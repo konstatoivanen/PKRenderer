@@ -1,0 +1,153 @@
+#include "PrecompiledHeader.h"
+#include "VulkanPipelineCache.h"
+
+namespace PK::Rendering::VulkanRHI::Systems
+{
+    const VulkanPipeline* VulkanPipelineCache::GetPipeline(const PipelineKey& key)
+    {
+        auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
+        auto iterator = m_pipelines.find(key);
+
+        if (iterator != m_pipelines.end() && iterator->second.pipeline != nullptr)
+        {
+            iterator->second.pruneTick = nextPruneTick;
+            return iterator->second.pipeline.get();
+        }
+
+        auto stageCount = 0u;
+        VkPipelineShaderStageCreateInfo shaderStages[(int)ShaderStage::MaxCount];
+
+        for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
+        {
+            if (key.shader->GetModule(i) != nullptr)
+            {
+                shaderStages[stageCount++] = key.shader->GetModule(i)->stageInfo;
+            }
+        }
+
+        auto bufferCount = 0u;
+        auto attributeCount = 0u;
+
+        for (auto i = 0u; i < PK_MAX_VERTEX_ATTRIBUTES; ++i)
+        {
+            if (key.vertexBuffers[i].stride != 0)
+            {
+                bufferCount++;
+            }
+
+            if (key.vertexAttributes[i].format != VK_FORMAT_UNDEFINED)
+            {
+                attributeCount++;
+            }
+        }
+
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
+        vertexInputInfo.vertexBindingDescriptionCount = bufferCount;
+        vertexInputInfo.vertexAttributeDescriptionCount = attributeCount;
+        vertexInputInfo.pVertexBindingDescriptions = key.vertexBuffers;
+        vertexInputInfo.pVertexAttributeDescriptions = key.vertexAttributes;
+
+        VkPipelineInputAssemblyStateCreateInfo inputAssembly{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
+        inputAssembly.topology = key.topology;
+        inputAssembly.primitiveRestartEnable = key.primitiveRestart;
+
+        VkPipelineViewportStateCreateInfo viewportState{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
+        viewportState.viewportCount = key.fixedFunctionState.viewportCount;
+        viewportState.pViewports = nullptr;
+        viewportState.scissorCount = key.fixedFunctionState.viewportCount;
+        viewportState.pScissors = nullptr;
+
+        VkPipelineRasterizationStateCreateInfo rasterizer{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
+        rasterizer.depthClampEnable = key.fixedFunctionState.rasterization.depthClampEnable;
+        rasterizer.rasterizerDiscardEnable = key.fixedFunctionState.rasterization.rasterizerDiscardEnable;
+        rasterizer.polygonMode = key.fixedFunctionState.rasterization.polygonMode;
+        rasterizer.lineWidth = key.fixedFunctionState.rasterization.lineWidth;
+        rasterizer.cullMode = key.fixedFunctionState.rasterization.cullMode;
+        rasterizer.frontFace = key.fixedFunctionState.rasterization.frontFace;
+        rasterizer.depthBiasEnable = key.fixedFunctionState.rasterization.depthBiasEnable;
+        rasterizer.depthBiasConstantFactor = key.fixedFunctionState.rasterization.depthBiasConstantFactor;
+        rasterizer.depthBiasClamp = key.fixedFunctionState.rasterization.depthBiasClamp;
+        rasterizer.depthBiasSlopeFactor = key.fixedFunctionState.rasterization.depthBiasSlopeFactor;
+
+        VkPipelineMultisampleStateCreateInfo multisampling{ VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
+        multisampling.sampleShadingEnable = key.fixedFunctionState.multisampling.sampleShadingEnable;
+        multisampling.rasterizationSamples = key.fixedFunctionState.multisampling.rasterizationSamples;
+        multisampling.minSampleShading = key.fixedFunctionState.multisampling.minSampleShading;
+        multisampling.pSampleMask = nullptr;
+        multisampling.alphaToCoverageEnable = key.fixedFunctionState.multisampling.alphaToCoverageEnable;
+        multisampling.alphaToOneEnable = key.fixedFunctionState.multisampling.alphaToOneEnable;
+
+        VkPipelineDepthStencilStateCreateInfo depthStencil{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
+        depthStencil.depthTestEnable = key.fixedFunctionState.depthStencil.depthTestEnable;
+        depthStencil.depthWriteEnable = key.fixedFunctionState.depthStencil.depthWriteEnable;
+        depthStencil.depthCompareOp = key.fixedFunctionState.depthStencil.depthCompareOp;
+        depthStencil.depthBoundsTestEnable = key.fixedFunctionState.depthStencil.depthBoundsTestEnable;
+        depthStencil.stencilTestEnable = key.fixedFunctionState.depthStencil.stencilTestEnable;
+        depthStencil.minDepthBounds = key.fixedFunctionState.depthStencil.minDepthBounds;
+        depthStencil.maxDepthBounds = key.fixedFunctionState.depthStencil.maxDepthBounds;
+
+        VkPipelineColorBlendAttachmentState blendAttachments[PK_MAX_RENDER_TARGETS];
+
+        for (auto i = 0u; i < key.fixedFunctionState.colorTargetCount; ++i)
+        {
+            blendAttachments[i] = key.fixedFunctionState.blending;
+        }
+
+        VkPipelineColorBlendStateCreateInfo colorBlending{ VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
+        colorBlending.logicOpEnable = VK_FALSE;
+        colorBlending.logicOp = VK_LOGIC_OP_COPY;
+        colorBlending.attachmentCount = key.fixedFunctionState.colorTargetCount;
+        colorBlending.pAttachments = blendAttachments;
+        colorBlending.blendConstants[0] = 0.0f;
+        colorBlending.blendConstants[1] = 0.0f;
+        colorBlending.blendConstants[2] = 0.0f;
+        colorBlending.blendConstants[3] = 0.0f;
+
+        VkDynamicState dynamicStates[] =
+        {
+            VK_DYNAMIC_STATE_VIEWPORT,
+            VK_DYNAMIC_STATE_SCISSOR,
+        };
+
+        VkPipelineDynamicStateCreateInfo dynamicState{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
+        dynamicState.dynamicStateCount = 2;
+        dynamicState.pDynamicStates = dynamicStates;
+
+        VkGraphicsPipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
+        pipelineInfo.stageCount = stageCount;
+        pipelineInfo.pStages = shaderStages;
+        pipelineInfo.pVertexInputState = &vertexInputInfo;
+        pipelineInfo.pInputAssemblyState = &inputAssembly;
+        pipelineInfo.pViewportState = &viewportState;
+        pipelineInfo.pRasterizationState = &rasterizer;
+        pipelineInfo.pMultisampleState = &multisampling;
+        pipelineInfo.pDepthStencilState = &depthStencil;
+        pipelineInfo.pColorBlendState = &colorBlending;
+        pipelineInfo.pDynamicState = &dynamicState;
+        pipelineInfo.layout = key.shader->GetPipelineLayout()->layout; 
+        pipelineInfo.renderPass = key.renderPass;
+        pipelineInfo.subpass = 0;
+        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+        pipelineInfo.basePipelineIndex = -1;
+
+        auto pipeline = CreateRef<VulkanPipeline>(m_device, VK_NULL_HANDLE, pipelineInfo);
+        m_pipelines[key] = { pipeline, nextPruneTick };
+        return pipeline.get();
+    }
+    
+    void VulkanPipelineCache::Prune()
+    {
+        m_currentPruneTick++;
+
+        for (auto& kv : m_pipelines)
+        {
+            auto& key = kv.first;
+            auto& value = kv.second;
+
+            if (value.pipeline != nullptr && value.pruneTick < m_currentPruneTick)
+            {
+                value.pipeline = nullptr;
+            }
+        }
+    }
+}

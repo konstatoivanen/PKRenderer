@@ -1,0 +1,239 @@
+#include "PrecompiledHeader.h"
+#include "VulkanFrameBufferCache.h"
+#include "Rendering/VulkanRHI/Utilities/VulkanConstants.h"
+#include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
+
+namespace PK::Rendering::VulkanRHI::Systems
+{    
+    VulkanFrameBufferCache::VulkanFrameBufferCache(VkDevice device, uint64_t pruneDelay) : m_device(device), m_pruneDelay(pruneDelay) {}
+
+    const VulkanFrameBuffer* VulkanFrameBufferCache::GetFrameBuffer(const FrameBufferKey& key)
+    {
+        auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
+        auto iterator = m_framebuffers.find(key);
+        
+        if (iterator != m_framebuffers.end() && iterator->second.frameBuffer != nullptr)
+        {
+            iterator->second.pruneTick = nextPruneTick;
+            return iterator->second.frameBuffer.get();
+        }
+
+        VkImageView attachments[PK_MAX_RENDER_TARGETS * 2 + 1];
+        uint32_t attachmentCount = 0;
+
+        for (auto attachment : key.color)
+        {
+            if (attachment) 
+            {
+                attachments[attachmentCount++] = attachment;
+            }
+        }
+
+        for (auto attachment : key.resolve)
+        {
+            if (attachment)
+            {
+                attachments[attachmentCount++] = attachment;
+            }
+        }
+
+        if (key.depth)
+        {
+            attachments[attachmentCount++] = key.depth;
+        }
+
+        VkFramebufferCreateInfo info{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
+        info.renderPass = key.renderPass;
+        info.attachmentCount = attachmentCount;
+        info.pAttachments = attachments;
+        info.width = key.extent.width;
+        info.height = key.extent.height;
+        info.layers = key.layers;
+
+        auto frameBuffer = CreateRef<VulkanFrameBuffer>(m_device, info);
+        m_framebuffers[key] = { frameBuffer, nextPruneTick };
+        m_renderPassReferenceCounts[key.renderPass]++;
+
+        return frameBuffer.get();
+    }
+
+    const VulkanRenderPass* VulkanFrameBufferCache::GetRenderPass(const RenderPassKey& key)
+    {
+        auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
+        auto iterator = m_renderPasses.find(key);
+
+        if (iterator != m_renderPasses.end() && iterator->second.renderPass != nullptr)
+        {
+            iterator->second.pruneTick = nextPruneTick;
+            return iterator->second.renderPass.get();
+        }
+
+        // In Vulkan, the subpass desc specifies the layout to transition to at the start of the render
+        // pass, and the attachment description specifies the layout to transition to at the end.
+        // However we use render passes to cause layout transitions only when drawing directly into the
+        // swap chain. We keep our offscreen images in GENERAL layout, which is simple and prevents
+        // thrashing the layout. Note that pipeline barriers are more powerful than render passes for
+        // performing layout transitions, because they allow for per-miplevel transitions.
+        struct { VkImageLayout subpass, initial, final; } colorLayouts[PK_MAX_RENDER_TARGETS];
+      
+        // Is swap chain
+        if (key.colors[0].layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+        {
+            colorLayouts[0].initial = VK_IMAGE_LAYOUT_UNDEFINED;
+            colorLayouts[0].final = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            colorLayouts[0].subpass = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        }
+        else 
+        {
+            for (int i = 0; i < PK_MAX_RENDER_TARGETS; ++i)
+            {
+                colorLayouts[i].initial = key.colors[i].layout;
+                colorLayouts[i].final = key.colors[i].layout;
+                colorLayouts[i].subpass = key.colors[i].layout;
+            }
+        }
+
+        VkAttachmentReference colorAttachmentRefs[PK_MAX_RENDER_TARGETS] = {};
+        VkAttachmentReference resolveAttachmentRef[PK_MAX_RENDER_TARGETS] = {};
+        VkAttachmentReference depthAttachmentRef{};
+
+        // Note that this needs to have the same ordering as the corollary array in getFramebuffer.
+        VkAttachmentDescription attachments[PK_MAX_RENDER_TARGETS * 2 + 1] = {};
+
+        const bool hasDepth = key.depth.format != VK_FORMAT_UNDEFINED;
+
+        VkSubpassDescription subpass{};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.pColorAttachments = colorAttachmentRefs;
+        subpass.colorAttachmentCount = 0;
+        subpass.pDepthStencilAttachment = hasDepth ? &depthAttachmentRef : nullptr;
+        subpass.pResolveAttachments = resolveAttachmentRef;
+
+        VkSubpassDependency dependency{};
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask = 0;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+        VkRenderPassCreateInfo renderPassInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
+        renderPassInfo.attachmentCount = 0;
+        renderPassInfo.pAttachments = attachments;
+        renderPassInfo.subpassCount = 1;
+        renderPassInfo.pSubpasses = &subpass;
+        renderPassInfo.dependencyCount = 1;
+        renderPassInfo.pDependencies = &dependency;
+
+        int attachmentIndex = 0;
+
+        for (int i = 0; i < PK_MAX_RENDER_TARGETS; i++) 
+        {
+            if (key.colors[i].format == VK_FORMAT_UNDEFINED) 
+            {
+                continue;
+            }
+
+            const VkImageLayout subpassLayout = colorLayouts[i].subpass;
+    
+            uint32_t index = subpass.colorAttachmentCount++;
+            colorAttachmentRefs[index].layout = colorLayouts[i].subpass;
+            colorAttachmentRefs[index].attachment = attachmentIndex;
+
+            auto* attachment = attachments + attachmentIndex++;
+            attachment->format = key.colors[i].format;
+            attachment->samples = EnumConvert::GetSampleCountFlags(key.samples);
+            attachment->loadOp = EnumConvert::GetLoadOp(key.colors[i].loadop);
+            attachment->storeOp = EnumConvert::GetStoreOp(key.colors[i].storeop);
+            attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            attachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            attachment->initialLayout = colorLayouts[i].initial;
+            attachment->finalLayout = colorLayouts[i].final;
+        }
+
+        VkAttachmentReference* pResolveAttachment = resolveAttachmentRef;
+        for (int i = 0; i < PK_MAX_RENDER_TARGETS; ++i)
+        {
+            if (key.colors[i].format == VK_FORMAT_UNDEFINED)
+            {
+                continue;
+            }
+
+            if (!key.colors[i].resolve) 
+            {
+                pResolveAttachment->attachment = VK_ATTACHMENT_UNUSED;
+                ++pResolveAttachment;
+                continue;
+            }
+
+            pResolveAttachment->attachment = attachmentIndex;
+            pResolveAttachment->layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            ++pResolveAttachment;
+
+            auto* attachment = attachments + attachmentIndex++;
+            attachment->format = key.colors[i].format;
+            attachment->samples = VK_SAMPLE_COUNT_1_BIT;
+            attachment->loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            attachment->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+            attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            attachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            attachment->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            attachment->finalLayout = colorLayouts[i].final;
+        }
+
+        if (hasDepth) 
+        {
+            depthAttachmentRef.layout = key.depth.layout;
+            depthAttachmentRef.attachment = attachmentIndex;
+            
+            auto* attachment = attachments + attachmentIndex++;
+            attachment->format = key.depth.format;
+            attachment->samples = EnumConvert::GetSampleCountFlags(key.samples);
+            attachment->loadOp = EnumConvert::GetLoadOp(key.depth.loadop);
+            attachment->storeOp = EnumConvert::GetStoreOp(key.depth.storeop);
+            attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            attachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            attachment->initialLayout = key.depth.layout;
+            attachment->finalLayout = key.depth.layout;
+            dependency.srcStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+            dependency.dstStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+            dependency.dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        }
+
+        renderPassInfo.attachmentCount = attachmentIndex;
+
+        auto renderPass = CreateRef<VulkanRenderPass>(m_device, renderPassInfo);
+        m_renderPasses[key] = { renderPass, nextPruneTick };
+
+        return renderPass.get();
+    }
+
+    void VulkanFrameBufferCache::Prune()
+    {
+        m_currentPruneTick++;
+
+        for (auto& kv : m_framebuffers)
+        {
+            auto& value = kv.second;
+            auto& key = kv.first;
+
+            if (value.frameBuffer != nullptr && value.pruneTick < m_currentPruneTick)
+            {
+                m_renderPassReferenceCounts[key.renderPass]--;
+                value.frameBuffer = nullptr;
+            }
+        }
+
+        for (auto& kv : m_renderPasses)
+        {
+            auto& value = kv.second;
+            auto& key = kv.first;
+
+            if (value.renderPass != nullptr && value.pruneTick < m_currentPruneTick && m_renderPassReferenceCounts[value.renderPass->renderPass] == 0)
+            {
+                value.renderPass = nullptr;
+            }
+        }
+    }
+
+}

@@ -1,6 +1,11 @@
 # Prerequisites
 *.d
 
+# Logs
+*.tlog
+*.log
+*.lastbuildstate
+
 # Compiled Object files
 *.slo
 *.lo
@@ -10,11 +15,11 @@
 # Precompiled Headers
 *.gch
 *.pch
+*.ipch
 
 # Compiled Dynamic libraries
 *.so
 *.dylib
-*.dll
 
 # Fortran module files
 *.mod
@@ -24,9 +29,13 @@
 *.lai
 *.la
 *.a
-*.lib
 
 # Executables
 *.exe
 *.out
 *.app
+
+# Build Folders
+**/x64
+**/.vs
+**/RawAssets
