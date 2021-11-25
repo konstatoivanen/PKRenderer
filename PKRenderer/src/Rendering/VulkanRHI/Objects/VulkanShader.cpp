@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "VulkanShader.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
-#include <PKAssetLoader.h>
+#include <PKAssets/PKAssetLoader.h>
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -15,14 +15,15 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanShader::Import(const char* path)
     {
-        auto asset = PK::Assets::OpenAsset(path);
+        PK::Assets::PKAsset asset;
 
+        PK_THROW_ASSERT(PK::Assets::OpenAsset(path, &asset) == 0, "Failed to open asset at path: %s", path);
         PK_THROW_ASSERT(asset.header->type == PK::Assets::PKAssetType::Shader, "Trying to read a shader from a non shader file!")
 
         auto shader = PK::Assets::ReadAsShader(&asset);
         auto base = asset.rawData;
 
-        PK_THROW_ASSERT(shader->variantcount == 0, "Trying to read a shader with 0 variants!");
+        PK_THROW_ASSERT(shader->variantcount > 0, "Trying to read a shader with 0 variants!");
 
         auto variant = shader->variants.Get(base);
 
@@ -63,7 +64,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 std::vector<VkDescriptorSetLayoutBinding> bindings;
                 std::vector<ResourceElement> elements;
                 
-                for (auto j = 0u; j < pDescriptorSet->descriptorCount; ++i)
+                for (auto j = 0u; j < pDescriptorSet->descriptorCount; ++j)
                 {
                     VkDescriptorSetLayoutBinding descriptorBinding{};
                     descriptorBinding.binding = pDescriptors[j].binding;
@@ -71,7 +72,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                     descriptorBinding.descriptorType = EnumConvert::GetDescriptorType(pDescriptors[j].type);
                     descriptorBinding.stageFlags = EnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags);
                     bindings.push_back(descriptorBinding);
-                    elements.emplace_back(pDescriptors[i].type, std::string(pDescriptors[i].name), pDescriptors[i].binding, pDescriptors[i].count);
+                    elements.emplace_back(pDescriptors[j].type, std::string(pDescriptors[j].name), pDescriptors[j].binding, pDescriptors[j].count);
                 }
 
                 VkDescriptorSetLayoutCreateInfo descriptorsetLayoutCreateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };

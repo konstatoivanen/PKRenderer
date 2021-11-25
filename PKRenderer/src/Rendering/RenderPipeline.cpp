@@ -46,7 +46,7 @@ namespace PK::Rendering
     {
         auto driver = GraphicsAPI::GetActiveDriver<VulkanDriver>();
 
-        m_shader = CreateRef<VulkanShader>(driver->device, "res/assets/SH_WS_Debug.pkshader");
+        m_shader = CreateRef<VulkanShader>(driver->device, "res/SH_WS_Debug.pkshader");
 
         TextureDescriptor depthTexDescr{};
         depthTexDescr.resolution = { width, height, 1 };

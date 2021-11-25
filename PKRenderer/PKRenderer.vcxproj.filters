@@ -873,12 +873,6 @@
     <ClInclude Include="include\KTX\ktx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\SPIRV-Reflect\spirv.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\SPIRV-Reflect\spirv_reflect.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\VMA\vk_mem_alloc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1098,19 +1092,10 @@
     <ClInclude Include="src\Utilities\StringUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\shaderc\env.h">
+    <ClInclude Include="include\PKAssets\PKAsset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\shaderc\shaderc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\shaderc\shaderc.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\shaderc\status.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\shaderc\visibility.h">
+    <ClInclude Include="include\PKAssets\PKAssetLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1534,9 +1519,6 @@
     <ClCompile Include="include\glm\detail\glm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="include\SPIRV-Reflect\spirv_reflect.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Core\Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1637,6 +1619,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Utilities\StringUtilities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="include\PKAssets\PKAssetLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

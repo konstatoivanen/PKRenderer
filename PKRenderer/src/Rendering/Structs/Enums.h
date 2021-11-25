@@ -1,6 +1,6 @@
 #pragma once
 #include "PrecompiledHeader.h"
-#include <PKAsset.h>
+#include <PKAssets/PKAsset.h>
 
 namespace PK::Rendering::Structs
 {
