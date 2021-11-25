@@ -257,11 +257,11 @@ namespace PK::Rendering::VulkanRHI
         vmaDestroyImage(allocator, image, memory);
     }
 
-    VulkanShaderModule::VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const std::vector<uint32_t>& spirv) : device(device)
+    VulkanShaderModule::VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t sprivSize) : device(device)
     {
         VkShaderModuleCreateInfo createInfo{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
-        createInfo.codeSize = spirv.size() * sizeof(uint32_t);
-        createInfo.pCode = spirv.data();
+        createInfo.codeSize = sprivSize;
+        createInfo.pCode = spirv;
 
         VK_ASSERT_RESULT_CTX(vkCreateShaderModule(device, &createInfo, nullptr, &module), "Failed to create shader module!");
 
@@ -330,7 +330,7 @@ namespace PK::Rendering::VulkanRHI
         info.unnormalizedCoordinates = !descriptor.normalized;
         info.borderColor = EnumConvert::GetBorderColor(descriptor.borderColor);
         info.mipmapMode = (uint32_t)descriptor.filter > (uint32_t)FilterMode::Bilinear ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
-        info.compareEnable = descriptor.comparison != Comparison::None ? VK_TRUE : VK_FALSE;
+        info.compareEnable = descriptor.comparison != Comparison::Off ? VK_TRUE : VK_FALSE;
         info.compareOp = EnumConvert::GetCompareOp(descriptor.comparison);
         info.magFilter = EnumConvert::GetFilterMode(descriptor.filter);
         info.minFilter = EnumConvert::GetFilterMode(descriptor.filter);

@@ -1528,6 +1528,7 @@
     <None Include="libs\vulkan-1.pdb" />
     <None Include="libs\VulkanMemoryAllocatord.pdb" />
     <None Include="res\T_DebugTexture.ktx2" />
+    <None Include="res\SH_WS_Debug.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
@@ -1646,7 +1647,5 @@
     <Library Include="libs\vulkan-1.lib" />
     <Library Include="libs\VulkanMemoryAllocator.lib" />
     <Library Include="libs\VulkanMemoryAllocatord.lib" />
-    <Library Include="libs\shaderc_combined.lib" />
-    <Library Include="libs\shaderc_combinedd.lib" />
   </ItemGroup>
 </Project>

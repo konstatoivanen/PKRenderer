@@ -1,0 +1,3 @@
+[submodule "PKAsset"]
+	path = PKAssetTools
+	url = https://github.com/konstatoivanen/PKAsset.git

@@ -11,7 +11,7 @@ namespace PK::Rendering::Structs
     {
         FilterMode filter = FilterMode::Point;
         WrapMode wrap[3] = { WrapMode::Clamp, WrapMode::Clamp, WrapMode::Clamp };
-        Comparison comparison = Comparison::None;
+        Comparison comparison = Comparison::Off;
         BorderColor borderColor = BorderColor::FloatClear;
         bool normalized = true;
         float anisotropy = 0.0f;

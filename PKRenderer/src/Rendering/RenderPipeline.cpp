@@ -3,7 +3,7 @@
 #include "Rendering/VulkanRHI/VulkanDriver.h"
 #include "Rendering/VulkanRHI/VulkanWindow.h"
 #include "Utilities/Log.h"
-#include <shaderc/shaderc.hpp>
+
 
 namespace PK::Rendering
 {
@@ -42,37 +42,11 @@ namespace PK::Rendering
         6, 7, 4
     };
 
-    static std::vector<uint32_t> CompileGLSLToSpirV(const std::string& source_name, shaderc_shader_kind kind, const std::string& source, bool optimize = false)
-    {
-        shaderc::Compiler compiler;
-        shaderc::CompileOptions options;
-
-        // Like -DMY_DEFINE=1
-        //options.AddMacroDefinition("MY_DEFINE", "1");
-
-        if (optimize)
-        {
-            //options.SetOptimizationLevel(shaderc_optimization_level_size);
-        }
-
-        shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, kind, source_name.c_str(), options);
-
-        if (module.GetCompilationStatus() != shaderc_compilation_status_success)
-        {
-            throw std::runtime_error(module.GetErrorMessage());
-        }
-
-        return { module.cbegin(), module.cend() };
-    }
-
     RenderPipeline::RenderPipeline(int width, int height)
     {
         auto driver = GraphicsAPI::GetActiveDriver<VulkanDriver>();
 
-        VulkanShaderCreateInfo shaderInfo{};
-        shaderInfo.spirv[(int)ShaderStage::Vertex] = CompileGLSLToSpirV("DEBUG VERTEX", shaderc_shader_kind::shaderc_vertex_shader, std::string(PK_DEBUG_VERTEX_SHADER), true);
-        shaderInfo.spirv[(int)ShaderStage::Fragment] = CompileGLSLToSpirV("DEBUG FRAGMENT", shaderc_shader_kind::shaderc_fragment_shader, std::string(PK_DEBUG_FRAGMENT_SHADER), true);
-        m_shader = CreateRef<VulkanShader>(driver->device, shaderInfo);
+        m_shader = CreateRef<VulkanShader>(driver->device, "res/assets/SH_WS_Debug.pkshader");
 
         TextureDescriptor depthTexDescr{};
         depthTexDescr.resolution = { width, height, 1 };

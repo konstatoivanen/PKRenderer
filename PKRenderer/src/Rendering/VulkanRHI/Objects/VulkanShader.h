@@ -14,7 +14,9 @@ namespace PK::Rendering::VulkanRHI::Objects
     class VulkanShader : public PK::Core::NoCopy
     {
         public:
-            VulkanShader(VkDevice device, const VulkanShaderCreateInfo& createInfo);
+            VulkanShader(VkDevice device, const char* path);
+
+            void Import(const char* path);
 
             const VulkanShaderModule* GetModule(uint32_t index) const { return m_modules[index] != nullptr ? m_modules[index].get() : nullptr; }
 
@@ -29,6 +31,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             constexpr const ShaderType GetShaderType() const { return m_type; }
 
         private:
+            const VkDevice m_device;
             Ref<VulkanShaderModule> m_modules[(int)ShaderStage::MaxCount];
             VertexLayout m_vertexLayout;
             ResourceLayout m_resourceLayouts[PK_MAX_DESCRIPTOR_SETS];

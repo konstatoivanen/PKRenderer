@@ -28,4 +28,5 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
     VkPipelineBindPoint GetPipelineBindPoint(ShaderType type);
     VkSampleCountFlagBits GetSampleCountFlags(uint32_t samples);
     VkVertexInputRate GetInputRate(InputRate inputRate);
+    VkShaderStageFlagBits GetShaderStageFlags(uint32_t pkStageFlags);
 }

@@ -8,7 +8,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
     {
         switch (format)
         {
-            case Structs::ElementType::None: return VK_FORMAT_UNDEFINED;
+            case Structs::ElementType::Invalid: return VK_FORMAT_UNDEFINED;
             case Structs::ElementType::Float: return VK_FORMAT_R32_SFLOAT;
             case Structs::ElementType::Float2: return VK_FORMAT_R32G32_SFLOAT;
             case Structs::ElementType::Float3: return VK_FORMAT_R32G32B32_SFLOAT;
@@ -101,7 +101,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
             case VK_FORMAT_R64G64B64A64_UINT: return Structs::ElementType::Ulong4;
         }
 
-        return Structs::ElementType::None;
+        return Structs::ElementType::Invalid;
     }
 
     VkFormat GetFormat(TextureFormat format)
@@ -641,5 +641,42 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
         }
 
         return VK_VERTEX_INPUT_RATE_MAX_ENUM;
+    }
+
+    VkShaderStageFlagBits GetShaderStageFlags(uint32_t pkStageFlags)
+    {
+        uint32_t flags = 0;
+
+        if ((pkStageFlags & (1 << (int)ShaderStage::Vertex)) != 0)
+        {
+            flags |= VK_SHADER_STAGE_VERTEX_BIT;
+        }
+
+        if ((pkStageFlags & (1 << (int)ShaderStage::TesselationControl)) != 0)
+        {
+            flags |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+        }
+
+        if ((pkStageFlags & (1 << (int)ShaderStage::TesselationEvaluation)) != 0)
+        {
+            flags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+        }
+
+        if ((pkStageFlags & (1 << (int)ShaderStage::Geometry)) != 0)
+        {
+            flags |= VK_SHADER_STAGE_GEOMETRY_BIT;
+        }
+
+        if ((pkStageFlags & (1 << (int)ShaderStage::Fragment)) != 0)
+        {
+            flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+        }
+
+        if ((pkStageFlags & (1 << (int)ShaderStage::Compute)) != 0)
+        {
+            flags |= VK_SHADER_STAGE_COMPUTE_BIT;
+        }
+
+        return (VkShaderStageFlagBits)flags;
     }
 }

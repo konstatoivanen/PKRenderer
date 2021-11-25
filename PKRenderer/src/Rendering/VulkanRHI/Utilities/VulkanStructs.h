@@ -44,11 +44,6 @@ namespace PK::Rendering::VulkanRHI
         VkImageAspectFlagBits aspect = (VkImageAspectFlagBits)0;
     };
 
-    struct VulkanShaderCreateInfo
-    {
-        std::vector<uint32_t> spirv[(uint32_t)ShaderStage::MaxCount] = {};
-    };
-
     struct VulkanLayoutTransition 
     {
         VulkanLayoutTransition() {}
@@ -186,7 +181,7 @@ namespace PK::Rendering::VulkanRHI
 
     struct VulkanShaderModule : public PK::Core::NoCopy
     {
-        VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const std::vector<uint32_t>& spirv);
+        VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t spirvSize);
         ~VulkanShaderModule();
 
         const VkDevice device;

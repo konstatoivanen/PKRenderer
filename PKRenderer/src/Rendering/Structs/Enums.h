@@ -1,44 +1,27 @@
 #pragma once
 #include "PrecompiledHeader.h"
+#include <PKAsset.h>
 
 namespace PK::Rendering::Structs
 {
+    typedef PK::Assets::PKDescriptorType ResourceType;
+    typedef PK::Assets::PKElementType ElementType;
+    typedef PK::Assets::PKShaderStage ShaderStage;
+    typedef PK::Assets::PKBlendFactor BlendFactor;
+    typedef PK::Assets::PKComparison Comparison;
+    typedef PK::Assets::PKCullMode CullMode;
+    
     enum class APIType
     {
-        Invalid,
+        Off,
         Vulkan,
         DX12
-    };
-
-    enum class ShaderStage : uint8_t
-    {
-        Vertex,
-        TesselationControl,
-        TesselationEvaluation,
-        Geometry,
-        Fragment,
-        Compute,
-        MaxCount
     };
 
     enum class ShaderType : uint8_t
     {
         Graphics,
         Compute
-    };
-
-    enum class ResourceType : uint8_t
-    {
-        Invalid,
-        Sampler,
-        SamplerTexture,
-        Texture,
-        Image,
-        UniformBuffer,
-        StorageBuffer,
-        DynamicUniformBuffer,
-        DynamicStorageBuffer,
-        InputAttachment,
     };
 
     enum class SamplerType : uint8_t
@@ -65,19 +48,6 @@ namespace PK::Rendering::Structs
         Mirror,
         MirrorOnce,
         Border
-    };
-
-    enum class Comparison : uint8_t
-    {
-        None,
-        Never,
-        Less,
-        Equal,
-        LessEqual,
-        Greater,
-        NotEqual,
-        GreaterEqual,
-        Always,
     };
 
     enum class LoadOp : uint16_t
@@ -242,70 +212,6 @@ namespace PK::Rendering::Structs
         SRGB8_ALPHA8_ASTC_10x10,
         SRGB8_ALPHA8_ASTC_12x10,
         SRGB8_ALPHA8_ASTC_12x12,
-    };
-
-    enum class ElementType : uint16_t
-    {
-        None = 0,
-
-        Float,
-        Float2,
-        Float3,
-        Float4,
-        
-        Double,
-        Double2,
-        Double3,
-        Double4,
-        
-        Half,
-        Half2,
-        Half3,
-        Half4,
-        
-        Int,
-        Int2,
-        Int3,
-        Int4,
-        
-        Uint,
-        Uint2,
-        Uint3,
-        Uint4,
-        
-        Short,
-        Short2,
-        Short3,
-        Short4,
-        
-        Ushort,
-        Ushort2,
-        Ushort3,
-        Ushort4,
-
-        Long,
-        Long2,
-        Long3,
-        Long4,
-
-        Ulong,
-        Ulong2,
-        Ulong3,
-        Ulong4,
-
-        Float2x2,
-        Float3x3,
-        Float4x4,
-
-        Double2x2,
-        Double3x3,
-        Double4x4,
-
-        Half2x2,
-        Half3x3,
-        Half4x4,
-
-        Invalid = 0xFFFF
     };
 
     namespace ElementConvert
