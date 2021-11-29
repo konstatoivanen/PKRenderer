@@ -29,4 +29,9 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
     VkSampleCountFlagBits GetSampleCountFlags(uint32_t samples);
     VkVertexInputRate GetInputRate(InputRate inputRate);
     VkShaderStageFlagBits GetShaderStageFlags(uint32_t pkStageFlags);
+    VkPolygonMode GetPolygonMode(PolygonMode mode);
+    VkBlendOp GetBlendOp(BlendOp op);
+    VkBlendFactor GetBlendFactor(BlendFactor factor, VkBlendFactor fallback);
+    VkCullModeFlagBits GetCullMode(CullMode op);
+    VkFrontFace GetFrontFace(FrontFace face);
 }

@@ -165,6 +165,16 @@ namespace PK::Assets
         OneMinusConstAlpha,
     };
 
+    enum class PKBlendOp
+    {
+        None,
+        Add,
+        Subtract,
+        ReverseSubtract,
+        Min,
+        Max,
+    };
+
     struct PKAssetHeader
     {
         char name[PK_ASSET_NAME_MAX_LENGTH];
@@ -173,6 +183,12 @@ namespace PK::Assets
 
     namespace Shader
     {
+        enum class Type : unsigned char
+        {
+            Graphics,
+            Compute
+        };
+
         struct alignas(4) PKVertexAttribute
         {
             char name[PK_ASSET_NAME_MAX_LENGTH];
@@ -196,13 +212,17 @@ namespace PK::Assets
 
         struct alignas(4) PKShaderFixedStateAttributes
         {
-            PKComparison ztest;
-            PKCullMode cull;
-            PKBlendFactor blendSrc;
-            PKBlendFactor blendDst;
-            unsigned short colorMask;
-            unsigned short zwrite;
-            float zoffsets[3];
+            PKComparison ztest = PKComparison::Off;
+            PKCullMode cull = PKCullMode::Off;
+            PKBlendFactor blendSrcFactorColor = PKBlendFactor::None;
+            PKBlendFactor blendDstFactorColor = PKBlendFactor::None;
+            PKBlendFactor blendSrcFactorAlpha = PKBlendFactor::None;
+            PKBlendFactor blendDstFactorAlpha = PKBlendFactor::None;
+            PKBlendOp blendOpColor = PKBlendOp::None;
+            PKBlendOp blendOpAlpha = PKBlendOp::None;
+            unsigned short colorMask = 0xFF;
+            unsigned short zwrite = 0x0;
+            float zoffsets[3] = { 0, 0, 0 };
         };
 
         struct PKDescriptorSet
@@ -225,6 +245,7 @@ namespace PK::Assets
 
         struct PKShader
         {
+            Type type = Type::Graphics;
             uint_t keywordCount = 0;
             RelativePtr<PKShaderKeyword> keywords;
             uint_t variantcount = 0;

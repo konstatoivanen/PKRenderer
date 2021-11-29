@@ -513,6 +513,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Math\PKMath.h" />
     <ClInclude Include="src\PrecompiledHeader.h" />
     <ClInclude Include="src\Rendering\GraphicsAPI.h" />
+    <ClInclude Include="src\Rendering\Objects\Shader.h" />
     <ClInclude Include="src\Rendering\RenderPipeline.h" />
     <ClInclude Include="src\Rendering\Structs\Descriptors.h" />
     <ClInclude Include="src\Rendering\Structs\Enums.h" />
@@ -703,6 +704,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PrecompiledHeader.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="src\Rendering\GraphicsAPI.cpp" />
+    <ClCompile Include="src\Rendering\Objects\Shader.cpp" />
     <ClCompile Include="src\Rendering\RenderPipeline.cpp" />
     <ClCompile Include="src\Rendering\Structs\Enums.cpp" />
     <ClCompile Include="src\Rendering\Structs\Layout.cpp" />

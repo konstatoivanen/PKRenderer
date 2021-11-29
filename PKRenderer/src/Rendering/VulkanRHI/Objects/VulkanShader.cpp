@@ -1,6 +1,8 @@
 #include "PrecompiledHeader.h"
 #include "VulkanShader.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
+#include "Rendering/VulkanRHI/VulkanDriver.h"
+#include "Rendering/GraphicsAPI.h"
 #include <PKAssets/PKAssetLoader.h>
 
 namespace PK::Rendering::VulkanRHI::Objects
@@ -8,24 +10,10 @@ namespace PK::Rendering::VulkanRHI::Objects
     using namespace PK::Rendering::VulkanRHI::Utilities;
     using namespace PK::Rendering::Structs;
 
-    VulkanShader::VulkanShader(VkDevice device, const char* path) : m_device(device)
+    VulkanShader::VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant)
     {
-        Import(path);
-    }
-
-    void VulkanShader::Import(const char* path)
-    {
-        PK::Assets::PKAsset asset;
-
-        PK_THROW_ASSERT(PK::Assets::OpenAsset(path, &asset) == 0, "Failed to open asset at path: %s", path);
-        PK_THROW_ASSERT(asset.header->type == PK::Assets::PKAssetType::Shader, "Trying to read a shader from a non shader file!")
-
-        auto shader = PK::Assets::ReadAsShader(&asset);
-        auto base = asset.rawData;
-
-        PK_THROW_ASSERT(shader->variantcount > 0, "Trying to read a shader with 0 variants!");
-
-        auto variant = shader->variants.Get(base);
+        auto driver = GraphicsAPI::GetActiveDriver<VulkanDriver>();
+        m_device = driver->device;
 
         for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
         {
@@ -56,14 +44,14 @@ namespace PK::Rendering::VulkanRHI::Objects
             layouts.reserve(variant->descriptorSetCount);
 
             auto* pDescriptorSets = variant->descriptorSets.Get(base);
-        
+
             for (auto i = 0u; i < variant->descriptorSetCount; ++i)
             {
                 auto pDescriptorSet = pDescriptorSets + i;
                 auto pDescriptors = pDescriptorSet->descriptors.Get(base);
                 std::vector<VkDescriptorSetLayoutBinding> bindings;
                 std::vector<ResourceElement> elements;
-                
+
                 for (auto j = 0u; j < pDescriptorSet->descriptorCount; ++j)
                 {
                     VkDescriptorSetLayoutBinding descriptorBinding{};
@@ -94,7 +82,18 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
 
         m_type = m_modules[(int)ShaderStage::Compute] != nullptr ? ShaderType::Compute : ShaderType::Graphics;
+    }
 
-        PK::Assets::CloseAsset(&asset);
+    void VulkanShader::Release()
+    {
+        auto driver = GraphicsAPI::GetActiveDriver<VulkanDriver>();
+
+        for (auto& module : m_modules)
+        {
+            if (module != nullptr)
+            {
+                driver->disposer->Dispose(module, driver->commandBufferPool->GetCurrent()->GetOnCompleteGate());
+            }
+        }
     }
 }

@@ -179,7 +179,7 @@ namespace PK::Rendering::VulkanRHI
         uint32_t layers;
     };
 
-    struct VulkanShaderModule : public PK::Core::NoCopy
+    struct VulkanShaderModule : public VulkanDisposable
     {
         VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t spirvSize);
         ~VulkanShaderModule();

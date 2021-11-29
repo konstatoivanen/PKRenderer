@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "VulkanPipelineCache.h"
+#include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
@@ -60,10 +61,10 @@ namespace PK::Rendering::VulkanRHI::Systems
         VkPipelineRasterizationStateCreateInfo rasterizer{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
         rasterizer.depthClampEnable = key.fixedFunctionState.rasterization.depthClampEnable;
         rasterizer.rasterizerDiscardEnable = key.fixedFunctionState.rasterization.rasterizerDiscardEnable;
-        rasterizer.polygonMode = key.fixedFunctionState.rasterization.polygonMode;
+        rasterizer.polygonMode = EnumConvert::GetPolygonMode(key.fixedFunctionState.rasterization.polygonMode);
         rasterizer.lineWidth = key.fixedFunctionState.rasterization.lineWidth;
-        rasterizer.cullMode = key.fixedFunctionState.rasterization.cullMode;
-        rasterizer.frontFace = key.fixedFunctionState.rasterization.frontFace;
+        rasterizer.cullMode = EnumConvert::GetCullMode(key.fixedFunctionState.rasterization.cullMode);
+        rasterizer.frontFace = EnumConvert::GetFrontFace(key.fixedFunctionState.rasterization.frontFace);
         rasterizer.depthBiasEnable = key.fixedFunctionState.rasterization.depthBiasEnable;
         rasterizer.depthBiasConstantFactor = key.fixedFunctionState.rasterization.depthBiasConstantFactor;
         rasterizer.depthBiasClamp = key.fixedFunctionState.rasterization.depthBiasClamp;
@@ -71,16 +72,16 @@ namespace PK::Rendering::VulkanRHI::Systems
 
         VkPipelineMultisampleStateCreateInfo multisampling{ VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
         multisampling.sampleShadingEnable = key.fixedFunctionState.multisampling.sampleShadingEnable;
-        multisampling.rasterizationSamples = key.fixedFunctionState.multisampling.rasterizationSamples;
+        multisampling.rasterizationSamples = EnumConvert::GetSampleCountFlags(key.fixedFunctionState.multisampling.rasterizationSamples);
         multisampling.minSampleShading = key.fixedFunctionState.multisampling.minSampleShading;
         multisampling.pSampleMask = nullptr;
         multisampling.alphaToCoverageEnable = key.fixedFunctionState.multisampling.alphaToCoverageEnable;
         multisampling.alphaToOneEnable = key.fixedFunctionState.multisampling.alphaToOneEnable;
 
         VkPipelineDepthStencilStateCreateInfo depthStencil{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
-        depthStencil.depthTestEnable = key.fixedFunctionState.depthStencil.depthTestEnable;
+        depthStencil.depthTestEnable = key.fixedFunctionState.depthStencil.depthCompareOp != Comparison::Off;
         depthStencil.depthWriteEnable = key.fixedFunctionState.depthStencil.depthWriteEnable;
-        depthStencil.depthCompareOp = key.fixedFunctionState.depthStencil.depthCompareOp;
+        depthStencil.depthCompareOp = EnumConvert::GetCompareOp(key.fixedFunctionState.depthStencil.depthCompareOp);
         depthStencil.depthBoundsTestEnable = key.fixedFunctionState.depthStencil.depthBoundsTestEnable;
         depthStencil.stencilTestEnable = key.fixedFunctionState.depthStencil.stencilTestEnable;
         depthStencil.minDepthBounds = key.fixedFunctionState.depthStencil.minDepthBounds;
@@ -90,7 +91,14 @@ namespace PK::Rendering::VulkanRHI::Systems
 
         for (auto i = 0u; i < key.fixedFunctionState.colorTargetCount; ++i)
         {
-            blendAttachments[i] = key.fixedFunctionState.blending;
+            blendAttachments[i].blendEnable = key.fixedFunctionState.blending.isBlendEnabled();
+            blendAttachments[i].srcColorBlendFactor = EnumConvert::GetBlendFactor(key.fixedFunctionState.blending.srcColorFactor, VK_BLEND_FACTOR_ONE);
+            blendAttachments[i].dstColorBlendFactor = EnumConvert::GetBlendFactor(key.fixedFunctionState.blending.dstColorFactor, VK_BLEND_FACTOR_ZERO);
+            blendAttachments[i].colorBlendOp = EnumConvert::GetBlendOp(key.fixedFunctionState.blending.colorOp);
+            blendAttachments[i].srcAlphaBlendFactor = EnumConvert::GetBlendFactor(key.fixedFunctionState.blending.srcAlphaFactor, VK_BLEND_FACTOR_ONE);
+            blendAttachments[i].dstAlphaBlendFactor = EnumConvert::GetBlendFactor(key.fixedFunctionState.blending.dstAlphaFactor, VK_BLEND_FACTOR_ZERO);
+            blendAttachments[i].alphaBlendOp = EnumConvert::GetBlendOp(key.fixedFunctionState.blending.alphaOp);
+            blendAttachments[i].colorWriteMask = key.fixedFunctionState.blending.colorMask & 0xF;
         }
 
         VkPipelineColorBlendStateCreateInfo colorBlending{ VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };

@@ -4,9 +4,10 @@
 #include "Rendering/VulkanRHI/VulkanWindow.h"
 #include "Utilities/Log.h"
 
-
 namespace PK::Rendering
 {
+    using namespace PK::Rendering::Objects;
+
     struct Vertex
     {
         float3 position;
@@ -42,11 +43,11 @@ namespace PK::Rendering
         6, 7, 4
     };
 
-    RenderPipeline::RenderPipeline(int width, int height)
+    RenderPipeline::RenderPipeline(AssetDatabase* assetDatabase, int width, int height)
     {
         auto driver = GraphicsAPI::GetActiveDriver<VulkanDriver>();
 
-        m_shader = CreateRef<VulkanShader>(driver->device, "res/SH_WS_Debug.pkshader");
+        m_shader = assetDatabase->Load<Shader>("res/SH_WS_Debug.pkshader");
 
         TextureDescriptor depthTexDescr{};
         depthTexDescr.resolution = { width, height, 1 };
@@ -55,14 +56,13 @@ namespace PK::Rendering
         m_depthTexture = CreateRef<VulkanTexture>(driver, depthTexDescr);
 
         m_fixedFunctionState = {};
-        m_fixedFunctionState.blending.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        m_fixedFunctionState.blending.blendEnable = VK_FALSE;
-        m_fixedFunctionState.blending.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-        m_fixedFunctionState.blending.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-        m_fixedFunctionState.blending.colorBlendOp = VK_BLEND_OP_ADD;
-        m_fixedFunctionState.blending.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-        m_fixedFunctionState.blending.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-        m_fixedFunctionState.blending.alphaBlendOp = VK_BLEND_OP_ADD;
+        m_fixedFunctionState.blending.colorMask = PK_COLOR_MASK_RGBA;
+        m_fixedFunctionState.blending.srcColorFactor = BlendFactor::None;
+        m_fixedFunctionState.blending.dstColorFactor = BlendFactor::None;
+        m_fixedFunctionState.blending.colorOp = BlendOp::None;
+        m_fixedFunctionState.blending.srcAlphaFactor = BlendFactor::None;
+        m_fixedFunctionState.blending.dstAlphaFactor = BlendFactor::None;
+        m_fixedFunctionState.blending.alphaOp = BlendOp::None;
         m_fixedFunctionState.multisampling.sampleShadingEnable = VK_FALSE;
         m_fixedFunctionState.multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
         m_fixedFunctionState.multisampling.minSampleShading = 1.0f;
@@ -70,17 +70,16 @@ namespace PK::Rendering
         m_fixedFunctionState.multisampling.alphaToOneEnable = VK_FALSE;
         m_fixedFunctionState.rasterization.depthClampEnable = VK_FALSE;
         m_fixedFunctionState.rasterization.rasterizerDiscardEnable = VK_FALSE;
-        m_fixedFunctionState.rasterization.polygonMode = VK_POLYGON_MODE_FILL;
+        m_fixedFunctionState.rasterization.polygonMode = PolygonMode::Fill;
         m_fixedFunctionState.rasterization.lineWidth = 1.0f;
-        m_fixedFunctionState.rasterization.cullMode = VK_CULL_MODE_BACK_BIT;
-        m_fixedFunctionState.rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        m_fixedFunctionState.rasterization.cullMode = CullMode::Back;
+        m_fixedFunctionState.rasterization.frontFace = FrontFace::Clockwise;
         m_fixedFunctionState.rasterization.depthBiasEnable = VK_FALSE;
         m_fixedFunctionState.rasterization.depthBiasConstantFactor = 0.0f;
         m_fixedFunctionState.rasterization.depthBiasClamp = 0.0f;
         m_fixedFunctionState.rasterization.depthBiasSlopeFactor = 0.0f;
-        m_fixedFunctionState.depthStencil.depthTestEnable = VK_TRUE;
         m_fixedFunctionState.depthStencil.depthWriteEnable = VK_TRUE;
-        m_fixedFunctionState.depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+        m_fixedFunctionState.depthStencil.depthCompareOp = Comparison::LessEqual;
         m_fixedFunctionState.colorTargetCount = 1;
 
         m_vertexBuffer = CreateRef<VulkanBuffer>(driver, BufferUsage::Vertex,
@@ -153,7 +152,7 @@ namespace PK::Rendering
 
         cmd->renderState.pipelineKey.fixedFunctionState = m_fixedFunctionState;
 
-        cmd->SetShader(m_shader.get());
+        cmd->SetShader(m_shader->GetVariant(0)->GetNative<VulkanShader>());
         cmd->BindVertexBuffers({ { m_vertexBuffer->GetBindHandle(), InputRate::PerVertex } });
         cmd->BindIndexBuffer(m_indexBuffer->GetBindHandle(), 0);
 

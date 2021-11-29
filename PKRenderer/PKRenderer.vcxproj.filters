@@ -1098,6 +1098,9 @@
     <ClInclude Include="include\PKAssets\PKAssetLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Rendering\Objects\Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -1622,6 +1625,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="include\PKAssets\PKAssetLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Objects\Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

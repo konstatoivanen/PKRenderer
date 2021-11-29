@@ -47,7 +47,7 @@ namespace PK::Core
 		m_window->OnMouseButtonInput = PK_BIND_MEMBER_FUNCTION(input, OnMouseButtonInput);
 		m_window->OnClose = PK_BIND_FUNCTION(Application::Close);
 
-		auto renderPipeline = m_services->Create<RenderPipeline>(1024, 512);
+		auto renderPipeline = m_services->Create<RenderPipeline>(assetDatabase, 1024, 512);
 
 		sequencer->SetSteps(
 		{

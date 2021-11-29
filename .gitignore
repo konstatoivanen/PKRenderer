@@ -36,6 +36,6 @@
 *.app
 
 # Build Folders
-**/x64
+**/Build
 **/.vs
 **/RawAssets

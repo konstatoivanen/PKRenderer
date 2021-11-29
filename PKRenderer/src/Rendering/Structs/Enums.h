@@ -8,20 +8,23 @@ namespace PK::Rendering::Structs
     typedef PK::Assets::PKElementType ElementType;
     typedef PK::Assets::PKShaderStage ShaderStage;
     typedef PK::Assets::PKBlendFactor BlendFactor;
+    typedef PK::Assets::PKBlendOp BlendOp;
     typedef PK::Assets::PKComparison Comparison;
     typedef PK::Assets::PKCullMode CullMode;
+    typedef PK::Assets::Shader::Type ShaderType;
+
+    constexpr const static uint32_t PK_DESIRED_SWAP_CHAIN_IMAGE_COUNT = 4;
+    constexpr static const int PK_MAX_FRAMES_IN_FLIGHT = 2;
+    constexpr static const int PK_MAX_RENDER_TARGETS = 8;
+    constexpr static const uint32_t PK_MAX_DESCRIPTOR_SETS = 4;
+    constexpr static const uint32_t PK_MAX_DESCRIPTORS_PER_SET = 16;
+    constexpr const static uint32_t PK_MAX_VERTEX_ATTRIBUTES = 8;
     
     enum class APIType
     {
         Off,
         Vulkan,
         DX12
-    };
-
-    enum class ShaderType : uint8_t
-    {
-        Graphics,
-        Compute
     };
 
     enum class SamplerType : uint8_t
@@ -41,6 +44,13 @@ namespace PK::Rendering::Structs
         Bicubic
     };
 
+    enum class PolygonMode : uint8_t
+    {
+        Fill,
+        Line,
+        Point,
+    };
+
     enum class WrapMode : uint8_t
     {
         Clamp,
@@ -48,6 +58,24 @@ namespace PK::Rendering::Structs
         Mirror,
         MirrorOnce,
         Border
+    };
+
+    typedef enum ColorMask
+    {
+        PK_COLOR_MASK_NONE = 0,
+        PK_COLOR_MASK_R = 0x00000001,
+        PK_COLOR_MASK_G = 0x00000002,
+        PK_COLOR_MASK_B = 0x00000004,
+        PK_COLOR_MASK_A = 0x00000008,
+        PK_COLOR_MASK_RG = PK_COLOR_MASK_R | PK_COLOR_MASK_G,
+        PK_COLOR_MASK_RGB = PK_COLOR_MASK_RG | PK_COLOR_MASK_B,
+        PK_COLOR_MASK_RGBA = PK_COLOR_MASK_RGB | PK_COLOR_MASK_A,
+    } ColorMask;
+
+    enum class FrontFace : uint8_t
+    {
+        CounterClockwise,
+        Clockwise,
     };
 
     enum class LoadOp : uint16_t

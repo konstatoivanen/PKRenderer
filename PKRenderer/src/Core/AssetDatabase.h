@@ -21,6 +21,8 @@ namespace PK::Core
         public:
             virtual ~Asset() = default;
     
+            virtual void Import(const char* filepath) = 0;
+
             inline AssetID GetAssetID() const { return m_assetId; }
     
             inline const std::string& GetFileName() const { return StringHashID::IDToString(m_assetId); }
@@ -52,7 +54,7 @@ namespace PK::Core
         bool IsValidExtension(const std::filesystem::path& extension);
 
         template<typename T>
-        void Import(const std::string& filepath, Ref<T>& asset);
+        Ref<T> Create();
     };
     
     class AssetDatabase : public IService
@@ -71,11 +73,11 @@ namespace PK::Core
                     return std::static_pointer_cast<T>(collection.at(assetId)).get();
                 }
     
-                auto asset = CreateRef<T>();
+                auto asset = AssetImporters::Create<T>();
                 collection[assetId] = asset;
                 std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
-    
-                AssetImporters::Import<T>(filepath, asset);
+
+                asset->Import(filepath.c_str());
     
                 AssetImportToken<T> importToken = { this, asset.get() };
                 m_sequencer->Next(this, &importToken, (int)AssetImportType::IMPORT);
@@ -103,7 +105,7 @@ namespace PK::Core
                     std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
                 }
     
-                AssetImporters::Import<T>(filepath, asset);
+                asset->Import(filepath.c_str());
     
                 AssetImportToken<T> importToken = { this, asset.get() };
                 m_sequencer->Next(this, &importToken, (int)AssetImportType::RELOAD);

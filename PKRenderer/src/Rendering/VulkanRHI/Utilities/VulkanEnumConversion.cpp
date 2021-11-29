@@ -503,6 +503,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
     {
         switch (comparison)
         {
+            case Structs::Comparison::Off: return VK_COMPARE_OP_ALWAYS;
             case Structs::Comparison::Never: return VK_COMPARE_OP_NEVER;
             case Structs::Comparison::Less: return VK_COMPARE_OP_LESS;
             case Structs::Comparison::Equal: return VK_COMPARE_OP_EQUAL;
@@ -678,5 +679,79 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
         }
 
         return (VkShaderStageFlagBits)flags;
+    }
+    
+    VkPolygonMode GetPolygonMode(PolygonMode mode)
+    {
+        switch (mode)
+        {
+            case PolygonMode::Fill: return VK_POLYGON_MODE_FILL;
+            case PolygonMode::Line: return VK_POLYGON_MODE_LINE;
+            case PolygonMode::Point: return VK_POLYGON_MODE_POINT;
+        }
+
+        return VK_POLYGON_MODE_MAX_ENUM;
+    }
+
+    VkBlendOp GetBlendOp(BlendOp op)
+    {
+        switch (op)
+        {
+            case BlendOp::None: return VK_BLEND_OP_ADD;
+            case BlendOp::Add: return VK_BLEND_OP_ADD;
+            case BlendOp::Subtract: return VK_BLEND_OP_SUBTRACT;
+            case BlendOp::ReverseSubtract: return VK_BLEND_OP_REVERSE_SUBTRACT;
+            case BlendOp::Min: return VK_BLEND_OP_MIN;
+            case BlendOp::Max: return VK_BLEND_OP_MAX;
+        }
+
+        return VK_BLEND_OP_MAX_ENUM;;
+    }
+
+    VkBlendFactor GetBlendFactor(BlendFactor factor, VkBlendFactor fallback)
+    {
+        switch (factor)
+        {
+            case BlendFactor::None: return fallback;
+            case BlendFactor::One: return VK_BLEND_FACTOR_ONE;
+            case BlendFactor::Zero: return VK_BLEND_FACTOR_ZERO;
+            case BlendFactor::SrcColor: return VK_BLEND_FACTOR_SRC_COLOR;
+            case BlendFactor::SrcAlpha: return VK_BLEND_FACTOR_SRC_ALPHA;
+            case BlendFactor::DstColor: return VK_BLEND_FACTOR_DST_COLOR;
+            case BlendFactor::DstAlpha: return VK_BLEND_FACTOR_DST_ALPHA;
+            case BlendFactor::OneMinusSrcColor: return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+            case BlendFactor::OneMinusSrcAlpha: return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+            case BlendFactor::OneMinusDstColor: return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+            case BlendFactor::OneMinusDstAlpha: return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+            case BlendFactor::ConstColor: return VK_BLEND_FACTOR_CONSTANT_COLOR;
+            case BlendFactor::OneMinusConstColor: return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
+            case BlendFactor::ConstAlpha: return VK_BLEND_FACTOR_CONSTANT_ALPHA;
+            case BlendFactor::OneMinusConstAlpha: return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+        }
+
+        return VK_BLEND_FACTOR_MAX_ENUM;
+    }
+
+    VkCullModeFlagBits GetCullMode(CullMode op)
+    {
+        switch (op)
+        {
+            case CullMode::Off: return VK_CULL_MODE_NONE;
+            case CullMode::Back: return VK_CULL_MODE_BACK_BIT;
+            case CullMode::Front: return VK_CULL_MODE_FRONT_BIT;
+        }
+
+        return VK_CULL_MODE_FLAG_BITS_MAX_ENUM;
+    }
+
+    VkFrontFace GetFrontFace(FrontFace face)
+    {
+        switch (face)
+        {
+            case FrontFace::Clockwise: return VK_FRONT_FACE_CLOCKWISE;
+            case FrontFace::CounterClockwise: return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        }
+
+        return VK_FRONT_FACE_MAX_ENUM;
     }
 }

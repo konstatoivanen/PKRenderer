@@ -23,7 +23,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         if ((flags & PK_RENDER_STATE_DIRTY_PIPELINE) != 0)
         {
             auto pipeline = renderState.pipeline;
-            auto bindPoint = EnumConvert::GetPipelineBindPoint(renderState.pipelineKey.shader->GetShaderType());
+            auto bindPoint = EnumConvert::GetPipelineBindPoint(renderState.pipelineKey.shader->GetType());
             BindPipeline(bindPoint, pipeline->pipeline);
         }
 
@@ -37,7 +37,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             if ((flags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i)) != 0)
             {
                 auto pipeline = renderState.pipeline;
-                auto bindPoint = EnumConvert::GetPipelineBindPoint(renderState.pipelineKey.shader->GetShaderType());
+                auto bindPoint = EnumConvert::GetPipelineBindPoint(renderState.pipelineKey.shader->GetType());
                 BindDescriptorSets(bindPoint, renderState.pipelineKey.shader->GetPipelineLayout(), 0, 1, &renderState.descriptorSets[i], 0, nullptr);
             }
         }
