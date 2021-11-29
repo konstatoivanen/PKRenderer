@@ -541,7 +541,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Utilities\Log.h" />
     <ClInclude Include="src\Utilities\Ref.h" />
     <ClInclude Include="src\Utilities\StringHashID.h" />
-    <ClInclude Include="src\Utilities\StringUtilities.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl" />
@@ -729,7 +728,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Rendering\VulkanRHI\VulkanWindow.cpp" />
     <ClCompile Include="src\Utilities\Log.cpp" />
     <ClCompile Include="src\Utilities\StringHashID.cpp" />
-    <ClCompile Include="src\Utilities\StringUtilities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\glfw3.lib" />

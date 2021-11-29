@@ -12,9 +12,9 @@ namespace PK::Core
 
     struct InputState
     {
-    	int scancode;
-    	int action;
-    	int mods;
+        int scancode;
+        int action;
+        int mods;
     };
     
     enum class KeyCode
@@ -150,15 +150,15 @@ namespace PK::Core
     
     class Input : public IService, public PK::ECS::IConditionalStep<PK::Core::Window>
     {
-    	public:
+        public:
             Input(PK::ECS::Sequencer* sequencer);
     
-    		bool GetKeyDown(KeyCode key);
-    		bool GetKeyUp(KeyCode key);
-    		bool GetKey(KeyCode key);
+            bool GetKeyDown(KeyCode key);
+            bool GetKeyUp(KeyCode key);
+            bool GetKey(KeyCode key);
     
-    		float2 GetAxis2D(KeyCode front, KeyCode back, KeyCode right, KeyCode left);
-    		float3 GetAxis3D(KeyCode up, KeyCode down, KeyCode front, KeyCode back, KeyCode right, KeyCode left);
+            float2 GetAxis2D(KeyCode front, KeyCode back, KeyCode right, KeyCode left);
+            float3 GetAxis3D(KeyCode up, KeyCode down, KeyCode front, KeyCode back, KeyCode right, KeyCode left);
             inline float2 GetMouseDelta() const { return m_mouseDelta; }
             inline float2 GetMousePosition() const { return m_mousePosition; }
             inline float2 GetMouseNormalizedPosition() const { return m_mousePositionNormalized; }
@@ -172,25 +172,25 @@ namespace PK::Core
             inline float GetMouseScrollX() const { return m_mouseScroll.x; }
             inline float GetMouseScrollY() const { return m_mouseScroll.y; }
     
-    		void Step(Window* window, int condition) override;
+            void Step(Window* window, int condition) override;
     
-    		void OnKeyInput(int key, int scancode, int action, int mods);
-    		void OnScrollInput(double scrollX, double scrollY);
-    		void OnMouseButtonInput(int button, int action, int mods);
+            void OnKeyInput(int key, int scancode, int action, int mods);
+            void OnScrollInput(double scrollX, double scrollY);
+            void OnMouseButtonInput(int button, int action, int mods);
             
             static std::string KeyToString(KeyCode keycode);
             static KeyCode StringToKey(const std::string& string);
     
-    	private:
+        private:
             PK::ECS::Sequencer* m_sequencer;
             
-    		std::unordered_map<KeyCode, InputState> m_inputStateCurrent;
-    		std::unordered_map<KeyCode, InputState> m_inputStatePrevious;
-    		float2 m_mousePositionNormalized = PK_FLOAT2_ZERO;
-    		float2 m_mousePosition = PK_FLOAT2_ZERO;
-    		float2 m_mousePrev = PK_FLOAT2_ZERO;
-    		float2 m_mouseDelta = PK_FLOAT2_ZERO;
-    		float2 m_mouseScrollRaw = PK_FLOAT2_ZERO;
-    		float2 m_mouseScroll = PK_FLOAT2_ZERO;
+            std::unordered_map<KeyCode, InputState> m_inputStateCurrent;
+            std::unordered_map<KeyCode, InputState> m_inputStatePrevious;
+            float2 m_mousePositionNormalized = PK_FLOAT2_ZERO;
+            float2 m_mousePosition = PK_FLOAT2_ZERO;
+            float2 m_mousePrev = PK_FLOAT2_ZERO;
+            float2 m_mouseDelta = PK_FLOAT2_ZERO;
+            float2 m_mouseScrollRaw = PK_FLOAT2_ZERO;
+            float2 m_mouseScroll = PK_FLOAT2_ZERO;
     };
 }

@@ -2,12 +2,12 @@
 
 namespace PK::Core
 {
-	enum class UpdateStep
-	{
-		OpenFrame,
-		UpdateInput,
-		UpdateEngines,
-		Render,
-		CloseFrame,
-	};
+    enum class UpdateStep
+    {
+        OpenFrame,
+        UpdateInput,
+        UpdateEngines,
+        Render,
+        CloseFrame,
+    };
 }
