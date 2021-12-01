@@ -28,7 +28,7 @@ namespace PK::Rendering::Objects
 
         public:
             virtual ~ShaderVariant() = default;
-            virtual void Release() = 0;
+            virtual void Dispose() = 0;
 
             constexpr const VertexLayout& GetVertexLayout() const { return m_vertexLayout; }
             constexpr const ResourceLayout& GetResourceLayout(uint32_t set) const { return m_resourceLayouts[set]; }

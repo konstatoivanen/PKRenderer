@@ -9,6 +9,12 @@ namespace PK::Rendering::Structs
     using namespace PK::Math;
     using namespace PK::Utilities;
 
+    struct IndexRange
+    {
+        uint offset;
+        uint count;
+    };
+
     struct ResourceElement
     {
         uint32_t NameHashId = 0;
@@ -106,6 +112,10 @@ namespace PK::Rendering::Structs
         BufferElement() = default;
     
         BufferElement(ElementType type, const std::string& name, ushort count = 1, bool normalized = false) : NameHashId(StringHashID::StringToID(name)), Type(type), Size(ElementConvert::Size(type)* count), Offset(0), AlignedOffset(0), Normalized(normalized)
+        {
+        }
+
+        BufferElement(ElementType type, uint32_t nameHashId, ushort count = 1, bool normalized = false) : NameHashId(nameHashId), Type(type), Size(ElementConvert::Size(type) * count), Offset(0), AlignedOffset(0), Normalized(normalized)
         {
         }
     };

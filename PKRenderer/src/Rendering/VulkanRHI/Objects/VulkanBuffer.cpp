@@ -1,9 +1,13 @@
 #include "PrecompiledHeader.h"
 #include "VulkanBuffer.h"
+#include "Rendering/GraphicsAPI.h"
+#include "Rendering/VulkanRHI/VulkanDriver.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    VulkanBuffer::VulkanBuffer(const VulkanDriver* driver, BufferUsage usage, const BufferLayout& layout, size_t count) :  m_driver(driver), m_usage(usage), m_layout(layout)
+    VulkanBuffer::VulkanBuffer(BufferUsage usage, const BufferLayout& layout, size_t count) : 
+        Buffer(usage, layout, count),
+        m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>()) 
     {
         Rebuild(count);
     }

@@ -10,11 +10,8 @@ namespace PK::Rendering::VulkanRHI::Objects
     using namespace PK::Rendering::VulkanRHI::Utilities;
     using namespace PK::Rendering::Structs;
 
-    VulkanShader::VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant)
+    VulkanShader::VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant) : m_device(GraphicsAPI::GetActiveDriver<VulkanDriver>()->device)
     {
-        auto driver = GraphicsAPI::GetActiveDriver<VulkanDriver>();
-        m_device = driver->device;
-
         for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
         {
             if (variant->sprivSizes[i] == 0)
@@ -84,7 +81,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_type = m_modules[(int)ShaderStage::Compute] != nullptr ? ShaderType::Compute : ShaderType::Graphics;
     }
 
-    void VulkanShader::Release()
+    void VulkanShader::Dispose()
     {
         auto driver = GraphicsAPI::GetActiveDriver<VulkanDriver>();
 

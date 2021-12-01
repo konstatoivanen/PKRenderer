@@ -25,7 +25,7 @@ namespace PK::Rendering
             Ref<VulkanBuffer> m_vertexBuffer;
             Ref<VulkanBuffer> m_indexBuffer;
             Ref<VulkanBuffer> m_uniformBuffer;
-            Ref<VulkanTexture> m_vulkanTexture;
+            Texture* m_testTexture;
             Ref<VulkanTexture> m_depthTexture;
             Shader* m_shader = nullptr;
             uint m_rotation;

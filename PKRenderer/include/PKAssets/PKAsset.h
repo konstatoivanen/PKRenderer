@@ -5,7 +5,7 @@ namespace PK::Assets
     typedef unsigned int uint_t;
     typedef unsigned int relativePtr;
 
-    constexpr static const unsigned int PK_ASSET_NAME_MAX_LENGTH = 128;
+    constexpr static const unsigned int PK_ASSET_NAME_MAX_LENGTH = 64;
     constexpr static const unsigned int PK_ASSET_MAX_VERTEX_ATTRIBUTES = 8;
     constexpr static const unsigned int PK_ASSET_MAX_DESCRIPTOR_SETS = 4;
     constexpr static const unsigned int PK_ASSET_MAX_DESCRIPTORS_PER_SET = 16;
@@ -262,17 +262,27 @@ namespace PK::Assets
             PKElementType type;
             unsigned short size = 0;
             unsigned short offset = 0;
-            bool normalized = false;
+        };
+
+        struct PKIndexRange
+        {
+            uint_t offset;
+            uint_t count;
         };
 
         struct PKMesh
         {
-            PKVertexAttribute vertexAttributes[PK_ASSET_MAX_VERTEX_ATTRIBUTES];
+            float bbmin[3]{};
+            float bbmax[3]{};
             PKElementType indexType;
-            RelativePtr<void> indexBuffer;
             uint_t indexBufferSize;
-            RelativePtr<void> vertexBuffer;
             uint_t vertexBufferSize;
+            uint_t submeshesSize;
+            uint_t vertexAttributesSize;
+            RelativePtr<PKVertexAttribute> vertexAttributes;
+            RelativePtr<PKIndexRange> submeshes;
+            RelativePtr<void> indexBuffer;
+            RelativePtr<void> vertexBuffer;
         };
     }
 

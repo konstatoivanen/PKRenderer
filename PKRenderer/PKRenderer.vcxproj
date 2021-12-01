@@ -513,7 +513,10 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Math\PKMath.h" />
     <ClInclude Include="src\PrecompiledHeader.h" />
     <ClInclude Include="src\Rendering\GraphicsAPI.h" />
+    <ClInclude Include="src\Rendering\Objects\Buffer.h" />
+    <ClInclude Include="src\Rendering\Objects\Mesh.h" />
     <ClInclude Include="src\Rendering\Objects\Shader.h" />
+    <ClInclude Include="src\Rendering\Objects\Texture.h" />
     <ClInclude Include="src\Rendering\RenderPipeline.h" />
     <ClInclude Include="src\Rendering\Structs\Descriptors.h" />
     <ClInclude Include="src\Rendering\Structs\Enums.h" />
@@ -541,6 +544,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Utilities\Log.h" />
     <ClInclude Include="src\Utilities\Ref.h" />
     <ClInclude Include="src\Utilities\StringHashID.h" />
+    <ClInclude Include="src\Utilities\StringUtilities.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl" />
@@ -703,7 +707,10 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PrecompiledHeader.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="src\Rendering\GraphicsAPI.cpp" />
+    <ClCompile Include="src\Rendering\Objects\Buffer.cpp" />
+    <ClCompile Include="src\Rendering\Objects\Mesh.cpp" />
     <ClCompile Include="src\Rendering\Objects\Shader.cpp" />
+    <ClCompile Include="src\Rendering\Objects\Texture.cpp" />
     <ClCompile Include="src\Rendering\RenderPipeline.cpp" />
     <ClCompile Include="src\Rendering\Structs\Enums.cpp" />
     <ClCompile Include="src\Rendering\Structs\Layout.cpp" />
@@ -728,6 +735,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Rendering\VulkanRHI\VulkanWindow.cpp" />
     <ClCompile Include="src\Utilities\Log.cpp" />
     <ClCompile Include="src\Utilities\StringHashID.cpp" />
+    <ClCompile Include="src\Utilities\StringUtilities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\glfw3.lib" />

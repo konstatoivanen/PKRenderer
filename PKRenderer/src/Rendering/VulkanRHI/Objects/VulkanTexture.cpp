@@ -5,13 +5,12 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    VulkanTexture::VulkanTexture(const VulkanDriver* driver, const char* filepath) : m_driver(driver)
+    VulkanTexture::VulkanTexture() : m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>())
     {
-        Import(filepath);
     }
 
-    VulkanTexture::VulkanTexture(const VulkanDriver* driver, const TextureDescriptor& descriptor) : m_driver(driver)
-	{
+    VulkanTexture::VulkanTexture(const TextureDescriptor& descriptor) : m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>())
+    {
         Rebuild(descriptor);
     }
 
@@ -37,6 +36,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanTexture::Import(const char* filepath)
     {
+        Dispose();
+
 		ktxTexture2* ktxTex2;
 
 		TextureDescriptor descriptor{};

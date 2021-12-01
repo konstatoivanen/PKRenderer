@@ -104,7 +104,7 @@ namespace PK::Rendering::Objects
     {
         for (auto& variant : m_variants)
         {
-            variant->Release();
+            variant->Dispose();
         }
 
         m_variants.clear();
@@ -166,6 +166,8 @@ namespace PK::Rendering::Objects
                 case APIType::Vulkan: m_variants.push_back(CreateRef<VulkanShader>(base, pVariant));
             }
         }
+
+        PK::Assets::CloseAsset(&asset);
     }
 }
 

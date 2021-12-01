@@ -28,8 +28,21 @@ namespace PK::Rendering::Structs
 
     struct TextureDescriptor
     {
-        SamplerType samplerType = SamplerType::Sampler2D;
         TextureFormat format = TextureFormat::RGBA8;
+        SamplerType samplerType = SamplerType::Sampler2D;
+        TextureUsage usage = TextureUsage::Default;
+        uint3 resolution = PK_UINT3_ONE;
+        uint8_t levels = 1;
+        uint8_t samples = 1;
+        uint16_t layers = 1;
+        SamplerDescriptor sampler = {};
+    };
+
+    struct RenderTextureDescriptor
+    {
+        std::vector<TextureFormat> colorFormats = { TextureFormat::RGBA8 };
+        TextureFormat depthFormat = TextureFormat::Depth24_Stencil8;
+        SamplerType samplerType = SamplerType::Sampler2D;
         TextureUsage usage = TextureUsage::Default;
         uint3 resolution = PK_UINT3_ONE;
         uint8_t levels = 1;

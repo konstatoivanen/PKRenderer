@@ -1,0 +1,99 @@
+#include "PrecompiledHeader.h"
+#include "Mesh.h"
+#include <PKAssets/PKAssetLoader.h>
+
+using namespace PK::Core;
+using namespace PK::Utilities;
+using namespace PK::Rendering;
+using namespace PK::Rendering::Objects;
+
+namespace PK::Rendering::Objects
+{
+    Mesh::Mesh()
+    {
+    }
+
+    Mesh::Mesh(const Ref<Buffer>& vertexBuffer, const Ref<Buffer>& indexBuffer) : Mesh()
+    {
+        AddVertexBuffer(vertexBuffer);
+        SetIndexBuffer(indexBuffer);
+    }
+
+    void Mesh::Import(const char* filepath)
+    {
+		m_indexBuffer = nullptr;
+		m_vertexBuffers.clear();
+		m_indexRanges.clear();
+
+		PK::Assets::PKAsset asset;
+
+		PK_THROW_ASSERT(PK::Assets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
+		PK_THROW_ASSERT(asset.header->type == PK::Assets::PKAssetType::Mesh, "Trying to read a mesh from a non mesh file!")
+
+		auto mesh = PK::Assets::ReadAsMesh(&asset);
+		auto base = asset.rawData;
+
+		PK_THROW_ASSERT(mesh->vertexAttributesSize > 0, "Trying to read a shader with 0 variants!");
+		PK_THROW_ASSERT(mesh->vertexBufferSize > 0, "Trying to read a shader with 0 variants!");
+		PK_THROW_ASSERT(mesh->indexBufferSize > 0, "Trying to read a shader with 0 variants!");
+		PK_THROW_ASSERT(mesh->submeshesSize > 0, "Trying to read a shader with 0 variants!");
+
+		auto pAttributes = mesh->vertexAttributes.Get(base);
+		auto pVertices = mesh->vertexBuffer.Get(base);
+		auto pIndexBuffer = mesh->indexBuffer.Get(base);
+		auto pSubmeshes = mesh->submeshes.Get(base);
+
+		std::vector<BufferElement> bufferElements;
+
+		for (auto i = 0u; i < mesh->submeshesSize; ++i)
+		{
+			m_indexRanges.emplace_back(pSubmeshes[i].offset, pSubmeshes[i].count);
+		}
+
+		auto stride = 0u;
+
+		for (auto i = 0u; i < mesh->vertexAttributesSize; ++i)
+		{
+			bufferElements.emplace_back(pAttributes[i].type, pAttributes[i]);
+			stride += pAttributes[i].size;
+		}
+
+		auto indexSize = ElementConvert::Size(mesh->indexType);
+		auto vertexBuffer = Buffer::Create(BufferUsage::Vertex, BufferLayout(bufferElements), mesh->vertexBufferSize / stride);
+		auto indexBuffer = Buffer::Create(BufferUsage::Index, BufferLayout(bufferElements), mesh->vertexBufferSize / stride);
+		AddVertexBuffer(vertexBuffer);
+		SetIndexBuffer(indexBuffer);
+
+        PK::Assets::CloseAsset(&asset);
+    }
+
+    void Mesh::AddVertexBuffer(const Ref<Buffer>& vertexBuffer)
+    {
+        if (m_vertexBuffers.size() >= PK_MAX_VERTEX_ATTRIBUTES)
+        {
+            PK_LOG_WARNING("Warning! Trying to add more vertex buffers than supported!");
+        }
+
+        m_vertexBuffers.push_back(vertexBuffer);
+    }
+
+    const IndexRange Mesh::GetSubmeshIndexRange(int submesh) const
+    {
+        if (submesh < 0 || m_indexRanges.empty())
+        {
+            return { 0, (uint)m_indexBuffer->GetCount() };
+        }
+
+        auto idx = glm::min((uint)submesh, (uint)m_indexRanges.size());
+        return m_indexRanges.at(idx);
+    }
+}
+
+template<>
+bool AssetImporters::IsValidExtension<Mesh>(const std::filesystem::path& extension) { return extension.compare(".ktx2") == 0; }
+
+template<>
+Ref<Mesh> AssetImporters::Create()
+{
+    return CreateRef<Mesh>();
+}

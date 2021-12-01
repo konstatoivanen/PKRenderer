@@ -53,16 +53,10 @@ namespace PK::Rendering
         depthTexDescr.resolution = { width, height, 1 };
         depthTexDescr.format = TextureFormat::Depth32F;
         depthTexDescr.usage = TextureUsage::RTDepth;
-        m_depthTexture = CreateRef<VulkanTexture>(driver, depthTexDescr);
+        m_depthTexture = CreateRef<VulkanTexture>(depthTexDescr);
 
         m_fixedFunctionState = {};
-        m_fixedFunctionState.blending.colorMask = PK_COLOR_MASK_RGBA;
-        m_fixedFunctionState.blending.srcColorFactor = BlendFactor::None;
-        m_fixedFunctionState.blending.dstColorFactor = BlendFactor::None;
-        m_fixedFunctionState.blending.colorOp = BlendOp::None;
-        m_fixedFunctionState.blending.srcAlphaFactor = BlendFactor::None;
-        m_fixedFunctionState.blending.dstAlphaFactor = BlendFactor::None;
-        m_fixedFunctionState.blending.alphaOp = BlendOp::None;
+        m_fixedFunctionState.blending = m_shader->GetFixedFunctionAttributes().blending;
         m_fixedFunctionState.multisampling.sampleShadingEnable = VK_FALSE;
         m_fixedFunctionState.multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
         m_fixedFunctionState.multisampling.minSampleShading = 1.0f;
@@ -82,35 +76,35 @@ namespace PK::Rendering
         m_fixedFunctionState.depthStencil.depthCompareOp = Comparison::LessEqual;
         m_fixedFunctionState.colorTargetCount = 1;
 
-        m_vertexBuffer = CreateRef<VulkanBuffer>(driver, BufferUsage::Vertex,
-                                                    BufferLayout
-                                                    ({
-                                                        { ElementType::Float3, "inPosition" },
-                                                        { ElementType::Float3, "inColor" },
-                                                        { ElementType::Float2, "inTexcoord" },
-                                                    }),
-                                                    PK_DEBUG_VERTICES.size());
+        m_vertexBuffer = CreateRef<VulkanBuffer>(BufferUsage::Vertex,
+                                                 BufferLayout
+                                                 ({
+                                                     { ElementType::Float3, "inPosition" },
+                                                     { ElementType::Float3, "inColor" },
+                                                     { ElementType::Float2, "inTexcoord" },
+                                                 }),
+                                                 PK_DEBUG_VERTICES.size());
 
-        m_indexBuffer = CreateRef<VulkanBuffer>(driver, BufferUsage::Index,
-                                                    BufferLayout
-                                                    ({
-                                                         { ElementType::Ushort, "INDEX" }
-                                                    }),
-                                                    PK_DEBUG_INDICES.size());
+        m_indexBuffer = CreateRef<VulkanBuffer>(BufferUsage::Index,
+                                                BufferLayout
+                                                ({
+                                                     { ElementType::Ushort, "INDEX" }
+                                                }),
+                                                PK_DEBUG_INDICES.size());
 
-        m_uniformBuffer = CreateRef<VulkanBuffer>(driver, BufferUsage::Uniform,
-                                                    BufferLayout
-                                                    ({
-                                                         { ElementType::Float4x4, "model" },
-                                                         { ElementType::Float4x4, "viewproj" },
-                                                    }), 
-                                                    1);
+        m_uniformBuffer = CreateRef<VulkanBuffer>(BufferUsage::Uniform,
+                                                  BufferLayout
+                                                  ({
+                                                       { ElementType::Float4x4, "model" },
+                                                       { ElementType::Float4x4, "viewproj" },
+                                                  }), 
+                                                  1);
 
 
         m_vertexBuffer->SetData(PK_DEBUG_VERTICES.data(), 0, m_vertexBuffer->GetCapacity());
         m_indexBuffer->SetData(PK_DEBUG_INDICES.data(), 0, m_indexBuffer->GetCapacity());
 
-        m_vulkanTexture = CreateRef<VulkanTexture>(driver, "res/T_DebugTexture.ktx2");
+        m_testTexture = assetDatabase->Load<Texture>("res/T_DebugTexture.ktx2");
 
         PK_LOG_VERBOSE("Render Pipeline Initialized!");
     }
@@ -121,7 +115,6 @@ namespace PK::Rendering
         m_vertexBuffer = nullptr;
         m_indexBuffer = nullptr;
         m_uniformBuffer = nullptr;
-        m_vulkanTexture = nullptr;
         m_depthTexture = nullptr;
         m_shader = nullptr;
     }
@@ -157,7 +150,7 @@ namespace PK::Rendering
         cmd->BindIndexBuffer(m_indexBuffer->GetBindHandle(), 0);
 
         cmd->BindResource("ubo", m_uniformBuffer->GetBindHandle());
-        cmd->BindResource("tex1", m_vulkanTexture->GetBindHandle());
+        cmd->BindResource("tex1", m_testTexture->GetNative<VulkanTexture>()->GetBindHandle());
 
         cmd->SetViewPort(vkWindow->GetRect(), 0.0f, 1.0f);
         cmd->SetScissor(vkWindow->GetRect());
