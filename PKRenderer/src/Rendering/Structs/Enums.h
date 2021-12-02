@@ -20,14 +20,14 @@ namespace PK::Rendering::Structs
     constexpr static const uint32_t PK_MAX_DESCRIPTORS_PER_SET = 16;
     constexpr const static uint32_t PK_MAX_VERTEX_ATTRIBUTES = 8;
     
-    constexpr const static char* PK_VS_POSIITON = "in_POSITION";
-    constexpr const static char* PK_VS_NORMAL = "in_NORMAL";
-    constexpr const static char* PK_VS_TANGENT = "in_TANGENT";
-    constexpr const static char* PK_VS_COLOR = "in_COLOR";
-    constexpr const static char* PK_VS_TEXCOORD0 = "in_TEXCOORD0";
-    constexpr const static char* PK_VS_TEXCOORD1 = "in_TEXCOORD1";
-    constexpr const static char* PK_VS_TEXCOORD2 = "in_TEXCOORD2";
-    constexpr const static char* PK_VS_TEXCOORD3 = "in_TEXCOORD3";
+    constexpr const static char* PK_VS_POSITION = PK::Assets::Mesh::PK_VS_POSITION;
+    constexpr const static char* PK_VS_NORMAL = PK::Assets::Mesh::PK_VS_NORMAL;
+    constexpr const static char* PK_VS_TANGENT = PK::Assets::Mesh::PK_VS_TANGENT;  
+    constexpr const static char* PK_VS_COLOR = PK::Assets::Mesh::PK_VS_COLOR; 
+    constexpr const static char* PK_VS_TEXCOORD0 = PK::Assets::Mesh::PK_VS_TEXCOORD0;
+    constexpr const static char* PK_VS_TEXCOORD1 = PK::Assets::Mesh::PK_VS_TEXCOORD1;
+    constexpr const static char* PK_VS_TEXCOORD2 = PK::Assets::Mesh::PK_VS_TEXCOORD2;
+    constexpr const static char* PK_VS_TEXCOORD3 = PK::Assets::Mesh::PK_VS_TEXCOORD3;
 
     enum class APIType
     {

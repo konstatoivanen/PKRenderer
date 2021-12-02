@@ -256,6 +256,15 @@ namespace PK::Assets
 
     namespace Mesh
     {
+        constexpr const static char* PK_VS_POSITION = "in_POSITION";
+        constexpr const static char* PK_VS_NORMAL = "in_NORMAL";
+        constexpr const static char* PK_VS_TANGENT = "in_TANGENT";
+        constexpr const static char* PK_VS_COLOR = "in_COLOR";
+        constexpr const static char* PK_VS_TEXCOORD0 = "in_TEXCOORD0";
+        constexpr const static char* PK_VS_TEXCOORD1 = "in_TEXCOORD1";
+        constexpr const static char* PK_VS_TEXCOORD2 = "in_TEXCOORD2";
+        constexpr const static char* PK_VS_TEXCOORD3 = "in_TEXCOORD3";
+
         struct PKVertexAttribute
         {
             char name[PK_ASSET_NAME_MAX_LENGTH];
@@ -275,14 +284,15 @@ namespace PK::Assets
             float bbmin[3]{};
             float bbmax[3]{};
             PKElementType indexType;
-            uint_t indexBufferSize;
-            uint_t vertexBufferSize;
-            uint_t submeshesSize;
-            uint_t vertexAttributesSize;
+            uint_t indexCount;
+            uint_t vertexCount;
+            uint_t vertexStride;
+            uint_t submeshCount;
+            uint_t vertexAttributeCount;
             RelativePtr<PKVertexAttribute> vertexAttributes;
             RelativePtr<PKIndexRange> submeshes;
-            RelativePtr<void> indexBuffer;
             RelativePtr<void> vertexBuffer;
+            RelativePtr<void> indexBuffer;
         };
     }
 

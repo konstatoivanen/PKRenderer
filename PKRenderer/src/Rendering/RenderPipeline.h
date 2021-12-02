@@ -2,9 +2,9 @@
 #include "Core/IService.h"
 #include "GraphicsAPI.h"
 #include "ECS/Sequencer.h"
-#include "Rendering/VulkanRHI/Objects/VulkanBuffer.h"
 #include "Rendering/VulkanRHI/Objects/VulkanTexture.h"
 #include "Rendering/Objects/Shader.h"
+#include "Rendering/Objects/Mesh.h"
 #include "Core/Window.h"
 
 namespace PK::Rendering
@@ -22,9 +22,8 @@ namespace PK::Rendering
 
         private:
             FixedFunctionState m_fixedFunctionState;
-            Ref<VulkanBuffer> m_vertexBuffer;
-            Ref<VulkanBuffer> m_indexBuffer;
-            Ref<VulkanBuffer> m_uniformBuffer;
+            Mesh* m_mesh;
+            Ref<Buffer> m_uniformBuffer;
             Texture* m_testTexture;
             Ref<VulkanTexture> m_depthTexture;
             Shader* m_shader = nullptr;

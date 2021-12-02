@@ -1110,6 +1110,15 @@
     <ClInclude Include="src\Rendering\Objects\Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Rendering\MeshUtility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mikktspace\mikktspace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Structs\StructsCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -1526,6 +1535,7 @@
     <None Include="libs\VulkanMemoryAllocatord.pdb" />
     <None Include="res\T_DebugTexture.ktx2" />
     <None Include="res\SH_WS_Debug.shader" />
+    <None Include="res\MDL_Cloth.mdl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
@@ -1646,6 +1656,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Objects\Mesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\MeshUtilitity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="include\mikktspace\mikktspace.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

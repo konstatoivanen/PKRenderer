@@ -15,6 +15,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         public:
             VulkanBuffer(BufferUsage usage, const BufferLayout& layout, size_t count);
+            VulkanBuffer(BufferUsage usage, const BufferLayout& layout, const void* data, size_t count);
             ~VulkanBuffer();
 
             void SetData(const void* data, size_t offset, size_t size) const override final;

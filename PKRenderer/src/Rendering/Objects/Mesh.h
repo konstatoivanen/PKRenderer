@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/AssetDatabase.h"
 #include "Rendering/Objects/Buffer.h"
+#include "Rendering/Structs/StructsCommon.h"
 
 namespace PK::Rendering::Objects
 {
@@ -13,6 +14,7 @@ namespace PK::Rendering::Objects
         public:
             Mesh();
             Mesh(const Ref<Buffer>& vertexBuffer, const Ref<Buffer>& indexBuffer);
+            Mesh(const Ref<Buffer>& vertexBuffer, const Ref<Buffer>& indexBuffer, const BoundingBox& localBounds);
 
             void Import(const char* filepath) override final;
 
@@ -23,8 +25,9 @@ namespace PK::Rendering::Objects
             inline void SetSubMeshes(const std::vector<IndexRange>& indexRanges) { m_indexRanges = indexRanges; }
 
             constexpr const std::vector<Ref<Buffer>>& GetVertexBuffers() const { return m_vertexBuffers; }
-            constexpr const Ref<Buffer>& GetIndexBuffer() const { return m_indexBuffer; }
-            const IndexRange GetSubmeshIndexRange(int submesh) const;
+            const Buffer* GetVertexBuffer(uint index) const { return m_vertexBuffers.at(index).get(); }
+            const Buffer* GetIndexBuffer() const { return m_indexBuffer.get(); }
+            const IndexRange GetSubmesh(int submesh) const;
             inline const uint GetSubmeshCount() const { return glm::max(1, (int)m_indexRanges.size()); }
             constexpr const BoundingBox& GetLocalBounds() const { return m_localBounds; }
             inline void SetLocalBounds(const BoundingBox& bounds) { m_localBounds = bounds; }

@@ -2,6 +2,8 @@
 #include "RenderPipeline.h"
 #include "Rendering/VulkanRHI/VulkanDriver.h"
 #include "Rendering/VulkanRHI/VulkanWindow.h"
+#include "Rendering/VulkanRHI/Objects/VulkanBuffer.h"
+#include "Rendering/MeshUtility.h"
 #include "Utilities/Log.h"
 
 namespace PK::Rendering
@@ -67,7 +69,7 @@ namespace PK::Rendering
         m_fixedFunctionState.rasterization.polygonMode = PolygonMode::Fill;
         m_fixedFunctionState.rasterization.lineWidth = 1.0f;
         m_fixedFunctionState.rasterization.cullMode = CullMode::Back;
-        m_fixedFunctionState.rasterization.frontFace = FrontFace::Clockwise;
+        m_fixedFunctionState.rasterization.frontFace = FrontFace::CounterClockwise;
         m_fixedFunctionState.rasterization.depthBiasEnable = VK_FALSE;
         m_fixedFunctionState.rasterization.depthBiasConstantFactor = 0.0f;
         m_fixedFunctionState.rasterization.depthBiasClamp = 0.0f;
@@ -76,34 +78,11 @@ namespace PK::Rendering
         m_fixedFunctionState.depthStencil.depthCompareOp = Comparison::LessEqual;
         m_fixedFunctionState.colorTargetCount = 1;
 
-        m_vertexBuffer = CreateRef<VulkanBuffer>(BufferUsage::Vertex,
-                                                 BufferLayout
-                                                 ({
-                                                     { ElementType::Float3, "inPosition" },
-                                                     { ElementType::Float3, "inColor" },
-                                                     { ElementType::Float2, "inTexcoord" },
-                                                 }),
-                                                 PK_DEBUG_VERTICES.size());
+        //m_mesh = MeshUtility::GetSphere(PK_FLOAT3_ZERO, 0.5f);
 
-        m_indexBuffer = CreateRef<VulkanBuffer>(BufferUsage::Index,
-                                                BufferLayout
-                                                ({
-                                                     { ElementType::Ushort, "INDEX" }
-                                                }),
-                                                PK_DEBUG_INDICES.size());
+        m_uniformBuffer = Buffer::CreateUniform({ { ElementType::Float4x4, "model" }, { ElementType::Float4x4, "viewproj" }});
 
-        m_uniformBuffer = CreateRef<VulkanBuffer>(BufferUsage::Uniform,
-                                                  BufferLayout
-                                                  ({
-                                                       { ElementType::Float4x4, "model" },
-                                                       { ElementType::Float4x4, "viewproj" },
-                                                  }), 
-                                                  1);
-
-
-        m_vertexBuffer->SetData(PK_DEBUG_VERTICES.data(), 0, m_vertexBuffer->GetCapacity());
-        m_indexBuffer->SetData(PK_DEBUG_INDICES.data(), 0, m_indexBuffer->GetCapacity());
-
+        m_mesh = assetDatabase->Load<Mesh>("res/MDL_Cloth.pkmesh");
         m_testTexture = assetDatabase->Load<Texture>("res/T_DebugTexture.ktx2");
 
         PK_LOG_VERBOSE("Render Pipeline Initialized!");
@@ -112,8 +91,7 @@ namespace PK::Rendering
     RenderPipeline::~RenderPipeline()
     {
         GraphicsAPI::GetActiveDriver<VulkanDriver>()->WaitForIdle();
-        m_vertexBuffer = nullptr;
-        m_indexBuffer = nullptr;
+        m_mesh = nullptr;
         m_uniformBuffer = nullptr;
         m_depthTexture = nullptr;
         m_shader = nullptr;
@@ -145,17 +123,22 @@ namespace PK::Rendering
 
         cmd->renderState.pipelineKey.fixedFunctionState = m_fixedFunctionState;
 
-        cmd->SetShader(m_shader->GetVariant(0)->GetNative<VulkanShader>());
-        cmd->BindVertexBuffers({ { m_vertexBuffer->GetBindHandle(), InputRate::PerVertex } });
-        cmd->BindIndexBuffer(m_indexBuffer->GetBindHandle(), 0);
+        auto vbuff = m_mesh->GetVertexBuffer(0)->GetNative<VulkanBuffer>()->GetBindHandle();
+        auto ibuff = m_mesh->GetIndexBuffer()->GetNative<VulkanBuffer>()->GetBindHandle();
+        auto ubuff = m_uniformBuffer->GetNative<VulkanBuffer>()->GetBindHandle();
 
-        cmd->BindResource("ubo", m_uniformBuffer->GetBindHandle());
+        cmd->SetShader(m_shader->GetVariant(0)->GetNative<VulkanShader>());
+        cmd->BindVertexBuffers({ { vbuff, InputRate::PerVertex } });
+        cmd->BindIndexBuffer(ibuff, 0);
+
+        cmd->BindResource("ubo", ubuff);
         cmd->BindResource("tex1", m_testTexture->GetNative<VulkanTexture>()->GetBindHandle());
 
         cmd->SetViewPort(vkWindow->GetRect(), 0.0f, 1.0f);
         cmd->SetScissor(vkWindow->GetRect());
 
-        cmd->DrawIndexed(static_cast<uint32_t>(PK_DEBUG_INDICES.size()), 1, 0, 0, 0);
+        auto sm = m_mesh->GetSubmesh(0);
+        cmd->DrawIndexed(sm.count, 1, sm.offset, 0, 0);
 
         cmd->EndRenderPass();
     }

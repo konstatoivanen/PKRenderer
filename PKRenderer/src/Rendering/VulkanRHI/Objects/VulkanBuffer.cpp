@@ -12,6 +12,14 @@ namespace PK::Rendering::VulkanRHI::Objects
         Rebuild(count);
     }
 
+    VulkanBuffer::VulkanBuffer(BufferUsage usage, const BufferLayout& layout, const void* data, size_t count) :
+        Buffer(usage, layout, count),
+        m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>())
+    {
+        Rebuild(count);
+        SetData(data, 0, m_layout.GetStride(m_usage) * count);
+    }
+
     VulkanBuffer::~VulkanBuffer()
     {
         Dispose();

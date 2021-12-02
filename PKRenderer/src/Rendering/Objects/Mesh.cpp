@@ -19,6 +19,11 @@ namespace PK::Rendering::Objects
         SetIndexBuffer(indexBuffer);
     }
 
+	Mesh::Mesh(const Ref<Buffer>& vertexBuffer, const Ref<Buffer>& indexBuffer, const BoundingBox& localBounds) : Mesh(vertexBuffer, indexBuffer)
+	{
+		m_localBounds = localBounds;
+	}
+
     void Mesh::Import(const char* filepath)
     {
 		m_indexBuffer = nullptr;
@@ -33,10 +38,10 @@ namespace PK::Rendering::Objects
 		auto mesh = PK::Assets::ReadAsMesh(&asset);
 		auto base = asset.rawData;
 
-		PK_THROW_ASSERT(mesh->vertexAttributesSize > 0, "Trying to read a shader with 0 variants!");
-		PK_THROW_ASSERT(mesh->vertexBufferSize > 0, "Trying to read a shader with 0 variants!");
-		PK_THROW_ASSERT(mesh->indexBufferSize > 0, "Trying to read a shader with 0 variants!");
-		PK_THROW_ASSERT(mesh->submeshesSize > 0, "Trying to read a shader with 0 variants!");
+		PK_THROW_ASSERT(mesh->vertexAttributeCount > 0, "Trying to read a shader with 0 variants!");
+		PK_THROW_ASSERT(mesh->vertexCount > 0, "Trying to read a shader with 0 variants!");
+		PK_THROW_ASSERT(mesh->indexCount > 0, "Trying to read a shader with 0 variants!");
+		PK_THROW_ASSERT(mesh->submeshCount > 0, "Trying to read a shader with 0 variants!");
 
 		auto pAttributes = mesh->vertexAttributes.Get(base);
 		auto pVertices = mesh->vertexBuffer.Get(base);
@@ -45,22 +50,22 @@ namespace PK::Rendering::Objects
 
 		std::vector<BufferElement> bufferElements;
 
-		for (auto i = 0u; i < mesh->submeshesSize; ++i)
+		for (auto i = 0u; i < mesh->submeshCount; ++i)
 		{
-			m_indexRanges.emplace_back(pSubmeshes[i].offset, pSubmeshes[i].count);
+			m_indexRanges.push_back({ pSubmeshes[i].offset, pSubmeshes[i].count });
 		}
 
 		auto stride = 0u;
 
-		for (auto i = 0u; i < mesh->vertexAttributesSize; ++i)
+		for (auto i = 0u; i < mesh->vertexAttributeCount; ++i)
 		{
-			bufferElements.emplace_back(pAttributes[i].type, pAttributes[i]);
+			bufferElements.emplace_back(pAttributes[i].type, pAttributes[i].name);
 			stride += pAttributes[i].size;
 		}
 
 		auto indexSize = ElementConvert::Size(mesh->indexType);
-		auto vertexBuffer = Buffer::Create(BufferUsage::Vertex, BufferLayout(bufferElements), mesh->vertexBufferSize / stride);
-		auto indexBuffer = Buffer::Create(BufferUsage::Index, BufferLayout(bufferElements), mesh->vertexBufferSize / stride);
+		auto vertexBuffer = Buffer::CreateVertex(BufferLayout(bufferElements), pVertices, mesh->vertexCount);
+		auto indexBuffer = Buffer::CreateIndex(mesh->indexType, pIndexBuffer, mesh->indexCount);
 		AddVertexBuffer(vertexBuffer);
 		SetIndexBuffer(indexBuffer);
 
@@ -77,7 +82,7 @@ namespace PK::Rendering::Objects
         m_vertexBuffers.push_back(vertexBuffer);
     }
 
-    const IndexRange Mesh::GetSubmeshIndexRange(int submesh) const
+    const IndexRange Mesh::GetSubmesh(int submesh) const
     {
         if (submesh < 0 || m_indexRanges.empty())
         {

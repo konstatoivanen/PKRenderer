@@ -9,12 +9,6 @@ namespace PK::Rendering::Structs
     using namespace PK::Math;
     using namespace PK::Utilities;
 
-    struct IndexRange
-    {
-        uint offset;
-        uint count;
-    };
-
     struct ResourceElement
     {
         uint32_t NameHashId = 0;

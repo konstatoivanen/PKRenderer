@@ -13,6 +13,22 @@ namespace PK::Rendering::Objects
     {
         public:
             static Ref<Buffer> Create(BufferUsage usage, const BufferLayout& layout, size_t count);
+            static Ref<Buffer> Create(BufferUsage usage, const BufferLayout& layout, const void* data, size_t count);
+
+            inline static Ref<Buffer> CreateVertex(const BufferLayout& layout, const void* data, size_t count)
+            { 
+                return Create(BufferUsage::Vertex, layout, data, count);
+            }
+
+            inline static Ref<Buffer> CreateIndex(ElementType type, const  void* data, size_t count)
+            {
+                return Create(BufferUsage::Index, BufferLayout({{ type, "INDEX" }}), data, count);
+            }
+
+            inline static Ref<Buffer> CreateUniform(const BufferLayout& layout)
+            {
+                return Create(BufferUsage::Uniform, layout, 1);
+            }
 
             virtual ~Buffer() = default;
             virtual void SetData(const void* data, size_t offset, size_t size) const = 0;
