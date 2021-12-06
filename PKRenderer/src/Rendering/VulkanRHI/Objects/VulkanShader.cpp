@@ -12,6 +12,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     VulkanShader::VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant) : m_device(GraphicsAPI::GetActiveDriver<VulkanDriver>()->device)
     {
+        m_stageFlags = 0u;
+
         for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
         {
             if (variant->sprivSizes[i] == 0)
@@ -23,6 +25,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             auto spirvSize = variant->sprivSizes[i];
             auto* spirv = reinterpret_cast<uint32_t*>(variant->sprivBuffers[i].Get(base));
             m_modules[i] = CreateRef<VulkanShaderModule>(m_device, EnumConvert::GetShaderStage((ShaderStage)i), spirv, spirvSize);
+            m_stageFlags |= 1 << i;
         }
 
         std::vector<VertexElement> vertexElements;
@@ -30,14 +33,21 @@ namespace PK::Rendering::VulkanRHI::Objects
         for (auto i = 0; i < PK::Assets::PK_ASSET_MAX_VERTEX_ATTRIBUTES; ++i)
         {
             auto attribute = &variant->vertexAttributes[i];
-            vertexElements.emplace_back(attribute->type, attribute->name, attribute->location);
+
+            if (attribute->type != ElementType::Invalid)
+            {
+                vertexElements.emplace_back(attribute->type, attribute->name, attribute->location);
+            }
         }
 
         m_vertexLayout = VertexLayout(vertexElements);
 
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+        std::vector<VkDescriptorSetLayout> layouts;
+        std::vector<VkPushConstantRange> pushConstantRanges;
+
         if (variant->descriptorSetCount > 0)
         {
-            std::vector<VkDescriptorSetLayout> layouts{};
             layouts.reserve(variant->descriptorSetCount);
 
             auto* pDescriptorSets = variant->descriptorSets.Get(base);
@@ -70,13 +80,34 @@ namespace PK::Rendering::VulkanRHI::Objects
                 m_resourceLayouts[pDescriptorSet->set] = ResourceLayout(elements);
             }
 
-            VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
             pipelineLayoutInfo.setLayoutCount = (uint32_t)layouts.size();
             pipelineLayoutInfo.pSetLayouts = layouts.data();
-            pipelineLayoutInfo.pushConstantRangeCount = 0;
-            pipelineLayoutInfo.pPushConstantRanges = nullptr;
-            m_pipelineLayout = CreateRef<VulkanPipelineLayout>(m_device, pipelineLayoutInfo);
         }
+
+        if (variant->constantVariableCount > 0)
+        {
+            std::vector<ConstantVariable> variables;
+
+            auto pVariables = variant->constantVariables.Get(base);
+
+            for (auto i = 0u; i < variant->constantVariableCount; ++i)
+            {
+                auto pVariable = pVariables + i;
+                variables.emplace_back(pVariable->name, pVariable->size, pVariable->offset, pVariable->stageFlags);
+            
+                VkPushConstantRange range{};
+                range.stageFlags = EnumConvert::GetShaderStageFlags(pVariable->stageFlags);
+                range.offset = pVariable->offset;
+                range.size = pVariable->size;
+                pushConstantRanges.push_back(range);
+            }
+
+            m_constantLayout = ConstantBufferLayout(variables);
+            pipelineLayoutInfo.pushConstantRangeCount = (uint32_t)pushConstantRanges.size();
+            pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
+        }
+
+        m_pipelineLayout = CreateRef<VulkanPipelineLayout>(m_device, pipelineLayoutInfo);
 
         m_type = m_modules[(int)ShaderStage::Compute] != nullptr ? ShaderType::Compute : ShaderType::Graphics;
     }

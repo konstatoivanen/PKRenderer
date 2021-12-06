@@ -13,6 +13,38 @@ using namespace PK::Rendering::VulkanRHI::Objects;
 
 namespace PK::Rendering::Objects
 {
+    void ShaderVariant::ListProperties()
+    {
+        PK_LOG_HEADER("Vertex Attributes:");
+
+        for (auto& element : m_vertexLayout)
+        {
+            PK_LOG_INFO("%s %i %i", StringHashID::IDToString(element.NameHashId).c_str(), element.Location, element.Type);
+        }
+
+        PK_LOG_HEADER("Dynamic Constants:");
+
+        for (auto& kv : m_constantLayout)
+        {
+            auto& element = kv.second;
+            PK_LOG_INFO("%s %i %i", StringHashID::IDToString(element.NameHashId).c_str(), element.Offset, element.Size);
+        }
+
+        PK_LOG_HEADER("Descriptor Sets:");
+        
+        for (auto i = 0u; i < PK_MAX_DESCRIPTOR_SETS; ++i)
+        {
+            PK_LOG_HEADER("Sets %i :", i);
+
+            auto& set = m_resourceLayouts[i];
+
+            for (auto& element : set)
+            {
+                PK_LOG_INFO("%s %i %i", StringHashID::IDToString(element.NameHashId).c_str(), element.Binding, element.Type);
+            }
+        }
+    }
+
     void ShaderVariantMap::ListVariants()
     {
         std::vector<std::vector<std::string>> keywordlist;
@@ -100,6 +132,25 @@ namespace PK::Rendering::Objects
         return idx;
     }
 
+    void Shader::ListVariants()
+    {
+        PK_LOG_HEADER("Listing variants for shader: %s", GetFileName().c_str());
+        m_variantMap.ListVariants();
+    }
+
+    void Shader::ListProperties(uint32_t variantIndex)
+    {
+        if (variantIndex > m_variantMap.variantcount)
+        {
+            PK_LOG_WARNING("Trying to list properties for variant index (%i) that is out of bounds", variantIndex);
+        }
+
+        PK_LOG_NEWLINE();
+        PK_LOG_HEADER("Listing properties for shader: %s", GetFileName().c_str());
+        m_variants.at(variantIndex)->ListProperties();
+        PK_LOG_NEWLINE();
+    }
+
     void Shader::Import(const char* filepath)
     {
         for (auto& variant : m_variants)
@@ -126,7 +177,6 @@ namespace PK::Rendering::Objects
         m_attributes.blending.colorOp = shader->attributes.blendOpColor;
         m_attributes.blending.alphaOp = shader->attributes.blendOpAlpha;
         m_attributes.blending.colorMask = (ColorMask)shader->attributes.colorMask;
-        m_attributes.depthStencil.depthBoundsTestEnable = true;
         m_attributes.depthStencil.depthCompareOp = shader->attributes.ztest;
         m_attributes.depthStencil.depthWriteEnable = shader->attributes.zwrite;
         m_attributes.rasterization.cullMode = shader->attributes.cull;

@@ -40,15 +40,29 @@ namespace PK::Rendering::VulkanRHI::Systems
 
             const std::vector<Ref<VulkanImageView>>& GetImageViews() const { return m_imageViews; }
             VulkanImageView* GetImageView() const { return m_imageViews.at(m_imageIndex).get(); }
-            const VulkanRenderTarget GetRenderTarget() const { return VulkanRenderTarget(m_imageViews.at(m_imageIndex).get(), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, m_format, m_extent, 1, 1); }
+            const VulkanRenderTarget GetRenderTarget() const 
+            { 
+                return VulkanRenderTarget
+                (
+                    m_imageViews.at(m_imageIndex)->view, 
+                    m_images.at(m_imageIndex), 
+                    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 
+                    VK_IMAGE_ASPECT_COLOR_BIT, 
+                    m_format, 
+                    { m_extent.width, m_extent.height, 1 },
+                    1, 
+                    1
+                ); 
+            }
             constexpr VkExtent2D GetExtent() const { return m_extent; }
             constexpr uint3 GetResolution() const { return { m_extent.width, m_extent.height, 1 }; }
             constexpr float GetAspectRatio() const { return (float)m_extent.width / (float)m_extent.height; }
-            constexpr VkRect2D GetRect() const { return { 0, 0, m_extent }; }
+            constexpr uint4 GetRect() const { return { 0, 0, m_extent.width, m_extent.height }; }
             constexpr VkFormat GetNativeFormat() const { return m_format; }
             TextureFormat GetFormat() const { return EnumConvert::GetTextureFormat(m_format); }
 
         private:
+
             const VkPhysicalDevice m_physicalDevice;
             const VkDevice m_device;
             const VkSurfaceKHR m_surface;

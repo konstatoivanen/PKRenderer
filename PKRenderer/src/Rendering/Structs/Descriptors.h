@@ -40,7 +40,7 @@ namespace PK::Rendering::Structs
 
     struct RenderTextureDescriptor
     {
-        std::vector<TextureFormat> colorFormats = { TextureFormat::RGBA8 };
+        TextureFormat colorFormats[PK_MAX_RENDER_TARGETS] = { TextureFormat::RGBA8 };
         TextureFormat depthFormat = TextureFormat::Depth24_Stencil8;
         SamplerType samplerType = SamplerType::Sampler2D;
         TextureUsage usage = TextureUsage::Default;
@@ -77,11 +77,11 @@ namespace PK::Rendering::Structs
         bool depthBiasEnable = false;
         PolygonMode polygonMode = PolygonMode::Fill;
         CullMode cullMode = CullMode::Off;
-        FrontFace frontFace = FrontFace::Clockwise;
+        FrontFace frontFace = FrontFace::CounterClockwise;
         float depthBiasConstantFactor = 0;
         float depthBiasClamp = 0;
         float depthBiasSlopeFactor = 0;
-        float lineWidth = 0;
+        float lineWidth = 1.0f;
     };
 
     struct BlendParameters

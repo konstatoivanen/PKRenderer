@@ -1,6 +1,4 @@
 #pragma once
-#include "Core/NoCopy.h"
-#include "Utilities/Ref.h"
 #include "Rendering/Objects/Buffer.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Rendering/VulkanRHI/VulkanDriver.h"
@@ -18,7 +16,10 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanBuffer(BufferUsage usage, const BufferLayout& layout, const void* data, size_t count);
             ~VulkanBuffer();
 
-            void SetData(const void* data, size_t offset, size_t size) const override final;
+            void SetData(const void* data, size_t offset, size_t size) override final;
+            void* BeginMap(size_t offset, size_t size) override final;
+            void EndMap() override final;
+
             bool Validate(size_t count) override final;
 
             size_t GetCapacity() const override final { return m_rawBuffer->capacity; }
@@ -32,5 +33,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             const VulkanDriver* m_driver = nullptr;
             Ref<VulkanRawBuffer> m_rawBuffer = nullptr;
             Scope<VulkanBindHandle> m_bindHandle = nullptr;
+            const VulkanStagingBuffer* m_mappedBuffer = nullptr;
     };
 }

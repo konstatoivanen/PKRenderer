@@ -1,6 +1,7 @@
 #pragma once
 #include "PrecompiledHeader.h"
 #include "Core/NoCopy.h"
+#include "Core/NativeInterface.h"
 #include "Utilities/Ref.h"
 #include "Math/PKMath.h"
 
@@ -23,13 +24,14 @@ namespace PK::Core
         }
     };
     
-    class Window : public NoCopy
+    class Window : public NoCopy, public NativeInterface<Window>
     {
         public:
             static Scope<Window> Create(const WindowProperties& properties);
             virtual ~Window() = default;
         
             virtual uint3 GetResolution() const = 0;
+            virtual uint4 GetRect() const = 0;
             virtual float GetAspectRatio() const = 0;
             virtual bool IsAlive() const = 0;
             virtual bool IsMinimized() const = 0;
@@ -42,7 +44,7 @@ namespace PK::Core
             virtual void SetVSync(bool enabled) = 0;
             virtual void PollEvents() const = 0;
             virtual void* GetNativeWindow() const = 0;
-        
+
         public:
             std::function<void(int width, int height)> OnResize;
             std::function<void()> OnClose;

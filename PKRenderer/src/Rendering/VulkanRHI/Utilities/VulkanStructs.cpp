@@ -230,13 +230,23 @@ namespace PK::Rendering::VulkanRHI
         vmaDestroyBuffer(allocator, buffer, memory);
     }
 
-    void VulkanRawBuffer::SetData(const void* data, size_t offset, size_t size) const
+    void* VulkanRawBuffer::BeginMap(size_t offset) const
     {
         void* mappedRange;
         vmaMapMemory(allocator, memory, &mappedRange);
-        memcpy(mappedRange, data, size);
+        return reinterpret_cast<char*>(mappedRange) + offset;
+    }
+
+    void VulkanRawBuffer::EndMap(size_t offset, size_t size) const
+    {
         vmaUnmapMemory(allocator, memory);
         vmaFlushAllocation(allocator, memory, offset, size);
+    }
+
+    void VulkanRawBuffer::SetData(const void* data, size_t size) const
+    {
+        memcpy(BeginMap(0ull), data, size);
+        EndMap(0ull, size);
     }
 
     VulkanRawImage::VulkanRawImage(VmaAllocator allocator, const VulkanImageCreateInfo& createInfo) : 
@@ -389,12 +399,12 @@ namespace PK::Rendering::VulkanRHI
         SetScissors(0, 1, &pScissor);
     }
 
-    void VulkanRawCommandBuffer::BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) const
+    void VulkanRawCommandBuffer::SetVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) const
     {
         vkCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
     }
 
-    void VulkanRawCommandBuffer::BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const std::initializer_list<VkDeviceSize> pOffsets) const
+    void VulkanRawCommandBuffer::SetVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const std::initializer_list<VkDeviceSize> pOffsets) const
     {
         vkCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets.begin());
     }
@@ -402,16 +412,6 @@ namespace PK::Rendering::VulkanRHI
     void VulkanRawCommandBuffer::BindIndexBuffer(VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType) const
     {
         vkCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
-    }
-
-    void VulkanRawCommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) const
-    {
-        vkCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
-    }
-
-    void VulkanRawCommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const
-    {
-        vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
     void VulkanRawCommandBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferCopy* pRegions) const

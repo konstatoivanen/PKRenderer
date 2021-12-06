@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/AssetDatabase.h"
+#include "Core/NativeInterface.h"
 #include "Rendering/Structs/Descriptors.h"
 
 namespace PK::Rendering::Objects
@@ -7,7 +8,7 @@ namespace PK::Rendering::Objects
     using namespace PK::Core;
     using namespace PK::Rendering::Structs;
 
-    class Texture : public PK::Core::Asset
+    class Texture : public Asset, public NativeInterface<Texture>
     {
         friend Ref<Texture> AssetImporters::Create();
 
@@ -21,13 +22,6 @@ namespace PK::Rendering::Objects
             virtual bool Validate(const TextureDescriptor& descriptor) = 0;
 
             const SamplerDescriptor& GetSamplerDescriptor() const { return m_descriptor.sampler; }
-
-            template<typename T>
-            const T* GetNative() const
-            {
-                static_assert(std::is_base_of<Texture, T>::value, "Template argument type does not derive from Texture!");
-                return static_cast<const T*>(this);
-            }
 
         protected:
             TextureDescriptor m_descriptor;

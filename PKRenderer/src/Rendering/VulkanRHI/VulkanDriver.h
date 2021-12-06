@@ -51,9 +51,13 @@ namespace PK::Rendering::VulkanRHI
 
         void PruneCaches();
 
-        APIType GetAPI() const override { return APIType::Vulkan; }
+        APIType GetAPI() const override final { return APIType::Vulkan; }
 
-        inline void WaitForIdle() const { vkDeviceWaitIdle(device); }
+        size_t GetMemoryUsageKB() const override final { return 0ull; }
+
+        CommandBuffer* GetPrimaryCommandBuffer() override final { return commandBufferPool->GetCurrent(); }
+
+        void WaitForIdle() const override final { vkDeviceWaitIdle(device); }
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                                   VkDebugUtilsMessageTypeFlagsEXT messageType,

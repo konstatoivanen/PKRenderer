@@ -196,6 +196,14 @@ namespace PK::Assets
             unsigned short location;
         };
 
+        struct alignas(4) PKConstantVariable
+        {
+            char name[PK_ASSET_NAME_MAX_LENGTH];
+            unsigned short size;
+            unsigned short offset;
+            unsigned short stageFlags;
+        };
+
         struct alignas(4) PKDescriptor
         {
             char name[PK_ASSET_NAME_MAX_LENGTH];
@@ -236,7 +244,9 @@ namespace PK::Assets
         struct PKShaderVariant
         {
             uint_t descriptorSetCount;
+            uint_t constantVariableCount;
             RelativePtr<PKDescriptorSet> descriptorSets;
+            RelativePtr<PKConstantVariable> constantVariables;
             PKVertexAttribute vertexAttributes[PK_ASSET_MAX_VERTEX_ATTRIBUTES];
 
             uint_t sprivSizes[(int)PKShaderStage::MaxCount];

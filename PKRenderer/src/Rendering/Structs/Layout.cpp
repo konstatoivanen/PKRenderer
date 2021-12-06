@@ -79,4 +79,22 @@ namespace PK::Rendering::Structs
             m_elementMap[elements[i].NameHashId] = i;
         }
     }
+
+    const ConstantVariable* ConstantBufferLayout::TryGetElement(uint32_t nameHashId) const
+    {
+        if (count(nameHashId) > 0)
+        {
+            return &at(nameHashId);
+        }
+
+        return nullptr;
+    }
+
+    void ConstantBufferLayout::FillElementMap(const ConstantVariable* variables, size_t count)
+    {
+        for (auto i = 0u; i < count; ++i)
+        {
+            (*this)[variables[i].NameHashId] = variables[i];
+        }
+    }
 }

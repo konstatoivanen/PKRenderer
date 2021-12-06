@@ -9,6 +9,45 @@ namespace PK::Rendering::Structs
     using namespace PK::Math;
     using namespace PK::Utilities;
 
+    struct ConstantVariable
+    {
+        uint32_t NameHashId = 0;
+        uint16_t Size;
+        uint16_t Offset;
+        uint32_t StageFlags;
+
+        ConstantVariable() = default;
+
+        ConstantVariable(const std::string & name, uint16_t size, uint16_t offset, uint32_t stageFlags) : 
+            NameHashId(StringHashID::StringToID(name)), 
+            Size(size),
+            Offset(offset),
+            StageFlags(stageFlags)
+        {
+        }
+    };
+
+    class ConstantBufferLayout : public std::map<uint32_t, ConstantVariable>
+    {
+        public:
+            ConstantBufferLayout() {}
+
+            ConstantBufferLayout(std::initializer_list<ConstantVariable> elements)
+            {
+                FillElementMap(elements.begin(), elements.size());
+            }
+
+            ConstantBufferLayout(std::vector<ConstantVariable> elements)
+            {
+                FillElementMap(elements.data(), elements.size());
+            }
+
+            const ConstantVariable* TryGetElement(uint32_t nameHashId) const;
+
+        private:
+            void FillElementMap(const ConstantVariable* variables, size_t count);
+    };
+
     struct ResourceElement
     {
         uint32_t NameHashId = 0;
@@ -18,7 +57,11 @@ namespace PK::Rendering::Structs
     
         ResourceElement() = default;
 
-        ResourceElement(ResourceType type, const std::string& name, uint8_t binding, uint16_t count) : NameHashId(StringHashID::StringToID(name)), Type(type), Binding(binding), Count(count)
+        ResourceElement(ResourceType type, const std::string& name, uint8_t binding, uint16_t count) :
+            NameHashId(StringHashID::StringToID(name)), 
+            Type(type), 
+            Binding(binding), 
+            Count(count)
         {
         }
     };
@@ -60,7 +103,10 @@ namespace PK::Rendering::Structs
 
         VertexElement() = default;
 
-        VertexElement(ElementType type, const std::string& name, ushort location) : NameHashId(StringHashID::StringToID(name)), Type(type), Location(location)
+        VertexElement(ElementType type, const std::string& name, ushort location) :
+            NameHashId(StringHashID::StringToID(name)), 
+            Type(type), 
+            Location(location)
         {
         }
     };
@@ -105,11 +151,23 @@ namespace PK::Rendering::Structs
     
         BufferElement() = default;
     
-        BufferElement(ElementType type, const std::string& name, ushort count = 1, bool normalized = false) : NameHashId(StringHashID::StringToID(name)), Type(type), Size(ElementConvert::Size(type)* count), Offset(0), AlignedOffset(0), Normalized(normalized)
+        BufferElement(ElementType type, const std::string& name, ushort count = 1, bool normalized = false) : 
+            NameHashId(StringHashID::StringToID(name)), 
+            Type(type), 
+            Size(ElementConvert::Size(type)* count), 
+            Offset(0), 
+            AlignedOffset(0), 
+            Normalized(normalized)
         {
         }
 
-        BufferElement(ElementType type, uint32_t nameHashId, ushort count = 1, bool normalized = false) : NameHashId(nameHashId), Type(type), Size(ElementConvert::Size(type) * count), Offset(0), AlignedOffset(0), Normalized(normalized)
+        BufferElement(ElementType type, uint32_t nameHashId, ushort count = 1, bool normalized = false) :
+            NameHashId(nameHashId), 
+            Type(type), 
+            Size(ElementConvert::Size(type) * count), 
+            Offset(0), 
+            AlignedOffset(0), 
+            Normalized(normalized)
         {
         }
     };

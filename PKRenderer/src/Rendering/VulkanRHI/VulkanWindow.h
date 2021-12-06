@@ -13,6 +13,8 @@ namespace PK::Rendering::VulkanRHI
     class VulkanWindow : public PK::Core::Window
     {
         public:
+            using PK::Core::Window::GetRect;
+
             VulkanWindow(VulkanDriver* driver, const PK::Core::WindowProperties& properties);
             ~VulkanWindow();
 
@@ -22,14 +24,14 @@ namespace PK::Rendering::VulkanRHI
             bool IsMinimized() const override { return m_minimized; }
             bool IsVSync() const override { return m_vsync; }
 
-            void Begin() override;
-            void End() override;
-            void SetCursorVisible(bool value) override;
-            void SetVSync(bool enabled) override { m_vsync = enabled; };
-            inline void PollEvents() const override { glfwPollEvents(); }
-            inline void* GetNativeWindow() const { return m_window; }
+            void Begin() override final;
+            void End() override final;
+            void SetCursorVisible(bool value) override final;
+            void SetVSync(bool enabled) override final { m_vsync = enabled; };
+            inline void PollEvents() const override final { glfwPollEvents(); }
+            void* GetNativeWindow() const override final { return m_window; }
 
-            constexpr VkRect2D GetRect() const { return m_swapchain->GetRect(); }
+            uint4 GetRect() const override final { return m_swapchain->GetRect(); }
             constexpr VkExtent2D GetExtent() const { return m_swapchain->GetExtent(); }
             constexpr VkFormat GetNativeFormat() const { return m_swapchain->GetNativeFormat(); }
             const VulkanRenderTarget GetRenderTarget() const { return m_swapchain->GetRenderTarget(); }

@@ -39,4 +39,8 @@ namespace PK::Rendering
     GraphicsDriver* GraphicsAPI::GetActiveDriver() { return s_currentDriver; }
 
     APIType GraphicsAPI::GetActiveAPI() { return s_currentDriver->GetAPI(); }
+   
+    CommandBuffer* GraphicsAPI::GetCommandBuffer() { return s_currentDriver->GetPrimaryCommandBuffer(); }
+    
+    size_t GraphicsAPI::GetMemoryUsageKB() { return s_currentDriver->GetMemoryUsageKB(); }
 }

@@ -14,8 +14,8 @@ namespace PK::Rendering::Structs
     typedef PK::Assets::Shader::Type ShaderType;
 
     constexpr const static uint32_t PK_DESIRED_SWAP_CHAIN_IMAGE_COUNT = 4;
-    constexpr static const int PK_MAX_FRAMES_IN_FLIGHT = 2;
-    constexpr static const int PK_MAX_RENDER_TARGETS = 8;
+    constexpr static const uint32_t PK_MAX_FRAMES_IN_FLIGHT = 2;
+    constexpr static const uint32_t PK_MAX_RENDER_TARGETS = 8;
     constexpr static const uint32_t PK_MAX_DESCRIPTOR_SETS = 4;
     constexpr static const uint32_t PK_MAX_DESCRIPTORS_PER_SET = 16;
     constexpr const static uint32_t PK_MAX_VERTEX_ATTRIBUTES = 8;
@@ -127,6 +127,9 @@ namespace PK::Rendering::Structs
         Dynamic = 0x20,
     };
 
+    static constexpr BufferUsage operator | (const BufferUsage& a, const BufferUsage& b) { return (BufferUsage)((uint32_t)a | (uint32_t)b); }
+    static constexpr BufferUsage operator & (const BufferUsage& a, const BufferUsage& b) { return (BufferUsage)((uint32_t)a & (uint32_t)b); }
+
     enum class TextureUsage : uint8_t
     {
         None = 0x0,
@@ -136,11 +139,17 @@ namespace PK::Rendering::Structs
         Upload = 0x8,
         Sample = 0x10,
         Input = 0x20,
-        Default = Upload | Sample
+        Default = Upload | Sample,
+        RTColorSample = RTColor | Sample,
+        RTDepthSample = RTDepth | Sample
     };
+
+    static constexpr TextureUsage operator | (const TextureUsage& a, const TextureUsage& b) { return (TextureUsage)((uint32_t)a | (uint32_t)b); }
+    static constexpr TextureUsage operator & (const TextureUsage& a, const TextureUsage& b) { return (TextureUsage)((uint32_t)a & (uint32_t)b); }
 
     enum class TextureFormat : uint16_t 
     {
+        Invalid = 0,
         R8, 
         R8_SNORM, 
         R8UI, 

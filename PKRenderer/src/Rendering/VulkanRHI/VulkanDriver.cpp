@@ -169,7 +169,9 @@ namespace PK::Rendering::VulkanRHI
                                                                       const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, 
                                                                       void* pUserData)
     {
-        if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+        auto isValidationError = strstr(pCallbackData->pMessage, "Error") != nullptr;
+
+        if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT || isValidationError)
         {
             PK_THROW_ERROR(pCallbackData->pMessage);
             return VK_FALSE;

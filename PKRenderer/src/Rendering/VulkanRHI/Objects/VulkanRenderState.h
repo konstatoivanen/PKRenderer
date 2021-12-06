@@ -49,9 +49,13 @@ namespace PK::Rendering::VulkanRHI::Objects
         void DiscardDepth();
 
         void SetShader(const VulkanShader* shader);
-        void BindResource(uint32_t nameHashId, const VulkanBindHandle* handle);
-        void BindVertexBuffers(const std::initializer_list<std::pair<const VulkanBindHandle*, InputRate>>& buffers);
-        
+        void SetBlending(const BlendParameters& blend);
+        void SetRasterization(const RasterizationParameters& rasterization);
+        void SetDepthStencil(const DepthStencilParameters& depthStencil);
+        void SetMultisampling(const MultisamplingParameters& multisampling);
+        void SetResource(uint32_t nameHashId, const VulkanBindHandle* handle);
+        void SetVertexBuffers(const VulkanBindHandle** handles, uint32_t count);
+
         PKRenderStateDirtyFlags ValidatePipeline(const VulkanExecutionGate& gate);
 
         VulkanDescriptorCache* descriptorCache = nullptr;
@@ -67,7 +71,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         RenderPassKey renderPassKey{};
         
         const VulkanBindHandle* vertexBuffers[PK_MAX_VERTEX_ATTRIBUTES]{};
-        VkVertexInputRate verteBufferInputRates[PK_MAX_VERTEX_ATTRIBUTES]{};
         VkBuffer vertexBuffersRaw[PK_MAX_VERTEX_ATTRIBUTES]{};
         VkDeviceSize vertexBufferOffsets[PK_MAX_VERTEX_ATTRIBUTES]{}; // Not used atm.
         uint32_t vertexBufferBindCount = 0u;

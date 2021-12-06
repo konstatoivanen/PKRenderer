@@ -136,11 +136,13 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\PKRenderer\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;ktx.lib;ktx_read.lib;glfw3.lib;VulkanMemoryAllocatord.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;ktx.lib;ktx_read.lib;glfw3.lib;yaml-cppd.lib;VulkanMemoryAllocatord.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d  "$(ProjectDir)libs\*.dll" "$(TargetDir)"
 xcopy /y /s "$(ProjectDir)res\*.ktx2" "$(TargetDir)res\"
+xcopy /y /s "$(ProjectDir)res\*.cfg" "$(TargetDir)res\"
+xcopy /y /s "$(ProjectDir)res\*.keycfg" "$(TargetDir)res\"
 Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)res\'"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
@@ -167,12 +169,14 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\PKRenderer\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;ktx.lib;ktx_read.lib;glfw3.lib;VulkanMemoryAllocator.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;ktx.lib;ktx_read.lib;glfw3.lib;yaml-cpp.lib;VulkanMemoryAllocator.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d  "$(ProjectDir)libs\*.dll" "$(TargetDir)"
 xcopy /y /s "$(ProjectDir)res\*.ktx2" "$(TargetDir)res\"
+xcopy /y /s "$(ProjectDir)res\*.cfg" "$(TargetDir)res\"
+xcopy /y /s "$(ProjectDir)res\*.keycfg" "$(TargetDir)res\"
 Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)res\'"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
@@ -498,17 +502,60 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="include\vulkan\vulkan_xcb.h" />
     <ClInclude Include="include\vulkan\vulkan_xlib.h" />
     <ClInclude Include="include\vulkan\vulkan_xlib_xrandr.h" />
+    <ClInclude Include="include\yaml-cpp\anchor.h" />
+    <ClInclude Include="include\yaml-cpp\binary.h" />
+    <ClInclude Include="include\yaml-cpp\contrib\anchordict.h" />
+    <ClInclude Include="include\yaml-cpp\contrib\graphbuilder.h" />
+    <ClInclude Include="include\yaml-cpp\depthguard.h" />
+    <ClInclude Include="include\yaml-cpp\dll.h" />
+    <ClInclude Include="include\yaml-cpp\emitfromevents.h" />
+    <ClInclude Include="include\yaml-cpp\emitter.h" />
+    <ClInclude Include="include\yaml-cpp\emitterdef.h" />
+    <ClInclude Include="include\yaml-cpp\emittermanip.h" />
+    <ClInclude Include="include\yaml-cpp\emitterstyle.h" />
+    <ClInclude Include="include\yaml-cpp\eventhandler.h" />
+    <ClInclude Include="include\yaml-cpp\exceptions.h" />
+    <ClInclude Include="include\yaml-cpp\mark.h" />
+    <ClInclude Include="include\yaml-cpp\node\convert.h" />
+    <ClInclude Include="include\yaml-cpp\node\detail\impl.h" />
+    <ClInclude Include="include\yaml-cpp\node\detail\iterator.h" />
+    <ClInclude Include="include\yaml-cpp\node\detail\iterator_fwd.h" />
+    <ClInclude Include="include\yaml-cpp\node\detail\memory.h" />
+    <ClInclude Include="include\yaml-cpp\node\detail\node.h" />
+    <ClInclude Include="include\yaml-cpp\node\detail\node_data.h" />
+    <ClInclude Include="include\yaml-cpp\node\detail\node_iterator.h" />
+    <ClInclude Include="include\yaml-cpp\node\detail\node_ref.h" />
+    <ClInclude Include="include\yaml-cpp\node\emit.h" />
+    <ClInclude Include="include\yaml-cpp\node\impl.h" />
+    <ClInclude Include="include\yaml-cpp\node\iterator.h" />
+    <ClInclude Include="include\yaml-cpp\node\node.h" />
+    <ClInclude Include="include\yaml-cpp\node\parse.h" />
+    <ClInclude Include="include\yaml-cpp\node\ptr.h" />
+    <ClInclude Include="include\yaml-cpp\node\type.h" />
+    <ClInclude Include="include\yaml-cpp\noexcept.h" />
+    <ClInclude Include="include\yaml-cpp\null.h" />
+    <ClInclude Include="include\yaml-cpp\ostream_wrapper.h" />
+    <ClInclude Include="include\yaml-cpp\parser.h" />
+    <ClInclude Include="include\yaml-cpp\stlemitter.h" />
+    <ClInclude Include="include\yaml-cpp\traits.h" />
+    <ClInclude Include="include\yaml-cpp\yaml.h" />
     <ClInclude Include="src\Core\Application.h" />
+    <ClInclude Include="src\Core\ApplicationConfig.h" />
     <ClInclude Include="src\Core\AssetDatabase.h" />
     <ClInclude Include="src\Core\BufferView.h" />
+    <ClInclude Include="src\Core\CommandConfig.h" />
+    <ClInclude Include="src\Core\ConsoleCommandBinding.h" />
     <ClInclude Include="src\Core\Input.h" />
     <ClInclude Include="src\Core\IService.h" />
     <ClInclude Include="src\Core\ISingleton.h" />
+    <ClInclude Include="src\Core\NativeInterface.h" />
     <ClInclude Include="src\Core\NoCopy.h" />
     <ClInclude Include="src\Core\ServiceRegister.h" />
     <ClInclude Include="src\Core\Time.h" />
     <ClInclude Include="src\Core\UpdateStep.h" />
     <ClInclude Include="src\Core\Window.h" />
+    <ClInclude Include="src\Core\YamlSerializers.h" />
+    <ClInclude Include="src\ECS\Contextual\Engines\EngineCommandInput.h" />
     <ClInclude Include="src\ECS\EntityDatabase.h" />
     <ClInclude Include="src\ECS\Sequencer.h" />
     <ClInclude Include="src\Math\PKMath.h" />
@@ -516,7 +563,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\GraphicsAPI.h" />
     <ClInclude Include="src\Rendering\MeshUtility.h" />
     <ClInclude Include="src\Rendering\Objects\Buffer.h" />
+    <ClInclude Include="src\Rendering\Objects\CommandBuffer.h" />
     <ClInclude Include="src\Rendering\Objects\Mesh.h" />
+    <ClInclude Include="src\Rendering\Objects\RenderTexture.h" />
     <ClInclude Include="src\Rendering\Objects\Shader.h" />
     <ClInclude Include="src\Rendering\Objects\Texture.h" />
     <ClInclude Include="src\Rendering\RenderPipeline.h" />
@@ -690,7 +739,10 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="libs\ktx_read.dll" />
     <None Include="libs\vulkan-1.pdb" />
     <None Include="libs\VulkanMemoryAllocatord.pdb" />
+    <None Include="res\configs\ApplicationConfig-Active.cfg" />
+    <None Include="res\configs\CommandConfig-Active.keycfg" />
     <None Include="res\MDL_Cloth.mdl" />
+    <None Include="res\MDL_Debug.mdl" />
     <None Include="res\SH_WS_Debug.shader" />
     <None Include="res\T_DebugTexture.ktx2" />
   </ItemGroup>
@@ -702,9 +754,12 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     </ClCompile>
     <ClCompile Include="include\PKAssets\PKAssetLoader.cpp" />
     <ClCompile Include="src\Core\Application.cpp" />
+    <ClCompile Include="src\Core\ApplicationConfig.cpp" />
+    <ClCompile Include="src\Core\CommandConfig.cpp" />
     <ClCompile Include="src\Core\Input.cpp" />
     <ClCompile Include="src\Core\Time.cpp" />
     <ClCompile Include="src\Core\Window.cpp" />
+    <ClCompile Include="src\ECS\Contextual\Engines\EngineCommandInput.cpp" />
     <ClCompile Include="src\ECS\Sequencer.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Math\PKMath.cpp" />
@@ -717,7 +772,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Rendering\GraphicsAPI.cpp" />
     <ClCompile Include="src\Rendering\MeshUtilitity.cpp" />
     <ClCompile Include="src\Rendering\Objects\Buffer.cpp" />
+    <ClCompile Include="src\Rendering\Objects\CommandBuffer.cpp" />
     <ClCompile Include="src\Rendering\Objects\Mesh.cpp" />
+    <ClCompile Include="src\Rendering\Objects\RenderTexture.cpp" />
     <ClCompile Include="src\Rendering\Objects\Shader.cpp" />
     <ClCompile Include="src\Rendering\Objects\Texture.cpp" />
     <ClCompile Include="src\Rendering\RenderPipeline.cpp" />
@@ -753,6 +810,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <Library Include="libs\vulkan-1.lib" />
     <Library Include="libs\VulkanMemoryAllocator.lib" />
     <Library Include="libs\VulkanMemoryAllocatord.lib" />
+    <Library Include="libs\yaml-cpp.lib" />
+    <Library Include="libs\yaml-cppd.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

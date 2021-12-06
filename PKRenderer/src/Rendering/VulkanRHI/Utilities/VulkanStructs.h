@@ -153,7 +153,9 @@ namespace PK::Rendering::VulkanRHI
         VulkanRawBuffer(VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo);
         ~VulkanRawBuffer();
 
-        void SetData(const void* data, size_t offset, size_t size) const;
+        void* BeginMap(size_t offset) const;
+        void EndMap(size_t offset, size_t size) const;
+        void SetData(const void* data, size_t size) const;
 
         const VmaAllocator allocator;
         const VkBufferUsageFlags usage;
@@ -261,11 +263,9 @@ namespace PK::Rendering::VulkanRHI
         void SetViewPort(const VkRect2D& rect, float minDepth, float maxDepth) const;
         void SetScissors(uint32_t firstScissor, uint32_t scissorCount, const VkRect2D* pScissors) const;
         void SetScissor(const VkRect2D& pScissor) const;
-        void BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) const;
-        void BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const std::initializer_list<VkDeviceSize> pOffsets) const;
+        void SetVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) const;
+        void SetVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const std::initializer_list<VkDeviceSize> pOffsets) const;
         void BindIndexBuffer(VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType) const;
-        void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) const;
-        void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const;
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferCopy* pRegions) const;
         void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions) const;
         void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, const VkExtent3D& extent, uint32_t level, uint32_t layer) const;
@@ -300,27 +300,34 @@ namespace PK::Rendering::VulkanRHI
         VkDeviceSize bufferRange = 0ull;
         VkDeviceSize bufferOffset = 0ull;
         const BufferLayout* bufferLayout = nullptr;
+        VkVertexInputRate inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     };
 
     struct VulkanRenderTarget : public PK::Core::NoCopy
     {
-        VulkanRenderTarget(const VulkanImageView* view,
-        VkImageLayout layout,
-        VkFormat format,
-        VkExtent2D extent,
-        uint32_t samples,
-        uint32_t layers) : 
+        VulkanRenderTarget(VkImageView view,
+                           VkImage image,
+                           VkImageLayout layout,
+                           VkImageAspectFlagBits aspect,
+                           VkFormat format,
+                           VkExtent3D extent,
+                           uint32_t samples,
+                           uint32_t layers) : 
             view(view), 
+            image(image),
             layout(layout), 
+            aspect(aspect),
             format(format), 
             extent(extent), 
             samples(samples), 
             layers(layers) {}
 
-        const VulkanImageView* view;
+        VkImageView view;
+        VkImage image;
         const VkImageLayout layout;
+        const VkImageAspectFlagBits aspect;
         const VkFormat format;
-        const VkExtent2D extent;
+        const VkExtent3D extent;
         const uint32_t samples;
         const uint32_t layers;
     };

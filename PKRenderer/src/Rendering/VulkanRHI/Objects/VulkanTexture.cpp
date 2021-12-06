@@ -22,7 +22,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 	void VulkanTexture::SetData(const void* data, size_t size, uint32_t level, uint32_t layer) const
     {
         const auto* stage = m_driver->stagingBufferCache->GetBuffer(size);
-        stage->SetData(data, 0, size);
+        stage->SetData(data, size);
      
         auto usageLayout = EnumConvert::GetImageLayout(m_descriptor.usage);
         auto optimalLayout = EnumConvert::GetImageLayout(m_descriptor.usage, true);
@@ -86,7 +86,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
 		auto stage = m_driver->stagingBufferCache->GetBuffer(ktxTextureSize);
 
-		stage->SetData(ktxTextureData, 0, ktxTextureSize);
+		stage->SetData(ktxTextureData, ktxTextureSize);
 
 		std::vector<VkBufferImageCopy> bufferCopyRegions;
 		uint32_t offset = 0;
@@ -127,8 +127,17 @@ namespace PK::Rendering::VulkanRHI::Objects
     const VulkanRenderTarget VulkanTexture::GetRenderTarget()
     {
         auto view = GetView(m_defaultViewRange, true);
-        auto extent = VkExtent2D{ m_rawImage->extent.width, m_rawImage->extent.height };
-        return VulkanRenderTarget(view, GetImageLayout(), m_rawImage->format, extent, m_descriptor.samples, m_descriptor.layers);
+        return VulkanRenderTarget
+        (
+            view->view, 
+            m_rawImage->image, 
+            GetImageLayout(), 
+            m_rawImage->aspect, 
+            m_rawImage->format, 
+            m_rawImage->extent, 
+            m_descriptor.samples, 
+            m_descriptor.layers
+        );
     }
 
     const VulkanBindHandle* VulkanTexture::GetBindHandle() const

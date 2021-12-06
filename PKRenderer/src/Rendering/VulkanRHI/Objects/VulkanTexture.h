@@ -22,6 +22,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             void Rebuild(const TextureDescriptor& descriptor);
 
             VkImageLayout GetImageLayout() const { return EnumConvert::GetImageLayout(m_descriptor.usage); }
+            VkImageAspectFlags GetAspectFlags() const { return m_rawImage->aspect; }
             VkFormat GetNativeFormat() const { return m_rawImage->format; }
             const SamplerDescriptor& GetSamplerDescriptor() const { return m_descriptor.sampler; }
             const VulkanImageView* GetDefaultView() const { return m_imageViews.at({ m_defaultViewRange, false }).get(); }

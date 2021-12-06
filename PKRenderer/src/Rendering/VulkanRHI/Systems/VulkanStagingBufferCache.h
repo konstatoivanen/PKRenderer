@@ -11,6 +11,8 @@ namespace PK::Rendering::VulkanRHI::Systems
     {
         VulkanStagingBuffer(VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo) : VulkanRawBuffer(allocator, createInfo) {}
         mutable VulkanExecutionGate executionGate;
+        mutable VkDeviceSize destinationOffset = 0ull;
+        mutable VkDeviceSize desitnationRange = 0ull;
         uint64_t pruneTick = 0ull;
     };
 

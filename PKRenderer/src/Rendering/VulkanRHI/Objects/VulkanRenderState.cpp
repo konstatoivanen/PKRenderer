@@ -12,6 +12,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         memset(&frameBufferKey, 0, sizeof(FrameBufferKey));
         memset(&renderPassKey, 0, sizeof(RenderPassKey));
         memset(&descriptorsDirty, 0, sizeof(descriptorsDirty));
+
+        pipelineKey.fixedFunctionState = FixedFunctionState();
         renderPass = nullptr;
         pipeline = nullptr;
         frameBuffer = nullptr;
@@ -53,7 +55,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         renderPassKey.samples = renderTarget.samples;
         frameBufferKey.layers = renderTarget.layers;
-        frameBufferKey.extent = renderTarget.extent;
+        frameBufferKey.extent = { renderTarget.extent.width, renderTarget.extent.height };
 
         renderArea = { {}, { renderTarget.extent.width, renderTarget.extent.height } };
 
@@ -67,17 +69,17 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if (isDepth)
         {
-            frameBufferKey.depth = renderTarget.view->view;
+            frameBufferKey.depth = renderTarget.view;
         }
         else
         {
-            frameBufferKey.color[index] = renderTarget.view->view;
+            frameBufferKey.color[index] = renderTarget.view;
         }
     }
 
     void VulkanRenderState::SetResolveTarget(const VulkanRenderTarget& renderTarget, uint32_t index)
     {
-        frameBufferKey.resolve[index] = renderTarget.view->view;
+        frameBufferKey.resolve[index] = renderTarget.view;
         renderPassKey.colors[index].resolve = true;
     }
 
@@ -184,8 +186,49 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    void VulkanRenderState::BindResource(uint32_t nameHashId, const VulkanBindHandle* handle)
+    void VulkanRenderState::SetBlending(const BlendParameters& blend)
     {
+        if (memcmp(&pipelineKey.fixedFunctionState.blending, &blend, sizeof(BlendParameters)) != 0)
+        {
+            pipelineKey.fixedFunctionState.blending = blend;
+            pipelineIsDirty = true;
+        }
+    }
+
+    void VulkanRenderState::SetRasterization(const RasterizationParameters& rasterization)
+    {
+        if (memcmp(&pipelineKey.fixedFunctionState.rasterization, &rasterization, sizeof(RasterizationParameters)) != 0)
+        {
+            pipelineKey.fixedFunctionState.rasterization = rasterization;
+            pipelineIsDirty = true;
+        }
+    }
+
+    void VulkanRenderState::SetDepthStencil(const DepthStencilParameters& depthStencil)
+    {
+        if (memcmp(&pipelineKey.fixedFunctionState.depthStencil, &depthStencil, sizeof(DepthStencilParameters)) != 0)
+        {
+            pipelineKey.fixedFunctionState.depthStencil = depthStencil;
+            pipelineIsDirty = true;
+        }
+    }
+
+    void VulkanRenderState::SetMultisampling(const MultisamplingParameters& multisampling)
+    {
+        if (memcmp(&pipelineKey.fixedFunctionState.multisampling, &multisampling, sizeof(MultisamplingParameters)) != 0)
+        {
+            pipelineKey.fixedFunctionState.multisampling = multisampling;
+            pipelineIsDirty = true;
+        }
+    }
+
+    void VulkanRenderState::SetResource(uint32_t nameHashId, const VulkanBindHandle* handle)
+    {
+        if (pipelineKey.shader == nullptr)
+        {
+            return;
+        }
+
         for (auto i = 0; i < PK_MAX_DESCRIPTOR_SETS; ++i)
         {
             uint32_t index;
@@ -203,33 +246,30 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    void VulkanRenderState::BindVertexBuffers(const std::initializer_list<std::pair<const VulkanBindHandle*, InputRate>>& handles)
+    void VulkanRenderState::SetVertexBuffers(const VulkanBindHandle** handles, uint32_t count)
     {
-        auto count = 0u;
-        auto pBuffers = handles.begin();
+        auto i = 0u;
 
-        for (; count < PK_MAX_VERTEX_ATTRIBUTES && count < handles.size(); ++count)
+        for (; i < PK_MAX_VERTEX_ATTRIBUTES && i < count; ++i)
         {
-            auto kv = pBuffers[count];
+            auto handle = handles[i];
 
-            PK_THROW_ASSERT(kv.first != nullptr, "Passing null vertex buffer is not allowed!");
+            PK_THROW_ASSERT(handle != nullptr, "Passing null vertex buffer is not allowed!");
 
-            verteBufferInputRates[count] = EnumConvert::GetInputRate(kv.second);
-
-            if (kv.first != vertexBuffers[count])
+            if (handle != vertexBuffers[i])
             {
-                vertexBuffers[count] = kv.first;
-                vertexBuffersRaw[count] = kv.first->buffer;
+                vertexBuffers[i] = handle;
+                vertexBuffersRaw[i] = handle->buffer;
                 vertexBuffersDirty = true;
             }
         }
 
-        vertexBufferBindCount = count;
+        vertexBufferBindCount = i;
 
-        if (count < PK_MAX_VERTEX_ATTRIBUTES)
+        if (i < PK_MAX_VERTEX_ATTRIBUTES)
         {
-            memset(vertexBuffers + count, 0, sizeof(vertexBuffers[0]) * (PK_MAX_VERTEX_ATTRIBUTES - count));
-            memset(vertexBuffersRaw + count, 0, sizeof(vertexBuffersRaw[0]) * (PK_MAX_VERTEX_ATTRIBUTES - count));
+            memset(vertexBuffers + i, 0, sizeof(vertexBuffers[0]) * (PK_MAX_VERTEX_ATTRIBUTES - i));
+            memset(vertexBuffersRaw + i, 0, sizeof(vertexBuffersRaw[0]) * (PK_MAX_VERTEX_ATTRIBUTES - i));
         }
     }
 
@@ -249,7 +289,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             {
                 auto vertexBuffer = vertexBuffers[i];
                 auto bufferAttribute = &pipelineKey.vertexBuffers[i];
-                auto inputRate = verteBufferInputRates[i];
                 
                 if (vertexBuffer == nullptr)
                 {
@@ -268,9 +307,9 @@ namespace PK::Rendering::VulkanRHI::Objects
                 
                 bufferAttribute->binding = i;
             
-                if (bufferAttribute->inputRate != inputRate || bufferAttribute->stride != stride)
+                if (bufferAttribute->inputRate != vertexBuffer->inputRate || bufferAttribute->stride != stride)
                 {
-                    bufferAttribute->inputRate = inputRate;
+                    bufferAttribute->inputRate = vertexBuffer->inputRate;
                     bufferAttribute->stride = stride;
                     pipelineIsDirty = true;
                 }

@@ -38,10 +38,10 @@ namespace PK::Rendering::Objects
 		auto mesh = PK::Assets::ReadAsMesh(&asset);
 		auto base = asset.rawData;
 
-		PK_THROW_ASSERT(mesh->vertexAttributeCount > 0, "Trying to read a shader with 0 variants!");
-		PK_THROW_ASSERT(mesh->vertexCount > 0, "Trying to read a shader with 0 variants!");
-		PK_THROW_ASSERT(mesh->indexCount > 0, "Trying to read a shader with 0 variants!");
-		PK_THROW_ASSERT(mesh->submeshCount > 0, "Trying to read a shader with 0 variants!");
+		PK_THROW_ASSERT(mesh->vertexAttributeCount > 0, "Trying to read a mesh with 0 vertex attributes!");
+		PK_THROW_ASSERT(mesh->vertexCount > 0, "Trying to read a shader with 0 vertices!");
+		PK_THROW_ASSERT(mesh->indexCount > 0, "Trying to read a shader with 0 indices!");
+		PK_THROW_ASSERT(mesh->submeshCount > 0, "Trying to read a shader with 0 submeshes!");
 
 		auto pAttributes = mesh->vertexAttributes.Get(base);
 		auto pVertices = mesh->vertexBuffer.Get(base);
@@ -55,19 +55,13 @@ namespace PK::Rendering::Objects
 			m_indexRanges.push_back({ pSubmeshes[i].offset, pSubmeshes[i].count });
 		}
 
-		auto stride = 0u;
-
 		for (auto i = 0u; i < mesh->vertexAttributeCount; ++i)
 		{
-			bufferElements.emplace_back(pAttributes[i].type, pAttributes[i].name);
-			stride += pAttributes[i].size;
+			bufferElements.emplace_back(pAttributes[i].type, std::string(pAttributes[i].name));
 		}
 
-		auto indexSize = ElementConvert::Size(mesh->indexType);
-		auto vertexBuffer = Buffer::CreateVertex(BufferLayout(bufferElements), pVertices, mesh->vertexCount);
-		auto indexBuffer = Buffer::CreateIndex(mesh->indexType, pIndexBuffer, mesh->indexCount);
-		AddVertexBuffer(vertexBuffer);
-		SetIndexBuffer(indexBuffer);
+		AddVertexBuffer(Buffer::CreateVertex(BufferLayout(bufferElements), pVertices, mesh->vertexCount));
+		SetIndexBuffer(Buffer::CreateIndex(mesh->indexType, pIndexBuffer, mesh->indexCount));
 
         PK::Assets::CloseAsset(&asset);
     }

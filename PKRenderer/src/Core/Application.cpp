@@ -4,11 +4,14 @@
 #include "Utilities/StringHashID.h"
 #include "Core/Input.h"
 #include "Core/Time.h"
+#include "Core/ApplicationConfig.h"
+#include "Core/CommandConfig.h"
 #include "Core/UpdateStep.h"
 #include "Core/AssetDatabase.h"
 #include "ECS/EntityDatabase.h"
 #include "ECS/Sequencer.h"
 #include "Rendering/RenderPipeline.h"
+#include "ECS/Contextual/Engines/EngineCommandInput.h"
 
 namespace PK::Core
 {
@@ -34,20 +37,27 @@ namespace PK::Core
         auto entityDb = m_services->Create<PK::ECS::EntityDatabase>();
         auto sequencer = m_services->Create<PK::ECS::Sequencer>();
         auto assetDatabase = m_services->Create<AssetDatabase>(sequencer);
-        auto time = m_services->Create<Time>(sequencer, 1.0f);
+
+        assetDatabase->LoadDirectory<ApplicationConfig>("res/configs/");
+        assetDatabase->LoadDirectory<CommandConfig>("res/configs/");
+        auto config = assetDatabase->Find<ApplicationConfig>("Active");
+        auto commandConfig = assetDatabase->Find<CommandConfig>("Active");
+
+        auto time = m_services->Create<Time>(sequencer, config->TimeScale);
         auto input = m_services->Create<Input>(sequencer);
         
         m_graphicsDriver = GraphicsDriver::Create(APIType::Vulkan);
 
-        m_window = Window::Create(WindowProperties(name, 1024, 512, true, true));
-        Window::SetConsole(true);
+        m_window = Window::Create(WindowProperties(name, config->InitialWidth, config->InitialHeight, config->EnableVsync, config->EnableCursor));
+        Window::SetConsole(config->EnableConsole);
 
         m_window->OnKeyInput = PK_BIND_MEMBER_FUNCTION(input, OnKeyInput);
         m_window->OnScrollInput = PK_BIND_MEMBER_FUNCTION(input, OnScrollInput);
         m_window->OnMouseButtonInput = PK_BIND_MEMBER_FUNCTION(input, OnMouseButtonInput);
         m_window->OnClose = PK_BIND_FUNCTION(Application::Close);
 
-        auto renderPipeline = m_services->Create<RenderPipeline>(assetDatabase, 1024, 512);
+        auto renderPipeline = m_services->Create<RenderPipeline>(assetDatabase, config->InitialWidth, config->InitialHeight);
+        auto engineCommands = m_services->Create<ECS::Engines::EngineCommandInput>(assetDatabase, sequencer, time, entityDb, commandConfig);
 
         sequencer->SetSteps(
         {
@@ -58,6 +68,12 @@ namespace PK::Core
                     { (int)UpdateStep::UpdateInput,		{ PK_STEP_C(input, PK::Core::Window) } },
                     { (int)UpdateStep::Render,			{ PK_STEP_C(renderPipeline, PK::Core::Window) }},
                     { (int)UpdateStep::CloseFrame,		{ PK_STEP_C(input, PK::Core::Window), time }},
+                }
+            },
+            {
+                input,
+                {
+                    PK_STEP_T(engineCommands, Input),
                 }
             },
         });

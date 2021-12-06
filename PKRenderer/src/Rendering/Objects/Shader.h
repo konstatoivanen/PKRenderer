@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/AssetDatabase.h"
+#include "Core/NativeInterface.h"
 #include "Rendering/Structs/Descriptors.h"
 #include "Rendering/Structs/Layout.h"
 
@@ -8,7 +9,7 @@ namespace PK::Rendering::Objects
     using namespace PK::Core;
     using namespace PK::Rendering::Structs;
 
-    class ShaderVariantMap : public PK::Core::NoCopy
+    class ShaderVariantMap : public NoCopy
     {
         public:
             void ListVariants();
@@ -22,7 +23,7 @@ namespace PK::Rendering::Objects
             std::unordered_map<uint32_t, uint8_t> keywords;
     };
 
-    class ShaderVariant : public PK::Core::NoCopy
+    class ShaderVariant : public NoCopy, public NativeInterface<ShaderVariant>
     {
         friend class Shader;
 
@@ -31,23 +32,22 @@ namespace PK::Rendering::Objects
             virtual void Dispose() = 0;
 
             constexpr const VertexLayout& GetVertexLayout() const { return m_vertexLayout; }
+            constexpr const ConstantBufferLayout& GetConstantLayout() const { return m_constantLayout; }
             constexpr const ResourceLayout& GetResourceLayout(uint32_t set) const { return m_resourceLayouts[set]; }
             constexpr const ShaderType GetType() const { return m_type; }
+            constexpr const uint32_t GetStageFlags() const { return m_stageFlags; }
 
-            template<typename T>
-            const T* GetNative() const
-            { 
-                static_assert(std::is_base_of<ShaderVariant, T>::value, "Template argument type does not derive from ShaderVariant!");
-                return static_cast<const T*>(this);
-            }
+            void ListProperties();
 
         protected:
             VertexLayout m_vertexLayout;
+            ConstantBufferLayout m_constantLayout;
             ResourceLayout m_resourceLayouts[PK_MAX_DESCRIPTOR_SETS];
             ShaderType m_type;
+            uint32_t m_stageFlags;
     };
 
-    class Shader : public PK::Core::Asset
+    class Shader : public Asset
     {
         friend Ref<Shader> AssetImporters::Create();
 
@@ -58,6 +58,9 @@ namespace PK::Rendering::Objects
             inline const ShaderVariant* GetVariant(uint32_t index) const { return m_variants[index].get(); }
             inline bool SupportsKeyword(const uint32_t hashId) const { return m_variantMap.SupportsKeyword(hashId); }
             inline bool SupportsKeywords(const uint32_t* hashIds, const uint32_t count) const { return m_variantMap.SupportsKeywords(hashIds, count); }
+
+            void ListVariants();
+            void ListProperties(uint32_t variantIndex);
 
             void Import(const char* filepath) override final;
 

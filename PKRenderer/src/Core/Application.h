@@ -24,6 +24,8 @@ namespace PK::Core
             template<typename T>
             inline static T* GetService() { return Get().m_services->Get<T>(); }
     
+            inline static Window* GetPrimaryWindow() { return Get().m_window.get(); }
+
         private:
             void Run();
     

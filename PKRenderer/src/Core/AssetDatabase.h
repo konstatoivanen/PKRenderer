@@ -54,14 +54,14 @@ namespace PK::Core
         bool IsValidExtension(const std::filesystem::path& extension);
 
         template<typename T>
-        Ref<T> Create();
+        [[nodiscard]] Ref<T> Create();
     };
     
     class AssetDatabase : public IService
     {
         private:
             template<typename T>
-            T* Load(const std::string& filepath, AssetID assetId)
+            [[nodiscard]] T* Load(const std::string& filepath, AssetID assetId)
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
                 PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
@@ -86,7 +86,7 @@ namespace PK::Core
             }
     
             template<typename T>
-            T* Reload(const std::string& filepath, AssetID assetId)
+            [[nodiscard]] T* Reload(const std::string& filepath, AssetID assetId)
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
                 PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
@@ -100,7 +100,7 @@ namespace PK::Core
                 }
                 else
                 {
-                    auto asset = CreateRef<T>();
+                    auto asset = AssetImporters::Create<T>();
                     collection[assetId] = asset;
                     std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
                 }
@@ -117,7 +117,7 @@ namespace PK::Core
             AssetDatabase(ECS::Sequencer* sequencer) : m_sequencer(sequencer) {}
 
             template<typename T, typename ... Args>
-            T* CreateProcedural(std::string name, Args&& ... args)
+            [[nodiscard]] T* CreateProcedural(std::string name, Args&& ... args)
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
                 auto& collection = m_assets[std::type_index(typeid(T))];
@@ -133,7 +133,7 @@ namespace PK::Core
             }
     
             template<typename T, typename ... Args>
-            T* RegisterProcedural(std::string name, Ref<T> asset)
+            [[nodiscard]] T* RegisterProcedural(std::string name, Ref<T> asset)
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
@@ -149,7 +149,7 @@ namespace PK::Core
             }
     
             template<typename T>
-            T* Find(const char* name) const
+            [[nodiscard]] T* Find(const char* name) const
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
@@ -174,7 +174,7 @@ namespace PK::Core
             }
 
             template<typename T>
-            T* TryFind(const char* name) const
+            [[nodiscard]] T* TryFind(const char* name) const
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
@@ -202,18 +202,18 @@ namespace PK::Core
             T* Load(const std::string& filepath) { return Load<T>(filepath, StringHashID::StringToID(filepath)); }
     
             template<typename T>
-            T* Load(AssetID assetId) { return Load<T>(StringHashID::IDToString(assetId), assetId); }
+            [[nodiscard]] T* Load(AssetID assetId) { return Load<T>(StringHashID::IDToString(assetId), assetId); }
     
             template<typename T>
             T* Reload(const std::string& filepath) { return Reload<T>(filepath, StringHashID::StringToID(filepath)); }
     
             template<typename T>
-            T* Reload(AssetID assetId) { return Reload<T>(StringHashID::IDToString(assetId), assetId); }
+            [[nodiscard]] T* Reload(AssetID assetId) { return Reload<T>(StringHashID::IDToString(assetId), assetId); }
     
             template<typename T>
-            void Reload(const Weak<T>& asset) 
+            void Reload(const T* asset) 
             {
-                auto assetId = asset.lock()->GetAssetID();
+                auto assetId = asset->GetAssetID();
                 Reload<T>(StringHashID::IDToString(assetId), assetId); 
             }
     
@@ -316,7 +316,7 @@ namespace PK::Core
 
                 for (auto& kv : collection)
                 {
-                    PK_CORE_LOG(StringHashID::IDToString(kv.first).c_str());
+                    PK_LOG_INFO(StringHashID::IDToString(kv.first).c_str());
                 }
             }
 
