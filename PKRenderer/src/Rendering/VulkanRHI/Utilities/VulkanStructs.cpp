@@ -291,6 +291,11 @@ namespace PK::Rendering::VulkanRHI
         VK_ASSERT_RESULT_CTX(vkCreateGraphicsPipelines(device, pipelineCache, 1, &createInfo, nullptr, &pipeline), "failed to create a graphics pipeline!");
     }
 
+    VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkComputePipelineCreateInfo& createInfo) : device(device)
+    {
+        VK_ASSERT_RESULT_CTX(vkCreateComputePipelines(device, pipelineCache, 1, &createInfo, nullptr, &pipeline), "failed to create a graphics pipeline!");
+    }
+
     VulkanPipeline::~VulkanPipeline()
     {
         vkDestroyPipeline(device, pipeline, nullptr);

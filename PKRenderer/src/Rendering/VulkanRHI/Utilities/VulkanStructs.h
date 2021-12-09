@@ -195,6 +195,7 @@ namespace PK::Rendering::VulkanRHI
     struct VulkanPipeline : public PK::Core::NoCopy 
     {
         VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo);
+        VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkComputePipelineCreateInfo& createInfo);
         ~VulkanPipeline();
 
         const VkDevice device;

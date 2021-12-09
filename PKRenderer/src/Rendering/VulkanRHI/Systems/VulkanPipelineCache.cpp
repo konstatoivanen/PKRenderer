@@ -4,12 +4,31 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
-    const VulkanPipeline* VulkanPipelineCache::GetPipeline(const PipelineKey& key)
+    const VulkanPipeline* VulkanPipelineCache::GetComputePipeline(const VulkanShader* shader)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
-        auto iterator = m_pipelines.find(key);
+        auto iterator = m_computePipelines.find(shader);
 
-        if (iterator != m_pipelines.end() && iterator->second.pipeline != nullptr)
+        if (iterator != m_computePipelines.end() && iterator->second.pipeline != nullptr)
+        {
+            iterator->second.pruneTick = nextPruneTick;
+            return iterator->second.pipeline.get();
+        }
+
+        VkComputePipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
+        pipelineInfo.stage = shader->GetModule((int)ShaderStage::Compute)->stageInfo;
+        pipelineInfo.layout = shader->GetPipelineLayout()->layout;
+        auto pipeline = CreateRef<VulkanPipeline>(m_device, VK_NULL_HANDLE, pipelineInfo);
+        m_computePipelines[shader] = { pipeline, nextPruneTick };
+        return pipeline.get();
+    }
+
+    const VulkanPipeline* VulkanPipelineCache::GetGraphicsPipeline(const PipelineKey& key)
+    {
+        auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
+        auto iterator = m_graphicsPipelines.find(key);
+
+        if (iterator != m_graphicsPipelines.end() && iterator->second.pipeline != nullptr)
         {
             iterator->second.pruneTick = nextPruneTick;
             return iterator->second.pipeline.get();
@@ -139,15 +158,15 @@ namespace PK::Rendering::VulkanRHI::Systems
         pipelineInfo.basePipelineIndex = -1;
 
         auto pipeline = CreateRef<VulkanPipeline>(m_device, VK_NULL_HANDLE, pipelineInfo);
-        m_pipelines[key] = { pipeline, nextPruneTick };
+        m_graphicsPipelines[key] = { pipeline, nextPruneTick };
         return pipeline.get();
     }
-    
+
     void VulkanPipelineCache::Prune()
     {
         m_currentPruneTick++;
 
-        for (auto& kv : m_pipelines)
+        for (auto& kv : m_graphicsPipelines)
         {
             auto& key = kv.first;
             auto& value = kv.second;

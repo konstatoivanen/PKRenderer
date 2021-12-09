@@ -1674,7 +1674,7 @@
     <None Include="res\models\MDL_Cloth.mdl" />
     <None Include="res\configs\ApplicationConfig-Active.cfg" />
     <None Include="res\configs\CommandConfig-Active.keycfg" />
-    <None Include="res\shaders\include\HLSLSupport.glsl" />
+    <None Include="res\shaders\includes\HLSLSupport.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

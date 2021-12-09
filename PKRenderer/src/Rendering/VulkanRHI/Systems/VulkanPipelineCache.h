@@ -46,12 +46,14 @@ namespace PK::Rendering::VulkanRHI::Systems
                 uint64_t pruneTick = 0;
             };
 
-            const VulkanPipeline* GetPipeline(const PipelineKey& key);
+            const VulkanPipeline* GetGraphicsPipeline(const PipelineKey& key);
+            const VulkanPipeline* GetComputePipeline(const VulkanShader* shader);
             void Prune();
 
         private:
             const VkDevice m_device;
-            std::unordered_map<PipelineKey, PipelineValue, PipelineKeyHash> m_pipelines;
+            std::unordered_map<PipelineKey, PipelineValue, PipelineKeyHash> m_graphicsPipelines;
+            std::unordered_map<const VulkanShader*, PipelineValue> m_computePipelines;
             uint64_t m_currentPruneTick = 0;
             uint64_t m_pruneDelay = 0;
     };

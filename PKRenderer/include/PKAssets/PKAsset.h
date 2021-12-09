@@ -34,6 +34,7 @@ namespace PK::Assets
 
     enum class PKAssetType : unsigned char
     {
+        Invalid,
         Shader,
         Mesh,
         Animation
@@ -185,9 +186,9 @@ namespace PK::Assets
 
     struct PKAssetHeader
     {
-        char name[PK_ASSET_NAME_MAX_LENGTH];
-        PKAssetType type;
-        bool isCompressed;
+        char name[PK_ASSET_NAME_MAX_LENGTH]{};
+        PKAssetType type = PKAssetType::Invalid;
+        bool isCompressed = false;
     };
 
     namespace Shader

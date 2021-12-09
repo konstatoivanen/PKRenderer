@@ -112,9 +112,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if ((flags & PK_RENDER_STATE_DIRTY_PIPELINE) != 0)
         {
-            auto pipeline = renderState.pipeline;
-            auto bindPoint = EnumConvert::GetPipelineBindPoint(renderState.pipelineKey.shader->GetType());
-            BindPipeline(bindPoint, pipeline->pipeline);
+            BindPipeline(EnumConvert::GetPipelineBindPoint(renderState.pipelineKey.shader->GetType()), renderState.pipeline->pipeline);
         }
 
         if ((flags & PK_RENDER_STATE_DIRTY_VERTEXBUFFERS) != 0)
@@ -145,8 +143,10 @@ namespace PK::Rendering::VulkanRHI::Objects
         vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
-    void VulkanCommandBuffer::DispatchCompute(uint3 groupCount)
+    void VulkanCommandBuffer::DispatchCompute(const ShaderVariant* shader, uint3 groupCount)
     {
+        auto vkshader = shader->GetNative<VulkanShader>();
+        BindPipeline(EnumConvert::GetPipelineBindPoint(vkshader->GetType()), renderState.GetComputePipeline(vkshader)->pipeline);
         vkCmdDispatch(commandBuffer, groupCount.x, groupCount.y, groupCount.z);
     }
 

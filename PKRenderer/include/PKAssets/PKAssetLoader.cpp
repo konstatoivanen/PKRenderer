@@ -16,12 +16,11 @@ namespace PK::Assets
 
         uint_t binOffs = *reinterpret_cast<uint_t*>(head);
         head += sizeof(uint_t);
-        
-        size_t binSize = *reinterpret_cast<uint_t*>(base);
+
+        size_t binSize = *reinterpret_cast<size_t*>(head);
         head += sizeof(size_t);
 
         auto decomp = reinterpret_cast<char*>(calloc(osize, sizeof(char)));
-
         memcpy(decomp, base, sizeof(PKAssetHeader));
 
         auto dh = 0ull;
@@ -29,12 +28,13 @@ namespace PK::Assets
         auto rn = reinterpret_cast<PKEncNode*>(head);
         auto cn = rn;
         auto comp = base + binOffs;
+        head = decomp + sizeof(PKAssetHeader);
 
         for (auto i = 0ull; i < dl; ++i)
         {
             if (cn->isLeaf)
             {
-                decomp[dh++] = cn->value;
+                head[dh++] = cn->value;
                 cn = rn;
             }
 
@@ -55,6 +55,7 @@ namespace PK::Assets
         free(asset->rawData);
         asset->rawData = decomp;
         asset->header = reinterpret_cast<PKAssetHeader*>(decomp);
+        asset->header->isCompressed = false;
     }
 
     int OpenAsset(const char* filepath, PKAsset* asset)
@@ -115,7 +116,7 @@ namespace PK::Assets
         {
             return;
         }
-        
+
         asset->header = nullptr;
         free(asset->rawData);
     }

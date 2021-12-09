@@ -36,7 +36,7 @@ namespace PK::Rendering::Objects
 
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;
-        virtual void DispatchCompute(uint3 groupCount) = 0;
+        virtual void DispatchCompute(const ShaderVariant* variant, uint3 groupCount) = 0;
         
         // @TODO Nasty dependency. Rethink this one!
         virtual void Blit(Texture* src, Window* dst, uint32_t dstLevel, uint32_t dstLayer, FilterMode filter) const = 0;

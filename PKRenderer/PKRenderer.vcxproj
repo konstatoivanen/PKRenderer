@@ -743,7 +743,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\configs\CommandConfig-Active.keycfg" />
     <None Include="res\models\MDL_Cloth.mdl" />
     <None Include="res\models\MDL_Debug.mdl" />
-    <None Include="res\shaders\include\HLSLSupport.glsl" />
+    <None Include="res\shaders\includes\HLSLSupport.glsl" />
     <None Include="res\shaders\SH_WS_Debug.shader" />
     <None Include="res\textures\T_DebugTexture.ktx2" />
   </ItemGroup>
@@ -753,7 +753,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="include\PKAssets\PKAssetLoader.cpp" />
+    <ClCompile Include="include\PKAssets\PKAssetLoader.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Core\Application.cpp" />
     <ClCompile Include="src\Core\ApplicationConfig.cpp" />
     <ClCompile Include="src\Core\CommandConfig.cpp" />

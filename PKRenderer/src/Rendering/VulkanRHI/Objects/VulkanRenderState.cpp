@@ -273,6 +273,12 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
+    const VulkanPipeline* VulkanRenderState::GetComputePipeline(const VulkanShader* shader)
+    {
+        pipelineIsDirty = true;
+        return pipelineCache->GetComputePipeline(shader);
+    }
+
     PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const VulkanExecutionGate& gate)
     {
         PK_THROW_ASSERT(pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
@@ -351,7 +357,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         if (pipelineIsDirty)
         {
             flags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-            pipeline = pipelineCache->GetPipeline(pipelineKey);
+            pipeline = pipelineCache->GetGraphicsPipeline(pipelineKey);
             pipelineIsDirty = false;
         }
 

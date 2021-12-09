@@ -56,6 +56,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         void SetResource(uint32_t nameHashId, const VulkanBindHandle* handle);
         void SetVertexBuffers(const VulkanBindHandle** handles, uint32_t count);
 
+        const VulkanPipeline* GetComputePipeline(const VulkanShader* shader);
         PKRenderStateDirtyFlags ValidatePipeline(const VulkanExecutionGate& gate);
 
         VulkanDescriptorCache* descriptorCache = nullptr;

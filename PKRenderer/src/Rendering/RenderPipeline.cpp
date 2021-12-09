@@ -15,7 +15,7 @@ namespace PK::Rendering
 
     RenderPipeline::RenderPipeline(AssetDatabase* assetDatabase, int width, int height)
     {
-        m_shader = assetDatabase->Load<Shader>("res/SH_WS_Debug.pkshader");
+        m_shader = assetDatabase->Load<Shader>("res/shaders/SH_WS_Debug.pkshader");
 
         RenderTextureDescriptor descriptor{};
         descriptor.resolution = { width, height, 1 };
@@ -26,8 +26,8 @@ namespace PK::Rendering
 
         m_uniformBuffer = Buffer::CreateUniform({ { ElementType::Float4x4, "model" }, { ElementType::Float4x4, "viewproj" }});
 
-        m_mesh = assetDatabase->Load<Mesh>("res/MDL_Cloth.pkmesh");
-        m_testTexture = assetDatabase->Load<Texture>("res/T_DebugTexture.ktx2");
+        m_mesh = assetDatabase->Load<Mesh>("res/models/MDL_Cloth.pkmesh");
+        m_testTexture = assetDatabase->Load<Texture>("res/textures/T_DebugTexture.ktx2");
 
         PK_LOG_VERBOSE("Render Pipeline Initialized!");
     }
