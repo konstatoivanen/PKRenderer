@@ -145,6 +145,11 @@ namespace PK::Rendering::VulkanRHI::Objects
         vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
+    void VulkanCommandBuffer::DispatchCompute(uint3 groupCount)
+    {
+        vkCmdDispatch(commandBuffer, groupCount.x, groupCount.y, groupCount.z);
+    }
+
     void VulkanCommandBuffer::Blit(Texture* src, Window* dst, uint32_t dstLevel, uint32_t dstLayer, FilterMode filter) const
     {
         auto vksrc = src->GetNative<VulkanTexture>();
@@ -207,6 +212,55 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         TransitionImageLayout(VulkanLayoutTransition(src.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src.layout, srcRange));
         TransitionImageLayout(VulkanLayoutTransition(dst.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dst.layout, dstRange));
+    }
+
+    void VulkanCommandBuffer::Barrier(const Texture* texture, const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) const
+    {
+        VkImageMemoryBarrier imageBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+        VkMemoryBarrier memoryBarrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+        VkBufferMemoryBarrier bufferBarrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
+
+        if (texture != nullptr)
+        {
+            auto vktex = texture->GetNative<VulkanTexture>();
+            auto vkrawtex = vktex->GetRaw();
+            imageBarrier.oldLayout = imageBarrier.newLayout = vktex->GetImageLayout();
+            imageBarrier.image = vkrawtex->image;
+            imageBarrier.subresourceRange.aspectMask = vkrawtex->aspect;
+            imageBarrier.subresourceRange.levelCount = vkrawtex->levels;
+            imageBarrier.subresourceRange.layerCount = vkrawtex->layers;
+        }
+
+        if (buffer != nullptr)
+        {
+            auto vkbuff = buffer->GetNative<VulkanBuffer>()->GetRaw();
+            bufferBarrier.buffer = vkbuff->buffer;
+            bufferBarrier.size = vkbuff->capacity;
+        }
+
+        if (texture == nullptr && buffer == nullptr)
+        {
+            memoryBarrier.srcAccessMask;
+            memoryBarrier.dstAccessMask;
+        }
+
+        imageBarrier.srcQueueFamilyIndex = bufferBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageBarrier.dstQueueFamilyIndex = bufferBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        memoryBarrier.srcAccessMask = imageBarrier.srcAccessMask = bufferBarrier.srcAccessMask = EnumConvert::GetAccessFlags(srcFlags);
+        memoryBarrier.dstAccessMask = imageBarrier.dstAccessMask = bufferBarrier.dstAccessMask = EnumConvert::GetAccessFlags(dstFlags);
+
+        PipelineBarrier
+        (
+            EnumConvert::GetPipelineStageFlags(srcFlags),
+            EnumConvert::GetPipelineStageFlags(dstFlags),
+            0,
+            texture == nullptr && buffer == nullptr ? 1u : 0u,
+            &memoryBarrier,
+            buffer != nullptr ? 1u : 0u,
+            &bufferBarrier,
+            texture != nullptr ? 1u : 0u,
+            &imageBarrier
+        );
     }
 }
 

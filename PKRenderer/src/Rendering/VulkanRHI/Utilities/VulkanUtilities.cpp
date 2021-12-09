@@ -117,15 +117,18 @@ namespace PK::Rendering::VulkanRHI::Utilities
 
     QueueFamilies VulkanGetPhysicalDeviceQueueFamilyIndices(VkPhysicalDevice device, VkSurfaceKHR surface)
     {
-        QueueFamilies indices;
+        QueueFamilies indices{};
 
         auto queueFamilies = PK::Rendering::VulkanRHI::Utilities::VulkanGetPhysicalDeviceQueueFamilyProperties(device);
 
         for (auto i = 0u; i < queueFamilies.size(); ++i)
         {
-            if (queueFamilies.at(i).queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            if ((queueFamilies.at(i).queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) == (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))
             {
                 indices[QueueType::Graphics].index = i;
+            
+                // @TODO consider a separate queue for compute
+                indices[QueueType::Compute].index = i;
             }
 
             VkBool32 presentSupport = false;

@@ -741,10 +741,11 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="libs\VulkanMemoryAllocatord.pdb" />
     <None Include="res\configs\ApplicationConfig-Active.cfg" />
     <None Include="res\configs\CommandConfig-Active.keycfg" />
-    <None Include="res\MDL_Cloth.mdl" />
-    <None Include="res\MDL_Debug.mdl" />
-    <None Include="res\SH_WS_Debug.shader" />
-    <None Include="res\T_DebugTexture.ktx2" />
+    <None Include="res\models\MDL_Cloth.mdl" />
+    <None Include="res\models\MDL_Debug.mdl" />
+    <None Include="res\shaders\include\HLSLSupport.glsl" />
+    <None Include="res\shaders\SH_WS_Debug.shader" />
+    <None Include="res\textures\T_DebugTexture.ktx2" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp" />

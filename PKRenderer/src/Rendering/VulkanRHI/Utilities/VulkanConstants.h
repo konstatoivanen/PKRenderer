@@ -4,7 +4,7 @@
 
 namespace PK::Rendering::VulkanRHI
 {
-    constexpr const static uint32_t PK_QUEUE_FAMILY_COUNT = 2;
+    constexpr const static uint32_t PK_QUEUE_FAMILY_COUNT = 3;
     constexpr const static uint32_t PK_INVALID_QUEUE_FAMILY = 0xFFFFFFFF;
 
     constexpr static const int VK_REQUIRED_VERSION_MAJOR = 1;

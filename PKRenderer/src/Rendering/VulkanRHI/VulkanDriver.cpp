@@ -65,7 +65,12 @@ namespace PK::Rendering::VulkanRHI
         float queuePriority = 1.0f;
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-        std::set<uint32_t> uniqueQueueFamilies = { queueFamilies[QueueType::Graphics].index, queueFamilies[QueueType::Present].index };
+        std::set<uint32_t> uniqueQueueFamilies = 
+        { 
+            queueFamilies[QueueType::Graphics].index, 
+            queueFamilies[QueueType::Compute].index, 
+            queueFamilies[QueueType::Present].index 
+        };
 
         for (auto queueFamily : uniqueQueueFamilies)
         {

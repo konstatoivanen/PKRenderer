@@ -754,4 +754,139 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
 
         return VK_FRONT_FACE_MAX_ENUM;
     }
+    
+    VkPipelineStageFlagBits GetPipelineStageFlags(MemoryAccessFlags flags)
+    {
+        /*
+            @TODO add support for these later
+
+            VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT = 0x00000010,
+            VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT = 0x00000020,
+            VK_PIPELINE_STAGE_TRANSFER_BIT = 0x00001000,
+            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT = 0x00002000,
+        */
+
+        uint32_t outflags = 0u;
+
+        if ((flags & MemoryAccessFlags::StageIndirect) != 0)
+        {
+            outflags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::StageVertexInput) != 0)
+        {
+            outflags |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::StageVertex) != 0)
+        {
+            outflags |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::StageGeometry) != 0)
+        {
+            outflags |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::StageFragment) != 0)
+        {
+            outflags |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::StageCompute) != 0)
+        {
+            outflags |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::StageDepthStencil) != 0)
+        {
+            outflags |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::StageDepthStencilOut) != 0)
+        {
+            outflags |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::StageColorOut) != 0)
+        {
+            outflags |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        }
+
+        if (flags == 0)
+        {
+            outflags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        }
+
+        return (VkPipelineStageFlagBits)outflags;
+    }
+
+    VkAccessFlagBits GetAccessFlags(MemoryAccessFlags flags)
+    {
+        /*
+            @TODO Add support for these later
+
+            VK_ACCESS_INPUT_ATTACHMENT_READ_BIT = 0x00000010,
+            VK_ACCESS_TRANSFER_READ_BIT = 0x00000800,
+            VK_ACCESS_TRANSFER_WRITE_BIT = 0x00001000,
+            VK_ACCESS_HOST_READ_BIT = 0x00002000,
+            VK_ACCESS_HOST_WRITE_BIT = 0x00004000,
+            VK_ACCESS_MEMORY_READ_BIT = 0x00008000,
+            VK_ACCESS_MEMORY_WRITE_BIT = 0x00010000,
+        */
+
+        uint32_t outflags = 0u;
+
+        if ((flags & MemoryAccessFlags::ReadShader) != 0)
+        {
+            outflags |= VK_ACCESS_SHADER_READ_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::ReadUniform) != 0)
+        {
+            outflags |= VK_ACCESS_UNIFORM_READ_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::ReadVertex) != 0)
+        {
+            outflags |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::ReadIndex) != 0)
+        {
+            outflags |= VK_ACCESS_INDEX_READ_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::ReadIndirect) != 0)
+        {
+            outflags |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::ReadRTColor) != 0)
+        {
+            outflags |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::ReadRTDepth) != 0)
+        {
+            outflags |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::WriteShader) != 0)
+        {
+            outflags |= VK_ACCESS_SHADER_WRITE_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::WriteRTColor) != 0)
+        {
+            outflags |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        }
+
+        if ((flags & MemoryAccessFlags::WriteRTDepth) != 0)
+        {
+            outflags |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        }
+
+        return (VkAccessFlagBits)outflags;
+    }
 }

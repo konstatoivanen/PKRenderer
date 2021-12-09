@@ -24,7 +24,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             VkImageLayout GetImageLayout() const { return EnumConvert::GetImageLayout(m_descriptor.usage); }
             VkImageAspectFlags GetAspectFlags() const { return m_rawImage->aspect; }
             VkFormat GetNativeFormat() const { return m_rawImage->format; }
-            const SamplerDescriptor& GetSamplerDescriptor() const { return m_descriptor.sampler; }
+            const VulkanRawImage* GetRaw() const { return m_rawImage.get(); }
             const VulkanImageView* GetDefaultView() const { return m_imageViews.at({ m_defaultViewRange, false }).get(); }
             const VulkanImageView* GetAttachmentView() { return GetView(m_defaultViewRange, true); }
             const VulkanRenderTarget GetRenderTarget();

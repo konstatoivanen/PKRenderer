@@ -13,6 +13,7 @@ namespace PK::Rendering::VulkanRHI
     enum class QueueType : uint32_t
     {
         Graphics,
+        Compute,
         Present
     };
     

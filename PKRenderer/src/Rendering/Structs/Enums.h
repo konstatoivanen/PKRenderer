@@ -69,17 +69,17 @@ namespace PK::Rendering::Structs
         Border
     };
 
-    typedef enum ColorMask
+    enum class ColorMask
     {
-        PK_COLOR_MASK_NONE = 0,
-        PK_COLOR_MASK_R = 0x00000001,
-        PK_COLOR_MASK_G = 0x00000002,
-        PK_COLOR_MASK_B = 0x00000004,
-        PK_COLOR_MASK_A = 0x00000008,
-        PK_COLOR_MASK_RG = PK_COLOR_MASK_R | PK_COLOR_MASK_G,
-        PK_COLOR_MASK_RGB = PK_COLOR_MASK_RG | PK_COLOR_MASK_B,
-        PK_COLOR_MASK_RGBA = PK_COLOR_MASK_RGB | PK_COLOR_MASK_A,
-    } ColorMask;
+        NONE = 0,
+        R = 0x00000001,
+        G = 0x00000002,
+        B = 0x00000004,
+        A = 0x00000008,
+        RG = R | G,
+        RGB = RG | B,
+        RGBA = RGB | A,
+    };
 
     enum class FrontFace : uint8_t
     {
@@ -116,6 +116,36 @@ namespace PK::Rendering::Structs
         PerInstance
     };
 
+    enum class MemoryAccessFlags
+    {
+        None                 = 0,
+        StageIndirect        = 1 << 0,
+        StageVertexInput     = 1 << 1,
+        StageVertex          = 1 << 2,
+        StageGeometry        = 1 << 3,
+        StageFragment        = 1 << 4,
+        StageCompute         = 1 << 5,
+        StageDepthStencil    = 1 << 6,
+        StageDepthStencilOut = 1 << 7,
+        StageColorOut        = 1 << 8,
+        
+        ReadShader   = 1 << 9,
+        ReadUniform  = 1 << 10,
+        ReadVertex   = 1 << 11,
+        ReadIndex    = 1 << 12,
+        ReadIndirect = 1 << 13,
+        ReadRTColor  = 1 << 14,
+        ReadRTDepth  = 1 << 15,
+
+        WriteShader  = 1 << 16,
+        WriteRTColor = 1 << 17,
+        WriteRTDepth = 1 << 18,
+
+        ReadWriteShader = ReadShader | WriteShader,
+        ReadWriteRTColor = ReadRTColor | WriteRTColor,
+        ReadWriteRTDepth = ReadRTDepth | WriteRTDepth,
+    };
+
     enum class BufferUsage : uint8_t
     {
         None = 0x0,
@@ -126,9 +156,6 @@ namespace PK::Rendering::Structs
         Storage = 0x10,
         Dynamic = 0x20,
     };
-
-    static constexpr BufferUsage operator | (const BufferUsage& a, const BufferUsage& b) { return (BufferUsage)((uint32_t)a | (uint32_t)b); }
-    static constexpr BufferUsage operator & (const BufferUsage& a, const BufferUsage& b) { return (BufferUsage)((uint32_t)a & (uint32_t)b); }
 
     enum class TextureUsage : uint8_t
     {
@@ -144,9 +171,20 @@ namespace PK::Rendering::Structs
         RTDepthSample = RTDepth | Sample
     };
 
-    static constexpr TextureUsage operator | (const TextureUsage& a, const TextureUsage& b) { return (TextureUsage)((uint32_t)a | (uint32_t)b); }
-    static constexpr TextureUsage operator & (const TextureUsage& a, const TextureUsage& b) { return (TextureUsage)((uint32_t)a & (uint32_t)b); }
+    #define PK_DECLARE_ENUM_OPERATORS(Type) \
+    static constexpr Type operator | (const Type& a, const Type& b) { return (Type)((uint32_t)a | (uint32_t)b); } \
+    static constexpr Type operator & (const Type& a, const Type& b) { return (Type)((uint32_t)a & (uint32_t)b); } \
+    static constexpr Type operator & (const Type& a, const int& b) { return (Type)((uint32_t)a & (uint32_t)b); } \
+    static constexpr bool operator == (const Type& a, const int& b) { return (uint32_t)a == b; } \
+    static constexpr bool operator != (const Type& a, const int& b) { return (uint32_t)a != b; } \
 
+    PK_DECLARE_ENUM_OPERATORS(ColorMask)
+    PK_DECLARE_ENUM_OPERATORS(MemoryAccessFlags)
+    PK_DECLARE_ENUM_OPERATORS(BufferUsage)
+    PK_DECLARE_ENUM_OPERATORS(TextureUsage)
+
+    #undef PK_DECLARE_ENUM_OPERATORS
+    
     enum class TextureFormat : uint16_t 
     {
         Invalid = 0,

@@ -165,7 +165,7 @@ namespace PK::Assets
         OneMinusConstAlpha,
     };
 
-    enum class PKBlendOp
+    enum class PKBlendOp 
     {
         None,
         Add,
@@ -175,10 +175,19 @@ namespace PK::Assets
         Max,
     };
 
+    struct PKEncNode
+    {
+        RelativePtr<PKEncNode> left;
+        RelativePtr<PKEncNode> right;
+        char value;
+        bool isLeaf;
+    };
+
     struct PKAssetHeader
     {
         char name[PK_ASSET_NAME_MAX_LENGTH];
         PKAssetType type;
+        bool isCompressed;
     };
 
     namespace Shader

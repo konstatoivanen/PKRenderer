@@ -23,7 +23,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             bool Validate(size_t count) override final;
 
             size_t GetCapacity() const override final { return m_rawBuffer->capacity; }
-
+            const VulkanRawBuffer* GetRaw() const { return m_rawBuffer.get(); }
             const VulkanBindHandle* GetBindHandle() const;
 
         private:

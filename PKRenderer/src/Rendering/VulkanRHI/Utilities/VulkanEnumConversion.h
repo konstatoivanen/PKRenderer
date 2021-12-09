@@ -34,4 +34,6 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
     VkBlendFactor GetBlendFactor(BlendFactor factor, VkBlendFactor fallback);
     VkCullModeFlagBits GetCullMode(CullMode op);
     VkFrontFace GetFrontFace(FrontFace face);
+    VkPipelineStageFlagBits GetPipelineStageFlags(MemoryAccessFlags flags);
+    VkAccessFlagBits GetAccessFlags(MemoryAccessFlags flags);
 }

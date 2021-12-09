@@ -64,4 +64,25 @@ namespace PK::Rendering::Objects
         sm = mesh->GetSubmesh(submesh);
         DrawIndexed(sm.count, 1, sm.offset, 0, 0);
     }
+
+    void CommandBuffer::DispatchCompute(Shader* shader, uint variantIndex, uint3 groupCount)
+    {
+        SetShader(shader, variantIndex);
+        DispatchCompute(groupCount);
+    }
+
+    void CommandBuffer::Barrier(const Texture* texture, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) const
+    {
+        Barrier(texture, nullptr, srcFlags, dstFlags);
+    }
+
+    void CommandBuffer::Barrier(const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) const
+    {
+        Barrier(nullptr, buffer, srcFlags, dstFlags);
+    }
+
+    void CommandBuffer::Barrier(MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) const
+    {
+        Barrier(nullptr, nullptr, srcFlags, dstFlags);
+    }
 }

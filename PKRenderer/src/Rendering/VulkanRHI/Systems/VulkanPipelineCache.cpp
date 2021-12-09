@@ -98,7 +98,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             blendAttachments[i].srcAlphaBlendFactor = EnumConvert::GetBlendFactor(key.fixedFunctionState.blending.srcAlphaFactor, VK_BLEND_FACTOR_ONE);
             blendAttachments[i].dstAlphaBlendFactor = EnumConvert::GetBlendFactor(key.fixedFunctionState.blending.dstAlphaFactor, VK_BLEND_FACTOR_ZERO);
             blendAttachments[i].alphaBlendOp = EnumConvert::GetBlendOp(key.fixedFunctionState.blending.alphaOp);
-            blendAttachments[i].colorWriteMask = key.fixedFunctionState.blending.colorMask & 0xF;
+            blendAttachments[i].colorWriteMask = (VkColorComponentFlagBits)key.fixedFunctionState.blending.colorMask & 0xF;
         }
 
         VkPipelineColorBlendStateCreateInfo colorBlending{ VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
