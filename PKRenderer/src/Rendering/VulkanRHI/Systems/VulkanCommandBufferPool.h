@@ -13,7 +13,7 @@ namespace PK::Rendering::VulkanRHI::Systems
     class VulkanCommandBufferPool 
     {
         public:
-            VulkanCommandBufferPool(const VkDevice device, const VulkanRenderState& renderState, uint32_t queueFamilyIndex);
+            VulkanCommandBufferPool(const VkDevice device, const VulkanSystemContext& systems, uint32_t queueFamilyIndex);
             ~VulkanCommandBufferPool();
     
             VulkanCommandBuffer* GetCurrent();
@@ -27,6 +27,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             const VkDevice m_device;
             VkQueue m_queue;
             VkCommandPool m_pool;
+            VulkanRenderState m_primaryRenderState;
             VulkanCommandBuffer m_commandBuffers[MAX_PRIMARY_COMMANDBUFFERS] = {};
             Ref<VulkanSemaphore> m_renderingFinishedSignals[MAX_PRIMARY_COMMANDBUFFERS] = {};
 

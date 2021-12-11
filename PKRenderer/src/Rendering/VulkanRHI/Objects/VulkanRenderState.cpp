@@ -1,66 +1,75 @@
 #include "PrecompiledHeader.h"
 #include "VulkanRenderState.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
+#include "Rendering/VulkanRHI/VulkanDriver.h"
+#include "Rendering/GraphicsAPI.h"
 #include "Utilities/Log.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
     void VulkanRenderState::Reset()
     {
-        memset(descriptorSetKeys, 0, sizeof(descriptorSetKeys));
-        memset(&pipelineKey, 0, sizeof(PipelineKey));
-        memset(&frameBufferKey, 0, sizeof(FrameBufferKey));
-        memset(&renderPassKey, 0, sizeof(RenderPassKey));
-        memset(&descriptorsDirty, 0, sizeof(descriptorsDirty));
+        memset(m_descriptorSetKeys, 0, sizeof(m_descriptorSetKeys));
+        memset(&m_pipelineKey, 0, sizeof(PipelineKey));
+        memset(&m_frameBufferKey, 0, sizeof(FrameBufferKey));
+        memset(&m_renderPassKey, 0, sizeof(RenderPassKey));
 
-        pipelineKey.fixedFunctionState = FixedFunctionState();
-        renderPass = nullptr;
-        pipeline = nullptr;
-        frameBuffer = nullptr;
-        pipelineIsDirty = true;
-        vertexBuffersDirty = true;
+        m_pipelineKey.fixedFunctionState = FixedFunctionState();
+        m_renderPass = nullptr;
+        m_pipeline = nullptr;
+        m_frameBuffer = nullptr;
+        m_dirtyFlags = PK_RENDER_STATE_DIRTY_PIPELINE | PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
 
-        frameBufferKey.layers = 1;
-        renderPassKey.samples = 1;
-        pipelineKey.primitiveRestart = VK_FALSE;
-        pipelineKey.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        m_frameBufferKey.layers = 1;
+        m_renderPassKey.samples = 1;
+        m_pipelineKey.primitiveRestart = VK_FALSE;
+        m_pipelineKey.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     }
 
-    void VulkanRenderState::PrepareRenderPass()
+    VkRenderPassBeginInfo VulkanRenderState::PrepareRenderPass()
     {
-        renderPass = frameBufferCache->GetRenderPass(renderPassKey);
-        frameBufferKey.renderPass = renderPass->renderPass;
-        frameBuffer = frameBufferCache->GetFrameBuffer(frameBufferKey);   
-        pipelineKey.renderPass = renderPass->renderPass;
-        pipelineIsDirty = true;
+        m_renderPass = m_frameBufferCache->GetRenderPass(m_renderPassKey);
+        m_frameBufferKey.renderPass = m_renderPass->renderPass;
+        m_frameBuffer = m_frameBufferCache->GetFrameBuffer(m_frameBufferKey);
+
+        m_pipelineKey.renderPass = m_renderPass->renderPass;
+        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
         
         for (auto i = 0u; i < PK_MAX_RENDER_TARGETS; ++i)
         {
-            if (renderPassKey.colors[i].format == VK_FORMAT_UNDEFINED)
+            if (m_renderPassKey.colors[i].format == VK_FORMAT_UNDEFINED)
             {
-                pipelineKey.fixedFunctionState.colorTargetCount = i;
-                clearValueCount = i;
-                clearValues[i] = clearValues[PK_MAX_RENDER_TARGETS];
+                m_pipelineKey.fixedFunctionState.colorTargetCount = i;
+                m_clearValueCount = i;
+                m_clearValues[i] = m_clearValues[PK_MAX_RENDER_TARGETS];
                 break;
             }
         }
 
-        if (renderPassKey.depth.format != VK_FORMAT_UNDEFINED)
+        if (m_renderPassKey.depth.format != VK_FORMAT_UNDEFINED)
         {
-            clearValueCount++;
+            m_clearValueCount++;
         }
+
+        VkRenderPassBeginInfo renderPassInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+        renderPassInfo.renderPass = m_renderPass->renderPass;
+        renderPassInfo.framebuffer = m_frameBuffer->frameBuffer;
+        renderPassInfo.renderArea = m_renderArea;
+        renderPassInfo.clearValueCount = m_clearValueCount;
+        renderPassInfo.pClearValues = m_clearValues;
+        return renderPassInfo;
     }
 
     void VulkanRenderState::SetRenderTarget(const VulkanRenderTarget& renderTarget, uint32_t index)
     {
-        renderPassKey.samples = renderTarget.samples;
-        frameBufferKey.layers = renderTarget.layers;
-        frameBufferKey.extent = { renderTarget.extent.width, renderTarget.extent.height };
+        m_renderPassKey.samples = renderTarget.samples;
+        m_frameBufferKey.layers = renderTarget.layers;
+        m_frameBufferKey.extent = { renderTarget.extent.width, renderTarget.extent.height };
 
-        renderArea = { {}, { renderTarget.extent.width, renderTarget.extent.height } };
+        m_renderArea = { {}, { renderTarget.extent.width, renderTarget.extent.height } };
 
         auto isDepth = EnumConvert::IsDepthFormat(renderTarget.format);
-        auto attachment = isDepth ? &renderPassKey.depth : (renderPassKey.colors + index);
+        auto attachment = isDepth ? &m_renderPassKey.depth : (m_renderPassKey.colors + index);
         attachment->format = renderTarget.format;
         attachment->layout = renderTarget.layout;
         attachment->loadop = LoadOp::Keep;
@@ -69,180 +78,93 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if (isDepth)
         {
-            frameBufferKey.depth = renderTarget.view;
+            m_frameBufferKey.depth = renderTarget.view;
         }
         else
         {
-            frameBufferKey.color[index] = renderTarget.view;
+            m_frameBufferKey.color[index] = renderTarget.view;
         }
     }
 
     void VulkanRenderState::SetResolveTarget(const VulkanRenderTarget& renderTarget, uint32_t index)
     {
-        frameBufferKey.resolve[index] = renderTarget.view;
-        renderPassKey.colors[index].resolve = true;
+        m_frameBufferKey.resolve[index] = renderTarget.view;
+        m_renderPassKey.colors[index].resolve = true;
     }
 
     void VulkanRenderState::SetRenderArea(const VkRect2D& rect)
     {
-        renderArea = rect;
+        m_renderArea = rect;
     }
     
     void VulkanRenderState::ClearColor(const color& color, uint32_t index)
     {
-        renderPassKey.colors[index].loadop = LoadOp::Clear;
-        clearValues[index].color.float32[0] = color.r;
-        clearValues[index].color.float32[1] = color.g;
-        clearValues[index].color.float32[2] = color.b;
-        clearValues[index].color.float32[3] = color.a;
+        m_renderPassKey.colors[index].loadop = LoadOp::Clear;
+        m_clearValues[index].color.float32[0] = color.r;
+        m_clearValues[index].color.float32[1] = color.g;
+        m_clearValues[index].color.float32[2] = color.b;
+        m_clearValues[index].color.float32[3] = color.a;
     }
     
     void VulkanRenderState::ClearDepth(float depth, uint32_t stencil)
     {
-        renderPassKey.depth.loadop = LoadOp::Clear;
-        clearValues[PK_MAX_RENDER_TARGETS].depthStencil.depth = depth;
-        clearValues[PK_MAX_RENDER_TARGETS].depthStencil.stencil = stencil;
+        m_renderPassKey.depth.loadop = LoadOp::Clear;
+        m_clearValues[PK_MAX_RENDER_TARGETS].depthStencil.depth = depth;
+        m_clearValues[PK_MAX_RENDER_TARGETS].depthStencil.stencil = stencil;
     }
     
     void VulkanRenderState::DiscardColor(uint32_t index)
     {
-        renderPassKey.colors[index].loadop = LoadOp::Discard;
+        m_renderPassKey.colors[index].loadop = LoadOp::Discard;
     }
 
     void VulkanRenderState::DiscardDepth()
     {
-        renderPassKey.depth.loadop = LoadOp::Discard;
+        m_renderPassKey.depth.loadop = LoadOp::Discard;
     }
 
     void VulkanRenderState::SetShader(const VulkanShader* shader)
     {
-        if (pipelineKey.shader == shader)
+        if (m_pipelineKey.shader != shader)
         {
-            return;
-        }
-
-        pipelineIsDirty = true;
-        pipelineKey.shader = shader;
-
-        auto index = 0u;
-
-        for (const auto& element : shader->GetVertexLayout())
-        {
-            auto* attribute = pipelineKey.vertexAttributes + index++;
-            auto format = EnumConvert::GetFormat(element.Type);
-
-            if (attribute->location != element.Location ||
-                attribute->format != format)
-            {
-                vertexBuffersDirty = true;
-                attribute->location = element.Location;
-                attribute->format = format;
-            }
-        }
-
-        for (; index < PK_MAX_VERTEX_ATTRIBUTES; ++index)
-        {
-            // Attribute count changed
-            if (pipelineKey.vertexAttributes[index].format != VK_FORMAT_UNDEFINED)
-            {
-                vertexBuffersDirty = true;
-                pipelineKey.vertexAttributes[index] = {};
-            }
-        }
-
-        for (auto i = 0; i < PK_MAX_DESCRIPTOR_SETS; ++i)
-        {
-            if (shader->GetDescriptorSetLayout(i) == nullptr)
-            {
-                continue;
-            }
-
-            index = 0u;
-
-            for (const auto& element : shader->GetResourceLayout(i))
-            {
-                auto* binding = descriptorSetKeys[i].bindings + index++;
-
-                if (binding->binding != element.Binding ||
-                    binding->count != element.Count ||
-                    binding->type != element.Type)
-                {
-                    descriptorsDirty[i] = true;
-                    binding->binding = element.Binding;
-                    binding->count = element.Count;
-                    binding->type = element.Type;
-                }
-            }
-
-            for (; index < PK_MAX_DESCRIPTORS_PER_SET; ++index)
-            {
-                // Binding count changed
-                if (descriptorSetKeys[i].bindings[index].count != 0)
-                {
-                    descriptorsDirty[i] = true;
-                    descriptorSetKeys[i].bindings[index] = {};
-                }
-            }
+            m_pipelineKey.shader = shader;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE | PK_RENDER_STATE_DIRTY_SHADER;
         }
     }
 
     void VulkanRenderState::SetBlending(const BlendParameters& blend)
     {
-        if (memcmp(&pipelineKey.fixedFunctionState.blending, &blend, sizeof(BlendParameters)) != 0)
+        if (memcmp(&m_pipelineKey.fixedFunctionState.blending, &blend, sizeof(BlendParameters)) != 0)
         {
-            pipelineKey.fixedFunctionState.blending = blend;
-            pipelineIsDirty = true;
+            m_pipelineKey.fixedFunctionState.blending = blend;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
         }
     }
 
     void VulkanRenderState::SetRasterization(const RasterizationParameters& rasterization)
     {
-        if (memcmp(&pipelineKey.fixedFunctionState.rasterization, &rasterization, sizeof(RasterizationParameters)) != 0)
+        if (memcmp(&m_pipelineKey.fixedFunctionState.rasterization, &rasterization, sizeof(RasterizationParameters)) != 0)
         {
-            pipelineKey.fixedFunctionState.rasterization = rasterization;
-            pipelineIsDirty = true;
+            m_pipelineKey.fixedFunctionState.rasterization = rasterization;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
         }
     }
 
     void VulkanRenderState::SetDepthStencil(const DepthStencilParameters& depthStencil)
     {
-        if (memcmp(&pipelineKey.fixedFunctionState.depthStencil, &depthStencil, sizeof(DepthStencilParameters)) != 0)
+        if (memcmp(&m_pipelineKey.fixedFunctionState.depthStencil, &depthStencil, sizeof(DepthStencilParameters)) != 0)
         {
-            pipelineKey.fixedFunctionState.depthStencil = depthStencil;
-            pipelineIsDirty = true;
+            m_pipelineKey.fixedFunctionState.depthStencil = depthStencil;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
         }
     }
 
     void VulkanRenderState::SetMultisampling(const MultisamplingParameters& multisampling)
     {
-        if (memcmp(&pipelineKey.fixedFunctionState.multisampling, &multisampling, sizeof(MultisamplingParameters)) != 0)
+        if (memcmp(&m_pipelineKey.fixedFunctionState.multisampling, &multisampling, sizeof(MultisamplingParameters)) != 0)
         {
-            pipelineKey.fixedFunctionState.multisampling = multisampling;
-            pipelineIsDirty = true;
-        }
-    }
-
-    void VulkanRenderState::SetResource(uint32_t nameHashId, const VulkanBindHandle* handle)
-    {
-        if (pipelineKey.shader == nullptr)
-        {
-            return;
-        }
-
-        for (auto i = 0; i < PK_MAX_DESCRIPTOR_SETS; ++i)
-        {
-            uint32_t index;
-            
-            if (!pipelineKey.shader->GetResourceLayout(i).TryGetElement(nameHashId, &index))
-            {
-                continue;
-            }
-
-            if (descriptorSetKeys[i].bindings[index].handle != handle)
-            {
-                descriptorSetKeys[i].bindings[index].handle = handle;
-                descriptorsDirty[i] = true;
-            }
+            m_pipelineKey.fixedFunctionState.multisampling = multisampling;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
         }
     }
 
@@ -256,111 +178,217 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             PK_THROW_ASSERT(handle != nullptr, "Passing null vertex buffer is not allowed!");
 
-            if (handle != vertexBuffers[i])
+            if (handle != m_vertexBuffers[i])
             {
-                vertexBuffers[i] = handle;
-                vertexBuffersRaw[i] = handle->buffer;
-                vertexBuffersDirty = true;
+                m_vertexBuffers[i] = handle;
+                m_dirtyFlags |= PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
             }
         }
 
-        vertexBufferBindCount = i;
-
         if (i < PK_MAX_VERTEX_ATTRIBUTES)
         {
-            memset(vertexBuffers + i, 0, sizeof(vertexBuffers[0]) * (PK_MAX_VERTEX_ATTRIBUTES - i));
-            memset(vertexBuffersRaw + i, 0, sizeof(vertexBuffersRaw[0]) * (PK_MAX_VERTEX_ATTRIBUTES - i));
+            memset(m_vertexBuffers + i, 0, sizeof(m_vertexBuffers[0]) * (PK_MAX_VERTEX_ATTRIBUTES - i));
         }
     }
 
-    const VulkanPipeline* VulkanRenderState::GetComputePipeline(const VulkanShader* shader)
+    VulkanVertexBufferBundle VulkanRenderState::GetVertexBufferBundle()
     {
-        pipelineIsDirty = true;
-        return pipelineCache->GetComputePipeline(shader);
+        VulkanVertexBufferBundle bundle{};
+
+        auto i = 0u;
+
+        for (; i < PK_MAX_VERTEX_ATTRIBUTES; ++i)
+        {
+            auto handle = m_vertexBuffers[i];
+
+            if (handle == nullptr)
+            {
+                break;
+            }
+
+            bundle.buffers[i] = handle->buffer;
+        }
+
+        bundle.count = i;
+
+        return bundle;
+    }
+
+    void VulkanRenderState::ValidateVertexBuffers()
+    {
+        auto shader = m_pipelineKey.shader;
+        auto shaderType = shader->GetType();
+
+        if (shaderType != ShaderType::Graphics)
+        {
+            return;
+        }
+
+        auto index = 0u;
+
+        if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_SHADER)
+        {
+            for (const auto& element : shader->GetVertexLayout())
+            {
+                auto* attribute = m_pipelineKey.vertexAttributes + index++;
+                auto format = EnumConvert::GetFormat(element.Type);
+
+                if (attribute->location != element.Location ||
+                    attribute->format != format)
+                {
+                    m_dirtyFlags |= PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
+                    attribute->location = element.Location;
+                    attribute->format = format;
+                }
+            }
+
+            for (; index < PK_MAX_VERTEX_ATTRIBUTES; ++index)
+            {
+                // Attribute count changed
+                if (m_pipelineKey.vertexAttributes[index].format != VK_FORMAT_UNDEFINED)
+                {
+                    m_dirtyFlags |= PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
+                    m_pipelineKey.vertexAttributes[index] = {};
+                }
+            }
+        }
+
+        if ((m_dirtyFlags & PK_RENDER_STATE_DIRTY_VERTEXBUFFERS) == 0)
+        {
+            return;
+        }
+
+        const auto& vertexLayout = shader->GetVertexLayout();
+
+        for (auto i = 0u; i < PK_MAX_VERTEX_ATTRIBUTES; ++i)
+        {
+            auto vertexBuffer = m_vertexBuffers[i];
+            auto bufferAttribute = &m_pipelineKey.vertexBuffers[i];
+            
+            if (vertexBuffer == nullptr)
+            {
+                // Buffer count changed!
+                if (bufferAttribute->stride != 0)
+                {
+                    m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+                }
+
+                *bufferAttribute = {};
+                break;
+            }
+
+            const auto& bufferLayout = *vertexBuffer->bufferLayout;
+            auto stride = bufferLayout.GetStride();
+            
+            bufferAttribute->binding = i;
+        
+            if (bufferAttribute->inputRate != vertexBuffer->inputRate || bufferAttribute->stride != stride)
+            {
+                bufferAttribute->inputRate = vertexBuffer->inputRate;
+                bufferAttribute->stride = stride;
+                m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+            }
+
+            for (const auto& element : bufferLayout)
+            {
+                uint32_t elementIdx = 0u;
+                auto* velement = vertexLayout.TryGetElement(element.NameHashId, &elementIdx);
+
+                if (velement == nullptr)
+                {
+                    continue;
+                }
+
+                auto* attribute = &m_pipelineKey.vertexAttributes[elementIdx];
+
+                if (attribute->format == EnumConvert::GetFormat(element.Type) && (attribute->binding != i || attribute->offset != element.Offset))
+                {
+                    m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+                    attribute->binding = i;
+                    attribute->offset = element.Offset;
+                }
+            }
+        }
+    }
+
+    void VulkanRenderState::ValidateDescriptorSets(const VulkanExecutionGate& gate)
+    {
+        auto shader = m_pipelineKey.shader;
+        auto setIndex = 0u;
+        auto index = 0u;
+
+        for (auto i = 0; i < PK_MAX_DESCRIPTOR_SETS; ++i)
+        {
+            if (shader->GetDescriptorSetLayout(i) == nullptr)
+            {
+                continue;
+            }
+
+            m_descriptorSetIndices[i] = setIndex++;
+
+            const VulkanBindHandle* handle = nullptr;
+            index = 0u;
+
+            for (const auto& element : shader->GetResourceLayout(i))
+            {
+                PK_THROW_ASSERT(m_resourceProperties.TryGetPropertyPtr<VulkanBindHandle>(element.NameHashId, handle), "Descriptor (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
+
+                auto* binding = m_descriptorSetKeys[i].bindings + index++;
+
+                if (binding->binding != element.Binding || binding->count != element.Count || binding->type != element.Type || binding->handle != handle)
+                {
+                    m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
+                    binding->binding = element.Binding;
+                    binding->count = element.Count;
+                    binding->type = element.Type;
+                    binding->handle = handle;
+                }
+            }
+
+            for (; index < PK_MAX_DESCRIPTORS_PER_SET; ++index)
+            {
+                // Binding count changed
+                if (m_descriptorSetKeys[i].bindings[index].count != 0)
+                {
+                    m_dirtyFlags |= (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i);
+                    m_descriptorSetKeys[i].bindings[index] = {};
+                }
+            }
+
+            if (m_dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i))
+            {
+                m_descriptorSets[i] = m_descriptorCache->GetDescriptorSet(shader->GetDescriptorSetLayout(i), m_descriptorSetKeys[i], gate);
+            }
+        }
     }
 
     PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const VulkanExecutionGate& gate)
     {
-        PK_THROW_ASSERT(pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
+        PK_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
-        uint32_t flags = 0u;
+        auto shaderType = m_pipelineKey.shader->GetType();
 
-        if (vertexBuffersDirty)
+        // Lets not update vertex buffers for a compute pipeline
+        if (shaderType == ShaderType::Compute)
         {
-            flags |= PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
-
-            const auto& vertexLayout = pipelineKey.shader->GetVertexLayout();
-
-            for (auto i = 0u; i < PK_MAX_VERTEX_ATTRIBUTES; ++i)
-            {
-                auto vertexBuffer = vertexBuffers[i];
-                auto bufferAttribute = &pipelineKey.vertexBuffers[i];
-                
-                if (vertexBuffer == nullptr)
-                {
-                    // Buffer count changed!
-                    if (bufferAttribute->stride != 0)
-                    {
-                        pipelineIsDirty = true;
-                    }
-
-                    *bufferAttribute = {};
-                    break;
-                }
-
-                const auto& bufferLayout = *vertexBuffer->bufferLayout;
-                auto stride = bufferLayout.GetStride();
-                
-                bufferAttribute->binding = i;
-            
-                if (bufferAttribute->inputRate != vertexBuffer->inputRate || bufferAttribute->stride != stride)
-                {
-                    bufferAttribute->inputRate = vertexBuffer->inputRate;
-                    bufferAttribute->stride = stride;
-                    pipelineIsDirty = true;
-                }
-
-                for (const auto& element : bufferLayout)
-                {
-                    uint32_t elementIdx = 0u;
-                    auto* velement = vertexLayout.TryGetElement(element.NameHashId, &elementIdx);
-
-                    if (velement == nullptr)
-                    {
-                        continue;
-                    }
-
-                    auto* attribute = &pipelineKey.vertexAttributes[elementIdx];
-
-                    if (attribute->format == EnumConvert::GetFormat(element.Type) && (attribute->binding != i || attribute->offset != element.Offset))
-                    {
-                        pipelineIsDirty = true;
-                        attribute->binding = i;
-                        attribute->offset = element.Offset;
-                    }
-                }
-            }
-
-            vertexBuffersDirty = false;
+            m_dirtyFlags &= ~PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
         }
 
-        for (auto i = 0; i < PK_MAX_DESCRIPTOR_SETS; ++i)
+        ValidateVertexBuffers();
+        ValidateDescriptorSets(gate);
+
+        if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_PIPELINE)
         {
-            if (descriptorsDirty[i])
+            switch (shaderType)
             {
-                flags |= (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i);
-                descriptorSets[i] = descriptorCache->GetDescriptorSet(pipelineKey.shader->GetDescriptorSetLayout(i), descriptorSetKeys[i], gate);
-                descriptorsDirty[i] = false;
+                case ShaderType::Compute: m_pipeline = m_pipelineCache->GetComputePipeline(m_pipelineKey.shader); break;
+                case ShaderType::Graphics: m_pipeline = m_pipelineCache->GetGraphicsPipeline(m_pipelineKey); break;
             }
         }
 
-        if (pipelineIsDirty)
-        {
-            flags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-            pipeline = pipelineCache->GetGraphicsPipeline(pipelineKey);
-            pipelineIsDirty = false;
-        }
-
-        return (PKRenderStateDirtyFlags)flags;
+        auto flags = (PKRenderStateDirtyFlags)m_dirtyFlags;
+        m_dirtyFlags = 0u;
+        
+        return flags;
     }
 }

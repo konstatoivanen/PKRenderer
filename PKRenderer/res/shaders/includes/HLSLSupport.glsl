@@ -89,21 +89,21 @@ float pow5(float x) { return x * x * x * x * x; }
 
 #define Greater(a,b) any(greaterThan(a,b))
 
-#define PK_DECLARE_CBUFFER(BufferName) layout(std140) uniform BufferName
+#define PK_DECLARE_CBUFFER(BufferName, Set) layout(std140, set = Set) uniform BufferName
 
-#define PK_DECLARE_BUFFER(ValueType, BufferName) layout(std430) buffer BufferName { ValueType BufferName##_Data[]; }
-#define PK_DECLARE_READONLY_BUFFER(ValueType, BufferName) layout(std430) readonly buffer BufferName { ValueType BufferName##_Data[]; }
-#define PK_DECLARE_WRITEONLY_BUFFER(ValueType, BufferName) layout(std430) writeonly buffer BufferName { ValueType BufferName##_Data[]; }
-#define PK_DECLARE_RESTRICTED_BUFFER(ValueType, BufferName) layout(std430) restrict buffer BufferName { ValueType BufferName##_Data[]; }
-#define PK_DECLARE_RESTRICTED_READONLY_BUFFER(ValueType, BufferName) layout(std430) restrict readonly buffer BufferName { ValueType BufferName##_Data[]; }
+#define PK_DECLARE_BUFFER(ValueType, BufferName, Set) layout(std430, set = Set) buffer BufferName { ValueType BufferName##_Data[]; }
+#define PK_DECLARE_READONLY_BUFFER(ValueType, BufferName, Set) layout(std430, set = Set) readonly buffer BufferName { ValueType BufferName##_Data[]; }
+#define PK_DECLARE_WRITEONLY_BUFFER(ValueType, BufferName, Set) layout(std430, set = Set) writeonly buffer BufferName { ValueType BufferName##_Data[]; }
+#define PK_DECLARE_RESTRICTED_BUFFER(ValueType, BufferName, Set) layout(std430, set = Set) restrict buffer BufferName { ValueType BufferName##_Data[]; }
+#define PK_DECLARE_RESTRICTED_READONLY_BUFFER(ValueType, BufferName, Set) layout(std430, set = Set) restrict readonly buffer BufferName { ValueType BufferName##_Data[]; }
 
 #define PK_BUFFER_DATA(BufferName, index) BufferName##_Data[index]
 
-#define PK_DECLARE_ATOMIC_VARIABLE(ValueType, BufferName) layout(std430) buffer BufferName { ValueType BufferName##_Data; }
-#define PK_DECLARE_ATOMIC_READONLY_VARIABLE(ValueType, BufferName) layout(std430) readonly buffer BufferName { ValueType BufferName##_Data; }
-#define PK_DECLARE_ATOMIC_WRITEONLY_VARIABLE(ValueType, BufferName) layout(std430) writeonly buffer BufferName { ValueType BufferName##_Data; }
-#define PK_DECLARE_ATOMIC_RESTRICTED_VARIABLE(ValueType, BufferName) layout(std430) restrict buffer BufferName { ValueType BufferName##_Data; }
-#define PK_DECLARE_ATOMIC_RESTRICTED_READONLY_VARIABLE(ValueType, BufferName) layout(std430) restrict readonly buffer BufferName { ValueType BufferName##_Data; }
+#define PK_DECLARE_ATOMIC_VARIABLE(ValueType, BufferName, Set) layout(std430, set = Set) buffer BufferName { ValueType BufferName##_Data; }
+#define PK_DECLARE_ATOMIC_READONLY_VARIABLE(ValueType, BufferName, Set) layout(std430, set = Set) readonly buffer BufferName { ValueType BufferName##_Data; }
+#define PK_DECLARE_ATOMIC_WRITEONLY_VARIABLE(ValueType, BufferName, Set) layout(std430, set = Set) writeonly buffer BufferName { ValueType BufferName##_Data; }
+#define PK_DECLARE_ATOMIC_RESTRICTED_VARIABLE(ValueType, BufferName, Set) layout(std430, set = Set) restrict buffer BufferName { ValueType BufferName##_Data; }
+#define PK_DECLARE_ATOMIC_RESTRICTED_READONLY_VARIABLE(ValueType, BufferName, Set) layout(std430, set = Set) restrict readonly buffer BufferName { ValueType BufferName##_Data; }
 
 #define PK_ATOMIC_DATA(BufferName) BufferName##_Data
 

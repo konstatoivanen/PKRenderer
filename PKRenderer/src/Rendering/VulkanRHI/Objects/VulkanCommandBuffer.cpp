@@ -9,12 +9,12 @@ namespace PK::Rendering::VulkanRHI::Objects
 {
     void VulkanCommandBuffer::SetRenderTarget(Window* window, uint32_t index)
     {
-        renderState.SetRenderTarget(window->GetNative<VulkanWindow>()->GetRenderTarget(), index);
+        renderState->SetRenderTarget(window->GetNative<VulkanWindow>()->GetRenderTarget(), index);
     }
 
     void VulkanCommandBuffer::SetRenderTarget(Texture* renderTarget, uint32_t index)
     {
-        renderState.SetRenderTarget(renderTarget->GetNative<VulkanTexture>()->GetRenderTarget(), index);
+        renderState->SetRenderTarget(renderTarget->GetNative<VulkanTexture>()->GetRenderTarget(), index);
     }
 
     void VulkanCommandBuffer::SetViewPort(uint4 rect, float mindepth, float maxdepth)
@@ -27,14 +27,21 @@ namespace PK::Rendering::VulkanRHI::Objects
         SetScissor({ { (int)rect.x, (int)rect.y }, { rect.z, rect.w } });
     }
 
-    void VulkanCommandBuffer::SetShader(const Shader* shader, uint variantIndex)
+    void VulkanCommandBuffer::SetShader(const Shader* shader, int variantIndex)
     {
+        if (variantIndex == -1)
+        {
+            auto selector = shader->GetVariantSelector();
+            selector.SetKeywordsFrom(renderState->m_resourceProperties);
+            variantIndex = selector.GetIndex();
+        }
+
         auto pVariant = shader->GetVariant(variantIndex)->GetNative<VulkanShader>();
         auto& fixedAttrib = shader->GetFixedFunctionAttributes();
-        renderState.SetBlending(fixedAttrib.blending);
-        renderState.SetDepthStencil(fixedAttrib.depthStencil);
-        renderState.SetRasterization(fixedAttrib.rasterization);
-        renderState.SetShader(pVariant);
+        renderState->SetBlending(fixedAttrib.blending);
+        renderState->SetDepthStencil(fixedAttrib.depthStencil);
+        renderState->SetRasterization(fixedAttrib.rasterization);
+        renderState->SetShader(pVariant);
     }
 
     void VulkanCommandBuffer::SetVertexBuffers(const Buffer** buffers, uint count)
@@ -46,7 +53,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             pHandles[i] = buffers[i]->GetNative<VulkanBuffer>()->GetBindHandle();
         }
 
-        renderState.SetVertexBuffers(pHandles, count);
+        renderState->SetVertexBuffers(pHandles, count);
     }
 
     void VulkanCommandBuffer::SetIndexBuffer(const Buffer* buffer, size_t offset)
@@ -57,76 +64,67 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::SetBuffer(uint32_t nameHashId, const Buffer* buffer)
     {
-        renderState.SetResource(nameHashId, buffer->GetNative<VulkanBuffer>()->GetBindHandle());
+        renderState->SetResource(nameHashId, buffer->GetNative<VulkanBuffer>()->GetBindHandle());
     }
 
     void VulkanCommandBuffer::SetTexture(uint32_t nameHashId, Texture* texture)
     {
-        renderState.SetResource(nameHashId, texture->GetNative<VulkanTexture>()->GetBindHandle());
+        renderState->SetResource(nameHashId, texture->GetNative<VulkanTexture>()->GetBindHandle());
     }
 
     void VulkanCommandBuffer::SetConstant(uint32_t nameHashId, const void* data, uint32_t size)
     {
-        if (renderState.pipelineKey.shader == nullptr)
-        {
-            return;
-        }
-
-        auto constantLayout = renderState.pipelineKey.shader->GetConstantLayout();
-        auto pipelineLayout = renderState.pipelineKey.shader->GetPipelineLayout()->layout;
-        auto stageFlags = EnumConvert::GetShaderStageFlags(renderState.pipelineKey.shader->GetStageFlags());
-
-        auto element = constantLayout.TryGetElement(nameHashId);
-
-        if (element == nullptr || element->Size < size)
-        {
-            return;
-        }
-
-        if (element != nullptr)
-        {
-            vkCmdPushConstants(commandBuffer, pipelineLayout, element->StageFlags, element->Offset, size, data);
-        }
+        renderState->SetResource<char>(nameHashId, reinterpret_cast<const char*>(data), size);
     }
 
-    void VulkanCommandBuffer::BeginRenderPass()
+    void VulkanCommandBuffer::SetKeyword(uint32_t nameHashId, bool value)
     {
-        renderState.PrepareRenderPass();
-        VkRenderPassBeginInfo renderPassInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-        renderPassInfo.renderPass = renderState.renderPass->renderPass;
-        renderPassInfo.framebuffer = renderState.frameBuffer->frameBuffer;
-        renderPassInfo.renderArea = renderState.renderArea;
-        renderPassInfo.clearValueCount = renderState.clearValueCount;
-        renderPassInfo.pClearValues = renderState.clearValues;
-        BeginRenderPass(renderPassInfo);
-    }
-
-    void VulkanCommandBuffer::EndRenderPass()
-    {
-        VulkanRawCommandBuffer::EndRenderPass();
+        renderState->SetResource<bool>(nameHashId, value);
     }
 
     void VulkanCommandBuffer::ValidatePipeline()
     {
-        auto flags = renderState.ValidatePipeline(GetOnCompleteGate());
+        auto flags = renderState->ValidatePipeline(GetOnCompleteGate());
 
         if ((flags & PK_RENDER_STATE_DIRTY_PIPELINE) != 0)
         {
-            BindPipeline(EnumConvert::GetPipelineBindPoint(renderState.pipelineKey.shader->GetType()), renderState.pipeline->pipeline);
+            BindPipeline(EnumConvert::GetPipelineBindPoint(renderState->m_pipelineKey.shader->GetType()), renderState->m_pipeline->pipeline);
         }
 
         if ((flags & PK_RENDER_STATE_DIRTY_VERTEXBUFFERS) != 0)
         {
-            SetVertexBuffers(0, renderState.vertexBufferBindCount, renderState.vertexBuffersRaw, renderState.vertexBufferOffsets);
+            auto vertexBufferBundle = renderState->GetVertexBufferBundle();
+            SetVertexBuffers(0, vertexBufferBundle.count, vertexBufferBundle.buffers, vertexBufferBundle.offsets);
         }
 
         for (auto i = 0; i < PK_MAX_DESCRIPTOR_SETS; ++i)
         {
             if ((flags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i)) != 0)
             {
-                auto pipeline = renderState.pipeline;
-                auto bindPoint = EnumConvert::GetPipelineBindPoint(renderState.pipelineKey.shader->GetType());
-                BindDescriptorSets(bindPoint, renderState.pipelineKey.shader->GetPipelineLayout(), 0, 1, &renderState.descriptorSets[i], 0, nullptr);
+                auto pipeline = renderState->m_pipeline;
+                auto bindPoint = EnumConvert::GetPipelineBindPoint(renderState->m_pipelineKey.shader->GetType());
+                BindDescriptorSets(bindPoint, renderState->m_pipelineKey.shader->GetPipelineLayout(), renderState->m_descriptorSetIndices[i], 1, &renderState->m_descriptorSets[i], 0, nullptr);
+            }
+        }
+
+        // @TODO delta checks
+        if (renderState->m_pipelineKey.shader != nullptr)
+        {
+            auto constantLayout = renderState->m_pipelineKey.shader->GetConstantLayout();
+            auto& props = renderState->m_resourceProperties;
+
+            for (auto& kv : constantLayout)
+            {
+                const char* data = nullptr;
+                size_t dataSize = 0u;
+                auto& element = kv.second;
+
+                if (props.TryGetPropertyPtr<char>(kv.second.NameHashId, data, &dataSize) && dataSize <= element.Size)
+                {
+                    auto pipelineLayout = renderState->m_pipelineKey.shader->GetPipelineLayout()->layout;
+                    auto stageFlags = EnumConvert::GetShaderStageFlags(renderState->m_pipelineKey.shader->GetStageFlags());
+                    vkCmdPushConstants(commandBuffer, pipelineLayout, element.StageFlags, element.Offset, (uint32_t)dataSize, data);
+                }
             }
         }
     }
@@ -143,10 +141,9 @@ namespace PK::Rendering::VulkanRHI::Objects
         vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
-    void VulkanCommandBuffer::DispatchCompute(const ShaderVariant* shader, uint3 groupCount)
+    void VulkanCommandBuffer::DispatchCompute(uint3 groupCount)
     {
-        auto vkshader = shader->GetNative<VulkanShader>();
-        BindPipeline(EnumConvert::GetPipelineBindPoint(vkshader->GetType()), renderState.GetComputePipeline(vkshader)->pipeline);
+        ValidatePipeline();
         vkCmdDispatch(commandBuffer, groupCount.x, groupCount.y, groupCount.z);
     }
 

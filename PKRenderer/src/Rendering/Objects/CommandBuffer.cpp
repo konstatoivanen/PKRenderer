@@ -65,6 +65,18 @@ namespace PK::Rendering::Objects
         DrawIndexed(sm.count, 1, sm.offset, 0, 0);
     }
 
+    void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh, Shader* shader, int variantIndex)
+    {
+        SetShader(shader, variantIndex);
+        DrawMesh(mesh, submesh);
+    }
+
+    void CommandBuffer::DispatchCompute(Shader* shader, uint3 groupCount)
+    {
+        SetShader(shader);
+        DispatchCompute(groupCount);
+    }
+
     void CommandBuffer::DispatchCompute(Shader* shader, uint variantIndex, uint3 groupCount)
     {
         SetShader(shader, variantIndex);

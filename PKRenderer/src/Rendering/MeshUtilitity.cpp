@@ -246,6 +246,24 @@ namespace PK::Rendering::MeshUtility
         PK_THROW_ASSERT(genTangSpaceDefault(&context), "Failed to calculate tangents");
     }
 
+    Ref<Mesh> GetBlitTriangle()
+    {
+        float vertices[] =
+        {
+            -1.0f, -1.0f, 0.0f, 0.0f,
+            -1.0f,  4.0f, 0.0f, 2.0f,
+             4.0f, -1.0f, 2.0f, 0.0f,
+        };
+
+        unsigned int indices[] = { 0, 1, 2 };
+
+        return CreateRef<Mesh>
+        (
+            Buffer::CreateVertex({ { ElementType::Float2, PK_VS_POSITION}, { ElementType::Float2, PK_VS_TEXCOORD0 } }, vertices, 3),
+            Buffer::CreateIndex(ElementType::Uint, indices, 3)
+        );
+    }
+
 
     Ref<Mesh> GetBoxSimple(const float3& offset, const float3& extents)
     {

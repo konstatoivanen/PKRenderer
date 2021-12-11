@@ -127,16 +127,16 @@ namespace PK::Rendering::VulkanRHI
                                                                  { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100ull },
                                                              }));
 
-        commandBufferPool = CreateScope<VulkanCommandBufferPool>(device, 
-                                                                 VulkanRenderState
-                                                                 (
-                                                                     descriptorCache.get(), 
-                                                                     pipelineCache.get(), 
-                                                                     samplerCache.get(), 
-                                                                     frameBufferCache.get(), 
-                                                                     stagingBufferCache.get(), 
-                                                                     disposer.get() 
-                                                                 ), 
+        commandBufferPool = CreateScope<VulkanCommandBufferPool>(device,
+                                                                 VulkanSystemContext
+                                                                 {
+                                                                     descriptorCache.get(),
+                                                                     pipelineCache.get(),
+                                                                     samplerCache.get(),
+                                                                     frameBufferCache.get(),
+                                                                     stagingBufferCache.get(),
+                                                                     disposer.get()
+                                                                 }, 
                                                                  queueFamilies[QueueType::Graphics].index);
     }
 

@@ -21,7 +21,8 @@ namespace PK::Rendering
             void Step(Window* window, int condition) override;
 
         private:
-            Ref<Buffer> m_uniformBuffer;
+            Ref<Buffer> m_perFrameConstants;
+            Ref<Buffer> m_modelMatrices;
             Ref<RenderTexture> m_renderTarget;
             Mesh* m_mesh;
             Texture* m_testTexture;

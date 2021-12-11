@@ -1254,6 +1254,12 @@
     <ClInclude Include="src\Core\ApplicationConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\PropertyBlock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\HashCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -1675,6 +1681,7 @@
     <None Include="res\configs\ApplicationConfig-Active.cfg" />
     <None Include="res\configs\CommandConfig-Active.keycfg" />
     <None Include="res\shaders\includes\HLSLSupport.glsl" />
+    <None Include="res\shaders\includes\Common.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
@@ -1816,6 +1823,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\ApplicationConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\PropertyBlock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

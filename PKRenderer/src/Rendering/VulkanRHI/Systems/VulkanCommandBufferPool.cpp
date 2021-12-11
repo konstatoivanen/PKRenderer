@@ -7,7 +7,7 @@ namespace PK::Rendering::VulkanRHI::Systems
 {
     using namespace Objects;
 
-    VulkanCommandBufferPool::VulkanCommandBufferPool(const VkDevice device, const VulkanRenderState& renderState, uint32_t queueFamilyIndex) : m_device(device)
+    VulkanCommandBufferPool::VulkanCommandBufferPool(const VkDevice device, const VulkanSystemContext& systems, uint32_t queueFamilyIndex) : m_device(device), m_primaryRenderState(systems)
     {
         VkCommandPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
         createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
@@ -23,7 +23,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         for (uint32_t index = 0; index < MAX_PRIMARY_COMMANDBUFFERS; ++index) 
         {
             m_commandBuffers[index].fence = CreateRef<VulkanFence>(m_device, false);
-            m_commandBuffers[index].renderState = renderState;
+            m_commandBuffers[index].renderState = &m_primaryRenderState;
         }
     }
 
@@ -64,7 +64,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         VK_ASSERT_RESULT(vkBeginCommandBuffer(m_current->commandBuffer, &beginInfo));
 
-        m_current->renderState.Reset();
+        m_current->renderState->Reset();
 
         return m_current;
     }

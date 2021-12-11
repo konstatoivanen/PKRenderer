@@ -132,6 +132,19 @@ namespace PK::Rendering::Objects
         return idx;
     }
 
+    void ShaderVariantMap::Selector::SetKeywordsFrom(const PropertyBlock& block)
+    {
+        bool value;
+
+        for (auto& kv : map->keywords)
+        {
+            if (block.TryGetPropertyValue(kv.first, value) && value)
+            {
+                keywords[kv.second >> 4] = kv.first;
+            }
+        }
+    }
+
     void Shader::ListVariants()
     {
         PK_LOG_HEADER("Listing variants for shader: %s", GetFileName().c_str());

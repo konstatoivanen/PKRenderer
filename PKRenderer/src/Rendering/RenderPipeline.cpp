@@ -7,11 +7,54 @@ namespace PK::Rendering
 {
     using namespace PK::Rendering::Objects;
 
-    struct UniformBufferObject
+    struct PerFrameConstants
     {
-        float4x4 model;
-        float4x4 viewproj;
+        float4 pk_Time;
+        float4 pk_SinTime;
+        float4 pk_CosTime;
+        float4 pk_DeltaTime;
+        float4 pk_CursorParams;
+        float4 pk_WorldSpaceCameraPos;
+        float4 pk_ProjectionParams;
+        float4 pk_ExpProjectionParams;
+        float4 pk_ScreenParams;
+        float4 pk_ShadowCascadeZSplits;
+        float4x4 pk_MATRIX_V;
+        float4x4 pk_MATRIX_I_V;
+        float4x4 pk_MATRIX_P;
+        float4x4 pk_MATRIX_I_P;
+        float4x4 pk_MATRIX_VP;
+        float4x4 pk_MATRIX_I_VP;
+        float4x4 pk_MATRIX_L_VP;
+        float pk_SceneOEM_Exposure;
     };
+
+    struct ModelMatrices
+    {
+        float4x4 pk_MATRIX_M;
+        float4x4 pk_MATRIX_I_M;
+    };
+
+    static void SetViewProjectionMatrices(PerFrameConstants* buffer, const float4x4& view, const float4x4& projection)
+    {
+        auto cameraMatrix = glm::inverse(view);
+
+        auto n = Functions::GetZNearFromProj(projection);
+        auto f = Functions::GetZFarFromProj(projection);
+        auto vp = projection * view;
+        auto pvp = buffer->pk_MATRIX_L_VP;
+
+        buffer->pk_ProjectionParams = { n, f, f - n, 1.0f / f };
+        buffer->pk_ExpProjectionParams = { 1.0f / glm::log2(f / n), -log2(n) / log2(f / n), f / n, 1.0f / n };
+        buffer->pk_WorldSpaceCameraPos = cameraMatrix[3];
+        buffer->pk_MATRIX_V = view;
+        buffer->pk_MATRIX_I_V = cameraMatrix;
+        buffer->pk_MATRIX_P = projection;
+        buffer->pk_MATRIX_I_P = glm::inverse(projection);
+        buffer->pk_MATRIX_VP = vp;
+        buffer->pk_MATRIX_I_VP = glm::inverse(vp);
+        buffer->pk_MATRIX_L_VP = pvp;
+    }
 
     RenderPipeline::RenderPipeline(AssetDatabase* assetDatabase, int width, int height)
     {
@@ -24,7 +67,39 @@ namespace PK::Rendering
         descriptor.usage = TextureUsage::Sample;
         m_renderTarget = CreateRef<RenderTexture>(descriptor);
 
-        m_uniformBuffer = Buffer::CreateUniform({ { ElementType::Float4x4, "model" }, { ElementType::Float4x4, "viewproj" }});
+        m_perFrameConstants = Buffer::CreateUniform
+        (
+            { 
+                { ElementType::Float4x4, "model" },
+                { ElementType::Float4x4, "viewproj" },
+                { ElementType::Float4, "pk_Time" },
+                { ElementType::Float4, "pk_SinTime" },
+                { ElementType::Float4, "pk_CosTime" },
+                { ElementType::Float4, "pk_DeltaTime" },
+                { ElementType::Float4, "pk_CursorParams" },
+                { ElementType::Float4, "pk_WorldSpaceCameraPos" },
+                { ElementType::Float4, "pk_ProjectionParams" },
+                { ElementType::Float4, "pk_ExpProjectionParams" },
+                { ElementType::Float4, "pk_ScreenParams" },
+                { ElementType::Float4, "pk_ShadowCascadeZSplits" },
+                { ElementType::Float4x4, "pk_MATRIX_V" },
+                { ElementType::Float4x4, "pk_MATRIX_I_V" },
+                { ElementType::Float4x4, "pk_MATRIX_P" },
+                { ElementType::Float4x4, "pk_MATRIX_I_P" },
+                { ElementType::Float4x4, "pk_MATRIX_VP" },
+                { ElementType::Float4x4, "pk_MATRIX_I_VP" },
+                { ElementType::Float4x4, "pk_MATRIX_L_VP" },
+                { ElementType::Float, "pk_SceneOEM_Exposure" }
+            }
+        );
+
+        m_modelMatrices = Buffer::CreateUniform
+        (
+            {
+                { ElementType::Float4x4, "pk_MATRIX_M" },
+                { ElementType::Float4x4, "pk_MATRIX_I_M" },
+            }
+        );
 
         m_mesh = assetDatabase->Load<Mesh>("res/models/MDL_Cloth.pkmesh");
         m_testTexture = assetDatabase->Load<Texture>("res/textures/T_DebugTexture.ktx2");
@@ -36,7 +111,7 @@ namespace PK::Rendering
     {
         GraphicsAPI::GetActiveDriver()->WaitForIdle();
         m_mesh = nullptr;
-        m_uniformBuffer = nullptr;
+        m_perFrameConstants = nullptr;
         m_renderTarget = nullptr;
         m_shader = nullptr;
     }
@@ -45,13 +120,14 @@ namespace PK::Rendering
     {
         auto* cmd = GraphicsAPI::GetCommandBuffer();
 
-        auto view = Functions::GetMatrixInvTRS({ 0,0,-2 }, PK_FLOAT3_ZERO, PK_FLOAT3_ONE);
-        auto proj = Functions::GetPerspective(90.0f, window->GetAspectRatio(), 0.1f, 100.0f);
+        auto perFrameView = m_perFrameConstants->BeginMap<PerFrameConstants>();
+        SetViewProjectionMatrices(perFrameView.data, Functions::GetMatrixInvTRS({ 0,0,-2 }, PK_FLOAT3_ZERO, PK_FLOAT3_ONE), Functions::GetPerspective(90.0f, window->GetAspectRatio(), 0.1f, 100.0f));
+        m_perFrameConstants->EndMap();
 
-        auto uboView = m_uniformBuffer->BeginMap<UniformBufferObject>();
-        uboView[0].model = Functions::GetMatrixTRS(PK_FLOAT3_ZERO, { 0, 0.01f * (m_rotation++), 0 }, PK_FLOAT3_ONE);
-        uboView[0].viewproj = proj * view;
-        m_uniformBuffer->EndMap();
+        auto modelView = m_modelMatrices->BeginMap<ModelMatrices>();
+        modelView[0].pk_MATRIX_M = Functions::GetMatrixTRS(PK_FLOAT3_ZERO, { 0, 0.01f * (m_rotation++), 0 }, PK_FLOAT3_ONE);
+        modelView[0].pk_MATRIX_I_M = glm::inverse(modelView[0].pk_MATRIX_M);
+        m_modelMatrices->EndMap();
 
         m_renderTarget->Validate(window->GetResolution());
 
@@ -61,17 +137,15 @@ namespace PK::Rendering
 
         cmd->BeginRenderPass();
 
-        cmd->SetShader(m_shader, 0);
-        cmd->SetMesh(m_mesh);
-
-        cmd->SetBuffer("ubo", m_uniformBuffer.get());
+        cmd->SetBuffer("pk_PerFrameConstants", m_perFrameConstants.get());
+        cmd->SetBuffer("pk_ModelMatrices", m_modelMatrices.get());
         cmd->SetTexture("tex1", m_testTexture);
         cmd->SetConstant<float4>("offset", { 0, glm::sin(m_rotation * 0.01f), 0, 0 });
 
         cmd->SetViewPort(window->GetRect(), 0.0f, 1.0f);
         cmd->SetScissor(window->GetRect());
 
-        cmd->DrawMesh(m_mesh, 0);
+        cmd->DrawMesh(m_mesh, 0, m_shader);
 
         cmd->EndRenderPass();
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/AssetDatabase.h"
 #include "Core/NativeInterface.h"
+#include "Core/PropertyBlock.h"
 #include "Rendering/Structs/Descriptors.h"
 #include "Rendering/Structs/Layout.h"
 
@@ -12,6 +13,8 @@ namespace PK::Rendering::Objects
     class ShaderVariantMap : public NoCopy
     {
         public:
+            constexpr static const int MAX_DIRECTIVES = 16;
+
             void ListVariants();
             inline bool SupportsKeyword(const uint32_t hashId) const { return keywords.count(hashId) > 0; }
             bool SupportsKeywords(const uint32_t* hashIds, const uint32_t count) const;
@@ -19,8 +22,16 @@ namespace PK::Rendering::Objects
     
             uint32_t variantcount = 0;
             uint32_t directivecount = 0;
-            uint32_t directives[16];
+            uint32_t directives[MAX_DIRECTIVES];
             std::unordered_map<uint32_t, uint8_t> keywords;
+    
+            struct Selector
+            {
+                const ShaderVariantMap* map;
+                uint32_t keywords[MAX_DIRECTIVES]{};
+                void SetKeywordsFrom(const PropertyBlock& block);
+                inline uint32_t GetIndex() const { return map->GetIndex(keywords, map->directivecount); }
+            };
     };
 
     class ShaderVariant : public NoCopy, public NativeInterface<ShaderVariant>
@@ -56,6 +67,7 @@ namespace PK::Rendering::Objects
             inline const FixedFunctionShaderAttributes& GetFixedFunctionAttributes() const { return m_attributes; }
             inline const ShaderVariant* GetVariant(const uint32_t* keywords, uint32_t count) const { return m_variants[m_variantMap.GetIndex(keywords, count)].get(); }
             inline const ShaderVariant* GetVariant(uint32_t index) const { return m_variants[index].get(); }
+            inline ShaderVariantMap::Selector GetVariantSelector() const { return { &m_variantMap }; }
             inline bool SupportsKeyword(const uint32_t hashId) const { return m_variantMap.SupportsKeyword(hashId); }
             inline bool SupportsKeywords(const uint32_t* hashIds, const uint32_t count) const { return m_variantMap.SupportsKeywords(hashIds, count); }
 

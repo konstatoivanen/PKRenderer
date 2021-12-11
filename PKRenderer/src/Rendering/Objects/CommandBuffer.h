@@ -24,19 +24,20 @@ namespace PK::Rendering::Objects
         virtual void SetDepthStencil(const DepthStencilParameters& depthStencil) = 0;
         virtual void SetMultisampling(const MultisamplingParameters& multisampling) = 0;
 
-        virtual void SetShader(const Shader* shader, uint variantIndex) = 0;
+        virtual void SetShader(const Shader* shader, int variantIndex = -1) = 0;
         virtual void SetVertexBuffers(const Buffer** buffers, uint count) = 0;
         virtual void SetIndexBuffer(const Buffer* buffer, size_t offset) = 0;
         virtual void SetBuffer(uint32_t nameHashId, const Buffer* buffer) = 0;
         virtual void SetTexture(uint32_t nameHashId, Texture* texture) = 0;
         virtual void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) = 0;
+        virtual void SetKeyword(uint32_t nameHashId, bool value) = 0;
 
         virtual void BeginRenderPass() = 0;
         virtual void EndRenderPass() = 0;
 
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;
-        virtual void DispatchCompute(const ShaderVariant* variant, uint3 groupCount) = 0;
+        virtual void DispatchCompute(uint3 groupCount) = 0;
         
         // @TODO Nasty dependency. Rethink this one!
         virtual void Blit(Texture* src, Window* dst, uint32_t dstLevel, uint32_t dstLayer, FilterMode filter) const = 0;
@@ -49,6 +50,7 @@ namespace PK::Rendering::Objects
         void SetBuffer(const char* name, const Buffer* buffer);
         void SetTexture(const char* name, Texture* texture);
         void SetConstant(const char* name, const void* data, uint32_t size);
+        void SetKeyword(const char* name, bool value);
 
         template<typename T>
         void SetConstant(uint32_t nameHashId, const T& value) { SetConstant(nameHashId, &value, (uint32_t)sizeof(T)); }
@@ -57,6 +59,8 @@ namespace PK::Rendering::Objects
         void SetConstant(const char* name, const T& value) { SetConstant(name, &value, (uint32_t)sizeof(T)); }
         
         void DrawMesh(const Mesh* mesh, int submesh);
+        void DrawMesh(const Mesh* mesh, int submesh, Shader* shader, int variantIndex = -1);
+        void DispatchCompute(Shader* shader, uint3 groupCount);
         void DispatchCompute(Shader* shader, uint variantIndex, uint3 groupCount);
         
         void Barrier(const Texture* texture, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) const;

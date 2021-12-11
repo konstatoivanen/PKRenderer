@@ -4,15 +4,9 @@
 #ZTest LEqual
 #ZWrite True
 
-#include includes/HLSLSupport.glsl
+#include includes/Common.glsl
 
 #pragma PROGRAM_VERTEX
-
-layout(set = 0) uniform UniformBufferObject
-{
-    float4x4 model;
-    float4x4 viewproj;
-} ubo;
 
 layout(push_constant) uniform offset{ float4 offset_x; };
 
@@ -25,7 +19,7 @@ layout(location = 1) out float2 vs_TEXCOORD0;
 
 void main()
 {
-    gl_Position = mul(mul(ubo.viewproj, ubo.model), float4(in_POSITION + offset_x.xyz, 1.0f));
+    gl_Position = ObjectToClipPos(in_POSITION + offset_x.xyz);
     vs_COLOR = in_COLOR;
     vs_TEXCOORD0 = in_TEXCOORD0;
 }
