@@ -21,8 +21,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         using VulkanRawCommandBuffer::EndRenderPass;
         using VulkanRawCommandBuffer::SetVertexBuffers;
         using VulkanRawCommandBuffer::BindIndexBuffer;
-        using VulkanRawCommandBuffer::SetScissor;
-        using VulkanRawCommandBuffer::SetViewPort;
 
         VulkanRenderState* renderState = nullptr;
         Ref<VulkanFence> fence = nullptr;

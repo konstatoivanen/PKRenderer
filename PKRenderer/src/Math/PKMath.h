@@ -19,9 +19,25 @@ namespace PK::Math
     typedef glm::vec3 float3;
     typedef glm::vec4 float4;
 
+    typedef glm::dvec2 double2;
+    typedef glm::dvec3 double3;
+    typedef glm::dvec4 double4;
+
     typedef glm::mat2x2 float2x2;
     typedef glm::mat3x3 float3x3;
     typedef glm::mat4x4 float4x4;
+
+    typedef glm::dmat2x2 double2x2;
+    typedef glm::dmat3x3 double3x3;
+    typedef glm::dmat4x4 double4x4;
+
+    typedef glm::i16vec2 short2;
+    typedef glm::i16vec3 short3;
+    typedef glm::i16vec4 short4;
+
+    typedef glm::u16vec2 ushort2;
+    typedef glm::u16vec3 ushort3;
+    typedef glm::u16vec4 ushort4;
 
     typedef glm::ivec2 int2;
     typedef glm::ivec3 int3;
@@ -30,6 +46,14 @@ namespace PK::Math
     typedef glm::uvec2 uint2;
     typedef glm::uvec3 uint3;
     typedef glm::uvec4 uint4;
+
+    typedef glm::i64vec2 long2;
+    typedef glm::i64vec3 long3;
+    typedef glm::i64vec4 long4;
+
+    typedef glm::u64vec2 ulong2;
+    typedef glm::u64vec3 ulong3;
+    typedef glm::u64vec4 ulong4;
 
     typedef glm::bvec2 bool2;
     typedef glm::bvec3 bool3;

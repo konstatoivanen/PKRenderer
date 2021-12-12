@@ -27,7 +27,7 @@ namespace PK::Rendering::Objects
                 return Create(BufferUsage::Index, BufferLayout({{ type, "INDEX" }}), data, count);
             }
 
-            inline static Ref<Buffer> CreateUniform(const BufferLayout& layout)
+            inline static Ref<Buffer> CreateConstant(const BufferLayout& layout)
             {
                 return Create(BufferUsage::Uniform, layout, 1);
             }

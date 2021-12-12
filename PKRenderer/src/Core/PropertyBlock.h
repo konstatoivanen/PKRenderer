@@ -5,7 +5,7 @@
 
 namespace PK::Core
 {
-    class PropertyBlock : public NoCopy
+    class PropertyBlock : public NoCopy, public std::vector<char>
     {
 		using uint = unsigned int;
 		using ushort = unsigned short;
@@ -32,12 +32,12 @@ namespace PK::Core
 			template<typename T>
 			const T* GetElementPtr(const PropertyInfo& info) const
 			{
-				if ((info.offset + (size_t)info.size) > m_data.capacity())
+				if ((info.offset + (size_t)info.size) > capacity())
 				{
-					PK_THROW_ERROR("OOB ARRAY INDEX! idx: %i, capacity: %i", info.offset + info.size, m_data.capacity());
+					PK_THROW_ERROR("OOB ARRAY INDEX! idx: %i, capacity: %i", info.offset + info.size, capacity());
 				}
 
-				return reinterpret_cast<const T*>(m_data.data() + info.offset);
+				return reinterpret_cast<const T*>(data() + info.offset);
 			}
 	
 			template<typename T>
@@ -82,6 +82,7 @@ namespace PK::Core
 
 			inline bool HasChanged(const uint hashId) { return m_properties.at(hashId).hasChanged != 0; }
 			inline void MarkAsRead(const uint hashId) { m_properties.at(hashId).hasChanged = 0; }
+			inline void FreezeLayout() { m_explicitLayout = true; }
 	
 			std::unordered_map<uint, PropertyInfo>::iterator begin() { return m_properties.begin(); }
 			std::unordered_map<uint, PropertyInfo>::iterator end() { return m_properties.end(); }
@@ -93,7 +94,7 @@ namespace PK::Core
 			{
 				PK_THROW_ASSERT(count > 0, "INVALID DATA COUNT!");
 
-				auto size = (ushort)(sizeof(T) * count);
+				auto wsize = (ushort)(sizeof(T) * count);
 				auto type = std::type_index(typeid(T));
 				auto& info = m_properties[hashId];
 
@@ -101,19 +102,43 @@ namespace PK::Core
 				{
 					PK_THROW_ASSERT(!m_explicitLayout, "Cannot add elements to explicitly mapped property block!");
 
-					if (m_currentByteOffset >= m_data.size())
+					if (m_currentByteOffset >= size())
 					{
-						m_data.resize(m_data.size() + size);
+						resize(size() + wsize);
 					}
 
-					info = { type, m_currentByteOffset, size, 1 };
-					m_currentByteOffset += size;
+					info = { type, m_currentByteOffset, wsize, 1 };
+					m_currentByteOffset += wsize;
 				}
 
-				if (!TryWriteValue(src, info, type, size))
+				if (!TryWriteValue(src, info, type, wsize))
 				{
 					PK_THROW_ERROR("INVALID DATA FORMAT! %i", hashId);
 				}
+			}
+
+			template<typename T>
+			void Reserve(uint hashId, uint count = 1)
+			{
+				if (m_properties.count(hashId) > 0)
+				{
+					return;
+				}
+
+				PK_THROW_ASSERT(count > 0, "INVALID DATA COUNT!");
+				PK_THROW_ASSERT(!m_explicitLayout, "Cannot add elements to explicitly mapped property block!");
+
+				auto wsize = (ushort)(sizeof(T) * count);
+				auto type = std::type_index(typeid(T));
+
+
+				if (m_currentByteOffset >= size())
+				{
+					resize(size() + wsize);
+				}
+
+				m_properties[hashId] = { type, m_currentByteOffset, wsize, 1 };
+				m_currentByteOffset += wsize;
 			}
 
 			template<typename T>
@@ -125,7 +150,6 @@ namespace PK::Core
 			bool m_explicitLayout = false;
 			bool m_deltaChecks = false;
 			uint m_currentByteOffset = 0;
-			std::vector<char> m_data;
 			std::unordered_map<uint, PropertyInfo> m_properties;
     };
 }

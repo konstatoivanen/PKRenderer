@@ -28,7 +28,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             m_stageFlags |= 1 << i;
         }
 
-        std::vector<VertexElement> vertexElements;
+        std::vector<BufferElement> vertexElements;
 
         for (auto i = 0; i < PK::Assets::PK_ASSET_MAX_VERTEX_ATTRIBUTES; ++i)
         {
@@ -36,11 +36,11 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             if (attribute->type != ElementType::Invalid)
             {
-                vertexElements.emplace_back(attribute->type, attribute->name, attribute->location);
+                vertexElements.emplace_back(attribute->type, attribute->name, 1, (byte)attribute->location);
             }
         }
 
-        m_vertexLayout = VertexLayout(vertexElements);
+        m_vertexLayout = BufferLayout(vertexElements);
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         std::vector<VkDescriptorSetLayout> layouts;

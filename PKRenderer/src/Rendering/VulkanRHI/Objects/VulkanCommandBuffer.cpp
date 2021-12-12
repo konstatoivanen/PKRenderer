@@ -19,12 +19,24 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::SetViewPort(uint4 rect, float mindepth, float maxdepth)
     {
-        SetViewPort({ { (int)rect.x, (int)rect.y }, { rect.z, rect.w } }, mindepth, maxdepth);
+        VkViewport viewport{};
+        viewport.x = (float)rect.x;
+        viewport.y = (float)(rect.y + rect.w);
+        viewport.width = (float)rect.z;
+        viewport.height = -(float)rect.w;
+        viewport.minDepth = mindepth;
+        viewport.maxDepth = maxdepth;
+        SetViewPorts(0, 1, &viewport);
     }
 
     void VulkanCommandBuffer::SetScissor(uint4 rect)
     {
-        SetScissor({ { (int)rect.x, (int)rect.y }, { rect.z, rect.w } });
+        VkRect2D scissor;
+        scissor.offset.x = (int)rect.x;
+        scissor.offset.y = (int)rect.y;
+        scissor.extent.width = (rect).z;
+        scissor.extent.height = (rect).w;
+        SetScissors(0, 1, &scissor);
     }
 
     void VulkanCommandBuffer::SetShader(const Shader* shader, int variantIndex)
@@ -103,7 +115,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             {
                 auto pipeline = renderState->m_pipeline;
                 auto bindPoint = EnumConvert::GetPipelineBindPoint(renderState->m_pipelineKey.shader->GetType());
-                BindDescriptorSets(bindPoint, renderState->m_pipelineKey.shader->GetPipelineLayout(), renderState->m_descriptorSetIndices[i], 1, &renderState->m_descriptorSets[i], 0, nullptr);
+                BindDescriptorSets(bindPoint, renderState->m_pipelineKey.shader->GetPipelineLayout(), i, 1, &renderState->m_descriptorSets[i], 0, nullptr);
             }
         }
 

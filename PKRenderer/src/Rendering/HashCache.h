@@ -41,6 +41,7 @@ namespace PK::Rendering
         DEFINE_HASH_CACHE(PK_ENABLE_INSTANCING)
 
         DEFINE_HASH_CACHE(pk_PerFrameConstants)
+        DEFINE_HASH_CACHE(pk_ModelMatrices)
         DEFINE_HASH_CACHE(pk_GizmoVertices)
         DEFINE_HASH_CACHE(pk_DebugDrawIndex)
         

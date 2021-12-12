@@ -93,7 +93,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         VulkanStagingBufferCache* m_stagingBufferCache = nullptr;
         VulkanDisposer* m_disposer = nullptr;
 
-        char m_descriptorSetIndices[PK_MAX_DESCRIPTOR_SETS]{};
         DescriptorSetKey m_descriptorSetKeys[PK_MAX_DESCRIPTOR_SETS]{};
         PipelineKey m_pipelineKey{};
         FrameBufferKey m_frameBufferKey{};

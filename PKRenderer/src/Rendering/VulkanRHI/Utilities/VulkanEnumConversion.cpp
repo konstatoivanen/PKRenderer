@@ -567,9 +567,9 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
             case Structs::ResourceType::SamplerTexture: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             case Structs::ResourceType::Texture: return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
             case Structs::ResourceType::Image: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-            case Structs::ResourceType::UniformBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            case Structs::ResourceType::ConstantBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             case Structs::ResourceType::StorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            case Structs::ResourceType::DynamicUniformBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+            case Structs::ResourceType::DynamicConstantBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
             case Structs::ResourceType::DynamicStorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
             case Structs::ResourceType::InputAttachment: return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
         }
@@ -585,9 +585,9 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
             case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: return Structs::ResourceType::SamplerTexture;
             case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE: return Structs::ResourceType::Texture;
             case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: return Structs::ResourceType::Image;
-            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: return Structs::ResourceType::UniformBuffer;
+            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: return Structs::ResourceType::ConstantBuffer;
             case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER: return Structs::ResourceType::StorageBuffer;
-            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC: return Structs::ResourceType::DynamicUniformBuffer;
+            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC: return Structs::ResourceType::DynamicConstantBuffer;
             case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: return Structs::ResourceType::DynamicStorageBuffer;
             case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: return Structs::ResourceType::InputAttachment;
         }

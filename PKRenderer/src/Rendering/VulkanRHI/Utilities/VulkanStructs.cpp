@@ -377,31 +377,9 @@ namespace PK::Rendering::VulkanRHI
         vkCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
     }
 
-    void VulkanRawCommandBuffer::SetViewPort(const VkViewport& pViewport) const
-    {
-        SetViewPorts(0, 1, &pViewport);
-    }
-
-    void VulkanRawCommandBuffer::SetViewPort(const VkRect2D& rect, float minDepth, float maxDepth) const
-    {
-        VkViewport viewport{};
-        viewport.x = (float)rect.offset.x;
-        viewport.x = (float)rect.offset.y;
-        viewport.width = (float)rect.extent.width;
-        viewport.height = (float)rect.extent.height;
-        viewport.minDepth = minDepth;
-        viewport.maxDepth = maxDepth;
-        SetViewPorts(0, 1, &viewport);
-    }
-
     void VulkanRawCommandBuffer::SetScissors(uint32_t firstScissor, uint32_t scissorCount, const VkRect2D* pScissors) const
     {
         vkCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
-    }
-
-    void VulkanRawCommandBuffer::SetScissor(const VkRect2D& pScissor) const
-    {
-        SetScissors(0, 1, &pScissor);
     }
 
     void VulkanRawCommandBuffer::SetVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) const

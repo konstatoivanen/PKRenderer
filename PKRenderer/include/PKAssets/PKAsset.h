@@ -40,7 +40,7 @@ namespace PK::Assets
         Animation
     };
 
-    enum class PKElementType : unsigned short
+    enum class PKElementType : unsigned char
     {
         Invalid = 0,
 
@@ -120,9 +120,9 @@ namespace PK::Assets
         SamplerTexture,
         Texture,
         Image,
-        UniformBuffer,
+        ConstantBuffer,
         StorageBuffer,
-        DynamicUniformBuffer,
+        DynamicConstantBuffer,
         DynamicStorageBuffer,
         InputAttachment,
     };

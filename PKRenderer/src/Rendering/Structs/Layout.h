@@ -48,6 +48,7 @@ namespace PK::Rendering::Structs
             void FillElementMap(const ConstantVariable* variables, size_t count);
     };
 
+
     struct ResourceElement
     {
         uint32_t NameHashId = 0;
@@ -66,123 +67,78 @@ namespace PK::Rendering::Structs
         }
     };
 
-    class ResourceLayout
+    class ResourceLayout : public std::vector<ResourceElement>
     {
         public:
             ResourceLayout() {}
 
-            ResourceLayout(std::initializer_list<ResourceElement> elements) : m_elements(elements)
+            ResourceLayout(std::initializer_list<ResourceElement> elements) : std::vector<ResourceElement>(elements)
             {
                 FillElementMap();
             }
 
-            ResourceLayout(std::vector<ResourceElement> elements) : m_elements(elements)
+            ResourceLayout(std::vector<ResourceElement> elements) : std::vector<ResourceElement>(elements)
             {
                 FillElementMap();
             }
 
             const ResourceElement* TryGetElement(uint32_t nameHashId, uint32_t* index) const;
 
-            std::vector<ResourceElement>::iterator begin() { return m_elements.begin(); }
-            std::vector<ResourceElement>::iterator end() { return m_elements.end(); }
-            std::vector<ResourceElement>::const_iterator begin() const { return m_elements.begin(); }
-            std::vector<ResourceElement>::const_iterator end() const { return m_elements.end(); }
-
         private:
             void FillElementMap();
-
-            std::vector<ResourceElement> m_elements;
             std::unordered_map<uint32_t, uint32_t> m_elementMap;
     };
 
-    struct VertexElement
-    {
-        uint32_t NameHashId = 0;
-        ElementType Type = ElementType::Invalid;
-        ushort Location = 0;
-
-        VertexElement() = default;
-
-        VertexElement(ElementType type, const std::string& name, ushort location) :
-            NameHashId(StringHashID::StringToID(name)), 
-            Type(type), 
-            Location(location)
-        {
-        }
-    };
-
-    class VertexLayout
-    {
-        public:
-            VertexLayout() {}
-
-            VertexLayout(std::initializer_list<VertexElement> elements) : m_elements(elements)
-            {
-                FillElementMap();
-            }
-
-            VertexLayout(std::vector<VertexElement> elements) : m_elements(elements)
-            {
-                FillElementMap();
-            }
-
-            const VertexElement* TryGetElement(uint32_t nameHashId, uint32_t* index) const;
-
-            std::vector<VertexElement>::iterator begin() { return m_elements.begin(); }
-            std::vector<VertexElement>::iterator end() { return m_elements.end(); }
-            std::vector<VertexElement>::const_iterator begin() const { return m_elements.begin(); }
-            std::vector<VertexElement>::const_iterator end() const { return m_elements.end(); }
-
-        private:
-            void FillElementMap();
-
-            std::vector<VertexElement> m_elements;
-            std::unordered_map<uint32_t, uint32_t> m_elementMap;
-    };
 
     struct BufferElement
     {
         uint32_t NameHashId = 0;
         ElementType Type = ElementType::Invalid;
-        ushort Size = 0;
+        byte Count = 1;
+        byte Location = 0;
+        bool Normalized = false;
+
         ushort Offset = 0;
         ushort AlignedOffset = 0;
-        bool Normalized = false;
     
+        ushort Size() const { return ElementConvert::Size(Type) * Count; }
+
         BufferElement() = default;
-    
-        BufferElement(ElementType type, const std::string& name, ushort count = 1, bool normalized = false) : 
+
+        BufferElement(ElementType type, const std::string& name, byte count = 1, byte location = 0, bool normalized = false) : 
             NameHashId(StringHashID::StringToID(name)), 
             Type(type), 
-            Size(ElementConvert::Size(type)* count), 
+            Count(count), 
             Offset(0), 
             AlignedOffset(0), 
+            Location(location),
             Normalized(normalized)
         {
         }
 
-        BufferElement(ElementType type, uint32_t nameHashId, ushort count = 1, bool normalized = false) :
+        BufferElement(ElementType type, uint32_t nameHashId, byte count = 1, byte location = 0, bool normalized = false) :
             NameHashId(nameHashId), 
             Type(type), 
-            Size(ElementConvert::Size(type) * count), 
+            Count(count), 
             Offset(0), 
             AlignedOffset(0), 
+            Location(location),
             Normalized(normalized)
         {
         }
     };
     
-    class BufferLayout
+    class BufferLayout : public std::vector<BufferElement>
     {
         public:
             BufferLayout() {}
     
-            BufferLayout(std::initializer_list<BufferElement> elements) : m_elements(elements)
+            BufferLayout(std::initializer_list<BufferElement> elements) : std::vector<BufferElement>(elements)
             {
                 CalculateOffsetsAndStride();
             }
     
-            BufferLayout(std::vector<BufferElement> elements) : m_elements(elements)
+            BufferLayout(std::vector<BufferElement> elements) : std::vector<BufferElement>(elements)
             {
                 CalculateOffsetsAndStride();
             }
@@ -191,17 +147,13 @@ namespace PK::Rendering::Structs
             constexpr inline uint GetStride() const { return m_stride; }
             constexpr inline uint GetAlignedStride() const { return m_alignedStride; }
             constexpr inline uint GetPaddedStride() const { return m_alignedStride; }
-            inline const std::vector<BufferElement>& GetElements() const { return m_elements; }
         
-            std::vector<BufferElement>::iterator begin() { return m_elements.begin(); }
-            std::vector<BufferElement>::iterator end() { return m_elements.end(); }
-            std::vector<BufferElement>::const_iterator begin() const { return m_elements.begin(); }
-            std::vector<BufferElement>::const_iterator end() const { return m_elements.end(); }
+            const BufferElement* TryGetElement(uint32_t nameHashId, uint32_t* index) const;
     
         private:
             void CalculateOffsetsAndStride();
             
-            std::vector<BufferElement> m_elements;
+            std::map<uint32_t, uint32_t> m_elementMap;
             uint m_stride = 0;
             uint m_alignedStride = 0;
             uint m_paddedStride = 0;

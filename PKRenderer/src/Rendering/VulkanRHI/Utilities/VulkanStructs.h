@@ -261,10 +261,7 @@ namespace PK::Rendering::VulkanRHI
         void EndRenderPass() const;
         void BindPipeline(VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline) const;
         void SetViewPorts(uint32_t firstViewport, uint32_t viewportCount, const VkViewport* pViewports) const;
-        void SetViewPort(const VkViewport& pViewport) const;
-        void SetViewPort(const VkRect2D& rect, float minDepth, float maxDepth) const;
         void SetScissors(uint32_t firstScissor, uint32_t scissorCount, const VkRect2D* pScissors) const;
-        void SetScissor(const VkRect2D& pScissor) const;
         void SetVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) const;
         void SetVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const std::initializer_list<VkDeviceSize> pOffsets) const;
         void BindIndexBuffer(VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType) const;

@@ -67,7 +67,7 @@ namespace PK::ECS
             inline const void* GetRoot() { return this; }
 
             template<typename T>
-            void Next(const void* engine, T* token, int condition)
+            void Next(const void* engine, T* token, int condition = 0)
             {
                 if (m_steps.count(engine) < 1)
                 {
@@ -86,9 +86,9 @@ namespace PK::ECS
             }
 
             template<typename T>
-            void InvokeRootStep(T* token, int condition) { Next<T>(this, token, condition); }
+            void Next(T* token, int condition) { Next<T>(this, token, condition); }
 
-            inline void InvokeRootStep(int condition) { Next<void>(this, nullptr, condition); }
+            inline void Next(int condition) { Next<void>(this, nullptr, condition); }
 
             inline void Release() { m_steps.clear(); }
 

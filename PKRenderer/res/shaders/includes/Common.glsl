@@ -63,12 +63,14 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, 0)
     float pk_SceneOEM_Exposure;
 };
 
+layout(set = 0) uniform sampler2D pk_SceneOEM_HDR;
+
 #if defined(PK_ENABLE_INSTANCING)
     PK_DECLARE_READONLY_BUFFER(float4x4, pk_InstancingMatrices);
     #define pk_MATRIX_M PK_BUFFER_DATA(pk_InstancingMatrices, PK_INSTANCE_OFFSET_ID)
     #define pk_MATRIX_I_M inverse(PK_BUFFER_DATA(pk_InstancingMatrices, PK_INSTANCE_OFFSET_ID))
 #else
-    PK_DECLARE_CBUFFER(pk_ModelMatrices, 1)
+    PK_DECLARE_CBUFFER(pk_ModelMatrices, 3)
     {
         // Current model matrix.
         float4x4 pk_MATRIX_M;

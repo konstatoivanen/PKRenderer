@@ -11,7 +11,10 @@
 #include "ECS/EntityDatabase.h"
 #include "ECS/Sequencer.h"
 #include "Rendering/RenderPipeline.h"
+#include "Rendering/HashCache.h"
 #include "ECS/Contextual/Engines/EngineCommandInput.h"
+#include "ECS/Contextual/Engines/EngineEditorCamera.h"
+#include "ECS/Contextual/Tokens/TimeToken.h"
 
 namespace PK::Core
 {
@@ -34,6 +37,7 @@ namespace PK::Core
         m_services = CreateScope<ServiceRegister>();
         m_services->Create<Utilities::Debug::Logger>(logfilter);
         m_services->Create<StringHashID>();
+        m_services->Create<HashCache>();
         auto entityDb = m_services->Create<PK::ECS::EntityDatabase>();
         auto sequencer = m_services->Create<PK::ECS::Sequencer>();
         auto assetDatabase = m_services->Create<AssetDatabase>(sequencer);
@@ -50,13 +54,15 @@ namespace PK::Core
 
         m_window = Window::Create(WindowProperties(name, config->InitialWidth, config->InitialHeight, config->EnableVsync, config->EnableCursor));
         Window::SetConsole(config->EnableConsole);
-
         m_window->OnKeyInput = PK_BIND_MEMBER_FUNCTION(input, OnKeyInput);
         m_window->OnScrollInput = PK_BIND_MEMBER_FUNCTION(input, OnScrollInput);
         m_window->OnMouseButtonInput = PK_BIND_MEMBER_FUNCTION(input, OnMouseButtonInput);
         m_window->OnClose = PK_BIND_FUNCTION(Application::Close);
 
-        auto renderPipeline = m_services->Create<RenderPipeline>(assetDatabase, config->InitialWidth, config->InitialHeight);
+        assetDatabase->LoadDirectory<Shader>("res/shaders/");
+
+        auto engineEditorCamera = m_services->Create<ECS::Engines::EngineEditorCamera>(sequencer, time, config);
+        auto renderPipeline = m_services->Create<RenderPipeline>(assetDatabase, config);
         auto engineCommands = m_services->Create<ECS::Engines::EngineCommandInput>(assetDatabase, sequencer, time, entityDb, commandConfig);
 
         sequencer->SetSteps(
@@ -71,11 +77,32 @@ namespace PK::Core
                 }
             },
             {
+                time,
+                {
+                    PK_STEP_T(renderPipeline, PK::ECS::Tokens::TimeToken)
+                }
+            },
+            {
                 input,
                 {
                     PK_STEP_T(engineCommands, Input),
+                    PK_STEP_T(engineEditorCamera, Input),
                 }
             },
+            {
+                engineCommands,
+                {
+                    PK_STEP_T(engineEditorCamera, ConsoleCommandToken),
+                    //PK_STEP_T(gizmoRenderer, ConsoleCommandToken),
+                    //PK_STEP_T(engineScreenshot, ConsoleCommandToken),
+                }
+            },
+            {
+                engineEditorCamera,
+                {
+                    PK_STEP_T(renderPipeline, PK::ECS::Tokens::ViewProjectionUpdateToken)
+                }
+            }
         });
 
         PK_LOG_HEADER("----------INITIALIZATION COMPLETE----------");
@@ -103,15 +130,19 @@ namespace PK::Core
                 continue;
             }
 
+            sequencer->Next((int)UpdateStep::OpenFrame);
+
             m_window->Begin();
 
-            sequencer->InvokeRootStep<PK::Core::Window>(m_window.get(), (int)UpdateStep::OpenFrame);
-            sequencer->InvokeRootStep<PK::Core::Window>(m_window.get(), (int)UpdateStep::UpdateInput);
-            sequencer->InvokeRootStep<PK::Core::Window>(m_window.get(), (int)UpdateStep::UpdateEngines);
-            sequencer->InvokeRootStep<PK::Core::Window>(m_window.get(), (int)UpdateStep::Render);
-            sequencer->InvokeRootStep<PK::Core::Window>(m_window.get(), (int)UpdateStep::CloseFrame);
+            sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::OpenFrame);
+            sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::UpdateInput);
+            sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::UpdateEngines);
+            sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::Render);
+            sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::CloseFrame);
             
             m_window->End();
+            
+            sequencer->Next((int)UpdateStep::CloseFrame);
         }
     }
 

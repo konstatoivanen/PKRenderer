@@ -557,6 +557,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Core\Window.h" />
     <ClInclude Include="src\Core\YamlSerializers.h" />
     <ClInclude Include="src\ECS\Contextual\Engines\EngineCommandInput.h" />
+    <ClInclude Include="src\ECS\Contextual\Engines\EngineEditorCamera.h" />
+    <ClInclude Include="src\ECS\Contextual\Tokens\ViewProjectionToken.h" />
+    <ClInclude Include="src\ECS\Contextual\Tokens\TimeToken.h" />
     <ClInclude Include="src\ECS\EntityDatabase.h" />
     <ClInclude Include="src\ECS\Sequencer.h" />
     <ClInclude Include="src\Math\PKMath.h" />
@@ -566,6 +569,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\MeshUtility.h" />
     <ClInclude Include="src\Rendering\Objects\Buffer.h" />
     <ClInclude Include="src\Rendering\Objects\CommandBuffer.h" />
+    <ClInclude Include="src\Rendering\Objects\ConstantBuffer.h" />
     <ClInclude Include="src\Rendering\Objects\Mesh.h" />
     <ClInclude Include="src\Rendering\Objects\RenderTexture.h" />
     <ClInclude Include="src\Rendering\Objects\Shader.h" />
@@ -746,9 +750,13 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\models\MDL_Cloth.mdl" />
     <None Include="res\models\MDL_Debug.mdl" />
     <None Include="res\shaders\includes\Common.glsl" />
+    <None Include="res\shaders\includes\Encoding.glsl" />
     <None Include="res\shaders\includes\HLSLSupport.glsl" />
+    <None Include="res\shaders\includes\Lighting.glsl" />
+    <None Include="res\shaders\SH_VS_IBLBackground.shader" />
     <None Include="res\shaders\SH_WS_Debug.shader" />
     <None Include="res\textures\T_DebugTexture.ktx2" />
+    <None Include="res\textures\T_OEM_Quarry.ktx2" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp" />
@@ -758,6 +766,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     </ClCompile>
     <ClCompile Include="include\PKAssets\PKAssetLoader.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Core\Application.cpp" />
     <ClCompile Include="src\Core\ApplicationConfig.cpp" />
@@ -767,6 +776,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Core\Time.cpp" />
     <ClCompile Include="src\Core\Window.cpp" />
     <ClCompile Include="src\ECS\Contextual\Engines\EngineCommandInput.cpp" />
+    <ClCompile Include="src\ECS\Contextual\Engines\EngineEditorCamera.cpp" />
     <ClCompile Include="src\ECS\Sequencer.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Math\PKMath.cpp" />
@@ -780,6 +790,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Rendering\MeshUtilitity.cpp" />
     <ClCompile Include="src\Rendering\Objects\Buffer.cpp" />
     <ClCompile Include="src\Rendering\Objects\CommandBuffer.cpp" />
+    <ClCompile Include="src\Rendering\Objects\ConstantBuffer.cpp" />
     <ClCompile Include="src\Rendering\Objects\Mesh.cpp" />
     <ClCompile Include="src\Rendering\Objects\RenderTexture.cpp" />
     <ClCompile Include="src\Rendering\Objects\Shader.cpp" />

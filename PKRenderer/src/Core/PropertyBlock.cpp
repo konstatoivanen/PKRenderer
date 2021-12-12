@@ -6,7 +6,7 @@ namespace PK::Core
     PropertyBlock::PropertyBlock(bool deltaChecks) : m_explicitLayout(false), m_deltaChecks(deltaChecks), m_currentByteOffset(0)
     {
     }
-    
+
 	void PropertyBlock::CopyFrom(PropertyBlock& from)
 	{
 		auto& propsm = m_properties;
@@ -18,7 +18,7 @@ namespace PK::Core
 
 			if (theirs != propst.end())
 			{
-				TryWriteValue(from.m_data.data() + theirs->second.offset, mine.second, theirs->second.type, theirs->second.size);
+				TryWriteValue(from.data() + theirs->second.offset, mine.second, theirs->second.type, theirs->second.size);
 			}
 		}
 	}
@@ -27,7 +27,7 @@ namespace PK::Core
 	{
 		m_currentByteOffset = 0;
 		m_properties.clear();
-		memset(m_data.data(), 0, m_data.size());
+		memset(data(), 0, size());
 	}
 
 	bool PropertyBlock::TryWriteValue(const void* src, PropertyInfo& info, std::type_index writeType, size_t writeSize)
@@ -37,7 +37,7 @@ namespace PK::Core
 			return false;
 		}
 
-		auto dst = m_data.data() + info.offset;
+		auto dst = data() + info.offset;
 
 		if (!m_deltaChecks || memcmp(dst, src, writeSize) != 0)
 		{

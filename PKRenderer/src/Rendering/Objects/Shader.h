@@ -42,7 +42,7 @@ namespace PK::Rendering::Objects
             virtual ~ShaderVariant() = default;
             virtual void Dispose() = 0;
 
-            constexpr const VertexLayout& GetVertexLayout() const { return m_vertexLayout; }
+            constexpr const BufferLayout& GetVertexLayout() const { return m_vertexLayout; }
             constexpr const ConstantBufferLayout& GetConstantLayout() const { return m_constantLayout; }
             constexpr const ResourceLayout& GetResourceLayout(uint32_t set) const { return m_resourceLayouts[set]; }
             constexpr const ShaderType GetType() const { return m_type; }
@@ -51,7 +51,7 @@ namespace PK::Rendering::Objects
             void ListProperties();
 
         protected:
-            VertexLayout m_vertexLayout;
+            BufferLayout m_vertexLayout;
             ConstantBufferLayout m_constantLayout;
             ResourceLayout m_resourceLayouts[PK_MAX_DESCRIPTOR_SETS];
             ShaderType m_type;

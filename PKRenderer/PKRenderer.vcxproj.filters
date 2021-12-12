@@ -1260,6 +1260,18 @@
     <ClInclude Include="src\Rendering\HashCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Tokens\TimeToken.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Tokens\ViewProjectionToken.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Objects\ConstantBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Engines\EngineEditorCamera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -1682,6 +1694,10 @@
     <None Include="res\configs\CommandConfig-Active.keycfg" />
     <None Include="res\shaders\includes\HLSLSupport.glsl" />
     <None Include="res\shaders\includes\Common.glsl" />
+    <None Include="res\shaders\SH_VS_IBLBackground.shader" />
+    <None Include="res\shaders\includes\Encoding.glsl" />
+    <None Include="res\shaders\includes\Lighting.glsl" />
+    <None Include="res\textures\T_OEM_Quarry.ktx2" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
@@ -1826,6 +1842,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\PropertyBlock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Objects\ConstantBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\Contextual\Engines\EngineEditorCamera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

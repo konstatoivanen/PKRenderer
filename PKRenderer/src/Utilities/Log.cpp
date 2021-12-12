@@ -22,6 +22,7 @@ namespace PK::Utilities::Debug
     
     void Logger::InsertNewLine()
     {
+        SetConsoleColor((int)ConsoleColor::LOG_PARAMETER);
         printf("\n");
         m_lineClearLength = 0;
     }

@@ -6,6 +6,7 @@ namespace PK::ECS
     To::To(std::initializer_list<BranchSteps::value_type> branchSteps) : m_branchSteps(branchSteps) {}
     To::To(std::initializer_list<StepPtr> commonSteps) : m_commonSteps(commonSteps) {}
     To::To(std::initializer_list<BranchSteps::value_type> branchSteps, std::initializer_list<StepPtr> commonSteps) : m_branchSteps(branchSteps), m_commonSteps(commonSteps) {}
+    To::To(std::initializer_list<StepPtr> commonSteps, std::initializer_list<BranchSteps::value_type> branchSteps) : m_branchSteps(branchSteps), m_commonSteps(commonSteps) {}
 
     const std::vector<StepPtr>* To::GetSteps(int condition)
     {

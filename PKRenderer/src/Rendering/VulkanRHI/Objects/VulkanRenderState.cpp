@@ -301,7 +301,9 @@ namespace PK::Rendering::VulkanRHI::Objects
 
                 auto* attribute = &m_pipelineKey.vertexAttributes[elementIdx];
 
-                if (attribute->format == EnumConvert::GetFormat(element.Type) && (attribute->binding != i || attribute->offset != element.Offset))
+                // Format equality might be too strict. disabling for now
+                // @TODO Review this again later?
+                if (/*attribute->format == EnumConvert::GetFormat(element.Type) && */ (attribute->binding != i || attribute->offset != element.Offset))
                 {
                     m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
                     attribute->binding = i;
@@ -314,7 +316,6 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanRenderState::ValidateDescriptorSets(const VulkanExecutionGate& gate)
     {
         auto shader = m_pipelineKey.shader;
-        auto setIndex = 0u;
         auto index = 0u;
 
         for (auto i = 0; i < PK_MAX_DESCRIPTOR_SETS; ++i)
@@ -324,8 +325,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 continue;
             }
 
-            m_descriptorSetIndices[i] = setIndex++;
-
+            auto* bindings = m_descriptorSetKeys[i].bindings;
             const VulkanBindHandle* handle = nullptr;
             index = 0u;
 
@@ -333,7 +333,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             {
                 PK_THROW_ASSERT(m_resourceProperties.TryGetPropertyPtr<VulkanBindHandle>(element.NameHashId, handle), "Descriptor (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
 
-                auto* binding = m_descriptorSetKeys[i].bindings + index++;
+                auto* binding = bindings + index++;
 
                 if (binding->binding != element.Binding || binding->count != element.Count || binding->type != element.Type || binding->handle != handle)
                 {
@@ -345,20 +345,19 @@ namespace PK::Rendering::VulkanRHI::Objects
                 }
             }
 
-            for (; index < PK_MAX_DESCRIPTORS_PER_SET; ++index)
+            // Binding count changed
+            if (index < PK_MAX_DESCRIPTORS_PER_SET && bindings[index].count != 0)
             {
-                // Binding count changed
-                if (m_descriptorSetKeys[i].bindings[index].count != 0)
-                {
-                    m_dirtyFlags |= (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i);
-                    m_descriptorSetKeys[i].bindings[index] = {};
-                }
+                memset(bindings + index, 0, sizeof(bindings[0]) * (PK_MAX_DESCRIPTORS_PER_SET - index));
+                m_dirtyFlags |= (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i);
             }
 
             if (m_dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i))
             {
                 m_descriptorSets[i] = m_descriptorCache->GetDescriptorSet(shader->GetDescriptorSetLayout(i), m_descriptorSetKeys[i], gate);
             }
+
+            m_dirtyFlags |= (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i);
         }
     }
 

@@ -4,6 +4,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <Core/UpdateStep.h>
+#include <ECS/Contextual/Tokens/TimeToken.h>
 
 namespace PK::Core
 {
@@ -21,7 +22,7 @@ namespace PK::Core
     {
     }
     
-    
+  
     void Time::Reset()
     {
         m_time = 0;
@@ -51,7 +52,22 @@ namespace PK::Core
             case PK::Core::UpdateStep::OpenFrame: 
             {
                 m_frameStart = std::chrono::steady_clock::now(); 
-                m_sequencer->Next<Time>(this, this, 0);
+
+                PK::ECS::Tokens::TimeToken token;
+                token.timeScale = m_timeScale;
+                token.time = m_time;
+                token.unscaledTime = m_unscaledTime;
+                token.deltaTime = m_deltaTime;
+                token.unscaledDeltaTime = m_unscaledDeltaTime;
+                token.smoothDeltaTime = m_smoothDeltaTime;
+                token.unscaledDeltaTimeFixed = m_unscaledDeltaTimeFixed;
+
+                m_sequencer->Next<PK::ECS::Tokens::TimeToken>(this, &token, 0);
+
+                if (token.logFrameRate)
+                {
+                    LogFrameRate();
+                }
             }
             break;
             case PK::Core::UpdateStep::CloseFrame:
