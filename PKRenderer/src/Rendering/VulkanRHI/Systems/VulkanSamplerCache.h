@@ -12,11 +12,12 @@ namespace PK::Rendering::VulkanRHI::Systems
     {
         public:
             VulkanSamplerCache(VkDevice device) : m_device(device) {}
+            ~VulkanSamplerCache();
 
             VkSampler GetSampler(const SamplerDescriptor& descriptor);
 
         private:
             const VkDevice m_device;
-            std::map<SamplerDescriptor, Ref<VulkanSampler>> m_samplers;
+            std::map<SamplerDescriptor, VulkanSampler*> m_samplers;
     };
 }

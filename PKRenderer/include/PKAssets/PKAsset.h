@@ -40,7 +40,7 @@ namespace PK::Assets
         Animation
     };
 
-    enum class PKElementType : unsigned char
+    enum class PKElementType : unsigned short
     {
         Invalid = 0,
 
@@ -245,7 +245,6 @@ namespace PK::Assets
 
         struct PKDescriptorSet
         {
-            uint_t set;
             uint_t stageflags;
             uint_t descriptorCount;
             RelativePtr<PKDescriptor> descriptors;

@@ -21,7 +21,7 @@
 #define pk_DielectricSpecular float4(0.04, 0.04, 0.04, 1.0 - 0.04) 
 #define pk_Luminance float4(0.2125, 0.7154, 0.0721, 1.0f) //float4(0.0396819152, 0.458021790, 0.00609653955, 1.0)
 
-PK_DECLARE_CBUFFER(pk_PerFrameConstants, 0)
+PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 {
     // Time since level load (t/20, t, t*2, t*3), use to animate things inside the shaders.
     float4 pk_Time;
@@ -63,14 +63,14 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, 0)
     float pk_SceneOEM_Exposure;
 };
 
-layout(set = 0) uniform sampler2D pk_SceneOEM_HDR;
+PK_DECLARE_SET_GLOBAL uniform sampler2D pk_SceneOEM_HDR;
 
 #if defined(PK_ENABLE_INSTANCING)
-    PK_DECLARE_READONLY_BUFFER(float4x4, pk_InstancingMatrices);
+    PK_DECLARE_READONLY_BUFFER(float4x4, pk_InstancingMatrices, PK_SET_PASS);
     #define pk_MATRIX_M PK_BUFFER_DATA(pk_InstancingMatrices, PK_INSTANCE_OFFSET_ID)
     #define pk_MATRIX_I_M inverse(PK_BUFFER_DATA(pk_InstancingMatrices, PK_INSTANCE_OFFSET_ID))
 #else
-    PK_DECLARE_CBUFFER(pk_ModelMatrices, 3)
+    PK_DECLARE_CBUFFER(pk_ModelMatrices, PK_SET_DRAW)
     {
         // Current model matrix.
         float4x4 pk_MATRIX_M;

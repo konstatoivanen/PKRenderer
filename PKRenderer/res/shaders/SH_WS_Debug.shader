@@ -8,7 +8,10 @@
 
 #pragma PROGRAM_VERTEX
 
-layout(push_constant) uniform offset{ float4 offset_x; };
+PK_DECLARE_LOCAL_CBUFFER(offset)
+{
+    float4 offset_x; 
+};
 
 layout(location = 0) in float3 in_POSITION;
 layout(location = 1) in float2 in_TEXCOORD0;
@@ -26,7 +29,7 @@ void main()
 
 #pragma PROGRAM_FRAGMENT
 
-layout(set = 0) uniform sampler2D tex1;
+PK_DECLARE_SET_SHADER uniform sampler2D tex1;
 
 layout(location = 0) in float3 vs_COLOR;
 layout(location = 1) in float2 vs_TEXCOORD0;

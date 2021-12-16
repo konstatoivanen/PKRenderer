@@ -5,7 +5,25 @@
 
 namespace PK::Core
 {
-    class PropertyBlock : public NoCopy, public std::vector<char>
+	template<typename T>
+	struct Handle 
+	{ 
+		const T* handle = nullptr; 
+		Handle(const T* ptr) { handle = ptr; }
+		void operator = (const T* ptr) { handle = ptr; }
+		operator const T* () const { return handle; }
+	};
+
+	template<typename T>
+	struct HandleArray 
+	{
+		const T* const* handles; 
+		HandleArray(const T* const* ptr) { handles = ptr; }
+		void operator = (const T* const* ptr) { handles = ptr; }
+		operator const T* const* () const { return handles; }
+	};
+
+    class PropertyBlock : public NoCopy
     {
 		using uint = unsigned int;
 		using ushort = unsigned short;
@@ -24,32 +42,32 @@ namespace PK::Core
 			};
 			
 		public:
-			PropertyBlock(bool deltaChecks = false);
-			virtual ~PropertyBlock() = default;
+			PropertyBlock(size_t initialCapacity, bool deltaChecks = false);
+			~PropertyBlock();
+
 			void CopyFrom(PropertyBlock& from);
 			virtual void Clear();
 		
 			template<typename T>
-			const T* GetElementPtr(const PropertyInfo& info) const
+			const T* Get(const PropertyInfo& info) const
 			{
-				if ((info.offset + (size_t)info.size) > capacity())
+				if ((info.offset + (size_t)info.size) > m_capacity)
 				{
-					PK_THROW_ERROR("OOB ARRAY INDEX! idx: %i, capacity: %i", info.offset + info.size, capacity());
+					PK_THROW_ERROR("OOB ARRAY INDEX! idx: %i, capacity: %i", info.offset + info.size, m_capacity);
 				}
 
-				return reinterpret_cast<const T*>(data() + info.offset);
+				return reinterpret_cast<const T*>(reinterpret_cast<char*>(m_buffer) + info.offset);
 			}
-	
+
 			template<typename T>
-			const T* GetPropertyPtr(const uint hashId) const 
+			const T* Get(const uint hashId) const 
 			{
 				auto iter = m_properties.find(hashId);
-				return iter != m_properties.end() ? GetElementPtr<T>(iter->second) : nullptr;
+				return iter != m_properties.end() ? Get<T>(iter->second) : nullptr;
 			}
 
-
 			template<typename T>
-			const bool TryGetPropertyPtr(const uint hashId, const T*& value, size_t* size = nullptr) const
+			const bool TryGet(const uint hashId, const T*& value, size_t* size = nullptr) const
 			{
 				auto iter = m_properties.find(hashId);
 
@@ -60,7 +78,7 @@ namespace PK::Core
 						*size = (size_t)iter->second.size;
 					}
 
-					value = GetElementPtr<T>(iter->second);
+					value = Get<T>(iter->second);
 					return true;
 				}
 
@@ -68,9 +86,9 @@ namespace PK::Core
 			}
 
 			template<typename T>
-			const bool TryGetPropertyValue(const uint hashId, T& value) const 
+			const bool TryGet(const uint hashId, T& value) const 
 			{
-				auto ptr = GetPropertyPtr<T>(hashId);
+				auto ptr = Get<T>(hashId);
 				
 				if (ptr != nullptr)
 				{
@@ -101,14 +119,9 @@ namespace PK::Core
 				if (info.size == 0)
 				{
 					PK_THROW_ASSERT(!m_explicitLayout, "Cannot add elements to explicitly mapped property block!");
-
-					if (m_currentByteOffset >= size())
-					{
-						resize(size() + wsize);
-					}
-
-					info = { type, m_currentByteOffset, wsize, 1 };
-					m_currentByteOffset += wsize;
+					ValidateBufferSize(m_head + wsize);
+					info = { type, (uint)m_head, wsize, 1 };
+					m_head += wsize;
 				}
 
 				if (!TryWriteValue(src, info, type, wsize))
@@ -116,6 +129,9 @@ namespace PK::Core
 					PK_THROW_ERROR("INVALID DATA FORMAT! %i", hashId);
 				}
 			}
+
+			template<typename T>
+			void Set(uint hashId, const T& src) { Set(hashId, &src); }
 
 			template<typename T>
 			void Reserve(uint hashId, uint count = 1)
@@ -131,25 +147,21 @@ namespace PK::Core
 				auto wsize = (ushort)(sizeof(T) * count);
 				auto type = std::type_index(typeid(T));
 
-
-				if (m_currentByteOffset >= size())
-				{
-					resize(size() + wsize);
-				}
-
-				m_properties[hashId] = { type, m_currentByteOffset, wsize, 1 };
-				m_currentByteOffset += wsize;
+				ValidateBufferSize(m_head + wsize);
+				m_properties[hashId] = { type, (uint)m_head, wsize, 1 };
+				m_head += wsize;
 			}
-
-			template<typename T>
-			void Set(uint hashId, const T& src) { Set(hashId, &src); }
 	
 		protected:
 			bool TryWriteValue(const void* src, PropertyInfo& info, std::type_index writeType, size_t writeSize);
+			void ValidateBufferSize(size_t size);
 
 			bool m_explicitLayout = false;
 			bool m_deltaChecks = false;
-			uint m_currentByteOffset = 0;
+			void* m_buffer = nullptr;
+			size_t m_capacity = 0ull;
+			size_t m_head = 0ll;
+
 			std::unordered_map<uint, PropertyInfo> m_properties;
     };
 }

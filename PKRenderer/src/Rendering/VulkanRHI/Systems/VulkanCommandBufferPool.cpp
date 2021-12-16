@@ -76,6 +76,9 @@ namespace PK::Rendering::VulkanRHI::Systems
             return;
         }
 
+        // End possibly active render pass
+        m_current->EndRenderPass();
+
         const int64_t index = m_current - &m_commandBuffers[0];
         auto& renderingFinished = m_renderingFinishedSignals[index];
 

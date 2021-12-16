@@ -143,6 +143,8 @@ namespace PK::Core
             m_window->End();
             
             sequencer->Next((int)UpdateStep::CloseFrame);
+
+            GraphicsAPI::GC();
         }
     }
 

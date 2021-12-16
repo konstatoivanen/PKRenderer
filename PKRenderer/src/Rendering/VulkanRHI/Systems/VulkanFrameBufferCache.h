@@ -1,7 +1,6 @@
 #pragma once
 #include "PrecompiledHeader.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
-#include "Rendering/VulkanRHI/Utilities/VulkanConstants.h"
 #include "Core/NoCopy.h"
 #include "Utilities/Ref.h"
 #include "Math/PKMath.h"
@@ -69,16 +68,17 @@ namespace PK::Rendering::VulkanRHI::Systems
     {
         public:
             VulkanFrameBufferCache(VkDevice device, uint64_t pruneDelay);
+            ~VulkanFrameBufferCache();
 
             struct FrameBufferValue
             {
-                Ref<VulkanFrameBuffer> frameBuffer;
+                VulkanFrameBuffer* frameBuffer;
                 uint64_t pruneTick;
             };
 
             struct RenderPassValue
             {
-                Ref<VulkanRenderPass> renderPass;
+                VulkanRenderPass* renderPass;
                 uint64_t pruneTick;
             };
 

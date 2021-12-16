@@ -45,6 +45,13 @@ namespace PK::Rendering::Structs
         CubemapArray,
     };
 
+    enum class TextureBindMode : uint8_t
+    {
+        SampledTexture,
+        Image,
+        RenderTarget
+    };
+
     enum class FilterMode : uint8_t
     {
         Point,
@@ -125,25 +132,30 @@ namespace PK::Rendering::Structs
         StageGeometry        = 1 << 3,
         StageFragment        = 1 << 4,
         StageCompute         = 1 << 5,
-        StageDepthStencil    = 1 << 6,
-        StageDepthStencilOut = 1 << 7,
-        StageColorOut        = 1 << 8,
+        StageDepthStencil    = 1 << 6, // Early depth & stencil test
+        StageDepthStencilOut = 1 << 7, // depth & stencil write
+        StageColorOut        = 1 << 8, // Color write
         
-        ReadShader   = 1 << 9,
-        ReadUniform  = 1 << 10,
-        ReadVertex   = 1 << 11,
-        ReadIndex    = 1 << 12,
-        ReadIndirect = 1 << 13,
+        ReadShader   = 1 << 9, // Read textures, images, buffers
+        ReadUniform  = 1 << 10, // Read uniform buffers
+        ReadVertex   = 1 << 11, // Read vertex buffer
+        ReadIndex    = 1 << 12, // Read index buffer
+        ReadIndirect = 1 << 13, // Read indirect arguments
         ReadRTColor  = 1 << 14,
         ReadRTDepth  = 1 << 15,
 
-        WriteShader  = 1 << 16,
+        WriteShader  = 1 << 16, // Write textures, images, buffers
         WriteRTColor = 1 << 17,
         WriteRTDepth = 1 << 18,
 
-        ReadWriteShader = ReadShader | WriteShader,
+        ReadWriteShader = ReadShader | WriteShader, // Read/Write, images & buffers
         ReadWriteRTColor = ReadRTColor | WriteRTColor,
         ReadWriteRTDepth = ReadRTDepth | WriteRTDepth,
+
+        // short hands
+        FragmentAttachmentColor = ReadWriteRTColor | StageColorOut,         // Write color in fragment out
+        FragmentAttachmentDepth = ReadWriteRTDepth | StageDepthStencilOut,  // Write depth in fragment out
+        FragmentTexture = ReadShader | StageFragment,                       // Read texture in fragment
     };
 
     enum class BufferUsage : uint8_t
@@ -166,9 +178,14 @@ namespace PK::Rendering::Structs
         Upload = 0x8,
         Sample = 0x10,
         Input = 0x20,
+        Storage = 0x40,
         Default = Upload | Sample,
         RTColorSample = RTColor | Sample,
-        RTDepthSample = RTDepth | Sample
+        RTDepthSample = RTDepth | Sample,
+
+        ValidRTTypes = RTColor | RTDepth | RTStencil,
+        ValidRTColorUsages = Sample | Storage | Input,
+        ValidRTDepthUsages = Sample | Input,
     };
 
     #define PK_DECLARE_ENUM_OPERATORS(Type) \

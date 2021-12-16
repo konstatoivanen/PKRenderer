@@ -7,8 +7,8 @@ namespace PK::Rendering::Objects
     {
         m_colorAttachmentCount = 0u;
 
-        auto usageColor = (descriptor.usage & TextureUsage::Sample) | TextureUsage::RTColor;
-        auto usageDepth = (descriptor.usage & TextureUsage::Sample) | TextureUsage::RTDepth;
+        auto usageColor = (descriptor.usage & TextureUsage::ValidRTColorUsages) | TextureUsage::RTColor;
+        auto usageDepth = (descriptor.usage & TextureUsage::ValidRTDepthUsages) | TextureUsage::RTDepth;
 
         for (auto i = 0u; i < PK_MAX_RENDER_TARGETS; ++i)
         {

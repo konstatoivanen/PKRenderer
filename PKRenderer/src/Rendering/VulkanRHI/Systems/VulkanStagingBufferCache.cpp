@@ -3,35 +3,43 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
+    VulkanStagingBufferCache::~VulkanStagingBufferCache()
+    {
+        for (auto& kv : m_freeBuffers)
+        {
+            delete kv.second;
+        }
+
+        for (auto stagingBuffer : m_activeBuffers)
+        {
+            delete stagingBuffer;
+        }
+    }
+
     const VulkanStagingBuffer* VulkanStagingBufferCache::GetBuffer(size_t size)
     {
         auto iter = m_freeBuffers.lower_bound(size);
+        auto nextPruneTick = m_currentPruneTick + 1;
 
         if (iter != m_freeBuffers.end())
         {
             auto stagingBuffer = iter->second;
+            stagingBuffer->pruneTick = nextPruneTick;
             m_freeBuffers.erase(iter);
             m_activeBuffers.insert(stagingBuffer);
-            return stagingBuffer.get();
+            return stagingBuffer;
         }
 
         VulkanBufferCreateInfo createInfo(BufferUsage::Staging, size);
-        auto stagingBuffer = CreateRef<VulkanStagingBuffer>(m_allocator, createInfo);
-        stagingBuffer->pruneTick = m_currentPruneTick + m_pruneDelay;
+        auto stagingBuffer = new VulkanStagingBuffer(m_allocator, createInfo);
+        stagingBuffer->pruneTick = nextPruneTick;
         stagingBuffer->executionGate.Invalidate();
         m_activeBuffers.insert(stagingBuffer);
-        return stagingBuffer.get();
+        return stagingBuffer;
     }
     
-    void VulkanStagingBufferCache::Prune(bool all)
+    void VulkanStagingBufferCache::Prune()
     {
-        if (all)
-        {
-            m_freeBuffers.clear();
-            m_activeBuffers.clear();
-            return;
-        }
-
         ++m_currentPruneTick;
 
         decltype(m_freeBuffers) freeBuffers;
@@ -42,7 +50,10 @@ namespace PK::Rendering::VulkanRHI::Systems
             if (kv.second->pruneTick > m_currentPruneTick) 
             {
                 m_freeBuffers.insert(kv);
+                continue;
             }
+
+            delete kv.second;
         }
         
         decltype(m_activeBuffers) activeBuffers;
@@ -54,13 +65,12 @@ namespace PK::Rendering::VulkanRHI::Systems
             if (stagingBuffer->executionGate.IsValid() ? stagingBuffer->executionGate.IsCompleted() : stagingBuffer->pruneTick < m_currentPruneTick)
             {
                 stagingBuffer->executionGate.Invalidate();
-                stagingBuffer->pruneTick = m_currentPruneTick;
+                stagingBuffer->pruneTick = m_currentPruneTick + m_pruneDelay;
                 m_freeBuffers.insert(std::make_pair(stagingBuffer->capacity, stagingBuffer));
+                continue;
             }
-            else 
-            {
-                m_activeBuffers.insert(stagingBuffer);
-            }
+
+            m_activeBuffers.insert(stagingBuffer);
         }
     }
 }

@@ -1,11 +1,29 @@
 #include "PrecompiledHeader.h"
 #include "VulkanFrameBufferCache.h"
-#include "Rendering/VulkanRHI/Utilities/VulkanConstants.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
 {    
     VulkanFrameBufferCache::VulkanFrameBufferCache(VkDevice device, uint64_t pruneDelay) : m_device(device), m_pruneDelay(pruneDelay) {}
+
+    VulkanFrameBufferCache::~VulkanFrameBufferCache()
+    {
+        for (auto& kv : m_framebuffers)
+        {
+            if (kv.second.frameBuffer != nullptr)
+            {
+                delete kv.second.frameBuffer;
+            }
+        }
+
+        for (auto& kv : m_renderPasses)
+        {
+            if (kv.second.renderPass != nullptr)
+            {
+                delete kv.second.renderPass;
+            }
+        }
+    }
 
     const VulkanFrameBuffer* VulkanFrameBufferCache::GetFrameBuffer(const FrameBufferKey& key)
     {
@@ -15,7 +33,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         if (iterator != m_framebuffers.end() && iterator->second.frameBuffer != nullptr)
         {
             iterator->second.pruneTick = nextPruneTick;
-            return iterator->second.frameBuffer.get();
+            return iterator->second.frameBuffer;
         }
 
         VkImageView attachments[PK_MAX_RENDER_TARGETS * 2 + 1];
@@ -50,11 +68,10 @@ namespace PK::Rendering::VulkanRHI::Systems
         info.height = key.extent.height;
         info.layers = key.layers;
 
-        auto frameBuffer = CreateRef<VulkanFrameBuffer>(m_device, info);
+        auto frameBuffer = new VulkanFrameBuffer(m_device, info);
         m_framebuffers[key] = { frameBuffer, nextPruneTick };
         m_renderPassReferenceCounts[key.renderPass]++;
-
-        return frameBuffer.get();
+        return frameBuffer;
     }
 
     const VulkanRenderPass* VulkanFrameBufferCache::GetRenderPass(const RenderPassKey& key)
@@ -65,7 +82,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         if (iterator != m_renderPasses.end() && iterator->second.renderPass != nullptr)
         {
             iterator->second.pruneTick = nextPruneTick;
-            return iterator->second.renderPass.get();
+            return iterator->second.renderPass;
         }
 
         // In Vulkan, the subpass desc specifies the layout to transition to at the start of the render
@@ -202,10 +219,9 @@ namespace PK::Rendering::VulkanRHI::Systems
 
         renderPassInfo.attachmentCount = attachmentIndex;
 
-        auto renderPass = CreateRef<VulkanRenderPass>(m_device, renderPassInfo);
+        auto renderPass = new VulkanRenderPass(m_device, renderPassInfo);
         m_renderPasses[key] = { renderPass, nextPruneTick };
-
-        return renderPass.get();
+        return renderPass;
     }
 
     void VulkanFrameBufferCache::Prune()
@@ -220,6 +236,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             if (value.frameBuffer != nullptr && value.pruneTick < m_currentPruneTick)
             {
                 m_renderPassReferenceCounts[key.renderPass]--;
+                delete value.frameBuffer;
                 value.frameBuffer = nullptr;
             }
         }
@@ -231,9 +248,9 @@ namespace PK::Rendering::VulkanRHI::Systems
 
             if (value.renderPass != nullptr && value.pruneTick < m_currentPruneTick && m_renderPassReferenceCounts[value.renderPass->renderPass] == 0)
             {
+                delete value.renderPass;
                 value.renderPass = nullptr;
             }
         }
     }
-
 }

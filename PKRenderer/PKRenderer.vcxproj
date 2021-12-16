@@ -592,7 +592,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanSamplerCache.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanStagingBufferCache.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanSwapchain.h" />
-    <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanConstants.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanEnumConversion.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanMemory.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanStructs.h" />
@@ -749,10 +748,13 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\configs\CommandConfig-Active.keycfg" />
     <None Include="res\models\MDL_Cloth.mdl" />
     <None Include="res\models\MDL_Debug.mdl" />
+    <None Include="res\shaders\includes\Blit.glsl" />
     <None Include="res\shaders\includes\Common.glsl" />
     <None Include="res\shaders\includes\Encoding.glsl" />
     <None Include="res\shaders\includes\HLSLSupport.glsl" />
     <None Include="res\shaders\includes\Lighting.glsl" />
+    <None Include="res\shaders\SH_CS_Debug.shader" />
+    <None Include="res\shaders\SH_VS_BlitDebug.shader" />
     <None Include="res\shaders\SH_VS_IBLBackground.shader" />
     <None Include="res\shaders\SH_WS_Debug.shader" />
     <None Include="res\textures\T_DebugTexture.ktx2" />

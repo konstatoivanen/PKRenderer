@@ -39,13 +39,15 @@ namespace PK::Rendering::VulkanRHI::Systems
     {
         public:
             VulkanPipelineCache(VkDevice device, uint64_t pruneDelay) : m_device(device), m_pruneDelay(pruneDelay) {}
+            ~VulkanPipelineCache();
 
             struct PipelineValue
             {
-                Ref<VulkanPipeline> pipeline = nullptr;
+                VulkanPipeline* pipeline = nullptr;
                 uint64_t pruneTick = 0;
             };
 
+            const VulkanPipeline* GetPipeline(const PipelineKey& key);
             const VulkanPipeline* GetGraphicsPipeline(const PipelineKey& key);
             const VulkanPipeline* GetComputePipeline(const VulkanShader* shader);
             void Prune();

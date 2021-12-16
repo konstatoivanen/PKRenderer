@@ -24,7 +24,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             auto spirvSize = variant->sprivSizes[i];
             auto* spirv = reinterpret_cast<uint32_t*>(variant->sprivBuffers[i].Get(base));
-            m_modules[i] = CreateRef<VulkanShaderModule>(m_device, EnumConvert::GetShaderStage((ShaderStage)i), spirv, spirvSize);
+            m_modules[i] = new VulkanShaderModule(m_device, EnumConvert::GetShaderStage((ShaderStage)i), spirv, spirvSize);
             m_stageFlags |= 1 << i;
         }
 
@@ -45,6 +45,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         std::vector<VkDescriptorSetLayout> layouts;
         std::vector<VkPushConstantRange> pushConstantRanges;
+        m_descriptorSetCount = variant->descriptorSetCount;
 
         if (variant->descriptorSetCount > 0)
         {
@@ -73,11 +74,10 @@ namespace PK::Rendering::VulkanRHI::Objects
                 VkDescriptorSetLayoutCreateInfo descriptorsetLayoutCreateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
                 descriptorsetLayoutCreateInfo.bindingCount = (uint32_t)bindings.size();
                 descriptorsetLayoutCreateInfo.pBindings = bindings.data();
-                auto descriptorSet = CreateRef<VulkanDescriptorSetLayout>(m_device, descriptorsetLayoutCreateInfo);
 
-                layouts.push_back(descriptorSet->layout);
-                m_descriptorSetLayouts[pDescriptorSet->set] = descriptorSet;
-                m_resourceLayouts[pDescriptorSet->set] = ResourceLayout(elements);
+                m_descriptorSetLayouts[i] = CreateScope<VulkanDescriptorSetLayout>(m_device, descriptorsetLayoutCreateInfo);
+                layouts.push_back(m_descriptorSetLayouts[i]->layout);
+                m_resourceLayouts[i] = ResourceLayout(elements);
             }
 
             pipelineLayoutInfo.setLayoutCount = (uint32_t)layouts.size();
@@ -107,9 +107,14 @@ namespace PK::Rendering::VulkanRHI::Objects
             pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
         }
 
-        m_pipelineLayout = CreateRef<VulkanPipelineLayout>(m_device, pipelineLayoutInfo);
+        m_pipelineLayout = CreateScope<VulkanPipelineLayout>(m_device, pipelineLayoutInfo);
 
         m_type = m_modules[(int)ShaderStage::Compute] != nullptr ? ShaderType::Compute : ShaderType::Graphics;
+    }
+
+    VulkanShader::~VulkanShader()
+    {
+        Dispose();
     }
 
     void VulkanShader::Dispose()

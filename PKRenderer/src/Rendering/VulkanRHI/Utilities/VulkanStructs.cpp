@@ -59,33 +59,38 @@ namespace PK::Rendering::VulkanRHI
             image.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         }
 
-        if (((uint32_t)descriptor.usage & (uint32_t)TextureUsage::Sample) != 0)
+        if ((descriptor.usage & TextureUsage::Sample) != 0)
         {
             image.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
         }
 
-        if (((uint32_t)descriptor.usage & (uint32_t)TextureUsage::RTColor) != 0)
+        if ((descriptor.usage & TextureUsage::Storage) != 0)
+        {
+            image.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+        }
+
+        if ((descriptor.usage & TextureUsage::RTColor) != 0)
         {
             image.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
-            if (((uint32_t)descriptor.usage & (uint32_t)TextureUsage::Sample) != 0)
+            if ((descriptor.usage & TextureUsage::Sample) != 0)
             {
                 image.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
             }
         }
 
-        if (((uint32_t)descriptor.usage & (uint32_t)TextureUsage::RTStencil) != 0)
+        if ((descriptor.usage & TextureUsage::RTStencil) != 0)
         {
             aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
             image.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         }
 
-        if (((uint32_t)descriptor.usage & (uint32_t)TextureUsage::Upload) != 0)
+        if ((descriptor.usage & TextureUsage::Upload) != 0)
         {
             image.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         }
 
-        if (((uint32_t)descriptor.usage & (uint32_t)TextureUsage::RTDepth) != 0)
+        if ((descriptor.usage & TextureUsage::RTDepth) != 0)
         {
             aspect = (VkImageAspectFlagBits)((uint32_t)aspect | (uint32_t)VK_IMAGE_ASPECT_DEPTH_BIT);
             image.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -355,129 +360,5 @@ namespace PK::Rendering::VulkanRHI
     VulkanSampler::~VulkanSampler()
     {
         vkDestroySampler(device, sampler, nullptr);
-    }
-
-    void VulkanRawCommandBuffer::BeginRenderPass(const VkRenderPassBeginInfo& beginInfo)
-    {
-        vkCmdBeginRenderPass(commandBuffer, &beginInfo, level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_SUBPASS_CONTENTS_INLINE : VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-    }
-
-    void VulkanRawCommandBuffer::EndRenderPass() const
-    {
-        vkCmdEndRenderPass(commandBuffer);
-    }
-
-    void VulkanRawCommandBuffer::BindPipeline(VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline) const
-    {
-        vkCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
-    }
-
-    void VulkanRawCommandBuffer::SetViewPorts(uint32_t firstViewport, uint32_t viewportCount, const VkViewport* pViewports) const
-    {
-        vkCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
-    }
-
-    void VulkanRawCommandBuffer::SetScissors(uint32_t firstScissor, uint32_t scissorCount, const VkRect2D* pScissors) const
-    {
-        vkCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
-    }
-
-    void VulkanRawCommandBuffer::SetVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) const
-    {
-        vkCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
-    }
-
-    void VulkanRawCommandBuffer::SetVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const std::initializer_list<VkDeviceSize> pOffsets) const
-    {
-        vkCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets.begin());
-    }
-
-    void VulkanRawCommandBuffer::BindIndexBuffer(VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType) const
-    {
-        vkCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
-    }
-
-    void VulkanRawCommandBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferCopy* pRegions) const
-    {
-        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
-    }
-
-    void VulkanRawCommandBuffer::CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions) const
-    {
-        vkCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
-    }
-
-    void VulkanRawCommandBuffer::CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, const VkExtent3D& extent, uint32_t level, uint32_t layer) const
-    {
-        VkBufferImageCopy region = {};
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = level;
-        region.imageSubresource.baseArrayLayer = layer;
-        region.imageSubresource.layerCount = 1;
-        region.imageExtent = extent;
-        CopyBufferToImage(srcBuffer, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-    }
-
-
-    void VulkanRawCommandBuffer::PipelineBarrier(VkPipelineStageFlags srcStageMask,
-        VkPipelineStageFlags dstStageMask,
-        VkDependencyFlags dependencyFlags,
-        uint32_t memoryBarrierCount,
-        const VkMemoryBarrier* pMemoryBarriers,
-        uint32_t bufferMemoryBarrierCount,
-        const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-        uint32_t imageMemoryBarrierCount,
-        const VkImageMemoryBarrier* pImageMemoryBarriers) const
-    {
-        vkCmdPipelineBarrier(commandBuffer,
-            srcStageMask,
-            dstStageMask,
-            dependencyFlags,
-            memoryBarrierCount,
-            pMemoryBarriers,
-            bufferMemoryBarrierCount,
-            pBufferMemoryBarriers,
-            imageMemoryBarrierCount,
-            pImageMemoryBarriers);
-    }
-
-    void VulkanRawCommandBuffer::TransitionImageLayout(const VulkanLayoutTransition& transition) const
-    {
-        if (transition.oldLayout == transition.newLayout)
-        {
-            return;
-        }
-
-        VkImageMemoryBarrier barrier = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
-        barrier.oldLayout = transition.oldLayout;
-        barrier.newLayout = transition.newLayout;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = transition.image;
-        barrier.subresourceRange = transition.subresources;
-        barrier.srcAccessMask = transition.srcAccessMask;
-        barrier.dstAccessMask = transition.dstAccessMask;
-        PipelineBarrier(transition.srcStage, transition.dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-    }
-
-    void VulkanRawCommandBuffer::BindDescriptorSets(VkPipelineBindPoint pipelineBindPoint,
-        const VulkanPipelineLayout* layout,
-        uint32_t firstSet,
-        uint32_t descriptorSetCount,
-        const VulkanDescriptorSet** pDescriptorSets,
-        uint32_t dynamicOffsetCount,
-        const uint32_t* pDynamicOffsets) const
-    {
-
-        std::vector<VkDescriptorSet> sets;
-        sets.resize(descriptorSetCount);
-
-        for (auto i = 0u; i < descriptorSetCount; ++i)
-        {
-            sets.at(i) = pDescriptorSets[i]->set;
-            pDescriptorSets[i]->executionGate = GetOnCompleteGate();
-        }
-
-        vkCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout->layout, firstSet, descriptorSetCount, sets.data(), dynamicOffsetCount, pDynamicOffsets);
     }
 }

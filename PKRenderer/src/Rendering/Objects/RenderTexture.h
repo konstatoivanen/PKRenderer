@@ -17,6 +17,8 @@ namespace PK::Rendering::Objects
             constexpr uint GetColorCount() const { return m_colorAttachmentCount; }
             inline Texture* GetColor(uint index) const { return index >= m_colorAttachmentCount ? nullptr : m_colorAttachments[index].get(); }
             inline Texture* GetDepth() const { return m_depthAttachment == nullptr ? nullptr : m_depthAttachment.get(); }
+            constexpr const uint4 GetRect() const { return { 0, 0, m_descriptor.resolution.x, m_descriptor.resolution.y }; }
+            constexpr const uint3 GetResolution() const { return m_descriptor.resolution; }
 
         private:
             RenderTextureDescriptor m_descriptor;

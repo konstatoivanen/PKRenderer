@@ -13,13 +13,14 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     enum PKRenderStateDirtyFlags
     {
-        PK_RENDER_STATE_DIRTY_PIPELINE = 1 << 0,
-        PK_RENDER_STATE_DIRTY_SHADER = 1 << 1,
-        PK_RENDER_STATE_DIRTY_VERTEXBUFFERS = 1 << 1,
-        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 = 1 << 3,
-        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_1 = 1 << 4,
-        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_2 = 1 << 5,
-        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_3 = 1 << 6,
+        PK_RENDER_STATE_DIRTY_RENDERTARGET = 1 << 0,
+        PK_RENDER_STATE_DIRTY_PIPELINE = 1 << 1,
+        PK_RENDER_STATE_DIRTY_SHADER = 1 << 2,
+        PK_RENDER_STATE_DIRTY_VERTEXBUFFERS = 1 << 3,
+        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 = 1 << 4,
+        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_1 = 1 << 5,
+        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_2 = 1 << 6,
+        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_3 = 1 << 7,
         PK_RENDER_STATE_DIRTY_DESCRIPTOR_SETS = 
             PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 | 
             PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_1 | 
@@ -57,7 +58,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
 
         void Reset();
-        VkRenderPassBeginInfo PrepareRenderPass();
         void SetRenderTarget(const VulkanRenderTarget& renderTarget, uint32_t index);
         void SetResolveTarget(const VulkanRenderTarget& renderTarget, uint32_t index);
         void SetRenderArea(const VkRect2D& rect);
@@ -79,13 +79,15 @@ namespace PK::Rendering::VulkanRHI::Objects
         template<typename T>
         void SetResource(uint32_t nameHashId, const T& value) { m_resourceProperties.Set(nameHashId, value); }
 
+        VkRenderPassBeginInfo GetRenderPassInfo();
         VulkanVertexBufferBundle GetVertexBufferBundle();
 
+        void ValidateRenderTarget();
         void ValidateVertexBuffers();
         void ValidateDescriptorSets(const VulkanExecutionGate& gate);
         PKRenderStateDirtyFlags ValidatePipeline(const VulkanExecutionGate& gate);
 
-        PK::Core::PropertyBlock m_resourceProperties;
+        PK::Core::PropertyBlock m_resourceProperties = PK::Core::PropertyBlock(16384);
         VulkanDescriptorCache* m_descriptorCache = nullptr;
         VulkanPipelineCache* m_pipelineCache = nullptr;
         VulkanSamplerCache* m_samplerCache = nullptr;
@@ -95,8 +97,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         DescriptorSetKey m_descriptorSetKeys[PK_MAX_DESCRIPTOR_SETS]{};
         PipelineKey m_pipelineKey{};
-        FrameBufferKey m_frameBufferKey{};
-        RenderPassKey m_renderPassKey{};
+        FrameBufferKey m_frameBufferKey[2]{};
+        RenderPassKey m_renderPassKey[2]{};
         
         const VulkanBindHandle* m_vertexBuffers[PK_MAX_VERTEX_ATTRIBUTES]{};
 

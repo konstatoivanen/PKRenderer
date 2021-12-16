@@ -138,7 +138,7 @@ namespace PK::Rendering::Objects
 
         for (auto& kv : map->keywords)
         {
-            if (block.TryGetPropertyValue(kv.first, value) && value)
+            if (block.TryGet(kv.first, value) && value)
             {
                 keywords[kv.second >> 4] = kv.first;
             }

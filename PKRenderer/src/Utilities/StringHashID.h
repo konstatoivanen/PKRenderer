@@ -19,7 +19,7 @@ namespace PK::Utilities
     
         private:
             std::unordered_map<std::string, uint32_t> m_stringIdMap;
-            std::unordered_map<uint32_t, std::string> m_idStringMap;
+            std::vector<std::string> m_idStringMap = { "NULL_ID" };
             uint32_t m_idCounter = 0;
     };
 }

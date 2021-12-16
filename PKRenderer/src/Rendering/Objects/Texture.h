@@ -21,7 +21,8 @@ namespace PK::Rendering::Objects
             virtual bool Validate(const uint3 resolution) = 0;
             virtual bool Validate(const TextureDescriptor& descriptor) = 0;
 
-            const SamplerDescriptor& GetSamplerDescriptor() const { return m_descriptor.sampler; }
+            constexpr const SamplerDescriptor& GetSamplerDescriptor() const { return m_descriptor.sampler; }
+            constexpr const uint4 GetRect() const { return { 0, 0, m_descriptor.resolution.x, m_descriptor.resolution.y }; }
 
         protected:
             TextureDescriptor m_descriptor;

@@ -31,9 +31,9 @@ namespace PK::Rendering
             void Step(Window* window, int condition) override;
 
         private:
-            Ref<Mesh> m_blitTriangle;
             Ref<ConstantBuffer> m_constantsPerFrame;
             Ref<RenderTexture> m_HDRRenderTarget;
+            Ref<RenderTexture> m_testTarget;
             Shader* m_OEMBackgroundShader;
             Texture* m_OEMTexture;
             float m_OEMExposure;
@@ -42,6 +42,7 @@ namespace PK::Rendering
             Mesh* m_mesh;
             Texture* m_testTexture;
             Shader* m_shader = nullptr;
+            Shader* m_blitTestShader = nullptr;
 
     };
 }

@@ -3,7 +3,7 @@
 
 namespace PK::Rendering::Objects
 {
-    ConstantBuffer::ConstantBuffer(const BufferLayout& layout)
+    ConstantBuffer::ConstantBuffer(const BufferLayout& layout) : PropertyBlock(layout.GetAlignedStride())
     {
         using uint = PK::Math::uint;
         using ushort = PK::Math::ushort;
@@ -71,6 +71,6 @@ namespace PK::Rendering::Objects
         }
 
         FreezeLayout();
-        m_buffer = Buffer::CreateConstant(layout);
+        m_graphicsBuffer = Buffer::CreateConstant(layout);
     }
 }

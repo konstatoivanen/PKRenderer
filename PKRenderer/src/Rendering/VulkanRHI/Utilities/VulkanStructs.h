@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/NoCopy.h"
+#include "vulkan/vulkan.h"
 #include "VulkanMemory.h"
-#include "VulkanConstants.h"
 #include "Rendering/Structs/Enums.h"
 #include "Rendering/Structs/Descriptors.h"
 #include "Rendering/Structs/Layout.h"
@@ -9,6 +9,9 @@
 namespace PK::Rendering::VulkanRHI
 {
     using namespace PK::Rendering::Structs;
+
+    constexpr const static uint32_t PK_QUEUE_FAMILY_COUNT = 3;
+    constexpr const static uint32_t PK_INVALID_QUEUE_FAMILY = 0xFFFFFFFF;
 
     enum class QueueType : uint32_t
     {
@@ -65,11 +68,8 @@ namespace PK::Rendering::VulkanRHI
 
     struct QueueFamily
     {
-        uint32_t index;
-        VkQueue queue;
-
-        QueueFamily() : index(PK_INVALID_QUEUE_FAMILY), queue(VK_NULL_HANDLE) {}
-
+        uint32_t index = PK_INVALID_QUEUE_FAMILY;
+        VkQueue queue = VK_NULL_HANDLE;
         inline constexpr bool HasIndex() const { return index != PK_INVALID_QUEUE_FAMILY; }
     };
 
@@ -103,7 +103,10 @@ namespace PK::Rendering::VulkanRHI
         inline bool IsCompleted() const { return remoteInvocationIndex == nullptr || *remoteInvocationIndex != invocationIndex; }
     };
 
-    struct VulkanDisposable : public PK::Core::NoCopy {};
+    struct IVulkanDisposable : public PK::Core::NoCopy 
+    {
+        public: virtual ~IVulkanDisposable() = 0 {};
+    };
 
     struct VulkanFence : public PK::Core::NoCopy
     {
@@ -122,7 +125,7 @@ namespace PK::Rendering::VulkanRHI
         VkSemaphore vulkanSemaphore;
     };
 
-    struct VulkanImageView : public VulkanDisposable
+    struct VulkanImageView : public IVulkanDisposable
     {
         VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo);
         ~VulkanImageView();
@@ -149,7 +152,7 @@ namespace PK::Rendering::VulkanRHI
         VkRenderPass renderPass;
     };
 
-    struct VulkanRawBuffer : public VulkanDisposable
+    struct VulkanRawBuffer : public IVulkanDisposable
     {
         VulkanRawBuffer(VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo);
         ~VulkanRawBuffer();
@@ -165,7 +168,7 @@ namespace PK::Rendering::VulkanRHI
         VmaAllocation memory;
     };
 
-    struct VulkanRawImage : public VulkanDisposable
+    struct VulkanRawImage : public IVulkanDisposable
     {
         VulkanRawImage(VmaAllocator allocator, const VulkanImageCreateInfo& createInfo);
         ~VulkanRawImage();
@@ -182,7 +185,7 @@ namespace PK::Rendering::VulkanRHI
         uint32_t layers;
     };
 
-    struct VulkanShaderModule : public VulkanDisposable
+    struct VulkanShaderModule : public IVulkanDisposable
     {
         VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t spirvSize);
         ~VulkanShaderModule();
@@ -247,59 +250,30 @@ namespace PK::Rendering::VulkanRHI
         VkSampler sampler;
     };
 
-    struct VulkanRawCommandBuffer : public PK::Core::NoCopy
-    {
-        VulkanRawCommandBuffer() {}
-        VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-        VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        uint64_t invocationIndex = 0;
-
-        inline bool IsActive() const { return commandBuffer != VK_NULL_HANDLE; }
-        inline VulkanExecutionGate GetOnCompleteGate() const { return { invocationIndex, &invocationIndex }; }
-
-        void BeginRenderPass(const VkRenderPassBeginInfo& beginInfo);
-        void EndRenderPass() const;
-        void BindPipeline(VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline) const;
-        void SetViewPorts(uint32_t firstViewport, uint32_t viewportCount, const VkViewport* pViewports) const;
-        void SetScissors(uint32_t firstScissor, uint32_t scissorCount, const VkRect2D* pScissors) const;
-        void SetVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) const;
-        void SetVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const std::initializer_list<VkDeviceSize> pOffsets) const;
-        void BindIndexBuffer(VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType) const;
-        void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferCopy* pRegions) const;
-        void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions) const;
-        void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, const VkExtent3D& extent, uint32_t level, uint32_t layer) const;
-        void PipelineBarrier(VkPipelineStageFlags srcStageMask,
-            VkPipelineStageFlags dstStageMask,
-            VkDependencyFlags dependencyFlags,
-            uint32_t memoryBarrierCount,
-            const VkMemoryBarrier* pMemoryBarriers,
-            uint32_t bufferMemoryBarrierCount,
-            const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-            uint32_t imageMemoryBarrierCount,
-            const VkImageMemoryBarrier* pImageMemoryBarriers) const;
-
-        void TransitionImageLayout(const VulkanLayoutTransition& transition) const;
-
-        void BindDescriptorSets(VkPipelineBindPoint pipelineBindPoint,
-            const VulkanPipelineLayout* layout,
-            uint32_t firstSet,
-            uint32_t descriptorSetCount,
-            const VulkanDescriptorSet** pDescriptorSets,
-            uint32_t dynamicOffsetCount,
-            const uint32_t* pDynamicOffsets) const;
-    };
-
     struct VulkanBindHandle
     {
-        VkImageView imageView = VK_NULL_HANDLE;
-        VkSampler sampler = VK_NULL_HANDLE;
-        VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        uint32_t version;
 
-        VkBuffer buffer = VK_NULL_HANDLE;
+        union
+        {
+            VkImageView imageView = VK_NULL_HANDLE;
+            VkBuffer buffer;
+        };
+
+        union
+        {
+            VkSampler sampler = VK_NULL_HANDLE;
+            const BufferLayout* bufferLayout;
+        };
+
+        union
+        {
+            VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            VkVertexInputRate inputRate;
+        };
+
         VkDeviceSize bufferRange = 0ull;
         VkDeviceSize bufferOffset = 0ull;
-        const BufferLayout* bufferLayout = nullptr;
-        VkVertexInputRate inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     };
 
     struct VulkanRenderTarget : public PK::Core::NoCopy

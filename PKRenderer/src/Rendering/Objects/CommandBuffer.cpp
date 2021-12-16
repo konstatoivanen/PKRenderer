@@ -3,7 +3,7 @@
 
 namespace PK::Rendering::Objects
 {
-    void CommandBuffer::SetRenderTarget(RenderTexture* renderTarget)
+    void CommandBuffer::SetRenderTarget(RenderTexture* renderTarget, bool updateViewPort)
     {
         auto count = renderTarget->GetColorCount();
     
@@ -18,11 +18,20 @@ namespace PK::Rendering::Objects
         {
             SetRenderTarget(depth, 0);
         }
+
+        if (updateViewPort)
+        {
+            auto rect = renderTarget->GetRect();
+            SetViewPort(rect, 0.0f, 1.0f);
+            SetScissor(rect);
+        }
     }
 
     void CommandBuffer::SetBuffer(const char* name, const Buffer* buffer) { SetBuffer(StringHashID::StringToID(name), buffer); }
     void CommandBuffer::SetTexture(const char* name, Texture* texture) { SetTexture(StringHashID::StringToID(name), texture); }
+    void CommandBuffer::SetImage(const char* name, Texture* texture, int level, int layer) { SetImage(StringHashID::StringToID(name), texture, level, layer); }
     void CommandBuffer::SetConstant(const char* name, const void* data, uint32_t size) { SetConstant(StringHashID::StringToID(name), data, size); }
+    void CommandBuffer::SetKeyword(const char* name, bool value) { SetKeyword(StringHashID::StringToID(name), value); }
 
     void CommandBuffer::SetMesh(const Mesh* mesh)
     {
@@ -71,29 +80,35 @@ namespace PK::Rendering::Objects
         DrawMesh(mesh, submesh);
     }
 
-    void CommandBuffer::DispatchCompute(Shader* shader, uint3 groupCount)
-    {
-        SetShader(shader);
-        DispatchCompute(groupCount);
-    }
-
-    void CommandBuffer::DispatchCompute(Shader* shader, uint variantIndex, uint3 groupCount)
+    void CommandBuffer::Blit(Shader* shader, int variantIndex)
     {
         SetShader(shader, variantIndex);
-        DispatchCompute(groupCount);
+        Draw(3,1,0,0);
     }
 
-    void CommandBuffer::Barrier(const Texture* texture, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) const
+    void CommandBuffer::Dispatch(Shader* shader, uint3 groupCount)
+    {
+        SetShader(shader);
+        Dispatch(groupCount);
+    }
+
+    void CommandBuffer::Dispatch(Shader* shader, uint variantIndex, uint3 groupCount)
+    {
+        SetShader(shader, variantIndex);
+        Dispatch(groupCount);
+    }
+
+    void CommandBuffer::Barrier(const Texture* texture, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
     {
         Barrier(texture, nullptr, srcFlags, dstFlags);
     }
 
-    void CommandBuffer::Barrier(const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) const
+    void CommandBuffer::Barrier(const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
     {
         Barrier(nullptr, buffer, srcFlags, dstFlags);
     }
 
-    void CommandBuffer::Barrier(MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) const
+    void CommandBuffer::Barrier(MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
     {
         Barrier(nullptr, nullptr, srcFlags, dstFlags);
     }

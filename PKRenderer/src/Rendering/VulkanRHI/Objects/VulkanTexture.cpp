@@ -19,6 +19,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         Dispose();
     }
 
+
 	void VulkanTexture::SetData(const void* data, size_t size, uint32_t level, uint32_t layer) const
     {
         const auto* stage = m_driver->stagingBufferCache->GetBuffer(size);
@@ -124,29 +125,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         ktxTexture_Destroy(ktxTexture(ktxTex2));
     }
 
-    const VulkanRenderTarget VulkanTexture::GetRenderTarget()
-    {
-        auto view = GetView(m_defaultViewRange, true);
-        return VulkanRenderTarget
-        (
-            view->view, 
-            m_rawImage->image, 
-            GetImageLayout(), 
-            m_rawImage->aspect, 
-            m_rawImage->format, 
-            m_rawImage->extent, 
-            m_descriptor.samples, 
-            m_descriptor.layers
-        );
-    }
-
-    const VulkanBindHandle* VulkanTexture::GetBindHandle() const
-    {
-        m_bindHandle->imageLayout = EnumConvert::GetImageLayout(m_descriptor.usage);
-        m_bindHandle->sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
-        m_bindHandle->imageView = GetDefaultView()->view;
-        return m_bindHandle.get();
-    }
 
     bool VulkanTexture::Validate(const uint3 resolution)
     {
@@ -178,9 +156,89 @@ namespace PK::Rendering::VulkanRHI::Objects
         return true;
     }
 
-	const VulkanImageView* VulkanTexture::GetView(const VkImageSubresourceRange& range, bool isAttachment)
+    void VulkanTexture::Rebuild(const TextureDescriptor& descriptor)
+    {
+        Dispose();
+
+        m_version++;
+
+        m_descriptor = descriptor;
+        m_rawImage = new VulkanRawImage(m_driver->allocator, VulkanImageCreateInfo(descriptor));
+
+        m_viewType = EnumConvert::GetViewType(descriptor.samplerType);
+        m_swizzle = EnumConvert::GetSwizzle(m_rawImage->format);
+
+        m_defaultViewRange.aspectMask = m_rawImage->aspect;
+        m_defaultViewRange.baseMipLevel = 0;
+        m_defaultViewRange.levelCount = m_rawImage->levels;
+        m_defaultViewRange.baseArrayLayer = 0;
+        m_defaultViewRange.layerCount = m_rawImage->layers;
+        GetView(m_defaultViewRange);
+
+        if ((descriptor.usage & TextureUsage::ValidRTTypes) != 0)
+        {
+            GetView(m_defaultViewRange, TextureBindMode::RenderTarget);
+        }
+
+        const auto layers = m_defaultViewRange.layerCount;
+        auto layout = EnumConvert::GetImageLayout(descriptor.usage);
+        auto optimalLayout = EnumConvert::GetImageLayout(descriptor.usage, true);
+        VulkanLayoutTransition transition(m_rawImage->image, VK_IMAGE_LAYOUT_UNDEFINED, layout, optimalLayout, { (uint32_t)m_rawImage->aspect, 0, m_rawImage->levels, 0, layers });
+        m_driver->commandBufferPool->GetCurrent()->TransitionImageLayout(transition);
+    }
+
+
+    const VulkanRenderTarget VulkanTexture::GetRenderTarget() const
+    {
+        auto view = GetView(m_defaultViewRange, TextureBindMode::RenderTarget)->view;
+
+        return VulkanRenderTarget
+        (
+            view->view,
+            m_rawImage->image,
+            GetImageLayout(),
+            m_rawImage->aspect,
+            m_rawImage->format,
+            m_rawImage->extent,
+            m_descriptor.samples,
+            m_descriptor.layers
+        );
+    }
+
+    const VulkanRenderTarget VulkanTexture::GetRenderTarget(uint32_t level, uint32_t levelCount, uint32_t layer, uint32_t layerCount)
+    {
+        auto view = GetView(level, levelCount, layer, layerCount, TextureBindMode::RenderTarget)->view;
+
+        return VulkanRenderTarget
+        (
+            view->view,
+            m_rawImage->image,
+            GetImageLayout(),
+            m_rawImage->aspect,
+            m_rawImage->format,
+            m_rawImage->extent,
+            m_descriptor.samples,
+            m_descriptor.layers
+        );
+    }
+
+
+    const VulkanTexture::ViewValue* VulkanTexture::GetView(uint32_t level, uint32_t levelCount, uint32_t layer, uint32_t layerCount, TextureBindMode mode)
+    {
+        auto range = m_defaultViewRange;
+
+        range.baseMipLevel = glm::min(range.levelCount - 1, level);
+        range.levelCount = glm::max(1u, glm::min(levelCount, range.levelCount - range.baseMipLevel));
+
+        range.baseArrayLayer = glm::min(range.layerCount - 1, layer);
+        range.layerCount = glm::max(1u, glm::min(layerCount, range.layerCount - range.baseArrayLayer));
+
+        return GetView(range, mode);
+    }
+
+    const VulkanTexture::ViewValue* VulkanTexture::GetView(const VkImageSubresourceRange& range, TextureBindMode mode)
 	{
-        ViewKey key = { range, isAttachment };
+        ViewKey key = { range, mode };
         auto iter = m_imageViews.find(key);
         
         if (iter != m_imageViews.end())
@@ -192,41 +250,26 @@ namespace PK::Rendering::VulkanRHI::Objects
         info.pNext = nullptr;
         info.flags = 0;
         info.image = m_rawImage->image;
-        info.viewType = isAttachment ? VK_IMAGE_VIEW_TYPE_2D : m_viewType;
+        info.viewType = mode == TextureBindMode::RenderTarget ? VK_IMAGE_VIEW_TYPE_2D : m_viewType;
         info.format = m_rawImage->format;
-        info.components = isAttachment ? (VkComponentMapping{}) : m_swizzle;
+        info.components = mode == TextureBindMode::RenderTarget ? (VkComponentMapping{}) : m_swizzle;
         info.subresourceRange = range;
 
-        auto view = CreateRef<VulkanImageView>(m_driver->device, info);
-        m_imageViews[key] = view;
+        auto viewValue = new VulkanTexture::ViewValue();
+        viewValue->view = new VulkanImageView(m_driver->device, info);
+        viewValue->bindHandle.imageLayout = GetImageLayout();
+        viewValue->bindHandle.imageView = viewValue->view->view;
+        viewValue->bindHandle.version = m_version;
 
-        return view.get();
+        if (mode == TextureBindMode::SampledTexture)
+        {
+            viewValue->bindHandle.sampler = GraphicsAPI::GetActiveDriver<VulkanDriver>()->samplerCache->GetSampler(m_descriptor.sampler);
+        }
+
+        m_imageViews[key] = Scope<VulkanTexture::ViewValue>(viewValue);
+        return viewValue;
 	}
 
-    void VulkanTexture::Rebuild(const TextureDescriptor& descriptor)
-    {
-        Dispose();
-
-        m_descriptor = descriptor;
-        m_rawImage = CreateRef<VulkanRawImage>(m_driver->allocator, VulkanImageCreateInfo(descriptor));
-        m_bindHandle = CreateScope<VulkanBindHandle>();
-
-        m_viewType = EnumConvert::GetViewType(descriptor.samplerType);
-        m_swizzle = EnumConvert::GetSwizzle(m_rawImage->format);
-
-        m_defaultViewRange.aspectMask = m_rawImage->aspect;
-        m_defaultViewRange.baseMipLevel = 0;
-        m_defaultViewRange.levelCount = m_rawImage->levels;
-        m_defaultViewRange.baseArrayLayer = 0;
-        m_defaultViewRange.layerCount = m_rawImage->layers;
-        GetView(m_defaultViewRange, false);
-
-        const auto layers = m_defaultViewRange.layerCount;
-        auto layout = EnumConvert::GetImageLayout(descriptor.usage);
-        auto optimalLayout = EnumConvert::GetImageLayout(descriptor.usage, true);
-        VulkanLayoutTransition transition(m_rawImage->image, VK_IMAGE_LAYOUT_UNDEFINED, layout, optimalLayout, { (uint32_t)m_rawImage->aspect, 0, m_rawImage->levels, 0, layers });
-        m_driver->commandBufferPool->GetCurrent()->TransitionImageLayout(transition);
-    }
 
     void VulkanTexture::Dispose()
     {
@@ -234,7 +277,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         for (auto& kv : m_imageViews)
         {
-            m_driver->disposer->Dispose(kv.second, gate);
+            m_driver->disposer->Dispose(kv.second->view, gate);
         }
 
         m_imageViews.clear();

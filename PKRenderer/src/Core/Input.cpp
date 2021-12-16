@@ -12,10 +12,12 @@ namespace PK::Core
     
     void Input::OnKeyInput(int key, int scancode, int action, int mods)
     {
-        auto& statecur = m_inputStateCurrent[(KeyCode)key];
-        statecur.scancode = scancode;
-        statecur.action = action;
-        statecur.mods = mods;
+        if (key < 0 || key >= (int)KeyCode::COUNT)
+        {
+            return;
+        }
+
+        m_inputActionsCurrent[key] = action;
     }
     
     void Input::OnScrollInput(double scrollX, double scrollY)
@@ -26,29 +28,28 @@ namespace PK::Core
     
     void Input::OnMouseButtonInput(int button, int action, int mods)
     {
-        auto& statecur = m_inputStateCurrent[(KeyCode)button];
-        statecur.action = action;
-        statecur.mods = mods;
+        if (button < 0 || button >= (int)KeyCode::COUNT)
+        {
+            return;
+        }
+
+        m_inputActionsCurrent[button] = action;
     }
     
     bool Input::GetKeyDown(KeyCode key)
     {
-        auto statecur = m_inputStateCurrent[key];
-        auto statepre = m_inputStatePrevious[key];
-        return statecur.action == GLFW_PRESS && statepre.action == GLFW_RELEASE;
+        return m_inputActionsCurrent[(int)key] == GLFW_PRESS && m_inputActionsPrevious[(int)key] == GLFW_RELEASE;
     }
     
     bool Input::GetKeyUp(KeyCode key)
     {
-        auto statecur = m_inputStateCurrent[key];
-        auto statepre = m_inputStatePrevious[key];
-        return statecur.action == GLFW_RELEASE && statepre.action == GLFW_PRESS;
+        return m_inputActionsCurrent[(int)key] == GLFW_RELEASE && m_inputActionsPrevious[(int)key] == GLFW_PRESS;
     }
     
     bool Input::GetKey(KeyCode key)
     {
-        auto state = m_inputStateCurrent[key];
-        return state.action == GLFW_PRESS || state.action == GLFW_REPEAT;
+        auto action = m_inputActionsCurrent[(int)key];
+        return action == GLFW_PRESS || action == GLFW_REPEAT;
     }
     
     float2 Input::GetAxis2D(KeyCode front, KeyCode back, KeyCode right, KeyCode left)
@@ -78,13 +79,7 @@ namespace PK::Core
         {
             case PK::Core::UpdateStep::CloseFrame: 
             {
-                for (auto& statecur : m_inputStateCurrent)
-                {
-                    auto& statepre = m_inputStatePrevious[statecur.first];
-                    statepre.scancode = statecur.second.scancode;
-                    statepre.action = statecur.second.action;
-                    statepre.mods = statecur.second.mods;
-                }
+                memcpy(m_inputActionsPrevious, m_inputActionsCurrent, sizeof(m_inputActionsCurrent));
             }
             break;
 

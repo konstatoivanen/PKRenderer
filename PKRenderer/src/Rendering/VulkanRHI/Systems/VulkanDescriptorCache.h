@@ -9,7 +9,12 @@ namespace PK::Rendering::VulkanRHI::Systems
 
     struct alignas(8) DescriptorBinding
     {
-        const VulkanBindHandle* handle;
+        union
+        {
+            const VulkanBindHandle* handle;
+            const VulkanBindHandle** handles;
+        };
+
         ResourceType type;
         uint8_t binding;
         uint16_t count;
@@ -37,18 +42,42 @@ namespace PK::Rendering::VulkanRHI::Systems
 
     class VulkanDescriptorCache : public PK::Core::NoCopy
     {
-        public:
+        private:
             struct ExtinctPool
             {
-                Ref<VulkanDescriptorPool> pool;
+                VulkanDescriptorPool* pool;
                 mutable VulkanExecutionGate executionGate;
             };
 
+            struct BindingArray : public std::vector<const VulkanBindHandle*>
+            {
+                mutable VulkanExecutionGate executionGate;
+                BindingArray(const VulkanBindHandle** handles, size_t count, const VulkanExecutionGate& gate);
+            };
+
+            struct BindingArrayKey
+            {
+                const VulkanBindHandle** handles;
+                size_t count;
+
+                inline bool operator < (const BindingArrayKey& other) const noexcept
+                {
+                    auto s0 = sizeof(const VulkanBindHandle*) * count;
+                    auto s1 = sizeof(const VulkanBindHandle*) * other.count;
+                    return s0 == s1 ? memcmp(handles, other.handles, s0) < 0 : s0 < s1;
+                }
+            };
+
+        public:
             VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, size_t maxSets, std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes);
+            ~VulkanDescriptorCache();
 
             const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
                                                         const DescriptorSetKey& key,
                                                         const VulkanExecutionGate& gate);
+
+            const VulkanBindHandle** GetBindingArray(const VulkanBindHandle** bindings, size_t count, const VulkanExecutionGate& gate);
+
             void Prune();
 
         private:
@@ -62,8 +91,13 @@ namespace PK::Rendering::VulkanRHI::Systems
             uint64_t m_currentPruneTick = 0ull;
             uint64_t m_pruneDelay;
 
-            Ref<VulkanDescriptorPool> m_currentPool;
+            VulkanDescriptorPool* m_currentPool = nullptr;
             std::unordered_map<DescriptorSetKey, VulkanDescriptorSet, DescriptorSetKeyHash> m_sets;
             std::vector<ExtinctPool> m_extinctPools;
+
+            std::vector<VkDescriptorImageInfo> m_writeImages;
+            std::vector<VkDescriptorBufferInfo> m_writeBuffers;
+    
+            std::map<BindingArrayKey, BindingArray> m_bindingArrays;
     };
 }

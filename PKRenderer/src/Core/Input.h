@@ -10,13 +10,7 @@ namespace PK::Core
 {
     using namespace Math;
 
-    struct InputState
-    {
-        int scancode;
-        int action;
-        int mods;
-    };
-    
+    // @TODO Refactor this to be decoupled from glfw
     enum class KeyCode
     {
         MOUSE1          = GLFW_MOUSE_BUTTON_1,
@@ -145,7 +139,8 @@ namespace PK::Core
         RIGHT_SHIFT     = GLFW_KEY_RIGHT_SHIFT,
         RIGHT_CONTROL   = GLFW_KEY_RIGHT_CONTROL,
         RIGHT_ALT       = GLFW_KEY_RIGHT_ALT,
-        RIGHT_SUPER     = GLFW_KEY_RIGHT_SUPER  
+        RIGHT_SUPER     = GLFW_KEY_RIGHT_SUPER,
+        COUNT           = GLFW_KEY_LAST + 1,
     };
     
     class Input : public IService, public PK::ECS::IConditionalStep<PK::Core::Window>
@@ -183,9 +178,8 @@ namespace PK::Core
     
         private:
             PK::ECS::Sequencer* m_sequencer;
-            
-            std::unordered_map<KeyCode, InputState> m_inputStateCurrent;
-            std::unordered_map<KeyCode, InputState> m_inputStatePrevious;
+            short m_inputActionsCurrent[(int)KeyCode::COUNT]{};
+            short m_inputActionsPrevious[(int)KeyCode::COUNT]{};
             float2 m_mousePositionNormalized = PK_FLOAT2_ZERO;
             float2 m_mousePosition = PK_FLOAT2_ZERO;
             float2 m_mousePrev = PK_FLOAT2_ZERO;

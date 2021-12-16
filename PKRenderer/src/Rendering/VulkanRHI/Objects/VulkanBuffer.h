@@ -23,7 +23,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             bool Validate(size_t count) override final;
 
             size_t GetCapacity() const override final { return m_rawBuffer->capacity; }
-            const VulkanRawBuffer* GetRaw() const { return m_rawBuffer.get(); }
+            const VulkanRawBuffer* GetRaw() const { return m_rawBuffer; }
             const VulkanBindHandle* GetBindHandle() const;
 
         private:
@@ -31,8 +31,9 @@ namespace PK::Rendering::VulkanRHI::Objects
             void Dispose();
 
             const VulkanDriver* m_driver = nullptr;
-            Ref<VulkanRawBuffer> m_rawBuffer = nullptr;
+            VulkanRawBuffer* m_rawBuffer = nullptr;
             Scope<VulkanBindHandle> m_bindHandle = nullptr;
             const VulkanStagingBuffer* m_mappedBuffer = nullptr;
+            uint32_t m_version = 0u;
     };
 }

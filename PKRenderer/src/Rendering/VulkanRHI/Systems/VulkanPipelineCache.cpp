@@ -4,6 +4,38 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
+    VulkanPipelineCache::~VulkanPipelineCache()
+    {
+        for (auto& kv : m_graphicsPipelines)
+        {
+            if (kv.second.pipeline != nullptr)
+            {
+                delete kv.second.pipeline;
+            }
+        }
+
+        for (auto& kv : m_computePipelines)
+        {
+            if (kv.second.pipeline != nullptr)
+            {
+                delete kv.second.pipeline;
+            }
+        }
+    }
+
+    const VulkanPipeline* VulkanPipelineCache::GetPipeline(const PipelineKey& key)
+    {
+        auto type = key.shader->GetType();
+
+        switch (type)
+        {
+            case ShaderType::Graphics: return GetGraphicsPipeline(key);
+            case ShaderType::Compute: return GetComputePipeline(key.shader);
+        }
+
+        PK_THROW_ERROR("Pipeline retrieval failed! Unknown shader type!");
+    }
+
     const VulkanPipeline* VulkanPipelineCache::GetComputePipeline(const VulkanShader* shader)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
@@ -12,15 +44,15 @@ namespace PK::Rendering::VulkanRHI::Systems
         if (iterator != m_computePipelines.end() && iterator->second.pipeline != nullptr)
         {
             iterator->second.pruneTick = nextPruneTick;
-            return iterator->second.pipeline.get();
+            return iterator->second.pipeline;
         }
 
         VkComputePipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
         pipelineInfo.stage = shader->GetModule((int)ShaderStage::Compute)->stageInfo;
         pipelineInfo.layout = shader->GetPipelineLayout()->layout;
-        auto pipeline = CreateRef<VulkanPipeline>(m_device, VK_NULL_HANDLE, pipelineInfo);
+        auto pipeline = new VulkanPipeline(m_device, VK_NULL_HANDLE, pipelineInfo);
         m_computePipelines[shader] = { pipeline, nextPruneTick };
-        return pipeline.get();
+        return pipeline;
     }
 
     const VulkanPipeline* VulkanPipelineCache::GetGraphicsPipeline(const PipelineKey& key)
@@ -31,7 +63,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         if (iterator != m_graphicsPipelines.end() && iterator->second.pipeline != nullptr)
         {
             iterator->second.pruneTick = nextPruneTick;
-            return iterator->second.pipeline.get();
+            return iterator->second.pipeline;
         }
 
         auto stageCount = 0u;
@@ -157,9 +189,9 @@ namespace PK::Rendering::VulkanRHI::Systems
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
 
-        auto pipeline = CreateRef<VulkanPipeline>(m_device, VK_NULL_HANDLE, pipelineInfo);
+        auto pipeline = new VulkanPipeline(m_device, VK_NULL_HANDLE, pipelineInfo);
         m_graphicsPipelines[key] = { pipeline, nextPruneTick };
-        return pipeline.get();
+        return pipeline;
     }
 
     void VulkanPipelineCache::Prune()
@@ -173,6 +205,19 @@ namespace PK::Rendering::VulkanRHI::Systems
 
             if (value.pipeline != nullptr && value.pruneTick < m_currentPruneTick)
             {
+                delete value.pipeline;
+                value.pipeline = nullptr;
+            }
+        }
+
+        for (auto& kv : m_computePipelines)
+        {
+            auto& key = kv.first;
+            auto& value = kv.second;
+
+            if (value.pipeline != nullptr && value.pruneTick < m_currentPruneTick)
+            {
+                delete value.pipeline;
                 value.pipeline = nullptr;
             }
         }

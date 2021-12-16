@@ -20,15 +20,16 @@ namespace PK::Rendering::VulkanRHI::Systems
     {
         public:
             VulkanStagingBufferCache(VmaAllocator allocator, uint64_t pruneDelay) : m_allocator(allocator), m_pruneDelay(pruneDelay) {}
+            ~VulkanStagingBufferCache();
 
             const VulkanStagingBuffer* GetBuffer(size_t size);
-            void Prune(bool all);
+            void Prune();
 
         private:
             const VmaAllocator m_allocator;
 
-            std::multimap<VkDeviceSize, Ref<VulkanStagingBuffer>> m_freeBuffers;
-            std::unordered_set<Ref<VulkanStagingBuffer>> m_activeBuffers;
+            std::multimap<VkDeviceSize, VulkanStagingBuffer*> m_freeBuffers;
+            std::unordered_set<VulkanStagingBuffer*> m_activeBuffers;
 
             uint64_t m_currentPruneTick = 0;
             uint64_t m_pruneDelay = 0;

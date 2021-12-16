@@ -54,8 +54,8 @@ namespace PK::Rendering::Objects
             BufferLayout m_vertexLayout;
             ConstantBufferLayout m_constantLayout;
             ResourceLayout m_resourceLayouts[PK_MAX_DESCRIPTOR_SETS];
-            ShaderType m_type;
-            uint32_t m_stageFlags;
+            ShaderType m_type = ShaderType::Graphics;
+            uint32_t m_stageFlags = 0u;
     };
 
     class Shader : public Asset

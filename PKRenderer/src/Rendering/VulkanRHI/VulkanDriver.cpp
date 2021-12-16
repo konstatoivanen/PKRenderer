@@ -17,6 +17,12 @@ namespace PK::Rendering::VulkanRHI
         auto temporaryWindow = glfwCreateWindow(32, 32, "Initialization Window", nullptr, nullptr);
         PK_THROW_ASSERT(temporaryWindow, "Failed To Create Window");
 
+        uint32_t supportedApiVersion;
+        VK_ASSERT_RESULT_CTX(vkEnumerateInstanceVersion(&supportedApiVersion), "Failed to query supported api version!");
+
+        auto supportedMajor = VK_VERSION_MAJOR(supportedApiVersion);
+        auto supportedMinor = VK_VERSION_MINOR(supportedApiVersion);
+
         VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
         debugMessengerCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
         debugMessengerCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
@@ -28,7 +34,7 @@ namespace PK::Rendering::VulkanRHI
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.pEngineName = "PK Engine";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_MAKE_API_VERSION(0, properties.apiVersionMajor, properties.apiVersionMinor, 0);
+        appInfo.apiVersion = supportedApiVersion;
 
         VkInstanceCreateInfo instanceCreateInfo{ VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
         instanceCreateInfo.pApplicationInfo = &appInfo;
@@ -55,8 +61,8 @@ namespace PK::Rendering::VulkanRHI
         VK_ASSERT_RESULT_CTX(glfwCreateWindowSurface(instance, temporaryWindow, nullptr, &temporarySurface), "Failed to create window surface!");
 
         PhysicalDeviceRequirements physicalDeviceRequirements{};
-        physicalDeviceRequirements.versionMajor = properties.apiVersionMajor;
-        physicalDeviceRequirements.versionMinor = properties.apiVersionMinor;
+        physicalDeviceRequirements.versionMajor = supportedMajor;
+        physicalDeviceRequirements.versionMinor = supportedMinor;
         physicalDeviceRequirements.alphaToOne = true;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
@@ -159,15 +165,14 @@ namespace PK::Rendering::VulkanRHI
         glfwTerminate();
     }
 
-    void VulkanDriver::PruneCaches()
+    void VulkanDriver::GC()
     {
-        stagingBufferCache->Prune(false);
+        stagingBufferCache->Prune();
         pipelineCache->Prune();
         descriptorCache->Prune();
         disposer->Prune();
         frameBufferCache->Prune();
     }
-
 
     VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDriver::VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                                       VkDebugUtilsMessageTypeFlagsEXT messageType, 

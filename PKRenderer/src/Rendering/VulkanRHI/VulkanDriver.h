@@ -25,21 +25,14 @@ namespace PK::Rendering::VulkanRHI
         const std::vector<const char*>* contextualInstanceExtensions;
         const std::vector<const char*>* contextualDeviceExtensions;
 
-        uint32_t apiVersionMajor;
-        uint32_t apiVersionMinor;
-
         VulkanContextProperties(const std::string& appName = "Vulkan Engine",
             const std::vector<const char*>* validationLayers = nullptr,
             const std::vector<const char*>* contextualInstanceExtensions = nullptr,
-            const std::vector<const char*>* contextualDeviceExtensions = nullptr,
-            uint32_t apiVersionMajor = 1,
-            uint32_t apiVersionMinor = 0) :
+            const std::vector<const char*>* contextualDeviceExtensions = nullptr) :
             appName(appName),
             validationLayers(validationLayers),
             contextualInstanceExtensions(contextualInstanceExtensions),
-            contextualDeviceExtensions(contextualDeviceExtensions),
-            apiVersionMajor(apiVersionMajor),
-            apiVersionMinor(apiVersionMinor)
+            contextualDeviceExtensions(contextualDeviceExtensions)
         {
         }
     };
@@ -49,15 +42,15 @@ namespace PK::Rendering::VulkanRHI
         VulkanDriver(const VulkanContextProperties& properties);
         ~VulkanDriver();
 
-        void PruneCaches();
-
         APIType GetAPI() const override final { return APIType::Vulkan; }
-
-        size_t GetMemoryUsageKB() const override final { return 0ull; }
 
         CommandBuffer* GetPrimaryCommandBuffer() override final { return commandBufferPool->GetCurrent(); }
 
         void WaitForIdle() const override final { vkDeviceWaitIdle(device); }
+        
+        size_t GetMemoryUsageKB() const override final { return 0ull; }
+        
+        void GC() override final;
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                                   VkDebugUtilsMessageTypeFlagsEXT messageType,

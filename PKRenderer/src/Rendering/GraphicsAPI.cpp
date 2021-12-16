@@ -17,14 +17,31 @@ namespace PK::Rendering
         switch (api)
         {
             case APIType::Vulkan: 
+                #ifdef PK_DEBUG
+                    const std::vector<const char*> PK_VALIDATION_LAYERS =
+                    {
+                        "VK_LAYER_KHRONOS_validation"
+                    };
+                #else
+                    const std::vector<const char*> PK_VALIDATION_LAYERS = {};
+                #endif
+
+                const std::vector<const char*> PK_INSTANCE_EXTENTIONS =
+                {
+                    "VK_EXT_debug_utils",
+                };
+
+                const std::vector<const char*> PK_DEVICE_EXTENTIONS =
+                {
+                    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                };
+
                 auto driver = CreateScope<VulkanDriver>(VulkanContextProperties
                 (
                     "PK Vulkan Engine",
                     &PK_VALIDATION_LAYERS,
                     &PK_INSTANCE_EXTENTIONS,
-                    &PK_DEVICE_EXTENTIONS,
-                    VK_REQUIRED_VERSION_MAJOR,
-                    VK_REQUIRED_VERSION_MINOR
+                    &PK_DEVICE_EXTENTIONS
                 ));
 
                 s_currentDriver = driver.get();
@@ -43,4 +60,6 @@ namespace PK::Rendering
     CommandBuffer* GraphicsAPI::GetCommandBuffer() { return s_currentDriver->GetPrimaryCommandBuffer(); }
     
     size_t GraphicsAPI::GetMemoryUsageKB() { return s_currentDriver->GetMemoryUsageKB(); }
+    
+    void GraphicsAPI::GC() { s_currentDriver->GC(); }
 }

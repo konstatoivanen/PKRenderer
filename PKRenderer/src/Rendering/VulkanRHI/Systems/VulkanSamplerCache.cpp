@@ -3,6 +3,14 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
+    VulkanSamplerCache::~VulkanSamplerCache()
+    {
+        for (auto& kv : m_samplers)
+        {
+            delete kv.second;
+        }
+    }
+
     VkSampler VulkanSamplerCache::GetSampler(const SamplerDescriptor& descriptor)
     {
         auto iterator = m_samplers.find(descriptor);
@@ -12,7 +20,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             return iterator->second->sampler;
         }
     
-        auto sampler = CreateRef<VulkanSampler>(m_device, descriptor);
+        auto sampler = new VulkanSampler(m_device, descriptor);
         m_samplers[descriptor] = sampler;
         return sampler->sampler;
     }

@@ -89,6 +89,18 @@ float pow5(float x) { return x * x * x * x * x; }
 
 #define Greater(a,b) any(greaterThan(a,b))
 
+#define PK_SET_GLOBAL 0
+#define PK_SET_PASS 1
+#define PK_SET_SHADER 2
+#define PK_SET_DRAW 3
+
+#define PK_DECLARE_SET_GLOBAL layout(set = 0)
+#define PK_DECLARE_SET_PASS layout(set = 1)
+#define PK_DECLARE_SET_SHADER layout(set = 2)
+#define PK_DECLARE_SET_DRAW layout(set = 3)
+
+#define PK_DECLARE_LOCAL_CBUFFER(BufferName) layout(push_constant) uniform BufferName
+
 #define PK_DECLARE_CBUFFER(BufferName, Set) layout(std140, set = Set) uniform BufferName
 
 #define PK_DECLARE_BUFFER(ValueType, BufferName, Set) layout(std430, set = Set) buffer BufferName { ValueType BufferName##_Data[]; }

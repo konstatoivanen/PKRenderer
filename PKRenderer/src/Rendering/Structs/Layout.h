@@ -146,7 +146,7 @@ namespace PK::Rendering::Structs
             inline uint GetStride(BufferUsage usage) const { return ((uint)usage & ((uint)BufferUsage::Storage | (uint)BufferUsage::Uniform)) != 0 ? m_alignedStride : m_stride; }
             constexpr inline uint GetStride() const { return m_stride; }
             constexpr inline uint GetAlignedStride() const { return m_alignedStride; }
-            constexpr inline uint GetPaddedStride() const { return m_alignedStride; }
+            constexpr inline uint GetPaddedStride() const { return m_paddedStride; }
         
             const BufferElement* TryGetElement(uint32_t nameHashId, uint32_t* index) const;
     

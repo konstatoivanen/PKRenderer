@@ -51,7 +51,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         PK_THROW_ASSERT(m_mappedBuffer != nullptr, "Trying to end buffer map for an unmapped buffer!");
         
-        const auto* cmd = m_driver->commandBufferPool->GetCurrent();
+        auto* cmd = m_driver->commandBufferPool->GetCurrent();
 
         VkBufferCopy region{};
         region.srcOffset = 0;
@@ -109,6 +109,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     const VulkanBindHandle* VulkanBuffer::GetBindHandle() const
     {
+        m_bindHandle->version = m_version;
         m_bindHandle->buffer = m_rawBuffer->buffer;
         m_bindHandle->bufferRange = m_rawBuffer->capacity;
         m_bindHandle->bufferOffset = 0ull;
@@ -120,9 +121,10 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanBuffer::Rebuild(size_t count)
     {
         Dispose();
+        m_version++;
         m_count = count;
         m_bindHandle = CreateScope<VulkanBindHandle>();
-        m_rawBuffer = CreateRef<VulkanRawBuffer>(m_driver->allocator, VulkanBufferCreateInfo(m_usage, m_layout.GetStride(m_usage) * count));
+        m_rawBuffer = new VulkanRawBuffer(m_driver->allocator, VulkanBufferCreateInfo(m_usage, m_layout.GetStride(m_usage) * count));
     }
 
     void VulkanBuffer::Dispose()

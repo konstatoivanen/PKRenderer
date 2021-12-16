@@ -5,13 +5,15 @@ namespace PK::Utilities
 {
     uint32_t StringHashID::LocalStringToID(const std::string& str)
     {
-        if (m_stringIdMap.count(str) > 0)
+        auto iter = m_stringIdMap.find(str);
+
+        if (iter != m_stringIdMap.end())
         {
-            return m_stringIdMap.at(str);
+            return iter->second;
         }
     
         m_stringIdMap[str] = ++m_idCounter;
-        m_idStringMap[m_idCounter] = str;
+        m_idStringMap.push_back(str);
         return m_idCounter;
     }
     

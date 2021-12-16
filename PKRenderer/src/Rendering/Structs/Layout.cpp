@@ -29,17 +29,13 @@ namespace PK::Rendering::Structs
             {
                 maxAlignment = alignment;
             }
+
+            m_elementMap[element->NameHashId] = i;
         }
 
         // As per std140 a structure has a base alignment equal to the largest base alignment of any of its members, rounded up to a multiple of 16.
         maxAlignment = 16 * (uint)glm::ceil(maxAlignment / 16.0f);
         m_paddedStride = maxAlignment * (uint)glm::ceil(m_alignedStride / (float)maxAlignment);
-
-
-        for (auto i = 0u; i < size(); ++i)
-        {
-            m_elementMap[elements[i].NameHashId] = i;
-        }
     }
     
     const BufferElement* BufferLayout::TryGetElement(uint32_t nameHashId, uint32_t* index) const

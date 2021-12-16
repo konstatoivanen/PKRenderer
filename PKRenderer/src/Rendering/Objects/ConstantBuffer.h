@@ -10,12 +10,12 @@ namespace PK::Rendering::Objects
     {
         public:
             ConstantBuffer(const BufferLayout& layout);
-            inline void FlushBuffer() { m_buffer->SetData(data(), 0, size()); }
+            inline void FlushBuffer() { m_graphicsBuffer->SetData(m_buffer, 0, m_capacity); }
 
-            operator Buffer* () { return m_buffer.get(); }
-            operator const Buffer* () { return m_buffer.get(); }
+            operator Buffer* () { return m_graphicsBuffer.get(); }
+            operator const Buffer* () { return m_graphicsBuffer.get(); }
 
         private:
-            Ref<Buffer> m_buffer;
+            Ref<Buffer> m_graphicsBuffer;
     };
 }
