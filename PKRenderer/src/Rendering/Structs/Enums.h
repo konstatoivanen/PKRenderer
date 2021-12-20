@@ -94,14 +94,14 @@ namespace PK::Rendering::Structs
         Clockwise,
     };
 
-    enum class LoadOp : uint16_t
+    enum class LoadOp : uint8_t
     {
         Keep,
         Clear,
         Discard,
     };
 
-    enum class StoreOp : uint16_t
+    enum class StoreOp : uint8_t
     {
         Store,
         Discard,
@@ -156,6 +156,9 @@ namespace PK::Rendering::Structs
         FragmentAttachmentColor = ReadWriteRTColor | StageColorOut,         // Write color in fragment out
         FragmentAttachmentDepth = ReadWriteRTDepth | StageDepthStencilOut,  // Write depth in fragment out
         FragmentTexture = ReadShader | StageFragment,                       // Read texture in fragment
+        ComputeReadWrite = ReadWriteShader | StageCompute,                  // Read/Write texture, image, & buffer  in compute
+        ComputeRead = ReadShader | StageCompute,                            // Read texture, image, & buffer in compute
+        ComputeWrite = WriteShader | StageCompute,                           // Write texture, image, & buffer  in compute
     };
 
     enum class BufferUsage : uint8_t
@@ -180,6 +183,7 @@ namespace PK::Rendering::Structs
         Input = 0x20,
         Storage = 0x40,
         Default = Upload | Sample,
+        DefaultStorage = Upload | Sample | Storage,
         RTColorSample = RTColor | Sample,
         RTDepthSample = RTDepth | Sample,
 

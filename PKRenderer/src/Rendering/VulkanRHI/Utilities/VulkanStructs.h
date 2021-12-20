@@ -26,6 +26,11 @@ namespace PK::Rendering::VulkanRHI
         uint32_t versionMinor;
         VkPhysicalDeviceType deviceType;
         bool alphaToOne;
+        bool shaderImageGatherExtended;
+        bool sparseBinding;
+        bool samplerAnisotropy;
+        bool multiViewport;
+
         const std::vector<const char*>* deviceExtensions;
     };
 
@@ -216,11 +221,12 @@ namespace PK::Rendering::VulkanRHI
 
     struct VulkanDescriptorSetLayout : public PK::Core::NoCopy
     {
-        VulkanDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& createInfo);
+        VulkanDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& createInfo, VkShaderStageFlagBits stageFlags);
         ~VulkanDescriptorSetLayout();
 
         const VkDevice device;
         VkDescriptorSetLayout layout;
+        VkShaderStageFlagBits stageFlags;
     };
 
     struct VulkanDescriptorPool : public PK::Core::NoCopy
@@ -284,8 +290,8 @@ namespace PK::Rendering::VulkanRHI
                            VkImageAspectFlagBits aspect,
                            VkFormat format,
                            VkExtent3D extent,
-                           uint32_t samples,
-                           uint32_t layers) : 
+                           uint16_t samples,
+                           uint16_t layers) : 
             view(view), 
             image(image),
             layout(layout), 
@@ -301,7 +307,7 @@ namespace PK::Rendering::VulkanRHI
         const VkImageAspectFlagBits aspect;
         const VkFormat format;
         const VkExtent3D extent;
-        const uint32_t samples;
-        const uint32_t layers;
+        const uint16_t samples;
+        const uint16_t layers;
     };
 }

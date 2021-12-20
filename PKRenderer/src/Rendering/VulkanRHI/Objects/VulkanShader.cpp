@@ -75,7 +75,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 descriptorsetLayoutCreateInfo.bindingCount = (uint32_t)bindings.size();
                 descriptorsetLayoutCreateInfo.pBindings = bindings.data();
 
-                m_descriptorSetLayouts[i] = CreateScope<VulkanDescriptorSetLayout>(m_device, descriptorsetLayoutCreateInfo);
+                m_descriptorSetLayouts[i] = CreateScope<VulkanDescriptorSetLayout>(m_device, descriptorsetLayoutCreateInfo, EnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags));
                 layouts.push_back(m_descriptorSetLayouts[i]->layout);
                 m_resourceLayouts[i] = ResourceLayout(elements);
             }

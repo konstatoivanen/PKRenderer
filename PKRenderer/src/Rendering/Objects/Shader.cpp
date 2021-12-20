@@ -211,7 +211,7 @@ namespace PK::Rendering::Objects
             auto hashId = StringHashID::StringToID(pKeyword->name);
             auto o = pKeyword->offsets;
             auto d = (o >> 28) & 0xF;
-            m_variantMap.directives[d] = o & 0xFFFFFF;
+            m_variantMap.directives[d++] = o & 0xFFFFFF;
             m_variantMap.keywords[hashId] = (o >> 24) & 0xFF;
             m_variantMap.directivecount = d > m_variantMap.directivecount ? d : m_variantMap.directivecount;
         }

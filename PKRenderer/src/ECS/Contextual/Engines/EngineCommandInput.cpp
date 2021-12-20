@@ -26,6 +26,7 @@ namespace PK::ECS::Engines
         {std::string("material"),   CommandArgument::TypeMaterial},
         {std::string("time"),       CommandArgument::TypeTime},
         {std::string("appconfig"),  CommandArgument::TypeAppConfig},
+        {std::string("remoteExecute"), CommandArgument::RemoteExecute},
     };
 
     void EngineCommandInput::ApplicationExit(const ConsoleCommand& arguments) { Application::Get().Close(); }
@@ -130,6 +131,12 @@ namespace PK::ECS::Engines
     void EngineCommandInput::QueryLoadedMeshes(const ConsoleCommand& arguments) { m_assetDatabase->ListAssetsOfType<Mesh>(); }
     void EngineCommandInput::QueryLoadedAssets(const ConsoleCommand& arguments) { m_assetDatabase->ListAssets(); }
 
+    void EngineCommandInput::RemoteExecute(const ConsoleCommand& arguments)
+    {
+        PK_LOG_INFO("Remote Execution: %s", arguments[1].c_str());
+        system(arguments[1].c_str());
+    }
+
     void EngineCommandInput::ProcessCommand(const std::string& command)
     {
         std::string argument;
@@ -193,6 +200,7 @@ namespace PK::ECS::Engines
         m_commands[{CommandArgument::Reload, CommandArgument::TypeTexture, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(ReloadTextures);
         m_commands[{CommandArgument::Reload, CommandArgument::TypeAppConfig, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(ReloadAppConfig);
         m_commands[{CommandArgument::Reload, CommandArgument::TypeTime}] = PK_BIND_FUNCTION(ReloadTime);
+        m_commands[{CommandArgument::RemoteExecute, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(RemoteExecute);
     }
     
     void EngineCommandInput::Step(Input* input)

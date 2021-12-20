@@ -1,0 +1,9 @@
+#pragma once
+#include HLSLSupport.glsl
+
+PK_DECLARE_BUFFER(uint, pk_Histogram, PK_SET_PASS);
+
+float GetAutoExposure()
+{
+    return uintBitsToFloat(PK_BUFFER_DATA(pk_Histogram, 256));
+}

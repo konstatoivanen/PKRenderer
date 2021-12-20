@@ -34,6 +34,12 @@ namespace PK::Rendering::VulkanRHI
                 allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
                 break;
 
+            case BufferUsage::Storage:
+                buffer.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+                buffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+                allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+                break;
+
             default: 
                 PK_THROW_ERROR("Invalid buffer create preset!");
         }
@@ -316,7 +322,7 @@ namespace PK::Rendering::VulkanRHI
         vkDestroyPipelineLayout(device, layout, nullptr);
     }
 
-    VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& createInfo) : device(device)
+    VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& createInfo, VkShaderStageFlagBits stageFlags) : device(device), stageFlags(stageFlags)
     {
         VK_ASSERT_RESULT_CTX(vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &layout), "Failed to create a descriptor set layout!");
     }
@@ -354,6 +360,12 @@ namespace PK::Rendering::VulkanRHI
         info.compareOp = EnumConvert::GetCompareOp(descriptor.comparison);
         info.magFilter = EnumConvert::GetFilterMode(descriptor.filter);
         info.minFilter = EnumConvert::GetFilterMode(descriptor.filter);
+
+        if (info.unnormalizedCoordinates)
+        {
+            info.minLod = info.maxLod = 0.0f;
+        }
+
         VK_ASSERT_RESULT_CTX(vkCreateSampler(device, &info, nullptr, &sampler), "Failed to create a sampler!");
     }
 

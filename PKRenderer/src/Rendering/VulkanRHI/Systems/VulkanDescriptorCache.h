@@ -22,11 +22,12 @@ namespace PK::Rendering::VulkanRHI::Systems
 
     struct DescriptorSetKey
     {
+        VkShaderStageFlagBits stageFlags;
         DescriptorBinding bindings[PK_MAX_DESCRIPTORS_PER_SET];
 
         inline bool operator == (const DescriptorSetKey& other) const noexcept
         {
-            return memcmp(this, &other, sizeof(DescriptorSetKey)) == 0;
+            return stageFlags == other.stageFlags && memcmp(this, &other, sizeof(DescriptorSetKey)) == 0;
         }
     };
 

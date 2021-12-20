@@ -28,21 +28,19 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         inline VulkanExecutionGate GetOnCompleteGate() const { return { invocationIndex, &invocationIndex }; }
 
-        void SetRenderTarget(Window* window, uint32_t index) override final;
-        void SetRenderTarget(Texture* renderTarget, uint32_t index) override final;
-        void SetViewPort(uint4 rect, float mindepth, float maxdepth) override final;
-        void SetScissor(uint4 rect) override final;
+        void SetRenderTarget(Texture** renderTargets, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count) override final;
+        void SetViewPort(uint4 rect, float mindepth, float maxdepth, uint index = 0) override final;
+        void SetScissor(uint4 rect, uint index = 0) override final;
 
         void SetShader(const Shader* shader, int variantIndex = -1) override final;
         void SetVertexBuffers(const Buffer** buffers, uint count) override final;
         void SetIndexBuffer(const Buffer* buffer, size_t offset) override final;
         void SetBuffer(uint32_t nameHashId, const Buffer* buffer) override final;
-        void SetTexture(uint32_t nameHashId, Texture* texture) override final;
-        void SetImage(uint32_t nameHashId, Texture* texture, int level, int layer) override final;
+        void SetTexture(uint32_t nameHashId, Texture* texture, const TextureViewRange& range) override final;
+        void SetImage(uint32_t nameHashId, Texture* texture, const TextureViewRange& range) override final;
         void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) override final;
         void SetKeyword(uint32_t nameHashId, bool value) override final;
 
-        inline void SetResolveTarget(const VulkanRenderTarget& renderTarget, uint32_t index) { renderState->SetResolveTarget(renderTarget, index); }
         inline void ClearColor(const color& color, uint32_t index) override final { renderState->ClearColor(color, index); }
         inline void ClearDepth(float depth, uint32_t stencil) override final { renderState->ClearDepth(depth, stencil); }
         inline void DiscardColor(uint32_t index) override final { renderState->DiscardColor(index); }
@@ -61,7 +59,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         void Blit(Texture* src, Texture* dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter) override final;
         void Blit(const VulkanRenderTarget& src, const VulkanRenderTarget& dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter);
 
-        void Barrier(const Texture* texture, const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) override final;
+        void Barrier(const Texture* texture, const TextureViewRange& range, const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) override final;
 
         // Vulkan specific interface
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferCopy* pRegions) const;

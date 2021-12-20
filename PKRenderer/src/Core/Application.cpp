@@ -23,7 +23,7 @@ namespace PK::Core
 
     Application* Application::s_Instance = nullptr;
 
-    Application::Application(const std::string& name)
+    Application::Application(ApplicationArguments arguments, const std::string& name)
     {
         PK_THROW_ASSERT(!s_Instance, "Application already exists!");
         s_Instance = this;

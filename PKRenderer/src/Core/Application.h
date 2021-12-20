@@ -12,10 +12,16 @@ namespace PK::Core
     using namespace Utilities;
     using namespace Rendering;
 
+    struct ApplicationArguments
+    {
+        int count;
+        char** args;
+    };
+
     class Application : public NoCopy
     {
         public:
-            Application(const std::string& name = "Application");
+            Application(ApplicationArguments arguments, const std::string& name = "Application");
             virtual ~Application();
             void Close();
         

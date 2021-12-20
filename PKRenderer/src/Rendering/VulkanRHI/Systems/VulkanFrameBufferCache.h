@@ -40,6 +40,9 @@ namespace PK::Rendering::VulkanRHI::Systems
         AttachmentKey depth;
         uint32_t samples = 1;
 
+        // Allows the use of barriers inside a render pass. Intended for multiviewport shenanigans.
+        bool dynamicTargets;
+
         inline bool operator == (const RenderPassKey& r) const noexcept
         {
             return memcmp(reinterpret_cast<const void*>(this), reinterpret_cast<const void*>(&r), sizeof(RenderPassKey)) == 0;

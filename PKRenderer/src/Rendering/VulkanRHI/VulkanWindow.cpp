@@ -58,7 +58,7 @@ namespace PK::Rendering::VulkanRHI
         SwapchainCreateInfo swapchainCreateInfo{};
         swapchainCreateInfo.desiredColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
         swapchainCreateInfo.desiredExtent = VkExtent2D{ properties.width, properties.height };
-        swapchainCreateInfo.desiredFormat = VK_FORMAT_B8G8R8A8_SRGB;
+        swapchainCreateInfo.desiredFormat = VK_FORMAT_B8G8R8A8_UNORM;
         swapchainCreateInfo.desiredImageCount = 4;
         swapchainCreateInfo.desiredPresentMode = VK_PRESENT_MODE_FIFO_KHR;
         swapchainCreateInfo.maxFramesInFlight = PK_MAX_FRAMES_IN_FLIGHT;

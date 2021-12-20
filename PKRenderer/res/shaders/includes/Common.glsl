@@ -3,23 +3,7 @@
 #define PK_COMMON
 
 #include HLSLSupport.glsl
-
-#define PK_PI            3.14159265359f
-#define PK_TWO_PI        6.28318530718f
-#define PK_FOUR_PI       12.56637061436f
-#define PK_INV_PI        0.31830988618f
-#define PK_INV_TWO_PI    0.15915494309f
-#define PK_INV_FOUR_PI   0.07957747155f
-#define PK_HALF_PI       1.57079632679f
-#define PK_INV_HALF_PI   0.636619772367f
-#define PK_TWO_SQRT2     2.828427
-#define PK_SQRT2         1.414213
-#define PK_INV_SQRT2     0.707106
-
-#define pk_Grey float4(0.214041144, 0.214041144, 0.214041144, 0.5)
-// standard dielectric reflectivity coef at incident angle (= 4%)
-#define pk_DielectricSpecular float4(0.04, 0.04, 0.04, 1.0 - 0.04) 
-#define pk_Luminance float4(0.2125, 0.7154, 0.0721, 1.0f) //float4(0.0396819152, 0.458021790, 0.00609653955, 1.0)
+#include Constants.glsl
 
 PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 {
@@ -64,6 +48,7 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 };
 
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_SceneOEM_HDR;
+PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenDepth;
 
 #if defined(PK_ENABLE_INSTANCING)
     PK_DECLARE_READONLY_BUFFER(float4x4, pk_InstancingMatrices, PK_SET_PASS);
@@ -83,11 +68,11 @@ float LinearizeDepth(float z) { return 1.0f / (pk_MATRIX_I_P[2][3] * (z * 2.0f -
 
 float4 LinearizeDepth(float4 z) { return 1.0f / (pk_MATRIX_I_P[2][3] * (z * 2.0f - 1.0f) + pk_MATRIX_I_P[3][3]); } 
 
-/*
 float SampleLinearDepth(float2 uv) { return LinearizeDepth(tex2D(pk_ScreenDepth, uv).r); }
 
 float SampleLinearDepth(int2 coord) { return LinearizeDepth(texelFetch(pk_ScreenDepth, coord, 0).r); }
 
+/*
 float3 GlobalNoiseBlue(uint2 coord) { return texelFetch(pk_Bluenoise256, int2(coord.x % 256, coord.y % 256), 0).xyz; }
 
 float3 GlobalNoiseBlueUV(float2 coord) { return tex2D(pk_Bluenoise256, coord).xyz; }

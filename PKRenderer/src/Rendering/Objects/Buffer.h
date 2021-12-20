@@ -32,6 +32,12 @@ namespace PK::Rendering::Objects
                 return Create(BufferUsage::Uniform, layout, 1);
             }
 
+            inline static Ref<Buffer> CreateStorage(const BufferLayout& layout, size_t count)
+            {
+                return Create(BufferUsage::Storage, layout, count);
+            }
+
+
             virtual ~Buffer() = default;
             virtual void SetData(const void* data, size_t offset, size_t size) = 0;
             virtual void* BeginMap(size_t offset, size_t size) = 0;

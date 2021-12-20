@@ -252,6 +252,10 @@ namespace PK::Rendering::VulkanRHI::Utilities
 
             if (properties.deviceType == requirements.deviceType &&
                 (features.alphaToOne || !requirements.alphaToOne) &&
+                (features.shaderImageGatherExtended || !requirements.shaderImageGatherExtended) &&
+                (features.sparseBinding || !requirements.sparseBinding) &&
+                (features.samplerAnisotropy || !requirements.samplerAnisotropy) &&
+                (features.multiViewport || !requirements.multiViewport) &&
                 extensionSupported &&
                 swapChainSupported &&
                 queueFamilies->HasIndices())

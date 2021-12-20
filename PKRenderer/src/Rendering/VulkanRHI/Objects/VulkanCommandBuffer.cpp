@@ -7,17 +7,27 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    void VulkanCommandBuffer::SetRenderTarget(Window* window, uint32_t index)
+    void VulkanCommandBuffer::SetRenderTarget(Texture** renderTargets, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count)
     {
-        renderState->SetRenderTarget(window->GetNative<VulkanWindow>()->GetRenderTarget(), index);
+        auto colors = PK_STACK_ALLOC(VulkanRenderTarget, count);
+        auto resolves = resolveTargets != nullptr ? PK_STACK_ALLOC(VulkanRenderTarget, count) : nullptr;
+
+        for (auto i = 0u; i < count; ++i)
+        {
+            auto color = renderTargets[i]->GetNative<VulkanTexture>()->GetRenderTarget(ranges[i]);
+            memcpy(colors + i, &color, sizeof(VulkanRenderTarget));
+
+            if (resolves != nullptr && resolveTargets[i] != nullptr)
+            {
+                auto resolve = resolveTargets[i]->GetNative<VulkanTexture>()->GetRenderTarget(ranges[i]);
+                memcpy(resolves + i, &resolve, sizeof(VulkanRenderTarget));
+            }
+        }
+
+        renderState->SetRenderTarget(colors, resolves, count);
     }
 
-    void VulkanCommandBuffer::SetRenderTarget(Texture* renderTarget, uint32_t index)
-    {
-        renderState->SetRenderTarget(renderTarget->GetNative<VulkanTexture>()->GetRenderTarget(), index);
-    }
-
-    void VulkanCommandBuffer::SetViewPort(uint4 rect, float mindepth, float maxdepth)
+    void VulkanCommandBuffer::SetViewPort(uint4 rect, float mindepth, float maxdepth, uint index)
     {
         VkViewport viewport{};
         viewport.x = (float)rect.x;
@@ -26,17 +36,17 @@ namespace PK::Rendering::VulkanRHI::Objects
         viewport.height = -(float)rect.w;
         viewport.minDepth = mindepth;
         viewport.maxDepth = maxdepth;
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdSetViewport(commandBuffer, index, 1, &viewport);
     }
 
-    void VulkanCommandBuffer::SetScissor(uint4 rect)
+    void VulkanCommandBuffer::SetScissor(uint4 rect, uint index)
     {
         VkRect2D scissor;
         scissor.offset.x = (int)rect.x;
         scissor.offset.y = (int)rect.y;
         scissor.extent.width = (rect).z;
         scissor.extent.height = (rect).w;
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        vkCmdSetScissor(commandBuffer, index, 1, &scissor);
     }
 
 
@@ -86,14 +96,14 @@ namespace PK::Rendering::VulkanRHI::Objects
         renderState->SetResource(nameHashId, Handle(buffer->GetNative<VulkanBuffer>()->GetBindHandle()));
     }
 
-    void VulkanCommandBuffer::SetTexture(uint32_t nameHashId, Texture* texture)
+    void VulkanCommandBuffer::SetTexture(uint32_t nameHashId, Texture* texture, const TextureViewRange& range)
     {
-        renderState->SetResource(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle()));
+        renderState->SetResource(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, true)));
     }
 
-    void VulkanCommandBuffer::SetImage(uint32_t nameHashId, Texture* texture, int level, int layer)
+    void VulkanCommandBuffer::SetImage(uint32_t nameHashId, Texture* texture, const TextureViewRange& range)
     {
-        renderState->SetResource(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(level, 1, layer, 1, false)));
+        renderState->SetResource(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, false)));
     }
 
     void VulkanCommandBuffer::SetConstant(uint32_t nameHashId, const void* data, uint32_t size)
@@ -149,8 +159,6 @@ namespace PK::Rendering::VulkanRHI::Objects
                                    uint32_t dstLayer,
                                    FilterMode filter)
     {
-        EndRenderPass();
-
         VkImageBlit blitRegion{};
         blitRegion.srcSubresource = { (uint32_t)src.aspect, srcLevel, srcLayer, 1 };
         blitRegion.dstSubresource = { (uint32_t)dst.aspect, dstLevel, dstLayer, 1 };
@@ -194,7 +202,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     }
 
 
-    void VulkanCommandBuffer::Barrier(const Texture* texture, const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
+    void VulkanCommandBuffer::Barrier(const Texture* texture, const TextureViewRange& range, const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
     {
         VkImageMemoryBarrier imageBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
         VkMemoryBarrier memoryBarrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
@@ -204,11 +212,17 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             auto vktex = texture->GetNative<VulkanTexture>();
             auto vkrawtex = vktex->GetRaw();
+            auto normalizedRange = vktex->NormalizeViewRange(range);
             imageBarrier.oldLayout = imageBarrier.newLayout = vktex->GetImageLayout();
             imageBarrier.image = vkrawtex->image;
-            imageBarrier.subresourceRange.aspectMask = vkrawtex->aspect;
-            imageBarrier.subresourceRange.levelCount = vkrawtex->levels;
-            imageBarrier.subresourceRange.layerCount = vkrawtex->layers;
+            imageBarrier.subresourceRange =
+            {
+                    (uint32_t)vkrawtex->aspect,
+                    normalizedRange.level,
+                    normalizedRange.levels,
+                    normalizedRange.layer,
+                    normalizedRange.layers
+            };
         }
 
         if (buffer != nullptr)
@@ -280,6 +294,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         barrier.subresourceRange = transition.subresources;
         barrier.srcAccessMask = transition.srcAccessMask;
         barrier.dstAccessMask = transition.dstAccessMask;
+        EndRenderPass();
         PipelineBarrier(transition.srcStage, transition.dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
 
@@ -293,7 +308,13 @@ namespace PK::Rendering::VulkanRHI::Objects
                                               uint32_t imageMemoryBarrierCount, 
                                               const VkImageMemoryBarrier* pImageMemoryBarriers)
     {
-        EndRenderPass();
+
+        // Memory & buffer memory barriers not allowed inside renderpasses. Barriers are not allowed inside renderpasses unless using self-dependencies.
+        if (memoryBarrierCount > 0 || bufferMemoryBarrierCount > 0 || !renderState->m_renderPassKey->dynamicTargets)
+        {
+            EndRenderPass();
+        }
+
         vkCmdPipelineBarrier(commandBuffer,
             srcStageMask,
             dstStageMask,
@@ -304,8 +325,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             pBufferMemoryBarriers,
             imageMemoryBarrierCount,
             pImageMemoryBarriers);
-    }
-    
+    }  
 
 
     void VulkanCommandBuffer::ValidatePipeline()
@@ -376,8 +396,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         if (isInActiveRenderPass)
         {
             vkCmdEndRenderPass(commandBuffer);
+            isInActiveRenderPass = false;
         }
-
-        isInActiveRenderPass = false;
     }
 }

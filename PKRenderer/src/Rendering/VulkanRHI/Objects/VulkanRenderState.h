@@ -58,8 +58,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
 
         void Reset();
-        void SetRenderTarget(const VulkanRenderTarget& renderTarget, uint32_t index);
-        void SetResolveTarget(const VulkanRenderTarget& renderTarget, uint32_t index);
+        void SetRenderTarget(const VulkanRenderTarget* renderTargets, const VulkanRenderTarget* resolves, uint32_t count);
         void SetRenderArea(const VkRect2D& rect);
         void ClearColor(const color& color, uint32_t index);
         void ClearDepth(float depth, uint32_t stencil);

@@ -447,28 +447,25 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
 
     VkImageLayout GetImageLayout(TextureUsage usage, bool useOptimized)
     {
-        auto flags = (uint32_t)usage;
-
         if (useOptimized)
         {
-            if ((flags & ((uint32_t)TextureUsage::RTDepth | (uint32_t)TextureUsage::RTColor)) == ((uint32_t)TextureUsage::RTDepth | (uint32_t)TextureUsage::RTColor))
+            if ((usage & (TextureUsage::RTDepth | TextureUsage::RTColor)) == (TextureUsage::RTDepth | TextureUsage::RTColor))
             {
                 return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             }
 
-            if ((flags & (uint32_t)TextureUsage::RTDepth) != 0)
+            if ((usage & TextureUsage::RTDepth) != 0)
             {
                 return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
             }
 
-            if ((flags & (uint32_t)TextureUsage::RTColor) != 0)
+            if ((usage & TextureUsage::RTColor) != 0)
             {
                 return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             }
         }
 
-
-        if ((flags & ((uint32_t)TextureUsage::RTDepth | (uint32_t)TextureUsage::RTColor)) != 0)
+        if ((usage & (TextureUsage::RTDepth | TextureUsage::RTColor | TextureUsage::Storage)) != 0)
         {
             return VK_IMAGE_LAYOUT_GENERAL;
         }

@@ -21,7 +21,7 @@ namespace PK::Rendering::Structs
     
         inline bool operator < (const SamplerDescriptor& other) const noexcept
         {
-            return memcmp(reinterpret_cast<const void*>(this), reinterpret_cast<const void*>(&other), sizeof(SamplerDescriptor)) < 0;
+            return memcmp(this, &other, sizeof(SamplerDescriptor)) < 0;
         }
     };
 
@@ -49,6 +49,14 @@ namespace PK::Rendering::Structs
         uint8_t samples = 1;
         uint16_t layers = 1;
         SamplerDescriptor sampler = {};
+    };
+
+    struct TextureViewRange
+    {
+        ushort level = 0u;
+        ushort layer = 0u;
+        ushort levels = 0u;
+        ushort layers = 0u;
     };
 
     struct MultisamplingParameters
@@ -94,11 +102,11 @@ namespace PK::Rendering::Structs
         BlendOp alphaOp;
         ColorMask colorMask;
 
-        inline bool isBlendEnabled() const { return (colorOp == BlendOp::None && alphaOp == BlendOp::None) ||
-                                                    (srcColorFactor == BlendFactor::None && 
-                                                     dstColorFactor == BlendFactor::None && 
-                                                     srcAlphaFactor == BlendFactor::None && 
-                                                     dstAlphaFactor == BlendFactor::None); }
+        inline bool isBlendEnabled() const { return colorOp != BlendOp::None || alphaOp != BlendOp::None ||
+                                                    srcColorFactor != BlendFactor::None || 
+                                                    dstColorFactor != BlendFactor::None || 
+                                                    srcAlphaFactor != BlendFactor::None || 
+                                                    dstAlphaFactor != BlendFactor::None; }
     };
 
     // Limited set of values that can be defined in the shader source

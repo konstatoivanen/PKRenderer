@@ -21,32 +21,50 @@ namespace PK::Rendering::VulkanRHI::Objects
             bool Validate(const TextureDescriptor& descriptor) override final;
             void Rebuild(const TextureDescriptor& descriptor);
 
+            TextureViewRange NormalizeViewRange(const TextureViewRange& range) const;
             inline VkImageLayout GetImageLayout() const { return EnumConvert::GetImageLayout(m_descriptor.usage); }
             inline VkImageAspectFlags GetAspectFlags() const { return m_rawImage->aspect; }
             inline VkFormat GetNativeFormat() const { return m_rawImage->format; }
             inline const VulkanRawImage* GetRaw() const { return m_rawImage; }
-            const VulkanRenderTarget GetRenderTarget() const;
-            const VulkanRenderTarget GetRenderTarget(uint32_t level, uint32_t levelCount, uint32_t layer, uint32_t layerCount);
+            VulkanRenderTarget GetRenderTarget() const;
+            VulkanRenderTarget GetRenderTarget(const TextureViewRange& range);
             inline const VulkanBindHandle* GetBindHandle() const { return &GetView(m_defaultViewRange)->bindHandle; }
-            inline const VulkanBindHandle* GetBindHandle(uint32_t level, uint32_t levelCount, uint32_t layer, uint32_t layerCount, bool sampled)
-            {
-                return &GetView(level, levelCount, layer, layerCount, sampled ? TextureBindMode::SampledTexture : TextureBindMode::Image)->bindHandle;
-            }
+            inline const VulkanBindHandle* GetBindHandle(const TextureViewRange& range, bool sampled) { return &GetView(range, sampled ? TextureBindMode::SampledTexture : TextureBindMode::Image)->bindHandle; }
 
         private:
-            struct ViewKey
+            struct alignas(8) ViewKey
             {
-                VkImageSubresourceRange range;
-                TextureBindMode bindMode;
+                TextureViewRange range{};
+                TextureBindMode bindMode = TextureBindMode::SampledTexture;
 
                 inline constexpr bool operator < (const ViewKey& other) const noexcept
                 {
-                    return range.aspectMask < other.range.aspectMask ||
-                        range.baseMipLevel < other.range.baseMipLevel ||
-                        range.levelCount < other.range.levelCount ||
-                        range.baseArrayLayer < other.range.baseArrayLayer ||
-                        range.layerCount < other.range.layerCount ||
-                        (int)bindMode < (int)other.bindMode;
+                    if (range.level != other.range.level)
+                    {
+                        return range.level < other.range.level;
+                    }
+
+                    if (range.layer != other.range.layer)
+                    {
+                        return range.layer < other.range.layer;
+                    }
+
+                    if (range.levels != other.range.levels)
+                    {
+                        return range.levels < other.range.levels;
+                    }
+
+                    if (range.layers != other.range.layers)
+                    {
+                        return range.layers < other.range.layers;
+                    }
+
+                    if (bindMode != other.bindMode)
+                    {
+                        return (int)bindMode < (int)other.bindMode;
+                    }
+
+                    return false;
                 }
             };
 
@@ -56,13 +74,12 @@ namespace PK::Rendering::VulkanRHI::Objects
                 VulkanImageView* view = nullptr;
             };
 
-            inline const ViewValue* GetView(const VkImageSubresourceRange& range, TextureBindMode mode = TextureBindMode::SampledTexture) const 
+            inline const ViewValue* GetView(const TextureViewRange& range, TextureBindMode mode = TextureBindMode::SampledTexture) const
             {
                 return m_imageViews.at({ range, mode }).get(); 
             }
 
-            const ViewValue* GetView(uint32_t level, uint32_t levelCount, uint32_t layer, uint32_t layerCount, TextureBindMode mode = TextureBindMode::SampledTexture);
-            const ViewValue* GetView(const VkImageSubresourceRange& range, TextureBindMode mode = TextureBindMode::SampledTexture);
+            const ViewValue* GetView(const TextureViewRange& range, TextureBindMode mode = TextureBindMode::SampledTexture);
 
             void Dispose();
 
@@ -70,8 +87,8 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanRawImage* m_rawImage = nullptr;
             std::map<ViewKey, Scope<ViewValue>> m_imageViews;
             VkComponentMapping m_swizzle{};
-            VkImageSubresourceRange m_defaultViewRange;
-            VkImageViewType m_viewType;
+            TextureViewRange m_defaultViewRange{};
+            VkImageViewType m_viewType = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
             uint32_t m_version = 0u;
     };
 }

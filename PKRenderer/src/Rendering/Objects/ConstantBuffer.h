@@ -12,6 +12,9 @@ namespace PK::Rendering::Objects
             ConstantBuffer(const BufferLayout& layout);
             inline void FlushBuffer() { m_graphicsBuffer->SetData(m_buffer, 0, m_capacity); }
 
+            const Buffer* GetBuffer() const { return m_graphicsBuffer.get(); }
+            Buffer* GetBuffer() { return m_graphicsBuffer.get(); }
+
             operator Buffer* () { return m_graphicsBuffer.get(); }
             operator const Buffer* () { return m_graphicsBuffer.get(); }
 

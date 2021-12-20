@@ -5,6 +5,9 @@
 
 namespace PK::Rendering
 {
+    using namespace PK::Core;
+    using namespace PK::Utilities;
+
     struct HashCache : public IService, public ISingleton<HashCache>
     {
         #define DEFINE_HASH_CACHE(name) unsigned int name = StringHashID::StringToID(#name); \
@@ -83,7 +86,7 @@ namespace PK::Rendering
         DEFINE_HASH_CACHE(pk_FilmGrainTex)
         DEFINE_HASH_CACHE(pk_BloomLensDirtTex)
         DEFINE_HASH_CACHE(pk_HDRScreenTex)
-        DEFINE_HASH_CACHE(pk_TonemappingParams)
+        DEFINE_HASH_CACHE(pk_PostEffectsParams)
         DEFINE_HASH_CACHE(pk_Histogram)
 
         DEFINE_HASH_CACHE(pk_FocalLength)

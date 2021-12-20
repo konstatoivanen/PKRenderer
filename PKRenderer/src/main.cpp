@@ -14,7 +14,7 @@ int main(int argc, char** argv)
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
-    auto app = new PK::Core::Application("PK Renderer");
+    auto app = new PK::Core::Application({ argc, argv }, "PK Renderer");
     app->Run();
     delete app;
 }

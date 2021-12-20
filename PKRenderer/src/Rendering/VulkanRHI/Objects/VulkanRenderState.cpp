@@ -28,38 +28,52 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_pipelineKey.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     }
 
-    void VulkanRenderState::SetRenderTarget(const VulkanRenderTarget& renderTarget, uint32_t index)
+    void VulkanRenderState::SetRenderTarget(const VulkanRenderTarget* renderTargets, const VulkanRenderTarget* resolves, uint32_t count)
     {
         m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
-        m_renderPassKey[0].samples = renderTarget.samples;
-        m_frameBufferKey[0].layers = renderTarget.layers;
-        m_frameBufferKey[0].extent = { renderTarget.extent.width, renderTarget.extent.height };
 
-        m_renderArea = { {}, { renderTarget.extent.width, renderTarget.extent.height } };
+        auto passKey = m_renderPassKey;
+        auto fboKey = m_frameBufferKey;
 
-        auto isDepth = EnumConvert::IsDepthFormat(renderTarget.format);
-        auto attachment = isDepth ? &m_renderPassKey[0].depth : (m_renderPassKey[0].colors + index);
-        attachment->format = renderTarget.format;
-        attachment->layout = renderTarget.layout;
-        attachment->loadop = LoadOp::Keep;
-        attachment->storeop = StoreOp::Store;
-        attachment->resolve = renderTarget.samples > 1;
+        memset(passKey, 0, sizeof(RenderPassKey));
+        memset(fboKey, 0, sizeof(FrameBufferKey));
 
-        if (isDepth)
+        // These should be the same for all targets. Validation will assert if not.
+        passKey->samples = renderTargets[0].samples;
+        fboKey->layers = renderTargets[0].layers;
+        fboKey->extent = { renderTargets[0].extent.width, renderTargets[0].extent.height };
+        m_renderArea = { {}, fboKey->extent };
+
+        for (auto i = 0u, j = 0u; i < count; ++i)
         {
-            m_frameBufferKey[0].depth = renderTarget.view;
-        }
-        else
-        {
-            m_frameBufferKey[0].color[index] = renderTarget.view;
-        }
-    }
+            auto target = renderTargets + i;
+            auto resolve = resolves != nullptr ? resolves + i : nullptr;
 
-    void VulkanRenderState::SetResolveTarget(const VulkanRenderTarget& renderTarget, uint32_t index)
-    {
-        m_frameBufferKey[0].resolve[index] = renderTarget.view;
-        m_renderPassKey[0].colors[index].resolve = true;
-        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
+            auto isDepth = EnumConvert::IsDepthFormat(target->format);
+            auto attachment = isDepth ? &passKey->depth : (passKey->colors + j);
+            attachment->format = target->format;
+            attachment->layout = target->layout;
+            attachment->loadop = LoadOp::Keep;
+            attachment->storeop = StoreOp::Store;
+            attachment->resolve = false;
+
+            if (isDepth)
+            {
+                // @TODO Handle depth resolves
+                fboKey->depth = target->view;
+            }
+            else
+            {
+                attachment->resolve = resolve != nullptr && resolve->view != VK_NULL_HANDLE;
+
+                if (attachment->resolve)
+                {
+                    fboKey->resolve[j] = resolve->view;
+                }
+
+                fboKey->color[j++] = target->view;
+            }
+        }
     }
 
     void VulkanRenderState::SetRenderArea(const VkRect2D& rect)
@@ -355,9 +369,17 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         for (auto i = 0u; i < setCount; ++i)
         {
-            if (shader->GetDescriptorSetLayout(i) == nullptr)
+            auto layout = shader->GetDescriptorSetLayout(i);
+
+            if (layout == nullptr)
             {
                 continue;
+            }
+
+            if (m_descriptorSetKeys[i].stageFlags != layout->stageFlags)
+            {
+                m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
+                m_descriptorSetKeys[i].stageFlags = layout->stageFlags;
             }
 
             auto* bindings = m_descriptorSetKeys[i].bindings;

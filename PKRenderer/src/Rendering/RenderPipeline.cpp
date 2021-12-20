@@ -14,13 +14,11 @@ namespace PK::Rendering
         float4x4 pk_MATRIX_I_M;
     };
 
-    RenderPipeline::RenderPipeline(AssetDatabase* assetDatabase, const ApplicationConfig* config)
+    RenderPipeline::RenderPipeline(AssetDatabase* assetDatabase, const ApplicationConfig* config) :
+        m_passPostEffects(assetDatabase, config)
     {
-        m_blitTestShader = assetDatabase->Find<Shader>("SH_CS_Debug");
-
         m_OEMBackgroundShader = assetDatabase->Find<Shader>("SH_VS_IBLBackground");
         m_OEMTexture = assetDatabase->Load<Texture>(config->FileBackgroundTexture.value.c_str());
-        m_OEMExposure = config->BackgroundExposure;
 
         RenderTextureDescriptor descriptor{};
         descriptor.resolution = { config->InitialWidth, config->InitialHeight, 1 };
@@ -29,9 +27,6 @@ namespace PK::Rendering
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
         descriptor.sampler.filter = FilterMode::Bilinear;
         m_HDRRenderTarget = CreateRef<RenderTexture>(descriptor);
-
-        descriptor.depthFormat = TextureFormat::Invalid;
-        m_testTarget = CreateRef<RenderTexture>(descriptor);
 
         auto hashCache = HashCache::Get();
 
@@ -63,7 +58,7 @@ namespace PK::Rendering
             { ElementType::Float4x4, hashCache->pk_MATRIX_I_M },
         });
 
-        m_constantsPerFrame->Set<float>(hashCache->pk_SceneOEM_Exposure, m_OEMExposure);
+        m_constantsPerFrame->Set<float>(hashCache->pk_SceneOEM_Exposure, config->BackgroundExposure);
 
         m_shader = assetDatabase->Find<Shader>("SH_WS_Debug");
         m_mesh = assetDatabase->Load<Mesh>("res/models/MDL_Cloth.pkmesh");
@@ -78,8 +73,6 @@ namespace PK::Rendering
         m_mesh = nullptr;
         m_constantsPerFrame = nullptr;
         m_HDRRenderTarget = nullptr;
-        m_testTarget = nullptr;
-        m_blitTestShader = nullptr;
         m_shader = nullptr;
     }
 
@@ -119,8 +112,13 @@ namespace PK::Rendering
     
     void RenderPipeline::Step(Window* window, int condition)
     {
+        auto hash = HashCache::Get();
         auto* cmd = GraphicsAPI::GetCommandBuffer();
 
+        auto resolution = window->GetResolution();
+        m_HDRRenderTarget->Validate(resolution);
+
+        m_constantsPerFrame->Set<float4>(hash->pk_ScreenParams, { (float)resolution.x, (float)resolution.y, 1.0f / (float)resolution.x, 1.0f / (float)resolution.y });
         m_constantsPerFrame->FlushBuffer();
 
         auto modelView = m_modelMatrices->BeginMap<ModelMatrices>();
@@ -128,32 +126,29 @@ namespace PK::Rendering
         modelView[0].pk_MATRIX_I_M = glm::inverse(modelView[0].pk_MATRIX_M);
         m_modelMatrices->EndMap();
 
-        m_HDRRenderTarget->Validate(window->GetResolution());
-        m_testTarget->Validate(window->GetResolution());
-
+        cmd->SetTexture(hash->pk_ScreenDepth, m_HDRRenderTarget->GetDepth());
         cmd->SetRenderTarget(m_HDRRenderTarget.get());
         cmd->ClearColor(PK_COLOR_RED, 0);
         cmd->ClearDepth(1.0f, 0u);
 
-        cmd->SetBuffer(HashCache::Get()->pk_PerFrameConstants, *m_constantsPerFrame.get());
-        cmd->SetBuffer(HashCache::Get()->pk_ModelMatrices, m_modelMatrices.get());
-        cmd->SetTexture(HashCache::Get()->pk_SceneOEM_HDR, m_OEMTexture);
+        cmd->SetBuffer(hash->pk_PerFrameConstants, *m_constantsPerFrame.get());
+        cmd->SetBuffer(hash->pk_ModelMatrices, m_modelMatrices.get());
+        cmd->SetTexture(hash->pk_SceneOEM_HDR, m_OEMTexture);
         cmd->SetTexture("tex1", m_testTexture);
         cmd->SetConstant<float4>("offset", { 0, 0, 0, 0 });
 
         cmd->Blit(m_OEMBackgroundShader);
         cmd->DrawMesh(m_mesh, 0, m_shader);
 
-        cmd->Barrier(m_HDRRenderTarget->GetColor(0), MemoryAccessFlags::FragmentAttachmentColor, MemoryAccessFlags::FragmentTexture);
-        cmd->SetRenderTarget(m_testTarget.get());
-        cmd->DiscardColor(0);
+        m_passPostEffects.Execute(m_HDRRenderTarget.get(), MemoryAccessFlags::FragmentAttachmentColor);
 
-        cmd->SetTexture(HashCache::Get()->_MainTex, m_HDRRenderTarget->GetColor(0));
-        cmd->SetImage("_OutImage", m_testTarget->GetColor(0), 0, 0);
+        cmd->Blit(m_HDRRenderTarget->GetColor(0), window, 0, 0, FilterMode::Bilinear);
+    }
 
-        auto res = m_testTarget->GetResolution();
-        cmd->Dispatch(m_blitTestShader, { (uint)glm::ceil(res.x / 16.0f), (uint)glm::ceil(res.y / 16.0f), 1u });
-
-        cmd->Blit(m_testTarget->GetColor(0), window, 0, 0, FilterMode::Bilinear);
+    void RenderPipeline::Step(AssetImportToken<ApplicationConfig>* token)
+    {
+        m_OEMTexture = token->assetDatabase->Load<Texture>(token->asset->FileBackgroundTexture.value.c_str());
+        m_constantsPerFrame->Set<float>(HashCache::Get()->pk_SceneOEM_Exposure, token->asset->BackgroundExposure);
+        m_passPostEffects.OnUpdateParameters(token->asset);
     }
 }

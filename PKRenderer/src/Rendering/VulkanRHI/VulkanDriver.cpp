@@ -64,6 +64,10 @@ namespace PK::Rendering::VulkanRHI
         physicalDeviceRequirements.versionMajor = supportedMajor;
         physicalDeviceRequirements.versionMinor = supportedMinor;
         physicalDeviceRequirements.alphaToOne = true;
+        physicalDeviceRequirements.shaderImageGatherExtended = true;
+        physicalDeviceRequirements.sparseBinding = true;
+        physicalDeviceRequirements.samplerAnisotropy = true;
+        physicalDeviceRequirements.multiViewport = true;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
         Utilities::VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice, &queueFamilies);
@@ -89,6 +93,10 @@ namespace PK::Rendering::VulkanRHI
 
         VkPhysicalDeviceFeatures deviceFeatures{};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
+        deviceFeatures.shaderImageGatherExtended = VK_TRUE;
+        deviceFeatures.sparseBinding = VK_TRUE;
+        deviceFeatures.samplerAnisotropy = VK_TRUE;
+        deviceFeatures.multiViewport = VK_TRUE;
 
         VkDeviceCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
