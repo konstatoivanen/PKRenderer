@@ -7,18 +7,6 @@ namespace PK::Rendering::Objects
 {
     using namespace PK::Rendering::VulkanRHI::Objects;
 
-    Ref<Buffer> Buffer::Create(BufferUsage usage, const BufferLayout& layout, size_t count)
-    {
-        auto api = GraphicsAPI::GetActiveAPI();
-
-        switch (api)
-        {
-            case APIType::Vulkan: return CreateRef<VulkanBuffer>(usage, layout, count);
-        }
-
-        return nullptr;
-    }
-
     Ref<Buffer> Buffer::Create(BufferUsage usage, const BufferLayout& layout, const void* data, size_t count)
     {
         auto api = GraphicsAPI::GetActiveAPI();

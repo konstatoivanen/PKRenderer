@@ -5,6 +5,26 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
+    static uint32_t GetVariableSize(const DescriptorSetKey& key)
+    {
+        uint32_t variableSize = 0u;
+
+        for (auto i = 0u; i < PK_MAX_DESCRIPTORS_PER_SET; ++i)
+        {
+            if (key.bindings[i].count == 0)
+            {
+                break;
+            }
+
+            if (key.bindings[i].count > 1)
+            {
+                variableSize += key.bindings[i].count;
+            }
+        }
+
+        return variableSize;
+    }
+
     VulkanDescriptorCache::VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, size_t maxSets, std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes) :
         m_device(device), 
         m_maxSets(maxSets), 
@@ -48,12 +68,15 @@ namespace PK::Rendering::VulkanRHI::Systems
             return value;
         }
 
+        auto variableSize = GetVariableSize(key);
+        VkDescriptorSetVariableDescriptorCountAllocateInfo variableSizeInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO };
         VkDescriptorSetAllocateInfo allocInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-        allocInfo.pNext = nullptr;
+        allocInfo.pNext = variableSize > 0ull ? &variableSizeInfo : nullptr;
         allocInfo.descriptorPool = m_currentPool->pool;
         allocInfo.descriptorSetCount = 1;
         allocInfo.pSetLayouts = &layout->layout;
-
+        variableSizeInfo.pDescriptorCounts = &variableSize;
+        variableSizeInfo.descriptorSetCount = 1;
         VkDescriptorSet vkdescriptorset;
         GetDescriptorSets(&allocInfo, &vkdescriptorset, gate, false);
 

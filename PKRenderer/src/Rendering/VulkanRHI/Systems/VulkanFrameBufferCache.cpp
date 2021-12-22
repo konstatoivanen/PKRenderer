@@ -85,12 +85,6 @@ namespace PK::Rendering::VulkanRHI::Systems
             return iterator->second.renderPass;
         }
 
-        // In Vulkan, the subpass desc specifies the layout to transition to at the start of the render
-        // pass, and the attachment description specifies the layout to transition to at the end.
-        // However we use render passes to cause layout transitions only when drawing directly into the
-        // swap chain. We keep our offscreen images in GENERAL layout, which is simple and prevents
-        // thrashing the layout. Note that pipeline barriers are more powerful than render passes for
-        // performing layout transitions, because they allow for per-miplevel transitions.
         struct { VkImageLayout subpass, initial, final; } colorLayouts[PK_MAX_RENDER_TARGETS];
       
         // Is swap chain

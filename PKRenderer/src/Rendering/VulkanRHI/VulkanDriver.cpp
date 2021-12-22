@@ -63,11 +63,13 @@ namespace PK::Rendering::VulkanRHI
         PhysicalDeviceRequirements physicalDeviceRequirements{};
         physicalDeviceRequirements.versionMajor = supportedMajor;
         physicalDeviceRequirements.versionMinor = supportedMinor;
-        physicalDeviceRequirements.alphaToOne = true;
-        physicalDeviceRequirements.shaderImageGatherExtended = true;
-        physicalDeviceRequirements.sparseBinding = true;
-        physicalDeviceRequirements.samplerAnisotropy = true;
-        physicalDeviceRequirements.multiViewport = true;
+        physicalDeviceRequirements.features.alphaToOne = VK_TRUE;
+        physicalDeviceRequirements.features.shaderImageGatherExtended = VK_TRUE;
+        physicalDeviceRequirements.features.sparseBinding = VK_TRUE;
+        physicalDeviceRequirements.features.samplerAnisotropy = VK_TRUE;
+        physicalDeviceRequirements.features.multiViewport = VK_TRUE;
+        physicalDeviceRequirements.features.shaderSampledImageArrayDynamicIndexing = VK_TRUE;
+        physicalDeviceRequirements.features.shaderUniformBufferArrayDynamicIndexing = VK_TRUE;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
         Utilities::VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice, &queueFamilies);
@@ -91,20 +93,21 @@ namespace PK::Rendering::VulkanRHI
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        VkPhysicalDeviceFeatures deviceFeatures{};
-        deviceFeatures.samplerAnisotropy = VK_TRUE;
-        deviceFeatures.shaderImageGatherExtended = VK_TRUE;
-        deviceFeatures.sparseBinding = VK_TRUE;
-        deviceFeatures.samplerAnisotropy = VK_TRUE;
-        deviceFeatures.multiViewport = VK_TRUE;
+        VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES };
+        descriptorIndexingFeatures.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
+        descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+        descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
+        descriptorIndexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+        descriptorIndexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
 
         VkDeviceCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos = queueCreateInfos.data();
-        createInfo.pEnabledFeatures = &deviceFeatures;
+        createInfo.pEnabledFeatures = &physicalDeviceRequirements.features;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(properties.contextualDeviceExtensions->size());
         createInfo.ppEnabledExtensionNames = properties.contextualDeviceExtensions->data();
         createInfo.enabledLayerCount = 0;
+        createInfo.pNext = &descriptorIndexingFeatures;
 
         if (properties.validationLayers != nullptr && properties.validationLayers->size() > 0)
         {

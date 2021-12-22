@@ -384,13 +384,32 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             auto* bindings = m_descriptorSetKeys[i].bindings;
             Handle<VulkanBindHandle> handle = nullptr;
+            HandleArray<VulkanBindHandle> handles = nullptr;
             index = 0u;
 
             for (const auto& element : shader->GetResourceLayout(i))
             {
-                PK_THROW_ASSERT(m_resourceProperties.TryGet(element.NameHashId, handle), "Descriptor (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
-
                 auto* binding = bindings + index++;
+                
+                if (element.Count > 1)
+                {
+                    PK_THROW_ASSERT(m_resourceProperties.TryGet(element.NameHashId, handles), "Descriptor (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
+
+                    auto count = handles.size < element.Count ? (uint16_t)handles.size : element.Count;
+
+                    if (binding->binding != element.Binding || binding->count != count || binding->type != element.Type || binding->handle != handle)
+                    {
+                        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
+                        binding->binding = element.Binding;
+                        binding->count = count;
+                        binding->type = element.Type;
+                        binding->handles = handles.handles;
+                    }
+
+                    continue;
+                }
+
+                PK_THROW_ASSERT(m_resourceProperties.TryGet(element.NameHashId, handle), "Descriptor (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
 
                 if (binding->binding != element.Binding || binding->count != element.Count || binding->type != element.Type || binding->handle != handle)
                 {

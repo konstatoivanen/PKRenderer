@@ -14,7 +14,6 @@ namespace PK::Rendering::Objects
     class Buffer : public NoCopy, public NativeInterface<Buffer>
     {
         public:
-            static Ref<Buffer> Create(BufferUsage usage, const BufferLayout& layout, size_t count);
             static Ref<Buffer> Create(BufferUsage usage, const BufferLayout& layout, const void* data, size_t count);
 
             inline static Ref<Buffer> CreateVertex(const BufferLayout& layout, const void* data, size_t count)
@@ -29,12 +28,12 @@ namespace PK::Rendering::Objects
 
             inline static Ref<Buffer> CreateConstant(const BufferLayout& layout)
             {
-                return Create(BufferUsage::Uniform, layout, 1);
+                return Create(BufferUsage::Uniform, layout, nullptr, 1);
             }
 
             inline static Ref<Buffer> CreateStorage(const BufferLayout& layout, size_t count)
             {
-                return Create(BufferUsage::Storage, layout, count);
+                return Create(BufferUsage::Storage, layout, nullptr, count);
             }
 
 

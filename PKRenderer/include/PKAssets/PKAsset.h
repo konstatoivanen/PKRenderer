@@ -10,6 +10,7 @@ namespace PK::Assets
     constexpr static const unsigned int PK_ASSET_MAX_DESCRIPTOR_SETS = 4;
     constexpr static const unsigned int PK_ASSET_MAX_DESCRIPTORS_PER_SET = 16;
     constexpr static const unsigned int PK_ASSET_MAX_SHADER_KEYWORDS = 256;
+    constexpr static const unsigned int PK_ASSET_MAX_UNBOUNDED_SIZE = 2048;
 
     constexpr static const char* PK_ASSET_EXTENSION_SHADER = ".pkshader";
     constexpr static const char* PK_ASSET_EXTENSION_MESH = ".pkmesh";
@@ -100,6 +101,10 @@ namespace PK::Assets
         Half2x2,
         Half3x3,
         Half4x4,
+
+        Texture2DHandle,
+        Texture3DHandle,
+        TextureCubeHandle,
     };
 
     enum class PKShaderStage : unsigned char
@@ -176,6 +181,8 @@ namespace PK::Assets
         Max,
     };
 
+    PKElementType GetElementType(const char* string);
+
     struct PKEncNode
     {
         RelativePtr<PKEncNode> left;
@@ -193,6 +200,24 @@ namespace PK::Assets
 
     namespace Shader
     {
+        constexpr const static char* PK_SHADER_ATTRIB_ZWRITE = "#ZWrite ";
+        constexpr const static char* PK_SHADER_ATTRIB_ZTEST = "#ZTest ";
+        constexpr const static char* PK_SHADER_ATTRIB_BLENDCOLOR = "#BlendColor ";
+        constexpr const static char* PK_SHADER_ATTRIB_BLENDALPHA = "#BlendAlpha ";
+        constexpr const static char* PK_SHADER_ATTRIB_COLORMASK = "#ColorMask ";
+        constexpr const static char* PK_SHADER_ATTRIB_CULL = "#Cull ";
+        constexpr const static char* PK_SHADER_ATTRIB_OFFSET = "#Offset ";
+        constexpr const static char* PK_SHADER_ATTRIB_MULTI_COMPILE = "#multi_compile ";
+        constexpr const static char* PK_SHADER_ATTRIB_MATERIAL_PROP = "#MaterialProperty ";
+        
+        constexpr const static char* PK_SHADER_INSTANCING_TRANSFORMS = "pk_Instancing_Transforms";
+        constexpr const static char* PK_SHADER_INSTANCING_INDICES = "pk_Instancing_Indices";
+        constexpr const static char* PK_SHADER_INSTANCING_PROPERTIES = "pk_Instancing_Properties";
+        constexpr const static char* PK_SHADER_INSTANCING_TEXTURES2D = "pk_Instancing_Textures2D";
+        constexpr const static char* PK_SHADER_INSTANCING_TEXTURES3D = "pk_Instancing_Textures3D";
+        constexpr const static char* PK_SHADER_INSTANCING_TEXTURESCUBE = "pk_Instancing_TexturesCube";
+        
+
         enum class Type : unsigned char
         {
             Graphics,
@@ -204,6 +229,12 @@ namespace PK::Assets
             char name[PK_ASSET_NAME_MAX_LENGTH];
             PKElementType type;
             unsigned short location;
+        };
+
+        struct alignas(4) PKMaterialProperty
+        {
+            char name[PK_ASSET_NAME_MAX_LENGTH];
+            PKElementType type;
         };
 
         struct alignas(4) PKConstantVariable
@@ -257,7 +288,6 @@ namespace PK::Assets
             RelativePtr<PKDescriptorSet> descriptorSets;
             RelativePtr<PKConstantVariable> constantVariables;
             PKVertexAttribute vertexAttributes[PK_ASSET_MAX_VERTEX_ATTRIBUTES];
-
             uint_t sprivSizes[(int)PKShaderStage::MaxCount];
             RelativePtr<void> sprivBuffers[(int)PKShaderStage::MaxCount];
         };
@@ -265,11 +295,13 @@ namespace PK::Assets
         struct PKShader
         {
             Type type = Type::Graphics;
+            uint_t materialPropertyCount = 0;
             uint_t keywordCount = 0;
-            RelativePtr<PKShaderKeyword> keywords;
             uint_t variantcount = 0;
-            RelativePtr<PKShaderVariant> variants;
             PKShaderFixedStateAttributes attributes;
+            RelativePtr<PKMaterialProperty> materialProperties;
+            RelativePtr<PKShaderKeyword> keywords;
+            RelativePtr<PKShaderVariant> variants;
         };
     }
 

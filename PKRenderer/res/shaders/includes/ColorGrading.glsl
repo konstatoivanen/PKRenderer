@@ -12,12 +12,12 @@ const float3x3 LMS_2_LIN_MAT = float3x3(
     -2.10182e-1,  1.15820e+0,  3.24281e-4,
     -4.18120e-2, -1.18169e-1,  1.06867e+0);
 
-float3 TonemapHejlDawson(half3 color, float exposure)
+float3 TonemapHejlDawson(float3 color, float exposure)
 {
-	const half a = 6.2;
-	const half b = 0.5;
-	const half c = 1.7;
-	const half d = 0.06;
+	const float a = 6.2;
+	const float b = 0.5;
+	const float c = 1.7;
+	const float d = 0.06;
 
 	color *= exposure;
 	color = max(float3(0.0), color - 0.004);
@@ -51,8 +51,8 @@ float3 RgbToHsv(float3 c)
     float4 K = float4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
     float4 p = lerp(float4(c.bg, K.wz), float4(c.gb, K.xy), step(c.b, c.g));
     float4 q = lerp(float4(p.xyw, c.r), float4(c.r, p.yzx), step(p.x, c.r));
-    half d = q.x - min(q.w, q.y);
-    half e = 1.0e-4;
+    float d = q.x - min(q.w, q.y);
+    float e = 1.0e-4;
     return float3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
 }
 

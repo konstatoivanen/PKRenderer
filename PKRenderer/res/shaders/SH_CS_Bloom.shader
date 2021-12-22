@@ -2,7 +2,7 @@
 #multi_compile PASS_DOWNSAMPLE PASS_BLUR
 
 #pragma PROGRAM_COMPUTE
-#include includes/HLSLSupport.glsl
+#include includes/Utilities.glsl
 
 #if defined(PASS_BLUR)
     PK_DECLARE_LOCAL_CBUFFER(_BlurOffset)

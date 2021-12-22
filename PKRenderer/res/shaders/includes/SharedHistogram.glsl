@@ -1,5 +1,5 @@
 #pragma once
-#include HLSLSupport.glsl
+#include Utilities.glsl
 
 PK_DECLARE_BUFFER(uint, pk_Histogram, PK_SET_PASS);
 

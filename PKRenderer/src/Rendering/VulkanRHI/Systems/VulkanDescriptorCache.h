@@ -12,7 +12,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         union
         {
             const VulkanBindHandle* handle;
-            const VulkanBindHandle** handles;
+            const VulkanBindHandle* const* handles;
         };
 
         ResourceType type;

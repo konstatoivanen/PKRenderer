@@ -181,7 +181,10 @@ namespace PK::Rendering::Objects
         auto shader = PK::Assets::ReadAsShader(&asset);
         auto base = asset.rawData;
 
-        PK_THROW_ASSERT(shader->variantcount > 0, "Trying to read a shader with 0 variants!");
+        if (shader->variantcount == 0)
+        {
+            PK_THROW_ASSERT(shader->variantcount > 0, "Trying to read a shader with 0 variants!");
+        }
 
         m_attributes.blending.srcColorFactor = shader->attributes.blendSrcFactorColor;
         m_attributes.blending.dstColorFactor = shader->attributes.blendDstFactorColor;

@@ -17,8 +17,9 @@ namespace PK::Core
 	template<typename T>
 	struct HandleArray 
 	{
-		const T* const* handles; 
-		HandleArray(const T* const* ptr) { handles = ptr; }
+		const T* const* handles;
+		size_t size;
+		HandleArray(const T* const* ptr, size_t size = 0ull) : size(size) { handles = ptr; }
 		void operator = (const T* const* ptr) { handles = ptr; }
 		operator const T* const* () const { return handles; }
 	};
@@ -40,14 +41,7 @@ namespace PK::Core
 				template<typename T>
 				bool Is() { return type == std::type_index(typeid(T)); }
 			};
-			
-		public:
-			PropertyBlock(size_t initialCapacity, bool deltaChecks = false);
-			~PropertyBlock();
 
-			void CopyFrom(PropertyBlock& from);
-			virtual void Clear();
-		
 			template<typename T>
 			const T* Get(const PropertyInfo& info) const
 			{
@@ -58,7 +52,14 @@ namespace PK::Core
 
 				return reinterpret_cast<const T*>(reinterpret_cast<char*>(m_buffer) + info.offset);
 			}
+			
+		public:
+			PropertyBlock(size_t initialCapacity, bool deltaChecks = false);
+			~PropertyBlock();
 
+			void CopyFrom(PropertyBlock& from);
+			virtual void Clear();
+		
 			template<typename T>
 			const T* Get(const uint hashId) const 
 			{

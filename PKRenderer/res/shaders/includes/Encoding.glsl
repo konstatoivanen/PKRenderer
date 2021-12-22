@@ -1,12 +1,12 @@
 #pragma once
-#include HLSLSupport.glsl
+#include Utilities.glsl
 
 #define HDRFactor 8.0
 
 float4 HDREncode(float3 color) 
 {
     color /= HDRFactor;
-    float alpha = ceil( max(max(color.r, color.g), color.b) * 255.0) / 255.0;
+    float alpha = ceil(max(max(color.r, color.g), color.b) * 255.0) / 255.0;
     return float4(color / alpha, alpha);
 }
 

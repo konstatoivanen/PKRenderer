@@ -43,13 +43,21 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_vertexLayout = BufferLayout(vertexElements);
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-        std::vector<VkDescriptorSetLayout> layouts;
+        VkDescriptorSetLayout layouts[PK_MAX_DESCRIPTOR_SETS];
         std::vector<VkPushConstantRange> pushConstantRanges;
         m_descriptorSetCount = variant->descriptorSetCount;
 
         if (variant->descriptorSetCount > 0)
         {
-            layouts.reserve(variant->descriptorSetCount);
+            VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO };
+            VkDescriptorSetLayoutCreateInfo layoutCreateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+            VkDescriptorSetLayoutBinding bindings[PK_MAX_DESCRIPTORS_PER_SET]{};
+            VkDescriptorBindingFlags bindingFlags[PK_MAX_DESCRIPTORS_PER_SET]{};
+            std::vector<ResourceElement> elements;
+
+            layoutCreateInfo.pNext = &bindingFlagsInfo;
+            layoutCreateInfo.pBindings = bindings;
+            bindingFlagsInfo.pBindingFlags = bindingFlags;
 
             auto* pDescriptorSets = variant->descriptorSets.Get(base);
 
@@ -57,31 +65,26 @@ namespace PK::Rendering::VulkanRHI::Objects
             {
                 auto pDescriptorSet = pDescriptorSets + i;
                 auto pDescriptors = pDescriptorSet->descriptors.Get(base);
-                std::vector<VkDescriptorSetLayoutBinding> bindings;
-                std::vector<ResourceElement> elements;
+                elements.clear();
 
                 for (auto j = 0u; j < pDescriptorSet->descriptorCount; ++j)
                 {
-                    VkDescriptorSetLayoutBinding descriptorBinding{};
-                    descriptorBinding.binding = pDescriptors[j].binding;
-                    descriptorBinding.descriptorCount = pDescriptors[j].count;
-                    descriptorBinding.descriptorType = EnumConvert::GetDescriptorType(pDescriptors[j].type);
-                    descriptorBinding.stageFlags = EnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags);
-                    bindings.push_back(descriptorBinding);
+                    bindingFlags[j] = pDescriptors[j].count >= PK_MAX_UNBOUNDED_SIZE ? VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT : 0u;
+                    bindings[j].binding = pDescriptors[j].binding;
+                    bindings[j].descriptorCount = pDescriptors[j].count;
+                    bindings[j].descriptorType = EnumConvert::GetDescriptorType(pDescriptors[j].type);
+                    bindings[j].stageFlags = EnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags);
                     elements.emplace_back(pDescriptors[j].type, std::string(pDescriptors[j].name), pDescriptors[j].binding, pDescriptors[j].count);
                 }
 
-                VkDescriptorSetLayoutCreateInfo descriptorsetLayoutCreateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
-                descriptorsetLayoutCreateInfo.bindingCount = (uint32_t)bindings.size();
-                descriptorsetLayoutCreateInfo.pBindings = bindings.data();
-
-                m_descriptorSetLayouts[i] = CreateScope<VulkanDescriptorSetLayout>(m_device, descriptorsetLayoutCreateInfo, EnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags));
-                layouts.push_back(m_descriptorSetLayouts[i]->layout);
+                bindingFlagsInfo.bindingCount = layoutCreateInfo.bindingCount = pDescriptorSet->descriptorCount;
+                m_descriptorSetLayouts[i] = CreateScope<VulkanDescriptorSetLayout>(m_device, layoutCreateInfo, EnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags));
+                layouts[i] = m_descriptorSetLayouts[i]->layout;
                 m_resourceLayouts[i] = ResourceLayout(elements);
             }
 
-            pipelineLayoutInfo.setLayoutCount = (uint32_t)layouts.size();
-            pipelineLayoutInfo.pSetLayouts = layouts.data();
+            pipelineLayoutInfo.setLayoutCount = variant->descriptorSetCount;
+            pipelineLayoutInfo.pSetLayouts = layouts;
         }
 
         if (variant->constantVariableCount > 0)

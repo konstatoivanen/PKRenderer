@@ -250,27 +250,43 @@ namespace PK::Rendering::VulkanRHI::Utilities
                 swapChainSupported = presentModeCount > 0 && formatCount > 0;
             }
 
-            if (properties.deviceType == requirements.deviceType &&
-                (features.alphaToOne || !requirements.alphaToOne) &&
-                (features.shaderImageGatherExtended || !requirements.shaderImageGatherExtended) &&
-                (features.sparseBinding || !requirements.sparseBinding) &&
-                (features.samplerAnisotropy || !requirements.samplerAnisotropy) &&
-                (features.multiViewport || !requirements.multiViewport) &&
-                extensionSupported &&
-                swapChainSupported &&
-                queueFamilies->HasIndices())
+            if (properties.deviceType != requirements.deviceType ||
+                !extensionSupported ||
+                !swapChainSupported ||
+                !queueFamilies->HasIndices())
             {
-                PK_LOG_NEWLINE();
-                PK_LOG_HEADER(" Selected Physical Device '%s' from '%i' physical devices. ", properties.deviceName, devices.size());
-                PK_LOG_INFO("   Vendor: %i", properties.vendorID);
-                PK_LOG_INFO("   Device: %i", properties.deviceID);
-                PK_LOG_INFO("   Driver: %i", properties.driverVersion);
-                PK_LOG_INFO("   API VER: %i.%i", versionMajor, versionMinor);
-                PK_LOG_NEWLINE();
-
-                *selectedDevice = device;
-                return;
+                continue;
             }
+
+            auto featureCount = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
+            auto curArray = reinterpret_cast<const VkBool32*>(&features);
+            auto reqArray = reinterpret_cast<const VkBool32*>(&requirements.features);
+            auto lackingFeatures = false;
+
+            for (auto i = 0; i < featureCount; ++i)
+            {
+                if (!curArray[i] && reqArray[i])
+                {
+                    lackingFeatures = true;
+                    break;
+                }
+            }
+
+            if (lackingFeatures)
+            {
+                continue;
+            }
+
+            PK_LOG_NEWLINE();
+            PK_LOG_HEADER(" Selected Physical Device '%s' from '%i' physical devices. ", properties.deviceName, devices.size());
+            PK_LOG_INFO("   Vendor: %i", properties.vendorID);
+            PK_LOG_INFO("   Device: %i", properties.deviceID);
+            PK_LOG_INFO("   Driver: %i", properties.driverVersion);
+            PK_LOG_INFO("   API VER: %i.%i", versionMajor, versionMinor);
+            PK_LOG_NEWLINE();
+
+            *selectedDevice = device;
+            return;
         }
 
         PK_THROW_ERROR("Could not find a suitable vulkan physical device!");

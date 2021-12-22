@@ -25,11 +25,7 @@ namespace PK::Rendering::VulkanRHI
         uint32_t versionMajor;
         uint32_t versionMinor;
         VkPhysicalDeviceType deviceType;
-        bool alphaToOne;
-        bool shaderImageGatherExtended;
-        bool sparseBinding;
-        bool samplerAnisotropy;
-        bool multiViewport;
+        VkPhysicalDeviceFeatures features;
 
         const std::vector<const char*>* deviceExtensions;
     };

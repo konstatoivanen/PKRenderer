@@ -16,9 +16,10 @@ namespace PK::Rendering::Structs
     constexpr const static uint32_t PK_DESIRED_SWAP_CHAIN_IMAGE_COUNT = 4;
     constexpr static const uint32_t PK_MAX_FRAMES_IN_FLIGHT = 2;
     constexpr static const uint32_t PK_MAX_RENDER_TARGETS = 8;
-    constexpr static const uint32_t PK_MAX_DESCRIPTOR_SETS = 4;
-    constexpr static const uint32_t PK_MAX_DESCRIPTORS_PER_SET = 16;
-    constexpr const static uint32_t PK_MAX_VERTEX_ATTRIBUTES = 8;
+    constexpr static const uint32_t PK_MAX_DESCRIPTOR_SETS = PK::Assets::PK_ASSET_MAX_DESCRIPTOR_SETS;
+    constexpr static const uint32_t PK_MAX_DESCRIPTORS_PER_SET = PK::Assets::PK_ASSET_MAX_DESCRIPTORS_PER_SET;
+    constexpr const static uint32_t PK_MAX_VERTEX_ATTRIBUTES = PK::Assets::PK_ASSET_MAX_VERTEX_ATTRIBUTES;
+    constexpr const static uint32_t PK_MAX_UNBOUNDED_SIZE = PK::Assets::PK_ASSET_MAX_UNBOUNDED_SIZE;
     
     constexpr const static char* PK_VS_POSITION = PK::Assets::Mesh::PK_VS_POSITION;
     constexpr const static char* PK_VS_NORMAL = PK::Assets::Mesh::PK_VS_NORMAL;

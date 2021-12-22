@@ -12,7 +12,6 @@ namespace PK::Rendering::VulkanRHI::Objects
     class VulkanBuffer : public Buffer
     {
         public:
-            VulkanBuffer(BufferUsage usage, const BufferLayout& layout, size_t count);
             VulkanBuffer(BufferUsage usage, const BufferLayout& layout, const void* data, size_t count);
             ~VulkanBuffer();
 
