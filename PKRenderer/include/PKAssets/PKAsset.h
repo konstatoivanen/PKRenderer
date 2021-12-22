@@ -5,6 +5,7 @@ namespace PK::Assets
     typedef unsigned int uint_t;
     typedef unsigned int relativePtr;
 
+    constexpr static const unsigned long long PK_ASSET_MAGIC_NUMBER = 16056123332373007180ull;
     constexpr static const unsigned int PK_ASSET_NAME_MAX_LENGTH = 64;
     constexpr static const unsigned int PK_ASSET_MAX_VERTEX_ATTRIBUTES = 8;
     constexpr static const unsigned int PK_ASSET_MAX_DESCRIPTOR_SETS = 4;
@@ -193,6 +194,7 @@ namespace PK::Assets
 
     struct PKAssetHeader
     {
+        unsigned long long magicNumber = PK_ASSET_MAGIC_NUMBER;
         char name[PK_ASSET_NAME_MAX_LENGTH]{};
         PKAssetType type = PKAssetType::Invalid;
         bool isCompressed = false;

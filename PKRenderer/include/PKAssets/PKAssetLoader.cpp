@@ -88,6 +88,17 @@ namespace PK::Assets
             return -1;
         }
 
+        unsigned long long magicNumber = 0ull;
+        fread(&magicNumber, sizeof(decltype(magicNumber)), 1, file);
+
+        if (magicNumber != PK_ASSET_MAGIC_NUMBER)
+        {
+            fclose(file);
+            return -1;
+        }
+
+        rewind(file);
+
         auto buffer = malloc(size);
 
         if (buffer == nullptr)
@@ -101,6 +112,7 @@ namespace PK::Assets
         fclose(file);
 
         asset->header = reinterpret_cast<PKAssetHeader*>(asset->rawData);
+
 
         if (asset->header->isCompressed)
         {
