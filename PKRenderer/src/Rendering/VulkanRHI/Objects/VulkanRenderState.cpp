@@ -1,9 +1,11 @@
 #include "PrecompiledHeader.h"
 #include "VulkanRenderState.h"
+#include "Core/Services/Log.h"
+#include "Utilities/Handle.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
 #include "Rendering/VulkanRHI/VulkanDriver.h"
+#include "Rendering/VulkanRHI/Objects/VulkanBindArray.h"
 #include "Rendering/GraphicsAPI.h"
-#include "Utilities/Log.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -383,8 +385,8 @@ namespace PK::Rendering::VulkanRHI::Objects
             }
 
             auto* bindings = m_descriptorSetKeys[i].bindings;
-            Handle<VulkanBindHandle> handle = nullptr;
-            HandleArray<VulkanBindHandle> handles = nullptr;
+            Handle<VulkanBindHandle> wrappedHandle = nullptr;
+            Handle<VulkanBindArray> wrappedHandleArray = nullptr;
             index = 0u;
 
             for (const auto& element : shader->GetResourceLayout(i))
@@ -393,31 +395,37 @@ namespace PK::Rendering::VulkanRHI::Objects
                 
                 if (element.Count > 1)
                 {
-                    PK_THROW_ASSERT(m_resourceProperties.TryGet(element.NameHashId, handles), "Descriptor (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
+                    PK_THROW_ASSERT(m_resourceProperties.TryGet(element.NameHashId, wrappedHandleArray), "Descriptors (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
 
-                    auto count = handles.size < element.Count ? (uint16_t)handles.size : element.Count;
+                    uint32_t version = 0u;
+                    uint32_t count = 0u;
+                    auto handles = wrappedHandleArray.handle->GetHandles(&version, &count);
+                    count = count < element.Count ? (uint16_t)count : element.Count;
 
-                    if (binding->binding != element.Binding || binding->count != count || binding->type != element.Type || binding->handle != handle)
+                    if (binding->count != count || binding->type != element.Type || binding->handles != handles || binding->version != version || !binding->isArray)
                     {
                         m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
-                        binding->binding = element.Binding;
                         binding->count = count;
                         binding->type = element.Type;
-                        binding->handles = handles.handles;
+                        binding->handles = handles;
+                        binding->version = version;
+                        binding->isArray = true;
                     }
 
                     continue;
                 }
 
-                PK_THROW_ASSERT(m_resourceProperties.TryGet(element.NameHashId, handle), "Descriptor (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
+                PK_THROW_ASSERT(m_resourceProperties.TryGet(element.NameHashId, wrappedHandle), "Descriptor (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
+                auto handle = wrappedHandle.handle;
 
-                if (binding->binding != element.Binding || binding->count != element.Count || binding->type != element.Type || binding->handle != handle)
+                if (binding->count != element.Count || binding->type != element.Type || binding->handle != handle || binding->version != handle->version || binding->isArray)
                 {
                     m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
-                    binding->binding = element.Binding;
                     binding->count = element.Count;
                     binding->type = element.Type;
                     binding->handle = handle;
+                    binding->version = handle->version;
+                    binding->isArray = false;
                 }
             }
 

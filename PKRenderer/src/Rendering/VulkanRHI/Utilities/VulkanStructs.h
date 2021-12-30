@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/NoCopy.h"
+#include "Utilities/NoCopy.h"
 #include "vulkan/vulkan.h"
 #include "VulkanMemory.h"
 #include "Rendering/Structs/Enums.h"
@@ -9,6 +9,7 @@
 namespace PK::Rendering::VulkanRHI
 {
     using namespace PK::Rendering::Structs;
+    using namespace PK::Utilities;
 
     constexpr const static uint32_t PK_QUEUE_FAMILY_COUNT = 3;
     constexpr const static uint32_t PK_INVALID_QUEUE_FAMILY = 0xFFFFFFFF;
@@ -104,12 +105,12 @@ namespace PK::Rendering::VulkanRHI
         inline bool IsCompleted() const { return remoteInvocationIndex == nullptr || *remoteInvocationIndex != invocationIndex; }
     };
 
-    struct IVulkanDisposable : public PK::Core::NoCopy 
+    struct IVulkanDisposable : public NoCopy 
     {
         public: virtual ~IVulkanDisposable() = 0 {};
     };
 
-    struct VulkanFence : public PK::Core::NoCopy
+    struct VulkanFence : public NoCopy
     {
         VulkanFence(VkDevice device, bool signaled = false);
         ~VulkanFence();
@@ -118,7 +119,7 @@ namespace PK::Rendering::VulkanRHI
         VkFence vulkanFence;
     };
 
-    struct VulkanSemaphore : public PK::Core::NoCopy
+    struct VulkanSemaphore : public NoCopy
     {
         VulkanSemaphore(VkDevice device);
         ~VulkanSemaphore();
@@ -135,7 +136,7 @@ namespace PK::Rendering::VulkanRHI
         VkImageView view;
     };
 
-    struct VulkanFrameBuffer : public PK::Core::NoCopy
+    struct VulkanFrameBuffer : public NoCopy
     {
         VulkanFrameBuffer(VkDevice device, const VkFramebufferCreateInfo& createInfo);
         ~VulkanFrameBuffer();
@@ -144,7 +145,7 @@ namespace PK::Rendering::VulkanRHI
         VkFramebuffer frameBuffer;
     };
 
-    struct VulkanRenderPass : public PK::Core::NoCopy
+    struct VulkanRenderPass : public NoCopy
     {
         VulkanRenderPass(VkDevice device, const VkRenderPassCreateInfo& createInfo);
         ~VulkanRenderPass();
@@ -196,7 +197,7 @@ namespace PK::Rendering::VulkanRHI
         VkPipelineShaderStageCreateInfo stageInfo;
     };
 
-    struct VulkanPipeline : public PK::Core::NoCopy 
+    struct VulkanPipeline : public NoCopy 
     {
         VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo);
         VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkComputePipelineCreateInfo& createInfo);
@@ -206,7 +207,7 @@ namespace PK::Rendering::VulkanRHI
         VkPipeline pipeline;
     };
 
-    struct VulkanPipelineLayout : public PK::Core::NoCopy
+    struct VulkanPipelineLayout : public NoCopy
     {
         VulkanPipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo& createInfo);
         ~VulkanPipelineLayout();
@@ -215,7 +216,7 @@ namespace PK::Rendering::VulkanRHI
         VkPipelineLayout layout;
     };
 
-    struct VulkanDescriptorSetLayout : public PK::Core::NoCopy
+    struct VulkanDescriptorSetLayout : public NoCopy
     {
         VulkanDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& createInfo, VkShaderStageFlagBits stageFlags);
         ~VulkanDescriptorSetLayout();
@@ -225,7 +226,7 @@ namespace PK::Rendering::VulkanRHI
         VkShaderStageFlagBits stageFlags;
     };
 
-    struct VulkanDescriptorPool : public PK::Core::NoCopy
+    struct VulkanDescriptorPool : public NoCopy
     {
         VulkanDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo& createInfo);
         ~VulkanDescriptorPool();
@@ -243,7 +244,7 @@ namespace PK::Rendering::VulkanRHI
         mutable VulkanExecutionGate executionGate;
     };
 
-    struct VulkanSampler : public PK::Core::NoCopy
+    struct VulkanSampler : public NoCopy
     {
         VulkanSampler(VkDevice device, const SamplerDescriptor& descriptor);
         ~VulkanSampler();
@@ -278,7 +279,7 @@ namespace PK::Rendering::VulkanRHI
         VkDeviceSize bufferOffset = 0ull;
     };
 
-    struct VulkanRenderTarget : public PK::Core::NoCopy
+    struct VulkanRenderTarget : public NoCopy
     {
         VulkanRenderTarget(VkImageView view,
                            VkImage image,

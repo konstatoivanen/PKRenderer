@@ -1,5 +1,5 @@
 #pragma once
-#include "Math/PKMath.h"
+#include "Math/Types.h"
 
 namespace PK::ECS::Tokens
 {

@@ -1,9 +1,8 @@
 #pragma once
-#include "PrecompiledHeader.h"
+#include "Utilities/NoCopy.h"
+#include "Utilities/Ref.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Rendering/VulkanRHI/Objects/VulkanCommandBuffer.h"
-#include "Core/NoCopy.h"
-#include "Utilities/Ref.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
 {

@@ -183,6 +183,9 @@ namespace PK::Assets
     };
 
     PKElementType GetElementType(const char* string);
+    uint_t GetElementSize(PKElementType type);
+    uint_t GetElementAlignment(PKElementType type);
+    uint_t GetElementComponents(PKElementType type);
 
     struct PKEncNode
     {
@@ -251,7 +254,6 @@ namespace PK::Assets
         {
             char name[PK_ASSET_NAME_MAX_LENGTH];
             PKDescriptorType type;
-            unsigned char binding;
             unsigned short count;
         };
 

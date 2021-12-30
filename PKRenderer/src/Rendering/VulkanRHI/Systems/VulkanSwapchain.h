@@ -1,6 +1,5 @@
 #pragma once
-#include "PrecompiledHeader.h"
-#include "Core/NoCopy.h"
+#include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
@@ -19,7 +18,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         uint32_t maxFramesInFlight;
     };
 
-    class VulkanSwapchain : public PK::Core::NoCopy
+    class VulkanSwapchain : public NoCopy
     {
         public:
             VulkanSwapchain(const VkPhysicalDevice physicalDevice, 
@@ -62,7 +61,6 @@ namespace PK::Rendering::VulkanRHI::Systems
             TextureFormat GetFormat() const { return EnumConvert::GetTextureFormat(m_format); }
 
         private:
-
             const VkPhysicalDevice m_physicalDevice;
             const VkDevice m_device;
             const VkSurfaceKHR m_surface;

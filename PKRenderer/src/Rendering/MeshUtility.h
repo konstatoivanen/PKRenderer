@@ -1,10 +1,11 @@
 #pragma once
 #include "Rendering/Objects/Mesh.h"
-#include "Math/PKMath.h"
+#include "Math/Types.h"
 
 namespace PK::Rendering::MeshUtility
 {
     using namespace Utilities;
+    using namespace PK::Math;
     using namespace PK::Rendering::Objects;
 
     void CalculateNormals(const float3* vertices, const uint* indices, float3* normals, uint vcount, uint icount, float sign = 1.0f);

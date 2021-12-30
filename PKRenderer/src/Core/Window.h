@@ -1,9 +1,9 @@
 #pragma once
 #include "PrecompiledHeader.h"
-#include "Core/NoCopy.h"
-#include "Core/NativeInterface.h"
+#include "Utilities/NoCopy.h"
+#include "Utilities/NativeInterface.h"
 #include "Utilities/Ref.h"
-#include "Math/PKMath.h"
+#include "Math/Types.h"
 
 namespace PK::Core
 {

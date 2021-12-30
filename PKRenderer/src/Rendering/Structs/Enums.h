@@ -13,14 +13,15 @@ namespace PK::Rendering::Structs
     typedef PK::Assets::PKCullMode CullMode;
     typedef PK::Assets::Shader::Type ShaderType;
 
-    constexpr const static uint32_t PK_DESIRED_SWAP_CHAIN_IMAGE_COUNT = 4;
+    constexpr static const uint32_t PK_DESIRED_SWAP_CHAIN_IMAGE_COUNT = 4;
     constexpr static const uint32_t PK_MAX_FRAMES_IN_FLIGHT = 2;
     constexpr static const uint32_t PK_MAX_RENDER_TARGETS = 8;
+    constexpr static const uint32_t PK_SHADOW_CASCADE_COUNT = 4;
     constexpr static const uint32_t PK_MAX_DESCRIPTOR_SETS = PK::Assets::PK_ASSET_MAX_DESCRIPTOR_SETS;
     constexpr static const uint32_t PK_MAX_DESCRIPTORS_PER_SET = PK::Assets::PK_ASSET_MAX_DESCRIPTORS_PER_SET;
-    constexpr const static uint32_t PK_MAX_VERTEX_ATTRIBUTES = PK::Assets::PK_ASSET_MAX_VERTEX_ATTRIBUTES;
-    constexpr const static uint32_t PK_MAX_UNBOUNDED_SIZE = PK::Assets::PK_ASSET_MAX_UNBOUNDED_SIZE;
-    
+    constexpr static const uint32_t PK_MAX_VERTEX_ATTRIBUTES = PK::Assets::PK_ASSET_MAX_VERTEX_ATTRIBUTES;
+    constexpr static const uint32_t PK_MAX_UNBOUNDED_SIZE = PK::Assets::PK_ASSET_MAX_UNBOUNDED_SIZE;
+
     constexpr const static char* PK_VS_POSITION = PK::Assets::Mesh::PK_VS_POSITION;
     constexpr const static char* PK_VS_NORMAL = PK::Assets::Mesh::PK_VS_NORMAL;
     constexpr const static char* PK_VS_TANGENT = PK::Assets::Mesh::PK_VS_TANGENT;  
@@ -168,7 +169,7 @@ namespace PK::Rendering::Structs
         Vertex = 0x1,
         Index = 0x2,
         Staging = 0x4,
-        Uniform = 0x8,
+        Constant = 0x8,
         Storage = 0x10,
         Dynamic = 0x20,
     };
@@ -193,19 +194,34 @@ namespace PK::Rendering::Structs
         ValidRTDepthUsages = Sample | Input,
     };
 
-    #define PK_DECLARE_ENUM_OPERATORS(Type) \
-    static constexpr Type operator | (const Type& a, const Type& b) { return (Type)((uint32_t)a | (uint32_t)b); } \
-    static constexpr Type operator & (const Type& a, const Type& b) { return (Type)((uint32_t)a & (uint32_t)b); } \
-    static constexpr Type operator & (const Type& a, const int& b) { return (Type)((uint32_t)a & (uint32_t)b); } \
-    static constexpr bool operator == (const Type& a, const int& b) { return (uint32_t)a == b; } \
-    static constexpr bool operator != (const Type& a, const int& b) { return (uint32_t)a != b; } \
+    enum class RenderableFlags : uint8_t
+    {
+        Mesh = 1 << 0,
+        Light = 1 << 1,
+        Static = 1 << 2,
+        CastShadows = 1 << 3,
+        Cullable = 1 << 4,
+    };
 
-    PK_DECLARE_ENUM_OPERATORS(ColorMask)
-    PK_DECLARE_ENUM_OPERATORS(MemoryAccessFlags)
-    PK_DECLARE_ENUM_OPERATORS(BufferUsage)
-    PK_DECLARE_ENUM_OPERATORS(TextureUsage)
+    enum class LightType : uint8_t
+    {
+        Point = 0,
+        Spot = 1,
+        Directional = 2,
+        TypeCount
+    };
 
-    #undef PK_DECLARE_ENUM_OPERATORS
+    enum class Cookie : uint8_t
+    {
+        Circle0,
+        Circle1,
+        Circle2,
+        Square0,
+        Square1,
+        Square2,
+        Triangle,
+        Star,
+    };
     
     enum class TextureFormat : uint16_t 
     {
@@ -320,10 +336,26 @@ namespace PK::Rendering::Structs
         SRGB8_ALPHA8_ASTC_12x12,
     };
 
+    #define PK_DECLARE_ENUM_OPERATORS(Type) \
+    static constexpr Type operator | (const Type& a, const Type& b) { return (Type)((uint32_t)a | (uint32_t)b); } \
+    static constexpr Type operator |= (const Type& a, const Type& b) { return (Type)((uint32_t)a | (uint32_t)b); } \
+    static constexpr Type operator & (const Type& a, const Type& b) { return (Type)((uint32_t)a & (uint32_t)b); } \
+    static constexpr Type operator & (const Type& a, const int& b) { return (Type)((uint32_t)a & (uint32_t)b); } \
+    static constexpr bool operator == (const Type& a, const int& b) { return (uint32_t)a == b; } \
+    static constexpr bool operator != (const Type& a, const int& b) { return (uint32_t)a != b; } \
+
+    PK_DECLARE_ENUM_OPERATORS(ColorMask)
+    PK_DECLARE_ENUM_OPERATORS(MemoryAccessFlags)
+    PK_DECLARE_ENUM_OPERATORS(BufferUsage)
+    PK_DECLARE_ENUM_OPERATORS(TextureUsage)
+    PK_DECLARE_ENUM_OPERATORS(RenderableFlags)
+
+    #undef PK_DECLARE_ENUM_OPERATORS
+
     namespace ElementConvert
     {
-        uint16_t Size(ElementType format);
-        uint16_t Alignment(ElementType format);
-        uint16_t Components(ElementType format);
+        inline uint16_t Size(ElementType format) { return (uint16_t)PK::Assets::GetElementSize(format); }
+        inline uint16_t Alignment(ElementType format) { return (uint16_t)PK::Assets::GetElementAlignment(format); }
+        inline uint16_t Components(ElementType format) { return (uint16_t)PK::Assets::GetElementComponents(format); }
     }
 }

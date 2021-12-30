@@ -6,8 +6,14 @@ namespace PK::Rendering::VulkanRHI::Systems
 {
     using namespace PK::Utilities;
 
-    class VulkanDisposer : public PK::Core::NoCopy
+    class VulkanDisposer : public NoCopy
     {
+        struct DisposeHandle
+        {
+            Scope<IVulkanDisposable> disposable = nullptr;
+            VulkanExecutionGate gate{};
+        };
+
         public:
             template<typename T>
             void Dispose(T* disposable, const VulkanExecutionGate& releaseGate)
@@ -19,12 +25,6 @@ namespace PK::Rendering::VulkanRHI::Systems
             void Prune();
 
         private:
-            struct DisposeHandle
-            {
-                Scope<IVulkanDisposable> disposable;
-                VulkanExecutionGate gate;
-            };
-
             std::vector<DisposeHandle> m_disposables;
     };
 }

@@ -1,15 +1,15 @@
 #pragma once
-#include "Core/NoCopy.h"
+#include "Utilities/NoCopy.h"
 #include "Rendering/Objects/Texture.h"
 #include "Rendering/Objects/Buffer.h"
 #include "Rendering/Objects/Shader.h"
 
 namespace PK::Rendering::Passes
 {
-    using namespace PK::Core;
+    using namespace PK::Utilities;
     using namespace PK::Rendering::Objects;
 
-    class PassHistogram : public PK::Core::NoCopy
+    class PassHistogram : public NoCopy
     {
         public:
             PassHistogram(AssetDatabase* assetDatabase);

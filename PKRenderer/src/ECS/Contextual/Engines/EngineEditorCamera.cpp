@@ -3,6 +3,8 @@
 #include "Core/Application.h"
 #include "Rendering/GraphicsAPI.h"
 #include "ECS/Contextual/Tokens/ViewProjectionToken.h"
+#include "Math/FunctionsMisc.h"
+#include "Math/FunctionsMatrix.h"
 
 namespace PK::ECS::Engines
 {

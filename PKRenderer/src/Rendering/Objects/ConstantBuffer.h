@@ -1,12 +1,12 @@
 #pragma once
-#include "Core/PropertyBlock.h"
+#include "Rendering/Objects/ShaderPropertyBlock.h"
 #include "Rendering/Objects/Buffer.h"
 
 namespace PK::Rendering::Objects
 {
     using namespace PK::Utilities;
 
-    class ConstantBuffer : public PK::Core::PropertyBlock
+    class ConstantBuffer : public ShaderPropertyBlock
     {
         public:
             ConstantBuffer(const BufferLayout& layout);

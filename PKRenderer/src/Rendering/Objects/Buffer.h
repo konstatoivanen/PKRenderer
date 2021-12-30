@@ -1,9 +1,10 @@
 #pragma once
-#include "Core/NoCopy.h"
-#include "Core/BufferView.h"
-#include "Core/NativeInterface.h"
 #include "Utilities/Ref.h"
+#include "Utilities/NoCopy.h"
+#include "Utilities/BufferView.h"
+#include "Utilities/NativeInterface.h"
 #include "Rendering/Structs/Layout.h"
+#include "Rendering/Structs/StructsCommon.h"
 
 namespace PK::Rendering::Objects
 {
@@ -28,7 +29,7 @@ namespace PK::Rendering::Objects
 
             inline static Ref<Buffer> CreateConstant(const BufferLayout& layout)
             {
-                return Create(BufferUsage::Uniform, layout, nullptr, 1);
+                return Create(BufferUsage::Constant, layout, nullptr, 1);
             }
 
             inline static Ref<Buffer> CreateStorage(const BufferLayout& layout, size_t count)
@@ -43,13 +44,13 @@ namespace PK::Rendering::Objects
             virtual void EndMap() = 0;
 
             template<typename T>
-            Core::BufferView<T> BeginMap()
+            BufferView<T> BeginMap()
             {
                 return { reinterpret_cast<T*>(BeginMap(0, GetCapacity())), GetCapacity() / sizeof(T) };
             }
 
             template<typename T>
-            Core::BufferView<T> BeginMap(size_t offset, size_t count)
+            BufferView<T> BeginMap(size_t offset, size_t count)
             {
                 auto tsize = sizeof(T);
                 auto mapSize = tsize * count + tsize * offset;
@@ -66,6 +67,7 @@ namespace PK::Rendering::Objects
             constexpr size_t GetCount() const { return m_count; }
             constexpr const BufferUsage GetUsage() const { return m_usage; }
             constexpr const BufferLayout& GetLayout() const { return m_layout; }
+            constexpr const IndexRange& GetFullRange() const { return { 0ull, m_count }; }
 
         protected:
             Buffer(BufferUsage usage, const BufferLayout& layout, size_t count) : m_usage(usage), m_layout(layout), m_count(count) {}

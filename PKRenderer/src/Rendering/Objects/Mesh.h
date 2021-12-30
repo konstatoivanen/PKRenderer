@@ -1,11 +1,11 @@
 #pragma once
-#include "Core/AssetDatabase.h"
+#include "Core/Services/AssetDatabase.h"
 #include "Rendering/Objects/Buffer.h"
 #include "Rendering/Structs/StructsCommon.h"
 
 namespace PK::Rendering::Objects
 {
-    using namespace PK::Core;
+    using namespace PK::Core::Services;
 
     class Mesh : public Asset
     {

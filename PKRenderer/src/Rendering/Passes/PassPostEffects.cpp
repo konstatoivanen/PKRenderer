@@ -2,6 +2,7 @@
 #include "PassPostEffects.h"
 #include "Rendering/HashCache.h"
 #include "Rendering/GraphicsAPI.h"
+#include "Math/FunctionsColor.h"
 
 namespace PK::Rendering::Passes
 {

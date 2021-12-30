@@ -1,9 +1,11 @@
 #pragma once
 #include "PrecompiledHeader.h"
-#include "Core/Input.h"
+#include "Core/Services/Input.h"
 
 namespace PK::Core
 {
+	using namespace Services;
+
 	struct ConsoleCommandToken
 	{
 		const std::string& argument;
@@ -12,11 +14,9 @@ namespace PK::Core
 
 	struct ConsoleCommandBinding
 	{
-		PK::Core::KeyCode keycode = PK::Core::KeyCode::MOUSE1;
+		KeyCode keycode = KeyCode::MOUSE1;
 		std::string command;
 	};
 
-	class ConsoleCommandBindList : public std::vector<ConsoleCommandBinding>
-	{
-	};
+	typedef std::vector<ConsoleCommandBinding> ConsoleCommandBindList;
 }

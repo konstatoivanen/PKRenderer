@@ -1,8 +1,8 @@
 #include "PrecompiledHeader.h"
-#include "GraphicsAPI.h"
 #include "Utilities/Ref.h"
+#include "Core/Services/Log.h"
+#include "GraphicsAPI.h"
 #include "Rendering/VulkanRHI/VulkanDriver.h"
-#include "Utilities/Log.h"
 
 namespace PK::Rendering
 {
@@ -60,6 +60,8 @@ namespace PK::Rendering
     CommandBuffer* GraphicsAPI::GetCommandBuffer() { return s_currentDriver->GetPrimaryCommandBuffer(); }
     
     size_t GraphicsAPI::GetMemoryUsageKB() { return s_currentDriver->GetMemoryUsageKB(); }
+
+    size_t GraphicsAPI::GetBufferOffsetAlignment(BufferUsage usage) { return s_currentDriver->GetBufferOffsetAlignment(usage); }
     
     void GraphicsAPI::GC() { s_currentDriver->GC(); }
 }

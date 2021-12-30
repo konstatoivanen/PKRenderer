@@ -23,7 +23,15 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             size_t GetCapacity() const override final { return m_rawBuffer->capacity; }
             const VulkanRawBuffer* GetRaw() const { return m_rawBuffer; }
-            const VulkanBindHandle* GetBindHandle() const;
+            const VulkanBindHandle* GetBindHandle(const IndexRange& range);
+            inline const VulkanBindHandle* GetBindHandle(const IndexRange& range) const
+            {
+                return m_bindHandles.at(range).get();
+            }
+            inline const VulkanBindHandle* GetBindHandle() const
+            {
+                return m_bindHandles.at({ 0ull, m_count }).get();
+            }
 
         private:
             void Rebuild(size_t count);
@@ -31,7 +39,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             const VulkanDriver* m_driver = nullptr;
             VulkanRawBuffer* m_rawBuffer = nullptr;
-            Scope<VulkanBindHandle> m_bindHandle = nullptr;
+            std::map<IndexRange, Scope<VulkanBindHandle>> m_bindHandles;
             const VulkanStagingBuffer* m_mappedBuffer = nullptr;
             uint32_t m_version = 0u;
     };

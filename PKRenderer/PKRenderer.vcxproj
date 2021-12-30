@@ -141,6 +141,7 @@
     <PostBuildEvent>
       <Command>xcopy /y /d  "$(ProjectDir)libs\*.dll" "$(TargetDir)"
 xcopy /y /s "$(ProjectDir)res\*.ktx2" "$(TargetDir)res\"
+xcopy /y /s "$(ProjectDir)res\*.material" "$(TargetDir)res\"
 xcopy /y /s "$(ProjectDir)res\*.cfg" "$(TargetDir)res\"
 xcopy /y /s "$(ProjectDir)res\*.keycfg" "$(TargetDir)res\"
 Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)res\'"</Command>
@@ -175,6 +176,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <PostBuildEvent>
       <Command>xcopy /y /d  "$(ProjectDir)libs\*.dll" "$(TargetDir)"
 xcopy /y /s "$(ProjectDir)res\*.ktx2" "$(TargetDir)res\"
+xcopy /y /s "$(ProjectDir)res\*.material" "$(TargetDir)res\"
 xcopy /y /s "$(ProjectDir)res\*.cfg" "$(TargetDir)res\"
 xcopy /y /s "$(ProjectDir)res\*.keycfg" "$(TargetDir)res\"
 Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)res\'"</Command>
@@ -541,38 +543,71 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="include\yaml-cpp\yaml.h" />
     <ClInclude Include="src\Core\Application.h" />
     <ClInclude Include="src\Core\ApplicationConfig.h" />
-    <ClInclude Include="src\Core\AssetDatabase.h" />
-    <ClInclude Include="src\Core\BufferView.h" />
+    <ClInclude Include="src\Core\Services\AssetDatabase.h" />
+    <ClInclude Include="src\ECS\Contextual\Engines\EngineDebug.h" />
+    <ClInclude Include="src\Rendering\Passes\PassGeometry.h" />
+    <ClInclude Include="src\Rendering\Passes\PassLights.h" />
+    <ClInclude Include="src\Utilities\BufferView.h" />
     <ClInclude Include="src\Core\CommandConfig.h" />
     <ClInclude Include="src\Core\ConsoleCommandBinding.h" />
-    <ClInclude Include="src\Core\Input.h" />
-    <ClInclude Include="src\Core\IService.h" />
-    <ClInclude Include="src\Core\ISingleton.h" />
-    <ClInclude Include="src\Core\NativeInterface.h" />
-    <ClInclude Include="src\Core\NoCopy.h" />
-    <ClInclude Include="src\Core\PropertyBlock.h" />
-    <ClInclude Include="src\Core\ServiceRegister.h" />
-    <ClInclude Include="src\Core\Time.h" />
+    <ClInclude Include="src\Utilities\IndexedSet.h" />
+    <ClInclude Include="src\Utilities\Handle.h" />
+    <ClInclude Include="src\Core\Services\Input.h" />
+    <ClInclude Include="src\Core\Services\IService.h" />
+    <ClInclude Include="src\Utilities\HashHelpers.h" />
+    <ClInclude Include="src\Utilities\ISingleton.h" />
+    <ClInclude Include="src\Utilities\NativeInterface.h" />
+    <ClInclude Include="src\Utilities\NoCopy.h" />
+    <ClInclude Include="src\Utilities\Pool.h" />
+    <ClInclude Include="src\Utilities\PropertyBlock.h" />
+    <ClInclude Include="src\Core\Services\ServiceRegister.h" />
+    <ClInclude Include="src\Core\Services\Time.h" />
     <ClInclude Include="src\Core\UpdateStep.h" />
     <ClInclude Include="src\Core\Window.h" />
     <ClInclude Include="src\Core\YamlSerializers.h" />
+    <ClInclude Include="src\ECS\Contextual\Builders\Builders.h" />
+    <ClInclude Include="src\ECS\Contextual\Components\Bounds.h" />
+    <ClInclude Include="src\ECS\Contextual\Components\Light.h" />
+    <ClInclude Include="src\ECS\Contextual\Components\Materials.h" />
+    <ClInclude Include="src\ECS\Contextual\Components\MeshReference.h" />
+    <ClInclude Include="src\ECS\Contextual\Components\Renderable.h" />
+    <ClInclude Include="src\ECS\Contextual\Components\Transform.h" />
+    <ClInclude Include="src\ECS\Contextual\Engines\EngineCull.h" />
+    <ClInclude Include="src\ECS\Contextual\Engines\EngineUpdateTransforms.h" />
+    <ClInclude Include="src\ECS\Contextual\EntityViews\BaseRenderableView.h" />
     <ClInclude Include="src\ECS\Contextual\Engines\EngineCommandInput.h" />
     <ClInclude Include="src\ECS\Contextual\Engines\EngineEditorCamera.h" />
+    <ClInclude Include="src\ECS\Contextual\EntityViews\LightRenderableView.h" />
+    <ClInclude Include="src\ECS\Contextual\EntityViews\LightSphereView.h" />
+    <ClInclude Include="src\ECS\Contextual\EntityViews\MeshRenderableView.h" />
+    <ClInclude Include="src\ECS\Contextual\EntityViews\TransformView.h" />
+    <ClInclude Include="src\ECS\Contextual\Implementers\LightImplementer.h" />
+    <ClInclude Include="src\ECS\Contextual\Implementers\MeshRenderableImplementer.h" />
+    <ClInclude Include="src\ECS\Contextual\Tokens\CullingTokens.h" />
     <ClInclude Include="src\ECS\Contextual\Tokens\ViewProjectionToken.h" />
     <ClInclude Include="src\ECS\Contextual\Tokens\TimeToken.h" />
     <ClInclude Include="src\ECS\EntityDatabase.h" />
-    <ClInclude Include="src\ECS\Sequencer.h" />
-    <ClInclude Include="src\Math\PKMath.h" />
+    <ClInclude Include="src\Core\Services\Sequencer.h" />
+    <ClInclude Include="src\Math\FunctionsMatrix.h" />
+    <ClInclude Include="src\Math\FunctionsMisc.h" />
+    <ClInclude Include="src\Math\FunctionsColor.h" />
+    <ClInclude Include="src\Math\FunctionsIntersect.h" />
+    <ClInclude Include="src\Math\Types.h" />
     <ClInclude Include="src\PrecompiledHeader.h" />
+    <ClInclude Include="src\Rendering\Batcher.h" />
     <ClInclude Include="src\Rendering\GraphicsAPI.h" />
     <ClInclude Include="src\Rendering\HashCache.h" />
     <ClInclude Include="src\Rendering\MeshUtility.h" />
+    <ClInclude Include="src\Rendering\Objects\BindSet.h" />
     <ClInclude Include="src\Rendering\Objects\Buffer.h" />
     <ClInclude Include="src\Rendering\Objects\CommandBuffer.h" />
     <ClInclude Include="src\Rendering\Objects\ConstantBuffer.h" />
+    <ClInclude Include="src\Rendering\Objects\Material.h" />
     <ClInclude Include="src\Rendering\Objects\Mesh.h" />
     <ClInclude Include="src\Rendering\Objects\RenderTexture.h" />
+    <ClInclude Include="src\Rendering\Objects\BindArray.h" />
     <ClInclude Include="src\Rendering\Objects\Shader.h" />
+    <ClInclude Include="src\Rendering\Objects\ShaderPropertyBlock.h" />
     <ClInclude Include="src\Rendering\Objects\Texture.h" />
     <ClInclude Include="src\Rendering\Passes\PassBloom.h" />
     <ClInclude Include="src\Rendering\Passes\PassDepthOfField.h" />
@@ -586,6 +621,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanBuffer.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanCommandBuffer.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanRenderState.h" />
+    <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanBindArray.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanShader.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanTexture.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanCommandBufferPool.h" />
@@ -602,10 +638,10 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanUtilities.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\VulkanDriver.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\VulkanWindow.h" />
-    <ClInclude Include="src\Utilities\Log.h" />
+    <ClInclude Include="src\Core\Services\Log.h" />
     <ClInclude Include="src\Utilities\Ref.h" />
-    <ClInclude Include="src\Utilities\StringHashID.h" />
-    <ClInclude Include="src\Utilities\StringUtilities.h" />
+    <ClInclude Include="src\Core\Services\StringHashID.h" />
+    <ClInclude Include="src\Utilities\VectorUtilities.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl" />
@@ -750,6 +786,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="libs\VulkanMemoryAllocatord.pdb" />
     <None Include="res\configs\ApplicationConfig-Active.cfg" />
     <None Include="res\configs\CommandConfig-Active.keycfg" />
+    <None Include="res\materials\M_Color_Green.material" />
+    <None Include="res\materials\M_Color_Red.material" />
+    <None Include="res\materials\M_Debug.material" />
     <None Include="res\models\MDL_Cloth.mdl" />
     <None Include="res\models\MDL_Debug.mdl" />
     <None Include="res\shaders\includes\Blit.glsl" />
@@ -774,9 +813,44 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\SH_VS_DepthOfFieldComposite.shader" />
     <None Include="res\shaders\SH_VS_IBLBackground.shader" />
     <None Include="res\shaders\SH_WS_Debug.shader" />
+    <None Include="res\shaders\SH_WS_Unlit_Color.shader" />
+    <None Include="res\textures\T_Asphalt_D.ktx2" />
+    <None Include="res\textures\T_Asphalt_H.ktx2" />
+    <None Include="res\textures\T_Asphalt_N.ktx2" />
+    <None Include="res\textures\T_Asphalt_S.ktx2" />
     <None Include="res\textures\T_Bloom_LensDirt.ktx2" />
-    <None Include="res\textures\T_DebugTexture.ktx2" />
+    <None Include="res\textures\T_Bluenoise256.ktx2" />
+    <None Include="res\textures\T_Cloth_D.ktx2" />
+    <None Include="res\textures\T_Cloth_H.ktx2" />
+    <None Include="res\textures\T_Cloth_S.ktx2" />
+    <None Include="res\textures\T_EmissiveTest_E.ktx2" />
+    <None Include="res\textures\T_Gravel_D.ktx2" />
+    <None Include="res\textures\T_Gravel_N.ktx2" />
+    <None Include="res\textures\T_Gravel_S.ktx2" />
+    <None Include="res\textures\T_Ground_D.ktx2" />
+    <None Include="res\textures\T_Ground_H.ktx2" />
+    <None Include="res\textures\T_Ground_N.ktx2" />
+    <None Include="res\textures\T_Ground_S.ktx2" />
+    <None Include="res\textures\T_LightCookies.ktx2" />
+    <None Include="res\textures\T_Metal_Plates_D.ktx2" />
+    <None Include="res\textures\T_Metal_Plates_N.ktx2" />
+    <None Include="res\textures\T_Metal_Plates_S.ktx2" />
+    <None Include="res\textures\T_Metal_Rust_D.ktx2" />
+    <None Include="res\textures\T_Metal_Rust_N.ktx2" />
+    <None Include="res\textures\T_Metal_Rust_S.ktx2" />
+    <None Include="res\textures\T_OEM_Desert.ktx2" />
+    <None Include="res\textures\T_OEM_Mountains.ktx2" />
+    <None Include="res\textures\T_OEM_Night.ktx2" />
+    <None Include="res\textures\T_OEM_Park.ktx2" />
     <None Include="res\textures\T_OEM_Quarry.ktx2" />
+    <None Include="res\textures\T_OEM_Trail.ktx2" />
+    <None Include="res\textures\T_Sand_D.ktx2" />
+    <None Include="res\textures\T_Sand_H.ktx2" />
+    <None Include="res\textures\T_Sand_N.ktx2" />
+    <None Include="res\textures\T_Sand_S.ktx2" />
+    <None Include="res\textures\T_Wood_Floor_D.ktx2" />
+    <None Include="res\textures\T_Wood_Floor_N.ktx2" />
+    <None Include="res\textures\T_Wood_Floor_S.ktx2" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp" />
@@ -786,6 +860,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     </ClCompile>
     <ClCompile Include="include\PKAssets\PKAsset.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="include\PKAssets\PKAssetLoader.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
@@ -794,40 +869,55 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Core\Application.cpp" />
     <ClCompile Include="src\Core\ApplicationConfig.cpp" />
     <ClCompile Include="src\Core\CommandConfig.cpp" />
-    <ClCompile Include="src\Core\Input.cpp" />
-    <ClCompile Include="src\Core\PropertyBlock.cpp" />
-    <ClCompile Include="src\Core\Time.cpp" />
+    <ClCompile Include="src\Core\Services\Input.cpp" />
+    <ClCompile Include="src\ECS\Contextual\Engines\EngineDebug.cpp" />
+    <ClCompile Include="src\Rendering\Passes\PassGeometry.cpp" />
+    <ClCompile Include="src\Rendering\Passes\PassLights.cpp" />
+    <ClCompile Include="src\Utilities\HashHelpers.cpp" />
+    <ClCompile Include="src\Utilities\PropertyBlock.cpp" />
+    <ClCompile Include="src\Core\Services\Time.cpp" />
     <ClCompile Include="src\Core\Window.cpp" />
+    <ClCompile Include="src\ECS\Contextual\Builders\Builders.cpp" />
     <ClCompile Include="src\ECS\Contextual\Engines\EngineCommandInput.cpp" />
+    <ClCompile Include="src\ECS\Contextual\Engines\EngineCull.cpp" />
     <ClCompile Include="src\ECS\Contextual\Engines\EngineEditorCamera.cpp" />
-    <ClCompile Include="src\ECS\Sequencer.cpp" />
+    <ClCompile Include="src\ECS\Contextual\Engines\EngineUpdateTransforms.cpp" />
+    <ClCompile Include="src\ECS\Contextual\Tokens\CullingTokens.cpp" />
+    <ClCompile Include="src\Core\Services\Sequencer.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\Math\PKMath.cpp" />
+    <ClCompile Include="src\Math\FunctionsColor.cpp" />
+    <ClCompile Include="src\Math\FunctionsIntersect.cpp" />
+    <ClCompile Include="src\Math\FunctionsMatrix.cpp" />
+    <ClCompile Include="src\Math\FunctionsMisc.cpp" />
     <ClCompile Include="src\PrecompiledHeader.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PrecompiledHeader.h</PrecompiledHeaderFile>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PrecompiledHeader.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="src\Rendering\Batcher.cpp" />
     <ClCompile Include="src\Rendering\GraphicsAPI.cpp" />
     <ClCompile Include="src\Rendering\MeshUtilitity.cpp" />
     <ClCompile Include="src\Rendering\Objects\Buffer.cpp" />
     <ClCompile Include="src\Rendering\Objects\CommandBuffer.cpp" />
     <ClCompile Include="src\Rendering\Objects\ConstantBuffer.cpp" />
+    <ClCompile Include="src\Rendering\Objects\Material.cpp" />
     <ClCompile Include="src\Rendering\Objects\Mesh.cpp" />
     <ClCompile Include="src\Rendering\Objects\RenderTexture.cpp" />
+    <ClCompile Include="src\Rendering\Objects\BindArray.cpp" />
     <ClCompile Include="src\Rendering\Objects\Shader.cpp" />
+    <ClCompile Include="src\Rendering\Objects\ShaderPropertyBlock.cpp" />
     <ClCompile Include="src\Rendering\Objects\Texture.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassBloom.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassDepthOfField.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassHistogram.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassPostEffects.cpp" />
     <ClCompile Include="src\Rendering\RenderPipeline.cpp" />
-    <ClCompile Include="src\Rendering\Structs\Enums.cpp" />
     <ClCompile Include="src\Rendering\Structs\Layout.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanBuffer.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanCommandBuffer.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanRenderState.cpp" />
+    <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanBindArray.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanShader.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanTexture.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanCommandBufferPool.cpp" />
@@ -844,9 +934,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Rendering\VulkanRHI\Utilities\VulkanUtilities.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\VulkanDriver.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\VulkanWindow.cpp" />
-    <ClCompile Include="src\Utilities\Log.cpp" />
-    <ClCompile Include="src\Utilities\StringHashID.cpp" />
-    <ClCompile Include="src\Utilities\StringUtilities.cpp" />
+    <ClCompile Include="src\Core\Services\Log.cpp" />
+    <ClCompile Include="src\Core\Services\StringHashID.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\glfw3.lib" />

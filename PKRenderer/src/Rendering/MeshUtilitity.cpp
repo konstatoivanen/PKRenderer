@@ -306,7 +306,7 @@ namespace PK::Rendering::MeshUtility
         (
             Buffer::CreateVertex({ { ElementType::Float3, PK_VS_POSITION } }, vertices, 8),
             Buffer::CreateIndex(ElementType::Uint, indices, 36), 
-            PK::Math::Functions::CreateBoundsCenterExtents(offset, extents)
+            PK::Math::BoundingBox::CenterExtents(offset, extents)
         );
     }
 
@@ -410,7 +410,7 @@ namespace PK::Rendering::MeshUtility
         (
             Buffer::CreateVertex(layout, vertices, 24),
             Buffer::CreateIndex(ElementType::Uint, indices, 36),
-            PK::Math::Functions::CreateBoundsCenterExtents(offset, extents)
+            PK::Math::BoundingBox::CenterExtents(offset, extents)
         );
     }
 
@@ -512,7 +512,7 @@ namespace PK::Rendering::MeshUtility
         (
             Buffer::CreateVertex(layout, vertices, vcount),
             Buffer::CreateIndex(ElementType::Uint, indices, icount),
-            PK::Math::Functions::CreateBoundsCenterExtents({ center.x, center.y, 0.0f }, { extents.x, extents.y, 0.0f })
+            PK::Math::BoundingBox::CenterExtents({ center.x, center.y, 0.0f }, { extents.x, extents.y, 0.0f })
         );
 
         free(vertices);
@@ -620,7 +620,7 @@ namespace PK::Rendering::MeshUtility
         (
             Buffer::CreateVertex(layout, vertices, vcount),
             Buffer::CreateIndex(ElementType::Uint, indices, icount),
-            PK::Math::Functions::CreateBoundsCenterExtents(offset, PK_FLOAT3_ONE * radius)
+            PK::Math::BoundingBox::CenterExtents(offset, PK_FLOAT3_ONE * radius)
         );
 
         free(vertices);

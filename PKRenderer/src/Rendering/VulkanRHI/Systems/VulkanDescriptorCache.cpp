@@ -5,7 +5,7 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
-    static uint32_t GetVariableSize(const DescriptorSetKey& key)
+    static uint32_t GetArraySize(const DescriptorSetKey& key)
     {
         uint32_t variableSize = 0u;
 
@@ -16,7 +16,7 @@ namespace PK::Rendering::VulkanRHI::Systems
                 break;
             }
 
-            if (key.bindings[i].count > 1)
+            if (key.bindings[i].isArray)
             {
                 variableSize += key.bindings[i].count;
             }
@@ -46,12 +46,6 @@ namespace PK::Rendering::VulkanRHI::Systems
             delete pool.pool;
         }
     }
-    
-    VulkanDescriptorCache::BindingArray::BindingArray(const VulkanBindHandle** bindings, size_t count, const VulkanExecutionGate& gate) : executionGate(gate)
-    {
-        resize(count);
-        memcpy(data(), bindings, sizeof(bindings[0]) * count);
-    }
 
     const VulkanDescriptorSet* VulkanDescriptorCache::GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
                                                                        const DescriptorSetKey& key,
@@ -68,14 +62,14 @@ namespace PK::Rendering::VulkanRHI::Systems
             return value;
         }
 
-        auto variableSize = GetVariableSize(key);
+        auto arraySize = GetArraySize(key);
         VkDescriptorSetVariableDescriptorCountAllocateInfo variableSizeInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO };
         VkDescriptorSetAllocateInfo allocInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-        allocInfo.pNext = variableSize > 0ull ? &variableSizeInfo : nullptr;
+        allocInfo.pNext = arraySize > 0ull ? &variableSizeInfo : nullptr;
         allocInfo.descriptorPool = m_currentPool->pool;
         allocInfo.descriptorSetCount = 1;
         allocInfo.pSetLayouts = &layout->layout;
-        variableSizeInfo.pDescriptorCounts = &variableSize;
+        variableSizeInfo.pDescriptorCounts = &arraySize;
         variableSizeInfo.descriptorSetCount = 1;
         VkDescriptorSet vkdescriptorset;
         GetDescriptorSets(&allocInfo, &vkdescriptorset, gate, false);
@@ -97,7 +91,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             }
 
             auto bind = key.bindings + count;
-            auto handles = bind->count > 1 ? bind->handles : &bind->handle;
+            auto handles = bind->isArray ? bind->handles : &bind->handle;
             auto* write = &writes[count];
             auto type = EnumConvert::GetDescriptorType(bind->type);
             
@@ -105,7 +99,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             write->dstArrayElement = 0;
             write->descriptorCount = bind->count;
             write->descriptorType = type;
-            write->dstBinding = bind->binding;
+            write->dstBinding = count;
             write->dstSet = value->set;
 
             switch (type)
@@ -184,38 +178,24 @@ namespace PK::Rendering::VulkanRHI::Systems
         return value;
     }
 
-    const VulkanBindHandle** VulkanDescriptorCache::GetBindingArray(const VulkanBindHandle** bindings, size_t count, const VulkanExecutionGate& gate)
-    {
-        auto iter = m_bindingArrays.find({ bindings, count });
-
-        if (iter != m_bindingArrays.end())
-        {
-            return iter->second.data();
-        }
-        
-        auto&& value = BindingArray(bindings, count, gate);
-        BindingArrayKey key = { value.data(), count };
-        m_bindingArrays.insert_or_assign(key, value);
-        
-        return value.data();
-    }
-
     void VulkanDescriptorCache::Prune()
     {
         m_currentPruneTick++;
 
-        decltype(m_extinctPools) extinctPools;
-        extinctPools.swap(m_extinctPools);
-
-        for (auto& pool : extinctPools)
+        for (auto i = (int)m_extinctPools.size() - 1; i >= 0; --i)
         {
-            if (!pool.executionGate.IsCompleted())
+            if (m_extinctPools.at(i).executionGate.IsCompleted())
             {
-                m_extinctPools.push_back(pool);
-                continue;
-            }
+                auto n = m_extinctPools.size() - 1;
+                delete m_extinctPools[i].pool;
 
-            delete pool.pool;
+                if (i != n)
+                {
+                    m_extinctPools[i] = m_extinctPools[n];
+                }
+
+                m_extinctPools.pop_back();
+            }
         }
 
         for (auto& kv : m_sets)

@@ -1,14 +1,14 @@
 #pragma once
-#include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
-#include "Core/NoCopy.h"
+#include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
+#include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
     using namespace PK::Utilities;
     using namespace Structs;
 
-    class VulkanSamplerCache : PK::Core::NoCopy
+    class VulkanSamplerCache : NoCopy
     {
         public:
             VulkanSamplerCache(VkDevice device) : m_device(device) {}

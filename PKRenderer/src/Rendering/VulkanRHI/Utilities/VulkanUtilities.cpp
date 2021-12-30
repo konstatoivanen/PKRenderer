@@ -1,7 +1,6 @@
 #include "PrecompiledHeader.h"
+#include "Core/Services/Log.h"
 #include "VulkanUtilities.h"
-#include "Math/PKMath.h"
-#include "Utilities/Log.h"
 #include <gfx.h>
 
 namespace PK::Rendering::VulkanRHI::Utilities

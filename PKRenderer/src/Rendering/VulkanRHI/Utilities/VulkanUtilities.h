@@ -1,10 +1,9 @@
 #pragma once
-#include "PrecompiledHeader.h"
+#include "Core/Services/Log.h"
 #include "VulkanStructs.h"
 #include "Rendering/Structs/Enums.h"
 #include "Rendering/Structs/Descriptors.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
-#include "Utilities/Log.h"
 
 namespace PK::Rendering::VulkanRHI::Utilities
 {

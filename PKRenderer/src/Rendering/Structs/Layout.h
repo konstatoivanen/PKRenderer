@@ -1,13 +1,14 @@
 #pragma once
 #include "PrecompiledHeader.h"
-#include "Utilities/StringHashID.h"
-#include "Math/PKMath.h"
+#include "Core/Services/StringHashID.h"
+#include "Math/Types.h"
 #include "Rendering/Structs/Enums.h"
 
 namespace PK::Rendering::Structs
 {
     using namespace PK::Math;
     using namespace PK::Utilities;
+    using namespace PK::Core::Services;
 
     struct ConstantVariable
     {
@@ -53,15 +54,13 @@ namespace PK::Rendering::Structs
     {
         uint32_t NameHashId = 0;
         ResourceType Type = ResourceType::Invalid;
-        uint8_t Binding = 0;
         uint16_t Count = 0;
     
         ResourceElement() = default;
 
-        ResourceElement(ResourceType type, const std::string& name, uint8_t binding, uint16_t count) :
+        ResourceElement(ResourceType type, const std::string& name, uint16_t count) :
             NameHashId(StringHashID::StringToID(name)), 
             Type(type), 
-            Binding(binding), 
             Count(count)
         {
         }
@@ -96,7 +95,6 @@ namespace PK::Rendering::Structs
         ElementType Type = ElementType::Invalid;
         byte Count = 1;
         byte Location = 0;
-        bool Normalized = false;
 
         ushort Offset = 0;
         ushort AlignedOffset = 0;
@@ -105,25 +103,23 @@ namespace PK::Rendering::Structs
 
         BufferElement() = default;
 
-        BufferElement(ElementType type, const std::string& name, byte count = 1, byte location = 0, bool normalized = false) : 
+        BufferElement(ElementType type, const std::string& name, byte count = 1, byte location = 0) : 
             NameHashId(StringHashID::StringToID(name)), 
             Type(type), 
             Count(count), 
             Offset(0), 
             AlignedOffset(0), 
-            Location(location),
-            Normalized(normalized)
+            Location(location)
         {
         }
 
-        BufferElement(ElementType type, uint32_t nameHashId, byte count = 1, byte location = 0, bool normalized = false) :
+        BufferElement(ElementType type, uint32_t nameHashId, byte count = 1, byte location = 0) :
             NameHashId(nameHashId), 
             Type(type), 
             Count(count), 
             Offset(0), 
             AlignedOffset(0), 
-            Location(location),
-            Normalized(normalized)
+            Location(location)
         {
         }
     };
@@ -143,7 +139,7 @@ namespace PK::Rendering::Structs
                 CalculateOffsetsAndStride();
             }
         
-            inline uint GetStride(BufferUsage usage) const { return ((uint)usage & ((uint)BufferUsage::Storage | (uint)BufferUsage::Uniform)) != 0 ? m_alignedStride : m_stride; }
+            inline uint GetStride(BufferUsage usage) const { return ((uint)usage & ((uint)BufferUsage::Storage | (uint)BufferUsage::Constant)) != 0 ? m_alignedStride : m_stride; }
             constexpr inline uint GetStride() const { return m_stride; }
             constexpr inline uint GetAlignedStride() const { return m_alignedStride; }
             constexpr inline uint GetPaddedStride() const { return m_paddedStride; }

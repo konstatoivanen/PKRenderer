@@ -5,14 +5,18 @@ namespace PK::Rendering::VulkanRHI::Systems
 {
     void VulkanDisposer::Prune()
     {
-        decltype(m_disposables) disposables;
-        disposables.swap(m_disposables);
-
-        for (auto& disposable : disposables)
+        for (auto i = (int)m_disposables.size() - 1; i >= 0; --i)
         {
-            if (!disposable.gate.IsCompleted())
+            if (m_disposables.at(i).gate.IsCompleted())
             {
-                m_disposables.push_back({ std::move(disposable.disposable), disposable.gate});
+                auto n = m_disposables.size() - 1;
+
+                if (i != n)
+                {
+                    m_disposables[i] = std::move(m_disposables[n]);
+                }
+
+                m_disposables.pop_back();
             }
         }
     }

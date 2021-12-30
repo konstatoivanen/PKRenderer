@@ -2,12 +2,13 @@
 #include "Core/Application.h"
 #include "Core/ConsoleCommandBinding.h"
 #include "Rendering/Objects/Texture.h"
-#include "Math/PKMath.h"
+#include "Math/Types.h"
 #include <yaml-cpp/yaml.h>
 
 namespace YAML
 {
 	using namespace PK::Utilities;
+	using namespace PK::Core::Services;
 	using namespace PK::Rendering::Objects;
 	using namespace PK::Math;
 

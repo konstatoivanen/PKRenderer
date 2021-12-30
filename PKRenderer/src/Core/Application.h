@@ -1,7 +1,7 @@
 #pragma once
 #include "PrecompiledHeader.h"
-#include "Core/ServiceRegister.h"
-#include "Core/NoCopy.h"
+#include "Utilities/NoCopy.h"
+#include "Core/Services/ServiceRegister.h"
 #include "Core/Window.h"
 #include "Rendering/GraphicsAPI.h"
 
@@ -11,6 +11,7 @@ namespace PK::Core
 {
     using namespace Utilities;
     using namespace Rendering;
+    using namespace Services;
 
     struct ApplicationArguments
     {

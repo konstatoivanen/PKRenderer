@@ -1,29 +1,22 @@
 #pragma once
-#include "Math/PKMath.h"
+#include "Math/Types.h"
 
 namespace PK::Rendering::Structs
 {
     using namespace PK::Math;
 
-    enum class LightType : uint
+    struct PK_Draw
     {
-        Point = 0,
-        Spot = 1,
-        Directional = 2,
-        TypeCount
+        uint material;
+        uint transfrom;
+        uint mesh;
+        uint clipInfo;
     };
 
-    enum class LightCookie : uint
+    struct PK_Transform
     {
-        Circle0 = 0,
-        Circle1 = 1,
-        Circle2 = 2,
-        Square0 = 3,
-        Square1 = 4,
-        Square2 = 5,
-        Triangle = 6,
-        Star = 7,
-        NoCookie = 0xFFFFFFFF
+        float4x4 localToWorld;
+        float4x4 worldToLocal;
     };
 
     struct FrustumTileAABB
@@ -64,7 +57,12 @@ namespace PK::Rendering::Structs
 
     struct IndexRange
     {
-        uint offset = 0;
-        uint count = 0;
+        size_t offset = 0;
+        size_t count = 0;
+
+        constexpr bool operator < (const IndexRange& other) const
+        {
+            return offset != other.offset ? offset < other.offset : count < other.count;
+        }
     };
 }

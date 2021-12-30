@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "PassBloom.h"
 #include "Rendering/GraphicsAPI.h"
+#include "Rendering/HashCache.h"
 
 namespace PK::Rendering::Passes
 {
@@ -44,9 +45,7 @@ namespace PK::Rendering::Passes
 
         bloom->Validate(res);
 
-        auto src = StringHashID::StringToID("_SourceTex");
-        auto dst = StringHashID::StringToID("_DestinationTex");
-        auto offset = StringHashID::StringToID("_BlurOffset");
+        auto hash = HashCache::Get();
         auto ls = 0u;
         auto ld = 1u;
 
@@ -56,46 +55,46 @@ namespace PK::Rendering::Passes
         {
             auto spread = 0.5f;// i == 2 ? 0.75f : (i > 1 ? 1.0f : 0.5f);
 
-            cmd->SetTexture(src, i == 0 ? color : bloom, i == 0 ? 0 : i - 1u, ls);
-            cmd->SetImage(dst, bloom, i, ld);
+            cmd->SetTexture(hash->_SourceTex, i == 0 ? color : bloom, i == 0 ? 0 : i - 1u, ls);
+            cmd->SetImage(hash->_DestinationTex, bloom, i, ld);
             cmd->Dispatch(m_computeBloom, m_passPrefilter, groups[i]);
             cmd->Barrier(bloom, i, ld, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
             ls ^= 1u;
             ld ^= 1u;
 
-            cmd->SetTexture(src, bloom, i, ls);
-            cmd->SetImage(dst, bloom, i, ld);
-            cmd->SetConstant<float2>(offset, { blurSize * spread, 0.0f });
+            cmd->SetTexture(hash->_SourceTex, bloom, i, ls);
+            cmd->SetImage(hash->_DestinationTex, bloom, i, ld);
+            cmd->SetConstant<float2>(hash->_BlurOffset, { blurSize * spread, 0.0f });
             cmd->Dispatch(m_computeBloom, m_passDiskblur, groups[i]);
             cmd->Barrier(bloom, i, ld, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
             ls ^= 1u;
             ld ^= 1u;
 
-            cmd->SetTexture(src, bloom, i, ls);
-            cmd->SetImage(dst, bloom, i, ld);
-            cmd->SetConstant<float2>(offset, { 0.0f, blurSize * spread });
+            cmd->SetTexture(hash->_SourceTex, bloom, i, ls);
+            cmd->SetImage(hash->_DestinationTex, bloom, i, ld);
+            cmd->SetConstant<float2>(hash->_BlurOffset, { 0.0f, blurSize * spread });
             cmd->Dispatch(m_computeBloom, m_passDiskblur, groups[i]);
             cmd->Barrier(bloom, i, ld, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
             ls ^= 1u;
             ld ^= 1u;
 
-            cmd->SetTexture(src, bloom, i, ls);
-            cmd->SetImage(dst, bloom, i, ld);
-            cmd->SetConstant<float2>(offset, { (blurSize + 1.0f) * spread, 0.0f });
+            cmd->SetTexture(hash->_SourceTex, bloom, i, ls);
+            cmd->SetImage(hash->_DestinationTex, bloom, i, ld);
+            cmd->SetConstant<float2>(hash->_BlurOffset, { (blurSize + 1.0f) * spread, 0.0f });
             cmd->Dispatch(m_computeBloom, m_passDiskblur, groups[i]);
             cmd->Barrier(bloom, i, ld, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
             ls ^= 1u;
             ld ^= 1u;
 
-            cmd->SetTexture(src, bloom, i, ls);
-            cmd->SetImage(dst, bloom, i, ld);
-            cmd->SetConstant<float2>(offset, { 0.0f, (blurSize + 1.0f) * spread });
+            cmd->SetTexture(hash->_SourceTex, bloom, i, ls);
+            cmd->SetImage(hash->_DestinationTex, bloom, i, ld);
+            cmd->SetConstant<float2>(hash->_BlurOffset, { 0.0f, (blurSize + 1.0f) * spread });
             cmd->Dispatch(m_computeBloom, m_passDiskblur, groups[i]);
             cmd->Barrier(bloom, i, ld, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
             ls ^= 1u;
             ld ^= 1u;
         }
 
-        cmd->SetTexture("pk_BloomTexture", bloom, { 0, 1, 6, 1 });
+        cmd->SetTexture(hash->pk_BloomTexture, bloom, { 0, 1, 6, 1 });
     }
 }

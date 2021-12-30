@@ -3,7 +3,6 @@
 #include "Core/Application.h"
 #include "Core/ApplicationConfig.h"
 #include "Rendering/GraphicsAPI.h"
-#include "Utilities/StringUtilities.h"
 #include "Rendering/Objects/Texture.h"
 
 namespace PK::ECS::Engines
@@ -222,8 +221,8 @@ namespace PK::ECS::Engines
         }
 
         PK_LOG_NEWLINE();
-        auto flag = PK::Utilities::Debug::PK_LOG_INFO;
-        PK::Utilities::Debug::Logger::Get()->Log(flag, (int)PK::Utilities::Debug::ConsoleColor::LOG_INPUT, "Awaiting command input...");
+        auto flag = PK::Core::Services::Debug::PK_LOG_LVL_INFO;
+        PK::Core::Services::Debug::Logger::Get()->Log(flag, (int)PK::Core::Services::Debug::ConsoleColor::LOG_INPUT, "Awaiting command input...");
 
         std::string command;
         std::getline(std::cin, command);

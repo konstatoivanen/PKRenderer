@@ -1,8 +1,8 @@
 #pragma once
-#include "Rendering/VulkanRHI/Objects/VulkanShader.h"
-#include "Core/NoCopy.h"
-#include "Math/PKMath.h"
+#include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
+#include "Rendering/VulkanRHI/Objects/VulkanShader.h"
+#include "Math/FunctionsMisc.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
@@ -35,7 +35,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         }
     };
 
-    class VulkanPipelineCache : public PK::Core::NoCopy
+    class VulkanPipelineCache : public NoCopy
     {
         public:
             VulkanPipelineCache(VkDevice device, uint64_t pruneDelay) : m_device(device), m_pruneDelay(pruneDelay) {}

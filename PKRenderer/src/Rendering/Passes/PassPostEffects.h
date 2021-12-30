@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/NoCopy.h"
+#include "Utilities/NoCopy.h"
 #include "Core/ApplicationConfig.h"
 #include "Rendering/Objects/RenderTexture.h"
 #include "Rendering/Objects/ConstantBuffer.h"

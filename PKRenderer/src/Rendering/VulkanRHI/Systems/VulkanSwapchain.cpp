@@ -1,7 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "VulkanSwapchain.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
-#include "Math/PKMath.h"
 #include <gfx.h>
 
 namespace PK::Rendering::VulkanRHI::Systems

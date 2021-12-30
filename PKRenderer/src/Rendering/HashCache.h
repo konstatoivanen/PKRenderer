@@ -1,18 +1,21 @@
 #pragma once
-#include "Core/ISingleton.h"
-#include "Core/IService.h"
-#include "Utilities/StringHashID.h"
+#include "Utilities/ISingleton.h"
+#include "Core/Services/IService.h"
+#include "Core/Services/StringHashID.h"
 
 namespace PK::Rendering
 {
-    using namespace PK::Core;
+    using namespace PK::Core::Services;
     using namespace PK::Utilities;
 
     struct HashCache : public IService, public ISingleton<HashCache>
     {
-        #define DEFINE_HASH_CACHE(name) unsigned int name = StringHashID::StringToID(#name); \
+        #define DEFINE_HASH_CACHE(name) uint32_t name = StringHashID::StringToID(#name); \
     
         DEFINE_HASH_CACHE(_MainTex)
+        DEFINE_HASH_CACHE(_SourceTex)
+        DEFINE_HASH_CACHE(_DestinationTex)
+        DEFINE_HASH_CACHE(_BlurOffset)
         DEFINE_HASH_CACHE(pk_Time)
         DEFINE_HASH_CACHE(pk_SinTime)
         DEFINE_HASH_CACHE(pk_CosTime)
@@ -38,10 +41,7 @@ namespace PK::Rendering
         DEFINE_HASH_CACHE(pk_SceneOEM_RVS)
         DEFINE_HASH_CACHE(pk_SceneOEM_Exposure)
 
-        DEFINE_HASH_CACHE(pk_InstancingMatrices)
-        DEFINE_HASH_CACHE(pk_InstancingPropertyIndices)
-        DEFINE_HASH_CACHE(pk_InstancedProperties)
-        DEFINE_HASH_CACHE(PK_ENABLE_INSTANCING)
+        DEFINE_HASH_CACHE(PK_INSTANCING_ENABLED)
 
         DEFINE_HASH_CACHE(pk_PerFrameConstants)
         DEFINE_HASH_CACHE(pk_ModelMatrices)
@@ -71,6 +71,7 @@ namespace PK::Rendering
         DEFINE_HASH_CACHE(pk_AutoExposureSpeed)
         DEFINE_HASH_CACHE(pk_BloomIntensity)
         DEFINE_HASH_CACHE(pk_BloomDirtIntensity)
+        DEFINE_HASH_CACHE(pk_BloomTexture)
 
         DEFINE_HASH_CACHE(pk_Vibrance)
         DEFINE_HASH_CACHE(pk_VignetteGrain)
@@ -85,7 +86,6 @@ namespace PK::Rendering
         DEFINE_HASH_CACHE(pk_ChannelMixerBlue)
         DEFINE_HASH_CACHE(pk_FilmGrainTex)
         DEFINE_HASH_CACHE(pk_BloomLensDirtTex)
-        DEFINE_HASH_CACHE(pk_HDRScreenTex)
         DEFINE_HASH_CACHE(pk_PostEffectsParams)
         DEFINE_HASH_CACHE(pk_Histogram)
 
@@ -95,6 +95,8 @@ namespace PK::Rendering
         DEFINE_HASH_CACHE(pk_FocusSpeed)
         DEFINE_HASH_CACHE(pk_MaximumCoC)
         DEFINE_HASH_CACHE(pk_DofParams)
+        DEFINE_HASH_CACHE(pk_Foreground)
+        DEFINE_HASH_CACHE(pk_Background)
         DEFINE_HASH_CACHE(pk_AutoFocusParams)
 
         DEFINE_HASH_CACHE(pk_Volume_WindDir)
@@ -125,5 +127,12 @@ namespace PK::Rendering
         DEFINE_HASH_CACHE(_ShadowmapBatch1)
 
         #undef DEFINE_HASH_CACHE
+
+        uint32_t pk_Instancing_Transforms = StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TRANSFORMS);
+        uint32_t pk_Instancing_Indices = StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_INDICES);
+        uint32_t pk_Instancing_Properties = StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_PROPERTIES);
+        uint32_t pk_Instancing_Textures2D = StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURES2D);
+        uint32_t pk_Instancing_Textures3D = StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURES3D);
+        uint32_t pk_Instancing_TexturesCube = StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURESCUBE);
     };
 }

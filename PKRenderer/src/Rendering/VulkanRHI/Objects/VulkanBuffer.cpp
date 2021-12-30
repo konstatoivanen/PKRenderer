@@ -95,7 +95,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     bool VulkanBuffer::Validate(size_t count)
     {
-        if (m_count == count)
+        if (m_count >= count)
         {
             return false;
         }
@@ -104,15 +104,27 @@ namespace PK::Rendering::VulkanRHI::Objects
         return true;
     }
 
-    const VulkanBindHandle* VulkanBuffer::GetBindHandle() const
+    const VulkanBindHandle* VulkanBuffer::GetBindHandle(const IndexRange& range)
     {
-        m_bindHandle->version = m_version;
-        m_bindHandle->buffer = m_rawBuffer->buffer;
-        m_bindHandle->bufferRange = m_rawBuffer->capacity;
-        m_bindHandle->bufferOffset = 0ull;
-        m_bindHandle->bufferLayout = &m_layout;
-        m_bindHandle->inputRate = EnumConvert::GetInputRate(m_inputRate);
-        return m_bindHandle.get();
+        PK_THROW_ASSERT(range.offset + range.count <= m_count, "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
+
+        auto iter = m_bindHandles.find(range);
+
+        if (iter != m_bindHandles.end())
+        {
+            return iter->second.get();
+        }
+
+        auto newHandle = new VulkanBindHandle();
+        auto stride = m_layout.GetStride(m_usage);
+        newHandle->version = m_version;
+        newHandle->buffer = m_rawBuffer->buffer;
+        newHandle->bufferRange = stride * range.count;
+        newHandle->bufferOffset = stride * range.offset;
+        newHandle->bufferLayout = &m_layout;
+        newHandle->inputRate = EnumConvert::GetInputRate(m_inputRate);
+        m_bindHandles[range] = Scope<VulkanBindHandle>(newHandle);
+        return newHandle;
     }
 
     void VulkanBuffer::Rebuild(size_t count)
@@ -120,12 +132,14 @@ namespace PK::Rendering::VulkanRHI::Objects
         Dispose();
         m_version++;
         m_count = count;
-        m_bindHandle = CreateScope<VulkanBindHandle>();
         m_rawBuffer = new VulkanRawBuffer(m_driver->allocator, VulkanBufferCreateInfo(m_usage, m_layout.GetStride(m_usage) * count));
+        GetBindHandle({ 0, m_count });
     }
 
     void VulkanBuffer::Dispose()
     {
+        m_bindHandles.clear();
+
         if (m_rawBuffer != nullptr)
         {
             m_driver->disposer->Dispose(m_rawBuffer, m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate());

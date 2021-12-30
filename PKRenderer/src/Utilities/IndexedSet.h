@@ -1,0 +1,242 @@
+#pragma once
+#include "HashHelpers.h"
+#include "NoCopy.h"
+#include "BufferView.h"
+#include <vector>
+
+namespace PK::Utilities
+{
+    template<typename T>
+    struct IndexedSet : NoCopy
+    {
+        using TValue = const T*;
+
+        private:
+            struct Node
+            {
+                int32_t previous;
+                int32_t next;
+                Node() : previous(-1), next(-1) {}
+                Node(int32_t previous) : previous(previous), next(-1) {}
+            };
+
+            std::vector<TValue> m_values;
+            std::vector<Node> m_nodes;
+            std::vector<int32_t> m_buckets;
+            uint32_t m_collisions;
+            uint32_t m_count;
+
+            uint32_t GetBucketIndex(TValue value) const { return (uint32_t)((size_t)value % m_buckets.size()); }
+
+            void SetValueIndexInBuckets(uint32_t i, int32_t value) { m_buckets[i] = value + 1; }
+
+            int32_t GetValueIndexFromBuckets(uint32_t i) const { return m_buckets[i] - 1; }
+
+        public:
+            IndexedSet(uint32_t size) : m_collisions(0u), m_count(0u)
+            {
+                m_values.resize(size);
+                m_nodes.resize(size);
+                m_buckets.resize(HashHelpers::GetPrime(size));
+            }
+
+            IndexedSet() : IndexedSet(1)
+            {}
+
+            void Clear()
+            {
+                if (m_count == 0)
+                {
+                    return;
+                }
+
+                m_count = 0u;
+                memset(m_values.data(), 0, sizeof(TValue) * m_values.size());
+                memset(m_nodes.data(), 0, sizeof(Node) * m_nodes.size());
+                memset(m_buckets.data(), 0, sizeof(int32_t) * m_buckets.size());
+            }
+
+            const BufferView<TValue> GetValues() const { return { m_values.data(), m_count }; }
+
+            uint32_t GetCount() const { return m_count; }
+
+            int32_t GetIndex(TValue value) const
+            { 
+                auto valueIndex = GetValueIndexFromBuckets(GetBucketIndex(value));
+
+                while (valueIndex != -1)
+                {
+                    if (m_values[valueIndex] == value)
+                    {
+                        return valueIndex;
+                    }
+
+                    valueIndex = m_nodes[valueIndex].previous;
+                }
+
+                return -1;
+            }
+
+            bool Add(TValue value, uint32_t* outIndex)
+            {
+                auto bucketIndex = GetBucketIndex(value);
+                auto valueIndex = GetValueIndexFromBuckets(bucketIndex);
+
+                if (valueIndex == -1)
+                {
+                    m_nodes[m_count] = Node();
+                }
+                else 
+                {
+                    {
+                        auto currentValueIndex = valueIndex;
+
+                        do
+                        {
+                            if (m_values[currentValueIndex] == value)
+                            {
+                                *outIndex = currentValueIndex;
+                                return false;
+                            }
+
+                            currentValueIndex = m_nodes[currentValueIndex].previous;
+                        } 
+                        while (currentValueIndex != -1);
+                    }
+
+                    m_collisions++;
+                    m_nodes[m_count] = Node(valueIndex);
+                    m_nodes[valueIndex].next = m_count;
+                }
+
+                SetValueIndexInBuckets(bucketIndex, (int32_t)m_count);
+                m_values[m_count++] = value;
+
+                if (m_count == m_values.size())
+                {
+                    m_values.resize(HashHelpers::ExpandPrime(m_count));
+                    m_nodes.resize(HashHelpers::ExpandPrime(m_count));
+                }
+
+                if (m_collisions > m_buckets.size())
+                {
+                    m_buckets.clear();
+                    m_buckets.resize(HashHelpers::ExpandPrime(m_collisions));
+                    m_collisions = 0;
+
+                    for (auto newValueIndex = 0u; newValueIndex < m_count; newValueIndex++)
+                    {
+                        bucketIndex = GetBucketIndex(m_values[newValueIndex]);
+                        auto existingValueIndex = GetValueIndexFromBuckets(bucketIndex);
+                        SetValueIndexInBuckets(bucketIndex, newValueIndex);
+
+                        if (existingValueIndex != -1)
+                        { 
+                            m_collisions++;
+                            m_nodes[newValueIndex].previous = existingValueIndex;
+                            m_nodes[newValueIndex].next = -1;
+                            m_nodes[existingValueIndex].next = newValueIndex;
+                        }
+                        else
+                        { 
+                            m_nodes[newValueIndex].next = -1;
+                            m_nodes[newValueIndex].previous = -1;
+                        }
+                    }
+                }
+
+                *outIndex = m_count - 1;
+                return true;
+            }
+
+            bool Add(TValue value)
+            {
+                uint32_t newIndex = 0u;
+                return Add(value, &newIndex);
+            }
+
+            uint32_t AddReturnIndex(TValue value)
+            {
+                uint32_t newIndex = 0u;
+                Add(value, &newIndex);
+                return newIndex;
+            }
+
+            bool Remove(TValue value)
+            {
+                auto bucketIndex = GetBucketIndex(value);
+                auto indexToValueToRemove = GetValueIndexFromBuckets(bucketIndex);
+                
+                while (indexToValueToRemove != -1)
+                {
+                    if (m_values[indexToValueToRemove] == value)
+                    {
+                        if (GetValueIndexFromBuckets(bucketIndex) == indexToValueToRemove)
+                        {
+                            if (m_nodes[indexToValueToRemove].next != -1)
+                            {
+                                throw std::exception("if the bucket points to the cell, next must not be assigned!");
+                            }
+
+                            SetValueIndexInBuckets(bucketIndex, m_nodes[indexToValueToRemove].previous);
+                        }
+                        else if (m_nodes[indexToValueToRemove].next == -1)
+                        {
+                            throw std::exception("if the bucket points to another cell, next must be assigned!");
+                        }
+
+                        auto updateNext = m_nodes[indexToValueToRemove].next;
+                        auto updatePrevious = m_nodes[indexToValueToRemove].previous;
+
+                        if (updateNext != -1)
+                        {
+                            m_nodes[updateNext].previous = updatePrevious;
+                        }
+
+                        if (updatePrevious != -1)
+                        {
+                            m_nodes[updatePrevious].next = updateNext;
+                        }
+                        break;
+                    }
+
+                    indexToValueToRemove = m_nodes[indexToValueToRemove].previous;
+                }
+
+                if (indexToValueToRemove == -1)
+                {
+                    return false;
+                }
+
+                m_count--; 
+
+                if (indexToValueToRemove != m_count)
+                {   
+                    auto movingBucketIndex = GetBucketIndex(m_values[m_count]);
+                    
+                    if (GetValueIndexFromBuckets(movingBucketIndex) == m_count)
+                    {
+                        SetValueIndexInBuckets(movingBucketIndex, indexToValueToRemove);
+                    }
+
+                    auto next = m_nodes[m_count].next;
+                    auto previous = m_nodes[m_count].previous;
+
+                    if (next != -1)
+                    {
+                        m_nodes[next].previous = indexToValueToRemove;
+                    }
+
+                    if (previous != -1)
+                    {
+                        m_nodes[previous].next = indexToValueToRemove;
+                    }
+
+                    m_nodes[indexToValueToRemove] = m_nodes[m_count];
+                    m_values[indexToValueToRemove] = m_values[m_count];
+                }
+
+                return true;
+            }
+    };
+}

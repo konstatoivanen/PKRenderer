@@ -40,7 +40,7 @@ namespace PK::Rendering::Objects
 
             for (auto& element : set)
             {
-                PK_LOG_INFO("%s %i %i", StringHashID::IDToString(element.NameHashId).c_str(), element.Binding, element.Type);
+                PK_LOG_INFO("%s %i", StringHashID::IDToString(element.NameHashId).c_str(), element.Type);
             }
         }
     }
@@ -217,6 +217,22 @@ namespace PK::Rendering::Objects
             m_variantMap.directives[d++] = o & 0xFFFFFF;
             m_variantMap.keywords[hashId] = (o >> 24) & 0xFF;
             m_variantMap.directivecount = d > m_variantMap.directivecount ? d : m_variantMap.directivecount;
+        }
+
+        if (shader->materialPropertyCount > 0)
+        {
+            auto pMaterialProperties = shader->materialProperties.Get(base);
+
+            std::vector<BufferElement> elements;
+            elements.reserve(shader->materialPropertyCount);
+
+            for (auto i = 0u; i < shader->materialPropertyCount; ++i)
+            {
+                auto& prop = pMaterialProperties[i];
+                elements.emplace_back(prop.type, prop.name);
+            }
+
+            m_materialPropertyLayout = BufferLayout(elements);
         }
 
         auto api = GraphicsAPI::GetActiveAPI();

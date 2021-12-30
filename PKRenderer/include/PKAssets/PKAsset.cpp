@@ -249,4 +249,175 @@ namespace PK::Assets
 
         return PKElementType::Invalid;
     }
+
+    uint_t Assets::GetElementSize(PKElementType type)
+    {
+        switch (type)
+        {
+            case PKElementType::Float: return 4;
+            case PKElementType::Float2: return 4 * 2;
+            case PKElementType::Float3: return 4 * 3;
+            case PKElementType::Float4: return 4 * 4;
+            case PKElementType::Double: return 8;
+            case PKElementType::Double2: return 8 * 2;
+            case PKElementType::Double3: return 8 * 3;
+            case PKElementType::Double4: return 8 * 4;
+            case PKElementType::Half: return 2;
+            case PKElementType::Half2: return 2 * 2;
+            case PKElementType::Half3: return 2 * 3;
+            case PKElementType::Half4: return 2 * 4;
+            case PKElementType::Int: return 4;
+            case PKElementType::Int2: return 4 * 2;
+            case PKElementType::Int3: return 4 * 3;
+            case PKElementType::Int4: return 4 * 4;
+            case PKElementType::Uint: return 4;
+            case PKElementType::Uint2: return 4 * 2;
+            case PKElementType::Uint3: return 4 * 3;
+            case PKElementType::Uint4: return 4 * 4;
+            case PKElementType::Short: return 2;
+            case PKElementType::Short2: return 2 * 2;
+            case PKElementType::Short3: return 2 * 3;
+            case PKElementType::Short4: return 2 * 4;
+            case PKElementType::Ushort: return 2;
+            case PKElementType::Ushort2: return 2 * 2;
+            case PKElementType::Ushort3: return 2 * 3;
+            case PKElementType::Ushort4: return 2 * 4;
+            case PKElementType::Long: return 8;
+            case PKElementType::Long2: return 8 * 2;
+            case PKElementType::Long3: return 8 * 3;
+            case PKElementType::Long4: return 8 * 4;
+            case PKElementType::Ulong: return 8;
+            case PKElementType::Ulong2: return 8 * 2;
+            case PKElementType::Ulong3: return 8 * 3;
+            case PKElementType::Ulong4: return 8 * 4;
+            case PKElementType::Float2x2: return 4 * 2 * 2;
+            case PKElementType::Float3x3: return 4 * 3 * 3;
+            case PKElementType::Float4x4: return 4 * 4 * 4;
+            case PKElementType::Double2x2: return 8 * 2 * 2;
+            case PKElementType::Double3x3: return 8 * 3 * 3;
+            case PKElementType::Double4x4: return 8 * 4 * 4;
+            case PKElementType::Half2x2: return 2 * 2 * 2;
+            case PKElementType::Half3x3: return 2 * 3 * 3;
+            case PKElementType::Half4x4: return 2 * 4 * 4;
+            case PKElementType::Texture2DHandle: return 4;
+            case PKElementType::Texture3DHandle: return 4;
+            case PKElementType::TextureCubeHandle: return 4;
+        }
+
+        return 0;
+    }
+
+    uint_t Assets::GetElementAlignment(PKElementType type)
+    {
+        switch (type)
+        {
+            case PKElementType::Float: return 4;
+            case PKElementType::Float2: return 4 * 2;
+            case PKElementType::Float3: return 4 * 4;
+            case PKElementType::Float4: return 4 * 4;
+            case PKElementType::Double: return 8;
+            case PKElementType::Double2: return 8 * 2;
+            case PKElementType::Double3: return 8 * 4;
+            case PKElementType::Double4: return 8 * 4;
+            case PKElementType::Half: return 2;
+            case PKElementType::Half2: return 2 * 2;
+            case PKElementType::Half3: return 2 * 4;
+            case PKElementType::Half4: return 2 * 4;
+            case PKElementType::Int: return 4;
+            case PKElementType::Int2: return 4 * 2;
+            case PKElementType::Int3: return 4 * 4;
+            case PKElementType::Int4: return 4 * 4;
+            case PKElementType::Uint: return 4;
+            case PKElementType::Uint2: return 4 * 2;
+            case PKElementType::Uint3: return 4 * 4;
+            case PKElementType::Uint4: return 4 * 4;
+            case PKElementType::Short: return 2;
+            case PKElementType::Short2: return 2 * 2;
+            case PKElementType::Short3: return 2 * 4;
+            case PKElementType::Short4: return 2 * 4;
+            case PKElementType::Ushort: return 2;
+            case PKElementType::Ushort2: return 2 * 2;
+            case PKElementType::Ushort3: return 2 * 4;
+            case PKElementType::Ushort4: return 2 * 4;
+            case PKElementType::Long: return 8;
+            case PKElementType::Long2: return 8 * 2;
+            case PKElementType::Long3: return 8 * 4;
+            case PKElementType::Long4: return 8 * 4;
+            case PKElementType::Ulong: return 8;
+            case PKElementType::Ulong2: return 8 * 2;
+            case PKElementType::Ulong3: return 8 * 4;
+            case PKElementType::Ulong4: return 8 * 4;
+            case PKElementType::Float2x2: return 4 * 2;
+            case PKElementType::Float3x3: return 4 * 4;
+            case PKElementType::Float4x4: return 4 * 4;
+            case PKElementType::Double2x2: return 8 * 2;
+            case PKElementType::Double3x3: return 8 * 4;
+            case PKElementType::Double4x4: return 8 * 4;
+            case PKElementType::Half2x2: return 2 * 2;
+            case PKElementType::Half3x3: return 2 * 4;
+            case PKElementType::Half4x4: return 2 * 4;
+            case PKElementType::Texture2DHandle: return 4;
+            case PKElementType::Texture3DHandle: return 4;
+            case PKElementType::TextureCubeHandle: return 4;
+        }
+
+        return 0;
+    }
+
+    uint_t Assets::GetElementComponents(PKElementType type)
+    {
+        switch (type)
+        {
+            case PKElementType::Float: return 1;
+            case PKElementType::Float2: return 2;
+            case PKElementType::Float3: return 3;
+            case PKElementType::Float4: return 4;
+            case PKElementType::Double: return 1;
+            case PKElementType::Double2: return 2;
+            case PKElementType::Double3: return 3;
+            case PKElementType::Double4: return 4;
+            case PKElementType::Half: return 1;
+            case PKElementType::Half2: return 2;
+            case PKElementType::Half3: return 3;
+            case PKElementType::Half4: return 4;
+            case PKElementType::Int: return 1;
+            case PKElementType::Int2: return 2;
+            case PKElementType::Int3: return 3;
+            case PKElementType::Int4: return 4;
+            case PKElementType::Uint: return 1;
+            case PKElementType::Uint2: return 2;
+            case PKElementType::Uint3: return 3;
+            case PKElementType::Uint4: return 4;
+            case PKElementType::Short: return 1;
+            case PKElementType::Short2: return 2;
+            case PKElementType::Short3: return 3;
+            case PKElementType::Short4: return 4;
+            case PKElementType::Ushort: return 1;
+            case PKElementType::Ushort2: return 2;
+            case PKElementType::Ushort3: return 3;
+            case PKElementType::Ushort4: return 4;
+            case PKElementType::Long: return 1;
+            case PKElementType::Long2: return 2;
+            case PKElementType::Long3: return 3;
+            case PKElementType::Long4: return 4;
+            case PKElementType::Ulong: return 1;
+            case PKElementType::Ulong2: return 2;
+            case PKElementType::Ulong3: return 3;
+            case PKElementType::Ulong4: return 4;
+            case PKElementType::Float2x2: return 2;
+            case PKElementType::Float3x3: return 3;
+            case PKElementType::Float4x4: return 4;
+            case PKElementType::Double2x2: return 2;
+            case PKElementType::Double3x3: return 3;
+            case PKElementType::Double4x4: return 4;
+            case PKElementType::Half2x2: return 2;
+            case PKElementType::Half3x3: return 3;
+            case PKElementType::Half4x4: return 4;
+            case PKElementType::Texture2DHandle: return 1;
+            case PKElementType::Texture3DHandle: return 1;
+            case PKElementType::TextureCubeHandle: return 1;
+        }
+
+        return 0;
+    }
 }

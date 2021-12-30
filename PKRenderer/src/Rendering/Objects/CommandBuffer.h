@@ -1,17 +1,18 @@
 #pragma once
-#include "Core/NoCopy.h"
+#include "Utilities/NoCopy.h"
 #include "Core/Window.h"
 #include "Rendering/Objects/Mesh.h"
 #include "Rendering/Objects/Shader.h"
 #include "Rendering/Objects/Texture.h"
 #include "Rendering/Objects/RenderTexture.h"
+#include "Rendering/Objects/BindArray.h"
 
 namespace PK::Rendering::Objects
 {
     typedef struct RenderTargets { Texture* targets[PK_MAX_RENDER_TARGETS + 1]; } RenderTargets;
     typedef std::initializer_list<const TextureViewRange> RenderTargetRanges;
 
-    struct CommandBuffer : public PK::Core::NoCopy
+    struct CommandBuffer : public PK::Utilities::NoCopy
     {
         virtual void SetRenderTarget(Texture** renderTarget, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count) = 0;
         virtual void ClearColor(const color& color, uint32_t index) = 0;
@@ -30,8 +31,10 @@ namespace PK::Rendering::Objects
         virtual void SetShader(const Shader* shader, int variantIndex = -1) = 0;
         virtual void SetVertexBuffers(const Buffer** buffers, uint count) = 0;
         virtual void SetIndexBuffer(const Buffer* buffer, size_t offset) = 0;
-        virtual void SetBuffer(uint32_t nameHashId, const Buffer* buffer) = 0;
+        virtual void SetBuffer(uint32_t nameHashId, Buffer* buffer, const IndexRange& range) = 0;
         virtual void SetTexture(uint32_t nameHashId, Texture* texture, const TextureViewRange& range) = 0;
+        virtual void SetBufferArray(uint32_t nameHashId, BindArray<Buffer>* bufferArray) = 0;
+        virtual void SetTextureArray(uint32_t nameHashId, BindArray<Texture>* textureArray) = 0;
         virtual void SetImage(uint32_t nameHashId, Texture* texture, const TextureViewRange& range) = 0;
         virtual void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) = 0;
         virtual void SetKeyword(uint32_t nameHashId, bool value) = 0;
@@ -54,7 +57,9 @@ namespace PK::Rendering::Objects
         void SetRenderTarget(RenderTargets& renderTargets, const RenderTargetRanges& ranges);
         void SetRenderTarget(RenderTargets& renderTargets, RenderTargets& resolveTargets, const RenderTargetRanges& ranges);
         void SetMesh(const Mesh* mesh);
-        void SetBuffer(const char* name, const Buffer* buffer);
+        void SetBuffer(uint32_t nameHashId, Buffer* buffer);
+        void SetBuffer(const char* name, Buffer* buffer);
+        void SetBuffer(const char* name, Buffer* buffer, const IndexRange& range);
 
         void SetTexture(uint32_t nameHashId, Texture* texture);
         void SetTexture(uint32_t nameHashId, Texture* texture, ushort level, ushort layer);
@@ -68,6 +73,9 @@ namespace PK::Rendering::Objects
         void SetImage(const char* name, Texture* texture, ushort level, ushort layer);
         void SetImage(const char* name, Texture* texture, const TextureViewRange& range);
         
+        void SetBufferArray(const char* name, BindArray<Buffer>* bufferArray);
+        void SetTextureArray(const char* name, BindArray<Texture>* textureArray);
+
         void SetConstant(const char* name, const void* data, uint32_t size);
         void SetKeyword(const char* name, bool value);
 
@@ -78,7 +86,9 @@ namespace PK::Rendering::Objects
         void SetConstant(const char* name, const T& value) { SetConstant(name, &value, (uint32_t)sizeof(T)); }
         
         void DrawMesh(const Mesh* mesh, int submesh);
+        void DrawMesh(const Mesh* mesh, int submesh, uint32_t instanceCount, uint32_t firstInstance);
         void DrawMesh(const Mesh* mesh, int submesh, Shader* shader, int variantIndex = -1);
+        void DrawMesh(const Mesh* mesh, int submesh, Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int variantIndex = -1);
         void Blit(Shader* shader, int variantIndex = -1);
         void Dispatch(Shader* shader, uint3 groupCount);
         void Dispatch(Shader* shader, uint variantIndex, uint3 groupCount);

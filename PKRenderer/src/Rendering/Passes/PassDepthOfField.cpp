@@ -68,8 +68,8 @@ namespace PK::Rendering::Passes
         cmd->DiscardColor(1u);
         cmd->Blit(m_shaderBlur, m_passDiskblur);
 
-        cmd->SetTexture("pk_Foreground", renderTarget, 0, 0);
-        cmd->SetTexture("pk_Background", renderTarget, 0, 1);
+        cmd->SetTexture(hash->pk_Foreground, renderTarget, 0, 0);
+        cmd->SetTexture(hash->pk_Background, renderTarget, 0, 1);
         cmd->SetRenderTarget(source);
         cmd->SetViewPort(source->GetRect(), 0.0f, 1.0f);
         cmd->SetScissor(source->GetRect());

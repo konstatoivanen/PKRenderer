@@ -1,6 +1,6 @@
 #pragma once
-#include "PrecompiledHeader.h"
-#include "Core/NoCopy.h"
+#include "Utilities/NoCopy.h"
+#include "Utilities/Ref.h"
 #include "Rendering/GraphicsAPI.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Rendering/VulkanRHI/Systems/VulkanDescriptorCache.h"
@@ -10,7 +10,6 @@
 #include "Rendering/VulkanRHI/Systems/VulkanStagingBufferCache.h"
 #include "Rendering/VulkanRHI/Systems/VulkanCommandBufferPool.h"
 #include "Rendering/VulkanRHI/Systems/VulkanFrameBufferCache.h"
-#include "Utilities/Ref.h"
 
 namespace PK::Rendering::VulkanRHI
 {
@@ -49,6 +48,7 @@ namespace PK::Rendering::VulkanRHI
         void WaitForIdle() const override final { vkDeviceWaitIdle(device); }
         
         size_t GetMemoryUsageKB() const override final { return 0ull; }
+        size_t GetBufferOffsetAlignment(BufferUsage usage) const override final;
         
         void GC() override final;
 
@@ -64,6 +64,7 @@ namespace PK::Rendering::VulkanRHI
         QueueFamilies queueFamilies;
         VmaAllocator allocator;
         VulkanContextProperties properties;
+        VkPhysicalDeviceProperties physicalDeviceProperties;
 
         Scope<VulkanFrameBufferCache> frameBufferCache;
         Scope<VulkanCommandBufferPool> commandBufferPool;

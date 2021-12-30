@@ -73,7 +73,9 @@ namespace PK::Rendering::Objects
         SetRenderTarget(renderTargets.targets, resolveTargets.targets, ranges.begin(), (uint32_t)(ranges.end() - ranges.begin()));
     }
 
-    void CommandBuffer::SetBuffer(const char* name, const Buffer* buffer) { SetBuffer(StringHashID::StringToID(name), buffer); }
+    void CommandBuffer::SetBuffer(const char* name, Buffer* buffer, const IndexRange& range) { SetBuffer(StringHashID::StringToID(name), buffer, range); }
+    void CommandBuffer::SetBuffer(uint32_t nameHashId, Buffer* buffer) { SetBuffer(nameHashId, buffer, buffer->GetFullRange()); }
+    void CommandBuffer::SetBuffer(const char* name, Buffer* buffer) { SetBuffer(StringHashID::StringToID(name), buffer, buffer->GetFullRange()); }
 
     void CommandBuffer::SetTexture(uint32_t nameHashId, Texture* texture) { SetTexture(nameHashId, texture, {}); }
     void CommandBuffer::SetTexture(uint32_t nameHashId, Texture* texture, ushort level, ushort layer) { SetTexture(nameHashId, texture, { level, layer, 1u, 1u }); }
@@ -87,12 +89,15 @@ namespace PK::Rendering::Objects
     void CommandBuffer::SetImage(const char* name, Texture* texture, ushort level, ushort layer) { SetImage(StringHashID::StringToID(name), texture, level, layer); }
     void CommandBuffer::SetImage(const char* name, Texture* texture, const TextureViewRange& range) { SetImage(StringHashID::StringToID(name), texture, range); }
 
+    void CommandBuffer::SetBufferArray(const char* name, BindArray<Buffer>* bufferArray) { SetBufferArray(StringHashID::StringToID(name), bufferArray); }
+    void CommandBuffer::SetTextureArray(const char* name, BindArray<Texture>* textureArray) { SetTextureArray(StringHashID::StringToID(name), textureArray); }
+
     void CommandBuffer::SetConstant(const char* name, const void* data, uint32_t size) { SetConstant(StringHashID::StringToID(name), data, size); }
     void CommandBuffer::SetKeyword(const char* name, bool value) { SetKeyword(StringHashID::StringToID(name), value); }
 
     void CommandBuffer::SetMesh(const Mesh* mesh)
     {
-        auto vbuffers = mesh->GetVertexBuffers();
+        auto& vbuffers = mesh->GetVertexBuffers();
         auto* pVBuffers = PK_STACK_ALLOC(const Buffer*, vbuffers.size());
 
         for (auto i = 0u; i < vbuffers.size(); ++i)
@@ -104,7 +109,8 @@ namespace PK::Rendering::Objects
         SetIndexBuffer(mesh->GetIndexBuffer(), 0);
     }
 
-    void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh)
+
+    void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh, uint32_t instanceCount, uint32_t firstInstance)
     {
         SetMesh(mesh);
      
@@ -116,7 +122,7 @@ namespace PK::Rendering::Objects
             for (auto i = 0u; i < smc; ++i)
             {
                 sm = mesh->GetSubmesh(i);
-                DrawIndexed(sm.count, 1, sm.offset, 0, 0);
+                DrawIndexed((uint32_t)sm.count, 1u, (uint32_t)sm.offset, 0u, 0u);
             }
 
             return;
@@ -128,13 +134,23 @@ namespace PK::Rendering::Objects
         }
 
         sm = mesh->GetSubmesh(submesh);
-        DrawIndexed(sm.count, 1, sm.offset, 0, 0);
+        DrawIndexed((uint32_t)sm.count, instanceCount, (uint32_t)sm.offset, 0u, firstInstance);
+    }
+
+    void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh)
+    {
+        DrawMesh(mesh, submesh, 1u, 0u);
     }
 
     void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh, Shader* shader, int variantIndex)
     {
+        DrawMesh(mesh, submesh, shader, 1u, 0u, variantIndex);
+    }
+
+    void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh, Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int variantIndex)
+    {
         SetShader(shader, variantIndex);
-        DrawMesh(mesh, submesh);
+        DrawMesh(mesh, submesh, instanceCount, firstInstance);
     }
 
     void CommandBuffer::Blit(Shader* shader, int variantIndex)

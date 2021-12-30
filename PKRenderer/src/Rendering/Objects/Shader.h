@@ -1,7 +1,7 @@
 #pragma once
-#include "Core/AssetDatabase.h"
-#include "Core/NativeInterface.h"
-#include "Core/PropertyBlock.h"
+#include "Utilities/NativeInterface.h"
+#include "Utilities/PropertyBlock.h"
+#include "Core/Services/AssetDatabase.h"
 #include "Rendering/Structs/Descriptors.h"
 #include "Rendering/Structs/Layout.h"
 
@@ -72,6 +72,8 @@ namespace PK::Rendering::Objects
             inline ShaderVariantMap::Selector GetVariantSelector() const { return { &m_variantMap }; }
             inline bool SupportsKeyword(const uint32_t hashId) const { return m_variantMap.SupportsKeyword(hashId); }
             inline bool SupportsKeywords(const uint32_t* hashIds, const uint32_t count) const { return m_variantMap.SupportsKeywords(hashIds, count); }
+            inline bool SupportsMaterials() const { return m_materialPropertyLayout.size() > 0; }
+            inline const BufferLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
 
             void ListVariants();
             void ListProperties(uint32_t variantIndex);
@@ -82,5 +84,6 @@ namespace PK::Rendering::Objects
             std::vector<Ref<ShaderVariant>> m_variants;
             ShaderVariantMap m_variantMap;
             FixedFunctionShaderAttributes m_attributes;
+            BufferLayout m_materialPropertyLayout;
     };
 }

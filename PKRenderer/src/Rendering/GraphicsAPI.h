@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/NoCopy.h"
+#include "Utilities/NoCopy.h"
 #include "Rendering/Structs/Enums.h"
 #include "Rendering/Objects/CommandBuffer.h"
 #include "Utilities/Ref.h"
@@ -17,6 +17,7 @@ namespace PK::Rendering
         virtual CommandBuffer* GetPrimaryCommandBuffer() = 0;
         virtual void WaitForIdle() const = 0;
         virtual size_t GetMemoryUsageKB() const = 0;
+        virtual size_t GetBufferOffsetAlignment(BufferUsage usage) const = 0;
         virtual void GC() = 0;
 
         static Scope<GraphicsDriver> Create(APIType api);
@@ -39,6 +40,7 @@ namespace PK::Rendering
         CommandBuffer* GetCommandBuffer();
 
         size_t GetMemoryUsageKB();
+        size_t GetBufferOffsetAlignment(BufferUsage usage);
 
         void GC();
     }

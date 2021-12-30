@@ -1,25 +1,29 @@
 #include "PrecompiledHeader.h"
 #include "Application.h"
-#include "Utilities/Log.h"
-#include "Utilities/StringHashID.h"
-#include "Core/Input.h"
-#include "Core/Time.h"
+#include "Core/Services/Log.h"
+#include "Core/Services/StringHashID.h"
+#include "Core/Services/Input.h"
+#include "Core/Services/Time.h"
+#include "Core/Services/AssetDatabase.h"
+#include "Core/Services/Sequencer.h"
 #include "Core/ApplicationConfig.h"
 #include "Core/CommandConfig.h"
 #include "Core/UpdateStep.h"
-#include "Core/AssetDatabase.h"
 #include "ECS/EntityDatabase.h"
-#include "ECS/Sequencer.h"
-#include "Rendering/RenderPipeline.h"
-#include "Rendering/HashCache.h"
 #include "ECS/Contextual/Engines/EngineCommandInput.h"
 #include "ECS/Contextual/Engines/EngineEditorCamera.h"
+#include "ECS/Contextual/Engines/EngineUpdateTransforms.h"
+#include "ECS/Contextual/Engines/EngineCull.h"
+#include "ECS/Contextual/Engines/EngineDebug.h"
 #include "ECS/Contextual/Tokens/TimeToken.h"
+#include "Rendering/RenderPipeline.h"
+#include "Rendering/HashCache.h"
 
 namespace PK::Core
 {
     using namespace Utilities;
     using namespace Rendering;
+    using namespace Services;
 
     Application* Application::s_Instance = nullptr;
 
@@ -28,18 +32,19 @@ namespace PK::Core
         PK_THROW_ASSERT(!s_Instance, "Application already exists!");
         s_Instance = this;
 
-        uint logfilter = 0;
-        logfilter |= PK::Utilities::Debug::PK_LOG_INFO;
-        logfilter |= PK::Utilities::Debug::PK_LOG_ERROR;
-        logfilter |= PK::Utilities::Debug::PK_LOG_WARNING;
-        logfilter |= PK::Utilities::Debug::PK_LOG_VERBOSE;
+        uint32_t logfilter = 0u;
+        logfilter |= Debug::PK_LOG_LVL_INFO;
+        logfilter |= Debug::PK_LOG_LVL_ERROR;
+        logfilter |= Debug::PK_LOG_LVL_WARNING;
+        logfilter |= Debug::PK_LOG_LVL_VERBOSE;
 
         m_services = CreateScope<ServiceRegister>();
-        m_services->Create<Utilities::Debug::Logger>(logfilter);
+        m_services->Create<Debug::Logger>(logfilter);
         m_services->Create<StringHashID>();
         m_services->Create<HashCache>();
+
         auto entityDb = m_services->Create<PK::ECS::EntityDatabase>();
-        auto sequencer = m_services->Create<PK::ECS::Sequencer>();
+        auto sequencer = m_services->Create<Sequencer>();
         auto assetDatabase = m_services->Create<AssetDatabase>(sequencer);
 
         assetDatabase->LoadDirectory<ApplicationConfig>("res/configs/");
@@ -62,37 +67,41 @@ namespace PK::Core
         assetDatabase->LoadDirectory<Shader>("res/shaders/");
 
         auto engineEditorCamera = m_services->Create<ECS::Engines::EngineEditorCamera>(sequencer, time, config);
-        auto renderPipeline = m_services->Create<RenderPipeline>(assetDatabase, config);
+        auto engineUpdateTransforms = m_services->Create<ECS::Engines::EngineUpdateTransforms>(entityDb);
+        auto renderPipeline = m_services->Create<RenderPipeline>(assetDatabase, entityDb, sequencer, config);
         auto engineCommands = m_services->Create<ECS::Engines::EngineCommandInput>(assetDatabase, sequencer, time, entityDb, commandConfig);
+        auto engineCull = m_services->Create<ECS::Engines::EngineCull>(entityDb);
+        auto engineDebug = m_services->Create<ECS::Engines::EngineDebug>(assetDatabase, entityDb, config);
 
         sequencer->SetSteps(
         {
             {
                 sequencer->GetRoot(),
                 {
-                    { (int)UpdateStep::OpenFrame,		{ time }},
-                    { (int)UpdateStep::UpdateInput,		{ PK_STEP_C(input, PK::Core::Window) } },
-                    { (int)UpdateStep::Render,			{ PK_STEP_C(renderPipeline, PK::Core::Window) }},
-                    { (int)UpdateStep::CloseFrame,		{ PK_STEP_C(input, PK::Core::Window), time }},
+                    { (int)UpdateStep::OpenFrame,		{ Step::Simple(time) }},
+                    { (int)UpdateStep::UpdateInput,		{ Step::Conditional<Window>(input) } },
+                    { (int)UpdateStep::UpdateEngines,   { Step::Simple(engineUpdateTransforms) } },
+                    { (int)UpdateStep::Render,			{ Step::Conditional<Window>(renderPipeline) } },
+                    { (int)UpdateStep::CloseFrame,		{ Step::Conditional<Window>(input), Step::Simple(time) }},
                 }
             },
             {
                 time,
                 {
-                    PK_STEP_T(renderPipeline, PK::ECS::Tokens::TimeToken)
+                    Step::Token<PK::ECS::Tokens::TimeToken>(renderPipeline)
                 }
             },
             {
                 input,
                 {
-                    PK_STEP_T(engineCommands, Input),
-                    PK_STEP_T(engineEditorCamera, Input),
+                    Step::Token<Input>(engineCommands),
+                    Step::Token<Input>(engineEditorCamera),
                 }
             },
             {
                 engineCommands,
                 {
-                    PK_STEP_T(engineEditorCamera, ConsoleCommandToken),
+                    Step::Token<ConsoleCommandToken>(engineEditorCamera),
                     //PK_STEP_T(gizmoRenderer, ConsoleCommandToken),
                     //PK_STEP_T(engineScreenshot, ConsoleCommandToken),
                 }
@@ -100,7 +109,15 @@ namespace PK::Core
             {
                 engineEditorCamera,
                 {
-                    PK_STEP_T(renderPipeline, PK::ECS::Tokens::ViewProjectionUpdateToken)
+                    Step::Token<PK::ECS::Tokens::ViewProjectionUpdateToken>(renderPipeline)
+                }
+            },
+            {
+                renderPipeline,
+                {
+                    Step::Token<PK::ECS::Tokens::TokenCullFrustum>(engineCull),
+                    Step::Token<PK::ECS::Tokens::TokenCullCascades>(engineCull),
+                    Step::Token<PK::ECS::Tokens::TokenCullCubeFaces>(engineCull)
                 }
             }
         });
@@ -136,7 +153,7 @@ namespace PK::Core
 
             sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::OpenFrame);
             sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::UpdateInput);
-            sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::UpdateEngines);
+            sequencer->Next((int)UpdateStep::UpdateEngines);
             sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::Render);
             sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::CloseFrame);
             

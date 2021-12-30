@@ -50,11 +50,7 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_SceneOEM_HDR;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenDepth;
 
-#if defined(PK_ENABLE_INSTANCING)
-    PK_DECLARE_READONLY_BUFFER(float4x4, pk_InstancingMatrices, PK_SET_PASS);
-    #define pk_MATRIX_M PK_BUFFER_DATA(pk_InstancingMatrices, PK_INSTANCE_OFFSET_ID)
-    #define pk_MATRIX_I_M inverse(PK_BUFFER_DATA(pk_InstancingMatrices, PK_INSTANCE_OFFSET_ID))
-#else
+#if !defined(PK_INSTANCING_ENABLED)
     PK_DECLARE_CBUFFER(pk_ModelMatrices, PK_SET_DRAW)
     {
         // Current model matrix.

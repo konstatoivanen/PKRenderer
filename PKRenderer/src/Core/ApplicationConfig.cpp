@@ -3,6 +3,8 @@
 
 namespace PK::Core
 {
+	using namespace Services;
+
 	ApplicationConfig::ApplicationConfig()
 	{
 		values =

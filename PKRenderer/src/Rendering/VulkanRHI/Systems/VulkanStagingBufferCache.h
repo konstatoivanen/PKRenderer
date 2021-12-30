@@ -1,7 +1,8 @@
 #pragma once
-#include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
-#include "Core/NoCopy.h"
+#include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
+#include "Utilities/Pool.h"
+#include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
@@ -16,10 +17,15 @@ namespace PK::Rendering::VulkanRHI::Systems
         uint64_t pruneTick = 0ull;
     };
 
-    class VulkanStagingBufferCache : public PK::Core::NoCopy
+    class VulkanStagingBufferCache : public NoCopy
     {
         public:
-            VulkanStagingBufferCache(VmaAllocator allocator, uint64_t pruneDelay) : m_allocator(allocator), m_pruneDelay(pruneDelay) {}
+            VulkanStagingBufferCache(VmaAllocator allocator, uint64_t pruneDelay) : m_allocator(allocator), m_pruneDelay(pruneDelay) 
+            {
+                m_activeBuffers.reserve(32);
+                m_freeBuffers.reserve(32);
+            }
+
             ~VulkanStagingBufferCache();
 
             const VulkanStagingBuffer* GetBuffer(size_t size);
@@ -27,11 +33,11 @@ namespace PK::Rendering::VulkanRHI::Systems
 
         private:
             const VmaAllocator m_allocator;
+            std::vector<VulkanStagingBuffer*> m_freeBuffers;
+            std::vector<VulkanStagingBuffer*> m_activeBuffers;
+            Pool<VulkanStagingBuffer, 1024> m_bufferPool;
 
-            std::multimap<VkDeviceSize, VulkanStagingBuffer*> m_freeBuffers;
-            std::unordered_set<VulkanStagingBuffer*> m_activeBuffers;
-
-            uint64_t m_currentPruneTick = 0;
-            uint64_t m_pruneDelay = 0;
+            uint64_t m_currentPruneTick = 0ull;
+            uint64_t m_pruneDelay = 0ull;
     };
 }

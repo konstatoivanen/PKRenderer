@@ -1,0 +1,9 @@
+Material:
+    Shader: res/shaders/SH_WS_Debug.pkshader
+    Properties:
+        _AlbedoTexture:
+            Type: texture2D
+            Value: res/textures/T_Metal_Plates_D.ktx2
+        _Color:
+            Type: float4
+            Value: [1,0,1,1]

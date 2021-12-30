@@ -1,9 +1,8 @@
 #pragma once
-#include "PrecompiledHeader.h"
-#include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
-#include "Core/NoCopy.h"
+#include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
-#include "Math/PKMath.h"
+#include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
+#include "Math/FunctionsMisc.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
@@ -67,7 +66,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         }
     };
 
-    class VulkanFrameBufferCache : public PK::Core::NoCopy
+    class VulkanFrameBufferCache : public NoCopy
     {
         public:
             VulkanFrameBufferCache(VkDevice device, uint64_t pruneDelay);

@@ -48,6 +48,9 @@ namespace PK::Rendering::Objects
 		auto pIndexBuffer = mesh->indexBuffer.Get(base);
 		auto pSubmeshes = mesh->submeshes.Get(base);
 
+		memcpy(glm::value_ptr(m_localBounds.min), mesh->bbmin, sizeof(mesh->bbmin));
+		memcpy(glm::value_ptr(m_localBounds.max), mesh->bbmax, sizeof(mesh->bbmax));
+
 		std::vector<BufferElement> bufferElements;
 
 		for (auto i = 0u; i < mesh->submeshCount; ++i)
@@ -62,7 +65,6 @@ namespace PK::Rendering::Objects
 
 		AddVertexBuffer(Buffer::CreateVertex(BufferLayout(bufferElements), pVertices, mesh->vertexCount));
 		SetIndexBuffer(Buffer::CreateIndex(mesh->indexType, pIndexBuffer, mesh->indexCount));
-
         PK::Assets::CloseAsset(&asset);
     }
 

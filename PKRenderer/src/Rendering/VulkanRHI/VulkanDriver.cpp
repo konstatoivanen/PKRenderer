@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
+#include "Core/Services/Log.h"
 #include "VulkanDriver.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
-#include "Utilities/Log.h"
 #include <gfx.h>
 
 namespace PK::Rendering::VulkanRHI
@@ -73,6 +73,7 @@ namespace PK::Rendering::VulkanRHI
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
         Utilities::VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice, &queueFamilies);
+        physicalDeviceProperties = Utilities::VulkanGetPhysicalDeviceProperties(physicalDevice);
 
         float queuePriority = 1.0f;
 
@@ -174,6 +175,21 @@ namespace PK::Rendering::VulkanRHI
         Utilities::VulkanDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         vkDestroyInstance(instance, nullptr);
         glfwTerminate();
+    }
+
+    size_t VulkanDriver::GetBufferOffsetAlignment(BufferUsage usage) const
+    {
+        if ((usage & BufferUsage::Storage) != 0)
+        {
+            return physicalDeviceProperties.limits.minStorageBufferOffsetAlignment;
+        }
+
+        if ((usage & BufferUsage::Constant) != 0)
+        {
+            return physicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
+        }
+
+        return sizeof(char);
     }
 
     void VulkanDriver::GC()

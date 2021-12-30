@@ -1,6 +1,6 @@
 #pragma once
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
-#include "Math/PKMath.h"
+#include "Math/FunctionsMisc.h"
 #include "Utilities/Ref.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
@@ -16,8 +16,9 @@ namespace PK::Rendering::VulkanRHI::Systems
         };
 
         ResourceType type;
-        uint8_t binding;
+        bool isArray;
         uint16_t count;
+        uint32_t version;
     };
 
     struct DescriptorSetKey
@@ -41,32 +42,13 @@ namespace PK::Rendering::VulkanRHI::Systems
     };
 
 
-    class VulkanDescriptorCache : public PK::Core::NoCopy
+    class VulkanDescriptorCache : public NoCopy
     {
         private:
             struct ExtinctPool
             {
                 VulkanDescriptorPool* pool;
                 mutable VulkanExecutionGate executionGate;
-            };
-
-            struct BindingArray : public std::vector<const VulkanBindHandle*>
-            {
-                mutable VulkanExecutionGate executionGate;
-                BindingArray(const VulkanBindHandle** handles, size_t count, const VulkanExecutionGate& gate);
-            };
-
-            struct BindingArrayKey
-            {
-                const VulkanBindHandle** handles;
-                size_t count;
-
-                inline bool operator < (const BindingArrayKey& other) const noexcept
-                {
-                    auto s0 = sizeof(const VulkanBindHandle*) * count;
-                    auto s1 = sizeof(const VulkanBindHandle*) * other.count;
-                    return s0 == s1 ? memcmp(handles, other.handles, s0) < 0 : s0 < s1;
-                }
             };
 
         public:
@@ -76,9 +58,6 @@ namespace PK::Rendering::VulkanRHI::Systems
             const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
                                                         const DescriptorSetKey& key,
                                                         const VulkanExecutionGate& gate);
-
-            const VulkanBindHandle** GetBindingArray(const VulkanBindHandle** bindings, size_t count, const VulkanExecutionGate& gate);
-
             void Prune();
 
         private:
@@ -98,7 +77,5 @@ namespace PK::Rendering::VulkanRHI::Systems
 
             std::vector<VkDescriptorImageInfo> m_writeImages;
             std::vector<VkDescriptorBufferInfo> m_writeBuffers;
-    
-            std::map<BindingArrayKey, BindingArray> m_bindingArrays;
     };
 }

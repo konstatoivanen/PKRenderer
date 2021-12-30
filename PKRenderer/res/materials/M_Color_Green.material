@@ -1,0 +1,6 @@
+Material:
+    Shader: res/shaders/SH_WS_Unlit_Color.pkshader
+    Properties:
+        _Color:
+            Type: float4
+            Value: [0,1,0,1]

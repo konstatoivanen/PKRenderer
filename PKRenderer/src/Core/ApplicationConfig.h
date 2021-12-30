@@ -1,8 +1,10 @@
 #pragma once
+#include "Core/Services/AssetDatabase.h"
 #include "Core/YamlSerializers.h"
 
 namespace PK::Core
 {
+	using namespace Services;
 	using namespace YAML;
 
 	struct ApplicationConfig : YamlValueList, public Asset

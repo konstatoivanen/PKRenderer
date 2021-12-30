@@ -11,7 +11,6 @@ namespace PK::ECS::Tokens
         double unscaledDeltaTime = 0.0;
         double smoothDeltaTime = 0.0;
         double unscaledDeltaTimeFixed = 0.0;
-    
         bool logFrameRate = false;
     };
 }

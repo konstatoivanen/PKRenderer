@@ -963,28 +963,28 @@
     <ClInclude Include="src\Core\Application.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\AssetDatabase.h">
+    <ClInclude Include="src\Core\Services\AssetDatabase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\BufferView.h">
+    <ClInclude Include="src\Utilities\BufferView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Input.h">
+    <ClInclude Include="src\Core\Services\Input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\IService.h">
+    <ClInclude Include="src\Core\Services\IService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\ISingleton.h">
+    <ClInclude Include="src\Utilities\ISingleton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\NoCopy.h">
+    <ClInclude Include="src\Utilities\NoCopy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\ServiceRegister.h">
+    <ClInclude Include="src\Core\Services\ServiceRegister.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Time.h">
+    <ClInclude Include="src\Core\Services\Time.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\UpdateStep.h">
@@ -996,10 +996,7 @@
     <ClInclude Include="src\ECS\EntityDatabase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Sequencer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Math\PKMath.h">
+    <ClInclude Include="src\Core\Services\Sequencer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\PrecompiledHeader.h">
@@ -1077,13 +1074,13 @@
     <ClInclude Include="src\Rendering\VulkanRHI\VulkanWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utilities\Log.h">
+    <ClInclude Include="src\Core\Services\Log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utilities\Ref.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utilities\StringHashID.h">
+    <ClInclude Include="src\Core\Services\StringHashID.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\PKAssets\PKAsset.h">
@@ -1093,9 +1090,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Objects\Shader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Utilities\StringUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Objects\Texture.h">
@@ -1119,7 +1113,7 @@
     <ClInclude Include="src\Rendering\Objects\CommandBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\NativeInterface.h">
+    <ClInclude Include="src\Utilities\NativeInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Objects\RenderTexture.h">
@@ -1251,7 +1245,7 @@
     <ClInclude Include="src\Core\ApplicationConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\PropertyBlock.h">
+    <ClInclude Include="src\Utilities\PropertyBlock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\HashCache.h">
@@ -1279,6 +1273,114 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Passes\PassDepthOfField.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanBindArray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Objects\BindArray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Components\Transform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Components\Bounds.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Components\Renderable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Components\MeshReference.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Components\Light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\EntityViews\BaseRenderableView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\EntityViews\TransformView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\EntityViews\MeshRenderableView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\EntityViews\LightRenderableView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\EntityViews\LightSphereView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Implementers\MeshRenderableImplementer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Implementers\LightImplementer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Engines\EngineUpdateTransforms.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Engines\EngineCull.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Batcher.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Tokens\CullingTokens.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Objects\Material.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Components\Materials.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utilities\Handle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Objects\BindSet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Objects\ShaderPropertyBlock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Builders\Builders.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utilities\VectorUtilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Math\Types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Math\FunctionsMisc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Math\FunctionsMatrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Math\FunctionsColor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Math\FunctionsIntersect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Engines\EngineDebug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Passes\PassGeometry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Passes\PassLights.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utilities\Pool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utilities\HashHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utilities\IndexedSet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1695,7 +1797,6 @@
     <None Include="libs\ktx_read.dll" />
     <None Include="libs\vulkan-1.pdb" />
     <None Include="libs\VulkanMemoryAllocatord.pdb" />
-    <None Include="res\textures\T_DebugTexture.ktx2" />
     <None Include="res\shaders\SH_WS_Debug.shader" />
     <None Include="res\models\MDL_Debug.mdl" />
     <None Include="res\models\MDL_Cloth.mdl" />
@@ -1724,6 +1825,45 @@
     <None Include="res\shaders\SH_CS_AutoFocus.shader" />
     <None Include="res\shaders\SH_VS_DepthOfFieldBlur.shader" />
     <None Include="res\shaders\SH_VS_DepthOfFieldComposite.shader" />
+    <None Include="res\shaders\SH_WS_Unlit_Color.shader" />
+    <None Include="res\materials\M_Color_Red.material" />
+    <None Include="res\materials\M_Debug.material" />
+    <None Include="res\textures\T_Wood_Floor_S.ktx2" />
+    <None Include="res\textures\T_OEM_Trail.ktx2" />
+    <None Include="res\textures\T_Sand_D.ktx2" />
+    <None Include="res\textures\T_Sand_H.ktx2" />
+    <None Include="res\textures\T_Sand_N.ktx2" />
+    <None Include="res\textures\T_Sand_S.ktx2" />
+    <None Include="res\textures\T_Wood_Floor_D.ktx2" />
+    <None Include="res\textures\T_Wood_Floor_N.ktx2" />
+    <None Include="res\textures\T_OEM_Park.ktx2" />
+    <None Include="res\textures\T_Gravel_D.ktx2" />
+    <None Include="res\textures\T_Gravel_N.ktx2" />
+    <None Include="res\textures\T_Gravel_S.ktx2" />
+    <None Include="res\textures\T_Ground_D.ktx2" />
+    <None Include="res\textures\T_Ground_H.ktx2" />
+    <None Include="res\textures\T_Ground_N.ktx2" />
+    <None Include="res\textures\T_Ground_S.ktx2" />
+    <None Include="res\textures\T_LightCookies.ktx2" />
+    <None Include="res\textures\T_Metal_Plates_D.ktx2" />
+    <None Include="res\textures\T_Metal_Plates_N.ktx2" />
+    <None Include="res\textures\T_Metal_Plates_S.ktx2" />
+    <None Include="res\textures\T_Metal_Rust_D.ktx2" />
+    <None Include="res\textures\T_Metal_Rust_N.ktx2" />
+    <None Include="res\textures\T_Metal_Rust_S.ktx2" />
+    <None Include="res\textures\T_OEM_Desert.ktx2" />
+    <None Include="res\textures\T_OEM_Mountains.ktx2" />
+    <None Include="res\textures\T_OEM_Night.ktx2" />
+    <None Include="res\textures\T_EmissiveTest_E.ktx2" />
+    <None Include="res\textures\T_Cloth_S.ktx2" />
+    <None Include="res\textures\T_Bluenoise256.ktx2" />
+    <None Include="res\textures\T_Cloth_D.ktx2" />
+    <None Include="res\textures\T_Cloth_H.ktx2" />
+    <None Include="res\textures\T_Asphalt_S.ktx2" />
+    <None Include="res\textures\T_Asphalt_D.ktx2" />
+    <None Include="res\textures\T_Asphalt_H.ktx2" />
+    <None Include="res\textures\T_Asphalt_N.ktx2" />
+    <None Include="res\materials\M_Color_Green.material" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
@@ -1732,22 +1872,19 @@
     <ClCompile Include="src\Core\Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\Input.cpp">
+    <ClCompile Include="src\Core\Services\Input.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\Time.cpp">
+    <ClCompile Include="src\Core\Services\Time.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ECS\Sequencer.cpp">
+    <ClCompile Include="src\Core\Services\Sequencer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Math\PKMath.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\PrecompiledHeader.cpp">
@@ -1757,9 +1894,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\RenderPipeline.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Rendering\Structs\Enums.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Structs\Layout.cpp">
@@ -1822,19 +1956,16 @@
     <ClCompile Include="src\Rendering\VulkanRHI\VulkanWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utilities\Log.cpp">
+    <ClCompile Include="src\Core\Services\Log.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utilities\StringHashID.cpp">
+    <ClCompile Include="src\Core\Services\StringHashID.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="include\PKAssets\PKAssetLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Objects\Shader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Utilities\StringUtilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Objects\Texture.cpp">
@@ -1867,7 +1998,7 @@
     <ClCompile Include="src\Core\ApplicationConfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\PropertyBlock.cpp">
+    <ClCompile Include="src\Utilities\PropertyBlock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Objects\ConstantBuffer.cpp">
@@ -1889,6 +2020,57 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="include\PKAssets\PKAsset.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanBindArray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Objects\BindArray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\Contextual\Engines\EngineUpdateTransforms.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\Contextual\Engines\EngineCull.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Batcher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\Contextual\Tokens\CullingTokens.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Objects\Material.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Objects\ShaderPropertyBlock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\Contextual\Builders\Builders.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Math\FunctionsMatrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Math\FunctionsColor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Math\FunctionsMisc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Math\FunctionsIntersect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\Contextual\Engines\EngineDebug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Passes\PassGeometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Passes\PassLights.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utilities\HashHelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

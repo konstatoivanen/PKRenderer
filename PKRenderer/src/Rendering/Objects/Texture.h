@@ -1,11 +1,13 @@
 #pragma once
-#include "Core/AssetDatabase.h"
-#include "Core/NativeInterface.h"
+#include "Utilities/NativeInterface.h"
+#include "Core/Services/AssetDatabase.h"
 #include "Rendering/Structs/Descriptors.h"
 
 namespace PK::Rendering::Objects
 {
+    using namespace PK::Utilities;
     using namespace PK::Core;
+    using namespace PK::Core::Services;
     using namespace PK::Rendering::Structs;
 
     class Texture : public Asset, public NativeInterface<Texture>

@@ -1,9 +1,11 @@
 #include "PrecompiledHeader.h"
 #include "VulkanCommandBuffer.h"
+#include "Utilities/Handle.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
 #include "Rendering/VulkanRHI/Objects/VulkanBuffer.h"
 #include "Rendering/VulkanRHI/Objects/VulkanTexture.h"
 #include "Rendering/VulkanRHI/VulkanWindow.h"
+#include "Rendering/VulkanRHI/Objects/VulkanBindArray.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -91,14 +93,24 @@ namespace PK::Rendering::VulkanRHI::Objects
         vkCmdBindIndexBuffer(commandBuffer, handle->buffer, offset, EnumConvert::GetIndexType(handle->bufferLayout->begin()->Type));
     }
 
-    void VulkanCommandBuffer::SetBuffer(uint32_t nameHashId, const Buffer* buffer)
+    void VulkanCommandBuffer::SetBuffer(uint32_t nameHashId, Buffer* buffer, const IndexRange& range)
     {
-        renderState->SetResource(nameHashId, Handle(buffer->GetNative<VulkanBuffer>()->GetBindHandle()));
+        renderState->SetResource(nameHashId, Handle(buffer->GetNative<VulkanBuffer>()->GetBindHandle(range)));
     }
 
     void VulkanCommandBuffer::SetTexture(uint32_t nameHashId, Texture* texture, const TextureViewRange& range)
     {
         renderState->SetResource(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, true)));
+    }
+
+    void VulkanCommandBuffer::SetBufferArray(uint32_t nameHashId, BindArray<Buffer>* bufferArray)
+    {
+        renderState->SetResource(nameHashId, Handle(bufferArray->GetNative<VulkanBindArray>()));
+    }
+
+    void VulkanCommandBuffer::SetTextureArray(uint32_t nameHashId, BindArray<Texture>* textureArray)
+    {
+        renderState->SetResource(nameHashId, Handle(textureArray->GetNative<VulkanBindArray>()));
     }
 
     void VulkanCommandBuffer::SetImage(uint32_t nameHashId, Texture* texture, const TextureViewRange& range)
@@ -372,7 +384,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         // @TODO delta checks
         if (renderState->m_pipelineKey.shader != nullptr)
         {
-            auto constantLayout = renderState->m_pipelineKey.shader->GetConstantLayout();
+            auto& constantLayout = renderState->m_pipelineKey.shader->GetConstantLayout();
             auto& props = renderState->m_resourceProperties;
 
             for (auto& kv : constantLayout)

@@ -70,11 +70,11 @@ namespace PK::Rendering::VulkanRHI::Objects
                 for (auto j = 0u; j < pDescriptorSet->descriptorCount; ++j)
                 {
                     bindingFlags[j] = pDescriptors[j].count >= PK_MAX_UNBOUNDED_SIZE ? VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT : 0u;
-                    bindings[j].binding = pDescriptors[j].binding;
+                    bindings[j].binding = j;
                     bindings[j].descriptorCount = pDescriptors[j].count;
                     bindings[j].descriptorType = EnumConvert::GetDescriptorType(pDescriptors[j].type);
                     bindings[j].stageFlags = EnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags);
-                    elements.emplace_back(pDescriptors[j].type, std::string(pDescriptors[j].name), pDescriptors[j].binding, pDescriptors[j].count);
+                    elements.emplace_back(pDescriptors[j].type, std::string(pDescriptors[j].name), pDescriptors[j].count);
                 }
 
                 bindingFlagsInfo.bindingCount = layoutCreateInfo.bindingCount = pDescriptorSet->descriptorCount;

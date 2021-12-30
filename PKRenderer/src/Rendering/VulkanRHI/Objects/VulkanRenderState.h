@@ -1,11 +1,11 @@
 #pragma once
+#include "Utilities/PropertyBlock.h"
 #include "Rendering/VulkanRHI/Systems/VulkanDescriptorCache.h"
 #include "Rendering/VulkanRHI/Systems/VulkanPipelineCache.h"
 #include "Rendering/VulkanRHI/Systems/VulkanSamplerCache.h"
 #include "Rendering/VulkanRHI/Systems/VulkanFrameBufferCache.h"
 #include "Rendering/VulkanRHI/Systems/VulkanStagingBufferCache.h"
 #include "Rendering/VulkanRHI/Systems/VulkanDisposer.h"
-#include "Core/PropertyBlock.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -45,7 +45,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         uint32_t count = 0u;
     };
 
-    struct VulkanRenderState : PK::Core::NoCopy
+    struct VulkanRenderState : NoCopy
     {
         VulkanRenderState(const VulkanSystemContext& systems) :
             m_descriptorCache(systems.descriptorCache),
@@ -86,7 +86,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         void ValidateDescriptorSets(const VulkanExecutionGate& gate);
         PKRenderStateDirtyFlags ValidatePipeline(const VulkanExecutionGate& gate);
 
-        PK::Core::PropertyBlock m_resourceProperties = PK::Core::PropertyBlock(16384);
+        PropertyBlock m_resourceProperties = PropertyBlock(16384);
         VulkanDescriptorCache* m_descriptorCache = nullptr;
         VulkanPipelineCache* m_pipelineCache = nullptr;
         VulkanSamplerCache* m_samplerCache = nullptr;

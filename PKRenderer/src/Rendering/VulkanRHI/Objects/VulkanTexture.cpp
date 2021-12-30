@@ -22,14 +22,16 @@ namespace PK::Rendering::VulkanRHI::Objects
 
 	void VulkanTexture::SetData(const void* data, size_t size, uint32_t level, uint32_t layer) const
     {
+        auto cmd = m_driver->commandBufferPool->GetCurrent();
+        
         const auto* stage = m_driver->stagingBufferCache->GetBuffer(size);
+        stage->executionGate = cmd->GetOnCompleteGate();
         stage->SetData(data, size);
      
         auto usageLayout = EnumConvert::GetImageLayout(m_descriptor.usage);
         auto optimalLayout = EnumConvert::GetImageLayout(m_descriptor.usage, true);
         VkImageSubresourceRange range = { (uint32_t)m_rawImage->aspect, level, 1, layer, 1 };
 
-        auto cmd = m_driver->commandBufferPool->GetCurrent();
         cmd->TransitionImageLayout(VulkanLayoutTransition(m_rawImage->image, usageLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range));
         cmd->CopyBufferToImage(stage->buffer, m_rawImage->image, { m_rawImage->extent.width >> level, m_rawImage->extent.height >> level, m_rawImage->extent.depth >> level }, level, layer);
         cmd->TransitionImageLayout(VulkanLayoutTransition(m_rawImage->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, usageLayout, optimalLayout, range));
@@ -85,8 +87,10 @@ namespace PK::Rendering::VulkanRHI::Objects
 		ktx_uint8_t* ktxTextureData = ktxTexture_GetData(ktxTexture(ktxTex2));
 		ktx_size_t ktxTextureSize = ktxTex2->dataSize;
 
+        auto cmd = m_driver->commandBufferPool->GetCurrent();
 		auto stage = m_driver->stagingBufferCache->GetBuffer(ktxTextureSize);
-
+        
+        stage->executionGate = cmd->GetOnCompleteGate();
 		stage->SetData(ktxTextureData, ktxTextureSize);
 
 		std::vector<VkBufferImageCopy> bufferCopyRegions;
@@ -117,7 +121,6 @@ namespace PK::Rendering::VulkanRHI::Objects
 		auto optimalLayout = EnumConvert::GetImageLayout(m_descriptor.usage, true);
 		VkImageSubresourceRange range = { (uint32_t)m_rawImage->aspect, 0, descriptor.levels, 0, descriptor.layers };
 
-		auto cmd = m_driver->commandBufferPool->GetCurrent();
 		cmd->TransitionImageLayout(VulkanLayoutTransition(m_rawImage->image, usageLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range));
         cmd->CopyBufferToImage(stage->buffer, m_rawImage->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, (uint32_t)bufferCopyRegions.size(), bufferCopyRegions.data());
 		cmd->TransitionImageLayout(VulkanLayoutTransition(m_rawImage->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, usageLayout, optimalLayout, range));

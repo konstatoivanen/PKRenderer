@@ -1,31 +1,30 @@
 #pragma once
-#include "Core/IService.h"
-#include "GraphicsAPI.h"
-#include "ECS/Sequencer.h"
-#include "Rendering/Objects/Texture.h"
-#include "Rendering/Objects/RenderTexture.h"
-#include "Rendering/Objects/Shader.h"
-#include "Rendering/Objects/Mesh.h"
-#include "Rendering/Objects/ConstantBuffer.h"
-#include "Rendering/Passes/PassPostEffects.h"
-#include "Rendering/Structs/StructsCommon.h"
-#include "ECS/Contextual/Tokens/ViewProjectionToken.h"
-#include "ECS/Contextual/Tokens/TimeToken.h"
+#include "Core/Services/IService.h"
+#include "Core/Services/Sequencer.h"
 #include "Core/ApplicationConfig.h"
 #include "Core/Window.h"
+#include "ECS/Contextual/Tokens/ViewProjectionToken.h"
+#include "ECS/Contextual/Tokens/TimeToken.h"
+#include "ECS/Contextual/Tokens/CullingTokens.h"
+#include "Rendering/Passes/PassPostEffects.h"
+#include "Rendering/Passes/PassGeometry.h"
+#include "Rendering/Passes/PassLights.h"
+#include "Rendering/Batcher.h"
 
 namespace PK::Rendering
 {
+    using namespace PK::Core;
+    using namespace PK::Core::Services;
     using namespace PK::Rendering::Objects;
 
-    class RenderPipeline : public PK::Core::IService,
-                           public PK::ECS::IStep<PK::ECS::Tokens::ViewProjectionUpdateToken>,
-                           public PK::ECS::IStep<PK::ECS::Tokens::TimeToken>,
-                           public PK::ECS::IConditionalStep<PK::Core::Window>,
-                           public PK::ECS::IStep<AssetImportToken<ApplicationConfig>>
+    class RenderPipeline : public IService,
+                           public IStep<PK::ECS::Tokens::ViewProjectionUpdateToken>,
+                           public IStep<PK::ECS::Tokens::TimeToken>,
+                           public IConditionalStep<Window>,
+                           public IStep<AssetImportToken<ApplicationConfig>>
     {
         public:
-            RenderPipeline(AssetDatabase* assetDatabase, const ApplicationConfig* config);
+            RenderPipeline(AssetDatabase* assetDatabase, EntityDatabase* entityDb, Sequencer* sequencer, const ApplicationConfig* config);
             ~RenderPipeline();
 
             void Step(PK::ECS::Tokens::ViewProjectionUpdateToken* token) override final;
@@ -34,18 +33,18 @@ namespace PK::Rendering
             void Step(AssetImportToken<ApplicationConfig>* token) override final;
 
         private:
+            Passes::PassPostEffects m_passPostEffects;
+            Passes::PassGeometry m_passGeometry;
+            Passes::PassLights m_passLights;
+            Batcher m_batcher;
+
             Ref<ConstantBuffer> m_constantsPerFrame;
             Ref<RenderTexture> m_HDRRenderTarget;
-            
-            Passes::PassPostEffects m_passPostEffects;
-
             Shader* m_OEMBackgroundShader;
-            Texture* m_OEMTexture;
+            ECS::Tokens::VisibilityList m_visibilityList;
 
-            Ref<Buffer> m_modelMatrices;
-            Mesh* m_mesh;
-            Texture* m_testTexture;
-            Shader* m_shader = nullptr;
-
+            float4x4 m_viewProjectionMatrix;
+            float m_znear;
+            float m_zfar;
     };
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include "PrecompiledHeader.h"
-#include "Math/PKMath.h"
+#include "Math/Types.h"
 #include "Enums.h"
 
 namespace PK::Rendering::Structs
@@ -85,7 +85,7 @@ namespace PK::Rendering::Structs
         bool depthBiasEnable = false;
         PolygonMode polygonMode = PolygonMode::Fill;
         CullMode cullMode = CullMode::Off;
-        FrontFace frontFace = FrontFace::CounterClockwise;
+        FrontFace frontFace = FrontFace::Clockwise;
         float depthBiasConstantFactor = 0;
         float depthBiasClamp = 0;
         float depthBiasSlopeFactor = 0;

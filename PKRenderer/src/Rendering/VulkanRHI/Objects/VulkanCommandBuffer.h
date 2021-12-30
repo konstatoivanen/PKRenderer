@@ -1,11 +1,10 @@
 #pragma once
-#include "PrecompiledHeader.h"
+#include "Utilities/NoCopy.h"
+#include "Utilities/Ref.h"
 #include "Rendering/Objects/CommandBuffer.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Rendering/VulkanRHI/Objects/VulkanRenderState.h"
-#include "Core/NoCopy.h"
-#include "Utilities/Ref.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -35,8 +34,10 @@ namespace PK::Rendering::VulkanRHI::Objects
         void SetShader(const Shader* shader, int variantIndex = -1) override final;
         void SetVertexBuffers(const Buffer** buffers, uint count) override final;
         void SetIndexBuffer(const Buffer* buffer, size_t offset) override final;
-        void SetBuffer(uint32_t nameHashId, const Buffer* buffer) override final;
+        void SetBuffer(uint32_t nameHashId, Buffer* buffer, const IndexRange& range) override final;
         void SetTexture(uint32_t nameHashId, Texture* texture, const TextureViewRange& range) override final;
+        void SetBufferArray(uint32_t nameHashId, BindArray<Buffer>* bufferArray) override final;
+        void SetTextureArray(uint32_t nameHashId, BindArray<Texture>* textureArray) override final;
         void SetImage(uint32_t nameHashId, Texture* texture, const TextureViewRange& range) override final;
         void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) override final;
         void SetKeyword(uint32_t nameHashId, bool value) override final;
