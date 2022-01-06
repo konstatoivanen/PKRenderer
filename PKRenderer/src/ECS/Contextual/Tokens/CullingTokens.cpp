@@ -6,7 +6,7 @@ namespace PK::ECS::Tokens
 {
     void VisibilityList::Add(uint entityId, ushort depth, ushort clipId)
     {
-        Utilities::Vector::ValidateSize(results, count + 1);
+        results.Validate(count + 1u);
         results[count++] = { entityId, depth, clipId };
     }
 }

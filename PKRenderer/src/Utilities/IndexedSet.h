@@ -2,7 +2,8 @@
 #include "HashHelpers.h"
 #include "NoCopy.h"
 #include "BufferView.h"
-#include <vector>
+#include "MemoryBlock.h"
+#include "BufferIterator.h"
 
 namespace PK::Utilities
 {
@@ -20,24 +21,29 @@ namespace PK::Utilities
                 Node(int32_t previous) : previous(previous), next(-1) {}
             };
 
-            std::vector<TValue> m_values;
-            std::vector<Node> m_nodes;
-            std::vector<int32_t> m_buckets;
+            MemoryBlock<TValue> m_values;
+            MemoryBlock<Node> m_nodes;
+            MemoryBlock<int32_t> m_buckets;
             uint32_t m_collisions;
             uint32_t m_count;
 
-            uint32_t GetBucketIndex(TValue value) const { return (uint32_t)((size_t)value % m_buckets.size()); }
+            uint32_t GetBucketIndex(TValue value) const { return (uint32_t)((size_t)value % m_buckets.GetCount()); }
 
             void SetValueIndexInBuckets(uint32_t i, int32_t value) { m_buckets[i] = value + 1; }
 
-            int32_t GetValueIndexFromBuckets(uint32_t i) const { return m_buckets[i] - 1; }
+            int32_t GetValueIndexFromBuckets(uint32_t i) const 
+            { 
+                return m_buckets[i] - 1; 
+            }
 
         public:
-            IndexedSet(uint32_t size) : m_collisions(0u), m_count(0u)
+            IndexedSet(uint32_t size) : 
+                m_collisions(0u), 
+                m_count(0u), 
+                m_values(size), 
+                m_nodes(size),
+                m_buckets(HashHelpers::GetPrime(size))
             {
-                m_values.resize(size);
-                m_nodes.resize(size);
-                m_buckets.resize(HashHelpers::GetPrime(size));
             }
 
             IndexedSet() : IndexedSet(1)
@@ -51,14 +57,21 @@ namespace PK::Utilities
                 }
 
                 m_count = 0u;
-                memset(m_values.data(), 0, sizeof(TValue) * m_values.size());
-                memset(m_nodes.data(), 0, sizeof(Node) * m_nodes.size());
-                memset(m_buckets.data(), 0, sizeof(int32_t) * m_buckets.size());
+                m_values.Clear();
+                m_nodes.Clear();
+                m_buckets.Clear();
             }
 
-            const BufferView<TValue> GetValues() const { return { m_values.data(), m_count }; }
+            ConstBufferIterator<TValue> begin() const { return ConstBufferIterator<TValue>(m_values.GetData(), 0ull); }
+            ConstBufferIterator<TValue> end() const { return ConstBufferIterator<TValue>(m_values.GetData() + m_count, m_count); }
 
-            uint32_t GetCount() const { return m_count; }
+            ConstBufferView<TValue> GetValues() const { return { m_values.GetData(), (size_t)m_count }; }
+
+            constexpr uint32_t GetCount() const { return m_count; }
+            
+            constexpr size_t GetCapacity() const { return m_values.GetCount(); }
+
+            TValue GetValue(uint32_t index) const { return m_values[index]; }
 
             int32_t GetIndex(TValue value) const
             { 
@@ -95,7 +108,11 @@ namespace PK::Utilities
                         {
                             if (m_values[currentValueIndex] == value)
                             {
-                                *outIndex = currentValueIndex;
+                                if (outIndex != nullptr)
+                                {
+                                    *outIndex = currentValueIndex;
+                                }
+
                                 return false;
                             }
 
@@ -112,16 +129,16 @@ namespace PK::Utilities
                 SetValueIndexInBuckets(bucketIndex, (int32_t)m_count);
                 m_values[m_count++] = value;
 
-                if (m_count == m_values.size())
+                if (m_count == m_values.GetCount())
                 {
-                    m_values.resize(HashHelpers::ExpandPrime(m_count));
-                    m_nodes.resize(HashHelpers::ExpandPrime(m_count));
+                    m_values.Validate(HashHelpers::ExpandPrime(m_count));
+                    m_nodes.Validate(HashHelpers::ExpandPrime(m_count));
                 }
 
-                if (m_collisions > m_buckets.size())
+                if (m_collisions > m_buckets.GetCount())
                 {
-                    m_buckets.clear();
-                    m_buckets.resize(HashHelpers::ExpandPrime(m_collisions));
+                    m_buckets.Validate(HashHelpers::ExpandPrime(m_collisions), true);
+                    m_buckets.Clear();
                     m_collisions = 0;
 
                     for (auto newValueIndex = 0u; newValueIndex < m_count; newValueIndex++)
@@ -145,17 +162,15 @@ namespace PK::Utilities
                     }
                 }
 
-                *outIndex = m_count - 1;
+                if (outIndex != nullptr)
+                {
+                    *outIndex = m_count - 1;
+                }
+
                 return true;
             }
 
-            bool Add(TValue value)
-            {
-                uint32_t newIndex = 0u;
-                return Add(value, &newIndex);
-            }
-
-            uint32_t AddReturnIndex(TValue value)
+            uint32_t Add(TValue value)
             {
                 uint32_t newIndex = 0u;
                 Add(value, &newIndex);

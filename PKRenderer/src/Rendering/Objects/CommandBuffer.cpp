@@ -28,7 +28,7 @@ namespace PK::Rendering::Objects
         if (updateViewPort)
         {
             auto rect = renderTarget->GetRect();
-            SetViewPort(rect, 0.0f, 1.0f);
+            SetViewPort(rect);
             SetScissor(rect);
         }
     }
@@ -142,30 +142,36 @@ namespace PK::Rendering::Objects
         DrawMesh(mesh, submesh, 1u, 0u);
     }
 
-    void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh, Shader* shader, int variantIndex)
+    void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh, const Shader* shader, int variantIndex)
     {
         DrawMesh(mesh, submesh, shader, 1u, 0u, variantIndex);
     }
 
-    void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh, Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int variantIndex)
+    void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh, const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int variantIndex)
     {
         SetShader(shader, variantIndex);
         DrawMesh(mesh, submesh, instanceCount, firstInstance);
     }
 
-    void CommandBuffer::Blit(Shader* shader, int variantIndex)
+    void CommandBuffer::Blit(const Shader* shader, int variantIndex)
     {
         SetShader(shader, variantIndex);
         Draw(3,1,0,0);
     }
 
-    void CommandBuffer::Dispatch(Shader* shader, uint3 groupCount)
+    void CommandBuffer::Blit(const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int variantIndex)
+    {
+        SetShader(shader, variantIndex);
+        Draw(3, instanceCount, 0u, firstInstance);
+    }
+
+    void CommandBuffer::Dispatch(const Shader* shader, uint3 groupCount)
     {
         SetShader(shader);
         Dispatch(groupCount);
     }
 
-    void CommandBuffer::Dispatch(Shader* shader, uint variantIndex, uint3 groupCount)
+    void CommandBuffer::Dispatch(const Shader* shader, uint variantIndex, uint3 groupCount)
     {
         SetShader(shader, variantIndex);
         Dispatch(groupCount);

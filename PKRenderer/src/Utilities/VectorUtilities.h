@@ -129,6 +129,16 @@ namespace PK::Utilities::Vector
     }
 
     template<typename T>
+    void QuickSort(T* v, size_t count)
+    {
+        if (count > 1)
+        {
+            Comparer<T> c{};
+            QuickSort(v, c, 0, (int32_t)count - 1);
+        }
+    }
+
+    template<typename T>
     static int LowerBound(std::vector<T>& v, uint32_t size)
     {
         Bound<T> b{};

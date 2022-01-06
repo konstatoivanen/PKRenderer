@@ -163,6 +163,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
             case TextureFormat::RGBA32F:                    return VK_FORMAT_R32G32B32A32_SFLOAT;
             case TextureFormat::RGBA32UI:                   return VK_FORMAT_R32G32B32A32_UINT;
             case TextureFormat::RGBA32I:                    return VK_FORMAT_R32G32B32A32_SINT;
+            case TextureFormat::DXT4:                       return VK_FORMAT_BC4_UNORM_BLOCK;
             case TextureFormat::DXT1_RGB:                   return VK_FORMAT_BC1_RGB_UNORM_BLOCK;
             case TextureFormat::DXT1_SRGB:                  return VK_FORMAT_BC1_RGB_SRGB_BLOCK;
             case TextureFormat::DXT1_RGBA:                  return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
@@ -203,8 +204,8 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
             case TextureFormat::ETC2_SRGB8:                 return VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK;
             case TextureFormat::ETC2_RGB8_A1:               return VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK;
             case TextureFormat::ETC2_SRGB8_A1:              return VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK;
-            case TextureFormat::ETC2_EAC_RGBA8:             return VK_FORMAT_UNDEFINED;
-            case TextureFormat::ETC2_EAC_SRGBA8:            return VK_FORMAT_UNDEFINED;
+            case TextureFormat::ETC2_RGBA8:                 return VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK;
+            case TextureFormat::ETC2_SRGBA8:                return VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK;
             case TextureFormat::EAC_R11:                    return VK_FORMAT_EAC_R11_UNORM_BLOCK;
             case TextureFormat::EAC_R11_SIGNED:             return VK_FORMAT_EAC_R11_SNORM_BLOCK;
             case TextureFormat::EAC_RG11:                   return VK_FORMAT_EAC_R11G11_UNORM_BLOCK;
@@ -284,6 +285,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
            case VK_FORMAT_R32G32B32A32_SFLOAT:       return TextureFormat::RGBA32F;
            case VK_FORMAT_R32G32B32A32_UINT:         return TextureFormat::RGBA32UI;
            case VK_FORMAT_R32G32B32A32_SINT:         return TextureFormat::RGBA32I;
+           case VK_FORMAT_BC4_UNORM_BLOCK:           return TextureFormat::DXT4;
            case VK_FORMAT_BC1_RGB_UNORM_BLOCK:       return TextureFormat::DXT1_RGB;
            case VK_FORMAT_BC1_RGB_SRGB_BLOCK:        return TextureFormat::DXT1_SRGB;
            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:      return TextureFormat::DXT1_RGBA;
@@ -324,8 +326,8 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
            case VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK:    return TextureFormat::ETC2_SRGB8;
            case VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK: return TextureFormat::ETC2_RGB8_A1;
            case VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK:  return TextureFormat::ETC2_SRGB8_A1;
-           case VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK: return TextureFormat::ETC2_EAC_RGBA8;
-           case VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK:  return TextureFormat::ETC2_EAC_SRGBA8;
+           case VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK: return TextureFormat::ETC2_RGBA8;
+           case VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK:  return TextureFormat::ETC2_SRGBA8;
            case VK_FORMAT_EAC_R11_UNORM_BLOCK:       return TextureFormat::EAC_R11;
            case VK_FORMAT_EAC_R11_SNORM_BLOCK:       return TextureFormat::EAC_R11_SIGNED;
            case VK_FORMAT_EAC_R11G11_UNORM_BLOCK:    return TextureFormat::EAC_RG11;
@@ -364,6 +366,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
             case VK_FORMAT_D32_SFLOAT:
             case VK_FORMAT_EAC_R11_UNORM_BLOCK:
             case VK_FORMAT_EAC_R11_SNORM_BLOCK:
+            case VK_FORMAT_BC4_UNORM_BLOCK:
                 return { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_R };
 
             case VK_FORMAT_R8G8_UNORM:
@@ -407,6 +410,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
             case VK_FORMAT_R32G32B32A32_SINT:
             case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:
             case VK_FORMAT_BC1_RGBA_SRGB_BLOCK:
+            case VK_FORMAT_BC3_UNORM_BLOCK:
             case VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK:
             case VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK:
                 return { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };

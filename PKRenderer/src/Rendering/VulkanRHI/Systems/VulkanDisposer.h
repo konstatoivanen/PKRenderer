@@ -15,6 +15,8 @@ namespace PK::Rendering::VulkanRHI::Systems
         };
 
         public:
+            VulkanDisposer() {}
+
             template<typename T>
             void Dispose(T* disposable, const VulkanExecutionGate& releaseGate)
             {

@@ -27,14 +27,14 @@ namespace PK::Rendering::Objects
                 return Create(BufferUsage::Index, BufferLayout({{ type, "INDEX" }}), data, count);
             }
 
-            inline static Ref<Buffer> CreateConstant(const BufferLayout& layout)
+            inline static Ref<Buffer> CreateConstant(const BufferLayout& layout, BufferUsage extraFlags = BufferUsage::None)
             {
-                return Create(BufferUsage::Constant, layout, nullptr, 1);
+                return Create(BufferUsage::Constant | extraFlags, layout, nullptr, 1);
             }
 
-            inline static Ref<Buffer> CreateStorage(const BufferLayout& layout, size_t count)
+            inline static Ref<Buffer> CreateStorage(const BufferLayout& layout, size_t count, BufferUsage extraFlags = BufferUsage::None)
             {
-                return Create(BufferUsage::Storage, layout, nullptr, count);
+                return Create(BufferUsage::Storage | extraFlags, layout, nullptr, count);
             }
 
 

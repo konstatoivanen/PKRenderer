@@ -29,15 +29,15 @@ namespace PK::Rendering::VulkanRHI::Objects
         renderState->SetRenderTarget(colors, resolves, count);
     }
 
-    void VulkanCommandBuffer::SetViewPort(uint4 rect, float mindepth, float maxdepth, uint index)
+    void VulkanCommandBuffer::SetViewPort(uint4 rect, uint index)
     {
         VkViewport viewport{};
         viewport.x = (float)rect.x;
-        viewport.y = (float)(rect.y + rect.w);
+        viewport.y = (float)rect.y;
         viewport.width = (float)rect.z;
-        viewport.height = -(float)rect.w;
-        viewport.minDepth = mindepth;
-        viewport.maxDepth = maxdepth;
+        viewport.height = (float)rect.w;
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
         vkCmdSetViewport(commandBuffer, index, 1, &viewport);
     }
 
@@ -153,7 +153,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         auto vksrc = src->GetNative<VulkanTexture>();
         auto vkwindow = dst->GetNative<VulkanWindow>();
-        Blit(vksrc->GetRenderTarget(), vkwindow->GetRenderTarget(), 0, dstLevel, 0, dstLayer, filter);
+        Blit(vksrc->GetRenderTarget(), vkwindow->GetRenderTarget(), 0, dstLevel, 0, dstLayer, filter, true);
     }
 
     void VulkanCommandBuffer::Blit(Texture* src, Texture* dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter)
@@ -169,13 +169,20 @@ namespace PK::Rendering::VulkanRHI::Objects
                                    uint32_t dstLevel, 
                                    uint32_t srcLayer, 
                                    uint32_t dstLayer,
-                                   FilterMode filter)
+                                   FilterMode filter,
+                                   bool flipVertical)
     {
         VkImageBlit blitRegion{};
         blitRegion.srcSubresource = { (uint32_t)src.aspect, srcLevel, srcLayer, 1 };
         blitRegion.dstSubresource = { (uint32_t)dst.aspect, dstLevel, dstLayer, 1 };
         blitRegion.srcOffsets[1] = { (int)src.extent.width, (int)src.extent.height, (int)src.extent.depth };
         blitRegion.dstOffsets[1] = { (int)dst.extent.width, (int)dst.extent.height, (int)dst.extent.depth };
+
+        if (flipVertical)
+        {
+            blitRegion.srcOffsets[0].y = (int)src.extent.height;
+            blitRegion.srcOffsets[1].y = 0u;
+        }
 
         VkImageResolve resolveRegion{};
         resolveRegion.srcSubresource = { (uint32_t)src.aspect, srcLevel, srcLayer, 1 };
@@ -211,6 +218,37 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         TransitionImageLayout(VulkanLayoutTransition(src.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src.layout, srcRange));
         TransitionImageLayout(VulkanLayoutTransition(dst.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dst.layout, dstRange));
+    }
+
+    void VulkanCommandBuffer::Clear(Buffer* dst, size_t offset, size_t size, uint32_t value)
+    {
+        vkCmdFillBuffer(commandBuffer, dst->GetNative<VulkanBuffer>()->GetRaw()->buffer, offset, size, value);
+    }
+
+    void VulkanCommandBuffer::Clear(Texture* dst, const TextureViewRange& range, const uint4& value)
+    {
+        auto vktex = dst->GetNative<VulkanTexture>();
+        auto rawtex = vktex->GetRaw();
+        auto handle = vktex->GetBindHandle(range, false);
+        auto normalizedRange = vktex->NormalizeViewRange(range);
+        
+        VkImageSubresourceRange subrange{};
+        subrange.aspectMask = rawtex->aspect;
+        subrange.baseMipLevel = normalizedRange.level;
+        subrange.levelCount = normalizedRange.levels;
+        subrange.baseArrayLayer = normalizedRange.layer;
+        subrange.layerCount = normalizedRange.layers;
+
+        VkClearColorValue clearValue{};
+
+        for (auto i = 0u; i < 4; ++i)
+        {
+            clearValue.float32[i] = *reinterpret_cast<const float*>(&value[i]);
+            clearValue.int32[i] = *reinterpret_cast<const int32_t*>(&value[i]);
+            clearValue.uint32[i] = value[i];
+        }
+
+        vkCmdClearColorImage(commandBuffer, vktex->GetRaw()->image, handle->imageLayout, &clearValue, 1, &subrange);
     }
 
 

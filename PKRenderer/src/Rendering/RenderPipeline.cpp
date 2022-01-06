@@ -17,8 +17,9 @@ namespace PK::Rendering
     RenderPipeline::RenderPipeline(AssetDatabase* assetDatabase, EntityDatabase* entityDb, Sequencer* sequencer, const ApplicationConfig* config) :
         m_passPostEffects(assetDatabase, config),
         m_passGeometry(entityDb, sequencer, &m_batcher),
-        m_passLights(entityDb, sequencer, &m_batcher, config->CascadeLinearity),
-        m_batcher()
+        m_passLights(assetDatabase, entityDb, sequencer, &m_batcher, config),
+        m_batcher(),
+        m_visibilityList(1024)
     {
         m_OEMBackgroundShader = assetDatabase->Find<Shader>("SH_VS_IBLBackground");
 
@@ -56,13 +57,28 @@ namespace PK::Rendering
 
         m_constantsPerFrame->Set<float>(hash->pk_SceneOEM_Exposure, config->BackgroundExposure);
 
-        auto cmd = GraphicsAPI::GetCommandBuffer();
-        cmd->SetTexture(hash->pk_Bluenoise256, assetDatabase->Load<Texture>("res/textures/T_Bluenoise256.ktx2"));
-        cmd->SetTexture(hash->pk_LightCookies, assetDatabase->Load<Texture>("res/textures/T_LightCookies.ktx2"));
-        cmd->SetBuffer(hash->pk_PerFrameConstants, *m_constantsPerFrame.get());
-        cmd->SetTexture(hash->pk_SceneOEM_HDR, assetDatabase->Load<Texture>(config->FileBackgroundTexture.value.c_str()));
+        auto bluenoise = assetDatabase->Load<Texture>("res/textures/default/T_Bluenoise256.ktx2");
+        auto lightCookies = assetDatabase->Load<Texture>("res/textures/default/T_LightCookies.ktx2");
+        auto sceneOEM = assetDatabase->Load<Texture>(config->FileBackgroundTexture.value.c_str());
+        
+        auto sampler = lightCookies->GetSamplerDescriptor();
+        sampler.wrap[0] = WrapMode::Clamp;
+        sampler.wrap[1] = WrapMode::Clamp;
+        sampler.wrap[2] = WrapMode::Clamp;
+        lightCookies->SetSampler(sampler);
 
-        m_visibilityList.results.resize(1024);
+        sampler = sceneOEM->GetSamplerDescriptor();
+        sampler.wrap[0] = WrapMode::Mirror;
+        sampler.wrap[1] = WrapMode::Mirror;
+        sampler.wrap[2] = WrapMode::Mirror;
+        sceneOEM->SetSampler(sampler);
+
+        auto cmd = GraphicsAPI::GetCommandBuffer();
+
+        cmd->SetTexture(hash->pk_Bluenoise256, bluenoise);
+        cmd->SetTexture(hash->pk_LightCookies, lightCookies);
+        cmd->SetTexture(hash->pk_SceneOEM_HDR, sceneOEM);
+        cmd->SetBuffer(hash->pk_PerFrameConstants, *m_constantsPerFrame.get());
 
         PK_LOG_VERBOSE("Render Pipeline Initialized!");
     }
@@ -117,23 +133,22 @@ namespace PK::Rendering
         auto hash = HashCache::Get();
         auto* cmd = GraphicsAPI::GetCommandBuffer();
 
-        m_batcher.Reset();
-
+        m_batcher.BeginCollectDrawCalls();
         m_passGeometry.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_zfar - m_znear);
         m_passLights.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_znear, m_zfar);
-
-        m_batcher.BuildDrawCalls();
-
-        m_passLights.RenderShadowmaps(cmd);
+        m_batcher.EndCollectDrawCalls();
 
         auto resolution = window->GetResolution();
         m_HDRRenderTarget->Validate(resolution);
+
+        auto cascadeZSplits = m_passLights.GetCascadeZSplits(m_znear, m_zfar);
+        m_constantsPerFrame->Set<float4>(hash->pk_ShadowCascadeZSplits, reinterpret_cast<float4*>(cascadeZSplits.planes));
         m_constantsPerFrame->Set<float4>(hash->pk_ScreenParams, { (float)resolution.x, (float)resolution.y, 1.0f / (float)resolution.x, 1.0f / (float)resolution.y });
         m_constantsPerFrame->FlushBuffer();
 
-        cmd->SetTexture(hash->pk_ScreenDepth, m_HDRRenderTarget->GetDepth());
+        m_passLights.Render(cmd);
 
-        m_passLights.RenderTiles(cmd);
+        cmd->SetTexture(hash->pk_ScreenDepth, m_HDRRenderTarget->GetDepth());
 
         cmd->SetRenderTarget(m_HDRRenderTarget.get());
         cmd->ClearColor(PK_COLOR_RED, 0);
@@ -150,6 +165,12 @@ namespace PK::Rendering
     void RenderPipeline::Step(AssetImportToken<ApplicationConfig>* token)
     {
         auto tex = token->assetDatabase->Load<Texture>(token->asset->FileBackgroundTexture.value.c_str());
+        auto sampler = tex->GetSamplerDescriptor();
+        sampler.wrap[0] = WrapMode::Mirror;
+        sampler.wrap[1] = WrapMode::Mirror;
+        sampler.wrap[2] = WrapMode::Mirror;
+        tex->SetSampler(sampler);
+
         GraphicsAPI::GetCommandBuffer()->SetTexture(HashCache::Get()->pk_SceneOEM_HDR, tex);
         m_constantsPerFrame->Set<float>(HashCache::Get()->pk_SceneOEM_Exposure, token->asset->BackgroundExposure);
         m_passPostEffects.OnUpdateParameters(token->asset);

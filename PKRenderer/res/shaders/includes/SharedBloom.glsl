@@ -6,7 +6,7 @@ PK_DECLARE_SET_PASS uniform sampler2D pk_BloomLensDirtTex;
 
 float3 Bloom(float3 color, float2 uv)
 {
-	float3 lensdirt = tex2D(pk_BloomLensDirtTex, uv).rgb;
+	float3 lensdirt = tex2D(pk_BloomLensDirtTex, uv).rrr;
 
 	float3 b0 = tex2DLod(pk_BloomTexture, uv, 0.0f).rgb;
 	float3 b1 = tex2DLod(pk_BloomTexture, uv, 1.0f).rgb;

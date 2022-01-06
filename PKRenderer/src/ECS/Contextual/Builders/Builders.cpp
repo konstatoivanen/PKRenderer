@@ -31,6 +31,7 @@ namespace PK::ECS::Builders
 	EGID BuildLightRenderableEntity(EntityDatabase* entityDb, 
 								AssetDatabase* assetDatabase, 
 								const float3& position, 
+								const float3& rotation,
 								LightType type, 
 								Cookie cookie, 
 								const color& color, 
@@ -40,7 +41,7 @@ namespace PK::ECS::Builders
 	{
 		auto egid = entityDb->ReserveEntityId((uint)ENTITY_GROUPS::ACTIVE);
 		auto implementer = entityDb->ReserveImplementer<LightImplementer>();
-		BuildTransformView(entityDb, implementer, egid, position, PK_FLOAT3_ZERO, PK_FLOAT3_ONE, {});
+		BuildTransformView(entityDb, implementer, egid, position, rotation, PK_FLOAT3_ONE, {});
 		BuildLightRenderableViews(entityDb, implementer, egid, type, cookie, color, angle, radius, castShadows);
 		auto lightSphereView = entityDb->ReserveEntityView<LightSphereView>(egid);
 		return egid;
@@ -66,7 +67,7 @@ namespace PK::ECS::Builders
 
 		auto mesh = assetDatabase->Find<Mesh>("Primitive_Sphere");
 		auto shader = assetDatabase->Find<Shader>("SH_WS_Unlit_Color");
-		auto material = assetDatabase->RegisterProcedural("M_Point_Light_" + std::to_string(egid.entityID()), CreateRef<Material>(shader));
+		auto material = assetDatabase->RegisterProcedural("M_Point_Light_" + std::to_string(egid.entityID()), CreateRef<Material>(shader, nullptr));
 		material->Set<float4>(HashCache::Get()->_Color, hdrColor);
 
 		auto meshEgid = BuildMeshRenderableEntity(entityDb, mesh, { material }, position, PK_FLOAT3_ZERO, sphereRadius, RenderableFlags::Cullable);

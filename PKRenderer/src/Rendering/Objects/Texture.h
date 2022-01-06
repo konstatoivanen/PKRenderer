@@ -19,13 +19,17 @@ namespace PK::Rendering::Objects
 
             virtual ~Texture() = default;
             virtual void SetData(const void* data, size_t size, uint32_t level, uint32_t layer) const = 0;
+            virtual void SetSampler(const SamplerDescriptor& sampler) = 0;
             virtual void Import(const char* filepath) = 0;
-            virtual bool Validate(const uint3 resolution) = 0;
+            virtual bool Validate(const uint3& resolution) = 0;
+            virtual bool Validate(const uint32_t levels, const uint32_t layers) = 0;
             virtual bool Validate(const TextureDescriptor& descriptor) = 0;
 
             constexpr const SamplerDescriptor& GetSamplerDescriptor() const { return m_descriptor.sampler; }
             constexpr const uint4 GetRect() const { return { 0, 0, m_descriptor.resolution.x, m_descriptor.resolution.y }; }
             constexpr const uint3 GetResolution() const { return m_descriptor.resolution; }
+            constexpr const uint GetLevels() const { return m_descriptor.levels; }
+            constexpr const uint GetLayers() const { return m_descriptor.layers; }
 
         protected:
             TextureDescriptor m_descriptor;

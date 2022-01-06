@@ -28,7 +28,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         inline VulkanExecutionGate GetOnCompleteGate() const { return { invocationIndex, &invocationIndex }; }
 
         void SetRenderTarget(Texture** renderTargets, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count) override final;
-        void SetViewPort(uint4 rect, float mindepth, float maxdepth, uint index = 0) override final;
+        void SetViewPort(uint4 rect, uint index = 0) override final;
         void SetScissor(uint4 rect, uint index = 0) override final;
 
         void SetShader(const Shader* shader, int variantIndex = -1) override final;
@@ -58,7 +58,10 @@ namespace PK::Rendering::VulkanRHI::Objects
         
         void Blit(Texture* src, Window* dst, uint32_t dstLevel, uint32_t dstLayer, FilterMode filter) override final;
         void Blit(Texture* src, Texture* dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter) override final;
-        void Blit(const VulkanRenderTarget& src, const VulkanRenderTarget& dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter);
+        void Blit(const VulkanRenderTarget& src, const VulkanRenderTarget& dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter, bool flipVertical = false);
+
+        void Clear(Buffer* dst, size_t offset, size_t size, uint32_t value) override final;
+        void Clear(Texture* dst, const TextureViewRange& range, const uint4& value) override final;
 
         void Barrier(const Texture* texture, const TextureViewRange& range, const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) override final;
 

@@ -20,4 +20,5 @@ namespace PK::Math::Functions
     uint GetMaxMipLevel(uint3 resolution); 
     uint ByteArrayHash(const void* data, size_t count);
     ulong MurmurHash(const void* data, size_t count, ulong seed);
+    std::string BytesToString(size_t bytes, uint32_t decimalPlaces = 2);
 }

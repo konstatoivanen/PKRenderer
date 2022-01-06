@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "FunctionsMisc.h"
+#include <iomanip>
 
 namespace PK::Math::Functions
 {
@@ -175,5 +176,30 @@ namespace PK::Math::Functions
         h = (h << 32) | h2;
 
         return h;
+    }
+
+    std::string BytesToString(size_t bytes, uint32_t decimalPlaces)
+    {
+        if (bytes == 0)
+        {
+            return "0bytes";
+        }
+
+        auto mag = (int)(log(bytes) / log(1024));
+        mag = glm::min(mag, 2);
+
+        auto adjustedSize = (double)bytes / (1L << (mag * 10));
+        auto factor = pow(10, decimalPlaces);
+
+        if ((round(adjustedSize * factor) / factor) >= 1000)
+        {
+            mag += 1;
+            adjustedSize /= 1024;
+        }
+
+        std::stringstream stream;
+        stream << std::fixed << std::setprecision(decimalPlaces) << adjustedSize;
+        stream << (mag > 1 ? "MB" : mag > 0 ? "KB" : "bytes");
+        return stream.str();
     }
 }

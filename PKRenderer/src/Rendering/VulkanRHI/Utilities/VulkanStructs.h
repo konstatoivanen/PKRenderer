@@ -163,11 +163,13 @@ namespace PK::Rendering::VulkanRHI
         void EndMap(size_t offset, size_t size) const;
         void SetData(const void* data, size_t size) const;
 
+        const bool persistentmap;
         const VmaAllocator allocator;
         const VkBufferUsageFlags usage;
         const VkDeviceSize capacity;
         VkBuffer buffer;
         VmaAllocation memory;
+        VmaAllocationInfo allocationInfo;
     };
 
     struct VulkanRawImage : public IVulkanDisposable

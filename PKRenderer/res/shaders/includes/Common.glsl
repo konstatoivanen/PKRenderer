@@ -49,6 +49,8 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_SceneOEM_HDR;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenDepth;
+PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenNormals;
+PK_DECLARE_SET_GLOBAL uniform sampler2D pk_Bluenoise256;
 
 #if !defined(PK_INSTANCING_ENABLED)
     PK_DECLARE_CBUFFER(pk_ModelMatrices, PK_SET_DRAW)
@@ -61,18 +63,12 @@ PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenDepth;
 #endif
 
 float LinearizeDepth(float z) { return 1.0f / (pk_MATRIX_I_P[2][3] * (z * 2.0f - 1.0f) + pk_MATRIX_I_P[3][3]); } 
-
 float4 LinearizeDepth(float4 z) { return 1.0f / (pk_MATRIX_I_P[2][3] * (z * 2.0f - 1.0f) + pk_MATRIX_I_P[3][3]); } 
-
 float SampleLinearDepth(float2 uv) { return LinearizeDepth(tex2D(pk_ScreenDepth, uv).r); }
-
 float SampleLinearDepth(int2 coord) { return LinearizeDepth(texelFetch(pk_ScreenDepth, coord, 0).r); }
 
-/*
 float3 GlobalNoiseBlue(uint2 coord) { return texelFetch(pk_Bluenoise256, int2(coord.x % 256, coord.y % 256), 0).xyz; }
-
 float3 GlobalNoiseBlueUV(float2 coord) { return tex2D(pk_Bluenoise256, coord).xyz; }
-*/
 
 uint GetShadowCascadeIndex(float linearDepth)
 {
@@ -82,35 +78,20 @@ uint GetShadowCascadeIndex(float linearDepth)
 }
 
 float4 WorldToClipPos( in float3 pos) { return mul(pk_MATRIX_VP, float4(pos, 1.0)); }
-
 float4 ViewToClipPos( in float3 pos) { return mul(pk_MATRIX_P, float4(pos, 1.0)); }
-
 float3 WorldToViewPos( in float3 pos) { return mul(pk_MATRIX_V, float4(pos, 1.0)).xyz; }
-
 float3 ObjectToViewPos( in float3 pos) { return mul(pk_MATRIX_V, mul(pk_MATRIX_M, float4(pos, 1.0))).xyz; }
-
 float3 ObjectToViewPos(float4 pos) { return ObjectToViewPos(pos.xyz); }
-
 float3 ObjectToWorldPos( in float3 pos) { return mul(pk_MATRIX_M, float4(pos, 1.0)).xyz; }
-
 float3 ObjectToWorldDir( in float3 dir) { return normalize(mul(float3x3(pk_MATRIX_M), dir)); }
-
 float3 ObjectToWorldVector( in float3 dir) { return mul(float3x3(pk_MATRIX_M), dir); }
-
 float3 ObjectToViewDir(float3 dir) { return normalize(mul(float3x3(pk_MATRIX_V), ObjectToWorldVector(dir))); }
-
 float3 ObjectToWorldNormal( in float3 normal) { return normalize(mul(normal, float3x3(pk_MATRIX_I_M))); }
-
 float3 WorldToObjectPos(in float3 pos) { return mul(pk_MATRIX_I_M, float4(pos, 1.0f)).xyz; }
-
 float3 WorldToObjectVector( in float3 dir) { return mul(float3x3(pk_MATRIX_I_M), dir); }
-
-float3 WorldToViewDir(float3 dir) { return normalize(mul(float3x3(pk_MATRIX_V), dir)); }
-
 float3 WorldToObjectDir( in float3 dir) { return normalize(mul(float3x3(pk_MATRIX_I_M), dir)); }
-
+float3 WorldToViewDir(float3 dir) { return normalize(mul(float3x3(pk_MATRIX_V), dir)); }
 float4 ObjectToClipPos( in float3 pos) { return mul(pk_MATRIX_VP, mul(pk_MATRIX_M, float4(pos, 1.0))); }
-
 float4 ObjectToClipPos(float4 pos) { return ObjectToClipPos(pos.xyz); }
 
 float4 ClipToScreenPos(float4 clippos) 

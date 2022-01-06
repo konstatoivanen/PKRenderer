@@ -39,8 +39,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             const VulkanDriver* m_driver = nullptr;
             VulkanRawBuffer* m_rawBuffer = nullptr;
+            VulkanStagingBuffer* m_mappedBuffer = nullptr;
             std::map<IndexRange, Scope<VulkanBindHandle>> m_bindHandles;
-            const VulkanStagingBuffer* m_mappedBuffer = nullptr;
             uint32_t m_version = 0u;
     };
 }

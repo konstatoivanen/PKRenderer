@@ -19,13 +19,14 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     VulkanBuffer::~VulkanBuffer()
     {
+        Dispose();
+
+        // Borrowed staging buffer not returned :/
         if (m_mappedBuffer != nullptr)
         {
             m_mappedBuffer->EndMap(0, m_mappedBuffer->desitnationRange);
             m_mappedBuffer = nullptr;
         }
-
-        Dispose();
     }
 
     void VulkanBuffer::SetData(const void* data, size_t offset, size_t size)
@@ -37,11 +38,20 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void* VulkanBuffer::BeginMap(size_t offset, size_t size)
     {
-        m_mappedBuffer = m_driver->stagingBufferCache->GetBuffer(size);
-        m_mappedBuffer->executionGate = m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate();
+        if ((m_usage & BufferUsage::PersistentStage) == 0)
+        {
+            PK_THROW_ASSERT(m_mappedBuffer == nullptr, "Trying to begin a new mapping for a buffer that is already being mapped!");
+            m_mappedBuffer = m_driver->stagingBufferCache->GetBuffer(size);
+            m_mappedBuffer->executionGate = m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate();
+            m_mappedBuffer->destinationOffset = offset;
+            m_mappedBuffer->desitnationRange = size;
+            return m_mappedBuffer->BeginMap(0ull);
+        }
+        
+        // Local persistent stage
         m_mappedBuffer->destinationOffset = offset;
         m_mappedBuffer->desitnationRange = size;
-        return m_mappedBuffer->BeginMap(0ull);
+        return m_mappedBuffer->BeginMap(offset);
     }
 
     void VulkanBuffer::EndMap()
@@ -49,15 +59,15 @@ namespace PK::Rendering::VulkanRHI::Objects
         PK_THROW_ASSERT(m_mappedBuffer != nullptr, "Trying to end buffer map for an unmapped buffer!");
         
         auto* cmd = m_driver->commandBufferPool->GetCurrent();
+        auto persistent = (m_usage & BufferUsage::PersistentStage) != 0;
 
         VkBufferCopy region{};
-        region.srcOffset = 0;
+        region.srcOffset = persistent ? m_mappedBuffer->destinationOffset : 0ull;
         region.dstOffset = m_mappedBuffer->destinationOffset;
         region.size = m_mappedBuffer->desitnationRange;
 
-        m_mappedBuffer->EndMap(0, region.size);
+        m_mappedBuffer->EndMap(region.srcOffset, region.size);
         cmd->CopyBuffer(m_mappedBuffer->buffer, m_rawBuffer->buffer, 1, &region);
-        m_mappedBuffer = nullptr;
 
         VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER };
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -65,7 +75,13 @@ namespace PK::Rendering::VulkanRHI::Objects
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.buffer = m_rawBuffer->buffer;
-        barrier.size = VK_WHOLE_SIZE;
+        barrier.offset = m_mappedBuffer->destinationOffset;
+        barrier.size = m_mappedBuffer->desitnationRange;
+
+        if (!persistent)
+        {
+            m_mappedBuffer = nullptr;
+        }
 
         if (m_rawBuffer->usage & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT || m_rawBuffer->usage & VK_BUFFER_USAGE_INDEX_BUFFER_BIT)
         {
@@ -79,7 +95,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             barrier.dstAccessMask |= VK_ACCESS_UNIFORM_READ_BIT;
             cmd->PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
                 0, 0, nullptr, 1, &barrier, 0, nullptr);
         }
 
@@ -87,7 +103,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             barrier.dstAccessMask |= VK_ACCESS_MEMORY_READ_BIT;
             cmd->PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
                 0, 0, nullptr, 1, &barrier, 0, nullptr);
         }
     }
@@ -132,7 +148,14 @@ namespace PK::Rendering::VulkanRHI::Objects
         Dispose();
         m_version++;
         m_count = count;
-        m_rawBuffer = new VulkanRawBuffer(m_driver->allocator, VulkanBufferCreateInfo(m_usage, m_layout.GetStride(m_usage) * count));
+        auto size = m_layout.GetStride(m_usage) * count;
+        m_rawBuffer = new VulkanRawBuffer(m_driver->allocator, VulkanBufferCreateInfo(m_usage, size));
+
+        if ((m_usage & BufferUsage::PersistentStage) != 0)
+        {
+            m_mappedBuffer = new VulkanStagingBuffer(m_driver->allocator, VulkanBufferCreateInfo(BufferUsage::Staging | BufferUsage::PersistentStage, size));
+        }
+
         GetBindHandle({ 0, m_count });
     }
 
@@ -144,6 +167,12 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             m_driver->disposer->Dispose(m_rawBuffer, m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate());
             m_rawBuffer = nullptr;
+        }
+
+        if (m_mappedBuffer != nullptr && (m_usage & BufferUsage::PersistentStage) != 0)
+        {
+            m_driver->disposer->Dispose(m_mappedBuffer, m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate());
+            m_mappedBuffer = nullptr;
         }
     }
 }

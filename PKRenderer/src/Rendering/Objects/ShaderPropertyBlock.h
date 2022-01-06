@@ -11,6 +11,7 @@ namespace PK::Rendering::Objects
     {
         public:
             ShaderPropertyBlock(uint64_t capacity) : PropertyBlock(capacity) {}
+            ShaderPropertyBlock(void* foreignBuffer, uint64_t capacity) : PropertyBlock(foreignBuffer, capacity) {}
             void ReserveLayout(const BufferLayout& layout);
     };
 }

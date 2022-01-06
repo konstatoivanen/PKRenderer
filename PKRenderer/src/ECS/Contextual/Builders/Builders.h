@@ -47,6 +47,7 @@ namespace PK::ECS::Builders
 			&LightRenderableView::transform, 
 			&LightRenderableView::bounds, 
 			&LightRenderableView::light, 
+			&LightRenderableView::lightFrameInfo, 
 			&LightRenderableView::renderable);
 		implementer->color = color;
 		implementer->radius = radius;
@@ -75,7 +76,7 @@ namespace PK::ECS::Builders
 
 		if (castShadows)
 		{
-			flags |= RenderableFlags::CastShadows;
+			flags = flags | RenderableFlags::CastShadows;
 		}
 
 		switch (type)
@@ -85,12 +86,12 @@ namespace PK::ECS::Builders
 				break;
 			case LightType::Point:
 				implementer->localAABB = BoundingBox::CenterExtents(PK_FLOAT3_ZERO, PK_FLOAT3_ONE * autoRadius);
-				flags |= RenderableFlags::Cullable;
+				flags = flags | RenderableFlags::Cullable;
 				break;
 			case LightType::Spot:
 				auto a = autoRadius * glm::tan(angle * 0.5f * PK_FLOAT_DEG2RAD);
 				implementer->localAABB = BoundingBox::CenterExtents({ 0.0f, 0.0f, autoRadius * 0.5f }, { a, a, autoRadius * 0.5f });
-				flags |= RenderableFlags::Cullable;
+				flags = flags | RenderableFlags::Cullable;
 				break;
 		}
 
@@ -103,12 +104,13 @@ namespace PK::ECS::Builders
 								std::initializer_list<Material*> materials, 
 								const float3& position, 
 								const float3& rotation, 
-								float size, 
-								RenderableFlags flags);
+								float size = 1.0f, 
+								RenderableFlags flags = RenderableFlags::DefaultMesh);
 
 	EGID BuildLightRenderableEntity(EntityDatabase* entityDb,
 								AssetDatabase* assetDatabase,
 								const float3& position,
+								const float3& rotation,
 								LightType type,
 								Cookie cookie,
 								const color& color,

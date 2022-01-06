@@ -10,13 +10,29 @@ namespace PK::Rendering
     using namespace Utilities;
     using namespace PK::Rendering::Objects;
 
+    // @TODO investigate if this is can be fulfilled by a possible dx12 implementation?
+    struct DriverMemoryInfo
+    {
+        uint32_t blockCount;
+        uint32_t allocationCount;
+        uint32_t unusedRangeCount;
+        size_t usedBytes;
+        size_t unusedBytes;
+        size_t allocationSizeMin;
+        size_t allocationSizeAvg;
+        size_t allocationSizeMax;
+        size_t unusedRangeSizeMin;
+        size_t unusedRangeSizeAvg; 
+        size_t unusedRangeSizeMax;
+    };
+
     struct GraphicsDriver : public PK::Core::NoCopy
     {
         virtual ~GraphicsDriver() = default;
         virtual APIType GetAPI() const = 0;
         virtual CommandBuffer* GetPrimaryCommandBuffer() = 0;
         virtual void WaitForIdle() const = 0;
-        virtual size_t GetMemoryUsageKB() const = 0;
+        virtual DriverMemoryInfo GetMemoryInfo() const = 0;
         virtual size_t GetBufferOffsetAlignment(BufferUsage usage) const = 0;
         virtual void GC() = 0;
 
@@ -39,7 +55,7 @@ namespace PK::Rendering
         // Add support for secondary commandbuffers
         CommandBuffer* GetCommandBuffer();
 
-        size_t GetMemoryUsageKB();
+        DriverMemoryInfo GetMemoryInfo();
         size_t GetBufferOffsetAlignment(BufferUsage usage);
 
         void GC();

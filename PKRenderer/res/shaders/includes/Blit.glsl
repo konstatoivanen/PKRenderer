@@ -10,9 +10,9 @@ float4 PK_BLIT_VERTEX_POSITIONS[3] =
 
 float2 PK_BLIT_VERTEX_TEXCOORDS[3] =
 {
-	float2(0.0,  0.0),
-	float2(0.0,  2.0),
-	float2(2.0,  0.0),
+	float2(0.0,  1.0),
+	float2(0.0, -1.0),
+	float2(2.0,  1.0),
 }; 
 
 #define PK_BLIT_VERTEX_POSITION PK_BLIT_VERTEX_POSITIONS[gl_VertexIndex]

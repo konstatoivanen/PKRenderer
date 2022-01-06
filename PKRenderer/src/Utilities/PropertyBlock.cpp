@@ -8,9 +8,16 @@ namespace PK::Utilities
 		ValidateBufferSize(initialCapacity);
     }
 
+	PropertyBlock::PropertyBlock(void* buffer, uint64_t initialCapacity)
+	{
+		m_capacity = initialCapacity;
+		m_buffer = buffer;
+		m_foreignBuffer = true;
+	}
+
 	PropertyBlock::~PropertyBlock()
 	{
-		if (m_buffer != nullptr)
+		if (m_buffer != nullptr && !m_foreignBuffer)
 		{
 			free(m_buffer);
 		}
@@ -71,6 +78,11 @@ namespace PK::Utilities
 			return;
 		}
 
+		if (m_foreignBuffer)
+		{
+			throw std::runtime_error("Cannot resize a foreign buffer!");
+		}
+
 		auto newBuffer = calloc(1, size);
 
 		if (newBuffer == nullptr)
@@ -86,5 +98,13 @@ namespace PK::Utilities
 
 		m_capacity = size;
 		m_buffer = newBuffer;
+	}
+
+	void PropertyBlock::SetForeign(void* buffer, uint64_t capacity)
+	{
+		m_buffer = buffer;
+		m_capacity = capacity;
+		m_foreignBuffer = true;
+		Clear();
 	}
 }

@@ -13,22 +13,11 @@ namespace PK::Rendering::Structs
         uint clipInfo;
     };
 
-    struct PK_Transform
+    struct PK_Light
     {
-        float4x4 localToWorld;
-        float4x4 worldToLocal;
-    };
-
-    struct FrustumTileAABB
-    {
-        float4 minPoint;
-        float4 maxPoint;
-    };
-
-    struct LightTile
-    {
-        uint offset = 0;
-        uint count = 0;
+        float4 position;
+        float4 color;
+        uint4 indices;
     };
 
     struct Vertex_Simple
@@ -43,16 +32,6 @@ namespace PK::Rendering::Structs
         float3 normal;
         float4 tangent;
         float2 texcoord;
-    };
-
-    struct PKRawLight
-    {
-        float4 color;
-        float4 position;
-        uint shadowmap_index = 0;
-        uint projection_index = 0;
-        uint cookie_index = 0;
-        uint type = 0;
     };
 
     struct IndexRange

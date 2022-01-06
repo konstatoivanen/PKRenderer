@@ -66,10 +66,11 @@ namespace PK::Core::Services
                 PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
     
                 auto& collection = m_assets[std::type_index(typeid(T))];
-    
-                if (collection.count(assetId) > 0)
+                auto iter = collection.find(assetId);
+
+                if (iter != collection.end())
                 {
-                    return std::static_pointer_cast<T>(collection.at(assetId)).get();
+                    return std::static_pointer_cast<T>(iter->second).get();
                 }
     
                 auto asset = AssetImporters::Create<T>();
@@ -91,11 +92,12 @@ namespace PK::Core::Services
                 PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
                 
                 auto& collection = m_assets[std::type_index(typeid(T))];
+                auto iter = collection.find(assetId);
                 Ref<T> asset = nullptr;
     
-                if (collection.count(assetId) > 0)
+                if (iter != collection.end())
                 {
-                    asset = std::static_pointer_cast<T>(collection.at(assetId));
+                    asset = std::static_pointer_cast<T>(iter->second);
                 }
                 else
                 {

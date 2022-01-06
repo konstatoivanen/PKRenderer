@@ -42,49 +42,36 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         m_vertexLayout = BufferLayout(vertexElements);
 
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-        VkDescriptorSetLayout layouts[PK_MAX_DESCRIPTOR_SETS];
-        std::vector<VkPushConstantRange> pushConstantRanges;
+        auto layoutCache = GraphicsAPI::GetActiveDriver<VulkanDriver>()->layoutCache.get();
+
+        PipelineLayoutKey pipelineKey{};
         m_descriptorSetCount = variant->descriptorSetCount;
 
         if (variant->descriptorSetCount > 0)
         {
-            VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO };
-            VkDescriptorSetLayoutCreateInfo layoutCreateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
-            VkDescriptorSetLayoutBinding bindings[PK_MAX_DESCRIPTORS_PER_SET]{};
-            VkDescriptorBindingFlags bindingFlags[PK_MAX_DESCRIPTORS_PER_SET]{};
             std::vector<ResourceElement> elements;
-
-            layoutCreateInfo.pNext = &bindingFlagsInfo;
-            layoutCreateInfo.pBindings = bindings;
-            bindingFlagsInfo.pBindingFlags = bindingFlags;
-
             auto* pDescriptorSets = variant->descriptorSets.Get(base);
 
             for (auto i = 0u; i < variant->descriptorSetCount; ++i)
             {
+                DescriptorSetLayoutKey key{};
+
                 auto pDescriptorSet = pDescriptorSets + i;
                 auto pDescriptors = pDescriptorSet->descriptors.Get(base);
                 elements.clear();
 
                 for (auto j = 0u; j < pDescriptorSet->descriptorCount; ++j)
                 {
-                    bindingFlags[j] = pDescriptors[j].count >= PK_MAX_UNBOUNDED_SIZE ? VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT : 0u;
-                    bindings[j].binding = j;
-                    bindings[j].descriptorCount = pDescriptors[j].count;
-                    bindings[j].descriptorType = EnumConvert::GetDescriptorType(pDescriptors[j].type);
-                    bindings[j].stageFlags = EnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags);
+                    key.counts[j] = pDescriptors[j].count;
+                    key.types[j] = EnumConvert::GetDescriptorType(pDescriptors[j].type);
                     elements.emplace_back(pDescriptors[j].type, std::string(pDescriptors[j].name), pDescriptors[j].count);
                 }
 
-                bindingFlagsInfo.bindingCount = layoutCreateInfo.bindingCount = pDescriptorSet->descriptorCount;
-                m_descriptorSetLayouts[i] = CreateScope<VulkanDescriptorSetLayout>(m_device, layoutCreateInfo, EnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags));
-                layouts[i] = m_descriptorSetLayouts[i]->layout;
+                key.stageFlags = EnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags);
+                m_descriptorSetLayouts[i] = layoutCache->GetSetLayout(key);
+                pipelineKey.setlayouts[i] = m_descriptorSetLayouts[i]->layout;
                 m_resourceLayouts[i] = ResourceLayout(elements);
             }
-
-            pipelineLayoutInfo.setLayoutCount = variant->descriptorSetCount;
-            pipelineLayoutInfo.pSetLayouts = layouts;
         }
 
         if (variant->constantVariableCount > 0)
@@ -97,21 +84,15 @@ namespace PK::Rendering::VulkanRHI::Objects
             {
                 auto pVariable = pVariables + i;
                 variables.emplace_back(pVariable->name, pVariable->size, pVariable->offset, pVariable->stageFlags);
-            
-                VkPushConstantRange range{};
-                range.stageFlags = EnumConvert::GetShaderStageFlags(pVariable->stageFlags);
-                range.offset = pVariable->offset;
-                range.size = pVariable->size;
-                pushConstantRanges.push_back(range);
+                pipelineKey.pushConstants[i].stageFlags = EnumConvert::GetShaderStageFlags(pVariable->stageFlags);
+                pipelineKey.pushConstants[i].offset = pVariable->offset;
+                pipelineKey.pushConstants[i].size = pVariable->size;
             }
 
             m_constantLayout = ConstantBufferLayout(variables);
-            pipelineLayoutInfo.pushConstantRangeCount = (uint32_t)pushConstantRanges.size();
-            pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
         }
 
-        m_pipelineLayout = CreateScope<VulkanPipelineLayout>(m_device, pipelineLayoutInfo);
-
+        m_pipelineLayout = layoutCache->GetPipelineLayout(pipelineKey);
         m_type = m_modules[(int)ShaderStage::Compute] != nullptr ? ShaderType::Compute : ShaderType::Graphics;
     }
 
@@ -129,6 +110,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             if (module != nullptr)
             {
                 driver->disposer->Dispose(module, driver->commandBufferPool->GetCurrent()->GetOnCompleteGate());
+                module = nullptr;
             }
         }
     }

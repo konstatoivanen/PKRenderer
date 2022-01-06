@@ -23,6 +23,11 @@ namespace PK::Rendering::Structs
         {
             return memcmp(this, &other, sizeof(SamplerDescriptor)) < 0;
         }
+
+        inline bool operator == (const SamplerDescriptor& other) const noexcept
+        {
+            return memcmp(this, &other, sizeof(SamplerDescriptor)) == 0;
+        }
     };
 
 
@@ -57,6 +62,9 @@ namespace PK::Rendering::Structs
         ushort layer = 0u;
         ushort levels = 0u;
         ushort layers = 0u;
+
+        TextureViewRange() {}
+        TextureViewRange(ushort level, ushort layer, ushort levels, ushort layers) : level(level), layer(layer), levels(levels), layers(layers) {}
     };
 
     struct MultisamplingParameters
@@ -85,7 +93,7 @@ namespace PK::Rendering::Structs
         bool depthBiasEnable = false;
         PolygonMode polygonMode = PolygonMode::Fill;
         CullMode cullMode = CullMode::Off;
-        FrontFace frontFace = FrontFace::Clockwise;
+        FrontFace frontFace = FrontFace::CounterClockwise;
         float depthBiasConstantFactor = 0;
         float depthBiasClamp = 0;
         float depthBiasSlopeFactor = 0;

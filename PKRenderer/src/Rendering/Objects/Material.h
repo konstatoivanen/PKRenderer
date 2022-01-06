@@ -12,13 +12,18 @@ namespace PK::Rendering::Objects
 
     class Material : public Asset, public ShaderPropertyBlock
     {
+        // @TODO refactor this to be derived from a config or generate at runtime?.
+        constexpr static const char* DEFAULT_PATH_TEXTURE_BLACK = "res/textures/default/T_Black.ktx2";
+        constexpr static const char* DEFAULT_PATH_TEXTURE_WHITE = "res/textures/default/T_White.ktx2";
+
         friend Ref<Material> AssetImporters::Create();
 
         public:
             Material() : ShaderPropertyBlock(1024) {}
-            Material(Shader* shader) : ShaderPropertyBlock(1024) { m_shader = shader; m_cachedShaderAssetId = shader->GetAssetID(); }
+            Material(Shader* shader) : ShaderPropertyBlock(1024), m_shader(shader) { InitializeShaderLayout(); }
+            Material(Shader* shader, Shader* shadowShader) : ShaderPropertyBlock(1024), m_shader(shader), m_shadowShader(shadowShader) { InitializeShaderLayout(); }
             constexpr Shader* GetShader() const { return m_shader; }
-            constexpr AssetID GetShaderAssetID() const { return m_cachedShaderAssetId; }
+            constexpr Shader* GetShadowShader() const { return m_shadowShader; }
             inline bool SupportsKeyword(const uint32_t hashId) const { return m_shader->SupportsKeyword(hashId); }
             inline bool SupportsKeywords(const uint32_t* hashIds, const uint32_t count) const { return m_shader->SupportsKeywords(hashIds, count); }
 
@@ -26,8 +31,10 @@ namespace PK::Rendering::Objects
 
             void Import(const char* filepath) override final;
 
+            void InitializeShaderLayout();
+
         private:
-            AssetID m_cachedShaderAssetId = 0;
             Shader* m_shader = nullptr;
+            Shader* m_shadowShader = nullptr;
     };
 }

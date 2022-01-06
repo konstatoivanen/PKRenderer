@@ -45,10 +45,13 @@ namespace PK::Rendering::VulkanRHI::Systems
     class VulkanDescriptorCache : public NoCopy
     {
         private:
+            using DescriptorSetMap = std::unordered_map<DescriptorSetKey, VulkanDescriptorSet, DescriptorSetKeyHash>;
+
             struct ExtinctPool
             {
                 VulkanDescriptorPool* pool;
                 mutable VulkanExecutionGate executionGate;
+                DescriptorSetMap extinctSets;
             };
 
         public:
@@ -62,7 +65,7 @@ namespace PK::Rendering::VulkanRHI::Systems
 
         private:
             void GrowPool(const VulkanExecutionGate& executionGate);
-            void GetDescriptorSets(const VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const VulkanExecutionGate& gate, bool throwOnFail);
+            void GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const VulkanExecutionGate& gate, bool throwOnFail);
 
             const VkDevice m_device;
             const std::map<VkDescriptorType, size_t> m_poolSizes;
@@ -72,7 +75,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             uint64_t m_pruneDelay;
 
             VulkanDescriptorPool* m_currentPool = nullptr;
-            std::unordered_map<DescriptorSetKey, VulkanDescriptorSet, DescriptorSetKeyHash> m_sets;
+            DescriptorSetMap m_sets;
             std::vector<ExtinctPool> m_extinctPools;
 
             std::vector<VkDescriptorImageInfo> m_writeImages;

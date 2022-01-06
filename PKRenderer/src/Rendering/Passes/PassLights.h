@@ -17,6 +17,14 @@ namespace PK::Rendering::Passes
 
     typedef struct ShadowCascades { float planes[5]; } ShadowCascades;
 
+    struct ShadowmapLightTypeData
+    {
+        Ref<RenderTexture> SceneRenderTarget = nullptr;
+        uint32_t BlurPass0 = 0u;
+        uint32_t BlurPass1 = 0u;
+        uint32_t TileCount = 0u;
+    };
+
     class PassLights : public PK::Core::NoCopy
     {
         public:
@@ -27,19 +35,37 @@ namespace PK::Rendering::Passes
             const uint ClusterCount = GridSizeX * GridSizeY * GridSizeZ;
             const float DepthGroupSize = 32.0f;
 
-            PassLights(EntityDatabase* entityDb, Sequencer* sequencer, Batcher* batcher, float cascadeLinearity);
+            PassLights(AssetDatabase* assetDatabase, EntityDatabase* entityDb, Sequencer* sequencer, Batcher* batcher, const ApplicationConfig* config);
             void Cull(void* engineRoot, VisibilityList* visibilityList, const float4x4& viewProjection, float znear, float zfar);
-            void RenderShadowmaps(CommandBuffer* cmd);
-            void RenderTiles(CommandBuffer* cmd);
+            void Render(CommandBuffer* cmd);
             ShadowCascades GetCascadeZSplits(float znear, float zfar) const;
         
         private:
+            void BuildShadowmapBatches(void* engineRoot, CullTokens* tokens, LightRenderableView* view, const float4x4& inverseViewProjection);
+
             EntityDatabase* m_entityDb = nullptr;
             Sequencer* m_sequencer = nullptr;
             Batcher* m_batcher = nullptr;
-            Ref<Buffer> m_lights;
-            std::vector<uint32_t> m_passGroups;
-            std::vector<LightRenderableView*> m_visibleLights;
-            const float m_cascadeLinearity;
+            Shader* m_computeLightAssignment = nullptr;
+            Shader* m_shadowmapBlur = nullptr;
+            float m_cascadeLinearity;
+            uint m_shadowmapCubeFaceSize;
+            uint m_shadowmapTileSize;
+            uint m_shadowmapTileCount;
+
+            uint32_t m_shadowmapCount;
+            uint32_t m_projectionCount;
+            uint32_t m_lightCount;
+            ShadowCascades m_cascadeSplits;
+            ShadowmapLightTypeData m_shadowmapTypeData[(int)LightType::TypeCount];
+
+            MemoryBlock<LightRenderableView*> m_lights;
+            Ref<Buffer> m_lightsBuffer;
+            Ref<Buffer> m_lightMatricesBuffer;
+            Ref<Buffer> m_lightDirectionsBuffer;
+            Ref<Buffer> m_globalLightsList;
+            Ref<Buffer> m_globalLightIndex;
+            Ref<Texture> m_lightTiles;      
+            Ref<Texture> m_shadowmaps;        
     };
 }

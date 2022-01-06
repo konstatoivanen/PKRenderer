@@ -16,8 +16,10 @@ namespace PK::Rendering::VulkanRHI::Objects
             ~VulkanTexture();
             
             void SetData(const void* data, size_t size, uint32_t level, uint32_t layer) const override final;
+            void SetSampler(const SamplerDescriptor& sampler) override final;
             void Import(const char* filepath) override final;
-            bool Validate(const uint3 resolution) override final;
+            bool Validate(const uint3& resolution) override final;
+            bool Validate(const uint32_t levels, const uint32_t layers) override final;
             bool Validate(const TextureDescriptor& descriptor) override final;
             void Rebuild(const TextureDescriptor& descriptor);
 

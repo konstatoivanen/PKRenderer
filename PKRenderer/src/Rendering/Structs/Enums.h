@@ -31,6 +31,13 @@ namespace PK::Rendering::Structs
     constexpr const static char* PK_VS_TEXCOORD2 = PK::Assets::Mesh::PK_VS_TEXCOORD2;
     constexpr const static char* PK_VS_TEXCOORD3 = PK::Assets::Mesh::PK_VS_TEXCOORD3;
 
+    constexpr const static char PK_CUBE_FACE_RIGHT = 0;
+    constexpr const static char PK_CUBE_FACE_LEFT = 1;
+    constexpr const static char PK_CUBE_FACE_DOWN = 2;
+    constexpr const static char PK_CUBE_FACE_UP = 3;
+    constexpr const static char PK_CUBE_FACE_FRONT = 4;
+    constexpr const static char PK_CUBE_FACE_BACK = 5;
+
     enum class APIType
     {
         Off,
@@ -158,6 +165,7 @@ namespace PK::Rendering::Structs
         FragmentAttachmentColor = ReadWriteRTColor | StageColorOut,         // Write color in fragment out
         FragmentAttachmentDepth = ReadWriteRTDepth | StageDepthStencilOut,  // Write depth in fragment out
         FragmentTexture = ReadShader | StageFragment,                       // Read texture in fragment
+        FragmentBuffer = ReadShader | StageFragment,                       // Read biffer in fragment
         ComputeReadWrite = ReadWriteShader | StageCompute,                  // Read/Write texture, image, & buffer  in compute
         ComputeRead = ReadShader | StageCompute,                            // Read texture, image, & buffer in compute
         ComputeWrite = WriteShader | StageCompute,                           // Write texture, image, & buffer  in compute
@@ -171,7 +179,10 @@ namespace PK::Rendering::Structs
         Staging = 0x4,
         Constant = 0x8,
         Storage = 0x10,
+        
         Dynamic = 0x20,
+        PersistentStage = 0x40,
+        ExtraFlags = Dynamic | PersistentStage,
     };
 
     enum class TextureUsage : uint8_t
@@ -201,6 +212,10 @@ namespace PK::Rendering::Structs
         Static = 1 << 2,
         CastShadows = 1 << 3,
         Cullable = 1 << 4,
+
+        // Presets
+        DefaultMesh = Mesh | Static | CastShadows | Cullable,
+        DefaultMeshNoShadows = Mesh | Static | Cullable,
     };
 
     enum class LightType : uint8_t
@@ -292,10 +307,11 @@ namespace PK::Rendering::Structs
         ETC2_SRGB8,
         ETC2_RGB8_A1, 
         ETC2_SRGB8_A1,
-        ETC2_EAC_RGBA8, 
-        ETC2_EAC_SRGBA8,
+        ETC2_RGBA8, 
+        ETC2_SRGBA8, 
 
         // Available everywhere except Android/iOS
+        DXT4, 
         DXT1_RGB, 
         DXT1_RGBA, 
         DXT3_RGBA, 
@@ -338,7 +354,7 @@ namespace PK::Rendering::Structs
 
     #define PK_DECLARE_ENUM_OPERATORS(Type) \
     static constexpr Type operator | (const Type& a, const Type& b) { return (Type)((uint32_t)a | (uint32_t)b); } \
-    static constexpr Type operator |= (const Type& a, const Type& b) { return (Type)((uint32_t)a | (uint32_t)b); } \
+    static constexpr Type operator |= (const Type& a, const Type& b) { return a | b; } \
     static constexpr Type operator & (const Type& a, const Type& b) { return (Type)((uint32_t)a & (uint32_t)b); } \
     static constexpr Type operator & (const Type& a, const int& b) { return (Type)((uint32_t)a & (uint32_t)b); } \
     static constexpr bool operator == (const Type& a, const int& b) { return (uint32_t)a == b; } \

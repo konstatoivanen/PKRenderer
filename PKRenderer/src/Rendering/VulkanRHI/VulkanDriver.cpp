@@ -70,6 +70,9 @@ namespace PK::Rendering::VulkanRHI
         physicalDeviceRequirements.features.multiViewport = VK_TRUE;
         physicalDeviceRequirements.features.shaderSampledImageArrayDynamicIndexing = VK_TRUE;
         physicalDeviceRequirements.features.shaderUniformBufferArrayDynamicIndexing = VK_TRUE;
+        physicalDeviceRequirements.features.shaderFloat64 = VK_TRUE;
+        physicalDeviceRequirements.features.shaderInt16 = VK_TRUE;
+        physicalDeviceRequirements.features.shaderInt64 = VK_TRUE;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
         Utilities::VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice, &queueFamilies);
@@ -94,12 +97,24 @@ namespace PK::Rendering::VulkanRHI
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES };
-        descriptorIndexingFeatures.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
-        descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-        descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
-        descriptorIndexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
-        descriptorIndexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+        // @TODO For safety add support validation for these features in the physical device selection
+        VkPhysicalDeviceVulkan11Features vulkan11Features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
+        vulkan11Features.storageBuffer16BitAccess = VK_TRUE;
+        vulkan11Features.uniformAndStorageBuffer16BitAccess = VK_TRUE;
+        vulkan11Features.storagePushConstant16 = VK_TRUE;
+
+        VkPhysicalDeviceVulkan12Features vulkan12Features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
+        vulkan12Features.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
+        vulkan12Features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+        vulkan12Features.runtimeDescriptorArray = VK_TRUE;
+        vulkan12Features.descriptorBindingVariableDescriptorCount = VK_TRUE;
+        vulkan12Features.descriptorBindingPartiallyBound = VK_TRUE;
+        vulkan12Features.scalarBlockLayout = VK_TRUE;
+        vulkan12Features.shaderFloat16 = VK_TRUE;
+        vulkan12Features.shaderInt8 = VK_TRUE;
+        vulkan12Features.shaderOutputViewportIndex = VK_TRUE;
+        vulkan12Features.shaderOutputLayer = VK_TRUE;
+        vulkan12Features.pNext = &vulkan11Features;
 
         VkDeviceCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
@@ -108,7 +123,7 @@ namespace PK::Rendering::VulkanRHI
         createInfo.enabledExtensionCount = static_cast<uint32_t>(properties.contextualDeviceExtensions->size());
         createInfo.ppEnabledExtensionNames = properties.contextualDeviceExtensions->data();
         createInfo.enabledLayerCount = 0;
-        createInfo.pNext = &descriptorIndexingFeatures;
+        createInfo.pNext = &vulkan12Features;
 
         if (properties.validationLayers != nullptr && properties.validationLayers->size() > 0)
         {
@@ -133,12 +148,13 @@ namespace PK::Rendering::VulkanRHI
         vkDestroySurfaceKHR(instance, temporarySurface, nullptr);
         glfwDestroyWindow(temporaryWindow);
 
-        frameBufferCache = CreateScope<VulkanFrameBufferCache>(device, 10);
-        stagingBufferCache = CreateScope<VulkanStagingBufferCache>(allocator, 10);
-        pipelineCache = CreateScope<VulkanPipelineCache>(device, 10);
+        frameBufferCache = CreateScope<VulkanFrameBufferCache>(device, properties.garbagePruneDelay);
+        stagingBufferCache = CreateScope<VulkanStagingBufferCache>(allocator, properties.garbagePruneDelay);
+        pipelineCache = CreateScope<VulkanPipelineCache>(device, properties.garbagePruneDelay);
         samplerCache = CreateScope<VulkanSamplerCache>(device);
+        layoutCache = CreateScope<VulkanLayoutCache>(device);
         disposer = CreateScope<VulkanDisposer>();
-        descriptorCache = CreateScope<VulkanDescriptorCache>(device, 10, 100ull,
+        descriptorCache = CreateScope<VulkanDescriptorCache>(device, properties.garbagePruneDelay, 100ull,
                                                              std::initializer_list<std::pair<const VkDescriptorType, size_t>>({
                                                                  { VK_DESCRIPTOR_TYPE_SAMPLER, 100ull },
                                                                  { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100ull },
@@ -169,12 +185,32 @@ namespace PK::Rendering::VulkanRHI
         stagingBufferCache = nullptr;
         commandBufferPool = nullptr;
         frameBufferCache = nullptr;
+        layoutCache = nullptr;
 
         vmaDestroyAllocator(allocator);
         vkDestroyDevice(device, nullptr);
         Utilities::VulkanDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         vkDestroyInstance(instance, nullptr);
         glfwTerminate();
+    }
+
+    DriverMemoryInfo VulkanDriver::GetMemoryInfo() const
+    {
+        VmaStats stats{};
+        vmaCalculateStats(allocator, &stats);
+        DriverMemoryInfo info{};
+        info.blockCount = stats.total.blockCount;
+        info.allocationCount = stats.total.allocationCount;
+        info.unusedRangeCount = stats.total.unusedRangeCount;
+        info.usedBytes = stats.total.usedBytes;
+        info.unusedBytes = stats.total.unusedBytes;
+        info.allocationSizeMin = stats.total.allocationSizeMin;
+        info.allocationSizeAvg = stats.total.allocationSizeAvg;
+        info.allocationSizeMax = stats.total.allocationSizeMax;
+        info.unusedRangeSizeMin = stats.total.unusedRangeSizeMin;
+        info.unusedRangeSizeAvg = stats.total.unusedRangeSizeAvg;
+        info.unusedRangeSizeMax = stats.total.unusedRangeSizeMax;
+        return info;
     }
 
     size_t VulkanDriver::GetBufferOffsetAlignment(BufferUsage usage) const

@@ -48,28 +48,29 @@ namespace PK::Rendering::Objects
 
 	void Material::Import(const char* filepath)
     {
-        Clear();
-
         YAML::Node root = YAML::LoadFile(filepath);
 
+		auto assetDb = Application::GetService<AssetDatabase>();
+
 		auto data = root["Material"];
-		PK_THROW_ASSERT(data, "Could not locate material (%s) header in file.", filepath);
-		
 		auto shaderPathProp = data["Shader"];
+		auto shadowShaderPathProp = data["ShadowShader"];
+		auto keywords = data["Keywords"];
+		auto properties = data["Properties"];
+		
+		PK_THROW_ASSERT(data, "Could not locate material (%s) header in file.", filepath);
 		PK_THROW_ASSERT(shaderPathProp, "Material (%s) doesn't define a shader.", filepath);
 
 		auto shaderPath = shaderPathProp.as<std::string>();
-		m_shader = Application::GetService<AssetDatabase>()->Load<Shader>(shaderPath);
-		m_cachedShaderAssetId = m_shader->GetAssetID();
+		m_shader = assetDb->Load<Shader>(shaderPath);
+		InitializeShaderLayout();
 
-		auto& propertyLayout = m_shader->GetMaterialPropertyLayout();
+		if (shadowShaderPathProp)
+		{
+			shaderPath = shadowShaderPathProp.as<std::string>();
+			m_shadowShader = assetDb->Load<Shader>(shaderPath);
+		}
 
-		PK_THROW_ASSERT(propertyLayout.size() > 0, "Shader is doesn't support materials!");
-
-		ReserveLayout(propertyLayout);
-
-		auto keywords = data["Keywords"];
-		
 		if (keywords)
 		{
 			for (auto keyword : keywords)
@@ -78,14 +79,11 @@ namespace PK::Rendering::Objects
 			}
 		}
 
-		auto properties = data["Properties"];
-
 		if (properties)
 		{
 			for (auto property : properties)
 			{
 				auto propertyName = property.first.as<std::string>();
-
 				auto type = property.second["Type"];
 
 				if (!type)
@@ -115,6 +113,26 @@ namespace PK::Rendering::Objects
 					case ElementType::Texture3DHandle: Set(nameHash, values.as<Texture*>()); break;
 					case ElementType::TextureCubeHandle: Set(nameHash, values.as<Texture*>()); break;
 				}
+			}
+		}
+	}
+
+	void Material::InitializeShaderLayout()
+	{
+		Clear();
+
+		auto assetDb = Application::GetService<AssetDatabase>();
+		auto defaultTexture2DBlack = assetDb->Load<Texture>(DEFAULT_PATH_TEXTURE_BLACK);
+		auto defaultTexture2DWhite = assetDb->Load<Texture>(DEFAULT_PATH_TEXTURE_WHITE);
+
+		PK_THROW_ASSERT(m_shader->SupportsMaterials(), "Shader is doesn't support materials!");
+		ReserveLayout(m_shader->GetMaterialPropertyLayout());
+
+		for (auto& element : m_shader->GetMaterialPropertyLayout())
+		{
+			switch (element.Type)
+			{
+			case ElementType::Texture2DHandle: Set(element.NameHashId, defaultTexture2DBlack); break;
 			}
 		}
 	}

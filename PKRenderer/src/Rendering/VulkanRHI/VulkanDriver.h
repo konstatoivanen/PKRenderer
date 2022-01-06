@@ -10,6 +10,7 @@
 #include "Rendering/VulkanRHI/Systems/VulkanStagingBufferCache.h"
 #include "Rendering/VulkanRHI/Systems/VulkanCommandBufferPool.h"
 #include "Rendering/VulkanRHI/Systems/VulkanFrameBufferCache.h"
+#include "Rendering/VulkanRHI/Systems/VulkanLayoutCache.h"
 
 namespace PK::Rendering::VulkanRHI
 {
@@ -20,15 +21,18 @@ namespace PK::Rendering::VulkanRHI
     struct VulkanContextProperties
     {
         std::string appName;
+        uint64_t garbagePruneDelay;
         const std::vector<const char*>* validationLayers;
         const std::vector<const char*>* contextualInstanceExtensions;
         const std::vector<const char*>* contextualDeviceExtensions;
 
         VulkanContextProperties(const std::string& appName = "Vulkan Engine",
+            uint64_t garbagePruneDelay = 32ull,
             const std::vector<const char*>* validationLayers = nullptr,
             const std::vector<const char*>* contextualInstanceExtensions = nullptr,
             const std::vector<const char*>* contextualDeviceExtensions = nullptr) :
             appName(appName),
+            garbagePruneDelay(garbagePruneDelay),
             validationLayers(validationLayers),
             contextualInstanceExtensions(contextualInstanceExtensions),
             contextualDeviceExtensions(contextualDeviceExtensions)
@@ -47,7 +51,7 @@ namespace PK::Rendering::VulkanRHI
 
         void WaitForIdle() const override final { vkDeviceWaitIdle(device); }
         
-        size_t GetMemoryUsageKB() const override final { return 0ull; }
+        DriverMemoryInfo GetMemoryInfo() const override final;
         size_t GetBufferOffsetAlignment(BufferUsage usage) const override final;
         
         void GC() override final;
@@ -72,6 +76,7 @@ namespace PK::Rendering::VulkanRHI
         Scope<VulkanDescriptorCache> descriptorCache;
         Scope<VulkanPipelineCache> pipelineCache;
         Scope<VulkanSamplerCache> samplerCache;
+        Scope<VulkanLayoutCache> layoutCache;
         Scope<VulkanDisposer> disposer;
     };
 }

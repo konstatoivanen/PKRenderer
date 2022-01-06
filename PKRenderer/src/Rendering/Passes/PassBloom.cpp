@@ -8,7 +8,7 @@ namespace PK::Rendering::Passes
     PassBloom::PassBloom(AssetDatabase* assetDatabase, uint initialWidth, uint initialHeight)
     {
         TextureDescriptor descriptor{};
-        descriptor.samplerType = SamplerType::Sampler2DArray;
+        descriptor.samplerType = SamplerType::Sampler2D;
         descriptor.usage = TextureUsage::DefaultStorage;
         descriptor.format = TextureFormat::RGBA16F;
         descriptor.layers = 2;

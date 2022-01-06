@@ -13,6 +13,7 @@
 #include "ECS/Contextual/Engines/EngineCommandInput.h"
 #include "ECS/Contextual/Engines/EngineEditorCamera.h"
 #include "ECS/Contextual/Engines/EngineUpdateTransforms.h"
+#include "ECS/Contextual/Engines/EnginePKAssetBuilder.h"
 #include "ECS/Contextual/Engines/EngineCull.h"
 #include "ECS/Contextual/Engines/EngineDebug.h"
 #include "ECS/Contextual/Tokens/TimeToken.h"
@@ -72,6 +73,7 @@ namespace PK::Core
         auto engineCommands = m_services->Create<ECS::Engines::EngineCommandInput>(assetDatabase, sequencer, time, entityDb, commandConfig);
         auto engineCull = m_services->Create<ECS::Engines::EngineCull>(entityDb);
         auto engineDebug = m_services->Create<ECS::Engines::EngineDebug>(assetDatabase, entityDb, config);
+        auto enginePKAssetBuilder = m_services->Create<ECS::Engines::EnginePKAssetBuilder>(arguments);
 
         sequencer->SetSteps(
         {
@@ -102,6 +104,7 @@ namespace PK::Core
                 engineCommands,
                 {
                     Step::Token<ConsoleCommandToken>(engineEditorCamera),
+                    Step::Token<ConsoleCommandToken>(enginePKAssetBuilder),
                     //PK_STEP_T(gizmoRenderer, ConsoleCommandToken),
                     //PK_STEP_T(engineScreenshot, ConsoleCommandToken),
                 }

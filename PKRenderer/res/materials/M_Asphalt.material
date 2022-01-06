@@ -1,0 +1,40 @@
+Material:
+    Shader: res/shaders/SH_WS_PBR_Default.pkshader
+    ShadowShader: res/shaders/SH_WS_Shadowmap_Generic.pkshader
+    Properties:
+        _AlbedoTexture:
+            Type: texture2D
+            Value: res/textures/environment/T_Asphalt_D.ktx2
+        _PBSTexture:
+            Type: texture2D
+            Value: res/textures/environment/T_Asphalt_S.ktx2
+        _NormalMap:
+            Type: texture2D
+            Value: res/textures/environment/T_Asphalt_N.ktx2
+        _HeightMap:
+            Type: texture2D
+            Value: res/textures/environment/T_Asphalt_H.ktx2
+        _EmissionTexture:
+            Type: texture2D
+            Value: res/textures/environment/T_EmissiveTest_E.ktx2
+        _Color:
+            Type: float4
+            Value: [1,1,1,1]
+        _EmissionColor:
+            Type: float4
+            Value: [25,1,1,1]
+        _Metallic:
+            Type: float
+            Value: 1
+        _Roughness:
+            Type: float
+            Value: 1
+        _Occlusion:
+            Type: float
+            Value: 1
+        _HeightAmount:
+            Type: float
+            Value: 0.05
+        _NormalAmount:
+            Type: float
+            Value: 1.0

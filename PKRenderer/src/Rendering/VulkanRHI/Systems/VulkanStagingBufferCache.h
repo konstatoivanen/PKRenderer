@@ -27,8 +27,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             }
 
             ~VulkanStagingBufferCache();
-
-            const VulkanStagingBuffer* GetBuffer(size_t size);
+            VulkanStagingBuffer* GetBuffer(size_t size);
             void Prune();
 
         private:

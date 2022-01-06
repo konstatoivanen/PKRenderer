@@ -31,8 +31,7 @@ namespace PK::ECS::Engines
 		TypeTexture,
 		TypeMaterial,
 		TypeTime,
-		TypeAppConfig,
-		RemoteExecute
+		TypeAppConfig
 	};
 
 	class ConsoleCommand : public std::vector<std::string>
@@ -65,7 +64,6 @@ namespace PK::ECS::Engines
 			void QueryLoadedTextures(const ConsoleCommand& arguments);
 			void QueryLoadedMeshes(const ConsoleCommand& arguments);
 			void QueryLoadedAssets(const ConsoleCommand& arguments);
-			void RemoteExecute(const ConsoleCommand& arguments);
 			void ProcessCommand(const std::string& command);
 
 			std::map<std::vector<CommandArgument>, std::function<void(const ConsoleCommand&)>> m_commands;

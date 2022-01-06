@@ -39,6 +39,7 @@ namespace PK::Rendering
                 auto driver = CreateScope<VulkanDriver>(VulkanContextProperties
                 (
                     "PK Vulkan Engine",
+                    32ull,
                     &PK_VALIDATION_LAYERS,
                     &PK_INSTANCE_EXTENTIONS,
                     &PK_DEVICE_EXTENTIONS
@@ -59,7 +60,7 @@ namespace PK::Rendering
    
     CommandBuffer* GraphicsAPI::GetCommandBuffer() { return s_currentDriver->GetPrimaryCommandBuffer(); }
     
-    size_t GraphicsAPI::GetMemoryUsageKB() { return s_currentDriver->GetMemoryUsageKB(); }
+    DriverMemoryInfo GraphicsAPI::GetMemoryInfo() { return s_currentDriver->GetMemoryInfo(); }
 
     size_t GraphicsAPI::GetBufferOffsetAlignment(BufferUsage usage) { return s_currentDriver->GetBufferOffsetAlignment(usage); }
     

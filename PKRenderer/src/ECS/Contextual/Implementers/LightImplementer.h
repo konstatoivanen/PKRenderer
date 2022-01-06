@@ -11,7 +11,8 @@ namespace PK::ECS::Implementers
         public Components::Transform,
         public Components::Bounds,
         public Components::Renderable,
-        public Components::Light
+        public Components::Light,
+        public Components::LightFrameInfo
     {
     };
 }

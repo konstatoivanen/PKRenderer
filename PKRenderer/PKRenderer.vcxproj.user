@@ -6,9 +6,11 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerWorkingDirectory>$(SolutionDir)Build\$(ProjectName)_$(Platform)_$(Configuration)\</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArguments>"'$(SolutionDir)Build\PKAssetTools.exe'" "'$(SolutionDir)$(ProjectName)\res'" "'$(SolutionDir)Build\$(ProjectName)_$(Platform)_$(Configuration)\res'"</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerWorkingDirectory>$(SolutionDir)Build\$(ProjectName)_$(Platform)_$(Configuration)\</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArguments>"'$(SolutionDir)Build\PKAssetTools.exe'" "'$(SolutionDir)$(ProjectName)\res'" "'$(SolutionDir)Build\$(ProjectName)_$(Platform)_$(Configuration)\res'"</LocalDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

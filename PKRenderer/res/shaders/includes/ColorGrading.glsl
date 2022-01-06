@@ -1,5 +1,6 @@
 #pragma once
 #include SharedPostEffects.glsl
+#include Encoding.glsl
 #include Constants.glsl
 
 const float3x3 LIN_2_LMS_MAT = float3x3(
@@ -46,23 +47,6 @@ float3 LinearToGamma(float3 color)
 	return 0.662002687 * S1 + 0.684122060 * S2 - 0.323583601 * S3 - 0.0225411470 * color;
 }
 
-float3 RgbToHsv(float3 c)
-{
-    float4 K = float4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-    float4 p = lerp(float4(c.bg, K.wz), float4(c.gb, K.xy), step(c.b, c.g));
-    float4 q = lerp(float4(p.xyw, c.r), float4(c.r, p.yzx), step(p.x, c.r));
-    float d = q.x - min(q.w, q.y);
-    float e = 1.0e-4;
-    return float3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-}
-
-float3 HsvToRgb(float3 c)
-{
-    float4 K = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-    float3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-    return c.z * lerp(K.xxx, saturate(p - K.xxx), c.y);
-}
-
 float3 ApplyColorGrading(float3 color)
 {
     float3 final = saturate(color);
@@ -82,10 +66,10 @@ float3 ApplyColorGrading(float3 color)
     final = pk_Gain.xyz * (pk_Lift.xyz * (1.0 - final) + pow(final, pk_Gamma.xyz));
 
     // Hue/saturation/value
-    float3 hsv = RgbToHsv(final);
+    float3 hsv = RGBToHSV(final);
     hsv.x = mod(hsv.x + pk_HSV.x, 1.0);
     hsv.yz *= pk_HSV.yz;
-    final = saturate(HsvToRgb(hsv));
+    final = saturate(HSVToRGB(hsv));
     
     // Vibrance
     float sat = max(final.r, max(final.g, final.b)) - min(final.r, min(final.g, final.b));

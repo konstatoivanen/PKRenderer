@@ -3,7 +3,6 @@
 
 namespace PK::Utilities::HashHelpers
 {
-    constexpr static const int32_t HashCollisionThreshold = 100;
     constexpr static const int32_t MaxPrimeArrayLength = 0x7FEFFFFD;
     constexpr static const int32_t HashPrime = 101;
     constexpr static const int32_t PrimesLength = 72;

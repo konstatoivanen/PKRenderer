@@ -37,8 +37,6 @@ namespace PK::Rendering
         DEFINE_HASH_CACHE(pk_MATRIX_L_VP)
         
         DEFINE_HASH_CACHE(pk_SceneOEM_HDR)
-        DEFINE_HASH_CACHE(pk_SceneOEM_ST)
-        DEFINE_HASH_CACHE(pk_SceneOEM_RVS)
         DEFINE_HASH_CACHE(pk_SceneOEM_Exposure)
 
         DEFINE_HASH_CACHE(PK_INSTANCING_ENABLED)
@@ -46,7 +44,6 @@ namespace PK::Rendering
         DEFINE_HASH_CACHE(pk_PerFrameConstants)
         DEFINE_HASH_CACHE(pk_ModelMatrices)
         DEFINE_HASH_CACHE(pk_GizmoVertices)
-        DEFINE_HASH_CACHE(pk_DebugDrawIndex)
         
         DEFINE_HASH_CACHE(pk_ScreenDepth)
         DEFINE_HASH_CACHE(pk_ScreenNormals)
@@ -61,7 +58,6 @@ namespace PK::Rendering
         DEFINE_HASH_CACHE(pk_LightCount)
         DEFINE_HASH_CACHE(pk_GlobalLightsList)
         DEFINE_HASH_CACHE(pk_LightTiles)
-        DEFINE_HASH_CACHE(pk_TileMaxDepths)
         DEFINE_HASH_CACHE(pk_GlobalListListIndex)
 
         DEFINE_HASH_CACHE(pk_MinLogLuminance)
@@ -122,9 +118,13 @@ namespace PK::Rendering
         DEFINE_HASH_CACHE(_AOParams)
         DEFINE_HASH_CACHE(_Color)
 
-        DEFINE_HASH_CACHE(_ShadowmapBatchCube)
-        DEFINE_HASH_CACHE(_ShadowmapBatch0)
-        DEFINE_HASH_CACHE(_ShadowmapBatch1)
+        DEFINE_HASH_CACHE(pk_ShadowmapSource)
+        DEFINE_HASH_CACHE(pk_ShadowmapData)
+
+        DEFINE_HASH_CACHE(SHADOW_SOURCE_CUBE)
+        DEFINE_HASH_CACHE(SHADOW_SOURCE_2D)
+        DEFINE_HASH_CACHE(SHADOW_BLUR_PASS0)
+        DEFINE_HASH_CACHE(SHADOW_BLUR_PASS1)
 
         #undef DEFINE_HASH_CACHE
 

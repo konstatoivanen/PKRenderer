@@ -20,7 +20,7 @@ namespace PK::Rendering::Objects
         virtual void DiscardColor(uint32_t index) = 0;
         virtual void DiscardDepth() = 0;
 
-        virtual void SetViewPort(uint4 rect, float mindepth, float maxdepth, uint index = 0) = 0;
+        virtual void SetViewPort(uint4 rect, uint index = 0) = 0;
         virtual void SetScissor(uint4 rect, uint index = 0) = 0;
 
         virtual void SetBlending(const BlendParameters& blend) = 0;
@@ -46,6 +46,9 @@ namespace PK::Rendering::Objects
         // @TODO Nasty dependency. Rethink this one!
         virtual void Blit(Texture* src, Window* dst, uint32_t dstLevel, uint32_t dstLayer, FilterMode filter) = 0;
         virtual void Blit(Texture* src, Texture* dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter) = 0;
+
+        virtual void Clear(Buffer* dst, size_t offset, size_t size, uint32_t value) = 0;
+        virtual void Clear(Texture* dst, const TextureViewRange& range, const uint4& value) = 0;
         
         virtual void Barrier(const Texture* texture, const TextureViewRange& range, const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) = 0;
 
@@ -87,11 +90,12 @@ namespace PK::Rendering::Objects
         
         void DrawMesh(const Mesh* mesh, int submesh);
         void DrawMesh(const Mesh* mesh, int submesh, uint32_t instanceCount, uint32_t firstInstance);
-        void DrawMesh(const Mesh* mesh, int submesh, Shader* shader, int variantIndex = -1);
-        void DrawMesh(const Mesh* mesh, int submesh, Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int variantIndex = -1);
-        void Blit(Shader* shader, int variantIndex = -1);
-        void Dispatch(Shader* shader, uint3 groupCount);
-        void Dispatch(Shader* shader, uint variantIndex, uint3 groupCount);
+        void DrawMesh(const Mesh* mesh, int submesh, const Shader* shader, int variantIndex = -1);
+        void DrawMesh(const Mesh* mesh, int submesh, const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int variantIndex = -1);
+        void Blit(const Shader* shader, int variantIndex = -1);
+        void Blit(const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int variantIndex = -1);
+        void Dispatch(const Shader* shader, uint3 groupCount);
+        void Dispatch(const Shader* shader, uint variantIndex, uint3 groupCount);
         
         void Barrier(const Texture* texture, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags);
         void Barrier(const Texture* texture, const TextureViewRange& range, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags);

@@ -13,6 +13,7 @@ in float3 in_POSITION0;
 void main()
 {
     gl_Position = ObjectToClipPos(float4(in_POSITION0, 0));
+    NORMALIZE_GL_Z;
 }
 
 #pragma PROGRAM_FRAGMENT

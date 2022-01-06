@@ -29,6 +29,7 @@ namespace PK::Utilities
 		
 		public:
 			PropertyBlock(uint64_t initialCapacity);
+			PropertyBlock(void* buffer, uint64_t initialCapacity);
 			~PropertyBlock();
 
 			void CopyFrom(PropertyBlock& from);
@@ -152,12 +153,13 @@ namespace PK::Utilities
 		protected:
 			bool TryWriteValue(const void* src, PropertyInfo& info, uint64_t writeSize);
 			void ValidateBufferSize(uint64_t size);
+			void SetForeign(void* buffer, uint64_t capacity);
 
+			bool m_foreignBuffer = false;
 			bool m_explicitLayout = false;
 			void* m_buffer = nullptr;
 			uint64_t m_capacity = 0ull;
 			uint64_t m_head = 0ll;
-
 			std::unordered_map<std::type_index, std::unordered_map<uint32_t, PropertyInfo>> m_properties;
     };
 }

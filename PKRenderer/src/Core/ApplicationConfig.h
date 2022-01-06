@@ -33,7 +33,6 @@ namespace PK::Core
 		
 		BoxedValue<float> TimeScale	= BoxedValue<float>("TimeScale", 1.0f);
 
-		BoxedValue<bool> ZCullLights = BoxedValue<bool>("ZCullLights", true);
 		BoxedValue<uint> LightCount = BoxedValue<uint>("LightCount", 0u);
 		BoxedValue<uint> ShadowmapTileSize = BoxedValue<uint>("ShadowmapTileSize", 512);
 		BoxedValue<uint> ShadowmapTileCount = BoxedValue<uint>("ShadowmapTileCount", 32);

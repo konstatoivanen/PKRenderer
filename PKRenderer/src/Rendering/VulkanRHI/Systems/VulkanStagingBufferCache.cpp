@@ -59,7 +59,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         }
     }
 
-    const VulkanStagingBuffer* VulkanStagingBufferCache::GetBuffer(size_t size)
+    VulkanStagingBuffer* VulkanStagingBufferCache::GetBuffer(size_t size)
     {
         auto index = Vector::LowerBound(m_freeBuffers, (uint32_t)size);
         auto nextPruneTick = m_currentPruneTick + 1;

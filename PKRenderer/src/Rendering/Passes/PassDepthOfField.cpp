@@ -17,7 +17,7 @@ namespace PK::Rendering::Passes
         m_constants.pk_FocusSpeed = config->CameraFocusSpeed;
 
         TextureDescriptor descriptor{};
-        descriptor.samplerType = SamplerType::Sampler2DArray;
+        descriptor.samplerType = SamplerType::Sampler2D;
         descriptor.format = TextureFormat::RGBA16F;
         descriptor.resolution.x = config->InitialWidth / 2;
         descriptor.resolution.y = config->InitialHeight / 2;
@@ -57,7 +57,7 @@ namespace PK::Rendering::Passes
         cmd->SetTexture(hash->_MainTex, source);
         cmd->SetRenderTarget(renderTarget, 0, 2);
         cmd->DiscardColor(0u);
-        cmd->SetViewPort(renderTarget->GetRect(), 0.0f, 1.0f);
+        cmd->SetViewPort(renderTarget->GetRect());
         cmd->SetScissor(renderTarget->GetRect());
         cmd->Blit(m_shaderBlur, m_passPrefilter);
         
@@ -71,7 +71,7 @@ namespace PK::Rendering::Passes
         cmd->SetTexture(hash->pk_Foreground, renderTarget, 0, 0);
         cmd->SetTexture(hash->pk_Background, renderTarget, 0, 1);
         cmd->SetRenderTarget(source);
-        cmd->SetViewPort(source->GetRect(), 0.0f, 1.0f);
+        cmd->SetViewPort(source->GetRect());
         cmd->SetScissor(source->GetRect());
         cmd->Blit(m_shaderComposite, 0);
     }

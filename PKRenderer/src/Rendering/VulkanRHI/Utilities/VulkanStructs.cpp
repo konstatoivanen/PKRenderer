@@ -8,8 +8,9 @@ namespace PK::Rendering::VulkanRHI
     {
         buffer.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         buffer.size = size;
+        auto type = usage & ~((uint32_t)BufferUsage::ExtraFlags);
 
-        switch (usage)
+        switch (type)
         {
             case BufferUsage::Vertex:
                 buffer.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -26,6 +27,12 @@ namespace PK::Rendering::VulkanRHI
             case BufferUsage::Staging:
                 buffer.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
                 allocation.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+
+                if ((usage & BufferUsage::PersistentStage) != 0)
+                {
+                    allocation.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+                }
+
                 break;
 
             case BufferUsage::Constant:
@@ -203,6 +210,7 @@ namespace PK::Rendering::VulkanRHI
 
     VulkanImageView::VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo) : device(device)
     {
+        PK_LOG_VERBOSE("VK ALLOC: Image View");
         VK_ASSERT_RESULT_CTX(vkCreateImageView(device, &createInfo, nullptr, &view), "Failed to create an image view!");
     }
 
@@ -231,9 +239,14 @@ namespace PK::Rendering::VulkanRHI
         vkDestroyRenderPass(device, renderPass, nullptr);
     }
 
-    VulkanRawBuffer::VulkanRawBuffer(VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo) : allocator(allocator), usage(createInfo.buffer.usage), capacity(createInfo.buffer.size)
+    VulkanRawBuffer::VulkanRawBuffer(VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo) : 
+        allocator(allocator), 
+        usage(createInfo.buffer.usage), 
+        capacity(createInfo.buffer.size), 
+        persistentmap(createInfo.allocation.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT)
     {
-        VK_ASSERT_RESULT_CTX(vmaCreateBuffer(allocator, &createInfo.buffer, &createInfo.allocation, &buffer, &memory, nullptr), "Failed to create a buffer!");
+        PK_LOG_VERBOSE("VK ALLOC: Buffer");
+        VK_ASSERT_RESULT_CTX(vmaCreateBuffer(allocator, &createInfo.buffer, &createInfo.allocation, &buffer, &memory, &allocationInfo), "Failed to create a buffer!");
     }
     
     VulkanRawBuffer::~VulkanRawBuffer()
@@ -244,13 +257,26 @@ namespace PK::Rendering::VulkanRHI
     void* VulkanRawBuffer::BeginMap(size_t offset) const
     {
         void* mappedRange;
-        vmaMapMemory(allocator, memory, &mappedRange);
+        
+        if (persistentmap)
+        {
+            mappedRange = allocationInfo.pMappedData;
+        }
+        else
+        {
+            vmaMapMemory(allocator, memory, &mappedRange);
+        }
+
         return reinterpret_cast<char*>(mappedRange) + offset;
     }
 
     void VulkanRawBuffer::EndMap(size_t offset, size_t size) const
     {
-        vmaUnmapMemory(allocator, memory);
+        if (!persistentmap)
+        {
+            vmaUnmapMemory(allocator, memory);
+        }
+
         vmaFlushAllocation(allocator, memory, offset, size);
     }
 
@@ -270,6 +296,7 @@ namespace PK::Rendering::VulkanRHI
         samples(createInfo.image.samples),
         aspect(createInfo.aspect)
     {
+        PK_LOG_VERBOSE("VK ALLOC: Image");
         VK_ASSERT_RESULT_CTX(vmaCreateImage(allocator, &createInfo.image, &createInfo.allocation, &image, &memory, nullptr), "Failed to create an image!");
     }
 
@@ -299,11 +326,13 @@ namespace PK::Rendering::VulkanRHI
 
     VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo) : device(device)
     {
+        PK_LOG_VERBOSE("VK ALLOC: Graphics Pipeline");
         VK_ASSERT_RESULT_CTX(vkCreateGraphicsPipelines(device, pipelineCache, 1, &createInfo, nullptr, &pipeline), "failed to create a graphics pipeline!");
     }
 
     VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkComputePipelineCreateInfo& createInfo) : device(device)
     {
+        PK_LOG_VERBOSE("VK ALLOC: Compute Pipeline");
         VK_ASSERT_RESULT_CTX(vkCreateComputePipelines(device, pipelineCache, 1, &createInfo, nullptr, &pipeline), "failed to create a graphics pipeline!");
     }
 

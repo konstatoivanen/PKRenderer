@@ -4,9 +4,12 @@
 #include "Core/ApplicationConfig.h"
 #include "Rendering/GraphicsAPI.h"
 #include "Rendering/Objects/Texture.h"
+#include "Math/FunctionsMisc.h"
 
 namespace PK::ECS::Engines
 {
+    using namespace PK::Math;
+
     const std::unordered_map<std::string, CommandArgument> EngineCommandInput::ArgumentMap =
     {
         {std::string("query"),      CommandArgument::Query},
@@ -25,7 +28,6 @@ namespace PK::ECS::Engines
         {std::string("material"),   CommandArgument::TypeMaterial},
         {std::string("time"),       CommandArgument::TypeTime},
         {std::string("appconfig"),  CommandArgument::TypeAppConfig},
-        {std::string("remoteExecute"), CommandArgument::RemoteExecute},
     };
 
     void EngineCommandInput::ApplicationExit(const ConsoleCommand& arguments) { Application::Get().Close(); }
@@ -84,7 +86,21 @@ namespace PK::ECS::Engines
 
     void EngineCommandInput::QueryGPUMemory(const ConsoleCommand& arguments)
     {
-        PK_LOG_INFO("GPU Memory usage in kb: %i", Rendering::GraphicsAPI::GetMemoryUsageKB());
+        PK_LOG_HEADER("----------GPU MEMORY INFO----------");
+        auto info = Rendering::GraphicsAPI::GetMemoryInfo();
+        PK_LOG_NEWLINE();
+        PK_LOG_INFO("Block count: %i", info.blockCount);
+        PK_LOG_INFO("Allocation count: %i", info.allocationCount);
+        PK_LOG_INFO("Unused range count: %i", info.unusedRangeCount);
+        PK_LOG_INFO("Used: %s", Functions::BytesToString(info.usedBytes).c_str());
+        PK_LOG_INFO("Unused: %s", Functions::BytesToString(info.unusedBytes).c_str());
+        PK_LOG_INFO("Allocation size min: %s", Functions::BytesToString(info.allocationSizeMin).c_str());
+        PK_LOG_INFO("Allocation size avg: %s", Functions::BytesToString(info.allocationSizeAvg).c_str());
+        PK_LOG_INFO("Allocation size max: %s", Functions::BytesToString(info.allocationSizeMax).c_str());
+        PK_LOG_INFO("Unused range size min: %s", Functions::BytesToString(info.unusedRangeSizeMin).c_str());
+        PK_LOG_INFO("Unused range size avg: %s", Functions::BytesToString(info.unusedRangeSizeAvg).c_str());
+        PK_LOG_INFO("Unused range size max: %s", Functions::BytesToString(info.unusedRangeSizeMax).c_str());
+        PK_LOG_NEWLINE();
     }
 
     void EngineCommandInput::ReloadTime(const ConsoleCommand& arguments)
@@ -129,12 +145,6 @@ namespace PK::ECS::Engines
     void EngineCommandInput::QueryLoadedTextures(const ConsoleCommand& arguments) { m_assetDatabase->ListAssetsOfType<Texture>(); }
     void EngineCommandInput::QueryLoadedMeshes(const ConsoleCommand& arguments) { m_assetDatabase->ListAssetsOfType<Mesh>(); }
     void EngineCommandInput::QueryLoadedAssets(const ConsoleCommand& arguments) { m_assetDatabase->ListAssets(); }
-
-    void EngineCommandInput::RemoteExecute(const ConsoleCommand& arguments)
-    {
-        PK_LOG_INFO("Remote Execution: %s", arguments[1].c_str());
-        system(arguments[1].c_str());
-    }
 
     void EngineCommandInput::ProcessCommand(const std::string& command)
     {
@@ -199,7 +209,6 @@ namespace PK::ECS::Engines
         m_commands[{CommandArgument::Reload, CommandArgument::TypeTexture, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(ReloadTextures);
         m_commands[{CommandArgument::Reload, CommandArgument::TypeAppConfig, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(ReloadAppConfig);
         m_commands[{CommandArgument::Reload, CommandArgument::TypeTime}] = PK_BIND_FUNCTION(ReloadTime);
-        m_commands[{CommandArgument::RemoteExecute, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(RemoteExecute);
     }
     
     void EngineCommandInput::Step(Input* input)

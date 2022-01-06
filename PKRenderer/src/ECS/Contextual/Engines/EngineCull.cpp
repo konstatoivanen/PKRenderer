@@ -88,14 +88,12 @@ namespace PK::ECS::Engines
                 rn[j] = dist < radius;
             }
 
-            vis[0] = rn[0] && rp[1] && rp[2] && rp[3] && bounds.max.x > aabbCenter.x;
-            vis[1] = rp[0] && rn[1] && rn[2] && rn[3] && bounds.min.x < aabbCenter.x;
-
-            vis[2] = rp[0] && rp[1] && rp[4] && rn[5] && bounds.max.y > aabbCenter.y;
-            vis[3] = rn[0] && rn[1] && rn[4] && rp[5] && bounds.min.y < aabbCenter.y;
-
-            vis[4] = rp[2] && rn[3] && rp[4] && rp[5] && bounds.max.z > aabbCenter.z;
-            vis[5] = rn[2] && rp[3] && rn[4] && rn[5] && bounds.min.z < aabbCenter.z;
+            vis[PK_CUBE_FACE_RIGHT] = rn[0] && rp[1] && rp[2] && rp[3] && bounds.max.x > aabbCenter.x;
+            vis[PK_CUBE_FACE_LEFT]  = rp[0] && rn[1] && rn[2] && rn[3] && bounds.min.x < aabbCenter.x;
+            vis[PK_CUBE_FACE_UP]    = rp[0] && rp[1] && rp[4] && rn[5] && bounds.max.y > aabbCenter.y;
+            vis[PK_CUBE_FACE_DOWN]  = rn[0] && rn[1] && rn[4] && rp[5] && bounds.min.y < aabbCenter.y;
+            vis[PK_CUBE_FACE_FRONT] = rp[2] && rn[3] && rp[4] && rp[5] && bounds.max.z > aabbCenter.z;
+            vis[PK_CUBE_FACE_BACK]  = rn[2] && rp[3] && rn[4] && rn[5] && bounds.min.z < aabbCenter.z;
 
             auto isCullable = (flags & RenderableFlags::Cullable) != 0;
             auto id = cullable->GID.entityID();

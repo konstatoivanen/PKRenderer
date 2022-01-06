@@ -1383,6 +1383,21 @@
     <ClInclude Include="src\Utilities\IndexedSet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Utilities\FixedList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utilities\MemoryBlock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utilities\BufferIterator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -1797,8 +1812,6 @@
     <None Include="libs\ktx_read.dll" />
     <None Include="libs\vulkan-1.pdb" />
     <None Include="libs\VulkanMemoryAllocatord.pdb" />
-    <None Include="res\shaders\SH_WS_Debug.shader" />
-    <None Include="res\models\MDL_Debug.mdl" />
     <None Include="res\models\MDL_Cloth.mdl" />
     <None Include="res\configs\ApplicationConfig-Active.cfg" />
     <None Include="res\configs\CommandConfig-Active.keycfg" />
@@ -1827,43 +1840,72 @@
     <None Include="res\shaders\SH_VS_DepthOfFieldComposite.shader" />
     <None Include="res\shaders\SH_WS_Unlit_Color.shader" />
     <None Include="res\materials\M_Color_Red.material" />
-    <None Include="res\materials\M_Debug.material" />
-    <None Include="res\textures\T_Wood_Floor_S.ktx2" />
     <None Include="res\textures\T_OEM_Trail.ktx2" />
-    <None Include="res\textures\T_Sand_D.ktx2" />
-    <None Include="res\textures\T_Sand_H.ktx2" />
-    <None Include="res\textures\T_Sand_N.ktx2" />
-    <None Include="res\textures\T_Sand_S.ktx2" />
-    <None Include="res\textures\T_Wood_Floor_D.ktx2" />
-    <None Include="res\textures\T_Wood_Floor_N.ktx2" />
     <None Include="res\textures\T_OEM_Park.ktx2" />
-    <None Include="res\textures\T_Gravel_D.ktx2" />
-    <None Include="res\textures\T_Gravel_N.ktx2" />
-    <None Include="res\textures\T_Gravel_S.ktx2" />
-    <None Include="res\textures\T_Ground_D.ktx2" />
-    <None Include="res\textures\T_Ground_H.ktx2" />
-    <None Include="res\textures\T_Ground_N.ktx2" />
-    <None Include="res\textures\T_Ground_S.ktx2" />
-    <None Include="res\textures\T_LightCookies.ktx2" />
-    <None Include="res\textures\T_Metal_Plates_D.ktx2" />
-    <None Include="res\textures\T_Metal_Plates_N.ktx2" />
-    <None Include="res\textures\T_Metal_Plates_S.ktx2" />
-    <None Include="res\textures\T_Metal_Rust_D.ktx2" />
-    <None Include="res\textures\T_Metal_Rust_N.ktx2" />
-    <None Include="res\textures\T_Metal_Rust_S.ktx2" />
+    <None Include="res\textures\default\T_LightCookies.ktx2" />
     <None Include="res\textures\T_OEM_Desert.ktx2" />
     <None Include="res\textures\T_OEM_Mountains.ktx2" />
     <None Include="res\textures\T_OEM_Night.ktx2" />
-    <None Include="res\textures\T_EmissiveTest_E.ktx2" />
-    <None Include="res\textures\T_Cloth_S.ktx2" />
-    <None Include="res\textures\T_Bluenoise256.ktx2" />
-    <None Include="res\textures\T_Cloth_D.ktx2" />
-    <None Include="res\textures\T_Cloth_H.ktx2" />
-    <None Include="res\textures\T_Asphalt_S.ktx2" />
-    <None Include="res\textures\T_Asphalt_D.ktx2" />
-    <None Include="res\textures\T_Asphalt_H.ktx2" />
-    <None Include="res\textures\T_Asphalt_N.ktx2" />
+    <None Include="res\textures\default\T_Bluenoise256.ktx2" />
     <None Include="res\materials\M_Color_Green.material" />
+    <None Include="res\shaders\includes\SharedShadowmapping.glsl" />
+    <None Include="res\shaders\includes\SharedLights.glsl" />
+    <None Include="res\shaders\SH_WS_Shadowmap_Generic.shader" />
+    <None Include="res\shaders\SH_VS_ShadowmapBlur.shader" />
+    <None Include="res\shaders\SH_CS_LightAssignment.shader" />
+    <None Include="res\shaders\includes\ClusterIndexing.glsl" />
+    <None Include="res\shaders\includes\Reconstruction.glsl" />
+    <None Include="res\shaders\includes\BRDF.glsl" />
+    <None Include="res\shaders\includes\SharedSurfaceShading.glsl" />
+    <None Include="res\shaders\SH_WS_PBR_Default.shader" />
+    <None Include="res\materials\M_Ground.material" />
+    <None Include="res\textures\default\T_Black.ktx2" />
+    <None Include="res\textures\default\T_White.ktx2" />
+    <None Include="res\textures\environment\T_Wood_Floor_S.ktx2" />
+    <None Include="res\textures\environment\T_Asphalt_D.ktx2" />
+    <None Include="res\textures\environment\T_Asphalt_H.ktx2" />
+    <None Include="res\textures\environment\T_Asphalt_N.ktx2" />
+    <None Include="res\textures\environment\T_Asphalt_S.ktx2" />
+    <None Include="res\textures\environment\T_Cloth_D.ktx2" />
+    <None Include="res\textures\environment\T_Cloth_H.ktx2" />
+    <None Include="res\textures\environment\T_Cloth_S.ktx2" />
+    <None Include="res\textures\environment\T_EmissiveTest_E.ktx2" />
+    <None Include="res\textures\environment\T_Gravel_D.ktx2" />
+    <None Include="res\textures\environment\T_Gravel_N.ktx2" />
+    <None Include="res\textures\environment\T_Gravel_S.ktx2" />
+    <None Include="res\textures\environment\T_Ground_D.ktx2" />
+    <None Include="res\textures\environment\T_Ground_H.ktx2" />
+    <None Include="res\textures\environment\T_Ground_N.ktx2" />
+    <None Include="res\textures\environment\T_Ground_S.ktx2" />
+    <None Include="res\textures\environment\T_Metal_Plates_D.ktx2" />
+    <None Include="res\textures\environment\T_Metal_Plates_N.ktx2" />
+    <None Include="res\textures\environment\T_Metal_Plates_S.ktx2" />
+    <None Include="res\textures\environment\T_Metal_Rust_D.ktx2" />
+    <None Include="res\textures\environment\T_Metal_Rust_N.ktx2" />
+    <None Include="res\textures\environment\T_Metal_Rust_S.ktx2" />
+    <None Include="res\textures\environment\T_Sand_D.ktx2" />
+    <None Include="res\textures\environment\T_Sand_H.ktx2" />
+    <None Include="res\textures\environment\T_Sand_N.ktx2" />
+    <None Include="res\textures\environment\T_Sand_S.ktx2" />
+    <None Include="res\textures\environment\T_Wood_Floor_D.ktx2" />
+    <None Include="res\textures\environment\T_Wood_Floor_N.ktx2" />
+    <None Include="res\materials\M_Cloth.material" />
+    <None Include="res\materials\M_Asphalt.material" />
+    <None Include="res\materials\M_Gravel.material" />
+    <None Include="res\materials\M_Metal_Panel.material" />
+    <None Include="res\materials\M_Metal_Rust.material" />
+    <None Include="res\materials\M_Sand.material" />
+    <None Include="res\materials\M_Water.material" />
+    <None Include="res\materials\M_Wood_Floor.material" />
+    <None Include="res\shaders\SH_WS_PBR_Cloth.shader" />
+    <None Include="res\shaders\SH_WS_PBR_Glitter.shader" />
+    <None Include="res\shaders\SH_WS_PBR_Water.shader" />
+    <None Include="res\textures\environment\T_Gravel_H.ktx2" />
+    <None Include="res\textures\environment\T_Metal_Plates_H.ktx2" />
+    <None Include="res\textures\environment\T_Metal_Rust_H.ktx2" />
+    <None Include="res\textures\environment\T_Wood_Floor_H.ktx2" />
+    <None Include="res\models\MDL_Spiral.mdl" />
+    <None Include="res\models\MDL_Columns.mdl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
@@ -2071,6 +2113,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Utilities\HashHelpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

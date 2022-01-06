@@ -37,6 +37,26 @@ namespace PK::Rendering::VulkanRHI::Objects
         cmd->TransitionImageLayout(VulkanLayoutTransition(m_rawImage->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, usageLayout, optimalLayout, range));
     }
 
+    void VulkanTexture::SetSampler(const SamplerDescriptor& sampler)
+    {
+        if (m_descriptor.sampler == sampler)
+        {
+            return;
+        }
+
+        m_descriptor.sampler = sampler;
+        m_version++;
+
+        for (auto& kv : m_imageViews)
+        {
+            if (kv.second->bindHandle.sampler != VK_NULL_HANDLE)
+            {
+                kv.second->bindHandle.version = m_version;
+                kv.second->bindHandle.sampler = GraphicsAPI::GetActiveDriver<VulkanDriver>()->samplerCache->GetSampler(m_descriptor.sampler);
+            }
+        }
+    }
+
     void VulkanTexture::Import(const char* filepath)
     {
         Dispose();
@@ -129,7 +149,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     }
 
 
-    bool VulkanTexture::Validate(const uint3 resolution)
+    bool VulkanTexture::Validate(const uint3& resolution)
     {
         if (m_descriptor.resolution == resolution)
         {
@@ -138,6 +158,20 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         auto descriptor = m_descriptor;
         descriptor.resolution = resolution;
+        Rebuild(descriptor);
+        return true;
+    }
+
+    bool VulkanTexture::Validate(const uint32_t levels, const uint32_t layers)
+    {
+        if (m_descriptor.levels == levels && m_descriptor.layers == layers)
+        {
+            return false;
+        }
+
+        auto descriptor = m_descriptor;
+        descriptor.levels = levels;
+        descriptor.layers = layers;
         Rebuild(descriptor);
         return true;
     }
@@ -192,6 +226,14 @@ namespace PK::Rendering::VulkanRHI::Objects
     TextureViewRange VulkanTexture::NormalizeViewRange(const TextureViewRange& range) const
     {
         auto out = range;
+
+        switch (m_viewType)
+        {
+            case VK_IMAGE_VIEW_TYPE_1D:
+            case VK_IMAGE_VIEW_TYPE_2D:
+            case VK_IMAGE_VIEW_TYPE_3D: out.layers = 1u; break;
+            case VK_IMAGE_VIEW_TYPE_CUBE: out.layers = 6u; break;
+        }
 
         if (out.level >= m_defaultViewRange.levels)
         {
@@ -277,7 +319,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         info.image = m_rawImage->image;
         info.viewType = m_viewType;
         info.format = m_rawImage->format;
-        info.components = mode == TextureBindMode::RenderTarget ? (VkComponentMapping{}) : m_swizzle;
+        info.components = mode == TextureBindMode::SampledTexture ? m_swizzle : (VkComponentMapping{});
         info.subresourceRange = 
         {
             (uint32_t)m_rawImage->aspect,
@@ -286,21 +328,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             key.range.layer,
             key.range.layers
         };
-
-        //if (mode == TextureBindMode::RenderTarget)
-        //{
-        //    info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        //}
-
-        if (key.range.layers == 1 && info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY)
-        {
-            info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        }
-
-        if (key.range.layers == 1 && info.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY)
-        {
-            info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-        }
 
         auto viewValue = new VulkanTexture::ViewValue();
         viewValue->view = new VulkanImageView(m_driver->device, info);
@@ -316,7 +343,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_imageViews[key] = Scope<VulkanTexture::ViewValue>(viewValue);
         return viewValue;
 	}
-
 
     void VulkanTexture::Dispose()
     {

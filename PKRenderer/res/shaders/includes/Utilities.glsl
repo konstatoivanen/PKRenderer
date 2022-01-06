@@ -16,6 +16,8 @@ float pow5(float x) { return x * x * x * x * x; }
 #define POW5(x) ((x) * (x) * (x) * (x) * (x))
 #define mod(x,y) ((x) - (y) * floor((x) / (y)))
 #define mul(a,b) (a * b)
+// @TODO Refactor math to produce correct 0-1 z matrices & remove this hack.
+#define NORMALIZE_GL_Z gl_Position.z = (gl_Position.z + gl_Position.w) / 2.0
 
 #define GEqual(a, b) any(greaterThanEqual(a,b))
 #define Equal(a, b) any(equal(a,b))

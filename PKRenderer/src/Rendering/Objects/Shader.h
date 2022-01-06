@@ -67,6 +67,7 @@ namespace PK::Rendering::Objects
             inline const FixedFunctionShaderAttributes& GetFixedFunctionAttributes() const { return m_attributes; }
             inline uint32_t GetVariantIndex(const uint32_t* keywords, uint32_t count) const { return m_variantMap.GetIndex(keywords, count); }
             inline uint32_t GetVariantIndex(uint32_t keyword) const { return m_variantMap.GetIndex(&keyword, 1); }
+            inline uint32_t GetVariantIndex(const std::initializer_list<uint32_t>& keywords) const { return GetVariantIndex(keywords.begin(), (uint32_t)(keywords.end() - keywords.begin())); }
             inline const ShaderVariant* GetVariant(const uint32_t* keywords, uint32_t count) const { return m_variants[m_variantMap.GetIndex(keywords, count)].get(); }
             inline const ShaderVariant* GetVariant(uint32_t index) const { return m_variants[index].get(); }
             inline ShaderVariantMap::Selector GetVariantSelector() const { return { &m_variantMap }; }

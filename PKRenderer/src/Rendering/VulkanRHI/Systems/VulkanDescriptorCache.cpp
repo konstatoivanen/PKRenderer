@@ -216,8 +216,9 @@ namespace PK::Rendering::VulkanRHI::Systems
     {
         if (m_currentPool != nullptr)
         {
-            m_extinctPools.push_back({ m_currentPool, executionGate });
+            m_extinctPools.push_back({ m_currentPool, executionGate, {}});
             m_currentPool = nullptr;
+            m_sets.swap(m_extinctPools.at(m_extinctPools.size() - 1).extinctSets);
         }
 
         m_sizeMultiplier++;
@@ -238,10 +239,9 @@ namespace PK::Rendering::VulkanRHI::Systems
         createInfo.poolSizeCount = (uint32_t)pPoolSizes.size();
         createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
         m_currentPool = new VulkanDescriptorPool(m_device, createInfo);
-        m_sets.clear();
     }
 
-    void VulkanDescriptorCache::GetDescriptorSets(const VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const VulkanExecutionGate& gate, bool throwOnFail)
+    void VulkanDescriptorCache::GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const VulkanExecutionGate& gate, bool throwOnFail)
     {
         auto result = vkAllocateDescriptorSets(m_device, pAllocateInfo, pDescriptorSets);
 
@@ -255,6 +255,7 @@ namespace PK::Rendering::VulkanRHI::Systems
                 if (!throwOnFail)
                 {
                     GrowPool(gate);
+                    pAllocateInfo->descriptorPool = m_currentPool->pool;
                     GetDescriptorSets(pAllocateInfo, pDescriptorSets, gate, true);
                     break;
                 }
