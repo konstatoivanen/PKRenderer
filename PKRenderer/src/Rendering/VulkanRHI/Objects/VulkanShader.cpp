@@ -60,6 +60,8 @@ namespace PK::Rendering::VulkanRHI::Objects
                 auto pDescriptors = pDescriptorSet->descriptors.Get(base);
                 elements.clear();
 
+                PK_WARNING_ASSERT(pDescriptorSet->descriptorCount <= PK_MAX_DESCRIPTORS_PER_SET, "Warning: Shader descriptor count exceeds the maximum count per set!");
+
                 for (auto j = 0u; j < pDescriptorSet->descriptorCount; ++j)
                 {
                     key.counts[j] = pDescriptors[j].count;

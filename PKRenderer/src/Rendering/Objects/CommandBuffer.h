@@ -9,11 +9,11 @@
 
 namespace PK::Rendering::Objects
 {
-    typedef struct RenderTargets { Texture* targets[PK_MAX_RENDER_TARGETS + 1]; } RenderTargets;
     typedef std::initializer_list<const TextureViewRange> RenderTargetRanges;
 
     struct CommandBuffer : public PK::Utilities::NoCopy
     {
+        virtual void SetRenderTarget(const uint3& resolution) = 0;
         virtual void SetRenderTarget(Texture** renderTarget, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count) = 0;
         virtual void ClearColor(const color& color, uint32_t index) = 0;
         virtual void ClearDepth(float depth, uint32_t stencil) = 0;
@@ -52,13 +52,15 @@ namespace PK::Rendering::Objects
         
         virtual void Barrier(const Texture* texture, const TextureViewRange& range, const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) = 0;
 
-        void SetRenderTarget(RenderTexture* renderTarget, bool updateViewPort = true);
+        void SetFixedStateAttributes(FixedFunctionShaderAttributes* attribs);
+
+        void SetRenderTarget(RenderTexture* renderTarget, const uint32_t* targets, uint32_t targetCount, bool bindDepth, bool updateViewPort);
+        void SetRenderTarget(RenderTexture* renderTarget, std::initializer_list<uint32_t> targets, bool bindDepth, bool updateViewPort);
+        void SetRenderTarget(RenderTexture* renderTarget, bool updateViewPort);
         void SetRenderTarget(Texture* renderTarget);
         void SetRenderTarget(Texture* renderTarget, const TextureViewRange& range);
         void SetRenderTarget(Texture* renderTarget, ushort level, ushort layer);
         void SetRenderTarget(Texture* renderTarget, const RenderTargetRanges& ranges);
-        void SetRenderTarget(RenderTargets& renderTargets, const RenderTargetRanges& ranges);
-        void SetRenderTarget(RenderTargets& renderTargets, RenderTargets& resolveTargets, const RenderTargetRanges& ranges);
         void SetMesh(const Mesh* mesh);
         void SetBuffer(uint32_t nameHashId, Buffer* buffer);
         void SetBuffer(const char* name, Buffer* buffer);

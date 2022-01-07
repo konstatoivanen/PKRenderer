@@ -9,6 +9,7 @@
 #include "Rendering/Passes/PassPostEffects.h"
 #include "Rendering/Passes/PassGeometry.h"
 #include "Rendering/Passes/PassLights.h"
+#include "Rendering/Passes/PassSceneGI.h"
 #include "Rendering/Batcher.h"
 
 namespace PK::Rendering
@@ -36,10 +37,11 @@ namespace PK::Rendering
             Passes::PassPostEffects m_passPostEffects;
             Passes::PassGeometry m_passGeometry;
             Passes::PassLights m_passLights;
+            Passes::PassSceneGI m_passSceneGI;
             Batcher m_batcher;
 
             Ref<ConstantBuffer> m_constantsPerFrame;
-            Ref<RenderTexture> m_HDRRenderTarget;
+            Ref<RenderTexture> m_RenderTarget;
             Shader* m_OEMBackgroundShader;
             ECS::Tokens::VisibilityList m_visibilityList;
 

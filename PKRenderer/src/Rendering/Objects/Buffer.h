@@ -67,7 +67,7 @@ namespace PK::Rendering::Objects
             constexpr size_t GetCount() const { return m_count; }
             constexpr const BufferUsage GetUsage() const { return m_usage; }
             constexpr const BufferLayout& GetLayout() const { return m_layout; }
-            constexpr const IndexRange& GetFullRange() const { return { 0ull, m_count }; }
+            constexpr IndexRange GetFullRange() const { return { 0ull, m_count }; }
 
         protected:
             Buffer(BufferUsage usage, const BufferLayout& layout, size_t count) : m_usage(usage), m_layout(layout), m_count(count) {}

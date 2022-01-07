@@ -3,27 +3,37 @@
 
 namespace PK::Rendering::Objects
 {
-    void CommandBuffer::SetRenderTarget(RenderTexture* renderTarget, bool updateViewPort)
+    void CommandBuffer::SetFixedStateAttributes(FixedFunctionShaderAttributes* attribs)
+    {
+        if (attribs == nullptr)
+        {
+            return;
+        }
+
+        SetBlending(attribs->blending);
+        SetDepthStencil(attribs->depthStencil);
+        SetRasterization(attribs->rasterization);
+    }
+
+    void CommandBuffer::SetRenderTarget(RenderTexture* renderTarget, const uint32_t* targets, uint32_t targetCount, bool bindDepth, bool updateViewPort)
     {
         auto i = 0u;
-        auto count = renderTarget->GetColorCount();
-
-        RenderTargets renderTargets;
+        Texture* renderTargets[PK_MAX_RENDER_TARGETS + 1]{};
         TextureViewRange ranges[PK_MAX_RENDER_TARGETS + 1]{};
-    
-        for (; i < count; ++i)
+
+        for (; i < targetCount; ++i)
         {
-            renderTargets.targets[i] = renderTarget->GetColor(i);
+            renderTargets[i] = renderTarget->GetColor(targets[i]);
         }
 
         auto depth = renderTarget->GetDepth();
 
-        if (depth != nullptr)
+        if (bindDepth && depth != nullptr)
         {
-            renderTargets.targets[i++] = depth;
+            renderTargets[i++] = depth;
         }
 
-        SetRenderTarget(renderTargets.targets, nullptr, ranges, i);
+        SetRenderTarget(renderTargets, nullptr, ranges, i);
 
         if (updateViewPort)
         {
@@ -31,6 +41,25 @@ namespace PK::Rendering::Objects
             SetViewPort(rect);
             SetScissor(rect);
         }
+    }
+
+    void CommandBuffer::SetRenderTarget(RenderTexture* renderTarget, std::initializer_list<uint32_t> targets, bool bindDepth, bool updateViewPort)
+    {
+        uint32_t count = (uint32_t)(targets.end() - targets.begin());
+        SetRenderTarget(renderTarget, targets.begin(), count, bindDepth, updateViewPort);
+    }
+
+    void CommandBuffer::SetRenderTarget(RenderTexture* renderTarget, bool updateViewPort)
+    {
+        auto count = renderTarget->GetColorCount();
+        uint32_t indices[PK_MAX_RENDER_TARGETS];
+    
+        for (auto i = 0u; i < count; ++i)
+        {
+            indices[i] = i;
+        }
+
+        SetRenderTarget(renderTarget, indices, count, true, updateViewPort);
     }
 
     void CommandBuffer::SetRenderTarget(Texture* renderTarget)
@@ -61,16 +90,6 @@ namespace PK::Rendering::Objects
         }
 
         SetRenderTarget(targets, nullptr, ranges.begin(), count);
-    }
-
-    void CommandBuffer::SetRenderTarget(RenderTargets& renderTargets, const RenderTargetRanges& ranges)
-    {
-        SetRenderTarget(renderTargets.targets, nullptr, ranges.begin(), (uint32_t)(ranges.end() - ranges.begin()));
-    }
-
-    void CommandBuffer::SetRenderTarget(RenderTargets& renderTargets, RenderTargets& resolveTargets, const RenderTargetRanges& ranges)
-    {
-        SetRenderTarget(renderTargets.targets, resolveTargets.targets, ranges.begin(), (uint32_t)(ranges.end() - ranges.begin()));
     }
 
     void CommandBuffer::SetBuffer(const char* name, Buffer* buffer, const IndexRange& range) { SetBuffer(StringHashID::StringToID(name), buffer, range); }

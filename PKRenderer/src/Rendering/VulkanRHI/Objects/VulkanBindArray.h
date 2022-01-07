@@ -18,8 +18,10 @@ namespace PK::Rendering::VulkanRHI::Objects
             ~VulkanBindArray();
             const VulkanBindHandle* const* GetHandles(uint32_t* version, uint32_t* count) const;
 
+            int32_t Add(Texture* value, void* bindInfo) override final;
             int32_t Add(Texture* value) override final;
             int32_t Add(const Texture* value) override final;
+            int32_t Add(Buffer* value, void* bindInfo) override final;
             int32_t Add(Buffer* value) override final;
             int32_t Add(const Buffer* value) override final;
 

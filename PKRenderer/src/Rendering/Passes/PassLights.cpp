@@ -284,7 +284,7 @@ namespace PK::Rendering::Passes
             renderData.pk_ShadowmapLightIndex = i;
             cmd->SetConstant(hash->pk_ShadowmapData, renderData);
 
-            cmd->SetRenderTarget(shadow.SceneRenderTarget.get());
+            cmd->SetRenderTarget(shadow.SceneRenderTarget.get(), true);
             cmd->ClearColor(color(depth, depth * depth, 0.0f, 0.0f), 0u);
             cmd->ClearDepth(1.0f, 0u);
 

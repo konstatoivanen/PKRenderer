@@ -12,6 +12,7 @@ namespace PK::Rendering::Objects
     {
         public:
             static Ref<BindArray<T>> Create(size_t capacity);
+            virtual int32_t Add(T* value, void* bindInfo) = 0;
             virtual int32_t Add(T* value) = 0;
             virtual int32_t Add(const T* value) = 0;
             virtual void Clear() = 0;

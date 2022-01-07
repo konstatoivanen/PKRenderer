@@ -110,4 +110,4 @@ namespace PK::Core::Services::Debug
 #define PK_GET_EXCEPTION(...) PK::Core::Services::Debug::Logger::Get()->Exception(PK::Core::Services::Debug::PK_LOG_LVL_ERROR, (unsigned short)PK::Core::Services::Debug::ConsoleColor::LOG_ERROR, __VA_ARGS__)
 #define PK_THROW_ERROR(...) throw PK_GET_EXCEPTION(__VA_ARGS__)
 #define PK_THROW_ASSERT(value, ...) { if(!(value)) { PK_THROW_ERROR(__VA_ARGS__); } }
-#define PK_THROW_ASSERT_WARNING(value, ...) { if(!(value)) { PK_LOG_WARNING(__VA_ARGS__); } }
+#define PK_WARNING_ASSERT(value, ...) { if(!(value)) { PK_LOG_WARNING(__VA_ARGS__); } }

@@ -25,7 +25,7 @@ void main()
         return;
     }
 
-    float2 uv = float2(coord + 0.5f.xx) / size;
+    float2 uv = float2(coord + 0.5f.xx) / float2(size);
     float2 texel = 1.0f.xx / textureSize(_SourceTex, 0).xy;
     float3 color = 0.0f.xxx;
 

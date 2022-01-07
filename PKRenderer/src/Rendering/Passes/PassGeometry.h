@@ -18,11 +18,14 @@ namespace PK::Rendering::Passes
         public:
             PassGeometry(EntityDatabase* entityDb, Sequencer* sequencer, Batcher* batcher);
             void Cull(void* engineRoot, VisibilityList* visibilityList, const float4x4& viewProjection, float depthRange);
-            void Render(CommandBuffer* cmd);
+            void RenderForward(CommandBuffer* cmd);
+            void RenderGBuffer(CommandBuffer* cmd);
+            constexpr uint32_t GetPassGroup() const { return m_passGroup; }
         private:
             EntityDatabase* m_entityDb = nullptr;
             Sequencer* m_sequencer = nullptr;
             Batcher* m_batcher = nullptr;
             uint32_t m_passGroup = 0u;
+            FixedFunctionShaderAttributes m_gbufferAttribs{};
     };
 }

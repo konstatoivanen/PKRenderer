@@ -548,6 +548,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.h" />
     <ClInclude Include="src\Rendering\Passes\PassGeometry.h" />
     <ClInclude Include="src\Rendering\Passes\PassLights.h" />
+    <ClInclude Include="src\Rendering\Passes\PassSceneGI.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.h" />
     <ClInclude Include="src\Utilities\BufferIterator.h" />
     <ClInclude Include="src\Utilities\BufferView.h" />
@@ -805,6 +806,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\models\MDL_Cloth.mdl" />
     <None Include="res\models\MDL_Columns.mdl" />
     <None Include="res\models\MDL_Spiral.mdl" />
+    <None Include="res\shaders\CS_SceneGI_Bake.shader" />
     <None Include="res\shaders\includes\Blit.glsl" />
     <None Include="res\shaders\includes\ClusterIndexing.glsl" />
     <None Include="res\shaders\includes\Common.glsl" />
@@ -813,8 +815,10 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\BRDF.glsl" />
     <None Include="res\shaders\includes\Reconstruction.glsl" />
     <None Include="res\shaders\includes\SharedLights.glsl" />
+    <None Include="res\shaders\includes\SharedSceneGI.glsl" />
     <None Include="res\shaders\includes\SharedShadowmapping.glsl" />
     <None Include="res\shaders\includes\SharedSurfaceShading.glsl" />
+    <None Include="res\shaders\CS_SceneGI_Mipmap.shader" />
     <None Include="res\shaders\SH_WS_PBR_Cloth.shader" />
     <None Include="res\shaders\includes\Utilities.glsl" />
     <None Include="res\shaders\includes\Lighting.glsl" />
@@ -825,12 +829,12 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\SharedBloom.glsl" />
     <None Include="res\shaders\includes\SharedFilmGrain.glsl" />
     <None Include="res\shaders\includes\SharedPostEffects.glsl" />
-    <None Include="res\shaders\SH_CS_AutoFocus.shader" />
-    <None Include="res\shaders\SH_CS_Bloom.shader" />
-    <None Include="res\shaders\SH_CS_FilmGrain.shader" />
-    <None Include="res\shaders\SH_CS_Histogram.shader" />
-    <None Include="res\shaders\SH_CS_LightAssignment.shader" />
-    <None Include="res\shaders\SH_CS_PostEffectsComposite.shader" />
+    <None Include="res\shaders\CS_AutoFocus.shader" />
+    <None Include="res\shaders\CS_Bloom.shader" />
+    <None Include="res\shaders\CS_FilmGrain.shader" />
+    <None Include="res\shaders\CS_Histogram.shader" />
+    <None Include="res\shaders\CS_LightAssignment.shader" />
+    <None Include="res\shaders\CS_PostEffectsComposite.shader" />
     <None Include="res\shaders\SH_VS_DepthOfFieldBlur.shader" />
     <None Include="res\shaders\SH_VS_DepthOfFieldComposite.shader" />
     <None Include="res\shaders\SH_VS_IBLBackground.shader" />
@@ -906,6 +910,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassGeometry.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassLights.cpp" />
+    <ClCompile Include="src\Rendering\Passes\PassSceneGI.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.cpp" />
     <ClCompile Include="src\Utilities\HashHelpers.cpp" />
     <ClCompile Include="src\Utilities\PropertyBlock.cpp" />

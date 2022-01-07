@@ -15,10 +15,10 @@ namespace PK::Rendering::Passes
         descriptor.levels = 6;
         descriptor.resolution.x = initialWidth / 2;
         descriptor.resolution.y = initialWidth / 2;
-        descriptor.sampler.filter = FilterMode::Bilinear;
+        descriptor.sampler.filter = FilterMode::Trilinear;
 
         m_bloomTexture = Texture::Create(descriptor);
-        m_computeBloom = assetDatabase->Find<Shader>("SH_CS_Bloom");
+        m_computeBloom = assetDatabase->Find<Shader>("CS_Bloom");
         m_passPrefilter = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_DOWNSAMPLE"));
         m_passDiskblur = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_BLUR"));
     }

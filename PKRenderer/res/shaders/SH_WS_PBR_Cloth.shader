@@ -1,7 +1,4 @@
 #version 460
-#ZTest LEqual
-#ZWrite True
-#Cull Back
 #MaterialProperty float4 _Color
 #MaterialProperty float4 _SheenColor
 #MaterialProperty float _Roughness

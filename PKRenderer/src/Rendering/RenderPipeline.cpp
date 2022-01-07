@@ -18,6 +18,7 @@ namespace PK::Rendering
         m_passPostEffects(assetDatabase, config),
         m_passGeometry(entityDb, sequencer, &m_batcher),
         m_passLights(assetDatabase, entityDb, sequencer, &m_batcher, config),
+        m_passSceneGI(assetDatabase, config),
         m_batcher(),
         m_visibilityList(1024)
     {
@@ -26,10 +27,11 @@ namespace PK::Rendering
         RenderTextureDescriptor descriptor{};
         descriptor.resolution = { config->InitialWidth, config->InitialHeight, 1 };
         descriptor.colorFormats[0] = TextureFormat::RGBA16F;
+        descriptor.colorFormats[1] = TextureFormat::RGBA16F;
         descriptor.depthFormat = TextureFormat::Depth32F;
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
         descriptor.sampler.filter = FilterMode::Bilinear;
-        m_HDRRenderTarget = CreateRef<RenderTexture>(descriptor);
+        m_RenderTarget = CreateRef<RenderTexture>(descriptor);
 
         auto hash = HashCache::Get();
 
@@ -87,7 +89,7 @@ namespace PK::Rendering
     {
         GraphicsAPI::GetActiveDriver()->WaitForIdle();
         m_constantsPerFrame = nullptr;
-        m_HDRRenderTarget = nullptr;
+        m_RenderTarget = nullptr;
     }
 
     void RenderPipeline::Step(PK::ECS::Tokens::ViewProjectionUpdateToken* token)
@@ -132,34 +134,42 @@ namespace PK::Rendering
     {
         auto hash = HashCache::Get();
         auto* cmd = GraphicsAPI::GetCommandBuffer();
-
-        m_batcher.BeginCollectDrawCalls();
-        m_passGeometry.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_zfar - m_znear);
-        m_passLights.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_znear, m_zfar);
-        m_batcher.EndCollectDrawCalls();
-
         auto resolution = window->GetResolution();
-        m_HDRRenderTarget->Validate(resolution);
+
+        m_RenderTarget->Validate(resolution);
+        cmd->SetTexture(hash->pk_ScreenDepth, m_RenderTarget->GetDepth());
+        cmd->SetTexture(hash->pk_ScreenNormals, m_RenderTarget->GetColor(1));
 
         auto cascadeZSplits = m_passLights.GetCascadeZSplits(m_znear, m_zfar);
         m_constantsPerFrame->Set<float4>(hash->pk_ShadowCascadeZSplits, reinterpret_cast<float4*>(cascadeZSplits.planes));
         m_constantsPerFrame->Set<float4>(hash->pk_ScreenParams, { (float)resolution.x, (float)resolution.y, 1.0f / (float)resolution.x, 1.0f / (float)resolution.y });
         m_constantsPerFrame->FlushBuffer();
 
+        m_batcher.BeginCollectDrawCalls();
+        m_passGeometry.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_zfar - m_znear);
+        m_passLights.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_znear, m_zfar);
+        m_batcher.EndCollectDrawCalls();
+
+        m_passSceneGI.PreRender(cmd, resolution);
         m_passLights.Render(cmd);
+        m_passSceneGI.RenderVoxels(cmd, &m_batcher, m_passGeometry.GetPassGroup());
 
-        cmd->SetTexture(hash->pk_ScreenDepth, m_HDRRenderTarget->GetDepth());
-
-        cmd->SetRenderTarget(m_HDRRenderTarget.get());
-        cmd->ClearColor(PK_COLOR_RED, 0);
+        cmd->SetRenderTarget(m_RenderTarget.get(), { 1 }, true, true);
+        cmd->ClearColor({ 0, 0, -1.0f, 1.0f }, 0);
         cmd->ClearDepth(1.0f, 0u);
+
+        m_passGeometry.RenderGBuffer(cmd);
+        m_passSceneGI.RenderGI(cmd);
+
+        cmd->SetRenderTarget(m_RenderTarget.get(), { 0 }, true, true);
+        cmd->ClearColor(PK_COLOR_CLEAR, 0);
 
         cmd->Blit(m_OEMBackgroundShader);
 
-        m_passGeometry.Render(cmd);
-        m_passPostEffects.Execute(m_HDRRenderTarget.get(), MemoryAccessFlags::FragmentAttachmentColor);
+        m_passGeometry.RenderForward(cmd);
+        m_passPostEffects.Execute(m_RenderTarget.get(), MemoryAccessFlags::FragmentAttachmentColor);
 
-        cmd->Blit(m_HDRRenderTarget->GetColor(0), window, 0, 0, FilterMode::Bilinear);
+        cmd->Blit(m_RenderTarget->GetColor(0), window, 0, 0, FilterMode::Bilinear);
     }
 
     void RenderPipeline::Step(AssetImportToken<ApplicationConfig>* token)

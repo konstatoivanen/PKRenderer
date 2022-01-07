@@ -58,7 +58,7 @@ namespace PK::Rendering
             void EndCollectDrawCalls();
             constexpr uint32_t BeginNewGroup() { return m_groupIndex++; }
             void SubmitDraw(Components::Transform* transform, Shader* shader, Material* material, Mesh* mesh, uint32_t submesh, uint32_t clipIndex);
-            void Render(CommandBuffer* cmd, uint32_t group, Shader* replacementShader = nullptr, uint32_t requireKeyword = 0u);
+            void Render(CommandBuffer* cmd, uint32_t group, FixedFunctionShaderAttributes* overrideAttributes = nullptr, uint32_t requireKeyword = 0u);
 
         private:
             Ref<Buffer> m_matrices;

@@ -4,11 +4,14 @@
 #include Reconstruction.glsl
 
 // Meta pass specific parameters (gi voxelization requires some changes from reqular view projection).
-#multi_compile _ PK_META_DEPTH_NORMALS
-//PK_META_GI_VOXELIZE
+#ZTest Equal
+#ZWrite False
+#Cull Back
+#multi_compile _ PK_META_PASS_GBUFFER PK_META_PASS_GIVOXELIZE
 
-#if defined(PK_META_GI_VOXELIZE)
-   // #include SceneGIShared.glsl
+#if defined(PK_META_PASS_GIVOXELIZE)
+
+    #include SharedSceneGI.glsl
     
     #undef PK_NORMALMAPS
     #undef PK_HEIGHTMAPS
@@ -189,11 +192,11 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
         PK_SURFACE_FUNC_FRAG(baseVaryings, surf);
 
         // @TODO refactor this to be more generic
-        #if defined(PK_META_DEPTH_NORMALS)
+        #if defined(PK_META_PASS_GBUFFER)
 
             value = float4(WorldToViewDir(surf.normal), surf.roughness);
 
-        #elif defined(PK_META_GI_VOXELIZE)
+        #elif defined(PK_META_PASS_GIVOXELIZE)
 
             GetSurfaceAlphaReflectivity(surf);
     
@@ -206,7 +209,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
             }
     
             // Multi bounce gi. Causes some very lingering light artifacts & bleeding. @TODO Consider adding a setting for this.
-            value.rgb += surf.albedo * ConeTraceDiffuse(surf.worldpos, surf.normal, 0.0f).rgb;
+          //  value.rgb += surf.albedo * ConeTraceDiffuse(surf.worldpos, surf.normal, 0.0f).rgb;
             value.rgb += surf.emission;
             value.a = surf.alpha; 
 
@@ -219,7 +222,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
             Indirect indirect = GetStaticSceneIndirect(surf.normal, surf.viewdir, surf.roughness);
             LightTile tile = GetLightTile(surf.clipuvw);
     
-          //  SampleScreenSpaceGI(indirect, surf.clipuvw.xy);
+            SampleScreenSpaceGI(indirect, surf.clipuvw.xy);
     
             INIT_BRDF_CACHE
             (
@@ -246,7 +249,6 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
     
             value.rgb += surf.emission;
             value.a = surf.alpha;
-
         #endif
 
         PK_META_STORE_SURFACE_OUTPUT(value, surf.worldpos);

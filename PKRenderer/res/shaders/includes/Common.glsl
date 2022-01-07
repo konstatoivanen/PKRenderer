@@ -51,6 +51,7 @@ PK_DECLARE_SET_GLOBAL uniform sampler2D pk_SceneOEM_HDR;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenDepth;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenNormals;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_Bluenoise256;
+PK_DECLARE_SET_SHADER uniform sampler2DArray pk_ScreenGI_Read;
 
 #if !defined(PK_INSTANCING_ENABLED)
     PK_DECLARE_CBUFFER(pk_ModelMatrices, PK_SET_DRAW)

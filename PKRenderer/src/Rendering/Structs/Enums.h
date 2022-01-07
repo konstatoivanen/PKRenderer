@@ -286,6 +286,7 @@ namespace PK::Rendering::Structs
         RG32F, 
         RG32UI, 
         RG32I,
+        RGBA16, 
         RGBA16F, 
         RGBA16UI, 
         RGBA16I,

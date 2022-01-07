@@ -132,24 +132,26 @@ namespace PK::Rendering
             }
         }
 
-        m_properties->Validate(buffsize / sizeof(uint32_t));
-        auto propertyView = m_properties->BeginMap<char>(0ull, buffsize);
-
-        for (auto& group : m_materials)
+        if (buffsize > 0)
         {
-            if (group->GetSize() > 0)
-            {
-                auto destination = propertyView.data + group->offset;
+            m_properties->Validate(buffsize / sizeof(uint32_t));
+            auto propertyView = m_properties->BeginMap<char>(0ull, buffsize);
 
-                for (auto& material : group->materials)
+            for (auto& group : m_materials)
+            {
+                if (group->GetSize() > 0)
                 {
-                    (*material)->CopyTo(destination + material.index * group->stride, &m_textures2D);
+                    auto destination = propertyView.data + group->offset;
+
+                    for (auto& material : group->materials)
+                    {
+                        (*material)->CopyTo(destination + material.index * group->stride, &m_textures2D);
+                    }
                 }
             }
+
+            m_properties->EndMap();
         }
-
-        m_properties->EndMap();
-
 
         m_indices->Validate(m_drawInfos.capacity());
         auto indexView = m_indices->BeginMap<PK_Draw>(0, m_drawInfos.size());
@@ -206,6 +208,11 @@ namespace PK::Rendering
         });
 
         m_passGroups.push_back({ pbase, m_drawCalls.size() - pbase });
+
+        auto cmd = GraphicsAPI::GetCommandBuffer();
+        auto hash = HashCache::Get();
+        cmd->SetBuffer(hash->pk_Instancing_Transforms, m_matrices.get());
+        cmd->SetTextureArray(hash->pk_Instancing_Textures2D, m_textures2D);
     }
 
     void Batcher::SubmitDraw(Components::Transform* transform, Shader* shader, Material* material, Mesh* mesh, uint32_t submesh, uint32_t clipIndex)
@@ -227,7 +234,7 @@ namespace PK::Rendering
         m_drawInfos.push_back(info);
     }
 
-    void Batcher::Render(CommandBuffer* cmd, uint32_t group, Shader* replacementShader, uint32_t requireKeyword)
+    void Batcher::Render(CommandBuffer* cmd, uint32_t group, FixedFunctionShaderAttributes* overrideAttributes, uint32_t requireKeyword)
     {
         if (group >= m_passGroups.size())
         {
@@ -244,26 +251,25 @@ namespace PK::Rendering
         auto start = passGroup.offset;
         auto end = passGroup.offset + passGroup.count;
 
-        cmd->SetBuffer(hash->pk_Instancing_Transforms, m_matrices.get());
-        cmd->SetTextureArray(hash->pk_Instancing_Textures2D, m_textures2D);
-
         for (auto i = start; i < end; ++i)
         {
             auto& dc = m_drawCalls.at(i);
             auto shader = dc.shader;
             
+            if (requireKeyword > 0u && !shader->SupportsKeyword(requireKeyword))
+            {
+                continue;
+            }
+
             if (dc.properties.count > 0)
             {
                 cmd->SetBuffer(hash->pk_Instancing_Properties, m_properties.get(), dc.properties);
             }
 
-            if (requireKeyword > 0u && replacementShader != nullptr && !shader->SupportsKeyword(requireKeyword))
-            {
-                shader = replacementShader;
-            }
-
             cmd->SetBuffer(hash->pk_Instancing_Indices, m_indices.get(), dc.indices);
-            cmd->DrawMesh(dc.mesh, dc.submesh, shader, (uint32_t)dc.indices.count, 0u);
+            cmd->SetShader(shader);
+            cmd->SetFixedStateAttributes(overrideAttributes);
+            cmd->DrawMesh(dc.mesh, dc.submesh, (uint32_t)dc.indices.count, 0u);
         }
 
         if (requireKeyword > 0u)

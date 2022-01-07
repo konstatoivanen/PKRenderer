@@ -9,6 +9,20 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
+    void VulkanCommandBuffer::SetRenderTarget(const uint3& resolution)
+    {
+        VulkanRenderTarget dummy(VK_NULL_HANDLE,
+            VK_NULL_HANDLE,
+            VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR,
+            VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM,
+            VK_FORMAT_UNDEFINED,
+            { resolution.x, resolution.y, resolution.z },
+            1u,
+            1u);
+
+        renderState->SetRenderTarget(&dummy, nullptr, 0u);
+    }
+
     void VulkanCommandBuffer::SetRenderTarget(Texture** renderTargets, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count)
     {
         auto colors = PK_STACK_ALLOC(VulkanRenderTarget, count);

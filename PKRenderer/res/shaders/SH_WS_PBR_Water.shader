@@ -1,7 +1,4 @@
 #version 460
-#ZTest LEqual
-#ZWrite True
-#Cull Back
 #MaterialProperty float4 _Color
 #MaterialProperty float4 _EmissionColor
 #define PK_ACTIVE_BRDF BRDF_PBS_DEFAULT_SS
@@ -56,7 +53,7 @@ void PK_SURFACE_FUNC_VERT(inout SurfaceFragmentVaryings surf)
 
 	surf.vs_WORLDPOSITION.xyz = p;
 
-#if defined(PK_META_GI_VOXELIZE)
+#if defined(PK_META_PASS_GIVOXELIZE)
 	surf.vs_WORLDPOSITION.y -= 1.0f;
 #endif
 

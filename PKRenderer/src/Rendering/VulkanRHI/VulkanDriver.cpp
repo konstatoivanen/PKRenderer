@@ -73,6 +73,7 @@ namespace PK::Rendering::VulkanRHI
         physicalDeviceRequirements.features.shaderFloat64 = VK_TRUE;
         physicalDeviceRequirements.features.shaderInt16 = VK_TRUE;
         physicalDeviceRequirements.features.shaderInt64 = VK_TRUE;
+        physicalDeviceRequirements.features.fragmentStoresAndAtomics = VK_TRUE;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
         Utilities::VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice, &queueFamilies);

@@ -2,6 +2,7 @@
 #include "PassGeometry.h"
 #include "ECS/Contextual/EntityViews/MeshRenderableView.h"
 #include "Math/FunctionsIntersect.h"
+#include "Rendering/HashCache.h"
 
 namespace PK::Rendering::Passes
 {
@@ -10,6 +11,9 @@ namespace PK::Rendering::Passes
 
     PassGeometry::PassGeometry(EntityDatabase* entityDb, Sequencer* sequencer, Batcher* batcher) : m_entityDb(entityDb), m_sequencer(sequencer), m_batcher(batcher)
     {
+        m_gbufferAttribs.depthStencil.depthCompareOp = Comparison::LessEqual;
+        m_gbufferAttribs.depthStencil.depthWriteEnable = true;
+        m_gbufferAttribs.blending.colorMask = ColorMask::RGBA;
     }
     
     void PassGeometry::Cull(void* engineRoot, VisibilityList* visibilityList, const float4x4& viewProjection, float depthRange)
@@ -44,5 +48,13 @@ namespace PK::Rendering::Passes
         }
     }
 
-    void PassGeometry::Render(CommandBuffer* cmd) { m_batcher->Render(cmd, m_passGroup); }
+    void PassGeometry::RenderForward(CommandBuffer* cmd)
+    {
+        m_batcher->Render(cmd, m_passGroup);
+    }
+
+    void PassGeometry::RenderGBuffer(CommandBuffer* cmd)
+    {
+        m_batcher->Render(cmd, m_passGroup, &m_gbufferAttribs, HashCache::Get()->PK_META_PASS_GBUFFER);
+    }
 }

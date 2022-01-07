@@ -35,6 +35,16 @@ namespace PK::Rendering::VulkanRHI::Objects
         return m_handles;
     }
 
+    int32_t VulkanBindArray::Add(Texture* value, void* bindInfo)
+    {
+        if (bindInfo)
+        {
+            return Add(value->GetNative<VulkanTexture>()->GetBindHandle(*reinterpret_cast<TextureViewRange*>(bindInfo), true));
+        }
+
+        return Add(value);
+    }
+
     int32_t VulkanBindArray::Add(Texture* value)
     {
         return Add(value->GetNative<VulkanTexture>()->GetBindHandle());
@@ -45,14 +55,24 @@ namespace PK::Rendering::VulkanRHI::Objects
         return Add(value->GetNative<VulkanTexture>()->GetBindHandle());
     }
 
+    int32_t VulkanBindArray::Add(Buffer* value, void* bindInfo)
+    {
+        if (bindInfo)
+        {
+            return Add(value->GetNative<VulkanBuffer>()->GetBindHandle(*reinterpret_cast<IndexRange*>(bindInfo)));
+        }
+
+        return Add(value);
+    }
+
     int32_t VulkanBindArray::Add(Buffer* value)
     {
-        return Add(value->GetNative<VulkanBuffer>()->GetBindHandle());;
+        return Add(value->GetNative<VulkanBuffer>()->GetBindHandle());
     }
 
     int32_t VulkanBindArray::Add(const Buffer* value)
     {
-        return Add(value->GetNative<VulkanBuffer>()->GetBindHandle());;
+        return Add(value->GetNative<VulkanBuffer>()->GetBindHandle());
     }
 
     int32_t VulkanBindArray::Add(const VulkanBindHandle* handle)

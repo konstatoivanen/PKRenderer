@@ -27,6 +27,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         inline VulkanExecutionGate GetOnCompleteGate() const { return { invocationIndex, &invocationIndex }; }
 
+        void SetRenderTarget(const uint3& resolution) override final;
         void SetRenderTarget(Texture** renderTargets, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count) override final;
         void SetViewPort(uint4 rect, uint index = 0) override final;
         void SetScissor(uint4 rect, uint index = 0) override final;

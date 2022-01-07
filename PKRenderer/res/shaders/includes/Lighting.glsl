@@ -40,10 +40,10 @@ float3 SampleEnvironment(float2 uv, float roughness)
 
 void SampleScreenSpaceGI(inout Indirect indirect, float2 uv)
 {
-    //float4 diffuse = tex2D(pk_ScreenGI_Diffuse, uv);
-    //float4 specular = tex2D(pk_ScreenGI_Specular, uv);
-    //indirect.diffuse = indirect.diffuse * diffuse.a + diffuse.rgb;
-    //indirect.specular = indirect.specular * specular.a + specular.rgb;
+    float4 diffuse = tex2D(pk_ScreenGI_Read, float3(uv, 0));
+    float4 specular = tex2D(pk_ScreenGI_Read, float3(uv, 1));
+    indirect.diffuse = indirect.diffuse * diffuse.a + diffuse.rgb;
+    indirect.specular = indirect.specular * specular.a + specular.rgb;
 }
 
 float SampleLightShadowmap(uint shadowmapIndex, float2 uv, float lightDistance)

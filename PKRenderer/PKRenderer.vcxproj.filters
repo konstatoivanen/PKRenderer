@@ -1398,6 +1398,9 @@
     <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Rendering\Passes\PassSceneGI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -1822,20 +1825,20 @@
     <None Include="res\shaders\includes\Lighting.glsl" />
     <None Include="res\textures\T_OEM_Quarry.ktx2" />
     <None Include="res\shaders\includes\Blit.glsl" />
-    <None Include="res\shaders\SH_CS_PostEffectsComposite.shader" />
+    <None Include="res\shaders\CS_PostEffectsComposite.shader" />
     <None Include="res\shaders\includes\ColorGrading.glsl" />
     <None Include="res\shaders\includes\SharedPostEffects.glsl" />
     <None Include="res\shaders\includes\Constants.glsl" />
     <None Include="res\shaders\includes\Noise.glsl" />
-    <None Include="res\shaders\SH_CS_FilmGrain.shader" />
+    <None Include="res\shaders\CS_FilmGrain.shader" />
     <None Include="res\shaders\includes\SharedFilmGrain.glsl" />
-    <None Include="res\shaders\SH_CS_Bloom.shader" />
+    <None Include="res\shaders\CS_Bloom.shader" />
     <None Include="res\shaders\includes\SharedBloom.glsl" />
     <None Include="res\textures\T_Bloom_LensDirt.ktx2" />
-    <None Include="res\shaders\SH_CS_Histogram.shader" />
+    <None Include="res\shaders\CS_Histogram.shader" />
     <None Include="res\shaders\includes\SharedHistogram.glsl" />
     <None Include="res\shaders\includes\SharedDepthOfField.glsl" />
-    <None Include="res\shaders\SH_CS_AutoFocus.shader" />
+    <None Include="res\shaders\CS_AutoFocus.shader" />
     <None Include="res\shaders\SH_VS_DepthOfFieldBlur.shader" />
     <None Include="res\shaders\SH_VS_DepthOfFieldComposite.shader" />
     <None Include="res\shaders\SH_WS_Unlit_Color.shader" />
@@ -1852,7 +1855,7 @@
     <None Include="res\shaders\includes\SharedLights.glsl" />
     <None Include="res\shaders\SH_WS_Shadowmap_Generic.shader" />
     <None Include="res\shaders\SH_VS_ShadowmapBlur.shader" />
-    <None Include="res\shaders\SH_CS_LightAssignment.shader" />
+    <None Include="res\shaders\CS_LightAssignment.shader" />
     <None Include="res\shaders\includes\ClusterIndexing.glsl" />
     <None Include="res\shaders\includes\Reconstruction.glsl" />
     <None Include="res\shaders\includes\BRDF.glsl" />
@@ -1906,6 +1909,9 @@
     <None Include="res\textures\environment\T_Wood_Floor_H.ktx2" />
     <None Include="res\models\MDL_Spiral.mdl" />
     <None Include="res\models\MDL_Columns.mdl" />
+    <None Include="res\shaders\CS_SceneGI_Mipmap.shader" />
+    <None Include="res\shaders\includes\SharedSceneGI.glsl" />
+    <None Include="res\shaders\CS_SceneGI_Bake.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
@@ -2119,6 +2125,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Passes\PassSceneGI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
