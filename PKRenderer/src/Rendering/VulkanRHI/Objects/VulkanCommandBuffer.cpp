@@ -236,6 +236,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::Clear(Buffer* dst, size_t offset, size_t size, uint32_t value)
     {
+        EndRenderPass();
         vkCmdFillBuffer(commandBuffer, dst->GetNative<VulkanBuffer>()->GetRaw()->buffer, offset, size, value);
     }
 

@@ -10,6 +10,7 @@
 #include "Rendering/Passes/PassGeometry.h"
 #include "Rendering/Passes/PassLights.h"
 #include "Rendering/Passes/PassSceneGI.h"
+#include "Rendering/Passes/PassVolumeFog.h"
 #include "Rendering/Batcher.h"
 
 namespace PK::Rendering
@@ -38,6 +39,7 @@ namespace PK::Rendering
             Passes::PassGeometry m_passGeometry;
             Passes::PassLights m_passLights;
             Passes::PassSceneGI m_passSceneGI;
+            Passes::PassVolumeFog m_passVolumeFog;
             Batcher m_batcher;
 
             Ref<ConstantBuffer> m_constantsPerFrame;

@@ -42,7 +42,7 @@ namespace PK::ECS::Engines
 		srand(config->RandomSeed);
 
 		Builders::BuildMeshRenderableEntity(m_entityDb, planeMesh, { materialSand }, { 0, -5, 0 }, { 90, 0, 0 }, 80.0f);
-		//Builders::BuildMeshRenderableEntity(m_entityDb, columnMesh, { materialAsphalt }, { -20, 5, -20 }, PK_FLOAT3_ZERO, 3.0f);
+		Builders::BuildMeshRenderableEntity(m_entityDb, columnMesh, { materialAsphalt }, { -20, 5, -20 }, PK_FLOAT3_ZERO, 3.0f);
 
 		//CreateMeshRenderable(entityDb, float3(0, -5, 0), { 0, 0, 0 }, 1.0f, buildingsMesh, materialAsphalt);
 

@@ -36,6 +36,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_MATRIX_VP)
         DECLARE_HASH(pk_MATRIX_I_VP)
         DECLARE_HASH(pk_MATRIX_L_VP)
+        DECLARE_HASH(pk_MATRIX_LD_P)
         
         DECLARE_HASH(pk_SceneOEM_HDR)
         DECLARE_HASH(pk_SceneOEM_Exposure)

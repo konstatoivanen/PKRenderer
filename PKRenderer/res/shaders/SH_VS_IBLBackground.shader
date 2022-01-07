@@ -1,4 +1,6 @@
 #version 450
+#ZTest LEqual
+#ZWrite False
 #include includes/Lighting.glsl
 #include includes/Blit.glsl
 

@@ -546,6 +546,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Core\Services\AssetDatabase.h" />
     <ClInclude Include="src\ECS\Contextual\Engines\EngineDebug.h" />
     <ClInclude Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.h" />
+    <ClInclude Include="src\Rendering\Passes\PassVolumeFog.h" />
     <ClInclude Include="src\Rendering\Passes\PassGeometry.h" />
     <ClInclude Include="src\Rendering\Passes\PassLights.h" />
     <ClInclude Include="src\Rendering\Passes\PassSceneGI.h" />
@@ -807,6 +808,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\models\MDL_Columns.mdl" />
     <None Include="res\models\MDL_Spiral.mdl" />
     <None Include="res\shaders\CS_SceneGI_Bake.shader" />
+    <None Include="res\shaders\CS_VolumeFogDepthMax.shader" />
+    <None Include="res\shaders\CS_VolumeFogLightDensity.shader" />
+    <None Include="res\shaders\CS_VolumeFogScatter.shader" />
     <None Include="res\shaders\includes\Blit.glsl" />
     <None Include="res\shaders\includes\ClusterIndexing.glsl" />
     <None Include="res\shaders\includes\Common.glsl" />
@@ -814,11 +818,13 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\Encoding.glsl" />
     <None Include="res\shaders\includes\BRDF.glsl" />
     <None Include="res\shaders\includes\Reconstruction.glsl" />
+    <None Include="res\shaders\includes\SharedVolumeFog.glsl" />
     <None Include="res\shaders\includes\SharedLights.glsl" />
     <None Include="res\shaders\includes\SharedSceneGI.glsl" />
     <None Include="res\shaders\includes\SharedShadowmapping.glsl" />
     <None Include="res\shaders\includes\SharedSurfaceShading.glsl" />
     <None Include="res\shaders\CS_SceneGI_Mipmap.shader" />
+    <None Include="res\shaders\SH_VS_VolumeFogComposite.shader" />
     <None Include="res\shaders\SH_WS_PBR_Cloth.shader" />
     <None Include="res\shaders\includes\Utilities.glsl" />
     <None Include="res\shaders\includes\Lighting.glsl" />
@@ -908,6 +914,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Core\Services\Input.cpp" />
     <ClCompile Include="src\ECS\Contextual\Engines\EngineDebug.cpp" />
     <ClCompile Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.cpp" />
+    <ClCompile Include="src\Rendering\Passes\PassVolumeFog.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassGeometry.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassLights.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassSceneGI.cpp" />

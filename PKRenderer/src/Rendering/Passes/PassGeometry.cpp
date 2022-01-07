@@ -13,6 +13,7 @@ namespace PK::Rendering::Passes
     {
         m_gbufferAttribs.depthStencil.depthCompareOp = Comparison::LessEqual;
         m_gbufferAttribs.depthStencil.depthWriteEnable = true;
+        m_gbufferAttribs.rasterization.cullMode = CullMode::Back;
         m_gbufferAttribs.blending.colorMask = ColorMask::RGBA;
     }
     

@@ -16,7 +16,7 @@ namespace PK::Rendering::Passes
     {
         public:
             PassPostEffects(AssetDatabase* assetDatabase, const ApplicationConfig* config);
-            void Execute(RenderTexture* destination, MemoryAccessFlags lastAccess);
+            void Render(CommandBuffer* cmd, RenderTexture* destination, MemoryAccessFlags lastAccess);
             void OnUpdateParameters(const ApplicationConfig* config);
 
         private:

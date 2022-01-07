@@ -43,6 +43,8 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float4x4 pk_MATRIX_I_VP;
     // Last view * projection matrix.
     float4x4 pk_MATRIX_L_VP;
+    // Last view * projection * current inverse view matrix;
+    float4x4 pk_MATRIX_LD_P;
     // Scene reflections exposure
     float pk_SceneOEM_Exposure;
 };

@@ -1401,6 +1401,9 @@
     <ClInclude Include="src\Rendering\Passes\PassSceneGI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Rendering\Passes\PassVolumeFog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -1912,6 +1915,11 @@
     <None Include="res\shaders\CS_SceneGI_Mipmap.shader" />
     <None Include="res\shaders\includes\SharedSceneGI.glsl" />
     <None Include="res\shaders\CS_SceneGI_Bake.shader" />
+    <None Include="res\shaders\includes\SharedVolumeFog.glsl" />
+    <None Include="res\shaders\CS_VolumeFogDepthMax.shader" />
+    <None Include="res\shaders\CS_VolumeFogLightDensity.shader" />
+    <None Include="res\shaders\CS_VolumeFogScatter.shader" />
+    <None Include="res\shaders\SH_VS_VolumeFogComposite.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
@@ -2128,6 +2136,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Passes\PassSceneGI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Passes\PassVolumeFog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

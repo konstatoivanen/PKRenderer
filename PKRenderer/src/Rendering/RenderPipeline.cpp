@@ -19,6 +19,7 @@ namespace PK::Rendering
         m_passGeometry(entityDb, sequencer, &m_batcher),
         m_passLights(assetDatabase, entityDb, sequencer, &m_batcher, config),
         m_passSceneGI(assetDatabase, config),
+        m_passVolumeFog(assetDatabase, config),
         m_batcher(),
         m_visibilityList(1024)
     {
@@ -54,6 +55,7 @@ namespace PK::Rendering
             { ElementType::Float4x4, hash->pk_MATRIX_VP },
             { ElementType::Float4x4, hash->pk_MATRIX_I_VP },
             { ElementType::Float4x4, hash->pk_MATRIX_L_VP },
+            { ElementType::Float4x4, hash->pk_MATRIX_LD_P },
             { ElementType::Float, hash->pk_SceneOEM_Exposure }
         }));
 
@@ -118,6 +120,7 @@ namespace PK::Rendering
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_VP, vp);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_VP, glm::inverse(vp));
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP, pvp);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_LD_P, pvp * cameraMatrix);
     }
 
     void RenderPipeline::Step(PK::ECS::Tokens::TimeToken* token)
@@ -164,10 +167,11 @@ namespace PK::Rendering
         cmd->SetRenderTarget(m_RenderTarget.get(), { 0 }, true, true);
         cmd->ClearColor(PK_COLOR_CLEAR, 0);
 
+        m_passGeometry.RenderForward(cmd);
         cmd->Blit(m_OEMBackgroundShader);
 
-        m_passGeometry.RenderForward(cmd);
-        m_passPostEffects.Execute(m_RenderTarget.get(), MemoryAccessFlags::FragmentAttachmentColor);
+        m_passVolumeFog.Render(cmd, m_RenderTarget.get(), resolution);
+        m_passPostEffects.Render(cmd, m_RenderTarget.get(), MemoryAccessFlags::FragmentAttachmentColor);
 
         cmd->Blit(m_RenderTarget->GetColor(0), window, 0, 0, FilterMode::Bilinear);
     }
@@ -184,5 +188,6 @@ namespace PK::Rendering
         GraphicsAPI::GetCommandBuffer()->SetTexture(HashCache::Get()->pk_SceneOEM_HDR, tex);
         m_constantsPerFrame->Set<float>(HashCache::Get()->pk_SceneOEM_Exposure, token->asset->BackgroundExposure);
         m_passPostEffects.OnUpdateParameters(token->asset);
+        m_passVolumeFog.OnUpdateParameters(token->asset);
     }
 }

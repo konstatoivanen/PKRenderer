@@ -51,10 +51,9 @@ namespace PK::Rendering::Passes
         m_filmGrainTexture = Texture::Create(descriptor);
     }
     
-    void PassPostEffects::Execute(RenderTexture* destination, MemoryAccessFlags lastAccess)
+    void PassPostEffects::Render(CommandBuffer* cmd, RenderTexture* destination, MemoryAccessFlags lastAccess)
     {
         auto hash = HashCache::Get();
-        auto cmd = GraphicsAPI::GetCommandBuffer();
         auto color = destination->GetColor(0);
         auto grain = m_filmGrainTexture.get();
         
