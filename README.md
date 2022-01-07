@@ -2,7 +2,7 @@
 Is a renderer developed for the implementation & testing of various rendering techniques using modern graphics APIs. 
 The project is built for Windows using C++ 17, Visual Studio & MSVC and supports Vulkan as a rendering backend (DX12 support is planned).
 
-##Features
+## Features
 - Vulkan 1.2 Rendering Backend.
 - Dynamic scene material batching & instanced rendering.
 - Clustered forward rendering.
