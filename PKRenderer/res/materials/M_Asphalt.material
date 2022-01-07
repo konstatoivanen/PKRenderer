@@ -22,7 +22,7 @@ Material:
             Value: [1,1,1,1]
         _EmissionColor:
             Type: float4
-            Value: [25,1,1,1]
+            Value: [1,1,1,1]
         _Metallic:
             Type: float
             Value: 1
