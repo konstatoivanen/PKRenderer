@@ -24,20 +24,20 @@ void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData
     float2 uv = varyings.vs_TEXCOORD0 + PK_SURF_SAMPLE_PARALLAX_OFFSET(_HeightMap, _HeightAmount);
 
     //// GI color test code
-    float lval = surf.worldpos.z * 0.025f + pk_Time.y * 0.25f;
-    lval -= floor(lval);
-    lval = 1.0f - lval;
-    lval -= 0.75f;
-    lval *= 4.0f;
-    lval = saturate(lval);
-    lval *= pow5(lval);
-    float3 c = float3(surf.worldpos.z * 0.025f + pk_Time.y, 1.0f, lval * 20.0f);
-    
-    float4 K = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-    float3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-    float3 ecolor = c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-     
-    surf.emission = ecolor * _EmissionColor.rgb;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;
+    //float lval = surf.worldpos.z * 0.025f + pk_Time.y * 0.25f;
+    //lval -= floor(lval);
+    //lval = 1.0f - lval;
+    //lval -= 0.75f;
+    //lval *= 4.0f;
+    //lval = saturate(lval);
+    //lval *= pow5(lval);
+    //float3 c = float3(surf.worldpos.z * 0.025f + pk_Time.y, 1.0f, lval * 20.0f);
+    //
+    //float4 K = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    //float3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    //float3 ecolor = c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+    // 
+    //surf.emission = ecolor * _EmissionColor.rgb;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;
 
     /*
         float lval = surf.worldpos.y * 2.0f - 0.01f;

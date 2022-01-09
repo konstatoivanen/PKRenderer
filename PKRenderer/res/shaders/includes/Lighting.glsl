@@ -51,7 +51,7 @@ float SampleLightShadowmap(uint shadowmapIndex, float2 uv, float lightDistance)
     float2 moments = tex2D(pk_ShadowmapAtlas, float3(uv, shadowmapIndex)).xy;
     float variance = moments.y - moments.x * moments.x;
     float difference = lightDistance - moments.x;
-    return difference > 0.1f ? LBR(variance / (variance + difference * difference)) : 1.0f;
+    return min(LBR(variance / (variance + difference * difference)) + step(difference, 0.1f), 1.0f);
 }
 
 float4 GetLightProjectionUVW(in float3 worldpos, uint projectionIndex)

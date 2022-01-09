@@ -40,8 +40,8 @@ void main()
 		return;
 	}
 
-	float3 worldposition = SampleWorldPosition(coord, size);
 	ReprojectNeighbours(basecoord, coord, size);
+	float3 worldposition = SampleWorldPosition(coord, size);
 
 	if (Greater(abs(WorldToVoxelClipSpace(worldposition)), 1.0f.xxx))
 	{

@@ -48,7 +48,8 @@ namespace PK::Rendering::Passes
     struct ShadowmapRenderData
     {
         uint pk_ShadowmapLightIndex;
-        float pk_ShadowmapBlurAmount;
+        uint pk_ShadowmapBaseLayer;
+        float4 pk_ShadowmapBlurAmount;
     };
 
     PassLights::PassLights(AssetDatabase* assetDatabase, EntityDatabase* entityDb, Sequencer* sequencer, Batcher* batcher, const ApplicationConfig* config) :
@@ -68,11 +69,11 @@ namespace PK::Rendering::Passes
         m_shadowmapCubeFaceSize = (uint)sqrt((m_shadowmapTileSize * m_shadowmapTileSize) / 6);
 
         auto descriptor = RenderTextureDescriptor();
-        descriptor.samplerType = SamplerType::Cubemap;
+        descriptor.samplerType = SamplerType::CubemapArray;
         descriptor.resolution = { m_shadowmapCubeFaceSize, m_shadowmapCubeFaceSize , 1u };
         descriptor.colorFormats[0] =  { TextureFormat::RG32F };
         descriptor.depthFormat = TextureFormat::Depth16;
-        descriptor.layers = 6;
+        descriptor.layers = 6 * PK_SHADOW_CASCADE_COUNT;
         descriptor.sampler.wrap[0] = WrapMode::Clamp;
         descriptor.sampler.wrap[1] = WrapMode::Clamp;
         descriptor.sampler.wrap[2] = WrapMode::Clamp;
@@ -82,6 +83,7 @@ namespace PK::Rendering::Passes
         m_shadowmapTypeData[(int)LightType::Point].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_CUBE, hash->SHADOW_BLUR_PASS0 });
         m_shadowmapTypeData[(int)LightType::Point].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_CUBE, hash->SHADOW_BLUR_PASS1 });
         m_shadowmapTypeData[(int)LightType::Point].TileCount = 1u;
+        m_shadowmapTypeData[(int)LightType::Point].LayerStride = 6u;
 
         descriptor.samplerType = SamplerType::Sampler2DArray;
         descriptor.resolution = { m_shadowmapTileSize, m_shadowmapTileSize, 1u };
@@ -90,11 +92,13 @@ namespace PK::Rendering::Passes
         m_shadowmapTypeData[(int)LightType::Spot].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D, hash->SHADOW_BLUR_PASS0 });
         m_shadowmapTypeData[(int)LightType::Spot].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D, hash->SHADOW_BLUR_PASS1 });
         m_shadowmapTypeData[(int)LightType::Spot].TileCount = 1u;
+        m_shadowmapTypeData[(int)LightType::Spot].LayerStride = 1u;
 
         m_shadowmapTypeData[(int)LightType::Directional].SceneRenderTarget = m_shadowmapTypeData[(int)LightType::Spot].SceneRenderTarget;
         m_shadowmapTypeData[(int)LightType::Directional].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D, hash->SHADOW_BLUR_PASS0 });
         m_shadowmapTypeData[(int)LightType::Directional].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D, hash->SHADOW_BLUR_PASS1 });
         m_shadowmapTypeData[(int)LightType::Directional].TileCount = PK_SHADOW_CASCADE_COUNT;
+        m_shadowmapTypeData[(int)LightType::Directional].LayerStride = PK_SHADOW_CASCADE_COUNT;
         
         TextureDescriptor atlasDescriptor;
         atlasDescriptor.samplerType = SamplerType::Sampler2DArray;
@@ -223,6 +227,8 @@ namespace PK::Rendering::Passes
                         matricesView.data + info->projectionIndex);
 					break;
 			}
+            // [7.3891, 3.6478, 2.5034, 7.3891]
+            // [2.0000, 1.2941, 0.9176, 2.0000]
 
             lightsView[i] =
             {
@@ -267,43 +273,66 @@ namespace PK::Rendering::Passes
 
         auto atlasIndex = 0u;
 
-        for (auto i = 0u; i < m_lightCount; ++i)
+        for (auto i = 0u; i < m_lightCount;)
         {
-            auto& view = m_lights[i];
-            auto info = view->lightFrameInfo;
+            auto view = m_lights[i];
 
-            if (info->batchGroup == 0xFFFF)
+            if (view->lightFrameInfo->batchGroup == 0xFFFF)
             {
+                ++i;
                 continue;
             }
 
-            auto depth = info->shadowDepth;
-            auto& shadow = m_shadowmapTypeData[(int)view->light->type];
+            auto batchSize = 1u;
+            auto batchType = view->light->type;
+            auto maxDepth = view->lightFrameInfo->shadowDepth;
+            auto& shadow = m_shadowmapTypeData[(int)batchType];
+            auto maxBatchSize = PK_SHADOW_CASCADE_COUNT - shadow.TileCount + 1;
+            maxBatchSize = glm::min(maxBatchSize, m_lightCount - i);
+            renderData.pk_ShadowmapBlurAmount[0] = view->light->shadowBlur;
 
-            renderData.pk_ShadowmapBlurAmount = view->light->shadowBlur;
-            renderData.pk_ShadowmapLightIndex = i;
-            cmd->SetConstant(hash->pk_ShadowmapData, renderData);
+            for (; batchSize < maxBatchSize; ++batchSize)
+            {
+                view = m_lights[i + batchSize];
+            
+                if (view->lightFrameInfo->batchGroup == 0xFFFF || view->light->type != batchType)
+                {
+                    break;
+                }
+
+                maxDepth = glm::max(view->lightFrameInfo->shadowDepth, maxDepth);
+            }
+
+            auto tileCount = shadow.TileCount * batchSize;
 
             cmd->SetRenderTarget(shadow.SceneRenderTarget.get(), true);
-            cmd->ClearColor(color(depth, depth * depth, 0.0f, 0.0f), 0u);
+            cmd->ClearColor(color(maxDepth, maxDepth * maxDepth, 0.0f, 0.0f), 0u);
             cmd->ClearDepth(1.0f, 0u);
 
-            m_batcher->Render(cmd, info->batchGroup);
+            for (auto j = 0u; j < batchSize; ++j)
+            {
+                auto group = m_lights[i]->lightFrameInfo->batchGroup;
+                renderData.pk_ShadowmapBlurAmount[j] = m_lights[i]->light->shadowBlur;
+                renderData.pk_ShadowmapBaseLayer = j * shadow.LayerStride;
+                renderData.pk_ShadowmapLightIndex = i++;
+                cmd->SetConstant(hash->pk_ShadowmapData, renderData);
+                m_batcher->Render(cmd, group);
+            }
 
             cmd->SetViewPort({ 0, 0, m_shadowmapTileSize, m_shadowmapTileSize }, 0);
             cmd->SetScissor({ 0, 0, m_shadowmapTileSize, m_shadowmapTileSize }, 0);
 
-            auto range0 = TextureViewRange(0, atlasIndex + shadow.TileCount, 1, shadow.TileCount);
+            auto range0 = TextureViewRange(0, atlasIndex + tileCount, 1, tileCount);
             cmd->SetRenderTarget(m_shadowmaps.get(), range0);
             cmd->SetTexture(hash->pk_ShadowmapSource, shadow.SceneRenderTarget->GetColor(0));
-            cmd->Blit(m_shadowmapBlur, shadow.TileCount, 0u, shadow.BlurPass0);
+            cmd->Blit(m_shadowmapBlur, tileCount, 0u, shadow.BlurPass0);
             
-            auto range1 = TextureViewRange(0, atlasIndex, 1, shadow.TileCount);
+            auto range1 = TextureViewRange(0, atlasIndex, 1, tileCount);
             cmd->SetRenderTarget(m_shadowmaps.get(), range1);
             cmd->SetTexture(hash->pk_ShadowmapSource, m_shadowmaps.get(), range0);
-            cmd->Blit(m_shadowmapBlur, shadow.TileCount, 0u, shadow.BlurPass1);
+            cmd->Blit(m_shadowmapBlur, tileCount, 0u, shadow.BlurPass1);
 
-            atlasIndex += shadow.TileCount;
+            atlasIndex += tileCount;
         }
 
         cmd->Dispatch(m_computeLightAssignment, { 1,1, GridSizeZ / 4 });
@@ -397,19 +426,16 @@ namespace PK::Rendering::Passes
         {
             auto& item = (*visibilityList)[i];
             auto entity = m_entityDb->Query<MeshRenderableView>(EGID(item.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
-            auto submesh = 0u;
 
-            for (auto& material : entity->materials->sharedMaterials)
+            for (auto& kv : entity->materials->materials)
             {
                 auto transform = entity->transform;
-                auto shader = material->GetShadowShader();
+                auto shader = kv.material->GetShadowShader();
 
                 if (shader != nullptr)
                 {
-                    m_batcher->SubmitDraw(transform, shader, nullptr, entity->mesh->sharedMesh, submesh, item.clipId);
+                    m_batcher->SubmitDraw(transform, shader, nullptr, entity->mesh->sharedMesh, kv.submesh, item.clipId);
                 }
-
-                ++submesh;
             }
         }
     }

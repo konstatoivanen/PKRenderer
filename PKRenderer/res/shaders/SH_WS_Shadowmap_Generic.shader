@@ -19,15 +19,15 @@ void main()
 	float4 vs_pos = 0.0f.xxxx;
 	float4 vs_depth = 0.0f.xxxx;
 
-	uint layer = pk_Instancing_ClipInfo;
-	uint projectionIndex = light.LIGHT_PROJECTION + layer;
+	uint layer = pk_Instancing_ClipInfo + pk_ShadowmapBaseLayer;
+	uint projectionIndex = light.LIGHT_PROJECTION;
 
 	switch (light.LIGHT_TYPE)
 	{
 		case LIGHT_TYPE_POINT:
 		{
 			vs_depth = float4(wpos - light.position.xyz, SHADOW_NEAR_BIAS);
-			vs_pos = GetCubeClipPos(vs_depth.xyz, light.position.w, layer);
+			vs_pos = GetCubeClipPos(vs_depth.xyz, light.position.w, pk_Instancing_ClipInfo);
 		}
 		break;
 		case LIGHT_TYPE_SPOT:
@@ -39,7 +39,7 @@ void main()
 		break;
 		case LIGHT_TYPE_DIRECTIONAL:
 		{
-			float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, projectionIndex);
+			float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, projectionIndex + layer);
 			vs_pos = mul(lightmatrix, float4(wpos, 1.0f));
 			float dist = ((vs_pos.z / vs_pos.w) + 1.0f) * light.position.w * 0.5f;
 			vs_depth = float4(dist * light.position.xyz, SHADOW_NEAR_BIAS * (layer + 1));

@@ -32,10 +32,21 @@ namespace PK::Math::Functions
     { 
         return (float)rand() / (float)RAND_MAX;
     }
+
+    uint RandomUint()
+    {
+        auto v = rand();
+        return *reinterpret_cast<uint*>(&v);
+    }
     
     float3 RandomFloat3() 
     { 
         return float3(RandomFloat(), RandomFloat(), RandomFloat()); 
+    }
+
+    uint RandomRangeUint(uint min, uint max)
+    {
+        return  min + (RandomUint() % (max - min));
     }
 
     float RandomRangeFloat(float min, float max) 

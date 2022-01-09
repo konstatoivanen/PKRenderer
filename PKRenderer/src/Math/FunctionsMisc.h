@@ -7,7 +7,9 @@ namespace PK::Math::Functions
     float CascadeDepth(float znear, float zfar, float linearity, float interpolant);
     float Cot(float value);
     float RandomFloat();
+    uint RandomUint();
     float3 RandomFloat3();
+    uint RandomRangeUint(uint min, uint max);
     float RandomRangeFloat(float min, float max);
     float3 RandomRangeFloat3(const float3& min, const float3& max);
     float3 RandomEuler();

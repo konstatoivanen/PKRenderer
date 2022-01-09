@@ -7,7 +7,7 @@ namespace PK::ECS::Components
 
     struct Materials
     {
-        std::vector<Material*> sharedMaterials;
+        std::vector<MaterialTarget> materials;
         virtual ~Materials() = default;
     };
 }

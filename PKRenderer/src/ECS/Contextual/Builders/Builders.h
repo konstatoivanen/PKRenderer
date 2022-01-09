@@ -16,7 +16,13 @@ namespace PK::ECS::Builders
 	using namespace EntityViews;
 
 	template<typename T>
-	void BuildTransformView(EntityDatabase* entityDb, T* implementer, const EGID& egid, const float3& position, const float3& rotation, const float3& scale, const BoundingBox& localBounds)
+	void BuildTransformView(EntityDatabase* entityDb, 
+							T* implementer, 
+							const EGID& egid, 
+							const float3& position, 
+							const float3& rotation,
+							const float3& scale, 
+							const BoundingBox& localBounds)
 	{
 		auto view = entityDb->ReserveEntityView(implementer, egid, &TransformView::bounds, &TransformView::transform);
 		implementer->localAABB = localBounds;
@@ -26,22 +32,36 @@ namespace PK::ECS::Builders
 	}
 
 	template<typename T>
-	void BuildBaseRenderableView(EntityDatabase* entityDb, T* implementer, const EGID& egid, RenderableFlags flags)
+	void BuildBaseRenderableView(EntityDatabase* entityDb, 
+								 T* implementer, 
+								 const EGID& egid, 
+								 RenderableFlags flags)
 	{
 		auto view = entityDb->ReserveEntityView(implementer, egid, &BaseRenderableView::renderable, &BaseRenderableView::bounds);
 		implementer->flags = flags;
 	}
 
 	template<typename T>
-	void BuildMeshRenderableView(EntityDatabase* entityDb, T* implementer, const EGID& egid, Mesh* mesh, const std::initializer_list<Material*>& materials)
+	void BuildMeshRenderableView(EntityDatabase* entityDb, 
+								 T* implementer, 
+								 const EGID& egid, 
+								 Mesh* mesh, 
+								 const std::initializer_list<MaterialTarget>& materials)
 	{
 		auto view = entityDb->ReserveEntityView(implementer, egid, &MeshRenderableView::materials, &MeshRenderableView::mesh, &MeshRenderableView::transform);
-		implementer->sharedMaterials = materials;
+		implementer->materials = materials;
 		implementer->sharedMesh = mesh;
 	}
 
 	template<typename T>
-	void BuildLightRenderableView(EntityDatabase* entityDb, T* implementer, const EGID& egid, LightType type, Cookie cookie, const color& color, float radius, float angle)
+	void BuildLightRenderableView(EntityDatabase* entityDb, 
+								  T* implementer, 
+								  const EGID& egid, 
+								  LightType type, 
+								  Cookie cookie, 
+								  const color& color, 
+								  float radius, 
+								  float angle)
 	{
 		auto view = entityDb->ReserveEntityView(implementer, egid, 
 			&LightRenderableView::transform, 
@@ -100,12 +120,12 @@ namespace PK::ECS::Builders
 	}
 
 	EGID BuildMeshRenderableEntity(EntityDatabase* entityDb, 
-								Mesh* mesh, 
-								std::initializer_list<Material*> materials, 
-								const float3& position, 
-								const float3& rotation, 
-								float size = 1.0f, 
-								RenderableFlags flags = RenderableFlags::DefaultMesh);
+								   Mesh* mesh, 
+								   const std::initializer_list<MaterialTarget>& materials,
+								   const float3& position, 
+								   const float3& rotation, 
+								   float size = 1.0f, 
+								   RenderableFlags flags = RenderableFlags::DefaultMesh);
 
 	EGID BuildLightRenderableEntity(EntityDatabase* entityDb,
 								AssetDatabase* assetDatabase,

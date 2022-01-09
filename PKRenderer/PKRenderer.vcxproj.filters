@@ -1845,7 +1845,6 @@
     <None Include="res\shaders\SH_VS_DepthOfFieldBlur.shader" />
     <None Include="res\shaders\SH_VS_DepthOfFieldComposite.shader" />
     <None Include="res\shaders\SH_WS_Unlit_Color.shader" />
-    <None Include="res\materials\M_Color_Red.material" />
     <None Include="res\textures\T_OEM_Trail.ktx2" />
     <None Include="res\textures\T_OEM_Park.ktx2" />
     <None Include="res\textures\default\T_LightCookies.ktx2" />
@@ -1853,7 +1852,6 @@
     <None Include="res\textures\T_OEM_Mountains.ktx2" />
     <None Include="res\textures\T_OEM_Night.ktx2" />
     <None Include="res\textures\default\T_Bluenoise256.ktx2" />
-    <None Include="res\materials\M_Color_Green.material" />
     <None Include="res\shaders\includes\SharedShadowmapping.glsl" />
     <None Include="res\shaders\includes\SharedLights.glsl" />
     <None Include="res\shaders\SH_WS_Shadowmap_Generic.shader" />
@@ -1920,6 +1918,18 @@
     <None Include="res\shaders\CS_VolumeFogLightDensity.shader" />
     <None Include="res\shaders\CS_VolumeFogScatter.shader" />
     <None Include="res\shaders\SH_VS_VolumeFogComposite.shader" />
+    <None Include="res\models\MDL_Rocks.mdl" />
+    <None Include="res\textures\environment\T_Marble_D.ktx2" />
+    <None Include="res\textures\environment\T_Marble_H.ktx2" />
+    <None Include="res\textures\environment\T_Marble_N.ktx2" />
+    <None Include="res\textures\environment\T_Marble_S.ktx2" />
+    <None Include="res\shaders\SH_WS_PBR_Triplanar.shader" />
+    <None Include="res\materials\M_Marble.material" />
+    <None Include="res\materials\M_Plaster.material" />
+    <None Include="res\textures\environment\T_Plaster_D.ktx2" />
+    <None Include="res\textures\environment\T_Plaster_H.ktx2" />
+    <None Include="res\textures\environment\T_Plaster_N.ktx2" />
+    <None Include="res\textures\environment\T_Plaster_S.ktx2" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

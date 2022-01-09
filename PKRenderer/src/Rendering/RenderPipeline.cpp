@@ -77,6 +77,12 @@ namespace PK::Rendering
         sampler.wrap[2] = WrapMode::Mirror;
         sceneOEM->SetSampler(sampler);
 
+        sampler = bluenoise->GetSamplerDescriptor();
+        sampler.anisotropy = 0.0f;
+        sampler.mipMin = 0.0f;
+        sampler.mipMax = 0.0f;
+        bluenoise->SetSampler(sampler);
+
         auto cmd = GraphicsAPI::GetCommandBuffer();
 
         cmd->SetTexture(hash->pk_Bluenoise256, bluenoise);

@@ -37,7 +37,7 @@ void main()
     vs_TEXCOORD0 = float3(PK_BLIT_VERTEX_TEXCOORD, gl_InstanceIndex);
 
     #if defined(SHADOW_SOURCE_CUBE)
-        float R = pow5(pk_ShadowmapBlurAmount);
+        float R = pow5(pk_ShadowmapBlurAmount[gl_Layer]);
 
         #pragma unroll SAMPLE_COUNT
         for (uint i = 0u; i < SAMPLE_COUNT; ++i)
@@ -58,9 +58,9 @@ const int2 sample_offsets_v1[4] = { int2(0,-3), int2(0, 0), int2(0,3), int2(0,0)
 
 #if defined(SHADOW_BLUR_PASS0)
     #if defined(SHADOW_SOURCE_CUBE)
-        PK_DECLARE_SET_DRAW uniform samplerCube pk_ShadowmapSource;
+        PK_DECLARE_SET_DRAW uniform samplerCubeArray pk_ShadowmapSource;
         // Cube y axis is flipped to avoid winding order change
-        float2 SAMPLE_SRC(float3 H, float layer) { return tex2D(pk_ShadowmapSource, float3(H.x, -H.y, H.z)).rg; }
+        float2 SAMPLE_SRC(float3 H, float layer) { return tex2D(pk_ShadowmapSource, float4(H.x, -H.y, H.z, layer)).rg; }
     #elif defined(SHADOW_SOURCE_2D)
         PK_DECLARE_SET_DRAW uniform sampler2DArray pk_ShadowmapSource;
         float2 SAMPLE_SRC(float3 uvw)

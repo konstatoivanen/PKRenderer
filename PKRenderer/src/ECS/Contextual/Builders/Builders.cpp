@@ -14,7 +14,7 @@ namespace PK::ECS::Builders
 
     EGID BuildMeshRenderableEntity(EntityDatabase* entityDb,
 							  Mesh* mesh, 
-						      std::initializer_list<Material*> materials, 
+							  const std::initializer_list<MaterialTarget>& materials,
 							  const float3& position, 
 							  const float3& rotation, 
 							  float size, 
@@ -70,7 +70,7 @@ namespace PK::ECS::Builders
 		auto material = assetDatabase->RegisterProcedural("M_Point_Light_" + std::to_string(egid.entityID()), CreateRef<Material>(shader, nullptr));
 		material->Set<float4>(HashCache::Get()->_Color, hdrColor);
 
-		auto meshEgid = BuildMeshRenderableEntity(entityDb, mesh, { material }, position, PK_FLOAT3_ZERO, sphereRadius, RenderableFlags::Cullable);
+		auto meshEgid = BuildMeshRenderableEntity(entityDb, mesh, {{ material, 0 }}, position, PK_FLOAT3_ZERO, sphereRadius, RenderableFlags::Cullable);
 		lightSphereView->transformMesh = entityDb->Query<EntityViews::TransformView>(meshEgid)->transform;
 		lightSphereView->transformLight = implementer;
 		return egid;

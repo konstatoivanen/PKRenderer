@@ -37,4 +37,4 @@ Material:
             Value: 0.05
         _NormalAmount:
             Type: float
-            Value: 1.0
+            Value: 0.4

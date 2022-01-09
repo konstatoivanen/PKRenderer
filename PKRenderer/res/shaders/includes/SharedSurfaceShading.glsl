@@ -209,7 +209,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
             }
     
             // Multi bounce gi. Causes some very lingering light artifacts & bleeding. @TODO Consider adding a setting for this.
-          //  value.rgb += surf.albedo * ConeTraceDiffuse(surf.worldpos, surf.normal, 0.0f).rgb;
+            value.rgb += surf.albedo * ConeTraceDiffuse(surf.worldpos, surf.normal, 0.0f).rgb;
             value.rgb += surf.emission;
             value.a = surf.alpha; 
 

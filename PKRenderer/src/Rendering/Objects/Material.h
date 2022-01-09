@@ -37,4 +37,10 @@ namespace PK::Rendering::Objects
             Shader* m_shader = nullptr;
             Shader* m_shadowShader = nullptr;
     };
+
+    struct MaterialTarget
+    {
+        Material* material;
+        uint32_t submesh;
+    };
 }

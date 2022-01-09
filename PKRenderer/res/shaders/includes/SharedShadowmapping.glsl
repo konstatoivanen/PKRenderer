@@ -5,7 +5,8 @@
 PK_DECLARE_LOCAL_CBUFFER(pk_ShadowmapData)
 {
     uint pk_ShadowmapLightIndex;
-    float pk_ShadowmapBlurAmount;
+    uint pk_ShadowmapBaseLayer;
+    float4 pk_ShadowmapBlurAmount;
 };
 
 #define SHADOW_NEAR_BIAS 0.1f

@@ -67,7 +67,8 @@ namespace PK::Rendering::VulkanRHI
         allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
         aspect = (VkImageAspectFlagBits)0;
 
-        if (descriptor.samplerType == SamplerType::Cubemap)
+        if (descriptor.samplerType == SamplerType::Cubemap || 
+            descriptor.samplerType == SamplerType::CubemapArray)
         {
             image.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         }

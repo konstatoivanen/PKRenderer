@@ -38,13 +38,12 @@ namespace PK::Rendering::Passes
         {
             auto& item = (*visibilityList)[i];
             auto entity = m_entityDb->Query<MeshRenderableView>(EGID(item.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
-            auto submesh = 0u;
 
-            for (auto& material : entity->materials->sharedMaterials)
+            for (auto& kv : entity->materials->materials)
             {
                 auto transform = entity->transform;
-                auto shader = material->GetShader();
-                m_batcher->SubmitDraw(transform, shader, material, entity->mesh->sharedMesh, submesh++, 0u);
+                auto shader = kv.material->GetShader();
+                m_batcher->SubmitDraw(transform, shader, kv.material, entity->mesh->sharedMesh, kv.submesh, 0u);
             }
         }
     }

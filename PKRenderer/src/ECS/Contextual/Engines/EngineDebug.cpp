@@ -22,27 +22,30 @@ namespace PK::ECS::Engines
 		//auto treeMesh = assetDatabase->Load<Mesh>("res/models/Tree.mdl");
 		
 		auto columnMesh = assetDatabase->Load<Mesh>("res/models/MDL_Columns.pkmesh");
-		auto clothMesh = assetDatabase->Load<Mesh>("res/models/MDL_Cloth.pkmesh");
+		//auto clothMesh = assetDatabase->Load<Mesh>("res/models/MDL_Cloth.pkmesh");
+		auto rocksMesh = assetDatabase->Load<Mesh>("res/models/MDL_Rocks.pkmesh");
 		auto sphereMesh = assetDatabase->RegisterProcedural<Mesh>("Primitive_Sphere", Rendering::MeshUtility::GetSphere(PK_FLOAT3_ZERO, 1.0f));
 		auto planeMesh = assetDatabase->RegisterProcedural<Mesh>("Primitive_Plane16x16", Rendering::MeshUtility::GetPlane(PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
-		auto oceanMesh = assetDatabase->RegisterProcedural<Mesh>("Primitive_Plane128x128", Rendering::MeshUtility::GetPlane(PK_FLOAT2_ZERO, PK_FLOAT2_ONE * 5.0f, { 128, 128 }));
+		//auto oceanMesh = assetDatabase->RegisterProcedural<Mesh>("Primitive_Plane128x128", Rendering::MeshUtility::GetPlane(PK_FLOAT2_ZERO, PK_FLOAT2_ONE * 5.0f, { 128, 128 }));
 
-		auto materialMetal = assetDatabase->Load<Material>("res/materials/M_Metal_Panel.material");
-		auto materialCloth = assetDatabase->Load<Material>("res/materials/M_Cloth.material");
-		auto materialGravel = assetDatabase->Load<Material>("res/materials/M_Gravel.material");
-		auto materialGround = assetDatabase->Load<Material>("res/materials/M_Ground.material");
+		//auto materialMetal = assetDatabase->Load<Material>("res/materials/M_Metal_Panel.material");
+		///auto materialGravel = assetDatabase->Load<Material>("res/materials/M_Gravel.material");
 		auto materialSand = assetDatabase->Load<Material>("res/materials/M_Sand.material");
-		auto materialWood = assetDatabase->Load<Material>("res/materials/M_Wood_Floor.material");
 		auto materialAsphalt = assetDatabase->Load<Material>("res/materials/M_Asphalt.material");
-		auto materialWater = assetDatabase->Load<Material>("res/materials/M_Water.material");
+		auto materialMarble = assetDatabase->Load<Material>("res/materials/M_Marble.material");
+		auto materialPlaster = assetDatabase->Load<Material>("res/materials/M_Plaster.material");
+		//auto materialCloth = assetDatabase->Load<Material>("res/materials/M_Cloth.material");
+		//auto materialGround = assetDatabase->Load<Material>("res/materials/M_Ground.material");
+		//auto materialWood = assetDatabase->Load<Material>("res/materials/M_Wood_Floor.material");
+		//auto materialWater = assetDatabase->Load<Material>("res/materials/M_Water.material");
 
-		auto minpos = float3(-70, -5, -70);
-		auto maxpos = float3(70, 0, 70);
+		auto minpos = float3(-70, -6, -70);
+		auto maxpos = float3(70, -4, 70);
 
 		srand(config->RandomSeed);
 
-		Builders::BuildMeshRenderableEntity(m_entityDb, planeMesh, { materialSand }, { 0, -5, 0 }, { 90, 0, 0 }, 80.0f);
-		Builders::BuildMeshRenderableEntity(m_entityDb, columnMesh, { materialAsphalt }, { -20, 5, -20 }, PK_FLOAT3_ZERO, 3.0f);
+		Builders::BuildMeshRenderableEntity(m_entityDb, planeMesh, {{materialSand,0}}, { 0, -5, 0 }, { 90, 0, 0 }, 80.0f);
+		Builders::BuildMeshRenderableEntity(m_entityDb, columnMesh, {{materialAsphalt,0}}, { -20, 5, -20 }, PK_FLOAT3_ZERO, 3.0f);
 
 		//CreateMeshRenderable(entityDb, float3(0, -5, 0), { 0, 0, 0 }, 1.0f, buildingsMesh, materialAsphalt);
 
@@ -54,14 +57,24 @@ namespace PK::ECS::Engines
 
 		//CreateMeshRenderable(entityDb, float3( -35, -5, -30), { 0, 0, 0 }, 2.0f, treeMesh, materialAsphalt, true);
 
-		for (auto i = 0; i < 320; ++i)
+		auto submeshCount = rocksMesh->GetSubmeshCount();
+
+		for (auto i = 0; i < 128; ++i)
 		{
-			Builders::BuildMeshRenderableEntity(m_entityDb, sphereMesh, { materialMetal }, Functions::RandomRangeFloat3(minpos, maxpos), Functions::RandomEuler());
+			auto submesh = Functions::RandomRangeUint(0, submeshCount);
+			auto pos = Functions::RandomRangeFloat3(minpos, maxpos);
+			auto rot = Functions::RandomEuler();
+			auto size = Functions::RandomRangeFloat(1.0f, 3.0f);
+			Builders::BuildMeshRenderableEntity(m_entityDb, rocksMesh, {{materialMarble,submesh}}, pos, rot, size);
 		}
 
-		for (auto i = 0; i < 320; ++i)
+		for (auto i = 0; i < 128; ++i)
 		{
-			Builders::BuildMeshRenderableEntity(m_entityDb, sphereMesh, { materialGravel }, Functions::RandomRangeFloat3(minpos, maxpos), Functions::RandomEuler());
+			auto submesh = Functions::RandomRangeUint(0, submeshCount);
+			auto pos = Functions::RandomRangeFloat3(minpos, maxpos);
+			auto rot = Functions::RandomEuler();
+			auto size = Functions::RandomRangeFloat(1.0f, 3.0f);
+			Builders::BuildMeshRenderableEntity(m_entityDb, rocksMesh, {{materialPlaster,submesh}}, pos, rot, size);
 		}
 
 		for (uint i = 0; i < config->LightCount; ++i)
@@ -72,11 +85,11 @@ namespace PK::ECS::Engines
 				Functions::RandomRangeFloat3(minpos, maxpos),
 				i % 2 == 0 ? LightType::Spot : LightType::Point,
 				Cookie::Circle0,
-				Functions::HueToRGB(Functions::RandomRangeFloat(0.0f, 1.0f)) * Functions::RandomRangeFloat(6.0f, 7.0f),
+				Functions::HueToRGB(Functions::RandomRangeFloat(0.0f, 1.0f)) * Functions::RandomRangeFloat(2.0f, 7.0f),
 				true);
 		}
 
-		auto color = Functions::HexToRGB(0xFFA575FF) * 2.0f; // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF
+		auto color = glm::log(Functions::HexToRGB(0xFFA575FF) * 2.0f); // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF
 		Builders::BuildLightRenderableEntity(m_entityDb, m_assetDatabase, PK_FLOAT3_ZERO, { 25, -35, 0 }, LightType::Directional, Cookie::Circle0, color, 90.0f, 50.0f, true);
 	}
 

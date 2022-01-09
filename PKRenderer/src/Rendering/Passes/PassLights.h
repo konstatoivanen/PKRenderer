@@ -23,6 +23,7 @@ namespace PK::Rendering::Passes
         uint32_t BlurPass0 = 0u;
         uint32_t BlurPass1 = 0u;
         uint32_t TileCount = 0u;
+        uint32_t LayerStride = 0u;
     };
 
     class PassLights : public PK::Core::NoCopy
