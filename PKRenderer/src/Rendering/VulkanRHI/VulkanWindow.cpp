@@ -68,6 +68,8 @@ namespace PK::Rendering::VulkanRHI
                                                    m_driver->queueFamilies[QueueType::Graphics].index,
                                                    m_driver->queueFamilies[QueueType::Present].index,
                                                    swapchainCreateInfo);
+
+        SetCursorVisible(properties.cursorVisible);
     }
     
     VulkanWindow::~VulkanWindow()

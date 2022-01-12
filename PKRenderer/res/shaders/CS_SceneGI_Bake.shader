@@ -4,6 +4,11 @@
 #include includes/Reconstruction.glsl
 #include includes/SharedSceneGI.glsl
 
+// Doing this in the same compute as writing will cause some artifacts when other groups have already written values to the reprojected coordinates.
+// However, tests show that the number of artifacts in very low as:
+// - at 144 as a coordinate has lower chance of leaving group boundaries.
+// - thanks to checkerboard rendering the chance of hitting an active pixel is 1 out of 4.
+// Bigger issues are caused by the lack of depth discontinuity testing which causes a ghosting effect when the camera moves.
 void ReprojectNeighbours(int2 basecoord, int2 coord, int2 size)
 {
 	int2 coord0 = basecoord + ((PK_GI_CHECKERBOARD_OFFSET + int2(1)) % int2(2));
@@ -42,6 +47,8 @@ void main()
 
 	ReprojectNeighbours(basecoord, coord, size);
 	float3 worldposition = SampleWorldPosition(coord, size);
+
+	barrier();
 
 	if (Greater(abs(WorldToVoxelClipSpace(worldposition)), 1.0f.xxx))
 	{
