@@ -83,8 +83,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         void ValidateRenderTarget();
         void ValidateVertexBuffers();
-        void ValidateDescriptorSets(const VulkanExecutionGate& gate);
-        PKRenderStateDirtyFlags ValidatePipeline(const VulkanExecutionGate& gate);
+        void ValidateDescriptorSets(const ExecutionGate& gate);
+        PKRenderStateDirtyFlags ValidatePipeline(const ExecutionGate& gate);
 
         PropertyBlock m_resourceProperties = PropertyBlock(16384);
         VulkanDescriptorCache* m_descriptorCache = nullptr;

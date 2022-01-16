@@ -227,8 +227,6 @@ namespace PK::Rendering::Passes
                         matricesView.data + info->projectionIndex);
 					break;
 			}
-            // [7.3891, 3.6478, 2.5034, 7.3891]
-            // [2.0000, 1.2941, 0.9176, 2.0000]
 
             lightsView[i] =
             {

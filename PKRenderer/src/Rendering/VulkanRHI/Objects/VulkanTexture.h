@@ -91,6 +91,5 @@ namespace PK::Rendering::VulkanRHI::Objects
             VkComponentMapping m_swizzle{};
             TextureViewRange m_defaultViewRange{};
             VkImageViewType m_viewType = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
-            uint32_t m_version = 0u;
     };
 }

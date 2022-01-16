@@ -1,6 +1,8 @@
 #pragma once
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Math/FunctionsMisc.h"
+#include "Utilities/Pool.h"
+#include "Utilities/FastMap.h"
 #include "Utilities/Ref.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
@@ -18,7 +20,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         ResourceType type;
         bool isArray;
         uint16_t count;
-        uint32_t version;
+        uint64_t version;
     };
 
     struct DescriptorSetKey
@@ -37,7 +39,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         std::size_t operator()(const DescriptorSetKey& k) const noexcept
         {
             constexpr ulong seed = 18446744073709551557;
-            return PK::Math::Functions::MurmurHash(&k, sizeof(DescriptorSetKey), seed);
+            return HashHelpers::MurmurHash(&k, sizeof(DescriptorSetKey), seed);
         }
     };
 
@@ -45,13 +47,11 @@ namespace PK::Rendering::VulkanRHI::Systems
     class VulkanDescriptorCache : public NoCopy
     {
         private:
-            using DescriptorSetMap = std::unordered_map<DescriptorSetKey, VulkanDescriptorSet, DescriptorSetKeyHash>;
-
             struct ExtinctPool
             {
                 VulkanDescriptorPool* pool;
-                mutable VulkanExecutionGate executionGate;
-                DescriptorSetMap extinctSets;
+                mutable ExecutionGate executionGate;
+                std::vector<uint32_t> extinctSetIndices;
             };
 
         public:
@@ -60,24 +60,26 @@ namespace PK::Rendering::VulkanRHI::Systems
 
             const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
                                                         const DescriptorSetKey& key,
-                                                        const VulkanExecutionGate& gate);
+                                                        const ExecutionGate& gate);
+
             void Prune();
 
         private:
-            void GrowPool(const VulkanExecutionGate& executionGate);
-            void GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const VulkanExecutionGate& gate, bool throwOnFail);
+            void GrowPool(const ExecutionGate& executionGate);
+            void GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const ExecutionGate& gate, bool throwOnFail);
 
-            const VkDevice m_device;
             const std::map<VkDescriptorType, size_t> m_poolSizes;
+            const VkDevice m_device;
             const size_t m_maxSets;
+            const uint64_t m_pruneDelay;
             size_t m_sizeMultiplier = 0ull;
             uint64_t m_currentPruneTick = 0ull;
-            uint64_t m_pruneDelay;
-
+            
             VulkanDescriptorPool* m_currentPool = nullptr;
-            DescriptorSetMap m_sets;
+           // Pool<VulkanBindHandle, 4096> m_bindHandlePool;
+            Pool<VulkanDescriptorSet, 2048> m_setsPool;
+            FastMap<DescriptorSetKey, VulkanDescriptorSet, DescriptorSetKeyHash> m_sets;
             std::vector<ExtinctPool> m_extinctPools;
-
             std::vector<VkDescriptorImageInfo> m_writeImages;
             std::vector<VkDescriptorBufferInfo> m_writeBuffers;
     };

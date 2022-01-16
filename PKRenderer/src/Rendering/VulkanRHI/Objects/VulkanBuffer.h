@@ -2,6 +2,7 @@
 #include "Rendering/Objects/Buffer.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Rendering/VulkanRHI/VulkanDriver.h"
+#include "Utilities/FastMap.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -26,21 +27,28 @@ namespace PK::Rendering::VulkanRHI::Objects
             const VulkanBindHandle* GetBindHandle(const IndexRange& range);
             inline const VulkanBindHandle* GetBindHandle(const IndexRange& range) const
             {
-                return m_bindHandles.at(range).get();
+                return m_bindHandles.GetValue(range);
             }
             inline const VulkanBindHandle* GetBindHandle() const
             {
-                return m_bindHandles.at({ 0ull, m_count }).get();
+                return m_bindHandles.GetValue({ 0ull, m_count });
             }
 
         private:
+            struct RangeHash
+            {
+                size_t operator()(const IndexRange& k) const noexcept
+                {
+                    return HashHelpers::FNV1AHash(&k, sizeof(IndexRange));
+                }
+            };
+
             void Rebuild(size_t count);
             void Dispose();
 
             const VulkanDriver* m_driver = nullptr;
             VulkanRawBuffer* m_rawBuffer = nullptr;
             VulkanStagingBuffer* m_mappedBuffer = nullptr;
-            std::map<IndexRange, Scope<VulkanBindHandle>> m_bindHandles;
-            uint32_t m_version = 0u;
+            FastMap<IndexRange, VulkanBindHandle, RangeHash> m_bindHandles;
     };
 }

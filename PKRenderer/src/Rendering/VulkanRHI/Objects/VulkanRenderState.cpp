@@ -363,7 +363,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    void VulkanRenderState::ValidateDescriptorSets(const VulkanExecutionGate& gate)
+    void VulkanRenderState::ValidateDescriptorSets(const ExecutionGate& gate)
     {
         auto shader = m_pipelineKey.shader;
         auto setCount = m_pipelineKey.shader->GetDescriptorSetCount();
@@ -418,13 +418,13 @@ namespace PK::Rendering::VulkanRHI::Objects
                 PK_THROW_ASSERT(m_resourceProperties.TryGet(element.NameHashId, wrappedHandle), "Descriptor (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
                 auto handle = wrappedHandle.handle;
 
-                if (binding->count != element.Count || binding->type != element.Type || binding->handle != handle || binding->version != handle->version || binding->isArray)
+                if (binding->count != element.Count || binding->type != element.Type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)
                 {
                     m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
                     binding->count = element.Count;
                     binding->type = element.Type;
                     binding->handle = handle;
-                    binding->version = handle->version;
+                    binding->version = handle->Version();
                     binding->isArray = false;
                 }
             }
@@ -451,7 +451,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const VulkanExecutionGate& gate)
+    PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const ExecutionGate& gate)
     {
         PK_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 

@@ -16,4 +16,8 @@ namespace PK::Utilities::HashHelpers
     bool IsPrime(int32_t candidate);
     int32_t GetPrime(int32_t min);
     int32_t ExpandPrime(uint32_t oldSize);
+
+    uint32_t ByteArrayHash(const void* data, size_t count);
+    uint64_t MurmurHash(const void* data, size_t count, uint64_t seed);
+    uint64_t FNV1AHash(const void* data, size_t count);
 }

@@ -69,6 +69,34 @@ namespace PK::Utilities
                 alloc_traits::destroy(m_alloc, ptr);
             }
 
+            void Delete(uint32_t index)
+            {
+                Delete(m_data + index);
+            }
+
+            std::vector<uint32_t> GetActiveIndices()
+            {
+                std::vector<uint32_t> active;
+                active.reserve(capacity - m_freelist.size());
+                std::sort(m_freelist.begin(), m_freelist.end());
+
+                auto c = m_freelist.data();
+                auto e = m_freelist.data() + m_freelist.size();
+
+                for (auto i = 0u; i < capacity; ++i)
+                {
+                    if (c != e && *c == i)
+                    {
+                        c++;
+                        continue;
+                    }
+
+                    active.push_back(i);
+                }
+
+                return active;
+            }
+
         private:
             T* m_data;
             std::vector<size_t> m_freelist;

@@ -1404,6 +1404,18 @@
     <ClInclude Include="src\Rendering\Passes\PassVolumeFog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Engines\EngineScreenshot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Structs\ExecutionGate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utilities\IDObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utilities\FastMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -2149,6 +2161,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Passes\PassVolumeFog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\Contextual\Engines\EngineScreenshot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

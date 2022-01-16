@@ -124,10 +124,10 @@ namespace PK::Rendering::VulkanRHI::Utilities
         {
             if ((queueFamilies.at(i).queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) == (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))
             {
-                indices[QueueType::Graphics].index = i;
+                indices[QueueType::Graphics] = i;
             
                 // @TODO consider a separate queue for compute
-                indices[QueueType::Compute].index = i;
+                indices[QueueType::Compute] = i;
             }
 
             VkBool32 presentSupport = false;
@@ -135,7 +135,7 @@ namespace PK::Rendering::VulkanRHI::Utilities
 
             if (presentSupport)
             {
-                indices[QueueType::Present].index = i;
+                indices[QueueType::Present] = i;
             }
         }
 
@@ -249,10 +249,21 @@ namespace PK::Rendering::VulkanRHI::Utilities
                 swapChainSupported = presentModeCount > 0 && formatCount > 0;
             }
 
+            auto hasQueueFamilies = true;
+
+            for (auto i = 0; i < PK_QUEUE_FAMILY_COUNT; ++i)
+            {
+                if (queueFamilies->indices[i] == PK_INVALID_QUEUE_FAMILY)
+                {
+                    hasQueueFamilies = false;
+                    break;
+                }
+            }
+
             if (properties.deviceType != requirements.deviceType ||
                 !extensionSupported ||
                 !swapChainSupported ||
-                !queueFamilies->HasIndices())
+                !hasQueueFamilies)
             {
                 continue;
             }

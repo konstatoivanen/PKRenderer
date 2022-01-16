@@ -1,6 +1,7 @@
 #pragma once
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Utilities/Ref.h"
+#include "Utilities/Pool.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
@@ -11,14 +12,14 @@ namespace PK::Rendering::VulkanRHI::Systems
         struct DisposeHandle
         {
             Scope<IVulkanDisposable> disposable = nullptr;
-            VulkanExecutionGate gate{};
+            ExecutionGate gate{};
         };
 
         public:
             VulkanDisposer() {}
 
             template<typename T>
-            void Dispose(T* disposable, const VulkanExecutionGate& releaseGate)
+            void Dispose(T* disposable, const ExecutionGate& releaseGate)
             {
                 static_assert(std::is_base_of<IVulkanDisposable, T>::value, "Template argument type does not derive from IService!");
                 m_disposables.push_back({ Scope<IVulkanDisposable>(disposable), releaseGate });

@@ -29,7 +29,8 @@ namespace PK::Rendering::VulkanRHI::Systems
         m_device(device), 
         m_maxSets(maxSets), 
         m_poolSizes(poolSizes),
-        m_pruneDelay(pruneDelay)
+        m_pruneDelay(pruneDelay),
+        m_sets(1024)
     {
         GrowPool({});
     }
@@ -49,16 +50,15 @@ namespace PK::Rendering::VulkanRHI::Systems
 
     const VulkanDescriptorSet* VulkanDescriptorCache::GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
                                                                        const DescriptorSetKey& key,
-                                                                       const VulkanExecutionGate& gate)
+                                                                       const ExecutionGate& gate)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
-        auto iterator = m_sets.find(key);
         VulkanDescriptorSet* value = nullptr;
 
-        if (iterator != m_sets.end() && iterator->second.set != VK_NULL_HANDLE)
+        if (m_sets.TryGetValue(key, &value))
         {
-            iterator->second.pruneTick = nextPruneTick;
-            value = &iterator->second;
+            value->pruneTick = nextPruneTick;
+            value->executionGate = gate;
             return value;
         }
 
@@ -74,8 +74,11 @@ namespace PK::Rendering::VulkanRHI::Systems
         VkDescriptorSet vkdescriptorset;
         GetDescriptorSets(&allocInfo, &vkdescriptorset, gate, false);
 
-        m_sets[key] = { vkdescriptorset, nextPruneTick, gate };
-        value = &m_sets.at(key);
+        value = m_setsPool.New();
+        value->set = vkdescriptorset;
+        value->pruneTick = nextPruneTick;
+        value->executionGate = gate;
+        m_sets.AddValue(key, value);
 
         VkWriteDescriptorSet writes[PK_MAX_DESCRIPTORS_PER_SET]{};
         auto count = 0u;
@@ -187,6 +190,12 @@ namespace PK::Rendering::VulkanRHI::Systems
             if (m_extinctPools.at(i).executionGate.IsCompleted())
             {
                 auto n = m_extinctPools.size() - 1;
+
+                for (auto& index : m_extinctPools[i].extinctSetIndices)
+                {
+                    m_setsPool.Delete(index);
+                }
+
                 delete m_extinctPools[i].pool;
 
                 if (i != n)
@@ -198,27 +207,33 @@ namespace PK::Rendering::VulkanRHI::Systems
             }
         }
 
-        for (auto& kv : m_sets)
-        {
-            auto& key = kv.first;
-            auto& value = kv.second;
+        auto keyvalues = m_sets.GetKeyValues();
 
-            if (value.set != VK_NULL_HANDLE && value.executionGate.IsCompleted() && value.pruneTick < m_currentPruneTick)
+        for (int32_t i = (int32_t)keyvalues.count - 1; i >= 0; --i)
+        {
+            auto& key = keyvalues.keys[i].key;
+            auto& value = keyvalues.values[i];
+
+            if (!value->executionGate.IsCompleted() || value->pruneTick >= m_currentPruneTick)
             {
-                value.executionGate.Invalidate();
-                VK_ASSERT_RESULT_CTX(vkFreeDescriptorSets(m_device, m_currentPool->pool, 1, &value.set), "Failed to free descriptor sets!");
-                value.set = VK_NULL_HANDLE;
+                continue;
             }
+
+            VK_ASSERT_RESULT_CTX(vkFreeDescriptorSets(m_device, m_currentPool->pool, 1, &value->set), "Failed to free descriptor sets!");
+            value->set = VK_NULL_HANDLE;
+            value->executionGate.Invalidate();
+            m_setsPool.Delete(value);
+            m_sets.RemoveAt((uint32_t)i);
         }
     }
 
-    void VulkanDescriptorCache::GrowPool(const VulkanExecutionGate& executionGate)
+    void VulkanDescriptorCache::GrowPool(const ExecutionGate& executionGate)
     {
         if (m_currentPool != nullptr)
         {
-            m_extinctPools.push_back({ m_currentPool, executionGate, {}});
+            m_extinctPools.push_back({ m_currentPool, executionGate, m_setsPool.GetActiveIndices() });
             m_currentPool = nullptr;
-            m_sets.swap(m_extinctPools.at(m_extinctPools.size() - 1).extinctSets);
+            m_sets.Clear();
         }
 
         m_sizeMultiplier++;
@@ -241,7 +256,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         m_currentPool = new VulkanDescriptorPool(m_device, createInfo);
     }
 
-    void VulkanDescriptorCache::GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const VulkanExecutionGate& gate, bool throwOnFail)
+    void VulkanDescriptorCache::GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const ExecutionGate& gate, bool throwOnFail)
     {
         auto result = vkAllocateDescriptorSets(m_device, pAllocateInfo, pDescriptorSets);
 

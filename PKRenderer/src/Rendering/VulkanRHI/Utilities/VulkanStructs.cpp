@@ -7,44 +7,62 @@ namespace PK::Rendering::VulkanRHI
     VulkanBufferCreateInfo::VulkanBufferCreateInfo(BufferUsage usage, size_t size)
     {
         buffer.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        buffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         buffer.size = size;
+        buffer.usage = 0u;
+
+        if ((usage & BufferUsage::PersistentStage) != 0)
+        {
+            allocation.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        }
+
+        if ((usage & BufferUsage::Vertex) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        }
+
+        if ((usage & BufferUsage::Index) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        }
+
+        if ((usage & BufferUsage::Staging) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        }
+
+        if ((usage & BufferUsage::Constant) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        }
+
+        if ((usage & BufferUsage::Storage) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        }
+
+        if ((usage & BufferUsage::Readback) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        }
+
         auto type = usage & ~((uint32_t)BufferUsage::ExtraFlags);
 
         switch (type)
         {
             case BufferUsage::Vertex:
-                buffer.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-                buffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            case BufferUsage::Index:
+            case BufferUsage::Constant:
+            case BufferUsage::Storage:
                 allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
                 break;
 
-            case BufferUsage::Index:
-                buffer.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-                buffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+            case BufferUsage::Readback:
+                allocation.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
                 break;
 
             case BufferUsage::Staging:
-                buffer.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
                 allocation.usage = VMA_MEMORY_USAGE_CPU_ONLY;
-
-                if ((usage & BufferUsage::PersistentStage) != 0)
-                {
-                    allocation.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-                }
-
-                break;
-
-            case BufferUsage::Constant:
-                buffer.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-                buffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-                break;
-
-            case BufferUsage::Storage:
-                buffer.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-                buffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
                 break;
 
             default: 

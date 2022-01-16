@@ -122,6 +122,12 @@ namespace PK::Core
                     Step::Token<PK::ECS::Tokens::TokenCullCascades>(engineCull),
                     Step::Token<PK::ECS::Tokens::TokenCullCubeFaces>(engineCull)
                 }
+            },
+            {
+                assetDatabase,
+                {
+                    Step::Token<AssetImportToken<ApplicationConfig>>(renderPipeline)
+                }
             }
         });
 

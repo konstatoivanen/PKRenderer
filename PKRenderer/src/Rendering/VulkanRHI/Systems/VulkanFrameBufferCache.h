@@ -2,7 +2,7 @@
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
-#include "Math/FunctionsMisc.h"
+#include "Utilities/HashHelpers.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
@@ -53,7 +53,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         std::size_t operator()(const FrameBufferKey& k) const noexcept
         {
             constexpr ulong seed = 18446744073709551557;
-            return PK::Math::Functions::MurmurHash(reinterpret_cast<const void*>(&k), sizeof(FrameBufferKey), seed);
+            return HashHelpers::MurmurHash(reinterpret_cast<const void*>(&k), sizeof(FrameBufferKey), seed);
         }
     };
 
@@ -62,7 +62,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         std::size_t operator()(const RenderPassKey& k) const noexcept
         {
             constexpr ulong seed = 18446744073709551557;
-            return PK::Math::Functions::MurmurHash(reinterpret_cast<const void*>(&k), sizeof(RenderPassKey), seed);
+            return HashHelpers::MurmurHash(reinterpret_cast<const void*>(&k), sizeof(RenderPassKey), seed);
         }
     };
 

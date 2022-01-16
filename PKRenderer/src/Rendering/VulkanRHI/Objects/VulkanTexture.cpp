@@ -45,13 +45,12 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
 
         m_descriptor.sampler = sampler;
-        m_version++;
 
         for (auto& kv : m_imageViews)
         {
             if (kv.second->bindHandle.sampler != VK_NULL_HANDLE)
             {
-                kv.second->bindHandle.version = m_version;
+                kv.second->bindHandle.IncrementVersion();
                 kv.second->bindHandle.sampler = GraphicsAPI::GetActiveDriver<VulkanDriver>()->samplerCache->GetSampler(m_descriptor.sampler);
             }
         }
@@ -197,8 +196,6 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         Dispose();
 
-        m_version++;
-
         m_descriptor = descriptor;
         m_rawImage = new VulkanRawImage(m_driver->allocator, VulkanImageCreateInfo(descriptor));
 
@@ -333,7 +330,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         viewValue->view = new VulkanImageView(m_driver->device, info);
         viewValue->bindHandle.imageLayout = GetImageLayout();
         viewValue->bindHandle.imageView = viewValue->view->view;
-        viewValue->bindHandle.version = m_version;
 
         if (mode == TextureBindMode::SampledTexture)
         {

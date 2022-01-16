@@ -25,7 +25,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         inline bool IsActive() const { return commandBuffer != VK_NULL_HANDLE; }
 
-        inline VulkanExecutionGate GetOnCompleteGate() const { return { invocationIndex, &invocationIndex }; }
+        inline ExecutionGate GetOnCompleteGate() const { return { invocationIndex, &invocationIndex }; }
 
         void SetRenderTarget(const uint3& resolution) override final;
         void SetRenderTarget(Texture** renderTargets, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count) override final;

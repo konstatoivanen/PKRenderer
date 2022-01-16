@@ -179,6 +179,7 @@ namespace PK::Rendering::Structs
         Staging = 0x4,
         Constant = 0x8,
         Storage = 0x10,
+        Readback = 0x20,
         
         Dynamic = 0x20,
         PersistentStage = 0x40,

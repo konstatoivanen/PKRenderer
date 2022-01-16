@@ -2,7 +2,7 @@
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
 #include "Rendering/VulkanRHI/Objects/VulkanShader.h"
-#include "Math/FunctionsMisc.h"
+#include "Utilities/HashHelpers.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
@@ -12,7 +12,7 @@ namespace PK::Rendering::VulkanRHI::Systems
 
     struct PipelineKey 
     {
-        const VulkanShader* shader = nullptr;
+        IDHandle<VulkanShader> shader;
         FixedFunctionState fixedFunctionState{};
         VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         VkBool32 primitiveRestart = VK_FALSE;
@@ -31,12 +31,14 @@ namespace PK::Rendering::VulkanRHI::Systems
         std::size_t operator()(const PipelineKey& k) const noexcept
         {
             constexpr ulong seed = 18446744073709551557;
-            return PK::Math::Functions::MurmurHash(reinterpret_cast<const void*>(&k), sizeof(PipelineKey), seed);
+            return HashHelpers::MurmurHash(reinterpret_cast<const void*>(&k), sizeof(PipelineKey), seed);
         }
     };
 
     class VulkanPipelineCache : public NoCopy
     {
+        private:
+
         public:
             VulkanPipelineCache(VkDevice device, uint64_t pruneDelay) : m_device(device), m_pruneDelay(pruneDelay) {}
             ~VulkanPipelineCache();
@@ -49,13 +51,13 @@ namespace PK::Rendering::VulkanRHI::Systems
 
             const VulkanPipeline* GetPipeline(const PipelineKey& key);
             const VulkanPipeline* GetGraphicsPipeline(const PipelineKey& key);
-            const VulkanPipeline* GetComputePipeline(const VulkanShader* shader);
+            const VulkanPipeline* GetComputePipeline(const IDHandle<VulkanShader>& shader);
             void Prune();
 
         private:
             const VkDevice m_device;
             std::unordered_map<PipelineKey, PipelineValue, PipelineKeyHash> m_graphicsPipelines;
-            std::unordered_map<const VulkanShader*, PipelineValue> m_computePipelines;
+            std::unordered_map<IDHandle<VulkanShader>, PipelineValue, IDHandle<VulkanShader>::Hash> m_computePipelines;
             uint64_t m_currentPruneTick = 0;
             uint64_t m_pruneDelay = 0;
     };

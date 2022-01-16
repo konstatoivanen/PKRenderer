@@ -1,7 +1,8 @@
 #pragma once
-#include "Utilities/NoCopy.h"
+#include "Utilities/IDObject.h"
 #include "vulkan/vulkan.h"
 #include "VulkanMemory.h"
+#include "Rendering/Structs/ExecutionGate.h"
 #include "Rendering/Structs/Enums.h"
 #include "Rendering/Structs/Descriptors.h"
 #include "Rendering/Structs/Layout.h"
@@ -21,6 +22,20 @@ namespace PK::Rendering::VulkanRHI
         Present
     };
     
+    typedef struct QueueFamilies 
+    {
+        uint32_t indices[3] = 
+        { 
+            PK_INVALID_QUEUE_FAMILY, 
+            PK_INVALID_QUEUE_FAMILY, 
+            PK_INVALID_QUEUE_FAMILY 
+        }; 
+
+        constexpr uint32_t operator[](const QueueType i) const { return indices[(uint32_t)i]; }
+        uint32_t& operator[](const QueueType i) { return indices[(uint32_t)i]; }
+
+    } QueueFamilies;
+
     struct PhysicalDeviceRequirements
     {
         uint32_t versionMajor;
@@ -68,46 +83,9 @@ namespace PK::Rendering::VulkanRHI
         VkAccessFlags dstAccessMask = 0;
     };
 
-    struct QueueFamily
+    struct IVulkanDisposable : public IDObject 
     {
-        uint32_t index = PK_INVALID_QUEUE_FAMILY;
-        VkQueue queue = VK_NULL_HANDLE;
-        inline constexpr bool HasIndex() const { return index != PK_INVALID_QUEUE_FAMILY; }
-    };
-
-    struct QueueFamilies
-    {
-        QueueFamily queues[PK_QUEUE_FAMILY_COUNT];
-
-        inline QueueFamily& operator[](const QueueType i) { return queues[(uint32_t)i]; }
-        inline constexpr const QueueFamily& operator[](QueueType i) const { return queues[(uint32_t)i]; }
-
-        inline constexpr bool HasIndices() const 
-        {
-            for (auto i = 0; i < PK_QUEUE_FAMILY_COUNT; ++i)
-            {
-                if (!queues[i].HasIndex())
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-    };
-
-    struct VulkanExecutionGate
-    {
-        uint64_t invocationIndex = 0;
-        const uint64_t* remoteInvocationIndex = nullptr;
-        inline void Invalidate() { remoteInvocationIndex = nullptr; }
-        inline bool IsValid() const { return remoteInvocationIndex != nullptr; }
-        inline bool IsCompleted() const { return remoteInvocationIndex == nullptr || *remoteInvocationIndex != invocationIndex; }
-    };
-
-    struct IVulkanDisposable : public NoCopy 
-    {
-        public: virtual ~IVulkanDisposable() = 0 {};
+        virtual ~IVulkanDisposable() = 0 {};
     };
 
     struct VulkanFence : public NoCopy
@@ -243,7 +221,7 @@ namespace PK::Rendering::VulkanRHI
     {
         VkDescriptorSet set;
         uint64_t pruneTick;
-        mutable VulkanExecutionGate executionGate;
+        mutable ExecutionGate executionGate;
     };
 
     struct VulkanSampler : public NoCopy
@@ -255,10 +233,8 @@ namespace PK::Rendering::VulkanRHI
         VkSampler sampler;
     };
 
-    struct VulkanBindHandle
+    struct VulkanBindHandle : IDObject
     {
-        uint32_t version;
-
         union
         {
             VkImageView imageView = VK_NULL_HANDLE;

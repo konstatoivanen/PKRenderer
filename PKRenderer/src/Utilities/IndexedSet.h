@@ -101,25 +101,23 @@ namespace PK::Utilities
                 }
                 else 
                 {
+                    auto currentValueIndex = valueIndex;
+
+                    do
                     {
-                        auto currentValueIndex = valueIndex;
-
-                        do
+                        if (m_values[currentValueIndex] == value)
                         {
-                            if (m_values[currentValueIndex] == value)
+                            if (outIndex != nullptr)
                             {
-                                if (outIndex != nullptr)
-                                {
-                                    *outIndex = currentValueIndex;
-                                }
-
-                                return false;
+                                *outIndex = currentValueIndex;
                             }
 
-                            currentValueIndex = m_nodes[currentValueIndex].previous;
-                        } 
-                        while (currentValueIndex != -1);
-                    }
+                            return false;
+                        }
+
+                        currentValueIndex = m_nodes[currentValueIndex].previous;
+                    } 
+                    while (currentValueIndex != -1);
 
                     m_collisions++;
                     m_nodes[m_count] = Node(valueIndex);
@@ -212,6 +210,7 @@ namespace PK::Utilities
                         {
                             m_nodes[updatePrevious].next = updateNext;
                         }
+
                         break;
                     }
 

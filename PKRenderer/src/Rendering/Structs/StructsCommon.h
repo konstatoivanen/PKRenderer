@@ -43,5 +43,10 @@ namespace PK::Rendering::Structs
         {
             return offset != other.offset ? offset < other.offset : count < other.count;
         }
+
+        constexpr bool operator == (const IndexRange& other) const
+        {
+            return offset == other.offset && count == other.count;
+        }
     };
 }

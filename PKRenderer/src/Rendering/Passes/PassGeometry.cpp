@@ -26,6 +26,7 @@ namespace PK::Rendering::Passes
         tokenFrustum.mask = RenderableFlags::Mesh;
         Functions::ExtractFrustrumPlanes(viewProjection, &tokenFrustum.planes, true);
         m_sequencer->Next(engineRoot, &tokenFrustum);
+        m_passGroup = 0xFFFFFFFF;
 
         if (visibilityList->count == 0)
         {

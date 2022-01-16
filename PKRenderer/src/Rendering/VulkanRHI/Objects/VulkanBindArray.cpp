@@ -84,7 +84,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         auto& target = m_handles[m_count];
 
-        if (target != handle || target->version != handle->version)
+        if (target != handle || target->Version() != handle->Version())
         {
             m_isDirty = true;
         }

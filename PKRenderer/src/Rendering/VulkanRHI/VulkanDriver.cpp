@@ -85,9 +85,9 @@ namespace PK::Rendering::VulkanRHI
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         std::set<uint32_t> uniqueQueueFamilies = 
         { 
-            queueFamilies[QueueType::Graphics].index, 
-            queueFamilies[QueueType::Compute].index, 
-            queueFamilies[QueueType::Present].index 
+            queueFamilies[QueueType::Graphics], 
+            queueFamilies[QueueType::Compute], 
+            queueFamilies[QueueType::Present] 
         };
 
         for (auto queueFamily : uniqueQueueFamilies)
@@ -135,10 +135,10 @@ namespace PK::Rendering::VulkanRHI
 
         VK_ASSERT_RESULT_CTX(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Failed to create logical device!");
 
-        for (auto i = 0; i < PK_QUEUE_FAMILY_COUNT; ++i)
-        {
-            vkGetDeviceQueue(device, queueFamilies.queues[i].index, 0, &queueFamilies[(QueueType)i].queue);
-        }
+        //for (auto i = 0; i < PK_QUEUE_FAMILY_COUNT; ++i)
+        //{
+        //    vkGetDeviceQueue(device, queueFamilies.queues[i].index, 0, &queueFamilies[(QueueType)i].queue);
+        //}
 
         VmaAllocatorCreateInfo allocatorInfo{};
         allocatorInfo.vulkanApiVersion = Utilities::VulkanGetPhysicalDeviceProperties(physicalDevice).apiVersion;
@@ -156,7 +156,7 @@ namespace PK::Rendering::VulkanRHI
         samplerCache = CreateScope<VulkanSamplerCache>(device);
         layoutCache = CreateScope<VulkanLayoutCache>(device);
         disposer = CreateScope<VulkanDisposer>();
-        descriptorCache = CreateScope<VulkanDescriptorCache>(device, properties.garbagePruneDelay, 100ull,
+        descriptorCache = CreateScope<VulkanDescriptorCache>(device, 4, 100ull,
                                                              std::initializer_list<std::pair<const VkDescriptorType, size_t>>({
                                                                  { VK_DESCRIPTOR_TYPE_SAMPLER, 100ull },
                                                                  { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100ull },
@@ -173,7 +173,7 @@ namespace PK::Rendering::VulkanRHI
                                                                      stagingBufferCache.get(),
                                                                      disposer.get()
                                                                  }, 
-                                                                 queueFamilies[QueueType::Graphics].index);
+                                                                 queueFamilies[QueueType::Graphics]);
     }
 
     VulkanDriver::~VulkanDriver()

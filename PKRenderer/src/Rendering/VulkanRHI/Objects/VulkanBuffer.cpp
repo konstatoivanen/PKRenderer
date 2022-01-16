@@ -5,7 +5,7 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    VulkanBuffer::VulkanBuffer(BufferUsage usage, const BufferLayout& layout, const void* data, size_t count) :
+    VulkanBuffer::VulkanBuffer(BufferUsage usage, const BufferLayout& layout, const void* data, size_t count) : 
         Buffer(usage, layout, count),
         m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>())
     {
@@ -124,29 +124,27 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         PK_THROW_ASSERT(range.offset + range.count <= m_count, "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
 
-        auto iter = m_bindHandles.find(range);
+        VulkanBindHandle* handle = nullptr;
 
-        if (iter != m_bindHandles.end())
+        if (m_bindHandles.TryGetValue(range, &handle))
         {
-            return iter->second.get();
+            return handle;
         }
 
-        auto newHandle = new VulkanBindHandle();
+        handle = new VulkanBindHandle();
         auto stride = m_layout.GetStride(m_usage);
-        newHandle->version = m_version;
-        newHandle->buffer = m_rawBuffer->buffer;
-        newHandle->bufferRange = stride * range.count;
-        newHandle->bufferOffset = stride * range.offset;
-        newHandle->bufferLayout = &m_layout;
-        newHandle->inputRate = EnumConvert::GetInputRate(m_inputRate);
-        m_bindHandles[range] = Scope<VulkanBindHandle>(newHandle);
-        return newHandle;
+        handle->buffer = m_rawBuffer->buffer;
+        handle->bufferRange = stride * range.count;
+        handle->bufferOffset = stride * range.offset;
+        handle->bufferLayout = &m_layout;
+        handle->inputRate = EnumConvert::GetInputRate(m_inputRate);
+        m_bindHandles.AddValue(range, handle);
+        return handle;
     }
 
     void VulkanBuffer::Rebuild(size_t count)
     {
         Dispose();
-        m_version++;
         m_count = count;
         auto size = m_layout.GetStride(m_usage) * count;
         m_rawBuffer = new VulkanRawBuffer(m_driver->allocator, VulkanBufferCreateInfo(m_usage, size));
@@ -161,7 +159,14 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanBuffer::Dispose()
     {
-        m_bindHandles.clear();
+        auto values = m_bindHandles.GetValues();
+
+        for (auto i = 0; i < values.count; ++i)
+        {
+            delete values[i];
+        }
+
+        m_bindHandles.Clear();
 
         if (m_rawBuffer != nullptr)
         {
