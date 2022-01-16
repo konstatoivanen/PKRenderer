@@ -559,7 +559,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Utilities\BufferView.h" />
     <ClInclude Include="src\Core\CommandConfig.h" />
     <ClInclude Include="src\Core\ConsoleCommandBinding.h" />
-    <ClInclude Include="src\Utilities\FastMap.h" />
+    <ClInclude Include="src\Utilities\PointerMap.h" />
     <ClInclude Include="src\Utilities\FixedList.h" />
     <ClInclude Include="src\Utilities\IDObject.h" />
     <ClInclude Include="src\Utilities\IndexedSet.h" />

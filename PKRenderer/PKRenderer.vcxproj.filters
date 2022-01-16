@@ -1413,7 +1413,7 @@
     <ClInclude Include="src\Utilities\IDObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utilities\FastMap.h">
+    <ClInclude Include="src\Utilities\PointerMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

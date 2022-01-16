@@ -212,6 +212,7 @@ namespace PK::Rendering
         auto cmd = GraphicsAPI::GetCommandBuffer();
         auto hash = HashCache::Get();
         cmd->SetBuffer(hash->pk_Instancing_Transforms, m_matrices.get());
+        cmd->SetBuffer(hash->pk_Instancing_Indices, m_indices.get());
         cmd->SetTextureArray(hash->pk_Instancing_Textures2D, m_textures2D);
     }
 
@@ -266,10 +267,9 @@ namespace PK::Rendering
                 cmd->SetBuffer(hash->pk_Instancing_Properties, m_properties.get(), dc.properties);
             }
 
-            cmd->SetBuffer(hash->pk_Instancing_Indices, m_indices.get(), dc.indices);
             cmd->SetShader(shader);
             cmd->SetFixedStateAttributes(overrideAttributes);
-            cmd->DrawMesh(dc.mesh, dc.submesh, (uint32_t)dc.indices.count, 0u);
+            cmd->DrawMesh(dc.mesh, dc.submesh, (uint32_t)dc.indices.count, (uint32_t)dc.indices.offset);
         }
 
         if (requireKeyword > 0u)

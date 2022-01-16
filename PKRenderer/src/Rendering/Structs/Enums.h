@@ -171,7 +171,7 @@ namespace PK::Rendering::Structs
         ComputeWrite = WriteShader | StageCompute,                           // Write texture, image, & buffer  in compute
     };
 
-    enum class BufferUsage : uint8_t
+    enum class BufferUsage : uint16_t
     {
         None = 0x0,
         Vertex = 0x1,

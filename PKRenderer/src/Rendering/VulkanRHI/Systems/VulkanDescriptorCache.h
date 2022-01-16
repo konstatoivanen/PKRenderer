@@ -2,7 +2,7 @@
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Math/FunctionsMisc.h"
 #include "Utilities/Pool.h"
-#include "Utilities/FastMap.h"
+#include "Utilities/PointerMap.h"
 #include "Utilities/Ref.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
@@ -78,7 +78,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             VulkanDescriptorPool* m_currentPool = nullptr;
            // Pool<VulkanBindHandle, 4096> m_bindHandlePool;
             Pool<VulkanDescriptorSet, 2048> m_setsPool;
-            FastMap<DescriptorSetKey, VulkanDescriptorSet, DescriptorSetKeyHash> m_sets;
+            PointerMap<DescriptorSetKey, VulkanDescriptorSet, DescriptorSetKeyHash> m_sets;
             std::vector<ExtinctPool> m_extinctPools;
             std::vector<VkDescriptorImageInfo> m_writeImages;
             std::vector<VkDescriptorBufferInfo> m_writeBuffers;

@@ -8,7 +8,7 @@
 namespace PK::Utilities
 {
     template<typename TKey, typename T, typename THash = std::hash<TKey>>
-    struct FastMap : NoCopy
+    struct PointerMap : NoCopy
     {
         using TValue = T*;
 
@@ -51,7 +51,7 @@ namespace PK::Utilities
             }
 
         public:
-            FastMap(uint32_t size) :
+            PointerMap(uint32_t size) :
                 m_collisions(0u),
                 m_count(0u),
                 m_values(size),
@@ -60,7 +60,7 @@ namespace PK::Utilities
             {
             }
 
-            FastMap() : FastMap(1)
+            PointerMap() : PointerMap(1)
             {
             }
 
@@ -114,6 +114,11 @@ namespace PK::Utilities
             {
                 auto index = GetIndex(key);
                 return index != -1 ? m_values[index] : nullptr;
+            }
+
+            const TValue GetValueAt(uint32_t index) const 
+            {
+                return m_values[index];
             }
 
             bool TryGetValue(const TKey& key, TValue* result)
