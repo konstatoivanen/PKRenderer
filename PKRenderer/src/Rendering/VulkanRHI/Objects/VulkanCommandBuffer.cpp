@@ -155,6 +155,12 @@ namespace PK::Rendering::VulkanRHI::Objects
         vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
+    void VulkanCommandBuffer::DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
+    {
+        ValidatePipeline();
+        vkCmdDrawIndexedIndirect(commandBuffer, indirectArguments->GetNative<VulkanBuffer>()->GetRaw()->buffer, offset, drawCount, stride);
+    }
+
     void VulkanCommandBuffer::Dispatch(uint3 groupCount)
     {
         EndRenderPass();

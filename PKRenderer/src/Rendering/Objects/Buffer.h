@@ -19,24 +19,23 @@ namespace PK::Rendering::Objects
 
             inline static Ref<Buffer> CreateVertex(const BufferLayout& layout, const void* data, size_t count)
             { 
-                return Create(BufferUsage::Vertex, layout, data, count);
+                return Create(BufferUsage::DefaultVertex, layout, data, count);
             }
 
             inline static Ref<Buffer> CreateIndex(ElementType type, const  void* data, size_t count)
             {
-                return Create(BufferUsage::Index, BufferLayout({{ type, "INDEX" }}), data, count);
+                return Create(BufferUsage::DefaultIndex, BufferLayout({{ type, "INDEX" }}), data, count);
             }
 
             inline static Ref<Buffer> CreateConstant(const BufferLayout& layout, BufferUsage extraFlags = BufferUsage::None)
             {
-                return Create(BufferUsage::Constant | extraFlags, layout, nullptr, 1);
+                return Create(BufferUsage::DefaultConstant | extraFlags, layout, nullptr, 1);
             }
 
             inline static Ref<Buffer> CreateStorage(const BufferLayout& layout, size_t count, BufferUsage extraFlags = BufferUsage::None)
             {
-                return Create(BufferUsage::Storage | extraFlags, layout, nullptr, count);
+                return Create(BufferUsage::DefaultStorage | extraFlags, layout, nullptr, count);
             }
-
 
             virtual ~Buffer() = default;
             virtual void SetData(const void* data, size_t offset, size_t size) = 0;

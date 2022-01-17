@@ -554,6 +554,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\Passes\PassLights.h" />
     <ClInclude Include="src\Rendering\Passes\PassSceneGI.h" />
     <ClInclude Include="src\Rendering\Structs\ExecutionGate.h" />
+    <ClInclude Include="src\Rendering\Structs\StructIndirectArguments.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.h" />
     <ClInclude Include="src\Utilities\BufferIterator.h" />
     <ClInclude Include="src\Utilities\BufferView.h" />

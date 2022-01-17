@@ -173,17 +173,31 @@ namespace PK::Rendering::Structs
 
     enum class BufferUsage : uint16_t
     {
-        None = 0x0,
-        Vertex = 0x1,
-        Index = 0x2,
-        Staging = 0x4,
-        Constant = 0x8,
-        Storage = 0x10,
-        Readback = 0x20,
-        
-        Dynamic = 0x20,
-        PersistentStage = 0x40,
-        ExtraFlags = Dynamic | PersistentStage,
+        None = 0,
+
+        GPUOnly     = 1,
+        CPUOnly     = 2,
+        CPUToGPU    = 3,
+        GPUToCPU    = 4,
+        CPUCopy     = 5,
+
+        TransferDst     = 1 << 4,
+        TransferSrc     = 1 << 5,
+        Vertex          = 1 << 6,
+        Index           = 1 << 7,
+        Constant        = 1 << 8,
+        Storage         = 1 << 9,
+        Indirect        = 1 << 10,
+        Dynamic         = 1 << 11,
+        PersistentStage = 1 << 12,
+
+        TypeBits = 7,
+        AlignedTypes = Storage | Constant,
+        DefaultVertex = GPUOnly | TransferDst | Vertex,
+        DefaultIndex = GPUOnly | TransferDst | Index,
+        DefaultConstant = GPUOnly | TransferDst | Constant,
+        DefaultStorage = GPUOnly | TransferDst | Storage,
+        DefaultStaging = CPUOnly | TransferSrc,
     };
 
     enum class TextureUsage : uint8_t

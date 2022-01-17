@@ -6,6 +6,7 @@
 #include "Rendering/Objects/Texture.h"
 #include "Rendering/Objects/RenderTexture.h"
 #include "Rendering/Objects/BindArray.h"
+#include "Rendering/Structs/ExecutionGate.h"
 
 namespace PK::Rendering::Objects
 {
@@ -13,6 +14,7 @@ namespace PK::Rendering::Objects
 
     struct CommandBuffer : public PK::Utilities::NoCopy
     {
+        virtual ExecutionGate GetOnCompleteGate() const = 0;
         virtual void SetRenderTarget(const uint3& resolution) = 0;
         virtual void SetRenderTarget(Texture** renderTarget, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count) = 0;
         virtual void ClearColor(const color& color, uint32_t index) = 0;
@@ -41,6 +43,7 @@ namespace PK::Rendering::Objects
 
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;
+        virtual void DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) = 0;
         virtual void Dispatch(uint3 groupCount) = 0;
         
         // @TODO Nasty dependency. Rethink this one!

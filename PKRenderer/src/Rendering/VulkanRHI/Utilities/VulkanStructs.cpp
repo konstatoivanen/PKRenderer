@@ -11,62 +11,55 @@ namespace PK::Rendering::VulkanRHI
         buffer.size = size;
         buffer.usage = 0u;
 
+        if ((usage & BufferUsage::TransferDst) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        }
+
+        if ((usage & BufferUsage::TransferSrc) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        }
+
+        if ((usage & BufferUsage::Vertex) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        }
+
+        if ((usage & BufferUsage::Index) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        }
+
+        if ((usage & BufferUsage::Constant) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        }
+
+        if ((usage & BufferUsage::Storage) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        }
+
+        if ((usage & BufferUsage::Indirect) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+        }
+
         if ((usage & BufferUsage::PersistentStage) != 0)
         {
             allocation.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
         }
 
-        if ((usage & BufferUsage::Vertex) != 0)
-        {
-            buffer.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        }
-
-        if ((usage & BufferUsage::Index) != 0)
-        {
-            buffer.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        }
-
-        if ((usage & BufferUsage::Staging) != 0)
-        {
-            buffer.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        }
-
-        if ((usage & BufferUsage::Constant) != 0)
-        {
-            buffer.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        }
-
-        if ((usage & BufferUsage::Storage) != 0)
-        {
-            buffer.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        }
-
-        if ((usage & BufferUsage::Readback) != 0)
-        {
-            buffer.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        }
-
-        auto type = usage & ~((uint32_t)BufferUsage::ExtraFlags);
+        auto type = usage & BufferUsage::TypeBits;
 
         switch (type)
         {
-            case BufferUsage::Vertex:
-            case BufferUsage::Index:
-            case BufferUsage::Constant:
-            case BufferUsage::Storage:
-                allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-                break;
-
-            case BufferUsage::Readback:
-                allocation.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
-                break;
-
-            case BufferUsage::Staging:
-                allocation.usage = VMA_MEMORY_USAGE_CPU_ONLY;
-                break;
-
-            default: 
-                PK_THROW_ERROR("Invalid buffer create preset!");
+            case BufferUsage::GPUOnly: allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY; break;
+            case BufferUsage::CPUOnly: allocation.usage = VMA_MEMORY_USAGE_CPU_ONLY; break;
+            case BufferUsage::CPUToGPU: allocation.usage = VMA_MEMORY_USAGE_CPU_TO_GPU; break;
+            case BufferUsage::GPUToCPU: allocation.usage = VMA_MEMORY_USAGE_GPU_TO_CPU; break;
+            case BufferUsage::CPUCopy: allocation.usage = VMA_MEMORY_USAGE_CPU_COPY; break;
         }
     }
 

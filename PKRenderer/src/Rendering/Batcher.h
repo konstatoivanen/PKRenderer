@@ -64,14 +64,13 @@ namespace PK::Rendering
             Ref<Buffer> m_matrices;
             Ref<Buffer> m_indices;
             Ref<Buffer> m_properties;
+            Ref<Buffer> m_indirectArguments;
             BindSet<Texture> m_textures2D;
-            //Ref<BindArray<Texture>> m_textures3D;
-            //Ref<BindArray<Texture>> m_texturesCube;
 
             std::vector<DrawCall> m_drawCalls;
-            std::vector<IndexRange> m_passGroups;
-            
+            std::vector<IndexRange> m_passGroups;     
             std::vector<DrawInfo> m_drawInfos;
+
             FixedList<MaterialGroup, 32> m_materials;
             IndexedSet<Mesh> m_meshes;
             IndexedSet<Shader> m_shaders;

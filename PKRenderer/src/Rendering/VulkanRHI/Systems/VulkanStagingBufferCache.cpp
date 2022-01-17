@@ -73,7 +73,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             return stagingBuffer;
         }
 
-        VulkanBufferCreateInfo createInfo(BufferUsage::Staging, size);
+        VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging, size);
         auto stagingBuffer = m_bufferPool.New(m_allocator, createInfo);
         stagingBuffer->pruneTick = nextPruneTick;
         stagingBuffer->executionGate.Invalidate();

@@ -79,6 +79,16 @@ namespace PK::Rendering
         },
         4096, BufferUsage::PersistentStage);
 
+        m_indirectArguments = Buffer::CreateStorage(
+        {
+            { ElementType::Uint, "indexCount"},
+            { ElementType::Uint, "instanceCount"},
+            { ElementType::Uint, "firstIndex"},
+            { ElementType::Int,  "vertexOffset"},
+            { ElementType::Uint, "firstInstance"}
+        },
+        256, BufferUsage::PersistentStage);
+
         m_drawCalls.reserve(512);
         m_passGroups.reserve(512);
     }
@@ -91,9 +101,10 @@ namespace PK::Rendering
         }
 
         m_groupIndex = 0u;
-        m_drawInfos.clear();
+        m_meshes.Clear();
         m_transforms.Clear();
         m_textures2D.Clear();
+        m_drawInfos.clear();
         m_passGroups.clear();
         m_drawCalls.clear();
     }

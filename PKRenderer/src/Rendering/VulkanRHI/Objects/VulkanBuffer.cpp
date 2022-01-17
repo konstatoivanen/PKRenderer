@@ -151,7 +151,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if ((m_usage & BufferUsage::PersistentStage) != 0)
         {
-            m_mappedBuffer = new VulkanStagingBuffer(m_driver->allocator, VulkanBufferCreateInfo(BufferUsage::Staging | BufferUsage::PersistentStage, size));
+            m_mappedBuffer = new VulkanStagingBuffer(m_driver->allocator, VulkanBufferCreateInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size));
         }
 
         GetBindHandle({ 0, m_count });
