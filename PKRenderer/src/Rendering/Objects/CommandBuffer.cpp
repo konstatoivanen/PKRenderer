@@ -172,6 +172,12 @@ namespace PK::Rendering::Objects
         DrawMesh(mesh, submesh, instanceCount, firstInstance);
     }
 
+    void CommandBuffer::DrawMeshIndirect(const Mesh* mesh, const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
+    {
+        SetMesh(mesh);
+        DrawIndexedIndirect(indirectArguments, offset, drawCount, stride);
+    }
+
     void CommandBuffer::Blit(const Shader* shader, int variantIndex)
     {
         SetShader(shader, variantIndex);

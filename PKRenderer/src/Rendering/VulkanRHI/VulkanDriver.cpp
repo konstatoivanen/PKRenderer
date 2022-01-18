@@ -75,6 +75,7 @@ namespace PK::Rendering::VulkanRHI
         physicalDeviceRequirements.features.shaderInt64 = VK_TRUE;
         physicalDeviceRequirements.features.imageCubeArray = VK_TRUE;
         physicalDeviceRequirements.features.fragmentStoresAndAtomics = VK_TRUE;
+        physicalDeviceRequirements.features.multiDrawIndirect = VK_TRUE;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
         Utilities::VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice, &queueFamilies);
@@ -134,11 +135,6 @@ namespace PK::Rendering::VulkanRHI
         }
 
         VK_ASSERT_RESULT_CTX(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Failed to create logical device!");
-
-        //for (auto i = 0; i < PK_QUEUE_FAMILY_COUNT; ++i)
-        //{
-        //    vkGetDeviceQueue(device, queueFamilies.queues[i].index, 0, &queueFamilies[(QueueType)i].queue);
-        //}
 
         VmaAllocatorCreateInfo allocatorInfo{};
         allocatorInfo.vulkanApiVersion = Utilities::VulkanGetPhysicalDeviceProperties(physicalDevice).apiVersion;

@@ -97,6 +97,7 @@ namespace PK::Rendering::Objects
         void DrawMesh(const Mesh* mesh, int submesh, uint32_t instanceCount, uint32_t firstInstance);
         void DrawMesh(const Mesh* mesh, int submesh, const Shader* shader, int variantIndex = -1);
         void DrawMesh(const Mesh* mesh, int submesh, const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int variantIndex = -1);
+        void DrawMeshIndirect(const Mesh* mesh, const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride);
         void Blit(const Shader* shader, int variantIndex = -1);
         void Blit(const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int variantIndex = -1);
         void Dispatch(const Shader* shader, uint3 groupCount);

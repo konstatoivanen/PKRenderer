@@ -73,6 +73,8 @@ namespace PK::Utilities
 
             TValue GetValue(uint32_t index) const { return m_values[index]; }
 
+            TValue operator[](uint32_t index) const { return m_values[index]; }
+
             int32_t GetIndex(TValue value) const
             { 
                 auto valueIndex = GetValueIndexFromBuckets(GetBucketIndex(value));

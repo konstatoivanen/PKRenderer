@@ -21,22 +21,20 @@ namespace PK::Rendering
     {
         const Mesh* mesh = nullptr;
         const Shader* shader = nullptr;
-        uint32_t submesh = 0;
         IndexRange indices{};
-        IndexRange properties{};
     };
 
     struct MaterialGroup
     {
         IndexedSet<Material> materials;
-        size_t offset = 0ull;
+        size_t firstIndex = 0ull;
         size_t stride = 0ull;
 
         MaterialGroup() : materials(32){}
         uint16_t Add(Material* material);
-        inline void Clear() { offset = 0ull; materials.Clear(); }
+        inline void Clear() { firstIndex = 0ull; materials.Clear(); }
         constexpr size_t GetSize() const { return materials.GetCount() * stride; }
-        constexpr IndexRange GetPropertyRange() const { return { offset / sizeof(uint32_t), GetSize() / sizeof(uint32_t) }; }
+        constexpr size_t GetOffset() const { return firstIndex * stride; }
     };
 
     struct DrawInfo
@@ -48,6 +46,18 @@ namespace PK::Rendering
         uint16_t transform = 0u;
         uint8_t clipIndex = 0u;
         uint8_t submesh = 0u;
+
+        bool operator < (DrawInfo& b)
+        {
+            if (group != b.group) return group < b.group;
+            if (shader != b.shader) return shader < b.shader;
+            if (mesh != b.mesh) return mesh < b.mesh;
+            if (submesh != b.submesh) return submesh < b.submesh;
+            if (clipIndex != b.clipIndex) return clipIndex < b.clipIndex;
+            if (material != b.material) return material < b.material;
+            if (transform != b.transform) return transform < b.transform;
+            return false;
+        }
     };
     
     class Batcher : public PK::Core::NoCopy

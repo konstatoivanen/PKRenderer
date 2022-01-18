@@ -1,11 +1,12 @@
 #include "PrecompiledHeader.h"
 #include "Batcher.h"
 #include "Rendering/HashCache.h"
+#include "Rendering/GraphicsAPI.h"
+#include "Rendering/Structs/StructIndirectArguments.h"
 #include "ECS/Contextual/EntityViews/MeshRenderableView.h"
 #include "ECS/Contextual/EntityViews/LightRenderableView.h"
-#include "Math/FunctionsIntersect.h"
-#include "Rendering/GraphicsAPI.h"
 #include "Utilities/VectorUtilities.h"
+#include "Math/FunctionsIntersect.h"
 
 using namespace PK::Rendering;
 using namespace PK::ECS::EntityViews;
@@ -87,7 +88,7 @@ namespace PK::Rendering
             { ElementType::Int,  "vertexOffset"},
             { ElementType::Uint, "firstInstance"}
         },
-        256, BufferUsage::PersistentStage);
+        256, BufferUsage::PersistentStage | BufferUsage::Indirect);
 
         m_drawCalls.reserve(512);
         m_passGroups.reserve(512);
@@ -116,7 +117,8 @@ namespace PK::Rendering
             return;
         }
 
-        Vector::QuickSort(m_drawInfos);
+        std::sort(m_drawInfos.begin(), m_drawInfos.end());
+        //Vector::QuickSort(m_drawInfos);
 
         m_matrices->Validate(m_transforms.GetCapacity());
         auto matrixView = m_matrices->BeginMap<float4x4>(0, m_transforms.GetCount());
@@ -128,17 +130,16 @@ namespace PK::Rendering
 
         m_matrices->EndMap();
 
-        auto alignment = GraphicsAPI::GetBufferOffsetAlignment(BufferUsage::Storage);
         auto buffsize = 0ull;
 
-        for (auto& material : m_materials)
+        for (auto& group : m_materials)
         {
-            auto size = material->GetSize();
+            auto size = group->GetSize();
 
             if (size > 0)
             {
-                buffsize = (size_t)ceil((double)buffsize / alignment) * alignment;
-                material->offset = buffsize;
+                group->firstIndex = (size_t)ceil((double)buffsize / group->stride);
+                buffsize = group->firstIndex * group->stride;
                 buffsize += size;
             }
         }
@@ -152,7 +153,7 @@ namespace PK::Rendering
             {
                 if (group->GetSize() > 0)
                 {
-                    auto destination = propertyView.data + group->offset;
+                    auto destination = propertyView.data + group->GetOffset();
 
                     for (auto& material : group->materials)
                     {
@@ -164,21 +165,44 @@ namespace PK::Rendering
             m_properties->EndMap();
         }
 
+        auto indirectCount = 1u;
+        auto current = m_drawInfos[0];
+
         m_indices->Validate(m_drawInfos.capacity());
         auto indexView = m_indices->BeginMap<PK_Draw>(0, m_drawInfos.size());
 
-        auto pbase = 0ull;
-        auto dbase = 0ull;
-        auto current = m_drawInfos[0];
-
         for (auto i = 0u; i < m_drawInfos.size(); ++i)
         {
-            auto info = &m_drawInfos[i];
-
-            indexView[i].material = info->material;
+            const auto info = m_drawInfos.data() + i;
+            indexView[i].material = (uint32_t)info->material + (uint32_t)m_materials[info->shader]->firstIndex;
             indexView[i].transfrom = info->transform;
             indexView[i].mesh = 0;
             indexView[i].clipInfo = info->clipIndex;
+
+            if (info->group != current.group || 
+                info->shader != current.shader || 
+                info->mesh != current.mesh || 
+                info->submesh != current.submesh)
+            {
+                current = *info;
+                ++indirectCount;
+            }
+        }
+
+        m_indices->EndMap();
+
+        m_indirectArguments->Validate(indirectCount);
+        auto indirectView = m_indirectArguments->BeginMap<DrawIndexedIndirectCommand>(0, indirectCount);
+
+        auto indirectIndex = 0u;
+        auto pbase = 0ull;
+        auto dbase = 0ull;
+        auto ibase = 0ull;
+        current = m_drawInfos[0];
+
+        for (auto i = 0u; i < m_drawInfos.size(); ++i)
+        {
+            const auto info = m_drawInfos.data() + i;
 
             if (info->group == current.group &&
                 info->mesh == current.mesh &&
@@ -188,14 +212,25 @@ namespace PK::Rendering
                 continue;
             }
 
-            m_drawCalls.push_back(
-            { 
-                m_meshes.GetValue(current.mesh), 
-                m_shaders.GetValue(current.shader), 
-                current.submesh, 
-                { dbase, i - dbase }, 
-                m_materials[current.shader]->GetPropertyRange() 
-            });
+            auto mesh = m_meshes.GetValue(current.mesh);
+            auto sm = mesh->GetSubmesh(current.submesh);
+            auto indirect = &indirectView[indirectIndex++];
+            indirect->indexCount = (uint32_t)sm.count;
+            indirect->instanceCount = i - (uint32_t)dbase;
+            indirect->firstIndex = (uint32_t)sm.offset;
+            indirect->vertexOffset = 0;
+            indirect->firstInstance = (uint32_t)dbase;
+            current.submesh = info->submesh;
+            dbase = i;
+
+            if (info->group == current.group &&
+                info->mesh == current.mesh &&
+                info->shader == current.shader)
+            {
+                continue;
+            }
+
+            m_drawCalls.push_back({ mesh, m_shaders[current.shader], { ibase, indirectIndex - ibase } });
 
             if (info->group != current.group)
             {
@@ -203,27 +238,27 @@ namespace PK::Rendering
                 pbase = m_drawCalls.size();
             }
          
-            dbase = i;
+            ibase = indirectIndex;
             current = *info;
         }
 
-        m_indices->EndMap();
+        auto lastsm = m_meshes.GetValue(current.mesh)->GetSubmesh(current.submesh);
+        indirectView[indirectIndex].indexCount = (uint32_t)lastsm.count;
+        indirectView[indirectIndex].instanceCount = m_drawInfos.size()- (uint32_t)dbase;
+        indirectView[indirectIndex].firstIndex = (uint32_t)lastsm.offset;
+        indirectView[indirectIndex].vertexOffset = 0;
+        indirectView[indirectIndex++].firstInstance = (uint32_t)dbase;
 
-        m_drawCalls.push_back(
-        { 
-            m_meshes.GetValue(current.mesh),
-            m_shaders.GetValue(current.shader),
-            current.submesh, 
-            { dbase, m_drawInfos.size() - dbase }, 
-            m_materials[current.shader]->GetPropertyRange() 
-        });
-
+        m_drawCalls.push_back({ m_meshes[current.mesh], m_shaders[current.shader], { ibase, indirectIndex - ibase } });
         m_passGroups.push_back({ pbase, m_drawCalls.size() - pbase });
+
+        m_indirectArguments->EndMap();
 
         auto cmd = GraphicsAPI::GetCommandBuffer();
         auto hash = HashCache::Get();
         cmd->SetBuffer(hash->pk_Instancing_Transforms, m_matrices.get());
         cmd->SetBuffer(hash->pk_Instancing_Indices, m_indices.get());
+        cmd->SetBuffer(hash->pk_Instancing_Properties, m_properties.get());
         cmd->SetTextureArray(hash->pk_Instancing_Textures2D, m_textures2D);
     }
 
@@ -262,6 +297,7 @@ namespace PK::Rendering
         auto& passGroup = m_passGroups.at(group);
         auto start = passGroup.offset;
         auto end = passGroup.offset + passGroup.count;
+        auto stride = sizeof(DrawIndexedIndirectCommand);
 
         for (auto i = start; i < end; ++i)
         {
@@ -273,14 +309,11 @@ namespace PK::Rendering
                 continue;
             }
 
-            if (dc.properties.count > 0)
-            {
-                cmd->SetBuffer(hash->pk_Instancing_Properties, m_properties.get(), dc.properties);
-            }
+            auto offset = dc.indices.offset * stride;
 
             cmd->SetShader(shader);
             cmd->SetFixedStateAttributes(overrideAttributes);
-            cmd->DrawMesh(dc.mesh, dc.submesh, (uint32_t)dc.indices.count, (uint32_t)dc.indices.offset);
+            cmd->DrawMeshIndirect(dc.mesh, m_indirectArguments.get(), offset, dc.indices.count, stride);
         }
 
         if (requireKeyword > 0u)

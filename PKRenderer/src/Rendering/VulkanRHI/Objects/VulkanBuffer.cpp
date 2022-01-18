@@ -83,27 +83,36 @@ namespace PK::Rendering::VulkanRHI::Objects
             m_mappedBuffer = nullptr;
         }
 
+        uint32_t dstStageMask = 0u;
+
         if (m_rawBuffer->usage & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT || m_rawBuffer->usage & VK_BUFFER_USAGE_INDEX_BUFFER_BIT)
         {
             barrier.dstAccessMask |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT;
-            cmd->PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-                0, 0, nullptr, 1, &barrier, 0, nullptr);
+            dstStageMask |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
         }
 
         if (m_rawBuffer->usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
         {
             barrier.dstAccessMask |= VK_ACCESS_UNIFORM_READ_BIT;
-            cmd->PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                0, 0, nullptr, 1, &barrier, 0, nullptr);
+            dstStageMask |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
         }
 
         if (m_rawBuffer->usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
         {
             barrier.dstAccessMask |= VK_ACCESS_MEMORY_READ_BIT;
+            dstStageMask |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+        }
+
+        if (m_rawBuffer->usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT)
+        {
+            barrier.dstAccessMask |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+            dstStageMask |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+        }
+
+        if (dstStageMask != 0)
+        {
             cmd->PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                dstStageMask,
                 0, 0, nullptr, 1, &barrier, 0, nullptr);
         }
     }
