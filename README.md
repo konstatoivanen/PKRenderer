@@ -28,7 +28,7 @@ The project is built for Windows using C++ 17, Visual Studio & MSVC and supports
 
 ## Planned Features
 - Hardware accelerated raytraced GI (deprecate VXGI).
-- Virtualized shared scene vertex buffer (improve performance by using multidraw indirect).
+- Virtualized shared scene vertex & index buffer.
 - Mesh Skinning.
 - Serialized scene representation.
 - DX12 Rendering backend.
