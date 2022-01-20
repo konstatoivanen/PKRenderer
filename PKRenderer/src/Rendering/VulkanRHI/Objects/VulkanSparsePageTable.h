@@ -2,7 +2,7 @@
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Rendering/VulkanRHI/VulkanDriver.h"
 #include "Rendering/Structs/StructsCommon.h"
-#include "Utilities/Pool.h"
+#include "Utilities/FixedPool.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -37,7 +37,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             VkQueue m_queue = VK_NULL_HANDLE;
             VmaAllocationCreateInfo m_pageCreateInfo{};
             VkMemoryRequirements m_memoryRequirements{};
-            std::map<uint32_t, Page*> m_activeBlocks;
-            Pool<Page, 1024> m_pages;
+            std::map<uint32_t, Page*> m_activePages;
+            FixedPool<Page, 1024> m_pages;
     };
 }

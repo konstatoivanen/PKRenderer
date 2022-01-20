@@ -11,6 +11,7 @@ namespace PK::Rendering::Objects
 
         public:
             VirtualMesh();
+            VirtualMesh(const SubmeshRangeAllocationInfo& data, Ref<Mesh> mesh);
             ~VirtualMesh();
 
             void Import(const char* filepath, void* pParams) override final;
@@ -21,7 +22,7 @@ namespace PK::Rendering::Objects
 
         private:
             Ref<Mesh> m_mesh = nullptr;
-            SubMesh m_fullRange;
+            SubMesh m_fullRange{};
             std::vector<uint32_t> m_submeshIndices;
     };
 }

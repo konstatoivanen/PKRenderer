@@ -13,6 +13,7 @@ namespace PK::Math::Functions
     float RandomRangeFloat(float min, float max);
     float3 RandomRangeFloat3(const float3& min, const float3& max);
     float3 RandomEuler();
+    float3 ToFloat3(float* ptr);
     size_t GetNextExponentialSize(size_t start, size_t min);
     uint GetMaxMipLevelPow2(uint resolution);
     uint GetMaxMipLevelPow2(uint2 resolution);

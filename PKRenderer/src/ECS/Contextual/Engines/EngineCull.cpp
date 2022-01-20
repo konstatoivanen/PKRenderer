@@ -36,9 +36,9 @@ namespace PK::ECS::Engines
                 continue;
             }
 
-            auto depth = Functions::PlaneDistanceToAABB(planes[4], cullable->bounds->worldAABB);
-            auto fixedDepth = (uint16_t)(depth * invDepthRange);
-            results->Add(cullable->GID.entityID(), fixedDepth, 0u);
+            auto depth = Functions::PlaneDistanceToAABB(planes[4], cullable->bounds->worldAABB) * invDepthRange;
+            auto fixedDepth = glm::min(0xFFFFu, (uint32_t)(depth));
+            results->Add(cullable->GID.entityID(), (uint16_t)fixedDepth, 0u);
         }
     }
 
@@ -75,7 +75,7 @@ namespace PK::ECS::Engines
             auto extents = bounds.GetExtents();
 
             // Not accurate but fast(er than other solutions)
-            auto depth = (uint16_t)(glm::length(center) * invDepthRange);
+            auto depth = glm::min(0xFFFFu, (uint32_t)(glm::length(center) * invDepthRange));
 
             bool rp[6], rn[6], vis[6];
 
@@ -102,7 +102,7 @@ namespace PK::ECS::Engines
             {
                 if (!isCullable || vis[j])
                 {
-                    results->Add(id, depth, j);
+                    results->Add(id, (uint16_t)depth, j);
                 }
             }
         }
@@ -148,9 +148,9 @@ namespace PK::ECS::Engines
             {
                 if (visibilities[j])
                 {
-                    auto depth = Functions::PlaneDistanceToAABB(cascades[j].planes[4], bounds);
-                    auto fixedDepth = (uint16_t)(depth * invDepthRange);
-                    results->Add(id, fixedDepth, j);
+                    auto depth = Functions::PlaneDistanceToAABB(cascades[j].planes[4], bounds) * invDepthRange;
+                    auto fixedDepth = glm::min(0xFFFFu, (uint32_t)depth);
+                    results->Add(id, (uint16_t)fixedDepth, j);
                 }
             }
         }

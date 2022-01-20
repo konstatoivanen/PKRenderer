@@ -23,7 +23,7 @@ namespace PK::Rendering::Objects
 
 	Mesh::Mesh(const Ref<Buffer>& vertexBuffer, const Ref<Buffer>& indexBuffer, const BoundingBox& bounds) : Mesh(vertexBuffer, indexBuffer)
 	{
-		m_fullBounds = bounds;
+		m_fullRange = { 0u, (uint32_t)vertexBuffer->GetCount(), 0u, (uint32_t)indexBuffer->GetCount(), bounds };
 	}
 
     void Mesh::Import(const char* filepath, void* pParams)
@@ -50,17 +50,15 @@ namespace PK::Rendering::Objects
 		auto pIndexBuffer = mesh->indexBuffer.Get(base);
 		auto pSubmeshes = mesh->submeshes.Get(base);
 
-		m_fullBounds = BoundingBox::GetMinBounds();
+		m_freeSubmeshIndices.clear();
+		m_fullRange = SubMesh();
 		std::vector<BufferElement> bufferElements;
 
 		for (auto i = 0u; i < mesh->submeshCount; ++i)
 		{
-			m_submeshes.push_back({ 0u, mesh->vertexCount, pSubmeshes[i].firstIndex, pSubmeshes[i].indexCount });
-			m_boundingBoxes.push_back({});
-			auto& b = m_boundingBoxes.at(m_boundingBoxes.size() - 1);
-			memcpy(glm::value_ptr(b.min), pSubmeshes[i].bbmin, sizeof(float) * 3);
-			memcpy(glm::value_ptr(b.max), pSubmeshes[i].bbmax, sizeof(float) * 3);
-			Functions::BoundsEncapsulate(&m_fullBounds, b);
+			auto bounds = BoundingBox::MinMax(Functions::ToFloat3(pSubmeshes[i].bbmin), Functions::ToFloat3(pSubmeshes[i].bbmax));
+			m_submeshes.push_back({ 0u, mesh->vertexCount, pSubmeshes[i].firstIndex, pSubmeshes[i].indexCount, bounds });
+			Functions::BoundsEncapsulate(&m_fullRange.bounds, bounds);
 		}
 
 		for (auto i = 0u; i < mesh->vertexAttributeCount; ++i)
@@ -83,8 +81,8 @@ namespace PK::Rendering::Objects
 		auto vstride = GetDefaultLayout().GetStride();
 		auto istride = m_indexBuffer->GetLayout().GetStride();
 
-		if ((vbuff->GetUsage() & BufferUsage::Sparse) == 0 ||
-			(ibuff->GetUsage() & BufferUsage::Sparse) == 0)
+		if (!vbuff->IsSparse() ||
+			!ibuff->IsSparse())
 		{
 			PK_THROW_ERROR("Trying to append resources to a mesh without sparse buffers!");
 		}
@@ -96,7 +94,7 @@ namespace PK::Rendering::Objects
 			PK_THROW_ASSERT(allocationInfo.vertexLayout.at(i) == layout.at(i), "Vertex attribute type missmatch!");
 		}
 
-		SubMesh range = { 0u, allocationInfo.vertexCount, 0u, allocationInfo.indexCount };
+		SubMesh range = { 0u, allocationInfo.vertexCount, 0u, allocationInfo.indexCount, BoundingBox::GetMinBounds() };
 
 		// @TODO refactor this to be more memory efficient
 		auto sortedSubmeshes = std::vector<SubMesh>(m_submeshes);
@@ -104,6 +102,11 @@ namespace PK::Rendering::Objects
 
 		for (auto& sm : sortedSubmeshes)
 		{
+			if (sm.vertexCount == 0)
+			{
+				continue;
+			}
+
 			if (sm.firstVertex < (range.firstVertex + range.vertexCount))
 			{
 				range.firstVertex = sm.firstVertex + sm.vertexCount;
@@ -117,15 +120,28 @@ namespace PK::Rendering::Objects
 
 		for (auto i = 0u; i < allocationInfo.submeshCount; ++i)
 		{
-			outSubmeshIndices[i] = (uint32_t)m_submeshes.size();
-			auto sm = allocationInfo.pSubmeshes[i];
-			auto b = allocationInfo.pBoundingBoxes + i;
+			if (m_freeSubmeshIndices.size() > 0)
+			{
+				outSubmeshIndices[i] = m_freeSubmeshIndices.back();
+				m_freeSubmeshIndices.pop_back();
+			}
+			else
+			{
+				outSubmeshIndices[i] = (uint32_t)m_submeshes.size();
+				m_submeshes.push_back({});
+			}
+
+			auto& sm = m_submeshes[outSubmeshIndices[i]];
+			sm = allocationInfo.pSubmeshes[i];
 			sm.firstVertex += range.firstVertex;
 			sm.firstIndex += range.firstIndex;
-			m_submeshes.push_back(sm);
-			m_boundingBoxes.push_back(*b);
-			Math::Functions::BoundsEncapsulate(&m_fullBounds, *b);
+			Math::Functions::BoundsEncapsulate(&m_fullRange.bounds, sm.bounds);
+			Math::Functions::BoundsEncapsulate(&range.bounds, sm.bounds);
+
 		}
+
+		m_fullRange.vertexCount = glm::max(m_fullRange.vertexCount, range.firstVertex + range.vertexCount);
+		m_fullRange.indexCount = glm::max(m_fullRange.indexCount, range.firstIndex + range.indexCount);
 
 		vbuff->MakeRangeResident({ range.firstVertex * vstride, range.vertexCount * vstride });
 		ibuff->MakeRangeResident({ range.firstIndex * istride, range.indexCount * istride });
@@ -147,7 +163,7 @@ namespace PK::Rendering::Objects
 		*outAllocationRange = range;
 	}
 
-	void Mesh::DeallocateSubmeshRange(const SubMesh& allocationRange)
+	void Mesh::DeallocateSubmeshRange(const SubMesh& allocationRange, uint32_t* submeshIndices, uint32_t submeshCount)
 	{
 		auto vbuff = m_vertexBuffers.at(0).get();
 		auto ibuff = m_indexBuffer.get();
@@ -164,7 +180,11 @@ namespace PK::Rendering::Objects
 		vbuff->MakeRangeNonResident({ allocationRange.firstVertex * vstride, allocationRange.vertexCount * vstride });
 		ibuff->MakeRangeNonResident({ allocationRange.firstIndex * istride, allocationRange.indexCount * istride });
 
-		//@TODO remove submeshes
+		for (auto i = 0u; i < submeshCount; ++i)
+		{
+			m_freeSubmeshIndices.push_back(submeshIndices[i]);
+			m_submeshes[i] = SubMesh();
+		}
 	}
 
 	void Mesh::AddVertexBuffer(const Ref<Buffer>& vertexBuffer)
@@ -177,37 +197,23 @@ namespace PK::Rendering::Objects
         m_vertexBuffers.push_back(vertexBuffer);
     }
 
-	void Mesh::SetSubMeshes(const SubMesh* submeshes, const BoundingBox* boundingBoxes, size_t submeshCount, size_t boundCount)
+	void Mesh::SetSubMeshes(const SubMesh* submeshes, size_t submeshCount)
 	{
-		PK_THROW_ASSERT(submeshCount == boundCount, "Submesh & Bounding box array size missmatch!");
-	
 		auto count = submeshCount;
-		m_fullBounds = BoundingBox::GetMinBounds();
+		m_fullRange = SubMesh();
 		m_submeshes.resize(submeshCount);
-		m_boundingBoxes.resize(submeshCount);
+		m_freeSubmeshIndices.clear();
 
 		for (auto i = 0u; i < submeshCount; ++i)
 		{
 			m_submeshes[i] = submeshes[i];
-			m_boundingBoxes[i] = boundingBoxes[i];
-			auto b = boundingBoxes + i;
-
-			for (auto k = 0; k < 3; ++k)
-			{
-				if (m_fullBounds.max[k] < b->max[k])
-				{
-					m_fullBounds.max[k] = b->max[k];
-				}
-
-				if (m_fullBounds.min[k] > b->min[k])
-				{
-					m_fullBounds.min[k] = b->min[k];
-				}
-			}
+			Functions::BoundsEncapsulate(&m_fullRange.bounds, submeshes[i].bounds);
+			m_fullRange.vertexCount = glm::max(m_fullRange.vertexCount, submeshes[i].firstVertex + submeshes[i].vertexCount);
+			m_fullRange.indexCount = glm::max(m_fullRange.indexCount, submeshes[i].firstIndex + submeshes[i].indexCount);
 		}
 	}
 
-    const SubMesh Mesh::GetSubmesh(int submesh) const
+    const SubMesh& Mesh::GetSubmesh(int submesh) const
     {
         if (submesh < 0 || m_submeshes.empty())
         {
@@ -217,17 +223,6 @@ namespace PK::Rendering::Objects
         auto idx = glm::min((uint)submesh, (uint)m_submeshes.size());
         return m_submeshes.at(idx);
     }
-
-	const BoundingBox& Mesh::GetBounds(int submesh) const
-	{
-		if (submesh < 0 || m_submeshes.empty())
-		{
-			return m_fullBounds;
-		}
-
-		auto idx = glm::min((uint)submesh, (uint)m_submeshes.size());
-		return m_boundingBoxes.at(idx);
-	}
 }
 
 template<>

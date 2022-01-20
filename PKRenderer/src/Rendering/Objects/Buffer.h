@@ -74,6 +74,7 @@ namespace PK::Rendering::Objects
             virtual size_t GetCapacity() const = 0;
 
             constexpr size_t GetCount() const { return m_count; }
+            constexpr bool IsSparse() const { return (m_usage & BufferUsage::Sparse) != 0; }
             constexpr const BufferUsage GetUsage() const { return m_usage; }
             constexpr const BufferLayout& GetLayout() const { return m_layout; }
             constexpr IndexRange GetFullRange() const { return { 0ull, m_count }; }

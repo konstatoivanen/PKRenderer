@@ -1,7 +1,7 @@
 #pragma once
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Math/FunctionsMisc.h"
-#include "Utilities/Pool.h"
+#include "Utilities/FixedPool.h"
 #include "Utilities/PointerMap.h"
 #include "Utilities/Ref.h"
 
@@ -76,8 +76,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             uint64_t m_currentPruneTick = 0ull;
             
             VulkanDescriptorPool* m_currentPool = nullptr;
-           // Pool<VulkanBindHandle, 4096> m_bindHandlePool;
-            Pool<VulkanDescriptorSet, 2048> m_setsPool;
+            FixedPool<VulkanDescriptorSet, 2048> m_setsPool;
             PointerMap<DescriptorSetKey, VulkanDescriptorSet, DescriptorSetKeyHash> m_sets;
             std::vector<ExtinctPool> m_extinctPools;
             std::vector<VkDescriptorImageInfo> m_writeImages;

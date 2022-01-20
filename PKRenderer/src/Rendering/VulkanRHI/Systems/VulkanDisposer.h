@@ -1,7 +1,6 @@
 #pragma once
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Utilities/Ref.h"
-#include "Utilities/Pool.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
 {

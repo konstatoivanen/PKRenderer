@@ -574,7 +574,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Utilities\MemoryBlock.h" />
     <ClInclude Include="src\Utilities\NativeInterface.h" />
     <ClInclude Include="src\Utilities\NoCopy.h" />
-    <ClInclude Include="src\Utilities\Pool.h" />
+    <ClInclude Include="src\Utilities\FixedPool.h" />
     <ClInclude Include="src\Utilities\PropertyBlock.h" />
     <ClInclude Include="src\Core\Services\ServiceRegister.h" />
     <ClInclude Include="src\Core\Services\Time.h" />

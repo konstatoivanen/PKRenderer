@@ -9,10 +9,11 @@ namespace PK::Rendering::Objects
 
     struct SubMesh
     {
-        uint32_t firstVertex;
-        uint32_t vertexCount;
-        uint32_t firstIndex;
-        uint32_t indexCount;
+        uint32_t firstVertex = 0u;
+        uint32_t vertexCount = 0u;
+        uint32_t firstIndex = 0u;
+        uint32_t indexCount = 0u;
+        BoundingBox bounds = BoundingBox::GetMinBounds();
 
         constexpr bool operator < (const SubMesh& other)
         {
@@ -30,7 +31,6 @@ namespace PK::Rendering::Objects
         void* pIndices;
         BufferLayout vertexLayout;
         SubMesh* pSubmeshes;
-        BoundingBox* pBoundingBoxes;
         ElementType indexType;
         uint32_t vertexCount;
         uint32_t indexCount;
@@ -55,49 +55,29 @@ namespace PK::Rendering::Objects
                                       SubMesh* outAllocationRange,
                                       uint32_t* outSubmeshIndices);
 
-            void DeallocateSubmeshRange(const SubMesh& allocationRange);
+            void DeallocateSubmeshRange(const SubMesh& allocationRange, uint32_t* submeshIndices, uint32_t submeshCount);
 
             void AddVertexBuffer(const Ref<Buffer>& vertexBuffer);
             void SetIndexBuffer(const Ref<Buffer>& indexBuffer) { m_indexBuffer = indexBuffer; }
-
-            void SetSubMeshes(const SubMesh* submeshes,
-                              const BoundingBox* boundingBoxes, 
-                              size_t submeshCount, 
-                              size_t boundCount);
-
-            inline void SetSubMeshes(const std::initializer_list<SubMesh>& submeshes,
-                                     const std::initializer_list<BoundingBox>& boundingBoxes)
-            {
-                SetSubMeshes(submeshes.begin(), 
-                             boundingBoxes.begin(), 
-                             submeshes.end() - submeshes.begin(), 
-                             boundingBoxes.end() - boundingBoxes.begin());
-            }
-
-            inline void SetSubMeshes(const std::vector<SubMesh>& submeshes,
-                                     const std::vector<BoundingBox>& boundingBoxes)
-            {
-                SetSubMeshes(submeshes.data(),
-                    boundingBoxes.data(),
-                    submeshes.size(),
-                    boundingBoxes.size());
-            }
+            void SetSubMeshes(const SubMesh* submeshes, size_t submeshCount);
+            inline void SetSubMeshes(const std::initializer_list<SubMesh>& submeshes) { SetSubMeshes(submeshes.begin(), submeshes.end() - submeshes.begin()); }
+            inline void SetSubMeshes(const std::vector<SubMesh>& submeshes) { SetSubMeshes(submeshes.data(), submeshes.size()); }
 
             constexpr const std::vector<Ref<Buffer>>& GetVertexBuffers() const { return m_vertexBuffers; }
             const BufferLayout& GetDefaultLayout() const { return m_vertexBuffers.at(0)->GetLayout(); }
             const Buffer* GetVertexBuffer() const { return m_vertexBuffers.at(0).get(); }
             const Buffer* GetVertexBuffer(uint index) const { return m_vertexBuffers.at(index).get(); }
             const Buffer* GetIndexBuffer() const { return m_indexBuffer.get(); }
-            const SubMesh GetSubmesh(int submesh) const;
-            inline const uint GetSubmeshCount() const { return glm::max(1, (int)m_submeshes.size()); }
-            const BoundingBox& GetBounds(int submesh) const;
-            constexpr const BoundingBox& GetBounds() const { return m_fullBounds; };
+            const SubMesh& GetSubmesh(int submesh) const;
+            inline const uint GetSubmeshCount() const { return glm::max(1u, (uint32_t)m_submeshes.size() - (uint32_t)m_freeSubmeshIndices.size()); }
+            constexpr const SubMesh& GetFullRange() const { return m_fullRange; }
 
         private:
             std::vector<Ref<Buffer>> m_vertexBuffers;
             Ref<Buffer> m_indexBuffer;
+            SubMesh m_fullRange{};
+            
             std::vector<SubMesh> m_submeshes;
-            std::vector<BoundingBox> m_boundingBoxes;
-            BoundingBox m_fullBounds = BoundingBox::GetMinBounds();
+            std::vector<uint32_t> m_freeSubmeshIndices;
     };
 }

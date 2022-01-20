@@ -52,7 +52,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         while (CheckRange(&start, &end))
         {
             auto page = m_pages.New(m_driver->allocator, start, end, m_memoryRequirements, m_pageCreateInfo);
-            m_activeBlocks[(uint32_t)end] = page;
+            m_activePages[(uint32_t)end] = page;
             VkSparseMemoryBind bind{};
             bind.resourceOffset = page->start * alignment;
             bind.size = (page->end - page->start) * alignment;
@@ -87,13 +87,13 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto alignment = m_memoryRequirements.alignment;
         auto start = range.offset / alignment;
         auto end = (range.offset + range.count + alignment - 1) / alignment;
-        auto iter = m_activeBlocks.upper_bound((uint32_t)start);
+        auto iter = m_activePages.upper_bound((uint32_t)start);
 
-        while (iter != m_activeBlocks.end() && iter->second->end <= end)
+        while (iter != m_activePages.end() && iter->second->end <= end)
         {
             m_pages.Delete(iter->second);
-            m_activeBlocks.erase(iter->first);
-            iter = m_activeBlocks.upper_bound((uint32_t)start);
+            m_activePages.erase(iter->first);
+            iter = m_activePages.upper_bound((uint32_t)start);
         }
     }
 
@@ -104,9 +104,9 @@ namespace PK::Rendering::VulkanRHI::Objects
             return false;
         }
 
-        auto iter = m_activeBlocks.lower_bound((uint32_t)*start);
+        auto iter = m_activePages.lower_bound((uint32_t)*start);
 
-        while (iter != m_activeBlocks.end())
+        while (iter != m_activePages.end())
         {
             auto page = iter->second;
 

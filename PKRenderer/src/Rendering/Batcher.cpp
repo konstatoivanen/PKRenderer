@@ -182,7 +182,7 @@ namespace PK::Rendering
             }
 
             auto mesh = m_meshes.GetValue(current.mesh);
-            auto sm = mesh->GetSubmesh(current.submesh);
+            auto& sm = mesh->GetSubmesh(current.submesh);
             auto indirect = &indirectView[indirectIndex++];
             indirect->indexCount = sm.indexCount;
             indirect->instanceCount = i - (uint32_t)dbase;
@@ -211,7 +211,7 @@ namespace PK::Rendering
             current = *info;
         }
 
-        auto lastsm = m_meshes.GetValue(current.mesh)->GetSubmesh(current.submesh);
+        auto& lastsm = m_meshes.GetValue(current.mesh)->GetSubmesh(current.submesh);
         indirectView[indirectIndex].indexCount = lastsm.indexCount;
         indirectView[indirectIndex].instanceCount = (uint32_t)m_drawInfos.size() - (uint32_t)dbase;
         indirectView[indirectIndex].firstIndex = lastsm.firstIndex;

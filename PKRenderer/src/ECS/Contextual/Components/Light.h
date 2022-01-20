@@ -23,7 +23,8 @@ namespace PK::ECS::Components
         uint16_t batchGroup = 0u;
         uint16_t shadowmapIndex = 0u;
         uint16_t projectionIndex = 0u;
-        float shadowDepth = 0.0f;
+        float maxShadowDepth = 0.0f;
+        float minShadowDepth = 0.0f;
         virtual ~LightFrameInfo() = default;
     };
 }

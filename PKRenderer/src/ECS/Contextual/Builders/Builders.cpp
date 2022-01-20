@@ -19,7 +19,7 @@ namespace PK::ECS::Builders
 
 		for (auto& target : materials)
 		{
-			Math::Functions::BoundsEncapsulate(&bounds, mesh->GetBounds(target.submesh));
+			Math::Functions::BoundsEncapsulate(&bounds, mesh->GetSubmesh(target.submesh).bounds);
 		}
 
 		return bounds;
@@ -33,7 +33,7 @@ namespace PK::ECS::Builders
 		for (auto& target : materials)
 		{
 			auto submesh = mesh->GetSubmeshIndex(target.submesh);
-			Math::Functions::BoundsEncapsulate(&bounds, mesh->GetBaseMesh()->GetBounds(submesh));
+			Math::Functions::BoundsEncapsulate(&bounds, mesh->GetBaseMesh()->GetSubmesh(submesh).bounds);
 		}
 
 		return bounds;

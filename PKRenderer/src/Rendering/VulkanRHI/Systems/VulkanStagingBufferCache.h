@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
-#include "Utilities/Pool.h"
+#include "Utilities/FixedPool.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
@@ -38,7 +38,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             const VkDevice m_device;
             std::vector<VulkanStagingBuffer*> m_freeBuffers;
             std::vector<VulkanStagingBuffer*> m_activeBuffers;
-            Pool<VulkanStagingBuffer, 1024> m_bufferPool;
+            FixedPool<VulkanStagingBuffer, 1024> m_bufferPool;
 
             uint64_t m_currentPruneTick = 0ull;
             uint64_t m_pruneDelay = 0ull;

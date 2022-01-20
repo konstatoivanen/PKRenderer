@@ -17,10 +17,11 @@ namespace PK::Rendering::VulkanRHI::Objects
         PK_RENDER_STATE_DIRTY_PIPELINE = 1 << 1,
         PK_RENDER_STATE_DIRTY_SHADER = 1 << 2,
         PK_RENDER_STATE_DIRTY_VERTEXBUFFERS = 1 << 3,
-        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 = 1 << 4,
-        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_1 = 1 << 5,
-        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_2 = 1 << 6,
-        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_3 = 1 << 7,
+        PK_RENDER_STATE_DIRTY_INDEXBUFFER = 1 << 4,
+        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 = 1 << 5,
+        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_1 = 1 << 6,
+        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_2 = 1 << 7,
+        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_3 = 1 << 8,
         PK_RENDER_STATE_DIRTY_DESCRIPTOR_SETS = 
             PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 | 
             PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_1 | 
@@ -71,6 +72,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         void SetDepthStencil(const DepthStencilParameters& depthStencil);
         void SetMultisampling(const MultisamplingParameters& multisampling);
         void SetVertexBuffers(const VulkanBindHandle** handles, uint32_t count);
+        void SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType);
 
         template<typename T>
         void SetResource(uint32_t nameHashId, const T* value, uint count = 1) { m_resourceProperties.Set(nameHashId, value, count); }
@@ -100,6 +102,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         RenderPassKey m_renderPassKey[2]{};
         
         const VulkanBindHandle* m_vertexBuffers[PK_MAX_VERTEX_ATTRIBUTES]{};
+        const VulkanBindHandle* m_indexBuffer = nullptr;
+        VkIndexType m_indexType = VK_INDEX_TYPE_UINT16;
 
         VkClearValue m_clearValues[PK_MAX_RENDER_TARGETS + 1]{};
         uint32_t m_clearValueCount = 0u;

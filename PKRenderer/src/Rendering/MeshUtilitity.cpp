@@ -246,70 +246,6 @@ namespace PK::Rendering::MeshUtility
         PK_THROW_ASSERT(genTangSpaceDefault(&context), "Failed to calculate tangents");
     }
 
-    Ref<Mesh> GetBlitTriangle()
-    {
-        float vertices[] =
-        {
-            1.0f,  1.0f, 0.0f, 0.0f,
-            1.0f, -4.0f, 0.0f, 2.0f,
-           -4.0f,  1.0f, 2.0f, 0.0f,
-        };
-
-        unsigned int indices[] = { 0, 1, 2 };
-
-        return CreateRef<Mesh>
-        (
-            Buffer::CreateVertex({ { ElementType::Float2, PK_VS_POSITION}, { ElementType::Float2, PK_VS_TEXCOORD0 } }, vertices, 3),
-            Buffer::CreateIndex(ElementType::Uint, indices, 3)
-        );
-    }
-
-
-    Ref<Mesh> GetBoxSimple(const float3& offset, const float3& extents)
-    {
-        float vertices[] =
-        {
-            offset.x - extents.x, offset.y - extents.y, offset.z - extents.z,
-            offset.x + extents.x, offset.y - extents.y, offset.z - extents.z,
-            offset.x + extents.x, offset.y + extents.y, offset.z - extents.z,
-            offset.x - extents.x, offset.y + extents.y, offset.z - extents.z,
-
-            offset.x - extents.x, offset.y + extents.y, offset.z + extents.z,
-            offset.x + extents.x, offset.y + extents.y, offset.z + extents.z,
-            offset.x + extents.x, offset.y - extents.y, offset.z + extents.z,
-            offset.x - extents.x, offset.y - extents.y, offset.z + extents.z,
-        };
-
-
-        unsigned int indices[] =
-        {
-            // face front
-            0, 2, 1, 0, 3, 2,
-
-            // face top
-            2, 3, 4, 2, 4, 5,
-
-            // face right
-            1, 2, 5, 1, 5, 6,
-
-            // face left
-            7, 0, 4, 0, 4, 3,
-
-            // face back
-            5, 4, 7, 5, 7, 6,
-
-            // face bottom
-            0, 6, 7, 0, 1, 6
-        };
-
-        return CreateRef<Mesh>
-        (
-            Buffer::CreateVertex({ { ElementType::Float3, PK_VS_POSITION } }, vertices, 8),
-            Buffer::CreateIndex(ElementType::Uint, indices, 36), 
-            PK::Math::BoundingBox::CenterExtents(offset, extents)
-        );
-    }
-
     Ref<Mesh> GetBox(const float3& offset, const float3& extents)
     {
         float3 p0 = { offset.x - extents.x, offset.y - extents.y, offset.z + extents.z };
@@ -414,34 +350,7 @@ namespace PK::Rendering::MeshUtility
         );
     }
 
-    Ref<Mesh> GetQuad2D(const float2& min, const float2& max)
-    {
-        float vertices[] =
-        {
-             min.x, min.y,
-             0.0,   0.0f,
-             min.x, max.y,
-             0.0f,  1.0f,
-             max.x, max.y,
-             1.0f,  1.0f,
-             max.x, min.y,
-             1.0f,  0.0f
-        };
-
-        unsigned int indices[] =
-        {
-            0,1,2,
-            2,3,0
-        };
-
-        return CreateRef<Mesh>
-        (
-            Buffer::CreateVertex({ { ElementType::Float2, PK_VS_POSITION}, { ElementType::Float2, PK_VS_TEXCOORD0 } }, vertices, 4),
-            Buffer::CreateIndex(ElementType::Uint, indices, 6)
-        );
-    }
-
-    Ref<Mesh> GetQuad3D(const float2& min, const float2& max)
+    Ref<Mesh> GetQuad(const float2& min, const float2& max)
     {
         float vertices[] =
         {
@@ -468,7 +377,7 @@ namespace PK::Rendering::MeshUtility
         );
     }
 
-    Ref<Mesh> GetPlane(const float2& center, const float2& extents, uint2 resolution)
+    Ref<VirtualMesh> GetPlane(Ref<Mesh> baseMesh, const float2& center, const float2& extents, uint2 resolution)
     {
         auto vcount = resolution.x * resolution.y * 4;
         auto icount = resolution.x * resolution.y * 6;
@@ -498,30 +407,35 @@ namespace PK::Rendering::MeshUtility
             indices[baseIndex + 5] = baseVertex + 0;
         }
 
-        BufferLayout layout = 
-        { 
-            { ElementType::Float3, PK_VS_POSITION }, 
-            { ElementType::Float3, PK_VS_NORMAL }, 
-            { ElementType::Float4, PK_VS_TANGENT }, 
+        SubMesh submesh = { 0u, vcount, 0u, icount, BoundingBox::CenterExtents({ center.x, center.y, 0.0f }, { extents.x, extents.y, 0.0f }) };
+        SubmeshRangeAllocationInfo allocInfo{};
+        allocInfo.pVertices = vertices;
+        allocInfo.pIndices = indices;
+        allocInfo.vertexLayout =
+        {
+            { ElementType::Float3, PK_VS_POSITION },
+            { ElementType::Float3, PK_VS_NORMAL },
+            { ElementType::Float4, PK_VS_TANGENT },
             { ElementType::Float2, PK_VS_TEXCOORD0 }
         };
 
-        CalculateTangents(reinterpret_cast<float*>(vertices), layout.GetStride() / 4, 0, 3, 6, 10, indices, vcount, icount);
+        allocInfo.pSubmeshes = &submesh;
+        allocInfo.indexType = ElementType::Uint;
+        allocInfo.vertexCount = vcount;
+        allocInfo.indexCount = icount;
+        allocInfo.submeshCount = 1u;
 
-        auto mesh = CreateRef<Mesh>
-        (
-            Buffer::CreateVertex(layout, vertices, vcount),
-            Buffer::CreateIndex(ElementType::Uint, indices, icount),
-            PK::Math::BoundingBox::CenterExtents({ center.x, center.y, 0.0f }, { extents.x, extents.y, 0.0f })
-        );
+        CalculateTangents(reinterpret_cast<float*>(vertices), allocInfo.vertexLayout.GetStride() / 4, 0, 3, 6, 10, indices, vcount, icount);
+
+        auto virtualMesh = CreateRef<VirtualMesh>(allocInfo, baseMesh);
 
         free(vertices);
         free(indices);
 
-        return mesh;
+        return virtualMesh;
     }
 
-    Ref<Mesh> GetSphere(const float3& offset, const float radius)
+    Ref<VirtualMesh> GetSphere(Ref<Mesh> baseMesh, const float3& offset, const float radius)
     {
         const int longc = 24;
         const int lattc = 16;
@@ -568,7 +482,7 @@ namespace PK::Rendering::MeshUtility
         const int facec = vcount;
         const int triscount = facec * 2;
         const int icount = triscount * 3;
-        auto indices = PK_CONTIGUOUS_ALLOC(unsigned int, icount);
+        auto indices = PK_CONTIGUOUS_ALLOC(uint, icount);
 
         //Top Cap
         int i = 0;
@@ -606,26 +520,31 @@ namespace PK::Rendering::MeshUtility
             indices[i++] = vcount - (lon + 1) - 1;
         }
 
-        BufferLayout layout = 
-        { 
-            { ElementType::Float3, PK_VS_POSITION }, 
-            { ElementType::Float3, PK_VS_NORMAL }, 
-            { ElementType::Float4, PK_VS_TANGENT }, 
-            { ElementType::Float2, PK_VS_TEXCOORD0 } 
+        SubMesh submesh = { 0u, vcount, 0u, icount, BoundingBox::CenterExtents(offset, PK_FLOAT3_ONE * radius) };
+        SubmeshRangeAllocationInfo allocInfo{};
+        allocInfo.pVertices = vertices;
+        allocInfo.pIndices = indices;
+        allocInfo.vertexLayout =
+        {
+            { ElementType::Float3, PK_VS_POSITION },
+            { ElementType::Float3, PK_VS_NORMAL },
+            { ElementType::Float4, PK_VS_TANGENT },
+            { ElementType::Float2, PK_VS_TEXCOORD0 }
         };
 
-        CalculateTangents(reinterpret_cast<float*>(vertices), layout.GetStride() / 4, 0, 3, 6, 10, indices, vcount, icount);
+        allocInfo.pSubmeshes = &submesh;
+        allocInfo.indexType = ElementType::Uint;
+        allocInfo.vertexCount = vcount;
+        allocInfo.indexCount = icount;
+        allocInfo.submeshCount = 1u;
 
-        auto mesh = CreateRef<Mesh>
-        (
-            Buffer::CreateVertex(layout, vertices, vcount),
-            Buffer::CreateIndex(ElementType::Uint, indices, icount),
-            PK::Math::BoundingBox::CenterExtents(offset, PK_FLOAT3_ONE * radius)
-        );
+        CalculateTangents(reinterpret_cast<float*>(vertices), allocInfo.vertexLayout.GetStride() / 4, 0, 3, 6, 10, indices, vcount, icount);
+
+        auto virtualMesh = CreateRef<VirtualMesh>(allocInfo, baseMesh);
 
         free(vertices);
         free(indices);
 
-        return mesh;
+        return virtualMesh;
     }
 }

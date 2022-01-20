@@ -104,7 +104,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanCommandBuffer::SetIndexBuffer(const Buffer* buffer, size_t offset)
     {
         auto handle = buffer->GetNative<VulkanBuffer>()->GetBindHandle();
-        vkCmdBindIndexBuffer(commandBuffer, handle->buffer, offset, EnumConvert::GetIndexType(handle->bufferLayout->begin()->Type));
+        renderState->SetIndexBuffer(handle, EnumConvert::GetIndexType(handle->bufferLayout->begin()->Type));
     }
 
     void VulkanCommandBuffer::SetBuffer(uint32_t nameHashId, Buffer* buffer, const IndexRange& range)
@@ -425,6 +425,12 @@ namespace PK::Rendering::VulkanRHI::Objects
             {
                 vkCmdBindVertexBuffers(commandBuffer, 0, vertexBufferBundle.count, vertexBufferBundle.buffers, vertexBufferBundle.offsets);
             }
+        }
+
+        if ((flags & PK_RENDER_STATE_DIRTY_INDEXBUFFER) != 0)
+        {
+            auto indexBufferHandle = renderState->m_indexBuffer;
+            vkCmdBindIndexBuffer(commandBuffer, indexBufferHandle->buffer, indexBufferHandle->bufferOffset, renderState->m_indexType);
         }
 
         for (auto i = 0; i < PK_MAX_DESCRIPTOR_SETS; ++i)

@@ -1374,7 +1374,7 @@
     <ClInclude Include="src\Rendering\Passes\PassLights.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utilities\Pool.h">
+    <ClInclude Include="src\Utilities\FixedPool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utilities\HashHelpers.h">

@@ -37,8 +37,8 @@ namespace PK::ECS::Engines
 		auto columnMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Columns.pkmesh", &m_virtualBaseMesh);
 		//auto clothMesh = assetDatabase->Load<Mesh>("res/models/MDL_Cloth.pkmesh");
 		auto rocksMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Rocks.pkmesh", &m_virtualBaseMesh);
-		auto sphereMesh = assetDatabase->RegisterProcedural<Mesh>("Primitive_Sphere", Rendering::MeshUtility::GetSphere(PK_FLOAT3_ZERO, 1.0f));
-		auto planeMesh = assetDatabase->RegisterProcedural<Mesh>("Primitive_Plane16x16", Rendering::MeshUtility::GetPlane(PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
+		auto sphereMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Sphere", Rendering::MeshUtility::GetSphere(m_virtualBaseMesh, PK_FLOAT3_ZERO, 1.0f));
+		auto planeMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Plane16x16", Rendering::MeshUtility::GetPlane(m_virtualBaseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
 		//auto oceanMesh = assetDatabase->RegisterProcedural<Mesh>("Primitive_Plane128x128", Rendering::MeshUtility::GetPlane(PK_FLOAT2_ZERO, PK_FLOAT2_ONE * 5.0f, { 128, 128 }));
 
 		//auto materialMetal = assetDatabase->Load<Material>("res/materials/M_Metal_Panel.material");
@@ -103,7 +103,7 @@ namespace PK::ECS::Engines
 		}
 
 		auto color = glm::log(Functions::HexToRGB(0xFFA575FF) * 2.0f); // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF
-		Builders::BuildLightRenderableEntity(m_entityDb, m_assetDatabase, PK_FLOAT3_ZERO, { 25, -35, 0 }, LightType::Directional, Cookie::Circle0, color, 90.0f, 50.0f, true);
+		Builders::BuildLightRenderableEntity(m_entityDb, m_assetDatabase, PK_FLOAT3_ZERO, { 25, -35, 0 }, LightType::Directional, Cookie::Circle0, color, 90.0f, 1000.0f, true);
 	}
 
 	void EngineDebug::Step(int condition)

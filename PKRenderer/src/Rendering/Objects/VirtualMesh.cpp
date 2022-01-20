@@ -1,6 +1,8 @@
 #include "PrecompiledHeader.h"
 #include "VirtualMesh.h"
 #include <PKAssets/PKAssetLoader.h>
+#include "Math/FunctionsMisc.h"
+#include "Math/FunctionsIntersect.h"
 
 using namespace PK::Core;
 using namespace PK::Utilities;
@@ -12,12 +14,19 @@ namespace PK::Rendering::Objects
     VirtualMesh::VirtualMesh()
     {
     }
+
+	VirtualMesh::VirtualMesh(const SubmeshRangeAllocationInfo& data, Ref<Mesh> mesh)
+	{
+		m_mesh = mesh;
+		m_submeshIndices.resize(data.submeshCount);
+		m_mesh->AllocateSubmeshRange(data, &m_fullRange, m_submeshIndices.data());
+	}
     
     VirtualMesh::~VirtualMesh()
     {
 		if (m_mesh)
 		{
-			m_mesh->DeallocateSubmeshRange(m_fullRange);
+			m_mesh->DeallocateSubmeshRange(m_fullRange, m_submeshIndices.data(), (uint32_t)m_submeshIndices.size());
 		}
     }
     
@@ -48,17 +57,12 @@ namespace PK::Rendering::Objects
 
 		std::vector<BufferElement> bufferElements;
 		std::vector<SubMesh> submeshes;
-		std::vector<BoundingBox> bounds;
 		submeshes.reserve(mesh->submeshCount);
-		bounds.reserve(mesh->submeshCount);
 
 		for (auto i = 0u; i < mesh->submeshCount; ++i)
 		{
-			submeshes.push_back({ 0u, mesh->vertexCount, pSubmeshes[i].firstIndex, pSubmeshes[i].indexCount });
-			bounds.push_back({});
-			auto& b = bounds.at(bounds.size() - 1);
-			memcpy(glm::value_ptr(b.min), pSubmeshes[i].bbmin, sizeof(float) * 3);
-			memcpy(glm::value_ptr(b.max), pSubmeshes[i].bbmax, sizeof(float) * 3);
+			auto bounds = BoundingBox::MinMax(Functions::ToFloat3(pSubmeshes[i].bbmin), Functions::ToFloat3(pSubmeshes[i].bbmax));
+			submeshes.push_back({ 0u, mesh->vertexCount, pSubmeshes[i].firstIndex, pSubmeshes[i].indexCount, bounds });
 		}
 
 		for (auto i = 0u; i < mesh->vertexAttributeCount; ++i)
@@ -73,7 +77,6 @@ namespace PK::Rendering::Objects
 		allocInfo.pIndices = pIndices;
 		allocInfo.vertexLayout = BufferLayout(bufferElements);
 		allocInfo.pSubmeshes = submeshes.data();
-		allocInfo.pBoundingBoxes = bounds.data();
 		allocInfo.indexType = mesh->indexType;
 		allocInfo.vertexCount = mesh->vertexCount;
 		allocInfo.indexCount = mesh->indexCount;

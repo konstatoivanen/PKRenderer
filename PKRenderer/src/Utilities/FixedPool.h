@@ -6,13 +6,13 @@
 namespace PK::Utilities
 {
     template<typename T, size_t capacity>
-    class Pool : NoCopy
+    class FixedPool : NoCopy
     {
         using alloc_rebind = typename std::allocator_traits<std::allocator<T>>::template rebind_alloc<T>;
         using alloc_traits = std::allocator_traits<alloc_rebind>; 
 
         public:
-            Pool()
+            FixedPool()
             {
                 m_data = alloc_traits::allocate(m_alloc, capacity);
 
@@ -22,7 +22,7 @@ namespace PK::Utilities
                 }
             }
 
-            ~Pool()
+            ~FixedPool()
             {
                 std::sort(m_freelist.begin(), m_freelist.end());
 
@@ -104,6 +104,4 @@ namespace PK::Utilities
             std::vector<size_t> m_freelist;
             alloc_rebind m_alloc;
     };
-
-
 }

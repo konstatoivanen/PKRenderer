@@ -20,7 +20,10 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_renderPass = nullptr;
         m_pipeline = nullptr;
         m_frameBuffer = nullptr;
-        m_dirtyFlags = PK_RENDER_STATE_DIRTY_RENDERTARGET | PK_RENDER_STATE_DIRTY_PIPELINE | PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
+        m_indexBuffer = nullptr;
+        m_dirtyFlags = PK_RENDER_STATE_DIRTY_RENDERTARGET | 
+                       PK_RENDER_STATE_DIRTY_PIPELINE | 
+                       PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
 
         m_frameBufferKey[0].layers = 1;
         m_frameBufferKey[1].layers = 1;
@@ -181,6 +184,16 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
+    void VulkanRenderState::SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType)
+    {
+        if (m_indexBuffer != handle || (handle != nullptr && indexType != m_indexType))
+        {
+            m_indexBuffer = handle;
+            m_indexType = indexType;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_INDEXBUFFER;
+        }
+    }
+
 
     VulkanVertexBufferBundle VulkanRenderState::GetVertexBufferBundle()
     {
@@ -278,6 +291,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
 
         auto index = 0u;
+        auto validateAttributes = false;
 
         if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_SHADER)
         {
@@ -289,7 +303,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 if (attribute->location != element.Location ||
                     attribute->format != format)
                 {
-                    m_dirtyFlags |= PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
+                    validateAttributes = true;
                     attribute->location = element.Location;
                     attribute->format = format;
                 }
@@ -299,11 +313,11 @@ namespace PK::Rendering::VulkanRHI::Objects
             if (index < PK_MAX_VERTEX_ATTRIBUTES && m_pipelineKey.vertexAttributes[index].format != VK_FORMAT_UNDEFINED)
             {
                 memset(m_pipelineKey.vertexAttributes + index, 0, sizeof(VkVertexInputAttributeDescription) * (PK_MAX_VERTEX_ATTRIBUTES - index));
-                m_dirtyFlags |= PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
+                validateAttributes = true;
             }
         }
 
-        if ((m_dirtyFlags & PK_RENDER_STATE_DIRTY_VERTEXBUFFERS) == 0)
+        if (!validateAttributes && (m_dirtyFlags & PK_RENDER_STATE_DIRTY_VERTEXBUFFERS) == 0)
         {
             return;
         }
@@ -456,12 +470,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         PK_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
         auto shaderType = m_pipelineKey.shader->GetType();
-
-        // Lets not update vertex buffers for a compute pipeline
-        if (shaderType == ShaderType::Compute)
-        {
-            m_dirtyFlags &= ~PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
-        }
+        auto vertexFlag = m_dirtyFlags & PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
 
         ValidateRenderTarget();
         ValidateVertexBuffers();
@@ -475,10 +484,14 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto flags = (PKRenderStateDirtyFlags)m_dirtyFlags;
         m_dirtyFlags = 0u;
 
-        // Dont dirty render pass when not using a graphics pipeline
+        // Dont dirty render pass or vertex buffers when not using a graphics pipeline
         if (shaderType != ShaderType::Graphics)
         {
             flags = (PKRenderStateDirtyFlags)(flags & ~PK_RENDER_STATE_DIRTY_RENDERTARGET);
+            flags = (PKRenderStateDirtyFlags)(flags & ~PK_RENDER_STATE_DIRTY_VERTEXBUFFERS);
+            
+            // Restore vertex dirty flag so that a graphics pipeline assignment can pickup this change.
+            m_dirtyFlags |= vertexFlag;
         }
         
         return flags;

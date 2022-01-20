@@ -64,6 +64,13 @@ namespace PK::Math::Functions
         return float3(RandomRangeFloat(-360.0f, 360.0f), RandomRangeFloat(-360.0f, 360.0f), RandomRangeFloat(-360.0f, 360.0f)); 
     }
 
+    float3 ToFloat3(float* ptr)
+    {
+        float3 value;
+        memcpy(glm::value_ptr(value), ptr, sizeof(float) * 3);
+        return value;
+    }
+
     size_t GetNextExponentialSize(size_t start, size_t min)
     {
         if (start < 1)

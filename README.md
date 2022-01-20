@@ -9,6 +9,7 @@ The project is built for Windows using C++ 17, Visual Studio & MSVC and supports
 - Vulkan 1.2 Rendering Backend.
 - Dynamic scene material batching & instanced rendering.
 - Clustered forward rendering.
+- Virtual geometry.
 - Volumetric fog & lighting.
 - Realtime global illumination (Voxel cone tracing).
 - Temporal reprojection for volumetrics & screen space GI.
@@ -28,7 +29,7 @@ The project is built for Windows using C++ 17, Visual Studio & MSVC and supports
 
 ## Planned Features
 - Hardware accelerated raytraced GI (deprecate VXGI).
-- Virtualized shared scene vertex & index buffer.
+- Refactor virtual meshes to have more robust unload support.
 - Mesh Skinning.
 - Serialized scene representation.
 - DX12 Rendering backend.
