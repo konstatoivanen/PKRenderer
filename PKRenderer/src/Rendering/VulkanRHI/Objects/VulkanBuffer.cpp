@@ -5,8 +5,8 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    VulkanBuffer::VulkanBuffer(BufferUsage usage, const BufferLayout& layout, const void* data, size_t count) : 
-        Buffer(usage, layout, count),
+    VulkanBuffer::VulkanBuffer(const BufferLayout& layout, const void* data, size_t count, BufferUsage usage) :
+        Buffer(layout, count, usage),
         m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>())
     {
         Rebuild(count);
@@ -29,10 +29,18 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
+
     void VulkanBuffer::SetData(const void* data, size_t offset, size_t size)
     {
         auto dst = BeginMap(0, GetCapacity());
         memcpy(reinterpret_cast<char*>(dst) + offset, data, size);
+        EndMap();
+    }
+
+    void VulkanBuffer::SetSubData(const void* data, size_t offset, size_t size)
+    {
+        auto dst = BeginMap(offset, size);
+        memcpy(dst, data, size);
         EndMap();
     }
 
@@ -118,17 +126,6 @@ namespace PK::Rendering::VulkanRHI::Objects
     }
 
 
-    bool VulkanBuffer::Validate(size_t count)
-    {
-        if (m_count >= count)
-        {
-            return false;
-        }
-
-        Rebuild(count);
-        return true;
-    }
-
     const VulkanBindHandle* VulkanBuffer::GetBindHandle(const IndexRange& range)
     {
         PK_THROW_ASSERT(range.offset + range.count <= m_count, "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
@@ -151,16 +148,62 @@ namespace PK::Rendering::VulkanRHI::Objects
         return handle;
     }
 
+
+    void VulkanBuffer::MakeRangeResident(const IndexRange& range)
+    {
+        if (m_pageTable != nullptr)
+        {
+            m_pageTable->AllocateRange(range);
+        }
+    }
+
+    void VulkanBuffer::MakeRangeNonResident(const IndexRange& range)
+    {
+        if (m_pageTable != nullptr)
+        {
+            m_pageTable->FreeRange(range);
+        }
+    }
+
+    
+    bool VulkanBuffer::Validate(size_t count)
+    {
+        if (m_count >= count)
+        {
+            return false;
+        }
+
+        Rebuild(count);
+        return true;
+    }
+
     void VulkanBuffer::Rebuild(size_t count)
     {
+        // @TODO maybe refactor to add support?
+        PK_THROW_ASSERT(m_pageTable == nullptr, "As of now sparse buffer don't support rebuilding");
+
+        // Sparse buffers cannot be persistently mapped
+        if ((m_usage & BufferUsage::Sparse) != 0)
+        {
+            m_usage = m_usage & ~((uint32_t)BufferUsage::PersistentStage);
+        }
+
         Dispose();
         m_count = count;
         auto size = m_layout.GetStride(m_usage) * count;
-        m_rawBuffer = new VulkanRawBuffer(m_driver->allocator, VulkanBufferCreateInfo(m_usage, size));
+        auto bufferCreateInfo = VulkanBufferCreateInfo(m_usage, size);
+        m_rawBuffer = new VulkanRawBuffer(m_driver->device, m_driver->allocator, bufferCreateInfo);
 
         if ((m_usage & BufferUsage::PersistentStage) != 0)
         {
-            m_mappedBuffer = new VulkanStagingBuffer(m_driver->allocator, VulkanBufferCreateInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size));
+            m_mappedBuffer = new VulkanStagingBuffer(m_driver->device,
+                                                     m_driver->allocator, 
+                                                     VulkanBufferCreateInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size));
+        }
+
+        if ((m_usage & BufferUsage::Sparse) != 0)
+        {
+            m_pageTable = new VulkanSparsePageTable(m_driver, m_rawBuffer->buffer, bufferCreateInfo.allocation.usage);
         }
 
         GetBindHandle({ 0, m_count });
@@ -176,6 +219,12 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
 
         m_bindHandles.Clear();
+
+        if (m_pageTable != nullptr)
+        {
+            m_driver->disposer->Dispose(m_pageTable, m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate());
+            m_pageTable = nullptr;
+        }
 
         if (m_rawBuffer != nullptr)
         {

@@ -2,6 +2,7 @@
 #include "ECS/EntityDatabase.h"
 #include "Math/Types.h"
 #include "Rendering/Objects/Mesh.h"
+#include "Rendering/Objects/VirtualMesh.h"
 #include "Rendering/Objects/Material.h"
 #include "ECS/Contextual/EntityViews/TransformView.h"
 #include "ECS/Contextual/EntityViews/BaseRenderableView.h"
@@ -121,6 +122,14 @@ namespace PK::ECS::Builders
 
 	EGID BuildMeshRenderableEntity(EntityDatabase* entityDb, 
 								   Mesh* mesh, 
+								   const std::initializer_list<MaterialTarget>& materials,
+								   const float3& position, 
+								   const float3& rotation, 
+								   float size = 1.0f, 
+								   RenderableFlags flags = RenderableFlags::DefaultMesh);
+
+	EGID BuildMeshRenderableEntity(EntityDatabase* entityDb, 
+								   VirtualMesh* mesh, 
 								   const std::initializer_list<MaterialTarget>& materials,
 								   const float3& position, 
 								   const float3& rotation, 

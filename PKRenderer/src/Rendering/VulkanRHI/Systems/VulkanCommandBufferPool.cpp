@@ -17,7 +17,12 @@ namespace PK::Rendering::VulkanRHI::Systems
 
         for (auto& semaphore : m_renderingFinishedSignals) 
         {
-            semaphore = CreateRef<VulkanSemaphore>(m_device);
+            semaphore = new VulkanSemaphore(m_device);
+        }
+
+        for (auto& semaphore : m_dependencySignals)
+        {
+            semaphore = new VulkanSemaphore(m_device);
         }
 
         for (uint32_t index = 0; index < MAX_PRIMARY_COMMANDBUFFERS; ++index) 
@@ -32,6 +37,16 @@ namespace PK::Rendering::VulkanRHI::Systems
         WaitForCompletion(true);
         PruneStaleBuffers();
         vkDestroyCommandPool(m_device, m_pool, nullptr);
+
+        for (auto& semaphore : m_renderingFinishedSignals)
+        {
+            delete semaphore;
+        }
+
+        for (auto& semaphore : m_dependencySignals)
+        {
+            delete semaphore;
+        }
     }
 
     VulkanCommandBuffer* VulkanCommandBufferPool::GetCurrent()
@@ -69,6 +84,20 @@ namespace PK::Rendering::VulkanRHI::Systems
         return m_current;
     }
 
+    VkSemaphore VulkanCommandBufferPool::QueueDependency(const VkSemaphore** previousDependency)
+    {
+        if (m_currentDependencySignal && previousDependency)
+        {
+            *previousDependency = &m_currentDependencySignal->vulkanSemaphore;
+        }
+
+        // go over this in a ring buffer like fashion.  This is pretty volatile as we can accidentally override a previously assigned semaphore.
+        // @TODO Refactor to use pooling & proper releasing.
+        m_currentDependencySignal = m_dependencySignals[m_dependencySignalIndex];
+        m_dependencySignalIndex = (m_dependencySignalIndex + 1) % MAX_DEPENDENCIES;
+        return m_currentDependencySignal->vulkanSemaphore;
+    }
+
     void VulkanCommandBufferPool::SubmitCurrent(VkPipelineStageFlags waitFlag, const VulkanSemaphore* waitSignal)
     {
         if (m_current == nullptr)
@@ -84,8 +113,9 @@ namespace PK::Rendering::VulkanRHI::Systems
 
         VK_ASSERT_RESULT(vkEndCommandBuffer(m_current->commandBuffer));
 
-        VkSemaphore signals[2] = 
+        VkSemaphore signals[3] = 
         {
+            VK_NULL_HANDLE,
             VK_NULL_HANDLE,
             VK_NULL_HANDLE,
         };
@@ -110,6 +140,11 @@ namespace PK::Rendering::VulkanRHI::Systems
             signals[submitInfo.waitSemaphoreCount++] = m_renderingFinishedSignal->vulkanSemaphore;
         }
 
+        if (m_currentDependencySignal)
+        {
+            signals[submitInfo.waitSemaphoreCount++] = m_currentDependencySignal->vulkanSemaphore;
+        }
+
         if (waitSignal)
         {
             signals[submitInfo.waitSemaphoreCount++] = waitSignal->vulkanSemaphore;
@@ -117,7 +152,8 @@ namespace PK::Rendering::VulkanRHI::Systems
 
         VK_ASSERT_RESULT_CTX(vkQueueSubmit(m_queue, 1, &submitInfo, m_current->fence->vulkanFence), "Failed to submit command buffer!");
 
-        m_renderingFinishedSignal = renderingFinished.get();
+        m_currentDependencySignal = nullptr;
+        m_renderingFinishedSignal = renderingFinished;
         m_current = nullptr;
     }
 

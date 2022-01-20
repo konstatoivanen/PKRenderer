@@ -66,6 +66,7 @@ namespace PK::Rendering::VulkanRHI
         physicalDeviceRequirements.features.alphaToOne = VK_TRUE;
         physicalDeviceRequirements.features.shaderImageGatherExtended = VK_TRUE;
         physicalDeviceRequirements.features.sparseBinding = VK_TRUE;
+        physicalDeviceRequirements.features.sparseResidencyBuffer = VK_TRUE;
         physicalDeviceRequirements.features.samplerAnisotropy = VK_TRUE;
         physicalDeviceRequirements.features.multiViewport = VK_TRUE;
         physicalDeviceRequirements.features.shaderSampledImageArrayDynamicIndexing = VK_TRUE;
@@ -147,7 +148,7 @@ namespace PK::Rendering::VulkanRHI
         glfwDestroyWindow(temporaryWindow);
 
         frameBufferCache = CreateScope<VulkanFrameBufferCache>(device, properties.garbagePruneDelay);
-        stagingBufferCache = CreateScope<VulkanStagingBufferCache>(allocator, properties.garbagePruneDelay);
+        stagingBufferCache = CreateScope<VulkanStagingBufferCache>(device, allocator, properties.garbagePruneDelay);
         pipelineCache = CreateScope<VulkanPipelineCache>(device, properties.garbagePruneDelay);
         samplerCache = CreateScope<VulkanSamplerCache>(device);
         layoutCache = CreateScope<VulkanLayoutCache>(device);

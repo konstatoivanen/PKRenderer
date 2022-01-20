@@ -46,6 +46,11 @@ namespace PK::Rendering::VulkanRHI
             buffer.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
         }
 
+        if ((usage & BufferUsage::Sparse) != 0)
+        {
+            buffer.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+        }
+
         if ((usage & BufferUsage::PersistentStage) != 0)
         {
             allocation.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
@@ -251,13 +256,22 @@ namespace PK::Rendering::VulkanRHI
         vkDestroyRenderPass(device, renderPass, nullptr);
     }
 
-    VulkanRawBuffer::VulkanRawBuffer(VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo) : 
+    VulkanRawBuffer::VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo) :
         allocator(allocator), 
         usage(createInfo.buffer.usage), 
         capacity(createInfo.buffer.size), 
         persistentmap(createInfo.allocation.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT)
     {
         PK_LOG_VERBOSE("VK ALLOC: Buffer");
+
+        if ((createInfo.buffer.flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0)
+        {
+            // No automatic memory allocation for sparse buffers. Do note that mapping a sparse buffer will throw an error.
+            VK_ASSERT_RESULT_CTX(vkCreateBuffer(device, &createInfo.buffer, nullptr, &buffer), "Failed to create a buffer!");
+            memory = nullptr;
+            return;
+        }
+
         VK_ASSERT_RESULT_CTX(vmaCreateBuffer(allocator, &createInfo.buffer, &createInfo.allocation, &buffer, &memory, &allocationInfo), "Failed to create a buffer!");
     }
     
@@ -268,6 +282,8 @@ namespace PK::Rendering::VulkanRHI
 
     void* VulkanRawBuffer::BeginMap(size_t offset) const
     {
+        PK_THROW_ASSERT(memory, "Trying to map a buffer without dedicated memory!");
+
         void* mappedRange;
         
         if (persistentmap)
@@ -284,6 +300,8 @@ namespace PK::Rendering::VulkanRHI
 
     void VulkanRawBuffer::EndMap(size_t offset, size_t size) const
     {
+        PK_THROW_ASSERT(memory, "Trying to umap a buffer without dedicated memory!");
+
         if (!persistentmap)
         {
             vmaUnmapMemory(allocator, memory);

@@ -56,7 +56,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    void VulkanTexture::Import(const char* filepath)
+    void VulkanTexture::Import(const char* filepath, void* pParams)
     {
         Dispose();
 

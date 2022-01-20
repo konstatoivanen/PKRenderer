@@ -1,5 +1,4 @@
 #pragma once
-#include "PrecompiledHeader.h"
 #include "Math/Types.h"
 #include "Enums.h"
 

@@ -123,6 +123,21 @@ namespace PK::Rendering::Structs
         {
         }
     };
+
+    constexpr static bool operator == (const BufferElement& a, const BufferElement& b)
+    {
+        return a.NameHashId == b.NameHashId &&
+               a.Type == b.Type &&
+               a.Count == b.Count &&
+               a.Location == b.Location &&
+               a.Offset == b.Offset &&
+               a.AlignedOffset == b.AlignedOffset;
+    }
+
+    constexpr static bool operator != (const BufferElement& a, const BufferElement& b)
+    {
+        return !(a == b);
+    }
     
     class BufferLayout : public std::vector<BufferElement>
     {

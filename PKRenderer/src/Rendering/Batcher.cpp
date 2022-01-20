@@ -11,36 +11,6 @@
 using namespace PK::Rendering;
 using namespace PK::ECS::EntityViews;
 
-template<>
-struct PK::Utilities::Vector::Comparer<DrawInfo>
-{
-    int operator()(DrawInfo& a, DrawInfo& b)
-    {
-        if (a.group > b.group) return 1;
-        if (a.group < b.group) return -1;
-
-        if (a.shader > b.shader) return 1;
-        if (a.shader < b.shader) return -1;
-
-        if (a.mesh > b.mesh) return 1;
-        if (a.mesh < b.mesh) return -1;
-
-        if (a.submesh > b.submesh) return 1;
-        if (a.submesh < b.submesh) return -1;
-
-        if (a.clipIndex > b.clipIndex) return 1;
-        if (a.clipIndex < b.clipIndex) return -1; 
-
-        if (a.material > b.material) return 1;
-        if (a.material < b.material) return -1;
-
-        if (a.transform > b.transform) return 1;
-        if (a.transform < b.transform) return -1;
-
-        return 0;
-    }
-};
-
 namespace PK::Rendering
 {
     uint16_t MaterialGroup::Add(Material* material)
@@ -118,7 +88,6 @@ namespace PK::Rendering
         }
 
         std::sort(m_drawInfos.begin(), m_drawInfos.end());
-        //Vector::QuickSort(m_drawInfos);
 
         m_matrices->Validate(m_transforms.GetCapacity());
         auto matrixView = m_matrices->BeginMap<float4x4>(0, m_transforms.GetCount());
@@ -215,10 +184,10 @@ namespace PK::Rendering
             auto mesh = m_meshes.GetValue(current.mesh);
             auto sm = mesh->GetSubmesh(current.submesh);
             auto indirect = &indirectView[indirectIndex++];
-            indirect->indexCount = (uint32_t)sm.count;
+            indirect->indexCount = sm.indexCount;
             indirect->instanceCount = i - (uint32_t)dbase;
-            indirect->firstIndex = (uint32_t)sm.offset;
-            indirect->vertexOffset = 0;
+            indirect->firstIndex = sm.firstIndex;
+            indirect->vertexOffset = sm.firstVertex;
             indirect->firstInstance = (uint32_t)dbase;
             current.submesh = info->submesh;
             dbase = i;
@@ -243,10 +212,10 @@ namespace PK::Rendering
         }
 
         auto lastsm = m_meshes.GetValue(current.mesh)->GetSubmesh(current.submesh);
-        indirectView[indirectIndex].indexCount = (uint32_t)lastsm.count;
-        indirectView[indirectIndex].instanceCount = m_drawInfos.size()- (uint32_t)dbase;
-        indirectView[indirectIndex].firstIndex = (uint32_t)lastsm.offset;
-        indirectView[indirectIndex].vertexOffset = 0;
+        indirectView[indirectIndex].indexCount = lastsm.indexCount;
+        indirectView[indirectIndex].instanceCount = (uint32_t)m_drawInfos.size() - (uint32_t)dbase;
+        indirectView[indirectIndex].firstIndex = lastsm.firstIndex;
+        indirectView[indirectIndex].vertexOffset = lastsm.firstVertex;
         indirectView[indirectIndex++].firstInstance = (uint32_t)dbase;
 
         m_drawCalls.push_back({ m_meshes[current.mesh], m_shaders[current.shader], { ibase, indirectIndex - ibase } });
@@ -313,7 +282,7 @@ namespace PK::Rendering
 
             cmd->SetShader(shader);
             cmd->SetFixedStateAttributes(overrideAttributes);
-            cmd->DrawMeshIndirect(dc.mesh, m_indirectArguments.get(), offset, dc.indices.count, stride);
+            cmd->DrawMeshIndirect(dc.mesh, m_indirectArguments.get(), offset, (uint32_t)dc.indices.count, (uint32_t)stride);
         }
 
         if (requireKeyword > 0u)

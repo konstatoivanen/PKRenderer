@@ -17,5 +17,6 @@ namespace PK::ECS::Engines
 		private:
 			EntityDatabase* m_entityDb;
 			AssetDatabase* m_assetDatabase;
+			Ref<Mesh> m_virtualBaseMesh = nullptr;
 	};
 }

@@ -164,7 +164,7 @@ namespace PK::Rendering::Objects
         PK_LOG_NEWLINE();
     }
 
-    void Shader::Import(const char* filepath)
+    void Shader::Import(const char* filepath, void* pParams)
     {
         for (auto& variant : m_variants)
         {

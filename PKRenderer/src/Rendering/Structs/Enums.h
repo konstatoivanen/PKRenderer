@@ -1,5 +1,4 @@
 #pragma once
-#include "PrecompiledHeader.h"
 #include <PKAssets/PKAsset.h>
 
 namespace PK::Rendering::Structs
@@ -190,11 +189,14 @@ namespace PK::Rendering::Structs
         Indirect        = 1 << 10,
         Dynamic         = 1 << 11,
         PersistentStage = 1 << 12,
+        Sparse          = 1 << 13,
 
         TypeBits = 7,
         AlignedTypes = Storage | Constant,
         DefaultVertex = GPUOnly | TransferDst | Vertex,
+        SparseVertex = GPUOnly | TransferDst | Vertex | Sparse,
         DefaultIndex = GPUOnly | TransferDst | Index,
+        SparseIndex = GPUOnly | TransferDst | Index | Sparse,
         DefaultConstant = GPUOnly | TransferDst | Constant,
         DefaultStorage = GPUOnly | TransferDst | Storage,
         DefaultStaging = CPUOnly | TransferSrc,

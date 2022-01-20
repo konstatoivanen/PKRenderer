@@ -134,7 +134,7 @@ namespace PK::Rendering::VulkanRHI
 
     struct VulkanRawBuffer : public IVulkanDisposable
     {
-        VulkanRawBuffer(VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo);
+        VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo);
         ~VulkanRawBuffer();
 
         void* BeginMap(size_t offset) const;

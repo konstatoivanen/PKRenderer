@@ -79,7 +79,7 @@ namespace PK::Rendering::Objects
             void ListVariants();
             void ListProperties(uint32_t variantIndex);
 
-            void Import(const char* filepath) override final;
+            void Import(const char* filepath, void* pParams) override final;
 
         protected:
             std::vector<Ref<ShaderVariant>> m_variants;

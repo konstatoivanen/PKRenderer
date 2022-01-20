@@ -328,16 +328,16 @@ namespace PK::Assets
             unsigned short offset = 0;
         };
 
-        struct PKIndexRange
+        struct PKSubmesh
         {
-            uint_t offset;
-            uint_t count;
+            uint_t firstIndex;
+            uint_t indexCount;
+            float bbmin[3]{};
+            float bbmax[3]{};
         };
 
         struct PKMesh
         {
-            float bbmin[3]{};
-            float bbmax[3]{};
             PKElementType indexType;
             uint_t indexCount;
             uint_t vertexCount;
@@ -345,7 +345,7 @@ namespace PK::Assets
             uint_t submeshCount;
             uint_t vertexAttributeCount;
             RelativePtr<PKVertexAttribute> vertexAttributes;
-            RelativePtr<PKIndexRange> submeshes;
+            RelativePtr<PKSubmesh> submeshes;
             RelativePtr<void> vertexBuffer;
             RelativePtr<void> indexBuffer;
         };

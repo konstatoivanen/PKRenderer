@@ -15,30 +15,37 @@ namespace PK::Rendering::Objects
     class Buffer : public NoCopy, public NativeInterface<Buffer>
     {
         public:
-            static Ref<Buffer> Create(BufferUsage usage, const BufferLayout& layout, const void* data, size_t count);
+            static Ref<Buffer> Create(const BufferLayout& layout, const void* data, size_t count, BufferUsage usage);
 
-            inline static Ref<Buffer> CreateVertex(const BufferLayout& layout, const void* data, size_t count)
+            inline static Ref<Buffer> CreateVertex(const BufferLayout& layout, 
+                                                   const void* data, 
+                                                   size_t count, 
+                                                   BufferUsage extraFlags = BufferUsage::None)
             { 
-                return Create(BufferUsage::DefaultVertex, layout, data, count);
+                return Create(layout, data, count, BufferUsage::DefaultVertex | extraFlags);
             }
 
-            inline static Ref<Buffer> CreateIndex(ElementType type, const  void* data, size_t count)
+            inline static Ref<Buffer> CreateIndex(ElementType type, 
+                                                  const void* data, 
+                                                  size_t count,
+                                                  BufferUsage extraFlags = BufferUsage::None)
             {
-                return Create(BufferUsage::DefaultIndex, BufferLayout({{ type, "INDEX" }}), data, count);
+                return Create(BufferLayout({{ type, "INDEX" }}), data, count, BufferUsage::DefaultIndex | extraFlags);
             }
 
             inline static Ref<Buffer> CreateConstant(const BufferLayout& layout, BufferUsage extraFlags = BufferUsage::None)
             {
-                return Create(BufferUsage::DefaultConstant | extraFlags, layout, nullptr, 1);
+                return Create(layout, nullptr, 1, BufferUsage::DefaultConstant | extraFlags);
             }
 
             inline static Ref<Buffer> CreateStorage(const BufferLayout& layout, size_t count, BufferUsage extraFlags = BufferUsage::None)
             {
-                return Create(BufferUsage::DefaultStorage | extraFlags, layout, nullptr, count);
+                return Create(layout, nullptr, count, BufferUsage::DefaultStorage | extraFlags);
             }
 
             virtual ~Buffer() = default;
             virtual void SetData(const void* data, size_t offset, size_t size) = 0;
+            virtual void SetSubData(const void* data, size_t offset, size_t size) = 0;
             virtual void* BeginMap(size_t offset, size_t size) = 0;
             virtual void EndMap() = 0;
 
@@ -60,6 +67,9 @@ namespace PK::Rendering::Objects
                 return { reinterpret_cast<T*>(BeginMap(offset * tsize, count * tsize)), count };
             }
 
+            virtual void MakeRangeResident(const IndexRange& range) = 0;
+            virtual void MakeRangeNonResident(const IndexRange& range) = 0;
+
             virtual bool Validate(size_t count) = 0;
             virtual size_t GetCapacity() const = 0;
 
@@ -69,7 +79,7 @@ namespace PK::Rendering::Objects
             constexpr IndexRange GetFullRange() const { return { 0ull, m_count }; }
 
         protected:
-            Buffer(BufferUsage usage, const BufferLayout& layout, size_t count) : m_usage(usage), m_layout(layout), m_count(count) {}
+            Buffer(const BufferLayout& layout, size_t count, BufferUsage usage) : m_usage(usage), m_layout(layout), m_count(count) {}
             
             BufferLayout m_layout{};
             BufferUsage m_usage = BufferUsage::None;

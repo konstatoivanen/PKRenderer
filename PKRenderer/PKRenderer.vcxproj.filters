@@ -1419,6 +1419,12 @@
     <ClInclude Include="src\Rendering\Structs\StructIndirectArguments.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanSparsePageTable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Objects\VirtualMesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -2167,6 +2173,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ECS\Contextual\Engines\EngineScreenshot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanSparsePageTable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Objects\VirtualMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -4,6 +4,7 @@
 #include "ECS/Contextual/Implementers/MeshRenderableImplementer.h"
 #include "ECS/Contextual/Implementers/LightImplementer.h"
 #include "ECS/Contextual/EntityViews/LightSphereView.h"
+#include "Math/FunctionsIntersect.h"
 
 namespace PK::ECS::Builders
 {
@@ -12,21 +13,75 @@ namespace PK::ECS::Builders
 	using namespace EntityViews;
 	using namespace Implementers;
 
+	static BoundingBox GetSubmeshRangeBounds(Mesh* mesh, const std::initializer_list<MaterialTarget>& materials)
+	{
+		auto bounds = BoundingBox::GetMinBounds();
+
+		for (auto& target : materials)
+		{
+			Math::Functions::BoundsEncapsulate(&bounds, mesh->GetBounds(target.submesh));
+		}
+
+		return bounds;
+	}
+
+	static BoundingBox GetSubmeshRangeBounds(VirtualMesh* mesh, const std::initializer_list<MaterialTarget>& materials)
+	{
+		auto bounds = BoundingBox::GetMinBounds();
+		auto baseIdx = mesh->GetBaseSubmeshIndex();
+
+		for (auto& target : materials)
+		{
+			auto submesh = mesh->GetSubmeshIndex(target.submesh);
+			Math::Functions::BoundsEncapsulate(&bounds, mesh->GetBaseMesh()->GetBounds(submesh));
+		}
+
+		return bounds;
+	}
+
+	static void ConvertVirtualToBaseSubmeshIndices(VirtualMesh* mesh, MaterialTarget* materials, uint32_t materialCount)
+	{
+		auto baseMesh = mesh->GetBaseMesh();
+
+		for (auto i = 0u; i < materialCount; ++i)
+		{
+			materials[i].submesh = mesh->GetSubmeshIndex(materials[i].submesh);
+		}
+	}
+
+
     EGID BuildMeshRenderableEntity(EntityDatabase* entityDb,
-							  Mesh* mesh, 
-							  const std::initializer_list<MaterialTarget>& materials,
-							  const float3& position, 
-							  const float3& rotation, 
-							  float size, 
-							  RenderableFlags flags)
+								   Mesh* mesh, 
+								   const std::initializer_list<MaterialTarget>& materials,
+								   const float3& position, 
+								   const float3& rotation, 
+								   float size, 
+								   RenderableFlags flags)
     {
 		auto egid = entityDb->ReserveEntityId((uint)ENTITY_GROUPS::ACTIVE);
 		auto implementer = entityDb->ReserveImplementer<MeshRenderableImplementer>();
-		BuildTransformView(entityDb, implementer, egid, position, rotation, PK_FLOAT3_ONE * size, mesh->GetLocalBounds());
+		BuildTransformView(entityDb, implementer, egid, position, rotation, PK_FLOAT3_ONE * size, GetSubmeshRangeBounds(mesh, materials));
 		BuildBaseRenderableView(entityDb, implementer, egid, flags | RenderableFlags::Mesh);
 		BuildMeshRenderableView(entityDb, implementer, egid, mesh, materials);
 		return egid;
     }
+
+    EGID BuildMeshRenderableEntity(EntityDatabase* entityDb,
+								   VirtualMesh* mesh, 
+								   const std::initializer_list<MaterialTarget>& materials,
+								   const float3& position, 
+								   const float3& rotation, 
+								   float size, 
+								   RenderableFlags flags)
+	{
+		auto egid = entityDb->ReserveEntityId((uint)ENTITY_GROUPS::ACTIVE);
+		auto implementer = entityDb->ReserveImplementer<MeshRenderableImplementer>();
+		BuildTransformView(entityDb, implementer, egid, position, rotation, PK_FLOAT3_ONE * size, GetSubmeshRangeBounds(mesh, materials));
+		BuildBaseRenderableView(entityDb, implementer, egid, flags | RenderableFlags::Mesh);
+		BuildMeshRenderableView(entityDb, implementer, egid, mesh->GetBaseMesh(), materials);
+		ConvertVirtualToBaseSubmeshIndices(mesh, implementer->materials.data(), (uint32_t)implementer->materials.size());
+		return egid;
+	}
 
 	EGID BuildLightRenderableEntity(EntityDatabase* entityDb, 
 								AssetDatabase* assetDatabase, 

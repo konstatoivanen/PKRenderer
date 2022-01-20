@@ -16,6 +16,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             ~VulkanCommandBufferPool();
     
             VulkanCommandBuffer* GetCurrent();
+            VkSemaphore QueueDependency(const VkSemaphore** previousDependency);
             void SubmitCurrent(VkPipelineStageFlags waitFlag, const VulkanSemaphore* waitSignal);
             void PruneStaleBuffers();
             void WaitForCompletion(bool all);
@@ -23,14 +24,18 @@ namespace PK::Rendering::VulkanRHI::Systems
     
         private:
             static constexpr int MAX_PRIMARY_COMMANDBUFFERS = 16;
+            static constexpr int MAX_DEPENDENCIES = 64;
             const VkDevice m_device;
             VkQueue m_queue;
             VkCommandPool m_pool;
             VulkanRenderState m_primaryRenderState;
             VulkanCommandBuffer m_commandBuffers[MAX_PRIMARY_COMMANDBUFFERS] = {};
-            Ref<VulkanSemaphore> m_renderingFinishedSignals[MAX_PRIMARY_COMMANDBUFFERS] = {};
+            VulkanSemaphore* m_renderingFinishedSignals[MAX_PRIMARY_COMMANDBUFFERS] = {};
+            VulkanSemaphore* m_dependencySignals[MAX_DEPENDENCIES] = {};
 
             VulkanCommandBuffer* m_current = nullptr;
             VulkanSemaphore* m_renderingFinishedSignal = {};
+            VulkanSemaphore* m_currentDependencySignal = {};
+            uint32_t m_dependencySignalIndex = 0u;
     };
 }

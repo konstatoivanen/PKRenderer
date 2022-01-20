@@ -10,6 +10,6 @@ namespace PK::Core
 	{
 		BoxedValue<ConsoleCommandBindList> Commands = BoxedValue<ConsoleCommandBindList>("Commands", ConsoleCommandBindList());
 		CommandConfig();
-		void Import(const char* filepath) override final;
+		void Import(const char* filepath, void* pParams) override final;
 	};
 }

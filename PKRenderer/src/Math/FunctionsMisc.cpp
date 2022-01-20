@@ -141,4 +141,12 @@ namespace PK::Math::Functions
         stream << (mag > 1 ? "MB" : mag > 0 ? "KB" : "bytes");
         return stream.str();
     }
+
+    void ReinterpretIndex16ToIndex32(uint32_t* dst, uint16_t* src, uint32_t count)
+    {
+        for (auto i = 0u; i < count; ++i)
+        {
+            dst[i] = (uint32_t)src[i];
+        }
+    }
 }

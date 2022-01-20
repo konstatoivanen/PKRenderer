@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "EngineDebug.h"
 #include "ECS/Contextual/Builders/Builders.h"
+#include "Rendering/Objects/VirtualMesh.h"
 #include "Rendering/MeshUtility.h"
 #include "Rendering/HashCache.h"
 #include "Math/FunctionsMisc.h"
@@ -17,13 +18,25 @@ namespace PK::ECS::Engines
 		m_entityDb = entityDb;
 		m_assetDatabase = assetDatabase;
 
+		BufferLayout defaultLayout =
+		{
+			{ ElementType::Float3, PK_VS_POSITION },
+			{ ElementType::Float3, PK_VS_NORMAL },
+			{ ElementType::Float4, PK_VS_TANGENT },
+			{ ElementType::Float2, PK_VS_TEXCOORD0 },
+		};
+
+		auto virtualVBuffer = Buffer::Create(defaultLayout, nullptr, 2000000, BufferUsage::SparseVertex);
+		auto virtualIBuffer = Buffer::CreateIndex(ElementType::Uint, nullptr, 2000000, BufferUsage::Sparse);
+		m_virtualBaseMesh = CreateRef<Mesh>(virtualVBuffer, virtualIBuffer);
+
 		//auto buildingsMesh = assetDatabase->Load<Mesh>("res/models/Buildings.mdl");
 		//auto spiralMesh = assetDatabase->Load<Mesh>("res/models/Spiral.mdl");
 		//auto treeMesh = assetDatabase->Load<Mesh>("res/models/Tree.mdl");
 		
-		auto columnMesh = assetDatabase->Load<Mesh>("res/models/MDL_Columns.pkmesh");
+		auto columnMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Columns.pkmesh", &m_virtualBaseMesh);
 		//auto clothMesh = assetDatabase->Load<Mesh>("res/models/MDL_Cloth.pkmesh");
-		auto rocksMesh = assetDatabase->Load<Mesh>("res/models/MDL_Rocks.pkmesh");
+		auto rocksMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Rocks.pkmesh", &m_virtualBaseMesh);
 		auto sphereMesh = assetDatabase->RegisterProcedural<Mesh>("Primitive_Sphere", Rendering::MeshUtility::GetSphere(PK_FLOAT3_ZERO, 1.0f));
 		auto planeMesh = assetDatabase->RegisterProcedural<Mesh>("Primitive_Plane16x16", Rendering::MeshUtility::GetPlane(PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
 		//auto oceanMesh = assetDatabase->RegisterProcedural<Mesh>("Primitive_Plane128x128", Rendering::MeshUtility::GetPlane(PK_FLOAT2_ZERO, PK_FLOAT2_ONE * 5.0f, { 128, 128 }));

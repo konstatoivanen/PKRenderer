@@ -549,12 +549,14 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\ECS\Contextual\Engines\EngineDebug.h" />
     <ClInclude Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.h" />
     <ClInclude Include="src\ECS\Contextual\Engines\EngineScreenshot.h" />
+    <ClInclude Include="src\Rendering\Objects\VirtualMesh.h" />
     <ClInclude Include="src\Rendering\Passes\PassVolumeFog.h" />
     <ClInclude Include="src\Rendering\Passes\PassGeometry.h" />
     <ClInclude Include="src\Rendering\Passes\PassLights.h" />
     <ClInclude Include="src\Rendering\Passes\PassSceneGI.h" />
     <ClInclude Include="src\Rendering\Structs\ExecutionGate.h" />
     <ClInclude Include="src\Rendering\Structs\StructIndirectArguments.h" />
+    <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanSparsePageTable.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.h" />
     <ClInclude Include="src\Utilities\BufferIterator.h" />
     <ClInclude Include="src\Utilities\BufferView.h" />
@@ -932,10 +934,12 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\ECS\Contextual\Engines\EngineDebug.cpp" />
     <ClCompile Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.cpp" />
     <ClCompile Include="src\ECS\Contextual\Engines\EngineScreenshot.cpp" />
+    <ClCompile Include="src\Rendering\Objects\VirtualMesh.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassVolumeFog.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassGeometry.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassLights.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassSceneGI.cpp" />
+    <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanSparsePageTable.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.cpp" />
     <ClCompile Include="src\Utilities\HashHelpers.cpp" />
     <ClCompile Include="src\Utilities\PropertyBlock.cpp" />

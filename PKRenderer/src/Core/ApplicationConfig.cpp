@@ -82,7 +82,7 @@ namespace PK::Core
 		};
 	}
 
-	void ApplicationConfig::Import(const char* filepath)
+	void ApplicationConfig::Import(const char* filepath, void* pParams)
 	{
 		Load(filepath);
 	}

@@ -12,6 +12,7 @@ namespace PK::Math::Functions
     bool IntersectAABB(const BoundingBox& a, const BoundingBox& b);
     bool IntersectSphere(const float3& center, float radius, const BoundingBox& b);
     void BoundsEncapsulate(BoundingBox* bounds, const BoundingBox& other);
+    void BoundsEncapsulate(BoundingBox* bounds, float* bmin, float* bmax);
     int BoundsLongestAxis(const BoundingBox& bounds);
     int BoundsShortestAxis(const BoundingBox& bounds);
     void BoundsSplit(const BoundingBox& bounds, int axis, BoundingBox* out0, BoundingBox* out1);

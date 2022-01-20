@@ -133,7 +133,7 @@ namespace PK::Rendering::Objects
     {
         SetMesh(mesh);
      
-        PK::Rendering::Structs::IndexRange sm;
+        PK::Rendering::Objects::SubMesh sm;
         auto smc = mesh->GetSubmeshCount();
 
         if (submesh < 0)
@@ -141,7 +141,7 @@ namespace PK::Rendering::Objects
             for (auto i = 0u; i < smc; ++i)
             {
                 sm = mesh->GetSubmesh(i);
-                DrawIndexed((uint32_t)sm.count, 1u, (uint32_t)sm.offset, 0u, 0u);
+                DrawIndexed(sm.indexCount, 1u, sm.firstIndex, sm.firstVertex, 0u);
             }
 
             return;
@@ -153,7 +153,7 @@ namespace PK::Rendering::Objects
         }
 
         sm = mesh->GetSubmesh(submesh);
-        DrawIndexed((uint32_t)sm.count, instanceCount, (uint32_t)sm.offset, 0u, firstInstance);
+        DrawIndexed(sm.indexCount, instanceCount, sm.firstIndex, sm.firstVertex, firstInstance);
     }
 
     void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh)

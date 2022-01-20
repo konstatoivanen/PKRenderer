@@ -90,6 +90,6 @@ namespace PK::Core
 
 		ApplicationConfig();
 
-		void Import(const char* filepath) override final;
+		void Import(const char* filepath, void* pParams) override final;
 	};
 }

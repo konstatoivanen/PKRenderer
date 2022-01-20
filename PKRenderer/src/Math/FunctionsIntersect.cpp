@@ -130,6 +130,22 @@ namespace PK::Math::Functions
         }
     }
 
+    void BoundsEncapsulate(BoundingBox* bounds, float* bmin, float* bmax)
+    {
+        for (auto i = 0; i < 3; ++i)
+        {
+            if (bmin[i] < bounds->min[i])
+            {
+                bounds->min[i] = bmin[i];
+            }
+
+            if (bmax[i] > bounds->max[i])
+            {
+                bounds->max[i] = bmax[i];
+            }
+        }
+    }
+
     int BoundsLongestAxis(const BoundingBox& bounds)
     {
         auto ext = bounds.GetExtents();

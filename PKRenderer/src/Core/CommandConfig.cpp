@@ -5,7 +5,7 @@ namespace PK::Core
 {
 	CommandConfig::CommandConfig() { values = { &Commands }; }
 
-	void CommandConfig::Import(const char* filepath)
+	void CommandConfig::Import(const char* filepath, void* pParams)
 	{
 		Load(filepath);
 	}

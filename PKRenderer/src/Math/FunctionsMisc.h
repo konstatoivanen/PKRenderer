@@ -21,4 +21,5 @@ namespace PK::Math::Functions
     uint GetMaxMipLevel(uint2 resolution);
     uint GetMaxMipLevel(uint3 resolution); 
     std::string BytesToString(size_t bytes, uint32_t decimalPlaces = 2);
+    void ReinterpretIndex16ToIndex32(uint32_t* dst, uint16_t* src, uint32_t count);
 }
