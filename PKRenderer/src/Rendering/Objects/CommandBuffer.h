@@ -22,8 +22,8 @@ namespace PK::Rendering::Objects
         virtual void DiscardColor(uint32_t index) = 0;
         virtual void DiscardDepth() = 0;
 
-        virtual void SetViewPort(uint4 rect, uint index = 0) = 0;
-        virtual void SetScissor(uint4 rect, uint index = 0) = 0;
+        virtual void SetViewPorts(const uint4* rects, uint32_t count) = 0;
+        virtual void SetScissors(const uint4* rects, uint32_t count) = 0;
 
         virtual void SetBlending(const BlendParameters& blend) = 0;
         virtual void SetRasterization(const RasterizationParameters& rasterization) = 0;
@@ -54,6 +54,9 @@ namespace PK::Rendering::Objects
         virtual void Clear(Texture* dst, const TextureViewRange& range, const uint4& value) = 0;
         
         virtual void Barrier(const Texture* texture, const TextureViewRange& range, const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) = 0;
+
+        void SetViewPort(const uint4& rect);
+        void SetScissor(const uint4& rect);
 
         void SetFixedStateAttributes(FixedFunctionShaderAttributes* attribs);
 

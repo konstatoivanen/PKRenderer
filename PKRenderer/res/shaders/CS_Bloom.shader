@@ -11,6 +11,27 @@
     };
 #endif
 
+const float sample_weights[17] =
+{
+    0.0006428483,
+    0.002363721,
+    0.007306095,
+    0.0189835,
+    0.04146377,
+    0.07613125,
+    0.1175057,
+    0.1524602,
+    0.1662859,
+    0.1524602,
+    0.1175057,
+    0.07613125,
+    0.04146377,
+    0.0189835,
+    0.007306095,
+    0.002363721,
+    0.0006428483,
+};
+
 PK_DECLARE_SET_DRAW uniform sampler2D _SourceTex;
 layout(rgba16f, set = PK_SET_DRAW) uniform image2D _DestinationTex;
 
@@ -37,15 +58,13 @@ void main()
         color = max(color / 4.0f, 0.0f.xxx);
     #else
         float2 offs = blurOffset * texel;
-        float2 coords = uv - offs * 3.0f;
+        float2 coords = uv - offs * 8.0f;
 
-        color += tex2D(_SourceTex, coords + offs * 0.0f).rgb * 0.0205f.xxx;
-        color += tex2D(_SourceTex, coords + offs * 1.0f).rgb * 0.0855f.xxx;
-        color += tex2D(_SourceTex, coords + offs * 2.0f).rgb * 0.232f.xxx;
-        color += tex2D(_SourceTex, coords + offs * 3.0f).rgb * 0.324f.xxx;
-        color += tex2D(_SourceTex, coords + offs * 4.0f).rgb * 0.232f.xxx;
-        color += tex2D(_SourceTex, coords + offs * 5.0f).rgb * 0.0855f.xxx;
-        color += tex2D(_SourceTex, coords + offs * 6.0f).rgb * 0.0205f.xxx;
+        for (uint i = 0u; i < 17; ++i)
+        {
+            color += tex2D(_SourceTex, coords + offs * i).rgb * sample_weights[i].xxx;
+        }
+
     #endif
 
     imageStore(_DestinationTex, coord, float4(color, 1.0f));

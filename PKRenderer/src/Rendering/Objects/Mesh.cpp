@@ -217,7 +217,7 @@ namespace PK::Rendering::Objects
     {
         if (submesh < 0 || m_submeshes.empty())
         {
-            return { 0u, (uint32_t)m_vertexBuffers.at(0)->GetCount(), 0u, (uint)m_indexBuffer->GetCount() };
+			return m_fullRange;
         }
 
         auto idx = glm::min((uint)submesh, (uint)m_submeshes.size());

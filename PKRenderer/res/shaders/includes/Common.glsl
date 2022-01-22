@@ -71,6 +71,7 @@ float SampleLinearDepth(float2 uv) { return LinearizeDepth(tex2D(pk_ScreenDepth,
 float SampleLinearDepth(int2 coord) { return LinearizeDepth(texelFetch(pk_ScreenDepth, coord, 0).r); }
 
 float3 GlobalNoiseBlue(uint2 coord) { return texelFetch(pk_Bluenoise256, int2(coord.x % 256, coord.y % 256), 0).xyz; }
+float3 GlobalNoiseBlueScreenUV(float2 coord) { return GlobalNoiseBlue(uint2(coord * pk_ScreenParams.xy)); }
 float3 GlobalNoiseBlueUV(float2 coord) { return tex2D(pk_Bluenoise256, coord).xyz; }
 
 uint GetShadowCascadeIndex(float linearDepth)

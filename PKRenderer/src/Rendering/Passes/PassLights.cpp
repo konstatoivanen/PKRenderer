@@ -317,8 +317,8 @@ namespace PK::Rendering::Passes
                 m_batcher->Render(cmd, group);
             }
 
-            cmd->SetViewPort({ 0, 0, m_shadowmapTileSize, m_shadowmapTileSize }, 0);
-            cmd->SetScissor({ 0, 0, m_shadowmapTileSize, m_shadowmapTileSize }, 0);
+            cmd->SetViewPort({ 0, 0, m_shadowmapTileSize, m_shadowmapTileSize });
+            cmd->SetScissor({ 0, 0, m_shadowmapTileSize, m_shadowmapTileSize });
 
             auto range0 = TextureViewRange(0, atlasIndex + tileCount, 1, tileCount);
             cmd->SetRenderTarget(m_shadowmaps.get(), range0);

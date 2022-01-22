@@ -15,6 +15,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         memset(&m_pipelineKey, 0, sizeof(PipelineKey));
         memset(m_frameBufferKey, 0, sizeof(FrameBufferKey) * 2);
         memset(m_renderPassKey, 0, sizeof(RenderPassKey) * 2);
+        memset(m_viewports, 0, sizeof(VkViewport) * PK_MAX_VIEWPORTS);
+        memset(m_scissors, 0, sizeof(VkRect2D) * PK_MAX_VIEWPORTS);
 
         m_pipelineKey.fixedFunctionState = FixedFunctionState();
         m_renderPass = nullptr;
@@ -47,7 +49,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         passKey->samples = renderTargets[0].samples;
         fboKey->layers = renderTargets[0].layers;
         fboKey->extent = { renderTargets[0].extent.width, renderTargets[0].extent.height };
-        m_renderArea = { {}, fboKey->extent };
 
         for (auto i = 0u, j = 0u; i < count; ++i)
         {
@@ -81,11 +82,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    void VulkanRenderState::SetRenderArea(const VkRect2D& rect)
-    {
-        m_renderArea = rect;
-    }
-    
     void VulkanRenderState::ClearColor(const color& color, uint32_t index)
     {
         m_renderPassKey[0].colors[index].loadop = LoadOp::Clear;
@@ -114,6 +110,56 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         m_renderPassKey[0].depth.loadop = LoadOp::Discard;
         m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
+    }
+
+    bool VulkanRenderState::SetViewports(const uint4* rects, uint32_t& count, VkViewport** outViewports)
+    {
+        if (count > PK_MAX_VIEWPORTS)
+        {
+            count = PK_MAX_VIEWPORTS;
+        }
+
+        *outViewports = m_viewports;
+        bool hasChanged = false;
+
+        for (auto i = 0u; i < count; ++i)
+        {
+            auto& rect = rects[i];
+            VkViewport v = { (float)rect.x, (float)rect.y, (float)rect.z, (float)rect.w, 0.0f, 1.0f };
+
+            if (memcmp(&m_viewports[i], &v, sizeof(VkViewport)) != 0)
+            {
+                m_viewports[i] = v;
+                hasChanged = true;
+            }
+        }
+
+        return hasChanged;
+    }
+
+    bool VulkanRenderState::SetScissors(const uint4* rects, uint32_t& count, VkRect2D** outScissors)
+    {
+        if (count > PK_MAX_VIEWPORTS)
+        {
+            count = PK_MAX_VIEWPORTS;
+        }
+
+        *outScissors = m_scissors;
+        bool hasChanged = false;
+
+        for (auto i = 0u; i < count; ++i)
+        {
+            auto& rect = rects[i];
+            VkRect2D v = {{(int)rect.x, (int)rect.y}, { rect.z, rect.w }};
+
+            if (memcmp(&m_scissors[i], &v, sizeof(VkRect2D)) != 0)
+            {
+                m_scissors[i] = v;
+                hasChanged = true;
+            }
+        }
+
+        return hasChanged;
     }
 
     void VulkanRenderState::SetShader(const VulkanShader* shader)
@@ -224,7 +270,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         VkRenderPassBeginInfo renderPassInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
         renderPassInfo.renderPass = m_renderPass->renderPass;
         renderPassInfo.framebuffer = m_frameBuffer->frameBuffer;
-        renderPassInfo.renderArea = m_renderArea;
+        renderPassInfo.renderArea = { {}, m_frameBufferKey->extent };
         renderPassInfo.clearValueCount = m_clearValueCount;
         renderPassInfo.pClearValues = m_clearValues;
         return renderPassInfo;
@@ -455,7 +501,15 @@ namespace PK::Rendering::VulkanRHI::Objects
                 m_descriptorSets[i] = m_descriptorCache->GetDescriptorSet(shader->GetDescriptorSetLayout(i), m_descriptorSetKeys[i], gate);
             }
 
-            m_dirtyFlags |= (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i);
+        }
+
+        // If a lower number set has changed all sets above it need to be rebound.
+        for (auto i = 0; i < (int32_t)(setCount - 1); ++i)
+        {
+            if ((m_dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i)) != 0)
+            {
+                m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << (i + 1);
+            }
         }
 
         // Clear remaining keys as they will go unbound when this pipe is used

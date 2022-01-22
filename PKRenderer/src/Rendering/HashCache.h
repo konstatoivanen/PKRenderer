@@ -80,6 +80,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_BloomIntensity)
         DECLARE_HASH(pk_BloomDirtIntensity)
         DECLARE_HASH(pk_BloomTexture)
+        DECLARE_HASH(pk_BloomTexture1)
 
         DECLARE_HASH(pk_Vibrance)
         DECLARE_HASH(pk_VignetteGrain)

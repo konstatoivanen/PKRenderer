@@ -60,11 +60,13 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         void Reset();
         void SetRenderTarget(const VulkanRenderTarget* renderTargets, const VulkanRenderTarget* resolves, uint32_t count);
-        void SetRenderArea(const VkRect2D& rect);
         void ClearColor(const color& color, uint32_t index);
         void ClearDepth(float depth, uint32_t stencil);
         void DiscardColor(uint32_t index);
         void DiscardDepth();
+
+        bool SetViewports(const uint4* rects, uint32_t& count, VkViewport** outViewports);
+        bool SetScissors(const uint4* rects, uint32_t& count, VkRect2D** outScissors);
 
         void SetShader(const VulkanShader* shader);
         void SetBlending(const BlendParameters& blend);
@@ -105,9 +107,10 @@ namespace PK::Rendering::VulkanRHI::Objects
         const VulkanBindHandle* m_indexBuffer = nullptr;
         VkIndexType m_indexType = VK_INDEX_TYPE_UINT16;
 
+        VkViewport m_viewports[PK_MAX_VIEWPORTS]{};
+        VkRect2D m_scissors[PK_MAX_VIEWPORTS]{};
         VkClearValue m_clearValues[PK_MAX_RENDER_TARGETS + 1]{};
         uint32_t m_clearValueCount = 0u;
-        VkRect2D m_renderArea{};
         
         uint32_t m_dirtyFlags;
         const VulkanRenderPass* m_renderPass = nullptr;

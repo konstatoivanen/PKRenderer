@@ -43,26 +43,22 @@ namespace PK::Rendering::VulkanRHI::Objects
         renderState->SetRenderTarget(colors, resolves, count);
     }
 
-    void VulkanCommandBuffer::SetViewPort(uint4 rect, uint index)
+    void VulkanCommandBuffer::SetViewPorts(const uint4* rects, uint32_t count)
     {
-        VkViewport viewport{};
-        viewport.x = (float)rect.x;
-        viewport.y = (float)rect.y;
-        viewport.width = (float)rect.z;
-        viewport.height = (float)rect.w;
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(commandBuffer, index, 1, &viewport);
+        VkViewport* viewports = nullptr;
+        if (renderState->SetViewports(rects, count, &viewports))
+        {
+            vkCmdSetViewport(commandBuffer, 0, count, viewports);
+        }
     }
 
-    void VulkanCommandBuffer::SetScissor(uint4 rect, uint index)
+    void VulkanCommandBuffer::SetScissors(const uint4* rects, uint32_t count)
     {
-        VkRect2D scissor;
-        scissor.offset.x = (int)rect.x;
-        scissor.offset.y = (int)rect.y;
-        scissor.extent.width = (rect).z;
-        scissor.extent.height = (rect).w;
-        vkCmdSetScissor(commandBuffer, index, 1, &scissor);
+        VkRect2D* scissors = nullptr;
+        if (renderState->SetScissors(rects, count, &scissors))
+        {
+            vkCmdSetScissor(commandBuffer, 0, count, scissors);
+        }
     }
 
 
@@ -433,17 +429,31 @@ namespace PK::Rendering::VulkanRHI::Objects
             vkCmdBindIndexBuffer(commandBuffer, indexBufferHandle->buffer, indexBufferHandle->bufferOffset, renderState->m_indexType);
         }
 
-        for (auto i = 0; i < PK_MAX_DESCRIPTOR_SETS; ++i)
+        if ((flags & PK_RENDER_STATE_DIRTY_DESCRIPTOR_SETS) != 0)
         {
-            if ((flags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i)) != 0)
+            VkDescriptorSet sets[PK_MAX_DESCRIPTOR_SETS]{};
+            auto pipeline = renderState->m_pipeline;
+            auto bindPoint = EnumConvert::GetPipelineBindPoint(renderState->m_pipelineKey.shader->GetType());
+            auto layout = renderState->m_pipelineKey.shader->GetPipelineLayout();
+            auto firstSet = 0xFFFFu;
+            auto setCount = 0u;
+
+            for (auto i = 0u; i < PK_MAX_DESCRIPTOR_SETS; ++i)
             {
-                auto pipeline = renderState->m_pipeline;
-                auto bindPoint = EnumConvert::GetPipelineBindPoint(renderState->m_pipelineKey.shader->GetType());
-                auto layout = renderState->m_pipelineKey.shader->GetPipelineLayout();
-                auto set = renderState->m_descriptorSets[i];
-                set->executionGate = GetOnCompleteGate();
-                vkCmdBindDescriptorSets(commandBuffer, bindPoint, layout->layout, i, 1, &set->set, 0, nullptr);
+                if ((flags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i)) != 0)
+                {
+                    if (i < firstSet)
+                    {
+                        firstSet = i;
+                    }
+
+                    auto set = renderState->m_descriptorSets[i];
+                    set->executionGate = GetOnCompleteGate();
+                    sets[setCount++] = set->set;
+                }
             }
+
+            vkCmdBindDescriptorSets(commandBuffer, bindPoint, layout->layout, firstSet, setCount, sets, 0, nullptr);
         }
 
         // @TODO delta checks

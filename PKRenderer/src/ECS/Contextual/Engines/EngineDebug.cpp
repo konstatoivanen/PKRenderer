@@ -80,7 +80,7 @@ namespace PK::ECS::Engines
 			auto size = Functions::RandomRangeFloat(1.0f, 3.0f);
 			Builders::BuildMeshRenderableEntity(m_entityDb, rocksMesh, {{materialMarble,submesh}}, pos, rot, size);
 		}
-
+		
 		for (auto i = 0; i < 128; ++i)
 		{
 			auto submesh = Functions::RandomRangeUint(0, submeshCount);
@@ -95,7 +95,7 @@ namespace PK::ECS::Engines
 			Builders::BuildLightSphereRenderableEntity(
 				m_entityDb,
 				m_assetDatabase,
-				Functions::RandomRangeFloat3(minpos, maxpos),
+				Functions::RandomRangeFloat3(minpos, maxpos) + PK_FLOAT3_UP,
 				i % 2 == 0 ? LightType::Spot : LightType::Point,
 				Cookie::Circle0,
 				Functions::HueToRGB(Functions::RandomRangeFloat(0.0f, 1.0f)) * Functions::RandomRangeFloat(2.0f, 7.0f),

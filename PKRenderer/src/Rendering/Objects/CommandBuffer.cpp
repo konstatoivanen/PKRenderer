@@ -3,6 +3,16 @@
 
 namespace PK::Rendering::Objects
 {
+    void CommandBuffer::SetViewPort(const uint4& rect)
+    {
+        SetViewPorts(&rect, 1);
+    }
+
+    void CommandBuffer::SetScissor(const uint4& rect)
+    {
+        SetScissors(&rect, 1);
+    }
+
     void CommandBuffer::SetFixedStateAttributes(FixedFunctionShaderAttributes* attribs)
     {
         if (attribs == nullptr)

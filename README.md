@@ -29,12 +29,9 @@ The project is built for Windows using C++ 17, Visual Studio & MSVC and supports
 
 ## Planned Features
 - Hardware accelerated raytraced GI (deprecate VXGI).
-- Refactor virtual meshes to have more robust unload support.
 - Mesh Skinning.
 - Serialized scene representation.
 - DX12 Rendering backend.
-- Improved bloom effect performance.
-  - Current one is a quick direct port from GLSLTestbed which used bindless textures to avoid frame buffer switches. The same technique is unsupported on Vulkan.
 - Antialiasing.
 
 ## Libraries & Other Dependencies

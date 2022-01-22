@@ -120,7 +120,7 @@ namespace PK::ECS::Builders
 		const auto sphereTranslucency = 0.1f;
 		auto hdrColor = implementer->color * sphereTranslucency * (1.0f / (sphereRadius * sphereRadius));
 
-		auto mesh = assetDatabase->Find<Mesh>("Primitive_Sphere");
+		auto mesh = assetDatabase->Find<VirtualMesh>("Primitive_Sphere");
 		auto shader = assetDatabase->Find<Shader>("SH_WS_Unlit_Color");
 		auto material = assetDatabase->RegisterProcedural("M_Point_Light_" + std::to_string(egid.entityID()), CreateRef<Material>(shader, nullptr));
 		material->Set<float4>(HashCache::Get()->_Color, hdrColor);

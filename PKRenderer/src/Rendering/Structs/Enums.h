@@ -20,6 +20,7 @@ namespace PK::Rendering::Structs
     constexpr static const uint32_t PK_MAX_DESCRIPTORS_PER_SET = PK::Assets::PK_ASSET_MAX_DESCRIPTORS_PER_SET;
     constexpr static const uint32_t PK_MAX_VERTEX_ATTRIBUTES = PK::Assets::PK_ASSET_MAX_VERTEX_ATTRIBUTES;
     constexpr static const uint32_t PK_MAX_UNBOUNDED_SIZE = PK::Assets::PK_ASSET_MAX_UNBOUNDED_SIZE;
+    constexpr static const uint32_t PK_MAX_VIEWPORTS = 16;
 
     constexpr const static char* PK_VS_POSITION = PK::Assets::Mesh::PK_VS_POSITION;
     constexpr const static char* PK_VS_NORMAL = PK::Assets::Mesh::PK_VS_NORMAL;
