@@ -90,7 +90,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             auto stagingBuffer = m_activeBuffers.at(i);
 
             // If staging buffer has been assigned an execution observer let's wait for that instead of prune tick.
-            if (stagingBuffer->executionGate.IsValid() ? stagingBuffer->executionGate.IsCompleted() : stagingBuffer->pruneTick < m_currentPruneTick)
+            if (stagingBuffer->executionGate.IsValid() ? stagingBuffer->executionGate.IsComplete() : stagingBuffer->pruneTick < m_currentPruneTick)
             {
                 stagingBuffer->executionGate.Invalidate();
                 stagingBuffer->pruneTick = m_currentPruneTick + m_pruneDelay;

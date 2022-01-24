@@ -137,6 +137,7 @@ namespace PK::Rendering::VulkanRHI
         VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo);
         ~VulkanRawBuffer();
 
+        void Invalidate(size_t offset, size_t size) const;
         void* BeginMap(size_t offset) const;
         void EndMap(size_t offset, size_t size) const;
         void SetData(const void* data, size_t size) const;

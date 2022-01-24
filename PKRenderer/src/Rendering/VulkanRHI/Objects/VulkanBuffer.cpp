@@ -32,19 +32,19 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanBuffer::SetData(const void* data, size_t offset, size_t size)
     {
-        auto dst = BeginMap(0, GetCapacity());
+        auto dst = BeginWrite(0, GetCapacity());
         memcpy(reinterpret_cast<char*>(dst) + offset, data, size);
-        EndMap();
+        EndWrite();
     }
 
     void VulkanBuffer::SetSubData(const void* data, size_t offset, size_t size)
     {
-        auto dst = BeginMap(offset, size);
+        auto dst = BeginWrite(offset, size);
         memcpy(dst, data, size);
-        EndMap();
+        EndWrite();
     }
 
-    void* VulkanBuffer::BeginMap(size_t offset, size_t size)
+    void* VulkanBuffer::BeginWrite(size_t offset, size_t size)
     {
         if ((m_usage & BufferUsage::PersistentStage) == 0)
         {
@@ -62,7 +62,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         return m_mappedBuffer->BeginMap(offset);
     }
 
-    void VulkanBuffer::EndMap()
+    void VulkanBuffer::EndWrite()
     {
         PK_THROW_ASSERT(m_mappedBuffer != nullptr, "Trying to end buffer map for an unmapped buffer!");
         
@@ -123,6 +123,17 @@ namespace PK::Rendering::VulkanRHI::Objects
                 dstStageMask,
                 0, 0, nullptr, 1, &barrier, 0, nullptr);
         }
+    }
+
+    const void* VulkanBuffer::BeginRead(size_t offset, size_t size)
+    {
+        m_rawBuffer->Invalidate(offset, size);
+        return m_rawBuffer->BeginMap(offset);
+    }
+
+    void VulkanBuffer::EndRead()
+    {
+        m_rawBuffer->EndMap(0ull, 0ull);
     }
 
 

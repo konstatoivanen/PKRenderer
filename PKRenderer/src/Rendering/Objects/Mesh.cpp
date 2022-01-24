@@ -151,9 +151,9 @@ namespace PK::Rendering::Objects
 		// Convert 16bit indices to 32bit to avoid compatibility issues between meshes.
 		if (ElementConvert::Size(allocationInfo.indexType) == 2)
 		{
-			Functions::ReinterpretIndex16ToIndex32(ibuff->BeginMap<uint32_t>(range.firstIndex, range.indexCount).data, 
+			Functions::ReinterpretIndex16ToIndex32(ibuff->BeginWrite<uint32_t>(range.firstIndex, range.indexCount).data, 
 												   reinterpret_cast<uint16_t*>(allocationInfo.pIndices), range.indexCount);
-			ibuff->EndMap();
+			ibuff->EndWrite();
 		}
 		else
 		{

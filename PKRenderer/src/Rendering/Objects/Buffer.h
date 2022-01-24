@@ -46,17 +46,21 @@ namespace PK::Rendering::Objects
             virtual ~Buffer() = default;
             virtual void SetData(const void* data, size_t offset, size_t size) = 0;
             virtual void SetSubData(const void* data, size_t offset, size_t size) = 0;
-            virtual void* BeginMap(size_t offset, size_t size) = 0;
-            virtual void EndMap() = 0;
+            virtual void* BeginWrite(size_t offset, size_t size) = 0;
+            virtual void EndWrite() = 0;
+
+            // This will likely throw for memory types that cannot be host read (i.e. GPU only).
+            virtual const void* BeginRead(size_t offset, size_t size) = 0;
+            virtual void EndRead() = 0;
 
             template<typename T>
-            BufferView<T> BeginMap()
+            BufferView<T> BeginWrite()
             {
-                return { reinterpret_cast<T*>(BeginMap(0, GetCapacity())), GetCapacity() / sizeof(T) };
+                return { reinterpret_cast<T*>(BeginWrite(0, GetCapacity())), GetCapacity() / sizeof(T) };
             }
 
             template<typename T>
-            BufferView<T> BeginMap(size_t offset, size_t count)
+            BufferView<T> BeginWrite(size_t offset, size_t count)
             {
                 auto tsize = sizeof(T);
                 auto mapSize = tsize * count + tsize * offset;
@@ -64,7 +68,25 @@ namespace PK::Rendering::Objects
 
                 PK_THROW_ASSERT(mapSize <= bufSize, "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", mapSize, bufSize);
 
-                return { reinterpret_cast<T*>(BeginMap(offset * tsize, count * tsize)), count };
+                return { reinterpret_cast<T*>(BeginWrite(offset * tsize, count * tsize)), count };
+            }
+
+            template<typename T>
+            ConstBufferView<T> BeginRead()
+            {
+                return { reinterpret_cast<const T*>(BeginRead(0, GetCapacity())), GetCapacity() / sizeof(T) };
+            }
+
+            template<typename T>
+            ConstBufferView<T> BeginRead(size_t offset, size_t count)
+            {
+                auto tsize = sizeof(T);
+                auto mapSize = tsize * count + tsize * offset;
+                auto bufSize = GetCapacity();
+
+                PK_THROW_ASSERT(mapSize <= bufSize, "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", mapSize, bufSize);
+
+                return { reinterpret_cast<const T*>(BeginRead(offset * tsize, count * tsize)), count };
             }
 
             virtual void MakeRangeResident(const IndexRange& range) = 0;

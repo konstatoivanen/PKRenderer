@@ -36,8 +36,8 @@ namespace PK::ECS::Engines
                 continue;
             }
 
-            auto depth = Functions::PlaneDistanceToAABB(planes[4], cullable->bounds->worldAABB) * invDepthRange;
-            auto fixedDepth = glm::min(0xFFFFu, (uint32_t)(depth));
+            auto depth = Functions::PlaneMaxDistanceToAABB(planes[4], cullable->bounds->worldAABB) * invDepthRange;
+            auto fixedDepth = glm::min(0xFFFFu, (uint32_t)glm::max(0.0f, depth));
             results->Add(cullable->GID.entityID(), (uint16_t)fixedDepth, 0u);
         }
     }
@@ -148,8 +148,8 @@ namespace PK::ECS::Engines
             {
                 if (visibilities[j])
                 {
-                    auto depth = Functions::PlaneDistanceToAABB(cascades[j].planes[4], bounds) * invDepthRange;
-                    auto fixedDepth = glm::min(0xFFFFu, (uint32_t)depth);
+                    auto depth = Functions::PlaneMinDistanceToAABB(cascades[j].planes[4], bounds) * invDepthRange;
+                    auto fixedDepth = glm::min(0xFFFFu, (uint32_t)glm::max(0.0f, depth));
                     results->Add(id, (uint16_t)fixedDepth, j);
                 }
             }

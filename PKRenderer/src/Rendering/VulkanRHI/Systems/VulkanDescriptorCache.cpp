@@ -187,7 +187,7 @@ namespace PK::Rendering::VulkanRHI::Systems
 
         for (auto i = (int)m_extinctPools.size() - 1; i >= 0; --i)
         {
-            if (m_extinctPools.at(i).executionGate.IsCompleted())
+            if (m_extinctPools.at(i).executionGate.IsComplete())
             {
                 auto n = m_extinctPools.size() - 1;
 
@@ -214,7 +214,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             auto& key = keyvalues.keys[i].key;
             auto& value = keyvalues.values[i];
 
-            if (!value->executionGate.IsCompleted() || value->pruneTick >= m_currentPruneTick)
+            if (!value->executionGate.IsComplete() || value->pruneTick >= m_currentPruneTick)
             {
                 continue;
             }

@@ -165,11 +165,35 @@ namespace PK::Rendering::VulkanRHI::Objects
     }
 
 
-    void VulkanCommandBuffer::Blit(Texture* src, Window* dst, uint32_t dstLevel, uint32_t dstLayer, FilterMode filter)
+    void VulkanCommandBuffer::Blit(Texture* src, Window* dst,FilterMode filter)
     {
         auto vksrc = src->GetNative<VulkanTexture>();
         auto vkwindow = dst->GetNative<VulkanWindow>();
-        Blit(vksrc->GetRenderTarget(), vkwindow->GetRenderTarget(), 0, dstLevel, 0, dstLayer, filter, true);
+        Blit(vksrc->GetRenderTarget(), vkwindow->GetRenderTarget(), 0, 0, 0, 0, filter, true);
+    }
+
+    void VulkanCommandBuffer::Blit(Window* src, Buffer* dst)
+    {
+        auto vksrc = src->GetNative<VulkanWindow>()->GetRenderTarget();
+        auto vkbuff = dst->GetNative<VulkanBuffer>();
+
+        VkBufferImageCopy region = {};
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+        region.imageExtent = vksrc.extent;
+
+        VkImageSubresourceRange srcRange{};
+        srcRange.aspectMask = vksrc.aspect;
+        srcRange.baseMipLevel = 0;
+        srcRange.levelCount = 1;
+        srcRange.baseArrayLayer = 0;
+        srcRange.layerCount = 1;
+
+        TransitionImageLayout(VulkanLayoutTransition(vksrc.image, vksrc.layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, srcRange));
+        vkCmdCopyImageToBuffer(commandBuffer, vksrc.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vkbuff->GetRaw()->buffer, 1, &region);
+        TransitionImageLayout(VulkanLayoutTransition(vksrc.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vksrc.layout, srcRange));
     }
 
     void VulkanCommandBuffer::Blit(Texture* src, Texture* dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter)

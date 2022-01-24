@@ -30,27 +30,16 @@ namespace PK::ECS::Engines
 		auto virtualIBuffer = Buffer::CreateIndex(ElementType::Uint, nullptr, 2000000, BufferUsage::Sparse);
 		m_virtualBaseMesh = CreateRef<Mesh>(virtualVBuffer, virtualIBuffer);
 
-		//auto buildingsMesh = assetDatabase->Load<Mesh>("res/models/Buildings.mdl");
-		//auto spiralMesh = assetDatabase->Load<Mesh>("res/models/Spiral.mdl");
-		//auto treeMesh = assetDatabase->Load<Mesh>("res/models/Tree.mdl");
-		
 		auto columnMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Columns.pkmesh", &m_virtualBaseMesh);
-		//auto clothMesh = assetDatabase->Load<Mesh>("res/models/MDL_Cloth.pkmesh");
 		auto rocksMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Rocks.pkmesh", &m_virtualBaseMesh);
 		auto sphereMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Sphere", Rendering::MeshUtility::GetSphere(m_virtualBaseMesh, PK_FLOAT3_ZERO, 1.0f));
 		auto planeMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Plane16x16", Rendering::MeshUtility::GetPlane(m_virtualBaseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
-		//auto oceanMesh = assetDatabase->RegisterProcedural<Mesh>("Primitive_Plane128x128", Rendering::MeshUtility::GetPlane(PK_FLOAT2_ZERO, PK_FLOAT2_ONE * 5.0f, { 128, 128 }));
 
-		//auto materialMetal = assetDatabase->Load<Material>("res/materials/M_Metal_Panel.material");
-		///auto materialGravel = assetDatabase->Load<Material>("res/materials/M_Gravel.material");
 		auto materialSand = assetDatabase->Load<Material>("res/materials/M_Sand.material");
 		auto materialAsphalt = assetDatabase->Load<Material>("res/materials/M_Asphalt.material");
 		auto materialMarble = assetDatabase->Load<Material>("res/materials/M_Marble.material");
 		auto materialPlaster = assetDatabase->Load<Material>("res/materials/M_Plaster.material");
-		//auto materialCloth = assetDatabase->Load<Material>("res/materials/M_Cloth.material");
-		//auto materialGround = assetDatabase->Load<Material>("res/materials/M_Ground.material");
-		//auto materialWood = assetDatabase->Load<Material>("res/materials/M_Wood_Floor.material");
-		//auto materialWater = assetDatabase->Load<Material>("res/materials/M_Water.material");
+
 
 		auto minpos = float3(-70, -6, -70);
 		auto maxpos = float3(70, -4, 70);
@@ -59,16 +48,6 @@ namespace PK::ECS::Engines
 
 		Builders::BuildMeshRenderableEntity(m_entityDb, planeMesh, {{materialSand,0}}, { 0, -5, 0 }, { 90, 0, 0 }, 80.0f);
 		Builders::BuildMeshRenderableEntity(m_entityDb, columnMesh, {{materialAsphalt,0}}, { -20, 5, -20 }, PK_FLOAT3_ZERO, 3.0f);
-
-		//CreateMeshRenderable(entityDb, float3(0, -5, 0), { 0, 0, 0 }, 1.0f, buildingsMesh, materialAsphalt);
-
-		//CreateMeshRenderable(entityDb, float3(-25, -7.5f, 0), { 0, 90, 0 }, 1.0f, spiralMesh, materialAsphalt);
-
-		//CreateMeshRenderable(entityDb, float3( 30, 0, 24), { 0, 90, 0 }, 2.0f, clothMesh, materialCloth);
-
-		//CreateMeshRenderable(entityDb, float3( 55, 7, -15), { 90, 0, 0 }, 3.0f, oceanMesh, materialWater, false);
-
-		//CreateMeshRenderable(entityDb, float3( -35, -5, -30), { 0, 0, 0 }, 2.0f, treeMesh, materialAsphalt, true);
 
 		auto submeshCount = rocksMesh->GetSubmeshCount();
 

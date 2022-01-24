@@ -9,6 +9,6 @@ namespace PK::Rendering::Structs
         const uint64_t* remoteInvocationIndex = nullptr;
         inline void Invalidate() { remoteInvocationIndex = nullptr; }
         inline bool IsValid() const { return remoteInvocationIndex != nullptr; }
-        inline bool IsCompleted() const { return remoteInvocationIndex == nullptr || *remoteInvocationIndex != invocationIndex; }
+        inline bool IsComplete() const { return remoteInvocationIndex == nullptr || *remoteInvocationIndex != invocationIndex; }
     };
 }

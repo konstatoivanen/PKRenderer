@@ -90,14 +90,14 @@ namespace PK::Rendering
         std::sort(m_drawInfos.begin(), m_drawInfos.end());
 
         m_matrices->Validate(m_transforms.GetCapacity());
-        auto matrixView = m_matrices->BeginMap<float4x4>(0, m_transforms.GetCount());
+        auto matrixView = m_matrices->BeginWrite<float4x4>(0, m_transforms.GetCount());
 
         for (auto& view : m_transforms)
         {
             matrixView[view.index] = (*view)->localToWorld;
         }
 
-        m_matrices->EndMap();
+        m_matrices->EndWrite();
 
         auto buffsize = 0ull;
 
@@ -116,7 +116,7 @@ namespace PK::Rendering
         if (buffsize > 0)
         {
             m_properties->Validate(buffsize / sizeof(uint32_t));
-            auto propertyView = m_properties->BeginMap<char>(0ull, buffsize);
+            auto propertyView = m_properties->BeginWrite<char>(0ull, buffsize);
 
             for (auto& group : m_materials)
             {
@@ -131,14 +131,14 @@ namespace PK::Rendering
                 }
             }
 
-            m_properties->EndMap();
+            m_properties->EndWrite();
         }
 
         auto indirectCount = 1u;
         auto current = m_drawInfos[0];
 
         m_indices->Validate(m_drawInfos.capacity());
-        auto indexView = m_indices->BeginMap<PK_Draw>(0, m_drawInfos.size());
+        auto indexView = m_indices->BeginWrite<PK_Draw>(0, m_drawInfos.size());
 
         for (auto i = 0u; i < m_drawInfos.size(); ++i)
         {
@@ -158,10 +158,10 @@ namespace PK::Rendering
             }
         }
 
-        m_indices->EndMap();
+        m_indices->EndWrite();
 
         m_indirectArguments->Validate(indirectCount);
-        auto indirectView = m_indirectArguments->BeginMap<DrawIndexedIndirectCommand>(0, indirectCount);
+        auto indirectView = m_indirectArguments->BeginWrite<DrawIndexedIndirectCommand>(0, indirectCount);
 
         auto indirectIndex = 0u;
         auto pbase = 0ull;
@@ -221,7 +221,7 @@ namespace PK::Rendering
         m_drawCalls.push_back({ m_meshes[current.mesh], m_shaders[current.shader], { ibase, indirectIndex - ibase } });
         m_passGroups.push_back({ pbase, m_drawCalls.size() - pbase });
 
-        m_indirectArguments->EndMap();
+        m_indirectArguments->EndWrite();
 
         auto cmd = GraphicsAPI::GetCommandBuffer();
         auto hash = HashCache::Get();

@@ -16,6 +16,7 @@
 #include "ECS/Contextual/Engines/EnginePKAssetBuilder.h"
 #include "ECS/Contextual/Engines/EngineCull.h"
 #include "ECS/Contextual/Engines/EngineDebug.h"
+#include "ECS/Contextual/Engines/EngineScreenshot.h"
 #include "ECS/Contextual/Tokens/TimeToken.h"
 #include "Rendering/RenderPipeline.h"
 #include "Rendering/HashCache.h"
@@ -74,6 +75,7 @@ namespace PK::Core
         auto engineCull = m_services->Create<ECS::Engines::EngineCull>(entityDb);
         auto engineDebug = m_services->Create<ECS::Engines::EngineDebug>(assetDatabase, entityDb, config);
         auto enginePKAssetBuilder = m_services->Create<ECS::Engines::EnginePKAssetBuilder>(arguments);
+        auto engineScreenshot = m_services->Create<ECS::Engines::EngineScreenshot>();
 
         sequencer->SetSteps(
         {
@@ -83,7 +85,7 @@ namespace PK::Core
                     { (int)UpdateStep::OpenFrame,		{ Step::Simple(time) }},
                     { (int)UpdateStep::UpdateInput,		{ Step::Conditional<Window>(input) } },
                     { (int)UpdateStep::UpdateEngines,   { Step::Simple(engineUpdateTransforms) } },
-                    { (int)UpdateStep::Render,			{ Step::Conditional<Window>(renderPipeline) } },
+                    { (int)UpdateStep::Render,			{ Step::Conditional<Window>(renderPipeline), Step::Token<Window>(engineScreenshot) } },
                     { (int)UpdateStep::CloseFrame,		{ Step::Conditional<Window>(input), Step::Simple(time) }},
                 }
             },
@@ -105,8 +107,8 @@ namespace PK::Core
                 {
                     Step::Token<ConsoleCommandToken>(engineEditorCamera),
                     Step::Token<ConsoleCommandToken>(enginePKAssetBuilder),
+                    Step::Token<ConsoleCommandToken>(engineScreenshot),
                     //PK_STEP_T(gizmoRenderer, ConsoleCommandToken),
-                    //PK_STEP_T(engineScreenshot, ConsoleCommandToken),
                 }
             },
             {

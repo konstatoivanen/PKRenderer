@@ -10,7 +10,7 @@ namespace PK::Rendering::Objects
     {
         public:
             ConstantBuffer(const BufferLayout& layout);
-            inline void FlushBuffer() { m_graphicsBuffer->EndMap(); }
+            inline void FlushBuffer() { m_graphicsBuffer->EndWrite(); }
 
             const Buffer* GetBuffer() const { return m_graphicsBuffer.get(); }
             Buffer* GetBuffer() { return m_graphicsBuffer.get(); }

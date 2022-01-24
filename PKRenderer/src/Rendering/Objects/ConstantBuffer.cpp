@@ -7,7 +7,7 @@ namespace PK::Rendering::Objects
         ShaderPropertyBlock(nullptr, 0ull),
         m_graphicsBuffer(Buffer::CreateConstant(layout, BufferUsage::PersistentStage))
     {
-        SetForeign(m_graphicsBuffer->BeginMap(0ull, m_graphicsBuffer->GetCapacity()), m_graphicsBuffer->GetCapacity());
+        SetForeign(m_graphicsBuffer->BeginWrite(0ull, m_graphicsBuffer->GetCapacity()), m_graphicsBuffer->GetCapacity());
         ReserveLayout(layout);
         FreezeLayout();
     }

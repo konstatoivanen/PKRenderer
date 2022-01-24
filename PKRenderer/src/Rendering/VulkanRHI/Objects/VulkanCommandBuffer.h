@@ -57,7 +57,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         void DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) override final;
         void Dispatch(uint3 groupCount) override final;
         
-        void Blit(Texture* src, Window* dst, uint32_t dstLevel, uint32_t dstLayer, FilterMode filter) override final;
+        void Blit(Texture* src, Window* dst, FilterMode filter) override final;
+        void Blit(Window* src, Buffer* dst) override final;
         void Blit(Texture* src, Texture* dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter) override final;
         void Blit(const VulkanRenderTarget& src, const VulkanRenderTarget& dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter, bool flipVertical = false);
 

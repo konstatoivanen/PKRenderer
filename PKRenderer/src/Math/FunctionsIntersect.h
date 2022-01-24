@@ -5,7 +5,8 @@ namespace PK::Math::Functions
 {
     void NormalizePlane(float4* plane);
     void ExtractFrustrumPlanes(const float4x4 viewprojection, FrustumPlanes* frustrum, bool normalize);
-    float PlaneDistanceToAABB(const float4& plane, const BoundingBox& aabb);
+    float PlaneMaxDistanceToAABB(const float4& plane, const BoundingBox& aabb);
+    float PlaneMinDistanceToAABB(const float4& plane, const BoundingBox& aabb);
     float PlaneDistanceToPoint(const float4& plane, const float3& point);
     float3 IntesectPlanes3(const float4& p1, const float4& p2, const float4& p3);
     bool IntersectPlanesAABB(const float4* planes, int planeCount, const BoundingBox& aabb);

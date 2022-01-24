@@ -7,7 +7,7 @@ namespace PK::Rendering::VulkanRHI::Systems
     {
         for (auto i = (int)m_disposables.size() - 1; i >= 0; --i)
         {
-            if (m_disposables.at(i).gate.IsCompleted())
+            if (m_disposables.at(i).gate.IsComplete())
             {
                 auto n = m_disposables.size() - 1;
 

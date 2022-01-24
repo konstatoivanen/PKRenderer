@@ -47,7 +47,8 @@ namespace PK::Rendering::Objects
         virtual void Dispatch(uint3 groupCount) = 0;
         
         // @TODO Nasty dependency. Rethink this one!
-        virtual void Blit(Texture* src, Window* dst, uint32_t dstLevel, uint32_t dstLayer, FilterMode filter) = 0;
+        virtual void Blit(Texture* src, Window* dst, FilterMode filter) = 0;
+        virtual void Blit(Window* src, Buffer* dst) = 0;
         virtual void Blit(Texture* src, Texture* dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter) = 0;
 
         virtual void Clear(Buffer* dst, size_t offset, size_t size, uint32_t value) = 0;

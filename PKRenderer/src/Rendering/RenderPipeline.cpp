@@ -179,7 +179,7 @@ namespace PK::Rendering
         m_passVolumeFog.Render(cmd, m_RenderTarget.get(), resolution);
         m_passPostEffects.Render(cmd, m_RenderTarget.get(), MemoryAccessFlags::FragmentAttachmentColor);
 
-        cmd->Blit(m_RenderTarget->GetColor(0), window, 0, 0, FilterMode::Bilinear);
+        cmd->Blit(m_RenderTarget->GetColor(0), window, FilterMode::Bilinear);
     }
 
     void RenderPipeline::Step(AssetImportToken<ApplicationConfig>* token)

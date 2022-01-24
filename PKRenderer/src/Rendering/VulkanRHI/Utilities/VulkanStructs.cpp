@@ -280,6 +280,11 @@ namespace PK::Rendering::VulkanRHI
         vmaDestroyBuffer(allocator, buffer, memory);
     }
 
+    void VulkanRawBuffer::Invalidate(size_t offset, size_t size) const
+    {
+        vmaInvalidateAllocation(allocator, memory, offset, size);
+    }
+
     void* VulkanRawBuffer::BeginMap(size_t offset) const
     {
         PK_THROW_ASSERT(memory, "Trying to map a buffer without dedicated memory!");
@@ -307,7 +312,10 @@ namespace PK::Rendering::VulkanRHI
             vmaUnmapMemory(allocator, memory);
         }
 
-        vmaFlushAllocation(allocator, memory, offset, size);
+        if (size > 0ull)
+        {
+            vmaFlushAllocation(allocator, memory, offset, size);
+        }
     }
 
     void VulkanRawBuffer::SetData(const void* data, size_t size) const

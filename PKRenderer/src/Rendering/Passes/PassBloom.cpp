@@ -49,13 +49,8 @@ namespace PK::Rendering::Passes
         auto ls = 0u;
         auto ld = 1u;
 
-        const float blurSize = 2.0f;
-        const float aspect = res.y / (float)res.x;
-
         for (auto i = 0u; i < 6u; ++i)
         {
-            // auto spread = i == 2 ? 0.75f : (i > 1 ? 1.0f : 0.5f);
-
             cmd->SetTexture(hash->_SourceTex, i == 0 ? color : bloom, i == 0 ? 0 : i - 1u, ls);
             cmd->SetImage(hash->_DestinationTex, bloom, i, ld);
             cmd->Dispatch(m_computeBloom, m_passPrefilter, groups[i]);

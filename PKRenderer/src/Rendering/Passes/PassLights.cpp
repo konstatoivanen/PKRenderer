@@ -194,9 +194,9 @@ namespace PK::Rendering::Passes
         m_lightMatricesBuffer->Validate(m_projectionCount);
         m_lightDirectionsBuffer->Validate(m_projectionCount);
 
-        auto lightsView = m_lightsBuffer->BeginMap<PK_Light>(0, m_lightCount + 1);
-        auto matricesView = m_projectionCount > 0 ? m_lightMatricesBuffer->BeginMap<float4x4>(0, m_projectionCount) : BufferView<float4x4>();
-        auto directionsView = m_projectionCount > 0 ? m_lightDirectionsBuffer->BeginMap<float4>(0, m_projectionCount) : BufferView<float4>();
+        auto lightsView = m_lightsBuffer->BeginWrite<PK_Light>(0, m_lightCount + 1);
+        auto matricesView = m_projectionCount > 0 ? m_lightMatricesBuffer->BeginWrite<float4x4>(0, m_projectionCount) : BufferView<float4x4>();
+        auto directionsView = m_projectionCount > 0 ? m_lightDirectionsBuffer->BeginWrite<float4>(0, m_projectionCount) : BufferView<float4>();
 
         for (auto i = 0u; i < m_lightCount; ++i)
         {
@@ -242,12 +242,12 @@ namespace PK::Rendering::Passes
         }
 
         lightsView[m_lightCount] = { PK_FLOAT4_ZERO, PK_COLOR_CLEAR, { 0xFFFF, 0u, 0xFFFF, 0xFFFF }};
-        m_lightsBuffer->EndMap();
+        m_lightsBuffer->EndWrite();
 
         if (m_projectionCount > 0)
         {
-            m_lightMatricesBuffer->EndMap();
-            m_lightDirectionsBuffer->EndMap();
+            m_lightMatricesBuffer->EndWrite();
+            m_lightDirectionsBuffer->EndWrite();
         }
     }
 

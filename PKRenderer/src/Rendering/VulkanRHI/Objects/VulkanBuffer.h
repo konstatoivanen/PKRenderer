@@ -19,8 +19,10 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             void SetData(const void* data, size_t offset, size_t size) override final;
             void SetSubData(const void* data, size_t offset, size_t size) override final;
-            void* BeginMap(size_t offset, size_t size) override final;
-            void EndMap() override final;
+            void* BeginWrite(size_t offset, size_t size) override final;
+            void EndWrite() override final;
+            const void* BeginRead(size_t offset, size_t size) override final;
+            void EndRead() override final;
 
             size_t GetCapacity() const override final { return m_rawBuffer->capacity; }
             const VulkanRawBuffer* GetRaw() const { return m_rawBuffer; }

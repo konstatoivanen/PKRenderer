@@ -60,11 +60,19 @@ namespace PK::Math::Functions
         }
     }
 
-    float PlaneDistanceToAABB(const float4& plane, const BoundingBox& aabb)
+    float PlaneMaxDistanceToAABB(const float4& plane, const BoundingBox& aabb)
     {
         auto bx = plane.x > 0 ? aabb.max.x : aabb.min.x;
         auto by = plane.y > 0 ? aabb.max.y : aabb.min.y;
         auto bz = plane.z > 0 ? aabb.max.z : aabb.min.z;
+        return plane.x * bx + plane.y * by + plane.z * bz + plane.w;
+    }
+
+    float PlaneMinDistanceToAABB(const float4& plane, const BoundingBox& aabb)
+    {
+        auto bx = plane.x < 0 ? aabb.max.x : aabb.min.x;
+        auto by = plane.y < 0 ? aabb.max.y : aabb.min.y;
+        auto bz = plane.z < 0 ? aabb.max.z : aabb.min.z;
         return plane.x * bx + plane.y * by + plane.z * bz + plane.w;
     }
 
