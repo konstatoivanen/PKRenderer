@@ -119,9 +119,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if (dstStageMask != 0)
         {
-            cmd->PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
-                dstStageMask,
-                0, 0, nullptr, 1, &barrier, 0, nullptr);
+            cmd->PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, dstStageMask, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         }
     }
 
@@ -200,6 +198,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
 
         Dispose();
+
         m_count = count;
         auto size = m_layout.GetStride(m_usage) * count;
         auto bufferCreateInfo = VulkanBufferCreateInfo(m_usage, size);
