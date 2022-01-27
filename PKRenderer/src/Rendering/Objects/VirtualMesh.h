@@ -5,7 +5,7 @@ namespace PK::Rendering::Objects
 {
     using namespace PK::Core::Services;
 
-    class VirtualMesh : public Asset
+    class VirtualMesh : public Asset, public IAssetImport<Ref<Mesh>>
     {
         friend Ref<VirtualMesh> AssetImporters::Create();
 
@@ -14,7 +14,7 @@ namespace PK::Rendering::Objects
             VirtualMesh(const SubmeshRangeAllocationInfo& data, Ref<Mesh> mesh);
             ~VirtualMesh();
 
-            void Import(const char* filepath, void* pParams) override final;
+            void Import(const char* filepath, Ref<Mesh>* pParams) override final;
             inline Mesh* GetBaseMesh() const { return m_mesh.get(); }
             uint32_t GetSubmeshIndex(uint32_t submesh) const;
             uint32_t GetBaseSubmeshIndex() const { return m_submeshIndices.at(0); }

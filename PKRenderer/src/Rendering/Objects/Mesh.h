@@ -37,7 +37,7 @@ namespace PK::Rendering::Objects
         uint32_t submeshCount;
     };
 
-    class Mesh : public Asset
+    class Mesh : public Asset, public IAssetImportSimple
     {
         friend Ref<Mesh> AssetImporters::Create();
 

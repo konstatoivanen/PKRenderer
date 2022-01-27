@@ -77,8 +77,22 @@ namespace PK::Rendering::VulkanRHI
         physicalDeviceRequirements.features.imageCubeArray = VK_TRUE;
         physicalDeviceRequirements.features.fragmentStoresAndAtomics = VK_TRUE;
         physicalDeviceRequirements.features.multiDrawIndirect = VK_TRUE;
+        physicalDeviceRequirements.features11.storageBuffer16BitAccess = VK_TRUE;
+        physicalDeviceRequirements.features11.uniformAndStorageBuffer16BitAccess = VK_TRUE;
+        physicalDeviceRequirements.features11.storagePushConstant16 = VK_TRUE;
+        physicalDeviceRequirements.features12.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
+        physicalDeviceRequirements.features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+        physicalDeviceRequirements.features12.runtimeDescriptorArray = VK_TRUE;
+        physicalDeviceRequirements.features12.descriptorBindingVariableDescriptorCount = VK_TRUE;
+        physicalDeviceRequirements.features12.descriptorBindingPartiallyBound = VK_TRUE;
+        physicalDeviceRequirements.features12.scalarBlockLayout = VK_TRUE;
+        physicalDeviceRequirements.features12.shaderFloat16 = VK_TRUE;
+        physicalDeviceRequirements.features12.shaderInt8 = VK_TRUE;
+        physicalDeviceRequirements.features12.shaderOutputViewportIndex = VK_TRUE;
+        physicalDeviceRequirements.features12.shaderOutputLayer = VK_TRUE;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
+        physicalDeviceRequirements.features12.pNext = &physicalDeviceRequirements.features11;
         Utilities::VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice, &queueFamilies);
         physicalDeviceProperties = Utilities::VulkanGetPhysicalDeviceProperties(physicalDevice);
 
@@ -101,25 +115,6 @@ namespace PK::Rendering::VulkanRHI
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        // @TODO For safety add support validation for these features in the physical device selection
-        VkPhysicalDeviceVulkan11Features vulkan11Features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
-        vulkan11Features.storageBuffer16BitAccess = VK_TRUE;
-        vulkan11Features.uniformAndStorageBuffer16BitAccess = VK_TRUE;
-        vulkan11Features.storagePushConstant16 = VK_TRUE;
-
-        VkPhysicalDeviceVulkan12Features vulkan12Features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
-        vulkan12Features.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
-        vulkan12Features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-        vulkan12Features.runtimeDescriptorArray = VK_TRUE;
-        vulkan12Features.descriptorBindingVariableDescriptorCount = VK_TRUE;
-        vulkan12Features.descriptorBindingPartiallyBound = VK_TRUE;
-        vulkan12Features.scalarBlockLayout = VK_TRUE;
-        vulkan12Features.shaderFloat16 = VK_TRUE;
-        vulkan12Features.shaderInt8 = VK_TRUE;
-        vulkan12Features.shaderOutputViewportIndex = VK_TRUE;
-        vulkan12Features.shaderOutputLayer = VK_TRUE;
-        vulkan12Features.pNext = &vulkan11Features;
-
         VkDeviceCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos = queueCreateInfos.data();
@@ -127,7 +122,7 @@ namespace PK::Rendering::VulkanRHI
         createInfo.enabledExtensionCount = static_cast<uint32_t>(properties.contextualDeviceExtensions->size());
         createInfo.ppEnabledExtensionNames = properties.contextualDeviceExtensions->data();
         createInfo.enabledLayerCount = 0;
-        createInfo.pNext = &vulkan12Features;
+        createInfo.pNext = &physicalDeviceRequirements.features12;
 
         if (properties.validationLayers != nullptr && properties.validationLayers->size() > 0)
         {

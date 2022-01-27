@@ -7,7 +7,7 @@ namespace PK::Core
 	using namespace Services;
 	using namespace YAML;
 
-	struct ApplicationConfig : YamlValueList, public Asset
+	struct ApplicationConfig : YamlValueList, public Asset, public IAssetImportSimple
 	{
 		BoxedValue<bool> EnableConsole = BoxedValue<bool>("EnableConsole", true);
 		BoxedValue<bool> EnableVsync = BoxedValue<bool>("EnableVsync", true);

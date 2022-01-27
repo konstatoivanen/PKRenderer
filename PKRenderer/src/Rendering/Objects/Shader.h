@@ -58,7 +58,7 @@ namespace PK::Rendering::Objects
             uint32_t m_stageFlags = 0u;
     };
 
-    class Shader : public Asset
+    class Shader : public Asset, public IAssetImportSimple
     {
         friend Ref<Shader> AssetImporters::Create();
 

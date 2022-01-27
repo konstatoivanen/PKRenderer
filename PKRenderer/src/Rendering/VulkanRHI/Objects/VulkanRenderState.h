@@ -6,6 +6,7 @@
 #include "Rendering/VulkanRHI/Systems/VulkanFrameBufferCache.h"
 #include "Rendering/VulkanRHI/Systems/VulkanStagingBufferCache.h"
 #include "Rendering/VulkanRHI/Systems/VulkanDisposer.h"
+#include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -46,76 +47,97 @@ namespace PK::Rendering::VulkanRHI::Objects
         uint32_t count = 0u;
     };
 
-    struct VulkanRenderState : NoCopy
+    struct VulkanDescriptorSetBundle
     {
-        VulkanRenderState(const VulkanSystemContext& systems) :
-            m_descriptorCache(systems.descriptorCache),
-            m_pipelineCache(systems.pipelineCache),
-            m_samplerCache(systems.samplerCache),
-            m_frameBufferCache(systems.frameBufferCache),
-            m_stagingBufferCache(systems.stagingBufferCache),
-            m_disposer(systems.disposer)
-        {
-        }
+        VkDescriptorSet sets[PK_MAX_DESCRIPTOR_SETS]{};
+        VkPipelineLayout layout;
+        VkPipelineBindPoint bindPoint;
+        uint32_t firstSet = 0u;
+        uint32_t count = 0u;
+    };
 
-        void Reset();
-        void SetRenderTarget(const VulkanRenderTarget* renderTargets, const VulkanRenderTarget* resolves, uint32_t count);
-        void ClearColor(const color& color, uint32_t index);
-        void ClearDepth(float depth, uint32_t stencil);
-        void DiscardColor(uint32_t index);
-        void DiscardDepth();
+    class VulkanRenderState : NoCopy
+    {
+        public:
+            VulkanRenderState(const VulkanSystemContext& systems) :
+                m_descriptorCache(systems.descriptorCache),
+                m_pipelineCache(systems.pipelineCache),
+                m_samplerCache(systems.samplerCache),
+                m_frameBufferCache(systems.frameBufferCache),
+                m_stagingBufferCache(systems.stagingBufferCache),
+                m_disposer(systems.disposer)
+            {
+            }
 
-        bool SetViewports(const uint4* rects, uint32_t& count, VkViewport** outViewports);
-        bool SetScissors(const uint4* rects, uint32_t& count, VkRect2D** outScissors);
+            void Reset();
+            void SetRenderTarget(const VulkanRenderTarget* renderTargets, const VulkanRenderTarget* resolves, uint32_t count);
+            void ClearColor(const color& color, uint32_t index);
+            void ClearDepth(float depth, uint32_t stencil);
+            void DiscardColor(uint32_t index);
+            void DiscardDepth();
 
-        void SetShader(const VulkanShader* shader);
-        void SetBlending(const BlendParameters& blend);
-        void SetRasterization(const RasterizationParameters& rasterization);
-        void SetDepthStencil(const DepthStencilParameters& depthStencil);
-        void SetMultisampling(const MultisamplingParameters& multisampling);
-        void SetVertexBuffers(const VulkanBindHandle** handles, uint32_t count);
-        void SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType);
+            bool SetViewports(const uint4* rects, uint32_t& count, VkViewport** outViewports);
+            bool SetScissors(const uint4* rects, uint32_t& count, VkRect2D** outScissors);
 
-        template<typename T>
-        void SetResource(uint32_t nameHashId, const T* value, uint count = 1) { m_resourceProperties.Set(nameHashId, value, count); }
+            void SetShader(const VulkanShader* shader);
+            void SetBlending(const BlendParameters& blend);
+            void SetRasterization(const RasterizationParameters& rasterization);
+            void SetDepthStencil(const DepthStencilParameters& depthStencil);
+            void SetMultisampling(const MultisamplingParameters& multisampling);
+            void SetVertexBuffers(const VulkanBindHandle** handles, uint32_t count);
+            void SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType);
 
-        template<typename T>
-        void SetResource(uint32_t nameHashId, const T& value) { m_resourceProperties.Set(nameHashId, value); }
+            template<typename T>
+            void SetResource(uint32_t nameHashId, const T* value, uint count = 1) { m_resourceState.Set(nameHashId, value, count); }
 
-        VkRenderPassBeginInfo GetRenderPassInfo();
-        VulkanVertexBufferBundle GetVertexBufferBundle();
+            template<typename T>
+            void SetResource(uint32_t nameHashId, const T& value) { m_resourceState.Set(nameHashId, value); }
 
-        void ValidateRenderTarget();
-        void ValidateVertexBuffers();
-        void ValidateDescriptorSets(const ExecutionGate& gate);
-        PKRenderStateDirtyFlags ValidatePipeline(const ExecutionGate& gate);
+            VkRenderPassBeginInfo GetRenderPassInfo() const;
+            VulkanVertexBufferBundle GetVertexBufferBundle() const;
+            VulkanDescriptorSetBundle GetDescriptorSetBundle(const ExecutionGate& gate, uint32_t dirtyFlags);
+            const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
 
-        PropertyBlock m_resourceProperties = PropertyBlock(16384);
-        VulkanDescriptorCache* m_descriptorCache = nullptr;
-        VulkanPipelineCache* m_pipelineCache = nullptr;
-        VulkanSamplerCache* m_samplerCache = nullptr;
-        VulkanFrameBufferCache* m_frameBufferCache = nullptr;
-        VulkanStagingBufferCache* m_stagingBufferCache = nullptr;
-        VulkanDisposer* m_disposer = nullptr;
+            void ValidateRenderTarget();
+            void ValidateVertexBuffers();
+            void ValidateDescriptorSets(const ExecutionGate& gate);
+            PKRenderStateDirtyFlags ValidatePipeline(const ExecutionGate& gate);
 
-        DescriptorSetKey m_descriptorSetKeys[PK_MAX_DESCRIPTOR_SETS]{};
-        PipelineKey m_pipelineKey{};
-        FrameBufferKey m_frameBufferKey[2]{};
-        RenderPassKey m_renderPassKey[2]{};
+            constexpr const PropertyBlock& GetResourceState() const { return m_resourceState; }
+            constexpr const ConstantBufferLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetConstantLayout(); }
+            constexpr VkPipelineLayout GetPipelineLayout() const { return m_pipelineKey.shader->GetPipelineLayout()->layout; }
+            constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
+            constexpr bool HasPipeline() const { return m_pipeline != nullptr; }
+            constexpr bool HasDynamicTargets() const { return m_renderPassKey->dynamicTargets; }
+            inline VkPipelineBindPoint GetPipelineBindPoint() const { return EnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetType()); }
+
+        private:
+            PropertyBlock m_resourceState = PropertyBlock(16384);
+            VulkanDescriptorCache* m_descriptorCache = nullptr;
+            VulkanPipelineCache* m_pipelineCache = nullptr;
+            VulkanSamplerCache* m_samplerCache = nullptr;
+            VulkanFrameBufferCache* m_frameBufferCache = nullptr;
+            VulkanStagingBufferCache* m_stagingBufferCache = nullptr;
+            VulkanDisposer* m_disposer = nullptr;
         
-        const VulkanBindHandle* m_vertexBuffers[PK_MAX_VERTEX_ATTRIBUTES]{};
-        const VulkanBindHandle* m_indexBuffer = nullptr;
-        VkIndexType m_indexType = VK_INDEX_TYPE_UINT16;
-
-        VkViewport m_viewports[PK_MAX_VIEWPORTS]{};
-        VkRect2D m_scissors[PK_MAX_VIEWPORTS]{};
-        VkClearValue m_clearValues[PK_MAX_RENDER_TARGETS + 1]{};
-        uint32_t m_clearValueCount = 0u;
+            DescriptorSetKey m_descriptorSetKeys[PK_MAX_DESCRIPTOR_SETS]{};
+            PipelineKey m_pipelineKey{};
+            FrameBufferKey m_frameBufferKey[2]{};
+            RenderPassKey m_renderPassKey[2]{};
         
-        uint32_t m_dirtyFlags;
-        const VulkanRenderPass* m_renderPass = nullptr;
-        const VulkanPipeline* m_pipeline = nullptr;
-        const VulkanDescriptorSet* m_descriptorSets[PK_MAX_DESCRIPTOR_SETS];
-        const VulkanFrameBuffer* m_frameBuffer = nullptr;
+            const VulkanBindHandle* m_vertexBuffers[PK_MAX_VERTEX_ATTRIBUTES]{};
+            const VulkanBindHandle* m_indexBuffer = nullptr;
+            VkIndexType m_indexType = VK_INDEX_TYPE_UINT16;
+            
+            VkViewport m_viewports[PK_MAX_VIEWPORTS]{};
+            VkRect2D m_scissors[PK_MAX_VIEWPORTS]{};
+            VkClearValue m_clearValues[PK_MAX_RENDER_TARGETS + 1]{};
+            uint32_t m_clearValueCount = 0u;
+            uint32_t m_dirtyFlags;
+
+            const VulkanRenderPass* m_renderPass = nullptr;
+            const VulkanPipeline* m_pipeline = nullptr;
+            const VulkanDescriptorSet* m_descriptorSets[PK_MAX_DESCRIPTOR_SETS];
+            const VulkanFrameBuffer* m_frameBuffer = nullptr;
     };
 }

@@ -1,7 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "VulkanCommandBuffer.h"
 #include "Utilities/Handle.h"
-#include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
 #include "Rendering/VulkanRHI/Objects/VulkanBuffer.h"
 #include "Rendering/VulkanRHI/Objects/VulkanTexture.h"
 #include "Rendering/VulkanRHI/VulkanWindow.h"
@@ -67,7 +66,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         if (variantIndex == -1)
         {
             auto selector = shader->GetVariantSelector();
-            selector.SetKeywordsFrom(renderState->m_resourceProperties);
+            selector.SetKeywordsFrom(renderState->GetResourceState());
             variantIndex = selector.GetIndex();
         }
 
@@ -177,7 +176,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto vksrc = src->GetNative<VulkanWindow>()->GetRenderTarget();
         auto vkbuff = dst->GetNative<VulkanBuffer>();
 
-        VkBufferImageCopy region = {};
+        VkBufferImageCopy region{};
         region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         region.imageSubresource.mipLevel = 0;
         region.imageSubresource.baseArrayLayer = 0;
@@ -401,7 +400,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
 
         // Memory & buffer memory barriers not allowed inside renderpasses. Barriers are not allowed inside renderpasses unless using self-dependencies.
-        if (memoryBarrierCount > 0 || bufferMemoryBarrierCount > 0 || !renderState->m_renderPassKey->dynamicTargets)
+        if (memoryBarrierCount > 0 || bufferMemoryBarrierCount > 0 || !renderState->HasDynamicTargets())
         {
             EndRenderPass();
         }
@@ -433,8 +432,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if ((flags & PK_RENDER_STATE_DIRTY_PIPELINE) != 0)
         {
-            auto bindPoint = EnumConvert::GetPipelineBindPoint(renderState->m_pipelineKey.shader->GetType());
-            vkCmdBindPipeline(commandBuffer, bindPoint, renderState->m_pipeline->pipeline);
+            vkCmdBindPipeline(commandBuffer, renderState->GetPipelineBindPoint(), renderState->GetPipeline());
         }
 
         if ((flags & PK_RENDER_STATE_DIRTY_VERTEXBUFFERS) != 0)
@@ -449,42 +447,21 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if ((flags & PK_RENDER_STATE_DIRTY_INDEXBUFFER) != 0)
         {
-            auto indexBufferHandle = renderState->m_indexBuffer;
-            vkCmdBindIndexBuffer(commandBuffer, indexBufferHandle->buffer, indexBufferHandle->bufferOffset, renderState->m_indexType);
+            VkIndexType indexType; 
+            auto indexBufferHandle = renderState->GetIndexBuffer(&indexType);
+            vkCmdBindIndexBuffer(commandBuffer, indexBufferHandle->buffer, indexBufferHandle->bufferOffset, indexType);
         }
 
         if ((flags & PK_RENDER_STATE_DIRTY_DESCRIPTOR_SETS) != 0)
         {
-            VkDescriptorSet sets[PK_MAX_DESCRIPTOR_SETS]{};
-            auto pipeline = renderState->m_pipeline;
-            auto bindPoint = EnumConvert::GetPipelineBindPoint(renderState->m_pipelineKey.shader->GetType());
-            auto layout = renderState->m_pipelineKey.shader->GetPipelineLayout();
-            auto firstSet = 0xFFFFu;
-            auto setCount = 0u;
-
-            for (auto i = 0u; i < PK_MAX_DESCRIPTOR_SETS; ++i)
-            {
-                if ((flags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i)) != 0)
-                {
-                    if (i < firstSet)
-                    {
-                        firstSet = i;
-                    }
-
-                    auto set = renderState->m_descriptorSets[i];
-                    set->executionGate = GetOnCompleteGate();
-                    sets[setCount++] = set->set;
-                }
-            }
-
-            vkCmdBindDescriptorSets(commandBuffer, bindPoint, layout->layout, firstSet, setCount, sets, 0, nullptr);
+            auto bindBundle = renderState->GetDescriptorSetBundle(GetOnCompleteGate(), flags);
+            vkCmdBindDescriptorSets(commandBuffer, bindBundle.bindPoint, bindBundle.layout, bindBundle.firstSet, bindBundle.count, bindBundle.sets, 0, nullptr);
         }
 
-        // @TODO delta checks
-        if (renderState->m_pipelineKey.shader != nullptr)
+        if (renderState->HasPipeline())
         {
-            auto& constantLayout = renderState->m_pipelineKey.shader->GetConstantLayout();
-            auto& props = renderState->m_resourceProperties;
+            auto& constantLayout = renderState->GetPipelinePushConstantLayout();
+            auto& props = renderState->GetResourceState();
 
             for (auto& kv : constantLayout)
             {
@@ -494,9 +471,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
                 if (props.TryGet<char>(kv.second.NameHashId, data, &dataSize) && dataSize <= element.Size)
                 {
-                    auto pipelineLayout = renderState->m_pipelineKey.shader->GetPipelineLayout()->layout;
-                    auto stageFlags = EnumConvert::GetShaderStageFlags(renderState->m_pipelineKey.shader->GetStageFlags());
-                    vkCmdPushConstants(commandBuffer, pipelineLayout, element.StageFlags, element.Offset, (uint32_t)dataSize, data);
+                    vkCmdPushConstants(commandBuffer, renderState->GetPipelineLayout(), element.StageFlags, element.Offset, (uint32_t)dataSize, data);
                 }
             }
         }

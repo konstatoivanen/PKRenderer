@@ -10,7 +10,7 @@ namespace PK::Rendering::Objects
     using namespace PK::Core::Services;
     using namespace PK::Rendering::Structs;
 
-    class Texture : public Asset, public NativeInterface<Texture>
+    class Texture : public Asset, public IAssetImportSimple, public NativeInterface<Texture>
     {
         friend Ref<Texture> AssetImporters::Create();
 

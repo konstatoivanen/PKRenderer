@@ -20,8 +20,6 @@ namespace PK::Core::Services
         public:
             virtual ~Asset() = default;
     
-            virtual void Import(const char* filepath, void* pParams) = 0;
-
             inline AssetID GetAssetID() const { return m_assetId; }
     
             inline const std::string& GetFileName() const { return StringHashID::IDToString(m_assetId); }
@@ -31,6 +29,15 @@ namespace PK::Core::Services
         private:
             AssetID m_assetId = 0;
     };
+
+    template<typename TParams>
+    class IAssetImport : public NoCopy
+    {
+        friend class AssetDatabase;
+        virtual void Import(const char* filepath, TParams* pParams) = 0;
+    };
+
+    typedef IAssetImport<void> IAssetImportSimple;
 
     enum class AssetImportType
     {
@@ -57,10 +64,11 @@ namespace PK::Core::Services
     class AssetDatabase : public IService
     {
         private:
-            template<typename T>
-            [[nodiscard]] T* Load(const std::string& filepath, AssetID assetId, void* pParams)
+            template<typename T, typename TParams = void>
+            [[nodiscard]] T* Load(const std::string& filepath, AssetID assetId, TParams* pParams)
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+                static_assert(std::is_base_of<IAssetImport<TParams>, T>::value, "Template argument type does not derive from IAssetImport!");
                 PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
     
                 auto& collection = m_assets[std::type_index(typeid(T))];
@@ -70,12 +78,12 @@ namespace PK::Core::Services
                 {
                     return std::static_pointer_cast<T>(iter->second).get();
                 }
-    
+
                 auto asset = AssetImporters::Create<T>();
                 collection[assetId] = asset;
                 std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
 
-                asset->Import(filepath.c_str(), pParams);
+                static_cast<IAssetImport<TParams>*>(asset.get())->Import(filepath.c_str(), pParams);
     
                 AssetImportToken<T> importToken = { this, asset.get() };
                 m_sequencer->Next(this, &importToken, (int)AssetImportType::IMPORT);
@@ -83,10 +91,11 @@ namespace PK::Core::Services
                 return asset.get();
             }
     
-            template<typename T>
-            [[nodiscard]] T* Reload(const std::string& filepath, AssetID assetId, void* pParams)
+            template<typename T, typename TParams = void>
+            [[nodiscard]] T* Reload(const std::string& filepath, AssetID assetId, TParams* pParams)
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+                static_assert(std::is_base_of<IAssetImport<TParams>, T>::value, "Template argument type does not derive from IAssetImport!");
                 PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
                 
                 auto& collection = m_assets[std::type_index(typeid(T))];
@@ -104,7 +113,7 @@ namespace PK::Core::Services
                     std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
                 }
     
-                asset->Import(filepath.c_str(), pParams);
+                static_cast<IAssetImport<TParams>*>(asset.get())->Import(filepath.c_str(), pParams);
     
                 AssetImportToken<T> importToken = { this, asset.get() };
                 m_sequencer->Next(this, &importToken, (int)AssetImportType::RELOAD);
@@ -180,27 +189,27 @@ namespace PK::Core::Services
                 return value;
             }
             
-            template<typename T>
-            T* Load(const std::string& filepath, void* pParams = nullptr) { return Load<T>(filepath, StringHashID::StringToID(filepath), pParams); }
+            template<typename T, typename TParams = void>
+            T* Load(const std::string& filepath, TParams* pParams = nullptr) { return Load<T>(filepath, StringHashID::StringToID(filepath), pParams); }
     
-            template<typename T>
-            [[nodiscard]] T* Load(AssetID assetId, void* pParams = nullptr) { return Load<T>(StringHashID::IDToString(assetId), assetId, pParams); }
+            template<typename T, typename TParams = void>
+            [[nodiscard]] T* Load(AssetID assetId, TParams* pParams = nullptr) { return Load<T>(StringHashID::IDToString(assetId), assetId, pParams); }
     
-            template<typename T>
-            T* Reload(const std::string& filepath, void* pParams = nullptr) { return Reload<T>(filepath, StringHashID::StringToID(filepath), pParams); }
+            template<typename T, typename TParams = void>
+            T* Reload(const std::string& filepath, TParams* pParams = nullptr) { return Reload<T>(filepath, StringHashID::StringToID(filepath), pParams); }
     
-            template<typename T>
-            [[nodiscard]] T* Reload(AssetID assetId, void* pParams = nullptr) { return Reload<T>(StringHashID::IDToString(assetId), assetId, pParams); }
+            template<typename T, typename TParams = void>
+            [[nodiscard]] T* Reload(AssetID assetId, TParams* pParams = nullptr) { return Reload<T>(StringHashID::IDToString(assetId), assetId, pParams); }
     
-            template<typename T>
-            void Reload(const T* asset, void* pParams = nullptr)
+            template<typename T, typename TParams = void>
+            void Reload(const T* asset, TParams* pParams = nullptr)
             {
                 auto assetId = asset->GetAssetID();
                 Reload<T>(StringHashID::IDToString(assetId), assetId, pParams);
             }
     
-            template<typename T>
-            void LoadDirectory(const std::string& directory, void* pParams = nullptr)
+            template<typename T, typename TParams = void>
+            void LoadDirectory(const std::string& directory, TParams* pParams = nullptr)
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
@@ -220,8 +229,8 @@ namespace PK::Core::Services
                 }
             }
     
-            template<typename T>
-            void ReloadDirectory(const std::string& directory, void* pParams = nullptr)
+            template<typename T, typename TParams = void>
+            void ReloadDirectory(const std::string& directory, TParams* pParams = nullptr)
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 

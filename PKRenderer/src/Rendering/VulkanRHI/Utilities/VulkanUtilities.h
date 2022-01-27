@@ -19,7 +19,6 @@ namespace PK::Rendering::VulkanRHI::Utilities
     std::vector<VkSurfaceFormatKHR> VulkanGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
     std::vector<VkPresentModeKHR> VulkanGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
     VkPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device);
-    VkPhysicalDeviceFeatures VulkanGetPhysicalDeviceFeatures(VkPhysicalDevice device);
     QueueFamilies VulkanGetPhysicalDeviceQueueFamilyIndices(VkPhysicalDevice device, VkSurfaceKHR surface);
 
     void VulkanDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);

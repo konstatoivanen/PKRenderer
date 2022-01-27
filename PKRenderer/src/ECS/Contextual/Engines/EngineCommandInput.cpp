@@ -4,6 +4,7 @@
 #include "Core/ApplicationConfig.h"
 #include "Rendering/GraphicsAPI.h"
 #include "Rendering/Objects/Texture.h"
+#include "Rendering/Objects/Material.h"
 #include "Math/FunctionsMisc.h"
 
 namespace PK::ECS::Engines
@@ -123,7 +124,7 @@ namespace PK::ECS::Engines
 
     void EngineCommandInput::ReloadMaterials(const ConsoleCommand& arguments)
     {
-       //@TODO m_assetDatabase->ReloadDirectory<Material>(arguments[2].c_str());
+        m_assetDatabase->ReloadDirectory<Material>(arguments[2].c_str());
         PK_LOG_INFO("Reimported materials in folder: %s", arguments[2].c_str());
     }
 
@@ -141,7 +142,7 @@ namespace PK::ECS::Engines
 
 
     void EngineCommandInput::QueryLoadedShaders(const ConsoleCommand& arguments) { m_assetDatabase->ListAssetsOfType<Shader>(); }
-    void EngineCommandInput::QueryLoadedMaterials(const ConsoleCommand& arguments) {}//@TODO m_assetDatabase->ListAssetsOfType<Material>(); }
+    void EngineCommandInput::QueryLoadedMaterials(const ConsoleCommand& arguments) { m_assetDatabase->ListAssetsOfType<Material>(); }
     void EngineCommandInput::QueryLoadedTextures(const ConsoleCommand& arguments) { m_assetDatabase->ListAssetsOfType<Texture>(); }
     void EngineCommandInput::QueryLoadedMeshes(const ConsoleCommand& arguments) { m_assetDatabase->ListAssetsOfType<Mesh>(); }
     void EngineCommandInput::QueryLoadedAssets(const ConsoleCommand& arguments) { m_assetDatabase->ListAssets(); }

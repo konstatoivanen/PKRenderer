@@ -107,13 +107,6 @@ namespace PK::Rendering::VulkanRHI::Utilities
         return deviceProperties;
     }
 
-    VkPhysicalDeviceFeatures VulkanGetPhysicalDeviceFeatures(VkPhysicalDevice device)
-    {
-        VkPhysicalDeviceFeatures deviceFeatures;
-        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-        return deviceFeatures;
-    }
-
     QueueFamilies VulkanGetPhysicalDeviceQueueFamilyIndices(VkPhysicalDevice device, VkSurfaceKHR surface)
     {
         QueueFamilies indices{};
@@ -125,8 +118,6 @@ namespace PK::Rendering::VulkanRHI::Utilities
             if ((queueFamilies.at(i).queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) == (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))
             {
                 indices[QueueType::Graphics] = i;
-            
-                // @TODO consider a separate queue for compute
                 indices[QueueType::Compute] = i;
             }
 
@@ -209,6 +200,19 @@ namespace PK::Rendering::VulkanRHI::Utilities
         return requiredLayers.empty();
     }
 
+    static bool VulkanCheckRequirements(const VkBool32* values, const VkBool32* requirements, uint32_t count)
+    {
+        for (auto i = 0u; i < count; ++i)
+        {
+            if (!values[i] && requirements[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 
     void VulkanSelectPhysicalDevice(VkInstance instance,  VkSurfaceKHR surface, const PhysicalDeviceRequirements& requirements, VkPhysicalDevice* selectedDevice, QueueFamilies* queueFamilies)
     {
@@ -219,8 +223,6 @@ namespace PK::Rendering::VulkanRHI::Utilities
         for (auto& device : devices)
         {
             auto properties = VulkanGetPhysicalDeviceProperties(device);
-            auto features = VulkanGetPhysicalDeviceFeatures(device);
-
             auto versionMajor = VK_API_VERSION_MAJOR(properties.apiVersion);
             auto versionMinor = VK_API_VERSION_MINOR(properties.apiVersion);
 
@@ -268,21 +270,17 @@ namespace PK::Rendering::VulkanRHI::Utilities
                 continue;
             }
 
-            auto featureCount = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
-            auto curArray = reinterpret_cast<const VkBool32*>(&features);
-            auto reqArray = reinterpret_cast<const VkBool32*>(&requirements.features);
-            auto lackingFeatures = false;
+            VkPhysicalDeviceFeatures2 features { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+            VkPhysicalDeviceVulkan11Features features11 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
+            VkPhysicalDeviceVulkan12Features features12 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
+            features12.pNext = &features11;
+            features.pNext = &features12;
 
-            for (auto i = 0; i < featureCount; ++i)
-            {
-                if (!curArray[i] && reqArray[i])
-                {
-                    lackingFeatures = true;
-                    break;
-                }
-            }
+            vkGetPhysicalDeviceFeatures2(device, &features);
 
-            if (lackingFeatures)
+            if (!VulkanCheckRequirements(&features.features.robustBufferAccess, &requirements.features.robustBufferAccess, 55) ||
+                !VulkanCheckRequirements(&features11.storageBuffer16BitAccess, &requirements.features11.storageBuffer16BitAccess, 12) ||
+                !VulkanCheckRequirements(&features12.samplerMirrorClampToEdge, &requirements.features12.samplerMirrorClampToEdge, 47))
             {
                 continue;
             }

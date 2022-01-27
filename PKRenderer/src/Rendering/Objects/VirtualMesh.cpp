@@ -30,12 +30,11 @@ namespace PK::Rendering::Objects
 		}
     }
     
-    void VirtualMesh::Import(const char* filepath, void* pParams)
+    void VirtualMesh::Import(const char* filepath, Ref<Mesh>* pParams)
     {
         PK_THROW_ASSERT(pParams, "Cannot create a virtual mesh without a base mesh!");
 
-        //@TODO maybe replace this with a import specialization template? less volatile if we can keep this type safe.
-        m_mesh = *reinterpret_cast<Ref<Mesh>*>(pParams);
+        m_mesh = *pParams;
 
 		PK::Assets::PKAsset asset;
 

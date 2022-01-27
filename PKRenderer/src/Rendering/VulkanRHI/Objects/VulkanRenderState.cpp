@@ -241,7 +241,18 @@ namespace PK::Rendering::VulkanRHI::Objects
     }
 
 
-    VulkanVertexBufferBundle VulkanRenderState::GetVertexBufferBundle()
+    VkRenderPassBeginInfo VulkanRenderState::GetRenderPassInfo() const
+    {
+        VkRenderPassBeginInfo renderPassInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+        renderPassInfo.renderPass = m_renderPass->renderPass;
+        renderPassInfo.framebuffer = m_frameBuffer->frameBuffer;
+        renderPassInfo.renderArea = { {}, m_frameBufferKey->extent };
+        renderPassInfo.clearValueCount = m_clearValueCount;
+        renderPassInfo.pClearValues = m_clearValues;
+        return renderPassInfo;
+    }
+
+    VulkanVertexBufferBundle VulkanRenderState::GetVertexBufferBundle() const
     {
         VulkanVertexBufferBundle bundle{};
 
@@ -265,17 +276,41 @@ namespace PK::Rendering::VulkanRHI::Objects
         return bundle;
     }
 
-    VkRenderPassBeginInfo VulkanRenderState::GetRenderPassInfo()
+    VulkanDescriptorSetBundle VulkanRenderState::GetDescriptorSetBundle(const ExecutionGate& gate, uint32_t dirtyFlags)
     {
-        VkRenderPassBeginInfo renderPassInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-        renderPassInfo.renderPass = m_renderPass->renderPass;
-        renderPassInfo.framebuffer = m_frameBuffer->frameBuffer;
-        renderPassInfo.renderArea = { {}, m_frameBufferKey->extent };
-        renderPassInfo.clearValueCount = m_clearValueCount;
-        renderPassInfo.pClearValues = m_clearValues;
-        return renderPassInfo;
+        VulkanDescriptorSetBundle bundle{};
+
+        if (m_pipelineKey.shader != nullptr)
+        {
+            bundle.bindPoint = EnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetType());
+            bundle.layout = m_pipelineKey.shader->GetPipelineLayout()->layout;
+            bundle.firstSet = 0xFFFFu;
+            bundle.count = 0u;
+
+            for (auto i = 0u; i < PK_MAX_DESCRIPTOR_SETS; ++i)
+            {
+                if ((dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i)) != 0)
+                {
+                    if (i < bundle.firstSet)
+                    {
+                        bundle.firstSet = i;
+                    }
+
+                    auto set = m_descriptorSets[i];
+                    set->executionGate = gate;
+                    bundle.sets[bundle.count++] = set->set;
+                }
+            }
+        }
+
+        return bundle;
     }
 
+    const VulkanBindHandle* VulkanRenderState::GetIndexBuffer(VkIndexType* outIndexType) const
+    {
+        *outIndexType = m_indexType;
+        return m_indexBuffer;
+    }
 
     void VulkanRenderState::ValidateRenderTarget()
     {
@@ -404,9 +439,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
                 auto* attribute = &m_pipelineKey.vertexAttributes[elementIdx];
 
-                // Format equality might be too strict. disabling for now
-                // @TODO Review this again later?
-                if (/*attribute->format == EnumConvert::GetFormat(element.Type) && */ (attribute->binding != index || attribute->offset != element.Offset))
+                // Format equality isn't checked against so that meshes without certain attributes can still be bound.
+                if (attribute->binding != index || attribute->offset != element.Offset)
                 {
                     m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
                     attribute->binding = index;
@@ -426,7 +460,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanRenderState::ValidateDescriptorSets(const ExecutionGate& gate)
     {
         auto shader = m_pipelineKey.shader;
-        auto setCount = m_pipelineKey.shader->GetDescriptorSetCount();
+        auto setCount = shader->GetDescriptorSetCount();
         auto index = 0u;
 
         for (auto i = 0u; i < setCount; ++i)
@@ -455,7 +489,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 
                 if (element.Count > 1)
                 {
-                    PK_THROW_ASSERT(m_resourceProperties.TryGet(element.NameHashId, wrappedHandleArray), "Descriptors (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
+                    PK_THROW_ASSERT(m_resourceState.TryGet(element.NameHashId, wrappedHandleArray), "Descriptors (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
 
                     uint32_t version = 0u;
                     uint32_t count = 0u;
@@ -475,7 +509,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                     continue;
                 }
 
-                PK_THROW_ASSERT(m_resourceProperties.TryGet(element.NameHashId, wrappedHandle), "Descriptor (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
+                PK_THROW_ASSERT(m_resourceState.TryGet(element.NameHashId, wrappedHandle), "Descriptor (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
                 auto handle = wrappedHandle.handle;
 
                 if (binding->count != element.Count || binding->type != element.Type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)
@@ -503,7 +537,17 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
 
         // If a lower number set has changed all sets above it need to be rebound.
-        // ^^^ That would have been ideal but unfortunately something is causing a lower set unbind so we'll just dirty all of them.
+        //for (auto i = 0; i < (int32_t)(setCount - 1); ++i)
+        //{
+        //    if ((m_dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i)) != 0)
+        //    {
+        //        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << (i + 1);
+        //    }
+        //}
+
+        // @TODO investigate why this happens.
+        // Unfortunately for some reason a set is being unbound despite using the same layout & resources (in the same pipeline bind point).
+        // I'll just have to dirty all of them :/
         if ((m_dirtyFlags & PK_RENDER_STATE_DIRTY_DESCRIPTOR_SETS) != 0)
         {
             for (auto i = 0u; i < setCount; ++i)
@@ -524,7 +568,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         PK_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
         auto shaderType = m_pipelineKey.shader->GetType();
-        auto vertexFlag = m_dirtyFlags & PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
+        auto graphicsFlags = m_dirtyFlags & (PK_RENDER_STATE_DIRTY_VERTEXBUFFERS | PK_RENDER_STATE_DIRTY_INDEXBUFFER | PK_RENDER_STATE_DIRTY_RENDERTARGET);
 
         ValidateRenderTarget();
         ValidateVertexBuffers();
@@ -541,11 +585,10 @@ namespace PK::Rendering::VulkanRHI::Objects
         // Dont dirty render pass or vertex buffers when not using a graphics pipeline
         if (shaderType != ShaderType::Graphics)
         {
-            flags = (PKRenderStateDirtyFlags)(flags & ~PK_RENDER_STATE_DIRTY_RENDERTARGET);
-            flags = (PKRenderStateDirtyFlags)(flags & ~PK_RENDER_STATE_DIRTY_VERTEXBUFFERS);
+            flags = (PKRenderStateDirtyFlags)(flags & ~graphicsFlags);
             
-            // Restore vertex dirty flag so that a graphics pipeline assignment can pickup this change.
-            m_dirtyFlags |= vertexFlag;
+            // Restore graphics specific dirty flags so that a later pipeline validation can pick these up pipeline assignment can pickup this change.
+            m_dirtyFlags |= graphicsFlags;
         }
         
         return flags;

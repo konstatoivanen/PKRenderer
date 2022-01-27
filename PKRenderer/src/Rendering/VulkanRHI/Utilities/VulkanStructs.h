@@ -42,6 +42,8 @@ namespace PK::Rendering::VulkanRHI
         uint32_t versionMinor;
         VkPhysicalDeviceType deviceType;
         VkPhysicalDeviceFeatures features;
+        VkPhysicalDeviceVulkan11Features features11 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
+        VkPhysicalDeviceVulkan12Features features12 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
 
         const std::vector<const char*>* deviceExtensions;
     };
@@ -51,8 +53,8 @@ namespace PK::Rendering::VulkanRHI
         VulkanBufferCreateInfo() {};
         VulkanBufferCreateInfo(BufferUsage usage, size_t size);
 
-        VkBufferCreateInfo buffer = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-        VmaAllocationCreateInfo allocation = {};
+        VkBufferCreateInfo buffer { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+        VmaAllocationCreateInfo allocation {};
     };
 
     struct VulkanImageCreateInfo

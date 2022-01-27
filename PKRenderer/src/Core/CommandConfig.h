@@ -6,7 +6,7 @@ namespace PK::Core
 {
 	using namespace YAML;
 	
-	struct CommandConfig : YamlValueList, public Asset
+	struct CommandConfig : YamlValueList, public Asset, public IAssetImportSimple
 	{
 		BoxedValue<ConsoleCommandBindList> Commands = BoxedValue<ConsoleCommandBindList>("Commands", ConsoleCommandBindList());
 		CommandConfig();

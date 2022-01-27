@@ -188,9 +188,6 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanBuffer::Rebuild(size_t count)
     {
-        // @TODO maybe refactor to add support?
-        PK_THROW_ASSERT(m_pageTable == nullptr, "As of now sparse buffer don't support rebuilding");
-
         // Sparse buffers cannot be persistently mapped
         if ((m_usage & BufferUsage::Sparse) != 0)
         {

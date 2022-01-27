@@ -10,7 +10,7 @@ namespace PK::Rendering::Objects
     using namespace PK::Utilities;
     using namespace PK::Rendering::Structs;
 
-    class Material : public Asset, public ShaderPropertyBlock
+    class Material : public Asset, public IAssetImportSimple, public ShaderPropertyBlock
     {
         // @TODO refactor this to be derived from a config or generate at runtime?.
         constexpr static const char* DEFAULT_PATH_TEXTURE_BLACK = "res/textures/default/T_Black.ktx2";
