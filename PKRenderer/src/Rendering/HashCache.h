@@ -63,6 +63,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_SceneGI_ConeAngle)
         DECLARE_HASH(pk_SceneGI_DiffuseGain)
         DECLARE_HASH(pk_SceneGI_SpecularGain)
+        DECLARE_HASH(pk_SceneGI_Fade)
 
         DECLARE_HASH(pk_Lights)
         DECLARE_HASH(pk_LightMatrices)

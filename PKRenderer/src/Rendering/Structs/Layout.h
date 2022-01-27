@@ -142,8 +142,14 @@ namespace PK::Rendering::Structs
     class BufferLayout : public std::vector<BufferElement>
     {
         public:
+
             BufferLayout() {}
     
+            BufferLayout(BufferElement* elements, size_t count) : std::vector<BufferElement>(elements, elements + count)
+            {
+                CalculateOffsetsAndStride();
+            }
+
             BufferLayout(std::initializer_list<BufferElement> elements) : std::vector<BufferElement>(elements)
             {
                 CalculateOffsetsAndStride();
@@ -163,7 +169,7 @@ namespace PK::Rendering::Structs
     
         private:
             void CalculateOffsetsAndStride();
-            
+
             std::map<uint32_t, uint32_t> m_elementMap;
             uint m_stride = 0;
             uint m_alignedStride = 0;

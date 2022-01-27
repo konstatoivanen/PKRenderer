@@ -495,20 +495,20 @@ namespace PK::Rendering::VulkanRHI::Objects
                 memset(bindings + index, 0, sizeof(bindings[0]) * (PK_MAX_DESCRIPTORS_PER_SET - index));
                 m_dirtyFlags |= (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i);
             }
-
+            
             if (m_dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i))
             {
                 m_descriptorSets[i] = m_descriptorCache->GetDescriptorSet(shader->GetDescriptorSetLayout(i), m_descriptorSetKeys[i], gate);
             }
-
         }
 
         // If a lower number set has changed all sets above it need to be rebound.
-        for (auto i = 0; i < (int32_t)(setCount - 1); ++i)
+        // ^^^ That would have been ideal but unfortunately something is causing a lower set unbind so we'll just dirty all of them.
+        if ((m_dirtyFlags & PK_RENDER_STATE_DIRTY_DESCRIPTOR_SETS) != 0)
         {
-            if ((m_dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i)) != 0)
+            for (auto i = 0u; i < setCount; ++i)
             {
-                m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << (i + 1);
+                m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
             }
         }
 

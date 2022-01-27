@@ -6,6 +6,7 @@ namespace PK::Rendering::Passes
 {
     PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
+        m_computeFade = assetDatabase->Find<Shader>("CS_SceneGI_Fade");
         m_computeMipmap = assetDatabase->Find<Shader>("CS_SceneGI_Mipmap");
         m_computeBakeGI = assetDatabase->Find<Shader>("CS_SceneGI_Bake");
 
@@ -55,7 +56,8 @@ namespace PK::Rendering::Passes
             { ElementType::Float, hash->pk_SceneGI_VoxelSize },
             { ElementType::Float, hash->pk_SceneGI_ConeAngle },
             { ElementType::Float, hash->pk_SceneGI_DiffuseGain },
-            { ElementType::Float, hash->pk_SceneGI_SpecularGain }
+            { ElementType::Float, hash->pk_SceneGI_SpecularGain },
+            { ElementType::Float, hash->pk_SceneGI_Fade }
         }));
 
         m_parameters->Set<float4>(hash->pk_SceneGI_ST, float4(-76.8f, -6.0f, -76.8f, 1.0f / 0.6f));
@@ -63,6 +65,7 @@ namespace PK::Rendering::Passes
         m_parameters->Set<float>(hash->pk_SceneGI_ConeAngle, 5.08320368996f);
         m_parameters->Set<float>(hash->pk_SceneGI_DiffuseGain, 2.0f);
         m_parameters->Set<float>(hash->pk_SceneGI_SpecularGain, 1.0f);
+        m_parameters->Set<float>(hash->pk_SceneGI_Fade, 0.95f);
         cmd->SetBuffer(hash->pk_SceneGI_Params, m_parameters->GetBuffer());
     }
 
@@ -96,6 +99,10 @@ namespace PK::Rendering::Passes
         auto hash = HashCache::Get();
 
         auto volres = m_voxels->GetResolution();
+
+        cmd->SetImage(hash->_DestinationTex, m_voxels.get(), 0, 0);
+        cmd->Dispatch(m_computeFade, { volres.x / 8u, volres.y / 8u, volres.z / 8u });
+        cmd->Barrier(m_voxels.get(), 0, 0, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::FragmentReadWrite);
 
         uint4 viewports[3] =
         {

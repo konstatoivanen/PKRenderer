@@ -10,6 +10,7 @@ PK_DECLARE_CBUFFER(pk_SceneGI_Params, PK_SET_SHADER)
 	float pk_SceneGI_ConeAngle; 
 	float pk_SceneGI_DiffuseGain; 
 	float pk_SceneGI_SpecularGain; 
+	float pk_SceneGI_Fade; 
 };
 
 layout(rgba16, set = PK_SET_SHADER) uniform image3D pk_SceneGI_VolumeWrite;
@@ -23,6 +24,8 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_SceneGI_VolumeRead;
 #define PK_GI_DIFFUSE_GAIN pk_SceneGI_DiffuseGain.xxx
 #define PK_GI_SPECULAR_GAIN pk_SceneGI_SpecularGain.xxx
 #define PK_GI_CHECKERBOARD_OFFSET pk_SceneGI_Checkerboard_Offset.xy
+
+float3 VoxelToWorldSpace(int3 coord) { return (float3(coord) * PK_GI_VOXEL_SIZE) + pk_SceneGI_ST.xyz + PK_GI_VOXEL_SIZE * 0.5f; }
 
 int3 WorldToVoxelSpace(float3 worldposition) { return int3((worldposition - pk_SceneGI_ST.xyz) * pk_SceneGI_ST.www); }
 
@@ -50,13 +53,7 @@ void StoreSceneGI(float3 worldposition, float4 color)
 	float4 value0 = imageLoad(pk_SceneGI_VolumeWrite, coord);
 	float4 value1 = float4(color.rgb / 128.0f, color.a);
 
-	value0.rgb *= value0.a * 0.9f;
-	value1.rgb *= 1.0f - value0.a * 0.9f;
-
-	// Quantize colors down so that we don't get any lingering artifacts from dim light sources.
-	value0.rgb = floor(value0.rgb * 0xFFFF.xxx) / 0xFFFF.xxx;
-	value1.rgb = floor(value1.rgb * 0xFFFF.xxx) / 0xFFFF.xxx;
-
+	value1.rgb *= 1.0f - value0.a * pk_SceneGI_Fade;
 	value1.rgb += value0.rgb;
 
 	imageStore(pk_SceneGI_VolumeWrite, coord, value1); 

@@ -1,6 +1,6 @@
 #version 460
 #pragma PROGRAM_COMPUTE
-#include includes/Utilities.glsl
+#include includes/Common.glsl
 
 PK_DECLARE_SET_DRAW uniform sampler3D _SourceTex;
 layout(rgba16, set = PK_SET_DRAW) uniform writeonly restrict image3D _DestinationTex;

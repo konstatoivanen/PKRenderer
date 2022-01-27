@@ -223,16 +223,15 @@ namespace PK::Rendering::Objects
         {
             auto pMaterialProperties = shader->materialProperties.Get(base);
 
-            std::vector<BufferElement> elements;
-            elements.reserve(shader->materialPropertyCount);
+            auto elements = PK_STACK_ALLOC(BufferElement, shader->materialPropertyCount);
 
             for (auto i = 0u; i < shader->materialPropertyCount; ++i)
             {
                 auto& prop = pMaterialProperties[i];
-                elements.emplace_back(prop.type, prop.name);
+                elements[i] = { prop.type, prop.name };
             }
 
-            m_materialPropertyLayout = BufferLayout(elements);
+            m_materialPropertyLayout = BufferLayout(elements, shader->materialPropertyCount);
         }
 
         auto api = GraphicsAPI::GetActiveAPI();

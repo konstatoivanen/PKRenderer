@@ -22,6 +22,7 @@ namespace PK::Rendering::Passes
 
         private:
             FixedFunctionShaderAttributes m_voxelizeAttribs{};
+            Shader* m_computeFade = nullptr;
             Shader* m_computeMipmap = nullptr;
             Shader* m_computeBakeGI = nullptr;
             Ref<ConstantBuffer> m_parameters;

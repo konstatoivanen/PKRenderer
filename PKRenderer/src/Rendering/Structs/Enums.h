@@ -165,7 +165,8 @@ namespace PK::Rendering::Structs
         FragmentAttachmentColor = ReadWriteRTColor | StageColorOut,         // Write color in fragment out
         FragmentAttachmentDepth = ReadWriteRTDepth | StageDepthStencilOut,  // Write depth in fragment out
         FragmentTexture = ReadShader | StageFragment,                       // Read texture in fragment
-        FragmentBuffer = ReadShader | StageFragment,                       // Read biffer in fragment
+        FragmentBuffer = ReadShader | StageFragment,                       // Read buffer in fragment
+        FragmentReadWrite = ReadWriteShader | StageFragment,                       // Write memory in fragment
         ComputeReadWrite = ReadWriteShader | StageCompute,                  // Read/Write texture, image, & buffer  in compute
         ComputeRead = ReadShader | StageCompute,                            // Read texture, image, & buffer in compute
         ComputeWrite = WriteShader | StageCompute,                           // Write texture, image, & buffer  in compute
