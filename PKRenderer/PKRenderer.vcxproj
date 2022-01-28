@@ -562,6 +562,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Utilities\BufferView.h" />
     <ClInclude Include="src\Core\CommandConfig.h" />
     <ClInclude Include="src\Core\ConsoleCommandBinding.h" />
+    <ClInclude Include="src\Utilities\FileIO.h" />
     <ClInclude Include="src\Utilities\PointerMap.h" />
     <ClInclude Include="src\Utilities\FixedList.h" />
     <ClInclude Include="src\Utilities\IDObject.h" />
@@ -942,6 +943,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Rendering\Passes\PassSceneGI.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanSparsePageTable.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.cpp" />
+    <ClCompile Include="src\Utilities\FileIO.cpp" />
     <ClCompile Include="src\Utilities\HashHelpers.cpp" />
     <ClCompile Include="src\Utilities\PropertyBlock.cpp" />
     <ClCompile Include="src\Core\Services\Time.cpp" />

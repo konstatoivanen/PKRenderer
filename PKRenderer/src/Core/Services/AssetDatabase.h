@@ -30,6 +30,7 @@ namespace PK::Core::Services
             AssetID m_assetId = 0;
     };
 
+    // @TODO decouple these from the actual asset classes
     template<typename TParams>
     class IAssetImport : public NoCopy
     {

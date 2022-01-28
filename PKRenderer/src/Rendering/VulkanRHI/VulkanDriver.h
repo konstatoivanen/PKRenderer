@@ -21,17 +21,21 @@ namespace PK::Rendering::VulkanRHI
     struct VulkanContextProperties
     {
         std::string appName;
+        std::string workingDirectory;
         uint64_t garbagePruneDelay;
         const std::vector<const char*>* validationLayers;
         const std::vector<const char*>* contextualInstanceExtensions;
         const std::vector<const char*>* contextualDeviceExtensions;
 
-        VulkanContextProperties(const std::string& appName = "Vulkan Engine",
+        VulkanContextProperties(
+            const std::string& appName = "Vulkan Engine",
+            const std::string& workingDirectory = "",
             uint64_t garbagePruneDelay = 32ull,
             const std::vector<const char*>* validationLayers = nullptr,
             const std::vector<const char*>* contextualInstanceExtensions = nullptr,
             const std::vector<const char*>* contextualDeviceExtensions = nullptr) :
             appName(appName),
+            workingDirectory(workingDirectory),
             garbagePruneDelay(garbagePruneDelay),
             validationLayers(validationLayers),
             contextualInstanceExtensions(contextualInstanceExtensions),

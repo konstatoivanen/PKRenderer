@@ -12,7 +12,7 @@ namespace PK::Rendering
 
     static GraphicsDriver* s_currentDriver;
 
-    Scope<GraphicsDriver> GraphicsDriver::Create(APIType api)
+    Scope<GraphicsDriver> GraphicsDriver::Create(const std::string& workingDirectory, APIType api)
     {
         switch (api)
         {
@@ -39,6 +39,7 @@ namespace PK::Rendering
                 auto driver = CreateScope<VulkanDriver>(VulkanContextProperties
                 (
                     "PK Vulkan Engine",
+                    workingDirectory,
                     32ull,
                     &PK_VALIDATION_LAYERS,
                     &PK_INSTANCE_EXTENTIONS,

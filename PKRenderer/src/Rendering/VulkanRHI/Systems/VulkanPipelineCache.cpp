@@ -1,11 +1,44 @@
 #include "PrecompiledHeader.h"
 #include "VulkanPipelineCache.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
+#include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
+#include "Utilities/FileIO.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
+    using namespace PK::Utilities;
+
+    VulkanPipelineCache::VulkanPipelineCache(VkDevice device, const std::string& workingDirectory, uint64_t pruneDelay) : 
+        m_device(device), 
+        m_workingDirectory(workingDirectory),
+        m_pruneDelay(pruneDelay) 
+    {
+        if (!workingDirectory.empty())
+        {
+            void* cacheData = nullptr;
+            size_t cacheSize = 0ull;
+            FileIO::ReadBinary((workingDirectory + PIPELINE_CACHE_FILENAME).c_str(), &cacheData, &cacheSize);
+            VkPipelineCacheCreateInfo cacheCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO };
+            cacheCreateInfo.initialDataSize = cacheSize;
+            cacheCreateInfo.pInitialData = cacheData;
+            VK_ASSERT_RESULT_CTX(vkCreatePipelineCache(device, &cacheCreateInfo, nullptr, &m_pipelineCache), "Failed to create pipeline cache!");
+            free(cacheData);
+        }
+    }
+
     VulkanPipelineCache::~VulkanPipelineCache()
     {
+        if (m_pipelineCache != VK_NULL_HANDLE && !m_workingDirectory.empty())
+        {
+            size_t size = 0ull;
+            vkGetPipelineCacheData(m_device, m_pipelineCache, &size, nullptr);
+            void* cacheData = malloc(size);
+            vkGetPipelineCacheData(m_device, m_pipelineCache, &size, cacheData);
+            FileIO::WriteBinary((m_workingDirectory + PIPELINE_CACHE_FILENAME).c_str(), cacheData, size);
+            vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
+            free(cacheData);
+        }
+
         for (auto& kv : m_graphicsPipelines)
         {
             if (kv.second.pipeline != nullptr)
@@ -50,7 +83,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         VkComputePipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
         pipelineInfo.stage = shader->GetModule((int)ShaderStage::Compute)->stageInfo;
         pipelineInfo.layout = shader->GetPipelineLayout()->layout;
-        auto pipeline = new VulkanPipeline(m_device, VK_NULL_HANDLE, pipelineInfo);
+        auto pipeline = new VulkanPipeline(m_device, m_pipelineCache, pipelineInfo);
         m_computePipelines[shader] = { pipeline, nextPruneTick };
         return pipeline;
     }
@@ -189,7 +222,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
 
-        auto pipeline = new VulkanPipeline(m_device, VK_NULL_HANDLE, pipelineInfo);
+        auto pipeline = new VulkanPipeline(m_device, m_pipelineCache, pipelineInfo);
         m_graphicsPipelines[key] = { pipeline, nextPruneTick };
         return pipeline;
     }

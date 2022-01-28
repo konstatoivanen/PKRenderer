@@ -144,7 +144,7 @@ namespace PK::Rendering::VulkanRHI
 
         frameBufferCache = CreateScope<VulkanFrameBufferCache>(device, properties.garbagePruneDelay);
         stagingBufferCache = CreateScope<VulkanStagingBufferCache>(device, allocator, properties.garbagePruneDelay);
-        pipelineCache = CreateScope<VulkanPipelineCache>(device, properties.garbagePruneDelay);
+        pipelineCache = CreateScope<VulkanPipelineCache>(device, properties.workingDirectory, properties.garbagePruneDelay);
         samplerCache = CreateScope<VulkanSamplerCache>(device);
         layoutCache = CreateScope<VulkanLayoutCache>(device);
         disposer = CreateScope<VulkanDisposer>();

@@ -57,7 +57,8 @@ namespace PK::Core
         auto time = m_services->Create<Time>(sequencer, config->TimeScale);
         auto input = m_services->Create<Input>(sequencer);
         
-        m_graphicsDriver = GraphicsDriver::Create(APIType::Vulkan);
+        auto workingDirectory = std::filesystem::path(arguments.args[0]).remove_filename().string();
+        m_graphicsDriver = GraphicsDriver::Create(workingDirectory, APIType::Vulkan);
 
         m_window = Window::Create(WindowProperties(name, config->InitialWidth, config->InitialHeight, config->EnableVsync, config->EnableCursor));
         Window::SetConsole(config->EnableConsole);

@@ -40,7 +40,9 @@ namespace PK::Rendering::VulkanRHI::Systems
         private:
 
         public:
-            VulkanPipelineCache(VkDevice device, uint64_t pruneDelay) : m_device(device), m_pruneDelay(pruneDelay) {}
+            constexpr const static char* PIPELINE_CACHE_FILENAME = "shadercache.cache";
+
+            VulkanPipelineCache(VkDevice device, const std::string& workingDirectory, uint64_t pruneDelay);
             ~VulkanPipelineCache();
 
             struct PipelineValue
@@ -56,6 +58,8 @@ namespace PK::Rendering::VulkanRHI::Systems
 
         private:
             const VkDevice m_device;
+            VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
+            std::string m_workingDirectory;
             std::unordered_map<PipelineKey, PipelineValue, PipelineKeyHash> m_graphicsPipelines;
             std::unordered_map<IDHandle<VulkanShader>, PipelineValue, IDHandle<VulkanShader>::Hash> m_computePipelines;
             uint64_t m_currentPruneTick = 0;

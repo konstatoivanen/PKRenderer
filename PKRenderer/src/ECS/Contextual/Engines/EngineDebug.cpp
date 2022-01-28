@@ -40,7 +40,6 @@ namespace PK::ECS::Engines
 		auto materialMarble = assetDatabase->Load<Material>("res/materials/M_Marble.material");
 		auto materialPlaster = assetDatabase->Load<Material>("res/materials/M_Plaster.material");
 
-
 		auto minpos = float3(-70, -6, -70);
 		auto maxpos = float3(70, -4, 70);
 

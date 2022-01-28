@@ -36,7 +36,7 @@ namespace PK::Rendering
         virtual size_t GetBufferOffsetAlignment(BufferUsage usage) const = 0;
         virtual void GC() = 0;
 
-        static Scope<GraphicsDriver> Create(APIType api);
+        static Scope<GraphicsDriver> Create(const std::string& workingDirectory, APIType api);
     };
 
     namespace GraphicsAPI

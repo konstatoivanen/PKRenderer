@@ -1425,6 +1425,9 @@
     <ClInclude Include="src\Rendering\Objects\VirtualMesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Utilities\FileIO.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -2180,6 +2183,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Objects\VirtualMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utilities\FileIO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
