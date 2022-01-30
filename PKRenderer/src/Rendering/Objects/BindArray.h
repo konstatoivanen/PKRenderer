@@ -5,13 +5,11 @@
 
 namespace PK::Rendering::Objects
 {
-    using namespace PK::Utilities;
-
     template<typename T>
-    class BindArray : public NoCopy, public NativeInterface<BindArray<T>>
+    class BindArray : public Utilities::NoCopy, public Utilities::NativeInterface<BindArray<T>>
     {
         public:
-            static Ref<BindArray<T>> Create(size_t capacity);
+            static Utilities::Ref<BindArray<T>> Create(size_t capacity);
             virtual int32_t Add(T* value, void* bindInfo) = 0;
             virtual int32_t Add(T* value) = 0;
             virtual int32_t Add(const T* value) = 0;

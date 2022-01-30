@@ -4,6 +4,8 @@
 
 namespace PK::Rendering::VulkanRHI::EnumConvert
 {
+    using namespace Rendering::Structs;
+
     VkFormat GetFormat(ElementType format)
     {
         switch (format)

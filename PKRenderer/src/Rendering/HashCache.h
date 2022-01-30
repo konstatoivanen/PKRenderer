@@ -5,12 +5,10 @@
 
 namespace PK::Rendering
 {
-    using namespace PK::Core::Services;
-    using namespace PK::Utilities;
-
-    struct HashCache : public IService, public ISingleton<HashCache>
+    struct HashCache : public Core::Services::IService, 
+                       public Utilities::ISingleton<HashCache>
     {
-        #define DECLARE_HASH(name) uint32_t name = StringHashID::StringToID(#name); \
+        #define DECLARE_HASH(name) uint32_t name = Core::Services::StringHashID::StringToID(#name); \
 
         DECLARE_HASH(_MainTex)
         DECLARE_HASH(_SourceTex)
@@ -140,11 +138,11 @@ namespace PK::Rendering
 
         #undef DEFINE_HASH_CACHE
 
-        uint32_t pk_Instancing_Transforms = StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TRANSFORMS);
-        uint32_t pk_Instancing_Indices = StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_INDICES);
-        uint32_t pk_Instancing_Properties = StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_PROPERTIES);
-        uint32_t pk_Instancing_Textures2D = StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURES2D);
-        uint32_t pk_Instancing_Textures3D = StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURES3D);
-        uint32_t pk_Instancing_TexturesCube = StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURESCUBE);
+        uint32_t pk_Instancing_Transforms = Core::Services::StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TRANSFORMS);
+        uint32_t pk_Instancing_Indices = Core::Services::StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_INDICES);
+        uint32_t pk_Instancing_Properties = Core::Services::StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_PROPERTIES);
+        uint32_t pk_Instancing_Textures2D = Core::Services::StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURES2D);
+        uint32_t pk_Instancing_Textures3D = Core::Services::StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURES3D);
+        uint32_t pk_Instancing_TexturesCube = Core::Services::StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURESCUBE);
     };
 }

@@ -11,8 +11,8 @@ namespace PK::Core
 	}
 
 	template<>
-	bool AssetImporters::IsValidExtension<CommandConfig>(const std::filesystem::path& extension) { return extension.compare(".keycfg") == 0; }
+	bool Services::AssetImporters::IsValidExtension<CommandConfig>(const std::filesystem::path& extension) { return extension.compare(".keycfg") == 0; }
 
 	template<>
-	Ref<CommandConfig> AssetImporters::Create() { return CreateRef<CommandConfig>(); }
+	Utilities::Ref<CommandConfig> Services::AssetImporters::Create() { return Utilities::CreateRef<CommandConfig>(); }
 }

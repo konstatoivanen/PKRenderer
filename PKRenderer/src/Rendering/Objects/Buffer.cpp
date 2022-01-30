@@ -5,7 +5,8 @@
 
 namespace PK::Rendering::Objects
 {
-    using namespace PK::Rendering::VulkanRHI::Objects;
+    using namespace Utilities;
+    using namespace VulkanRHI::Objects;
 
     Ref<Buffer> Buffer::Create(const BufferLayout& layout, const void* data, size_t count, BufferUsage usage)
     {

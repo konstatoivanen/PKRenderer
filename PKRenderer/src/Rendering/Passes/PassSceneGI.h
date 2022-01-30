@@ -8,27 +8,23 @@
 
 namespace PK::Rendering::Passes
 {
-    using namespace PK::Core;
-    using namespace PK::ECS::Tokens;
-    using namespace PK::Rendering::Objects;
-
-    class PassSceneGI : public PK::Core::NoCopy
+    class PassSceneGI : public PK::Utilities::NoCopy
     {
         public:
-            PassSceneGI(AssetDatabase* assetDatabase, const ApplicationConfig* config);
-            void PreRender(CommandBuffer* cmd, const uint3& resolution);
-            void RenderVoxels(CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup);
-            void RenderGI(CommandBuffer* cmd);
+            PassSceneGI(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
+            void PreRender(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
+            void RenderVoxels(Objects::CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup);
+            void RenderGI(Objects::CommandBuffer* cmd);
 
         private:
-            FixedFunctionShaderAttributes m_voxelizeAttribs{};
-            Shader* m_computeFade = nullptr;
-            Shader* m_computeMipmap = nullptr;
-            Shader* m_computeBakeGI = nullptr;
-            Ref<ConstantBuffer> m_parameters;
-            Ref<Texture> m_voxels;
-            Ref<Texture> m_screenSpaceGI;
-            uint m_checkerboardIndex = 0u;
-            int m_rasterAxis = 0;
+            Structs::FixedFunctionShaderAttributes m_voxelizeAttribs{};
+            Objects::Shader* m_computeFade = nullptr;
+            Objects::Shader* m_computeMipmap = nullptr;
+            Objects::Shader* m_computeBakeGI = nullptr;
+            Utilities::Ref<Objects::ConstantBuffer> m_parameters;
+            Utilities::Ref<Objects::Texture> m_voxels;
+            Utilities::Ref<Objects::Texture> m_screenSpaceGI;
+            uint32_t m_checkerboardIndex = 0u;
+            int32_t m_rasterAxis = 0;
     };
 }

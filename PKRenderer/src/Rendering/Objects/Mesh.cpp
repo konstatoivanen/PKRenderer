@@ -4,10 +4,12 @@
 #include "Math/FunctionsMisc.h"
 #include <PKAssets/PKAssetLoader.h>
 
+using namespace PK::Math;
 using namespace PK::Core;
 using namespace PK::Utilities;
 using namespace PK::Rendering;
 using namespace PK::Rendering::Objects;
+using namespace PK::Rendering::Structs;
 
 namespace PK::Rendering::Objects
 {
@@ -226,10 +228,10 @@ namespace PK::Rendering::Objects
 }
 
 template<>
-bool AssetImporters::IsValidExtension<Mesh>(const std::filesystem::path& extension) { return extension.compare(".ktx2") == 0; }
+bool PK::Core::Services::AssetImporters::IsValidExtension<Mesh>(const std::filesystem::path& extension) { return extension.compare(".ktx2") == 0; }
 
 template<>
-Ref<Mesh> AssetImporters::Create()
+Ref<Mesh> PK::Core::Services::AssetImporters::Create()
 {
     return CreateRef<Mesh>();
 }

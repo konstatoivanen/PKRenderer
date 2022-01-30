@@ -3,7 +3,9 @@
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
 
 namespace PK::Rendering::VulkanRHI::Systems
-{    
+{   
+    using namespace Structs;
+
     VulkanFrameBufferCache::VulkanFrameBufferCache(VkDevice device, uint64_t pruneDelay) : m_device(device), m_pruneDelay(pruneDelay) {}
 
     VulkanFrameBufferCache::~VulkanFrameBufferCache()

@@ -9,9 +9,12 @@
 
 namespace PK::ECS::Engines
 {
-	using namespace PK::Rendering::Objects;
-	using namespace PK::Rendering::Structs;
+	using namespace PK::Utilities;
 	using namespace PK::Math;
+	using namespace PK::Core;
+	using namespace PK::Core::Services;
+	using namespace PK::Rendering::Structs;
+	using namespace PK::Rendering::Objects;
 
 	EngineDebug::EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, const ApplicationConfig* config)
 	{

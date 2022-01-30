@@ -9,6 +9,10 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
+    using namespace Utilities;
+    using namespace Systems;
+    using namespace Core::Services;
+
     void VulkanRenderState::Reset()
     {
         memset(m_descriptorSetKeys, 0, sizeof(m_descriptorSetKeys));

@@ -5,7 +5,12 @@
 
 namespace PK::Rendering::Passes
 {
-    PassBloom::PassBloom(AssetDatabase* assetDatabase, uint initialWidth, uint initialHeight)
+    using namespace Core::Services;
+    using namespace Math;
+    using namespace Objects;
+    using namespace Structs;
+
+    PassBloom::PassBloom(AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight)
     {
         TextureDescriptor descriptor{};
         descriptor.samplerType = SamplerType::Sampler2D;

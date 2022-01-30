@@ -3,35 +3,33 @@
 
 namespace PK::Rendering::Structs
 {
-    using namespace PK::Math;
-
     struct PK_Draw
     {
-        uint material;
-        uint transfrom;
-        uint mesh;
-        uint clipInfo;
+        Math::uint material;
+        Math::uint transfrom;
+        Math::uint mesh;
+        Math::uint clipInfo;
     };
 
     struct PK_Light
     {
-        float4 position;
-        float4 color;
-        uint4 indices;
+        Math::float4 position;
+        Math::float4 color;
+        Math::uint4 indices;
     };
 
     struct Vertex_Simple
     {
-        float3 position;
-        float2 texcoord;
+        Math::float3 position;
+        Math::float2 texcoord;
     };
 
     struct Vertex_Full
     {
-        float3 position;
-        float3 normal;
-        float4 tangent;
-        float2 texcoord;
+        Math::float3 position;
+        Math::float3 normal;
+        Math::float4 tangent;
+        Math::float2 texcoord;
     };
 
     struct IndexRange

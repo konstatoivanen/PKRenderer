@@ -7,8 +7,9 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    using namespace PK::Rendering::VulkanRHI::Utilities;
-    using namespace PK::Rendering::Structs;
+    using namespace VulkanRHI::Utilities;
+    using namespace Structs;
+    using namespace Systems;
 
     VulkanShader::VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant) : m_device(GraphicsAPI::GetActiveDriver<VulkanDriver>()->device)
     {

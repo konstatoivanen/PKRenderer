@@ -3,12 +3,10 @@
 
 namespace PK::ECS::Components
 {
-    using namespace PK::Math;
-
     struct Bounds
     {
-        BoundingBox localAABB;
-        BoundingBox worldAABB;
+        PK::Math::BoundingBox localAABB;
+        PK::Math::BoundingBox worldAABB;
         virtual ~Bounds() = default;
     };
 }

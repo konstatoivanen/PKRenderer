@@ -8,11 +8,17 @@
 #include "Utilities/VectorUtilities.h"
 #include "Math/FunctionsIntersect.h"
 
-using namespace PK::Rendering;
-using namespace PK::ECS::EntityViews;
-
 namespace PK::Rendering
 {
+    using namespace Core;
+    using namespace Core::Services;
+    using namespace Rendering;
+    using namespace Rendering::Structs;
+    using namespace Rendering::Objects;
+    using namespace Math;
+    using namespace ECS;
+    using namespace ECS::EntityViews;
+
     uint16_t MaterialGroup::Add(Material* material)
     {
         if (stride == 0ull)

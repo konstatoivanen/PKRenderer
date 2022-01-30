@@ -5,6 +5,8 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
+    using namespace Systems;
+
     VulkanBuffer::VulkanBuffer(const BufferLayout& layout, const void* data, size_t count, BufferUsage usage) :
         Buffer(layout, count, usage),
         m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>())

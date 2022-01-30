@@ -4,6 +4,13 @@
 
 namespace PK::Rendering::Passes
 {
+    using namespace Math;
+    using namespace Core;
+    using namespace Core::Services;
+    using namespace Utilities;
+    using namespace Structs;
+    using namespace Objects;
+
     constexpr static const uint3 InjectThreadCount = { 16u, 2u, 16u };
     constexpr static const uint3 ScatterThreadCount = { 32u,2u,1u };
     constexpr static const uint3 VolumeResolution = { 160u, 90u, 128u };

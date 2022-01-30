@@ -4,14 +4,14 @@
 #include "Math/FunctionsMisc.h"
 #include "Math/FunctionsIntersect.h"
 
-using namespace PK::Core;
-using namespace PK::Utilities;
-using namespace PK::Rendering;
-using namespace PK::Rendering::Objects;
-
 namespace PK::Rendering::Objects
 {
-    VirtualMesh::VirtualMesh()
+	using namespace Core;
+	using namespace Math;
+	using namespace Utilities;
+	using namespace Structs;
+
+	VirtualMesh::VirtualMesh()
     {
     }
 
@@ -93,7 +93,7 @@ namespace PK::Rendering::Objects
 }
 
 template<>
-Ref<VirtualMesh> AssetImporters::Create()
+PK::Utilities::Ref<PK::Rendering::Objects::VirtualMesh> PK::Core::Services::AssetImporters::Create()
 {
-	return CreateRef<VirtualMesh>();
+	return PK::Utilities::CreateRef<PK::Rendering::Objects::VirtualMesh>();
 }

@@ -6,6 +6,9 @@
 namespace PK::Rendering::MeshUtility
 {
     using namespace Utilities;
+    using namespace Math;
+    using namespace Objects;
+    using namespace Structs;
 
     namespace MikktsInterface0
     {
@@ -164,7 +167,7 @@ namespace PK::Rendering::MeshUtility
         }
     }
 
-    void CalculateNormals(const float3* vertices, const uint* indices, float3* normals, uint vcount, uint icount, float sign)
+    void CalculateNormals(const float3* vertices, const uint32_t* indices, float3* normals, uint32_t vcount, uint32_t icount, float sign)
     {
         for (uint i = 0, j = 0; i < icount; i += 3)
         {
@@ -190,7 +193,7 @@ namespace PK::Rendering::MeshUtility
 
     }
 
-    void CalculateTangents(const float3* vertices, const float3* normals, const float2* texcoords, const uint* indices, float4* tangents, uint vcount, uint icount)
+    void CalculateTangents(const float3* vertices, const float3* normals, const float2* texcoords, const uint32_t* indices, float4* tangents, uint32_t vcount, uint32_t icount)
     {
         MikktsInterface0::PKMeshData data;
         data.vertices = reinterpret_cast<const float*>(vertices);
@@ -217,7 +220,7 @@ namespace PK::Rendering::MeshUtility
         PK_THROW_ASSERT(genTangSpaceDefault(&context), "Failed to calculate tangents");
     }
 
-    void CalculateTangents(void* vertices, uint stride, uint vertexOffset, uint normalOffset, uint tangentOffset, uint texcoordOffset, const uint* indices, uint vcount, uint icount)
+    void CalculateTangents(void* vertices, uint32_t stride, uint32_t vertexOffset, uint32_t normalOffset, uint32_t tangentOffset, uint32_t texcoordOffset, const uint32_t* indices, uint32_t vcount, uint32_t icount)
     {
         MikktsInterface1::PKMeshData data;
         data.vertices = reinterpret_cast<float*>(vertices);

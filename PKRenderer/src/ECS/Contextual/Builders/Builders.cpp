@@ -8,8 +8,12 @@
 
 namespace PK::ECS::Builders
 {
-	using namespace PK::Rendering;
-	using namespace PK::Core::Services;
+	using namespace Utilities;
+	using namespace Core::Services;
+	using namespace Math;
+	using namespace Rendering;
+	using namespace Rendering::Objects;
+	using namespace Rendering::Structs;
 	using namespace EntityViews;
 	using namespace Implementers;
 

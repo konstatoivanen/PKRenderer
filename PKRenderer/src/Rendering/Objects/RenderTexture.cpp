@@ -3,6 +3,9 @@
 
 namespace PK::Rendering::Objects
 {
+    using namespace Structs;
+    using namespace Math;
+
     RenderTexture::RenderTexture(const RenderTextureDescriptor& descriptor) : m_descriptor(descriptor)
     {
         m_colorAttachmentCount = 0u;

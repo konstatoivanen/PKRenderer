@@ -5,23 +5,19 @@
 
 namespace PK::ECS::Tokens
 {
-	using namespace PK::Utilities;
-	using namespace PK::Math;
-	using namespace PK::Rendering::Structs;
-
 	struct VisibleItem
 	{
-		uint entityId;
-		ushort depth;
-		ushort clipId;
+		uint32_t entityId;
+		uint16_t depth;
+		uint16_t clipId;
 	};
 
 	struct VisibilityList
 	{
-		MemoryBlock<VisibleItem> results;
+		Utilities::MemoryBlock<VisibleItem> results;
 		size_t count;
 		VisibilityList(size_t count) : results(512){}
-		void Add(uint entityId, ushort depth, ushort clipId);
+		void Add(uint32_t entityId, uint16_t depth, uint16_t clipId);
 		inline void Clear() { count = 0ull; }
 		inline const VisibleItem& operator [] (size_t index) const { return results[index]; }
 	};
@@ -29,24 +25,24 @@ namespace PK::ECS::Tokens
 	struct TokenCullBase
 	{
 		VisibilityList* results;
-		RenderableFlags mask;
+		Rendering::Structs::RenderableFlags mask;
 		float depthRange;
 	};
 
 	struct TokenCullFrustum : public TokenCullBase
 	{
-		FrustumPlanes planes;
+		Math::FrustumPlanes planes;
 	};
 
 	struct TokenCullCubeFaces : public TokenCullBase
 	{
-		BoundingBox aabb;
+		Math::BoundingBox aabb;
 	};
 
 	struct TokenCullCascades : public TokenCullBase
 	{
-		FrustumPlanes* cascades;
-		uint count;
+		Math::FrustumPlanes* cascades;
+		uint32_t count;
 	};
 
 	struct CullTokens

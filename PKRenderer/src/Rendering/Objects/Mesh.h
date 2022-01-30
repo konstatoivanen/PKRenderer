@@ -5,15 +5,13 @@
 
 namespace PK::Rendering::Objects
 {
-    using namespace PK::Core::Services;
-
     struct SubMesh
     {
         uint32_t firstVertex = 0u;
         uint32_t vertexCount = 0u;
         uint32_t firstIndex = 0u;
         uint32_t indexCount = 0u;
-        BoundingBox bounds = BoundingBox::GetMinBounds();
+        Math::BoundingBox bounds = Math::BoundingBox::GetMinBounds();
 
         constexpr bool operator < (const SubMesh& other)
         {
@@ -29,22 +27,22 @@ namespace PK::Rendering::Objects
     {
         void* pVertices;
         void* pIndices;
-        BufferLayout vertexLayout;
+        Structs::BufferLayout vertexLayout;
         SubMesh* pSubmeshes;
-        ElementType indexType;
+        Structs::ElementType indexType;
         uint32_t vertexCount;
         uint32_t indexCount;
         uint32_t submeshCount;
     };
 
-    class Mesh : public Asset, public IAssetImportSimple
+    class Mesh : public Core::Services::Asset, public Core::Services::IAssetImportSimple
     {
-        friend Ref<Mesh> AssetImporters::Create();
+        friend Utilities::Ref<Mesh> Core::Services::AssetImporters::Create();
 
         public:
             Mesh();
-            Mesh(const Ref<Buffer>& vertexBuffer, const Ref<Buffer>& indexBuffer);
-            Mesh(const Ref<Buffer>& vertexBuffer, const Ref<Buffer>& indexBuffer, const BoundingBox& bounds);
+            Mesh(const Utilities::Ref<Buffer>& vertexBuffer, const Utilities::Ref<Buffer>& indexBuffer);
+            Mesh(const Utilities::Ref<Buffer>& vertexBuffer, const Utilities::Ref<Buffer>& indexBuffer, const Math::BoundingBox& bounds);
 
             void Import(const char* filepath, void* pParams) override final;
 
@@ -57,24 +55,24 @@ namespace PK::Rendering::Objects
 
             void DeallocateSubmeshRange(const SubMesh& allocationRange, uint32_t* submeshIndices, uint32_t submeshCount);
 
-            void AddVertexBuffer(const Ref<Buffer>& vertexBuffer);
-            void SetIndexBuffer(const Ref<Buffer>& indexBuffer) { m_indexBuffer = indexBuffer; }
+            void AddVertexBuffer(const Utilities::Ref<Buffer>& vertexBuffer);
+            void SetIndexBuffer(const Utilities::Ref<Buffer>& indexBuffer) { m_indexBuffer = indexBuffer; }
             void SetSubMeshes(const SubMesh* submeshes, size_t submeshCount);
             inline void SetSubMeshes(const std::initializer_list<SubMesh>& submeshes) { SetSubMeshes(submeshes.begin(), submeshes.end() - submeshes.begin()); }
             inline void SetSubMeshes(const std::vector<SubMesh>& submeshes) { SetSubMeshes(submeshes.data(), submeshes.size()); }
 
-            constexpr const std::vector<Ref<Buffer>>& GetVertexBuffers() const { return m_vertexBuffers; }
-            const BufferLayout& GetDefaultLayout() const { return m_vertexBuffers.at(0)->GetLayout(); }
+            constexpr const std::vector<Utilities::Ref<Buffer>>& GetVertexBuffers() const { return m_vertexBuffers; }
+            const Structs::BufferLayout& GetDefaultLayout() const { return m_vertexBuffers.at(0)->GetLayout(); }
             const Buffer* GetVertexBuffer() const { return m_vertexBuffers.at(0).get(); }
-            const Buffer* GetVertexBuffer(uint index) const { return m_vertexBuffers.at(index).get(); }
+            const Buffer* GetVertexBuffer(uint32_t index) const { return m_vertexBuffers.at(index).get(); }
             const Buffer* GetIndexBuffer() const { return m_indexBuffer.get(); }
             const SubMesh& GetSubmesh(int submesh) const;
-            inline const uint GetSubmeshCount() const { return glm::max(1u, (uint32_t)m_submeshes.size() - (uint32_t)m_freeSubmeshIndices.size()); }
+            inline const uint32_t GetSubmeshCount() const { return glm::max(1u, (uint32_t)m_submeshes.size() - (uint32_t)m_freeSubmeshIndices.size()); }
             constexpr const SubMesh& GetFullRange() const { return m_fullRange; }
 
         private:
-            std::vector<Ref<Buffer>> m_vertexBuffers;
-            Ref<Buffer> m_indexBuffer;
+            std::vector<Utilities::Ref<Buffer>> m_vertexBuffers;
+            Utilities::Ref<Buffer> m_indexBuffer;
             SubMesh m_fullRange{};
             
             std::vector<SubMesh> m_submeshes;

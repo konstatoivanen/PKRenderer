@@ -9,17 +9,13 @@ int main(int argc, char** argv);
 
 namespace PK::Core
 {
-    using namespace Utilities;
-    using namespace Rendering;
-    using namespace Services;
-
     struct ApplicationArguments
     {
         int count;
         char** args;
     };
 
-    class Application : public NoCopy
+    class Application : public Utilities::NoCopy
     {
         public:
             Application(ApplicationArguments arguments, const std::string& name = "Application");
@@ -40,9 +36,9 @@ namespace PK::Core
             static Application* s_Instance;
             bool m_Running = true;
             
-            Scope<GraphicsDriver> m_graphicsDriver;
-            Scope<Window> m_window;
-            Scope<ServiceRegister> m_services;
+            Utilities::Scope<Rendering::GraphicsDriver> m_graphicsDriver;
+            Utilities::Scope<Window> m_window;
+            Utilities::Scope<Services::ServiceRegister> m_services;
     
             friend int ::main(int argc, char** argv);
     };

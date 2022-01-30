@@ -9,23 +9,22 @@
 
 namespace PK::ECS::Engines
 {
-	using namespace PK::Utilities;
-	using namespace PK::Rendering::Objects;
-
-	class EngineScreenshot : public IService, public IStep<Window>, public IStep<ConsoleCommandToken>
+	class EngineScreenshot : public Core::Services::IService, 
+							 public Core::Services::IStep<Core::Window>, 
+							 public Core::Services::IStep<Core::ConsoleCommandToken>
 	{
 		public:
 			EngineScreenshot();
-			void Step(Window* window) override final;
-			void Step(ConsoleCommandToken* token) override final;
+			void Step(Core::Window* window) override final;
+			void Step(Core::ConsoleCommandToken* token) override final;
 		
 		private:
-			ExecutionGate m_copyGate;
-			MemoryBlock<ushort> m_accumulatedPixels;
-			Ref<Buffer> m_copyBuffer;
+			Rendering::Structs::ExecutionGate m_copyGate;
+			Utilities::MemoryBlock<uint16_t> m_accumulatedPixels;
+			Utilities::Ref<Rendering::Objects::Buffer> m_copyBuffer;
 			uint32_t m_captureCounter = 0u;
 			uint32_t m_captureFrameCount = 0u;
-			uint2 m_captureResolution = PK_UINT2_ZERO;
-			uint2 m_currentResolution = PK_UINT2_ZERO;
+			Math::uint2 m_captureResolution = Math::PK_UINT2_ZERO;
+			Math::uint2 m_currentResolution = Math::PK_UINT2_ZERO;
 	};
 }

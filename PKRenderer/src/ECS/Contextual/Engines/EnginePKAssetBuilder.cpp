@@ -4,6 +4,8 @@
 
 namespace PK::ECS::Engines
 {
+    using namespace Core;
+
     EnginePKAssetBuilder::EnginePKAssetBuilder(const ApplicationArguments& arguments) : m_executablePath(L"")
     {
         if (arguments.count < 4)

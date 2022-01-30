@@ -5,19 +5,16 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
-    using namespace PK::Utilities;
-    using namespace Structs;
-
-    class VulkanSamplerCache : NoCopy
+    class VulkanSamplerCache : PK::Utilities::NoCopy
     {
         public:
             VulkanSamplerCache(VkDevice device) : m_device(device) {}
             ~VulkanSamplerCache();
 
-            VkSampler GetSampler(const SamplerDescriptor& descriptor);
+            VkSampler GetSampler(const Structs::SamplerDescriptor& descriptor);
 
         private:
             const VkDevice m_device;
-            std::map<SamplerDescriptor, VulkanSampler*> m_samplers;
+            std::map<Structs::SamplerDescriptor, VulkanSampler*> m_samplers;
     };
 }

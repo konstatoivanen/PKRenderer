@@ -6,20 +6,16 @@
 
 namespace PK::Rendering::Passes
 {
-    using namespace PK::Utilities;
-    using namespace PK::Rendering::Objects;
-
-    class PassHistogram : public NoCopy
+    class PassHistogram : public Utilities::NoCopy
     {
         public:
-            PassHistogram(AssetDatabase* assetDatabase);
-            void Execute(Texture* target, MemoryAccessFlags nextAccess);
+            PassHistogram(Core::Services::AssetDatabase* assetDatabase);
+            void Execute(Objects::Texture* target, Structs::MemoryAccessFlags nextAccess);
 
         private:
-            Shader* m_computeHistogram = nullptr;
-            Ref<Buffer> m_histogram;
-
-            uint m_passHistogramBins = 0u;
-            uint m_passHistogramAvg = 0u;
+            Objects::Shader* m_computeHistogram = nullptr;
+            Utilities::Ref<Objects::Buffer> m_histogram;
+            uint32_t m_passHistogramBins = 0u;
+            uint32_t m_passHistogramAvg = 0u;
     };
 }

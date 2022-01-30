@@ -5,6 +5,8 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
+    using namespace Structs;
+
     static uint32_t GetArraySize(const DescriptorSetKey& key)
     {
         uint32_t variableSize = 0u;

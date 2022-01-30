@@ -6,21 +6,16 @@
 
 namespace PK::ECS::Engines
 {
-	using namespace PK::ECS::Tokens;
-	using namespace PK::Math;
-	using namespace PK::Rendering::Structs;
-	using namespace PK::Core::Services;
-
-	class EngineCull : public IService, 
-					   public IStep<TokenCullFrustum>,
-					   public IStep<TokenCullCubeFaces>,
-					   public IStep<TokenCullCascades>
+	class EngineCull : public Core::Services::IService, 
+					   public Core::Services::IStep<Tokens::TokenCullFrustum>,
+					   public Core::Services::IStep<Tokens::TokenCullCubeFaces>,
+					   public Core::Services::IStep<Tokens::TokenCullCascades>
 	{
 		public:
 			EngineCull(EntityDatabase* entityDb);
-			void Step(TokenCullFrustum* token) override final;
-			void Step(TokenCullCubeFaces* token) override final;
-			void Step(TokenCullCascades* token) override final;
+			void Step(Tokens::TokenCullFrustum* token) override final;
+			void Step(Tokens::TokenCullCubeFaces* token) override final;
+			void Step(Tokens::TokenCullCascades* token) override final;
 
 		private:
 			EntityDatabase* m_entityDb = nullptr;

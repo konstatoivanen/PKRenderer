@@ -7,8 +7,6 @@
 
 namespace PK::Core::Services
 {
-    using namespace Math;
-
     // @TODO Refactor this to be decoupled from glfw
     enum class KeyCode
     {
@@ -151,12 +149,12 @@ namespace PK::Core::Services
             bool GetKeyUp(KeyCode key);
             bool GetKey(KeyCode key);
     
-            float2 GetAxis2D(KeyCode front, KeyCode back, KeyCode right, KeyCode left);
-            float3 GetAxis3D(KeyCode up, KeyCode down, KeyCode front, KeyCode back, KeyCode right, KeyCode left);
-            inline float2 GetMouseDelta() const { return m_mouseDelta; }
-            inline float2 GetMousePosition() const { return m_mousePosition; }
-            inline float2 GetMouseNormalizedPosition() const { return m_mousePositionNormalized; }
-            inline float2 GetMouseScroll() const { return m_mouseScroll; }
+            Math::float2 GetAxis2D(KeyCode front, KeyCode back, KeyCode right, KeyCode left);
+            Math::float3 GetAxis3D(KeyCode up, KeyCode down, KeyCode front, KeyCode back, KeyCode right, KeyCode left);
+            inline Math::float2 GetMouseDelta() const { return m_mouseDelta; }
+            inline Math::float2 GetMousePosition() const { return m_mousePosition; }
+            inline Math::float2 GetMouseNormalizedPosition() const { return m_mousePositionNormalized; }
+            inline Math::float2 GetMouseScroll() const { return m_mouseScroll; }
             inline float GetMouseDeltaX() const { return m_mouseDelta.x; }
             inline float GetMouseDeltaY() const { return m_mouseDelta.y; }
             inline float GetMouseX() const { return m_mousePosition.x; }
@@ -179,11 +177,11 @@ namespace PK::Core::Services
             Sequencer* m_sequencer;
             int16_t m_inputActionsCurrent[(int)KeyCode::COUNT]{};
             int16_t m_inputActionsPrevious[(int)KeyCode::COUNT]{};
-            float2 m_mousePositionNormalized = PK_FLOAT2_ZERO;
-            float2 m_mousePosition = PK_FLOAT2_ZERO;
-            float2 m_mousePrev = PK_FLOAT2_ZERO;
-            float2 m_mouseDelta = PK_FLOAT2_ZERO;
-            float2 m_mouseScrollRaw = PK_FLOAT2_ZERO;
-            float2 m_mouseScroll = PK_FLOAT2_ZERO;
+            Math::float2 m_mousePositionNormalized = Math::PK_FLOAT2_ZERO;
+            Math::float2 m_mousePosition = Math::PK_FLOAT2_ZERO;
+            Math::float2 m_mousePrev = Math::PK_FLOAT2_ZERO;
+            Math::float2 m_mouseDelta = Math::PK_FLOAT2_ZERO;
+            Math::float2 m_mouseScrollRaw = Math::PK_FLOAT2_ZERO;
+            Math::float2 m_mouseScroll = Math::PK_FLOAT2_ZERO;
     };
 }

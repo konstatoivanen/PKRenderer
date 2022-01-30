@@ -15,24 +15,24 @@
 
 namespace PK::Rendering
 {
-    using namespace PK::Core;
-    using namespace PK::Core::Services;
-    using namespace PK::Rendering::Objects;
-
-    class RenderPipeline : public IService,
-                           public IStep<PK::ECS::Tokens::ViewProjectionUpdateToken>,
-                           public IStep<PK::ECS::Tokens::TimeToken>,
-                           public IConditionalStep<Window>,
-                           public IStep<AssetImportToken<ApplicationConfig>>
+    class RenderPipeline : public Core::Services::IService,
+                           public Core::Services::IStep<PK::ECS::Tokens::ViewProjectionUpdateToken>,
+                           public Core::Services::IStep<PK::ECS::Tokens::TimeToken>,
+                           public Core::Services::IConditionalStep<Core::Window>,
+                           public Core::Services::IStep<Core::Services::AssetImportToken<Core::ApplicationConfig>>
     {
         public:
-            RenderPipeline(AssetDatabase* assetDatabase, EntityDatabase* entityDb, Sequencer* sequencer, const ApplicationConfig* config);
+            RenderPipeline(Core::Services::AssetDatabase* assetDatabase, 
+                           ECS::EntityDatabase* entityDb, 
+                           Core::Services::Sequencer* sequencer, 
+                           const Core::ApplicationConfig* config);
+
             ~RenderPipeline();
 
             void Step(PK::ECS::Tokens::ViewProjectionUpdateToken* token) override final;
             void Step(PK::ECS::Tokens::TimeToken* token) override final;
-            void Step(Window* window, int condition) override final;
-            void Step(AssetImportToken<ApplicationConfig>* token) override final;
+            void Step(Core::Window* window, int condition) override final;
+            void Step(Core::Services::AssetImportToken<Core::ApplicationConfig>* token) override final;
 
         private:
             Passes::PassPostEffects m_passPostEffects;
@@ -42,12 +42,12 @@ namespace PK::Rendering
             Passes::PassVolumeFog m_passVolumeFog;
             Batcher m_batcher;
 
-            Ref<ConstantBuffer> m_constantsPerFrame;
-            Ref<RenderTexture> m_RenderTarget;
-            Shader* m_OEMBackgroundShader;
+            Utilities::Ref<Objects::ConstantBuffer> m_constantsPerFrame;
+            Utilities::Ref<Objects::RenderTexture> m_RenderTarget;
+            Objects::Shader* m_OEMBackgroundShader;
             ECS::Tokens::VisibilityList m_visibilityList;
 
-            float4x4 m_viewProjectionMatrix;
+            Math::float4x4 m_viewProjectionMatrix;
             float m_znear;
             float m_zfar;
     };

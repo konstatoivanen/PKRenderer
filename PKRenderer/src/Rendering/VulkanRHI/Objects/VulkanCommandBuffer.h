@@ -8,9 +8,10 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    using namespace PK::Rendering::VulkanRHI;
+    // Forgive me for this
+    using namespace PK::Math;
     using namespace PK::Rendering::Objects;
-    using namespace PK::Utilities;
+    using namespace PK::Rendering::Structs;
 
     struct VulkanCommandBuffer : public CommandBuffer
     {
@@ -19,8 +20,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
         VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         uint64_t invocationIndex = 0;
-        VulkanRenderState* renderState = nullptr;
-        Ref<VulkanFence> fence = nullptr;
+        Objects::VulkanRenderState* renderState = nullptr;
+        PK::Utilities::Ref<VulkanFence> fence = nullptr;
         bool isInActiveRenderPass = false;
 
         inline bool IsActive() const { return commandBuffer != VK_NULL_HANDLE; }
@@ -57,8 +58,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         void DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) override final;
         void Dispatch(uint3 groupCount) override final;
         
-        void Blit(Texture* src, Window* dst, FilterMode filter) override final;
-        void Blit(Window* src, Buffer* dst) override final;
+        void Blit(Texture* src, Core::Window* dst, FilterMode filter) override final;
+        void Blit(Core::Window* src, Buffer* dst) override final;
         void Blit(Texture* src, Texture* dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter) override final;
         void Blit(const VulkanRenderTarget& src, const VulkanRenderTarget& dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter, bool flipVertical = false);
 

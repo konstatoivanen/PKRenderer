@@ -6,10 +6,6 @@
 
 namespace PK::Rendering::Structs
 {
-    using namespace PK::Math;
-    using namespace PK::Utilities;
-    using namespace PK::Core::Services;
-
     struct ConstantVariable
     {
         uint32_t NameHashId = 0;
@@ -20,7 +16,7 @@ namespace PK::Rendering::Structs
         ConstantVariable() = default;
 
         ConstantVariable(const std::string & name, uint16_t size, uint16_t offset, uint32_t stageFlags) : 
-            NameHashId(StringHashID::StringToID(name)), 
+            NameHashId(Core::Services::StringHashID::StringToID(name)), 
             Size(size),
             Offset(offset),
             StageFlags(stageFlags)
@@ -59,7 +55,7 @@ namespace PK::Rendering::Structs
         ResourceElement() = default;
 
         ResourceElement(ResourceType type, const std::string& name, uint16_t count) :
-            NameHashId(StringHashID::StringToID(name)), 
+            NameHashId(Core::Services::StringHashID::StringToID(name)),
             Type(type), 
             Count(count)
         {
@@ -96,15 +92,14 @@ namespace PK::Rendering::Structs
         byte Count = 1;
         byte Location = 0;
 
-        ushort Offset = 0;
-        ushort AlignedOffset = 0;
-    
-        ushort Size() const { return ElementConvert::Size(Type) * Count; }
+        uint16_t Offset = 0;
+        uint16_t AlignedOffset = 0;
+        uint16_t Size() const { return ElementConvert::Size(Type) * Count; }
 
         BufferElement() = default;
 
         BufferElement(ElementType type, const std::string& name, byte count = 1, byte location = 0) : 
-            NameHashId(StringHashID::StringToID(name)), 
+            NameHashId(Core::Services::StringHashID::StringToID(name)),
             Type(type), 
             Count(count), 
             Offset(0), 
@@ -160,10 +155,10 @@ namespace PK::Rendering::Structs
                 CalculateOffsetsAndStride();
             }
         
-            inline uint GetStride(BufferUsage usage) const { return (usage & BufferUsage::AlignedTypes) != 0 ? m_alignedStride : m_stride; }
-            constexpr inline uint GetStride() const { return m_stride; }
-            constexpr inline uint GetAlignedStride() const { return m_alignedStride; }
-            constexpr inline uint GetPaddedStride() const { return m_paddedStride; }
+            inline uint32_t GetStride(BufferUsage usage) const { return (usage & BufferUsage::AlignedTypes) != 0 ? m_alignedStride : m_stride; }
+            constexpr inline uint32_t GetStride() const { return m_stride; }
+            constexpr inline uint32_t GetAlignedStride() const { return m_alignedStride; }
+            constexpr inline uint32_t GetPaddedStride() const { return m_paddedStride; }
         
             const BufferElement* TryGetElement(uint32_t nameHashId, uint32_t* index) const;
     
@@ -171,8 +166,8 @@ namespace PK::Rendering::Structs
             void CalculateOffsetsAndStride();
 
             std::map<uint32_t, uint32_t> m_elementMap;
-            uint m_stride = 0;
-            uint m_alignedStride = 0;
-            uint m_paddedStride = 0;
+            uint32_t m_stride = 0;
+            uint32_t m_alignedStride = 0;
+            uint32_t m_paddedStride = 0;
     };
 }

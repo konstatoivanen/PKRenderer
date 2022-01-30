@@ -8,6 +8,9 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
+    using namespace Utilities;
+    using namespace Core;
+
     void VulkanCommandBuffer::SetRenderTarget(const uint3& resolution)
     {
         VulkanRenderTarget dummy(VK_NULL_HANDLE,
@@ -61,7 +64,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     }
 
 
-    void VulkanCommandBuffer::SetShader(const Shader* shader, int variantIndex)
+    void VulkanCommandBuffer::SetShader(const Shader* shader, int32_t variantIndex)
     {
         if (variantIndex == -1)
         {
@@ -84,7 +87,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         renderState->SetShader(pVariant);
     }
 
-    void VulkanCommandBuffer::SetVertexBuffers(const Buffer** buffers, uint count)
+    void VulkanCommandBuffer::SetVertexBuffers(const Buffer** buffers, uint32_t count)
     {
         auto pHandles = PK_STACK_ALLOC(const VulkanBindHandle*, count);
 

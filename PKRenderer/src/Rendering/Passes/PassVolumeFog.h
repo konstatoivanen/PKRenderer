@@ -7,24 +7,21 @@
 
 namespace PK::Rendering::Passes
 {
-    using namespace PK::Core;
-    using namespace PK::Rendering::Objects;
-
-    class PassVolumeFog : public PK::Core::NoCopy
+    class PassVolumeFog : public PK::Utilities::NoCopy
     {
         public:
-            PassVolumeFog(AssetDatabase* assetDatabase, const ApplicationConfig* config);
-            void Render(CommandBuffer* cmd, RenderTexture* destination, const uint3& resolution);
-            void OnUpdateParameters(const ApplicationConfig* config);
+            PassVolumeFog(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
+            void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* destination, const Math::uint3& resolution);
+            void OnUpdateParameters(const Core::ApplicationConfig* config);
 
         private:
-            Ref<ConstantBuffer> m_volumeResources;
-            Ref<Buffer> m_depthTiles;
-            Ref<Texture> m_volumeInject;
-            Ref<Texture> m_volumeScatter;
-            Shader* m_computeInject = nullptr;
-            Shader* m_computeScatter = nullptr;
-            Shader* m_computeDepthTiles = nullptr;
-            Shader* m_shaderComposite = nullptr;
+            Utilities::Ref<Objects::ConstantBuffer> m_volumeResources;
+            Utilities::Ref<Objects::Buffer> m_depthTiles;
+            Utilities::Ref<Objects::Texture> m_volumeInject;
+            Utilities::Ref<Objects::Texture> m_volumeScatter;
+            Objects::Shader* m_computeInject = nullptr;
+            Objects::Shader* m_computeScatter = nullptr;
+            Objects::Shader* m_computeDepthTiles = nullptr;
+            Objects::Shader* m_shaderComposite = nullptr;
     };
 }

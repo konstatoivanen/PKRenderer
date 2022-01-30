@@ -9,7 +9,11 @@
 
 namespace PK::ECS::Engines
 {
-    using namespace PK::Math;
+    using namespace Math;
+    using namespace Core;
+    using namespace Core::Services;
+    using namespace Rendering::Objects;
+    using namespace Rendering::Structs;
 
     const std::unordered_map<std::string, CommandArgument> EngineCommandInput::ArgumentMap =
     {

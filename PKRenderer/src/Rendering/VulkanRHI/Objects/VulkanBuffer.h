@@ -7,14 +7,10 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    using namespace PK::Rendering::Objects;
-    using namespace PK::Utilities;
-    using namespace Systems;
-
     class VulkanBuffer : public Buffer
     {
         public:
-            VulkanBuffer(const BufferLayout& layout, const void* data, size_t count, BufferUsage usage);
+            VulkanBuffer(const Structs::BufferLayout& layout, const void* data, size_t count, Structs::BufferUsage usage);
             ~VulkanBuffer();
 
             void SetData(const void* data, size_t offset, size_t size) override final;
@@ -26,24 +22,24 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             size_t GetCapacity() const override final { return m_rawBuffer->capacity; }
             const VulkanRawBuffer* GetRaw() const { return m_rawBuffer; }
-            const VulkanBindHandle* GetBindHandle(const IndexRange& range);
+            const VulkanBindHandle* GetBindHandle(const Structs::IndexRange& range);
             inline const VulkanBindHandle* GetBindHandle() const
             {
                 // Default range is always the first one
                 return m_bindHandles.GetValueAt(0);
             }
 
-            void MakeRangeResident(const IndexRange& range) override final;
-            void MakeRangeNonResident(const IndexRange& range)  override final;
+            void MakeRangeResident(const Structs::IndexRange& range) override final;
+            void MakeRangeNonResident(const Structs::IndexRange& range)  override final;
 
             bool Validate(size_t count) override final;
 
         private:
             struct RangeHash
             {
-                size_t operator()(const IndexRange& k) const noexcept
+                size_t operator()(const Structs::IndexRange& k) const noexcept
                 {
-                    return HashHelpers::FNV1AHash(&k, sizeof(IndexRange));
+                    return Utilities::HashHelpers::FNV1AHash(&k, sizeof(Structs::IndexRange));
                 }
             };
 
@@ -52,8 +48,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             const VulkanDriver* m_driver = nullptr;
             VulkanRawBuffer* m_rawBuffer = nullptr;
-            VulkanStagingBuffer* m_mappedBuffer = nullptr;
+            Systems::VulkanStagingBuffer* m_mappedBuffer = nullptr;
             VulkanSparsePageTable* m_pageTable = nullptr;
-            PointerMap<IndexRange, VulkanBindHandle, RangeHash> m_bindHandles;
+            Utilities::PointerMap<Structs::IndexRange, VulkanBindHandle, RangeHash> m_bindHandles;
     };
 }

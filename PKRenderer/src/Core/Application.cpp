@@ -25,6 +25,8 @@ namespace PK::Core
 {
     using namespace Utilities;
     using namespace Rendering;
+    using namespace Rendering::Structs;
+    using namespace Rendering::Objects;
     using namespace Services;
 
     Application* Application::s_Instance = nullptr;
@@ -139,7 +141,7 @@ namespace PK::Core
 
     Application::~Application()
     {
-        GetService<ECS::Sequencer>()->Release();
+        GetService<Services::Sequencer>()->Release();
         GetService<AssetDatabase>()->Unload();
         m_services->Clear();
         m_window = nullptr;
@@ -148,7 +150,7 @@ namespace PK::Core
 
     void Application::Run()
     {
-        auto sequencer = GetService<ECS::Sequencer>();
+        auto sequencer = GetService<Services::Sequencer>();
 
         while (m_window->IsAlive() && m_Running)
         {

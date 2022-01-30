@@ -7,10 +7,6 @@
 
 namespace PK::ECS
 {
-    using namespace PK::Utilities;
-    using namespace PK::Core;
-    using namespace PK::Core::Services;
-
     enum class ENTITY_GROUPS
     {
         INVALID = 0,
@@ -66,7 +62,7 @@ namespace PK::ECS
     struct ImplementerContainer
     {
         size_t count = 0;
-        std::vector<Scope<ImplementerBucket>> buckets;
+        std::vector<Utilities::Scope<ImplementerBucket>> buckets;
     };
 
     struct EntityViewsCollection
@@ -87,7 +83,7 @@ namespace PK::ECS
     };
 
 
-    class EntityDatabase : public IService
+    class EntityDatabase : public Core::Services::IService
     {
         public:
             constexpr int ReserveEntityId() { return ++m_idCounter; }
@@ -111,7 +107,7 @@ namespace PK::ECS
                     auto newBucket = new ImplementerBucket();
                     newBucket->data = new T[elementsPerBucket];
                     newBucket->destructor = [](void* v) { delete[] reinterpret_cast<T*>(v); };
-                    container.buckets.push_back(Scope<ImplementerBucket>(newBucket));
+                    container.buckets.push_back(Utilities::Scope<ImplementerBucket>(newBucket));
                 }
 
                 return reinterpret_cast<T*>(container.buckets.at(bucketIndex).get()->data) + subIndex;
@@ -142,7 +138,7 @@ namespace PK::ECS
             }
 
             template<typename TView>
-            const BufferView<TView> Query(const uint32_t group)
+            const Utilities::BufferView<TView> Query(const uint32_t group)
             {
                 static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
                 PK_THROW_ASSERT(group, "Trying to acquire resources for an invalid egid!");

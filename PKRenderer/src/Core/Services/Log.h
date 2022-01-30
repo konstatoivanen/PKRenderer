@@ -5,8 +5,6 @@
 
 namespace PK::Core::Services::Debug
 {
-    using namespace PK::Utilities;
-
     constexpr unsigned short ComposeConsoleColor(unsigned short fore, unsigned short back)
     {
         return ((unsigned)back << 4) | (unsigned)fore;
@@ -47,7 +45,7 @@ namespace PK::Core::Services::Debug
         PK_LOG_LVL_ALL_FLAGS = 0xFF,
     } PKLogSeverityFlags;
 
-    class Logger : public IService, public ISingleton<Logger>
+    class Logger : public IService, public PK::Utilities::ISingleton<Logger>
     {
         public:
             Logger(uint32_t filterFlags) : m_filterFlags(filterFlags) {}

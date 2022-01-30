@@ -7,13 +7,10 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
-    using namespace PK::Math;
-    using namespace PK::Utilities;
-
     struct DescriptorSetLayoutKey
     {
-        uint16_t counts[PK_MAX_DESCRIPTORS_PER_SET]{};
-        VkDescriptorType types[PK_MAX_DESCRIPTORS_PER_SET]{};
+        uint16_t counts[Structs::PK_MAX_DESCRIPTORS_PER_SET]{};
+        VkDescriptorType types[Structs::PK_MAX_DESCRIPTORS_PER_SET]{};
         VkShaderStageFlags stageFlags = 0u;
 
         inline bool operator < (const DescriptorSetLayoutKey& r) const noexcept
@@ -24,8 +21,8 @@ namespace PK::Rendering::VulkanRHI::Systems
 
     struct PipelineLayoutKey
     {
-        VkDescriptorSetLayout setlayouts[PK_MAX_DESCRIPTOR_SETS]{};
-        VkPushConstantRange pushConstants[(int)ShaderStage::MaxCount]{};
+        VkDescriptorSetLayout setlayouts[Structs::PK_MAX_DESCRIPTOR_SETS]{};
+        VkPushConstantRange pushConstants[(int)Structs::ShaderStage::MaxCount]{};
 
         inline bool operator < (const PipelineLayoutKey& r) const noexcept
         {
@@ -33,7 +30,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         }
     };
 
-    class VulkanLayoutCache : public NoCopy
+    class VulkanLayoutCache : public PK::Utilities::NoCopy
     {
         public:
             VulkanLayoutCache(VkDevice device) : m_device(device) {}
@@ -43,7 +40,7 @@ namespace PK::Rendering::VulkanRHI::Systems
 
         private:
             VkDevice m_device;
-            std::map<DescriptorSetLayoutKey, Scope<VulkanDescriptorSetLayout>> m_setlayouts;
-            std::map<PipelineLayoutKey, Scope<VulkanPipelineLayout>> m_pipelineLayouts;
+            std::map<DescriptorSetLayoutKey, PK::Utilities::Scope<VulkanDescriptorSetLayout>> m_setlayouts;
+            std::map<PipelineLayoutKey, PK::Utilities::Scope<VulkanPipelineLayout>> m_pipelineLayouts;
     };
 }

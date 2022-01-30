@@ -4,17 +4,14 @@
 
 namespace PK::ECS::Components
 {
-    using namespace PK::Math;
-    using namespace PK::Rendering::Structs;
-
     struct Light
     {
-        color color = PK_COLOR_WHITE;
+        PK::Math::color color = PK::Math::PK_COLOR_WHITE;
         float radius = 1.0f;
         float angle = 45.0f;
         float shadowBlur = 0.1f;
-        Cookie cookie = Cookie::Circle0;
-        LightType type = LightType::Point;
+        PK::Rendering::Structs::Cookie cookie = PK::Rendering::Structs::Cookie::Circle0;
+        PK::Rendering::Structs::LightType type = PK::Rendering::Structs::LightType::Point;
         virtual ~Light() = default;
     };
 

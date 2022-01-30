@@ -4,6 +4,8 @@
 
 namespace PK::Rendering::VulkanRHI
 {
+    using namespace Structs;
+
     VulkanBufferCreateInfo::VulkanBufferCreateInfo(BufferUsage usage, size_t size)
     {
         buffer.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

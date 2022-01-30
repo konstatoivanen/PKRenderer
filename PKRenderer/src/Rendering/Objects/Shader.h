@@ -7,10 +7,7 @@
 
 namespace PK::Rendering::Objects
 {
-    using namespace PK::Core;
-    using namespace PK::Rendering::Structs;
-
-    class ShaderVariantMap : public NoCopy
+    class ShaderVariantMap : public Utilities::NoCopy
     {
         public:
             constexpr static const int MAX_DIRECTIVES = 16;
@@ -29,12 +26,12 @@ namespace PK::Rendering::Objects
             {
                 const ShaderVariantMap* map;
                 uint32_t keywords[MAX_DIRECTIVES]{};
-                void SetKeywordsFrom(const PropertyBlock& block);
+                void SetKeywordsFrom(const Utilities::PropertyBlock& block);
                 inline uint32_t GetIndex() const { return map->GetIndex(keywords, map->directivecount); }
             };
     };
 
-    class ShaderVariant : public NoCopy, public NativeInterface<ShaderVariant>
+    class ShaderVariant : public Utilities::NoCopy, public Utilities::NativeInterface<ShaderVariant>
     {
         friend class Shader;
 
@@ -42,29 +39,29 @@ namespace PK::Rendering::Objects
             virtual ~ShaderVariant() = default;
             virtual void Dispose() = 0;
 
-            constexpr const BufferLayout& GetVertexLayout() const { return m_vertexLayout; }
-            constexpr const ConstantBufferLayout& GetConstantLayout() const { return m_constantLayout; }
-            constexpr const ResourceLayout& GetResourceLayout(uint32_t set) const { return m_resourceLayouts[set]; }
-            constexpr const ShaderType GetType() const { return m_type; }
+            constexpr const Structs::BufferLayout& GetVertexLayout() const { return m_vertexLayout; }
+            constexpr const Structs::ConstantBufferLayout& GetConstantLayout() const { return m_constantLayout; }
+            constexpr const Structs::ResourceLayout& GetResourceLayout(uint32_t set) const { return m_resourceLayouts[set]; }
+            constexpr const Structs::ShaderType GetType() const { return m_type; }
             constexpr const uint32_t GetStageFlags() const { return m_stageFlags; }
 
             void ListProperties();
 
         protected:
-            BufferLayout m_vertexLayout;
-            ConstantBufferLayout m_constantLayout;
-            ResourceLayout m_resourceLayouts[PK_MAX_DESCRIPTOR_SETS];
-            ShaderType m_type = ShaderType::Graphics;
+            Structs::BufferLayout m_vertexLayout;
+            Structs::ConstantBufferLayout m_constantLayout;
+            Structs::ResourceLayout m_resourceLayouts[Structs::PK_MAX_DESCRIPTOR_SETS];
+            Structs::ShaderType m_type = Structs::ShaderType::Graphics;
             uint32_t m_stageFlags = 0u;
     };
 
-    class Shader : public Asset, public IAssetImportSimple
+    class Shader : public Core::Services::Asset, public Core::Services::IAssetImportSimple
     {
-        friend Ref<Shader> AssetImporters::Create();
+        friend Utilities::Ref<Shader> Core::Services::AssetImporters::Create();
 
         public:
-            constexpr ShaderType GetType() const { return m_variants.at(0)->GetType(); }
-            inline const FixedFunctionShaderAttributes& GetFixedFunctionAttributes() const { return m_attributes; }
+            constexpr Structs::ShaderType GetType() const { return m_variants.at(0)->GetType(); }
+            inline const Structs::FixedFunctionShaderAttributes& GetFixedFunctionAttributes() const { return m_attributes; }
             inline uint32_t GetVariantIndex(const uint32_t* keywords, uint32_t count) const { return m_variantMap.GetIndex(keywords, count); }
             inline uint32_t GetVariantIndex(uint32_t keyword) const { return m_variantMap.GetIndex(&keyword, 1); }
             inline uint32_t GetVariantIndex(const std::initializer_list<uint32_t>& keywords) const { return GetVariantIndex(keywords.begin(), (uint32_t)(keywords.end() - keywords.begin())); }
@@ -74,7 +71,7 @@ namespace PK::Rendering::Objects
             inline bool SupportsKeyword(const uint32_t hashId) const { return m_variantMap.SupportsKeyword(hashId); }
             inline bool SupportsKeywords(const uint32_t* hashIds, const uint32_t count) const { return m_variantMap.SupportsKeywords(hashIds, count); }
             inline bool SupportsMaterials() const { return m_materialPropertyLayout.size() > 0; }
-            inline const BufferLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
+            inline const Structs::BufferLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
 
             void ListVariants();
             void ListProperties(uint32_t variantIndex);
@@ -82,9 +79,9 @@ namespace PK::Rendering::Objects
             void Import(const char* filepath, void* pParams) override final;
 
         protected:
-            std::vector<Ref<ShaderVariant>> m_variants;
+            std::vector<Utilities::Ref<ShaderVariant>> m_variants;
             ShaderVariantMap m_variantMap;
-            FixedFunctionShaderAttributes m_attributes;
-            BufferLayout m_materialPropertyLayout;
+            Structs::FixedFunctionShaderAttributes m_attributes;
+            Structs::BufferLayout m_materialPropertyLayout;
     };
 }

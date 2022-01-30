@@ -4,36 +4,34 @@
 
 namespace PK::Rendering::VulkanRHI::EnumConvert
 {
-    using namespace PK::Rendering::Structs;
-
-    VkFormat GetFormat(ElementType format);
-    ElementType GetElementType(VkFormat format);
-    VkFormat GetFormat(TextureFormat format);
-    VkIndexType GetIndexType(ElementType format);
-    TextureFormat GetTextureFormat(VkFormat format);
+    VkFormat GetFormat(Rendering::Structs::ElementType format);
+    Rendering::Structs::ElementType GetElementType(VkFormat format);
+    VkFormat GetFormat(Rendering::Structs::TextureFormat format);
+    VkIndexType GetIndexType(Rendering::Structs::ElementType format);
+    Rendering::Structs::TextureFormat GetTextureFormat(VkFormat format);
     bool IsDepthFormat(VkFormat format);
 
     VkComponentMapping GetSwizzle(VkFormat format);
-    VkImageViewType GetViewType(SamplerType samplerType);
-    VkImageLayout GetImageLayout(TextureUsage usage, bool useOptimized = false);
-    VkAttachmentLoadOp GetLoadOp(LoadOp loadOp);
-    VkAttachmentStoreOp GetStoreOp(StoreOp storeOp);
-    VkCompareOp GetCompareOp(Comparison comparison);
-    VkBorderColor GetBorderColor(BorderColor color);
-    VkSamplerAddressMode GetSamplerAddressMode(WrapMode wrap);
-    VkFilter GetFilterMode(FilterMode filter);
-    VkDescriptorType GetDescriptorType(ResourceType type);
-    ResourceType GetResourceType(VkDescriptorType type, uint32_t count);
-    VkShaderStageFlagBits GetShaderStage(ShaderStage stage);
-    VkPipelineBindPoint GetPipelineBindPoint(ShaderType type);
+    VkImageViewType GetViewType(Rendering::Structs::SamplerType samplerType);
+    VkImageLayout GetImageLayout(Rendering::Structs::TextureUsage usage, bool useOptimized = false);
+    VkAttachmentLoadOp GetLoadOp(Rendering::Structs::LoadOp loadOp);
+    VkAttachmentStoreOp GetStoreOp(Rendering::Structs::StoreOp storeOp);
+    VkCompareOp GetCompareOp(Rendering::Structs::Comparison comparison);
+    VkBorderColor GetBorderColor(Rendering::Structs::BorderColor color);
+    VkSamplerAddressMode GetSamplerAddressMode(Rendering::Structs::WrapMode wrap);
+    VkFilter GetFilterMode(Rendering::Structs::FilterMode filter);
+    VkDescriptorType GetDescriptorType(Rendering::Structs::ResourceType type);
+    Rendering::Structs::ResourceType GetResourceType(VkDescriptorType type, uint32_t count);
+    VkShaderStageFlagBits GetShaderStage(Rendering::Structs::ShaderStage stage);
+    VkPipelineBindPoint GetPipelineBindPoint(Rendering::Structs::ShaderType type);
     VkSampleCountFlagBits GetSampleCountFlags(uint32_t samples);
-    VkVertexInputRate GetInputRate(InputRate inputRate);
+    VkVertexInputRate GetInputRate(Rendering::Structs::InputRate inputRate);
     VkShaderStageFlagBits GetShaderStageFlags(uint32_t pkStageFlags);
-    VkPolygonMode GetPolygonMode(PolygonMode mode);
-    VkBlendOp GetBlendOp(BlendOp op);
-    VkBlendFactor GetBlendFactor(BlendFactor factor, VkBlendFactor fallback);
-    VkCullModeFlagBits GetCullMode(CullMode op);
-    VkFrontFace GetFrontFace(FrontFace face);
-    VkPipelineStageFlagBits GetPipelineStageFlags(MemoryAccessFlags flags);
-    VkAccessFlagBits GetAccessFlags(MemoryAccessFlags flags);
+    VkPolygonMode GetPolygonMode(Rendering::Structs::PolygonMode mode);
+    VkBlendOp GetBlendOp(Rendering::Structs::BlendOp op);
+    VkBlendFactor GetBlendFactor(Rendering::Structs::BlendFactor factor, VkBlendFactor fallback);
+    VkCullModeFlagBits GetCullMode(Rendering::Structs::CullMode op);
+    VkFrontFace GetFrontFace(Rendering::Structs::FrontFace face);
+    VkPipelineStageFlagBits GetPipelineStageFlags(Rendering::Structs::MemoryAccessFlags flags);
+    VkAccessFlagBits GetAccessFlags(Rendering::Structs::MemoryAccessFlags flags);
 }

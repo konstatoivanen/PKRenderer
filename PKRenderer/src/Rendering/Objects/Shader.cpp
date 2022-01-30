@@ -6,9 +6,11 @@
 #include <PKAssets/PKAssetLoader.h>
 
 using namespace PK::Core;
+using namespace PK::Core::Services;
 using namespace PK::Utilities;
 using namespace PK::Rendering;
 using namespace PK::Rendering::Objects;
+using namespace PK::Rendering::Structs;
 using namespace PK::Rendering::VulkanRHI::Objects;
 
 namespace PK::Rendering::Objects

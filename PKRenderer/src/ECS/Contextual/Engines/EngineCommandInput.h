@@ -10,9 +10,6 @@
 
 namespace PK::ECS::Engines
 {
-	using namespace PK::Utilities;
-	using namespace PK::Rendering::Objects;
-
 	enum class CommandArgument : char
 	{
 		Query,
@@ -38,13 +35,18 @@ namespace PK::ECS::Engines
 	{
 	};
 
-	class EngineCommandInput : public IService, public IStep<Input>
+	class EngineCommandInput : public Core::Services::IService, public Core::Services::IStep<Core::Services::Input>
 	{
 		public:
 			const static std::unordered_map<std::string, CommandArgument> ArgumentMap;
 
-			EngineCommandInput(AssetDatabase* assetDatabase, Sequencer* sequencer, Time* time, EntityDatabase* entityDb, CommandConfig* commandBindings);
-			void Step(Input* input) override final;
+			EngineCommandInput(Core::Services::AssetDatabase* assetDatabase,
+							   Core::Services::Sequencer* sequencer, 
+							   Core::Services::Time* time, 
+							   EntityDatabase* entityDb, 
+							   Core::CommandConfig* commandBindings);
+
+			void Step(Core::Services::Input* input) override final;
 
 		private:
 			void ApplicationExit(const ConsoleCommand& arguments);
@@ -67,10 +69,10 @@ namespace PK::ECS::Engines
 			void ProcessCommand(const std::string& command);
 
 			std::map<std::vector<CommandArgument>, std::function<void(const ConsoleCommand&)>> m_commands;
-			CommandConfig* m_commandBindings = nullptr;
+			Core::CommandConfig* m_commandBindings = nullptr;
 			EntityDatabase* m_entityDb = nullptr;
-			AssetDatabase* m_assetDatabase = nullptr;
-			Sequencer* m_sequencer = nullptr;
-			Time* m_time = nullptr;
+			Core::Services::AssetDatabase* m_assetDatabase = nullptr;
+			Core::Services::Sequencer* m_sequencer = nullptr;
+			Core::Services::Time* m_time = nullptr;
 	};
 }

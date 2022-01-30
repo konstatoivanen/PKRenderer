@@ -4,7 +4,7 @@
 
 namespace PK::Utilities
 {
-    class PropertyBlock : public NoCopy
+    class PropertyBlock : public Utilities::NoCopy
     {
 		protected:
 			struct PropertyInfo

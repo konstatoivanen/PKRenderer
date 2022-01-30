@@ -6,9 +6,6 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    using namespace PK::Utilities;
-    using namespace PK::Rendering::Structs;
-
     class VulkanShader : public PK::Rendering::Objects::ShaderVariant, public IVulkanDisposable
     {
         public:
@@ -25,8 +22,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         private:
             const VkDevice m_device;
             uint32_t m_descriptorSetCount;
-            VulkanShaderModule* m_modules[(int)ShaderStage::MaxCount];
-            VulkanDescriptorSetLayout* m_descriptorSetLayouts[PK_MAX_DESCRIPTOR_SETS]{};
+            VulkanShaderModule* m_modules[(int)Structs::ShaderStage::MaxCount];
+            VulkanDescriptorSetLayout* m_descriptorSetLayouts[Structs::PK_MAX_DESCRIPTOR_SETS]{};
             VulkanPipelineLayout* m_pipelineLayout;
     };
 }

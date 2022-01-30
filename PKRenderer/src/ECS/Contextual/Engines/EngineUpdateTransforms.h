@@ -5,7 +5,7 @@
 
 namespace PK::ECS::Engines
 {
-	class EngineUpdateTransforms : public IService, public ISimpleStep
+	class EngineUpdateTransforms : public Core::Services::IService, public Core::Services::ISimpleStep
 	{
 		public:
 			EngineUpdateTransforms(EntityDatabase* entityDb);

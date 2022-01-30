@@ -4,8 +4,6 @@
 
 namespace PK::Rendering::Structs
 {
-    using namespace PK::Math;
-
     struct SamplerDescriptor
     {
         FilterMode filter = FilterMode::Point;
@@ -35,7 +33,7 @@ namespace PK::Rendering::Structs
         TextureFormat format = TextureFormat::RGBA8;
         SamplerType samplerType = SamplerType::Sampler2D;
         TextureUsage usage = TextureUsage::Default;
-        uint3 resolution = PK_UINT3_ONE;
+        Math::uint3 resolution = Math::PK_UINT3_ONE;
         uint8_t levels = 1;
         uint8_t samples = 1;
         uint16_t layers = 1;
@@ -48,7 +46,7 @@ namespace PK::Rendering::Structs
         TextureFormat depthFormat = TextureFormat::Depth24_Stencil8;
         SamplerType samplerType = SamplerType::Sampler2D;
         TextureUsage usage = TextureUsage::Default;
-        uint3 resolution = PK_UINT3_ONE;
+        Math::uint3 resolution = Math::PK_UINT3_ONE;
         uint8_t levels = 1;
         uint8_t samples = 1;
         uint16_t layers = 1;
@@ -57,18 +55,18 @@ namespace PK::Rendering::Structs
 
     struct TextureViewRange
     {
-        ushort level = 0u;
-        ushort layer = 0u;
-        ushort levels = 0u;
-        ushort layers = 0u;
+        uint16_t level = 0u;
+        uint16_t layer = 0u;
+        uint16_t levels = 0u;
+        uint16_t layers = 0u;
 
         TextureViewRange() {}
-        TextureViewRange(ushort level, ushort layer, ushort levels, ushort layers) : level(level), layer(layer), levels(levels), layers(layers) {}
+        TextureViewRange(uint16_t level, uint16_t layer, uint16_t levels, uint16_t layers) : level(level), layer(layer), levels(levels), layers(layers) {}
     };
 
     struct MultisamplingParameters
     {
-        uint rasterizationSamples = 1;
+        uint32_t rasterizationSamples = 1;
         bool sampleShadingEnable = false;
         bool alphaToCoverageEnable = false;
         bool alphaToOneEnable = false;

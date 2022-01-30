@@ -20,7 +20,7 @@ namespace PK::Rendering::Structs
             element->Offset = m_stride;
             m_stride += element->Size();
             
-            m_alignedStride = alignment * (uint)glm::ceil(m_alignedStride / (float)alignment);
+            m_alignedStride = alignment * (uint32_t)glm::ceil(m_alignedStride / (float)alignment);
 
             element->AlignedOffset = m_alignedStride;
             m_alignedStride += element->Size();
@@ -34,8 +34,8 @@ namespace PK::Rendering::Structs
         }
 
         // As per std140 a structure has a base alignment equal to the largest base alignment of any of its members, rounded up to a multiple of 16.
-        maxAlignment = 16 * (uint)glm::ceil(maxAlignment / 16.0f);
-        m_paddedStride = maxAlignment * (uint)glm::ceil(m_alignedStride / (float)maxAlignment);
+        maxAlignment = 16 * (uint32_t)glm::ceil(maxAlignment / 16.0f);
+        m_paddedStride = maxAlignment * (uint32_t)glm::ceil(m_alignedStride / (float)maxAlignment);
     }
     
     const BufferElement* BufferLayout::TryGetElement(uint32_t nameHashId, uint32_t* index) const

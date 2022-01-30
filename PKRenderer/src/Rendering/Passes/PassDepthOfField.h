@@ -7,10 +7,7 @@
 
 namespace PK::Rendering::Passes
 {
-    using namespace PK::Core;
-    using namespace PK::Rendering::Objects;
-
-    class PassDepthOfField : public PK::Core::NoCopy
+    class PassDepthOfField : public PK::Utilities::NoCopy
     {
         struct Constants
         {
@@ -22,19 +19,18 @@ namespace PK::Rendering::Passes
         };
 
         public:
-            PassDepthOfField(AssetDatabase* assetDatabase, const ApplicationConfig* config);
-            void Execute(RenderTexture* destination, MemoryAccessFlags lastAccess);
-            void OnUpdateParameters(const ApplicationConfig* config);
+            PassDepthOfField(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
+            void Execute(Objects::RenderTexture* destination, Structs::MemoryAccessFlags lastAccess);
+            void OnUpdateParameters(const Core::ApplicationConfig* config);
 
         private:
-            Shader* m_shaderBlur = nullptr;
-            Shader* m_shaderComposite = nullptr;
-            Shader* m_computeAutoFocus = nullptr;
-            Ref<Texture> m_renderTarget;
-            Ref<Buffer> m_autoFocusParams;
-            uint m_passPrefilter = 0u;
-            uint m_passDiskblur = 0u;
-
+            Objects::Shader* m_shaderBlur = nullptr;
+            Objects::Shader* m_shaderComposite = nullptr;
+            Objects::Shader* m_computeAutoFocus = nullptr;
+            Utilities::Ref<Objects::Texture> m_renderTarget;
+            Utilities::Ref<Objects::Buffer> m_autoFocusParams;
+            uint32_t m_passPrefilter = 0u;
+            uint32_t m_passDiskblur = 0u;
             Constants m_constants{};
     };
 }

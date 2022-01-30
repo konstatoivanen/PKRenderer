@@ -5,6 +5,7 @@
 
 using namespace PK::Utilities;
 using namespace PK::Rendering::VulkanRHI::Systems;
+using namespace PK::Rendering::Structs;
 
 template<>
 struct Vector::Comparer<VulkanStagingBuffer*>

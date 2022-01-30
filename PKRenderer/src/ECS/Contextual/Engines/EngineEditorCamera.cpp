@@ -8,7 +8,9 @@
 
 namespace PK::ECS::Engines
 {
-	using namespace PK::Math;
+	using namespace Math;
+	using namespace Core;
+	using namespace Core::Services;
 
 	EngineEditorCamera::EngineEditorCamera(Sequencer* sequencer, Time* time, const ApplicationConfig* config)
 	{

@@ -3,6 +3,9 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
+    using namespace Structs;
+    using namespace Utilities;
+
     VulkanDescriptorSetLayout* VulkanLayoutCache::GetSetLayout(const DescriptorSetLayoutKey& key)
     {
         auto iterator = m_setlayouts.find(key);

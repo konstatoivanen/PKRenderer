@@ -8,8 +8,6 @@
 
 namespace PK::Rendering::VulkanRHI
 {
-    using namespace Systems;
-
     class VulkanWindow : public PK::Core::Window
     {
         public:
@@ -18,7 +16,7 @@ namespace PK::Rendering::VulkanRHI
             VulkanWindow(VulkanDriver* driver, const PK::Core::WindowProperties& properties);
             ~VulkanWindow();
 
-            uint3 GetResolution() const override { return m_swapchain->GetResolution(); }
+            Math::uint3 GetResolution() const override { return m_swapchain->GetResolution(); }
             float GetAspectRatio() const override { return m_swapchain->GetAspectRatio(); }
             bool IsAlive() const override { return m_alive; }
             bool IsMinimized() const override { return m_minimized; }
@@ -31,7 +29,7 @@ namespace PK::Rendering::VulkanRHI
             inline void PollEvents() const override final { glfwPollEvents(); }
             void* GetNativeWindow() const override final { return m_window; }
 
-            uint4 GetRect() const override final { return m_swapchain->GetRect(); }
+            Math::uint4 GetRect() const override final { return m_swapchain->GetRect(); }
             constexpr VkExtent2D GetExtent() const { return m_swapchain->GetExtent(); }
             constexpr VkFormat GetNativeFormat() const { return m_swapchain->GetNativeFormat(); }
             const VulkanRenderTarget GetRenderTarget() const { return m_swapchain->GetRenderTarget(); }
@@ -40,7 +38,7 @@ namespace PK::Rendering::VulkanRHI
             const VulkanDriver* m_driver;
             VkSurfaceKHR m_surface;
             GLFWwindow* m_window;
-            Scope<VulkanSwapchain> m_swapchain;
+            PK::Utilities::Scope<Systems::VulkanSwapchain> m_swapchain;
             VulkanSemaphore* m_imageAvailableSignal;
 
             bool m_vsync = true;

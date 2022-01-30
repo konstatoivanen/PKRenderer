@@ -9,23 +9,19 @@
 
 namespace PK::Rendering::Passes
 {
-    using namespace PK::Core;
-    using namespace PK::ECS::Tokens;
-    using namespace PK::Rendering::Objects;
-
-    class PassGeometry : public PK::Core::NoCopy
+    class PassGeometry : public PK::Utilities::NoCopy
     {
         public:
-            PassGeometry(EntityDatabase* entityDb, Sequencer* sequencer, Batcher* batcher);
-            void Cull(void* engineRoot, VisibilityList* visibilityList, const float4x4& viewProjection, float depthRange);
-            void RenderForward(CommandBuffer* cmd);
-            void RenderGBuffer(CommandBuffer* cmd);
+            PassGeometry(ECS::EntityDatabase* entityDb, Core::Services::Sequencer* sequencer, Batcher* batcher);
+            void Cull(void* engineRoot, ECS::Tokens::VisibilityList* visibilityList, const Math::float4x4& viewProjection, float depthRange);
+            void RenderForward(Objects::CommandBuffer* cmd);
+            void RenderGBuffer(Objects::CommandBuffer* cmd);
             constexpr uint32_t GetPassGroup() const { return m_passGroup; }
         private:
-            EntityDatabase* m_entityDb = nullptr;
-            Sequencer* m_sequencer = nullptr;
+            ECS::EntityDatabase* m_entityDb = nullptr;
+            Core::Services::Sequencer* m_sequencer = nullptr;
             Batcher* m_batcher = nullptr;
             uint32_t m_passGroup = 0u;
-            FixedFunctionShaderAttributes m_gbufferAttribs{};
+            Structs::FixedFunctionShaderAttributes m_gbufferAttribs{};
     };
 }

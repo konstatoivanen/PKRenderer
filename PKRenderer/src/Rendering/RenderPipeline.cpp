@@ -6,7 +6,13 @@
 
 namespace PK::Rendering
 {
-    using namespace PK::Rendering::Objects;
+    using namespace Utilities;
+    using namespace Core;
+    using namespace Core::Services;
+    using namespace Math;
+    using namespace ECS;
+    using namespace Objects;
+    using namespace Structs;
 
     struct ModelMatrices
     {

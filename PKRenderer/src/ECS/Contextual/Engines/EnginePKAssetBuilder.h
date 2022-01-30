@@ -6,16 +6,11 @@
 
 namespace PK::ECS::Engines
 {
-	using namespace PK::Math;
-	using namespace PK::Rendering::Structs;
-	using namespace PK::Core;
-	using namespace PK::Core::Services;
-
-	class EnginePKAssetBuilder : public IService, public IStep<ConsoleCommandToken>
+	class EnginePKAssetBuilder : public Core::Services::IService, public Core::Services::IStep<Core::ConsoleCommandToken>
 	{
 		public:
-			EnginePKAssetBuilder(const ApplicationArguments& arguments);
-			void Step(ConsoleCommandToken* token) override final;
+			EnginePKAssetBuilder(const Core::ApplicationArguments& arguments);
+			void Step(Core::ConsoleCommandToken* token) override final;
 
 		private:
 			std::wstring m_executablePath;

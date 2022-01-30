@@ -3,6 +3,8 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
+    using namespace Structs;
+
     VulkanSamplerCache::~VulkanSamplerCache()
     {
         for (auto& kv : m_samplers)

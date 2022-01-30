@@ -14,24 +14,21 @@
 
 namespace PK::Rendering
 {
-    using namespace PK::Rendering::Objects;
-    using namespace PK::ECS;
-
     struct DrawCall
     {
-        const Mesh* mesh = nullptr;
-        const Shader* shader = nullptr;
-        IndexRange indices{};
+        const Objects::Mesh* mesh = nullptr;
+        const Objects::Shader* shader = nullptr;
+        Structs::IndexRange indices{};
     };
 
     struct MaterialGroup
     {
-        IndexedSet<Material> materials;
+        Utilities::IndexedSet<Objects::Material> materials;
         size_t firstIndex = 0ull;
         size_t stride = 0ull;
 
         MaterialGroup() : materials(32){}
-        uint16_t Add(Material* material);
+        uint16_t Add(Objects::Material* material);
         inline void Clear() { firstIndex = 0ull; materials.Clear(); }
         constexpr size_t GetSize() const { return materials.GetCount() * stride; }
         constexpr size_t GetOffset() const { return firstIndex * stride; }
@@ -60,31 +57,31 @@ namespace PK::Rendering
         }
     };
     
-    class Batcher : public PK::Core::NoCopy
+    class Batcher : public Utilities::NoCopy
     {
         public:
             Batcher();
             void BeginCollectDrawCalls();
             void EndCollectDrawCalls();
             constexpr uint32_t BeginNewGroup() { return m_groupIndex++; }
-            void SubmitDraw(Components::Transform* transform, Shader* shader, Material* material, Mesh* mesh, uint32_t submesh, uint32_t clipIndex);
-            void Render(CommandBuffer* cmd, uint32_t group, FixedFunctionShaderAttributes* overrideAttributes = nullptr, uint32_t requireKeyword = 0u);
+            void SubmitDraw(ECS::Components::Transform* transform, Objects::Shader* shader, Objects::Material* material, Objects::Mesh* mesh, uint32_t submesh, uint32_t clipIndex);
+            void Render(Objects::CommandBuffer* cmd, uint32_t group, Structs::FixedFunctionShaderAttributes* overrideAttributes = nullptr, uint32_t requireKeyword = 0u);
 
         private:
-            Ref<Buffer> m_matrices;
-            Ref<Buffer> m_indices;
-            Ref<Buffer> m_properties;
-            Ref<Buffer> m_indirectArguments;
-            BindSet<Texture> m_textures2D;
+            Utilities::Ref<Objects::Buffer> m_matrices;
+            Utilities::Ref<Objects::Buffer> m_indices;
+            Utilities::Ref<Objects::Buffer> m_properties;
+            Utilities::Ref<Objects::Buffer> m_indirectArguments;
+            Objects::BindSet<Objects::Texture> m_textures2D;
 
             std::vector<DrawCall> m_drawCalls;
-            std::vector<IndexRange> m_passGroups;     
+            std::vector<Structs::IndexRange> m_passGroups;     
             std::vector<DrawInfo> m_drawInfos;
 
-            FixedList<MaterialGroup, 32> m_materials;
-            IndexedSet<Mesh> m_meshes;
-            IndexedSet<Shader> m_shaders;
-            IndexedSet<Components::Transform> m_transforms;
+            Utilities::FixedList<MaterialGroup, 32> m_materials;
+            Utilities::IndexedSet<Objects::Mesh> m_meshes;
+            Utilities::IndexedSet<Objects::Shader> m_shaders;
+            Utilities::IndexedSet<ECS::Components::Transform> m_transforms;
             uint16_t m_groupIndex = 0u;
     };
 }

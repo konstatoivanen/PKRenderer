@@ -7,12 +7,17 @@
 #include "Rendering/HashCache.h"
 
 using namespace PK::Core;
+using namespace PK::Core::Services;
+using namespace PK::Math;
+using namespace PK::Utilities;
+using namespace PK::ECS;
 using namespace PK::ECS::Tokens;
 using namespace PK::ECS::EntityViews;
 using namespace PK::Rendering::Objects;
+using namespace PK::Rendering::Structs;
 
 template<>
-struct PK::Utilities::Vector::Comparer<LightRenderableView*>
+struct Vector::Comparer<LightRenderableView*>
 {
     int operator()(LightRenderableView*& a, LightRenderableView*& b)
     {

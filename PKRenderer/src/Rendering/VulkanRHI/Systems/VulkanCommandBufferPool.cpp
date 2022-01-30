@@ -6,6 +6,7 @@
 namespace PK::Rendering::VulkanRHI::Systems
 {
     using namespace Objects;
+    using namespace PK::Utilities;
 
     VulkanCommandBufferPool::VulkanCommandBufferPool(const VkDevice device, const VulkanSystemContext& systems, uint32_t queueFamilyIndex) : m_device(device), m_primaryRenderState(systems)
     {

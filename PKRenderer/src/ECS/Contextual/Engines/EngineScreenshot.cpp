@@ -4,7 +4,12 @@
 
 namespace PK::ECS::Engines
 {
-    using namespace PK::Rendering;
+    using namespace Math;
+    using namespace Core;
+    using namespace Core::Services;
+    using namespace Rendering;
+    using namespace Rendering::Structs;
+    using namespace Rendering::Objects;
 
     // Source: https://elcharolin.wordpress.com/2018/11/28/read-and-write-bmp-files-in-c-c/
     static void WriteImage(const char* fileName, byte* pixels, uint width, uint height)

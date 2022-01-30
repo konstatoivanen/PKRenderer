@@ -5,6 +5,10 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
+    using namespace PK::Utilities;
+    using namespace Systems;
+    using namespace Objects;
+
     VulkanTexture::VulkanTexture() : m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>())
     {
     }

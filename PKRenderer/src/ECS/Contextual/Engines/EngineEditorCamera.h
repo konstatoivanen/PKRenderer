@@ -8,26 +8,24 @@
 
 namespace PK::ECS::Engines
 {
-	using namespace PK::Math;
-	using namespace PK::Core;
-	using namespace PK::Core::Services;
-
-	class EngineEditorCamera : public IService, public IStep<Input>, public IStep<ConsoleCommandToken>
+	class EngineEditorCamera : public Core::Services::IService, 
+							   public Core::Services::IStep<Core::Services::Input>, 
+							   public Core::Services::IStep<Core::ConsoleCommandToken>
 	{
 		public:
-			EngineEditorCamera(Sequencer* sequencer, Time* time, const ApplicationConfig* config);
-			void Step(Input* input) override final;
-			void Step(ConsoleCommandToken* token) override final;
+			EngineEditorCamera(Core::Services::Sequencer* sequencer, Core::Services::Time* time, const Core::ApplicationConfig* config);
+			void Step(Core::Services::Input* input) override final;
+			void Step(Core::ConsoleCommandToken* token) override final;
 
 		private:
-			Sequencer* m_sequencer = nullptr;
-			Time* m_time = nullptr;
-			const ApplicationConfig* m_config = nullptr;
-			float3 m_position = PK_FLOAT3_ZERO;
-			float3 m_eulerAngles = PK_FLOAT3_ZERO;
-			quaternion m_rotation = PK_QUATERNION_IDENTITY;
-			float3 m_smoothPosition = PK_FLOAT3_ZERO;
-			quaternion m_smoothRotation = PK_QUATERNION_IDENTITY;
+			Core::Services::Sequencer* m_sequencer = nullptr;
+			Core::Services::Time* m_time = nullptr;
+			const Core::ApplicationConfig* m_config = nullptr;
+			Math::float3 m_position = Math::PK_FLOAT3_ZERO;
+			Math::float3 m_eulerAngles = Math::PK_FLOAT3_ZERO;
+			Math::quaternion m_rotation = Math::PK_QUATERNION_IDENTITY;
+			Math::float3 m_smoothPosition = Math::PK_FLOAT3_ZERO;
+			Math::quaternion m_smoothRotation = Math::PK_QUATERNION_IDENTITY;
 			float m_fieldOfView = 60.0f;
 			float m_zNear = 0.1f;
 			float m_zFar = 250.0f;

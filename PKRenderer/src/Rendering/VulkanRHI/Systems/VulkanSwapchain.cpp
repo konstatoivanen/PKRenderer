@@ -5,6 +5,8 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
+    using namespace PK::Utilities;
+
     static bool SwapchainErrorAssert(VkResult result, bool& outofdate, bool& submoptimal)
     {
         if (result == VK_ERROR_OUT_OF_DATE_KHR && !outofdate)

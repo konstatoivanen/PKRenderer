@@ -6,6 +6,13 @@
 
 namespace PK::Rendering::Passes
 {
+    using namespace Core;
+    using namespace Core::Services;
+    using namespace Math;
+    using namespace Utilities;
+    using namespace Structs;
+    using namespace Objects;
+
     PassPostEffects::PassPostEffects(AssetDatabase* assetDatabase, const ApplicationConfig* config) : 
         m_bloom(assetDatabase, config->InitialWidth, config->InitialHeight),
         m_histogram(assetDatabase),

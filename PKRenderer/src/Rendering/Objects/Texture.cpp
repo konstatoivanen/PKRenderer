@@ -4,6 +4,7 @@
 #include "Rendering/GraphicsAPI.h"
 
 using namespace PK::Core;
+using namespace PK::Core::Services;
 using namespace PK::Utilities;
 using namespace PK::Rendering;
 using namespace PK::Rendering::Objects;

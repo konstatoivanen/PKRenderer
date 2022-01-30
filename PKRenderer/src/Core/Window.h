@@ -7,9 +7,6 @@
 
 namespace PK::Core
 {
-    using namespace Utilities;
-    using namespace Math;
-
     struct WindowProperties
     {
         std::string title;
@@ -24,14 +21,14 @@ namespace PK::Core
         }
     };
     
-    class Window : public NoCopy, public NativeInterface<Window>
+    class Window : public Utilities::NoCopy, public Utilities::NativeInterface<Window>
     {
         public:
-            static Scope<Window> Create(const WindowProperties& properties);
+            static Utilities::Scope<Window> Create(const WindowProperties& properties);
             virtual ~Window() = default;
         
-            virtual uint3 GetResolution() const = 0;
-            virtual uint4 GetRect() const = 0;
+            virtual Math::uint3 GetResolution() const = 0;
+            virtual Math::uint4 GetRect() const = 0;
             virtual float GetAspectRatio() const = 0;
             virtual bool IsAlive() const = 0;
             virtual bool IsMinimized() const = 0;

@@ -7,23 +7,20 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    using namespace PK::Core;
-    using namespace PK::Rendering::Objects;
-
-    class VulkanBindArray : public BindArray<Texture>,
-                            public BindArray<Buffer>
+    class VulkanBindArray : public Rendering::Objects::BindArray<Rendering::Objects::Texture>,
+                            public Rendering::Objects::BindArray<Rendering::Objects::Buffer>
     {
         public:
             VulkanBindArray(size_t capacity);
             ~VulkanBindArray();
             const VulkanBindHandle* const* GetHandles(uint32_t* version, uint32_t* count) const;
 
-            int32_t Add(Texture* value, void* bindInfo) override final;
-            int32_t Add(Texture* value) override final;
-            int32_t Add(const Texture* value) override final;
-            int32_t Add(Buffer* value, void* bindInfo) override final;
-            int32_t Add(Buffer* value) override final;
-            int32_t Add(const Buffer* value) override final;
+            int32_t Add(Rendering::Objects::Texture* value, void* bindInfo) override final;
+            int32_t Add(Rendering::Objects::Texture* value) override final;
+            int32_t Add(const Rendering::Objects::Texture* value) override final;
+            int32_t Add(Rendering::Objects::Buffer* value, void* bindInfo) override final;
+            int32_t Add(Rendering::Objects::Buffer* value) override final;
+            int32_t Add(const Rendering::Objects::Buffer* value) override final;
 
             void Clear() override final { m_count = 0; }
 

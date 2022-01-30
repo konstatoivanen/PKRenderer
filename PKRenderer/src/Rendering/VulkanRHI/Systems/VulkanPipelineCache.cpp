@@ -7,6 +7,8 @@
 namespace PK::Rendering::VulkanRHI::Systems
 {
     using namespace PK::Utilities;
+    using namespace Structs;
+    using namespace Objects;
 
     VulkanPipelineCache::VulkanPipelineCache(VkDevice device, const std::string& workingDirectory, uint64_t pruneDelay) : 
         m_device(device), 

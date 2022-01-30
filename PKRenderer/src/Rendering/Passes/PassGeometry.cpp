@@ -6,8 +6,14 @@
 
 namespace PK::Rendering::Passes
 {
-    using namespace PK::ECS::Tokens;
-    using namespace PK::ECS::EntityViews;
+    using namespace Core;
+    using namespace Core::Services;
+    using namespace Math;
+    using namespace ECS;
+    using namespace ECS::Tokens;
+    using namespace ECS::EntityViews;
+    using namespace Objects;
+    using namespace Structs;
 
     PassGeometry::PassGeometry(EntityDatabase* entityDb, Sequencer* sequencer, Batcher* batcher) : m_entityDb(entityDb), m_sequencer(sequencer), m_batcher(batcher)
     {

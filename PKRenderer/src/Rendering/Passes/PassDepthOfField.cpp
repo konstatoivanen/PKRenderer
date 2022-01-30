@@ -5,6 +5,11 @@
 
 namespace PK::Rendering::Passes
 {
+    using namespace Core;
+    using namespace Core::Services;
+    using namespace Rendering::Objects;
+    using namespace Rendering::Structs;
+
     PassDepthOfField::PassDepthOfField(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
         m_shaderBlur = assetDatabase->Find<Shader>("VS_DepthOfFieldBlur");

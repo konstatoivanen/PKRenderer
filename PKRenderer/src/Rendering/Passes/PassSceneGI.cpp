@@ -4,6 +4,13 @@
 
 namespace PK::Rendering::Passes
 {
+    using namespace Core;
+    using namespace Core::Services;
+    using namespace Math;
+    using namespace Utilities;
+    using namespace Structs;
+    using namespace Objects;
+
     PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
         m_computeFade = assetDatabase->Find<Shader>("CS_SceneGI_Fade");

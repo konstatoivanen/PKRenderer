@@ -5,10 +5,7 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    using namespace Systems;
-    using namespace PK::Rendering::Objects;
-
-    class VulkanTexture : public Texture
+    class VulkanTexture : public Rendering::Objects::Texture
     {
         public:
             VulkanTexture();
@@ -16,28 +13,31 @@ namespace PK::Rendering::VulkanRHI::Objects
             ~VulkanTexture();
             
             void SetData(const void* data, size_t size, uint32_t level, uint32_t layer) const override final;
-            void SetSampler(const SamplerDescriptor& sampler) override final;
+            void SetSampler(const Structs::SamplerDescriptor& sampler) override final;
             void Import(const char* filepath, void* pParams) override final;
-            bool Validate(const uint3& resolution) override final;
+            bool Validate(const Math::uint3& resolution) override final;
             bool Validate(const uint32_t levels, const uint32_t layers) override final;
-            bool Validate(const TextureDescriptor& descriptor) override final;
-            void Rebuild(const TextureDescriptor& descriptor);
+            bool Validate(const Structs::TextureDescriptor& descriptor) override final;
+            void Rebuild(const Structs::TextureDescriptor& descriptor);
 
-            TextureViewRange NormalizeViewRange(const TextureViewRange& range) const;
+            Structs::TextureViewRange NormalizeViewRange(const Structs::TextureViewRange& range) const;
             inline VkImageLayout GetImageLayout() const { return EnumConvert::GetImageLayout(m_descriptor.usage); }
             inline VkImageAspectFlags GetAspectFlags() const { return m_rawImage->aspect; }
             inline VkFormat GetNativeFormat() const { return m_rawImage->format; }
             inline const VulkanRawImage* GetRaw() const { return m_rawImage; }
             VulkanRenderTarget GetRenderTarget() const;
-            VulkanRenderTarget GetRenderTarget(const TextureViewRange& range);
+            VulkanRenderTarget GetRenderTarget(const Structs::TextureViewRange& range);
             inline const VulkanBindHandle* GetBindHandle() const { return &GetView(m_defaultViewRange)->bindHandle; }
-            inline const VulkanBindHandle* GetBindHandle(const TextureViewRange& range, bool sampled) { return &GetView(range, sampled ? TextureBindMode::SampledTexture : TextureBindMode::Image)->bindHandle; }
+            inline const VulkanBindHandle* GetBindHandle(const Structs::TextureViewRange& range, bool sampled) 
+            { 
+                return &GetView(range, sampled ? Structs::TextureBindMode::SampledTexture : Structs::TextureBindMode::Image)->bindHandle;
+            }
 
         private:
             struct alignas(8) ViewKey
             {
-                TextureViewRange range{};
-                TextureBindMode bindMode = TextureBindMode::SampledTexture;
+                Structs::TextureViewRange range{};
+                Structs::TextureBindMode bindMode = Structs::TextureBindMode::SampledTexture;
 
                 inline constexpr bool operator < (const ViewKey& other) const noexcept
                 {
@@ -76,20 +76,20 @@ namespace PK::Rendering::VulkanRHI::Objects
                 VulkanImageView* view = nullptr;
             };
 
-            inline const ViewValue* GetView(const TextureViewRange& range, TextureBindMode mode = TextureBindMode::SampledTexture) const
+            inline const ViewValue* GetView(const Structs::TextureViewRange& range, Structs::TextureBindMode mode = Structs::TextureBindMode::SampledTexture) const
             {
                 return m_imageViews.at({ range, mode }).get(); 
             }
 
-            const ViewValue* GetView(const TextureViewRange& range, TextureBindMode mode = TextureBindMode::SampledTexture);
+            const ViewValue* GetView(const Structs::TextureViewRange& range, Structs::TextureBindMode mode = Structs::TextureBindMode::SampledTexture);
 
             void Dispose();
 
             const VulkanDriver* m_driver = nullptr;
             VulkanRawImage* m_rawImage = nullptr;
-            std::map<ViewKey, Scope<ViewValue>> m_imageViews;
+            std::map<ViewKey, PK::Utilities::Scope<ViewValue>> m_imageViews;
             VkComponentMapping m_swizzle{};
-            TextureViewRange m_defaultViewRange{};
+            Structs::TextureViewRange m_defaultViewRange{};
             VkImageViewType m_viewType = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
     };
 }

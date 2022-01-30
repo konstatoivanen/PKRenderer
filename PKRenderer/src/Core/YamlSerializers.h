@@ -107,15 +107,15 @@ namespace YAML
 		static bool decode(const Node& node, Texture*& rhs)
 		{
 			auto path = node.as<std::string>();
-			rhs = Application::GetService<AssetDatabase>()->Load<Texture>(path);
+			rhs = PK::Core::Application::GetService<AssetDatabase>()->Load<PK::Rendering::Objects::Texture>(path);
 			return true;
 		}
 	};
 
 	template<>
-	struct convert<ConsoleCommandBinding>
+	struct convert<PK::Core::ConsoleCommandBinding>
 	{
-		static Node encode(const ConsoleCommandBinding& rhs)
+		static Node encode(const PK::Core::ConsoleCommandBinding& rhs)
 		{
 			Node node;
 
@@ -125,7 +125,7 @@ namespace YAML
 			return node;
 		}
 
-		static bool decode(const Node& node, ConsoleCommandBinding& rhs)
+		static bool decode(const Node& node, PK::Core::ConsoleCommandBinding& rhs)
 		{
 			if (!node.IsSequence() || node.size() != 2)
 			{
@@ -139,9 +139,9 @@ namespace YAML
 	};
 
 	template<>
-	struct convert<ConsoleCommandBindList>
+	struct convert<PK::Core::ConsoleCommandBindList>
 	{
-		static Node encode(const ConsoleCommandBindList& rhs)
+		static Node encode(const PK::Core::ConsoleCommandBindList& rhs)
 		{
 			Node node;
 			for (auto& arg : rhs)
@@ -153,11 +153,11 @@ namespace YAML
 			return node;
 		}
 
-		static bool decode(const Node& node, ConsoleCommandBindList& rhs)
+		static bool decode(const Node& node, PK::Core::ConsoleCommandBindList& rhs)
 		{
 			for (auto i = 0; i < node.size(); ++i)
 			{
-				rhs.push_back(node[i].as<ConsoleCommandBinding>());
+				rhs.push_back(node[i].as<PK::Core::ConsoleCommandBinding>());
 			}
 
 			return true;

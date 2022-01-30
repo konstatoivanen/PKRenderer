@@ -6,9 +6,10 @@
 
 namespace PK::Rendering
 {
+    using namespace Rendering::Objects;
     using namespace Structs;
     using namespace VulkanRHI;
-    using namespace PK::Utilities;
+    using namespace Utilities;
 
     static GraphicsDriver* s_currentDriver;
 

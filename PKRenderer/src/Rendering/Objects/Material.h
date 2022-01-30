@@ -7,16 +7,13 @@
 
 namespace PK::Rendering::Objects
 {
-    using namespace PK::Utilities;
-    using namespace PK::Rendering::Structs;
-
-    class Material : public Asset, public IAssetImportSimple, public ShaderPropertyBlock
+    class Material : public Core::Services::Asset, public Core::Services::IAssetImportSimple, public ShaderPropertyBlock
     {
         // @TODO refactor this to be derived from a config or generate at runtime?.
         constexpr static const char* DEFAULT_PATH_TEXTURE_BLACK = "res/textures/default/T_Black.ktx2";
         constexpr static const char* DEFAULT_PATH_TEXTURE_WHITE = "res/textures/default/T_White.ktx2";
 
-        friend Ref<Material> AssetImporters::Create();
+        friend Utilities::Ref<Material> Core::Services::AssetImporters::Create();
 
         public:
             Material() : ShaderPropertyBlock(1024) {}

@@ -3,11 +3,9 @@
 
 namespace PK::ECS::Components
 {
-    using namespace PK::Rendering::Objects;
-
     struct MeshReference
     {
-        Mesh* sharedMesh = nullptr;
+        PK::Rendering::Objects::Mesh* sharedMesh = nullptr;
         virtual ~MeshReference() = default;
     };
 }

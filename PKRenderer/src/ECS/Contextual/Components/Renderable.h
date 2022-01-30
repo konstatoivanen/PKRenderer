@@ -3,11 +3,9 @@
 
 namespace PK::ECS::Components
 {
-    using namespace PK::Rendering::Structs;
-
     struct Renderable
     {
-        RenderableFlags flags = RenderableFlags::Mesh;
+        PK::Rendering::Structs::RenderableFlags flags = PK::Rendering::Structs::RenderableFlags::Mesh;
         virtual ~Renderable() = default;
     };
 }

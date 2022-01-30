@@ -6,13 +6,10 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
-    using namespace PK::Utilities;
-    using namespace PK::Math;
-    
     struct alignas(8) FrameBufferKey 
     {
-        VkImageView color[PK_MAX_RENDER_TARGETS];
-        VkImageView resolve[PK_MAX_RENDER_TARGETS];
+        VkImageView color[Structs::PK_MAX_RENDER_TARGETS];
+        VkImageView resolve[Structs::PK_MAX_RENDER_TARGETS];
         VkImageView depth;
         VkRenderPass renderPass;
         VkExtent2D extent;
@@ -28,14 +25,14 @@ namespace PK::Rendering::VulkanRHI::Systems
     {
         VkImageLayout layout;
         VkFormat format;
-        LoadOp loadop;
-        StoreOp storeop;
+        Structs::LoadOp loadop;
+        Structs::StoreOp storeop;
         bool resolve;
     };
 
     struct alignas(8) RenderPassKey 
     {
-        AttachmentKey colors[PK_MAX_RENDER_TARGETS];
+        AttachmentKey colors[Structs::PK_MAX_RENDER_TARGETS];
         AttachmentKey depth;
         uint32_t samples = 1;
 
@@ -52,8 +49,8 @@ namespace PK::Rendering::VulkanRHI::Systems
     {
         std::size_t operator()(const FrameBufferKey& k) const noexcept
         {
-            constexpr ulong seed = 18446744073709551557;
-            return HashHelpers::MurmurHash(reinterpret_cast<const void*>(&k), sizeof(FrameBufferKey), seed);
+            constexpr uint64_t seed = 18446744073709551557;
+            return PK::Utilities::HashHelpers::MurmurHash(reinterpret_cast<const void*>(&k), sizeof(FrameBufferKey), seed);
         }
     };
 
@@ -61,12 +58,12 @@ namespace PK::Rendering::VulkanRHI::Systems
     {
         std::size_t operator()(const RenderPassKey& k) const noexcept
         {
-            constexpr ulong seed = 18446744073709551557;
-            return HashHelpers::MurmurHash(reinterpret_cast<const void*>(&k), sizeof(RenderPassKey), seed);
+            constexpr uint64_t seed = 18446744073709551557;
+            return PK::Utilities::HashHelpers::MurmurHash(reinterpret_cast<const void*>(&k), sizeof(RenderPassKey), seed);
         }
     };
 
-    class VulkanFrameBufferCache : public NoCopy
+    class VulkanFrameBufferCache : public PK::Utilities::NoCopy
     {
         public:
             VulkanFrameBufferCache(VkDevice device, uint64_t pruneDelay);

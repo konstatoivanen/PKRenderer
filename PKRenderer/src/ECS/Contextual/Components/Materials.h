@@ -3,11 +3,9 @@
 
 namespace PK::ECS::Components
 {
-    using namespace PK::Rendering::Objects;
-
     struct Materials
     {
-        std::vector<MaterialTarget> materials;
+        std::vector<Rendering::Objects::MaterialTarget> materials;
         virtual ~Materials() = default;
     };
 }

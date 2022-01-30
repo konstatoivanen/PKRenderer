@@ -4,12 +4,10 @@
 
 namespace PK::Rendering::Objects
 {
-    using namespace PK::Utilities;
-
     class ConstantBuffer : public ShaderPropertyBlock
     {
         public:
-            ConstantBuffer(const BufferLayout& layout);
+            ConstantBuffer(const Structs::BufferLayout& layout);
             inline void FlushBuffer() { m_graphicsBuffer->EndWrite(); }
 
             const Buffer* GetBuffer() const { return m_graphicsBuffer.get(); }
@@ -19,6 +17,6 @@ namespace PK::Rendering::Objects
             operator const Buffer* () { return m_graphicsBuffer.get(); }
 
         private:
-            Ref<Buffer> m_graphicsBuffer;
+            Utilities::Ref<Buffer> m_graphicsBuffer;
     };
 }

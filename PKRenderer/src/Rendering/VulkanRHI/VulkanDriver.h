@@ -14,10 +14,6 @@
 
 namespace PK::Rendering::VulkanRHI
 {
-    using namespace PK::Utilities;
-    using namespace PK::Rendering::GraphicsAPI;
-    using namespace Systems;
-
     struct VulkanContextProperties
     {
         std::string appName;
@@ -49,14 +45,13 @@ namespace PK::Rendering::VulkanRHI
         VulkanDriver(const VulkanContextProperties& properties);
         ~VulkanDriver();
 
-        APIType GetAPI() const override final { return APIType::Vulkan; }
-
-        CommandBuffer* GetPrimaryCommandBuffer() override final { return commandBufferPool->GetCurrent(); }
+        Rendering::Structs::APIType GetAPI() const override final { return Rendering::Structs::APIType::Vulkan; }
+        Rendering::Objects::CommandBuffer* GetPrimaryCommandBuffer() override final { return commandBufferPool->GetCurrent(); }
 
         void WaitForIdle() const override final { vkDeviceWaitIdle(device); }
         
         DriverMemoryInfo GetMemoryInfo() const override final;
-        size_t GetBufferOffsetAlignment(BufferUsage usage) const override final;
+        size_t GetBufferOffsetAlignment(Structs::BufferUsage usage) const override final;
         
         void GC() override final;
 
@@ -74,13 +69,13 @@ namespace PK::Rendering::VulkanRHI
         VulkanContextProperties properties;
         VkPhysicalDeviceProperties physicalDeviceProperties;
 
-        Scope<VulkanFrameBufferCache> frameBufferCache;
-        Scope<VulkanCommandBufferPool> commandBufferPool;
-        Scope<VulkanStagingBufferCache> stagingBufferCache;
-        Scope<VulkanDescriptorCache> descriptorCache;
-        Scope<VulkanPipelineCache> pipelineCache;
-        Scope<VulkanSamplerCache> samplerCache;
-        Scope<VulkanLayoutCache> layoutCache;
-        Scope<VulkanDisposer> disposer;
+        PK::Utilities::Scope<Systems::VulkanFrameBufferCache> frameBufferCache;
+        PK::Utilities::Scope<Systems::VulkanCommandBufferPool> commandBufferPool;
+        PK::Utilities::Scope<Systems::VulkanStagingBufferCache> stagingBufferCache;
+        PK::Utilities::Scope<Systems::VulkanDescriptorCache> descriptorCache;
+        PK::Utilities::Scope<Systems::VulkanPipelineCache> pipelineCache;
+        PK::Utilities::Scope<Systems::VulkanSamplerCache> samplerCache;
+        PK::Utilities::Scope<Systems::VulkanLayoutCache> layoutCache;
+        PK::Utilities::Scope<Systems::VulkanDisposer> disposer;
     };
 }

@@ -4,11 +4,9 @@
 
 namespace PK::Core
 {
-	using namespace YAML;
-	
-	struct CommandConfig : YamlValueList, public Asset, public IAssetImportSimple
+	struct CommandConfig : YAML::YamlValueList, public Core::Services::Asset, public Core::Services::IAssetImportSimple
 	{
-		BoxedValue<ConsoleCommandBindList> Commands = BoxedValue<ConsoleCommandBindList>("Commands", ConsoleCommandBindList());
+		YAML::BoxedValue<ConsoleCommandBindList> Commands = YAML::BoxedValue<ConsoleCommandBindList>("Commands", ConsoleCommandBindList());
 		CommandConfig();
 		void Import(const char* filepath, void* pParams) override final;
 	};

@@ -48,7 +48,7 @@ namespace PK::Core::Services
         return action == GLFW_PRESS || action == GLFW_REPEAT;
     }
     
-    float2 Input::GetAxis2D(KeyCode front, KeyCode back, KeyCode right, KeyCode left)
+    Math::float2 Input::GetAxis2D(KeyCode front, KeyCode back, KeyCode right, KeyCode left)
     {
         return
         {
@@ -57,7 +57,7 @@ namespace PK::Core::Services
         };
     }
     
-    float3 Input::GetAxis3D(KeyCode up, KeyCode down, KeyCode front, KeyCode back, KeyCode right, KeyCode left)
+    Math::float3 Input::GetAxis3D(KeyCode up, KeyCode down, KeyCode front, KeyCode back, KeyCode right, KeyCode left)
     {
         return
         {

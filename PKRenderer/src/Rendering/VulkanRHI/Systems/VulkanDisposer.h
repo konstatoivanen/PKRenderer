@@ -4,24 +4,22 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
-    using namespace PK::Utilities;
-
-    class VulkanDisposer : public NoCopy
+    class VulkanDisposer : public PK::Utilities::NoCopy
     {
         struct DisposeHandle
         {
-            Scope<IVulkanDisposable> disposable = nullptr;
-            ExecutionGate gate{};
+            PK::Utilities::Scope<IVulkanDisposable> disposable = nullptr;
+            Structs::ExecutionGate gate{};
         };
 
         public:
             VulkanDisposer() {}
 
             template<typename T>
-            void Dispose(T* disposable, const ExecutionGate& releaseGate)
+            void Dispose(T* disposable, const Structs::ExecutionGate& releaseGate)
             {
                 static_assert(std::is_base_of<IVulkanDisposable, T>::value, "Template argument type does not derive from IService!");
-                m_disposables.push_back({ Scope<IVulkanDisposable>(disposable), releaseGate });
+                m_disposables.push_back({ PK::Utilities::Scope<IVulkanDisposable>(disposable), releaseGate });
             }
 
             void Prune();

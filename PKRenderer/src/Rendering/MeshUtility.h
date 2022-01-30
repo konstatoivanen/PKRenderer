@@ -5,15 +5,11 @@
 
 namespace PK::Rendering::MeshUtility
 {
-    using namespace Utilities;
-    using namespace PK::Math;
-    using namespace PK::Rendering::Objects;
-
-    void CalculateNormals(const float3* vertices, const uint* indices, float3* normals, uint vcount, uint icount, float sign = 1.0f);
-    void CalculateTangents(const float3* vertices, const float3* normals, const float2* texcoords, const uint* indices, float4* tangents, uint vcount, uint icount);
-    void CalculateTangents(void* vertices, uint stride, uint vertexOffset, uint normalOffset, uint tangentOffset, uint texcoordOffset, const uint* indices, uint vcount, uint icount);
-    Ref<Mesh> GetBox(const float3& offset, const float3& extents);
-    Ref<Mesh> GetQuad(const float2& min, const float2& max);
-    Ref<VirtualMesh> GetPlane(Ref<Mesh> baseMesh, const float2& center, const float2& extents, uint2 resolution);
-    Ref<VirtualMesh> GetSphere(Ref<Mesh> baseMesh, const float3& offset, const float radius);
+    void CalculateNormals(const Math::float3* vertices, const uint32_t* indices, Math::float3* normals, uint32_t vcount, uint32_t icount, float sign = 1.0f);
+    void CalculateTangents(const Math::float3* vertices, const Math::float3* normals, const Math::float2* texcoords, const uint32_t indices, Math::float4* tangents, uint32_t vcount, uint32_t icount);
+    void CalculateTangents(void* vertices, uint32_t stride, uint32_t vertexOffset, uint32_t normalOffset, uint32_t tangentOffset, uint32_t texcoordOffset, const uint32_t* indices, uint32_t vcount, uint32_t icount);
+    Utilities::Ref<Objects::Mesh> GetBox(const Math::float3& offset, const Math::float3& extents);
+    Utilities::Ref<Objects::Mesh> GetQuad(const Math::float2& min, const Math::float2& max);
+    Utilities::Ref<Objects::VirtualMesh> GetPlane(Utilities::Ref<Objects::Mesh> baseMesh, const Math::float2& center, const Math::float2& extents, Math::uint2 resolution);
+    Utilities::Ref<Objects::VirtualMesh> GetSphere(Utilities::Ref<Objects::Mesh> baseMesh, const Math::float3& offset, const float radius);
 }

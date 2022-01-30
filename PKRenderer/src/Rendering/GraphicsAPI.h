@@ -6,10 +6,6 @@
 
 namespace PK::Rendering
 {
-    using namespace Structs;
-    using namespace Utilities;
-    using namespace PK::Rendering::Objects;
-
     // @TODO investigate if this is can be fulfilled by a possible dx12 implementation?
     struct DriverMemoryInfo
     {
@@ -26,17 +22,17 @@ namespace PK::Rendering
         size_t unusedRangeSizeMax;
     };
 
-    struct GraphicsDriver : public PK::Core::NoCopy
+    struct GraphicsDriver : public PK::Utilities::NoCopy
     {
         virtual ~GraphicsDriver() = default;
-        virtual APIType GetAPI() const = 0;
-        virtual CommandBuffer* GetPrimaryCommandBuffer() = 0;
+        virtual Structs::APIType GetAPI() const = 0;
+        virtual Objects::CommandBuffer* GetPrimaryCommandBuffer() = 0;
         virtual void WaitForIdle() const = 0;
         virtual DriverMemoryInfo GetMemoryInfo() const = 0;
-        virtual size_t GetBufferOffsetAlignment(BufferUsage usage) const = 0;
+        virtual size_t GetBufferOffsetAlignment(Structs::BufferUsage usage) const = 0;
         virtual void GC() = 0;
 
-        static Scope<GraphicsDriver> Create(const std::string& workingDirectory, APIType api);
+        static Utilities::Scope<GraphicsDriver> Create(const std::string& workingDirectory, Structs::APIType api);
     };
 
     namespace GraphicsAPI
@@ -50,13 +46,13 @@ namespace PK::Rendering
             return static_cast<T*>(GetActiveDriver()); 
         }
 
-        APIType GetActiveAPI();
+        Structs::APIType GetActiveAPI();
         
         // Add support for secondary commandbuffers
-        CommandBuffer* GetCommandBuffer();
+        Objects::CommandBuffer* GetCommandBuffer();
 
         DriverMemoryInfo GetMemoryInfo();
-        size_t GetBufferOffsetAlignment(BufferUsage usage);
+        size_t GetBufferOffsetAlignment(Structs::BufferUsage usage);
 
         void GC();
     }

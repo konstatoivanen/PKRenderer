@@ -4,8 +4,12 @@
 #include <yaml-cpp/yaml.h>
 
 using namespace PK::Core;
+using namespace PK::Core::Services;
+using namespace PK::Math;
 using namespace PK::Utilities;
 using namespace PK::Rendering::Objects;
+using namespace PK::Rendering::Structs;
+using namespace PK::Rendering::Structs;
 
 namespace YAML
 {

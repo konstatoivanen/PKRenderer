@@ -5,18 +5,15 @@
 
 namespace PK::ECS::Engines
 {
-	using namespace PK::Utilities;
-	using namespace PK::Rendering::Objects;
-
-	class EngineDebug : public IService, public ISimpleStep
+	class EngineDebug : public Core::Services::IService, public Core::Services::ISimpleStep
 	{
 		public:
-			EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, const ApplicationConfig* config);
+			EngineDebug(Core::Services::AssetDatabase* assetDatabase, EntityDatabase* entityDb, const Core::ApplicationConfig* config);
 			void Step(int condition) override;
 
 		private:
 			EntityDatabase* m_entityDb;
-			AssetDatabase* m_assetDatabase;
-			Ref<Mesh> m_virtualBaseMesh = nullptr;
+			Core::Services::AssetDatabase* m_assetDatabase;
+			Utilities::Ref<Rendering::Objects::Mesh> m_virtualBaseMesh = nullptr;
 	};
 }

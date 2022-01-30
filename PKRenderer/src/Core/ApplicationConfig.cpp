@@ -91,5 +91,5 @@ namespace PK::Core
 	bool AssetImporters::IsValidExtension<ApplicationConfig>(const std::filesystem::path& extension) { return extension.compare(".cfg") == 0; }
 
 	template<>
-	Ref<ApplicationConfig> AssetImporters::Create() { return CreateRef<ApplicationConfig>(); }
+	Utilities::Ref<ApplicationConfig> AssetImporters::Create() { return Utilities::CreateRef<ApplicationConfig>(); }
 }

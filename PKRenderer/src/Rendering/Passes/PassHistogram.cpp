@@ -5,8 +5,11 @@
 
 namespace PK::Rendering::Passes
 {
-    using namespace PK::Core;
-    using namespace PK::Rendering::Objects;
+    using namespace Core;
+    using namespace Core::Services;
+    using namespace Math;
+    using namespace Objects;
+    using namespace Structs;
 
     PassHistogram::PassHistogram(AssetDatabase* assetDatabase)
     {

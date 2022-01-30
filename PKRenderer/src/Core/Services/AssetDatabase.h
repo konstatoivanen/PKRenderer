@@ -9,11 +9,9 @@
 
 namespace PK::Core::Services
 {
-    using namespace PK::Utilities;
-
     typedef uint32_t AssetID;
     
-    class Asset : public NoCopy
+    class Asset : public Utilities::NoCopy
     {
         friend class AssetDatabase;
     
@@ -32,7 +30,7 @@ namespace PK::Core::Services
 
     // @TODO decouple these from the actual asset classes
     template<typename TParams>
-    class IAssetImport : public NoCopy
+    class IAssetImport : public Utilities::NoCopy
     {
         friend class AssetDatabase;
         virtual void Import(const char* filepath, TParams* pParams) = 0;
@@ -59,7 +57,7 @@ namespace PK::Core::Services
         bool IsValidExtension(const std::filesystem::path& extension);
 
         template<typename T>
-        [[nodiscard]] Ref<T> Create();
+        [[nodiscard]] Utilities::Ref<T> Create();
     };
     
     class AssetDatabase : public IService
@@ -101,7 +99,7 @@ namespace PK::Core::Services
                 
                 auto& collection = m_assets[std::type_index(typeid(T))];
                 auto iter = collection.find(assetId);
-                Ref<T> asset = nullptr;
+                Utilities::Ref<T> asset = nullptr;
     
                 if (iter != collection.end())
                 {
@@ -134,7 +132,7 @@ namespace PK::Core::Services
     
                 PK_THROW_ASSERT(collection.count(assetId) < 1, "Procedural asset (%s) already exists", name.c_str());
     
-                auto asset = CreateRef<T>(std::forward<Args>(args)...);
+                auto asset = Utilities::CreateRef<T>(std::forward<Args>(args)...);
                 collection[assetId] = asset;
                 std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
     
@@ -142,7 +140,7 @@ namespace PK::Core::Services
             }
     
             template<typename T, typename ... Args>
-            [[nodiscard]] T* RegisterProcedural(std::string name, Ref<T> asset)
+            [[nodiscard]] T* RegisterProcedural(std::string name, Utilities::Ref<T> asset)
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
@@ -326,7 +324,7 @@ namespace PK::Core::Services
             }
 
         private:
-            std::unordered_map<std::type_index, std::unordered_map<AssetID, Ref<Asset>>> m_assets;
+            std::unordered_map<std::type_index, std::unordered_map<AssetID, Utilities::Ref<Asset>>> m_assets;
             Sequencer* m_sequencer;
     };
 }

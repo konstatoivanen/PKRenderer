@@ -4,14 +4,11 @@
 
 namespace PK::Rendering::Objects
 {
-    using namespace PK::Utilities;
-    using namespace PK::Rendering::Structs;
-
-    class ShaderPropertyBlock : public PropertyBlock
+    class ShaderPropertyBlock : public Utilities::PropertyBlock
     {
         public:
-            ShaderPropertyBlock(uint64_t capacity) : PropertyBlock(capacity) {}
-            ShaderPropertyBlock(void* foreignBuffer, uint64_t capacity) : PropertyBlock(foreignBuffer, capacity) {}
-            void ReserveLayout(const BufferLayout& layout);
+            ShaderPropertyBlock(uint64_t capacity) : Utilities::PropertyBlock(capacity) {}
+            ShaderPropertyBlock(void* foreignBuffer, uint64_t capacity) : Utilities::PropertyBlock(foreignBuffer, capacity) {}
+            void ReserveLayout(const Structs::BufferLayout& layout);
     };
 }

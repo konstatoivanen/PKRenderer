@@ -6,8 +6,6 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    using namespace PK::Utilities;
-
     class VulkanSparsePageTable : public IVulkanDisposable
     {
         struct Page
@@ -26,8 +24,8 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanSparsePageTable(const VulkanDriver* driver, const VkBuffer buffer, VmaMemoryUsage memoryUsage);
             ~VulkanSparsePageTable();
 
-            void AllocateRange(const IndexRange& range);
-            void FreeRange(const IndexRange& range);
+            void AllocateRange(const Structs::IndexRange& range);
+            void FreeRange(const Structs::IndexRange& range);
 
         private:
             bool CheckRange(size_t* start, size_t* end);
@@ -38,6 +36,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             VmaAllocationCreateInfo m_pageCreateInfo{};
             VkMemoryRequirements m_memoryRequirements{};
             std::map<uint32_t, Page*> m_activePages;
-            FixedPool<Page, 1024> m_pages;
+            Utilities::FixedPool<Page, 1024> m_pages;
     };
 }

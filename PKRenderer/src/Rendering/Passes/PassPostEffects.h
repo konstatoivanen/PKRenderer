@@ -9,25 +9,22 @@
 
 namespace PK::Rendering::Passes
 {
-    using namespace PK::Core;
-    using namespace PK::Rendering::Objects;
-
-    class PassPostEffects : public PK::Core::NoCopy
+    class PassPostEffects : public PK::Utilities::NoCopy
     {
         public:
-            PassPostEffects(AssetDatabase* assetDatabase, const ApplicationConfig* config);
-            void Render(CommandBuffer* cmd, RenderTexture* destination, MemoryAccessFlags lastAccess);
-            void OnUpdateParameters(const ApplicationConfig* config);
+            PassPostEffects(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
+            void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* destination, Structs::MemoryAccessFlags lastAccess);
+            void OnUpdateParameters(const Core::ApplicationConfig* config);
 
         private:
             PassBloom m_bloom;
             PassHistogram m_histogram;
             PassDepthOfField m_depthOfField;
 
-            Shader* m_computeComposite = nullptr;
-            Shader* m_computeFilmGrain = nullptr;
-            Texture* m_bloomLensDirtTexture;
-            Ref<Texture> m_filmGrainTexture;
-            Ref<ConstantBuffer> m_paramatersBuffer;
+            Objects::Shader* m_computeComposite = nullptr;
+            Objects::Shader* m_computeFilmGrain = nullptr;
+            Objects::Texture* m_bloomLensDirtTexture;
+            Utilities::Ref<Objects::Texture> m_filmGrainTexture;
+            Utilities::Ref<Objects::ConstantBuffer> m_paramatersBuffer;
     };
 }

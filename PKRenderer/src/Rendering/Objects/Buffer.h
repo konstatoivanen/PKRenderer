@@ -8,39 +8,35 @@
 
 namespace PK::Rendering::Objects
 {
-    using namespace PK::Core;
-    using namespace PK::Utilities;
-    using namespace PK::Rendering::Structs;
-
-    class Buffer : public NoCopy, public NativeInterface<Buffer>
+    class Buffer : public Utilities::NoCopy, public Utilities::NativeInterface<Buffer>
     {
         public:
-            static Ref<Buffer> Create(const BufferLayout& layout, const void* data, size_t count, BufferUsage usage);
+            static Utilities::Ref<Buffer> Create(const Structs::BufferLayout& layout, const void* data, size_t count, Structs::BufferUsage usage);
 
-            inline static Ref<Buffer> CreateVertex(const BufferLayout& layout, 
+            inline static Utilities::Ref<Buffer> CreateVertex(const Structs::BufferLayout& layout,
                                                    const void* data, 
                                                    size_t count, 
-                                                   BufferUsage extraFlags = BufferUsage::None)
+                                                   Structs::BufferUsage extraFlags = Structs::BufferUsage::None)
             { 
-                return Create(layout, data, count, BufferUsage::DefaultVertex | extraFlags);
+                return Create(layout, data, count, Structs::BufferUsage::DefaultVertex | extraFlags);
             }
 
-            inline static Ref<Buffer> CreateIndex(ElementType type, 
+            inline static Utilities::Ref<Buffer> CreateIndex(Structs::ElementType type,
                                                   const void* data, 
                                                   size_t count,
-                                                  BufferUsage extraFlags = BufferUsage::None)
+                                                  Structs::BufferUsage extraFlags = Structs::BufferUsage::None)
             {
-                return Create(BufferLayout({{ type, "INDEX" }}), data, count, BufferUsage::DefaultIndex | extraFlags);
+                return Create(Structs::BufferLayout({{ type, "INDEX" }}), data, count, Structs::BufferUsage::DefaultIndex | extraFlags);
             }
 
-            inline static Ref<Buffer> CreateConstant(const BufferLayout& layout, BufferUsage extraFlags = BufferUsage::None)
+            inline static Utilities::Ref<Buffer> CreateConstant(const Structs::BufferLayout& layout, Structs::BufferUsage extraFlags = Structs::BufferUsage::None)
             {
-                return Create(layout, nullptr, 1, BufferUsage::DefaultConstant | extraFlags);
+                return Create(layout, nullptr, 1, Structs::BufferUsage::DefaultConstant | extraFlags);
             }
 
-            inline static Ref<Buffer> CreateStorage(const BufferLayout& layout, size_t count, BufferUsage extraFlags = BufferUsage::None)
+            inline static Utilities::Ref<Buffer> CreateStorage(const Structs::BufferLayout& layout, size_t count, Structs::BufferUsage extraFlags = Structs::BufferUsage::None)
             {
-                return Create(layout, nullptr, count, BufferUsage::DefaultStorage | extraFlags);
+                return Create(layout, nullptr, count, Structs::BufferUsage::DefaultStorage | extraFlags);
             }
 
             virtual ~Buffer() = default;
@@ -54,13 +50,13 @@ namespace PK::Rendering::Objects
             virtual void EndRead() = 0;
 
             template<typename T>
-            BufferView<T> BeginWrite()
+            Utilities::BufferView<T> BeginWrite()
             {
                 return { reinterpret_cast<T*>(BeginWrite(0, GetCapacity())), GetCapacity() / sizeof(T) };
             }
 
             template<typename T>
-            BufferView<T> BeginWrite(size_t offset, size_t count)
+            Utilities::BufferView<T> BeginWrite(size_t offset, size_t count)
             {
                 auto tsize = sizeof(T);
                 auto mapSize = tsize * count + tsize * offset;
@@ -72,13 +68,13 @@ namespace PK::Rendering::Objects
             }
 
             template<typename T>
-            ConstBufferView<T> BeginRead()
+            Utilities::ConstBufferView<T> BeginRead()
             {
                 return { reinterpret_cast<const T*>(BeginRead(0, GetCapacity())), GetCapacity() / sizeof(T) };
             }
 
             template<typename T>
-            ConstBufferView<T> BeginRead(size_t offset, size_t count)
+            Utilities::ConstBufferView<T> BeginRead(size_t offset, size_t count)
             {
                 auto tsize = sizeof(T);
                 auto mapSize = tsize * count + tsize * offset;
@@ -89,24 +85,24 @@ namespace PK::Rendering::Objects
                 return { reinterpret_cast<const T*>(BeginRead(offset * tsize, count * tsize)), count };
             }
 
-            virtual void MakeRangeResident(const IndexRange& range) = 0;
-            virtual void MakeRangeNonResident(const IndexRange& range) = 0;
+            virtual void MakeRangeResident(const Structs::IndexRange& range) = 0;
+            virtual void MakeRangeNonResident(const Structs::IndexRange& range) = 0;
 
             virtual bool Validate(size_t count) = 0;
             virtual size_t GetCapacity() const = 0;
 
             constexpr size_t GetCount() const { return m_count; }
-            constexpr bool IsSparse() const { return (m_usage & BufferUsage::Sparse) != 0; }
-            constexpr const BufferUsage GetUsage() const { return m_usage; }
-            constexpr const BufferLayout& GetLayout() const { return m_layout; }
-            constexpr IndexRange GetFullRange() const { return { 0ull, m_count }; }
+            constexpr bool IsSparse() const { return (m_usage & Structs::BufferUsage::Sparse) != 0; }
+            constexpr const Structs::BufferUsage GetUsage() const { return m_usage; }
+            constexpr const Structs::BufferLayout& GetLayout() const { return m_layout; }
+            constexpr Structs::IndexRange GetFullRange() const { return { 0ull, m_count }; }
 
         protected:
-            Buffer(const BufferLayout& layout, size_t count, BufferUsage usage) : m_usage(usage), m_layout(layout), m_count(count) {}
+            Buffer(const Structs::BufferLayout& layout, size_t count, Structs::BufferUsage usage) : m_usage(usage), m_layout(layout), m_count(count) {}
             
-            BufferLayout m_layout{};
-            BufferUsage m_usage = BufferUsage::None;
-            InputRate m_inputRate = InputRate::PerVertex;
+            Structs::BufferLayout m_layout{};
+            Structs::BufferUsage m_usage = Structs::BufferUsage::None;
+            Structs::InputRate m_inputRate = Structs::InputRate::PerVertex;
             size_t m_count = 0;
     };
 }

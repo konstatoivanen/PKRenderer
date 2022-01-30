@@ -3,6 +3,11 @@
 
 namespace PK::Rendering::Objects
 {
+    using namespace PK::Math;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering::Objects;
+    using namespace PK::Rendering::Structs;
+
     void CommandBuffer::SetViewPort(const uint4& rect)
     {
         SetViewPorts(&rect, 1);
@@ -134,12 +139,12 @@ namespace PK::Rendering::Objects
             pVBuffers[i] = vbuffers[i].get();
         }
 
-        SetVertexBuffers(pVBuffers, (uint)vbuffers.size());
+        SetVertexBuffers(pVBuffers, (uint32_t)vbuffers.size());
         SetIndexBuffer(mesh->GetIndexBuffer(), 0);
     }
 
 
-    void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh, uint32_t instanceCount, uint32_t firstInstance)
+    void CommandBuffer::DrawMesh(const Mesh* mesh, int32_t submesh, uint32_t instanceCount, uint32_t firstInstance)
     {
         SetMesh(mesh);
      
@@ -165,17 +170,17 @@ namespace PK::Rendering::Objects
         DrawIndexed(sm.indexCount, instanceCount, sm.firstIndex, sm.firstVertex, firstInstance);
     }
 
-    void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh)
+    void CommandBuffer::DrawMesh(const Mesh* mesh, int32_t submesh)
     {
         DrawMesh(mesh, submesh, 1u, 0u);
     }
 
-    void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh, const Shader* shader, int variantIndex)
+    void CommandBuffer::DrawMesh(const Mesh* mesh, int32_t submesh, const Shader* shader, int32_t variantIndex)
     {
         DrawMesh(mesh, submesh, shader, 1u, 0u, variantIndex);
     }
 
-    void CommandBuffer::DrawMesh(const Mesh* mesh, int submesh, const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int variantIndex)
+    void CommandBuffer::DrawMesh(const Mesh* mesh, int32_t submesh, const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int32_t variantIndex)
     {
         SetShader(shader, variantIndex);
         DrawMesh(mesh, submesh, instanceCount, firstInstance);
@@ -187,13 +192,13 @@ namespace PK::Rendering::Objects
         DrawIndexedIndirect(indirectArguments, offset, drawCount, stride);
     }
 
-    void CommandBuffer::Blit(const Shader* shader, int variantIndex)
+    void CommandBuffer::Blit(const Shader* shader, int32_t variantIndex)
     {
         SetShader(shader, variantIndex);
         Draw(3,1,0,0);
     }
 
-    void CommandBuffer::Blit(const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int variantIndex)
+    void CommandBuffer::Blit(const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int32_t variantIndex)
     {
         SetShader(shader, variantIndex);
         Draw(3, instanceCount, 0u, firstInstance);
@@ -205,7 +210,7 @@ namespace PK::Rendering::Objects
         Dispatch(groupCount);
     }
 
-    void CommandBuffer::Dispatch(const Shader* shader, uint variantIndex, uint3 groupCount)
+    void CommandBuffer::Dispatch(const Shader* shader, uint32_t variantIndex, uint3 groupCount)
     {
         SetShader(shader, variantIndex);
         Dispatch(groupCount);

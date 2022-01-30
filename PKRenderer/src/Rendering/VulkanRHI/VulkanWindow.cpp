@@ -5,6 +5,11 @@
 
 namespace PK::Rendering::VulkanRHI
 {
+    using namespace PK::Utilities;
+    using namespace Systems;
+    using namespace Objects;
+    using namespace Structs;
+
     static VulkanWindow* GetWindowPtr(GLFWwindow* window)
     {
         return (VulkanWindow*)glfwGetWindowUserPointer(window);

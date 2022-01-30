@@ -6,16 +6,13 @@
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
-    using namespace PK::Utilities;
-    using namespace Objects;
-
-    class VulkanCommandBufferPool 
+    class VulkanCommandBufferPool : public PK::Utilities::NoCopy
     {
         public:
-            VulkanCommandBufferPool(const VkDevice device, const VulkanSystemContext& systems, uint32_t queueFamilyIndex);
+            VulkanCommandBufferPool(const VkDevice device, const Objects::VulkanSystemContext& systems, uint32_t queueFamilyIndex);
             ~VulkanCommandBufferPool();
     
-            VulkanCommandBuffer* GetCurrent();
+            Objects::VulkanCommandBuffer* GetCurrent();
             VkSemaphore QueueDependency(const VkSemaphore** previousDependency);
             void SubmitCurrent(VkPipelineStageFlags waitFlag, const VulkanSemaphore* waitSignal);
             void PruneStaleBuffers();
@@ -28,12 +25,12 @@ namespace PK::Rendering::VulkanRHI::Systems
             const VkDevice m_device;
             VkQueue m_queue;
             VkCommandPool m_pool;
-            VulkanRenderState m_primaryRenderState;
-            VulkanCommandBuffer m_commandBuffers[MAX_PRIMARY_COMMANDBUFFERS] = {};
+            Objects::VulkanRenderState m_primaryRenderState;
+            Objects::VulkanCommandBuffer m_commandBuffers[MAX_PRIMARY_COMMANDBUFFERS] = {};
             VulkanSemaphore* m_renderingFinishedSignals[MAX_PRIMARY_COMMANDBUFFERS] = {};
             VulkanSemaphore* m_dependencySignals[MAX_DEPENDENCIES] = {};
 
-            VulkanCommandBuffer* m_current = nullptr;
+            Objects::VulkanCommandBuffer* m_current = nullptr;
             VulkanSemaphore* m_renderingFinishedSignal = {};
             VulkanSemaphore* m_currentDependencySignal = {};
             uint32_t m_dependencySignalIndex = 0u;

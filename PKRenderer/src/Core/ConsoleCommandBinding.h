@@ -4,8 +4,6 @@
 
 namespace PK::Core
 {
-	using namespace Services;
-
 	struct ConsoleCommandToken
 	{
 		const std::string& argument;
@@ -14,7 +12,7 @@ namespace PK::Core
 
 	struct ConsoleCommandBinding
 	{
-		KeyCode keycode = KeyCode::MOUSE1;
+		Services::KeyCode keycode = Services::KeyCode::MOUSE1;
 		std::string command;
 	};
 

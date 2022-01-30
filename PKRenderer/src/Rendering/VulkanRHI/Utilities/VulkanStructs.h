@@ -9,9 +9,6 @@
 
 namespace PK::Rendering::VulkanRHI
 {
-    using namespace PK::Rendering::Structs;
-    using namespace PK::Utilities;
-
     constexpr const static uint32_t PK_QUEUE_FAMILY_COUNT = 3;
     constexpr const static uint32_t PK_INVALID_QUEUE_FAMILY = 0xFFFFFFFF;
 
@@ -51,7 +48,7 @@ namespace PK::Rendering::VulkanRHI
     struct VulkanBufferCreateInfo
     {
         VulkanBufferCreateInfo() {};
-        VulkanBufferCreateInfo(BufferUsage usage, size_t size);
+        VulkanBufferCreateInfo(Structs::BufferUsage usage, size_t size);
 
         VkBufferCreateInfo buffer { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
         VmaAllocationCreateInfo allocation {};
@@ -60,7 +57,7 @@ namespace PK::Rendering::VulkanRHI
     struct VulkanImageCreateInfo
     {
         VulkanImageCreateInfo() {};
-        VulkanImageCreateInfo(const TextureDescriptor& descriptor);
+        VulkanImageCreateInfo(const Structs::TextureDescriptor& descriptor);
 
         VkImageCreateInfo image = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
         VmaAllocationCreateInfo allocation = {};
@@ -85,12 +82,12 @@ namespace PK::Rendering::VulkanRHI
         VkAccessFlags dstAccessMask = 0;
     };
 
-    struct IVulkanDisposable : public IDObject 
+    struct IVulkanDisposable : public PK::Utilities::IDObject 
     {
         virtual ~IVulkanDisposable() = 0 {};
     };
 
-    struct VulkanFence : public NoCopy
+    struct VulkanFence : public PK::Utilities::NoCopy
     {
         VulkanFence(VkDevice device, bool signaled = false);
         ~VulkanFence();
@@ -99,7 +96,7 @@ namespace PK::Rendering::VulkanRHI
         VkFence vulkanFence;
     };
 
-    struct VulkanSemaphore : public NoCopy
+    struct VulkanSemaphore : public PK::Utilities::NoCopy
     {
         VulkanSemaphore(VkDevice device);
         ~VulkanSemaphore();
@@ -116,7 +113,7 @@ namespace PK::Rendering::VulkanRHI
         VkImageView view;
     };
 
-    struct VulkanFrameBuffer : public NoCopy
+    struct VulkanFrameBuffer : public PK::Utilities::NoCopy
     {
         VulkanFrameBuffer(VkDevice device, const VkFramebufferCreateInfo& createInfo);
         ~VulkanFrameBuffer();
@@ -125,7 +122,7 @@ namespace PK::Rendering::VulkanRHI
         VkFramebuffer frameBuffer;
     };
 
-    struct VulkanRenderPass : public NoCopy
+    struct VulkanRenderPass : public PK::Utilities::NoCopy
     {
         VulkanRenderPass(VkDevice device, const VkRenderPassCreateInfo& createInfo);
         ~VulkanRenderPass();
@@ -180,7 +177,7 @@ namespace PK::Rendering::VulkanRHI
         VkPipelineShaderStageCreateInfo stageInfo;
     };
 
-    struct VulkanPipeline : public NoCopy 
+    struct VulkanPipeline : public PK::Utilities::NoCopy
     {
         VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo);
         VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkComputePipelineCreateInfo& createInfo);
@@ -190,7 +187,7 @@ namespace PK::Rendering::VulkanRHI
         VkPipeline pipeline;
     };
 
-    struct VulkanPipelineLayout : public NoCopy
+    struct VulkanPipelineLayout : public PK::Utilities::NoCopy
     {
         VulkanPipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo& createInfo);
         ~VulkanPipelineLayout();
@@ -199,7 +196,7 @@ namespace PK::Rendering::VulkanRHI
         VkPipelineLayout layout;
     };
 
-    struct VulkanDescriptorSetLayout : public NoCopy
+    struct VulkanDescriptorSetLayout : public PK::Utilities::NoCopy
     {
         VulkanDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& createInfo, VkShaderStageFlagBits stageFlags);
         ~VulkanDescriptorSetLayout();
@@ -209,7 +206,7 @@ namespace PK::Rendering::VulkanRHI
         VkShaderStageFlagBits stageFlags;
     };
 
-    struct VulkanDescriptorPool : public NoCopy
+    struct VulkanDescriptorPool : public PK::Utilities::NoCopy
     {
         VulkanDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo& createInfo);
         ~VulkanDescriptorPool();
@@ -224,19 +221,19 @@ namespace PK::Rendering::VulkanRHI
     {
         VkDescriptorSet set;
         uint64_t pruneTick;
-        mutable ExecutionGate executionGate;
+        mutable Rendering::Structs::ExecutionGate executionGate;
     };
 
-    struct VulkanSampler : public NoCopy
+    struct VulkanSampler : public PK::Utilities::NoCopy
     {
-        VulkanSampler(VkDevice device, const SamplerDescriptor& descriptor);
+        VulkanSampler(VkDevice device, const Rendering::Structs::SamplerDescriptor& descriptor);
         ~VulkanSampler();
 
         const VkDevice device;
         VkSampler sampler;
     };
 
-    struct VulkanBindHandle : IDObject
+    struct VulkanBindHandle : PK::Utilities::IDObject
     {
         union
         {
@@ -247,7 +244,7 @@ namespace PK::Rendering::VulkanRHI
         union
         {
             VkSampler sampler = VK_NULL_HANDLE;
-            const BufferLayout* bufferLayout;
+            const Rendering::Structs::BufferLayout* bufferLayout;
         };
 
         union
@@ -260,7 +257,7 @@ namespace PK::Rendering::VulkanRHI
         VkDeviceSize bufferOffset = 0ull;
     };
 
-    struct VulkanRenderTarget : public NoCopy
+    struct VulkanRenderTarget : public PK::Utilities::NoCopy
     {
         VulkanRenderTarget(VkImageView view,
                            VkImage image,

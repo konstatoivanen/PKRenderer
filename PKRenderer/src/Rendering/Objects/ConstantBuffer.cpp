@@ -3,6 +3,8 @@
 
 namespace PK::Rendering::Objects
 {
+    using namespace Structs;
+
     ConstantBuffer::ConstantBuffer(const BufferLayout& layout) : 
         ShaderPropertyBlock(nullptr, 0ull),
         m_graphicsBuffer(Buffer::CreateConstant(layout, BufferUsage::PersistentStage))

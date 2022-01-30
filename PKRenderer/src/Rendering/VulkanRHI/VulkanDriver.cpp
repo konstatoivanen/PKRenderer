@@ -6,6 +6,10 @@
 
 namespace PK::Rendering::VulkanRHI
 {
+    using namespace PK::Utilities;
+    using namespace Systems;
+    using namespace Objects;
+
     VulkanDriver::VulkanDriver(const VulkanContextProperties& properties) : properties(properties)
     {
         glfwInit();
