@@ -34,6 +34,39 @@ The project is built for Windows using C++ 17, Visual Studio & MSVC and supports
 - DX12 Rendering backend.
 - Antialiasing.
 
+## Required Vulkan Features & Extensions
+- VK_EXT_debug_utils
+- VK_LAYER_KHRONOS_validation
+- VK_KHR_surface
+- VK_KHR_win32_surface
+- alphaToOne
+- shaderImageGatherExtended
+- sparseBinding
+- sparseResidencyBuffer
+- samplerAnisotropy
+- multiViewport
+- shaderSampledImageArrayDynamicIndexing
+- shaderUniformBufferArrayDynamicIndexing
+- shaderFloat64
+- shaderInt16
+- shaderInt64
+- imageCubeArray
+- fragmentStoresAndAtomics
+- multiDrawIndirect
+- storageBuffer16BitAccess
+- uniformAndStorageBuffer16BitAccess
+- storagePushConstant16
+- shaderUniformBufferArrayNonUniformIndexing
+- shaderSampledImageArrayNonUniformIndexing
+- runtimeDescriptorArray
+- descriptorBindingVariableDescriptorCount
+- descriptorBindingPartiallyBound
+- scalarBlockLayout
+- shaderFloat16
+- shaderInt8
+- shaderOutputViewportIndex
+- shaderOutputLayer
+
 ## Libraries & Other Dependencies
 - Windows 10 (Support for other platforms has not been tested/developed/verified).
 - C++ 17 support required.
