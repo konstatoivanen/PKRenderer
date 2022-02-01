@@ -2,6 +2,8 @@
 Is a renderer developed for the implementation & testing of various rendering techniques using modern graphics APIs. 
 The project is built for Windows using C++ 17, Visual Studio & MSVC and supports Vulkan as a rendering backend (DX12 support is planned).
 
+**Note that if you want to build this but don't want to build PKAssetTools you can place the prebuilt binaries from that repository into your Build folder instead.**
+
 ## Preview
 ![Preview](T_Preview_01.gif?raw=true "GI Preview")
 
