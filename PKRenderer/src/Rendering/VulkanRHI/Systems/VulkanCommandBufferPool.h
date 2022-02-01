@@ -20,8 +20,8 @@ namespace PK::Rendering::VulkanRHI::Systems
             VulkanSemaphore* AcquireRenderingFinishedSignal();
     
         private:
-            static constexpr int MAX_PRIMARY_COMMANDBUFFERS = 16;
-            static constexpr int MAX_DEPENDENCIES = 64;
+            constexpr static const uint32_t MAX_PRIMARY_COMMANDBUFFERS = 16u;
+            constexpr static const uint32_t MAX_DEPENDENCIES = 64u;
             const VkDevice m_device;
             VkQueue m_queue;
             VkCommandPool m_pool;

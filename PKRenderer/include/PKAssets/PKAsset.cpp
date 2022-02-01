@@ -250,7 +250,7 @@ namespace PK::Assets
         return PKElementType::Invalid;
     }
 
-    uint_t Assets::GetElementSize(PKElementType type)
+    uint32_t Assets::GetElementSize(PKElementType type)
     {
         switch (type)
         {
@@ -307,7 +307,7 @@ namespace PK::Assets
         return 0;
     }
 
-    uint_t Assets::GetElementAlignment(PKElementType type)
+    uint32_t Assets::GetElementAlignment(PKElementType type)
     {
         switch (type)
         {
@@ -364,7 +364,7 @@ namespace PK::Assets
         return 0;
     }
 
-    uint_t Assets::GetElementComponents(PKElementType type)
+    uint32_t Assets::GetElementComponents(PKElementType type)
     {
         switch (type)
         {

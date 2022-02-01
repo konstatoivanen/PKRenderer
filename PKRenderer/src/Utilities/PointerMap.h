@@ -21,7 +21,7 @@ namespace PK::Utilities
                 int32_t next;
 
                 Node() : previous(-1), next(-1) {}
-                Node(const TKey& key, uint64_t hash, int previousNode) : key(key), hashcode(hash), previous(previousNode), next(-1) {}
+                Node(const TKey& key, uint64_t hash, int32_t previousNode) : key(key), hashcode(hash), previous(previousNode), next(-1) {}
                 Node(const TKey& key, uint64_t hash) : key(key), hashcode(hash), previous(-1), next(-1) {}
             };
 

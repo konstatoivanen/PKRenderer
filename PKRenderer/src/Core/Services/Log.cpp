@@ -3,7 +3,7 @@
 
 namespace PK::Core::Services::Debug
 {
-    void Logger::ClearLineRemainder(int length)
+    void Logger::ClearLineRemainder(int32_t length)
     {
         auto l = m_lineClearLength - length;
     

@@ -25,7 +25,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             void Clear() override final { m_count = 0; }
 
         private:
-            int Add(const VulkanBindHandle* handle);
+            int32_t Add(const VulkanBindHandle* handle);
 
             const VulkanBindHandle** m_handles = nullptr;
             // Hackedy hack dirty stuff

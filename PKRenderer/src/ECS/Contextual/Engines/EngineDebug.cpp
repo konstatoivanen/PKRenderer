@@ -71,7 +71,7 @@ namespace PK::ECS::Engines
 			Builders::BuildMeshRenderableEntity(m_entityDb, rocksMesh, {{materialPlaster,submesh}}, pos, rot, size);
 		}
 
-		for (uint i = 0; i < config->LightCount; ++i)
+		for (uint32_t i = 0u; i < config->LightCount; ++i)
 		{
 			Builders::BuildLightSphereRenderableEntity(
 				m_entityDb,

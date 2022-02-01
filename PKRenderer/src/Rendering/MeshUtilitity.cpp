@@ -18,9 +18,9 @@ namespace PK::Rendering::MeshUtility
             const float* normals = nullptr;
             float* tangents = nullptr;
             const float* texcoords = nullptr;
-            const unsigned int* indices = nullptr;
-            unsigned int vcount = 0;
-            unsigned int icount = 0;
+            const uint32_t* indices = nullptr;
+            uint32_t vcount = 0;
+            uint32_t icount = 0;
         };
 
         // Returns the number of faces (triangles/quads) on the mesh to be processed.
@@ -91,14 +91,14 @@ namespace PK::Rendering::MeshUtility
         struct PKMeshData
         {
             float* vertices = nullptr;
-            unsigned int stride = 0;
-            unsigned int vertexOffset = 0;
-            unsigned int normalOffset = 0;
-            unsigned int tangentOffset = 0;
-            unsigned int texcoordOffset = 0;
-            const unsigned int* indices = nullptr;
-            unsigned int vcount = 0;
-            unsigned int icount = 0;
+            uint32_t stride = 0;
+            uint32_t vertexOffset = 0;
+            uint32_t normalOffset = 0;
+            uint32_t tangentOffset = 0;
+            uint32_t texcoordOffset = 0;
+            const uint32_t* indices = nullptr;
+            uint32_t vcount = 0;
+            uint32_t icount = 0;
         };
 
         // Returns the number of faces (triangles/quads) on the mesh to be processed.
@@ -169,7 +169,7 @@ namespace PK::Rendering::MeshUtility
 
     void CalculateNormals(const float3* vertices, const uint32_t* indices, float3* normals, uint32_t vcount, uint32_t icount, float sign)
     {
-        for (uint i = 0, j = 0; i < icount; i += 3)
+        for (auto i = 0u, j = 0u; i < icount; i += 3u)
         {
             auto i0 = indices[i + 0];
             auto i1 = indices[i + 1];
@@ -186,11 +186,10 @@ namespace PK::Rendering::MeshUtility
             normals[i2] += normal;
         }
 
-        for (uint i = 0; i < vcount; ++i)
+        for (auto i = 0u; i < vcount; ++i)
         {
             normals[i] = glm::normalize(normals[i]) * sign;
         }
-
     }
 
     void CalculateTangents(const float3* vertices, const float3* normals, const float2* texcoords, const uint32_t* indices, float4* tangents, uint32_t vcount, uint32_t icount)
@@ -311,7 +310,7 @@ namespace PK::Rendering::MeshUtility
             { p4, up, float4(back, 1), uv10 }
         };
 
-        unsigned int indices[] =
+        uint32_t indices[] =
         {
             // Bottom
             3, 1, 0, 3, 2, 1,
@@ -367,7 +366,7 @@ namespace PK::Rendering::MeshUtility
              1.0f,  0.0f
         };
 
-        unsigned int indices[] =
+        uint32_t indices[] =
         {
             0,1,2,
             2,3,0
@@ -389,8 +388,8 @@ namespace PK::Rendering::MeshUtility
         auto isize = float3(extents.x / resolution.x, extents.y / resolution.y, 0.0f) * 2.0f;
         auto min = float3(center - extents, 0);
 
-        for (uint x = 0; x < resolution.x; ++x)
-        for (uint y = 0; y < resolution.y; ++y)
+        for (auto x = 0u; x < resolution.x; ++x)
+        for (auto y = 0u; y < resolution.y; ++y)
         {
             auto vmin = min + isize * float3(x, y, 0);
             auto baseVertex = (y * resolution.x + x) * 4;
@@ -440,22 +439,22 @@ namespace PK::Rendering::MeshUtility
 
     Ref<VirtualMesh> GetSphere(Ref<Mesh> baseMesh, const float3& offset, const float radius)
     {
-        const int longc = 24;
-        const int lattc = 16;
-        const int vcount = (longc + 1) * lattc + 2;
+        const int32_t longc = 24;
+        const int32_t lattc = 16;
+        const int32_t vcount = (longc + 1) * lattc + 2;
 
         //Vertex_Full
         auto vertices = PK_CONTIGUOUS_ALLOC(Structs::Vertex_Full, vcount);
 
         vertices[0].position = PK_FLOAT3_UP * radius;
 
-        for (int lat = 0; lat < lattc; lat++)
+        for (auto lat = 0u; lat < lattc; lat++)
         {
             float a1 = PK_FLOAT_PI * (float)(lat + 1) / (lattc + 1);
             float sin1 = sin(a1);
             float cos1 = cos(a1);
 
-            for (int lon = 0; lon <= longc; lon++)
+            for (auto lon = 0u; lon <= longc; lon++)
             {
                 float a2 = PK_FLOAT_2PI * (float)(lon == longc ? 0 : lon) / longc;
                 float sin2 = sin(a2);
@@ -474,9 +473,9 @@ namespace PK::Rendering::MeshUtility
         vertices[0].texcoord = PK_FLOAT2_UP;
         vertices[vcount - 1].texcoord = PK_FLOAT2_ZERO;
 
-        for (int lat = 0; lat < lattc; lat++)
+        for (auto lat = 0u; lat < lattc; lat++)
         {
-            for (int lon = 0; lon <= longc; lon++)
+            for (int lon = 0u; lon <= longc; lon++)
             {
                 vertices[lon + lat * (longc + 1) + 1].texcoord = float2((float)lon / longc, 1.0f - (float)(lat + 1) / (lattc + 1));
             }
@@ -488,9 +487,9 @@ namespace PK::Rendering::MeshUtility
         auto indices = PK_CONTIGUOUS_ALLOC(uint, icount);
 
         //Top Cap
-        int i = 0;
+        auto i = 0u;
 
-        for (int lon = 0; lon < longc; lon++)
+        for (auto lon = 0u; lon < longc; lon++)
         {
             indices[i++] = lon + 2;
             indices[i++] = lon + 1;
@@ -498,12 +497,12 @@ namespace PK::Rendering::MeshUtility
         }
 
         //Middle
-        for (int lat = 0; lat < lattc - 1; lat++)
+        for (auto lat = 0u; lat < lattc - 1; lat++)
         {
-            for (int lon = 0; lon < longc; lon++)
+            for (auto lon = 0u; lon < longc; lon++)
             {
-                int current = lon + lat * (longc + 1) + 1;
-                int next = current + longc + 1;
+                auto current = lon + lat * (longc + 1) + 1;
+                auto next = current + longc + 1;
 
                 indices[i++] = current;
                 indices[i++] = current + 1;
@@ -516,7 +515,7 @@ namespace PK::Rendering::MeshUtility
         }
 
         //Bottom Cap
-        for (int lon = 0; lon < longc; lon++)
+        for (auto lon = 0u; lon < longc; lon++)
         {
             indices[i++] = vcount - 1;
             indices[i++] = vcount - (lon + 2) - 1;

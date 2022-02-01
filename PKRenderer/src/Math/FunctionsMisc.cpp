@@ -4,7 +4,7 @@
 
 namespace PK::Math::Functions
 {
-    void GetCascadeDepths(float znear, float zfar, float linearity, float* cascades, uint count)
+    void GetCascadeDepths(float znear, float zfar, float linearity, float* cascades, uint32_t count)
     {
         assert(count > 2);
 
@@ -33,10 +33,10 @@ namespace PK::Math::Functions
         return (float)rand() / (float)RAND_MAX;
     }
 
-    uint RandomUint()
+    uint32_t RandomUint()
     {
         auto v = rand();
-        return *reinterpret_cast<uint*>(&v);
+        return *reinterpret_cast<uint32_t*>(&v);
     }
     
     float3 RandomFloat3() 
@@ -44,7 +44,7 @@ namespace PK::Math::Functions
         return float3(RandomFloat(), RandomFloat(), RandomFloat()); 
     }
 
-    uint RandomRangeUint(uint min, uint max)
+    uint32_t RandomRangeUint(uint32_t min, uint32_t max)
     {
         return  min + (RandomUint() % (max - min));
     }
@@ -86,24 +86,24 @@ namespace PK::Math::Functions
         return start;
     }
 
-    uint GetMaxMipLevelPow2(uint resolution) 
+    uint32_t GetMaxMipLevelPow2(uint32_t resolution) 
     { 
         return glm::log2(resolution); 
     }
 
-    uint GetMaxMipLevelPow2(uint2 resolution) 
+    uint32_t GetMaxMipLevelPow2(uint2 resolution) 
     { 
         return glm::log2(glm::compMin(resolution)); 
     }
 
-    uint GetMaxMipLevelPow2(uint3 resolution) 
+    uint32_t GetMaxMipLevelPow2(uint3 resolution) 
     { 
         return glm::log2(glm::compMin(resolution)); 
     }
 
-    uint GetMaxMipLevel(uint resolution)
+    uint32_t GetMaxMipLevel(uint32_t resolution)
     {
-        uint level = 1;
+        uint32_t level = 1;
 
         while (resolution > 1)
         {
@@ -114,12 +114,12 @@ namespace PK::Math::Functions
         return level;
     }
 
-    uint GetMaxMipLevel(uint2 resolution) 
+    uint32_t GetMaxMipLevel(uint2 resolution) 
     { 
         return GetMaxMipLevel(glm::compMin(resolution)); 
     }
 
-    uint GetMaxMipLevel(uint3 resolution) 
+    uint32_t GetMaxMipLevel(uint3 resolution) 
     { 
         return GetMaxMipLevel(glm::compMin(resolution)); 
     }

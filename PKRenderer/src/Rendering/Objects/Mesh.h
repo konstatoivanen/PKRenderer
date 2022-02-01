@@ -66,7 +66,7 @@ namespace PK::Rendering::Objects
             const Buffer* GetVertexBuffer() const { return m_vertexBuffers.at(0).get(); }
             const Buffer* GetVertexBuffer(uint32_t index) const { return m_vertexBuffers.at(index).get(); }
             const Buffer* GetIndexBuffer() const { return m_indexBuffer.get(); }
-            const SubMesh& GetSubmesh(int submesh) const;
+            const SubMesh& GetSubmesh(int32_t submesh) const;
             inline const uint32_t GetSubmeshCount() const { return glm::max(1u, (uint32_t)m_submeshes.size() - (uint32_t)m_freeSubmeshIndices.size()); }
             constexpr const SubMesh& GetFullRange() const { return m_fullRange; }
 

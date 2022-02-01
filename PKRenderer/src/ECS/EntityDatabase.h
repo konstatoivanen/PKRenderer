@@ -86,7 +86,7 @@ namespace PK::ECS
     class EntityDatabase : public Core::Services::IService
     {
         public:
-            constexpr int ReserveEntityId() { return ++m_idCounter; }
+            constexpr uint32_t ReserveEntityId() { return ++m_idCounter; }
             inline EGID ReserveEntityId(uint32_t groupId) { return EGID(ReserveEntityId(), groupId); }
 
             template<typename T>

@@ -32,8 +32,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         void SetViewPorts(const uint4* rects, uint32_t count) override final;
         void SetScissors(const uint4* rects, uint32_t count) override final;
 
-        void SetShader(const Shader* shader, int variantIndex = -1) override final;
-        void SetVertexBuffers(const Buffer** buffers, uint count) override final;
+        void SetShader(const Shader* shader, int32_t variantIndex = -1) override final;
+        void SetVertexBuffers(const Buffer** buffers, uint32_t count) override final;
         void SetIndexBuffer(const Buffer* buffer, size_t offset) override final;
         void SetBuffer(uint32_t nameHashId, Buffer* buffer, const IndexRange& range) override final;
         void SetTexture(uint32_t nameHashId, Texture* texture, const TextureViewRange& range) override final;

@@ -33,8 +33,8 @@ namespace PK::Utilities
             }
         };
 
-        IDHandle() : value(nullptr), version(0ull) {}
-        IDHandle(const T* value) : value(value), version(value->Version()) {}
+        constexpr IDHandle() : value(nullptr), version(0ull) {}
+        constexpr IDHandle(const T* value) : value(value), version(value->Version()) {}
 
         constexpr bool operator == (const IDHandle& r) const noexcept
         {

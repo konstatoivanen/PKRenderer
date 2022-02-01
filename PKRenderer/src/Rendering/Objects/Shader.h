@@ -10,7 +10,7 @@ namespace PK::Rendering::Objects
     class ShaderVariantMap : public Utilities::NoCopy
     {
         public:
-            constexpr static const int MAX_DIRECTIVES = 16;
+            constexpr static const uint32_t MAX_DIRECTIVES = 16;
 
             void ListVariants();
             inline bool SupportsKeyword(const uint32_t hashId) const { return keywords.count(hashId) > 0; }

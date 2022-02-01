@@ -10,11 +10,9 @@
 
 int main(int argc, char** argv)
 {
-#ifdef PK_DEBUG
+#if defined(PK_DEBUG) && defined(_WIN32)
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
-
-   // _CrtSetBreakAlloc(38508);
 
     auto app = new PK::Core::Application({ argc, argv }, "PK Renderer");
     app->Run();

@@ -11,11 +11,11 @@ namespace PK::Assets
         auto base = reinterpret_cast<char*>(asset->rawData);
         auto head = base + sizeof(PKAssetHeader);
 
-        uint_t osize = *reinterpret_cast<uint_t*>(head);
-        head += sizeof(uint_t);
+        uint32_t osize = *reinterpret_cast<uint32_t*>(head);
+        head += sizeof(uint32_t);
 
-        uint_t binOffs = *reinterpret_cast<uint_t*>(head);
-        head += sizeof(uint_t);
+        uint32_t binOffs = *reinterpret_cast<uint32_t*>(head);
+        head += sizeof(uint32_t);
 
         size_t binSize = *reinterpret_cast<size_t*>(head);
         head += sizeof(size_t);
@@ -88,7 +88,7 @@ namespace PK::Assets
             return -1;
         }
 
-        unsigned long long magicNumber = 0ull;
+        uint64_t magicNumber = 0ull;
         fread(&magicNumber, sizeof(decltype(magicNumber)), 1, file);
 
         if (magicNumber != PK_ASSET_MAGIC_NUMBER)

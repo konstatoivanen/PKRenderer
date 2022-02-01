@@ -5,7 +5,7 @@
 
 namespace PK::Core::Services::Debug
 {
-    constexpr unsigned short ComposeConsoleColor(unsigned short fore, unsigned short back)
+    constexpr uint16_t ComposeConsoleColor(uint16_t fore, uint16_t back)
     {
         return ((unsigned)back << 4) | (unsigned)fore;
     }
@@ -50,9 +50,9 @@ namespace PK::Core::Services::Debug
         public:
             Logger(uint32_t filterFlags) : m_filterFlags(filterFlags) {}
 
-            void ClearLineRemainder(int length);
+            void ClearLineRemainder(int32_t length);
             void InsertNewLine();
-            inline void SetConsoleColor(int color) 
+            inline void SetConsoleColor(int32_t color) 
             {
                 #if defined(WIN32)
                     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color); 
@@ -60,7 +60,7 @@ namespace PK::Core::Services::Debug
             }
 
             template<typename T, typename... Args>
-            void Log(PKLogSeverityFlags flags, int color, const T* message, const Args&...args)
+            void Log(PKLogSeverityFlags flags, int32_t color, const T* message, const Args&...args)
             {
                 if ((flags & m_filterFlags) != 0)
                 {
@@ -79,7 +79,7 @@ namespace PK::Core::Services::Debug
             }
 
             template<typename T, typename ... Args>
-            std::exception Exception(PKLogSeverityFlags flags, int color, const T* message, const Args&...args)
+            std::exception Exception(PKLogSeverityFlags flags, int32_t color, const T* message, const Args&...args)
             {
                 if ((flags & m_filterFlags) != 0)
                 {

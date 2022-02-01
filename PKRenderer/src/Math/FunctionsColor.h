@@ -3,7 +3,7 @@
 
 namespace PK::Math::Functions
 {
-    inline color HexToRGB(uint hex) { return color((hex >> 24) & 0xFF, (hex >> 16) & 0xFF, (hex >> 8) & 0xFF, 255.0f) / 255.0f; }
+    inline color HexToRGB(uint32_t hex) { return color((hex >> 24) & 0xFF, (hex >> 16) & 0xFF, (hex >> 8) & 0xFF, 255.0f) / 255.0f; }
     color HueToRGB(float hue);
 
     color NormalizeColor(const color& color);

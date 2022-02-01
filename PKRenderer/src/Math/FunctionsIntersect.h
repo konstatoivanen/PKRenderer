@@ -9,14 +9,14 @@ namespace PK::Math::Functions
     float PlaneMinDistanceToAABB(const float4& plane, const BoundingBox& aabb);
     float PlaneDistanceToPoint(const float4& plane, const float3& point);
     float3 IntesectPlanes3(const float4& p1, const float4& p2, const float4& p3);
-    bool IntersectPlanesAABB(const float4* planes, int planeCount, const BoundingBox& aabb);
+    bool IntersectPlanesAABB(const float4* planes, uint32_t planeCount, const BoundingBox& aabb);
     bool IntersectAABB(const BoundingBox& a, const BoundingBox& b);
     bool IntersectSphere(const float3& center, float radius, const BoundingBox& b);
     void BoundsEncapsulate(BoundingBox* bounds, const BoundingBox& other);
     void BoundsEncapsulate(BoundingBox* bounds, float* bmin, float* bmax);
-    int BoundsLongestAxis(const BoundingBox& bounds);
-    int BoundsShortestAxis(const BoundingBox& bounds);
-    void BoundsSplit(const BoundingBox& bounds, int axis, BoundingBox* out0, BoundingBox* out1);
+    uint32_t BoundsLongestAxis(const BoundingBox& bounds);
+    uint32_t BoundsShortestAxis(const BoundingBox& bounds);
+    void BoundsSplit(const BoundingBox& bounds, uint32_t axis, BoundingBox* out0, BoundingBox* out1);
     bool BoundsContains(const BoundingBox& bounds, const float3& point);
     BoundingBox BoundsTransform(const float4x4& matrix, const BoundingBox& bounds);
     BoundingBox GetInverseFrustumBounds(const float4x4& inverseMatrix);

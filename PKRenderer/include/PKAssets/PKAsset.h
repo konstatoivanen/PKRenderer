@@ -1,17 +1,17 @@
 #pragma once
+#include <cstdint>
 
 namespace PK::Assets
 {
-    typedef unsigned int uint_t;
-    typedef unsigned int relativePtr;
+    typedef uint32_t relativePtr;
 
-    constexpr static const unsigned long long PK_ASSET_MAGIC_NUMBER = 16056123332373007180ull;
-    constexpr static const unsigned int PK_ASSET_NAME_MAX_LENGTH = 64;
-    constexpr static const unsigned int PK_ASSET_MAX_VERTEX_ATTRIBUTES = 8;
-    constexpr static const unsigned int PK_ASSET_MAX_DESCRIPTOR_SETS = 4;
-    constexpr static const unsigned int PK_ASSET_MAX_DESCRIPTORS_PER_SET = 16;
-    constexpr static const unsigned int PK_ASSET_MAX_SHADER_KEYWORDS = 256;
-    constexpr static const unsigned int PK_ASSET_MAX_UNBOUNDED_SIZE = 2048;
+    constexpr static const uint64_t PK_ASSET_MAGIC_NUMBER = 16056123332373007180ull;
+    constexpr static const uint32_t PK_ASSET_NAME_MAX_LENGTH = 64;
+    constexpr static const uint32_t PK_ASSET_MAX_VERTEX_ATTRIBUTES = 8;
+    constexpr static const uint32_t PK_ASSET_MAX_DESCRIPTOR_SETS = 4;
+    constexpr static const uint32_t PK_ASSET_MAX_DESCRIPTORS_PER_SET = 16;
+    constexpr static const uint32_t PK_ASSET_MAX_SHADER_KEYWORDS = 256;
+    constexpr static const uint32_t PK_ASSET_MAX_UNBOUNDED_SIZE = 2048;
 
     constexpr static const char* PK_ASSET_EXTENSION_SHADER = ".pkshader";
     constexpr static const char* PK_ASSET_EXTENSION_MESH = ".pkmesh";
@@ -20,7 +20,7 @@ namespace PK::Assets
     template<typename T>
     struct RelativePtr
     {
-        uint_t offset = 0;
+        uint32_t offset = 0;
 
         T* Get(void* base)
         {
@@ -30,7 +30,7 @@ namespace PK::Assets
 
         void Set(void* base, T* value)
         {
-            offset = (uint_t)(reinterpret_cast<char*>(value) - reinterpret_cast<char*>(base));
+            offset = (uint32_t)(reinterpret_cast<char*>(value) - reinterpret_cast<char*>(base));
         }
     };
 
@@ -183,9 +183,9 @@ namespace PK::Assets
     };
 
     PKElementType GetElementType(const char* string);
-    uint_t GetElementSize(PKElementType type);
-    uint_t GetElementAlignment(PKElementType type);
-    uint_t GetElementComponents(PKElementType type);
+    uint32_t GetElementSize(PKElementType type);
+    uint32_t GetElementAlignment(PKElementType type);
+    uint32_t GetElementComponents(PKElementType type);
 
     struct PKEncNode
     {
@@ -197,7 +197,7 @@ namespace PK::Assets
 
     struct PKAssetHeader
     {
-        unsigned long long magicNumber = PK_ASSET_MAGIC_NUMBER;
+        uint64_t magicNumber = PK_ASSET_MAGIC_NUMBER;
         char name[PK_ASSET_NAME_MAX_LENGTH]{};
         PKAssetType type = PKAssetType::Invalid;
         bool isCompressed = false;
@@ -233,7 +233,7 @@ namespace PK::Assets
         {
             char name[PK_ASSET_NAME_MAX_LENGTH];
             PKElementType type;
-            unsigned short location;
+            uint16_t location;
         };
 
         struct alignas(4) PKMaterialProperty
@@ -245,22 +245,22 @@ namespace PK::Assets
         struct alignas(4) PKConstantVariable
         {
             char name[PK_ASSET_NAME_MAX_LENGTH];
-            unsigned short size;
-            unsigned short offset;
-            unsigned short stageFlags;
+            uint16_t size;
+            uint16_t offset;
+            uint16_t stageFlags;
         };
 
         struct alignas(4) PKDescriptor
         {
             char name[PK_ASSET_NAME_MAX_LENGTH];
             PKDescriptorType type;
-            unsigned short count;
+            uint16_t count;
         };
 
         struct alignas(4) PKShaderKeyword
         {
             char name[PK_ASSET_NAME_MAX_LENGTH];
-            uint_t offsets;
+            uint32_t offsets;
         };
 
         struct alignas(4) PKShaderFixedStateAttributes
@@ -273,35 +273,35 @@ namespace PK::Assets
             PKBlendFactor blendDstFactorAlpha = PKBlendFactor::None;
             PKBlendOp blendOpColor = PKBlendOp::None;
             PKBlendOp blendOpAlpha = PKBlendOp::None;
-            unsigned short colorMask = 0xFF;
-            unsigned short zwrite = 0x0;
+            uint16_t colorMask = 0xFF;
+            uint16_t zwrite = 0x0;
             float zoffsets[3] = { 0, 0, 0 };
         };
 
         struct PKDescriptorSet
         {
-            uint_t stageflags;
-            uint_t descriptorCount;
+            uint32_t stageflags;
+            uint32_t descriptorCount;
             RelativePtr<PKDescriptor> descriptors;
         };
 
         struct PKShaderVariant
         {
-            uint_t descriptorSetCount;
-            uint_t constantVariableCount;
+            uint32_t descriptorSetCount;
+            uint32_t constantVariableCount;
             RelativePtr<PKDescriptorSet> descriptorSets;
             RelativePtr<PKConstantVariable> constantVariables;
             PKVertexAttribute vertexAttributes[PK_ASSET_MAX_VERTEX_ATTRIBUTES];
-            uint_t sprivSizes[(int)PKShaderStage::MaxCount];
+            uint32_t sprivSizes[(int)PKShaderStage::MaxCount];
             RelativePtr<void> sprivBuffers[(int)PKShaderStage::MaxCount];
         };
 
         struct PKShader
         {
             Type type = Type::Graphics;
-            uint_t materialPropertyCount = 0;
-            uint_t keywordCount = 0;
-            uint_t variantcount = 0;
+            uint32_t materialPropertyCount = 0;
+            uint32_t keywordCount = 0;
+            uint32_t variantcount = 0;
             PKShaderFixedStateAttributes attributes;
             RelativePtr<PKMaterialProperty> materialProperties;
             RelativePtr<PKShaderKeyword> keywords;
@@ -324,14 +324,14 @@ namespace PK::Assets
         {
             char name[PK_ASSET_NAME_MAX_LENGTH];
             PKElementType type;
-            unsigned short size = 0;
-            unsigned short offset = 0;
+            uint16_t size = 0;
+            uint16_t offset = 0;
         };
 
         struct PKSubmesh
         {
-            uint_t firstIndex;
-            uint_t indexCount;
+            uint32_t firstIndex;
+            uint32_t indexCount;
             float bbmin[3]{};
             float bbmax[3]{};
         };
@@ -339,11 +339,11 @@ namespace PK::Assets
         struct PKMesh
         {
             PKElementType indexType;
-            uint_t indexCount;
-            uint_t vertexCount;
-            uint_t vertexStride;
-            uint_t submeshCount;
-            uint_t vertexAttributeCount;
+            uint32_t indexCount;
+            uint32_t vertexCount;
+            uint32_t vertexStride;
+            uint32_t submeshCount;
+            uint32_t vertexAttributeCount;
             RelativePtr<PKVertexAttribute> vertexAttributes;
             RelativePtr<PKSubmesh> submeshes;
             RelativePtr<void> vertexBuffer;

@@ -83,7 +83,7 @@ namespace PK::ECS::Engines
             bool rp[6], rn[6], vis[6];
 
             // Source: https://newq.net/dl/pub/s2015_shadows.pdf
-            for (uint j = 0; j < 6; ++j)
+            for (uint32_t j = 0u; j < 6; ++j)
             {
                 auto dist = glm::dot(center, planeNormals[j]);
                 auto radius = glm::dot(extents, absPlaneNormals[j]);

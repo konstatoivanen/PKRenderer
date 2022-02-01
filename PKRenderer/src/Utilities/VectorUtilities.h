@@ -139,7 +139,7 @@ namespace PK::Utilities::Vector
     }
 
     template<typename T>
-    static int LowerBound(std::vector<T>& v, uint32_t size)
+    static int32_t LowerBound(std::vector<T>& v, uint32_t size)
     {
         Bound<T> b{};
 

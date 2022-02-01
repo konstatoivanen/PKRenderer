@@ -66,7 +66,7 @@ namespace PK::Rendering::Objects
         void SetRenderTarget(RenderTexture* renderTarget, bool updateViewPort);
         void SetRenderTarget(Texture* renderTarget);
         void SetRenderTarget(Texture* renderTarget, const Structs::TextureViewRange& range);
-        void SetRenderTarget(Texture* renderTarget, Math::ushort level, Math::ushort layer);
+        void SetRenderTarget(Texture* renderTarget, uint16_t level, uint16_t layer);
         void SetRenderTarget(Texture* renderTarget, const RenderTargetRanges& ranges);
         void SetMesh(const Mesh* mesh);
         void SetBuffer(uint32_t nameHashId, Buffer* buffer);
@@ -74,15 +74,15 @@ namespace PK::Rendering::Objects
         void SetBuffer(const char* name, Buffer* buffer, const Structs::IndexRange& range);
 
         void SetTexture(uint32_t nameHashId, Texture* texture);
-        void SetTexture(uint32_t nameHashId, Texture* texture, Math::ushort level, Math::ushort layer);
+        void SetTexture(uint32_t nameHashId, Texture* texture, uint16_t level, uint16_t layer);
         void SetTexture(const char* name, Texture* texture);
-        void SetTexture(const char* name, Texture* texture, Math::ushort level, Math::ushort layer);
+        void SetTexture(const char* name, Texture* texture, uint16_t level, uint16_t layer);
         void SetTexture(const char* name, Texture* texture, const Structs::TextureViewRange& range);
         
         void SetImage(uint32_t nameHashId, Texture* texture);
-        void SetImage(uint32_t nameHashId, Texture* texture, Math::ushort level, Math::ushort layer);
+        void SetImage(uint32_t nameHashId, Texture* texture, uint16_t level, uint16_t layer);
         void SetImage(const char* name, Texture* texture);
-        void SetImage(const char* name, Texture* texture, Math::ushort level, Math::ushort layer);
+        void SetImage(const char* name, Texture* texture, uint16_t level, uint16_t layer);
         void SetImage(const char* name, Texture* texture, const Structs::TextureViewRange& range);
         
         void SetBufferArray(const char* name, BindArray<Buffer>* bufferArray);
@@ -109,7 +109,7 @@ namespace PK::Rendering::Objects
         
         void Barrier(const Texture* texture, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
         void Barrier(const Texture* texture, const Structs::TextureViewRange& range, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
-        void Barrier(const Texture* texture, Math::ushort level, Math::ushort layer, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
+        void Barrier(const Texture* texture, uint16_t level, uint16_t layer, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
         void Barrier(const Buffer* buffer, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
         void Barrier(Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
     };

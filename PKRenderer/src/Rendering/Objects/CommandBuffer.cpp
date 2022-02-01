@@ -88,7 +88,7 @@ namespace PK::Rendering::Objects
         SetRenderTarget(&renderTarget, nullptr, &range, 1u);
     }
 
-    void CommandBuffer::SetRenderTarget(Texture* renderTarget, ushort level, ushort layer)
+    void CommandBuffer::SetRenderTarget(Texture* renderTarget, uint16_t level, uint16_t layer)
     {
         TextureViewRange range = { level, layer, 1u, 1u };
         SetRenderTarget(&renderTarget, nullptr, &range, 1u);
@@ -112,15 +112,15 @@ namespace PK::Rendering::Objects
     void CommandBuffer::SetBuffer(const char* name, Buffer* buffer) { SetBuffer(StringHashID::StringToID(name), buffer, buffer->GetFullRange()); }
 
     void CommandBuffer::SetTexture(uint32_t nameHashId, Texture* texture) { SetTexture(nameHashId, texture, {}); }
-    void CommandBuffer::SetTexture(uint32_t nameHashId, Texture* texture, ushort level, ushort layer) { SetTexture(nameHashId, texture, { level, layer, 1u, 1u }); }
+    void CommandBuffer::SetTexture(uint32_t nameHashId, Texture* texture, uint16_t level, uint16_t layer) { SetTexture(nameHashId, texture, { level, layer, 1u, 1u }); }
     void CommandBuffer::SetTexture(const char* name, Texture* texture) { SetTexture(StringHashID::StringToID(name), texture); }
-    void CommandBuffer::SetTexture(const char* name, Texture* texture, ushort level, ushort layer) { SetTexture(StringHashID::StringToID(name), texture, level, layer); }
+    void CommandBuffer::SetTexture(const char* name, Texture* texture, uint16_t level, uint16_t layer) { SetTexture(StringHashID::StringToID(name), texture, level, layer); }
     void CommandBuffer::SetTexture(const char* name, Texture* texture, const TextureViewRange& range) { SetTexture(StringHashID::StringToID(name), texture, range); }
     
     void CommandBuffer::SetImage(uint32_t nameHashId, Texture* texture) { SetImage(nameHashId, texture, {}); }
-    void CommandBuffer::SetImage(uint32_t nameHashId, Texture* texture, ushort level, ushort layer) { SetImage(nameHashId, texture, { level, layer, 1u, 1u }); }
+    void CommandBuffer::SetImage(uint32_t nameHashId, Texture* texture, uint16_t level, uint16_t layer) { SetImage(nameHashId, texture, { level, layer, 1u, 1u }); }
     void CommandBuffer::SetImage(const char* name, Texture* texture) { SetImage(StringHashID::StringToID(name), texture); }
-    void CommandBuffer::SetImage(const char* name, Texture* texture, ushort level, ushort layer) { SetImage(StringHashID::StringToID(name), texture, level, layer); }
+    void CommandBuffer::SetImage(const char* name, Texture* texture, uint16_t level, uint16_t layer) { SetImage(StringHashID::StringToID(name), texture, level, layer); }
     void CommandBuffer::SetImage(const char* name, Texture* texture, const TextureViewRange& range) { SetImage(StringHashID::StringToID(name), texture, range); }
 
     void CommandBuffer::SetBufferArray(const char* name, BindArray<Buffer>* bufferArray) { SetBufferArray(StringHashID::StringToID(name), bufferArray); }
@@ -226,7 +226,7 @@ namespace PK::Rendering::Objects
         Barrier(texture, range, nullptr, srcFlags, dstFlags);
     }
 
-    void CommandBuffer::Barrier(const Texture* texture, ushort level, ushort layer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
+    void CommandBuffer::Barrier(const Texture* texture, uint16_t level, uint16_t layer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
     {
         Barrier(texture, { level, layer, 1u, 1u }, nullptr, srcFlags, dstFlags);
     }

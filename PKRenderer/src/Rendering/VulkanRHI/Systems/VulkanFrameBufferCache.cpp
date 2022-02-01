@@ -98,7 +98,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         }
         else 
         {
-            for (int i = 0; i < PK_MAX_RENDER_TARGETS; ++i)
+            for (int i = 0u; i < PK_MAX_RENDER_TARGETS; ++i)
             {
                 colorLayouts[i].initial = key.colors[i].layout;
                 colorLayouts[i].final = key.colors[i].layout;
@@ -145,9 +145,9 @@ namespace PK::Rendering::VulkanRHI::Systems
         renderPassInfo.dependencyCount = key.dynamicTargets ? 2 : 1;
         renderPassInfo.pDependencies = dependencies;
 
-        int attachmentIndex = 0;
+        auto attachmentIndex = 0u;
 
-        for (int i = 0; i < PK_MAX_RENDER_TARGETS; i++) 
+        for (auto i = 0u; i < PK_MAX_RENDER_TARGETS; i++) 
         {
             if (key.colors[i].format == VK_FORMAT_UNDEFINED) 
             {
@@ -170,7 +170,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         }
 
         VkAttachmentReference* pResolveAttachment = resolveAttachmentRef;
-        for (int i = 0; i < PK_MAX_RENDER_TARGETS; ++i)
+        for (uint32_t i = 0u; i < PK_MAX_RENDER_TARGETS; ++i)
         {
             if (key.colors[i].format == VK_FORMAT_UNDEFINED)
             {

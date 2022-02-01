@@ -215,7 +215,7 @@ namespace PK::Rendering::Objects
 		}
 	}
 
-    const SubMesh& Mesh::GetSubmesh(int submesh) const
+    const SubMesh& Mesh::GetSubmesh(int32_t submesh) const
     {
         if (submesh < 0 || m_submeshes.empty())
         {

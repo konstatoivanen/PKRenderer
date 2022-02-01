@@ -76,9 +76,9 @@ namespace PK::Math::Functions
         return plane.x * bx + plane.y * by + plane.z * bz + plane.w;
     }
 
-    bool IntersectPlanesAABB(const float4* planes, int planeCount, const BoundingBox& aabb)
+    bool IntersectPlanesAABB(const float4* planes, uint32_t planeCount, const BoundingBox& aabb)
     {
-        for (auto i = 0; i < planeCount; ++i)
+        for (auto i = 0u; i < planeCount; ++i)
         {
             auto& plane = planes[i];
 
@@ -154,13 +154,13 @@ namespace PK::Math::Functions
         }
     }
 
-    int BoundsLongestAxis(const BoundingBox& bounds)
+    uint32_t BoundsLongestAxis(const BoundingBox& bounds)
     {
         auto ext = bounds.GetExtents();
         auto length = ext[0];
-        auto axis = 0;
+        auto axis = 0u;
 
-        for (auto i = 1; i < 3; ++i)
+        for (auto i = 1u; i < 3u; ++i)
         {
             if (ext[i] > length)
             {
@@ -172,13 +172,13 @@ namespace PK::Math::Functions
         return axis;
     }
 
-    int BoundsShortestAxis(const BoundingBox& bounds)
+    uint32_t BoundsShortestAxis(const BoundingBox& bounds)
     {
         auto ext = bounds.GetExtents();
         auto length = ext[0];
-        auto axis = 0;
+        auto axis = 0u;
 
-        for (auto i = 1; i < 3; ++i)
+        for (auto i = 1u; i < 3u; ++i)
         {
             if (ext[i] < length)
             {
@@ -190,7 +190,7 @@ namespace PK::Math::Functions
         return axis;
     }
 
-    void BoundsSplit(const BoundingBox& bounds, int axis, BoundingBox* out0, BoundingBox* out1)
+    void BoundsSplit(const BoundingBox& bounds, uint32_t axis, BoundingBox* out0, BoundingBox* out1)
     {
         *out0 = bounds;
         *out1 = bounds;
@@ -215,23 +215,23 @@ namespace PK::Math::Functions
     {
         BoundingBox out(matrix[3].xyz, matrix[3].xyz);
 
-        for (int i = 0; i < 3; ++i)
-            for (int j = 0; j < 3; ++j)
-            {
-                auto a = matrix[j][i] * bounds.min[j];
-                auto b = matrix[j][i] * bounds.max[j];
+        for (auto i = 0u; i < 3u; ++i)
+        for (auto j = 0u; j < 3u; ++j)
+        {
+            auto a = matrix[j][i] * bounds.min[j];
+            auto b = matrix[j][i] * bounds.max[j];
 
-                if (a < b)
-                {
-                    out.min[i] += a;
-                    out.max[i] += b;
-                }
-                else
-                {
-                    out.min[i] += b;
-                    out.max[i] += a;
-                }
+            if (a < b)
+            {
+                out.min[i] += a;
+                out.max[i] += b;
             }
+            else
+            {
+                out.min[i] += b;
+                out.max[i] += a;
+            }
+        }
 
         return out;
     }
