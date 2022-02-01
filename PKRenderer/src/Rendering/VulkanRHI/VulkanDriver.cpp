@@ -27,6 +27,11 @@ namespace PK::Rendering::VulkanRHI
         auto supportedMajor = VK_VERSION_MAJOR(supportedApiVersion);
         auto supportedMinor = VK_VERSION_MINOR(supportedApiVersion);
 
+        if (properties.minApiVersionMajor > supportedMajor || properties.minApiVersionMinor > supportedMinor)
+        {
+            PK_THROW_ERROR("Vulkan version %i.%i required. Your driver only supports version %i.%i", properties.minApiVersionMajor, properties.minApiVersionMinor, supportedMajor, supportedMinor);
+        }
+
         VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
         debugMessengerCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
         debugMessengerCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;

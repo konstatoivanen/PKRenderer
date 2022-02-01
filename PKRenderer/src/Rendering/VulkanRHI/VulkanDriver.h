@@ -19,6 +19,8 @@ namespace PK::Rendering::VulkanRHI
         std::string appName;
         std::string workingDirectory;
         uint64_t garbagePruneDelay;
+        uint32_t minApiVersionMajor;
+        uint32_t minApiVersionMinor;
         const std::vector<const char*>* validationLayers;
         const std::vector<const char*>* contextualInstanceExtensions;
         const std::vector<const char*>* contextualDeviceExtensions;
@@ -27,12 +29,16 @@ namespace PK::Rendering::VulkanRHI
             const std::string& appName = "Vulkan Engine",
             const std::string& workingDirectory = "",
             uint64_t garbagePruneDelay = 32ull,
+            uint32_t minApiVersionMajor = 1,
+            uint32_t minApiVersionMinor = 2,
             const std::vector<const char*>* validationLayers = nullptr,
             const std::vector<const char*>* contextualInstanceExtensions = nullptr,
             const std::vector<const char*>* contextualDeviceExtensions = nullptr) :
             appName(appName),
             workingDirectory(workingDirectory),
             garbagePruneDelay(garbagePruneDelay),
+            minApiVersionMajor(minApiVersionMajor),
+            minApiVersionMinor(minApiVersionMinor),
             validationLayers(validationLayers),
             contextualInstanceExtensions(contextualInstanceExtensions),
             contextualDeviceExtensions(contextualDeviceExtensions)

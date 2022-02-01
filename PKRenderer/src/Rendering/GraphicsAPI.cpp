@@ -42,6 +42,8 @@ namespace PK::Rendering
                     "PK Vulkan Engine",
                     workingDirectory,
                     32ull,
+                    1u,
+                    2u,
                     &PK_VALIDATION_LAYERS,
                     &PK_INSTANCE_EXTENTIONS,
                     &PK_DEVICE_EXTENTIONS
