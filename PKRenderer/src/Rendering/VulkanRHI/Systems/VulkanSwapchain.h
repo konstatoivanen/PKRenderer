@@ -16,7 +16,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         uint32_t maxFramesInFlight;
     };
 
-    class VulkanSwapchain : public Utilities::NoCopy
+    class VulkanSwapchain : public PK::Utilities::NoCopy
     {
         public:
             VulkanSwapchain(const VkPhysicalDevice physicalDevice, 
@@ -35,28 +35,13 @@ namespace PK::Rendering::VulkanRHI::Systems
             void Present(VulkanSemaphore* waitSignal);
             void OnWindowResize(int w, int h);
 
-            const std::vector<Utilities::Ref<VulkanImageView>>& GetImageViews() const { return m_imageViews; }
-            VulkanImageView* GetImageView() const { return m_imageViews.at(m_imageIndex).get(); }
-            const VulkanRenderTarget GetRenderTarget() const 
-            { 
-                return VulkanRenderTarget
-                (
-                    m_imageViews.at(m_imageIndex)->view, 
-                    m_images.at(m_imageIndex), 
-                    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 
-                    VK_IMAGE_ASPECT_COLOR_BIT, 
-                    m_format, 
-                    { m_extent.width, m_extent.height, 1 },
-                    1, 
-                    1
-                ); 
-            }
+            const VulkanRenderTarget GetRenderTarget() const;
+            const VulkanImageView* GetImageView() const { return m_imageViews.at(m_imageIndex); }
             constexpr VkExtent2D GetExtent() const { return m_extent; }
             constexpr Math::uint3 GetResolution() const { return { m_extent.width, m_extent.height, 1 }; }
             constexpr float GetAspectRatio() const { return (float)m_extent.width / (float)m_extent.height; }
             constexpr Math::uint4 GetRect() const { return { 0, 0, m_extent.width, m_extent.height }; }
             constexpr VkFormat GetNativeFormat() const { return m_format; }
-            Structs::TextureFormat GetFormat() const { return EnumConvert::GetTextureFormat(m_format); }
 
         private:
             const VkPhysicalDevice m_physicalDevice;
@@ -69,8 +54,8 @@ namespace PK::Rendering::VulkanRHI::Systems
             VkQueue m_presentQueue = VK_NULL_HANDLE;
             VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
             std::vector<VkImage> m_images;
-            std::vector<PK::Utilities::Ref<VulkanImageView>> m_imageViews;
-            std::vector<PK::Utilities::Ref<VulkanSemaphore>> m_imageAvailableSignals;
+            std::vector<VulkanImageView*> m_imageViews;
+            std::vector<VulkanSemaphore*> m_imageAvailableSignals;
             VkFormat m_format;
             VkExtent2D m_extent;
             uint32_t m_maxFramesInFlight;

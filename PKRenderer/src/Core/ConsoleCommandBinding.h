@@ -4,7 +4,7 @@
 
 namespace PK::Core
 {
-	struct ConsoleCommandToken
+	struct TokenConsoleCommand
 	{
 		const std::string& argument;
 		bool isConsumed;

@@ -79,7 +79,7 @@ namespace PK::ECS::Engines
 		m_sequencer->Next<Tokens::ViewProjectionUpdateToken>(this, &token, 0);
 	}
 
-	void EngineEditorCamera::Step(ConsoleCommandToken* token)
+	void EngineEditorCamera::Step(TokenConsoleCommand* token)
 	{
 		if (!token->isConsumed && token->argument == "log_camera_transform")
 		{

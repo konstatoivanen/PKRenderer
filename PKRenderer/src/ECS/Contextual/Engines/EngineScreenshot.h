@@ -11,12 +11,12 @@ namespace PK::ECS::Engines
 {
 	class EngineScreenshot : public Core::Services::IService, 
 							 public Core::Services::IStep<Core::Window>, 
-							 public Core::Services::IStep<Core::ConsoleCommandToken>
+							 public Core::Services::IStep<Core::TokenConsoleCommand>
 	{
 		public:
 			EngineScreenshot();
 			void Step(Core::Window* window) override final;
-			void Step(Core::ConsoleCommandToken* token) override final;
+			void Step(Core::TokenConsoleCommand* token) override final;
 		
 		private:
 			Rendering::Structs::ExecutionGate m_copyGate;

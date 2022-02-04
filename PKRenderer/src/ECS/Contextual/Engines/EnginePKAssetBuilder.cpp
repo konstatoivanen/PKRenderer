@@ -24,7 +24,7 @@ namespace PK::ECS::Engines
         memcpy(m_executableArguments.data(), args.c_str(), sizeof(wchar_t) * args.size());
     }
     
-    void EnginePKAssetBuilder::Step(ConsoleCommandToken* token)
+    void EnginePKAssetBuilder::Step(TokenConsoleCommand* token)
     {
         if (m_executablePath.empty() || m_executableArguments.empty() || token->isConsumed || token->argument != "recompile_pkassets")
         {

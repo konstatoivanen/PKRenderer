@@ -108,9 +108,9 @@ namespace PK::Core
             {
                 engineCommands,
                 {
-                    Step::Token<ConsoleCommandToken>(engineEditorCamera),
-                    Step::Token<ConsoleCommandToken>(enginePKAssetBuilder),
-                    Step::Token<ConsoleCommandToken>(engineScreenshot),
+                    Step::Token<TokenConsoleCommand>(engineEditorCamera),
+                    Step::Token<TokenConsoleCommand>(enginePKAssetBuilder),
+                    Step::Token<TokenConsoleCommand>(engineScreenshot),
                     //PK_STEP_T(gizmoRenderer, ConsoleCommandToken),
                 }
             },

@@ -100,7 +100,7 @@ namespace PK::Rendering::VulkanRHI::Systems
  
         m_imageViews.resize(m_images.size());
 
-        for (size_t i = 0; i < m_imageViews.size(); ++i)
+        for (size_t i = 0u; i < m_imageViews.size(); ++i)
         {
             VkImageViewCreateInfo imageViewCreateInfo{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
             imageViewCreateInfo.image = m_images[i];
@@ -112,14 +112,14 @@ namespace PK::Rendering::VulkanRHI::Systems
             imageViewCreateInfo.subresourceRange.levelCount = 1;
             imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
             imageViewCreateInfo.subresourceRange.layerCount = 1;
-            m_imageViews[i] = CreateRef<VulkanImageView>(m_device, imageViewCreateInfo);
+            m_imageViews[i] = new VulkanImageView(m_device, imageViewCreateInfo);
         }
 
         m_imageAvailableSignals.resize(m_maxFramesInFlight);
 
-        for (auto& semaphore : m_imageAvailableSignals)
+        for (size_t i = 0u; i < m_maxFramesInFlight; ++i)
         {
-            semaphore = CreateRef<VulkanSemaphore>(m_device);
+            m_imageAvailableSignals[i] = new VulkanSemaphore(m_device);
         }
 
         m_outofdate = false;
@@ -129,6 +129,16 @@ namespace PK::Rendering::VulkanRHI::Systems
 
     void VulkanSwapchain::Release()
     {
+        for (size_t i = 0u; i < m_imageViews.size(); ++i)
+        {
+            delete m_imageViews[i];
+        }
+
+        for (size_t i = 0u; i < m_imageAvailableSignals.size(); ++i)
+        {
+            delete m_imageAvailableSignals[i];
+        }
+
         m_imageAvailableSignals.clear();
         m_imageViews.clear();
 
@@ -147,7 +157,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         }
 
         auto result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, m_imageAvailableSignals[m_frameIndex]->vulkanSemaphore, VK_NULL_HANDLE, &m_imageIndex);
-        *imageAvailableSignal = m_imageAvailableSignals[m_frameIndex].get();
+        *imageAvailableSignal = m_imageAvailableSignals[m_frameIndex];
 
         PK_THROW_ASSERT(SwapchainErrorAssert(result, m_outofdate, m_suboptimal), "Failed to acquire swap chain image!");
 
@@ -170,7 +180,6 @@ namespace PK::Rendering::VulkanRHI::Systems
         presentInfo.pImageIndices = &m_imageIndex;
         presentInfo.pResults = nullptr; // Optional
         auto result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
-
         PK_THROW_ASSERT(SwapchainErrorAssert(result, m_outofdate, m_suboptimal), "Failed to present swap chain image!");
     }
 
@@ -179,5 +188,20 @@ namespace PK::Rendering::VulkanRHI::Systems
         m_cachedCreateInfo.desiredExtent.width = (uint32_t)w;
         m_cachedCreateInfo.desiredExtent.height = (uint32_t)h;
         m_outofdate = true;
+    }
+
+    const VulkanRenderTarget VulkanSwapchain::GetRenderTarget() const
+    {
+        return VulkanRenderTarget
+        (
+            m_imageViews.at(m_imageIndex)->view,
+            m_images.at(m_imageIndex),
+            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            m_format,
+            { m_extent.width, m_extent.height, 1 },
+            1,
+            1
+        );
     }
 }

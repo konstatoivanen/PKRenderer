@@ -34,13 +34,14 @@ namespace PK::Rendering::VulkanRHI::Systems
     {
         public:
             VulkanLayoutCache(VkDevice device) : m_device(device) {}
+            ~VulkanLayoutCache();
 
-            VulkanDescriptorSetLayout* GetSetLayout(const DescriptorSetLayoutKey& key);
-            VulkanPipelineLayout* GetPipelineLayout(const PipelineLayoutKey& key);
+            const VulkanDescriptorSetLayout* GetSetLayout(const DescriptorSetLayoutKey& key);
+            const VulkanPipelineLayout* GetPipelineLayout(const PipelineLayoutKey& key);
 
         private:
             VkDevice m_device;
-            std::map<DescriptorSetLayoutKey, PK::Utilities::Scope<VulkanDescriptorSetLayout>> m_setlayouts;
-            std::map<PipelineLayoutKey, PK::Utilities::Scope<VulkanPipelineLayout>> m_pipelineLayouts;
+            std::map<DescriptorSetLayoutKey, VulkanDescriptorSetLayout*> m_setlayouts;
+            std::map<PipelineLayoutKey, VulkanPipelineLayout*> m_pipelineLayouts;
     };
 }

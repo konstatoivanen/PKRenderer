@@ -18,25 +18,24 @@ namespace PK::ECS
     struct EGID
     {
         public:
-            inline uint32_t entityID() const { return (uint32_t)(m_GID & 0xFFFFFFFF); }
-            inline uint32_t groupID() const { return (uint32_t)(m_GID >> 32); }
-            EGID() : m_GID(0) {}
-            EGID(const EGID& other) : m_GID(other.m_GID) {}
-            EGID(uint64_t identifier) : m_GID(identifier) {}
-            EGID(uint32_t entityID, uint32_t groupID) : m_GID((uint64_t)groupID << 32 | ((uint64_t)(uint32_t)entityID & 0xFFFFFFFF)) {}
+            constexpr uint32_t entityID() const { return (uint32_t)(m_GID & 0xFFFFFFFF); }
+            constexpr uint32_t groupID() const { return (uint32_t)(m_GID >> 32); }
+            constexpr EGID() : m_GID(0) {}
+            constexpr EGID(const EGID& other) : m_GID(other.m_GID) {}
+            constexpr EGID(uint64_t identifier) : m_GID(identifier) {}
+            constexpr EGID(uint32_t entityID, uint32_t groupID) : m_GID((uint64_t)groupID << 32 | ((uint64_t)(uint32_t)entityID & 0xFFFFFFFF)) {}
             constexpr bool IsValid() const { return m_GID > 0; }
-            
-            inline bool operator ==(const EGID& obj2) const { return m_GID == obj2.m_GID; }
-            inline bool operator !=(const EGID& obj2) const { return m_GID != obj2.m_GID; }
-            inline bool operator <(const EGID& obj2) const { return m_GID < obj2.m_GID; }
-            inline bool operator >(const EGID& obj2) const { return m_GID > obj2.m_GID; }
+            constexpr bool operator ==(const EGID& obj2) const { return m_GID == obj2.m_GID; }
+            constexpr bool operator !=(const EGID& obj2) const { return m_GID != obj2.m_GID; }
+            constexpr bool operator <(const EGID& obj2) const { return m_GID < obj2.m_GID; }
+            constexpr bool operator >(const EGID& obj2) const { return m_GID > obj2.m_GID; }
 
         private:
             uint64_t m_GID;
     };
 
-    const EGID EGIDDefault = EGID(1);
-    const EGID EGIDInvalid = EGID(0);
+    constexpr static const EGID EGIDDefault = EGID(1);
+    constexpr static const EGID EGIDInvalid = EGID(0);
 
     struct IImplementer
     {
@@ -49,7 +48,7 @@ namespace PK::ECS
         virtual ~IEntityView() = default;
     };
     
-    const uint32_t PK_ECS_BUCKET_SIZE = 32000;
+    constexpr static const uint32_t PK_ECS_BUCKET_SIZE = 32000;
 
     struct ImplementerBucket
     {
@@ -67,8 +66,8 @@ namespace PK::ECS
 
     struct EntityViewsCollection
     {
-        std::map<uint32_t, size_t> Indices;
-        std::vector<uint8_t> Buffer;
+        std::map<uint32_t, size_t> indices;
+        std::vector<uint8_t> buffer;
     };
 
     struct ViewCollectionKey
@@ -120,10 +119,10 @@ namespace PK::ECS
                 PK_THROW_ASSERT(egid.IsValid(), "Trying to acquire resources for an invalid egid!");
 
                 auto& views = m_entityViews[{ std::type_index(typeid(TView)), egid.groupID() }];
-                auto offset = views.Buffer.size();
-                views.Buffer.resize(offset + sizeof(TView));
-                views.Indices[egid.entityID()] = offset;
-                auto* element = reinterpret_cast<TView*>(views.Buffer.data() + offset);
+                auto offset = views.buffer.size();
+                views.buffer.resize(offset + sizeof(TView));
+                views.indices[egid.entityID()] = offset;
+                auto* element = reinterpret_cast<TView*>(views.buffer.data() + offset);
                 element->GID = egid;
                 return element;
             }
@@ -144,8 +143,8 @@ namespace PK::ECS
                 PK_THROW_ASSERT(group, "Trying to acquire resources for an invalid egid!");
 
                 auto& views = m_entityViews[{ std::type_index(typeid(TView)), group }];
-                auto count = views.Buffer.size() / sizeof(TView);
-                return { reinterpret_cast<TView*>(views.Buffer.data()), count };
+                auto count = views.buffer.size() / sizeof(TView);
+                return { reinterpret_cast<TView*>(views.buffer.data()), count };
             }
 
             template<typename TView>
@@ -155,8 +154,8 @@ namespace PK::ECS
                 PK_THROW_ASSERT(egid.IsValid(), "Trying to acquire resources for an invalid egid!");
 
                 auto& views = m_entityViews.at({ std::type_index(typeid(TView)), egid.groupID() });
-                auto offset = views.Indices.at(egid.entityID());
-                return reinterpret_cast<TView*>(views.Buffer.data() + offset);
+                auto offset = views.indices.at(egid.entityID());
+                return reinterpret_cast<TView*>(views.buffer.data() + offset);
             }
 
         private:

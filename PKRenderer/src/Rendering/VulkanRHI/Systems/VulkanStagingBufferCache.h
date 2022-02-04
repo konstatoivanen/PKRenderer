@@ -18,15 +18,7 @@ namespace PK::Rendering::VulkanRHI::Systems
     class VulkanStagingBufferCache : public PK::Utilities::NoCopy
     {
         public:
-            VulkanStagingBufferCache(VkDevice device, VmaAllocator allocator, uint64_t pruneDelay) : 
-                    m_allocator(allocator), 
-                    m_device(device),
-                    m_pruneDelay(pruneDelay)
-            {
-                m_activeBuffers.reserve(32);
-                m_freeBuffers.reserve(32);
-            }
-
+            VulkanStagingBufferCache(VkDevice device, VmaAllocator allocator, uint64_t pruneDelay);
             ~VulkanStagingBufferCache();
             VulkanStagingBuffer* GetBuffer(size_t size);
             void Prune();

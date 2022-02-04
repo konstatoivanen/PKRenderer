@@ -6,13 +6,26 @@ namespace PK::Rendering::VulkanRHI::Systems
     using namespace Structs;
     using namespace Utilities;
 
-    VulkanDescriptorSetLayout* VulkanLayoutCache::GetSetLayout(const DescriptorSetLayoutKey& key)
+    VulkanLayoutCache::~VulkanLayoutCache()
+    {
+        for (auto& kv : m_setlayouts)
+        {
+            delete kv.second;
+        }
+
+        for (auto& kv : m_pipelineLayouts)
+        {
+            delete kv.second;
+        }
+    }
+
+    const VulkanDescriptorSetLayout* VulkanLayoutCache::GetSetLayout(const DescriptorSetLayoutKey& key)
     {
         auto iterator = m_setlayouts.find(key);
 
         if (iterator != m_setlayouts.end())
         {
-            return iterator->second.get();
+            return iterator->second;
         }
 
         VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO };
@@ -42,17 +55,17 @@ namespace PK::Rendering::VulkanRHI::Systems
 
         bindingFlagsInfo.bindingCount = layoutCreateInfo.bindingCount = count;
         auto layout = new VulkanDescriptorSetLayout(m_device, layoutCreateInfo, (VkShaderStageFlagBits)key.stageFlags);
-        m_setlayouts[key] = Scope<VulkanDescriptorSetLayout>(layout);
+        m_setlayouts[key] = new VulkanDescriptorSetLayout(layout);
         return layout;
     }
 
-    VulkanPipelineLayout* VulkanLayoutCache::GetPipelineLayout(const PipelineLayoutKey& key)
+    const VulkanPipelineLayout* VulkanLayoutCache::GetPipelineLayout(const PipelineLayoutKey& key)
     {
         auto iterator = m_pipelineLayouts.find(key);
 
         if (iterator != m_pipelineLayouts.end())
         {
-            return iterator->second.get();
+            return iterator->second;
         }
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
@@ -80,7 +93,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         }
 
         auto layout = new VulkanPipelineLayout(m_device, pipelineLayoutInfo);
-        m_pipelineLayouts[key] = Scope<VulkanPipelineLayout>(layout);
+        m_pipelineLayouts[key] = new VulkanPipelineLayout(layout);
         return layout;
     }
 }

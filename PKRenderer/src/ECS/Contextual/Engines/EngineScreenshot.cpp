@@ -148,7 +148,7 @@ namespace PK::ECS::Engines
         PK_LOG_INFO("Screenshot captured: %s", filename.c_str());
     }
 
-    void EngineScreenshot::Step(ConsoleCommandToken* token)
+    void EngineScreenshot::Step(TokenConsoleCommand* token)
     {
         if (token->isConsumed || token->argument != "take_screenshot")
         {

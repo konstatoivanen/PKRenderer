@@ -47,6 +47,16 @@ struct Vector::Bound<VulkanStagingBuffer*>
 
 namespace PK::Rendering::VulkanRHI::Systems
 {
+    VulkanStagingBufferCache::VulkanStagingBufferCache(VkDevice device, VmaAllocator allocator, uint64_t pruneDelay) :
+        m_allocator(allocator),
+        m_device(device),
+        m_pruneDelay(pruneDelay)
+    {
+        m_activeBuffers.reserve(32);
+        m_freeBuffers.reserve(32);
+    }
+
+
     VulkanStagingBufferCache::~VulkanStagingBufferCache()
     {
         for (auto& buff : m_freeBuffers)

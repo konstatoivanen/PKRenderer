@@ -39,7 +39,7 @@ namespace PK::ECS::Engines
 
     void EngineCommandInput::ApplicationContextual(const ConsoleCommand& arguments)
     {
-        ConsoleCommandToken token = { arguments.at(2), false };
+        TokenConsoleCommand token = { arguments.at(2), false };
         m_sequencer->Next(this, &token, 0);
 
         if (!token.isConsumed)

@@ -10,12 +10,12 @@ namespace PK::ECS::Engines
 {
 	class EngineEditorCamera : public Core::Services::IService, 
 							   public Core::Services::IStep<Core::Services::Input>, 
-							   public Core::Services::IStep<Core::ConsoleCommandToken>
+							   public Core::Services::IStep<Core::TokenConsoleCommand>
 	{
 		public:
 			EngineEditorCamera(Core::Services::Sequencer* sequencer, Core::Services::Time* time, const Core::ApplicationConfig* config);
 			void Step(Core::Services::Input* input) override final;
-			void Step(Core::ConsoleCommandToken* token) override final;
+			void Step(Core::TokenConsoleCommand* token) override final;
 
 		private:
 			Core::Services::Sequencer* m_sequencer = nullptr;
