@@ -144,18 +144,29 @@ namespace PK::Rendering::Structs
         StageDepthStencil    = 1 << 6, // Early depth & stencil test
         StageDepthStencilOut = 1 << 7, // depth & stencil write
         StageColorOut        = 1 << 8, // Color write
+        StageTessControl     = 1 << 9,
+        StageTessEvaluation  = 1 << 10,
+        StageTransfer        = 1 << 11,
+        StageBottom          = 1 << 12,
         
-        ReadShader   = 1 << 9, // Read textures, images, buffers
-        ReadUniform  = 1 << 10, // Read uniform buffers
-        ReadVertex   = 1 << 11, // Read vertex buffer
-        ReadIndex    = 1 << 12, // Read index buffer
-        ReadIndirect = 1 << 13, // Read indirect arguments
-        ReadRTColor  = 1 << 14,
-        ReadRTDepth  = 1 << 15,
+        ReadShader   = 1 << 13, // Read textures, images, buffers
+        ReadUniform  = 1 << 14, // Read uniform buffers
+        ReadVertex   = 1 << 15, // Read vertex buffer
+        ReadIndex    = 1 << 16, // Read index buffer
+        ReadIndirect = 1 << 17, // Read indirect arguments
+        ReadRTColor  = 1 << 18,
+        ReadRTDepth  = 1 << 19,
+        ReadRTInput  = 1 << 20,
+        ReadTransfer = 1 << 21,
+        ReadHost     = 1 << 22,
+        ReadMemory   = 1 << 23,
 
-        WriteShader  = 1 << 16, // Write textures, images, buffers
-        WriteRTColor = 1 << 17,
-        WriteRTDepth = 1 << 18,
+        WriteShader   = 1 << 24, // Write textures, images, buffers
+        WriteRTColor  = 1 << 25,
+        WriteRTDepth  = 1 << 26,
+        WriteTransfer = 1 << 27,
+        WriteHost     = 1 << 28,
+        WriteMemory   = 1 << 29,
 
         ReadWriteShader = ReadShader | WriteShader, // Read/Write, images & buffers
         ReadWriteRTColor = ReadRTColor | WriteRTColor,

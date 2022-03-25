@@ -55,7 +55,7 @@ namespace PK::Rendering::VulkanRHI::Systems
 
         bindingFlagsInfo.bindingCount = layoutCreateInfo.bindingCount = count;
         auto layout = new VulkanDescriptorSetLayout(m_device, layoutCreateInfo, (VkShaderStageFlagBits)key.stageFlags);
-        m_setlayouts[key] = new VulkanDescriptorSetLayout(layout);
+        m_setlayouts[key] = layout;
         return layout;
     }
 
@@ -93,7 +93,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         }
 
         auto layout = new VulkanPipelineLayout(m_device, pipelineLayoutInfo);
-        m_pipelineLayouts[key] = new VulkanPipelineLayout(layout);
+        m_pipelineLayouts[key] = layout;
         return layout;
     }
 }
