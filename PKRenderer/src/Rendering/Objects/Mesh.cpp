@@ -13,6 +13,62 @@ using namespace PK::Rendering::Structs;
 
 namespace PK::Rendering::Objects
 {
+	void AlignVertices(char* vertices, size_t vcount, const BufferLayout& layout, const std::vector<const BufferLayout*> targetLayouts)
+	{
+		auto stride = layout.GetStride();
+		auto fullStride = 0ull;
+		auto needsAlignment = false;
+		auto streamIndex = 0u;
+
+		for (auto& targetLayout : targetLayouts)
+		{
+			for (auto& element : *targetLayout)
+			{
+				uint32_t elementIndex = 0u;
+				auto other = layout.TryGetElement(element.NameHashId, &elementIndex);
+				PK_THROW_ASSERT(other, "Required element not present in source layout!");
+				PK_THROW_ASSERT(other->Type == element.Type, "Element type missmatch!");
+				needsAlignment |= other->Location != streamIndex || other->Offset != element.Offset;
+			}
+
+			fullStride += targetLayout->GetStride();
+			++streamIndex;
+		}
+
+		PK_THROW_ASSERT(fullStride == stride, "Layout stride missmatch!");
+
+		if (!needsAlignment)
+		{
+			return;
+		}
+
+		auto buffer = (char*)calloc(vcount, stride);
+		auto subBuffer = buffer;
+
+		for (auto& targetLayout : targetLayouts)
+		{
+			auto targetStride = targetLayout->GetStride();
+
+			for (auto& targetElement : *targetLayout)
+			{
+				uint32_t elementIndex = 0u;
+				auto element = layout.TryGetElement(targetElement.NameHashId, &elementIndex);
+				auto srcOffset = element->Offset;
+				auto size = targetElement.Size();
+
+				for (auto i = 0u; i < vcount; ++i)
+				{
+					memcpy(subBuffer + targetStride * i + targetElement.Offset, vertices + stride * i + srcOffset, size);
+				}
+			}
+
+			subBuffer += targetStride * vcount;
+		}
+
+		memcpy(vertices, buffer, vcount * stride);
+		free(buffer);
+	}
+
     Mesh::Mesh()
     {
     }
@@ -54,7 +110,7 @@ namespace PK::Rendering::Objects
 
 		m_freeSubmeshIndices.clear();
 		m_fullRange = SubMesh();
-		std::vector<BufferElement> bufferElements;
+		std::map<uint32_t, std::vector<BufferElement>> layoutMap;
 
 		for (auto i = 0u; i < mesh->submeshCount; ++i)
 		{
@@ -65,10 +121,17 @@ namespace PK::Rendering::Objects
 
 		for (auto i = 0u; i < mesh->vertexAttributeCount; ++i)
 		{
-			bufferElements.emplace_back(pAttributes[i].type, std::string(pAttributes[i].name));
+			layoutMap[pAttributes[i].stream].emplace_back(pAttributes[i].type, std::string(pAttributes[i].name));
 		}
 
-		AddVertexBuffer(Buffer::CreateVertex(BufferLayout(bufferElements), pVertices, mesh->vertexCount));
+		auto pBufferOffset = 0ull;
+
+		for (auto& kv : layoutMap)
+		{
+			AddVertexBuffer(Buffer::CreateVertex(BufferLayout(kv.second), (char*)pVertices + pBufferOffset, mesh->vertexCount));
+			pBufferOffset += m_vertexBuffers.back()->GetLayout().GetStride() * mesh->vertexCount;
+		}
+
 		SetIndexBuffer(Buffer::CreateIndex(mesh->indexType, pIndexBuffer, mesh->indexCount));
         PK::Assets::CloseAsset(&asset);
     }
@@ -77,46 +140,27 @@ namespace PK::Rendering::Objects
 									SubMesh* outAllocationRange,
 									uint32_t* outSubmeshIndices)
 	{
-		const auto& layout = GetDefaultLayout();
-		auto vbuff = m_vertexBuffers.at(0).get();
-		auto ibuff = m_indexBuffer.get();
-		auto vstride = GetDefaultLayout().GetStride();
-		auto istride = m_indexBuffer->GetLayout().GetStride();
-
-		if (!vbuff->IsSparse() ||
-			!ibuff->IsSparse())
-		{
-			PK_THROW_ERROR("Trying to append resources to a mesh without sparse buffers!");
-		}
-
-		PK_THROW_ASSERT(allocationInfo.vertexLayout.size()  == layout.size(), "Vertex attribute count missmatch!");
-
-		for (auto i = 0u; i < layout.size(); ++i)
-		{
-			PK_THROW_ASSERT(allocationInfo.vertexLayout.at(i) == layout.at(i), "Vertex attribute type missmatch!");
-		}
-
 		SubMesh range = { 0u, allocationInfo.vertexCount, 0u, allocationInfo.indexCount, BoundingBox::GetMinBounds() };
 
 		// @TODO refactor this to be more memory efficient
 		auto sortedSubmeshes = std::vector<SubMesh>(m_submeshes);
 		std::sort(sortedSubmeshes.begin(), sortedSubmeshes.end());
 
-		for (auto& sm : sortedSubmeshes)
+		for (auto& submesh : sortedSubmeshes)
 		{
-			if (sm.vertexCount == 0)
+			if (submesh.vertexCount == 0)
 			{
 				continue;
 			}
 
-			if (sm.firstVertex < (range.firstVertex + range.vertexCount))
+			if (submesh.firstVertex < (range.firstVertex + range.vertexCount))
 			{
-				range.firstVertex = sm.firstVertex + sm.vertexCount;
+				range.firstVertex = submesh.firstVertex + submesh.vertexCount;
 			}
 
-			if (sm.firstIndex < (range.firstIndex + range.indexCount))
+			if (submesh.firstIndex < (range.firstIndex + range.indexCount))
 			{
-				range.firstIndex = sm.firstIndex + sm.indexCount;
+				range.firstIndex = submesh.firstIndex + submesh.indexCount;
 			}
 		}
 
@@ -133,54 +177,70 @@ namespace PK::Rendering::Objects
 				m_submeshes.push_back({});
 			}
 
-			auto& sm = m_submeshes[outSubmeshIndices[i]];
-			sm = allocationInfo.pSubmeshes[i];
-			sm.firstVertex += range.firstVertex;
-			sm.firstIndex += range.firstIndex;
-			Math::Functions::BoundsEncapsulate(&m_fullRange.bounds, sm.bounds);
-			Math::Functions::BoundsEncapsulate(&range.bounds, sm.bounds);
-
+			auto& submesh = m_submeshes[outSubmeshIndices[i]];
+			submesh = allocationInfo.pSubmeshes[i];
+			submesh.firstVertex += range.firstVertex;
+			submesh.firstIndex += range.firstIndex;
+			Math::Functions::BoundsEncapsulate(&m_fullRange.bounds, submesh.bounds);
+			Math::Functions::BoundsEncapsulate(&range.bounds, submesh.bounds);
 		}
+
 
 		m_fullRange.vertexCount = glm::max(m_fullRange.vertexCount, range.firstVertex + range.vertexCount);
 		m_fullRange.indexCount = glm::max(m_fullRange.indexCount, range.firstIndex + range.indexCount);
 
-		vbuff->MakeRangeResident({ range.firstVertex * vstride, range.vertexCount * vstride });
-		ibuff->MakeRangeResident({ range.firstIndex * istride, range.indexCount * istride });
+		auto pBufferOffset = 0ull;
+		auto attributeIndex = 0ull;
 
-		vbuff->SetSubData(allocationInfo.pVertices, range.firstVertex * vstride, range.vertexCount * vstride);
+		AlignVertices((char*)allocationInfo.pVertices, allocationInfo.vertexCount, allocationInfo.vertexLayout, GetVertexBufferLayouts());
+
+		for (auto i = 0u; i < m_vertexBuffers.size(); ++i)
+		{
+			auto& vertexBuffer = m_vertexBuffers.at(i);
+			PK_THROW_ASSERT(vertexBuffer->IsSparse(), "Cannot append vertices to a non sparse vertex buffer!");
+			
+			const auto& layout = vertexBuffer->GetLayout();
+			auto vertexStride = layout.GetStride();
+			
+			vertexBuffer->MakeRangeResident({ range.firstVertex * vertexStride, range.vertexCount * vertexStride });
+			vertexBuffer->SetSubData((char*)allocationInfo.pVertices + pBufferOffset, range.firstVertex * vertexStride, range.vertexCount * vertexStride);
+			pBufferOffset += vertexStride * range.vertexCount;
+		}
+
+
+		auto indexBuffer = m_indexBuffer.get();
+		auto indexStride = m_indexBuffer->GetLayout().GetStride();
+		PK_THROW_ASSERT(indexBuffer->IsSparse(), "Cannot append indices to a non sparse index buffer!");
+		indexBuffer->MakeRangeResident({ range.firstIndex * indexStride, range.indexCount * indexStride });
 
 		// Convert 16bit indices to 32bit to avoid compatibility issues between meshes.
 		if (ElementConvert::Size(allocationInfo.indexType) == 2)
 		{
-			Functions::ReinterpretIndex16ToIndex32(ibuff->BeginWrite<uint32_t>(range.firstIndex, range.indexCount).data, 
+			Functions::ReinterpretIndex16ToIndex32(indexBuffer->BeginWrite<uint32_t>(range.firstIndex, range.indexCount).data, 
 												   reinterpret_cast<uint16_t*>(allocationInfo.pIndices), range.indexCount);
-			ibuff->EndWrite();
+			indexBuffer->EndWrite();
 		}
 		else
 		{
-			ibuff->SetSubData(allocationInfo.pIndices, range.firstIndex * istride, range.indexCount * istride);
+			indexBuffer->SetSubData(allocationInfo.pIndices, range.firstIndex * indexStride, range.indexCount * indexStride);
 		}
-		
+
 		*outAllocationRange = range;
 	}
 
 	void Mesh::DeallocateSubmeshRange(const SubMesh& allocationRange, uint32_t* submeshIndices, uint32_t submeshCount)
 	{
-		auto vbuff = m_vertexBuffers.at(0).get();
-		auto ibuff = m_indexBuffer.get();
-
-		if ((vbuff->GetUsage() & BufferUsage::Sparse) == 0 ||
-			(ibuff->GetUsage() & BufferUsage::Sparse) == 0)
+		for (auto& vertexBuffer : m_vertexBuffers)
 		{
-			PK_THROW_ERROR("Trying to deallocate resources from a mesh without sparse buffers!");
+			auto vertexStride = vertexBuffer->GetLayout().GetStride();
+			PK_THROW_ASSERT(vertexBuffer->IsSparse(), "Trying to deallocate resources from a mesh without sparse buffers!");
+			vertexBuffer->MakeRangeNonResident({ allocationRange.firstVertex * vertexStride, allocationRange.vertexCount * vertexStride });
 		}
 
-		auto vstride = GetDefaultLayout().GetStride();
-		auto istride = m_indexBuffer->GetLayout().GetStride();
-
-		vbuff->MakeRangeNonResident({ allocationRange.firstVertex * vstride, allocationRange.vertexCount * vstride });
-		ibuff->MakeRangeNonResident({ allocationRange.firstIndex * istride, allocationRange.indexCount * istride });
+		auto indexBuffer = m_indexBuffer.get();
+		auto indexStride = m_indexBuffer->GetLayout().GetStride();
+		PK_THROW_ASSERT(indexBuffer->IsSparse(), "Trying to deallocate resources from a mesh without sparse buffers!");
+		indexBuffer->MakeRangeNonResident({ allocationRange.firstIndex * indexStride, allocationRange.indexCount * indexStride });
 
 		for (auto i = 0u; i < submeshCount; ++i)
 		{
@@ -215,7 +275,19 @@ namespace PK::Rendering::Objects
 		}
 	}
 
-    const SubMesh& Mesh::GetSubmesh(int32_t submesh) const
+	const std::vector<const Structs::BufferLayout*> Mesh::GetVertexBufferLayouts() const
+	{
+		std::vector<const Structs::BufferLayout*> layouts;
+
+		for (auto& vertexBuffer : m_vertexBuffers)
+		{
+			layouts.push_back(&vertexBuffer->GetLayout());
+		}
+
+		return layouts;
+	}
+
+	const SubMesh& Mesh::GetSubmesh(int32_t submesh) const
     {
         if (submesh < 0 || m_submeshes.empty())
         {
@@ -228,7 +300,7 @@ namespace PK::Rendering::Objects
 }
 
 template<>
-bool PK::Core::Services::AssetImporters::IsValidExtension<Mesh>(const std::filesystem::path& extension) { return extension.compare(".ktx2") == 0; }
+bool PK::Core::Services::AssetImporters::IsValidExtension<Mesh>(const std::filesystem::path& extension) { return extension.compare(".pkmesh") == 0; }
 
 template<>
 Ref<Mesh> PK::Core::Services::AssetImporters::Create()

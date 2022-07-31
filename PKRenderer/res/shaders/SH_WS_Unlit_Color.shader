@@ -8,11 +8,11 @@
 #include includes/Common.glsl
 
 #pragma PROGRAM_VERTEX
-in float3 in_POSITION0;
+in float3 in_POSITION;
 
 void main()
 {
-    gl_Position = ObjectToClipPos(float4(in_POSITION0, 0));
+    gl_Position = ObjectToClipPos(float4(in_POSITION, 0));
     NORMALIZE_GL_Z;
 }
 

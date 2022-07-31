@@ -4,7 +4,7 @@
 
 namespace PK::Rendering::Structs
 {
-    void BufferLayout::CalculateOffsetsAndStride()
+    void BufferLayout::CalculateOffsetsAndStride(bool applyOffsets)
     {
         m_stride = 0;
         m_alignedStride = 0;
@@ -17,12 +17,20 @@ namespace PK::Rendering::Structs
             auto element = elements + i;
             auto alignment = ElementConvert::Alignment(element->Type);
 
-            element->Offset = m_stride;
+            if (applyOffsets)
+            {
+                element->Offset = m_stride;
+            }
+
             m_stride += element->Size();
             
             m_alignedStride = alignment * (uint32_t)glm::ceil(m_alignedStride / (float)alignment);
 
-            element->AlignedOffset = m_alignedStride;
+            if (applyOffsets)
+            {
+                element->AlignedOffset = m_alignedStride;
+            }
+
             m_alignedStride += element->Size();
 
             if (alignment > maxAlignment)

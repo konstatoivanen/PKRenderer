@@ -8,14 +8,14 @@
 #include includes/SharedShadowmapping.glsl
 
 #pragma PROGRAM_VERTEX
-in float3 in_POSITION0;
+in float3 in_POSITION;
 out float4 vs_DEPTH;
 
 void main()
 {
 	PK_Light light = PK_BUFFER_DATA(pk_Lights, pk_ShadowmapLightIndex);
 
-	float3 wpos = ObjectToWorldPos(in_POSITION0);
+	float3 wpos = ObjectToWorldPos(in_POSITION);
 	float4 vs_pos = 0.0f.xxxx;
 	float4 vs_depth = 0.0f.xxxx;
 

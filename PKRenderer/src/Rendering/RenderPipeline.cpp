@@ -14,12 +14,6 @@ namespace PK::Rendering
     using namespace Objects;
     using namespace Structs;
 
-    struct ModelMatrices
-    {
-        float4x4 pk_MATRIX_M;
-        float4x4 pk_MATRIX_I_M;
-    };
-
     RenderPipeline::RenderPipeline(AssetDatabase* assetDatabase, EntityDatabase* entityDb, Sequencer* sequencer, const ApplicationConfig* config) :
         m_passPostEffects(assetDatabase, config),
         m_passGeometry(entityDb, sequencer, &m_batcher),

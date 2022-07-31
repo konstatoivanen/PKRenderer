@@ -407,12 +407,11 @@ namespace PK::Rendering::VulkanRHI::Objects
             return;
         }
 
-        const auto& vertexLayout = shader->GetVertexLayout();
+        const auto& shaderLayout = shader->GetVertexLayout();
 
         for (index = 0u; index < PK_MAX_VERTEX_ATTRIBUTES; ++index)
         {
             auto vertexBuffer = m_vertexBuffers[index];
-            auto bufferAttribute = &m_pipelineKey.vertexBuffers[index];
             
             if (vertexBuffer == nullptr)
             {
@@ -422,6 +421,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             const auto& bufferLayout = *vertexBuffer->bufferLayout;
             auto stride = bufferLayout.GetStride();
             
+            auto bufferAttribute = &m_pipelineKey.vertexBuffers[index];
             bufferAttribute->binding = index;
         
             if (bufferAttribute->inputRate != vertexBuffer->inputRate || bufferAttribute->stride != stride)
@@ -434,9 +434,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             for (const auto& element : bufferLayout)
             {
                 uint32_t elementIdx = 0u;
-                auto* velement = vertexLayout.TryGetElement(element.NameHashId, &elementIdx);
-
-                if (velement == nullptr)
+                if (shaderLayout.TryGetElement(element.NameHashId, &elementIdx) == nullptr)
                 {
                     continue;
                 }

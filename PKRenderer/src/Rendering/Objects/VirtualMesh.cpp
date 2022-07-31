@@ -66,7 +66,7 @@ namespace PK::Rendering::Objects
 
 		for (auto i = 0u; i < mesh->vertexAttributeCount; ++i)
 		{
-			bufferElements.emplace_back(pAttributes[i].type, std::string(pAttributes[i].name));
+			bufferElements.emplace_back(pAttributes[i].type, std::string(pAttributes[i].name), (byte)1u, (byte)pAttributes[i].stream, pAttributes[i].offset);
 		}
 
 		m_submeshIndices.resize(mesh->submeshCount);
@@ -74,7 +74,7 @@ namespace PK::Rendering::Objects
 		SubmeshRangeAllocationInfo allocInfo{};
 		allocInfo.pVertices = pVertices;
 		allocInfo.pIndices = pIndices;
-		allocInfo.vertexLayout = BufferLayout(bufferElements);
+		allocInfo.vertexLayout = BufferLayout(bufferElements, false);
 		allocInfo.pSubmeshes = submeshes.data();
 		allocInfo.indexType = mesh->indexType;
 		allocInfo.vertexCount = mesh->vertexCount;

@@ -14,6 +14,14 @@ namespace PK::Math::Functions
     float3 RandomRangeFloat3(const float3& min, const float3& max);
     float3 RandomEuler();
     float3 ToFloat3(float* ptr);
+    ushort PackHalf(float v);
+    ushort2 PackHalf(float2 v);
+    ushort3 PackHalf(float3 v);
+    ushort4 PackHalf(float4 v);
+    float UnPackHalf(ushort v);
+    float2 UnPackHalf(ushort2 v);
+    float3 UnPackHalf(ushort3 v);
+    float4 UnPackHalf(ushort4 v);
     size_t GetNextExponentialSize(size_t start, size_t min);
     uint32_t GetMaxMipLevelPow2(uint32_t resolution);
     uint32_t GetMaxMipLevelPow2(uint2 resolution);

@@ -815,9 +815,13 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\materials\M_Water.material" />
     <None Include="res\materials\M_Wood_Floor.material" />
     <None Include="res\models\MDL_Cloth.mdl" />
+    <None Include="res\models\MDL_Cloth.mdl.pkmeta" />
     <None Include="res\models\MDL_Columns.mdl" />
+    <None Include="res\models\MDL_Columns.mdl.pkmeta" />
     <None Include="res\models\MDL_Rocks.mdl" />
+    <None Include="res\models\MDL_Rocks.mdl.pkmeta" />
     <None Include="res\models\MDL_Spiral.mdl" />
+    <None Include="res\models\MDL_Spiral.mdl.pkmeta" />
     <None Include="res\shaders\CS_SceneGI_Bake.shader" />
     <None Include="res\shaders\CS_SceneGI_Fade.shader" />
     <None Include="res\shaders\CS_VolumeFogDepthMax.shader" />

@@ -62,8 +62,7 @@ namespace PK::Rendering::Objects
             inline void SetSubMeshes(const std::vector<SubMesh>& submeshes) { SetSubMeshes(submeshes.data(), submeshes.size()); }
 
             constexpr const std::vector<Utilities::Ref<Buffer>>& GetVertexBuffers() const { return m_vertexBuffers; }
-            const Structs::BufferLayout& GetDefaultLayout() const { return m_vertexBuffers.at(0)->GetLayout(); }
-            const Buffer* GetVertexBuffer() const { return m_vertexBuffers.at(0).get(); }
+            const std::vector<const Structs::BufferLayout*> GetVertexBufferLayouts() const;
             const Buffer* GetVertexBuffer(uint32_t index) const { return m_vertexBuffers.at(index).get(); }
             const Buffer* GetIndexBuffer() const { return m_indexBuffer.get(); }
             const SubMesh& GetSubmesh(int32_t submesh) const;

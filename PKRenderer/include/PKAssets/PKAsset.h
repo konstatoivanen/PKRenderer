@@ -187,6 +187,13 @@ namespace PK::Assets
     uint32_t GetElementAlignment(PKElementType type);
     uint32_t GetElementComponents(PKElementType type);
 
+    struct PKAssetMeta
+    {
+        char* optionNames = nullptr;
+        uint32_t* optionValues = nullptr;
+        uint32_t optionCount = 0u;
+    };
+
     struct PKEncNode
     {
         RelativePtr<PKEncNode> left;
@@ -326,6 +333,7 @@ namespace PK::Assets
             PKElementType type;
             uint16_t size = 0;
             uint16_t offset = 0;
+            uint16_t stream = 0;
         };
 
         struct PKSubmesh
@@ -341,7 +349,6 @@ namespace PK::Assets
             PKElementType indexType;
             uint32_t indexCount;
             uint32_t vertexCount;
-            uint32_t vertexStride;
             uint32_t submeshCount;
             uint32_t vertexAttributeCount;
             RelativePtr<PKVertexAttribute> vertexAttributes;

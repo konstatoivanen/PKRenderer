@@ -23,15 +23,18 @@ namespace PK::ECS::Engines
 
 		BufferLayout defaultLayout =
 		{
-			{ ElementType::Float3, PK_VS_POSITION },
 			{ ElementType::Float3, PK_VS_NORMAL },
 			{ ElementType::Float4, PK_VS_TANGENT },
 			{ ElementType::Float2, PK_VS_TEXCOORD0 },
 		};
 
-		auto virtualVBuffer = Buffer::Create(defaultLayout, nullptr, 2000000, BufferUsage::SparseVertex);
+		BufferLayout positionLayout = { { ElementType::Float3, PK_VS_POSITION } };
+
+		auto virtualVBuffer0 = Buffer::Create(defaultLayout, nullptr, 2000000, BufferUsage::SparseVertex);
+		auto virtualVBuffer1 = Buffer::Create(positionLayout, nullptr, 2000000, BufferUsage::SparseVertex);
 		auto virtualIBuffer = Buffer::CreateIndex(ElementType::Uint, nullptr, 2000000, BufferUsage::Sparse);
-		m_virtualBaseMesh = CreateRef<Mesh>(virtualVBuffer, virtualIBuffer);
+		m_virtualBaseMesh = CreateRef<Mesh>(virtualVBuffer0, virtualIBuffer);
+		m_virtualBaseMesh->AddVertexBuffer(virtualVBuffer1);
 
 		auto columnMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Columns.pkmesh", &m_virtualBaseMesh);
 		auto rocksMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Rocks.pkmesh", &m_virtualBaseMesh);

@@ -16,7 +16,7 @@ namespace PK::ECS::Tokens
 	{
 		Utilities::MemoryBlock<VisibleItem> results;
 		size_t count;
-		VisibilityList(size_t count) : results(512){}
+		VisibilityList(size_t count) : results(512), count(count){}
 		void Add(uint32_t entityId, uint16_t depth, uint16_t clipId);
 		inline void Clear() { count = 0ull; }
 		inline const VisibleItem& operator [] (size_t index) const { return results[index]; }

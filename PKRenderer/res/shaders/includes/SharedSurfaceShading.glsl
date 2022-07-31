@@ -112,7 +112,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
     // Use these to modify surface values in fragment or vertex stage
     void PK_SURFACE_FUNC_VERT(inout SurfaceFragmentVaryings surf);
 
-    in float3 in_POSITION0;
+    in float3 in_POSITION;
     in float3 in_NORMAL;
     in float4 in_TANGENT;
     in float2 in_TEXCOORD0;
@@ -120,7 +120,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
     
     void main()
     {
-        baseVaryings.vs_WORLDPOSITION = ObjectToWorldPos(in_POSITION0.xyz);
+        baseVaryings.vs_WORLDPOSITION = ObjectToWorldPos(in_POSITION.xyz);
         baseVaryings.vs_TEXCOORD0 = in_TEXCOORD0;
     
         #if defined(PK_NORMALMAPS) || defined(PK_HEIGHTMAPS)

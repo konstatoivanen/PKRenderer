@@ -71,6 +71,61 @@ namespace PK::Math::Functions
         return value;
     }
 
+    ushort PackHalf(float v)
+    {
+        if (v < -65536.0f)
+        {
+            v = -65536.0f;
+        }
+
+        if (v > 65536.0f)
+        {
+            v = 65536.0f;
+        }
+
+        v *= 1.925930e-34f;
+        int32_t i = *(int32_t*)&v;
+        uint32_t ui = (uint32_t)i;
+        return ((i >> 16) & (int)0xffff8000) | ((int)(ui >> 13));
+    }
+
+    ushort2 PackHalf(float2 v)
+    {
+        return { PackHalf(v.x), PackHalf(v.y) };
+    }
+
+    ushort3 PackHalf(float3 v)
+    {
+        return { PackHalf(v.x), PackHalf(v.y), PackHalf(v.z) };
+    }
+
+    ushort4 PackHalf(float4 v)
+    {
+        return { PackHalf(v.x), PackHalf(v.y), PackHalf(v.z), PackHalf(v.w) };
+    }
+
+    float UnPackHalf(ushort v)
+    {
+        int32_t iv = v;
+        int32_t i = (iv & 0x47fff) << 13;
+        return *(float*)&i * 5.192297e+33f;
+    }
+
+    float2 UnPackHalf(ushort2 v)
+    {
+        return { UnPackHalf(v.x), UnPackHalf(v.y) };
+    }
+
+    float3 UnPackHalf(ushort3 v)
+    {
+        return { UnPackHalf(v.x), UnPackHalf(v.y), UnPackHalf(v.z) };
+    }
+
+    float4 UnPackHalf(ushort4 v)
+    {
+        return { UnPackHalf(v.x), UnPackHalf(v.y), UnPackHalf(v.z), UnPackHalf(v.w) };
+    }
+
     size_t GetNextExponentialSize(size_t start, size_t min)
     {
         if (start < 1)

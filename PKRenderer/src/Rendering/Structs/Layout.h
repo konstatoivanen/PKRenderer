@@ -98,22 +98,22 @@ namespace PK::Rendering::Structs
 
         BufferElement() = default;
 
-        BufferElement(ElementType type, const std::string& name, byte count = 1, byte location = 0) : 
+        BufferElement(ElementType type, const std::string& name, byte count = 1, byte location = 0, uint16_t offset = 0, uint16_t alignedOffset = 0) : 
             NameHashId(Core::Services::StringHashID::StringToID(name)),
             Type(type), 
             Count(count), 
-            Offset(0), 
-            AlignedOffset(0), 
+            Offset(offset),
+            AlignedOffset(alignedOffset),
             Location(location)
         {
         }
 
-        BufferElement(ElementType type, uint32_t nameHashId, byte count = 1, byte location = 0) :
+        BufferElement(ElementType type, uint32_t nameHashId, byte count = 1, byte location = 0, uint16_t offset = 0, uint16_t alignedOffset = 0) :
             NameHashId(nameHashId), 
             Type(type), 
             Count(count), 
-            Offset(0), 
-            AlignedOffset(0), 
+            Offset(offset),
+            AlignedOffset(alignedOffset),
             Location(location)
         {
         }
@@ -140,19 +140,19 @@ namespace PK::Rendering::Structs
 
             BufferLayout() {}
     
-            BufferLayout(BufferElement* elements, size_t count) : std::vector<BufferElement>(elements, elements + count)
+            BufferLayout(BufferElement* elements, size_t count, bool applyOffsets = true) : std::vector<BufferElement>(elements, elements + count)
             {
-                CalculateOffsetsAndStride();
+                CalculateOffsetsAndStride(applyOffsets);
             }
 
-            BufferLayout(std::initializer_list<BufferElement> elements) : std::vector<BufferElement>(elements)
+            BufferLayout(std::initializer_list<BufferElement> elements, bool applyOffsets = true) : std::vector<BufferElement>(elements)
             {
-                CalculateOffsetsAndStride();
+                CalculateOffsetsAndStride(applyOffsets);
             }
     
-            BufferLayout(std::vector<BufferElement> elements) : std::vector<BufferElement>(elements)
+            BufferLayout(std::vector<BufferElement> elements, bool applyOffsets = true) : std::vector<BufferElement>(elements)
             {
-                CalculateOffsetsAndStride();
+                CalculateOffsetsAndStride(applyOffsets);
             }
         
             inline uint32_t GetStride(BufferUsage usage) const { return (usage & BufferUsage::AlignedTypes) != 0 ? m_alignedStride : m_stride; }
@@ -163,7 +163,7 @@ namespace PK::Rendering::Structs
             const BufferElement* TryGetElement(uint32_t nameHashId, uint32_t* index) const;
     
         private:
-            void CalculateOffsetsAndStride();
+            void CalculateOffsetsAndStride(bool applyOffsets);
 
             std::map<uint32_t, uint32_t> m_elementMap;
             uint32_t m_stride = 0;
