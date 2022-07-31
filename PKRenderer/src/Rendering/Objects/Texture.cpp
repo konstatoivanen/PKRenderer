@@ -10,13 +10,13 @@ using namespace PK::Rendering;
 using namespace PK::Rendering::Objects;
 using namespace PK::Rendering::VulkanRHI::Objects;
 
-Ref<Texture> PK::Rendering::Objects::Texture::Create(const TextureDescriptor& descriptor)
+Ref<Texture> PK::Rendering::Objects::Texture::Create(const TextureDescriptor& descriptor, const char* name)
 {
     auto api = GraphicsAPI::GetActiveAPI();
 
     switch (api)
     {
-        case APIType::Vulkan: return CreateRef<VulkanTexture>(descriptor);
+        case APIType::Vulkan: return CreateRef<VulkanTexture>(descriptor, name);
     }
 
     return nullptr;

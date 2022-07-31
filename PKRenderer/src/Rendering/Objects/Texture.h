@@ -10,7 +10,7 @@ namespace PK::Rendering::Objects
         friend Utilities::Ref<Texture> Core::Services::AssetImporters::Create();
 
         public:
-            static Utilities::Ref<Texture> Create(const Structs::TextureDescriptor& descriptor);
+            static Utilities::Ref<Texture> Create(const Structs::TextureDescriptor& descriptor, const char* name);
 
             virtual ~Texture() = default;
             virtual void SetData(const void* data, size_t size, uint32_t level, uint32_t layer) const = 0;

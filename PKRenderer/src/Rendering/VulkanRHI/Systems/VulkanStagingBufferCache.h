@@ -8,7 +8,7 @@ namespace PK::Rendering::VulkanRHI::Systems
 {
     struct VulkanStagingBuffer : public VulkanRawBuffer
     {
-        VulkanStagingBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo) : VulkanRawBuffer(device, allocator, createInfo) {}
+        VulkanStagingBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo) : VulkanRawBuffer(device, allocator, createInfo, "Staging Buffer") {}
         mutable Rendering::Structs::ExecutionGate executionGate;
         mutable VkDeviceSize destinationOffset = 0ull;
         mutable VkDeviceSize desitnationRange = 0ull;

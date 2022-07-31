@@ -558,6 +558,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\Structs\StructIndirectArguments.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanSparsePageTable.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.h" />
+    <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanExtensions.h" />
     <ClInclude Include="src\Utilities\BufferIterator.h" />
     <ClInclude Include="src\Utilities\BufferView.h" />
     <ClInclude Include="src\Core\CommandConfig.h" />

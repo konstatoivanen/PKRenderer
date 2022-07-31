@@ -13,7 +13,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
     }
 
-    VulkanTexture::VulkanTexture(const TextureDescriptor& descriptor) : m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>())
+    VulkanTexture::VulkanTexture(const TextureDescriptor& descriptor, const char* name) : m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>()), m_name(name)
     {
         Rebuild(descriptor);
     }
@@ -63,6 +63,8 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanTexture::Import(const char* filepath, void* pParams)
     {
         Dispose();
+
+        m_name = GetFileName();
 
 		ktxTexture2* ktxTex2;
 
@@ -201,7 +203,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         Dispose();
 
         m_descriptor = descriptor;
-        m_rawImage = new VulkanRawImage(m_driver->allocator, VulkanImageCreateInfo(descriptor));
+        m_rawImage = new VulkanRawImage(m_driver->allocator, m_driver->device, VulkanImageCreateInfo(descriptor), m_name.c_str());
 
         m_viewType = EnumConvert::GetViewType(descriptor.samplerType);
         m_swizzle = EnumConvert::GetSwizzle(m_rawImage->format);
@@ -331,7 +333,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         };
 
         auto viewValue = new VulkanTexture::ViewValue();
-        viewValue->view = new VulkanImageView(m_driver->device, info);
+        viewValue->view = new VulkanImageView(m_driver->device, info, m_name.c_str());
         viewValue->bindHandle.imageLayout = GetImageLayout();
         viewValue->bindHandle.imageView = viewValue->view->view;
 

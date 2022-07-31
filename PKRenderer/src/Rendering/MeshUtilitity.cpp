@@ -346,8 +346,8 @@ namespace PK::Rendering::MeshUtility
 
         return CreateRef<Mesh>
         (
-            Buffer::CreateVertex(layout, vertices, 24),
-            Buffer::CreateIndex(ElementType::Uint, indices, 36),
+            Buffer::CreateVertex(layout, vertices, 24, BufferUsage::None, "Mesh Vertex Buffer"),
+            Buffer::CreateIndex(ElementType::Uint, indices, 36, BufferUsage::None, "Mesh Index Buffer"),
             PK::Math::BoundingBox::CenterExtents(offset, extents)
         );
     }
@@ -374,8 +374,8 @@ namespace PK::Rendering::MeshUtility
 
         return CreateRef<Mesh>
         (
-            Buffer::CreateVertex({ {ElementType::Float3, PK_VS_POSITION }, { ElementType::Float2, PK_VS_TEXCOORD0 } }, vertices, 4),
-            Buffer::CreateIndex(ElementType::Uint, indices, 6)
+            Buffer::CreateVertex({ {ElementType::Float3, PK_VS_POSITION }, { ElementType::Float2, PK_VS_TEXCOORD0 } }, vertices, 4, BufferUsage::None, "Mesh Vertex Buffer"),
+            Buffer::CreateIndex(ElementType::Uint, indices, 6, BufferUsage::None, "Mesh Index Buffer")
         );
     }
 

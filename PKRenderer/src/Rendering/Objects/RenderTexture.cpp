@@ -6,7 +6,7 @@ namespace PK::Rendering::Objects
     using namespace Structs;
     using namespace Math;
 
-    RenderTexture::RenderTexture(const RenderTextureDescriptor& descriptor) : m_descriptor(descriptor)
+    RenderTexture::RenderTexture(const RenderTextureDescriptor& descriptor, const char* name) : m_descriptor(descriptor)
     {
         m_colorAttachmentCount = 0u;
 
@@ -28,7 +28,7 @@ namespace PK::Rendering::Objects
                 attachmentDescriptor.samples = descriptor.samples;
                 attachmentDescriptor.layers = descriptor.layers;
                 attachmentDescriptor.sampler = descriptor.sampler;
-                m_colorAttachments[m_colorAttachmentCount++] = Texture::Create(attachmentDescriptor);
+                m_colorAttachments[m_colorAttachmentCount++] = Texture::Create(attachmentDescriptor, name);
             }
         }
 
@@ -43,7 +43,7 @@ namespace PK::Rendering::Objects
             attachmentDescriptor.samples = descriptor.samples;
             attachmentDescriptor.layers = descriptor.layers;
             attachmentDescriptor.sampler = descriptor.sampler;
-            m_depthAttachment = Texture::Create(attachmentDescriptor);
+            m_depthAttachment = Texture::Create(attachmentDescriptor, name);
         }
     }
     

@@ -42,7 +42,7 @@ namespace PK::Rendering::Passes
             {ElementType::Float4, "pk_ChannelMixerRed"},
             {ElementType::Float4, "pk_ChannelMixerGreen"},
             {ElementType::Float4, "pk_ChannelMixerBlue"},
-        }));
+        }), "Color Grading Parameters");
         
         OnUpdateParameters(config);
 
@@ -55,11 +55,13 @@ namespace PK::Rendering::Passes
         descriptor.sampler.wrap[1] = WrapMode::Repeat;
         descriptor.sampler.wrap[2] = WrapMode::Repeat;
         descriptor.usage = TextureUsage::Default | TextureUsage::Storage;
-        m_filmGrainTexture = Texture::Create(descriptor);
+        m_filmGrainTexture = Texture::Create(descriptor, "Film Grain Texture");
     }
     
     void PassPostEffects::Render(CommandBuffer* cmd, RenderTexture* destination, MemoryAccessFlags lastAccess)
     {
+        cmd->BeginDebugScope("Post Effects", PK_COLOR_YELLOW);
+
         auto hash = HashCache::Get();
         auto color = destination->GetColor(0);
         auto grain = m_filmGrainTexture.get();
@@ -81,6 +83,8 @@ namespace PK::Rendering::Passes
 
         auto res = destination->GetResolution();
         cmd->Dispatch(m_computeComposite, { (uint)glm::ceil(res.x / 16.0f), (uint)glm::ceil(res.y / 4.0f), 1u });
+
+        cmd->EndDebugScope();
     }
 
     void PassPostEffects::OnUpdateParameters(const ApplicationConfig* config)

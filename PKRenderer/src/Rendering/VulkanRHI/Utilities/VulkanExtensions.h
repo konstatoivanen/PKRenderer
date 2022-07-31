@@ -1,0 +1,40 @@
+#pragma once
+#include "vulkan/vulkan.h"
+
+extern PFN_vkSetDebugUtilsObjectNameEXT pk_vkSetDebugUtilsObjectNameEXT;
+#define vkSetDebugUtilsObjectNameEXT pk_vkSetDebugUtilsObjectNameEXT
+
+extern PFN_vkSetDebugUtilsObjectTagEXT pk_vkSetDebugUtilsObjectTagEXT;
+#define vkSetDebugUtilsObjectTagEXT pk_vkSetDebugUtilsObjectTagEXT
+
+extern PFN_vkQueueBeginDebugUtilsLabelEXT pk_vkQueueBeginDebugUtilsLabelEXT;
+#define vkQueueBeginDebugUtilsLabelEXT pk_vkQueueBeginDebugUtilsLabelEXT
+
+extern PFN_vkQueueEndDebugUtilsLabelEXT pk_vkQueueEndDebugUtilsLabelEXT;
+#define vkQueueEndDebugUtilsLabelEXT pk_vkQueueEndDebugUtilsLabelEXT
+
+extern PFN_vkQueueInsertDebugUtilsLabelEXT pk_vkQueueInsertDebugUtilsLabelEXT;
+#define vkQueueInsertDebugUtilsLabelEXT pk_vkQueueInsertDebugUtilsLabelEXT
+
+extern PFN_vkCmdBeginDebugUtilsLabelEXT pk_vkCmdBeginDebugUtilsLabelEXT;
+#define vkCmdBeginDebugUtilsLabelEXT pk_vkCmdBeginDebugUtilsLabelEXT
+
+extern PFN_vkCmdEndDebugUtilsLabelEXT pk_vkCmdEndDebugUtilsLabelEXT;
+#define vkCmdEndDebugUtilsLabelEXT pk_vkCmdEndDebugUtilsLabelEXT
+
+extern PFN_vkCmdInsertDebugUtilsLabelEXT pk_vkCmdInsertDebugUtilsLabelEXT;
+#define vkCmdInsertDebugUtilsLabelEXT pk_vkCmdInsertDebugUtilsLabelEXT
+
+extern PFN_vkCreateDebugUtilsMessengerEXT pk_vkCreateDebugUtilsMessengerEXT;
+#define vkCreateDebugUtilsMessengerEXT pk_vkCreateDebugUtilsMessengerEXT
+
+extern PFN_vkDestroyDebugUtilsMessengerEXT pk_vkDestroyDebugUtilsMessengerEXT;
+#define vkDestroyDebugUtilsMessengerEXT pk_vkDestroyDebugUtilsMessengerEXT
+
+extern PFN_vkSubmitDebugUtilsMessageEXT pk_vkSubmitDebugUtilsMessageEXT;
+#define vkSubmitDebugUtilsMessageEXT pk_vkSubmitDebugUtilsMessageEXT
+
+namespace PK::Rendering::VulkanRHI::Utilities
+{
+    void VulkanBindExtensionMethods(VkInstance instance);
+}

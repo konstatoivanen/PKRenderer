@@ -239,14 +239,16 @@ namespace PK::Rendering::Objects
         auto api = GraphicsAPI::GetActiveAPI();
 
         auto pVariants = shader->variants.Get(base);
+        auto fileName = GetFileName();
 
         for (auto i = 0u; i < shader->variantcount; ++i)
         {
             auto pVariant = pVariants + i;
+            auto name = fileName + ":" + std::to_string(i);
 
             switch (api)
             {
-                case APIType::Vulkan: m_variants.push_back(CreateRef<VulkanShader>(base, pVariant));
+                case APIType::Vulkan: m_variants.push_back(CreateRef<VulkanShader>(base, pVariant, name.c_str()));
             }
         }
 

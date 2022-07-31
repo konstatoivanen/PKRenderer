@@ -8,13 +8,13 @@ namespace PK::Rendering::Objects
     using namespace Utilities;
     using namespace VulkanRHI::Objects;
 
-    Ref<Buffer> Buffer::Create(const BufferLayout& layout, const void* data, size_t count, BufferUsage usage)
+    Ref<Buffer> Buffer::Create(const BufferLayout& layout, const void* data, size_t count, BufferUsage usage, const char* name)
     {
         auto api = GraphicsAPI::GetActiveAPI();
 
         switch (api)
         {
-            case APIType::Vulkan: return CreateRef<VulkanBuffer>(layout, data, count, usage);
+            case APIType::Vulkan: return CreateRef<VulkanBuffer>(layout, data, count, usage, name);
         }
 
         return nullptr;

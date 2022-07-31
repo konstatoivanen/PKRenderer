@@ -31,7 +31,7 @@ namespace PK::Rendering::Passes
         descr.resolution = resolution;
         descr.levels = 7u;
         descr.usage = TextureUsage::Sample | TextureUsage::Storage;
-        m_voxels = Texture::Create(descr);
+        m_voxels = Texture::Create(descr, "GI Voxel Volume");
 
         descr.samplerType = SamplerType::Sampler2DArray;
         descr.format = TextureFormat::RGBA16F;
@@ -42,7 +42,7 @@ namespace PK::Rendering::Passes
         descr.levels = 1u;
         descr.layers = 2u;
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1 };
-        m_screenSpaceGI = Texture::Create(descr);
+        m_screenSpaceGI = Texture::Create(descr, "GI Sceen Space Texture");
 
         auto cmd = GraphicsAPI::GetCommandBuffer();
         auto hash = HashCache::Get();
@@ -65,7 +65,7 @@ namespace PK::Rendering::Passes
             { ElementType::Float, hash->pk_SceneGI_DiffuseGain },
             { ElementType::Float, hash->pk_SceneGI_SpecularGain },
             { ElementType::Float, hash->pk_SceneGI_Fade }
-        }));
+        }), "Scene GI Parameters");
 
         m_parameters->Set<float4>(hash->pk_SceneGI_ST, float4(-76.8f, -6.0f, -76.8f, 1.0f / 0.6f));
         m_parameters->Set<float>(hash->pk_SceneGI_VoxelSize, 0.6f);
@@ -103,6 +103,8 @@ namespace PK::Rendering::Passes
 
     void PassSceneGI::RenderVoxels(CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup)
     {
+        cmd->BeginDebugScope("GI Voxelize", PK_COLOR_GREEN);
+
         auto hash = HashCache::Get();
 
         auto volres = m_voxels->GetResolution();
@@ -132,12 +134,18 @@ namespace PK::Rendering::Passes
             cmd->Dispatch(m_computeMipmap, 0, { (volres.x >> i) / 4u, (volres.y >> i) / 4u, (volres.z >> i) / 4u });
             cmd->Barrier(m_voxels.get(), i, 0, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
         }
+
+        cmd->EndDebugScope();
     }
     
     void PassSceneGI::RenderGI(CommandBuffer* cmd)
     {
+        cmd->BeginDebugScope("GI Gather", PK_COLOR_GREEN);
+
         auto resolution = m_screenSpaceGI->GetResolution();
         cmd->Dispatch(m_computeBakeGI, 0, { (uint)ceil(resolution.x / 32.0f), (uint)ceil(resolution.y / 32.0f), 1u });
         cmd->Barrier(m_screenSpaceGI.get(), MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::FragmentTexture);
+        
+        cmd->EndDebugScope();
     }
 }

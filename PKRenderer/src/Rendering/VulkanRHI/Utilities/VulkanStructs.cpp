@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "VulkanStructs.h"
 #include "VulkanUtilities.h"
+#include "VulkanExtensions.h"
 
 namespace PK::Rendering::VulkanRHI
 {
@@ -227,10 +228,17 @@ namespace PK::Rendering::VulkanRHI
         vkDestroySemaphore(device, vulkanSemaphore, nullptr);
     }
 
-    VulkanImageView::VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo) : device(device)
+    VulkanImageView::VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo, const char* name) : device(device)
     {
         PK_LOG_VERBOSE("VK ALLOC: Image View");
         VK_ASSERT_RESULT_CTX(vkCreateImageView(device, &createInfo, nullptr, &view), "Failed to create an image view!");
+
+        VkDebugUtilsObjectNameInfoEXT nameInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
+        nameInfo.pNext = nullptr;
+        nameInfo.objectType = VK_OBJECT_TYPE_IMAGE_VIEW;
+        nameInfo.objectHandle = (uint64_t)view;
+        nameInfo.pObjectName = name;
+        vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
     }
 
     VulkanImageView::~VulkanImageView()
@@ -258,7 +266,7 @@ namespace PK::Rendering::VulkanRHI
         vkDestroyRenderPass(device, renderPass, nullptr);
     }
 
-    VulkanRawBuffer::VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo) :
+    VulkanRawBuffer::VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo, const char* name) :
         allocator(allocator), 
         usage(createInfo.buffer.usage), 
         capacity(createInfo.buffer.size), 
@@ -275,6 +283,13 @@ namespace PK::Rendering::VulkanRHI
         }
 
         VK_ASSERT_RESULT_CTX(vmaCreateBuffer(allocator, &createInfo.buffer, &createInfo.allocation, &buffer, &memory, &allocationInfo), "Failed to create a buffer!");
+
+        VkDebugUtilsObjectNameInfoEXT nameInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
+        nameInfo.pNext = nullptr;
+        nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
+        nameInfo.objectHandle = (uint64_t)buffer;
+        nameInfo.pObjectName = name;
+        vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
     }
     
     VulkanRawBuffer::~VulkanRawBuffer()
@@ -326,7 +341,7 @@ namespace PK::Rendering::VulkanRHI
         EndMap(0ull, size);
     }
 
-    VulkanRawImage::VulkanRawImage(VmaAllocator allocator, const VulkanImageCreateInfo& createInfo) : 
+    VulkanRawImage::VulkanRawImage(VmaAllocator allocator, VkDevice device, const VulkanImageCreateInfo& createInfo, const char* name) :
         allocator(allocator),
         format(createInfo.image.format),
         type(createInfo.image.imageType),
@@ -338,6 +353,13 @@ namespace PK::Rendering::VulkanRHI
     {
         PK_LOG_VERBOSE("VK ALLOC: Image");
         VK_ASSERT_RESULT_CTX(vmaCreateImage(allocator, &createInfo.image, &createInfo.allocation, &image, &memory, nullptr), "Failed to create an image!");
+
+        VkDebugUtilsObjectNameInfoEXT nameInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
+        nameInfo.pNext = nullptr;
+        nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
+        nameInfo.objectHandle = (uint64_t)image;
+        nameInfo.pObjectName = name;
+        vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
     }
 
     VulkanRawImage::~VulkanRawImage()
@@ -345,7 +367,7 @@ namespace PK::Rendering::VulkanRHI
         vmaDestroyImage(allocator, image, memory);
     }
 
-    VulkanShaderModule::VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t sprivSize) : device(device)
+    VulkanShaderModule::VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t sprivSize, const char* name) : device(device)
     {
         VkShaderModuleCreateInfo createInfo{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
         createInfo.codeSize = sprivSize;
@@ -357,6 +379,13 @@ namespace PK::Rendering::VulkanRHI
         stageInfo.stage = stage;
         stageInfo.module = module;
         stageInfo.pName = "main";
+
+        VkDebugUtilsObjectNameInfoEXT nameInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
+        nameInfo.pNext = nullptr;
+        nameInfo.objectType = VK_OBJECT_TYPE_SHADER_MODULE;
+        nameInfo.objectHandle = (uint64_t)module;
+        nameInfo.pObjectName = name;
+        vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
     }
 
     VulkanShaderModule::~VulkanShaderModule()

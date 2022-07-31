@@ -166,7 +166,12 @@ namespace PK::ECS::Engines
 
         if (m_copyBuffer == nullptr)
         {
-            m_copyBuffer = Buffer::Create({ { ElementType::Uint, "DATA"} }, nullptr, m_currentResolution.x * m_currentResolution.y, BufferUsage::GPUToCPU | BufferUsage::TransferDst | BufferUsage::TransferSrc);
+            m_copyBuffer = Buffer::Create(
+                { { ElementType::Uint, "DATA"} }, 
+                nullptr, 
+                m_currentResolution.x * m_currentResolution.y, 
+                BufferUsage::GPUToCPU | BufferUsage::TransferDst | BufferUsage::TransferSrc, 
+                "Screenshot Copy Buffer");
         }
         else
         {

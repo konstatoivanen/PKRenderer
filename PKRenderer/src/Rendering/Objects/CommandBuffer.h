@@ -56,6 +56,9 @@ namespace PK::Rendering::Objects
         
         virtual void Barrier(const Texture* texture, const Structs::TextureViewRange& range, const Buffer* buffer, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags) = 0;
 
+        virtual void BeginDebugScope(const char* name, const Math::color& color) = 0;
+        virtual void EndDebugScope() = 0;
+
         void SetViewPort(const Math::uint4& rect);
         void SetScissor(const Math::uint4& rect);
 

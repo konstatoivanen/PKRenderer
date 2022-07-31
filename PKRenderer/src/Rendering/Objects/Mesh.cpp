@@ -125,14 +125,16 @@ namespace PK::Rendering::Objects
 		}
 
 		auto pBufferOffset = 0ull;
+		auto vertexBufferName = GetFileName() + std::string(" Vertex Buffer");
+		auto indexBufferName = GetFileName() + std::string(" Index Buffer");
 
 		for (auto& kv : layoutMap)
 		{
-			AddVertexBuffer(Buffer::CreateVertex(BufferLayout(kv.second), (char*)pVertices + pBufferOffset, mesh->vertexCount));
+			AddVertexBuffer(Buffer::CreateVertex(BufferLayout(kv.second), (char*)pVertices + pBufferOffset, mesh->vertexCount, BufferUsage::None, vertexBufferName.c_str()));
 			pBufferOffset += m_vertexBuffers.back()->GetLayout().GetStride() * mesh->vertexCount;
 		}
 
-		SetIndexBuffer(Buffer::CreateIndex(mesh->indexType, pIndexBuffer, mesh->indexCount));
+		SetIndexBuffer(Buffer::CreateIndex(mesh->indexType, pIndexBuffer, mesh->indexCount, BufferUsage::None, indexBufferName.c_str()));
         PK::Assets::CloseAsset(&asset);
     }
 

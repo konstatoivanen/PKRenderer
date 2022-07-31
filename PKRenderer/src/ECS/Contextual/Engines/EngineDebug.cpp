@@ -30,9 +30,9 @@ namespace PK::ECS::Engines
 
 		BufferLayout positionLayout = { { ElementType::Float3, PK_VS_POSITION } };
 
-		auto virtualVBuffer0 = Buffer::Create(defaultLayout, nullptr, 2000000, BufferUsage::SparseVertex);
-		auto virtualVBuffer1 = Buffer::Create(positionLayout, nullptr, 2000000, BufferUsage::SparseVertex);
-		auto virtualIBuffer = Buffer::CreateIndex(ElementType::Uint, nullptr, 2000000, BufferUsage::Sparse);
+		auto virtualVBuffer0 = Buffer::Create(defaultLayout, nullptr, 2000000, BufferUsage::SparseVertex, "Virtual Mesh Vertex Buffer 0");
+		auto virtualVBuffer1 = Buffer::Create(positionLayout, nullptr, 2000000, BufferUsage::SparseVertex, "Virtual Mesh Vertex Buffer 1");
+		auto virtualIBuffer = Buffer::CreateIndex(ElementType::Uint, nullptr, 2000000, BufferUsage::Sparse, "Virtual Mesh Index Buffer");
 		m_virtualBaseMesh = CreateRef<Mesh>(virtualVBuffer0, virtualIBuffer);
 		m_virtualBaseMesh->AddVertexBuffer(virtualVBuffer1);
 
@@ -86,7 +86,7 @@ namespace PK::ECS::Engines
 				true);
 		}
 
-		auto color = glm::log(Functions::HexToRGB(0x66D1FFFF) * 0.04f); // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF //0xFFA575FF
+		auto color = glm::log(Functions::HexToRGB(0x6D563DFF) * 16.0f); // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF //0xFFA575FF
 		Builders::BuildLightRenderableEntity(m_entityDb, m_assetDatabase, PK_FLOAT3_ZERO, { 25, -35, 0 }, LightType::Directional, Cookie::Circle0, color, 90.0f, 1000.0f, true);
 	}
 

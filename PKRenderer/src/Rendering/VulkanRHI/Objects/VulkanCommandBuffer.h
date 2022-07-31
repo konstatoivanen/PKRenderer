@@ -68,6 +68,9 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         void Barrier(const Texture* texture, const TextureViewRange& range, const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) override final;
 
+        void BeginDebugScope(const char* name, const Math::color& color) override final;
+        void EndDebugScope() override final;
+
         // Vulkan specific interface
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferCopy* pRegions) const;
         void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions) const;

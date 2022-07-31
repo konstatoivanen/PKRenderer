@@ -106,7 +106,7 @@ namespace PK::Rendering::VulkanRHI
 
     struct VulkanImageView : public IVulkanDisposable
     {
-        VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo);
+        VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo, const char* name);
         ~VulkanImageView();
 
         const VkDevice device;
@@ -133,7 +133,7 @@ namespace PK::Rendering::VulkanRHI
 
     struct VulkanRawBuffer : public IVulkanDisposable
     {
-        VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo);
+        VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo, const char* name);
         ~VulkanRawBuffer();
 
         void Invalidate(size_t offset, size_t size) const;
@@ -152,7 +152,7 @@ namespace PK::Rendering::VulkanRHI
 
     struct VulkanRawImage : public IVulkanDisposable
     {
-        VulkanRawImage(VmaAllocator allocator, const VulkanImageCreateInfo& createInfo);
+        VulkanRawImage(VmaAllocator allocator, VkDevice device, const VulkanImageCreateInfo& createInfo, const char* name);
         ~VulkanRawImage();
 
         const VmaAllocator allocator;
@@ -169,7 +169,7 @@ namespace PK::Rendering::VulkanRHI
 
     struct VulkanShaderModule : public IVulkanDisposable
     {
-        VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t spirvSize);
+        VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t spirvSize, const char* name);
         ~VulkanShaderModule();
 
         const VkDevice device;

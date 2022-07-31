@@ -11,32 +11,39 @@ namespace PK::Rendering::Objects
     class Buffer : public Utilities::NoCopy, public Utilities::NativeInterface<Buffer>
     {
         public:
-            static Utilities::Ref<Buffer> Create(const Structs::BufferLayout& layout, const void* data, size_t count, Structs::BufferUsage usage);
+            static Utilities::Ref<Buffer> Create(const Structs::BufferLayout& layout, const void* data, size_t count, Structs::BufferUsage usage, const char* name);
 
             inline static Utilities::Ref<Buffer> CreateVertex(const Structs::BufferLayout& layout,
                                                    const void* data, 
                                                    size_t count, 
-                                                   Structs::BufferUsage extraFlags = Structs::BufferUsage::None)
+                                                   Structs::BufferUsage extraFlags,
+                                                   const char* name)
             { 
-                return Create(layout, data, count, Structs::BufferUsage::DefaultVertex | extraFlags);
+                return Create(layout, data, count, Structs::BufferUsage::DefaultVertex | extraFlags, name);
             }
 
             inline static Utilities::Ref<Buffer> CreateIndex(Structs::ElementType type,
                                                   const void* data, 
                                                   size_t count,
-                                                  Structs::BufferUsage extraFlags = Structs::BufferUsage::None)
+                                                  Structs::BufferUsage extraFlags,
+                                                  const char* name)
             {
-                return Create(Structs::BufferLayout({{ type, "INDEX" }}), data, count, Structs::BufferUsage::DefaultIndex | extraFlags);
+                return Create(Structs::BufferLayout({{ type, "INDEX" }}), data, count, Structs::BufferUsage::DefaultIndex | extraFlags, name);
             }
 
-            inline static Utilities::Ref<Buffer> CreateConstant(const Structs::BufferLayout& layout, Structs::BufferUsage extraFlags = Structs::BufferUsage::None)
+            inline static Utilities::Ref<Buffer> CreateConstant(const Structs::BufferLayout& layout, 
+                                                                Structs::BufferUsage extraFlags,
+                                                                const char* name)
             {
-                return Create(layout, nullptr, 1, Structs::BufferUsage::DefaultConstant | extraFlags);
+                return Create(layout, nullptr, 1, Structs::BufferUsage::DefaultConstant | extraFlags, name);
             }
 
-            inline static Utilities::Ref<Buffer> CreateStorage(const Structs::BufferLayout& layout, size_t count, Structs::BufferUsage extraFlags = Structs::BufferUsage::None)
+            inline static Utilities::Ref<Buffer> CreateStorage(const Structs::BufferLayout& layout, 
+                                                               size_t count, 
+                                                               Structs::BufferUsage extraFlags,
+                                                               const char* name)
             {
-                return Create(layout, nullptr, count, Structs::BufferUsage::DefaultStorage | extraFlags);
+                return Create(layout, nullptr, count, Structs::BufferUsage::DefaultStorage | extraFlags, name);
             }
 
             virtual ~Buffer() = default;

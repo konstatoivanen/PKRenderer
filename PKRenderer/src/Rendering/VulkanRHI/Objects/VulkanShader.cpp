@@ -11,7 +11,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     using namespace Structs;
     using namespace Systems;
 
-    VulkanShader::VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant) : m_device(GraphicsAPI::GetActiveDriver<VulkanDriver>()->device)
+    VulkanShader::VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant, const char* name) : m_device(GraphicsAPI::GetActiveDriver<VulkanDriver>()->device)
     {
         m_stageFlags = 0u;
 
@@ -25,7 +25,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             auto spirvSize = variant->sprivSizes[i];
             auto* spirv = reinterpret_cast<uint32_t*>(variant->sprivBuffers[i].Get(base));
-            m_modules[i] = new VulkanShaderModule(m_device, EnumConvert::GetShaderStage((ShaderStage)i), spirv, spirvSize);
+            m_modules[i] = new VulkanShaderModule(m_device, EnumConvert::GetShaderStage((ShaderStage)i), spirv, spirvSize, name);
             m_stageFlags |= 1 << i;
         }
 

@@ -14,7 +14,7 @@ namespace PK::Rendering::Passes
     PassHistogram::PassHistogram(AssetDatabase* assetDatabase)
     {
         m_computeHistogram = assetDatabase->Find<Shader>("CS_Histogram");
-        m_histogram = Buffer::CreateStorage(BufferLayout({ { ElementType::Uint, "BIN" } }), 257);
+        m_histogram = Buffer::CreateStorage(BufferLayout({ { ElementType::Uint, "BIN" } }), 257, BufferUsage::None, "Histogram");
         m_passHistogramBins = m_computeHistogram->GetVariantIndex(StringHashID::StringToID("PASS_HISTOGRAM"));
         m_passHistogramAvg = m_computeHistogram->GetVariantIndex(StringHashID::StringToID("PASS_AVG"));
     }

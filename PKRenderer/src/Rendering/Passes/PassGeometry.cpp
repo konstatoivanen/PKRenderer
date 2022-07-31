@@ -57,11 +57,15 @@ namespace PK::Rendering::Passes
 
     void PassGeometry::RenderForward(CommandBuffer* cmd)
     {
+        cmd->BeginDebugScope("Forward Opaque", PK_COLOR_BLUE);
         m_batcher->Render(cmd, m_passGroup);
+        cmd->EndDebugScope();
     }
 
     void PassGeometry::RenderGBuffer(CommandBuffer* cmd)
     {
+        cmd->BeginDebugScope("GBuffer", PK_COLOR_RED);
         m_batcher->Render(cmd, m_passGroup, &m_gbufferAttribs, HashCache::Get()->PK_META_PASS_GBUFFER);
+        cmd->EndDebugScope();
     }
 }

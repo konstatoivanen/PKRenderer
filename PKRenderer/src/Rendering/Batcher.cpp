@@ -39,7 +39,7 @@ namespace PK::Rendering
         { 
             {ElementType::Float4x4, "localToWorld"}, 
         }, 
-        1024, BufferUsage::PersistentStage);
+        1024, BufferUsage::PersistentStage, "Batching Matrices");
 
         m_indices = Buffer::CreateStorage(
         {
@@ -48,13 +48,13 @@ namespace PK::Rendering
             {ElementType::Uint, "mesh"},
             {ElementType::Uint, "clipInfo"}
         },
-        1024, BufferUsage::PersistentStage);
+        1024, BufferUsage::PersistentStage, "Batching Draw Infos");
 
         m_properties = Buffer::CreateStorage(
         {
             { ElementType::Uint, "DATA"},
         },
-        4096, BufferUsage::PersistentStage);
+        4096, BufferUsage::PersistentStage, "Batching Material Properties");
 
         m_indirectArguments = Buffer::CreateStorage(
         {
@@ -64,7 +64,7 @@ namespace PK::Rendering
             { ElementType::Int,  "vertexOffset"},
             { ElementType::Uint, "firstInstance"}
         },
-        256, BufferUsage::PersistentStage | BufferUsage::Indirect);
+        256, BufferUsage::PersistentStage | BufferUsage::Indirect, "Batching Indirect Draw Arguments");
 
         m_drawCalls.reserve(512);
         m_passGroups.reserve(512);

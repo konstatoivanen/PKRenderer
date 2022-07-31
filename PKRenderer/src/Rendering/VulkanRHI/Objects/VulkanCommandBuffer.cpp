@@ -5,9 +5,11 @@
 #include "Rendering/VulkanRHI/Objects/VulkanTexture.h"
 #include "Rendering/VulkanRHI/VulkanWindow.h"
 #include "Rendering/VulkanRHI/Objects/VulkanBindArray.h"
+#include "Rendering/VulkanRHI/Utilities/VulkanExtensions.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
+    using namespace PK::Utilities;
     using namespace Utilities;
     using namespace Core;
 
@@ -348,6 +350,20 @@ namespace PK::Rendering::VulkanRHI::Objects
             texture != nullptr ? 1u : 0u,
             &imageBarrier
         );
+    }
+
+    void VulkanCommandBuffer::BeginDebugScope(const char* name, const Math::color& color)
+    {
+        VkDebugUtilsLabelEXT labelInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
+        labelInfo.pNext = nullptr;
+        labelInfo.pLabelName = name;
+        memcpy(labelInfo.color, glm::value_ptr(color), sizeof(Math::color));
+        vkCmdBeginDebugUtilsLabelEXT(commandBuffer, &labelInfo);
+    }
+
+    void VulkanCommandBuffer::EndDebugScope()
+    {
+        vkCmdEndDebugUtilsLabelEXT(commandBuffer);
     }
 
     void VulkanCommandBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferCopy* pRegions) const

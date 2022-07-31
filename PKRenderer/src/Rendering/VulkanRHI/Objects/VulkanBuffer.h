@@ -10,7 +10,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     class VulkanBuffer : public Buffer
     {
         public:
-            VulkanBuffer(const Structs::BufferLayout& layout, const void* data, size_t count, Structs::BufferUsage usage);
+            VulkanBuffer(const Structs::BufferLayout& layout, const void* data, size_t count, Structs::BufferUsage usage, const char* name);
             ~VulkanBuffer();
 
             void SetData(const void* data, size_t offset, size_t size) override final;
@@ -47,6 +47,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             void Dispose();
 
             const VulkanDriver* m_driver = nullptr;
+            std::string m_name = "Buffer";
             VulkanRawBuffer* m_rawBuffer = nullptr;
             Systems::VulkanStagingBuffer* m_mappedBuffer = nullptr;
             VulkanSparsePageTable* m_pageTable = nullptr;

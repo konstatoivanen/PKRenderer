@@ -7,7 +7,7 @@ namespace PK::Rendering::Objects
     class RenderTexture : public Utilities::NoCopy
     {
         public:
-            RenderTexture(const Structs::RenderTextureDescriptor& descriptor);
+            RenderTexture(const Structs::RenderTextureDescriptor& descriptor, const char* name);
 
             void Validate(Math::uint3 resolution);
 

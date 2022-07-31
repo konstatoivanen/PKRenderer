@@ -7,9 +7,10 @@ namespace PK::Rendering::VulkanRHI::Objects
 {
     using namespace Systems;
 
-    VulkanBuffer::VulkanBuffer(const BufferLayout& layout, const void* data, size_t count, BufferUsage usage) :
+    VulkanBuffer::VulkanBuffer(const BufferLayout& layout, const void* data, size_t count, BufferUsage usage, const char* name) :
         Buffer(layout, count, usage),
-        m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>())
+        m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>()),
+        m_name(name)
     {
         Rebuild(count);
         
@@ -201,7 +202,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_count = count;
         auto size = m_layout.GetStride(m_usage) * count;
         auto bufferCreateInfo = VulkanBufferCreateInfo(m_usage, size);
-        m_rawBuffer = new VulkanRawBuffer(m_driver->device, m_driver->allocator, bufferCreateInfo);
+        m_rawBuffer = new VulkanRawBuffer(m_driver->device, m_driver->allocator, bufferCreateInfo, m_name.c_str());
 
         if ((m_usage & BufferUsage::PersistentStage) != 0)
         {

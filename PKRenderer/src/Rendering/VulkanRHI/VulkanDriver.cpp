@@ -2,6 +2,7 @@
 #include "Core/Services/Log.h"
 #include "VulkanDriver.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
+#include "Rendering/VulkanRHI/Utilities/VulkanExtensions.h"
 #include <gfx.h>
 
 namespace PK::Rendering::VulkanRHI
@@ -64,7 +65,9 @@ namespace PK::Rendering::VulkanRHI
         }
 
         VK_ASSERT_RESULT_CTX(vkCreateInstance(&instanceCreateInfo, nullptr, &instance), "Failed to create vulkan instance!");
-        VK_ASSERT_RESULT_CTX(Utilities::VulkanCreateDebugUtilsMessengerEXT(instance, &debugMessengerCreateInfo, nullptr, &debugMessenger), "Failed to create debug messenger");
+        Utilities::VulkanBindExtensionMethods(instance);
+
+        VK_ASSERT_RESULT_CTX(vkCreateDebugUtilsMessengerEXT(instance, &debugMessengerCreateInfo, nullptr, &debugMessenger), "Failed to create debug messenger");
 
         VkSurfaceKHR temporarySurface;
         VK_ASSERT_RESULT_CTX(glfwCreateWindowSurface(instance, temporaryWindow, nullptr, &temporarySurface), "Failed to create window surface!");
@@ -192,7 +195,7 @@ namespace PK::Rendering::VulkanRHI
 
         vmaDestroyAllocator(allocator);
         vkDestroyDevice(device, nullptr);
-        Utilities::VulkanDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+        vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         vkDestroyInstance(instance, nullptr);
         glfwTerminate();
     }

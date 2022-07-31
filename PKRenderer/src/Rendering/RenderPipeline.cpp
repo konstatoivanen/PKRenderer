@@ -32,7 +32,7 @@ namespace PK::Rendering
         descriptor.depthFormat = TextureFormat::Depth32F;
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
         descriptor.sampler.filter = FilterMode::Bilinear;
-        m_RenderTarget = CreateRef<RenderTexture>(descriptor);
+        m_RenderTarget = CreateRef<RenderTexture>(descriptor, "Scene Render Target");
 
         auto hash = HashCache::Get();
 
@@ -57,7 +57,7 @@ namespace PK::Rendering
             { ElementType::Float4x4, hash->pk_MATRIX_L_VP },
             { ElementType::Float4x4, hash->pk_MATRIX_LD_P },
             { ElementType::Float, hash->pk_SceneOEM_Exposure }
-        }));
+        }), "Frame Parameters");
 
         m_constantsPerFrame->Set<float>(hash->pk_SceneOEM_Exposure, config->BackgroundExposure);
 

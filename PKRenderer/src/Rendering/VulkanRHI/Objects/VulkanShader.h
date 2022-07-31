@@ -9,7 +9,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     class VulkanShader : public PK::Rendering::Objects::ShaderVariant, public IVulkanDisposable
     {
         public:
-            VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant);
+            VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant, const char* name);
             ~VulkanShader();
 
             void Dispose() override final;

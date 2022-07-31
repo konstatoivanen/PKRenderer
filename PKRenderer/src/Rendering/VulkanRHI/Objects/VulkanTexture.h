@@ -9,7 +9,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         public:
             VulkanTexture();
-            VulkanTexture(const TextureDescriptor& descriptor);
+            VulkanTexture(const TextureDescriptor& descriptor, const char* name);
             ~VulkanTexture();
             
             void SetData(const void* data, size_t size, uint32_t level, uint32_t layer) const override final;
@@ -86,6 +86,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             void Dispose();
 
             const VulkanDriver* m_driver = nullptr;
+            std::string m_name = "Texture";
             VulkanRawImage* m_rawImage = nullptr;
             std::map<ViewKey, PK::Utilities::Scope<ViewValue>> m_imageViews;
             VkComponentMapping m_swizzle{};

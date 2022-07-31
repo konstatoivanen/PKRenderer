@@ -29,8 +29,8 @@ namespace PK::Rendering::Passes
         descriptor.layers = 3;
         descriptor.usage = TextureUsage::RTColorSample;
         descriptor.sampler.filter = FilterMode::Bilinear;
-        m_renderTarget = Texture::Create(descriptor);
-        m_autoFocusParams = Buffer::CreateStorage(BufferLayout({ {ElementType::Float2, "PARAMS"} }), 1);
+        m_renderTarget = Texture::Create(descriptor, "Depth Of Field Texture");
+        m_autoFocusParams = Buffer::CreateStorage(BufferLayout({ {ElementType::Float2, "PARAMS"} }), 1, BufferUsage::None, "Auto Focus Parameters");
 
         m_passPrefilter = m_shaderBlur->GetVariantIndex(StringHashID::StringToID("PASS_PREFILTER"));
         m_passDiskblur = m_shaderBlur->GetVariantIndex(StringHashID::StringToID("PASS_DISKBLUR"));

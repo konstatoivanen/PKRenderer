@@ -7,7 +7,7 @@ namespace PK::Rendering::Objects
     class ConstantBuffer : public ShaderPropertyBlock
     {
         public:
-            ConstantBuffer(const Structs::BufferLayout& layout);
+            ConstantBuffer(const Structs::BufferLayout& layout, const char* name);
             inline void FlushBuffer() { m_graphicsBuffer->EndWrite(); }
 
             const Buffer* GetBuffer() const { return m_graphicsBuffer.get(); }

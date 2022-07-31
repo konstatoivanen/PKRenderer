@@ -22,7 +22,7 @@ namespace PK::Rendering::Passes
         descriptor.resolution.y = initialWidth / 2;
         descriptor.sampler.filter = FilterMode::Trilinear;
 
-        m_bloomTexture = Texture::Create(descriptor);
+        m_bloomTexture = Texture::Create(descriptor, "Bloom Texture");
         m_computeBloom = assetDatabase->Find<Shader>("CS_Bloom");
         m_passPrefilter = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_DOWNSAMPLE"));
         m_passDiskblur = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_BLUR"));
