@@ -41,8 +41,8 @@ namespace PK::Rendering
         uint16_t mesh = 0u;
         uint16_t material = 0u;
         uint16_t transform = 0u;
-        uint8_t clipIndex = 0u;
-        uint8_t submesh = 0u;
+        uint16_t submesh = 0u;
+        uint32_t userdata = 0u;
 
         bool operator < (DrawInfo& b)
         {
@@ -50,7 +50,7 @@ namespace PK::Rendering
             if (shader != b.shader) return shader < b.shader;
             if (mesh != b.mesh) return mesh < b.mesh;
             if (submesh != b.submesh) return submesh < b.submesh;
-            if (clipIndex != b.clipIndex) return clipIndex < b.clipIndex;
+            if (userdata != b.userdata) return userdata < b.userdata;
             if (material != b.material) return material < b.material;
             if (transform != b.transform) return transform < b.transform;
             return false;
@@ -64,7 +64,7 @@ namespace PK::Rendering
             void BeginCollectDrawCalls();
             void EndCollectDrawCalls();
             constexpr uint32_t BeginNewGroup() { return m_groupIndex++; }
-            void SubmitDraw(ECS::Components::Transform* transform, Objects::Shader* shader, Objects::Material* material, Objects::Mesh* mesh, uint32_t submesh, uint32_t clipIndex);
+            void SubmitDraw(ECS::Components::Transform* transform, Objects::Shader* shader, Objects::Material* material, Objects::Mesh* mesh, uint32_t submesh, uint32_t userdata);
             void Render(Objects::CommandBuffer* cmd, uint32_t group, Structs::FixedFunctionShaderAttributes* overrideAttributes = nullptr, uint32_t requireKeyword = 0u);
 
         private:

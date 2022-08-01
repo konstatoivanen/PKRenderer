@@ -13,13 +13,15 @@ out float4 vs_DEPTH;
 
 void main()
 {
-	PK_Light light = PK_BUFFER_DATA(pk_Lights, pk_ShadowmapLightIndex);
+	uint lightIndex = bitfieldExtract(pk_Instancing_Userdata, 0, 16);
+	uint layer = bitfieldExtract(pk_Instancing_Userdata, 16, 16);
+
+	PK_Light light = PK_BUFFER_DATA(pk_Lights, lightIndex);
 
 	float3 wpos = ObjectToWorldPos(in_POSITION);
 	float4 vs_pos = 0.0f.xxxx;
 	float4 vs_depth = 0.0f.xxxx;
 
-	uint layer = pk_Instancing_ClipInfo + pk_ShadowmapBaseLayer;
 	uint projectionIndex = light.LIGHT_PROJECTION;
 
 	switch (light.LIGHT_TYPE)
@@ -27,7 +29,7 @@ void main()
 		case LIGHT_TYPE_POINT:
 		{
 			vs_depth = float4(wpos - light.position.xyz, SHADOW_NEAR_BIAS);
-			vs_pos = GetCubeClipPos(vs_depth.xyz, light.position.w, pk_Instancing_ClipInfo);
+			vs_pos = GetCubeClipPos(vs_depth.xyz, light.position.w, layer % 6);
 		}
 		break;
 		case LIGHT_TYPE_SPOT:

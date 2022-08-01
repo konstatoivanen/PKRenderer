@@ -32,7 +32,6 @@ namespace PK::Core
 
 		YAML::BoxedValue<Math::uint> LightCount = YAML::BoxedValue<Math::uint>("LightCount", 0u);
 		YAML::BoxedValue<Math::uint> ShadowmapTileSize = YAML::BoxedValue<Math::uint>("ShadowmapTileSize", 512);
-		YAML::BoxedValue<Math::uint> ShadowmapTileCount = YAML::BoxedValue<Math::uint>("ShadowmapTileCount", 32);
 	
 		YAML::BoxedValue<float> CameraFocalLength = YAML::BoxedValue<float>("CameraFocalLength", 0.05f);
 		YAML::BoxedValue<float> CameraFNumber = YAML::BoxedValue<float>("CameraFNumber", 1.40f);

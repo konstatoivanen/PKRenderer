@@ -8,7 +8,7 @@ namespace PK::Rendering::Structs
         Math::uint material;
         Math::uint transfrom;
         Math::uint mesh;
-        Math::uint clipInfo;
+        Math::uint userdata;
     };
 
     struct PK_Light

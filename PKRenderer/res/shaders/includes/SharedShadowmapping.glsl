@@ -4,8 +4,6 @@
 
 PK_DECLARE_LOCAL_CBUFFER(pk_ShadowmapData)
 {
-    uint pk_ShadowmapLightIndex;
-    uint pk_ShadowmapBaseLayer;
     float4 pk_ShadowmapBlurAmount;
 };
 
@@ -16,23 +14,23 @@ const float3x3 PK_CUBE_FACE_MATRICES[6] =
 {
 	// Right
 	float3x3( 0,  0, -1, 
-			  0,  1,  0,
-			  1,  0,  0), 
+			 0,  1,  0,
+			 1,  0,  0), 
 
 	// Left
 	float3x3( 0,  0,  1, 
-			  0,  1,  0,
-			 -1,  0,  0), 
+			 0,  1,  0,
+			-1,  0,  0), 
 
 	// Down
 	float3x3( 1,  0,  0, 
-			  0,  0,  1,
-			  0, -1,  0), 
+			 0,  0,  1,
+			 0, -1,  0), 
 
 	// Up
 	float3x3( 1,  0,  0, 
-			  0,  0, -1,
-			  0,  1,  0), 
+			 0,  0, -1,
+			 0,  1,  0), 
 
 	// Front
 	float3x3( 1,  0,  0, 
@@ -41,8 +39,8 @@ const float3x3 PK_CUBE_FACE_MATRICES[6] =
 
 	// Back
 	float3x3(-1,  0,  0, 
-			  0,  1,  0,
-			  0,  0, -1), 
+			 0,  1,  0,
+			 0,  0, -1), 
 };
 
 float4 GetCubeClipPos(float3 viewvec, float radius, uint faceIndex)

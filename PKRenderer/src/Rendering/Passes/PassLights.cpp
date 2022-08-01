@@ -50,13 +50,6 @@ struct Vector::Comparer<LightRenderableView*>
 
 namespace PK::Rendering::Passes
 {
-    struct ShadowmapRenderData
-    {
-        uint pk_ShadowmapLightIndex;
-        uint pk_ShadowmapBaseLayer;
-        float4 pk_ShadowmapBlurAmount;
-    };
-
     PassLights::PassLights(AssetDatabase* assetDatabase, EntityDatabase* entityDb, Sequencer* sequencer, Batcher* batcher, const ApplicationConfig* config) :
         m_entityDb(entityDb), 
         m_sequencer(sequencer), 
@@ -70,7 +63,6 @@ namespace PK::Rendering::Passes
 
         m_cascadeLinearity = config->CascadeLinearity;
         m_shadowmapTileSize = config->ShadowmapTileSize;
-        m_shadowmapTileCount = config->ShadowmapTileCount;
         m_shadowmapCubeFaceSize = (uint)sqrt((m_shadowmapTileSize * m_shadowmapTileSize) / 6);
 
         auto descriptor = RenderTextureDescriptor();
@@ -88,6 +80,7 @@ namespace PK::Rendering::Passes
         m_shadowmapTypeData[(int)LightType::Point].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_CUBE, hash->SHADOW_BLUR_PASS0 });
         m_shadowmapTypeData[(int)LightType::Point].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_CUBE, hash->SHADOW_BLUR_PASS1 });
         m_shadowmapTypeData[(int)LightType::Point].TileCount = 1u;
+        m_shadowmapTypeData[(int)LightType::Point].MaxBatchSize = PK_SHADOW_CASCADE_COUNT;
         m_shadowmapTypeData[(int)LightType::Point].LayerStride = 6u;
 
         descriptor.samplerType = SamplerType::Sampler2DArray;
@@ -97,12 +90,14 @@ namespace PK::Rendering::Passes
         m_shadowmapTypeData[(int)LightType::Spot].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D, hash->SHADOW_BLUR_PASS0 });
         m_shadowmapTypeData[(int)LightType::Spot].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D, hash->SHADOW_BLUR_PASS1 });
         m_shadowmapTypeData[(int)LightType::Spot].TileCount = 1u;
+        m_shadowmapTypeData[(int)LightType::Spot].MaxBatchSize = PK_SHADOW_CASCADE_COUNT;
         m_shadowmapTypeData[(int)LightType::Spot].LayerStride = 1u;
 
         m_shadowmapTypeData[(int)LightType::Directional].SceneRenderTarget = m_shadowmapTypeData[(int)LightType::Spot].SceneRenderTarget;
         m_shadowmapTypeData[(int)LightType::Directional].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D, hash->SHADOW_BLUR_PASS0 });
         m_shadowmapTypeData[(int)LightType::Directional].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D, hash->SHADOW_BLUR_PASS1 });
         m_shadowmapTypeData[(int)LightType::Directional].TileCount = PK_SHADOW_CASCADE_COUNT;
+        m_shadowmapTypeData[(int)LightType::Directional].MaxBatchSize = 1u;
         m_shadowmapTypeData[(int)LightType::Directional].LayerStride = PK_SHADOW_CASCADE_COUNT;
         
         TextureDescriptor atlasDescriptor;
@@ -180,6 +175,8 @@ namespace PK::Rendering::Passes
 
         Vector::QuickSort(m_lights.GetData(), m_lightCount);
 
+        m_shadowBatches.clear();
+
         for (auto i = 0u; i < m_lightCount; ++i)
         {
             auto& view = m_lights[i];
@@ -191,7 +188,7 @@ namespace PK::Rendering::Passes
 
             if ((view->renderable->flags & RenderableFlags::CastShadows) != 0)
             {
-                BuildShadowmapBatches(engineRoot, &tokens, view, inverseViewProjection);
+                BuildShadowmapBatches(engineRoot, &tokens, view, i, inverseViewProjection);
             }
         }
 
@@ -263,7 +260,7 @@ namespace PK::Rendering::Passes
         auto hash = HashCache::Get();
         cmd->Clear(m_globalLightIndex.get(), 0, sizeof(uint32_t), 0u);
         
-        if (m_shadowmaps->GetLevels() <= m_shadowmapCount + PK_SHADOW_CASCADE_COUNT)
+        if (m_shadowmaps->GetLayers() < m_shadowmapCount + PK_SHADOW_CASCADE_COUNT)
         {
             m_shadowmaps->Validate(1u, m_shadowmapCount + PK_SHADOW_CASCADE_COUNT);
         }
@@ -274,55 +271,22 @@ namespace PK::Rendering::Passes
         cmd->SetBuffer(hash->pk_LightDirections, m_lightDirectionsBuffer.get());
         cmd->SetTexture(hash->pk_ShadowmapAtlas, m_shadowmaps.get());
 
-        ShadowmapRenderData renderData{};
-
         auto atlasIndex = 0u;
 
-        for (auto i = 0u; i < m_lightCount;)
+        for (const auto& shadowBatch :  m_shadowBatches)
         {
-            auto view = m_lights[i];
-
-            if (view->lightFrameInfo->batchGroup == 0xFFFF)
-            {
-                ++i;
-                continue;
-            }
-
-            auto batchSize = 1u;
-            auto batchType = view->light->type;
-            auto maxDepth = view->lightFrameInfo->maxShadowDepth - view->lightFrameInfo->minShadowDepth;
+            auto batchType = shadowBatch.batchType;
             auto& shadow = m_shadowmapTypeData[(int)batchType];
-            auto maxBatchSize = PK_SHADOW_CASCADE_COUNT - shadow.TileCount + 1;
-            maxBatchSize = glm::min(maxBatchSize, m_lightCount - i);
-            renderData.pk_ShadowmapBlurAmount[0] = view->light->shadowBlur;
+            auto tileCount = shadow.TileCount * shadowBatch.count;
 
-            for (; batchSize < maxBatchSize; ++batchSize)
-            {
-                view = m_lights[i + batchSize];
-            
-                if (view->lightFrameInfo->batchGroup == 0xFFFF || view->light->type != batchType)
-                {
-                    break;
-                }
-
-                maxDepth = glm::max(view->lightFrameInfo->maxShadowDepth - view->lightFrameInfo->minShadowDepth, maxDepth);
-            }
-
-            auto tileCount = shadow.TileCount * batchSize;
+            cmd->BeginDebugScope("Light Batch", PK_COLOR_RED);
 
             cmd->SetRenderTarget(shadow.SceneRenderTarget.get(), true);
-            cmd->ClearColor(color(maxDepth, maxDepth * maxDepth, 0.0f, 0.0f), 0u);
+            cmd->ClearColor(color(shadowBatch.maxDepthRange, shadowBatch.maxDepthRange * shadowBatch.maxDepthRange, 0.0f, 0.0f), 0u);
             cmd->ClearDepth(1.0f, 0u);
 
-            for (auto j = 0u; j < batchSize; ++j)
-            {
-                auto group = m_lights[i]->lightFrameInfo->batchGroup;
-                renderData.pk_ShadowmapBlurAmount[j] = m_lights[i]->light->shadowBlur;
-                renderData.pk_ShadowmapBaseLayer = j * shadow.LayerStride;
-                renderData.pk_ShadowmapLightIndex = i++;
-                cmd->SetConstant(hash->pk_ShadowmapData, renderData);
-                m_batcher->Render(cmd, group);
-            }
+            cmd->SetConstant(hash->pk_ShadowmapData, shadowBatch.shadowBlurAmounts);
+            m_batcher->Render(cmd, shadowBatch.batchGroup);
 
             cmd->SetViewPort({ 0, 0, m_shadowmapTileSize, m_shadowmapTileSize });
             cmd->SetScissor({ 0, 0, m_shadowmapTileSize, m_shadowmapTileSize });
@@ -336,6 +300,8 @@ namespace PK::Rendering::Passes
             cmd->SetRenderTarget(m_shadowmaps.get(), range1);
             cmd->SetTexture(hash->pk_ShadowmapSource, m_shadowmaps.get(), range0);
             cmd->Blit(m_shadowmapBlur, tileCount, 0u, shadow.BlurPass1);
+
+            cmd->EndDebugScope();
 
             atlasIndex += tileCount;
         }
@@ -364,7 +330,11 @@ namespace PK::Rendering::Passes
         return cascadeSplits;
     }
 
-    void PassLights::BuildShadowmapBatches(void* engineRoot, CullTokens* tokens, LightRenderableView* view, const float4x4& inverseViewProjection)
+    void PassLights::BuildShadowmapBatches(void* engineRoot, 
+                                           CullTokens* tokens, 
+                                           LightRenderableView* view, 
+                                           uint32_t index, 
+                                           const float4x4& inverseViewProjection)
     {
         auto info = view->lightFrameInfo;
 
@@ -425,9 +395,21 @@ namespace PK::Rendering::Passes
             return;
         }
 
+        auto& shadow = m_shadowmapTypeData[(int)view->light->type];
+
+        if (m_shadowBatches.size() == 0 || m_shadowBatches.back().count >= shadow.MaxBatchSize || m_shadowBatches.back().batchType != view->light->type)
+        {
+            auto& newBatch = m_shadowBatches.emplace_back();
+            newBatch.batchGroup = m_batcher->BeginNewGroup();
+            newBatch.firstIndex = index;
+            newBatch.batchType = view->light->type;
+        }
+
+        auto& batch = m_shadowBatches.back();
+
         uint32_t minDepth = 0xFFFFFFFF;
         info->shadowmapIndex = m_shadowmapCount;
-        info->batchGroup = m_batcher->BeginNewGroup();
+        info->batchGroup = batch.batchGroup;
         m_shadowmapCount += view->light->type == LightType::Directional ? PK_SHADOW_CASCADE_COUNT : 1;
 
         for (auto i = 0u; i < visibilityList->count; ++i)
@@ -447,11 +429,16 @@ namespace PK::Rendering::Passes
 
                 if (shader != nullptr)
                 {
-                    m_batcher->SubmitDraw(transform, shader, nullptr, entity->mesh->sharedMesh, kv.submesh, item.clipId);
+                    uint32_t layerOffset = batch.count * shadow.LayerStride + item.clipId;
+                    m_batcher->SubmitDraw(transform, shader, nullptr, entity->mesh->sharedMesh, kv.submesh, (index & 0xFFFF) | (layerOffset << 16));
                 }
             }
         }
 
         info->minShadowDepth = (minDepth * info->maxShadowDepth) / (float)0xFFFF;
+        
+        batch.shadowBlurAmounts.values[batch.count] = view->light->shadowBlur;
+        batch.maxDepthRange = glm::max(batch.maxDepthRange, info->maxShadowDepth - info->minShadowDepth);
+        batch.count++;
     }
 }

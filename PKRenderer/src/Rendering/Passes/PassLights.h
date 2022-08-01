@@ -11,6 +11,7 @@
 namespace PK::Rendering::Passes
 {
     typedef struct ShadowCascades { float planes[5]; } ShadowCascades;
+    typedef struct ShadowBlurAmounts { float values[4]{}; } ShadowBlurAmounts;
 
     struct ShadowmapLightTypeData
     {
@@ -18,7 +19,18 @@ namespace PK::Rendering::Passes
         uint32_t BlurPass0 = 0u;
         uint32_t BlurPass1 = 0u;
         uint32_t TileCount = 0u;
+        uint32_t MaxBatchSize = 0u;
         uint32_t LayerStride = 0u;
+    };
+
+    struct ShadowbatchInfo
+    {
+        uint32_t firstIndex = 0u;
+        uint32_t count = 0u;
+        uint32_t batchGroup = 0u;
+        Structs::LightType batchType = Structs::LightType::TypeCount;
+        float maxDepthRange = 0.0f;
+        ShadowBlurAmounts shadowBlurAmounts{};
     };
 
     class PassLights : public Utilities::NoCopy
@@ -41,7 +53,11 @@ namespace PK::Rendering::Passes
             ShadowCascades GetCascadeZSplits(float znear, float zfar) const;
         
         private:
-            void BuildShadowmapBatches(void* engineRoot, ECS::Tokens::CullTokens* tokens, ECS::EntityViews::LightRenderableView* view, const Math::float4x4& inverseViewProjection);
+            void BuildShadowmapBatches(void* engineRoot, 
+                                       ECS::Tokens::CullTokens* tokens, 
+                                       ECS::EntityViews::LightRenderableView* view, 
+                                       uint32_t index, 
+                                       const Math::float4x4& inverseViewProjection);
 
             ECS::EntityDatabase* m_entityDb = nullptr;
             Core::Services::Sequencer* m_sequencer = nullptr;
@@ -51,12 +67,12 @@ namespace PK::Rendering::Passes
             float m_cascadeLinearity;
             uint32_t m_shadowmapCubeFaceSize;
             uint32_t m_shadowmapTileSize;
-            uint32_t m_shadowmapTileCount;
             uint32_t m_shadowmapCount;
             uint32_t m_projectionCount;
             uint32_t m_lightCount;
             ShadowCascades m_cascadeSplits;
             ShadowmapLightTypeData m_shadowmapTypeData[(int)Structs::LightType::TypeCount];
+            std::vector<ShadowbatchInfo> m_shadowBatches;
             Utilities::MemoryBlock<ECS::EntityViews::LightRenderableView*> m_lights;
             Utilities::Ref<Objects::Buffer> m_lightsBuffer;
             Utilities::Ref<Objects::Buffer> m_lightMatricesBuffer;

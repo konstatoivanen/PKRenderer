@@ -46,7 +46,7 @@ namespace PK::Rendering
             {ElementType::Uint, "transform"},
             {ElementType::Uint, "material"},
             {ElementType::Uint, "mesh"},
-            {ElementType::Uint, "clipInfo"}
+            {ElementType::Uint, "userdata"}
         },
         1024, BufferUsage::PersistentStage, "Batching Draw Infos");
 
@@ -152,7 +152,7 @@ namespace PK::Rendering
             indexView[i].material = (uint32_t)info->material + (uint32_t)m_materials[info->shader]->firstIndex;
             indexView[i].transfrom = info->transform;
             indexView[i].mesh = 0;
-            indexView[i].clipInfo = info->clipIndex;
+            indexView[i].userdata = info->userdata;
 
             if (info->group != current.group || 
                 info->shader != current.shader || 
@@ -251,7 +251,7 @@ namespace PK::Rendering
         info.transform = m_transforms.Add(transform);
         info.mesh = m_meshes.Add(mesh);
         info.submesh = submesh;
-        info.clipIndex = (uint8_t)clipIndex;
+        info.userdata = clipIndex;
         info.group = m_groupIndex - 1;
         m_drawInfos.push_back(info);
     }

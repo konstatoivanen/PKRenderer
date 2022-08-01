@@ -31,7 +31,6 @@ namespace PK::Core
 			&RandomSeed,
 			&LightCount,
 			&ShadowmapTileSize,
-			&ShadowmapTileCount,
 			&CameraFocalLength,
 			&CameraFNumber,
 			&CameraFilmHeight,
