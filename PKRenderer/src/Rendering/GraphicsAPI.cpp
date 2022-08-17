@@ -35,6 +35,8 @@ namespace PK::Rendering
                 const std::vector<const char*> PK_DEVICE_EXTENTIONS =
                 {
                     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                    VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+                    VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
                 };
 
                 auto driver = CreateScope<VulkanDriver>(VulkanContextProperties

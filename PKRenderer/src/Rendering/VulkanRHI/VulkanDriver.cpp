@@ -202,19 +202,32 @@ namespace PK::Rendering::VulkanRHI
 
     DriverMemoryInfo VulkanDriver::GetMemoryInfo() const
     {
-        VmaStats stats{};
-        vmaCalculateStats(allocator, &stats);
+        VmaBudget budgets[VK_MAX_MEMORY_HEAPS]{};
+        vmaGetHeapBudgets(allocator, budgets);
+
+        size_t totalUsed = 0ull;
+        size_t totalAvailable = 0ull;
+
+        for (auto i = 0u; i < VK_MAX_MEMORY_HEAPS; ++i)
+        {
+            totalUsed += budgets[i].usage;
+            totalAvailable += budgets[i].budget;
+        }
+
+        VmaTotalStatistics stats{};
+        vmaCalculateStatistics(allocator, &stats);
+
         DriverMemoryInfo info{};
-        info.blockCount = stats.total.blockCount;
-        info.allocationCount = stats.total.allocationCount;
+        info.blockCount = stats.total.statistics.blockCount;
+        info.allocationCount = stats.total.statistics.allocationCount;
         info.unusedRangeCount = stats.total.unusedRangeCount;
-        info.usedBytes = stats.total.usedBytes;
-        info.unusedBytes = stats.total.unusedBytes;
+        info.usedBytes = totalUsed;
+        info.unusedBytes = totalAvailable - totalUsed;
         info.allocationSizeMin = stats.total.allocationSizeMin;
-        info.allocationSizeAvg = stats.total.allocationSizeAvg;
+        info.allocationSizeAvg = stats.total.allocationSizeMin + (stats.total.allocationSizeMax - stats.total.allocationSizeMin) / 2;
         info.allocationSizeMax = stats.total.allocationSizeMax;
         info.unusedRangeSizeMin = stats.total.unusedRangeSizeMin;
-        info.unusedRangeSizeAvg = stats.total.unusedRangeSizeAvg;
+        info.unusedRangeSizeAvg = stats.total.unusedRangeSizeMin + (stats.total.unusedRangeSizeMax - stats.total.unusedRangeSizeMin) / 2;
         info.unusedRangeSizeMax = stats.total.unusedRangeSizeMax;
         return info;
     }
