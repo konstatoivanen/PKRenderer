@@ -49,7 +49,7 @@ namespace PK::Rendering::Objects
         // @TODO Nasty dependency. Rethink this one!
         virtual void Blit(Texture* src, Core::Window* dst, Structs::FilterMode filter) = 0;
         virtual void Blit(Core::Window* src, Buffer* dst) = 0;
-        virtual void Blit(Texture* src, Texture* dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, Structs::FilterMode filter) = 0;
+        virtual void Blit(Texture* src, Texture* dst, const Structs::TextureViewRange& srcRange, const Structs::TextureViewRange& dstRange, Structs::FilterMode filter) = 0;
 
         virtual void Clear(Buffer* dst, size_t offset, size_t size, uint32_t value) = 0;
         virtual void Clear(Texture* dst, const Structs::TextureViewRange& range, const Math::uint4& value) = 0;

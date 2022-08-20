@@ -19,12 +19,19 @@ float pow5(float x) { return x * x * x * x * x; }
 // @TODO Refactor math to produce correct 0-1 z matrices & remove this hack.
 #define NORMALIZE_GL_Z gl_Position.z = (gl_Position.z + gl_Position.w) / 2.0
 
-#define GEqual(a, b) any(greaterThanEqual(a,b))
-#define Equal(a, b) any(equal(a,b))
-#define NotEqual(a, b) any(notEqual(a,b))
-#define LEqual(a, b) any(lessThanEqual(a,b))
-#define Less(a,b) any(lessThan(a,b))
-#define Greater(a,b) any(greaterThan(a,b))
+#define Any_GEqual(a, b) any(greaterThanEqual(a,b))
+#define Any_Equal(a, b) any(equal(a,b))
+#define Any_NotEqual(a, b) any(notEqual(a,b))
+#define Any_LEqual(a, b) any(lessThanEqual(a,b))
+#define Any_Less(a,b) any(lessThan(a,b))
+#define Any_Greater(a,b) any(greaterThan(a,b))
+
+#define All_GEqual(a, b) all(greaterThanEqual(a,b))
+#define All_Equal(a, b) all(equal(a,b))
+#define All_NotEqual(a, b) all(notEqual(a,b))
+#define All_LEqual(a, b) all(lessThanEqual(a,b))
+#define All_Less(a,b) all(lessThan(a,b))
+#define All_Greater(a,b) all(greaterThan(a,b))
 
 #define PK_SET_GLOBAL 0
 #define PK_SET_PASS 1

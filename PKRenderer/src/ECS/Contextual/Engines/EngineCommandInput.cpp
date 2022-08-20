@@ -197,23 +197,23 @@ namespace PK::ECS::Engines
         m_sequencer = sequencer;
         m_commandBindings = commandBindings;
 
-        m_commands[{CommandArgument::Application, CommandArgument::Exit }] = PK_BIND_FUNCTION(ApplicationExit);
-        m_commands[{CommandArgument::Application, CommandArgument::Contextual, CommandArgument::StringParameter }] = PK_BIND_FUNCTION(ApplicationContextual);
-        m_commands[{CommandArgument::Application, CommandArgument::VSync, CommandArgument::StringParameter }] = PK_BIND_FUNCTION(ApplicationSetVSync);
-        m_commands[{CommandArgument::Query, CommandArgument::TypeShader, CommandArgument::StringParameter, CommandArgument::Variants}] = PK_BIND_FUNCTION(QueryShaderVariants);
-        m_commands[{CommandArgument::Query, CommandArgument::TypeShader, CommandArgument::StringParameter, CommandArgument::Uniforms, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(QueryShaderUniforms);
-        m_commands[{CommandArgument::Query, CommandArgument::GPUMemory}] = PK_BIND_FUNCTION(QueryGPUMemory);
-        m_commands[{CommandArgument::Query, CommandArgument::Assets, CommandArgument::TypeShader}] = PK_BIND_FUNCTION(QueryLoadedShaders);
-        m_commands[{CommandArgument::Query, CommandArgument::Assets, CommandArgument::TypeMaterial}] = PK_BIND_FUNCTION(QueryLoadedMaterials);
-        m_commands[{CommandArgument::Query, CommandArgument::Assets, CommandArgument::TypeMesh}] = PK_BIND_FUNCTION(QueryLoadedMeshes);
-        m_commands[{CommandArgument::Query, CommandArgument::Assets, CommandArgument::TypeTexture}] = PK_BIND_FUNCTION(QueryLoadedTextures);
-        m_commands[{CommandArgument::Query, CommandArgument::Assets}] = PK_BIND_FUNCTION(QueryLoadedAssets);
-        m_commands[{CommandArgument::Reload, CommandArgument::TypeShader, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(ReloadShaders);
-        m_commands[{CommandArgument::Reload, CommandArgument::TypeMesh, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(ReloadMeshes);
-        m_commands[{CommandArgument::Reload, CommandArgument::TypeMaterial, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(ReloadMaterials);
-        m_commands[{CommandArgument::Reload, CommandArgument::TypeTexture, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(ReloadTextures);
-        m_commands[{CommandArgument::Reload, CommandArgument::TypeAppConfig, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(ReloadAppConfig);
-        m_commands[{CommandArgument::Reload, CommandArgument::TypeTime}] = PK_BIND_FUNCTION(ReloadTime);
+        m_commands[{CommandArgument::Application, CommandArgument::Exit }] = PK_BIND_FUNCTION(this, ApplicationExit);
+        m_commands[{CommandArgument::Application, CommandArgument::Contextual, CommandArgument::StringParameter }] = PK_BIND_FUNCTION(this, ApplicationContextual);
+        m_commands[{CommandArgument::Application, CommandArgument::VSync, CommandArgument::StringParameter }] = PK_BIND_FUNCTION(this, ApplicationSetVSync);
+        m_commands[{CommandArgument::Query, CommandArgument::TypeShader, CommandArgument::StringParameter, CommandArgument::Variants}] = PK_BIND_FUNCTION(this, QueryShaderVariants);
+        m_commands[{CommandArgument::Query, CommandArgument::TypeShader, CommandArgument::StringParameter, CommandArgument::Uniforms, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(this, QueryShaderUniforms);
+        m_commands[{CommandArgument::Query, CommandArgument::GPUMemory}] = PK_BIND_FUNCTION(this, QueryGPUMemory);
+        m_commands[{CommandArgument::Query, CommandArgument::Assets, CommandArgument::TypeShader}] = PK_BIND_FUNCTION(this, QueryLoadedShaders);
+        m_commands[{CommandArgument::Query, CommandArgument::Assets, CommandArgument::TypeMaterial}] = PK_BIND_FUNCTION(this, QueryLoadedMaterials);
+        m_commands[{CommandArgument::Query, CommandArgument::Assets, CommandArgument::TypeMesh}] = PK_BIND_FUNCTION(this, QueryLoadedMeshes);
+        m_commands[{CommandArgument::Query, CommandArgument::Assets, CommandArgument::TypeTexture}] = PK_BIND_FUNCTION(this, QueryLoadedTextures);
+        m_commands[{CommandArgument::Query, CommandArgument::Assets}] = PK_BIND_FUNCTION(this, QueryLoadedAssets);
+        m_commands[{CommandArgument::Reload, CommandArgument::TypeShader, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(this, ReloadShaders);
+        m_commands[{CommandArgument::Reload, CommandArgument::TypeMesh, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(this, ReloadMeshes);
+        m_commands[{CommandArgument::Reload, CommandArgument::TypeMaterial, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(this, ReloadMaterials);
+        m_commands[{CommandArgument::Reload, CommandArgument::TypeTexture, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(this, ReloadTextures);
+        m_commands[{CommandArgument::Reload, CommandArgument::TypeAppConfig, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(this, ReloadAppConfig);
+        m_commands[{CommandArgument::Reload, CommandArgument::TypeTime}] = PK_BIND_FUNCTION(this, ReloadTime);
     }
     
     void EngineCommandInput::Step(Input* input)

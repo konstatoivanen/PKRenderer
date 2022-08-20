@@ -64,10 +64,10 @@ namespace PK::Core
 
         m_window = Window::Create(WindowProperties(name, config->InitialWidth, config->InitialHeight, config->EnableVsync, config->EnableCursor));
         Window::SetConsole(config->EnableConsole);
-        m_window->OnKeyInput = PK_BIND_MEMBER_FUNCTION(input, OnKeyInput);
-        m_window->OnScrollInput = PK_BIND_MEMBER_FUNCTION(input, OnScrollInput);
-        m_window->OnMouseButtonInput = PK_BIND_MEMBER_FUNCTION(input, OnMouseButtonInput);
-        m_window->OnClose = PK_BIND_FUNCTION(Application::Close);
+        m_window->OnKeyInput = PK_BIND_FUNCTION(input, OnKeyInput);
+        m_window->OnScrollInput = PK_BIND_FUNCTION(input, OnScrollInput);
+        m_window->OnMouseButtonInput = PK_BIND_FUNCTION(input, OnMouseButtonInput);
+        m_window->OnClose = PK_BIND_FUNCTION(this, Application::Close);
 
         assetDatabase->LoadDirectory<Shader>("res/shaders/");
 
@@ -158,6 +158,7 @@ namespace PK::Core
 
             if (m_window->IsMinimized())
             {
+                m_window->WaitEvents();
                 continue;
             }
 

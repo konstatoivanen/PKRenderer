@@ -32,7 +32,14 @@ namespace PK::Rendering
         descriptor.depthFormat = TextureFormat::Depth32F;
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
         descriptor.sampler.filter = FilterMode::Bilinear;
-        m_RenderTarget = CreateRef<RenderTexture>(descriptor, "Scene Render Target");
+        m_renderTarget = CreateRef<RenderTexture>(descriptor, "Scene Render Target");
+
+        TextureDescriptor depthDescriptor{};
+        depthDescriptor.resolution = { config->InitialWidth, config->InitialHeight, 1 };
+        depthDescriptor.format = TextureFormat::Depth32F;
+        depthDescriptor.usage = TextureUsage::RTDepthSample;
+        depthDescriptor.sampler.filter = FilterMode::Bilinear;
+        m_depthPrevious = Texture::Create(depthDescriptor, "Previous Scene Depth Texture");
 
         auto hash = HashCache::Get();
 
@@ -97,7 +104,7 @@ namespace PK::Rendering
     {
         GraphicsAPI::GetActiveDriver()->WaitForIdle();
         m_constantsPerFrame = nullptr;
-        m_RenderTarget = nullptr;
+        m_renderTarget = nullptr;
     }
 
     void RenderPipeline::Step(PK::ECS::Tokens::ViewProjectionUpdateToken* token)
@@ -145,9 +152,11 @@ namespace PK::Rendering
         auto* cmd = GraphicsAPI::GetCommandBuffer();
         auto resolution = window->GetResolution();
 
-        m_RenderTarget->Validate(resolution);
-        cmd->SetTexture(hash->pk_ScreenDepth, m_RenderTarget->GetDepth());
-        cmd->SetTexture(hash->pk_ScreenNormals, m_RenderTarget->GetColor(1));
+        m_renderTarget->Validate(resolution);
+        m_depthPrevious->Validate(resolution);
+        cmd->SetTexture(hash->pk_ScreenDepthCurrent, m_renderTarget->GetDepth());
+        cmd->SetTexture(hash->pk_ScreenDepthPrevious, m_depthPrevious.get());
+        cmd->SetTexture(hash->pk_ScreenNormals, m_renderTarget->GetColor(1));
 
         auto cascadeZSplits = m_passLights.GetCascadeZSplits(m_znear, m_zfar);
         m_constantsPerFrame->Set<float4>(hash->pk_ShadowCascadeZSplits, reinterpret_cast<float4*>(cascadeZSplits.planes));
@@ -163,23 +172,25 @@ namespace PK::Rendering
         m_passLights.Render(cmd);
         m_passSceneGI.RenderVoxels(cmd, &m_batcher, m_passGeometry.GetPassGroup());
 
-        cmd->SetRenderTarget(m_RenderTarget.get(), { 1 }, true, true);
+        cmd->SetRenderTarget(m_renderTarget.get(), { 1 }, true, true);
         cmd->ClearColor({ 0, 0, -1.0f, 1.0f }, 0);
         cmd->ClearDepth(1.0f, 0u);
 
         m_passGeometry.RenderGBuffer(cmd);
         m_passSceneGI.RenderGI(cmd);
 
-        cmd->SetRenderTarget(m_RenderTarget.get(), { 0 }, true, true);
+        cmd->SetRenderTarget(m_renderTarget.get(), { 0 }, true, true);
         cmd->ClearColor(PK_COLOR_CLEAR, 0);
 
         m_passGeometry.RenderForward(cmd);
         cmd->Blit(m_OEMBackgroundShader);
 
-        m_passVolumeFog.Render(cmd, m_RenderTarget.get(), resolution);
-        m_passPostEffects.Render(cmd, m_RenderTarget.get(), MemoryAccessFlags::FragmentAttachmentColor);
+        m_passVolumeFog.Render(cmd, m_renderTarget.get(), resolution);
+        m_passPostEffects.Render(cmd, m_renderTarget.get(), MemoryAccessFlags::FragmentAttachmentColor);
 
-        cmd->Blit(m_RenderTarget->GetColor(0), window, FilterMode::Bilinear);
+        cmd->Blit(m_renderTarget->GetDepth(), m_depthPrevious.get(), {}, {}, FilterMode::Point);
+
+        cmd->Blit(m_renderTarget->GetColor(0), window, FilterMode::Bilinear);
     }
 
     void RenderPipeline::Step(AssetImportToken<ApplicationConfig>* token)

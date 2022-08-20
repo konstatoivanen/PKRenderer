@@ -27,42 +27,28 @@ namespace PK::Rendering::VulkanRHI::Objects
         // Borrowed staging buffer not returned :/
         if (m_mappedBuffer != nullptr)
         {
-            m_mappedBuffer->EndMap(0, m_mappedBuffer->desitnationRange);
+            m_mappedBuffer->EndMap(0, m_mapRange.region.size);
             m_mappedBuffer = nullptr;
         }
     }
 
-
-    void VulkanBuffer::SetData(const void* data, size_t offset, size_t size)
-    {
-        auto dst = BeginWrite(0, GetCapacity());
-        memcpy(reinterpret_cast<char*>(dst) + offset, data, size);
-        EndWrite();
-    }
-
-    void VulkanBuffer::SetSubData(const void* data, size_t offset, size_t size)
-    {
-        auto dst = BeginWrite(offset, size);
-        memcpy(dst, data, size);
-        EndWrite();
-    }
-
     void* VulkanBuffer::BeginWrite(size_t offset, size_t size)
     {
+        m_mapRange.region.dstOffset = offset;
+        m_mapRange.region.size = size;
+
         if ((m_usage & BufferUsage::PersistentStage) == 0)
         {
             PK_THROW_ASSERT(m_mappedBuffer == nullptr, "Trying to begin a new mapping for a buffer that is already being mapped!");
-            m_mappedBuffer = m_driver->stagingBufferCache->GetBuffer(size);
-            m_mappedBuffer->executionGate = m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate();
-            m_mappedBuffer->destinationOffset = offset;
-            m_mappedBuffer->desitnationRange = size;
+            m_mappedBuffer = m_driver->stagingBufferCache->GetBuffer(size, m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate());
+            m_mapRange.region.srcOffset = 0ull;
             return m_mappedBuffer->BeginMap(0ull);
         }
         
+        m_mapRange.region.srcOffset = m_mapRange.ringOffset + offset;
+
         // Local persistent stage
-        m_mappedBuffer->destinationOffset = offset;
-        m_mappedBuffer->desitnationRange = size;
-        return m_mappedBuffer->BeginMap(offset);
+        return m_mappedBuffer->BeginMap(m_mapRange.region.srcOffset);
     }
 
     void VulkanBuffer::EndWrite()
@@ -71,14 +57,9 @@ namespace PK::Rendering::VulkanRHI::Objects
         
         auto* cmd = m_driver->commandBufferPool->GetCurrent();
         auto persistent = (m_usage & BufferUsage::PersistentStage) != 0;
-
-        VkBufferCopy region{};
-        region.srcOffset = persistent ? m_mappedBuffer->destinationOffset : 0ull;
-        region.dstOffset = m_mappedBuffer->destinationOffset;
-        region.size = m_mappedBuffer->desitnationRange;
-
-        m_mappedBuffer->EndMap(region.srcOffset, region.size);
-        cmd->CopyBuffer(m_mappedBuffer->buffer, m_rawBuffer->buffer, 1, &region);
+        
+        m_mappedBuffer->EndMap(m_mapRange.region.srcOffset, m_mapRange.region.size);
+        cmd->CopyBuffer(m_mappedBuffer->buffer, m_rawBuffer->buffer, 1, &m_mapRange.region);
 
         VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER };
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -86,12 +67,16 @@ namespace PK::Rendering::VulkanRHI::Objects
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.buffer = m_rawBuffer->buffer;
-        barrier.offset = m_mappedBuffer->destinationOffset;
-        barrier.size = m_mappedBuffer->desitnationRange;
+        barrier.offset = m_mapRange.region.dstOffset;
+        barrier.size = m_mapRange.region.size;
 
         if (!persistent)
         {
             m_mappedBuffer = nullptr;
+        }
+        else
+        {
+            m_mapRange.ringOffset = (m_mapRange.ringOffset + m_rawBuffer->capacity) % m_mappedBuffer->capacity;
         }
 
         uint32_t dstStageMask = 0u;
@@ -206,9 +191,11 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if ((m_usage & BufferUsage::PersistentStage) != 0)
         {
+            auto stagingName = std::string(m_name) + std::string(" (Staging Buffer)");
             m_mappedBuffer = new VulkanStagingBuffer(m_driver->device,
                                                      m_driver->allocator, 
-                                                     VulkanBufferCreateInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size));
+                                                     VulkanBufferCreateInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size * PK_MAX_FRAMES_IN_FLIGHT),
+                                                     stagingName.c_str());
         }
 
         if ((m_usage & BufferUsage::Sparse) != 0)

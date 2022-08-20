@@ -32,7 +32,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             void Release();
 
             bool TryAcquireNextImage(VulkanSemaphore** imageAvailableSignal);
-            void Present(VulkanSemaphore* waitSignal);
+            void Present(VulkanSemaphore* waitSignal, VkFence frameFence, const Structs::ExecutionGate& gate);
             void OnWindowResize(int w, int h);
 
             const VulkanRenderTarget GetRenderTarget() const;
@@ -44,6 +44,12 @@ namespace PK::Rendering::VulkanRHI::Systems
             constexpr VkFormat GetNativeFormat() const { return m_format; }
 
         private:
+            struct FrameFence
+            {
+                Structs::ExecutionGate gate;
+                VkFence fence;
+            };
+
             const VkPhysicalDevice m_physicalDevice;
             const VkDevice m_device;
             const VkSurfaceKHR m_surface;
@@ -56,6 +62,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             std::vector<VkImage> m_images;
             std::vector<VulkanImageView*> m_imageViews;
             std::vector<VulkanSemaphore*> m_imageAvailableSignals;
+            std::vector<FrameFence> m_frameFences;
             VkFormat m_format;
             VkExtent2D m_extent;
             uint32_t m_maxFramesInFlight;

@@ -1962,6 +1962,7 @@
     <None Include="res\models\MDL_Columns.mdl.pkmeta" />
     <None Include="res\models\MDL_Rocks.mdl.pkmeta" />
     <None Include="res\models\MDL_Spiral.mdl.pkmeta" />
+    <None Include="res\shaders\CS_SceneGI_Mask.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

@@ -43,7 +43,8 @@ namespace PK::Rendering
         DECLARE_HASH(pk_ModelMatrices)
         DECLARE_HASH(pk_GizmoVertices)
         
-        DECLARE_HASH(pk_ScreenDepth)
+        DECLARE_HASH(pk_ScreenDepthCurrent)
+        DECLARE_HASH(pk_ScreenDepthPrevious)
         DECLARE_HASH(pk_ScreenNormals)
         DECLARE_HASH(pk_ShadowmapAtlas)
         DECLARE_HASH(pk_LightCookies)
@@ -54,6 +55,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_SceneGI_VolumeRead)
         DECLARE_HASH(pk_ScreenGI_Write)
         DECLARE_HASH(pk_ScreenGI_Read)
+        DECLARE_HASH(pk_ScreenGI_Mask)
         DECLARE_HASH(pk_SceneGI_ST)
         DECLARE_HASH(pk_SceneGI_Swizzle)
         DECLARE_HASH(pk_SceneGI_Checkerboard_Offset)

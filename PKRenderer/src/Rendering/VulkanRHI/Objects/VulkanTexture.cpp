@@ -28,8 +28,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         auto cmd = m_driver->commandBufferPool->GetCurrent();
         
-        const auto* stage = m_driver->stagingBufferCache->GetBuffer(size);
-        stage->executionGate = cmd->GetOnCompleteGate();
+        const auto* stage = m_driver->stagingBufferCache->GetBuffer(size, cmd->GetOnCompleteGate());
         stage->SetData(data, size);
      
         auto usageLayout = EnumConvert::GetImageLayout(m_descriptor.usage);
@@ -113,9 +112,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 		ktx_size_t ktxTextureSize = ktxTex2->dataSize;
 
         auto cmd = m_driver->commandBufferPool->GetCurrent();
-		auto stage = m_driver->stagingBufferCache->GetBuffer(ktxTextureSize);
+		auto stage = m_driver->stagingBufferCache->GetBuffer(ktxTextureSize, cmd->GetOnCompleteGate());
         
-        stage->executionGate = cmd->GetOnCompleteGate();
 		stage->SetData(ktxTextureData, ktxTextureSize);
 
 		std::vector<VkBufferImageCopy> bufferCopyRegions;
@@ -203,7 +201,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         Dispose();
 
         m_descriptor = descriptor;
-        m_rawImage = new VulkanRawImage(m_driver->allocator, m_driver->device, VulkanImageCreateInfo(descriptor), m_name.c_str());
+        m_rawImage = new VulkanRawImage(m_driver->device, m_driver->allocator, VulkanImageCreateInfo(descriptor), m_name.c_str());
 
         m_viewType = EnumConvert::GetViewType(descriptor.samplerType);
         m_swizzle = EnumConvert::GetSwizzle(m_rawImage->format);
@@ -287,14 +285,20 @@ namespace PK::Rendering::VulkanRHI::Objects
         );
     }
 
-    VulkanRenderTarget VulkanTexture::GetRenderTarget(const TextureViewRange& range)
+    VulkanRenderTarget VulkanTexture::GetRenderTarget(const TextureViewRange& range, bool includeView)
     {
         auto normalizedRange = NormalizeViewRange(range);
-        auto view = GetView(normalizedRange, TextureBindMode::RenderTarget)->view;
+
+        VkImageView view = VK_NULL_HANDLE;
+        
+        if (includeView)
+        {
+            view = GetView(normalizedRange, TextureBindMode::RenderTarget)->view->view;
+        }
 
         return VulkanRenderTarget
         (
-            view->view,
+            view,
             m_rawImage->image,
             GetImageLayout(),
             m_rawImage->aspect,

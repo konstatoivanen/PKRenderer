@@ -53,6 +53,11 @@ float3 SampleViewPosition(int2 coord, int2 size)
     return ClipToViewPos((coord + 0.5f.xx) / float2(size), depth);
 }
 
+float3 SampleViewPosition(int2 coord, int2 size, float linearDepth)
+{
+    return ClipToViewPos((coord + 0.5f.xx) / float2(size), linearDepth);
+}
+
 float3 SampleWorldPosition(float2 uv) { return mul(pk_MATRIX_I_V, float4(SampleViewPosition(uv), 1.0f)).xyz; }
 
 float3 SampleWorldPosition(int2 coord, int2 size) { return mul(pk_MATRIX_I_V, float4(SampleViewPosition(coord, size), 1.0f)).xyz; }

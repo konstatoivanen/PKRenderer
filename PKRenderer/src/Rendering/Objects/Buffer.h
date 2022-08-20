@@ -47,14 +47,15 @@ namespace PK::Rendering::Objects
             }
 
             virtual ~Buffer() = default;
-            virtual void SetData(const void* data, size_t offset, size_t size) = 0;
-            virtual void SetSubData(const void* data, size_t offset, size_t size) = 0;
             virtual void* BeginWrite(size_t offset, size_t size) = 0;
             virtual void EndWrite() = 0;
 
             // This will likely throw for memory types that cannot be host read (i.e. GPU only).
             virtual const void* BeginRead(size_t offset, size_t size) = 0;
             virtual void EndRead() = 0;
+
+            void SetData(const void* data, size_t offset, size_t size);
+            void SetSubData(const void* data, size_t offset, size_t size);
 
             template<typename T>
             Utilities::BufferView<T> BeginWrite()

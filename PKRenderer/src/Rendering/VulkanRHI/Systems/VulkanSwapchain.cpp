@@ -116,6 +116,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         }
 
         m_imageAvailableSignals.resize(m_maxFramesInFlight);
+        m_frameFences.resize(m_maxFramesInFlight);
 
         for (size_t i = 0u; i < m_maxFramesInFlight; ++i)
         {
@@ -156,21 +157,24 @@ namespace PK::Rendering::VulkanRHI::Systems
             glfwWaitEvents();
         }
 
+        // This is not strictly necesssary when not using double buffering for staging buffers.
+        // However, for them have coherent memory operations we cannot push more than 2 frames at a time.
+        auto& fence = m_frameFences.at(m_frameIndex);
+        
+        if (fence.fence != VK_NULL_HANDLE && !fence.gate.IsComplete())
+        {
+            vkWaitForFences(m_device, 1, &fence.fence, VK_TRUE, UINT64_MAX);
+        }
+
         auto result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, m_imageAvailableSignals[m_frameIndex]->vulkanSemaphore, VK_NULL_HANDLE, &m_imageIndex);
         *imageAvailableSignal = m_imageAvailableSignals[m_frameIndex];
 
         PK_THROW_ASSERT(SwapchainErrorAssert(result, m_outofdate, m_suboptimal), "Failed to acquire swap chain image!");
 
-        if (!m_outofdate)
-        {
-            ++m_frameIndex;
-            m_frameIndex %= m_maxFramesInFlight;
-        }
-
         return !m_outofdate;
     }
 
-    void VulkanSwapchain::Present(VulkanSemaphore* waitSignal)
+    void VulkanSwapchain::Present(VulkanSemaphore* waitSignal, VkFence frameFence, const Structs::ExecutionGate& gate)
     {
         VkPresentInfoKHR presentInfo{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
         presentInfo.waitSemaphoreCount = 1;
@@ -181,6 +185,10 @@ namespace PK::Rendering::VulkanRHI::Systems
         presentInfo.pResults = nullptr; // Optional
         auto result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
         PK_THROW_ASSERT(SwapchainErrorAssert(result, m_outofdate, m_suboptimal), "Failed to present swap chain image!");
+
+        m_frameFences[m_frameIndex].fence = frameFence;
+        m_frameFences[m_frameIndex].gate = gate;
+        m_frameIndex = (m_frameIndex + 1) % m_maxFramesInFlight;
     }
 
     void VulkanSwapchain::OnWindowResize(int w, int h)

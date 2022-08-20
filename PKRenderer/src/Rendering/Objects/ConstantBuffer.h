@@ -8,7 +8,7 @@ namespace PK::Rendering::Objects
     {
         public:
             ConstantBuffer(const Structs::BufferLayout& layout, const char* name);
-            inline void FlushBuffer() { m_graphicsBuffer->EndWrite(); }
+            inline void FlushBuffer() { m_graphicsBuffer->SetData(m_buffer, 0ull, m_graphicsBuffer->GetCapacity()); }
 
             const Buffer* GetBuffer() const { return m_graphicsBuffer.get(); }
             Buffer* GetBuffer() { return m_graphicsBuffer.get(); }

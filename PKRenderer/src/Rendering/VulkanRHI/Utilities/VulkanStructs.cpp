@@ -2,10 +2,30 @@
 #include "VulkanStructs.h"
 #include "VulkanUtilities.h"
 #include "VulkanExtensions.h"
+#include <vulkan/vk_enum_string_helper.h>
 
 namespace PK::Rendering::VulkanRHI
 {
     using namespace Structs;
+
+    static void VulkanSetObjectDebugName(VkDevice device, VkObjectType objectType, uint64_t objectHandle, const char* name)
+    {
+        VkDebugUtilsObjectNameInfoEXT nameInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
+        nameInfo.pNext = nullptr;
+        nameInfo.objectType = objectType;
+        nameInfo.objectHandle = objectHandle;
+        nameInfo.pObjectName = name;
+        vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
+        PK_LOG_VERBOSE("New: %s, %s", string_VkObjectType(nameInfo.objectType), name);
+    }
+
+    VulkanPhysicalDeviceFeatures::VulkanPhysicalDeviceFeatures()
+    {
+        vk10.pNext = &vk11;
+        vk11.pNext = &vk12;
+        vk12.pNext = &accelerationStructure;
+        accelerationStructure.pNext = &rayTracingPipeline;
+    }
 
     VulkanBufferCreateInfo::VulkanBufferCreateInfo(BufferUsage usage, size_t size)
     {
@@ -57,6 +77,11 @@ namespace PK::Rendering::VulkanRHI
         if ((usage & BufferUsage::PersistentStage) != 0)
         {
             allocation.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        }
+
+        if ((usage & BufferUsage::AccelerationStructure) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         }
 
         auto type = usage & BufferUsage::TypeBits;
@@ -216,7 +241,7 @@ namespace PK::Rendering::VulkanRHI
     {
         vkDestroyFence(device, vulkanFence, nullptr);
     }
-    
+
     VulkanSemaphore::VulkanSemaphore(VkDevice device) : device(device)
     {
         VkSemaphoreCreateInfo semaphoreInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
@@ -230,15 +255,8 @@ namespace PK::Rendering::VulkanRHI
 
     VulkanImageView::VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo, const char* name) : device(device)
     {
-        PK_LOG_VERBOSE("VK ALLOC: Image View");
         VK_ASSERT_RESULT_CTX(vkCreateImageView(device, &createInfo, nullptr, &view), "Failed to create an image view!");
-
-        VkDebugUtilsObjectNameInfoEXT nameInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
-        nameInfo.pNext = nullptr;
-        nameInfo.objectType = VK_OBJECT_TYPE_IMAGE_VIEW;
-        nameInfo.objectHandle = (uint64_t)view;
-        nameInfo.pObjectName = name;
-        vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
+        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)view, name);
     }
 
     VulkanImageView::~VulkanImageView()
@@ -272,24 +290,17 @@ namespace PK::Rendering::VulkanRHI
         capacity(createInfo.buffer.size), 
         persistentmap(createInfo.allocation.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT)
     {
-        PK_LOG_VERBOSE("VK ALLOC: Buffer");
-
         if ((createInfo.buffer.flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0)
         {
             // No automatic memory allocation for sparse buffers. Do note that mapping a sparse buffer will throw an error.
             VK_ASSERT_RESULT_CTX(vkCreateBuffer(device, &createInfo.buffer, nullptr, &buffer), "Failed to create a buffer!");
+            VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer, name);
             memory = nullptr;
             return;
         }
 
         VK_ASSERT_RESULT_CTX(vmaCreateBuffer(allocator, &createInfo.buffer, &createInfo.allocation, &buffer, &memory, &allocationInfo), "Failed to create a buffer!");
-
-        VkDebugUtilsObjectNameInfoEXT nameInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
-        nameInfo.pNext = nullptr;
-        nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-        nameInfo.objectHandle = (uint64_t)buffer;
-        nameInfo.pObjectName = name;
-        vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
+        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer, name);
     }
     
     VulkanRawBuffer::~VulkanRawBuffer()
@@ -341,7 +352,7 @@ namespace PK::Rendering::VulkanRHI
         EndMap(0ull, size);
     }
 
-    VulkanRawImage::VulkanRawImage(VmaAllocator allocator, VkDevice device, const VulkanImageCreateInfo& createInfo, const char* name) :
+    VulkanRawImage::VulkanRawImage(VkDevice device, VmaAllocator allocator, const VulkanImageCreateInfo& createInfo, const char* name) :
         allocator(allocator),
         format(createInfo.image.format),
         type(createInfo.image.imageType),
@@ -351,20 +362,29 @@ namespace PK::Rendering::VulkanRHI
         samples(createInfo.image.samples),
         aspect(createInfo.aspect)
     {
-        PK_LOG_VERBOSE("VK ALLOC: Image");
         VK_ASSERT_RESULT_CTX(vmaCreateImage(allocator, &createInfo.image, &createInfo.allocation, &image, &memory, nullptr), "Failed to create an image!");
-
-        VkDebugUtilsObjectNameInfoEXT nameInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
-        nameInfo.pNext = nullptr;
-        nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
-        nameInfo.objectHandle = (uint64_t)image;
-        nameInfo.pObjectName = name;
-        vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
+        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_IMAGE, (uint64_t)image, name);
     }
 
     VulkanRawImage::~VulkanRawImage()
     {
         vmaDestroyImage(allocator, image, memory);
+    }
+
+    VulkanTLAS::VulkanTLAS(VkDevice device, VmaAllocator allocator, const VkAccelerationStructureCreateInfoKHR& createInfo, const char* name) :
+        device(device),
+        rawBuffer(device, allocator, VulkanBufferCreateInfo(BufferUsage::AccelerationStructure | BufferUsage::GPUOnly, createInfo.size), name)
+    {
+        VkAccelerationStructureCreateInfoKHR modifiedCreateInfo = createInfo;
+        modifiedCreateInfo.buffer = rawBuffer.buffer;
+
+        vkCreateAccelerationStructureKHR(device, &createInfo, nullptr, &structure);
+        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, (uint64_t)structure, name);
+    }
+
+    VulkanTLAS::~VulkanTLAS()
+    {
+        vkDestroyAccelerationStructureKHR(device, structure, nullptr);
     }
 
     VulkanShaderModule::VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t sprivSize, const char* name) : device(device)
@@ -380,12 +400,7 @@ namespace PK::Rendering::VulkanRHI
         stageInfo.module = module;
         stageInfo.pName = "main";
 
-        VkDebugUtilsObjectNameInfoEXT nameInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
-        nameInfo.pNext = nullptr;
-        nameInfo.objectType = VK_OBJECT_TYPE_SHADER_MODULE;
-        nameInfo.objectHandle = (uint64_t)module;
-        nameInfo.pObjectName = name;
-        vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
+        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)module, name);
     }
 
     VulkanShaderModule::~VulkanShaderModule()

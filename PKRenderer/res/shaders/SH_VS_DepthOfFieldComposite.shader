@@ -23,7 +23,7 @@ layout(location = 0) out float4 SV_Target0;
 
 void main()
 {
-    float linearDepth = LinearizeDepth(tex2D(pk_ScreenDepth, vs_TEXCOORD0).r);
+    float linearDepth = SampleLinearDepth(vs_TEXCOORD0);
     float coc = GetCircleOfConfusion(linearDepth);
 
     float4 foreground = tex2D(pk_Foreground, vs_TEXCOORD0);

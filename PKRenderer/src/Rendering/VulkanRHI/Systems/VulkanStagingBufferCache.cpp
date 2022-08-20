@@ -70,25 +70,28 @@ namespace PK::Rendering::VulkanRHI::Systems
         }
     }
 
-    VulkanStagingBuffer* VulkanStagingBufferCache::GetBuffer(size_t size)
+    VulkanStagingBuffer* VulkanStagingBufferCache::GetBuffer(size_t size, const Rendering::Structs::ExecutionGate& gate)
     {
         auto index = Vector::LowerBound(m_freeBuffers, (uint32_t)size);
         auto nextPruneTick = m_currentPruneTick + 1;
 
+        VulkanStagingBuffer* stagingBuffer = nullptr;
+
         if (index != -1)
         {
-            auto stagingBuffer = m_freeBuffers.at(index);
-            stagingBuffer->pruneTick = nextPruneTick;
+            stagingBuffer = m_freeBuffers.at(index);
             Vector::OrderedRemoveAt(m_freeBuffers, index);
             m_activeBuffers.push_back(stagingBuffer);
-            return stagingBuffer;
+        }
+        else
+        {
+            VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging, size);
+            stagingBuffer = m_bufferPool.New(m_device, m_allocator, createInfo, (std::string("Staging Buffer ") + std::to_string(m_currentPruneTick)).c_str());
+            m_activeBuffers.push_back(stagingBuffer);
         }
 
-        VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging, size);
-        auto stagingBuffer = m_bufferPool.New(m_device, m_allocator, createInfo);
         stagingBuffer->pruneTick = nextPruneTick;
-        stagingBuffer->executionGate.Invalidate();
-        m_activeBuffers.push_back(stagingBuffer);
+        stagingBuffer->executionGate = gate;
         return stagingBuffer;
     }
     

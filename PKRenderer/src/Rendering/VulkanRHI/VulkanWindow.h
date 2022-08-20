@@ -27,6 +27,7 @@ namespace PK::Rendering::VulkanRHI
             void SetCursorVisible(bool value) override final;
             void SetVSync(bool enabled) override final { m_vsync = enabled; };
             inline void PollEvents() const override final { glfwPollEvents(); }
+            inline void WaitEvents() const override final { glfwWaitEvents(); }
             void* GetNativeWindow() const override final { return m_window; }
 
             Math::uint4 GetRect() const override final { return m_swapchain->GetRect(); }

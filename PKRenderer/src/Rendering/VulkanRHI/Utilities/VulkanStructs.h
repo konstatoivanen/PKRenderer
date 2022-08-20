@@ -33,14 +33,23 @@ namespace PK::Rendering::VulkanRHI
 
     } QueueFamilies;
 
-    struct PhysicalDeviceRequirements
+    struct VulkanPhysicalDeviceFeatures
+    {
+        VkPhysicalDeviceFeatures2 vk10{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+        VkPhysicalDeviceVulkan11Features vk11{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
+        VkPhysicalDeviceVulkan12Features vk12{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
+        VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructure{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR };
+        VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipeline{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR };
+        
+        VulkanPhysicalDeviceFeatures();
+    };
+
+    struct VulkanPhysicalDeviceRequirements
     {
         uint32_t versionMajor;
         uint32_t versionMinor;
         VkPhysicalDeviceType deviceType;
-        VkPhysicalDeviceFeatures features;
-        VkPhysicalDeviceVulkan11Features features11 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
-        VkPhysicalDeviceVulkan12Features features12 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
+        VulkanPhysicalDeviceFeatures features;
 
         const std::vector<const char*>* deviceExtensions;
     };
@@ -91,7 +100,7 @@ namespace PK::Rendering::VulkanRHI
     {
         VulkanFence(VkDevice device, bool signaled = false);
         ~VulkanFence();
-        inline VkResult GetStatus() const { return vkGetFenceStatus(device, vulkanFence); }
+
         const VkDevice device;
         VkFence vulkanFence;
     };
@@ -100,6 +109,7 @@ namespace PK::Rendering::VulkanRHI
     {
         VulkanSemaphore(VkDevice device);
         ~VulkanSemaphore();
+
         const VkDevice device;
         VkSemaphore vulkanSemaphore;
     };
@@ -152,7 +162,7 @@ namespace PK::Rendering::VulkanRHI
 
     struct VulkanRawImage : public IVulkanDisposable
     {
-        VulkanRawImage(VmaAllocator allocator, VkDevice device, const VulkanImageCreateInfo& createInfo, const char* name);
+        VulkanRawImage(VkDevice device, VmaAllocator allocator, const VulkanImageCreateInfo& createInfo, const char* name);
         ~VulkanRawImage();
 
         const VmaAllocator allocator;
@@ -165,6 +175,16 @@ namespace PK::Rendering::VulkanRHI
         VkExtent3D extent;
         uint32_t levels;
         uint32_t layers;
+    };
+
+    struct VulkanTLAS : public IVulkanDisposable
+    {
+        VulkanTLAS(VkDevice device, VmaAllocator allocator, const VkAccelerationStructureCreateInfoKHR& createInfo, const char* name);
+        ~VulkanTLAS();
+
+        const VkDevice device;
+        const VulkanRawBuffer rawBuffer;
+        VkAccelerationStructureKHR structure;
     };
 
     struct VulkanShaderModule : public IVulkanDisposable

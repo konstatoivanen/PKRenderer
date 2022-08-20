@@ -19,4 +19,18 @@ namespace PK::Rendering::Objects
 
         return nullptr;
     }
+
+    void Buffer::SetData(const void* data, size_t offset, size_t size)
+    {
+        auto dst = BeginWrite(0, GetCapacity());
+        memcpy(reinterpret_cast<char*>(dst) + offset, data, size);
+        EndWrite();
+    }
+
+    void Buffer::SetSubData(const void* data, size_t offset, size_t size)
+    {
+        auto dst = BeginWrite(offset, size);
+        memcpy(dst, data, size);
+        EndWrite();
+    }
 }

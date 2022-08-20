@@ -162,15 +162,12 @@ namespace PK::Rendering::VulkanRHI::Systems
     {
         for (auto& wrapper : m_commandBuffers)
         {
-            if (wrapper.IsActive())
+            if (wrapper.IsActive() && vkWaitForFences(m_device, 1, &wrapper.fence->vulkanFence, VK_TRUE, 0) == VK_SUCCESS)
             {
-                if (vkWaitForFences(m_device, 1, &wrapper.fence->vulkanFence, VK_TRUE, 0) == VK_SUCCESS)
-                {
-                    vkFreeCommandBuffers(m_device, m_pool, 1, &wrapper.commandBuffer);
-                    wrapper.commandBuffer = VK_NULL_HANDLE;
-                    wrapper.invocationIndex++;
-                    VK_ASSERT_RESULT(vkResetFences(m_device, 1, &wrapper.fence->vulkanFence));
-                }
+                vkFreeCommandBuffers(m_device, m_pool, 1, &wrapper.commandBuffer);
+                wrapper.commandBuffer = VK_NULL_HANDLE;
+                wrapper.invocationIndex++;
+                VK_ASSERT_RESULT(vkResetFences(m_device, 1, &wrapper.fence->vulkanFence));
             }
         }
     }

@@ -105,8 +105,7 @@ void main()
 {
     #if defined(PASS_PREFILTER)
         const int2 OFFS[4] = { int2(-1,-1), int2(1,1), int2(-1,1), int2(1,-1) };
-        float4 zvalues = textureGatherOffsets(pk_ScreenDepth, vs_TEXCOORD0, OFFS);
-        float4 depths = LinearizeDepth(zvalues);
+        float4 depths = SampleLinearDepthOffsets(vs_TEXCOORD0, OFFS);
 
         float4 cocs = GetCirclesOfConfusion(depths);
         float4 weights = saturate(abs(cocs) / pk_MaximumCoC);

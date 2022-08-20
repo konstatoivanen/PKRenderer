@@ -12,7 +12,7 @@ void main()
     coord.y = min(coord.y, int(pk_ScreenParams.y - 2));
     float2 uv = coord * pk_ScreenParams.zw;
 
-    float4 depths = LinearizeDepth(textureGatherOffsets(pk_ScreenDepth, uv, offsets));
+    float4 depths = SampleLinearDepthOffsets(uv, offsets);
 
     float depth = depths.x;
     depth = max(depth, depths.y);

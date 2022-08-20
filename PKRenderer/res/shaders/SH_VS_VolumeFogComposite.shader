@@ -13,16 +13,11 @@ void main()
 };
 
 #pragma PROGRAM_FRAGMENT
-float SampleDepth(float2 uv)
-{
-	return LinearizeDepth(tex2D(pk_ScreenDepth, uv).r);
-}
-
 in float4 vs_TEXCOORD;
 out float4 SV_Target0;
 void main() 
 {
-	float d = LinearizeDepth(tex2D(pk_ScreenDepth, vs_TEXCOORD.xy).r);
+	float d = SampleLinearDepth(vs_TEXCOORD.xy);
 	float w = GetVolumeWCoord(d);
 
 	float3 offset = GlobalNoiseBlue(int2(vs_TEXCOORD.zw));

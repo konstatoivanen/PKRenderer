@@ -16,6 +16,7 @@ namespace PK::Rendering::Passes
         m_computeFade = assetDatabase->Find<Shader>("CS_SceneGI_Fade");
         m_computeMipmap = assetDatabase->Find<Shader>("CS_SceneGI_Mipmap");
         m_computeBakeGI = assetDatabase->Find<Shader>("CS_SceneGI_Bake");
+        m_computeMask = assetDatabase->Find<Shader>("CS_SceneGI_Mask");
 
         uint3 resolution = { 256u, 128u, 256u };
 
@@ -33,6 +34,12 @@ namespace PK::Rendering::Passes
         descr.usage = TextureUsage::Sample | TextureUsage::Storage;
         m_voxels = Texture::Create(descr, "GI Voxel Volume");
 
+        descr.samplerType = SamplerType::Sampler2D;
+        descr.format = TextureFormat::R8UI;
+        descr.layers = 1u;
+        descr.resolution = { config->InitialWidth, config->InitialHeight, 1 };
+        m_mask = Texture::Create(descr, "GI Screen Space Mask Texture");
+
         descr.samplerType = SamplerType::Sampler2DArray;
         descr.format = TextureFormat::RGBA16F;
         descr.sampler.filter = FilterMode::Bilinear;
@@ -40,16 +47,16 @@ namespace PK::Rendering::Passes
         descr.sampler.wrap[1] = WrapMode::Clamp;
         descr.sampler.wrap[2] = WrapMode::Clamp;
         descr.levels = 1u;
-        descr.layers = 2u;
-        descr.resolution = { config->InitialWidth, config->InitialHeight, 1 };
+        descr.layers = 4u;
+        descr.usage = TextureUsage::RTColorSample | TextureUsage::Storage;
         m_screenSpaceGI = Texture::Create(descr, "GI Sceen Space Texture");
+
 
         auto cmd = GraphicsAPI::GetCommandBuffer();
         auto hash = HashCache::Get();
         cmd->SetImage(hash->pk_SceneGI_VolumeWrite, m_voxels.get());
-        cmd->SetImage(hash->pk_ScreenGI_Write, m_screenSpaceGI.get());
         cmd->SetTexture(hash->pk_SceneGI_VolumeRead, m_voxels.get());
-        cmd->SetTexture(hash->pk_ScreenGI_Read, m_screenSpaceGI.get());
+        cmd->SetImage(hash->pk_ScreenGI_Mask, m_mask.get());
 
         m_voxelizeAttribs.depthStencil.depthCompareOp = Comparison::Off;
         m_voxelizeAttribs.depthStencil.depthWriteEnable = false;
@@ -80,10 +87,11 @@ namespace PK::Rendering::Passes
     {
         auto hash = HashCache::Get();
 
-        if (m_screenSpaceGI->Validate(resolution))
+        m_screenSpaceGI->Validate(resolution);
+
+        if (m_mask->Validate(resolution))
         {
-            cmd->SetImage(hash->pk_ScreenGI_Write, m_screenSpaceGI.get());
-            cmd->SetTexture(hash->pk_ScreenGI_Read, m_screenSpaceGI.get());
+            cmd->SetImage(hash->pk_ScreenGI_Mask, m_mask.get());
         }
 
         uint4 swizzles[3] =
@@ -142,10 +150,30 @@ namespace PK::Rendering::Passes
     {
         cmd->BeginDebugScope("GI Gather", PK_COLOR_GREEN);
 
+        auto hash = HashCache::Get();
+
         auto resolution = m_screenSpaceGI->GetResolution();
-        cmd->Dispatch(m_computeBakeGI, 0, { (uint)ceil(resolution.x / 32.0f), (uint)ceil(resolution.y / 32.0f), 1u });
-        cmd->Barrier(m_screenSpaceGI.get(), MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::FragmentTexture);
-        
+        uint3 groupSize = { (uint)ceil(resolution.x / 16.0f), (uint)ceil(resolution.y / 16.0f), 1u };
+
+        cmd->Blit(m_screenSpaceGI.get(), m_screenSpaceGI.get(), { 0, 0, 0, 2 }, { 0, 2, 0, 2 }, FilterMode::Point);
+
+        {
+            cmd->SetTexture(hash->pk_ScreenGI_Read, m_screenSpaceGI.get(), { 0, 2, 0, 2 });
+            cmd->SetImage(hash->pk_ScreenGI_Write, m_screenSpaceGI.get(), { 0, 0, 0, 2 });
+            cmd->SetImage(hash->_DestinationTex, m_mask.get());
+            
+            cmd->Dispatch(m_computeMask, 0, groupSize);
+            
+            cmd->Barrier(m_mask.get(), 0, 0, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
+            cmd->Barrier(m_screenSpaceGI.get(), { 0, 0, 0, 2 }, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeWrite);
+        }
+
+        {
+            cmd->Dispatch(m_computeBakeGI, 0, groupSize);
+            cmd->Barrier(m_screenSpaceGI.get(), { 0, 0, 0, 2 }, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::FragmentTexture);
+            cmd->SetTexture(hash->pk_ScreenGI_Read, m_screenSpaceGI.get(), { 0, 0, 0, 2 });
+        }
+
         cmd->EndDebugScope();
     }
 }

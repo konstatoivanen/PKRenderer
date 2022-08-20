@@ -200,11 +200,11 @@ namespace PK::Rendering::VulkanRHI::Objects
         TransitionImageLayout(VulkanLayoutTransition(vksrc.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vksrc.layout, srcRange));
     }
 
-    void VulkanCommandBuffer::Blit(Texture* src, Texture* dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter)
+    void VulkanCommandBuffer::Blit(Texture* src, Texture* dst, const Structs::TextureViewRange& srcRange, const Structs::TextureViewRange& dstRange, FilterMode filter)
     {
         auto vksrc = src->GetNative<VulkanTexture>();
         auto vkdst = dst->GetNative<VulkanTexture>();
-        Blit(vksrc->GetRenderTarget(), vkdst->GetRenderTarget(), 0, dstLevel, 0, dstLayer, filter);
+        Blit(vksrc->GetRenderTarget(srcRange, false), vkdst->GetRenderTarget(dstRange, false), srcRange.level, dstRange.level, srcRange.layer, dstRange.layer, filter);
     }
 
     void VulkanCommandBuffer::Blit(const VulkanRenderTarget& src, 
@@ -217,8 +217,8 @@ namespace PK::Rendering::VulkanRHI::Objects
                                    bool flipVertical)
     {
         VkImageBlit blitRegion{};
-        blitRegion.srcSubresource = { (uint32_t)src.aspect, srcLevel, srcLayer, 1 };
-        blitRegion.dstSubresource = { (uint32_t)dst.aspect, dstLevel, dstLayer, 1 };
+        blitRegion.srcSubresource = { (uint32_t)src.aspect, srcLevel, srcLayer, src.layers };
+        blitRegion.dstSubresource = { (uint32_t)dst.aspect, dstLevel, dstLayer, dst.layers };
         blitRegion.srcOffsets[1] = { (int)src.extent.width, (int)src.extent.height, (int)src.extent.depth };
         blitRegion.dstOffsets[1] = { (int)dst.extent.width, (int)dst.extent.height, (int)dst.extent.depth };
 
@@ -229,8 +229,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
 
         VkImageResolve resolveRegion{};
-        resolveRegion.srcSubresource = { (uint32_t)src.aspect, srcLevel, srcLayer, 1 };
-        resolveRegion.dstSubresource = { (uint32_t)dst.aspect, dstLevel, dstLayer, 1 };
+        resolveRegion.srcSubresource = { (uint32_t)src.aspect, srcLevel, srcLayer, src.layers };
+        resolveRegion.dstSubresource = { (uint32_t)dst.aspect, dstLevel, dstLayer, dst.layers };
         resolveRegion.extent = src.extent;
 
         VkImageSubresourceRange srcRange{};
@@ -238,14 +238,14 @@ namespace PK::Rendering::VulkanRHI::Objects
         srcRange.baseMipLevel = srcLevel;
         srcRange.levelCount = 1;
         srcRange.baseArrayLayer = srcLayer;
-        srcRange.layerCount = 1;
+        srcRange.layerCount = src.layers;
 
         VkImageSubresourceRange dstRange{};
         dstRange.aspectMask = dst.aspect;
         dstRange.baseMipLevel = dstLevel;
         dstRange.levelCount = 1;
         dstRange.baseArrayLayer = dstLayer;
-        dstRange.layerCount = 1;
+        dstRange.layerCount = dst.layers;
 
         TransitionImageLayout(VulkanLayoutTransition(src.image, src.layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, srcRange));
         TransitionImageLayout(VulkanLayoutTransition(dst.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dstRange));

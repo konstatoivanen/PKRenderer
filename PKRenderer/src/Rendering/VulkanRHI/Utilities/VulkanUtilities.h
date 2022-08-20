@@ -25,7 +25,7 @@ namespace PK::Rendering::VulkanRHI::Utilities
     bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const std::vector<const char*>* extensions);
     bool VulkanValidateValidationLayers(const std::vector<const char*>* validationLayers);
 
-    void VulkanSelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, const PhysicalDeviceRequirements& requirements, VkPhysicalDevice* device, QueueFamilies* queueFamilies);
+    void VulkanSelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, const VulkanPhysicalDeviceRequirements& requirements, VkPhysicalDevice* device, QueueFamilies* queueFamilies);
     VkExtent2D VulkanSelectSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities, const VkExtent2D& desiredExtent);
     VkSurfaceFormatKHR VulkanSelectSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats, VkFormat desiredFormat, VkColorSpaceKHR desiredColorSpace);
     VkPresentModeKHR VulkanSelectPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, VkPresentModeKHR desiredPresentMode);

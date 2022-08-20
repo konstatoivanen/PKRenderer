@@ -41,7 +41,7 @@ void main()
     int2 coord = int2(gl_GlobalInvocationID.xy);
     int2 size = imageSize(_DestinationTex).xy;
 
-    if (GEqual(coord, size))
+    if (Any_GEqual(coord, size))
     {
         return;
     }

@@ -60,7 +60,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         
         void Blit(Texture* src, Core::Window* dst, FilterMode filter) override final;
         void Blit(Core::Window* src, Buffer* dst) override final;
-        void Blit(Texture* src, Texture* dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter) override final;
+        void Blit(Texture* src, Texture* dst, const Structs::TextureViewRange& srcRange, const Structs::TextureViewRange& dstRange, FilterMode filter) override final;
         void Blit(const VulkanRenderTarget& src, const VulkanRenderTarget& dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter, bool flipVertical = false);
 
         void Clear(Buffer* dst, size_t offset, size_t size, uint32_t value) override final;

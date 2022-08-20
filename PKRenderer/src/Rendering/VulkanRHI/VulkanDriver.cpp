@@ -72,39 +72,42 @@ namespace PK::Rendering::VulkanRHI
         VkSurfaceKHR temporarySurface;
         VK_ASSERT_RESULT_CTX(glfwCreateWindowSurface(instance, temporaryWindow, nullptr, &temporarySurface), "Failed to create window surface!");
 
-        PhysicalDeviceRequirements physicalDeviceRequirements{};
+        VulkanPhysicalDeviceRequirements physicalDeviceRequirements{};
         physicalDeviceRequirements.versionMajor = supportedMajor;
         physicalDeviceRequirements.versionMinor = supportedMinor;
-        physicalDeviceRequirements.features.alphaToOne = VK_TRUE;
-        physicalDeviceRequirements.features.shaderImageGatherExtended = VK_TRUE;
-        physicalDeviceRequirements.features.sparseBinding = VK_TRUE;
-        physicalDeviceRequirements.features.sparseResidencyBuffer = VK_TRUE;
-        physicalDeviceRequirements.features.samplerAnisotropy = VK_TRUE;
-        physicalDeviceRequirements.features.multiViewport = VK_TRUE;
-        physicalDeviceRequirements.features.shaderSampledImageArrayDynamicIndexing = VK_TRUE;
-        physicalDeviceRequirements.features.shaderUniformBufferArrayDynamicIndexing = VK_TRUE;
-        physicalDeviceRequirements.features.shaderFloat64 = VK_TRUE;
-        physicalDeviceRequirements.features.shaderInt16 = VK_TRUE;
-        physicalDeviceRequirements.features.shaderInt64 = VK_TRUE;
-        physicalDeviceRequirements.features.imageCubeArray = VK_TRUE;
-        physicalDeviceRequirements.features.fragmentStoresAndAtomics = VK_TRUE;
-        physicalDeviceRequirements.features.multiDrawIndirect = VK_TRUE;
-        physicalDeviceRequirements.features11.storageBuffer16BitAccess = VK_TRUE;
-        physicalDeviceRequirements.features11.uniformAndStorageBuffer16BitAccess = VK_TRUE;
-        physicalDeviceRequirements.features11.storagePushConstant16 = VK_TRUE;
-        physicalDeviceRequirements.features12.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
-        physicalDeviceRequirements.features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-        physicalDeviceRequirements.features12.runtimeDescriptorArray = VK_TRUE;
-        physicalDeviceRequirements.features12.descriptorBindingVariableDescriptorCount = VK_TRUE;
-        physicalDeviceRequirements.features12.descriptorBindingPartiallyBound = VK_TRUE;
-        physicalDeviceRequirements.features12.scalarBlockLayout = VK_TRUE;
-        physicalDeviceRequirements.features12.shaderFloat16 = VK_TRUE;
-        physicalDeviceRequirements.features12.shaderInt8 = VK_TRUE;
-        physicalDeviceRequirements.features12.shaderOutputViewportIndex = VK_TRUE;
-        physicalDeviceRequirements.features12.shaderOutputLayer = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.alphaToOne = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.shaderImageGatherExtended = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.sparseBinding = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.sparseResidencyBuffer = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.samplerAnisotropy = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.multiViewport = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.shaderSampledImageArrayDynamicIndexing = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.shaderUniformBufferArrayDynamicIndexing = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.shaderFloat64 = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.shaderInt16 = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.shaderInt64 = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.imageCubeArray = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.fragmentStoresAndAtomics = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.multiDrawIndirect = VK_TRUE;
+        physicalDeviceRequirements.features.vk11.storageBuffer16BitAccess = VK_TRUE;
+        physicalDeviceRequirements.features.vk11.uniformAndStorageBuffer16BitAccess = VK_TRUE;
+        physicalDeviceRequirements.features.vk11.storagePushConstant16 = VK_TRUE;
+        physicalDeviceRequirements.features.vk12.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
+        physicalDeviceRequirements.features.vk12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+        physicalDeviceRequirements.features.vk12.runtimeDescriptorArray = VK_TRUE;
+        physicalDeviceRequirements.features.vk12.descriptorBindingVariableDescriptorCount = VK_TRUE;
+        physicalDeviceRequirements.features.vk12.descriptorBindingPartiallyBound = VK_TRUE;
+        physicalDeviceRequirements.features.vk12.scalarBlockLayout = VK_TRUE;
+        physicalDeviceRequirements.features.vk12.shaderFloat16 = VK_TRUE;
+        physicalDeviceRequirements.features.vk12.shaderInt8 = VK_TRUE;
+        physicalDeviceRequirements.features.vk12.shaderOutputViewportIndex = VK_TRUE;
+        physicalDeviceRequirements.features.vk12.shaderOutputLayer = VK_TRUE;
+        physicalDeviceRequirements.features.vk12.bufferDeviceAddress = VK_TRUE;
+        physicalDeviceRequirements.features.accelerationStructure.accelerationStructure = VK_TRUE;
+        physicalDeviceRequirements.features.rayTracingPipeline.rayTracingPipeline = VK_TRUE;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
-        physicalDeviceRequirements.features12.pNext = &physicalDeviceRequirements.features11;
+
         Utilities::VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice, &queueFamilies);
         physicalDeviceProperties = Utilities::VulkanGetPhysicalDeviceProperties(physicalDevice);
 
@@ -130,11 +133,11 @@ namespace PK::Rendering::VulkanRHI
         VkDeviceCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos = queueCreateInfos.data();
-        createInfo.pEnabledFeatures = &physicalDeviceRequirements.features;
+        createInfo.pEnabledFeatures = nullptr;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(properties.contextualDeviceExtensions->size());
         createInfo.ppEnabledExtensionNames = properties.contextualDeviceExtensions->data();
         createInfo.enabledLayerCount = 0;
-        createInfo.pNext = &physicalDeviceRequirements.features12;
+        createInfo.pNext = &physicalDeviceRequirements.features.vk10;
 
         if (properties.validationLayers != nullptr && properties.validationLayers->size() > 0)
         {
@@ -149,6 +152,7 @@ namespace PK::Rendering::VulkanRHI
         allocatorInfo.physicalDevice = physicalDevice;
         allocatorInfo.device = device;
         allocatorInfo.instance = instance;
+        allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
         VK_ASSERT_RESULT_CTX(vmaCreateAllocator(&allocatorInfo, &allocator), "Failed to create a VMA allocator!");
 
         vkDestroySurfaceKHR(instance, temporarySurface, nullptr);

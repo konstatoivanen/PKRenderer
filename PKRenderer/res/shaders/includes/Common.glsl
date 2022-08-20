@@ -50,7 +50,8 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 };
 
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_SceneOEM_HDR;
-PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenDepth;
+PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenDepthCurrent;
+PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenDepthPrevious;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenNormals;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_Bluenoise256;
 PK_DECLARE_SET_SHADER uniform sampler2DArray pk_ScreenGI_Read;
@@ -67,8 +68,14 @@ PK_DECLARE_SET_SHADER uniform sampler2DArray pk_ScreenGI_Read;
 
 float LinearizeDepth(float z) { return 1.0f / (pk_MATRIX_I_P[2][3] * (z * 2.0f - 1.0f) + pk_MATRIX_I_P[3][3]); } 
 float4 LinearizeDepth(float4 z) { return 1.0f / (pk_MATRIX_I_P[2][3] * (z * 2.0f - 1.0f) + pk_MATRIX_I_P[3][3]); } 
-float SampleLinearDepth(float2 uv) { return LinearizeDepth(tex2D(pk_ScreenDepth, uv).r); }
-float SampleLinearDepth(int2 coord) { return LinearizeDepth(texelFetch(pk_ScreenDepth, coord, 0).r); }
+
+float SampleLinearDepth(float2 uv) { return LinearizeDepth(tex2D(pk_ScreenDepthCurrent, uv).r); }
+float SampleLinearDepth(int2 coord) { return LinearizeDepth(texelFetch(pk_ScreenDepthCurrent, coord, 0).r); }
+#define SampleLinearDepthOffsets(uv, offsets) LinearizeDepth(textureGatherOffsets(pk_ScreenDepthCurrent, uv, offsets))
+
+float SampleLinearPreviousDepth(float2 uv) { return LinearizeDepth(tex2D(pk_ScreenDepthPrevious, uv).r); }
+float SampleLinearPreviousDepth(int2 coord) { return LinearizeDepth(texelFetch(pk_ScreenDepthPrevious, coord, 0).r); }
+#define SampleLinearPreviousDepthOffsets(uv, offsets) LinearizeDepth(textureGatherOffsets(pk_ScreenDepthPrevious, uv, offsets))
 
 float3 GlobalNoiseBlue(uint2 coord) { return texelFetch(pk_Bluenoise256, int2(coord.x % 256, coord.y % 256), 0).xyz; }
 float3 GlobalNoiseBlueScreenUV(float2 coord) { return GlobalNoiseBlue(uint2(coord * pk_ScreenParams.xy)); }

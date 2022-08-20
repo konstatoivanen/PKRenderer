@@ -4,6 +4,7 @@
 #include includes/SharedFilmGrain.glsl
 #include includes/SharedBloom.glsl
 #include includes/SharedHistogram.glsl
+#include includes/Common.glsl
 
 layout(rgba16f, set = PK_SET_DRAW) uniform image2D _MainTex;
 
@@ -13,7 +14,7 @@ void main()
     int2 coord = int2(gl_GlobalInvocationID.xy);
     int2 size = imageSize(_MainTex).xy;
 
-    if (Greater(coord, size))
+    if (Any_Greater(coord, size))
     {
         return;
     }

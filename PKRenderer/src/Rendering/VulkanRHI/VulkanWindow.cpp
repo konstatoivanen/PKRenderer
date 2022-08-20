@@ -64,7 +64,7 @@ namespace PK::Rendering::VulkanRHI
         swapchainCreateInfo.desiredColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
         swapchainCreateInfo.desiredExtent = VkExtent2D{ properties.width, properties.height };
         swapchainCreateInfo.desiredFormat = VK_FORMAT_B8G8R8A8_UNORM;
-        swapchainCreateInfo.desiredImageCount = 4;
+        swapchainCreateInfo.desiredImageCount = 3;
         swapchainCreateInfo.desiredPresentMode = VK_PRESENT_MODE_FIFO_KHR;
         swapchainCreateInfo.maxFramesInFlight = PK_MAX_FRAMES_IN_FLIGHT;
         m_swapchain = CreateScope<VulkanSwapchain>(m_driver->physicalDevice,
@@ -103,8 +103,11 @@ namespace PK::Rendering::VulkanRHI
     void VulkanWindow::End()
     {
         PK_THROW_ASSERT(m_imageAvailableSignal != nullptr, "Trying to end a frame that outside of a frame scope!")
+        auto frameFence = m_driver->commandBufferPool->GetCurrent()->fence->vulkanFence;
+        auto frameGate = m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate();
+
         m_driver->commandBufferPool->SubmitCurrent(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, m_imageAvailableSignal);
-        m_swapchain->Present(m_driver->commandBufferPool->AcquireRenderingFinishedSignal());
+        m_swapchain->Present(m_driver->commandBufferPool->AcquireRenderingFinishedSignal(), frameFence, frameGate);
         m_imageAvailableSignal = nullptr;
     }
 

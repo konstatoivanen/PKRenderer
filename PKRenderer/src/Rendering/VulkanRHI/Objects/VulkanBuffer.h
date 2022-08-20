@@ -13,8 +13,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanBuffer(const Structs::BufferLayout& layout, const void* data, size_t count, Structs::BufferUsage usage, const char* name);
             ~VulkanBuffer();
 
-            void SetData(const void* data, size_t offset, size_t size) override final;
-            void SetSubData(const void* data, size_t offset, size_t size) override final;
             void* BeginWrite(size_t offset, size_t size) override final;
             void EndWrite() override final;
             const void* BeginRead(size_t offset, size_t size) override final;
@@ -35,6 +33,12 @@ namespace PK::Rendering::VulkanRHI::Objects
             bool Validate(size_t count) override final;
 
         private:
+            struct MapRange
+            {
+                size_t ringOffset = 0ull;
+                VkBufferCopy region = { 0ull, 0ull, 0ull };
+            };
+
             struct RangeHash
             {
                 size_t operator()(const Structs::IndexRange& k) const noexcept
@@ -51,6 +55,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanRawBuffer* m_rawBuffer = nullptr;
             Systems::VulkanStagingBuffer* m_mappedBuffer = nullptr;
             VulkanSparsePageTable* m_pageTable = nullptr;
+            MapRange m_mapRange{};
             Utilities::PointerMap<Structs::IndexRange, VulkanBindHandle, RangeHash> m_bindHandles;
     };
 }

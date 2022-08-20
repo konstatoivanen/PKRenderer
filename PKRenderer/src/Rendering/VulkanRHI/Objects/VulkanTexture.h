@@ -26,7 +26,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             inline VkFormat GetNativeFormat() const { return m_rawImage->format; }
             inline const VulkanRawImage* GetRaw() const { return m_rawImage; }
             VulkanRenderTarget GetRenderTarget() const;
-            VulkanRenderTarget GetRenderTarget(const Structs::TextureViewRange& range);
+            VulkanRenderTarget GetRenderTarget(const Structs::TextureViewRange& range, bool includeView = true);
             inline const VulkanBindHandle* GetBindHandle() const { return &GetView(m_defaultViewRange)->bindHandle; }
             inline const VulkanBindHandle* GetBindHandle(const Structs::TextureViewRange& range, bool sampled) 
             { 

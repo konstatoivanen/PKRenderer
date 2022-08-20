@@ -40,6 +40,7 @@ namespace PK::Core
             virtual void SetCursorVisible(bool value) = 0;
             virtual void SetVSync(bool enabled) = 0;
             virtual void PollEvents() const = 0;
+            virtual void WaitEvents() const = 0;
             virtual void* GetNativeWindow() const = 0;
 
         public:

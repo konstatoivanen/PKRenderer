@@ -43,7 +43,8 @@ namespace PK::Rendering
             Batcher m_batcher;
 
             Utilities::Ref<Objects::ConstantBuffer> m_constantsPerFrame;
-            Utilities::Ref<Objects::RenderTexture> m_RenderTarget;
+            Utilities::Ref<Objects::RenderTexture> m_renderTarget;
+            Utilities::Ref<Objects::Texture> m_depthPrevious;
             Objects::Shader* m_OEMBackgroundShader;
             ECS::Tokens::VisibilityList m_visibilityList;
 

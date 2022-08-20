@@ -15,6 +15,16 @@ PFN_vkCreateDebugUtilsMessengerEXT pk_vkCreateDebugUtilsMessengerEXT = nullptr;
 PFN_vkDestroyDebugUtilsMessengerEXT pk_vkDestroyDebugUtilsMessengerEXT = nullptr;
 PFN_vkSubmitDebugUtilsMessageEXT pk_vkSubmitDebugUtilsMessageEXT = nullptr;
 
+PFN_vkCreateAccelerationStructureKHR pk_vkCreateAccelerationStructureKHR = nullptr;
+PFN_vkDestroyAccelerationStructureKHR pk_vkDestroyAccelerationStructureKHR = nullptr;
+PFN_vkCmdSetRayTracingPipelineStackSizeKHR pk_vkCmdSetRayTracingPipelineStackSizeKHR = nullptr;
+PFN_vkCmdTraceRaysIndirectKHR pk_vkCmdTraceRaysIndirectKHR = nullptr;
+PFN_vkCmdTraceRaysKHR pk_vkCmdTraceRaysKHR = nullptr;
+PFN_vkCreateRayTracingPipelinesKHR pk_vkCreateRayTracingPipelinesKHR = nullptr;
+PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR pk_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR = nullptr;
+PFN_vkGetRayTracingShaderGroupHandlesKHR pk_vkGetRayTracingShaderGroupHandlesKHR = nullptr;
+PFN_vkGetRayTracingShaderGroupStackSizeKHR pk_vkGetRayTracingShaderGroupStackSizeKHR = nullptr;
+
 namespace PK::Rendering::VulkanRHI::Utilities
 {
     void VulkanBindExtensionMethods(VkInstance instance)
@@ -30,6 +40,16 @@ namespace PK::Rendering::VulkanRHI::Utilities
         pk_vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
         pk_vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
         pk_vkSubmitDebugUtilsMessageEXT = (PFN_vkSubmitDebugUtilsMessageEXT)vkGetInstanceProcAddr(instance, "vkSubmitDebugUtilsMessageEXT");
+
+        pk_vkCreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)vkGetInstanceProcAddr(instance, "vkCreateAccelerationStructureKHR");
+        pk_vkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)vkGetInstanceProcAddr(instance, "vkDestroyAccelerationStructureKHR");
+        pk_vkCmdSetRayTracingPipelineStackSizeKHR = (PFN_vkCmdSetRayTracingPipelineStackSizeKHR)vkGetInstanceProcAddr(instance, "vkCmdSetRayTracingPipelineStackSizeKHR");
+        pk_vkCmdTraceRaysIndirectKHR = (PFN_vkCmdTraceRaysIndirectKHR)vkGetInstanceProcAddr(instance, "vkCmdTraceRaysIndirectKHR");
+        pk_vkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)vkGetInstanceProcAddr(instance, "vkCmdTraceRaysKHR");
+        pk_vkCreateRayTracingPipelinesKHR = (PFN_vkCreateRayTracingPipelinesKHR)vkGetInstanceProcAddr(instance, "vkCreateRayTracingPipelinesKHR");
+        pk_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR = (PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR");
+        pk_vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupHandlesKHR");
+        pk_vkGetRayTracingShaderGroupStackSizeKHR = (PFN_vkGetRayTracingShaderGroupStackSizeKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupStackSizeKHR");
     }
 
     std::vector<VkLayerProperties> VulkanGetInstanceLayerProperties()
@@ -239,11 +259,15 @@ namespace PK::Rendering::VulkanRHI::Utilities
         return requiredLayers.empty();
     }
 
-    static bool VulkanCheckRequirements(const VkBool32* values, const VkBool32* requirements, uint32_t count)
+    template<typename TVal>
+    static bool VulkanCheckRequirements(const TVal& values, const TVal& requirements, size_t offset, size_t count)
     {
+        auto valuesPtr = reinterpret_cast<const VkBool32*>(reinterpret_cast<const char*>(&values) + offset);
+        auto requirementsPtr = reinterpret_cast<const VkBool32*>(reinterpret_cast<const char*>(&requirements) + offset);
+
         for (auto i = 0u; i < count; ++i)
         {
-            if (!values[i] && requirements[i])
+            if (!valuesPtr[i] && requirementsPtr[i])
             {
                 return false;
             }
@@ -252,8 +276,18 @@ namespace PK::Rendering::VulkanRHI::Utilities
         return true;
     }
 
+    template<typename TVal, typename ... Args>
+    static bool VulkanCheckRequirements(const TVal& values, const TVal& requirements, size_t offset, size_t count, Args&&... args)
+    {
+        if (!VulkanCheckRequirements(values, requirements, offset, count))
+        {
+            return false;
+        }
 
-    void VulkanSelectPhysicalDevice(VkInstance instance,  VkSurfaceKHR surface, const PhysicalDeviceRequirements& requirements, VkPhysicalDevice* selectedDevice, QueueFamilies* queueFamilies)
+        return VulkanCheckRequirements(args...);
+    }
+
+    void VulkanSelectPhysicalDevice(VkInstance instance,  VkSurfaceKHR surface, const VulkanPhysicalDeviceRequirements& requirements, VkPhysicalDevice* selectedDevice, QueueFamilies* queueFamilies)
     {
         auto devices = VulkanGetPhysicalDevices(instance);
         *selectedDevice = VK_NULL_HANDLE;
@@ -309,17 +343,15 @@ namespace PK::Rendering::VulkanRHI::Utilities
                 continue;
             }
 
-            VkPhysicalDeviceFeatures2 features { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
-            VkPhysicalDeviceVulkan11Features features11 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
-            VkPhysicalDeviceVulkan12Features features12 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
-            features12.pNext = &features11;
-            features.pNext = &features12;
+            VulkanPhysicalDeviceFeatures features{};
+            vkGetPhysicalDeviceFeatures2(device, &features.vk10);
 
-            vkGetPhysicalDeviceFeatures2(device, &features);
-
-            if (!VulkanCheckRequirements(&features.features.robustBufferAccess, &requirements.features.robustBufferAccess, 55) ||
-                !VulkanCheckRequirements(&features11.storageBuffer16BitAccess, &requirements.features11.storageBuffer16BitAccess, 12) ||
-                !VulkanCheckRequirements(&features12.samplerMirrorClampToEdge, &requirements.features12.samplerMirrorClampToEdge, 47))
+            if (!VulkanCheckRequirements(
+                features.vk10, requirements.features.vk10, offsetof(VkPhysicalDeviceFeatures2, features), 55,
+                features.vk11, requirements.features.vk11, offsetof(VkPhysicalDeviceVulkan11Features, storageBuffer16BitAccess), 12,
+                features.vk12, requirements.features.vk12, offsetof(VkPhysicalDeviceVulkan12Features, samplerMirrorClampToEdge), 47,
+                features.accelerationStructure, requirements.features.accelerationStructure, offsetof(VkPhysicalDeviceAccelerationStructureFeaturesKHR, accelerationStructure), 5,
+                features.rayTracingPipeline, requirements.features.rayTracingPipeline, offsetof(VkPhysicalDeviceRayTracingPipelineFeaturesKHR, rayTracingPipeline), 5))
             {
                 continue;
             }
