@@ -30,7 +30,7 @@ namespace PK::Core
             inline static Window* GetPrimaryWindow() { return Get().m_window.get(); }
 
         private:
-            void Run();
+            void Execute();
     
         private:
             static Application* s_Instance;

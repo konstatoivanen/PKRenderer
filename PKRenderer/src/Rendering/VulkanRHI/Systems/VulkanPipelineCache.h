@@ -8,7 +8,7 @@ namespace PK::Rendering::VulkanRHI::Systems
 {
     struct PipelineKey 
     {
-        PK::Utilities::IDHandle<Objects::VulkanShader> shader;
+        PK::Utilities::VersionHandle<Objects::VulkanShader> shader;
         Structs::FixedFunctionState fixedFunctionState{};
         VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         VkBool32 primitiveRestart = VK_FALSE;
@@ -49,7 +49,7 @@ namespace PK::Rendering::VulkanRHI::Systems
 
             const VulkanPipeline* GetPipeline(const PipelineKey& key);
             const VulkanPipeline* GetGraphicsPipeline(const PipelineKey& key);
-            const VulkanPipeline* GetComputePipeline(const PK::Utilities::IDHandle<Objects::VulkanShader>& shader);
+            const VulkanPipeline* GetComputePipeline(const PK::Utilities::VersionHandle<Objects::VulkanShader>& shader);
             void Prune();
 
         private:
@@ -57,7 +57,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
             std::string m_workingDirectory;
             std::unordered_map<PipelineKey, PipelineValue, PipelineKeyHash> m_graphicsPipelines;
-            std::unordered_map<PK::Utilities::IDHandle<Objects::VulkanShader>, PipelineValue, PK::Utilities::IDHandle<Objects::VulkanShader>::Hash> m_computePipelines;
+            std::unordered_map<PK::Utilities::VersionHandle<Objects::VulkanShader>, PipelineValue, PK::Utilities::VersionHandle<Objects::VulkanShader>::Hash> m_computePipelines;
             uint64_t m_currentPruneTick = 0;
             uint64_t m_pruneDelay = 0;
     };

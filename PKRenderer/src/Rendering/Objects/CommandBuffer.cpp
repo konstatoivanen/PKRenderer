@@ -218,26 +218,31 @@ namespace PK::Rendering::Objects
 
     void CommandBuffer::Barrier(const Texture* texture, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
     {
-        Barrier(texture, {}, nullptr, srcFlags, dstFlags);
+        Barrier(texture, {}, nullptr, 0ull, 0ull, srcFlags, dstFlags);
     }
 
     void CommandBuffer::Barrier(const Texture* texture, const TextureViewRange& range, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
     {
-        Barrier(texture, range, nullptr, srcFlags, dstFlags);
+        Barrier(texture, range, nullptr, 0ull, 0ull, srcFlags, dstFlags);
     }
 
     void CommandBuffer::Barrier(const Texture* texture, uint16_t level, uint16_t layer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
     {
-        Barrier(texture, { level, layer, 1u, 1u }, nullptr, srcFlags, dstFlags);
+        Barrier(texture, { level, layer, 1u, 1u }, nullptr, 0ull, 0ull, srcFlags, dstFlags);
     }
 
     void CommandBuffer::Barrier(const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
     {
-        Barrier(nullptr, {}, buffer, srcFlags, dstFlags);
+        Barrier(nullptr, {}, buffer, 0ull, (~0ULL), srcFlags, dstFlags);
+    }
+
+    void CommandBuffer::Barrier(const Buffer* buffer, size_t offset, size_t size, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags)
+    {
+        Barrier(nullptr, {}, buffer, offset, size, srcFlags, dstFlags);
     }
 
     void CommandBuffer::Barrier(MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
     {
-        Barrier(nullptr, {}, nullptr, srcFlags, dstFlags);
+        Barrier(nullptr, {}, nullptr, 0ull, 0ull, srcFlags, dstFlags);
     }
 }

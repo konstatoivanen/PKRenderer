@@ -566,7 +566,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Utilities\FileIO.h" />
     <ClInclude Include="src\Utilities\PointerMap.h" />
     <ClInclude Include="src\Utilities\FixedList.h" />
-    <ClInclude Include="src\Utilities\IDObject.h" />
+    <ClInclude Include="src\Utilities\VersionedObject.h" />
     <ClInclude Include="src\Utilities\IndexedSet.h" />
     <ClInclude Include="src\Utilities\Handle.h" />
     <ClInclude Include="src\Core\Services\Input.h" />

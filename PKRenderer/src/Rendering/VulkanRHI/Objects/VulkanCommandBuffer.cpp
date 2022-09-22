@@ -297,7 +297,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     }
 
 
-    void VulkanCommandBuffer::Barrier(const Texture* texture, const TextureViewRange& range, const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
+    void VulkanCommandBuffer::Barrier(const Texture* texture, const TextureViewRange& range, const Buffer* buffer, size_t offset, size_t size, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
     {
         VkImageMemoryBarrier imageBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
         VkMemoryBarrier memoryBarrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
@@ -324,7 +324,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             auto vkbuff = buffer->GetNative<VulkanBuffer>()->GetRaw();
             bufferBarrier.buffer = vkbuff->buffer;
-            bufferBarrier.size = vkbuff->capacity;
+            bufferBarrier.offset = offset;
+            bufferBarrier.size = size;
         }
 
         if (texture == nullptr && buffer == nullptr)

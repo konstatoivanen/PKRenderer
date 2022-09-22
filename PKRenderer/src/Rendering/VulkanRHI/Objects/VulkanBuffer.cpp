@@ -61,15 +61,9 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_mappedBuffer->EndMap(m_mapRange.region.srcOffset, m_mapRange.region.size);
         cmd->CopyBuffer(m_mappedBuffer->buffer, m_rawBuffer->buffer, 1, &m_mapRange.region);
 
-        VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER };
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.buffer = m_rawBuffer->buffer;
-        barrier.offset = m_mapRange.region.dstOffset;
-        barrier.size = m_mapRange.region.size;
-
+        auto srcFlags = MemoryAccessFlags::WriteTransfer | MemoryAccessFlags::StageTransfer;
+        auto dstFlags = MemoryAccessFlags::WriteTransfer;
+        
         if (!persistent)
         {
             m_mappedBuffer = nullptr;
@@ -78,6 +72,15 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             m_mapRange.ringOffset = (m_mapRange.ringOffset + m_rawBuffer->capacity) % m_mappedBuffer->capacity;
         }
+
+        VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER };
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.buffer = m_rawBuffer->buffer;
+        barrier.offset = m_mapRange.region.dstOffset;
+        barrier.size = m_mapRange.region.size;
 
         uint32_t dstStageMask = 0u;
 
@@ -109,6 +112,34 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             cmd->PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, dstStageMask, 0, 0, nullptr, 1, &barrier, 0, nullptr);
         }
+
+        /*
+        // @TODO Fix all stage mask not converting to vulkan correctly.
+        if ((m_usage & (BufferUsage::Vertex | BufferUsage::Index)) != 0)
+        {
+            dstFlags = dstFlags | MemoryAccessFlags::ReadVertex | MemoryAccessFlags::ReadIndex | MemoryAccessFlags::StageTransfer | MemoryAccessFlags::StageVertexInput;
+        }
+
+        if ((m_usage & BufferUsage::Constant) != 0)
+        {
+            dstFlags = dstFlags | MemoryAccessFlags::ReadConstant | MemoryAccessFlags::StageTransfer | MemoryAccessFlags::StageCompute | MemoryAccessFlags::StageAllGrahpics;
+        }
+
+        if ((m_usage & BufferUsage::Storage) != 0)
+        {
+            dstFlags = dstFlags | MemoryAccessFlags::ReadMemory | MemoryAccessFlags::StageTransfer | MemoryAccessFlags::StageCompute | MemoryAccessFlags::StageAllGrahpics;
+        }
+
+        if ((m_usage & BufferUsage::Indirect) != 0)
+        {
+            dstFlags = dstFlags | MemoryAccessFlags::ReadIndirect | MemoryAccessFlags::StageTransfer | MemoryAccessFlags::StageCompute | MemoryAccessFlags::StageAllGrahpics;
+        }
+
+        if ((dstFlags & MemoryAccessFlags::StageAllStages) != 0)
+        {
+            cmd->Barrier(this, m_mapRange.region.dstOffset, m_mapRange.region.size, srcFlags, dstFlags);
+        }
+        */
     }
 
     const void* VulkanBuffer::BeginRead(size_t offset, size_t size)
@@ -191,11 +222,10 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if ((m_usage & BufferUsage::PersistentStage) != 0)
         {
-            auto stagingName = std::string(m_name) + std::string(" (Staging Buffer)");
             m_mappedBuffer = new VulkanStagingBuffer(m_driver->device,
                                                      m_driver->allocator, 
                                                      VulkanBufferCreateInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size * PK_MAX_FRAMES_IN_FLIGHT),
-                                                     stagingName.c_str());
+                                                     (std::string(m_name) + std::string(" (Staging Buffer)")).c_str());
         }
 
         if ((m_usage & BufferUsage::Sparse) != 0)

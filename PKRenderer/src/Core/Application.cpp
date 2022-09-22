@@ -148,7 +148,7 @@ namespace PK::Core
         m_graphicsDriver = nullptr;
     }
 
-    void Application::Run()
+    void Application::Execute()
     {
         auto sequencer = GetService<Services::Sequencer>();
 

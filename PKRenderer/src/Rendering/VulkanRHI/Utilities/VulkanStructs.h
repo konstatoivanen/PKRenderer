@@ -1,5 +1,5 @@
 #pragma once
-#include "Utilities/IDObject.h"
+#include "Utilities/VersionedObject.h"
 #include "vulkan/vulkan.h"
 #include "VulkanMemory.h"
 #include "Rendering/Structs/ExecutionGate.h"
@@ -91,7 +91,7 @@ namespace PK::Rendering::VulkanRHI
         VkAccessFlags dstAccessMask = 0;
     };
 
-    struct IVulkanDisposable : public PK::Utilities::IDObject 
+    struct IVulkanDisposable : public PK::Utilities::VersionedObject 
     {
         virtual ~IVulkanDisposable() = 0 {};
     };
@@ -253,7 +253,7 @@ namespace PK::Rendering::VulkanRHI
         VkSampler sampler;
     };
 
-    struct VulkanBindHandle : PK::Utilities::IDObject
+    struct VulkanBindHandle : PK::Utilities::VersionedObject
     {
         union
         {

@@ -1410,7 +1410,7 @@
     <ClInclude Include="src\Rendering\Structs\ExecutionGate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utilities\IDObject.h">
+    <ClInclude Include="src\Utilities\VersionedObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utilities\PointerMap.h">

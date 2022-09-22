@@ -71,7 +71,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         PK_THROW_ERROR("Pipeline retrieval failed! Unknown shader type!");
     }
 
-    const VulkanPipeline* VulkanPipelineCache::GetComputePipeline(const IDHandle<VulkanShader>& shader)
+    const VulkanPipeline* VulkanPipelineCache::GetComputePipeline(const VersionHandle<VulkanShader>& shader)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
         auto iterator = m_computePipelines.find(shader);

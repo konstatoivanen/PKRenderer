@@ -54,7 +54,7 @@ namespace PK::Rendering::Objects
         virtual void Clear(Buffer* dst, size_t offset, size_t size, uint32_t value) = 0;
         virtual void Clear(Texture* dst, const Structs::TextureViewRange& range, const Math::uint4& value) = 0;
         
-        virtual void Barrier(const Texture* texture, const Structs::TextureViewRange& range, const Buffer* buffer, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags) = 0;
+        virtual void Barrier(const Texture* texture, const Structs::TextureViewRange& range, const Buffer* buffer, size_t offset, size_t size, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags) = 0;
 
         virtual void BeginDebugScope(const char* name, const Math::color& color) = 0;
         virtual void EndDebugScope() = 0;
@@ -114,6 +114,7 @@ namespace PK::Rendering::Objects
         void Barrier(const Texture* texture, const Structs::TextureViewRange& range, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
         void Barrier(const Texture* texture, uint16_t level, uint16_t layer, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
         void Barrier(const Buffer* buffer, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
+        void Barrier(const Buffer* buffer, size_t offset, size_t size, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
         void Barrier(Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
     };
 }

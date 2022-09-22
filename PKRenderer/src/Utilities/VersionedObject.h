@@ -4,10 +4,10 @@
 
 namespace PK::Utilities
 {
-    struct IDObject : public NoCopy
+    struct VersionedObject : public NoCopy
     {
-        IDObject() : m_version(++s_globalVersion) {}
-        virtual ~IDObject() = 0 {};
+        VersionedObject() : m_version(++s_globalVersion) {}
+        virtual ~VersionedObject() = 0 {};
 
         constexpr uint64_t Version() const { return m_version; }
         inline void IncrementVersion() { m_version = ++s_globalVersion; }
@@ -18,25 +18,25 @@ namespace PK::Utilities
     };
 
     template<typename T>
-    struct IDHandle
+    struct VersionHandle
     {
         const T* value;
         uint64_t version;
 
-        static_assert(std::is_base_of<IDObject, T>::value, "Template argument type does not derive from IDObject!");
+        static_assert(std::is_base_of<VersionedObject, T>::value, "Template argument type does not derive from IDObject!");
 
         struct Hash
         {
-            std::size_t operator()(const IDHandle& k) const noexcept
+            std::size_t operator()(const VersionHandle& k) const noexcept
             {
                 return k.version;
             }
         };
 
-        constexpr IDHandle() : value(nullptr), version(0ull) {}
-        constexpr IDHandle(const T* value) : value(value), version(value->Version()) {}
+        constexpr VersionHandle() : value(nullptr), version(0ull) {}
+        constexpr VersionHandle(const T* value) : value(value), version(value->Version()) {}
 
-        constexpr bool operator == (const IDHandle& r) const noexcept
+        constexpr bool operator == (const VersionHandle& r) const noexcept
         {
             return value == r.value && version == r.version;
         }

@@ -847,7 +847,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
             outflags |= VK_ACCESS_SHADER_READ_BIT;
         }
 
-        if ((flags & MemoryAccessFlags::ReadUniform) != 0)
+        if ((flags & MemoryAccessFlags::ReadConstant) != 0)
         {
             outflags |= VK_ACCESS_UNIFORM_READ_BIT;
         }

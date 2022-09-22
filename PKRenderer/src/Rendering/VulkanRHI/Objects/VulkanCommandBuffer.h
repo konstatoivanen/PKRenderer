@@ -15,6 +15,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     struct VulkanCommandBuffer : public CommandBuffer
     {
+        using CommandBuffer::Barrier;
+
         VulkanCommandBuffer() {}
 
         VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
@@ -66,7 +68,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         void Clear(Buffer* dst, size_t offset, size_t size, uint32_t value) override final;
         void Clear(Texture* dst, const TextureViewRange& range, const uint4& value) override final;
 
-        void Barrier(const Texture* texture, const TextureViewRange& range, const Buffer* buffer, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) override final;
+        void Barrier(const Texture* texture, const TextureViewRange& range, const Buffer* buffer, size_t offset, size_t size, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) override final;
 
         void BeginDebugScope(const char* name, const Math::color& color) override final;
         void EndDebugScope() override final;
