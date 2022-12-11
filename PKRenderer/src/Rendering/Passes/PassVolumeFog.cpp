@@ -20,7 +20,8 @@ namespace PK::Rendering::Passes
         TextureDescriptor descriptor;
         descriptor.samplerType = SamplerType::Sampler3D;
         descriptor.format = TextureFormat::RGBA16F;
-        descriptor.sampler.filter = FilterMode::Trilinear;
+        descriptor.sampler.filterMin = FilterMode::Trilinear;
+        descriptor.sampler.filterMag = FilterMode::Trilinear;
         descriptor.sampler.wrap[0] = WrapMode::Clamp;
         descriptor.sampler.wrap[1] = WrapMode::Clamp;
         descriptor.sampler.wrap[2] = WrapMode::Clamp;

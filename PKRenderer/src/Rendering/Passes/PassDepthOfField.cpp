@@ -28,7 +28,8 @@ namespace PK::Rendering::Passes
         descriptor.resolution.y = config->InitialHeight / 2;
         descriptor.layers = 3;
         descriptor.usage = TextureUsage::RTColorSample;
-        descriptor.sampler.filter = FilterMode::Bilinear;
+        descriptor.sampler.filterMin = FilterMode::Bilinear;
+        descriptor.sampler.filterMag = FilterMode::Bilinear;
         m_renderTarget = Texture::Create(descriptor, "Depth Of Field Texture");
         m_autoFocusParams = Buffer::CreateStorage(BufferLayout({ {ElementType::Float2, "PARAMS"} }), 1, BufferUsage::None, "Auto Focus Parameters");
 

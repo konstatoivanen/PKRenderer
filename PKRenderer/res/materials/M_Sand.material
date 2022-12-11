@@ -22,7 +22,7 @@ Material:
             Value: 1
         _Roughness:
             Type: float
-            Value: 1.3
+            Value: 1.0
         _Occlusion:
             Type: float
             Value: 0.5

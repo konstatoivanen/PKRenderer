@@ -6,7 +6,8 @@ namespace PK::Rendering::Structs
 {
     struct SamplerDescriptor
     {
-        FilterMode filter = FilterMode::Point;
+        FilterMode filterMin = FilterMode::Point;
+        FilterMode filterMag = FilterMode::Point;
         WrapMode wrap[3] = { WrapMode::Clamp, WrapMode::Clamp, WrapMode::Clamp };
         Comparison comparison = Comparison::Off;
         BorderColor borderColor = BorderColor::FloatClear;

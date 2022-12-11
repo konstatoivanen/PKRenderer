@@ -13,26 +13,31 @@ namespace PK::Rendering::Passes
 
     PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
-        m_computeFade = assetDatabase->Find<Shader>("CS_SceneGI_Fade");
+        m_computeClear = assetDatabase->Find<Shader>("CS_SceneGI_Clear");
         m_computeMipmap = assetDatabase->Find<Shader>("CS_SceneGI_Mipmap");
         m_computeBakeGI = assetDatabase->Find<Shader>("CS_SceneGI_Bake");
         m_computeMask = assetDatabase->Find<Shader>("CS_SceneGI_Mask");
 
-        uint3 resolution = { 256u, 128u, 256u };
-
         TextureDescriptor descr{};
         descr.samplerType = SamplerType::Sampler3D;
         descr.format = TextureFormat::RGBA16;
-        descr.sampler.filter = FilterMode::Trilinear;
+        descr.sampler.filterMin = FilterMode::Trilinear;
+        descr.sampler.filterMag = FilterMode::Trilinear;
         descr.sampler.wrap[0] = WrapMode::Border;
         descr.sampler.wrap[1] = WrapMode::Border;
         descr.sampler.wrap[2] = WrapMode::Border;
         descr.sampler.borderColor = BorderColor::FloatClear;
         descr.sampler.mipMax = 6.0f;
-        descr.resolution = resolution;
+        descr.resolution = { 256u, 128u, 256u };
         descr.levels = 7u;
         descr.usage = TextureUsage::Sample | TextureUsage::Storage;
         m_voxels = Texture::Create(descr, "GI Voxel Volume");
+
+        descr.format = TextureFormat::R8UI;
+        descr.sampler.borderColor = BorderColor::IntClear;
+        descr.levels = 1u;
+        descr.sampler.mipMax = 0.0f;
+        m_voxelMask = Texture::Create(descr, "GI Voxel Volume Mask");
 
         descr.samplerType = SamplerType::Sampler2D;
         descr.format = TextureFormat::R8UI;
@@ -42,7 +47,8 @@ namespace PK::Rendering::Passes
 
         descr.samplerType = SamplerType::Sampler2DArray;
         descr.format = TextureFormat::RGBA16F;
-        descr.sampler.filter = FilterMode::Bilinear;
+        descr.sampler.filterMin = FilterMode::Bilinear;
+        descr.sampler.filterMag = FilterMode::Bilinear;
         descr.sampler.wrap[0] = WrapMode::Clamp;
         descr.sampler.wrap[1] = WrapMode::Clamp;
         descr.sampler.wrap[2] = WrapMode::Clamp;
@@ -54,6 +60,7 @@ namespace PK::Rendering::Passes
 
         auto cmd = GraphicsAPI::GetCommandBuffer();
         auto hash = HashCache::Get();
+        cmd->SetImage(hash->pk_SceneGI_VolumeMaskWrite, m_voxelMask.get());
         cmd->SetImage(hash->pk_SceneGI_VolumeWrite, m_voxels.get());
         cmd->SetTexture(hash->pk_SceneGI_VolumeRead, m_voxels.get());
         cmd->SetImage(hash->pk_ScreenGI_Mask, m_mask.get());
@@ -117,10 +124,6 @@ namespace PK::Rendering::Passes
 
         auto volres = m_voxels->GetResolution();
 
-        cmd->SetImage(hash->_DestinationTex, m_voxels.get(), 0, 0);
-        cmd->Dispatch(m_computeFade, { volres.x / 8u, volres.y / 8u, volres.z / 8u });
-        cmd->Barrier(m_voxels.get(), 0, 0, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::FragmentReadWrite);
-
         uint4 viewports[3] =
         {
             {0u, 0u, volres.x, volres.y },
@@ -133,6 +136,14 @@ namespace PK::Rendering::Passes
         cmd->SetScissor(viewports[m_rasterAxis]);
 
         batcher->Render(cmd, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);
+
+        // Clear transparencies every axis cycle
+        if (m_rasterAxis == 0)
+        {
+            cmd->SetImage(hash->_DestinationTex, m_voxels.get(), 0, 0);
+            cmd->Dispatch(m_computeClear, { volres.x / 8u, volres.y / 8u, volres.z / 8u });
+            cmd->Barrier(m_voxels.get(), 0, 0, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::FragmentReadWrite);
+        }
 
         cmd->SetTexture(hash->_SourceTex, m_voxels.get());
 

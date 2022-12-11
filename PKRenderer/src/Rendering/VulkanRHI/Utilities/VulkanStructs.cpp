@@ -468,11 +468,11 @@ namespace PK::Rendering::VulkanRHI
         info.anisotropyEnable = descriptor.anisotropy > 0.0f ? VK_TRUE : VK_FALSE;
         info.unnormalizedCoordinates = !descriptor.normalized;
         info.borderColor = EnumConvert::GetBorderColor(descriptor.borderColor);
-        info.mipmapMode = (uint32_t)descriptor.filter > (uint32_t)FilterMode::Bilinear ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        info.mipmapMode = (uint32_t)descriptor.filterMin > (uint32_t)FilterMode::Bilinear ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
         info.compareEnable = descriptor.comparison != Comparison::Off ? VK_TRUE : VK_FALSE;
         info.compareOp = EnumConvert::GetCompareOp(descriptor.comparison);
-        info.magFilter = EnumConvert::GetFilterMode(descriptor.filter);
-        info.minFilter = EnumConvert::GetFilterMode(descriptor.filter);
+        info.magFilter = EnumConvert::GetFilterMode(descriptor.filterMag);
+        info.minFilter = EnumConvert::GetFilterMode(descriptor.filterMin);
 
         if (info.unnormalizedCoordinates)
         {

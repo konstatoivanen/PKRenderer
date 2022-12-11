@@ -1957,12 +1957,12 @@
     <None Include="res\textures\environment\T_Plaster_H.ktx2" />
     <None Include="res\textures\environment\T_Plaster_N.ktx2" />
     <None Include="res\textures\environment\T_Plaster_S.ktx2" />
-    <None Include="res\shaders\CS_SceneGI_Fade.shader" />
     <None Include="res\models\MDL_Cloth.mdl.pkmeta" />
     <None Include="res\models\MDL_Columns.mdl.pkmeta" />
     <None Include="res\models\MDL_Rocks.mdl.pkmeta" />
     <None Include="res\models\MDL_Spiral.mdl.pkmeta" />
     <None Include="res\shaders\CS_SceneGI_Mask.shader" />
+    <None Include="res\shaders\CS_SceneGI_Clear.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

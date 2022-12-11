@@ -20,7 +20,8 @@ namespace PK::Rendering::Passes
         descriptor.levels = 6;
         descriptor.resolution.x = initialWidth / 2;
         descriptor.resolution.y = initialWidth / 2;
-        descriptor.sampler.filter = FilterMode::Trilinear;
+        descriptor.sampler.filterMin = FilterMode::Trilinear;
+        descriptor.sampler.filterMag = FilterMode::Trilinear;
 
         m_bloomTexture = Texture::Create(descriptor, "Bloom Texture");
         m_computeBloom = assetDatabase->Find<Shader>("CS_Bloom");

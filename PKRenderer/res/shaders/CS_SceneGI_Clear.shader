@@ -10,13 +10,16 @@ void main()
 {
     float3 worldpos = VoxelToWorldSpace(int3(gl_GlobalInvocationID));
 
-    if (!WorldToClipSpaceCull(worldpos, 0.05f))
+    if (!WorldToClipSpaceCull(worldpos, 0.0f))
     {
         return;
     }
 
-    float4 value = imageLoad(_DestinationTex, int3(gl_GlobalInvocationID));
-    value.rgb *= value.a * pk_SceneGI_Fade;
-    value.rgb = floor(value.rgb * 0xFFFF.xxx) / 0xFFFF.xxx;
-    imageStore(_DestinationTex, int3(gl_GlobalInvocationID), value);
+    uint writeCount = imageLoad(pk_SceneGI_VolumeMaskWrite, int3(gl_GlobalInvocationID)).x;
+    imageStore(pk_SceneGI_VolumeMaskWrite, int3(gl_GlobalInvocationID), uint4(0u));
+
+    if (writeCount == 0u)
+    {
+        imageStore(_DestinationTex, int3(gl_GlobalInvocationID), 0.0f.xxxx);
+    }
 }

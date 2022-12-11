@@ -74,7 +74,8 @@ namespace PK::Rendering::Passes
         descriptor.sampler.wrap[0] = WrapMode::Clamp;
         descriptor.sampler.wrap[1] = WrapMode::Clamp;
         descriptor.sampler.wrap[2] = WrapMode::Clamp;
-        descriptor.sampler.filter = FilterMode::Bilinear;
+        descriptor.sampler.filterMin = FilterMode::Bilinear;
+        descriptor.sampler.filterMag = FilterMode::Bilinear;
         descriptor.usage = TextureUsage::Sample;
         m_shadowmapTypeData[(int)LightType::Point].SceneRenderTarget = CreateRef<RenderTexture>(descriptor, "Point light Shadowmap Render Target");
         m_shadowmapTypeData[(int)LightType::Point].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_CUBE, hash->SHADOW_BLUR_PASS0 });
@@ -109,7 +110,8 @@ namespace PK::Rendering::Passes
         atlasDescriptor.sampler.wrap[0] = WrapMode::Clamp;
         atlasDescriptor.sampler.wrap[1] = WrapMode::Clamp;
         atlasDescriptor.sampler.wrap[2] = WrapMode::Clamp;
-        atlasDescriptor.sampler.filter = FilterMode::Bilinear;
+        atlasDescriptor.sampler.filterMin = FilterMode::Bilinear;
+        atlasDescriptor.sampler.filterMag = FilterMode::Bilinear;
         m_shadowmaps = Texture::Create(atlasDescriptor, "Shadowmap Atlas");
 
         TextureDescriptor imageDescriptor;
@@ -117,7 +119,8 @@ namespace PK::Rendering::Passes
         imageDescriptor.format = TextureFormat::R32UI;
         imageDescriptor.usage = TextureUsage::Storage;
         imageDescriptor.resolution = { GridSizeX, GridSizeY, GridSizeZ };
-        imageDescriptor.sampler.filter = FilterMode::Point;
+        imageDescriptor.sampler.filterMin = FilterMode::Point;
+        imageDescriptor.sampler.filterMag = FilterMode::Point;
         imageDescriptor.sampler.wrap[0] = WrapMode::Clamp;
         imageDescriptor.sampler.wrap[1] = WrapMode::Clamp;
         imageDescriptor.sampler.wrap[2] = WrapMode::Clamp;

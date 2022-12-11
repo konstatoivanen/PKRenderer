@@ -824,7 +824,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\models\MDL_Spiral.mdl" />
     <None Include="res\models\MDL_Spiral.mdl.pkmeta" />
     <None Include="res\shaders\CS_SceneGI_Bake.shader" />
-    <None Include="res\shaders\CS_SceneGI_Fade.shader" />
+    <None Include="res\shaders\CS_SceneGI_Clear.shader" />
     <None Include="res\shaders\CS_SceneGI_Mask.shader" />
     <None Include="res\shaders\CS_VolumeFogDepthMax.shader" />
     <None Include="res\shaders\CS_VolumeFogLightDensity.shader" />

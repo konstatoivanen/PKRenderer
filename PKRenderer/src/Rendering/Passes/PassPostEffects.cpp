@@ -50,7 +50,8 @@ namespace PK::Rendering::Passes
         descriptor.format = TextureFormat::RGBA8;
         descriptor.resolution.x = 256;
         descriptor.resolution.y = 256;
-        descriptor.sampler.filter = FilterMode::Bilinear;
+        descriptor.sampler.filterMin = FilterMode::Bilinear;
+        descriptor.sampler.filterMag = FilterMode::Bilinear;
         descriptor.sampler.wrap[0] = WrapMode::Repeat;
         descriptor.sampler.wrap[1] = WrapMode::Repeat;
         descriptor.sampler.wrap[2] = WrapMode::Repeat;

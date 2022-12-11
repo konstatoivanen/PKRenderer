@@ -51,6 +51,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_Bluenoise256)
         
         DECLARE_HASH(pk_SceneGI_Params)
+        DECLARE_HASH(pk_SceneGI_VolumeMaskWrite)
         DECLARE_HASH(pk_SceneGI_VolumeWrite)
         DECLARE_HASH(pk_SceneGI_VolumeRead)
         DECLARE_HASH(pk_ScreenGI_Write)

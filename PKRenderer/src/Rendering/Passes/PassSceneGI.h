@@ -18,12 +18,13 @@ namespace PK::Rendering::Passes
 
         private:
             Structs::FixedFunctionShaderAttributes m_voxelizeAttribs{};
-            Objects::Shader* m_computeFade = nullptr;
+            Objects::Shader* m_computeClear = nullptr;
             Objects::Shader* m_computeMipmap = nullptr;
             Objects::Shader* m_computeBakeGI = nullptr;
             Objects::Shader* m_computeMask = nullptr;
             Utilities::Ref<Objects::ConstantBuffer> m_parameters;
             Utilities::Ref<Objects::Texture> m_voxels;
+            Utilities::Ref<Objects::Texture> m_voxelMask;
             Utilities::Ref<Objects::Texture> m_screenSpaceGI;
             Utilities::Ref<Objects::Texture> m_mask;
             uint32_t m_checkerboardIndex = 0u;

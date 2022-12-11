@@ -31,14 +31,16 @@ namespace PK::Rendering
         descriptor.colorFormats[1] = TextureFormat::RGBA16F;
         descriptor.depthFormat = TextureFormat::Depth32F;
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
-        descriptor.sampler.filter = FilterMode::Bilinear;
+        descriptor.sampler.filterMin = FilterMode::Bilinear;
+        descriptor.sampler.filterMag = FilterMode::Bilinear;
         m_renderTarget = CreateRef<RenderTexture>(descriptor, "Scene Render Target");
 
         TextureDescriptor depthDescriptor{};
         depthDescriptor.resolution = { config->InitialWidth, config->InitialHeight, 1 };
         depthDescriptor.format = TextureFormat::Depth32F;
         depthDescriptor.usage = TextureUsage::RTDepthSample;
-        depthDescriptor.sampler.filter = FilterMode::Bilinear;
+        depthDescriptor.sampler.filterMin = FilterMode::Bilinear;
+        depthDescriptor.sampler.filterMag = FilterMode::Bilinear;
         m_depthPrevious = Texture::Create(depthDescriptor, "Previous Scene Depth Texture");
 
         auto hash = HashCache::Get();
@@ -88,6 +90,8 @@ namespace PK::Rendering
         sampler.anisotropy = 0.0f;
         sampler.mipMin = 0.0f;
         sampler.mipMax = 0.0f;
+        sampler.filterMin = FilterMode::Point;
+        sampler.filterMag = FilterMode::Bilinear;
         bluenoise->SetSampler(sampler);
 
         auto cmd = GraphicsAPI::GetCommandBuffer();

@@ -13,6 +13,7 @@ PK_DECLARE_CBUFFER(pk_SceneGI_Params, PK_SET_SHADER)
 	float pk_SceneGI_Fade; 
 };
 
+layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_SceneGI_VolumeMaskWrite;
 layout(rgba16, set = PK_SET_SHADER) uniform image3D pk_SceneGI_VolumeWrite;
 layout(rgba16, set = PK_SET_SHADER) uniform image2DArray pk_ScreenGI_Write;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_SceneGI_VolumeRead;
@@ -53,9 +54,16 @@ void StoreSceneGI(float3 worldposition, float4 color)
 	float4 value0 = imageLoad(pk_SceneGI_VolumeWrite, coord);
 	float4 value1 = float4(color.rgb / 128.0f, color.a);
 
+	value0.rgb *= value0.a * pk_SceneGI_Fade;
 	value1.rgb *= 1.0f - value0.a * pk_SceneGI_Fade;
+	
+	// Quantize colors down so that we don't get any lingering artifacts from dim light sources.
+	value0.rgb = floor(value0.rgb * 0xFFFF.xxx) / 0xFFFF.xxx;
+	value1.rgb = floor(value1.rgb * 0xFFFF.xxx) / 0xFFFF.xxx;
+	
 	value1.rgb += value0.rgb;
 
+	imageStore(pk_SceneGI_VolumeMaskWrite, coord, uint4(1u));
 	imageStore(pk_SceneGI_VolumeWrite, coord, value1); 
 }
 
