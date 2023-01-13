@@ -12,6 +12,7 @@
 #include "ECS/EntityDatabase.h"
 #include "ECS/Contextual/Engines/EngineCommandInput.h"
 #include "ECS/Contextual/Engines/EngineEditorCamera.h"
+#include "ECS/Contextual/Engines/EngineBuildAccelerationStructure.h"
 #include "ECS/Contextual/Engines/EngineUpdateTransforms.h"
 #include "ECS/Contextual/Engines/EnginePKAssetBuilder.h"
 #include "ECS/Contextual/Engines/EngineCull.h"
@@ -76,6 +77,7 @@ namespace PK::Core
         auto renderPipeline = m_services->Create<RenderPipeline>(assetDatabase, entityDb, sequencer, config);
         auto engineCommands = m_services->Create<ECS::Engines::EngineCommandInput>(assetDatabase, sequencer, time, entityDb, commandConfig);
         auto engineCull = m_services->Create<ECS::Engines::EngineCull>(entityDb);
+        auto engineBuildAccelerationStructure = m_services->Create<ECS::Engines::EngineBuildAccelerationStructure>(entityDb);
         auto engineDebug = m_services->Create<ECS::Engines::EngineDebug>(assetDatabase, entityDb, config);
         auto enginePKAssetBuilder = m_services->Create<ECS::Engines::EnginePKAssetBuilder>(arguments);
         auto engineScreenshot = m_services->Create<ECS::Engines::EngineScreenshot>();
@@ -125,7 +127,8 @@ namespace PK::Core
                 {
                     Step::Token<PK::ECS::Tokens::TokenCullFrustum>(engineCull),
                     Step::Token<PK::ECS::Tokens::TokenCullCascades>(engineCull),
-                    Step::Token<PK::ECS::Tokens::TokenCullCubeFaces>(engineCull)
+                    Step::Token<PK::ECS::Tokens::TokenCullCubeFaces>(engineCull),
+                    Step::Token<PK::ECS::Tokens::AccelerationStructureBuildToken>(engineBuildAccelerationStructure)
                 }
             },
             {

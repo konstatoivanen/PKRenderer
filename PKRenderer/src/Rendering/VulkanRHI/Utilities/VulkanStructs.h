@@ -54,6 +54,13 @@ namespace PK::Rendering::VulkanRHI
         const std::vector<const char*>* deviceExtensions;
     };
 
+    struct VulkanPhysicalDeviceProperties
+    {
+        VkPhysicalDeviceProperties properties;
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties;
+        VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties;
+    };
+
     struct VulkanBufferCreateInfo
     {
         VulkanBufferCreateInfo() {};
@@ -155,9 +162,10 @@ namespace PK::Rendering::VulkanRHI
         const VmaAllocator allocator;
         const VkBufferUsageFlags usage;
         const VkDeviceSize capacity;
+        VkDeviceAddress deviceAddress;
         VkBuffer buffer;
         VmaAllocation memory;
-        VmaAllocationInfo allocationInfo;
+        VmaAllocationInfo allocationInfo{};
     };
 
     struct VulkanRawImage : public IVulkanDisposable
@@ -177,14 +185,23 @@ namespace PK::Rendering::VulkanRHI
         uint32_t layers;
     };
 
-    struct VulkanTLAS : public IVulkanDisposable
+    struct VulkanRawAccelerationStructure : public IVulkanDisposable
     {
-        VulkanTLAS(VkDevice device, VmaAllocator allocator, const VkAccelerationStructureCreateInfoKHR& createInfo, const char* name);
-        ~VulkanTLAS();
+        VulkanRawAccelerationStructure(VkDevice device, 
+            VmaAllocator allocator, 
+            const VkAccelerationStructureGeometryKHR& geometryInfo,
+            const VkAccelerationStructureBuildRangeInfoKHR& rangeInfo,
+            const VkAccelerationStructureTypeKHR type,
+            const char* name);
+        ~VulkanRawAccelerationStructure();
 
         const VkDevice device;
-        const VulkanRawBuffer rawBuffer;
+        VulkanRawBuffer* rawBuffer;
+        VkDeviceSize scratchBufferSize;
+        VkDeviceAddress deviceAddress;
         VkAccelerationStructureKHR structure;
+        VkAccelerationStructureGeometryKHR geometryInfo;
+        VkAccelerationStructureBuildRangeInfoKHR rangeInfo;
     };
 
     struct VulkanShaderModule : public IVulkanDisposable
@@ -201,6 +218,7 @@ namespace PK::Rendering::VulkanRHI
     {
         VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo);
         VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkComputePipelineCreateInfo& createInfo);
+        VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkRayTracingPipelineCreateInfoKHR& createInfo);
         ~VulkanPipeline();
 
         const VkDevice device;
@@ -259,6 +277,7 @@ namespace PK::Rendering::VulkanRHI
         {
             VkImageView imageView = VK_NULL_HANDLE;
             VkBuffer buffer;
+            VkAccelerationStructureKHR accelerationStructure;
         };
 
         union

@@ -578,6 +578,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
             case Structs::ResourceType::DynamicConstantBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
             case Structs::ResourceType::DynamicStorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
             case Structs::ResourceType::InputAttachment: return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+            case Structs::ResourceType::AccelerationStructure: return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         }
 
         return VK_DESCRIPTOR_TYPE_MAX_ENUM;
@@ -596,6 +597,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
             case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC: return Structs::ResourceType::DynamicConstantBuffer;
             case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: return Structs::ResourceType::DynamicStorageBuffer;
             case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: return Structs::ResourceType::InputAttachment;
+            case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: return Structs::ResourceType::AccelerationStructure;
         }
 
         return Structs::ResourceType::Invalid;
@@ -611,6 +613,11 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
             case Structs::ShaderStage::Geometry: return VK_SHADER_STAGE_GEOMETRY_BIT;
             case Structs::ShaderStage::Fragment: return VK_SHADER_STAGE_FRAGMENT_BIT;
             case Structs::ShaderStage::Compute: return VK_SHADER_STAGE_COMPUTE_BIT;
+            case Structs::ShaderStage::RayGeneration: return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+            case Structs::ShaderStage::RayMiss: return VK_SHADER_STAGE_MISS_BIT_KHR;
+            case Structs::ShaderStage::RayClosestHit: return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+            case Structs::ShaderStage::RayAnyHit: return VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+            case Structs::ShaderStage::RayIntersection: return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
         }
 
         return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
@@ -622,6 +629,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
         {
             case Structs::ShaderType::Graphics: return VK_PIPELINE_BIND_POINT_GRAPHICS;
             case Structs::ShaderType::Compute: return VK_PIPELINE_BIND_POINT_COMPUTE;
+            case Structs::ShaderType::RayTracing: return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
         }
 
         return VK_PIPELINE_BIND_POINT_MAX_ENUM;
@@ -682,6 +690,31 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
         if ((pkStageFlags & (1 << (int)ShaderStage::Compute)) != 0)
         {
             flags |= VK_SHADER_STAGE_COMPUTE_BIT;
+        }
+
+        if ((pkStageFlags & (1 << (int)ShaderStage::RayGeneration)) != 0)
+        {
+            flags |= VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+        }
+
+        if ((pkStageFlags & (1 << (int)ShaderStage::RayMiss)) != 0)
+        {
+            flags |= VK_SHADER_STAGE_MISS_BIT_KHR;
+        }
+
+        if ((pkStageFlags & (1 << (int)ShaderStage::RayClosestHit)) != 0)
+        {
+            flags |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+        }
+
+        if ((pkStageFlags & (1 << (int)ShaderStage::RayAnyHit)) != 0)
+        {
+            flags |= VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+        }
+
+        if ((pkStageFlags & (1 << (int)ShaderStage::RayIntersection)) != 0)
+        {
+            flags |= VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
         }
 
         return (VkShaderStageFlagBits)flags;
@@ -820,6 +853,11 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
             outflags |= VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
         }
 
+        if ((flags & MemoryAccessFlags::StageRayTracing) != 0)
+        {
+            outflags |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+        }
+
         if ((flags & MemoryAccessFlags::StageTransfer) != 0)
         {
             outflags |= VK_PIPELINE_STAGE_TRANSFER_BIT;
@@ -928,5 +966,19 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
         }
 
         return (VkAccessFlagBits)outflags;
+    }
+
+    VkRayTracingShaderGroupTypeKHR GetRayTracingStageGroupType(Rendering::Structs::ShaderStage stage)
+    {
+        switch (stage)
+        {
+            case ShaderStage::RayGeneration:
+            case ShaderStage::RayMiss: return VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+            case ShaderStage::RayClosestHit:
+            case ShaderStage::RayAnyHit: return VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+            case ShaderStage::RayIntersection: return VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
+        }
+
+        return VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
     }
 }

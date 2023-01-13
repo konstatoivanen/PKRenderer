@@ -50,7 +50,7 @@ namespace PK::Rendering::Objects
 		}
 	}
 
-	void Material::Import(const char* filepath, void* pParams)
+	void Material::Import(const char* filepath)
     {
         YAML::Node root = YAML::LoadFile(filepath);
 

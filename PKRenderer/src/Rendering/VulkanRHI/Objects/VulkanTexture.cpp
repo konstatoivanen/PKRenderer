@@ -20,13 +20,13 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     VulkanTexture::~VulkanTexture()
     {
-        Dispose();
+        Dispose(m_driver->GetPrimaryCommandBuffer()->GetOnCompleteGate());
     }
 
 
 	void VulkanTexture::SetData(const void* data, size_t size, uint32_t level, uint32_t layer) const
     {
-        auto cmd = m_driver->commandBufferPool->GetCurrent();
+        auto* cmd = m_driver->commandBufferPool->GetCurrent();
         
         const auto* stage = m_driver->stagingBufferCache->GetBuffer(size, cmd->GetOnCompleteGate());
         stage->SetData(data, size);
@@ -59,9 +59,11 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    void VulkanTexture::Import(const char* filepath, void* pParams)
+    void VulkanTexture::Import(const char* filepath)
     {
-        Dispose();
+        auto cmd = m_driver->commandBufferPool->GetCurrent();
+
+        Dispose(cmd->GetOnCompleteGate());
 
         m_name = GetFileName();
 
@@ -107,12 +109,11 @@ namespace PK::Rendering::VulkanRHI::Objects
 		descriptor.sampler.wrap[1] = WrapMode::Repeat;
 		descriptor.sampler.wrap[2] = WrapMode::Repeat;
 
-		Rebuild(descriptor);
+        Rebuild(descriptor);
 
 		ktx_uint8_t* ktxTextureData = ktxTexture_GetData(ktxTexture(ktxTex2));
 		ktx_size_t ktxTextureSize = ktxTex2->dataSize;
 
-        auto cmd = m_driver->commandBufferPool->GetCurrent();
 		auto stage = m_driver->stagingBufferCache->GetBuffer(ktxTextureSize, cmd->GetOnCompleteGate());
         
 		stage->SetData(ktxTextureData, ktxTextureSize);
@@ -199,7 +200,9 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanTexture::Rebuild(const TextureDescriptor& descriptor)
     {
-        Dispose();
+        auto* cmd = m_driver->commandBufferPool->GetCurrent();
+
+        Dispose(cmd->GetOnCompleteGate());
 
         m_descriptor = descriptor;
         m_rawImage = new VulkanRawImage(m_driver->device, m_driver->allocator, VulkanImageCreateInfo(descriptor), m_name.c_str());
@@ -222,7 +225,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto layout = EnumConvert::GetImageLayout(descriptor.usage);
         auto optimalLayout = EnumConvert::GetImageLayout(descriptor.usage, true);
         VulkanLayoutTransition transition(m_rawImage->image, VK_IMAGE_LAYOUT_UNDEFINED, layout, optimalLayout, { (uint32_t)m_rawImage->aspect, 0, m_rawImage->levels, 0, m_defaultViewRange.layers });
-        m_driver->commandBufferPool->GetCurrent()->TransitionImageLayout(transition);
+        cmd->TransitionImageLayout(transition);
     }
 
     TextureViewRange VulkanTexture::NormalizeViewRange(const TextureViewRange& range) const
@@ -351,10 +354,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         return viewValue;
 	}
 
-    void VulkanTexture::Dispose()
+    void VulkanTexture::Dispose(const ExecutionGate& gate)
     {
-        auto gate = m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate();
-
         for (auto& kv : m_imageViews)
         {
             m_driver->disposer->Dispose(kv.second->view, gate);

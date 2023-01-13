@@ -29,10 +29,8 @@ namespace PK::Rendering::Passes
         m_passDiskblur = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_BLUR"));
     }
     
-    void PassBloom::Execute(RenderTexture* source, MemoryAccessFlags lastAccess)
+    void PassBloom::Execute(Objects::CommandBuffer* cmd, RenderTexture* source, MemoryAccessFlags lastAccess)
     {
-        auto cmd = GraphicsAPI::GetCommandBuffer();
-
         auto color = source->GetColor(0);
         auto bloom = m_bloomTexture.get();
 

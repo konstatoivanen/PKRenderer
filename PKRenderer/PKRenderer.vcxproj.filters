@@ -1431,6 +1431,21 @@
     <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanExtensions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Rendering\Objects\AccelerationStructure.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanAccelerationStructure.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Engines\EngineBuildAccelerationStructure.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Contextual\Tokens\AccelerationStructureBuildToken.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Objects\RayTracingAccelerationStructure.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -1963,6 +1978,7 @@
     <None Include="res\models\MDL_Spiral.mdl.pkmeta" />
     <None Include="res\shaders\CS_SceneGI_Mask.shader" />
     <None Include="res\shaders\CS_SceneGI_Clear.shader" />
+    <None Include="res\shaders\RS_SceneGI_Gather.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
@@ -2194,6 +2210,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Utilities\FileIO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Objects\AccelerationStructure.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanAccelerationStructure.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\Contextual\Engines\EngineBuildAccelerationStructure.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

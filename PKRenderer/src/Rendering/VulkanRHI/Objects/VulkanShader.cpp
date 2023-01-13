@@ -1,6 +1,8 @@
 #include "PrecompiledHeader.h"
 #include "VulkanShader.h"
+#include "Math/FunctionsMisc.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
+#include "Rendering/VulkanRHI/Utilities/VulkanExtensions.h"
 #include "Rendering/VulkanRHI/VulkanDriver.h"
 #include "Rendering/GraphicsAPI.h"
 #include <PKAssets/PKAssetLoader.h>
@@ -96,7 +98,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
 
         m_pipelineLayout = layoutCache->GetPipelineLayout(pipelineKey);
-        m_type = m_modules[(int)ShaderStage::Compute] != nullptr ? ShaderType::Compute : ShaderType::Graphics;
+        m_type = m_modules[(int)ShaderStage::Compute] != nullptr ? ShaderType::Compute : m_modules[(int)ShaderStage::RayGeneration] ? ShaderType::RayTracing : ShaderType::Graphics;
     }
 
     VulkanShader::~VulkanShader()
@@ -107,14 +109,81 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanShader::Dispose()
     {
         auto driver = GraphicsAPI::GetActiveDriver<VulkanDriver>();
+        auto gate = driver->GetPrimaryCommandBuffer()->GetOnCompleteGate();
 
         for (auto& module : m_modules)
         {
             if (module != nullptr)
             {
-                driver->disposer->Dispose(module, driver->commandBufferPool->GetCurrent()->GetOnCompleteGate());
+                driver->disposer->Dispose(module, gate);
                 module = nullptr;
             }
         }
+    }
+
+    Structs::ShaderBindingTableInfo VulkanShader::GetShaderBindingTableInfo() const
+    {
+        ShaderBindingTableInfo info{};
+        
+        auto driver = GraphicsAPI::GetActiveDriver<VulkanDriver>();
+
+        const auto& deviceProperties = driver->physicalDeviceProperties;
+        const auto handleSize = deviceProperties.rayTracingProperties.shaderGroupHandleSize;
+        const auto handleAlignment = deviceProperties.rayTracingProperties.shaderGroupHandleAlignment;
+        const auto tableAlignment = deviceProperties.rayTracingProperties.shaderGroupBaseAlignment;
+
+        info.handleSize = handleSize;
+        info.handleSizeAligned = PK::Math::Functions::GetAlignedSize(handleSize, handleAlignment);
+        info.tableAlignment = tableAlignment;
+        info.totalTableSize = 0u;
+
+        RayTracingShaderGroup currentGroup = RayTracingShaderGroup::MaxCount;
+
+        for (auto i = (uint32_t)ShaderStage::RayGeneration; i < (uint32_t)ShaderStage::MaxCount; ++i)
+        {
+            if (m_modules[i] == nullptr)
+            {
+                continue;
+            }
+
+            if (PK_SHADER_STAGE_RAYTRACING_GROUP[i] != currentGroup)
+            {
+                currentGroup = PK_SHADER_STAGE_RAYTRACING_GROUP[i];
+                info.totalTableSize = PK::Math::Functions::GetAlignedSize(info.totalTableSize, tableAlignment);
+                info.byteOffsets[(uint32_t)currentGroup] = info.totalTableSize;
+                info.byteStrides[(uint32_t)currentGroup] = info.handleSizeAligned;
+                info.offsets[(uint32_t)currentGroup] = info.totalHandleCount;
+                info.layouts[(uint32_t)currentGroup] = nullptr;
+            }
+
+            info.counts[(uint32_t)currentGroup]++;
+            info.totalHandleCount++;
+            info.totalTableSize += info.handleSizeAligned;
+        }
+
+        const uint32_t sbtSize = info.totalTableSize;
+        const uint32_t maxSize = sizeof(info.handleData);
+
+        PK_THROW_ASSERT(sbtSize, "SBT has no data!");
+        PK_THROW_ASSERT(sbtSize <= maxSize, "SBT is too big to fit to static memory");
+
+        auto pipeline = driver->pipelineCache->GetRayTracingPipeline(this);
+
+        for (auto i = 0u; i < (uint32_t)RayTracingShaderGroup::MaxCount; ++i)
+        {
+            if (info.counts[i] == 0)
+            {
+                continue;
+            }
+
+            VK_ASSERT_RESULT_CTX(vkGetRayTracingShaderGroupHandlesKHR(driver->device, 
+                pipeline->pipeline, 
+                info.offsets[i], 
+                info.counts[i], 
+                info.counts[i] * info.handleSizeAligned, 
+                info.handleData + info.byteOffsets[i]), "Failed to get ray tracing shader group handles");
+        }
+
+        return info;
     }
 }

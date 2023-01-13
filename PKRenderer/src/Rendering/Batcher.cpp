@@ -86,7 +86,7 @@ namespace PK::Rendering
         m_drawCalls.clear();
     }
 
-    void Batcher::EndCollectDrawCalls()
+    void Batcher::EndCollectDrawCalls(Objects::CommandBuffer* cmd)
     {
         if (m_drawInfos.size() == 0)
         {
@@ -229,7 +229,6 @@ namespace PK::Rendering
 
         m_indirectArguments->EndWrite();
 
-        auto cmd = GraphicsAPI::GetCommandBuffer();
         auto hash = HashCache::Get();
         cmd->SetBuffer(hash->pk_Instancing_Transforms, m_matrices.get());
         cmd->SetBuffer(hash->pk_Instancing_Indices, m_indices.get());

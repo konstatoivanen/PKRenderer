@@ -79,5 +79,6 @@ namespace PK::Rendering::VulkanRHI::Systems
             std::vector<ExtinctPool> m_extinctPools;
             std::vector<VkDescriptorImageInfo> m_writeImages;
             std::vector<VkDescriptorBufferInfo> m_writeBuffers;
+            std::vector<VkWriteDescriptorSetAccelerationStructureKHR> m_writeAccerationStructures;
     };
 }

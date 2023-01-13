@@ -170,4 +170,22 @@ namespace PK::Rendering::Structs
             uint32_t m_alignedStride = 0;
             uint32_t m_paddedStride = 0;
     };
+
+    struct ShaderBindingTableInfo
+    {
+        enum { HandleMaxSize = 64 };
+        enum { MaxHandles = 8 };
+
+        uint8_t handleData[HandleMaxSize * MaxHandles];
+        uint16_t byteOffsets[(uint32_t)RayTracingShaderGroup::MaxCount];
+        uint16_t byteStrides[(uint32_t)RayTracingShaderGroup::MaxCount];
+        uint8_t offsets[(uint32_t)RayTracingShaderGroup::MaxCount];
+        uint8_t counts[(uint32_t)RayTracingShaderGroup::MaxCount];
+        const ResourceLayout* layouts[(uint32_t)RayTracingShaderGroup::MaxCount];
+        uint16_t handleSize;
+        uint16_t handleSizeAligned;
+        uint16_t tableAlignment;
+        uint16_t totalTableSize;
+        uint16_t totalHandleCount;
+    };
 }

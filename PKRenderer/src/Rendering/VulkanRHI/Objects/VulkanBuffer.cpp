@@ -22,7 +22,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     VulkanBuffer::~VulkanBuffer()
     {
-        Dispose();
+        Dispose(m_driver->GetPrimaryCommandBuffer()->GetOnCompleteGate());
 
         // Borrowed staging buffer not returned :/
         if (m_mappedBuffer != nullptr)
@@ -40,7 +40,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         if ((m_usage & BufferUsage::PersistentStage) == 0)
         {
             PK_THROW_ASSERT(m_mappedBuffer == nullptr, "Trying to begin a new mapping for a buffer that is already being mapped!");
-            m_mappedBuffer = m_driver->stagingBufferCache->GetBuffer(size, m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate());
+            m_mappedBuffer = m_driver->stagingBufferCache->GetBuffer(size, m_driver->GetPrimaryCommandBuffer()->GetOnCompleteGate());
             m_mapRange.region.srcOffset = 0ull;
             return m_mappedBuffer->BeginMap(0ull);
         }
@@ -213,7 +213,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             m_usage = m_usage & ~((uint32_t)BufferUsage::PersistentStage);
         }
 
-        Dispose();
+        Dispose(m_driver->GetPrimaryCommandBuffer()->GetOnCompleteGate());
 
         m_count = count;
         auto size = m_layout.GetStride(m_usage) * count;
@@ -236,7 +236,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         GetBindHandle({ 0, m_count });
     }
 
-    void VulkanBuffer::Dispose()
+    void VulkanBuffer::Dispose(const ExecutionGate& gate)
     {
         auto values = m_bindHandles.GetValues();
 
@@ -249,19 +249,19 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if (m_pageTable != nullptr)
         {
-            m_driver->disposer->Dispose(m_pageTable, m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate());
+            m_driver->disposer->Dispose(m_pageTable, gate);
             m_pageTable = nullptr;
         }
 
         if (m_rawBuffer != nullptr)
         {
-            m_driver->disposer->Dispose(m_rawBuffer, m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate());
+            m_driver->disposer->Dispose(m_rawBuffer, gate);
             m_rawBuffer = nullptr;
         }
 
         if (m_mappedBuffer != nullptr && (m_usage & BufferUsage::PersistentStage) != 0)
         {
-            m_driver->disposer->Dispose(m_mappedBuffer, m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate());
+            m_driver->disposer->Dispose(m_mappedBuffer, gate);
             m_mappedBuffer = nullptr;
         }
     }

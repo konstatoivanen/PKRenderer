@@ -34,4 +34,5 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
     VkFrontFace GetFrontFace(Rendering::Structs::FrontFace face);
     VkPipelineStageFlagBits GetPipelineStageFlags(Rendering::Structs::MemoryAccessFlags flags);
     VkAccessFlagBits GetAccessFlags(Rendering::Structs::MemoryAccessFlags flags);
+    VkRayTracingShaderGroupTypeKHR GetRayTracingStageGroupType(Rendering::Structs::ShaderStage stage);
 }

@@ -44,7 +44,7 @@ namespace PK::Rendering::Objects
             Mesh(const Utilities::Ref<Buffer>& vertexBuffer, const Utilities::Ref<Buffer>& indexBuffer);
             Mesh(const Utilities::Ref<Buffer>& vertexBuffer, const Utilities::Ref<Buffer>& indexBuffer, const Math::BoundingBox& bounds);
 
-            void Import(const char* filepath, void* pParams) override final;
+            void Import(const char* filepath) override final;
 
             /// Allocates a submesh range by appending submitted data to the first assigned vertex buffer.
             /// - Requires the first vertex buffer to be virtual.

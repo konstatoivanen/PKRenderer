@@ -14,10 +14,12 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             void Dispose() override final;
 
-            const VulkanShaderModule* GetModule(uint32_t index) const { return m_modules[index] != nullptr ? m_modules[index] : nullptr; }
+            const VulkanShaderModule* GetModule(uint32_t index) const { return m_modules[index]; }
             constexpr const VulkanDescriptorSetLayout* GetDescriptorSetLayout(uint32_t index) const { return m_descriptorSetLayouts[index]; }
             constexpr const VulkanPipelineLayout* GetPipelineLayout() const { return m_pipelineLayout; }
             constexpr const uint32_t GetDescriptorSetCount() const { return m_descriptorSetCount; }
+
+            Structs::ShaderBindingTableInfo GetShaderBindingTableInfo() const override final;
 
         private:
             const VkDevice m_device;

@@ -3,6 +3,7 @@
 #include "Utilities/Handle.h"
 #include "Rendering/VulkanRHI/Objects/VulkanBuffer.h"
 #include "Rendering/VulkanRHI/Objects/VulkanTexture.h"
+#include "Rendering/VulkanRHI/Objects/VulkanAccelerationStructure.h"
 #include "Rendering/VulkanRHI/VulkanWindow.h"
 #include "Rendering/VulkanRHI/Objects/VulkanBindArray.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanExtensions.h"
@@ -132,6 +133,17 @@ namespace PK::Rendering::VulkanRHI::Objects
         renderState->SetResource(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, false)));
     }
 
+    void VulkanCommandBuffer::SetAccelerationStructure(uint32_t nameHashId, AccelerationStructure* structure)
+    {
+        renderState->SetResource(nameHashId, Handle(structure->GetNative<VulkanAccelerationStructure>()->GetBindHandle()));
+    }
+
+    void VulkanCommandBuffer::SetShaderBindingTable(Structs::RayTracingShaderGroup group, const Buffer* buffer, size_t offset, size_t stride, size_t size)
+    {
+        auto address = buffer->GetNative<VulkanBuffer>()->GetRaw()->deviceAddress;
+        renderState->SetShaderBindingTableAddress(group, address + offset, stride, size);
+    }
+
     void VulkanCommandBuffer::SetConstant(uint32_t nameHashId, const void* data, uint32_t size)
     {
         renderState->SetResource<char>(nameHashId, reinterpret_cast<const char*>(data), size);
@@ -166,6 +178,21 @@ namespace PK::Rendering::VulkanRHI::Objects
         EndRenderPass();
         ValidatePipeline();
         vkCmdDispatch(commandBuffer, groupCount.x, groupCount.y, groupCount.z);
+    }
+
+    void VulkanCommandBuffer::DispatchRays(Math::uint3 dimensions)
+    {
+        EndRenderPass();
+        ValidatePipeline();
+        auto bundle = renderState->GetShaderBindingTableBundle();
+        vkCmdTraceRaysKHR(commandBuffer, 
+                          bundle.addresses + (uint32_t)Structs::RayTracingShaderGroup::RayGeneration, 
+                          bundle.addresses + (uint32_t)Structs::RayTracingShaderGroup::Miss,
+                          bundle.addresses + (uint32_t)Structs::RayTracingShaderGroup::Hit,
+                          bundle.addresses + (uint32_t)Structs::RayTracingShaderGroup::Callable,
+                          dimensions.x, 
+                          dimensions.y, 
+                          dimensions.z);
     }
 
 

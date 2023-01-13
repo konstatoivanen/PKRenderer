@@ -2,6 +2,7 @@
 #include "Utilities/NoCopy.h"
 #include "Rendering/Objects/RenderTexture.h"
 #include "Rendering/Objects/Shader.h"
+#include "Rendering/Objects/CommandBuffer.h"
 
 namespace PK::Rendering::Passes
 {
@@ -9,7 +10,7 @@ namespace PK::Rendering::Passes
     {
         public:
             PassBloom(Core::Services::AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight);
-            void Execute(Objects::RenderTexture* source, Structs::MemoryAccessFlags lastAccess);
+            void Execute(Objects::CommandBuffer* cmd, Objects::RenderTexture* source, Structs::MemoryAccessFlags lastAccess);
 
             Objects::Texture* GetTexture() { return m_bloomTexture.get(); }
 

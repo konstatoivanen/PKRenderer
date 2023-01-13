@@ -37,10 +37,9 @@ namespace PK::Rendering::Passes
         m_passDiskblur = m_shaderBlur->GetVariantIndex(StringHashID::StringToID("PASS_DISKBLUR"));
     }
 
-    void PassDepthOfField::Execute(RenderTexture* destination, MemoryAccessFlags lastAccess)
+    void PassDepthOfField::Execute(Objects::CommandBuffer* cmd, RenderTexture* destination, MemoryAccessFlags lastAccess)
     {
         auto hash = HashCache::Get();
-        auto cmd = GraphicsAPI::GetCommandBuffer();
         auto autoFocusParams = m_autoFocusParams.get();
         auto renderTarget = m_renderTarget.get();
         auto source = destination->GetColor(0);

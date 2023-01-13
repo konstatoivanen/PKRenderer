@@ -148,7 +148,7 @@ namespace PK::Rendering::VulkanRHI
         VK_ASSERT_RESULT_CTX(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Failed to create logical device!");
 
         VmaAllocatorCreateInfo allocatorInfo{};
-        allocatorInfo.vulkanApiVersion = Utilities::VulkanGetPhysicalDeviceProperties(physicalDevice).apiVersion;
+        allocatorInfo.vulkanApiVersion = physicalDeviceProperties.properties.apiVersion;
         allocatorInfo.physicalDevice = physicalDevice;
         allocatorInfo.device = device;
         allocatorInfo.instance = instance;
@@ -169,6 +169,7 @@ namespace PK::Rendering::VulkanRHI
                                                                  { VK_DESCRIPTOR_TYPE_SAMPLER, 100ull },
                                                                  { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100ull },
                                                                  { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100ull },
+                                                                 { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 10ull }
                                                              }));
 
         commandBufferPool = CreateScope<VulkanCommandBufferPool>(device,
@@ -240,12 +241,17 @@ namespace PK::Rendering::VulkanRHI
     {
         if ((usage & BufferUsage::Storage) != 0)
         {
-            return physicalDeviceProperties.limits.minStorageBufferOffsetAlignment;
+            return physicalDeviceProperties.properties.limits.minStorageBufferOffsetAlignment;
         }
 
         if ((usage & BufferUsage::Constant) != 0)
         {
-            return physicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
+            return physicalDeviceProperties.properties.limits.minUniformBufferOffsetAlignment;
+        }
+
+        if ((usage & BufferUsage::ShaderBindingTable) != 0)
+        {
+            return physicalDeviceProperties.rayTracingProperties.shaderGroupBaseAlignment;
         }
 
         return sizeof(char);

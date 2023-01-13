@@ -244,6 +244,11 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
+    void VulkanRenderState::SetShaderBindingTableAddress(Structs::RayTracingShaderGroup group, VkDeviceAddress address, size_t stride, size_t size)
+    {
+        m_shaderBindingTableBundle.addresses[(uint32_t)group] = { address, stride, size };
+    }
+
 
     VkRenderPassBeginInfo VulkanRenderState::GetRenderPassInfo() const
     {
@@ -303,6 +308,24 @@ namespace PK::Rendering::VulkanRHI::Objects
                     auto set = m_descriptorSets[i];
                     set->executionGate = gate;
                     bundle.sets[bundle.count++] = set->set;
+                }
+            }
+        }
+
+        return bundle;
+    }
+
+    VulkanShaderBindingTableBundle VulkanRenderState::GetShaderBindingTableBundle()
+    {
+        VulkanShaderBindingTableBundle bundle{};
+
+        if (m_pipelineKey.shader != nullptr)
+        {
+            for (auto i = 0u; i < (uint32_t)Structs::RayTracingShaderGroup::MaxCount; ++i)
+            {
+                if (m_pipelineKey.shader->HasRayTracingShaderGroup((Structs::RayTracingShaderGroup)i))
+                {
+                    bundle.addresses[i] = m_shaderBindingTableBundle.addresses[i];
                 }
             }
         }

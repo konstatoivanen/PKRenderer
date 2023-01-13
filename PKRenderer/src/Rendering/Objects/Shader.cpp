@@ -15,6 +15,19 @@ using namespace PK::Rendering::VulkanRHI::Objects;
 
 namespace PK::Rendering::Objects
 {
+    bool ShaderVariant::HasRayTracingShaderGroup(Structs::RayTracingShaderGroup group) const
+    {
+        switch (group)
+        {
+            case RayTracingShaderGroup::RayGeneration: return (RayTracingShaderGroupStageMask::RayGeneration & m_stageFlags) != 0;
+            case RayTracingShaderGroup::Miss: return (RayTracingShaderGroupStageMask::Miss & m_stageFlags) != 0;
+            case RayTracingShaderGroup::Hit: return (RayTracingShaderGroupStageMask::Hit & m_stageFlags) != 0;
+            case RayTracingShaderGroup::Callable: return (RayTracingShaderGroupStageMask::Callable & m_stageFlags) != 0;
+        }
+
+        return false;
+    }
+
     void ShaderVariant::ListProperties()
     {
         PK_LOG_HEADER("Vertex Attributes:");
@@ -166,7 +179,7 @@ namespace PK::Rendering::Objects
         PK_LOG_NEWLINE();
     }
 
-    void Shader::Import(const char* filepath, void* pParams)
+    void Shader::Import(const char* filepath)
     {
         for (auto& variant : m_variants)
         {

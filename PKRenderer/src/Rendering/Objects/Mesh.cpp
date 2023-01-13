@@ -2,6 +2,7 @@
 #include "Mesh.h"
 #include "Math/FunctionsIntersect.h"
 #include "Math/FunctionsMisc.h"
+#include "Rendering/GraphicsAPI.h"
 #include <PKAssets/PKAssetLoader.h>
 
 using namespace PK::Math;
@@ -84,7 +85,7 @@ namespace PK::Rendering::Objects
 		m_fullRange = { 0u, (uint32_t)vertexBuffer->GetCount(), 0u, (uint32_t)indexBuffer->GetCount(), bounds };
 	}
 
-    void Mesh::Import(const char* filepath, void* pParams)
+    void Mesh::Import(const char* filepath)
     {
 		m_indexBuffer = nullptr;
 		m_vertexBuffers.clear();
@@ -208,7 +209,6 @@ namespace PK::Rendering::Objects
 			vertexBuffer->SetSubData((char*)allocationInfo.pVertices + pBufferOffset, range.firstVertex * vertexStride, range.vertexCount * vertexStride);
 			pBufferOffset += vertexStride * range.vertexCount;
 		}
-
 
 		auto indexBuffer = m_indexBuffer.get();
 		auto indexStride = m_indexBuffer->GetLayout().GetStride();

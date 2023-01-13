@@ -20,7 +20,7 @@ namespace PK::Rendering::Passes
 
         public:
             PassDepthOfField(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
-            void Execute(Objects::RenderTexture* destination, Structs::MemoryAccessFlags lastAccess);
+            void Execute(Objects::CommandBuffer* cmd, Objects::RenderTexture* destination, Structs::MemoryAccessFlags lastAccess);
             void OnUpdateParameters(const Core::ApplicationConfig* config);
 
         private:

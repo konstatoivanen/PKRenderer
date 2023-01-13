@@ -59,4 +59,18 @@ float pow5(float x) { return x * x * x * x * x; }
 
 #define PK_BUFFER_DATA(BufferName, index) BufferName##_Data[index]
 #define PK_ATOMIC_DATA(BufferName) BufferName##_Data
+
+// Ray tracing utilities
+#define PK_GET_RAY_HIT_POINT (gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT)
+#define PK_GET_RAY_HIT_DISTANCE gl_HitTEXT
+#define PK_DECLARE_RT_BARYCOORDS(name) hitAttributeEXT float2 name
+#define PK_DECLARE_RT_PAYLOAD_IN(type, name, index) layout(location = index) rayPayloadInEXT type name
+#define PK_DECLARE_RT_PAYLOAD_OUT(type, name, index) layout(location = index) rayPayloadEXT type name
+
+#if defined(SHADER_STAGE_RAY_GENERATION) || defined(SHADER_STAGE_RAY_MISS) || defined(SHADER_STAGE_RAY_CLOSEST_HIT) || defined(SHADER_STAGE_RAY_ANY_HIT) || defined(SHADER_STAGE_RAY_INTERSECTION)
+    #define PK_DECLARE_ACCELERATION_STRUCTURE(Set, Name) layout(set = Set) uniform accelerationStructureEXT Name;
+#else
+    #define PK_DECLARE_ACCELERATION_STRUCTURE(Set, Name)
+#endif
+
 #endif

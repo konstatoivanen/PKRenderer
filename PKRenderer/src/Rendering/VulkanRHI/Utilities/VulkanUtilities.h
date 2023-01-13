@@ -8,7 +8,15 @@
 namespace PK::Rendering::VulkanRHI::Utilities
 {
     #define VK_ASSERT_RESULT(cmd) if ((cmd) != VK_SUCCESS) PK_THROW_ERROR("Vulkan Command Failed!");
-    #define VK_ASSERT_RESULT_CTX(cmd, ctx) if ((cmd) != VK_SUCCESS) PK_THROW_ERROR(ctx);
+    #define VK_ASSERT_RESULT_CTX(cmd, ctx)                                                                                  \
+            {                                                                                                               \
+                auto result = cmd;                                                                                          \
+                                                                                                                            \
+                if (result != VK_SUCCESS)                                                                                   \
+                {                                                                                                           \
+                    PK_THROW_ERROR(ctx " (%s)", PK::Rendering::VulkanRHI::Utilities::VulkanResultToString(result).c_str()); \
+                }                                                                                                           \
+            }                                                                                                               \
 
     std::vector<VkLayerProperties> VulkanGetInstanceLayerProperties();
     std::vector<VkExtensionProperties> VulkanGetInstanceExtensions();
@@ -18,7 +26,7 @@ namespace PK::Rendering::VulkanRHI::Utilities
     std::vector<const char*> VulkanGetRequiredInstanceExtensions(const std::vector<const char*>* contextualExtensions);
     std::vector<VkSurfaceFormatKHR> VulkanGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
     std::vector<VkPresentModeKHR> VulkanGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
-    VkPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device);
+    VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device);
     QueueFamilies VulkanGetPhysicalDeviceQueueFamilyIndices(VkPhysicalDevice device, VkSurfaceKHR surface);
 
     bool VulkanValidateInstanceExtensions(const std::vector<const char*>* extensions);
@@ -29,4 +37,7 @@ namespace PK::Rendering::VulkanRHI::Utilities
     VkExtent2D VulkanSelectSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities, const VkExtent2D& desiredExtent);
     VkSurfaceFormatKHR VulkanSelectSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats, VkFormat desiredFormat, VkColorSpaceKHR desiredColorSpace);
     VkPresentModeKHR VulkanSelectPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, VkPresentModeKHR desiredPresentMode);
+
+    VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureGeometryKHR& geometry, VkAccelerationStructureTypeKHR type, uint32_t primitiveCount);
+    std::string VulkanResultToString(VkResult result);
 }

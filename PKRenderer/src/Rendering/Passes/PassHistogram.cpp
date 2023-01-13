@@ -19,10 +19,9 @@ namespace PK::Rendering::Passes
         m_passHistogramAvg = m_computeHistogram->GetVariantIndex(StringHashID::StringToID("PASS_AVG"));
     }
 
-    void PassHistogram::Execute(Texture* target, MemoryAccessFlags nextAccess)
+    void PassHistogram::Execute(Objects::CommandBuffer* cmd, Texture* target, MemoryAccessFlags nextAccess)
     {
         auto hash = HashCache::Get();
-        auto cmd = GraphicsAPI::GetCommandBuffer();
         auto histogram = m_histogram.get();
 
         auto res = target->GetResolution();

@@ -36,6 +36,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             VmaAllocationCreateInfo m_pageCreateInfo{};
             VkMemoryRequirements m_memoryRequirements{};
             std::map<uint32_t, Page*> m_activePages;
-            Utilities::FixedPool<Page, 1024> m_pages;
+            PK::Utilities::FixedPool<Page, 1024> m_pages;
     };
 }

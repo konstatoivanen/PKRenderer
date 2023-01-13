@@ -43,12 +43,12 @@ namespace PK::Rendering::VulkanRHI::Objects
             {
                 size_t operator()(const Structs::IndexRange& k) const noexcept
                 {
-                    return Utilities::HashHelpers::FNV1AHash(&k, sizeof(Structs::IndexRange));
+                    return PK::Utilities::HashHelpers::FNV1AHash(&k, sizeof(Structs::IndexRange));
                 }
             };
 
             void Rebuild(size_t count);
-            void Dispose();
+            void Dispose(const ExecutionGate& gate);
 
             const VulkanDriver* m_driver = nullptr;
             std::string m_name = "Buffer";
@@ -56,6 +56,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             Systems::VulkanStagingBuffer* m_mappedBuffer = nullptr;
             VulkanSparsePageTable* m_pageTable = nullptr;
             MapRange m_mapRange{};
-            Utilities::PointerMap<Structs::IndexRange, VulkanBindHandle, RangeHash> m_bindHandles;
+            PK::Utilities::PointerMap<Structs::IndexRange, VulkanBindHandle, RangeHash> m_bindHandles;
     };
 }

@@ -123,6 +123,11 @@ namespace PK::Rendering::Objects
     void CommandBuffer::SetImage(const char* name, Texture* texture, uint16_t level, uint16_t layer) { SetImage(StringHashID::StringToID(name), texture, level, layer); }
     void CommandBuffer::SetImage(const char* name, Texture* texture, const TextureViewRange& range) { SetImage(StringHashID::StringToID(name), texture, range); }
 
+    void CommandBuffer::SetAccelerationStructure(const char* name, AccelerationStructure* structure)
+    {
+        SetAccelerationStructure(StringHashID::StringToID(name), structure);
+    }
+
     void CommandBuffer::SetBufferArray(const char* name, BindArray<Buffer>* bufferArray) { SetBufferArray(StringHashID::StringToID(name), bufferArray); }
     void CommandBuffer::SetTextureArray(const char* name, BindArray<Texture>* textureArray) { SetTextureArray(StringHashID::StringToID(name), textureArray); }
 
@@ -214,6 +219,18 @@ namespace PK::Rendering::Objects
     {
         SetShader(shader, variantIndex);
         Dispatch(groupCount);
+    }
+
+    void CommandBuffer::DispatchRays(const Shader* shader, Math::uint3 dimensions)
+    {
+        SetShader(shader);
+        DispatchRays(dimensions);
+    }
+
+    void CommandBuffer::DispatchRays(const Shader* shader, uint32_t variantIndex, Math::uint3 dimensions)
+    {
+        SetShader(shader, variantIndex);
+        DispatchRays(dimensions);
     }
 
     void CommandBuffer::Barrier(const Texture* texture, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)

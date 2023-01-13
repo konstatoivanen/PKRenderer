@@ -87,6 +87,7 @@ namespace PK::Rendering::VulkanRHI::Systems
 
         auto imageCount = 0ull;
         auto bufferCount = 0ull;
+        auto accelerationStructureCount = 0ull;
 
         for (; count < PK_MAX_DESCRIPTORS_PER_SET; ++count)
         {
@@ -159,6 +160,29 @@ namespace PK::Rendering::VulkanRHI::Systems
                 }
                 break;
 
+                case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+                {
+                    write->pNext = reinterpret_cast<decltype(write->pNext)>(accelerationStructureCount + 1);
+                    auto newSize = accelerationStructureCount + bind->count;
+
+                    if (m_writeAccerationStructures.size() < newSize)
+                    {
+                        m_writeAccerationStructures.resize(newSize);
+                    }
+
+                    auto accelerationStructures = m_writeAccerationStructures.data() + accelerationStructureCount;
+                    accelerationStructureCount = newSize;
+
+                    for (auto i = 0; i < bind->count; ++i)
+                    {
+                        accelerationStructures[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+                        accelerationStructures[i].accelerationStructureCount = 1;
+                        accelerationStructures[i].pAccelerationStructures = &handles[i]->accelerationStructure;
+                    }
+
+                    break;
+                }
+
                 default: 
                     PK_THROW_ERROR("Binding type not yet implemented!");
             }
@@ -176,6 +200,11 @@ namespace PK::Rendering::VulkanRHI::Systems
             if (w->pImageInfo != nullptr)
             {
                 w->pImageInfo = m_writeImages.data() + ((reinterpret_cast<size_t>(w->pImageInfo) & 0xFFFF)- 1);
+            }
+
+            if (w->pNext != nullptr)
+            {
+                w->pNext = m_writeAccerationStructures.data() + ((reinterpret_cast<size_t>(w->pNext) & 0xFFFF) - 1);
             }
         }
 

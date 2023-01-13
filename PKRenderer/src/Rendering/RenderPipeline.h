@@ -41,7 +41,9 @@ namespace PK::Rendering
             Passes::PassSceneGI m_passSceneGI;
             Passes::PassVolumeFog m_passVolumeFog;
             Batcher m_batcher;
+            Core::Services::Sequencer* m_sequencer;
 
+            Utilities::Ref<Objects::AccelerationStructure> m_sceneStructure;
             Utilities::Ref<Objects::ConstantBuffer> m_constantsPerFrame;
             Utilities::Ref<Objects::RenderTexture> m_renderTarget;
             Utilities::Ref<Objects::Texture> m_depthPrevious;

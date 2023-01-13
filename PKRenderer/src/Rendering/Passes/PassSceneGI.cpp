@@ -17,6 +17,11 @@ namespace PK::Rendering::Passes
         m_computeMipmap = assetDatabase->Find<Shader>("CS_SceneGI_Mipmap");
         m_computeBakeGI = assetDatabase->Find<Shader>("CS_SceneGI_Bake");
         m_computeMask = assetDatabase->Find<Shader>("CS_SceneGI_Mask");
+        m_rayTraceGatherGI = assetDatabase->Find<Shader>("RS_SceneGI_Gather");
+
+        auto tableInfo = m_rayTraceGatherGI->GetShaderBindingTableInfo();
+        auto tableUintCount = tableInfo.totalTableSize / sizeof(uint32_t);
+        m_shaderBindingTable = Buffer::Create(ElementType::Uint, tableInfo.handleData, tableUintCount, BufferUsage::DefaultShaderBindingTable, "SceneGI.ShaderBindingTable");
 
         TextureDescriptor descr{};
         descr.samplerType = SamplerType::Sampler3D;
@@ -57,13 +62,30 @@ namespace PK::Rendering::Passes
         descr.usage = TextureUsage::RTColorSample | TextureUsage::Storage;
         m_screenSpaceGI = Texture::Create(descr, "GI Sceen Space Texture");
 
-
         auto cmd = GraphicsAPI::GetCommandBuffer();
         auto hash = HashCache::Get();
         cmd->SetImage(hash->pk_SceneGI_VolumeMaskWrite, m_voxelMask.get());
         cmd->SetImage(hash->pk_SceneGI_VolumeWrite, m_voxels.get());
         cmd->SetTexture(hash->pk_SceneGI_VolumeRead, m_voxels.get());
         cmd->SetImage(hash->pk_ScreenGI_Mask, m_mask.get());
+
+        cmd->SetShaderBindingTable(RayTracingShaderGroup::RayGeneration, 
+            m_shaderBindingTable.get(), 
+            tableInfo.byteOffsets[(uint32_t)RayTracingShaderGroup::RayGeneration], 
+            tableInfo.handleSizeAligned,
+            tableInfo.handleSizeAligned);
+        
+        cmd->SetShaderBindingTable(RayTracingShaderGroup::Miss,
+            m_shaderBindingTable.get(),
+            tableInfo.byteOffsets[(uint32_t)RayTracingShaderGroup::Miss],
+            tableInfo.handleSizeAligned,
+            tableInfo.handleSizeAligned);
+        
+        cmd->SetShaderBindingTable(RayTracingShaderGroup::Hit,
+            m_shaderBindingTable.get(),
+            tableInfo.byteOffsets[(uint32_t)RayTracingShaderGroup::Hit],
+            tableInfo.handleSizeAligned,
+            tableInfo.handleSizeAligned);
 
         m_voxelizeAttribs.depthStencil.depthCompareOp = Comparison::Off;
         m_voxelizeAttribs.depthStencil.depthWriteEnable = false;
@@ -182,6 +204,8 @@ namespace PK::Rendering::Passes
         {
             cmd->Dispatch(m_computeBakeGI, 0, groupSize);
             cmd->Barrier(m_screenSpaceGI.get(), { 0, 0, 0, 2 }, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::FragmentTexture);
+            //cmd->DispatchRays(m_rayTraceGatherGI, { resolution.x, resolution.y, 1 });
+            //cmd->Barrier(m_screenSpaceGI.get(), { 0, 0, 0, 2 }, MemoryAccessFlags::RayTraceWrite, MemoryAccessFlags::FragmentTexture);
             cmd->SetTexture(hash->pk_ScreenGI_Read, m_screenSpaceGI.get(), { 0, 0, 0, 2 });
         }
 

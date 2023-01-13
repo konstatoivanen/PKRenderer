@@ -3,6 +3,7 @@
 #include "Rendering/Objects/Texture.h"
 #include "Rendering/Objects/Buffer.h"
 #include "Rendering/Objects/Shader.h"
+#include "Rendering/Objects/CommandBuffer.h"
 
 namespace PK::Rendering::Passes
 {
@@ -10,7 +11,7 @@ namespace PK::Rendering::Passes
     {
         public:
             PassHistogram(Core::Services::AssetDatabase* assetDatabase);
-            void Execute(Objects::Texture* target, Structs::MemoryAccessFlags nextAccess);
+            void Execute(Objects::CommandBuffer* cmd, Objects::Texture* target, Structs::MemoryAccessFlags nextAccess);
 
         private:
             Objects::Shader* m_computeHistogram = nullptr;

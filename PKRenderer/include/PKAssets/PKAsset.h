@@ -116,6 +116,11 @@ namespace PK::Assets
         Geometry,
         Fragment,
         Compute,
+        RayGeneration,
+        RayMiss,
+        RayClosestHit,
+        RayAnyHit,
+        RayIntersection,
         MaxCount
     };
 
@@ -131,6 +136,7 @@ namespace PK::Assets
         DynamicConstantBuffer,
         DynamicStorageBuffer,
         InputAttachment,
+        AccelerationStructure,
     };
 
     enum class PKComparison : unsigned char
@@ -233,7 +239,8 @@ namespace PK::Assets
         enum class Type : unsigned char
         {
             Graphics,
-            Compute
+            Compute,
+            RayTracing
         };
 
         struct alignas(4) PKVertexAttribute

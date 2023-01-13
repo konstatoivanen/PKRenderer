@@ -147,29 +147,30 @@ namespace PK::Rendering::Structs
         StageTessEvaluation  = 1 << 9,
         StageCompute         = 1 << 10,
         StageTransfer        = 1 << 11,
-        StageBottom          = 1 << 12,
+        StageRayTracing      = 1 << 12,
+        StageBottom          = 1 << 13,
         
-        ReadShader    = 1 << 13, // Read textures, images, buffers
-        ReadConstant  = 1 << 14, // Read constant buffers
-        ReadVertex    = 1 << 15, // Read vertex buffer
-        ReadIndex     = 1 << 16, // Read index buffer
-        ReadIndirect  = 1 << 17, // Read indirect arguments
-        ReadRTColor   = 1 << 18,
-        ReadRTDepth   = 1 << 19,
-        ReadRTInput   = 1 << 20,
-        ReadTransfer  = 1 << 21,
-        ReadHost      = 1 << 22,
-        ReadMemory    = 1 << 23,
+        ReadShader    = 1 << 14, // Read textures, images, buffers
+        ReadConstant  = 1 << 15, // Read constant buffers
+        ReadVertex    = 1 << 16, // Read vertex buffer
+        ReadIndex     = 1 << 17, // Read index buffer
+        ReadIndirect  = 1 << 18, // Read indirect arguments
+        ReadRTColor   = 1 << 19,
+        ReadRTDepth   = 1 << 20,
+        ReadRTInput   = 1 << 21,
+        ReadTransfer  = 1 << 22,
+        ReadHost      = 1 << 23,
+        ReadMemory    = 1 << 24,
 
-        WriteShader   = 1 << 24, // Write textures, images, buffers
-        WriteRTColor  = 1 << 25,
-        WriteRTDepth  = 1 << 26,
-        WriteTransfer = 1 << 27,
-        WriteHost     = 1 << 28,
-        WriteMemory   = 1 << 29,
+        WriteShader   = 1 << 25, // Write textures, images, buffers
+        WriteRTColor  = 1 << 26,
+        WriteRTDepth  = 1 << 27,
+        WriteTransfer = 1 << 28,
+        WriteHost     = 1 << 29,
+        WriteMemory   = 1 << 30,
 
         StageAllGrahpics = 0x1FF,
-        StageAllStages = 0xFFF,
+        StageAllStages = 0x1FFF,
 
         ReadWriteShader = ReadShader | WriteShader, // Read/Write, images & buffers
         ReadWriteRTColor = ReadRTColor | WriteRTColor,
@@ -179,14 +180,16 @@ namespace PK::Rendering::Structs
         FragmentAttachmentColor = ReadWriteRTColor | StageColorOut,         // Write color in fragment out
         FragmentAttachmentDepth = ReadWriteRTDepth | StageDepthStencilOut,  // Write depth in fragment out
         FragmentTexture = ReadShader | StageFragment,                       // Read texture in fragment
-        FragmentBuffer = ReadShader | StageFragment,                       // Read buffer in fragment
-        FragmentReadWrite = ReadWriteShader | StageFragment,                       // Write memory in fragment
+        FragmentBuffer = ReadShader | StageFragment,                        // Read buffer in fragment
+        FragmentReadWrite = ReadWriteShader | StageFragment,                // Write memory in fragment
         ComputeReadWrite = ReadWriteShader | StageCompute,                  // Read/Write texture, image, & buffer  in compute
         ComputeRead = ReadShader | StageCompute,                            // Read texture, image, & buffer in compute
-        ComputeWrite = WriteShader | StageCompute,                           // Write texture, image, & buffer  in compute
+        ComputeWrite = WriteShader | StageCompute,                          // Write texture, image, & buffer  in compute
+        RayTraceWrite = WriteShader | StageRayTracing,                      // Write texture, image, & buffer  in raytrace
+        RayTraceRead = WriteShader | StageRayTracing,                       // Write texture, image, & buffer  in raytrace
     };
 
-    enum class BufferUsage : uint16_t
+    enum class BufferUsage : uint32_t
     {
         None = 0,
 
@@ -207,6 +210,8 @@ namespace PK::Rendering::Structs
         PersistentStage       = 1 << 12,
         Sparse                = 1 << 13,
         AccelerationStructure = 1 << 14,
+        InstanceInput         = 1 << 15,
+        ShaderBindingTable    = 1 << 16,
 
         TypeBits = 7,
         AlignedTypes = Storage | Constant,
@@ -217,6 +222,7 @@ namespace PK::Rendering::Structs
         DefaultConstant = GPUOnly | TransferDst | Constant,
         DefaultStorage = GPUOnly | TransferDst | Storage,
         DefaultStaging = CPUOnly | TransferSrc,
+        DefaultShaderBindingTable = GPUOnly | TransferDst | ShaderBindingTable
     };
 
     enum class TextureUsage : uint8_t
@@ -246,9 +252,10 @@ namespace PK::Rendering::Structs
         Static = 1 << 2,
         CastShadows = 1 << 3,
         Cullable = 1 << 4,
+        RayTraceable = 1 << 5,
 
         // Presets
-        DefaultMesh = Mesh | Static | CastShadows | Cullable,
+        DefaultMesh = Mesh | Static | CastShadows | Cullable | RayTraceable,
         DefaultMeshNoShadows = Mesh | Static | Cullable,
     };
 
@@ -260,18 +267,6 @@ namespace PK::Rendering::Structs
         TypeCount
     };
 
-    enum class Cookie : uint8_t
-    {
-        Circle0,
-        Circle1,
-        Circle2,
-        Square0,
-        Square1,
-        Square2,
-        Triangle,
-        Star,
-    };
-    
     enum class TextureFormat : uint16_t 
     {
         Invalid = 0,
@@ -387,6 +382,51 @@ namespace PK::Rendering::Structs
         SRGB8_ALPHA8_ASTC_12x12,
     };
 
+    enum class Cookie : uint8_t
+    {
+        Circle0,
+        Circle1,
+        Circle2,
+        Square0,
+        Square1,
+        Square2,
+        Triangle,
+        Star,
+    };
+
+    enum class RayTracingShaderGroup
+    {
+        RayGeneration,
+        Miss,
+        Hit,
+        Callable, //@TODO Add callable support
+        MaxCount
+    };
+
+    enum class RayTracingShaderGroupStageMask
+    {
+        RayGeneration = 1 << (uint32_t)ShaderStage::RayGeneration,
+        Miss = 1 << (uint32_t)ShaderStage::RayMiss,
+        Hit = 1 << (uint32_t)ShaderStage::RayClosestHit | 1 << (uint32_t)ShaderStage::RayAnyHit | 1 << (uint32_t)ShaderStage::RayIntersection,
+        Callable = 0, 
+        MaxCount
+    };
+
+    constexpr const static RayTracingShaderGroup PK_SHADER_STAGE_RAYTRACING_GROUP[(uint32_t)ShaderStage::MaxCount] =
+    {
+        RayTracingShaderGroup::MaxCount,        //Vertex,
+        RayTracingShaderGroup::MaxCount,        //TesselationControl,
+        RayTracingShaderGroup::MaxCount,        //TesselationEvaluation,
+        RayTracingShaderGroup::MaxCount,        //Geometry,
+        RayTracingShaderGroup::MaxCount,        //Fragment,
+        RayTracingShaderGroup::MaxCount,        //Compute,
+        RayTracingShaderGroup::RayGeneration,   //RayGeneration,
+        RayTracingShaderGroup::Miss,            //RayMiss,
+        RayTracingShaderGroup::Hit,             //RayClosestHit,
+        RayTracingShaderGroup::Hit,             //RayAnyHit,
+        RayTracingShaderGroup::Hit,             //RayIntersection,
+    };
+
     #define PK_DECLARE_ENUM_OPERATORS(Type) \
     static constexpr Type operator | (const Type& a, const Type& b) { return (Type)((uint32_t)a | (uint32_t)b); } \
     static constexpr Type operator |= (const Type& a, const Type& b) { return a | b; } \
@@ -400,6 +440,7 @@ namespace PK::Rendering::Structs
     PK_DECLARE_ENUM_OPERATORS(BufferUsage)
     PK_DECLARE_ENUM_OPERATORS(TextureUsage)
     PK_DECLARE_ENUM_OPERATORS(RenderableFlags)
+    PK_DECLARE_ENUM_OPERATORS(RayTracingShaderGroupStageMask)
 
     #undef PK_DECLARE_ENUM_OPERATORS
 

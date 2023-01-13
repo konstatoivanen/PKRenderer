@@ -138,7 +138,7 @@ float4 ConeTraceDiffuse(float3 origin, const float3 normal, const float dither)
 	return A;
 }
 
-float4 ConeTraceSpecular(float3 origin, const float3 normal, const float3 direction, const float dither, float roughness) 
+float4 ConeTraceSpecular(float3 origin, const float3 normal, const float3 direction, float roughness) 
 {
 	origin += normal * (1.0f + PK_INV_SQRT2) * PK_GI_VOXEL_SIZE;
 

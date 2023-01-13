@@ -28,15 +28,14 @@ namespace PK::Core::Services
             AssetID m_assetId = 0;
     };
 
-    // @TODO decouple these from the actual asset classes
-    template<typename TParams>
+    template<typename ... Args>
     class IAssetImport : public Utilities::NoCopy
     {
         friend class AssetDatabase;
-        virtual void Import(const char* filepath, TParams* pParams) = 0;
+        virtual void Import(const char* filepath, Args ... args) = 0;
     };
 
-    typedef IAssetImport<void> IAssetImportSimple;
+    typedef IAssetImport<> IAssetImportSimple;
 
     enum class AssetImportType
     {
@@ -63,11 +62,11 @@ namespace PK::Core::Services
     class AssetDatabase : public IService
     {
         private:
-            template<typename T, typename TParams = void>
-            [[nodiscard]] T* Load(const std::string& filepath, AssetID assetId, TParams* pParams)
+            template<typename T, typename ... Args>
+            [[nodiscard]] T* Load(const std::string& filepath, AssetID assetId, Args&& ... args)
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-                static_assert(std::is_base_of<IAssetImport<TParams>, T>::value, "Template argument type does not derive from IAssetImport!");
+                static_assert(std::is_base_of<IAssetImport<Args...>, T>::value, "Template argument type does not derive from IAssetImport!");
                 PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
     
                 auto& collection = m_assets[std::type_index(typeid(T))];
@@ -82,7 +81,7 @@ namespace PK::Core::Services
                 collection[assetId] = asset;
                 std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
 
-                static_cast<IAssetImport<TParams>*>(asset.get())->Import(filepath.c_str(), pParams);
+                static_cast<IAssetImport<Args...>*>(asset.get())->Import(filepath.c_str(), std::forward<Args>(args)...);
     
                 AssetImportToken<T> importToken = { this, asset.get() };
                 m_sequencer->Next(this, &importToken, (int)AssetImportType::IMPORT);
@@ -90,11 +89,11 @@ namespace PK::Core::Services
                 return asset.get();
             }
     
-            template<typename T, typename TParams = void>
-            [[nodiscard]] T* Reload(const std::string& filepath, AssetID assetId, TParams* pParams)
+            template<typename T, typename ... Args>
+            [[nodiscard]] T* Reload(const std::string& filepath, AssetID assetId, Args&& ... args)
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-                static_assert(std::is_base_of<IAssetImport<TParams>, T>::value, "Template argument type does not derive from IAssetImport!");
+                static_assert(std::is_base_of<IAssetImport<Args...>, T>::value, "Template argument type does not derive from IAssetImport!");
                 PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
                 
                 auto& collection = m_assets[std::type_index(typeid(T))];
@@ -112,7 +111,7 @@ namespace PK::Core::Services
                     std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
                 }
     
-                static_cast<IAssetImport<TParams>*>(asset.get())->Import(filepath.c_str(), pParams);
+                static_cast<IAssetImport<Args...>*>(asset.get())->Import(filepath.c_str(), std::forward<Args>(args)...);
     
                 AssetImportToken<T> importToken = { this, asset.get() };
                 m_sequencer->Next(this, &importToken, (int)AssetImportType::RELOAD);
@@ -139,7 +138,7 @@ namespace PK::Core::Services
                 return asset.get();
             }
     
-            template<typename T, typename ... Args>
+            template<typename T>
             [[nodiscard]] T* RegisterProcedural(std::string name, Utilities::Ref<T> asset)
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
@@ -188,27 +187,27 @@ namespace PK::Core::Services
                 return value;
             }
             
-            template<typename T, typename TParams = void>
-            T* Load(const std::string& filepath, TParams* pParams = nullptr) { return Load<T>(filepath, StringHashID::StringToID(filepath), pParams); }
+            template<typename T, typename ... Args>
+            T* Load(const std::string& filepath, Args&& ... args) { return Load<T>(filepath, StringHashID::StringToID(filepath), std::forward<Args>(args)...); }
     
-            template<typename T, typename TParams = void>
-            [[nodiscard]] T* Load(AssetID assetId, TParams* pParams = nullptr) { return Load<T>(StringHashID::IDToString(assetId), assetId, pParams); }
+            template<typename T, typename ... Args>
+            [[nodiscard]] T* Load(AssetID assetId, Args&& ... args) { return Load<T>(StringHashID::IDToString(assetId), assetId, std::forward<Args>(args)...); }
     
-            template<typename T, typename TParams = void>
-            T* Reload(const std::string& filepath, TParams* pParams = nullptr) { return Reload<T>(filepath, StringHashID::StringToID(filepath), pParams); }
+            template<typename T, typename ... Args>
+            T* Reload(const std::string& filepath, Args&& ... args) { return Reload<T>(filepath, StringHashID::StringToID(filepath), std::forward<Args>(args)...); }
     
-            template<typename T, typename TParams = void>
-            [[nodiscard]] T* Reload(AssetID assetId, TParams* pParams = nullptr) { return Reload<T>(StringHashID::IDToString(assetId), assetId, pParams); }
+            template<typename T, typename ... Args>
+            [[nodiscard]] T* Reload(AssetID assetId, Args&& ... args) { return Reload<T>(StringHashID::IDToString(assetId), assetId, std::forward<Args>(args)...); }
     
-            template<typename T, typename TParams = void>
-            void Reload(const T* asset, TParams* pParams = nullptr)
+            template<typename T, typename ... Args>
+            void Reload(const T* asset, Args&& ... args)
             {
                 auto assetId = asset->GetAssetID();
-                Reload<T>(StringHashID::IDToString(assetId), assetId, pParams);
+                Reload<T>(StringHashID::IDToString(assetId), assetId, std::forward<Args>(args)...);
             }
     
-            template<typename T, typename TParams = void>
-            void LoadDirectory(const std::string& directory, TParams* pParams = nullptr)
+            template<typename T, typename ... Args>
+            void LoadDirectory(const std::string& directory, Args&& ... args)
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
@@ -223,13 +222,13 @@ namespace PK::Core::Services
     
                     if (path.has_extension() && AssetImporters::IsValidExtension<T>(path.extension()))
                     {
-                        Load<T>(entry.path().string(), pParams);
+                        Load<T>(entry.path().string(), std::forward<Args>(args)...);
                     }
                 }
             }
     
-            template<typename T, typename TParams = void>
-            void ReloadDirectory(const std::string& directory, TParams* pParams = nullptr)
+            template<typename T, typename ... Args>
+            void ReloadDirectory(const std::string& directory, Args&& ... args)
             {
                 static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
@@ -244,7 +243,7 @@ namespace PK::Core::Services
     
                     if (path.has_extension() && AssetImporters::IsValidExtension<T>(path.extension()))
                     {
-                        Reload<T>(entry.path().string(), pParams);
+                        Reload<T>(entry.path().string(), std::forward<Args>(args)...);
                     }
                 }
             }

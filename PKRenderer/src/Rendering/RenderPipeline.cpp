@@ -3,6 +3,7 @@
 #include "RenderPipeline.h"
 #include "Rendering/MeshUtility.h"
 #include "Rendering/HashCache.h"
+#include "ECS/Contextual/Tokens/AccelerationStructureBuildToken.h"
 
 namespace PK::Rendering
 {
@@ -21,6 +22,7 @@ namespace PK::Rendering
         m_passSceneGI(assetDatabase, config),
         m_passVolumeFog(assetDatabase, config),
         m_batcher(),
+        m_sequencer(sequencer),
         m_visibilityList(1024)
     {
         m_OEMBackgroundShader = assetDatabase->Find<Shader>("SH_VS_IBLBackground");
@@ -42,6 +44,8 @@ namespace PK::Rendering
         depthDescriptor.sampler.filterMin = FilterMode::Bilinear;
         depthDescriptor.sampler.filterMag = FilterMode::Bilinear;
         m_depthPrevious = Texture::Create(depthDescriptor, "Previous Scene Depth Texture");
+
+        m_sceneStructure = AccelerationStructure::Create("Scene");
 
         auto hash = HashCache::Get();
 
@@ -96,6 +100,7 @@ namespace PK::Rendering
 
         auto cmd = GraphicsAPI::GetCommandBuffer();
 
+        cmd->SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         cmd->SetTexture(hash->pk_Bluenoise256, bluenoise);
         cmd->SetTexture(hash->pk_LightCookies, lightCookies);
         cmd->SetTexture(hash->pk_SceneOEM_HDR, sceneOEM);
@@ -152,6 +157,16 @@ namespace PK::Rendering
     
     void RenderPipeline::Step(Window* window, int condition)
     {
+        //@TODO refactor a smarter rebuild mode
+        if (m_sceneStructure->GetInstanceCount() == 0)
+        {
+            Tokens::AccelerationStructureBuildToken token;
+            token.structure = m_sceneStructure.get();
+            token.mask = RenderableFlags::DefaultMesh;
+            token.useBounds = false;
+            m_sequencer->Next<Tokens::AccelerationStructureBuildToken>(this, &token);
+        }
+
         auto hash = HashCache::Get();
         auto* cmd = GraphicsAPI::GetCommandBuffer();
         auto resolution = window->GetResolution();
@@ -170,7 +185,7 @@ namespace PK::Rendering
         m_batcher.BeginCollectDrawCalls();
         m_passGeometry.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_zfar - m_znear);
         m_passLights.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_znear, m_zfar);
-        m_batcher.EndCollectDrawCalls();
+        m_batcher.EndCollectDrawCalls(cmd);
 
         m_passSceneGI.PreRender(cmd, resolution);
         m_passLights.Render(cmd);

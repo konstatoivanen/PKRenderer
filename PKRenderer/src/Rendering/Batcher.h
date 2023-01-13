@@ -62,7 +62,7 @@ namespace PK::Rendering
         public:
             Batcher();
             void BeginCollectDrawCalls();
-            void EndCollectDrawCalls();
+            void EndCollectDrawCalls(Objects::CommandBuffer* cmd);
             constexpr uint32_t BeginNewGroup() { return m_groupIndex++; }
             void SubmitDraw(ECS::Components::Transform* transform, Objects::Shader* shader, Objects::Material* material, Objects::Mesh* mesh, uint32_t submesh, uint32_t userdata);
             void Render(Objects::CommandBuffer* cmd, uint32_t group, Structs::FixedFunctionShaderAttributes* overrideAttributes = nullptr, uint32_t requireKeyword = 0u);

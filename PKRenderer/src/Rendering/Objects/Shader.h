@@ -45,6 +45,9 @@ namespace PK::Rendering::Objects
             constexpr const Structs::ShaderType GetType() const { return m_type; }
             constexpr const uint32_t GetStageFlags() const { return m_stageFlags; }
 
+            virtual Structs::ShaderBindingTableInfo GetShaderBindingTableInfo() const = 0;
+
+            bool HasRayTracingShaderGroup(Structs::RayTracingShaderGroup group) const;
             void ListProperties();
 
         protected:
@@ -61,7 +64,7 @@ namespace PK::Rendering::Objects
 
         public:
             constexpr Structs::ShaderType GetType() const { return m_variants.at(0)->GetType(); }
-            inline const Structs::FixedFunctionShaderAttributes& GetFixedFunctionAttributes() const { return m_attributes; }
+            constexpr const Structs::FixedFunctionShaderAttributes& GetFixedFunctionAttributes() const { return m_attributes; }
             inline uint32_t GetVariantIndex(const uint32_t* keywords, uint32_t count) const { return m_variantMap.GetIndex(keywords, count); }
             inline uint32_t GetVariantIndex(uint32_t keyword) const { return m_variantMap.GetIndex(&keyword, 1); }
             inline uint32_t GetVariantIndex(const std::initializer_list<uint32_t>& keywords) const { return GetVariantIndex(keywords.begin(), (uint32_t)(keywords.end() - keywords.begin())); }
@@ -71,12 +74,13 @@ namespace PK::Rendering::Objects
             inline bool SupportsKeyword(const uint32_t hashId) const { return m_variantMap.SupportsKeyword(hashId); }
             inline bool SupportsKeywords(const uint32_t* hashIds, const uint32_t count) const { return m_variantMap.SupportsKeywords(hashIds, count); }
             inline bool SupportsMaterials() const { return m_materialPropertyLayout.size() > 0; }
-            inline const Structs::BufferLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
+            constexpr const Structs::BufferLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
+            inline Structs::ShaderBindingTableInfo GetShaderBindingTableInfo() const { return m_variants.at(0)->GetShaderBindingTableInfo(); }
 
             void ListVariants();
             void ListProperties(uint32_t variantIndex);
 
-            void Import(const char* filepath, void* pParams) override final;
+            void Import(const char* filepath) override final;
 
         protected:
             std::vector<Utilities::Ref<ShaderVariant>> m_variants;

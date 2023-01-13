@@ -14,7 +14,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             
             void SetData(const void* data, size_t size, uint32_t level, uint32_t layer) const override final;
             void SetSampler(const Structs::SamplerDescriptor& sampler) override final;
-            void Import(const char* filepath, void* pParams) override final;
+            void Import(const char* filepath) override final;
             bool Validate(const Math::uint3& resolution) override final;
             bool Validate(const uint32_t levels, const uint32_t layers) override final;
             bool Validate(const Structs::TextureDescriptor& descriptor) override final;
@@ -83,7 +83,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             const ViewValue* GetView(const Structs::TextureViewRange& range, Structs::TextureBindMode mode = Structs::TextureBindMode::SampledTexture);
 
-            void Dispose();
+            void Dispose(const ExecutionGate& gate);
 
             const VulkanDriver* m_driver = nullptr;
             std::string m_name = "Texture";

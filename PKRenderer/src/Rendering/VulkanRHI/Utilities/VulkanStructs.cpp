@@ -32,7 +32,7 @@ namespace PK::Rendering::VulkanRHI
         buffer.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         buffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         buffer.size = size;
-        buffer.usage = 0u;
+        buffer.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
         if ((usage & BufferUsage::TransferDst) != 0)
         {
@@ -46,12 +46,12 @@ namespace PK::Rendering::VulkanRHI
 
         if ((usage & BufferUsage::Vertex) != 0)
         {
-            buffer.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+            buffer.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
         }
 
         if ((usage & BufferUsage::Index) != 0)
         {
-            buffer.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+            buffer.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
         }
 
         if ((usage & BufferUsage::Constant) != 0)
@@ -81,7 +81,17 @@ namespace PK::Rendering::VulkanRHI
 
         if ((usage & BufferUsage::AccelerationStructure) != 0)
         {
-            buffer.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+            buffer.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+        }
+
+        if ((usage & BufferUsage::InstanceInput) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+        }
+
+        if ((usage & BufferUsage::ShaderBindingTable) != 0)
+        {
+            buffer.usage |= VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
         }
 
         auto type = usage & BufferUsage::TypeBits;
@@ -296,11 +306,19 @@ namespace PK::Rendering::VulkanRHI
             VK_ASSERT_RESULT_CTX(vkCreateBuffer(device, &createInfo.buffer, nullptr, &buffer), "Failed to create a buffer!");
             VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer, name);
             memory = nullptr;
-            return;
+        }
+        else
+        {
+            VK_ASSERT_RESULT_CTX(vmaCreateBuffer(allocator, &createInfo.buffer, &createInfo.allocation, &buffer, &memory, &allocationInfo), "Failed to create a buffer!");
+            VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer, name);
         }
 
-        VK_ASSERT_RESULT_CTX(vmaCreateBuffer(allocator, &createInfo.buffer, &createInfo.allocation, &buffer, &memory, &allocationInfo), "Failed to create a buffer!");
-        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer, name);
+        if ((usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0)
+        {
+            VkBufferDeviceAddressInfo addressInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
+            addressInfo.buffer = buffer;
+            deviceAddress = vkGetBufferDeviceAddress(device, &addressInfo);
+        }
     }
     
     VulkanRawBuffer::~VulkanRawBuffer()
@@ -371,20 +389,38 @@ namespace PK::Rendering::VulkanRHI
         vmaDestroyImage(allocator, image, memory);
     }
 
-    VulkanTLAS::VulkanTLAS(VkDevice device, VmaAllocator allocator, const VkAccelerationStructureCreateInfoKHR& createInfo, const char* name) :
+    VulkanRawAccelerationStructure::VulkanRawAccelerationStructure(VkDevice device, 
+        VmaAllocator allocator, 
+        const VkAccelerationStructureGeometryKHR& geometryInfo,
+        const VkAccelerationStructureBuildRangeInfoKHR& rangeInfo,
+        const VkAccelerationStructureTypeKHR type,
+        const char* name) :
         device(device),
-        rawBuffer(device, allocator, VulkanBufferCreateInfo(BufferUsage::AccelerationStructure | BufferUsage::GPUOnly, createInfo.size), name)
+        geometryInfo(geometryInfo),
+        rangeInfo(rangeInfo)
     {
-        VkAccelerationStructureCreateInfoKHR modifiedCreateInfo = createInfo;
-        modifiedCreateInfo.buffer = rawBuffer.buffer;
+        auto buildSizeInfo = VulkanRHI::Utilities::VulkanGetAccelerationBuildSizesInfo(device, geometryInfo, type, rangeInfo.primitiveCount);
 
-        vkCreateAccelerationStructureKHR(device, &createInfo, nullptr, &structure);
+        scratchBufferSize = buildSizeInfo.buildScratchSize;
+        rawBuffer = new VulkanRawBuffer(device, allocator, VulkanBufferCreateInfo(BufferUsage::AccelerationStructure | BufferUsage::GPUOnly, buildSizeInfo.accelerationStructureSize), name);
+
+        VkAccelerationStructureCreateInfoKHR createInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
+        createInfo.size = buildSizeInfo.accelerationStructureSize;
+        createInfo.type = type;
+        createInfo.buffer = rawBuffer->buffer;
+
+        VK_ASSERT_RESULT_CTX(vkCreateAccelerationStructureKHR(device, &createInfo, nullptr, &structure), "Failed to create acceleration structure!");
         VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, (uint64_t)structure, name);
+
+        VkAccelerationStructureDeviceAddressInfoKHR accelerationDeviceAddressInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR };
+        accelerationDeviceAddressInfo.accelerationStructure = structure;
+        deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(device, &accelerationDeviceAddressInfo);
     }
 
-    VulkanTLAS::~VulkanTLAS()
+    VulkanRawAccelerationStructure::~VulkanRawAccelerationStructure()
     {
         vkDestroyAccelerationStructureKHR(device, structure, nullptr);
+        delete rawBuffer;
     }
 
     VulkanShaderModule::VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t sprivSize, const char* name) : device(device)
@@ -418,6 +454,12 @@ namespace PK::Rendering::VulkanRHI
     {
         PK_LOG_VERBOSE("VK ALLOC: Compute Pipeline");
         VK_ASSERT_RESULT_CTX(vkCreateComputePipelines(device, pipelineCache, 1, &createInfo, nullptr, &pipeline), "failed to create a graphics pipeline!");
+    }
+
+    VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkRayTracingPipelineCreateInfoKHR& createInfo) : device(device)
+    {
+        PK_LOG_VERBOSE("VK ALLOC: Ray Tracing Pipeline");
+        VK_ASSERT_RESULT_CTX(vkCreateRayTracingPipelinesKHR(device, VK_NULL_HANDLE, pipelineCache, 1, &createInfo, nullptr, &pipeline), "failed to create a graphics pipeline!");
     }
 
     VulkanPipeline::~VulkanPipeline()

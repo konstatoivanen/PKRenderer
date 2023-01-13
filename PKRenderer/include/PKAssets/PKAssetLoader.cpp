@@ -251,7 +251,7 @@ namespace PK::Assets
             meta.optionValues[lineIndex++] = (uint32_t)strtoull(comma + 1, &head, 10);
         }
 
-        meta.optionCount = lineIndex;
+        meta.optionCount = (uint32_t)lineIndex;
         
         fclose(file);
         free(buffer);

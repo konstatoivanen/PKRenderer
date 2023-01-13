@@ -211,4 +211,9 @@ namespace PK::Math::Functions
             dst[i] = (uint32_t)src[i];
         }
     }
+
+    uint32_t GetAlignedSize(uint32_t value, uint32_t alignment)
+    {
+        return (value + alignment - 1) & ~(alignment - 1);
+    }
 }

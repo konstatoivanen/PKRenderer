@@ -72,9 +72,9 @@ namespace PK::Rendering::Passes
         cmd->SetImage(hash->_MainTex, grain, 0, 0);
         cmd->Dispatch(m_computeFilmGrain, { 16, 64, 1 });
 
-        m_depthOfField.Execute(destination, lastAccess);
-        m_bloom.Execute(destination, lastAccess);
-        m_histogram.Execute(m_bloom.GetTexture(), MemoryAccessFlags::ComputeRead);
+        m_depthOfField.Execute(cmd, destination, lastAccess);
+        m_bloom.Execute(cmd, destination, lastAccess);
+        m_histogram.Execute(cmd, m_bloom.GetTexture(), MemoryAccessFlags::ComputeRead);
 
         cmd->SetImage(hash->_MainTex, color, 0, 0);
         cmd->SetTexture(hash->pk_BloomLensDirtTex, m_bloomLensDirtTexture);

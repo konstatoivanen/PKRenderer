@@ -5,6 +5,7 @@
 #include "Rendering/Objects/Shader.h"
 #include "Rendering/Objects/Texture.h"
 #include "Rendering/Objects/RenderTexture.h"
+#include "Rendering/Objects/AccelerationStructure.h"
 #include "Rendering/Objects/BindArray.h"
 #include "Rendering/Structs/ExecutionGate.h"
 
@@ -12,7 +13,9 @@ namespace PK::Rendering::Objects
 {
     typedef std::initializer_list<const Structs::TextureViewRange> RenderTargetRanges;
 
-    struct CommandBuffer : public PK::Utilities::NoCopy
+    // @TODO refactor object command buffer operations to happen through command buffers as under the hood they're dependent anyway.
+    // Current setup hides implicit dependencies on currently active command buffers.
+    struct CommandBuffer : public PK::Utilities::NoCopy, public Utilities::NativeInterface<CommandBuffer>
     {
         virtual Structs::ExecutionGate GetOnCompleteGate() const = 0;
         virtual void SetRenderTarget(const Math::uint3& resolution) = 0;
@@ -38,6 +41,8 @@ namespace PK::Rendering::Objects
         virtual void SetBufferArray(uint32_t nameHashId, BindArray<Buffer>* bufferArray) = 0;
         virtual void SetTextureArray(uint32_t nameHashId, BindArray<Texture>* textureArray) = 0;
         virtual void SetImage(uint32_t nameHashId, Texture* texture, const Structs::TextureViewRange& range) = 0;
+        virtual void SetAccelerationStructure(uint32_t nameHashId, AccelerationStructure* structure) = 0;
+        virtual void SetShaderBindingTable(Structs::RayTracingShaderGroup group, const Buffer* buffer, size_t offset = 0, size_t stride = 0, size_t size = 0) = 0;
         virtual void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) = 0;
         virtual void SetKeyword(uint32_t nameHashId, bool value) = 0;
 
@@ -45,7 +50,8 @@ namespace PK::Rendering::Objects
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;
         virtual void DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) = 0;
         virtual void Dispatch(Math::uint3 groupCount) = 0;
-        
+        virtual void DispatchRays(Math::uint3 dimensions) = 0;
+
         // @TODO Nasty dependency. Rethink this one!
         virtual void Blit(Texture* src, Core::Window* dst, Structs::FilterMode filter) = 0;
         virtual void Blit(Core::Window* src, Buffer* dst) = 0;
@@ -88,6 +94,8 @@ namespace PK::Rendering::Objects
         void SetImage(const char* name, Texture* texture, uint16_t level, uint16_t layer);
         void SetImage(const char* name, Texture* texture, const Structs::TextureViewRange& range);
         
+        void SetAccelerationStructure(const char* name, AccelerationStructure* structure);
+
         void SetBufferArray(const char* name, BindArray<Buffer>* bufferArray);
         void SetTextureArray(const char* name, BindArray<Texture>* textureArray);
 
@@ -109,6 +117,8 @@ namespace PK::Rendering::Objects
         void Blit(const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int32_t variantIndex = -1);
         void Dispatch(const Shader* shader, Math::uint3 groupCount);
         void Dispatch(const Shader* shader, uint32_t variantIndex, Math::uint3 groupCount);
+        void DispatchRays(const Shader* shader, Math::uint3 dimensions);
+        void DispatchRays(const Shader* shader, uint32_t variantIndex, Math::uint3 dimensions);
         
         void Barrier(const Texture* texture, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
         void Barrier(const Texture* texture, const Structs::TextureViewRange& range, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);

@@ -31,4 +31,5 @@ namespace PK::Math::Functions
     uint32_t GetMaxMipLevel(uint3 resolution); 
     std::string BytesToString(size_t bytes, uint32_t decimalPlaces = 2);
     void ReinterpretIndex16ToIndex32(uint32_t* dst, uint16_t* src, uint32_t count);
+    uint32_t GetAlignedSize(uint32_t value, uint32_t alignment);
 }

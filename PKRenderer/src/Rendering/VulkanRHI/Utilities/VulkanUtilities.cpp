@@ -24,6 +24,9 @@ PFN_vkCreateRayTracingPipelinesKHR pk_vkCreateRayTracingPipelinesKHR = nullptr;
 PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR pk_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR = nullptr;
 PFN_vkGetRayTracingShaderGroupHandlesKHR pk_vkGetRayTracingShaderGroupHandlesKHR = nullptr;
 PFN_vkGetRayTracingShaderGroupStackSizeKHR pk_vkGetRayTracingShaderGroupStackSizeKHR = nullptr;
+PFN_vkGetAccelerationStructureDeviceAddressKHR pk_vkGetAccelerationStructureDeviceAddressKHR = nullptr;
+PFN_vkGetAccelerationStructureBuildSizesKHR pk_vkGetAccelerationStructureBuildSizesKHR = nullptr;
+PFN_vkCmdBuildAccelerationStructuresKHR pk_vkCmdBuildAccelerationStructuresKHR = nullptr;
 
 namespace PK::Rendering::VulkanRHI::Utilities
 {
@@ -50,6 +53,10 @@ namespace PK::Rendering::VulkanRHI::Utilities
         pk_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR = (PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR");
         pk_vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupHandlesKHR");
         pk_vkGetRayTracingShaderGroupStackSizeKHR = (PFN_vkGetRayTracingShaderGroupStackSizeKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupStackSizeKHR");
+        pk_vkGetAccelerationStructureDeviceAddressKHR = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureDeviceAddressKHR");
+        pk_vkGetAccelerationStructureBuildSizesKHR = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureBuildSizesKHR");
+        pk_vkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetInstanceProcAddr(instance, "vkCmdBuildAccelerationStructuresKHR");
+        pk_vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupHandlesKHR");
     }
 
     std::vector<VkLayerProperties> VulkanGetInstanceLayerProperties()
@@ -147,11 +154,21 @@ namespace PK::Rendering::VulkanRHI::Utilities
         return presentModes;
     }
 
-    VkPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device)
+    VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device)
     {
-        VkPhysicalDeviceProperties deviceProperties;
-        vkGetPhysicalDeviceProperties(device, &deviceProperties);
-        return deviceProperties;
+        VkPhysicalDeviceProperties2 deviceProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
+        VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR };
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
+        deviceProperties.pNext = &accelerationStructureProperties;
+        accelerationStructureProperties.pNext = &rayTracingProperties;
+
+        vkGetPhysicalDeviceProperties2(device, &deviceProperties);
+
+        VulkanPhysicalDeviceProperties returnProperties;
+        returnProperties.properties = deviceProperties.properties;
+        returnProperties.accelerationStructureProperties = accelerationStructureProperties;
+        returnProperties.rayTracingProperties = rayTracingProperties;
+        return returnProperties;
     }
 
     QueueFamilies VulkanGetPhysicalDeviceQueueFamilyIndices(VkPhysicalDevice device, VkSurfaceKHR surface)
@@ -296,8 +313,8 @@ namespace PK::Rendering::VulkanRHI::Utilities
         for (auto& device : devices)
         {
             auto properties = VulkanGetPhysicalDeviceProperties(device);
-            auto versionMajor = VK_API_VERSION_MAJOR(properties.apiVersion);
-            auto versionMinor = VK_API_VERSION_MINOR(properties.apiVersion);
+            auto versionMajor = VK_API_VERSION_MAJOR(properties.properties.apiVersion);
+            auto versionMinor = VK_API_VERSION_MINOR(properties.properties.apiVersion);
 
             if (versionMajor < requirements.versionMajor)
             {
@@ -335,7 +352,7 @@ namespace PK::Rendering::VulkanRHI::Utilities
                 }
             }
 
-            if (properties.deviceType != requirements.deviceType ||
+            if (properties.properties.deviceType != requirements.deviceType ||
                 !extensionSupported ||
                 !swapChainSupported ||
                 !hasQueueFamilies)
@@ -357,10 +374,10 @@ namespace PK::Rendering::VulkanRHI::Utilities
             }
 
             PK_LOG_NEWLINE();
-            PK_LOG_HEADER(" Selected Physical Device '%s' from '%i' physical devices. ", properties.deviceName, devices.size());
-            PK_LOG_INFO("   Vendor: %i", properties.vendorID);
-            PK_LOG_INFO("   Device: %i", properties.deviceID);
-            PK_LOG_INFO("   Driver: %i", properties.driverVersion);
+            PK_LOG_HEADER(" Selected Physical Device '%s' from '%i' physical devices. ", properties.properties.deviceName, devices.size());
+            PK_LOG_INFO("   Vendor: %i", properties.properties.vendorID);
+            PK_LOG_INFO("   Device: %i", properties.properties.deviceID);
+            PK_LOG_INFO("   Driver: %i", properties.properties.driverVersion);
             PK_LOG_INFO("   API VER: %i.%i", versionMajor, versionMinor);
             PK_LOG_NEWLINE();
 
@@ -395,6 +412,82 @@ namespace PK::Rendering::VulkanRHI::Utilities
         }
 
         return VK_PRESENT_MODE_FIFO_KHR;
+    }
+
+    VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureGeometryKHR& geometry, VkAccelerationStructureTypeKHR type, uint32_t primitiveCount)
+    {
+        VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR };
+
+        VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
+        accelerationStructureBuildGeometryInfo.type = type;
+        accelerationStructureBuildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+        accelerationStructureBuildGeometryInfo.geometryCount = 1;
+        accelerationStructureBuildGeometryInfo.pGeometries = &geometry;
+
+        pk_vkGetAccelerationStructureBuildSizesKHR(
+            device,
+            VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+            &accelerationStructureBuildGeometryInfo,
+            &primitiveCount,
+            &accelerationStructureBuildSizesInfo);
+
+        return accelerationStructureBuildSizesInfo;
+    }
+
+    std::string VulkanResultToString(VkResult result)
+    {
+        switch (result)
+        {
+            case VK_SUCCESS: return "VK_SUCCESS";
+            case VK_NOT_READY: return "VK_NOT_READY";
+            case VK_TIMEOUT: return "VK_TIMEOUT";
+            case VK_EVENT_SET: return "VK_EVENT_SET";
+            case VK_EVENT_RESET: return "VK_EVENT_RESET";
+            case VK_INCOMPLETE: return "VK_INCOMPLETE";
+            case VK_ERROR_OUT_OF_HOST_MEMORY: return "VK_ERROR_OUT_OF_HOST_MEMORY";
+            case VK_ERROR_OUT_OF_DEVICE_MEMORY: return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
+            case VK_ERROR_INITIALIZATION_FAILED: return "VK_ERROR_INITIALIZATION_FAILED";
+            case VK_ERROR_DEVICE_LOST: return "VK_ERROR_DEVICE_LOST";
+            case VK_ERROR_MEMORY_MAP_FAILED: return "VK_ERROR_MEMORY_MAP_FAILED";
+            case VK_ERROR_LAYER_NOT_PRESENT: return "VK_ERROR_LAYER_NOT_PRESENT";
+            case VK_ERROR_EXTENSION_NOT_PRESENT: return "VK_ERROR_EXTENSION_NOT_PRESENT";
+            case VK_ERROR_FEATURE_NOT_PRESENT: return "VK_ERROR_FEATURE_NOT_PRESENT";
+            case VK_ERROR_INCOMPATIBLE_DRIVER: return "VK_ERROR_INCOMPATIBLE_DRIVER";
+            case VK_ERROR_TOO_MANY_OBJECTS: return "VK_ERROR_TOO_MANY_OBJECTS";
+            case VK_ERROR_FORMAT_NOT_SUPPORTED: return "VK_ERROR_FORMAT_NOT_SUPPORTED";
+            case VK_ERROR_FRAGMENTED_POOL: return "VK_ERROR_FRAGMENTED_POOL";
+            case VK_ERROR_UNKNOWN: return "VK_ERROR_UNKNOWN";
+            case VK_ERROR_OUT_OF_POOL_MEMORY: return "VK_ERROR_OUT_OF_POOL_MEMORY";
+            case VK_ERROR_INVALID_EXTERNAL_HANDLE: return "VK_ERROR_INVALID_EXTERNAL_HANDLE";
+            case VK_ERROR_FRAGMENTATION: return "VK_ERROR_FRAGMENTATION";
+            case VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS: return "VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS";
+            case VK_PIPELINE_COMPILE_REQUIRED: return "VK_PIPELINE_COMPILE_REQUIRED";
+            case VK_ERROR_SURFACE_LOST_KHR: return "VK_ERROR_SURFACE_LOST_KHR";
+            case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR: return "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
+            case VK_SUBOPTIMAL_KHR: return "VK_SUBOPTIMAL_KHR";
+            case VK_ERROR_OUT_OF_DATE_KHR: return "VK_ERROR_OUT_OF_DATE_KHR";
+            case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR: return "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
+            case VK_ERROR_VALIDATION_FAILED_EXT: return "VK_ERROR_VALIDATION_FAILED_EXT";
+            case VK_ERROR_INVALID_SHADER_NV: return "VK_ERROR_INVALID_SHADER_NV";
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            case VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR: return "VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR";
+            case VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR: return "VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR";
+            case VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR: return "VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR";
+            case VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR: return "VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR";
+            case VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR: return "VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR";
+            case VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR: return "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR";
+        #endif
+            case VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT: return "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT";
+            case VK_ERROR_NOT_PERMITTED_KHR: return "VK_ERROR_NOT_PERMITTED_KHR";
+            case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT: return "VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT";
+            case VK_THREAD_IDLE_KHR: return "VK_THREAD_IDLE_KHR";
+            case VK_THREAD_DONE_KHR: return "VK_THREAD_DONE_KHR";
+            case VK_OPERATION_DEFERRED_KHR: return "VK_OPERATION_DEFERRED_KHR";
+            case VK_OPERATION_NOT_DEFERRED_KHR: return "VK_OPERATION_NOT_DEFERRED_KHR";
+            case VK_ERROR_COMPRESSION_EXHAUSTED_EXT: return "VK_ERROR_COMPRESSION_EXHAUSTED_EXT";
+            case VK_RESULT_MAX_ENUM: return "VK_RESULT_MAX_ENUM";
+            default: return "VK_RESULT_INVALID_ENUM";
+        }
     }
 
     VkExtent2D VulkanSelectSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities, const VkExtent2D& desiredExtent)

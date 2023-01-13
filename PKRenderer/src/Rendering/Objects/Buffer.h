@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/Services/Log.h"
 #include "Utilities/Ref.h"
 #include "Utilities/NoCopy.h"
 #include "Utilities/BufferView.h"
@@ -12,6 +13,15 @@ namespace PK::Rendering::Objects
     {
         public:
             static Utilities::Ref<Buffer> Create(const Structs::BufferLayout& layout, const void* data, size_t count, Structs::BufferUsage usage, const char* name);
+
+            inline static Utilities::Ref<Buffer> Create(Structs::ElementType type,
+                const void* data,
+                size_t count,
+                Structs::BufferUsage usage,
+                const char* name)
+            {
+                return Create(Structs::BufferLayout({ { type, "DATA" } }), data, count, usage, name);
+            }
 
             inline static Utilities::Ref<Buffer> CreateVertex(const Structs::BufferLayout& layout,
                                                    const void* data, 
@@ -73,6 +83,17 @@ namespace PK::Rendering::Objects
                 PK_THROW_ASSERT(mapSize <= bufSize, "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", mapSize, bufSize);
 
                 return { reinterpret_cast<T*>(BeginWrite(offset * tsize, count * tsize)), count };
+            }
+
+            template<typename T>
+            Utilities::InterleavedBufferView<T> BeginWrite(size_t stride, size_t elementOffset, size_t bufferOffset, size_t count)
+            {
+                auto mapSize = stride * count + stride * bufferOffset;
+                auto bufSize = GetCapacity();
+
+                PK_THROW_ASSERT(mapSize <= bufSize, "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", mapSize, bufSize);
+
+                return { reinterpret_cast<uint8_t*>(BeginWrite(bufferOffset * stride, count * stride)), count, stride, elementOffset };
             }
 
             template<typename T>

@@ -49,7 +49,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             }
         }
 
-        for (auto& kv : m_computePipelines)
+        for (auto& kv : m_otherPipelines)
         {
             if (kv.second.pipeline != nullptr)
             {
@@ -66,6 +66,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         {
             case ShaderType::Graphics: return GetGraphicsPipeline(key);
             case ShaderType::Compute: return GetComputePipeline(key.shader);
+            case ShaderType::RayTracing: return GetRayTracingPipeline(key.shader);
         }
 
         PK_THROW_ERROR("Pipeline retrieval failed! Unknown shader type!");
@@ -74,9 +75,9 @@ namespace PK::Rendering::VulkanRHI::Systems
     const VulkanPipeline* VulkanPipelineCache::GetComputePipeline(const VersionHandle<VulkanShader>& shader)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
-        auto iterator = m_computePipelines.find(shader);
+        auto iterator = m_otherPipelines.find(shader);
 
-        if (iterator != m_computePipelines.end() && iterator->second.pipeline != nullptr)
+        if (iterator != m_otherPipelines.end() && iterator->second.pipeline != nullptr)
         {
             iterator->second.pruneTick = nextPruneTick;
             return iterator->second.pipeline;
@@ -86,7 +87,7 @@ namespace PK::Rendering::VulkanRHI::Systems
         pipelineInfo.stage = shader->GetModule((int)ShaderStage::Compute)->stageInfo;
         pipelineInfo.layout = shader->GetPipelineLayout()->layout;
         auto pipeline = new VulkanPipeline(m_device, m_pipelineCache, pipelineInfo);
-        m_computePipelines[shader] = { pipeline, nextPruneTick };
+        m_otherPipelines[shader] = { pipeline, nextPruneTick };
         return pipeline;
     }
 
@@ -229,6 +230,62 @@ namespace PK::Rendering::VulkanRHI::Systems
         return pipeline;
     }
 
+    const VulkanPipeline* VulkanPipelineCache::GetRayTracingPipeline(const PK::Utilities::VersionHandle<Objects::VulkanShader>& shader)
+    {
+        auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
+        auto iterator = m_otherPipelines.find(shader);
+
+        if (iterator != m_otherPipelines.end() && iterator->second.pipeline != nullptr)
+        {
+            iterator->second.pruneTick = nextPruneTick;
+            return iterator->second.pipeline;
+        }
+
+        auto stageCount = 0u;
+        VkPipelineShaderStageCreateInfo shaderStages[(int)ShaderStage::MaxCount]{};
+        VkRayTracingShaderGroupCreateInfoKHR shaderGroups[(int)ShaderStage::MaxCount]{};
+
+        for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
+        {
+            if (shader->GetModule(i) == nullptr)
+            {
+                continue;
+            }
+            
+            auto stage = (ShaderStage)i;
+
+            shaderGroups[stageCount].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+            shaderGroups[stageCount].type = VulkanRHI::EnumConvert::GetRayTracingStageGroupType(stage);
+            shaderGroups[stageCount].generalShader = VK_SHADER_UNUSED_KHR;
+            shaderGroups[stageCount].closestHitShader = VK_SHADER_UNUSED_KHR;
+            shaderGroups[stageCount].anyHitShader = VK_SHADER_UNUSED_KHR;
+            shaderGroups[stageCount].intersectionShader = VK_SHADER_UNUSED_KHR;
+
+            switch (stage)
+            {
+                case ShaderStage::RayGeneration: 
+                case ShaderStage::RayMiss: shaderGroups[stageCount].generalShader = stageCount; break;
+                case ShaderStage::RayClosestHit: shaderGroups[stageCount].closestHitShader = stageCount; break;
+                case ShaderStage::RayAnyHit: shaderGroups[stageCount].anyHitShader = stageCount; break;
+                case ShaderStage::RayIntersection: shaderGroups[stageCount].intersectionShader = stageCount; break;
+            }
+
+            shaderStages[stageCount++] = shader->GetModule(i)->stageInfo;
+        }
+
+		VkRayTracingPipelineCreateInfoKHR pipelineInfo{ VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR };
+        pipelineInfo.stageCount = stageCount;
+        pipelineInfo.pStages = shaderStages;
+        pipelineInfo.groupCount = stageCount;
+        pipelineInfo.pGroups = shaderGroups;
+		pipelineInfo.maxPipelineRayRecursionDepth = 1;
+		pipelineInfo.layout = shader->GetPipelineLayout()->layout;
+
+        auto pipeline = new VulkanPipeline(m_device, m_pipelineCache, pipelineInfo);
+        m_otherPipelines[shader] = { pipeline, nextPruneTick };
+        return pipeline;
+    }
+
     void VulkanPipelineCache::Prune()
     {
         m_currentPruneTick++;
@@ -245,7 +302,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             }
         }
 
-        for (auto& kv : m_computePipelines)
+        for (auto& kv : m_otherPipelines)
         {
             auto& key = kv.first;
             auto& value = kv.second;

@@ -21,7 +21,9 @@ namespace PK::Rendering::Passes
             Objects::Shader* m_computeClear = nullptr;
             Objects::Shader* m_computeMipmap = nullptr;
             Objects::Shader* m_computeBakeGI = nullptr;
+            Objects::Shader* m_rayTraceGatherGI = nullptr;
             Objects::Shader* m_computeMask = nullptr;
+            Utilities::Ref<Objects::Buffer> m_shaderBindingTable;
             Utilities::Ref<Objects::ConstantBuffer> m_parameters;
             Utilities::Ref<Objects::Texture> m_voxels;
             Utilities::Ref<Objects::Texture> m_voxelMask;

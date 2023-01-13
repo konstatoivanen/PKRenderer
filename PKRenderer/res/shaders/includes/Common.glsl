@@ -55,6 +55,7 @@ PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenDepthPrevious;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenNormals;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_Bluenoise256;
 PK_DECLARE_SET_SHADER uniform sampler2DArray pk_ScreenGI_Read;
+PK_DECLARE_ACCELERATION_STRUCTURE(PK_SET_SHADER, pk_SceneStructure)
 
 #if !defined(PK_INSTANCING_ENABLED)
     PK_DECLARE_CBUFFER(pk_ModelMatrices, PK_SET_DRAW)

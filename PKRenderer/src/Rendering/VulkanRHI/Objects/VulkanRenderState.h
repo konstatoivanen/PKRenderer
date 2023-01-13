@@ -45,6 +45,11 @@ namespace PK::Rendering::VulkanRHI::Objects
         uint32_t count = 0u;
     };
 
+    struct VulkanShaderBindingTableBundle
+    {
+        VkStridedDeviceAddressRegionKHR addresses[(uint32_t)Structs::RayTracingShaderGroup::MaxCount]{};
+    };
+
     struct VulkanDescriptorSetBundle
     {
         VkDescriptorSet sets[Structs::PK_MAX_DESCRIPTOR_SETS]{};
@@ -84,6 +89,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             void SetMultisampling(const Structs::MultisamplingParameters& multisampling);
             void SetVertexBuffers(const VulkanBindHandle** handles, uint32_t count);
             void SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType);
+            void SetShaderBindingTableAddress(Structs::RayTracingShaderGroup group, VkDeviceAddress address, size_t stride, size_t size);
 
             template<typename T>
             void SetResource(uint32_t nameHashId, const T* value, uint32_t count = 1) { m_resourceState.Set(nameHashId, value, count); }
@@ -94,6 +100,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             VkRenderPassBeginInfo GetRenderPassInfo() const;
             VulkanVertexBufferBundle GetVertexBufferBundle() const;
             VulkanDescriptorSetBundle GetDescriptorSetBundle(const Structs::ExecutionGate& gate, uint32_t dirtyFlags);
+            VulkanShaderBindingTableBundle GetShaderBindingTableBundle();
             const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
 
             void ValidateRenderTarget();
@@ -122,6 +129,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             Systems::PipelineKey m_pipelineKey{};
             Systems::FrameBufferKey m_frameBufferKey[2]{};
             Systems::RenderPassKey m_renderPassKey[2]{};
+            VulkanShaderBindingTableBundle m_shaderBindingTableBundle;
         
             const VulkanBindHandle* m_vertexBuffers[Structs::PK_MAX_VERTEX_ATTRIBUTES]{};
             const VulkanBindHandle* m_indexBuffer = nullptr;
