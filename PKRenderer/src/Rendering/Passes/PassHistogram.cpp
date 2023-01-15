@@ -21,6 +21,8 @@ namespace PK::Rendering::Passes
 
     void PassHistogram::Execute(Objects::CommandBuffer* cmd, Texture* target, MemoryAccessFlags nextAccess)
     {
+        cmd->BeginDebugScope("Histogram", PK_COLOR_MAGENTA);
+
         auto hash = HashCache::Get();
         auto histogram = m_histogram.get();
 
@@ -32,5 +34,7 @@ namespace PK::Rendering::Passes
         cmd->Barrier(histogram, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
         cmd->Dispatch(m_computeHistogram, m_passHistogramAvg, { 1u, 1u, 1u });
         cmd->Barrier(histogram, MemoryAccessFlags::ComputeWrite, nextAccess);
+    
+        cmd->EndDebugScope();
     }
 }

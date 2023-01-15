@@ -39,6 +39,8 @@ namespace PK::Rendering::Passes
 
     void PassDepthOfField::Execute(Objects::CommandBuffer* cmd, RenderTexture* destination, MemoryAccessFlags& lastAccess)
     {
+        cmd->BeginDebugScope("DepthOfField", Math::PK_COLOR_MAGENTA);
+
         auto hash = HashCache::Get();
         auto autoFocusParams = m_autoFocusParams.get();
         auto renderTarget = m_renderTarget.get();
@@ -81,6 +83,8 @@ namespace PK::Rendering::Passes
         cmd->Blit(m_shaderComposite, 0);
 
         lastAccess = MemoryAccessFlags::FragmentAttachmentColor;
+    
+        cmd->EndDebugScope();
     }
 
     void PassDepthOfField::OnUpdateParameters(const ApplicationConfig* config)

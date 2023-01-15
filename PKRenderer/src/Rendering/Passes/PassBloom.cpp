@@ -31,6 +31,8 @@ namespace PK::Rendering::Passes
     
     void PassBloom::Execute(Objects::CommandBuffer* cmd, RenderTexture* source, MemoryAccessFlags& lastAccess)
     {
+        cmd->BeginDebugScope("Bloom", PK_COLOR_MAGENTA);
+
         auto color = source->GetColor(0);
         auto bloom = m_bloomTexture.get();
 
@@ -83,5 +85,7 @@ namespace PK::Rendering::Passes
         cmd->SetTexture(hash->pk_BloomTexture1, bloom, { 0, 0, 6, 1 });
 
         lastAccess = MemoryAccessFlags::ComputeRead;
+
+        cmd->EndDebugScope();
     }
 }
