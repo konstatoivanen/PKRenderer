@@ -23,13 +23,13 @@ namespace PK::Rendering::Passes
         descriptor.sampler.filterMin = FilterMode::Trilinear;
         descriptor.sampler.filterMag = FilterMode::Trilinear;
 
-        m_bloomTexture = Texture::Create(descriptor, "Bloom Texture");
+        m_bloomTexture = Texture::Create(descriptor, "Bloom.Texture");
         m_computeBloom = assetDatabase->Find<Shader>("CS_Bloom");
         m_passPrefilter = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_DOWNSAMPLE"));
         m_passDiskblur = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_BLUR"));
     }
     
-    void PassBloom::Execute(Objects::CommandBuffer* cmd, RenderTexture* source, MemoryAccessFlags lastAccess)
+    void PassBloom::Execute(Objects::CommandBuffer* cmd, RenderTexture* source, MemoryAccessFlags& lastAccess)
     {
         auto color = source->GetColor(0);
         auto bloom = m_bloomTexture.get();
@@ -81,5 +81,7 @@ namespace PK::Rendering::Passes
 
         cmd->SetTexture(hash->pk_BloomTexture, bloom, { 0, 1, 6, 1 });
         cmd->SetTexture(hash->pk_BloomTexture1, bloom, { 0, 0, 6, 1 });
+
+        lastAccess = MemoryAccessFlags::ComputeRead;
     }
 }

@@ -28,9 +28,9 @@ namespace PK::Rendering::Passes
         descriptor.resolution = VolumeResolution;
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
 
-        m_volumeInject = Texture::Create(descriptor, "Fog Inject Volume");
-        m_volumeScatter = Texture::Create(descriptor, "Fog Scatter Volume");
-        m_depthTiles = Buffer::CreateStorage({ {ElementType::Uint, "DEPTHMAX"} }, VolumeResolution.x * VolumeResolution.y, BufferUsage::None, "Fog Depth Tiles");
+        m_volumeInject = Texture::Create(descriptor, "Fog.InjectVolume");
+        m_volumeScatter = Texture::Create(descriptor, "Fog.ScatterVolume");
+        m_depthTiles = Buffer::CreateStorage({ {ElementType::Uint, "DEPTHMAX"} }, VolumeResolution.x * VolumeResolution.y, BufferUsage::None, "Fog.DepthTiles");
 
         m_computeInject = assetDatabase->Find<Shader>("CS_VolumeFogLightDensity");
         m_computeScatter = assetDatabase->Find<Shader>("CS_VolumeFogScatter");
@@ -52,7 +52,7 @@ namespace PK::Rendering::Passes
             { ElementType::Float,  hash->pk_Volume_NoiseFogAmount },
             { ElementType::Float,  hash->pk_Volume_NoiseFogScale },
             { ElementType::Float,  hash->pk_Volume_WindSpeed },
-        }), "Fog Parameters");
+        }), "Fog.Parameters");
 
         OnUpdateParameters(config);
 
@@ -67,7 +67,7 @@ namespace PK::Rendering::Passes
 
     void PassVolumeFog::Render(CommandBuffer* cmd, RenderTexture* destination, const uint3& resolution)
     {
-        cmd->BeginDebugScope("Volumetric Fog", PK_COLOR_MAGENTA);
+        cmd->BeginDebugScope("VolumetricFog", PK_COLOR_MAGENTA);
 
         auto depthCountX = (uint)std::ceilf(resolution.x / 32.0f);
         auto depthCountY = (uint)std::ceilf(resolution.y / 32.0f);

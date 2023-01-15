@@ -21,7 +21,7 @@ namespace PK::Rendering::Passes
 
         auto tableInfo = m_rayTraceGatherGI->GetShaderBindingTableInfo();
         auto tableUintCount = tableInfo.totalTableSize / sizeof(uint32_t);
-        m_shaderBindingTable = Buffer::Create(ElementType::Uint, tableInfo.handleData, tableUintCount, BufferUsage::DefaultShaderBindingTable, "SceneGI.ShaderBindingTable");
+        m_shaderBindingTable = Buffer::Create(ElementType::Uint, tableInfo.handleData, tableUintCount, BufferUsage::DefaultShaderBindingTable, "GI.ShaderBindingTable");
 
         TextureDescriptor descr{};
         descr.samplerType = SamplerType::Sampler3D;
@@ -36,19 +36,19 @@ namespace PK::Rendering::Passes
         descr.resolution = { 256u, 128u, 256u };
         descr.levels = 7u;
         descr.usage = TextureUsage::Sample | TextureUsage::Storage;
-        m_voxels = Texture::Create(descr, "GI Voxel Volume");
+        m_voxels = Texture::Create(descr, "GI.VoxelVolume");
 
         descr.format = TextureFormat::R8UI;
         descr.sampler.borderColor = BorderColor::IntClear;
         descr.levels = 1u;
         descr.sampler.mipMax = 0.0f;
-        m_voxelMask = Texture::Create(descr, "GI Voxel Volume Mask");
+        m_voxelMask = Texture::Create(descr, "GI.VoxelVolumeMask");
 
         descr.samplerType = SamplerType::Sampler2D;
         descr.format = TextureFormat::R8UI;
         descr.layers = 1u;
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1 };
-        m_mask = Texture::Create(descr, "GI Screen Space Mask Texture");
+        m_mask = Texture::Create(descr, "GI.ScreenSpaceMaskTexture");
 
         descr.samplerType = SamplerType::Sampler2DArray;
         descr.format = TextureFormat::RGBA16F;
@@ -60,7 +60,7 @@ namespace PK::Rendering::Passes
         descr.levels = 1u;
         descr.layers = 4u;
         descr.usage = TextureUsage::RTColorSample | TextureUsage::Storage;
-        m_screenSpaceGI = Texture::Create(descr, "GI Sceen Space Texture");
+        m_screenSpaceGI = Texture::Create(descr, "GI.ScreenSpaceTexture");
 
         auto cmd = GraphicsAPI::GetCommandBuffer();
         auto hash = HashCache::Get();
@@ -101,7 +101,7 @@ namespace PK::Rendering::Passes
             { ElementType::Float, hash->pk_SceneGI_DiffuseGain },
             { ElementType::Float, hash->pk_SceneGI_SpecularGain },
             { ElementType::Float, hash->pk_SceneGI_Fade }
-        }), "Scene GI Parameters");
+        }), "GI.Parameters");
 
         m_parameters->Set<float4>(hash->pk_SceneGI_ST, float4(-76.8f, -6.0f, -76.8f, 1.0f / 0.6f));
         m_parameters->Set<float>(hash->pk_SceneGI_VoxelSize, 0.6f);

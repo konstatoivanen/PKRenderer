@@ -69,6 +69,11 @@ namespace PK::Core
 		YAML::BoxedValue<float> AmbientOcclusionRadius = YAML::BoxedValue<float>("AmbientOcclusionRadius", 1.0f);
 		YAML::BoxedValue<bool> AmbientOcclusionDownsample = YAML::BoxedValue<bool>("AmbientOcclusionDownsample", true);
 
+		YAML::BoxedValue<float> TAASharpness = YAML::BoxedValue<float>("TAASharpness", 0.5f);
+		YAML::BoxedValue<float> TAABlendingStatic = YAML::BoxedValue<float>("TAABlendingStatic", 0.99f);
+		YAML::BoxedValue<float> TAABlendingMotion = YAML::BoxedValue<float>("TAABlendingMotion", 0.85f);
+		YAML::BoxedValue<float> TAAMotionAmplification = YAML::BoxedValue<float>("TAAMotionAmplification", 600.0f);
+
 		YAML::BoxedValue<float> VolumeConstantFog	= YAML::BoxedValue<float>("VolumeConstantFog", 0.0f);
 		YAML::BoxedValue<float> VolumeHeightFogExponent = YAML::BoxedValue<float>("VolumeHeightFogExponent", 0.0f);
 		YAML::BoxedValue<float> VolumeHeightFogOffset	= YAML::BoxedValue<float>("VolumeHeightFogOffset", 0.0f);

@@ -18,4 +18,5 @@ namespace PK::Math::Functions
     float4x4 GetPerspectiveSubdivision(uint32_t index, const int3& gridSize, float fovy, float aspect, float znear, float zfar);
     float4x4 GetFrustumBoundingOrthoMatrix(const float4x4& worldToLocal, const float4x4& inverseViewProjection, const float3& paddingLD, const float3& paddingRU, float* outZnear, float* outZFar);
     float GetShadowCascadeMatrices(const float4x4& worldToLocal, const float4x4& inverseViewProjection, const float* zPlanes, float zPadding, uint32_t count, float4x4* matrices);
+    float4x4 GetPerspectiveJittered(const float4x4& matrix, const float2& jitter);
 }

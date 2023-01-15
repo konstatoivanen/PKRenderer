@@ -200,4 +200,12 @@ namespace PK::Math::Functions
         minNear += zPadding;
         return maxFar - minNear;
     }
+
+    float4x4 GetPerspectiveJittered(const float4x4& matrix, const float2& jitter)
+    {
+        float4x4 returnValue = matrix;
+        returnValue[2][0] += jitter.x;
+        returnValue[2][1] += jitter.y;
+        return returnValue;
+    }
 }

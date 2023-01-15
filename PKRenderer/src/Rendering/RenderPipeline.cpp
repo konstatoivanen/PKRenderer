@@ -4,6 +4,7 @@
 #include "Rendering/MeshUtility.h"
 #include "Rendering/HashCache.h"
 #include "ECS/Contextual/Tokens/AccelerationStructureBuildToken.h"
+#include "Math/FunctionsMisc.h"
 
 namespace PK::Rendering
 {
@@ -35,7 +36,7 @@ namespace PK::Rendering
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
-        m_renderTarget = CreateRef<RenderTexture>(descriptor, "Scene Render Target");
+        m_renderTarget = CreateRef<RenderTexture>(descriptor, "Scene.RenderTarget");
 
         TextureDescriptor depthDescriptor{};
         depthDescriptor.resolution = { config->InitialWidth, config->InitialHeight, 1 };
@@ -43,7 +44,7 @@ namespace PK::Rendering
         depthDescriptor.usage = TextureUsage::RTDepthSample;
         depthDescriptor.sampler.filterMin = FilterMode::Bilinear;
         depthDescriptor.sampler.filterMag = FilterMode::Bilinear;
-        m_depthPrevious = Texture::Create(depthDescriptor, "Previous Scene Depth Texture");
+        m_depthPrevious = Texture::Create(depthDescriptor, "Scene.DepthTexture.Previous");
 
         m_sceneStructure = AccelerationStructure::Create("Scene");
 
@@ -61,6 +62,7 @@ namespace PK::Rendering
             { ElementType::Float4, hash->pk_ExpProjectionParams },
             { ElementType::Float4, hash->pk_ScreenParams },
             { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
+            { ElementType::Float4, hash->pk_ProjectionJitter },
             { ElementType::Float4x4, hash->pk_MATRIX_V },
             { ElementType::Float4x4, hash->pk_MATRIX_I_V },
             { ElementType::Float4x4, hash->pk_MATRIX_P },
@@ -119,6 +121,17 @@ namespace PK::Rendering
     void RenderPipeline::Step(PK::ECS::Tokens::ViewProjectionUpdateToken* token)
     {
         auto hash = HashCache::Get();
+        
+        // @TODO move to a sequencer step instead
+        m_passPostEffects.OnModifyProjection(token);
+
+        float2 jitter = 
+        {
+            token->jitter.x / m_renderTarget->GetResolution().x,
+            token->jitter.y / m_renderTarget->GetResolution().y
+        };
+
+        token->projection = Functions::GetPerspectiveJittered(token->projection, jitter);
 
         auto cameraMatrix = glm::inverse(token->view);
 
@@ -135,6 +148,7 @@ namespace PK::Rendering
         m_constantsPerFrame->Set<float4>(hash->pk_ProjectionParams, { n, f, f - n, 1.0f / f });
         m_constantsPerFrame->Set<float4>(hash->pk_ExpProjectionParams, { 1.0f / glm::log2(f / n), -log2(n) / log2(f / n), f / n, 1.0f / n });
         m_constantsPerFrame->Set<float4>(hash->pk_WorldSpaceCameraPos, cameraMatrix[3]);
+        m_constantsPerFrame->Set<float4>(hash->pk_ProjectionJitter, token->jitter);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_V, token->view);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_V, cameraMatrix);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_P, token->projection);

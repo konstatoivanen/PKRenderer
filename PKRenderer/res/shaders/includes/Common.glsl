@@ -28,6 +28,8 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float4 pk_ScreenParams;
     // view space z axis splits for directional light shadow cascades
     float4 pk_ShadowCascadeZSplits;
+    // xy = sub pixel jitter, zw = previous frame jitter
+    float4 pk_ProjectionJitter;
 
     // Current view matrix.
     float4x4 pk_MATRIX_V;

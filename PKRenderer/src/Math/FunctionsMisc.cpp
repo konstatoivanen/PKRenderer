@@ -33,6 +33,22 @@ namespace PK::Math::Functions
         return (float)rand() / (float)RAND_MAX;
     }
 
+    float GetHaltonSequence(uint32_t index, uint32_t radix)
+    {
+        float result = 0.0f;
+        float fraction = 1.0f / (float)radix;
+
+        while (index > 0)
+        {
+            result += (float)(index % radix) * fraction;
+
+            index /= radix;
+            fraction /= (float)radix;
+        }
+
+        return result;
+    }
+
     uint32_t RandomUint()
     {
         auto v = rand();
@@ -215,5 +231,15 @@ namespace PK::Math::Functions
     uint32_t GetAlignedSize(uint32_t value, uint32_t alignment)
     {
         return (value + alignment - 1) & ~(alignment - 1);
+    }
+
+    uint3 GetComputeGroupCount(const uint3& threads, const uint3& clusterSize)
+    {
+        return
+        {
+            (uint)glm::ceil(threads.x / float(clusterSize.x)),
+            (uint)glm::ceil(threads.y / float(clusterSize.y)),
+            (uint)glm::ceil(threads.z / float(clusterSize.z))
+        };
     }
 }

@@ -28,7 +28,7 @@ void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData
     surf.albedo = tex2D(_AlbedoTexture, uv).rgb * _Color.rgb;
 
     // Add glitter
-    float t = GlobalNoiseBlueUV(uv * 2.0f.xx).r;
+    float t = GlobalNoiseBlueUV(uv).r;
     t = pow5(t);
     t -= 0.875f;
     t *= 4.0f;

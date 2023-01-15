@@ -16,6 +16,7 @@ The project is built for Windows using C++ 17, Visual Studio & MSVC and supports
 - Realtime global illumination (Voxel cone tracing).
 - Temporal reprojection for volumetrics & screen space GI.
 - Point, spot & directional lights.
+- Temporal Antialiasing.
 - Variance shadow mapping.
 - Cascaded shadow maps.
 - Light cookies.
@@ -34,7 +35,6 @@ The project is built for Windows using C++ 17, Visual Studio & MSVC and supports
 - Mesh Skinning.
 - Serialized scene representation.
 - DX12 Rendering backend.
-- Antialiasing.
 
 ## Required Vulkan Features & Extensions
 - VK_EXT_debug_utils

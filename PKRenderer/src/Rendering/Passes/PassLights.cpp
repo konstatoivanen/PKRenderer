@@ -77,7 +77,7 @@ namespace PK::Rendering::Passes
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
         descriptor.usage = TextureUsage::Sample;
-        m_shadowmapTypeData[(int)LightType::Point].SceneRenderTarget = CreateRef<RenderTexture>(descriptor, "Point light Shadowmap Render Target");
+        m_shadowmapTypeData[(int)LightType::Point].SceneRenderTarget = CreateRef<RenderTexture>(descriptor, "Lights.Shadowmap.PointRenderTarget");
         m_shadowmapTypeData[(int)LightType::Point].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_CUBE, hash->SHADOW_BLUR_PASS0 });
         m_shadowmapTypeData[(int)LightType::Point].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_CUBE, hash->SHADOW_BLUR_PASS1 });
         m_shadowmapTypeData[(int)LightType::Point].TileCount = 1u;
@@ -87,7 +87,7 @@ namespace PK::Rendering::Passes
         descriptor.samplerType = SamplerType::Sampler2DArray;
         descriptor.resolution = { m_shadowmapTileSize, m_shadowmapTileSize, 1u };
         descriptor.layers = PK_SHADOW_CASCADE_COUNT;
-        m_shadowmapTypeData[(int)LightType::Spot].SceneRenderTarget = CreateRef<RenderTexture>(descriptor, "Spot light Shadowmap Render Target");
+        m_shadowmapTypeData[(int)LightType::Spot].SceneRenderTarget = CreateRef<RenderTexture>(descriptor, "Lights.Shadowmap.SpotRenderTarget");
         m_shadowmapTypeData[(int)LightType::Spot].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D, hash->SHADOW_BLUR_PASS0 });
         m_shadowmapTypeData[(int)LightType::Spot].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D, hash->SHADOW_BLUR_PASS1 });
         m_shadowmapTypeData[(int)LightType::Spot].TileCount = 1u;
@@ -112,7 +112,7 @@ namespace PK::Rendering::Passes
         atlasDescriptor.sampler.wrap[2] = WrapMode::Clamp;
         atlasDescriptor.sampler.filterMin = FilterMode::Bilinear;
         atlasDescriptor.sampler.filterMag = FilterMode::Bilinear;
-        m_shadowmaps = Texture::Create(atlasDescriptor, "Shadowmap Atlas");
+        m_shadowmaps = Texture::Create(atlasDescriptor, "Lights.Shadowmap.Atlas");
 
         TextureDescriptor imageDescriptor;
         imageDescriptor.samplerType = SamplerType::Sampler3D;
@@ -124,7 +124,7 @@ namespace PK::Rendering::Passes
         imageDescriptor.sampler.wrap[0] = WrapMode::Clamp;
         imageDescriptor.sampler.wrap[1] = WrapMode::Clamp;
         imageDescriptor.sampler.wrap[2] = WrapMode::Clamp;
-        m_lightTiles = Texture::Create(imageDescriptor, "Light Tiles");
+        m_lightTiles = Texture::Create(imageDescriptor, "Lights.Tiles");
 
         m_lightsBuffer = Buffer::CreateStorage(
         {
@@ -134,10 +134,10 @@ namespace PK::Rendering::Passes
         },
         1024, BufferUsage::PersistentStage, "Lights");
 
-        m_lightMatricesBuffer = Buffer::CreateStorage({ { ElementType::Float4x4, "MATRIX" } }, 32, BufferUsage::PersistentStage, "Light Matrices");
-        m_lightDirectionsBuffer = Buffer::CreateStorage({ { ElementType::Float4, "DIRECTION"} }, 32, BufferUsage::PersistentStage, "Light Direction");
-        m_globalLightsList = Buffer::CreateStorage({ {ElementType::Int, "INDEX"} }, ClusterCount * MaxLightsPerTile, BufferUsage::None, "Lights List");
-        m_globalLightIndex = Buffer::CreateStorage({ {ElementType::Uint, "INDEX"} }, 1, BufferUsage::None, "Light Index Counter");
+        m_lightMatricesBuffer = Buffer::CreateStorage({ { ElementType::Float4x4, "MATRIX" } }, 32, BufferUsage::PersistentStage, "Lights.Matrices");
+        m_lightDirectionsBuffer = Buffer::CreateStorage({ { ElementType::Float4, "DIRECTION"} }, 32, BufferUsage::PersistentStage, "Lights.Directions");
+        m_globalLightsList = Buffer::CreateStorage({ {ElementType::Int, "INDEX"} }, ClusterCount * MaxLightsPerTile, BufferUsage::None, "Lights.List");
+        m_globalLightIndex = Buffer::CreateStorage({ {ElementType::Uint, "INDEX"} }, 1, BufferUsage::None, "Lights.IndexCounter");
         
         auto cmd = GraphicsAPI::GetCommandBuffer();
         cmd->SetBuffer(hash->pk_GlobalLightsList, m_globalLightsList.get());
@@ -258,7 +258,7 @@ namespace PK::Rendering::Passes
 
     void PassLights::Render(CommandBuffer* cmd)
     {
-        cmd->BeginDebugScope("Light Assembly", PK_COLOR_CYAN);
+        cmd->BeginDebugScope("LightAssembly", PK_COLOR_CYAN);
 
         auto hash = HashCache::Get();
         cmd->Clear(m_globalLightIndex.get(), 0, sizeof(uint32_t), 0u);
@@ -282,7 +282,7 @@ namespace PK::Rendering::Passes
             auto& shadow = m_shadowmapTypeData[(int)batchType];
             auto tileCount = shadow.TileCount * shadowBatch.count;
 
-            cmd->BeginDebugScope("Light Batch", PK_COLOR_RED);
+            cmd->BeginDebugScope("LightBatch", PK_COLOR_RED);
 
             cmd->SetRenderTarget(shadow.SceneRenderTarget.get(), true);
             cmd->ClearColor(color(shadowBatch.maxDepthRange, shadowBatch.maxDepthRange * shadowBatch.maxDepthRange, 0.0f, 0.0f), 0u);

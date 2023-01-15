@@ -13,6 +13,8 @@ namespace PK::Rendering
         DECLARE_HASH(_MainTex)
         DECLARE_HASH(_SourceTex)
         DECLARE_HASH(_DestinationTex)
+        DECLARE_HASH(_HistoryReadTex)
+        DECLARE_HASH(_HistoryWriteTex)
         DECLARE_HASH(_BlurOffset)
         DECLARE_HASH(_Color)
         DECLARE_HASH(pk_Time)
@@ -25,6 +27,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_ExpProjectionParams)
         DECLARE_HASH(pk_ScreenParams)
         DECLARE_HASH(pk_ShadowCascadeZSplits)
+        DECLARE_HASH(pk_ProjectionJitter)
         DECLARE_HASH(pk_MATRIX_M)
         DECLARE_HASH(pk_MATRIX_I_M)
         DECLARE_HASH(pk_MATRIX_V)
@@ -101,6 +104,11 @@ namespace PK::Rendering
         DECLARE_HASH(pk_BloomLensDirtTex)
         DECLARE_HASH(pk_PostEffectsParams)
         DECLARE_HASH(pk_Histogram)
+
+        DECLARE_HASH(pk_TAA_Sharpness)
+        DECLARE_HASH(pk_TAA_BlendingStatic)
+        DECLARE_HASH(pk_TAA_BlendingMotion)
+        DECLARE_HASH(pk_TAA_MotionAmplification)
 
         DECLARE_HASH(pk_FocalLength)
         DECLARE_HASH(pk_FNumber)

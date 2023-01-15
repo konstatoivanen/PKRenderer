@@ -7,6 +7,7 @@ namespace PK::Math::Functions
     float CascadeDepth(float znear, float zfar, float linearity, float interpolant);
     float Cot(float value);
     float RandomFloat();
+    float GetHaltonSequence(uint32_t index, uint32_t radix);
     uint32_t RandomUint();
     float3 RandomFloat3();
     uint32_t RandomRangeUint(uint32_t min, uint32_t max);
@@ -32,4 +33,5 @@ namespace PK::Math::Functions
     std::string BytesToString(size_t bytes, uint32_t decimalPlaces = 2);
     void ReinterpretIndex16ToIndex32(uint32_t* dst, uint16_t* src, uint32_t count);
     uint32_t GetAlignedSize(uint32_t value, uint32_t alignment);
+    uint3 GetComputeGroupCount(const uint3& threads, const uint3& clusterSize);
 }

@@ -26,7 +26,6 @@ void main()
 	float previousDepth = SampleLinearPreviousDepth(uvw.xy);
 
 	float deltaDepth = abs(currentDepth - previousDepth) / max(max(currentDepth, previousDepth), 1e-4f);
-
 	
 	uint hasDiscontinuity = deltaDepth > 0.25f ? 1u : 0u;
 	uint isActive		  = All_Equal(coord % PK_GI_CHECKERBOARD_OFFSET, uint2(0u)) ? 1u : 0u;

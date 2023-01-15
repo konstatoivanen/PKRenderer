@@ -11,6 +11,10 @@ PK_DECLARE_CBUFFER(pk_PostEffectsParams, PK_SET_PASS)
     float pk_BloomIntensity;
     float pk_BloomDirtIntensity;
     float pk_Vibrance;
+    float pk_TAA_Sharpness;
+    float pk_TAA_BlendingStatic;
+    float pk_TAA_BlendingMotion;
+    float pk_TAA_MotionAmplification;
     float4 pk_VignetteGrain;
     float4 pk_WhiteBalance;
 	float4 pk_Lift;

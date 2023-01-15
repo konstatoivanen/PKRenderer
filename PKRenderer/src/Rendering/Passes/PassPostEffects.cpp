@@ -16,7 +16,8 @@ namespace PK::Rendering::Passes
     PassPostEffects::PassPostEffects(AssetDatabase* assetDatabase, const ApplicationConfig* config) : 
         m_bloom(assetDatabase, config->InitialWidth, config->InitialHeight),
         m_histogram(assetDatabase),
-        m_depthOfField(assetDatabase, config)
+        m_depthOfField(assetDatabase, config),
+        m_temporalAntialiasing(assetDatabase, config->InitialWidth, config->InitialHeight)
     {
         m_computeComposite = assetDatabase->Find<Shader>("CS_PostEffectsComposite");
         m_computeFilmGrain = assetDatabase->Find<Shader>("CS_FilmGrain");
@@ -32,6 +33,10 @@ namespace PK::Rendering::Passes
             {ElementType::Float, "pk_BloomIntensity"},
             {ElementType::Float, "pk_BloomDirtIntensity"},
             {ElementType::Float, "pk_Vibrance"},
+            {ElementType::Float, "pk_TAA_Sharpness"},
+            {ElementType::Float, "pk_TAA_BlendingStatic"},
+            {ElementType::Float, "pk_TAA_BlendingMotion"},
+            {ElementType::Float, "pk_TAA_MotionAmplification"},
             {ElementType::Float4, "pk_VignetteGrain"},
             {ElementType::Float4, "pk_WhiteBalance"},
             {ElementType::Float4, "pk_Lift"},
@@ -56,12 +61,12 @@ namespace PK::Rendering::Passes
         descriptor.sampler.wrap[1] = WrapMode::Repeat;
         descriptor.sampler.wrap[2] = WrapMode::Repeat;
         descriptor.usage = TextureUsage::Default | TextureUsage::Storage;
-        m_filmGrainTexture = Texture::Create(descriptor, "Film Grain Texture");
+        m_filmGrainTexture = Texture::Create(descriptor, "FilmGrain.Texture");
     }
     
     void PassPostEffects::Render(CommandBuffer* cmd, RenderTexture* destination, MemoryAccessFlags lastAccess)
     {
-        cmd->BeginDebugScope("Post Effects", PK_COLOR_YELLOW);
+        cmd->BeginDebugScope("PostEffects", PK_COLOR_YELLOW);
 
         auto hash = HashCache::Get();
         auto color = destination->GetColor(0);
@@ -72,6 +77,7 @@ namespace PK::Rendering::Passes
         cmd->SetImage(hash->_MainTex, grain, 0, 0);
         cmd->Dispatch(m_computeFilmGrain, { 16, 64, 1 });
 
+        m_temporalAntialiasing.Execute(cmd, destination, lastAccess);
         m_depthOfField.Execute(cmd, destination, lastAccess);
         m_bloom.Execute(cmd, destination, lastAccess);
         m_histogram.Execute(cmd, m_bloom.GetTexture(), MemoryAccessFlags::ComputeRead);
@@ -92,6 +98,8 @@ namespace PK::Rendering::Passes
     {
         auto hash = HashCache::Get();
 
+        m_depthOfField.OnUpdateParameters(config);
+
         m_paramatersBuffer->Set<float>(hash->pk_MinLogLuminance, config->AutoExposureLuminanceMin);
         m_paramatersBuffer->Set<float>(hash->pk_InvLogLuminanceRange, 1.0f / config->AutoExposureLuminanceRange);
         m_paramatersBuffer->Set<float>(hash->pk_LogLuminanceRange, config->AutoExposureLuminanceRange);
@@ -99,6 +107,11 @@ namespace PK::Rendering::Passes
         m_paramatersBuffer->Set<float>(hash->pk_AutoExposureSpeed, config->AutoExposureSpeed);
         m_paramatersBuffer->Set<float>(hash->pk_BloomIntensity, glm::exp(config->BloomIntensity) - 1.0f);
         m_paramatersBuffer->Set<float>(hash->pk_BloomDirtIntensity, glm::exp(config->BloomLensDirtIntensity) - 1.0f);
+        
+        m_paramatersBuffer->Set<float>(hash->pk_TAA_Sharpness, config->TAASharpness);
+        m_paramatersBuffer->Set<float>(hash->pk_TAA_BlendingStatic, config->TAABlendingStatic);
+        m_paramatersBuffer->Set<float>(hash->pk_TAA_BlendingMotion, config->TAABlendingMotion);
+        m_paramatersBuffer->Set<float>(hash->pk_TAA_MotionAmplification, config->TAAMotionAmplification);
 
         color lift, gamma, gain;
         Functions::GenerateLiftGammaGain(Functions::HexToRGB(config->CC_Shadows), Functions::HexToRGB(config->CC_Midtones), Functions::HexToRGB(config->CC_Highlights), &lift, &gamma, &gain);
@@ -114,5 +127,10 @@ namespace PK::Rendering::Passes
         m_paramatersBuffer->Set<float4>(hash->pk_ChannelMixerGreen, Functions::HexToRGB(config->CC_ChannelMixerGreen));
         m_paramatersBuffer->Set<float4>(hash->pk_ChannelMixerBlue, Functions::HexToRGB(config->CC_ChannelMixerBlue));
         m_paramatersBuffer->FlushBuffer();
+    }
+
+    void PassPostEffects::OnModifyProjection(PK::ECS::Tokens::ViewProjectionUpdateToken* token)
+    {
+        token->jitter = m_temporalAntialiasing.GetJitter();
     }
 }

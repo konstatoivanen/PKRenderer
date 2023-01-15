@@ -30,14 +30,14 @@ namespace PK::Rendering::Passes
         descriptor.usage = TextureUsage::RTColorSample;
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
-        m_renderTarget = Texture::Create(descriptor, "Depth Of Field Texture");
-        m_autoFocusParams = Buffer::CreateStorage(BufferLayout({ {ElementType::Float2, "PARAMS"} }), 1, BufferUsage::None, "Auto Focus Parameters");
+        m_renderTarget = Texture::Create(descriptor, "DepthOfField.Texture");
+        m_autoFocusParams = Buffer::CreateStorage(BufferLayout({ {ElementType::Float2, "PARAMS"} }), 1, BufferUsage::None, "DepthOfField.AutoFocus.Parameters");
 
         m_passPrefilter = m_shaderBlur->GetVariantIndex(StringHashID::StringToID("PASS_PREFILTER"));
         m_passDiskblur = m_shaderBlur->GetVariantIndex(StringHashID::StringToID("PASS_DISKBLUR"));
     }
 
-    void PassDepthOfField::Execute(Objects::CommandBuffer* cmd, RenderTexture* destination, MemoryAccessFlags lastAccess)
+    void PassDepthOfField::Execute(Objects::CommandBuffer* cmd, RenderTexture* destination, MemoryAccessFlags& lastAccess)
     {
         auto hash = HashCache::Get();
         auto autoFocusParams = m_autoFocusParams.get();
@@ -79,6 +79,8 @@ namespace PK::Rendering::Passes
         cmd->SetViewPort(source->GetRect());
         cmd->SetScissor(source->GetRect());
         cmd->Blit(m_shaderComposite, 0);
+
+        lastAccess = MemoryAccessFlags::FragmentAttachmentColor;
     }
 
     void PassDepthOfField::OnUpdateParameters(const ApplicationConfig* config)

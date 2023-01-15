@@ -152,7 +152,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 info.totalTableSize = PK::Math::Functions::GetAlignedSize(info.totalTableSize, tableAlignment);
                 info.byteOffsets[(uint32_t)currentGroup] = info.totalTableSize;
                 info.byteStrides[(uint32_t)currentGroup] = info.handleSizeAligned;
-                info.offsets[(uint32_t)currentGroup] = info.totalHandleCount;
+                info.offsets[(uint32_t)currentGroup] = (uint8_t)info.totalHandleCount;
                 info.layouts[(uint32_t)currentGroup] = nullptr;
             }
 

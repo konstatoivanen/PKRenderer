@@ -59,6 +59,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto persistent = (m_usage & BufferUsage::PersistentStage) != 0;
         
         m_mappedBuffer->EndMap(m_mapRange.region.srcOffset, m_mapRange.region.size);
+
         cmd->CopyBuffer(m_mappedBuffer->buffer, m_rawBuffer->buffer, 1, &m_mapRange.region);
 
         auto srcFlags = MemoryAccessFlags::WriteTransfer | MemoryAccessFlags::StageTransfer;
@@ -222,6 +223,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if ((m_usage & BufferUsage::PersistentStage) != 0)
         {
+            m_mapRange.ringOffset = 0ull;
             m_mappedBuffer = new VulkanStagingBuffer(m_driver->device,
                                                      m_driver->allocator, 
                                                      VulkanBufferCreateInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size * PK_MAX_FRAMES_IN_FLIGHT),
