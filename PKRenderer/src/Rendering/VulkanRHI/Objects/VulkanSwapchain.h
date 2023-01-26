@@ -4,7 +4,7 @@
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Objects
 {
     struct SwapchainCreateInfo
     {
@@ -35,7 +35,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             void Present(VulkanSemaphore* waitSignal, VkFence frameFence, const Structs::ExecutionGate& gate);
             void OnWindowResize(int w, int h);
 
-            const VulkanRenderTarget GetRenderTarget() const;
+            const VulkanBindHandle* GetBindHandle() const { return &m_bindHandles[m_imageIndex]; }
             const VulkanImageView* GetImageView() const { return m_imageViews.at(m_imageIndex); }
             constexpr VkExtent2D GetExtent() const { return m_extent; }
             constexpr Math::uint3 GetResolution() const { return { m_extent.width, m_extent.height, 1 }; }
@@ -63,6 +63,7 @@ namespace PK::Rendering::VulkanRHI::Systems
             std::vector<VulkanImageView*> m_imageViews;
             std::vector<VulkanSemaphore*> m_imageAvailableSignals;
             std::vector<FrameFence> m_frameFences;
+            VulkanBindHandle* m_bindHandles;
             VkFormat m_format;
             VkExtent2D m_extent;
             uint32_t m_maxFramesInFlight;

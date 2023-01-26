@@ -216,11 +216,12 @@ namespace PK::Rendering::Structs
         TypeBits = 7,
         AlignedTypes = Storage | Constant,
         DefaultVertex = GPUOnly | TransferDst | Vertex,
-        SparseVertex = GPUOnly | TransferDst | Vertex | Sparse,
+        SparseVertex = DefaultVertex | Sparse,
         DefaultIndex = GPUOnly | TransferDst | Index,
-        SparseIndex = GPUOnly | TransferDst | Index | Sparse,
+        SparseIndex = DefaultIndex | Sparse,
         DefaultConstant = GPUOnly | TransferDst | Constant,
         DefaultStorage = GPUOnly | TransferDst | Storage,
+        PersistentStorage = DefaultStorage | PersistentStage,
         DefaultStaging = CPUOnly | TransferSrc,
         DefaultShaderBindingTable = GPUOnly | TransferDst | ShaderBindingTable
     };
@@ -394,6 +395,7 @@ namespace PK::Rendering::Structs
         Star,
     };
 
+
     enum class RayTracingShaderGroup
     {
         RayGeneration,
@@ -426,6 +428,7 @@ namespace PK::Rendering::Structs
         RayTracingShaderGroup::Hit,             //RayAnyHit,
         RayTracingShaderGroup::Hit,             //RayIntersection,
     };
+
 
     #define PK_DECLARE_ENUM_OPERATORS(Type) \
     static constexpr Type operator | (const Type& a, const Type& b) { return (Type)((uint32_t)a | (uint32_t)b); } \

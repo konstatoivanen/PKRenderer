@@ -61,6 +61,7 @@ namespace PK::Core::Services
                 token.unscaledDeltaTime = m_unscaledDeltaTime;
                 token.smoothDeltaTime = m_smoothDeltaTime;
                 token.unscaledDeltaTimeFixed = m_unscaledDeltaTimeFixed;
+                token.frameIndex = m_frameIndex;
 
                 m_sequencer->Next<PK::ECS::Tokens::TimeToken>(this, &token, 0);
 

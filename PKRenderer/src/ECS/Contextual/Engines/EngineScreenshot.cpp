@@ -168,7 +168,6 @@ namespace PK::ECS::Engines
         {
             m_copyBuffer = Buffer::Create(
                 { { ElementType::Uint, "DATA"} }, 
-                nullptr, 
                 m_currentResolution.x * m_currentResolution.y, 
                 BufferUsage::GPUToCPU | BufferUsage::TransferDst | BufferUsage::TransferSrc, 
                 "Screenshot Copy Buffer");

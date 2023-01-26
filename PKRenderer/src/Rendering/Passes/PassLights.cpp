@@ -126,18 +126,18 @@ namespace PK::Rendering::Passes
         imageDescriptor.sampler.wrap[2] = WrapMode::Clamp;
         m_lightTiles = Texture::Create(imageDescriptor, "Lights.Tiles");
 
-        m_lightsBuffer = Buffer::CreateStorage(
+        m_lightsBuffer = Buffer::Create(
         {
             { ElementType::Float4, "POSITION"},
             { ElementType::Float4, "COLOR"},
             { ElementType::Uint4, "INDICES"},
         },
-        1024, BufferUsage::PersistentStage, "Lights");
+        1024, BufferUsage::PersistentStorage, "Lights");
 
-        m_lightMatricesBuffer = Buffer::CreateStorage({ { ElementType::Float4x4, "MATRIX" } }, 32, BufferUsage::PersistentStage, "Lights.Matrices");
-        m_lightDirectionsBuffer = Buffer::CreateStorage({ { ElementType::Float4, "DIRECTION"} }, 32, BufferUsage::PersistentStage, "Lights.Directions");
-        m_globalLightsList = Buffer::CreateStorage({ {ElementType::Int, "INDEX"} }, ClusterCount * MaxLightsPerTile, BufferUsage::None, "Lights.List");
-        m_globalLightIndex = Buffer::CreateStorage({ {ElementType::Uint, "INDEX"} }, 1, BufferUsage::None, "Lights.IndexCounter");
+        m_lightMatricesBuffer = Buffer::Create(ElementType::Float4x4, 32, BufferUsage::PersistentStorage, "Lights.Matrices");
+        m_lightDirectionsBuffer = Buffer::Create(ElementType::Float4, 32, BufferUsage::PersistentStorage, "Lights.Directions");
+        m_globalLightsList = Buffer::Create(ElementType::Int, ClusterCount * MaxLightsPerTile, BufferUsage::DefaultStorage, "Lights.List");
+        m_globalLightIndex = Buffer::Create(ElementType::Uint, 1, BufferUsage::DefaultStorage, "Lights.IndexCounter");
         
         auto cmd = GraphicsAPI::GetCommandBuffer();
         cmd->SetBuffer(hash->pk_GlobalLightsList, m_globalLightsList.get());
@@ -199,9 +199,10 @@ namespace PK::Rendering::Passes
         m_lightMatricesBuffer->Validate(m_projectionCount);
         m_lightDirectionsBuffer->Validate(m_projectionCount);
 
-        auto lightsView = m_lightsBuffer->BeginWrite<PK_Light>(0, m_lightCount + 1);
-        auto matricesView = m_projectionCount > 0 ? m_lightMatricesBuffer->BeginWrite<float4x4>(0, m_projectionCount) : BufferView<float4x4>();
-        auto directionsView = m_projectionCount > 0 ? m_lightDirectionsBuffer->BeginWrite<float4>(0, m_projectionCount) : BufferView<float4>();
+        auto cmd = GraphicsAPI::GetCommandBuffer();
+        auto lightsView = cmd->BeginBufferWrite<PK_Light>(m_lightsBuffer.get(), 0u, m_lightCount + 1);
+        auto matricesView = m_projectionCount > 0 ? cmd->BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, m_projectionCount) : BufferView<float4x4>();
+        auto directionsView = m_projectionCount > 0 ? cmd->BeginBufferWrite<float4>(m_lightDirectionsBuffer.get(), 0u, m_projectionCount) : BufferView<float4>();
 
         for (auto i = 0u; i < m_lightCount; ++i)
         {
@@ -247,12 +248,12 @@ namespace PK::Rendering::Passes
         }
 
         lightsView[m_lightCount] = { PK_FLOAT4_ZERO, PK_COLOR_CLEAR, { 0xFFFF, 0u, 0xFFFF, 0xFFFF }};
-        m_lightsBuffer->EndWrite();
+        cmd->EndBufferWrite(m_lightsBuffer.get());
 
         if (m_projectionCount > 0)
         {
-            m_lightMatricesBuffer->EndWrite();
-            m_lightDirectionsBuffer->EndWrite();
+            cmd->EndBufferWrite(m_lightMatricesBuffer.get());
+            cmd->EndBufferWrite(m_lightDirectionsBuffer.get());
         }
     }
 

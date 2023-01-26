@@ -4,7 +4,7 @@
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
 #include "Utilities/FileIO.h"
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Services
 {
     using namespace PK::Utilities;
     using namespace Structs;

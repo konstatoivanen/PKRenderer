@@ -1032,28 +1032,28 @@
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanTexture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanCommandBufferPool.h">
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanCommandBufferPool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanDescriptorCache.h">
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanDescriptorCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanDisposer.h">
+    <ClInclude Include="src\Rendering\Services\Disposer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanFrameBufferCache.h">
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanFrameBufferCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanPipelineCache.h">
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanPipelineCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanSamplerCache.h">
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanSamplerCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanStagingBufferCache.h">
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanStagingBufferCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanSwapchain.h">
+    <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanSwapchain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanEnumConversion.h">
@@ -1323,7 +1323,7 @@
     <ClInclude Include="src\ECS\Contextual\Engines\EngineCull.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Batcher.h">
+    <ClInclude Include="src\Rendering\Services\Batcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ECS\Contextual\Tokens\CullingTokens.h">
@@ -1395,7 +1395,7 @@
     <ClInclude Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.h">
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanLayoutCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Passes\PassSceneGI.h">
@@ -1447,6 +1447,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Passes\PassTemporalAntialiasing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Passes\PassFilmGrain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanBarrierHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2034,28 +2040,28 @@
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanTexture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanCommandBufferPool.cpp">
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanCommandBufferPool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanDescriptorCache.cpp">
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanDescriptorCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanDisposer.cpp">
+    <ClCompile Include="src\Rendering\Services\Disposer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanFrameBufferCache.cpp">
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanFrameBufferCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanPipelineCache.cpp">
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanPipelineCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanSamplerCache.cpp">
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanSamplerCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanStagingBufferCache.cpp">
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanStagingBufferCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanSwapchain.cpp">
+    <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanSwapchain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\VulkanRHI\Utilities\VulkanEnumConversion.cpp">
@@ -2154,7 +2160,7 @@
     <ClCompile Include="src\ECS\Contextual\Engines\EngineCull.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Batcher.cpp">
+    <ClCompile Include="src\Rendering\Services\Batcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ECS\Contextual\Tokens\CullingTokens.cpp">
@@ -2196,7 +2202,7 @@
     <ClCompile Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.cpp">
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanLayoutCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Passes\PassSceneGI.cpp">
@@ -2227,6 +2233,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Passes\PassTemporalAntialiasing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Passes\PassFilmGrain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanBarrierHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

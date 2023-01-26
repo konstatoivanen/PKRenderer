@@ -66,12 +66,15 @@ namespace PK::Rendering::VulkanRHI::Objects
         void Blit(Texture* src, Core::Window* dst, FilterMode filter) override final;
         void Blit(Core::Window* src, Buffer* dst) override final;
         void Blit(Texture* src, Texture* dst, const Structs::TextureViewRange& srcRange, const Structs::TextureViewRange& dstRange, FilterMode filter) override final;
-        void Blit(const VulkanRenderTarget& src, const VulkanRenderTarget& dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter, bool flipVertical = false);
+        void Blit(const VulkanBindHandle* src, const VulkanBindHandle* dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter, bool flipVertical = false);
 
         void Clear(Buffer* dst, size_t offset, size_t size, uint32_t value) override final;
         void Clear(Texture* dst, const TextureViewRange& range, const uint4& value) override final;
 
         void Barrier(const Texture* texture, const TextureViewRange& range, const Buffer* buffer, size_t offset, size_t size, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags) override final;
+
+        void* BeginBufferWrite(Buffer* buffer, size_t offset, size_t size) override final;
+        void EndBufferWrite(Buffer* buffer) override final;
 
         void BeginDebugScope(const char* name, const Math::color& color) override final;
         void EndDebugScope() override final;
@@ -80,6 +83,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferCopy* pRegions) const;
         void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions) const;
         void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, const VkExtent3D& extent, uint32_t level, uint32_t layer) const;
+        void BuildAccelerationStructures(uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
         void TransitionImageLayout(const VulkanLayoutTransition& transition);
         void PipelineBarrier(VkPipelineStageFlags srcStageMask,
                              VkPipelineStageFlags dstStageMask,

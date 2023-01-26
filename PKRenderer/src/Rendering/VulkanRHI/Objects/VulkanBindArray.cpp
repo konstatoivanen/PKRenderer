@@ -39,7 +39,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         if (bindInfo)
         {
-            return Add(value->GetNative<VulkanTexture>()->GetBindHandle(*reinterpret_cast<TextureViewRange*>(bindInfo), true));
+            return Add(value->GetNative<VulkanTexture>()->GetBindHandle(*reinterpret_cast<TextureViewRange*>(bindInfo), TextureBindMode::SampledTexture));
         }
 
         return Add(value);

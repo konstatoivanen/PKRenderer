@@ -11,7 +11,10 @@
 #include "Rendering/Passes/PassLights.h"
 #include "Rendering/Passes/PassSceneGI.h"
 #include "Rendering/Passes/PassVolumeFog.h"
-#include "Rendering/Batcher.h"
+#include "Rendering/Passes/PassFilmGrain.h"
+#include "Rendering/Passes/PassDepthOfField.h"
+#include "Rendering/Passes/PassTemporalAntiAliasing.h"
+#include "Rendering/Services/Batcher.h"
 
 namespace PK::Rendering
 {
@@ -25,7 +28,7 @@ namespace PK::Rendering
             RenderPipeline(Core::Services::AssetDatabase* assetDatabase, 
                            ECS::EntityDatabase* entityDb, 
                            Core::Services::Sequencer* sequencer, 
-                           const Core::ApplicationConfig* config);
+                           Core::ApplicationConfig* config);
 
             ~RenderPipeline();
 
@@ -35,21 +38,29 @@ namespace PK::Rendering
             void Step(Core::Services::AssetImportToken<Core::ApplicationConfig>* token) override final;
 
         private:
-            Passes::PassPostEffects m_passPostEffects;
             Passes::PassGeometry m_passGeometry;
             Passes::PassLights m_passLights;
             Passes::PassSceneGI m_passSceneGI;
             Passes::PassVolumeFog m_passVolumeFog;
+
+            Passes::PassFilmGrain m_passFilmGrain;
+            Passes::PassDepthOfField m_depthOfField;
+            Passes::PassTemporalAntialiasing m_temporalAntialiasing;
+            Passes::PassBloom m_bloom;
+            Passes::PassHistogram m_histogram;
+            Passes::PassPostEffectsComposite m_passPostEffectsComposite;
+
             Batcher m_batcher;
             Core::Services::Sequencer* m_sequencer;
 
             Utilities::Ref<Objects::AccelerationStructure> m_sceneStructure;
+            Utilities::Ref<Objects::ConstantBuffer> m_constantsPostProcess;
             Utilities::Ref<Objects::ConstantBuffer> m_constantsPerFrame;
             Utilities::Ref<Objects::RenderTexture> m_renderTarget;
             Utilities::Ref<Objects::Texture> m_depthPrevious;
             Objects::Shader* m_OEMBackgroundShader;
-            ECS::Tokens::VisibilityList m_visibilityList;
 
+            ECS::Tokens::VisibilityList m_visibilityList;
             Math::float4x4 m_viewProjectionMatrix;
             float m_znear;
             float m_zfar;

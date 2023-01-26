@@ -5,6 +5,7 @@
 #include "Rendering/HashCache.h"
 #include "ECS/Contextual/Tokens/AccelerationStructureBuildToken.h"
 #include "Math/FunctionsMisc.h"
+#include "Math/FunctionsColor.h"
 
 namespace PK::Rendering
 {
@@ -16,12 +17,17 @@ namespace PK::Rendering
     using namespace Objects;
     using namespace Structs;
 
-    RenderPipeline::RenderPipeline(AssetDatabase* assetDatabase, EntityDatabase* entityDb, Sequencer* sequencer, const ApplicationConfig* config) :
-        m_passPostEffects(assetDatabase, config),
+    RenderPipeline::RenderPipeline(AssetDatabase* assetDatabase, EntityDatabase* entityDb, Sequencer* sequencer, ApplicationConfig* config) :
+        m_passPostEffectsComposite(assetDatabase, config),
         m_passGeometry(entityDb, sequencer, &m_batcher),
         m_passLights(assetDatabase, entityDb, sequencer, &m_batcher, config),
         m_passSceneGI(assetDatabase, config),
         m_passVolumeFog(assetDatabase, config),
+        m_passFilmGrain(assetDatabase),
+        m_depthOfField(assetDatabase, config),
+        m_temporalAntialiasing(assetDatabase, config->InitialWidth, config->InitialHeight),
+        m_bloom(assetDatabase, config->InitialWidth, config->InitialHeight),
+        m_histogram(assetDatabase),
         m_batcher(),
         m_sequencer(sequencer),
         m_visibilityList(1024)
@@ -71,26 +77,47 @@ namespace PK::Rendering
             { ElementType::Float4x4, hash->pk_MATRIX_I_VP },
             { ElementType::Float4x4, hash->pk_MATRIX_L_VP },
             { ElementType::Float4x4, hash->pk_MATRIX_LD_P },
-            { ElementType::Float, hash->pk_SceneOEM_Exposure }
-        }), "Frame Parameters");
+            { ElementType::Float, hash->pk_SceneOEM_Exposure },
+            { ElementType::Uint, hash->pk_FrameIndex }
+        }), "Constants.Frame");
 
-        m_constantsPerFrame->Set<float>(hash->pk_SceneOEM_Exposure, config->BackgroundExposure);
+        m_constantsPostProcess = CreateRef<ConstantBuffer>(BufferLayout(
+        {
+            {ElementType::Float, "pk_MinLogLuminance"},
+            {ElementType::Float, "pk_InvLogLuminanceRange"},
+            {ElementType::Float, "pk_LogLuminanceRange"},
+            {ElementType::Float, "pk_TargetExposure"},
+            {ElementType::Float, "pk_AutoExposureSpeed"},
+            {ElementType::Float, "pk_BloomIntensity"},
+            {ElementType::Float, "pk_BloomDirtIntensity"},
+            {ElementType::Float, "pk_Vibrance"},
+            {ElementType::Float, "pk_TAA_Sharpness"},
+            {ElementType::Float, "pk_TAA_BlendingStatic"},
+            {ElementType::Float, "pk_TAA_BlendingMotion"},
+            {ElementType::Float, "pk_TAA_MotionAmplification"},
+            {ElementType::Float4, "pk_VignetteGrain"},
+            {ElementType::Float4, "pk_WhiteBalance"},
+            {ElementType::Float4, "pk_Lift"},
+            {ElementType::Float4, "pk_Gamma"},
+            {ElementType::Float4, "pk_Gain"},
+            {ElementType::Float4, "pk_ContrastGainGammaContribution"},
+            {ElementType::Float4, "pk_HSV"},
+            {ElementType::Float4, "pk_ChannelMixerRed"},
+            {ElementType::Float4, "pk_ChannelMixerGreen"},
+            {ElementType::Float4, "pk_ChannelMixerBlue"},
+        }), "Constants.PostProcess");
+
+        AssetImportToken<ApplicationConfig> token { assetDatabase, config };
+        Step(&token);
 
         auto bluenoise = assetDatabase->Load<Texture>("res/textures/default/T_Bluenoise256.ktx2");
         auto lightCookies = assetDatabase->Load<Texture>("res/textures/default/T_LightCookies.ktx2");
-        auto sceneOEM = assetDatabase->Load<Texture>(config->FileBackgroundTexture.value.c_str());
         
         auto sampler = lightCookies->GetSamplerDescriptor();
         sampler.wrap[0] = WrapMode::Clamp;
         sampler.wrap[1] = WrapMode::Clamp;
         sampler.wrap[2] = WrapMode::Clamp;
         lightCookies->SetSampler(sampler);
-
-        sampler = sceneOEM->GetSamplerDescriptor();
-        sampler.wrap[0] = WrapMode::Mirror;
-        sampler.wrap[1] = WrapMode::Mirror;
-        sampler.wrap[2] = WrapMode::Mirror;
-        sceneOEM->SetSampler(sampler);
 
         sampler = bluenoise->GetSamplerDescriptor();
         sampler.anisotropy = 0.0f;
@@ -105,8 +132,8 @@ namespace PK::Rendering
         cmd->SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         cmd->SetTexture(hash->pk_Bluenoise256, bluenoise);
         cmd->SetTexture(hash->pk_LightCookies, lightCookies);
-        cmd->SetTexture(hash->pk_SceneOEM_HDR, sceneOEM);
         cmd->SetBuffer(hash->pk_PerFrameConstants, *m_constantsPerFrame.get());
+        cmd->SetBuffer(hash->pk_PostEffectsParams, *m_constantsPostProcess.get());
 
         PK_LOG_VERBOSE("Render Pipeline Initialized!");
     }
@@ -123,7 +150,7 @@ namespace PK::Rendering
         auto hash = HashCache::Get();
         
         // @TODO move to a sequencer step instead
-        m_passPostEffects.OnModifyProjection(token);
+        token->jitter = m_temporalAntialiasing.GetJitter();
 
         float2 jitter = 
         {
@@ -166,6 +193,7 @@ namespace PK::Rendering
         m_constantsPerFrame->Set<float4>(hash->pk_SinTime, { (float)sin(token->time / 8.0f), (float)sin(token->time / 4.0f), (float)sin(token->time / 2.0f), (float)sin(token->time) });
         m_constantsPerFrame->Set<float4>(hash->pk_CosTime, { (float)cos(token->time / 8.0f), (float)cos(token->time / 4.0f), (float)cos(token->time / 2.0f), (float)cos(token->time) });
         m_constantsPerFrame->Set<float4>(hash->pk_DeltaTime, { (float)token->deltaTime, 1.0f / (float)token->deltaTime, (float)token->smoothDeltaTime, 1.0f / (float)token->smoothDeltaTime });
+        m_constantsPerFrame->Set<uint>(hash->pk_FrameIndex, token->frameIndex % 0xFFFFFFFFu);
         token->logFrameRate = true;
     }
     
@@ -187,6 +215,7 @@ namespace PK::Rendering
 
         m_renderTarget->Validate(resolution);
         m_depthPrevious->Validate(resolution);
+
         cmd->SetTexture(hash->pk_ScreenDepthCurrent, m_renderTarget->GetDepth());
         cmd->SetTexture(hash->pk_ScreenDepthPrevious, m_depthPrevious.get());
         cmd->SetTexture(hash->pk_ScreenNormals, m_renderTarget->GetColor(1));
@@ -205,39 +234,85 @@ namespace PK::Rendering
         m_passLights.Render(cmd);
         m_passSceneGI.RenderVoxels(cmd, &m_batcher, m_passGeometry.GetPassGroup());
 
-        cmd->SetRenderTarget(m_renderTarget.get(), { 1 }, true, true);
-        cmd->ClearColor({ 0, 0, -1.0f, 1.0f }, 0);
-        cmd->ClearDepth(1.0f, 0u);
+        // Opaque GBuffer
+        {
+            cmd->SetRenderTarget(m_renderTarget.get(), { 1 }, true, true);
+            cmd->ClearColor({ 0, 0, -1.0f, 1.0f }, 0);
+            cmd->ClearDepth(1.0f, 0u);
+            m_passGeometry.RenderGBuffer(cmd);
+            m_passSceneGI.RenderGI(cmd);
+        }
 
-        m_passGeometry.RenderGBuffer(cmd);
-        m_passSceneGI.RenderGI(cmd);
+        // Forward Opaque
+        {
+            cmd->SetRenderTarget(m_renderTarget.get(), { 0 }, true, true);
+            cmd->ClearColor(PK_COLOR_CLEAR, 0);
+            m_passGeometry.RenderForward(cmd);
+            cmd->Blit(m_OEMBackgroundShader);
+            m_passVolumeFog.Render(cmd, m_renderTarget.get());
+        }
 
-        cmd->SetRenderTarget(m_renderTarget.get(), { 0 }, true, true);
-        cmd->ClearColor(PK_COLOR_CLEAR, 0);
-
-        m_passGeometry.RenderForward(cmd);
-        cmd->Blit(m_OEMBackgroundShader);
-
-        m_passVolumeFog.Render(cmd, m_renderTarget.get(), resolution);
-        m_passPostEffects.Render(cmd, m_renderTarget.get(), MemoryAccessFlags::FragmentAttachmentColor);
+        // Post Effects
+        {
+            cmd->BeginDebugScope("PostEffects", PK_COLOR_YELLOW);
+            auto lastColorAccess = MemoryAccessFlags::FragmentAttachmentColor;
+            m_passFilmGrain.Render(cmd);
+            m_temporalAntialiasing.Render(cmd, m_renderTarget.get(), lastColorAccess);
+            m_depthOfField.Render(cmd, m_renderTarget.get(), lastColorAccess);
+            m_bloom.Render(cmd, m_renderTarget.get(), lastColorAccess);
+            m_histogram.Render(cmd, m_bloom.GetTexture(), MemoryAccessFlags::ComputeRead);
+            m_passPostEffectsComposite.Render(cmd, m_renderTarget.get());
+            cmd->EndDebugScope();
+        }
 
         cmd->Blit(m_renderTarget->GetDepth(), m_depthPrevious.get(), {}, {}, FilterMode::Point);
-
         cmd->Blit(m_renderTarget->GetColor(0), window, FilterMode::Bilinear);
     }
 
     void RenderPipeline::Step(AssetImportToken<ApplicationConfig>* token)
     {
+        auto hash = HashCache::Get();
+        auto config = token->asset;
+
         auto tex = token->assetDatabase->Load<Texture>(token->asset->FileBackgroundTexture.value.c_str());
         auto sampler = tex->GetSamplerDescriptor();
         sampler.wrap[0] = WrapMode::Mirror;
         sampler.wrap[1] = WrapMode::Mirror;
         sampler.wrap[2] = WrapMode::Mirror;
         tex->SetSampler(sampler);
+        GraphicsAPI::GetCommandBuffer()->SetTexture(hash->pk_SceneOEM_HDR, tex);
 
-        GraphicsAPI::GetCommandBuffer()->SetTexture(HashCache::Get()->pk_SceneOEM_HDR, tex);
-        m_constantsPerFrame->Set<float>(HashCache::Get()->pk_SceneOEM_Exposure, token->asset->BackgroundExposure);
-        m_passPostEffects.OnUpdateParameters(token->asset);
-        m_passVolumeFog.OnUpdateParameters(token->asset);
+        m_constantsPerFrame->Set<float>(hash->pk_SceneOEM_Exposure, config->BackgroundExposure);
+
+        m_constantsPostProcess->Set<float>(hash->pk_MinLogLuminance, config->AutoExposureLuminanceMin);
+        m_constantsPostProcess->Set<float>(hash->pk_InvLogLuminanceRange, 1.0f / config->AutoExposureLuminanceRange);
+        m_constantsPostProcess->Set<float>(hash->pk_LogLuminanceRange, config->AutoExposureLuminanceRange);
+        m_constantsPostProcess->Set<float>(hash->pk_TargetExposure, config->TonemapExposure);
+        m_constantsPostProcess->Set<float>(hash->pk_AutoExposureSpeed, config->AutoExposureSpeed);
+        m_constantsPostProcess->Set<float>(hash->pk_BloomIntensity, glm::exp(config->BloomIntensity) - 1.0f);
+        m_constantsPostProcess->Set<float>(hash->pk_BloomDirtIntensity, glm::exp(config->BloomLensDirtIntensity) - 1.0f);
+
+        m_constantsPostProcess->Set<float>(hash->pk_TAA_Sharpness, config->TAASharpness);
+        m_constantsPostProcess->Set<float>(hash->pk_TAA_BlendingStatic, config->TAABlendingStatic);
+        m_constantsPostProcess->Set<float>(hash->pk_TAA_BlendingMotion, config->TAABlendingMotion);
+        m_constantsPostProcess->Set<float>(hash->pk_TAA_MotionAmplification, config->TAAMotionAmplification);
+
+        color lift, gamma, gain;
+        Functions::GenerateLiftGammaGain(Functions::HexToRGB(config->CC_Shadows), Functions::HexToRGB(config->CC_Midtones), Functions::HexToRGB(config->CC_Highlights), &lift, &gamma, &gain);
+        m_constantsPostProcess->Set<float>(hash->pk_Vibrance, config->CC_Vibrance);
+        m_constantsPostProcess->Set<float4>(hash->pk_VignetteGrain, { config->VignetteIntensity, config->VignettePower, config->FilmGrainLuminance, config->FilmGrainIntensity });
+        m_constantsPostProcess->Set<float4>(hash->pk_WhiteBalance, Functions::GetWhiteBalance(config->CC_TemperatureShift, config->CC_Tint));
+        m_constantsPostProcess->Set<float4>(hash->pk_Lift, lift);
+        m_constantsPostProcess->Set<float4>(hash->pk_Gamma, gamma);
+        m_constantsPostProcess->Set<float4>(hash->pk_Gain, gain);
+        m_constantsPostProcess->Set<float4>(hash->pk_ContrastGainGammaContribution, float4(config->CC_Contrast, config->CC_Gain, 1.0f / config->CC_Gamma, config->CC_Contribution));
+        m_constantsPostProcess->Set<float4>(hash->pk_HSV, float4(config->CC_Hue, config->CC_Saturation, config->CC_Value, 1.0f));
+        m_constantsPostProcess->Set<float4>(hash->pk_ChannelMixerRed, Functions::HexToRGB(config->CC_ChannelMixerRed));
+        m_constantsPostProcess->Set<float4>(hash->pk_ChannelMixerGreen, Functions::HexToRGB(config->CC_ChannelMixerGreen));
+        m_constantsPostProcess->Set<float4>(hash->pk_ChannelMixerBlue, Functions::HexToRGB(config->CC_ChannelMixerBlue));
+        m_constantsPostProcess->FlushBuffer();
+
+        m_depthOfField.OnUpdateParameters(config);
+        m_passVolumeFog.OnUpdateParameters(config);
     }
 }

@@ -11,24 +11,14 @@
 
 namespace PK::Rendering::Passes
 {
-    class PassPostEffects : public PK::Utilities::NoCopy
+    class PassPostEffectsComposite : public PK::Utilities::NoCopy
     {
         public:
-            PassPostEffects(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
-            void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* destination, Structs::MemoryAccessFlags lastAccess);
-            void OnUpdateParameters(const Core::ApplicationConfig* config);
-            void OnModifyProjection(PK::ECS::Tokens::ViewProjectionUpdateToken* token);
+            PassPostEffectsComposite(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
+            void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* destination);
 
         private:
-            PassBloom m_bloom;
-            PassHistogram m_histogram;
-            PassDepthOfField m_depthOfField;
-            PassTemporalAntialiasing m_temporalAntialiasing;
-
             Objects::Shader* m_computeComposite = nullptr;
-            Objects::Shader* m_computeFilmGrain = nullptr;
             Objects::Texture* m_bloomLensDirtTexture;
-            Utilities::Ref<Objects::Texture> m_filmGrainTexture;
-            Utilities::Ref<Objects::ConstantBuffer> m_paramatersBuffer;
     };
 }

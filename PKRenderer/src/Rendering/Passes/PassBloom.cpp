@@ -29,7 +29,7 @@ namespace PK::Rendering::Passes
         m_passDiskblur = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_BLUR"));
     }
     
-    void PassBloom::Execute(Objects::CommandBuffer* cmd, RenderTexture* source, MemoryAccessFlags& lastAccess)
+    void PassBloom::Render(Objects::CommandBuffer* cmd, RenderTexture* source, MemoryAccessFlags& lastAccess)
     {
         cmd->BeginDebugScope("Bloom", PK_COLOR_MAGENTA);
 

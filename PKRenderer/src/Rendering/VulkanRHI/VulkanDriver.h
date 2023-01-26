@@ -2,15 +2,15 @@
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
 #include "Rendering/GraphicsAPI.h"
+#include "Rendering/Services/Disposer.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
-#include "Rendering/VulkanRHI/Systems/VulkanDescriptorCache.h"
-#include "Rendering/VulkanRHI/Systems/VulkanDisposer.h"
-#include "Rendering/VulkanRHI/Systems/VulkanSamplerCache.h"
-#include "Rendering/VulkanRHI/Systems/VulkanPipelineCache.h"
-#include "Rendering/VulkanRHI/Systems/VulkanStagingBufferCache.h"
-#include "Rendering/VulkanRHI/Systems/VulkanCommandBufferPool.h"
-#include "Rendering/VulkanRHI/Systems/VulkanFrameBufferCache.h"
-#include "Rendering/VulkanRHI/Systems/VulkanLayoutCache.h"
+#include "Rendering/VulkanRHI/Services/VulkanDescriptorCache.h"
+#include "Rendering/VulkanRHI/Services/VulkanSamplerCache.h"
+#include "Rendering/VulkanRHI/Services/VulkanPipelineCache.h"
+#include "Rendering/VulkanRHI/Services/VulkanStagingBufferCache.h"
+#include "Rendering/VulkanRHI/Services/VulkanCommandBufferPool.h"
+#include "Rendering/VulkanRHI/Services/VulkanFrameBufferCache.h"
+#include "Rendering/VulkanRHI/Services/VulkanLayoutCache.h"
 
 namespace PK::Rendering::VulkanRHI
 {
@@ -75,13 +75,13 @@ namespace PK::Rendering::VulkanRHI
         VulkanContextProperties properties;
         VulkanPhysicalDeviceProperties physicalDeviceProperties;
 
-        PK::Utilities::Scope<Systems::VulkanFrameBufferCache> frameBufferCache;
-        PK::Utilities::Scope<Systems::VulkanCommandBufferPool> commandBufferPool;
-        PK::Utilities::Scope<Systems::VulkanStagingBufferCache> stagingBufferCache;
-        PK::Utilities::Scope<Systems::VulkanDescriptorCache> descriptorCache;
-        PK::Utilities::Scope<Systems::VulkanPipelineCache> pipelineCache;
-        PK::Utilities::Scope<Systems::VulkanSamplerCache> samplerCache;
-        PK::Utilities::Scope<Systems::VulkanLayoutCache> layoutCache;
-        PK::Utilities::Scope<Systems::VulkanDisposer> disposer;
+        PK::Utilities::Scope<Services::VulkanFrameBufferCache> frameBufferCache;
+        PK::Utilities::Scope<Services::VulkanCommandBufferPool> commandBufferPool;
+        PK::Utilities::Scope<Services::VulkanStagingBufferCache> stagingBufferCache;
+        PK::Utilities::Scope<Services::VulkanDescriptorCache> descriptorCache;
+        PK::Utilities::Scope<Services::VulkanPipelineCache> pipelineCache;
+        PK::Utilities::Scope<Services::VulkanSamplerCache> samplerCache;
+        PK::Utilities::Scope<Services::VulkanLayoutCache> layoutCache;
+        PK::Utilities::Scope<Rendering::Services::Disposer> disposer;
     };
 }

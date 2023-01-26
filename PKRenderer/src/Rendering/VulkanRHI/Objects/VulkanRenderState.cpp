@@ -10,7 +10,7 @@
 namespace PK::Rendering::VulkanRHI::Objects
 {
     using namespace Utilities;
-    using namespace Systems;
+    using namespace Services;
     using namespace Core::Services;
 
     void VulkanRenderState::Reset()
@@ -39,7 +39,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_pipelineKey.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     }
 
-    void VulkanRenderState::SetRenderTarget(const VulkanRenderTarget* renderTargets, const VulkanRenderTarget* resolves, uint32_t count)
+    void VulkanRenderState::SetRenderTarget(const VulkanBindHandle* const* renderTargets, const VulkanBindHandle* const* resolves, uint32_t count)
     {
         m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
 
@@ -50,19 +50,19 @@ namespace PK::Rendering::VulkanRHI::Objects
         memset(fboKey, 0, sizeof(FrameBufferKey));
 
         // These should be the same for all targets. Validation will assert if not.
-        passKey->samples = renderTargets[0].samples;
-        fboKey->layers = renderTargets[0].layers;
-        fboKey->extent = { renderTargets[0].extent.width, renderTargets[0].extent.height };
+        passKey->samples = renderTargets[0]->image.samples;
+        fboKey->layers = renderTargets[0]->image.range.layerCount;
+        fboKey->extent = { renderTargets[0]->image.extent.width, renderTargets[0]->image.extent.height };
 
         for (auto i = 0u, j = 0u; i < count; ++i)
         {
-            auto target = renderTargets + i;
-            auto resolve = resolves != nullptr ? resolves + i : nullptr;
+            auto target = renderTargets[i];
+            auto resolve = resolves != nullptr ? resolves[i] : nullptr;
 
-            auto isDepth = EnumConvert::IsDepthFormat(target->format);
+            auto isDepth = EnumConvert::IsDepthFormat(target->image.format);
             auto attachment = isDepth ? &passKey->depth : (passKey->colors + j);
-            attachment->format = target->format;
-            attachment->layout = target->layout;
+            attachment->format = target->image.format;
+            attachment->layout = target->image.layout;
             attachment->loadop = LoadOp::Keep;
             attachment->storeop = StoreOp::Store;
             attachment->resolve = false;
@@ -70,18 +70,18 @@ namespace PK::Rendering::VulkanRHI::Objects
             if (isDepth)
             {
                 // @TODO Handle depth resolves
-                fboKey->depth = target->view;
+                fboKey->depth = target->image.view;
             }
             else
             {
-                attachment->resolve = resolve != nullptr && resolve->view != VK_NULL_HANDLE;
+                attachment->resolve = resolve != nullptr && resolve->image.view != VK_NULL_HANDLE;
 
                 if (attachment->resolve)
                 {
-                    fboKey->resolve[j] = resolve->view;
+                    fboKey->resolve[j] = resolve->image.view;
                 }
 
-                fboKey->color[j++] = target->view;
+                fboKey->color[j++] = target->image.view;
             }
         }
     }
@@ -277,7 +277,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 break;
             }
 
-            bundle.buffers[i] = handle->buffer;
+            bundle.buffers[i] = handle->buffer.buffer;
         }
 
         bundle.count = i;
@@ -441,15 +441,15 @@ namespace PK::Rendering::VulkanRHI::Objects
                 break;
             }
 
-            const auto& bufferLayout = *vertexBuffer->bufferLayout;
+            const auto& bufferLayout = *vertexBuffer->buffer.layout;
             auto stride = bufferLayout.GetStride();
             
             auto bufferAttribute = &m_pipelineKey.vertexBuffers[index];
             bufferAttribute->binding = index;
         
-            if (bufferAttribute->inputRate != vertexBuffer->inputRate || bufferAttribute->stride != stride)
+            if (bufferAttribute->inputRate != vertexBuffer->buffer.inputRate || bufferAttribute->stride != stride)
             {
-                bufferAttribute->inputRate = vertexBuffer->inputRate;
+                bufferAttribute->inputRate = vertexBuffer->buffer.inputRate;
                 bufferAttribute->stride = stride;
                 m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
             }

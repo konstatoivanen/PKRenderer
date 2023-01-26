@@ -246,7 +246,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 				buildStructureRangeInfoPtrs.push_back(&blas->rangeInfo);
 			}
 
-			vkCmdBuildAccelerationStructuresKHR(cmd->commandBuffer, (uint32_t)buildGeometryInfos.size(), buildGeometryInfos.data(), buildStructureRangeInfoPtrs.data());
+			cmd->BuildAccelerationStructures((uint32_t)buildGeometryInfos.size(), buildGeometryInfos.data(), buildStructureRangeInfoPtrs.data());
 
 			VkMemoryBarrier barrier{ VK_STRUCTURE_TYPE_MEMORY_BARRIER };
 			barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
@@ -266,9 +266,9 @@ namespace PK::Rendering::VulkanRHI::Objects
 		tlasGeometryInfo.scratchData.deviceAddress = scratchBuffer->deviceAddress + scratchOffset;
 		const auto* pBuildStructureRangeInfo = &accelerationStructureBuildRangeInfo;
 
-		vkCmdBuildAccelerationStructuresKHR(cmd->commandBuffer, 1, &tlasGeometryInfo, &pBuildStructureRangeInfo);
+		cmd->BuildAccelerationStructures(1, &tlasGeometryInfo, &pBuildStructureRangeInfo);
 
-		m_bindHandle.accelerationStructure = m_structure->structure;
+		m_bindHandle.acceleration.structure = m_structure->structure;
 		m_bindHandle.IncrementVersion();
 	}
 

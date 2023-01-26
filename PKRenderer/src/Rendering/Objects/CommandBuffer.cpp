@@ -262,4 +262,25 @@ namespace PK::Rendering::Objects
     {
         Barrier(nullptr, {}, nullptr, 0ull, 0ull, srcFlags, dstFlags);
     }
+
+    void CommandBuffer::UploadBufferData(Buffer* buffer, const void* data)
+    {
+        auto dst = BeginBufferWrite(buffer, 0, buffer->GetCapacity());
+        memcpy(reinterpret_cast<char*>(dst), data, buffer->GetCapacity());
+        EndBufferWrite(buffer);
+    }
+
+    void CommandBuffer::UploadBufferData(Buffer* buffer, const void* data, size_t offset, size_t size)
+    {
+        auto dst = BeginBufferWrite(buffer, 0, buffer->GetCapacity());
+        memcpy(reinterpret_cast<char*>(dst) + offset, data, size);
+        EndBufferWrite(buffer);
+    }
+
+    void CommandBuffer::UploadBufferSubData(Buffer* buffer, const void* data, size_t offset, size_t size)
+    {
+        auto dst = BeginBufferWrite(buffer, offset, size);
+        memcpy(dst, data, size);
+        EndBufferWrite(buffer);
+    }
 }

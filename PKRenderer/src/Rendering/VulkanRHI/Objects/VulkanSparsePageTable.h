@@ -6,7 +6,7 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    class VulkanSparsePageTable : public IVulkanDisposable
+    class VulkanSparsePageTable : public Rendering::Services::IDisposable
     {
         struct Page
         {

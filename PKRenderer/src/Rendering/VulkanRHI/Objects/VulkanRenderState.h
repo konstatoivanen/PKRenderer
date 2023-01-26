@@ -1,12 +1,12 @@
 #pragma once
 #include "Utilities/PropertyBlock.h"
-#include "Rendering/VulkanRHI/Systems/VulkanDescriptorCache.h"
-#include "Rendering/VulkanRHI/Systems/VulkanPipelineCache.h"
-#include "Rendering/VulkanRHI/Systems/VulkanSamplerCache.h"
-#include "Rendering/VulkanRHI/Systems/VulkanFrameBufferCache.h"
-#include "Rendering/VulkanRHI/Systems/VulkanStagingBufferCache.h"
-#include "Rendering/VulkanRHI/Systems/VulkanDisposer.h"
+#include "Rendering/VulkanRHI/Services/VulkanDescriptorCache.h"
+#include "Rendering/VulkanRHI/Services/VulkanPipelineCache.h"
+#include "Rendering/VulkanRHI/Services/VulkanSamplerCache.h"
+#include "Rendering/VulkanRHI/Services/VulkanFrameBufferCache.h"
+#include "Rendering/VulkanRHI/Services/VulkanStagingBufferCache.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
+#include "Rendering/Services/Disposer.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -30,12 +30,12 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     struct VulkanSystemContext
     {
-        Systems::VulkanDescriptorCache* descriptorCache;
-        Systems::VulkanPipelineCache* pipelineCache;
-        Systems::VulkanSamplerCache* samplerCache;
-        Systems::VulkanFrameBufferCache* frameBufferCache;
-        Systems::VulkanStagingBufferCache* stagingBufferCache;
-        Systems::VulkanDisposer* disposer;
+        Services::VulkanDescriptorCache* descriptorCache;
+        Services::VulkanPipelineCache* pipelineCache;
+        Services::VulkanSamplerCache* samplerCache;
+        Services::VulkanFrameBufferCache* frameBufferCache;
+        Services::VulkanStagingBufferCache* stagingBufferCache;
+        Rendering::Services::Disposer* disposer;
     };
 
     struct VulkanVertexBufferBundle
@@ -73,7 +73,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             }
 
             void Reset();
-            void SetRenderTarget(const VulkanRenderTarget* renderTargets, const VulkanRenderTarget* resolves, uint32_t count);
+            void SetRenderTarget(const VulkanBindHandle* const* renderTargets, const VulkanBindHandle* const* resolves, uint32_t count);
             void ClearColor(const Math::color& color, uint32_t index);
             void ClearDepth(float depth, uint32_t stencil);
             void DiscardColor(uint32_t index);
@@ -118,17 +118,17 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         private:
             PK::Utilities::PropertyBlock m_resourceState = PK::Utilities::PropertyBlock(16384);
-            Systems::VulkanDescriptorCache* m_descriptorCache = nullptr;
-            Systems::VulkanPipelineCache* m_pipelineCache = nullptr;
-            Systems::VulkanSamplerCache* m_samplerCache = nullptr;
-            Systems::VulkanFrameBufferCache* m_frameBufferCache = nullptr;
-            Systems::VulkanStagingBufferCache* m_stagingBufferCache = nullptr;
-            Systems::VulkanDisposer* m_disposer = nullptr;
+            Services::VulkanDescriptorCache* m_descriptorCache = nullptr;
+            Services::VulkanPipelineCache* m_pipelineCache = nullptr;
+            Services::VulkanSamplerCache* m_samplerCache = nullptr;
+            Services::VulkanFrameBufferCache* m_frameBufferCache = nullptr;
+            Services::VulkanStagingBufferCache* m_stagingBufferCache = nullptr;
+            Rendering::Services::Disposer* m_disposer = nullptr;
         
-            Systems::DescriptorSetKey m_descriptorSetKeys[Structs::PK_MAX_DESCRIPTOR_SETS]{};
-            Systems::PipelineKey m_pipelineKey{};
-            Systems::FrameBufferKey m_frameBufferKey[2]{};
-            Systems::RenderPassKey m_renderPassKey[2]{};
+            Services::DescriptorSetKey m_descriptorSetKeys[Structs::PK_MAX_DESCRIPTOR_SETS]{};
+            Services::PipelineKey m_pipelineKey{};
+            Services::FrameBufferKey m_frameBufferKey[2]{};
+            Services::RenderPassKey m_renderPassKey[2]{};
             VulkanShaderBindingTableBundle m_shaderBindingTableBundle;
         
             const VulkanBindHandle* m_vertexBuffers[Structs::PK_MAX_VERTEX_ATTRIBUTES]{};

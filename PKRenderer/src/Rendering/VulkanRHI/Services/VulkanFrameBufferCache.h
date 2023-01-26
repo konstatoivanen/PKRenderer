@@ -4,7 +4,7 @@
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Utilities/HashHelpers.h"
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Services
 {
     struct alignas(8) FrameBufferKey 
     {

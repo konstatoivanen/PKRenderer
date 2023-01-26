@@ -2,7 +2,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/Window.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
-#include "Rendering/VulkanRHI/Systems/VulkanSwapchain.h"
+#include "Rendering/VulkanRHI/Objects/VulkanSwapchain.h"
 #include "Rendering/VulkanRHI/VulkanDriver.h"
 #include <gfx.h>
 
@@ -33,13 +33,13 @@ namespace PK::Rendering::VulkanRHI
             Math::uint4 GetRect() const override final { return m_swapchain->GetRect(); }
             constexpr VkExtent2D GetExtent() const { return m_swapchain->GetExtent(); }
             constexpr VkFormat GetNativeFormat() const { return m_swapchain->GetNativeFormat(); }
-            const VulkanRenderTarget GetRenderTarget() const { return m_swapchain->GetRenderTarget(); }
+            const VulkanBindHandle* GetBindHandle() const { return m_swapchain->GetBindHandle(); }
 
         private:
             const VulkanDriver* m_driver;
             VkSurfaceKHR m_surface;
             GLFWwindow* m_window;
-            PK::Utilities::Scope<Systems::VulkanSwapchain> m_swapchain;
+            PK::Utilities::Scope<Objects::VulkanSwapchain> m_swapchain;
             VulkanSemaphore* m_imageAvailableSignal;
 
             bool m_vsync = true;

@@ -11,6 +11,12 @@ namespace PK::Rendering::Passes
     using namespace Structs;
     using namespace Objects;
 
+    struct RayGatherParams
+    {
+        uint pk_SampleIndex;
+        uint pk_SampleCount;
+    };
+
     PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
         m_computeClear = assetDatabase->Find<Shader>("CS_SceneGI_Clear");
@@ -21,7 +27,8 @@ namespace PK::Rendering::Passes
 
         auto tableInfo = m_rayTraceGatherGI->GetShaderBindingTableInfo();
         auto tableUintCount = tableInfo.totalTableSize / sizeof(uint32_t);
-        m_shaderBindingTable = Buffer::Create(ElementType::Uint, tableInfo.handleData, tableUintCount, BufferUsage::DefaultShaderBindingTable, "GI.ShaderBindingTable");
+        m_shaderBindingTable = Buffer::Create(ElementType::Uint, tableUintCount, BufferUsage::DefaultShaderBindingTable, "GI.ShaderBindingTable");
+        GraphicsAPI::GetCommandBuffer()->UploadBufferData(m_shaderBindingTable.get(), tableInfo.handleData);
 
         TextureDescriptor descr{};
         descr.samplerType = SamplerType::Sampler3D;
@@ -62,12 +69,17 @@ namespace PK::Rendering::Passes
         descr.usage = TextureUsage::RTColorSample | TextureUsage::Storage;
         m_screenSpaceGI = Texture::Create(descr, "GI.ScreenSpaceTexture");
 
+        descr.format = TextureFormat::R16F;
+        descr.layers = 16;
+        m_rayhits = Texture::Create(descr, "GI.RayHits");
+
         auto cmd = GraphicsAPI::GetCommandBuffer();
         auto hash = HashCache::Get();
         cmd->SetImage(hash->pk_SceneGI_VolumeMaskWrite, m_voxelMask.get());
         cmd->SetImage(hash->pk_SceneGI_VolumeWrite, m_voxels.get());
         cmd->SetTexture(hash->pk_SceneGI_VolumeRead, m_voxels.get());
         cmd->SetImage(hash->pk_ScreenGI_Mask, m_mask.get());
+        cmd->SetImage(hash->pk_ScreenGI_Hits, m_rayhits.get());
 
         cmd->SetShaderBindingTable(RayTracingShaderGroup::RayGeneration, 
             m_shaderBindingTable.get(), 
@@ -117,6 +129,11 @@ namespace PK::Rendering::Passes
         auto hash = HashCache::Get();
 
         m_screenSpaceGI->Validate(resolution);
+
+        if (m_rayhits->Validate(resolution))
+        {
+            cmd->SetImage(hash->pk_ScreenGI_Hits, m_rayhits.get());
+        }
 
         if (m_mask->Validate(resolution))
         {
@@ -191,6 +208,15 @@ namespace PK::Rendering::Passes
         cmd->Blit(m_screenSpaceGI.get(), m_screenSpaceGI.get(), { 0, 0, 0, 2 }, { 0, 2, 0, 2 }, FilterMode::Point);
 
         {
+            //RayGatherParams gatherParams;
+            //gatherParams.pk_SampleCount = 16u;
+            //gatherParams.pk_SampleIndex = m_rayIndex++ % 16u;
+            //cmd->SetConstant("pk_RayGatherParams", gatherParams);
+            //cmd->DispatchRays(m_rayTraceGatherGI, { resolution.x, resolution.y, 1 });
+            //cmd->Barrier(m_rayhits.get(), { 0, (uint16_t)gatherParams.pk_SampleIndex, 0, 1 }, MemoryAccessFlags::RayTraceWrite, MemoryAccessFlags::FragmentTexture);
+        }
+
+        {
             cmd->SetTexture(hash->pk_ScreenGI_Read, m_screenSpaceGI.get(), { 0, 2, 0, 2 });
             cmd->SetImage(hash->pk_ScreenGI_Write, m_screenSpaceGI.get(), { 0, 0, 0, 2 });
             cmd->SetImage(hash->_DestinationTex, m_mask.get());
@@ -204,8 +230,6 @@ namespace PK::Rendering::Passes
         {
             cmd->Dispatch(m_computeBakeGI, 0, groupSize);
             cmd->Barrier(m_screenSpaceGI.get(), { 0, 0, 0, 2 }, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::FragmentTexture);
-            //cmd->DispatchRays(m_rayTraceGatherGI, { resolution.x, resolution.y, 1 });
-            //cmd->Barrier(m_screenSpaceGI.get(), { 0, 0, 0, 2 }, MemoryAccessFlags::RayTraceWrite, MemoryAccessFlags::FragmentTexture);
             cmd->SetTexture(hash->pk_ScreenGI_Read, m_screenSpaceGI.get(), { 0, 0, 0, 2 });
         }
 

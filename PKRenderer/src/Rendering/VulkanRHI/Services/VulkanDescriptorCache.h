@@ -5,7 +5,7 @@
 #include "Utilities/PointerMap.h"
 #include "Utilities/Ref.h"
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Services
 {
     struct alignas(8) DescriptorBinding
     {

@@ -11,7 +11,7 @@ namespace PK::Rendering::Passes
     {
         public:
             PassHistogram(Core::Services::AssetDatabase* assetDatabase);
-            void Execute(Objects::CommandBuffer* cmd, Objects::Texture* target, Structs::MemoryAccessFlags nextAccess);
+            void Render(Objects::CommandBuffer* cmd, Objects::Texture* target, Structs::MemoryAccessFlags nextAccess);
 
         private:
             Objects::Shader* m_computeHistogram = nullptr;

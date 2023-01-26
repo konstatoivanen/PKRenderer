@@ -31,13 +31,13 @@ namespace PK::Rendering::Passes
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
         m_renderTarget = Texture::Create(descriptor, "DepthOfField.Texture");
-        m_autoFocusParams = Buffer::CreateStorage(BufferLayout({ {ElementType::Float2, "PARAMS"} }), 1, BufferUsage::None, "DepthOfField.AutoFocus.Parameters");
+        m_autoFocusParams = Buffer::Create(ElementType::Float2, 1, BufferUsage::DefaultStorage, "DepthOfField.AutoFocus.Parameters");
 
         m_passPrefilter = m_shaderBlur->GetVariantIndex(StringHashID::StringToID("PASS_PREFILTER"));
         m_passDiskblur = m_shaderBlur->GetVariantIndex(StringHashID::StringToID("PASS_DISKBLUR"));
     }
 
-    void PassDepthOfField::Execute(Objects::CommandBuffer* cmd, RenderTexture* destination, MemoryAccessFlags& lastAccess)
+    void PassDepthOfField::Render(Objects::CommandBuffer* cmd, RenderTexture* destination, MemoryAccessFlags& lastAccess)
     {
         cmd->BeginDebugScope("DepthOfField", Math::PK_COLOR_MAGENTA);
 

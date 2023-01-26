@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "VulkanSamplerCache.h"
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Services
 {
     using namespace Structs;
 

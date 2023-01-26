@@ -554,6 +554,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\Objects\AccelerationStructure.h" />
     <ClInclude Include="src\Rendering\Objects\RayTracingAccelerationStructure.h" />
     <ClInclude Include="src\Rendering\Objects\VirtualMesh.h" />
+    <ClInclude Include="src\Rendering\Passes\PassFilmGrain.h" />
     <ClInclude Include="src\Rendering\Passes\PassTemporalAntialiasing.h" />
     <ClInclude Include="src\Rendering\Passes\PassVolumeFog.h" />
     <ClInclude Include="src\Rendering\Passes\PassGeometry.h" />
@@ -563,7 +564,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\Structs\StructIndirectArguments.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanAccelerationStructure.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanSparsePageTable.h" />
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.h" />
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanBarrierHandler.h" />
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanLayoutCache.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanExtensions.h" />
     <ClInclude Include="src\Utilities\BufferIterator.h" />
     <ClInclude Include="src\Utilities\BufferView.h" />
@@ -618,7 +620,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Math\FunctionsIntersect.h" />
     <ClInclude Include="src\Math\Types.h" />
     <ClInclude Include="src\PrecompiledHeader.h" />
-    <ClInclude Include="src\Rendering\Batcher.h" />
+    <ClInclude Include="src\Rendering\Services\Batcher.h" />
     <ClInclude Include="src\Rendering\GraphicsAPI.h" />
     <ClInclude Include="src\Rendering\HashCache.h" />
     <ClInclude Include="src\Rendering\MeshUtility.h" />
@@ -648,14 +650,14 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanBindArray.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanShader.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanTexture.h" />
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanCommandBufferPool.h" />
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanDescriptorCache.h" />
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanDisposer.h" />
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanFrameBufferCache.h" />
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanPipelineCache.h" />
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanSamplerCache.h" />
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanStagingBufferCache.h" />
-    <ClInclude Include="src\Rendering\VulkanRHI\Systems\VulkanSwapchain.h" />
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanCommandBufferPool.h" />
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanDescriptorCache.h" />
+    <ClInclude Include="src\Rendering\Services\Disposer.h" />
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanFrameBufferCache.h" />
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanPipelineCache.h" />
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanSamplerCache.h" />
+    <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanStagingBufferCache.h" />
+    <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanSwapchain.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanEnumConversion.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanMemory.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanStructs.h" />
@@ -954,6 +956,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\ECS\Contextual\Engines\EngineScreenshot.cpp" />
     <ClCompile Include="src\Rendering\Objects\AccelerationStructure.cpp" />
     <ClCompile Include="src\Rendering\Objects\VirtualMesh.cpp" />
+    <ClCompile Include="src\Rendering\Passes\PassFilmGrain.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassTemporalAntialiasing.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassVolumeFog.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassGeometry.cpp" />
@@ -961,7 +964,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Rendering\Passes\PassSceneGI.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanAccelerationStructure.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanSparsePageTable.cpp" />
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanLayoutCache.cpp" />
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanBarrierHandler.cpp" />
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanLayoutCache.cpp" />
     <ClCompile Include="src\Utilities\FileIO.cpp" />
     <ClCompile Include="src\Utilities\HashHelpers.cpp" />
     <ClCompile Include="src\Utilities\PropertyBlock.cpp" />
@@ -985,7 +989,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PrecompiledHeader.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Batcher.cpp" />
+    <ClCompile Include="src\Rendering\Services\Batcher.cpp" />
     <ClCompile Include="src\Rendering\GraphicsAPI.cpp" />
     <ClCompile Include="src\Rendering\MeshUtilitity.cpp" />
     <ClCompile Include="src\Rendering\Objects\Buffer.cpp" />
@@ -1010,14 +1014,14 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanBindArray.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanShader.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanTexture.cpp" />
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanCommandBufferPool.cpp" />
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanDescriptorCache.cpp" />
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanDisposer.cpp" />
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanFrameBufferCache.cpp" />
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanPipelineCache.cpp" />
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanSamplerCache.cpp" />
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanStagingBufferCache.cpp" />
-    <ClCompile Include="src\Rendering\VulkanRHI\Systems\VulkanSwapchain.cpp" />
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanCommandBufferPool.cpp" />
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanDescriptorCache.cpp" />
+    <ClCompile Include="src\Rendering\Services\Disposer.cpp" />
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanFrameBufferCache.cpp" />
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanPipelineCache.cpp" />
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanSamplerCache.cpp" />
+    <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanStagingBufferCache.cpp" />
+    <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanSwapchain.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Utilities\VulkanEnumConversion.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Utilities\VulkanMemory.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Utilities\VulkanStructs.cpp" />

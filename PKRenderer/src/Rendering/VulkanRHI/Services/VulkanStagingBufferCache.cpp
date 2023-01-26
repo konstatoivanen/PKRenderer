@@ -4,7 +4,7 @@
 #include "Core/Services/Log.h"
 
 using namespace PK::Utilities;
-using namespace PK::Rendering::VulkanRHI::Systems;
+using namespace PK::Rendering::VulkanRHI::Services;
 using namespace PK::Rendering::Structs;
 
 template<>
@@ -45,7 +45,7 @@ struct Vector::Bound<VulkanStagingBuffer*>
     }
 };
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Services
 {
     VulkanStagingBufferCache::VulkanStagingBufferCache(VkDevice device, VmaAllocator allocator, uint64_t pruneDelay) :
         m_allocator(allocator),

@@ -268,6 +268,7 @@ namespace PK::Assets
         {
             char name[PK_ASSET_NAME_MAX_LENGTH];
             PKDescriptorType type;
+            uint8_t writeStageMask;
             uint16_t count;
         };
 
@@ -292,14 +293,14 @@ namespace PK::Assets
             float zoffsets[3] = { 0, 0, 0 };
         };
 
-        struct PKDescriptorSet
+        struct alignas(4) PKDescriptorSet
         {
             uint32_t stageflags;
             uint32_t descriptorCount;
             RelativePtr<PKDescriptor> descriptors;
         };
 
-        struct PKShaderVariant
+        struct alignas(4) PKShaderVariant
         {
             uint32_t descriptorSetCount;
             uint32_t constantVariableCount;
@@ -310,7 +311,7 @@ namespace PK::Assets
             RelativePtr<void> sprivBuffers[(int)PKShaderStage::MaxCount];
         };
 
-        struct PKShader
+        struct alignas(4) PKShader
         {
             Type type = Type::Graphics;
             uint32_t materialPropertyCount = 0;

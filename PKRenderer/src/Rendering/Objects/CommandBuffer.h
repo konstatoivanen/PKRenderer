@@ -62,6 +62,9 @@ namespace PK::Rendering::Objects
         
         virtual void Barrier(const Texture* texture, const Structs::TextureViewRange& range, const Buffer* buffer, size_t offset, size_t size, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags) = 0;
 
+        virtual void* BeginBufferWrite(Buffer* buffer, size_t offset, size_t size) = 0;
+        virtual void EndBufferWrite(Buffer* buffer) = 0;
+
         virtual void BeginDebugScope(const char* name, const Math::color& color) = 0;
         virtual void EndDebugScope() = 0;
 
@@ -126,5 +129,39 @@ namespace PK::Rendering::Objects
         void Barrier(const Buffer* buffer, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
         void Barrier(const Buffer* buffer, size_t offset, size_t size, Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
         void Barrier(Structs::MemoryAccessFlags srcFlags, Structs::MemoryAccessFlags dstFlags);
+
+        void UploadBufferData(Buffer* buffer, const void* data);
+        void UploadBufferData(Buffer* buffer, const void* data, size_t offset, size_t size);
+        void UploadBufferSubData(Buffer* buffer, const void* data, size_t offset, size_t size);
+
+        template<typename T>
+        Utilities::BufferView<T> BeginBufferWrite(Buffer* buffer)
+        {
+            auto bufSize = buffer->GetCapacity();
+            return { reinterpret_cast<T*>(BeginBufferWrite(buffer, 0, bufSize)), bufSize / sizeof(T) };
+        }
+
+        template<typename T>
+        Utilities::BufferView<T> BeginBufferWrite(Buffer* buffer, size_t offset, size_t count)
+        {
+            auto tsize = sizeof(T);
+            auto mapSize = tsize * count + tsize * offset;
+            auto bufSize = buffer->GetCapacity();
+
+            PK_THROW_ASSERT(mapSize <= bufSize, "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", mapSize, bufSize);
+
+            return { reinterpret_cast<T*>(BeginBufferWrite(buffer, offset * tsize, count * tsize)), count };
+        }
+
+        template<typename T>
+        Utilities::InterleavedBufferView<T> BeginBufferWrite(Buffer* buffer, size_t stride, size_t elementOffset, size_t bufferOffset, size_t count)
+        {
+            auto mapSize = stride * count + stride * bufferOffset;
+            auto bufSize = buffer->GetCapacity();
+
+            PK_THROW_ASSERT(mapSize <= bufSize, "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", mapSize, bufSize);
+
+            return { reinterpret_cast<uint8_t*>(BeginBufferWrite(buffer, bufferOffset * stride, count * stride)), count, stride, elementOffset };
+        }
     };
 }

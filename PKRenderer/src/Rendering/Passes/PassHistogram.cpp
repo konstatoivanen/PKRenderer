@@ -14,12 +14,12 @@ namespace PK::Rendering::Passes
     PassHistogram::PassHistogram(AssetDatabase* assetDatabase)
     {
         m_computeHistogram = assetDatabase->Find<Shader>("CS_Histogram");
-        m_histogram = Buffer::CreateStorage(BufferLayout({ { ElementType::Uint, "BIN" } }), 257, BufferUsage::None, "Histogram");
+        m_histogram = Buffer::Create(ElementType::Uint, 257, BufferUsage::DefaultStorage, "Histogram");
         m_passHistogramBins = m_computeHistogram->GetVariantIndex(StringHashID::StringToID("PASS_HISTOGRAM"));
         m_passHistogramAvg = m_computeHistogram->GetVariantIndex(StringHashID::StringToID("PASS_AVG"));
     }
 
-    void PassHistogram::Execute(Objects::CommandBuffer* cmd, Texture* target, MemoryAccessFlags nextAccess)
+    void PassHistogram::Render(Objects::CommandBuffer* cmd, Texture* target, MemoryAccessFlags nextAccess)
     {
         cmd->BeginDebugScope("Histogram", PK_COLOR_MAGENTA);
 

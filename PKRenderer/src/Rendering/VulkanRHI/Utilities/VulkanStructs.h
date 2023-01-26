@@ -6,6 +6,7 @@
 #include "Rendering/Structs/Enums.h"
 #include "Rendering/Structs/Descriptors.h"
 #include "Rendering/Structs/Layout.h"
+#include "Rendering/Services/Disposer.h"
 
 namespace PK::Rendering::VulkanRHI
 {
@@ -98,11 +99,6 @@ namespace PK::Rendering::VulkanRHI
         VkAccessFlags dstAccessMask = 0;
     };
 
-    struct IVulkanDisposable : public PK::Utilities::VersionedObject 
-    {
-        virtual ~IVulkanDisposable() = 0 {};
-    };
-
     struct VulkanFence : public PK::Utilities::NoCopy
     {
         VulkanFence(VkDevice device, bool signaled = false);
@@ -121,7 +117,7 @@ namespace PK::Rendering::VulkanRHI
         VkSemaphore vulkanSemaphore;
     };
 
-    struct VulkanImageView : public IVulkanDisposable
+    struct VulkanImageView : public Rendering::Services::IDisposable
     {
         VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo, const char* name);
         ~VulkanImageView();
@@ -148,7 +144,7 @@ namespace PK::Rendering::VulkanRHI
         VkRenderPass renderPass;
     };
 
-    struct VulkanRawBuffer : public IVulkanDisposable
+    struct VulkanRawBuffer : public Rendering::Services::IDisposable
     {
         VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo, const char* name);
         ~VulkanRawBuffer();
@@ -168,7 +164,7 @@ namespace PK::Rendering::VulkanRHI
         VmaAllocationInfo allocationInfo{};
     };
 
-    struct VulkanRawImage : public IVulkanDisposable
+    struct VulkanRawImage : public Rendering::Services::IDisposable
     {
         VulkanRawImage(VkDevice device, VmaAllocator allocator, const VulkanImageCreateInfo& createInfo, const char* name);
         ~VulkanRawImage();
@@ -185,7 +181,7 @@ namespace PK::Rendering::VulkanRHI
         uint32_t layers;
     };
 
-    struct VulkanRawAccelerationStructure : public IVulkanDisposable
+    struct VulkanRawAccelerationStructure : public Rendering::Services::IDisposable
     {
         VulkanRawAccelerationStructure(VkDevice device, 
             VmaAllocator allocator, 
@@ -204,7 +200,7 @@ namespace PK::Rendering::VulkanRHI
         VkAccelerationStructureBuildRangeInfoKHR rangeInfo;
     };
 
-    struct VulkanShaderModule : public IVulkanDisposable
+    struct VulkanShaderModule : public Rendering::Services::IDisposable
     {
         VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t spirvSize, const char* name);
         ~VulkanShaderModule();
@@ -275,53 +271,36 @@ namespace PK::Rendering::VulkanRHI
     {
         union
         {
-            VkImageView imageView = VK_NULL_HANDLE;
-            VkBuffer buffer;
-            VkAccelerationStructureKHR accelerationStructure;
+            struct Image
+            {
+                VkImage image = VK_NULL_HANDLE;
+                VkImageView view = VK_NULL_HANDLE;
+                VkSampler sampler = VK_NULL_HANDLE;
+                VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+                VkFormat format = VK_FORMAT_UNDEFINED;
+                VkExtent3D extent = { 0u, 0u, 0u };
+                VkImageSubresourceRange range = { VK_IMAGE_ASPECT_NONE, 0u, 1u, 0u, 1u };
+                uint16_t samples = 1u;
+            } 
+            image;
+
+            struct Buffer
+            {
+                VkBuffer buffer;
+                const Rendering::Structs::BufferLayout* layout;
+                VkVertexInputRate inputRate;
+                VkDeviceSize offset;
+                VkDeviceSize range;
+            } 
+            buffer;
+
+            struct Acceleration
+            {
+                VkAccelerationStructureKHR structure;
+            } 
+            acceleration;
         };
 
-        union
-        {
-            VkSampler sampler = VK_NULL_HANDLE;
-            const Rendering::Structs::BufferLayout* bufferLayout;
-        };
-
-        union
-        {
-            VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            VkVertexInputRate inputRate;
-        };
-
-        VkDeviceSize bufferRange = 0ull;
-        VkDeviceSize bufferOffset = 0ull;
-    };
-
-    struct VulkanRenderTarget : public PK::Utilities::NoCopy
-    {
-        VulkanRenderTarget(VkImageView view,
-                           VkImage image,
-                           VkImageLayout layout,
-                           VkImageAspectFlagBits aspect,
-                           VkFormat format,
-                           VkExtent3D extent,
-                           uint16_t samples,
-                           uint16_t layers) : 
-            view(view), 
-            image(image),
-            layout(layout), 
-            aspect(aspect),
-            format(format), 
-            extent(extent), 
-            samples(samples), 
-            layers(layers) {}
-
-        VkImageView view;
-        VkImage image;
-        const VkImageLayout layout;
-        const VkImageAspectFlagBits aspect;
-        const VkFormat format;
-        const VkExtent3D extent;
-        const uint16_t samples;
-        const uint16_t layers;
+        VulkanBindHandle() : image{}{};
     };
 }

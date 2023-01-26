@@ -35,4 +35,6 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
     VkPipelineStageFlagBits GetPipelineStageFlags(Rendering::Structs::MemoryAccessFlags flags);
     VkAccessFlagBits GetAccessFlags(Rendering::Structs::MemoryAccessFlags flags);
     VkRayTracingShaderGroupTypeKHR GetRayTracingStageGroupType(Rendering::Structs::ShaderStage stage);
+    bool IsReadAccess(VkAccessFlags flags);
+    bool IsWriteAccess(VkAccessFlags flags);
 }

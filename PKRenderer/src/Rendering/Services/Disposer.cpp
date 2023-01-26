@@ -1,9 +1,9 @@
 #include "PrecompiledHeader.h"
-#include "VulkanDisposer.h"
+#include "Disposer.h"
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::Services
 {
-    void VulkanDisposer::Prune()
+    void Disposer::Prune()
     {
         for (auto i = (int)m_disposables.size() - 1; i >= 0; --i)
         {

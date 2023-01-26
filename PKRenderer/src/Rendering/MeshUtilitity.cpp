@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "MeshUtility.h"
 #include "Rendering/Structs/StructsCommon.h"
+#include "Rendering/GraphicsAPI.h"
 #include <mikktspace/mikktspace.h>
 
 namespace PK::Rendering::MeshUtility
@@ -336,20 +337,21 @@ namespace PK::Rendering::MeshUtility
             3 + 4 * 5, 2 + 4 * 5, 1 + 4 * 5,
         };
 
-        BufferLayout layout = 
-        { 
-            { ElementType::Float3, PK_VS_POSITION }, 
-            { ElementType::Float3, PK_VS_NORMAL }, 
-            { ElementType::Float3, PK_VS_TANGENT }, 
-            { ElementType::Float2, PK_VS_TEXCOORD0 } 
-        };
+        auto vertexBuffer = Buffer::Create(
+        {
+            { ElementType::Float3, PK_VS_POSITION },
+            { ElementType::Float3, PK_VS_NORMAL },
+            { ElementType::Float3, PK_VS_TANGENT },
+            { ElementType::Float2, PK_VS_TEXCOORD0 }
+        }, 
+        24, BufferUsage::DefaultVertex, "Box.VertexBuffer");
 
-        return CreateRef<Mesh>
-        (
-            Buffer::CreateVertex(layout, vertices, 24, BufferUsage::None, "Mesh Vertex Buffer"),
-            Buffer::CreateIndex(ElementType::Uint, indices, 36, BufferUsage::None, "Mesh Index Buffer"),
-            PK::Math::BoundingBox::CenterExtents(offset, extents)
-        );
+        auto indexBuffer = Buffer::Create(ElementType::Uint, 36, BufferUsage::DefaultIndex, "Box.IndexBuffer");
+
+        auto cmd = GraphicsAPI::GetCommandBuffer();
+        cmd->UploadBufferData(vertexBuffer.get(), vertices);
+        cmd->UploadBufferData(indexBuffer.get(), indices);
+        return CreateRef<Mesh>(vertexBuffer, indexBuffer, PK::Math::BoundingBox::CenterExtents(offset, extents));
     }
 
     Ref<Mesh> GetQuad(const float2& min, const float2& max)
@@ -372,11 +374,12 @@ namespace PK::Rendering::MeshUtility
             2,3,0
         };
 
-        return CreateRef<Mesh>
-        (
-            Buffer::CreateVertex({ {ElementType::Float3, PK_VS_POSITION }, { ElementType::Float2, PK_VS_TEXCOORD0 } }, vertices, 4, BufferUsage::None, "Mesh Vertex Buffer"),
-            Buffer::CreateIndex(ElementType::Uint, indices, 6, BufferUsage::None, "Mesh Index Buffer")
-        );
+        auto vertexBuffer = Buffer::Create({ {ElementType::Float3, PK_VS_POSITION }, { ElementType::Float2, PK_VS_TEXCOORD0 } }, 4, BufferUsage::DefaultVertex, "Quad.VertexBuffer");
+        auto indexBuffer = Buffer::Create(ElementType::Uint, 6, BufferUsage::DefaultIndex, "Quad.IndexBuffer");
+        auto cmd = GraphicsAPI::GetCommandBuffer();
+        cmd->UploadBufferData(vertexBuffer.get(), vertices);
+        cmd->UploadBufferData(indexBuffer.get(), indices);
+        return CreateRef<Mesh>(vertexBuffer, indexBuffer);
     }
 
     Ref<VirtualMesh> GetPlane(Ref<Mesh> baseMesh, const float2& center, const float2& extents, uint2 resolution)

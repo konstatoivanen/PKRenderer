@@ -3,7 +3,7 @@
 #include "Core/Services/Log.h"
 #include "Rendering/VUlkanRHI/Utilities/VulkanUtilities.h"
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Services
 {
     using namespace Objects;
     using namespace PK::Utilities;

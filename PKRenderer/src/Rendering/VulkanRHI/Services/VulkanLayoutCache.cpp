@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "VulkanLayoutCache.h"
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Services
 {
     using namespace Structs;
     using namespace Utilities;

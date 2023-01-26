@@ -4,7 +4,7 @@
 #include "Rendering/Objects/RenderTexture.h"
 #include "Rendering/Objects/ConstantBuffer.h"
 #include "Rendering/Objects/Shader.h"
-#include "Rendering/Batcher.h"
+#include "Rendering/Services/Batcher.h"
 
 namespace PK::Rendering::Passes
 {
@@ -29,6 +29,8 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Texture> m_voxelMask;
             Utilities::Ref<Objects::Texture> m_screenSpaceGI;
             Utilities::Ref<Objects::Texture> m_mask;
+            Utilities::Ref<Objects::Texture> m_rayhits;
+            uint32_t m_rayIndex = 0u;
             uint32_t m_checkerboardIndex = 0u;
             int32_t m_rasterAxis = 0;
     };

@@ -4,7 +4,7 @@
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Rendering/VulkanRHI/Objects/VulkanCommandBuffer.h"
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Services
 {
     class VulkanCommandBufferPool : public PK::Utilities::NoCopy
     {

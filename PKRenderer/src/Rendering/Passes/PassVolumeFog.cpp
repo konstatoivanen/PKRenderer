@@ -30,7 +30,7 @@ namespace PK::Rendering::Passes
 
         m_volumeInject = Texture::Create(descriptor, "Fog.InjectVolume");
         m_volumeScatter = Texture::Create(descriptor, "Fog.ScatterVolume");
-        m_depthTiles = Buffer::CreateStorage({ {ElementType::Uint, "DEPTHMAX"} }, VolumeResolution.x * VolumeResolution.y, BufferUsage::None, "Fog.DepthTiles");
+        m_depthTiles = Buffer::Create(ElementType::Uint, VolumeResolution.x * VolumeResolution.y, BufferUsage::DefaultStorage, "Fog.DepthTiles");
 
         m_computeInject = assetDatabase->Find<Shader>("CS_VolumeFogLightDensity");
         m_computeScatter = assetDatabase->Find<Shader>("CS_VolumeFogScatter");
@@ -65,10 +65,11 @@ namespace PK::Rendering::Passes
         cmd->SetBuffer(hash->pk_VolumeMaxDepths, m_depthTiles.get());
     }
 
-    void PassVolumeFog::Render(CommandBuffer* cmd, RenderTexture* destination, const uint3& resolution)
+    void PassVolumeFog::Render(CommandBuffer* cmd, RenderTexture* destination)
     {
         cmd->BeginDebugScope("VolumetricFog", PK_COLOR_MAGENTA);
 
+        auto resolution = destination->GetResolution();
         auto depthCountX = (uint)std::ceilf(resolution.x / 32.0f);
         auto depthCountY = (uint)std::ceilf(resolution.y / 32.0f);
         auto groupsInject = uint3(VolumeResolution.x / InjectThreadCount.x, VolumeResolution.y / InjectThreadCount.y, VolumeResolution.z / InjectThreadCount.z);

@@ -16,32 +16,32 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::SetRenderTarget(const uint3& resolution)
     {
-        VulkanRenderTarget dummy(VK_NULL_HANDLE,
-            VK_NULL_HANDLE,
-            VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR,
-            VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM,
-            VK_FORMAT_UNDEFINED,
-            { resolution.x, resolution.y, resolution.z },
-            1u,
-            1u);
-
-        renderState->SetRenderTarget(&dummy, nullptr, 0u);
+        // @TODO move somewhere non static
+        static VulkanBindHandle dummy{};
+        dummy.image.image = VK_NULL_HANDLE;
+        dummy.image.view = VK_NULL_HANDLE;
+        dummy.image.sampler = VK_NULL_HANDLE;
+        dummy.image.layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
+        dummy.image.format = VK_FORMAT_UNDEFINED;
+        dummy.image.extent = { resolution.x, resolution.y, resolution.z };
+        dummy.image.range = { VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM, 0u, 1u, 0u, 1u };
+        dummy.image.samples = 1u;
+        const VulkanBindHandle* handles = &dummy;
+        renderState->SetRenderTarget(&handles, nullptr, 0u);
     }
 
     void VulkanCommandBuffer::SetRenderTarget(Texture** renderTargets, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count)
     {
-        auto colors = PK_STACK_ALLOC(VulkanRenderTarget, count);
-        auto resolves = resolveTargets != nullptr ? PK_STACK_ALLOC(VulkanRenderTarget, count) : nullptr;
+        auto colors = PK_STACK_ALLOC(const VulkanBindHandle*, count);
+        auto resolves = resolveTargets != nullptr ? PK_STACK_ALLOC(const VulkanBindHandle*, count) : nullptr;
 
         for (auto i = 0u; i < count; ++i)
         {
-            auto color = renderTargets[i]->GetNative<VulkanTexture>()->GetRenderTarget(ranges[i]);
-            memcpy(colors + i, &color, sizeof(VulkanRenderTarget));
+            colors[i] = renderTargets[i]->GetNative<VulkanTexture>()->GetBindHandle(ranges[i], TextureBindMode::RenderTarget);
 
             if (resolves != nullptr && resolveTargets[i] != nullptr)
             {
-                auto resolve = resolveTargets[i]->GetNative<VulkanTexture>()->GetRenderTarget(ranges[i]);
-                memcpy(resolves + i, &resolve, sizeof(VulkanRenderTarget));
+                resolves[i] = resolveTargets[i]->GetNative<VulkanTexture>()->GetBindHandle(ranges[i], TextureBindMode::RenderTarget);
             }
         }
 
@@ -105,7 +105,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanCommandBuffer::SetIndexBuffer(const Buffer* buffer, size_t offset)
     {
         auto handle = buffer->GetNative<VulkanBuffer>()->GetBindHandle();
-        renderState->SetIndexBuffer(handle, EnumConvert::GetIndexType(handle->bufferLayout->begin()->Type));
+        renderState->SetIndexBuffer(handle, EnumConvert::GetIndexType(handle->buffer.layout->begin()->Type));
     }
 
     void VulkanCommandBuffer::SetBuffer(uint32_t nameHashId, Buffer* buffer, const IndexRange& range)
@@ -115,7 +115,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::SetTexture(uint32_t nameHashId, Texture* texture, const TextureViewRange& range)
     {
-        renderState->SetResource(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, true)));
+        renderState->SetResource(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::SampledTexture)));
     }
 
     void VulkanCommandBuffer::SetBufferArray(uint32_t nameHashId, BindArray<Buffer>* bufferArray)
@@ -130,7 +130,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::SetImage(uint32_t nameHashId, Texture* texture, const TextureViewRange& range)
     {
-        renderState->SetResource(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, false)));
+        renderState->SetResource(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::Image)));
     }
 
     void VulkanCommandBuffer::SetAccelerationStructure(uint32_t nameHashId, AccelerationStructure* structure)
@@ -196,16 +196,16 @@ namespace PK::Rendering::VulkanRHI::Objects
     }
 
 
-    void VulkanCommandBuffer::Blit(Texture* src, Window* dst,FilterMode filter)
+    void VulkanCommandBuffer::Blit(Texture* src, Window* dst, FilterMode filter)
     {
         auto vksrc = src->GetNative<VulkanTexture>();
         auto vkwindow = dst->GetNative<VulkanWindow>();
-        Blit(vksrc->GetRenderTarget(), vkwindow->GetRenderTarget(), 0, 0, 0, 0, filter, true);
+        Blit(vksrc->GetBindHandle(TextureBindMode::RenderTarget), vkwindow->GetBindHandle(), 0, 0, 0, 0, filter, true);
     }
 
     void VulkanCommandBuffer::Blit(Window* src, Buffer* dst)
     {
-        auto vksrc = src->GetNative<VulkanWindow>()->GetRenderTarget();
+        auto vksrc = src->GetNative<VulkanWindow>()->GetBindHandle();
         auto vkbuff = dst->GetNative<VulkanBuffer>();
 
         VkBufferImageCopy region{};
@@ -213,29 +213,31 @@ namespace PK::Rendering::VulkanRHI::Objects
         region.imageSubresource.mipLevel = 0;
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount = 1;
-        region.imageExtent = vksrc.extent;
+        region.imageExtent = vksrc->image.extent;
 
         VkImageSubresourceRange srcRange{};
-        srcRange.aspectMask = vksrc.aspect;
+        srcRange.aspectMask = vksrc->image.range.aspectMask;
         srcRange.baseMipLevel = 0;
         srcRange.levelCount = 1;
         srcRange.baseArrayLayer = 0;
         srcRange.layerCount = 1;
 
-        TransitionImageLayout(VulkanLayoutTransition(vksrc.image, vksrc.layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, srcRange));
-        vkCmdCopyImageToBuffer(commandBuffer, vksrc.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vkbuff->GetRaw()->buffer, 1, &region);
-        TransitionImageLayout(VulkanLayoutTransition(vksrc.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vksrc.layout, srcRange));
+        TransitionImageLayout(VulkanLayoutTransition(vksrc->image.image, vksrc->image.layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, srcRange));
+        vkCmdCopyImageToBuffer(commandBuffer, vksrc->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vkbuff->GetRaw()->buffer, 1, &region);
+        TransitionImageLayout(VulkanLayoutTransition(vksrc->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vksrc->image.layout, srcRange));
     }
 
     void VulkanCommandBuffer::Blit(Texture* src, Texture* dst, const Structs::TextureViewRange& srcRange, const Structs::TextureViewRange& dstRange, FilterMode filter)
     {
-        auto vksrc = src->GetNative<VulkanTexture>();
-        auto vkdst = dst->GetNative<VulkanTexture>();
-        Blit(vksrc->GetRenderTarget(srcRange, false), vkdst->GetRenderTarget(dstRange, false), srcRange.level, dstRange.level, srcRange.layer, dstRange.layer, filter);
+        static VulkanBindHandle srcHandle;
+        static VulkanBindHandle dstHandle;
+        src->GetNative<VulkanTexture>()->FillBindHandle(&srcHandle, srcRange, TextureBindMode::RenderTarget);
+        dst->GetNative<VulkanTexture>()->FillBindHandle(&dstHandle, dstRange, TextureBindMode::RenderTarget);
+        Blit(&srcHandle, &dstHandle, srcRange.level, dstRange.level, srcRange.layer, dstRange.layer, filter);
     }
 
-    void VulkanCommandBuffer::Blit(const VulkanRenderTarget& src, 
-                                   const VulkanRenderTarget& dst, 
+    void VulkanCommandBuffer::Blit(const VulkanBindHandle* src, 
+                                   const VulkanBindHandle* dst, 
                                    uint32_t srcLevel, 
                                    uint32_t dstLevel, 
                                    uint32_t srcLayer, 
@@ -244,51 +246,51 @@ namespace PK::Rendering::VulkanRHI::Objects
                                    bool flipVertical)
     {
         VkImageBlit blitRegion{};
-        blitRegion.srcSubresource = { (uint32_t)src.aspect, srcLevel, srcLayer, src.layers };
-        blitRegion.dstSubresource = { (uint32_t)dst.aspect, dstLevel, dstLayer, dst.layers };
-        blitRegion.srcOffsets[1] = { (int)src.extent.width, (int)src.extent.height, (int)src.extent.depth };
-        blitRegion.dstOffsets[1] = { (int)dst.extent.width, (int)dst.extent.height, (int)dst.extent.depth };
+        blitRegion.srcSubresource = { (uint32_t)src->image.range.aspectMask, srcLevel, srcLayer, src->image.range.layerCount };
+        blitRegion.dstSubresource = { (uint32_t)dst->image.range.aspectMask, dstLevel, dstLayer, dst->image.range.layerCount };
+        blitRegion.srcOffsets[1] = { (int)src->image.extent.width, (int)src->image.extent.height, (int)src->image.extent.depth };
+        blitRegion.dstOffsets[1] = { (int)dst->image.extent.width, (int)dst->image.extent.height, (int)dst->image.extent.depth };
 
         if (flipVertical)
         {
-            blitRegion.srcOffsets[0].y = (int)src.extent.height;
+            blitRegion.srcOffsets[0].y = (int)src->image.extent.height;
             blitRegion.srcOffsets[1].y = 0u;
         }
 
         VkImageResolve resolveRegion{};
-        resolveRegion.srcSubresource = { (uint32_t)src.aspect, srcLevel, srcLayer, src.layers };
-        resolveRegion.dstSubresource = { (uint32_t)dst.aspect, dstLevel, dstLayer, dst.layers };
-        resolveRegion.extent = src.extent;
+        resolveRegion.srcSubresource = { (uint32_t)src->image.range.aspectMask, srcLevel, srcLayer, src->image.range.layerCount };
+        resolveRegion.dstSubresource = { (uint32_t)dst->image.range.aspectMask, dstLevel, dstLayer, dst->image.range.layerCount };
+        resolveRegion.extent = src->image.extent;
 
         VkImageSubresourceRange srcRange{};
-        srcRange.aspectMask = src.aspect;
+        srcRange.aspectMask = src->image.range.aspectMask;
         srcRange.baseMipLevel = srcLevel;
         srcRange.levelCount = 1;
         srcRange.baseArrayLayer = srcLayer;
-        srcRange.layerCount = src.layers;
+        srcRange.layerCount = src->image.range.layerCount;
 
         VkImageSubresourceRange dstRange{};
-        dstRange.aspectMask = dst.aspect;
+        dstRange.aspectMask = dst->image.range.aspectMask;
         dstRange.baseMipLevel = dstLevel;
         dstRange.levelCount = 1;
         dstRange.baseArrayLayer = dstLayer;
-        dstRange.layerCount = dst.layers;
+        dstRange.layerCount = dst->image.range.layerCount;
 
-        TransitionImageLayout(VulkanLayoutTransition(src.image, src.layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, srcRange));
-        TransitionImageLayout(VulkanLayoutTransition(dst.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dstRange));
+        TransitionImageLayout(VulkanLayoutTransition(src->image.image, src->image.layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, srcRange));
+        TransitionImageLayout(VulkanLayoutTransition(dst->image.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dstRange));
 
-        if (src.samples > 1 && dst.samples == 1)
+        if (src->image.samples > 1 && dst->image.samples == 1)
         {
-            vkCmdResolveImage(commandBuffer, src.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &resolveRegion);
+            vkCmdResolveImage(commandBuffer, src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &resolveRegion);
         }
         else 
         {
             auto vkFilter = EnumConvert::GetFilterMode(filter);
-            vkCmdBlitImage(commandBuffer, src.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blitRegion, vkFilter);
+            vkCmdBlitImage(commandBuffer, src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blitRegion, vkFilter);
         }
 
-        TransitionImageLayout(VulkanLayoutTransition(src.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src.layout, srcRange));
-        TransitionImageLayout(VulkanLayoutTransition(dst.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dst.layout, dstRange));
+        TransitionImageLayout(VulkanLayoutTransition(src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src->image.layout, srcRange));
+        TransitionImageLayout(VulkanLayoutTransition(dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dst->image.layout, dstRange));
     }
 
     void VulkanCommandBuffer::Clear(Buffer* dst, size_t offset, size_t size, uint32_t value)
@@ -301,7 +303,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         auto vktex = dst->GetNative<VulkanTexture>();
         auto rawtex = vktex->GetRaw();
-        auto handle = vktex->GetBindHandle(range, false);
+        auto handle = vktex->GetBindHandle(range, TextureBindMode::Image);
         auto normalizedRange = vktex->NormalizeViewRange(range);
         
         VkImageSubresourceRange subrange{};
@@ -320,7 +322,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             clearValue.uint32[i] = value[i];
         }
 
-        vkCmdClearColorImage(commandBuffer, vktex->GetRaw()->image, handle->imageLayout, &clearValue, 1, &subrange);
+        vkCmdClearColorImage(commandBuffer, vktex->GetRaw()->image, handle->image.layout, &clearValue, 1, &subrange);
     }
 
 
@@ -380,6 +382,64 @@ namespace PK::Rendering::VulkanRHI::Objects
         );
     }
 
+    void* VulkanCommandBuffer::BeginBufferWrite(Buffer* buffer, size_t offset, size_t size)
+    {
+        return buffer->GetNative<VulkanBuffer>()->BeginWrite(offset, size);
+    }
+
+    void VulkanCommandBuffer::EndBufferWrite(Buffer* buffer)
+    {
+        VkBufferCopy copyRegion;
+        VkBuffer srcBuffer;
+        VkBuffer dstBuffer;
+
+        auto vkBuffer = buffer->GetNative<VulkanBuffer>();
+        vkBuffer->EndWrite(&srcBuffer, &dstBuffer, &copyRegion);
+
+        CopyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
+
+        VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER };
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.buffer = dstBuffer;
+        barrier.offset = copyRegion.dstOffset;
+        barrier.size = copyRegion.size;
+
+        auto usage = vkBuffer->GetRaw()->usage;
+        uint32_t dstStageMask = 0u;
+
+        if (usage & (VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT))
+        {
+            barrier.dstAccessMask |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT;
+            dstStageMask |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+        }
+
+        if (usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
+        {
+            barrier.dstAccessMask |= VK_ACCESS_UNIFORM_READ_BIT;
+            dstStageMask |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+        }
+
+        if (usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
+        {
+            barrier.dstAccessMask |= VK_ACCESS_MEMORY_READ_BIT;
+            dstStageMask |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+        }
+
+        if (usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT)
+        {
+            barrier.dstAccessMask |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+            dstStageMask |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+        }
+
+        if (dstStageMask != 0)
+        {
+            PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, dstStageMask, 0, 0, nullptr, 1, &barrier, 0, nullptr);
+        }
+    }
+
     void VulkanCommandBuffer::BeginDebugScope(const char* name, const Math::color& color)
     {
         VkDebugUtilsLabelEXT labelInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
@@ -413,6 +473,11 @@ namespace PK::Rendering::VulkanRHI::Objects
         region.imageSubresource.layerCount = 1;
         region.imageExtent = extent;
         CopyBufferToImage(srcBuffer, dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    }
+
+    void VulkanCommandBuffer::BuildAccelerationStructures(uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
+    {
+        vkCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
     }
 
     void VulkanCommandBuffer::TransitionImageLayout(const VulkanLayoutTransition& transition)
@@ -496,7 +561,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             VkIndexType indexType; 
             auto indexBufferHandle = renderState->GetIndexBuffer(&indexType);
-            vkCmdBindIndexBuffer(commandBuffer, indexBufferHandle->buffer, indexBufferHandle->bufferOffset, indexType);
+            vkCmdBindIndexBuffer(commandBuffer, indexBufferHandle->buffer.buffer, indexBufferHandle->buffer.offset, indexType);
         }
 
         if ((flags & PK_RENDER_STATE_DIRTY_DESCRIPTOR_SETS) != 0)
@@ -518,7 +583,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
                 if (props.TryGet<char>(kv.second.NameHashId, data, &dataSize) && dataSize <= element.Size)
                 {
-                    vkCmdPushConstants(commandBuffer, renderState->GetPipelineLayout(), element.StageFlags, element.Offset, (uint32_t)dataSize, data);
+                    auto stageFlags = EnumConvert::GetShaderStageFlags(element.StageFlags);
+                    vkCmdPushConstants(commandBuffer, renderState->GetPipelineLayout(), stageFlags, element.Offset, (uint32_t)dataSize, data);
                 }
             }
         }

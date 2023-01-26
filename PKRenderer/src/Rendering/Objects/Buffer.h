@@ -12,89 +12,23 @@ namespace PK::Rendering::Objects
     class Buffer : public Utilities::NoCopy, public Utilities::NativeInterface<Buffer>
     {
         public:
-            static Utilities::Ref<Buffer> Create(const Structs::BufferLayout& layout, const void* data, size_t count, Structs::BufferUsage usage, const char* name);
+            static Utilities::Ref<Buffer> Create(const Structs::BufferLayout& layout, size_t count, Structs::BufferUsage usage, const char* name);
 
-            inline static Utilities::Ref<Buffer> Create(Structs::ElementType type,
-                const void* data,
-                size_t count,
-                Structs::BufferUsage usage,
-                const char* name)
+            inline static Utilities::Ref<Buffer> Create(Structs::ElementType type, size_t count, Structs::BufferUsage usage, const char* name)
             {
-                return Create(Structs::BufferLayout({ { type, "DATA" } }), data, count, usage, name);
+                return Create(Structs::BufferLayout({ { type, "DATA" } }), count, usage, name);
             }
 
-            inline static Utilities::Ref<Buffer> CreateVertex(const Structs::BufferLayout& layout,
-                                                   const void* data, 
-                                                   size_t count, 
-                                                   Structs::BufferUsage extraFlags,
-                                                   const char* name)
-            { 
-                return Create(layout, data, count, Structs::BufferUsage::DefaultVertex | extraFlags, name);
-            }
-
-            inline static Utilities::Ref<Buffer> CreateIndex(Structs::ElementType type,
-                                                  const void* data, 
-                                                  size_t count,
-                                                  Structs::BufferUsage extraFlags,
-                                                  const char* name)
+            inline static Utilities::Ref<Buffer> Create(const Structs::BufferLayout& layout, Structs::BufferUsage usage, const char* name)
             {
-                return Create(Structs::BufferLayout({{ type, "INDEX" }}), data, count, Structs::BufferUsage::DefaultIndex | extraFlags, name);
-            }
-
-            inline static Utilities::Ref<Buffer> CreateConstant(const Structs::BufferLayout& layout, 
-                                                                Structs::BufferUsage extraFlags,
-                                                                const char* name)
-            {
-                return Create(layout, nullptr, 1, Structs::BufferUsage::DefaultConstant | extraFlags, name);
-            }
-
-            inline static Utilities::Ref<Buffer> CreateStorage(const Structs::BufferLayout& layout, 
-                                                               size_t count, 
-                                                               Structs::BufferUsage extraFlags,
-                                                               const char* name)
-            {
-                return Create(layout, nullptr, count, Structs::BufferUsage::DefaultStorage | extraFlags, name);
+                return Create(layout, 1, usage, name);
             }
 
             virtual ~Buffer() = default;
-            virtual void* BeginWrite(size_t offset, size_t size) = 0;
-            virtual void EndWrite() = 0;
 
             // This will likely throw for memory types that cannot be host read (i.e. GPU only).
             virtual const void* BeginRead(size_t offset, size_t size) = 0;
             virtual void EndRead() = 0;
-
-            void SetData(const void* data, size_t offset, size_t size);
-            void SetSubData(const void* data, size_t offset, size_t size);
-
-            template<typename T>
-            Utilities::BufferView<T> BeginWrite()
-            {
-                return { reinterpret_cast<T*>(BeginWrite(0, GetCapacity())), GetCapacity() / sizeof(T) };
-            }
-
-            template<typename T>
-            Utilities::BufferView<T> BeginWrite(size_t offset, size_t count)
-            {
-                auto tsize = sizeof(T);
-                auto mapSize = tsize * count + tsize * offset;
-                auto bufSize = GetCapacity();
-
-                PK_THROW_ASSERT(mapSize <= bufSize, "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", mapSize, bufSize);
-
-                return { reinterpret_cast<T*>(BeginWrite(offset * tsize, count * tsize)), count };
-            }
-
-            template<typename T>
-            Utilities::InterleavedBufferView<T> BeginWrite(size_t stride, size_t elementOffset, size_t bufferOffset, size_t count)
-            {
-                auto mapSize = stride * count + stride * bufferOffset;
-                auto bufSize = GetCapacity();
-
-                PK_THROW_ASSERT(mapSize <= bufSize, "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", mapSize, bufSize);
-
-                return { reinterpret_cast<uint8_t*>(BeginWrite(bufferOffset * stride, count * stride)), count, stride, elementOffset };
-            }
 
             template<typename T>
             Utilities::ConstBufferView<T> BeginRead()

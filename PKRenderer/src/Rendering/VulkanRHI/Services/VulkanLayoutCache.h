@@ -5,7 +5,7 @@
 #include "Rendering/Structs/Enums.h"
 #include "Math/FunctionsMisc.h"
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Services
 {
     struct DescriptorSetLayoutKey
     {

@@ -10,7 +10,7 @@ namespace PK::Core
     using namespace Rendering;
     using namespace Rendering::Structs;
     using namespace Rendering::VulkanRHI;
-    using namespace Rendering::VulkanRHI::Systems;
+    using namespace Rendering::VulkanRHI::Services;
 
     Scope<Window> Window::Create(const WindowProperties& properties)
     {

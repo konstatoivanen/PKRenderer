@@ -25,14 +25,12 @@ namespace PK::Rendering::VulkanRHI::Objects
             inline VkImageAspectFlags GetAspectFlags() const { return m_rawImage->aspect; }
             inline VkFormat GetNativeFormat() const { return m_rawImage->format; }
             inline const VulkanRawImage* GetRaw() const { return m_rawImage; }
-            VulkanRenderTarget GetRenderTarget() const;
-            VulkanRenderTarget GetRenderTarget(const Structs::TextureViewRange& range, bool includeView = true);
             inline const VulkanBindHandle* GetBindHandle() const { return &GetView(m_defaultViewRange)->bindHandle; }
-            inline const VulkanBindHandle* GetBindHandle(const Structs::TextureViewRange& range, bool sampled) 
-            { 
-                return &GetView(range, sampled ? Structs::TextureBindMode::SampledTexture : Structs::TextureBindMode::Image)->bindHandle;
-            }
-
+            inline const VulkanBindHandle* GetBindHandle(TextureBindMode bindMode) { return &GetView(m_defaultViewRange, bindMode)->bindHandle; }
+            inline const VulkanBindHandle* GetBindHandle(const Structs::TextureViewRange& range, TextureBindMode bindMode) { return &GetView(range, bindMode)->bindHandle; }
+            void FillBindHandle(VulkanBindHandle* handle, const Structs::TextureViewRange& range, TextureBindMode bindMode) const;
+            inline void FillBindHandle(VulkanBindHandle* handle, TextureBindMode bindMode) const { FillBindHandle(handle, m_defaultViewRange, bindMode); }
+        
         private:
             struct alignas(8) ViewKey
             {

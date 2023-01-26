@@ -35,28 +35,24 @@ namespace PK::Rendering
         m_shaders(32),
         m_transforms(1024)
     {
-        m_matrices = Buffer::CreateStorage(
-        { 
-            {ElementType::Float4x4, "localToWorld"}, 
-        }, 
-        1024, BufferUsage::PersistentStage, "Batching Matrices");
+        m_matrices = Buffer::Create(ElementType::Float4x4, 1024, BufferUsage::PersistentStorage, "Batching Matrices");
 
-        m_indices = Buffer::CreateStorage(
+        m_indices = Buffer::Create(
         {
             {ElementType::Uint, "transform"},
             {ElementType::Uint, "material"},
             {ElementType::Uint, "mesh"},
             {ElementType::Uint, "userdata"}
         },
-        1024, BufferUsage::PersistentStage, "Batching Draw Infos");
+        1024, BufferUsage::PersistentStorage, "Batching Draw Infos");
 
-        m_properties = Buffer::CreateStorage(
+        m_properties = Buffer::Create(
         {
             { ElementType::Uint, "DATA"},
         },
-        4096, BufferUsage::PersistentStage, "Batching Material Properties");
+        4096, BufferUsage::PersistentStorage, "Batching Material Properties");
 
-        m_indirectArguments = Buffer::CreateStorage(
+        m_indirectArguments = Buffer::Create(
         {
             { ElementType::Uint, "indexCount"},
             { ElementType::Uint, "instanceCount"},
@@ -64,7 +60,7 @@ namespace PK::Rendering
             { ElementType::Int,  "vertexOffset"},
             { ElementType::Uint, "firstInstance"}
         },
-        256, BufferUsage::PersistentStage | BufferUsage::Indirect, "Batching Indirect Draw Arguments");
+        256, BufferUsage::PersistentStorage | BufferUsage::Indirect, "Batching Indirect Draw Arguments");
 
         m_drawCalls.reserve(512);
         m_passGroups.reserve(512);
@@ -96,14 +92,14 @@ namespace PK::Rendering
         std::sort(m_drawInfos.begin(), m_drawInfos.end());
 
         m_matrices->Validate(m_transforms.GetCapacity());
-        auto matrixView = m_matrices->BeginWrite<float4x4>(0, m_transforms.GetCount());
+        auto matrixView = cmd->BeginBufferWrite<float4x4>(m_matrices.get(), 0u, m_transforms.GetCount());
 
         for (auto& view : m_transforms)
         {
             matrixView[view.index] = (*view)->localToWorld;
         }
 
-        m_matrices->EndWrite();
+        cmd->EndBufferWrite(m_matrices.get());
 
         auto buffsize = 0ull;
 
@@ -122,7 +118,7 @@ namespace PK::Rendering
         if (buffsize > 0)
         {
             m_properties->Validate(buffsize / sizeof(uint32_t));
-            auto propertyView = m_properties->BeginWrite<char>(0ull, buffsize);
+            auto propertyView = cmd->BeginBufferWrite<char>(m_properties.get(), 0ull, buffsize);
 
             for (auto& group : m_materials)
             {
@@ -137,14 +133,14 @@ namespace PK::Rendering
                 }
             }
 
-            m_properties->EndWrite();
+            cmd->EndBufferWrite(m_properties.get());
         }
 
         auto indirectCount = 1u;
         auto current = m_drawInfos[0];
 
         m_indices->Validate(m_drawInfos.capacity());
-        auto indexView = m_indices->BeginWrite<PK_Draw>(0, m_drawInfos.size());
+        auto indexView = cmd->BeginBufferWrite<PK_Draw>(m_indices.get(), 0u, m_drawInfos.size());
 
         for (auto i = 0u; i < m_drawInfos.size(); ++i)
         {
@@ -164,10 +160,10 @@ namespace PK::Rendering
             }
         }
 
-        m_indices->EndWrite();
+        cmd->EndBufferWrite(m_indices.get());
 
         m_indirectArguments->Validate(indirectCount);
-        auto indirectView = m_indirectArguments->BeginWrite<DrawIndexedIndirectCommand>(0, indirectCount);
+        auto indirectView = cmd->BeginBufferWrite<DrawIndexedIndirectCommand>(m_indirectArguments.get(), 0u, indirectCount);
 
         auto indirectIndex = 0u;
         auto pbase = 0ull;
@@ -227,7 +223,7 @@ namespace PK::Rendering
         m_drawCalls.push_back({ m_meshes[current.mesh], m_shaders[current.shader], { ibase, indirectIndex - ibase } });
         m_passGroups.push_back({ pbase, m_drawCalls.size() - pbase });
 
-        m_indirectArguments->EndWrite();
+        cmd->EndBufferWrite(m_indirectArguments.get());
 
         auto hash = HashCache::Get();
         cmd->SetBuffer(hash->pk_Instancing_Transforms, m_matrices.get());

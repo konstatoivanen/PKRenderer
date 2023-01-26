@@ -3,7 +3,7 @@
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Services
 {
     using namespace Structs;
 
@@ -128,9 +128,9 @@ namespace PK::Rendering::VulkanRHI::Systems
 
                     for (auto i = 0; i < bind->count; ++i)
                     {
-                        buffers[i].buffer = bind->handle->buffer;
-                        buffers[i].offset = bind->handle->bufferOffset;
-                        buffers[i].range = bind->handle->bufferRange;
+                        buffers[i].buffer = bind->handle->buffer.buffer;
+                        buffers[i].offset = bind->handle->buffer.offset;
+                        buffers[i].range = bind->handle->buffer.range;
                     }
                 }
                 break;
@@ -153,9 +153,9 @@ namespace PK::Rendering::VulkanRHI::Systems
 
                     for (auto i = 0; i < bind->count; ++i)
                     {
-                        images[i].sampler = handles[i]->sampler;
-                        images[i].imageView = handles[i]->imageView;
-                        images[i].imageLayout = handles[i]->imageLayout;
+                        images[i].sampler = handles[i]->image.sampler;
+                        images[i].imageView = handles[i]->image.view;
+                        images[i].imageLayout = handles[i]->image.layout;
                     }
                 }
                 break;
@@ -177,7 +177,7 @@ namespace PK::Rendering::VulkanRHI::Systems
                     {
                         accelerationStructures[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
                         accelerationStructures[i].accelerationStructureCount = 1;
-                        accelerationStructures[i].pAccelerationStructures = &handles[i]->accelerationStructure;
+                        accelerationStructures[i].pAccelerationStructures = &handles[i]->acceleration.structure;
                     }
 
                     break;

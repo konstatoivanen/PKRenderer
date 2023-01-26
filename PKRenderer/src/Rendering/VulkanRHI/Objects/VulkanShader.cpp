@@ -11,7 +11,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 {
     using namespace VulkanRHI::Utilities;
     using namespace Structs;
-    using namespace Systems;
+    using namespace Services;
 
     VulkanShader::VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant, const char* name) : m_device(GraphicsAPI::GetActiveDriver<VulkanDriver>()->device)
     {
@@ -69,7 +69,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 {
                     key.counts[j] = pDescriptors[j].count;
                     key.types[j] = EnumConvert::GetDescriptorType(pDescriptors[j].type);
-                    elements.emplace_back(pDescriptors[j].type, std::string(pDescriptors[j].name), pDescriptors[j].count);
+                    elements.emplace_back(pDescriptors[j].type, std::string(pDescriptors[j].name), pDescriptors[j].writeStageMask, pDescriptors[j].count);
                 }
 
                 key.stageFlags = EnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags);

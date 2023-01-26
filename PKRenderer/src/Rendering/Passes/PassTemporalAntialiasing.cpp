@@ -12,7 +12,7 @@ namespace PK::Rendering::Passes
 
     PassTemporalAntialiasing::PassTemporalAntialiasing(AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight)
     {
-        m_computeTAA = assetDatabase->Find<Shader>("CS_TemporalAntiAliasing");
+        m_computeTAA = assetDatabase->Find<Shader>("CS_TemporalAntialiasing");
 
         TextureDescriptor descriptor{};
         descriptor.format = TextureFormat::RGBA16F;
@@ -28,7 +28,7 @@ namespace PK::Rendering::Passes
         m_renderTarget = Texture::Create(descriptor, "TAA.HistoryTexture");
     }
     
-    void PassTemporalAntialiasing::Execute(CommandBuffer* cmd, RenderTexture* source, MemoryAccessFlags& lastAccess)
+    void PassTemporalAntialiasing::Render(CommandBuffer* cmd, RenderTexture* source, MemoryAccessFlags& lastAccess)
     {
         cmd->BeginDebugScope("TemporalAntialiasing", PK_COLOR_MAGENTA);
 

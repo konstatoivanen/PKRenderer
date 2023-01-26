@@ -50,13 +50,15 @@ namespace PK::Rendering::Structs
     {
         uint32_t NameHashId = 0;
         ResourceType Type = ResourceType::Invalid;
+        uint8_t WriteStageMask = 0u;
         uint16_t Count = 0;
     
         ResourceElement() = default;
 
-        ResourceElement(ResourceType type, const std::string& name, uint16_t count) :
+        ResourceElement(ResourceType type, const std::string& name, uint8_t writeStageMask, uint16_t count) :
             NameHashId(Core::Services::StringHashID::StringToID(name)),
-            Type(type), 
+            Type(type),
+            WriteStageMask(writeStageMask),
             Count(count)
         {
         }

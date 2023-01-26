@@ -128,14 +128,17 @@ namespace PK::Rendering::Objects
 		auto pBufferOffset = 0ull;
 		auto vertexBufferName = GetFileName() + std::string(" Vertex Buffer");
 		auto indexBufferName = GetFileName() + std::string(" Index Buffer");
+		auto cmd = GraphicsAPI::GetCommandBuffer();
 
 		for (auto& kv : layoutMap)
 		{
-			AddVertexBuffer(Buffer::CreateVertex(BufferLayout(kv.second), (char*)pVertices + pBufferOffset, mesh->vertexCount, BufferUsage::None, vertexBufferName.c_str()));
+			AddVertexBuffer(Buffer::Create(BufferLayout(kv.second), mesh->vertexCount, BufferUsage::DefaultVertex, vertexBufferName.c_str()));
+			cmd->UploadBufferData(m_vertexBuffers.back().get(), (char*)pVertices + pBufferOffset);
 			pBufferOffset += m_vertexBuffers.back()->GetLayout().GetStride() * mesh->vertexCount;
 		}
 
-		SetIndexBuffer(Buffer::CreateIndex(mesh->indexType, pIndexBuffer, mesh->indexCount, BufferUsage::None, indexBufferName.c_str()));
+		SetIndexBuffer(Buffer::Create(mesh->indexType, mesh->indexCount, BufferUsage::DefaultIndex, indexBufferName.c_str()));
+		cmd->UploadBufferData(m_indexBuffer.get(), (char*)pVertices + pBufferOffset);
         PK::Assets::CloseAsset(&asset);
     }
 
@@ -197,6 +200,8 @@ namespace PK::Rendering::Objects
 
 		AlignVertices((char*)allocationInfo.pVertices, allocationInfo.vertexCount, allocationInfo.vertexLayout, GetVertexBufferLayouts());
 
+		auto cmd = GraphicsAPI::GetCommandBuffer();
+
 		for (auto i = 0u; i < m_vertexBuffers.size(); ++i)
 		{
 			auto& vertexBuffer = m_vertexBuffers.at(i);
@@ -206,7 +211,7 @@ namespace PK::Rendering::Objects
 			auto vertexStride = layout.GetStride();
 			
 			vertexBuffer->MakeRangeResident({ range.firstVertex * vertexStride, range.vertexCount * vertexStride });
-			vertexBuffer->SetSubData((char*)allocationInfo.pVertices + pBufferOffset, range.firstVertex * vertexStride, range.vertexCount * vertexStride);
+			cmd->UploadBufferSubData(vertexBuffer.get(), (char*)allocationInfo.pVertices + pBufferOffset, range.firstVertex * vertexStride, range.vertexCount * vertexStride);
 			pBufferOffset += vertexStride * range.vertexCount;
 		}
 
@@ -218,13 +223,13 @@ namespace PK::Rendering::Objects
 		// Convert 16bit indices to 32bit to avoid compatibility issues between meshes.
 		if (ElementConvert::Size(allocationInfo.indexType) == 2)
 		{
-			Functions::ReinterpretIndex16ToIndex32(indexBuffer->BeginWrite<uint32_t>(range.firstIndex, range.indexCount).data, 
-												   reinterpret_cast<uint16_t*>(allocationInfo.pIndices), range.indexCount);
-			indexBuffer->EndWrite();
+			auto view = cmd->BeginBufferWrite<uint32_t>(indexBuffer, range.firstIndex, range.indexCount);
+			Functions::ReinterpretIndex16ToIndex32(view.data, reinterpret_cast<uint16_t*>(allocationInfo.pIndices), range.indexCount);
+			cmd->EndBufferWrite(indexBuffer);
 		}
 		else
 		{
-			indexBuffer->SetSubData(allocationInfo.pIndices, range.firstIndex * indexStride, range.indexCount * indexStride);
+			cmd->UploadBufferSubData(indexBuffer, allocationInfo.pIndices, range.firstIndex * indexStride, range.indexCount * indexStride);
 		}
 
 		*outAllocationRange = range;

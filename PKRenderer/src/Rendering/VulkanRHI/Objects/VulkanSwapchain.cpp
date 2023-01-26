@@ -3,7 +3,7 @@
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
 #include <gfx.h>
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Objects
 {
     using namespace PK::Utilities;
 
@@ -115,6 +115,22 @@ namespace PK::Rendering::VulkanRHI::Systems
             m_imageViews[i] = new VulkanImageView(m_device, imageViewCreateInfo, (std::string("Swapchain Image: ") + std::to_string(i)).c_str());
         }
 
+        m_bindHandles = new VulkanBindHandle[m_images.size()];
+
+        for (size_t i = 0u; i < m_images.size(); ++i)
+        {
+            auto handle = &m_bindHandles[i];
+            handle->image.image = m_images.at(i);
+            handle->image.view = m_imageViews.at(i)->view;
+            handle->image.sampler = VK_NULL_HANDLE;
+            handle->image.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            handle->image.format = m_format;
+            handle->image.extent = { m_extent.width, m_extent.height, 1 };
+            handle->image.range = { VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u };
+            handle->image.samples = 1u;
+            handle->IncrementVersion();
+        }
+
         m_imageAvailableSignals.resize(m_maxFramesInFlight);
         m_frameFences.resize(m_maxFramesInFlight);
 
@@ -130,6 +146,8 @@ namespace PK::Rendering::VulkanRHI::Systems
 
     void VulkanSwapchain::Release()
     {
+        delete[] m_bindHandles;
+        
         for (size_t i = 0u; i < m_imageViews.size(); ++i)
         {
             delete m_imageViews[i];
@@ -196,20 +214,5 @@ namespace PK::Rendering::VulkanRHI::Systems
         m_cachedCreateInfo.desiredExtent.width = (uint32_t)w;
         m_cachedCreateInfo.desiredExtent.height = (uint32_t)h;
         m_outofdate = true;
-    }
-
-    const VulkanRenderTarget VulkanSwapchain::GetRenderTarget() const
-    {
-        return VulkanRenderTarget
-        (
-            m_imageViews.at(m_imageIndex)->view,
-            m_images.at(m_imageIndex),
-            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-            VK_IMAGE_ASPECT_COLOR_BIT,
-            m_format,
-            { m_extent.width, m_extent.height, 1 },
-            1,
-            1
-        );
     }
 }

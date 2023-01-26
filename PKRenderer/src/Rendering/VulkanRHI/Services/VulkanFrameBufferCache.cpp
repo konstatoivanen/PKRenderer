@@ -2,7 +2,7 @@
 #include "VulkanFrameBufferCache.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Services
 {   
     using namespace Structs;
 

@@ -8,7 +8,8 @@
 namespace PK::Rendering::VulkanRHI
 {
     using namespace PK::Utilities;
-    using namespace Systems;
+    using namespace Rendering::Services;
+    using namespace Services;
     using namespace Objects;
 
     VulkanDriver::VulkanDriver(const VulkanContextProperties& properties) : properties(properties)
@@ -163,7 +164,7 @@ namespace PK::Rendering::VulkanRHI
         pipelineCache = CreateScope<VulkanPipelineCache>(device, properties.workingDirectory, properties.garbagePruneDelay);
         samplerCache = CreateScope<VulkanSamplerCache>(device);
         layoutCache = CreateScope<VulkanLayoutCache>(device);
-        disposer = CreateScope<VulkanDisposer>();
+        disposer = CreateScope<Disposer>();
         descriptorCache = CreateScope<VulkanDescriptorCache>(device, 4, 100ull,
                                                              std::initializer_list<std::pair<const VkDescriptorType, size_t>>({
                                                                  { VK_DESCRIPTOR_TYPE_SAMPLER, 100ull },

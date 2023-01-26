@@ -4,7 +4,7 @@
 #include "Rendering/VulkanRHI/Objects/VulkanShader.h"
 #include "Utilities/HashHelpers.h"
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Services
 {
     struct PipelineKey 
     {

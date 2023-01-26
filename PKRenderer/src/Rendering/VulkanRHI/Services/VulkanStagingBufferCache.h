@@ -4,7 +4,7 @@
 #include "Utilities/FixedPool.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 
-namespace PK::Rendering::VulkanRHI::Systems
+namespace PK::Rendering::VulkanRHI::Services
 {
     struct VulkanStagingBuffer : public VulkanRawBuffer
     {
