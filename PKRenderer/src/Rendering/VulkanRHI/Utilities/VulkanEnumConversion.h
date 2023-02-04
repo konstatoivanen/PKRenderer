@@ -10,6 +10,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
     VkIndexType GetIndexType(Rendering::Structs::ElementType format);
     Rendering::Structs::TextureFormat GetTextureFormat(VkFormat format);
     bool IsDepthFormat(VkFormat format);
+    bool IsDepthStencilFormat(VkFormat format);
 
     VkComponentMapping GetSwizzle(VkFormat format);
     VkImageViewType GetViewType(Rendering::Structs::SamplerType samplerType);
@@ -33,6 +34,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
     VkCullModeFlagBits GetCullMode(Rendering::Structs::CullMode op);
     VkFrontFace GetFrontFace(Rendering::Structs::FrontFace face);
     VkPipelineStageFlagBits GetPipelineStageFlags(Rendering::Structs::MemoryAccessFlags flags);
+    VkPipelineStageFlags GetPipelineStageFlags(VkShaderStageFlags flags);
     VkAccessFlagBits GetAccessFlags(Rendering::Structs::MemoryAccessFlags flags);
     VkRayTracingShaderGroupTypeKHR GetRayTracingStageGroupType(Rendering::Structs::ShaderStage stage);
     bool IsReadAccess(VkAccessFlags flags);

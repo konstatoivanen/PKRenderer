@@ -9,7 +9,7 @@ namespace PK::Rendering::VulkanRHI::Services
     class VulkanCommandBufferPool : public PK::Utilities::NoCopy
     {
         public:
-            VulkanCommandBufferPool(const VkDevice device, const Objects::VulkanSystemContext& systems, uint32_t queueFamilyIndex);
+            VulkanCommandBufferPool(const VkDevice device, const Objects::VulkanServiceContext& systems, uint32_t queueFamilyIndex);
             ~VulkanCommandBufferPool();
     
             Objects::VulkanCommandBuffer* GetCurrent();

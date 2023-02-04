@@ -86,7 +86,7 @@ namespace PK::Rendering::VulkanRHI::Services
         else
         {
             VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging, size);
-            stagingBuffer = m_bufferPool.New(m_device, m_allocator, createInfo, (std::string("Staging Buffer ") + std::to_string(m_currentPruneTick)).c_str());
+            stagingBuffer = m_bufferPool.New(m_device, m_allocator, createInfo, (std::string("StagingBuffer") + std::to_string(m_currentPruneTick)).c_str());
             m_activeBuffers.push_back(stagingBuffer);
         }
 

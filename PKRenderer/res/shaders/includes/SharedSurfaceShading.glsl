@@ -16,11 +16,11 @@
     #undef PK_NORMALMAPS
     #undef PK_HEIGHTMAPS
     
-    #define PK_META_EARLY_CLIP_UVW(w, c)    \
-        if (!TryGetWorldToClipUVW(w, c))    \
-        {                                   \
-            return;                         \
-        }                                   \
+    #define PK_META_EARLY_CLIP_UVW(w, c)                               \
+        if (!TryGetWorldToClipUVW(w, c) || SceneGIVoxelHasValue(w))    \
+        {                                                              \
+            return;                                                    \
+        }                                                              \
 
     #define PK_META_DECLARE_SURFACE_OUTPUT
 

@@ -222,12 +222,20 @@ namespace PK::Rendering::VulkanRHI::Objects
             GetView(m_defaultViewRange, TextureBindMode::RenderTarget);
         }
 
+        // Transition static layout for immutable resources
         auto layout = EnumConvert::GetImageLayout(descriptor.usage);
         auto optimalLayout = EnumConvert::GetImageLayout(descriptor.usage, true);
-        VulkanLayoutTransition transition(m_rawImage->image, VK_IMAGE_LAYOUT_UNDEFINED, layout, optimalLayout, { (uint32_t)m_rawImage->aspect, 0, m_rawImage->levels, 0, m_defaultViewRange.layers });
+        VulkanLayoutTransition transition(m_rawImage->image, VK_IMAGE_LAYOUT_UNDEFINED, layout, optimalLayout, { (uint32_t)m_rawImage->aspect, 0, m_rawImage->levels, 0, m_defaultViewRange.layers }); 
         cmd->TransitionImageLayout(transition);
-    }
 
+        Services::VulkanBarrierHandler::AccessRecord record{};
+        record.access = transition.dstAccessMask;
+        record.stage = transition.dstStage;
+        record.layout = transition.newLayout;
+        record.aspect = transition.subresources.aspectMask;
+        record.imageRange = m_defaultViewRange;
+        m_driver->barrierHandler->Record(m_rawImage->image, record);
+    }
 
     TextureViewRange VulkanTexture::NormalizeViewRange(const TextureViewRange& range) const
     {

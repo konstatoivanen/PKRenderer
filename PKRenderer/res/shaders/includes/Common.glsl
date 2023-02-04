@@ -49,6 +49,8 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float4x4 pk_MATRIX_LD_P;
     // Scene reflections exposure
     float pk_SceneOEM_Exposure;
+    // Current Frame Number
+    uint pk_FrameIndex;
 };
 
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_SceneOEM_HDR;

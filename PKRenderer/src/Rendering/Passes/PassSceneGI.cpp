@@ -181,7 +181,6 @@ namespace PK::Rendering::Passes
         {
             cmd->SetImage(hash->_DestinationTex, m_voxels.get(), 0, 0);
             cmd->Dispatch(m_computeClear, { volres.x / 8u, volres.y / 8u, volres.z / 8u });
-            cmd->Barrier(m_voxels.get(), 0, 0, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::FragmentReadWrite);
         }
 
         cmd->SetTexture(hash->_SourceTex, m_voxels.get());
@@ -190,7 +189,6 @@ namespace PK::Rendering::Passes
         {
             cmd->SetImage(hash->_DestinationTex, m_voxels.get(), i, 0);
             cmd->Dispatch(m_computeMipmap, 0, { (volres.x >> i) / 4u, (volres.y >> i) / 4u, (volres.z >> i) / 4u });
-            cmd->Barrier(m_voxels.get(), i, 0, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
         }
 
         cmd->EndDebugScope();
@@ -208,28 +206,22 @@ namespace PK::Rendering::Passes
         cmd->Blit(m_screenSpaceGI.get(), m_screenSpaceGI.get(), { 0, 0, 0, 2 }, { 0, 2, 0, 2 }, FilterMode::Point);
 
         {
-            //RayGatherParams gatherParams;
-            //gatherParams.pk_SampleCount = 16u;
-            //gatherParams.pk_SampleIndex = m_rayIndex++ % 16u;
-            //cmd->SetConstant("pk_RayGatherParams", gatherParams);
-            //cmd->DispatchRays(m_rayTraceGatherGI, { resolution.x, resolution.y, 1 });
-            //cmd->Barrier(m_rayhits.get(), { 0, (uint16_t)gatherParams.pk_SampleIndex, 0, 1 }, MemoryAccessFlags::RayTraceWrite, MemoryAccessFlags::FragmentTexture);
+            RayGatherParams gatherParams;
+            gatherParams.pk_SampleCount = 16u;
+            gatherParams.pk_SampleIndex = m_rayIndex++ % 16u;
+            cmd->SetConstant("pk_RayGatherParams", gatherParams);
+            cmd->DispatchRays(m_rayTraceGatherGI, { resolution.x, resolution.y, 1 });
         }
 
         {
             cmd->SetTexture(hash->pk_ScreenGI_Read, m_screenSpaceGI.get(), { 0, 2, 0, 2 });
             cmd->SetImage(hash->pk_ScreenGI_Write, m_screenSpaceGI.get(), { 0, 0, 0, 2 });
             cmd->SetImage(hash->_DestinationTex, m_mask.get());
-            
             cmd->Dispatch(m_computeMask, 0, groupSize);
-            
-            cmd->Barrier(m_mask.get(), 0, 0, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
-            cmd->Barrier(m_screenSpaceGI.get(), { 0, 0, 0, 2 }, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeWrite);
         }
 
         {
             cmd->Dispatch(m_computeBakeGI, 0, groupSize);
-            cmd->Barrier(m_screenSpaceGI.get(), { 0, 0, 0, 2 }, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::FragmentTexture);
             cmd->SetTexture(hash->pk_ScreenGI_Read, m_screenSpaceGI.get(), { 0, 0, 0, 2 });
         }
 

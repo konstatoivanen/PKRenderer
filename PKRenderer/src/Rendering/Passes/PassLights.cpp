@@ -311,8 +311,6 @@ namespace PK::Rendering::Passes
         }
 
         cmd->Dispatch(m_computeLightAssignment, { 1,1, GridSizeZ / 4 });
-        cmd->Barrier(m_globalLightsList.get(), MemoryAccessFlags::ComputeReadWrite, MemoryAccessFlags::FragmentBuffer);
-
         cmd->EndDebugScope();
     }
 

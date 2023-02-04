@@ -34,6 +34,5 @@ namespace PK::Rendering::Passes
         cmd->SetImage(hash->_MainTex, m_filmGrainTexture.get(), 0, 0);
         cmd->Dispatch(m_computeFilmGrain, { 16, 64, 1 });
         cmd->SetTexture(hash->pk_FilmGrainTex, m_filmGrainTexture.get());
-        cmd->Barrier(m_filmGrainTexture.get(), MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
     }
 }

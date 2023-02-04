@@ -23,7 +23,8 @@ namespace PK::Rendering::VulkanRHI::Services
 
     struct alignas(8) AttachmentKey
     {
-        VkImageLayout layout;
+        VkImageLayout initialLayout;
+        VkImageLayout finalLayout;
         VkFormat format;
         Structs::LoadOp loadop;
         Structs::StoreOp storeop;
@@ -34,6 +35,8 @@ namespace PK::Rendering::VulkanRHI::Services
     {
         AttachmentKey colors[Structs::PK_MAX_RENDER_TARGETS];
         AttachmentKey depth;
+        VkAccessFlags accessMask;
+        VkPipelineStageFlags stageMask;
         uint32_t samples = 1;
 
         // Allows the use of barriers inside a render pass. Intended for multiviewport shenanigans.

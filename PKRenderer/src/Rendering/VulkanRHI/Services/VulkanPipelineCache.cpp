@@ -86,7 +86,7 @@ namespace PK::Rendering::VulkanRHI::Services
         VkComputePipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
         pipelineInfo.stage = shader->GetModule((int)ShaderStage::Compute)->stageInfo;
         pipelineInfo.layout = shader->GetPipelineLayout()->layout;
-        auto pipeline = new VulkanPipeline(m_device, m_pipelineCache, pipelineInfo);
+        auto pipeline = new VulkanPipeline(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
         m_otherPipelines[shader] = { pipeline, nextPruneTick };
         return pipeline;
     }
@@ -225,7 +225,7 @@ namespace PK::Rendering::VulkanRHI::Services
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
 
-        auto pipeline = new VulkanPipeline(m_device, m_pipelineCache, pipelineInfo);
+        auto pipeline = new VulkanPipeline(m_device, m_pipelineCache, pipelineInfo, key.shader->GetName());
         m_graphicsPipelines[key] = { pipeline, nextPruneTick };
         return pipeline;
     }
@@ -281,7 +281,7 @@ namespace PK::Rendering::VulkanRHI::Services
 		pipelineInfo.maxPipelineRayRecursionDepth = 1;
 		pipelineInfo.layout = shader->GetPipelineLayout()->layout;
 
-        auto pipeline = new VulkanPipeline(m_device, m_pipelineCache, pipelineInfo);
+        auto pipeline = new VulkanPipeline(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
         m_otherPipelines[shader] = { pipeline, nextPruneTick };
         return pipeline;
     }

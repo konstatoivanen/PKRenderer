@@ -8,7 +8,7 @@ namespace PK::Rendering::VulkanRHI::Services
     using namespace Objects;
     using namespace PK::Utilities;
 
-    VulkanCommandBufferPool::VulkanCommandBufferPool(const VkDevice device, const VulkanSystemContext& systems, uint32_t queueFamilyIndex) : m_device(device), m_primaryRenderState(systems)
+    VulkanCommandBufferPool::VulkanCommandBufferPool(const VkDevice device, const VulkanServiceContext& systems, uint32_t queueFamilyIndex) : m_device(device), m_primaryRenderState(systems)
     {
         VkCommandPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
         createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;

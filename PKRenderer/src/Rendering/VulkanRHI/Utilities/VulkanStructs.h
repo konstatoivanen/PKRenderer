@@ -34,6 +34,17 @@ namespace PK::Rendering::VulkanRHI
 
     } QueueFamilies;
 
+    struct VulkanBarrierInfo
+    {
+        VkPipelineStageFlags srcStageMask;
+        VkPipelineStageFlags dstStageMask;
+        VkDependencyFlags dependencyFlags;
+        uint32_t bufferMemoryBarrierCount;
+        const VkBufferMemoryBarrier* pBufferMemoryBarriers;
+        uint32_t imageMemoryBarrierCount;
+        const VkImageMemoryBarrier* pImageMemoryBarriers;
+    };
+
     struct VulkanPhysicalDeviceFeatures
     {
         VkPhysicalDeviceFeatures2 vk10{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
@@ -212,9 +223,9 @@ namespace PK::Rendering::VulkanRHI
 
     struct VulkanPipeline : public PK::Utilities::NoCopy
     {
-        VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo);
-        VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkComputePipelineCreateInfo& createInfo);
-        VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkRayTracingPipelineCreateInfoKHR& createInfo);
+        VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo, const char* name);
+        VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkComputePipelineCreateInfo& createInfo, const char* name);
+        VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkRayTracingPipelineCreateInfoKHR& createInfo, const char* name);
         ~VulkanPipeline();
 
         const VkDevice device;

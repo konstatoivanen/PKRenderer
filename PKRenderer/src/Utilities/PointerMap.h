@@ -116,9 +116,21 @@ namespace PK::Utilities
                 return index != -1 ? m_values[index] : nullptr;
             }
 
+
             const TValue GetValueAt(uint32_t index) const 
             {
                 return m_values[index];
+            }
+
+            TValue* GetValueRef(const TKey& key)
+            {
+                auto index = GetIndex(key);
+                return index != -1 ? &m_values[index] : nullptr;
+            }
+
+            TValue* GetValueAtRef(uint32_t index)
+            {
+                return &m_values[index];
             }
 
             bool TryGetValue(const TKey& key, TValue* result)

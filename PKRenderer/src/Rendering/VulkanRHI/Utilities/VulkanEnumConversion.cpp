@@ -350,6 +350,13 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
                format == VK_FORMAT_D32_SFLOAT ||
                format == VK_FORMAT_D32_SFLOAT_S8_UINT;
     }
+
+    bool IsDepthStencilFormat(VkFormat format)
+    {
+        return  format == VK_FORMAT_D16_UNORM_S8_UINT ||
+                format == VK_FORMAT_D24_UNORM_S8_UINT ||
+                format == VK_FORMAT_D32_SFLOAT_S8_UINT;
+    }
     
     VkComponentMapping GetSwizzle(VkFormat format)
     {
@@ -874,6 +881,54 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
         }
 
         return (VkPipelineStageFlagBits)outflags;
+    }
+
+    VkPipelineStageFlags GetPipelineStageFlags(VkShaderStageFlags flags)
+    {
+        VkPipelineStageFlags outflags = 0u;
+
+        if (flags & VK_SHADER_STAGE_VERTEX_BIT)
+        {
+            outflags |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+        }
+
+        if (flags & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT)
+        {
+            outflags |= VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
+        }
+
+        if (flags & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)
+        {
+            outflags |= VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+        }
+
+        if (flags & VK_SHADER_STAGE_GEOMETRY_BIT)
+        {
+            outflags |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+        }
+
+        if (flags & VK_SHADER_STAGE_FRAGMENT_BIT)
+        {
+            outflags |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        }
+
+        if (flags & VK_SHADER_STAGE_COMPUTE_BIT)
+        {
+            outflags |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        }
+
+        if (flags & 
+            (VK_SHADER_STAGE_RAYGEN_BIT_KHR | 
+             VK_SHADER_STAGE_ANY_HIT_BIT_KHR | 
+             VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | 
+             VK_SHADER_STAGE_MISS_BIT_KHR | 
+             VK_SHADER_STAGE_INTERSECTION_BIT_KHR | 
+             VK_SHADER_STAGE_CALLABLE_BIT_KHR))
+        {
+            outflags |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+        }
+
+        return outflags;
     }
 
     VkAccessFlagBits GetAccessFlags(MemoryAccessFlags flags)

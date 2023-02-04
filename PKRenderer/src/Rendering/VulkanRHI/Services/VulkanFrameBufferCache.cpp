@@ -87,22 +87,20 @@ namespace PK::Rendering::VulkanRHI::Services
             return iterator->second.renderPass;
         }
 
-        struct { VkImageLayout subpass, initial, final; } colorLayouts[PK_MAX_RENDER_TARGETS];
+        struct { VkImageLayout initial, final; } colorLayouts[PK_MAX_RENDER_TARGETS];
       
         // Is swap chain
-        if (key.colors[0].layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+        if (key.colors[0].finalLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
         {
             colorLayouts[0].initial = VK_IMAGE_LAYOUT_UNDEFINED;
             colorLayouts[0].final = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            colorLayouts[0].subpass = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         }
         else 
         {
             for (int i = 0u; i < PK_MAX_RENDER_TARGETS; ++i)
             {
-                colorLayouts[i].initial = key.colors[i].layout;
-                colorLayouts[i].final = key.colors[i].layout;
-                colorLayouts[i].subpass = key.colors[i].layout;
+                colorLayouts[i].initial = key.colors[i].initialLayout;
+                colorLayouts[i].final = key.colors[i].finalLayout;
             }
         }
 
@@ -110,7 +108,7 @@ namespace PK::Rendering::VulkanRHI::Services
         VkAttachmentReference resolveAttachmentRef[PK_MAX_RENDER_TARGETS] = {};
         VkAttachmentReference depthAttachmentRef{};
 
-        // Note that this needs to have the same ordering as the corollary array in getFramebuffer.
+        // Note that this needs to have the same ordering as the corollary array in GetFrameBuffer.
         VkAttachmentDescription attachments[PK_MAX_RENDER_TARGETS * 2 + 1] = {};
 
         const bool hasDepth = key.depth.format != VK_FORMAT_UNDEFINED;
@@ -125,10 +123,11 @@ namespace PK::Rendering::VulkanRHI::Services
         VkSubpassDependency dependencies[2]{};
         dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
         dependencies[0].dstSubpass = 0;
-        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependencies[0].srcAccessMask = 0;
+        dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
         dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[0].srcStageMask = key.stageMask;
+        dependencies[0].srcAccessMask = key.accessMask;
 
         dependencies[1].srcSubpass = 0;
         dependencies[1].dstSubpass = 0;
@@ -155,7 +154,7 @@ namespace PK::Rendering::VulkanRHI::Services
             }
 
             uint32_t index = subpass.colorAttachmentCount++;
-            colorAttachmentRefs[index].layout = colorLayouts[i].subpass;
+            colorAttachmentRefs[index].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             colorAttachmentRefs[index].attachment = attachmentIndex;
 
             auto* attachment = attachments + attachmentIndex++;
@@ -201,7 +200,7 @@ namespace PK::Rendering::VulkanRHI::Services
 
         if (hasDepth) 
         {
-            depthAttachmentRef.layout = key.depth.layout;
+            depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             depthAttachmentRef.attachment = attachmentIndex;
             
             auto* attachment = attachments + attachmentIndex++;
@@ -211,9 +210,8 @@ namespace PK::Rendering::VulkanRHI::Services
             attachment->storeOp = EnumConvert::GetStoreOp(key.depth.storeop);
             attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             attachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            attachment->initialLayout = key.depth.layout;
-            attachment->finalLayout = key.depth.layout;
-            dependencies[0].srcStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+            attachment->initialLayout = key.depth.initialLayout;
+            attachment->finalLayout = key.depth.finalLayout;
             dependencies[0].dstStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
             dependencies[0].dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         }

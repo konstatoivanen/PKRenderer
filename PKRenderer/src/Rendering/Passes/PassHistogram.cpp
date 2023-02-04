@@ -31,10 +31,7 @@ namespace PK::Rendering::Passes
         cmd->SetBuffer(hash->pk_Histogram, histogram);
 
         cmd->Dispatch(m_computeHistogram, m_passHistogramBins, { (uint)glm::ceil(res.x / 16.0f), (uint)glm::ceil(res.y / 16.0f), 1u });
-        cmd->Barrier(histogram, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
         cmd->Dispatch(m_computeHistogram, m_passHistogramAvg, { 1u, 1u, 1u });
-        cmd->Barrier(histogram, MemoryAccessFlags::ComputeWrite, nextAccess);
-    
         cmd->EndDebugScope();
     }
 }

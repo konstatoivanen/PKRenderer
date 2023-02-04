@@ -30,9 +30,9 @@ namespace PK::ECS::Engines
 
 		BufferLayout positionLayout = { { ElementType::Float3, PK_VS_POSITION } };
 
-		auto virtualVBuffer0 = Buffer::Create(defaultLayout, 2000000, BufferUsage::SparseVertex, "Virtual Mesh Vertex Buffer 0");
-		auto virtualVBuffer1 = Buffer::Create(positionLayout, 2000000, BufferUsage::SparseVertex, "Virtual Mesh Vertex Buffer 1");
-		auto virtualIBuffer = Buffer::Create(ElementType::Uint, 2000000, BufferUsage::SparseIndex, "Virtual Mesh Index Buffer");
+		auto virtualVBuffer0 = Buffer::Create(defaultLayout, 2000000, BufferUsage::SparseVertex, "VirtualMesh.VertexBuffer0");
+		auto virtualVBuffer1 = Buffer::Create(positionLayout, 2000000, BufferUsage::SparseVertex, "VirtualMesh.VertexBuffer1");
+		auto virtualIBuffer = Buffer::Create(ElementType::Uint, 2000000, BufferUsage::SparseIndex, "VirtualMesh.IndexBuffer");
 		m_virtualBaseMesh = CreateRef<Mesh>(virtualVBuffer0, virtualIBuffer);
 		m_virtualBaseMesh->AddVertexBuffer(virtualVBuffer1);
 

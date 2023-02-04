@@ -35,7 +35,7 @@ namespace PK::Rendering
         m_shaders(32),
         m_transforms(1024)
     {
-        m_matrices = Buffer::Create(ElementType::Float4x4, 1024, BufferUsage::PersistentStorage, "Batching Matrices");
+        m_matrices = Buffer::Create(ElementType::Float4x4, 1024, BufferUsage::PersistentStorage, "Batching.Matrices");
 
         m_indices = Buffer::Create(
         {
@@ -44,13 +44,13 @@ namespace PK::Rendering
             {ElementType::Uint, "mesh"},
             {ElementType::Uint, "userdata"}
         },
-        1024, BufferUsage::PersistentStorage, "Batching Draw Infos");
+        1024, BufferUsage::PersistentStorage, "Batching.DrawInfos");
 
         m_properties = Buffer::Create(
         {
             { ElementType::Uint, "DATA"},
         },
-        4096, BufferUsage::PersistentStorage, "Batching Material Properties");
+        4096, BufferUsage::PersistentStorage, "Batching.MaterialProperties");
 
         m_indirectArguments = Buffer::Create(
         {
@@ -60,7 +60,7 @@ namespace PK::Rendering
             { ElementType::Int,  "vertexOffset"},
             { ElementType::Uint, "firstInstance"}
         },
-        256, BufferUsage::PersistentStorage | BufferUsage::Indirect, "Batching Indirect Draw Arguments");
+        256, BufferUsage::PersistentStorage | BufferUsage::Indirect, "Batching.IndirectDrawArguments");
 
         m_drawCalls.reserve(512);
         m_passGroups.reserve(512);

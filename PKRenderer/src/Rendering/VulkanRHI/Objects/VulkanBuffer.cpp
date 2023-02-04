@@ -146,7 +146,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             m_mappedBuffer = new VulkanStagingBuffer(m_driver->device,
                                                      m_driver->allocator, 
                                                      VulkanBufferCreateInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size * PK_MAX_FRAMES_IN_FLIGHT),
-                                                     (std::string(m_name) + std::string(" (Staging Buffer)")).c_str());
+                                                     (std::string(m_name) + std::string(".StagingBuffer")).c_str());
         }
 
         if ((m_usage & BufferUsage::Sparse) != 0)

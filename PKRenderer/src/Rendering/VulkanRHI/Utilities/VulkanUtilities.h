@@ -40,4 +40,7 @@ namespace PK::Rendering::VulkanRHI::Utilities
 
     VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureGeometryKHR& geometry, VkAccelerationStructureTypeKHR type, uint32_t primitiveCount);
     std::string VulkanResultToString(VkResult result);
+
+    VkImageSubresourceRange VulkanConvertRange(const Structs::TextureViewRange& viewRange, VkImageAspectFlags aspect);
+    Structs::TextureViewRange VulkanConvertRange(VkImageSubresourceRange resourceRange);
 }

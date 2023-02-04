@@ -36,8 +36,6 @@ namespace PK::Rendering::Passes
         auto color = source->GetColor(0);
         auto bloom = m_bloomTexture.get();
 
-        cmd->Barrier(color, lastAccess, MemoryAccessFlags::ComputeReadWrite);
-
         auto res = source->GetResolution();
         res.x /= 2;
         res.y /= 2;
@@ -60,7 +58,6 @@ namespace PK::Rendering::Passes
             cmd->SetTexture(hash->_SourceTex, i == 0 ? color : bloom, i == 0 ? 0 : i - 1u, ls);
             cmd->SetImage(hash->_DestinationTex, bloom, i, ld);
             cmd->Dispatch(m_computeBloom, m_passPrefilter, groups[i]);
-            cmd->Barrier(bloom, i, ld, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
             ls ^= 1u;
             ld ^= 1u;
 
@@ -68,7 +65,6 @@ namespace PK::Rendering::Passes
             cmd->SetImage(hash->_DestinationTex, bloom, i, ld);
             cmd->SetConstant<float2>(hash->_BlurOffset, { 1.0f, 0.0f });
             cmd->Dispatch(m_computeBloom, m_passDiskblur, groups[i]);
-            cmd->Barrier(bloom, i, ld, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
             ls ^= 1u;
             ld ^= 1u;
 
@@ -76,7 +72,6 @@ namespace PK::Rendering::Passes
             cmd->SetImage(hash->_DestinationTex, bloom, i, ld);
             cmd->SetConstant<float2>(hash->_BlurOffset, { 0.0f, 1.0f });
             cmd->Dispatch(m_computeBloom, m_passDiskblur, groups[i]);
-            cmd->Barrier(bloom, i, ld, MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
             ls ^= 1u;
             ld ^= 1u;
         }

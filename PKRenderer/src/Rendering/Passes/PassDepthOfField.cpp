@@ -57,9 +57,6 @@ namespace PK::Rendering::Passes
 
         cmd->SetBuffer(hash->pk_AutoFocusParams, autoFocusParams);
         cmd->Dispatch(m_computeAutoFocus, 0, { 1u, 1u, 1u });
-        cmd->Barrier(autoFocusParams, MemoryAccessFlags::ComputeReadWrite, MemoryAccessFlags::StageFragment | MemoryAccessFlags::ReadShader);
-        
-        cmd->Barrier(source, lastAccess, MemoryAccessFlags::FragmentTexture);
 
         cmd->SetTexture(hash->_MainTex, source);
         cmd->SetRenderTarget(renderTarget, 0, 2);

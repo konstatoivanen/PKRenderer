@@ -5,6 +5,7 @@
 #include "Rendering/VulkanRHI/Services/VulkanSamplerCache.h"
 #include "Rendering/VulkanRHI/Services/VulkanFrameBufferCache.h"
 #include "Rendering/VulkanRHI/Services/VulkanStagingBufferCache.h"
+#include "Rendering/VulkanRHI/Services/VulkanBarrierHandler.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
 #include "Rendering/Services/Disposer.h"
 
@@ -28,14 +29,15 @@ namespace PK::Rendering::VulkanRHI::Objects
             PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_3,
     };
 
-    struct VulkanSystemContext
+    struct VulkanServiceContext
     {
-        Services::VulkanDescriptorCache* descriptorCache;
-        Services::VulkanPipelineCache* pipelineCache;
-        Services::VulkanSamplerCache* samplerCache;
-        Services::VulkanFrameBufferCache* frameBufferCache;
-        Services::VulkanStagingBufferCache* stagingBufferCache;
-        Rendering::Services::Disposer* disposer;
+        Services::VulkanDescriptorCache* descriptorCache = nullptr;
+        Services::VulkanPipelineCache* pipelineCache = nullptr;
+        Services::VulkanSamplerCache* samplerCache = nullptr;
+        Services::VulkanFrameBufferCache* frameBufferCache = nullptr;
+        Services::VulkanStagingBufferCache* stagingBufferCache = nullptr;
+        Services::VulkanBarrierHandler* barrierHandler = nullptr;
+        Rendering::Services::Disposer* disposer = nullptr;
     };
 
     struct VulkanVertexBufferBundle
@@ -62,15 +64,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     class VulkanRenderState : PK::Utilities::NoCopy
     {
         public:
-            VulkanRenderState(const VulkanSystemContext& systems) :
-                m_descriptorCache(systems.descriptorCache),
-                m_pipelineCache(systems.pipelineCache),
-                m_samplerCache(systems.samplerCache),
-                m_frameBufferCache(systems.frameBufferCache),
-                m_stagingBufferCache(systems.stagingBufferCache),
-                m_disposer(systems.disposer)
-            {
-            }
+            VulkanRenderState(const VulkanServiceContext& services) : m_services(services) {}
 
             void Reset();
             void SetRenderTarget(const VulkanBindHandle* const* renderTargets, const VulkanBindHandle* const* resolves, uint32_t count);
@@ -91,6 +85,12 @@ namespace PK::Rendering::VulkanRHI::Objects
             void SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType);
             void SetShaderBindingTableAddress(Structs::RayTracingShaderGroup group, VkDeviceAddress address, size_t stride, size_t size);
 
+            template<typename T, typename ... Args>
+            constexpr void RecordAccess(const T resource, Args&& ... args)
+            {
+                m_services.barrierHandler->Record<T>(resource, std::forward<Args>(args)...);
+            }
+
             template<typename T>
             void SetResource(uint32_t nameHashId, const T* value, uint32_t count = 1) { m_resourceState.Set(nameHashId, value, count); }
 
@@ -102,10 +102,12 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanDescriptorSetBundle GetDescriptorSetBundle(const Structs::ExecutionGate& gate, uint32_t dirtyFlags);
             VulkanShaderBindingTableBundle GetShaderBindingTableBundle();
             const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
+            inline bool ResolveBarriers(VulkanBarrierInfo* outBarrierInfo) { return m_services.barrierHandler->Resolve(outBarrierInfo); }
 
             void ValidateRenderTarget();
             void ValidateVertexBuffers();
             void ValidateDescriptorSets(const Structs::ExecutionGate& gate);
+            void ValidateResourceStates();
             PKRenderStateDirtyFlags ValidatePipeline(const Structs::ExecutionGate& gate);
 
             constexpr const PK::Utilities::PropertyBlock& GetResourceState() const { return m_resourceState; }
@@ -118,17 +120,13 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         private:
             PK::Utilities::PropertyBlock m_resourceState = PK::Utilities::PropertyBlock(16384);
-            Services::VulkanDescriptorCache* m_descriptorCache = nullptr;
-            Services::VulkanPipelineCache* m_pipelineCache = nullptr;
-            Services::VulkanSamplerCache* m_samplerCache = nullptr;
-            Services::VulkanFrameBufferCache* m_frameBufferCache = nullptr;
-            Services::VulkanStagingBufferCache* m_stagingBufferCache = nullptr;
-            Rendering::Services::Disposer* m_disposer = nullptr;
+            VulkanServiceContext m_services;
         
             Services::DescriptorSetKey m_descriptorSetKeys[Structs::PK_MAX_DESCRIPTOR_SETS]{};
             Services::PipelineKey m_pipelineKey{};
             Services::FrameBufferKey m_frameBufferKey[2]{};
             Services::RenderPassKey m_renderPassKey[2]{};
+            const VulkanBindHandle* m_frameBufferImages[Structs::PK_MAX_RENDER_TARGETS * 2 + 1]{};
             VulkanShaderBindingTableBundle m_shaderBindingTableBundle;
         
             const VulkanBindHandle* m_vertexBuffers[Structs::PK_MAX_VERTEX_ATTRIBUTES]{};

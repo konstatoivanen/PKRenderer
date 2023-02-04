@@ -112,7 +112,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             imageViewCreateInfo.subresourceRange.levelCount = 1;
             imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
             imageViewCreateInfo.subresourceRange.layerCount = 1;
-            m_imageViews[i] = new VulkanImageView(m_device, imageViewCreateInfo, (std::string("Swapchain Image: ") + std::to_string(i)).c_str());
+            m_imageViews[i] = new VulkanImageView(m_device, imageViewCreateInfo, (std::string("Swapchain.Image") + std::to_string(i)).c_str());
         }
 
         m_bindHandles = new VulkanBindHandle[m_images.size()];

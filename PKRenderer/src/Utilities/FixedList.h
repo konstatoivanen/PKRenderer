@@ -79,6 +79,10 @@ namespace PK::Utilities
 
             constexpr size_t GetCount() const { return m_count; }
 
+            void SetCount(size_t count) { m_count = count; }
+
+            constexpr const T* GetData() const { return m_data; }
+
             ConstBufferIterator<T> begin() const { return ConstBufferIterator<T>(m_data, 0ull); }
             ConstBufferIterator<T> end() const { return ConstBufferIterator<T>(m_data + m_count, m_count); }
 

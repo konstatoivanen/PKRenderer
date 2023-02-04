@@ -32,9 +32,9 @@ void main()
 		const float3 O = worldposition;
 		const float3 V = normalize(worldposition - pk_WorldSpaceCameraPos.xyz);
 		const float3 R = reflect(V, N);
-		const float3 D = GlobalNoiseBlue(uint2(coord + pk_Time.xy * 512)).xyz;
+		const float3 D = GlobalNoiseBlue(uint2(coord)).xyz;
 
-		imageStore(pk_ScreenGI_Write, int3(coord, PK_GI_DIFF_LVL), ConeTraceDiffuse(O, N, D.x));
+		imageStore(pk_ScreenGI_Write, int3(coord, PK_GI_DIFF_LVL), GatherRayHits(coord, O, N, D.xy)); //ConeTraceDiffuse(O, N, D.x));
 		imageStore(pk_ScreenGI_Write, int3(coord, PK_GI_SPEC_LVL), ConeTraceSpecular(O, N, R, NR.w));
 	}
 }

@@ -257,7 +257,7 @@ namespace PK::Rendering::Objects
         for (auto i = 0u; i < shader->variantcount; ++i)
         {
             auto pVariant = pVariants + i;
-            auto name = fileName + ":" + std::to_string(i);
+            auto name = fileName + std::to_string(i);
 
             switch (api)
             {

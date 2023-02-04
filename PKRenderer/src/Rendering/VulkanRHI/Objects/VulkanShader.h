@@ -15,10 +15,10 @@ namespace PK::Rendering::VulkanRHI::Objects
             void Dispose() override final;
 
             const VulkanShaderModule* GetModule(uint32_t index) const { return m_modules[index]; }
+            const char* GetName() const { return m_name.c_str(); }
             constexpr const VulkanDescriptorSetLayout* GetDescriptorSetLayout(uint32_t index) const { return m_descriptorSetLayouts[index]; }
             constexpr const VulkanPipelineLayout* GetPipelineLayout() const { return m_pipelineLayout; }
             constexpr const uint32_t GetDescriptorSetCount() const { return m_descriptorSetCount; }
-
             Structs::ShaderBindingTableInfo GetShaderBindingTableInfo() const override final;
 
         private:
@@ -27,5 +27,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanShaderModule* m_modules[(int)Structs::ShaderStage::MaxCount];
             const VulkanDescriptorSetLayout* m_descriptorSetLayouts[Structs::PK_MAX_DESCRIPTOR_SETS]{};
             const VulkanPipelineLayout* m_pipelineLayout;
+            const std::string m_name;
     };
 }

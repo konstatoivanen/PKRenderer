@@ -7,6 +7,7 @@
 #include "Rendering/VulkanRHI/VulkanWindow.h"
 #include "Rendering/VulkanRHI/Objects/VulkanBindArray.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanExtensions.h"
+#include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -169,8 +170,16 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
     {
+        auto vkbuffer = indirectArguments->GetNative<VulkanBuffer>()->GetRaw();
+        static Services::VulkanBarrierHandler::AccessRecord record{};
+        record.bufferRange.offset = (uint32_t)offset;
+        record.bufferRange.size = drawCount * stride;
+        record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+        record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+        renderState->RecordAccess(vkbuffer->buffer, record);
+
         ValidatePipeline();
-        vkCmdDrawIndexedIndirect(commandBuffer, indirectArguments->GetNative<VulkanBuffer>()->GetRaw()->buffer, offset, drawCount, stride);
+        vkCmdDrawIndexedIndirect(commandBuffer, vkbuffer->buffer, offset, drawCount, stride);
     }
 
     void VulkanCommandBuffer::Dispatch(uint3 groupCount)
@@ -200,7 +209,19 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         auto vksrc = src->GetNative<VulkanTexture>();
         auto vkwindow = dst->GetNative<VulkanWindow>();
-        Blit(vksrc->GetBindHandle(TextureBindMode::RenderTarget), vkwindow->GetBindHandle(), 0, 0, 0, 0, filter, true);
+        const auto& windowHandle = vkwindow->GetBindHandle();
+        Blit(vksrc->GetBindHandle(TextureBindMode::RenderTarget), windowHandle, 0, 0, 0, 0, filter, true);
+
+        Services::VulkanBarrierHandler::AccessRecord record{};
+        record.access = VK_ACCESS_TRANSFER_WRITE_BIT;
+        record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        record.layout = windowHandle->image.layout;
+        record.aspect = windowHandle->image.range.aspectMask;
+        record.imageRange = Utilities::VulkanConvertRange(windowHandle->image.range);
+        renderState->RecordAccess(windowHandle->image.image, record);
+
+        // Resolve swapchain image layout immediately
+        ResolveBarriers();
     }
 
     void VulkanCommandBuffer::Blit(Window* src, Buffer* dst)
@@ -209,22 +230,24 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto vkbuff = dst->GetNative<VulkanBuffer>();
 
         VkBufferImageCopy region{};
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = 1;
+        region.imageSubresource.aspectMask = vksrc->image.range.aspectMask;
+        region.imageSubresource.mipLevel = vksrc->image.range.baseMipLevel;
+        region.imageSubresource.baseArrayLayer = vksrc->image.range.baseArrayLayer;
+        region.imageSubresource.layerCount = vksrc->image.range.layerCount;
         region.imageExtent = vksrc->image.extent;
 
-        VkImageSubresourceRange srcRange{};
-        srcRange.aspectMask = vksrc->image.range.aspectMask;
-        srcRange.baseMipLevel = 0;
-        srcRange.levelCount = 1;
-        srcRange.baseArrayLayer = 0;
-        srcRange.layerCount = 1;
+        Services::VulkanBarrierHandler::AccessRecord record{};
 
-        TransitionImageLayout(VulkanLayoutTransition(vksrc->image.image, vksrc->image.layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, srcRange));
+        record.access = VK_ACCESS_TRANSFER_READ_BIT;
+        record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        record.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        record.aspect = vksrc->image.range.aspectMask;
+        record.imageRange = Utilities::VulkanConvertRange(vksrc->image.range);
+        renderState->RecordAccess(vksrc->image.image, record);
+
+        EndRenderPass();
+        ResolveBarriers();
         vkCmdCopyImageToBuffer(commandBuffer, vksrc->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vkbuff->GetRaw()->buffer, 1, &region);
-        TransitionImageLayout(VulkanLayoutTransition(vksrc->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vksrc->image.layout, srcRange));
     }
 
     void VulkanCommandBuffer::Blit(Texture* src, Texture* dst, const Structs::TextureViewRange& srcRange, const Structs::TextureViewRange& dstRange, FilterMode filter)
@@ -262,22 +285,31 @@ namespace PK::Rendering::VulkanRHI::Objects
         resolveRegion.dstSubresource = { (uint32_t)dst->image.range.aspectMask, dstLevel, dstLayer, dst->image.range.layerCount };
         resolveRegion.extent = src->image.extent;
 
-        VkImageSubresourceRange srcRange{};
-        srcRange.aspectMask = src->image.range.aspectMask;
-        srcRange.baseMipLevel = srcLevel;
-        srcRange.levelCount = 1;
-        srcRange.baseArrayLayer = srcLayer;
-        srcRange.layerCount = src->image.range.layerCount;
+        Services::VulkanBarrierHandler::AccessRecord record{};
 
-        VkImageSubresourceRange dstRange{};
-        dstRange.aspectMask = dst->image.range.aspectMask;
-        dstRange.baseMipLevel = dstLevel;
-        dstRange.levelCount = 1;
-        dstRange.baseArrayLayer = dstLayer;
-        dstRange.layerCount = dst->image.range.layerCount;
+        record.access = VK_ACCESS_TRANSFER_READ_BIT;
+        record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        record.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        record.aspect = src->image.range.aspectMask;
+        record.imageRange = Utilities::VulkanConvertRange(src->image.range);
+        renderState->RecordAccess(src->image.image, record);
 
-        TransitionImageLayout(VulkanLayoutTransition(src->image.image, src->image.layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, srcRange));
-        TransitionImageLayout(VulkanLayoutTransition(dst->image.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dstRange));
+        record.access = 0u;
+        record.stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        record.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+        record.aspect = dst->image.range.aspectMask;
+        record.imageRange = Utilities::VulkanConvertRange(dst->image.range);
+        renderState->RecordAccess(dst->image.image, record, nullptr, false);
+
+        record.access = VK_ACCESS_TRANSFER_WRITE_BIT;
+        record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        record.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        record.aspect = dst->image.range.aspectMask;
+        record.imageRange = Utilities::VulkanConvertRange(dst->image.range);
+        renderState->RecordAccess(dst->image.image, record);
+
+        EndRenderPass();
+        ResolveBarriers();
 
         if (src->image.samples > 1 && dst->image.samples == 1)
         {
@@ -288,9 +320,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             auto vkFilter = EnumConvert::GetFilterMode(filter);
             vkCmdBlitImage(commandBuffer, src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blitRegion, vkFilter);
         }
-
-        TransitionImageLayout(VulkanLayoutTransition(src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src->image.layout, srcRange));
-        TransitionImageLayout(VulkanLayoutTransition(dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dst->image.layout, dstRange));
     }
 
     void VulkanCommandBuffer::Clear(Buffer* dst, size_t offset, size_t size, uint32_t value)
@@ -317,69 +346,10 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         for (auto i = 0u; i < 4; ++i)
         {
-            clearValue.float32[i] = *reinterpret_cast<const float*>(&value[i]);
-            clearValue.int32[i] = *reinterpret_cast<const int32_t*>(&value[i]);
             clearValue.uint32[i] = value[i];
         }
 
         vkCmdClearColorImage(commandBuffer, vktex->GetRaw()->image, handle->image.layout, &clearValue, 1, &subrange);
-    }
-
-
-    void VulkanCommandBuffer::Barrier(const Texture* texture, const TextureViewRange& range, const Buffer* buffer, size_t offset, size_t size, MemoryAccessFlags srcFlags, MemoryAccessFlags dstFlags)
-    {
-        VkImageMemoryBarrier imageBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
-        VkMemoryBarrier memoryBarrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
-        VkBufferMemoryBarrier bufferBarrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
-
-        if (texture != nullptr)
-        {
-            auto vktex = texture->GetNative<VulkanTexture>();
-            auto vkrawtex = vktex->GetRaw();
-            auto normalizedRange = vktex->NormalizeViewRange(range);
-            imageBarrier.oldLayout = imageBarrier.newLayout = vktex->GetImageLayout();
-            imageBarrier.image = vkrawtex->image;
-            imageBarrier.subresourceRange =
-            {
-                    (uint32_t)vkrawtex->aspect,
-                    normalizedRange.level,
-                    normalizedRange.levels,
-                    normalizedRange.layer,
-                    normalizedRange.layers
-            };
-        }
-
-        if (buffer != nullptr)
-        {
-            auto vkbuff = buffer->GetNative<VulkanBuffer>()->GetRaw();
-            bufferBarrier.buffer = vkbuff->buffer;
-            bufferBarrier.offset = offset;
-            bufferBarrier.size = size;
-        }
-
-        if (texture == nullptr && buffer == nullptr)
-        {
-            memoryBarrier.srcAccessMask;
-            memoryBarrier.dstAccessMask;
-        }
-
-        imageBarrier.srcQueueFamilyIndex = bufferBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageBarrier.dstQueueFamilyIndex = bufferBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        memoryBarrier.srcAccessMask = imageBarrier.srcAccessMask = bufferBarrier.srcAccessMask = EnumConvert::GetAccessFlags(srcFlags);
-        memoryBarrier.dstAccessMask = imageBarrier.dstAccessMask = bufferBarrier.dstAccessMask = EnumConvert::GetAccessFlags(dstFlags);
-
-        PipelineBarrier
-        (
-            EnumConvert::GetPipelineStageFlags(srcFlags),
-            EnumConvert::GetPipelineStageFlags(dstFlags),
-            0,
-            texture == nullptr && buffer == nullptr ? 1u : 0u,
-            &memoryBarrier,
-            buffer != nullptr ? 1u : 0u,
-            &bufferBarrier,
-            texture != nullptr ? 1u : 0u,
-            &imageBarrier
-        );
     }
 
     void* VulkanCommandBuffer::BeginBufferWrite(Buffer* buffer, size_t offset, size_t size)
@@ -398,46 +368,12 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         CopyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
 
-        VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER };
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.buffer = dstBuffer;
-        barrier.offset = copyRegion.dstOffset;
-        barrier.size = copyRegion.size;
-
-        auto usage = vkBuffer->GetRaw()->usage;
-        uint32_t dstStageMask = 0u;
-
-        if (usage & (VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT))
-        {
-            barrier.dstAccessMask |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT;
-            dstStageMask |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
-        }
-
-        if (usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
-        {
-            barrier.dstAccessMask |= VK_ACCESS_UNIFORM_READ_BIT;
-            dstStageMask |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-        }
-
-        if (usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
-        {
-            barrier.dstAccessMask |= VK_ACCESS_MEMORY_READ_BIT;
-            dstStageMask |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-        }
-
-        if (usage & VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT)
-        {
-            barrier.dstAccessMask |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-            dstStageMask |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-        }
-
-        if (dstStageMask != 0)
-        {
-            PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, dstStageMask, 0, 0, nullptr, 1, &barrier, 0, nullptr);
-        }
+        static Services::VulkanBarrierHandler::AccessRecord record{};
+        record.bufferRange.offset = (uint32_t)copyRegion.dstOffset;
+        record.bufferRange.size = (uint32_t)copyRegion.size;
+        record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        record.access = VK_ACCESS_TRANSFER_WRITE_BIT;
+        renderState->RecordAccess(dstBuffer, record);
     }
 
     void VulkanCommandBuffer::BeginDebugScope(const char* name, const Math::color& color)
@@ -530,11 +466,36 @@ namespace PK::Rendering::VulkanRHI::Objects
     }  
 
 
+    bool VulkanCommandBuffer::ResolveBarriers()
+    {
+        static VulkanBarrierInfo barrierInfo{};
+        
+        if (renderState->ResolveBarriers(&barrierInfo))
+        {
+            PipelineBarrier(barrierInfo.srcStageMask, 
+                            barrierInfo.dstStageMask, 
+                            barrierInfo.dependencyFlags, 
+                            0u, 
+                            nullptr, 
+                            barrierInfo.bufferMemoryBarrierCount,
+                            barrierInfo.pBufferMemoryBarriers,
+                            barrierInfo.imageMemoryBarrierCount,
+                            barrierInfo.pImageMemoryBarriers);
+
+            return true;
+        }
+
+        return false;
+    }
+
     void VulkanCommandBuffer::ValidatePipeline()
     {
         auto flags = renderState->ValidatePipeline(GetOnCompleteGate());
 
-        if ((flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
+        auto wasInRenderPass = isInActiveRenderPass;
+        auto barrierDeployed = ResolveBarriers();
+
+        if ((flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0 || (wasInRenderPass && barrierDeployed))
         {
             EndRenderPass();
             auto info = renderState->GetRenderPassInfo();

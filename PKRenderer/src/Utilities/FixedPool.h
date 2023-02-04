@@ -15,6 +15,7 @@ namespace PK::Utilities
             FixedPool()
             {
                 m_data = alloc_traits::allocate(m_alloc, capacity);
+                m_freelist.reserve(capacity);
 
                 for (auto i = 0u; i < capacity; ++i)
                 {
@@ -24,22 +25,7 @@ namespace PK::Utilities
 
             ~FixedPool()
             {
-                std::sort(m_freelist.begin(), m_freelist.end());
-
-                auto c = m_freelist.data();
-                auto e = m_freelist.data() + m_freelist.size();
-
-                for (auto i = 0u; i < capacity; ++i)
-                {
-                    if (c != e && *c == i)
-                    {
-                        c++;
-                        continue;
-                    }
-
-                    alloc_traits::destroy(m_alloc, m_data + i);
-                }
-
+                Clear();
                 alloc_traits::deallocate(m_alloc, m_data, capacity);
             }
 
@@ -74,6 +60,26 @@ namespace PK::Utilities
             void Delete(uint32_t index)
             {
                 Delete(m_data + index);
+            }
+
+            void Clear()
+            {
+                std::sort(m_freelist.begin(), m_freelist.end());
+
+                auto c = m_freelist.data();
+                auto e = m_freelist.data() + m_freelist.size();
+
+                for (auto i = 0u; i < capacity; ++i)
+                {
+                    if (c != e && *c == i)
+                    {
+                        c++;
+                        continue;
+                    }
+
+                    alloc_traits::destroy(m_alloc, m_data + i);
+                    m_freelist.push_back(i);
+                }
             }
 
             std::vector<uint32_t> GetActiveIndices()

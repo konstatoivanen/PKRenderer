@@ -6,6 +6,7 @@
 #include "Rendering/VulkanRHI/VulkanDriver.h"
 #include "Rendering/GraphicsAPI.h"
 #include <PKAssets/PKAssetLoader.h>
+#include <vulkan/vk_enum_string_helper.h>
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -13,7 +14,9 @@ namespace PK::Rendering::VulkanRHI::Objects
     using namespace Structs;
     using namespace Services;
 
-    VulkanShader::VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant, const char* name) : m_device(GraphicsAPI::GetActiveDriver<VulkanDriver>()->device)
+    VulkanShader::VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant, const char* name) : 
+        m_device(GraphicsAPI::GetActiveDriver<VulkanDriver>()->device),
+        m_name(name)
     {
         m_stageFlags = 0u;
 
@@ -27,7 +30,9 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             auto spirvSize = variant->sprivSizes[i];
             auto* spirv = reinterpret_cast<uint32_t*>(variant->sprivBuffers[i].Get(base));
-            m_modules[i] = new VulkanShaderModule(m_device, EnumConvert::GetShaderStage((ShaderStage)i), spirv, spirvSize, name);
+            auto stage = EnumConvert::GetShaderStage((ShaderStage)i);
+            auto moduleName = std::string(name) + std::string(".") + string_VkShaderStageFlagBits(stage);
+            m_modules[i] = new VulkanShaderModule(m_device, stage, spirv, spirvSize, moduleName.c_str());
             m_stageFlags |= 1 << i;
         }
 

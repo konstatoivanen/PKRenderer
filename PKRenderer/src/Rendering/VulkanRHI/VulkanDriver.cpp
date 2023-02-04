@@ -164,6 +164,7 @@ namespace PK::Rendering::VulkanRHI
         pipelineCache = CreateScope<VulkanPipelineCache>(device, properties.workingDirectory, properties.garbagePruneDelay);
         samplerCache = CreateScope<VulkanSamplerCache>(device);
         layoutCache = CreateScope<VulkanLayoutCache>(device);
+        barrierHandler = CreateScope<VulkanBarrierHandler>();
         disposer = CreateScope<Disposer>();
         descriptorCache = CreateScope<VulkanDescriptorCache>(device, 4, 100ull,
                                                              std::initializer_list<std::pair<const VkDescriptorType, size_t>>({
@@ -174,13 +175,14 @@ namespace PK::Rendering::VulkanRHI
                                                              }));
 
         commandBufferPool = CreateScope<VulkanCommandBufferPool>(device,
-                                                                 VulkanSystemContext
+                                                                 VulkanServiceContext
                                                                  {
                                                                      descriptorCache.get(),
                                                                      pipelineCache.get(),
                                                                      samplerCache.get(),
                                                                      frameBufferCache.get(),
                                                                      stagingBufferCache.get(),
+                                                                     barrierHandler.get(),
                                                                      disposer.get()
                                                                  }, 
                                                                  queueFamilies[QueueType::Graphics]);
@@ -198,6 +200,7 @@ namespace PK::Rendering::VulkanRHI
         commandBufferPool = nullptr;
         frameBufferCache = nullptr;
         layoutCache = nullptr;
+        barrierHandler = nullptr;
 
         vmaDestroyAllocator(allocator);
         vkDestroyDevice(device, nullptr);
@@ -265,6 +268,7 @@ namespace PK::Rendering::VulkanRHI
         descriptorCache->Prune();
         disposer->Prune();
         frameBufferCache->Prune();
+        barrierHandler->Prune();
     }
 
     VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDriver::VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

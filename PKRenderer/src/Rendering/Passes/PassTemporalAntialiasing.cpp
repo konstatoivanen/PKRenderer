@@ -44,7 +44,6 @@ namespace PK::Rendering::Passes
 
         m_renderTarget->Validate(resolution);
 
-        cmd->Barrier(source->GetColor(0), lastAccess, MemoryAccessFlags::ComputeRead);
         cmd->SetTexture(hash->_SourceTex, source->GetColor(0u), { 0, 0, 1u, 1u });
         cmd->SetTexture(hash->_HistoryReadTex, m_renderTarget.get(), { 0, historyRead, 1u, 1u });
         cmd->SetImage(hash->_DestinationTex, m_renderTarget.get(), { 0, 0, 1u, 1u });

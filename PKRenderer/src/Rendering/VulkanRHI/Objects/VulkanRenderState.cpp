@@ -3,13 +3,15 @@
 #include "Core/Services/Log.h"
 #include "Utilities/Handle.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
+#include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
 #include "Rendering/VulkanRHI/VulkanDriver.h"
 #include "Rendering/VulkanRHI/Objects/VulkanBindArray.h"
 #include "Rendering/GraphicsAPI.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    using namespace Utilities;
+    using namespace PK::Utilities;
+    using namespace PK::Rendering::VulkanRHI::Utilities;
     using namespace Services;
     using namespace Core::Services;
 
@@ -17,10 +19,11 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         memset(m_descriptorSetKeys, 0, sizeof(m_descriptorSetKeys));
         memset(&m_pipelineKey, 0, sizeof(PipelineKey));
-        memset(m_frameBufferKey, 0, sizeof(FrameBufferKey) * 2);
-        memset(m_renderPassKey, 0, sizeof(RenderPassKey) * 2);
-        memset(m_viewports, 0, sizeof(VkViewport) * PK_MAX_VIEWPORTS);
-        memset(m_scissors, 0, sizeof(VkRect2D) * PK_MAX_VIEWPORTS);
+        memset(m_frameBufferKey, 0, sizeof(m_frameBufferKey));
+        memset(m_renderPassKey, 0, sizeof(m_renderPassKey));
+        memset(m_frameBufferImages, 0, sizeof(m_frameBufferImages));
+        memset(m_viewports, 0, sizeof(m_viewports));
+        memset(m_scissors, 0, sizeof(m_scissors));
 
         m_pipelineKey.fixedFunctionState = FixedFunctionState();
         m_renderPass = nullptr;
@@ -46,8 +49,13 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto passKey = m_renderPassKey;
         auto fboKey = m_frameBufferKey;
 
+        memset(m_frameBufferImages, 0, sizeof(m_frameBufferImages));
         memset(passKey, 0, sizeof(RenderPassKey));
         memset(fboKey, 0, sizeof(FrameBufferKey));
+
+        auto imagesColor = m_frameBufferImages;
+        auto imagesResolve = imagesColor + Structs::PK_MAX_RENDER_TARGETS;
+        auto imageDepth = imagesResolve + Structs::PK_MAX_RENDER_TARGETS;
 
         // These should be the same for all targets. Validation will assert if not.
         passKey->samples = renderTargets[0]->image.samples;
@@ -62,7 +70,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             auto isDepth = EnumConvert::IsDepthFormat(target->image.format);
             auto attachment = isDepth ? &passKey->depth : (passKey->colors + j);
             attachment->format = target->image.format;
-            attachment->layout = target->image.layout;
             attachment->loadop = LoadOp::Keep;
             attachment->storeop = StoreOp::Store;
             attachment->resolve = false;
@@ -71,6 +78,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             {
                 // @TODO Handle depth resolves
                 fboKey->depth = target->image.view;
+                *imageDepth = target;
             }
             else
             {
@@ -78,9 +86,11 @@ namespace PK::Rendering::VulkanRHI::Objects
 
                 if (attachment->resolve)
                 {
+                    imagesResolve[j] = resolve;
                     fboKey->resolve[j] = resolve->image.view;
                 }
 
+                imagesColor[j] = target;
                 fboKey->color[j++] = target->image.view;
             }
         }
@@ -361,12 +371,82 @@ namespace PK::Rendering::VulkanRHI::Objects
             return;
         }
 
+        // Record resource access
+        {
+            VulkanBarrierHandler::AccessRecord record{};
+            VulkanBarrierHandler::AccessRecord recordPrevious{};
+            m_renderPassKey->accessMask = 0u;
+            m_renderPassKey->stageMask = 0u;
+
+            for (auto i = 0u; i < Structs::PK_MAX_RENDER_TARGETS; ++i)
+            {
+                auto color = m_frameBufferImages[i];
+                auto resolve = m_frameBufferImages[i + PK_MAX_RENDER_TARGETS];
+
+                if (!color || !color->image.image)
+                {
+                    continue;
+                }
+
+                record.imageRange = Utilities::VulkanConvertRange(color->image.range);
+                record.aspect = color->image.range.aspectMask;
+                record.layout = color->image.layout;
+                record.access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                record.stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+                RecordAccess(color->image.image, record, &recordPrevious, false);
+
+                m_renderPassKey->accessMask |= recordPrevious.access;
+                m_renderPassKey->stageMask |= recordPrevious.stage;
+                m_renderPassKey->colors[i].initialLayout = recordPrevious.layout;
+                m_renderPassKey->colors[i].finalLayout = record.layout;
+
+                if (!resolve || !resolve->image.image)
+                {
+                    continue;
+                }
+
+                record.imageRange = Utilities::VulkanConvertRange(resolve->image.range);
+                record.aspect = resolve->image.range.aspectMask;
+                record.layout = resolve->image.layout;
+                record.access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                record.stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+                RecordAccess(resolve->image.image, record, &recordPrevious, false);
+                m_renderPassKey->accessMask |= recordPrevious.access;
+                m_renderPassKey->stageMask |= recordPrevious.stage;
+            }
+
+            auto depth = m_frameBufferImages[PK_MAX_RENDER_TARGETS * 2];
+
+            if (depth && depth->image.image)
+            {
+                record.imageRange = Utilities::VulkanConvertRange(depth->image.range);
+                record.aspect = depth->image.range.aspectMask;
+                record.layout = depth->image.layout;
+                record.access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                record.stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+
+                RecordAccess(depth->image.image, record, &recordPrevious, false);
+
+                m_renderPassKey->accessMask |= recordPrevious.access;
+                m_renderPassKey->stageMask |= recordPrevious.stage;
+                m_renderPassKey->depth.initialLayout = recordPrevious.layout;
+                m_renderPassKey->depth.finalLayout = record.layout;
+            }
+
+            if (m_renderPassKey->stageMask == 0u)
+            {
+                m_renderPassKey->stageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            }
+        }
+
         memcpy(m_frameBufferKey + 1, m_frameBufferKey, sizeof(FrameBufferKey));
         memcpy(m_renderPassKey + 1, m_renderPassKey, sizeof(RenderPassKey));
 
-        m_renderPass = m_frameBufferCache->GetRenderPass(m_renderPassKey[0]);
+        m_renderPass = m_services.frameBufferCache->GetRenderPass(m_renderPassKey[0]);
         m_frameBufferKey[0].renderPass = m_renderPass->renderPass;
-        m_frameBuffer = m_frameBufferCache->GetFrameBuffer(m_frameBufferKey[0]);
+        m_frameBuffer = m_services.frameBufferCache->GetFrameBuffer(m_frameBufferKey[0]);
 
         m_pipelineKey.renderPass = m_renderPass->renderPass;
         m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
@@ -557,7 +637,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             
             if (m_dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i))
             {
-                m_descriptorSets[i] = m_descriptorCache->GetDescriptorSet(shader->GetDescriptorSetLayout(i), m_descriptorSetKeys[i], gate);
+                m_descriptorSets[i] = m_services.descriptorCache->GetDescriptorSet(shader->GetDescriptorSetLayout(i), m_descriptorSetKeys[i], gate);
             }
         }
 
@@ -588,6 +668,96 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
+    void VulkanRenderState::ValidateResourceStates()
+    {
+        VulkanBarrierHandler::AccessRecord record{};
+
+        auto shader = m_pipelineKey.shader;
+        auto shaderType = shader->GetType();
+        auto setCount = m_pipelineKey.shader->GetDescriptorSetCount();
+
+        for (auto i = 0u; i < setCount; ++i)
+        {
+            const auto& setkey = m_descriptorSetKeys[i];
+
+            for (auto j = 0u; j < Structs::PK_MAX_DESCRIPTORS_PER_SET && setkey.bindings[j].count > 0; ++j)
+            {
+                auto binding = setkey.bindings[j];
+
+                // @TODO add array support
+                if (binding.isArray)
+                {
+                    continue;
+                }
+                
+                auto handle = binding.handle;
+                record.stage = EnumConvert::GetPipelineStageFlags(setkey.stageFlags);
+                record.access = shader->GetResourceLayout(i)[j].WriteStageMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : 0u;
+
+                switch (binding.type)
+                {
+                    case ResourceType::SamplerTexture:
+                    case ResourceType::Texture:
+                    case ResourceType::Image:
+                    {
+                        record.imageRange = VulkanConvertRange(handle->image.range);
+                        record.layout = handle->image.layout;
+                        record.aspect = handle->image.range.aspectMask;
+                        record.access |= VK_ACCESS_SHADER_READ_BIT;
+                        RecordAccess(handle->image.image, record);
+                    }
+                    break;
+                    case ResourceType::StorageBuffer:
+                    case ResourceType::DynamicStorageBuffer:
+                    {
+                        record.bufferRange.offset = (uint32_t)handle->buffer.offset;
+                        record.bufferRange.size = (uint32_t)handle->buffer.range;
+                        record.access |= VK_ACCESS_SHADER_READ_BIT;
+                        RecordAccess(handle->buffer.buffer, record);
+                    }
+                    break;
+                    case ResourceType::ConstantBuffer:
+                    case ResourceType::DynamicConstantBuffer:
+                    {
+                        record.bufferRange.offset = (uint32_t)handle->buffer.offset;
+                        record.bufferRange.size = (uint32_t)handle->buffer.range;
+                        record.access |= VK_ACCESS_UNIFORM_READ_BIT;
+                        RecordAccess(handle->buffer.buffer, record);
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (shaderType != ShaderType::Graphics)
+        {
+            return;
+        }
+
+        for (auto i = 0u; i < PK_MAX_VERTEX_ATTRIBUTES; ++i)
+        {
+            if (m_vertexBuffers[i] == nullptr)
+            {
+                break;
+            }
+
+            record.bufferRange.offset = (uint32_t)m_vertexBuffers[i]->buffer.offset;
+            record.bufferRange.size = (uint32_t)m_vertexBuffers[i]->buffer.range;
+            record.stage = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+            record.access = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+            RecordAccess(m_vertexBuffers[i]->buffer.buffer, record);
+        }
+
+        if (m_indexBuffer != nullptr)
+        {
+            record.bufferRange.offset = (uint32_t)m_indexBuffer->buffer.offset;
+            record.bufferRange.size = (uint32_t)m_indexBuffer->buffer.range;
+            record.stage = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+            record.access = VK_ACCESS_INDEX_READ_BIT;
+            RecordAccess(m_indexBuffer->buffer.buffer, record);
+        }
+    }
+
     PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const ExecutionGate& gate)
     {
         PK_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
@@ -598,10 +768,11 @@ namespace PK::Rendering::VulkanRHI::Objects
         ValidateRenderTarget();
         ValidateVertexBuffers();
         ValidateDescriptorSets(gate);
+        ValidateResourceStates();
 
         if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_PIPELINE)
         {
-            m_pipeline = m_pipelineCache->GetPipeline(m_pipelineKey);
+            m_pipeline = m_services.pipelineCache->GetPipeline(m_pipelineKey);
         }
 
         auto flags = (PKRenderStateDirtyFlags)m_dirtyFlags;

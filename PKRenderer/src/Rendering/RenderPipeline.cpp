@@ -135,7 +135,7 @@ namespace PK::Rendering
         cmd->SetBuffer(hash->pk_PerFrameConstants, *m_constantsPerFrame.get());
         cmd->SetBuffer(hash->pk_PostEffectsParams, *m_constantsPostProcess.get());
 
-        PK_LOG_VERBOSE("Render Pipeline Initialized!");
+        PK_LOG_HEADER("----------RENDER PIPELINE INITIALIZED----------");
     }
     
     RenderPipeline::~RenderPipeline()

@@ -78,14 +78,8 @@ namespace PK::Rendering::Passes
         cmd->Clear(m_depthTiles.get(), 0, sizeof(uint32_t) * VolumeResolution.x * VolumeResolution.y, 0u);
 
         cmd->Dispatch(m_computeDepthTiles, 0, { depthCountX, depthCountY, 1 });
-        cmd->Barrier(m_depthTiles.get(), MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
-
         cmd->Dispatch(m_computeInject, 0, groupsInject);
-        cmd->Barrier(m_volumeScatter.get(), MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::ComputeRead);
-
         cmd->Dispatch(m_computeScatter, 0, groupsScatter);
-        cmd->Barrier(m_volumeInject.get(), MemoryAccessFlags::ComputeWrite, MemoryAccessFlags::FragmentTexture);
-
         cmd->SetRenderTarget(destination, { 0 }, false, true);
         cmd->Blit(m_shaderComposite, 0);
 

@@ -490,6 +490,29 @@ namespace PK::Rendering::VulkanRHI::Utilities
         }
     }
 
+    VkImageSubresourceRange VulkanConvertRange(const Structs::TextureViewRange& viewRange, VkImageAspectFlags aspect)
+    {
+        return
+        {
+            aspect,                     //aspectMask
+            (uint32_t)viewRange.level,  //baseMipLevel
+            (uint32_t)viewRange.levels, //levelCount
+            (uint32_t)viewRange.layer,  //baseArrayLayer
+            (uint32_t)viewRange.layers  //layerCount
+        };
+    }
+
+    Structs::TextureViewRange VulkanConvertRange(VkImageSubresourceRange resourceRange)
+    {
+        return
+        {
+            (uint16_t)resourceRange.baseMipLevel,     //level
+            (uint16_t)resourceRange.baseArrayLayer,   //layer
+            (uint16_t)resourceRange.levelCount,       //levels
+            (uint16_t)resourceRange.layerCount        //layers
+        };
+    }
+
     VkExtent2D VulkanSelectSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities, const VkExtent2D& desiredExtent)
     {
         if (capabilities.currentExtent.width != UINT32_MAX)

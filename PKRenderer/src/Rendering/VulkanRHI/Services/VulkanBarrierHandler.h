@@ -2,54 +2,85 @@
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
+#include "Utilities/FixedPool.h"
+#include "Utilities/FixedList.h"
+#include "Utilities/PointerMap.h"
 
 namespace PK::Rendering::VulkanRHI::Services
 {
-    struct VulkanBarrierInfo
-    {
-        VkPipelineStageFlags srcStageMask;
-        VkPipelineStageFlags dstStageMask;
-        VkDependencyFlags dependencyFlags;
-        uint32_t bufferMemoryBarrierCount;
-        const VkBufferMemoryBarrier* pBufferMemoryBarriers;
-        uint32_t imageMemoryBarrierCount;
-        const VkImageMemoryBarrier* pImageMemoryBarriers;
-    };
-
     class VulkanBarrierHandler : PK::Utilities::NoCopy
     {
-        struct BufferAccess
-        {
-            uint32_t offset = 0u;
-            uint32_t size = 0u;
-            VkPipelineStageFlags stage = 0u;
-            VkAccessFlags access = 0u;
-            uint32_t previous = 0u;
-        };
-
-        struct ImageAccess
-        {
-            Structs::TextureViewRange range{};
-            VkPipelineStageFlags stage = 0u;
-            VkAccessFlags access = 0u;
-            uint32_t previous = 0u;
-        };
-
         public:
-            VulkanBarrierHandler(VkDevice device) : m_device(device) {}
+            struct AccessRecord
+            {
+                union
+                {
+                    struct Range
+                    {
+                        uint32_t offset = 0u;
+                        uint32_t size = 0u;
+                    }
+                    bufferRange;
+
+                    Structs::TextureViewRange imageRange;
+                };
+
+                VkPipelineStageFlags stage = 0u;
+                VkAccessFlags access = 0u;
+                VkImageAspectFlags aspect = 0u;
+                VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+                AccessRecord* next = nullptr;
+
+                AccessRecord() {};
+                AccessRecord(const VkBuffer& buffer, const AccessRecord& record) :
+                    stage(record.stage),
+                    access(record.access),
+                    bufferRange(record.bufferRange),
+                    next(nullptr)
+                {
+                }
+
+                AccessRecord(const VkImage& buffer, const AccessRecord& record) :
+                    stage(record.stage),
+                    access(record.access),
+                    layout(record.layout),
+                    imageRange(record.imageRange),
+                    next(nullptr)
+                {
+                }
+
+                template<typename T>
+                void Set(const AccessRecord& record);
+                template<typename T>
+                void Merge(const AccessRecord& record);
+                template<typename T>
+                bool IsOverlap(const AccessRecord& record) const;
+                template<typename T>
+                bool IsAdjacent(const AccessRecord& record) const;
+                template<typename T>
+                bool IsInclusive(const AccessRecord& record) const;
+                template<typename T>
+                bool IsAccessDiff(const AccessRecord& record) const;
+            };
+
+            VulkanBarrierHandler() = default;
             ~VulkanBarrierHandler();
 
-            void RecordAccess(VkBuffer buffer, uint32_t offset, uint32_t size, VkPipelineStageFlags stage, VkAccessFlags access);
-            void RecordAccess(VkImage image, const Structs::TextureViewRange& range, VkImageLayout layout, VkPipelineStageFlags stage, VkAccessFlags access);
+            template<typename T>
+            void Record(const T resource, AccessRecord record, AccessRecord* outValue = nullptr, bool writeBarrier = true);
             bool Resolve(VulkanBarrierInfo* outBarrierInfo);
+            void Prune();
 
         private:
-            const VkDevice m_device;
-            std::unordered_map<VkBuffer, BufferAccess> m_buffers;
-            std::unordered_map<VkImage, ImageAccess> m_images;
-            std::vector<BufferAccess> m_bufferAccesses;
-            std::vector<ImageAccess> m_imageAccesses;
-            std::vector<VkBufferMemoryBarrier> m_bufferBarriers;
-            std::vector<VkImageMemoryBarrier> m_imageBarriers;
+            AccessRecord* RemoveRecord(AccessRecord* record);
+
+            PK::Utilities::PointerMap<uint64_t, AccessRecord> m_resources;
+            PK::Utilities::FixedPool<AccessRecord, 1024> m_records;
+            PK::Utilities::FixedList<VkBufferMemoryBarrier, 1024> m_bufferBarriers;
+            PK::Utilities::FixedList<VkImageMemoryBarrier, 1024> m_imageBarriers;
+            std::vector<uint64_t> m_pruneTicks;
+            VkPipelineStageFlags m_sourceStage = 0u;
+            VkPipelineStageFlags m_destinationStage = 0u;
+            uint64_t m_currentPruneTick = 0u;
     };
 }
