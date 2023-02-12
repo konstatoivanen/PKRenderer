@@ -19,7 +19,7 @@ namespace PK::Rendering::Passes
         m_passHistogramAvg = m_computeHistogram->GetVariantIndex(StringHashID::StringToID("PASS_AVG"));
     }
 
-    void PassHistogram::Render(Objects::CommandBuffer* cmd, Texture* target, MemoryAccessFlags nextAccess)
+    void PassHistogram::Render(Objects::CommandBuffer* cmd, Texture* target)
     {
         cmd->BeginDebugScope("Histogram", PK_COLOR_MAGENTA);
 

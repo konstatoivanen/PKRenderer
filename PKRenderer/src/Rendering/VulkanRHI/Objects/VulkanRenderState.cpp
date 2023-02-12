@@ -371,75 +371,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             return;
         }
 
-        // Record resource access
-        {
-            VulkanBarrierHandler::AccessRecord record{};
-            VulkanBarrierHandler::AccessRecord recordPrevious{};
-            m_renderPassKey->accessMask = 0u;
-            m_renderPassKey->stageMask = 0u;
-
-            for (auto i = 0u; i < Structs::PK_MAX_RENDER_TARGETS; ++i)
-            {
-                auto color = m_frameBufferImages[i];
-                auto resolve = m_frameBufferImages[i + PK_MAX_RENDER_TARGETS];
-
-                if (!color || !color->image.image)
-                {
-                    continue;
-                }
-
-                record.imageRange = Utilities::VulkanConvertRange(color->image.range);
-                record.aspect = color->image.range.aspectMask;
-                record.layout = color->image.layout;
-                record.access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                record.stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-                RecordAccess(color->image.image, record, &recordPrevious, false);
-
-                m_renderPassKey->accessMask |= recordPrevious.access;
-                m_renderPassKey->stageMask |= recordPrevious.stage;
-                m_renderPassKey->colors[i].initialLayout = recordPrevious.layout;
-                m_renderPassKey->colors[i].finalLayout = record.layout;
-
-                if (!resolve || !resolve->image.image)
-                {
-                    continue;
-                }
-
-                record.imageRange = Utilities::VulkanConvertRange(resolve->image.range);
-                record.aspect = resolve->image.range.aspectMask;
-                record.layout = resolve->image.layout;
-                record.access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                record.stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-                RecordAccess(resolve->image.image, record, &recordPrevious, false);
-                m_renderPassKey->accessMask |= recordPrevious.access;
-                m_renderPassKey->stageMask |= recordPrevious.stage;
-            }
-
-            auto depth = m_frameBufferImages[PK_MAX_RENDER_TARGETS * 2];
-
-            if (depth && depth->image.image)
-            {
-                record.imageRange = Utilities::VulkanConvertRange(depth->image.range);
-                record.aspect = depth->image.range.aspectMask;
-                record.layout = depth->image.layout;
-                record.access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-                record.stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-
-                RecordAccess(depth->image.image, record, &recordPrevious, false);
-
-                m_renderPassKey->accessMask |= recordPrevious.access;
-                m_renderPassKey->stageMask |= recordPrevious.stage;
-                m_renderPassKey->depth.initialLayout = recordPrevious.layout;
-                m_renderPassKey->depth.finalLayout = record.layout;
-            }
-
-            if (m_renderPassKey->stageMask == 0u)
-            {
-                m_renderPassKey->stageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            }
-        }
+        RecordRenderTargetAccess();
 
         memcpy(m_frameBufferKey + 1, m_frameBufferKey, sizeof(FrameBufferKey));
         memcpy(m_renderPassKey + 1, m_renderPassKey, sizeof(RenderPassKey));
@@ -668,7 +600,40 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    void VulkanRenderState::ValidateResourceStates()
+    PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const ExecutionGate& gate)
+    {
+        PK_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
+
+        auto shaderType = m_pipelineKey.shader->GetType();
+        auto graphicsFlags = m_dirtyFlags & (PK_RENDER_STATE_DIRTY_VERTEXBUFFERS | PK_RENDER_STATE_DIRTY_INDEXBUFFER | PK_RENDER_STATE_DIRTY_RENDERTARGET);
+
+        ValidateRenderTarget();
+        ValidateVertexBuffers();
+        ValidateDescriptorSets(gate);
+        RecordResourceAccess();
+
+        if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_PIPELINE)
+        {
+            m_pipeline = m_services.pipelineCache->GetPipeline(m_pipelineKey);
+        }
+
+        auto flags = (PKRenderStateDirtyFlags)m_dirtyFlags;
+        m_dirtyFlags = 0u;
+
+        // Dont dirty render pass or vertex buffers when not using a graphics pipeline
+        if (shaderType != ShaderType::Graphics)
+        {
+            flags = (PKRenderStateDirtyFlags)(flags & ~graphicsFlags);
+            
+            // Restore graphics specific dirty flags so that a later pipeline validation can pick these up pipeline assignment can pickup this change.
+            m_dirtyFlags |= graphicsFlags;
+        }
+        
+        return flags;
+    }
+
+ 
+    void VulkanRenderState::RecordResourceAccess()
     {
         VulkanBarrierHandler::AccessRecord record{};
 
@@ -757,36 +722,74 @@ namespace PK::Rendering::VulkanRHI::Objects
             RecordAccess(m_indexBuffer->buffer.buffer, record);
         }
     }
-
-    PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const ExecutionGate& gate)
+    
+    void VulkanRenderState::RecordRenderTargetAccess()
     {
-        PK_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
+        VulkanBarrierHandler::AccessRecord record{};
+        VulkanBarrierHandler::AccessRecord recordPrevious{};
+        m_renderPassKey->accessMask = 0u;
+        m_renderPassKey->stageMask = 0u;
 
-        auto shaderType = m_pipelineKey.shader->GetType();
-        auto graphicsFlags = m_dirtyFlags & (PK_RENDER_STATE_DIRTY_VERTEXBUFFERS | PK_RENDER_STATE_DIRTY_INDEXBUFFER | PK_RENDER_STATE_DIRTY_RENDERTARGET);
-
-        ValidateRenderTarget();
-        ValidateVertexBuffers();
-        ValidateDescriptorSets(gate);
-        ValidateResourceStates();
-
-        if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_PIPELINE)
+        for (auto i = 0u; i < Structs::PK_MAX_RENDER_TARGETS; ++i)
         {
-            m_pipeline = m_services.pipelineCache->GetPipeline(m_pipelineKey);
+            auto color = m_frameBufferImages[i];
+            auto resolve = m_frameBufferImages[i + PK_MAX_RENDER_TARGETS];
+
+            if (!color || !color->image.image)
+            {
+                continue;
+            }
+
+            record.imageRange = Utilities::VulkanConvertRange(color->image.range);
+            record.aspect = color->image.range.aspectMask;
+            record.layout = color->image.layout;
+            record.access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            record.stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+            RecordAccess(color->image.image, record, &recordPrevious, false);
+
+            m_renderPassKey->accessMask |= recordPrevious.access;
+            m_renderPassKey->stageMask |= recordPrevious.stage;
+            m_renderPassKey->colors[i].initialLayout = recordPrevious.layout;
+            m_renderPassKey->colors[i].finalLayout = record.layout;
+
+            if (!resolve || !resolve->image.image)
+            {
+                continue;
+            }
+
+            record.imageRange = Utilities::VulkanConvertRange(resolve->image.range);
+            record.aspect = resolve->image.range.aspectMask;
+            record.layout = resolve->image.layout;
+            record.access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            record.stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+            RecordAccess(resolve->image.image, record, &recordPrevious, false);
+            m_renderPassKey->accessMask |= recordPrevious.access;
+            m_renderPassKey->stageMask |= recordPrevious.stage;
         }
 
-        auto flags = (PKRenderStateDirtyFlags)m_dirtyFlags;
-        m_dirtyFlags = 0u;
+        auto depth = m_frameBufferImages[PK_MAX_RENDER_TARGETS * 2];
 
-        // Dont dirty render pass or vertex buffers when not using a graphics pipeline
-        if (shaderType != ShaderType::Graphics)
+        if (depth && depth->image.image)
         {
-            flags = (PKRenderStateDirtyFlags)(flags & ~graphicsFlags);
-            
-            // Restore graphics specific dirty flags so that a later pipeline validation can pick these up pipeline assignment can pickup this change.
-            m_dirtyFlags |= graphicsFlags;
+            record.imageRange = Utilities::VulkanConvertRange(depth->image.range);
+            record.aspect = depth->image.range.aspectMask;
+            record.layout = depth->image.layout;
+            record.access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            record.stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+
+            RecordAccess(depth->image.image, record, &recordPrevious, false);
+
+            m_renderPassKey->accessMask |= recordPrevious.access;
+            m_renderPassKey->stageMask |= recordPrevious.stage;
+            m_renderPassKey->depth.initialLayout = recordPrevious.layout;
+            m_renderPassKey->depth.finalLayout = record.layout;
         }
-        
-        return flags;
+
+        if (m_renderPassKey->stageMask == 0u)
+        {
+            m_renderPassKey->stageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        }
     }
 }

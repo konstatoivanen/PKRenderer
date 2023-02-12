@@ -255,12 +255,11 @@ namespace PK::Rendering
         // Post Effects
         {
             cmd->BeginDebugScope("PostEffects", PK_COLOR_YELLOW);
-            auto lastColorAccess = MemoryAccessFlags::FragmentAttachmentColor;
             m_passFilmGrain.Render(cmd);
-            m_temporalAntialiasing.Render(cmd, m_renderTarget.get(), lastColorAccess);
-            m_depthOfField.Render(cmd, m_renderTarget.get(), lastColorAccess);
-            m_bloom.Render(cmd, m_renderTarget.get(), lastColorAccess);
-            m_histogram.Render(cmd, m_bloom.GetTexture(), MemoryAccessFlags::ComputeRead);
+            m_temporalAntialiasing.Render(cmd, m_renderTarget.get());
+            m_depthOfField.Render(cmd, m_renderTarget.get());
+            m_bloom.Render(cmd, m_renderTarget.get());
+            m_histogram.Render(cmd, m_bloom.GetTexture());
             m_passPostEffectsComposite.Render(cmd, m_renderTarget.get());
             cmd->EndDebugScope();
         }

@@ -28,7 +28,7 @@ namespace PK::Rendering::Passes
         m_renderTarget = Texture::Create(descriptor, "TAA.HistoryTexture");
     }
     
-    void PassTemporalAntialiasing::Render(CommandBuffer* cmd, RenderTexture* source, MemoryAccessFlags& lastAccess)
+    void PassTemporalAntialiasing::Render(CommandBuffer* cmd, RenderTexture* source)
     {
         cmd->BeginDebugScope("TemporalAntialiasing", PK_COLOR_MAGENTA);
 
@@ -50,8 +50,6 @@ namespace PK::Rendering::Passes
         cmd->SetImage(hash->_HistoryWriteTex, m_renderTarget.get(), { 0, historyWrite, 1u, 1u });
         cmd->Dispatch(m_computeTAA, Functions::GetComputeGroupCount(resolution, { 16, 16, 1u }));
         cmd->Blit(m_renderTarget.get(), source->GetColor(0), { 0, 0, 1u, 1u }, { 0, 0, 1u, 1u }, FilterMode::Bilinear);
-
-        lastAccess = MemoryAccessFlags::StageTransfer | MemoryAccessFlags::WriteTransfer;
 
         cmd->EndDebugScope();
 

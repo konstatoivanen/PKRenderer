@@ -37,7 +37,7 @@ namespace PK::Rendering::Passes
         m_passDiskblur = m_shaderBlur->GetVariantIndex(StringHashID::StringToID("PASS_DISKBLUR"));
     }
 
-    void PassDepthOfField::Render(Objects::CommandBuffer* cmd, RenderTexture* destination, MemoryAccessFlags& lastAccess)
+    void PassDepthOfField::Render(Objects::CommandBuffer* cmd, RenderTexture* destination)
     {
         cmd->BeginDebugScope("DepthOfField", Math::PK_COLOR_MAGENTA);
 
@@ -79,8 +79,6 @@ namespace PK::Rendering::Passes
         cmd->SetScissor(source->GetRect());
         cmd->Blit(m_shaderComposite, 0);
 
-        lastAccess = MemoryAccessFlags::FragmentAttachmentColor;
-    
         cmd->EndDebugScope();
     }
 

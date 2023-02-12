@@ -492,10 +492,13 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         auto flags = renderState->ValidatePipeline(GetOnCompleteGate());
 
-        auto wasInRenderPass = isInActiveRenderPass;
-        auto barrierDeployed = ResolveBarriers();
+        // Conservative barrier deployment. lets not break an active renderpass. Assume coherent read/writes.
+        if (!isInActiveRenderPass || (flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
+        {
+            ResolveBarriers();
+        }
 
-        if ((flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0 || (wasInRenderPass && barrierDeployed))
+        if ((flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
         {
             EndRenderPass();
             auto info = renderState->GetRenderPassInfo();

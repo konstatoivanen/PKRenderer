@@ -66,6 +66,14 @@ namespace PK::Rendering::VulkanRHI::Objects
         public:
             VulkanRenderState(const VulkanServiceContext& services) : m_services(services) {}
 
+            constexpr const PK::Utilities::PropertyBlock& GetResourceState() const { return m_resourceState; }
+            constexpr const Structs::ConstantBufferLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetConstantLayout(); }
+            constexpr VkPipelineLayout GetPipelineLayout() const { return m_pipelineKey.shader->GetPipelineLayout()->layout; }
+            constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
+            constexpr bool HasPipeline() const { return m_pipeline != nullptr; }
+            constexpr bool HasDynamicTargets() const { return m_renderPassKey->dynamicTargets; }
+            inline VkPipelineBindPoint GetPipelineBindPoint() const { return EnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetType()); }
+
             void Reset();
             void SetRenderTarget(const VulkanBindHandle* const* renderTargets, const VulkanBindHandle* const* resolves, uint32_t count);
             void ClearColor(const Math::color& color, uint32_t index);
@@ -104,21 +112,17 @@ namespace PK::Rendering::VulkanRHI::Objects
             const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
             inline bool ResolveBarriers(VulkanBarrierInfo* outBarrierInfo) { return m_services.barrierHandler->Resolve(outBarrierInfo); }
 
+            PKRenderStateDirtyFlags ValidatePipeline(const Structs::ExecutionGate& gate);
+
+
+        private:
             void ValidateRenderTarget();
             void ValidateVertexBuffers();
             void ValidateDescriptorSets(const Structs::ExecutionGate& gate);
-            void ValidateResourceStates();
-            PKRenderStateDirtyFlags ValidatePipeline(const Structs::ExecutionGate& gate);
 
-            constexpr const PK::Utilities::PropertyBlock& GetResourceState() const { return m_resourceState; }
-            constexpr const Structs::ConstantBufferLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetConstantLayout(); }
-            constexpr VkPipelineLayout GetPipelineLayout() const { return m_pipelineKey.shader->GetPipelineLayout()->layout; }
-            constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
-            constexpr bool HasPipeline() const { return m_pipeline != nullptr; }
-            constexpr bool HasDynamicTargets() const { return m_renderPassKey->dynamicTargets; }
-            inline VkPipelineBindPoint GetPipelineBindPoint() const { return EnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetType()); }
+            void RecordResourceAccess();
+            void RecordRenderTargetAccess();
 
-        private:
             PK::Utilities::PropertyBlock m_resourceState = PK::Utilities::PropertyBlock(16384);
             VulkanServiceContext m_services;
         

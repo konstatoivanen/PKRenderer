@@ -105,7 +105,7 @@ namespace PK::Utilities
             }
 
 
-            bool ContainsKey(const TKey& key)
+            bool ContainsKey(const TKey& key) const
             {
                 return GetIndex(key) != -1;
             }
@@ -115,7 +115,6 @@ namespace PK::Utilities
                 auto index = GetIndex(key);
                 return index != -1 ? m_values[index] : nullptr;
             }
-
 
             const TValue GetValueAt(uint32_t index) const 
             {

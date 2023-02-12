@@ -2,6 +2,7 @@
 #include "Core/Services/Log.h"
 #include "VulkanUtilities.h"
 #include <gfx.h>
+#include <vulkan/vk_enum_string_helper.h>
 
 PFN_vkSetDebugUtilsObjectNameEXT pk_vkSetDebugUtilsObjectNameEXT = nullptr;
 PFN_vkSetDebugUtilsObjectTagEXT pk_vkSetDebugUtilsObjectTagEXT = nullptr;
@@ -177,8 +178,13 @@ namespace PK::Rendering::VulkanRHI::Utilities
 
         auto queueFamilies = PK::Rendering::VulkanRHI::Utilities::VulkanGetPhysicalDeviceQueueFamilyProperties(device);
 
+        PK_LOG_VERBOSE("Found %i queues:", queueFamilies.size());
+
         for (auto i = 0u; i < queueFamilies.size(); ++i)
         {
+            auto flagsString = string_VkQueueFlags(queueFamilies.at(i).queueFlags);
+            PK_LOG_VERBOSE("    NumQueues: %i, Flags: %s", queueFamilies.at(i).queueCount, flagsString.c_str());
+
             if ((queueFamilies.at(i).queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) == (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))
             {
                 indices[QueueType::Graphics] = i;

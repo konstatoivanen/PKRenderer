@@ -29,7 +29,7 @@ namespace PK::Utilities
                 alloc_traits::deallocate(m_alloc, m_data, capacity);
             }
 
-            T* operator [](uint32_t index) { return m_data + index; }
+            T*& operator [](uint32_t index) { return m_data + index; }
 
             template<typename ... Args>
             T* New(Args&& ... args)

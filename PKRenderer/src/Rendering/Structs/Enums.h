@@ -45,6 +45,15 @@ namespace PK::Rendering::Structs
         DX12
     };
 
+    enum class QueueType
+    {
+        Transfer,
+        Graphics,
+        ComputeAsync,
+        Present,
+        MaxCount
+    };
+
     enum class SamplerType : uint8_t
     {
         Sampler2D,
@@ -130,63 +139,6 @@ namespace PK::Rendering::Structs
     {
         PerVertex,
         PerInstance
-    };
-
-    enum class MemoryAccessFlags
-    {
-        None                 = 0,
-        StageIndirect        = 1 << 0,
-        StageVertexInput     = 1 << 1,
-        StageVertex          = 1 << 2,
-        StageGeometry        = 1 << 3,
-        StageFragment        = 1 << 4,
-        StageDepthStencil    = 1 << 5, // Early depth & stencil test
-        StageDepthStencilOut = 1 << 6, // depth & stencil write
-        StageColorOut        = 1 << 7, // Color write
-        StageTessControl     = 1 << 8,
-        StageTessEvaluation  = 1 << 9,
-        StageCompute         = 1 << 10,
-        StageTransfer        = 1 << 11,
-        StageRayTracing      = 1 << 12,
-        StageBottom          = 1 << 13,
-        
-        ReadShader    = 1 << 14, // Read textures, images, buffers
-        ReadConstant  = 1 << 15, // Read constant buffers
-        ReadVertex    = 1 << 16, // Read vertex buffer
-        ReadIndex     = 1 << 17, // Read index buffer
-        ReadIndirect  = 1 << 18, // Read indirect arguments
-        ReadRTColor   = 1 << 19,
-        ReadRTDepth   = 1 << 20,
-        ReadRTInput   = 1 << 21,
-        ReadTransfer  = 1 << 22,
-        ReadHost      = 1 << 23,
-        ReadMemory    = 1 << 24,
-
-        WriteShader   = 1 << 25, // Write textures, images, buffers
-        WriteRTColor  = 1 << 26,
-        WriteRTDepth  = 1 << 27,
-        WriteTransfer = 1 << 28,
-        WriteHost     = 1 << 29,
-        WriteMemory   = 1 << 30,
-
-        StageAllGrahpics = 0x1FF,
-        StageAllStages = 0x1FFF,
-
-        ReadWriteShader = ReadShader | WriteShader, // Read/Write, images & buffers
-        ReadWriteRTColor = ReadRTColor | WriteRTColor,
-        ReadWriteRTDepth = ReadRTDepth | WriteRTDepth,
-
-        // short hands
-        FragmentAttachmentColor = ReadWriteRTColor | StageColorOut,         // Write color in fragment out
-        FragmentAttachmentDepth = ReadWriteRTDepth | StageDepthStencilOut,  // Write depth in fragment out
-        FragmentTexture = ReadShader | StageFragment,                       // Read texture in fragment
-        FragmentBuffer = ReadShader | StageFragment,                        // Read buffer in fragment
-        FragmentReadWrite = ReadWriteShader | StageFragment,                // Write memory in fragment
-        ComputeReadWrite = ReadWriteShader | StageCompute,                  // Read/Write texture, image, & buffer  in compute
-        ComputeRead = ReadShader | StageCompute,                            // Read texture, image, & buffer in compute
-        ComputeWrite = WriteShader | StageCompute,                          // Write texture, image, & buffer  in compute
-        RayTraceWrite = WriteShader | StageRayTracing,                      // Write texture, image, & buffer  in raytrace
-        RayTraceRead = WriteShader | StageRayTracing,                       // Write texture, image, & buffer  in raytrace
     };
 
     enum class BufferUsage : uint32_t
@@ -439,7 +391,6 @@ namespace PK::Rendering::Structs
     static constexpr bool operator != (const Type& a, const int& b) { return (uint32_t)a != b; } \
 
     PK_DECLARE_ENUM_OPERATORS(ColorMask)
-    PK_DECLARE_ENUM_OPERATORS(MemoryAccessFlags)
     PK_DECLARE_ENUM_OPERATORS(BufferUsage)
     PK_DECLARE_ENUM_OPERATORS(TextureUsage)
     PK_DECLARE_ENUM_OPERATORS(RenderableFlags)

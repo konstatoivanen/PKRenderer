@@ -10,7 +10,7 @@ namespace PK::Rendering::Passes
     {
         public:
             PassBloom(Core::Services::AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight);
-            void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* source, Structs::MemoryAccessFlags& lastAccess);
+            void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* source);
 
             Objects::Texture* GetTexture() { return m_bloomTexture.get(); }
 
