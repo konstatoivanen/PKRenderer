@@ -10,30 +10,6 @@
 
 namespace PK::Rendering::VulkanRHI
 {
-    constexpr const static uint32_t PK_QUEUE_FAMILY_COUNT = 3;
-    constexpr const static uint32_t PK_INVALID_QUEUE_FAMILY = 0xFFFFFFFF;
-
-    enum class QueueType : uint32_t
-    {
-        Graphics,
-        Compute,
-        Present
-    };
-    
-    typedef struct QueueFamilies 
-    {
-        uint32_t indices[3] = 
-        { 
-            PK_INVALID_QUEUE_FAMILY, 
-            PK_INVALID_QUEUE_FAMILY, 
-            PK_INVALID_QUEUE_FAMILY 
-        }; 
-
-        constexpr uint32_t operator[](const QueueType i) const { return indices[(uint32_t)i]; }
-        uint32_t& operator[](const QueueType i) { return indices[(uint32_t)i]; }
-
-    } QueueFamilies;
-
     struct VulkanBarrierInfo
     {
         VkPipelineStageFlags srcStageMask;

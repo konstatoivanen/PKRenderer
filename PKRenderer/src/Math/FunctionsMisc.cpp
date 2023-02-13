@@ -242,4 +242,17 @@ namespace PK::Math::Functions
             (uint)glm::ceil(threads.z / float(clusterSize.z))
         };
     }
+
+    uint32_t CountBits(uint32_t value)
+    {
+        uint32_t count = 0;
+        
+        while (value > 0)
+        {
+            count += value & 1;
+            value >>= 1;
+        }
+
+        return count;
+    }
 }

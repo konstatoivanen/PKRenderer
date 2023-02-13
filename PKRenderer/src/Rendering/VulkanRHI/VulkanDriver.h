@@ -12,6 +12,7 @@
 #include "Rendering/VulkanRHI/Services/VulkanFrameBufferCache.h"
 #include "Rendering/VulkanRHI/Services/VulkanLayoutCache.h"
 #include "Rendering/VulkanRHI/Services/VulkanBarrierHandler.h"
+#include "Rendering/VulkanRHI/Objects/VulkanQueue.h"
 
 namespace PK::Rendering::VulkanRHI
 {
@@ -71,11 +72,11 @@ namespace PK::Rendering::VulkanRHI
         VkDebugUtilsMessengerEXT debugMessenger;
         VkPhysicalDevice physicalDevice;
         VkDevice device;
-        QueueFamilies queueFamilies;
         VmaAllocator allocator;
         VulkanContextProperties properties;
         VulkanPhysicalDeviceProperties physicalDeviceProperties;
 
+        PK::Utilities::Scope<Objects::VulkanQueueSet> queues;
         PK::Utilities::Scope<Services::VulkanFrameBufferCache> frameBufferCache;
         PK::Utilities::Scope<Services::VulkanCommandBufferPool> commandBufferPool;
         PK::Utilities::Scope<Services::VulkanStagingBufferCache> stagingBufferCache;

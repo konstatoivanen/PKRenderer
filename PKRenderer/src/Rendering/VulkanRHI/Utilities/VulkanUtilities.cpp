@@ -172,37 +172,6 @@ namespace PK::Rendering::VulkanRHI::Utilities
         return returnProperties;
     }
 
-    QueueFamilies VulkanGetPhysicalDeviceQueueFamilyIndices(VkPhysicalDevice device, VkSurfaceKHR surface)
-    {
-        QueueFamilies indices{};
-
-        auto queueFamilies = PK::Rendering::VulkanRHI::Utilities::VulkanGetPhysicalDeviceQueueFamilyProperties(device);
-
-        PK_LOG_VERBOSE("Found %i queues:", queueFamilies.size());
-
-        for (auto i = 0u; i < queueFamilies.size(); ++i)
-        {
-            auto flagsString = string_VkQueueFlags(queueFamilies.at(i).queueFlags);
-            PK_LOG_VERBOSE("    NumQueues: %i, Flags: %s", queueFamilies.at(i).queueCount, flagsString.c_str());
-
-            if ((queueFamilies.at(i).queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) == (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))
-            {
-                indices[QueueType::Graphics] = i;
-                indices[QueueType::Compute] = i;
-            }
-
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-
-            if (presentSupport)
-            {
-                indices[QueueType::Present] = i;
-            }
-        }
-
-        return indices;
-    }
-
     void VulkanDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
     {
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
@@ -282,6 +251,13 @@ namespace PK::Rendering::VulkanRHI::Utilities
         return requiredLayers.empty();
     }
 
+    bool VulkanIsPresentSupported(VkPhysicalDevice physicalDevice, uint32_t familyIndex, VkSurfaceKHR surface)
+    {
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, familyIndex, surface, &presentSupport);
+        return presentSupport;
+    }
+
     template<typename TVal>
     static bool VulkanCheckRequirements(const TVal& values, const TVal& requirements, size_t offset, size_t count)
     {
@@ -310,11 +286,10 @@ namespace PK::Rendering::VulkanRHI::Utilities
         return VulkanCheckRequirements(args...);
     }
 
-    void VulkanSelectPhysicalDevice(VkInstance instance,  VkSurfaceKHR surface, const VulkanPhysicalDeviceRequirements& requirements, VkPhysicalDevice* selectedDevice, QueueFamilies* queueFamilies)
+    void VulkanSelectPhysicalDevice(VkInstance instance,  VkSurfaceKHR surface, const VulkanPhysicalDeviceRequirements& requirements, VkPhysicalDevice* selectedDevice)
     {
         auto devices = VulkanGetPhysicalDevices(instance);
         *selectedDevice = VK_NULL_HANDLE;
-        *queueFamilies = QueueFamilies();
 
         for (auto& device : devices)
         {
@@ -332,7 +307,7 @@ namespace PK::Rendering::VulkanRHI::Utilities
                 continue;
             }
 
-            *queueFamilies = VulkanGetPhysicalDeviceQueueFamilyIndices(device, surface);
+            auto queueFamilies = VulkanGetPhysicalDeviceQueueFamilyProperties(device);
             auto extensionSupported = VulkanValidatePhysicalDeviceExtensions(device, requirements.deviceExtensions);
             auto swapChainSupported = false;
 
@@ -347,21 +322,21 @@ namespace PK::Rendering::VulkanRHI::Utilities
                 swapChainSupported = presentModeCount > 0 && formatCount > 0;
             }
 
-            auto hasQueueFamilies = true;
+            auto hasPresent = false;
+            auto queueMask = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
 
-            for (auto i = 0; i < PK_QUEUE_FAMILY_COUNT; ++i)
+            for (auto i = 0u; i < queueFamilies.size(); ++i)
             {
-                if (queueFamilies->indices[i] == PK_INVALID_QUEUE_FAMILY)
-                {
-                    hasQueueFamilies = false;
-                    break;
-                }
+                auto& family = queueFamilies.at(i);
+                queueMask &= ~family.queueFlags;
+                hasPresent |= VulkanIsPresentSupported(device, i, surface);
             }
 
             if (properties.properties.deviceType != requirements.deviceType ||
                 !extensionSupported ||
                 !swapChainSupported ||
-                !hasQueueFamilies)
+                !hasPresent ||
+                queueMask != 0u)
             {
                 continue;
             }

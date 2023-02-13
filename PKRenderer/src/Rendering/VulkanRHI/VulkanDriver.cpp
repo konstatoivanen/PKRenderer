@@ -109,31 +109,14 @@ namespace PK::Rendering::VulkanRHI
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
 
-        Utilities::VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice, &queueFamilies);
+        Utilities::VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice);
         physicalDeviceProperties = Utilities::VulkanGetPhysicalDeviceProperties(physicalDevice);
 
-        float queuePriority = 1.0f;
-
-        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-        std::set<uint32_t> uniqueQueueFamilies = 
-        { 
-            queueFamilies[QueueType::Graphics], 
-            queueFamilies[QueueType::Compute], 
-            queueFamilies[QueueType::Present] 
-        };
-
-        for (auto queueFamily : uniqueQueueFamilies)
-        {
-            VkDeviceQueueCreateInfo queueCreateInfo{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
-            queueCreateInfo.queueFamilyIndex = queueFamily;
-            queueCreateInfo.queueCount = 1;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
-            queueCreateInfos.push_back(queueCreateInfo);
-        }
+        VulkanQueueSet::Initializer queueInitializer(physicalDevice, temporarySurface);
 
         VkDeviceCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
-        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-        createInfo.pQueueCreateInfos = queueCreateInfos.data();
+        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueInitializer.createInfos.size());
+        createInfo.pQueueCreateInfos = queueInitializer.createInfos.data();
         createInfo.pEnabledFeatures = nullptr;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(properties.contextualDeviceExtensions->size());
         createInfo.ppEnabledExtensionNames = properties.contextualDeviceExtensions->data();
@@ -146,7 +129,7 @@ namespace PK::Rendering::VulkanRHI
             createInfo.ppEnabledLayerNames = properties.validationLayers->data();
         }
 
-        VK_ASSERT_RESULT_CTX(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Failed to create logical device!");
+        VK_ASSERT_RESULT_CTX(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Failed to create logical device!");    
 
         VmaAllocatorCreateInfo allocatorInfo{};
         allocatorInfo.vulkanApiVersion = physicalDeviceProperties.properties.apiVersion;
@@ -159,6 +142,7 @@ namespace PK::Rendering::VulkanRHI
         vkDestroySurfaceKHR(instance, temporarySurface, nullptr);
         glfwDestroyWindow(temporaryWindow);
 
+        queues = CreateScope<VulkanQueueSet>(device, queueInitializer);
         frameBufferCache = CreateScope<VulkanFrameBufferCache>(device, properties.garbagePruneDelay);
         stagingBufferCache = CreateScope<VulkanStagingBufferCache>(device, allocator, properties.garbagePruneDelay);
         pipelineCache = CreateScope<VulkanPipelineCache>(device, properties.workingDirectory, properties.garbagePruneDelay);
@@ -185,7 +169,7 @@ namespace PK::Rendering::VulkanRHI
                                                                      barrierHandler.get(),
                                                                      disposer.get()
                                                                  }, 
-                                                                 queueFamilies[QueueType::Graphics]);
+                                                                 queues->GetQueue(QueueType::Graphics));
     }
 
     VulkanDriver::~VulkanDriver()
@@ -201,6 +185,7 @@ namespace PK::Rendering::VulkanRHI
         frameBufferCache = nullptr;
         layoutCache = nullptr;
         barrierHandler = nullptr;
+        queues = nullptr;
 
         vmaDestroyAllocator(allocator);
         vkDestroyDevice(device, nullptr);

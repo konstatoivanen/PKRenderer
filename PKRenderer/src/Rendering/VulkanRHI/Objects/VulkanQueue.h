@@ -31,6 +31,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             constexpr VkQueue GetNative() const { return m_queue; }
             constexpr uint32_t GetFamily() const { return m_family; }
             constexpr VkPipelineStageFlags GetCapabilityFlags() const { return m_capabilityFlags; }
+            constexpr const VkQueueFamilyProperties& GetFamilyProperties() const { return m_familyProperties; }
 
         private:
             struct SignalGroup
@@ -56,9 +57,22 @@ namespace PK::Rendering::VulkanRHI::Objects
     class VulkanQueueSet : public PK::Utilities::NoCopy
     {
         public:
-            VulkanQueueSet(const VkPhysicalDevice physicalDevice, const VkDevice device, VkSurfaceKHR surface);
+            struct Initializer
+            {
+                float priorities[(uint32_t)Structs::QueueType::MaxCount] = { 1.0f, 1.0f, 1.0f, 1.0f };
+                uint32_t queueIndices[(uint32_t)Structs::QueueType::MaxCount]{};
+                uint32_t queueFamilies[(uint32_t)Structs::QueueType::MaxCount]{};
+                uint32_t typeIndices[(uint32_t)Structs::QueueType::MaxCount]{};
+                uint32_t queueCount = 0u;
+                std::vector<VkDeviceQueueCreateInfo> createInfos;
+                std::vector<VkQueueFamilyProperties> familyProperties;
+                Initializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
+            };
+
+            VulkanQueueSet(VkDevice device, const Initializer& initializer);
             ~VulkanQueueSet();
             VulkanQueue* GetQueue(Structs::QueueType type) const { return m_queues[m_queueIndices[(uint32_t)type]]; }
+        
         private:
             VulkanQueue* m_queues[(uint32_t)Structs::QueueType::MaxCount] = {};
             uint32_t m_queueIndices[(uint32_t)Structs::QueueType::MaxCount] = {};

@@ -8,13 +8,15 @@ namespace PK::Rendering::VulkanRHI::Services
     using namespace Objects;
     using namespace PK::Utilities;
 
-    VulkanCommandBufferPool::VulkanCommandBufferPool(const VkDevice device, const VulkanServiceContext& systems, uint32_t queueFamilyIndex) : m_device(device), m_primaryRenderState(systems)
+    VulkanCommandBufferPool::VulkanCommandBufferPool(const VkDevice device, const VulkanServiceContext& systems, Objects::VulkanQueue* queue) :
+        m_device(device), 
+        m_primaryRenderState(systems), 
+        m_queue(queue)
     {
         VkCommandPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
         createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-        createInfo.queueFamilyIndex = queueFamilyIndex;
+        createInfo.queueFamilyIndex = queue->GetFamily();
         VK_ASSERT_RESULT(vkCreateCommandPool(m_device, &createInfo, nullptr, &m_pool));
-        vkGetDeviceQueue(m_device, queueFamilyIndex, 0, &m_queue);
 
         for (auto& semaphore : m_renderingFinishedSignals) 
         {
@@ -151,7 +153,7 @@ namespace PK::Rendering::VulkanRHI::Services
             signals[submitInfo.waitSemaphoreCount++] = waitSignal->vulkanSemaphore;
         }
 
-        VK_ASSERT_RESULT_CTX(vkQueueSubmit(m_queue, 1, &submitInfo, m_current->fence->vulkanFence), "Failed to submit command buffer!");
+        VK_ASSERT_RESULT_CTX(vkQueueSubmit(m_queue->GetNative(), 1, &submitInfo, m_current->fence->vulkanFence), "Failed to submit command buffer!");
 
         m_currentDependencySignal = nullptr;
         m_renderingFinishedSignal = renderingFinished;

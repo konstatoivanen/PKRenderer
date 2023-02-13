@@ -34,4 +34,5 @@ namespace PK::Math::Functions
     void ReinterpretIndex16ToIndex32(uint32_t* dst, uint16_t* src, uint32_t count);
     uint32_t GetAlignedSize(uint32_t value, uint32_t alignment);
     uint3 GetComputeGroupCount(const uint3& threads, const uint3& clusterSize);
+    uint32_t CountBits(uint32_t value);
 }

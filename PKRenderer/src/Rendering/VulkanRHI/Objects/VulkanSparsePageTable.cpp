@@ -32,7 +32,6 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         m_pageCreateInfo.usage = memoryUsage;
         vkGetBufferMemoryRequirements(m_driver->device, buffer, &m_memoryRequirements);
-        vkGetDeviceQueue(m_driver->device, m_driver->queueFamilies[QueueType::Graphics], 0, &m_queue);
     }
 
     VulkanSparsePageTable::~VulkanSparsePageTable()
@@ -79,7 +78,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         sparseBind.pBufferBinds = &bufferBind;
         sparseBind.signalSemaphoreCount = 1;
         sparseBind.pSignalSemaphores = &signal;
-        vkQueueBindSparse(m_queue, 1, &sparseBind, VK_NULL_HANDLE);
+        vkQueueBindSparse(m_driver->queues->GetQueue(QueueType::Graphics)->GetNative(), 1, &sparseBind, VK_NULL_HANDLE);
     }
 
     void VulkanSparsePageTable::FreeRange(const IndexRange& range)

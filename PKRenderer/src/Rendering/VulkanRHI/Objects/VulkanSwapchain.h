@@ -3,6 +3,7 @@
 #include "Utilities/Ref.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
+#include "Rendering/VulkanRHI/Objects/VulkanQueue.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -22,8 +23,8 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanSwapchain(const VkPhysicalDevice physicalDevice, 
                             const VkDevice device, 
                             const VkSurfaceKHR surface,
-                            uint32_t queueIndexGraphics, 
-                            uint32_t queueIndexPresent,
+                            const VulkanQueue* queueGraphics,
+                            const VulkanQueue* queuePresent,
                             const SwapchainCreateInfo& createInfo);
 
             ~VulkanSwapchain() { Release(); }
@@ -53,11 +54,10 @@ namespace PK::Rendering::VulkanRHI::Objects
             const VkPhysicalDevice m_physicalDevice;
             const VkDevice m_device;
             const VkSurfaceKHR m_surface;
-            const uint32_t m_queueIndexGraphics;
-            const uint32_t m_queueIndexPresent;
+            const VulkanQueue* m_queueGraphics;
+            const VulkanQueue* m_queuePresent;
 
             SwapchainCreateInfo m_cachedCreateInfo;
-            VkQueue m_presentQueue = VK_NULL_HANDLE;
             VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
             std::vector<VkImage> m_images;
             std::vector<VulkanImageView*> m_imageViews;

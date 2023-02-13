@@ -1,10 +1,102 @@
 #include "PrecompiledHeader.h"
 #include "VulkanQueue.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
+#include "Core/Services/Log.h"
 #include <vulkan/vk_enum_string_helper.h>
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
+    using namespace PK::Rendering::Structs;
+
+    struct QueueFindContext
+    {
+        VkPhysicalDevice physicalDevice;
+        VkSurfaceKHR surface;
+        std::vector<VkQueueFamilyProperties>* families;
+        std::vector<VkDeviceQueueCreateInfo>* createInfos;
+        uint32_t* queueFamilies;
+        uint32_t* queueIndices;
+        uint32_t queueCount = 0u;
+    };
+
+    static uint32_t GetQueueIndex(QueueFindContext& ctx,
+                                    VkQueueFlags requiredFlags, 
+                                    VkQueueFlags optionalFlags, 
+                                    bool requirePresent,
+                                    bool optionalPresent,
+                                    bool preferSeparate)
+    {
+        auto selectedFamily = 0xFFFFFFFF;
+        auto existingIndex = 0xFFFFFFFF;
+        auto heuristic = 0u;
+
+        for (auto i = 0u; i < ctx.queueCount && !preferSeparate; ++i)
+        {
+            const auto familyIndex = ctx.queueFamilies[i];
+            const auto& family = ctx.families->at(familyIndex);
+            auto presentSupport = Utilities::VulkanIsPresentSupported(ctx.physicalDevice, familyIndex, ctx.surface);
+
+            if ((family.queueFlags & requiredFlags) != requiredFlags || 
+                (*ctx.createInfos)[familyIndex].queueCount >= family.queueCount ||
+                (!presentSupport && requirePresent))
+            {
+                continue;
+            }
+
+            auto value = Math::Functions::CountBits(family.queueFlags & optionalFlags) + (presentSupport && optionalPresent ? 3 : 2);
+
+            if (value > heuristic)
+            {
+                heuristic = value;
+                selectedFamily = familyIndex;
+                existingIndex = i;
+            }
+        }
+
+        for (auto i = 0u; i < ctx.families->size(); ++i)
+        {
+            auto& family = ctx.families->at(i);
+            auto presentSupport = Utilities::VulkanIsPresentSupported(ctx.physicalDevice, i, ctx.surface);
+
+            if ((family.queueFlags & requiredFlags) != requiredFlags ||
+                (*ctx.createInfos)[i].queueCount >= family.queueCount ||
+                (!presentSupport && requirePresent))
+            {
+                continue;
+            }
+
+            auto value = Math::Functions::CountBits(family.queueFlags & optionalFlags) + (presentSupport && optionalPresent ? 2 : 1);
+
+            if (preferSeparate && (*ctx.createInfos)[i].queueCount == 0)
+            {
+                value++;
+            }
+
+            if (value > heuristic)
+            {
+                heuristic = value;
+                selectedFamily = i;
+                existingIndex = 0xFFFFFFFF;
+            }
+        }
+
+        if (selectedFamily == 0xFFFFFFFF)
+        {
+            PK_THROW_ERROR("Failed to find queue matching parameters!");
+        }
+
+        if (existingIndex != 0xFFFFFFFF)
+        {
+            return existingIndex;
+        }
+
+        PK_THROW_ASSERT(ctx.queueCount < (uint32_t)Structs::QueueType::MaxCount, "Maximum queue count reached!");
+
+        ctx.queueIndices[ctx.queueCount] = (*ctx.createInfos)[selectedFamily].queueCount++;
+        ctx.queueFamilies[ctx.queueCount] = selectedFamily;
+        return ctx.queueCount++;
+    }
+
     VulkanQueue::VulkanQueue(const VkDevice device, const VkQueueFamilyProperties& properties, uint32_t queueFamily, uint32_t queueIndex) :
         m_device(device),
         m_family(queueFamily),
@@ -144,51 +236,75 @@ namespace PK::Rendering::VulkanRHI::Objects
             group.flags[group.count++] = flags;
         }
     }
-    
-    VulkanQueueSet::VulkanQueueSet(VkPhysicalDevice physicalDevice, const VkDevice device, VkSurfaceKHR surface)
+
+    VulkanQueueSet::VulkanQueueSet(VkDevice device, const Initializer& initializer)
     {
-        auto familyProperties = Utilities::VulkanGetPhysicalDeviceQueueFamilyProperties(physicalDevice);
-        auto graphicsMask = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
-        auto transferMask = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
-
-        uint32_t indices[(uint32_t)Structs::QueueType::MaxCount]{};
-        memset(indices, 0xFFFFFFFF, sizeof(indices));
-
-        PK_LOG_VERBOSE("Found %i queues:", familyProperties.size());
-
-        for (auto i = 0u; i < familyProperties.size(); ++i)
+        for (auto i = 0u; i < initializer.queueCount; ++i)
         {
-            auto& props = familyProperties.at(i);
-            
-            auto flagsString = string_VkQueueFlags(props.queueFlags);
-            PK_LOG_VERBOSE("    NumQueues: %i, Flags: %s", props.queueCount, flagsString.c_str());
-                
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
-        
-            if ((props.queueFlags & transferMask) == transferMask)
-            {
-                indices[(uint32_t)Structs::QueueType::Transfer] = i;
-            }
-            
-            if (props.queueFlags & graphicsMask)
-            {
-                indices[(uint32_t)Structs::QueueType::Graphics] = i;
-            }
-
-            if ((props.queueFlags & VK_QUEUE_COMPUTE_BIT) && (props.queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0)
-            {
-                indices[(uint32_t)Structs::QueueType::ComputeAsync] = i;
-            }
-
-            if (presentSupport)
-            {
-                indices[(uint32_t)Structs::QueueType::Present] = i;
-            }
+            auto& familyProps = initializer.familyProperties.at(initializer.queueFamilies[i]);
+            m_queues[i] = new VulkanQueue(device, familyProps, initializer.queueFamilies[i], initializer.queueIndices[i]);
         }
+
+        memcpy(m_queueIndices, initializer.typeIndices, sizeof(m_queueIndices));
     }
 
     VulkanQueueSet::~VulkanQueueSet()
     {
+        for (auto i = 0u; i < (uint32_t)Structs::QueueType::MaxCount; ++i)
+        {
+            if (m_queues[i])
+            {
+                delete m_queues[i];
+            }
+        }
+    }
+
+    VulkanQueueSet::Initializer::Initializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
+    {
+        createInfos.clear();
+
+        familyProperties = Utilities::VulkanGetPhysicalDeviceQueueFamilyProperties(physicalDevice);
+
+        QueueFindContext context;
+        context.families = &familyProperties;
+        context.physicalDevice = physicalDevice;
+        context.surface = surface;
+        context.queueFamilies = queueFamilies;
+        context.queueIndices = queueIndices;
+        context.createInfos = &createInfos;
+
+        PK_LOG_VERBOSE("Found %i queues:", context.families->size());
+
+        for (auto i = 0u; i < context.families->size(); ++i)
+        {
+            VkDeviceQueueCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
+            createInfo.flags = 0u;
+            createInfo.queueFamilyIndex = i;
+            createInfo.queueCount = 0u;
+            createInfo.pQueuePriorities = priorities;
+            createInfos.push_back(createInfo);
+
+            auto& props = context.families->at(i);
+            auto flagsString = string_VkQueueFlags(props.queueFlags);
+            PK_LOG_VERBOSE("    NumQueues: %i, Flags: %s", props.queueCount, flagsString.c_str());
+        }
+
+        auto maskTransfer = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
+        auto maskGraphics = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
+        auto maskCompute = VK_QUEUE_COMPUTE_BIT;
+
+        typeIndices[(uint32_t)QueueType::Graphics] = GetQueueIndex(context, maskGraphics, maskTransfer, false, true, true);
+        typeIndices[(uint32_t)QueueType::Present] = GetQueueIndex(context, maskGraphics, maskTransfer, true, false, false);
+        typeIndices[(uint32_t)QueueType::Transfer] = GetQueueIndex(context, maskTransfer, 0u, false, false, false);
+        typeIndices[(uint32_t)QueueType::ComputeAsync] = GetQueueIndex(context, maskCompute, maskTransfer, false, false, true);
+        queueCount = context.queueCount;
+
+        for (int32_t i = (int32_t)createInfos.size() - 1; i >= 0; --i)
+        {
+            if (createInfos.at(i).queueCount == 0)
+            {
+                createInfos.erase(createInfos.begin() + i);
+            }
+        }
     }
 }

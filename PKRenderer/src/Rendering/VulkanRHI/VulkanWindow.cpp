@@ -57,7 +57,7 @@ namespace PK::Rendering::VulkanRHI
         VK_ASSERT_RESULT_CTX(glfwCreateWindowSurface(m_driver->instance, m_window, nullptr, &m_surface), "Failed to create window surface!");
 
         VkBool32 presentSupported;
-        VK_ASSERT_RESULT_CTX(vkGetPhysicalDeviceSurfaceSupportKHR(m_driver->physicalDevice, m_driver->queueFamilies[QueueType::Present], m_surface, &presentSupported), "Surface support query failure!");
+        VK_ASSERT_RESULT_CTX(vkGetPhysicalDeviceSurfaceSupportKHR(m_driver->physicalDevice, m_driver->queues->GetQueue(QueueType::Present)->GetFamily(), m_surface, &presentSupported), "Surface support query failure!");
         PK_THROW_ASSERT(presentSupported, "Surface present not supported on selected physical device!");
 
         SwapchainCreateInfo swapchainCreateInfo{};
@@ -70,8 +70,8 @@ namespace PK::Rendering::VulkanRHI
         m_swapchain = CreateScope<VulkanSwapchain>(m_driver->physicalDevice,
                                                    m_driver->device,
                                                    m_surface,
-                                                   m_driver->queueFamilies[QueueType::Graphics],
-                                                   m_driver->queueFamilies[QueueType::Present],
+                                                   m_driver->queues->GetQueue(QueueType::Graphics),
+                                                   m_driver->queues->GetQueue(QueueType::Present),
                                                    swapchainCreateInfo);
 
         SetCursorVisible(properties.cursorVisible);

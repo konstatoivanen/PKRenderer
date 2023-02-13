@@ -27,17 +27,16 @@ namespace PK::Rendering::VulkanRHI::Objects
     VulkanSwapchain::VulkanSwapchain(const VkPhysicalDevice physicalDevice, 
                                      const VkDevice device, 
                                      const VkSurfaceKHR surface,
-                                     uint32_t queueIndexGraphics, 
-                                     uint32_t queueIndexPresent,
+                                     const VulkanQueue* queueGraphics, 
+                                     const VulkanQueue* queuePresent,
                                      const SwapchainCreateInfo& createInfo) :
                                         m_physicalDevice(physicalDevice),
                                         m_device(device),
                                         m_surface(surface),
-                                        m_queueIndexGraphics(queueIndexGraphics),
-                                        m_queueIndexPresent(queueIndexPresent)
+                                        m_queueGraphics(queueGraphics),
+                                        m_queuePresent(queuePresent)
 
     {
-        vkGetDeviceQueue(device, queueIndexPresent, 0, &m_presentQueue);
         Rebuild(createInfo);
     }
 
@@ -62,7 +61,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         uint32_t maxImageCount = capabilities.maxImageCount > 0 ? capabilities.maxImageCount : UINT32_MAX;
         uint32_t minImageCount = capabilities.minImageCount;
         uint32_t imageCount = glm::clamp(createInfo.desiredImageCount, minImageCount, maxImageCount);
-        uint32_t queueFamilyIndices[] = { m_queueIndexGraphics, m_queueIndexPresent };
+        uint32_t queueFamilyIndices[] = { m_queueGraphics->GetFamily(), m_queuePresent->GetFamily() };
 
         VkSwapchainCreateInfoKHR swapchainCreateInfo{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
         swapchainCreateInfo.surface = m_surface;
@@ -201,7 +200,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         presentInfo.pSwapchains = &m_swapchain;
         presentInfo.pImageIndices = &m_imageIndex;
         presentInfo.pResults = nullptr; // Optional
-        auto result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
+        auto result = vkQueuePresentKHR(m_queuePresent->GetNative(), &presentInfo);
         PK_THROW_ASSERT(SwapchainErrorAssert(result, m_outofdate, m_suboptimal), "Failed to present swap chain image!");
 
         m_frameFences[m_frameIndex].fence = frameFence;
