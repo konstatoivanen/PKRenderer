@@ -23,8 +23,8 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanSwapchain(const VkPhysicalDevice physicalDevice, 
                             const VkDevice device, 
                             const VkSurfaceKHR surface,
-                            const VulkanQueue* queueGraphics,
-                            const VulkanQueue* queuePresent,
+                            VulkanQueue* queueGraphics,
+                            VulkanQueue* queuePresent,
                             const SwapchainCreateInfo& createInfo);
 
             ~VulkanSwapchain() { Release(); }
@@ -32,8 +32,8 @@ namespace PK::Rendering::VulkanRHI::Objects
             void Rebuild(const SwapchainCreateInfo& createInfo);
             void Release();
 
-            bool TryAcquireNextImage(VulkanSemaphore** imageAvailableSignal);
-            void Present(VulkanSemaphore* waitSignal, VkFence frameFence, const Structs::ExecutionGate& gate);
+            bool TryAcquireNextImage();
+            void Present();
             void OnWindowResize(int w, int h);
 
             const VulkanBindHandle* GetBindHandle() const { return &m_bindHandles[m_imageIndex]; }
@@ -54,14 +54,13 @@ namespace PK::Rendering::VulkanRHI::Objects
             const VkPhysicalDevice m_physicalDevice;
             const VkDevice m_device;
             const VkSurfaceKHR m_surface;
-            const VulkanQueue* m_queueGraphics;
-            const VulkanQueue* m_queuePresent;
+            VulkanQueue* m_queueGraphics;
+            VulkanQueue* m_queuePresent;
 
             SwapchainCreateInfo m_cachedCreateInfo;
             VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
             std::vector<VkImage> m_images;
             std::vector<VulkanImageView*> m_imageViews;
-            std::vector<VulkanSemaphore*> m_imageAvailableSignals;
             std::vector<FrameFence> m_frameFences;
             VulkanBindHandle* m_bindHandles;
             VkFormat m_format;

@@ -18,16 +18,6 @@ namespace PK::Rendering::VulkanRHI::Services
         createInfo.queueFamilyIndex = queue->GetFamily();
         VK_ASSERT_RESULT(vkCreateCommandPool(m_device, &createInfo, nullptr, &m_pool));
 
-        for (auto& semaphore : m_renderingFinishedSignals) 
-        {
-            semaphore = new VulkanSemaphore(m_device);
-        }
-
-        for (auto& semaphore : m_dependencySignals)
-        {
-            semaphore = new VulkanSemaphore(m_device);
-        }
-
         for (uint32_t index = 0; index < MAX_PRIMARY_COMMANDBUFFERS; ++index) 
         {
             m_commandBuffers[index].fence = CreateRef<VulkanFence>(m_device, false);
@@ -40,16 +30,6 @@ namespace PK::Rendering::VulkanRHI::Services
         WaitForCompletion(true);
         PruneStaleBuffers();
         vkDestroyCommandPool(m_device, m_pool, nullptr);
-
-        for (auto& semaphore : m_renderingFinishedSignals)
-        {
-            delete semaphore;
-        }
-
-        for (auto& semaphore : m_dependencySignals)
-        {
-            delete semaphore;
-        }
     }
 
     VulkanCommandBuffer* VulkanCommandBufferPool::GetCurrent()
@@ -78,30 +58,12 @@ namespace PK::Rendering::VulkanRHI::Services
         allocateInfo.commandBufferCount = 1;
         VK_ASSERT_RESULT(vkAllocateCommandBuffers(m_device, &allocateInfo, &m_current->commandBuffer));
 
-        VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        VK_ASSERT_RESULT(vkBeginCommandBuffer(m_current->commandBuffer, &beginInfo));
-
+        m_current->BeginCommandBuffer();
         m_current->renderState->Reset();
-
         return m_current;
     }
 
-    VkSemaphore VulkanCommandBufferPool::QueueDependency(const VkSemaphore** previousDependency)
-    {
-        if (m_currentDependencySignal && previousDependency)
-        {
-            *previousDependency = &m_currentDependencySignal->vulkanSemaphore;
-        }
-
-        // go over this in a ring buffer like fashion.  This is pretty volatile as we can accidentally override a previously assigned semaphore.
-        // @TODO Refactor to use pooling & proper releasing.
-        m_currentDependencySignal = m_dependencySignals[m_dependencySignalIndex];
-        m_dependencySignalIndex = (m_dependencySignalIndex + 1) % MAX_DEPENDENCIES;
-        return m_currentDependencySignal->vulkanSemaphore;
-    }
-
-    void VulkanCommandBufferPool::SubmitCurrent(VkPipelineStageFlags waitFlag, const VulkanSemaphore* waitSignal)
+    void VulkanCommandBufferPool::SubmitCurrent()
     {
         if (m_current == nullptr)
         {
@@ -109,54 +71,8 @@ namespace PK::Rendering::VulkanRHI::Services
         }
 
         // End possibly active render pass
-        m_current->EndRenderPass();
-
-        const int64_t index = m_current - &m_commandBuffers[0];
-        auto& renderingFinished = m_renderingFinishedSignals[index];
-
-        VK_ASSERT_RESULT(vkEndCommandBuffer(m_current->commandBuffer));
-
-        VkSemaphore signals[3] = 
-        {
-            VK_NULL_HANDLE,
-            VK_NULL_HANDLE,
-            VK_NULL_HANDLE,
-        };
-
-        VkPipelineStageFlags waitFlags[2] =
-        {
-            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-            waitFlag
-        };
-
-        VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
-        submitInfo.waitSemaphoreCount = 0;
-        submitInfo.pWaitSemaphores = signals;
-        submitInfo.pWaitDstStageMask = waitFlags;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &m_current->commandBuffer;
-        submitInfo.signalSemaphoreCount = 1u;
-        submitInfo.pSignalSemaphores = &renderingFinished->vulkanSemaphore;
-
-        if (m_renderingFinishedSignal) 
-        {
-            signals[submitInfo.waitSemaphoreCount++] = m_renderingFinishedSignal->vulkanSemaphore;
-        }
-
-        if (m_currentDependencySignal)
-        {
-            signals[submitInfo.waitSemaphoreCount++] = m_currentDependencySignal->vulkanSemaphore;
-        }
-
-        if (waitSignal)
-        {
-            signals[submitInfo.waitSemaphoreCount++] = waitSignal->vulkanSemaphore;
-        }
-
-        VK_ASSERT_RESULT_CTX(vkQueueSubmit(m_queue->GetNative(), 1, &submitInfo, m_current->fence->vulkanFence), "Failed to submit command buffer!");
-
-        m_currentDependencySignal = nullptr;
-        m_renderingFinishedSignal = renderingFinished;
+        m_current->EndCommandBuffer();
+        m_queue->Submit(m_current, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, true);
         m_current = nullptr;
     }
 
@@ -202,13 +118,4 @@ namespace PK::Rendering::VulkanRHI::Services
             VK_ASSERT_RESULT(vkWaitForFences(m_device, count, fences, all ? VK_TRUE : VK_FALSE, UINT64_MAX));
         }
     }
-
-    VulkanSemaphore* VulkanCommandBufferPool::AcquireRenderingFinishedSignal()
-    {
-        PK_THROW_ASSERT(m_renderingFinishedSignal != nullptr, "Trying to acquire a null rendering finished signal!");
-        auto* semaphore = m_renderingFinishedSignal;
-        m_renderingFinishedSignal = nullptr;
-        return semaphore;
-    }
-
 }

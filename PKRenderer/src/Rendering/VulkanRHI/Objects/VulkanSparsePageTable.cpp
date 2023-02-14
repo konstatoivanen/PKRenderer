@@ -67,18 +67,8 @@ namespace PK::Rendering::VulkanRHI::Objects
             return;
         }
 
-        VkBindSparseInfo sparseBind{ VK_STRUCTURE_TYPE_BIND_SPARSE_INFO };
-        VkSparseBufferMemoryBindInfo bufferBind{};
-        auto signal = m_driver->commandBufferPool->QueueDependency(&sparseBind.pWaitSemaphores);
-        bufferBind.buffer = m_targetBuffer;
-        bufferBind.bindCount = (uint32_t)bindInfos.size();
-        bufferBind.pBinds = bindInfos.data();
-        sparseBind.waitSemaphoreCount = sparseBind.pWaitSemaphores ? 1 : 0;
-        sparseBind.bufferBindCount = 1;
-        sparseBind.pBufferBinds = &bufferBind;
-        sparseBind.signalSemaphoreCount = 1;
-        sparseBind.pSignalSemaphores = &signal;
-        vkQueueBindSparse(m_driver->queues->GetQueue(QueueType::Graphics)->GetNative(), 1, &sparseBind, VK_NULL_HANDLE);
+        auto queue = m_driver->queues->GetQueue(QueueType::Graphics);
+        queue->BindSparse(m_targetBuffer, bindInfos.data(), (uint32_t)bindInfos.size());
     }
 
     void VulkanSparsePageTable::FreeRange(const IndexRange& range)

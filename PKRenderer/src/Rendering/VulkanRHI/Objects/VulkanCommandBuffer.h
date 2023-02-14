@@ -94,5 +94,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         bool ResolveBarriers();
         void ValidatePipeline();
         void EndRenderPass();
+        void BeginCommandBuffer();
+        void EndCommandBuffer();
     };
 }

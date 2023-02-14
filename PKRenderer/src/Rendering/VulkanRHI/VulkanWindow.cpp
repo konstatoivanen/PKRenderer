@@ -94,21 +94,20 @@ namespace PK::Rendering::VulkanRHI
     
     void VulkanWindow::Begin()
     {
-        while (!m_swapchain->TryAcquireNextImage(&m_imageAvailableSignal))
+        while (!m_swapchain->TryAcquireNextImage())
         {
             PollEvents();
         }
+
+        m_inWindowScope = true;
     }
 
     void VulkanWindow::End()
     {
-        PK_THROW_ASSERT(m_imageAvailableSignal != nullptr, "Trying to end a frame that outside of a frame scope!")
-        auto frameFence = m_driver->commandBufferPool->GetCurrent()->fence->vulkanFence;
-        auto frameGate = m_driver->commandBufferPool->GetCurrent()->GetOnCompleteGate();
-
-        m_driver->commandBufferPool->SubmitCurrent(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, m_imageAvailableSignal);
-        m_swapchain->Present(m_driver->commandBufferPool->AcquireRenderingFinishedSignal(), frameFence, frameGate);
-        m_imageAvailableSignal = nullptr;
+        PK_THROW_ASSERT(m_inWindowScope, "Trying to end a frame that outside of a frame scope!")
+        m_driver->commandBufferPool->SubmitCurrent();
+        m_swapchain->Present();
+        m_inWindowScope = false;
     }
 
     void VulkanWindow::SetCursorVisible(bool value)

@@ -40,8 +40,8 @@ namespace PK::Rendering::VulkanRHI
             VkSurfaceKHR m_surface;
             GLFWwindow* m_window;
             PK::Utilities::Scope<Objects::VulkanSwapchain> m_swapchain;
-            VulkanSemaphore* m_imageAvailableSignal;
 
+            bool m_inWindowScope = false;
             bool m_vsync = true;
             bool m_cursorVisible = true;
             bool m_alive = true;

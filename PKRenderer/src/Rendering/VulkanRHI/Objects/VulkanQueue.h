@@ -20,7 +20,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             constexpr static const uint32_t MAX_DEPENDENCIES = 64u;
             constexpr static const uint32_t MAX_QUEUED_DEPENDENCIES = 8u;
 
-            VulkanQueue(const VkDevice device, const VkQueueFamilyProperties& properties, uint32_t queueFamily, uint32_t queueIndex);
+            VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex);
             ~VulkanQueue();
 
             VkResult Present(VkSwapchainKHR swapchain, uint32_t imageIndex);
@@ -31,7 +31,9 @@ namespace PK::Rendering::VulkanRHI::Objects
             constexpr VkQueue GetNative() const { return m_queue; }
             constexpr uint32_t GetFamily() const { return m_family; }
             constexpr VkPipelineStageFlags GetCapabilityFlags() const { return m_capabilityFlags; }
-            constexpr const VkQueueFamilyProperties& GetFamilyProperties() const { return m_familyProperties; }
+
+            constexpr VkFence GetLastSubmitFence() const { return m_lastSubmitFence; }
+            constexpr ExecutionGate GetLastSubmitGate() const { return m_lastSubmitGate; }
 
         private:
             struct SignalGroup
@@ -42,16 +44,16 @@ namespace PK::Rendering::VulkanRHI::Objects
             };
 
             const VkDevice m_device;
-            VkQueueFamilyProperties m_familyProperties;
             VkPipelineStageFlags m_capabilityFlags = 0u;
             uint32_t m_family = 0u;
             uint32_t m_queueIndex = 0u;
             VkQueue m_queue = VK_NULL_HANDLE;
 
+            VkFence m_lastSubmitFence = VK_NULL_HANDLE;
+            ExecutionGate m_lastSubmitGate{};
+            SignalGroup m_signalGroups[2] = {};
             VulkanSemaphore* m_semaphores[MAX_DEPENDENCIES] = {};
             uint32_t m_semaphoreIndex = 0u;
-
-            SignalGroup m_signalGroups[2] = {};
     };
 
     class VulkanQueueSet : public PK::Utilities::NoCopy

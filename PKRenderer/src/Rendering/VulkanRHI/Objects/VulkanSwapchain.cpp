@@ -27,8 +27,8 @@ namespace PK::Rendering::VulkanRHI::Objects
     VulkanSwapchain::VulkanSwapchain(const VkPhysicalDevice physicalDevice, 
                                      const VkDevice device, 
                                      const VkSurfaceKHR surface,
-                                     const VulkanQueue* queueGraphics, 
-                                     const VulkanQueue* queuePresent,
+                                     VulkanQueue* queueGraphics, 
+                                     VulkanQueue* queuePresent,
                                      const SwapchainCreateInfo& createInfo) :
                                         m_physicalDevice(physicalDevice),
                                         m_device(device),
@@ -130,13 +130,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             handle->IncrementVersion();
         }
 
-        m_imageAvailableSignals.resize(m_maxFramesInFlight);
         m_frameFences.resize(m_maxFramesInFlight);
-
-        for (size_t i = 0u; i < m_maxFramesInFlight; ++i)
-        {
-            m_imageAvailableSignals[i] = new VulkanSemaphore(m_device);
-        }
 
         m_outofdate = false;
 
@@ -152,12 +146,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             delete m_imageViews[i];
         }
 
-        for (size_t i = 0u; i < m_imageAvailableSignals.size(); ++i)
-        {
-            delete m_imageAvailableSignals[i];
-        }
-
-        m_imageAvailableSignals.clear();
         m_imageViews.clear();
 
         if (m_swapchain != VK_NULL_HANDLE)
@@ -166,7 +154,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    bool VulkanSwapchain::TryAcquireNextImage(VulkanSemaphore** imageAvailableSignal)
+    bool VulkanSwapchain::TryAcquireNextImage()
     {
         if (m_outofdate)
         {
@@ -175,7 +163,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
 
         // This is not strictly necesssary when not using double buffering for staging buffers.
-        // However, for them have coherent memory operations we cannot push more than 2 frames at a time.
+        // However, for them to have coherent memory operations we cannot push more than 2 frames at a time.
         auto& fence = m_frameFences.at(m_frameIndex);
         
         if (fence.fence != VK_NULL_HANDLE && !fence.gate.IsComplete())
@@ -183,28 +171,21 @@ namespace PK::Rendering::VulkanRHI::Objects
             vkWaitForFences(m_device, 1, &fence.fence, VK_TRUE, UINT64_MAX);
         }
 
-        auto result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, m_imageAvailableSignals[m_frameIndex]->vulkanSemaphore, VK_NULL_HANDLE, &m_imageIndex);
-        *imageAvailableSignal = m_imageAvailableSignals[m_frameIndex];
-
+        VulkanQueue::SignalInfo signalInfo{};
+        m_queueGraphics->QueueDependency(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, &signalInfo, true, false);
+        
+        auto result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, signalInfo.signal, VK_NULL_HANDLE, &m_imageIndex);
+        
         PK_THROW_ASSERT(SwapchainErrorAssert(result, m_outofdate, m_suboptimal), "Failed to acquire swap chain image!");
 
         return !m_outofdate;
     }
 
-    void VulkanSwapchain::Present(VulkanSemaphore* waitSignal, VkFence frameFence, const Structs::ExecutionGate& gate)
+    void VulkanSwapchain::Present()
     {
-        VkPresentInfoKHR presentInfo{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = &waitSignal->vulkanSemaphore;
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = &m_swapchain;
-        presentInfo.pImageIndices = &m_imageIndex;
-        presentInfo.pResults = nullptr; // Optional
-        auto result = vkQueuePresentKHR(m_queuePresent->GetNative(), &presentInfo);
-        PK_THROW_ASSERT(SwapchainErrorAssert(result, m_outofdate, m_suboptimal), "Failed to present swap chain image!");
-
-        m_frameFences[m_frameIndex].fence = frameFence;
-        m_frameFences[m_frameIndex].gate = gate;
+        auto result = m_queuePresent->Present(m_swapchain, m_imageIndex);
+        m_frameFences[m_frameIndex].fence = m_queueGraphics->GetLastSubmitFence();
+        m_frameFences[m_frameIndex].gate = m_queueGraphics->GetLastSubmitGate();
         m_frameIndex = (m_frameIndex + 1) % m_maxFramesInFlight;
     }
 

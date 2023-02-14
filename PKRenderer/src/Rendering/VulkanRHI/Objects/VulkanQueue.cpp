@@ -97,11 +97,10 @@ namespace PK::Rendering::VulkanRHI::Objects
         return ctx.queueCount++;
     }
 
-    VulkanQueue::VulkanQueue(const VkDevice device, const VkQueueFamilyProperties& properties, uint32_t queueFamily, uint32_t queueIndex) :
+    VulkanQueue::VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex) :
         m_device(device),
         m_family(queueFamily),
-        m_queueIndex(queueIndex),
-        m_familyProperties(properties)
+        m_queueIndex(queueIndex)
     {
         vkGetDeviceQueue(m_device, m_family, m_queueIndex, &m_queue);
     
@@ -114,7 +113,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT |
                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
-        if (properties.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        if (flags & VK_QUEUE_GRAPHICS_BIT)
         {
             m_capabilityFlags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
                                  VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | 
@@ -135,12 +134,12 @@ namespace PK::Rendering::VulkanRHI::Objects
                                  VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
         }
 
-        if (properties.queueFlags & VK_QUEUE_COMPUTE_BIT)
+        if (flags & VK_QUEUE_COMPUTE_BIT)
         {
             m_capabilityFlags |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
         }
 
-        if (properties.queueFlags & VK_QUEUE_TRANSFER_BIT)
+        if (flags & VK_QUEUE_TRANSFER_BIT)
         {
             m_capabilityFlags |= VK_PIPELINE_STAGE_HOST_BIT |
                                  VK_PIPELINE_STAGE_TRANSFER_BIT;
@@ -158,7 +157,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     VkResult VulkanQueue::Present(VkSwapchainKHR swapchain, uint32_t imageIndex)
     {
         SignalInfo signalInfo{};
-        QueueDependency(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, &signalInfo, false, true);
+        QueueDependency(VK_PIPELINE_STAGE_NONE, &signalInfo, false, true);
         
         VkPresentInfoKHR presentInfo{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
         presentInfo.waitSemaphoreCount = signalInfo.waitCount;
@@ -172,14 +171,14 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     VkResult VulkanQueue::Submit(Objects::VulkanCommandBuffer* commandBuffer, VkPipelineStageFlags flags, bool waitForPrevious)
     {
-        commandBuffer->EndRenderPass();
-        VK_ASSERT_RESULT(vkEndCommandBuffer(commandBuffer->commandBuffer));
-        
         SignalInfo signalInfo{};
         QueueDependency(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, &signalInfo, true, waitForPrevious);
 
+        m_lastSubmitFence = commandBuffer->fence->vulkanFence;
+        m_lastSubmitGate = commandBuffer->GetOnCompleteGate();
+
         VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
-        submitInfo.waitSemaphoreCount = 0;
+        submitInfo.waitSemaphoreCount = signalInfo.waitCount;
         submitInfo.pWaitSemaphores = signalInfo.waits;
         submitInfo.pWaitDstStageMask = signalInfo.waitFlags;
         submitInfo.commandBufferCount = 1;
@@ -192,7 +191,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     VkResult VulkanQueue::BindSparse(VkBuffer buffer, const VkSparseMemoryBind* binds, uint32_t bindCount)
     {
         SignalInfo signalInfo{};
-        QueueDependency(VK_PIPELINE_STAGE_NONE, &signalInfo, true, false);
+        QueueDependency(VK_PIPELINE_STAGE_TRANSFER_BIT, &signalInfo, true, false);
 
         VkSparseBufferMemoryBindInfo bufferBind{};
         bufferBind.buffer = buffer;
@@ -213,6 +212,8 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         auto semaphore = addNew ? m_semaphores[m_semaphoreIndex++ % MAX_DEPENDENCIES] : nullptr;
         
+        waitForPrevious |= addNew && m_signalGroups[0].count >= MAX_QUEUED_DEPENDENCIES;
+        
         if (signalInfo)
         {
             signalInfo->waitCount = 0u;
@@ -226,7 +227,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             
             signalInfo->waits = m_signalGroups[1].semaphores;
             signalInfo->waitFlags = m_signalGroups[1].flags;
-            signalInfo->signal = semaphore->vulkanSemaphore;
+            signalInfo->signal = semaphore ? semaphore->vulkanSemaphore : VK_NULL_HANDLE;
         }
 
         if (addNew)
@@ -242,7 +243,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         for (auto i = 0u; i < initializer.queueCount; ++i)
         {
             auto& familyProps = initializer.familyProperties.at(initializer.queueFamilies[i]);
-            m_queues[i] = new VulkanQueue(device, familyProps, initializer.queueFamilies[i], initializer.queueIndices[i]);
+            m_queues[i] = new VulkanQueue(device, familyProps.queueFlags, initializer.queueFamilies[i], initializer.queueIndices[i]);
         }
 
         memcpy(m_queueIndices, initializer.typeIndices, sizeof(m_queueIndices));

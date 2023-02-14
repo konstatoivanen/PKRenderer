@@ -562,4 +562,18 @@ namespace PK::Rendering::VulkanRHI::Objects
             isInActiveRenderPass = false;
         }
     }
+    
+    void VulkanCommandBuffer::BeginCommandBuffer()
+    {
+        VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        VK_ASSERT_RESULT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+    }
+
+    void VulkanCommandBuffer::EndCommandBuffer()
+    {
+        // End possibly active render pass
+        EndRenderPass();
+        VK_ASSERT_RESULT(vkEndCommandBuffer(commandBuffer));
+    }
 }
