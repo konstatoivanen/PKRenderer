@@ -105,8 +105,10 @@ namespace PK::Rendering::VulkanRHI
     void VulkanWindow::End()
     {
         PK_THROW_ASSERT(m_inWindowScope, "Trying to end a frame that outside of a frame scope!")
-        m_driver->commandBufferPool->SubmitCurrent();
-        m_swapchain->Present();
+
+        VkSemaphore renderingFinishedSignal = VK_NULL_HANDLE;
+        m_driver->commandBufferPool->SubmitCurrent(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, true, &renderingFinishedSignal);
+        m_swapchain->Present(renderingFinishedSignal);
         m_inWindowScope = false;
     }
 

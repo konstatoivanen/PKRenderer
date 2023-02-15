@@ -193,12 +193,12 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         EndRenderPass();
         ValidatePipeline();
-        auto bundle = renderState->GetShaderBindingTableBundle();
+        auto addresses = renderState->GetShaderBindingTableAddresses();
         vkCmdTraceRaysKHR(commandBuffer, 
-                          bundle.addresses + (uint32_t)Structs::RayTracingShaderGroup::RayGeneration, 
-                          bundle.addresses + (uint32_t)Structs::RayTracingShaderGroup::Miss,
-                          bundle.addresses + (uint32_t)Structs::RayTracingShaderGroup::Hit,
-                          bundle.addresses + (uint32_t)Structs::RayTracingShaderGroup::Callable,
+                          addresses + (uint32_t)Structs::RayTracingShaderGroup::RayGeneration, 
+                          addresses + (uint32_t)Structs::RayTracingShaderGroup::Miss,
+                          addresses + (uint32_t)Structs::RayTracingShaderGroup::Hit,
+                          addresses + (uint32_t)Structs::RayTracingShaderGroup::Callable,
                           dimensions.x, 
                           dimensions.y, 
                           dimensions.z);
@@ -568,6 +568,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         VK_ASSERT_RESULT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+        renderState->Reset();
     }
 
     void VulkanCommandBuffer::EndCommandBuffer()

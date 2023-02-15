@@ -47,11 +47,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         uint32_t count = 0u;
     };
 
-    struct VulkanShaderBindingTableBundle
-    {
-        VkStridedDeviceAddressRegionKHR addresses[(uint32_t)Structs::RayTracingShaderGroup::MaxCount]{};
-    };
-
     struct VulkanDescriptorSetBundle
     {
         VkDescriptorSet sets[Structs::PK_MAX_DESCRIPTOR_SETS]{};
@@ -108,7 +103,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             VkRenderPassBeginInfo GetRenderPassInfo() const;
             VulkanVertexBufferBundle GetVertexBufferBundle() const;
             VulkanDescriptorSetBundle GetDescriptorSetBundle(const Structs::ExecutionGate& gate, uint32_t dirtyFlags);
-            VulkanShaderBindingTableBundle GetShaderBindingTableBundle();
+            VkStridedDeviceAddressRegionKHR* GetShaderBindingTableAddresses();
             const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
             inline bool ResolveBarriers(VulkanBarrierInfo* outBarrierInfo) { return m_services.barrierHandler->Resolve(outBarrierInfo); }
 
@@ -131,7 +126,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             Services::FrameBufferKey m_frameBufferKey[2]{};
             Services::RenderPassKey m_renderPassKey[2]{};
             const VulkanBindHandle* m_frameBufferImages[Structs::PK_MAX_RENDER_TARGETS * 2 + 1]{};
-            VulkanShaderBindingTableBundle m_shaderBindingTableBundle;
+            VkStridedDeviceAddressRegionKHR m_sbtAddresses[(uint32_t)Structs::RayTracingShaderGroup::MaxCount]{};
         
             const VulkanBindHandle* m_vertexBuffers[Structs::PK_MAX_VERTEX_ATTRIBUTES]{};
             const VulkanBindHandle* m_indexBuffer = nullptr;

@@ -341,15 +341,16 @@ namespace PK::Rendering::VulkanRHI::Utilities
                 continue;
             }
 
+            auto& requiredFeatures = requirements.features;
             VulkanPhysicalDeviceFeatures features{};
             vkGetPhysicalDeviceFeatures2(device, &features.vk10);
 
             if (!VulkanCheckRequirements(
-                features.vk10, requirements.features.vk10, offsetof(VkPhysicalDeviceFeatures2, features), 55,
-                features.vk11, requirements.features.vk11, offsetof(VkPhysicalDeviceVulkan11Features, storageBuffer16BitAccess), 12,
-                features.vk12, requirements.features.vk12, offsetof(VkPhysicalDeviceVulkan12Features, samplerMirrorClampToEdge), 47,
-                features.accelerationStructure, requirements.features.accelerationStructure, offsetof(VkPhysicalDeviceAccelerationStructureFeaturesKHR, accelerationStructure), 5,
-                features.rayTracingPipeline, requirements.features.rayTracingPipeline, offsetof(VkPhysicalDeviceRayTracingPipelineFeaturesKHR, rayTracingPipeline), 5))
+                features.vk10, requiredFeatures.vk10, offsetof(VkPhysicalDeviceFeatures2, features), 55,
+                features.vk11, requiredFeatures.vk11, offsetof(VkPhysicalDeviceVulkan11Features, storageBuffer16BitAccess), 12,
+                features.vk12, requiredFeatures.vk12, offsetof(VkPhysicalDeviceVulkan12Features, samplerMirrorClampToEdge), 47,
+                features.accelerationStructure, requiredFeatures.accelerationStructure, offsetof(VkPhysicalDeviceAccelerationStructureFeaturesKHR, accelerationStructure), 5,
+                features.rayTracingPipeline, requiredFeatures.rayTracingPipeline, offsetof(VkPhysicalDeviceRayTracingPipelineFeaturesKHR, rayTracingPipeline), 5))
             {
                 continue;
             }

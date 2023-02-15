@@ -33,7 +33,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             void Release();
 
             bool TryAcquireNextImage();
-            void Present();
+            void Present(VkSemaphore waitSignal);
             void OnWindowResize(int w, int h);
 
             const VulkanBindHandle* GetBindHandle() const { return &m_bindHandles[m_imageIndex]; }

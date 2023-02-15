@@ -104,6 +104,7 @@ namespace PK::Rendering::VulkanRHI
         physicalDeviceRequirements.features.vk12.shaderOutputViewportIndex = VK_TRUE;
         physicalDeviceRequirements.features.vk12.shaderOutputLayer = VK_TRUE;
         physicalDeviceRequirements.features.vk12.bufferDeviceAddress = VK_TRUE;
+        physicalDeviceRequirements.features.vk12.timelineSemaphore = VK_TRUE;
         physicalDeviceRequirements.features.accelerationStructure.accelerationStructure = VK_TRUE;
         physicalDeviceRequirements.features.rayTracingPipeline.rayTracingPipeline = VK_TRUE;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;

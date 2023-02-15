@@ -256,7 +256,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanRenderState::SetShaderBindingTableAddress(Structs::RayTracingShaderGroup group, VkDeviceAddress address, size_t stride, size_t size)
     {
-        m_shaderBindingTableBundle.addresses[(uint32_t)group] = { address, stride, size };
+        m_sbtAddresses[(uint32_t)group] = { address, stride, size };
     }
 
 
@@ -325,9 +325,9 @@ namespace PK::Rendering::VulkanRHI::Objects
         return bundle;
     }
 
-    VulkanShaderBindingTableBundle VulkanRenderState::GetShaderBindingTableBundle()
+    VkStridedDeviceAddressRegionKHR* VulkanRenderState::GetShaderBindingTableAddresses()
     {
-        VulkanShaderBindingTableBundle bundle{};
+        static VkStridedDeviceAddressRegionKHR addresses[(uint32_t)Structs::RayTracingShaderGroup::MaxCount];
 
         if (m_pipelineKey.shader != nullptr)
         {
@@ -335,12 +335,12 @@ namespace PK::Rendering::VulkanRHI::Objects
             {
                 if (m_pipelineKey.shader->HasRayTracingShaderGroup((Structs::RayTracingShaderGroup)i))
                 {
-                    bundle.addresses[i] = m_shaderBindingTableBundle.addresses[i];
+                    addresses[i] = m_sbtAddresses[i];
                 }
             }
         }
 
-        return bundle;
+        return addresses;
     }
 
     const VulkanBindHandle* VulkanRenderState::GetIndexBuffer(VkIndexType* outIndexType) const

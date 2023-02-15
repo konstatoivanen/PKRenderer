@@ -59,11 +59,10 @@ namespace PK::Rendering::VulkanRHI::Services
         VK_ASSERT_RESULT(vkAllocateCommandBuffers(m_device, &allocateInfo, &m_current->commandBuffer));
 
         m_current->BeginCommandBuffer();
-        m_current->renderState->Reset();
         return m_current;
     }
 
-    void VulkanCommandBufferPool::SubmitCurrent()
+    void VulkanCommandBufferPool::SubmitCurrent(VkPipelineStageFlags flags, bool waitForPrevious, VkSemaphore* outSignal)
     {
         if (m_current == nullptr)
         {
@@ -72,7 +71,7 @@ namespace PK::Rendering::VulkanRHI::Services
 
         // End possibly active render pass
         m_current->EndCommandBuffer();
-        m_queue->Submit(m_current, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, true);
+        VK_ASSERT_RESULT(m_queue->Submit(m_current, flags, waitForPrevious, outSignal));
         m_current = nullptr;
     }
 

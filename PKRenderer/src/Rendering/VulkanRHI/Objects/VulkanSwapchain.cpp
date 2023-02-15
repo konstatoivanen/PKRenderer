@@ -171,19 +171,18 @@ namespace PK::Rendering::VulkanRHI::Objects
             vkWaitForFences(m_device, 1, &fence.fence, VK_TRUE, UINT64_MAX);
         }
 
-        VulkanQueue::SignalInfo signalInfo{};
-        m_queueGraphics->QueueDependency(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, &signalInfo, true, false);
-        
-        auto result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, signalInfo.signal, VK_NULL_HANDLE, &m_imageIndex);
+        auto semaphore = m_queueGraphics->GetNextSemaphore();
+        auto result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_imageIndex);
+        VK_ASSERT_RESULT(m_queueGraphics->QueueWait(semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT));
         
         PK_THROW_ASSERT(SwapchainErrorAssert(result, m_outofdate, m_suboptimal), "Failed to acquire swap chain image!");
 
         return !m_outofdate;
     }
 
-    void VulkanSwapchain::Present()
+    void VulkanSwapchain::Present(VkSemaphore waitSignal)
     {
-        auto result = m_queuePresent->Present(m_swapchain, m_imageIndex);
+        auto result = m_queuePresent->Present(m_swapchain, m_imageIndex, waitSignal);
         m_frameFences[m_frameIndex].fence = m_queueGraphics->GetLastSubmitFence();
         m_frameFences[m_frameIndex].gate = m_queueGraphics->GetLastSubmitGate();
         m_frameIndex = (m_frameIndex + 1) % m_maxFramesInFlight;

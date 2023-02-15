@@ -28,7 +28,7 @@ namespace PK::Rendering::VulkanRHI
         VkPhysicalDeviceVulkan12Features vk12{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
         VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructure{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR };
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipeline{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR };
-        
+
         VulkanPhysicalDeviceFeatures();
     };
 
@@ -93,15 +93,6 @@ namespace PK::Rendering::VulkanRHI
 
         const VkDevice device;
         VkFence vulkanFence;
-    };
-
-    struct VulkanSemaphore : public PK::Utilities::NoCopy
-    {
-        VulkanSemaphore(VkDevice device);
-        ~VulkanSemaphore();
-
-        const VkDevice device;
-        VkSemaphore vulkanSemaphore;
     };
 
     struct VulkanImageView : public Rendering::Services::IDisposable

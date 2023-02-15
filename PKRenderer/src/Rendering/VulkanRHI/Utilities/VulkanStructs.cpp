@@ -252,17 +252,6 @@ namespace PK::Rendering::VulkanRHI
         vkDestroyFence(device, vulkanFence, nullptr);
     }
 
-    VulkanSemaphore::VulkanSemaphore(VkDevice device) : device(device)
-    {
-        VkSemaphoreCreateInfo semaphoreInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
-        VK_ASSERT_RESULT(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &vulkanSemaphore));
-    }
-    
-    VulkanSemaphore::~VulkanSemaphore()
-    {
-        vkDestroySemaphore(device, vulkanSemaphore, nullptr);
-    }
-
     VulkanImageView::VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo, const char* name) : device(device)
     {
         VK_ASSERT_RESULT_CTX(vkCreateImageView(device, &createInfo, nullptr, &view), "Failed to create an image view!");

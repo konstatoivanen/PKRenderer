@@ -14,7 +14,7 @@ namespace PK::Rendering::VulkanRHI::Services
             ~VulkanCommandBufferPool();
     
             Objects::VulkanCommandBuffer* GetCurrent();
-            void SubmitCurrent();
+            void SubmitCurrent(VkPipelineStageFlags flags, bool waitForPrevious, VkSemaphore* outSignal = VK_NULL_HANDLE);
             void PruneStaleBuffers();
             void WaitForCompletion(bool all);
 

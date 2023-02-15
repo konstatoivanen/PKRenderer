@@ -8,26 +8,21 @@ namespace PK::Rendering::VulkanRHI::Objects
 {
     class VulkanQueue : public PK::Utilities::NoCopy
     {
+        constexpr static const uint32_t MAX_SEMAPHORES = 16u;
+        constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)Structs::QueueType::MaxCount;
+
         public:
-            struct SignalInfo
-            {
-                VkSemaphore signal = VK_NULL_HANDLE;
-                const VkSemaphore* waits = nullptr;
-                const VkPipelineStageFlags* waitFlags = nullptr;
-                uint32_t waitCount = 0u;
-            };
-
-            constexpr static const uint32_t MAX_DEPENDENCIES = 64u;
-            constexpr static const uint32_t MAX_QUEUED_DEPENDENCIES = 8u;
-
             VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex);
             ~VulkanQueue();
 
-            VkResult Present(VkSwapchainKHR swapchain, uint32_t imageIndex);
-            VkResult Submit(Objects::VulkanCommandBuffer* commandBuffer, VkPipelineStageFlags flags, bool waitForPrevious);
+            VkResult Present(VkSwapchainKHR swapchain, uint32_t imageIndex, VkSemaphore waitSignal = VK_NULL_HANDLE);
+            VkResult Submit(Objects::VulkanCommandBuffer* commandBuffer, VkPipelineStageFlags flags, bool waitForPrevious, VkSemaphore* outSignal = nullptr);
             VkResult BindSparse(VkBuffer buffer, const VkSparseMemoryBind* binds, uint32_t bindCount);
-            void QueueDependency(VkPipelineStageFlags flags, SignalInfo* signalInfo, bool addNew, bool waitForPrevious);
+            VkResult QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags);
+            VkSemaphore QueueSignal(VkPipelineStageFlags flags);
+            void QueueWait(VulkanQueue* other);
 
+            inline VkSemaphore GetNextSemaphore() { return m_semaphores[m_semaphoreIndex++ % MAX_SEMAPHORES]; }
             constexpr VkQueue GetNative() const { return m_queue; }
             constexpr uint32_t GetFamily() const { return m_family; }
             constexpr VkPipelineStageFlags GetCapabilityFlags() const { return m_capabilityFlags; }
@@ -36,11 +31,11 @@ namespace PK::Rendering::VulkanRHI::Objects
             constexpr ExecutionGate GetLastSubmitGate() const { return m_lastSubmitGate; }
 
         private:
-            struct SignalGroup
+            struct TimelineSemaphore
             {
-                VkSemaphore semaphores[MAX_QUEUED_DEPENDENCIES] = {};
-                VkPipelineStageFlags flags[MAX_QUEUED_DEPENDENCIES] = {};
-                uint32_t count = 0u;
+                VkSemaphore semaphore = VK_NULL_HANDLE;
+                VkPipelineStageFlags waitFlags = VK_PIPELINE_STAGE_NONE;
+                uint64_t counter = 0ull;
             };
 
             const VkDevice m_device;
@@ -51,8 +46,11 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             VkFence m_lastSubmitFence = VK_NULL_HANDLE;
             ExecutionGate m_lastSubmitGate{};
-            SignalGroup m_signalGroups[2] = {};
-            VulkanSemaphore* m_semaphores[MAX_DEPENDENCIES] = {};
+            
+            TimelineSemaphore m_timeline{};
+            TimelineSemaphore m_waitTimelines[MAX_DEPENDENCIES]{};
+
+            VkSemaphore m_semaphores[MAX_SEMAPHORES] = {};
             uint32_t m_semaphoreIndex = 0u;
     };
 
