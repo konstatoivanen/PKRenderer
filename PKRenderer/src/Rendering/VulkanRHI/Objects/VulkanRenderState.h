@@ -31,6 +31,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     struct VulkanServiceContext
     {
+        PK::Utilities::PropertyBlock* globalResources = nullptr;
         Services::VulkanDescriptorCache* descriptorCache = nullptr;
         Services::VulkanPipelineCache* pipelineCache = nullptr;
         Services::VulkanSamplerCache* samplerCache = nullptr;
@@ -61,7 +62,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         public:
             VulkanRenderState(const VulkanServiceContext& services) : m_services(services) {}
 
-            constexpr const PK::Utilities::PropertyBlock& GetResourceState() const { return m_resourceState; }
+            constexpr const PK::Utilities::PropertyBlock* GetResources() const { return m_services.globalResources; }
             constexpr const Structs::ConstantBufferLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetConstantLayout(); }
             constexpr VkPipelineLayout GetPipelineLayout() const { return m_pipelineKey.shader->GetPipelineLayout()->layout; }
             constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
@@ -95,10 +96,10 @@ namespace PK::Rendering::VulkanRHI::Objects
             }
 
             template<typename T>
-            void SetResource(uint32_t nameHashId, const T* value, uint32_t count = 1) { m_resourceState.Set(nameHashId, value, count); }
+            void SetResource(uint32_t nameHashId, const T* value, uint32_t count = 1) { m_services.globalResources->Set(nameHashId, value, count); }
 
             template<typename T>
-            void SetResource(uint32_t nameHashId, const T& value) { m_resourceState.Set(nameHashId, value); }
+            void SetResource(uint32_t nameHashId, const T& value) { m_services.globalResources->Set(nameHashId, value); }
 
             VkRenderPassBeginInfo GetRenderPassInfo() const;
             VulkanVertexBufferBundle GetVertexBufferBundle() const;
@@ -109,7 +110,6 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             PKRenderStateDirtyFlags ValidatePipeline(const Structs::ExecutionGate& gate);
 
-
         private:
             void ValidateRenderTarget();
             void ValidateVertexBuffers();
@@ -118,7 +118,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             void RecordResourceAccess();
             void RecordRenderTargetAccess();
 
-            PK::Utilities::PropertyBlock m_resourceState = PK::Utilities::PropertyBlock(16384);
             VulkanServiceContext m_services;
         
             Services::DescriptorSetKey m_descriptorSetKeys[Structs::PK_MAX_DESCRIPTOR_SETS]{};

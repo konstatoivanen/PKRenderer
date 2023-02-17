@@ -8,20 +8,19 @@ namespace PK::Rendering::VulkanRHI::Services
     using namespace Objects;
     using namespace PK::Utilities;
 
-    VulkanCommandBufferPool::VulkanCommandBufferPool(const VkDevice device, const VulkanServiceContext& systems, Objects::VulkanQueue* queue) :
+    VulkanCommandBufferPool::VulkanCommandBufferPool(VkDevice device, const VulkanServiceContext& services, uint32_t queueFamily) :
         m_device(device), 
-        m_primaryRenderState(systems), 
-        m_queue(queue)
+        m_primaryRenderState(services)
     {
         VkCommandPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
         createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-        createInfo.queueFamilyIndex = queue->GetFamily();
+        createInfo.queueFamilyIndex = queueFamily;
         VK_ASSERT_RESULT(vkCreateCommandPool(m_device, &createInfo, nullptr, &m_pool));
 
-        for (uint32_t index = 0; index < MAX_PRIMARY_COMMANDBUFFERS; ++index) 
+        for (auto& wrapper : m_commandBuffers)
         {
-            m_commandBuffers[index].fence = CreateRef<VulkanFence>(m_device, false);
-            m_commandBuffers[index].renderState = &m_primaryRenderState;
+            VkFenceCreateInfo fenceCreateInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+            VK_ASSERT_RESULT(vkCreateFence(device, &fenceCreateInfo, nullptr, &wrapper.GetFence()));
         }
     }
 
@@ -30,6 +29,11 @@ namespace PK::Rendering::VulkanRHI::Services
         WaitForCompletion(true);
         PruneStaleBuffers();
         vkDestroyCommandPool(m_device, m_pool, nullptr);
+    
+        for (auto& wrapper : m_commandBuffers)
+        {
+            vkDestroyFence(m_device, wrapper.GetFence(), nullptr);
+        }
     }
 
     VulkanCommandBuffer* VulkanCommandBufferPool::GetCurrent()
@@ -51,40 +55,39 @@ namespace PK::Rendering::VulkanRHI::Services
             }
         }
 
+        VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
         VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
-        allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocateInfo.commandPool = m_pool;
         allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocateInfo.commandBufferCount = 1;
-        VK_ASSERT_RESULT(vkAllocateCommandBuffers(m_device, &allocateInfo, &m_current->commandBuffer));
+        VK_ASSERT_RESULT(vkAllocateCommandBuffers(m_device, &allocateInfo, &commandBuffer));
 
-        m_current->BeginCommandBuffer();
+        m_current->BeginCommandBuffer(commandBuffer, allocateInfo.level, &m_primaryRenderState);
         return m_current;
     }
 
-    void VulkanCommandBufferPool::SubmitCurrent(VkPipelineStageFlags flags, bool waitForPrevious, VkSemaphore* outSignal)
+    Objects::VulkanCommandBuffer* VulkanCommandBufferPool::EndCurrent()
     {
         if (m_current == nullptr)
         {
-            return;
+            return nullptr;
         }
 
-        // End possibly active render pass
+        auto cmd = m_current;
         m_current->EndCommandBuffer();
-        VK_ASSERT_RESULT(m_queue->Submit(m_current, flags, waitForPrevious, outSignal));
         m_current = nullptr;
+        return cmd;
     }
 
     void VulkanCommandBufferPool::PruneStaleBuffers()
     {
         for (auto& wrapper : m_commandBuffers)
         {
-            if (wrapper.IsActive() && vkWaitForFences(m_device, 1, &wrapper.fence->vulkanFence, VK_TRUE, 0) == VK_SUCCESS)
+            if (wrapper.IsActive() && vkWaitForFences(m_device, 1, &wrapper.GetFence(), VK_TRUE, 0) == VK_SUCCESS)
             {
-                vkFreeCommandBuffers(m_device, m_pool, 1, &wrapper.commandBuffer);
-                wrapper.commandBuffer = VK_NULL_HANDLE;
-                wrapper.invocationIndex++;
-                VK_ASSERT_RESULT(vkResetFences(m_device, 1, &wrapper.fence->vulkanFence));
+                vkFreeCommandBuffers(m_device, m_pool, 1, &wrapper.GetNative());
+                wrapper.Release();
+                VK_ASSERT_RESULT(vkResetFences(m_device, 1, &wrapper.GetFence()));
             }
         }
     }
@@ -103,7 +106,7 @@ namespace PK::Rendering::VulkanRHI::Services
 
             if (wrapper.IsActive())
             {
-                fences[count++] = wrapper.fence->vulkanFence;
+                fences[count++] = wrapper.GetFence();
             }
             else if (!all)
             {

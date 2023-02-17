@@ -143,7 +143,7 @@ namespace PK::Rendering::VulkanRHI
         vkDestroySurfaceKHR(instance, temporarySurface, nullptr);
         glfwDestroyWindow(temporaryWindow);
 
-        queues = CreateScope<VulkanQueueSet>(device, queueInitializer);
+
         frameBufferCache = CreateScope<VulkanFrameBufferCache>(device, properties.garbagePruneDelay);
         stagingBufferCache = CreateScope<VulkanStagingBufferCache>(device, allocator, properties.garbagePruneDelay);
         pipelineCache = CreateScope<VulkanPipelineCache>(device, properties.workingDirectory, properties.garbagePruneDelay);
@@ -159,18 +159,19 @@ namespace PK::Rendering::VulkanRHI
                                                                  { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 10ull }
                                                              }));
 
-        commandBufferPool = CreateScope<VulkanCommandBufferPool>(device,
-                                                                 VulkanServiceContext
-                                                                 {
-                                                                     descriptorCache.get(),
-                                                                     pipelineCache.get(),
-                                                                     samplerCache.get(),
-                                                                     frameBufferCache.get(),
-                                                                     stagingBufferCache.get(),
-                                                                     barrierHandler.get(),
-                                                                     disposer.get()
-                                                                 }, 
-                                                                 queues->GetQueue(QueueType::Graphics));
+        queues = CreateScope<VulkanQueueSet>(device, 
+                                             queueInitializer, 
+                                             VulkanServiceContext
+                                             {
+                                                 &globalResources,
+                                                 descriptorCache.get(),
+                                                 pipelineCache.get(),
+                                                 samplerCache.get(),
+                                                 frameBufferCache.get(),
+                                                 stagingBufferCache.get(),
+                                                 barrierHandler.get(),
+                                                 disposer.get()
+                                             });
     }
 
     VulkanDriver::~VulkanDriver()
@@ -182,7 +183,6 @@ namespace PK::Rendering::VulkanRHI
         samplerCache = nullptr;
         pipelineCache = nullptr;
         stagingBufferCache = nullptr;
-        commandBufferPool = nullptr;
         frameBufferCache = nullptr;
         layoutCache = nullptr;
         barrierHandler = nullptr;

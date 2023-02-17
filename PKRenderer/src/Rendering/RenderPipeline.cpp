@@ -127,7 +127,7 @@ namespace PK::Rendering
         sampler.filterMag = FilterMode::Bilinear;
         bluenoise->SetSampler(sampler);
 
-        auto cmd = GraphicsAPI::GetCommandBuffer();
+        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
 
         cmd->SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         cmd->SetTexture(hash->pk_Bluenoise256, bluenoise);
@@ -210,7 +210,7 @@ namespace PK::Rendering
         }
 
         auto hash = HashCache::Get();
-        auto* cmd = GraphicsAPI::GetCommandBuffer();
+        auto* cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
         auto resolution = window->GetResolution();
 
         m_renderTarget->Validate(resolution);
@@ -279,7 +279,7 @@ namespace PK::Rendering
         sampler.wrap[1] = WrapMode::Mirror;
         sampler.wrap[2] = WrapMode::Mirror;
         tex->SetSampler(sampler);
-        GraphicsAPI::GetCommandBuffer()->SetTexture(hash->pk_SceneOEM_HDR, tex);
+        GraphicsAPI::GetCommandBuffer(QueueType::Graphics)->SetTexture(hash->pk_SceneOEM_HDR, tex);
 
         m_constantsPerFrame->Set<float>(hash->pk_SceneOEM_Exposure, config->BackgroundExposure);
 

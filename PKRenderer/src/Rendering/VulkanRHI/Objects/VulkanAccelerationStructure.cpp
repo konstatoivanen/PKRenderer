@@ -28,7 +28,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     VulkanAccelerationStructure::~VulkanAccelerationStructure()
     {
-        Dispose(m_driver->GetPrimaryCommandBuffer()->GetOnCompleteGate());
+        Dispose(m_driver->GetCommandBuffer(QueueType::Graphics)->GetOnCompleteGate());
     }
 
 	VulkanRawBuffer* VulkanAccelerationStructure::GetScratchBuffer(size_t size)
@@ -37,7 +37,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 		{
 			if (m_scratchBuffer != nullptr)
 			{
-				m_driver->disposer->Dispose(m_scratchBuffer, m_driver->GetPrimaryCommandBuffer()->GetOnCompleteGate());
+				m_driver->disposer->Dispose(m_scratchBuffer, m_driver->GetCommandBuffer(QueueType::Graphics)->GetOnCompleteGate());
 			}
 			
 			m_scratchBuffer = new VulkanRawBuffer(m_driver->device, 
@@ -55,7 +55,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 		{
 			if (m_instanceInputBuffer != nullptr)
 			{
-				m_driver->disposer->Dispose(m_instanceInputBuffer, m_driver->GetPrimaryCommandBuffer()->GetOnCompleteGate());
+				m_driver->disposer->Dispose(m_instanceInputBuffer, m_driver->GetCommandBuffer(QueueType::Graphics)->GetOnCompleteGate());
 			}
 
 			m_instanceInputBuffer = new VulkanRawBuffer(m_driver->device,
@@ -207,7 +207,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 		{
 			if (m_structure != nullptr)
 			{
-				m_driver->disposer->Dispose(m_structure, m_driver->GetPrimaryCommandBuffer()->GetOnCompleteGate());
+				m_driver->disposer->Dispose(m_structure, m_driver->GetCommandBuffer(QueueType::Graphics)->GetOnCompleteGate());
 			}
 
 			m_structure = new VulkanRawAccelerationStructure(m_driver->device,
@@ -218,8 +218,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 				(m_name + std::string(".TLAS")).c_str());
 		}
 
-		auto cmd = m_driver->commandBufferPool->GetCurrent();
-
+		auto cmd = m_driver->queues->GetCommandBuffer(QueueType::Graphics);
+		
 		auto scratchBuffer = GetScratchBuffer(scratchBufferSize + accelerationStructureBuildSizesInfo.buildScratchSize);
 		auto scratchOffset = 0ull;
 

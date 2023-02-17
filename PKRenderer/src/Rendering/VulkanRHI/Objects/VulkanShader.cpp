@@ -114,7 +114,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanShader::Dispose()
     {
         auto driver = GraphicsAPI::GetActiveDriver<VulkanDriver>();
-        auto gate = driver->GetPrimaryCommandBuffer()->GetOnCompleteGate();
+        auto gate = driver->GetCommandBuffer(QueueType::Graphics)->GetOnCompleteGate();
 
         for (auto& module : m_modules)
         {

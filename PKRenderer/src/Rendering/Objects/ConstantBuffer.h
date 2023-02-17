@@ -9,7 +9,7 @@ namespace PK::Rendering::Objects
     {
         public:
             ConstantBuffer(const Structs::BufferLayout& layout, const char* name);
-            inline void FlushBuffer() { GraphicsAPI::GetCommandBuffer()->UploadBufferData(m_graphicsBuffer.get(), m_buffer, 0ull, m_graphicsBuffer->GetCapacity()); }
+            inline void FlushBuffer() { GraphicsAPI::GetCommandBuffer(Structs::QueueType::Graphics)->UploadBufferData(m_graphicsBuffer.get(), m_buffer, 0ull, m_graphicsBuffer->GetCapacity()); }
 
             const Buffer* GetBuffer() const { return m_graphicsBuffer.get(); }
             Buffer* GetBuffer() { return m_graphicsBuffer.get(); }

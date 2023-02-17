@@ -17,15 +17,11 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         VulkanCommandBuffer() {}
 
-        VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-        VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        uint64_t invocationIndex = 0;
-        Objects::VulkanRenderState* renderState = nullptr;
-        PK::Utilities::Ref<VulkanFence> fence = nullptr;
-        bool isInActiveRenderPass = false;
-
-        inline bool IsActive() const { return commandBuffer != VK_NULL_HANDLE; }
-        ExecutionGate GetOnCompleteGate() const override final { return { invocationIndex, &invocationIndex }; }
+        inline bool IsActive() const { return m_commandBuffer != VK_NULL_HANDLE; }
+        inline ExecutionGate GetOnCompleteGate() const override final { return { m_invocationIndex, &m_invocationIndex }; }
+        inline VkCommandBuffer& GetNative() { return m_commandBuffer; }
+        inline VkFence& GetFence() { return m_fence; }
+        inline void Release() { m_commandBuffer = VK_NULL_HANDLE; ++m_invocationIndex; }
 
         void SetRenderTarget(const uint3& resolution) override final;
         void SetRenderTarget(Texture** renderTargets, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count) override final;
@@ -45,15 +41,15 @@ namespace PK::Rendering::VulkanRHI::Objects
         void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) override final;
         void SetKeyword(uint32_t nameHashId, bool value) override final;
 
-        inline void ClearColor(const color& color, uint32_t index) override final { renderState->ClearColor(color, index); }
-        inline void ClearDepth(float depth, uint32_t stencil) override final { renderState->ClearDepth(depth, stencil); }
-        inline void DiscardColor(uint32_t index) override final { renderState->DiscardColor(index); }
-        inline void DiscardDepth() override final { renderState->DiscardDepth(); }
+        inline void ClearColor(const color& color, uint32_t index) override final { m_renderState->ClearColor(color, index); }
+        inline void ClearDepth(float depth, uint32_t stencil) override final { m_renderState->ClearDepth(depth, stencil); }
+        inline void DiscardColor(uint32_t index) override final { m_renderState->DiscardColor(index); }
+        inline void DiscardDepth() override final { m_renderState->DiscardDepth(); }
 
-        inline void SetBlending(const BlendParameters& blend) override final { renderState->SetBlending(blend); }
-        inline void SetRasterization(const RasterizationParameters& rasterization) override final { renderState->SetRasterization(rasterization); }
-        inline void SetDepthStencil(const DepthStencilParameters& depthStencil) override final { renderState->SetDepthStencil(depthStencil); }
-        inline void SetMultisampling(const MultisamplingParameters& multisampling) override final { renderState->SetMultisampling(multisampling); }
+        inline void SetBlending(const BlendParameters& blend) override final { m_renderState->SetBlending(blend); }
+        inline void SetRasterization(const RasterizationParameters& rasterization) override final { m_renderState->SetRasterization(rasterization); }
+        inline void SetDepthStencil(const DepthStencilParameters& depthStencil) override final { m_renderState->SetDepthStencil(depthStencil); }
+        inline void SetMultisampling(const MultisamplingParameters& multisampling) override final { m_renderState->SetMultisampling(multisampling); }
 
         void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override final;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override final;
@@ -94,7 +90,15 @@ namespace PK::Rendering::VulkanRHI::Objects
         bool ResolveBarriers();
         void ValidatePipeline();
         void EndRenderPass();
-        void BeginCommandBuffer();
+        void BeginCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferLevel level, Objects::VulkanRenderState* renderState);
         void EndCommandBuffer();
+        
+        private:
+            Objects::VulkanRenderState* m_renderState = nullptr;
+            VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
+            VkFence m_fence = VK_NULL_HANDLE;
+            VkCommandBufferLevel m_level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+            uint64_t m_invocationIndex = 0;
+            bool m_isInActiveRenderPass = false;
     };
 }

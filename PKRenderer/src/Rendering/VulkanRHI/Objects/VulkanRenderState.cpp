@@ -18,13 +18,21 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanRenderState::Reset()
     {
         memset(m_descriptorSetKeys, 0, sizeof(m_descriptorSetKeys));
-        memset(&m_pipelineKey, 0, sizeof(PipelineKey));
+        memset(&m_pipelineKey, 0, sizeof(m_pipelineKey));
         memset(m_frameBufferKey, 0, sizeof(m_frameBufferKey));
         memset(m_renderPassKey, 0, sizeof(m_renderPassKey));
         memset(m_frameBufferImages, 0, sizeof(m_frameBufferImages));
         memset(m_viewports, 0, sizeof(m_viewports));
         memset(m_scissors, 0, sizeof(m_scissors));
+        memset(m_clearValues, 0, sizeof(m_clearValues));
+        memset(m_vertexBuffers, 0, sizeof(m_vertexBuffers));
+        memset(m_descriptorSets, 0, sizeof(m_descriptorSets));
 
+        // @TODO refactor usage to allow for reset
+        //memset(m_sbtAddresses, 0, sizeof(m_sbtAddresses));
+
+        m_clearValueCount = 0u;
+        m_indexType = VK_INDEX_TYPE_UINT16;
         m_pipelineKey.fixedFunctionState = FixedFunctionState();
         m_renderPass = nullptr;
         m_pipeline = nullptr;
@@ -496,6 +504,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanRenderState::ValidateDescriptorSets(const ExecutionGate& gate)
     {
+        auto resources = m_services.globalResources;
         auto shader = m_pipelineKey.shader;
         auto setCount = shader->GetDescriptorSetCount();
         auto index = 0u;
@@ -526,7 +535,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 
                 if (element.Count > 1)
                 {
-                    PK_THROW_ASSERT(m_resourceState.TryGet(element.NameHashId, wrappedHandleArray), "Descriptors (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
+                    PK_THROW_ASSERT(resources->TryGet(element.NameHashId, wrappedHandleArray), "Descriptors (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
 
                     uint32_t version = 0u;
                     uint32_t count = 0u;
@@ -546,7 +555,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                     continue;
                 }
 
-                PK_THROW_ASSERT(m_resourceState.TryGet(element.NameHashId, wrappedHandle), "Descriptor (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
+                PK_THROW_ASSERT(resources->TryGet(element.NameHashId, wrappedHandle), "Descriptor (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
                 auto handle = wrappedHandle.handle;
 
                 if (binding->count != element.Count || binding->type != element.Type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)

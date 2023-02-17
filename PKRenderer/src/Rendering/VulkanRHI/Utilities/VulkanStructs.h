@@ -86,15 +86,6 @@ namespace PK::Rendering::VulkanRHI
         VkAccessFlags dstAccessMask = 0;
     };
 
-    struct VulkanFence : public PK::Utilities::NoCopy
-    {
-        VulkanFence(VkDevice device, bool signaled = false);
-        ~VulkanFence();
-
-        const VkDevice device;
-        VkFence vulkanFence;
-    };
-
     struct VulkanImageView : public Rendering::Services::IDisposable
     {
         VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo, const char* name);

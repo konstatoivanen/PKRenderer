@@ -2,7 +2,7 @@
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
-#include "Rendering/VulkanRHI/Objects/VulkanCommandBuffer.h"
+#include "Rendering/VulkanRHI/Services/VulkanCommandBufferPool.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -56,6 +56,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     class VulkanQueueSet : public PK::Utilities::NoCopy
     {
+        constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)Structs::QueueType::MaxCount;
+
         public:
             struct Initializer
             {
@@ -69,12 +71,20 @@ namespace PK::Rendering::VulkanRHI::Objects
                 Initializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
             };
 
-            VulkanQueueSet(VkDevice device, const Initializer& initializer);
+            VulkanQueueSet(VkDevice device, const Initializer& initializer, const Objects::VulkanServiceContext& services);
             ~VulkanQueueSet();
-            VulkanQueue* GetQueue(Structs::QueueType type) const { return m_queues[m_queueIndices[(uint32_t)type]]; }
-        
+            inline VulkanQueue* GetQueue(Structs::QueueType type) const { return m_queues[m_queueIndices[(uint32_t)type]]; }
+            inline Services::VulkanCommandBufferPool* GetCommandPool(Structs::QueueType type) const { return m_commandBufferPools[m_queueIndices[(uint32_t)type]]; }
+            inline VulkanCommandBuffer* GetCommandBuffer(Structs::QueueType type) const { return GetCommandPool(type)->GetCurrent(); }
+            inline VulkanCommandBuffer* EndCommandBuffer(Structs::QueueType type) const { return GetCommandPool(type)->EndCurrent(); }
+            inline VkResult SubmitCurrent(Structs::QueueType type, VkPipelineStageFlags flags, bool waitForPrevious, VkSemaphore* outSignal = nullptr)
+            {
+                return GetQueue(type)->Submit(EndCommandBuffer(type), flags, waitForPrevious, outSignal);
+            }
+
         private:
-            VulkanQueue* m_queues[(uint32_t)Structs::QueueType::MaxCount] = {};
-            uint32_t m_queueIndices[(uint32_t)Structs::QueueType::MaxCount] = {};
+            Services::VulkanCommandBufferPool* m_commandBufferPools[MAX_DEPENDENCIES]{};
+            VulkanQueue* m_queues[MAX_DEPENDENCIES]{};
+            uint32_t m_queueIndices[MAX_DEPENDENCIES]{};
     };
 }

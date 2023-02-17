@@ -235,23 +235,6 @@ namespace PK::Rendering::VulkanRHI
         }
     }
 
-    VulkanFence::VulkanFence(VkDevice device, bool signaled) : device(device)
-    {
-        VkFenceCreateInfo fenceCreateInfo{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-
-        if (signaled) 
-        {
-            fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-        }
-
-        VK_ASSERT_RESULT(vkCreateFence(device, &fenceCreateInfo, nullptr, &vulkanFence));
-    }
-    
-    VulkanFence::~VulkanFence()
-    {
-        vkDestroyFence(device, vulkanFence, nullptr);
-    }
-
     VulkanImageView::VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo, const char* name) : device(device)
     {
         VK_ASSERT_RESULT_CTX(vkCreateImageView(device, &createInfo, nullptr, &view), "Failed to create an image view!");

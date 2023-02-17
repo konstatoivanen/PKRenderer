@@ -128,7 +128,7 @@ namespace PK::Rendering::Objects
 		auto pBufferOffset = 0ull;
 		auto vertexBufferName = GetFileName() + std::string(" Vertex Buffer");
 		auto indexBufferName = GetFileName() + std::string(" Index Buffer");
-		auto cmd = GraphicsAPI::GetCommandBuffer();
+		auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
 
 		for (auto& kv : layoutMap)
 		{
@@ -200,7 +200,7 @@ namespace PK::Rendering::Objects
 
 		AlignVertices((char*)allocationInfo.pVertices, allocationInfo.vertexCount, allocationInfo.vertexLayout, GetVertexBufferLayouts());
 
-		auto cmd = GraphicsAPI::GetCommandBuffer();
+		auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
 
 		for (auto i = 0u; i < m_vertexBuffers.size(); ++i)
 		{

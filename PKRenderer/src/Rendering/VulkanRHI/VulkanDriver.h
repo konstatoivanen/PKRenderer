@@ -54,7 +54,7 @@ namespace PK::Rendering::VulkanRHI
         ~VulkanDriver();
 
         Rendering::Structs::APIType GetAPI() const override final { return Rendering::Structs::APIType::Vulkan; }
-        Rendering::Objects::CommandBuffer* GetPrimaryCommandBuffer() const override final { return commandBufferPool->GetCurrent(); }
+        Rendering::Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) const override final { return queues->GetCommandBuffer(type); }
 
         void WaitForIdle() const override final { vkDeviceWaitIdle(device); }
         
@@ -78,7 +78,6 @@ namespace PK::Rendering::VulkanRHI
 
         PK::Utilities::Scope<Objects::VulkanQueueSet> queues;
         PK::Utilities::Scope<Services::VulkanFrameBufferCache> frameBufferCache;
-        PK::Utilities::Scope<Services::VulkanCommandBufferPool> commandBufferPool;
         PK::Utilities::Scope<Services::VulkanStagingBufferCache> stagingBufferCache;
         PK::Utilities::Scope<Services::VulkanDescriptorCache> descriptorCache;
         PK::Utilities::Scope<Services::VulkanPipelineCache> pipelineCache;

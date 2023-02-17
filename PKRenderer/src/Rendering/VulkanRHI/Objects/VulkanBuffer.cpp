@@ -17,7 +17,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     VulkanBuffer::~VulkanBuffer()
     {
-        Dispose(m_driver->GetPrimaryCommandBuffer()->GetOnCompleteGate());
+        Dispose(m_driver->GetCommandBuffer(QueueType::Graphics)->GetOnCompleteGate());
 
         // Borrowed staging buffer not returned :/
         if (m_mappedBuffer != nullptr)
@@ -35,7 +35,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         if ((m_usage & BufferUsage::PersistentStage) == 0)
         {
             PK_THROW_ASSERT(m_mappedBuffer == nullptr, "Trying to begin a new mapping for a buffer that is already being mapped!");
-            m_mappedBuffer = m_driver->stagingBufferCache->GetBuffer(size, m_driver->GetPrimaryCommandBuffer()->GetOnCompleteGate());
+            m_mappedBuffer = m_driver->stagingBufferCache->GetBuffer(size, m_driver->GetCommandBuffer(QueueType::Graphics)->GetOnCompleteGate());
             m_mapRange.region.srcOffset = 0ull;
             return m_mappedBuffer->BeginMap(0ull);
         }
@@ -133,7 +133,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             m_usage = m_usage & ~((uint32_t)BufferUsage::PersistentStage);
         }
 
-        Dispose(m_driver->GetPrimaryCommandBuffer()->GetOnCompleteGate());
+        Dispose(m_driver->GetCommandBuffer(QueueType::Graphics)->GetOnCompleteGate());
 
         m_count = count;
         auto size = m_layout.GetStride(m_usage) * count;

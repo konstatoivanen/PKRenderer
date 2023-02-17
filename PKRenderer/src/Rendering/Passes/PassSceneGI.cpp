@@ -28,7 +28,7 @@ namespace PK::Rendering::Passes
         auto tableInfo = m_rayTraceGatherGI->GetShaderBindingTableInfo();
         auto tableUintCount = tableInfo.totalTableSize / sizeof(uint32_t);
         m_shaderBindingTable = Buffer::Create(ElementType::Uint, tableUintCount, BufferUsage::DefaultShaderBindingTable, "GI.ShaderBindingTable");
-        GraphicsAPI::GetCommandBuffer()->UploadBufferData(m_shaderBindingTable.get(), tableInfo.handleData);
+        GraphicsAPI::GetCommandBuffer(QueueType::Graphics)->UploadBufferData(m_shaderBindingTable.get(), tableInfo.handleData);
 
         TextureDescriptor descr{};
         descr.samplerType = SamplerType::Sampler3D;
@@ -73,7 +73,7 @@ namespace PK::Rendering::Passes
         descr.layers = 16;
         m_rayhits = Texture::Create(descr, "GI.RayHits");
 
-        auto cmd = GraphicsAPI::GetCommandBuffer();
+        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
         auto hash = HashCache::Get();
         cmd->SetImage(hash->pk_SceneGI_VolumeMaskWrite, m_voxelMask.get());
         cmd->SetImage(hash->pk_SceneGI_VolumeWrite, m_voxels.get());

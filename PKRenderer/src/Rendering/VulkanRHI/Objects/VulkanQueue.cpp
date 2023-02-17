@@ -178,6 +178,11 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     VkResult VulkanQueue::Submit(Objects::VulkanCommandBuffer* commandBuffer, VkPipelineStageFlags flags, bool waitForPrevious, VkSemaphore* outSignal)
     {
+        if (!commandBuffer)
+        {
+            return VK_SUCCESS;
+        }
+
         VkPipelineStageFlags waitFlags[MAX_DEPENDENCIES]{};
         VkSemaphore waits[MAX_DEPENDENCIES]{};
         uint64_t waitValues[MAX_DEPENDENCIES]{};
@@ -212,7 +217,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         timelineInfo.signalSemaphoreValueCount = signalCount;
         timelineInfo.pSignalSemaphoreValues = signalValues;
 
-        m_lastSubmitFence = commandBuffer->fence->vulkanFence;
+        m_lastSubmitFence = commandBuffer->GetFence();
         m_lastSubmitGate = commandBuffer->GetOnCompleteGate();
 
         VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
@@ -223,7 +228,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         submitInfo.signalSemaphoreCount = signalCount;
         submitInfo.pSignalSemaphores = signals;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer->commandBuffer;
+        submitInfo.pCommandBuffers = &commandBuffer->GetNative();
         
         if (outSignal)
         {
@@ -233,7 +238,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         
         m_timeline.waitFlags = flags;
 
-        return vkQueueSubmit(m_queue, 1, &submitInfo, commandBuffer->fence->vulkanFence);
+        return vkQueueSubmit(m_queue, 1, &submitInfo, commandBuffer->GetFence());
     }
 
     VkResult VulkanQueue::BindSparse(VkBuffer buffer, const VkSparseMemoryBind* binds, uint32_t bindCount)
@@ -331,12 +336,13 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    VulkanQueueSet::VulkanQueueSet(VkDevice device, const Initializer& initializer)
+    VulkanQueueSet::VulkanQueueSet(VkDevice device, const Initializer& initializer, const Objects::VulkanServiceContext& services)
     {
         for (auto i = 0u; i < initializer.queueCount; ++i)
         {
             auto& familyProps = initializer.familyProperties.at(initializer.queueFamilies[i]);
             m_queues[i] = new VulkanQueue(device, familyProps.queueFlags, initializer.queueFamilies[i], initializer.queueIndices[i]);
+            m_commandBufferPools[i] = new Services::VulkanCommandBufferPool(device, services, initializer.queueFamilies[i]);
         }
 
         memcpy(m_queueIndices, initializer.typeIndices, sizeof(m_queueIndices));
@@ -349,6 +355,11 @@ namespace PK::Rendering::VulkanRHI::Objects
             if (m_queues[i])
             {
                 delete m_queues[i];
+            }
+
+            if (m_commandBufferPools[i])
+            {
+                delete m_commandBufferPools[i];
             }
         }
     }

@@ -28,7 +28,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         dummy.image.range = { VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM, 0u, 1u, 0u, 1u };
         dummy.image.samples = 1u;
         const VulkanBindHandle* handles = &dummy;
-        renderState->SetRenderTarget(&handles, nullptr, 0u);
+        m_renderState->SetRenderTarget(&handles, nullptr, 0u);
     }
 
     void VulkanCommandBuffer::SetRenderTarget(Texture** renderTargets, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count)
@@ -46,24 +46,24 @@ namespace PK::Rendering::VulkanRHI::Objects
             }
         }
 
-        renderState->SetRenderTarget(colors, resolves, count);
+        m_renderState->SetRenderTarget(colors, resolves, count);
     }
 
     void VulkanCommandBuffer::SetViewPorts(const uint4* rects, uint32_t count)
     {
         VkViewport* viewports = nullptr;
-        if (renderState->SetViewports(rects, count, &viewports))
+        if (m_renderState->SetViewports(rects, count, &viewports))
         {
-            vkCmdSetViewport(commandBuffer, 0, count, viewports);
+            vkCmdSetViewport(m_commandBuffer, 0, count, viewports);
         }
     }
 
     void VulkanCommandBuffer::SetScissors(const uint4* rects, uint32_t count)
     {
         VkRect2D* scissors = nullptr;
-        if (renderState->SetScissors(rects, count, &scissors))
+        if (m_renderState->SetScissors(rects, count, &scissors))
         {
-            vkCmdSetScissor(commandBuffer, 0, count, scissors);
+            vkCmdSetScissor(m_commandBuffer, 0, count, scissors);
         }
     }
 
@@ -73,7 +73,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         if (variantIndex == -1)
         {
             auto selector = shader->GetVariantSelector();
-            selector.SetKeywordsFrom(renderState->GetResourceState());
+            selector.SetKeywordsFrom(*m_renderState->GetResources());
             variantIndex = selector.GetIndex();
         }
 
@@ -83,12 +83,12 @@ namespace PK::Rendering::VulkanRHI::Objects
         // No need to assign raster params for a non graphics pipeline
         if (shader->GetType() == ShaderType::Graphics)
         {
-            renderState->SetBlending(fixedAttrib.blending);
-            renderState->SetDepthStencil(fixedAttrib.depthStencil);
-            renderState->SetRasterization(fixedAttrib.rasterization);
+            m_renderState->SetBlending(fixedAttrib.blending);
+            m_renderState->SetDepthStencil(fixedAttrib.depthStencil);
+            m_renderState->SetRasterization(fixedAttrib.rasterization);
         }
 
-        renderState->SetShader(pVariant);
+        m_renderState->SetShader(pVariant);
     }
 
     void VulkanCommandBuffer::SetVertexBuffers(const Buffer** buffers, uint32_t count)
@@ -100,72 +100,72 @@ namespace PK::Rendering::VulkanRHI::Objects
             pHandles[i] = buffers[i]->GetNative<VulkanBuffer>()->GetBindHandle();
         }
 
-        renderState->SetVertexBuffers(pHandles, count);
+        m_renderState->SetVertexBuffers(pHandles, count);
     }
 
     void VulkanCommandBuffer::SetIndexBuffer(const Buffer* buffer, size_t offset)
     {
         auto handle = buffer->GetNative<VulkanBuffer>()->GetBindHandle();
-        renderState->SetIndexBuffer(handle, EnumConvert::GetIndexType(handle->buffer.layout->begin()->Type));
+        m_renderState->SetIndexBuffer(handle, EnumConvert::GetIndexType(handle->buffer.layout->begin()->Type));
     }
 
     void VulkanCommandBuffer::SetBuffer(uint32_t nameHashId, Buffer* buffer, const IndexRange& range)
     {
-        renderState->SetResource(nameHashId, Handle(buffer->GetNative<VulkanBuffer>()->GetBindHandle(range)));
+        m_renderState->SetResource(nameHashId, Handle(buffer->GetNative<VulkanBuffer>()->GetBindHandle(range)));
     }
 
     void VulkanCommandBuffer::SetTexture(uint32_t nameHashId, Texture* texture, const TextureViewRange& range)
     {
-        renderState->SetResource(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::SampledTexture)));
+        m_renderState->SetResource(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::SampledTexture)));
     }
 
     void VulkanCommandBuffer::SetBufferArray(uint32_t nameHashId, BindArray<Buffer>* bufferArray)
     {
-        renderState->SetResource(nameHashId, Handle(bufferArray->GetNative<VulkanBindArray>()));
+        m_renderState->SetResource(nameHashId, Handle(bufferArray->GetNative<VulkanBindArray>()));
     }
 
     void VulkanCommandBuffer::SetTextureArray(uint32_t nameHashId, BindArray<Texture>* textureArray)
     {
-        renderState->SetResource(nameHashId, Handle(textureArray->GetNative<VulkanBindArray>()));
+        m_renderState->SetResource(nameHashId, Handle(textureArray->GetNative<VulkanBindArray>()));
     }
 
     void VulkanCommandBuffer::SetImage(uint32_t nameHashId, Texture* texture, const TextureViewRange& range)
     {
-        renderState->SetResource(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::Image)));
+        m_renderState->SetResource(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::Image)));
     }
 
     void VulkanCommandBuffer::SetAccelerationStructure(uint32_t nameHashId, AccelerationStructure* structure)
     {
-        renderState->SetResource(nameHashId, Handle(structure->GetNative<VulkanAccelerationStructure>()->GetBindHandle()));
+        m_renderState->SetResource(nameHashId, Handle(structure->GetNative<VulkanAccelerationStructure>()->GetBindHandle()));
     }
 
     void VulkanCommandBuffer::SetShaderBindingTable(Structs::RayTracingShaderGroup group, const Buffer* buffer, size_t offset, size_t stride, size_t size)
     {
         auto address = buffer->GetNative<VulkanBuffer>()->GetRaw()->deviceAddress;
-        renderState->SetShaderBindingTableAddress(group, address + offset, stride, size);
+        m_renderState->SetShaderBindingTableAddress(group, address + offset, stride, size);
     }
 
     void VulkanCommandBuffer::SetConstant(uint32_t nameHashId, const void* data, uint32_t size)
     {
-        renderState->SetResource<char>(nameHashId, reinterpret_cast<const char*>(data), size);
+        m_renderState->SetResource<char>(nameHashId, reinterpret_cast<const char*>(data), size);
     }
 
     void VulkanCommandBuffer::SetKeyword(uint32_t nameHashId, bool value)
     {
-        renderState->SetResource<bool>(nameHashId, value);
+        m_renderState->SetResource<bool>(nameHashId, value);
     }
 
 
     void VulkanCommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
     {
         ValidatePipeline();
-        vkCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+        vkCmdDraw(m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
     void VulkanCommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
     {
         ValidatePipeline();
-        vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+        vkCmdDrawIndexed(m_commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
     void VulkanCommandBuffer::DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
@@ -176,25 +176,25 @@ namespace PK::Rendering::VulkanRHI::Objects
         record.bufferRange.size = drawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        renderState->RecordAccess(vkbuffer->buffer, record);
+        m_renderState->RecordAccess(vkbuffer->buffer, record);
 
         ValidatePipeline();
-        vkCmdDrawIndexedIndirect(commandBuffer, vkbuffer->buffer, offset, drawCount, stride);
+        vkCmdDrawIndexedIndirect(m_commandBuffer, vkbuffer->buffer, offset, drawCount, stride);
     }
 
     void VulkanCommandBuffer::Dispatch(uint3 groupCount)
     {
         EndRenderPass();
         ValidatePipeline();
-        vkCmdDispatch(commandBuffer, groupCount.x, groupCount.y, groupCount.z);
+        vkCmdDispatch(m_commandBuffer, groupCount.x, groupCount.y, groupCount.z);
     }
 
     void VulkanCommandBuffer::DispatchRays(Math::uint3 dimensions)
     {
         EndRenderPass();
         ValidatePipeline();
-        auto addresses = renderState->GetShaderBindingTableAddresses();
-        vkCmdTraceRaysKHR(commandBuffer, 
+        auto addresses = m_renderState->GetShaderBindingTableAddresses();
+        vkCmdTraceRaysKHR(m_commandBuffer,
                           addresses + (uint32_t)Structs::RayTracingShaderGroup::RayGeneration, 
                           addresses + (uint32_t)Structs::RayTracingShaderGroup::Miss,
                           addresses + (uint32_t)Structs::RayTracingShaderGroup::Hit,
@@ -218,7 +218,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         record.layout = windowHandle->image.layout;
         record.aspect = windowHandle->image.range.aspectMask;
         record.imageRange = Utilities::VulkanConvertRange(windowHandle->image.range);
-        renderState->RecordAccess(windowHandle->image.image, record);
+        m_renderState->RecordAccess(windowHandle->image.image, record);
 
         // Resolve swapchain image layout immediately
         ResolveBarriers();
@@ -243,11 +243,11 @@ namespace PK::Rendering::VulkanRHI::Objects
         record.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         record.aspect = vksrc->image.range.aspectMask;
         record.imageRange = Utilities::VulkanConvertRange(vksrc->image.range);
-        renderState->RecordAccess(vksrc->image.image, record);
+        m_renderState->RecordAccess(vksrc->image.image, record);
 
         EndRenderPass();
         ResolveBarriers();
-        vkCmdCopyImageToBuffer(commandBuffer, vksrc->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vkbuff->GetRaw()->buffer, 1, &region);
+        vkCmdCopyImageToBuffer(m_commandBuffer, vksrc->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vkbuff->GetRaw()->buffer, 1, &region);
     }
 
     void VulkanCommandBuffer::Blit(Texture* src, Texture* dst, const Structs::TextureViewRange& srcRange, const Structs::TextureViewRange& dstRange, FilterMode filter)
@@ -292,40 +292,40 @@ namespace PK::Rendering::VulkanRHI::Objects
         record.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         record.aspect = src->image.range.aspectMask;
         record.imageRange = Utilities::VulkanConvertRange(src->image.range);
-        renderState->RecordAccess(src->image.image, record);
+        m_renderState->RecordAccess(src->image.image, record);
 
         record.access = 0u;
         record.stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         record.layout = VK_IMAGE_LAYOUT_UNDEFINED;
         record.aspect = dst->image.range.aspectMask;
         record.imageRange = Utilities::VulkanConvertRange(dst->image.range);
-        renderState->RecordAccess(dst->image.image, record, nullptr, false);
+        m_renderState->RecordAccess(dst->image.image, record, nullptr, false);
 
         record.access = VK_ACCESS_TRANSFER_WRITE_BIT;
         record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         record.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         record.aspect = dst->image.range.aspectMask;
         record.imageRange = Utilities::VulkanConvertRange(dst->image.range);
-        renderState->RecordAccess(dst->image.image, record);
+        m_renderState->RecordAccess(dst->image.image, record);
 
         EndRenderPass();
         ResolveBarriers();
 
         if (src->image.samples > 1 && dst->image.samples == 1)
         {
-            vkCmdResolveImage(commandBuffer, src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &resolveRegion);
+            vkCmdResolveImage(m_commandBuffer, src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &resolveRegion);
         }
         else 
         {
             auto vkFilter = EnumConvert::GetFilterMode(filter);
-            vkCmdBlitImage(commandBuffer, src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blitRegion, vkFilter);
+            vkCmdBlitImage(m_commandBuffer, src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blitRegion, vkFilter);
         }
     }
 
     void VulkanCommandBuffer::Clear(Buffer* dst, size_t offset, size_t size, uint32_t value)
     {
         EndRenderPass();
-        vkCmdFillBuffer(commandBuffer, dst->GetNative<VulkanBuffer>()->GetRaw()->buffer, offset, size, value);
+        vkCmdFillBuffer(m_commandBuffer, dst->GetNative<VulkanBuffer>()->GetRaw()->buffer, offset, size, value);
     }
 
     void VulkanCommandBuffer::Clear(Texture* dst, const TextureViewRange& range, const uint4& value)
@@ -349,7 +349,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             clearValue.uint32[i] = value[i];
         }
 
-        vkCmdClearColorImage(commandBuffer, vktex->GetRaw()->image, handle->image.layout, &clearValue, 1, &subrange);
+        vkCmdClearColorImage(m_commandBuffer, vktex->GetRaw()->image, handle->image.layout, &clearValue, 1, &subrange);
     }
 
     void* VulkanCommandBuffer::BeginBufferWrite(Buffer* buffer, size_t offset, size_t size)
@@ -373,7 +373,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         record.bufferRange.size = (uint32_t)copyRegion.size;
         record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         record.access = VK_ACCESS_TRANSFER_WRITE_BIT;
-        renderState->RecordAccess(dstBuffer, record);
+        m_renderState->RecordAccess(dstBuffer, record);
     }
 
     void VulkanCommandBuffer::BeginDebugScope(const char* name, const Math::color& color)
@@ -382,22 +382,22 @@ namespace PK::Rendering::VulkanRHI::Objects
         labelInfo.pNext = nullptr;
         labelInfo.pLabelName = name;
         memcpy(labelInfo.color, glm::value_ptr(color), sizeof(Math::color));
-        vkCmdBeginDebugUtilsLabelEXT(commandBuffer, &labelInfo);
+        vkCmdBeginDebugUtilsLabelEXT(m_commandBuffer, &labelInfo);
     }
 
     void VulkanCommandBuffer::EndDebugScope()
     {
-        vkCmdEndDebugUtilsLabelEXT(commandBuffer);
+        vkCmdEndDebugUtilsLabelEXT(m_commandBuffer);
     }
 
     void VulkanCommandBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferCopy* pRegions) const
     {
-        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+        vkCmdCopyBuffer(m_commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
     }
 
     void VulkanCommandBuffer::CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions) const
     {
-        vkCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+        vkCmdCopyBufferToImage(m_commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
     }
 
     void VulkanCommandBuffer::CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, const VkExtent3D& extent, uint32_t level, uint32_t layer) const
@@ -413,7 +413,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::BuildAccelerationStructures(uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
     {
-        vkCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
+        vkCmdBuildAccelerationStructuresKHR(m_commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
     }
 
     void VulkanCommandBuffer::TransitionImageLayout(const VulkanLayoutTransition& transition)
@@ -448,12 +448,12 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
 
         // Memory & buffer memory barriers not allowed inside renderpasses. Barriers are not allowed inside renderpasses unless using self-dependencies.
-        if (memoryBarrierCount > 0 || bufferMemoryBarrierCount > 0 || !renderState->HasDynamicTargets())
+        if (memoryBarrierCount > 0 || bufferMemoryBarrierCount > 0 || !m_renderState->HasDynamicTargets())
         {
             EndRenderPass();
         }
 
-        vkCmdPipelineBarrier(commandBuffer,
+        vkCmdPipelineBarrier(m_commandBuffer,
             srcStageMask,
             dstStageMask,
             dependencyFlags,
@@ -470,7 +470,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         static VulkanBarrierInfo barrierInfo{};
         
-        if (renderState->ResolveBarriers(&barrierInfo))
+        if (m_renderState->ResolveBarriers(&barrierInfo))
         {
             PipelineBarrier(barrierInfo.srcStageMask, 
                             barrierInfo.dstStageMask, 
@@ -490,10 +490,10 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::ValidatePipeline()
     {
-        auto flags = renderState->ValidatePipeline(GetOnCompleteGate());
+        auto flags = m_renderState->ValidatePipeline(GetOnCompleteGate());
 
         // Conservative barrier deployment. lets not break an active renderpass. Assume coherent read/writes.
-        if (!isInActiveRenderPass || (flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
+        if (!m_isInActiveRenderPass || (flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
         {
             ResolveBarriers();
         }
@@ -501,43 +501,43 @@ namespace PK::Rendering::VulkanRHI::Objects
         if ((flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
         {
             EndRenderPass();
-            auto info = renderState->GetRenderPassInfo();
-            vkCmdBeginRenderPass(commandBuffer, &info, level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_SUBPASS_CONTENTS_INLINE : VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-            isInActiveRenderPass = true;
+            auto info = m_renderState->GetRenderPassInfo();
+            vkCmdBeginRenderPass(m_commandBuffer, &info, m_level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_SUBPASS_CONTENTS_INLINE : VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+            m_isInActiveRenderPass = true;
         }
 
         if ((flags & PK_RENDER_STATE_DIRTY_PIPELINE) != 0)
         {
-            vkCmdBindPipeline(commandBuffer, renderState->GetPipelineBindPoint(), renderState->GetPipeline());
+            vkCmdBindPipeline(m_commandBuffer, m_renderState->GetPipelineBindPoint(), m_renderState->GetPipeline());
         }
 
         if ((flags & PK_RENDER_STATE_DIRTY_VERTEXBUFFERS) != 0)
         {
-            auto vertexBufferBundle = renderState->GetVertexBufferBundle();
+            auto vertexBufferBundle = m_renderState->GetVertexBufferBundle();
 
             if (vertexBufferBundle.count > 0)
             {
-                vkCmdBindVertexBuffers(commandBuffer, 0, vertexBufferBundle.count, vertexBufferBundle.buffers, vertexBufferBundle.offsets);
+                vkCmdBindVertexBuffers(m_commandBuffer, 0, vertexBufferBundle.count, vertexBufferBundle.buffers, vertexBufferBundle.offsets);
             }
         }
 
         if ((flags & PK_RENDER_STATE_DIRTY_INDEXBUFFER) != 0)
         {
             VkIndexType indexType; 
-            auto indexBufferHandle = renderState->GetIndexBuffer(&indexType);
-            vkCmdBindIndexBuffer(commandBuffer, indexBufferHandle->buffer.buffer, indexBufferHandle->buffer.offset, indexType);
+            auto indexBufferHandle = m_renderState->GetIndexBuffer(&indexType);
+            vkCmdBindIndexBuffer(m_commandBuffer, indexBufferHandle->buffer.buffer, indexBufferHandle->buffer.offset, indexType);
         }
 
         if ((flags & PK_RENDER_STATE_DIRTY_DESCRIPTOR_SETS) != 0)
         {
-            auto bindBundle = renderState->GetDescriptorSetBundle(GetOnCompleteGate(), flags);
-            vkCmdBindDescriptorSets(commandBuffer, bindBundle.bindPoint, bindBundle.layout, bindBundle.firstSet, bindBundle.count, bindBundle.sets, 0, nullptr);
+            auto bindBundle = m_renderState->GetDescriptorSetBundle(GetOnCompleteGate(), flags);
+            vkCmdBindDescriptorSets(m_commandBuffer, bindBundle.bindPoint, bindBundle.layout, bindBundle.firstSet, bindBundle.count, bindBundle.sets, 0, nullptr);
         }
 
-        if (renderState->HasPipeline())
+        if (m_renderState->HasPipeline())
         {
-            auto& constantLayout = renderState->GetPipelinePushConstantLayout();
-            auto& props = renderState->GetResourceState();
+            auto& constantLayout = m_renderState->GetPipelinePushConstantLayout();
+            auto& props = *m_renderState->GetResources();
 
             for (auto& kv : constantLayout)
             {
@@ -548,7 +548,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 if (props.TryGet<char>(kv.second.NameHashId, data, &dataSize) && dataSize <= element.Size)
                 {
                     auto stageFlags = EnumConvert::GetShaderStageFlags(element.StageFlags);
-                    vkCmdPushConstants(commandBuffer, renderState->GetPipelineLayout(), stageFlags, element.Offset, (uint32_t)dataSize, data);
+                    vkCmdPushConstants(m_commandBuffer, m_renderState->GetPipelineLayout(), stageFlags, element.Offset, (uint32_t)dataSize, data);
                 }
             }
         }
@@ -556,25 +556,30 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::EndRenderPass()
     {
-        if (isInActiveRenderPass)
+        if (m_isInActiveRenderPass)
         {
-            vkCmdEndRenderPass(commandBuffer);
-            isInActiveRenderPass = false;
+            vkCmdEndRenderPass(m_commandBuffer);
+            m_isInActiveRenderPass = false;
         }
     }
     
-    void VulkanCommandBuffer::BeginCommandBuffer()
+    void VulkanCommandBuffer::BeginCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferLevel level, Objects::VulkanRenderState* renderState)
     {
+        m_level = level;
+        m_commandBuffer = commandBuffer;
+        m_renderState = renderState;
+        m_renderState->Reset();
+
         VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        VK_ASSERT_RESULT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
-        renderState->Reset();
+        VK_ASSERT_RESULT(vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
     }
 
     void VulkanCommandBuffer::EndCommandBuffer()
     {
         // End possibly active render pass
         EndRenderPass();
-        VK_ASSERT_RESULT(vkEndCommandBuffer(commandBuffer));
+        VK_ASSERT_RESULT(vkEndCommandBuffer(m_commandBuffer));
+        m_renderState = nullptr;
     }
 }

@@ -26,13 +26,15 @@ namespace PK::Rendering
     {
         virtual ~GraphicsDriver() = default;
         virtual Structs::APIType GetAPI() const = 0;
-        virtual Objects::CommandBuffer* GetPrimaryCommandBuffer() const = 0;
+        virtual Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) const = 0;
         virtual void WaitForIdle() const = 0;
         virtual DriverMemoryInfo GetMemoryInfo() const = 0;
         virtual size_t GetBufferOffsetAlignment(Structs::BufferUsage usage) const = 0;
         virtual void GC() = 0;
 
         static Utilities::Scope<GraphicsDriver> Create(const std::string& workingDirectory, Structs::APIType api);
+    
+        PK::Utilities::PropertyBlock globalResources = PK::Utilities::PropertyBlock(16384);
     };
 
     namespace GraphicsAPI
@@ -49,7 +51,7 @@ namespace PK::Rendering
         Structs::APIType GetActiveAPI();
         
         // Add support for secondary commandbuffers
-        Objects::CommandBuffer* GetCommandBuffer();
+        Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type);
 
         DriverMemoryInfo GetMemoryInfo();
         size_t GetBufferOffsetAlignment(Structs::BufferUsage usage);

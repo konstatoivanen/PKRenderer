@@ -20,13 +20,13 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     VulkanTexture::~VulkanTexture()
     {
-        Dispose(m_driver->GetPrimaryCommandBuffer()->GetOnCompleteGate());
+        Dispose(m_driver->GetCommandBuffer(QueueType::Graphics)->GetOnCompleteGate());
     }
 
 
 	void VulkanTexture::SetData(const void* data, size_t size, uint32_t level, uint32_t layer) const
     {
-        auto* cmd = m_driver->commandBufferPool->GetCurrent();
+        auto* cmd = m_driver->queues->GetCommandBuffer(QueueType::Graphics);
         
         const auto* stage = m_driver->stagingBufferCache->GetBuffer(size, cmd->GetOnCompleteGate());
         stage->SetData(data, size);
@@ -61,7 +61,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanTexture::Import(const char* filepath)
     {
-        auto cmd = m_driver->commandBufferPool->GetCurrent();
+        auto cmd = m_driver->queues->GetCommandBuffer(QueueType::Graphics);
 
         Dispose(cmd->GetOnCompleteGate());
 
@@ -200,7 +200,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanTexture::Rebuild(const TextureDescriptor& descriptor)
     {
-        auto* cmd = m_driver->commandBufferPool->GetCurrent();
+        auto* cmd = m_driver->queues->GetCommandBuffer(QueueType::Graphics);
 
         Dispose(cmd->GetOnCompleteGate());
 

@@ -65,7 +65,7 @@ namespace PK::Rendering
 
     APIType GraphicsAPI::GetActiveAPI() { return s_currentDriver->GetAPI(); }
    
-    CommandBuffer* GraphicsAPI::GetCommandBuffer() { return s_currentDriver->GetPrimaryCommandBuffer(); }
+    CommandBuffer* GraphicsAPI::GetCommandBuffer(Structs::QueueType type) { return s_currentDriver->GetCommandBuffer(type); }
     
     DriverMemoryInfo GraphicsAPI::GetMemoryInfo() { return s_currentDriver->GetMemoryInfo(); }
 

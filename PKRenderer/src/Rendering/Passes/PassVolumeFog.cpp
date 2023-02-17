@@ -56,7 +56,7 @@ namespace PK::Rendering::Passes
 
         OnUpdateParameters(config);
 
-        auto cmd = GraphicsAPI::GetCommandBuffer();
+        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
         cmd->SetImage(hash->pk_Volume_Inject, m_volumeInject.get());
         cmd->SetImage(hash->pk_Volume_Scatter, m_volumeScatter.get());
         cmd->SetTexture(hash->pk_Volume_InjectRead, m_volumeInject.get());
