@@ -164,12 +164,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         // This is not strictly necesssary when not using double buffering for staging buffers.
         // However, for them to have coherent memory operations we cannot push more than 2 frames at a time.
-        auto& fence = m_frameFences.at(m_frameIndex);
-        
-        if (fence.fence != VK_NULL_HANDLE && !fence.gate.IsComplete())
-        {
-            vkWaitForFences(m_device, 1, &fence.fence, VK_TRUE, UINT64_MAX);
-        }
+        PK_THROW_ASSERT(m_frameFences.at(m_frameIndex).WaitInvalidate(UINT64_MAX), "Frame fence timeout!");
 
         auto semaphore = m_queueGraphics->GetNextSemaphore();
         auto result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_imageIndex);
@@ -183,8 +178,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanSwapchain::Present(VkSemaphore waitSignal)
     {
         auto result = m_queuePresent->Present(m_swapchain, m_imageIndex, waitSignal);
-        m_frameFences[m_frameIndex].fence = m_queueGraphics->GetLastSubmitFence();
-        m_frameFences[m_frameIndex].gate = m_queueGraphics->GetLastSubmitGate();
+        m_frameFences[m_frameIndex] = m_queueGraphics->GetFenceRef();
         m_frameIndex = (m_frameIndex + 1) % m_maxFramesInFlight;
     }
 

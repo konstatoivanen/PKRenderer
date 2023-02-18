@@ -16,9 +16,8 @@ namespace PK::Rendering::VulkanRHI::Objects
     struct VulkanCommandBuffer : public CommandBuffer
     {
         VulkanCommandBuffer() {}
-
+        FenceRef GetFenceRef() const override final;
         inline bool IsActive() const { return m_commandBuffer != VK_NULL_HANDLE; }
-        inline ExecutionGate GetOnCompleteGate() const override final { return { m_invocationIndex, &m_invocationIndex }; }
         inline VkCommandBuffer& GetNative() { return m_commandBuffer; }
         inline VkFence& GetFence() { return m_fence; }
         inline void Release() { m_commandBuffer = VK_NULL_HANDLE; ++m_invocationIndex; }

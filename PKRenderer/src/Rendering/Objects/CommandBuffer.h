@@ -7,7 +7,7 @@
 #include "Rendering/Objects/RenderTexture.h"
 #include "Rendering/Objects/AccelerationStructure.h"
 #include "Rendering/Objects/BindArray.h"
-#include "Rendering/Structs/ExecutionGate.h"
+#include "Rendering/Structs/FenceRef.h"
 
 namespace PK::Rendering::Objects
 {
@@ -17,7 +17,7 @@ namespace PK::Rendering::Objects
     // Current setup hides implicit dependencies on currently active command buffers.
     struct CommandBuffer : public PK::Utilities::NoCopy, public Utilities::NativeInterface<CommandBuffer>
     {
-        virtual Structs::ExecutionGate GetOnCompleteGate() const = 0;
+        virtual Structs::FenceRef GetFenceRef() const = 0;
         virtual void SetRenderTarget(const Math::uint3& resolution) = 0;
         virtual void SetRenderTarget(Texture** renderTarget, Texture** resolveTargets, const Structs::TextureViewRange* ranges, uint32_t count) = 0;
         virtual void ClearColor(const Math::color& color, uint32_t index) = 0;

@@ -2,6 +2,7 @@
 #include "VulkanWindow.h"
 #include "Core/Services/Log.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
+#include "Utilities/FileIOBMP.h"
 
 namespace PK::Rendering::VulkanRHI
 {
@@ -27,11 +28,22 @@ namespace PK::Rendering::VulkanRHI
     VulkanWindow::VulkanWindow(VulkanDriver* driver, const PK::Core::WindowProperties& properties) :
         m_driver(driver)
     {
+
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         m_window = glfwCreateWindow(properties.width, properties.height, properties.title.c_str(), nullptr, nullptr);
         PK_THROW_ASSERT(m_window, "Failed To Create Window");
+
+        if (properties.iconPath.length() > 0)
+        {
+            GLFWimage image;
+            int32_t iconBytesPerPixel = 0;
+            PK::Utilities::FileIO::ReadBMP(properties.iconPath.c_str(), &image.pixels, &image.width, &image.height, &iconBytesPerPixel);
+            PK_THROW_ASSERT(iconBytesPerPixel == 4, "Trying to load an icon with invalid bytes per pixel value, %i", iconBytesPerPixel);
+            glfwSetWindowIcon(m_window, 1, &image);
+            free(image.pixels);
+        }
 
         glfwSetWindowUserPointer(m_window, this);
 

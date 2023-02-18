@@ -55,12 +55,13 @@ namespace PK::Rendering::VulkanRHI
 
         Rendering::Structs::APIType GetAPI() const override final { return Rendering::Structs::APIType::Vulkan; }
         Rendering::Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) const override final { return queues->GetCommandBuffer(type); }
-
-        void WaitForIdle() const override final { vkDeviceWaitIdle(device); }
-        
+        Structs::FenceRef GetCommandBufferFenceRef(Structs::QueueType type) const override final { return queues->GetCommandBuffer(type)->GetFenceRef(); }
+        Structs::FenceRef GetQueueFenceRef(Structs::QueueType type) const override final { return queues->GetQueue(type)->GetFenceRef(); }
+        std::string GetDriverHeader() const;
         DriverMemoryInfo GetMemoryInfo() const override final;
         size_t GetBufferOffsetAlignment(Structs::BufferUsage usage) const override final;
-        
+
+        void WaitForIdle() const override final { vkDeviceWaitIdle(device); }
         void GC() override final;
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -75,6 +76,7 @@ namespace PK::Rendering::VulkanRHI
         VmaAllocator allocator;
         VulkanContextProperties properties;
         VulkanPhysicalDeviceProperties physicalDeviceProperties;
+        uint32_t apiVersion;
 
         PK::Utilities::Scope<Objects::VulkanQueueSet> queues;
         PK::Utilities::Scope<Services::VulkanFrameBufferCache> frameBufferCache;

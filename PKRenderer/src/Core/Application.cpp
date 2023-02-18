@@ -63,7 +63,13 @@ namespace PK::Core
         auto workingDirectory = std::filesystem::path(arguments.args[0]).remove_filename().string();
         m_graphicsDriver = GraphicsDriver::Create(workingDirectory, APIType::Vulkan);
 
-        m_window = Window::Create(WindowProperties(name, config->InitialWidth, config->InitialHeight, config->EnableVsync, config->EnableCursor));
+        m_window = Window::Create(WindowProperties(name + m_graphicsDriver->GetDriverHeader(),
+                                    config->FileWindowIcon, 
+                                    config->InitialWidth, 
+                                    config->InitialHeight, 
+                                    config->EnableVsync, 
+                                    config->EnableCursor));
+
         Window::SetConsole(config->EnableConsole);
         m_window->OnKeyInput = PK_BIND_FUNCTION(input, OnKeyInput);
         m_window->OnScrollInput = PK_BIND_FUNCTION(input, OnScrollInput);

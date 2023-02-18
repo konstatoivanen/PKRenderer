@@ -103,17 +103,17 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             VkRenderPassBeginInfo GetRenderPassInfo() const;
             VulkanVertexBufferBundle GetVertexBufferBundle() const;
-            VulkanDescriptorSetBundle GetDescriptorSetBundle(const Structs::ExecutionGate& gate, uint32_t dirtyFlags);
+            VulkanDescriptorSetBundle GetDescriptorSetBundle(const Structs::FenceRef& fence, uint32_t dirtyFlags);
             VkStridedDeviceAddressRegionKHR* GetShaderBindingTableAddresses();
             const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
             inline bool ResolveBarriers(VulkanBarrierInfo* outBarrierInfo) { return m_services.barrierHandler->Resolve(outBarrierInfo); }
 
-            PKRenderStateDirtyFlags ValidatePipeline(const Structs::ExecutionGate& gate);
+            PKRenderStateDirtyFlags ValidatePipeline(const Structs::FenceRef& fence);
 
         private:
             void ValidateRenderTarget();
             void ValidateVertexBuffers();
-            void ValidateDescriptorSets(const Structs::ExecutionGate& gate);
+            void ValidateDescriptorSets(const Structs::FenceRef& fence);
 
             void RecordResourceAccess();
             void RecordRenderTargetAccess();

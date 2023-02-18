@@ -81,7 +81,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             const ViewValue* GetView(const Structs::TextureViewRange& range, Structs::TextureBindMode mode = Structs::TextureBindMode::SampledTexture);
 
-            void Dispose(const ExecutionGate& gate);
+            void Dispose();
 
             const VulkanDriver* m_driver = nullptr;
             std::string m_name = "Texture";

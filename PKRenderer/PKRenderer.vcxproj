@@ -143,6 +143,7 @@
     <PostBuildEvent>
       <Command>xcopy /y /d  "$(ProjectDir)libs\*.dll" "$(TargetDir)"
 xcopy /y /s "$(ProjectDir)res\*.ktx2" "$(TargetDir)res\"
+xcopy /y /s "$(ProjectDir)res\*.bmp" "$(TargetDir)res\"
 xcopy /y /s "$(ProjectDir)res\*.material" "$(TargetDir)res\"
 xcopy /y /s "$(ProjectDir)res\*.cfg" "$(TargetDir)res\"
 xcopy /y /s "$(ProjectDir)res\*.keycfg" "$(TargetDir)res\"
@@ -178,6 +179,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <PostBuildEvent>
       <Command>xcopy /y /d  "$(ProjectDir)libs\*.dll" "$(TargetDir)"
 xcopy /y /s "$(ProjectDir)res\*.ktx2" "$(TargetDir)res\"
+xcopy /y /s "$(ProjectDir)res\*.bmp" "$(TargetDir)res\"
 xcopy /y /s "$(ProjectDir)res\*.material" "$(TargetDir)res\"
 xcopy /y /s "$(ProjectDir)res\*.cfg" "$(TargetDir)res\"
 xcopy /y /s "$(ProjectDir)res\*.keycfg" "$(TargetDir)res\"
@@ -560,7 +562,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\Passes\PassGeometry.h" />
     <ClInclude Include="src\Rendering\Passes\PassLights.h" />
     <ClInclude Include="src\Rendering\Passes\PassSceneGI.h" />
-    <ClInclude Include="src\Rendering\Structs\ExecutionGate.h" />
+    <ClInclude Include="src\Rendering\Structs\FenceRef.h" />
     <ClInclude Include="src\Rendering\Structs\StructIndirectArguments.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanAccelerationStructure.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanQueue.h" />
@@ -573,6 +575,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Core\CommandConfig.h" />
     <ClInclude Include="src\Core\ConsoleCommandBinding.h" />
     <ClInclude Include="src\Utilities\FileIO.h" />
+    <ClInclude Include="src\Utilities\FileIOBMP.h" />
     <ClInclude Include="src\Utilities\PointerMap.h" />
     <ClInclude Include="src\Utilities\FixedList.h" />
     <ClInclude Include="src\Utilities\VersionedObject.h" />
@@ -969,6 +972,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanBarrierHandler.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanLayoutCache.cpp" />
     <ClCompile Include="src\Utilities\FileIO.cpp" />
+    <ClCompile Include="src\Utilities\FileIOBMP.cpp" />
     <ClCompile Include="src\Utilities\HashHelpers.cpp" />
     <ClCompile Include="src\Utilities\PropertyBlock.cpp" />
     <ClCompile Include="src\Core\Services\Time.cpp" />
@@ -1042,6 +1046,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <Library Include="libs\VulkanMemoryAllocatord.lib" />
     <Library Include="libs\yaml-cpp.lib" />
     <Library Include="libs\yaml-cppd.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\T_AppIcon.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

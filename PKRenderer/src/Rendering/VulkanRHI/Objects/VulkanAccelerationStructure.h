@@ -10,7 +10,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         VulkanAccelerationStructure(const char* name);
         ~VulkanAccelerationStructure();
-        void Dispose(const ExecutionGate& gate);
+        void Dispose(const FenceRef& fence);
         
         void BeginWrite(uint32_t instanceLimit) override final;
         void AddInstance(Mesh* mesh, uint32_t submesh, uint32_t customIndex, const PK::Math::float4x4& matrix) override final;

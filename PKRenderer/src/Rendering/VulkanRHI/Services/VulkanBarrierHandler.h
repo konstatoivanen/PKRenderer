@@ -165,8 +165,8 @@ namespace PK::Rendering::VulkanRHI::Services
 
             PK::Utilities::PointerMap<uint64_t, AccessRecord> m_resources;
             PK::Utilities::FixedPool<AccessRecord, 1024> m_records;
-            PK::Utilities::FixedList<VkBufferMemoryBarrier, 1024> m_bufferBarriers;
-            PK::Utilities::FixedList<VkImageMemoryBarrier, 1024> m_imageBarriers;
+            PK::Utilities::FixedList<VkBufferMemoryBarrier, 256> m_bufferBarriers;
+            PK::Utilities::FixedList<VkImageMemoryBarrier, 256> m_imageBarriers;
             std::vector<uint64_t> m_pruneTicks;
             VkPipelineStageFlags m_sourceStage = 0u;
             VkPipelineStageFlags m_destinationStage = 0u;

@@ -48,7 +48,7 @@ namespace PK::Rendering::VulkanRHI::Services
             struct ExtinctPool
             {
                 VulkanDescriptorPool* pool;
-                mutable Structs::ExecutionGate executionGate;
+                mutable Structs::FenceRef fence;
                 std::vector<uint32_t> extinctSetIndices;
             };
 
@@ -58,13 +58,13 @@ namespace PK::Rendering::VulkanRHI::Services
 
             const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
                                                         const DescriptorSetKey& key,
-                                                        const Structs::ExecutionGate& gate);
+                                                        const Structs::FenceRef& fence);
 
             void Prune();
 
         private:
-            void GrowPool(const Structs::ExecutionGate& executionGate);
-            void GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const Structs::ExecutionGate& gate, bool throwOnFail);
+            void GrowPool(const Structs::FenceRef& fence);
+            void GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const Structs::FenceRef& fence, bool throwOnFail);
 
             const std::map<VkDescriptorType, size_t> m_poolSizes;
             const VkDevice m_device;

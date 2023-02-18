@@ -70,7 +70,7 @@ namespace PK::Rendering::VulkanRHI::Services
         }
     }
 
-    VulkanStagingBuffer* VulkanStagingBufferCache::GetBuffer(size_t size, const Rendering::Structs::ExecutionGate& gate)
+    VulkanStagingBuffer* VulkanStagingBufferCache::GetBuffer(size_t size, const FenceRef& fence)
     {
         auto index = Vector::LowerBound(m_freeBuffers, (uint32_t)size);
         auto nextPruneTick = m_currentPruneTick + 1;
@@ -91,7 +91,7 @@ namespace PK::Rendering::VulkanRHI::Services
         }
 
         stagingBuffer->pruneTick = nextPruneTick;
-        stagingBuffer->executionGate = gate;
+        stagingBuffer->fence = fence;
         return stagingBuffer;
     }
     
@@ -104,9 +104,9 @@ namespace PK::Rendering::VulkanRHI::Services
             auto stagingBuffer = m_activeBuffers.at(i);
 
             // If staging buffer has been assigned an execution observer let's wait for that instead of prune tick.
-            if (stagingBuffer->executionGate.IsValid() ? stagingBuffer->executionGate.IsComplete() : stagingBuffer->pruneTick < m_currentPruneTick)
+            if (stagingBuffer->fence.IsValid() ? stagingBuffer->fence.IsComplete() : stagingBuffer->pruneTick < m_currentPruneTick)
             {
-                stagingBuffer->executionGate.Invalidate();
+                stagingBuffer->fence.Invalidate();
                 stagingBuffer->pruneTick = m_currentPruneTick + m_pruneDelay;
                 m_freeBuffers.push_back(stagingBuffer);
                 Vector::UnorderedRemoveAt(m_activeBuffers, i);

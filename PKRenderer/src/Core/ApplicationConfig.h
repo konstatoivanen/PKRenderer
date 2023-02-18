@@ -14,6 +14,7 @@ namespace PK::Core
 		YAML::BoxedValue<bool> EnableFrameRateLog = YAML::BoxedValue<bool>("EnableFrameRateLog", true);
 		YAML::BoxedValue<int> InitialWidth = YAML::BoxedValue<int>("InitialWidth", 1024);
 		YAML::BoxedValue<int> InitialHeight = YAML::BoxedValue<int>("InitialHeight", 512);
+		YAML::BoxedValue<std::string> FileWindowIcon = YAML::BoxedValue<std::string>("FileWindowIcon", "res/T_AppIcon.bmp");
 		
 		YAML::BoxedValue<Math::uint> RandomSeed = YAML::BoxedValue<Math::uint>("RandomSeed", 512);
 

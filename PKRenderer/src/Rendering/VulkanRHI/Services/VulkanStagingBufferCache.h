@@ -9,7 +9,7 @@ namespace PK::Rendering::VulkanRHI::Services
     struct VulkanStagingBuffer : public VulkanRawBuffer
     {
         VulkanStagingBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo, const char* name) : VulkanRawBuffer(device, allocator, createInfo, name) {}
-        mutable Rendering::Structs::ExecutionGate executionGate;
+        mutable Rendering::Structs::FenceRef fence;
         uint64_t pruneTick = 0ull;
     };
 
@@ -18,7 +18,7 @@ namespace PK::Rendering::VulkanRHI::Services
         public:
             VulkanStagingBufferCache(VkDevice device, VmaAllocator allocator, uint64_t pruneDelay);
             ~VulkanStagingBufferCache();
-            VulkanStagingBuffer* GetBuffer(size_t size, const Rendering::Structs::ExecutionGate& gate);
+            VulkanStagingBuffer* GetBuffer(size_t size, const Rendering::Structs::FenceRef& fence);
             void Prune();
 
         private:

@@ -303,7 +303,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         return bundle;
     }
 
-    VulkanDescriptorSetBundle VulkanRenderState::GetDescriptorSetBundle(const ExecutionGate& gate, uint32_t dirtyFlags)
+    VulkanDescriptorSetBundle VulkanRenderState::GetDescriptorSetBundle(const FenceRef& fence, uint32_t dirtyFlags)
     {
         VulkanDescriptorSetBundle bundle{};
 
@@ -324,7 +324,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                     }
 
                     auto set = m_descriptorSets[i];
-                    set->executionGate = gate;
+                    set->fence = fence;
                     bundle.sets[bundle.count++] = set->set;
                 }
             }
@@ -502,7 +502,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    void VulkanRenderState::ValidateDescriptorSets(const ExecutionGate& gate)
+    void VulkanRenderState::ValidateDescriptorSets(const FenceRef& fence)
     {
         auto resources = m_services.globalResources;
         auto shader = m_pipelineKey.shader;
@@ -578,7 +578,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             
             if (m_dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i))
             {
-                m_descriptorSets[i] = m_services.descriptorCache->GetDescriptorSet(shader->GetDescriptorSetLayout(i), m_descriptorSetKeys[i], gate);
+                m_descriptorSets[i] = m_services.descriptorCache->GetDescriptorSet(shader->GetDescriptorSetLayout(i), m_descriptorSetKeys[i], fence);
             }
         }
 
@@ -609,7 +609,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const ExecutionGate& gate)
+    PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const FenceRef& fence)
     {
         PK_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
@@ -618,7 +618,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         ValidateRenderTarget();
         ValidateVertexBuffers();
-        ValidateDescriptorSets(gate);
+        ValidateDescriptorSets(fence);
         RecordResourceAccess();
 
         if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_PIPELINE)

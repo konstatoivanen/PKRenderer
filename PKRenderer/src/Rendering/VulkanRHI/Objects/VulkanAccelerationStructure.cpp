@@ -28,7 +28,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     VulkanAccelerationStructure::~VulkanAccelerationStructure()
     {
-        Dispose(m_driver->GetCommandBuffer(QueueType::Graphics)->GetOnCompleteGate());
+        Dispose(m_driver->GetQueueFenceRef(QueueType::Graphics));
     }
 
 	VulkanRawBuffer* VulkanAccelerationStructure::GetScratchBuffer(size_t size)
@@ -37,7 +37,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 		{
 			if (m_scratchBuffer != nullptr)
 			{
-				m_driver->disposer->Dispose(m_scratchBuffer, m_driver->GetCommandBuffer(QueueType::Graphics)->GetOnCompleteGate());
+				m_driver->disposer->Dispose(m_scratchBuffer, m_driver->GetQueueFenceRef(QueueType::Graphics));
 			}
 			
 			m_scratchBuffer = new VulkanRawBuffer(m_driver->device, 
@@ -55,7 +55,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 		{
 			if (m_instanceInputBuffer != nullptr)
 			{
-				m_driver->disposer->Dispose(m_instanceInputBuffer, m_driver->GetCommandBuffer(QueueType::Graphics)->GetOnCompleteGate());
+				m_driver->disposer->Dispose(m_instanceInputBuffer, m_driver->GetCommandBufferFenceRef(QueueType::Graphics));
 			}
 
 			m_instanceInputBuffer = new VulkanRawBuffer(m_driver->device,
@@ -207,7 +207,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 		{
 			if (m_structure != nullptr)
 			{
-				m_driver->disposer->Dispose(m_structure, m_driver->GetCommandBuffer(QueueType::Graphics)->GetOnCompleteGate());
+				m_driver->disposer->Dispose(m_structure, m_driver->GetQueueFenceRef(QueueType::Graphics));
 			}
 
 			m_structure = new VulkanRawAccelerationStructure(m_driver->device,
@@ -272,28 +272,28 @@ namespace PK::Rendering::VulkanRHI::Objects
 		m_bindHandle.IncrementVersion();
 	}
 
-    void VulkanAccelerationStructure::Dispose(const ExecutionGate& gate)
+    void VulkanAccelerationStructure::Dispose(const FenceRef& fence)
     {
 		if (m_instanceInputBuffer != nullptr)
 		{
-            m_driver->disposer->Dispose(m_instanceInputBuffer, gate);
+            m_driver->disposer->Dispose(m_instanceInputBuffer, fence);
 		}
 
 		if (m_scratchBuffer != nullptr)
 		{
-            m_driver->disposer->Dispose(m_scratchBuffer, gate);
+            m_driver->disposer->Dispose(m_scratchBuffer, fence);
 		}
 
         if (m_structure != nullptr)
         {
-            m_driver->disposer->Dispose(m_structure, gate);
+            m_driver->disposer->Dispose(m_structure, fence);
         }
 
 		auto substructures = m_subStructures.GetValues();
 
 		for (auto i = 0u; i < substructures.count; ++i)
         {
-            m_driver->disposer->Dispose(substructures[i], gate);
+            m_driver->disposer->Dispose(substructures[i], fence);
         }
     }
 }

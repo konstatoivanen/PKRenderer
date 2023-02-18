@@ -114,13 +114,13 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanShader::Dispose()
     {
         auto driver = GraphicsAPI::GetActiveDriver<VulkanDriver>();
-        auto gate = driver->GetCommandBuffer(QueueType::Graphics)->GetOnCompleteGate();
+        auto fence = driver->GetQueueFenceRef(QueueType::Graphics);
 
         for (auto& module : m_modules)
         {
             if (module != nullptr)
             {
-                driver->disposer->Dispose(module, gate);
+                driver->disposer->Dispose(module, fence);
                 module = nullptr;
             }
         }

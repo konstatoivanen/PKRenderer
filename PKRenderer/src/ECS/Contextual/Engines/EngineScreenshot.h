@@ -5,7 +5,7 @@
 #include "Core/ConsoleCommandBinding.h"
 #include "Utilities/MemoryBlock.h"
 #include "Rendering/Objects/Buffer.h"
-#include "Rendering/Structs/ExecutionGate.h"
+#include "Rendering/Structs/FenceRef.h"
 
 namespace PK::ECS::Engines
 {
@@ -19,7 +19,7 @@ namespace PK::ECS::Engines
 			void Step(Core::TokenConsoleCommand* token) override final;
 		
 		private:
-			Rendering::Structs::ExecutionGate m_copyGate;
+			Rendering::Structs::FenceRef m_copyFence;
 			Utilities::MemoryBlock<uint16_t> m_accumulatedPixels;
 			Utilities::Ref<Rendering::Objects::Buffer> m_copyBuffer;
 			uint32_t m_captureCounter = 0u;

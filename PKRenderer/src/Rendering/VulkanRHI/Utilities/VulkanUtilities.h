@@ -7,7 +7,6 @@
 
 namespace PK::Rendering::VulkanRHI::Utilities
 {
-    #define VK_ASSERT_RESULT(cmd) if ((cmd) != VK_SUCCESS) PK_THROW_ERROR("Vulkan Command Failed!");
     #define VK_ASSERT_RESULT_CTX(cmd, ctx)                                                                                  \
             {                                                                                                               \
                 auto result = cmd;                                                                                          \
@@ -17,6 +16,9 @@ namespace PK::Rendering::VulkanRHI::Utilities
                     PK_THROW_ERROR(ctx " (%s)", PK::Rendering::VulkanRHI::Utilities::VulkanResultToString(result).c_str()); \
                 }                                                                                                           \
             }                                                                                                               \
+
+    #define VK_ASSERT_RESULT(cmd) VK_ASSERT_RESULT_CTX(cmd, "VK COMMAND FAILED! ");
+    #define VK_THROW_RESULT(result) PK_THROW_ERROR(PK::Rendering::VulkanRHI::Utilities::VulkanResultToString(result).c_str())
 
     std::vector<VkLayerProperties> VulkanGetInstanceLayerProperties();
     std::vector<VkExtensionProperties> VulkanGetInstanceExtensions();

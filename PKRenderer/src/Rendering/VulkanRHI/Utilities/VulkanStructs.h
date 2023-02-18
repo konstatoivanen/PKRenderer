@@ -2,7 +2,7 @@
 #include "Utilities/VersionedObject.h"
 #include "vulkan/vulkan.h"
 #include "VulkanMemory.h"
-#include "Rendering/Structs/ExecutionGate.h"
+#include "Rendering/Structs/FenceRef.h"
 #include "Rendering/Structs/Enums.h"
 #include "Rendering/Structs/Descriptors.h"
 #include "Rendering/Structs/Layout.h"
@@ -224,7 +224,7 @@ namespace PK::Rendering::VulkanRHI
     {
         VkDescriptorSet set;
         uint64_t pruneTick;
-        mutable Rendering::Structs::ExecutionGate executionGate;
+        mutable Rendering::Structs::FenceRef fence;
     };
 
     struct VulkanSampler : public PK::Utilities::NoCopy

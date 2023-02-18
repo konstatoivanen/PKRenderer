@@ -217,9 +217,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         timelineInfo.signalSemaphoreValueCount = signalCount;
         timelineInfo.pSignalSemaphoreValues = signalValues;
 
-        m_lastSubmitFence = commandBuffer->GetFence();
-        m_lastSubmitGate = commandBuffer->GetOnCompleteGate();
-
         VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
         submitInfo.pNext = &timelineInfo;
         submitInfo.waitSemaphoreCount = waitCount;
@@ -336,6 +333,30 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
+    FenceRef VulkanQueue::GetFenceRef() const
+    {
+        return FenceRef(this, [](const void* ctx, uint64_t userdata, uint64_t timeout)
+            {
+                auto queue = reinterpret_cast<const VulkanQueue*>(ctx);
+
+                VkSemaphoreWaitInfo waitInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO };
+                waitInfo.pNext = nullptr;
+                waitInfo.flags = VK_SEMAPHORE_WAIT_ANY_BIT;
+                waitInfo.semaphoreCount = 1u;
+                waitInfo.pSemaphores = &queue->m_timeline.semaphore;
+                waitInfo.pValues = &userdata;
+                auto result = vkWaitSemaphores(queue->m_device, &waitInfo, timeout);
+
+                if (result != VK_SUCCESS && result != VK_TIMEOUT)
+                {
+                    VK_THROW_RESULT(result);
+                }
+
+                return result == VK_SUCCESS;
+            },
+            m_timeline.counter);
+    }
+
     VulkanQueueSet::VulkanQueueSet(VkDevice device, const Initializer& initializer, const Objects::VulkanServiceContext& services)
     {
         for (auto i = 0u; i < initializer.queueCount; ++i)
@@ -378,7 +399,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         context.queueIndices = queueIndices;
         context.createInfos = &createInfos;
 
-        PK_LOG_VERBOSE("Found %i queues:", context.families->size());
+        PK_LOG_INFO(" Found '%i' Physical Device Queue Families:", context.families->size());
 
         for (auto i = 0u; i < context.families->size(); ++i)
         {
@@ -391,8 +412,10 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             auto& props = context.families->at(i);
             auto flagsString = string_VkQueueFlags(props.queueFlags);
-            PK_LOG_VERBOSE("    NumQueues: %i, Flags: %s", props.queueCount, flagsString.c_str());
+            PK_LOG_INFO("   Family: %i, NumQueues: %i, Flags: %s", i, props.queueCount, flagsString.c_str());
         }
+
+        PK_LOG_NEWLINE();
 
         auto maskTransfer = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
         auto maskGraphics = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
@@ -404,12 +427,21 @@ namespace PK::Rendering::VulkanRHI::Objects
         typeIndices[(uint32_t)QueueType::ComputeAsync] = GetQueueIndex(context, maskCompute, maskTransfer, false, false, true);
         queueCount = context.queueCount;
 
-        for (int32_t i = (int32_t)createInfos.size() - 1; i >= 0; --i)
+        for (auto i = (int32_t)createInfos.size() - 1; i >= 0; --i)
         {
             if (createInfos.at(i).queueCount == 0)
             {
                 createInfos.erase(createInfos.begin() + i);
             }
         }
+
+        PK_LOG_INFO(" Selected '%i' Queues From '%i' Physical Device Queue Families:", queueCount, createInfos.size());
+
+        for (auto i = 0u; i < queueCount; ++i)
+        {
+            PK_LOG_INFO("   Family: %i Index: %i", queueFamilies[i], queueIndices[i]);
+        }
+
+        PK_LOG_NEWLINE();
     }
 }

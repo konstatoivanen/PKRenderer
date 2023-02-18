@@ -15,6 +15,16 @@ namespace PK::Rendering::VulkanRHI::Objects
     using namespace Utilities;
     using namespace Core;
 
+    FenceRef VulkanCommandBuffer::GetFenceRef() const
+    {
+        return FenceRef(this, [](const void* ctx, uint64_t userdata, uint64_t timeout)
+            {
+                auto cmd = reinterpret_cast<const VulkanCommandBuffer*>(ctx);
+                return cmd->m_invocationIndex >= userdata;
+            },
+            m_invocationIndex + 1);
+    }
+
     void VulkanCommandBuffer::SetRenderTarget(const uint3& resolution)
     {
         // @TODO move somewhere non static
@@ -354,7 +364,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void* VulkanCommandBuffer::BeginBufferWrite(Buffer* buffer, size_t offset, size_t size)
     {
-        return buffer->GetNative<VulkanBuffer>()->BeginWrite(offset, size);
+        return buffer->GetNative<VulkanBuffer>()->BeginWrite(GetFenceRef(), offset, size);
     }
 
     void VulkanCommandBuffer::EndBufferWrite(Buffer* buffer)
@@ -490,7 +500,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::ValidatePipeline()
     {
-        auto flags = m_renderState->ValidatePipeline(GetOnCompleteGate());
+        auto flags = m_renderState->ValidatePipeline(GetFenceRef());
 
         // Conservative barrier deployment. lets not break an active renderpass. Assume coherent read/writes.
         if (!m_isInActiveRenderPass || (flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
@@ -530,7 +540,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if ((flags & PK_RENDER_STATE_DIRTY_DESCRIPTOR_SETS) != 0)
         {
-            auto bindBundle = m_renderState->GetDescriptorSetBundle(GetOnCompleteGate(), flags);
+            auto bindBundle = m_renderState->GetDescriptorSetBundle(GetFenceRef(), flags);
             vkCmdBindDescriptorSets(m_commandBuffer, bindBundle.bindPoint, bindBundle.layout, bindBundle.firstSet, bindBundle.count, bindBundle.sets, 0, nullptr);
         }
 

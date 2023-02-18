@@ -10,13 +10,14 @@ namespace PK::Core
     struct WindowProperties
     {
         std::string title;
+        std::string iconPath;
         uint32_t width;
         uint32_t height;
         bool vsync;
         bool cursorVisible;
     
-        WindowProperties(const std::string& title = "PK Window", uint32_t width = 1600, uint32_t height = 900, bool vsync = true, bool cursorVisible = true) : 
-            title(title), width(width), height(height), vsync(vsync), cursorVisible(cursorVisible)
+        WindowProperties(const std::string& title = "PK Window", const std::string& iconPath = std::string(), uint32_t width = 1600, uint32_t height = 900, bool vsync = true, bool cursorVisible = true) :
+            title(title), iconPath(iconPath), width(width), height(height), vsync(vsync), cursorVisible(cursorVisible)
         {
         }
     };

@@ -27,8 +27,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             constexpr uint32_t GetFamily() const { return m_family; }
             constexpr VkPipelineStageFlags GetCapabilityFlags() const { return m_capabilityFlags; }
 
-            constexpr VkFence GetLastSubmitFence() const { return m_lastSubmitFence; }
-            constexpr ExecutionGate GetLastSubmitGate() const { return m_lastSubmitGate; }
+            FenceRef GetFenceRef() const;
 
         private:
             struct TimelineSemaphore
@@ -43,9 +42,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             uint32_t m_family = 0u;
             uint32_t m_queueIndex = 0u;
             VkQueue m_queue = VK_NULL_HANDLE;
-
-            VkFence m_lastSubmitFence = VK_NULL_HANDLE;
-            ExecutionGate m_lastSubmitGate{};
             
             TimelineSemaphore m_timeline{};
             TimelineSemaphore m_waitTimelines[MAX_DEPENDENCIES]{};
@@ -73,6 +69,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             VulkanQueueSet(VkDevice device, const Initializer& initializer, const Objects::VulkanServiceContext& services);
             ~VulkanQueueSet();
+
             inline VulkanQueue* GetQueue(Structs::QueueType type) const { return m_queues[m_queueIndices[(uint32_t)type]]; }
             inline Services::VulkanCommandBufferPool* GetCommandPool(Structs::QueueType type) const { return m_commandBufferPools[m_queueIndices[(uint32_t)type]]; }
             inline VulkanCommandBuffer* GetCommandBuffer(Structs::QueueType type) const { return GetCommandPool(type)->GetCurrent(); }

@@ -13,7 +13,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanBuffer(const Structs::BufferLayout& layout, size_t count, Structs::BufferUsage usage, const char* name);
             ~VulkanBuffer();
 
-            void* BeginWrite(size_t offset, size_t size);
+            void* BeginWrite(const Structs::FenceRef& fence, size_t offset, size_t size);
             void EndWrite(VkBuffer* src, VkBuffer* dst, VkBufferCopy* region);
             const void* BeginRead(size_t offset, size_t size) override final;
             void EndRead() override final;
@@ -45,7 +45,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             };
 
             void Rebuild(size_t count);
-            void Dispose(const ExecutionGate& gate);
+            void Dispose();
 
             const VulkanDriver* m_driver = nullptr;
             std::string m_name = "Buffer";

@@ -45,12 +45,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             constexpr VkFormat GetNativeFormat() const { return m_format; }
 
         private:
-            struct FrameFence
-            {
-                Structs::ExecutionGate gate;
-                VkFence fence;
-            };
-
             const VkPhysicalDevice m_physicalDevice;
             const VkDevice m_device;
             const VkSurfaceKHR m_surface;
@@ -61,7 +55,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
             std::vector<VkImage> m_images;
             std::vector<VulkanImageView*> m_imageViews;
-            std::vector<FrameFence> m_frameFences;
+            std::vector<Structs::FenceRef> m_frameFences;
             VulkanBindHandle* m_bindHandles;
             VkFormat m_format;
             VkExtent2D m_extent;

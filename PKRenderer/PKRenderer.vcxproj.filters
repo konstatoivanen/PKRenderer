@@ -1407,7 +1407,7 @@
     <ClInclude Include="src\ECS\Contextual\Engines\EngineScreenshot.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Structs\ExecutionGate.h">
+    <ClInclude Include="src\Rendering\Structs\FenceRef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utilities\VersionedObject.h">
@@ -1456,6 +1456,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utilities\FileIOBMP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2247,6 +2250,9 @@
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanQueue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Utilities\FileIOBMP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\glfw3.lib" />
@@ -2257,5 +2263,10 @@
     <Library Include="libs\VulkanMemoryAllocatord.lib" />
     <Library Include="libs\yaml-cpp.lib" />
     <Library Include="libs\yaml-cppd.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\T_AppIcon.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

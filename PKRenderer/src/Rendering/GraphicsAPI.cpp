@@ -11,14 +11,17 @@ namespace PK::Rendering
     using namespace VulkanRHI;
     using namespace Utilities;
 
+    // #define PK_NO_VK_VALIDATION
+
     static GraphicsDriver* s_currentDriver;
 
     Scope<GraphicsDriver> GraphicsDriver::Create(const std::string& workingDirectory, APIType api)
     {
+
         switch (api)
         {
             case APIType::Vulkan: 
-                #ifdef PK_DEBUG
+                #if defined(PK_DEBUG) && !defined(PK_NO_VK_VALIDATION)
                     const std::vector<const char*> PK_VALIDATION_LAYERS =
                     {
                         "VK_LAYER_KHRONOS_validation"
@@ -65,7 +68,11 @@ namespace PK::Rendering
 
     APIType GraphicsAPI::GetActiveAPI() { return s_currentDriver->GetAPI(); }
    
-    CommandBuffer* GraphicsAPI::GetCommandBuffer(Structs::QueueType type) { return s_currentDriver->GetCommandBuffer(type); }
+    CommandBuffer* GraphicsAPI::GetCommandBuffer(QueueType type) { return s_currentDriver->GetCommandBuffer(type); }
+
+    FenceRef GraphicsAPI::GetCommandBufferFenceRef(QueueType type) { return s_currentDriver->GetCommandBufferFenceRef(type); }
+
+    FenceRef GraphicsAPI::GetQueueFenceRef(QueueType type) { return s_currentDriver->GetQueueFenceRef(type); }
     
     DriverMemoryInfo GraphicsAPI::GetMemoryInfo() { return s_currentDriver->GetMemoryInfo(); }
 

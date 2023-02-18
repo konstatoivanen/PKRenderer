@@ -356,7 +356,7 @@ namespace PK::Rendering::VulkanRHI::Utilities
             }
 
             PK_LOG_NEWLINE();
-            PK_LOG_HEADER(" Selected Physical Device '%s' from '%i' physical devices. ", properties.properties.deviceName, devices.size());
+            PK_LOG_INFO(" Selected Physical Device '%s' from '%i' Physical Devices:", properties.properties.deviceName, devices.size());
             PK_LOG_INFO("   Vendor: %i", properties.properties.vendorID);
             PK_LOG_INFO("   Device: %i", properties.properties.deviceID);
             PK_LOG_INFO("   Driver: %i", properties.properties.driverVersion);

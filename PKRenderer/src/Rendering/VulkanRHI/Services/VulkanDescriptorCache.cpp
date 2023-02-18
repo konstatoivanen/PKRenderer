@@ -52,7 +52,7 @@ namespace PK::Rendering::VulkanRHI::Services
 
     const VulkanDescriptorSet* VulkanDescriptorCache::GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
                                                                        const DescriptorSetKey& key,
-                                                                       const ExecutionGate& gate)
+                                                                       const FenceRef& fence)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
         VulkanDescriptorSet* value = nullptr;
@@ -60,7 +60,7 @@ namespace PK::Rendering::VulkanRHI::Services
         if (m_sets.TryGetValue(key, &value))
         {
             value->pruneTick = nextPruneTick;
-            value->executionGate = gate;
+            value->fence = fence;
             return value;
         }
 
@@ -74,12 +74,12 @@ namespace PK::Rendering::VulkanRHI::Services
         variableSizeInfo.pDescriptorCounts = &arraySize;
         variableSizeInfo.descriptorSetCount = 1;
         VkDescriptorSet vkdescriptorset;
-        GetDescriptorSets(&allocInfo, &vkdescriptorset, gate, false);
+        GetDescriptorSets(&allocInfo, &vkdescriptorset, fence, false);
 
         value = m_setsPool.New();
         value->set = vkdescriptorset;
         value->pruneTick = nextPruneTick;
-        value->executionGate = gate;
+        value->fence = fence;
         m_sets.AddValue(key, value);
 
         VkWriteDescriptorSet writes[PK_MAX_DESCRIPTORS_PER_SET]{};
@@ -218,7 +218,7 @@ namespace PK::Rendering::VulkanRHI::Services
 
         for (auto i = (int)m_extinctPools.size() - 1; i >= 0; --i)
         {
-            if (m_extinctPools.at(i).executionGate.IsComplete())
+            if (m_extinctPools.at(i).fence.IsComplete())
             {
                 auto n = m_extinctPools.size() - 1;
 
@@ -245,24 +245,24 @@ namespace PK::Rendering::VulkanRHI::Services
             auto& key = keyvalues.keys[i].key;
             auto& value = keyvalues.values[i];
 
-            if (!value->executionGate.IsComplete() || value->pruneTick >= m_currentPruneTick)
+            if (!value->fence.IsComplete() || value->pruneTick >= m_currentPruneTick)
             {
                 continue;
             }
 
             VK_ASSERT_RESULT_CTX(vkFreeDescriptorSets(m_device, m_currentPool->pool, 1, &value->set), "Failed to free descriptor sets!");
             value->set = VK_NULL_HANDLE;
-            value->executionGate.Invalidate();
+            value->fence.Invalidate();
             m_setsPool.Delete(value);
             m_sets.RemoveAt((uint32_t)i);
         }
     }
 
-    void VulkanDescriptorCache::GrowPool(const ExecutionGate& executionGate)
+    void VulkanDescriptorCache::GrowPool(const FenceRef& fence)
     {
         if (m_currentPool != nullptr)
         {
-            m_extinctPools.push_back({ m_currentPool, executionGate, m_setsPool.GetActiveIndices() });
+            m_extinctPools.push_back({ m_currentPool, fence, m_setsPool.GetActiveIndices() });
             m_currentPool = nullptr;
             m_sets.Clear();
         }
@@ -287,7 +287,7 @@ namespace PK::Rendering::VulkanRHI::Services
         m_currentPool = new VulkanDescriptorPool(m_device, createInfo);
     }
 
-    void VulkanDescriptorCache::GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const ExecutionGate& gate, bool throwOnFail)
+    void VulkanDescriptorCache::GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const FenceRef& fence, bool throwOnFail)
     {
         auto result = vkAllocateDescriptorSets(m_device, pAllocateInfo, pDescriptorSets);
 
@@ -300,9 +300,9 @@ namespace PK::Rendering::VulkanRHI::Services
             case VK_ERROR_OUT_OF_POOL_MEMORY:
                 if (!throwOnFail)
                 {
-                    GrowPool(gate);
+                    GrowPool(fence);
                     pAllocateInfo->descriptorPool = m_currentPool->pool;
-                    GetDescriptorSets(pAllocateInfo, pDescriptorSets, gate, true);
+                    GetDescriptorSets(pAllocateInfo, pDescriptorSets, fence, true);
                     break;
                 }
             default:
