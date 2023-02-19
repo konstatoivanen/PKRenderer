@@ -21,6 +21,7 @@ namespace PK::Rendering::VulkanRHI::Services
         {
             VkFenceCreateInfo fenceCreateInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
             VK_ASSERT_RESULT(vkCreateFence(device, &fenceCreateInfo, nullptr, &wrapper.GetFence()));
+            wrapper.GetQueueFamily() = queueFamily;
         }
     }
 
@@ -66,7 +67,7 @@ namespace PK::Rendering::VulkanRHI::Services
         return m_current;
     }
 
-    Objects::VulkanCommandBuffer* VulkanCommandBufferPool::EndCurrent()
+    Objects::VulkanCommandBuffer* VulkanCommandBufferPool::EndCurrent(VulkanBarrierInfo* transferBarrier)
     {
         if (m_current == nullptr)
         {
@@ -74,7 +75,7 @@ namespace PK::Rendering::VulkanRHI::Services
         }
 
         auto cmd = m_current;
-        m_current->EndCommandBuffer();
+        m_current->EndCommandBuffer(transferBarrier);
         m_current = nullptr;
         return cmd;
     }

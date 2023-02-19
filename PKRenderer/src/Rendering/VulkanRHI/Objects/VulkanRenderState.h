@@ -62,13 +62,18 @@ namespace PK::Rendering::VulkanRHI::Objects
         public:
             VulkanRenderState(const VulkanServiceContext& services) : m_services(services) {}
 
-            constexpr const PK::Utilities::PropertyBlock* GetResources() const { return m_services.globalResources; }
+            constexpr VulkanServiceContext* GetServices() { return &m_services; }
             constexpr const Structs::ConstantBufferLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetConstantLayout(); }
             constexpr VkPipelineLayout GetPipelineLayout() const { return m_pipelineKey.shader->GetPipelineLayout()->layout; }
             constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
             constexpr bool HasPipeline() const { return m_pipeline != nullptr; }
             constexpr bool HasDynamicTargets() const { return m_renderPassKey->dynamicTargets; }
             inline VkPipelineBindPoint GetPipelineBindPoint() const { return EnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetType()); }
+            VkRenderPassBeginInfo GetRenderPassInfo() const;
+            VulkanVertexBufferBundle GetVertexBufferBundle() const;
+            VulkanDescriptorSetBundle GetDescriptorSetBundle(const Structs::FenceRef& fence, uint32_t dirtyFlags);
+            VkStridedDeviceAddressRegionKHR* GetShaderBindingTableAddresses();
+            const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
 
             void Reset();
             void SetRenderTarget(const VulkanBindHandle* const* renderTargets, const VulkanBindHandle* const* resolves, uint32_t count);
@@ -89,34 +94,15 @@ namespace PK::Rendering::VulkanRHI::Objects
             void SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType);
             void SetShaderBindingTableAddress(Structs::RayTracingShaderGroup group, VkDeviceAddress address, size_t stride, size_t size);
 
-            template<typename T, typename ... Args>
-            constexpr void RecordAccess(const T resource, Args&& ... args)
-            {
-                m_services.barrierHandler->Record<T>(resource, std::forward<Args>(args)...);
-            }
-
-            template<typename T>
-            void SetResource(uint32_t nameHashId, const T* value, uint32_t count = 1) { m_services.globalResources->Set(nameHashId, value, count); }
-
-            template<typename T>
-            void SetResource(uint32_t nameHashId, const T& value) { m_services.globalResources->Set(nameHashId, value); }
-
-            VkRenderPassBeginInfo GetRenderPassInfo() const;
-            VulkanVertexBufferBundle GetVertexBufferBundle() const;
-            VulkanDescriptorSetBundle GetDescriptorSetBundle(const Structs::FenceRef& fence, uint32_t dirtyFlags);
-            VkStridedDeviceAddressRegionKHR* GetShaderBindingTableAddresses();
-            const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
-            inline bool ResolveBarriers(VulkanBarrierInfo* outBarrierInfo) { return m_services.barrierHandler->Resolve(outBarrierInfo); }
-
-            PKRenderStateDirtyFlags ValidatePipeline(const Structs::FenceRef& fence);
+            PKRenderStateDirtyFlags ValidatePipeline(const Structs::FenceRef& fence, uint16_t queueFamily);
 
         private:
-            void ValidateRenderTarget();
+            void ValidateRenderTarget(uint16_t queueFamily);
             void ValidateVertexBuffers();
             void ValidateDescriptorSets(const Structs::FenceRef& fence);
 
-            void RecordResourceAccess();
-            void RecordRenderTargetAccess();
+            void RecordResourceAccess(uint16_t queueFamily);
+            void RecordRenderTargetAccess(uint16_t queueFamily);
 
             VulkanServiceContext m_services;
         

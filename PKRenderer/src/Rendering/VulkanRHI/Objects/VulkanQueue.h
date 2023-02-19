@@ -1,6 +1,7 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
+#include "Rendering/Objects/QueueSet.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Rendering/VulkanRHI/Services/VulkanCommandBufferPool.h"
 
@@ -30,31 +31,28 @@ namespace PK::Rendering::VulkanRHI::Objects
             FenceRef GetFenceRef() const;
 
         private:
-            struct TimelineSemaphore
-            {
-                VkSemaphore semaphore = VK_NULL_HANDLE;
-                VkPipelineStageFlags waitFlags = VK_PIPELINE_STAGE_NONE;
-                uint64_t counter = 0ull;
-            };
-
             const VkDevice m_device;
             VkPipelineStageFlags m_capabilityFlags = 0u;
             uint32_t m_family = 0u;
             uint32_t m_queueIndex = 0u;
             VkQueue m_queue = VK_NULL_HANDLE;
             
-            TimelineSemaphore m_timeline{};
-            TimelineSemaphore m_waitTimelines[MAX_DEPENDENCIES]{};
+            VulkanTimelineSemaphore m_timeline{};
+            VulkanTimelineSemaphore m_waitTimelines[MAX_DEPENDENCIES]{};
 
             VkSemaphore m_semaphores[MAX_SEMAPHORES] = {};
             uint32_t m_semaphoreIndex = 0u;
     };
 
-    class VulkanQueueSet : public PK::Utilities::NoCopy
+    class VulkanQueueSet : public PK::Rendering::Objects::QueueSet
     {
-        constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)Structs::QueueType::MaxCount;
-
         public:
+            struct Family
+            {
+                Services::VulkanCommandBufferPool* commandBufferPool = nullptr;
+                VulkanQueue* queue = nullptr;
+            };
+
             struct Initializer
             {
                 float priorities[(uint32_t)Structs::QueueType::MaxCount] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -70,18 +68,24 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanQueueSet(VkDevice device, const Initializer& initializer, const Objects::VulkanServiceContext& services);
             ~VulkanQueueSet();
 
-            inline VulkanQueue* GetQueue(Structs::QueueType type) const { return m_queues[m_queueIndices[(uint32_t)type]]; }
-            inline Services::VulkanCommandBufferPool* GetCommandPool(Structs::QueueType type) const { return m_commandBufferPools[m_queueIndices[(uint32_t)type]]; }
-            inline VulkanCommandBuffer* GetCommandBuffer(Structs::QueueType type) const { return GetCommandPool(type)->GetCurrent(); }
-            inline VulkanCommandBuffer* EndCommandBuffer(Structs::QueueType type) const { return GetCommandPool(type)->EndCurrent(); }
+            inline VulkanQueue* GetQueue(Structs::QueueType type) { return m_families[m_queueIndices[(uint32_t)type]].queue; }
+            inline Services::VulkanCommandBufferPool* GetPool(Structs::QueueType type) { return m_families[m_queueIndices[(uint32_t)type]].commandBufferPool; }
+            
             inline VkResult SubmitCurrent(Structs::QueueType type, VkPipelineStageFlags flags, bool waitForPrevious, VkSemaphore* outSignal = nullptr)
             {
-                return GetQueue(type)->Submit(EndCommandBuffer(type), flags, waitForPrevious, outSignal);
+                return GetQueue(type)->Submit(GetPool(type)->EndCurrent(), flags, waitForPrevious, outSignal);
             }
 
+            void QueueResourceSync(Structs::QueueType source, Structs::QueueType destination) override final;
+            inline void QueueWait(Structs::QueueType source, Structs::QueueType destination) override final { GetQueue(destination)->QueueWait(GetQueue(source)); }
+            inline void SubmitCurrent(Structs::QueueType type) override final { SubmitCurrent(type, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, true, nullptr); }
+            inline PK::Rendering::Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) override final { return GetPool(type)->GetCurrent(); }
+            inline Structs::FenceRef GetFenceRef(Structs::QueueType type) override final { return GetQueue(type)->GetFenceRef(); }
+            constexpr const VulkanQueueFamilies& GetSelectedFamilies() const { return m_selectedFamilies; }
+
         private:
-            Services::VulkanCommandBufferPool* m_commandBufferPools[MAX_DEPENDENCIES]{};
-            VulkanQueue* m_queues[MAX_DEPENDENCIES]{};
+            Family m_families[MAX_DEPENDENCIES]{};
             uint32_t m_queueIndices[MAX_DEPENDENCIES]{};
+            VulkanQueueFamilies m_selectedFamilies{};
     };
 }

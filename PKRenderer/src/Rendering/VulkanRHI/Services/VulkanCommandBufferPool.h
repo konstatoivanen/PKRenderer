@@ -13,7 +13,7 @@ namespace PK::Rendering::VulkanRHI::Services
             ~VulkanCommandBufferPool();
     
             Objects::VulkanCommandBuffer* GetCurrent();
-            Objects::VulkanCommandBuffer* EndCurrent();
+            Objects::VulkanCommandBuffer* EndCurrent(VulkanBarrierInfo* transferBarrier = nullptr);
             void PruneStaleBuffers();
             void WaitForCompletion(bool all);
 

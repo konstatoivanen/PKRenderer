@@ -67,12 +67,8 @@ namespace PK::Rendering
     GraphicsDriver* GraphicsAPI::GetActiveDriver() { return s_currentDriver; }
 
     APIType GraphicsAPI::GetActiveAPI() { return s_currentDriver->GetAPI(); }
-   
-    CommandBuffer* GraphicsAPI::GetCommandBuffer(QueueType type) { return s_currentDriver->GetCommandBuffer(type); }
 
-    FenceRef GraphicsAPI::GetCommandBufferFenceRef(QueueType type) { return s_currentDriver->GetCommandBufferFenceRef(type); }
-
-    FenceRef GraphicsAPI::GetQueueFenceRef(QueueType type) { return s_currentDriver->GetQueueFenceRef(type); }
+    QueueSet* GraphicsAPI::GetQueues() { return s_currentDriver->GetQueues(); }
     
     DriverMemoryInfo GraphicsAPI::GetMemoryInfo() { return s_currentDriver->GetMemoryInfo(); }
 

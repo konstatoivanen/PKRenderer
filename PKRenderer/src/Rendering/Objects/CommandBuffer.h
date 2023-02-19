@@ -1,6 +1,7 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Core/Window.h"
+#include "Rendering/Structs/ImageUploadRange.h"
 #include "Rendering/Objects/Mesh.h"
 #include "Rendering/Objects/Shader.h"
 #include "Rendering/Objects/Texture.h"
@@ -45,6 +46,8 @@ namespace PK::Rendering::Objects
         virtual void SetShaderBindingTable(Structs::RayTracingShaderGroup group, const Buffer* buffer, size_t offset = 0, size_t stride = 0, size_t size = 0) = 0;
         virtual void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) = 0;
         virtual void SetKeyword(uint32_t nameHashId, bool value) = 0;
+        virtual void TransferBuffer(uint32_t nameHashId, Structs::QueueType destination) = 0;
+        virtual void TransferImage(uint32_t nameHashId, Structs::QueueType destination) = 0;
 
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;
@@ -62,6 +65,9 @@ namespace PK::Rendering::Objects
         
         virtual void* BeginBufferWrite(Buffer* buffer, size_t offset, size_t size) = 0;
         virtual void EndBufferWrite(Buffer* buffer) = 0;
+
+        virtual void UploadTexture(Texture* texture, const void* data, size_t size, Structs::ImageUploadRange* ranges, uint32_t rangeCount) = 0;
+        virtual void UploadTexture(Texture* texture, const void* data, size_t size, uint32_t level, uint32_t layer) = 0;
 
         virtual void BeginDebugScope(const char* name, const Math::color& color) = 0;
         virtual void EndDebugScope() = 0;
@@ -102,6 +108,9 @@ namespace PK::Rendering::Objects
 
         void SetConstant(const char* name, const void* data, uint32_t size);
         void SetKeyword(const char* name, bool value);
+
+        void TransferBuffer(const char* name, Structs::QueueType destination);
+        void TransferImage(const char* name, Structs::QueueType destination);
 
         template<typename T>
         void SetConstant(uint32_t nameHashId, const T& value) { SetConstant(nameHashId, &value, (uint32_t)sizeof(T)); }

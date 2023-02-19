@@ -34,7 +34,7 @@ namespace PK::ECS::Engines
 
         auto elementCount = m_captureResolution.x * m_captureResolution.y * 4;
 
-        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
+        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
     
         if (m_copyFence.IsValid() && m_copyFence.IsComplete())
         {

@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Rendering/Structs/Enums.h"
-#include "Rendering/Objects/CommandBuffer.h"
+#include "Rendering/Objects/QueueSet.h"
 #include "Utilities/Ref.h"
 
 namespace PK::Rendering
@@ -26,9 +26,7 @@ namespace PK::Rendering
     {
         virtual ~GraphicsDriver() = default;
         virtual Structs::APIType GetAPI() const = 0;
-        virtual Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) const = 0;
-        virtual Structs::FenceRef GetCommandBufferFenceRef(Structs::QueueType type) const = 0;
-        virtual Structs::FenceRef GetQueueFenceRef(Structs::QueueType type) const = 0;
+        virtual Objects::QueueSet* GetQueues() const = 0;
         virtual DriverMemoryInfo GetMemoryInfo() const = 0;
         virtual std::string GetDriverHeader() const = 0;
         virtual size_t GetBufferOffsetAlignment(Structs::BufferUsage usage) const = 0;
@@ -53,11 +51,7 @@ namespace PK::Rendering
         }
 
         Structs::APIType GetActiveAPI();
-        
-        Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type);
-        Structs::FenceRef GetCommandBufferFenceRef(Structs::QueueType type);
-        Structs::FenceRef GetQueueFenceRef(Structs::QueueType type);
-
+        Objects::QueueSet* GetQueues();
         DriverMemoryInfo GetMemoryInfo();
         size_t GetBufferOffsetAlignment(Structs::BufferUsage usage);
 

@@ -114,7 +114,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanShader::Dispose()
     {
         auto driver = GraphicsAPI::GetActiveDriver<VulkanDriver>();
-        auto fence = driver->GetQueueFenceRef(QueueType::Graphics);
+        auto fence = driver->GetQueues()->GetFenceRef(QueueType::Graphics);
 
         for (auto& module : m_modules)
         {

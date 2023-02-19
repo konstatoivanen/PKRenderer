@@ -554,6 +554,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\ECS\Contextual\Engines\EngineScreenshot.h" />
     <ClInclude Include="src\ECS\Contextual\Tokens\AccelerationStructureBuildToken.h" />
     <ClInclude Include="src\Rendering\Objects\AccelerationStructure.h" />
+    <ClInclude Include="src\Rendering\Objects\QueueSet.h" />
     <ClInclude Include="src\Rendering\Objects\RayTracingAccelerationStructure.h" />
     <ClInclude Include="src\Rendering\Objects\VirtualMesh.h" />
     <ClInclude Include="src\Rendering\Passes\PassFilmGrain.h" />
@@ -562,6 +563,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\Passes\PassGeometry.h" />
     <ClInclude Include="src\Rendering\Passes\PassLights.h" />
     <ClInclude Include="src\Rendering\Passes\PassSceneGI.h" />
+    <ClInclude Include="src\Rendering\Structs\ImageUploadRange.h" />
     <ClInclude Include="src\Rendering\Structs\FenceRef.h" />
     <ClInclude Include="src\Rendering\Structs\StructIndirectArguments.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanAccelerationStructure.h" />

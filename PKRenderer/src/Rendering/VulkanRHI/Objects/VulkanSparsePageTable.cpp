@@ -38,7 +38,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
     }
 
-    void VulkanSparsePageTable::AllocateRange(const IndexRange& range)
+    void VulkanSparsePageTable::AllocateRange(const IndexRange& range, Structs::QueueType type)
     {
         auto alignment = m_memoryRequirements.alignment;
         auto low = range.offset / alignment;
@@ -67,7 +67,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             return;
         }
 
-        auto queue = m_driver->queues->GetQueue(QueueType::Graphics);
+        auto queue = m_driver->queues->GetQueue(type);
         queue->BindSparse(m_targetBuffer, bindInfos.data(), (uint32_t)bindInfos.size());
     }
 

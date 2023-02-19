@@ -348,7 +348,7 @@ namespace PK::Rendering::MeshUtility
 
         auto indexBuffer = Buffer::Create(ElementType::Uint, 36, BufferUsage::DefaultIndex, "Box.IndexBuffer");
 
-        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
+        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
         cmd->UploadBufferData(vertexBuffer.get(), vertices);
         cmd->UploadBufferData(indexBuffer.get(), indices);
         return CreateRef<Mesh>(vertexBuffer, indexBuffer, PK::Math::BoundingBox::CenterExtents(offset, extents));
@@ -376,7 +376,7 @@ namespace PK::Rendering::MeshUtility
 
         auto vertexBuffer = Buffer::Create({ {ElementType::Float3, PK_VS_POSITION }, { ElementType::Float2, PK_VS_TEXCOORD0 } }, 4, BufferUsage::DefaultVertex, "Quad.VertexBuffer");
         auto indexBuffer = Buffer::Create(ElementType::Uint, 6, BufferUsage::DefaultIndex, "Quad.IndexBuffer");
-        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
+        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
         cmd->UploadBufferData(vertexBuffer.get(), vertices);
         cmd->UploadBufferData(indexBuffer.get(), indices);
         return CreateRef<Mesh>(vertexBuffer, indexBuffer);

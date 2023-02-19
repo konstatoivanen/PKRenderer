@@ -24,7 +24,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanSparsePageTable(const VulkanDriver* driver, const VkBuffer buffer, VmaMemoryUsage memoryUsage);
             ~VulkanSparsePageTable();
 
-            void AllocateRange(const Structs::IndexRange& range);
+            void AllocateRange(const Structs::IndexRange& range, Structs::QueueType type);
             void FreeRange(const Structs::IndexRange& range);
 
         private:

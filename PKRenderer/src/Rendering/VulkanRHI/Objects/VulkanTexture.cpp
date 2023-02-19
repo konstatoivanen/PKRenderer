@@ -1,7 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "VulkanTexture.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
-#include "KTX/ktx.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -9,11 +8,11 @@ namespace PK::Rendering::VulkanRHI::Objects
     using namespace Services;
     using namespace Objects;
 
-    VulkanTexture::VulkanTexture() : m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>())
+    VulkanTexture::VulkanTexture() : m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>()), Texture("Textrue")
     {
     }
 
-    VulkanTexture::VulkanTexture(const TextureDescriptor& descriptor, const char* name) : m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>()), m_name(name)
+    VulkanTexture::VulkanTexture(const TextureDescriptor& descriptor, const char* name) : m_driver(GraphicsAPI::GetActiveDriver<VulkanDriver>()), Texture(name)
     {
         Rebuild(descriptor);
     }
@@ -23,22 +22,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         Dispose();
     }
 
-
-	void VulkanTexture::SetData(const void* data, size_t size, uint32_t level, uint32_t layer) const
-    {
-        auto* cmd = m_driver->queues->GetCommandBuffer(QueueType::Graphics);
-        
-        const auto* stage = m_driver->stagingBufferCache->GetBuffer(size, cmd->GetFenceRef());
-        stage->SetData(data, size);
-     
-        auto usageLayout = EnumConvert::GetImageLayout(m_descriptor.usage);
-        auto optimalLayout = EnumConvert::GetImageLayout(m_descriptor.usage, true);
-        VkImageSubresourceRange range = { (uint32_t)m_rawImage->aspect, level, 1, layer, 1 };
-
-        cmd->TransitionImageLayout(VulkanLayoutTransition(m_rawImage->image, usageLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range));
-        cmd->CopyBufferToImage(stage->buffer, m_rawImage->image, { m_rawImage->extent.width >> level, m_rawImage->extent.height >> level, m_rawImage->extent.depth >> level }, level, layer);
-        cmd->TransitionImageLayout(VulkanLayoutTransition(m_rawImage->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, usageLayout, optimalLayout, range));
-    }
 
     void VulkanTexture::SetSampler(const SamplerDescriptor& sampler)
     {
@@ -58,100 +41,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             }
         }
     }
-
-    void VulkanTexture::Import(const char* filepath)
-    {
-        Dispose();
-
-        m_name = GetFileName();
-
-		ktxTexture2* ktxTex2;
-
-		TextureDescriptor descriptor{};
-
-		auto result = ktxTexture2_CreateFromNamedFile(filepath, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTex2);
-
-        if (result != KTX_SUCCESS)
-        {
-            PK_THROW_ERROR(ktxErrorString(result));
-        }
-
-		descriptor.resolution = { ktxTex2->baseWidth, ktxTex2->baseHeight, ktxTex2->baseDepth };
-		descriptor.levels = ktxTex2->numLevels;
-		descriptor.layers = ktxTex2->numLayers;
-		descriptor.format = EnumConvert::GetTextureFormat((VkFormat)ktxTex2->vkFormat);
-
-		if (ktxTex2->isCubemap && ktxTex2->isArray)
-		{
-			descriptor.samplerType = SamplerType::CubemapArray;
-		}
-        else if (ktxTex2->isCubemap)
-        {
-			descriptor.samplerType = SamplerType::Cubemap;
-        }
-		else if (ktxTex2->isArray)
-		{
-			descriptor.samplerType = SamplerType::Sampler2DArray;
-		}
-		else if (ktxTex2->baseDepth > 1)
-		{
-			descriptor.samplerType = SamplerType::Sampler3D;
-		}
-			 
-		descriptor.sampler.anisotropy = 16.0f;
-		descriptor.sampler.mipMin = 0.0f;
-		descriptor.sampler.mipMax = (float)ktxTex2->numLevels;
-		descriptor.sampler.filterMin = ktxTex2->numLevels > 1 ? FilterMode::Trilinear : FilterMode::Bilinear;
-		descriptor.sampler.filterMag = ktxTex2->numLevels > 1 ? FilterMode::Trilinear : FilterMode::Bilinear;
-		descriptor.sampler.wrap[0] = WrapMode::Repeat;
-		descriptor.sampler.wrap[1] = WrapMode::Repeat;
-		descriptor.sampler.wrap[2] = WrapMode::Repeat;
-
-        Rebuild(descriptor);
-
-		ktx_uint8_t* ktxTextureData = ktxTexture_GetData(ktxTexture(ktxTex2));
-		ktx_size_t ktxTextureSize = ktxTex2->dataSize;
-
-        auto cmd = m_driver->queues->GetCommandBuffer(QueueType::Graphics);
-		auto stage = m_driver->stagingBufferCache->GetBuffer(ktxTextureSize, cmd->GetFenceRef());
-        
-		stage->SetData(ktxTextureData, ktxTextureSize);
-
-		std::vector<VkBufferImageCopy> bufferCopyRegions;
-		uint32_t offset = 0;
-
-        auto slices = ktxTex2->isCubemap ? ktxTex2->numFaces : descriptor.resolution.z;
-
-        for (auto layer = 0u; layer < descriptor.layers; ++layer)
-		for (auto level = 0u; level < descriptor.levels; ++level) 
-        for (auto slice = 0u; slice < slices; ++slice)
-		{
-			ktx_size_t offset;
-			PK_THROW_ASSERT(ktxTexture_GetImageOffset(ktxTexture(ktxTex2), level, layer, slice, &offset) == KTX_SUCCESS, "Failed to get image buffer offset");
-
-			VkBufferImageCopy bufferCopyRegion = {};
-			bufferCopyRegion.imageSubresource.aspectMask = m_rawImage->aspect;
-			bufferCopyRegion.imageSubresource.mipLevel = level;
-			bufferCopyRegion.imageSubresource.baseArrayLayer = ktxTex2->isCubemap ? ((layer * slices) + slice) : layer;
-			bufferCopyRegion.imageSubresource.layerCount = 1;
-            bufferCopyRegion.imageExtent.width = descriptor.resolution.x > 1 ? descriptor.resolution.x >> level : 1;
-			bufferCopyRegion.imageExtent.height = descriptor.resolution.y > 1 ? descriptor.resolution.y >> level : 1;
-			bufferCopyRegion.imageExtent.depth = descriptor.resolution.z > 1 ? descriptor.resolution.z >> level : 1;
-			bufferCopyRegion.bufferOffset = offset;
-			bufferCopyRegions.push_back(bufferCopyRegion);
-		}
-
-		auto usageLayout = EnumConvert::GetImageLayout(m_descriptor.usage);
-		auto optimalLayout = EnumConvert::GetImageLayout(m_descriptor.usage, true);
-		VkImageSubresourceRange range = { (uint32_t)m_rawImage->aspect, 0, descriptor.levels, 0, descriptor.layers };
-
-		cmd->TransitionImageLayout(VulkanLayoutTransition(m_rawImage->image, usageLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range));
-        cmd->CopyBufferToImage(stage->buffer, m_rawImage->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, (uint32_t)bufferCopyRegions.size(), bufferCopyRegions.data());
-		cmd->TransitionImageLayout(VulkanLayoutTransition(m_rawImage->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, usageLayout, optimalLayout, range));
-
-        ktxTexture_Destroy(ktxTexture(ktxTex2));
-    }
-
 
     bool VulkanTexture::Validate(const uint3& resolution)
     {
@@ -201,8 +90,10 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         Dispose();
 
+        auto& families = m_driver->queues->GetSelectedFamilies();
+
         m_descriptor = descriptor;
-        m_rawImage = new VulkanRawImage(m_driver->device, m_driver->allocator, VulkanImageCreateInfo(descriptor), m_name.c_str());
+        m_rawImage = new VulkanRawImage(m_driver->device, m_driver->allocator, VulkanImageCreateInfo(descriptor, &families), m_name.c_str());
 
         m_viewType = EnumConvert::GetViewType(descriptor.samplerType);
         m_swizzle = EnumConvert::GetSwizzle(m_rawImage->format);
@@ -219,11 +110,14 @@ namespace PK::Rendering::VulkanRHI::Objects
             GetView(m_defaultViewRange, TextureBindMode::RenderTarget);
         }
 
+        auto queue = m_driver->queues->GetQueue(QueueType::Graphics);
+        auto cmd = m_driver->queues->GetPool(QueueType::Graphics)->GetCurrent();
+
         // Transition static layout for immutable resources
         auto layout = EnumConvert::GetImageLayout(descriptor.usage);
         auto optimalLayout = EnumConvert::GetImageLayout(descriptor.usage, true);
         VulkanLayoutTransition transition(m_rawImage->image, VK_IMAGE_LAYOUT_UNDEFINED, layout, optimalLayout, { (uint32_t)m_rawImage->aspect, 0, m_rawImage->levels, 0, m_defaultViewRange.layers }); 
-        m_driver->queues->GetCommandBuffer(QueueType::Graphics)->TransitionImageLayout(transition);
+        cmd->TransitionImageLayout(transition);
 
         Services::VulkanBarrierHandler::AccessRecord record{};
         record.access = transition.dstAccessMask;
@@ -231,6 +125,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         record.layout = transition.newLayout;
         record.aspect = transition.subresources.aspectMask;
         record.imageRange = m_defaultViewRange;
+        record.queueFamily = IsConcurrent() ? VK_QUEUE_FAMILY_IGNORED : queue->GetFamily();
         m_driver->barrierHandler->Record(m_rawImage->image, record);
     }
 
@@ -280,6 +175,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanTexture::FillBindHandle(VulkanBindHandle* handle, const Structs::TextureViewRange& range, TextureBindMode bindMode) const
     {
         auto normalizedRange = NormalizeViewRange(range);
+        handle->isConcurrent = IsConcurrent();
         handle->image.view = VK_NULL_HANDLE;
         handle->image.image = m_rawImage->image;
         handle->image.layout = GetImageLayout();
@@ -336,6 +232,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         viewValue->bindHandle.image.extent = m_rawImage->extent;
         viewValue->bindHandle.image.range = info.subresourceRange;
         viewValue->bindHandle.image.samples = m_descriptor.samples;
+        viewValue->bindHandle.isConcurrent = IsConcurrent();
 
         if (mode == TextureBindMode::SampledTexture)
         {
@@ -348,7 +245,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanTexture::Dispose()
     {
-        auto fence = m_driver->GetQueueFenceRef(QueueType::Graphics);
+        auto fence = m_driver->GetQueues()->GetFenceRef(QueueType::Graphics);
 
         for (auto& kv : m_imageViews)
         {

@@ -40,7 +40,8 @@ namespace PK::Rendering::VulkanRHI::Services
 
                 VkPipelineStageFlags stage = 0u;
                 VkAccessFlags access = 0u;
-                VkImageAspectFlags aspect = 0u;
+                uint16_t aspect = 0u; //VkImageAspectFlags
+                uint16_t queueFamily = 0u;
                 VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
                 AccessRecord* next = nullptr;
 
@@ -48,6 +49,7 @@ namespace PK::Rendering::VulkanRHI::Services
                 AccessRecord(const VkBuffer& buffer, const AccessRecord& record) :
                     stage(record.stage),
                     access(record.access),
+                    queueFamily(record.queueFamily),
                     bufferRange(record.bufferRange),
                     next(nullptr)
                 {
@@ -57,6 +59,7 @@ namespace PK::Rendering::VulkanRHI::Services
                     stage(record.stage),
                     access(record.access),
                     layout(record.layout),
+                    queueFamily(record.queueFamily),
                     imageRange(record.imageRange),
                     next(nullptr)
                 {
@@ -155,7 +158,41 @@ namespace PK::Rendering::VulkanRHI::Services
                 }
             }
 
-            bool Resolve(VulkanBarrierInfo* outBarrierInfo);
+            template<typename T>
+            void Transfer(const T resource, uint16_t queueFamily)
+            {
+                auto key = reinterpret_cast<uint64_t>(resource);
+                auto index = m_resources.GetIndex(key);
+
+                // First value no delta
+                if (index == -1)
+                {
+                    return;
+                }
+
+                typedef BarrierType<T>::Type TBarrier;
+                TBarrier* barrier = nullptr;
+
+                AccessRecord** current = m_resources.GetValueAtRef(index);
+                m_pruneTicks.at(index) = m_currentPruneTick + 1ull;
+                
+                while (current && *current)
+                {
+                    if ((*current)->queueFamily == queueFamily)
+                    {
+                        return;
+                    }
+
+                    auto currentCopy = **current;
+                    currentCopy.queueFamily = queueFamily;
+
+                    ProcessBarrier<T>(resource, &barrier, **current, currentCopy);
+                    (*current)->queueFamily = queueFamily;
+                    current = &(*current)->next;
+                }
+            }
+
+            bool Resolve(VulkanBarrierInfo* outBarrierInfo, bool isQueueTransfer);
             void Prune();
 
         private:
@@ -170,6 +207,8 @@ namespace PK::Rendering::VulkanRHI::Services
             std::vector<uint64_t> m_pruneTicks;
             VkPipelineStageFlags m_sourceStage = 0u;
             VkPipelineStageFlags m_destinationStage = 0u;
+            uint16_t m_srcQueueFamily = 0u;
+            uint16_t m_dstQueueFamily = 0u;
             uint64_t m_currentPruneTick = 0u;
     };
 }

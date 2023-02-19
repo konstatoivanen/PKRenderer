@@ -15,6 +15,96 @@ namespace PK::Rendering::VulkanRHI::Objects
     using namespace Services;
     using namespace Core::Services;
 
+    VkRenderPassBeginInfo VulkanRenderState::GetRenderPassInfo() const
+    {
+        VkRenderPassBeginInfo renderPassInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+        renderPassInfo.renderPass = m_renderPass->renderPass;
+        renderPassInfo.framebuffer = m_frameBuffer->frameBuffer;
+        renderPassInfo.renderArea = { {}, m_frameBufferKey->extent };
+        renderPassInfo.clearValueCount = m_clearValueCount;
+        renderPassInfo.pClearValues = m_clearValues;
+        return renderPassInfo;
+    }
+
+    VulkanVertexBufferBundle VulkanRenderState::GetVertexBufferBundle() const
+    {
+        VulkanVertexBufferBundle bundle{};
+
+        auto i = 0u;
+
+        for (; i < PK_MAX_VERTEX_ATTRIBUTES; ++i)
+        {
+            auto bufferAttrib = &m_pipelineKey.vertexBuffers[i];
+            auto handle = m_vertexBuffers[i];
+
+            if (bufferAttrib->stride == 0 || handle == nullptr)
+            {
+                break;
+            }
+
+            bundle.buffers[i] = handle->buffer.buffer;
+        }
+
+        bundle.count = i;
+
+        return bundle;
+    }
+
+    VulkanDescriptorSetBundle VulkanRenderState::GetDescriptorSetBundle(const FenceRef& fence, uint32_t dirtyFlags)
+    {
+        VulkanDescriptorSetBundle bundle{};
+
+        if (m_pipelineKey.shader != nullptr)
+        {
+            bundle.bindPoint = EnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetType());
+            bundle.layout = m_pipelineKey.shader->GetPipelineLayout()->layout;
+            bundle.firstSet = 0xFFFFu;
+            bundle.count = 0u;
+
+            for (auto i = 0u; i < PK_MAX_DESCRIPTOR_SETS; ++i)
+            {
+                if ((dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i)) != 0)
+                {
+                    if (i < bundle.firstSet)
+                    {
+                        bundle.firstSet = i;
+                    }
+
+                    auto set = m_descriptorSets[i];
+                    set->fence = fence;
+                    bundle.sets[bundle.count++] = set->set;
+                }
+            }
+        }
+
+        return bundle;
+    }
+
+    VkStridedDeviceAddressRegionKHR* VulkanRenderState::GetShaderBindingTableAddresses()
+    {
+        static VkStridedDeviceAddressRegionKHR addresses[(uint32_t)Structs::RayTracingShaderGroup::MaxCount];
+
+        if (m_pipelineKey.shader != nullptr)
+        {
+            for (auto i = 0u; i < (uint32_t)Structs::RayTracingShaderGroup::MaxCount; ++i)
+            {
+                if (m_pipelineKey.shader->HasRayTracingShaderGroup((Structs::RayTracingShaderGroup)i))
+                {
+                    addresses[i] = m_sbtAddresses[i];
+                }
+            }
+        }
+
+        return addresses;
+    }
+
+    const VulkanBindHandle* VulkanRenderState::GetIndexBuffer(VkIndexType* outIndexType) const
+    {
+        *outIndexType = m_indexType;
+        return m_indexBuffer;
+    }
+
+
     void VulkanRenderState::Reset()
     {
         memset(m_descriptorSetKeys, 0, sizeof(m_descriptorSetKeys));
@@ -268,96 +358,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     }
 
 
-    VkRenderPassBeginInfo VulkanRenderState::GetRenderPassInfo() const
-    {
-        VkRenderPassBeginInfo renderPassInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-        renderPassInfo.renderPass = m_renderPass->renderPass;
-        renderPassInfo.framebuffer = m_frameBuffer->frameBuffer;
-        renderPassInfo.renderArea = { {}, m_frameBufferKey->extent };
-        renderPassInfo.clearValueCount = m_clearValueCount;
-        renderPassInfo.pClearValues = m_clearValues;
-        return renderPassInfo;
-    }
-
-    VulkanVertexBufferBundle VulkanRenderState::GetVertexBufferBundle() const
-    {
-        VulkanVertexBufferBundle bundle{};
-
-        auto i = 0u;
-
-        for (; i < PK_MAX_VERTEX_ATTRIBUTES; ++i)
-        {
-            auto bufferAttrib = &m_pipelineKey.vertexBuffers[i];
-            auto handle = m_vertexBuffers[i];
-
-            if (bufferAttrib->stride == 0 || handle == nullptr)
-            {
-                break;
-            }
-
-            bundle.buffers[i] = handle->buffer.buffer;
-        }
-
-        bundle.count = i;
-
-        return bundle;
-    }
-
-    VulkanDescriptorSetBundle VulkanRenderState::GetDescriptorSetBundle(const FenceRef& fence, uint32_t dirtyFlags)
-    {
-        VulkanDescriptorSetBundle bundle{};
-
-        if (m_pipelineKey.shader != nullptr)
-        {
-            bundle.bindPoint = EnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetType());
-            bundle.layout = m_pipelineKey.shader->GetPipelineLayout()->layout;
-            bundle.firstSet = 0xFFFFu;
-            bundle.count = 0u;
-
-            for (auto i = 0u; i < PK_MAX_DESCRIPTOR_SETS; ++i)
-            {
-                if ((dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i)) != 0)
-                {
-                    if (i < bundle.firstSet)
-                    {
-                        bundle.firstSet = i;
-                    }
-
-                    auto set = m_descriptorSets[i];
-                    set->fence = fence;
-                    bundle.sets[bundle.count++] = set->set;
-                }
-            }
-        }
-
-        return bundle;
-    }
-
-    VkStridedDeviceAddressRegionKHR* VulkanRenderState::GetShaderBindingTableAddresses()
-    {
-        static VkStridedDeviceAddressRegionKHR addresses[(uint32_t)Structs::RayTracingShaderGroup::MaxCount];
-
-        if (m_pipelineKey.shader != nullptr)
-        {
-            for (auto i = 0u; i < (uint32_t)Structs::RayTracingShaderGroup::MaxCount; ++i)
-            {
-                if (m_pipelineKey.shader->HasRayTracingShaderGroup((Structs::RayTracingShaderGroup)i))
-                {
-                    addresses[i] = m_sbtAddresses[i];
-                }
-            }
-        }
-
-        return addresses;
-    }
-
-    const VulkanBindHandle* VulkanRenderState::GetIndexBuffer(VkIndexType* outIndexType) const
-    {
-        *outIndexType = m_indexType;
-        return m_indexBuffer;
-    }
-
-    void VulkanRenderState::ValidateRenderTarget()
+    void VulkanRenderState::ValidateRenderTarget(uint16_t queueFamily)
     {
         auto shader = m_pipelineKey.shader;
         auto shaderType = shader->GetType();
@@ -379,7 +380,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             return;
         }
 
-        RecordRenderTargetAccess();
+        RecordRenderTargetAccess(queueFamily);
 
         memcpy(m_frameBufferKey + 1, m_frameBufferKey, sizeof(FrameBufferKey));
         memcpy(m_renderPassKey + 1, m_renderPassKey, sizeof(RenderPassKey));
@@ -609,17 +610,17 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const FenceRef& fence)
+    PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const FenceRef& fence, uint16_t queueFamily)
     {
         PK_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
         auto shaderType = m_pipelineKey.shader->GetType();
         auto graphicsFlags = m_dirtyFlags & (PK_RENDER_STATE_DIRTY_VERTEXBUFFERS | PK_RENDER_STATE_DIRTY_INDEXBUFFER | PK_RENDER_STATE_DIRTY_RENDERTARGET);
 
-        ValidateRenderTarget();
+        ValidateRenderTarget(queueFamily);
         ValidateVertexBuffers();
         ValidateDescriptorSets(fence);
-        RecordResourceAccess();
+        RecordResourceAccess(queueFamily);
 
         if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_PIPELINE)
         {
@@ -642,8 +643,10 @@ namespace PK::Rendering::VulkanRHI::Objects
     }
 
  
-    void VulkanRenderState::RecordResourceAccess()
+    void VulkanRenderState::RecordResourceAccess(uint16_t queueFamily)
     {
+        auto barrierHandler = m_services.barrierHandler;
+
         VulkanBarrierHandler::AccessRecord record{};
 
         auto shader = m_pipelineKey.shader;
@@ -678,7 +681,8 @@ namespace PK::Rendering::VulkanRHI::Objects
                         record.layout = handle->image.layout;
                         record.aspect = handle->image.range.aspectMask;
                         record.access |= VK_ACCESS_SHADER_READ_BIT;
-                        RecordAccess(handle->image.image, record);
+                        record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : queueFamily;
+                        barrierHandler->Record(handle->image.image, record);
                     }
                     break;
                     case ResourceType::StorageBuffer:
@@ -687,7 +691,8 @@ namespace PK::Rendering::VulkanRHI::Objects
                         record.bufferRange.offset = (uint32_t)handle->buffer.offset;
                         record.bufferRange.size = (uint32_t)handle->buffer.range;
                         record.access |= VK_ACCESS_SHADER_READ_BIT;
-                        RecordAccess(handle->buffer.buffer, record);
+                        record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : queueFamily;
+                        barrierHandler->Record(handle->buffer.buffer, record);
                     }
                     break;
                     case ResourceType::ConstantBuffer:
@@ -696,7 +701,8 @@ namespace PK::Rendering::VulkanRHI::Objects
                         record.bufferRange.offset = (uint32_t)handle->buffer.offset;
                         record.bufferRange.size = (uint32_t)handle->buffer.range;
                         record.access |= VK_ACCESS_UNIFORM_READ_BIT;
-                        RecordAccess(handle->buffer.buffer, record);
+                        record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : queueFamily;
+                        barrierHandler->Record(handle->buffer.buffer, record);
                     }
                     break;
                 }
@@ -719,7 +725,8 @@ namespace PK::Rendering::VulkanRHI::Objects
             record.bufferRange.size = (uint32_t)m_vertexBuffers[i]->buffer.range;
             record.stage = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
             record.access = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
-            RecordAccess(m_vertexBuffers[i]->buffer.buffer, record);
+            record.queueFamily = m_vertexBuffers[i]->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : queueFamily;
+            barrierHandler->Record(m_vertexBuffers[i]->buffer.buffer, record);
         }
 
         if (m_indexBuffer != nullptr)
@@ -728,12 +735,15 @@ namespace PK::Rendering::VulkanRHI::Objects
             record.bufferRange.size = (uint32_t)m_indexBuffer->buffer.range;
             record.stage = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
             record.access = VK_ACCESS_INDEX_READ_BIT;
-            RecordAccess(m_indexBuffer->buffer.buffer, record);
+            record.queueFamily = m_indexBuffer->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : queueFamily;
+            barrierHandler->Record(m_indexBuffer->buffer.buffer, record);
         }
     }
     
-    void VulkanRenderState::RecordRenderTargetAccess()
+    void VulkanRenderState::RecordRenderTargetAccess(uint16_t queueFamily)
     {
+        auto barrierHandler = m_services.barrierHandler;
+
         VulkanBarrierHandler::AccessRecord record{};
         VulkanBarrierHandler::AccessRecord recordPrevious{};
         m_renderPassKey->accessMask = 0u;
@@ -754,8 +764,8 @@ namespace PK::Rendering::VulkanRHI::Objects
             record.layout = color->image.layout;
             record.access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             record.stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-            RecordAccess(color->image.image, record, &recordPrevious, false);
+            record.queueFamily = color->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : queueFamily;
+            barrierHandler->Record(color->image.image, record, &recordPrevious, false);
 
             m_renderPassKey->accessMask |= recordPrevious.access;
             m_renderPassKey->stageMask |= recordPrevious.stage;
@@ -772,8 +782,9 @@ namespace PK::Rendering::VulkanRHI::Objects
             record.layout = resolve->image.layout;
             record.access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             record.stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            record.queueFamily = resolve->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : queueFamily;
+            barrierHandler->Record(resolve->image.image, record, &recordPrevious, false);
 
-            RecordAccess(resolve->image.image, record, &recordPrevious, false);
             m_renderPassKey->accessMask |= recordPrevious.access;
             m_renderPassKey->stageMask |= recordPrevious.stage;
         }
@@ -787,8 +798,8 @@ namespace PK::Rendering::VulkanRHI::Objects
             record.layout = depth->image.layout;
             record.access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
             record.stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-
-            RecordAccess(depth->image.image, record, &recordPrevious, false);
+            record.queueFamily = depth->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : queueFamily;
+            barrierHandler->Record(depth->image.image, record, &recordPrevious, false);
 
             m_renderPassKey->accessMask |= recordPrevious.access;
             m_renderPassKey->stageMask |= recordPrevious.stage;

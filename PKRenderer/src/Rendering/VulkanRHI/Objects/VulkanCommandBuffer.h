@@ -20,6 +20,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         inline bool IsActive() const { return m_commandBuffer != VK_NULL_HANDLE; }
         inline VkCommandBuffer& GetNative() { return m_commandBuffer; }
         inline VkFence& GetFence() { return m_fence; }
+        inline uint16_t& GetQueueFamily() { return m_queueFamily; }
         inline void Release() { m_commandBuffer = VK_NULL_HANDLE; ++m_invocationIndex; }
 
         void SetRenderTarget(const uint3& resolution) override final;
@@ -39,6 +40,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         void SetShaderBindingTable(Structs::RayTracingShaderGroup group, const Buffer* buffer, size_t offset, size_t stride, size_t size) override final;
         void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) override final;
         void SetKeyword(uint32_t nameHashId, bool value) override final;
+        void TransferBuffer(uint32_t nameHashId, Structs::QueueType destination) override final;
+        void TransferImage(uint32_t nameHashId, Structs::QueueType destination) override final;
 
         inline void ClearColor(const color& color, uint32_t index) override final { m_renderState->ClearColor(color, index); }
         inline void ClearDepth(float depth, uint32_t stencil) override final { m_renderState->ClearDepth(depth, stencil); }
@@ -67,37 +70,30 @@ namespace PK::Rendering::VulkanRHI::Objects
         void* BeginBufferWrite(Buffer* buffer, size_t offset, size_t size) override final;
         void EndBufferWrite(Buffer* buffer) override final;
 
+        void UploadTexture(Texture* texture, const void* data, size_t size, Structs::ImageUploadRange* ranges, uint32_t rangeCount) override final;
+        void UploadTexture(Texture* texture, const void* data, size_t size, uint32_t level, uint32_t layer) override final;
+
         void BeginDebugScope(const char* name, const Math::color& color) override final;
         void EndDebugScope() override final;
 
         // Vulkan specific interface
-        void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferCopy* pRegions) const;
-        void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions) const;
-        void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, const VkExtent3D& extent, uint32_t level, uint32_t layer) const;
         void BuildAccelerationStructures(uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
         void TransitionImageLayout(const VulkanLayoutTransition& transition);
-        void PipelineBarrier(VkPipelineStageFlags srcStageMask,
-                             VkPipelineStageFlags dstStageMask,
-                             VkDependencyFlags dependencyFlags,
-                             uint32_t memoryBarrierCount,
-                             const VkMemoryBarrier* pMemoryBarriers,
-                             uint32_t bufferMemoryBarrierCount,
-                             const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                             uint32_t imageMemoryBarrierCount,
-                             const VkImageMemoryBarrier* pImageMemoryBarriers);
+        void PipelineBarrier(const VulkanBarrierInfo& barrier);
         
         bool ResolveBarriers();
         void ValidatePipeline();
         void EndRenderPass();
         void BeginCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferLevel level, Objects::VulkanRenderState* renderState);
-        void EndCommandBuffer();
+        void EndCommandBuffer(VulkanBarrierInfo* transferBarrier);
         
         private:
             Objects::VulkanRenderState* m_renderState = nullptr;
             VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
-            VkFence m_fence = VK_NULL_HANDLE;
             VkCommandBufferLevel m_level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-            uint64_t m_invocationIndex = 0;
+            VkFence m_fence = VK_NULL_HANDLE;
+            uint16_t m_queueFamily = 0u;
+            uint64_t m_invocationIndex = 0ull;
             bool m_isInActiveRenderPass = false;
     };
 }

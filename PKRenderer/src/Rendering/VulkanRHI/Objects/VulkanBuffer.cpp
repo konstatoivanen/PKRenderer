@@ -92,16 +92,17 @@ namespace PK::Rendering::VulkanRHI::Objects
         handle->buffer.offset = stride * range.offset;
         handle->buffer.layout = &m_layout;
         handle->buffer.inputRate = EnumConvert::GetInputRate(m_inputRate);
+        handle->isConcurrent = IsConcurrent();
         m_bindHandles.AddValue(range, handle);
         return handle;
     }
 
 
-    void VulkanBuffer::MakeRangeResident(const IndexRange& range)
+    void VulkanBuffer::MakeRangeResident(const IndexRange& range, QueueType type)
     {
         if (m_pageTable != nullptr)
         {
-            m_pageTable->AllocateRange(range);
+            m_pageTable->AllocateRange(range, type);
         }
     }
 
@@ -137,7 +138,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         m_count = count;
         auto size = m_layout.GetStride(m_usage) * count;
-        auto bufferCreateInfo = VulkanBufferCreateInfo(m_usage, size);
+        auto& queueFamilies = m_driver->queues->GetSelectedFamilies();
+        auto bufferCreateInfo = VulkanBufferCreateInfo(m_usage, size, &queueFamilies);
         m_rawBuffer = new VulkanRawBuffer(m_driver->device, m_driver->allocator, bufferCreateInfo, m_name.c_str());
 
         if ((m_usage & BufferUsage::PersistentStage) != 0)
@@ -159,7 +161,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanBuffer::Dispose()
     {
-        auto fence = m_driver->GetQueueFenceRef(QueueType::Graphics);
+        auto fence = m_driver->GetQueues()->GetFenceRef(QueueType::Graphics);
         auto values = m_bindHandles.GetValues();
 
         for (auto i = 0; i < values.count; ++i)

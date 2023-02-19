@@ -127,7 +127,7 @@ namespace PK::Rendering
         sampler.filterMag = FilterMode::Bilinear;
         bluenoise->SetSampler(sampler);
 
-        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
+        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
 
         cmd->SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         cmd->SetTexture(hash->pk_Bluenoise256, bluenoise);
@@ -199,6 +199,15 @@ namespace PK::Rendering
     
     void RenderPipeline::Step(Window* window, int condition)
     {
+        /*
+            @TODO refactor passes to use async compute
+                - Noise compute
+                - Light assignment
+                - Volume fog
+
+        */
+
+
         //@TODO refactor a smarter rebuild mode
         if (m_sceneStructure->GetInstanceCount() == 0)
         {
@@ -210,7 +219,7 @@ namespace PK::Rendering
         }
 
         auto hash = HashCache::Get();
-        auto* cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
+        auto* cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
         auto resolution = window->GetResolution();
 
         m_renderTarget->Validate(resolution);
@@ -224,14 +233,16 @@ namespace PK::Rendering
         m_constantsPerFrame->Set<float4>(hash->pk_ShadowCascadeZSplits, reinterpret_cast<float4*>(cascadeZSplits.planes));
         m_constantsPerFrame->Set<float4>(hash->pk_ScreenParams, { (float)resolution.x, (float)resolution.y, 1.0f / (float)resolution.x, 1.0f / (float)resolution.y });
         m_constantsPerFrame->FlushBuffer();
+        m_passSceneGI.PreRender(cmd, resolution);
 
         m_batcher.BeginCollectDrawCalls();
         m_passGeometry.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_zfar - m_znear);
         m_passLights.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_znear, m_zfar);
         m_batcher.EndCollectDrawCalls(cmd);
 
-        m_passSceneGI.PreRender(cmd, resolution);
-        m_passLights.Render(cmd);
+        // Begin rendering work
+        m_passLights.ComputeClusters(cmd);
+        m_passLights.RenderShadows(cmd);
         m_passSceneGI.RenderVoxels(cmd, &m_batcher, m_passGeometry.GetPassGroup());
 
         // Opaque GBuffer
@@ -279,7 +290,7 @@ namespace PK::Rendering
         sampler.wrap[1] = WrapMode::Mirror;
         sampler.wrap[2] = WrapMode::Mirror;
         tex->SetSampler(sampler);
-        GraphicsAPI::GetCommandBuffer(QueueType::Graphics)->SetTexture(hash->pk_SceneOEM_HDR, tex);
+        GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics)->SetTexture(hash->pk_SceneOEM_HDR, tex);
 
         m_constantsPerFrame->Set<float>(hash->pk_SceneOEM_Exposure, config->BackgroundExposure);
 

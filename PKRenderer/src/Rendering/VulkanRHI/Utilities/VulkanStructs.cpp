@@ -27,10 +27,17 @@ namespace PK::Rendering::VulkanRHI
         accelerationStructure.pNext = &rayTracingPipeline;
     }
 
-    VulkanBufferCreateInfo::VulkanBufferCreateInfo(BufferUsage usage, size_t size)
+    VulkanBufferCreateInfo::VulkanBufferCreateInfo(BufferUsage usage, size_t size, const VulkanQueueFamilies* families) 
     {
+        if (families)
+        {
+            queueFamilies = *families;
+        }
+
         buffer.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        buffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        buffer.pQueueFamilyIndices = queueFamilies.indices;
+        buffer.queueFamilyIndexCount = queueFamilies.count;
+        buffer.sharingMode = (usage & BufferUsage::Concurrent) != 0 ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
         buffer.size = size;
         buffer.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
@@ -106,8 +113,13 @@ namespace PK::Rendering::VulkanRHI
         }
     }
 
-    VulkanImageCreateInfo::VulkanImageCreateInfo(const TextureDescriptor& descriptor)
+    VulkanImageCreateInfo::VulkanImageCreateInfo(const TextureDescriptor& descriptor, const VulkanQueueFamilies* families)
     {
+        if (families)
+        {
+            queueFamilies = *families;
+        }
+
         image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         image.imageType = descriptor.samplerType == SamplerType::Sampler3D ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
         image.format = EnumConvert::GetFormat(descriptor.format);
@@ -118,6 +130,9 @@ namespace PK::Rendering::VulkanRHI
         image.tiling = VK_IMAGE_TILING_OPTIMAL;
         image.usage = 0;
         image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        image.sharingMode = (descriptor.usage & TextureUsage::Concurrent) != 0 ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
+        image.pQueueFamilyIndices = queueFamilies.indices;
+        image.queueFamilyIndexCount = queueFamilies.count;
         allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
         aspect = (VkImageAspectFlagBits)0;
 

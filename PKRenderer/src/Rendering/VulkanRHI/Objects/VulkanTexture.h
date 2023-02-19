@@ -12,9 +12,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanTexture(const TextureDescriptor& descriptor, const char* name);
             ~VulkanTexture();
             
-            void SetData(const void* data, size_t size, uint32_t level, uint32_t layer) const override final;
             void SetSampler(const Structs::SamplerDescriptor& sampler) override final;
-            void Import(const char* filepath) override final;
             bool Validate(const Math::uint3& resolution) override final;
             bool Validate(const uint32_t levels, const uint32_t layers) override final;
             bool Validate(const Structs::TextureDescriptor& descriptor) override final;
@@ -84,7 +82,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             void Dispose();
 
             const VulkanDriver* m_driver = nullptr;
-            std::string m_name = "Texture";
             VulkanRawImage* m_rawImage = nullptr;
             std::map<ViewKey, PK::Utilities::Scope<ViewValue>> m_imageViews;
             VkComponentMapping m_swizzle{};

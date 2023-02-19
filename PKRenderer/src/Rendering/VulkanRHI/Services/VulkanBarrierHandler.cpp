@@ -39,6 +39,7 @@ namespace PK::Rendering::VulkanRHI::Services
         access = record.access;
         stage = record.stage;
         bufferRange = record.bufferRange;
+        queueFamily = record.queueFamily;
     }
 
     template<>
@@ -66,7 +67,10 @@ namespace PK::Rendering::VulkanRHI::Services
         const auto max0 = bufferRange.offset + bufferRange.size;
         const auto min1 = record.bufferRange.offset;
         const auto max1 = record.bufferRange.offset + record.bufferRange.size;
-        return min0 <= min1 && max0 >= max1 && stage == record.stage && access == record.access;
+        return min0 <= min1 && max0 >= max1 && 
+               stage == record.stage && 
+               access == record.access &&
+               queueFamily == record.queueFamily;
     }
 
     template<>
@@ -78,7 +82,8 @@ namespace PK::Rendering::VulkanRHI::Services
         auto write1 = EnumConvert::IsWriteAccess(access);
 
         return (write1 && (read0 || write0)) || 
-               (write0 && (read1 || write1));
+               (write0 && (read1 || write1)) ||
+               queueFamily != record.queueFamily;
     }
 
 
@@ -89,6 +94,7 @@ namespace PK::Rendering::VulkanRHI::Services
         stage = record.stage;
         layout = record.layout;
         imageRange = record.imageRange;
+        queueFamily = record.queueFamily;
     }
 
     template<>
@@ -132,7 +138,10 @@ namespace PK::Rendering::VulkanRHI::Services
 
         return min00 <= min01 && max00 >= max01 && 
                min10 <= min11 && max10 >= max11 && 
-               stage == record.stage && access == record.access && layout == record.layout;
+               stage == record.stage && 
+               access == record.access && 
+               layout == record.layout &&
+               queueFamily == record.queueFamily;
     }
 
     template<>
@@ -145,7 +154,8 @@ namespace PK::Rendering::VulkanRHI::Services
 
         return (write1 && (read0 || write0)) || 
                (write0 && (read1 || write1)) ||
-               layout != record.layout;
+               layout != record.layout ||
+               queueFamily != record.queueFamily;
     }
 
 
@@ -153,13 +163,20 @@ namespace PK::Rendering::VulkanRHI::Services
     {
     }
 
-    bool VulkanBarrierHandler::Resolve(VulkanBarrierInfo* outBarrierInfo)
+    bool VulkanBarrierHandler::Resolve(VulkanBarrierInfo* outBarrierInfo, bool isQueueTransfer)
     {
-        if (m_bufferBarriers.GetCount() == 0u && m_imageBarriers.GetCount() == 0u)
+        if (outBarrierInfo == nullptr || (m_bufferBarriers.GetCount() == 0u && m_imageBarriers.GetCount() == 0u))
         {
             return false;
         }
 
+        if (isQueueTransfer && m_srcQueueFamily == m_dstQueueFamily)
+        {
+            return false;
+        }
+
+        outBarrierInfo->memoryBarrierCount = 0u;
+        outBarrierInfo->pMemoryBarriers = nullptr;
         outBarrierInfo->dependencyFlags = 0u;
         outBarrierInfo->srcStageMask = m_sourceStage;
         outBarrierInfo->dstStageMask = m_destinationStage;
@@ -206,14 +223,18 @@ namespace PK::Rendering::VulkanRHI::Services
             *barrier = m_bufferBarriers.Add();
             (*barrier)->sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
             (*barrier)->buffer = resource;
-            (*barrier)->srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            (*barrier)->dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            (*barrier)->srcQueueFamilyIndex = recordOld.queueFamily;// VK_QUEUE_FAMILY_IGNORED;
+            (*barrier)->dstQueueFamilyIndex = recordNew.queueFamily;// VK_QUEUE_FAMILY_IGNORED;
             (*barrier)->srcAccessMask = 0u;
             (*barrier)->dstAccessMask = recordNew.access;
             (*barrier)->offset = recordNew.bufferRange.offset;
             (*barrier)->size = recordNew.bufferRange.size;
             m_destinationStage |= recordNew.stage;
+            m_srcQueueFamily = recordOld.queueFamily;
+            m_dstQueueFamily = recordNew.queueFamily;
         }
+
+        PK_THROW_ASSERT(m_srcQueueFamily == recordOld.queueFamily, "Cannot batch multiple queue family barriers together!");
 
         m_sourceStage |= recordOld.stage;
         (*barrier)->srcAccessMask |= recordOld.access;
@@ -229,15 +250,19 @@ namespace PK::Rendering::VulkanRHI::Services
             *barrier = m_imageBarriers.Add();
             (*barrier)->sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             (*barrier)->image = resource;
-            (*barrier)->srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            (*barrier)->dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            (*barrier)->srcQueueFamilyIndex = recordOld.queueFamily;// VK_QUEUE_FAMILY_IGNORED;
+            (*barrier)->dstQueueFamilyIndex = recordNew.queueFamily;// VK_QUEUE_FAMILY_IGNORED;
             (*barrier)->srcAccessMask = 0u;
             (*barrier)->dstAccessMask = recordNew.access;
             (*barrier)->oldLayout = recordOld.layout;
             (*barrier)->newLayout = recordNew.layout;
             (*barrier)->subresourceRange = Utilities::VulkanConvertRange(recordNew.imageRange, recordNew.aspect);
             m_destinationStage |= recordNew.stage;
+            m_srcQueueFamily = recordOld.queueFamily;
+            m_dstQueueFamily = recordNew.queueFamily;
         }
+
+        PK_THROW_ASSERT(m_srcQueueFamily == recordOld.queueFamily, "Cannot batch multiple queue family barriers together!");
 
         m_sourceStage |= recordOld.stage;
         (*barrier)->srcAccessMask |= recordOld.access;

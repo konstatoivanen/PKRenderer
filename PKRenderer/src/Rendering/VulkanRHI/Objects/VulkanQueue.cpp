@@ -234,7 +234,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
         
         m_timeline.waitFlags = flags;
-
         return vkQueueSubmit(m_queue, 1, &submitInfo, commandBuffer->GetFence());
     }
 
@@ -359,11 +358,14 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     VulkanQueueSet::VulkanQueueSet(VkDevice device, const Initializer& initializer, const Objects::VulkanServiceContext& services)
     {
+        m_selectedFamilies.count = initializer.queueCount;
+
         for (auto i = 0u; i < initializer.queueCount; ++i)
         {
             auto& familyProps = initializer.familyProperties.at(initializer.queueFamilies[i]);
-            m_queues[i] = new VulkanQueue(device, familyProps.queueFlags, initializer.queueFamilies[i], initializer.queueIndices[i]);
-            m_commandBufferPools[i] = new Services::VulkanCommandBufferPool(device, services, initializer.queueFamilies[i]);
+            m_families[i].queue = new VulkanQueue(device, familyProps.queueFlags, initializer.queueFamilies[i], initializer.queueIndices[i]);
+            m_families[i].commandBufferPool = new Services::VulkanCommandBufferPool(device, services, initializer.queueFamilies[i]);
+            m_selectedFamilies.indices[i] = initializer.queueFamilies[i];
         }
 
         memcpy(m_queueIndices, initializer.typeIndices, sizeof(m_queueIndices));
@@ -373,16 +375,35 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         for (auto i = 0u; i < (uint32_t)Structs::QueueType::MaxCount; ++i)
         {
-            if (m_queues[i])
+            if (m_families[i].queue)
             {
-                delete m_queues[i];
-            }
-
-            if (m_commandBufferPools[i])
-            {
-                delete m_commandBufferPools[i];
+                delete m_families[i].queue;
+                delete m_families[i].commandBufferPool;
             }
         }
+    }
+
+    void VulkanQueueSet::QueueResourceSync(Structs::QueueType source, Structs::QueueType destination)
+    {
+        auto& srcFamily = m_families[m_queueIndices[(uint32_t)source]];
+        auto& dstFamily = m_families[m_queueIndices[(uint32_t)destination]];
+        
+        if (srcFamily.queue == dstFamily.queue || srcFamily.commandBufferPool == dstFamily.commandBufferPool)
+        {
+            return;
+        }
+
+        VulkanBarrierInfo transferBarrier{};
+
+        srcFamily.queue->Submit(srcFamily.commandBufferPool->EndCurrent(&transferBarrier), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, true);
+        dstFamily.queue->QueueWait(srcFamily.queue);
+    
+        if (transferBarrier.srcQueueFamily == transferBarrier.dstQueueFamily)
+        {
+            return;
+        }
+
+        dstFamily.commandBufferPool->GetCurrent()->PipelineBarrier(transferBarrier);
     }
 
     VulkanQueueSet::Initializer::Initializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)

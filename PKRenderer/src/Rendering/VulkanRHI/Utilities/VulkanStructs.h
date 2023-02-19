@@ -10,15 +10,25 @@
 
 namespace PK::Rendering::VulkanRHI
 {
+    struct VulkanQueueFamilies
+    {
+        uint32_t indices[(uint32_t)Structs::QueueType::MaxCount]{};
+        uint32_t count;
+    };
+
     struct VulkanBarrierInfo
     {
-        VkPipelineStageFlags srcStageMask;
-        VkPipelineStageFlags dstStageMask;
-        VkDependencyFlags dependencyFlags;
-        uint32_t bufferMemoryBarrierCount;
-        const VkBufferMemoryBarrier* pBufferMemoryBarriers;
-        uint32_t imageMemoryBarrierCount;
-        const VkImageMemoryBarrier* pImageMemoryBarriers;
+        uint16_t srcQueueFamily = 0u;
+        uint16_t dstQueueFamily = 0u;
+        VkPipelineStageFlags srcStageMask = 0u;
+        VkPipelineStageFlags dstStageMask = 0u;
+        VkDependencyFlags dependencyFlags = 0u;
+        uint32_t memoryBarrierCount = 0u;
+        const VkMemoryBarrier* pMemoryBarriers = nullptr;
+        uint32_t bufferMemoryBarrierCount = 0u;
+        const VkBufferMemoryBarrier* pBufferMemoryBarriers = nullptr;
+        uint32_t imageMemoryBarrierCount = 0u;
+        const VkImageMemoryBarrier* pImageMemoryBarriers = nullptr;
     };
 
     struct VulkanPhysicalDeviceFeatures
@@ -49,23 +59,32 @@ namespace PK::Rendering::VulkanRHI
         VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties;
     };
 
+    struct VulkanTimelineSemaphore
+    {
+        VkSemaphore semaphore = VK_NULL_HANDLE;
+        VkPipelineStageFlags waitFlags = VK_PIPELINE_STAGE_NONE;
+        uint64_t counter = 0ull;
+    };
+
     struct VulkanBufferCreateInfo
     {
         VulkanBufferCreateInfo() {};
-        VulkanBufferCreateInfo(Structs::BufferUsage usage, size_t size);
+        VulkanBufferCreateInfo(Structs::BufferUsage usage, size_t size, const VulkanQueueFamilies* families = nullptr);
 
         VkBufferCreateInfo buffer { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
         VmaAllocationCreateInfo allocation {};
+        VulkanQueueFamilies queueFamilies{};
     };
 
     struct VulkanImageCreateInfo
     {
         VulkanImageCreateInfo() {};
-        VulkanImageCreateInfo(const Structs::TextureDescriptor& descriptor);
+        VulkanImageCreateInfo(const Structs::TextureDescriptor& descriptor, const VulkanQueueFamilies* families = nullptr);
 
         VkImageCreateInfo image = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
         VmaAllocationCreateInfo allocation = {};
         VkImageAspectFlagBits aspect = (VkImageAspectFlagBits)0;
+        VulkanQueueFamilies queueFamilies{};
     };
 
     struct VulkanLayoutTransition 
@@ -269,6 +288,8 @@ namespace PK::Rendering::VulkanRHI
             } 
             acceleration;
         };
+
+        bool isConcurrent = false;
 
         VulkanBindHandle() : image{}{};
     };

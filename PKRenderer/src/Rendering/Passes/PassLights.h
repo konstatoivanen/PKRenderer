@@ -49,7 +49,8 @@ namespace PK::Rendering::Passes
                        Batcher* batcher, 
                        const Core::ApplicationConfig* config);
             void Cull(void* engineRoot, ECS::Tokens::VisibilityList* visibilityList, const Math::float4x4& viewProjection, float znear, float zfar);
-            void Render(Objects::CommandBuffer* cmd);
+            void RenderShadows(Objects::CommandBuffer* cmd);
+            void ComputeClusters(Objects::CommandBuffer* cmd);
             ShadowCascades GetCascadeZSplits(float znear, float zfar) const;
         
         private:

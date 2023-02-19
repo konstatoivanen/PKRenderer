@@ -48,7 +48,7 @@ namespace PK::Rendering::Objects
                 return { reinterpret_cast<const T*>(BeginRead(offset * tsize, count * tsize)), count };
             }
 
-            virtual void MakeRangeResident(const Structs::IndexRange& range) = 0;
+            virtual void MakeRangeResident(const Structs::IndexRange& range, Structs::QueueType type) = 0;
             virtual void MakeRangeNonResident(const Structs::IndexRange& range) = 0;
 
             virtual bool Validate(size_t count) = 0;
@@ -56,6 +56,7 @@ namespace PK::Rendering::Objects
 
             constexpr size_t GetCount() const { return m_count; }
             constexpr bool IsSparse() const { return (m_usage & Structs::BufferUsage::Sparse) != 0; }
+            constexpr bool IsConcurrent() const { return (m_usage & Structs::BufferUsage::Concurrent) != 0u; }
             constexpr const Structs::BufferUsage GetUsage() const { return m_usage; }
             constexpr const Structs::BufferLayout& GetLayout() const { return m_layout; }
             constexpr Structs::IndexRange GetFullRange() const { return { 0ull, m_count }; }

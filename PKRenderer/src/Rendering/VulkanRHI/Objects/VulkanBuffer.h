@@ -24,7 +24,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             // Default range is always the first one
             inline const VulkanBindHandle* GetBindHandle() const { return m_bindHandles.GetValueAt(0); }
 
-            void MakeRangeResident(const Structs::IndexRange& range) override final;
+            void MakeRangeResident(const Structs::IndexRange& range, QueueType type) override final;
             void MakeRangeNonResident(const Structs::IndexRange& range)  override final;
 
             bool Validate(size_t count) override final;

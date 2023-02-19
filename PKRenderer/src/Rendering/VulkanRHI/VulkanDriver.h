@@ -54,9 +54,7 @@ namespace PK::Rendering::VulkanRHI
         ~VulkanDriver();
 
         Rendering::Structs::APIType GetAPI() const override final { return Rendering::Structs::APIType::Vulkan; }
-        Rendering::Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) const override final { return queues->GetCommandBuffer(type); }
-        Structs::FenceRef GetCommandBufferFenceRef(Structs::QueueType type) const override final { return queues->GetCommandBuffer(type)->GetFenceRef(); }
-        Structs::FenceRef GetQueueFenceRef(Structs::QueueType type) const override final { return queues->GetQueue(type)->GetFenceRef(); }
+        Rendering::Objects::QueueSet* GetQueues() const override final { return queues.get(); }
         std::string GetDriverHeader() const;
         DriverMemoryInfo GetMemoryInfo() const override final;
         size_t GetBufferOffsetAlignment(Structs::BufferUsage usage) const override final;

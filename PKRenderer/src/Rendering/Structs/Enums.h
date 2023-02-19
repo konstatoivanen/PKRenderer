@@ -164,6 +164,7 @@ namespace PK::Rendering::Structs
         AccelerationStructure = 1 << 14,
         InstanceInput         = 1 << 15,
         ShaderBindingTable    = 1 << 16,
+        Concurrent            = 1 << 17,
 
         TypeBits = 7,
         AlignedTypes = Storage | Constant,
@@ -188,6 +189,7 @@ namespace PK::Rendering::Structs
         Sample = 0x10,
         Input = 0x20,
         Storage = 0x40,
+        Concurrent = 0x80,
         Default = Upload | Sample,
         DefaultStorage = Upload | Sample | Storage,
         RTColorSample = RTColor | Sample,

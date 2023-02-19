@@ -28,7 +28,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     VulkanAccelerationStructure::~VulkanAccelerationStructure()
     {
-        Dispose(m_driver->GetQueueFenceRef(QueueType::Graphics));
+        Dispose(m_driver->GetQueues()->GetFenceRef(QueueType::Graphics));
     }
 
 	VulkanRawBuffer* VulkanAccelerationStructure::GetScratchBuffer(size_t size)
@@ -37,7 +37,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 		{
 			if (m_scratchBuffer != nullptr)
 			{
-				m_driver->disposer->Dispose(m_scratchBuffer, m_driver->GetQueueFenceRef(QueueType::Graphics));
+				m_driver->disposer->Dispose(m_scratchBuffer, m_driver->GetQueues()->GetFenceRef(QueueType::Graphics));
 			}
 			
 			m_scratchBuffer = new VulkanRawBuffer(m_driver->device, 
@@ -55,7 +55,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 		{
 			if (m_instanceInputBuffer != nullptr)
 			{
-				m_driver->disposer->Dispose(m_instanceInputBuffer, m_driver->GetCommandBufferFenceRef(QueueType::Graphics));
+				m_driver->disposer->Dispose(m_instanceInputBuffer, m_driver->GetQueues()->GetCommandBuffer(QueueType::Graphics)->GetFenceRef());
 			}
 
 			m_instanceInputBuffer = new VulkanRawBuffer(m_driver->device,
@@ -207,7 +207,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 		{
 			if (m_structure != nullptr)
 			{
-				m_driver->disposer->Dispose(m_structure, m_driver->GetQueueFenceRef(QueueType::Graphics));
+				m_driver->disposer->Dispose(m_structure, m_driver->GetQueues()->GetFenceRef(QueueType::Graphics));
 			}
 
 			m_structure = new VulkanRawAccelerationStructure(m_driver->device,
@@ -218,7 +218,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 				(m_name + std::string(".TLAS")).c_str());
 		}
 
-		auto cmd = m_driver->queues->GetCommandBuffer(QueueType::Graphics);
+		auto cmd = m_driver->queues->GetPool(QueueType::Graphics)->GetCurrent();
 		
 		auto scratchBuffer = GetScratchBuffer(scratchBufferSize + accelerationStructureBuildSizesInfo.buildScratchSize);
 		auto scratchOffset = 0ull;
@@ -248,12 +248,15 @@ namespace PK::Rendering::VulkanRHI::Objects
 
 			cmd->BuildAccelerationStructures((uint32_t)buildGeometryInfos.size(), buildGeometryInfos.data(), buildStructureRangeInfoPtrs.data());
 
-			VkMemoryBarrier barrier{ VK_STRUCTURE_TYPE_MEMORY_BARRIER };
-			barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
-			barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-
-			cmd->PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 
-								 VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &barrier, 0, nullptr, 0, nullptr);
+			VkMemoryBarrier memoryBarrier{ VK_STRUCTURE_TYPE_MEMORY_BARRIER };
+			memoryBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+			memoryBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+			VulkanBarrierInfo barrier;
+			barrier.srcStageMask = VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+			barrier.dstStageMask = VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+			barrier.memoryBarrierCount = 1u;
+			barrier.pMemoryBarriers = &memoryBarrier;
+			cmd->PipelineBarrier(barrier);
 		}
 
 		VkAccelerationStructureBuildGeometryInfoKHR tlasGeometryInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };

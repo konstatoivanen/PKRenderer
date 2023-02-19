@@ -139,7 +139,7 @@ namespace PK::Rendering::Passes
         m_globalLightsList = Buffer::Create(ElementType::Int, ClusterCount * MaxLightsPerTile, BufferUsage::DefaultStorage, "Lights.List");
         m_globalLightIndex = Buffer::Create(ElementType::Uint, 1, BufferUsage::DefaultStorage, "Lights.IndexCounter");
         
-        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
+        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
         cmd->SetBuffer(hash->pk_GlobalLightsList, m_globalLightsList.get());
         cmd->SetBuffer(hash->pk_GlobalListListIndex, m_globalLightIndex.get());
         cmd->SetImage(hash->pk_LightTiles, m_lightTiles.get());
@@ -199,7 +199,7 @@ namespace PK::Rendering::Passes
         m_lightMatricesBuffer->Validate(m_projectionCount);
         m_lightDirectionsBuffer->Validate(m_projectionCount);
 
-        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
+        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
         auto lightsView = cmd->BeginBufferWrite<PK_Light>(m_lightsBuffer.get(), 0u, m_lightCount + 1);
         auto matricesView = m_projectionCount > 0 ? cmd->BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, m_projectionCount) : BufferView<float4x4>();
         auto directionsView = m_projectionCount > 0 ? cmd->BeginBufferWrite<float4>(m_lightDirectionsBuffer.get(), 0u, m_projectionCount) : BufferView<float4>();
@@ -255,35 +255,32 @@ namespace PK::Rendering::Passes
             cmd->EndBufferWrite(m_lightMatricesBuffer.get());
             cmd->EndBufferWrite(m_lightDirectionsBuffer.get());
         }
-    }
 
-    void PassLights::Render(CommandBuffer* cmd)
-    {
-        cmd->BeginDebugScope("LightAssembly", PK_COLOR_CYAN);
-
-        auto hash = HashCache::Get();
-        cmd->Clear(m_globalLightIndex.get(), 0, sizeof(uint32_t), 0u);
-        
         if (m_shadowmaps->GetLayers() < m_shadowmapCount + PK_SHADOW_CASCADE_COUNT)
         {
             m_shadowmaps->Validate(1u, m_shadowmapCount + PK_SHADOW_CASCADE_COUNT);
         }
 
+        auto hash = HashCache::Get();
         cmd->SetConstant<uint32_t>(hash->pk_LightCount, m_lightCount);
         cmd->SetBuffer(hash->pk_Lights, m_lightsBuffer.get());
         cmd->SetBuffer(hash->pk_LightMatrices, m_lightMatricesBuffer.get());
         cmd->SetBuffer(hash->pk_LightDirections, m_lightDirectionsBuffer.get());
         cmd->SetTexture(hash->pk_ShadowmapAtlas, m_shadowmaps.get());
+    }
 
+    void PassLights::RenderShadows(Objects::CommandBuffer* cmd)
+    {
+        auto hash = HashCache::Get();
         auto atlasIndex = 0u;
 
-        for (const auto& shadowBatch :  m_shadowBatches)
+        for (const auto& shadowBatch : m_shadowBatches)
         {
             auto batchType = shadowBatch.batchType;
             auto& shadow = m_shadowmapTypeData[(int)batchType];
             auto tileCount = shadow.TileCount * shadowBatch.count;
 
-            cmd->BeginDebugScope("LightBatch", PK_COLOR_RED);
+            cmd->BeginDebugScope("ShadowBatch", PK_COLOR_RED);
 
             cmd->SetRenderTarget(shadow.SceneRenderTarget.get(), true);
             cmd->ClearColor(color(shadowBatch.maxDepthRange, shadowBatch.maxDepthRange * shadowBatch.maxDepthRange, 0.0f, 0.0f), 0u);
@@ -299,7 +296,7 @@ namespace PK::Rendering::Passes
             cmd->SetRenderTarget(m_shadowmaps.get(), range0);
             cmd->SetTexture(hash->pk_ShadowmapSource, shadow.SceneRenderTarget->GetColor(0));
             cmd->Blit(m_shadowmapBlur, tileCount, 0u, shadow.BlurPass0);
-            
+
             auto range1 = TextureViewRange(0, atlasIndex, 1, tileCount);
             cmd->SetRenderTarget(m_shadowmaps.get(), range1);
             cmd->SetTexture(hash->pk_ShadowmapSource, m_shadowmaps.get(), range0);
@@ -309,7 +306,11 @@ namespace PK::Rendering::Passes
 
             atlasIndex += tileCount;
         }
+    }
 
+    void PassLights::ComputeClusters(CommandBuffer* cmd)
+    {
+        cmd->BeginDebugScope("LightAssignment", PK_COLOR_CYAN);
         cmd->Dispatch(m_computeLightAssignment, { 1,1, GridSizeZ / 4 });
         cmd->EndDebugScope();
     }

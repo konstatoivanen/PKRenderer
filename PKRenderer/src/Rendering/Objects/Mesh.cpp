@@ -126,9 +126,9 @@ namespace PK::Rendering::Objects
 		}
 
 		auto pBufferOffset = 0ull;
-		auto vertexBufferName = GetFileName() + std::string(" Vertex Buffer");
-		auto indexBufferName = GetFileName() + std::string(" Index Buffer");
-		auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
+		auto vertexBufferName = GetFileName() + std::string(".VertexBuffer");
+		auto indexBufferName = GetFileName() + std::string(".IndexBuffer");
+		auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
 
 		for (auto& kv : layoutMap)
 		{
@@ -200,7 +200,7 @@ namespace PK::Rendering::Objects
 
 		AlignVertices((char*)allocationInfo.pVertices, allocationInfo.vertexCount, allocationInfo.vertexLayout, GetVertexBufferLayouts());
 
-		auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
+		auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
 
 		for (auto i = 0u; i < m_vertexBuffers.size(); ++i)
 		{
@@ -210,7 +210,7 @@ namespace PK::Rendering::Objects
 			const auto& layout = vertexBuffer->GetLayout();
 			auto vertexStride = layout.GetStride();
 			
-			vertexBuffer->MakeRangeResident({ range.firstVertex * vertexStride, range.vertexCount * vertexStride });
+			vertexBuffer->MakeRangeResident({ range.firstVertex * vertexStride, range.vertexCount * vertexStride }, QueueType::Graphics);
 			cmd->UploadBufferSubData(vertexBuffer.get(), (char*)allocationInfo.pVertices + pBufferOffset, range.firstVertex * vertexStride, range.vertexCount * vertexStride);
 			pBufferOffset += vertexStride * range.vertexCount;
 		}
@@ -218,7 +218,7 @@ namespace PK::Rendering::Objects
 		auto indexBuffer = m_indexBuffer.get();
 		auto indexStride = m_indexBuffer->GetLayout().GetStride();
 		PK_THROW_ASSERT(indexBuffer->IsSparse(), "Cannot append indices to a non sparse index buffer!");
-		indexBuffer->MakeRangeResident({ range.firstIndex * indexStride, range.indexCount * indexStride });
+		indexBuffer->MakeRangeResident({ range.firstIndex * indexStride, range.indexCount * indexStride }, QueueType::Graphics);
 
 		// Convert 16bit indices to 32bit to avoid compatibility issues between meshes.
 		if (ElementConvert::Size(allocationInfo.indexType) == 2)
