@@ -12,7 +12,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         ~VulkanAccelerationStructure();
         void Dispose(const FenceRef& fence);
         
-        void BeginWrite(uint32_t instanceLimit) override final;
+        void BeginWrite(Structs::QueueType queue, uint32_t instanceLimit) override final;
         void AddInstance(Mesh* mesh, uint32_t submesh, uint32_t customIndex, const PK::Math::float4x4& matrix) override final;
         void EndWrite() override final;
 
@@ -52,6 +52,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             const VulkanDriver* m_driver = nullptr;
             std::string m_name = "AccelerationStructure";
+
+            Objects::VulkanCommandBuffer* m_cmd = nullptr;
 
             VulkanRawBuffer* m_instanceInputBuffer = nullptr;
             VulkanRawBuffer* m_scratchBuffer = nullptr;

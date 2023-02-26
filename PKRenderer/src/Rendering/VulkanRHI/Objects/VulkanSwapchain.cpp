@@ -154,7 +154,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    bool VulkanSwapchain::TryAcquireNextImage()
+    bool VulkanSwapchain::TryAcquireNextImage(VkSemaphore* imageAvailableSignal)
     {
         if (m_outofdate)
         {
@@ -166,9 +166,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         // However, for them to have coherent memory operations we cannot push more than 2 frames at a time.
         PK_THROW_ASSERT(m_frameFences.at(m_frameIndex).WaitInvalidate(UINT64_MAX), "Frame fence timeout!");
 
-        auto semaphore = m_queueGraphics->GetNextSemaphore();
-        auto result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_imageIndex);
-        VK_ASSERT_RESULT(m_queueGraphics->QueueWait(semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT));
+        *imageAvailableSignal = m_queueGraphics->GetNextSemaphore();
+        auto result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, *imageAvailableSignal, VK_NULL_HANDLE, &m_imageIndex);
         
         PK_THROW_ASSERT(SwapchainErrorAssert(result, m_outofdate, m_suboptimal), "Failed to acquire swap chain image!");
 

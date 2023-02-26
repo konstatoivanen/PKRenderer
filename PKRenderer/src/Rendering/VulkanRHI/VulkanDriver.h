@@ -83,7 +83,6 @@ namespace PK::Rendering::VulkanRHI
         PK::Utilities::Scope<Services::VulkanPipelineCache> pipelineCache;
         PK::Utilities::Scope<Services::VulkanSamplerCache> samplerCache;
         PK::Utilities::Scope<Services::VulkanLayoutCache> layoutCache;
-        PK::Utilities::Scope<Services::VulkanBarrierHandler> barrierHandler;
         PK::Utilities::Scope<Rendering::Services::Disposer> disposer;
     };
 }

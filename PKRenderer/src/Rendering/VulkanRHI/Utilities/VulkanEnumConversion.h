@@ -16,6 +16,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
     VkImageViewType GetViewType(Rendering::Structs::SamplerType samplerType);
     VkImageLayout GetImageLayout(Rendering::Structs::TextureUsage usage, bool useOptimized = false);
     VkAttachmentLoadOp GetLoadOp(Rendering::Structs::LoadOp loadOp);
+    VkAttachmentLoadOp GetLoadOp(VkImageLayout layout, Rendering::Structs::LoadOp loadOp);
     VkAttachmentStoreOp GetStoreOp(Rendering::Structs::StoreOp storeOp);
     VkCompareOp GetCompareOp(Rendering::Structs::Comparison comparison);
     VkBorderColor GetBorderColor(Rendering::Structs::BorderColor color);

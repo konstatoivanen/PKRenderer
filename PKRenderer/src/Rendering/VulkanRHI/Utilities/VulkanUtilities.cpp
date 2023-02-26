@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/Services/Log.h"
 #include "VulkanUtilities.h"
+#include "VulkanExtensions.h"
 #include <gfx.h>
 #include <vulkan/vk_enum_string_helper.h>
 
@@ -484,7 +485,7 @@ namespace PK::Rendering::VulkanRHI::Utilities
         };
     }
 
-    Structs::TextureViewRange VulkanConvertRange(VkImageSubresourceRange resourceRange)
+    Structs::TextureViewRange VulkanConvertRange(const VkImageSubresourceRange& resourceRange)
     {
         return
         {
@@ -493,6 +494,17 @@ namespace PK::Rendering::VulkanRHI::Utilities
             (uint16_t)resourceRange.levelCount,       //levels
             (uint16_t)resourceRange.layerCount        //layers
         };
+    }
+
+    void VulkanSetObjectDebugName(VkDevice device, VkObjectType objectType, uint64_t objectHandle, const char* name)
+    {
+        VkDebugUtilsObjectNameInfoEXT nameInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
+        nameInfo.pNext = nullptr;
+        nameInfo.objectType = objectType;
+        nameInfo.objectHandle = objectHandle;
+        nameInfo.pObjectName = name;
+        vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
+        PK_LOG_VERBOSE("New: %s, %s", string_VkObjectType(nameInfo.objectType), name);
     }
 
     VkExtent2D VulkanSelectSurfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities, const VkExtent2D& desiredExtent)

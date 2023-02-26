@@ -152,7 +152,7 @@ namespace PK::Rendering::Passes
 
         m_parameters->Set<uint4>(hash->pk_SceneGI_Swizzle, swizzles[m_rasterAxis]);
         m_parameters->Set<int4>(hash->pk_SceneGI_Checkerboard_Offset, { m_checkerboardIndex / 2, m_checkerboardIndex % 2, 0, 0 });
-        m_parameters->FlushBuffer();
+        m_parameters->FlushBuffer(QueueType::Graphics);
     }
 
     void PassSceneGI::RenderVoxels(CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup)
@@ -193,7 +193,7 @@ namespace PK::Rendering::Passes
 
         cmd->EndDebugScope();
     }
-    
+
     void PassSceneGI::RenderGI(CommandBuffer* cmd)
     {
         cmd->BeginDebugScope("GI Gather", PK_COLOR_GREEN);

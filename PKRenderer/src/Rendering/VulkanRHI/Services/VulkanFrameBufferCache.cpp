@@ -87,23 +87,6 @@ namespace PK::Rendering::VulkanRHI::Services
             return iterator->second.renderPass;
         }
 
-        struct { VkImageLayout initial, final; } colorLayouts[PK_MAX_RENDER_TARGETS];
-      
-        // Is swap chain
-        if (key.colors[0].finalLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-        {
-            colorLayouts[0].initial = VK_IMAGE_LAYOUT_UNDEFINED;
-            colorLayouts[0].final = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        }
-        else 
-        {
-            for (int i = 0u; i < PK_MAX_RENDER_TARGETS; ++i)
-            {
-                colorLayouts[i].initial = key.colors[i].initialLayout;
-                colorLayouts[i].final = key.colors[i].finalLayout;
-            }
-        }
-
         VkAttachmentReference colorAttachmentRefs[PK_MAX_RENDER_TARGETS] = {};
         VkAttachmentReference resolveAttachmentRef[PK_MAX_RENDER_TARGETS] = {};
         VkAttachmentReference depthAttachmentRef{};
@@ -160,12 +143,12 @@ namespace PK::Rendering::VulkanRHI::Services
             auto* attachment = attachments + attachmentIndex++;
             attachment->format = key.colors[i].format;
             attachment->samples = EnumConvert::GetSampleCountFlags(key.samples);
-            attachment->loadOp = EnumConvert::GetLoadOp(key.colors[i].loadop);
+            attachment->loadOp = EnumConvert::GetLoadOp(key.colors[i].initialLayout, key.colors[i].loadop);
             attachment->storeOp = EnumConvert::GetStoreOp(key.colors[i].storeop);
             attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             attachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            attachment->initialLayout = colorLayouts[i].initial;
-            attachment->finalLayout = colorLayouts[i].final;
+            attachment->initialLayout = key.colors[i].loadop == LoadOp::Keep ? key.colors[i].initialLayout : VK_IMAGE_LAYOUT_UNDEFINED;
+            attachment->finalLayout = key.colors[i].finalLayout;
         }
 
         VkAttachmentReference* pResolveAttachment = resolveAttachmentRef;
@@ -195,7 +178,7 @@ namespace PK::Rendering::VulkanRHI::Services
             attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             attachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
             attachment->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            attachment->finalLayout = colorLayouts[i].final;
+            attachment->finalLayout = key.colors[i].finalLayout;
         }
 
         if (hasDepth) 
@@ -206,11 +189,11 @@ namespace PK::Rendering::VulkanRHI::Services
             auto* attachment = attachments + attachmentIndex++;
             attachment->format = key.depth.format;
             attachment->samples = EnumConvert::GetSampleCountFlags(key.samples);
-            attachment->loadOp = EnumConvert::GetLoadOp(key.depth.loadop);
+            attachment->loadOp = EnumConvert::GetLoadOp(key.depth.initialLayout, key.depth.loadop);
             attachment->storeOp = EnumConvert::GetStoreOp(key.depth.storeop);
             attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             attachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            attachment->initialLayout = key.depth.initialLayout;
+            attachment->initialLayout = key.depth.loadop == LoadOp::Keep ? key.depth.initialLayout : VK_IMAGE_LAYOUT_UNDEFINED; 
             attachment->finalLayout = key.depth.finalLayout;
             dependencies[0].dstStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
             dependencies[0].dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;

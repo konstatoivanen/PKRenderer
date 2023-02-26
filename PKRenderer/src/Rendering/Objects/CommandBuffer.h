@@ -46,8 +46,6 @@ namespace PK::Rendering::Objects
         virtual void SetShaderBindingTable(Structs::RayTracingShaderGroup group, const Buffer* buffer, size_t offset = 0, size_t stride = 0, size_t size = 0) = 0;
         virtual void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) = 0;
         virtual void SetKeyword(uint32_t nameHashId, bool value) = 0;
-        virtual void TransferBuffer(uint32_t nameHashId, Structs::QueueType destination) = 0;
-        virtual void TransferImage(uint32_t nameHashId, Structs::QueueType destination) = 0;
 
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;

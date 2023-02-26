@@ -13,14 +13,14 @@ namespace PK::Rendering::VulkanRHI::Objects
         constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)Structs::QueueType::MaxCount;
 
         public:
-            VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex);
+            VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, const Objects::VulkanServiceContext& services, uint32_t queueIndex = 0u);
             ~VulkanQueue();
 
             VkResult Present(VkSwapchainKHR swapchain, uint32_t imageIndex, VkSemaphore waitSignal = VK_NULL_HANDLE);
-            VkResult Submit(Objects::VulkanCommandBuffer* commandBuffer, VkPipelineStageFlags flags, bool waitForPrevious, VkSemaphore* outSignal = nullptr);
+            VkResult Submit(Objects::VulkanCommandBuffer* commandBuffer, VkSemaphore* outSignal = nullptr);
             VkResult BindSparse(VkBuffer buffer, const VkSparseMemoryBind* binds, uint32_t bindCount);
-            VkResult QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags);
             VkSemaphore QueueSignal(VkPipelineStageFlags flags);
+            void QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags);
             void QueueWait(VulkanQueue* other);
 
             inline VkSemaphore GetNextSemaphore() { return m_semaphores[m_semaphoreIndex++ % MAX_SEMAPHORES]; }
@@ -30,11 +30,14 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             FenceRef GetFenceRef() const;
 
+            PK::Utilities::Scope<Services::VulkanCommandBufferPool> commandPool = nullptr;
+            PK::Utilities::Scope<Services::VulkanBarrierHandler> barrierHandler = nullptr;
+
         private:
             const VkDevice m_device;
             VkPipelineStageFlags m_capabilityFlags = 0u;
             uint32_t m_family = 0u;
-            uint32_t m_queueIndex = 0u;
+            const uint32_t m_queueIndex = 0u;
             VkQueue m_queue = VK_NULL_HANDLE;
             
             VulkanTimelineSemaphore m_timeline{};
@@ -47,16 +50,9 @@ namespace PK::Rendering::VulkanRHI::Objects
     class VulkanQueueSet : public PK::Rendering::Objects::QueueSet
     {
         public:
-            struct Family
-            {
-                Services::VulkanCommandBufferPool* commandBufferPool = nullptr;
-                VulkanQueue* queue = nullptr;
-            };
-
             struct Initializer
             {
                 float priorities[(uint32_t)Structs::QueueType::MaxCount] = { 1.0f, 1.0f, 1.0f, 1.0f };
-                uint32_t queueIndices[(uint32_t)Structs::QueueType::MaxCount]{};
                 uint32_t queueFamilies[(uint32_t)Structs::QueueType::MaxCount]{};
                 uint32_t typeIndices[(uint32_t)Structs::QueueType::MaxCount]{};
                 uint32_t queueCount = 0u;
@@ -66,25 +62,31 @@ namespace PK::Rendering::VulkanRHI::Objects
             };
 
             VulkanQueueSet(VkDevice device, const Initializer& initializer, const Objects::VulkanServiceContext& services);
-            ~VulkanQueueSet();
 
-            inline VulkanQueue* GetQueue(Structs::QueueType type) { return m_families[m_queueIndices[(uint32_t)type]].queue; }
-            inline Services::VulkanCommandBufferPool* GetPool(Structs::QueueType type) { return m_families[m_queueIndices[(uint32_t)type]].commandBufferPool; }
-            
-            inline VkResult SubmitCurrent(Structs::QueueType type, VkPipelineStageFlags flags, bool waitForPrevious, VkSemaphore* outSignal = nullptr)
-            {
-                return GetQueue(type)->Submit(GetPool(type)->EndCurrent(), flags, waitForPrevious, outSignal);
-            }
+            inline VulkanQueue* GetQueue(Structs::QueueType type) { return m_queues[m_queueIndices[(uint32_t)type]].get(); }
 
-            void QueueResourceSync(Structs::QueueType source, Structs::QueueType destination) override final;
-            inline void QueueWait(Structs::QueueType source, Structs::QueueType destination) override final { GetQueue(destination)->QueueWait(GetQueue(source)); }
-            inline void SubmitCurrent(Structs::QueueType type) override final { SubmitCurrent(type, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, true, nullptr); }
-            inline PK::Rendering::Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) override final { return GetPool(type)->GetCurrent(); }
-            inline Structs::FenceRef GetFenceRef(Structs::QueueType type) override final { return GetQueue(type)->GetFenceRef(); }
             constexpr const VulkanQueueFamilies& GetSelectedFamilies() const { return m_selectedFamilies; }
+            
+            inline VkResult SubmitCurrent(Structs::QueueType type, VulkanBarrierInfo* barrierInfo = nullptr, VkSemaphore* outSignal = nullptr)
+            {
+                auto queue = GetQueue(type);
+                return queue->Submit(GetQueue(type)->commandPool->EndCurrent(barrierInfo), outSignal);
+            }
+            
+            void QueueSync(Structs::QueueType from, Structs::QueueType to) override final;
+            
+            Objects::CommandBuffer* SubmitSynced(Structs::QueueType source, Structs::QueueType destination) override final;
+            
+            Objects::CommandBuffer* Submit(Structs::QueueType type) override final;
+            
+            inline Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) override final { return GetQueue(type)->commandPool->GetCurrent(); }
+            
+            inline Structs::FenceRef GetFenceRef(Structs::QueueType type) override final { return GetQueue(type)->GetFenceRef(); }
+            
+            void Prune();
 
         private:
-            Family m_families[MAX_DEPENDENCIES]{};
+            PK::Utilities::Scope<VulkanQueue> m_queues[MAX_DEPENDENCIES]{};
             uint32_t m_queueIndices[MAX_DEPENDENCIES]{};
             VulkanQueueFamilies m_selectedFamilies{};
     };

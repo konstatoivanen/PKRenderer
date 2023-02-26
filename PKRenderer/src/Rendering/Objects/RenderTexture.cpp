@@ -18,6 +18,7 @@ namespace PK::Rendering::Objects
             if (descriptor.colorFormats[i] != TextureFormat::Invalid)
             {
                 m_descriptor.colorFormats[m_colorAttachmentCount] = descriptor.colorFormats[i];
+                auto attachmentName = std::string(name) + std::string(".Color") + std::to_string(i);
                 
                 TextureDescriptor attachmentDescriptor{};
                 attachmentDescriptor.format = descriptor.colorFormats[i];
@@ -28,12 +29,13 @@ namespace PK::Rendering::Objects
                 attachmentDescriptor.samples = descriptor.samples;
                 attachmentDescriptor.layers = descriptor.layers;
                 attachmentDescriptor.sampler = descriptor.sampler;
-                m_colorAttachments[m_colorAttachmentCount++] = Texture::Create(attachmentDescriptor, name);
+                m_colorAttachments[m_colorAttachmentCount++] = Texture::Create(attachmentDescriptor, attachmentName.c_str());
             }
         }
 
         if (descriptor.depthFormat != TextureFormat::Invalid)
         {
+            auto attachmentName = std::string(name) + std::string(".Depth");
             TextureDescriptor attachmentDescriptor{};
             attachmentDescriptor.format = descriptor.depthFormat;
             attachmentDescriptor.samplerType = descriptor.samplerType; 
@@ -43,7 +45,7 @@ namespace PK::Rendering::Objects
             attachmentDescriptor.samples = descriptor.samples;
             attachmentDescriptor.layers = descriptor.layers;
             attachmentDescriptor.sampler = descriptor.sampler;
-            m_depthAttachment = Texture::Create(attachmentDescriptor, name);
+            m_depthAttachment = Texture::Create(attachmentDescriptor, attachmentName.c_str());
         }
     }
     

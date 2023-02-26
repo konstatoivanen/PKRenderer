@@ -117,7 +117,7 @@ namespace PK::Rendering::Passes
         TextureDescriptor imageDescriptor;
         imageDescriptor.samplerType = SamplerType::Sampler3D;
         imageDescriptor.format = TextureFormat::R32UI;
-        imageDescriptor.usage = TextureUsage::Storage;
+        imageDescriptor.usage = TextureUsage::Storage | TextureUsage::Concurrent;
         imageDescriptor.resolution = { GridSizeX, GridSizeY, GridSizeZ };
         imageDescriptor.sampler.filterMin = FilterMode::Point;
         imageDescriptor.sampler.filterMag = FilterMode::Point;
@@ -132,12 +132,12 @@ namespace PK::Rendering::Passes
             { ElementType::Float4, "COLOR"},
             { ElementType::Uint4, "INDICES"},
         },
-        1024, BufferUsage::PersistentStorage, "Lights");
+        1024, BufferUsage::PersistentStorage | BufferUsage::Concurrent, "Lights");
 
-        m_lightMatricesBuffer = Buffer::Create(ElementType::Float4x4, 32, BufferUsage::PersistentStorage, "Lights.Matrices");
-        m_lightDirectionsBuffer = Buffer::Create(ElementType::Float4, 32, BufferUsage::PersistentStorage, "Lights.Directions");
-        m_globalLightsList = Buffer::Create(ElementType::Int, ClusterCount * MaxLightsPerTile, BufferUsage::DefaultStorage, "Lights.List");
-        m_globalLightIndex = Buffer::Create(ElementType::Uint, 1, BufferUsage::DefaultStorage, "Lights.IndexCounter");
+        m_lightMatricesBuffer = Buffer::Create(ElementType::Float4x4, 32, BufferUsage::PersistentStorage | BufferUsage::Concurrent, "Lights.Matrices");
+        m_lightDirectionsBuffer = Buffer::Create(ElementType::Float4, 32, BufferUsage::PersistentStorage | BufferUsage::Concurrent, "Lights.Directions");
+        m_globalLightsList = Buffer::Create(ElementType::Int, ClusterCount * MaxLightsPerTile, BufferUsage::DefaultStorage | BufferUsage::Concurrent, "Lights.List");
+        m_globalLightIndex = Buffer::Create(ElementType::Uint, 1, BufferUsage::DefaultStorage | BufferUsage::Concurrent, "Lights.IndexCounter");
         
         auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
         cmd->SetBuffer(hash->pk_GlobalLightsList, m_globalLightsList.get());
@@ -311,6 +311,7 @@ namespace PK::Rendering::Passes
     void PassLights::ComputeClusters(CommandBuffer* cmd)
     {
         cmd->BeginDebugScope("LightAssignment", PK_COLOR_CYAN);
+        cmd->Clear(m_globalLightIndex.get(), 0, sizeof(uint32_t), 0u);
         cmd->Dispatch(m_computeLightAssignment, { 1,1, GridSizeZ / 4 });
         cmd->EndDebugScope();
     }

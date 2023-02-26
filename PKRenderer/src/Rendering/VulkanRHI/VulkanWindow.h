@@ -37,6 +37,7 @@ namespace PK::Rendering::VulkanRHI
 
         private:
             const VulkanDriver* m_driver;
+            VkSemaphore m_imageAvailableSignal = VK_NULL_HANDLE;
             VkSurfaceKHR m_surface;
             GLFWwindow* m_window;
             PK::Utilities::Scope<Objects::VulkanSwapchain> m_swapchain;

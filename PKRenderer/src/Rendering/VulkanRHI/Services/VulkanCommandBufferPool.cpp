@@ -8,7 +8,7 @@ namespace PK::Rendering::VulkanRHI::Services
     using namespace Objects;
     using namespace PK::Utilities;
 
-    VulkanCommandBufferPool::VulkanCommandBufferPool(VkDevice device, const VulkanServiceContext& services, uint32_t queueFamily) :
+    VulkanCommandBufferPool::VulkanCommandBufferPool(VkDevice device, const VulkanServiceContext& services, uint32_t queueFamily, VkPipelineStageFlags capabilities) :
         m_device(device), 
         m_primaryRenderState(services)
     {
@@ -17,11 +17,12 @@ namespace PK::Rendering::VulkanRHI::Services
         createInfo.queueFamilyIndex = queueFamily;
         VK_ASSERT_RESULT(vkCreateCommandPool(m_device, &createInfo, nullptr, &m_pool));
 
-        for (auto& wrapper : m_commandBuffers)
+        for (auto i = 0u; i < MAX_PRIMARY_COMMANDBUFFERS; ++i)
         {
             VkFenceCreateInfo fenceCreateInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-            VK_ASSERT_RESULT(vkCreateFence(device, &fenceCreateInfo, nullptr, &wrapper.GetFence()));
-            wrapper.GetQueueFamily() = queueFamily;
+            VkFence fence = VK_NULL_HANDLE;
+            VK_ASSERT_RESULT(vkCreateFence(device, &fenceCreateInfo, nullptr, &fence));
+            m_commandBuffers[i].Initialize(fence, queueFamily, capabilities);
         }
     }
 
@@ -44,9 +45,6 @@ namespace PK::Rendering::VulkanRHI::Services
             return m_current;
         }
 
-        WaitForCompletion(false);
-        PruneStaleBuffers();
-
         for (auto& commandBuffer : m_commandBuffers)
         {
             if (!commandBuffer.IsActive())
@@ -55,15 +53,11 @@ namespace PK::Rendering::VulkanRHI::Services
                 break;
             }
         }
+        
+        const int64_t index = m_current - &m_commandBuffers[0];
 
-        VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-        VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
-        allocateInfo.commandPool = m_pool;
-        allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocateInfo.commandBufferCount = 1;
-        VK_ASSERT_RESULT(vkAllocateCommandBuffers(m_device, &allocateInfo, &commandBuffer));
-
-        m_current->BeginCommandBuffer(commandBuffer, allocateInfo.level, &m_primaryRenderState);
+        AllocateBuffers();
+        m_current->BeginCommandBuffer(m_nativeBuffers[index], VK_COMMAND_BUFFER_LEVEL_PRIMARY, &m_primaryRenderState);
         return m_current;
     }
 
@@ -86,9 +80,10 @@ namespace PK::Rendering::VulkanRHI::Services
         {
             if (wrapper.IsActive() && vkWaitForFences(m_device, 1, &wrapper.GetFence(), VK_TRUE, 0) == VK_SUCCESS)
             {
+                m_nativeBuffers[(int64_t)(&wrapper - &m_commandBuffers[0])] = VK_NULL_HANDLE;
                 vkFreeCommandBuffers(m_device, m_pool, 1, &wrapper.GetNative());
-                wrapper.Release();
                 VK_ASSERT_RESULT(vkResetFences(m_device, 1, &wrapper.GetFence()));
+                wrapper.Release();
             }
         }
     }
@@ -119,6 +114,40 @@ namespace PK::Rendering::VulkanRHI::Services
         if (count > 0)
         {
             VK_ASSERT_RESULT(vkWaitForFences(m_device, count, fences, all ? VK_TRUE : VK_FALSE, UINT64_MAX));
+        }
+    }
+
+    void VulkanCommandBufferPool::AllocateBuffers()
+    {
+        VkCommandBuffer buffers[MAX_PRIMARY_COMMANDBUFFERS];
+        uint32_t count = 0u;
+
+        for (auto i = 0u; i < MAX_PRIMARY_COMMANDBUFFERS; ++i)
+        {
+            if (m_nativeBuffers[i] == VK_NULL_HANDLE)
+            {
+                ++count;
+            }
+        }
+
+        if (count == 0)
+        {
+            return;
+        }
+
+        VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+        allocateInfo.commandPool = m_pool;
+        allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocateInfo.commandBufferCount = count;
+        VK_ASSERT_RESULT(vkAllocateCommandBuffers(m_device, &allocateInfo, buffers));
+        count = 0u;
+
+        for (auto i = 0u; i < MAX_PRIMARY_COMMANDBUFFERS; ++i)
+        {
+            if (m_nativeBuffers[i] == VK_NULL_HANDLE)
+            {
+                m_nativeBuffers[i] = buffers[count++];
+            }
         }
     }
 }

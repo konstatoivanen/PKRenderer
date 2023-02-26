@@ -94,15 +94,15 @@ namespace PK::Rendering::VulkanRHI::Objects
             void SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType);
             void SetShaderBindingTableAddress(Structs::RayTracingShaderGroup group, VkDeviceAddress address, size_t stride, size_t size);
 
-            PKRenderStateDirtyFlags ValidatePipeline(const Structs::FenceRef& fence, uint16_t queueFamily);
+            PKRenderStateDirtyFlags ValidatePipeline(const Structs::FenceRef& fence);
 
         private:
-            void ValidateRenderTarget(uint16_t queueFamily);
+            void ValidateRenderTarget();
             void ValidateVertexBuffers();
             void ValidateDescriptorSets(const Structs::FenceRef& fence);
 
-            void RecordResourceAccess(uint16_t queueFamily);
-            void RecordRenderTargetAccess(uint16_t queueFamily);
+            void RecordResourceAccess();
+            void RecordRenderTargetAccess();
 
             VulkanServiceContext m_services;
         

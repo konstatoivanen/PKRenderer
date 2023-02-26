@@ -47,7 +47,7 @@ namespace PK::ECS::Engines
             m_renderableEgids.push_back(renderable->GID);
         }
 
-        structure->BeginWrite((uint32_t)m_renderableEgids.size());
+        structure->BeginWrite(token->queue, (uint32_t)m_renderableEgids.size());
 
         for (const auto& egid : m_renderableEgids)
         {

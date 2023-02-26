@@ -32,7 +32,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             void Rebuild(const SwapchainCreateInfo& createInfo);
             void Release();
 
-            bool TryAcquireNextImage();
+            bool TryAcquireNextImage(VkSemaphore* imageAvailableSignal);
             void Present(VkSemaphore waitSignal);
             void OnWindowResize(int w, int h);
 

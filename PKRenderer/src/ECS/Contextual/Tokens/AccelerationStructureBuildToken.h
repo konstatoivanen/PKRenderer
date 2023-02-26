@@ -7,6 +7,7 @@ namespace PK::ECS::Tokens
 {
     struct AccelerationStructureBuildToken
     {
+        Rendering::Structs::QueueType queue = Rendering::Structs::QueueType::Graphics;
         Rendering::Objects::AccelerationStructure* structure = 0;
         Rendering::Structs::RenderableFlags mask = (Rendering::Structs::RenderableFlags)0;
         Math::BoundingBox bounds{};

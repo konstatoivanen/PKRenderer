@@ -33,134 +33,153 @@ namespace PK::Rendering::VulkanRHI::Services
         IncludeRange(&range0->level, &range0->levels, range1.level, range1.levels);
     }
 
-    template<>
-    void VulkanBarrierHandler::AccessRecord::Set<VkBuffer>(const AccessRecord& record)
+    VulkanBarrierHandler::AccessRecord VulkanBarrierHandler::TInfo<VkBuffer>::GetRecord(const VulkanBindHandle* handle)
     {
-        access = record.access;
-        stage = record.stage;
-        bufferRange = record.bufferRange;
-        queueFamily = record.queueFamily;
+        AccessRecord record{};
+        record.bufferRange.offset = (uint32_t)handle->buffer.offset;
+        record.bufferRange.size = (uint32_t)handle->buffer.range;
+        return record;
     }
 
-    template<>
-    void VulkanBarrierHandler::AccessRecord::Merge<VkBuffer>(const AccessRecord& record)
+    void VulkanBarrierHandler::TInfo<VkBuffer>::Merge(AccessRecord& a, const AccessRecord& b)
     {
-        access |= record.access;
-        stage |= record.stage;
-        IncludeRange(&bufferRange.offset, &bufferRange.size, record.bufferRange.offset, record.bufferRange.size);
+        a.access |= b.access;
+        a.stage |= b.stage;
+        IncludeRange(&a.bufferRange.offset, &a.bufferRange.size, b.bufferRange.offset, b.bufferRange.size);
     }
 
-    template<>
-    bool VulkanBarrierHandler::AccessRecord::IsOverlap<VkBuffer>(const AccessRecord& record) const
+    void VulkanBarrierHandler::TInfo<VkBuffer>::Set(AccessRecord& a, const AccessRecord& b)
     {
-        const auto min0 = bufferRange.offset;
-        const auto max0 = bufferRange.offset + bufferRange.size;
-        const auto min1 = record.bufferRange.offset;
-        const auto max1 = record.bufferRange.offset + record.bufferRange.size;
-        return min1 < max0 && max1 > min0;
+        a.access = b.access;
+        a.stage = b.stage;
+        a.bufferRange = b.bufferRange;
+        a.queueFamily = b.queueFamily;
     }
 
-    template<>
-    bool VulkanBarrierHandler::AccessRecord::IsInclusive<VkBuffer>(const AccessRecord& record) const
+    bool VulkanBarrierHandler::TInfo<VkBuffer>::IsOverlap(const AccessRecord& a, const AccessRecord& b)
     {
-        const auto min0 = bufferRange.offset;
-        const auto max0 = bufferRange.offset + bufferRange.size;
-        const auto min1 = record.bufferRange.offset;
-        const auto max1 = record.bufferRange.offset + record.bufferRange.size;
-        return min0 <= min1 && max0 >= max1 && 
-               stage == record.stage && 
-               access == record.access &&
-               queueFamily == record.queueFamily;
+        return b.bufferRange.offset < (a.bufferRange.offset + a.bufferRange.size) &&
+            (b.bufferRange.offset + b.bufferRange.size) > a.bufferRange.offset;
     }
 
-    template<>
-    bool VulkanBarrierHandler::AccessRecord::IsAccessDiff<VkBuffer>(const AccessRecord& record) const
+    bool VulkanBarrierHandler::TInfo<VkBuffer>::IsInclusiveRange(const AccessRecord& a, const AccessRecord& b)
     {
-        auto read0 = EnumConvert::IsReadAccess(record.access);
-        auto write0 = EnumConvert::IsWriteAccess(record.access);
-        auto read1 = EnumConvert::IsReadAccess(access);
-        auto write1 = EnumConvert::IsWriteAccess(access);
-
-        return (write1 && (read0 || write0)) || 
-               (write0 && (read1 || write1)) ||
-               queueFamily != record.queueFamily;
+        return a.bufferRange.offset <= b.bufferRange.offset &&
+            (a.bufferRange.offset + a.bufferRange.size) >= (b.bufferRange.offset + b.bufferRange.size);
     }
 
-
-    template<>
-    void VulkanBarrierHandler::AccessRecord::Set<VkImage>(const AccessRecord& record)
+    bool VulkanBarrierHandler::TInfo<VkBuffer>::IsInclusive(const AccessRecord& a, const AccessRecord& b)
     {
-        access = record.access;
-        stage = record.stage;
-        layout = record.layout;
-        imageRange = record.imageRange;
-        queueFamily = record.queueFamily;
+        return IsInclusiveRange(a, b) && a.stage == b.stage && a.access == b.access && a.queueFamily == b.queueFamily;
     }
 
-    template<>
-    void VulkanBarrierHandler::AccessRecord::Merge<VkImage>(const AccessRecord& record)
+    bool VulkanBarrierHandler::TInfo<VkBuffer>::IsAccessDiff(const AccessRecord& a, const AccessRecord& b)
     {
-        assert(layout == record.layout);
-        access |= record.access;
-        stage |= record.stage;
-        IncludeRange(&imageRange, record.imageRange);
+        auto read0 = EnumConvert::IsReadAccess(b.access);
+        auto write0 = EnumConvert::IsWriteAccess(b.access);
+        auto read1 = EnumConvert::IsReadAccess(a.access);
+        auto write1 = EnumConvert::IsWriteAccess(a.access);
+        return (write1 && (read0 || write0)) || (write0 && (read1 || write1)) || a.queueFamily != b.queueFamily;
     }
 
-    template<>
-    bool VulkanBarrierHandler::AccessRecord::IsOverlap<VkImage>(const AccessRecord& record) const
+    
+    VulkanBarrierHandler::AccessRecord VulkanBarrierHandler::TInfo<VkImage>::GetRecord(const VulkanBindHandle* handle)
     {
-        const auto min00 = imageRange.layer;
-        const auto max00 = imageRange.layer + imageRange.layers;
-        const auto min01 = record.imageRange.layer;
-        const auto max01 = record.imageRange.layer + record.imageRange.layers;
-
-        const auto min10 = imageRange.level;
-        const auto max10 = imageRange.level + imageRange.levels;
-        const auto min11 = record.imageRange.level;
-        const auto max11 = record.imageRange.level + record.imageRange.levels;
-
-        return min01 < max00 && max01 > min00 && 
-               min11 < max10 && max11 > min10;
+        AccessRecord record{};
+        record.imageRange = Utilities::VulkanConvertRange(handle->image.range);
+        record.layout = handle->image.layout;
+        record.aspect = handle->image.range.aspectMask;
+        return record;
     }
 
-    template<>
-    bool VulkanBarrierHandler::AccessRecord::IsInclusive<VkImage>(const AccessRecord& record) const
+    void VulkanBarrierHandler::TInfo<VkImage>::Merge(AccessRecord& a, const AccessRecord& b)
     {
-        const auto min00 = imageRange.layer;
-        const auto max00 = imageRange.layer + imageRange.layers;
-        const auto min01 = record.imageRange.layer;
-        const auto max01 = record.imageRange.layer + record.imageRange.layers;
-
-        const auto min10 = imageRange.level;
-        const auto max10 = imageRange.level + imageRange.levels;
-        const auto min11 = record.imageRange.level;
-        const auto max11 = record.imageRange.level + record.imageRange.levels;
-
-        return min00 <= min01 && max00 >= max01 && 
-               min10 <= min11 && max10 >= max11 && 
-               stage == record.stage && 
-               access == record.access && 
-               layout == record.layout &&
-               queueFamily == record.queueFamily;
+        assert(a.layout == b.layout);
+        a.access |= b.access;
+        a.stage |= b.stage;
+        IncludeRange(&a.imageRange, b.imageRange);
     }
 
-    template<>
-    bool VulkanBarrierHandler::AccessRecord::IsAccessDiff<VkImage>(const AccessRecord& record) const
+    void VulkanBarrierHandler::TInfo<VkImage>::Set(AccessRecord& a, const AccessRecord& b)
     {
-        auto read0 = EnumConvert::IsReadAccess(record.access);
-        auto write0 = EnumConvert::IsWriteAccess(record.access);
-        auto read1 = EnumConvert::IsReadAccess(access);
-        auto write1 = EnumConvert::IsWriteAccess(access);
+        a.access = b.access;
+        a.stage = b.stage;
+        a.layout = b.layout;
+        a.imageRange = b.imageRange;
+        a.queueFamily = b.queueFamily;
+    }
+    
+    bool VulkanBarrierHandler::TInfo<VkImage>::IsOverlap(const AccessRecord& a, const AccessRecord& b)
+    {
+        return b.imageRange.layer < (a.imageRange.layer + a.imageRange.layers) &&
+            (b.imageRange.layer + b.imageRange.layers) > a.imageRange.layer &&
+            b.imageRange.level < (a.imageRange.level + b.imageRange.levels) &&
+            (b.imageRange.level + b.imageRange.levels) > a.imageRange.level;
+    }
+    
+    bool VulkanBarrierHandler::TInfo<VkImage>::IsInclusiveRange(const AccessRecord& a, const AccessRecord& b)
+    {
+        return a.imageRange.layer <= b.imageRange.layer &&
+            (a.imageRange.layer + a.imageRange.layers) >= (b.imageRange.layer + b.imageRange.layers) &&
+            a.imageRange.level <= b.imageRange.level &&
+            (a.imageRange.level + a.imageRange.levels) >= (b.imageRange.level + b.imageRange.levels);
+    }
+    
+    bool VulkanBarrierHandler::TInfo<VkImage>::IsInclusive(const AccessRecord& a, const AccessRecord& b)
+    {
+        return IsInclusiveRange(a, b) && a.stage == b.stage && a.access == b.access && a.layout == b.layout && a.queueFamily == b.queueFamily;
+    }
 
-        return (write1 && (read0 || write0)) || 
-               (write0 && (read1 || write1)) ||
-               layout != record.layout ||
-               queueFamily != record.queueFamily;
+    bool VulkanBarrierHandler::TInfo<VkImage>::IsAccessDiff(const AccessRecord& a, const AccessRecord& b)
+    {
+        auto read0 = EnumConvert::IsReadAccess(b.access);
+        auto write0 = EnumConvert::IsWriteAccess(b.access);
+        auto read1 = EnumConvert::IsReadAccess(a.access);
+        auto write1 = EnumConvert::IsWriteAccess(a.access);
+        return (write1 && (read0 || write0)) || (write0 && (read1 || write1)) || a.layout != b.layout || a.queueFamily != b.queueFamily;
     }
 
 
     VulkanBarrierHandler::~VulkanBarrierHandler()
     {
+    }
+
+    void VulkanBarrierHandler::TransferRecords(VulkanBarrierHandler* target)
+    {
+        auto keyValues = m_resources.GetKeyValues();
+
+        for (auto i = 0u; i < m_resources.GetCount(); ++i)
+        {
+            // Dont copy unaccessed resources
+            if (m_pruneTicks.at(i) < m_currentPruneTick)
+            {
+                continue;
+            }
+
+            auto& key = keyValues.keys[i].key;
+            auto current = &keyValues.values[i];
+
+            // Hacky way to detect type. buffers will have zero value
+            if ((*current)->aspect != 0u)
+            {
+                while (current && *current)
+                {
+                    target->Transfer<VkImage>(key, **current);
+                    current = &(*current)->next;
+                }
+            }
+            else
+            {
+                while (current && *current)
+                {
+                    target->Transfer<VkBuffer>(key, **current);
+                    current = &(*current)->next;
+                }
+            }
+        }
+
+        m_transferCount++;
+        m_currentPruneTick++;
     }
 
     bool VulkanBarrierHandler::Resolve(VulkanBarrierInfo* outBarrierInfo, bool isQueueTransfer)
@@ -193,9 +212,11 @@ namespace PK::Rendering::VulkanRHI::Services
 
     void VulkanBarrierHandler::Prune()
     {
+        auto pruneTick = m_currentPruneTick - m_transferCount;
+
         for (auto i = (int32_t)(m_resources.GetCount() - 1); i >= 0; --i)
         {
-            if (m_pruneTicks.at(i) > m_currentPruneTick)
+            if (m_pruneTicks.at(i) > pruneTick)
             {
                 continue;
             }
@@ -212,29 +233,45 @@ namespace PK::Rendering::VulkanRHI::Services
             }
         }
 
-        ++m_currentPruneTick;
+        m_transferCount = 0u;
+        m_currentPruneTick++;
     }
 
     template<>
-    void VulkanBarrierHandler::ProcessBarrier<VkBuffer, VkBufferMemoryBarrier>(const VkBuffer resource, VkBufferMemoryBarrier** barrier, const AccessRecord& recordOld, const AccessRecord& recordNew)
+    void VulkanBarrierHandler::ProcessBarrier<VkBuffer, VkBufferMemoryBarrier>(
+        const VkBuffer resource, 
+        VkBufferMemoryBarrier** barrier, 
+        const AccessRecord& recordOld, 
+        const AccessRecord& recordNew,
+        bool useFullRange)
     {
+        // Expand queue family bits
+        uint32_t srcQueueFamily = recordOld.queueFamily == 0xFFFF ? VK_QUEUE_FAMILY_IGNORED : recordOld.queueFamily;
+        uint32_t dstQueueFamily = recordNew.queueFamily == 0xFFFF ? VK_QUEUE_FAMILY_IGNORED : recordNew.queueFamily;
+
         if (!(*barrier))
         {
             *barrier = m_bufferBarriers.Add();
             (*barrier)->sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
             (*barrier)->buffer = resource;
-            (*barrier)->srcQueueFamilyIndex = recordOld.queueFamily;// VK_QUEUE_FAMILY_IGNORED;
-            (*barrier)->dstQueueFamilyIndex = recordNew.queueFamily;// VK_QUEUE_FAMILY_IGNORED;
+            (*barrier)->srcQueueFamilyIndex = srcQueueFamily;
+            (*barrier)->dstQueueFamilyIndex = dstQueueFamily;// VK_QUEUE_FAMILY_IGNORED;
             (*barrier)->srcAccessMask = 0u;
             (*barrier)->dstAccessMask = recordNew.access;
             (*barrier)->offset = recordNew.bufferRange.offset;
             (*barrier)->size = recordNew.bufferRange.size;
             m_destinationStage |= recordNew.stage;
-            m_srcQueueFamily = recordOld.queueFamily;
-            m_dstQueueFamily = recordNew.queueFamily;
+            m_srcQueueFamily = srcQueueFamily;
+            m_dstQueueFamily = dstQueueFamily;
+
+            if (useFullRange)
+            {
+                (*barrier)->offset = 0ull;
+                (*barrier)->size = VK_WHOLE_SIZE;
+            }
         }
 
-        PK_THROW_ASSERT(m_srcQueueFamily == recordOld.queueFamily, "Cannot batch multiple queue family barriers together!");
+        PK_THROW_ASSERT(m_srcQueueFamily == srcQueueFamily, "Cannot batch multiple queue family barriers together!");
 
         m_sourceStage |= recordOld.stage;
         (*barrier)->srcAccessMask |= recordOld.access;
@@ -242,27 +279,44 @@ namespace PK::Rendering::VulkanRHI::Services
     }
 
     template<>
-    void VulkanBarrierHandler::ProcessBarrier<VkImage, VkImageMemoryBarrier>(const VkImage resource, VkImageMemoryBarrier** barrier, const AccessRecord& recordOld, const AccessRecord& recordNew)
+    void VulkanBarrierHandler::ProcessBarrier<VkImage, VkImageMemoryBarrier>(
+        const VkImage resource, 
+        VkImageMemoryBarrier** barrier, 
+        const AccessRecord& recordOld, 
+        const AccessRecord& recordNew,
+        bool useFullRange)
     {
+        // Expand queue family bits
+        uint32_t srcQueueFamily = recordOld.queueFamily == 0xFFFF ? VK_QUEUE_FAMILY_IGNORED : recordOld.queueFamily;
+        uint32_t dstQueueFamily = recordNew.queueFamily == 0xFFFF ? VK_QUEUE_FAMILY_IGNORED : recordNew.queueFamily;
+
         // Create new barrier on layout miss match
         if (!(*barrier) || (*barrier)->oldLayout != recordOld.layout)
         {
             *barrier = m_imageBarriers.Add();
             (*barrier)->sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             (*barrier)->image = resource;
-            (*barrier)->srcQueueFamilyIndex = recordOld.queueFamily;// VK_QUEUE_FAMILY_IGNORED;
-            (*barrier)->dstQueueFamilyIndex = recordNew.queueFamily;// VK_QUEUE_FAMILY_IGNORED;
+            (*barrier)->srcQueueFamilyIndex = srcQueueFamily;// VK_QUEUE_FAMILY_IGNORED;
+            (*barrier)->dstQueueFamilyIndex = dstQueueFamily;// VK_QUEUE_FAMILY_IGNORED;
             (*barrier)->srcAccessMask = 0u;
             (*barrier)->dstAccessMask = recordNew.access;
             (*barrier)->oldLayout = recordOld.layout;
             (*barrier)->newLayout = recordNew.layout;
             (*barrier)->subresourceRange = Utilities::VulkanConvertRange(recordNew.imageRange, recordNew.aspect);
             m_destinationStage |= recordNew.stage;
-            m_srcQueueFamily = recordOld.queueFamily;
-            m_dstQueueFamily = recordNew.queueFamily;
+            m_srcQueueFamily = srcQueueFamily;
+            m_dstQueueFamily = dstQueueFamily;
+
+            if (useFullRange)
+            {
+                (*barrier)->subresourceRange.baseArrayLayer = 0u;
+                (*barrier)->subresourceRange.baseMipLevel = 0u;
+                (*barrier)->subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+                (*barrier)->subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+            }
         }
 
-        PK_THROW_ASSERT(m_srcQueueFamily == recordOld.queueFamily, "Cannot batch multiple queue family barriers together!");
+        PK_THROW_ASSERT(m_srcQueueFamily == srcQueueFamily, "Cannot batch multiple queue family barriers together!");
 
         m_sourceStage |= recordOld.stage;
         (*barrier)->srcAccessMask |= recordOld.access;

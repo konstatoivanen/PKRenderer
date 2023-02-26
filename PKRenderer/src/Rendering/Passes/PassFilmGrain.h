@@ -10,7 +10,7 @@ namespace PK::Rendering::Passes
     {
         public:
             PassFilmGrain(Core::Services::AssetDatabase* assetDatabase);
-            void Render(Objects::CommandBuffer* cmd);
+            void Compute(Objects::CommandBuffer* cmd);
 
         private:
             Objects::Shader* m_computeFilmGrain = nullptr;

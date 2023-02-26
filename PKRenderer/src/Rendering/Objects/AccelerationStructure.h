@@ -11,7 +11,7 @@ namespace PK::Rendering::Objects
         public:
             static Utilities::Ref<AccelerationStructure> Create(const char* name);
 
-            virtual void BeginWrite(uint32_t instanceLimit) = 0;
+            virtual void BeginWrite(Structs::QueueType queue, uint32_t instanceLimit) = 0;
             virtual void AddInstance(Mesh* mesh, uint32_t submesh, uint32_t customIndex, const PK::Math::float4x4& matrix) = 0;
             virtual void EndWrite() = 0;
 

@@ -129,7 +129,6 @@ namespace PK::Rendering
 
         auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
 
-        cmd->SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         cmd->SetTexture(hash->pk_Bluenoise256, bluenoise);
         cmd->SetTexture(hash->pk_LightCookies, lightCookies);
         cmd->SetBuffer(hash->pk_PerFrameConstants, *m_constantsPerFrame.get());
@@ -199,27 +198,10 @@ namespace PK::Rendering
     
     void RenderPipeline::Step(Window* window, int condition)
     {
-        /*
-            @TODO refactor passes to use async compute
-                - Noise compute
-                - Light assignment
-                - Volume fog
-
-        */
-
-
-        //@TODO refactor a smarter rebuild mode
-        if (m_sceneStructure->GetInstanceCount() == 0)
-        {
-            Tokens::AccelerationStructureBuildToken token;
-            token.structure = m_sceneStructure.get();
-            token.mask = RenderableFlags::DefaultMesh;
-            token.useBounds = false;
-            m_sequencer->Next<Tokens::AccelerationStructureBuildToken>(this, &token);
-        }
-
         auto hash = HashCache::Get();
-        auto* cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
+        auto queues = GraphicsAPI::GetQueues();
+        auto* cmd = queues->GetCommandBuffer(QueueType::Graphics);
+        auto* cmdAsync = queues->GetCommandBuffer(QueueType::ComputeAsync);
         auto resolution = window->GetResolution();
 
         m_renderTarget->Validate(resolution);
@@ -232,41 +214,78 @@ namespace PK::Rendering
         auto cascadeZSplits = m_passLights.GetCascadeZSplits(m_znear, m_zfar);
         m_constantsPerFrame->Set<float4>(hash->pk_ShadowCascadeZSplits, reinterpret_cast<float4*>(cascadeZSplits.planes));
         m_constantsPerFrame->Set<float4>(hash->pk_ScreenParams, { (float)resolution.x, (float)resolution.y, 1.0f / (float)resolution.x, 1.0f / (float)resolution.y });
-        m_constantsPerFrame->FlushBuffer();
+        m_constantsPerFrame->FlushBuffer(QueueType::Graphics);
+
         m_passSceneGI.PreRender(cmd, resolution);
 
         m_batcher.BeginCollectDrawCalls();
         m_passGeometry.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_zfar - m_znear);
         m_passLights.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_znear, m_zfar);
         m_batcher.EndCollectDrawCalls(cmd);
+        
+        // End transfer operations
+        cmd = queues->Submit(QueueType::Graphics);
+        queues->QueueSync(QueueType::Graphics, QueueType::ComputeAsync);
 
-        // Begin rendering work
-        m_passLights.ComputeClusters(cmd);
-        m_passLights.RenderShadows(cmd);
-        m_passSceneGI.RenderVoxels(cmd, &m_batcher, m_passGeometry.GetPassGroup());
-
-        // Opaque GBuffer
+        // Concurrent Shadows & gbuffer
         {
+            m_passLights.RenderShadows(cmd);
             cmd->SetRenderTarget(m_renderTarget.get(), { 1 }, true, true);
             cmd->ClearColor({ 0, 0, -1.0f, 1.0f }, 0);
             cmd->ClearDepth(1.0f, 0u);
             m_passGeometry.RenderGBuffer(cmd);
-            m_passSceneGI.RenderGI(cmd);
         }
+        cmd = queues->Submit(QueueType::Graphics);
 
-        // Forward Opaque
+        // Async Work Noise & Light Assignment
         {
+            m_passFilmGrain.Compute(cmdAsync);
+            m_passLights.ComputeClusters(cmdAsync);
+
+            // Build acceleration structures on the async queue
+            Tokens::AccelerationStructureBuildToken token;
+            token.queue = QueueType::ComputeAsync;
+            token.structure = m_sceneStructure.get();
+            token.mask = RenderableFlags::DefaultMesh;
+            token.useBounds = false;
+            m_sequencer->Next<Tokens::AccelerationStructureBuildToken>(this, &token);
+            cmdAsync->SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
+        }
+        cmdAsync = queues->Submit(QueueType::ComputeAsync);
+        queues->QueueSync(QueueType::ComputeAsync, QueueType::Graphics);
+
+        // Voxelize, subsequent passes depend on this
+        {
+            m_passSceneGI.RenderVoxels(cmd, &m_batcher, m_passGeometry.GetPassGroup());
+        }
+        cmd = queues->Submit(QueueType::Graphics);
+        queues->QueueSync(QueueType::Graphics, QueueType::ComputeAsync);
+
+        // Forward Opaque on graphics queue
+        {
+            m_passSceneGI.RenderGI(cmd);
             cmd->SetRenderTarget(m_renderTarget.get(), { 0 }, true, true);
             cmd->ClearColor(PK_COLOR_CLEAR, 0);
             m_passGeometry.RenderForward(cmd);
             cmd->Blit(m_OEMBackgroundShader);
+        }
+        cmd = queues->Submit(QueueType::Graphics);
+
+        // Compute voxel volumes on async queue
+        {
+            m_passVolumeFog.Compute(cmdAsync, m_renderTarget->GetResolution());
+        }
+        cmdAsync = queues->Submit(QueueType::ComputeAsync);
+        queues->QueueSync(QueueType::ComputeAsync, QueueType::Graphics);
+
+        // Forward Transparent on graphics queue
+        {
             m_passVolumeFog.Render(cmd, m_renderTarget.get());
         }
 
         // Post Effects
         {
             cmd->BeginDebugScope("PostEffects", PK_COLOR_YELLOW);
-            m_passFilmGrain.Render(cmd);
             m_temporalAntialiasing.Render(cmd, m_renderTarget.get());
             m_depthOfField.Render(cmd, m_renderTarget.get());
             m_bloom.Render(cmd, m_renderTarget.get());
@@ -320,7 +339,7 @@ namespace PK::Rendering
         m_constantsPostProcess->Set<float4>(hash->pk_ChannelMixerRed, Functions::HexToRGB(config->CC_ChannelMixerRed));
         m_constantsPostProcess->Set<float4>(hash->pk_ChannelMixerGreen, Functions::HexToRGB(config->CC_ChannelMixerGreen));
         m_constantsPostProcess->Set<float4>(hash->pk_ChannelMixerBlue, Functions::HexToRGB(config->CC_ChannelMixerBlue));
-        m_constantsPostProcess->FlushBuffer();
+        m_constantsPostProcess->FlushBuffer(QueueType::Graphics);
 
         m_depthOfField.OnUpdateParameters(config);
         m_passVolumeFog.OnUpdateParameters(config);

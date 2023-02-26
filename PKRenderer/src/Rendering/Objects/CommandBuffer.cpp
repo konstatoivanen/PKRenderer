@@ -134,9 +134,6 @@ namespace PK::Rendering::Objects
     void CommandBuffer::SetConstant(const char* name, const void* data, uint32_t size) { SetConstant(StringHashID::StringToID(name), data, size); }
     void CommandBuffer::SetKeyword(const char* name, bool value) { SetKeyword(StringHashID::StringToID(name), value); }
 
-    void CommandBuffer::TransferBuffer(const char* name, Structs::QueueType destination) { TransferBuffer(StringHashID::StringToID(name), destination); }
-    void CommandBuffer::TransferImage(const char* name, Structs::QueueType destination) { TransferImage(StringHashID::StringToID(name), destination); }
-
     void CommandBuffer::SetMesh(const Mesh* mesh)
     {
         auto& vbuffers = mesh->GetVertexBuffers();

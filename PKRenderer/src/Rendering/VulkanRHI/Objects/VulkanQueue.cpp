@@ -6,7 +6,10 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
+    using namespace PK::Rendering::VulkanRHI::Services;
     using namespace PK::Rendering::Structs;
+    using namespace PK::Rendering::Services;
+    using namespace PK::Utilities;
 
     struct QueueFindContext
     {
@@ -15,7 +18,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         std::vector<VkQueueFamilyProperties>* families;
         std::vector<VkDeviceQueueCreateInfo>* createInfos;
         uint32_t* queueFamilies;
-        uint32_t* queueIndices;
         uint32_t queueCount = 0u;
     };
 
@@ -30,20 +32,19 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto existingIndex = 0xFFFFFFFF;
         auto heuristic = 0u;
 
-        for (auto i = 0u; i < ctx.queueCount && !preferSeparate; ++i)
+        for (auto i = 0u; i < ctx.queueCount; ++i)
         {
             const auto familyIndex = ctx.queueFamilies[i];
             const auto& family = ctx.families->at(familyIndex);
             auto presentSupport = Utilities::VulkanIsPresentSupported(ctx.physicalDevice, familyIndex, ctx.surface);
 
             if ((family.queueFlags & requiredFlags) != requiredFlags || 
-                (*ctx.createInfos)[familyIndex].queueCount >= family.queueCount ||
                 (!presentSupport && requirePresent))
             {
                 continue;
             }
 
-            auto value = Math::Functions::CountBits(family.queueFlags & optionalFlags) + (presentSupport && optionalPresent ? 3 : 2);
+            auto value = Math::Functions::CountBits(family.queueFlags & optionalFlags) + (presentSupport && optionalPresent ? 2 : 1);
 
             if (value > heuristic)
             {
@@ -59,7 +60,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             auto presentSupport = Utilities::VulkanIsPresentSupported(ctx.physicalDevice, i, ctx.surface);
 
             if ((family.queueFlags & requiredFlags) != requiredFlags ||
-                (*ctx.createInfos)[i].queueCount >= family.queueCount ||
+                (*ctx.createInfos)[i].queueCount > 0 ||
                 (!presentSupport && requirePresent))
             {
                 continue;
@@ -67,7 +68,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             auto value = Math::Functions::CountBits(family.queueFlags & optionalFlags) + (presentSupport && optionalPresent ? 2 : 1);
 
-            if (preferSeparate && (*ctx.createInfos)[i].queueCount == 0)
+            if (preferSeparate)
             {
                 value++;
             }
@@ -80,24 +81,20 @@ namespace PK::Rendering::VulkanRHI::Objects
             }
         }
 
-        if (selectedFamily == 0xFFFFFFFF)
-        {
-            PK_THROW_ERROR("Failed to find queue matching parameters!");
-        }
+        PK_THROW_ASSERT(selectedFamily != 0xFFFFFFFF, "Failed to find queue matching parameters!");
 
         if (existingIndex != 0xFFFFFFFF)
         {
             return existingIndex;
         }
 
-        PK_THROW_ASSERT(ctx.queueCount < (uint32_t)Structs::QueueType::MaxCount, "Maximum queue count reached!");
-
-        ctx.queueIndices[ctx.queueCount] = (*ctx.createInfos)[selectedFamily].queueCount++;
+        (*ctx.createInfos)[selectedFamily].queueCount = 1;
         ctx.queueFamilies[ctx.queueCount] = selectedFamily;
         return ctx.queueCount++;
     }
 
-    VulkanQueue::VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, uint32_t queueIndex) :
+
+    VulkanQueue::VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, const Objects::VulkanServiceContext& services, uint32_t queueIndex) :
         m_device(device),
         m_family(queueFamily),
         m_queueIndex(queueIndex)
@@ -124,20 +121,21 @@ namespace PK::Rendering::VulkanRHI::Objects
             m_capabilityFlags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
                                  VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | 
                                  VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | 
-                                 VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
-                                 VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
-                                 VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT | 
+                                 // Requires tesselation & geometry features
+                                 //VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
+                                 //VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
+                                 //VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT | 
                                  VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | 
                                  VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | 
                                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | 
                                  VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | 
-                                 VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT | 
-                                 VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT |
+                                 //VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT | 
+                                 //VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT |
                                  VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
-                                 VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR |
-                                 VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT |
-                                 VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+                                 VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;// |
+                                 //VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT |
+                                 //VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
         }
 
         if (flags & VK_QUEUE_COMPUTE_BIT)
@@ -147,9 +145,14 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if (flags & VK_QUEUE_TRANSFER_BIT)
         {
-            m_capabilityFlags |= VK_PIPELINE_STAGE_HOST_BIT |
+            m_capabilityFlags |= //VK_PIPELINE_STAGE_HOST_BIT |
                                  VK_PIPELINE_STAGE_TRANSFER_BIT;
         }
+
+        auto servicesCopy = services;
+        barrierHandler = CreateScope<VulkanBarrierHandler>(m_family);
+        servicesCopy.barrierHandler = barrierHandler.get();
+        commandPool = CreateScope<VulkanCommandBufferPool>(device, servicesCopy, queueFamily, m_capabilityFlags);
     }
 
     VulkanQueue::~VulkanQueue()
@@ -176,7 +179,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         return vkQueuePresentKHR(m_queue, &presentInfo);
     }
 
-    VkResult VulkanQueue::Submit(Objects::VulkanCommandBuffer* commandBuffer, VkPipelineStageFlags flags, bool waitForPrevious, VkSemaphore* outSignal)
+    VkResult VulkanQueue::Submit(Objects::VulkanCommandBuffer* commandBuffer, VkSemaphore* outSignal)
     {
         if (!commandBuffer)
         {
@@ -186,12 +189,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         VkPipelineStageFlags waitFlags[MAX_DEPENDENCIES]{};
         VkSemaphore waits[MAX_DEPENDENCIES]{};
         uint64_t waitValues[MAX_DEPENDENCIES]{};
-        uint32_t waitCount = waitForPrevious ? 1u : 0u;
+        uint32_t waitCount = 0u;
       
-        waitFlags[0] = m_timeline.waitFlags;
-        waits[0] = m_timeline.semaphore;
-        waitValues[0] = m_timeline.counter;
-
         VkSemaphore signals[2]{ m_timeline.semaphore, VK_NULL_HANDLE };
         uint64_t signalValues[2]{ ++m_timeline.counter, 0ull };
         uint32_t signalCount = outSignal ? 2 : 1;
@@ -205,7 +204,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             waits[waitCount] = timeline.semaphore;
             waitValues[waitCount] = timeline.counter;
-            waitFlags[waitCount] = timeline.waitFlags;
+            waitFlags[waitCount] = timeline.waitFlags & m_capabilityFlags;
             waitCount++;
         }
 
@@ -233,7 +232,8 @@ namespace PK::Rendering::VulkanRHI::Objects
             signals[1] = *outSignal;
         }
         
-        m_timeline.waitFlags = flags;
+        // @TODO maybe optimize this based on submitted commands.
+        m_timeline.waitFlags = m_capabilityFlags;
         return vkQueueSubmit(m_queue, 1, &submitInfo, commandBuffer->GetFence());
     }
 
@@ -264,29 +264,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         return vkQueueBindSparse(m_queue, 1, &sparseBind, VK_NULL_HANDLE);
     }
 
-    VkResult VulkanQueue::QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags)
-    {
-        m_timeline.counter++;
-
-        VkTimelineSemaphoreSubmitInfo timelineInfo{ VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO };
-        timelineInfo.waitSemaphoreValueCount = 0;
-        timelineInfo.pWaitSemaphoreValues = nullptr;
-        timelineInfo.signalSemaphoreValueCount = 1;
-        timelineInfo.pSignalSemaphoreValues = &m_timeline.counter;
-
-        VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
-        submitInfo.pNext = &timelineInfo;
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = &semaphore;
-        submitInfo.pWaitDstStageMask = &flags;
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = &m_timeline.semaphore;
-        submitInfo.commandBufferCount = 0;
-        submitInfo.pCommandBuffers = nullptr;
-
-        return vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
-    }
-
     VkSemaphore VulkanQueue::QueueSignal(VkPipelineStageFlags flags)
     {
         auto semaphore = GetNextSemaphore();
@@ -313,13 +290,24 @@ namespace PK::Rendering::VulkanRHI::Objects
         return semaphore;
     }
 
+    void VulkanQueue::QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags)
+    {
+        for (auto& timeline : m_waitTimelines)
+        {
+            if (timeline.semaphore != VK_NULL_HANDLE)
+            {
+                continue;
+            }
+
+            timeline.counter = 0u;
+            timeline.semaphore = semaphore;
+            timeline.waitFlags = flags;
+            break;
+        }
+    }
+
     void VulkanQueue::QueueWait(VulkanQueue* other)
     {
-        if (other == this)
-        {
-            return;
-        }
-
         for (auto& timeline : m_waitTimelines)
         {
             if (timeline.semaphore != VK_NULL_HANDLE)
@@ -356,54 +344,71 @@ namespace PK::Rendering::VulkanRHI::Objects
             m_timeline.counter);
     }
 
+
     VulkanQueueSet::VulkanQueueSet(VkDevice device, const Initializer& initializer, const Objects::VulkanServiceContext& services)
     {
+        auto servicesCopy = services;
         m_selectedFamilies.count = initializer.queueCount;
 
         for (auto i = 0u; i < initializer.queueCount; ++i)
         {
             auto& familyProps = initializer.familyProperties.at(initializer.queueFamilies[i]);
-            m_families[i].queue = new VulkanQueue(device, familyProps.queueFlags, initializer.queueFamilies[i], initializer.queueIndices[i]);
-            m_families[i].commandBufferPool = new Services::VulkanCommandBufferPool(device, services, initializer.queueFamilies[i]);
+            m_queues[i] = CreateScope<VulkanQueue>(device, familyProps.queueFlags, initializer.queueFamilies[i], servicesCopy);
             m_selectedFamilies.indices[i] = initializer.queueFamilies[i];
         }
 
         memcpy(m_queueIndices, initializer.typeIndices, sizeof(m_queueIndices));
     }
 
-    VulkanQueueSet::~VulkanQueueSet()
+    void VulkanQueueSet::Prune()
     {
-        for (auto i = 0u; i < (uint32_t)Structs::QueueType::MaxCount; ++i)
+        for (auto& queue : m_queues)
         {
-            if (m_families[i].queue)
+            if (queue != nullptr)
             {
-                delete m_families[i].queue;
-                delete m_families[i].commandBufferPool;
+                queue->barrierHandler->Prune();
+                queue->commandPool->Prune();
             }
         }
     }
 
-    void VulkanQueueSet::QueueResourceSync(Structs::QueueType source, Structs::QueueType destination)
+    void VulkanQueueSet::QueueSync(Structs::QueueType from, Structs::QueueType to)
     {
-        auto& srcFamily = m_families[m_queueIndices[(uint32_t)source]];
-        auto& dstFamily = m_families[m_queueIndices[(uint32_t)destination]];
+        auto queueFrom = GetQueue(from);
+        auto queueTo = GetQueue(to);
+
+        queueTo->QueueWait(queueFrom);
+        queueFrom->barrierHandler->TransferRecords(queueTo->barrierHandler.get());
+    }
+
+    Objects::CommandBuffer* VulkanQueueSet::SubmitSynced(Structs::QueueType source, Structs::QueueType destination)
+    {
+        auto srcQueue = GetQueue(source);
+        auto dstQueue = GetQueue(destination);
         
-        if (srcFamily.queue == dstFamily.queue || srcFamily.commandBufferPool == dstFamily.commandBufferPool)
+        if (srcQueue == dstQueue)
         {
-            return;
+            return srcQueue->commandPool->GetCurrent();
         }
 
-        VulkanBarrierInfo transferBarrier{};
+        VulkanBarrierInfo transferSrc{};
 
-        srcFamily.queue->Submit(srcFamily.commandBufferPool->EndCurrent(&transferBarrier), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, true);
-        dstFamily.queue->QueueWait(srcFamily.queue);
+        VK_ASSERT_RESULT(srcQueue->Submit(srcQueue->commandPool->EndCurrent(&transferSrc)));
+        dstQueue->QueueWait(srcQueue);
     
-        if (transferBarrier.srcQueueFamily == transferBarrier.dstQueueFamily)
+        if (transferSrc.srcQueueFamily != transferSrc.dstQueueFamily &&
+            transferSrc.dstQueueFamily == srcQueue->GetFamily())
         {
-            return;
+            dstQueue->commandPool->GetCurrent()->PipelineBarrier(transferSrc);
         }
 
-        dstFamily.commandBufferPool->GetCurrent()->PipelineBarrier(transferBarrier);
+        return srcQueue->commandPool->GetCurrent();
+    }
+
+    Objects::CommandBuffer* VulkanQueueSet::Submit(Structs::QueueType type)
+    {
+        VK_ASSERT_RESULT(SubmitCurrent(type));
+        return GetCommandBuffer(type);
     }
 
     VulkanQueueSet::Initializer::Initializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
@@ -417,7 +422,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         context.physicalDevice = physicalDevice;
         context.surface = surface;
         context.queueFamilies = queueFamilies;
-        context.queueIndices = queueIndices;
         context.createInfos = &createInfos;
 
         PK_LOG_INFO(" Found '%i' Physical Device Queue Families:", context.families->size());
@@ -444,8 +448,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         typeIndices[(uint32_t)QueueType::Graphics] = GetQueueIndex(context, maskGraphics, maskTransfer, false, true, true);
         typeIndices[(uint32_t)QueueType::Present] = GetQueueIndex(context, maskGraphics, maskTransfer, true, false, false);
-        typeIndices[(uint32_t)QueueType::Transfer] = GetQueueIndex(context, maskTransfer, 0u, false, false, false);
         typeIndices[(uint32_t)QueueType::ComputeAsync] = GetQueueIndex(context, maskCompute, maskTransfer, false, false, true);
+        typeIndices[(uint32_t)QueueType::Transfer] = GetQueueIndex(context, maskTransfer, 0u, false, false, true);
         queueCount = context.queueCount;
 
         for (auto i = (int32_t)createInfos.size() - 1; i >= 0; --i)
@@ -460,7 +464,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         for (auto i = 0u; i < queueCount; ++i)
         {
-            PK_LOG_INFO("   Family: %i Index: %i", queueFamilies[i], queueIndices[i]);
+            PK_LOG_INFO("   Family: %i", queueFamilies[i]);
         }
 
         PK_LOG_NEWLINE();

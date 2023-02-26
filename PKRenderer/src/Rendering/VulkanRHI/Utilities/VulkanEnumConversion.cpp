@@ -501,6 +501,11 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
         return VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
     }
 
+    VkAttachmentLoadOp GetLoadOp(VkImageLayout layout, Rendering::Structs::LoadOp loadOp)
+    {
+        return layout == VK_IMAGE_LAYOUT_UNDEFINED ? VK_ATTACHMENT_LOAD_OP_DONT_CARE : GetLoadOp(loadOp);
+    }
+
     VkAttachmentStoreOp GetStoreOp(StoreOp storeOp)
     {
         switch (storeOp)

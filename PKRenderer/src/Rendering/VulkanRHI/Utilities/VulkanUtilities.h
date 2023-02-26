@@ -44,5 +44,7 @@ namespace PK::Rendering::VulkanRHI::Utilities
     std::string VulkanResultToString(VkResult result);
 
     VkImageSubresourceRange VulkanConvertRange(const Structs::TextureViewRange& viewRange, VkImageAspectFlags aspect);
-    Structs::TextureViewRange VulkanConvertRange(VkImageSubresourceRange resourceRange);
+    Structs::TextureViewRange VulkanConvertRange(const VkImageSubresourceRange& resourceRange);
+
+    void VulkanSetObjectDebugName(VkDevice device, VkObjectType objectType, uint64_t objectHandle, const char* name);
 }

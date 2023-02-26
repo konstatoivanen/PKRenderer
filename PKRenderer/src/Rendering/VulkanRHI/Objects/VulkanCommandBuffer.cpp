@@ -11,6 +11,7 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
+    using namespace PK::Rendering::VulkanRHI::Services;
     using namespace PK::Utilities;
     using namespace Utilities;
     using namespace Core;
@@ -173,30 +174,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         resources->Set<bool>(nameHashId, value);
     }
 
-    void VulkanCommandBuffer::TransferBuffer(uint32_t nameHashId, Structs::QueueType destination)
-    {
-        auto queueFamily = GraphicsAPI::GetActiveDriver<VulkanDriver>()->queues->GetQueue(destination)->GetFamily();
-        auto services = m_renderState->GetServices();
-        auto handle = services->globalResources->Get<Handle<VulkanBindHandle>>(nameHashId);
-
-        if (!handle->handle->isConcurrent)
-        {
-            services->barrierHandler->Transfer(handle->handle->buffer.buffer, queueFamily);
-        }
-    }
-
-    void VulkanCommandBuffer::TransferImage(uint32_t nameHashId, Structs::QueueType destination)
-    {
-        auto queueFamily = GraphicsAPI::GetActiveDriver<VulkanDriver>()->queues->GetQueue(destination)->GetFamily();
-        auto services = m_renderState->GetServices();
-        const auto handle = services->globalResources->Get<Handle<VulkanBindHandle>>(nameHashId);
-
-        if (!handle->handle->isConcurrent)
-        {
-            services->barrierHandler->Transfer(handle->handle->image.image, queueFamily);
-        }
-    }
-
     void VulkanCommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
     {
         ValidatePipeline();
@@ -218,7 +195,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
         record.queueFamily = indirectArguments->IsConcurrent() ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
-        m_renderState->GetServices()->barrierHandler->Record(vkbuffer->buffer, record);
+        m_renderState->GetServices()->barrierHandler->Record(vkbuffer->buffer, record, PK_ACCESS_OPT_BARRIER, nullptr);
 
         ValidatePipeline();
         vkCmdDrawIndexedIndirect(m_commandBuffer, vkbuffer->buffer, offset, drawCount, stride);
@@ -251,18 +228,13 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         auto vksrc = src->GetNative<VulkanTexture>();
         auto vkwindow = dst->GetNative<VulkanWindow>();
+        const auto& srcHandle = vksrc->GetBindHandle(TextureBindMode::RenderTarget);
         const auto& windowHandle = vkwindow->GetBindHandle();
-        Blit(vksrc->GetBindHandle(TextureBindMode::RenderTarget), windowHandle, 0, 0, 0, 0, filter, true);
+        
+        Blit(srcHandle, windowHandle, 0, 0, 0, 0, filter, true);
 
-        Services::VulkanBarrierHandler::AccessRecord record{};
-        record.access = VK_ACCESS_TRANSFER_WRITE_BIT;
-        record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        record.layout = windowHandle->image.layout;
-        record.aspect = windowHandle->image.range.aspectMask;
-        record.imageRange = Utilities::VulkanConvertRange(windowHandle->image.range);
-        record.queueFamily = windowHandle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
-        m_renderState->GetServices()->barrierHandler->Record(windowHandle->image.image, record);
-
+        m_renderState->GetServices()->barrierHandler->Record<VkImage>(windowHandle, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+        
         // Resolve swapchain image layout immediately
         ResolveBarriers();
     }
@@ -279,14 +251,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         region.imageSubresource.layerCount = vksrc->image.range.layerCount;
         region.imageExtent = vksrc->image.extent;
 
-        Services::VulkanBarrierHandler::AccessRecord record{};
-        record.access = VK_ACCESS_TRANSFER_READ_BIT;
-        record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        record.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        record.aspect = vksrc->image.range.aspectMask;
-        record.imageRange = Utilities::VulkanConvertRange(vksrc->image.range);
-        record.queueFamily = vksrc->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
-        m_renderState->GetServices()->barrierHandler->Record(vksrc->image.image, record);
+        m_renderState->GetServices()->barrierHandler->Record<VkImage>(vksrc, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
         EndRenderPass();
         ResolveBarriers();
@@ -328,31 +293,10 @@ namespace PK::Rendering::VulkanRHI::Objects
         resolveRegion.dstSubresource = { (uint32_t)dst->image.range.aspectMask, dstLevel, dstLayer, dst->image.range.layerCount };
         resolveRegion.extent = src->image.extent;
 
-        Services::VulkanBarrierHandler::AccessRecord record{};
-
-        record.access = VK_ACCESS_TRANSFER_READ_BIT;
-        record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        record.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        record.aspect = src->image.range.aspectMask;
-        record.imageRange = Utilities::VulkanConvertRange(src->image.range);
-        record.queueFamily = src->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
-        m_renderState->GetServices()->barrierHandler->Record(src->image.image, record);
-
-        record.access = 0u;
-        record.stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        record.layout = VK_IMAGE_LAYOUT_UNDEFINED;
-        record.aspect = dst->image.range.aspectMask;
-        record.imageRange = Utilities::VulkanConvertRange(dst->image.range);
-        record.queueFamily = dst->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
-        m_renderState->GetServices()->barrierHandler->Record(dst->image.image, record, nullptr, false);
-
-        record.access = VK_ACCESS_TRANSFER_WRITE_BIT;
-        record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        record.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        record.aspect = dst->image.range.aspectMask;
-        record.imageRange = Utilities::VulkanConvertRange(dst->image.range);
-        record.queueFamily = dst->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
-        m_renderState->GetServices()->barrierHandler->Record(dst->image.image, record);
+        auto barrierHandler = m_renderState->GetServices()->barrierHandler;
+        barrierHandler->Record<VkImage>(src, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, PK_ACCESS_OPT_BARRIER | PK_ACCESS_OPT_LAYOUT);
+        barrierHandler->Record<VkImage>(dst, 0u, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
+        barrierHandler->Record<VkImage>(dst, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         EndRenderPass();
         ResolveBarriers();
@@ -414,7 +358,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         record.access = VK_ACCESS_TRANSFER_WRITE_BIT;
         record.queueFamily = buffer->IsConcurrent() ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
-        m_renderState->GetServices()->barrierHandler->Record(dstBuffer, record);
+        m_renderState->GetServices()->barrierHandler->Record(dstBuffer, record, PK_ACCESS_OPT_BARRIER, nullptr);
     }
 
     void VulkanCommandBuffer::UploadTexture(Texture* texture, const void* data, size_t size, Structs::ImageUploadRange* ranges, uint32_t rangeCount)
@@ -447,7 +391,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 		}
 
 		stage->SetData(data, size);
-		TransitionImageLayout(VulkanLayoutTransition(vkTexture->GetRaw()->image, usageLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range));
+		TransitionImageLayout(VulkanLayoutTransition(vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range));
         vkCmdCopyBufferToImage(m_commandBuffer, stage->buffer, vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, (uint32_t)bufferCopyRegions.size(), bufferCopyRegions.data());
 		TransitionImageLayout(VulkanLayoutTransition(vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, usageLayout, optimalLayout, range));
     }
@@ -526,7 +470,6 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::PipelineBarrier(const VulkanBarrierInfo& barrier)
     {
-
         // Memory & buffer memory barriers not allowed inside renderpasses. Barriers are not allowed inside renderpasses unless using self-dependencies.
         if (barrier.memoryBarrierCount > 0 || barrier.bufferMemoryBarrierCount > 0 || !m_renderState->HasDynamicTargets())
         {
@@ -561,7 +504,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::ValidatePipeline()
     {
-        auto flags = m_renderState->ValidatePipeline(GetFenceRef(), m_queueFamily);
+        auto flags = m_renderState->ValidatePipeline(GetFenceRef());
 
         // Conservative barrier deployment. lets not break an active renderpass. Assume coherent read/writes.
         if (!m_isInActiveRenderPass || (flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
@@ -650,7 +593,19 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         // End possibly active render pass
         EndRenderPass();
-        m_renderState->GetServices()->barrierHandler->Resolve(transferBarrier, true);
+
+        //Add potential resource transitions
+        VulkanBarrierInfo barrier;
+        if (m_renderState->GetServices()->barrierHandler->Resolve(&barrier, false))
+        {
+            PipelineBarrier(barrier);
+            
+            if (transferBarrier)
+            {
+                *transferBarrier = barrier;
+            }
+        }
+
         VK_ASSERT_RESULT(vkEndCommandBuffer(m_commandBuffer));
         m_renderState = nullptr;
     }

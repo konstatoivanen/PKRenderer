@@ -16,11 +16,17 @@ namespace PK::Rendering::VulkanRHI::Objects
     struct VulkanCommandBuffer : public CommandBuffer
     {
         VulkanCommandBuffer() {}
+
         FenceRef GetFenceRef() const override final;
         inline bool IsActive() const { return m_commandBuffer != VK_NULL_HANDLE; }
         inline VkCommandBuffer& GetNative() { return m_commandBuffer; }
-        inline VkFence& GetFence() { return m_fence; }
-        inline uint16_t& GetQueueFamily() { return m_queueFamily; }
+        inline const VkFence& GetFence() { return m_fence; }
+        inline void Initialize(VkFence fence, uint16_t queueFamily, VkPipelineStageFlags capabilities) 
+        {
+            m_fence = fence;
+            m_queueFamily = queueFamily;
+            m_capabilityFlags = capabilities;
+        }
         inline void Release() { m_commandBuffer = VK_NULL_HANDLE; ++m_invocationIndex; }
 
         void SetRenderTarget(const uint3& resolution) override final;
@@ -40,8 +46,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         void SetShaderBindingTable(Structs::RayTracingShaderGroup group, const Buffer* buffer, size_t offset, size_t stride, size_t size) override final;
         void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) override final;
         void SetKeyword(uint32_t nameHashId, bool value) override final;
-        void TransferBuffer(uint32_t nameHashId, Structs::QueueType destination) override final;
-        void TransferImage(uint32_t nameHashId, Structs::QueueType destination) override final;
 
         inline void ClearColor(const color& color, uint32_t index) override final { m_renderState->ClearColor(color, index); }
         inline void ClearDepth(float depth, uint32_t stencil) override final { m_renderState->ClearDepth(depth, stencil); }
@@ -88,11 +92,13 @@ namespace PK::Rendering::VulkanRHI::Objects
         void EndCommandBuffer(VulkanBarrierInfo* transferBarrier);
         
         private:
+            VkFence m_fence = VK_NULL_HANDLE;
+            VkPipelineStageFlags m_capabilityFlags = 0u;
+            uint16_t m_queueFamily = 0u;
+
             Objects::VulkanRenderState* m_renderState = nullptr;
             VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
             VkCommandBufferLevel m_level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-            VkFence m_fence = VK_NULL_HANDLE;
-            uint16_t m_queueFamily = 0u;
             uint64_t m_invocationIndex = 0ull;
             bool m_isInActiveRenderPass = false;
     };

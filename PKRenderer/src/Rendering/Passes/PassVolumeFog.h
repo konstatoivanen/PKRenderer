@@ -11,6 +11,7 @@ namespace PK::Rendering::Passes
     {
         public:
             PassVolumeFog(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
+            void Compute(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
             void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* destination);
             void OnUpdateParameters(const Core::ApplicationConfig* config);
 

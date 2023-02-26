@@ -26,11 +26,11 @@ namespace PK::Rendering::Passes
         descriptor.sampler.wrap[1] = WrapMode::Clamp;
         descriptor.sampler.wrap[2] = WrapMode::Clamp;
         descriptor.resolution = VolumeResolution;
-        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
+        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::Concurrent;
 
         m_volumeInject = Texture::Create(descriptor, "Fog.InjectVolume");
         m_volumeScatter = Texture::Create(descriptor, "Fog.ScatterVolume");
-        m_depthTiles = Buffer::Create(ElementType::Uint, VolumeResolution.x * VolumeResolution.y, BufferUsage::DefaultStorage, "Fog.DepthTiles");
+        m_depthTiles = Buffer::Create(ElementType::Uint, VolumeResolution.x * VolumeResolution.y, BufferUsage::DefaultStorage | BufferUsage::Concurrent, "Fog.DepthTiles");
 
         m_computeInject = assetDatabase->Find<Shader>("CS_VolumeFogLightDensity");
         m_computeScatter = assetDatabase->Find<Shader>("CS_VolumeFogScatter");
@@ -65,11 +65,10 @@ namespace PK::Rendering::Passes
         cmd->SetBuffer(hash->pk_VolumeMaxDepths, m_depthTiles.get());
     }
 
-    void PassVolumeFog::Render(CommandBuffer* cmd, RenderTexture* destination)
+    void PassVolumeFog::Compute(Objects::CommandBuffer* cmd, const uint3& resolution)
     {
-        cmd->BeginDebugScope("VolumetricFog", PK_COLOR_MAGENTA);
+        cmd->BeginDebugScope("VolumetricFog.Compute", PK_COLOR_MAGENTA);
 
-        auto resolution = destination->GetResolution();
         auto depthCountX = (uint)std::ceilf(resolution.x / 32.0f);
         auto depthCountY = (uint)std::ceilf(resolution.y / 32.0f);
         auto groupsInject = uint3(VolumeResolution.x / InjectThreadCount.x, VolumeResolution.y / InjectThreadCount.y, VolumeResolution.z / InjectThreadCount.z);
@@ -80,6 +79,14 @@ namespace PK::Rendering::Passes
         cmd->Dispatch(m_computeDepthTiles, 0, { depthCountX, depthCountY, 1 });
         cmd->Dispatch(m_computeInject, 0, groupsInject);
         cmd->Dispatch(m_computeScatter, 0, groupsScatter);
+
+        cmd->EndDebugScope();
+    }
+
+    void PassVolumeFog::Render(CommandBuffer* cmd, RenderTexture* destination)
+    {
+        cmd->BeginDebugScope("VolumetricFog.Composite", PK_COLOR_MAGENTA);
+
         cmd->SetRenderTarget(destination, { 0 }, false, true);
         cmd->Blit(m_shaderComposite, 0);
 
@@ -100,6 +107,6 @@ namespace PK::Rendering::Passes
         m_volumeResources->Set<float>(hash->pk_Volume_NoiseFogAmount, config->VolumeNoiseFogAmount);
         m_volumeResources->Set<float>(hash->pk_Volume_NoiseFogScale, config->VolumeNoiseFogScale);
         m_volumeResources->Set<float>(hash->pk_Volume_WindSpeed, config->VolumeWindSpeed);
-        m_volumeResources->FlushBuffer();
+        m_volumeResources->FlushBuffer(QueueType::Graphics);
     }
 }
