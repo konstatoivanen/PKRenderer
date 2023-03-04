@@ -107,6 +107,6 @@ namespace PK::Rendering::Passes
         m_volumeResources->Set<float>(hash->pk_Volume_NoiseFogAmount, config->VolumeNoiseFogAmount);
         m_volumeResources->Set<float>(hash->pk_Volume_NoiseFogScale, config->VolumeNoiseFogScale);
         m_volumeResources->Set<float>(hash->pk_Volume_WindSpeed, config->VolumeWindSpeed);
-        m_volumeResources->FlushBuffer(QueueType::Graphics);
+        m_volumeResources->FlushBuffer(QueueType::Transfer);
     }
 }

@@ -27,7 +27,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             constexpr VkQueue GetNative() const { return m_queue; }
             constexpr uint32_t GetFamily() const { return m_family; }
             constexpr VkPipelineStageFlags GetCapabilityFlags() const { return m_capabilityFlags; }
-
             FenceRef GetFenceRef() const;
 
             PK::Utilities::Scope<Services::VulkanCommandBufferPool> commandPool = nullptr;
@@ -35,9 +34,9 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         private:
             const VkDevice m_device;
-            VkPipelineStageFlags m_capabilityFlags = 0u;
-            uint32_t m_family = 0u;
+            const uint32_t m_family = 0u;
             const uint32_t m_queueIndex = 0u;
+            VkPipelineStageFlags m_capabilityFlags = 0u;
             VkQueue m_queue = VK_NULL_HANDLE;
             
             VulkanTimelineSemaphore m_timeline{};
@@ -64,25 +63,13 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanQueueSet(VkDevice device, const Initializer& initializer, const Objects::VulkanServiceContext& services);
 
             inline VulkanQueue* GetQueue(Structs::QueueType type) { return m_queues[m_queueIndices[(uint32_t)type]].get(); }
-
             constexpr const VulkanQueueFamilies& GetSelectedFamilies() const { return m_selectedFamilies; }
-            
-            inline VkResult SubmitCurrent(Structs::QueueType type, VulkanBarrierInfo* barrierInfo = nullptr, VkSemaphore* outSignal = nullptr)
-            {
-                auto queue = GetQueue(type);
-                return queue->Submit(GetQueue(type)->commandPool->EndCurrent(barrierInfo), outSignal);
-            }
-            
-            void QueueSync(Structs::QueueType from, Structs::QueueType to) override final;
-            
-            Objects::CommandBuffer* SubmitSynced(Structs::QueueType source, Structs::QueueType destination) override final;
-            
-            Objects::CommandBuffer* Submit(Structs::QueueType type) override final;
-            
             inline Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) override final { return GetQueue(type)->commandPool->GetCurrent(); }
             
+            VkResult SubmitCurrent(Structs::QueueType type, VulkanBarrierInfo* barrierInfo = nullptr, VkSemaphore* outSignal = nullptr);
+            Objects::CommandBuffer* Submit(Structs::QueueType type) override final;
+            void Sync(Structs::QueueType from, Structs::QueueType to) override final;
             inline Structs::FenceRef GetFenceRef(Structs::QueueType type) override final { return GetQueue(type)->GetFenceRef(); }
-            
             void Prune();
 
         private:

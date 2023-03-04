@@ -1,17 +1,15 @@
 #pragma once
 #include "Utilities/NoCopy.h"
-#include "Utilities/Ref.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
+#include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
 #include "Utilities/FixedPool.h"
 #include "Utilities/FixedList.h"
 #include "Utilities/PointerMap.h"
-#include "Core/Services/Log.h"
 
 namespace PK::Rendering::VulkanRHI::Services
 {
     constexpr static const uint8_t PK_ACCESS_OPT_BARRIER = 1 << 0;
-    constexpr static const uint8_t PK_ACCESS_OPT_LAYOUT = 1 << 1;
-    constexpr static const uint8_t PK_ACCESS_OPT_ISTRANSFER = 1 << 2;
+    constexpr static const uint8_t PK_ACCESS_OPT_TRANSFER = 1 << 1;
 
     class VulkanBarrierHandler : public PK::Utilities::NoCopy
     {
@@ -20,14 +18,15 @@ namespace PK::Rendering::VulkanRHI::Services
             {
                 union
                 {
+                    uint64_t range = 0u;
+                    Structs::TextureViewRange imageRange;
+
                     struct Range
                     {
-                        uint32_t offset = 0u;
-                        uint32_t size = 0u;
+                        uint32_t offset;
+                        uint32_t size;
                     }
                     bufferRange;
-
-                    Structs::TextureViewRange imageRange;
                 };
 
                 VkPipelineStageFlags stage = 0u;
@@ -42,235 +41,182 @@ namespace PK::Rendering::VulkanRHI::Services
                 AccessRecord() {};
             };
 
-            inline static void ConditionalCopy(AccessRecord* out, const AccessRecord& value)
-            {
-                if (out)
-                {
-                    *out = value;
-                }
-            }
-        
             template<typename T> struct TInfo {};
             
             template<> struct TInfo<VkBuffer>
             { 
                 using BarrierType = VkBufferMemoryBarrier; 
-                static void Merge(AccessRecord& a, const AccessRecord& b);
-                inline static const VkBuffer GetResource(const VulkanBindHandle* handle) { return handle->buffer.buffer; }
-                static AccessRecord GetRecord(const VulkanBindHandle* handle);
-                static void Set(AccessRecord& a, const AccessRecord& b);
-                static bool IsOverlap(const AccessRecord& a, const AccessRecord& b);
-                static bool IsInclusiveRange(const AccessRecord& a, const AccessRecord& b);
-                static bool IsInclusive(const AccessRecord& a, const AccessRecord& b);
-                static bool IsAccessDiff(const AccessRecord& a, const AccessRecord& b);
+                static void SetDefaultRange(AccessRecord* a) {};
+                static bool IsOverlap(uint64_t a, uint64_t b);
+                static bool IsAdjacent(uint64_t a, uint64_t b);
+                static bool IsInclusive(uint64_t  a, uint64_t b);
+                static uint64_t Merge(uint64_t a, uint64_t b);
+                static uint32_t Splice(uint64_t c, uint64_t s, uint64_t* o);
             };
 
             template<> struct TInfo<VkImage>
             { 
                 using BarrierType = VkImageMemoryBarrier; 
-                static void Merge(AccessRecord& a, const AccessRecord& b);
-                inline static const VkImage GetResource(const VulkanBindHandle* handle) { return handle->image.image; }
-                static AccessRecord GetRecord(const VulkanBindHandle* handle);
-                static void Set(AccessRecord& a, const AccessRecord& b);
-                static bool IsOverlap(const AccessRecord& a, const AccessRecord& b);
-                static bool IsInclusiveRange(const AccessRecord& a, const AccessRecord& b);
-                static bool IsInclusive(const AccessRecord& a, const AccessRecord& b);
-                static bool IsAccessDiff(const AccessRecord& a, const AccessRecord& b);
+                static void SetDefaultRange(AccessRecord* a);
+                static bool IsOverlap(uint64_t a, uint64_t b);
+                static bool IsAdjacent(uint64_t a, uint64_t b);
+                static bool IsInclusive(uint64_t a, uint64_t b);
+                static uint64_t Merge(uint64_t a, uint64_t b);
+                static uint32_t Splice(uint64_t c, uint64_t s, uint64_t* o);
             };
 
             VulkanBarrierHandler(uint32_t queueFamily) : m_queueFamily(queueFamily) {};
-            ~VulkanBarrierHandler();
+
+            constexpr uint32_t GetQueueFamily() const { return m_queueFamily; }
 
             template<typename T>
-            void Record(const T resource, AccessRecord record, uint8_t options, AccessRecord* out)
+            void Record(const T resource, const AccessRecord& record, uint8_t options)
             {
                 typedef TInfo<T>::BarrierType TBarrier;
                 TBarrier* barrier = nullptr;
 
+                auto scope = record;
+                scope.next = nullptr;
+                
                 auto key = reinterpret_cast<uint64_t>(resource);
                 auto index = m_resources.GetIndex(key);
 
-                // First value no resolve
                 if (index == -1)
                 {
-                    auto newRecord = m_records.New(record);
-                    m_resources.AddValue(key, newRecord);
-                    m_pruneTicks.push_back(m_currentPruneTick + 1ull);
-                    ConditionalCopy(out, record);
-
-                    if (options & PK_ACCESS_OPT_LAYOUT)
-                    {
-                        record.access = 0u;
-                        record.stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                        record.layout = VK_IMAGE_LAYOUT_UNDEFINED;
-                        ProcessBarrier<T>(resource, &barrier, record, *newRecord, true);
-                    }
-
-                    return;
+                    auto defaultRecord = m_records.New(scope);
+                    TInfo<T>::SetDefaultRange(defaultRecord);
+                    m_resources.AddValue(key, defaultRecord);
+                    m_pruneTicks.push_back(0ull);
+                    index = m_resources.GetCount() - 1;
                 }
-                
-                AccessRecord** current = m_resources.GetValueAtRef(index);
-                m_pruneTicks.at(index) = m_currentPruneTick + 1ull;
 
-                while (current && *current)
+                m_pruneTicks.at(index) = options & PK_ACCESS_OPT_TRANSFER ? 0ull : m_currentPruneTick + 1ull;
+
+                auto current = m_resources.GetValueAtRef(index);
+
+                for (auto next = &(*current)->next; *current; current = next, next = &(*current)->next)
                 {
-                    if (TInfo<T>::IsInclusive(**current, record))
+                    if (TInfo<T>::IsInclusive((*current)->range, scope.range) &&
+                        (*current)->stage == scope.stage &&
+                        (*current)->access == scope.access &&
+                        (*current)->layout == scope.layout &&
+                        (*current)->queueFamily == scope.queueFamily)
                     {
                         return;
                     }
 
-                    auto overlap = TInfo<T>::IsOverlap(**current, record);
-                    auto accessDiff = TInfo<T>::IsAccessDiff(**current, record);
+                    auto r0 = EnumConvert::IsReadAccess((*current)->access);
+                    auto w0 = EnumConvert::IsWriteAccess((*current)->access);
+                    auto r1 = EnumConvert::IsReadAccess(scope.access);
+                    auto w1 = EnumConvert::IsWriteAccess(scope.access);
 
-                    // Resolve
-                    if (overlap && accessDiff)
+                    auto overlap = TInfo<T>::IsOverlap((*current)->range, scope.range);
+                    auto adjacent = TInfo<T>::IsAdjacent((*current)->range, scope.range);
+                    auto mergeFlags = (*current)->layout == scope.layout && (*current)->queueFamily == scope.queueFamily;
+                    auto mergeOverlap = overlap && (!w1 || (!r0 && !w0)) && (!w0 || (!r1 && !w1));
+                    auto mergeAdjacent = adjacent && w0 == w1 && r0 == r1;
+
+                    if (mergeFlags && (mergeOverlap || mergeAdjacent))
                     {
-                        if (options & PK_ACCESS_OPT_BARRIER)
-                        {
-                            ProcessBarrier<T>(resource, &barrier, **current, record, false);
-                        }
-                       
-                        if ((*current)->next == nullptr)
-                        {
-                            ConditionalCopy(out, **current);
-                            TInfo<T>::Set(**current, record);
-                            return;
-                        }
-
-                        *current = RemoveRecord(*current);
+                        scope.stage |= (*current)->stage;
+                        scope.access |= (*current)->access;
+                        scope.range = TInfo<T>::Merge((*current)->range, scope.range);
+                        Delete(current, &next);
                         continue;
                     }
 
-                    // Merge
-                    if (overlap && !accessDiff)
+                    if (!overlap)
                     {
-                        if ((*current)->next == nullptr)
-                        {
-                            ConditionalCopy(out, **current);
-                            TInfo<T>::Merge(**current, record);
-                            return;
-                        }
+                        continue;
+                    }
+        
+                    if (options & PK_ACCESS_OPT_BARRIER)
+                    {
+                        ProcessBarrier<T>(resource, &barrier, **current, record);
+                    }
 
-                        TInfo<T>::Merge(record, **current);
-                        *current = RemoveRecord(*current);
+                    // Same or inclusive current range
+                    if (TInfo<T>::IsInclusive(scope.range, (*current)->range))
+                    {
+                        Delete(current, &next);
                         continue;
                     }
 
-                    // Append
-                    if ((*current)->next == nullptr)
-                    {
-                        (*current)->next = m_records.New(record);
-                        ConditionalCopy(out, record);
-                        return;
-                    }
+                    uint64_t ranges[4];
+                    auto count = TInfo<T>::Splice((*current)->range, scope.range, ranges);
 
-                    current = &(*current)->next;
+                    (*current)->range = ranges[0];
+
+                    for (auto i = 1u; i < count; ++i)
+                    {
+                        auto slice = m_records.New(**current);
+                        slice->range= ranges[i];
+                        slice->next = (*current)->next;
+                        next = &slice->next;
+
+                        (*current)->next = slice;
+                        current = &(*current)->next;
+                    }
                 }
+
+                *current = m_records.New(scope);
             }
 
             template<typename T>
-            void Record(const VulkanBindHandle* handle, 
-                        VkAccessFlags access, 
-                        VkPipelineStageFlags stage,
-                        VkImageLayout overrideLayout = VK_IMAGE_LAYOUT_MAX_ENUM,
-                        uint8_t options = PK_ACCESS_OPT_BARRIER,
-                        AccessRecord* out = nullptr)
+            AccessRecord Retrieve(const T resource, const AccessRecord& record) const
             {
-                auto resource = TInfo<T>::GetResource(handle);
-                auto record = TInfo<T>::GetRecord(handle);
-                record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
-                record.access = access;
-                record.stage = stage;
+                auto index = m_resources.GetIndex(reinterpret_cast<uint64_t>(resource));
+                auto previous = record;
 
-                if (overrideLayout != VK_IMAGE_LAYOUT_MAX_ENUM)
+                previous.access = VK_ACCESS_NONE;
+                previous.stage = VK_PIPELINE_STAGE_NONE;
+                previous.layout = VK_IMAGE_LAYOUT_MAX_ENUM;
+                
+                if (index != -1)
                 {
-                    record.layout = overrideLayout;
+                    for (auto cur = m_resources.GetValueAt(index); cur; cur = cur->next)
+                    {
+                        if (TInfo<T>::IsOverlap(cur->range, record.range))
+                        {
+                            previous.stage |= cur->stage;
+                            previous.access |= cur->access;
+
+                            if (previous.layout != VK_IMAGE_LAYOUT_UNDEFINED)
+                            {
+                                previous.layout = cur->layout;
+                            }
+                        }
+                    }
                 }
 
-                Record(resource, record, options, out);
-            }
+                if (previous.stage == VK_PIPELINE_STAGE_NONE)
+                {
+                    previous.stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                }
 
+                if (previous.layout == VK_IMAGE_LAYOUT_MAX_ENUM)
+                {
+                    previous.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+                }
+
+                return previous;
+            }
+            
             void TransferRecords(VulkanBarrierHandler* target);
-            bool Resolve(VulkanBarrierInfo* outBarrierInfo, bool isQueueTransfer);
+            bool Resolve(VulkanBarrierInfo* outBarrierInfo);
             void Prune();
 
         private:
-            // @TODO do proper transfers
-            template<typename T>
-            void Transfer(const uint64_t key, AccessRecord record)
-            {
-                auto index = m_resources.GetIndex(key);
-                record.next = nullptr;
-                record.stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                record.access = VK_ACCESS_NONE;
-                record.queueFamily = record.queueFamily != 0xFFFF ? m_queueFamily : 0xFFFF;
-
-                // First value no resolve
-                if (index == -1)
-                {
-                    auto newRecord = m_records.New(record);
-                    m_resources.AddValue(key, newRecord);
-                    m_pruneTicks.push_back(0ull);
-                    return;
-                }
-                
-                AccessRecord** current = m_resources.GetValueAtRef(index);
-
-                while (current && *current)
-                {
-                    if (TInfo<T>::IsInclusive(**current, record))
-                    {
-                        return;
-                    }
-
-                    auto overlap = TInfo<T>::IsOverlap(**current, record);
-                    auto accessDiff = TInfo<T>::IsAccessDiff(**current, record);
-
-                    // Resolve
-                    if (overlap && accessDiff)
-                    {
-                        if ((*current)->next == nullptr)
-                        {
-                            TInfo<T>::Set(**current, record);
-                            return;
-                        }
-
-                        *current = RemoveRecord(*current);
-                        continue;
-                    }
-
-                    // Merge
-                    if (overlap && !accessDiff)
-                    {
-                        if ((*current)->next == nullptr)
-                        {
-                            TInfo<T>::Merge(**current, record);
-                            return;
-                        }
-
-                        TInfo<T>::Merge(record, **current);
-                        *current = RemoveRecord(*current);
-                        continue;
-                    }
-
-                    // Append
-                    if ((*current)->next == nullptr)
-                    {
-                        (*current)->next = m_records.New(record);
-                        return;
-                    }
-
-                    current = &(*current)->next;
-                }
-            }
-
             template<typename T, typename TBarrier>
-            void ProcessBarrier(const T resource, 
-                                TBarrier** barrier, 
-                                const AccessRecord& recordOld, 
-                                const AccessRecord& recordNew, 
-                                bool useFullRange);
-            AccessRecord* RemoveRecord(AccessRecord* record);
+            void ProcessBarrier(const T resource, TBarrier** barrier, const AccessRecord& recordOld, const AccessRecord& recordNew);
+
+            inline void Delete(AccessRecord** current, AccessRecord*** next)
+            {
+                auto deleted = *current;
+                *current = **next;
+                *next = current;
+                m_records.Delete(deleted);
+            }
 
             const uint32_t m_queueFamily = 0u;
             PK::Utilities::PointerMap<uint64_t, AccessRecord> m_resources;
@@ -280,8 +226,6 @@ namespace PK::Rendering::VulkanRHI::Services
             std::vector<uint64_t> m_pruneTicks;
             VkPipelineStageFlags m_sourceStage = 0u;
             VkPipelineStageFlags m_destinationStage = 0u;
-            uint32_t m_srcQueueFamily = VK_QUEUE_FAMILY_IGNORED;
-            uint32_t m_dstQueueFamily = VK_QUEUE_FAMILY_IGNORED;
             uint64_t m_currentPruneTick = 0u;
             uint64_t m_transferCount = 0u;
     };

@@ -14,7 +14,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
 
     VkComponentMapping GetSwizzle(VkFormat format);
     VkImageViewType GetViewType(Rendering::Structs::SamplerType samplerType);
-    VkImageLayout GetImageLayout(Rendering::Structs::TextureUsage usage, bool useOptimized = false);
+    VkImageLayout GetImageLayout(Rendering::Structs::TextureUsage usage);
     VkAttachmentLoadOp GetLoadOp(Rendering::Structs::LoadOp loadOp);
     VkAttachmentLoadOp GetLoadOp(VkImageLayout layout, Rendering::Structs::LoadOp loadOp);
     VkAttachmentStoreOp GetStoreOp(Rendering::Structs::StoreOp storeOp);

@@ -87,24 +87,6 @@ namespace PK::Rendering::VulkanRHI
         VulkanQueueFamilies queueFamilies{};
     };
 
-    struct VulkanLayoutTransition 
-    {
-        VulkanLayoutTransition() {}
-        VulkanLayoutTransition(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageSubresourceRange& range);
-        VulkanLayoutTransition(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, VkImageLayout impostorLayout, const VkImageSubresourceRange& range);
-
-        void ApplyTransitionTemplate(VkImageLayout layout);
-
-        VkImage image = nullptr;
-        VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        VkImageSubresourceRange subresources = {};
-        VkPipelineStageFlags srcStage = 0;
-        VkAccessFlags srcAccessMask = 0;
-        VkPipelineStageFlags dstStage = 0;
-        VkAccessFlags dstAccessMask = 0;
-    };
-
     struct VulkanImageView : public Rendering::Services::IDisposable
     {
         VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo, const char* name);

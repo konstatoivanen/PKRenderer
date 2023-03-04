@@ -200,32 +200,36 @@ namespace PK::Rendering
     {
         auto hash = HashCache::Get();
         auto queues = GraphicsAPI::GetQueues();
-        auto* cmd = queues->GetCommandBuffer(QueueType::Graphics);
-        auto* cmdAsync = queues->GetCommandBuffer(QueueType::ComputeAsync);
         auto resolution = window->GetResolution();
+        auto cmdTransfer = queues->GetCommandBuffer(QueueType::Transfer);
 
         m_renderTarget->Validate(resolution);
         m_depthPrevious->Validate(resolution);
 
-        cmd->SetTexture(hash->pk_ScreenDepthCurrent, m_renderTarget->GetDepth());
-        cmd->SetTexture(hash->pk_ScreenDepthPrevious, m_depthPrevious.get());
-        cmd->SetTexture(hash->pk_ScreenNormals, m_renderTarget->GetColor(1));
+        cmdTransfer->SetTexture(hash->pk_ScreenDepthCurrent, m_renderTarget->GetDepth());
+        cmdTransfer->SetTexture(hash->pk_ScreenDepthPrevious, m_depthPrevious.get());
+        cmdTransfer->SetTexture(hash->pk_ScreenNormals, m_renderTarget->GetColor(1));
 
         auto cascadeZSplits = m_passLights.GetCascadeZSplits(m_znear, m_zfar);
         m_constantsPerFrame->Set<float4>(hash->pk_ShadowCascadeZSplits, reinterpret_cast<float4*>(cascadeZSplits.planes));
         m_constantsPerFrame->Set<float4>(hash->pk_ScreenParams, { (float)resolution.x, (float)resolution.y, 1.0f / (float)resolution.x, 1.0f / (float)resolution.y });
-        m_constantsPerFrame->FlushBuffer(QueueType::Graphics);
+        m_constantsPerFrame->FlushBuffer(QueueType::Transfer);
 
-        m_passSceneGI.PreRender(cmd, resolution);
+        m_passSceneGI.PreRender(cmdTransfer, resolution);
 
         m_batcher.BeginCollectDrawCalls();
         m_passGeometry.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_zfar - m_znear);
         m_passLights.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_znear, m_zfar);
-        m_batcher.EndCollectDrawCalls(cmd);
+        m_batcher.EndCollectDrawCalls(cmdTransfer);
         
         // End transfer operations
-        cmd = queues->Submit(QueueType::Graphics);
-        queues->QueueSync(QueueType::Graphics, QueueType::ComputeAsync);
+        queues->Sync(QueueType::Graphics, QueueType::Transfer);
+        queues->Submit(QueueType::Transfer);
+        queues->Sync(QueueType::Transfer, QueueType::Graphics);
+        queues->Sync(QueueType::Transfer, QueueType::ComputeAsync);
+
+        auto* cmd = queues->GetCommandBuffer(QueueType::Graphics);
+        auto* cmdAsync = queues->GetCommandBuffer(QueueType::ComputeAsync);
 
         // Concurrent Shadows & gbuffer
         {
@@ -252,14 +256,14 @@ namespace PK::Rendering
             cmdAsync->SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         }
         cmdAsync = queues->Submit(QueueType::ComputeAsync);
-        queues->QueueSync(QueueType::ComputeAsync, QueueType::Graphics);
+        queues->Sync(QueueType::ComputeAsync, QueueType::Graphics);
 
         // Voxelize, subsequent passes depend on this
         {
             m_passSceneGI.RenderVoxels(cmd, &m_batcher, m_passGeometry.GetPassGroup());
         }
         cmd = queues->Submit(QueueType::Graphics);
-        queues->QueueSync(QueueType::Graphics, QueueType::ComputeAsync);
+        queues->Sync(QueueType::Graphics, QueueType::ComputeAsync);
 
         // Forward Opaque on graphics queue
         {
@@ -276,7 +280,7 @@ namespace PK::Rendering
             m_passVolumeFog.Compute(cmdAsync, m_renderTarget->GetResolution());
         }
         cmdAsync = queues->Submit(QueueType::ComputeAsync);
-        queues->QueueSync(QueueType::ComputeAsync, QueueType::Graphics);
+        queues->Sync(QueueType::ComputeAsync, QueueType::Graphics);
 
         // Forward Transparent on graphics queue
         {
@@ -296,6 +300,7 @@ namespace PK::Rendering
 
         cmd->Blit(m_renderTarget->GetDepth(), m_depthPrevious.get(), {}, {}, FilterMode::Point);
         cmd->Blit(m_renderTarget->GetColor(0), window, FilterMode::Bilinear);
+
     }
 
     void RenderPipeline::Step(AssetImportToken<ApplicationConfig>* token)
@@ -309,7 +314,7 @@ namespace PK::Rendering
         sampler.wrap[1] = WrapMode::Mirror;
         sampler.wrap[2] = WrapMode::Mirror;
         tex->SetSampler(sampler);
-        GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics)->SetTexture(hash->pk_SceneOEM_HDR, tex);
+        GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer)->SetTexture(hash->pk_SceneOEM_HDR, tex);
 
         m_constantsPerFrame->Set<float>(hash->pk_SceneOEM_Exposure, config->BackgroundExposure);
 
@@ -339,7 +344,7 @@ namespace PK::Rendering
         m_constantsPostProcess->Set<float4>(hash->pk_ChannelMixerRed, Functions::HexToRGB(config->CC_ChannelMixerRed));
         m_constantsPostProcess->Set<float4>(hash->pk_ChannelMixerGreen, Functions::HexToRGB(config->CC_ChannelMixerGreen));
         m_constantsPostProcess->Set<float4>(hash->pk_ChannelMixerBlue, Functions::HexToRGB(config->CC_ChannelMixerBlue));
-        m_constantsPostProcess->FlushBuffer(QueueType::Graphics);
+        m_constantsPostProcess->FlushBuffer(QueueType::Transfer);
 
         m_depthOfField.OnUpdateParameters(config);
         m_passVolumeFog.OnUpdateParameters(config);

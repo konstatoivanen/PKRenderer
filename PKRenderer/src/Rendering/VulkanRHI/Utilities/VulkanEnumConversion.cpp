@@ -461,26 +461,8 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
         return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
     }
 
-    VkImageLayout GetImageLayout(TextureUsage usage, bool useOptimized)
+    VkImageLayout GetImageLayout(TextureUsage usage)
     {
-        if (useOptimized)
-        {
-            if ((usage & (TextureUsage::RTDepth | TextureUsage::RTColor)) == (TextureUsage::RTDepth | TextureUsage::RTColor))
-            {
-                return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            }
-
-            if ((usage & TextureUsage::RTDepth) != 0)
-            {
-                return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-            }
-
-            if ((usage & TextureUsage::RTColor) != 0)
-            {
-                return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            }
-        }
-
         if ((usage & (TextureUsage::RTDepth | TextureUsage::RTColor | TextureUsage::Storage)) != 0)
         {
             return VK_IMAGE_LAYOUT_GENERAL;

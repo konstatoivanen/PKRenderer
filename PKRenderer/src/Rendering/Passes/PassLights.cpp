@@ -139,7 +139,7 @@ namespace PK::Rendering::Passes
         m_globalLightsList = Buffer::Create(ElementType::Int, ClusterCount * MaxLightsPerTile, BufferUsage::DefaultStorage | BufferUsage::Concurrent, "Lights.List");
         m_globalLightIndex = Buffer::Create(ElementType::Uint, 1, BufferUsage::DefaultStorage | BufferUsage::Concurrent, "Lights.IndexCounter");
         
-        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
+        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer);
         cmd->SetBuffer(hash->pk_GlobalLightsList, m_globalLightsList.get());
         cmd->SetBuffer(hash->pk_GlobalListListIndex, m_globalLightIndex.get());
         cmd->SetImage(hash->pk_LightTiles, m_lightTiles.get());
@@ -199,7 +199,7 @@ namespace PK::Rendering::Passes
         m_lightMatricesBuffer->Validate(m_projectionCount);
         m_lightDirectionsBuffer->Validate(m_projectionCount);
 
-        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
+        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer);
         auto lightsView = cmd->BeginBufferWrite<PK_Light>(m_lightsBuffer.get(), 0u, m_lightCount + 1);
         auto matricesView = m_projectionCount > 0 ? cmd->BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, m_projectionCount) : BufferView<float4x4>();
         auto directionsView = m_projectionCount > 0 ? cmd->BeginBufferWrite<float4>(m_lightDirectionsBuffer.get(), 0u, m_projectionCount) : BufferView<float4>();

@@ -176,9 +176,11 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanSwapchain::Present(VkSemaphore waitSignal)
     {
-        auto result = m_queuePresent->Present(m_swapchain, m_imageIndex, waitSignal);
+        // Assumes previous submit was for rendering work.
+        // Lets get the previous counter value instead of the incremented current one.
         m_frameFences[m_frameIndex] = m_queueGraphics->GetFenceRef();
         m_frameIndex = (m_frameIndex + 1) % m_maxFramesInFlight;
+        VK_ASSERT_RESULT(m_queuePresent->Present(m_swapchain, m_imageIndex, waitSignal));
     }
 
     void VulkanSwapchain::OnWindowResize(int w, int h)

@@ -372,43 +372,24 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    void VulkanQueueSet::QueueSync(Structs::QueueType from, Structs::QueueType to)
+    VkResult VulkanQueueSet::SubmitCurrent(Structs::QueueType type, VulkanBarrierInfo* barrierInfo, VkSemaphore* outSignal)
     {
-        auto queueFrom = GetQueue(from);
-        auto queueTo = GetQueue(to);
-
-        queueTo->QueueWait(queueFrom);
-        queueFrom->barrierHandler->TransferRecords(queueTo->barrierHandler.get());
-    }
-
-    Objects::CommandBuffer* VulkanQueueSet::SubmitSynced(Structs::QueueType source, Structs::QueueType destination)
-    {
-        auto srcQueue = GetQueue(source);
-        auto dstQueue = GetQueue(destination);
-        
-        if (srcQueue == dstQueue)
-        {
-            return srcQueue->commandPool->GetCurrent();
-        }
-
-        VulkanBarrierInfo transferSrc{};
-
-        VK_ASSERT_RESULT(srcQueue->Submit(srcQueue->commandPool->EndCurrent(&transferSrc)));
-        dstQueue->QueueWait(srcQueue);
-    
-        if (transferSrc.srcQueueFamily != transferSrc.dstQueueFamily &&
-            transferSrc.dstQueueFamily == srcQueue->GetFamily())
-        {
-            dstQueue->commandPool->GetCurrent()->PipelineBarrier(transferSrc);
-        }
-
-        return srcQueue->commandPool->GetCurrent();
+        auto queue = GetQueue(type);
+        return queue->Submit(GetQueue(type)->commandPool->EndCurrent(barrierInfo), outSignal);
     }
 
     Objects::CommandBuffer* VulkanQueueSet::Submit(Structs::QueueType type)
     {
         VK_ASSERT_RESULT(SubmitCurrent(type));
         return GetCommandBuffer(type);
+    }
+
+    void VulkanQueueSet::Sync(Structs::QueueType from, Structs::QueueType to)
+    {
+        auto queueFrom = GetQueue(from);
+        auto queueTo = GetQueue(to);
+        queueTo->QueueWait(queueFrom);
+        queueFrom->barrierHandler->TransferRecords(queueTo->barrierHandler.get());
     }
 
     VulkanQueueSet::Initializer::Initializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)

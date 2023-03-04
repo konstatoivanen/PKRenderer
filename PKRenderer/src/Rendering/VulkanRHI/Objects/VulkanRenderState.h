@@ -94,6 +94,11 @@ namespace PK::Rendering::VulkanRHI::Objects
             void SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType);
             void SetShaderBindingTableAddress(Structs::RayTracingShaderGroup group, VkDeviceAddress address, size_t stride, size_t size);
 
+            // AccessRecord Utilities
+            void RecordBuffer(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access);
+            void RecordImage(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access, VkImageLayout overrideLayout = VK_IMAGE_LAYOUT_MAX_ENUM, uint8_t options = Services::PK_ACCESS_OPT_BARRIER);
+            Services::VulkanBarrierHandler::AccessRecord ExchangeImage(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access);
+
             PKRenderStateDirtyFlags ValidatePipeline(const Structs::FenceRef& fence);
 
         private:

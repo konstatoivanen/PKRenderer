@@ -82,7 +82,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         // Vulkan specific interface
         void BuildAccelerationStructures(uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
-        void TransitionImageLayout(const VulkanLayoutTransition& transition);
+        void TransitionImageLayout(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageSubresourceRange& range);
         void PipelineBarrier(const VulkanBarrierInfo& barrier);
         
         bool ResolveBarriers();

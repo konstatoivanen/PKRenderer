@@ -28,7 +28,7 @@ namespace PK::Rendering::Passes
         auto tableInfo = m_rayTraceGatherGI->GetShaderBindingTableInfo();
         auto tableUintCount = tableInfo.totalTableSize / sizeof(uint32_t);
         m_shaderBindingTable = Buffer::Create(ElementType::Uint, tableUintCount, BufferUsage::DefaultShaderBindingTable, "GI.ShaderBindingTable");
-        GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics)->UploadBufferData(m_shaderBindingTable.get(), tableInfo.handleData);
+        GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer)->UploadBufferData(m_shaderBindingTable.get(), tableInfo.handleData);
 
         TextureDescriptor descr{};
         descr.samplerType = SamplerType::Sampler3D;
@@ -152,7 +152,7 @@ namespace PK::Rendering::Passes
 
         m_parameters->Set<uint4>(hash->pk_SceneGI_Swizzle, swizzles[m_rasterAxis]);
         m_parameters->Set<int4>(hash->pk_SceneGI_Checkerboard_Offset, { m_checkerboardIndex / 2, m_checkerboardIndex % 2, 0, 0 });
-        m_parameters->FlushBuffer(QueueType::Graphics);
+        m_parameters->FlushBuffer(QueueType::Transfer);
     }
 
     void PassSceneGI::RenderVoxels(CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup)

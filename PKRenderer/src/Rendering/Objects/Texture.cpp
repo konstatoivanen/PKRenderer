@@ -101,7 +101,7 @@ namespace PK::Rendering::Objects
 			};
 		}
 
-		GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics)->UploadTexture(this, ktxTextureData, ktxTextureSize, ranges.data(), (uint32_t)ranges.size());
+		GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer)->UploadTexture(this, ktxTextureData, ktxTextureSize, ranges.data(), (uint32_t)ranges.size());
 
         ktxTexture_Destroy(ktxTexture(ktxTex2));
     }

@@ -358,6 +358,47 @@ namespace PK::Rendering::VulkanRHI::Objects
     }
 
 
+    void VulkanRenderState::RecordBuffer(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access)
+    {
+        auto handler = m_services.barrierHandler;
+        VulkanBarrierHandler::AccessRecord record{};
+        record.stage = stage;
+        record.access = access;
+        record.bufferRange.offset = (uint32_t)handle->buffer.offset;
+        record.bufferRange.size = (uint32_t)handle->buffer.range;
+        record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
+        handler->Record(handle->buffer.buffer, record, PK_ACCESS_OPT_BARRIER);
+    }
+
+    void VulkanRenderState::RecordImage(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access, VkImageLayout overrideLayout, uint8_t options)
+    {
+        auto handler = m_services.barrierHandler;
+        VulkanBarrierHandler::AccessRecord record{};
+        record.stage = stage;
+        record.access = access;
+        record.imageRange = Utilities::VulkanConvertRange(handle->image.range);
+        record.aspect = handle->image.range.aspectMask;
+        record.layout = overrideLayout != VK_IMAGE_LAYOUT_MAX_ENUM ? overrideLayout : handle->image.layout;
+        record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
+        handler->Record(handle->image.image, record, options);
+    }
+
+    VulkanBarrierHandler::AccessRecord VulkanRenderState::ExchangeImage(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access)
+    {
+        auto handler = m_services.barrierHandler;
+        VulkanBarrierHandler::AccessRecord record{};
+        record.stage = stage;
+        record.access = access;
+        record.imageRange = Utilities::VulkanConvertRange(handle->image.range);
+        record.aspect = handle->image.range.aspectMask;
+        record.layout = handle->image.layout;
+        record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
+        auto previous = handler->Retrieve(handle->image.image, record);
+        handler->Record(handle->image.image, record, 0u);
+        return previous;
+    }
+
+
     void VulkanRenderState::ValidateRenderTarget()
     {
         auto shader = m_pipelineKey.shader;
@@ -640,7 +681,6 @@ namespace PK::Rendering::VulkanRHI::Objects
  
     void VulkanRenderState::RecordResourceAccess()
     {
-        auto barrierHandler = m_services.barrierHandler;
         auto shader = m_pipelineKey.shader;
         auto shaderType = shader->GetType();
         auto setCount = m_pipelineKey.shader->GetDescriptorSetCount();
@@ -660,8 +700,8 @@ namespace PK::Rendering::VulkanRHI::Objects
                 }
                 
                 auto handle = binding.handle;
-                VkPipelineStageFlags stage = EnumConvert::GetPipelineStageFlags(setkey.stageFlags);
-                VkAccessFlags access = shader->GetResourceLayout(i)[j].WriteStageMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : 0u;
+                auto stage = EnumConvert::GetPipelineStageFlags(setkey.stageFlags);
+                auto access = shader->GetResourceLayout(i)[j].WriteStageMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
 
                 switch (binding.type)
                 {
@@ -672,22 +712,18 @@ namespace PK::Rendering::VulkanRHI::Objects
                         // Dont record static upload images
                         if (handle->image.layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
                         {
-                            barrierHandler->Record<VkImage>(handle, access | VK_ACCESS_SHADER_READ_BIT, stage, VK_IMAGE_LAYOUT_MAX_ENUM, PK_ACCESS_OPT_BARRIER | PK_ACCESS_OPT_LAYOUT);
+                            RecordImage(handle, stage, access | VK_ACCESS_SHADER_READ_BIT);
                         }
                     }
                     break;
                     case ResourceType::StorageBuffer:
                     case ResourceType::DynamicStorageBuffer:
-                    {
-                        barrierHandler->Record<VkBuffer>(handle, access | VK_ACCESS_SHADER_READ_BIT, stage);
-                    }
-                    break;
+                        RecordBuffer(handle, stage, access | VK_ACCESS_SHADER_READ_BIT);
+                        break;
                     case ResourceType::ConstantBuffer:
                     case ResourceType::DynamicConstantBuffer:
-                    {
-                        barrierHandler->Record<VkBuffer>(handle, access | VK_ACCESS_UNIFORM_READ_BIT, stage);
-                    }
-                    break;
+                        RecordBuffer(handle, stage, access | VK_ACCESS_UNIFORM_READ_BIT);
+                        break;
                 }
             }
         }
@@ -704,20 +740,17 @@ namespace PK::Rendering::VulkanRHI::Objects
                 break;
             }
 
-            barrierHandler->Record<VkBuffer>(m_vertexBuffers[i], VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
+            RecordBuffer(m_vertexBuffers[i], VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
         }
 
         if (m_indexBuffer != nullptr)
         {
-            barrierHandler->Record<VkBuffer>(m_indexBuffer, VK_ACCESS_INDEX_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
+            RecordBuffer(m_indexBuffer, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_INDEX_READ_BIT);
         }
     }
     
     void VulkanRenderState::RecordRenderTargetAccess()
     {
-        auto barrierHandler = m_services.barrierHandler;
-
-        VulkanBarrierHandler::AccessRecord previous{};
         m_renderPassKey->accessMask = 0u;
         m_renderPassKey->stageMask = 0u;
 
@@ -731,10 +764,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 continue;
             }
 
-            auto access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            auto stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            barrierHandler->Record<VkImage>(color, access, stage, VK_IMAGE_LAYOUT_MAX_ENUM, PK_ACCESS_OPT_LAYOUT, &previous);
-
+            auto previous = ExchangeImage(color, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
             m_renderPassKey->accessMask |= previous.access;
             m_renderPassKey->stageMask |= previous.stage;
             m_renderPassKey->colors[i].initialLayout = previous.layout;
@@ -745,10 +775,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 continue;
             }
 
-            access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            barrierHandler->Record<VkImage>(resolve, access, stage, VK_IMAGE_LAYOUT_MAX_ENUM, 0u, &previous);
-
+            previous = ExchangeImage(resolve, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
             m_renderPassKey->accessMask |= previous.access;
             m_renderPassKey->stageMask |= previous.stage;
         }
@@ -757,9 +784,9 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if (depth && depth->image.image)
         {
-            auto access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-            auto stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-            barrierHandler->Record<VkImage>(depth, access, stage, VK_IMAGE_LAYOUT_MAX_ENUM, PK_ACCESS_OPT_LAYOUT, &previous);
+            auto previous = ExchangeImage(depth, 
+                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, 
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 
             m_renderPassKey->accessMask |= previous.access;
             m_renderPassKey->stageMask |= previous.stage;
