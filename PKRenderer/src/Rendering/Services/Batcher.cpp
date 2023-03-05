@@ -226,10 +226,10 @@ namespace PK::Rendering
         cmd->EndBufferWrite(m_indirectArguments.get());
 
         auto hash = HashCache::Get();
-        cmd->SetBuffer(hash->pk_Instancing_Transforms, m_matrices.get());
-        cmd->SetBuffer(hash->pk_Instancing_Indices, m_indices.get());
-        cmd->SetBuffer(hash->pk_Instancing_Properties, m_properties.get());
-        cmd->SetTextureArray(hash->pk_Instancing_Textures2D, m_textures2D);
+        GraphicsAPI::SetBuffer(hash->pk_Instancing_Transforms, m_matrices.get());
+        GraphicsAPI::SetBuffer(hash->pk_Instancing_Indices, m_indices.get());
+        GraphicsAPI::SetBuffer(hash->pk_Instancing_Properties, m_properties.get());
+        GraphicsAPI::SetTextureArray(hash->pk_Instancing_Textures2D, m_textures2D);
     }
 
     void Batcher::SubmitDraw(Components::Transform* transform, Shader* shader, Material* material, Mesh* mesh, uint32_t submesh, uint32_t clipIndex)
@@ -260,7 +260,7 @@ namespace PK::Rendering
 
         if (requireKeyword > 0u)
         {
-            cmd->SetKeyword(requireKeyword, true);
+            GraphicsAPI::SetKeyword(requireKeyword, true);
         }
 
         auto hash = HashCache::Get();
@@ -288,7 +288,7 @@ namespace PK::Rendering
 
         if (requireKeyword > 0u)
         {
-            cmd->SetKeyword(requireKeyword, false);
+            GraphicsAPI::SetKeyword(requireKeyword, false);
         }
     }
 }

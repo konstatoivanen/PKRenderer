@@ -32,6 +32,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             void Rebuild(const SwapchainCreateInfo& createInfo);
             void Release();
 
+            void SetFrameFence(const FenceRef& fence);
             bool TryAcquireNextImage(VkSemaphore* imageAvailableSignal);
             void Present(VkSemaphore waitSignal);
             void OnWindowResize(int w, int h);
@@ -60,9 +61,10 @@ namespace PK::Rendering::VulkanRHI::Objects
             VkFormat m_format;
             VkExtent2D m_extent;
             uint32_t m_maxFramesInFlight;
-            uint32_t m_frameIndex;
-            uint32_t m_imageIndex;
-            bool m_outofdate;
-            bool m_suboptimal;
+            uint32_t m_frameIndex = 0u;
+            uint32_t m_imageIndex = 0u;
+            bool m_outofdate = false;
+            bool m_suboptimal = false;
+            bool m_hasExternalFrameFence = false;
     };
 }

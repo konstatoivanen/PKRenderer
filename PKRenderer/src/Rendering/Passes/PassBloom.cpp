@@ -55,29 +55,29 @@ namespace PK::Rendering::Passes
 
         for (auto i = 0u; i < 6u; ++i)
         {
-            cmd->SetTexture(hash->_SourceTex, i == 0 ? color : bloom, i == 0 ? 0 : i - 1u, ls);
-            cmd->SetImage(hash->_DestinationTex, bloom, i, ld);
+            GraphicsAPI::SetTexture(hash->_SourceTex, i == 0 ? color : bloom, i == 0 ? 0 : i - 1u, ls);
+            GraphicsAPI::SetImage(hash->_DestinationTex, bloom, i, ld);
             cmd->Dispatch(m_computeBloom, m_passPrefilter, groups[i]);
             ls ^= 1u;
             ld ^= 1u;
 
-            cmd->SetTexture(hash->_SourceTex, bloom, i, ls);
-            cmd->SetImage(hash->_DestinationTex, bloom, i, ld);
-            cmd->SetConstant<float2>(hash->_BlurOffset, { 1.0f, 0.0f });
+            GraphicsAPI::SetTexture(hash->_SourceTex, bloom, i, ls);
+            GraphicsAPI::SetImage(hash->_DestinationTex, bloom, i, ld);
+            GraphicsAPI::SetConstant<float2>(hash->_BlurOffset, { 1.0f, 0.0f });
             cmd->Dispatch(m_computeBloom, m_passDiskblur, groups[i]);
             ls ^= 1u;
             ld ^= 1u;
 
-            cmd->SetTexture(hash->_SourceTex, bloom, i, ls);
-            cmd->SetImage(hash->_DestinationTex, bloom, i, ld);
-            cmd->SetConstant<float2>(hash->_BlurOffset, { 0.0f, 1.0f });
+            GraphicsAPI::SetTexture(hash->_SourceTex, bloom, i, ls);
+            GraphicsAPI::SetImage(hash->_DestinationTex, bloom, i, ld);
+            GraphicsAPI::SetConstant<float2>(hash->_BlurOffset, { 0.0f, 1.0f });
             cmd->Dispatch(m_computeBloom, m_passDiskblur, groups[i]);
             ls ^= 1u;
             ld ^= 1u;
         }
 
-        cmd->SetTexture(hash->pk_BloomTexture, bloom, { 0, 1, 6, 1 });
-        cmd->SetTexture(hash->pk_BloomTexture1, bloom, { 0, 0, 6, 1 });
+        GraphicsAPI::SetTexture(hash->pk_BloomTexture, bloom, { 0, 1, 6, 1 });
+        GraphicsAPI::SetTexture(hash->pk_BloomTexture1, bloom, { 0, 0, 6, 1 });
 
         cmd->EndDebugScope();
     }

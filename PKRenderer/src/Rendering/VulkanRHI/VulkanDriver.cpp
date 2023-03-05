@@ -3,6 +3,11 @@
 #include "VulkanDriver.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanExtensions.h"
+#include "Utilities/Handle.h"
+#include "Rendering/VulkanRHI/Objects/VulkanBuffer.h"
+#include "Rendering/VulkanRHI/Objects/VulkanTexture.h"
+#include "Rendering/VulkanRHI/Objects/VulkanAccelerationStructure.h"
+#include "Rendering/VulkanRHI/Objects/VulkanBindArray.h"
 #include <gfx.h>
 
 namespace PK::Rendering::VulkanRHI
@@ -270,6 +275,46 @@ namespace PK::Rendering::VulkanRHI
         }
 
         return sizeof(char);
+    }
+
+    void VulkanDriver::SetBuffer(uint32_t nameHashId, Buffer* buffer, const IndexRange& range)
+    {
+        globalResources.Set(nameHashId, Handle(buffer->GetNative<VulkanBuffer>()->GetBindHandle(range)));
+    }
+
+    void VulkanDriver::SetTexture(uint32_t nameHashId, Texture* texture, const TextureViewRange& range)
+    {
+        globalResources.Set(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::SampledTexture)));
+    }
+
+    void VulkanDriver::SetBufferArray(uint32_t nameHashId, BindArray<Buffer>* bufferArray)
+    {
+        globalResources.Set(nameHashId, Handle(bufferArray->GetNative<VulkanBindArray>()));
+    }
+
+    void VulkanDriver::SetTextureArray(uint32_t nameHashId, BindArray<Texture>* textureArray)
+    {
+        globalResources.Set(nameHashId, Handle(textureArray->GetNative<VulkanBindArray>()));
+    }
+
+    void VulkanDriver::SetImage(uint32_t nameHashId, Texture* texture, const TextureViewRange& range)
+    {
+        globalResources.Set(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::Image)));
+    }
+
+    void VulkanDriver::SetAccelerationStructure(uint32_t nameHashId, AccelerationStructure* structure)
+    {
+        globalResources.Set(nameHashId, Handle(structure->GetNative<VulkanAccelerationStructure>()->GetBindHandle()));
+    }
+
+    void VulkanDriver::SetConstant(uint32_t nameHashId, const void* data, uint32_t size)
+    {
+        globalResources.Set<char>(nameHashId, reinterpret_cast<const char*>(data), size);
+    }
+
+    void VulkanDriver::SetKeyword(uint32_t nameHashId, bool value)
+    {
+        globalResources.Set<bool>(nameHashId, value);
     }
 
     void VulkanDriver::GC()

@@ -3,6 +3,7 @@
 #include "Utilities/NoCopy.h"
 #include "Utilities/NativeInterface.h"
 #include "Utilities/Ref.h"
+#include "Rendering/Structs/FenceRef.h"
 #include "Math/Types.h"
 
 namespace PK::Core
@@ -38,6 +39,7 @@ namespace PK::Core
             
             virtual void Begin() = 0;
             virtual void End() = 0;
+            virtual void SetFrameFence(const Rendering::Structs::FenceRef& fence) = 0;
             virtual void SetCursorVisible(bool value) = 0;
             virtual void SetVSync(bool enabled) = 0;
             virtual void PollEvents() const = 0;

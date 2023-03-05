@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "PassTemporalAntiAliasing.h"
 #include "Rendering/HashCache.h"
+#include "Rendering/GraphicsAPI.h"
 #include "Math/FunctionsMisc.h"
 
 namespace PK::Rendering::Passes
@@ -44,10 +45,10 @@ namespace PK::Rendering::Passes
 
         m_renderTarget->Validate(resolution);
 
-        cmd->SetTexture(hash->_SourceTex, source->GetColor(0u), { 0, 0, 1u, 1u });
-        cmd->SetTexture(hash->_HistoryReadTex, m_renderTarget.get(), { 0, historyRead, 1u, 1u });
-        cmd->SetImage(hash->_DestinationTex, m_renderTarget.get(), { 0, 0, 1u, 1u });
-        cmd->SetImage(hash->_HistoryWriteTex, m_renderTarget.get(), { 0, historyWrite, 1u, 1u });
+        GraphicsAPI::SetTexture(hash->_SourceTex, source->GetColor(0u), { 0, 0, 1u, 1u });
+        GraphicsAPI::SetTexture(hash->_HistoryReadTex, m_renderTarget.get(), { 0, historyRead, 1u, 1u });
+        GraphicsAPI::SetImage(hash->_DestinationTex, m_renderTarget.get(), { 0, 0, 1u, 1u });
+        GraphicsAPI::SetImage(hash->_HistoryWriteTex, m_renderTarget.get(), { 0, historyWrite, 1u, 1u });
         cmd->Dispatch(m_computeTAA, Functions::GetComputeGroupCount(resolution, { 16, 16, 1u }));
         cmd->Blit(m_renderTarget.get(), source->GetColor(0), { 0, 0, 1u, 1u }, { 0, 0, 1u, 1u }, FilterMode::Bilinear);
 

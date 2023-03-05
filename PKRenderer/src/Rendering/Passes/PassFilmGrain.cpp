@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "PassFilmGrain.h"
 #include "Rendering/HashCache.h"
+#include "Rendering/GraphicsAPI.h"
 
 namespace PK::Rendering::Passes
 {
@@ -26,15 +27,15 @@ namespace PK::Rendering::Passes
         descriptor.sampler.wrap[2] = WrapMode::Repeat;
         descriptor.usage = TextureUsage::DefaultStorage | TextureUsage::Concurrent;
         m_filmGrainTexture = Texture::Create(descriptor, "FilmGrain.Texture");
+        GraphicsAPI::SetTexture(HashCache::Get()->pk_FilmGrainTex, m_filmGrainTexture.get());
     }
     
     void PassFilmGrain::Compute(Objects::CommandBuffer* cmd)
     {
         auto hash = HashCache::Get();
         cmd->BeginDebugScope("Noise Compute", PK_COLOR32_BLUE);
-        cmd->SetImage(hash->_MainTex, m_filmGrainTexture.get(), 0, 0);
+        GraphicsAPI::SetImage(hash->_MainTex, m_filmGrainTexture.get(), 0, 0);
         cmd->Dispatch(m_computeFilmGrain, { 16, 64, 1 });
-        cmd->SetTexture(hash->pk_FilmGrainTex, m_filmGrainTexture.get());
         cmd->EndDebugScope();
     }
 }

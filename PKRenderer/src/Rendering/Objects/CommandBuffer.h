@@ -37,15 +37,7 @@ namespace PK::Rendering::Objects
         virtual void SetShader(const Shader* shader, int32_t variantIndex = -1) = 0;
         virtual void SetVertexBuffers(const Buffer** buffers, uint32_t count) = 0;
         virtual void SetIndexBuffer(const Buffer* buffer, size_t offset) = 0;
-        virtual void SetBuffer(uint32_t nameHashId, Buffer* buffer, const Structs::IndexRange& range) = 0;
-        virtual void SetTexture(uint32_t nameHashId, Texture* texture, const Structs::TextureViewRange& range) = 0;
-        virtual void SetBufferArray(uint32_t nameHashId, BindArray<Buffer>* bufferArray) = 0;
-        virtual void SetTextureArray(uint32_t nameHashId, BindArray<Texture>* textureArray) = 0;
-        virtual void SetImage(uint32_t nameHashId, Texture* texture, const Structs::TextureViewRange& range) = 0;
-        virtual void SetAccelerationStructure(uint32_t nameHashId, AccelerationStructure* structure) = 0;
         virtual void SetShaderBindingTable(Structs::RayTracingShaderGroup group, const Buffer* buffer, size_t offset = 0, size_t stride = 0, size_t size = 0) = 0;
-        virtual void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) = 0;
-        virtual void SetKeyword(uint32_t nameHashId, bool value) = 0;
 
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;
@@ -83,38 +75,6 @@ namespace PK::Rendering::Objects
         void SetRenderTarget(Texture* renderTarget, uint16_t level, uint16_t layer);
         void SetRenderTarget(Texture* renderTarget, const RenderTargetRanges& ranges);
         void SetMesh(const Mesh* mesh);
-        void SetBuffer(uint32_t nameHashId, Buffer* buffer);
-        void SetBuffer(const char* name, Buffer* buffer);
-        void SetBuffer(const char* name, Buffer* buffer, const Structs::IndexRange& range);
-
-        void SetTexture(uint32_t nameHashId, Texture* texture);
-        void SetTexture(uint32_t nameHashId, Texture* texture, uint16_t level, uint16_t layer);
-        void SetTexture(const char* name, Texture* texture);
-        void SetTexture(const char* name, Texture* texture, uint16_t level, uint16_t layer);
-        void SetTexture(const char* name, Texture* texture, const Structs::TextureViewRange& range);
-        
-        void SetImage(uint32_t nameHashId, Texture* texture);
-        void SetImage(uint32_t nameHashId, Texture* texture, uint16_t level, uint16_t layer);
-        void SetImage(const char* name, Texture* texture);
-        void SetImage(const char* name, Texture* texture, uint16_t level, uint16_t layer);
-        void SetImage(const char* name, Texture* texture, const Structs::TextureViewRange& range);
-        
-        void SetAccelerationStructure(const char* name, AccelerationStructure* structure);
-
-        void SetBufferArray(const char* name, BindArray<Buffer>* bufferArray);
-        void SetTextureArray(const char* name, BindArray<Texture>* textureArray);
-
-        void SetConstant(const char* name, const void* data, uint32_t size);
-        void SetKeyword(const char* name, bool value);
-
-        void TransferBuffer(const char* name, Structs::QueueType destination);
-        void TransferImage(const char* name, Structs::QueueType destination);
-
-        template<typename T>
-        void SetConstant(uint32_t nameHashId, const T& value) { SetConstant(nameHashId, &value, (uint32_t)sizeof(T)); }
-
-        template<typename T>
-        void SetConstant(const char* name, const T& value) { SetConstant(name, &value, (uint32_t)sizeof(T)); }
         
         void DrawMesh(const Mesh* mesh, int32_t submesh);
         void DrawMesh(const Mesh* mesh, int32_t submesh, uint32_t instanceCount, uint32_t firstInstance);

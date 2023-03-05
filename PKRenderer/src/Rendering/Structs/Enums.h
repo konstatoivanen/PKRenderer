@@ -49,7 +49,7 @@ namespace PK::Rendering::Structs
     {
         Transfer,
         Graphics,
-        ComputeAsync,
+        Compute,
         Present,
         MaxCount
     };

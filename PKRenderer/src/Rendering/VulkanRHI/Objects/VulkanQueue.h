@@ -64,10 +64,10 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             inline VulkanQueue* GetQueue(Structs::QueueType type) { return m_queues[m_queueIndices[(uint32_t)type]].get(); }
             constexpr const VulkanQueueFamilies& GetSelectedFamilies() const { return m_selectedFamilies; }
-            inline Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) override final { return GetQueue(type)->commandPool->GetCurrent(); }
+            inline Rendering::Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) override final { return GetQueue(type)->commandPool->GetCurrent(); }
             
             VkResult SubmitCurrent(Structs::QueueType type, VulkanBarrierInfo* barrierInfo = nullptr, VkSemaphore* outSignal = nullptr);
-            Objects::CommandBuffer* Submit(Structs::QueueType type) override final;
+            Rendering::Objects::CommandBuffer* Submit(Structs::QueueType type) override final;
             void Sync(Structs::QueueType from, Structs::QueueType to) override final;
             inline Structs::FenceRef GetFenceRef(Structs::QueueType type) override final { return GetQueue(type)->GetFenceRef(); }
             void Prune();

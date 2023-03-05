@@ -107,33 +107,6 @@ namespace PK::Rendering::Objects
         SetRenderTarget(targets, nullptr, ranges.begin(), count);
     }
 
-    void CommandBuffer::SetBuffer(const char* name, Buffer* buffer, const IndexRange& range) { SetBuffer(StringHashID::StringToID(name), buffer, range); }
-    void CommandBuffer::SetBuffer(uint32_t nameHashId, Buffer* buffer) { SetBuffer(nameHashId, buffer, buffer->GetFullRange()); }
-    void CommandBuffer::SetBuffer(const char* name, Buffer* buffer) { SetBuffer(StringHashID::StringToID(name), buffer, buffer->GetFullRange()); }
-
-    void CommandBuffer::SetTexture(uint32_t nameHashId, Texture* texture) { SetTexture(nameHashId, texture, {}); }
-    void CommandBuffer::SetTexture(uint32_t nameHashId, Texture* texture, uint16_t level, uint16_t layer) { SetTexture(nameHashId, texture, { level, layer, 1u, 1u }); }
-    void CommandBuffer::SetTexture(const char* name, Texture* texture) { SetTexture(StringHashID::StringToID(name), texture); }
-    void CommandBuffer::SetTexture(const char* name, Texture* texture, uint16_t level, uint16_t layer) { SetTexture(StringHashID::StringToID(name), texture, level, layer); }
-    void CommandBuffer::SetTexture(const char* name, Texture* texture, const TextureViewRange& range) { SetTexture(StringHashID::StringToID(name), texture, range); }
-    
-    void CommandBuffer::SetImage(uint32_t nameHashId, Texture* texture) { SetImage(nameHashId, texture, {}); }
-    void CommandBuffer::SetImage(uint32_t nameHashId, Texture* texture, uint16_t level, uint16_t layer) { SetImage(nameHashId, texture, { level, layer, 1u, 1u }); }
-    void CommandBuffer::SetImage(const char* name, Texture* texture) { SetImage(StringHashID::StringToID(name), texture); }
-    void CommandBuffer::SetImage(const char* name, Texture* texture, uint16_t level, uint16_t layer) { SetImage(StringHashID::StringToID(name), texture, level, layer); }
-    void CommandBuffer::SetImage(const char* name, Texture* texture, const TextureViewRange& range) { SetImage(StringHashID::StringToID(name), texture, range); }
-
-    void CommandBuffer::SetAccelerationStructure(const char* name, AccelerationStructure* structure)
-    {
-        SetAccelerationStructure(StringHashID::StringToID(name), structure);
-    }
-
-    void CommandBuffer::SetBufferArray(const char* name, BindArray<Buffer>* bufferArray) { SetBufferArray(StringHashID::StringToID(name), bufferArray); }
-    void CommandBuffer::SetTextureArray(const char* name, BindArray<Texture>* textureArray) { SetTextureArray(StringHashID::StringToID(name), textureArray); }
-
-    void CommandBuffer::SetConstant(const char* name, const void* data, uint32_t size) { SetConstant(StringHashID::StringToID(name), data, size); }
-    void CommandBuffer::SetKeyword(const char* name, bool value) { SetKeyword(StringHashID::StringToID(name), value); }
-
     void CommandBuffer::SetMesh(const Mesh* mesh)
     {
         auto& vbuffers = mesh->GetVertexBuffers();

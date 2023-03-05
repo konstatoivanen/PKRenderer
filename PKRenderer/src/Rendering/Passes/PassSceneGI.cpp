@@ -73,14 +73,14 @@ namespace PK::Rendering::Passes
         descr.layers = 16;
         m_rayhits = Texture::Create(descr, "GI.RayHits");
 
-        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
         auto hash = HashCache::Get();
-        cmd->SetImage(hash->pk_SceneGI_VolumeMaskWrite, m_voxelMask.get());
-        cmd->SetImage(hash->pk_SceneGI_VolumeWrite, m_voxels.get());
-        cmd->SetTexture(hash->pk_SceneGI_VolumeRead, m_voxels.get());
-        cmd->SetImage(hash->pk_ScreenGI_Mask, m_mask.get());
-        cmd->SetImage(hash->pk_ScreenGI_Hits, m_rayhits.get());
+        GraphicsAPI::SetImage(hash->pk_SceneGI_VolumeMaskWrite, m_voxelMask.get());
+        GraphicsAPI::SetImage(hash->pk_SceneGI_VolumeWrite, m_voxels.get());
+        GraphicsAPI::SetTexture(hash->pk_SceneGI_VolumeRead, m_voxels.get());
+        GraphicsAPI::SetImage(hash->pk_ScreenGI_Mask, m_mask.get());
+        GraphicsAPI::SetImage(hash->pk_ScreenGI_Hits, m_rayhits.get());
 
+        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
         cmd->SetShaderBindingTable(RayTracingShaderGroup::RayGeneration, 
             m_shaderBindingTable.get(), 
             tableInfo.byteOffsets[(uint32_t)RayTracingShaderGroup::RayGeneration], 
@@ -121,7 +121,7 @@ namespace PK::Rendering::Passes
         m_parameters->Set<float>(hash->pk_SceneGI_DiffuseGain, 2.0f);
         m_parameters->Set<float>(hash->pk_SceneGI_SpecularGain, 1.0f);
         m_parameters->Set<float>(hash->pk_SceneGI_Fade, 0.95f);
-        cmd->SetBuffer(hash->pk_SceneGI_Params, m_parameters->GetBuffer());
+        GraphicsAPI::SetBuffer(hash->pk_SceneGI_Params, m_parameters->GetBuffer());
     }
 
     void PassSceneGI::PreRender(CommandBuffer* cmd, const uint3& resolution)
@@ -132,12 +132,12 @@ namespace PK::Rendering::Passes
 
         if (m_rayhits->Validate(resolution))
         {
-            cmd->SetImage(hash->pk_ScreenGI_Hits, m_rayhits.get());
+            GraphicsAPI::SetImage(hash->pk_ScreenGI_Hits, m_rayhits.get());
         }
 
         if (m_mask->Validate(resolution))
         {
-            cmd->SetImage(hash->pk_ScreenGI_Mask, m_mask.get());
+            GraphicsAPI::SetImage(hash->pk_ScreenGI_Mask, m_mask.get());
         }
 
         uint4 swizzles[3] =
@@ -155,9 +155,22 @@ namespace PK::Rendering::Passes
         m_parameters->FlushBuffer(QueueType::Transfer);
     }
 
+    void PassSceneGI::PruneVoxels(Objects::CommandBuffer* cmd)
+    {
+        // Clear transparencies every axis cycle
+        if (m_rasterAxis == 0)
+        {
+            cmd->BeginDebugScope("SceneGI.PruneVoxels", PK_COLOR_GREEN);
+            auto volres = m_voxels->GetResolution();
+            GraphicsAPI::SetImage(HashCache::Get()->_DestinationTex, m_voxels.get(), 0, 0);
+            cmd->Dispatch(m_computeClear, { volres.x / 8u, volres.y / 8u, volres.z / 8u });
+            cmd->EndDebugScope();
+        }
+    }
+
     void PassSceneGI::RenderVoxels(CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup)
     {
-        cmd->BeginDebugScope("GI Voxelize", PK_COLOR_GREEN);
+        cmd->BeginDebugScope("SceneGI.Voxelize", PK_COLOR_GREEN);
 
         auto hash = HashCache::Get();
 
@@ -176,18 +189,11 @@ namespace PK::Rendering::Passes
 
         batcher->Render(cmd, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);
 
-        // Clear transparencies every axis cycle
-        if (m_rasterAxis == 0)
-        {
-            cmd->SetImage(hash->_DestinationTex, m_voxels.get(), 0, 0);
-            cmd->Dispatch(m_computeClear, { volres.x / 8u, volres.y / 8u, volres.z / 8u });
-        }
-
-        cmd->SetTexture(hash->_SourceTex, m_voxels.get());
+        GraphicsAPI::SetTexture(hash->_SourceTex, m_voxels.get());
 
         for (auto i = 1u; i < m_voxels->GetLevels(); ++i)
         {
-            cmd->SetImage(hash->_DestinationTex, m_voxels.get(), i, 0);
+            GraphicsAPI::SetImage(hash->_DestinationTex, m_voxels.get(), i, 0);
             cmd->Dispatch(m_computeMipmap, 0, { (volres.x >> i) / 4u, (volres.y >> i) / 4u, (volres.z >> i) / 4u });
         }
 
@@ -196,7 +202,7 @@ namespace PK::Rendering::Passes
 
     void PassSceneGI::RenderGI(CommandBuffer* cmd)
     {
-        cmd->BeginDebugScope("GI Gather", PK_COLOR_GREEN);
+        cmd->BeginDebugScope("SceneGI.Gather", PK_COLOR_GREEN);
 
         auto hash = HashCache::Get();
 
@@ -209,20 +215,20 @@ namespace PK::Rendering::Passes
             RayGatherParams gatherParams;
             gatherParams.pk_SampleCount = 16u;
             gatherParams.pk_SampleIndex = m_rayIndex++ % 16u;
-            cmd->SetConstant("pk_RayGatherParams", gatherParams);
+            GraphicsAPI::SetConstant("pk_RayGatherParams", gatherParams);
             cmd->DispatchRays(m_rayTraceGatherGI, { resolution.x, resolution.y, 1 });
         }
 
         {
-            cmd->SetTexture(hash->pk_ScreenGI_Read, m_screenSpaceGI.get(), { 0, 2, 0, 2 });
-            cmd->SetImage(hash->pk_ScreenGI_Write, m_screenSpaceGI.get(), { 0, 0, 0, 2 });
-            cmd->SetImage(hash->_DestinationTex, m_mask.get());
+            GraphicsAPI::SetTexture(hash->pk_ScreenGI_Read, m_screenSpaceGI.get(), { 0, 2, 0, 2 });
+            GraphicsAPI::SetImage(hash->pk_ScreenGI_Write, m_screenSpaceGI.get(), { 0, 0, 0, 2 });
+            GraphicsAPI::SetImage(hash->_DestinationTex, m_mask.get());
             cmd->Dispatch(m_computeMask, 0, groupSize);
         }
 
         {
             cmd->Dispatch(m_computeBakeGI, 0, groupSize);
-            cmd->SetTexture(hash->pk_ScreenGI_Read, m_screenSpaceGI.get(), { 0, 0, 0, 2 });
+            GraphicsAPI::SetTexture(hash->pk_ScreenGI_Read, m_screenSpaceGI.get(), { 0, 0, 0, 2 });
         }
 
         cmd->EndDebugScope();

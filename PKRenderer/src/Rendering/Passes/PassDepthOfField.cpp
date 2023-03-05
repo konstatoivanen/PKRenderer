@@ -53,27 +53,27 @@ namespace PK::Rendering::Passes
         renderTarget->Validate(res);
 
         m_constants.pk_MaximumCoC = std::min(0.05f, 10.0f / destination->GetResolution().y);
-        cmd->SetConstant<Constants>(hash->pk_DofParams, m_constants);
+        GraphicsAPI::SetConstant<Constants>(hash->pk_DofParams, m_constants);
 
-        cmd->SetBuffer(hash->pk_AutoFocusParams, autoFocusParams);
+        GraphicsAPI::SetBuffer(hash->pk_AutoFocusParams, autoFocusParams);
         cmd->Dispatch(m_computeAutoFocus, 0, { 1u, 1u, 1u });
 
-        cmd->SetTexture(hash->_MainTex, source);
+        GraphicsAPI::SetTexture(hash->_MainTex, source);
         cmd->SetRenderTarget(renderTarget, 0, 2);
         cmd->DiscardColor(0u);
         cmd->SetViewPort(renderTarget->GetRect());
         cmd->SetScissor(renderTarget->GetRect());
         cmd->Blit(m_shaderBlur, m_passPrefilter);
         
-        cmd->SetTexture(hash->_MainTex, renderTarget, 0, 2);
+        GraphicsAPI::SetTexture(hash->_MainTex, renderTarget, 0, 2);
 
         cmd->SetRenderTarget(renderTarget, { { 0u, 0u, 1u, 1u}, { 0u, 1u, 1u, 1u} });
         cmd->DiscardColor(0u);
         cmd->DiscardColor(1u);
         cmd->Blit(m_shaderBlur, m_passDiskblur);
 
-        cmd->SetTexture(hash->pk_Foreground, renderTarget, 0, 0);
-        cmd->SetTexture(hash->pk_Background, renderTarget, 0, 1);
+        GraphicsAPI::SetTexture(hash->pk_Foreground, renderTarget, 0, 0);
+        GraphicsAPI::SetTexture(hash->pk_Background, renderTarget, 0, 1);
         cmd->SetRenderTarget(source);
         cmd->SetViewPort(source->GetRect());
         cmd->SetScissor(source->GetRect());

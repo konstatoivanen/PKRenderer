@@ -59,6 +59,15 @@ namespace PK::Rendering::VulkanRHI
         DriverMemoryInfo GetMemoryInfo() const override final;
         size_t GetBufferOffsetAlignment(Structs::BufferUsage usage) const override final;
 
+        void SetBuffer(uint32_t nameHashId, Objects::Buffer* buffer, const Structs::IndexRange& range) override final;
+        void SetTexture(uint32_t nameHashId, Objects::Texture* texture, const Structs::TextureViewRange& range) override final;
+        void SetBufferArray(uint32_t nameHashId, Objects::BindArray<Objects::Buffer>* bufferArray) override final;
+        void SetTextureArray(uint32_t nameHashId, Objects::BindArray<Objects::Texture>* textureArray) override final;
+        void SetImage(uint32_t nameHashId, Objects::Texture* texture, const Structs::TextureViewRange& range) override final;
+        void SetAccelerationStructure(uint32_t nameHashId, Objects::AccelerationStructure* structure) override final;
+        void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) override final;
+        void SetKeyword(uint32_t nameHashId, bool value) override final;
+
         void WaitForIdle() const override final { vkDeviceWaitIdle(device); }
         void GC() override final;
 

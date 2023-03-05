@@ -154,6 +154,12 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
+    void VulkanSwapchain::SetFrameFence(const FenceRef& fence)
+    {
+        m_frameFences[m_frameIndex] = fence;
+        m_hasExternalFrameFence = true;
+    }
+
     bool VulkanSwapchain::TryAcquireNextImage(VkSemaphore* imageAvailableSignal)
     {
         if (m_outofdate)
@@ -176,9 +182,14 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanSwapchain::Present(VkSemaphore waitSignal)
     {
-        // Assumes previous submit was for rendering work.
-        // Lets get the previous counter value instead of the incremented current one.
-        m_frameFences[m_frameIndex] = m_queueGraphics->GetFenceRef();
+        // Frame synchronization for this frame is handled externally.
+        if (!m_hasExternalFrameFence)
+        {
+            // Assumes previous submit was for rendering work.
+            m_frameFences[m_frameIndex] = m_queueGraphics->GetFenceRef();
+        }
+
+        m_hasExternalFrameFence = false;
         m_frameIndex = (m_frameIndex + 1) % m_maxFramesInFlight;
         VK_ASSERT_RESULT(m_queuePresent->Present(m_swapchain, m_imageIndex, waitSignal));
     }

@@ -120,58 +120,10 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_renderState->SetIndexBuffer(handle, EnumConvert::GetIndexType(handle->buffer.layout->begin()->Type));
     }
 
-    void VulkanCommandBuffer::SetBuffer(uint32_t nameHashId, Buffer* buffer, const IndexRange& range)
-    {
-        auto resources = m_renderState->GetServices()->globalResources;
-        resources->Set(nameHashId, Handle(buffer->GetNative<VulkanBuffer>()->GetBindHandle(range)));
-    }
-
-    void VulkanCommandBuffer::SetTexture(uint32_t nameHashId, Texture* texture, const TextureViewRange& range)
-    {
-        auto resources = m_renderState->GetServices()->globalResources;
-        resources->Set(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::SampledTexture)));
-    }
-
-    void VulkanCommandBuffer::SetBufferArray(uint32_t nameHashId, BindArray<Buffer>* bufferArray)
-    {
-        auto resources = m_renderState->GetServices()->globalResources;
-        resources->Set(nameHashId, Handle(bufferArray->GetNative<VulkanBindArray>()));
-    }
-
-    void VulkanCommandBuffer::SetTextureArray(uint32_t nameHashId, BindArray<Texture>* textureArray)
-    {
-        auto resources = m_renderState->GetServices()->globalResources;
-        resources->Set(nameHashId, Handle(textureArray->GetNative<VulkanBindArray>()));
-    }
-
-    void VulkanCommandBuffer::SetImage(uint32_t nameHashId, Texture* texture, const TextureViewRange& range)
-    {
-        auto resources = m_renderState->GetServices()->globalResources;
-        resources->Set(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::Image)));
-    }
-
-    void VulkanCommandBuffer::SetAccelerationStructure(uint32_t nameHashId, AccelerationStructure* structure)
-    {
-        auto resources = m_renderState->GetServices()->globalResources;
-        resources->Set(nameHashId, Handle(structure->GetNative<VulkanAccelerationStructure>()->GetBindHandle()));
-    }
-
     void VulkanCommandBuffer::SetShaderBindingTable(Structs::RayTracingShaderGroup group, const Buffer* buffer, size_t offset, size_t stride, size_t size)
     {
         auto address = buffer->GetNative<VulkanBuffer>()->GetRaw()->deviceAddress;
         m_renderState->SetShaderBindingTableAddress(group, address + offset, stride, size);
-    }
-
-    void VulkanCommandBuffer::SetConstant(uint32_t nameHashId, const void* data, uint32_t size)
-    {
-        auto resources = m_renderState->GetServices()->globalResources;
-        resources->Set<char>(nameHashId, reinterpret_cast<const char*>(data), size);
-    }
-
-    void VulkanCommandBuffer::SetKeyword(uint32_t nameHashId, bool value)
-    {
-        auto resources = m_renderState->GetServices()->globalResources;
-        resources->Set<bool>(nameHashId, value);
     }
 
     void VulkanCommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)

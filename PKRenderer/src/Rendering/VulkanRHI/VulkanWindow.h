@@ -24,6 +24,7 @@ namespace PK::Rendering::VulkanRHI
 
             void Begin() override final;
             void End() override final;
+            void SetFrameFence(const Structs::FenceRef& fence) override final;
             void SetCursorVisible(bool value) override final;
             void SetVSync(bool enabled) override final { m_vsync = enabled; };
             inline void PollEvents() const override final { glfwPollEvents(); }

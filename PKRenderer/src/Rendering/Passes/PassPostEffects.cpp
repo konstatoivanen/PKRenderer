@@ -15,6 +15,7 @@ namespace PK::Rendering::Passes
     {
         m_computeComposite = assetDatabase->Find<Shader>("CS_PostEffectsComposite");
         m_bloomLensDirtTexture = assetDatabase->Load<Texture>(config->FileBloomDirt.value.c_str());
+        GraphicsAPI::SetTexture(HashCache::Get()->pk_BloomLensDirtTex, m_bloomLensDirtTexture);
     }
     
     void PassPostEffectsComposite::Render(CommandBuffer* cmd, RenderTexture* destination)
@@ -24,8 +25,7 @@ namespace PK::Rendering::Passes
         auto resolution = destination->GetResolution();
 
         cmd->BeginDebugScope("PostEffects.Composite", PK_COLOR_YELLOW);
-        cmd->SetImage(hash->_MainTex, color, 0, 0);
-        cmd->SetTexture(hash->pk_BloomLensDirtTex, m_bloomLensDirtTexture);
+        GraphicsAPI::SetImage(hash->_MainTex, color, 0, 0);
         cmd->Dispatch(m_computeComposite, { (uint)glm::ceil(resolution.x / 16.0f), (uint)glm::ceil(resolution.y / 4.0f), 1u });
         cmd->EndDebugScope();
     }

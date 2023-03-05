@@ -13,6 +13,7 @@ namespace PK::Rendering::Passes
         public:
             PassSceneGI(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
             void PreRender(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
+            void PruneVoxels(Objects::CommandBuffer* cmd);
             void RenderVoxels(Objects::CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup);
             void RenderGI(Objects::CommandBuffer* cmd);
 

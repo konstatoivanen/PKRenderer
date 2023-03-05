@@ -132,17 +132,16 @@ namespace PK::Rendering::Passes
             { ElementType::Float4, "COLOR"},
             { ElementType::Uint4, "INDICES"},
         },
-        1024, BufferUsage::PersistentStorage | BufferUsage::Concurrent, "Lights");
+        1024, BufferUsage::PersistentStorage, "Lights");
 
-        m_lightMatricesBuffer = Buffer::Create(ElementType::Float4x4, 32, BufferUsage::PersistentStorage | BufferUsage::Concurrent, "Lights.Matrices");
-        m_lightDirectionsBuffer = Buffer::Create(ElementType::Float4, 32, BufferUsage::PersistentStorage | BufferUsage::Concurrent, "Lights.Directions");
-        m_globalLightsList = Buffer::Create(ElementType::Int, ClusterCount * MaxLightsPerTile, BufferUsage::DefaultStorage | BufferUsage::Concurrent, "Lights.List");
-        m_globalLightIndex = Buffer::Create(ElementType::Uint, 1, BufferUsage::DefaultStorage | BufferUsage::Concurrent, "Lights.IndexCounter");
+        m_lightMatricesBuffer = Buffer::Create(ElementType::Float4x4, 32, BufferUsage::PersistentStorage, "Lights.Matrices");
+        m_lightDirectionsBuffer = Buffer::Create(ElementType::Float4, 32, BufferUsage::PersistentStorage, "Lights.Directions");
+        m_globalLightsList = Buffer::Create(ElementType::Int, ClusterCount * MaxLightsPerTile, BufferUsage::DefaultStorage, "Lights.List");
+        m_globalLightIndex = Buffer::Create(ElementType::Uint, 1, BufferUsage::DefaultStorage, "Lights.IndexCounter");
         
-        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer);
-        cmd->SetBuffer(hash->pk_GlobalLightsList, m_globalLightsList.get());
-        cmd->SetBuffer(hash->pk_GlobalListListIndex, m_globalLightIndex.get());
-        cmd->SetImage(hash->pk_LightTiles, m_lightTiles.get());
+        GraphicsAPI::SetBuffer(hash->pk_GlobalLightsList, m_globalLightsList.get());
+        GraphicsAPI::SetBuffer(hash->pk_GlobalListListIndex, m_globalLightIndex.get());
+        GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
     }
 
     void PassLights::Cull(void* engineRoot, VisibilityList* visibilityList, const float4x4& viewProjection, float znear, float zfar)
@@ -262,11 +261,11 @@ namespace PK::Rendering::Passes
         }
 
         auto hash = HashCache::Get();
-        cmd->SetConstant<uint32_t>(hash->pk_LightCount, m_lightCount);
-        cmd->SetBuffer(hash->pk_Lights, m_lightsBuffer.get());
-        cmd->SetBuffer(hash->pk_LightMatrices, m_lightMatricesBuffer.get());
-        cmd->SetBuffer(hash->pk_LightDirections, m_lightDirectionsBuffer.get());
-        cmd->SetTexture(hash->pk_ShadowmapAtlas, m_shadowmaps.get());
+        GraphicsAPI::SetConstant<uint32_t>(hash->pk_LightCount, m_lightCount);
+        GraphicsAPI::SetBuffer(hash->pk_Lights, m_lightsBuffer.get());
+        GraphicsAPI::SetBuffer(hash->pk_LightMatrices, m_lightMatricesBuffer.get());
+        GraphicsAPI::SetBuffer(hash->pk_LightDirections, m_lightDirectionsBuffer.get());
+        GraphicsAPI::SetTexture(hash->pk_ShadowmapAtlas, m_shadowmaps.get());
     }
 
     void PassLights::RenderShadows(Objects::CommandBuffer* cmd)
@@ -286,7 +285,7 @@ namespace PK::Rendering::Passes
             cmd->ClearColor(color(shadowBatch.maxDepthRange, shadowBatch.maxDepthRange * shadowBatch.maxDepthRange, 0.0f, 0.0f), 0u);
             cmd->ClearDepth(1.0f, 0u);
 
-            cmd->SetConstant(hash->pk_ShadowmapData, shadowBatch.shadowBlurAmounts);
+            GraphicsAPI::SetConstant(hash->pk_ShadowmapData, shadowBatch.shadowBlurAmounts);
             m_batcher->Render(cmd, shadowBatch.batchGroup);
 
             cmd->SetViewPort({ 0, 0, m_shadowmapTileSize, m_shadowmapTileSize });
@@ -294,12 +293,12 @@ namespace PK::Rendering::Passes
 
             auto range0 = TextureViewRange(0, atlasIndex + tileCount, 1, tileCount);
             cmd->SetRenderTarget(m_shadowmaps.get(), range0);
-            cmd->SetTexture(hash->pk_ShadowmapSource, shadow.SceneRenderTarget->GetColor(0));
+            GraphicsAPI::SetTexture(hash->pk_ShadowmapSource, shadow.SceneRenderTarget->GetColor(0));
             cmd->Blit(m_shadowmapBlur, tileCount, 0u, shadow.BlurPass0);
 
             auto range1 = TextureViewRange(0, atlasIndex, 1, tileCount);
             cmd->SetRenderTarget(m_shadowmaps.get(), range1);
-            cmd->SetTexture(hash->pk_ShadowmapSource, m_shadowmaps.get(), range0);
+            GraphicsAPI::SetTexture(hash->pk_ShadowmapSource, m_shadowmaps.get(), range0);
             cmd->Blit(m_shadowmapBlur, tileCount, 0u, shadow.BlurPass1);
 
             cmd->EndDebugScope();

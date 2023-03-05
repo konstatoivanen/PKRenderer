@@ -30,7 +30,7 @@ namespace PK::Rendering::Passes
 
         m_volumeInject = Texture::Create(descriptor, "Fog.InjectVolume");
         m_volumeScatter = Texture::Create(descriptor, "Fog.ScatterVolume");
-        m_depthTiles = Buffer::Create(ElementType::Uint, VolumeResolution.x * VolumeResolution.y, BufferUsage::DefaultStorage | BufferUsage::Concurrent, "Fog.DepthTiles");
+        m_depthTiles = Buffer::Create(ElementType::Uint, VolumeResolution.x * VolumeResolution.y, BufferUsage::DefaultStorage, "Fog.DepthTiles");
 
         m_computeInject = assetDatabase->Find<Shader>("CS_VolumeFogLightDensity");
         m_computeScatter = assetDatabase->Find<Shader>("CS_VolumeFogScatter");
@@ -56,30 +56,31 @@ namespace PK::Rendering::Passes
 
         OnUpdateParameters(config);
 
-        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
-        cmd->SetImage(hash->pk_Volume_Inject, m_volumeInject.get());
-        cmd->SetImage(hash->pk_Volume_Scatter, m_volumeScatter.get());
-        cmd->SetTexture(hash->pk_Volume_InjectRead, m_volumeInject.get());
-        cmd->SetTexture(hash->pk_Volume_ScatterRead, m_volumeScatter.get());
-        cmd->SetBuffer(hash->pk_VolumeResources, m_volumeResources->GetBuffer());
-        cmd->SetBuffer(hash->pk_VolumeMaxDepths, m_depthTiles.get());
+        GraphicsAPI::SetImage(hash->pk_Volume_Inject, m_volumeInject.get());
+        GraphicsAPI::SetImage(hash->pk_Volume_Scatter, m_volumeScatter.get());
+        GraphicsAPI::SetTexture(hash->pk_Volume_InjectRead, m_volumeInject.get());
+        GraphicsAPI::SetTexture(hash->pk_Volume_ScatterRead, m_volumeScatter.get());
+        GraphicsAPI::SetBuffer(hash->pk_VolumeResources, m_volumeResources->GetBuffer());
+        GraphicsAPI::SetBuffer(hash->pk_VolumeMaxDepths, m_depthTiles.get());
     }
 
-    void PassVolumeFog::Compute(Objects::CommandBuffer* cmd, const uint3& resolution)
+    void PassVolumeFog::ComputeDepthTiles(Objects::CommandBuffer* cmd, const Math::uint3& resolution)
     {
-        cmd->BeginDebugScope("VolumetricFog.Compute", PK_COLOR_MAGENTA);
-
+        cmd->BeginDebugScope("VolumetricFog.Compute.DepthTiles", PK_COLOR_MAGENTA);
         auto depthCountX = (uint)std::ceilf(resolution.x / 32.0f);
         auto depthCountY = (uint)std::ceilf(resolution.y / 32.0f);
+        cmd->Clear(m_depthTiles.get(), 0, sizeof(uint32_t) * VolumeResolution.x * VolumeResolution.y, 0u);
+        cmd->Dispatch(m_computeDepthTiles, 0, { depthCountX, depthCountY, 1 });
+        cmd->EndDebugScope();
+    }
+
+    void PassVolumeFog::Compute(Objects::CommandBuffer* cmd)
+    {
+        cmd->BeginDebugScope("VolumetricFog.Compute.Scattering", PK_COLOR_MAGENTA);
         auto groupsInject = uint3(VolumeResolution.x / InjectThreadCount.x, VolumeResolution.y / InjectThreadCount.y, VolumeResolution.z / InjectThreadCount.z);
         auto groupsScatter = uint3(VolumeResolution.x / ScatterThreadCount.x, VolumeResolution.y / ScatterThreadCount.y, 1);
-
-        cmd->Clear(m_depthTiles.get(), 0, sizeof(uint32_t) * VolumeResolution.x * VolumeResolution.y, 0u);
-
-        cmd->Dispatch(m_computeDepthTiles, 0, { depthCountX, depthCountY, 1 });
         cmd->Dispatch(m_computeInject, 0, groupsInject);
         cmd->Dispatch(m_computeScatter, 0, groupsScatter);
-
         cmd->EndDebugScope();
     }
 

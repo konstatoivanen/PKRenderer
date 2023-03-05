@@ -429,7 +429,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         typeIndices[(uint32_t)QueueType::Graphics] = GetQueueIndex(context, maskGraphics, maskTransfer, false, true, true);
         typeIndices[(uint32_t)QueueType::Present] = GetQueueIndex(context, maskGraphics, maskTransfer, true, false, false);
-        typeIndices[(uint32_t)QueueType::ComputeAsync] = GetQueueIndex(context, maskCompute, maskTransfer, false, false, true);
+        typeIndices[(uint32_t)QueueType::Compute] = GetQueueIndex(context, maskCompute, maskTransfer, false, false, true);
         typeIndices[(uint32_t)QueueType::Transfer] = GetQueueIndex(context, maskTransfer, 0u, false, false, true);
         queueCount = context.queueCount;
 

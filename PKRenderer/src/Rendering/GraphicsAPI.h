@@ -3,6 +3,10 @@
 #include "Rendering/Structs/Enums.h"
 #include "Rendering/Objects/QueueSet.h"
 #include "Utilities/Ref.h"
+#include "Rendering/Objects/Buffer.h"
+#include "Rendering/Objects/Texture.h"
+#include "Rendering/Objects/BindArray.h"
+#include "Rendering/Objects/AccelerationStructure.h"
 
 namespace PK::Rendering
 {
@@ -31,6 +35,15 @@ namespace PK::Rendering
         virtual std::string GetDriverHeader() const = 0;
         virtual size_t GetBufferOffsetAlignment(Structs::BufferUsage usage) const = 0;
 
+        virtual void SetBuffer(uint32_t nameHashId, Objects::Buffer* buffer, const Structs::IndexRange& range) = 0;
+        virtual void SetTexture(uint32_t nameHashId, Objects::Texture* texture, const Structs::TextureViewRange& range) = 0;
+        virtual void SetBufferArray(uint32_t nameHashId, Objects::BindArray<Objects::Buffer>* bufferArray) = 0;
+        virtual void SetTextureArray(uint32_t nameHashId, Objects::BindArray<Objects::Texture>* textureArray) = 0;
+        virtual void SetImage(uint32_t nameHashId, Objects::Texture* texture, const Structs::TextureViewRange& range) = 0;
+        virtual void SetAccelerationStructure(uint32_t nameHashId, Objects::AccelerationStructure* structure) = 0;
+        virtual void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) = 0;
+        virtual void SetKeyword(uint32_t nameHashId, bool value) = 0;
+
         virtual void WaitForIdle() const = 0;
         virtual void GC() = 0;
 
@@ -51,9 +64,42 @@ namespace PK::Rendering
         }
 
         Structs::APIType GetActiveAPI();
-        Objects::QueueSet* GetQueues();
+        PK::Rendering::Objects::QueueSet* GetQueues();
         DriverMemoryInfo GetMemoryInfo();
         size_t GetBufferOffsetAlignment(Structs::BufferUsage usage);
+
+        void SetBuffer(uint32_t nameHashId, PK::Rendering::Objects::Buffer* buffer, const Structs::IndexRange& range);
+        void SetBuffer(uint32_t nameHashId, PK::Rendering::Objects::Buffer* buffer);
+        void SetBuffer(const char* name, PK::Rendering::Objects::Buffer* buffer);
+        void SetBuffer(const char* name, PK::Rendering::Objects::Buffer* buffer, const Structs::IndexRange& range);
+        void SetTexture(uint32_t nameHashId, PK::Rendering::Objects::Texture* texture, const Structs::TextureViewRange& range);
+        void SetTexture(uint32_t nameHashId, PK::Rendering::Objects::Texture* texture);
+        void SetTexture(uint32_t nameHashId, PK::Rendering::Objects::Texture* texture, uint16_t level, uint16_t layer);
+        void SetTexture(const char* name, PK::Rendering::Objects::Texture* texture);
+        void SetTexture(const char* name, PK::Rendering::Objects::Texture* texture, uint16_t level, uint16_t layer);
+        void SetTexture(const char* name, PK::Rendering::Objects::Texture* texture, const Structs::TextureViewRange& range);
+        void SetImage(uint32_t nameHashId, PK::Rendering::Objects::Texture* texture, const Structs::TextureViewRange& range);
+        void SetImage(uint32_t nameHashId, PK::Rendering::Objects::Texture* texture);
+        void SetImage(uint32_t nameHashId, PK::Rendering::Objects::Texture* texture, uint16_t level, uint16_t layer);
+        void SetImage(const char* name, PK::Rendering::Objects::Texture* texture);
+        void SetImage(const char* name, PK::Rendering::Objects::Texture* texture, uint16_t level, uint16_t layer);
+        void SetImage(const char* name, PK::Rendering::Objects::Texture* texture, const Structs::TextureViewRange& range);
+        void SetAccelerationStructure(uint32_t nameHashId, PK::Rendering::Objects::AccelerationStructure* structure);
+        void SetAccelerationStructure(const char* name, PK::Rendering::Objects::AccelerationStructure* structure);
+        void SetBufferArray(uint32_t nameHashId, PK::Rendering::Objects::BindArray<PK::Rendering::Objects::Buffer>* bufferArray);
+        void SetBufferArray(const char* name, PK::Rendering::Objects::BindArray<PK::Rendering::Objects::Buffer>* bufferArray);
+        void SetTextureArray(uint32_t nameHashId, PK::Rendering::Objects::BindArray<PK::Rendering::Objects::Texture>* textureArray);
+        void SetTextureArray(const char* name, PK::Rendering::Objects::BindArray<PK::Rendering::Objects::Texture>* textureArray);
+        void SetConstant(uint32_t nameHashId, const void* data, uint32_t size);
+        void SetConstant(const char* name, const void* data, uint32_t size);
+        void SetKeyword(uint32_t nameHashId, bool value);
+        void SetKeyword(const char* name, bool value);
+
+        template<typename T>
+        void SetConstant(uint32_t nameHashId, const T& value) { SetConstant(nameHashId, &value, (uint32_t)sizeof(T)); }
+
+        template<typename T>
+        void SetConstant(const char* name, const T& value) { SetConstant(name, &value, (uint32_t)sizeof(T)); }
 
         void GC();
     }

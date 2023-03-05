@@ -127,6 +127,11 @@ namespace PK::Rendering::VulkanRHI
         m_inWindowScope = false;
     }
 
+    void VulkanWindow::SetFrameFence(const Structs::FenceRef& fence)
+    {
+        m_swapchain->SetFrameFence(fence);
+    }
+
     void VulkanWindow::SetCursorVisible(bool value)
     {
         glfwSetInputMode(m_window, GLFW_CURSOR, value ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN);

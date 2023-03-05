@@ -37,15 +37,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         void SetShader(const Shader* shader, int32_t variantIndex = -1) override final;
         void SetVertexBuffers(const Buffer** buffers, uint32_t count) override final;
         void SetIndexBuffer(const Buffer* buffer, size_t offset) override final;
-        void SetBuffer(uint32_t nameHashId, Buffer* buffer, const IndexRange& range) override final;
-        void SetTexture(uint32_t nameHashId, Texture* texture, const TextureViewRange& range) override final;
-        void SetBufferArray(uint32_t nameHashId, BindArray<Buffer>* bufferArray) override final;
-        void SetTextureArray(uint32_t nameHashId, BindArray<Texture>* textureArray) override final;
-        void SetImage(uint32_t nameHashId, Texture* texture, const TextureViewRange& range) override final;
-        void SetAccelerationStructure(uint32_t nameHashId, AccelerationStructure* structure) override final;
         void SetShaderBindingTable(Structs::RayTracingShaderGroup group, const Buffer* buffer, size_t offset, size_t stride, size_t size) override final;
-        void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) override final;
-        void SetKeyword(uint32_t nameHashId, bool value) override final;
 
         inline void ClearColor(const color& color, uint32_t index) override final { m_renderState->ClearColor(color, index); }
         inline void ClearDepth(float depth, uint32_t stencil) override final { m_renderState->ClearDepth(depth, stencil); }
