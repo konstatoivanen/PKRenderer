@@ -39,32 +39,8 @@ uniform sampler2D _MainTex;
 #if defined(PASS_PREFILTER)
     out float2 vs_TEXCOORD0;
 #else 
-    const float2 SAMPLE_KERNEL[SAMPLE_COUNT] =
-    {
-        float2(0,0),
-        float2(0.53333336,0),
-        float2(0.3325279,0.4169768),
-        float2(-0.11867785,0.5199616),
-        float2(-0.48051673,0.2314047),
-        float2(-0.48051673,-0.23140468),
-        float2(-0.11867763,-0.51996166),
-        float2(0.33252785,-0.4169769),
-        float2(1,0),
-        float2(0.90096885,0.43388376),
-        float2(0.6234898,0.7818315),
-        float2(0.22252098,0.9749279),
-        float2(-0.22252095,0.9749279),
-        float2(-0.62349,0.7818314),
-        float2(-0.90096885,0.43388382),
-        float2(-1,0),
-        float2(-0.90096885,-0.43388376),
-        float2(-0.6234896,-0.7818316),
-        float2(-0.22252055,-0.974928),
-        float2(0.2225215,-0.9749278),
-        float2(0.6234897,-0.7818316),
-        float2(0.90096885,-0.43388376),
-    };
-
+    #include includes/SampleDistribution.glsl
+    #define SAMPLE_KERNEL PK_POISSON_DISK_22
     out float3 vs_TEXCOORDS[SAMPLE_COUNT + 1];
 #endif
 

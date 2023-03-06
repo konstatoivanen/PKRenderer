@@ -211,13 +211,13 @@ namespace PK::Rendering::Passes
 
         cmd->Blit(m_screenSpaceGI.get(), m_screenSpaceGI.get(), { 0, 0, 0, 2 }, { 0, 2, 0, 2 }, FilterMode::Point);
 
-        {
-            RayGatherParams gatherParams;
-            gatherParams.pk_SampleCount = 16u;
-            gatherParams.pk_SampleIndex = m_rayIndex++ % 16u;
-            GraphicsAPI::SetConstant("pk_RayGatherParams", gatherParams);
-            cmd->DispatchRays(m_rayTraceGatherGI, { resolution.x, resolution.y, 1 });
-        }
+        //{
+        //    RayGatherParams gatherParams;
+        //    gatherParams.pk_SampleCount = 16u;
+        //    gatherParams.pk_SampleIndex = m_rayIndex++ % 16u;
+        //    GraphicsAPI::SetConstant("pk_RayGatherParams", gatherParams);
+        //    cmd->DispatchRays(m_rayTraceGatherGI, { resolution.x, resolution.y, 1 });
+        //}
 
         {
             GraphicsAPI::SetTexture(hash->pk_ScreenGI_Read, m_screenSpaceGI.get(), { 0, 2, 0, 2 });

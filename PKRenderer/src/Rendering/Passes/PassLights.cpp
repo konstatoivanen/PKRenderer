@@ -78,8 +78,8 @@ namespace PK::Rendering::Passes
         descriptor.sampler.filterMag = FilterMode::Bilinear;
         descriptor.usage = TextureUsage::Sample;
         m_shadowmapTypeData[(int)LightType::Point].SceneRenderTarget = CreateRef<RenderTexture>(descriptor, "Lights.Shadowmap.PointRenderTarget");
-        m_shadowmapTypeData[(int)LightType::Point].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_CUBE, hash->SHADOW_BLUR_PASS0 });
-        m_shadowmapTypeData[(int)LightType::Point].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_CUBE, hash->SHADOW_BLUR_PASS1 });
+        m_shadowmapTypeData[(int)LightType::Point].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_CUBE });
+        m_shadowmapTypeData[(int)LightType::Point].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D });
         m_shadowmapTypeData[(int)LightType::Point].TileCount = 1u;
         m_shadowmapTypeData[(int)LightType::Point].MaxBatchSize = PK_SHADOW_CASCADE_COUNT;
         m_shadowmapTypeData[(int)LightType::Point].LayerStride = 6u;
@@ -88,15 +88,15 @@ namespace PK::Rendering::Passes
         descriptor.resolution = { m_shadowmapTileSize, m_shadowmapTileSize, 1u };
         descriptor.layers = PK_SHADOW_CASCADE_COUNT;
         m_shadowmapTypeData[(int)LightType::Spot].SceneRenderTarget = CreateRef<RenderTexture>(descriptor, "Lights.Shadowmap.SpotRenderTarget");
-        m_shadowmapTypeData[(int)LightType::Spot].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D, hash->SHADOW_BLUR_PASS0 });
-        m_shadowmapTypeData[(int)LightType::Spot].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D, hash->SHADOW_BLUR_PASS1 });
+        m_shadowmapTypeData[(int)LightType::Spot].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D });
+        m_shadowmapTypeData[(int)LightType::Spot].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D });
         m_shadowmapTypeData[(int)LightType::Spot].TileCount = 1u;
         m_shadowmapTypeData[(int)LightType::Spot].MaxBatchSize = PK_SHADOW_CASCADE_COUNT;
         m_shadowmapTypeData[(int)LightType::Spot].LayerStride = 1u;
 
         m_shadowmapTypeData[(int)LightType::Directional].SceneRenderTarget = m_shadowmapTypeData[(int)LightType::Spot].SceneRenderTarget;
-        m_shadowmapTypeData[(int)LightType::Directional].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D, hash->SHADOW_BLUR_PASS0 });
-        m_shadowmapTypeData[(int)LightType::Directional].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D, hash->SHADOW_BLUR_PASS1 });
+        m_shadowmapTypeData[(int)LightType::Directional].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D });
+        m_shadowmapTypeData[(int)LightType::Directional].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D });
         m_shadowmapTypeData[(int)LightType::Directional].TileCount = PK_SHADOW_CASCADE_COUNT;
         m_shadowmapTypeData[(int)LightType::Directional].MaxBatchSize = 1u;
         m_shadowmapTypeData[(int)LightType::Directional].LayerStride = PK_SHADOW_CASCADE_COUNT;
@@ -291,15 +291,9 @@ namespace PK::Rendering::Passes
             cmd->SetViewPort({ 0, 0, m_shadowmapTileSize, m_shadowmapTileSize });
             cmd->SetScissor({ 0, 0, m_shadowmapTileSize, m_shadowmapTileSize });
 
-            auto range0 = TextureViewRange(0, atlasIndex + tileCount, 1, tileCount);
-            cmd->SetRenderTarget(m_shadowmaps.get(), range0);
+            cmd->SetRenderTarget(m_shadowmaps.get(), TextureViewRange(0, atlasIndex, 1, tileCount));
             GraphicsAPI::SetTexture(hash->pk_ShadowmapSource, shadow.SceneRenderTarget->GetColor(0));
             cmd->Blit(m_shadowmapBlur, tileCount, 0u, shadow.BlurPass0);
-
-            auto range1 = TextureViewRange(0, atlasIndex, 1, tileCount);
-            cmd->SetRenderTarget(m_shadowmaps.get(), range1);
-            GraphicsAPI::SetTexture(hash->pk_ShadowmapSource, m_shadowmaps.get(), range0);
-            cmd->Blit(m_shadowmapBlur, tileCount, 0u, shadow.BlurPass1);
 
             cmd->EndDebugScope();
 

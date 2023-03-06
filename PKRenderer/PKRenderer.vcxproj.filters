@@ -2002,6 +2002,7 @@
     <None Include="res\shaders\RS_SceneGI_Gather.shader" />
     <None Include="res\shaders\CS_TemporalAntialiasing.shader" />
     <None Include="res\shaders\includes\SharedTemporalAntialiasing.glsl" />
+    <None Include="res\shaders\includes\SampleDistribution.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

@@ -1,5 +1,6 @@
 #pragma once
 #include Utilities.glsl
+#include SampleDistribution.glsl
 
 PK_DECLARE_CBUFFER(pk_SceneGI_Params, PK_SET_SHADER)
 {
@@ -28,60 +29,7 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_SceneGI_VolumeRead;
 #define PK_GI_CHECKERBOARD_OFFSET pk_SceneGI_Checkerboard_Offset.xy
 #define PK_GI_RAY_MIN_DISTANCE 0.01f
 #define PK_GI_RAY_MAX_DISTANCE 50.0f
-#define PK_GI_RAY_COUNT 16u
-
-float3 GetSampleDirectionSE(float3 worldNormal, uint index, const float sampleCount, float dither)
-{
-    float fi = float(index) + dither;
-	float fiN = fi / sampleCount;
-	float longitude = PK_GI_ANGLE * fi;
-	float latitude = asin(fiN * 2.0 - 1.0);
-
-	float3 kernel;
-	kernel.x = cos(latitude) * cos(longitude);
-	kernel.z = cos(latitude) * sin(longitude);
-	kernel.y = sin(latitude);
-	kernel = faceforward(kernel, kernel, -worldNormal); 
-
-	return normalize(kernel);
-}
-
-float RadicalInverse_VdC(uint bits)													
-{																						
-    bits = (bits << 16u) | (bits >> 16u);												
-    bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);				
-    bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);				
-    bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);				
-    bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);				
-    return float(bits) * 2.3283064365386963e-10;										
-}																						
-																						
-float2 Hammersley(uint i, uint N)														
-{					
-    return float2(float(i % N) / float(N), RadicalInverse_VdC(i));							
-}																						
-																						
-float3 GetSampleDirectionHammersLey(uint i, uint s, float2 d, float3 N)								
-{															
-	float2 Xi = Hammersley(i,s);
-	Xi += d;
-	Xi -= floor(Xi);
-
-    float phi = 2.0 * 3.14159265 * Xi.x;												
-    float cosTheta = sqrt((1.0 - Xi.y) / 1.0);				
-    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);									
-																						
-    vec3 H;																			
-    H.x = cos(phi) * sinTheta;															
-    H.y = sin(phi) * sinTheta;															
-    H.z = cosTheta;																	
-																						
-    float3 up = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);			
-    float3 tangent = normalize(cross(up, N));											
-    float3 bitangent = cross(N, tangent);												
-    float3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;						
-    return normalize(sampleVec);														
-}																						
+#define PK_GI_RAY_COUNT 16u																					
 
 float3 VoxelToWorldSpace(int3 coord) { return (float3(coord) * PK_GI_VOXEL_SIZE) + pk_SceneGI_ST.xyz + PK_GI_VOXEL_SIZE * 0.5f; }
 
@@ -149,7 +97,7 @@ float4 ConeTraceDiffuse(float3 origin, const float3 normal, const float dither)
 	#pragma unroll 16
 	for (uint i = 0u; i < 16u; ++i)
 	{
-		const float3 direction = GetSampleDirectionSE(normal, i, 16u, dither);
+		const float3 direction = GetSampleDirectionSE(normal, i, 16u, dither, PK_GI_ANGLE);
 
 		float4 color = float4(0.0.xxx, 1.0);
 
