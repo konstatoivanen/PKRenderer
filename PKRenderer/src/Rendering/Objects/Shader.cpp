@@ -211,6 +211,8 @@ namespace PK::Rendering::Objects
         m_attributes.depthStencil.depthCompareOp = shader->attributes.ztest;
         m_attributes.depthStencil.depthWriteEnable = shader->attributes.zwrite;
         m_attributes.rasterization.cullMode = shader->attributes.cull;
+        m_attributes.rasterization.rasterMode = shader->attributes.rasterMode;
+        m_attributes.rasterization.overEstimation = shader->attributes.overEstimation;
         m_attributes.rasterization.depthBiasConstantFactor = shader->attributes.zoffsets[0];
         m_attributes.rasterization.depthBiasClamp = shader->attributes.zoffsets[1];
         m_attributes.rasterization.depthBiasSlopeFactor = shader->attributes.zoffsets[2];

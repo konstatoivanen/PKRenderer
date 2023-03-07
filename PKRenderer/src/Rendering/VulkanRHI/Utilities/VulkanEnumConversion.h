@@ -33,6 +33,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
     VkBlendOp GetBlendOp(Rendering::Structs::BlendOp op);
     VkBlendFactor GetBlendFactor(Rendering::Structs::BlendFactor factor, VkBlendFactor fallback);
     VkCullModeFlagBits GetCullMode(Rendering::Structs::CullMode op);
+    VkConservativeRasterizationModeEXT GetRasterMode(Rendering::Structs::RasterMode mode);
     VkFrontFace GetFrontFace(Rendering::Structs::FrontFace face);
     VkPipelineStageFlags GetPipelineStageFlags(VkShaderStageFlags flags);
     VkRayTracingShaderGroupTypeKHR GetRayTracingStageGroupType(Rendering::Structs::ShaderStage stage);

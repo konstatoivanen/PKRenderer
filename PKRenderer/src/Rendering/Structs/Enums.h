@@ -10,6 +10,7 @@ namespace PK::Rendering::Structs
     typedef PK::Assets::PKBlendOp BlendOp;
     typedef PK::Assets::PKComparison Comparison;
     typedef PK::Assets::PKCullMode CullMode;
+    typedef PK::Assets::PKRasterMode RasterMode;
     typedef PK::Assets::Shader::Type ShaderType;
 
     constexpr static const uint32_t PK_DESIRED_SWAP_CHAIN_IMAGE_COUNT = 4;

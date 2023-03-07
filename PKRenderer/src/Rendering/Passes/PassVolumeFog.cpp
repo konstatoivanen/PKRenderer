@@ -66,7 +66,7 @@ namespace PK::Rendering::Passes
 
     void PassVolumeFog::ComputeDepthTiles(Objects::CommandBuffer* cmd, const Math::uint3& resolution)
     {
-        cmd->BeginDebugScope("VolumetricFog.Compute.DepthTiles", PK_COLOR_MAGENTA);
+        cmd->BeginDebugScope("VolumetricFog.DepthTiles", PK_COLOR_MAGENTA);
         auto depthCountX = (uint)std::ceilf(resolution.x / 32.0f);
         auto depthCountY = (uint)std::ceilf(resolution.y / 32.0f);
         cmd->Clear(m_depthTiles.get(), 0, sizeof(uint32_t) * VolumeResolution.x * VolumeResolution.y, 0u);
@@ -76,10 +76,12 @@ namespace PK::Rendering::Passes
 
     void PassVolumeFog::Compute(Objects::CommandBuffer* cmd)
     {
-        cmd->BeginDebugScope("VolumetricFog.Compute.Scattering", PK_COLOR_MAGENTA);
         auto groupsInject = uint3(VolumeResolution.x / InjectThreadCount.x, VolumeResolution.y / InjectThreadCount.y, VolumeResolution.z / InjectThreadCount.z);
         auto groupsScatter = uint3(VolumeResolution.x / ScatterThreadCount.x, VolumeResolution.y / ScatterThreadCount.y, 1);
+        cmd->BeginDebugScope("VolumetricFog.Injection", PK_COLOR_MAGENTA);
         cmd->Dispatch(m_computeInject, 0, groupsInject);
+        cmd->EndDebugScope();
+        cmd->BeginDebugScope("VolumetricFog.Scattering", PK_COLOR_MAGENTA);
         cmd->Dispatch(m_computeScatter, 0, groupsScatter);
         cmd->EndDebugScope();
     }

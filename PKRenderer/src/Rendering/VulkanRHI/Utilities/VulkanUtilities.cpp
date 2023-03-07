@@ -161,8 +161,10 @@ namespace PK::Rendering::VulkanRHI::Utilities
         VkPhysicalDeviceProperties2 deviceProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
         VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR };
         VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
+        VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservativeRasterizationProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT };
         deviceProperties.pNext = &accelerationStructureProperties;
         accelerationStructureProperties.pNext = &rayTracingProperties;
+        rayTracingProperties.pNext = &conservativeRasterizationProperties;
 
         vkGetPhysicalDeviceProperties2(device, &deviceProperties);
 
@@ -170,6 +172,7 @@ namespace PK::Rendering::VulkanRHI::Utilities
         returnProperties.properties = deviceProperties.properties;
         returnProperties.accelerationStructureProperties = accelerationStructureProperties;
         returnProperties.rayTracingProperties = rayTracingProperties;
+        returnProperties.conservativeRasterizationProperties = conservativeRasterizationProperties;
         return returnProperties;
     }
 

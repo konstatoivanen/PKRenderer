@@ -10,10 +10,12 @@ namespace PK::Rendering::VulkanRHI::Services
     using namespace Structs;
     using namespace Objects;
 
-    VulkanPipelineCache::VulkanPipelineCache(VkDevice device, const std::string& workingDirectory, uint64_t pruneDelay) : 
+    VulkanPipelineCache::VulkanPipelineCache(VkDevice device, const std::string& workingDirectory, const VulkanPhysicalDeviceProperties& physicalDeviceProperties, uint64_t pruneDelay) :
         m_device(device), 
         m_workingDirectory(workingDirectory),
-        m_pruneDelay(pruneDelay) 
+        m_pruneDelay(pruneDelay),
+        m_allowUnderEstimation(physicalDeviceProperties.conservativeRasterizationProperties.primitiveUnderestimation),
+        m_maxOverEstimation(physicalDeviceProperties.conservativeRasterizationProperties.maxExtraPrimitiveOverestimationSize)
     {
         if (!workingDirectory.empty())
         {
@@ -156,6 +158,11 @@ namespace PK::Rendering::VulkanRHI::Services
         rasterizer.depthBiasConstantFactor = key.fixedFunctionState.rasterization.depthBiasConstantFactor;
         rasterizer.depthBiasClamp = key.fixedFunctionState.rasterization.depthBiasClamp;
         rasterizer.depthBiasSlopeFactor = key.fixedFunctionState.rasterization.depthBiasSlopeFactor;
+
+        VkPipelineRasterizationConservativeStateCreateInfoEXT conservativeRaster{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT };
+        conservativeRaster.conservativeRasterizationMode = EnumConvert::GetRasterMode(key.fixedFunctionState.rasterization.rasterMode);
+        conservativeRaster.extraPrimitiveOverestimationSize = std::fminf(m_maxOverEstimation, key.fixedFunctionState.rasterization.overEstimation);
+        rasterizer.pNext = key.fixedFunctionState.rasterization.rasterMode != RasterMode::Default ? &conservativeRaster : nullptr;
 
         VkPipelineMultisampleStateCreateInfo multisampling{ VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
         multisampling.sampleShadingEnable = key.fixedFunctionState.multisampling.sampleShadingEnable;

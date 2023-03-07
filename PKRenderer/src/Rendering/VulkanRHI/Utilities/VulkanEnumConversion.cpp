@@ -777,6 +777,18 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
         return VK_CULL_MODE_FLAG_BITS_MAX_ENUM;
     }
 
+    VkConservativeRasterizationModeEXT GetRasterMode(Rendering::Structs::RasterMode mode)
+    {
+        switch (mode)
+        {
+            case RasterMode::Default: return VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
+            case RasterMode::OverEstimate: return VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT;
+            case RasterMode::UnderEstimate: return VK_CONSERVATIVE_RASTERIZATION_MODE_UNDERESTIMATE_EXT;
+        }
+
+        return VK_CONSERVATIVE_RASTERIZATION_MODE_MAX_ENUM_EXT;
+    }
+
     VkFrontFace GetFrontFace(FrontFace face)
     {
         switch (face)

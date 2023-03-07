@@ -35,6 +35,7 @@ namespace PK::Rendering
                 const std::vector<const char*> PK_INSTANCE_EXTENTIONS =
                 {
                     "VK_EXT_debug_utils",
+                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
                 };
 
                 const std::vector<const char*> PK_DEVICE_EXTENTIONS =
@@ -42,7 +43,8 @@ namespace PK::Rendering
                     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
                     VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
                     VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-                    VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
+                    VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+                    VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME
                 };
 
                 auto driver = CreateScope<VulkanDriver>(VulkanContextProperties

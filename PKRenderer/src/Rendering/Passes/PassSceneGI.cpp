@@ -102,6 +102,7 @@ namespace PK::Rendering::Passes
         m_voxelizeAttribs.depthStencil.depthCompareOp = Comparison::Off;
         m_voxelizeAttribs.depthStencil.depthWriteEnable = false;
         m_voxelizeAttribs.rasterization.cullMode = CullMode::Off;
+        //m_voxelizeAttribs.rasterization.rasterMode = RasterMode::OverEstimate;
 
         m_parameters = CreateRef<ConstantBuffer>(BufferLayout(
         {

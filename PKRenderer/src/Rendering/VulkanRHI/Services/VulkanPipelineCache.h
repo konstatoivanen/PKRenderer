@@ -38,7 +38,7 @@ namespace PK::Rendering::VulkanRHI::Services
         public:
             constexpr const static char* PIPELINE_CACHE_FILENAME = "shadercache.cache";
 
-            VulkanPipelineCache(VkDevice device, const std::string& workingDirectory, uint64_t pruneDelay);
+            VulkanPipelineCache(VkDevice device, const std::string& workingDirectory, const VulkanPhysicalDeviceProperties& physicalDeviceProperties, uint64_t pruneDelay);
             ~VulkanPipelineCache();
 
             struct PipelineValue
@@ -55,6 +55,9 @@ namespace PK::Rendering::VulkanRHI::Services
 
         private:
             const VkDevice m_device;
+            const bool m_allowUnderEstimation;
+            const float m_maxOverEstimation;
+
             VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
             std::string m_workingDirectory;
             std::unordered_map<PipelineKey, PipelineValue, PipelineKeyHash> m_graphicsPipelines;

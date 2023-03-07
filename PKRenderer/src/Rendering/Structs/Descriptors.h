@@ -92,6 +92,8 @@ namespace PK::Rendering::Structs
         PolygonMode polygonMode = PolygonMode::Fill;
         CullMode cullMode = CullMode::Off;
         FrontFace frontFace = FrontFace::CounterClockwise;
+        RasterMode rasterMode = RasterMode::Default;
+        float overEstimation = 0.0f;
         float depthBiasConstantFactor = 0;
         float depthBiasClamp = 0;
         float depthBiasSlopeFactor = 0;

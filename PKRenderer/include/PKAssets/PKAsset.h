@@ -178,7 +178,7 @@ namespace PK::Assets
         OneMinusConstAlpha,
     };
 
-    enum class PKBlendOp 
+    enum class PKBlendOp : unsigned char
     {
         None,
         Add,
@@ -186,6 +186,13 @@ namespace PK::Assets
         ReverseSubtract,
         Min,
         Max,
+    };
+
+    enum class PKRasterMode : unsigned char
+    {
+        Default,
+        OverEstimate,
+        UnderEstimate,
     };
 
     PKElementType GetElementType(const char* string);
@@ -225,6 +232,7 @@ namespace PK::Assets
         constexpr const static char* PK_SHADER_ATTRIB_COLORMASK = "#ColorMask ";
         constexpr const static char* PK_SHADER_ATTRIB_CULL = "#Cull ";
         constexpr const static char* PK_SHADER_ATTRIB_OFFSET = "#Offset ";
+        constexpr const static char* PK_SHADER_ATTRIB_RASTERMODE = "#RasterMode ";
         constexpr const static char* PK_SHADER_ATTRIB_MULTI_COMPILE = "#multi_compile ";
         constexpr const static char* PK_SHADER_ATTRIB_MATERIAL_PROP = "#MaterialProperty ";
         constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_PROP = "#EnableInstancing";
@@ -282,14 +290,16 @@ namespace PK::Assets
         {
             PKComparison ztest = PKComparison::Off;
             PKCullMode cull = PKCullMode::Off;
+            PKRasterMode rasterMode = PKRasterMode::Default;
             PKBlendFactor blendSrcFactorColor = PKBlendFactor::None;
             PKBlendFactor blendDstFactorColor = PKBlendFactor::None;
             PKBlendFactor blendSrcFactorAlpha = PKBlendFactor::None;
             PKBlendFactor blendDstFactorAlpha = PKBlendFactor::None;
             PKBlendOp blendOpColor = PKBlendOp::None;
             PKBlendOp blendOpAlpha = PKBlendOp::None;
-            uint16_t colorMask = 0xFF;
-            uint16_t zwrite = 0x0;
+            uint8_t overEstimation = 0x0;
+            uint8_t colorMask = 0xFF;
+            uint8_t zwrite = 0x0;
             float zoffsets[3] = { 0, 0, 0 };
         };
 
