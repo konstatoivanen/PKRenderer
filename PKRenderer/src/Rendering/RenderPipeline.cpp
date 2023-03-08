@@ -155,6 +155,9 @@ namespace PK::Rendering
             token->jitter.y / m_renderTarget->GetResolution().y
         };
 
+        // Nonnjittered projection matrix;
+        m_viewProjectionMatrix = token->projection * token->view;
+
         token->projection = Functions::GetPerspectiveJittered(token->projection, jitter);
 
         auto cameraMatrix = glm::inverse(token->view);
@@ -164,7 +167,6 @@ namespace PK::Rendering
         auto vp = token->projection * token->view;
         auto pvp = vp;
 
-        m_viewProjectionMatrix = vp;
         m_znear = n;
         m_zfar = f;
 
