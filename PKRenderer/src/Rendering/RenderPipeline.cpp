@@ -236,7 +236,6 @@ namespace PK::Rendering
         auto* cmdcompute = queues->GetCommandBuffer(QueueType::Compute);
 
         // Concurrent Shadows & gbuffer
-        m_passLights.RenderShadows(cmdgraphics);
         cmdgraphics->SetRenderTarget(m_renderTarget.get(), { 1 }, true, true);
         cmdgraphics->ClearColor({ 0, 0, -1.0f, 1.0f }, 0);
         cmdgraphics->ClearDepth(1.0f, 0u);
@@ -253,13 +252,17 @@ namespace PK::Rendering
         m_sequencer->Next<Tokens::AccelerationStructureBuildToken>(this, &token);
         GraphicsAPI::SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         queues->Submit(QueueType::Compute, &cmdcompute);
-        queues->Sync(QueueType::Compute, QueueType::Graphics);
         queues->Sync(QueueType::Graphics, QueueType::Compute);
 
         m_passVolumeFog.ComputeDepthTiles(cmdcompute, m_renderTarget->GetResolution());
         queues->Submit(QueueType::Compute, &cmdcompute);
 
         // Voxelize, subsequent passes depend on this
+        m_passLights.RenderShadows(cmdgraphics);
+        queues->Submit(QueueType::Graphics, &cmdgraphics);
+        // Wait for light list build instead of depth tile pass
+        queues->Sync(QueueType::Compute, QueueType::Graphics, -1); 
+
         m_passSceneGI.RenderVoxels(cmdgraphics, &m_batcher, m_passGeometry.GetPassGroup());
         queues->Submit(QueueType::Graphics, &cmdgraphics);
         queues->Sync(QueueType::Graphics, QueueType::Compute);

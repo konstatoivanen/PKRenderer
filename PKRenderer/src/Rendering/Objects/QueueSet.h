@@ -12,7 +12,7 @@ namespace PK::Rendering::Objects
         virtual Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) = 0;
         virtual Structs::FenceRef GetFenceRef(Structs::QueueType type) = 0;
         virtual Objects::CommandBuffer* Submit(Structs::QueueType type) = 0;
-        virtual void Sync(Structs::QueueType from, Structs::QueueType to) = 0;
+        virtual void Sync(Structs::QueueType from, Structs::QueueType to, int32_t submitOffset = 0) = 0;
 
         inline void Submit(Structs::QueueType type, Objects::CommandBuffer** commandBuffer)
         {

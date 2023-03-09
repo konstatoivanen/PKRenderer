@@ -306,7 +306,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    void VulkanQueue::QueueWait(VulkanQueue* other)
+    void VulkanQueue::QueueWait(VulkanQueue* other, int32_t timelineOffset)
     {
         for (auto& timeline : m_waitTimelines)
         {
@@ -316,6 +316,9 @@ namespace PK::Rendering::VulkanRHI::Objects
             }
 
             timeline = other->m_timeline;
+            timeline.counter += timelineOffset;
+            // Wait at top of pipe as we dont know what the first op will be.
+            timeline.waitFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             break;
         }
     }
@@ -384,11 +387,11 @@ namespace PK::Rendering::VulkanRHI::Objects
         return GetCommandBuffer(type);
     }
 
-    void VulkanQueueSet::Sync(Structs::QueueType from, Structs::QueueType to)
+    void VulkanQueueSet::Sync(Structs::QueueType from, Structs::QueueType to, int32_t submitOffset)
     {
         auto queueFrom = GetQueue(from);
         auto queueTo = GetQueue(to);
-        queueTo->QueueWait(queueFrom);
+        queueTo->QueueWait(queueFrom, submitOffset);
         queueFrom->barrierHandler->TransferRecords(queueTo->barrierHandler.get());
     }
 

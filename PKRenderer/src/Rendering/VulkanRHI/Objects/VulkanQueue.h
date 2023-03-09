@@ -21,7 +21,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             VkResult BindSparse(VkBuffer buffer, const VkSparseMemoryBind* binds, uint32_t bindCount);
             VkSemaphore QueueSignal(VkPipelineStageFlags flags);
             void QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags);
-            void QueueWait(VulkanQueue* other);
+            void QueueWait(VulkanQueue* other, int32_t timelineOffset = 0);
 
             inline VkSemaphore GetNextSemaphore() { return m_semaphores[m_semaphoreIndex++ % MAX_SEMAPHORES]; }
             constexpr VkQueue GetNative() const { return m_queue; }
@@ -68,7 +68,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             
             VkResult SubmitCurrent(Structs::QueueType type, VulkanBarrierInfo* barrierInfo = nullptr, VkSemaphore* outSignal = nullptr);
             Rendering::Objects::CommandBuffer* Submit(Structs::QueueType type) override final;
-            void Sync(Structs::QueueType from, Structs::QueueType to) override final;
+            void Sync(Structs::QueueType from, Structs::QueueType to, int32_t submitOffset = 0) override final;
             inline Structs::FenceRef GetFenceRef(Structs::QueueType type) override final { return GetQueue(type)->GetFenceRef(); }
             void Prune();
 
