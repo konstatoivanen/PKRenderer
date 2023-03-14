@@ -18,7 +18,7 @@ namespace PK::Rendering::Structs
 
         inline bool Invalidate() { m_waitFunction = nullptr; m_userdata = INVALID_USER_DATA; return true; }
         inline bool IsValid() { return m_userdata != INVALID_USER_DATA && m_waitFunction != nullptr; }
-        inline bool Wait(uint64_t timeout) { return IsValid() ? m_waitFunction(m_context, m_userdata, timeout) : true; }
+        inline bool Wait(uint64_t timeout) { return !IsValid() || m_waitFunction(m_context, m_userdata, timeout); }
         inline bool WaitInvalidate(uint64_t timeout) { return Wait(timeout) && Invalidate(); }
         inline bool IsComplete() { return Wait(0ull); }
         

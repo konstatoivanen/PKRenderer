@@ -14,7 +14,7 @@ using namespace PK::Rendering::Structs;
 
 namespace PK::Rendering::Objects
 {
-	void AlignVertices(char* vertices, size_t vcount, const BufferLayout& layout, const std::vector<const BufferLayout*> targetLayouts)
+	static void AlignVertices(char* vertices, size_t vcount, const BufferLayout& layout, const std::vector<const BufferLayout*> targetLayouts)
 	{
 		auto stride = layout.GetStride();
 		auto fullStride = 0ull;
@@ -70,9 +70,32 @@ namespace PK::Rendering::Objects
 		free(buffer);
 	}
 
-    Mesh::Mesh()
-    {
-    }
+	static void FindAllocationRange(const std::vector<SubMesh>& submeshes, SubMesh* range)
+	{
+		// @TODO refactor this to be more memory efficient
+		auto sortedSubmeshes = std::vector<SubMesh>(submeshes);
+		std::sort(sortedSubmeshes.begin(), sortedSubmeshes.end());
+
+		for (auto& submesh : sortedSubmeshes)
+		{
+			if (submesh.vertexCount == 0)
+			{
+				continue;
+			}
+
+			if (submesh.firstVertex < (range->firstVertex + range->vertexCount))
+			{
+				range->firstVertex = submesh.firstVertex + submesh.vertexCount;
+			}
+
+			if (submesh.firstIndex < (range->firstIndex + range->indexCount))
+			{
+				range->firstIndex = submesh.firstIndex + submesh.indexCount;
+			}
+		}
+	}
+
+    Mesh::Mesh() {}
 
     Mesh::Mesh(const Ref<Buffer>& vertexBuffer, const Ref<Buffer>& indexBuffer) : Mesh()
     {
@@ -139,6 +162,8 @@ namespace PK::Rendering::Objects
 
 		SetIndexBuffer(Buffer::Create(mesh->indexType, mesh->indexCount, BufferUsage::DefaultIndex, indexBufferName.c_str()));
 		cmd->UploadBufferData(m_indexBuffer.get(), (char*)pVertices + pBufferOffset);
+		m_uploadFence = cmd->GetFenceRef();
+
         PK::Assets::CloseAsset(&asset);
     }
 
@@ -147,28 +172,7 @@ namespace PK::Rendering::Objects
 									uint32_t* outSubmeshIndices)
 	{
 		SubMesh range = { 0u, allocationInfo.vertexCount, 0u, allocationInfo.indexCount, BoundingBox::GetMinBounds() };
-
-		// @TODO refactor this to be more memory efficient
-		auto sortedSubmeshes = std::vector<SubMesh>(m_submeshes);
-		std::sort(sortedSubmeshes.begin(), sortedSubmeshes.end());
-
-		for (auto& submesh : sortedSubmeshes)
-		{
-			if (submesh.vertexCount == 0)
-			{
-				continue;
-			}
-
-			if (submesh.firstVertex < (range.firstVertex + range.vertexCount))
-			{
-				range.firstVertex = submesh.firstVertex + submesh.vertexCount;
-			}
-
-			if (submesh.firstIndex < (range.firstIndex + range.indexCount))
-			{
-				range.firstIndex = submesh.firstIndex + submesh.indexCount;
-			}
-		}
+		FindAllocationRange(m_submeshes, &range);
 
 		for (auto i = 0u; i < allocationInfo.submeshCount; ++i)
 		{
@@ -191,16 +195,13 @@ namespace PK::Rendering::Objects
 			Math::Functions::BoundsEncapsulate(&range.bounds, submesh.bounds);
 		}
 
-
 		m_fullRange.vertexCount = glm::max(m_fullRange.vertexCount, range.firstVertex + range.vertexCount);
 		m_fullRange.indexCount = glm::max(m_fullRange.indexCount, range.firstIndex + range.indexCount);
-
-		auto pBufferOffset = 0ull;
-		auto attributeIndex = 0ull;
 
 		AlignVertices((char*)allocationInfo.pVertices, allocationInfo.vertexCount, allocationInfo.vertexLayout, GetVertexBufferLayouts());
 
 		auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer);
+		auto pBufferOffset = 0ull;
 
 		for (auto i = 0u; i < m_vertexBuffers.size(); ++i)
 		{
@@ -232,6 +233,7 @@ namespace PK::Rendering::Objects
 			cmd->UploadBufferSubData(indexBuffer, allocationInfo.pIndices, range.firstIndex * indexStride, range.indexCount * indexStride);
 		}
 
+		m_uploadFence = cmd->GetFenceRef();
 		*outAllocationRange = range;
 	}
 

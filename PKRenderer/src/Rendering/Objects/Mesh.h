@@ -2,6 +2,7 @@
 #include "Core/Services/AssetDatabase.h"
 #include "Rendering/Objects/Buffer.h"
 #include "Rendering/Structs/StructsCommon.h"
+#include "Rendering/Structs/FenceRef.h"
 
 namespace PK::Rendering::Objects
 {
@@ -68,12 +69,14 @@ namespace PK::Rendering::Objects
             const SubMesh& GetSubmesh(int32_t submesh) const;
             inline const uint32_t GetSubmeshCount() const { return glm::max(1u, (uint32_t)m_submeshes.size() - (uint32_t)m_freeSubmeshIndices.size()); }
             constexpr const SubMesh& GetFullRange() const { return m_fullRange; }
+            const bool HasPendingUpload() const { return !m_uploadFence.WaitInvalidate(0ull); }
 
         private:
             std::vector<Utilities::Ref<Buffer>> m_vertexBuffers;
             Utilities::Ref<Buffer> m_indexBuffer;
             SubMesh m_fullRange{};
-            
+            mutable Structs::FenceRef m_uploadFence;
+
             std::vector<SubMesh> m_submeshes;
             std::vector<uint32_t> m_freeSubmeshIndices;
     };

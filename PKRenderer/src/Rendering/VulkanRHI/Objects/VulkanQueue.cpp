@@ -2,6 +2,7 @@
 #include "VulkanQueue.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
 #include "Core/Services/Log.h"
+#include "Math/FunctionsMisc.h"
 #include <vulkan/vk_enum_string_helper.h>
 
 namespace PK::Rendering::VulkanRHI::Objects
@@ -316,14 +317,14 @@ namespace PK::Rendering::VulkanRHI::Objects
             }
 
             timeline = other->m_timeline;
-            timeline.counter += timelineOffset;
+            timeline.counter = Math::Functions::ULongAdd(timeline.counter, timelineOffset);
             // Wait at top of pipe as we dont know what the first op will be.
             timeline.waitFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             break;
         }
     }
 
-    FenceRef VulkanQueue::GetFenceRef() const
+    FenceRef VulkanQueue::GetFenceRef(int32_t timelineOffset) const
     {
         return FenceRef(this, [](const void* ctx, uint64_t userdata, uint64_t timeout)
             {
@@ -344,7 +345,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
                 return result == VK_SUCCESS;
             },
-            m_timeline.counter);
+            Math::Functions::ULongAdd(m_timeline.counter, timelineOffset));
     }
 
 
@@ -370,15 +371,15 @@ namespace PK::Rendering::VulkanRHI::Objects
             if (queue != nullptr)
             {
                 queue->barrierHandler->Prune();
-                queue->commandPool->Prune();
+                queue->commandPool->Prune(false);
             }
         }
     }
 
-    VkResult VulkanQueueSet::SubmitCurrent(Structs::QueueType type, VulkanBarrierInfo* barrierInfo, VkSemaphore* outSignal)
+    VkResult VulkanQueueSet::SubmitCurrent(Structs::QueueType type, VkSemaphore* outSignal)
     {
         auto queue = GetQueue(type);
-        return queue->Submit(GetQueue(type)->commandPool->EndCurrent(barrierInfo), outSignal);
+        return queue->Submit(GetQueue(type)->commandPool->EndCurrent(), outSignal);
     }
 
     Objects::CommandBuffer* VulkanQueueSet::Submit(Structs::QueueType type)

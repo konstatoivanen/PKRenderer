@@ -285,6 +285,9 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         VkClearColorValue clearValue{};
         memcpy(clearValue.uint32, glm::value_ptr(value), sizeof(clearValue.uint32));
+
+        m_renderState->RecordImage(handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_MEMORY_WRITE_BIT);
+        ResolveBarriers();
         vkCmdClearColorImage(m_commandBuffer, vktex->GetRaw()->image, handle->image.layout, &clearValue, 1, &subrange);
     }
 
@@ -314,6 +317,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::UploadTexture(Texture* texture, const void* data, size_t size, Structs::ImageUploadRange* ranges, uint32_t rangeCount)
     {
+        PK_THROW_ASSERT(texture->GetUsage() == TextureUsage::Default, "Texture upload is only supported for sampled | upload textures!");
+
         auto vkTexture = texture->GetNative<VulkanTexture>();
 		auto layout = vkTexture->GetImageLayout();
 		auto range = VkImageSubresourceRange { (uint32_t)vkTexture->GetAspectFlags(), 0, texture->GetLevels(), 0, texture->GetLayers() };
@@ -348,6 +353,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::UploadTexture(Texture* texture, const void* data, size_t size, uint32_t level, uint32_t layer)
     {
+        PK_THROW_ASSERT(texture->GetUsage() == TextureUsage::Default, "Texture upload is only supported for sampled | upload textures!");
+
         auto vkTexture = texture->GetNative<VulkanTexture>();
         auto extent = vkTexture->GetRaw()->extent;
         auto image = vkTexture->GetRaw()->image;
@@ -561,23 +568,10 @@ namespace PK::Rendering::VulkanRHI::Objects
         VK_ASSERT_RESULT(vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
     }
 
-    void VulkanCommandBuffer::EndCommandBuffer(VulkanBarrierInfo* transferBarrier)
+    void VulkanCommandBuffer::EndCommandBuffer()
     {
         // End possibly active render pass
         EndRenderPass();
-
-        //Add potential resource transitions
-        VulkanBarrierInfo barrier;
-        if (m_renderState->GetServices()->barrierHandler->Resolve(&barrier))
-        {
-            PipelineBarrier(barrier);
-            
-            if (transferBarrier)
-            {
-                *transferBarrier = barrier;
-            }
-        }
-
         VK_ASSERT_RESULT(vkEndCommandBuffer(m_commandBuffer));
         m_renderState = nullptr;
     }

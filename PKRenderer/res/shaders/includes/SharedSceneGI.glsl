@@ -7,6 +7,8 @@ PK_DECLARE_CBUFFER(pk_SceneGI_Params, PK_SET_SHADER)
 	float4 pk_SceneGI_ST;
 	uint4 pk_SceneGI_Swizzle;
 	int4 pk_SceneGI_Checkerboard_Offset;
+	uint pk_SceneGI_SampleIndex;
+	uint pk_SceneGI_SampleCount;
 	float pk_SceneGI_VoxelSize; 
 	float pk_SceneGI_ConeAngle; 
 	float pk_SceneGI_DiffuseGain; 
@@ -16,8 +18,8 @@ PK_DECLARE_CBUFFER(pk_SceneGI_Params, PK_SET_SHADER)
 
 layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_SceneGI_VolumeMaskWrite;
 layout(rgba16, set = PK_SET_SHADER) uniform image3D pk_SceneGI_VolumeWrite;
-layout(rgba16, set = PK_SET_SHADER) uniform image2DArray pk_ScreenGI_Write;
-layout(r16f, set = PK_SET_SHADER) uniform image2DArray pk_ScreenGI_Hits;
+layout(rgba16f, set = PK_SET_SHADER) uniform image2DArray pk_ScreenGI_Write;
+layout(rg16f, set = PK_SET_SHADER) uniform image2D pk_ScreenGI_Hits;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_SceneGI_VolumeRead;
 
 #define PK_GI_DIFF_LVL 0
@@ -29,7 +31,6 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_SceneGI_VolumeRead;
 #define PK_GI_CHECKERBOARD_OFFSET pk_SceneGI_Checkerboard_Offset.xy
 #define PK_GI_RAY_MIN_DISTANCE 0.01f
 #define PK_GI_RAY_MAX_DISTANCE 50.0f
-#define PK_GI_RAY_COUNT 16u																					
 
 float3 VoxelToWorldSpace(int3 coord) { return (float3(coord) * PK_GI_VOXEL_SIZE) + pk_SceneGI_ST.xyz + PK_GI_VOXEL_SIZE * 0.5f; }
 
@@ -154,29 +155,4 @@ float4 ConeTraceSpecular(float3 origin, const float3 normal, const float3 direct
 	color.rgb *= PK_GI_SPECULAR_GAIN;
 
 	return color;
-}
-
-float4 GatherRayHits(uint2 coord, float3 origin, float3 normal, float2 dither)
-{
-	float4 A = 0.0f.xxxx;
-
-	for (uint i = 0u; i < PK_GI_RAY_COUNT; ++i)
-	{
-		const float3 direction = GetSampleDirectionHammersLey(i, PK_GI_RAY_COUNT, dither, normal);
-		//const float3 direction = GetSampleDirectionSE(normal, i, PK_GI_RAY_COUNT, dither);
-		
-		const float sampleDistance = imageLoad(pk_ScreenGI_Hits, int3(coord, i)).r;
-		const float3 samplePosition = origin +  direction * sampleDistance;
-		const float level = 0.5f * sqrt(sampleDistance / PK_GI_VOXEL_SIZE);
-		const float ndotl = max(0.0, dot(direction, normal));
-		const float4 voxel = SampleSceneGI(samplePosition, level);
-		
-		A.rgb += voxel.rgb * ndotl * pow3(1.0f + level);
-		A.a += voxel.a * (1.0f + pow3(level));
-	}
-
-	A /= PK_GI_RAY_COUNT;
-	A.a = saturate(1.0f - A.a);
-
-	return A;
 }

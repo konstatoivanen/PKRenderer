@@ -158,6 +158,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         auto normalizedRange = NormalizeViewRange(range);
         handle->isConcurrent = IsConcurrent();
+        handle->isTracked = IsTracked();
         handle->image.view = VK_NULL_HANDLE;
         handle->image.image = m_rawImage->image;
         handle->image.layout = GetImageLayout();
@@ -215,6 +216,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         viewValue->bindHandle.image.range = info.subresourceRange;
         viewValue->bindHandle.image.samples = m_descriptor.samples;
         viewValue->bindHandle.isConcurrent = IsConcurrent();
+        viewValue->bindHandle.isTracked = IsTracked();
 
         if (mode == TextureBindMode::SampledTexture)
         {

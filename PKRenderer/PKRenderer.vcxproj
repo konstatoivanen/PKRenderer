@@ -859,6 +859,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\SharedShadowmapping.glsl" />
     <None Include="res\shaders\includes\SharedSurfaceShading.glsl" />
     <None Include="res\shaders\CS_SceneGI_Mipmap.shader" />
+    <None Include="res\shaders\includes\SHL1.glsl" />
     <None Include="res\shaders\RS_SceneGI_Gather.shader" />
     <None Include="res\shaders\SH_VS_VolumeFogComposite.shader" />
     <None Include="res\shaders\SH_WS_PBR_Cloth.shader" />

@@ -151,6 +151,12 @@ namespace PK::Rendering::VulkanRHI::Objects
 
 	void VulkanAccelerationStructure::AddInstance(Mesh* mesh, uint32_t submesh, uint32_t customIndex, const PK::Math::float4x4& matrix)
 	{
+		// Wait for mesh uploads to finnish before building BLAS
+		if (mesh->HasPendingUpload())
+		{
+			return;
+		}
+
 		PK_THROW_ASSERT(m_instanceCount < m_instanceLimit, "Instance limit exceeded!");
 
 		auto substructure = GetMeshStructure(mesh, submesh);
@@ -170,7 +176,6 @@ namespace PK::Rendering::VulkanRHI::Objects
 		if (m_instanceCount <= 0)
 		{
 			PK_LOG_WARNING("Ray tracing structure build has no instances!");
-			return;
 		}
 
 		auto substructureCount = m_subStructures.GetCount() - m_previousSubStructureCount;

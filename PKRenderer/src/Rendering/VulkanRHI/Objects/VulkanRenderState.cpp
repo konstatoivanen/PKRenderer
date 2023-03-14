@@ -360,32 +360,39 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanRenderState::RecordBuffer(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access)
     {
-        auto handler = m_services.barrierHandler;
-        VulkanBarrierHandler::AccessRecord record{};
-        record.stage = stage;
-        record.access = access;
-        record.bufferRange.offset = (uint32_t)handle->buffer.offset;
-        record.bufferRange.size = (uint32_t)handle->buffer.range;
-        record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
-        handler->Record(handle->buffer.buffer, record, PK_ACCESS_OPT_BARRIER);
+        if (handle->isTracked)
+        {
+            auto handler = m_services.barrierHandler;
+            VulkanBarrierHandler::AccessRecord record{};
+            record.stage = stage;
+            record.access = access;
+            record.bufferRange.offset = (uint32_t)handle->buffer.offset;
+            record.bufferRange.size = (uint32_t)handle->buffer.range;
+            record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
+            handler->Record(handle->buffer.buffer, record, PK_ACCESS_OPT_BARRIER);
+        }
     }
 
     void VulkanRenderState::RecordImage(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access, VkImageLayout overrideLayout, uint8_t options)
     {
-        auto handler = m_services.barrierHandler;
-        VulkanBarrierHandler::AccessRecord record{};
-        record.stage = stage;
-        record.access = access;
-        record.imageRange = Utilities::VulkanConvertRange(handle->image.range);
-        record.aspect = handle->image.range.aspectMask;
-        record.layout = overrideLayout != VK_IMAGE_LAYOUT_MAX_ENUM ? overrideLayout : handle->image.layout;
-        record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
-        handler->Record(handle->image.image, record, options);
+        if (handle->isTracked)
+        {
+            auto handler = m_services.barrierHandler;
+            VulkanBarrierHandler::AccessRecord record{};
+            record.stage = stage;
+            record.access = access;
+            record.imageRange = Utilities::VulkanConvertRange(handle->image.range);
+            record.aspect = handle->image.range.aspectMask;
+            record.layout = overrideLayout != VK_IMAGE_LAYOUT_MAX_ENUM ? overrideLayout : handle->image.layout;
+            record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
+            handler->Record(handle->image.image, record, options);
+        }
     }
 
     VulkanBarrierHandler::AccessRecord VulkanRenderState::ExchangeImage(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access)
     {
         auto handler = m_services.barrierHandler;
+        
         VulkanBarrierHandler::AccessRecord record{};
         record.stage = stage;
         record.access = access;
@@ -393,9 +400,15 @@ namespace PK::Rendering::VulkanRHI::Objects
         record.aspect = handle->image.range.aspectMask;
         record.layout = handle->image.layout;
         record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
-        auto previous = handler->Retrieve(handle->image.image, record);
-        handler->Record(handle->image.image, record, 0u);
-        return previous;
+
+        if (handle->isTracked)
+        {
+            auto previous = handler->Retrieve(handle->image.image, record);
+            handler->Record(handle->image.image, record, 0u);
+            return previous;
+        }
+
+        return record;
     }
 
 
@@ -708,14 +721,8 @@ namespace PK::Rendering::VulkanRHI::Objects
                     case ResourceType::SamplerTexture:
                     case ResourceType::Texture:
                     case ResourceType::Image:
-                    {
-                        // Dont record static upload images
-                        if (handle->image.layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                        {
-                            RecordImage(handle, stage, access | VK_ACCESS_SHADER_READ_BIT);
-                        }
-                    }
-                    break;
+                        RecordImage(handle, stage, access | VK_ACCESS_SHADER_READ_BIT);
+                        break;
                     case ResourceType::StorageBuffer:
                     case ResourceType::DynamicStorageBuffer:
                         RecordBuffer(handle, stage, access | VK_ACCESS_SHADER_READ_BIT);
@@ -733,13 +740,8 @@ namespace PK::Rendering::VulkanRHI::Objects
             return;
         }
 
-        for (auto i = 0u; i < PK_MAX_VERTEX_ATTRIBUTES; ++i)
+        for (auto i = 0u; i < PK_MAX_VERTEX_ATTRIBUTES && m_vertexBuffers[i]; ++i)
         {
-            if (m_vertexBuffers[i] == nullptr)
-            {
-                break;
-            }
-
             RecordBuffer(m_vertexBuffers[i], VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
         }
 

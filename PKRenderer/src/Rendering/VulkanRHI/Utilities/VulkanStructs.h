@@ -273,6 +273,7 @@ namespace PK::Rendering::VulkanRHI
         };
 
         bool isConcurrent = false;
+        bool isTracked = true;
 
         VulkanBindHandle() : image{}{};
     };

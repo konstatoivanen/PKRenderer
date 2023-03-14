@@ -1,16 +1,17 @@
 #pragma once
 
-#define PK_PI               3.14159265359f
-#define PK_TWO_PI           6.28318530718f
-#define PK_FOUR_PI          12.56637061436f
-#define PK_INV_PI           0.31830988618f
-#define PK_INV_TWO_PI       0.15915494309f
-#define PK_INV_FOUR_PI      0.07957747155f
-#define PK_HALF_PI          1.57079632679f
-#define PK_INV_HALF_PI      0.636619772367f
-#define PK_TWO_SQRT2        2.828427
-#define PK_SQRT2            1.414213
-#define PK_INV_SQRT2        0.707106
+#define PK_PI               3.1415926535f
+#define PK_TWO_PI           6.2831853071f
+#define PK_FOUR_PI          12.566370614f
+#define PK_INV_PI           0.3183098861f
+#define PK_INV_TWO_PI       0.1591549430f
+#define PK_INV_FOUR_PI      0.0795774715f
+#define PK_HALF_PI          1.5707963267f
+#define PK_INV_HALF_PI      0.6366197723f
+#define PK_SQRT_PI          1.7724538509f
+#define PK_TWO_SQRT2        2.8284271247f
+#define PK_SQRT2            1.4142135623f
+#define PK_INV_SQRT2        0.7071067811f
 #define PK_HALF_MAX         65504.0
 #define PK_HALF_MAX_MINUS1  65472.0
 

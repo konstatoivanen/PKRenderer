@@ -122,7 +122,7 @@ namespace PK::Rendering::VulkanRHI
 
         // Window write is expected to be in the last (and implicit) graphics submit.
         m_driver->queues->GetQueue(QueueType::Graphics)->QueueWait(m_imageAvailableSignal, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
-        m_driver->queues->SubmitCurrent(QueueType::Graphics, nullptr, &renderingFinishedSignal);
+        m_driver->queues->SubmitCurrent(QueueType::Graphics, &renderingFinishedSignal);
         m_swapchain->Present(renderingFinishedSignal);
         m_inWindowScope = false;
     }

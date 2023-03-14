@@ -35,4 +35,5 @@ namespace PK::Math::Functions
     uint32_t GetAlignedSize(uint32_t value, uint32_t alignment);
     uint3 GetComputeGroupCount(const uint3& threads, const uint3& clusterSize);
     uint32_t CountBits(uint32_t value);
+    inline uint64_t ULongAdd(uint64_t a, int32_t b) { return (int64_t)a + b < 0 ? 0ull : a + b; }
 }

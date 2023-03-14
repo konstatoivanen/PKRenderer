@@ -221,9 +221,20 @@ namespace PK::Rendering
         m_passGeometry.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_zfar - m_znear);
         m_passLights.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_znear, m_zfar);
         m_batcher.EndCollectDrawCalls(cmdtransfer);
-        
+
+        auto* cmdgraphics = queues->GetCommandBuffer(QueueType::Graphics);
+        auto* cmdcompute = queues->GetCommandBuffer(QueueType::Compute);
+
+        // Prune voxels & build AS.
+        // These can happen before the end of last frame. 
+        m_passSceneGI.PruneVoxels(cmdcompute);
+        Tokens::AccelerationStructureBuildToken token { QueueType::Compute, m_sceneStructure.get(), RenderableFlags::DefaultMesh, {}, false };
+        m_sequencer->Next<Tokens::AccelerationStructureBuildToken>(this, &token);
+        GraphicsAPI::SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
+        queues->Submit(QueueType::Compute, &cmdcompute);
+
         // End transfer operations
-        queues->Sync(QueueType::Graphics, QueueType::Transfer);
+        queues->Sync(QueueType::Graphics, QueueType::Transfer, -1);
         queues->Submit(QueueType::Transfer);
         queues->Sync(QueueType::Transfer, QueueType::Graphics);
         queues->Sync(QueueType::Transfer, QueueType::Compute);
@@ -232,9 +243,6 @@ namespace PK::Rendering
         // Eliminate redundant rendering waits by waiting for transfer instead.
         window->SetFrameFence(queues->GetFenceRef(QueueType::Transfer));
 
-        auto* cmdgraphics = queues->GetCommandBuffer(QueueType::Graphics);
-        auto* cmdcompute = queues->GetCommandBuffer(QueueType::Compute);
-
         // Concurrent Shadows & gbuffer
         cmdgraphics->SetRenderTarget(m_renderTarget.get(), { 1 }, true, true);
         cmdgraphics->ClearColor({ 0, 0, -1.0f, 1.0f }, 0);
@@ -242,18 +250,13 @@ namespace PK::Rendering
         m_passGeometry.RenderGBuffer(cmdgraphics);
         queues->Submit(QueueType::Graphics, &cmdgraphics);
 
-        // Async Work Noise & Light Assignment
         m_passFilmGrain.Compute(cmdcompute);
         m_passLights.ComputeClusters(cmdcompute);
-        m_passSceneGI.PruneVoxels(cmdcompute);
-
-        // Build acceleration structures on the async queue
-        Tokens::AccelerationStructureBuildToken token{ QueueType::Compute, m_sceneStructure.get(), RenderableFlags::DefaultMesh, {}, false };
-        m_sequencer->Next<Tokens::AccelerationStructureBuildToken>(this, &token);
-        GraphicsAPI::SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         queues->Submit(QueueType::Compute, &cmdcompute);
         queues->Sync(QueueType::Graphics, QueueType::Compute);
 
+        // Depth tiles for volume fog filtering
+        m_passSceneGI.DispatchRays(cmdcompute);
         m_passVolumeFog.ComputeDepthTiles(cmdcompute, m_renderTarget->GetResolution());
         queues->Submit(QueueType::Compute, &cmdcompute);
 
@@ -263,6 +266,7 @@ namespace PK::Rendering
         // Wait for light list build instead of depth tile pass
         queues->Sync(QueueType::Compute, QueueType::Graphics, -1); 
 
+        // Voxelize scene
         m_passSceneGI.RenderVoxels(cmdgraphics, &m_batcher, m_passGeometry.GetPassGroup());
         queues->Submit(QueueType::Graphics, &cmdgraphics);
         queues->Sync(QueueType::Graphics, QueueType::Compute);
@@ -283,6 +287,8 @@ namespace PK::Rendering
         // Forward Transparent on graphics queue
         m_passVolumeFog.Render(cmdgraphics, m_renderTarget.get());
 
+        // @TODO Add trasparent forward stuff here
+
         // Post Effects
         cmdgraphics->BeginDebugScope("PostEffects", PK_COLOR_YELLOW);
         m_temporalAntialiasing.Render(cmdgraphics, m_renderTarget.get());
@@ -291,6 +297,7 @@ namespace PK::Rendering
         m_histogram.Render(cmdgraphics, m_bloom.GetTexture());
         m_passPostEffectsComposite.Render(cmdgraphics, m_renderTarget.get());
         cmdgraphics->EndDebugScope();
+        queues->Submit(QueueType::Graphics, &cmdgraphics);
 
         // Blit to window
         cmdgraphics->Blit(m_renderTarget->GetDepth(), m_depthPrevious.get(), {}, {}, FilterMode::Point);

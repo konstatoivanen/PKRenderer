@@ -16,18 +16,12 @@ namespace PK::Rendering::VulkanRHI::Services
             ~VulkanCommandBufferPool();
     
             Objects::VulkanCommandBuffer* GetCurrent();
-            Objects::VulkanCommandBuffer* EndCurrent(VulkanBarrierInfo* transferBarrier = nullptr);
-            void PruneStaleBuffers();
-            void WaitForCompletion(bool all);
+            Objects::VulkanCommandBuffer* EndCurrent();
+            void Prune(bool all);
             void AllocateBuffers();
-            inline void Prune()
-            {
-                WaitForCompletion(false);
-                PruneStaleBuffers();
-            }
 
         private:
-            constexpr static const uint32_t MAX_PRIMARY_COMMANDBUFFERS = 16u;
+            constexpr static const uint32_t MAX_PRIMARY_COMMANDBUFFERS = 24u;
             VkDevice m_device;
             VkCommandPool m_pool;
             VkCommandBuffer m_nativeBuffers[MAX_PRIMARY_COMMANDBUFFERS]{};

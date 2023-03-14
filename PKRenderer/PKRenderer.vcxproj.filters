@@ -2003,6 +2003,7 @@
     <None Include="res\shaders\CS_TemporalAntialiasing.shader" />
     <None Include="res\shaders\includes\SharedTemporalAntialiasing.glsl" />
     <None Include="res\shaders\includes\SampleDistribution.glsl" />
+    <None Include="res\shaders\includes\SHL1.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

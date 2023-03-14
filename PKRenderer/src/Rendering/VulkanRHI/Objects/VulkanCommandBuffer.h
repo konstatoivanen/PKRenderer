@@ -81,7 +81,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         void ValidatePipeline();
         void EndRenderPass();
         void BeginCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferLevel level, Objects::VulkanRenderState* renderState);
-        void EndCommandBuffer(VulkanBarrierInfo* transferBarrier);
+        void EndCommandBuffer();
         
         private:
             VkFence m_fence = VK_NULL_HANDLE;

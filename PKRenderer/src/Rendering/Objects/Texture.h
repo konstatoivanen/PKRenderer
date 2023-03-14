@@ -22,6 +22,7 @@ namespace PK::Rendering::Objects
 
             constexpr const Structs::TextureUsage GetUsage() const { return m_descriptor.usage; }
             constexpr const bool IsConcurrent() const { return (m_descriptor.usage & Structs::TextureUsage::Concurrent) != 0; }
+            constexpr const bool IsTracked() const { return m_descriptor.usage != Structs::TextureUsage::Default; }
             constexpr const Structs::SamplerDescriptor& GetSamplerDescriptor() const { return m_descriptor.sampler; }
             constexpr const Math::uint4 GetRect() const { return { 0, 0, m_descriptor.resolution.x, m_descriptor.resolution.y }; }
             constexpr const Math::uint3 GetResolution() const { return m_descriptor.resolution; }

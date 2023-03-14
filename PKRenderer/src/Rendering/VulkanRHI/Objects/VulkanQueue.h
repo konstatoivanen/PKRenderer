@@ -27,7 +27,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             constexpr VkQueue GetNative() const { return m_queue; }
             constexpr uint32_t GetFamily() const { return m_family; }
             constexpr VkPipelineStageFlags GetCapabilityFlags() const { return m_capabilityFlags; }
-            FenceRef GetFenceRef() const;
+            FenceRef GetFenceRef(int32_t timelineOffset = 0) const;
 
             PK::Utilities::Scope<Services::VulkanCommandBufferPool> commandPool = nullptr;
             PK::Utilities::Scope<Services::VulkanBarrierHandler> barrierHandler = nullptr;
@@ -66,10 +66,10 @@ namespace PK::Rendering::VulkanRHI::Objects
             constexpr const VulkanQueueFamilies& GetSelectedFamilies() const { return m_selectedFamilies; }
             inline Rendering::Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) override final { return GetQueue(type)->commandPool->GetCurrent(); }
             
-            VkResult SubmitCurrent(Structs::QueueType type, VulkanBarrierInfo* barrierInfo = nullptr, VkSemaphore* outSignal = nullptr);
+            VkResult SubmitCurrent(Structs::QueueType type, VkSemaphore* outSignal = nullptr);
             Rendering::Objects::CommandBuffer* Submit(Structs::QueueType type) override final;
             void Sync(Structs::QueueType from, Structs::QueueType to, int32_t submitOffset = 0) override final;
-            inline Structs::FenceRef GetFenceRef(Structs::QueueType type) override final { return GetQueue(type)->GetFenceRef(); }
+            inline Structs::FenceRef GetFenceRef(Structs::QueueType type, int32_t submitOffset = 0) override final { return GetQueue(type)->GetFenceRef(submitOffset); }
             void Prune();
 
         private:

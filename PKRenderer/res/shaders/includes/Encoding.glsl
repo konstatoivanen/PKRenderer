@@ -1,6 +1,9 @@
 #pragma once
 #include Utilities.glsl
 
+const float3x3 PK_RGBToYCoCg = float3x3(0.25, 0.5, -0.25, 0.5, 0.0, 0.5, 0.25, -0.5, -0.25);
+const float3x3 PK_YCoCgToRGB = float3x3(1.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, 1.0, -1.0);
+
 #define HDRFactor 8.0
 
 float4 HDREncode(float3 color) 
@@ -66,4 +69,14 @@ float3 HSVToRGB(float3 c)
 float3 HSVToRGB(float hue, float saturation, float value)
 {
     return HSVToRGB(float3(hue, saturation, value));
+}
+
+float3 RGBToYCoCg(float3 rgb)
+{
+    return PK_RGBToYCoCg * rgb;
+}
+
+float3 YCoCgToRGB(float3 ycocg)
+{
+    return PK_YCoCgToRGB * ycocg;
 }

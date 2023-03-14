@@ -28,8 +28,7 @@ namespace PK::Rendering::VulkanRHI::Services
 
     VulkanCommandBufferPool::~VulkanCommandBufferPool()
     {
-        WaitForCompletion(true);
-        PruneStaleBuffers();
+        Prune(true);
         vkDestroyCommandPool(m_device, m_pool, nullptr);
     
         for (auto& wrapper : m_commandBuffers)
@@ -54,6 +53,8 @@ namespace PK::Rendering::VulkanRHI::Services
             }
         }
         
+        PK_THROW_ASSERT(m_current, "No available command buffers!");
+
         const int64_t index = m_current - &m_commandBuffers[0];
 
         AllocateBuffers();
@@ -61,7 +62,7 @@ namespace PK::Rendering::VulkanRHI::Services
         return m_current;
     }
 
-    Objects::VulkanCommandBuffer* VulkanCommandBufferPool::EndCurrent(VulkanBarrierInfo* transferBarrier)
+    Objects::VulkanCommandBuffer* VulkanCommandBufferPool::EndCurrent()
     {
         if (m_current == nullptr)
         {
@@ -69,26 +70,12 @@ namespace PK::Rendering::VulkanRHI::Services
         }
 
         auto cmd = m_current;
-        m_current->EndCommandBuffer(transferBarrier);
+        m_current->EndCommandBuffer();
         m_current = nullptr;
         return cmd;
     }
 
-    void VulkanCommandBufferPool::PruneStaleBuffers()
-    {
-        for (auto& wrapper : m_commandBuffers)
-        {
-            if (wrapper.IsActive() && vkWaitForFences(m_device, 1, &wrapper.GetFence(), VK_TRUE, 0) == VK_SUCCESS)
-            {
-                m_nativeBuffers[(int64_t)(&wrapper - &m_commandBuffers[0])] = VK_NULL_HANDLE;
-                vkFreeCommandBuffers(m_device, m_pool, 1, &wrapper.GetNative());
-                VK_ASSERT_RESULT(vkResetFences(m_device, 1, &wrapper.GetFence()));
-                wrapper.Release();
-            }
-        }
-    }
-
-    void VulkanCommandBufferPool::WaitForCompletion(bool all)
+    void VulkanCommandBufferPool::Prune(bool all)
     {
         VkFence fences[MAX_PRIMARY_COMMANDBUFFERS];
         uint32_t count = 0;
@@ -107,13 +94,25 @@ namespace PK::Rendering::VulkanRHI::Services
             else if (!all)
             {
                 // At least one command buffer has been released/completed.
-                return;
+                count = 0u;
+                break;
             }
         }
 
         if (count > 0)
         {
             VK_ASSERT_RESULT(vkWaitForFences(m_device, count, fences, all ? VK_TRUE : VK_FALSE, UINT64_MAX));
+        }
+
+        for (auto& wrapper : m_commandBuffers)
+        {
+            if (wrapper.IsActive() && vkWaitForFences(m_device, 1, &wrapper.GetFence(), VK_TRUE, 0) == VK_SUCCESS)
+            {
+                m_nativeBuffers[(int64_t)(&wrapper - &m_commandBuffers[0])] = VK_NULL_HANDLE;
+                vkFreeCommandBuffers(m_device, m_pool, 1, &wrapper.GetNative());
+                VK_ASSERT_RESULT(vkResetFences(m_device, 1, &wrapper.GetFence()));
+                wrapper.Release();
+            }
         }
     }
 
