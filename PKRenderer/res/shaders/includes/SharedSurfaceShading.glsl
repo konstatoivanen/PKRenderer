@@ -2,6 +2,7 @@
 #include Lighting.glsl
 #include BRDF.glsl
 #include Reconstruction.glsl
+#include SharedSceneGI.glsl
 
 // Meta pass specific parameters (gi voxelization requires some changes from reqular view projection).
 #ZTest Equal
@@ -9,10 +10,7 @@
 #Cull Back
 #multi_compile _ PK_META_PASS_GBUFFER PK_META_PASS_GIVOXELIZE
 
-#if defined(PK_META_PASS_GIVOXELIZE)
-
-    #include SharedSceneGI.glsl
-    
+#if defined(PK_META_PASS_GIVOXELIZE) 
     #undef PK_NORMALMAPS
     #undef PK_HEIGHTMAPS
     
@@ -23,18 +21,13 @@
         }                                                              \
 
     #define PK_META_DECLARE_SURFACE_OUTPUT
-
     #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) StoreSceneGI(worldpos, color)
-
     #define PK_META_WORLD_TO_CLIPSPACE(position)  WorldToVoxelNDCSpace(position)
 
 #else
     #define PK_META_EARLY_CLIP_UVW(w, c) c = GetFragmentClipUVW(); 
-
     #define PK_META_DECLARE_SURFACE_OUTPUT out float4 SV_Target0;
-
     #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) SV_Target0 = color
-
     #define PK_META_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
 
 #endif
@@ -107,6 +100,18 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
     return indirect;
 }
 
+void SampleGI(inout Indirect indirect, const SurfaceData surf)
+{
+    float4 diffuse = 0.0f.xxxx; 
+    float4 specular = 0.0f.xxxx;
+    //float4 diffuse = tex2D(pk_ScreenGI_Read, float3(uv, 0));
+    //float4 specular = tex2D(pk_ScreenGI_Read, float3(uv, 1));
+    SampleSceneGI_ScreenSpace(diffuse, specular, surf.clipuvw.xy, surf.worldpos, surf.normal, -surf.viewdir, surf.roughness);
+
+    indirect.diffuse = indirect.diffuse * diffuse.a + diffuse.rgb;
+    indirect.specular = indirect.specular * specular.a + specular.rgb;
+}
+
 #if defined(SHADER_STAGE_VERTEX)
 
     // Use these to modify surface values in fragment or vertex stage
@@ -163,8 +168,8 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
          #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormal(normalmap, baseVaryings.vs_TSROTATION, uv, amount)
          #define PK_SURF_MESH_NORMAL normalize(baseVaryings.vs_TSROTATION[2])
     #else
-         #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) varyings.vs_NORMAL
-         #define PK_SURF_MESH_NORMAL normalize(varyings.vs_NORMAL)
+         #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) baseVaryings.vs_NORMAL
+         #define PK_SURF_MESH_NORMAL normalize(baseVaryings.vs_NORMAL)
     #endif
 
     void main()
@@ -191,7 +196,6 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
         
         PK_SURFACE_FUNC_FRAG(baseVaryings, surf);
 
-        // @TODO refactor this to be more generic
         #if defined(PK_META_PASS_GBUFFER)
 
             value = float4(WorldToViewDir(surf.normal), surf.roughness);
@@ -225,7 +229,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
             Indirect indirect = GetStaticSceneIndirect(surf.normal, surf.viewdir, surf.roughness);
             LightTile tile = GetLightTile(surf.clipuvw);
     
-            SampleScreenSpaceGI(indirect, surf.clipuvw.xy);
+            SampleGI(indirect, surf);
     
             INIT_BRDF_CACHE
             (
@@ -252,6 +256,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
     
             value.rgb += surf.emission;
             value.a = surf.alpha;
+
         #endif
 
         PK_META_STORE_SURFACE_OUTPUT(value, surf.worldpos);

@@ -6,6 +6,13 @@ float pow2(float x) { return x * x; }
 float pow3(float x) { return x * x * x; }
 float pow4(float x) { return x * x * x * x; }
 float pow5(float x) { return x * x * x * x * x; }
+bool IsNaN(float v) { return (floatBitsToUint(v) & 0x7fffffff) > 0x7f800000; }
+bool IsNaN(float2 v) { return IsNaN(v.x) || IsNaN(v.y); }
+bool IsNaN(float3 v) { return IsNaN(v.x) || IsNaN(v.y) || IsNaN(v.z); }
+bool IsNaN(float4 v) { return IsNaN(v.x) || IsNaN(v.y) || IsNaN(v.z) || IsNaN(v.w); }
+
+#define lerp_outquad(a, b, c) (-((b) - (a)) * (c) * ((c) - 2) + (a))
+#define lerp_inquad(a, b, c) (((b) - (a)) * (c) * (c) + (a))
 #define unlerp(a,b,value) (((value) - (a)) / ((b) - (a)))
 #define unlerp_sat(a,b,value) saturate(((value) - (a)) / ((b) - (a)))
 #define saturate(v) clamp(v, 0.0, 1.0)

@@ -38,14 +38,6 @@ float3 SampleEnvironment(float2 uv, float roughness)
     return HDRDecode(tex2DLod(pk_SceneOEM_HDR, uv, roughness * 4)) * pk_SceneOEM_Exposure; 
 }
 
-void SampleScreenSpaceGI(inout Indirect indirect, float2 uv)
-{
-    float4 diffuse = tex2D(pk_ScreenGI_Read, float3(uv, 0));
-    float4 specular = tex2D(pk_ScreenGI_Read, float3(uv, 1));
-    indirect.diffuse = indirect.diffuse * diffuse.a + diffuse.rgb;
-    indirect.specular = indirect.specular * specular.a + specular.rgb;
-}
-
 float SampleLightShadowmap(uint shadowmapIndex, float2 uv, float lightDistance)
 {
     float2 moments = tex2D(pk_ShadowmapAtlas, float3(uv, shadowmapIndex)).xy;

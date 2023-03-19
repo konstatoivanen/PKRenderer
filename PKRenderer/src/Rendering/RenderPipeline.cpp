@@ -270,6 +270,7 @@ namespace PK::Rendering
         m_passSceneGI.RenderVoxels(cmdgraphics, &m_batcher, m_passGeometry.GetPassGroup());
         queues->Submit(QueueType::Graphics, &cmdgraphics);
         queues->Sync(QueueType::Graphics, QueueType::Compute);
+        queues->Sync(QueueType::Compute, QueueType::Graphics);
 
         // Forward Opaque on graphics queue
         m_passSceneGI.RenderGI(cmdgraphics);

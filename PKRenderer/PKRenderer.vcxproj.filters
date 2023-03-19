@@ -1997,13 +1997,14 @@
     <None Include="res\models\MDL_Columns.mdl.pkmeta" />
     <None Include="res\models\MDL_Rocks.mdl.pkmeta" />
     <None Include="res\models\MDL_Spiral.mdl.pkmeta" />
-    <None Include="res\shaders\CS_SceneGI_Mask.shader" />
+    <None Include="res\shaders\CS_SceneGI_ReprojectMask.shader" />
     <None Include="res\shaders\CS_SceneGI_Clear.shader" />
     <None Include="res\shaders\RS_SceneGI_Gather.shader" />
     <None Include="res\shaders\CS_TemporalAntialiasing.shader" />
     <None Include="res\shaders\includes\SharedTemporalAntialiasing.glsl" />
     <None Include="res\shaders\includes\SampleDistribution.glsl" />
     <None Include="res\shaders\includes\SHL1.glsl" />
+    <None Include="res\shaders\CS_SceneGI_Denoise.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

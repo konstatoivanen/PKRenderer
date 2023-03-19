@@ -213,36 +213,14 @@ float2 Hammersley(uint i, uint N)
     return float2(float(i % N) / float(N), RadicalInverse_VdC(i));
 }
 
-float3 GetSampleDirectionHammersLey(float3 Xi, float blur)
+float3 GetSampleDirectionHammersLey(const float3 Xi, float blur)
 {
     float theta = (1.0f - Xi.z) / (1.0f + (blur - 1.0f) * Xi.z);
     float2 sincos = sqrt(float2(1.0f - theta, theta));
     return normalize(float3(Xi.xy * sincos.xx, sincos.y));
 }
 
-float3 GetSampleDirectionHammersLey(uint i, uint s, float2 d, float3 N)
-{
-    float2 Xi = Hammersley(i,s);
-    Xi += d;
-    Xi -= floor(Xi);
-    
-    float phi = 2.0 * 3.14159265 * Xi.x;
-    float cosTheta = sqrt((1.0 - Xi.y) / 1.0);
-    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-    
-    vec3 H;
-    H.x = cos(phi) * sinTheta;
-    H.y = sin(phi) * sinTheta;
-    H.z = cosTheta;
-    
-    float3 up = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
-    float3 tangent = normalize(cross(up, N));
-    float3 bitangent = cross(N, tangent);
-    float3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
-    return normalize(sampleVec);
-}
-
-float3 ImportanceSampleGGX(float2 Xi, float3 N, float roughness)
+float3 ImportanceSampleGGX(const float2 Xi, const float3 N, float roughness)
 {
     float a = roughness * roughness;
 
@@ -260,6 +238,25 @@ float3 ImportanceSampleGGX(float2 Xi, float3 N, float roughness)
     float3 bitangent = cross(N, tangent);
     float3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
     return normalize(sampleVec);
+}
+
+float3 ImportanceSampleGGX(uint i, uint s, const float3 N, const float R, const float2 dither)
+{
+    float2 Xi = Hammersley(i,s);
+    Xi += dither;
+    Xi -= floor(Xi);
+    return ImportanceSampleGGX(Xi, N, R);
+}
+
+float3 ImportanceSampleGGX(uint i, uint s, const float3 N, const float3 V, const float R, const float2 dither)
+{
+    float2 Xi = Hammersley(i,s);
+    Xi += dither;
+    Xi -= floor(Xi);
+    
+    float3 D = ImportanceSampleGGX(Xi, reflect(V, N), R);
+    D += N * -min(0.0, (dot(D, N) * (1.0f + R)) / dot(N, N));
+    return normalize(D);
 }
 
 float3 GetSampleDirectionSE(float3 worldNormal, uint index, const float sampleCount, float dither, float angle)

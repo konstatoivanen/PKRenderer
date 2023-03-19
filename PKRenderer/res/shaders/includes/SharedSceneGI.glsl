@@ -1,6 +1,7 @@
 #pragma once
 #include Utilities.glsl
 #include SampleDistribution.glsl
+#include SHL1.glsl
 
 PK_DECLARE_CBUFFER(pk_SceneGI_Params, PK_SET_SHADER)
 {
@@ -18,12 +19,13 @@ PK_DECLARE_CBUFFER(pk_SceneGI_Params, PK_SET_SHADER)
 
 layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_SceneGI_VolumeMaskWrite;
 layout(rgba16, set = PK_SET_SHADER) uniform image3D pk_SceneGI_VolumeWrite;
-layout(rgba16f, set = PK_SET_SHADER) uniform image2DArray pk_ScreenGI_Write;
-layout(rg16f, set = PK_SET_SHADER) uniform image2D pk_ScreenGI_Hits;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_SceneGI_VolumeRead;
+PK_DECLARE_SET_SHADER uniform sampler2DArray pk_ScreenGI_SHY_Read;
+PK_DECLARE_SET_SHADER uniform sampler2DArray pk_ScreenGI_CoCg_Read;
 
 #define PK_GI_DIFF_LVL 0
 #define PK_GI_SPEC_LVL 1
+#define PK_GI_VOXEL_MAX_MIP 7
 #define PK_GI_VOXEL_SIZE pk_SceneGI_VoxelSize
 #define PK_GI_ANGLE pk_SceneGI_ConeAngle
 #define PK_GI_DIFFUSE_GAIN pk_SceneGI_DiffuseGain.xxx
@@ -31,6 +33,10 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_SceneGI_VolumeRead;
 #define PK_GI_CHECKERBOARD_OFFSET pk_SceneGI_Checkerboard_Offset.xy
 #define PK_GI_RAY_MIN_DISTANCE 0.01f
 #define PK_GI_RAY_MAX_DISTANCE 50.0f
+#define PK_GI_RADIANCE_BLEND_MIN 0.4f
+#define PK_GI_RADIANCE_BLEND_MAX 0.8f
+#define PK_GI_HDR_FACTOR 128.0f
+
 
 float3 VoxelToWorldSpace(int3 coord) { return (float3(coord) * PK_GI_VOXEL_SIZE) + pk_SceneGI_ST.xyz + PK_GI_VOXEL_SIZE * 0.5f; }
 
@@ -55,14 +61,14 @@ bool SceneGIVoxelHasValue(float3 worldposition)
 float4 SampleSceneGI(float3 worldposition, float level)
 {
     float4 value = tex2DLod(pk_SceneGI_VolumeRead, WorldToSampleSpace(worldposition), level);
-    value.rgb *= 128.0f;
+    value.rgb *= PK_GI_HDR_FACTOR;
     return value;
 }
 
 void StoreSceneGI(float3 worldposition, float4 color) 
 { 
 	int3 coord = WorldToVoxelSpace(worldposition);
-	float4 value = float4(color.rgb / 128.0f, color.a);
+	float4 value = float4(color.rgb / PK_GI_HDR_FACTOR, color.a);
 	
 	// Quantize colors down so that we don't get any lingering artifacts from dim light sources.
 	value.rgb = floor(value.rgb * 0xFFFF.xxx) / 0xFFFF.xxx;
@@ -155,4 +161,21 @@ float4 ConeTraceSpecular(float3 origin, const float3 normal, const float3 direct
 	color.rgb *= PK_GI_SPECULAR_GAIN;
 
 	return color;
+}
+
+
+void SampleSceneGI_ScreenSpace(inout float4 diffuse, inout float4 specular, const float2 uv, const float3 O, const float3 N, const float3 V, const float R)
+{
+	SH irradianceSH;
+	irradianceSH.SHY = tex2D(pk_ScreenGI_SHY_Read, float3(uv, PK_GI_DIFF_LVL)).rgba;
+    irradianceSH.CoCg = tex2D(pk_ScreenGI_CoCg_Read, float3(uv, PK_GI_DIFF_LVL)).rg;
+    diffuse = float4(SHToIrradiance(irradianceSH, N) * PK_GI_HDR_FACTOR * PK_GI_DIFFUSE_GAIN, 0.0f);
+    
+	const float radianceBlend = unlerp_sat(PK_GI_RADIANCE_BLEND_MIN, PK_GI_RADIANCE_BLEND_MAX, R);
+	const float radianceLevel = lerp(PK_GI_SPEC_LVL, PK_GI_DIFF_LVL, radianceBlend);
+
+	SH radianceSH;
+	radianceSH.SHY = tex2D(pk_ScreenGI_SHY_Read, float3(uv, radianceLevel)).rgba;
+    radianceSH.CoCg = tex2D(pk_ScreenGI_CoCg_Read, float3(uv, radianceLevel)).rg;
+    specular = float4(SHToRadiance(radianceSH, normalize(reflect(V, N))) * PK_GI_HDR_FACTOR * PK_GI_SPECULAR_GAIN, 0.0f);
 }
