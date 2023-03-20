@@ -41,7 +41,7 @@ float4 ClipColorToAABB(float4 color, float3 minimum, float3 maximum)
     return color;
 }
 
-TAAOutput SolveTemporalAntiAliasing(sampler2D texMain, sampler2D texHistory, TAADescriptor desc)
+TAAOutput SolveTemporalAntiAliasing(TAADescriptor desc)
 {
     float2 uv = saturate(desc.texcoord - desc.jitter);
 

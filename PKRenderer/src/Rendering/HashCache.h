@@ -72,10 +72,8 @@ namespace PK::Rendering
         DECLARE_HASH(pk_SceneGI_SampleIndex)
         DECLARE_HASH(pk_SceneGI_SampleCount)
         DECLARE_HASH(pk_SceneGI_VoxelSize)
-        DECLARE_HASH(pk_SceneGI_ConeAngle)
-        DECLARE_HASH(pk_SceneGI_DiffuseGain)
-        DECLARE_HASH(pk_SceneGI_SpecularGain)
-        DECLARE_HASH(pk_SceneGI_Fade)
+        DECLARE_HASH(pk_SceneGI_LuminanceGain)
+        DECLARE_HASH(pk_SceneGI_ChrominanceGain)
 
         DECLARE_HASH(pk_Lights)
         DECLARE_HASH(pk_LightMatrices)

@@ -29,7 +29,7 @@ void main()
 		return;
 	}
 
-	const float radius = hasDiscontinuity ? 1.0f : 0.25f;
+	const float radius = hasDiscontinuity ? 1.0f : 0.2f;
 	const float planeThreshold = hasDiscontinuity ? 0.5f : 0.25f;
 	float theta = (pk_SceneGI_SampleIndex / pk_SceneGI_SampleCount) * PK_TWO_PI;
 	float2 rotation = float2(cos(theta), sin(theta));

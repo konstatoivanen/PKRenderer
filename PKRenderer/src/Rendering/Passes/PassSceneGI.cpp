@@ -81,18 +81,14 @@ namespace PK::Rendering::Passes
             { ElementType::Uint, hash->pk_SceneGI_SampleIndex },
             { ElementType::Uint, hash->pk_SceneGI_SampleCount },
             { ElementType::Float, hash->pk_SceneGI_VoxelSize },
-            { ElementType::Float, hash->pk_SceneGI_ConeAngle },
-            { ElementType::Float, hash->pk_SceneGI_DiffuseGain },
-            { ElementType::Float, hash->pk_SceneGI_SpecularGain },
-            { ElementType::Float, hash->pk_SceneGI_Fade }
+            { ElementType::Float, hash->pk_SceneGI_LuminanceGain },
+            { ElementType::Float, hash->pk_SceneGI_ChrominanceGain },
         }), "GI.Parameters");
 
         m_parameters->Set<float4>(hash->pk_SceneGI_ST, float4(-76.8f, -6.0f, -76.8f, 1.0f / 0.6f));
         m_parameters->Set<float>(hash->pk_SceneGI_VoxelSize, 0.6f);
-        m_parameters->Set<float>(hash->pk_SceneGI_ConeAngle, 5.08320368996f);
-        m_parameters->Set<float>(hash->pk_SceneGI_DiffuseGain, 1.0f);
-        m_parameters->Set<float>(hash->pk_SceneGI_SpecularGain, 3.14f);
-        m_parameters->Set<float>(hash->pk_SceneGI_Fade, 0.95f);
+        m_parameters->Set<float>(hash->pk_SceneGI_LuminanceGain, 1.0f);
+        m_parameters->Set<float>(hash->pk_SceneGI_ChrominanceGain, 3.14f);
         m_parameters->Set<uint>(hash->pk_SceneGI_SampleIndex, 0u);
         m_parameters->Set<uint>(hash->pk_SceneGI_SampleCount, 256u);
 
@@ -185,9 +181,31 @@ namespace PK::Rendering::Passes
 
     void PassSceneGI::RenderVoxels(CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup)
     {
-        cmd->BeginDebugScope("SceneGI.Voxelize", PK_COLOR_GREEN);
+        cmd->BeginDebugScope("SceneGI.ReprojectMask", PK_COLOR_GREEN);
 
         auto hash = HashCache::Get();
+        auto resolution = m_screenSpaceSHY->GetResolution();
+        uint3 groupSize = { (uint)ceil(resolution.x / 16.0f), (uint)ceil(resolution.y / 16.0f), 1u };
+        auto range0 = TextureViewRange(0, 0, 0, 2);
+        auto range1 = TextureViewRange(0, 2, 0, 2);
+
+        GraphicsAPI::SetTexture(hash->pk_ScreenGI_SHY_Read, m_screenSpaceSHY.get(), range1);
+        GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range1);
+        GraphicsAPI::SetImage(hash->pk_ScreenGI_SHY_Write, m_screenSpaceSHY.get(), range0);
+        GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range0);
+        GraphicsAPI::SetImage(hash->_DestinationTex, m_screenSpaceMask.get());
+
+        cmd->Dispatch(m_computeReprojectMask, 0, groupSize);
+
+        cmd->Blit(m_screenSpaceSHY.get(), m_screenSpaceSHY.get(), range0, range1, FilterMode::Point);
+        cmd->Blit(m_screenSpaceCoCg.get(), m_screenSpaceCoCg.get(), range0, range1, FilterMode::Point);
+
+        cmd->Dispatch(m_computeDenoise, 0, groupSize);
+
+        cmd->EndDebugScope();
+
+        cmd->BeginDebugScope("SceneGI.Voxelize", PK_COLOR_GREEN);
+
         auto volres = m_voxels->GetResolution();
 
         uint4 viewports[3] =
@@ -210,28 +228,6 @@ namespace PK::Rendering::Passes
             GraphicsAPI::SetImage(hash->_DestinationTex, m_voxels.get(), i, 0);
             cmd->Dispatch(m_computeMipmap, 0, { (volres.x >> i) / 4u, (volres.y >> i) / 4u, (volres.z >> i) / 4u });
         }
-
-        cmd->EndDebugScope();
-
-        cmd->BeginDebugScope("SceneGI.ReprojectMask", PK_COLOR_GREEN);
-
-        auto resolution = m_screenSpaceSHY->GetResolution();
-        uint3 groupSize = { (uint)ceil(resolution.x / 16.0f), (uint)ceil(resolution.y / 16.0f), 1u };
-        auto range0 = TextureViewRange(0, 0, 0, 2);
-        auto range1 = TextureViewRange(0, 2, 0, 2);
-
-        GraphicsAPI::SetTexture(hash->pk_ScreenGI_SHY_Read, m_screenSpaceSHY.get(), range1);
-        GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range1);
-        GraphicsAPI::SetImage(hash->pk_ScreenGI_SHY_Write, m_screenSpaceSHY.get(), range0);
-        GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range0);
-        GraphicsAPI::SetImage(hash->_DestinationTex, m_screenSpaceMask.get());
-
-        cmd->Dispatch(m_computeReprojectMask, 0, groupSize);
-
-        cmd->Blit(m_screenSpaceSHY.get(), m_screenSpaceSHY.get(), range0, range1, FilterMode::Point);
-        cmd->Blit(m_screenSpaceCoCg.get(), m_screenSpaceCoCg.get(), range0, range1, FilterMode::Point);
-
-        cmd->Dispatch(m_computeDenoise, 0, groupSize);
 
         cmd->EndDebugScope();
     }

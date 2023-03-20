@@ -254,9 +254,12 @@ float3 ImportanceSampleGGX(uint i, uint s, const float3 N, const float3 V, const
     Xi += dither;
     Xi -= floor(Xi);
     
-    float3 D = ImportanceSampleGGX(Xi, reflect(V, N), R);
-    D += N * -min(0.0, (dot(D, N) * (1.0f + R)) / dot(N, N));
-    return normalize(D);
+    // view dependent roughness
+    float A = 1.0 - dot(V, N);
+    A = lerp(R * R, R, A * A * A * A * A);
+    
+    float3 D = ImportanceSampleGGX(Xi, reflect(V, N), A);
+    return normalize(D + N * -min(0.0, 2.0f * dot(D, N) / dot(N, N)));
 }
 
 float3 GetSampleDirectionSE(float3 worldNormal, uint index, const float sampleCount, float dither, float angle)

@@ -21,7 +21,7 @@
         }                                                              \
 
     #define PK_META_DECLARE_SURFACE_OUTPUT
-    #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) StoreSceneGI(worldpos, color)
+    #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) StoreGI_WS(worldpos, color)
     #define PK_META_WORLD_TO_CLIPSPACE(position)  WorldToVoxelNDCSpace(position)
 
 #else
@@ -98,18 +98,6 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
     indirect.diffuse = SampleEnvironment(OctaUV(normal), 1.0f);
     indirect.specular = SampleEnvironment(OctaUV(reflect(-viewdir, normal)), roughness);
     return indirect;
-}
-
-void SampleGI(inout Indirect indirect, const SurfaceData surf)
-{
-    float4 diffuse = 0.0f.xxxx; 
-    float4 specular = 0.0f.xxxx;
-    //float4 diffuse = tex2D(pk_ScreenGI_Read, float3(uv, 0));
-    //float4 specular = tex2D(pk_ScreenGI_Read, float3(uv, 1));
-    SampleSceneGI_ScreenSpace(diffuse, specular, surf.clipuvw.xy, surf.worldpos, surf.normal, -surf.viewdir, surf.roughness);
-
-    indirect.diffuse = indirect.diffuse * diffuse.a + diffuse.rgb;
-    indirect.specular = indirect.specular * specular.a + specular.rgb;
 }
 
 #if defined(SHADER_STAGE_VERTEX)
@@ -213,10 +201,23 @@ void SampleGI(inout Indirect indirect, const SurfaceData surf)
             }
     
             // Multi bounce gi. Causes some very lingering light artifacts & bleeding. @TODO Consider adding a setting for this.
-            float3 environmentDiffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
-            float4 tracedDiffuse = ConeTraceDiffuse(surf.worldpos, surf.normal, 0.0f);
+            float3 sceneDelta = surf.worldpos - SampleWorldPosition(surf.clipuvw.xy);
+            bool inView = dot(sceneDelta, sceneDelta) < (PK_GI_VOXEL_LENGTH * PK_GI_VOXEL_LENGTH);
+            float3 indirect = 0.0f.xxx;
 
-            value.rgb += surf.albedo * (environmentDiffuse * tracedDiffuse.a + tracedDiffuse.rgb);
+            if (inView)
+            {
+                // Sample screen space SH values for more accurate results.
+                indirect = SampleGI_VS_Diffuse(surf.clipuvw.xy, surf.normal);
+            }
+            else
+            {
+                float3 environmentDiffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
+                float4 tracedDiffuse = ConeTraceDiffuse(surf.worldpos, surf.normal, 0.0f);
+                indirect = (environmentDiffuse * tracedDiffuse.a + tracedDiffuse.rgb);
+            }
+
+            value.rgb += surf.albedo * indirect;
             value.rgb += surf.emission;
             value.a = surf.alpha; 
 
@@ -229,7 +230,15 @@ void SampleGI(inout Indirect indirect, const SurfaceData surf)
             Indirect indirect = GetStaticSceneIndirect(surf.normal, surf.viewdir, surf.roughness);
             LightTile tile = GetLightTile(surf.clipuvw);
     
-            SampleGI(indirect, surf);
+            SampleGI_VS
+            (
+                indirect.diffuse, 
+                indirect.specular, 
+                surf.clipuvw.xy, 
+                surf.normal, 
+                -surf.viewdir, 
+                surf.roughness
+            );
     
             INIT_BRDF_CACHE
             (

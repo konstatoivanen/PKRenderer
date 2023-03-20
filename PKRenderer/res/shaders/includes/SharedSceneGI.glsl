@@ -11,10 +11,8 @@ PK_DECLARE_CBUFFER(pk_SceneGI_Params, PK_SET_SHADER)
 	uint pk_SceneGI_SampleIndex;
 	uint pk_SceneGI_SampleCount;
 	float pk_SceneGI_VoxelSize; 
-	float pk_SceneGI_ConeAngle; 
-	float pk_SceneGI_DiffuseGain; 
-	float pk_SceneGI_SpecularGain; 
-	float pk_SceneGI_Fade; 
+	float pk_SceneGI_LuminanceGain; 
+	float pk_SceneGI_ChrominanceGain; 
 };
 
 layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_SceneGI_VolumeMaskWrite;
@@ -27,16 +25,11 @@ PK_DECLARE_SET_SHADER uniform sampler2DArray pk_ScreenGI_CoCg_Read;
 #define PK_GI_SPEC_LVL 1
 #define PK_GI_VOXEL_MAX_MIP 7
 #define PK_GI_VOXEL_SIZE pk_SceneGI_VoxelSize
-#define PK_GI_ANGLE pk_SceneGI_ConeAngle
-#define PK_GI_DIFFUSE_GAIN pk_SceneGI_DiffuseGain.xxx
-#define PK_GI_SPECULAR_GAIN pk_SceneGI_SpecularGain.xxx
+#define PK_GI_VOXEL_LENGTH pk_SceneGI_VoxelSize * PK_SQRT2
 #define PK_GI_CHECKERBOARD_OFFSET pk_SceneGI_Checkerboard_Offset.xy
 #define PK_GI_RAY_MIN_DISTANCE 0.01f
-#define PK_GI_RAY_MAX_DISTANCE 50.0f
-#define PK_GI_RADIANCE_BLEND_MIN 0.4f
-#define PK_GI_RADIANCE_BLEND_MAX 0.8f
+#define PK_GI_RAY_MAX_DISTANCE 100.0f
 #define PK_GI_HDR_FACTOR 128.0f
-
 
 float3 VoxelToWorldSpace(int3 coord) { return (float3(coord) * PK_GI_VOXEL_SIZE) + pk_SceneGI_ST.xyz + PK_GI_VOXEL_SIZE * 0.5f; }
 
@@ -58,14 +51,14 @@ bool SceneGIVoxelHasValue(float3 worldposition)
 	return imageLoad(pk_SceneGI_VolumeMaskWrite, coord).x != 0;
 }
 
-float4 SampleSceneGI(float3 worldposition, float level)
+float4 SampleGI_WS(float3 worldposition, float level)
 {
     float4 value = tex2DLod(pk_SceneGI_VolumeRead, WorldToSampleSpace(worldposition), level);
     value.rgb *= PK_GI_HDR_FACTOR;
     return value;
 }
 
-void StoreSceneGI(float3 worldposition, float4 color) 
+void StoreGI_WS(float3 worldposition, float4 color) 
 { 
 	int3 coord = WorldToVoxelSpace(worldposition);
 	float4 value = float4(color.rgb / PK_GI_HDR_FACTOR, color.a);
@@ -77,6 +70,34 @@ void StoreSceneGI(float3 worldposition, float4 color)
 	imageStore(pk_SceneGI_VolumeWrite, coord, value); 
 }
 
+float3 SampleGI_VS_Diffuse(const float2 uv, const float3 N)
+{
+	SH irradianceSH;
+	irradianceSH.SHY = tex2D(pk_ScreenGI_SHY_Read, float3(uv, PK_GI_DIFF_LVL)).rgba;
+    irradianceSH.CoCg = tex2D(pk_ScreenGI_CoCg_Read, float3(uv, PK_GI_DIFF_LVL)).rg;
+	irradianceSH.SHY *= pk_SceneGI_LuminanceGain;
+	irradianceSH.CoCg *= pk_SceneGI_ChrominanceGain;
+	return SHToIrradiance(irradianceSH, N);
+}
+
+void SampleGI_VS(inout float3 diffuse, inout float3 specular, const float2 uv, const float3 N, const float3 V, const float R)
+{
+	SH irradianceSH;
+	irradianceSH.SHY = tex2D(pk_ScreenGI_SHY_Read, float3(uv, PK_GI_DIFF_LVL)).rgba;
+    irradianceSH.CoCg = tex2D(pk_ScreenGI_CoCg_Read, float3(uv, PK_GI_DIFF_LVL)).rg;
+    
+	SH radianceSH;
+	radianceSH.SHY = tex2D(pk_ScreenGI_SHY_Read, float3(uv, PK_GI_SPEC_LVL)).rgba;
+    radianceSH.CoCg = tex2D(pk_ScreenGI_CoCg_Read, float3(uv, PK_GI_SPEC_LVL)).rg;
+
+	irradianceSH.SHY *= pk_SceneGI_LuminanceGain;
+	irradianceSH.CoCg *= pk_SceneGI_ChrominanceGain;
+	radianceSH.SHY *= pk_SceneGI_LuminanceGain;
+	radianceSH.CoCg *= pk_SceneGI_ChrominanceGain;
+
+    diffuse = SHToIrradiance(irradianceSH, N);
+    specular = SHToRadiance(radianceSH, normalize(reflect(V, N))) / sqrt(R);
+}
 
 float4 SampleGIVolumetric(float3 position)
 {
@@ -86,7 +107,7 @@ float4 SampleGIVolumetric(float3 position)
 	{
 		float level = i * 1.25f;
 
-		float4 voxel = SampleSceneGI(position, level);
+		float4 voxel = SampleGI_WS(position, level);
 
 		color.rgb += voxel.rgb * (1.0 + level) * pow2(color.a) * i;
 		color.a *= saturate(1.0 - voxel.a * (1.0 + pow3(level) * 0.075));
@@ -104,7 +125,7 @@ float4 ConeTraceDiffuse(float3 origin, const float3 normal, const float dither)
 	#pragma unroll 16
 	for (uint i = 0u; i < 16u; ++i)
 	{
-		const float3 direction = GetSampleDirectionSE(normal, i, 16u, dither, PK_GI_ANGLE);
+		const float3 direction = GetSampleDirectionSE(normal, i, 16u, dither, 5.08320368996f);
 
 		float4 color = float4(0.0.xxx, 1.0);
 
@@ -114,7 +135,7 @@ float4 ConeTraceDiffuse(float3 origin, const float3 normal, const float dither)
 		for (uint i = 0; i < 4; ++i)
 		{
 			float level = log2(dist / PK_GI_VOXEL_SIZE);
-			float4 voxel = SampleSceneGI(origin + dist * direction, level);
+			float4 voxel = SampleGI_WS(origin + dist * direction, level);
 
 			color.rgb += voxel.rgb * (1.0f + level) * pow2(color.a) * i;
 			color.a *= saturate(1.0f - voxel.a * (1.0f + pow3(level) * 0.1f));
@@ -128,8 +149,6 @@ float4 ConeTraceDiffuse(float3 origin, const float3 normal, const float dither)
 	float groundOcclusion = saturate(normal.y + 1.0f);
 
 	A.a *= groundOcclusion;
-	A.rgb *= PK_GI_DIFFUSE_GAIN;
-
 	A /= 16.0;
 
 	return A;
@@ -149,7 +168,7 @@ float4 ConeTraceSpecular(float3 origin, const float3 normal, const float3 direct
 	{
 		float level = i * conesize;
 
-		float4 voxel = SampleSceneGI(origin + dist * direction, level);
+		float4 voxel = SampleGI_WS(origin + dist * direction, level);
 
 		color.rgb += voxel.rgb * voxel.a * color.a * (1.0 + level);
 		color.a *= saturate(1.0 - voxel.a * (1.0 + pow3(level) * conesize * 0.02)); 
@@ -158,24 +177,5 @@ float4 ConeTraceSpecular(float3 origin, const float3 normal, const float3 direct
 		dist += PK_GI_VOXEL_SIZE * (1.0f + 0.125f * level);
 	}
 
-	color.rgb *= PK_GI_SPECULAR_GAIN;
-
 	return color;
-}
-
-
-void SampleSceneGI_ScreenSpace(inout float4 diffuse, inout float4 specular, const float2 uv, const float3 O, const float3 N, const float3 V, const float R)
-{
-	SH irradianceSH;
-	irradianceSH.SHY = tex2D(pk_ScreenGI_SHY_Read, float3(uv, PK_GI_DIFF_LVL)).rgba;
-    irradianceSH.CoCg = tex2D(pk_ScreenGI_CoCg_Read, float3(uv, PK_GI_DIFF_LVL)).rg;
-    diffuse = float4(SHToIrradiance(irradianceSH, N) * PK_GI_HDR_FACTOR * PK_GI_DIFFUSE_GAIN, 0.0f);
-    
-	const float radianceBlend = unlerp_sat(PK_GI_RADIANCE_BLEND_MIN, PK_GI_RADIANCE_BLEND_MAX, R);
-	const float radianceLevel = lerp(PK_GI_SPEC_LVL, PK_GI_DIFF_LVL, radianceBlend);
-
-	SH radianceSH;
-	radianceSH.SHY = tex2D(pk_ScreenGI_SHY_Read, float3(uv, radianceLevel)).rgba;
-    radianceSH.CoCg = tex2D(pk_ScreenGI_CoCg_Read, float3(uv, radianceLevel)).rg;
-    specular = float4(SHToRadiance(radianceSH, normalize(reflect(V, N))) * PK_GI_HDR_FACTOR * PK_GI_SPECULAR_GAIN, 0.0f);
 }

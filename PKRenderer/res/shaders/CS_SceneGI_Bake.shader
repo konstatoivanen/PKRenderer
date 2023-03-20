@@ -17,9 +17,9 @@ float3 SampleEnvironment(float3 direction, float roughness)
 float3 SampleRadiance(const float3 origin, const float3 direction, const float dist, const float roughness)
 {
     const float level = roughness * roughness * sqrt(dist / PK_GI_VOXEL_SIZE);
-    const float4 voxel = SampleSceneGI(origin + direction * dist, level);
+    const float4 voxel = SampleGI_WS(origin + direction * dist, level);
 
-    const float3 env = SampleEnvironment(direction, roughness);
+    const float3 env = SampleEnvironment(direction, 0.25f);
     const float envclip = saturate(PK_GI_RAY_MAX_DISTANCE * (1.0f - (dist / PK_GI_RAY_MAX_DISTANCE)));
     const float alpha = max(voxel.a, 1.0f / PK_GI_VOXEL_MAX_MIP);
 
@@ -31,8 +31,8 @@ SH SampleIrradianceSH(const float3 O, const float3 N, int2 coord)
     const float3 dither = GlobalNoiseBlue(uint2(coord) + pk_FrameIndex.xx).xyz;
     const float3 direction = ImportanceSampleGGX(pk_SceneGI_SampleIndex, pk_SceneGI_SampleCount, N, 1.0f, dither.xy);
     const float sampleDistance = imageLoad(pk_ScreenGI_Hits, coord).r;
-    const float3 radiance = SampleRadiance(O, direction, sampleDistance, 0.5f);
-    return IrradianceToSH(radiance / PK_GI_HDR_FACTOR, direction);
+    const float3 radiance = SampleRadiance(O, direction, sampleDistance, 0.0f);
+    return IrradianceToSH(radiance, direction);
 }
 
 SH SampleRadianceSH(const float3 O, const float3 N, const float3 V, int2 coord, float roughness)
@@ -41,7 +41,7 @@ SH SampleRadianceSH(const float3 O, const float3 N, const float3 V, int2 coord, 
     const float3 direction = ImportanceSampleGGX(pk_SceneGI_SampleIndex, pk_SceneGI_SampleCount, N, V, roughness, dither.xy);
     const float sampleDistance = imageLoad(pk_ScreenGI_Hits, coord).g;
     const float3 radiance = SampleRadiance(O, direction, sampleDistance, roughness);
-    return IrradianceToSH(radiance / PK_GI_HDR_FACTOR, direction);
+    return IrradianceToSH(radiance, direction);
 }
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;

@@ -38,7 +38,7 @@ void main()
     desc.blendingMotion = pk_TAA_BlendingMotion;
     desc.motionAmplification = pk_TAA_MotionAmplification;
 
-    TAAOutput o = SolveTemporalAntiAliasing(_SourceTex, _HistoryReadTex, desc);
+    TAAOutput o = SolveTemporalAntiAliasing(desc);
 
     imageStore(_DestinationTex, coord, o.color);
     imageStore(_HistoryWriteTex, coord, o.history);
