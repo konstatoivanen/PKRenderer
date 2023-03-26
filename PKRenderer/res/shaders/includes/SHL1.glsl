@@ -46,10 +46,36 @@ float3 SHToRadiance(const SH sh, const float3 direction)
 	return PK_YCoCgRToRGB * float3(Y, CoCg);
 }
 
+float SHToLuminance(const SH sh, const float3 direction)
+{
+	return max(0.0f, dot(sh.SHY,  float4(0.282095f, 0.488603f * direction.y, 0.488603f * direction.z, 0.488603f * direction.x)));
+}
+
+float3 SHGetMaxRadiance(const SH sh)
+{
+	return SHToRadiance(sh, normalize(sh.SHY.wyz));
+}
+
 SH InterpolateSH(const SH sha, const SH shb, const float i)
 {
 	SH shc;
 	shc.SHY = lerp(sha.SHY, shb.SHY, i);
 	shc.CoCg = lerp(sha.CoCg, shb.CoCg, i);
+	return shc;
+}
+
+SH ScaleSH(const SH sh, float scale)
+{
+	SH shc;
+	shc.SHY = sh.SHY * scale;
+	shc.CoCg = sh.CoCg * scale;
+	return shc;
+}
+
+SH AddSH(const SH sha, const SH shb, float scaleb)
+{
+	SH shc;
+	shc.SHY = sha.SHY + shb.SHY * scaleb;
+	shc.CoCg = sha.CoCg + shb.CoCg * scaleb;
 	return shc;
 }

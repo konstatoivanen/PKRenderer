@@ -14,22 +14,26 @@
     #undef PK_NORMALMAPS
     #undef PK_HEIGHTMAPS
     
-    #define PK_META_EARLY_CLIP_UVW(w, c)                               \
-        if (!TryGetWorldToClipUVW(w, c) || SceneGIVoxelHasValue(w))    \
-        {                                                              \
-            return;                                                    \
-        }                                                              \
+    #define PK_META_EARLY_CLIP_UVW(w, c, n)         \
+        float3 vq = QuantizeWorldToVoxelSpace(w);   \
+        if (!TryGetWorldToClipUVW(vq, c) ||         \
+             SceneGIVoxelHasValue(w) ||             \
+             !SceneGINormalReject(n))               \
+        {                                           \
+            return;                                 \
+        }                                           \
+        c = WorldToClipUVW(w);                      \
+        c.xy = ClampClipUVBorder(c.xy);             \
+
 
     #define PK_META_DECLARE_SURFACE_OUTPUT
     #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) StoreGI_WS(worldpos, color)
     #define PK_META_WORLD_TO_CLIPSPACE(position)  WorldToVoxelNDCSpace(position)
-
 #else
-    #define PK_META_EARLY_CLIP_UVW(w, c) c = GetFragmentClipUVW(); 
+    #define PK_META_EARLY_CLIP_UVW(w, c, n) c = GetFragmentClipUVW(); 
     #define PK_META_DECLARE_SURFACE_OUTPUT out float4 SV_Target0;
     #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) SV_Target0 = color
     #define PK_META_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
-
 #endif
 
 #define SRC_METALLIC x
@@ -140,12 +144,6 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
 
 #elif defined(SHADER_STAGE_FRAGMENT)
 
-    // Use these to modify surface values in fragment or vertex stage
-    void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData surf);
-
-    in SurfaceFragmentVaryings baseVaryings;
-    PK_META_DECLARE_SURFACE_OUTPUT
-    
     #if defined(PK_HEIGHTMAPS)
         #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount) ParallaxOffset(tex2D(heightmap, varyings.vs_TEXCOORD0.xy).x, amount, normalize(baseVaryings.vs_TSVIEWDIRECTION));
     #else
@@ -160,6 +158,11 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
          #define PK_SURF_MESH_NORMAL normalize(baseVaryings.vs_NORMAL)
     #endif
 
+    // Use these to modify surface values in fragment or vertex stage
+    void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData surf);
+
+    in SurfaceFragmentVaryings baseVaryings;
+    PK_META_DECLARE_SURFACE_OUTPUT
     void main()
     {
         float4 value = 0.0f.xxxx;
@@ -180,7 +183,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
         surf.subsurface_power = 1.0f;
         surf.subsurface_thickness = 0.0f;
 
-        PK_META_EARLY_CLIP_UVW(surf.worldpos, surf.clipuvw)
+        PK_META_EARLY_CLIP_UVW(surf.worldpos, surf.clipuvw, PK_SURF_MESH_NORMAL)
         
         PK_SURFACE_FUNC_FRAG(baseVaryings, surf);
 
@@ -189,9 +192,8 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
             value = float4(WorldToViewDir(surf.normal), surf.roughness);
 
         #elif defined(PK_META_PASS_GIVOXELIZE)
-
             GetSurfaceAlphaReflectivity(surf);
-    
+
             LightTile tile = GetLightTile(surf.clipuvw);
     
             for (uint i = tile.start; i < tile.end; ++i)
@@ -201,11 +203,13 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
             }
     
             // Multi bounce gi. Causes some very lingering light artifacts & bleeding. @TODO Consider adding a setting for this.
-            float3 sceneDelta = surf.worldpos - SampleWorldPosition(surf.clipuvw.xy);
-            bool inView = dot(sceneDelta, sceneDelta) < (PK_GI_VOXEL_LENGTH * PK_GI_VOXEL_LENGTH);
             float3 indirect = 0.0f.xxx;
 
-            if (inView)
+            // Get unquantized clip uvw.
+            float deltaDepth = SampleLinearDepth(surf.clipuvw.xy) - LinearizeDepth(surf.clipuvw.z); 
+            
+            // Fragment is in view
+            if (deltaDepth > -0.01f && deltaDepth < 0.1f)
             {
                 // Sample screen space SH values for more accurate results.
                 indirect = SampleGI_VS_Diffuse(surf.clipuvw.xy, surf.normal);
@@ -213,7 +217,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
             else
             {
                 float3 environmentDiffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
-                float4 tracedDiffuse = ConeTraceDiffuse(surf.worldpos, surf.normal, 0.0f);
+                float4 tracedDiffuse = SampleGI_ConeTraceDiffuse(surf.worldpos, surf.normal, 0.0f);
                 indirect = (environmentDiffuse * tracedDiffuse.a + tracedDiffuse.rgb);
             }
 
@@ -265,7 +269,6 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
     
             value.rgb += surf.emission;
             value.a = surf.alpha;
-
         #endif
 
         PK_META_STORE_SURFACE_OUTPUT(value, surf.worldpos);

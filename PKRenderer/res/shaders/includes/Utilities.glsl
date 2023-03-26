@@ -10,6 +10,7 @@ bool IsNaN(float v) { return (floatBitsToUint(v) & 0x7fffffff) > 0x7f800000; }
 bool IsNaN(float2 v) { return IsNaN(v.x) || IsNaN(v.y); }
 bool IsNaN(float3 v) { return IsNaN(v.x) || IsNaN(v.y) || IsNaN(v.z); }
 bool IsNaN(float4 v) { return IsNaN(v.x) || IsNaN(v.y) || IsNaN(v.z) || IsNaN(v.w); }
+float2 make_rotation(float radian)  { return float2(cos(radian), sin(radian)); }
 
 #define lerp_outquad(a, b, c) (-((b) - (a)) * (c) * ((c) - 2) + (a))
 #define lerp_inquad(a, b, c) (((b) - (a)) * (c) * (c) + (a))

@@ -10,7 +10,7 @@ void main()
 {
     float3 worldpos = VoxelToWorldSpace(int3(gl_GlobalInvocationID));
 
-    if (!WorldToClipSpaceCull(worldpos, 0.0f))
+    if (!WorldToClipSpaceCull(worldpos))
     {
         return;
     }

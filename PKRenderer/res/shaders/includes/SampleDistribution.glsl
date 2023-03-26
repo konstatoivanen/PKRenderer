@@ -220,10 +220,22 @@ float3 GetSampleDirectionHammersLey(const float3 Xi, float blur)
     return normalize(float3(Xi.xy * sincos.xx, sincos.y));
 }
 
-float3 ImportanceSampleGGX(const float2 Xi, const float3 N, float roughness)
+float3x3 ComposeTBN(float3 N, float3 U)
+{
+    float3 T = normalize(cross(U, N));
+    float3 B = cross(N, T);
+    return float3x3(T, B, N);
+}
+
+float3x3 ComposeTBN(float3 N)
+{
+    float3 U = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
+    return ComposeTBN(N, U);
+}
+
+float3 DistributeGGX(const float2 Xi, float roughness)
 {
     float a = roughness * roughness;
-
     float phi = 2.0 * 3.14159265 * Xi.x;
     float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
@@ -232,34 +244,37 @@ float3 ImportanceSampleGGX(const float2 Xi, const float3 N, float roughness)
     H.x = cos(phi) * sinTheta;
     H.y = sin(phi) * sinTheta;
     H.z = cosTheta;
-
-    float3 up = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
-    float3 tangent = normalize(cross(up, N));
-    float3 bitangent = cross(N, tangent);
-    float3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
-    return normalize(sampleVec);
+    return H;
 }
 
-float3 ImportanceSampleGGX(uint i, uint s, const float3 N, const float R, const float2 dither)
+float3 ImportanceSampleGGX(const float2 Xi, const float3 N, float roughness)
+{
+    float3 H = DistributeGGX(Xi, roughness);
+    return normalize(ComposeTBN(N) * H);
+}
+
+float3 ImportanceSampleGGX(uint i, uint s, const float3 N, const float R)
 {
     float2 Xi = Hammersley(i,s);
-    Xi += dither;
-    Xi -= floor(Xi);
     return ImportanceSampleGGX(Xi, N, R);
 }
 
-float3 ImportanceSampleGGX(uint i, uint s, const float3 N, const float3 V, const float R, const float2 dither)
+float3 ImportanceSampleGGX(const float2 Xi, const float3 N, const float3 V, const float R)
 {
-    float2 Xi = Hammersley(i,s);
-    Xi += dither;
-    Xi -= floor(Xi);
-    
-    // view dependent roughness
-    float A = 1.0 - dot(V, N);
-    A = lerp(R * R, R, A * A * A * A * A);
-    
-    float3 D = ImportanceSampleGGX(Xi, reflect(V, N), A);
-    return normalize(D + N * -min(0.0, 2.0f * dot(D, N) / dot(N, N)));
+    float3 H = DistributeGGX(Xi, R);
+    float3 RV = reflect(V, N);
+    float3x3 TBN = ComposeTBN(RV, N); 
+    float3 D = TBN * H;
+
+    // Flip sample along V/N plane to avoid self intersections
+    // This also somewhat produces view dependent roughness as
+    // directions align in narrow angles
+    if (dot(D, N) < 0)
+    {
+        D = TBN * float3(H.x, -H.y, H.z);
+    }
+
+    return D;
 }
 
 float3 GetSampleDirectionSE(float3 worldNormal, uint index, const float sampleCount, float dither, float angle)

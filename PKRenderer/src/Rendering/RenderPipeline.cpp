@@ -290,6 +290,8 @@ namespace PK::Rendering
 
         // @TODO Add trasparent forward stuff here
 
+        m_passSceneGI.CacheForwardOutput(cmdgraphics, m_renderTarget->GetColor(0u));
+
         // Post Effects
         cmdgraphics->BeginDebugScope("PostEffects", PK_COLOR_YELLOW);
         m_temporalAntialiasing.Render(cmdgraphics, m_renderTarget.get());

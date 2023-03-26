@@ -17,6 +17,7 @@ namespace PK::Rendering::Passes
             void DispatchRays(Objects::CommandBuffer* cmd);
             void RenderVoxels(Objects::CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup);
             void RenderGI(Objects::CommandBuffer* cmd);
+            void CacheForwardOutput(Objects::CommandBuffer* cmd, Objects::Texture* texture);
 
         private:
             Structs::FixedFunctionShaderAttributes m_voxelizeAttribs{};
@@ -34,6 +35,8 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Texture> m_screenSpaceCoCg;
             Utilities::Ref<Objects::Texture> m_screenSpaceMask;
             Utilities::Ref<Objects::Texture> m_screenSpaceRayhits;
+            Utilities::Ref<Objects::Texture> m_screenSpaceAO;
+            Utilities::Ref<Objects::Texture> m_previousForwardOutput;
             uint32_t m_rayIndex = 0u;
             uint32_t m_checkerboardIndex = 0u;
             int32_t m_rasterAxis = 0;

@@ -62,6 +62,8 @@ namespace PK::Rendering
         DECLARE_HASH(pk_SceneGI_VolumeRead)
         DECLARE_HASH(pk_ScreenGI_Mask)
         DECLARE_HASH(pk_ScreenGI_Hits)
+        DECLARE_HASH(pk_ScreenGI_ForwardOuput)
+        DECLARE_HASH(pk_ScreenGI_AO)
         DECLARE_HASH(pk_ScreenGI_SHY_Read)
         DECLARE_HASH(pk_ScreenGI_SHY_Write)
         DECLARE_HASH(pk_ScreenGI_CoCg_Read)

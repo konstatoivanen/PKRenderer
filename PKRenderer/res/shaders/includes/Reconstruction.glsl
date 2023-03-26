@@ -62,6 +62,8 @@ float3 SampleWorldPosition(float2 uv) { return mul(pk_MATRIX_I_V, float4(SampleV
 
 float3 SampleWorldPosition(int2 coord, int2 size) { return mul(pk_MATRIX_I_V, float4(SampleViewPosition(coord, size), 1.0f)).xyz; }
 
+float3 SampleWorldPosition(int2 coord, int2 size, float linearDepth) { return mul(pk_MATRIX_I_V, float4(SampleViewPosition(coord, size, linearDepth), 1.0f)).xyz; }
+
 float3 GetFragmentClipUVW()
 {
     #if defined(SHADER_STAGE_FRAGMENT)

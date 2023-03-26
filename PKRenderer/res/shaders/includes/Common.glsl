@@ -109,6 +109,8 @@ float3 WorldToViewDir(float3 dir) { return normalize(mul(float3x3(pk_MATRIX_V), 
 float4 ObjectToClipPos( in float3 pos) { return mul(pk_MATRIX_VP, mul(pk_MATRIX_M, float4(pos, 1.0))); }
 float4 ObjectToClipPos(float4 pos) { return ObjectToClipPos(pos.xyz); }
 
+float2 ClampClipUVBorder(float2 uv) { return clamp(uv, 0.5f * pk_ScreenParams.zw, 1.0f.xx - pk_ScreenParams.zw * 0.5f); }
+
 float4 ClipToScreenPos(float4 clippos) 
 {
     float4 screenpos = clippos * 0.5f;
@@ -160,15 +162,28 @@ float3x3 ComposeMikkTangentSpaceMatrix(float3 normal, float4 tangent)
     return mul(float3x3(pk_MATRIX_M), float3x3(T, B, N));
 }
 
-bool WorldToClipSpaceCull(float3 worldpos, float bias)
+float3 WorldToClipUVW(float3 worldpos)
 {
     float4 clippos = WorldToClipPos(worldpos);
-    return clippos.z > -bias && all(lessThan(abs(clippos.xy / clippos.w), 1.0f.xx + bias.xx));
+    return ClipToUVW(clippos);
+}
+
+bool WorldToClipSpaceCull(float3 worldpos)
+{
+    float4 clippos = WorldToClipPos(worldpos);
+    return clippos.z > 0.0f && all(lessThan(abs(clippos.xy / clippos.w), 1.0f.xx));
 }
 
 bool TryGetWorldToClipUVW(float3 worldpos, inout float3 uvw)
 {
     float4 clippos = WorldToClipPos(worldpos);
+    uvw = ClipToUVW(clippos);
+    return clippos.z > 0.0f && all(lessThan(abs(clippos.xy / clippos.w), 1.0f.xx));
+}
+
+bool TryGetWorldToPrevClipUVW(float3 worldpos, inout float3 uvw)
+{
+    float4 clippos = mul(pk_MATRIX_L_VP, float4(worldpos, 1.0f));
     uvw = ClipToUVW(clippos);
     return clippos.z > 0.0f && all(lessThan(abs(clippos.xy / clippos.w), 1.0f.xx));
 }
