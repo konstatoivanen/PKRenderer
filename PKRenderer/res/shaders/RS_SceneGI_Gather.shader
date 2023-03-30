@@ -18,6 +18,13 @@ void main()
 	int2 coord = int2(gl_LaunchIDEXT.xy);
 
 	float depth = SampleLinearDepth(coord);
+
+	if (depth >= pk_ProjectionParams.z - 1e-4f)
+	{
+		imageStore(pk_ScreenGI_Hits, coord, float4(PK_GI_RAY_MIN_DISTANCE, PK_GI_RAY_MIN_DISTANCE, 0.0f.xx));
+		return;
+	}
+
 	depth -= depth * 1e-2f; // Apply Bias to avoid rays clipping with geo
 
 	const float4 NR = SampleWorldSpaceNormalRoughness(coord);

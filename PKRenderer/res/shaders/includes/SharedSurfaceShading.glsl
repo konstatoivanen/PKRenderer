@@ -269,6 +269,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
     
             value.rgb += surf.emission;
             value.a = surf.alpha;
+
         #endif
 
         PK_META_STORE_SURFACE_OUTPUT(value, surf.worldpos);

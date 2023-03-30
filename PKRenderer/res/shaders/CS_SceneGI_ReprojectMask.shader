@@ -15,7 +15,8 @@ void main()
 		return;
 	}
 
-	float currentDepth = SampleLinearDepth(coord);
+	float2 uv = (coord + 0.5f.xx) / size;
+	float currentDepth = SampleLinearDepth(uv);
 
 	float3 viewpos = SampleViewPosition(coord, size, currentDepth);
 	float3 worldpos = mul(pk_MATRIX_I_V, float4(viewpos, 1.0f)).xyz;
@@ -23,6 +24,7 @@ void main()
 	float3 uvw = ClipToUVW(mul(pk_MATRIX_LD_P, float4(viewpos, 1.0f)));
 	float previousDepth = SampleLinearPreviousDepth(uvw.xy);
 
+	float uvclip = step(0.5f, length((uvw.xy - uv) * pk_ScreenParams.xy));
 	float deltaDepth = abs(currentDepth - previousDepth) / max(max(currentDepth, previousDepth), 1e-4f);
 
 	GIMask mask; 

@@ -22,7 +22,7 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const float d
         float deltaDepth = abs(sdepth - rdepth);
         float bias = rdepth * 0.01f;
     
-        if ((sdepth > 0.99f && dist >= PK_GI_RAY_MAX_DISTANCE - 0.01f) || deltaDepth <= bias)
+        if ((sdepth > pk_ProjectionParams.z - 1e-4f && dist >= PK_GI_RAY_MAX_DISTANCE - 0.01f) || deltaDepth <= bias)
         {
             return tex2D(pk_ScreenGI_ForwardOuput, clipuvw.xy).rgb;
         }
@@ -96,10 +96,10 @@ void main()
     float irradianceLum = SHToLuminance(irradianceSH, N);
     float radianceLum = SHToLuminance(radianceSH, reflect(V, N));
 
-    const bool refreshDiff = IsNaN(irradianceSH.SHY.w) || IsNaN(irradianceSH.CoCg);
-    const bool refreshSpec = IsNaN(radianceSH.SHY.w) || IsNaN(radianceSH.CoCg);
-    const float interDiff = mask.discontinuityFrames > 0u ? mask.discontinuityFrames * 0.125f : lerp(0.01f, 0.25f, saturate(irradianceLum * 5.0f));
-    const float interSpec = mask.discontinuityFrames > 0u ? mask.discontinuityFrames * 0.125f : lerp(0.05f, 0.25f, saturate(radianceLum * 5.0f));
+    const bool refreshDiff = mask.discontinuityFrames > 7u || IsNaN(irradianceSH.SHY.w) || IsNaN(irradianceSH.CoCg);
+    const bool refreshSpec = mask.discontinuityFrames > 7u || IsNaN(radianceSH.SHY.w) || IsNaN(radianceSH.CoCg);
+    const float interDiff = lerp(0.01f, 0.75f, saturate(irradianceLum * 5.0f));
+    const float interSpec = lerp(0.05f, 0.25f, saturate(radianceLum * 5.0f));
 
     SH irradianceNew = SampleIrradianceSH(O, N, coord);
     SH radianceNew = SampleRadianceSH(O, N, V, coord, NR.w);
