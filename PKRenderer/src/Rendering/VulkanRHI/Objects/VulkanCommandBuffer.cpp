@@ -153,11 +153,17 @@ namespace PK::Rendering::VulkanRHI::Objects
         vkCmdDrawIndexedIndirect(m_commandBuffer, vkbuffer->buffer, offset, drawCount, stride);
     }
 
-    void VulkanCommandBuffer::Dispatch(uint3 groupCount)
+    void VulkanCommandBuffer::Dispatch(uint3 dimensions)
     {
         EndRenderPass();
         ValidatePipeline();
-        vkCmdDispatch(m_commandBuffer, groupCount.x, groupCount.y, groupCount.z);
+        
+        uint3 groupSize = m_renderState->GetComputeGroupSize();
+        uint32_t groupCountX = (uint32_t)ceilf(dimensions.x / (float)groupSize.x);
+        uint32_t groupCountY = (uint32_t)ceilf(dimensions.y / (float)groupSize.y);
+        uint32_t groupCountZ = (uint32_t)ceilf(dimensions.z / (float)groupSize.z);
+        
+        vkCmdDispatch(m_commandBuffer, groupCountX, groupCountY, groupCountZ);
     }
 
     void VulkanCommandBuffer::DispatchRays(Math::uint3 dimensions)

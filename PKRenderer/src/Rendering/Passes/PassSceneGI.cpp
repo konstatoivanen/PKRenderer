@@ -76,16 +76,16 @@ namespace PK::Rendering::Passes
 
         auto hash = HashCache::Get();
         m_parameters = CreateRef<ConstantBuffer>(BufferLayout(
-            {
-                { ElementType::Float4, hash->pk_SceneGI_ST },
-                { ElementType::Uint4, hash->pk_SceneGI_Swizzle },
-                { ElementType::Int4, hash->pk_SceneGI_Checkerboard_Offset },
-                { ElementType::Uint, hash->pk_SceneGI_SampleIndex },
-                { ElementType::Uint, hash->pk_SceneGI_SampleCount },
-                { ElementType::Float, hash->pk_SceneGI_VoxelSize },
-                { ElementType::Float, hash->pk_SceneGI_LuminanceGain },
-                { ElementType::Float, hash->pk_SceneGI_ChrominanceGain },
-            }), "GI.Parameters");
+        {
+            { ElementType::Float4, hash->pk_SceneGI_ST },
+            { ElementType::Uint4, hash->pk_SceneGI_Swizzle },
+            { ElementType::Int4, hash->pk_SceneGI_Checkerboard_Offset },
+            { ElementType::Uint, hash->pk_SceneGI_SampleIndex },
+            { ElementType::Uint, hash->pk_SceneGI_SampleCount },
+            { ElementType::Float, hash->pk_SceneGI_VoxelSize },
+            { ElementType::Float, hash->pk_SceneGI_LuminanceGain },
+            { ElementType::Float, hash->pk_SceneGI_ChrominanceGain },
+        }), "GI.Parameters");
 
         m_parameters->Set<float4>(hash->pk_SceneGI_ST, float4(-76.8f, -6.0f, -76.8f, 1.0f / 0.6f));
         m_parameters->Set<float>(hash->pk_SceneGI_VoxelSize, 0.6f);
@@ -152,9 +152,8 @@ namespace PK::Rendering::Passes
         if (m_rasterAxis == 0)
         {
             cmd->BeginDebugScope("SceneGI.PruneVoxels", PK_COLOR_GREEN);
-            auto volres = m_voxels->GetResolution();
             GraphicsAPI::SetImage(HashCache::Get()->_DestinationTex, m_voxels.get(), 0, 0);
-            cmd->Dispatch(m_computeClear, { volres.x / 8u, volres.y / 8u, volres.z / 8u });
+            cmd->Dispatch(m_computeClear, m_voxels->GetResolution());
             cmd->EndDebugScope();
         }
     }
@@ -173,7 +172,6 @@ namespace PK::Rendering::Passes
 
         auto hash = HashCache::Get();
         auto resolution = m_screenSpaceSHY->GetResolution();
-        uint3 groupSize = { (uint)ceil(resolution.x / 16.0f), (uint)ceil(resolution.y / 16.0f), 1u };
         auto range0 = TextureViewRange(0, 0, 0, 2);
         auto range1 = TextureViewRange(0, 2, 0, 2);
 
@@ -181,7 +179,7 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range0);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_SHY_Write, m_screenSpaceSHY.get(), range1);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range1);
-        cmd->Dispatch(m_computeReprojectMask, 0, groupSize);
+        cmd->Dispatch(m_computeReprojectMask, 0, { resolution.x, resolution.y, 1u });
 
         cmd->EndDebugScope();
 
@@ -207,7 +205,7 @@ namespace PK::Rendering::Passes
         for (auto i = 1u; i < m_voxels->GetLevels(); ++i)
         {
             GraphicsAPI::SetImage(hash->_DestinationTex, m_voxels.get(), i, 0);
-            cmd->Dispatch(m_computeMipmap, 0, { (volres.x >> i) / 4u, (volres.y >> i) / 4u, (volres.z >> i) / 4u });
+            cmd->Dispatch(m_computeMipmap, 0, { volres.x >> i, volres.y >> i, volres.z >> i });
         }
 
         cmd->EndDebugScope();
@@ -219,7 +217,7 @@ namespace PK::Rendering::Passes
 
         auto hash = HashCache::Get();
         auto resolution = m_screenSpaceSHY->GetResolution();
-        uint3 groupSize = { (uint)ceil(resolution.x / 16.0f), (uint)ceil(resolution.y / 16.0f), 1u };
+        uint3 dimension = { resolution.x, resolution.y, 1u };
         auto range0 = TextureViewRange(0, 0, 0, 2);
         auto range1 = TextureViewRange(0, 2, 0, 2);
 
@@ -227,19 +225,19 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range1);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_SHY_Write, m_screenSpaceSHY.get(), range0);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range0);
-        cmd->Dispatch(m_computeBakeGI, 0, groupSize);
+        cmd->Dispatch(m_computeBakeGI, 0, dimension);
 
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_SHY_Read, m_screenSpaceSHY.get(), range0);
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range0);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_SHY_Write, m_screenSpaceSHY.get(), range1);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range1);
-        cmd->Dispatch(m_computeDenoise, 0, groupSize);
+        cmd->Dispatch(m_computeDenoise, 0, dimension);
 
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_SHY_Read, m_screenSpaceSHY.get(), range1);
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range1);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_SHY_Write, m_screenSpaceSHY.get(), range0);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range0);
-        cmd->Dispatch(m_computeDenoise, 0, groupSize);
+        cmd->Dispatch(m_computeDenoise, 0, dimension);
 
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_SHY_Read, m_screenSpaceSHY.get(), range0);
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range0);

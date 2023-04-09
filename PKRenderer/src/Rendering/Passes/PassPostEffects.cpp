@@ -26,7 +26,7 @@ namespace PK::Rendering::Passes
 
         cmd->BeginDebugScope("PostEffects.Composite", PK_COLOR_YELLOW);
         GraphicsAPI::SetImage(hash->_MainTex, color, 0, 0);
-        cmd->Dispatch(m_computeComposite, { (uint)glm::ceil(resolution.x / 16.0f), (uint)glm::ceil(resolution.y / 4.0f), 1u });
+        cmd->Dispatch(m_computeComposite, { resolution.x, resolution.y, 1u });
         cmd->EndDebugScope();
     }
 }

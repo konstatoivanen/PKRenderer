@@ -13,7 +13,7 @@ layout(rgba16f, set = PK_SET_DRAW) uniform image2D _HistoryWriteTex;
 #define SAMPLE_TAA_HISTORY(uv) tex2D(_HistoryReadTex, uv)
 #include includes/SharedTemporalAntialiasing.glsl
 
-layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+layout(local_size_x = 16, local_size_y = 4, local_size_z = 1) in;
 void main()
 {
     int2 coord = int2(gl_GlobalInvocationID.xy);

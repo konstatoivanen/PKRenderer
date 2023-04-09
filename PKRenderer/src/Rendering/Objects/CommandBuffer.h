@@ -42,7 +42,7 @@ namespace PK::Rendering::Objects
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;
         virtual void DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) = 0;
-        virtual void Dispatch(Math::uint3 groupCount) = 0;
+        virtual void Dispatch(Math::uint3 dimensions) = 0;
         virtual void DispatchRays(Math::uint3 dimensions) = 0;
 
         // @TODO Nasty dependency. Rethink this one!
@@ -83,8 +83,8 @@ namespace PK::Rendering::Objects
         void DrawMeshIndirect(const Mesh* mesh, const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride);
         void Blit(const Shader* shader, int32_t variantIndex = -1);
         void Blit(const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int32_t variantIndex = -1);
-        void Dispatch(const Shader* shader, Math::uint3 groupCount);
-        void Dispatch(const Shader* shader, uint32_t variantIndex, Math::uint3 groupCount);
+        void Dispatch(const Shader* shader, Math::uint3 dimensions);
+        void Dispatch(const Shader* shader, uint32_t variantIndex, Math::uint3 dimensions);
         void DispatchRays(const Shader* shader, Math::uint3 dimensions);
         void DispatchRays(const Shader* shader, uint32_t variantIndex, Math::uint3 dimensions);
         

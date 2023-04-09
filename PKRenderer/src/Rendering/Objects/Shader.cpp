@@ -162,7 +162,7 @@ namespace PK::Rendering::Objects
 
             switch (api)
             {
-            case APIType::Vulkan: m_variants.push_back(CreateRef<VulkanShader>(base, pVariant, name.c_str()));
+                case APIType::Vulkan: m_variants.push_back(CreateRef<VulkanShader>(base, pVariant, name.c_str()));
             }
         }
 

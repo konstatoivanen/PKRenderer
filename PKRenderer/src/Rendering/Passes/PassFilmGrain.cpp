@@ -35,7 +35,7 @@ namespace PK::Rendering::Passes
         auto hash = HashCache::Get();
         cmd->BeginDebugScope("Noise Compute", PK_COLOR32_BLUE);
         GraphicsAPI::SetImage(hash->_MainTex, m_filmGrainTexture.get(), 0, 0);
-        cmd->Dispatch(m_computeFilmGrain, { 16, 64, 1 });
+        cmd->Dispatch(m_computeFilmGrain, { 256, 256, 1 });
         cmd->EndDebugScope();
     }
 }

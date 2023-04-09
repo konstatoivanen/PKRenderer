@@ -305,7 +305,7 @@ namespace PK::Rendering::Passes
     {
         cmd->BeginDebugScope("LightAssignment", PK_COLOR_CYAN);
         cmd->Clear(m_globalLightIndex.get(), 0, sizeof(uint32_t), 0u);
-        cmd->Dispatch(m_computeLightAssignment, { 1,1, GridSizeZ / 4 });
+        cmd->Dispatch(m_computeLightAssignment, { GridSizeX , GridSizeY, GridSizeZ });
         cmd->EndDebugScope();
     }
 

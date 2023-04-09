@@ -40,13 +40,6 @@ namespace PK::Rendering::Passes
         res.x /= 2;
         res.y /= 2;
 
-        uint3 groups[6];
-
-        for (auto i = 0; i < 6; ++i)
-        {
-            groups[i] = { (uint)glm::ceil((res.x >> i) / 16.0f), (uint)glm::ceil((res.y >> i) / 4.0f), 1 };
-        }
-
         bloom->Validate(res);
 
         auto hash = HashCache::Get();
@@ -55,23 +48,25 @@ namespace PK::Rendering::Passes
 
         for (auto i = 0u; i < 6u; ++i)
         {
+            uint3 dimension = { (res.x >> i), (res.y >> i), 1 };
+
             GraphicsAPI::SetTexture(hash->_SourceTex, i == 0 ? color : bloom, i == 0 ? 0 : i - 1u, ls);
             GraphicsAPI::SetImage(hash->_DestinationTex, bloom, i, ld);
-            cmd->Dispatch(m_computeBloom, m_passPrefilter, groups[i]);
+            cmd->Dispatch(m_computeBloom, m_passPrefilter, dimension);
             ls ^= 1u;
             ld ^= 1u;
 
             GraphicsAPI::SetTexture(hash->_SourceTex, bloom, i, ls);
             GraphicsAPI::SetImage(hash->_DestinationTex, bloom, i, ld);
             GraphicsAPI::SetConstant<float2>(hash->_BlurOffset, { 1.0f, 0.0f });
-            cmd->Dispatch(m_computeBloom, m_passDiskblur, groups[i]);
+            cmd->Dispatch(m_computeBloom, m_passDiskblur, dimension);
             ls ^= 1u;
             ld ^= 1u;
 
             GraphicsAPI::SetTexture(hash->_SourceTex, bloom, i, ls);
             GraphicsAPI::SetImage(hash->_DestinationTex, bloom, i, ld);
             GraphicsAPI::SetConstant<float2>(hash->_BlurOffset, { 0.0f, 1.0f });
-            cmd->Dispatch(m_computeBloom, m_passDiskblur, groups[i]);
+            cmd->Dispatch(m_computeBloom, m_passDiskblur, dimension);
             ls ^= 1u;
             ld ^= 1u;
         }

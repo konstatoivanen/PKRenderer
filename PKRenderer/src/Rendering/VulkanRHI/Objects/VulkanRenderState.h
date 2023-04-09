@@ -66,6 +66,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             constexpr const Structs::ConstantBufferLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetConstantLayout(); }
             constexpr VkPipelineLayout GetPipelineLayout() const { return m_pipelineKey.shader->GetPipelineLayout()->layout; }
             constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
+            constexpr Math::uint3 GetComputeGroupSize() const { return m_pipelineKey.shader->GetGroupSize(); }
             constexpr bool HasPipeline() const { return m_pipeline != nullptr; }
             constexpr bool HasDynamicTargets() const { return m_renderPassKey->dynamicTargets; }
             inline VkPipelineBindPoint GetPipelineBindPoint() const { return EnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetType()); }

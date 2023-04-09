@@ -19,8 +19,9 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const float d
     {
         float rdepth = LinearizeDepth(clipuvw.z);
         float sdepth = SamplePreviousLinearDepth(clipuvw.xy);
+        float sviewz = -SamplePreviousViewNormal(clipuvw.xy).z + 0.1f;
         float deltaDepth = abs(sdepth - rdepth);
-        float bias = rdepth * 0.01f;
+        float bias = rdepth * 0.01f / sviewz;
 
         if ((sdepth > pk_ProjectionParams.z - 1e-4f && dist >= PK_GI_RAY_MAX_DISTANCE - 0.01f) || deltaDepth <= bias)
         {
@@ -64,7 +65,7 @@ void AccumualteAO(const int2 coord, bool discontinuous)
     imageStore(pk_ScreenGI_AO, coord, float4(cur));
 }
 
-layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+layout(local_size_x = 16, local_size_y = 4, local_size_z = 1) in;
 void main()
 {
     int2 size = imageSize(pk_ScreenGI_Mask).xy;

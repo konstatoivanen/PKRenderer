@@ -49,7 +49,7 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetTexture(hash->_HistoryReadTex, m_renderTarget.get(), { 0, historyRead, 1u, 1u });
         GraphicsAPI::SetImage(hash->_DestinationTex, m_renderTarget.get(), { 0, 0, 1u, 1u });
         GraphicsAPI::SetImage(hash->_HistoryWriteTex, m_renderTarget.get(), { 0, historyWrite, 1u, 1u });
-        cmd->Dispatch(m_computeTAA, Functions::GetComputeGroupCount(resolution, { 16, 16, 1u }));
+        cmd->Dispatch(m_computeTAA, { resolution.x, resolution.y, 1u });
         cmd->Blit(m_renderTarget.get(), source->GetColor(0), { 0, 0, 1u, 1u }, { 0, 0, 1u, 1u }, FilterMode::Bilinear);
 
         cmd->EndDebugScope();

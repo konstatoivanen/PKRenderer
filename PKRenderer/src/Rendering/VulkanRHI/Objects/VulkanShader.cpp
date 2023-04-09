@@ -18,6 +18,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_device(GraphicsAPI::GetActiveDriver<VulkanDriver>()->device),
         m_name(name)
     {
+        m_groupSize = { variant->groupSize[0], variant->groupSize[1], variant->groupSize[2] };
         m_stageFlags = 0u;
 
         for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)

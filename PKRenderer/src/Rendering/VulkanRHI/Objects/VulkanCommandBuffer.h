@@ -52,7 +52,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override final;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override final;
         void DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) override final;
-        void Dispatch(uint3 groupCount) override final;
+        void Dispatch(Math::uint3 dimensions) override final;
         void DispatchRays(Math::uint3 dimensions) override final;
         
         void Blit(Texture* src, Core::Window* dst, FilterMode filter) override final;

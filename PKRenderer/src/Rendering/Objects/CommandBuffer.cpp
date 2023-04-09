@@ -182,16 +182,16 @@ namespace PK::Rendering::Objects
         Draw(3, instanceCount, 0u, firstInstance);
     }
 
-    void CommandBuffer::Dispatch(const Shader* shader, uint3 groupCount)
+    void CommandBuffer::Dispatch(const Shader* shader, uint3 dimensions)
     {
         SetShader(shader);
-        Dispatch(groupCount);
+        Dispatch(dimensions);
     }
 
-    void CommandBuffer::Dispatch(const Shader* shader, uint32_t variantIndex, uint3 groupCount)
+    void CommandBuffer::Dispatch(const Shader* shader, uint32_t variantIndex, uint3 dimensions)
     {
         SetShader(shader, variantIndex);
-        Dispatch(groupCount);
+        Dispatch(dimensions);
     }
 
     void CommandBuffer::DispatchRays(const Shader* shader, Math::uint3 dimensions)
