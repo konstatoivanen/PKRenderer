@@ -216,22 +216,22 @@ namespace PK::Math::Functions
         BoundingBox out(matrix[3].xyz, matrix[3].xyz);
 
         for (auto i = 0u; i < 3u; ++i)
-        for (auto j = 0u; j < 3u; ++j)
-        {
-            auto a = matrix[j][i] * bounds.min[j];
-            auto b = matrix[j][i] * bounds.max[j];
+            for (auto j = 0u; j < 3u; ++j)
+            {
+                auto a = matrix[j][i] * bounds.min[j];
+                auto b = matrix[j][i] * bounds.max[j];
 
-            if (a < b)
-            {
-                out.min[i] += a;
-                out.max[i] += b;
+                if (a < b)
+                {
+                    out.min[i] += a;
+                    out.max[i] += b;
+                }
+                else
+                {
+                    out.min[i] += b;
+                    out.max[i] += a;
+                }
             }
-            else
-            {
-                out.min[i] += b;
-                out.max[i] += a;
-            }
-        }
 
         return out;
     }

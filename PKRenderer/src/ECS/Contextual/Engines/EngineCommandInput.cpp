@@ -24,8 +24,7 @@ namespace PK::ECS::Engines
         {std::string("contextual"), CommandArgument::Contextual},
         {std::string("vsync"),      CommandArgument::VSync},
         {std::string("assets"),     CommandArgument::Assets},
-        {std::string("variants"),   CommandArgument::Variants},
-        {std::string("uniforms"),   CommandArgument::Uniforms},
+        {std::string("assetmeta"),  CommandArgument::AssetMeta},
         {std::string("gpu_memory"), CommandArgument::GPUMemory},
         {std::string("shader"),     CommandArgument::TypeShader},
         {std::string("mesh"),       CommandArgument::TypeMesh},
@@ -55,38 +54,6 @@ namespace PK::ECS::Engines
         if (str == "false") Application::GetPrimaryWindow()->SetVSync(false);
         if (str == "toggle") Application::GetPrimaryWindow()->SetVSync(!Application::GetPrimaryWindow()->IsVSync());
         PK_LOG_INFO("VSync: %s", (Application::GetPrimaryWindow()->IsVSync() ? "Enabled" : "Disabled"));
-    }
-
-    void EngineCommandInput::QueryShaderVariants(const ConsoleCommand& arguments)
-    {
-        auto shader = m_assetDatabase->TryFind<Shader>(arguments[2].c_str());
-
-        if (shader != nullptr)
-        {
-            shader->ListVariants();
-        }
-        else
-        {
-            PK_LOG_NEWLINE();
-            PK_LOG_WARNING("Could not find shader with keyword: %s", arguments[2].c_str());
-            PK_LOG_NEWLINE();
-        }
-    }
-
-    void EngineCommandInput::QueryShaderUniforms(const ConsoleCommand& arguments)
-    {
-        auto shader = m_assetDatabase->TryFind<Shader>(arguments[2].c_str());
-
-        if (shader != nullptr)
-        {
-            shader->ListProperties((uint32_t)std::stoi(arguments[3].c_str()));
-        }
-        else
-        {
-            PK_LOG_NEWLINE();
-            PK_LOG_WARNING("Could not find shader with keyword: %s", arguments[2].c_str());
-            PK_LOG_NEWLINE();
-        }
     }
 
     void EngineCommandInput::QueryGPUMemory(const ConsoleCommand& arguments)
@@ -200,8 +167,10 @@ namespace PK::ECS::Engines
         m_commands[{CommandArgument::Application, CommandArgument::Exit }] = PK_BIND_FUNCTION(this, ApplicationExit);
         m_commands[{CommandArgument::Application, CommandArgument::Contextual, CommandArgument::StringParameter }] = PK_BIND_FUNCTION(this, ApplicationContextual);
         m_commands[{CommandArgument::Application, CommandArgument::VSync, CommandArgument::StringParameter }] = PK_BIND_FUNCTION(this, ApplicationSetVSync);
-        m_commands[{CommandArgument::Query, CommandArgument::TypeShader, CommandArgument::StringParameter, CommandArgument::Variants}] = PK_BIND_FUNCTION(this, QueryShaderVariants);
-        m_commands[{CommandArgument::Query, CommandArgument::TypeShader, CommandArgument::StringParameter, CommandArgument::Uniforms, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(this, QueryShaderUniforms);
+        m_commands[{CommandArgument::Query, CommandArgument::TypeShader, CommandArgument::StringParameter, CommandArgument::AssetMeta}] = PK_BIND_FUNCTION(this, QueryAssetMeta<Shader>);
+        m_commands[{CommandArgument::Query, CommandArgument::TypeMaterial, CommandArgument::StringParameter, CommandArgument::AssetMeta}] = PK_BIND_FUNCTION(this, QueryAssetMeta<Material>);
+        m_commands[{CommandArgument::Query, CommandArgument::TypeTexture, CommandArgument::StringParameter, CommandArgument::AssetMeta}] = PK_BIND_FUNCTION(this, QueryAssetMeta<Texture>);
+        m_commands[{CommandArgument::Query, CommandArgument::TypeMesh, CommandArgument::StringParameter, CommandArgument::AssetMeta}] = PK_BIND_FUNCTION(this, QueryAssetMeta<Mesh>);
         m_commands[{CommandArgument::Query, CommandArgument::GPUMemory}] = PK_BIND_FUNCTION(this, QueryGPUMemory);
         m_commands[{CommandArgument::Query, CommandArgument::Assets, CommandArgument::TypeShader}] = PK_BIND_FUNCTION(this, QueryLoadedShaders);
         m_commands[{CommandArgument::Query, CommandArgument::Assets, CommandArgument::TypeMaterial}] = PK_BIND_FUNCTION(this, QueryLoadedMaterials);
@@ -215,7 +184,7 @@ namespace PK::ECS::Engines
         m_commands[{CommandArgument::Reload, CommandArgument::TypeAppConfig, CommandArgument::StringParameter}] = PK_BIND_FUNCTION(this, ReloadAppConfig);
         m_commands[{CommandArgument::Reload, CommandArgument::TypeTime}] = PK_BIND_FUNCTION(this, ReloadTime);
     }
-    
+
     void EngineCommandInput::Step(Input* input)
     {
         if (m_commandBindings != nullptr)

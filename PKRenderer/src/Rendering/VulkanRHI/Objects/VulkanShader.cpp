@@ -14,7 +14,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     using namespace Structs;
     using namespace Services;
 
-    VulkanShader::VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant, const char* name) : 
+    VulkanShader::VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant, const char* name) :
         m_device(GraphicsAPI::GetActiveDriver<VulkanDriver>()->device),
         m_name(name)
     {
@@ -129,7 +129,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     Structs::ShaderBindingTableInfo VulkanShader::GetShaderBindingTableInfo() const
     {
         ShaderBindingTableInfo info{};
-        
+
         auto driver = GraphicsAPI::GetActiveDriver<VulkanDriver>();
 
         const auto& deviceProperties = driver->physicalDeviceProperties;
@@ -181,11 +181,11 @@ namespace PK::Rendering::VulkanRHI::Objects
                 continue;
             }
 
-            VK_ASSERT_RESULT_CTX(vkGetRayTracingShaderGroupHandlesKHR(driver->device, 
-                pipeline->pipeline, 
-                info.offsets[i], 
-                info.counts[i], 
-                info.counts[i] * info.handleSizeAligned, 
+            VK_ASSERT_RESULT_CTX(vkGetRayTracingShaderGroupHandlesKHR(driver->device,
+                pipeline->pipeline,
+                info.offsets[i],
+                info.counts[i],
+                info.counts[i] * info.handleSizeAligned,
                 info.handleData + info.byteOffsets[i]), "Failed to get ray tracing shader group handles");
         }
 

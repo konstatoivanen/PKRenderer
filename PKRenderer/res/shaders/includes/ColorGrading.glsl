@@ -13,6 +13,17 @@ const float3x3 LMS_2_LIN_MAT = float3x3(
     -2.10182e-1,  1.15820e+0,  3.24281e-4,
     -4.18120e-2, -1.18169e-1,  1.06867e+0);
 
+float3 TonemapACESFilm(float3 color, float exposure)
+{
+    color *= exposure;
+    float a = 2.51f;
+    float b = 0.03f;
+    float c = 2.43f;
+    float d = 0.59f;
+    float e = 0.14f;
+    return saturate((color * (a * color + b)) / (color * (c * color + d) + e));
+}
+
 float3 TonemapHejlDawson(float3 color, float exposure)
 {
 	const float a = 6.2;

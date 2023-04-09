@@ -11,6 +11,6 @@ void main()
     uint3 baseSize = uint3(textureSize(_SourceTex, 0).xyz);
     uint3 levelSize = gl_NumWorkGroups.xyz * gl_WorkGroupSize.xyz;
     int level = int(log2(float(baseSize.x)) - log2(float(levelSize.x))) - 1;
-    float3 uvw = (float3(gl_GlobalInvocationID) + 0.5f.xxx) / float3(levelSize);
+    float3 uvw = (float3(gl_GlobalInvocationID)+0.5f.xxx) / float3(levelSize);
     imageStore(_DestinationTex, int3(gl_GlobalInvocationID), tex2DLod(_SourceTex, uvw, level));
 }

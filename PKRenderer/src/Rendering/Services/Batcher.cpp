@@ -38,34 +38,34 @@ namespace PK::Rendering
         m_matrices = Buffer::Create(ElementType::Float4x4, 1024, BufferUsage::PersistentStorage, "Batching.Matrices");
 
         m_indices = Buffer::Create(
-        {
-            {ElementType::Uint, "transform"},
-            {ElementType::Uint, "material"},
-            {ElementType::Uint, "mesh"},
-            {ElementType::Uint, "userdata"}
-        },
-        1024, BufferUsage::PersistentStorage, "Batching.DrawInfos");
+            {
+                {ElementType::Uint, "transform"},
+                {ElementType::Uint, "material"},
+                {ElementType::Uint, "mesh"},
+                {ElementType::Uint, "userdata"}
+            },
+            1024, BufferUsage::PersistentStorage, "Batching.DrawInfos");
 
         m_properties = Buffer::Create(
-        {
-            { ElementType::Uint, "DATA"},
-        },
-        4096, BufferUsage::PersistentStorage, "Batching.MaterialProperties");
+            {
+                { ElementType::Uint, "DATA"},
+            },
+            4096, BufferUsage::PersistentStorage, "Batching.MaterialProperties");
 
         m_indirectArguments = Buffer::Create(
-        {
-            { ElementType::Uint, "indexCount"},
-            { ElementType::Uint, "instanceCount"},
-            { ElementType::Uint, "firstIndex"},
-            { ElementType::Int,  "vertexOffset"},
-            { ElementType::Uint, "firstInstance"}
-        },
-        256, BufferUsage::PersistentStorage | BufferUsage::Indirect, "Batching.IndirectDrawArguments");
+            {
+                { ElementType::Uint, "indexCount"},
+                { ElementType::Uint, "instanceCount"},
+                { ElementType::Uint, "firstIndex"},
+                { ElementType::Int,  "vertexOffset"},
+                { ElementType::Uint, "firstInstance"}
+            },
+            256, BufferUsage::PersistentStorage | BufferUsage::Indirect, "Batching.IndirectDrawArguments");
 
         m_drawCalls.reserve(512);
         m_passGroups.reserve(512);
     }
-    
+
     void Batcher::BeginCollectDrawCalls()
     {
         for (auto i = 0u; i < m_materials.GetCount(); ++i)
@@ -150,9 +150,9 @@ namespace PK::Rendering
             indexView[i].mesh = 0;
             indexView[i].userdata = info->userdata;
 
-            if (info->group != current.group || 
-                info->shader != current.shader || 
-                info->mesh != current.mesh || 
+            if (info->group != current.group ||
+                info->shader != current.shader ||
+                info->mesh != current.mesh ||
                 info->submesh != current.submesh)
             {
                 current = *info;
@@ -208,7 +208,7 @@ namespace PK::Rendering
                 m_passGroups.push_back({ pbase, m_drawCalls.size() - pbase });
                 pbase = m_drawCalls.size();
             }
-         
+
             ibase = indirectIndex;
             current = *info;
         }
@@ -235,7 +235,7 @@ namespace PK::Rendering
     void Batcher::SubmitDraw(Components::Transform* transform, Shader* shader, Material* material, Mesh* mesh, uint32_t submesh, uint32_t clipIndex)
     {
         DrawInfo info{};
-        
+
         info.shader = m_shaders.Add(shader);
 
         if (material != nullptr)
@@ -273,7 +273,7 @@ namespace PK::Rendering
         {
             auto& dc = m_drawCalls.at(i);
             auto shader = dc.shader;
-            
+
             if (requireKeyword > 0u && !shader->SupportsKeyword(requireKeyword))
             {
                 continue;

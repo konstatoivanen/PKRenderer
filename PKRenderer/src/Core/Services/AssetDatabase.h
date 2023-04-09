@@ -10,22 +10,23 @@
 namespace PK::Core::Services
 {
     typedef uint32_t AssetID;
-    
+
     class Asset : public Utilities::NoCopy
     {
         friend class AssetDatabase;
-    
-        public:
-            virtual ~Asset() = default;
-    
-            inline AssetID GetAssetID() const { return m_assetId; }
-    
-            inline const std::string& GetFileName() const { return StringHashID::IDToString(m_assetId); }
-    
-            bool operator==(const Asset& other) const { return m_assetId == ((Asset&)other).m_assetId; }
-    
-        private:
-            AssetID m_assetId = 0;
+
+    public:
+        virtual ~Asset() = default;
+        virtual std::string GetMetaInfo() const { return std::string("Metadata info is not implemented for this asset type."); }
+        constexpr AssetID GetAssetID() const { return m_assetId; }
+        constexpr uint32_t GetAssetVersion() const { return m_version; }
+        constexpr uint64_t GetAssetHash() const { return ((uint64_t)m_version << 32) | ((uint64_t)m_assetId & 0xFFFFFFFF); }
+        inline const std::string& GetFileName() const { return StringHashID::IDToString(m_assetId); }
+        bool operator==(const Asset& other) const { return m_assetId == ((Asset&)other).m_assetId; }
+
+    private:
+        AssetID m_assetId = 0u;
+        uint32_t m_version = 0u;
     };
 
     template<typename ... Args>
@@ -49,7 +50,7 @@ namespace PK::Core::Services
         AssetDatabase* assetDatabase;
         T* asset;
     };
-    
+
     namespace AssetImporters
     {
         template<typename T>
@@ -58,272 +59,254 @@ namespace PK::Core::Services
         template<typename T>
         [[nodiscard]] Utilities::Ref<T> Create();
     };
-    
+
     class AssetDatabase : public IService
     {
-        private:
-            template<typename T, typename ... Args>
-            [[nodiscard]] T* Load(const std::string& filepath, AssetID assetId, Args&& ... args)
+    private:
+        template<typename T, typename ... Args>
+        [[nodiscard]] T* LoadInternal(const std::string& filepath, AssetID assetId, bool reload, Args&& ... args)
+        {
+            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+            static_assert(std::is_base_of<IAssetImport<Args...>, T>::value, "Template argument type does not derive from IAssetImport!");
+            PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
+
+            auto importType = reload ? AssetImportType::RELOAD : AssetImportType::IMPORT;
+            auto& collection = m_assets[std::type_index(typeid(T))];
+            auto iter = collection.find(assetId);
+            Utilities::Ref<T> asset = nullptr;
+
+            if (iter != collection.end())
             {
-                static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-                static_assert(std::is_base_of<IAssetImport<Args...>, T>::value, "Template argument type does not derive from IAssetImport!");
-                PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
-    
-                auto& collection = m_assets[std::type_index(typeid(T))];
-                auto iter = collection.find(assetId);
+                asset = std::static_pointer_cast<T>(iter->second);
 
-                if (iter != collection.end())
+                if (!reload)
                 {
-                    return std::static_pointer_cast<T>(iter->second).get();
+                    return asset.get();
                 }
-
-                auto asset = AssetImporters::Create<T>();
+            }
+            else
+            {
+                importType = AssetImportType::IMPORT;
+                asset = AssetImporters::Create<T>();
                 collection[assetId] = asset;
                 std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
-
-                static_cast<IAssetImport<Args...>*>(asset.get())->Import(filepath.c_str(), std::forward<Args>(args)...);
-    
-                AssetImportToken<T> importToken = { this, asset.get() };
-                m_sequencer->Next(this, &importToken, (int)AssetImportType::IMPORT);
-
-                return asset.get();
             }
-    
-            template<typename T, typename ... Args>
-            [[nodiscard]] T* Reload(const std::string& filepath, AssetID assetId, Args&& ... args)
+
+            std::static_pointer_cast<Asset>(asset)->m_version++;
+
+            static_cast<IAssetImport<Args...>*>(asset.get())->Import(filepath.c_str(), std::forward<Args>(args)...);
+
+            AssetImportToken<T> importToken = { this, asset.get() };
+            m_sequencer->Next(this, &importToken, (int)importType);
+
+            return asset.get();
+        }
+
+    public:
+        AssetDatabase(Sequencer* sequencer) : m_sequencer(sequencer) {}
+
+        template<typename T, typename ... Args>
+        [[nodiscard]] T* CreateProcedural(std::string name, Args&& ... args)
+        {
+            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+            auto& collection = m_assets[std::type_index(typeid(T))];
+            auto assetId = StringHashID::StringToID(name);
+
+            PK_THROW_ASSERT(collection.count(assetId) < 1, "Procedural asset (%s) already exists", name.c_str());
+
+            auto asset = Utilities::CreateRef<T>(std::forward<Args>(args)...);
+            collection[assetId] = asset;
+            std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
+
+            return asset.get();
+        }
+
+        template<typename T>
+        [[nodiscard]] T* RegisterProcedural(std::string name, Utilities::Ref<T> asset)
+        {
+            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+
+            auto& collection = m_assets[std::type_index(typeid(T))];
+            auto assetId = StringHashID::StringToID(name);
+
+            PK_THROW_ASSERT(collection.count(assetId) < 1, "Procedural asset (%s) already exists", name.c_str());
+
+            collection[assetId] = asset;
+            std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
+
+            return asset.get();
+        }
+
+        template<typename T>
+        [[nodiscard]] T* TryFind(const char* name) const
+        {
+            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+
+            auto type = std::type_index(typeid(T));
+
+            if (m_assets.count(type) > 0)
             {
-                static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-                static_assert(std::is_base_of<IAssetImport<Args...>, T>::value, "Template argument type does not derive from IAssetImport!");
-                PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
-                
-                auto& collection = m_assets[std::type_index(typeid(T))];
-                auto iter = collection.find(assetId);
-                Utilities::Ref<T> asset = nullptr;
-    
-                if (iter != collection.end())
+                auto& collection = m_assets.at(type);
+
+                for (auto& i : collection)
                 {
-                    asset = std::static_pointer_cast<T>(iter->second);
-                }
-                else
-                {
-                    auto asset = AssetImporters::Create<T>();
-                    collection[assetId] = asset;
-                    std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
-                }
-    
-                static_cast<IAssetImport<Args...>*>(asset.get())->Import(filepath.c_str(), std::forward<Args>(args)...);
-    
-                AssetImportToken<T> importToken = { this, asset.get() };
-                m_sequencer->Next(this, &importToken, (int)AssetImportType::RELOAD);
+                    auto& filename = StringHashID::IDToString(i.first);
 
-                return asset.get();
-            }
-    
-        public:
-            AssetDatabase(Sequencer* sequencer) : m_sequencer(sequencer) {}
-
-            template<typename T, typename ... Args>
-            [[nodiscard]] T* CreateProcedural(std::string name, Args&& ... args)
-            {
-                static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-                auto& collection = m_assets[std::type_index(typeid(T))];
-                auto assetId = StringHashID::StringToID(name);
-    
-                PK_THROW_ASSERT(collection.count(assetId) < 1, "Procedural asset (%s) already exists", name.c_str());
-    
-                auto asset = Utilities::CreateRef<T>(std::forward<Args>(args)...);
-                collection[assetId] = asset;
-                std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
-    
-                return asset.get();
-            }
-    
-            template<typename T>
-            [[nodiscard]] T* RegisterProcedural(std::string name, Utilities::Ref<T> asset)
-            {
-                static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-
-                auto& collection = m_assets[std::type_index(typeid(T))];
-                auto assetId = StringHashID::StringToID(name);
-    
-                PK_THROW_ASSERT(collection.count(assetId) < 1, "Procedural asset (%s) already exists", name.c_str());
-    
-                collection[assetId] = asset;
-                std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
-    
-                return asset.get();
-            }
-    
-            template<typename T>
-            [[nodiscard]] T* TryFind(const char* name) const
-            {
-                static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-
-                auto type = std::type_index(typeid(T));
-
-                if (m_assets.count(type) > 0)
-                {
-                    auto& collection = m_assets.at(type);
-
-                    for (auto& i : collection)
+                    if (filename.find(name) != std::string::npos)
                     {
-                        auto& filename = StringHashID::IDToString(i.first);
-
-                        if (filename.find(name) != std::string::npos)
-                        {
-                            return std::static_pointer_cast<T>(i.second).get();
-                        }
-                    }
-                }
-
-                return nullptr;
-            }
-
-            template<typename T>
-            [[nodiscard]] T* Find(const char* name) const
-            {
-                auto value = TryFind<T>(name);
-                PK_THROW_ASSERT(value != nullptr, "Could not find asset with name %s", name);
-                return value;
-            }
-            
-            template<typename T, typename ... Args>
-            T* Load(const std::string& filepath, Args&& ... args) { return Load<T>(filepath, StringHashID::StringToID(filepath), std::forward<Args>(args)...); }
-    
-            template<typename T, typename ... Args>
-            [[nodiscard]] T* Load(AssetID assetId, Args&& ... args) { return Load<T>(StringHashID::IDToString(assetId), assetId, std::forward<Args>(args)...); }
-    
-            template<typename T, typename ... Args>
-            T* Reload(const std::string& filepath, Args&& ... args) { return Reload<T>(filepath, StringHashID::StringToID(filepath), std::forward<Args>(args)...); }
-    
-            template<typename T, typename ... Args>
-            [[nodiscard]] T* Reload(AssetID assetId, Args&& ... args) { return Reload<T>(StringHashID::IDToString(assetId), assetId, std::forward<Args>(args)...); }
-    
-            template<typename T, typename ... Args>
-            void Reload(const T* asset, Args&& ... args)
-            {
-                auto assetId = asset->GetAssetID();
-                Reload<T>(StringHashID::IDToString(assetId), assetId, std::forward<Args>(args)...);
-            }
-    
-            template<typename T, typename ... Args>
-            void LoadDirectory(const std::string& directory, Args&& ... args)
-            {
-                static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-
-                if (!std::filesystem::exists(directory))
-                {
-                    return;
-                }
-    
-                for (const auto& entry : std::filesystem::directory_iterator(directory))
-                {
-                    auto& path = entry.path();
-    
-                    if (path.has_extension() && AssetImporters::IsValidExtension<T>(path.extension()))
-                    {
-                        Load<T>(entry.path().string(), std::forward<Args>(args)...);
+                        return std::static_pointer_cast<T>(i.second).get();
                     }
                 }
             }
-    
-            template<typename T, typename ... Args>
-            void ReloadDirectory(const std::string& directory, Args&& ... args)
-            {
-                static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
-                if (!std::filesystem::exists(directory))
+            return nullptr;
+        }
+
+        template<typename T>
+        [[nodiscard]] T* Find(const char* name) const
+        {
+            auto value = TryFind<T>(name);
+            PK_THROW_ASSERT(value != nullptr, "Could not find asset with name %s", name);
+            return value;
+        }
+
+        template<typename T, typename ... Args>
+        T* Load(const std::string& filepath, Args&& ... args) { return LoadInternal<T>(filepath, StringHashID::StringToID(filepath), false, std::forward<Args>(args)...); }
+
+        template<typename T, typename ... Args>
+        [[nodiscard]] T* Load(AssetID assetId, Args&& ... args) { return LoadInternal<T>(StringHashID::IDToString(assetId), assetId, false, std::forward<Args>(args)...); }
+
+        template<typename T, typename ... Args>
+        T* Reload(const std::string& filepath, Args&& ... args) { return LoadInternal<T>(filepath, StringHashID::StringToID(filepath), true, std::forward<Args>(args)...); }
+
+        template<typename T, typename ... Args>
+        [[nodiscard]] T* Reload(AssetID assetId, Args&& ... args) { return LoadInternal<T>(StringHashID::IDToString(assetId), assetId, true, std::forward<Args>(args)...); }
+
+        template<typename T, typename ... Args>
+        void Reload(const T* asset, Args&& ... args)
+        {
+            auto assetId = asset->GetAssetID();
+            LoadInternal<T>(StringHashID::IDToString(assetId), assetId, true, std::forward<Args>(args)...);
+        }
+
+        template<typename T, typename ... Args>
+        void LoadDirectory(const std::string& directory, Args&& ... args)
+        {
+            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+
+            if (!std::filesystem::exists(directory))
+            {
+                return;
+            }
+
+            for (const auto& entry : std::filesystem::directory_iterator(directory))
+            {
+                auto& path = entry.path();
+
+                if (path.has_extension() && AssetImporters::IsValidExtension<T>(path.extension()))
                 {
-                    return;
+                    Load<T>(entry.path().string(), std::forward<Args>(args)...);
                 }
-    
-                for (const auto& entry : std::filesystem::directory_iterator(directory))
+            }
+        }
+
+        template<typename T, typename ... Args>
+        void ReloadDirectory(const std::string& directory, Args&& ... args)
+        {
+            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+
+            if (!std::filesystem::exists(directory))
+            {
+                return;
+            }
+
+            for (const auto& entry : std::filesystem::directory_iterator(directory))
+            {
+                auto& path = entry.path();
+
+                if (path.has_extension() && AssetImporters::IsValidExtension<T>(path.extension()))
                 {
-                    auto& path = entry.path();
-    
-                    if (path.has_extension() && AssetImporters::IsValidExtension<T>(path.extension()))
-                    {
-                        Reload<T>(entry.path().string(), std::forward<Args>(args)...);
-                    }
+                    Reload<T>(entry.path().string(), std::forward<Args>(args)...);
                 }
             }
-    
-            template<typename T>
-            void UnloadDirectory(const std::string& directory)
-            {
-                static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+        }
 
-                if (!std::filesystem::exists(directory))
+        template<typename T>
+        void UnloadDirectory(const std::string& directory)
+        {
+            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+
+            if (!std::filesystem::exists(directory))
+            {
+                return;
+            }
+
+            for (const auto& entry : std::filesystem::directory_iterator(directory))
+            {
+                auto& path = entry.path();
+
+                if (path.has_extension() && AssetImporters::IsValidExtension<T>(path.extension()))
                 {
-                    return;
-                }
-    
-                for (const auto& entry : std::filesystem::directory_iterator(directory))
-                {
-                    auto& path = entry.path();
-    
-                    if (path.has_extension() && AssetImporters::IsValidExtension<T>(path.extension()))
-                    {
-                        Unload<T>(entry.path().string());
-                    }
+                    Unload<T>(entry.path().string());
                 }
             }
-    
-            template<typename T>
-            void Unload(AssetID assetId)
-            {
-                static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-                auto& collection = m_assets[std::type_index(typeid(T))];
-                collection.erase(assetId);
-            }
-    
-            template<typename T>
-            inline void Unload(const std::string& filepath) 
-            { 
-                static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-                Unload<T>(StringHashID::StringToID(filepath)); 
-            }
-    
-            template<typename T>
-            inline void Unload() 
-            {
-                static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-                m_assets.erase(std::type_index(typeid(T))); 
-            }
-    
-            inline void Unload() { m_assets.clear();  };
-    
-            template<typename T>
-            void ListAssetsOfType()
-            {
-                static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+        }
 
-                auto type = std::type_index(typeid(T));
-                auto& collection = m_assets[type];
+        template<typename T>
+        void Unload(AssetID assetId)
+        {
+            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+            auto& collection = m_assets[std::type_index(typeid(T))];
+            collection.erase(assetId);
+        }
 
-                PK_LOG_HEADER("Listing loaded assets of type: %s", type.name());
+        template<typename T>
+        inline void Unload(const std::string& filepath)
+        {
+            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+            Unload<T>(StringHashID::StringToID(filepath));
+        }
 
-                for (auto& kv : collection)
+        template<typename T>
+        inline void Unload()
+        {
+            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+            m_assets.erase(std::type_index(typeid(T)));
+        }
+
+        inline void Unload() { m_assets.clear(); };
+
+        template<typename T>
+        void ListAssetsOfType()
+        {
+            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+
+            auto type = std::type_index(typeid(T));
+            auto& collection = m_assets[type];
+
+            PK_LOG_HEADER("Listing loaded assets of type: %s", type.name());
+
+            for (auto& kv : collection)
+            {
+                PK_LOG_INFO(StringHashID::IDToString(kv.first).c_str());
+            }
+        }
+
+        void ListAssets()
+        {
+            for (auto& typecollection : m_assets)
+            {
+                PK_LOG_HEADER("Listing loaded assets of type: %s", typecollection.first.name());
+
+                for (auto& kv : typecollection.second)
                 {
                     PK_LOG_INFO(StringHashID::IDToString(kv.first).c_str());
                 }
             }
+        }
 
-            void ListAssets()
-            {
-                for (auto& typecollection : m_assets)
-                {
-                    PK_LOG_HEADER("Listing loaded assets of type: %s", typecollection.first.name());
-
-                    for (auto& kv : typecollection.second)
-                    {
-                        PK_LOG_INFO(StringHashID::IDToString(kv.first).c_str());
-                    }
-                }
-            }
-
-        private:
-            std::unordered_map<std::type_index, std::unordered_map<AssetID, Utilities::Ref<Asset>>> m_assets;
-            Sequencer* m_sequencer;
+    private:
+        std::unordered_map<std::type_index, std::unordered_map<AssetID, Utilities::Ref<Asset>>> m_assets;
+        Sequencer* m_sequencer;
     };
 }

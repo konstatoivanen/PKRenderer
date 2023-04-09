@@ -3,7 +3,7 @@
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
 
 namespace PK::Rendering::VulkanRHI::Services
-{   
+{
     using namespace Structs;
 
     VulkanFrameBufferCache::VulkanFrameBufferCache(VkDevice device, uint64_t pruneDelay) : m_device(device), m_pruneDelay(pruneDelay) {}
@@ -31,7 +31,7 @@ namespace PK::Rendering::VulkanRHI::Services
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
         auto iterator = m_framebuffers.find(key);
-        
+
         if (iterator != m_framebuffers.end() && iterator->second.frameBuffer != nullptr)
         {
             iterator->second.pruneTick = nextPruneTick;
@@ -43,7 +43,7 @@ namespace PK::Rendering::VulkanRHI::Services
 
         for (auto attachment : key.color)
         {
-            if (attachment) 
+            if (attachment)
             {
                 attachments[attachmentCount++] = attachment;
             }
@@ -129,9 +129,9 @@ namespace PK::Rendering::VulkanRHI::Services
 
         auto attachmentIndex = 0u;
 
-        for (auto i = 0u; i < PK_MAX_RENDER_TARGETS; i++) 
+        for (auto i = 0u; i < PK_MAX_RENDER_TARGETS; i++)
         {
-            if (key.colors[i].format == VK_FORMAT_UNDEFINED) 
+            if (key.colors[i].format == VK_FORMAT_UNDEFINED)
             {
                 continue;
             }
@@ -159,7 +159,7 @@ namespace PK::Rendering::VulkanRHI::Services
                 continue;
             }
 
-            if (!key.colors[i].resolve) 
+            if (!key.colors[i].resolve)
             {
                 pResolveAttachment->attachment = VK_ATTACHMENT_UNUSED;
                 ++pResolveAttachment;
@@ -181,11 +181,11 @@ namespace PK::Rendering::VulkanRHI::Services
             attachment->finalLayout = key.colors[i].finalLayout;
         }
 
-        if (hasDepth) 
+        if (hasDepth)
         {
             depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             depthAttachmentRef.attachment = attachmentIndex;
-            
+
             auto* attachment = attachments + attachmentIndex++;
             attachment->format = key.depth.format;
             attachment->samples = EnumConvert::GetSampleCountFlags(key.samples);
@@ -193,7 +193,7 @@ namespace PK::Rendering::VulkanRHI::Services
             attachment->storeOp = EnumConvert::GetStoreOp(key.depth.storeop);
             attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             attachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            attachment->initialLayout = key.depth.loadop == LoadOp::Keep ? key.depth.initialLayout : VK_IMAGE_LAYOUT_UNDEFINED; 
+            attachment->initialLayout = key.depth.loadop == LoadOp::Keep ? key.depth.initialLayout : VK_IMAGE_LAYOUT_UNDEFINED;
             attachment->finalLayout = key.depth.finalLayout;
             dependencies[0].dstStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
             dependencies[0].dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;

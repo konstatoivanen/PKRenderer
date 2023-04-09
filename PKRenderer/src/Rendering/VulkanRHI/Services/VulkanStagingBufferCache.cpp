@@ -94,7 +94,7 @@ namespace PK::Rendering::VulkanRHI::Services
         stagingBuffer->fence = fence;
         return stagingBuffer;
     }
-    
+
     void VulkanStagingBufferCache::Prune()
     {
         ++m_currentPruneTick;

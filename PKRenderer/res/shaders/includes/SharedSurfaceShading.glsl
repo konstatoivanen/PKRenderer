@@ -189,7 +189,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
 
         #if defined(PK_META_PASS_GBUFFER)
 
-            value = float4(WorldToViewDir(surf.normal), surf.roughness);
+            value = EncodeGBufferN(WorldToViewDir(surf.normal), surf.roughness);
 
         #elif defined(PK_META_PASS_GIVOXELIZE)
             GetSurfaceAlphaReflectivity(surf);
@@ -260,7 +260,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
     
             value.rgb = BRDF_PBS_DEFAULT_INDIRECT(indirect);
             value.rgb *= surf.occlusion;
-    
+
             for (uint i = tile.start; i < tile.end; ++i)
             {
                 Light light = GetSurfaceLight(i, surf.worldpos, tile.cascade);

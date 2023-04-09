@@ -90,6 +90,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
 
         m_handles[m_count++] = handle;
-        return (int32_t)(m_count) - 1;
+        return (int32_t)(m_count)-1;
     }
 }

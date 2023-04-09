@@ -1,9 +1,9 @@
 #include "PrecompiledHeader.h"
 
 #ifdef PK_DEBUG
-    #define _CRTDBG_MAP_ALLOC  
-    #include <stdlib.h>  
-    #include <crtdbg.h>  
+#define _CRTDBG_MAP_ALLOC  
+#include <stdlib.h>  
+#include <crtdbg.h>  
 #endif 
 
 #include "Core/Application.h"

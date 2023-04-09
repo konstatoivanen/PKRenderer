@@ -15,11 +15,11 @@ namespace PK::ECS::Engines
     EngineScreenshot::EngineScreenshot() : m_accumulatedPixels(1)
     {
     }
-    
+
     void EngineScreenshot::Step(Window* window)
     {
         m_currentResolution = uint2(window->GetResolution().xy);
-        
+
         if (m_currentResolution != m_captureResolution)
         {
             m_captureCounter = 0u;
@@ -35,11 +35,11 @@ namespace PK::ECS::Engines
         auto elementCount = m_captureResolution.x * m_captureResolution.y * 4;
 
         auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Graphics);
-    
+
         if (m_copyFence.IsValid() && m_copyFence.IsComplete())
         {
             auto pxView = m_copyBuffer->BeginRead<unsigned char>();
-        
+
             for (auto i = 0u; i < elementCount; ++i)
             {
                 m_accumulatedPixels[i] += pxView[i];
@@ -105,9 +105,9 @@ namespace PK::ECS::Engines
         if (m_copyBuffer == nullptr)
         {
             m_copyBuffer = Buffer::Create(
-                { { ElementType::Uint, "DATA"} }, 
-                m_currentResolution.x * m_currentResolution.y, 
-                BufferUsage::GPUToCPU | BufferUsage::TransferDst | BufferUsage::TransferSrc, 
+                { { ElementType::Uint, "DATA"} },
+                m_currentResolution.x * m_currentResolution.y,
+                BufferUsage::GPUToCPU | BufferUsage::TransferDst | BufferUsage::TransferSrc,
                 "Screenshot Copy Buffer");
         }
         else

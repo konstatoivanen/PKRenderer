@@ -39,7 +39,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             m_mapRange.region.srcOffset = 0ull;
             return m_mappedBuffer->BeginMap(0ull);
         }
-        
+
         // Local persistent stage
         m_mapRange.region.srcOffset = m_mapRange.ringOffset + offset;
         return m_mappedBuffer->BeginMap(m_mapRange.region.srcOffset);
@@ -48,10 +48,10 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanBuffer::EndWrite(VkBuffer* src, VkBuffer* dst, VkBufferCopy* region)
     {
         PK_THROW_ASSERT(m_mappedBuffer != nullptr, "Trying to end buffer map for an unmapped buffer!");
-        
+
         m_mappedBuffer->EndMap(m_mapRange.region.srcOffset, m_mapRange.region.size);
         m_mapRange.ringOffset = (m_mapRange.ringOffset + m_rawBuffer->capacity) % m_mappedBuffer->capacity;
-        
+
         *src = m_mappedBuffer->buffer;
         *dst = m_rawBuffer->buffer;
         *region = m_mapRange.region;
@@ -114,7 +114,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
     }
 
-    
+
     bool VulkanBuffer::Validate(size_t count)
     {
         if (m_count >= count)
@@ -146,9 +146,9 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             m_mapRange.ringOffset = 0ull;
             m_mappedBuffer = new VulkanStagingBuffer(m_driver->device,
-                                                     m_driver->allocator, 
-                                                     VulkanBufferCreateInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size * PK_MAX_FRAMES_IN_FLIGHT),
-                                                     (std::string(m_name) + std::string(".StagingBuffer")).c_str());
+                m_driver->allocator,
+                VulkanBufferCreateInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size * PK_MAX_FRAMES_IN_FLIGHT),
+                (std::string(m_name) + std::string(".StagingBuffer")).c_str());
         }
 
         if ((m_usage & BufferUsage::Sparse) != 0)

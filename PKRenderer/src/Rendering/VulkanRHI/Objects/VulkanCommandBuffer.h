@@ -77,6 +77,9 @@ namespace PK::Rendering::VulkanRHI::Objects
         void TransitionImageLayout(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageSubresourceRange& range);
         void PipelineBarrier(const VulkanBarrierInfo& barrier);
         
+        // Blits might leave window images in non presentable layouts.
+        // This validates window image layout & should be called for the last cmd before present.
+        void ValidateWindowPresent(Core::Window* window);
         bool ResolveBarriers();
         void ValidatePipeline();
         void EndRenderPass();

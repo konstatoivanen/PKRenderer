@@ -40,19 +40,19 @@ namespace PK::Rendering::Passes
         auto hash = HashCache::Get();
 
         m_volumeResources = CreateRef<ConstantBuffer>(BufferLayout(
-        {
-            { ElementType::Float4, hash->pk_Volume_WindDir },
-            { ElementType::Float,  hash->pk_Volume_ConstantFog },
-            { ElementType::Float,  hash->pk_Volume_HeightFogExponent },
-            { ElementType::Float,  hash->pk_Volume_HeightFogOffset },
-            { ElementType::Float,  hash->pk_Volume_HeightFogAmount },
-            { ElementType::Float,  hash->pk_Volume_Density },
-            { ElementType::Float,  hash->pk_Volume_Intensity },
-            { ElementType::Float,  hash->pk_Volume_Anisotropy },
-            { ElementType::Float,  hash->pk_Volume_NoiseFogAmount },
-            { ElementType::Float,  hash->pk_Volume_NoiseFogScale },
-            { ElementType::Float,  hash->pk_Volume_WindSpeed },
-        }), "Fog.Parameters");
+            {
+                { ElementType::Float4, hash->pk_Volume_WindDir },
+                { ElementType::Float,  hash->pk_Volume_ConstantFog },
+                { ElementType::Float,  hash->pk_Volume_HeightFogExponent },
+                { ElementType::Float,  hash->pk_Volume_HeightFogOffset },
+                { ElementType::Float,  hash->pk_Volume_HeightFogAmount },
+                { ElementType::Float,  hash->pk_Volume_Density },
+                { ElementType::Float,  hash->pk_Volume_Intensity },
+                { ElementType::Float,  hash->pk_Volume_Anisotropy },
+                { ElementType::Float,  hash->pk_Volume_NoiseFogAmount },
+                { ElementType::Float,  hash->pk_Volume_NoiseFogScale },
+                { ElementType::Float,  hash->pk_Volume_WindSpeed },
+            }), "Fog.Parameters");
 
         OnUpdateParameters(config);
 

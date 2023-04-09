@@ -13,7 +13,7 @@ namespace PK::ECS::Engines
     EngineBuildAccelerationStructure::EngineBuildAccelerationStructure(EntityDatabase* entityDb) : m_entityDb(entityDb)
     {
     }
-    
+
     void EngineBuildAccelerationStructure::Step(Tokens::AccelerationStructureBuildToken* token)
     {
         PK_THROW_ASSERT(token != nullptr && token->structure, "Invalid token supplied!");
@@ -52,7 +52,7 @@ namespace PK::ECS::Engines
         for (const auto& egid : m_renderableEgids)
         {
             auto renderable = m_entityDb->Query<MeshRenderableView>(egid);
-        
+
             for (const auto& material : renderable->materials->materials)
             {
                 structure->AddInstance(renderable->mesh->sharedMesh, material.submesh, 0u, renderable->transform->localToWorld);

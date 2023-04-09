@@ -7,35 +7,43 @@
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 void main()
 {
-	int2 size = imageSize(pk_ScreenGI_Mask).xy;
-	int2 coord = int2(gl_GlobalInvocationID.xy);
+    int2 size = imageSize(pk_ScreenGI_Mask).xy;
+    int2 coord = int2(gl_GlobalInvocationID.xy);
 
-	if (Any_GEqual(coord, size))
-	{
-		return;
-	}
+    if (Any_GEqual(coord, size))
+    {
+        return;
+    }
 
-	float2 uv = (coord + 0.5f.xx) / size;
-	float currentDepth = SampleLinearDepth(uv);
+    float2 uv = (coord + 0.5f.xx) / size;
 
-	float3 viewpos = SampleViewPosition(coord, size, currentDepth);
-	float3 worldpos = mul(pk_MATRIX_I_V, float4(viewpos, 1.0f)).xyz;
+    float depthCurrent = SampleLinearDepth(uv);
+    float4 viewpos = float4(SampleViewPosition(coord, size, depthCurrent), 1.0f);
+    float3 worldpos = mul(pk_MATRIX_I_V, viewpos).xyz;
+    float3 uvw = ClipToUVW(mul(pk_MATRIX_LD_P, viewpos)) - float3(pk_ProjectionJitter.zw * pk_ScreenParams.zw * 0.5f, 0.0f);
+    float depthPrevious = SamplePreviousLinearDepth(uvw.xy);
+    float depthDelta = abs(depthCurrent - depthPrevious) / max(max(depthCurrent, depthPrevious), 1e-4f);
 
-	float3 uvw = ClipToUVW(mul(pk_MATRIX_LD_P, float4(viewpos, 1.0f)));
-	float previousDepth = SampleLinearPreviousDepth(uvw.xy);
+    GIMask mask;
+    GIMask prevMask = LoadGIMask(coord);
 
-	float uvclip = step(0.5f, length((uvw.xy - uv) * pk_ScreenParams.xy));
-	float deltaDepth = abs(currentDepth - previousDepth) / max(max(currentDepth, previousDepth), 1e-4f);
+    bool hasDiscontinuity = depthDelta > 0.1f || Any_Greater(abs(uvw.xy - 0.5f), 0.5f.xx);
+    mask.discontinuityFrames = hasDiscontinuity ? 8u : uint(max(0, int(prevMask.discontinuityFrames) - 1));
+    mask.isActive = All_Equal(coord % PK_GI_CHECKERBOARD_OFFSET, uint2(0u));
+    mask.isOOB = Any_Greater(abs(WorldToVoxelClipSpace(worldpos)), 1.0f.xxx);
 
-	GIMask mask; 
-	GIMask prevMask = LoadGIMask(coord);
-	
-	bool hasDiscontinuity = deltaDepth > 0.1f || Any_Greater(abs(uvw.xy - 0.5f), 0.5f.xx);
-	mask.discontinuityFrames = hasDiscontinuity ? 8u : uint(max(0, int(prevMask.discontinuityFrames) - 1));
-	mask.isActive = All_Equal(coord % PK_GI_CHECKERBOARD_OFFSET, uint2(0u));
-	mask.isOOB = Any_Greater(abs(WorldToVoxelClipSpace(worldpos)), 1.0f.xxx);
+    StoreGIMask(coord, mask);
 
-	StoreGIMask(coord, mask);
-	StoreGI_SH(coord, PK_GI_DIFF_LVL, SampleGI_SH(uvw.xy, PK_GI_DIFF_LVL));
-	StoreGI_SH(coord, PK_GI_SPEC_LVL, SampleGI_SH(uvw.xy, PK_GI_SPEC_LVL));
+    SH diffSH = SampleGI_SH(uvw.xy, PK_GI_DIFF_LVL);
+    SH specSH = SampleGI_SH(uvw.xy, PK_GI_SPEC_LVL);
+
+    //Remove directional SH component based on normal similarity to reduce sampling error.
+    const float3 nref = SampleViewNormal(coord);
+    const float3 nsmp = SamplePreviousViewNormal(uvw.xy);
+    const float ndot = max(0.0f, dot(nref, nsmp));
+    diffSH.SHY.yzw *= ndot;
+    specSH.SHY.yzw *= ndot;
+
+    StoreGI_SH(coord, PK_GI_DIFF_LVL, diffSH);
+    StoreGI_SH(coord, PK_GI_SPEC_LVL, specSH);
 }

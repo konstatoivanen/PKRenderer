@@ -28,7 +28,7 @@ namespace PK::Rendering::Passes
         descriptor.usage = TextureUsage::Default | TextureUsage::Storage;
         m_renderTarget = Texture::Create(descriptor, "TAA.HistoryTexture");
     }
-    
+
     void PassTemporalAntialiasing::Render(CommandBuffer* cmd, RenderTexture* source)
     {
         cmd->BeginDebugScope("TemporalAntialiasing", PK_COLOR_MAGENTA);
@@ -38,7 +38,7 @@ namespace PK::Rendering::Passes
         uint16_t historyRead = 1u + m_historyLayerIndex++;
         m_historyLayerIndex %= PK_MAX_FRAMES_IN_FLIGHT;
         uint16_t historyWrite = 1u + m_historyLayerIndex;
-        
+
         auto resolution = source->GetResolution();
         resolution.x *= 2;
         resolution.y *= 2;

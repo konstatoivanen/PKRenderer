@@ -6,14 +6,14 @@
 
 namespace PK::ECS::Engines
 {
-	class EnginePKAssetBuilder : public Core::Services::IService, public Core::Services::IStep<Core::TokenConsoleCommand>
-	{
-		public:
-			EnginePKAssetBuilder(const Core::ApplicationArguments& arguments);
-			void Step(Core::TokenConsoleCommand* token) override final;
+    class EnginePKAssetBuilder : public Core::Services::IService, public Core::Services::IStep<Core::TokenConsoleCommand>
+    {
+    public:
+        EnginePKAssetBuilder(const Core::ApplicationArguments& arguments);
+        void Step(Core::TokenConsoleCommand* token) override final;
 
-		private:
-			std::wstring m_executablePath;
-			std::vector<wchar_t> m_executableArguments;
-	};
+    private:
+        std::wstring m_executablePath;
+        std::vector<wchar_t> m_executableArguments;
+    };
 }

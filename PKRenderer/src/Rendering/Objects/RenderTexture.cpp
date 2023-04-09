@@ -19,10 +19,10 @@ namespace PK::Rendering::Objects
             {
                 m_descriptor.colorFormats[m_colorAttachmentCount] = descriptor.colorFormats[i];
                 auto attachmentName = std::string(name) + std::string(".Color") + std::to_string(i);
-                
+
                 TextureDescriptor attachmentDescriptor{};
                 attachmentDescriptor.format = descriptor.colorFormats[i];
-                attachmentDescriptor.samplerType = descriptor.samplerType; 
+                attachmentDescriptor.samplerType = descriptor.samplerType;
                 attachmentDescriptor.usage = usageColor;
                 attachmentDescriptor.resolution = descriptor.resolution;
                 attachmentDescriptor.levels = descriptor.levels;
@@ -38,7 +38,7 @@ namespace PK::Rendering::Objects
             auto attachmentName = std::string(name) + std::string(".Depth");
             TextureDescriptor attachmentDescriptor{};
             attachmentDescriptor.format = descriptor.depthFormat;
-            attachmentDescriptor.samplerType = descriptor.samplerType; 
+            attachmentDescriptor.samplerType = descriptor.samplerType;
             attachmentDescriptor.usage = usageDepth;
             attachmentDescriptor.resolution = descriptor.resolution;
             attachmentDescriptor.levels = descriptor.levels;
@@ -48,7 +48,7 @@ namespace PK::Rendering::Objects
             m_depthAttachment = Texture::Create(attachmentDescriptor, attachmentName.c_str());
         }
     }
-    
+
     void RenderTexture::Validate(uint3 resolution)
     {
         if (m_descriptor.resolution == resolution)

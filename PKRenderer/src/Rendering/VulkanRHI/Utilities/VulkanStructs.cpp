@@ -16,7 +16,7 @@ namespace PK::Rendering::VulkanRHI
         accelerationStructure.pNext = &rayTracingPipeline;
     }
 
-    VulkanBufferCreateInfo::VulkanBufferCreateInfo(BufferUsage usage, size_t size, const VulkanQueueFamilies* families) 
+    VulkanBufferCreateInfo::VulkanBufferCreateInfo(BufferUsage usage, size_t size, const VulkanQueueFamilies* families)
     {
         if (families)
         {
@@ -94,11 +94,11 @@ namespace PK::Rendering::VulkanRHI
 
         switch (type)
         {
-            case BufferUsage::GPUOnly: allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY; break;
-            case BufferUsage::CPUOnly: allocation.usage = VMA_MEMORY_USAGE_CPU_ONLY; break;
-            case BufferUsage::CPUToGPU: allocation.usage = VMA_MEMORY_USAGE_CPU_TO_GPU; break;
-            case BufferUsage::GPUToCPU: allocation.usage = VMA_MEMORY_USAGE_GPU_TO_CPU; break;
-            case BufferUsage::CPUCopy: allocation.usage = VMA_MEMORY_USAGE_CPU_COPY; break;
+        case BufferUsage::GPUOnly: allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY; break;
+        case BufferUsage::CPUOnly: allocation.usage = VMA_MEMORY_USAGE_CPU_ONLY; break;
+        case BufferUsage::CPUToGPU: allocation.usage = VMA_MEMORY_USAGE_CPU_TO_GPU; break;
+        case BufferUsage::GPUToCPU: allocation.usage = VMA_MEMORY_USAGE_GPU_TO_CPU; break;
+        case BufferUsage::CPUCopy: allocation.usage = VMA_MEMORY_USAGE_CPU_COPY; break;
         }
     }
 
@@ -125,7 +125,7 @@ namespace PK::Rendering::VulkanRHI
         allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
         aspect = (VkImageAspectFlagBits)0;
 
-        if (descriptor.samplerType == SamplerType::Cubemap || 
+        if (descriptor.samplerType == SamplerType::Cubemap ||
             descriptor.samplerType == SamplerType::CubemapArray)
         {
             image.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
@@ -184,7 +184,7 @@ namespace PK::Rendering::VulkanRHI
     {
         vkDestroyImageView(device, view, nullptr);
     }
-    
+
     VulkanFrameBuffer::VulkanFrameBuffer(VkDevice device, const VkFramebufferCreateInfo& createInfo) : device(device)
     {
         VK_ASSERT_RESULT_CTX(vkCreateFramebuffer(device, &createInfo, nullptr, &frameBuffer), "Failed to create framebuffer!");
@@ -206,10 +206,10 @@ namespace PK::Rendering::VulkanRHI
     }
 
     VulkanRawBuffer::VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo, const char* name) :
-        allocator(allocator), 
-        usage(createInfo.buffer.usage), 
-        capacity(createInfo.buffer.size), 
-        persistentmap(createInfo.allocation.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT)
+        allocator(allocator),
+        usage(createInfo.buffer.usage),
+        capacity(createInfo.buffer.size),
+        persistentmap(createInfo.allocation.flags& VMA_ALLOCATION_CREATE_MAPPED_BIT)
     {
         if ((createInfo.buffer.flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0)
         {
@@ -231,7 +231,7 @@ namespace PK::Rendering::VulkanRHI
             deviceAddress = vkGetBufferDeviceAddress(device, &addressInfo);
         }
     }
-    
+
     VulkanRawBuffer::~VulkanRawBuffer()
     {
         vmaDestroyBuffer(allocator, buffer, memory);
@@ -247,7 +247,7 @@ namespace PK::Rendering::VulkanRHI
         PK_THROW_ASSERT(memory, "Trying to map a buffer without dedicated memory!");
 
         void* mappedRange;
-        
+
         if (persistentmap)
         {
             mappedRange = allocationInfo.pMappedData;
@@ -300,8 +300,8 @@ namespace PK::Rendering::VulkanRHI
         vmaDestroyImage(allocator, image, memory);
     }
 
-    VulkanRawAccelerationStructure::VulkanRawAccelerationStructure(VkDevice device, 
-        VmaAllocator allocator, 
+    VulkanRawAccelerationStructure::VulkanRawAccelerationStructure(VkDevice device,
+        VmaAllocator allocator,
         const VkAccelerationStructureGeometryKHR& geometryInfo,
         const VkAccelerationStructureBuildRangeInfoKHR& rangeInfo,
         const VkAccelerationStructureTypeKHR type,
@@ -410,7 +410,7 @@ namespace PK::Rendering::VulkanRHI
 
     VulkanSampler::VulkanSampler(VkDevice device, const SamplerDescriptor& descriptor) : device(device)
     {
-        VkSamplerCreateInfo info{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
+        VkSamplerCreateInfo info{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
         info.addressModeU = EnumConvert::GetSamplerAddressMode(descriptor.wrap[0]);
         info.addressModeV = EnumConvert::GetSamplerAddressMode(descriptor.wrap[1]);
         info.addressModeW = EnumConvert::GetSamplerAddressMode(descriptor.wrap[2]);

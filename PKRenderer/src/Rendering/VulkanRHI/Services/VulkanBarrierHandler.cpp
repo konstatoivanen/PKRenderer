@@ -107,7 +107,7 @@ namespace PK::Rendering::VulkanRHI::Services
         auto ra = reinterpret_cast<urect2D*>(&a);
         auto rb = reinterpret_cast<urect2D*>(&b);
         return rb->xmin < (ra->xmin + ra->xmax) && (rb->xmin + rb->xmax) > ra->xmin &&
-               rb->ymin < (ra->ymin + ra->ymax) && (rb->ymin + rb->ymax) > ra->ymin;
+            rb->ymin < (ra->ymin + ra->ymax) && (rb->ymin + rb->ymax) > ra->ymin;
     }
 
     bool VulkanBarrierHandler::TInfo<VkImage>::IsAdjacent(uint64_t a, uint64_t b)
@@ -115,7 +115,7 @@ namespace PK::Rendering::VulkanRHI::Services
         auto ra = reinterpret_cast<urect2D*>(&a);
         auto rb = reinterpret_cast<urect2D*>(&b);
         return ((ra->xmin == (rb->xmin + rb->xmax) || rb->xmin == (ra->xmin + ra->xmax)) && (ra->ymin == rb->ymin && ra->ymax == rb->ymax)) ||
-               ((ra->xmin == (rb->xmin + rb->xmax) || rb->xmin == (ra->xmin + ra->xmax)) && (ra->xmin == rb->xmin && ra->xmax == rb->xmax));
+            ((ra->xmin == (rb->xmin + rb->xmax) || rb->xmin == (ra->xmin + ra->xmax)) && (ra->xmin == rb->xmin && ra->xmax == rb->xmax));
     }
 
     bool VulkanBarrierHandler::TInfo<VkImage>::IsInclusive(uint64_t a, uint64_t b)
@@ -123,7 +123,7 @@ namespace PK::Rendering::VulkanRHI::Services
         auto ra = reinterpret_cast<urect2D*>(&a);
         auto rb = reinterpret_cast<urect2D*>(&b);
         return ra->xmin <= rb->xmin && (ra->xmin + ra->xmax) >= (rb->xmin + rb->xmax) &&
-               ra->ymin <= rb->ymin && (ra->ymin + ra->ymax) >= (rb->ymin + rb->ymax);
+            ra->ymin <= rb->ymin && (ra->ymin + ra->ymax) >= (rb->ymin + rb->ymax);
     }
 
     uint64_t VulkanBarrierHandler::TInfo<VkImage>::Merge(uint64_t a, uint64_t b)
@@ -189,8 +189,8 @@ namespace PK::Rendering::VulkanRHI::Services
 
         return n;
     }
-    
-    
+
+
     void VulkanBarrierHandler::TransferRecords(VulkanBarrierHandler* target)
     {
         auto keyValues = m_resources.GetKeyValues();
@@ -209,7 +209,7 @@ namespace PK::Rendering::VulkanRHI::Services
             while (current && *current)
             {
                 auto copy = **current;
-                
+
                 //@TODO FIX THIS Hack to ignore queue families for now
                 copy.queueFamily = copy.queueFamily != 0xFFFF ? target->m_queueFamily : 0xFFFF;
                 copy.access = 0u;
@@ -283,7 +283,7 @@ namespace PK::Rendering::VulkanRHI::Services
         m_currentPruneTick++;
     }
 
-    
+
     template<>
     void VulkanBarrierHandler::ProcessBarrier<VkBuffer, VkBufferMemoryBarrier>(const VkBuffer resource, VkBufferMemoryBarrier** barrier, const AccessRecord& recordOld, const AccessRecord& recordNew)
     {

@@ -8,16 +8,16 @@ namespace PK::Rendering::Objects
 {
     class AccelerationStructure : public Utilities::NoCopy, public Utilities::NativeInterface<AccelerationStructure>
     {
-        public:
-            static Utilities::Ref<AccelerationStructure> Create(const char* name);
+    public:
+        static Utilities::Ref<AccelerationStructure> Create(const char* name);
 
-            virtual void BeginWrite(Structs::QueueType queue, uint32_t instanceLimit) = 0;
-            virtual void AddInstance(Mesh* mesh, uint32_t submesh, uint32_t customIndex, const PK::Math::float4x4& matrix) = 0;
-            virtual void EndWrite() = 0;
+        virtual void BeginWrite(Structs::QueueType queue, uint32_t instanceLimit) = 0;
+        virtual void AddInstance(Mesh* mesh, uint32_t submesh, uint32_t customIndex, const PK::Math::float4x4& matrix) = 0;
+        virtual void EndWrite() = 0;
 
-            virtual uint32_t GetInstanceCount() const = 0;
-            virtual uint32_t GetSubStructureCount() const = 0;
+        virtual uint32_t GetInstanceCount() const = 0;
+        virtual uint32_t GetSubStructureCount() const = 0;
 
-            virtual ~AccelerationStructure() = default;
+        virtual ~AccelerationStructure() = default;
     };
 }

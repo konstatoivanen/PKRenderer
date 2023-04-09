@@ -19,7 +19,7 @@ namespace PK::Utilities::HashHelpers
 
             return true;
         }
-    
+
         return (candidate == 2);
     }
 
@@ -75,7 +75,7 @@ namespace PK::Utilities::HashHelpers
 
         return GetPrime(newSize);
     }
-    
+
     uint32_t ByteArrayHash(const void* data, size_t count)
     {
         const char* bytes = reinterpret_cast<const char*>(data);
@@ -130,10 +130,10 @@ namespace PK::Utilities::HashHelpers
 
         switch (len)
         {
-            case 3: h2 ^= ((unsigned char*)data)[2] << 16;
-            case 2: h2 ^= ((unsigned char*)data)[1] << 8;
-            case 1: h2 ^= ((unsigned char*)data)[0];
-                    h2 *= m;
+        case 3: h2 ^= ((unsigned char*)data)[2] << 16;
+        case 2: h2 ^= ((unsigned char*)data)[1] << 8;
+        case 1: h2 ^= ((unsigned char*)data)[0];
+            h2 *= m;
         };
 
         h1 ^= h2 >> 18; h1 *= m;

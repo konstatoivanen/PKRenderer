@@ -556,6 +556,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\Objects\AccelerationStructure.h" />
     <ClInclude Include="src\Rendering\Objects\QueueSet.h" />
     <ClInclude Include="src\Rendering\Objects\RayTracingAccelerationStructure.h" />
+    <ClInclude Include="src\Rendering\Objects\ShaderBindingTable.h" />
     <ClInclude Include="src\Rendering\Objects\VirtualMesh.h" />
     <ClInclude Include="src\Rendering\Passes\PassFilmGrain.h" />
     <ClInclude Include="src\Rendering\Passes\PassTemporalAntialiasing.h" />
@@ -964,6 +965,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.cpp" />
     <ClCompile Include="src\ECS\Contextual\Engines\EngineScreenshot.cpp" />
     <ClCompile Include="src\Rendering\Objects\AccelerationStructure.cpp" />
+    <ClCompile Include="src\Rendering\Objects\ShaderBindingTable.cpp" />
     <ClCompile Include="src\Rendering\Objects\VirtualMesh.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassFilmGrain.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassTemporalAntialiasing.cpp" />

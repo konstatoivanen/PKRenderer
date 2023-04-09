@@ -27,7 +27,6 @@ layout(rgba16, set = PK_SET_SHADER) uniform image3D pk_SceneGI_VolumeWrite;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_SceneGI_VolumeRead;
 PK_DECLARE_SET_SHADER uniform sampler2DArray pk_ScreenGI_SHY_Read;
 PK_DECLARE_SET_SHADER uniform sampler2DArray pk_ScreenGI_CoCg_Read;
-PK_DECLARE_SET_SHADER uniform sampler2D pk_ScreenGI_ForwardOuput;
 
 struct GIMask
 {
@@ -127,6 +126,15 @@ SH SampleGI_SH(const float2 uv, float level)
 	(
 		tex2D(pk_ScreenGI_SHY_Read, float3(uv, level)).rgba, 
 		tex2D(pk_ScreenGI_CoCg_Read, float3(uv, level)).rg
+	);
+}
+
+SH SampleGI_SH(const int2 coord, int level)
+{
+	return SH
+	(
+		texelFetch(pk_ScreenGI_SHY_Read, int3(coord, level), 0).rgba, 
+		texelFetch(pk_ScreenGI_CoCg_Read, int3(coord, level), 0).rg
 	);
 }
 

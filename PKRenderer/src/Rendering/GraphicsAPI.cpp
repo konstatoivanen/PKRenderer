@@ -22,15 +22,15 @@ namespace PK::Rendering
 
         switch (api)
         {
-            case APIType::Vulkan: 
-                #if defined(PK_DEBUG) && !defined(PK_NO_VK_VALIDATION)
-                    const std::vector<const char*> PK_VALIDATION_LAYERS =
-                    {
-                        "VK_LAYER_KHRONOS_validation"
-                    };
-                #else
-                    const std::vector<const char*> PK_VALIDATION_LAYERS = {};
-                #endif
+            case APIType::Vulkan:
+#if defined(PK_DEBUG) && !defined(PK_NO_VK_VALIDATION)
+                const std::vector<const char*> PK_VALIDATION_LAYERS =
+                {
+                    "VK_LAYER_KHRONOS_validation"
+                };
+#else
+                const std::vector<const char*> PK_VALIDATION_LAYERS = {};
+#endif
 
                 const std::vector<const char*> PK_INSTANCE_EXTENTIONS =
                 {
@@ -70,7 +70,7 @@ namespace PK::Rendering
 
     GraphicsDriver* GraphicsAPI::GetActiveDriver() { return s_currentDriver; }
     APIType GraphicsAPI::GetActiveAPI() { return s_currentDriver->GetAPI(); }
-    QueueSet* GraphicsAPI::GetQueues() { return s_currentDriver->GetQueues(); }  
+    QueueSet* GraphicsAPI::GetQueues() { return s_currentDriver->GetQueues(); }
     DriverMemoryInfo GraphicsAPI::GetMemoryInfo() { return s_currentDriver->GetMemoryInfo(); }
     size_t GraphicsAPI::GetBufferOffsetAlignment(BufferUsage usage) { return s_currentDriver->GetBufferOffsetAlignment(usage); }
 
@@ -100,6 +100,6 @@ namespace PK::Rendering
     void GraphicsAPI::SetConstant(const char* name, const void* data, uint32_t size) { SetConstant(StringHashID::StringToID(name), data, size); }
     void GraphicsAPI::SetKeyword(uint32_t nameHashId, bool value) { s_currentDriver->SetKeyword(nameHashId, value); }
     void GraphicsAPI::SetKeyword(const char* name, bool value) { SetKeyword(StringHashID::StringToID(name), value); }
-    
+
     void GraphicsAPI::GC() { s_currentDriver->GC(); }
 }

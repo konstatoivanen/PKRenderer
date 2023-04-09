@@ -20,8 +20,7 @@ namespace PK::ECS::Engines
 		VSync,
 		Assets,
 		StringParameter,
-		Variants,
-		Uniforms,
+		AssetMeta,
 		GPUMemory,
 		TypeShader,
 		TypeMesh,
@@ -52,8 +51,24 @@ namespace PK::ECS::Engines
 			void ApplicationExit(const ConsoleCommand& arguments);
 			void ApplicationContextual(const ConsoleCommand& arguments);
 			void ApplicationSetVSync(const ConsoleCommand& arguments);
-			void QueryShaderVariants(const ConsoleCommand& arguments);
-			void QueryShaderUniforms(const ConsoleCommand& arguments);
+			template<typename T>
+			void QueryAssetMeta(const ConsoleCommand& arguments)
+			{
+				auto asset = m_assetDatabase->TryFind<T>(arguments[2].c_str());
+				PK_LOG_NEWLINE();
+
+				if (asset != nullptr)
+				{
+					PK_LOG_INFO(asset->GetMetaInfo().c_str());
+				}
+				else
+				{
+					PK_LOG_WARNING("Could not find asset with keyword: %s", arguments[2].c_str());
+				}
+
+				PK_LOG_NEWLINE();
+			}
+
 			void QueryGPUMemory(const ConsoleCommand& arguments);
 			void ReloadTime(const ConsoleCommand& arguments);
 			void ReloadAppConfig(const ConsoleCommand& arguments);

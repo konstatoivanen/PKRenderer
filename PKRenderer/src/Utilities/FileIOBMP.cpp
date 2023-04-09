@@ -36,7 +36,7 @@ namespace PK::Utilities::FileIO
         int totalSize = unpaddedRowSize * (*height);
 
         *pixels = (byte*)malloc(totalSize);
-        
+
         byte* currentRowPointer = *pixels + ((*height - 1) * unpaddedRowSize);
 
         for (auto i = 0; i < *height; ++i)
@@ -57,7 +57,7 @@ namespace PK::Utilities::FileIO
 
         fclose(imageFile);
     }
-    
+
     void WriteBMP(const char* fileName, byte* pixels, uint32_t width, uint32_t height)
     {
         FILE* outputFile = fopen(fileName, "wb");
@@ -99,12 +99,12 @@ namespace PK::Utilities::FileIO
         int32_t unpaddedRowSize = width * BYTES_PER_PIXEL;
 
         for (int32_t y = height - 1; y >= 0; --y)
-        for (uint32_t x = 0u; x < width; ++x)
-        {
-            uint32_t index = (x + y * width) * BYTES_PER_PIXEL;
-            byte color[4] = { pixels[index + 0], pixels[index + 1], pixels[index + 2], pixels[index + 3] };
-            fwrite(color, sizeof(byte), 4, outputFile);
-        }
+            for (uint32_t x = 0u; x < width; ++x)
+            {
+                uint32_t index = (x + y * width) * BYTES_PER_PIXEL;
+                byte color[4] = { pixels[index + 0], pixels[index + 1], pixels[index + 2], pixels[index + 3] };
+                fwrite(color, sizeof(byte), 4, outputFile);
+            }
 
         fclose(outputFile);
     }

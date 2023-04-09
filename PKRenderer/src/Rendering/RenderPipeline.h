@@ -57,7 +57,7 @@ namespace PK::Rendering
             Utilities::Ref<Objects::ConstantBuffer> m_constantsPostProcess;
             Utilities::Ref<Objects::ConstantBuffer> m_constantsPerFrame;
             Utilities::Ref<Objects::RenderTexture> m_renderTarget;
-            Utilities::Ref<Objects::Texture> m_depthPrevious;
+            Utilities::Ref<Objects::RenderTexture> m_renderTargetPrevious;
             Objects::Shader* m_OEMBackgroundShader;
 
             ECS::Tokens::VisibilityList m_visibilityList;

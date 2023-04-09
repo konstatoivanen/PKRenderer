@@ -23,29 +23,29 @@ namespace PK::ECS::Engines
         m_executableArguments.resize(args.size() + 1);
         memcpy(m_executableArguments.data(), args.c_str(), sizeof(wchar_t) * args.size());
     }
-    
+
     void EnginePKAssetBuilder::Step(TokenConsoleCommand* token)
     {
         if (m_executablePath.empty() || m_executableArguments.empty() || token->isConsumed || token->argument != "recompile_pkassets")
         {
             return;
         }
-        
+
         token->isConsumed = true;
 
-        #if defined(WIN32)
-            PK_LOG_INFO("Executing Command!");
+#if defined(WIN32)
+        PK_LOG_INFO("Executing Command!");
 
-            STARTUPINFO si;
-            PROCESS_INFORMATION pi;
+        STARTUPINFO si;
+        PROCESS_INFORMATION pi;
 
-            ZeroMemory(&si, sizeof(si));
-            si.cb = sizeof(si);
-            ZeroMemory(&pi, sizeof(pi));
+        ZeroMemory(&si, sizeof(si));
+        si.cb = sizeof(si);
+        ZeroMemory(&pi, sizeof(pi));
 
-            PK_THROW_ASSERT(CreateProcess(m_executablePath.c_str(), m_executableArguments.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi), "CreateProcess failed (%d).", GetLastError());
-            WaitForSingleObject(pi.hProcess, INFINITE);
-            CloseHandle(pi.hProcess);
-        #endif
+        PK_THROW_ASSERT(CreateProcess(m_executablePath.c_str(), m_executableArguments.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi), "CreateProcess failed (%d).", GetLastError());
+        WaitForSingleObject(pi.hProcess, INFINITE);
+        CloseHandle(pi.hProcess);
+#endif
     }
 }

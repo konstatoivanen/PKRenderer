@@ -22,11 +22,11 @@ namespace PK::Rendering::Passes
         m_gbufferAttribs.rasterization.cullMode = CullMode::Back;
         m_gbufferAttribs.blending.colorMask = ColorMask::RGBA;
     }
-    
+
     void PassGeometry::Cull(void* engineRoot, VisibilityList* visibilityList, const float4x4& viewProjection, float depthRange)
     {
         visibilityList->Clear();
-        
+
         TokenCullFrustum tokenFrustum{};
         tokenFrustum.results = visibilityList;
         tokenFrustum.mask = RenderableFlags::Mesh;

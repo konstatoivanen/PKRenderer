@@ -68,7 +68,7 @@ namespace PK::Rendering::Objects
     {
         auto count = renderTarget->GetColorCount();
         uint32_t indices[PK_MAX_RENDER_TARGETS];
-    
+
         for (auto i = 0u; i < count; ++i)
         {
             indices[i] = i;
@@ -125,7 +125,7 @@ namespace PK::Rendering::Objects
     void CommandBuffer::DrawMesh(const Mesh* mesh, int32_t submesh, uint32_t instanceCount, uint32_t firstInstance)
     {
         SetMesh(mesh);
-     
+
         auto smc = mesh->GetSubmeshCount();
 
         if (submesh < 0)
@@ -173,7 +173,7 @@ namespace PK::Rendering::Objects
     void CommandBuffer::Blit(const Shader* shader, int32_t variantIndex)
     {
         SetShader(shader, variantIndex);
-        Draw(3,1,0,0);
+        Draw(3, 1, 0, 0);
     }
 
     void CommandBuffer::Blit(const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int32_t variantIndex)

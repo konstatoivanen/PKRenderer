@@ -9,7 +9,7 @@ namespace PK::Rendering::VulkanRHI::Services
     using namespace PK::Utilities;
 
     VulkanCommandBufferPool::VulkanCommandBufferPool(VkDevice device, const VulkanServiceContext& services, uint32_t queueFamily, VkPipelineStageFlags capabilities) :
-        m_device(device), 
+        m_device(device),
         m_primaryRenderState(services)
     {
         VkCommandPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
@@ -30,7 +30,7 @@ namespace PK::Rendering::VulkanRHI::Services
     {
         Prune(true);
         vkDestroyCommandPool(m_device, m_pool, nullptr);
-    
+
         for (auto& wrapper : m_commandBuffers)
         {
             vkDestroyFence(m_device, wrapper.GetFence(), nullptr);
@@ -52,7 +52,7 @@ namespace PK::Rendering::VulkanRHI::Services
                 break;
             }
         }
-        
+
         PK_THROW_ASSERT(m_current, "No available command buffers!");
 
         const int64_t index = m_current - &m_commandBuffers[0];

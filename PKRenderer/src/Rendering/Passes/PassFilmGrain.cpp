@@ -29,7 +29,7 @@ namespace PK::Rendering::Passes
         m_filmGrainTexture = Texture::Create(descriptor, "FilmGrain.Texture");
         GraphicsAPI::SetTexture(HashCache::Get()->pk_FilmGrainTex, m_filmGrainTexture.get());
     }
-    
+
     void PassFilmGrain::Compute(Objects::CommandBuffer* cmd)
     {
         auto hash = HashCache::Get();

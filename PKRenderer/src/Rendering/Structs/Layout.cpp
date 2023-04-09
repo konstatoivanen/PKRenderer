@@ -23,7 +23,7 @@ namespace PK::Rendering::Structs
             }
 
             m_stride += element->Size();
-            
+
             m_alignedStride = alignment * (uint32_t)glm::ceil(m_alignedStride / (float)alignment);
 
             if (applyOffsets)
@@ -45,11 +45,11 @@ namespace PK::Rendering::Structs
         maxAlignment = 16 * (uint32_t)glm::ceil(maxAlignment / 16.0f);
         m_paddedStride = maxAlignment * (uint32_t)glm::ceil(m_alignedStride / (float)maxAlignment);
     }
-    
+
     const BufferElement* BufferLayout::TryGetElement(uint32_t nameHashId, uint32_t* index) const
     {
         auto iterator = m_elementMap.find(nameHashId);
-        
+
         if (iterator != m_elementMap.end())
         {
             *index = iterator->second;

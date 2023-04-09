@@ -14,7 +14,7 @@ namespace PK::Rendering::Objects
 
         switch (api)
         {
-            case APIType::Vulkan: return CreateRef<VulkanBuffer>(layout, count, usage, name);
+        case APIType::Vulkan: return CreateRef<VulkanBuffer>(layout, count, usage, name);
         }
 
         return nullptr;

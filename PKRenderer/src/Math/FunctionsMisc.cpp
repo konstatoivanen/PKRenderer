@@ -17,19 +17,19 @@ namespace PK::Math::Functions
             cascades[i] = CascadeDepth(znear, zfar, linearity, i / (float)count);
         }
     }
-    
-    float CascadeDepth(float znear, float zfar, float linearity, float interpolant) 
-    { 
-        return linearity * (znear * powf(zfar / znear, interpolant)) + (1.0f - linearity) * (znear + (zfar - znear) * interpolant); 
+
+    float CascadeDepth(float znear, float zfar, float linearity, float interpolant)
+    {
+        return linearity * (znear * powf(zfar / znear, interpolant)) + (1.0f - linearity) * (znear + (zfar - znear) * interpolant);
     }
-    
-    float Cot(float value) 
-    { 
-        return cos(value) / sin(value); 
+
+    float Cot(float value)
+    {
+        return cos(value) / sin(value);
     }
-    
-    float RandomFloat() 
-    { 
+
+    float RandomFloat()
+    {
         return (float)rand() / (float)RAND_MAX;
     }
 
@@ -54,10 +54,10 @@ namespace PK::Math::Functions
         auto v = rand();
         return *reinterpret_cast<uint32_t*>(&v);
     }
-    
-    float3 RandomFloat3() 
-    { 
-        return float3(RandomFloat(), RandomFloat(), RandomFloat()); 
+
+    float3 RandomFloat3()
+    {
+        return float3(RandomFloat(), RandomFloat(), RandomFloat());
     }
 
     uint32_t RandomRangeUint(uint32_t min, uint32_t max)
@@ -65,19 +65,19 @@ namespace PK::Math::Functions
         return  min + (RandomUint() % (max - min));
     }
 
-    float RandomRangeFloat(float min, float max) 
-    { 
-        return min + (RandomFloat() * (max - min)); 
+    float RandomRangeFloat(float min, float max)
+    {
+        return min + (RandomFloat() * (max - min));
     }
 
-    float3 RandomRangeFloat3(const float3& min, const float3& max) 
-    { 
-        return float3(RandomRangeFloat(min.x, max.x), RandomRangeFloat(min.y, max.y), RandomRangeFloat(min.z, max.z)); 
+    float3 RandomRangeFloat3(const float3& min, const float3& max)
+    {
+        return float3(RandomRangeFloat(min.x, max.x), RandomRangeFloat(min.y, max.y), RandomRangeFloat(min.z, max.z));
     }
-   
-    float3 RandomEuler() 
-    { 
-        return float3(RandomRangeFloat(-360.0f, 360.0f), RandomRangeFloat(-360.0f, 360.0f), RandomRangeFloat(-360.0f, 360.0f)); 
+
+    float3 RandomEuler()
+    {
+        return float3(RandomRangeFloat(-360.0f, 360.0f), RandomRangeFloat(-360.0f, 360.0f), RandomRangeFloat(-360.0f, 360.0f));
     }
 
     float3 ToFloat3(float* ptr)
@@ -157,19 +157,19 @@ namespace PK::Math::Functions
         return start;
     }
 
-    uint32_t GetMaxMipLevelPow2(uint32_t resolution) 
-    { 
-        return glm::log2(resolution); 
+    uint32_t GetMaxMipLevelPow2(uint32_t resolution)
+    {
+        return glm::log2(resolution);
     }
 
-    uint32_t GetMaxMipLevelPow2(uint2 resolution) 
-    { 
-        return glm::log2(glm::compMin(resolution)); 
+    uint32_t GetMaxMipLevelPow2(uint2 resolution)
+    {
+        return glm::log2(glm::compMin(resolution));
     }
 
-    uint32_t GetMaxMipLevelPow2(uint3 resolution) 
-    { 
-        return glm::log2(glm::compMin(resolution)); 
+    uint32_t GetMaxMipLevelPow2(uint3 resolution)
+    {
+        return glm::log2(glm::compMin(resolution));
     }
 
     uint32_t GetMaxMipLevel(uint32_t resolution)
@@ -185,14 +185,14 @@ namespace PK::Math::Functions
         return level;
     }
 
-    uint32_t GetMaxMipLevel(uint2 resolution) 
-    { 
-        return GetMaxMipLevel(glm::compMin(resolution)); 
+    uint32_t GetMaxMipLevel(uint2 resolution)
+    {
+        return GetMaxMipLevel(glm::compMin(resolution));
     }
 
-    uint32_t GetMaxMipLevel(uint3 resolution) 
-    { 
-        return GetMaxMipLevel(glm::compMin(resolution)); 
+    uint32_t GetMaxMipLevel(uint3 resolution)
+    {
+        return GetMaxMipLevel(glm::compMin(resolution));
     }
 
     std::string BytesToString(size_t bytes, uint32_t decimalPlaces)
@@ -246,7 +246,7 @@ namespace PK::Math::Functions
     uint32_t CountBits(uint32_t value)
     {
         uint32_t count = 0;
-        
+
         while (value > 0)
         {
             count += value & 1;

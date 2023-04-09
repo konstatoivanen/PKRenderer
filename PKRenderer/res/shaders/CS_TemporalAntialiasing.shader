@@ -28,7 +28,7 @@ void main()
     desc.texelSize = 2.0f.xx / size;
     desc.jitter = pk_ProjectionJitter.xy * desc.texelSize;
     desc.texcoord = (coord + 0.5f.xx) / size;
-    
+
     float3 viewpos = SampleViewPosition(desc.texcoord);
     float3 uvw = ClipToUVW(mul(pk_MATRIX_LD_P, float4(viewpos, 1.0f)));
 

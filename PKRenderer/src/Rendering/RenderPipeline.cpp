@@ -37,82 +37,76 @@ namespace PK::Rendering
         RenderTextureDescriptor descriptor{};
         descriptor.resolution = { config->InitialWidth, config->InitialHeight, 1 };
         descriptor.colorFormats[0] = TextureFormat::RGBA16F;
-        descriptor.colorFormats[1] = TextureFormat::RGBA16F;
+        descriptor.colorFormats[1] = TextureFormat::RGB10A2;
         descriptor.depthFormat = TextureFormat::Depth32F;
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
         m_renderTarget = CreateRef<RenderTexture>(descriptor, "Scene.RenderTarget");
-
-        TextureDescriptor depthDescriptor{};
-        depthDescriptor.resolution = { config->InitialWidth, config->InitialHeight, 1 };
-        depthDescriptor.format = TextureFormat::Depth32F;
-        depthDescriptor.usage = TextureUsage::RTDepthSample;
-        depthDescriptor.sampler.filterMin = FilterMode::Bilinear;
-        depthDescriptor.sampler.filterMag = FilterMode::Bilinear;
-        m_depthPrevious = Texture::Create(depthDescriptor, "Scene.DepthTexture.Previous");
+        m_renderTargetPrevious = CreateRef<RenderTexture>(descriptor, "Scene.RenderTarget.Previous");
 
         m_sceneStructure = AccelerationStructure::Create("Scene");
 
         auto hash = HashCache::Get();
 
         m_constantsPerFrame = CreateRef<ConstantBuffer>(BufferLayout(
-        { 
-            { ElementType::Float4, hash->pk_Time },
-            { ElementType::Float4, hash->pk_SinTime },
-            { ElementType::Float4, hash->pk_CosTime },
-            { ElementType::Float4, hash->pk_DeltaTime },
-            { ElementType::Float4, hash->pk_CursorParams },
-            { ElementType::Float4, hash->pk_WorldSpaceCameraPos },
-            { ElementType::Float4, hash->pk_ProjectionParams },
-            { ElementType::Float4, hash->pk_ExpProjectionParams },
-            { ElementType::Float4, hash->pk_ScreenParams },
-            { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
-            { ElementType::Float4, hash->pk_ProjectionJitter },
-            { ElementType::Float4x4, hash->pk_MATRIX_V },
-            { ElementType::Float4x4, hash->pk_MATRIX_I_V },
-            { ElementType::Float4x4, hash->pk_MATRIX_P },
-            { ElementType::Float4x4, hash->pk_MATRIX_I_P },
-            { ElementType::Float4x4, hash->pk_MATRIX_VP },
-            { ElementType::Float4x4, hash->pk_MATRIX_I_VP },
-            { ElementType::Float4x4, hash->pk_MATRIX_L_VP },
-            { ElementType::Float4x4, hash->pk_MATRIX_LD_P },
-            { ElementType::Float, hash->pk_SceneOEM_Exposure },
-            { ElementType::Uint, hash->pk_FrameIndex }
-        }), "Constants.Frame");
+            {
+                { ElementType::Float4, hash->pk_Time },
+                { ElementType::Float4, hash->pk_SinTime },
+                { ElementType::Float4, hash->pk_CosTime },
+                { ElementType::Float4, hash->pk_DeltaTime },
+                { ElementType::Float4, hash->pk_CursorParams },
+                { ElementType::Float4, hash->pk_WorldSpaceCameraPos },
+                { ElementType::Float4, hash->pk_ProjectionParams },
+                { ElementType::Float4, hash->pk_ExpProjectionParams },
+                { ElementType::Float4, hash->pk_ScreenParams },
+                { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
+                { ElementType::Float4, hash->pk_ProjectionJitter },
+                { ElementType::Float4x4, hash->pk_MATRIX_V },
+                { ElementType::Float4x4, hash->pk_MATRIX_I_V },
+                { ElementType::Float4x4, hash->pk_MATRIX_P },
+                { ElementType::Float4x4, hash->pk_MATRIX_I_P },
+                { ElementType::Float4x4, hash->pk_MATRIX_VP },
+                { ElementType::Float4x4, hash->pk_MATRIX_I_VP },
+                { ElementType::Float4x4, hash->pk_MATRIX_L_I_V },
+                { ElementType::Float4x4, hash->pk_MATRIX_L_VP },
+                { ElementType::Float4x4, hash->pk_MATRIX_LD_P },
+                { ElementType::Float, hash->pk_SceneOEM_Exposure },
+                { ElementType::Uint, hash->pk_FrameIndex }
+            }), "Constants.Frame");
 
         m_constantsPostProcess = CreateRef<ConstantBuffer>(BufferLayout(
-        {
-            {ElementType::Float, "pk_MinLogLuminance"},
-            {ElementType::Float, "pk_InvLogLuminanceRange"},
-            {ElementType::Float, "pk_LogLuminanceRange"},
-            {ElementType::Float, "pk_TargetExposure"},
-            {ElementType::Float, "pk_AutoExposureSpeed"},
-            {ElementType::Float, "pk_BloomIntensity"},
-            {ElementType::Float, "pk_BloomDirtIntensity"},
-            {ElementType::Float, "pk_Vibrance"},
-            {ElementType::Float, "pk_TAA_Sharpness"},
-            {ElementType::Float, "pk_TAA_BlendingStatic"},
-            {ElementType::Float, "pk_TAA_BlendingMotion"},
-            {ElementType::Float, "pk_TAA_MotionAmplification"},
-            {ElementType::Float4, "pk_VignetteGrain"},
-            {ElementType::Float4, "pk_WhiteBalance"},
-            {ElementType::Float4, "pk_Lift"},
-            {ElementType::Float4, "pk_Gamma"},
-            {ElementType::Float4, "pk_Gain"},
-            {ElementType::Float4, "pk_ContrastGainGammaContribution"},
-            {ElementType::Float4, "pk_HSV"},
-            {ElementType::Float4, "pk_ChannelMixerRed"},
-            {ElementType::Float4, "pk_ChannelMixerGreen"},
-            {ElementType::Float4, "pk_ChannelMixerBlue"},
-        }), "Constants.PostProcess");
+            {
+                {ElementType::Float, "pk_MinLogLuminance"},
+                {ElementType::Float, "pk_InvLogLuminanceRange"},
+                {ElementType::Float, "pk_LogLuminanceRange"},
+                {ElementType::Float, "pk_TargetExposure"},
+                {ElementType::Float, "pk_AutoExposureSpeed"},
+                {ElementType::Float, "pk_BloomIntensity"},
+                {ElementType::Float, "pk_BloomDirtIntensity"},
+                {ElementType::Float, "pk_Vibrance"},
+                {ElementType::Float, "pk_TAA_Sharpness"},
+                {ElementType::Float, "pk_TAA_BlendingStatic"},
+                {ElementType::Float, "pk_TAA_BlendingMotion"},
+                {ElementType::Float, "pk_TAA_MotionAmplification"},
+                {ElementType::Float4, "pk_VignetteGrain"},
+                {ElementType::Float4, "pk_WhiteBalance"},
+                {ElementType::Float4, "pk_Lift"},
+                {ElementType::Float4, "pk_Gamma"},
+                {ElementType::Float4, "pk_Gain"},
+                {ElementType::Float4, "pk_ContrastGainGammaContribution"},
+                {ElementType::Float4, "pk_HSV"},
+                {ElementType::Float4, "pk_ChannelMixerRed"},
+                {ElementType::Float4, "pk_ChannelMixerGreen"},
+                {ElementType::Float4, "pk_ChannelMixerBlue"},
+            }), "Constants.PostProcess");
 
-        AssetImportToken<ApplicationConfig> token { assetDatabase, config };
+        AssetImportToken<ApplicationConfig> token{ assetDatabase, config };
         Step(&token);
 
         auto bluenoise = assetDatabase->Load<Texture>("res/textures/default/T_Bluenoise256.ktx2");
         auto lightCookies = assetDatabase->Load<Texture>("res/textures/default/T_LightCookies.ktx2");
-        
+
         auto sampler = lightCookies->GetSamplerDescriptor();
         sampler.wrap[0] = WrapMode::Clamp;
         sampler.wrap[1] = WrapMode::Clamp;
@@ -134,7 +128,7 @@ namespace PK::Rendering
 
         PK_LOG_HEADER("----------RENDER PIPELINE INITIALIZED----------");
     }
-    
+
     RenderPipeline::~RenderPipeline()
     {
         GraphicsAPI::GetActiveDriver()->WaitForIdle();
@@ -145,11 +139,11 @@ namespace PK::Rendering
     void RenderPipeline::Step(PK::ECS::Tokens::ViewProjectionUpdateToken* token)
     {
         auto hash = HashCache::Get();
-        
+
         // @TODO move to a sequencer step instead
         token->jitter = m_temporalAntialiasing.GetJitter();
 
-        float2 jitter = 
+        float2 jitter =
         {
             token->jitter.x / m_renderTarget->GetResolution().x,
             token->jitter.y / m_renderTarget->GetResolution().y
@@ -166,11 +160,13 @@ namespace PK::Rendering
         auto f = Functions::GetZFarFromProj(token->projection);
         auto vp = token->projection * token->view;
         auto pvp = vp;
+        auto piv = cameraMatrix;
 
         m_znear = n;
         m_zfar = f;
 
         m_constantsPerFrame->TryGet(hash->pk_MATRIX_VP, pvp);
+        m_constantsPerFrame->TryGet(hash->pk_MATRIX_I_V, piv);
         m_constantsPerFrame->Set<float4>(hash->pk_ProjectionParams, { n, f, f - n, 1.0f / f });
         m_constantsPerFrame->Set<float4>(hash->pk_ExpProjectionParams, { 1.0f / glm::log2(f / n), -log2(n) / log2(f / n), f / n, 1.0f / n });
         m_constantsPerFrame->Set<float4>(hash->pk_WorldSpaceCameraPos, cameraMatrix[3]);
@@ -181,6 +177,7 @@ namespace PK::Rendering
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_P, glm::inverse(token->projection));
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_VP, vp);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_VP, glm::inverse(vp));
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_I_V, piv);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP, pvp);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_LD_P, pvp * cameraMatrix);
     }
@@ -195,7 +192,7 @@ namespace PK::Rendering
         m_constantsPerFrame->Set<uint>(hash->pk_FrameIndex, token->frameIndex % 0xFFFFFFFFu);
         token->logFrameRate = true;
     }
-    
+
     void RenderPipeline::Step(Window* window, int condition)
     {
         auto hash = HashCache::Get();
@@ -203,11 +200,13 @@ namespace PK::Rendering
         auto resolution = window->GetResolution();
 
         m_renderTarget->Validate(resolution);
-        m_depthPrevious->Validate(resolution);
+        m_renderTargetPrevious->Validate(resolution);
 
         GraphicsAPI::SetTexture(hash->pk_ScreenDepthCurrent, m_renderTarget->GetDepth());
-        GraphicsAPI::SetTexture(hash->pk_ScreenDepthPrevious, m_depthPrevious.get());
-        GraphicsAPI::SetTexture(hash->pk_ScreenNormals, m_renderTarget->GetColor(1));
+        GraphicsAPI::SetTexture(hash->pk_ScreenNormalsCurrent, m_renderTarget->GetColor(1));
+        GraphicsAPI::SetTexture(hash->pk_ScreenDepthPrevious, m_renderTargetPrevious->GetDepth());
+        GraphicsAPI::SetTexture(hash->pk_ScreenNormalsPrevious, m_renderTargetPrevious->GetColor(1));
+        GraphicsAPI::SetTexture(hash->pk_ScreenColorPrevious, m_renderTargetPrevious->GetColor(0));
 
         auto cascadeZSplits = m_passLights.GetCascadeZSplits(m_znear, m_zfar);
         m_constantsPerFrame->Set<float4>(hash->pk_ShadowCascadeZSplits, reinterpret_cast<float4*>(cascadeZSplits.planes));
@@ -228,7 +227,7 @@ namespace PK::Rendering
         // Prune voxels & build AS.
         // These can happen before the end of last frame. 
         m_passSceneGI.PruneVoxels(cmdcompute);
-        Tokens::AccelerationStructureBuildToken token { QueueType::Compute, m_sceneStructure.get(), RenderableFlags::DefaultMesh, {}, false };
+        Tokens::AccelerationStructureBuildToken token{ QueueType::Compute, m_sceneStructure.get(), RenderableFlags::DefaultMesh, {}, false };
         m_sequencer->Next<Tokens::AccelerationStructureBuildToken>(this, &token);
         GraphicsAPI::SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         queues->Submit(QueueType::Compute, &cmdcompute);
@@ -245,7 +244,7 @@ namespace PK::Rendering
 
         // Concurrent Shadows & gbuffer
         cmdgraphics->SetRenderTarget(m_renderTarget.get(), { 1 }, true, true);
-        cmdgraphics->ClearColor({ 0, 0, -1.0f, 1.0f }, 0);
+        cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         cmdgraphics->ClearDepth(1.0f, 0u);
         m_passGeometry.RenderGBuffer(cmdgraphics);
         queues->Submit(QueueType::Graphics, &cmdgraphics);
@@ -264,7 +263,7 @@ namespace PK::Rendering
         m_passLights.RenderShadows(cmdgraphics);
         queues->Submit(QueueType::Graphics, &cmdgraphics);
         // Wait for light list build instead of depth tile pass
-        queues->Sync(QueueType::Compute, QueueType::Graphics, -1); 
+        queues->Sync(QueueType::Compute, QueueType::Graphics, -1);
 
         // Voxelize scene
         m_passSceneGI.RenderVoxels(cmdgraphics, &m_batcher, m_passGeometry.GetPassGroup());
@@ -290,7 +289,8 @@ namespace PK::Rendering
 
         // @TODO Add trasparent forward stuff here
 
-        m_passSceneGI.CacheForwardOutput(cmdgraphics, m_renderTarget->GetColor(0u));
+        // Cache forward output of current frame
+        cmdgraphics->Blit(m_renderTarget->GetColor(0u), m_renderTargetPrevious->GetColor(0u), {}, {}, FilterMode::Point);
 
         // Post Effects
         cmdgraphics->BeginDebugScope("PostEffects", PK_COLOR_YELLOW);
@@ -303,7 +303,8 @@ namespace PK::Rendering
         queues->Submit(QueueType::Graphics, &cmdgraphics);
 
         // Blit to window
-        cmdgraphics->Blit(m_renderTarget->GetDepth(), m_depthPrevious.get(), {}, {}, FilterMode::Point);
+        cmdgraphics->Blit(m_renderTarget->GetDepth(), m_renderTargetPrevious->GetDepth(), {}, {}, FilterMode::Point);
+        cmdgraphics->Blit(m_renderTarget->GetColor(1), m_renderTargetPrevious->GetColor(1), {}, {}, FilterMode::Point);
         cmdgraphics->Blit(m_renderTarget->GetColor(0), window, FilterMode::Bilinear);
     }
 

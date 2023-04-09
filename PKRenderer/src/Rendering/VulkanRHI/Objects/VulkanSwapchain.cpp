@@ -24,17 +24,17 @@ namespace PK::Rendering::VulkanRHI::Objects
         return result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR;
     }
 
-    VulkanSwapchain::VulkanSwapchain(const VkPhysicalDevice physicalDevice, 
-                                     const VkDevice device, 
-                                     const VkSurfaceKHR surface,
-                                     VulkanQueue* queueGraphics, 
-                                     VulkanQueue* queuePresent,
-                                     const SwapchainCreateInfo& createInfo) :
-                                        m_physicalDevice(physicalDevice),
-                                        m_device(device),
-                                        m_surface(surface),
-                                        m_queueGraphics(queueGraphics),
-                                        m_queuePresent(queuePresent)
+    VulkanSwapchain::VulkanSwapchain(const VkPhysicalDevice physicalDevice,
+        const VkDevice device,
+        const VkSurfaceKHR surface,
+        VulkanQueue* queueGraphics,
+        VulkanQueue* queuePresent,
+        const SwapchainCreateInfo& createInfo) :
+        m_physicalDevice(physicalDevice),
+        m_device(device),
+        m_surface(surface),
+        m_queueGraphics(queueGraphics),
+        m_queuePresent(queuePresent)
 
     {
         Rebuild(createInfo);
@@ -96,7 +96,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, nullptr);
         m_images.resize(imageCount);
         vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, m_images.data());
- 
+
         m_imageViews.resize(m_images.size());
 
         for (size_t i = 0u; i < m_imageViews.size(); ++i)
@@ -140,7 +140,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanSwapchain::Release()
     {
         delete[] m_bindHandles;
-        
+
         for (size_t i = 0u; i < m_imageViews.size(); ++i)
         {
             delete m_imageViews[i];
@@ -174,7 +174,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         *imageAvailableSignal = m_queueGraphics->GetNextSemaphore();
         auto result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, *imageAvailableSignal, VK_NULL_HANDLE, &m_imageIndex);
-        
+
         PK_THROW_ASSERT(SwapchainErrorAssert(result, m_outofdate, m_suboptimal), "Failed to acquire swap chain image!");
 
         return !m_outofdate;

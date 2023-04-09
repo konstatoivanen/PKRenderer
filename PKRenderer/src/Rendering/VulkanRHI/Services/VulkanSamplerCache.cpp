@@ -16,12 +16,12 @@ namespace PK::Rendering::VulkanRHI::Services
     VkSampler VulkanSamplerCache::GetSampler(const SamplerDescriptor& descriptor)
     {
         auto iterator = m_samplers.find(descriptor);
-    
+
         if (iterator != m_samplers.end())
         {
             return iterator->second->sampler;
         }
-    
+
         auto sampler = new VulkanSampler(m_device, descriptor);
         m_samplers[descriptor] = sampler;
         return sampler->sampler;

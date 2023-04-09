@@ -28,7 +28,7 @@ namespace PK::Rendering::Passes
         m_passPrefilter = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_DOWNSAMPLE"));
         m_passDiskblur = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_BLUR"));
     }
-    
+
     void PassBloom::Render(Objects::CommandBuffer* cmd, RenderTexture* source)
     {
         cmd->BeginDebugScope("Bloom", PK_COLOR_MAGENTA);

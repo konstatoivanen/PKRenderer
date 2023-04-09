@@ -128,9 +128,9 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_pipeline = nullptr;
         m_frameBuffer = nullptr;
         m_indexBuffer = nullptr;
-        m_dirtyFlags = PK_RENDER_STATE_DIRTY_RENDERTARGET | 
-                       PK_RENDER_STATE_DIRTY_PIPELINE | 
-                       PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
+        m_dirtyFlags = PK_RENDER_STATE_DIRTY_RENDERTARGET |
+            PK_RENDER_STATE_DIRTY_PIPELINE |
+            PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
 
         m_frameBufferKey[0].layers = 1;
         m_frameBufferKey[1].layers = 1;
@@ -203,7 +203,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_clearValues[index].color.float32[3] = color.a;
         m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
     }
-    
+
     void VulkanRenderState::ClearDepth(float depth, uint32_t stencil)
     {
         m_renderPassKey[0].depth.loadop = LoadOp::Clear;
@@ -211,7 +211,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_clearValues[PK_MAX_RENDER_TARGETS].depthStencil.stencil = stencil;
         m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
     }
-    
+
     void VulkanRenderState::DiscardColor(uint32_t index)
     {
         m_renderPassKey[0].colors[index].loadop = LoadOp::Discard;
@@ -262,7 +262,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         for (auto i = 0u; i < count; ++i)
         {
             auto& rect = rects[i];
-            VkRect2D v = {{(int)rect.x, (int)rect.y}, { rect.z, rect.w }};
+            VkRect2D v = { {(int)rect.x, (int)rect.y}, { rect.z, rect.w } };
 
             if (memcmp(&m_scissors[i], &v, sizeof(VkRect2D)) != 0)
             {
@@ -392,7 +392,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     VulkanBarrierHandler::AccessRecord VulkanRenderState::ExchangeImage(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access)
     {
         auto handler = m_services.barrierHandler;
-        
+
         VulkanBarrierHandler::AccessRecord record{};
         record.stage = stage;
         record.access = access;
@@ -505,7 +505,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         for (index = 0u; index < PK_MAX_VERTEX_ATTRIBUTES; ++index)
         {
             auto vertexBuffer = m_vertexBuffers[index];
-            
+
             if (vertexBuffer == nullptr)
             {
                 break;
@@ -513,10 +513,10 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             const auto& bufferLayout = *vertexBuffer->buffer.layout;
             auto stride = bufferLayout.GetStride();
-            
+
             auto bufferAttribute = &m_pipelineKey.vertexBuffers[index];
             bufferAttribute->binding = index;
-        
+
             if (bufferAttribute->inputRate != vertexBuffer->buffer.inputRate || bufferAttribute->stride != stride)
             {
                 bufferAttribute->inputRate = vertexBuffer->buffer.inputRate;
@@ -582,7 +582,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             for (const auto& element : shader->GetResourceLayout(i))
             {
                 auto* binding = bindings + index++;
-                
+
                 if (element.Count > 1)
                 {
                     PK_THROW_ASSERT(resources->TryGet(element.NameHashId, wrappedHandleArray), "Descriptors (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
@@ -625,7 +625,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 memset(bindings + index, 0, sizeof(bindings[0]) * (PK_MAX_DESCRIPTORS_PER_SET - index));
                 m_dirtyFlags |= (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i);
             }
-            
+
             if (m_dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i))
             {
                 m_descriptorSets[i] = m_services.descriptorCache->GetDescriptorSet(shader->GetDescriptorSetLayout(i), m_descriptorSetKeys[i], fence);
@@ -683,15 +683,15 @@ namespace PK::Rendering::VulkanRHI::Objects
         if (shaderType != ShaderType::Graphics)
         {
             flags = (PKRenderStateDirtyFlags)(flags & ~graphicsFlags);
-            
+
             // Restore graphics specific dirty flags so that a later pipeline validation can pick these up pipeline assignment can pickup this change.
             m_dirtyFlags |= graphicsFlags;
         }
-        
+
         return flags;
     }
 
- 
+
     void VulkanRenderState::RecordResourceAccess()
     {
         auto shader = m_pipelineKey.shader;
@@ -711,26 +711,26 @@ namespace PK::Rendering::VulkanRHI::Objects
                 {
                     continue;
                 }
-                
+
                 auto handle = binding.handle;
                 auto stage = EnumConvert::GetPipelineStageFlags(setkey.stageFlags);
                 auto access = shader->GetResourceLayout(i)[j].WriteStageMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
 
                 switch (binding.type)
                 {
-                    case ResourceType::SamplerTexture:
-                    case ResourceType::Texture:
-                    case ResourceType::Image:
-                        RecordImage(handle, stage, access | VK_ACCESS_SHADER_READ_BIT);
-                        break;
-                    case ResourceType::StorageBuffer:
-                    case ResourceType::DynamicStorageBuffer:
-                        RecordBuffer(handle, stage, access | VK_ACCESS_SHADER_READ_BIT);
-                        break;
-                    case ResourceType::ConstantBuffer:
-                    case ResourceType::DynamicConstantBuffer:
-                        RecordBuffer(handle, stage, access | VK_ACCESS_UNIFORM_READ_BIT);
-                        break;
+                case ResourceType::SamplerTexture:
+                case ResourceType::Texture:
+                case ResourceType::Image:
+                    RecordImage(handle, stage, access | VK_ACCESS_SHADER_READ_BIT);
+                    break;
+                case ResourceType::StorageBuffer:
+                case ResourceType::DynamicStorageBuffer:
+                    RecordBuffer(handle, stage, access | VK_ACCESS_SHADER_READ_BIT);
+                    break;
+                case ResourceType::ConstantBuffer:
+                case ResourceType::DynamicConstantBuffer:
+                    RecordBuffer(handle, stage, access | VK_ACCESS_UNIFORM_READ_BIT);
+                    break;
                 }
             }
         }
@@ -750,7 +750,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             RecordBuffer(m_indexBuffer, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_INDEX_READ_BIT);
         }
     }
-    
+
     void VulkanRenderState::RecordRenderTargetAccess()
     {
         m_renderPassKey->accessMask = 0u;
@@ -786,8 +786,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if (depth && depth->image.image)
         {
-            auto previous = ExchangeImage(depth, 
-                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, 
+            auto previous = ExchangeImage(depth,
+                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 
             m_renderPassKey->accessMask |= previous.access;

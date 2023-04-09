@@ -64,7 +64,7 @@ namespace PK::Rendering::Passes
         cmd->SetViewPort(renderTarget->GetRect());
         cmd->SetScissor(renderTarget->GetRect());
         cmd->Blit(m_shaderBlur, m_passPrefilter);
-        
+
         GraphicsAPI::SetTexture(hash->_MainTex, renderTarget, 0, 2);
 
         cmd->SetRenderTarget(renderTarget, { { 0u, 0u, 1u, 1u}, { 0u, 1u, 1u, 1u} });

@@ -101,7 +101,7 @@ namespace PK::Assets
         {
             return -1;
         }
-        
+
         uint64_t magicNumber = 0ull;
         fread(&magicNumber, sizeof(decltype(magicNumber)), 1, file);
 
@@ -190,7 +190,7 @@ namespace PK::Assets
         buffer[size] = '\0';
 
         fread(buffer, sizeof(char), size, file);
-        
+
         auto lineCount = 0ull;
         auto lineIndex = 0ull;
         auto head = buffer;
@@ -227,7 +227,7 @@ namespace PK::Assets
             free(buffer);
             return {};
         }
-        
+
         while (head != nullptr && (size_t)head < (size_t)(buffer + size))
         {
             auto comma = strchr(head, ':');
@@ -239,7 +239,7 @@ namespace PK::Assets
 
 #if _WIN32
             auto error = strncpy_s(meta.optionNames + PK_ASSET_NAME_MAX_LENGTH * lineIndex, PK_ASSET_NAME_MAX_LENGTH, head, (size_t)(comma - head));
-            
+
             if (error != 0)
             {
                 break;
@@ -252,7 +252,7 @@ namespace PK::Assets
         }
 
         meta.optionCount = (uint32_t)lineIndex;
-        
+
         fclose(file);
         free(buffer);
 

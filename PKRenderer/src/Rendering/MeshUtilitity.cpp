@@ -338,13 +338,13 @@ namespace PK::Rendering::MeshUtility
         };
 
         auto vertexBuffer = Buffer::Create(
-        {
-            { ElementType::Float3, PK_VS_POSITION },
-            { ElementType::Float3, PK_VS_NORMAL },
-            { ElementType::Float3, PK_VS_TANGENT },
-            { ElementType::Float2, PK_VS_TEXCOORD0 }
-        }, 
-        24, BufferUsage::DefaultVertex, "Box.VertexBuffer");
+            {
+                { ElementType::Float3, PK_VS_POSITION },
+                { ElementType::Float3, PK_VS_NORMAL },
+                { ElementType::Float3, PK_VS_TANGENT },
+                { ElementType::Float2, PK_VS_TEXCOORD0 }
+            },
+            24, BufferUsage::DefaultVertex, "Box.VertexBuffer");
 
         auto indexBuffer = Buffer::Create(ElementType::Uint, 36, BufferUsage::DefaultIndex, "Box.IndexBuffer");
 
@@ -392,25 +392,25 @@ namespace PK::Rendering::MeshUtility
         auto min = float3(center - extents, 0);
 
         for (auto x = 0u; x < resolution.x; ++x)
-        for (auto y = 0u; y < resolution.y; ++y)
-        {
-            auto vmin = min + isize * float3(x, y, 0);
-            auto baseVertex = (y * resolution.x + x) * 4;
-            auto baseIndex = (y * resolution.x + x) * 6;
+            for (auto y = 0u; y < resolution.y; ++y)
+            {
+                auto vmin = min + isize * float3(x, y, 0);
+                auto baseVertex = (y * resolution.x + x) * 4;
+                auto baseIndex = (y * resolution.x + x) * 6;
 
-            vertices[baseVertex + 0] = { vmin + isize.zzz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(0, 0) };
-            vertices[baseVertex + 1] = { vmin + isize.zyz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(0, 1) };
-            vertices[baseVertex + 2] = { vmin + isize.xyz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(1, 1) };
-            vertices[baseVertex + 3] = { vmin + isize.xzz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(1, 0) };
+                vertices[baseVertex + 0] = { vmin + isize.zzz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(0, 0) };
+                vertices[baseVertex + 1] = { vmin + isize.zyz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(0, 1) };
+                vertices[baseVertex + 2] = { vmin + isize.xyz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(1, 1) };
+                vertices[baseVertex + 3] = { vmin + isize.xzz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(1, 0) };
 
-            indices[baseIndex + 0] = baseVertex + 0;
-            indices[baseIndex + 1] = baseVertex + 1;
-            indices[baseIndex + 2] = baseVertex + 2;
+                indices[baseIndex + 0] = baseVertex + 0;
+                indices[baseIndex + 1] = baseVertex + 1;
+                indices[baseIndex + 2] = baseVertex + 2;
 
-            indices[baseIndex + 3] = baseVertex + 2;
-            indices[baseIndex + 4] = baseVertex + 3;
-            indices[baseIndex + 5] = baseVertex + 0;
-        }
+                indices[baseIndex + 3] = baseVertex + 2;
+                indices[baseIndex + 4] = baseVertex + 3;
+                indices[baseIndex + 5] = baseVertex + 0;
+            }
 
         SubMesh submesh = { 0u, vcount, 0u, icount, BoundingBox::CenterExtents({ center.x, center.y, 0.0f }, { extents.x, extents.y, 0.0f }) };
         SubmeshRangeAllocationInfo allocInfo{};

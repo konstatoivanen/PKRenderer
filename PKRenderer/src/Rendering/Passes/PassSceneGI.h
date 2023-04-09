@@ -4,6 +4,7 @@
 #include "Rendering/Objects/RenderTexture.h"
 #include "Rendering/Objects/ConstantBuffer.h"
 #include "Rendering/Objects/Shader.h"
+#include "Rendering/Objects/ShaderBindingTable.h"
 #include "Rendering/Services/Batcher.h"
 
 namespace PK::Rendering::Passes
@@ -17,7 +18,6 @@ namespace PK::Rendering::Passes
             void DispatchRays(Objects::CommandBuffer* cmd);
             void RenderVoxels(Objects::CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup);
             void RenderGI(Objects::CommandBuffer* cmd);
-            void CacheForwardOutput(Objects::CommandBuffer* cmd, Objects::Texture* texture);
 
         private:
             Structs::FixedFunctionShaderAttributes m_voxelizeAttribs{};
@@ -27,7 +27,7 @@ namespace PK::Rendering::Passes
             Objects::Shader* m_computeReprojectMask = nullptr;
             Objects::Shader* m_computeDenoise = nullptr;
             Objects::Shader* m_rayTraceGatherGI = nullptr;
-            Utilities::Ref<Objects::Buffer> m_shaderBindingTable;
+            Objects::ShaderBindingTable m_shaderBindingTable;
             Utilities::Ref<Objects::ConstantBuffer> m_parameters;
             Utilities::Ref<Objects::Texture> m_voxels;
             Utilities::Ref<Objects::Texture> m_voxelMask;
@@ -36,7 +36,6 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Texture> m_screenSpaceMask;
             Utilities::Ref<Objects::Texture> m_screenSpaceRayhits;
             Utilities::Ref<Objects::Texture> m_screenSpaceAO;
-            Utilities::Ref<Objects::Texture> m_previousForwardOutput;
             uint32_t m_rayIndex = 0u;
             uint32_t m_checkerboardIndex = 0u;
             int32_t m_rasterAxis = 0;

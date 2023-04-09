@@ -17,7 +17,7 @@ namespace PK::Rendering::Passes
         m_bloomLensDirtTexture = assetDatabase->Load<Texture>(config->FileBloomDirt.value.c_str());
         GraphicsAPI::SetTexture(HashCache::Get()->pk_BloomLensDirtTex, m_bloomLensDirtTexture);
     }
-    
+
     void PassPostEffectsComposite::Render(CommandBuffer* cmd, RenderTexture* destination)
     {
         auto hash = HashCache::Get();

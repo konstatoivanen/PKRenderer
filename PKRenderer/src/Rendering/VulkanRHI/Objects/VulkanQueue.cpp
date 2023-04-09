@@ -23,11 +23,11 @@ namespace PK::Rendering::VulkanRHI::Objects
     };
 
     static uint32_t GetQueueIndex(QueueFindContext& ctx,
-                                    VkQueueFlags requiredFlags, 
-                                    VkQueueFlags optionalFlags, 
-                                    bool requirePresent,
-                                    bool optionalPresent,
-                                    bool preferSeparate)
+        VkQueueFlags requiredFlags,
+        VkQueueFlags optionalFlags,
+        bool requirePresent,
+        bool optionalPresent,
+        bool preferSeparate)
     {
         auto selectedFamily = 0xFFFFFFFF;
         auto existingIndex = 0xFFFFFFFF;
@@ -39,7 +39,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             const auto& family = ctx.families->at(familyIndex);
             auto presentSupport = Utilities::VulkanIsPresentSupported(ctx.physicalDevice, familyIndex, ctx.surface);
 
-            if ((family.queueFlags & requiredFlags) != requiredFlags || 
+            if ((family.queueFlags & requiredFlags) != requiredFlags ||
                 (!presentSupport && requirePresent))
             {
                 continue;
@@ -101,7 +101,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_queueIndex(queueIndex)
     {
         vkGetDeviceQueue(m_device, m_family, m_queueIndex, &m_queue);
-    
+
         VkSemaphoreTypeCreateInfo timelineCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO, nullptr, VK_SEMAPHORE_TYPE_TIMELINE, 0ull };
         VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, &timelineCreateInfo };
         vkCreateSemaphore(m_device, &createInfo, nullptr, &m_timeline.semaphore);
@@ -112,31 +112,31 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             vkCreateSemaphore(m_device, &createInfo, nullptr, &semaphore);
         }
-        
+
         m_capabilityFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT |
-                            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT |
-                            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT |
+            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
         if (flags & VK_QUEUE_GRAPHICS_BIT)
         {
             m_capabilityFlags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
-                                 VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | 
-                                 VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | 
-                                 // Requires tesselation & geometry features
-                                 //VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
-                                 //VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
-                                 //VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT | 
-                                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-                                 VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | 
-                                 VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | 
-                                 VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | 
-                                 VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | 
-                                 //VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT | 
-                                 //VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT |
-                                 VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
-                                 VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;// |
-                                 //VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT |
-                                 //VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+                VK_PIPELINE_STAGE_VERTEX_INPUT_BIT |
+                VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                // Requires tesselation & geometry features
+                //VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
+                //VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
+                //VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT | 
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT |
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT |
+                //VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT | 
+                //VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT |
+                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
+                VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;// |
+                //VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT |
+                //VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
         }
 
         if (flags & VK_QUEUE_COMPUTE_BIT)
@@ -147,7 +147,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         if (flags & VK_QUEUE_TRANSFER_BIT)
         {
             m_capabilityFlags |= //VK_PIPELINE_STAGE_HOST_BIT |
-                                 VK_PIPELINE_STAGE_TRANSFER_BIT;
+                VK_PIPELINE_STAGE_TRANSFER_BIT;
         }
 
         auto servicesCopy = services;
@@ -191,7 +191,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         VkSemaphore waits[MAX_DEPENDENCIES]{};
         uint64_t waitValues[MAX_DEPENDENCIES]{};
         uint32_t waitCount = 0u;
-      
+
         VkSemaphore signals[2]{ m_timeline.semaphore, VK_NULL_HANDLE };
         uint64_t signalValues[2]{ ++m_timeline.counter, 0ull };
         uint32_t signalCount = outSignal ? 2 : 1;
@@ -226,13 +226,13 @@ namespace PK::Rendering::VulkanRHI::Objects
         submitInfo.pSignalSemaphores = signals;
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer->GetNative();
-        
+
         if (outSignal)
         {
             *outSignal = GetNextSemaphore();
             signals[1] = *outSignal;
         }
-        
+
         // @TODO maybe optimize this based on submitted commands.
         m_timeline.waitFlags = m_capabilityFlags;
         return vkQueueSubmit(m_queue, 1, &submitInfo, commandBuffer->GetFence());
@@ -268,7 +268,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     VkSemaphore VulkanQueue::QueueSignal(VkPipelineStageFlags flags)
     {
         auto semaphore = GetNextSemaphore();
-     
+
         VkTimelineSemaphoreSubmitInfo timelineInfo{ VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO };
         timelineInfo.waitSemaphoreValueCount = 1;
         timelineInfo.pWaitSemaphoreValues = &m_timeline.counter;

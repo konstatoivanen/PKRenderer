@@ -37,6 +37,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_MATRIX_I_P)
         DECLARE_HASH(pk_MATRIX_VP)
         DECLARE_HASH(pk_MATRIX_I_VP)
+        DECLARE_HASH(pk_MATRIX_L_I_V)
         DECLARE_HASH(pk_MATRIX_L_VP)
         DECLARE_HASH(pk_MATRIX_LD_P)
         
@@ -51,7 +52,9 @@ namespace PK::Rendering
         
         DECLARE_HASH(pk_ScreenDepthCurrent)
         DECLARE_HASH(pk_ScreenDepthPrevious)
-        DECLARE_HASH(pk_ScreenNormals)
+        DECLARE_HASH(pk_ScreenNormalsCurrent)
+        DECLARE_HASH(pk_ScreenNormalsPrevious)
+        DECLARE_HASH(pk_ScreenColorPrevious)
         DECLARE_HASH(pk_ShadowmapAtlas)
         DECLARE_HASH(pk_LightCookies)
         DECLARE_HASH(pk_Bluenoise256)
@@ -62,7 +65,6 @@ namespace PK::Rendering
         DECLARE_HASH(pk_SceneGI_VolumeRead)
         DECLARE_HASH(pk_ScreenGI_Mask)
         DECLARE_HASH(pk_ScreenGI_Hits)
-        DECLARE_HASH(pk_ScreenGI_ForwardOuput)
         DECLARE_HASH(pk_ScreenGI_AO)
         DECLARE_HASH(pk_ScreenGI_SHY_Read)
         DECLARE_HASH(pk_ScreenGI_SHY_Write)

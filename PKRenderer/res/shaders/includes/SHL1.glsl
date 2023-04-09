@@ -8,74 +8,28 @@ struct SH
 	float2 CoCg;
 };
 
+#define pk_SHL1B_IR float4(3.141593f, 2.094395f, 2.094395f, 2.094395f)
+#define pk_SHL1B float4(0.282095f, 0.488603f, 0.488603f, 0.488603f)
+
+float4 GetSHBasis(const float3 d) { return float4(1.0f, d.yzx) * pk_SHL1B; }
+SH InterpolateSH(const SH sha, const SH shb, const float i) { return SH(lerp(sha.SHY, shb.SHY, i), lerp(sha.CoCg, shb.CoCg, i)); }
+SH ScaleSH(const SH sh, float s) { return SH(sh.SHY * s, sh.CoCg * s); }
+SH AddSH(const SH sha, const SH shb, float sb) { return SH(sha.SHY + shb.SHY * sb, sha.CoCg + shb.CoCg * sb); }
+float3 SHToIrradiance(const SH sh, const float3 d) { return PK_YCoCgRToRGB * float3(max(0.0f, dot(pk_SHL1B_IR * sh.SHY, GetSHBasis(d))), pk_SHL1B_IR.x * sh.CoCg * pk_SHL1B.x);}
+float3 SHToRadiance(const SH sh, const float3 d) { return PK_YCoCgRToRGB * float3(max(0.0f, dot(sh.SHY, GetSHBasis(d))), pk_SHL1B.x * sh.CoCg); }
+float SHToLuminance(const SH sh, const float3 d) { return max(0.0f, dot(sh.SHY, GetSHBasis(d))); }
+float3 SHGetMaxRadiance(const SH sh) { return SHToRadiance(sh, normalize(sh.SHY.wyz)); }
+
 SH IrradianceToSH(const float3 color, const float3 direction)
 {
-	// Y00, Y1-1, Y10, Y11
-	const float4 shBasisL1 = float4(0.282095f, 0.488603f * direction.y, 0.488603f * direction.z, 0.488603f * direction.x);
-	const float shBasisL0 = 0.282095f;
-
 	const float3 yCoCg = PK_RGBToYCoCgR * color;
-
-	SH sh;
-	sh.SHY = shBasisL1 * yCoCg.x;
-	sh.CoCg = shBasisL0 * yCoCg.yz;
-	return sh;
+	return SH(GetSHBasis(direction) * yCoCg.x, pk_SHL1B.x * yCoCg.yz);
 }
 
-float3 SHToIrradiance(const SH sh, const float3 normal)
+SH DegenerateSH(const SH sh, float normaldot)
 {
-	const float Y = max(0.0f, 3.141593f * sh.SHY.x * 0.282095f + 
-						2.094395f * sh.SHY.y * 0.488603f * normal.y + 
-						2.094395f * sh.SHY.z * 0.488603f * normal.z + 
-						2.094395f * sh.SHY.w * 0.488603f * normal.x);
-
-	const float2 CoCg = 3.141593f * sh.CoCg * 0.282095f;
-
-	return PK_YCoCgRToRGB * float3(Y, CoCg);
-}
-
-float3 SHToRadiance(const SH sh, const float3 direction)
-{
-	// Y00, Y1-1, Y10, Y11
-	const float4 shBasisL1 = float4(0.282095f, 0.488603f * direction.y, 0.488603f * direction.z, 0.488603f * direction.x);
-	const float shBasisL0 = 0.282095f;
-
-	const float Y = max(0.0f, dot(sh.SHY, shBasisL1));
-	const float2 CoCg = shBasisL0 * sh.CoCg;
-
-	return PK_YCoCgRToRGB * float3(Y, CoCg);
-}
-
-float SHToLuminance(const SH sh, const float3 direction)
-{
-	return max(0.0f, dot(sh.SHY,  float4(0.282095f, 0.488603f * direction.y, 0.488603f * direction.z, 0.488603f * direction.x)));
-}
-
-float3 SHGetMaxRadiance(const SH sh)
-{
-	return SHToRadiance(sh, normalize(sh.SHY.wyz));
-}
-
-SH InterpolateSH(const SH sha, const SH shb, const float i)
-{
-	SH shc;
-	shc.SHY = lerp(sha.SHY, shb.SHY, i);
-	shc.CoCg = lerp(sha.CoCg, shb.CoCg, i);
-	return shc;
-}
-
-SH ScaleSH(const SH sh, float scale)
-{
-	SH shc;
-	shc.SHY = sh.SHY * scale;
-	shc.CoCg = sh.CoCg * scale;
-	return shc;
-}
-
-SH AddSH(const SH sha, const SH shb, float scaleb)
-{
-	SH shc;
-	shc.SHY = sha.SHY + shb.SHY * scaleb;
-	shc.CoCg = sha.CoCg + shb.CoCg * scaleb;
-	return shc;
+	float4 Y = sh.SHY;
+	Y.x += length(Y.yzw) * (1.0f - normaldot);
+	Y.yzw *= normaldot;
+	return SH(Y, sh.CoCg);
 }

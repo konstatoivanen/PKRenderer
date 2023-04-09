@@ -117,10 +117,10 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         switch (m_viewType)
         {
-            case VK_IMAGE_VIEW_TYPE_1D:
-            case VK_IMAGE_VIEW_TYPE_2D:
-            case VK_IMAGE_VIEW_TYPE_3D: out.layers = 1u; break;
-            case VK_IMAGE_VIEW_TYPE_CUBE: out.layers = 6u; break;
+        case VK_IMAGE_VIEW_TYPE_1D:
+        case VK_IMAGE_VIEW_TYPE_2D:
+        case VK_IMAGE_VIEW_TYPE_3D: out.layers = 1u; break;
+        case VK_IMAGE_VIEW_TYPE_CUBE: out.layers = 6u; break;
         }
 
         if (out.level >= m_defaultViewRange.levels)
@@ -181,10 +181,10 @@ namespace PK::Rendering::VulkanRHI::Objects
     }
 
     const VulkanTexture::ViewValue* VulkanTexture::GetView(const TextureViewRange& range, TextureBindMode mode)
-	{
+    {
         ViewKey key = { NormalizeViewRange(range), mode };
         auto iter = m_imageViews.find(key);
-        
+
         if (iter != m_imageViews.end())
         {
             return iter->second.get();
@@ -197,7 +197,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         info.viewType = m_viewType;
         info.format = m_rawImage->format;
         info.components = mode == TextureBindMode::SampledTexture ? m_swizzle : (VkComponentMapping{});
-        info.subresourceRange = 
+        info.subresourceRange =
         {
             (uint32_t)m_rawImage->aspect,
             key.range.level,
@@ -225,7 +225,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         m_imageViews[key] = Scope<VulkanTexture::ViewValue>(viewValue);
         return viewValue;
-	}
+    }
 
     void VulkanTexture::Dispose()
     {

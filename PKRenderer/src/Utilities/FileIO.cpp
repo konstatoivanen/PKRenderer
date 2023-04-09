@@ -20,16 +20,16 @@ namespace PK::Utilities::FileIO
 
         FILE* file = nullptr;
 
-        #if _WIN32
-            auto error = fopen_s(&file, cachepath.string().c_str(), "rb");
-    
-            if (error != 0)
-            {
-                return -1;
-            }
-        #else
-            file = fopen(filepath, "rb");
-        #endif
+#if _WIN32
+        auto error = fopen_s(&file, cachepath.string().c_str(), "rb");
+
+        if (error != 0)
+        {
+            return -1;
+        }
+#else
+        file = fopen(filepath, "rb");
+#endif
 
         if (file == nullptr)
         {
@@ -78,16 +78,16 @@ namespace PK::Utilities::FileIO
             }
         }
 
-        #if _WIN32
-            auto error = fopen_s(&file, filepath, "wb");
+#if _WIN32
+        auto error = fopen_s(&file, filepath, "wb");
 
-            if (error != 0)
-            {
-                return -1;
-            }
-        #else
-            file = fopen(filepath, "wb");
-        #endif
+        if (error != 0)
+        {
+            return -1;
+        }
+#else
+        file = fopen(filepath, "wb");
+#endif
 
         if (file == nullptr)
         {

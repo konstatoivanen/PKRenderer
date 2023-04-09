@@ -48,18 +48,18 @@ namespace PK::Rendering::VulkanRHI
         glfwSetWindowUserPointer(m_window, this);
 
         glfwSetWindowSizeCallback(m_window, [](GLFWwindow* nativeWindow, int width, int height)
-        {
-            auto window = GetWindowPtr(nativeWindow);
-            window->m_minimized = width == 0 || height == 0;
-            window->m_swapchain->OnWindowResize(width, height);
-            SafeInvokeFunction(window->OnResize, width, height);
-        });
+            {
+                auto window = GetWindowPtr(nativeWindow);
+                window->m_minimized = width == 0 || height == 0;
+                window->m_swapchain->OnWindowResize(width, height);
+                SafeInvokeFunction(window->OnResize, width, height);
+            });
         glfwSetWindowCloseCallback(m_window, [](GLFWwindow* nativeWindow)
-        {
-            auto window = GetWindowPtr(nativeWindow);
-            window->m_alive = false;
-            SafeInvokeFunction(window->OnClose);
-        });
+            {
+                auto window = GetWindowPtr(nativeWindow);
+                window->m_alive = false;
+                SafeInvokeFunction(window->OnClose);
+            });
         glfwSetKeyCallback(m_window, [](GLFWwindow* nativeWindow, int key, int scancode, int action, int mods) { SafeInvokeFunction(GetWindowPtr(nativeWindow)->OnKeyInput, key, scancode, action, mods); });
         glfwSetCharCallback(m_window, [](GLFWwindow* nativeWindow, uint32_t keycode) { SafeInvokeFunction(GetWindowPtr(nativeWindow)->OnCharInput, keycode); });
         glfwSetMouseButtonCallback(m_window, [](GLFWwindow* nativeWindow, int button, int action, int mods) { SafeInvokeFunction(GetWindowPtr(nativeWindow)->OnMouseButtonInput, button, action, mods); });
@@ -80,15 +80,15 @@ namespace PK::Rendering::VulkanRHI
         swapchainCreateInfo.desiredPresentMode = VK_PRESENT_MODE_FIFO_KHR;
         swapchainCreateInfo.maxFramesInFlight = PK_MAX_FRAMES_IN_FLIGHT;
         m_swapchain = CreateScope<VulkanSwapchain>(m_driver->physicalDevice,
-                                                   m_driver->device,
-                                                   m_surface,
-                                                   m_driver->queues->GetQueue(QueueType::Graphics),
-                                                   m_driver->queues->GetQueue(QueueType::Present),
-                                                   swapchainCreateInfo);
+            m_driver->device,
+            m_surface,
+            m_driver->queues->GetQueue(QueueType::Graphics),
+            m_driver->queues->GetQueue(QueueType::Present),
+            swapchainCreateInfo);
 
         SetCursorVisible(properties.cursorVisible);
     }
-    
+
     VulkanWindow::~VulkanWindow()
     {
         m_driver->WaitForIdle();
@@ -103,7 +103,7 @@ namespace PK::Rendering::VulkanRHI
             m_window = nullptr;
         }
     }
-    
+
     void VulkanWindow::Begin()
     {
         while (!m_swapchain->TryAcquireNextImage(&m_imageAvailableSignal))
@@ -118,10 +118,11 @@ namespace PK::Rendering::VulkanRHI
     {
         PK_THROW_ASSERT(m_inWindowScope, "Trying to end a frame that outside of a frame scope!")
 
-        VkSemaphore renderingFinishedSignal = VK_NULL_HANDLE;
+            VkSemaphore renderingFinishedSignal = VK_NULL_HANDLE;
 
         // Window write is expected to be in the last (and implicit) graphics submit.
         m_driver->queues->GetQueue(QueueType::Graphics)->QueueWait(m_imageAvailableSignal, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+        m_driver->queues->GetQueue(QueueType::Graphics)->commandPool->GetCurrent()->ValidateWindowPresent(this);
         m_driver->queues->SubmitCurrent(QueueType::Graphics, &renderingFinishedSignal);
         m_swapchain->Present(renderingFinishedSignal);
         m_inWindowScope = false;

@@ -59,16 +59,16 @@ namespace PK::Core
 
         auto time = m_services->Create<Time>(sequencer, config->TimeScale);
         auto input = m_services->Create<Input>(sequencer);
-        
+
         auto workingDirectory = std::filesystem::path(arguments.args[0]).remove_filename().string();
         m_graphicsDriver = GraphicsDriver::Create(workingDirectory, APIType::Vulkan);
 
         m_window = Window::Create(WindowProperties(name + m_graphicsDriver->GetDriverHeader(),
-                                    config->FileWindowIcon, 
-                                    config->InitialWidth, 
-                                    config->InitialHeight, 
-                                    config->EnableVsync, 
-                                    config->EnableCursor));
+            config->FileWindowIcon,
+            config->InitialWidth,
+            config->InitialHeight,
+            config->EnableVsync,
+            config->EnableCursor));
 
         Window::SetConsole(config->EnableConsole);
         m_window->OnKeyInput = PK_BIND_FUNCTION(input, OnKeyInput);
@@ -89,61 +89,61 @@ namespace PK::Core
         auto engineScreenshot = m_services->Create<ECS::Engines::EngineScreenshot>();
 
         sequencer->SetSteps(
-        {
             {
-                sequencer->GetRoot(),
                 {
-                    { (int)UpdateStep::OpenFrame,		{ Step::Simple(time) }},
-                    { (int)UpdateStep::UpdateInput,		{ Step::Conditional<Window>(input) } },
-                    { (int)UpdateStep::UpdateEngines,   { Step::Simple(engineUpdateTransforms) } },
-                    { (int)UpdateStep::Render,			{ Step::Conditional<Window>(renderPipeline), Step::Token<Window>(engineScreenshot) } },
-                    { (int)UpdateStep::CloseFrame,		{ Step::Conditional<Window>(input), Step::Simple(time) }},
-                }
-            },
-            {
-                time,
+                    sequencer->GetRoot(),
+                    {
+                        { (int)UpdateStep::OpenFrame,		{ Step::Simple(time) }},
+                        { (int)UpdateStep::UpdateInput,		{ Step::Conditional<Window>(input) } },
+                        { (int)UpdateStep::UpdateEngines,   { Step::Simple(engineUpdateTransforms) } },
+                        { (int)UpdateStep::Render,			{ Step::Conditional<Window>(renderPipeline), Step::Token<Window>(engineScreenshot) } },
+                        { (int)UpdateStep::CloseFrame,		{ Step::Conditional<Window>(input), Step::Simple(time) }},
+                    }
+                },
                 {
-                    Step::Token<PK::ECS::Tokens::TimeToken>(renderPipeline)
-                }
-            },
-            {
-                input,
+                    time,
+                    {
+                        Step::Token<PK::ECS::Tokens::TimeToken>(renderPipeline)
+                    }
+                },
                 {
-                    Step::Token<Input>(engineCommands),
-                    Step::Token<Input>(engineEditorCamera),
-                }
-            },
-            {
-                engineCommands,
+                    input,
+                    {
+                        Step::Token<Input>(engineCommands),
+                        Step::Token<Input>(engineEditorCamera),
+                    }
+                },
                 {
-                    Step::Token<TokenConsoleCommand>(engineEditorCamera),
-                    Step::Token<TokenConsoleCommand>(enginePKAssetBuilder),
-                    Step::Token<TokenConsoleCommand>(engineScreenshot),
-                    //PK_STEP_T(gizmoRenderer, ConsoleCommandToken),
-                }
-            },
-            {
-                engineEditorCamera,
+                    engineCommands,
+                    {
+                        Step::Token<TokenConsoleCommand>(engineEditorCamera),
+                        Step::Token<TokenConsoleCommand>(enginePKAssetBuilder),
+                        Step::Token<TokenConsoleCommand>(engineScreenshot),
+                        //PK_STEP_T(gizmoRenderer, ConsoleCommandToken),
+                    }
+                },
                 {
-                    Step::Token<PK::ECS::Tokens::ViewProjectionUpdateToken>(renderPipeline)
-                }
-            },
-            {
-                renderPipeline,
+                    engineEditorCamera,
+                    {
+                        Step::Token<PK::ECS::Tokens::ViewProjectionUpdateToken>(renderPipeline)
+                    }
+                },
                 {
-                    Step::Token<PK::ECS::Tokens::TokenCullFrustum>(engineCull),
-                    Step::Token<PK::ECS::Tokens::TokenCullCascades>(engineCull),
-                    Step::Token<PK::ECS::Tokens::TokenCullCubeFaces>(engineCull),
-                    Step::Token<PK::ECS::Tokens::AccelerationStructureBuildToken>(engineBuildAccelerationStructure)
-                }
-            },
-            {
-                assetDatabase,
+                    renderPipeline,
+                    {
+                        Step::Token<PK::ECS::Tokens::TokenCullFrustum>(engineCull),
+                        Step::Token<PK::ECS::Tokens::TokenCullCascades>(engineCull),
+                        Step::Token<PK::ECS::Tokens::TokenCullCubeFaces>(engineCull),
+                        Step::Token<PK::ECS::Tokens::AccelerationStructureBuildToken>(engineBuildAccelerationStructure)
+                    }
+                },
                 {
-                    Step::Token<AssetImportToken<ApplicationConfig>>(renderPipeline)
+                    assetDatabase,
+                    {
+                        Step::Token<AssetImportToken<ApplicationConfig>>(renderPipeline)
+                    }
                 }
-            }
-        });
+            });
 
         PK_LOG_HEADER("----------INITIALIZATION COMPLETE----------");
     }
@@ -180,9 +180,9 @@ namespace PK::Core
             sequencer->Next((int)UpdateStep::UpdateEngines);
             sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::Render);
             sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::CloseFrame);
-            
+
             m_window->End();
-            
+
             sequencer->Next((int)UpdateStep::CloseFrame);
 
             GraphicsAPI::GC();

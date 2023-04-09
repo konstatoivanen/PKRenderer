@@ -8,10 +8,10 @@ namespace PK::Rendering::VulkanRHI::Objects
     using namespace PK::Utilities;
 
     VulkanSparsePageTable::Page::Page(VmaAllocator allocator,
-                                      size_t start, 
-                                      size_t end,
-                                      const VkMemoryRequirements& memoryRequirements, 
-                                      const VmaAllocationCreateInfo& createInfo) :
+        size_t start,
+        size_t end,
+        const VkMemoryRequirements& memoryRequirements,
+        const VmaAllocationCreateInfo& createInfo) :
         allocator(allocator),
         start(start),
         end(end)

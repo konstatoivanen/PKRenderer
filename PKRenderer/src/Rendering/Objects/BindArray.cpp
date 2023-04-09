@@ -15,7 +15,7 @@ namespace PK::Rendering::Objects
 
         switch (api)
         {
-            case APIType::Vulkan: return CreateRef<VulkanBindArray>(capacity);
+        case APIType::Vulkan: return CreateRef<VulkanBindArray>(capacity);
         }
 
         return nullptr;
@@ -28,7 +28,7 @@ namespace PK::Rendering::Objects
 
         switch (api)
         {
-            case APIType::Vulkan: return CreateRef<VulkanBindArray>(capacity);
+        case APIType::Vulkan: return CreateRef<VulkanBindArray>(capacity);
         }
 
         return nullptr;

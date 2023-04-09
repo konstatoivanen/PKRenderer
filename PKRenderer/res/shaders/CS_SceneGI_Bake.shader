@@ -18,23 +18,23 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const float d
     if (TryGetWorldToPrevClipUVW(worldpos, clipuvw))
     {
         float rdepth = LinearizeDepth(clipuvw.z);
-        float sdepth = SampleLinearPreviousDepth(clipuvw.xy);
+        float sdepth = SamplePreviousLinearDepth(clipuvw.xy);
         float deltaDepth = abs(sdepth - rdepth);
         float bias = rdepth * 0.01f;
-    
+
         if ((sdepth > pk_ProjectionParams.z - 1e-4f && dist >= PK_GI_RAY_MAX_DISTANCE - 0.01f) || deltaDepth <= bias)
         {
-            return tex2D(pk_ScreenGI_ForwardOuput, clipuvw.xy).rgb;
+            return tex2D(pk_ScreenColorPrevious, clipuvw.xy).rgb;
         }
     }
 
     const float level = roughness * roughness * log2(max(1.0f, dist) / PK_GI_VOXEL_SIZE);
     const float4 voxel = SampleGI_WS(worldpos, level);
-    
+
     const float3 env = SampleEnvironment(direction, roughness);
     const float envclip = saturate(PK_GI_RAY_MAX_DISTANCE * (1.0f - (dist / PK_GI_RAY_MAX_DISTANCE)));
     const float alpha = max(voxel.a, 1.0f / (PK_GI_VOXEL_MAX_MIP * PK_GI_VOXEL_MAX_MIP));
-    
+
     return lerp(env, voxel.rgb / alpha, envclip);
 }
 
@@ -81,9 +81,9 @@ void main()
     {
         return;
     }
-    
+
     // Find a base for the side cones with the normal as one of its base vectors.
-    const float4 NR = SampleWorldSpaceNormalRoughness(coord);
+    const float4 NR = SampleWorldNormalRoughness(coord);
     const float3 N = NR.xyz;
     const float3 O = SampleWorldPosition(coord, size);
     const float3 V = normalize(O - pk_WorldSpaceCameraPos.xyz);
@@ -98,15 +98,21 @@ void main()
 
     const bool refreshDiff = mask.discontinuityFrames > 7u || IsNaN(irradianceSH.SHY.w) || IsNaN(irradianceSH.CoCg);
     const bool refreshSpec = mask.discontinuityFrames > 7u || IsNaN(radianceSH.SHY.w) || IsNaN(radianceSH.CoCg);
-    const float interDiff = lerp(0.01f, 0.75f, saturate(irradianceLum * 5.0f));
-    const float interSpec = lerp(0.05f, 0.25f, saturate(radianceLum * 5.0f));
+    float interDiff = lerp(0.01f, 0.75f, saturate(irradianceLum * 5.0f));
+    float interSpec = lerp(0.05f, 0.25f, saturate(radianceLum * 5.0f));
+
+    //if (UV.x > 0.5f)
+    //{
+    //    interDiff = 0.005f;
+    //    interSpec = 0.005f;
+    //}
 
     SH irradianceNew = SampleIrradianceSH(O, N, coord);
     SH radianceNew = SampleRadianceSH(O, N, V, coord, NR.w);
 
     irradianceSH = refreshDiff ? irradianceNew : InterpolateSH(irradianceSH, irradianceNew, interDiff);
     radianceSH = refreshSpec ? radianceNew : InterpolateSH(radianceSH, radianceNew, interSpec);
-    
+
     StoreGI_SH(coord, PK_GI_DIFF_LVL, irradianceSH);
     StoreGI_SH(coord, PK_GI_SPEC_LVL, radianceSH);
 

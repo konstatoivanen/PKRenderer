@@ -62,9 +62,9 @@ bool IntersectionTest(uint lightIndex)
 {
     switch (sharedLights[lightIndex].type)
     {
-        case LIGHT_TYPE_POINT: return IntersectPointLight(lightIndex);
-        case LIGHT_TYPE_SPOT: return IntersectPointLight(lightIndex) && IntersectSpotLight(lightIndex);
-        case LIGHT_TYPE_DIRECTIONAL: return true;
+    case LIGHT_TYPE_POINT: return IntersectPointLight(lightIndex);
+    case LIGHT_TYPE_SPOT: return IntersectPointLight(lightIndex) && IntersectSpotLight(lightIndex);
+    case LIGHT_TYPE_DIRECTIONAL: return true;
     }
 
     return false;
@@ -82,10 +82,10 @@ void main()
     float2 invstep = 1.0f / float2(LIGHT_CLUSTER_TILE_COUNT_X, LIGHT_CLUSTER_TILE_COUNT_Y);
     float4 screenminmax = float4(gl_GlobalInvocationID.xy * invstep, (gl_GlobalInvocationID.xy + 1.0f) * invstep);
 
-    float3 min00 = ClipToViewPos(screenminmax.xy, near);
-    float3 max00 = ClipToViewPos(screenminmax.xy, far);
-    float3 min11 = ClipToViewPos(screenminmax.zw, near);
-    float3 max11 = ClipToViewPos(screenminmax.zw, far);
+    float3 min00 = ClipUVToViewPos(screenminmax.xy, near);
+    float3 max00 = ClipUVToViewPos(screenminmax.xy, far);
+    float3 min11 = ClipUVToViewPos(screenminmax.zw, near);
+    float3 max11 = ClipUVToViewPos(screenminmax.zw, far);
 
     float3 aabbmin = min(min(min00, max00), min(min11, max11));
     float3 aabbmax = max(max(min00, max00), max(min11, max11));

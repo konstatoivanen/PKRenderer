@@ -143,7 +143,7 @@ namespace PK::Rendering::VulkanRHI
         createInfo.enabledLayerCount = instanceCreateInfo.enabledLayerCount;
         createInfo.ppEnabledLayerNames = instanceCreateInfo.ppEnabledLayerNames;
         createInfo.pNext = &physicalDeviceRequirements.features.vk10;
-        VK_ASSERT_RESULT_CTX(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Failed to create logical device!");    
+        VK_ASSERT_RESULT_CTX(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Failed to create logical device!");
 
         PK_LOG_INFO(" Created Vulkan Device With '%i' extensions:", createInfo.enabledExtensionCount);
 
@@ -173,26 +173,26 @@ namespace PK::Rendering::VulkanRHI
         layoutCache = CreateScope<VulkanLayoutCache>(device);
         disposer = CreateScope<Disposer>();
         descriptorCache = CreateScope<VulkanDescriptorCache>(device, 4, 100ull,
-                                                             std::initializer_list<std::pair<const VkDescriptorType, size_t>>({
-                                                                 { VK_DESCRIPTOR_TYPE_SAMPLER, 100ull },
-                                                                 { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100ull },
-                                                                 { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100ull },
-                                                                 { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 10ull }
-                                                             }));
+            std::initializer_list<std::pair<const VkDescriptorType, size_t>>({
+                { VK_DESCRIPTOR_TYPE_SAMPLER, 100ull },
+                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100ull },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100ull },
+                { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 10ull }
+                }));
 
-        queues = CreateScope<VulkanQueueSet>(device, 
-                                             queueInitializer, 
-                                             VulkanServiceContext
-                                             {
-                                                 &globalResources,
-                                                 descriptorCache.get(),
-                                                 pipelineCache.get(),
-                                                 samplerCache.get(),
-                                                 frameBufferCache.get(),
-                                                 stagingBufferCache.get(),
-                                                 nullptr, // Assigned by queues
-                                                 disposer.get()
-                                             });
+        queues = CreateScope<VulkanQueueSet>(device,
+            queueInitializer,
+            VulkanServiceContext
+            {
+                &globalResources,
+                descriptorCache.get(),
+                pipelineCache.get(),
+                samplerCache.get(),
+                frameBufferCache.get(),
+                stagingBufferCache.get(),
+                nullptr, // Assigned by queues
+                disposer.get()
+            });
     }
 
     VulkanDriver::~VulkanDriver()
@@ -219,10 +219,10 @@ namespace PK::Rendering::VulkanRHI
     {
         auto supportedMajor = VK_VERSION_MAJOR(apiVersion);
         auto supportedMinor = VK_VERSION_MINOR(apiVersion);
-        return std::string(" - Vulkan ") + 
-               std::to_string(supportedMajor) + 
-               std::string(".") +
-               std::to_string(supportedMinor);
+        return std::string(" - Vulkan ") +
+            std::to_string(supportedMajor) +
+            std::string(".") +
+            std::to_string(supportedMinor);
     }
 
     DriverMemoryInfo VulkanDriver::GetMemoryInfo() const
@@ -328,9 +328,9 @@ namespace PK::Rendering::VulkanRHI
     }
 
     VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDriver::VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                                      VkDebugUtilsMessageTypeFlagsEXT messageType, 
-                                                                      const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, 
-                                                                      void* pUserData)
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData)
     {
         auto isValidationError = strstr(pCallbackData->pMessage, "Error") != nullptr;
 

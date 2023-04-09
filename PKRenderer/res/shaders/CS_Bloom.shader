@@ -5,10 +5,10 @@
 #include includes/Utilities.glsl
 
 #if defined(PASS_BLUR)
-    PK_DECLARE_LOCAL_CBUFFER(_BlurOffset)
-    {
-        float2 blurOffset;
-    };
+PK_DECLARE_LOCAL_CBUFFER(_BlurOffset)
+{
+    float2 blurOffset;
+};
 #endif
 
 const float sample_weights[17] =
@@ -50,22 +50,22 @@ void main()
     float2 texel = 1.0f.xx / textureSize(_SourceTex, 0).xy;
     float3 color = 0.0f.xxx;
 
-    #if defined(PASS_DOWNSAMPLE)
-        color += tex2D(_SourceTex, uv + 0.5f * texel).rgb;
-        color += tex2D(_SourceTex, uv - 0.5f * texel).rgb;
-        color += tex2D(_SourceTex, uv + float2(0.5f, -0.5f) * texel).rgb;
-        color += tex2D(_SourceTex, uv - float2(0.5f, -0.5f) * texel).rgb;
-        color = max(color / 4.0f, 0.0f.xxx);
-    #else
-        float2 offs = blurOffset * texel;
-        float2 coords = uv - offs * 8.0f;
+#if defined(PASS_DOWNSAMPLE)
+    color += tex2D(_SourceTex, uv + 0.5f * texel).rgb;
+    color += tex2D(_SourceTex, uv - 0.5f * texel).rgb;
+    color += tex2D(_SourceTex, uv + float2(0.5f, -0.5f) * texel).rgb;
+    color += tex2D(_SourceTex, uv - float2(0.5f, -0.5f) * texel).rgb;
+    color = max(color / 4.0f, 0.0f.xxx);
+#else
+    float2 offs = blurOffset * texel;
+    float2 coords = uv - offs * 8.0f;
 
-        for (uint i = 0u; i < 17; ++i)
-        {
-            color += tex2D(_SourceTex, coords + offs * i).rgb * sample_weights[i].xxx;
-        }
+    for (uint i = 0u; i < 17; ++i)
+    {
+        color += tex2D(_SourceTex, coords + offs * i).rgb * sample_weights[i].xxx;
+    }
 
-    #endif
+#endif
 
     imageStore(_DestinationTex, coord, float4(color, 1.0f));
 }

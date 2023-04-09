@@ -28,8 +28,8 @@ namespace PK::Rendering::VulkanRHI::Services
     }
 
     VulkanDescriptorCache::VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, size_t maxSets, std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes) :
-        m_device(device), 
-        m_maxSets(maxSets), 
+        m_device(device),
+        m_maxSets(maxSets),
         m_poolSizes(poolSizes),
         m_pruneDelay(pruneDelay),
         m_sets(1024)
@@ -50,9 +50,9 @@ namespace PK::Rendering::VulkanRHI::Services
         }
     }
 
-    const VulkanDescriptorSet* VulkanDescriptorCache::GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
-                                                                       const DescriptorSetKey& key,
-                                                                       const FenceRef& fence)
+    const VulkanDescriptorSet* VulkanDescriptorCache::GetDescriptorSet(const VulkanDescriptorSetLayout* layout,
+        const DescriptorSetKey& key,
+        const FenceRef& fence)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
         VulkanDescriptorSet* value = nullptr;
@@ -100,7 +100,7 @@ namespace PK::Rendering::VulkanRHI::Services
             auto handles = bind->isArray ? bind->handles : &bind->handle;
             auto* write = &writes[count];
             auto type = EnumConvert::GetDescriptorType(bind->type);
-            
+
             write->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             write->dstArrayElement = 0;
             write->descriptorCount = bind->count;
@@ -110,81 +110,81 @@ namespace PK::Rendering::VulkanRHI::Services
 
             switch (type)
             {
-                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+            case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+            {
+                write->pBufferInfo = reinterpret_cast<decltype(write->pBufferInfo)>(bufferCount + 1);
+                auto newSize = bufferCount + bind->count;
+
+                if (m_writeBuffers.size() < newSize)
                 {
-                    write->pBufferInfo = reinterpret_cast<decltype(write->pBufferInfo)>(bufferCount + 1);
-                    auto newSize = bufferCount + bind->count;
-
-                    if (m_writeBuffers.size() < newSize)
-                    {
-                        m_writeBuffers.resize(newSize);
-                    }
-
-                    auto buffers = m_writeBuffers.data() + bufferCount;
-                    bufferCount = newSize;
-
-                    for (auto i = 0; i < bind->count; ++i)
-                    {
-                        buffers[i].buffer = bind->handle->buffer.buffer;
-                        buffers[i].offset = bind->handle->buffer.offset;
-                        buffers[i].range = bind->handle->buffer.range;
-                    }
+                    m_writeBuffers.resize(newSize);
                 }
+
+                auto buffers = m_writeBuffers.data() + bufferCount;
+                bufferCount = newSize;
+
+                for (auto i = 0; i < bind->count; ++i)
+                {
+                    buffers[i].buffer = bind->handle->buffer.buffer;
+                    buffers[i].offset = bind->handle->buffer.offset;
+                    buffers[i].range = bind->handle->buffer.range;
+                }
+            }
+            break;
+
+            case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+            case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            case VK_DESCRIPTOR_TYPE_SAMPLER:
+            {
+                write->pImageInfo = reinterpret_cast<decltype(write->pImageInfo)>(imageCount + 1);
+                auto newSize = imageCount + bind->count;
+
+                if (m_writeImages.size() < newSize)
+                {
+                    m_writeImages.resize(newSize);
+                }
+
+                auto images = m_writeImages.data() + imageCount;
+                imageCount = newSize;
+
+                for (auto i = 0; i < bind->count; ++i)
+                {
+                    images[i].sampler = handles[i]->image.sampler;
+                    images[i].imageView = handles[i]->image.view;
+                    images[i].imageLayout = handles[i]->image.layout;
+                }
+            }
+            break;
+
+            case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+            {
+                write->pNext = reinterpret_cast<decltype(write->pNext)>(accelerationStructureCount + 1);
+                auto newSize = accelerationStructureCount + bind->count;
+
+                if (m_writeAccerationStructures.size() < newSize)
+                {
+                    m_writeAccerationStructures.resize(newSize);
+                }
+
+                auto accelerationStructures = m_writeAccerationStructures.data() + accelerationStructureCount;
+                accelerationStructureCount = newSize;
+
+                for (auto i = 0; i < bind->count; ++i)
+                {
+                    accelerationStructures[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+                    accelerationStructures[i].accelerationStructureCount = 1;
+                    accelerationStructures[i].pAccelerationStructures = &handles[i]->acceleration.structure;
+                }
+
                 break;
+            }
 
-                case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-                case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-                case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-                case VK_DESCRIPTOR_TYPE_SAMPLER:
-                {
-                    write->pImageInfo = reinterpret_cast<decltype(write->pImageInfo)>(imageCount + 1);
-                    auto newSize = imageCount + bind->count;
-
-                    if (m_writeImages.size() < newSize)
-                    {
-                        m_writeImages.resize(newSize);
-                    }
-
-                    auto images = m_writeImages.data() + imageCount;
-                    imageCount = newSize;
-
-                    for (auto i = 0; i < bind->count; ++i)
-                    {
-                        images[i].sampler = handles[i]->image.sampler;
-                        images[i].imageView = handles[i]->image.view;
-                        images[i].imageLayout = handles[i]->image.layout;
-                    }
-                }
-                break;
-
-                case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-                {
-                    write->pNext = reinterpret_cast<decltype(write->pNext)>(accelerationStructureCount + 1);
-                    auto newSize = accelerationStructureCount + bind->count;
-
-                    if (m_writeAccerationStructures.size() < newSize)
-                    {
-                        m_writeAccerationStructures.resize(newSize);
-                    }
-
-                    auto accelerationStructures = m_writeAccerationStructures.data() + accelerationStructureCount;
-                    accelerationStructureCount = newSize;
-
-                    for (auto i = 0; i < bind->count; ++i)
-                    {
-                        accelerationStructures[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-                        accelerationStructures[i].accelerationStructureCount = 1;
-                        accelerationStructures[i].pAccelerationStructures = &handles[i]->acceleration.structure;
-                    }
-
-                    break;
-                }
-
-                default: 
-                    PK_THROW_ERROR("Binding type not yet implemented!");
+            default:
+                PK_THROW_ERROR("Binding type not yet implemented!");
             }
         }
 
@@ -199,7 +199,7 @@ namespace PK::Rendering::VulkanRHI::Services
 
             if (w->pImageInfo != nullptr)
             {
-                w->pImageInfo = m_writeImages.data() + ((reinterpret_cast<size_t>(w->pImageInfo) & 0xFFFF)- 1);
+                w->pImageInfo = m_writeImages.data() + ((reinterpret_cast<size_t>(w->pImageInfo) & 0xFFFF) - 1);
             }
 
             if (w->pNext != nullptr)
@@ -293,20 +293,20 @@ namespace PK::Rendering::VulkanRHI::Services
 
         switch (result)
         {
-            case VK_SUCCESS:
-                break;
+        case VK_SUCCESS:
+            break;
 
-            case VK_ERROR_FRAGMENTED_POOL:
-            case VK_ERROR_OUT_OF_POOL_MEMORY:
-                if (!throwOnFail)
-                {
-                    GrowPool(fence);
-                    pAllocateInfo->descriptorPool = m_currentPool->pool;
-                    GetDescriptorSets(pAllocateInfo, pDescriptorSets, fence, true);
-                    break;
-                }
-            default:
-                PK_THROW_ERROR("Failed to allocate a descriptor set!");
+        case VK_ERROR_FRAGMENTED_POOL:
+        case VK_ERROR_OUT_OF_POOL_MEMORY:
+            if (!throwOnFail)
+            {
+                GrowPool(fence);
+                pAllocateInfo->descriptorPool = m_currentPool->pool;
+                GetDescriptorSets(pAllocateInfo, pDescriptorSets, fence, true);
+                break;
+            }
+        default:
+            PK_THROW_ERROR("Failed to allocate a descriptor set!");
         }
     }
 }

@@ -19,23 +19,23 @@ void main()
         return;
     }
 
-	float2 uv = float2(coord + 0.5f.xx) / float2(size);
+    float2 uv = float2(coord + 0.5f.xx) / float2(size);
     float3 color = imageLoad(_MainTex, coord).rgb;
-	color = max(0.0f.xxx, color);
+    color = max(0.0f.xxx, color);
 
-	float exposure = GetAutoExposure();
-	exposure *= Vignette(uv);
+    float exposure = GetAutoExposure();
+    exposure *= Vignette(uv);
 
-	color = Bloom(color, uv);
-	// Applying a bit of desaturation to reduce high intensity value color blowout
-	// A personal preference really (should probably try to deprecate this).
-	color = Saturation(color, 0.8f);
-	color = TonemapHejlDawson(color, exposure);
-	color = FilmGrain(color, float2(coord));
-	color = LinearToGamma(color);
-	// This should perhaps be done before gamma corretion.
-	// But doing so invalidates configurations done using external tools.
-	color = ApplyColorGrading(color);
+    color = Bloom(color, uv);
+    // Applying a bit of desaturation to reduce high intensity value color blowout
+    // A personal preference really (should probably try to deprecate this).
+    color = Saturation(color, 0.8f);
+    color = TonemapACESFilm(color, exposure);
+    color = FilmGrain(color, float2(coord));
+    color = LinearToGamma(color);
+    // This should perhaps be done before gamma corretion.
+    // But doing so invalidates configurations done using external tools.
+    color = ApplyColorGrading(color);
 
-	imageStore(_MainTex, coord, float4(color, 1.0f));
+    imageStore(_MainTex, coord, float4(color, 1.0f));
 }

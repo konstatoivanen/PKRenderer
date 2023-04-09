@@ -15,13 +15,13 @@ namespace PK::Core::Services
 
         m_inputActionsCurrent[key] = action;
     }
-    
+
     void Input::OnScrollInput(double scrollX, double scrollY)
     {
         m_mouseScrollRaw.x = (float)scrollX;
         m_mouseScrollRaw.y = (float)scrollY;
     }
-    
+
     void Input::OnMouseButtonInput(int button, int action, int mods)
     {
         if (button < 0 || button >= (int)KeyCode::COUNT)
@@ -31,23 +31,23 @@ namespace PK::Core::Services
 
         m_inputActionsCurrent[button] = action;
     }
-    
+
     bool Input::GetKeyDown(KeyCode key)
     {
         return m_inputActionsCurrent[(int)key] == GLFW_PRESS && m_inputActionsPrevious[(int)key] == GLFW_RELEASE;
     }
-    
+
     bool Input::GetKeyUp(KeyCode key)
     {
         return m_inputActionsCurrent[(int)key] == GLFW_RELEASE && m_inputActionsPrevious[(int)key] == GLFW_PRESS;
     }
-    
+
     bool Input::GetKey(KeyCode key)
     {
         auto action = m_inputActionsCurrent[(int)key];
         return action == GLFW_PRESS || action == GLFW_REPEAT;
     }
-    
+
     Math::float2 Input::GetAxis2D(KeyCode front, KeyCode back, KeyCode right, KeyCode left)
     {
         return
@@ -56,7 +56,7 @@ namespace PK::Core::Services
             (GetKey(right) ? 1.0f : GetKey(left) ? -1.0f : 0.0f)
         };
     }
-    
+
     Math::float3 Input::GetAxis3D(KeyCode up, KeyCode down, KeyCode front, KeyCode back, KeyCode right, KeyCode left)
     {
         return
@@ -66,179 +66,179 @@ namespace PK::Core::Services
             (GetKey(front) ? 1.0f : GetKey(back) ? -1.0f : 0.0f)
         };
     }
-    
+
     void Input::Step(Window* window, int condition)
     {
         auto step = (PK::Core::UpdateStep)condition;
 
         switch (step)
         {
-            case PK::Core::UpdateStep::CloseFrame: 
-            {
-                memcpy(m_inputActionsPrevious, m_inputActionsCurrent, sizeof(m_inputActionsCurrent));
-            }
-            break;
+        case PK::Core::UpdateStep::CloseFrame:
+        {
+            memcpy(m_inputActionsPrevious, m_inputActionsCurrent, sizeof(m_inputActionsCurrent));
+        }
+        break;
 
-            case PK::Core::UpdateStep::UpdateInput:
-            {
-                double xpos, ypos;
-                int w, h;
-                auto glfwWindow = static_cast<GLFWwindow*>(window->GetNativeWindow());
-                glfwGetCursorPos(glfwWindow, &xpos, &ypos);
-                glfwGetWindowSize(glfwWindow, &w, &h);
+        case PK::Core::UpdateStep::UpdateInput:
+        {
+            double xpos, ypos;
+            int w, h;
+            auto glfwWindow = static_cast<GLFWwindow*>(window->GetNativeWindow());
+            glfwGetCursorPos(glfwWindow, &xpos, &ypos);
+            glfwGetWindowSize(glfwWindow, &w, &h);
 
-                m_mousePosition.x = (float)xpos;
-                m_mousePosition.y = (float)ypos;
-                m_mousePosition.y = (float)h - (float)ypos;
-                m_mousePositionNormalized.x = m_mousePosition.x / w;
-                m_mousePositionNormalized.y = m_mousePosition.y / h;
-                m_mouseDelta = m_mousePosition - m_mousePrev;
-                m_mousePrev = m_mousePosition;
-                m_mouseScroll = m_mouseScrollRaw;
-                m_mouseScrollRaw = { 0, 0 };
+            m_mousePosition.x = (float)xpos;
+            m_mousePosition.y = (float)ypos;
+            m_mousePosition.y = (float)h - (float)ypos;
+            m_mousePositionNormalized.x = m_mousePosition.x / w;
+            m_mousePositionNormalized.y = m_mousePosition.y / h;
+            m_mouseDelta = m_mousePosition - m_mousePrev;
+            m_mousePrev = m_mousePosition;
+            m_mouseScroll = m_mouseScrollRaw;
+            m_mouseScrollRaw = { 0, 0 };
 
-                m_sequencer->Next(this, this, 0);
-            }
-            break;
+            m_sequencer->Next(this, this, 0);
+        }
+        break;
         }
     }
-    
+
     std::string Input::KeyToString(KeyCode keycode)
     {
         switch (keycode)
         {
-            case KeyCode::MOUSE1: return "MOUSE1";
-            case KeyCode::MOUSE2: return "MOUSE2";
-            case KeyCode::MOUSE3: return "MOUSE3";
-            case KeyCode::MOUSE4: return "MOUSE4";
-            case KeyCode::MOUSE5: return "MOUSE5";
-            case KeyCode::MOUSE6: return "MOUSE6";
-            case KeyCode::MOUSE7: return "MOUSE7";
-            case KeyCode::MOUSE8: return "MOUSE8";
-            case KeyCode::SPACE: return "SPACE";
-            case KeyCode::APOSTROPHE: return "APOSTROPHE";
-            case KeyCode::COMMA: return "COMMA";
-            case KeyCode::MINUS: return "MINUS";
-            case KeyCode::PERIOD: return "PERIOD";
-            case KeyCode::SLASH: return "SLASH";
-            case KeyCode::ALPHA0: return "ALPHA0";
-            case KeyCode::ALPHA1: return "ALPHA1";
-            case KeyCode::ALPHA2: return "ALPHA2";
-            case KeyCode::ALPHA3: return "ALPHA3";
-            case KeyCode::ALPHA4: return "ALPHA4";
-            case KeyCode::ALPHA5: return "ALPHA5";
-            case KeyCode::ALPHA6: return "ALPHA6";
-            case KeyCode::ALPHA7: return "ALPHA7";
-            case KeyCode::ALPHA8: return "ALPHA8";
-            case KeyCode::ALPHA9: return "ALPHA9";
-            case KeyCode::SEMICOLON: return "SEMICOLON";
-            case KeyCode::EQUAL: return "EQUAL";
-            case KeyCode::A: return "A";
-            case KeyCode::B: return "B";
-            case KeyCode::C: return "C";
-            case KeyCode::D: return "D";
-            case KeyCode::E: return "E";
-            case KeyCode::F: return "F";
-            case KeyCode::G: return "G";
-            case KeyCode::H: return "H";
-            case KeyCode::I: return "I";
-            case KeyCode::J: return "J";
-            case KeyCode::K: return "K";
-            case KeyCode::L: return "L";
-            case KeyCode::M: return "M";
-            case KeyCode::N: return "N";
-            case KeyCode::O: return "O";
-            case KeyCode::P: return "P";
-            case KeyCode::Q: return "Q";
-            case KeyCode::R: return "R";
-            case KeyCode::S: return "S";
-            case KeyCode::T: return "T";
-            case KeyCode::U: return "U";
-            case KeyCode::V: return "V";
-            case KeyCode::W: return "W";
-            case KeyCode::X: return "X";
-            case KeyCode::Y: return "Y";
-            case KeyCode::Z: return "Z";
-            case KeyCode::LEFT_BRACKET: return "LEFT_BRACKET";
-            case KeyCode::BACKSLASH: return "BACKSLASH";
-            case KeyCode::RIGHT_BRACKET: return "RIGHT_BRACKET";
-            case KeyCode::GRAVE_ACCENT: return "GRAVE_ACCENT";
-            case KeyCode::WORLD_1: return "WORLD_1";
-            case KeyCode::WORLD_2: return "WORLD_2";
-            case KeyCode::ESCAPE: return "ESCAPE";
-            case KeyCode::ENTER: return "ENTER";
-            case KeyCode::TAB: return "TAB";
-            case KeyCode::BACKSPACE: return "BACKSPACE";
-            case KeyCode::INSERT: return "INSERT";
-            case KeyCode::DEL: return "DEL";
-            case KeyCode::RIGHT: return "RIGHT";
-            case KeyCode::LEFT: return "LEFT";
-            case KeyCode::DOWN: return "DOWN";
-            case KeyCode::UP: return "UP";
-            case KeyCode::PAGE_UP: return "PAGE_UP";
-            case KeyCode::PAGE_DOWN: return "PAGE_DOWN";
-            case KeyCode::HOME: return "HOME";
-            case KeyCode::END: return "END";
-            case KeyCode::CAPS_LOCK: return "CAPS_LOCK";
-            case KeyCode::SCROLL_LOCK: return "SCROLL_LOCK";
-            case KeyCode::NUM_LOCK: return "NUM_LOCK";
-            case KeyCode::PRINT_SCREEN: return "PRINT_SCREEN";
-            case KeyCode::PAUSE: return "PAUSE";
-            case KeyCode::F1: return "F1";
-            case KeyCode::F2: return "F2";
-            case KeyCode::F3: return "F3";
-            case KeyCode::F4: return "F4";
-            case KeyCode::F5: return "F5";
-            case KeyCode::F6: return "F6";
-            case KeyCode::F7: return "F7";
-            case KeyCode::F8: return "F8";
-            case KeyCode::F9: return "F9";
-            case KeyCode::F10: return "F10";
-            case KeyCode::F11: return "F11";
-            case KeyCode::F12: return "F12";
-            case KeyCode::F13: return "F13";
-            case KeyCode::F14: return "F14";
-            case KeyCode::F15: return "F15";
-            case KeyCode::F16: return "F16";
-            case KeyCode::F17: return "F17";
-            case KeyCode::F18: return "F18";
-            case KeyCode::F19: return "F19";
-            case KeyCode::F20: return "F20";
-            case KeyCode::F21: return "F21";
-            case KeyCode::F22: return "F22";
-            case KeyCode::F23: return "F23";
-            case KeyCode::F24: return "F24";
-            case KeyCode::F25: return "F25";
-            case KeyCode::KP_0: return "KP_0";
-            case KeyCode::KP_1: return "KP_1";
-            case KeyCode::KP_2: return "KP_2";
-            case KeyCode::KP_3: return "KP_3";
-            case KeyCode::KP_4: return "KP_4";
-            case KeyCode::KP_5: return "KP_5";
-            case KeyCode::KP_6: return "KP_6";
-            case KeyCode::KP_7: return "KP_7";
-            case KeyCode::KP_8: return "KP_8";
-            case KeyCode::KP_9: return "KP_9";
-            case KeyCode::KP_DECIMAL: return "KP_DECIMAL";
-            case KeyCode::KP_DIVIDE: return "KP_DIVIDE";
-            case KeyCode::KP_MULTIPLY: return "KP_MULTIPLY";
-            case KeyCode::KP_SUBTRACT: return "KP_SUBTRACT";
-            case KeyCode::KP_ADD: return "KP_ADD";
-            case KeyCode::KP_ENTER: return "KP_ENTER";
-            case KeyCode::KP_EQUAL: return "KP_EQUAL";
-            case KeyCode::LEFT_SHIFT: return "LEFT_SHIFT";
-            case KeyCode::LEFT_CONTROL: return "LEFT_CONTROL";
-            case KeyCode::LEFT_ALT: return "LEFT_ALT";
-            case KeyCode::LEFT_SUPER: return "LEFT_SUPER";
-            case KeyCode::RIGHT_SHIFT: return "RIGHT_SHIFT";
-            case KeyCode::RIGHT_CONTROL: return "RIGHT_CONTROL";
-            case KeyCode::RIGHT_ALT: return "RIGHT_ALT";
-            case KeyCode::RIGHT_SUPER: return "RIGHT_SUPER";
+        case KeyCode::MOUSE1: return "MOUSE1";
+        case KeyCode::MOUSE2: return "MOUSE2";
+        case KeyCode::MOUSE3: return "MOUSE3";
+        case KeyCode::MOUSE4: return "MOUSE4";
+        case KeyCode::MOUSE5: return "MOUSE5";
+        case KeyCode::MOUSE6: return "MOUSE6";
+        case KeyCode::MOUSE7: return "MOUSE7";
+        case KeyCode::MOUSE8: return "MOUSE8";
+        case KeyCode::SPACE: return "SPACE";
+        case KeyCode::APOSTROPHE: return "APOSTROPHE";
+        case KeyCode::COMMA: return "COMMA";
+        case KeyCode::MINUS: return "MINUS";
+        case KeyCode::PERIOD: return "PERIOD";
+        case KeyCode::SLASH: return "SLASH";
+        case KeyCode::ALPHA0: return "ALPHA0";
+        case KeyCode::ALPHA1: return "ALPHA1";
+        case KeyCode::ALPHA2: return "ALPHA2";
+        case KeyCode::ALPHA3: return "ALPHA3";
+        case KeyCode::ALPHA4: return "ALPHA4";
+        case KeyCode::ALPHA5: return "ALPHA5";
+        case KeyCode::ALPHA6: return "ALPHA6";
+        case KeyCode::ALPHA7: return "ALPHA7";
+        case KeyCode::ALPHA8: return "ALPHA8";
+        case KeyCode::ALPHA9: return "ALPHA9";
+        case KeyCode::SEMICOLON: return "SEMICOLON";
+        case KeyCode::EQUAL: return "EQUAL";
+        case KeyCode::A: return "A";
+        case KeyCode::B: return "B";
+        case KeyCode::C: return "C";
+        case KeyCode::D: return "D";
+        case KeyCode::E: return "E";
+        case KeyCode::F: return "F";
+        case KeyCode::G: return "G";
+        case KeyCode::H: return "H";
+        case KeyCode::I: return "I";
+        case KeyCode::J: return "J";
+        case KeyCode::K: return "K";
+        case KeyCode::L: return "L";
+        case KeyCode::M: return "M";
+        case KeyCode::N: return "N";
+        case KeyCode::O: return "O";
+        case KeyCode::P: return "P";
+        case KeyCode::Q: return "Q";
+        case KeyCode::R: return "R";
+        case KeyCode::S: return "S";
+        case KeyCode::T: return "T";
+        case KeyCode::U: return "U";
+        case KeyCode::V: return "V";
+        case KeyCode::W: return "W";
+        case KeyCode::X: return "X";
+        case KeyCode::Y: return "Y";
+        case KeyCode::Z: return "Z";
+        case KeyCode::LEFT_BRACKET: return "LEFT_BRACKET";
+        case KeyCode::BACKSLASH: return "BACKSLASH";
+        case KeyCode::RIGHT_BRACKET: return "RIGHT_BRACKET";
+        case KeyCode::GRAVE_ACCENT: return "GRAVE_ACCENT";
+        case KeyCode::WORLD_1: return "WORLD_1";
+        case KeyCode::WORLD_2: return "WORLD_2";
+        case KeyCode::ESCAPE: return "ESCAPE";
+        case KeyCode::ENTER: return "ENTER";
+        case KeyCode::TAB: return "TAB";
+        case KeyCode::BACKSPACE: return "BACKSPACE";
+        case KeyCode::INSERT: return "INSERT";
+        case KeyCode::DEL: return "DEL";
+        case KeyCode::RIGHT: return "RIGHT";
+        case KeyCode::LEFT: return "LEFT";
+        case KeyCode::DOWN: return "DOWN";
+        case KeyCode::UP: return "UP";
+        case KeyCode::PAGE_UP: return "PAGE_UP";
+        case KeyCode::PAGE_DOWN: return "PAGE_DOWN";
+        case KeyCode::HOME: return "HOME";
+        case KeyCode::END: return "END";
+        case KeyCode::CAPS_LOCK: return "CAPS_LOCK";
+        case KeyCode::SCROLL_LOCK: return "SCROLL_LOCK";
+        case KeyCode::NUM_LOCK: return "NUM_LOCK";
+        case KeyCode::PRINT_SCREEN: return "PRINT_SCREEN";
+        case KeyCode::PAUSE: return "PAUSE";
+        case KeyCode::F1: return "F1";
+        case KeyCode::F2: return "F2";
+        case KeyCode::F3: return "F3";
+        case KeyCode::F4: return "F4";
+        case KeyCode::F5: return "F5";
+        case KeyCode::F6: return "F6";
+        case KeyCode::F7: return "F7";
+        case KeyCode::F8: return "F8";
+        case KeyCode::F9: return "F9";
+        case KeyCode::F10: return "F10";
+        case KeyCode::F11: return "F11";
+        case KeyCode::F12: return "F12";
+        case KeyCode::F13: return "F13";
+        case KeyCode::F14: return "F14";
+        case KeyCode::F15: return "F15";
+        case KeyCode::F16: return "F16";
+        case KeyCode::F17: return "F17";
+        case KeyCode::F18: return "F18";
+        case KeyCode::F19: return "F19";
+        case KeyCode::F20: return "F20";
+        case KeyCode::F21: return "F21";
+        case KeyCode::F22: return "F22";
+        case KeyCode::F23: return "F23";
+        case KeyCode::F24: return "F24";
+        case KeyCode::F25: return "F25";
+        case KeyCode::KP_0: return "KP_0";
+        case KeyCode::KP_1: return "KP_1";
+        case KeyCode::KP_2: return "KP_2";
+        case KeyCode::KP_3: return "KP_3";
+        case KeyCode::KP_4: return "KP_4";
+        case KeyCode::KP_5: return "KP_5";
+        case KeyCode::KP_6: return "KP_6";
+        case KeyCode::KP_7: return "KP_7";
+        case KeyCode::KP_8: return "KP_8";
+        case KeyCode::KP_9: return "KP_9";
+        case KeyCode::KP_DECIMAL: return "KP_DECIMAL";
+        case KeyCode::KP_DIVIDE: return "KP_DIVIDE";
+        case KeyCode::KP_MULTIPLY: return "KP_MULTIPLY";
+        case KeyCode::KP_SUBTRACT: return "KP_SUBTRACT";
+        case KeyCode::KP_ADD: return "KP_ADD";
+        case KeyCode::KP_ENTER: return "KP_ENTER";
+        case KeyCode::KP_EQUAL: return "KP_EQUAL";
+        case KeyCode::LEFT_SHIFT: return "LEFT_SHIFT";
+        case KeyCode::LEFT_CONTROL: return "LEFT_CONTROL";
+        case KeyCode::LEFT_ALT: return "LEFT_ALT";
+        case KeyCode::LEFT_SUPER: return "LEFT_SUPER";
+        case KeyCode::RIGHT_SHIFT: return "RIGHT_SHIFT";
+        case KeyCode::RIGHT_CONTROL: return "RIGHT_CONTROL";
+        case KeyCode::RIGHT_ALT: return "RIGHT_ALT";
+        case KeyCode::RIGHT_SUPER: return "RIGHT_SUPER";
         }
-    
+
         PK_THROW_ERROR("Invalid keycode value: %i", keycode);
     }
-    
+
     KeyCode Input::StringToKey(const std::string& string)
     {
         if (string == "SPACE") return KeyCode::SPACE;
@@ -360,7 +360,7 @@ namespace PK::Core::Services
         if (string == "RIGHT_CONTROL") return KeyCode::RIGHT_CONTROL;
         if (string == "RIGHT_ALT") return KeyCode::RIGHT_ALT;
         if (string == "RIGHT_SUPER") return KeyCode::RIGHT_SUPER;
-    
+
         PK_THROW_ERROR("Invalid keycode value: %s", string);
     }
 }

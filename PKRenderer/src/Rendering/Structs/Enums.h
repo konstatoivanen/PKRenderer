@@ -254,7 +254,7 @@ namespace PK::Rendering::Structs
         RG16F, 
         RG16UI, 
         RG16I,
-        R11FG11FB10F,
+        B10G11R11UF,
         RGBA8, 
         RGBA8_SRGB, 
         RGBA8_SNORM, 
