@@ -4,11 +4,14 @@ The project is built for Windows using C++ 17, Visual Studio & MSVC and supports
 
 **Note that if you want to build this but don't want to build PKAssetTools you can place the prebuilt binaries from that repository into your Build folder instead.**
 
-## Preview
-![Preview](T_Preview_01.gif?raw=true "GI Preview")
+| Previews | -- |
+|--|--|
+| ![Preview](T_Preview_01.gif?raw=true "GI Preview") | ![Preview](T_Preview_02.jpg?raw=true "GI Preview") |
+| ![Preview](T_Preview_03.jpg?raw=true "GI Preview") | ![Preview](T_Preview_04.jpg?raw=true "GI Preview") |
+| ![Preview](T_Preview_05.jpg?raw=true "GI Preview") | ![Preview](T_Preview_06.jpg?raw=true "GI Preview") |
 
 ## Features
-- Vulkan 1.2 Rendering Backend.
+- Vulkan 1.3 Rendering Backend.
 - Dynamic scene material batching & instanced rendering.
 - Clustered forward rendering.
 - Virtual geometry.
@@ -30,12 +33,19 @@ The project is built for Windows using C++ 17, Visual Studio & MSVC and supports
 - Multi compile shader variants.
 - Asset hot reloading.
 
-## Planned Features
+### Planned Features
 - Mesh Skinning.
 - Serialized scene representation.
 - DX12 Rendering backend.
 
-## Required Vulkan Features & Extensions
+---
+
+## Libraries & Dependencies
+
+<details>
+
+<summary>Required Vulkan Features & Extensions</summary>
+
 - VK_EXT_debug_utils
 - VK_LAYER_KHRONOS_validation
 - VK_KHR_surface
@@ -68,10 +78,11 @@ The project is built for Windows using C++ 17, Visual Studio & MSVC and supports
 - shaderOutputViewportIndex
 - shaderOutputLayer
 
-## Libraries & Other Dependencies
+</details>
+
 - Windows 10 (Support for other platforms has not been tested/developed/verified).
 - C++ 17 support required.
-- Vulkan 1.2 support required.
+- Vulkan 1.3 support required.
 - [PKAssetTools](https://github.com/konstatoivanen/PKAssetTools)
 - [KTX](https://github.com/KhronosGroup/KTX-Software)
 - [yaml-cpp](https://github.com/jbeder/yaml-cpp)
