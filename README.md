@@ -13,7 +13,7 @@ The project is built for Windows using C++ 17, Visual Studio & MSVC and supports
 - Clustered forward rendering.
 - Virtual geometry.
 - Volumetric fog & lighting.
-- Realtime global illumination (Voxel cone tracing).
+- Realtime global illumination (Raytraced SHL1 specular & diffuse, world space voxel radiance cache).
 - Temporal reprojection for volumetrics & screen space GI.
 - Point, spot & directional lights.
 - Temporal Antialiasing.
@@ -31,7 +31,6 @@ The project is built for Windows using C++ 17, Visual Studio & MSVC and supports
 - Asset hot reloading.
 
 ## Planned Features
-- Hardware accelerated raytraced GI (deprecate VXGI).
 - Mesh Skinning.
 - Serialized scene representation.
 - DX12 Rendering backend.
