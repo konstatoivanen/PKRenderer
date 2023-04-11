@@ -30,7 +30,10 @@ PK_DECLARE_SET_SHADER uniform sampler2DArray pk_ScreenGI_CoCg_Read;
 
 struct GIMask
 {
-	uint discontinuityFrames;
+	uint history;
+	uint historyI;
+	float historyN;
+	float historyIN;
 	bool isOOB;
 	bool isActive;
 };
@@ -45,6 +48,7 @@ struct GIMask
 #define PK_GI_SAMPLE_COUNT pk_SceneGI_SampleCount
 #define PK_GI_RAY_MIN_DISTANCE 0.005f
 #define PK_GI_RAY_MAX_DISTANCE 100.0f
+#define PK_GI_MAX_HISTORY 32u
 
 //----------UTILITIES----------//
 float2 GetSampleOffset(float2 dither)
@@ -86,16 +90,19 @@ GIMask LoadGIMask(int2 coord)
 {
 	uint value = imageLoad(pk_ScreenGI_Mask, coord).r;
 	GIMask mask;
-	mask.discontinuityFrames = value & 0x3Fu;
+	mask.history = value & 0x3Fu;
 	mask.isOOB = (value & (1 << 6)) != 0u;
 	mask.isActive = (value & (1 << 7)) != 0u;
+	mask.historyI = PK_GI_MAX_HISTORY - mask.history;
+	mask.historyN = mask.history / float(PK_GI_MAX_HISTORY); 
+	mask.historyIN = 1.0f - mask.historyN;
 	return mask;
 }
 
 void StoreGIMask(int2 coord, const GIMask mask)
 {
 	uint value = 0u;
-	value = mask.discontinuityFrames & 0x3Fu;
+	value = mask.history & 0x3Fu;
 	value |= (mask.isOOB ? 1u : 0u) << 6; 
 	value |= (mask.isActive ? 1u : 0u) << 7; 
 	imageStore(pk_ScreenGI_Mask, coord, uint4(value));

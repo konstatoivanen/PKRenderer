@@ -28,9 +28,9 @@ void main()
     GIMask prevMask = LoadGIMask(coord);
 
     bool hasDiscontinuity = depthDelta > 0.1f || Any_Greater(abs(uvw.xy - 0.5f), 0.5f.xx);
-    mask.discontinuityFrames = hasDiscontinuity ? 8u : uint(max(0, int(prevMask.discontinuityFrames) - 1));
+    mask.history = min(PK_GI_MAX_HISTORY, hasDiscontinuity ? 0u : (prevMask.history + 1));
     mask.isActive = All_Equal(coord % PK_GI_CHECKERBOARD_OFFSET, uint2(0u));
-    mask.isOOB = Any_Greater(abs(WorldToVoxelClipSpace(worldpos)), 1.0f.xxx);
+    mask.isOOB = depthCurrent > (pk_ProjectionParams.z - 1e-2f); 
 
     StoreGIMask(coord, mask);
 

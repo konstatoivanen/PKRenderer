@@ -9,7 +9,7 @@ float3 SampleEnvironment(float3 direction, float roughness)
     return HDRDecode(tex2DLod(pk_SceneOEM_HDR, OctaUV(direction), 4.0f * roughness)).rgb * pk_SceneOEM_Exposure;
 }
 
-float3 SampleRadiance(const float3 origin, const float3 direction, const float dist, const float roughness)
+float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direction, const float dist, const float roughness)
 {
     const float3 worldpos = origin + direction * dist;
     float3 clipuvw;
@@ -17,13 +17,17 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const float d
     // Try sample previous forward output for better sampling.
     if (TryGetWorldToPrevClipUVW(worldpos, clipuvw))
     {
-        float rdepth = LinearizeDepth(clipuvw.z);
         float sdepth = SamplePreviousLinearDepth(clipuvw.xy);
-        float sviewz = -SamplePreviousViewNormal(clipuvw.xy).z + 0.1f;
-        float deltaDepth = abs(sdepth - rdepth);
-        float bias = rdepth * 0.01f / sviewz;
+        bool isMiss = sdepth > pk_ProjectionParams.z - 1e-4f && dist >= PK_GI_RAY_MAX_DISTANCE - 0.01f;
+        
+        float rdepth = LinearizeDepth(clipuvw.z);
+        float sviewz = -SamplePreviousViewNormal(clipuvw.xy).z + 0.15f;
+        bool isDepthValid = abs(sdepth - rdepth) < (rdepth * 0.01f / sviewz);
 
-        if ((sdepth > pk_ProjectionParams.z - 1e-4f && dist >= PK_GI_RAY_MAX_DISTANCE - 0.01f) || deltaDepth <= bias)
+        float2 deltacoord = abs(coord - (clipuvw.xy * pk_ScreenParams.xy));
+        bool isCoordValid = dot(deltacoord, deltacoord) > 2.0f;
+
+        if (isCoordValid && (isMiss || isDepthValid))
         {
             return tex2D(pk_ScreenColorPrevious, clipuvw.xy).rgb;
         }
@@ -44,7 +48,7 @@ SH SampleIrradianceSH(const float3 O, const float3 N, int2 coord)
     const float2 Xi = GetSampleOffset(GlobalNoiseBlue(coord + pk_FrameIndex / PK_GI_SAMPLE_COUNT).xy);
     const float3 direction = ImportanceSampleGGX(Xi, N, 1.0f);
     const float sampleDistance = imageLoad(pk_ScreenGI_Hits, coord).r;
-    const float3 radiance = SampleRadiance(O, direction, sampleDistance, 0.5f);
+    const float3 radiance = SampleRadiance(coord, O, direction, sampleDistance, 0.5f);
     return IrradianceToSH(radiance, direction);
 }
 
@@ -53,7 +57,7 @@ SH SampleRadianceSH(const float3 O, const float3 N, const float3 V, int2 coord, 
     const float2 Xi = GetSampleOffset(GlobalNoiseBlue(coord + pk_FrameIndex / PK_GI_SAMPLE_COUNT).xy);
     const float3 direction = ImportanceSampleGGX(Xi, N, V, roughness);
     const float sampleDistance = imageLoad(pk_ScreenGI_Hits, coord).g;
-    const float3 radiance = SampleRadiance(O, direction, sampleDistance, 0.0f);
+    const float3 radiance = SampleRadiance(coord, O, direction, sampleDistance, 0.0f);
     return IrradianceToSH(radiance, direction);
 }
 
@@ -97,8 +101,8 @@ void main()
     float irradianceLum = SHToLuminance(irradianceSH, N);
     float radianceLum = SHToLuminance(radianceSH, reflect(V, N));
 
-    const bool refreshDiff = mask.discontinuityFrames > 7u || IsNaN(irradianceSH.SHY.w) || IsNaN(irradianceSH.CoCg);
-    const bool refreshSpec = mask.discontinuityFrames > 7u || IsNaN(radianceSH.SHY.w) || IsNaN(radianceSH.CoCg);
+    const bool refreshDiff = mask.history == 0u || IsNaN(irradianceSH.SHY.w) || IsNaN(irradianceSH.CoCg);
+    const bool refreshSpec = mask.history == 0u || IsNaN(radianceSH.SHY.w) || IsNaN(radianceSH.CoCg);
     float interDiff = lerp(0.01f, 0.75f, saturate(irradianceLum * 5.0f));
     float interSpec = lerp(0.05f, 0.25f, saturate(radianceLum * 5.0f));
 
@@ -117,5 +121,5 @@ void main()
     StoreGI_SH(coord, PK_GI_DIFF_LVL, irradianceSH);
     StoreGI_SH(coord, PK_GI_SPEC_LVL, radianceSH);
 
-    AccumualteAO(coord, mask.isOOB || mask.discontinuityFrames > 7u);
+    AccumualteAO(coord, mask.isOOB || mask.history == 0u);
 }

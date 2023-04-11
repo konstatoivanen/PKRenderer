@@ -22,8 +22,11 @@ void main()
         return;
     }
 
+    const float historyS0 = max(mask.historyIN - 0.75f, 0.0f) * 5.0f;
+
     const float2 UV = (coord + 0.5f.xx) / size;
     const float D = SampleLinearDepth(UV);
+    const float InvD = 1.0f - (SampleLinearDepth(UV) / pk_ProjectionParams.z);
     const float3 O = SampleViewPosition(coord, size, D);
     const float4 NR = SampleViewNormalRoughness(coord);
     const float3 N = NR.xyz;
@@ -31,12 +34,12 @@ void main()
     const float2 rotation = make_rotation(pk_SceneGI_SampleIndex * (PK_PI / 3.0f));
 
     const float mindist = imageLoad(pk_ScreenGI_AO, coord).r;
-    const float radius = min(mindist, 0.02f * D) * (1.0f + mask.discontinuityFrames);
+    const float radius = min(mindist, 0.02f * D) * (1.0f + historyS0 * 4.0f);
     const float planedist = radius * 0.5f;
 
     float3 clipuvw;
 
-    float2 W = 1.0f.xx / (1.0f + mask.discontinuityFrames);
+    float2 W = 1.0f.xx / (1.0f + mask.historyIN * 32.0f);
     SH irradiance = ScaleSH(SampleGI_SH(UV, PK_GI_DIFF_LVL), W.x);
     SH radiance = ScaleSH(SampleGI_SH(UV, PK_GI_SPEC_LVL), W.y);
 
@@ -73,13 +76,13 @@ void main()
 
         GIMask sampleMask = LoadGIMask(scoord);
 
-        const float reproWeight = 1.0f / (1.0f + sampleMask.discontinuityFrames * 2);
-        const float normalWeight = pow(max(0.0f, sampleDot), 9.0f - mask.discontinuityFrames);
+        const float reproWeight = 1.0f / (1.0f + mask.historyIN * 32.0f);
+        const float normalWeight = pow(max(0.0f, sampleDot), 1.0f + mask.history * 24.0f * InvD);
         const float planeWeight = max(0.0f, 1.0f - (sampleDistY / planedist));
         const float distWeight = max(0.0f, 1.0f - (sqrt(sampleDist) / radius));
 
         float2 WS;
-        WS.x = normalWeight * planeWeight * distWeight * reproWeight;
+        WS.x = saturate(normalWeight * planeWeight * distWeight * reproWeight);
         WS.y = WS.x * pow2(NR.w);
 
         SH diffSH = SampleGI_SH(scoord, PK_GI_DIFF_LVL);

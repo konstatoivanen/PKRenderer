@@ -341,50 +341,50 @@ namespace PK::Rendering::Passes
 
         switch (view->light->type)
         {
-        case LightType::Point:
-        {
-            tokens->cube.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
-            tokens->cube.depthRange = info->maxShadowDepth = view->light->radius - 0.1f;
-            tokens->cube.aabb = view->bounds->worldAABB;
-            m_sequencer->Next(engineRoot, &tokens->cube);
-        }
-        break;
-
-        case LightType::Spot:
-        {
-            tokens->frustum.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
-            tokens->frustum.depthRange = info->maxShadowDepth = view->light->radius - 0.1f;
-            auto projection = Functions::GetPerspective(view->light->angle, 1.0f, 0.1f, view->light->radius) * view->transform->worldToLocal;
-            Functions::ExtractFrustrumPlanes(projection, &tokens->frustum.planes, true);
-            m_sequencer->Next(engineRoot, &tokens->frustum);
-        }
-        break;
-
-        case LightType::Directional:
-        {
-            float4x4 cascades[PK_SHADOW_CASCADE_COUNT];
-            FrustumPlanes planes[PK_SHADOW_CASCADE_COUNT];
-
-            auto lightRange = Functions::GetShadowCascadeMatrices(
-                view->transform->worldToLocal,
-                inverseViewProjection,
-                m_cascadeSplits.planes,
-                -view->light->radius,
-                PK_SHADOW_CASCADE_COUNT,
-                cascades);
-
-            for (auto j = 0u; j < PK_SHADOW_CASCADE_COUNT; ++j)
+            case LightType::Point:
             {
-                Functions::ExtractFrustrumPlanes(cascades[j], &planes[j], true);
+                tokens->cube.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
+                tokens->cube.depthRange = info->maxShadowDepth = view->light->radius - 0.1f;
+                tokens->cube.aabb = view->bounds->worldAABB;
+                m_sequencer->Next(engineRoot, &tokens->cube);
             }
+            break;
 
-            tokens->cascades.depthRange = info->maxShadowDepth = lightRange;
-            tokens->cascades.count = PK_SHADOW_CASCADE_COUNT;
-            tokens->cascades.cascades = planes;
-            tokens->cascades.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
-            m_sequencer->Next(engineRoot, &tokens->cascades);
-        }
-        break;
+            case LightType::Spot:
+            {
+                tokens->frustum.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
+                tokens->frustum.depthRange = info->maxShadowDepth = view->light->radius - 0.1f;
+                auto projection = Functions::GetPerspective(view->light->angle, 1.0f, 0.1f, view->light->radius) * view->transform->worldToLocal;
+                Functions::ExtractFrustrumPlanes(projection, &tokens->frustum.planes, true);
+                m_sequencer->Next(engineRoot, &tokens->frustum);
+            }
+            break;
+
+            case LightType::Directional:
+            {
+                float4x4 cascades[PK_SHADOW_CASCADE_COUNT];
+                FrustumPlanes planes[PK_SHADOW_CASCADE_COUNT];
+
+                auto lightRange = Functions::GetShadowCascadeMatrices(
+                    view->transform->worldToLocal,
+                    inverseViewProjection,
+                    m_cascadeSplits.planes,
+                    -view->light->radius,
+                    PK_SHADOW_CASCADE_COUNT,
+                    cascades);
+
+                for (auto j = 0u; j < PK_SHADOW_CASCADE_COUNT; ++j)
+                {
+                    Functions::ExtractFrustrumPlanes(cascades[j], &planes[j], true);
+                }
+
+                tokens->cascades.depthRange = info->maxShadowDepth = lightRange;
+                tokens->cascades.count = PK_SHADOW_CASCADE_COUNT;
+                tokens->cascades.cascades = planes;
+                tokens->cascades.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
+                m_sequencer->Next(engineRoot, &tokens->cascades);
+            }
+            break;
         }
 
         if (visibilityList->count == 0)
@@ -434,7 +434,13 @@ namespace PK::Rendering::Passes
 
         info->minShadowDepth = (minDepth * info->maxShadowDepth) / (float)0xFFFF;
 
-        batch.shadowBlurAmounts.values[batch.count] = view->light->shadowBlur;
+        // Directional lights use same blur amount for all cascades.
+        // Fill the vector so that every tile gets the correct value.
+        for (auto i = 0u; i < shadow.TileCount; ++i)
+        {
+            batch.shadowBlurAmounts.values[batch.count + i] = view->light->shadowBlur / (1.0f + i * 0.25f);
+        }
+
         batch.maxDepthRange = glm::max(batch.maxDepthRange, info->maxShadowDepth - info->minShadowDepth);
         batch.count++;
     }
