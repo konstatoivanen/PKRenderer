@@ -39,7 +39,7 @@ uniform sampler2D _MainTex;
 #if defined(PASS_PREFILTER)
 out float2 vs_TEXCOORD0;
 #else 
-#include includes/SampleDistribution.glsl
+#include includes/Kernels.glsl
 #define SAMPLE_KERNEL PK_BOKEH_DISK_22
 out float3 vs_TEXCOORDS[SAMPLE_COUNT + 1];
 #endif

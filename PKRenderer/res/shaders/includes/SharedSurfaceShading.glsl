@@ -17,8 +17,8 @@
     #define PK_META_EARLY_CLIP_UVW(w, c, n)         \
         float3 vq = QuantizeWorldToVoxelSpace(w);   \
         if (!TryGetWorldToClipUVW(vq, c) ||         \
-             SceneGIVoxelHasValue(w) ||             \
-             !SceneGINormalReject(n))               \
+             SceneGI_VoxelHasValue(w) ||            \
+             !SceneGI_NormalReject(n))              \
         {                                           \
             return;                                 \
         }                                           \
@@ -234,6 +234,8 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
             Indirect indirect = GetStaticSceneIndirect(surf.normal, surf.viewdir, surf.roughness);
             LightTile tile = GetLightTile(surf.clipuvw);
     
+            float3 indirectSpecDir = 0.0f.xxx;
+
             SampleGI_VS
             (
                 indirect.diffuse, 

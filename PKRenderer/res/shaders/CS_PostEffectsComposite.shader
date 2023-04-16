@@ -6,6 +6,8 @@
 #include includes/SharedHistogram.glsl
 #include includes/Common.glsl
 
+#include includes/SharedSceneGI.glsl
+
 layout(rgba16f, set = PK_SET_DRAW) uniform image2D _MainTex;
 
 layout(local_size_x = 16, local_size_y = 4, local_size_z = 1) in;
@@ -36,6 +38,14 @@ void main()
     // This should perhaps be done before gamma corretion.
     // But doing so invalidates configurations done using external tools.
     color = ApplyColorGrading(color);
+
+    if (uv.x > 0.5f)
+    {
+        float2 suv = uv.xy;
+        suv.x -= 0.5f;
+        color = SampleGI_Meta(int2(suv * pk_ScreenSize.xy)).variance.xxx;
+        color = LinearToGamma(color);
+    }
 
     imageStore(_MainTex, coord, float4(color, 1.0f));
 }

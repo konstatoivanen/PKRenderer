@@ -17,8 +17,9 @@ SH ScaleSH(const SH sh, float s) { return SH(sh.SHY * s, sh.CoCg * s); }
 SH AddSH(const SH sha, const SH shb, float sb) { return SH(sha.SHY + shb.SHY * sb, sha.CoCg + shb.CoCg * sb); }
 float3 SHToIrradiance(const SH sh, const float3 d) { return PK_YCoCgRToRGB * float3(max(0.0f, dot(pk_SHL1B_IR * sh.SHY, GetSHBasis(d))), pk_SHL1B_IR.x * sh.CoCg * pk_SHL1B.x);}
 float3 SHToRadiance(const SH sh, const float3 d) { return PK_YCoCgRToRGB * float3(max(0.0f, dot(sh.SHY, GetSHBasis(d))), pk_SHL1B.x * sh.CoCg); }
-float SHToLuminance(const SH sh, const float3 d) { return max(0.0f, dot(sh.SHY, GetSHBasis(d))); }
-float3 SHGetMaxRadiance(const SH sh) { return SHToRadiance(sh, normalize(sh.SHY.wyz)); }
+//float SHToLuminance(const SH sh, const float3 d) { return max(0.0f, dot(sh.SHY, GetSHBasis(d))); }
+float SHToLuminance(const SH sh, const float3 d) { return dot(pk_Luminance.xyz, SHToIrradiance(sh, d)); }
+float SHToAmbientLuminance(const SH sh) { return dot(pk_Luminance.xyz, PK_YCoCgRToRGB * (float3(sh.SHY.x, sh.CoCg) * pk_SHL1B_IR.x * pk_SHL1B.x)); }
 
 SH IrradianceToSH(const float3 color, const float3 direction)
 {

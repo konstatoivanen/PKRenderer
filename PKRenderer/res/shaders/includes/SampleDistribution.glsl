@@ -1,120 +1,39 @@
 #pragma once
 
-// Poisson disk kernels
-const float2 PK_POISSON_DISK_16[16] =
+float3x3 ComposeTBNFast(const float3 N)
 {
-	float2(-0.94201624, -0.39906216),
-	float2(0.94558609, -0.76890725),
-	float2(-0.094184101, -0.92938870),
-	float2(0.34495938, 0.29387760),
-	float2(-0.91588581, 0.45771432),
-	float2(-0.81544232, -0.87912464),
-	float2(-0.38277543, 0.27676845),
-	float2(0.97484398, 0.75648379),
-	float2(0.44323325, -0.97511554),
-	float2(0.53742981, -0.47373420),
-	float2(-0.26496911, -0.41893023),
-	float2(0.79197514, 0.19090188),
-	float2(-0.24188840, 0.99706507),
-	float2(-0.81409955, 0.91437590),
-	float2(0.19984126, 0.78641367),
-	float2(0.14383161, -0.14100790)
-};
+    float3 T, B;
 
-const float2 PK_POISSON_DISK_POW2_16[16] =
-{
-	float2(-0.9637361f,-0.4082632f),
-	float2(1.152433f,-0.9371057f),
-	float2(-0.08798196f,-0.8681873f),
-	float2(0.1563245f,0.1331758f),
-	float2(-0.9377657f,0.4686488f),
-	float2(-0.9777852f,-1.054146f),
-	float2(-0.1808053f,0.1307325f),
-	float2(1.202891f,0.9334497f),
-	float2(0.4747576f,-1.044469f),
-	float2(0.3850244f,-0.3393917f),
-	float2(-0.1313432f,-0.2076606f),
-	float2(0.6451891f,0.1555198f),
-	float2(-0.2481743f,1.022976f),
-	float2(-0.9966791f,1.119445f),
-	float2(0.1621528f,0.6381024f),
-	float2(0.02897083f,-0.02840207f),
-};
+    if (N.z < 0.0)
+    {
+        const float a = 1.0f / (1.0f - N.z);
+        const float b = N.x * N.y * a;
+        T = float3(1.0f - N.x * N.x * a, -b, N.x);
+        B = float3(b, N.y * N.y * a - 1.0f, -N.y);
+    }
+    else
+    {
+        const float a = 1.0f / (1.0f + N.z);
+        const float b = -N.x * N.y * a;
+        T = float3(1.0f - N.x * N.x * a, b, -N.x);
+        B = float3(b, 1.0f - N.y * N.y * a, -N.y);
+    }
+    
+    return float3x3(T, B, N);
+}
 
-const float2 PK_BOKEH_DISK_16[16] = 
+float3x3 ComposeTBN(const float3 N, const float3 U)
 {
-    float2(0,0),
-    float2(0.54545456,0),
-    float2(0.16855472,0.5187581),
-    float2(-0.44128203,0.3206101),
-    float2(-0.44128197,-0.3206102),
-    float2(0.1685548,-0.5187581),
-    float2(1,0),
-    float2(0.809017,0.58778524),
-    float2(0.30901697,0.95105654),
-    float2(-0.30901703,0.9510565),
-    float2(-0.80901706,0.5877852),
-    float2(-1,0),
-    float2(-0.80901694,-0.58778536),
-    float2(-0.30901664,-0.9510566),
-    float2(0.30901712,-0.9510565),
-    float2(0.80901694,-0.5877853),
-};
+    float3 T = normalize(cross(U, N));
+    float3 B = cross(N, T);
+    return float3x3(T, B, N);
+}
 
-const float2 PK_BOKEH_DISK_22[22] = 
+float3x3 ComposeTBN(const float3 N)
 {
-    float2(0,0),
-    float2(0.53333336,0),
-    float2(0.3325279,0.4169768),
-    float2(-0.11867785,0.5199616),
-    float2(-0.48051673,0.2314047),
-    float2(-0.48051673,-0.23140468),
-    float2(-0.11867763,-0.51996166),
-    float2(0.33252785,-0.4169769),
-    float2(1,0),
-    float2(0.90096885,0.43388376),
-    float2(0.6234898,0.7818315),
-    float2(0.22252098,0.9749279),
-    float2(-0.22252095,0.9749279),
-    float2(-0.62349,0.7818314),
-    float2(-0.90096885,0.43388382),
-    float2(-1,0),
-    float2(-0.90096885,-0.43388376),
-    float2(-0.6234896,-0.7818316),
-    float2(-0.22252055,-0.974928),
-    float2(0.2225215,-0.9749278),
-    float2(0.6234897,-0.7818316),
-    float2(0.90096885,-0.43388376),
-};
-
-const float3 PK_HAMMERSLEY_SET_5[5] =
-{
-    float3(1.0f,       0.0f,       0.0f),
-    float3(0.309017f,  0.9510565f, 0.5f),
-    float3(-0.8090171f, 0.5877852f, 0.25f),
-    float3(-0.8090169f,-0.5877854f, 0.75f),
-    float3(0.3090171f,-0.9510565f, 0.125f),
-};
-
-const float3 PK_HAMMERSLEY_SET_16[16] = 
-{
-    float3(1.0f,0.0f,0.0f),
-    float3(0.9238795f,0.3826835f,0.5f),
-    float3(0.7071068f,0.7071068f,0.25f),
-    float3(0.3826834f,0.9238795f,0.75f),
-    float3(-4.371139E-08f,1.0f,0.125f),
-    float3(-0.3826835f,0.9238795f,0.625f),
-    float3(-0.7071068f,0.7071068f,0.375f),
-    float3(-0.9238796f,0.3826833f,0.875f),
-    float3(-1.0f,-8.742278E-08f,0.0625f),
-    float3(-0.9238795f,-0.3826834f,0.5625f),
-    float3(-0.7071066f,-0.7071069f,0.3125f),
-    float3(-0.3826831f,-0.9238797f,0.8125f),
-    float3(1.192488E-08f,-1.0f,0.1875f),
-    float3(0.3826836f,-0.9238794f,0.6875f),
-    float3(0.707107f,-0.7071065f,0.4375f),
-    float3(0.9238796f,-0.3826834f,0.9375f)
-};
+    float3 U = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
+    return ComposeTBN(N, U);
+}
 
 float RadicalInverse_VdC(uint bits)
 {
@@ -136,19 +55,6 @@ float3 GetSampleDirectionHammersLey(const float3 Xi, float blur)
     float theta = (1.0f - Xi.z) / (1.0f + (blur - 1.0f) * Xi.z);
     float2 sincos = sqrt(float2(1.0f - theta, theta));
     return normalize(float3(Xi.xy * sincos.xx, sincos.y));
-}
-
-float3x3 ComposeTBN(float3 N, float3 U)
-{
-    float3 T = normalize(cross(U, N));
-    float3 B = cross(N, T);
-    return float3x3(T, B, N);
-}
-
-float3x3 ComposeTBN(float3 N)
-{
-    float3 U = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
-    return ComposeTBN(N, U);
 }
 
 float3 DistributeGGX(const float2 Xi, float roughness)
@@ -177,35 +83,56 @@ float3 ImportanceSampleGGX(uint i, uint s, const float3 N, const float R)
     return ImportanceSampleGGX(Xi, N, R);
 }
 
-float3 ImportanceSampleGGX(const float2 Xi, const float3 N, const float3 V, const float R)
+// "Sampling the GGX Distribution of Visible Normals", Heitz
+float3 ImportanceSampleGGXVNDF(float2 Xi, const vec3 V, float R)
 {
-    float3 H = DistributeGGX(Xi, R);
-    float3 RV = reflect(V, N);
-    float3x3 TBN = ComposeTBN(RV, N); 
-    float3 D = TBN * H;
+    // prevent grazing angles 
+    Xi *= 0.98;
 
-    // Flip sample along V/N plane to avoid self intersections
-    // This also somewhat produces view dependent roughness as
-    // directions align in narrow angles
-    if (dot(D, N) < 0)
-    {
-        D = TBN * float3(H.x, -H.y, H.z);
-    }
+    // Section 3.2: transforming the view direction to the hemisphere configuration
+    float3 Vh = normalize(float3(R * V.x, R * V.y, V.z));
+    
+    // Section 4.1: orthonormal basis (with special case if cross product is zero)
+    float lensq = Vh.x * Vh.x + Vh.y * Vh.y;
+    const float3 T1 = lensq > 0 ? float3(-Vh.y, Vh.x, 0) * inversesqrt(lensq) : float3(1,0,0);
+    const float3 T2 = cross(Vh, T1);
 
-    return D;
+    // Section 4.2: parameterization of the projected area
+    float r = sqrt(Xi.x);    
+    float phi = 2.0 * 3.14159265 * Xi.y;    
+    float t1 = r * cos(phi);
+    float t2 = r * sin(phi);
+    float s = 0.5 * (1.0 + Vh.z);
+    t2 = (1.0 - s) * sqrt(1.0 - t1 * t1) + s * t2;
+
+    // Section 4.3: reprojection onto hemisphere
+    const float3 Nh = t1 * T1 + t2 * T2 + sqrt(max(0.0, 1.0 - t1 * t1 - t2 * t2)) * Vh;
+    
+    // Section 3.4: transforming the normal back to the ellipsoid configuration
+    return normalize(float3(R * Nh.x, R * Nh.y, max(0.02, Nh.z)));
 }
 
-float3 GetSampleDirectionSE(float3 worldNormal, uint index, const float sampleCount, float dither, float angle)
+float3 ImportanceSampleSmithGGX(const float2 Xi, const float3 N, const float3 V, const float R)
 {
-    float fi = float(index) + dither;
-    float fiN = fi / sampleCount;
-    float longitude = angle * fi;
-    float latitude = asin(fiN * 2.0 - 1.0);
+    const float3x3 basis = ComposeTBNFast(N);
+    const float3 ve = transpose(basis) * -V;
+    const float3 m = ImportanceSampleGGXVNDF(Xi, ve, R);
 
-    float3 kernel;
-    kernel.x = cos(latitude) * cos(longitude);
-    kernel.z = cos(latitude) * sin(longitude);
-    kernel.y = sin(latitude);
-    kernel = faceforward(kernel, kernel, -worldNormal);
-    return normalize(kernel);
+    // reflect viewer dir by a microfacet
+    float3 l = reflect(-ve, m);
+    
+    return basis * l;
+}
+
+// Ray Tracing Gems, Chapter 16 "Sampling Transformations Zoo"
+float3 ImportanceSampleLambert(const float2 Xi, const float3 N)
+{
+    float a = 1.0 - 2.0 * Xi.x;
+    float b = sqrt(1.0 - a * a);
+    float phi = 2.0 * 3.14159265 * Xi.y;
+
+    a *= 0.98;
+    b *= 0.98;
+
+    return normalize(float3(N.x + b * cos(phi), N.y + b * sin(phi), N.z + a));
 }

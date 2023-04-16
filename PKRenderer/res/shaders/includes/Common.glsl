@@ -14,11 +14,13 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     
     float4 pk_CursorParams;         // xy = cursor screen position, zw = cursor screen delta.
     float4 pk_WorldSpaceCameraPos;  // World space position of the camera.
+    float4 pk_ViewSpaceCameraDelta; // View space delta position of the camera.
     float4 pk_ProjectionParams;     // x = n, y = f, z = f - n, w = 1.0f / f.
     float4 pk_ExpProjectionParams;  // x = 1.0f / log2(f / n), y = -log2(n) / log2(f / n), z = f / n, w = 1.0f / n.
     float4 pk_ScreenParams;         // xy = current screen (width, height), z = 1 / width, w = 1 / height.
     float4 pk_ShadowCascadeZSplits; // view space z axis splits for directional light shadow cascades
     float4 pk_ProjectionJitter;     // xy = sub pixel jitter, zw = previous frame jitter
+    uint4 pk_ScreenSize;            // xy = current screen size, zw = @TODO padding
 
     float4x4 pk_MATRIX_V;       // Current view matrix.
     float4x4 pk_MATRIX_I_V;     // Current inverse view matrix.
@@ -47,7 +49,6 @@ PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenNormalsCurrent;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenNormalsPrevious;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenColorPrevious;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_SceneOEM_HDR;
-PK_DECLARE_SET_GLOBAL uniform sampler2D pk_Bluenoise256;
 PK_DECLARE_ACCELERATION_STRUCTURE(PK_SET_SHADER, pk_SceneStructure)
 
 //----------GBUFFER ENCODING UTILITIES----------//
@@ -90,10 +91,6 @@ float SamplePreviousRoughness(int2 coord) { return texelFetch(pk_ScreenNormalsPr
 float4 SamplePreviousViewNormalRoughness(float2 uv) { return DecodeGBufferN(tex2D(pk_ScreenNormalsPrevious, uv)); }
 float4 SamplePreviousViewNormalRoughness(int2 coord) { return DecodeGBufferN(texelFetch(pk_ScreenNormalsPrevious, coord, 0)); }
 
-float3 GlobalNoiseBlue(uint2 coord) { return texelFetch(pk_Bluenoise256, int2(coord.x % 256, coord.y % 256), 0).xyz; }
-float3 GlobalNoiseBlueScreenUV(float2 coord) { return GlobalNoiseBlue(uint2(coord * pk_ScreenParams.xy)); }
-float3 GlobalNoiseBlueUV(float2 coord) { return tex2D(pk_Bluenoise256, coord).xyz; }
-
 //----------COORDINATE TRANSFORMS----------//
 float4 WorldToClipPos( in float3 pos) { return mul(pk_MATRIX_VP, float4(pos, 1.0)); }
 float4 ViewToClipPos( in float3 pos) { return mul(pk_MATRIX_P, float4(pos, 1.0)); }
@@ -131,6 +128,7 @@ float3x3 ComposeMikkTangentSpaceMatrix(float3 normal, float4 tangent)
     return mul(float3x3(pk_MATRIX_M), float3x3(T, B, N));
 }
 
+bool DepthReprojectCull(const float depthCurrent, const float depthPrevious) { return (abs(depthCurrent - depthPrevious - pk_ViewSpaceCameraDelta.z) / depthCurrent) < 0.1f; }
 bool ClipPosCull(const float4 clippos) { return clippos.z > 0.0f && all(lessThan(abs(clippos.xy / clippos.w), 1.0f.xx)); }
 bool WorldToClipSpaceCull(float3 worldpos) { return ClipPosCull(WorldToClipPos(worldpos)); }
 

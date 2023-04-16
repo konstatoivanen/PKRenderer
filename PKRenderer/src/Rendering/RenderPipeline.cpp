@@ -57,11 +57,13 @@ namespace PK::Rendering
                 { ElementType::Float4, hash->pk_DeltaTime },
                 { ElementType::Float4, hash->pk_CursorParams },
                 { ElementType::Float4, hash->pk_WorldSpaceCameraPos },
+                { ElementType::Float4, hash->pk_ViewSpaceCameraDelta },
                 { ElementType::Float4, hash->pk_ProjectionParams },
                 { ElementType::Float4, hash->pk_ExpProjectionParams },
                 { ElementType::Float4, hash->pk_ScreenParams },
                 { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
                 { ElementType::Float4, hash->pk_ProjectionJitter },
+                { ElementType::Uint4, hash->pk_ScreenSize },
                 { ElementType::Float4x4, hash->pk_MATRIX_V },
                 { ElementType::Float4x4, hash->pk_MATRIX_I_V },
                 { ElementType::Float4x4, hash->pk_MATRIX_P },
@@ -104,7 +106,8 @@ namespace PK::Rendering
         AssetImportToken<ApplicationConfig> token{ assetDatabase, config };
         Step(&token);
 
-        auto bluenoise = assetDatabase->Load<Texture>("res/textures/default/T_Bluenoise256.ktx2");
+        auto bluenoise256 = assetDatabase->Load<Texture>("res/textures/default/T_Bluenoise256.ktx2");
+        auto bluenoise128x64 = assetDatabase->Load<Texture>("res/textures/default/T_Bluenoise128x64.ktx2");
         auto lightCookies = assetDatabase->Load<Texture>("res/textures/default/T_LightCookies.ktx2");
 
         auto sampler = lightCookies->GetSamplerDescriptor();
@@ -113,15 +116,24 @@ namespace PK::Rendering
         sampler.wrap[2] = WrapMode::Clamp;
         lightCookies->SetSampler(sampler);
 
-        sampler = bluenoise->GetSamplerDescriptor();
+        sampler = bluenoise256->GetSamplerDescriptor();
         sampler.anisotropy = 0.0f;
         sampler.mipMin = 0.0f;
         sampler.mipMax = 0.0f;
         sampler.filterMin = FilterMode::Point;
         sampler.filterMag = FilterMode::Bilinear;
-        bluenoise->SetSampler(sampler);
+        bluenoise256->SetSampler(sampler);
 
-        GraphicsAPI::SetTexture(hash->pk_Bluenoise256, bluenoise);
+        sampler = bluenoise128x64->GetSamplerDescriptor();
+        sampler.anisotropy = 0.0f;
+        sampler.mipMin = 0.0f;
+        sampler.mipMax = 0.0f;
+        sampler.filterMin = FilterMode::Point;
+        sampler.filterMag = FilterMode::Bilinear;
+        bluenoise128x64->SetSampler(sampler);
+
+        GraphicsAPI::SetTexture(hash->pk_Bluenoise256, bluenoise256);
+        GraphicsAPI::SetTexture(hash->pk_Bluenoise128x64, bluenoise128x64);
         GraphicsAPI::SetTexture(hash->pk_LightCookies, lightCookies);
         GraphicsAPI::SetBuffer(hash->pk_PerFrameConstants, *m_constantsPerFrame.get());
         GraphicsAPI::SetBuffer(hash->pk_PostEffectsParams, *m_constantsPostProcess.get());
@@ -160,16 +172,20 @@ namespace PK::Rendering
         auto f = Functions::GetZFarFromProj(token->projection);
         auto vp = token->projection * token->view;
         auto pvp = vp;
-        auto piv = cameraMatrix;
+        auto cameraMatrixPrev = cameraMatrix;
 
         m_znear = n;
         m_zfar = f;
 
         m_constantsPerFrame->TryGet(hash->pk_MATRIX_VP, pvp);
-        m_constantsPerFrame->TryGet(hash->pk_MATRIX_I_V, piv);
+        m_constantsPerFrame->TryGet(hash->pk_MATRIX_I_V, cameraMatrixPrev);
+
+        float3 previousCameraPos = float3(cameraMatrixPrev[3].x, cameraMatrixPrev[3].y, cameraMatrixPrev[3].z);
+
         m_constantsPerFrame->Set<float4>(hash->pk_ProjectionParams, { n, f, f - n, 1.0f / f });
         m_constantsPerFrame->Set<float4>(hash->pk_ExpProjectionParams, { 1.0f / glm::log2(f / n), -log2(n) / log2(f / n), f / n, 1.0f / n });
         m_constantsPerFrame->Set<float4>(hash->pk_WorldSpaceCameraPos, cameraMatrix[3]);
+        m_constantsPerFrame->Set<float4>(hash->pk_ViewSpaceCameraDelta, token->view * float4(previousCameraPos, 1.0f));
         m_constantsPerFrame->Set<float4>(hash->pk_ProjectionJitter, token->jitter);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_V, token->view);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_V, cameraMatrix);
@@ -177,7 +193,7 @@ namespace PK::Rendering
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_P, glm::inverse(token->projection));
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_VP, vp);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_VP, glm::inverse(vp));
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_I_V, piv);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_I_V, cameraMatrixPrev);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP, pvp);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_LD_P, pvp * cameraMatrix);
     }
@@ -211,6 +227,7 @@ namespace PK::Rendering
         auto cascadeZSplits = m_passLights.GetCascadeZSplits(m_znear, m_zfar);
         m_constantsPerFrame->Set<float4>(hash->pk_ShadowCascadeZSplits, reinterpret_cast<float4*>(cascadeZSplits.planes));
         m_constantsPerFrame->Set<float4>(hash->pk_ScreenParams, { (float)resolution.x, (float)resolution.y, 1.0f / (float)resolution.x, 1.0f / (float)resolution.y });
+        m_constantsPerFrame->Set<uint4>(hash->pk_ScreenSize, { resolution.x, resolution.y, 0u, 0u });
         m_constantsPerFrame->FlushBuffer(QueueType::Transfer);
 
         auto cmdtransfer = queues->GetCommandBuffer(QueueType::Transfer);

@@ -43,10 +43,10 @@ namespace PK::Rendering::Passes
 
         descr.samplerType = SamplerType::Sampler2D;
         descr.usage = TextureUsage::Storage;
-        descr.format = TextureFormat::R8UI;
-        descr.layers = 1u;
+        descr.format = TextureFormat::R32UI;
+        descr.layers = 2;
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1 };
-        m_screenSpaceMask = Texture::Create(descr, "GI.ScreenSpaceMaskTexture");
+        m_screenSpaceMeta = Texture::Create(descr, "GI.Meta");
 
         descr.format = TextureFormat::RG16F;
         m_screenSpaceRayhits = Texture::Create(descr, "GI.RayHits");
@@ -63,11 +63,6 @@ namespace PK::Rendering::Passes
         m_screenSpaceSHY = Texture::Create(descr, "GI.ScreenSpaceSHY");
         descr.format = TextureFormat::RG16F;
         m_screenSpaceCoCg = Texture::Create(descr, "GI.ScreenSpaceCoCg");
-
-        descr.samplerType = SamplerType::Sampler2D;
-        descr.layers = 1u;
-        descr.format = TextureFormat::R16F;
-        m_screenSpaceAO = Texture::Create(descr, "GI.AO");
 
         m_voxelizeAttribs.depthStencil.depthCompareOp = Comparison::Off;
         m_voxelizeAttribs.depthStencil.depthWriteEnable = false;
@@ -98,9 +93,7 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetImage(hash->pk_SceneGI_VolumeMaskWrite, m_voxelMask.get());
         GraphicsAPI::SetImage(hash->pk_SceneGI_VolumeWrite, m_voxels.get());
         GraphicsAPI::SetTexture(hash->pk_SceneGI_VolumeRead, m_voxels.get());
-        GraphicsAPI::SetImage(hash->pk_ScreenGI_Mask, m_screenSpaceMask.get());
         GraphicsAPI::SetImage(hash->pk_ScreenGI_Hits, m_screenSpaceRayhits.get());
-        GraphicsAPI::SetImage(hash->pk_ScreenGI_AO, m_screenSpaceAO.get());
     }
 
     void PassSceneGI::PreRender(CommandBuffer* cmd, const uint3& resolution)
@@ -117,16 +110,7 @@ namespace PK::Rendering::Passes
             GraphicsAPI::SetImage(hash->pk_ScreenGI_Hits, m_screenSpaceRayhits.get());
         }
 
-        if (m_screenSpaceMask->Validate(resolution))
-        {
-            GraphicsAPI::SetImage(hash->pk_ScreenGI_Mask, m_screenSpaceMask.get());
-        }
-
-        if (m_screenSpaceAO->Validate(resolution))
-        {
-            GraphicsAPI::SetImage(hash->pk_ScreenGI_AO, m_screenSpaceAO.get());
-        }
-
+        m_screenSpaceMeta->Validate(resolution);
         m_screenSpaceSHY->Validate(resolution);
         m_screenSpaceCoCg->Validate(resolution);
 
@@ -179,6 +163,8 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range0);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_SHY_Write, m_screenSpaceSHY.get(), range1);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range1);
+        GraphicsAPI::SetImage(hash->pk_ScreenGI_Meta_Read, m_screenSpaceMeta.get(), 0, 0);
+        GraphicsAPI::SetImage(hash->pk_ScreenGI_Meta_Write, m_screenSpaceMeta.get(), 0, 1);
         cmd->Dispatch(m_computeReprojectMask, 0, { resolution.x, resolution.y, 1u });
 
         cmd->EndDebugScope();
@@ -225,19 +211,22 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range1);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_SHY_Write, m_screenSpaceSHY.get(), range0);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range0);
+        GraphicsAPI::SetImage(hash->pk_ScreenGI_Meta_Read, m_screenSpaceMeta.get(), 0, 1);
         cmd->Dispatch(m_computeBakeGI, 0, dimension);
 
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_SHY_Read, m_screenSpaceSHY.get(), range0);
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range0);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_SHY_Write, m_screenSpaceSHY.get(), range1);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range1);
+        GraphicsAPI::SetImage(hash->pk_ScreenGI_Meta_Write, m_screenSpaceMeta.get(), 0, 0);
         cmd->Dispatch(m_computeDenoise, 0, dimension);
-
+        
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_SHY_Read, m_screenSpaceSHY.get(), range1);
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range1);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_SHY_Write, m_screenSpaceSHY.get(), range0);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range0);
-        cmd->Dispatch(m_computeDenoise, 0, dimension);
+        GraphicsAPI::SetImage(hash->pk_ScreenGI_Meta_Read, m_screenSpaceMeta.get(), 0, 0);
+        cmd->Dispatch(m_computeDenoise, 1, dimension);
 
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_SHY_Read, m_screenSpaceSHY.get(), range0);
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range0);

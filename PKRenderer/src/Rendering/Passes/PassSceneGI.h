@@ -33,9 +33,8 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Texture> m_voxelMask;
             Utilities::Ref<Objects::Texture> m_screenSpaceSHY;
             Utilities::Ref<Objects::Texture> m_screenSpaceCoCg;
-            Utilities::Ref<Objects::Texture> m_screenSpaceMask;
+            Utilities::Ref<Objects::Texture> m_screenSpaceMeta;
             Utilities::Ref<Objects::Texture> m_screenSpaceRayhits;
-            Utilities::Ref<Objects::Texture> m_screenSpaceAO;
             uint32_t m_rayIndex = 0u;
             uint32_t m_checkerboardIndex = 0u;
             int32_t m_rasterAxis = 0;

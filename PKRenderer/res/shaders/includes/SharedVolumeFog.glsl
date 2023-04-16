@@ -1,6 +1,7 @@
 #pragma once
 #include Common.glsl
 #include Noise.glsl
+#include BlueNoise.glsl
 
 #define VOLUME_DEPTH 128
 #define VOLUME_INV_DEPTH 0.0078125f // 1.0f / 128.0f

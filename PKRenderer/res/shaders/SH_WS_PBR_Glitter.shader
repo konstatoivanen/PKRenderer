@@ -31,7 +31,7 @@ void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData
     float t = GlobalNoiseBlueUV(uv).r;
     t = pow5(t);
     t -= 0.875f;
-    t *= 4.0f;
+    t *= 50.0f;
     t = max(0.0f, t);
     surf.roughness -= t;
 };

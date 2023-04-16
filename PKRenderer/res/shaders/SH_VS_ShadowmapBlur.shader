@@ -1,5 +1,6 @@
 #version 460
 #include includes/SharedShadowmapping.glsl
+#include includes/Kernels.glsl
 #include includes/SampleDistribution.glsl
 #include includes/Blit.glsl
 #multi_compile SHADOW_SOURCE_CUBE SHADOW_SOURCE_2D

@@ -1,23 +1,24 @@
 #pragma once
 #include Utilities.glsl
 #include SampleDistribution.glsl
+#include BlueNoise.glsl
 #include SHL1.glsl
 
 PK_DECLARE_CBUFFER(pk_SceneGI_Params, PK_SET_SHADER)
 {
-	float4 pk_SceneGI_ST;
-	uint4 pk_SceneGI_Swizzle;
-	int4 pk_SceneGI_Checkerboard_Offset;
-	uint pk_SceneGI_SampleIndex;
-	uint pk_SceneGI_SampleCount;
-	float pk_SceneGI_VoxelSize; 
-	float pk_SceneGI_LuminanceGain; 
-	float pk_SceneGI_ChrominanceGain; 
+    float4 pk_SceneGI_ST;
+    uint4 pk_SceneGI_Swizzle;
+    int4 pk_SceneGI_Checkerboard_Offset;
+    uint pk_SceneGI_SampleIndex;
+    uint pk_SceneGI_SampleCount;
+    float pk_SceneGI_VoxelSize; 
+    float pk_SceneGI_LuminanceGain; 
+    float pk_SceneGI_ChrominanceGain; 
 };
 
-layout(r8ui, set = PK_SET_SHADER) uniform uimage2D pk_ScreenGI_Mask;
+layout(r32ui, set = PK_SET_SHADER) uniform uimage2D pk_ScreenGI_Meta_Read;
+layout(r32ui, set = PK_SET_SHADER) uniform uimage2D pk_ScreenGI_Meta_Write;
 layout(rg16f, set = PK_SET_SHADER) uniform image2D pk_ScreenGI_Hits;
-layout(r16f, set = PK_SET_SHADER) uniform image2D pk_ScreenGI_AO;
 layout(rgba16f, set = PK_SET_SHADER) uniform image2DArray pk_ScreenGI_SHY_Write;
 layout(rg16f, set = PK_SET_SHADER) uniform image2DArray pk_ScreenGI_CoCg_Write;
 
@@ -28,14 +29,16 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_SceneGI_VolumeRead;
 PK_DECLARE_SET_SHADER uniform sampler2DArray pk_ScreenGI_SHY_Read;
 PK_DECLARE_SET_SHADER uniform sampler2DArray pk_ScreenGI_CoCg_Read;
 
-struct GIMask
+struct SceneGIMeta
 {
-	uint history;
-	uint historyI;
-	float historyN;
-	float historyIN;
-	bool isOOB;
-	bool isActive;
+    float variance;
+    float mindist;
+    uint history;
+    bool isOOB;
+    bool isActive;
+
+    // Interpreted fields
+    float history01;
 };
 
 #define PK_GI_DIFF_LVL 0
@@ -51,12 +54,20 @@ struct GIMask
 #define PK_GI_MAX_HISTORY 32u
 
 //----------UTILITIES----------//
-float2 GetSampleOffset(float2 dither)
+uint MurmurHash13(uint3 src)
 {
-	float2 Xi = Hammersley(PK_GI_SAMPLE_INDEX, PK_GI_SAMPLE_COUNT);
-	Xi += dither;
-	Xi -= floor(Xi);
-	return Xi;
+    const uint M = 0x5bd1e995u;
+    uint h = 1190494759u;
+    src *= M; src ^= src>>24u; src *= M;
+    h *= M; h ^= src.x; h *= M; h ^= src.y; h *= M; h ^= src.z;
+    h ^= h>>13u; h *= M; h ^= h>>15u;
+    return h;
+}
+
+float2 GetSampleOffset(uint2 coord, uint offset)
+{
+    uint hash = MurmurHash13(uint3(coord.xy, offset));
+    return Hammersley(offset + hash, 1024);
 }
 
 float3 VoxelToWorldSpace(int3 coord) { return (float3(coord) * PK_GI_VOXEL_SIZE) + pk_SceneGI_ST.xyz + PK_GI_VOXEL_SIZE * 0.5f; }
@@ -68,45 +79,49 @@ float3 WorldToVoxelClipSpace(float3 worldposition) { return WorldToSampleSpace(w
 
 float4 WorldToVoxelNDCSpace(float3 worldposition) 
 { 
-	float3 clippos = WorldToVoxelClipSpace(worldposition);
-	return float4(clippos[pk_SceneGI_Swizzle.x], clippos[pk_SceneGI_Swizzle.y], clippos[pk_SceneGI_Swizzle.z] * 0.5f + 0.5f, 1);
+    float3 clippos = WorldToVoxelClipSpace(worldposition);
+    return float4(clippos[pk_SceneGI_Swizzle.x], clippos[pk_SceneGI_Swizzle.y], clippos[pk_SceneGI_Swizzle.z] * 0.5f + 0.5f, 1);
 }
 
 //----------PREDICATES----------//
-bool SceneGIVoxelHasValue(float3 worldposition)
+bool SceneGI_VoxelHasValue(float3 worldposition)
 {
-	int3 coord = WorldToVoxelSpace(worldposition);
-	return imageLoad(pk_SceneGI_VolumeMaskWrite, coord).x != 0;
+    int3 coord = WorldToVoxelSpace(worldposition);
+    return imageLoad(pk_SceneGI_VolumeMaskWrite, coord).x != 0;
 }
 
-bool SceneGINormalReject(float3 normal)
+bool SceneGI_NormalReject(float3 normal)
 {
-	normal = abs(normal);
-	return normal[pk_SceneGI_Swizzle.z] > normal[pk_SceneGI_Swizzle.x] && normal[pk_SceneGI_Swizzle.z] > normal[pk_SceneGI_Swizzle.y];
+    normal = abs(normal);
+    return normal[pk_SceneGI_Swizzle.z] > normal[pk_SceneGI_Swizzle.x] && normal[pk_SceneGI_Swizzle.z] > normal[pk_SceneGI_Swizzle.y];
 }
 
-//----------MASK SAMPLE / STORE FUNCTIONS----------//
-GIMask LoadGIMask(int2 coord)
+//----------META SAMPLE / STORE FUNCTIONS----------//
+SceneGIMeta SceneGI_DecodeMeta(uint v)
 {
-	uint value = imageLoad(pk_ScreenGI_Mask, coord).r;
-	GIMask mask;
-	mask.history = value & 0x3Fu;
-	mask.isOOB = (value & (1 << 6)) != 0u;
-	mask.isActive = (value & (1 << 7)) != 0u;
-	mask.historyI = PK_GI_MAX_HISTORY - mask.history;
-	mask.historyN = mask.history / float(PK_GI_MAX_HISTORY); 
-	mask.historyIN = 1.0f - mask.historyN;
-	return mask;
+    SceneGIMeta meta;
+    meta.variance = float(bitfieldExtract(v, 0, 12)) / 4095.0f;
+    meta.mindist = float(bitfieldExtract(v, 12, 12)) / 4095.0f;
+    meta.history = bitfieldExtract(v, 24, 6);
+    meta.isOOB = bitfieldExtract(v, 30, 1) != 0;
+    meta.isActive = bitfieldExtract(v, 31, 1) != 0;
+    meta.history01 = meta.history / float(PK_GI_MAX_HISTORY); 
+    return meta;
 }
 
-void StoreGIMask(int2 coord, const GIMask mask)
+uint SceneGI_EncodeMeta(const SceneGIMeta m)
 {
-	uint value = 0u;
-	value = mask.history & 0x3Fu;
-	value |= (mask.isOOB ? 1u : 0u) << 6; 
-	value |= (mask.isActive ? 1u : 0u) << 7; 
-	imageStore(pk_ScreenGI_Mask, coord, uint4(value));
+    uint v = 0u;
+    v = bitfieldInsert(v, min(4095u, uint(m.variance * 4095.0f)), 0, 12);
+    v = bitfieldInsert(v, min(4095u, uint(m.mindist * 4095.0f)), 12, 12);
+    v = bitfieldInsert(v, m.history, 24, 6);
+    v = bitfieldInsert(v, m.isOOB ? 1u : 0u, 30, 1);
+    v = bitfieldInsert(v, m.isActive ? 1u : 0u, 31, 1);
+    return v;
 }
+
+SceneGIMeta SampleGI_Meta(int2 coord) { return SceneGI_DecodeMeta(imageLoad(pk_ScreenGI_Meta_Read, coord).x); }
+void StoreGI_Meta(int2 coord, const SceneGIMeta meta) { imageStore(pk_ScreenGI_Meta_Write, coord, uint4(SceneGI_EncodeMeta(meta))); }
 
 //----------VOXEL SAMPLE / STORE FUNCTIONS----------//
 float4 SampleGI_WS(float3 worldposition, float level)
@@ -121,124 +136,123 @@ float4 SampleGI_WS_Discrete(float3 worldposition, float level)
 
 void StoreGI_WS(float3 worldposition, float4 color) 
 { 
-	int3 coord = WorldToVoxelSpace(worldposition);
-	imageStore(pk_SceneGI_VolumeMaskWrite, coord, uint4(1u));
-	imageStore(pk_SceneGI_VolumeWrite, coord, color); 
+    int3 coord = WorldToVoxelSpace(worldposition);
+    imageStore(pk_SceneGI_VolumeMaskWrite, coord, uint4(1u));
+    imageStore(pk_SceneGI_VolumeWrite, coord, color); 
 }
 
 //----------SH SAMPLE / STORE FUNCTIONS----------//
 SH SampleGI_SH(const float2 uv, float level)
 {
-	return SH
-	(
-		tex2D(pk_ScreenGI_SHY_Read, float3(uv, level)).rgba, 
-		tex2D(pk_ScreenGI_CoCg_Read, float3(uv, level)).rg
-	);
+    return SH
+    (
+        tex2D(pk_ScreenGI_SHY_Read, float3(uv, level)).rgba, 
+        tex2D(pk_ScreenGI_CoCg_Read, float3(uv, level)).rg
+    );
 }
 
 SH SampleGI_SH(const int2 coord, int level)
 {
-	return SH
-	(
-		texelFetch(pk_ScreenGI_SHY_Read, int3(coord, level), 0).rgba, 
-		texelFetch(pk_ScreenGI_CoCg_Read, int3(coord, level), 0).rg
-	);
+    return SH
+    (
+        texelFetch(pk_ScreenGI_SHY_Read, int3(coord, level), 0).rgba, 
+        texelFetch(pk_ScreenGI_CoCg_Read, int3(coord, level), 0).rg
+    );
 }
 
 void StoreGI_SH(const int2 coord, const int level, const SH sh)
 {
-	imageStore(pk_ScreenGI_SHY_Write, int3(coord, level), sh.SHY);
-	imageStore(pk_ScreenGI_CoCg_Write, int3(coord, level), float4(sh.CoCg, 0.0f.xx));
+    imageStore(pk_ScreenGI_SHY_Write, int3(coord, level), sh.SHY);
+    imageStore(pk_ScreenGI_CoCg_Write, int3(coord, level), float4(sh.CoCg, 0.0f.xx));
 }
 
 float3 SampleGI_VS_Diffuse(const float2 uv, const float3 direction)
 {
-	SH irradianceSH = SampleGI_SH(uv, PK_GI_DIFF_LVL);
-	irradianceSH.SHY *= pk_SceneGI_LuminanceGain;
-	irradianceSH.CoCg *= pk_SceneGI_ChrominanceGain;
-	return SHToRadiance(irradianceSH, direction);
+    SH diffSH = SampleGI_SH(uv, PK_GI_DIFF_LVL);
+    diffSH.SHY *= pk_SceneGI_LuminanceGain;
+    diffSH.CoCg *= pk_SceneGI_ChrominanceGain;
+    return SHToIrradiance(diffSH, direction);
 }
 
 void SampleGI_VS(inout float3 diffuse, inout float3 specular, const float2 uv, const float3 N, const float3 V, const float R)
 {
-	SH irradianceSH = SampleGI_SH(uv, PK_GI_DIFF_LVL);
-	SH radianceSH = SampleGI_SH(uv, PK_GI_SPEC_LVL);
-
-	irradianceSH.SHY *= pk_SceneGI_LuminanceGain;
-	irradianceSH.CoCg *= pk_SceneGI_ChrominanceGain;
-	radianceSH.SHY *= pk_SceneGI_LuminanceGain;
-	radianceSH.CoCg *= pk_SceneGI_ChrominanceGain;
-
-    diffuse = SHToIrradiance(irradianceSH, N);
-    specular = SHToRadiance(radianceSH, normalize(reflect(V, N))) / sqrt(R);
+    SH diffSH = SampleGI_SH(uv, PK_GI_DIFF_LVL);
+    diffSH.SHY *= pk_SceneGI_LuminanceGain;
+    diffSH.CoCg *= pk_SceneGI_ChrominanceGain;
+    diffuse = SHToIrradiance(diffSH, N);
+    
+    SH specSH = SampleGI_SH(uv, PK_GI_SPEC_LVL);
+    specSH.SHY *= pk_SceneGI_LuminanceGain;
+    specSH.CoCg *= pk_SceneGI_ChrominanceGain;
+    specular = SHToIrradiance(specSH, normalize(reflect(V, N)));
 }
 
 //----------VOXEL CONE TRACING FUNCTIONS----------//
 float4 SampleGI_ConeTraceVolumetric(float3 position)
 {
-	float4 color = float4(0.0.xxx, 1.0);
+    float4 color = float4(0.0.xxx, 1.0);
 
-	for (uint i = 0; i < 4; ++i)
-	{
-		float level = i * 1.25f;
+    for (uint i = 0; i < 4; ++i)
+    {
+        float level = i * 1.25f;
 
-		float4 voxel = SampleGI_WS(position, level);
+        float4 voxel = SampleGI_WS(position, level);
 
-		color.rgb += voxel.rgb * (1.0 + level) * pow2(color.a) * i;
-		color.a *= saturate(1.0 - voxel.a * (1.0 + pow3(level) * 0.075));
-	}
+        color.rgb += voxel.rgb * (1.0 + level) * pow2(color.a) * i;
+        color.a *= saturate(1.0 - voxel.a * (1.0 + pow3(level) * 0.075));
+    }
 
-	return color;
+    return color;
 }
 
 float4 SampleGI_ConeTraceDiffuse(const float3 O, const float3 N, const float dither) 
 {
-	const float angle = PK_PI / 3.0f;
-	const float levelscale = 2.0f * tan(angle / 2.0f) / PK_GI_VOXEL_SIZE;
-	const float correctionAngle = tan(angle / 8.0f);
-	const float S = (1.0f + correctionAngle) / (1.0f - correctionAngle) * PK_GI_VOXEL_SIZE / 2.0f;
-	
-	float4 A = 0.0.xxxx;
-	float3 T = cross(N, float3(0.0f, 1.0f, 0.0f));
+    const float angle = PK_PI / 3.0f;
+    const float levelscale = 2.0f * tan(angle / 2.0f) / PK_GI_VOXEL_SIZE;
+    const float correctionAngle = tan(angle / 8.0f);
+    const float S = (1.0f + correctionAngle) / (1.0f - correctionAngle) * PK_GI_VOXEL_SIZE / 2.0f;
+    
+    float4 A = 0.0.xxxx;
+    float3 T = cross(N, float3(0.0f, 1.0f, 0.0f));
     float3 B = cross(T, N);
 
-	const float3 directions[6] =
-	{
-		N, 
-		0.7071f * N + 0.7071f * T,
-		0.7071f * N + 0.7071f * (0.309f * T + 0.951f * B),
-		0.7071f * N + 0.7071f * (-0.809f * T + 0.588f * B),
-		0.7071f * N - 0.7071f * (-0.809f * T - 0.588f * B),
-		0.7071f * N - 0.7071f * (0.309f * T - 0.951f * B)
-	};
+    const float3 directions[6] =
+    {
+        N, 
+        0.7071f * N + 0.7071f * T,
+        0.7071f * N + 0.7071f * (0.309f * T + 0.951f * B),
+        0.7071f * N + 0.7071f * (-0.809f * T + 0.588f * B),
+        0.7071f * N - 0.7071f * (-0.809f * T - 0.588f * B),
+        0.7071f * N - 0.7071f * (0.309f * T - 0.951f * B)
+    };
 
-	for (uint i = 0u; i < 6; ++i)
-	{
-		const float3 D = directions[i];
-		
-		float4 C = 0.0.xxxx;
-		float AO = 1.0f;
-		float DI = S;
+    for (uint i = 0u; i < 6; ++i)
+    {
+        const float3 D = directions[i];
+        
+        float4 C = 0.0.xxxx;
+        float AO = 1.0f;
+        float DI = S;
 
-		for (uint j = 0u; j < 11u; ++j)
-		{
-		    float level = max(1.0f, log2(levelscale * DI));
-			float4 V = SampleGI_WS(O + D * DI, level);
-		    C.rgb += (1.0f - C.a) * V.a * (V.rgb / max(1e-4f, V.a));
-			C.a = min(1.0f, C.a + (1.0f - C.a) * V.a);
-			DI += S * level;
+        for (uint j = 0u; j < 11u; ++j)
+        {
+            float level = max(1.0f, log2(levelscale * DI));
+            float4 V = SampleGI_WS(O + D * DI, level);
+            C.rgb += (1.0f - C.a) * V.a * (V.rgb / max(1e-4f, V.a));
+            C.a = min(1.0f, C.a + (1.0f - C.a) * V.a);
+            DI += S * level;
 
-			AO *= max(0.0f, 1.0f - V.a * (1.0f + level * 0.5f));
-		}
+            AO *= max(0.0f, 1.0f - V.a * (1.0f + level * 0.5f));
+        }
 
-		C.a = AO;
-		A += C * max(0.0f, dot(N, D));
-	}
+        C.a = AO;
+        A += C * max(0.0f, dot(N, D));
+    }
  
-	float groundOcclusion = saturate(N.y + 1.0f);
+    float groundOcclusion = saturate(N.y + 1.0f);
 
-	A.a *= groundOcclusion;
-	A /= 6.0f;
+    A.a *= groundOcclusion;
+    A /= 6.0f;
 
-	return A;
+    return A;
 }
