@@ -2008,6 +2008,9 @@
     <None Include="res\shaders\includes\SampleDistribution.glsl" />
     <None Include="res\shaders\includes\SHL1.glsl" />
     <None Include="res\shaders\CS_SceneGI_Denoise.shader" />
+    <None Include="res\shaders\includes\Kernels.glsl" />
+    <None Include="res\shaders\includes\BlueNoise.glsl" />
+    <None Include="res\textures\default\T_Bluenoise128x64.ktx2" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

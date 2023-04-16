@@ -39,13 +39,5 @@ void main()
     // But doing so invalidates configurations done using external tools.
     color = ApplyColorGrading(color);
 
-    if (uv.x > 0.5f)
-    {
-        float2 suv = uv.xy;
-        suv.x -= 0.5f;
-        color = SampleGI_Meta(int2(suv * pk_ScreenSize.xy)).variance.xxx;
-        color = LinearToGamma(color);
-    }
-
     imageStore(_MainTex, coord, float4(color, 1.0f));
 }

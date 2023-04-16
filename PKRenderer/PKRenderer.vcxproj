@@ -847,11 +847,13 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_VolumeFogLightDensity.shader" />
     <None Include="res\shaders\CS_VolumeFogScatter.shader" />
     <None Include="res\shaders\includes\Blit.glsl" />
+    <None Include="res\shaders\includes\BlueNoise.glsl" />
     <None Include="res\shaders\includes\ClusterIndexing.glsl" />
     <None Include="res\shaders\includes\Common.glsl" />
     <None Include="res\shaders\includes\Constants.glsl" />
     <None Include="res\shaders\includes\Encoding.glsl" />
     <None Include="res\shaders\includes\BRDF.glsl" />
+    <None Include="res\shaders\includes\Kernels.glsl" />
     <None Include="res\shaders\includes\Reconstruction.glsl" />
     <None Include="res\shaders\includes\SampleDistribution.glsl" />
     <None Include="res\shaders\includes\SharedTemporalAntialiasing.glsl" />
@@ -891,6 +893,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\SH_WS_Shadowmap_Generic.shader" />
     <None Include="res\shaders\SH_WS_Unlit_Color.shader" />
     <None Include="res\textures\default\T_Black.ktx2" />
+    <None Include="res\textures\default\T_Bluenoise128x64.ktx2" />
     <None Include="res\textures\default\T_White.ktx2" />
     <None Include="res\textures\environment\T_Asphalt_D.ktx2" />
     <None Include="res\textures\environment\T_Asphalt_H.ktx2" />

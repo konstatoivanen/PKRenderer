@@ -11,6 +11,7 @@ bool IsNaN(float2 v) { return IsNaN(v.x) || IsNaN(v.y); }
 bool IsNaN(float3 v) { return IsNaN(v.x) || IsNaN(v.y) || IsNaN(v.z); }
 bool IsNaN(float4 v) { return IsNaN(v.x) || IsNaN(v.y) || IsNaN(v.z) || IsNaN(v.w); }
 float2 make_rotation(float radian)  { return float2(cos(radian), sin(radian)); }
+float2 rotate2D(float2 v, float2 r)  { return float2(v.x * r.x - v.y * r.y, v.x * r.y + v.y * r.x); }
 float4 mul3x3(const float3x3 matrix, const float4 v) { return float4(matrix * v.xyz, v.w); }
 
 #define lerp_outquad(a, b, c) (-((b) - (a)) * (c) * ((c) - 2) + (a))

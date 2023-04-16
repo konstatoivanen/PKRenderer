@@ -214,19 +214,23 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetImage(hash->pk_ScreenGI_Meta_Read, m_screenSpaceMeta.get(), 0, 1);
         cmd->Dispatch(m_computeBakeGI, 0, dimension);
 
+        cmd->BeginDebugScope("SceneGI.Denoise.Variance", PK_COLOR_GREEN);
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_SHY_Read, m_screenSpaceSHY.get(), range0);
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range0);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_SHY_Write, m_screenSpaceSHY.get(), range1);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range1);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_Meta_Write, m_screenSpaceMeta.get(), 0, 0);
         cmd->Dispatch(m_computeDenoise, 0, dimension);
+        cmd->EndDebugScope();
         
+        cmd->BeginDebugScope("SceneGI.Denoise.Disk", PK_COLOR_GREEN);
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_SHY_Read, m_screenSpaceSHY.get(), range1);
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range1);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_SHY_Write, m_screenSpaceSHY.get(), range0);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range0);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_Meta_Read, m_screenSpaceMeta.get(), 0, 0);
         cmd->Dispatch(m_computeDenoise, 1, dimension);
+        cmd->EndDebugScope();
 
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_SHY_Read, m_screenSpaceSHY.get(), range0);
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range0);
