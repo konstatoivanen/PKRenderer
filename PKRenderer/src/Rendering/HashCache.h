@@ -76,8 +76,6 @@ namespace PK::Rendering
         DECLARE_HASH(pk_SceneGI_ST)
         DECLARE_HASH(pk_SceneGI_Swizzle)
         DECLARE_HASH(pk_SceneGI_Checkerboard_Offset)
-        DECLARE_HASH(pk_SceneGI_SampleIndex)
-        DECLARE_HASH(pk_SceneGI_SampleCount)
         DECLARE_HASH(pk_SceneGI_VoxelSize)
         DECLARE_HASH(pk_SceneGI_LuminanceGain)
         DECLARE_HASH(pk_SceneGI_ChrominanceGain)

@@ -25,7 +25,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             struct MeshKey
             {
                 Mesh* mesh;
-                uint32_t submesh;
+                uint64_t submesh;
 
                 constexpr bool operator < (const MeshKey& other) const
                 {

@@ -132,6 +132,11 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         m_frameFences.resize(m_maxFramesInFlight);
 
+        for (auto& fence : m_frameFences)
+        {
+            fence.Invalidate();
+        }
+
         m_outofdate = false;
 
         PK_LOG_VERBOSE("Swapchain rebuilt! (%i,%i)", m_extent.width, m_extent.height);

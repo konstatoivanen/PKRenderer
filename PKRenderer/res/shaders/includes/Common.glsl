@@ -129,6 +129,7 @@ float3x3 ComposeMikkTangentSpaceMatrix(float3 normal, float4 tangent)
 }
 
 bool DepthReprojectCull(const float depthCurrent, const float depthPrevious) { return (abs(depthCurrent - depthPrevious - pk_ViewSpaceCameraDelta.z) / depthCurrent) < 0.1f; }
+bool DepthFarCull(const float depth) { return depth < (pk_ProjectionParams.z - 1e-2f); }
 bool ClipPosCull(const float4 clippos) { return clippos.z > 0.0f && all(lessThan(abs(clippos.xy / clippos.w), 1.0f.xx)); }
 bool WorldToClipSpaceCull(float3 worldpos) { return ClipPosCull(WorldToClipPos(worldpos)); }
 

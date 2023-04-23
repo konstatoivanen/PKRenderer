@@ -9,8 +9,6 @@ PK_DECLARE_CBUFFER(pk_SceneGI_Params, PK_SET_SHADER)
     float4 pk_SceneGI_ST;
     uint4 pk_SceneGI_Swizzle;
     int4 pk_SceneGI_Checkerboard_Offset;
-    uint pk_SceneGI_SampleIndex;
-    uint pk_SceneGI_SampleCount;
     float pk_SceneGI_VoxelSize; 
     float pk_SceneGI_LuminanceGain; 
     float pk_SceneGI_ChrominanceGain; 
@@ -31,14 +29,10 @@ PK_DECLARE_SET_SHADER uniform sampler2DArray pk_ScreenGI_CoCg_Read;
 
 struct SceneGIMeta
 {
-    float variance;
-    float mindist;
+    float2 moments;
     uint history;
     bool isOOB;
     bool isActive;
-
-    // Interpreted fields
-    float history01;
 };
 
 #define PK_GI_DIFF_LVL 0
@@ -47,27 +41,26 @@ struct SceneGIMeta
 #define PK_GI_VOXEL_SIZE pk_SceneGI_VoxelSize
 #define PK_GI_VOXEL_LENGTH pk_SceneGI_VoxelSize * PK_SQRT2
 #define PK_GI_CHECKERBOARD_OFFSET pk_SceneGI_Checkerboard_Offset.xy
-#define PK_GI_SAMPLE_INDEX pk_SceneGI_SampleIndex
-#define PK_GI_SAMPLE_COUNT pk_SceneGI_SampleCount
 #define PK_GI_RAY_MIN_DISTANCE 0.005f
 #define PK_GI_RAY_MAX_DISTANCE 100.0f
 #define PK_GI_MAX_HISTORY 32u
 
 //----------UTILITIES----------//
-uint MurmurHash13(uint3 src)
+uint2 MurmurHash21(uint src) 
 {
     const uint M = 0x5bd1e995u;
-    uint h = 1190494759u;
+    uint2 h = uint2(1190494759u, 2147483647u);
     src *= M; src ^= src>>24u; src *= M;
-    h *= M; h ^= src.x; h *= M; h ^= src.y; h *= M; h ^= src.z;
+    h *= M; h ^= src;
     h ^= h>>13u; h *= M; h ^= h>>15u;
     return h;
 }
 
 float2 GetSampleOffset(uint2 coord, uint offset)
 {
-    uint hash = MurmurHash13(uint3(coord.xy, offset));
-    return Hammersley(offset + hash, 1024);
+    uint2 hash = MurmurHash21(offset / 64u);
+    float3 v = GlobalNoiseBlue(coord.xy + hash, offset);
+    return saturate(v.xy + ((v.z - 0.5f) / 256.0f));
 }
 
 float3 VoxelToWorldSpace(int3 coord) { return (float3(coord) * PK_GI_VOXEL_SIZE) + pk_SceneGI_ST.xyz + PK_GI_VOXEL_SIZE * 0.5f; }
@@ -100,21 +93,20 @@ bool SceneGI_NormalReject(float3 normal)
 SceneGIMeta SceneGI_DecodeMeta(uint v)
 {
     SceneGIMeta meta;
-    meta.variance = float(bitfieldExtract(v, 0, 12)) / 4095.0f;
-    meta.mindist = float(bitfieldExtract(v, 12, 12)) / 4095.0f;
+    meta.moments.x = 2.0f * pow2(float(bitfieldExtract(v, 0, 12)) / 4095.0f);
+    meta.moments.y = 4.0f * pow2(float(bitfieldExtract(v, 12, 12)) / 4095.0f);
     meta.history = bitfieldExtract(v, 24, 6);
     meta.isOOB = bitfieldExtract(v, 30, 1) != 0;
     meta.isActive = bitfieldExtract(v, 31, 1) != 0;
-    meta.history01 = meta.history / float(PK_GI_MAX_HISTORY); 
     return meta;
 }
 
 uint SceneGI_EncodeMeta(const SceneGIMeta m)
 {
     uint v = 0u;
-    v = bitfieldInsert(v, min(4095u, uint(m.variance * 4095.0f)), 0, 12);
-    v = bitfieldInsert(v, min(4095u, uint(m.mindist * 4095.0f)), 12, 12);
-    v = bitfieldInsert(v, m.history, 24, 6);
+    v = bitfieldInsert(v, min(4095u, uint(saturate(sqrt(m.moments.x * 0.5f)) * 4095.0f)), 0, 12);
+    v = bitfieldInsert(v, min(4095u, uint(saturate(sqrt(m.moments.y * 0.25f)) * 4095.0f)), 12, 12);
+    v = bitfieldInsert(v, min(PK_GI_MAX_HISTORY, m.history), 24, 6);
     v = bitfieldInsert(v, m.isOOB ? 1u : 0u, 30, 1);
     v = bitfieldInsert(v, m.isActive ? 1u : 0u, 31, 1);
     return v;
@@ -162,14 +154,14 @@ SH SampleGI_SH(const int2 coord, int level)
 
 void StoreGI_SH(const int2 coord, const int level, const SH sh)
 {
-    imageStore(pk_ScreenGI_SHY_Write, int3(coord, level), sh.SHY);
+    imageStore(pk_ScreenGI_SHY_Write, int3(coord, level), sh.Y);
     imageStore(pk_ScreenGI_CoCg_Write, int3(coord, level), float4(sh.CoCg, 0.0f.xx));
 }
 
 float3 SampleGI_VS_Diffuse(const float2 uv, const float3 direction)
 {
     SH diffSH = SampleGI_SH(uv, PK_GI_DIFF_LVL);
-    diffSH.SHY *= pk_SceneGI_LuminanceGain;
+    diffSH.Y *= pk_SceneGI_LuminanceGain;
     diffSH.CoCg *= pk_SceneGI_ChrominanceGain;
     return SHToIrradiance(diffSH, direction);
 }
@@ -177,12 +169,12 @@ float3 SampleGI_VS_Diffuse(const float2 uv, const float3 direction)
 void SampleGI_VS(inout float3 diffuse, inout float3 specular, const float2 uv, const float3 N, const float3 V, const float R)
 {
     SH diffSH = SampleGI_SH(uv, PK_GI_DIFF_LVL);
-    diffSH.SHY *= pk_SceneGI_LuminanceGain;
+    diffSH.Y *= pk_SceneGI_LuminanceGain;
     diffSH.CoCg *= pk_SceneGI_ChrominanceGain;
     diffuse = SHToIrradiance(diffSH, N);
     
     SH specSH = SampleGI_SH(uv, PK_GI_SPEC_LVL);
-    specSH.SHY *= pk_SceneGI_LuminanceGain;
+    specSH.Y *= pk_SceneGI_LuminanceGain;
     specSH.CoCg *= pk_SceneGI_ChrominanceGain;
     specular = SHToIrradiance(specSH, normalize(reflect(V, N)));
 }

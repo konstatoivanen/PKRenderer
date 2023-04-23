@@ -9,7 +9,6 @@ float3 GlobalNoiseBlueUV(float2 coord) { return tex2D(pk_Bluenoise256, coord).xy
 
 float3 GlobalNoiseBlue(uint2 coord, uint layer) 
 {
-    coord.xy += (layer / 64u).xx * 7u;
     return texelFetch(pk_Bluenoise128x64, int3(coord.x % 128, coord.y % 128, layer % 64), 0).xyz; 
 }
 

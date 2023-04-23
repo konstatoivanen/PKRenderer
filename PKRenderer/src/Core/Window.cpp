@@ -18,7 +18,7 @@ namespace PK::Core
 
         switch (api)
         {
-        case APIType::Vulkan: return CreateScope<VulkanWindow>(GraphicsAPI::GetActiveDriver<VulkanDriver>(), properties);
+            case APIType::Vulkan: return CreateScope<VulkanWindow>(GraphicsAPI::GetActiveDriver<VulkanDriver>(), properties);
         }
 
         return nullptr;

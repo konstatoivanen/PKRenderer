@@ -4,26 +4,10 @@
 #include includes/SharedSceneGI.glsl
 #include includes/Reconstruction.glsl
 
-SceneGIMeta SampleGI_Meta_Bilinear(float2 uv, const int2 size)
+float2 GetPreviousUV(const float depth, const int2 coord, const int2 size)
 {
-    uv = uv * size - 0.5f.xx;
-    const int2 coord = int2(uv);
-    const float2 ddxy = uv - coord;
-
-    float4 w;
-    w.x = (1.0f - ddxy.x) * (1.0f - ddxy.y);
-    w.y = ddxy.x * (1.0f - ddxy.y);
-    w.z = (1.0f - ddxy.x) * ddxy.y;
-    w.w = ddxy.x * ddxy.y;
-
-    SceneGIMeta m00 = SceneGI_DecodeMeta(imageLoad(pk_ScreenGI_Meta_Read, coord + int2(0, 0)).x);
-    SceneGIMeta m10 = SceneGI_DecodeMeta(imageLoad(pk_ScreenGI_Meta_Read, coord + int2(1, 0)).x);
-    SceneGIMeta m01 = SceneGI_DecodeMeta(imageLoad(pk_ScreenGI_Meta_Read, coord + int2(0, 1)).x);
-    SceneGIMeta m11 = SceneGI_DecodeMeta(imageLoad(pk_ScreenGI_Meta_Read, coord + int2(1, 1)).x);
-
-    m00.mindist = m00.mindist * w.x + m10.mindist * w.y + m01.mindist * w.z + m11.mindist * w.w;
-    m00.history = uint(m00.history * w.x + m10.history * w.y + m01.history * w.z + m11.history * w.w);
-    return m00;
+    float4 viewpos = float4(SampleViewPosition(coord, size, depth), 1.0f);
+    return ClipToUVW(mul(pk_MATRIX_LD_P, viewpos)).xy;// -(pk_ProjectionJitter.zw * pk_ScreenParams.zw * 0.5f);
 }
 
 layout(local_size_x = 16, local_size_y = 4, local_size_z = 1) in;
@@ -37,29 +21,85 @@ void main()
         return;
     }
 
-    float2 uv = (coord + 0.5f.xx) / size;
+    const float2 uv = (coord + 0.5f.xx) / size;
+    const float depth = SampleLinearDepth(uv);
+    const float3 normal = SampleViewNormal(coord);
+    const float2 prevUV = GetPreviousUV(depth, coord, size) * size - 0.5.xx;
+    const int2 prevCoord = int2(prevUV);
+    const float2 ddxy = prevUV - prevCoord;
 
-    float currentZ = SampleLinearDepth(uv);
-    float4 viewpos = float4(SampleViewPosition(coord, size, currentZ), 1.0f);
-    float3 uvw = ClipToUVW(mul(pk_MATRIX_LD_P, viewpos)) - float3(pk_ProjectionJitter.zw * pk_ScreenParams.zw * 0.5f, 0.0f);
-    float previousZ = SamplePreviousLinearDepth(uvw.xy);
-    bool hasDiscontinuity = !DepthReprojectCull(currentZ, previousZ) || Any_Greater(abs(uvw.xy - 0.5f), 0.5f.xx);
-
-    SceneGIMeta meta = SampleGI_Meta_Bilinear(uvw.xy, size);
-    meta.history = min(PK_GI_MAX_HISTORY, hasDiscontinuity ? 0u : (meta.history + 1));
-    meta.mindist = hasDiscontinuity ? 1.0f : meta.mindist;
-    meta.isActive = All_Equal(coord % PK_GI_CHECKERBOARD_OFFSET, uint2(0u));
-    meta.isOOB = currentZ > (pk_ProjectionParams.z - 1e-2f);
-
-    SH diffSH = SampleGI_SH(uvw.xy, PK_GI_DIFF_LVL);
-    SH specSH = SampleGI_SH(uvw.xy, PK_GI_SPEC_LVL);
+    const float bilinearWeights[2][2] =
+    {
+        { (1.0 - ddxy.x) * (1.0 - ddxy.y), ddxy.x * (1.0 - ddxy.y) },
+        { (1.0 - ddxy.x) * ddxy.y,         ddxy.x * ddxy.y         },
+    };
     
-    //Remove directional SH component based on normal similarity to reduce sampling error.
-    const float3 currentN = SampleViewNormal(coord);
-    const float3 previousN = SamplePreviousViewNormal(uvw.xy);
-    const float normalDot = max(0.0f, dot(currentN, previousN));
-    diffSH = DegenerateSH(diffSH, normalDot);
-    specSH = DegenerateSH(specSH, normalDot);
+    SH diffSH = pk_ZeroSH;
+    SH specSH = pk_ZeroSH;
+    SceneGIMeta meta = SceneGI_DecodeMeta(0u);
+
+    meta.isOOB = !DepthFarCull(depth);
+
+    if (meta.isOOB)
+    {
+        StoreGI_Meta(coord, meta);
+        StoreGI_SH(coord, PK_GI_DIFF_LVL, diffSH);
+        StoreGI_SH(coord, PK_GI_SPEC_LVL, specSH);
+        return;
+    }
+
+    meta.isActive = All_Equal(coord % PK_GI_CHECKERBOARD_OFFSET, uint2(0u));
+
+    float fHistory = 0.0f;
+
+    float wSH = 0.0f;
+    float wSum = 0.0f;
+
+    for (int yy = 0; yy <= 1; ++yy)
+    for (int xx = 0; xx <= 1; ++xx)
+    {
+        int2 xy = prevCoord + int2(xx, yy);
+        const float weight = bilinearWeights[yy][xx];
+        
+        if (Any_Less(xy, int2(0)) || Any_GEqual(xy, size) || weight < 1e-4f)
+        {
+            continue;
+        }
+
+        const float depthPrev = SamplePreviousLinearDepth(xy);
+        const float3 normalPrev = SamplePreviousViewNormal(xy);
+        const float normalDot = dot(normalPrev, normal);
+
+        if (!DepthReprojectCull(depth, depthPrev) || normalDot <= 0.05f)
+        {
+            continue;
+        }
+
+        diffSH = AddSH(diffSH, SampleGI_SH(xy, PK_GI_DIFF_LVL), weight * normalDot);
+        specSH = AddSH(specSH, SampleGI_SH(xy, PK_GI_SPEC_LVL), weight * normalDot);
+        
+        SceneGIMeta sampleMeta = SceneGI_DecodeMeta(imageLoad(pk_ScreenGI_Meta_Read, xy).x);
+        meta.moments += sampleMeta.moments * weight;
+        fHistory += sampleMeta.history * weight;
+
+        wSum += weight;
+        wSH += weight * normalDot;
+    }
+
+    if (wSH > 1e-4f)
+    {
+        meta.moments /= wSum;
+        meta.history = uint(fHistory / wSum) + 1;
+
+        diffSH = ScaleSH(diffSH, 1.0f / wSH);
+        specSH = ScaleSH(specSH, 1.0f / wSH);
+    }
+
+    if (IsNaN(diffSH.Y) || IsNaN(diffSH.CoCg) || IsNaN(specSH.Y) || IsNaN(specSH.CoCg))
+    {
+        diffSH = pk_ZeroSH;
+        specSH = pk_ZeroSH;
+    }
 
     StoreGI_Meta(coord, meta);
     StoreGI_SH(coord, PK_GI_DIFF_LVL, diffSH);

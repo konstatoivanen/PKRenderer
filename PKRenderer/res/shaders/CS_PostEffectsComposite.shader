@@ -39,5 +39,14 @@ void main()
     // But doing so invalidates configurations done using external tools.
     color = ApplyColorGrading(color);
 
+    // GI Debug
+    //if (uv.x > 0.75)
+    //{
+    //    int2 metacoord = coord - int2(size.x / 4, 0);
+    //    SceneGIMeta meta = SampleGI_Meta(metacoord);
+    //    float depth = SampleLinearDepth(coord);
+    //    color = (meta.moments.y - pow2(meta.moments.x)).xxx;
+    //}
+
     imageStore(_MainTex, coord, float4(color, 1.0f));
 }

@@ -118,7 +118,7 @@ namespace PK::Rendering::VulkanRHI
     {
         PK_THROW_ASSERT(m_inWindowScope, "Trying to end a frame that outside of a frame scope!")
 
-            VkSemaphore renderingFinishedSignal = VK_NULL_HANDLE;
+        VkSemaphore renderingFinishedSignal = VK_NULL_HANDLE;
 
         // Window write is expected to be in the last (and implicit) graphics submit.
         m_driver->queues->GetQueue(QueueType::Graphics)->QueueWait(m_imageAvailableSignal, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);

@@ -35,7 +35,6 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Texture> m_screenSpaceCoCg;
             Utilities::Ref<Objects::Texture> m_screenSpaceMeta;
             Utilities::Ref<Objects::Texture> m_screenSpaceRayhits;
-            uint32_t m_rayIndex = 0u;
             uint32_t m_checkerboardIndex = 0u;
             int32_t m_rasterAxis = 0;
     };

@@ -1,13 +1,16 @@
 #version 460
 #pragma PROGRAM_COMPUTE
-#include includes/Common.glsl
+#include includes/Lighting.glsl
 #include includes/SharedSceneGI.glsl
 #include includes/Reconstruction.glsl
+#include includes/SharedHistogram.glsl
 
-float3 SampleEnvironment(float3 direction, float roughness)
+struct SampleIndirect
 {
-    return HDRDecode(tex2DLod(pk_SceneOEM_HDR, OctaUV(direction), 4.0f * roughness)).rgb * pk_SceneOEM_Exposure;
-}
+    SH sh;
+    float3 direction;
+    float luminance;
+};
 
 float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direction, const float dist, const float roughness)
 {
@@ -36,11 +39,32 @@ float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direct
     const float level = roughness * roughness * log2(max(1.0f, dist) / PK_GI_VOXEL_SIZE);
     const float4 voxel = SampleGI_WS(worldpos, level);
 
-    const float3 env = SampleEnvironment(direction, roughness);
+    const float3 env = SampleEnvironment(OctaUV(direction), roughness);
     const float envclip = saturate(PK_GI_RAY_MAX_DISTANCE * (1.0f - (dist / PK_GI_RAY_MAX_DISTANCE)));
     const float alpha = max(voxel.a, 1.0f / (PK_GI_VOXEL_MAX_MIP * PK_GI_VOXEL_MAX_MIP));
 
     return lerp(env, voxel.rgb / alpha, envclip);
+}
+
+SampleIndirect GetSample(const int2 coord, const int layer, const float3 normal)
+{
+    SampleIndirect s;
+    s.sh = SampleGI_SH(coord, layer);
+    s.direction = normalize(s.sh.Y.wyz + normal * 0.01f);
+    s.luminance = SHToLuminance(s.sh, normal);
+    return s;
+}
+
+SampleIndirect GetSampleNew(const int2 coord, const float3 origin, const float3 normal, const float3 direction, const float hitDistance, const float vxconeSize)
+{
+    const float3 radiance = SampleRadiance(coord, origin, direction, hitDistance, vxconeSize);
+
+    SampleIndirect s;
+    s.sh = IrradianceToSH(radiance, direction);
+    s.direction = direction;
+    s.luminance = SHToLuminance(s.sh, normal);
+    return s;
+
 }
 
 layout(local_size_x = 16, local_size_y = 4, local_size_z = 1) in;
@@ -66,30 +90,29 @@ void main()
     const float3 O = SampleWorldPosition(coord, size);
     const float3 V = normalize(O - pk_WorldSpaceCameraPos.xyz);
     const float2 Xi = GetSampleOffset(coord, pk_FrameIndex);
+
     const float2 hitDist = imageLoad(pk_ScreenGI_Hits, coord).xy;
+    const float exposure = GetAutoExposure();
+    const uint history = 1u + meta.history;
+    
+    SampleIndirect diff = GetSample(coord, PK_GI_DIFF_LVL, N);
+    SampleIndirect spec = GetSample(coord, PK_GI_SPEC_LVL, N);
+    SampleIndirect sDiff = GetSampleNew(coord, O, N, ImportanceSampleLambert(Xi, N), hitDist.x, 0.5f);
+    SampleIndirect sSpec = GetSampleNew(coord, O, N, ImportanceSampleSmithGGX(Xi, N, V, NR.w), hitDist.y, 0.0f);
 
-    const float3 diffDir = ImportanceSampleLambert(Xi, N);
-    const float3 specDir = ImportanceSampleSmithGGX(Xi, N, V, NR.w);
+    const float wHistory = 1.0f / history;
+    const float wDiff = max(0.01f, wHistory);
+    const float wSpec = max(exp(-NR.w) * 0.1f, wHistory);
 
-    const float3 diffRad = SampleRadiance(coord, O, diffDir, hitDist.x, 0.5f);
-    const float3 specRad = SampleRadiance(coord, O, specDir, hitDist.y, 0.0f);
+    diff.sh = InterpolateSH(diff.sh, sDiff.sh, wDiff);
+    spec.sh = InterpolateSH(spec.sh, sSpec.sh, wSpec);
 
-    SH diffSH = SampleGI_SH(coord, PK_GI_DIFF_LVL);
-    SH specSH = SampleGI_SH(coord, PK_GI_SPEC_LVL);
-    SH diffSHSample = IrradianceToSH(diffRad, diffDir);
-    SH specSHSample = IrradianceToSH(specRad, specDir);
+    const float exposedLum = sqrt(sDiff.luminance) * exposure;
 
-    float diffLum = SHToLuminance(diffSH, N);
-    float specLum = SHToLuminance(specSH, reflect(V, N));
+    meta.moments = lerp(meta.moments, float2(exposedLum, pow2(exposedLum)), wDiff);
+    meta.moments /= lerp(1.0f, 0.25f, 1.0f / history);
 
-    const bool refreshDiff = meta.history == 0u || IsNaN(diffSH.SHY.w) || IsNaN(diffSH.CoCg);
-    const bool refreshSpec = meta.history == 0u || IsNaN(specSH.SHY.w) || IsNaN(specSH.CoCg);
-    float interDiff = lerp(0.01f, 0.5f, saturate(diffLum * 5.0f));
-    float interSpec = lerp(0.05f, 0.5f, saturate(specLum * 5.0f));
-
-    diffSH = refreshDiff ? diffSHSample : InterpolateSH(diffSH, diffSHSample, interDiff);
-    specSH = refreshSpec ? specSHSample : InterpolateSH(specSH, specSHSample, interSpec);
-
-    StoreGI_SH(coord, PK_GI_DIFF_LVL, diffSH);
-    StoreGI_SH(coord, PK_GI_SPEC_LVL, specSH);
+    StoreGI_Meta(coord, meta);
+    StoreGI_SH(coord, PK_GI_DIFF_LVL, diff.sh);
+    StoreGI_SH(coord, PK_GI_SPEC_LVL, spec.sh);
 }

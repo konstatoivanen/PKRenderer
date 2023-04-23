@@ -130,9 +130,9 @@ namespace PK::Utilities::HashHelpers
 
         switch (len)
         {
-        case 3: h2 ^= ((unsigned char*)data)[2] << 16;
-        case 2: h2 ^= ((unsigned char*)data)[1] << 8;
-        case 1: h2 ^= ((unsigned char*)data)[0];
+            case 3: h2 ^= ((unsigned char*)data)[2] << 16;
+            case 2: h2 ^= ((unsigned char*)data)[1] << 8;
+            case 1: h2 ^= ((unsigned char*)data)[0];
             h2 *= m;
         };
 

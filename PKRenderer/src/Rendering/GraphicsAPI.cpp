@@ -5,6 +5,7 @@
 #include "GraphicsAPI.h"
 #include "Rendering/VulkanRHI/VulkanDriver.h"
 
+
 namespace PK::Rendering
 {
     using namespace Core::Services;
@@ -14,6 +15,7 @@ namespace PK::Rendering
     using namespace Utilities;
 
     // #define PK_NO_VK_VALIDATION
+    // #define PK_FORCE_VK_VALIDATION
 
     static GraphicsDriver* s_currentDriver;
 
@@ -23,7 +25,7 @@ namespace PK::Rendering
         switch (api)
         {
             case APIType::Vulkan:
-#if defined(PK_DEBUG) && !defined(PK_NO_VK_VALIDATION)
+#if defined(PK_DEBUG) && !defined(PK_NO_VK_VALIDATION) || defined(PK_FORCE_VK_VALIDATION)
                 const std::vector<const char*> PK_VALIDATION_LAYERS =
                 {
                     "VK_LAYER_KHRONOS_validation"
