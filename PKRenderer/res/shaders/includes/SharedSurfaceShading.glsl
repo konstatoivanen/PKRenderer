@@ -16,7 +16,7 @@
     
     #define PK_META_EARLY_CLIP_UVW(w, c, n)         \
         float3 vq = QuantizeWorldToVoxelSpace(w);   \
-        if (!TryGetWorldToClipUVW(vq, c) ||         \
+        if (!Test_WorldToClipUVW(vq, c) ||          \
              SceneGI_VoxelHasValue(w) ||            \
              !SceneGI_NormalReject(n))              \
         {                                           \

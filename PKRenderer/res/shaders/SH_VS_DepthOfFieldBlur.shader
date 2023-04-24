@@ -80,6 +80,7 @@ layout(location = 1) out float4 SV_Target1;
 void main()
 {
 #if defined(PASS_PREFILTER)
+
     const int2 OFFS[4] = { int2(-1,-1), int2(1,1), int2(-1,1), int2(1,-1) };
     float4 depths = SampleLinearDepthOffsets(vs_TEXCOORD0, OFFS);
 
@@ -93,12 +94,14 @@ void main()
     average /= dot(weights, 1.0f.xxxx);
 
     SV_Target0 = float4(average, dot(cocs, 0.25f.xxxx));
+
 #else
+
     float4 center = tex2D(_MainTex, vs_TEXCOORDS[0].xy);
     float4 background = float4(0.0f);
     float4 foreground = float4(0.0f);
 
-#pragma unroll SAMPLE_COUNT
+    #pragma unroll SAMPLE_COUNT
     for (uint i = 1; i <= SAMPLE_COUNT; ++i)
     {
         float4 value = tex2D(_MainTex, vs_TEXCOORDS[i].xy);
@@ -115,6 +118,7 @@ void main()
 
     SV_Target0 = foreground;
     SV_Target1 = background;
+
 #endif
 };
 

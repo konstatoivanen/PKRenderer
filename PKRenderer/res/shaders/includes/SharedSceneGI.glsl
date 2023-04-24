@@ -31,8 +31,6 @@ struct SceneGIMeta
 {
     float2 moments;
     uint history;
-    bool isOOB;
-    bool isActive;
 };
 
 #define PK_GI_DIFF_LVL 0
@@ -43,7 +41,7 @@ struct SceneGIMeta
 #define PK_GI_CHECKERBOARD_OFFSET pk_SceneGI_Checkerboard_Offset.xy
 #define PK_GI_RAY_MIN_DISTANCE 0.005f
 #define PK_GI_RAY_MAX_DISTANCE 100.0f
-#define PK_GI_MAX_HISTORY 32u
+#define PK_GI_MAX_HISTORY 255u
 
 //----------UTILITIES----------//
 uint2 MurmurHash21(uint src) 
@@ -95,9 +93,7 @@ SceneGIMeta SceneGI_DecodeMeta(uint v)
     SceneGIMeta meta;
     meta.moments.x = 2.0f * pow2(float(bitfieldExtract(v, 0, 12)) / 4095.0f);
     meta.moments.y = 4.0f * pow2(float(bitfieldExtract(v, 12, 12)) / 4095.0f);
-    meta.history = bitfieldExtract(v, 24, 6);
-    meta.isOOB = bitfieldExtract(v, 30, 1) != 0;
-    meta.isActive = bitfieldExtract(v, 31, 1) != 0;
+    meta.history = bitfieldExtract(v, 24, 8);
     return meta;
 }
 
@@ -106,9 +102,7 @@ uint SceneGI_EncodeMeta(const SceneGIMeta m)
     uint v = 0u;
     v = bitfieldInsert(v, min(4095u, uint(saturate(sqrt(m.moments.x * 0.5f)) * 4095.0f)), 0, 12);
     v = bitfieldInsert(v, min(4095u, uint(saturate(sqrt(m.moments.y * 0.25f)) * 4095.0f)), 12, 12);
-    v = bitfieldInsert(v, min(PK_GI_MAX_HISTORY, m.history), 24, 6);
-    v = bitfieldInsert(v, m.isOOB ? 1u : 0u, 30, 1);
-    v = bitfieldInsert(v, m.isActive ? 1u : 0u, 31, 1);
+    v = bitfieldInsert(v, min(PK_GI_MAX_HISTORY, m.history), 24, 8);
     return v;
 }
 

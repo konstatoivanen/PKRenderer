@@ -128,30 +128,30 @@ float3x3 ComposeMikkTangentSpaceMatrix(float3 normal, float4 tangent)
     return mul(float3x3(pk_MATRIX_M), float3x3(T, B, N));
 }
 
-bool DepthReprojectCull(const float depthCurrent, const float depthPrevious) { return (abs(depthCurrent - depthPrevious - pk_ViewSpaceCameraDelta.z) / depthCurrent) < 0.1f; }
-bool DepthFarCull(const float depth) { return depth < (pk_ProjectionParams.z - 1e-2f); }
-bool ClipPosCull(const float4 clippos) { return clippos.z > 0.0f && all(lessThan(abs(clippos.xy / clippos.w), 1.0f.xx)); }
-bool WorldToClipSpaceCull(float3 worldpos) { return ClipPosCull(WorldToClipPos(worldpos)); }
+bool Test_DepthReproject(const float z, const float zprev, const float bias) { return (abs(z - zprev - pk_ViewSpaceCameraDelta.z) / z) < bias; }
+bool Test_DepthFar(const float depth) { return depth < (pk_ProjectionParams.z - 1e-2f); }
+bool Test_ClipPos(const float4 clippos) { return clippos.z > 0.0f && all(lessThan(abs(clippos.xy / clippos.w), 1.0f.xx)); }
+bool Test_WorldToClipSpace(float3 worldpos) { return Test_ClipPos(WorldToClipPos(worldpos)); }
 
-bool TryGetViewToClipUVW(float3 viewpos, inout float3 uvw)
+bool Test_ViewToClipUVW(float3 viewpos, inout float3 uvw)
 {
     float4 clippos = ViewToClipPos(viewpos);
     uvw = ClipToUVW(clippos);
-    return ClipPosCull(clippos);
+    return Test_ClipPos(clippos);
 }
 
-bool TryGetWorldToClipUVW(float3 worldpos, inout float3 uvw)
+bool Test_WorldToClipUVW(float3 worldpos, inout float3 uvw)
 {
     float4 clippos = WorldToClipPos(worldpos);
     uvw = ClipToUVW(clippos);
-    return ClipPosCull(clippos);
+    return Test_ClipPos(clippos);
 }
 
-bool TryGetWorldToPrevClipUVW(float3 worldpos, inout float3 uvw)
+bool Test_WorldToPrevClipUVW(float3 worldpos, inout float3 uvw)
 {
     float4 clippos = mul(pk_MATRIX_L_VP, float4(worldpos, 1.0f));
     uvw = ClipToUVW(clippos);
-    return ClipPosCull(clippos);
+    return Test_ClipPos(clippos);
 }
 
 #endif

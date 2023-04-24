@@ -18,7 +18,7 @@ float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direct
     float3 clipuvw;
 
     // Try sample previous forward output for better sampling.
-    if (TryGetWorldToPrevClipUVW(worldpos, clipuvw))
+    if (Test_WorldToPrevClipUVW(worldpos, clipuvw))
     {
         float sdepth = SamplePreviousLinearDepth(clipuvw.xy);
         bool isMiss = sdepth > pk_ProjectionParams.z - 1e-4f && dist >= PK_GI_RAY_MAX_DISTANCE - 0.01f;
@@ -78,16 +78,17 @@ void main()
         return;
     }
 
-    SceneGIMeta meta = SampleGI_Meta(coord);
+    const float depth = SampleLinearDepth(coord);
 
-    if (meta.isOOB)
+    if (!Test_DepthFar(depth))
     {
         return;
     }
 
+    SceneGIMeta meta = SampleGI_Meta(coord);
     const float4 NR = SampleWorldNormalRoughness(coord);
     const float3 N = NR.xyz;
-    const float3 O = SampleWorldPosition(coord, size);
+    const float3 O = SampleWorldPosition(coord, size, depth);
     const float3 V = normalize(O - pk_WorldSpaceCameraPos.xyz);
     const float2 Xi = GetSampleOffset(coord, pk_FrameIndex);
 
@@ -107,10 +108,8 @@ void main()
     diff.sh = InterpolateSH(diff.sh, sDiff.sh, wDiff);
     spec.sh = InterpolateSH(spec.sh, sSpec.sh, wSpec);
 
-    const float exposedLum = sqrt(sDiff.luminance) * exposure;
-
-    meta.moments = lerp(meta.moments, float2(exposedLum, pow2(exposedLum)), wDiff);
-    meta.moments /= lerp(1.0f, 0.25f, 1.0f / history);
+    meta.moments = lerp(meta.moments, float2(sDiff.luminance, pow2(sDiff.luminance)), wDiff);
+    meta.moments /= lerp(1.0f, 0.0625f, 1.0f / history);
 
     StoreGI_Meta(coord, meta);
     StoreGI_SH(coord, PK_GI_DIFF_LVL, diff.sh);

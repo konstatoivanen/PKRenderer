@@ -44,7 +44,6 @@ void main()
     //{
     //    int2 metacoord = coord - int2(size.x / 4, 0);
     //    SceneGIMeta meta = SampleGI_Meta(metacoord);
-    //    float depth = SampleLinearDepth(coord);
     //    color = (meta.moments.y - pow2(meta.moments.x)).xxx;
     //}
 

@@ -22,11 +22,13 @@ void main()
     }
 
     const float2 uv = (coord + 0.5f.xx) / size;
-    const float depth = SampleLinearDepth(uv);
-    const float3 normal = SampleViewNormal(coord);
-    const float2 prevUV = GetPreviousUV(depth, coord, size) * size - 0.5.xx;
-    const int2 prevCoord = int2(prevUV);
-    const float2 ddxy = prevUV - prevCoord;
+    const float depth = SampleLinearDepth(coord);
+    const float3 vnormal = SampleViewNormal(coord);
+    const float depthBias = lerp(0.1f, 0.01f, -vnormal.z);
+    const float3 normal = mul(float3x3(pk_MATRIX_I_V), vnormal);
+    const float2 uvPrev = GetPreviousUV(depth, coord, size) * size - 0.5.xx;
+    const int2 coordPrev = int2(uvPrev);
+    const float2 ddxy = uvPrev - coordPrev;
 
     const float bilinearWeights[2][2] =
     {
@@ -37,10 +39,9 @@ void main()
     SH diffSH = pk_ZeroSH;
     SH specSH = pk_ZeroSH;
     SceneGIMeta meta = SceneGI_DecodeMeta(0u);
+   // meta.isActive = All_Equal(coord % PK_GI_CHECKERBOARD_OFFSET, uint2(0u));
 
-    meta.isOOB = !DepthFarCull(depth);
-
-    if (meta.isOOB)
+    if (!Test_DepthFar(depth))
     {
         StoreGI_Meta(coord, meta);
         StoreGI_SH(coord, PK_GI_DIFF_LVL, diffSH);
@@ -48,29 +49,26 @@ void main()
         return;
     }
 
-    meta.isActive = All_Equal(coord % PK_GI_CHECKERBOARD_OFFSET, uint2(0u));
 
     float fHistory = 0.0f;
-
-    float wSH = 0.0f;
     float wSum = 0.0f;
 
     for (int yy = 0; yy <= 1; ++yy)
     for (int xx = 0; xx <= 1; ++xx)
     {
-        int2 xy = prevCoord + int2(xx, yy);
+        const int2 xy = coordPrev + int2(xx, yy);
         const float weight = bilinearWeights[yy][xx];
         
-        if (Any_Less(xy, int2(0)) || Any_GEqual(xy, size) || weight < 1e-4f)
+        if (!All_InArea(xy, int2(0), size) || weight < 1e-4f)
         {
             continue;
         }
 
         const float depthPrev = SamplePreviousLinearDepth(xy);
         const float3 normalPrev = SamplePreviousViewNormal(xy);
-        const float normalDot = dot(normalPrev, normal);
+        const float normalDot = dot(normalPrev, vnormal);
 
-        if (!DepthReprojectCull(depth, depthPrev) || normalDot <= 0.05f)
+        if (!Test_DepthReproject(depth, depthPrev, depthBias) || normalDot <= 0.05f)
         {
             continue;
         }
@@ -79,20 +77,17 @@ void main()
         specSH = AddSH(specSH, SampleGI_SH(xy, PK_GI_SPEC_LVL), weight * normalDot);
         
         SceneGIMeta sampleMeta = SceneGI_DecodeMeta(imageLoad(pk_ScreenGI_Meta_Read, xy).x);
-        meta.moments += sampleMeta.moments * weight;
-        fHistory += sampleMeta.history * weight;
-
-        wSum += weight;
-        wSH += weight * normalDot;
+        meta.moments += sampleMeta.moments * weight * normalDot;
+        fHistory += sampleMeta.history * weight * normalDot;
+        wSum += weight * normalDot;
     }
 
-    if (wSH > 1e-4f)
+    if (wSum > 1e-4f)
     {
         meta.moments /= wSum;
-        meta.history = uint(fHistory / wSum) + 1;
-
-        diffSH = ScaleSH(diffSH, 1.0f / wSH);
-        specSH = ScaleSH(specSH, 1.0f / wSH);
+        meta.history = uint(round(fHistory / wSum)) + 1;
+        diffSH = ScaleSH(diffSH, 1.0f / wSum);
+        specSH = ScaleSH(specSH, 1.0f / wSum);
     }
 
     if (IsNaN(diffSH.Y) || IsNaN(diffSH.CoCg) || IsNaN(specSH.Y) || IsNaN(specSH.CoCg))

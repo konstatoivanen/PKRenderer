@@ -42,6 +42,7 @@ float4 mul3x3(const float3x3 matrix, const float4 v) { return float4(matrix * v.
 #define All_LEqual(a, b) all(lessThanEqual(a,b))
 #define All_Less(a,b) all(lessThan(a,b))
 #define All_Greater(a,b) all(greaterThan(a,b))
+#define All_InArea(a,b,c) (all(greaterThanEqual(a,b)) && all(lessThan(a,c)))
 
 #define PK_SET_GLOBAL 0
 #define PK_SET_PASS 1
