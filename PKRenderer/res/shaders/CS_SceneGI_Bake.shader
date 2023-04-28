@@ -3,11 +3,11 @@
 #include includes/Lighting.glsl
 #include includes/SharedSceneGI.glsl
 #include includes/Reconstruction.glsl
-#include includes/SharedHistogram.glsl
 
 struct SampleIndirect
 {
     SH sh;
+    float3 radiance;
     float3 direction;
     float luminance;
 };
@@ -55,14 +55,13 @@ SampleIndirect GetSample(const int2 coord, const int layer, const float3 normal)
     return s;
 }
 
-SampleIndirect GetSampleNew(const int2 coord, const float3 origin, const float3 normal, const float3 direction, const float hitDistance, const float vxconeSize)
+SampleIndirect GetSampleNew(const int2 coord, const float3 O, const float3 N, const float3 D, const float hitDistance, const float vxconeSize)
 {
-    const float3 radiance = SampleRadiance(coord, origin, direction, hitDistance, vxconeSize);
-
     SampleIndirect s;
-    s.sh = IrradianceToSH(radiance, direction);
-    s.direction = direction;
-    s.luminance = SHToLuminance(s.sh, normal);
+    s.radiance = SampleRadiance(coord, O, D, hitDistance, vxconeSize);
+    s.sh = IrradianceToSH(s.radiance, D);
+    s.direction = D;
+    s.luminance = SHToLuminance(s.sh, N);
     return s;
 
 }
@@ -91,18 +90,31 @@ void main()
     const float3 O = SampleWorldPosition(coord, size, depth);
     const float3 V = normalize(O - pk_WorldSpaceCameraPos.xyz);
     const float2 Xi = GetSampleOffset(coord, pk_FrameIndex);
-
     const float2 hitDist = imageLoad(pk_ScreenGI_Hits, coord).xy;
-    const float exposure = GetAutoExposure();
-    const uint history = 1u + meta.history;
     
     SampleIndirect diff = GetSample(coord, PK_GI_DIFF_LVL, N);
     SampleIndirect spec = GetSample(coord, PK_GI_SPEC_LVL, N);
     SampleIndirect sDiff = GetSampleNew(coord, O, N, ImportanceSampleLambert(Xi, N), hitDist.x, 0.5f);
     SampleIndirect sSpec = GetSampleNew(coord, O, N, ImportanceSampleSmithGGX(Xi, N, V, NR.w), hitDist.y, 0.0f);
 
+    const float sPDF = max(0.01f, dot(N, sDiff.direction));
+    const float sSHPDF = sPDF * pk_L1Basis_Cosine.y * pk_L1Basis.y + pk_L1Basis_Cosine.x * pk_L1Basis.x;
+    const float sLum = dot(pk_Luminance.xyz, sDiff.radiance * sSHPDF);
+
+    const float cLum = SHToLuminance(diff.sh, sDiff.direction);
+    const float maxLum = max(diff.luminance, sDiff.luminance);
+    const float graLum = max(0.0, cLum - sLum) * (1.0 - smoothstep(1.0, 10.0, diff.luminance));
+
+    // @TODO luminance delta scaling based on sh projection is not very accurate. test other alternatives
+    const float lumDelta = maxLum > 1e-4f ? saturate(graLum  / maxLum) : 0.0f;
+    const float antiLagMult = 1.0f;// pow(1.0 - lumDelta * 0.005f, 10);
+
+    float history = meta.history;
+    history *= antiLagMult;
+    history = clamp(history + 1.0f, 1.0f, PK_GI_MAX_HISTORY + 1.0f);
+
     const float wHistory = 1.0f / history;
-    const float wDiff = max(0.01f, wHistory);
+    const float wDiff = lerp(max(0.01f, wHistory), 1.0f, 0.0f);
     const float wSpec = max(exp(-NR.w) * 0.1f, wHistory);
 
     diff.sh = InterpolateSH(diff.sh, sDiff.sh, wDiff);
@@ -110,6 +122,7 @@ void main()
 
     meta.moments = lerp(meta.moments, float2(sDiff.luminance, pow2(sDiff.luminance)), wDiff);
     meta.moments /= lerp(1.0f, 0.0625f, 1.0f / history);
+    meta.moments.x = meta.history == 0u ? 0.0f : meta.moments.x;
 
     StoreGI_Meta(coord, meta);
     StoreGI_SH(coord, PK_GI_DIFF_LVL, diff.sh);

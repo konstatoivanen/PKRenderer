@@ -18,10 +18,9 @@ struct WaveData
 {
     SH diff;
     SH spec;
-    uint history;
-    float variance;
-    float roughness;
+    uint meta;
     float depth;
+    float roughness;
     float3 normal;
 };
 
@@ -56,7 +55,7 @@ shared WaveData waveData[SHARED_WIDTH][SHARED_WIDTH];
 WaveData LoadWaveData(const int2 coord)
 {
     WaveData d;
-    d.history = 0xFFFFFFFFu;
+    d.meta = 0xFFFFFFFFu;
 
     if (!All_InArea(coord, int2(0), pk_ScreenSize.xy))
     {
@@ -76,10 +75,7 @@ WaveData LoadWaveData(const int2 coord)
     const float4 nr = SampleWorldNormalRoughness(coord);
     d.normal = nr.xyz;
     d.roughness = nr.w;
-    
-    const SceneGIMeta meta = SampleGI_Meta(coord);
-    d.variance = meta.moments.y - pow2(meta.moments.x);
-    d.history = meta.history;
+    d.meta = SampleGI_MetaEnc(coord);
     return d;
 }
 
@@ -129,10 +125,14 @@ float PrefilterLuminanceVariance()
     {
         WaveData w = GET_WAVE_DATA(xx, yy);
 
-        if (w.history != 0xFFFFFFFFu)
+        if (w.meta == 0xFFFFFFFFu)
         {
-            r += GET_WAVE_DATA(xx, yy).variance * gaussianKernel[abs(xx)][abs(yy)];
+            continue;
         }
+
+        const float2 moments = SceneGI_DecodeMeta(w.meta).moments;
+        const float variance = moments.y - pow2(moments.x);
+        r += variance * gaussianKernel[abs(xx)][abs(yy)];
     }
 
     return sqrt(max(r, 0.0));
@@ -141,14 +141,20 @@ float PrefilterLuminanceVariance()
 
 void FilterEmpty(in WaveData c, inout FilterOutput o) {}
 
-void FilterSVGF(in WaveData c, inout FilterOutput o)
+void FilterSVGF(inout WaveData c, inout FilterOutput o)
 {
+    SceneGIMeta c_meta = SceneGI_DecodeMeta(c.meta);
+
     const float c_l = SHToLuminance(c.diff, c.normal);
-    const float variance = PrefilterLuminanceVariance();
+    const float variance = PrefilterLuminanceVariance() * (c_meta.history < 5 ? 4.0f : 1.0f);
 
     const float wLumMult = 1.0 / (4.0f * variance + 1e-4f);
     const float wRoughnessMult = saturate(c.roughness * 30);
-    const float normalPower = clamp((c.history + 1), 1, 256);
+    const float normalPower = min(c_meta.history + 1, 256);
+
+    float2 moments = float2(c_l, pow2(c_l));
+    float fHist = c_meta.history;
+    float wHist = 1.0f;
 
     for (int x = -DENOISE_FILTER_RADIUS; x <= DENOISE_FILTER_RADIUS; ++x)
     for (int y = -DENOISE_FILTER_RADIUS; y <= DENOISE_FILTER_RADIUS; ++y)
@@ -160,40 +166,55 @@ void FilterSVGF(in WaveData c, inout FilterOutput o)
 
         const WaveData s = GET_WAVE_DATA(x, y);
     
-        if (s.history >= 0xFFFFu)
+        if (s.meta == 0xFFFFFFFFu)
         {
             continue;
         }
-    
-        const float s_nd = max(0.0f, dot(c.normal, s.normal));
+
+        const float s_nd = saturate(dot(c.normal, s.normal));
         const float s_l = SHToLuminance(s.diff, c.normal);
-        const float w_l = exp(-abs(c_l - s_l) * wLumMult);
+
+        const float w_l = c_meta.history < 5u ? 1.0f : exp(-abs(c_l - s_l) * wLumMult);
         const float w_z = exp(-abs(c.depth - s.depth) / min(c.depth, s.depth));
-        const float w_h = (s.history + 1.0) / 256.0f;
         const float w_n = pow(s_nd, normalPower);
         const float w_r = max(0.0, 1.0 - 10 * abs(c.roughness - s.roughness)) * wRoughnessMult;
-        const float w_w = WAVELET_KERNEL[abs(y)][abs(x)];
-        const float wBase = saturate(w_z * w_w * w_n * w_h);
+        const float w_w = c_meta.history < 5u ? 1.0f : WAVELET_KERNEL[abs(y)][abs(x)];
+        const float wBase = w_z * w_w * w_n;
         const float wDiff = wBase * w_l;
         const float wSpec = wBase * w_r;
    
+        moments += float2(sqrt(s_l), pow2(sqrt(s_l))) * wDiff;
+        fHist += SceneGI_DecodeMeta(s.meta).history * wDiff;
+        wHist += wDiff;
+
         o.wDiff += wDiff;
         o.wSpec += wSpec;
         o.diff = AddSH(o.diff, s.diff, wDiff);
         o.spec = AddSH(o.spec, s.spec, wSpec);
     }
+
+    //if (c_meta.history < 5)
+    //{
+    //    moments /= wHist;
+    //    c_meta.moments = moments;// *10.0f;// *16.0f;
+    //}
+
+    c_meta.history = uint(c_meta.history + saturate(1.0 - variance) * 1.5);
+    c.meta = SceneGI_EncodeMeta(c_meta);
 }
 
 void FilterSparse3x3(in WaveData c, inout FilterOutput o)
 {
-    c.variance = sqrt(max(0.0f, c.variance));
+    SceneGIMeta c_meta = SceneGI_DecodeMeta(c.meta);
+
+    const float variance = sqrt(max(0.0f, c_meta.moments.y - pow2(c_meta.moments.x)));
 
     const float c_l = SHToLuminance(c.diff, c.normal);
-    const float wLumMult = 1.0 / (4.0f * c.variance + 1e-4f);
+    const float wLumMult = 1.0 / (4.0f * variance + 1e-4f);
     const float wRoughnessMult = saturate(c.roughness * 30);
-    const float normalPower = clamp((c.history + 1) * 2, 1, 512);
+    const float normalPower = min((c_meta.history + 1) * 2, 512);
 
-    const int filterVScale = int(c.variance * 4.0f);
+    const int filterVScale = int(variance * 4.0f);
     const int filterScale0 = int(clamp(filterVScale + 1u, 1u, 4u));
     const int filterScale1 = int(clamp(filterVScale, 1u, 6u));
 
@@ -209,7 +230,7 @@ void FilterSparse3x3(in WaveData c, inout FilterOutput o)
         offset *= x == 0 || y == 0 ? filterScale1 : filterScale0;
         const WaveData s = GET_WAVE_DATA(offset.x, offset.y);
     
-        if (s.history >= 0xFFFFu)
+        if (s.meta == 0xFFFFFFFFu)
         {
             continue;
         }
@@ -231,7 +252,6 @@ void FilterSparse3x3(in WaveData c, inout FilterOutput o)
     }
 }
 
-
 layout(local_size_x = DENOISE_GROUP_SIZE_X, local_size_y = DENOISE_GROUP_SIZE_X, local_size_z = 1) in;
 void main()
 {
@@ -242,7 +262,7 @@ void main()
 
     WaveData c = GET_WAVE_DATA(0, 0);
 
-    if (c.history >= 0xFFFFu)
+    if (c.meta == 0xFFFFFFFFu)
     {
         return;
     }
@@ -254,6 +274,7 @@ void main()
 
     FILTER_PASS(c, o);
 
+    StoreGI_MetaEnc(coord, c.meta);
     StoreGI_SH(coord, PK_GI_DIFF_LVL, ScaleSH(o.diff, 1.0f / o.wDiff));
     StoreGI_SH(coord, PK_GI_SPEC_LVL, ScaleSH(o.spec, 1.0f / o.wSpec));
 }

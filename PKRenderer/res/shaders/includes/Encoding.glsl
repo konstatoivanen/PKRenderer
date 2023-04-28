@@ -72,3 +72,35 @@ float3 HSVToRGB(float hue, float saturation, float value)
 {
     return HSVToRGB(float3(hue, saturation, value));
 }
+
+uint EncodeE5GR9(float2 v)
+{
+    const int N = 9;
+    const int Np2 = 1 << N;
+    const int B = 15;
+
+    v = clamp(v, float2(0.0), float2(65408));
+    float max_c = max(v.x, v.y);
+
+    // for log2
+    if (max_c == 0.0)
+    {
+        return 0;
+    }
+
+    int exp_shared_p = max(-B-1, int(floor(log2(max_c)))) + 1 + B;
+    int max_s = int(round(max_c * exp2(-float(exp_shared_p - B - N))));
+    int exp_shared = max_s != Np2 ? exp_shared_p : exp_shared_p + 1;
+
+    float s = exp2(-float(exp_shared - B - N));
+    uint2 rgb_s = uint2(round(v * s));
+
+    return (exp_shared << (3 * 9)) | (rgb_s.y << (2 * 9)) | (rgb_s.x << (1 * 9));
+}
+
+float2 DecodeE5GR9(const uint v)
+{
+    int exp_shared = int(v >> (3 * 9));
+    float s = exp2(float(exp_shared - 15 - 9));
+    return s * float2((v >> (1 * 9)) & ((1 << 9) - 1), (v >> (2 * 9)) & ((1 << 9) - 1));
+}

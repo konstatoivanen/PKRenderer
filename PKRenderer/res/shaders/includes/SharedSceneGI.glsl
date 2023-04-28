@@ -91,23 +91,20 @@ bool SceneGI_NormalReject(float3 normal)
 SceneGIMeta SceneGI_DecodeMeta(uint v)
 {
     SceneGIMeta meta;
-    meta.moments.x = 2.0f * pow2(float(bitfieldExtract(v, 0, 12)) / 4095.0f);
-    meta.moments.y = 4.0f * pow2(float(bitfieldExtract(v, 12, 12)) / 4095.0f);
-    meta.history = bitfieldExtract(v, 24, 8);
+    meta.moments = DecodeE5GR9(v);
+    meta.history = bitfieldExtract(v, 0, 9);
     return meta;
 }
 
 uint SceneGI_EncodeMeta(const SceneGIMeta m)
 {
-    uint v = 0u;
-    v = bitfieldInsert(v, min(4095u, uint(saturate(sqrt(m.moments.x * 0.5f)) * 4095.0f)), 0, 12);
-    v = bitfieldInsert(v, min(4095u, uint(saturate(sqrt(m.moments.y * 0.25f)) * 4095.0f)), 12, 12);
-    v = bitfieldInsert(v, min(PK_GI_MAX_HISTORY, m.history), 24, 8);
-    return v;
+    return bitfieldInsert(EncodeE5GR9(m.moments), min(PK_GI_MAX_HISTORY, m.history), 0, 9);
 }
 
-SceneGIMeta SampleGI_Meta(int2 coord) { return SceneGI_DecodeMeta(imageLoad(pk_ScreenGI_Meta_Read, coord).x); }
-void StoreGI_Meta(int2 coord, const SceneGIMeta meta) { imageStore(pk_ScreenGI_Meta_Write, coord, uint4(SceneGI_EncodeMeta(meta))); }
+uint SampleGI_MetaEnc(int2 coord) { return imageLoad(pk_ScreenGI_Meta_Read, coord).x; }
+void StoreGI_MetaEnc(int2 coord, const uint meta) { imageStore(pk_ScreenGI_Meta_Write, coord, uint4(meta)); }
+SceneGIMeta SampleGI_Meta(int2 coord) { return SceneGI_DecodeMeta(SampleGI_MetaEnc(coord)); }
+void StoreGI_Meta(int2 coord, const SceneGIMeta meta) { StoreGI_MetaEnc(coord, SceneGI_EncodeMeta(meta)); }
 
 //----------VOXEL SAMPLE / STORE FUNCTIONS----------//
 float4 SampleGI_WS(float3 worldposition, float level)

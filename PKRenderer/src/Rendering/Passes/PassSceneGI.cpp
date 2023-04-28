@@ -155,9 +155,11 @@ namespace PK::Rendering::Passes
         auto range1 = TextureViewRange(0, 2, 0, 2);
 
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_SHY_Read, m_screenSpaceSHY.get(), range0);
-        GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range0);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_SHY_Write, m_screenSpaceSHY.get(), range1);
+        
+        GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range0);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range1);
+
         GraphicsAPI::SetImage(hash->pk_ScreenGI_Meta_Read, m_screenSpaceMeta.get(), 0, 0);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_Meta_Write, m_screenSpaceMeta.get(), 0, 1);
         cmd->Dispatch(m_computeReprojectMask, 0, { resolution.x, resolution.y, 1u });
@@ -220,15 +222,19 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range1);
 
         GraphicsAPI::SetImage(hash->pk_ScreenGI_Meta_Read, m_screenSpaceMeta.get(), 0, 0);
+        GraphicsAPI::SetImage(hash->pk_ScreenGI_Meta_Write, m_screenSpaceMeta.get(), 0, 1);
         cmd->Dispatch(m_computeDenoise, 0, dimension);
         cmd->EndDebugScope();
         
-        cmd->BeginDebugScope("SceneGI.Denoise.Disk", PK_COLOR_GREEN);
+        cmd->BeginDebugScope("SceneGI.Denoise.Sparse", PK_COLOR_GREEN);
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_SHY_Read, m_screenSpaceSHY.get(), range1);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_SHY_Write, m_screenSpaceSHY.get(), range0);
 
         GraphicsAPI::SetTexture(hash->pk_ScreenGI_CoCg_Read, m_screenSpaceCoCg.get(), range1);
         GraphicsAPI::SetImage(hash->pk_ScreenGI_CoCg_Write, m_screenSpaceCoCg.get(), range0);
+
+        GraphicsAPI::SetImage(hash->pk_ScreenGI_Meta_Read, m_screenSpaceMeta.get(), 0, 1);
+        GraphicsAPI::SetImage(hash->pk_ScreenGI_Meta_Write, m_screenSpaceMeta.get(), 0, 0);
         cmd->Dispatch(m_computeDenoise, 1, dimension);
         cmd->EndDebugScope();
 
