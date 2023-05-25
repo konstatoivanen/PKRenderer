@@ -163,7 +163,10 @@ namespace PK::Rendering::VulkanRHI::Objects
         uint32_t groupCountY = (uint32_t)ceilf(dimensions.y / (float)groupSize.y);
         uint32_t groupCountZ = (uint32_t)ceilf(dimensions.z / (float)groupSize.z);
         
+        // Add debug scopes to compute calls as they're not otherwise visible in NSight timeline
+        BeginDebugScope(m_renderState->GetShaderName().c_str(), PK_COLOR_MAGENTA);
         vkCmdDispatch(m_commandBuffer, groupCountX, groupCountY, groupCountZ);
+        EndDebugScope();
     }
 
     void VulkanCommandBuffer::DispatchRays(Math::uint3 dimensions)

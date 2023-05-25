@@ -15,10 +15,10 @@
     #undef PK_HEIGHTMAPS
     
     #define PK_META_EARLY_CLIP_UVW(w, c, n)         \
-        float3 vq = QuantizeWorldToVoxelSpace(w);   \
+        float3 vq = GI_QuantizeWorldToVoxelSpace(w);\
         if (!Test_WorldToClipUVW(vq, c) ||          \
-             SceneGI_VoxelHasValue(w) ||            \
-             !SceneGI_NormalReject(n))              \
+             GI_Test_VX_HasValue(w) ||              \
+             !GI_Test_VX_Normal(n))                 \
         {                                           \
             return;                                 \
         }                                           \
@@ -27,8 +27,8 @@
 
 
     #define PK_META_DECLARE_SURFACE_OUTPUT
-    #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) StoreGI_WS(worldpos, color)
-    #define PK_META_WORLD_TO_CLIPSPACE(position)  WorldToVoxelNDCSpace(position)
+    #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) GI_Store_VX(worldpos, color)
+    #define PK_META_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNDCSpace(position)
 #else
     #define PK_META_EARLY_CLIP_UVW(w, c, n) c = GetFragmentClipUVW(); 
     #define PK_META_DECLARE_SURFACE_OUTPUT out float4 SV_Target0;
@@ -209,15 +209,15 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
             float deltaDepth = SampleLinearDepth(surf.clipuvw.xy) - LinearizeDepth(surf.clipuvw.z); 
             
             // Fragment is in view
-            if (deltaDepth > -0.01f && deltaDepth < 0.1f)
+            if (deltaDepth > -0.01f && deltaDepth < 0.1f && !GI_Test_VX_History(surf.clipuvw.xy))
             {
                 // Sample screen space SH values for more accurate results.
-                indirect = SampleGI_VS_Diffuse(surf.clipuvw.xy, surf.normal);
+                indirect = GI_Load_Diffuse(surf.clipuvw.xy, surf.normal);
             }
             else
             {
                 float3 environmentDiffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
-                float4 tracedDiffuse = SampleGI_ConeTraceDiffuse(surf.worldpos, surf.normal, 0.0f);
+                float4 tracedDiffuse = GI_ConeTrace_Diffuse(surf.worldpos, surf.normal, 0.0f);
                 indirect = (environmentDiffuse * tracedDiffuse.a + tracedDiffuse.rgb);
             }
 
@@ -231,20 +231,11 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
             surf.normal = GetViewShiftedNormal(surf.normal, surf.viewdir);
             float3 specColor = GetSurfaceSpecularColor(surf.albedo, surf.metallic);
             float reflectivity = GetSurfaceAlphaReflectivity(surf);
-            Indirect indirect = GetStaticSceneIndirect(surf.normal, surf.viewdir, surf.roughness);
             LightTile tile = GetLightTile(surf.clipuvw);
     
-            float3 indirectSpecDir = 0.0f.xxx;
-
-            SampleGI_VS
-            (
-                indirect.diffuse, 
-                indirect.specular, 
-                surf.clipuvw.xy, 
-                surf.normal, 
-                -surf.viewdir, 
-                surf.roughness
-            );
+            Indirect indirect;// = GetStaticSceneIndirect(surf.normal, surf.viewdir, surf.roughness);
+            indirect.diffuse = GI_Load_Diffuse(surf.clipuvw.xy, surf.normal); 
+            indirect.specular = GI_Load_Specular(surf.clipuvw.xy, normalize(reflect(-surf.viewdir, surf.normal))); 
     
             INIT_BRDF_CACHE
             (

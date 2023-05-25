@@ -26,25 +26,26 @@ void main()
     color = max(0.0f.xxx, color);
 
     float exposure = GetAutoExposure();
-    exposure *= Vignette(uv);
+  //  exposure *= Vignette(uv);
 
-    color = Bloom(color, uv);
+   // color = Bloom(color, uv);
     // Applying a bit of desaturation to reduce high intensity value color blowout
     // A personal preference really (should probably try to deprecate this).
     color = Saturation(color, 0.8f);
     color = TonemapACESFilm(color, exposure);
-    color = FilmGrain(color, float2(coord));
+   // color = FilmGrain(color, float2(coord));
     color = LinearToGamma(color);
     // This should perhaps be done before gamma corretion.
     // But doing so invalidates configurations done using external tools.
-    color = ApplyColorGrading(color);
+  //  color = ApplyColorGrading(color);
 
     // GI Debug
     //if (uv.x > 0.75)
     //{
     //    int2 metacoord = coord - int2(size.x / 4, 0);
-    //    SceneGIMeta meta = SampleGI_Meta(metacoord);
-    //    color = (meta.moments.y - pow2(meta.moments.x)).xxx;
+    //    float2 moments = GI_Load_Moments(metacoord);
+    //    float variance = sqrt(max(0.0f, moments.y - pow2(moments.x))) * exposure;
+    //    color = GI_Load_HistoryVariance(metacoord).yyy;
     //}
 
     imageStore(_MainTex, coord, float4(color, 1.0f));

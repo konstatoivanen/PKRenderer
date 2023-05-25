@@ -20,12 +20,16 @@ namespace PK::Rendering::Passes
             void RenderGI(Objects::CommandBuffer* cmd);
 
         private:
+            void SetPassParams(bool flipSH, bool flipMeta);
+
             Structs::FixedFunctionShaderAttributes m_voxelizeAttribs{};
             Objects::Shader* m_computeClear = nullptr;
             Objects::Shader* m_computeMipmap = nullptr;
-            Objects::Shader* m_computeBakeGI = nullptr;
-            Objects::Shader* m_computeReprojectMask = nullptr;
-            Objects::Shader* m_computeDenoise = nullptr;
+            Objects::Shader* m_computeAccumulate = nullptr;
+            Objects::Shader* m_computeReproject = nullptr;
+            Objects::Shader* m_computeVariance = nullptr;
+            Objects::Shader* m_computeSVGF = nullptr;
+            Objects::Shader* m_computeDiskFilter = nullptr;
             Objects::Shader* m_rayTraceGatherGI = nullptr;
             Objects::ShaderBindingTable m_shaderBindingTable;
             Utilities::Ref<Objects::ConstantBuffer> m_parameters;
@@ -34,7 +38,7 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Texture> m_screenSpaceSHY;
             Utilities::Ref<Objects::Texture> m_screenSpaceCoCg;
             Utilities::Ref<Objects::Texture> m_screenSpaceMeta;
-            Utilities::Ref<Objects::Texture> m_screenSpaceRayhits;
+            Utilities::Ref<Objects::Texture> m_rayhits;
             uint32_t m_checkerboardIndex = 0u;
             int32_t m_rasterAxis = 0;
     };

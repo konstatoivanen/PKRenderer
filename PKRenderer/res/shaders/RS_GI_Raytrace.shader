@@ -6,28 +6,30 @@
 struct TracePayload
 {
     float hitDistance;
+    bool isMiss;
 };
 
 #pragma PROGRAM_RAY_GENERATION
 
 PK_DECLARE_RT_PAYLOAD_OUT(TracePayload, payload, 0);
 
-float TraceRay(const float3 origin, const float3 direction)
+bool TraceRay(const float3 origin, const float3 direction, inout float hitDistance)
 {
     payload.hitDistance = PK_GI_RAY_MAX_DISTANCE;
     traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction, PK_GI_RAY_MAX_DISTANCE, 0);
-    return payload.hitDistance;
+    hitDistance = payload.hitDistance;
+    return payload.isMiss;
 }
 
 void main()
 {
-    int2 size = imageSize(pk_ScreenGI_Hits).xy;
+    int2 size = imageSize(pk_GI_RayHits).xy;
     int2 coord = int2(gl_LaunchIDEXT.xy);
     float depth = SampleLinearDepth(coord);
 
     if (depth >= pk_ProjectionParams.z - 1e-4f)
     {
-        imageStore(pk_ScreenGI_Hits, coord, float4(PK_GI_RAY_MIN_DISTANCE, PK_GI_RAY_MIN_DISTANCE, 0.0f.xx));
+        imageStore(pk_GI_RayHits, coord, uint4(0xFFFFFFFF));
         return;
     }
 
@@ -41,29 +43,32 @@ void main()
     // Offsetting origin by min distance fixes this, but causes incorrect near hits.
     const float3 O = SampleWorldPosition(coord, size, depth) + N * PK_GI_RAY_MIN_DISTANCE;
     const float3 V = normalize(O - pk_WorldSpaceCameraPos.xyz);
-    const float2 Xi = GetSampleOffset(coord, pk_FrameIndex);
 
-    const float3 dirDiff = ImportanceSampleLambert(Xi, N);
-    const float3 dirSpec = ImportanceSampleSmithGGX(Xi, N, V, NR.w);
+    float3 dirDiff, dirSpec;
+    GI_GetRayDirections(coord, pk_FrameIndex, N, V, NR.w, dirDiff, dirSpec);
 
-    const float distanceDiff = TraceRay(O, dirDiff);
-    const float distanceSpec = TraceRay(O, dirSpec);
+    float distanceDiff, distanceSpec;
+    const bool isMissDiff = TraceRay(O, dirDiff, distanceDiff);
+    const bool isMissSpec = TraceRay(O, dirSpec, distanceSpec);
+    
+    uint packedHits = packHalf2x16(float2(distanceDiff, distanceSpec));
+    packedHits = isMissDiff ? bitfieldInsert(packedHits, 0xFFFF, 0, 16) : packedHits;
+    packedHits = isMissSpec ? bitfieldInsert(packedHits, 0xFFFF, 16, 16) : packedHits;
 
-    imageStore(pk_ScreenGI_Hits, coord, float4(distanceDiff, distanceSpec, 0.0f.xx));
+    imageStore(pk_GI_RayHits, coord, uint4(packedHits));
 }
 
 #pragma PROGRAM_RAY_MISS
 PK_DECLARE_RT_PAYLOAD_IN(TracePayload, payload, 0);
 
-void main()
-{
-    // Do nothing for now
-}
+// Do nothing for now
+void main() { payload.isMiss = true; }
 
 #pragma PROGRAM_RAY_CLOSEST_HIT
 PK_DECLARE_RT_PAYLOAD_IN(TracePayload, payload, 0);
 
 void main()
 {
+    payload.isMiss = false;
     payload.hitDistance = PK_GET_RAY_HIT_DISTANCE;
 }

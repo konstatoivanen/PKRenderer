@@ -20,8 +20,7 @@ float Density(float3 pos)
 float3 GetAmbientColor(float3 position, float3 direction, float3 viewdir)
 {
     float anistropy = GetLightAnisotropy(viewdir, direction, pk_Volume_Anisotropy);
-
-    float4 scenegi = SampleGI_ConeTraceVolumetric(position);
+    float4 scenegi = GI_ConeTrace_Volumetric(position);
     float3 staticgi = SampleEnvironment(OctaUV(direction), 1.0f) * anistropy;
     return staticgi * scenegi.a + scenegi.rgb;
 }

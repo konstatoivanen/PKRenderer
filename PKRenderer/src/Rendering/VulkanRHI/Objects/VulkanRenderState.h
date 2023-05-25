@@ -69,6 +69,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             constexpr Math::uint3 GetComputeGroupSize() const { return m_pipelineKey.shader->GetGroupSize(); }
             constexpr bool HasPipeline() const { return m_pipeline != nullptr; }
             constexpr bool HasDynamicTargets() const { return m_renderPassKey->dynamicTargets; }
+            const std::string& GetShaderName() const { return m_pipelineKey.shader->GetName(); }
             inline VkPipelineBindPoint GetPipelineBindPoint() const { return EnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetType()); }
             VkRenderPassBeginInfo GetRenderPassInfo() const;
             VulkanVertexBufferBundle GetVertexBufferBundle() const;
