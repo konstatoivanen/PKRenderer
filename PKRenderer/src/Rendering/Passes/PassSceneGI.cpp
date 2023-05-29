@@ -17,8 +17,7 @@ namespace PK::Rendering::Passes
         m_computeMipmap = assetDatabase->Find<Shader>("CS_GI_Mipmap");
         m_computeAccumulate = assetDatabase->Find<Shader>("CS_GI_Accumulate");
         m_computeReproject = assetDatabase->Find<Shader>("CS_GI_Reproject");
-        m_computeVariance = assetDatabase->Find<Shader>("CS_GI_EstimateVariance");
-        m_computeSVGF = assetDatabase->Find<Shader>("CS_GI_SVGF");
+        m_computeDiffuseHistoryFill = assetDatabase->Find<Shader>("CS_GI_DiffuseHistoryFill");
         m_computeDiskFilter = assetDatabase->Find<Shader>("CS_GI_DiskFilter");
         m_rayTraceGatherGI = assetDatabase->Find<Shader>("RS_GI_Raytrace");
 
@@ -44,30 +43,22 @@ namespace PK::Rendering::Passes
         m_voxelMask = Texture::Create(descr, "GI.VoxelVolumeMask");
 
         descr.samplerType = SamplerType::Sampler2DArray;
+        descr.sampler.wrap[0] = WrapMode::Clamp;
+        descr.sampler.wrap[1] = WrapMode::Clamp;
+        descr.sampler.wrap[2] = WrapMode::Clamp;
+        descr.sampler.filterMin = FilterMode::Point;
+        descr.sampler.filterMag = FilterMode::Point;
         descr.usage = TextureUsage::Sample | TextureUsage::Storage;
-        descr.format = TextureFormat::RG16F;
-        descr.layers = 4;
+        descr.format = TextureFormat::RG32UI;
+        descr.layers = 8;
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1 };
-        m_screenSpaceMeta = Texture::Create(descr, "GI.Meta");
+        m_screenData = Texture::Create(descr, "GI.ScreenData");
 
         descr.samplerType = SamplerType::Sampler2D;
         descr.layers = 1u;
         descr.usage = TextureUsage::Storage;
         descr.format = TextureFormat::R32UI;
         m_rayhits = Texture::Create(descr, "GI.RayHits");
-
-        descr.samplerType = SamplerType::Sampler2DArray;
-        descr.sampler.filterMin = FilterMode::Bilinear;
-        descr.sampler.filterMag = FilterMode::Bilinear;
-        descr.sampler.wrap[0] = WrapMode::Clamp;
-        descr.sampler.wrap[1] = WrapMode::Clamp;
-        descr.sampler.wrap[2] = WrapMode::Clamp;
-        descr.usage = TextureUsage::DefaultStorage;
-        descr.layers = 4;
-        descr.format = TextureFormat::RGBA16F;
-        m_screenSpaceSHY = Texture::Create(descr, "GI.ScreenSpaceSHY");
-        descr.format = TextureFormat::RG16F;
-        m_screenSpaceCoCg = Texture::Create(descr, "GI.ScreenSpaceCoCg");
 
         m_voxelizeAttribs.depthStencil.depthCompareOp = Comparison::Off;
         m_voxelizeAttribs.depthStencil.depthWriteEnable = false;
@@ -103,9 +94,7 @@ namespace PK::Rendering::Passes
             GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Compute),
             m_rayTraceGatherGI);
 
-        m_screenSpaceMeta->Validate(resolution);
-        m_screenSpaceSHY->Validate(resolution);
-        m_screenSpaceCoCg->Validate(resolution);
+        m_screenData->Validate(resolution);
         m_rayhits->Validate(resolution);
         GraphicsAPI::SetImage(hash->pk_GI_RayHits, m_rayhits.get());
 
@@ -139,7 +128,7 @@ namespace PK::Rendering::Passes
     void PassSceneGI::DispatchRays(Objects::CommandBuffer* cmd)
     {
         cmd->BeginDebugScope("SceneGI.DispatchRays", PK_COLOR_GREEN);
-        auto resolution = m_screenSpaceMeta->GetResolution();
+        auto resolution = m_rayhits->GetResolution();
         cmd->DispatchRays(m_rayTraceGatherGI, { resolution.x, resolution.y, 1 });
         cmd->EndDebugScope();
     }
@@ -149,7 +138,7 @@ namespace PK::Rendering::Passes
         cmd->BeginDebugScope("SceneGI.Preprocess", PK_COLOR_GREEN);
 
         auto hash = HashCache::Get();
-        auto resolution = m_screenSpaceSHY->GetResolution();
+        auto resolution = m_screenData->GetResolution();
         auto volres = m_voxels->GetResolution();
 
         uint4 viewports[3] =
@@ -159,8 +148,12 @@ namespace PK::Rendering::Passes
             {0u, 0u, volres.y, volres.z },
         };
 
-        SetPassParams(false, false);
+        auto range0 = TextureViewRange(0, 0, 0, 4);
+        auto range1 = TextureViewRange(0, 4, 0, 4);
+        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), range1);
+        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), range0);
         cmd->Dispatch(m_computeReproject, 0, { resolution.x, resolution.y, 1u });
+
         cmd->SetRenderTarget({ viewports[m_rasterAxis].z, viewports[m_rasterAxis].w, 1 });
         cmd->SetViewPort(viewports[m_rasterAxis]);
         cmd->SetScissor(viewports[m_rasterAxis]);
@@ -180,38 +173,28 @@ namespace PK::Rendering::Passes
     void PassSceneGI::RenderGI(CommandBuffer* cmd)
     {
         auto hash = HashCache::Get();
-        auto resolution = m_screenSpaceSHY->GetResolution();
+        auto range0 = TextureViewRange(0, 0, 0, 4);
+        auto range1 = TextureViewRange(0, 4, 0, 4);
+
+        auto resolution = m_screenData->GetResolution();
         uint3 dimension = { resolution.x, resolution.y, 1u };
 
         cmd->BeginDebugScope("SceneGI.Filter", PK_COLOR_GREEN);
-        SetPassParams(true, true);
+        
+        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), range0);
+        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), range1);
         cmd->Dispatch(m_computeAccumulate, 0, dimension);
-        SetPassParams(false, false);
-        cmd->Dispatch(m_computeVariance, 0, dimension);
-        SetPassParams(true, true);
-        cmd->Dispatch(m_computeSVGF, 0, dimension);
-        SetPassParams(false, false);
-        cmd->Dispatch(m_computeSVGF, 0, dimension);
-        SetPassParams(true, true);
-        cmd->Dispatch(m_computeSVGF, 0, dimension);
-        SetPassParams(false, false);
+
+        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), range1);
+        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), range0);
+        cmd->Dispatch(m_computeDiffuseHistoryFill, 0, dimension);
+        
+        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), range0);
+        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), range1);
+        cmd->Dispatch(m_computeDiskFilter, 0, dimension);
+
+        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), range1);
+        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), range0);
         cmd->EndDebugScope();
-    }
-
-    void PassSceneGI::SetPassParams(bool flipSH, bool flipMeta)
-    {
-        auto hash = HashCache::Get();
-
-        auto range0 = TextureViewRange(0, 0, 0, 2);
-        auto range1 = TextureViewRange(0, 2, 0, 2);
-
-        GraphicsAPI::SetTexture(hash->pk_GI_Meta_Read, m_screenSpaceMeta.get(), flipMeta ? range0 : range1);
-        GraphicsAPI::SetImage(hash->pk_GI_Meta_Write, m_screenSpaceMeta.get(), flipMeta ? range1 : range0);
-
-        GraphicsAPI::SetTexture(hash->pk_GI_CoCg_Read, m_screenSpaceCoCg.get(), flipSH ? range0 : range1);
-        GraphicsAPI::SetTexture(hash->pk_GI_SHY_Read, m_screenSpaceSHY.get(), flipSH ? range0 : range1);
-
-        GraphicsAPI::SetImage(hash->pk_GI_CoCg_Write, m_screenSpaceCoCg.get(), flipSH ? range1 : range0);
-        GraphicsAPI::SetImage(hash->pk_GI_SHY_Write, m_screenSpaceSHY.get(), flipSH ? range1 : range0);
     }
 }

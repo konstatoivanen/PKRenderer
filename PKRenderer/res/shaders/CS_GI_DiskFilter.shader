@@ -16,13 +16,16 @@ void main()
         return;
     }
 
-    const float c_depth = SampleLinearDepth(coord);
+    const float depth = SampleLinearDepth(coord);
 
-    if (!Test_DepthFar(c_depth))
+    if (!Test_DepthFar(depth))
     {
         return;
     }
 
+    GISampleFull filtered = GI_Load_SampleFull(coord);
+
+    /*
     SH c_diff = GI_Load_SH(coord, PK_GI_DIFF_LVL);
     SH c_spec = GI_Load_SH(coord, PK_GI_SPEC_LVL);
 
@@ -39,7 +42,7 @@ void main()
 
     const float3 c_position = SampleWorldPosition(coord, size, c_depth);
     const float3x3 TBN = ComposeTBN(c_normal);
-    const float2 rotation = make_rotation(pk_FrameIndex * (PK_PI / 3.0f));
+    const float2 rotation = make_rotation(pk_FrameIndex.y * (PK_PI / 3.0f));
 
     const float normalPower = clamp(c_history, 0.25f, 256.0f);
     const float scalePx = pk_ScreenParams.w * 2.0f / pk_MATRIX_P[1][1];
@@ -114,9 +117,8 @@ void main()
     }
 
     sumVariance /= pow2(wSumDiff);
+    */
 
-    GI_Store_Moments(coord, GI_Load_Moments(coord));
-    GI_Store_HistoryVariance(coord, float2(c_history, sumVariance));
-    GI_Store_SH(coord, PK_GI_DIFF_LVL, SHScale(c_diff, 1.0f / wSumDiff));
-    GI_Store_SH(coord, PK_GI_SPEC_LVL, SHScale(c_spec, 1.0f / wSumSpec));
+
+    GI_Store_SampleFull(coord, filtered);
 }

@@ -30,7 +30,8 @@ namespace PK::Rendering
         m_histogram(assetDatabase),
         m_batcher(),
         m_sequencer(sequencer),
-        m_visibilityList(1024)
+        m_visibilityList(1024),
+        m_resizeFrameIndex(0ull)
     {
         m_OEMBackgroundShader = assetDatabase->Find<Shader>("SH_VS_IBLBackground");
 
@@ -63,7 +64,8 @@ namespace PK::Rendering
                 { ElementType::Float4, hash->pk_ScreenParams },
                 { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
                 { ElementType::Float4, hash->pk_ProjectionJitter },
-                { ElementType::Uint4, hash->pk_ScreenSize },
+                { ElementType::Uint2, hash->pk_ScreenSize },
+                { ElementType::Uint2, hash->pk_FrameIndex },
                 { ElementType::Float4x4, hash->pk_MATRIX_V },
                 { ElementType::Float4x4, hash->pk_MATRIX_I_V },
                 { ElementType::Float4x4, hash->pk_MATRIX_P },
@@ -73,8 +75,7 @@ namespace PK::Rendering
                 { ElementType::Float4x4, hash->pk_MATRIX_L_I_V },
                 { ElementType::Float4x4, hash->pk_MATRIX_L_VP },
                 { ElementType::Float4x4, hash->pk_MATRIX_LD_P },
-                { ElementType::Float, hash->pk_SceneOEM_Exposure },
-                { ElementType::Uint, hash->pk_FrameIndex }
+                { ElementType::Float, hash->pk_SceneOEM_Exposure }
             }), "Constants.Frame");
 
         m_constantsPostProcess = CreateRef<ConstantBuffer>(BufferLayout(
@@ -205,7 +206,7 @@ namespace PK::Rendering
         m_constantsPerFrame->Set<float4>(hash->pk_SinTime, { (float)sin(token->time / 8.0f), (float)sin(token->time / 4.0f), (float)sin(token->time / 2.0f), (float)sin(token->time) });
         m_constantsPerFrame->Set<float4>(hash->pk_CosTime, { (float)cos(token->time / 8.0f), (float)cos(token->time / 4.0f), (float)cos(token->time / 2.0f), (float)cos(token->time) });
         m_constantsPerFrame->Set<float4>(hash->pk_DeltaTime, { (float)token->deltaTime, 1.0f / (float)token->deltaTime, (float)token->smoothDeltaTime, 1.0f / (float)token->smoothDeltaTime });
-        m_constantsPerFrame->Set<uint>(hash->pk_FrameIndex, token->frameIndex % 0xFFFFFFFFu);
+        m_constantsPerFrame->Set<uint2>(hash->pk_FrameIndex, { token->frameIndex % 0xFFFFFFFFu, (token->frameIndex - m_resizeFrameIndex) % 0xFFFFFFFFu });
         token->logFrameRate = true;
     }
 
@@ -215,7 +216,12 @@ namespace PK::Rendering
         auto queues = GraphicsAPI::GetQueues();
         auto resolution = window->GetResolution();
 
-        m_renderTarget->Validate(resolution);
+        if (m_renderTarget->Validate(resolution))
+        {
+            m_resizeFrameIndex = m_constantsPerFrame->Get<uint2>(hash->pk_FrameIndex)->x;
+            m_constantsPerFrame->Set<uint2>(hash->pk_FrameIndex, { m_resizeFrameIndex, 0u });
+        }
+
         m_renderTargetPrevious->Validate(resolution);
 
         GraphicsAPI::SetTexture(hash->pk_ScreenDepthCurrent, m_renderTarget->GetDepth());
@@ -227,7 +233,7 @@ namespace PK::Rendering
         auto cascadeZSplits = m_passLights.GetCascadeZSplits(m_znear, m_zfar);
         m_constantsPerFrame->Set<float4>(hash->pk_ShadowCascadeZSplits, reinterpret_cast<float4*>(cascadeZSplits.planes));
         m_constantsPerFrame->Set<float4>(hash->pk_ScreenParams, { (float)resolution.x, (float)resolution.y, 1.0f / (float)resolution.x, 1.0f / (float)resolution.y });
-        m_constantsPerFrame->Set<uint4>(hash->pk_ScreenSize, { resolution.x, resolution.y, 0u, 0u });
+        m_constantsPerFrame->Set<uint2>(hash->pk_ScreenSize, { resolution.x, resolution.y });
         m_constantsPerFrame->FlushBuffer(QueueType::Transfer);
 
         auto cmdtransfer = queues->GetCommandBuffer(QueueType::Transfer);

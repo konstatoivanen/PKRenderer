@@ -40,7 +40,7 @@ float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direct
     }
 
     const float level = roughness * roughness * log2(max(1.0f, dist) / pk_GI_VoxelSize);
-    const float4 voxel = GI_Load_VX(worldpos, level);
+    const float4 voxel = GI_Load_Voxel(worldpos, level);
     return voxel.rgb / max(voxel.a, 1.0f / (PK_GI_VOXEL_MAX_MIP * PK_GI_VOXEL_MAX_MIP));
 }
 
@@ -59,6 +59,7 @@ void main()
 
     if (!Test_DepthFar(depth))
     {
+        GI_Store_Packed_SampleFull(coord, uint4(0), uint2(0), uint2(0));
         return;
     }
 
@@ -67,51 +68,35 @@ void main()
     const float3 O = SampleWorldPosition(coord, size, depth);
     const float3 V = normalize(O - pk_WorldSpaceCameraPos.xyz);
 
-    float3 dirDiff, dirSpec;
-    GI_GetRayDirections(coord, pk_FrameIndex, N, V, NR.w, dirDiff, dirSpec);
-
-    const uint packedHits = imageLoad(pk_GI_RayHits, coord).x;
-    const bool isMissDiff = bitfieldExtract(packedHits, 0, 16) == 0xFFFF;
-    const bool isMissSpec = bitfieldExtract(packedHits, 16, 16) == 0xFFFF;
-    const float2 hitDist = unpackHalf2x16(packedHits);
-
-    const float history = GI_Load_HistoryVariance(coord).x;
-    const float wDiff = max(1.0f / min(history + 2.0f, PK_GI_MAX_HISTORY), 0.01f);
-    const float wSpec = max(1.0f / min(history + 1.0f, PK_GI_MAX_HISTORY), 0.01f);//exp(-NR.w) * 0.1f);
-
+    GIRayDirections directions = GI_GetRayDirections(coord, N, V, NR.w);
+    GIRayHits hits = GI_Load_RayHits(coord);
+    GISampleFull filtered = GI_Load_SampleFull(coord);
+    const float wDiff = max(1.0f / (filtered.meta.historyDiff + 1.0f), 0.01f);
+    const float wSpec = max(1.0f / (filtered.meta.historySpec + 1.0f), 0.01f); 
+    
     const float coneSizeDiff = 0.5f;
     const float coneSizeSpec = pow2(NR.w);
+    
+    float3 radianceDiff = SampleRadiance(coord, O, directions.diff, hits.distDiff, hits.isMissDiff, coneSizeDiff);
+    float3 radianceSpec = SampleRadiance(coord, O, directions.spec, hits.distSpec, hits.isMissSpec, coneSizeSpec);
 
-    float3 radianceDiff = SampleRadiance(coord, O, dirDiff, hitDist.x, isMissDiff, coneSizeDiff);
-    float3 radianceSpec = SampleRadiance(coord, O, dirSpec, hitDist.y, isMissSpec, coneSizeSpec);
+    // Construct new samples
+    GISampleDiff s_diff;
+    GISampleSpec s_spec;
+    s_diff.sh       = SHFromRadiance(radianceDiff, directions.diff);
+    s_spec.radiance = radianceSpec;
+    s_diff.ao       = hits.isMissDiff ? 1.0f : saturate(hits.distDiff / PK_GI_AO_DIFF_MAX_DISTANCE);
+    s_spec.ao       = hits.isMissSpec ? 1.0f : saturate(hits.distSpec / PK_GI_AO_SPEC_MAX_DISTANCE);
+    float luma      = SHToLuminance(s_diff.sh, N) + dot(pk_Luminance.rgb, radianceSpec);
 
-    // Fallback on ws cache on fresh samples
-    if (history < 4)
-    {
-        float4 voxel = GI_Load_VX(O, 0.0f);
-        voxel.rgb /= max(voxel.a, 1.0f / (PK_GI_VOXEL_MAX_MIP * PK_GI_VOXEL_MAX_MIP));
-        voxel.rgb *= dot(N, dirDiff) / (history + 1);
-        radianceDiff = max(radianceDiff, voxel.rgb);
-    }
+    // Interpolate samples
+    filtered.diff.sh       = SHInterpolate(filtered.diff.sh, s_diff.sh, wDiff);
+    filtered.spec.radiance = lerp(filtered.spec.radiance, s_spec.radiance, wSpec);
+    filtered.diff.ao       = lerp(filtered.diff.ao, s_diff.ao, wDiff);
+    filtered.spec.ao       = lerp(filtered.spec.ao, s_spec.ao, wSpec);
+    filtered.meta.moments  = lerp(filtered.meta.moments, float2(luma, pow2(luma)), wDiff);
+    filtered.spec.depth    = depth;
+    filtered.diff.depth    = depth;
 
-    const SH sampleDiff = SHFromRadiance(radianceDiff, dirDiff);
-    const SH sampleSpec = SHFromRadiance(radianceSpec, dirSpec);
-
-    SH diff = history < 1.0f ? sampleSpec : GI_Load_SH(coord, PK_GI_DIFF_LVL);
-    SH spec = GI_Load_SH(coord, PK_GI_SPEC_LVL);
-
-    float lumaA = GI_SHToLuminance(diff, N);
-    float lumaB = GI_SHToLuminance(sampleDiff, N);
-
-    float2 prevMoments = history < 1.0f ? float2(lumaA, pow2(lumaA)) : GI_Load_Moments(coord);
-    float2 moments = float2(lumaB, pow2(lumaB));
-    moments = lerp(prevMoments, moments, wDiff);
-
-    diff = SHInterpolate(diff, sampleDiff, wDiff);
-    spec = SHInterpolate(spec, sampleSpec, wSpec);
-
-    GI_Store_Moments(coord, moments);
-    GI_Store_HistoryVariance(coord, float2(history, 0.0f));
-    GI_Store_SH(coord, PK_GI_DIFF_LVL, diff);
-    GI_Store_SH(coord, PK_GI_SPEC_LVL, spec);
+    GI_Store_SampleFull(coord, filtered);
 }

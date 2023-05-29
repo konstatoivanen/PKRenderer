@@ -841,8 +841,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_GI_Accumulate.shader" />
     <None Include="res\shaders\CS_GI_Clear.shader" />
     <None Include="res\shaders\CS_GI_DiskFilter.shader" />
-    <None Include="res\shaders\CS_GI_SVGF.shader" />
-    <None Include="res\shaders\CS_GI_EstimateVariance.shader" />
+    <None Include="res\shaders\CS_GI_DiffuseHistoryFill.shader" />
     <None Include="res\shaders\CS_GI_Reproject.shader" />
     <None Include="res\shaders\CS_TemporalAntialiasing.shader" />
     <None Include="res\shaders\CS_VolumeFogDepthMax.shader" />

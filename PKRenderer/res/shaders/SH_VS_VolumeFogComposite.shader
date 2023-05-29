@@ -20,7 +20,7 @@ void main()
     float d = SampleLinearDepth(vs_TEXCOORD.xy);
     float w = GetVolumeWCoord(d);
 
-    float3 offset = GlobalNoiseBlue(uint2(vs_TEXCOORD.zw), pk_FrameIndex);
+    float3 offset = GlobalNoiseBlue(uint2(vs_TEXCOORD.zw), pk_FrameIndex.x);
     offset -= 0.5f;
     offset *= VOLUME_COMPOSITE_DITHER_AMOUNT;
 

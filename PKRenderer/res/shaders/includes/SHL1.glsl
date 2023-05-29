@@ -32,6 +32,7 @@ float3 SHToIrradiance(const SH sh, const float3 d) { return SHToIrradiance(sh, d
 float3 SHToColor(const SH sh) { return PK_YCoCgRToRGB * float3(sh.Y.x / pk_L1Basis.x, sh.CoCg); }
 float SHToLuminance(const SH sh, const float3 d) { return dot(pk_Luminance.xyz, SHToIrradiance(sh, d)); }
 float SHToLuminance(const SH sh, const float3 d, const float chromaBias) { return dot(pk_Luminance.xyz, SHToIrradiance(sh, d, chromaBias)); }
+float3 SHToDominantDir(const SH sh) { return sh.Y.wyz; }
 
 SH SHFromRadiance(const float3 color, const float3 d)
 {

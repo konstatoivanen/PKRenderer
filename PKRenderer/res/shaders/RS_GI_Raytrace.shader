@@ -44,18 +44,12 @@ void main()
     const float3 O = SampleWorldPosition(coord, size, depth) + N * PK_GI_RAY_MIN_DISTANCE;
     const float3 V = normalize(O - pk_WorldSpaceCameraPos.xyz);
 
-    float3 dirDiff, dirSpec;
-    GI_GetRayDirections(coord, pk_FrameIndex, N, V, NR.w, dirDiff, dirSpec);
-
-    float distanceDiff, distanceSpec;
-    const bool isMissDiff = TraceRay(O, dirDiff, distanceDiff);
-    const bool isMissSpec = TraceRay(O, dirSpec, distanceSpec);
+    GIRayDirections directions = GI_GetRayDirections(coord, N, V, NR.w);
     
-    uint packedHits = packHalf2x16(float2(distanceDiff, distanceSpec));
-    packedHits = isMissDiff ? bitfieldInsert(packedHits, 0xFFFF, 0, 16) : packedHits;
-    packedHits = isMissSpec ? bitfieldInsert(packedHits, 0xFFFF, 16, 16) : packedHits;
-
-    imageStore(pk_GI_RayHits, coord, uint4(packedHits));
+    GIRayHits hits;
+    hits.isMissDiff = TraceRay(O, directions.diff, hits.distDiff);
+    hits.isMissSpec = TraceRay(O, directions.spec, hits.distSpec);
+    GI_Store_RayHits(coord, hits);
 }
 
 #pragma PROGRAM_RAY_MISS

@@ -7,7 +7,7 @@
 
 PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 {
-    float4 pk_Time;      // Time since level load (t/20, t, t*2, t*3), use to animate things inside the shaders.
+    float4 pk_Time;      // Time since load (t/20, t, t*2, t*3), use to animate things inside the shaders.
     float4 pk_SinTime;   // Sine of time: (t/8, t/4, t/2, t).
     float4 pk_CosTime;   // Cosine of time: (t/8, t/4, t/2, t).
     float4 pk_DeltaTime; // Delta time: (dt, 1/dt, smoothDt, 1/smoothDt).
@@ -20,7 +20,8 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float4 pk_ScreenParams;         // xy = current screen (width, height), z = 1 / width, w = 1 / height.
     float4 pk_ShadowCascadeZSplits; // view space z axis splits for directional light shadow cascades
     float4 pk_ProjectionJitter;     // xy = sub pixel jitter, zw = previous frame jitter
-    uint4 pk_ScreenSize;            // xy = current screen size, zw = @TODO padding
+    uint2 pk_ScreenSize;            // xy = current screen size
+    uint2 pk_FrameIndex;            // x = frame index since load, y = frame index since resize
 
     float4x4 pk_MATRIX_V;       // Current view matrix.
     float4x4 pk_MATRIX_I_V;     // Current inverse view matrix.
@@ -32,7 +33,6 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float4x4 pk_MATRIX_L_VP;    // Last view * projection matrix.
     float4x4 pk_MATRIX_LD_P;    // Last view * projection * current inverse view matrix.
     float pk_SceneOEM_Exposure; // Scene reflections exposure
-    uint pk_FrameIndex;         // Current Frame Number
 };
 
 #if !defined(PK_INSTANCING_ENABLED)

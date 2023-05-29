@@ -2007,12 +2007,11 @@
     <None Include="res\shaders\includes\SharedTemporalAntialiasing.glsl" />
     <None Include="res\shaders\includes\SampleDistribution.glsl" />
     <None Include="res\shaders\includes\SHL1.glsl" />
-    <None Include="res\shaders\CS_GI_SVGF.shader" />
     <None Include="res\shaders\includes\Kernels.glsl" />
     <None Include="res\shaders\includes\BlueNoise.glsl" />
     <None Include="res\textures\default\T_Bluenoise128x64.ktx2" />
     <None Include="res\shaders\includes\LDSLoader.glsl" />
-    <None Include="res\shaders\CS_GI_EstimateVariance.shader" />
+    <None Include="res\shaders\CS_GI_DiffuseHistoryFill.shader" />
     <None Include="res\shaders\CS_GI_DiskFilter.shader" />
   </ItemGroup>
   <ItemGroup>

@@ -27,7 +27,7 @@
 
 
     #define PK_META_DECLARE_SURFACE_OUTPUT
-    #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) GI_Store_VX(worldpos, color)
+    #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) GI_Store_Voxel(worldpos, color)
     #define PK_META_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNDCSpace(position)
 #else
     #define PK_META_EARLY_CLIP_UVW(w, c, n) c = GetFragmentClipUVW(); 
@@ -212,7 +212,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
             if (deltaDepth > -0.01f && deltaDepth < 0.1f && !GI_Test_VX_History(surf.clipuvw.xy))
             {
                 // Sample screen space SH values for more accurate results.
-                indirect = GI_Load_Diffuse(surf.clipuvw.xy, surf.normal);
+                indirect = GI_Sample_Diffuse(surf.clipuvw.xy, surf.normal);
             }
             else
             {
@@ -234,8 +234,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
             LightTile tile = GetLightTile(surf.clipuvw);
     
             Indirect indirect;// = GetStaticSceneIndirect(surf.normal, surf.viewdir, surf.roughness);
-            indirect.diffuse = GI_Load_Diffuse(surf.clipuvw.xy, surf.normal); 
-            indirect.specular = GI_Load_Specular(surf.clipuvw.xy, normalize(reflect(-surf.viewdir, surf.normal))); 
+            GI_Sample_Lighting(surf.clipuvw.xy, surf.normal, surf.viewdir, surf.roughness, indirect.diffuse, indirect.specular);
     
             INIT_BRDF_CACHE
             (

@@ -62,6 +62,7 @@ namespace PK::Rendering
 
             ECS::Tokens::VisibilityList m_visibilityList;
             Math::float4x4 m_viewProjectionMatrix;
+            uint64_t m_resizeFrameIndex;
             float m_znear;
             float m_zfar;
     };

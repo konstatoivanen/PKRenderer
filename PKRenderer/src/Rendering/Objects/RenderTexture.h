@@ -9,7 +9,7 @@ namespace PK::Rendering::Objects
         public:
             RenderTexture(const Structs::RenderTextureDescriptor& descriptor, const char* name);
 
-            void Validate(Math::uint3 resolution);
+            bool Validate(Math::uint3 resolution);
 
             constexpr uint32_t GetColorCount() const { return m_colorAttachmentCount; }
             inline Texture* GetColor(uint32_t index) const { return index >= m_colorAttachmentCount ? nullptr : m_colorAttachments[index].get(); }

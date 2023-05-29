@@ -6,6 +6,8 @@
 #include includes/SharedHistogram.glsl
 #include includes/Common.glsl
 
+
+#include includes/Reconstruction.glsl
 #include includes/SharedSceneGI.glsl
 
 layout(rgba16f, set = PK_SET_DRAW) uniform image2D _MainTex;
@@ -40,13 +42,12 @@ void main()
   //  color = ApplyColorGrading(color);
 
     // GI Debug
-    //if (uv.x > 0.75)
-    //{
-    //    int2 metacoord = coord - int2(size.x / 4, 0);
-    //    float2 moments = GI_Load_Moments(metacoord);
-    //    float variance = sqrt(max(0.0f, moments.y - pow2(moments.x))) * exposure;
-    //    color = GI_Load_HistoryVariance(metacoord).yyy;
-    //}
+    if (uv.x > 0.5)
+    {
+        float3 normal = SampleWorldNormal(uv);
+        float3 diff = GI_Sample_Diffuse(uv, normal) * 4.0f;
+        color = diff;
+    }
 
     imageStore(_MainTex, coord, float4(color, 1.0f));
 }

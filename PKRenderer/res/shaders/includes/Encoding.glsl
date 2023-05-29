@@ -73,14 +73,23 @@ float3 HSVToRGB(float hue, float saturation, float value)
     return HSVToRGB(float3(hue, saturation, value));
 }
 
-uint EncodeE5GR9(float2 v)
-{
-    const int N = 9;
-    const int Np2 = 1 << N;
-    const int B = 15;
+//Source: https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_texture_shared_exponent.txt
+#define ENCODE_E5BGR9_EXPONENT_BITS 5
+#define ENCODE_E5BGR9_MANTISSA_BITS 9
+#define ENCODE_E5BGR9_MAX_VALID_BIASED_EXP 31
+#define ENCODE_E5BGR9_EXP_BIAS 15
+#define ENCODE_E5BGR9_MANTISSA_VALUES (1 << 9)
+#define ENCODE_E5BGR9_MANTISSA_MASK (ENCODE_E5BGR9_MANTISSA_VALUES - 1)
+#define ENCODE_E5BGR9_SHAREDEXP_MAX 65408
 
-    v = clamp(v, float2(0.0), float2(65408));
-    float max_c = max(v.x, v.y);
+uint EncodeE5BGR9(float3 unpacked)
+{
+    const int N = ENCODE_E5BGR9_MANTISSA_BITS;
+    const int Np2 = 1 << N;
+    const int B = ENCODE_E5BGR9_EXP_BIAS;
+
+    unpacked = clamp(unpacked, 0.0f.xxx, ENCODE_E5BGR9_SHAREDEXP_MAX.xxx);
+    float max_c = max(unpacked.r, max(unpacked.g, unpacked.b));
 
     // for log2
     if (max_c == 0.0)
@@ -90,17 +99,32 @@ uint EncodeE5GR9(float2 v)
 
     int exp_shared_p = max(-B-1, int(floor(log2(max_c)))) + 1 + B;
     int max_s = int(round(max_c * exp2(-float(exp_shared_p - B - N))));
-    int exp_shared = max_s != Np2 ? exp_shared_p : exp_shared_p + 1;
+
+    int exp_shared = max_s != Np2 ? 
+        exp_shared_p : 
+        exp_shared_p + 1;
 
     float s = exp2(-float(exp_shared - B - N));
-    uint2 rgb_s = uint2(round(v * s));
+    uint3 rgb_s = uint3(round(unpacked * s));
 
-    return (exp_shared << (3 * 9)) | (rgb_s.y << (2 * 9)) | (rgb_s.x << (1 * 9));
+    return 
+        (exp_shared << (3 * ENCODE_E5BGR9_MANTISSA_BITS)) |
+        (rgb_s.b    << (2 * ENCODE_E5BGR9_MANTISSA_BITS)) |
+        (rgb_s.g    << (1 * ENCODE_E5BGR9_MANTISSA_BITS)) |
+        (rgb_s.r);
 }
 
-float2 DecodeE5GR9(const uint v)
+float3 DecodeE5BGR9(const uint _packed)
 {
-    int exp_shared = int(v >> (3 * 9));
-    float s = exp2(float(exp_shared - 15 - 9));
-    return s * float2((v >> (1 * 9)) & ((1 << 9) - 1), (v >> (2 * 9)) & ((1 << 9) - 1));
+    const int N = ENCODE_E5BGR9_MANTISSA_BITS;
+    const int B = ENCODE_E5BGR9_EXP_BIAS;
+
+    int exp_shared = int(_packed >> (3 * ENCODE_E5BGR9_MANTISSA_BITS));
+    float s = exp2(float(exp_shared - B - N));
+
+    return s * float3(
+        (_packed                                       ) & ENCODE_E5BGR9_MANTISSA_MASK, 
+        (_packed >> (1 * ENCODE_E5BGR9_MANTISSA_BITS)) & ENCODE_E5BGR9_MANTISSA_MASK,
+        (_packed >> (2 * ENCODE_E5BGR9_MANTISSA_BITS)) & ENCODE_E5BGR9_MANTISSA_MASK
+    );
 }

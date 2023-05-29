@@ -14,30 +14,75 @@ PK_DECLARE_CBUFFER(pk_GI_Parameters, PK_SET_SHADER)
 };
 
 layout(r32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_RayHits;
-layout(rg16f, set = PK_SET_SHADER) uniform image2DArray pk_GI_Meta_Write;
-PK_DECLARE_SET_SHADER uniform sampler2DArray pk_GI_Meta_Read;
-
-layout(rgba16f, set = PK_SET_SHADER) uniform image2DArray pk_GI_SHY_Write;
-layout(rg16f, set = PK_SET_SHADER) uniform image2DArray pk_GI_CoCg_Write;
-PK_DECLARE_SET_SHADER uniform sampler2DArray pk_GI_SHY_Read;
-PK_DECLARE_SET_SHADER uniform sampler2DArray pk_GI_CoCg_Read;
-
+layout(rg32ui, set = PK_SET_SHADER) uniform writeonly uimage2DArray pk_GI_ScreenDataWrite;
 layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_GI_VolumeMaskWrite;
 layout(rgba16, set = PK_SET_SHADER) uniform image3D pk_GI_VolumeWrite;
+PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 
-#define PK_GI_MOMENTS_LVL 0
-#define PK_GI_HISTVAR_LVL 1
-#define PK_GI_DIFF_LVL 0
-#define PK_GI_SPEC_LVL 1
+#define PK_GI_LVL_DIFF0 0
+#define PK_GI_LVL_DIFF1 1
+#define PK_GI_LVL_SPEC 2
+#define PK_GI_LVL_META 3
 #define PK_GI_VOXEL_MAX_MIP 7
 #define PK_GI_RAY_MIN_DISTANCE 0.005f
 #define PK_GI_RAY_MAX_DISTANCE 100.0f
+#define PK_GI_AO_DIFF_MAX_DISTANCE 1.0f
+#define PK_GI_AO_SPEC_MAX_DISTANCE 1.0f
 #define PK_GI_MAX_HISTORY 256u
 #define PK_GI_MIN_VXHISTORY 32.0
+#define PK_GI_DATA_LOAD(c, l) texelFetch(pk_GI_ScreenDataRead, int3(c, l), 0).xy
+#define PK_GI_DATA_STORE(c, l, d) imageStore(pk_GI_ScreenDataWrite, int3(c, l), uint4(d, 0,0))
+
+//----------STRUCTS----------//
+struct GISampleDiff
+{
+    SH sh;
+    float ao;
+    float depth;
+};
+
+struct GISampleSpec
+{
+    float3 radiance;
+    float ao;
+    float depth;
+};
+
+struct GISampleMeta
+{
+    float historyDiff;
+    float historySpec;
+    float2 moments;
+};
+
+struct GISampleFull
+{
+    GISampleDiff diff;
+    GISampleSpec spec;
+    GISampleMeta meta;
+};
+
+struct GIRayDirections
+{
+    float3 diff;
+    float3 spec;
+};
+
+struct GIRayHits
+{
+    float distDiff;
+    float distSpec;
+    bool isMissDiff;
+    bool isMissSpec;
+};
+
+#define pk_Zero_GISampleDiff GISampleDiff(pk_ZeroSH, 0.0f, 0.0f)
+#define pk_Zero_GISampleSpec GISampleSpec(0.0f.xxx, 0.0f, 0.0f)
+#define pk_Zero_GISampleMeta GISampleMeta(0.0f, 0.0f, 0.0f.xx)
+#define pk_Zero_GISampleFull GISampleFull(pk_Zero_GISampleDiff, pk_Zero_GISampleSpec, pk_Zero_GISampleMeta)
 
 //----------UTILITIES----------//
-
 uint2 MurmurHash21(uint src) 
 {
     const uint M = 0x5bd1e995u;
@@ -48,13 +93,13 @@ uint2 MurmurHash21(uint src)
     return h;
 }
 
-void GI_GetRayDirections(uint2 coord, uint offset, in float3 N, in float3 V, in float R, inout float3 dirDiff, inout float3 dirSpec)
+GIRayDirections GI_GetRayDirections(uint2 coord, in float3 N, in float3 V, in float R)
 {
-    uint2 hash = MurmurHash21(offset / 64u);
-    float3 v = GlobalNoiseBlue(coord.xy + hash, offset);
-    float2 Xi = saturate(v.xy + ((v.z - 0.5f) / 256.0f));
-    dirDiff = ImportanceSampleLambert(Xi, N);
-    dirSpec = ImportanceSampleSmithGGX(Xi.yx, N, V, R);
+    const uint offset = pk_FrameIndex.y;
+    const uint2 hash = MurmurHash21(offset / 64u);
+    const float3 v = GlobalNoiseBlue(coord.xy + hash, offset);
+    const float2 Xi = saturate(v.xy + ((v.z - 0.5f) / 256.0f));
+    return GIRayDirections(ImportanceSampleLambert(Xi, N), ImportanceSampleSmithGGX(Xi.yx, N, V, R));
 }
 
 float3 GI_VoxelToWorldSpace(int3 coord) { return coord * pk_GI_VoxelSize + pk_GI_VolumeST.xyz + pk_GI_VoxelSize * 0.5f; }
@@ -69,8 +114,82 @@ float4 GI_WorldToVoxelNDCSpace(float3 worldpos)
     return float4(clippos[pk_GI_VolumeSwizzle.x], clippos[pk_GI_VolumeSwizzle.y], clippos[pk_GI_VolumeSwizzle.z] * 0.5f + 0.5f, 1);
 }
 
-float GI_SHToLuminance(SH sh, float3 dir) { return SHToLuminance(sh, dir, pk_GI_ChromaBias); }
-bool GI_Test_VX_History(const float2 uv) { return texelFetch(pk_GI_Meta_Read, int3(uv * pk_ScreenSize.xy, PK_GI_HISTVAR_LVL), 0).x < PK_GI_MIN_VXHISTORY; }
+//----------PACK / UNPACK FUNCTIONS----------//
+uint4 GI_Pack_SampleDiff(const GISampleDiff u) { return uint4(packHalf4x16(u.sh.Y), packHalf4x16(float4(u.sh.CoCg, u.ao, u.depth))); }
+uint2 GI_Pack_SampleSpec(const GISampleSpec u) { return uint2(EncodeE5BGR9(u.radiance), packHalf2x16(float2(u.ao, u.depth))); }
+uint2 GI_Pack_SampleMeta(const GISampleMeta u) { return packHalf4x16(float4(u.historyDiff, u.historySpec, u.moments)); }
+
+GISampleDiff GI_Unpack_SampleDiff(const uint4 p) 
+{
+    const float4 v0 = unpackHalf4x16(p.xy);
+    const float4 v1 = unpackHalf4x16(p.zw);
+    return GISampleDiff(SH(v0, v1.xy), v1.z, v1.w);
+}
+
+GISampleSpec GI_Unpack_SampleSpec(const uint2 p) 
+{ 
+    const float2 v = unpackHalf2x16(p.y);
+    return GISampleSpec(DecodeE5BGR9(p.x), v.x, v.y);
+}
+
+GISampleMeta GI_Unpack_SampleMeta(const uint2 p) 
+{ 
+    const float4 v0 = unpackHalf4x16(p.xy);
+    return GISampleMeta(v0.x, v0.y, v0.zw);
+}
+
+//----------LOAD FUNCTIONS----------//
+uint4 GI_Load_Packed_SampleDiff(const int2 coord) { return uint4(PK_GI_DATA_LOAD(coord, PK_GI_LVL_DIFF0), PK_GI_DATA_LOAD(coord, PK_GI_LVL_DIFF1)); }
+uint2 GI_Load_Packed_SampleSpec(const int2 coord) { return PK_GI_DATA_LOAD(coord, PK_GI_LVL_SPEC); }
+uint2 GI_Load_Packed_SampleMeta(const int2 coord) { return PK_GI_DATA_LOAD(coord, PK_GI_LVL_META); }
+GISampleDiff GI_Load_SampleDiff(const int2 coord) { return GI_Unpack_SampleDiff(GI_Load_Packed_SampleDiff(coord)); }
+GISampleSpec GI_Load_SampleSpec(const int2 coord) { return GI_Unpack_SampleSpec(GI_Load_Packed_SampleSpec(coord)); }
+GISampleMeta GI_Load_SampleMeta(const int2 coord) { return GI_Unpack_SampleMeta(GI_Load_Packed_SampleMeta(coord)); }
+GISampleFull GI_Load_SampleFull(const int2 coord) { return GISampleFull(GI_Load_SampleDiff(coord), GI_Load_SampleSpec(coord), GI_Load_SampleMeta(coord)); }
+GIRayHits GI_Load_RayHits(const int2 coord)
+{
+    const uint packedHits = imageLoad(pk_GI_RayHits, coord).x;
+    const bool isMissDiff = bitfieldExtract(packedHits, 0, 16) == 0xFFFF;
+    const bool isMissSpec = bitfieldExtract(packedHits, 16, 16) == 0xFFFF;
+    const float2 hitDist = unpackHalf2x16(packedHits);
+    return GIRayHits(hitDist.x, hitDist.y, isMissDiff, isMissSpec);
+}
+
+float4 GI_Load_Voxel(const float3 worldpos, float lvl) { return tex2DLod(pk_GI_VolumeRead, GI_WorldToVoxelUVW(worldpos), lvl); }
+float4 GI_Load_Voxel_Discrete(const float3 worldpos, float lvl) { return tex2DLod(pk_GI_VolumeRead, GI_WorldToVoxelUVWDiscrete(worldpos), lvl); }
+
+//----------STORE FUNCTIONS----------//
+void GI_Store_Packed_SampleDiff(const int2 coord, const uint4 p) { PK_GI_DATA_STORE(coord, PK_GI_LVL_DIFF0, p.xy); PK_GI_DATA_STORE(coord, PK_GI_LVL_DIFF1, p.zw); }
+void GI_Store_Packed_SampleSpec(const int2 coord, const uint2 p) { PK_GI_DATA_STORE(coord, PK_GI_LVL_SPEC, p); }
+void GI_Store_Packed_SampleMeta(const int2 coord, const uint2 p) { PK_GI_DATA_STORE(coord, PK_GI_LVL_META, p); }
+void GI_Store_Packed_SampleFull(const int2 coord, const uint4 u0, const uint2 u1, const uint2 u2) 
+{ 
+    GI_Store_Packed_SampleDiff(coord, u0); 
+    GI_Store_Packed_SampleSpec(coord, u1); 
+    GI_Store_Packed_SampleMeta(coord, u2); 
+}
+void GI_Store_SampleDiff(const int2 coord, const GISampleDiff u) { GI_Store_Packed_SampleDiff(coord, GI_Pack_SampleDiff(u)); }
+void GI_Store_SampleSpec(const int2 coord, const GISampleSpec u) { GI_Store_Packed_SampleSpec(coord, GI_Pack_SampleSpec(u)); }
+void GI_Store_SampleMeta(const int2 coord, const GISampleMeta u) { GI_Store_Packed_SampleMeta(coord, GI_Pack_SampleMeta(u)); }
+void GI_Store_SampleFull(const int2 coord, const GISampleFull u) { GI_Store_Packed_SampleFull(coord, GI_Pack_SampleDiff(u.diff), GI_Pack_SampleSpec(u.spec), GI_Pack_SampleMeta(u.meta)); }
+
+void GI_Store_RayHits(const int2 coord, const GIRayHits u)
+{
+    uint packedHits = packHalf2x16(float2(u.distDiff, u.distSpec));
+    packedHits = u.isMissDiff ? bitfieldInsert(packedHits, 0xFFFF, 0, 16) : packedHits;
+    packedHits = u.isMissSpec ? bitfieldInsert(packedHits, 0xFFFF, 16, 16) : packedHits;
+    imageStore(pk_GI_RayHits, coord, uint4(packedHits));
+}
+
+void GI_Store_Voxel(float3 worldpos, float4 color) 
+{ 
+    int3 coord = GI_WorldToVoxelSpace(worldpos);
+    imageStore(pk_GI_VolumeMaskWrite, coord, uint4(1u));
+    imageStore(pk_GI_VolumeWrite, coord, color); 
+}
+
+//----------PREDICATES----------//
+bool GI_Test_VX_History(const float2 uv) { return GI_Load_SampleMeta(int2(uv * pk_ScreenSize.xy)).historyDiff < PK_GI_MIN_VXHISTORY; }
 bool GI_Test_VX_HasValue(float3 worldposition) { return imageLoad(pk_GI_VolumeMaskWrite, GI_WorldToVoxelSpace(worldposition)).x != 0; }
 bool GI_Test_VX_Normal(float3 normal)
 {
@@ -78,32 +197,23 @@ bool GI_Test_VX_Normal(float3 normal)
     return normal[pk_GI_VolumeSwizzle.z] > normal[pk_GI_VolumeSwizzle.x] && normal[pk_GI_VolumeSwizzle.z] > normal[pk_GI_VolumeSwizzle.y];
 }
 
-//----------LOAD / STORE FUNCTIONS----------//
-float2 GI_Load_Moments(int2 coord) { return texelFetch(pk_GI_Meta_Read, int3(coord, PK_GI_MOMENTS_LVL), 0).xy; }
-float2 GI_Load_HistoryVariance(int2 coord) { return texelFetch(pk_GI_Meta_Read, int3(coord, PK_GI_HISTVAR_LVL), 0).xy; }
+//----------SAMPLING FUNCTIONS----------//
+float GI_AOPower(float ao) { return pow(ao, 0.4f); }
 
-SH GI_Load_SH(const float2 uv, float lvl) { return SH(tex2D(pk_GI_SHY_Read, float3(uv, lvl)).rgba, tex2D(pk_GI_CoCg_Read, float3(uv, lvl)).rg); }
-SH GI_Load_SH(const int2 coord, int lvl) { return SH(texelFetch(pk_GI_SHY_Read, int3(coord, lvl), 0).rgba, texelFetch(pk_GI_CoCg_Read, int3(coord, lvl), 0).rg); }
-float3 GI_Load_Diffuse(const float2 uv, const float3 dir) { return SHToIrradiance(GI_Load_SH(uv, PK_GI_DIFF_LVL), dir, pk_GI_ChromaBias); }
-float3 GI_Load_Specular(const float2 uv, const float3 dir) { return SHToIrradiance(GI_Load_SH(uv, PK_GI_SPEC_LVL), dir, pk_GI_ChromaBias); }
-
-float4 GI_Load_VX(const float3 worldpos, float lvl) { return tex2DLod(pk_GI_VolumeRead, GI_WorldToVoxelUVW(worldpos), lvl); }
-float4 GI_Load_VX_Discrete(const float3 worldpos, float lvl) { return tex2DLod(pk_GI_VolumeRead, GI_WorldToVoxelUVWDiscrete(worldpos), lvl); }
-
-void GI_Store_Moments(int2 coord, float2 v) { imageStore(pk_GI_Meta_Write, int3(coord, PK_GI_MOMENTS_LVL), float4(v, 0.0f.xx)); }
-void GI_Store_HistoryVariance(int2 coord, float2 v) { imageStore(pk_GI_Meta_Write, int3(coord, PK_GI_HISTVAR_LVL), float4(v, 0.0f.xx)); }
-
-void GI_Store_SH(const int2 coord, const int level, const SH sh)
+float3 GI_Sample_Diffuse(const float2 uv, const float3 N)
 {
-    imageStore(pk_GI_SHY_Write, int3(coord, level), sh.Y);
-    imageStore(pk_GI_CoCg_Write, int3(coord, level), float4(sh.CoCg, 0.0f.xx));
+    const GISampleDiff s_diff = GI_Load_SampleDiff(int2(uv * pk_ScreenSize.xy));
+    return SHToIrradiance(s_diff.sh, N, pk_GI_ChromaBias);
 }
 
-void GI_Store_VX(float3 worldposition, float4 color) 
-{ 
-    int3 coord = GI_WorldToVoxelSpace(worldposition);
-    imageStore(pk_GI_VolumeMaskWrite, coord, uint4(1u));
-    imageStore(pk_GI_VolumeWrite, coord, color); 
+void GI_Sample_Lighting(const float2 uv, const float3 N, const float3 V, const float R, inout float3 diffuse, inout float3 specular) 
+{
+    //@ Todo get rough specular from diffuse dominant dir.
+    const int2 coord = int2(uv * pk_ScreenSize.xy);
+    const GISampleDiff s_diff = GI_Load_SampleDiff(coord);
+    const GISampleSpec s_spec = GI_Load_SampleSpec(coord);
+    diffuse = SHToIrradiance(s_diff.sh, N, pk_GI_ChromaBias) * GI_AOPower(s_diff.ao);
+    specular = s_spec.radiance * GI_AOPower(s_spec.ao);
 }
 
 //----------VOXEL CONE TRACING FUNCTIONS----------//
@@ -111,10 +221,11 @@ float4 GI_ConeTrace_Volumetric(float3 position)
 {
     float4 color = float4(0.0.xxx, 1.0);
 
+    #pragma unroll 4
     for (uint i = 0; i < 4; ++i)
     {
         float level = i * 1.25f;
-        float4 voxel = GI_Load_VX(position, level);
+        float4 voxel = GI_Load_Voxel(position, level);
         color.rgb += voxel.rgb * (1.0 + level) * pow2(color.a) * i;
         color.a *= saturate(1.0 - voxel.a * (1.0 + pow3(level) * 0.075));
     }
@@ -154,11 +265,10 @@ float4 GI_ConeTrace_Diffuse(const float3 O, const float3 N, const float dither)
         for (uint j = 0u; j < 11u; ++j)
         {
             float level = max(1.0f, log2(levelscale * DI));
-            float4 V = GI_Load_VX(O + D * DI, level);
+            float4 V = GI_Load_Voxel(O + D * DI, level);
             C.rgb += (1.0f - C.a) * V.a * (V.rgb / max(1e-4f, V.a));
             C.a = min(1.0f, C.a + (1.0f - C.a) * V.a);
             DI += S * level;
-
             AO *= max(0.0f, 1.0f - V.a * (1.0f + level * 0.5f));
         }
 
@@ -166,9 +276,8 @@ float4 GI_ConeTrace_Diffuse(const float3 O, const float3 N, const float dither)
         A += C * max(0.0f, dot(N, D));
     }
  
-    float groundOcclusion = saturate(N.y + 1.0f);
-
-    A.a *= groundOcclusion;
+    // Ground Occlusion
+    A.a *= saturate(N.y + 1.0f);
     A /= 6.0f;
 
     return A;

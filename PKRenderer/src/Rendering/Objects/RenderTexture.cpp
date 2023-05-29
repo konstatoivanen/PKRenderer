@@ -49,23 +49,26 @@ namespace PK::Rendering::Objects
         }
     }
 
-    void RenderTexture::Validate(uint3 resolution)
+    bool RenderTexture::Validate(uint3 resolution)
     {
         if (m_descriptor.resolution == resolution)
         {
-            return;
+            return false;
         }
 
         m_descriptor.resolution = resolution;
+        bool resized = false;
 
         for (auto i = 0u; i < m_colorAttachmentCount; ++i)
         {
-            m_colorAttachments[i]->Validate(resolution);
+            resized |= m_colorAttachments[i]->Validate(resolution);
         }
 
         if (m_depthAttachment != nullptr)
         {
-            m_depthAttachment->Validate(resolution);
+            resized |= m_depthAttachment->Validate(resolution);
         }
+
+        return resized;
     }
 }
