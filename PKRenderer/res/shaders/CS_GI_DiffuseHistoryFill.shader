@@ -12,9 +12,8 @@
     look at mipvis.pdn
 */
 
-#define GROUP_SIZE 8
-#define LDS_SIZE 32
-int lds_mip = 0;
+#define GROUP_SIZE 8u
+#define LDS_SIZE 32u
 shared uint4 shared_Samples[LDS_SIZE][LDS_SIZE];
 shared uint shared_DoCompute;
 
@@ -40,14 +39,14 @@ uint4 NormalizeSample(GISampleDiff o, float w)
 
 void Group_LoadFirstMip(const int2 size)
 {
-    const int2 baseCoord = GROUP_SIZE * 2 * (int2(gl_WorkGroupID.xy) / 2) - int2(GROUP_SIZE);
-    const int threadIndex = int(gl_LocalInvocationIndex);
+    const int2 baseCoord = int(GROUP_SIZE) * 2 * (int2(gl_WorkGroupID.xy) / 2) - int(GROUP_SIZE).xx;
+    const uint threadIndex = gl_LocalInvocationIndex;
 
-    for (int i = 0; i < 16; ++i)
+    for (uint i = 0u; i < 16u; ++i)
     {
-        const int sharedOffset = 16 * threadIndex + i;
-        const int2 sharedCoord = int2(sharedOffset % LDS_SIZE, sharedOffset / LDS_SIZE);
-        const int2 coord = baseCoord + sharedCoord;
+        const uint sharedOffset = 16u * threadIndex + i;
+        const uint2 sharedCoord = uint2(sharedOffset % LDS_SIZE, sharedOffset / LDS_SIZE);
+        const int2 coord = baseCoord + int2(sharedCoord);
 
         if (!All_InArea(coord, int2(0), size))
         {
@@ -56,72 +55,59 @@ void Group_LoadFirstMip(const int2 size)
         }
 
         const uint4 packed = GI_Load_Packed_SampleDiff(coord);
-
-        if (packed.w == 0u)
-        {
-            shared_Samples[sharedCoord.y][sharedCoord.x] = uint4(0);
-            continue;
-        }
-
-        shared_Samples[sharedCoord.y][sharedCoord.x] = packed;
+        shared_Samples[sharedCoord.y][sharedCoord.x] = packed.w == 0u ? uint4(0) : packed;
     }
 }
 
-void Group_ReduceMip()
+void Group_ReduceMip(const uint mip)
 {
-    lds_mip++;
+    const uint sharedWidth = LDS_SIZE >> mip;
+    const uint sharedCount = sharedWidth * sharedWidth;
+    const uint threadCount = GROUP_SIZE * GROUP_SIZE;
+    const uint threadIndex = gl_LocalInvocationIndex;
+    const uint loadCount = max(1u, sharedCount / threadCount);
+    const uint strideStore = 1u << mip;
+    const uint strideLoad = 1u << (mip - 1u);
 
-    const int sharedWidth = LDS_SIZE >> lds_mip;
-    const int sharedCount = sharedWidth * sharedWidth;
-    const int threadCount = GROUP_SIZE * GROUP_SIZE;
-    const int threadIndex = int(gl_LocalInvocationIndex);
-    const int loadCount = max(1, sharedCount / threadCount);
-
-    const int strideStore = 1 << (lds_mip);
-    const int strideLoad = 1 << (lds_mip - 1);
-
-    if (threadIndex >= sharedCount)
+    if (threadIndex < sharedCount)
     {
-        return;
-    }
-
-    for (int i = 0; i < loadCount; ++i)
-    {
-        const int sharedOffset = loadCount * threadIndex + i;
-        const int2 sharedCoord = strideStore * int2(sharedOffset % sharedWidth, sharedOffset / sharedWidth);
-
-        GISampleDiff flt = pk_Zero_GISampleDiff;
-        float wSum = 0.0f;
-
-        for (int xx = 0; xx <= 1; ++xx)
-        for (int yy = 0; yy <= 1; ++yy)
+        for (uint i = 0u; i < loadCount; ++i)
         {
-            const int2 xy = sharedCoord + strideLoad * int2(xx, yy);
-            const uint4 packed = shared_Samples[xy.y][xy.x];
+            const uint sharedOffset = loadCount * threadIndex + i;
+            const uint2 sharedCoord = strideStore * uint2(sharedOffset % sharedWidth, sharedOffset / sharedWidth);
 
-            if (packed.w != 0u)
+            GISampleDiff flt = pk_Zero_GISampleDiff;
+            float wSum = 0.0f;
+
+            for (uint xx = 0u; xx <= 1u; ++xx)
+            for (uint yy = 0u; yy <= 1u; ++yy)
             {
-                AddSample(flt, GI_Unpack_SampleDiff(packed), 1.0f);
-                wSum += 1.0f;
-            }
-        }
+                const uint2 xy = sharedCoord + strideLoad * uint2(xx, yy);
+                const uint4 packed = shared_Samples[xy.y][xy.x];
 
-        shared_Samples[sharedCoord.y][sharedCoord.x] = NormalizeSample(flt, wSum);
+                if (packed.w != 0u)
+                {
+                    AddSample(flt, GI_Unpack_SampleDiff(packed), 1.0f);
+                    wSum += 1.0f;
+                }
+            }
+
+            shared_Samples[sharedCoord.y][sharedCoord.x] = NormalizeSample(flt, wSum);
+        }
     }
 }
 
-void FilterBilateral(inout GISampleDiff o)
+void FilterBilateral(inout GISampleDiff o, const uint mip)
 {
-    const int2 sharedBase = (int2(gl_WorkGroupID.xy) % int2(2)) * GROUP_SIZE + GROUP_SIZE;
+    const uint2 sharedBase = (gl_WorkGroupID.xy % 2u) * GROUP_SIZE + GROUP_SIZE;
 
-    const int stride0 = 1 << lds_mip;
-    const int stride1 = stride0 / 2;
+    const uint stride0 = 1u << mip;
+    const uint stride1 = stride0 / 2u;
 
-    const int2 coord = sharedBase + int2(gl_LocalInvocationID.xy);
-    const int2 base = stride0 * ((coord - stride1) / stride0);
+    const uint2 coord = sharedBase + gl_LocalInvocationID.xy;
+    const uint2 base = stride0 * ((coord - stride1) / stride0);
 
     const float2 ddxy = float2(coord - base - stride1 + 0.5f.xx) / stride0;
-    const float zbias = o.depth * 1e-1f;
 
     const float bilinearWeights[2][2] =
     {
@@ -132,8 +118,8 @@ void FilterBilateral(inout GISampleDiff o)
     GISampleDiff flt = pk_Zero_GISampleDiff;
     float wSum = 0.0f;
 
-    for (int yy = 0; yy <= 1; ++yy)
-    for (int xx = 0; xx <= 1; ++xx)
+    for (uint yy = 0; yy <= 1u; ++yy)
+    for (uint xx = 0; xx <= 1u; ++xx)
     {
         const uint4 packed = shared_Samples[base.y + yy * stride0][base.x + xx * stride0];
 
@@ -190,39 +176,39 @@ void main()
 
     if (history == 4u)
     {
-        FilterBilateral(filtered.diff);
+        FilterBilateral(filtered.diff, 0);
     }
     
-    Group_ReduceMip();
+    Group_ReduceMip(1);
     barrier();
 
     if (history == 3u)
     {
-        FilterBilateral(filtered.diff);
+        FilterBilateral(filtered.diff, 1);
     }
 
-    Group_ReduceMip();
+    Group_ReduceMip(2);
     barrier();
 
     if (history == 2u)
     {
-        FilterBilateral(filtered.diff);
+        FilterBilateral(filtered.diff, 2);
     }
 
-    Group_ReduceMip();
+    Group_ReduceMip(3);
     barrier();
 
     if (history == 1u)
     {
-        FilterBilateral(filtered.diff);
+        FilterBilateral(filtered.diff, 3);
     }
 
-    Group_ReduceMip();
+    Group_ReduceMip(4);
     barrier();
 
     if (history == 0u)
     {
-        FilterBilateral(filtered.diff);
+        FilterBilateral(filtered.diff, 4);
     }
 
     if (isValid)
