@@ -843,6 +843,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_GI_DiskFilter.shader" />
     <None Include="res\shaders\CS_GI_DiffuseHistoryFill.shader" />
     <None Include="res\shaders\CS_GI_Reproject.shader" />
+    <None Include="res\shaders\CS_GI_ScreenMip.shader" />
     <None Include="res\shaders\CS_TemporalAntialiasing.shader" />
     <None Include="res\shaders\CS_VolumeFogDepthMax.shader" />
     <None Include="res\shaders\CS_VolumeFogLightDensity.shader" />
@@ -863,7 +864,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\SharedSceneGI.glsl" />
     <None Include="res\shaders\includes\SharedShadowmapping.glsl" />
     <None Include="res\shaders\includes\SharedSurfaceShading.glsl" />
-    <None Include="res\shaders\CS_GI_Mipmap.shader" />
+    <None Include="res\shaders\CS_GI_VolumeMipmap.shader" />
     <None Include="res\shaders\includes\SHL1.glsl" />
     <None Include="res\shaders\includes\LDSLoader.glsl" />
     <None Include="res\shaders\RS_GI_Raytrace.shader" />

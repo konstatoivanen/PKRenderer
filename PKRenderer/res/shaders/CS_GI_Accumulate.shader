@@ -59,7 +59,6 @@ void main()
 
     if (!Test_DepthFar(depth))
     {
-        GI_Store_Packed_SampleFull(coord, uint4(0), uint2(0), uint2(0));
         return;
     }
 

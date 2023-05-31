@@ -17,6 +17,7 @@ layout(r32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_RayHits;
 layout(rg32ui, set = PK_SET_SHADER) uniform writeonly uimage2DArray pk_GI_ScreenDataWrite;
 layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_GI_VolumeMaskWrite;
 layout(rgba16, set = PK_SET_SHADER) uniform image3D pk_GI_VolumeWrite;
+PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataMips;
 PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 
@@ -31,6 +32,8 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 #define PK_GI_AO_SPEC_MAX_DISTANCE 1.0f
 #define PK_GI_MAX_HISTORY 256u
 #define PK_GI_MIN_VXHISTORY 32.0
+#define PK_GI_SCREEN_MAX_MIP 4
+#define PK_GI_DATA_LOAD_MIP(c, l, m) texelFetch(pk_GI_ScreenDataMips, int3(c, l), m).xy
 #define PK_GI_DATA_LOAD(c, l) texelFetch(pk_GI_ScreenDataRead, int3(c, l), 0).xy
 #define PK_GI_DATA_STORE(c, l, d) imageStore(pk_GI_ScreenDataWrite, int3(c, l), uint4(d, 0,0))
 
@@ -139,13 +142,18 @@ GISampleMeta GI_Unpack_SampleMeta(const uint2 p)
 }
 
 //----------LOAD FUNCTIONS----------//
+uint4 GI_Load_Packed_Mip_SampleDiff(const int2 coord, const int mip) { return uint4(PK_GI_DATA_LOAD_MIP(coord, PK_GI_LVL_DIFF0, mip), PK_GI_DATA_LOAD_MIP(coord, PK_GI_LVL_DIFF1, mip)); }
+uint2 GI_Load_Packed_Mip_SampleSpec(const int2 coord, const int mip) { return PK_GI_DATA_LOAD_MIP(coord, PK_GI_LVL_SPEC, mip); }
+
 uint4 GI_Load_Packed_SampleDiff(const int2 coord) { return uint4(PK_GI_DATA_LOAD(coord, PK_GI_LVL_DIFF0), PK_GI_DATA_LOAD(coord, PK_GI_LVL_DIFF1)); }
 uint2 GI_Load_Packed_SampleSpec(const int2 coord) { return PK_GI_DATA_LOAD(coord, PK_GI_LVL_SPEC); }
 uint2 GI_Load_Packed_SampleMeta(const int2 coord) { return PK_GI_DATA_LOAD(coord, PK_GI_LVL_META); }
+
 GISampleDiff GI_Load_SampleDiff(const int2 coord) { return GI_Unpack_SampleDiff(GI_Load_Packed_SampleDiff(coord)); }
 GISampleSpec GI_Load_SampleSpec(const int2 coord) { return GI_Unpack_SampleSpec(GI_Load_Packed_SampleSpec(coord)); }
 GISampleMeta GI_Load_SampleMeta(const int2 coord) { return GI_Unpack_SampleMeta(GI_Load_Packed_SampleMeta(coord)); }
 GISampleFull GI_Load_SampleFull(const int2 coord) { return GISampleFull(GI_Load_SampleDiff(coord), GI_Load_SampleSpec(coord), GI_Load_SampleMeta(coord)); }
+
 GIRayHits GI_Load_RayHits(const int2 coord)
 {
     const uint packedHits = imageLoad(pk_GI_RayHits, coord).x;
@@ -168,6 +176,7 @@ void GI_Store_Packed_SampleFull(const int2 coord, const uint4 u0, const uint2 u1
     GI_Store_Packed_SampleSpec(coord, u1); 
     GI_Store_Packed_SampleMeta(coord, u2); 
 }
+
 void GI_Store_SampleDiff(const int2 coord, const GISampleDiff u) { GI_Store_Packed_SampleDiff(coord, GI_Pack_SampleDiff(u)); }
 void GI_Store_SampleSpec(const int2 coord, const GISampleSpec u) { GI_Store_Packed_SampleSpec(coord, GI_Pack_SampleSpec(u)); }
 void GI_Store_SampleMeta(const int2 coord, const GISampleMeta u) { GI_Store_Packed_SampleMeta(coord, GI_Pack_SampleMeta(u)); }

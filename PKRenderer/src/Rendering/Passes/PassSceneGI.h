@@ -25,6 +25,7 @@ namespace PK::Rendering::Passes
             Objects::Shader* m_computeMipmap = nullptr;
             Objects::Shader* m_computeAccumulate = nullptr;
             Objects::Shader* m_computeReproject = nullptr;
+            Objects::Shader* m_computeScreenMip = nullptr;
             Objects::Shader* m_computeDiffuseHistoryFill = nullptr;
             Objects::Shader* m_computeDiskFilter = nullptr;
             Objects::Shader* m_rayTraceGatherGI = nullptr;
@@ -33,6 +34,7 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Texture> m_voxels;
             Utilities::Ref<Objects::Texture> m_voxelMask;
             Utilities::Ref<Objects::Texture> m_screenData;
+            Utilities::Ref<Objects::Texture> m_screenDataMips;
             Utilities::Ref<Objects::Texture> m_rayhits;
             uint32_t m_checkerboardIndex = 0u;
             int32_t m_rasterAxis = 0;

@@ -11,12 +11,18 @@ namespace PK::Rendering::Passes
     using namespace Structs;
     using namespace Objects;
 
+    static uint3 GetScreenDataMipResolution(uint w, uint h)
+    {
+        return uint3(8u * uint(ceil(w / 16.0f)), 8u * uint(ceil(h / 16.0f)), 1u);
+    }
+
     PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
         m_computeClear = assetDatabase->Find<Shader>("CS_GI_Clear");
-        m_computeMipmap = assetDatabase->Find<Shader>("CS_GI_Mipmap");
+        m_computeMipmap = assetDatabase->Find<Shader>("CS_GI_VolumeMipmap");
         m_computeAccumulate = assetDatabase->Find<Shader>("CS_GI_Accumulate");
         m_computeReproject = assetDatabase->Find<Shader>("CS_GI_Reproject");
+        m_computeScreenMip = assetDatabase->Find<Shader>("CS_GI_ScreenMip");
         m_computeDiffuseHistoryFill = assetDatabase->Find<Shader>("CS_GI_DiffuseHistoryFill");
         m_computeDiskFilter = assetDatabase->Find<Shader>("CS_GI_DiskFilter");
         m_rayTraceGatherGI = assetDatabase->Find<Shader>("RS_GI_Raytrace");
@@ -54,7 +60,13 @@ namespace PK::Rendering::Passes
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1 };
         m_screenData = Texture::Create(descr, "GI.ScreenData");
 
+        descr.layers = 3u;
+        descr.levels = 4u;
+        descr.resolution = GetScreenDataMipResolution(config->InitialWidth, config->InitialHeight);
+        m_screenDataMips = Texture::Create(descr, "GI.ScreenDataMips");
+
         descr.samplerType = SamplerType::Sampler2D;
+        descr.levels = 1u;
         descr.layers = 1u;
         descr.usage = TextureUsage::Storage;
         descr.format = TextureFormat::R32UI;
@@ -88,15 +100,7 @@ namespace PK::Rendering::Passes
     void PassSceneGI::PreRender(CommandBuffer* cmd, const uint3& resolution)
     {
         auto hash = HashCache::Get();
-
-        m_shaderBindingTable.Validate(
-            GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer),
-            GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Compute),
-            m_rayTraceGatherGI);
-
-        m_screenData->Validate(resolution);
-        m_rayhits->Validate(resolution);
-        GraphicsAPI::SetImage(hash->pk_GI_RayHits, m_rayhits.get());
+        auto mipResolution = GetScreenDataMipResolution(resolution.x, resolution.y);
 
         uint4 swizzles[3] =
         {
@@ -105,9 +109,24 @@ namespace PK::Rendering::Passes
              { 1u, 2u, 0u, 0u },
         };
 
+        m_shaderBindingTable.Validate(
+            GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer),
+            GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Compute),
+            m_rayTraceGatherGI);
+
+        m_screenData->Validate(resolution);
+        m_rayhits->Validate(resolution);
+        m_screenDataMips->Validate(mipResolution);
+
+        GraphicsAPI::SetImage(hash->pk_GI_RayHits, m_rayhits.get());
+        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataMip1, m_screenDataMips.get(), { 0, 0, 1, 3 });
+        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataMip2, m_screenDataMips.get(), { 1, 0, 1, 3 });
+        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataMip3, m_screenDataMips.get(), { 2, 0, 1, 3 });
+        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataMip4, m_screenDataMips.get(), { 3, 0, 1, 3 });
+        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataMips, m_screenDataMips.get());
+
         m_rasterAxis = (m_rasterAxis + 1) % 3;
         m_checkerboardIndex = (m_checkerboardIndex + 1) % 4;
-
         m_parameters->Set<uint4>(hash->pk_GI_VolumeSwizzle, swizzles[m_rasterAxis]);
         m_parameters->Set<int4>(hash->pk_GI_Checkerboard_Offset, { m_checkerboardIndex / 2, m_checkerboardIndex % 2, 0, 0 });
         m_parameters->FlushBuffer(QueueType::Transfer);
@@ -182,19 +201,15 @@ namespace PK::Rendering::Passes
         cmd->BeginDebugScope("SceneGI.Filter", PK_COLOR_GREEN);
         
         GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), range0);
-        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), range1);
-        cmd->Dispatch(m_computeAccumulate, 0, dimension);
-
-        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), range1);
         GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), range0);
+        cmd->Dispatch(m_computeAccumulate, 0, dimension);
+        cmd->Dispatch(m_computeScreenMip, 0, m_screenDataMips->GetResolution());
         cmd->Dispatch(m_computeDiffuseHistoryFill, 0, dimension);
-        
-        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), range0);
+
         GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), range1);
         cmd->Dispatch(m_computeDiskFilter, 0, dimension);
 
         GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), range1);
-        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), range0);
         cmd->EndDebugScope();
     }
 }
