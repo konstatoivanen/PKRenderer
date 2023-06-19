@@ -1413,7 +1413,7 @@
     <ClInclude Include="src\Utilities\VersionedObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utilities\PointerMap.h">
+    <ClInclude Include="src\Utilities\FastMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Structs\StructIndirectArguments.h">
@@ -1468,6 +1468,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Objects\ShaderBindingTable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utilities\Bitmask.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1980,7 +1983,6 @@
     <None Include="res\shaders\includes\SharedSceneGI.glsl" />
     <None Include="res\shaders\CS_GI_Accumulate.shader" />
     <None Include="res\shaders\includes\SharedVolumeFog.glsl" />
-    <None Include="res\shaders\CS_VolumeFogDepthMax.shader" />
     <None Include="res\shaders\CS_VolumeFogLightDensity.shader" />
     <None Include="res\shaders\CS_VolumeFogScatter.shader" />
     <None Include="res\shaders\SH_VS_VolumeFogComposite.shader" />
@@ -2011,9 +2013,10 @@
     <None Include="res\shaders\includes\BlueNoise.glsl" />
     <None Include="res\textures\default\T_Bluenoise128x64.ktx2" />
     <None Include="res\shaders\includes\LDSLoader.glsl" />
-    <None Include="res\shaders\CS_GI_DiffuseHistoryFill.shader" />
+    <None Include="res\shaders\CS_GI_HistoryFill.shader" />
     <None Include="res\shaders\CS_GI_DiskFilter.shader" />
     <None Include="res\shaders\CS_GI_ScreenMip.shader" />
+    <None Include="res\shaders\CS_HierachicalDepth.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

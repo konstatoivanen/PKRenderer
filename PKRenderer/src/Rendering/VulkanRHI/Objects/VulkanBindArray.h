@@ -15,14 +15,14 @@ namespace PK::Rendering::VulkanRHI::Objects
             ~VulkanBindArray();
             const VulkanBindHandle* const* GetHandles(uint32_t* version, uint32_t* count) const;
 
-            int32_t Add(Rendering::Objects::Texture* value, void* bindInfo) override final;
-            int32_t Add(Rendering::Objects::Texture* value) override final;
-            int32_t Add(const Rendering::Objects::Texture* value) override final;
-            int32_t Add(Rendering::Objects::Buffer* value, void* bindInfo) override final;
-            int32_t Add(Rendering::Objects::Buffer* value) override final;
-            int32_t Add(const Rendering::Objects::Buffer* value) override final;
+            int32_t Add(Rendering::Objects::Texture* value, void* bindInfo) final;
+            int32_t Add(Rendering::Objects::Texture* value) final;
+            int32_t Add(const Rendering::Objects::Texture* value) final;
+            int32_t Add(Rendering::Objects::Buffer* value, void* bindInfo) final;
+            int32_t Add(Rendering::Objects::Buffer* value) final;
+            int32_t Add(const Rendering::Objects::Buffer* value) final;
 
-            void Clear() override final { m_count = 0; }
+            void Clear() final { m_count = 0; }
 
         private:
             int32_t Add(const VulkanBindHandle* handle);

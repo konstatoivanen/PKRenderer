@@ -152,6 +152,9 @@ namespace PK::Math
 
         float3 GetCenter() const { return min + (max - min) * 0.5f; }
         float3 GetExtents() const { return (max - min) * 0.5f; }
+        float GetWidth() const { return max.x - min.x; }
+        float GetHeight() const { return max.y - min.y; }
+        float GetDepth() const { return max.z - min.z; }
 
         BoundingBox() : min(PK_FLOAT3_ZERO), max(PK_FLOAT3_ZERO) {}
         BoundingBox(const float3& _min, const float3& _max) : min(_min), max(_max) {}

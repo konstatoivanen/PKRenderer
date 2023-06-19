@@ -7,34 +7,29 @@
 
 namespace PK::Utilities
 {
-    template<typename TKey, typename T, typename THash = std::hash<TKey>>
-    struct PointerMap : NoCopy
+    template<typename TKey, typename TValue, typename THash = std::hash<TKey>>
+    struct FastMap : NoCopy
     {
-        using TValue = T*;
+        struct Node
+        {
+            TKey key = {};
+            size_t hashcode = 0ull;
+            int32_t previous;
+            int32_t next;
+            Node() : previous(-1), next(-1) {}
+            Node(const TKey& key, uint64_t hash, int32_t previousNode) : key(key), hashcode(hash), previous(previousNode), next(-1) {}
+            Node(const TKey& key, uint64_t hash) : key(key), hashcode(hash), previous(-1), next(-1) {}
+        };
 
-        public:
-            struct Node
-            {
-                TKey key = {};
-                size_t hashcode = 0ull;
-                int32_t previous;
-                int32_t next;
-
-                Node() : previous(-1), next(-1) {}
-                Node(const TKey& key, uint64_t hash, int32_t previousNode) : key(key), hashcode(hash), previous(previousNode), next(-1) {}
-                Node(const TKey& key, uint64_t hash) : key(key), hashcode(hash), previous(-1), next(-1) {}
-            };
-
-            struct KeyValues
-            {
-                const Node* keys;
-                TValue* values;
-                size_t count;
-            };
+        struct KeyValues
+        {
+            const Node* keys;
+            TValue* values;
+            size_t count;
+        };
 
         private:
             inline static THash Hash;
-
             MemoryBlock<TValue> m_values;
             MemoryBlock<Node> m_nodes;
             MemoryBlock<int32_t> m_buckets;
@@ -42,16 +37,11 @@ namespace PK::Utilities
             uint32_t m_count;
 
             uint32_t GetBucketIndex(uint64_t hash) const { return (uint32_t)(hash % m_buckets.GetCount()); }
-
             void SetValueIndexInBuckets(uint32_t i, int32_t value) { m_buckets[i] = value + 1; }
-            
-            int32_t GetValueIndexFromBuckets(uint32_t i) const
-            {
-                return m_buckets[i] - 1;
-            }
+            int32_t GetValueIndexFromBuckets(uint32_t i) const { return m_buckets[i] - 1; }
 
         public:
-            PointerMap(uint32_t size) :
+            FastMap(uint32_t size) :
                 m_collisions(0u),
                 m_count(0u),
                 m_values(size),
@@ -60,29 +50,24 @@ namespace PK::Utilities
             {
             }
 
-            PointerMap() : PointerMap(1)
+            FastMap() : FastMap(1)
             {
             }
 
             void Clear()
             {
-                if (m_count == 0)
+                if (m_count > 0)
                 {
-                    return;
+                    m_count = 0u;
+                    m_values.Clear();
+                    m_nodes.Clear();
+                    m_buckets.Clear();
                 }
-
-                m_count = 0u;
-                m_values.Clear();
-                m_nodes.Clear();
-                m_buckets.Clear();
             }
 
             ConstBufferView<TValue> GetValues() const { return { m_values.GetData(), (size_t)m_count }; }
-
             KeyValues GetKeyValues() { return { m_nodes.GetData(), m_values.GetData(), (size_t)m_count }; }
-
             constexpr uint32_t GetCount() const { return m_count; }
-
             constexpr size_t GetCapacity() const { return m_values.GetCount(); }
 
             int32_t GetIndex(const TKey& key) const
@@ -104,21 +89,12 @@ namespace PK::Utilities
                 return -1;
             }
 
-
-            bool ContainsKey(const TKey& key) const
-            {
-                return GetIndex(key) != -1;
-            }
+            bool ContainsKey(const TKey& key) const { return GetIndex(key) != -1; }
             
             const TValue GetValue(const TKey& key) const
             {
                 auto index = GetIndex(key);
                 return index != -1 ? m_values[index] : nullptr;
-            }
-
-            const TValue GetValueAt(uint32_t index) const 
-            {
-                return m_values[index];
             }
 
             TValue* GetValueRef(const TKey& key)
@@ -127,10 +103,8 @@ namespace PK::Utilities
                 return index != -1 ? &m_values[index] : nullptr;
             }
 
-            TValue* GetValueAtRef(uint32_t index)
-            {
-                return &m_values[index];
-            }
+            const TValue GetValueAt(uint32_t index) const { return m_values[index]; }
+            TValue* GetValueAtRef(uint32_t index) { return &m_values[index]; }
 
             bool TryGetValue(const TKey& key, TValue* result)
             {
@@ -146,7 +120,7 @@ namespace PK::Utilities
                 return false;
             }
 
-            bool AddValue(const TKey& key, TValue value)
+            bool AddKey(const TKey& key, uint32_t* outIndex)
             {
                 auto hash = Hash(key);
                 auto bucketIndex = GetBucketIndex(hash);
@@ -165,7 +139,7 @@ namespace PK::Utilities
                         if (m_nodes[currentValueIndex].hashcode == hash
                          && m_nodes[currentValueIndex].key == key)
                         {
-                            m_values[currentValueIndex] = value;
+                            *outIndex = currentValueIndex;
                             return false;
                         }
 
@@ -178,8 +152,7 @@ namespace PK::Utilities
                     m_nodes[valueIndex].next = m_count;
                 }
 
-                SetValueIndexInBuckets(bucketIndex, m_count);
-                m_values[m_count++] = value;
+                SetValueIndexInBuckets(bucketIndex, m_count++);
 
                 if (m_count == m_values.GetCount())
                 {
@@ -214,7 +187,16 @@ namespace PK::Utilities
                     }
                 }
 
+                *outIndex = m_count - 1u;
                 return true;
+            }
+
+            bool AddValue(const TKey& key, const TValue& value)
+            {
+                auto index = 0u;
+                auto appended = AddKey(key, &index);
+                m_values[index] = value;
+                return appended;
             }
 
             bool RemoveAt(uint32_t index)
@@ -302,5 +284,12 @@ namespace PK::Utilities
 
                 return indexToValueToRemove != -1;
             }
+    };
+
+    template<typename TKey, typename TValue, typename THash = std::hash<TKey>>
+    struct PointerMap : public FastMap<TKey, TValue*, THash>
+    {
+        PointerMap(uint32_t size) : FastMap<TKey, TValue*, THash>(size) {}
+        PointerMap() : FastMap<TKey, TValue*, THash>() {}
     };
 }

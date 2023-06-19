@@ -14,7 +14,7 @@ namespace PK::Rendering::Objects
 
             Texture(const char* name) : m_name(name){}
             virtual ~Texture() = default;
-            void Import(const char* filepath) override final;
+            void Import(const char* filepath) final;
             virtual void SetSampler(const Structs::SamplerDescriptor& sampler) = 0;
             virtual bool Validate(const Math::uint3& resolution) = 0;
             virtual bool Validate(const uint32_t levels, const uint32_t layers) = 0;

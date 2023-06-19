@@ -34,6 +34,7 @@ namespace PK::Rendering
         m_resizeFrameIndex(0ull)
     {
         m_OEMBackgroundShader = assetDatabase->Find<Shader>("SH_VS_IBLBackground");
+        m_computeHierachicalDepth = assetDatabase->Find<Shader>("CS_HierachicalDepth");
 
         RenderTextureDescriptor descriptor{};
         descriptor.resolution = { config->InitialWidth, config->InitialHeight, 1 };
@@ -45,6 +46,22 @@ namespace PK::Rendering
         descriptor.sampler.filterMag = FilterMode::Bilinear;
         m_renderTarget = CreateRef<RenderTexture>(descriptor, "Scene.RenderTarget");
         m_renderTargetPrevious = CreateRef<RenderTexture>(descriptor, "Scene.RenderTarget.Previous");
+
+        TextureDescriptor hizDesc{};
+        hizDesc.samplerType = SamplerType::Sampler2DArray;
+        hizDesc.format = TextureFormat::R16F;
+        hizDesc.sampler.filterMin = FilterMode::Bilinear;
+        hizDesc.sampler.filterMag = FilterMode::Bilinear;
+        hizDesc.sampler.wrap[0] = WrapMode::Border;
+        hizDesc.sampler.wrap[1] = WrapMode::Border;
+        hizDesc.sampler.wrap[2] = WrapMode::Border;
+        hizDesc.sampler.borderColor = BorderColor::FloatClear;
+        hizDesc.sampler.mipMax = 8.0f;
+        hizDesc.resolution = { config->InitialWidth, config->InitialHeight, 1 };
+        hizDesc.levels = 9u;
+        hizDesc.layers = 2u;
+        hizDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
+        m_hierarchicalDepth = Texture::Create(hizDesc, "Scene.HierarchicalDepth");
 
         m_sceneStructure = AccelerationStructure::Create("Scene");
 
@@ -64,6 +81,7 @@ namespace PK::Rendering
                 { ElementType::Float4, hash->pk_ScreenParams },
                 { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
                 { ElementType::Float4, hash->pk_ProjectionJitter },
+                { ElementType::Uint4, hash->pk_FrameRandom },
                 { ElementType::Uint2, hash->pk_ScreenSize },
                 { ElementType::Uint2, hash->pk_FrameIndex },
                 { ElementType::Float4x4, hash->pk_MATRIX_V },
@@ -207,6 +225,7 @@ namespace PK::Rendering
         m_constantsPerFrame->Set<float4>(hash->pk_CosTime, { (float)cos(token->time / 8.0f), (float)cos(token->time / 4.0f), (float)cos(token->time / 2.0f), (float)cos(token->time) });
         m_constantsPerFrame->Set<float4>(hash->pk_DeltaTime, { (float)token->deltaTime, 1.0f / (float)token->deltaTime, (float)token->smoothDeltaTime, 1.0f / (float)token->smoothDeltaTime });
         m_constantsPerFrame->Set<uint2>(hash->pk_FrameIndex, { token->frameIndex % 0xFFFFFFFFu, (token->frameIndex - m_resizeFrameIndex) % 0xFFFFFFFFu });
+        m_constantsPerFrame->Set<uint4>(hash->pk_FrameRandom, Functions::MurmurHash41((uint32_t)(token->frameIndex % ~0u)));
         token->logFrameRate = true;
     }
 
@@ -214,7 +233,7 @@ namespace PK::Rendering
     {
         auto hash = HashCache::Get();
         auto queues = GraphicsAPI::GetQueues();
-        auto resolution = window->GetResolution();
+        auto resolution = window->GetResolutionAligned();
 
         if (m_renderTarget->Validate(resolution))
         {
@@ -223,8 +242,10 @@ namespace PK::Rendering
         }
 
         m_renderTargetPrevious->Validate(resolution);
+        m_hierarchicalDepth->Validate({ resolution.x, resolution.y, 1u });
 
         GraphicsAPI::SetTexture(hash->pk_ScreenDepthCurrent, m_renderTarget->GetDepth());
+        GraphicsAPI::SetTexture(hash->pk_ScreenDepthHierachical, m_hierarchicalDepth.get());
         GraphicsAPI::SetTexture(hash->pk_ScreenNormalsCurrent, m_renderTarget->GetColor(1));
         GraphicsAPI::SetTexture(hash->pk_ScreenDepthPrevious, m_renderTargetPrevious->GetDepth());
         GraphicsAPI::SetTexture(hash->pk_ScreenNormalsPrevious, m_renderTargetPrevious->GetColor(1));
@@ -270,6 +291,10 @@ namespace PK::Rendering
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         cmdgraphics->ClearDepth(1.0f, 0u);
         m_passGeometry.RenderGBuffer(cmdgraphics);
+
+        // Compute HiZ
+        ComputeHierarchicalDepth(cmdgraphics);
+
         queues->Submit(QueueType::Graphics, &cmdgraphics);
 
         m_passFilmGrain.Compute(cmdcompute);
@@ -277,9 +302,8 @@ namespace PK::Rendering
         queues->Submit(QueueType::Compute, &cmdcompute);
         queues->Sync(QueueType::Graphics, QueueType::Compute);
 
-        // Depth tiles for volume fog filtering
+        // Indirect GI ray tracing
         m_passSceneGI.DispatchRays(cmdcompute);
-        m_passVolumeFog.ComputeDepthTiles(cmdcompute, m_renderTarget->GetResolution());
         queues->Submit(QueueType::Compute, &cmdcompute);
 
         // Voxelize, subsequent passes depend on this
@@ -303,7 +327,7 @@ namespace PK::Rendering
         queues->Submit(QueueType::Graphics, &cmdgraphics);
 
         // Compute voxel volumes on async queue
-        m_passVolumeFog.Compute(cmdcompute);
+        m_passVolumeFog.Compute(cmdcompute, m_renderTarget->GetResolution());
         queues->Submit(QueueType::Compute, &cmdcompute);
         queues->Sync(QueueType::Compute, QueueType::Graphics);
 
@@ -376,5 +400,28 @@ namespace PK::Rendering
 
         m_depthOfField.OnUpdateParameters(config);
         m_passVolumeFog.OnUpdateParameters(config);
+    }
+
+    void RenderPipeline::ComputeHierarchicalDepth(CommandBuffer* cmd)
+    {
+        auto hash = HashCache::Get();
+        auto resolution = m_hierarchicalDepth->GetResolution();
+
+        resolution.x >>= 1u;
+        resolution.y >>= 1u;
+        GraphicsAPI::SetImage(hash->_DestinationTex, m_hierarchicalDepth.get(), { 0, 0, 1, 1 });
+        GraphicsAPI::SetImage(hash->_DestinationMip1, m_hierarchicalDepth.get(), { 1, 0, 1, 1 });
+        GraphicsAPI::SetImage(hash->_DestinationMip2, m_hierarchicalDepth.get(), { 2, 0, 1, 1 });
+        GraphicsAPI::SetImage(hash->_DestinationMip3, m_hierarchicalDepth.get(), { 3, 0, 1, 1 });
+        GraphicsAPI::SetImage(hash->_DestinationMip4, m_hierarchicalDepth.get(), { 4, 0, 1, 1 });
+        cmd->Dispatch(m_computeHierachicalDepth, 0u, resolution);
+
+        resolution.x >>= 4u;
+        resolution.y >>= 4u;
+        GraphicsAPI::SetImage(hash->_DestinationMip1, m_hierarchicalDepth.get(), { 5, 0, 1, 1 });
+        GraphicsAPI::SetImage(hash->_DestinationMip2, m_hierarchicalDepth.get(), { 6, 0, 1, 1 });
+        GraphicsAPI::SetImage(hash->_DestinationMip3, m_hierarchicalDepth.get(), { 7, 0, 1, 1 });
+        GraphicsAPI::SetImage(hash->_DestinationMip4, m_hierarchicalDepth.get(), { 8, 0, 1, 1 });
+        cmd->Dispatch(m_computeHierachicalDepth, 1u, resolution);
     }
 }

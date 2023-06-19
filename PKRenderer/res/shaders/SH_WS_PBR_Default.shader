@@ -63,10 +63,10 @@ void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData
         surf.emission = ecolor;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;
     */
 
-    float3 textureval = tex2D(_PBSTexture, uv).xyz;
+    float3 textureval = PK_SURF_TEX(_PBSTexture, uv).xyz;
     surf.metallic = textureval.SRC_METALLIC * _Metallic;
     surf.roughness = textureval.SRC_ROUGHNESS * _Roughness;
     surf.occlusion = lerp(1.0f, textureval.SRC_OCCLUSION, _Occlusion);
     surf.normal = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
-    surf.albedo = tex2D(_AlbedoTexture, uv).rgb * _Color.xyz;
+    surf.albedo = PK_SURF_TEX(_AlbedoTexture, uv).rgb * _Color.xyz;
 }

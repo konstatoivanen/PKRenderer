@@ -144,7 +144,12 @@ namespace PK::Math::Functions
         return GetOffsetPerspective(x, x + ix, y, y + iy, fovy, aspect, znear + zrange * z, znear + zrange * (z + iz));
     }
 
-    float4x4 GetFrustumBoundingOrthoMatrix(const float4x4& worldToLocal, const float4x4& inverseViewProjection, const float3& paddingLD, const float3& paddingRU, float* outZNear, float* outZFar)
+    float4x4 GetFrustumBoundingOrthoMatrix(const float4x4& worldToLocal, 
+                                            const float4x4& inverseViewProjection, 
+                                            const float3& paddingLD, 
+                                            const float3& paddingRU, 
+                                            float* outZNear, 
+                                            float* outZFar)
     {
         auto aabb = GetInverseFrustumBounds(worldToLocal * inverseViewProjection);
 
@@ -159,7 +164,13 @@ namespace PK::Math::Functions
             aabb.max.z + paddingRU.z) * worldToLocal;
     }
 
-    float GetShadowCascadeMatrices(const float4x4& worldToLocal, const float4x4& inverseViewProjection, const float* zPlanes, float zPadding, uint32_t count, float4x4* matrices)
+    float GetShadowCascadeMatrices(const float4x4& worldToLocal, 
+                                    const float4x4& inverseViewProjection, 
+                                    const float* zPlanes, 
+                                    float zPadding, 
+                                    uint resolution,
+                                    uint32_t count, 
+                                    float4x4* matrices)
     {
         auto matrix = worldToLocal * inverseViewProjection;
         auto minNear = std::numeric_limits<float>().max();
@@ -174,6 +185,19 @@ namespace PK::Math::Functions
             auto lfar = zPlanes[i + 1] / zrange;
 
             aabbs[i] = GetInverseFrustumBounds(matrix, lnear, lfar);
+
+            // Quantize to resolution steps.
+            // Avoids crawling effect, doesn't solve it rotationally though.
+            // For that we would need to use spherical bounds, but that wastes a lot of texel density.
+            auto w = aabbs[i].GetWidth();
+            auto h = aabbs[i].GetHeight();
+            auto c = float2(aabbs[i].GetCenter().xy);
+            auto offset = glm::mod(c, float2(w / resolution, h / resolution));
+
+            aabbs[i].min.x -= offset.x;
+            aabbs[i].min.y -= offset.y;
+            aabbs[i].max.x -= offset.x;
+            aabbs[i].max.y -= offset.y; 
 
             if (aabbs[i].min.z < minNear)
             {

@@ -29,7 +29,7 @@ namespace PK::Core::Services
             virtual ~ISimpleStep() = default;
         public:
             virtual void Step(int condition) = 0;
-            void Step(void* token, int condition) override final { Step(condition); }
+            void Step(void* token, int condition) final { Step(condition); }
     };
 
     struct Step

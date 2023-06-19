@@ -10,14 +10,13 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         VulkanAccelerationStructure(const char* name);
         ~VulkanAccelerationStructure();
-        void Dispose(const FenceRef& fence);
         
-        void BeginWrite(Structs::QueueType queue, uint32_t instanceLimit) override final;
-        void AddInstance(Mesh* mesh, uint32_t submesh, uint32_t customIndex, const PK::Math::float4x4& matrix) override final;
-        void EndWrite() override final;
+        void BeginWrite(Structs::QueueType queue, uint32_t instanceLimit) final;
+        void AddInstance(Mesh* mesh, uint32_t submesh, uint32_t customIndex, const PK::Math::float4x4& matrix) final;
+        void EndWrite() final;
 
-        uint32_t GetInstanceCount() const override final { return m_instanceCount; }
-        uint32_t GetSubStructureCount() const override final { return m_subStructures.GetCount(); };
+        uint32_t GetInstanceCount() const final { return m_instanceCount; }
+        uint32_t GetSubStructureCount() const final { return m_substructures.GetCount(); };
 
         inline const VulkanBindHandle* GetBindHandle() const { return &m_bindHandle; };
 
@@ -46,23 +45,52 @@ namespace PK::Rendering::VulkanRHI::Objects
                 }
             };
 
-            VulkanRawBuffer* GetScratchBuffer(size_t size);
-            VulkanRawBuffer* GetInstanceBuffer(size_t size);
-            VulkanRawAccelerationStructure* GetMeshStructure(Mesh* mesh, uint32_t submeshIndex);
+            constexpr static uint32_t MAX_SUBSTRUCTURES = 1024u;
+
+            struct BLAS
+            {
+                VulkanRawAccelerationStructure* raw = nullptr;
+                MeshKey key;
+                VkAccelerationStructureGeometryKHR geometry{};
+                VkAccelerationStructureBuildRangeInfoKHR range{};
+                VkAccelerationStructureBuildSizesInfoKHR size{};
+                VkAccelerationStructureBuildGeometryInfoKHR buildInfo{};
+                VkDeviceSize bufferOffset = 0ull;
+                VkDeviceSize scratchOffset = 0ull;
+                int32_t queryIndex = -1;
+                bool isCompacted = false;
+            };
+
+            struct TLAS
+            {
+                VulkanRawAccelerationStructure* raw = nullptr;
+                VkAccelerationStructureGeometryKHR geometry{};
+                VkAccelerationStructureBuildRangeInfoKHR range{};
+                VkAccelerationStructureBuildSizesInfoKHR size{};
+                VkAccelerationStructureBuildGeometryInfoKHR buildInfo{};
+                VkDeviceSize bufferOffset = 0ull;
+                VkDeviceSize scratchOffset = 0ull;
+                bool needsRealloc = false;
+            };
+
+            uint64_t GetMeshStructureIndex(Mesh* mesh, uint32_t submeshIndex);
+            void ValidateResources();
 
             const VulkanDriver* m_driver = nullptr;
             std::string m_name = "AccelerationStructure";
 
             Objects::VulkanCommandBuffer* m_cmd = nullptr;
-
             VulkanRawBuffer* m_instanceInputBuffer = nullptr;
             VulkanRawBuffer* m_scratchBuffer = nullptr;
-            VulkanRawAccelerationStructure* m_structure = nullptr;
-            PK::Utilities::PointerMap<MeshKey, VulkanRawAccelerationStructure, MeshKeyHash> m_subStructures;
+            VulkanRawBuffer* m_structureBuffer = nullptr;
+            VulkanQueryPool* m_queryPool = nullptr;
+            TLAS m_structure{};
+            PK::Utilities::FastMap<MeshKey, BLAS, MeshKeyHash> m_substructures;
             VulkanBindHandle m_bindHandle{};
             uint32_t m_instanceCount = 0u;
             uint32_t m_instanceLimit = 0u;
-            uint32_t m_previousSubStructureCount = 0u;
+            VkDeviceSize m_instanceBufferOffset = 0ull;
             VkAccelerationStructureInstanceKHR* m_writeBuffer = nullptr;
+            VkDeviceSize m_queryResults[MAX_SUBSTRUCTURES]{};
     };
 }

@@ -13,24 +13,19 @@ layout(rgba16f, set = PK_SET_DRAW) uniform image2D _HistoryWriteTex;
 #define SAMPLE_TAA_HISTORY(uv) tex2D(_HistoryReadTex, uv)
 #include includes/SharedTemporalAntialiasing.glsl
 
-layout(local_size_x = 16, local_size_y = 4, local_size_z = 1) in;
+layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
-    int2 coord = int2(gl_GlobalInvocationID.xy);
-    int2 size = imageSize(_DestinationTex).xy;
-
-    if (Any_Greater(coord, size))
-    {
-        return;
-    }
+    const int2 coord = int2(gl_GlobalInvocationID.xy);
+    const int2 size = int2(pk_ScreenSize.xy * 2u);
 
     TAADescriptor desc;
     desc.texelSize = 2.0f.xx / size;
     desc.jitter = pk_ProjectionJitter.xy * desc.texelSize;
     desc.texcoord = (coord + 0.5f.xx) / size;
 
-    float3 viewpos = SampleViewPosition(desc.texcoord);
-    float3 uvw = ClipToUVW(mul(pk_MATRIX_LD_P, float4(viewpos, 1.0f)));
+    const float3 viewpos = SampleViewPosition(desc.texcoord);
+    const float3 uvw = ClipToUVW(mul(pk_MATRIX_LD_P, float4(viewpos, 1.0f)));
 
     desc.motion = (desc.texcoord - uvw.xy) + pk_ProjectionJitter.zw * desc.texelSize * 0.5f;
     desc.sharpness = pk_TAA_Sharpness;

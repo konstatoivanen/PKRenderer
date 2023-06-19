@@ -5,6 +5,15 @@
 #include Utilities.glsl
 #include Constants.glsl
 
+// Backbuffer resolutions are always divisible by the following values
+// Kept here so that computes using these can be more easily refactored.
+#define PK_W_ALIGNMENT_32 32u
+#define PK_W_ALIGNMENT_16 16u
+#define PK_W_ALIGNMENT_8 8u
+#define PK_W_ALIGNMENT_4 4u
+#define PK_W_ALIGNMENT_2 2u
+
+
 PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 {
     float4 pk_Time;      // Time since load (t/20, t, t*2, t*3), use to animate things inside the shaders.
@@ -20,6 +29,7 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float4 pk_ScreenParams;         // xy = current screen (width, height), z = 1 / width, w = 1 / height.
     float4 pk_ShadowCascadeZSplits; // view space z axis splits for directional light shadow cascades
     float4 pk_ProjectionJitter;     // xy = sub pixel jitter, zw = previous frame jitter
+    uint4 pk_FrameRandom;           // Random uint4 values for current frame.
     uint2 pk_ScreenSize;            // xy = current screen size
     uint2 pk_FrameIndex;            // x = frame index since load, y = frame index since resize
 
@@ -44,6 +54,7 @@ PK_DECLARE_CBUFFER(pk_ModelMatrices, PK_SET_DRAW)
 #endif
 
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenDepthCurrent;
+PK_DECLARE_SET_GLOBAL uniform sampler2DArray pk_ScreenDepthHierachical;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenDepthPrevious;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenNormalsCurrent;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenNormalsPrevious;
@@ -64,6 +75,9 @@ float4 DecodeGBufferN(float4 encoded)
 
 float LinearizeDepth(float z) { return 1.0f / (pk_MATRIX_I_P[2][3] * (z * 2.0f - 1.0f) + pk_MATRIX_I_P[3][3]); } 
 float4 LinearizeDepth(float4 z) { return 1.0f / (pk_MATRIX_I_P[2][3] * (z * 2.0f - 1.0f) + pk_MATRIX_I_P[3][3]); } 
+// Linear depth to projected depth (opposite of above).
+float ProjectDepth(float z) { return 0.5f * (z * (pk_MATRIX_I_P[2][3] - pk_MATRIX_I_P[3][3]) + 1.0f) / (z * pk_MATRIX_I_P[2][3]); }
+float4 ProjectDepth(float4 z) { return 0.5f * (z * (pk_MATRIX_I_P[2][3] - pk_MATRIX_I_P[3][3]) + 1.0f) / (z * pk_MATRIX_I_P[2][3]); }
 
 uint GetShadowCascadeIndex(float linearDepth)
 {
@@ -73,8 +87,14 @@ uint GetShadowCascadeIndex(float linearDepth)
 }
 
 //----------GBUFFER SAMPLING----------//
+float SampleMinZ(float2 uv, float l) { return textureLod(pk_ScreenDepthHierachical, float3(uv, 0), l).x; }
+float SampleMinZ(int2 coord, int l) { return texelFetch(pk_ScreenDepthHierachical, int3(coord, 0), l).x; }
+float SampleMaxZ(float2 uv, float l) { return textureLod(pk_ScreenDepthHierachical, float3(uv, 1), l).x; }
+float SampleMaxZ(int2 coord, int l) { return texelFetch(pk_ScreenDepthHierachical, int3(coord, 1), l).x; }
+
 float SampleLinearDepth(float2 uv) { return LinearizeDepth(tex2D(pk_ScreenDepthCurrent, uv).x); }
 float SampleLinearDepth(int2 coord) { return LinearizeDepth(texelFetch(pk_ScreenDepthCurrent, coord, 0).x); }
+#define GatherLinearDepths(uv) LinearizeDepth(textureGather(pk_ScreenDepthCurrent, uv, 0))
 #define SampleLinearDepthOffsets(uv, offsets) LinearizeDepth(textureGatherOffsets(pk_ScreenDepthCurrent, uv, offsets))
 
 float SamplePreviousLinearDepth(float2 uv) { return LinearizeDepth(tex2D(pk_ScreenDepthPrevious, uv).x); }
@@ -93,6 +113,7 @@ float4 SamplePreviousViewNormalRoughness(int2 coord) { return DecodeGBufferN(tex
 
 //----------COORDINATE TRANSFORMS----------//
 float4 WorldToClipPos( in float3 pos) { return mul(pk_MATRIX_VP, float4(pos, 1.0)); }
+float4 WorldToClipDir( in float3 dir) { return mul(pk_MATRIX_VP, float4(dir, 0.0)); }
 float4 ViewToClipPos( in float3 pos) { return mul(pk_MATRIX_P, float4(pos, 1.0)); }
 float3 WorldToViewPos( in float3 pos) { return mul(pk_MATRIX_V, float4(pos, 1.0)).xyz; }
 float3 ObjectToViewPos( in float3 pos) { return mul(pk_MATRIX_V, mul(pk_MATRIX_M, float4(pos, 1.0))).xyz; }

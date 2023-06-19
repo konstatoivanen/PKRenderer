@@ -12,10 +12,10 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanTexture(const TextureDescriptor& descriptor, const char* name);
             ~VulkanTexture();
             
-            void SetSampler(const Structs::SamplerDescriptor& sampler) override final;
-            bool Validate(const Math::uint3& resolution) override final;
-            bool Validate(const uint32_t levels, const uint32_t layers) override final;
-            bool Validate(const Structs::TextureDescriptor& descriptor) override final;
+            void SetSampler(const Structs::SamplerDescriptor& sampler) final;
+            bool Validate(const Math::uint3& resolution) final;
+            bool Validate(const uint32_t levels, const uint32_t layers) final;
+            bool Validate(const Structs::TextureDescriptor& descriptor) final;
             void Rebuild(const Structs::TextureDescriptor& descriptor);
 
             Structs::TextureViewRange NormalizeViewRange(const Structs::TextureViewRange& range) const;

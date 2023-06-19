@@ -15,7 +15,10 @@ namespace PK::Rendering::VulkanRHI::Services
         m_workingDirectory(workingDirectory),
         m_pruneDelay(pruneDelay),
         m_allowUnderEstimation(physicalDeviceProperties.conservativeRasterizationProperties.primitiveUnderestimation),
-        m_maxOverEstimation(physicalDeviceProperties.conservativeRasterizationProperties.maxExtraPrimitiveOverestimationSize)
+        m_maxOverEstimation(physicalDeviceProperties.conservativeRasterizationProperties.maxExtraPrimitiveOverestimationSize),
+        m_graphicsPipelines(1024),
+        m_otherPipelines(1024),
+        m_pipelinePool()
     {
         if (!workingDirectory.empty())
         {
@@ -43,21 +46,9 @@ namespace PK::Rendering::VulkanRHI::Services
             free(cacheData);
         }
 
-        for (auto& kv : m_graphicsPipelines)
-        {
-            if (kv.second.pipeline != nullptr)
-            {
-                delete kv.second.pipeline;
-            }
-        }
-
-        for (auto& kv : m_otherPipelines)
-        {
-            if (kv.second.pipeline != nullptr)
-            {
-                delete kv.second.pipeline;
-            }
-        }
+        m_pipelinePool.Clear();
+        m_graphicsPipelines.Clear();
+        m_otherPipelines.Clear();
     }
 
     const VulkanPipeline* VulkanPipelineCache::GetPipeline(const PipelineKey& key)
@@ -66,9 +57,9 @@ namespace PK::Rendering::VulkanRHI::Services
 
         switch (type)
         {
-        case ShaderType::Graphics: return GetGraphicsPipeline(key);
-        case ShaderType::Compute: return GetComputePipeline(key.shader);
-        case ShaderType::RayTracing: return GetRayTracingPipeline(key.shader);
+            case ShaderType::Graphics: return GetGraphicsPipeline(key);
+            case ShaderType::Compute: return GetComputePipeline(key.shader);
+            case ShaderType::RayTracing: return GetRayTracingPipeline(key.shader);
         }
 
         PK_THROW_ERROR("Pipeline retrieval failed! Unknown shader type!");
@@ -77,31 +68,36 @@ namespace PK::Rendering::VulkanRHI::Services
     const VulkanPipeline* VulkanPipelineCache::GetComputePipeline(const VersionHandle<VulkanShader>& shader)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
-        auto iterator = m_otherPipelines.find(shader);
+        uint32_t index = 0u;
+        PipelineValue* value = nullptr;
 
-        if (iterator != m_otherPipelines.end() && iterator->second.pipeline != nullptr)
+        if (!m_otherPipelines.AddKey(shader, &index))
         {
-            iterator->second.pruneTick = nextPruneTick;
-            return iterator->second.pipeline;
+            value = m_otherPipelines.GetValueAtRef(index);
+            value->pruneTick = nextPruneTick;
+            return value->pipeline;
         }
 
         VkComputePipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
         pipelineInfo.stage = shader->GetModule((int)ShaderStage::Compute)->stageInfo;
         pipelineInfo.layout = shader->GetPipelineLayout()->layout;
-        auto pipeline = new VulkanPipeline(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
-        m_otherPipelines[shader] = { pipeline, nextPruneTick };
-        return pipeline;
+        value = m_otherPipelines.GetValueAtRef(index);
+        value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
+        value->pruneTick = nextPruneTick;
+        return value->pipeline;
     }
 
     const VulkanPipeline* VulkanPipelineCache::GetGraphicsPipeline(const PipelineKey& key)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
-        auto iterator = m_graphicsPipelines.find(key);
+        uint32_t index = 0u;
+        PipelineValue* value = nullptr;
 
-        if (iterator != m_graphicsPipelines.end() && iterator->second.pipeline != nullptr)
+        if (!m_graphicsPipelines.AddKey(key, &index))
         {
-            iterator->second.pruneTick = nextPruneTick;
-            return iterator->second.pipeline;
+            value = m_graphicsPipelines.GetValueAtRef(index);
+            value->pruneTick = nextPruneTick;
+            return value->pipeline;
         }
 
         auto stageCount = 0u;
@@ -232,20 +228,24 @@ namespace PK::Rendering::VulkanRHI::Services
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
 
-        auto pipeline = new VulkanPipeline(m_device, m_pipelineCache, pipelineInfo, key.shader->GetName());
-        m_graphicsPipelines[key] = { pipeline, nextPruneTick };
-        return pipeline;
+        value = m_graphicsPipelines.GetValueAtRef(index);
+        value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, key.shader->GetName());
+        value->pruneTick = nextPruneTick;
+        return value->pipeline;
     }
 
     const VulkanPipeline* VulkanPipelineCache::GetRayTracingPipeline(const PK::Utilities::VersionHandle<Objects::VulkanShader>& shader)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
-        auto iterator = m_otherPipelines.find(shader);
 
-        if (iterator != m_otherPipelines.end() && iterator->second.pipeline != nullptr)
+        uint32_t index = 0u;
+        PipelineValue* value = nullptr;
+
+        if (!m_otherPipelines.AddKey(shader, &index))
         {
-            iterator->second.pruneTick = nextPruneTick;
-            return iterator->second.pipeline;
+            value = m_otherPipelines.GetValueAtRef(index);
+            value->pruneTick = nextPruneTick;
+            return value->pipeline;
         }
 
         auto stageCount = 0u;
@@ -270,11 +270,11 @@ namespace PK::Rendering::VulkanRHI::Services
 
             switch (stage)
             {
-            case ShaderStage::RayGeneration:
-            case ShaderStage::RayMiss: shaderGroups[stageCount].generalShader = stageCount; break;
-            case ShaderStage::RayClosestHit: shaderGroups[stageCount].closestHitShader = stageCount; break;
-            case ShaderStage::RayAnyHit: shaderGroups[stageCount].anyHitShader = stageCount; break;
-            case ShaderStage::RayIntersection: shaderGroups[stageCount].intersectionShader = stageCount; break;
+                case ShaderStage::RayGeneration:
+                case ShaderStage::RayMiss: shaderGroups[stageCount].generalShader = stageCount; break;
+                case ShaderStage::RayClosestHit: shaderGroups[stageCount].closestHitShader = stageCount; break;
+                case ShaderStage::RayAnyHit: shaderGroups[stageCount].anyHitShader = stageCount; break;
+                case ShaderStage::RayIntersection: shaderGroups[stageCount].intersectionShader = stageCount; break;
             }
 
             shaderStages[stageCount++] = shader->GetModule(i)->stageInfo;
@@ -286,38 +286,39 @@ namespace PK::Rendering::VulkanRHI::Services
         pipelineInfo.groupCount = stageCount;
         pipelineInfo.pGroups = shaderGroups;
         pipelineInfo.maxPipelineRayRecursionDepth = 1;
+        pipelineInfo.flags |= VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR;
+        pipelineInfo.flags |= VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
         pipelineInfo.layout = shader->GetPipelineLayout()->layout;
 
-        auto pipeline = new VulkanPipeline(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
-        m_otherPipelines[shader] = { pipeline, nextPruneTick };
-        return pipeline;
+        value = m_otherPipelines.GetValueAtRef(index);
+        value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
+        value->pruneTick = nextPruneTick;
+        return value->pipeline;
     }
 
     void VulkanPipelineCache::Prune()
     {
         m_currentPruneTick++;
 
-        for (auto& kv : m_graphicsPipelines)
+        for (int32_t i = m_graphicsPipelines.GetCount() - 1; i >= 0; --i)
         {
-            auto& key = kv.first;
-            auto& value = kv.second;
+            auto value = m_graphicsPipelines.GetValueAtRef(i);
 
-            if (value.pipeline != nullptr && value.pruneTick < m_currentPruneTick)
+            if (value->pruneTick < m_currentPruneTick)
             {
-                delete value.pipeline;
-                value.pipeline = nullptr;
+                m_pipelinePool.Delete(value->pipeline);
+                m_graphicsPipelines.RemoveAt(i);
             }
         }
 
-        for (auto& kv : m_otherPipelines)
+        for (int32_t i = m_otherPipelines.GetCount() - 1; i >= 0; --i)
         {
-            auto& key = kv.first;
-            auto& value = kv.second;
+            auto value = m_otherPipelines.GetValueAtRef(i);
 
-            if (value.pipeline != nullptr && value.pruneTick < m_currentPruneTick)
+            if (value->pruneTick < m_currentPruneTick)
             {
-                delete value.pipeline;
-                value.pipeline = nullptr;
+                m_pipelinePool.Delete(value->pipeline);
+                m_graphicsPipelines.RemoveAt(i);
             }
         }
     }

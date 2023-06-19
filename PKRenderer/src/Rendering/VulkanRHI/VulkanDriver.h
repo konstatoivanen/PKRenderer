@@ -53,23 +53,23 @@ namespace PK::Rendering::VulkanRHI
         VulkanDriver(const VulkanContextProperties& properties);
         ~VulkanDriver();
 
-        Rendering::Structs::APIType GetAPI() const override final { return Rendering::Structs::APIType::Vulkan; }
-        Rendering::Objects::QueueSet* GetQueues() const override final { return queues.get(); }
+        Rendering::Structs::APIType GetAPI() const final { return Rendering::Structs::APIType::Vulkan; }
+        Rendering::Objects::QueueSet* GetQueues() const final { return queues.get(); }
         std::string GetDriverHeader() const;
-        DriverMemoryInfo GetMemoryInfo() const override final;
-        size_t GetBufferOffsetAlignment(Structs::BufferUsage usage) const override final;
+        DriverMemoryInfo GetMemoryInfo() const final;
+        size_t GetBufferOffsetAlignment(Structs::BufferUsage usage) const final;
 
-        void SetBuffer(uint32_t nameHashId, Objects::Buffer* buffer, const Structs::IndexRange& range) override final;
-        void SetTexture(uint32_t nameHashId, Objects::Texture* texture, const Structs::TextureViewRange& range) override final;
-        void SetBufferArray(uint32_t nameHashId, Objects::BindArray<Objects::Buffer>* bufferArray) override final;
-        void SetTextureArray(uint32_t nameHashId, Objects::BindArray<Objects::Texture>* textureArray) override final;
-        void SetImage(uint32_t nameHashId, Objects::Texture* texture, const Structs::TextureViewRange& range) override final;
-        void SetAccelerationStructure(uint32_t nameHashId, Objects::AccelerationStructure* structure) override final;
-        void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) override final;
-        void SetKeyword(uint32_t nameHashId, bool value) override final;
+        void SetBuffer(uint32_t nameHashId, Objects::Buffer* buffer, const Structs::IndexRange& range) final;
+        void SetTexture(uint32_t nameHashId, Objects::Texture* texture, const Structs::TextureViewRange& range) final;
+        void SetBufferArray(uint32_t nameHashId, Objects::BindArray<Objects::Buffer>* bufferArray) final;
+        void SetTextureArray(uint32_t nameHashId, Objects::BindArray<Objects::Texture>* textureArray) final;
+        void SetImage(uint32_t nameHashId, Objects::Texture* texture, const Structs::TextureViewRange& range) final;
+        void SetAccelerationStructure(uint32_t nameHashId, Objects::AccelerationStructure* structure) final;
+        void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) final;
+        void SetKeyword(uint32_t nameHashId, bool value) final;
 
-        void WaitForIdle() const override final { vkDeviceWaitIdle(device); }
-        void GC() override final;
+        void WaitForIdle() const final { vkDeviceWaitIdle(device); }
+        void GC() final;
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                                   VkDebugUtilsMessageTypeFlagsEXT messageType,

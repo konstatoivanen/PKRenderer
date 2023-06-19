@@ -25,15 +25,15 @@ namespace PK::Rendering::VulkanRHI
         }
     }
 
-    VulkanWindow::VulkanWindow(VulkanDriver* driver, const PK::Core::WindowProperties& properties) :
-        m_driver(driver)
+    VulkanWindow::VulkanWindow(VulkanDriver* driver, const PK::Core::WindowProperties& properties) : m_driver(driver)
     {
-
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         m_window = glfwCreateWindow(properties.width, properties.height, properties.title.c_str(), nullptr, nullptr);
         PK_THROW_ASSERT(m_window, "Failed To Create Window");
+
+        glfwSetWindowSizeLimits(m_window, MIN_SIZE, MIN_SIZE, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
         if (properties.iconPath.length() > 0)
         {

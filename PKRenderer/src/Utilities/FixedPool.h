@@ -1,3 +1,4 @@
+/*
 #pragma once
 #include "NoCopy.h"
 #include <vector>
@@ -108,6 +109,106 @@ namespace PK::Utilities
         private:
             T* m_data;
             std::vector<size_t> m_freelist;
+            alloc_rebind m_alloc;
+    };
+}
+*/
+
+#pragma once
+#include "NoCopy.h"
+#include "Bitmask.h"
+#include <vector>
+#include <exception>
+
+namespace PK::Utilities
+{
+    template<typename T, size_t capacity>
+    class FixedPool : NoCopy
+    {
+        using alloc_rebind = typename std::allocator_traits<std::allocator<T>>::template rebind_alloc<T>;
+        using alloc_traits = std::allocator_traits<alloc_rebind>; 
+
+        public:
+            FixedPool() : m_mask()
+            {
+                m_data = alloc_traits::allocate(m_alloc, capacity);
+            }
+
+            ~FixedPool()
+            {
+                Clear();
+                alloc_traits::deallocate(m_alloc, m_data, capacity);
+            }
+
+            T*& operator [](uint32_t index) { return m_data + index; }
+
+            template<typename ... Args>
+            T* New(Args&& ... args)
+            {
+                auto index = m_mask.FirstFalse();
+
+                if (index == -1 || index >= capacity)
+                {
+                    throw std::exception("Pool capacity exceeded!");
+                }
+
+                auto ptr = m_data + index;
+                m_mask.ToggleAt(index);
+                alloc_traits::construct(m_alloc, ptr, std::forward<Args>(args)...);
+                return ptr;
+            }
+
+            void Delete(const T* ptr)
+            {
+                if (ptr < m_data || ptr >= (m_data + capacity))
+                {
+                    throw std::exception("Trying to delete an element that doesn't belong to the pool");
+                }
+
+                auto index = ptr - m_data;
+                if (m_mask.GetAt(index))
+                {
+                    m_mask.ToggleAt(index);
+                    alloc_traits::destroy(m_alloc, ptr);
+                }
+            }
+
+            void Delete(uint32_t index)
+            {
+                Delete(m_data + index);
+            }
+
+            void Clear()
+            {
+                for (auto i = 0u; i < capacity; ++i)
+                {
+                    if (m_mask.GetAt(i))
+                    {
+                        alloc_traits::destroy(m_alloc, m_data + i);
+                        m_mask.ToggleAt(i);
+                    }
+                }
+            }
+
+            std::vector<uint32_t> GetActiveIndices()
+            {
+                std::vector<uint32_t> active;
+                active.reserve(m_mask.CountBits());
+
+                for (auto i = 0u; i < capacity; ++i)
+                {
+                    if (m_mask.GetAt(i))
+                    {
+                        active.push_back(i);
+                    }
+                }
+
+                return active;
+            }
+
+        private:
+            T* m_data;
+            Bitmask<capacity> m_mask;
             alloc_rebind m_alloc;
     };
 }

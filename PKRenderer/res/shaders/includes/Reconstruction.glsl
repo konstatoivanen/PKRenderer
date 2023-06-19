@@ -17,10 +17,12 @@ float4 SampleWorldNormalRoughness(float2 uv) { return mul3x3(float3x3(pk_MATRIX_
 float4 SampleWorldNormalRoughness(int2 coord) { return mul3x3(float3x3(pk_MATRIX_I_V), SampleViewNormalRoughness(coord)); }
 
 float3 SampleViewPosition(float2 uv) { return ClipUVToViewPos(uv, SampleLinearDepth(uv)); }
+float3 SampleViewPosition(float2 uv, float linearDepth) { return ClipUVToViewPos(uv, linearDepth); }
 float3 SampleViewPosition(int2 coord, int2 size) { return ClipUVToViewPos((coord + 0.5f.xx) / float2(size), SampleLinearDepth(coord)); }
 float3 SampleViewPosition(int2 coord, int2 size, float linearDepth) { return ClipUVToViewPos((coord + 0.5f.xx) / float2(size), linearDepth); }
 
 float3 SampleWorldPosition(float2 uv) { return mul(pk_MATRIX_I_V, float4(SampleViewPosition(uv), 1.0f)).xyz; }
+float3 SampleWorldPosition(float2 uv, float linearDepth) { return mul(pk_MATRIX_I_V, float4(SampleViewPosition(uv, linearDepth), 1.0f)).xyz; }
 float3 SampleWorldPosition(int2 coord, int2 size) { return mul(pk_MATRIX_I_V, float4(SampleViewPosition(coord, size), 1.0f)).xyz; }
 float3 SampleWorldPosition(int2 coord, int2 size, float linearDepth) { return mul(pk_MATRIX_I_V, float4(SampleViewPosition(coord, size, linearDepth), 1.0f)).xyz; }
 

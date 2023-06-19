@@ -4,7 +4,7 @@
 #include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"
 #include "Utilities/FixedPool.h"
 #include "Utilities/FixedList.h"
-#include "Utilities/PointerMap.h"
+#include "Utilities/FastMap.h"
 
 namespace PK::Rendering::VulkanRHI::Services
 {

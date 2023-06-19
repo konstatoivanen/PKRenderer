@@ -164,7 +164,7 @@ namespace PK::Core::Services
             inline float GetMouseScrollX() const { return m_mouseScroll.x; }
             inline float GetMouseScrollY() const { return m_mouseScroll.y; }
     
-            void Step(Window* window, int condition) override;
+            void Step(Window* window, int condition) final;
     
             void OnKeyInput(int key, int scancode, int action, int mods);
             void OnScrollInput(double scrollX, double scrollY);

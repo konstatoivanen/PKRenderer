@@ -75,8 +75,8 @@ namespace PK::Rendering::Objects
             constexpr const Structs::BufferLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
             inline Structs::ShaderBindingTableInfo GetShaderBindingTableInfo() const { return m_variants.at(0)->GetShaderBindingTableInfo(); }
 
-            void Import(const char* filepath) override final;
-            std::string GetMetaInfo() const override final;
+            void Import(const char* filepath) final;
+            std::string GetMetaInfo() const final;
 
         protected:
             std::vector<Utilities::Ref<ShaderVariant>> m_variants;

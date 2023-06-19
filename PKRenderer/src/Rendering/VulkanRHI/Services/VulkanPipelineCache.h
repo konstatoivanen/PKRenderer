@@ -3,9 +3,13 @@
 #include "Utilities/Ref.h"
 #include "Rendering/VulkanRHI/Objects/VulkanShader.h"
 #include "Utilities/HashHelpers.h"
+#include "Utilities/FixedPool.h"
+#include "Utilities/FastMap.h"
 
 namespace PK::Rendering::VulkanRHI::Services
 {
+    using namespace PK::Utilities;
+
     struct PipelineKey 
     {
         PK::Utilities::VersionHandle<Objects::VulkanShader> shader;
@@ -33,7 +37,6 @@ namespace PK::Rendering::VulkanRHI::Services
 
     class VulkanPipelineCache : public PK::Utilities::NoCopy
     {
-        private:
 
         public:
             constexpr const static char* PIPELINE_CACHE_FILENAME = "shadercache.cache";
@@ -60,8 +63,9 @@ namespace PK::Rendering::VulkanRHI::Services
 
             VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
             std::string m_workingDirectory;
-            std::unordered_map<PipelineKey, PipelineValue, PipelineKeyHash> m_graphicsPipelines;
-            std::unordered_map<PK::Utilities::VersionHandle<Objects::VulkanShader>, PipelineValue, PK::Utilities::VersionHandle<Objects::VulkanShader>::Hash> m_otherPipelines;
+            FixedPool<VulkanPipeline, 2048> m_pipelinePool;
+            FastMap<PipelineKey, PipelineValue, PipelineKeyHash> m_graphicsPipelines;
+            FastMap<VersionHandle<Objects::VulkanShader>, PipelineValue, VersionHandle<Objects::VulkanShader>::Hash> m_otherPipelines;
             uint64_t m_currentPruneTick = 0;
             uint64_t m_pruneDelay = 0;
     };

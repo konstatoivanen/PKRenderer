@@ -32,7 +32,7 @@ namespace PK::Core::Services
             void Reset();
             void LogFrameRate();
     
-            void Step(int condition) override;
+            void Step(int condition) final;
     
         private:
             Sequencer* m_sequencer = nullptr;

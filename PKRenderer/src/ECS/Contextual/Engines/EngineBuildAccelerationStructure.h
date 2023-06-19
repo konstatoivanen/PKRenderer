@@ -11,7 +11,7 @@ namespace PK::ECS::Engines
     {
     public:
         EngineBuildAccelerationStructure(EntityDatabase* entityDb);
-        void Step(Tokens::AccelerationStructureBuildToken* token) override final;
+        void Step(Tokens::AccelerationStructureBuildToken* token) final;
 
     private:
         EntityDatabase* m_entityDb = nullptr;

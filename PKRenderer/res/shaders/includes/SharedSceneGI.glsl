@@ -9,6 +9,7 @@ PK_DECLARE_CBUFFER(pk_GI_Parameters, PK_SET_SHADER)
     float4 pk_GI_VolumeST;
     uint4 pk_GI_VolumeSwizzle;
     int4 pk_GI_Checkerboard_Offset;
+    uint2 pk_GI_RayDither;
     float pk_GI_VoxelSize; 
     float pk_GI_ChromaBias; 
 };
@@ -28,8 +29,10 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 #define PK_GI_VOXEL_MAX_MIP 7
 #define PK_GI_RAY_MIN_DISTANCE 0.005f
 #define PK_GI_RAY_MAX_DISTANCE 100.0f
-#define PK_GI_AO_DIFF_MAX_DISTANCE 1.0f
+#define PK_GI_AO_DIFF_MAX_DISTANCE 6.0f
 #define PK_GI_AO_SPEC_MAX_DISTANCE 1.0f
+#define PK_GI_AO_DIFF_POWER 0.25f
+#define PK_GI_AO_SPEC_POWER 0.4f
 #define PK_GI_MAX_HISTORY 256u
 #define PK_GI_MIN_VXHISTORY 32.0
 #define PK_GI_SCREEN_MAX_MIP 4
@@ -86,21 +89,9 @@ struct GIRayHits
 #define pk_Zero_GISampleFull GISampleFull(pk_Zero_GISampleDiff, pk_Zero_GISampleSpec, pk_Zero_GISampleMeta)
 
 //----------UTILITIES----------//
-uint2 MurmurHash21(uint src) 
-{
-    const uint M = 0x5bd1e995u;
-    uint2 h = uint2(1190494759u, 2147483647u);
-    src *= M; src ^= src>>24u; src *= M;
-    h *= M; h ^= src;
-    h ^= h>>13u; h *= M; h ^= h>>15u;
-    return h;
-}
-
 GIRayDirections GI_GetRayDirections(uint2 coord, in float3 N, in float3 V, in float R)
 {
-    const uint offset = pk_FrameIndex.y;
-    const uint2 hash = MurmurHash21(offset / 64u);
-    const float3 v = GlobalNoiseBlue(coord.xy + hash, offset);
+    const float3 v = GlobalNoiseBlue(coord.xy + pk_GI_RayDither, pk_FrameIndex.y);
     const float2 Xi = saturate(v.xy + ((v.z - 0.5f) / 256.0f));
     return GIRayDirections(ImportanceSampleLambert(Xi, N), ImportanceSampleSmithGGX(Xi.yx, N, V, R));
 }
@@ -156,10 +147,10 @@ GISampleFull GI_Load_SampleFull(const int2 coord) { return GISampleFull(GI_Load_
 
 GIRayHits GI_Load_RayHits(const int2 coord)
 {
-    const uint packedHits = imageLoad(pk_GI_RayHits, coord).x;
-    const bool isMissDiff = bitfieldExtract(packedHits, 0, 16) == 0xFFFF;
-    const bool isMissSpec = bitfieldExtract(packedHits, 16, 16) == 0xFFFF;
-    const float2 hitDist = unpackHalf2x16(packedHits);
+    const uint packed = imageLoad(pk_GI_RayHits, coord).x;
+    const bool isMissDiff = bitfieldExtract(packed, 0, 16) == 0x7C00u;
+    const bool isMissSpec = bitfieldExtract(packed, 16, 16)== 0x7C00u;
+    const float2 hitDist = unpackHalf2x16(packed);
     return GIRayHits(hitDist.x, hitDist.y, isMissDiff, isMissSpec);
 }
 
@@ -184,10 +175,10 @@ void GI_Store_SampleFull(const int2 coord, const GISampleFull u) { GI_Store_Pack
 
 void GI_Store_RayHits(const int2 coord, const GIRayHits u)
 {
-    uint packedHits = packHalf2x16(float2(u.distDiff, u.distSpec));
-    packedHits = u.isMissDiff ? bitfieldInsert(packedHits, 0xFFFF, 0, 16) : packedHits;
-    packedHits = u.isMissSpec ? bitfieldInsert(packedHits, 0xFFFF, 16, 16) : packedHits;
-    imageStore(pk_GI_RayHits, coord, uint4(packedHits));
+    uint packed = packHalf2x16(float2(u.distDiff, u.distSpec));
+    packed = u.isMissDiff ? bitfieldInsert(packed, 0x7C00u, 0, 16) : packed;
+    packed = u.isMissSpec ? bitfieldInsert(packed, 0x7C00u, 16, 16) : packed;
+    imageStore(pk_GI_RayHits, coord, uint4(packed));
 }
 
 void GI_Store_Voxel(float3 worldpos, float4 color) 
@@ -221,8 +212,10 @@ void GI_Sample_Lighting(const float2 uv, const float3 N, const float3 V, const f
     const int2 coord = int2(uv * pk_ScreenSize.xy);
     const GISampleDiff s_diff = GI_Load_SampleDiff(coord);
     const GISampleSpec s_spec = GI_Load_SampleSpec(coord);
-    diffuse = SHToIrradiance(s_diff.sh, N, pk_GI_ChromaBias) * GI_AOPower(s_diff.ao);
-    specular = s_spec.radiance * GI_AOPower(s_spec.ao);
+    diffuse = SHToIrradiance(s_diff.sh, N, pk_GI_ChromaBias);
+    specular = s_spec.radiance;
+    diffuse *= pow(s_diff.ao, PK_GI_AO_DIFF_POWER);
+    specular *= pow(s_spec.ao, PK_GI_AO_SPEC_POWER);
 }
 
 //----------VOXEL CONE TRACING FUNCTIONS----------//

@@ -45,7 +45,7 @@ namespace PK::ECS::Engines
 							   EntityDatabase* entityDb, 
 							   Core::CommandConfig* commandBindings);
 
-			void Step(Core::Services::Input* input) override final;
+			void Step(Core::Services::Input* input) final;
 
 		private:
 			void ApplicationExit(const ConsoleCommand& arguments);

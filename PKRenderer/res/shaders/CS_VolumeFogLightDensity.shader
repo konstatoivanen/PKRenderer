@@ -19,22 +19,21 @@ float Density(float3 pos)
 
 float3 GetAmbientColor(float3 position, float3 direction, float3 viewdir)
 {
-    float anistropy = GetLightAnisotropy(viewdir, direction, pk_Volume_Anisotropy);
+    float anisotropy = GetLightAnisotropy(viewdir, direction, pk_Volume_Anisotropy);
     float4 scenegi = GI_ConeTrace_Volumetric(position);
-    float3 staticgi = SampleEnvironment(OctaUV(direction), 1.0f) * anistropy;
+    float3 staticgi = SampleEnvironment(OctaUV(direction), 1.0f) * anisotropy;
     return staticgi * scenegi.a + scenegi.rgb;
 }
 
-layout(local_size_x = 16, local_size_y = 2, local_size_z = 16) in;
+layout(local_size_x = PK_W_ALIGNMENT_4, local_size_y = PK_W_ALIGNMENT_4, local_size_z = PK_W_ALIGNMENT_4) in;
 void main()
 {
-    uint3 id = gl_GlobalInvocationID;
-    float2 uv = (VOLUME_SIZE_ST.zz + id.xy) * VOLUME_SIZE_ST.xy;
-
-    float zmax = VOLUME_LOAD_MAX_DEPTH(GetVolumeDepthTileIndex(uv));
+    const uint3 id = gl_GlobalInvocationID;
+    const float2 uv = (id.xy + 0.5f.xx) / VOLUME_SIZE_XY;
 
     // Triangle dither range is -1.5 - 1.5 and due to trilinear interpolation we also need to have 2 texels worth of coverage.
-    float zmin = GetVolumeCellDepth(id.z - 3.0f);
+    const float zmin = GetVolumeCellDepth(id.z - 3.0f);
+    const float zmax = SampleMaxZ(int2(id.xy), 3);
 
     float3 bluenoise = GetVolumeCellNoise(id);
 

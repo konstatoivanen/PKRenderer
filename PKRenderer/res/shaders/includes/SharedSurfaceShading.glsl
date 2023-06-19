@@ -13,7 +13,9 @@
 #if defined(PK_META_PASS_GIVOXELIZE) 
     #undef PK_NORMALMAPS
     #undef PK_HEIGHTMAPS
-    
+    // Prefilter by using a higher mip bias in voxelization.
+    #define PK_SURF_TEX(t, uv) tex2D(t, uv, 4.0f)
+
     #define PK_META_EARLY_CLIP_UVW(w, c, n)         \
         float3 vq = GI_QuantizeWorldToVoxelSpace(w);\
         if (!Test_WorldToClipUVW(vq, c) ||          \
@@ -30,6 +32,7 @@
     #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) GI_Store_Voxel(worldpos, color)
     #define PK_META_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNDCSpace(position)
 #else
+    #define PK_SURF_TEX(t, uv) tex2D(t, uv)
     #define PK_META_EARLY_CLIP_UVW(w, c, n) c = GetFragmentClipUVW(); 
     #define PK_META_DECLARE_SURFACE_OUTPUT out float4 SV_Target0;
     #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) SV_Target0 = color
@@ -96,7 +99,7 @@ float3 GetViewShiftedNormal(float3 normal, float3 viewdir)
     return shiftAmount < 0.0f ? normal + viewdir * (-shiftAmount + 1e-5f) : normal;
 }
 
-Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
+Indirect GetStaticSceneIndirect(const float3 normal, const float3 viewdir, float roughness)
 {
     Indirect indirect;
     indirect.diffuse = SampleEnvironment(OctaUV(normal), 1.0f);
@@ -233,7 +236,7 @@ Indirect GetStaticSceneIndirect(float3 normal, float3 viewdir, float roughness)
             float reflectivity = GetSurfaceAlphaReflectivity(surf);
             LightTile tile = GetLightTile(surf.clipuvw);
     
-            Indirect indirect;// = GetStaticSceneIndirect(surf.normal, surf.viewdir, surf.roughness);
+            Indirect indirect; // = GetStaticSceneIndirect(surf.normal, surf.viewdir, surf.roughness);
             GI_Sample_Lighting(surf.clipuvw.xy, surf.normal, surf.viewdir, surf.roughness, indirect.diffuse, indirect.specular);
     
             INIT_BRDF_CACHE

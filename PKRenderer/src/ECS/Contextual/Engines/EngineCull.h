@@ -13,9 +13,9 @@ namespace PK::ECS::Engines
 	{
 		public:
 			EngineCull(EntityDatabase* entityDb);
-			void Step(Tokens::TokenCullFrustum* token) override final;
-			void Step(Tokens::TokenCullCubeFaces* token) override final;
-			void Step(Tokens::TokenCullCascades* token) override final;
+			void Step(Tokens::TokenCullFrustum* token) final;
+			void Step(Tokens::TokenCullCubeFaces* token) final;
+			void Step(Tokens::TokenCullCascades* token) final;
 
 		private:
 			EntityDatabase* m_entityDb = nullptr;

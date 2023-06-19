@@ -17,7 +17,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         VulkanCommandBuffer() {}
 
-        FenceRef GetFenceRef() const override final;
+        FenceRef GetFenceRef() const final;
         inline bool IsActive() const { return m_commandBuffer != VK_NULL_HANDLE; }
         inline VkCommandBuffer& GetNative() { return m_commandBuffer; }
         inline const VkFence& GetFence() { return m_fence; }
@@ -29,51 +29,53 @@ namespace PK::Rendering::VulkanRHI::Objects
         }
         inline void Release() { m_commandBuffer = VK_NULL_HANDLE; ++m_invocationIndex; }
 
-        void SetRenderTarget(const uint3& resolution) override final;
-        void SetRenderTarget(Texture** renderTargets, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count) override final;
-        void SetViewPorts(const uint4* rects, uint32_t count) override final;
-        void SetScissors(const uint4* rects, uint32_t count) override final;
+        void SetRenderTarget(const uint3& resolution) final;
+        void SetRenderTarget(Texture** renderTargets, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count) final;
+        void SetViewPorts(const uint4* rects, uint32_t count) final;
+        void SetScissors(const uint4* rects, uint32_t count) final;
 
-        void SetShader(const Shader* shader, int32_t variantIndex = -1) override final;
-        void SetVertexBuffers(const Buffer** buffers, uint32_t count) override final;
-        void SetIndexBuffer(const Buffer* buffer, size_t offset) override final;
-        void SetShaderBindingTable(Structs::RayTracingShaderGroup group, const Buffer* buffer, size_t offset, size_t stride, size_t size) override final;
+        void SetShader(const Shader* shader, int32_t variantIndex = -1) final;
+        void SetVertexBuffers(const Buffer** buffers, uint32_t count) final;
+        void SetIndexBuffer(const Buffer* buffer, size_t offset) final;
+        void SetShaderBindingTable(Structs::RayTracingShaderGroup group, const Buffer* buffer, size_t offset, size_t stride, size_t size) final;
 
-        inline void ClearColor(const color& color, uint32_t index) override final { m_renderState->ClearColor(color, index); }
-        inline void ClearDepth(float depth, uint32_t stencil) override final { m_renderState->ClearDepth(depth, stencil); }
-        inline void DiscardColor(uint32_t index) override final { m_renderState->DiscardColor(index); }
-        inline void DiscardDepth() override final { m_renderState->DiscardDepth(); }
+        inline void ClearColor(const color& color, uint32_t index) final { m_renderState->ClearColor(color, index); }
+        inline void ClearDepth(float depth, uint32_t stencil) final { m_renderState->ClearDepth(depth, stencil); }
+        inline void DiscardColor(uint32_t index) final { m_renderState->DiscardColor(index); }
+        inline void DiscardDepth() final { m_renderState->DiscardDepth(); }
 
-        inline void SetBlending(const BlendParameters& blend) override final { m_renderState->SetBlending(blend); }
-        inline void SetRasterization(const RasterizationParameters& rasterization) override final { m_renderState->SetRasterization(rasterization); }
-        inline void SetDepthStencil(const DepthStencilParameters& depthStencil) override final { m_renderState->SetDepthStencil(depthStencil); }
-        inline void SetMultisampling(const MultisamplingParameters& multisampling) override final { m_renderState->SetMultisampling(multisampling); }
+        inline void SetBlending(const BlendParameters& blend) final { m_renderState->SetBlending(blend); }
+        inline void SetRasterization(const RasterizationParameters& rasterization) final { m_renderState->SetRasterization(rasterization); }
+        inline void SetDepthStencil(const DepthStencilParameters& depthStencil) final { m_renderState->SetDepthStencil(depthStencil); }
+        inline void SetMultisampling(const MultisamplingParameters& multisampling) final { m_renderState->SetMultisampling(multisampling); }
 
-        void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override final;
-        void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override final;
-        void DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) override final;
-        void Dispatch(Math::uint3 dimensions) override final;
-        void DispatchRays(Math::uint3 dimensions) override final;
+        void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) final;
+        void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) final;
+        void DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) final;
+        void Dispatch(Math::uint3 dimensions) final;
+        void DispatchRays(Math::uint3 dimensions) final;
         
-        void Blit(Texture* src, Core::Window* dst, FilterMode filter) override final;
-        void Blit(Core::Window* src, Buffer* dst) override final;
-        void Blit(Texture* src, Texture* dst, const Structs::TextureViewRange& srcRange, const Structs::TextureViewRange& dstRange, FilterMode filter) override final;
-        void Blit(const VulkanBindHandle* src, const VulkanBindHandle* dst, uint32_t srcLevel, uint32_t dstLevel, uint32_t srcLayer, uint32_t dstLayer, FilterMode filter, bool flipVertical = false);
+        void Blit(Texture* src, Core::Window* dst, FilterMode filter) final;
+        void Blit(Core::Window* src, Buffer* dst) final;
+        void Blit(Texture* src, Texture* dst, const Structs::TextureViewRange& srcRange, const Structs::TextureViewRange& dstRange, FilterMode filter) final;
+        void Blit(const VulkanBindHandle* src, const VulkanBindHandle* dst, const VkImageBlit& blitRegion, FilterMode filter);
 
-        void Clear(Buffer* dst, size_t offset, size_t size, uint32_t value) override final;
-        void Clear(Texture* dst, const TextureViewRange& range, const uint4& value) override final;
+        void Clear(Buffer* dst, size_t offset, size_t size, uint32_t value) final;
+        void Clear(Texture* dst, const TextureViewRange& range, const uint4& value) final;
 
-        void* BeginBufferWrite(Buffer* buffer, size_t offset, size_t size) override final;
-        void EndBufferWrite(Buffer* buffer) override final;
+        void* BeginBufferWrite(Buffer* buffer, size_t offset, size_t size) final;
+        void EndBufferWrite(Buffer* buffer) final;
 
-        void UploadTexture(Texture* texture, const void* data, size_t size, Structs::ImageUploadRange* ranges, uint32_t rangeCount) override final;
-        void UploadTexture(Texture* texture, const void* data, size_t size, uint32_t level, uint32_t layer) override final;
+        void UploadTexture(Texture* texture, const void* data, size_t size, Structs::ImageUploadRange* ranges, uint32_t rangeCount) final;
+        void UploadTexture(Texture* texture, const void* data, size_t size, uint32_t level, uint32_t layer) final;
 
-        void BeginDebugScope(const char* name, const Math::color& color) override final;
-        void EndDebugScope() override final;
+        void BeginDebugScope(const char* name, const Math::color& color) final;
+        void EndDebugScope() final;
 
         // Vulkan specific interface
         void BuildAccelerationStructures(uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
+        void CopyAccelerationStructure(const VkCopyAccelerationStructureInfoKHR* pInfo);
+        uint32_t QueryAccelerationStructureCompactSize(const VulkanRawAccelerationStructure* structure, VulkanQueryPool* pool);
         void TransitionImageLayout(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageSubresourceRange& range);
         void PipelineBarrier(const VulkanBarrierInfo& barrier);
         

@@ -228,6 +228,7 @@ namespace PK::Rendering::Passes
                     inverseViewProjection,
                     m_cascadeSplits.planes,
                     -view->light->radius + info->minShadowDepth,
+                    m_shadowmapTileSize,
                     PK_SHADOW_CASCADE_COUNT,
                     matricesView.data + info->projectionIndex);
                 break;
@@ -370,6 +371,7 @@ namespace PK::Rendering::Passes
                     inverseViewProjection,
                     m_cascadeSplits.planes,
                     -view->light->radius,
+                    m_shadowmapTileSize,
                     PK_SHADOW_CASCADE_COUNT,
                     cascades);
 

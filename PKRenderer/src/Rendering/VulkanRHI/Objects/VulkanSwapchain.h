@@ -41,6 +41,8 @@ namespace PK::Rendering::VulkanRHI::Objects
             const VulkanImageView* GetImageView() const { return m_imageViews.at(m_imageIndex); }
             constexpr VkExtent2D GetExtent() const { return m_extent; }
             constexpr Math::uint3 GetResolution() const { return { m_extent.width, m_extent.height, 1 }; }
+            constexpr uint32_t GetWidth() const { return m_extent.width; }
+            constexpr uint32_t GetHeight() const { return m_extent.height; }
             constexpr float GetAspectRatio() const { return (float)m_extent.width / (float)m_extent.height; }
             constexpr Math::uint4 GetRect() const { return { 0, 0, m_extent.width, m_extent.height }; }
             constexpr VkFormat GetNativeFormat() const { return m_format; }

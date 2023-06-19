@@ -17,8 +17,18 @@ namespace PK::Core
         bool vsync;
         bool cursorVisible;
     
-        WindowProperties(const std::string& title = "PK Window", const std::string& iconPath = std::string(), uint32_t width = 1600, uint32_t height = 900, bool vsync = true, bool cursorVisible = true) :
-            title(title), iconPath(iconPath), width(width), height(height), vsync(vsync), cursorVisible(cursorVisible)
+        WindowProperties(const std::string& title = "PK Window", 
+                            const std::string& iconPath = std::string(), 
+                            uint32_t width = 1600u, 
+                            uint32_t height = 912u, 
+                            bool vsync = true, 
+                            bool cursorVisible = true) :
+            title(title), 
+            iconPath(iconPath), 
+            width(width), 
+            height(height), 
+            vsync(vsync), 
+            cursorVisible(cursorVisible)
         {
         }
     };
@@ -26,6 +36,9 @@ namespace PK::Core
     class Window : public Utilities::NoCopy, public Utilities::NativeInterface<Window>
     {
         public:
+            constexpr static uint32_t SIZE_ALIGNMENT = 32u;
+            constexpr static uint32_t MIN_SIZE = 256u;
+
             static Utilities::Scope<Window> Create(const WindowProperties& properties);
             virtual ~Window() = default;
         
@@ -37,6 +50,10 @@ namespace PK::Core
             virtual bool IsVSync() const = 0;
             inline static void SetConsole(bool enabled) { ::ShowWindow(::GetConsoleWindow(), enabled ? SW_SHOW : SW_HIDE); }
             
+            Math::uint3 GetResolutionAligned() const;
+            Math::uint4 GetRectAligned() const; 
+            float GetAspectRatioAligned() const; 
+
             virtual void Begin() = 0;
             virtual void End() = 0;
             virtual void SetFrameFence(const Rendering::Structs::FenceRef& fence) = 0;

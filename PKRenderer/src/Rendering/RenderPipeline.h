@@ -32,12 +32,14 @@ namespace PK::Rendering
 
             ~RenderPipeline();
 
-            void Step(PK::ECS::Tokens::ViewProjectionUpdateToken* token) override final;
-            void Step(PK::ECS::Tokens::TimeToken* token) override final;
-            void Step(Core::Window* window, int condition) override final;
-            void Step(Core::Services::AssetImportToken<Core::ApplicationConfig>* token) override final;
+            void Step(PK::ECS::Tokens::ViewProjectionUpdateToken* token) final;
+            void Step(PK::ECS::Tokens::TimeToken* token) final;
+            void Step(Core::Window* window, int condition) final;
+            void Step(Core::Services::AssetImportToken<Core::ApplicationConfig>* token) final;
 
         private:
+            void ComputeHierarchicalDepth(Objects::CommandBuffer* cmd);
+
             Passes::PassGeometry m_passGeometry;
             Passes::PassLights m_passLights;
             Passes::PassSceneGI m_passSceneGI;
@@ -58,7 +60,9 @@ namespace PK::Rendering
             Utilities::Ref<Objects::ConstantBuffer> m_constantsPerFrame;
             Utilities::Ref<Objects::RenderTexture> m_renderTarget;
             Utilities::Ref<Objects::RenderTexture> m_renderTargetPrevious;
+            Utilities::Ref<Objects::Texture> m_hierarchicalDepth;
             Objects::Shader* m_OEMBackgroundShader;
+            Objects::Shader* m_computeHierachicalDepth;
 
             ECS::Tokens::VisibilityList m_visibilityList;
             Math::float4x4 m_viewProjectionMatrix;

@@ -9,7 +9,7 @@ namespace PK::ECS::Engines
     {
     public:
         EngineDebug(Core::Services::AssetDatabase* assetDatabase, EntityDatabase* entityDb, const Core::ApplicationConfig* config);
-        void Step(int condition) override;
+        void Step(int condition) final;
 
     private:
         EntityDatabase* m_entityDb;

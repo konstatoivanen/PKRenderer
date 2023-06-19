@@ -78,6 +78,22 @@ float TDF_Dice(float3 viewdir, float3 lightdir, float3 normal, float3 subsurface
     return pow(saturate(dot(viewdir, -(lightdir + normal * subsurface.x))), subsurface.y) * subsurface.z;
 }
 
+float3 BRDF_GGX_SPECULAR(const float3 specular, float roughness, const float3 lightdir, const float3 viewdir, const float3 normal)
+{
+    const float3 halfdir = normalize(viewdir + lightdir);
+
+    float4 ldots;
+    ldots.x = dot(normal, viewdir);
+    ldots.y = dot(normal, lightdir);
+    ldots.z = dot(normal, halfdir);
+    ldots.w = dot(viewdir, halfdir);
+    ldots = max(0.0f.xxxx, ldots);
+
+    const float D = NDF_GGX(ldots.z, roughness);
+    const float G = GSF_SmithGGX(ldots.x, ldots.y, roughness);
+
+    return D * G * FresnelTerm(specular, ldots.w);
+}
 
 void INIT_BRDF_CACHE(float3 diffuse, 
                      float3 specular, 
@@ -113,11 +129,11 @@ float3 BRDF_PBS_DEFAULT_DIRECT(const Light light)
 {
     float3 color = light.color * light.shadow;
     
-    float3 halfDir = normalize(light.direction.xyz + brdf_cache.viewdir);
+    float3 halfdir = normalize(light.direction.xyz + brdf_cache.viewdir);
     float3 ldots;
     ldots.x = dot(brdf_cache.normal, light.direction.xyz); // NL
-    ldots.y = dot(brdf_cache.normal, halfDir); // NH
-    ldots.z = dot(light.direction.xyz, halfDir); // LH
+    ldots.y = dot(brdf_cache.normal, halfdir); // NH
+    ldots.z = dot(light.direction.xyz, halfdir); // LH
     ldots = max(0.0f.xxx, ldots);
 
     float G = GSF_SmithGGX(ldots.x, brdf_cache.nv, brdf_cache.roughness);
@@ -133,11 +149,11 @@ float3 BRDF_PBS_DEFAULT_SS(const Light light)
 {
     float3 color = light.color * light.shadow;
     
-    float3 halfDir = normalize(light.direction.xyz + brdf_cache.viewdir);
+    float3 halfdir = normalize(light.direction.xyz + brdf_cache.viewdir);
     float3 ldots;
     ldots.x = dot(brdf_cache.normal, light.direction.xyz); // NL
-    ldots.y = dot(brdf_cache.normal, halfDir); // NH
-    ldots.z = dot(light.direction.xyz, halfDir); // LH
+    ldots.y = dot(brdf_cache.normal, halfdir); // NH
+    ldots.z = dot(light.direction.xyz, halfdir); // LH
     ldots = max(0.0f.xxx, ldots);
 
     
@@ -157,11 +173,11 @@ float3 BRDF_PBS_CLOTH_DIRECT(const Light light)
 {
     float3 color = light.color * light.shadow;
 
-    float3 halfDir = normalize(light.direction.xyz + brdf_cache.viewdir);
+    float3 halfdir = normalize(light.direction.xyz + brdf_cache.viewdir);
     float3 ldots;
     ldots.x = dot(brdf_cache.normal, light.direction.xyz); // NL
-    ldots.y = dot(brdf_cache.normal, halfDir); // NH
-    ldots.z = dot(light.direction.xyz, halfDir); // LH
+    ldots.y = dot(brdf_cache.normal, halfdir); // NH
+    ldots.z = dot(light.direction.xyz, halfdir); // LH
     ldots = max(0.0f.xxx, ldots);
 
     float S = TDF_Dice(brdf_cache.viewdir, light.direction.xyz, brdf_cache.normal, brdf_cache.subsurface);

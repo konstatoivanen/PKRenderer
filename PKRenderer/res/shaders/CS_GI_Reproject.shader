@@ -4,7 +4,6 @@
 #include includes/SharedSceneGI.glsl
 #include includes/Reconstruction.glsl
 
-
 void AddWeightedSample(const int2 coord, inout GISampleFull o, const float weight)
 {
     GISampleFull s = GI_Load_SampleFull(coord);
@@ -36,19 +35,11 @@ float GetMaxSpecularHistory(float roughness, float NoV, float parallax)
     return PK_GI_MAX_HISTORY * pow(roughness, power);
 }
 
-layout(local_size_x = 16, local_size_y = 2, local_size_z = 1) in;
+layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
-    int2 size = int2(pk_ScreenSize.xy);
-    int2 coord = int2(gl_GlobalInvocationID.xy);
-
-    if (Any_GEqual(coord, size))
-    {
-        return;
-    }
-
-    GISampleFull filtered = pk_Zero_GISampleFull;
-
+    const int2 size = int2(pk_ScreenSize.xy);
+    const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float2 uv = (coord + 0.5f.xx) / size;
     const float depth = SampleLinearDepth(coord);
 
@@ -58,6 +49,8 @@ void main()
         GI_Store_Packed_SampleFull(coord, uint4(0), uint2(0), uint2(0));
         return;
     }
+   
+    GISampleFull filtered = pk_Zero_GISampleFull;
 
     const float4 normalRoughness = SampleViewNormalRoughness(coord);
     const float3 normal = normalRoughness.xyz;
@@ -156,9 +149,9 @@ void main()
         filtered.meta.moments /= wSum;
     }
 
-    const bool invalidDiff = IsNaN(filtered.diff.sh.Y) || IsNaN(filtered.diff.sh.CoCg) || IsNaN(filtered.diff.ao);
-    const bool invalidSpec = IsNaN(filtered.spec.radiance) || IsNaN(filtered.spec.ao);
-    const bool invalidMeta = IsNaN(filtered.meta.historyDiff) || IsNaN(filtered.meta.historySpec) || IsNaN(filtered.meta.moments);
+    const bool invalidDiff = Any_IsNaN(filtered.diff.sh.Y) || Any_IsNaN(filtered.diff.sh.CoCg) || isnan(filtered.diff.ao);
+    const bool invalidSpec = Any_IsNaN(filtered.spec.radiance) || isnan(filtered.spec.ao);
+    const bool invalidMeta = isnan(filtered.meta.historyDiff) || isnan(filtered.meta.historySpec) || Any_IsNaN(filtered.meta.moments);
 
     uint4 packedDiff = invalidDiff ? uint4(0) : GI_Pack_SampleDiff(filtered.diff);
     uint2 packedSpec = invalidSpec ? uint2(0) : GI_Pack_SampleSpec(filtered.spec);

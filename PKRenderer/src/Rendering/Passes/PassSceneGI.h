@@ -26,7 +26,7 @@ namespace PK::Rendering::Passes
             Objects::Shader* m_computeAccumulate = nullptr;
             Objects::Shader* m_computeReproject = nullptr;
             Objects::Shader* m_computeScreenMip = nullptr;
-            Objects::Shader* m_computeDiffuseHistoryFill = nullptr;
+            Objects::Shader* m_computeHistoryFill = nullptr;
             Objects::Shader* m_computeDiskFilter = nullptr;
             Objects::Shader* m_rayTraceGatherGI = nullptr;
             Objects::ShaderBindingTable m_shaderBindingTable;
@@ -36,7 +36,7 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Texture> m_screenData;
             Utilities::Ref<Objects::Texture> m_screenDataMips;
             Utilities::Ref<Objects::Texture> m_rayhits;
-            uint32_t m_checkerboardIndex = 0u;
+            uint32_t m_frameIndex = 0u;
             int32_t m_rasterAxis = 0;
     };
 }

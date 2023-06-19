@@ -64,12 +64,12 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             inline VulkanQueue* GetQueue(Structs::QueueType type) { return m_queues[m_queueIndices[(uint32_t)type]].get(); }
             constexpr const VulkanQueueFamilies& GetSelectedFamilies() const { return m_selectedFamilies; }
-            inline Rendering::Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) override final { return GetQueue(type)->commandPool->GetCurrent(); }
+            inline Rendering::Objects::CommandBuffer* GetCommandBuffer(Structs::QueueType type) final { return GetQueue(type)->commandPool->GetCurrent(); }
             
             VkResult SubmitCurrent(Structs::QueueType type, VkSemaphore* outSignal = nullptr);
-            Rendering::Objects::CommandBuffer* Submit(Structs::QueueType type) override final;
-            void Sync(Structs::QueueType from, Structs::QueueType to, int32_t submitOffset = 0) override final;
-            inline Structs::FenceRef GetFenceRef(Structs::QueueType type, int32_t submitOffset = 0) override final { return GetQueue(type)->GetFenceRef(submitOffset); }
+            Rendering::Objects::CommandBuffer* Submit(Structs::QueueType type) final;
+            void Sync(Structs::QueueType from, Structs::QueueType to, int32_t submitOffset = 0) final;
+            inline Structs::FenceRef GetFenceRef(Structs::QueueType type, int32_t submitOffset = 0) final { return GetQueue(type)->GetFenceRef(submitOffset); }
             void Prune();
 
         private:

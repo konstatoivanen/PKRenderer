@@ -2,12 +2,14 @@
 #pragma PROGRAM_COMPUTE
 #include includes/SharedVolumeFog.glsl
 
-layout(local_size_x = 32, local_size_y = 2, local_size_z = 1) in;
+layout(local_size_x = PK_W_ALIGNMENT_4, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void main()
 {
+    const float2 uv = (gl_GlobalInvocationID.xy + 0.5f.xx) / VOLUME_SIZE_XY;
+    const float3 vpos = ClipUVToViewPos(uv, 1.0f);
+
     float4 accumulation = float4(0, 0, 0, 1);
     int3 pos = int3(gl_GlobalInvocationID.xy, 0);
-    float3 vpos = ClipUVToViewPos((VOLUME_SIZE_ST.zz + pos.xy) * VOLUME_SIZE_ST.xy, 1.0f);
 
 #pragma unroll VOLUME_DEPTH
     for (; pos.z < VOLUME_DEPTH; ++pos.z)

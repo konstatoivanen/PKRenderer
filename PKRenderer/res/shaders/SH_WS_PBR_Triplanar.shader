@@ -23,9 +23,9 @@ float4 SampleTriplanar(sampler2D tex, float3 normal, float3 position, float scal
 
     blend /= dot(blend, 1.0.xxx);
 
-    float4 cx = tex2D(tex, position.yz * scale);
-    float4 cy = tex2D(tex, position.xz * scale);
-    float4 cz = tex2D(tex, position.xy * scale);
+    float4 cx = PK_SURF_TEX(tex, position.yz * scale);
+    float4 cy = PK_SURF_TEX(tex, position.xz * scale);
+    float4 cz = PK_SURF_TEX(tex, position.xy * scale);
 
     return cx * blend.x + cy * blend.y + cz * blend.z;
 }

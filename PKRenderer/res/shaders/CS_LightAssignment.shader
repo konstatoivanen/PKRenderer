@@ -28,11 +28,6 @@ struct AABB
 AABB currentCell;
 shared SharedLight sharedLights[LIGHT_CLUSTER_GROUP_SIZE_XYZ];
 
-float cmax(float3 v)
-{
-    return max(max(v.x, v.y), v.z);
-}
-
 bool IntersectPointLight(uint lightIndex)
 {
     SharedLight light = sharedLights[lightIndex];

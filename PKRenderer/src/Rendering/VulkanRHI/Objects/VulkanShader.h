@@ -12,14 +12,14 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant, const char* name);
             ~VulkanShader();
 
-            void Dispose() override final;
+            void Dispose() final;
 
             const VulkanShaderModule* GetModule(uint32_t index) const { return m_modules[index]; }
             const char* GetName() const { return m_name.c_str(); }
             constexpr const VulkanDescriptorSetLayout* GetDescriptorSetLayout(uint32_t index) const { return m_descriptorSetLayouts[index]; }
             constexpr const VulkanPipelineLayout* GetPipelineLayout() const { return m_pipelineLayout; }
             constexpr const uint32_t GetDescriptorSetCount() const { return m_descriptorSetCount; }
-            Structs::ShaderBindingTableInfo GetShaderBindingTableInfo() const override final;
+            Structs::ShaderBindingTableInfo GetShaderBindingTableInfo() const final;
 
         private:
             const VkDevice m_device;

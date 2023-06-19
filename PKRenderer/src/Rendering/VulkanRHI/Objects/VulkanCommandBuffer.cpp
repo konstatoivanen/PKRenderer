@@ -164,7 +164,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         uint32_t groupCountZ = (uint32_t)ceilf(dimensions.z / (float)groupSize.z);
         
         // Add debug scopes to compute calls as they're not otherwise visible in NSight timeline
-        BeginDebugScope(m_renderState->GetShaderName().c_str(), PK_COLOR_MAGENTA);
+        BeginDebugScope(m_renderState->GetShaderName(), PK_COLOR_MAGENTA);
         vkCmdDispatch(m_commandBuffer, groupCountX, groupCountY, groupCountZ);
         EndDebugScope();
     }
@@ -190,10 +190,27 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto vksrc = src->GetNative<VulkanTexture>();
         auto vkwindow = dst->GetNative<VulkanWindow>();
         const auto& srcHandle = vksrc->GetBindHandle(TextureBindMode::RenderTarget);
-        const auto& windowHandle = vkwindow->GetBindHandle();
+        const auto& dstHandle = vkwindow->GetBindHandle();
 
-        Blit(srcHandle, windowHandle, 0, 0, 0, 0, filter, true);
-        m_renderState->RecordImage(windowHandle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT);
+        auto srcRes = src->GetResolution();
+        auto dstRes = dst->GetResolution();
+        auto minres = glm::min(srcRes, dstRes);
+
+        auto diff = int3(srcRes - minres);
+        auto srcMin = diff / 2;
+        auto srcMax = int3(srcRes) - (diff - srcMin);
+
+        VkImageBlit blitRegion{};
+        blitRegion.srcSubresource = { (uint32_t)srcHandle->image.range.aspectMask, 0u, 0u, 1u };
+        blitRegion.dstSubresource = { (uint32_t)dstHandle->image.range.aspectMask, 0u, 0u, 1u };
+
+        blitRegion.srcOffsets[0] = { srcMin.x, srcMax.y, srcMin.z };
+        blitRegion.srcOffsets[1] = { srcMax.x, srcMin.y, srcMax.z };
+        blitRegion.dstOffsets[0] = { 0, 0, 0 };
+        blitRegion.dstOffsets[1] = { (int)dstRes.x, (int)dstRes.y, (int)dstRes.z };
+
+        Blit(srcHandle, dstHandle, blitRegion, filter);
+        m_renderState->RecordImage(dstHandle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT);
     }
 
     void VulkanCommandBuffer::Blit(Window* src, Buffer* dst)
@@ -221,35 +238,23 @@ namespace PK::Rendering::VulkanRHI::Objects
         static VulkanBindHandle dstHandle;
         src->GetNative<VulkanTexture>()->FillBindHandle(&srcHandle, srcRange, TextureBindMode::RenderTarget);
         dst->GetNative<VulkanTexture>()->FillBindHandle(&dstHandle, dstRange, TextureBindMode::RenderTarget);
-        Blit(&srcHandle, &dstHandle, srcRange.level, dstRange.level, srcRange.layer, dstRange.layer, filter);
+        auto srange = src->GetNative<VulkanTexture>()->NormalizeViewRange(srcRange);
+        auto drange = dst->GetNative<VulkanTexture>()->NormalizeViewRange(dstRange);
+
+        VkImageBlit blitRegion{};
+        blitRegion.srcSubresource = { (uint32_t)srcHandle.image.range.aspectMask, srange.level, srange.layer, srange.layers };
+        blitRegion.dstSubresource = { (uint32_t)srcHandle.image.range.aspectMask, drange.level, drange.layer, drange.layers };
+        blitRegion.srcOffsets[1] = { (int)srcHandle.image.extent.width, (int)srcHandle.image.extent.height, (int)srcHandle.image.extent.depth };
+        blitRegion.dstOffsets[1] = { (int)dstHandle.image.extent.width, (int)dstHandle.image.extent.height, (int)dstHandle.image.extent.depth };
+        Blit(&srcHandle, &dstHandle, blitRegion, filter);
     }
 
-    void VulkanCommandBuffer::Blit(const VulkanBindHandle* src,
-        const VulkanBindHandle* dst,
-        uint32_t srcLevel,
-        uint32_t dstLevel,
-        uint32_t srcLayer,
-        uint32_t dstLayer,
-        FilterMode filter,
-        bool flipVertical)
+    void VulkanCommandBuffer::Blit(const VulkanBindHandle* src, const VulkanBindHandle* dst, const VkImageBlit& blitRegion, FilterMode filter)
     {
-        VkImageBlit blitRegion{};
-        blitRegion.srcSubresource = { (uint32_t)src->image.range.aspectMask, srcLevel, srcLayer, src->image.range.layerCount };
-        blitRegion.dstSubresource = { (uint32_t)dst->image.range.aspectMask, dstLevel, dstLayer, dst->image.range.layerCount };
-        blitRegion.srcOffsets[1] = { (int)src->image.extent.width, (int)src->image.extent.height, (int)src->image.extent.depth };
-        blitRegion.dstOffsets[1] = { (int)dst->image.extent.width, (int)dst->image.extent.height, (int)dst->image.extent.depth };
-
-        if (flipVertical)
-        {
-            blitRegion.srcOffsets[0].y = (int)src->image.extent.height;
-            blitRegion.srcOffsets[1].y = 0u;
-        }
-
         VkImageResolve resolveRegion{};
-        resolveRegion.srcSubresource = { (uint32_t)src->image.range.aspectMask, srcLevel, srcLayer, src->image.range.layerCount };
-        resolveRegion.dstSubresource = { (uint32_t)dst->image.range.aspectMask, dstLevel, dstLayer, dst->image.range.layerCount };
+        resolveRegion.srcSubresource = { (uint32_t)src->image.range.aspectMask, blitRegion.srcSubresource.mipLevel, blitRegion.srcSubresource.baseArrayLayer, blitRegion.srcSubresource.layerCount };
+        resolveRegion.dstSubresource = { (uint32_t)dst->image.range.aspectMask, blitRegion.dstSubresource.mipLevel, blitRegion.dstSubresource.baseArrayLayer, blitRegion.dstSubresource.layerCount };
         resolveRegion.extent = src->image.extent;
-
         m_renderState->RecordImage(src, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
         m_renderState->RecordImage(dst, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0u, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
         m_renderState->RecordImage(dst, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -402,6 +407,19 @@ namespace PK::Rendering::VulkanRHI::Objects
         vkCmdBuildAccelerationStructuresKHR(m_commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
     }
 
+    void VulkanCommandBuffer::CopyAccelerationStructure(const VkCopyAccelerationStructureInfoKHR* pInfo)
+    {
+        vkCmdCopyAccelerationStructureKHR(m_commandBuffer, pInfo);
+    }
+
+    uint32_t VulkanCommandBuffer::QueryAccelerationStructureCompactSize(const VulkanRawAccelerationStructure* structure, VulkanQueryPool* pool)
+    {
+        PK_THROW_ASSERT(pool->type == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, "Invalid query pool type");
+        auto queryIndex = pool->AddQuery(GetFenceRef());
+        vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer, 1u, &structure->structure, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, pool->pool, queryIndex);
+        return queryIndex;
+    }
+
     void VulkanCommandBuffer::TransitionImageLayout(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageSubresourceRange& range)
     {
         if (srcLayout == dstLayout)
@@ -471,7 +489,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             barrier.imageMemoryBarrierCount,
             barrier.pImageMemoryBarriers);
     }
-
 
     void VulkanCommandBuffer::ValidateWindowPresent(Core::Window* window)
     {

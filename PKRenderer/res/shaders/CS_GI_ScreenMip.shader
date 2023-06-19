@@ -3,10 +3,10 @@
 #include includes/Common.glsl
 #include includes/SharedSceneGI.glsl
 
-layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray pk_GI_ScreenDataMip1;
-layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray pk_GI_ScreenDataMip2;
-layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray pk_GI_ScreenDataMip3;
-layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray pk_GI_ScreenDataMip4;
+layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray _DestinationMip1;
+layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray _DestinationMip2;
+layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray _DestinationMip3;
+layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray _DestinationMip4;
 
 #define GROUP_SIZE 8u
 shared uint4 lds_Data[GROUP_SIZE * GROUP_SIZE];
@@ -34,9 +34,9 @@ uint4 CombinePackedDiff(const uint4 u0, const uint4 u1, const uint4 u2, const ui
     uint sum = 0u;
 
     if (u0.w != 0u) { CombineSamplesDiff(flt, u0); ++sum; }
-    if (u0.w != 0u) { CombineSamplesDiff(flt, u1); ++sum; }
-    if (u0.w != 0u) { CombineSamplesDiff(flt, u2); ++sum; }
-    if (u0.w != 0u) { CombineSamplesDiff(flt, u3); ++sum; }
+    if (u1.w != 0u) { CombineSamplesDiff(flt, u1); ++sum; }
+    if (u2.w != 0u) { CombineSamplesDiff(flt, u2); ++sum; }
+    if (u3.w != 0u) { CombineSamplesDiff(flt, u3); ++sum; }
 
     if (sum == 0u)
     {
@@ -57,9 +57,9 @@ uint2 CombinePackedSpec(const uint2 u0, const uint2 u1, const uint2 u2, const ui
     uint sum = 0u;
 
     if (u0.y != 0u) { CombineSamplesSpec(flt, u0); ++sum; }
-    if (u0.y != 0u) { CombineSamplesSpec(flt, u1); ++sum; }
-    if (u0.y != 0u) { CombineSamplesSpec(flt, u2); ++sum; }
-    if (u0.y != 0u) { CombineSamplesSpec(flt, u3); ++sum; }
+    if (u1.y != 0u) { CombineSamplesSpec(flt, u1); ++sum; }
+    if (u2.y != 0u) { CombineSamplesSpec(flt, u2); ++sum; }
+    if (u3.y != 0u) { CombineSamplesSpec(flt, u3); ++sum; }
 
     if (sum == 0u)
     {
@@ -88,47 +88,41 @@ void main()
         coord * 2 + uint2(0, 1)
     };
 
-    bool4 isOOB;
-    isOOB.x = Any_Greater(baseCoords[0], size);
-    isOOB.y = Any_Greater(baseCoords[1], size);
-    isOOB.z = Any_Greater(baseCoords[2], size);
-    isOOB.w = Any_Greater(baseCoords[3], size);
-    
     uint4 packedDiff = uint4(0u);
 
     //----------DIFFUSE MIP----------//
     {
-        uint4 packed0 = isOOB.x ? uint4(0u) : GI_Load_Packed_SampleDiff(int2(baseCoords[0]));
-        uint4 packed1 = isOOB.y ? uint4(0u) : GI_Load_Packed_SampleDiff(int2(baseCoords[1]));
-        uint4 packed2 = isOOB.z ? uint4(0u) : GI_Load_Packed_SampleDiff(int2(baseCoords[2]));
-        uint4 packed3 = isOOB.w ? uint4(0u) : GI_Load_Packed_SampleDiff(int2(baseCoords[3]));
+        uint4 packed0 = GI_Load_Packed_SampleDiff(int2(baseCoords[0]));
+        uint4 packed1 = GI_Load_Packed_SampleDiff(int2(baseCoords[1]));
+        uint4 packed2 = GI_Load_Packed_SampleDiff(int2(baseCoords[2]));
+        uint4 packed3 = GI_Load_Packed_SampleDiff(int2(baseCoords[3]));
         lds_Data[thread] = packedDiff = CombinePackedDiff(packed0, packed1, packed2, packed3);
-        imageStore(pk_GI_ScreenDataMip1, int3(coord, PK_GI_LVL_DIFF0), packedDiff.xyxy);
-        imageStore(pk_GI_ScreenDataMip1, int3(coord, PK_GI_LVL_DIFF1), packedDiff.zwzw);
+        imageStore(_DestinationMip1, int3(coord, PK_GI_LVL_DIFF0), packedDiff.xyxy);
+        imageStore(_DestinationMip1, int3(coord, PK_GI_LVL_DIFF1), packedDiff.zwzw);
     }
     barrier();
 
     if ((thread & 0x9u) == 0u)
     {
         lds_Data[thread] = packedDiff = CombinePackedDiff(packedDiff, lds_Data[thread + 0x01u], lds_Data[thread + 0x08u], lds_Data[thread + 0x09u]);
-        imageStore(pk_GI_ScreenDataMip2, int3(coord / 2u, PK_GI_LVL_DIFF0), packedDiff.xyxy);
-        imageStore(pk_GI_ScreenDataMip2, int3(coord / 2u, PK_GI_LVL_DIFF1), packedDiff.zwzw);
+        imageStore(_DestinationMip2, int3(coord / 2u, PK_GI_LVL_DIFF0), packedDiff.xyxy);
+        imageStore(_DestinationMip2, int3(coord / 2u, PK_GI_LVL_DIFF1), packedDiff.zwzw);
     }
     barrier();
 
     if ((thread & 0x1Bu) == 0u)
     {
         lds_Data[thread] = packedDiff = CombinePackedDiff(packedDiff, lds_Data[thread + 0x02u], lds_Data[thread + 0x10u], lds_Data[thread + 0x12u]);
-        imageStore(pk_GI_ScreenDataMip3, int3(coord / 4u, PK_GI_LVL_DIFF0), packedDiff.xyxy);
-        imageStore(pk_GI_ScreenDataMip3, int3(coord / 4u, PK_GI_LVL_DIFF1), packedDiff.zwzw);
+        imageStore(_DestinationMip3, int3(coord / 4u, PK_GI_LVL_DIFF0), packedDiff.xyxy);
+        imageStore(_DestinationMip3, int3(coord / 4u, PK_GI_LVL_DIFF1), packedDiff.zwzw);
     }
     barrier();
 
     if (thread == 0u)
     {
         packedDiff = CombinePackedDiff(packedDiff, lds_Data[thread + 0x04u], lds_Data[thread + 0x20u], lds_Data[thread + 0x24u]);
-        imageStore(pk_GI_ScreenDataMip4, int3(coord / 8u, PK_GI_LVL_DIFF0), packedDiff.xyxy);
-        imageStore(pk_GI_ScreenDataMip4, int3(coord / 8u, PK_GI_LVL_DIFF1), packedDiff.zwzw);
+        imageStore(_DestinationMip4, int3(coord / 8u, PK_GI_LVL_DIFF0), packedDiff.xyxy);
+        imageStore(_DestinationMip4, int3(coord / 8u, PK_GI_LVL_DIFF1), packedDiff.zwzw);
     }
     barrier();
 
@@ -137,32 +131,32 @@ void main()
     uint2 packedSpec = uint2(0u);
     
     {
-        uint2 packed0 = isOOB.x ? uint2(0u) : GI_Load_Packed_SampleSpec(int2(baseCoords[0]));
-        uint2 packed1 = isOOB.y ? uint2(0u) : GI_Load_Packed_SampleSpec(int2(baseCoords[1]));
-        uint2 packed2 = isOOB.z ? uint2(0u) : GI_Load_Packed_SampleSpec(int2(baseCoords[2]));
-        uint2 packed3 = isOOB.w ? uint2(0u) : GI_Load_Packed_SampleSpec(int2(baseCoords[3]));
+        uint2 packed0 = GI_Load_Packed_SampleSpec(int2(baseCoords[0]));
+        uint2 packed1 = GI_Load_Packed_SampleSpec(int2(baseCoords[1]));
+        uint2 packed2 = GI_Load_Packed_SampleSpec(int2(baseCoords[2]));
+        uint2 packed3 = GI_Load_Packed_SampleSpec(int2(baseCoords[3]));
         lds_Data[thread].xy = packedSpec = CombinePackedSpec(packed0, packed1, packed2, packed3);
-        imageStore(pk_GI_ScreenDataMip1, int3(coord, PK_GI_LVL_SPEC), packedSpec.xyxy);
+        imageStore(_DestinationMip1, int3(coord, PK_GI_LVL_SPEC), packedSpec.xyxy);
     }
     barrier();
 
     if ((thread & 0x9u) == 0u)
     {
         lds_Data[thread].xy = packedSpec = CombinePackedSpec(packedSpec, lds_Data[thread + 0x01u].xy, lds_Data[thread + 0x08u].xy, lds_Data[thread + 0x09u].xy);
-        imageStore(pk_GI_ScreenDataMip2, int3(coord / 2u, PK_GI_LVL_SPEC), packedSpec.xyxy);
+        imageStore(_DestinationMip2, int3(coord / 2u, PK_GI_LVL_SPEC), packedSpec.xyxy);
     }
     barrier();
 
     if ((thread & 0x1Bu) == 0u)
     {
         lds_Data[thread].xy = packedSpec = CombinePackedSpec(packedSpec, lds_Data[thread + 0x02u].xy, lds_Data[thread + 0x10u].xy, lds_Data[thread + 0x12u].xy);
-        imageStore(pk_GI_ScreenDataMip3, int3(coord / 4u, PK_GI_LVL_SPEC), packedSpec.xyxy);
+        imageStore(_DestinationMip3, int3(coord / 4u, PK_GI_LVL_SPEC), packedSpec.xyxy);
     }
     barrier();
 
     if (thread == 0u)
     {
         lds_Data[thread].xy = packedSpec = CombinePackedSpec(packedSpec, lds_Data[thread + 0x04u].xy, lds_Data[thread + 0x20u].xy, lds_Data[thread + 0x24u].xy);
-        imageStore(pk_GI_ScreenDataMip4, int3(coord / 8u, PK_GI_LVL_SPEC), packedSpec.xyxy);
+        imageStore(_DestinationMip4, int3(coord / 8u, PK_GI_LVL_SPEC), packedSpec.xyxy);
     }
 }

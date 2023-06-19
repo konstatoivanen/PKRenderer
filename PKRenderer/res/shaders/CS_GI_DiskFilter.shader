@@ -4,18 +4,13 @@
 #include includes/SharedSceneGI.glsl
 #include includes/Reconstruction.glsl
 #include includes/Kernels.glsl
+#include includes/BRDF.glsl
 
-layout(local_size_x = 16, local_size_y = 2, local_size_z = 1) in;
+layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void main()
 {
     const int2 size = int2(pk_ScreenSize.xy);
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-
-    if (Any_GEqual(coord, size))
-    {
-        return;
-    }
-
     const float depth = SampleLinearDepth(coord);
 
     if (!Test_DepthFar(depth))
@@ -24,14 +19,22 @@ void main()
     }
 
     GISampleFull filtered = GI_Load_SampleFull(coord);
+    const float4 NR = SampleWorldNormalRoughness(coord);
+    const float3 N = NR.xyz;
+    const float R = NR.w;
+    const float3 O = SampleWorldPosition(coord, size, depth);
+    const float3 V = normalize(O - pk_WorldSpaceCameraPos.xyz);
+   
+    const float3 s_dir = SHToDominantDir(filtered.diff.sh);
+    const float3 s_color = SHToIrradiance(filtered.diff.sh, s_dir, pk_GI_ChromaBias);
+    const float3 specular = BRDF_GGX_SPECULAR(s_color, R, s_dir, V, N) * saturate(dot(N, s_dir));
+
+    //filtered.spec.radiance = lerp(filtered.spec.radiance, specular, 1.0f / max(1.0f, filtered.meta.historyDiff * 4.0f));
 
     /*
     SH c_diff = GI_Load_SH(coord, PK_GI_DIFF_LVL);
     SH c_spec = GI_Load_SH(coord, PK_GI_SPEC_LVL);
 
-    const float4 c_nr = SampleWorldNormalRoughness(coord);
-    const float3 c_normal = c_nr.xyz;
-    const float c_roughness = c_nr.w;
     const float2 c_hisvar = GI_Load_HistoryVariance(coord);
     const float c_history = c_hisvar.x;
     const float c_variance = c_hisvar.y;
@@ -93,7 +96,7 @@ void main()
 
         float s_lum = GI_SHToLuminance(s_diff, c_normal);
 
-        if (IsNaN(s_lum))
+        if (isnan(s_lum))
         {
             s_lum = 0.0f;
         }

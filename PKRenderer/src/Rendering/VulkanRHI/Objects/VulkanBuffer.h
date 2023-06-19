@@ -3,7 +3,7 @@
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Rendering/VulkanRHI/VulkanDriver.h"
 #include "Rendering/VulkanRHI/Objects/VulkanSparsePageTable.h"
-#include "Utilities/PointerMap.h"
+#include "Utilities/FastMap.h"
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
@@ -15,19 +15,19 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             void* BeginWrite(const Structs::FenceRef& fence, size_t offset, size_t size);
             void EndWrite(VkBuffer* src, VkBuffer* dst, VkBufferCopy* region);
-            const void* BeginRead(size_t offset, size_t size) override final;
-            void EndRead() override final;
+            const void* BeginRead(size_t offset, size_t size) final;
+            void EndRead() final;
 
-            size_t GetCapacity() const override final { return m_rawBuffer->capacity; }
+            size_t GetCapacity() const final { return m_rawBuffer->capacity; }
             const VulkanRawBuffer* GetRaw() const { return m_rawBuffer; }
             const VulkanBindHandle* GetBindHandle(const Structs::IndexRange& range);
             // Default range is always the first one
             inline const VulkanBindHandle* GetBindHandle() const { return m_bindHandles.GetValueAt(0); }
 
-            void MakeRangeResident(const Structs::IndexRange& range, QueueType type) override final;
-            void MakeRangeNonResident(const Structs::IndexRange& range)  override final;
+            void MakeRangeResident(const Structs::IndexRange& range, QueueType type) final;
+            void MakeRangeNonResident(const Structs::IndexRange& range) final;
 
-            bool Validate(size_t count) override final;
+            bool Validate(size_t count) final;
 
         private:
             struct MapRange

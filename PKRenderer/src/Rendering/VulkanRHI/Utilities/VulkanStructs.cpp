@@ -14,6 +14,7 @@ namespace PK::Rendering::VulkanRHI
         vk11.pNext = &vk12;
         vk12.pNext = &accelerationStructure;
         accelerationStructure.pNext = &rayTracingPipeline;
+        rayTracingPipeline.pNext = &rayQuery;
     }
 
     VulkanBufferCreateInfo::VulkanBufferCreateInfo(BufferUsage usage, size_t size, const VulkanQueueFamilies* families)
@@ -300,38 +301,17 @@ namespace PK::Rendering::VulkanRHI
         vmaDestroyImage(allocator, image, memory);
     }
 
-    VulkanRawAccelerationStructure::VulkanRawAccelerationStructure(VkDevice device,
-        VmaAllocator allocator,
-        const VkAccelerationStructureGeometryKHR& geometryInfo,
-        const VkAccelerationStructureBuildRangeInfoKHR& rangeInfo,
-        const VkAccelerationStructureTypeKHR type,
-        const char* name) :
-        device(device),
-        geometryInfo(geometryInfo),
-        rangeInfo(rangeInfo)
+    VulkanRawAccelerationStructure::VulkanRawAccelerationStructure(VkDevice device, const VkAccelerationStructureCreateInfoKHR& createInfo, const char* name) : device(device)
     {
-        auto buildSizeInfo = VulkanRHI::Utilities::VulkanGetAccelerationBuildSizesInfo(device, geometryInfo, type, rangeInfo.primitiveCount);
-
-        scratchBufferSize = buildSizeInfo.buildScratchSize;
-        rawBuffer = new VulkanRawBuffer(device, allocator, VulkanBufferCreateInfo(BufferUsage::AccelerationStructure | BufferUsage::GPUOnly, buildSizeInfo.accelerationStructureSize), name);
-
-        VkAccelerationStructureCreateInfoKHR createInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
-        createInfo.size = buildSizeInfo.accelerationStructureSize;
-        createInfo.type = type;
-        createInfo.buffer = rawBuffer->buffer;
-
         VK_ASSERT_RESULT_CTX(vkCreateAccelerationStructureKHR(device, &createInfo, nullptr, &structure), "Failed to create acceleration structure!");
         Utilities::VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, (uint64_t)structure, name);
-
-        VkAccelerationStructureDeviceAddressInfoKHR accelerationDeviceAddressInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR };
-        accelerationDeviceAddressInfo.accelerationStructure = structure;
-        deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(device, &accelerationDeviceAddressInfo);
+        VkAccelerationStructureDeviceAddressInfoKHR addressInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR, nullptr, structure };
+        deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(device, &addressInfo);
     }
 
     VulkanRawAccelerationStructure::~VulkanRawAccelerationStructure()
     {
         vkDestroyAccelerationStructureKHR(device, structure, nullptr);
-        delete rawBuffer;
     }
 
     VulkanShaderModule::VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t sprivSize, const char* name) : device(device)
@@ -438,5 +418,44 @@ namespace PK::Rendering::VulkanRHI
     VulkanSampler::~VulkanSampler()
     {
         vkDestroySampler(device, sampler, nullptr);
+    }
+
+    VulkanQueryPool::VulkanQueryPool(VkDevice device, VkQueryType type, uint32_t size) :
+        device(device),
+        type(type),
+        size(size),
+        count(0u),
+        lastQueryFence()
+    {
+        VkQueryPoolCreateInfo info{ VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO };
+        info.queryCount = size;
+        info.queryType = type;
+        VK_ASSERT_RESULT_CTX(vkCreateQueryPool(device, &info, nullptr, &pool), "Failed to create a query pool!");
+        vkResetQueryPool(device, pool, 0, size);
+    }
+
+    VulkanQueryPool::~VulkanQueryPool()
+    {
+        vkDestroyQueryPool(device, pool, nullptr);
+    }
+
+    bool VulkanQueryPool::TryGetResults(void* outBuffer, size_t stride, VkQueryResultFlagBits flags)
+    {
+        if (count == 0 || !lastQueryFence.WaitInvalidate(0ull))
+        {
+            return false;
+        }
+
+        VK_ASSERT_RESULT_CTX(vkGetQueryPoolResults(device, pool, 0, count, count * stride, outBuffer, stride, flags), "Failed to get query results!");
+        vkResetQueryPool(device, pool, 0, count);
+        count = 0u;
+        return true;
+    }
+
+    uint32_t VulkanQueryPool::AddQuery(const Rendering::Structs::FenceRef& fence)
+    {
+        assert(count < size);
+        lastQueryFence = fence;
+        return count++;
     }
 }

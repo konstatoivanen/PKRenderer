@@ -14,8 +14,8 @@ namespace PK::ECS::Engines
 	{
 		public:
 			EngineEditorCamera(Core::Services::Sequencer* sequencer, Core::Services::Time* time, const Core::ApplicationConfig* config);
-			void Step(Core::Services::Input* input) override final;
-			void Step(Core::TokenConsoleCommand* token) override final;
+			void Step(Core::Services::Input* input) final;
+			void Step(Core::TokenConsoleCommand* token) final;
 
 		private:
 			Core::Services::Sequencer* m_sequencer = nullptr;

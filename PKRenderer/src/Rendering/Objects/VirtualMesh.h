@@ -12,7 +12,7 @@ namespace PK::Rendering::Objects
             VirtualMesh(const SubmeshRangeAllocationInfo& data, Utilities::Ref<Mesh> mesh);
             ~VirtualMesh();
 
-            virtual void Import(const char* filepath, Utilities::Ref<Mesh>* pParams) override final;
+            virtual void Import(const char* filepath, Utilities::Ref<Mesh>* pParams) final;
             inline Mesh* GetBaseMesh() const { return m_mesh.get(); }
             uint32_t GetSubmeshIndex(uint32_t submesh) const;
             uint32_t GetBaseSubmeshIndex() const { return m_submeshIndices.at(0); }

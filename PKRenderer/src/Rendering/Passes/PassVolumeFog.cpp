@@ -11,8 +11,6 @@ namespace PK::Rendering::Passes
     using namespace Structs;
     using namespace Objects;
 
-    constexpr static const uint3 VolumeResolution = { 160u, 90u, 128u };
-
     PassVolumeFog::PassVolumeFog(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
         TextureDescriptor descriptor;
@@ -23,16 +21,13 @@ namespace PK::Rendering::Passes
         descriptor.sampler.wrap[0] = WrapMode::Clamp;
         descriptor.sampler.wrap[1] = WrapMode::Clamp;
         descriptor.sampler.wrap[2] = WrapMode::Clamp;
-        descriptor.resolution = VolumeResolution;
+        descriptor.resolution = { config->InitialWidth / 8u, config->InitialHeight / 8u, 128 };
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::Concurrent;
 
         m_volumeInject = Texture::Create(descriptor, "Fog.InjectVolume");
         m_volumeScatter = Texture::Create(descriptor, "Fog.ScatterVolume");
-        m_depthTiles = Buffer::Create(ElementType::Uint, VolumeResolution.x * VolumeResolution.y, BufferUsage::DefaultStorage, "Fog.DepthTiles");
-
         m_computeInject = assetDatabase->Find<Shader>("CS_VolumeFogLightDensity");
         m_computeScatter = assetDatabase->Find<Shader>("CS_VolumeFogScatter");
-        m_computeDepthTiles = assetDatabase->Find<Shader>("CS_VolumeFogDepthMax");
         m_shaderComposite = assetDatabase->Find<Shader>("SH_VS_VolumeFogComposite");
 
         auto hash = HashCache::Get();
@@ -53,30 +48,27 @@ namespace PK::Rendering::Passes
             }), "Fog.Parameters");
 
         OnUpdateParameters(config);
+        GraphicsAPI::SetBuffer(hash->pk_VolumeResources, m_volumeResources->GetBuffer());
+    }
+
+    void PassVolumeFog::Compute(Objects::CommandBuffer* cmd, const Math::uint3& resolution)
+    {
+        cmd->BeginDebugScope("VolumetricFog.Injection", PK_COLOR_MAGENTA);
+
+        auto hash = HashCache::Get();
+        const uint3 volumeResolution = { resolution.x / 8u, resolution.y / 8u, 128u };
+        m_volumeInject->Validate(volumeResolution);
+        m_volumeScatter->Validate(volumeResolution);
 
         GraphicsAPI::SetImage(hash->pk_Volume_Inject, m_volumeInject.get());
         GraphicsAPI::SetImage(hash->pk_Volume_Scatter, m_volumeScatter.get());
         GraphicsAPI::SetTexture(hash->pk_Volume_InjectRead, m_volumeInject.get());
         GraphicsAPI::SetTexture(hash->pk_Volume_ScatterRead, m_volumeScatter.get());
-        GraphicsAPI::SetBuffer(hash->pk_VolumeResources, m_volumeResources->GetBuffer());
-        GraphicsAPI::SetBuffer(hash->pk_VolumeMaxDepths, m_depthTiles.get());
-    }
 
-    void PassVolumeFog::ComputeDepthTiles(Objects::CommandBuffer* cmd, const Math::uint3& resolution)
-    {
-        cmd->BeginDebugScope("VolumetricFog.DepthTiles", PK_COLOR_MAGENTA);
-        cmd->Clear(m_depthTiles.get(), 0, sizeof(uint32_t) * VolumeResolution.x * VolumeResolution.y, 0u);
-        cmd->Dispatch(m_computeDepthTiles, 0, { resolution.x, resolution.y, 1 });
-        cmd->EndDebugScope();
-    }
-
-    void PassVolumeFog::Compute(Objects::CommandBuffer* cmd)
-    {
-        cmd->BeginDebugScope("VolumetricFog.Injection", PK_COLOR_MAGENTA);
-        cmd->Dispatch(m_computeInject, 0, VolumeResolution);
+        cmd->Dispatch(m_computeInject, 0, volumeResolution);
         cmd->EndDebugScope();
         cmd->BeginDebugScope("VolumetricFog.Scattering", PK_COLOR_MAGENTA);
-        cmd->Dispatch(m_computeScatter, 0, { VolumeResolution.x, VolumeResolution.y, 1u });
+        cmd->Dispatch(m_computeScatter, 0, { volumeResolution.x, volumeResolution.y, 1u });
         cmd->EndDebugScope();
     }
 

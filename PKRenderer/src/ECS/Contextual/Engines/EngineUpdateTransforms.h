@@ -9,7 +9,7 @@ namespace PK::ECS::Engines
 	{
 		public:
 			EngineUpdateTransforms(EntityDatabase* entityDb);
-			void Step(int condition) override final;
+			void Step(int condition) final;
 		
 		private:
 			EntityDatabase* m_entityDb = nullptr;

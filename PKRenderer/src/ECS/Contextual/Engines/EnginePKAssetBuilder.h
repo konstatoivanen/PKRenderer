@@ -10,7 +10,7 @@ namespace PK::ECS::Engines
     {
     public:
         EnginePKAssetBuilder(const Core::ApplicationArguments& arguments);
-        void Step(Core::TokenConsoleCommand* token) override final;
+        void Step(Core::TokenConsoleCommand* token) final;
 
     private:
         std::wstring m_executablePath;

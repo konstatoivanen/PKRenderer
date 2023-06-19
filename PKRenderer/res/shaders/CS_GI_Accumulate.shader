@@ -14,19 +14,19 @@ float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direct
     {
         float2 deltacoord = abs(coord - (clipuvw.xy * pk_ScreenParams.xy));
         bool isScreenHit = dot(deltacoord, deltacoord) > 2.0f;
-
+    
         if (isScreenHit)
         {
             float sdepth = SamplePreviousLinearDepth(clipuvw.xy);
             isScreenHit = isMiss && !Test_DepthFar(sdepth);
-
+    
             if (!isScreenHit)
             {
                 float rdepth = LinearizeDepth(clipuvw.z);
                 float sviewz = -SamplePreviousViewNormal(clipuvw.xy).z + 0.15f;
                 isScreenHit = abs(sdepth - rdepth) < (rdepth * 0.01f / sviewz);
             }
-
+    
             if (isScreenHit)
             {
                 return tex2D(pk_ScreenColorPrevious, clipuvw.xy).rgb;
@@ -41,20 +41,14 @@ float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direct
 
     const float level = roughness * roughness * log2(max(1.0f, dist) / pk_GI_VoxelSize);
     const float4 voxel = GI_Load_Voxel(worldpos, level);
-    return voxel.rgb / max(voxel.a, 1.0f / (PK_GI_VOXEL_MAX_MIP * PK_GI_VOXEL_MAX_MIP));
+    return voxel.rgb / max(voxel.a, 1e-2f);
 }
 
-layout(local_size_x = 16, local_size_y = 4, local_size_z = 1) in;
+layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
     const int2 size = int2(pk_ScreenSize.xy);
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-
-    if (Any_GEqual(coord, size))
-    {
-        return;
-    }
-
     const float depth = SampleLinearDepth(coord);
 
     if (!Test_DepthFar(depth))
@@ -72,9 +66,9 @@ void main()
     GISampleFull filtered = GI_Load_SampleFull(coord);
     const float wDiff = max(1.0f / (filtered.meta.historyDiff + 1.0f), 0.01f);
     const float wSpec = max(1.0f / (filtered.meta.historySpec + 1.0f), 0.01f); 
-    
+
     const float coneSizeDiff = 0.5f;
-    const float coneSizeSpec = pow2(NR.w);
+    const float coneSizeSpec = NR.w;
     
     float3 radianceDiff = SampleRadiance(coord, O, directions.diff, hits.distDiff, hits.isMissDiff, coneSizeDiff);
     float3 radianceSpec = SampleRadiance(coord, O, directions.spec, hits.distSpec, hits.isMissSpec, coneSizeSpec);

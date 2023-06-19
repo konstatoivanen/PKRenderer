@@ -248,7 +248,7 @@ namespace PK::Math::Functions
         positions[6] = inverseMatrix * float4(1, 1, 1, 1);
         positions[7] = inverseMatrix * float4(1, -1, 1, 1);
         float3 min = { std::numeric_limits<float>().max(), std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
-        float3 max = { -std::numeric_limits<float>().min(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };
+        float3 max = { -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };
 
         for (auto i = 0; i < 8; ++i)
         {
@@ -286,7 +286,7 @@ namespace PK::Math::Functions
         }
 
         float3 min = { std::numeric_limits<float>().max(), std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
-        float3 max = { -std::numeric_limits<float>().min(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };
+        float3 max = { -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };
 
         for (auto i = 0; i < 8; ++i)
         {
@@ -310,7 +310,7 @@ namespace PK::Math::Functions
         positions[7] = float4(1, -1, 1, 1);
 
         float3 min = { std::numeric_limits<float>().max(), std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
-        float3 max = { -std::numeric_limits<float>().min(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };
+        float3 max = { -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };
 
         for (auto i = 0; i < 8; ++i)
         {

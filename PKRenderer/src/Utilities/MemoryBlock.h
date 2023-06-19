@@ -36,21 +36,16 @@ namespace PK::Utilities
                     newCount <<= 1;
                 }
 
-                auto newbuffer = calloc(newCount, sizeof(T));
+                auto oldSize = sizeof(T) * m_count;
+                auto newSize = sizeof(T) * newCount;
+                auto newbuffer = m_data != nullptr ? realloc(m_data, newSize) : calloc(newCount, sizeof(T));
 
-                if (newbuffer == nullptr)
-                {
-                    throw std::runtime_error("Failed to allocate new buffer!");
-                }
+                assert(newbuffer != nullptr);
 
+                // Usages expect cleared buffers & realloc doesnt clear the new reguion.
                 if (m_data != nullptr)
                 {
-                    if (!discard)
-                    {
-                        memcpy(newbuffer, m_data, sizeof(T) * m_count);
-                    }
-
-                    free(m_data);
+                    memset(reinterpret_cast<char*>(newbuffer) + oldSize, 0, newSize - oldSize);
                 }
 
                 m_data = newbuffer;

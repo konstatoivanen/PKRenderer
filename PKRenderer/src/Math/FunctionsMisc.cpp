@@ -230,7 +230,44 @@ namespace PK::Math::Functions
 
     uint32_t GetAlignedSize(uint32_t value, uint32_t alignment)
     {
-        return (value + alignment - 1) & ~(alignment - 1);
+        assert(alignment && ((alignment & (alignment - 1)) == 0));
+        return (value + alignment - 1u) & ~(alignment - 1u);
+    }
+
+    uint64_t GetAlignedSize(uint64_t value, uint64_t alignment)
+    {
+        assert(alignment && ((alignment & (alignment - 1)) == 0));
+        return (value + alignment - 1ull) & ~(alignment - 1ull);
+    }
+
+    uint2 GetAlignedResolution2D(const uint2& resolution, uint32_t alignment)
+    {
+        return
+        {
+            GetAlignedSize(resolution.x, alignment),
+            GetAlignedSize(resolution.y, alignment),
+        };
+    }
+
+    uint3 GetAlignedResolution2D(const uint3& resolution, uint32_t alignment)
+    {
+        return
+        {
+            GetAlignedSize(resolution.x, alignment),
+            GetAlignedSize(resolution.y, alignment),
+            resolution.z
+        };
+    }
+
+    uint4 GetAlignedSize(uint4 value, uint32_t alignment)
+    {
+        return
+        {
+            GetAlignedSize(value.x, alignment),
+            GetAlignedSize(value.y, alignment),
+            GetAlignedSize(value.z, alignment),
+            GetAlignedSize(value.w, alignment)
+        };
     }
 
     uint3 GetComputeGroupCount(const uint3& threads, const uint3& clusterSize)
@@ -254,5 +291,35 @@ namespace PK::Math::Functions
         }
 
         return count;
+    }
+
+    uint4 MurmurHash41(uint32_t seed)
+    {
+        const uint M = 0x5bd1e995u;
+        uint4 h = uint4(1190494759u, 2147483647u, 3559788179u, 179424673u);
+        seed *= M;
+        seed ^= seed >> 24u;
+        seed *= M;
+        h *= M; 
+        h ^= seed;
+        h ^= h >> 13u; 
+        h *= M; 
+        h ^= h >> 15u;
+        return h;
+    }
+
+    uint2 MurmurHash21(uint32_t seed)
+    {
+        const uint M = 0x5bd1e995u;
+        uint2 h = uint2(1190494759u, 2147483647u);
+        seed *= M; 
+        seed ^= seed >> 24u; 
+        seed *= M;
+        h *= M; 
+        h ^= seed;
+        h ^= h >> 13u; 
+        h *= M; 
+        h ^= h >> 15u;
+        return h;
     }
 }

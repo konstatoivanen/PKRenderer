@@ -177,7 +177,8 @@ namespace PK::Rendering::Structs
         DefaultStorage = GPUOnly | TransferDst | Storage,
         PersistentStorage = DefaultStorage | PersistentStage,
         DefaultStaging = CPUOnly | TransferSrc,
-        DefaultShaderBindingTable = GPUOnly | TransferDst | ShaderBindingTable
+        DefaultShaderBindingTable = GPUOnly | TransferDst | ShaderBindingTable,
+        DefaultAccelerationStructure = GPUOnly | AccelerationStructure
     };
 
     enum class TextureUsage : uint8_t

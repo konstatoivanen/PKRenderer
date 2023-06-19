@@ -16,22 +16,22 @@ namespace PK::Rendering::VulkanRHI
             VulkanWindow(VulkanDriver* driver, const PK::Core::WindowProperties& properties);
             ~VulkanWindow();
 
-            Math::uint3 GetResolution() const override { return m_swapchain->GetResolution(); }
-            float GetAspectRatio() const override { return m_swapchain->GetAspectRatio(); }
-            bool IsAlive() const override { return m_alive; }
-            bool IsMinimized() const override { return m_minimized; }
-            bool IsVSync() const override { return m_vsync; }
+            Math::uint3 GetResolution() const final { return m_swapchain->GetResolution(); }
+            float GetAspectRatio() const final { return m_swapchain->GetAspectRatio(); }
+            bool IsAlive() const final { return m_alive; }
+            bool IsMinimized() const final { return m_minimized; }
+            bool IsVSync() const final { return m_vsync; }
 
-            void Begin() override final;
-            void End() override final;
-            void SetFrameFence(const Structs::FenceRef& fence) override final;
-            void SetCursorVisible(bool value) override final;
-            void SetVSync(bool enabled) override final { m_vsync = enabled; };
-            inline void PollEvents() const override final { glfwPollEvents(); }
-            inline void WaitEvents() const override final { glfwWaitEvents(); }
-            void* GetNativeWindow() const override final { return m_window; }
+            void Begin() final;
+            void End() final;
+            void SetFrameFence(const Structs::FenceRef& fence) final;
+            void SetCursorVisible(bool value) final;
+            void SetVSync(bool enabled) final { m_vsync = enabled; };
+            inline void PollEvents() const final { glfwPollEvents(); }
+            inline void WaitEvents() const final { glfwWaitEvents(); }
+            void* GetNativeWindow() const final { return m_window; }
 
-            Math::uint4 GetRect() const override final { return m_swapchain->GetRect(); }
+            Math::uint4 GetRect() const final { return m_swapchain->GetRect(); }
             constexpr VkExtent2D GetExtent() const { return m_swapchain->GetExtent(); }
             constexpr VkFormat GetNativeFormat() const { return m_swapchain->GetNativeFormat(); }
             const VulkanBindHandle* GetBindHandle() const { return m_swapchain->GetBindHandle(); }

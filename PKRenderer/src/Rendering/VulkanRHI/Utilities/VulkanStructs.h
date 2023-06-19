@@ -38,7 +38,7 @@ namespace PK::Rendering::VulkanRHI
         VkPhysicalDeviceVulkan12Features vk12{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
         VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructure{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR };
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipeline{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR };
-
+        VkPhysicalDeviceRayQueryFeaturesKHR rayQuery{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR };
         VulkanPhysicalDeviceFeatures();
     };
 
@@ -154,21 +154,11 @@ namespace PK::Rendering::VulkanRHI
 
     struct VulkanRawAccelerationStructure : public Rendering::Services::IDisposable
     {
-        VulkanRawAccelerationStructure(VkDevice device, 
-            VmaAllocator allocator, 
-            const VkAccelerationStructureGeometryKHR& geometryInfo,
-            const VkAccelerationStructureBuildRangeInfoKHR& rangeInfo,
-            const VkAccelerationStructureTypeKHR type,
-            const char* name);
+        VulkanRawAccelerationStructure(VkDevice device, const VkAccelerationStructureCreateInfoKHR& createInfo, const char* name);
         ~VulkanRawAccelerationStructure();
-
         const VkDevice device;
-        VulkanRawBuffer* rawBuffer;
-        VkDeviceSize scratchBufferSize;
-        VkDeviceAddress deviceAddress;
         VkAccelerationStructureKHR structure;
-        VkAccelerationStructureGeometryKHR geometryInfo;
-        VkAccelerationStructureBuildRangeInfoKHR rangeInfo;
+        VkDeviceAddress deviceAddress;
     };
 
     struct VulkanShaderModule : public Rendering::Services::IDisposable
@@ -236,6 +226,22 @@ namespace PK::Rendering::VulkanRHI
 
         const VkDevice device;
         VkSampler sampler;
+    };
+
+    struct VulkanQueryPool : public PK::Utilities::NoCopy
+    {
+        VulkanQueryPool(VkDevice device, VkQueryType type, uint32_t size);
+        ~VulkanQueryPool();
+
+        bool TryGetResults(void* outBuffer, size_t stride, VkQueryResultFlagBits flags);
+        uint32_t AddQuery(const Rendering::Structs::FenceRef& fence);
+
+        const VkDevice device;
+        const uint32_t size;
+        const VkQueryType type;
+        Rendering::Structs::FenceRef lastQueryFence;
+        uint32_t count;
+        VkQueryPool pool;
     };
 
     struct VulkanBindHandle : PK::Utilities::VersionedObject

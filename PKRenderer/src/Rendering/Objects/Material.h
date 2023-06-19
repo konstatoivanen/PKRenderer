@@ -26,7 +26,7 @@ namespace PK::Rendering::Objects
 
             void CopyTo(char* dst, BindSet<Texture>* textureSet) const;
 
-            void Import(const char* filepath) override final;
+            void Import(const char* filepath) final;
 
             void InitializeShaderLayout();
 

@@ -6,10 +6,18 @@ float pow2(float x) { return x * x; }
 float pow3(float x) { return x * x * x; }
 float pow4(float x) { return x * x * x * x; }
 float pow5(float x) { return x * x * x * x * x; }
-bool IsNaN(float v) { return (floatBitsToUint(v) & 0x7fffffff) > 0x7f800000; }
-bool IsNaN(float2 v) { return IsNaN(v.x) || IsNaN(v.y); }
-bool IsNaN(float3 v) { return IsNaN(v.x) || IsNaN(v.y) || IsNaN(v.z); }
-bool IsNaN(float4 v) { return IsNaN(v.x) || IsNaN(v.y) || IsNaN(v.z) || IsNaN(v.w); }
+float cmin(float2 x) { return min(x.x, x.y); }
+float cmin(float3 x) { return min(min(x.x, x.y), x.z); }
+float cmin(float4 x) { return min(min(min(x.x, x.y), x.z), x.w); }
+float cmax(float2 x) { return max(x.x, x.y); }
+float cmax(float3 x) { return max(max(x.x, x.y), x.z); }
+float cmax(float4 x) { return max(max(max(x.x, x.y), x.z), x.w); }
+half cmin(half2 x) { return min(x.x, x.y); }
+half cmin(half3 x) { return min(min(x.x, x.y), x.z); }
+half cmin(half4 x) { return min(min(min(x.x, x.y), x.z), x.w); }
+half cmax(half2 x) { return max(x.x, x.y); }
+half cmax(half3 x) { return max(max(x.x, x.y), x.z); }
+half cmax(half4 x) { return max(max(max(x.x, x.y), x.z), x.w); }
 float2 make_rotation(float radian)  { return float2(cos(radian), sin(radian)); }
 float2 rotate2D(float2 v, float2 r)  { return float2(v.x * r.x - v.y * r.y, v.x * r.y + v.y * r.x); }
 float4 mul3x3(const float3x3 matrix, const float4 v) { return float4(matrix * v.xyz, v.w); }
@@ -26,11 +34,11 @@ uint2 packHalf4x16(float4 v) { return uint2(packHalf2x16(v.xy), packHalf2x16(v.z
 #define POW3(x) ((x) * (x) * (x))
 #define POW4(x) ((x) * (x) * (x) * (x))
 #define POW5(x) ((x) * (x) * (x) * (x) * (x))
-#define mod(x,y) ((x) - (y) * floor((x) / (y)))
 #define mul(a,b) (a * b)
 // @TODO Refactor math to produce correct 0-1 z matrices & remove this hack.
 #define NORMALIZE_GL_Z gl_Position.z = (gl_Position.z + gl_Position.w) / 2.0
 
+#define Any_IsNaN(v) any(isnan(v))
 #define Any_GEqual(a, b) any(greaterThanEqual(a,b))
 #define Any_Equal(a, b) any(equal(a,b))
 #define Any_NotEqual(a, b) any(notEqual(a,b))
@@ -81,6 +89,10 @@ uint2 packHalf4x16(float4 v) { return uint2(packHalf2x16(v.xy), packHalf2x16(v.z
 #define PK_DECLARE_RT_PAYLOAD_OUT(type, name, index) layout(location = index) rayPayloadEXT type name
 
 #if defined(SHADER_STAGE_RAY_GENERATION) || defined(SHADER_STAGE_RAY_MISS) || defined(SHADER_STAGE_RAY_CLOSEST_HIT) || defined(SHADER_STAGE_RAY_ANY_HIT) || defined(SHADER_STAGE_RAY_INTERSECTION)
+    #define PK_IS_RAYTRACING_STAGE 
+#endif
+
+#if defined(PK_IS_RAYTRACING_STAGE) || defined(PK_ALLOW_TLAS_DECLARATION)
     #define PK_DECLARE_ACCELERATION_STRUCTURE(Set, Name) layout(set = Set) uniform accelerationStructureEXT Name;
 #else
     #define PK_DECLARE_ACCELERATION_STRUCTURE(Set, Name)

@@ -11,19 +11,16 @@ namespace PK::Rendering::Passes
     {
         public:
             PassVolumeFog(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
-            void ComputeDepthTiles(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
-            void Compute(Objects::CommandBuffer* cmd);
+            void Compute(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
             void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* destination);
             void OnUpdateParameters(const Core::ApplicationConfig* config);
 
         private:
             Utilities::Ref<Objects::ConstantBuffer> m_volumeResources;
-            Utilities::Ref<Objects::Buffer> m_depthTiles;
             Utilities::Ref<Objects::Texture> m_volumeInject;
             Utilities::Ref<Objects::Texture> m_volumeScatter;
             Objects::Shader* m_computeInject = nullptr;
             Objects::Shader* m_computeScatter = nullptr;
-            Objects::Shader* m_computeDepthTiles = nullptr;
             Objects::Shader* m_shaderComposite = nullptr;
     };
 }

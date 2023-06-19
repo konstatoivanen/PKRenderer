@@ -15,8 +15,8 @@ namespace PK::ECS::Engines
     {
     public:
         EngineScreenshot();
-        void Step(Core::Window* window) override final;
-        void Step(Core::TokenConsoleCommand* token) override final;
+        void Step(Core::Window* window) final;
+        void Step(Core::TokenConsoleCommand* token) final;
 
     private:
         Rendering::Structs::FenceRef m_copyFence;

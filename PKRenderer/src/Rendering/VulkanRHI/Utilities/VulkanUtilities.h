@@ -40,7 +40,7 @@ namespace PK::Rendering::VulkanRHI::Utilities
     VkSurfaceFormatKHR VulkanSelectSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats, VkFormat desiredFormat, VkColorSpaceKHR desiredColorSpace);
     VkPresentModeKHR VulkanSelectPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, VkPresentModeKHR desiredPresentMode);
 
-    VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureGeometryKHR& geometry, VkAccelerationStructureTypeKHR type, uint32_t primitiveCount);
+    VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR info, uint32_t primitiveCount);
     std::string VulkanResultToString(VkResult result);
 
     VkImageSubresourceRange VulkanConvertRange(const Structs::TextureViewRange& viewRange, VkImageAspectFlags aspect);

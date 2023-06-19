@@ -8,6 +8,6 @@ namespace PK::Core
 	{
 		YAML::BoxedValue<ConsoleCommandBindList> Commands = YAML::BoxedValue<ConsoleCommandBindList>("Commands", ConsoleCommandBindList());
 		CommandConfig();
-		void Import(const char* filepath) override final;
+		void Import(const char* filepath) final;
 	};
 }

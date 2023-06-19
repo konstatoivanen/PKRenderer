@@ -2,7 +2,7 @@
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Math/FunctionsMisc.h"
 #include "Utilities/FixedPool.h"
-#include "Utilities/PointerMap.h"
+#include "Utilities/FastMap.h"
 #include "Utilities/Ref.h"
 
 namespace PK::Rendering::VulkanRHI::Services

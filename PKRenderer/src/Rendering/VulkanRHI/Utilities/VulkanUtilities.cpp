@@ -29,6 +29,9 @@ PFN_vkGetRayTracingShaderGroupStackSizeKHR pk_vkGetRayTracingShaderGroupStackSiz
 PFN_vkGetAccelerationStructureDeviceAddressKHR pk_vkGetAccelerationStructureDeviceAddressKHR = nullptr;
 PFN_vkGetAccelerationStructureBuildSizesKHR pk_vkGetAccelerationStructureBuildSizesKHR = nullptr;
 PFN_vkCmdBuildAccelerationStructuresKHR pk_vkCmdBuildAccelerationStructuresKHR = nullptr;
+PFN_vkCmdCopyAccelerationStructureKHR pk_vkCmdCopyAccelerationStructureKHR = nullptr;
+PFN_vkCmdPipelineBarrier2KHR pk_vkCmdPipelineBarrier2KHR = nullptr;
+PFN_vkCmdWriteAccelerationStructuresPropertiesKHR pk_vkCmdWriteAccelerationStructuresPropertiesKHR = nullptr;
 
 namespace PK::Rendering::VulkanRHI::Utilities
 {
@@ -58,7 +61,10 @@ namespace PK::Rendering::VulkanRHI::Utilities
         pk_vkGetAccelerationStructureDeviceAddressKHR = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureDeviceAddressKHR");
         pk_vkGetAccelerationStructureBuildSizesKHR = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureBuildSizesKHR");
         pk_vkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetInstanceProcAddr(instance, "vkCmdBuildAccelerationStructuresKHR");
+        pk_vkCmdCopyAccelerationStructureKHR = (PFN_vkCmdCopyAccelerationStructureKHR)vkGetInstanceProcAddr(instance, "vkCmdCopyAccelerationStructureKHR");
         pk_vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupHandlesKHR");
+        pk_vkCmdWriteAccelerationStructuresPropertiesKHR = (PFN_vkCmdWriteAccelerationStructuresPropertiesKHR)vkGetInstanceProcAddr(instance, "vkCmdWriteAccelerationStructuresPropertiesKHR");
+        pk_vkCmdPipelineBarrier2KHR = (PFN_vkCmdPipelineBarrier2KHR)vkGetInstanceProcAddr(instance, "vkCmdPipelineBarrier2KHR");
     }
 
     std::vector<VkLayerProperties> VulkanGetInstanceLayerProperties()
@@ -354,7 +360,8 @@ namespace PK::Rendering::VulkanRHI::Utilities
                 features.vk11, requiredFeatures.vk11, offsetof(VkPhysicalDeviceVulkan11Features, storageBuffer16BitAccess), 12,
                 features.vk12, requiredFeatures.vk12, offsetof(VkPhysicalDeviceVulkan12Features, samplerMirrorClampToEdge), 47,
                 features.accelerationStructure, requiredFeatures.accelerationStructure, offsetof(VkPhysicalDeviceAccelerationStructureFeaturesKHR, accelerationStructure), 5,
-                features.rayTracingPipeline, requiredFeatures.rayTracingPipeline, offsetof(VkPhysicalDeviceRayTracingPipelineFeaturesKHR, rayTracingPipeline), 5))
+                features.rayTracingPipeline, requiredFeatures.rayTracingPipeline, offsetof(VkPhysicalDeviceRayTracingPipelineFeaturesKHR, rayTracingPipeline), 5,
+                features.rayQuery, requiredFeatures.rayQuery, offsetof(VkPhysicalDeviceRayQueryFeaturesKHR, rayQuery), 1))
             {
                 continue;
             }
@@ -400,23 +407,10 @@ namespace PK::Rendering::VulkanRHI::Utilities
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureGeometryKHR& geometry, VkAccelerationStructureTypeKHR type, uint32_t primitiveCount)
+    VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR info, uint32_t primitiveCount)
     {
         VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR };
-
-        VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
-        accelerationStructureBuildGeometryInfo.type = type;
-        accelerationStructureBuildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-        accelerationStructureBuildGeometryInfo.geometryCount = 1;
-        accelerationStructureBuildGeometryInfo.pGeometries = &geometry;
-
-        pk_vkGetAccelerationStructureBuildSizesKHR(
-            device,
-            VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
-            &accelerationStructureBuildGeometryInfo,
-            &primitiveCount,
-            &accelerationStructureBuildSizesInfo);
-
+        pk_vkGetAccelerationStructureBuildSizesKHR(device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &info, &primitiveCount, &accelerationStructureBuildSizesInfo);
         return accelerationStructureBuildSizesInfo;
     }
 

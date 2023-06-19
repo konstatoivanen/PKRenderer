@@ -33,7 +33,12 @@ namespace PK::Math::Functions
     std::string BytesToString(size_t bytes, uint32_t decimalPlaces = 2);
     void ReinterpretIndex16ToIndex32(uint32_t* dst, uint16_t* src, uint32_t count);
     uint32_t GetAlignedSize(uint32_t value, uint32_t alignment);
+    uint64_t GetAlignedSize(uint64_t value, uint64_t alignment);
+    uint2 GetAlignedResolution2D(const uint2& resolution, uint32_t alignment);
+    uint3 GetAlignedResolution2D(const uint3& resolution, uint32_t alignment);
     uint3 GetComputeGroupCount(const uint3& threads, const uint3& clusterSize);
     uint32_t CountBits(uint32_t value);
     inline uint64_t ULongAdd(uint64_t a, int32_t b) { return (int64_t)a + b < 0 ? 0ull : a + b; }
+    uint4 MurmurHash41(uint32_t seed);
+    uint2 MurmurHash21(uint32_t seed);
 }

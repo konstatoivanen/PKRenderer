@@ -88,6 +88,10 @@ namespace PK::Core::Services::Debug
                     InsertNewLine();
                 }
 
+                #if defined(WIN32) && defined(PK_DEBUG)
+                DebugBreak();
+                #endif
+
                 _getch();
                 return std::runtime_error(message);
             }
