@@ -6,36 +6,33 @@ namespace PK::Rendering::VulkanRHI::Services
 {
     using namespace Structs;
 
-    VulkanFrameBufferCache::VulkanFrameBufferCache(VkDevice device, uint64_t pruneDelay) : m_device(device), m_pruneDelay(pruneDelay) {}
+    VulkanFrameBufferCache::VulkanFrameBufferCache(VkDevice device, uint64_t pruneDelay) : 
+        m_device(device), 
+        m_pruneDelay(pruneDelay),
+        m_frameBuffers(512),
+        m_renderPasses(512)
+    {
+    }
 
     VulkanFrameBufferCache::~VulkanFrameBufferCache()
     {
-        for (auto& kv : m_framebuffers)
-        {
-            if (kv.second.frameBuffer != nullptr)
-            {
-                delete kv.second.frameBuffer;
-            }
-        }
-
-        for (auto& kv : m_renderPasses)
-        {
-            if (kv.second.renderPass != nullptr)
-            {
-                delete kv.second.renderPass;
-            }
-        }
+        m_frameBufferPool.Clear();
+        m_renderPassPool.Clear();
+        m_frameBuffers.Clear();
+        m_renderPasses.Clear();
     }
 
     const VulkanFrameBuffer* VulkanFrameBufferCache::GetFrameBuffer(const FrameBufferKey& key)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
-        auto iterator = m_framebuffers.find(key);
+        auto index = 0u;
+        FrameBufferValue* value = nullptr;
 
-        if (iterator != m_framebuffers.end() && iterator->second.frameBuffer != nullptr)
+        if (!m_frameBuffers.AddKey(key, &index))
         {
-            iterator->second.pruneTick = nextPruneTick;
-            return iterator->second.frameBuffer;
+            value = m_frameBuffers.GetValueAtRef(index);
+            value->pruneTick = nextPruneTick;
+            return value->frameBuffer;
         }
 
         VkImageView attachments[PK_MAX_RENDER_TARGETS * 2 + 1];
@@ -70,21 +67,24 @@ namespace PK::Rendering::VulkanRHI::Services
         info.height = key.extent.height;
         info.layers = key.layers;
 
-        auto frameBuffer = new VulkanFrameBuffer(m_device, info);
-        m_framebuffers[key] = { frameBuffer, nextPruneTick };
+        value = m_frameBuffers.GetValueAtRef(index);
+        value->frameBuffer = m_frameBufferPool.New(m_device, info);
+        value->pruneTick = nextPruneTick;
         m_renderPassReferenceCounts[key.renderPass]++;
-        return frameBuffer;
+        return value->frameBuffer;
     }
 
     const VulkanRenderPass* VulkanFrameBufferCache::GetRenderPass(const RenderPassKey& key)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
-        auto iterator = m_renderPasses.find(key);
+        auto index = 0u;
+        RenderPassValue* value = nullptr;
 
-        if (iterator != m_renderPasses.end() && iterator->second.renderPass != nullptr)
+        if (!m_renderPasses.AddKey(key, &index))
         {
-            iterator->second.pruneTick = nextPruneTick;
-            return iterator->second.renderPass;
+            value = m_renderPasses.GetValueAtRef(index);
+            value->pruneTick = nextPruneTick;
+            return value->renderPass;
         }
 
         VkAttachmentReference colorAttachmentRefs[PK_MAX_RENDER_TARGETS] = {};
@@ -201,37 +201,37 @@ namespace PK::Rendering::VulkanRHI::Services
 
         renderPassInfo.attachmentCount = attachmentIndex;
 
-        auto renderPass = new VulkanRenderPass(m_device, renderPassInfo);
-        m_renderPasses[key] = { renderPass, nextPruneTick };
-        return renderPass;
+        value = m_renderPasses.GetValueAtRef(index);
+        value->renderPass = m_renderPassPool.New(m_device, renderPassInfo);
+        value->pruneTick = nextPruneTick;
+        return value->renderPass;
     }
 
     void VulkanFrameBufferCache::Prune()
     {
         m_currentPruneTick++;
 
-        for (auto& kv : m_framebuffers)
+        for (int32_t i = m_frameBuffers.GetCount() - 1; i >= 0; --i)
         {
-            auto& value = kv.second;
-            auto& key = kv.first;
+            auto value = m_frameBuffers.GetValueAtRef(i);
 
-            if (value.frameBuffer != nullptr && value.pruneTick < m_currentPruneTick)
+            if (value->pruneTick < m_currentPruneTick)
             {
-                m_renderPassReferenceCounts[key.renderPass]--;
-                delete value.frameBuffer;
-                value.frameBuffer = nullptr;
+                m_renderPassReferenceCounts[m_frameBuffers.GetKeyAt(i).renderPass]--;
+                m_frameBufferPool.Delete(value->frameBuffer);
+                m_frameBuffers.RemoveAt(i);
             }
         }
 
-        for (auto& kv : m_renderPasses)
+        for (int32_t i = m_renderPasses.GetCount() - 1; i >= 0; --i)
         {
-            auto& value = kv.second;
-            auto& key = kv.first;
+            auto value = m_renderPasses.GetValueAtRef(i);
 
-            if (value.renderPass != nullptr && value.pruneTick < m_currentPruneTick && m_renderPassReferenceCounts[value.renderPass->renderPass] == 0)
+            if (value->pruneTick < m_currentPruneTick && m_renderPassReferenceCounts[value->renderPass->renderPass] == 0u)
             {
-                delete value.renderPass;
-                value.renderPass = nullptr;
+                m_renderPassReferenceCounts.erase(value->renderPass->renderPass);
+                m_renderPassPool.Delete(value->renderPass);
+                m_renderPasses.RemoveAt(i);
             }
         }
     }

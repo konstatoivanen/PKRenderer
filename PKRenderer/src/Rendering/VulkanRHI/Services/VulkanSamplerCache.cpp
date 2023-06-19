@@ -5,25 +5,17 @@ namespace PK::Rendering::VulkanRHI::Services
 {
     using namespace Structs;
 
-    VulkanSamplerCache::~VulkanSamplerCache()
-    {
-        for (auto& kv : m_samplers)
-        {
-            delete kv.second;
-        }
-    }
-
     VkSampler VulkanSamplerCache::GetSampler(const SamplerDescriptor& descriptor)
     {
-        auto iterator = m_samplers.find(descriptor);
+        auto index = 0u;
 
-        if (iterator != m_samplers.end())
+        if (!m_samplers.AddKey(descriptor, &index))
         {
-            return iterator->second->sampler;
+            return m_samplers.GetValueAt(index)->sampler;
         }
 
-        auto sampler = new VulkanSampler(m_device, descriptor);
-        m_samplers[descriptor] = sampler;
-        return sampler->sampler;
+        auto sampler = m_samplers.GetValueAtRef(index);
+        *sampler = m_samplerPool.New(m_device, descriptor);
+        return (*sampler)->sampler;
     }
 }

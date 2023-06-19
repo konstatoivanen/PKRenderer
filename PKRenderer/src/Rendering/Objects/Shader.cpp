@@ -19,10 +19,10 @@ namespace PK::Rendering::Objects
     {
         switch (group)
         {
-        case RayTracingShaderGroup::RayGeneration: return (RayTracingShaderGroupStageMask::RayGeneration & m_stageFlags) != 0;
-        case RayTracingShaderGroup::Miss: return (RayTracingShaderGroupStageMask::Miss & m_stageFlags) != 0;
-        case RayTracingShaderGroup::Hit: return (RayTracingShaderGroupStageMask::Hit & m_stageFlags) != 0;
-        case RayTracingShaderGroup::Callable: return (RayTracingShaderGroupStageMask::Callable & m_stageFlags) != 0;
+            case RayTracingShaderGroup::RayGeneration: return (RayTracingShaderGroupStageMask::RayGeneration & m_stageFlags) != 0;
+            case RayTracingShaderGroup::Miss: return (RayTracingShaderGroupStageMask::Miss & m_stageFlags) != 0;
+            case RayTracingShaderGroup::Hit: return (RayTracingShaderGroupStageMask::Hit & m_stageFlags) != 0;
+            case RayTracingShaderGroup::Callable: return (RayTracingShaderGroupStageMask::Callable & m_stageFlags) != 0;
         }
 
         return false;

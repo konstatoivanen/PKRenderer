@@ -3,9 +3,13 @@
 #include "Utilities/Ref.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanStructs.h"
 #include "Utilities/HashHelpers.h"
+#include "Utilities/FixedPool.h"
+#include "Utilities/FastMap.h"
 
 namespace PK::Rendering::VulkanRHI::Services
 {
+    using namespace PK::Utilities;
+
     struct alignas(8) FrameBufferKey 
     {
         VkImageView color[Structs::PK_MAX_RENDER_TARGETS];
@@ -90,8 +94,10 @@ namespace PK::Rendering::VulkanRHI::Services
 
         private:
             const VkDevice m_device;
-            std::unordered_map<FrameBufferKey, FrameBufferValue, FrameBufferKeyHash> m_framebuffers;
-            std::unordered_map<RenderPassKey, RenderPassValue, RenderPassKeyHash> m_renderPasses;
+            FixedPool<VulkanFrameBuffer, 512> m_frameBufferPool;
+            FixedPool<VulkanRenderPass, 512> m_renderPassPool;
+            FastMap<FrameBufferKey, FrameBufferValue, FrameBufferKeyHash> m_frameBuffers;
+            FastMap<RenderPassKey, RenderPassValue, RenderPassKeyHash> m_renderPasses;
             std::unordered_map<VkRenderPass, uint32_t> m_renderPassReferenceCounts;
             uint64_t m_currentPruneTick = 0;
             uint64_t m_pruneDelay = 0;

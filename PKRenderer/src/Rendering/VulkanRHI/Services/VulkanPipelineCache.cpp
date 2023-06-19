@@ -318,7 +318,7 @@ namespace PK::Rendering::VulkanRHI::Services
             if (value->pruneTick < m_currentPruneTick)
             {
                 m_pipelinePool.Delete(value->pipeline);
-                m_graphicsPipelines.RemoveAt(i);
+                m_otherPipelines.RemoveAt(i);
             }
         }
     }

@@ -39,8 +39,11 @@ namespace PK::Utilities
                 auto oldSize = sizeof(T) * m_count;
                 auto newSize = sizeof(T) * newCount;
                 auto newbuffer = m_data != nullptr ? realloc(m_data, newSize) : calloc(newCount, sizeof(T));
-
-                assert(newbuffer != nullptr);
+                
+                if (newbuffer == nullptr)
+                {
+                    throw std::exception("Failed to allocate new buffer!");
+                }
 
                 // Usages expect cleared buffers & realloc doesnt clear the new reguion.
                 if (m_data != nullptr)
