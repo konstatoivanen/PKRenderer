@@ -26,17 +26,9 @@ namespace PK::Rendering::VulkanRHI::Services
         }
     };
 
-    struct PipelineKeyHash
-    {
-        std::size_t operator()(const PipelineKey& k) const noexcept
-        {
-            constexpr uint64_t seed = 18446744073709551557;
-            return PK::Utilities::HashHelpers::MurmurHash(reinterpret_cast<const void*>(&k), sizeof(PipelineKey), seed);
-        }
-    };
-
     class VulkanPipelineCache : public PK::Utilities::NoCopy
     {
+        using PipelineKeyHash = PK::Utilities::HashHelpers::TMurmurHash<PipelineKey>;
 
         public:
             constexpr const static char* PIPELINE_CACHE_FILENAME = "shadercache.cache";

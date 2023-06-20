@@ -17,11 +17,6 @@ namespace PK::Rendering::Structs
         float mipMin = 0.0f;
         float mipMax = 0.0f;
     
-        inline bool operator < (const SamplerDescriptor& other) const noexcept
-        {
-            return memcmp(this, &other, sizeof(SamplerDescriptor)) < 0;
-        }
-
         inline bool operator == (const SamplerDescriptor& other) const noexcept
         {
             return memcmp(this, &other, sizeof(SamplerDescriptor)) == 0;

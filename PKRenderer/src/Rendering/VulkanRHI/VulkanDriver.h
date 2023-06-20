@@ -93,5 +93,6 @@ namespace PK::Rendering::VulkanRHI
         PK::Utilities::Scope<Services::VulkanSamplerCache> samplerCache;
         PK::Utilities::Scope<Services::VulkanLayoutCache> layoutCache;
         PK::Utilities::Scope<Rendering::Services::Disposer> disposer;
+        mutable PK::Utilities::FixedPool<VulkanBindHandle, 4096> bindhandlePool;
     };
 }

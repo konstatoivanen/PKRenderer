@@ -58,14 +58,16 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto presentMode = Utilities::VulkanSelectPresentMode(availablePresentModes, createInfo.desiredPresentMode);
         auto extent = Utilities::VulkanSelectSurfaceExtent(capabilities, createInfo.desiredExtent);
 
-        uint32_t maxImageCount = capabilities.maxImageCount > 0 ? capabilities.maxImageCount : UINT32_MAX;
-        uint32_t minImageCount = capabilities.minImageCount;
-        uint32_t imageCount = glm::clamp(createInfo.desiredImageCount, minImageCount, maxImageCount);
+        auto maxImageCount = capabilities.maxImageCount > 0 ? capabilities.maxImageCount : UINT32_MAX;
+        auto minImageCount = capabilities.minImageCount;
+        maxImageCount = maxImageCount > MaxImageCount ? MaxImageCount : maxImageCount;
+
+        m_imageCount = glm::clamp(createInfo.desiredImageCount, minImageCount, maxImageCount);
         uint32_t queueFamilyIndices[] = { m_queueGraphics->GetFamily(), m_queuePresent->GetFamily() };
 
         VkSwapchainCreateInfoKHR swapchainCreateInfo{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
         swapchainCreateInfo.surface = m_surface;
-        swapchainCreateInfo.minImageCount = imageCount;
+        swapchainCreateInfo.minImageCount = m_imageCount;
         swapchainCreateInfo.imageFormat = surfaceFormat.format;
         swapchainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
         swapchainCreateInfo.imageExtent = extent;
@@ -93,13 +95,10 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_format = surfaceFormat.format;
         m_extent = extent;
 
-        vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, nullptr);
-        m_images.resize(imageCount);
-        vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, m_images.data());
+        vkGetSwapchainImagesKHR(m_device, m_swapchain, &m_imageCount, nullptr);
+        vkGetSwapchainImagesKHR(m_device, m_swapchain, &m_imageCount, m_images);
 
-        m_imageViews.resize(m_images.size());
-
-        for (size_t i = 0u; i < m_imageViews.size(); ++i)
+        for (size_t i = 0u; i < m_imageCount; ++i)
         {
             VkImageViewCreateInfo imageViewCreateInfo{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
             imageViewCreateInfo.image = m_images[i];
@@ -114,13 +113,11 @@ namespace PK::Rendering::VulkanRHI::Objects
             m_imageViews[i] = new VulkanImageView(m_device, imageViewCreateInfo, (std::string("Swapchain.Image") + std::to_string(i)).c_str());
         }
 
-        m_bindHandles = new VulkanBindHandle[m_images.size()];
-
-        for (size_t i = 0u; i < m_images.size(); ++i)
+        for (size_t i = 0u; i < m_imageCount; ++i)
         {
             auto handle = &m_bindHandles[i];
-            handle->image.image = m_images.at(i);
-            handle->image.view = m_imageViews.at(i)->view;
+            handle->image.image = m_images[i];
+            handle->image.view = m_imageViews[i]->view;
             handle->image.sampler = VK_NULL_HANDLE;
             handle->image.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
             handle->image.format = m_format;
@@ -129,8 +126,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             handle->image.samples = 1u;
             handle->IncrementVersion();
         }
-
-        m_frameFences.resize(m_maxFramesInFlight);
 
         for (auto& fence : m_frameFences)
         {
@@ -144,14 +139,15 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanSwapchain::Release()
     {
-        delete[] m_bindHandles;
-
-        for (size_t i = 0u; i < m_imageViews.size(); ++i)
+        for (size_t i = 0u; i < MaxImageCount; ++i)
         {
-            delete m_imageViews[i];
-        }
+            if (m_imageViews[i] != nullptr)
+            {
+                delete m_imageViews[i];
+            }
 
-        m_imageViews.clear();
+            m_imageViews[i] = nullptr;
+        }
 
         if (m_swapchain != VK_NULL_HANDLE)
         {
@@ -175,7 +171,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         // This is not strictly necesssary when not using double buffering for staging buffers.
         // However, for them to have coherent memory operations we cannot push more than 2 frames at a time.
-        PK_THROW_ASSERT(m_frameFences.at(m_frameIndex).WaitInvalidate(UINT64_MAX), "Frame fence timeout!");
+        PK_THROW_ASSERT(m_frameFences[m_frameIndex].WaitInvalidate(UINT64_MAX), "Frame fence timeout!");
 
         *imageAvailableSignal = m_queueGraphics->GetNextSemaphore();
         auto result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, *imageAvailableSignal, VK_NULL_HANDLE, &m_imageIndex);

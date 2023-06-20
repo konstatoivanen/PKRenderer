@@ -103,8 +103,17 @@ namespace PK::Utilities
                 return index != -1 ? &m_values[index] : nullptr;
             }
 
+            const TValue* GetValueRef(const TKey& key) const
+            {
+                auto index = GetIndex(key);
+                return index != -1 ? &m_values[index] : nullptr;
+            }
+
             const TValue GetValueAt(uint32_t index) const { return m_values[index]; }
+
             TValue* GetValueAtRef(uint32_t index) { return &m_values[index]; }
+
+            const TValue* GetValueAtRef(uint32_t index) const { return &m_values[index]; }
 
             const TKey& GetKeyAt(uint32_t index) const { return m_nodes[index].key; }
 

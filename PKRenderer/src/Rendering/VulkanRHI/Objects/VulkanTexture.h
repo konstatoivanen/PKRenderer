@@ -23,58 +23,33 @@ namespace PK::Rendering::VulkanRHI::Objects
             inline VkImageAspectFlags GetAspectFlags() const { return m_rawImage->aspect; }
             inline VkFormat GetNativeFormat() const { return m_rawImage->format; }
             inline const VulkanRawImage* GetRaw() const { return m_rawImage; }
-            inline const VulkanBindHandle* GetBindHandle() const { return &GetView(m_defaultViewRange)->bindHandle; }
-            inline const VulkanBindHandle* GetBindHandle(TextureBindMode bindMode) { return &GetView(m_defaultViewRange, bindMode)->bindHandle; }
-            inline const VulkanBindHandle* GetBindHandle(const Structs::TextureViewRange& range, TextureBindMode bindMode) { return &GetView(range, bindMode)->bindHandle; }
+            inline const VulkanBindHandle* GetBindHandle() const { return GetView(m_defaultViewRange)->bindHandle; }
+            inline const VulkanBindHandle* GetBindHandle(TextureBindMode bindMode) { return GetView(m_defaultViewRange, bindMode)->bindHandle; }
+            inline const VulkanBindHandle* GetBindHandle(const Structs::TextureViewRange& range, TextureBindMode bindMode) { return GetView(range, bindMode)->bindHandle; }
             void FillBindHandle(VulkanBindHandle* handle, const Structs::TextureViewRange& range, TextureBindMode bindMode) const;
             inline void FillBindHandle(VulkanBindHandle* handle, TextureBindMode bindMode) const { FillBindHandle(handle, m_defaultViewRange, bindMode); }
         
         private:
-            struct alignas(8) ViewKey
+            inline static size_t GetViewKey(const Structs::TextureViewRange& range, Structs::TextureBindMode mode)
             {
-                Structs::TextureViewRange range{};
-                Structs::TextureBindMode bindMode = Structs::TextureBindMode::SampledTexture;
-
-                inline constexpr bool operator < (const ViewKey& other) const noexcept
-                {
-                    if (range.level != other.range.level)
-                    {
-                        return range.level < other.range.level;
-                    }
-
-                    if (range.layer != other.range.layer)
-                    {
-                        return range.layer < other.range.layer;
-                    }
-
-                    if (range.levels != other.range.levels)
-                    {
-                        return range.levels < other.range.levels;
-                    }
-
-                    if (range.layers != other.range.layers)
-                    {
-                        return range.layers < other.range.layers;
-                    }
-
-                    if (bindMode != other.bindMode)
-                    {
-                        return (int)bindMode < (int)other.bindMode;
-                    }
-
-                    return false;
-                }
-            };
+                size_t h = 0ull;
+                h |= range.level & 0xFFull;
+                h |= (range.levels & 0xFFull) << 8ull;
+                h |= (size_t)range.layer << 16ull;
+                h |= (size_t)range.layers << 32ull;
+                h |= (size_t)mode << 48ull;
+                return h;
+            }
 
             struct ViewValue
             {
-                VulkanBindHandle bindHandle{};
+                VulkanBindHandle* bindHandle = nullptr;
                 VulkanImageView* view = nullptr;
             };
 
             inline const ViewValue* GetView(const Structs::TextureViewRange& range, Structs::TextureBindMode mode = Structs::TextureBindMode::SampledTexture) const
             {
-                return m_imageViews.at({ range, mode }).get(); 
+                return m_imageViews.GetValueRef(GetViewKey(range, mode));
             }
 
             const ViewValue* GetView(const Structs::TextureViewRange& range, Structs::TextureBindMode mode = Structs::TextureBindMode::SampledTexture);
@@ -83,7 +58,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             const VulkanDriver* m_driver = nullptr;
             VulkanRawImage* m_rawImage = nullptr;
-            std::map<ViewKey, PK::Utilities::Scope<ViewValue>> m_imageViews;
+            PK::Utilities::FastMap<size_t, ViewValue> m_imageViews;
             VkComponentMapping m_swizzle{};
             Structs::TextureViewRange m_defaultViewRange{};
             VkImageViewType m_viewType = VK_IMAGE_VIEW_TYPE_MAX_ENUM;

@@ -6,28 +6,29 @@ namespace PK::Utilities
     template<size_t capacity>
     struct Bitmask
     {
-        constexpr static size_t stride = sizeof(uint64_t) * 8ull;
-        constexpr static size_t size = (capacity / stride) + 1ull;
-        uint64_t m_mask[size]{};
+        constexpr static size_t Capacity = capacity;
+        constexpr static size_t Stride = sizeof(uint64_t) * 8ull;
+        constexpr static size_t Size = (capacity / Stride) + 1ull;
+        uint64_t m_mask[Size]{};
 
         bool GetAt(size_t index) const
         {
-            auto base = index / stride;
-            auto bit = 1ull << (index - base * stride);
+            auto base = index / Stride;
+            auto bit = 1ull << (index - base * Stride);
             return (m_mask[base] & bit) != 0u;
         }
 
         void SetAt(size_t index, bool value)
         {
-            auto base = index / stride;
-            auto bit = 1ull << (index - base * stride);
+            auto base = index / Stride;
+            auto bit = 1ull << (index - base * Stride);
             m_mask[base] = value ? (m_mask[base] | bit) : (m_mask[base] & ~bit);
         }
 
         void ToggleAt(size_t index)
         {
-            auto base = index / stride;
-            m_mask[base] ^= 1ull << (index - base * stride);
+            auto base = index / Stride;
+            m_mask[base] ^= 1ull << (index - base * Stride);
         }
 
         void Clear() { memset(m_mask, 0, sizeof(m_mask)); }
@@ -36,7 +37,7 @@ namespace PK::Utilities
         {
             auto count = 0ull;
 
-            for (size_t i = 0ull; i < size; ++i)
+            for (size_t i = 0ull; i < Size; ++i)
             {
                 auto j = m_mask[i];
                 j = j - ((j >> 1) & 0x5555555555555555);
@@ -50,13 +51,13 @@ namespace PK::Utilities
 
         int64_t FirstFalse() const
         {
-            for (auto i = 0ull; i < size; ++i)
+            for (auto i = 0ull; i < Size; ++i)
             {
 #if defined(WIN32)
                 unsigned long idx = 0ul;
                 if (_BitScanForward64(&idx, ~m_mask[i]))
                 {
-                    return i * stride + idx;
+                    return i * Stride + idx;
                 }
 #else
                 // @TODO probably doesn't work on arm.
@@ -64,7 +65,7 @@ namespace PK::Utilities
                 auto idx = __lzcnt64(m_mask[i]);
                 if (idx >= 0)
                 {
-                    return i * stride + idx;
+                    return i * Stride + idx;
                 }
 #endif
             }

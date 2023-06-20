@@ -32,12 +32,14 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         m_descriptor.sampler = sampler;
 
-        for (auto& kv : m_imageViews)
+        for (auto i = 0u; i < m_imageViews.GetCount(); ++i)
         {
-            if (kv.second->bindHandle.image.sampler != VK_NULL_HANDLE)
+            auto value = m_imageViews.GetValueAtRef(i);
+
+            if (value->bindHandle->image.sampler != VK_NULL_HANDLE)
             {
-                kv.second->bindHandle.IncrementVersion();
-                kv.second->bindHandle.image.sampler = GraphicsAPI::GetActiveDriver<VulkanDriver>()->samplerCache->GetSampler(m_descriptor.sampler);
+                value->bindHandle->IncrementVersion();
+                value->bindHandle->image.sampler = GraphicsAPI::GetActiveDriver<VulkanDriver>()->samplerCache->GetSampler(m_descriptor.sampler);
             }
         }
     }
@@ -117,10 +119,10 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         switch (m_viewType)
         {
-        case VK_IMAGE_VIEW_TYPE_1D:
-        case VK_IMAGE_VIEW_TYPE_2D:
-        case VK_IMAGE_VIEW_TYPE_3D: out.layers = 1u; break;
-        case VK_IMAGE_VIEW_TYPE_CUBE: out.layers = 6u; break;
+            case VK_IMAGE_VIEW_TYPE_1D:
+            case VK_IMAGE_VIEW_TYPE_2D:
+            case VK_IMAGE_VIEW_TYPE_3D: out.layers = 1u; break;
+            case VK_IMAGE_VIEW_TYPE_CUBE: out.layers = 6u; break;
         }
 
         if (out.level >= m_defaultViewRange.levels)
@@ -182,12 +184,13 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     const VulkanTexture::ViewValue* VulkanTexture::GetView(const TextureViewRange& range, TextureBindMode mode)
     {
-        ViewKey key = { NormalizeViewRange(range), mode };
-        auto iter = m_imageViews.find(key);
+        auto normalizedRange = NormalizeViewRange(range);
+        size_t key = GetViewKey(normalizedRange, mode);
+        auto index = 0u;
 
-        if (iter != m_imageViews.end())
+        if (!m_imageViews.AddKey(key, &index))
         {
-            return iter->second.get();
+            return m_imageViews.GetValueAtRef(index);
         }
 
         VkImageViewCreateInfo info{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
@@ -200,30 +203,30 @@ namespace PK::Rendering::VulkanRHI::Objects
         info.subresourceRange =
         {
             (uint32_t)m_rawImage->aspect,
-            key.range.level,
-            key.range.levels,
-            key.range.layer,
-            key.range.layers
+            normalizedRange.level,
+            normalizedRange.levels,
+            normalizedRange.layer,
+            normalizedRange.layers
         };
 
-        auto viewValue = new VulkanTexture::ViewValue();
+        auto viewValue = m_imageViews.GetValueAtRef(index);
         viewValue->view = new VulkanImageView(m_driver->device, info, m_name.c_str());
-        viewValue->bindHandle.image.view = viewValue->view->view;
-        viewValue->bindHandle.image.image = m_rawImage->image;
-        viewValue->bindHandle.image.layout = GetImageLayout();
-        viewValue->bindHandle.image.format = m_rawImage->format;
-        viewValue->bindHandle.image.extent = m_rawImage->extent;
-        viewValue->bindHandle.image.range = info.subresourceRange;
-        viewValue->bindHandle.image.samples = m_descriptor.samples;
-        viewValue->bindHandle.isConcurrent = IsConcurrent();
-        viewValue->bindHandle.isTracked = IsTracked();
+        viewValue->bindHandle = m_driver->bindhandlePool.New();
+        viewValue->bindHandle->image.view = viewValue->view->view;
+        viewValue->bindHandle->image.image = m_rawImage->image;
+        viewValue->bindHandle->image.layout = GetImageLayout();
+        viewValue->bindHandle->image.format = m_rawImage->format;
+        viewValue->bindHandle->image.extent = m_rawImage->extent;
+        viewValue->bindHandle->image.range = info.subresourceRange;
+        viewValue->bindHandle->image.samples = m_descriptor.samples;
+        viewValue->bindHandle->isConcurrent = IsConcurrent();
+        viewValue->bindHandle->isTracked = IsTracked();
 
         if (mode == TextureBindMode::SampledTexture)
         {
-            viewValue->bindHandle.image.sampler = GraphicsAPI::GetActiveDriver<VulkanDriver>()->samplerCache->GetSampler(m_descriptor.sampler);
+            viewValue->bindHandle->image.sampler = GraphicsAPI::GetActiveDriver<VulkanDriver>()->samplerCache->GetSampler(m_descriptor.sampler);
         }
 
-        m_imageViews[key] = Scope<VulkanTexture::ViewValue>(viewValue);
         return viewValue;
     }
 
@@ -231,12 +234,14 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         auto fence = m_driver->GetQueues()->GetFenceRef(QueueType::Graphics);
 
-        for (auto& kv : m_imageViews)
+        for (auto i = 0u; i < m_imageViews.GetCount(); ++i)
         {
-            m_driver->disposer->Dispose(kv.second->view, fence);
+            auto value = m_imageViews.GetValueAtRef(i);
+            m_driver->bindhandlePool.Delete(value->bindHandle);
+            m_driver->disposer->Dispose(value->view, fence);
         }
 
-        m_imageViews.clear();
+        m_imageViews.Clear();
 
         if (m_rawImage != nullptr)
         {

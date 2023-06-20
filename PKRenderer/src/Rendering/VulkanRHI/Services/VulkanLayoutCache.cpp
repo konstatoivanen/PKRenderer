@@ -6,26 +6,12 @@ namespace PK::Rendering::VulkanRHI::Services
     using namespace Structs;
     using namespace Utilities;
 
-    VulkanLayoutCache::~VulkanLayoutCache()
-    {
-        for (auto& kv : m_setlayouts)
-        {
-            delete kv.second;
-        }
-
-        for (auto& kv : m_pipelineLayouts)
-        {
-            delete kv.second;
-        }
-    }
-
     const VulkanDescriptorSetLayout* VulkanLayoutCache::GetSetLayout(const DescriptorSetLayoutKey& key)
     {
-        auto iterator = m_setlayouts.find(key);
-
-        if (iterator != m_setlayouts.end())
+        auto index = 0u;
+        if (!m_setlayouts.AddKey(key, &index))
         {
-            return iterator->second;
+            return m_setlayouts.GetValueAt(index);
         }
 
         VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO };
@@ -54,18 +40,17 @@ namespace PK::Rendering::VulkanRHI::Services
         }
 
         bindingFlagsInfo.bindingCount = layoutCreateInfo.bindingCount = count;
-        auto layout = new VulkanDescriptorSetLayout(m_device, layoutCreateInfo, (VkShaderStageFlagBits)key.stageFlags);
-        m_setlayouts[key] = layout;
-        return layout;
+        auto value = m_setlayouts.GetValueAtRef(index);
+        *value = m_setLayoutPool.New(m_device, layoutCreateInfo, (VkShaderStageFlagBits)key.stageFlags);
+        return *value;
     }
 
     const VulkanPipelineLayout* VulkanLayoutCache::GetPipelineLayout(const PipelineLayoutKey& key)
     {
-        auto iterator = m_pipelineLayouts.find(key);
-
-        if (iterator != m_pipelineLayouts.end())
+        auto index = 0u;
+        if (!m_pipelineLayouts.AddKey(key, &index))
         {
-            return iterator->second;
+            return m_pipelineLayouts.GetValueAt(index);
         }
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
@@ -92,8 +77,8 @@ namespace PK::Rendering::VulkanRHI::Services
             }
         }
 
-        auto layout = new VulkanPipelineLayout(m_device, pipelineLayoutInfo);
-        m_pipelineLayouts[key] = layout;
-        return layout;
+        auto value = m_pipelineLayouts.GetValueAtRef(index);
+        *value = m_pipelineLayoutPool.New(m_device, pipelineLayoutInfo);
+        return *value;
     }
 }

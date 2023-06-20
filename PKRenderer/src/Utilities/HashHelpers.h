@@ -20,4 +20,23 @@ namespace PK::Utilities::HashHelpers
     uint32_t ByteArrayHash(const void* data, size_t count);
     uint64_t MurmurHash(const void* data, size_t count, uint64_t seed);
     uint64_t FNV1AHash(const void* data, size_t count);
+
+    template<typename T>
+    struct TMurmurHash
+    {
+        std::size_t operator()(const T& k) const noexcept
+        {
+            constexpr uint64_t seed = 18446744073709551557;
+            return PK::Utilities::HashHelpers::MurmurHash(&k, sizeof(T), seed);
+        }
+    };
+
+    template<typename T>
+    struct TFNV1AHash
+    {
+        size_t operator()(const T& k) const noexcept
+        {
+            return PK::Utilities::HashHelpers::FNV1AHash(&k, sizeof(T));
+        }
+    };
 }

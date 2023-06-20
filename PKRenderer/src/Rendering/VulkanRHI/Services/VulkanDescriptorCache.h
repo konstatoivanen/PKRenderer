@@ -32,29 +32,20 @@ namespace PK::Rendering::VulkanRHI::Services
         }
     };
 
-    struct DescriptorSetKeyHash
-    {
-        std::size_t operator()(const DescriptorSetKey& k) const noexcept
-        {
-            constexpr uint64_t seed = 18446744073709551557;
-            return PK::Utilities::HashHelpers::MurmurHash(&k, sizeof(DescriptorSetKey), seed);
-        }
-    };
-
-
     class VulkanDescriptorCache : public PK::Utilities::NoCopy
     {
         private:
             struct ExtinctPool
             {
-                VulkanDescriptorPool* pool;
+                uint32_t poolIndex;
                 mutable Structs::FenceRef fence;
-                std::vector<uint32_t> extinctSetIndices;
+                PK::Utilities::Bitmask<2048> indexMask;
             };
+
+            using DescriptorSetKeyHash = PK::Utilities::HashHelpers::TMurmurHash<DescriptorSetKey>;
 
         public:
             VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, size_t maxSets, std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes);
-            ~VulkanDescriptorCache();
 
             const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
                                                         const DescriptorSetKey& key,
@@ -75,6 +66,7 @@ namespace PK::Rendering::VulkanRHI::Services
             
             VulkanDescriptorPool* m_currentPool = nullptr;
             PK::Utilities::FixedPool<VulkanDescriptorSet, 2048> m_setsPool;
+            PK::Utilities::FixedPool<VulkanDescriptorPool, 8> m_poolPool; // A great name for a great variable.
             PK::Utilities::PointerMap<DescriptorSetKey, VulkanDescriptorSet, DescriptorSetKeyHash> m_sets;
             std::vector<ExtinctPool> m_extinctPools;
             std::vector<VkDescriptorImageInfo> m_writeImages;

@@ -52,26 +52,11 @@ namespace PK::Rendering::VulkanRHI::Services
         }
     };
 
-    struct FrameBufferKeyHash
-    {
-        std::size_t operator()(const FrameBufferKey& k) const noexcept
-        {
-            constexpr uint64_t seed = 18446744073709551557;
-            return PK::Utilities::HashHelpers::MurmurHash(reinterpret_cast<const void*>(&k), sizeof(FrameBufferKey), seed);
-        }
-    };
-
-    struct RenderPassKeyHash
-    {
-        std::size_t operator()(const RenderPassKey& k) const noexcept
-        {
-            constexpr uint64_t seed = 18446744073709551557;
-            return PK::Utilities::HashHelpers::MurmurHash(reinterpret_cast<const void*>(&k), sizeof(RenderPassKey), seed);
-        }
-    };
-
     class VulkanFrameBufferCache : public PK::Utilities::NoCopy
     {
+        using FrameBufferKeyHash = PK::Utilities::HashHelpers::TMurmurHash<FrameBufferKey>;
+        using RenderPassKeyHash = PK::Utilities::HashHelpers::TMurmurHash<RenderPassKey>;
+
         public:
             VulkanFrameBufferCache(VkDevice device, uint64_t pruneDelay);
             ~VulkanFrameBufferCache();

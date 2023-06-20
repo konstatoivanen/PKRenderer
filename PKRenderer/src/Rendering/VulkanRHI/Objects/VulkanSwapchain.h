@@ -20,6 +20,9 @@ namespace PK::Rendering::VulkanRHI::Objects
     class VulkanSwapchain : public PK::Utilities::NoCopy
     {
         public:
+            // Max count so that resources can use static arrays.
+            constexpr static uint32_t MaxImageCount = 16u;
+
             VulkanSwapchain(const VkPhysicalDevice physicalDevice, 
                             const VkDevice device, 
                             const VkSurfaceKHR surface,
@@ -38,7 +41,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             void OnWindowResize(int w, int h);
 
             const VulkanBindHandle* GetBindHandle() const { return &m_bindHandles[m_imageIndex]; }
-            const VulkanImageView* GetImageView() const { return m_imageViews.at(m_imageIndex); }
+            const VulkanImageView* GetImageView() const { return m_imageViews[m_imageIndex]; }
             constexpr VkExtent2D GetExtent() const { return m_extent; }
             constexpr Math::uint3 GetResolution() const { return { m_extent.width, m_extent.height, 1 }; }
             constexpr uint32_t GetWidth() const { return m_extent.width; }
@@ -56,10 +59,11 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             SwapchainCreateInfo m_cachedCreateInfo;
             VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
-            std::vector<VkImage> m_images;
-            std::vector<VulkanImageView*> m_imageViews;
-            std::vector<Structs::FenceRef> m_frameFences;
-            VulkanBindHandle* m_bindHandles;
+            VkImage m_images[MaxImageCount];
+            VulkanImageView* m_imageViews[MaxImageCount];
+            Structs::FenceRef m_frameFences[MaxImageCount];
+            VulkanBindHandle m_bindHandles[MaxImageCount];
+            uint32_t m_imageCount;
             VkFormat m_format;
             VkExtent2D m_extent;
             uint32_t m_maxFramesInFlight;

@@ -37,19 +37,6 @@ namespace PK::Rendering::VulkanRHI::Services
         GrowPool({});
     }
 
-    VulkanDescriptorCache::~VulkanDescriptorCache()
-    {
-        if (m_currentPool != nullptr)
-        {
-            delete m_currentPool;
-        }
-
-        for (auto& pool : m_extinctPools)
-        {
-            delete pool.pool;
-        }
-    }
-
     const VulkanDescriptorSet* VulkanDescriptorCache::GetDescriptorSet(const VulkanDescriptorSetLayout* layout,
         const DescriptorSetKey& key,
         const FenceRef& fence)
@@ -218,24 +205,21 @@ namespace PK::Rendering::VulkanRHI::Services
 
         for (auto i = (int)m_extinctPools.size() - 1; i >= 0; --i)
         {
-            if (m_extinctPools.at(i).fence.IsComplete())
+            if (!m_extinctPools.at(i).fence.IsComplete())
             {
-                auto n = m_extinctPools.size() - 1;
-
-                for (auto& index : m_extinctPools[i].extinctSetIndices)
-                {
-                    m_setsPool.Delete(index);
-                }
-
-                delete m_extinctPools[i].pool;
-
-                if (i != n)
-                {
-                    m_extinctPools[i] = m_extinctPools[n];
-                }
-
-                m_extinctPools.pop_back();
+                continue;
             }
+
+            m_setsPool.Delete(m_extinctPools[i].indexMask);
+            m_poolPool.Delete(m_extinctPools[i].poolIndex);
+            auto n = m_extinctPools.size() - 1;
+            
+            if (i != n)
+            {
+                m_extinctPools[i] = m_extinctPools[n];
+            }
+
+            m_extinctPools.pop_back();
         }
 
         auto keyvalues = m_sets.GetKeyValues();
@@ -262,7 +246,7 @@ namespace PK::Rendering::VulkanRHI::Services
     {
         if (m_currentPool != nullptr)
         {
-            m_extinctPools.push_back({ m_currentPool, fence, m_setsPool.GetActiveIndices() });
+            m_extinctPools.push_back({ m_poolPool.GetIndex(m_currentPool), fence, m_setsPool.GetActiveMask() });
             m_currentPool = nullptr;
             m_sets.Clear();
         }
@@ -284,7 +268,7 @@ namespace PK::Rendering::VulkanRHI::Services
         createInfo.pPoolSizes = pPoolSizes.data();
         createInfo.poolSizeCount = (uint32_t)pPoolSizes.size();
         createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        m_currentPool = new VulkanDescriptorPool(m_device, createInfo);
+        m_currentPool = m_poolPool.New(m_device, createInfo);
     }
 
     void VulkanDescriptorCache::GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const FenceRef& fence, bool throwOnFail)
@@ -293,20 +277,20 @@ namespace PK::Rendering::VulkanRHI::Services
 
         switch (result)
         {
-        case VK_SUCCESS:
-            break;
-
-        case VK_ERROR_FRAGMENTED_POOL:
-        case VK_ERROR_OUT_OF_POOL_MEMORY:
-            if (!throwOnFail)
-            {
-                GrowPool(fence);
-                pAllocateInfo->descriptorPool = m_currentPool->pool;
-                GetDescriptorSets(pAllocateInfo, pDescriptorSets, fence, true);
+            case VK_SUCCESS:
                 break;
-            }
-        default:
-            PK_THROW_ERROR("Failed to allocate a descriptor set!");
+
+            case VK_ERROR_FRAGMENTED_POOL:
+            case VK_ERROR_OUT_OF_POOL_MEMORY:
+                if (!throwOnFail)
+                {
+                    GrowPool(fence);
+                    pAllocateInfo->descriptorPool = m_currentPool->pool;
+                    GetDescriptorSets(pAllocateInfo, pDescriptorSets, fence, true);
+                    break;
+                }
+            default:
+                PK_THROW_ERROR("Failed to allocate a descriptor set!");
         }
     }
 }

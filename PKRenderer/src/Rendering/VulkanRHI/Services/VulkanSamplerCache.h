@@ -9,16 +9,9 @@ namespace PK::Rendering::VulkanRHI::Services
 {
     class VulkanSamplerCache : PK::Utilities::NoCopy
     {
-        public:
-            struct SampelerKeyHash
-            {
-                std::size_t operator()(const Structs::SamplerDescriptor& k) const noexcept
-                {
-                    constexpr uint64_t seed = 18446744073709551557;
-                    return PK::Utilities::HashHelpers::MurmurHash(reinterpret_cast<const void*>(&k), sizeof(Structs::SamplerDescriptor), seed);
-                }
-            };
+        using SampelerKeyHash = PK::Utilities::HashHelpers::TMurmurHash<Structs::SamplerDescriptor>;
 
+        public:
             VulkanSamplerCache(VkDevice device) : m_device(device) {}
             VkSampler GetSampler(const Structs::SamplerDescriptor& descriptor);
 

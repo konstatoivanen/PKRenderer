@@ -26,25 +26,13 @@ namespace PK::Rendering::VulkanRHI::Objects
                 Mesh* mesh;
                 uint64_t submesh;
 
-                constexpr bool operator < (const MeshKey& other) const
-                {
-                    return mesh != other.mesh ? mesh < other.mesh : submesh < other.submesh;
-                }
-
                 constexpr bool operator == (const MeshKey& other) const
                 {
                     return mesh == other.mesh && submesh == other.submesh;
                 }
             };
 
-            struct MeshKeyHash
-            {
-                size_t operator()(const MeshKey& k) const noexcept
-                {
-                    return PK::Utilities::HashHelpers::FNV1AHash(&k, sizeof(MeshKey));
-                }
-            };
-
+            using MeshKeyHash = PK::Utilities::HashHelpers::TFNV1AHash<MeshKey>;
             constexpr static uint32_t MAX_SUBSTRUCTURES = 1024u;
 
             struct BLAS

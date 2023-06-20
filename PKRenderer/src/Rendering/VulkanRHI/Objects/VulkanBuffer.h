@@ -36,13 +36,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 VkBufferCopy region = { 0ull, 0ull, 0ull };
             };
 
-            struct RangeHash
-            {
-                size_t operator()(const Structs::IndexRange& k) const noexcept
-                {
-                    return PK::Utilities::HashHelpers::FNV1AHash(&k, sizeof(Structs::IndexRange));
-                }
-            };
+            using RangeHash = PK::Utilities::HashHelpers::TMurmurHash<Structs::IndexRange>;
 
             void Rebuild(size_t count);
             void Dispose();

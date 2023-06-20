@@ -85,7 +85,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             return handle;
         }
 
-        handle = new VulkanBindHandle();
+        handle = m_driver->bindhandlePool.New();
         auto stride = m_layout.GetStride(m_usage);
         handle->buffer.buffer = m_rawBuffer->buffer;
         handle->buffer.range = stride * range.count;
@@ -166,7 +166,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         for (auto i = 0; i < values.count; ++i)
         {
-            delete values[i];
+            m_driver->bindhandlePool.Delete(values[i]);
         }
 
         m_bindHandles.Clear();
