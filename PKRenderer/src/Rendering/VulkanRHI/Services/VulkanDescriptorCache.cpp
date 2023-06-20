@@ -97,81 +97,81 @@ namespace PK::Rendering::VulkanRHI::Services
 
             switch (type)
             {
-            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-            case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-            case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-            {
-                write->pBufferInfo = reinterpret_cast<decltype(write->pBufferInfo)>(bufferCount + 1);
-                auto newSize = bufferCount + bind->count;
-
-                if (m_writeBuffers.size() < newSize)
+                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
                 {
-                    m_writeBuffers.resize(newSize);
+                    write->pBufferInfo = reinterpret_cast<decltype(write->pBufferInfo)>(bufferCount + 1);
+                    auto newSize = bufferCount + bind->count;
+
+                    if (m_writeBuffers.size() < newSize)
+                    {
+                        m_writeBuffers.resize(newSize);
+                    }
+
+                    auto buffers = m_writeBuffers.data() + bufferCount;
+                    bufferCount = newSize;
+
+                    for (auto i = 0; i < bind->count; ++i)
+                    {
+                        buffers[i].buffer = bind->handle->buffer.buffer;
+                        buffers[i].offset = bind->handle->buffer.offset;
+                        buffers[i].range = bind->handle->buffer.range;
+                    }
                 }
-
-                auto buffers = m_writeBuffers.data() + bufferCount;
-                bufferCount = newSize;
-
-                for (auto i = 0; i < bind->count; ++i)
-                {
-                    buffers[i].buffer = bind->handle->buffer.buffer;
-                    buffers[i].offset = bind->handle->buffer.offset;
-                    buffers[i].range = bind->handle->buffer.range;
-                }
-            }
-            break;
-
-            case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-            case VK_DESCRIPTOR_TYPE_SAMPLER:
-            {
-                write->pImageInfo = reinterpret_cast<decltype(write->pImageInfo)>(imageCount + 1);
-                auto newSize = imageCount + bind->count;
-
-                if (m_writeImages.size() < newSize)
-                {
-                    m_writeImages.resize(newSize);
-                }
-
-                auto images = m_writeImages.data() + imageCount;
-                imageCount = newSize;
-
-                for (auto i = 0; i < bind->count; ++i)
-                {
-                    images[i].sampler = handles[i]->image.sampler;
-                    images[i].imageView = handles[i]->image.view;
-                    images[i].imageLayout = handles[i]->image.layout;
-                }
-            }
-            break;
-
-            case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            {
-                write->pNext = reinterpret_cast<decltype(write->pNext)>(accelerationStructureCount + 1);
-                auto newSize = accelerationStructureCount + bind->count;
-
-                if (m_writeAccerationStructures.size() < newSize)
-                {
-                    m_writeAccerationStructures.resize(newSize);
-                }
-
-                auto accelerationStructures = m_writeAccerationStructures.data() + accelerationStructureCount;
-                accelerationStructureCount = newSize;
-
-                for (auto i = 0; i < bind->count; ++i)
-                {
-                    accelerationStructures[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-                    accelerationStructures[i].accelerationStructureCount = 1;
-                    accelerationStructures[i].pAccelerationStructures = &handles[i]->acceleration.structure;
-                }
-
                 break;
-            }
 
-            default:
-                PK_THROW_ERROR("Binding type not yet implemented!");
+                case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+                case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+                case VK_DESCRIPTOR_TYPE_SAMPLER:
+                {
+                    write->pImageInfo = reinterpret_cast<decltype(write->pImageInfo)>(imageCount + 1);
+                    auto newSize = imageCount + bind->count;
+
+                    if (m_writeImages.size() < newSize)
+                    {
+                        m_writeImages.resize(newSize);
+                    }
+
+                    auto images = m_writeImages.data() + imageCount;
+                    imageCount = newSize;
+
+                    for (auto i = 0; i < bind->count; ++i)
+                    {
+                        images[i].sampler = handles[i]->image.sampler;
+                        images[i].imageView = handles[i]->image.view;
+                        images[i].imageLayout = handles[i]->image.layout;
+                    }
+                }
+                break;
+
+                case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+                {
+                    write->pNext = reinterpret_cast<decltype(write->pNext)>(accelerationStructureCount + 1);
+                    auto newSize = accelerationStructureCount + bind->count;
+
+                    if (m_writeAccerationStructures.size() < newSize)
+                    {
+                        m_writeAccerationStructures.resize(newSize);
+                    }
+
+                    auto accelerationStructures = m_writeAccerationStructures.data() + accelerationStructureCount;
+                    accelerationStructureCount = newSize;
+
+                    for (auto i = 0; i < bind->count; ++i)
+                    {
+                        accelerationStructures[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+                        accelerationStructures[i].accelerationStructureCount = 1;
+                        accelerationStructures[i].pAccelerationStructures = &handles[i]->acceleration.structure;
+                    }
+
+                    break;
+                }
+
+                default:
+                    PK_THROW_ERROR("Binding type not yet implemented!");
             }
         }
 

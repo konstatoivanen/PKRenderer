@@ -66,6 +66,7 @@ namespace PK::Rendering::Passes
         descr.layers = 1u;
         descr.usage = TextureUsage::Storage;
         descr.format = TextureFormat::R32UI;
+        descr.resolution = { config->InitialWidth, config->InitialHeight, 1u };
         m_rayhits = Texture::Create(descr, "GI.RayHits");
 
         m_voxelizeAttribs.depthStencil.depthCompareOp = Comparison::Off;

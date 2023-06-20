@@ -6,7 +6,7 @@
 
 namespace PK::Rendering::VulkanRHI::Objects
 {
-    class VulkanShader : public PK::Rendering::Objects::ShaderVariant, public Rendering::Services::IDisposable
+    class VulkanShader : public PK::Rendering::Objects::ShaderVariant, public PK::Utilities::VersionedObject
     {
         public:
             VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant, const char* name);

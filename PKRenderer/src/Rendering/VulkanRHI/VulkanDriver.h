@@ -76,6 +76,9 @@ namespace PK::Rendering::VulkanRHI
                                                                   const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                                                   void* pUserData);
 
+        void DisposePooledImageView(VulkanImageView* view, const PK::Rendering::Structs::FenceRef& fence) const;
+        void DisposePooledImage(VulkanRawImage* image, const PK::Rendering::Structs::FenceRef& fence) const;
+
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;
         VkPhysicalDevice physicalDevice;
@@ -94,5 +97,7 @@ namespace PK::Rendering::VulkanRHI
         PK::Utilities::Scope<Services::VulkanLayoutCache> layoutCache;
         PK::Utilities::Scope<Rendering::Services::Disposer> disposer;
         mutable PK::Utilities::FixedPool<VulkanBindHandle, 4096> bindhandlePool;
+        mutable PK::Utilities::FixedPool<VulkanImageView, 2048> imageViewPool;
+        mutable PK::Utilities::FixedPool<VulkanRawImage, 2048> imagePool;
     };
 }

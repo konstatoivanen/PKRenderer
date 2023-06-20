@@ -18,8 +18,7 @@ namespace PK::Rendering::Passes
         descriptor.format = TextureFormat::RGBA16F;
         descriptor.layers = 2;
         descriptor.levels = 6;
-        descriptor.resolution.x = initialWidth / 2;
-        descriptor.resolution.y = initialWidth / 2;
+        descriptor.resolution = { initialWidth / 2u, initialHeight / 2u, 1u };
         descriptor.sampler.filterMin = FilterMode::Trilinear;
         descriptor.sampler.filterMag = FilterMode::Trilinear;
 

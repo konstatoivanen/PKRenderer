@@ -95,7 +95,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto& families = m_driver->queues->GetSelectedFamilies();
 
         m_descriptor = descriptor;
-        m_rawImage = new VulkanRawImage(m_driver->device, m_driver->allocator, VulkanImageCreateInfo(descriptor, &families), m_name.c_str());
+        m_rawImage = m_driver->imagePool.New(m_driver->device, m_driver->allocator, VulkanImageCreateInfo(descriptor, &families), m_name.c_str());
 
         m_viewType = EnumConvert::GetViewType(descriptor.samplerType);
         m_swizzle = EnumConvert::GetSwizzle(m_rawImage->format);
@@ -210,7 +210,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         };
 
         auto viewValue = m_imageViews.GetValueAtRef(index);
-        viewValue->view = new VulkanImageView(m_driver->device, info, m_name.c_str());
+        viewValue->view = m_driver->imageViewPool.New(m_driver->device, info, m_name.c_str());
         viewValue->bindHandle = m_driver->bindhandlePool.New();
         viewValue->bindHandle->image.view = viewValue->view->view;
         viewValue->bindHandle->image.image = m_rawImage->image;
@@ -238,14 +238,14 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             auto value = m_imageViews.GetValueAtRef(i);
             m_driver->bindhandlePool.Delete(value->bindHandle);
-            m_driver->disposer->Dispose(value->view, fence);
+            m_driver->DisposePooledImageView(value->view, fence);
         }
 
         m_imageViews.Clear();
 
         if (m_rawImage != nullptr)
         {
-            m_driver->disposer->Dispose(m_rawImage, fence);
+            m_driver->DisposePooledImage(m_rawImage, fence);
             m_rawImage = nullptr;
         }
     }

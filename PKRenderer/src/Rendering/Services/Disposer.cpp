@@ -3,6 +3,14 @@
 
 namespace PK::Rendering::Services
 {
+    Disposer::~Disposer()
+    {
+        for (auto i = (int)m_disposables.size() - 1; i >= 0; --i)
+        {
+            m_disposables[i].destructor(m_disposables[i].disposable);
+        }
+    }
+
     void Disposer::Prune()
     {
         for (auto i = (int)m_disposables.size() - 1; i >= 0; --i)
@@ -13,6 +21,7 @@ namespace PK::Rendering::Services
             }
 
             auto n = m_disposables.size() - 1;
+            m_disposables[i].destructor(m_disposables[i].disposable);
 
             if (i != n)
             {

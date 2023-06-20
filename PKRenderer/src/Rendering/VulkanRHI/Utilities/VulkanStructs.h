@@ -88,7 +88,7 @@ namespace PK::Rendering::VulkanRHI
         VulkanQueueFamilies queueFamilies{};
     };
 
-    struct VulkanImageView : public Rendering::Services::IDisposable
+    struct VulkanImageView : public PK::Utilities::VersionedObject
     {
         VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo, const char* name);
         ~VulkanImageView();
@@ -115,7 +115,7 @@ namespace PK::Rendering::VulkanRHI
         VkRenderPass renderPass;
     };
 
-    struct VulkanRawBuffer : public Rendering::Services::IDisposable
+    struct VulkanRawBuffer : public PK::Utilities::VersionedObject
     {
         VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo, const char* name);
         ~VulkanRawBuffer();
@@ -135,7 +135,7 @@ namespace PK::Rendering::VulkanRHI
         VmaAllocationInfo allocationInfo{};
     };
 
-    struct VulkanRawImage : public Rendering::Services::IDisposable
+    struct VulkanRawImage : public PK::Utilities::VersionedObject
     {
         VulkanRawImage(VkDevice device, VmaAllocator allocator, const VulkanImageCreateInfo& createInfo, const char* name);
         ~VulkanRawImage();
@@ -152,7 +152,7 @@ namespace PK::Rendering::VulkanRHI
         uint32_t layers;
     };
 
-    struct VulkanRawAccelerationStructure : public Rendering::Services::IDisposable
+    struct VulkanRawAccelerationStructure : public PK::Utilities::VersionedObject
     {
         VulkanRawAccelerationStructure(VkDevice device, const VkAccelerationStructureCreateInfoKHR& createInfo, const char* name);
         ~VulkanRawAccelerationStructure();
@@ -161,7 +161,7 @@ namespace PK::Rendering::VulkanRHI
         VkDeviceAddress deviceAddress;
     };
 
-    struct VulkanShaderModule : public Rendering::Services::IDisposable
+    struct VulkanShaderModule : public PK::Utilities::VersionedObject
     {
         VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t spirvSize, const char* name);
         ~VulkanShaderModule();

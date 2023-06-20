@@ -357,6 +357,26 @@ namespace PK::Rendering::VulkanRHI
         PK_LOG_VERBOSE(pCallbackData->pMessage);
         return VK_FALSE;
     }
+
+    void VulkanDriver::DisposePooledImageView(VulkanImageView* view, const PK::Rendering::Structs::FenceRef& fence) const
+    {
+        auto deleter = [](void* v)
+        {
+            GraphicsAPI::GetActiveDriver<VulkanDriver>()->imageViewPool.Delete(reinterpret_cast<VulkanImageView*>(v));
+        };
+
+        disposer->Dispose(view, deleter, fence);
+    }
+
+    void VulkanDriver::DisposePooledImage(VulkanRawImage* image, const PK::Rendering::Structs::FenceRef& fence) const
+    {
+        auto deleter = [](void* v)
+        {
+            GraphicsAPI::GetActiveDriver<VulkanDriver>()->imagePool.Delete(reinterpret_cast<VulkanRawImage*>(v));
+        };
+
+        disposer->Dispose(image, deleter, fence);
+    }
 }
 
 

@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "VulkanSwapchain.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanUtilities.h"
+#include "Rendering/VulkanRHI/VulkanDriver.h"
 #include <gfx.h>
 
 namespace PK::Rendering::VulkanRHI::Objects
@@ -110,7 +111,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             imageViewCreateInfo.subresourceRange.levelCount = 1;
             imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
             imageViewCreateInfo.subresourceRange.layerCount = 1;
-            m_imageViews[i] = new VulkanImageView(m_device, imageViewCreateInfo, (std::string("Swapchain.Image") + std::to_string(i)).c_str());
+            m_imageViews[i] = GraphicsAPI::GetActiveDriver<VulkanDriver>()->imageViewPool.New(m_device, imageViewCreateInfo, (std::string("Swapchain.Image") + std::to_string(i)).c_str());
         }
 
         for (size_t i = 0u; i < m_imageCount; ++i)
@@ -143,10 +144,9 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             if (m_imageViews[i] != nullptr)
             {
-                delete m_imageViews[i];
+                GraphicsAPI::GetActiveDriver<VulkanDriver>()->imageViewPool.Delete(m_imageViews[i]);
+                m_imageViews[i] = nullptr;
             }
-
-            m_imageViews[i] = nullptr;
         }
 
         if (m_swapchain != VK_NULL_HANDLE)
