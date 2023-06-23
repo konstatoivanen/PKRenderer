@@ -488,8 +488,8 @@ namespace PK::Rendering::VulkanRHI::Utilities
         {
             (uint16_t)resourceRange.baseMipLevel,     //level
             (uint16_t)resourceRange.baseArrayLayer,   //layer
-            (uint16_t)resourceRange.levelCount,       //levels
-            (uint16_t)resourceRange.layerCount        //layers
+            (uint16_t)resourceRange.levelCount & 0x7FFFu,       //levels
+            (uint16_t)resourceRange.layerCount & 0x7FFFu        //layers
         };
     }
 

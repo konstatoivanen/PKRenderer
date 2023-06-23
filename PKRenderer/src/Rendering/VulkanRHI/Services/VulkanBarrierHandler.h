@@ -86,11 +86,15 @@ namespace PK::Rendering::VulkanRHI::Services
                     auto defaultRecord = m_records.New(scope);
                     TInfo<T>::SetDefaultRange(defaultRecord);
                     m_resources.AddValue(key, defaultRecord);
-                    m_pruneTicks.push_back(0ull);
                     index = m_resources.GetCount() - 1;
                 }
 
-                m_pruneTicks.at(index) = options & PK_ACCESS_OPT_TRANSFER ? 0ull : m_currentPruneTick + 1ull;
+                m_transferMask.SetAt(index, (options & PK_ACCESS_OPT_TRANSFER) == 0u);
+
+                if ((options & PK_ACCESS_OPT_TRANSFER) == 0u)
+                {
+                    m_accessMask.SetAt(index, true);
+                }
 
                 auto current = m_resources.GetValueAtRef(index);
 
@@ -223,10 +227,9 @@ namespace PK::Rendering::VulkanRHI::Services
             PK::Utilities::FixedPool<AccessRecord, 1024> m_records;
             PK::Utilities::FixedList<VkBufferMemoryBarrier, 256> m_bufferBarriers;
             PK::Utilities::FixedList<VkImageMemoryBarrier, 256> m_imageBarriers;
-            std::vector<uint64_t> m_pruneTicks;
+            PK::Utilities::Bitmask<1024> m_accessMask;
+            PK::Utilities::Bitmask<1024> m_transferMask;
             VkPipelineStageFlags m_sourceStage = 0u;
             VkPipelineStageFlags m_destinationStage = 0u;
-            uint64_t m_currentPruneTick = 0u;
-            uint64_t m_transferCount = 0u;
     };
 }

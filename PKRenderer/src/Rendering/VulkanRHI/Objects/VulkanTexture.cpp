@@ -96,20 +96,14 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         m_descriptor = descriptor;
         m_rawImage = m_driver->imagePool.New(m_driver->device, m_driver->allocator, VulkanImageCreateInfo(descriptor, &families), m_name.c_str());
-
         m_viewType = EnumConvert::GetViewType(descriptor.samplerType);
         m_swizzle = EnumConvert::GetSwizzle(m_rawImage->format);
 
-        m_defaultViewRange.level = 0;
-        m_defaultViewRange.layer = 0;
-        m_defaultViewRange.levels = m_rawImage->levels;
-        m_defaultViewRange.layers = m_rawImage->layers;
-
-        GetView(m_defaultViewRange);
+        GetView({});
 
         if ((descriptor.usage & TextureUsage::ValidRTTypes) != 0)
         {
-            GetView(m_defaultViewRange, TextureBindMode::RenderTarget);
+            GetView({}, TextureBindMode::RenderTarget);
         }
     }
 
@@ -125,32 +119,38 @@ namespace PK::Rendering::VulkanRHI::Objects
             case VK_IMAGE_VIEW_TYPE_CUBE: out.layers = 6u; break;
         }
 
-        if (out.level >= m_defaultViewRange.levels)
+        if (out.level >= m_descriptor.levels)
         {
-            out.level = m_defaultViewRange.levels - 1u;
+            out.level = m_descriptor.levels - 1u;
         }
 
-        if (out.layer >= m_defaultViewRange.layers)
+        if (out.layer >= m_descriptor.layers)
         {
-            out.layer = m_defaultViewRange.layers - 1u;
+            out.layer = m_descriptor.layers - 1u;
         }
 
-        if (out.levels == 0)
+        if (out.levels == 0 || out.level + out.levels >= m_descriptor.levels)
         {
-            out.levels = m_defaultViewRange.levels;
-        }
-        else if (out.level + out.levels > m_defaultViewRange.levels)
-        {
-            out.levels = m_defaultViewRange.levels - out.level;
+            out.levels = 0x7FFF;
         }
 
-        if (out.layers == 0)
+        if (out.layers == 0 || out.layer + out.layers >= m_descriptor.layers)
         {
-            out.layers = m_defaultViewRange.layers;
+            out.layers = 0x7FFF;
         }
-        else if (out.layer + out.layers > m_defaultViewRange.layers)
+
+        // Use clamped range for render targets as framebuffers cannot have unbounded layer ranges
+        if ((m_descriptor.usage & TextureUsage::ValidRTTypes) != 0)
         {
-            out.layers = m_defaultViewRange.layers - out.layer;
+            if (out.layers == 0x7FFF)
+            {
+                out.layers = glm::max(1, m_descriptor.layers - out.layer);
+            }
+
+            if (out.levels == 0x7FFF)
+            {
+                out.levels = glm::max(1, m_descriptor.levels - out.level);
+            }
         }
 
         return out;
@@ -172,9 +172,9 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             (uint32_t)m_rawImage->aspect,
             normalizedRange.level,
-            normalizedRange.levels,
+            EnumConvert::ExpandVkRange16(normalizedRange.levels),
             normalizedRange.layer,
-            normalizedRange.layers
+            EnumConvert::ExpandVkRange16(normalizedRange.layers)
         };
 
         if (bindMode == TextureBindMode::SampledTexture)
@@ -191,7 +191,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if (!m_imageViews.AddKey(key, &index))
         {
-            return m_imageViews.GetValueAtRef(index);
+            auto v = m_imageViews.GetValueAtRef(index);
+            return v;
         }
 
         auto useAlias = mode == TextureBindMode::Image && (m_descriptor.usage & TextureUsage::Aliased) != 0;
@@ -207,9 +208,9 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             (uint32_t)m_rawImage->aspect,
             normalizedRange.level,
-            normalizedRange.levels,
+            EnumConvert::ExpandVkRange16(normalizedRange.levels),
             normalizedRange.layer,
-            normalizedRange.layers
+            EnumConvert::ExpandVkRange16(normalizedRange.layers)
         };
 
         auto viewValue = m_imageViews.GetValueAtRef(index);

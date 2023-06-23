@@ -124,7 +124,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             handle->image.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
             handle->image.format = m_format;
             handle->image.extent = { m_extent.width, m_extent.height, 1 };
-            handle->image.range = { VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u };
+            handle->image.range = { VK_IMAGE_ASPECT_COLOR_BIT, 0u, VK_REMAINING_MIP_LEVELS, 0u, VK_REMAINING_ARRAY_LAYERS };
             handle->image.samples = 1u;
             handle->IncrementVersion();
         }

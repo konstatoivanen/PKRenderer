@@ -239,12 +239,10 @@ namespace PK::Rendering::VulkanRHI::Objects
         static VulkanBindHandle dstHandle;
         src->GetNative<VulkanTexture>()->FillBindHandle(&srcHandle, srcRange, TextureBindMode::RenderTarget);
         dst->GetNative<VulkanTexture>()->FillBindHandle(&dstHandle, dstRange, TextureBindMode::RenderTarget);
-        auto srange = src->GetNative<VulkanTexture>()->NormalizeViewRange(srcRange);
-        auto drange = dst->GetNative<VulkanTexture>()->NormalizeViewRange(dstRange);
 
         VkImageBlit blitRegion{};
-        blitRegion.srcSubresource = { (uint32_t)srcHandle.image.range.aspectMask, srange.level, srange.layer, srange.layers };
-        blitRegion.dstSubresource = { (uint32_t)srcHandle.image.range.aspectMask, drange.level, drange.layer, drange.layers };
+        blitRegion.srcSubresource = { (uint32_t)srcHandle.image.range.aspectMask, srcHandle.image.range.baseMipLevel, srcHandle.image.range.baseArrayLayer, srcHandle.image.range.layerCount };
+        blitRegion.dstSubresource = { (uint32_t)srcHandle.image.range.aspectMask, dstHandle.image.range.baseMipLevel, srcHandle.image.range.baseArrayLayer, dstHandle.image.range.layerCount };
         blitRegion.srcOffsets[1] = { (int)srcHandle.image.extent.width, (int)srcHandle.image.extent.height, (int)srcHandle.image.extent.depth };
         blitRegion.dstOffsets[1] = { (int)dstHandle.image.extent.width, (int)dstHandle.image.extent.height, (int)dstHandle.image.extent.depth };
         Blit(&srcHandle, &dstHandle, blitRegion, filter);
@@ -285,21 +283,13 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto vktex = dst->GetNative<VulkanTexture>();
         auto rawtex = vktex->GetRaw();
         auto handle = vktex->GetBindHandle(range, TextureBindMode::Image);
-        auto normalizedRange = vktex->NormalizeViewRange(range);
-
-        VkImageSubresourceRange subrange{};
-        subrange.aspectMask = rawtex->aspect;
-        subrange.baseMipLevel = normalizedRange.level;
-        subrange.levelCount = normalizedRange.levels;
-        subrange.baseArrayLayer = normalizedRange.layer;
-        subrange.layerCount = normalizedRange.layers;
 
         VkClearColorValue clearValue{};
         memcpy(clearValue.uint32, glm::value_ptr(value), sizeof(clearValue.uint32));
 
         m_renderState->RecordImage(handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_MEMORY_WRITE_BIT);
         ResolveBarriers();
-        vkCmdClearColorImage(m_commandBuffer, vktex->GetRaw()->image, handle->image.layout, &clearValue, 1, &subrange);
+        vkCmdClearColorImage(m_commandBuffer, vktex->GetRaw()->image, handle->image.layout, &clearValue, 1, &handle->image.range);
     }
 
     void* VulkanCommandBuffer::BeginBufferWrite(Buffer* buffer, size_t offset, size_t size)

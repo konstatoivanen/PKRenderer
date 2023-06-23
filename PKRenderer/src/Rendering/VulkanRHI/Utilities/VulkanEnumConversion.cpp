@@ -382,7 +382,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
 
     uint32_t ExpandVkRange16(uint32_t v)
     {
-        return v >= 0xFFFFu ? VK_REMAINING_ARRAY_LAYERS : v;
+        return v >= 0x7FFF ? VK_REMAINING_ARRAY_LAYERS : v;
     }
 
 

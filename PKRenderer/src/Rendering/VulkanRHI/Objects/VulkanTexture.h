@@ -18,18 +18,19 @@ namespace PK::Rendering::VulkanRHI::Objects
             bool Validate(const Structs::TextureDescriptor& descriptor) final;
             void Rebuild(const Structs::TextureDescriptor& descriptor);
 
-            Structs::TextureViewRange NormalizeViewRange(const Structs::TextureViewRange& range) const;
             inline VkImageLayout GetImageLayout() const { return EnumConvert::GetImageLayout(m_descriptor.usage); }
             inline VkImageAspectFlags GetAspectFlags() const { return m_rawImage->aspect; }
             inline VkFormat GetNativeFormat() const { return m_rawImage->format; }
             inline const VulkanRawImage* GetRaw() const { return m_rawImage; }
-            inline const VulkanBindHandle* GetBindHandle() const { return GetView(m_defaultViewRange)->bindHandle; }
-            inline const VulkanBindHandle* GetBindHandle(TextureBindMode bindMode) { return GetView(m_defaultViewRange, bindMode)->bindHandle; }
+            inline const VulkanBindHandle* GetBindHandle() const { return GetView({})->bindHandle; }
+            inline const VulkanBindHandle* GetBindHandle(TextureBindMode bindMode) { return GetView({}, bindMode)->bindHandle; }
             inline const VulkanBindHandle* GetBindHandle(const Structs::TextureViewRange& range, TextureBindMode bindMode) { return GetView(range, bindMode)->bindHandle; }
             void FillBindHandle(VulkanBindHandle* handle, const Structs::TextureViewRange& range, TextureBindMode bindMode) const;
-            inline void FillBindHandle(VulkanBindHandle* handle, TextureBindMode bindMode) const { FillBindHandle(handle, m_defaultViewRange, bindMode); }
+            inline void FillBindHandle(VulkanBindHandle* handle, TextureBindMode bindMode) const { FillBindHandle(handle, {}, bindMode); }
         
         private:
+            Structs::TextureViewRange NormalizeViewRange(const Structs::TextureViewRange& range) const;
+            
             inline static size_t GetViewKey(const Structs::TextureViewRange& range, Structs::TextureBindMode mode)
             {
                 size_t h = 0ull;
@@ -49,7 +50,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
             inline const ViewValue* GetView(const Structs::TextureViewRange& range, Structs::TextureBindMode mode = Structs::TextureBindMode::SampledTexture) const
             {
-                return m_imageViews.GetValueRef(GetViewKey(range, mode));
+                return m_imageViews.GetValueRef(GetViewKey(NormalizeViewRange(range), mode));
             }
 
             const ViewValue* GetView(const Structs::TextureViewRange& range, Structs::TextureBindMode mode = Structs::TextureBindMode::SampledTexture);
@@ -60,7 +61,6 @@ namespace PK::Rendering::VulkanRHI::Objects
             VulkanRawImage* m_rawImage = nullptr;
             PK::Utilities::FastMap<size_t, ViewValue> m_imageViews;
             VkComponentMapping m_swizzle{};
-            Structs::TextureViewRange m_defaultViewRange{};
             VkImageViewType m_viewType = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
     };
 }

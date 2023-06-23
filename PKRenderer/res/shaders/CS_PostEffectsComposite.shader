@@ -30,7 +30,7 @@ void main()
     float exposure = GetAutoExposure();
   //  exposure *= Vignette(uv);
 
-    color = Bloom(0.0f.xxx, uv);
+    //color = Bloom(color, uv);
     // Applying a bit of desaturation to reduce high intensity value color blowout
     // A personal preference really (should probably try to deprecate this).
     color = Saturation(color, 0.8f);
@@ -47,7 +47,7 @@ void main()
         float3 normal = SampleWorldNormal(uv);
         float3 diff = GI_Sample_Diffuse(uv, normal) * 4.0f;
        // GIRayHits hits = GI_Load_RayHits(coord);
-        color = diff; //hits.isMissSpec ? 0.0f.xxx : 1.0f.xxx;// diff;
+      //  color = diff; //hits.isMissSpec ? 0.0f.xxx : 1.0f.xxx;// diff;
     }
 
     imageStore(_MainTex, coord, float4(color, 1.0f));

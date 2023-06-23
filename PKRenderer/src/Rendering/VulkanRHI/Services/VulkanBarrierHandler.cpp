@@ -26,6 +26,12 @@ namespace PK::Rendering::VulkanRHI::Services
         uint16_t ymax;
     };
 
+    uint32_t MaskedAdd(uint32_t x, uint32_t y)
+    {
+        auto t = (size_t)x + (size_t)y;
+        return t >= 0xFFFFFFFFu ? 0xFFFFFFFFu : (uint32_t)t;
+    }
+
     bool VulkanBarrierHandler::TInfo<VkBuffer>::IsOverlap(uint64_t a, uint64_t b)
     {
         auto ra = reinterpret_cast<urect1D*>(&a);
@@ -198,7 +204,7 @@ namespace PK::Rendering::VulkanRHI::Services
         for (auto i = 0u; i < m_resources.GetCount(); ++i)
         {
             // Dont copy unaccessed resources
-            if (m_pruneTicks.at(i) < m_currentPruneTick)
+            if (!m_transferMask.GetAt(i))
             {
                 continue;
             }
@@ -218,7 +224,12 @@ namespace PK::Rendering::VulkanRHI::Services
                 // Hacky way to detect type. buffers will have zero value
                 if ((*current)->aspect != 0u)
                 {
-                    target->Record(reinterpret_cast<VkImage>(key), copy, PK_ACCESS_OPT_TRANSFER);
+                    // No need to transfer unitialized images as they should be handled by Record function default range anyways.
+                    // Also this could lead to redundant barriers between queues.
+                    if (copy.layout != VK_IMAGE_LAYOUT_UNDEFINED)
+                    {
+                        target->Record(reinterpret_cast<VkImage>(key), copy, PK_ACCESS_OPT_TRANSFER);
+                    }
                 }
                 else
                 {
@@ -228,9 +239,6 @@ namespace PK::Rendering::VulkanRHI::Services
                 current = &(*current)->next;
             }
         }
-
-        m_transferCount++;
-        m_currentPruneTick++;
     }
 
     bool VulkanBarrierHandler::Resolve(VulkanBarrierInfo* outBarrierInfo)
@@ -258,17 +266,14 @@ namespace PK::Rendering::VulkanRHI::Services
 
     void VulkanBarrierHandler::Prune()
     {
-        auto pruneTick = m_currentPruneTick - m_transferCount;
-
         for (auto i = (int32_t)(m_resources.GetCount() - 1); i >= 0; --i)
         {
-            if (m_pruneTicks.at(i) > pruneTick)
+            if (m_accessMask.GetAt(i))
             {
                 continue;
             }
 
             auto record = m_resources.GetValueAt(i);
-            PK::Utilities::Vector::UnorderedRemoveAt(m_pruneTicks, i);
             m_resources.RemoveAt(i);
 
             while (record)
@@ -279,8 +284,8 @@ namespace PK::Rendering::VulkanRHI::Services
             }
         }
 
-        m_transferCount = 0u;
-        m_currentPruneTick++;
+        m_accessMask.Clear();
+        m_transferMask.Clear();
     }
 
 
@@ -355,9 +360,9 @@ namespace PK::Rendering::VulkanRHI::Services
         {
             auto rb = reinterpret_cast<uint32_t*>(&(*barrier)->subresourceRange.baseMipLevel);
             rangeo.xmin = rangeo.xmin < rb[0] ? rangeo.xmin : rb[0];
-            rangeo.xmax = rangeo.xmax > (rb[0] + rb[1]) ? rangeo.xmax : (rb[0] + rb[1]);
+            rangeo.xmax = rangeo.xmax > MaskedAdd(rb[0], rb[1]) ? rangeo.xmax : MaskedAdd(rb[0], rb[1]);
             rangeo.ymin = rangeo.ymin < rb[2] ? rangeo.ymin : rb[2];
-            rangeo.ymax = rangeo.ymax > (rb[2] + rb[3]) ? rangeo.ymax : (rb[2] + rb[3]);
+            rangeo.ymax = rangeo.ymax > MaskedAdd(rb[2], rb[3]) ? rangeo.ymax : MaskedAdd(rb[2], rb[3]);
         }
 
         rangeo.xmin = rangeo.xmin > rangen.xmin ? rangeo.xmin : rangen.xmin;
@@ -372,12 +377,12 @@ namespace PK::Rendering::VulkanRHI::Services
 
         if (rangeo.xmax >= 0x7FFF)
         {
-            (*barrier)->subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+            (*barrier)->subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
         }
 
         if (rangeo.ymax >= 0x7FFF)
         {
-            (*barrier)->subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+            (*barrier)->subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
         }
 
         m_sourceStage |= recordOld.stage;
