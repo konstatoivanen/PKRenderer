@@ -11,18 +11,17 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         public:
             VulkanBuffer(const Structs::BufferLayout& layout, size_t count, Structs::BufferUsage usage, const char* name);
-            ~VulkanBuffer();
+            ~VulkanBuffer() { Dispose(); }
 
-            void* BeginWrite(const Structs::FenceRef& fence, size_t offset, size_t size);
-            void EndWrite(VkBuffer* src, VkBuffer* dst, VkBufferCopy* region);
+            void* BeginWrite(size_t offset, size_t size);
+            void EndWrite(VkBuffer* src, VkBuffer* dst, VkBufferCopy* region, const Structs::FenceRef& fence);
             const void* BeginRead(size_t offset, size_t size) final;
             void EndRead() final;
 
             size_t GetCapacity() const final { return m_rawBuffer->capacity; }
             const VulkanRawBuffer* GetRaw() const { return m_rawBuffer; }
             const VulkanBindHandle* GetBindHandle(const Structs::IndexRange& range);
-            // Default range is always the first one
-            inline const VulkanBindHandle* GetBindHandle() const { return m_bindHandles.GetValueAt(0); }
+            inline const VulkanBindHandle* GetBindHandle() const { return m_bindHandles.GetValueAt(0); } // Default range is always the first one
 
             void MakeRangeResident(const Structs::IndexRange& range, QueueType type) final;
             void MakeRangeNonResident(const Structs::IndexRange& range) final;

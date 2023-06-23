@@ -24,7 +24,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         private:
             const VkDevice m_device;
             uint32_t m_descriptorSetCount;
-            VulkanShaderModule* m_modules[(int)Structs::ShaderStage::MaxCount];
+            VulkanShaderModule* m_modules[(size_t)Structs::ShaderStage::MaxCount];
             const VulkanDescriptorSetLayout* m_descriptorSetLayouts[Structs::PK_MAX_DESCRIPTOR_SETS]{};
             const VulkanPipelineLayout* m_pipelineLayout;
             const std::string m_name;

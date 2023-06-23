@@ -62,7 +62,7 @@ void main()
 
     float density = Density(worldpos);
 
-    float4 preval = tex2D(pk_Volume_InjectRead, ReprojectWorldToCoord(worldpos));
+    float4 preval = ReplaceIfResized(tex2D(pk_Volume_InjectRead, ReprojectWorldToCoord(worldpos)), 0.0f.xxxx);
     float4 curval = float4(pk_Volume_Intensity * density * color, density);
 
     curval = lerp(preval, curval, VOLUME_ACCUMULATION);

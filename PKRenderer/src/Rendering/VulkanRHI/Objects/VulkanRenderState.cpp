@@ -386,6 +386,12 @@ namespace PK::Rendering::VulkanRHI::Objects
             record.layout = overrideLayout != VK_IMAGE_LAYOUT_MAX_ENUM ? overrideLayout : handle->image.layout;
             record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
             handler->Record(handle->image.image, record, options);
+
+            // Track alias as well so that layout stays consistent
+            if (handle->image.alias)
+            {
+                handler->Record(handle->image.alias, record, options);
+            }
         }
     }
 

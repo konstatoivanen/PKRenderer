@@ -175,4 +175,6 @@ bool Test_WorldToPrevClipUVW(float3 worldpos, inout float3 uvw)
     return Test_ClipPos(clippos);
 }
 
+#define ReplaceIfResized(v, r) (pk_FrameIndex.y == 0u? r : v)
+
 #endif

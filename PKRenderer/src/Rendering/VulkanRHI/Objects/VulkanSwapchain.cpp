@@ -118,6 +118,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             auto handle = &m_bindHandles[i];
             handle->image.image = m_images[i];
+            handle->image.alias = VK_NULL_HANDLE;
             handle->image.view = m_imageViews[i]->view;
             handle->image.sampler = VK_NULL_HANDLE;
             handle->image.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;

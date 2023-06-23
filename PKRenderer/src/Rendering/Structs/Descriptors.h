@@ -27,8 +27,8 @@ namespace PK::Rendering::Structs
     struct TextureDescriptor
     {
         TextureFormat format = TextureFormat::RGBA8;
-        SamplerType samplerType = SamplerType::Sampler2D;
         TextureUsage usage = TextureUsage::Default;
+        SamplerType samplerType = SamplerType::Sampler2D;
         Math::uint3 resolution = Math::PK_UINT3_ONE;
         uint8_t levels = 1;
         uint8_t samples = 1;

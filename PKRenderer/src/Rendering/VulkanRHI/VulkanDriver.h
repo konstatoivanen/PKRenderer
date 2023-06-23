@@ -78,6 +78,7 @@ namespace PK::Rendering::VulkanRHI
 
         void DisposePooledImageView(VulkanImageView* view, const PK::Rendering::Structs::FenceRef& fence) const;
         void DisposePooledImage(VulkanRawImage* image, const PK::Rendering::Structs::FenceRef& fence) const;
+        void DisposePooledBuffer(VulkanRawBuffer* buffer, const PK::Rendering::Structs::FenceRef& fence) const;
 
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;
@@ -99,5 +100,6 @@ namespace PK::Rendering::VulkanRHI
         mutable PK::Utilities::FixedPool<VulkanBindHandle, 4096> bindhandlePool;
         mutable PK::Utilities::FixedPool<VulkanImageView, 2048> imageViewPool;
         mutable PK::Utilities::FixedPool<VulkanRawImage, 2048> imagePool;
+        mutable PK::Utilities::FixedPool<VulkanRawBuffer, 2048> bufferPool;
     };
 }

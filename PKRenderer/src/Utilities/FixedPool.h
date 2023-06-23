@@ -26,6 +26,8 @@ namespace PK::Utilities
 
             T*& operator [](uint32_t index) { return m_data + index; }
 
+            const T*& operator [](uint32_t index) const { return m_data + index; }
+
             uint32_t GetIndex(const T* ptr) const 
             {
                 if (ptr < m_data || ptr >= (m_data + capacity))
@@ -37,10 +39,8 @@ namespace PK::Utilities
             }
 
             template<typename ... Args>
-            T* New(Args&& ... args)
+            T* NewAt(int64_t index, Args&& ... args)
             {
-                auto index = m_mask.FirstFalse();
-
                 if (index == -1 || index >= capacity)
                 {
                     throw std::exception("Pool capacity exceeded!");
@@ -50,6 +50,12 @@ namespace PK::Utilities
                 m_mask.ToggleAt(index);
                 alloc_traits::construct(m_alloc, ptr, std::forward<Args>(args)...);
                 return ptr;
+            }
+
+            template<typename ... Args>
+            T* New(Args&& ... args)
+            {
+                return NewAt(m_mask.FirstFalse(), std::forward<Args>(args)...);
             }
 
             void Delete(const T* ptr)

@@ -377,6 +377,16 @@ namespace PK::Rendering::VulkanRHI
 
         disposer->Dispose(image, deleter, fence);
     }
+
+    void VulkanDriver::DisposePooledBuffer(VulkanRawBuffer* buffer, const PK::Rendering::Structs::FenceRef& fence) const
+    {
+        auto deleter = [](void* v)
+        {
+            GraphicsAPI::GetActiveDriver<VulkanDriver>()->bufferPool.Delete(reinterpret_cast<VulkanRawBuffer*>(v));
+        };
+
+        disposer->Dispose(buffer, deleter, fence);
+    }
 }
 
 

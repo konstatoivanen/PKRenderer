@@ -181,7 +181,7 @@ namespace PK::Rendering::Structs
         DefaultAccelerationStructure = GPUOnly | AccelerationStructure
     };
 
-    enum class TextureUsage : uint8_t
+    enum class TextureUsage : uint16_t
     {
         None = 0x0,
         RTColor = 0x1,
@@ -192,6 +192,7 @@ namespace PK::Rendering::Structs
         Input = 0x20,
         Storage = 0x40,
         Concurrent = 0x80,
+        Aliased = 0x100,
         Default = Upload | Sample,
         DefaultStorage = Upload | Sample | Storage,
         RTColorSample = RTColor | Sample,
@@ -307,6 +308,11 @@ namespace PK::Rendering::Structs
         DXT1_SRGBA, 
         DXT3_SRGBA, 
         DXT5_SRGBA,
+
+        // Desktop hdr compression formats
+        BC6H_RGBUF,
+        BC6H_RGBF,
+        BC7_UNORM,
         
         // ASTC formats are available with a GLES extension
         RGBA_ASTC_4x4,

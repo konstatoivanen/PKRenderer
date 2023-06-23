@@ -18,7 +18,8 @@ namespace PK::Rendering::VulkanRHI::Services
         public:
             VulkanStagingBufferCache(VkDevice device, VmaAllocator allocator, uint64_t pruneDelay);
             ~VulkanStagingBufferCache();
-            VulkanStagingBuffer* GetBuffer(size_t size, const Rendering::Structs::FenceRef& fence);
+            VulkanStagingBuffer* Acquire(size_t size, bool persistent, const char* name);
+            void Release(VulkanStagingBuffer* buffer, const Rendering::Structs::FenceRef& fence);
             void Prune();
 
         private:
@@ -27,7 +28,6 @@ namespace PK::Rendering::VulkanRHI::Services
             std::vector<VulkanStagingBuffer*> m_freeBuffers;
             std::vector<VulkanStagingBuffer*> m_activeBuffers;
             PK::Utilities::FixedPool<VulkanStagingBuffer, 1024> m_bufferPool;
-
             uint64_t m_currentPruneTick = 0ull;
             uint64_t m_pruneDelay = 0ull;
     };

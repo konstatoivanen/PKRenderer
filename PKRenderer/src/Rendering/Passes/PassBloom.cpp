@@ -14,8 +14,8 @@ namespace PK::Rendering::Passes
     {
         TextureDescriptor descriptor{};
         descriptor.samplerType = SamplerType::Sampler2D;
-        descriptor.usage = TextureUsage::DefaultStorage;
-        descriptor.format = TextureFormat::RGBA16F;
+        descriptor.usage = TextureUsage::DefaultStorage | TextureUsage::Aliased;
+        descriptor.format = TextureFormat::RGB9E5;
         descriptor.layers = 2;
         descriptor.levels = 6;
         descriptor.resolution = { initialWidth / 2u, initialHeight / 2u, 1u };

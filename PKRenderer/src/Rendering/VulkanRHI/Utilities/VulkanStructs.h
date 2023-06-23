@@ -142,6 +142,7 @@ namespace PK::Rendering::VulkanRHI
 
         const VmaAllocator allocator;
         VkImage image;
+        VkImage imageAlias;
         VmaAllocation memory;
         VkImageAspectFlagBits aspect;
         VkSampleCountFlagBits samples;
@@ -251,12 +252,13 @@ namespace PK::Rendering::VulkanRHI
             struct Image
             {
                 VkImage image = VK_NULL_HANDLE;
+                VkImage alias = VK_NULL_HANDLE;
                 VkImageView view = VK_NULL_HANDLE;
                 VkSampler sampler = VK_NULL_HANDLE;
                 VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
                 VkFormat format = VK_FORMAT_UNDEFINED;
                 VkExtent3D extent = { 0u, 0u, 0u };
-                VkImageSubresourceRange range = { VK_IMAGE_ASPECT_NONE, 0u, 1u, 0u, 1u };
+                VkImageSubresourceRange range = { VK_IMAGE_ASPECT_NONE, 0u, VK_REMAINING_MIP_LEVELS, 0u, VK_REMAINING_ARRAY_LAYERS };
                 uint16_t samples = 1u;
             } 
             image;

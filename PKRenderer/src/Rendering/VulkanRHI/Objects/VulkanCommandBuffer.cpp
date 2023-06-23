@@ -31,6 +31,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         // @TODO move somewhere non static
         static VulkanBindHandle dummy{};
         dummy.image.image = VK_NULL_HANDLE;
+        dummy.image.alias = VK_NULL_HANDLE;
         dummy.image.view = VK_NULL_HANDLE;
         dummy.image.sampler = VK_NULL_HANDLE;
         dummy.image.layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
@@ -303,7 +304,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void* VulkanCommandBuffer::BeginBufferWrite(Buffer* buffer, size_t offset, size_t size)
     {
-        return buffer->GetNative<VulkanBuffer>()->BeginWrite(GetFenceRef(), offset, size);
+        return buffer->GetNative<VulkanBuffer>()->BeginWrite(offset, size);
     }
 
     void VulkanCommandBuffer::EndBufferWrite(Buffer* buffer)
@@ -312,7 +313,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         VkBuffer srcBuffer, dstBuffer;
 
         auto vkBuffer = buffer->GetNative<VulkanBuffer>();
-        vkBuffer->EndWrite(&srcBuffer, &dstBuffer, &copyRegion);
+        vkBuffer->EndWrite(&srcBuffer, &dstBuffer, &copyRegion, GetFenceRef());
 
         vkCmdCopyBuffer(m_commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
@@ -332,7 +333,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto vkTexture = texture->GetNative<VulkanTexture>();
         auto layout = vkTexture->GetImageLayout();
         auto range = VkImageSubresourceRange{ (uint32_t)vkTexture->GetAspectFlags(), 0, texture->GetLevels(), 0, texture->GetLayers() };
-        const auto stage = m_renderState->GetServices()->stagingBufferCache->GetBuffer(size, GetFenceRef());
+        auto stage = m_renderState->GetServices()->stagingBufferCache->Acquire(size, false, nullptr);
         std::vector<VkBufferImageCopy> bufferCopyRegions;
         bufferCopyRegions.reserve(rangeCount);
 
@@ -359,6 +360,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         TransitionImageLayout(vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range);
         vkCmdCopyBufferToImage(m_commandBuffer, stage->buffer, vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, (uint32_t)bufferCopyRegions.size(), bufferCopyRegions.data());
         TransitionImageLayout(vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout, range);
+        m_renderState->GetServices()->stagingBufferCache->Release(stage, GetFenceRef());
     }
 
     void VulkanCommandBuffer::UploadTexture(Texture* texture, const void* data, size_t size, uint32_t level, uint32_t layer)
@@ -370,7 +372,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto image = vkTexture->GetRaw()->image;
         auto layout = vkTexture->GetImageLayout();
         auto range = VkImageSubresourceRange{ (uint32_t)vkTexture->GetAspectFlags(), level, 1, layer, 1 };
-        const auto* stage = m_renderState->GetServices()->stagingBufferCache->GetBuffer(size, GetFenceRef());
+        auto stage = m_renderState->GetServices()->stagingBufferCache->Acquire(size, false, nullptr);
 
         VkBufferImageCopy copyRegion{};
         copyRegion.imageSubresource.aspectMask = vkTexture->GetAspectFlags();
@@ -386,6 +388,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         TransitionImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range);
         vkCmdCopyBufferToImage(m_commandBuffer, stage->buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &copyRegion);
         TransitionImageLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout, range);
+        m_renderState->GetServices()->stagingBufferCache->Release(stage, GetFenceRef());
     }
 
     void VulkanCommandBuffer::BeginDebugScope(const char* name, const Math::color& color)

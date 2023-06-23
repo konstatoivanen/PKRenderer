@@ -23,13 +23,19 @@ namespace PK::Rendering::Services
             template<typename T>
             void Dispose(T* disposable, const Structs::FenceRef& releaseFence)
             {
-                m_disposables.push_back({ disposable, [](void* v) { delete reinterpret_cast<T*>(v); }, releaseFence });
+                if (disposable != nullptr)
+                {
+                    m_disposables.push_back({ disposable, [](void* v) { delete reinterpret_cast<T*>(v); }, releaseFence });
+                }
             }
 
             template<typename T>
             void Dispose(T* disposable, DeletaFunction deleter, const Structs::FenceRef& releaseFence)
             {
-                m_disposables.push_back({ disposable, deleter, releaseFence });
+                if (disposable != nullptr)
+                {
+                    m_disposables.push_back({ disposable, deleter, releaseFence });
+                }
             }
 
             void Prune();

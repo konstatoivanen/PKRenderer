@@ -95,11 +95,11 @@ namespace PK::Rendering::VulkanRHI
 
         switch (type)
         {
-        case BufferUsage::GPUOnly: allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY; break;
-        case BufferUsage::CPUOnly: allocation.usage = VMA_MEMORY_USAGE_CPU_ONLY; break;
-        case BufferUsage::CPUToGPU: allocation.usage = VMA_MEMORY_USAGE_CPU_TO_GPU; break;
-        case BufferUsage::GPUToCPU: allocation.usage = VMA_MEMORY_USAGE_GPU_TO_CPU; break;
-        case BufferUsage::CPUCopy: allocation.usage = VMA_MEMORY_USAGE_CPU_COPY; break;
+            case BufferUsage::GPUOnly: allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY; break;
+            case BufferUsage::CPUOnly: allocation.usage = VMA_MEMORY_USAGE_CPU_ONLY; break;
+            case BufferUsage::CPUToGPU: allocation.usage = VMA_MEMORY_USAGE_CPU_TO_GPU; break;
+            case BufferUsage::GPUToCPU: allocation.usage = VMA_MEMORY_USAGE_GPU_TO_CPU; break;
+            case BufferUsage::CPUCopy: allocation.usage = VMA_MEMORY_USAGE_CPU_COPY; break;
         }
     }
 
@@ -126,10 +126,17 @@ namespace PK::Rendering::VulkanRHI
         allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
         aspect = (VkImageAspectFlagBits)0;
 
+
         if (descriptor.samplerType == SamplerType::Cubemap ||
             descriptor.samplerType == SamplerType::CubemapArray)
         {
             image.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+        }
+
+        if ((descriptor.usage & TextureUsage::Aliased) != 0)
+        {
+            image.flags |= VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_ALIAS_BIT;
+            // Set VK_IMAGE_CREATE_ALIAS_BIT  for block compressed formats
         }
 
         if ((descriptor.usage & TextureUsage::Sample) != 0)
@@ -292,13 +299,31 @@ namespace PK::Rendering::VulkanRHI
         samples(createInfo.image.samples),
         aspect(createInfo.aspect)
     {
-        VK_ASSERT_RESULT_CTX(vmaCreateImage(allocator, &createInfo.image, &createInfo.allocation, &image, &memory, nullptr), "Failed to create an image!");
+        if (createInfo.image.flags & VK_IMAGE_CREATE_ALIAS_BIT)
+        {
+            auto aliasInfo = createInfo.image;
+            aliasInfo.usage &= ~VK_IMAGE_USAGE_STORAGE_BIT;
+            VK_ASSERT_RESULT_CTX(vmaCreateImage(allocator, &aliasInfo, &createInfo.allocation, &image, &memory, nullptr), "Failed to create an image!");
+            vmaCreateAliasingImage(allocator, memory, &createInfo.image, &imageAlias);
+        }
+        else
+        {
+            imageAlias = VK_NULL_HANDLE;
+            VK_ASSERT_RESULT_CTX(vmaCreateImage(allocator, &createInfo.image, &createInfo.allocation, &image, &memory, nullptr), "Failed to create an image!");
+        }
+
         Utilities::VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_IMAGE, (uint64_t)image, name);
     }
 
     VulkanRawImage::~VulkanRawImage()
     {
+        if (imageAlias != VK_NULL_HANDLE)
+        {
+            vmaDestroyImage(allocator, imageAlias, VK_NULL_HANDLE);
+        }
+
         vmaDestroyImage(allocator, image, memory);
+
     }
 
     VulkanRawAccelerationStructure::VulkanRawAccelerationStructure(VkDevice device, const VkAccelerationStructureCreateInfoKHR& createInfo, const char* name) : device(device)

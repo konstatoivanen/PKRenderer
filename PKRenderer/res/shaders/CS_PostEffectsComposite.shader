@@ -30,7 +30,7 @@ void main()
     float exposure = GetAutoExposure();
   //  exposure *= Vignette(uv);
 
-   // color = Bloom(color, uv);
+    color = Bloom(0.0f.xxx, uv);
     // Applying a bit of desaturation to reduce high intensity value color blowout
     // A personal preference really (should probably try to deprecate this).
     color = Saturation(color, 0.8f);

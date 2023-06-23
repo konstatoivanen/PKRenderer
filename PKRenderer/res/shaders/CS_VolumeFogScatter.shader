@@ -26,7 +26,7 @@ void main()
         accumulation.rgb += lightintegral * accumulation.a;
         accumulation.a *= transmittance;
 
-        float4 preval = tex2D(pk_Volume_ScatterRead, ReprojectViewToCoord(vpos * depth));
+        float4 preval = ReplaceIfResized(tex2D(pk_Volume_ScatterRead, ReprojectViewToCoord(vpos * depth)), 0.0f.xxxx);
         float4 outval = lerp(preval, accumulation, VOLUME_ACCUMULATION);
 
         imageStore(pk_Volume_Scatter, pos, outval);

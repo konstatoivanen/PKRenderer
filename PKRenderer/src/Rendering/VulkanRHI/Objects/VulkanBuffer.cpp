@@ -15,19 +15,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         Rebuild(count);
     }
 
-    VulkanBuffer::~VulkanBuffer()
-    {
-        Dispose();
-
-        // Borrowed staging buffer not returned :/
-        if (m_mappedBuffer != nullptr)
-        {
-            m_mappedBuffer->EndMap(0, m_mapRange.region.size);
-            m_mappedBuffer = nullptr;
-        }
-    }
-
-    void* VulkanBuffer::BeginWrite(const Structs::FenceRef& fence, size_t offset, size_t size)
+    void* VulkanBuffer::BeginWrite(size_t offset, size_t size)
     {
         m_mapRange.region.dstOffset = offset;
         m_mapRange.region.size = size;
@@ -35,7 +23,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         if ((m_usage & BufferUsage::PersistentStage) == 0)
         {
             PK_THROW_ASSERT(m_mappedBuffer == nullptr, "Trying to begin a new mapping for a buffer that is already being mapped!");
-            m_mappedBuffer = m_driver->stagingBufferCache->GetBuffer(size, fence);
+            m_mappedBuffer = m_driver->stagingBufferCache->Acquire(size, false, nullptr);
             m_mapRange.region.srcOffset = 0ull;
             return m_mappedBuffer->BeginMap(0ull);
         }
@@ -45,7 +33,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         return m_mappedBuffer->BeginMap(m_mapRange.region.srcOffset);
     }
 
-    void VulkanBuffer::EndWrite(VkBuffer* src, VkBuffer* dst, VkBufferCopy* region)
+    void VulkanBuffer::EndWrite(VkBuffer* src, VkBuffer* dst, VkBufferCopy* region, const Structs::FenceRef& fence)
     {
         PK_THROW_ASSERT(m_mappedBuffer != nullptr, "Trying to end buffer map for an unmapped buffer!");
 
@@ -58,6 +46,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if ((m_usage & BufferUsage::PersistentStage) == 0)
         {
+            m_driver->stagingBufferCache->Release(m_mappedBuffer, fence);
             m_mappedBuffer = nullptr;
         }
     }
@@ -78,23 +67,23 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         PK_THROW_ASSERT(range.offset + range.count <= m_count, "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
 
-        VulkanBindHandle* handle = nullptr;
+        auto index = 0u;
 
-        if (m_bindHandles.TryGetValue(range, &handle))
+        if (!m_bindHandles.AddKey(range, &index))
         {
-            return handle;
+            return m_bindHandles.GetValueAt(index);
         }
 
-        handle = m_driver->bindhandlePool.New();
         auto stride = m_layout.GetStride(m_usage);
-        handle->buffer.buffer = m_rawBuffer->buffer;
-        handle->buffer.range = stride * range.count;
-        handle->buffer.offset = stride * range.offset;
-        handle->buffer.layout = &m_layout;
-        handle->buffer.inputRate = EnumConvert::GetInputRate(m_inputRate);
-        handle->isConcurrent = IsConcurrent();
-        m_bindHandles.AddValue(range, handle);
-        return handle;
+        auto handle = m_bindHandles.GetValueAtRef(index);
+        *handle = m_driver->bindhandlePool.New();
+        (*handle)->buffer.buffer = m_rawBuffer->buffer;
+        (*handle)->buffer.range = stride * range.count;
+        (*handle)->buffer.offset = stride * range.offset;
+        (*handle)->buffer.layout = &m_layout;
+        (*handle)->buffer.inputRate = EnumConvert::GetInputRate(m_inputRate);
+        (*handle)->isConcurrent = IsConcurrent();
+        return *handle;
     }
 
 
@@ -136,19 +125,15 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         Dispose();
 
-        m_count = count;
         auto size = m_layout.GetStride(m_usage) * count;
-        auto& queueFamilies = m_driver->queues->GetSelectedFamilies();
-        auto bufferCreateInfo = VulkanBufferCreateInfo(m_usage, size, &queueFamilies);
-        m_rawBuffer = new VulkanRawBuffer(m_driver->device, m_driver->allocator, bufferCreateInfo, m_name.c_str());
+        auto bufferCreateInfo = VulkanBufferCreateInfo(m_usage, size, &m_driver->queues->GetSelectedFamilies());
+        m_rawBuffer = m_driver->bufferPool.New(m_driver->device, m_driver->allocator, bufferCreateInfo, m_name.c_str());
+        m_count = count;
 
         if ((m_usage & BufferUsage::PersistentStage) != 0)
         {
             m_mapRange.ringOffset = 0ull;
-            m_mappedBuffer = new VulkanStagingBuffer(m_driver->device,
-                m_driver->allocator,
-                VulkanBufferCreateInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size * PK_MAX_FRAMES_IN_FLIGHT),
-                (std::string(m_name) + std::string(".StagingBuffer")).c_str());
+            m_mappedBuffer = m_driver->stagingBufferCache->Acquire(size, true, m_name.c_str());
         }
 
         if ((m_usage & BufferUsage::Sparse) != 0)
@@ -169,24 +154,17 @@ namespace PK::Rendering::VulkanRHI::Objects
             m_driver->bindhandlePool.Delete(values[i]);
         }
 
+        if (m_mappedBuffer != nullptr && !m_mappedBuffer->persistentmap)
+        {
+            m_mappedBuffer->EndMap(0, m_mapRange.region.size);
+        }
+
         m_bindHandles.Clear();
-
-        if (m_pageTable != nullptr)
-        {
-            m_driver->disposer->Dispose(m_pageTable, fence);
-            m_pageTable = nullptr;
-        }
-
-        if (m_rawBuffer != nullptr)
-        {
-            m_driver->disposer->Dispose(m_rawBuffer, fence);
-            m_rawBuffer = nullptr;
-        }
-
-        if (m_mappedBuffer != nullptr && (m_usage & BufferUsage::PersistentStage) != 0)
-        {
-            m_driver->disposer->Dispose(m_mappedBuffer, fence);
-            m_mappedBuffer = nullptr;
-        }
+        m_driver->disposer->Dispose(m_pageTable, fence);
+        m_driver->DisposePooledBuffer(m_rawBuffer, fence);
+        m_driver->stagingBufferCache->Release(m_mappedBuffer, fence);
+        m_pageTable = nullptr;
+        m_rawBuffer = nullptr;
+        m_mappedBuffer = nullptr;
     }
 }

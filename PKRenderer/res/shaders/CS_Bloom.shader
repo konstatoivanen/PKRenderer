@@ -3,6 +3,7 @@
 
 #pragma PROGRAM_COMPUTE
 #include includes/Utilities.glsl
+#include includes/Encoding.glsl
 
 #if defined(PASS_BLUR)
 PK_DECLARE_LOCAL_CBUFFER(_BlurOffset)
@@ -33,7 +34,7 @@ const float sample_weights[17] =
 };
 
 PK_DECLARE_SET_DRAW uniform sampler2D _SourceTex;
-layout(rgba16f, set = PK_SET_DRAW) uniform image2D _DestinationTex;
+layout(r32ui, set = PK_SET_DRAW) uniform uimage2D _DestinationTex;
 
 layout(local_size_x = 16, local_size_y = 4, local_size_z = 1) in;
 void main()
@@ -67,5 +68,5 @@ void main()
 
 #endif
 
-    imageStore(_DestinationTex, coord, float4(color, 1.0f));
+    imageStore(_DestinationTex, coord, uint4(EncodeE5BGR9(color.bgr)));
 }

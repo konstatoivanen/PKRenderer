@@ -20,7 +20,7 @@ namespace PK::Rendering::Objects
 
         switch (api)
         {
-        case APIType::Vulkan: return CreateRef<VulkanTexture>(descriptor, name);
+            case APIType::Vulkan: return CreateRef<VulkanTexture>(descriptor, name);
         }
 
         return nullptr;

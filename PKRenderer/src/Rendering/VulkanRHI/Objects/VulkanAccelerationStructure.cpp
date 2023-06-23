@@ -49,20 +49,9 @@ namespace PK::Rendering::VulkanRHI::Objects
             m_driver->disposer->Dispose(substructures[i].raw, fence);
         }
 
-        if (m_instanceInputBuffer != nullptr)
-        {
-            m_driver->disposer->Dispose(m_instanceInputBuffer, fence);
-        }
-
-        if (m_scratchBuffer != nullptr)
-        {
-            m_driver->disposer->Dispose(m_scratchBuffer, fence);
-        }
-
-        if (m_structureBuffer != nullptr)
-        {
-            m_driver->disposer->Dispose(m_structureBuffer, fence);
-        }
+        m_driver->DisposePooledBuffer(m_instanceInputBuffer, fence);
+        m_driver->DisposePooledBuffer(m_scratchBuffer, fence);
+        m_driver->DisposePooledBuffer(m_structureBuffer, fence);
     }
 
     uint64_t VulkanAccelerationStructure::GetMeshStructureIndex(Mesh* mesh, uint32_t submeshIndex)
@@ -203,13 +192,9 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if (m_scratchBuffer == nullptr || m_scratchBuffer->capacity < scratchSize)
         {
-            if (m_scratchBuffer != nullptr)
-            {
-                m_driver->disposer->Dispose(m_scratchBuffer, m_cmd->GetFenceRef());
-            }
-
+            m_driver->DisposePooledBuffer(m_scratchBuffer, m_cmd->GetFenceRef());
             auto name = m_name + std::string(".ScratchBuffer");
-            m_scratchBuffer = new VulkanRawBuffer(m_driver->device, m_driver->allocator, VulkanBufferCreateInfo(BufferUsage::DefaultStorage, scratchSize), name.c_str());
+            m_scratchBuffer = m_driver->bufferPool.New(m_driver->device, m_driver->allocator, VulkanBufferCreateInfo(BufferUsage::DefaultStorage, scratchSize), name.c_str());
         }
 
         if (m_structureBuffer != nullptr && 
@@ -221,15 +206,11 @@ namespace PK::Rendering::VulkanRHI::Objects
             return;
         }
 
-        if (m_structureBuffer != nullptr)
         {
-            m_driver->disposer->Dispose(m_structureBuffer, m_cmd->GetFenceRef());
-        }
-
-        {
+            m_driver->DisposePooledBuffer(m_structureBuffer, m_cmd->GetFenceRef());
             auto name = m_name + std::string(".StructureBuffer");
             auto createInfo = VulkanBufferCreateInfo(BufferUsage::DefaultAccelerationStructure, bufferSize);
-            m_structureBuffer = new VulkanRawBuffer(m_driver->device, m_driver->allocator, createInfo, name.c_str());
+            m_structureBuffer = m_driver->bufferPool.New(m_driver->device, m_driver->allocator, createInfo, name.c_str());
         }
 
         std::vector<VkAccelerationStructureBuildGeometryInfoKHR> buildGeometryInfos;
@@ -321,15 +302,11 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if (m_instanceInputBuffer == nullptr || m_instanceInputBuffer->capacity < inputBufferSize)
         {
-            if (m_instanceInputBuffer != nullptr)
-            {
-                m_driver->disposer->Dispose(m_instanceInputBuffer, m_cmd->GetFenceRef());
-            }
-
             m_instanceBufferOffset = 0ull;
-            m_instanceInputBuffer = new VulkanRawBuffer(m_driver->device,
+            m_driver->DisposePooledBuffer(m_instanceInputBuffer, m_cmd->GetFenceRef());
+            m_instanceInputBuffer = m_driver->bufferPool.New(m_driver->device,
                 m_driver->allocator,
-                VulkanBufferCreateInfo(BufferUsage::InstanceInput | BufferUsage::DefaultStaging, inputBufferSize),
+                VulkanBufferCreateInfo(BufferUsage::InstanceInput | BufferUsage::DefaultStaging | BufferUsage::PersistentStage, inputBufferSize),
                 (m_name + std::string(".InstanceInputBuffer")).c_str());
         }
 

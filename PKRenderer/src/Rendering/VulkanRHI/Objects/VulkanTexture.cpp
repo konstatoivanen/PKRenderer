@@ -163,6 +163,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         handle->isTracked = IsTracked();
         handle->image.view = VK_NULL_HANDLE;
         handle->image.image = m_rawImage->image;
+        handle->image.alias = m_rawImage->imageAlias;
         handle->image.layout = GetImageLayout();
         handle->image.format = m_rawImage->format;
         handle->image.extent = m_rawImage->extent;
@@ -193,12 +194,14 @@ namespace PK::Rendering::VulkanRHI::Objects
             return m_imageViews.GetValueAtRef(index);
         }
 
+        auto useAlias = mode == TextureBindMode::Image && (m_descriptor.usage & TextureUsage::Aliased) != 0;
+
         VkImageViewCreateInfo info{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
         info.pNext = nullptr;
         info.flags = 0;
-        info.image = m_rawImage->image;
+        info.image = useAlias ? m_rawImage->imageAlias : m_rawImage->image;
         info.viewType = m_viewType;
-        info.format = m_rawImage->format;
+        info.format = mode == TextureBindMode::Image ? EnumConvert::GetImageStorageFormat(m_rawImage->format) : m_rawImage->format; 
         info.components = mode == TextureBindMode::SampledTexture ? m_swizzle : (VkComponentMapping{});
         info.subresourceRange =
         {
@@ -214,8 +217,9 @@ namespace PK::Rendering::VulkanRHI::Objects
         viewValue->bindHandle = m_driver->bindhandlePool.New();
         viewValue->bindHandle->image.view = viewValue->view->view;
         viewValue->bindHandle->image.image = m_rawImage->image;
+        viewValue->bindHandle->image.alias = m_rawImage->imageAlias;
         viewValue->bindHandle->image.layout = GetImageLayout();
-        viewValue->bindHandle->image.format = m_rawImage->format;
+        viewValue->bindHandle->image.format = info.format;
         viewValue->bindHandle->image.extent = m_rawImage->extent;
         viewValue->bindHandle->image.range = info.subresourceRange;
         viewValue->bindHandle->image.samples = m_descriptor.samples;

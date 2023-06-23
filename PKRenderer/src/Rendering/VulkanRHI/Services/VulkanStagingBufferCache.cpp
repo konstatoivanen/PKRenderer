@@ -2,6 +2,7 @@
 #include "VulkanStagingBufferCache.h"
 #include "Utilities/VectorUtilities.h"
 #include "Core/Services/Log.h"
+#include "Rendering/VulkanRHI/VulkanDriver.h"
 
 using namespace PK::Utilities;
 using namespace PK::Rendering::VulkanRHI::Services;
@@ -70,29 +71,59 @@ namespace PK::Rendering::VulkanRHI::Services
         }
     }
 
-    VulkanStagingBuffer* VulkanStagingBufferCache::GetBuffer(size_t size, const FenceRef& fence)
+    VulkanStagingBuffer* VulkanStagingBufferCache::Acquire(size_t size, bool persistent, const char* name)
     {
-        auto index = Vector::LowerBound(m_freeBuffers, (uint32_t)size);
-        auto nextPruneTick = m_currentPruneTick + 1;
+        VulkanStagingBuffer* buffer = nullptr;
 
-        VulkanStagingBuffer* stagingBuffer = nullptr;
-
-        if (index != -1)
+        if (persistent)
         {
-            stagingBuffer = m_freeBuffers.at(index);
-            Vector::OrderedRemoveAt(m_freeBuffers, index);
-            m_activeBuffers.push_back(stagingBuffer);
+            VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size * PK_MAX_FRAMES_IN_FLIGHT);
+            buffer = m_bufferPool.New(m_device, m_allocator, createInfo, (std::string(name) + std::string(".StagingBuffer")).c_str());
         }
         else
         {
-            VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging, size);
-            stagingBuffer = m_bufferPool.New(m_device, m_allocator, createInfo, (std::string("StagingBuffer") + std::to_string(m_currentPruneTick)).c_str());
-            m_activeBuffers.push_back(stagingBuffer);
+            auto index = Vector::LowerBound(m_freeBuffers, (uint32_t)size);
+
+            if (index != -1)
+            {
+                buffer = m_freeBuffers.at(index);
+                Vector::OrderedRemoveAt(m_freeBuffers, index);
+            }
+            else
+            {
+                VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging, size);
+                buffer = m_bufferPool.New(m_device, m_allocator, createInfo, (std::string("StagingBuffer") + std::to_string(m_currentPruneTick)).c_str());
+            }
         }
 
-        stagingBuffer->pruneTick = nextPruneTick;
-        stagingBuffer->fence = fence;
-        return stagingBuffer;
+        buffer->pruneTick = ~0ull;
+        return buffer;
+    }
+
+    void VulkanStagingBufferCache::Release(VulkanStagingBuffer* buffer, const Rendering::Structs::FenceRef& fence)
+    {
+        if (buffer == nullptr)
+        {
+            return;
+        }
+
+        auto nextPruneTick = m_currentPruneTick + 1;
+        buffer->pruneTick = nextPruneTick;
+        buffer->fence = fence;
+
+        if (buffer->persistentmap)
+        {
+            auto deleter = [](void* v)
+            {
+                GraphicsAPI::GetActiveDriver<VulkanDriver>()->stagingBufferCache->m_bufferPool.Delete(reinterpret_cast<VulkanStagingBuffer*>(v));
+            };
+
+            GraphicsAPI::GetActiveDriver<VulkanDriver>()->disposer->Dispose(buffer, deleter, fence);
+        }
+        else
+        {
+            m_activeBuffers.push_back(buffer);
+        }
     }
 
     void VulkanStagingBufferCache::Prune()
