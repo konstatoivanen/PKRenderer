@@ -6,16 +6,16 @@ const float3x3 PK_YCoCgToRGB = float3x3(1.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, 1.0
 const float3x3 PK_RGBToYCoCgR = float3x3(0.25, 1.0, -0.5, 0.5, 0.0, 1.0, 0.25, -1.0, -0.5);
 const float3x3 PK_YCoCgRToRGB = float3x3(1.0, 1.0, 1.0, 0.5, 0.0, -0.5, -0.5, 0.5, -0.5);
 
-#define HDRFactor 8.0
+#define RGBMFactor 8.0
 
-float4 HDREncode(float3 color) 
+float4 RGBMEncodde(float3 color) 
 {
-    color /= HDRFactor;
+    color /= RGBMFactor;
     float alpha = ceil(max(max(color.r, color.g), color.b) * 255.0) / 255.0;
     return float4(color / alpha, alpha);
 }
 
-float3 HDRDecode(float4 hdr) { return float3(hdr.rgb * hdr.a * HDRFactor); }
+float3 RGBMDecode(float4 hdr) { return float3(hdr.rgb * hdr.a * RGBMFactor); }
 
 float2 OctaWrap(float2 v) { return (1.0 - abs(v.yx)) * float2(v.x >= 0.0 ? 1.0 : -1.0, v.y >= 0.0 ? 1.0 : -1.0); }
 

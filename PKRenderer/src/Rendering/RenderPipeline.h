@@ -59,7 +59,9 @@ namespace PK::Rendering
             Utilities::Ref<Objects::ConstantBuffer> m_constantsPostProcess;
             Utilities::Ref<Objects::ConstantBuffer> m_constantsPerFrame;
             Utilities::Ref<Objects::RenderTexture> m_renderTarget;
-            Utilities::Ref<Objects::RenderTexture> m_renderTargetPrevious;
+            Utilities::Ref<Objects::Texture> m_previousColor;
+            Utilities::Ref<Objects::Texture> m_previousNormals;
+            Utilities::Ref<Objects::Texture> m_previousDepth;
             Utilities::Ref<Objects::Texture> m_hierarchicalDepth;
             Objects::Shader* m_OEMBackgroundShader;
             Objects::Shader* m_computeHierachicalDepth;

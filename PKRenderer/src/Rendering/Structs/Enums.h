@@ -193,14 +193,16 @@ namespace PK::Rendering::Structs
         Storage = 0x40,
         Concurrent = 0x80,
         Aliased = 0x100,
+        ReadOnly = 0x200,
+        DefaultDisk = Upload | Sample | ReadOnly,
         Default = Upload | Sample,
         DefaultStorage = Upload | Sample | Storage,
         RTColorSample = RTColor | Sample,
         RTDepthSample = RTDepth | Sample,
 
         ValidRTTypes = RTColor | RTDepth | RTStencil,
-        ValidRTColorUsages = Sample | Storage | Input,
-        ValidRTDepthUsages = Sample | Input,
+        ValidRTColorUsages = Sample | Storage | Input | Concurrent | Aliased,
+        ValidRTDepthUsages = Sample | Input | Concurrent,
     };
 
     enum class RenderableFlags : uint8_t

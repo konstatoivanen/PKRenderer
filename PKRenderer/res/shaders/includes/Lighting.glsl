@@ -35,7 +35,7 @@ float GetLightAnisotropy(float3 viewdir, float3 posToLight, float anistropy)
 //----------INDIRECT SAMPLERS----------//
 float3 SampleEnvironment(float2 uv, float roughness) 
 { 
-    return HDRDecode(tex2DLod(pk_SceneOEM_HDR, uv, roughness * 4)) * pk_SceneOEM_Exposure; 
+    return tex2DLod(pk_SceneOEM_HDR, uv, roughness * 4).rgb * pk_SceneOEM_Exposure; 
 }
 
 float SampleLightShadowmap(uint shadowmapIndex, float2 uv, float lightDistance)

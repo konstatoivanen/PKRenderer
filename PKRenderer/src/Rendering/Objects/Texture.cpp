@@ -41,6 +41,7 @@ namespace PK::Rendering::Objects
             PK_THROW_ERROR(ktxErrorString(result));
         }
 
+        descriptor.usage = TextureUsage::DefaultDisk;
         descriptor.resolution = { ktxTex2->baseWidth, ktxTex2->baseHeight, ktxTex2->baseDepth };
         descriptor.levels = ktxTex2->numLevels;
         descriptor.layers = ktxTex2->numLayers;
@@ -80,26 +81,26 @@ namespace PK::Rendering::Objects
         auto slices = ktxTex2->isCubemap ? ktxTex2->numFaces : descriptor.resolution.z;
 
         for (auto layer = 0u; layer < descriptor.layers; ++layer)
-            for (auto level = 0u; level < descriptor.levels; ++level)
-                for (auto slice = 0u; slice < slices; ++slice)
-                {
-                    ktx_size_t offset;
-                    PK_THROW_ASSERT(ktxTexture_GetImageOffset(ktxTexture(ktxTex2), level, layer, slice, &offset) == KTX_SUCCESS, "Failed to get image buffer offset");
+        for (auto level = 0u; level < descriptor.levels; ++level)
+        for (auto slice = 0u; slice < slices; ++slice)
+        {
+            ktx_size_t offset;
+            PK_THROW_ASSERT(ktxTexture_GetImageOffset(ktxTexture(ktxTex2), level, layer, slice, &offset) == KTX_SUCCESS, "Failed to get image buffer offset");
 
-                    ranges.push_back({});
-                    auto& range = ranges.back();
-                    range.bufferOffset = (uint32_t)offset;
-                    range.level = level;
-                    range.layer = ktxTex2->isCubemap ? ((layer * slices) + slice) : layer;
-                    range.layers = 1;
-                    range.offset = PK::Math::PK_UINT3_ZERO;
-                    range.extent =
-                    {
-                        descriptor.resolution.x > 1 ? descriptor.resolution.x >> level : 1,
-                        descriptor.resolution.y > 1 ? descriptor.resolution.y >> level : 1,
-                        descriptor.resolution.z > 1 ? descriptor.resolution.z >> level : 1
-                    };
-                }
+            ranges.push_back({});
+            auto& range = ranges.back();
+            range.bufferOffset = (uint32_t)offset;
+            range.level = level;
+            range.layer = ktxTex2->isCubemap ? ((layer * slices) + slice) : layer;
+            range.layers = 1;
+            range.offset = PK::Math::PK_UINT3_ZERO;
+            range.extent =
+            {
+                descriptor.resolution.x > 1 ? descriptor.resolution.x >> level : 1,
+                descriptor.resolution.y > 1 ? descriptor.resolution.y >> level : 1,
+                descriptor.resolution.z > 1 ? descriptor.resolution.z >> level : 1
+            };
+        }
 
         GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer)->UploadTexture(this, ktxTextureData, ktxTextureSize, ranges.data(), (uint32_t)ranges.size());
 
@@ -117,7 +118,7 @@ Ref<Texture> AssetImporters::Create()
 
     switch (api)
     {
-    case APIType::Vulkan: return CreateRef<VulkanTexture>();
+        case APIType::Vulkan: return CreateRef<VulkanTexture>();
     }
 
     return nullptr;

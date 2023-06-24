@@ -203,13 +203,15 @@ namespace PK::Rendering::VulkanRHI::Services
 
         for (auto i = 0u; i < m_resources.GetCount(); ++i)
         {
-            // Dont copy unaccessed resources
-            if (!m_transferMask.GetAt(i))
+            auto& key = keyValues.keys[i].key;
+            auto index = target->m_resources.GetIndex(key);
+
+            // Dont override newer data with older one
+            if (index != -1 && target->m_accessTimestamps[index] >= m_accessTimestamps[i])
             {
                 continue;
             }
 
-            auto& key = keyValues.keys[i].key;
             auto current = &keyValues.values[i];
 
             while (current && *current)
@@ -285,7 +287,6 @@ namespace PK::Rendering::VulkanRHI::Services
         }
 
         m_accessMask.Clear();
-        m_transferMask.Clear();
     }
 
 

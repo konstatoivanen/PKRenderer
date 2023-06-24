@@ -3,14 +3,15 @@
 #include includes/Common.glsl
 #include includes/Reconstruction.glsl
 #include includes/SharedPostEffects.glsl
+#include includes/Encoding.glsl
 
 PK_DECLARE_SET_DRAW uniform sampler2D _SourceTex;
 PK_DECLARE_SET_DRAW uniform sampler2D _HistoryReadTex;
-layout(rgba16f, set = PK_SET_DRAW) uniform image2D _DestinationTex;
-layout(rgba16f, set = PK_SET_DRAW) uniform image2D _HistoryWriteTex;
+layout(r32ui, set = PK_SET_DRAW) uniform uimage2D _DestinationTex;
+layout(r32ui, set = PK_SET_DRAW) uniform uimage2D _HistoryWriteTex;
 
-#define SAMPLE_TAA_SOURCE(uv) tex2D(_SourceTex, uv)
-#define SAMPLE_TAA_HISTORY(uv) tex2D(_HistoryReadTex, uv)
+#define SAMPLE_TAA_SOURCE(uv) tex2D(_SourceTex, uv).rgb
+#define SAMPLE_TAA_HISTORY(uv) tex2D(_HistoryReadTex, uv).rgb
 #include includes/SharedTemporalAntialiasing.glsl
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
@@ -35,6 +36,6 @@ void main()
 
     TAAOutput o = SolveTemporalAntiAliasing(desc);
 
-    imageStore(_DestinationTex, coord, o.color);
-    imageStore(_HistoryWriteTex, coord, o.history);
+    imageStore(_DestinationTex, coord, uint4(EncodeE5BGR9(o.color)));
+    imageStore(_HistoryWriteTex, coord, uint4(EncodeE5BGR9(o.history)));
 }

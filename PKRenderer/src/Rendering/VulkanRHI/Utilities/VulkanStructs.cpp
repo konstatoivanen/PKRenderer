@@ -124,8 +124,7 @@ namespace PK::Rendering::VulkanRHI
         image.pQueueFamilyIndices = queueFamilies.indices;
         image.queueFamilyIndexCount = queueFamilies.count;
         allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-        aspect = (VkImageAspectFlagBits)0;
-
+        aspect = EnumConvert::GetFormatAspect(image.format);
 
         if (descriptor.samplerType == SamplerType::Cubemap ||
             descriptor.samplerType == SamplerType::CubemapArray)
@@ -136,6 +135,7 @@ namespace PK::Rendering::VulkanRHI
         if ((descriptor.usage & TextureUsage::Aliased) != 0)
         {
             image.flags |= VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_ALIAS_BIT;
+            allocation.flags |= VMA_ALLOCATION_CREATE_CAN_ALIAS_BIT;
             // Set VK_IMAGE_CREATE_ALIAS_BIT  for block compressed formats
         }
 
@@ -161,7 +161,6 @@ namespace PK::Rendering::VulkanRHI
 
         if ((descriptor.usage & TextureUsage::RTStencil) != 0)
         {
-            aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
             image.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         }
 
@@ -172,13 +171,7 @@ namespace PK::Rendering::VulkanRHI
 
         if ((descriptor.usage & TextureUsage::RTDepth) != 0)
         {
-            aspect = (VkImageAspectFlagBits)((uint32_t)aspect | (uint32_t)VK_IMAGE_ASPECT_DEPTH_BIT);
             image.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        }
-
-        if (aspect == (VkImageAspectFlagBits)0)
-        {
-            aspect = VK_IMAGE_ASPECT_COLOR_BIT;
         }
     }
 

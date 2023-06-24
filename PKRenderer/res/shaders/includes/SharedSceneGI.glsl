@@ -17,7 +17,7 @@ PK_DECLARE_CBUFFER(pk_GI_Parameters, PK_SET_SHADER)
 layout(r32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_RayHits;
 layout(rg32ui, set = PK_SET_SHADER) uniform writeonly uimage2DArray pk_GI_ScreenDataWrite;
 layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_GI_VolumeMaskWrite;
-layout(rgba16, set = PK_SET_SHADER) uniform image3D pk_GI_VolumeWrite;
+layout(rgba16f, set = PK_SET_SHADER) uniform image3D pk_GI_VolumeWrite;
 PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataMips;
 PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;

@@ -45,7 +45,19 @@ namespace PK::Rendering
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
         m_renderTarget = CreateRef<RenderTexture>(descriptor, "Scene.RenderTarget");
-        m_renderTargetPrevious = CreateRef<RenderTexture>(descriptor, "Scene.RenderTarget.Previous");
+
+        TextureDescriptor prevDesc{};
+        prevDesc.format = TextureFormat::B10G11R11UF; // @TODO refactor to use RGB9E5 as this has very poor bit depth. needs a compute copy pass to work as RGB9E5 is not blittable.
+        prevDesc.sampler.filterMin = FilterMode::Bilinear;
+        prevDesc.sampler.filterMag = FilterMode::Bilinear;
+        prevDesc.resolution = descriptor.resolution;
+        m_previousColor = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Color0");
+        
+        prevDesc.format = TextureFormat::RGB10A2;
+        m_previousNormals = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Color1");
+        
+        prevDesc.format = TextureFormat::Depth32F;
+        m_previousDepth = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Depth");
 
         TextureDescriptor hizDesc{};
         hizDesc.samplerType = SamplerType::Sampler2DArray;
@@ -241,15 +253,17 @@ namespace PK::Rendering
             m_constantsPerFrame->Set<uint2>(hash->pk_FrameIndex, { m_resizeFrameIndex, 0u });
         }
 
-        m_renderTargetPrevious->Validate(resolution);
+        m_previousColor->Validate(resolution);
+        m_previousNormals->Validate(resolution);
+        m_previousDepth->Validate(resolution);
         m_hierarchicalDepth->Validate({ resolution.x, resolution.y, 1u });
 
         GraphicsAPI::SetTexture(hash->pk_ScreenDepthCurrent, m_renderTarget->GetDepth());
         GraphicsAPI::SetTexture(hash->pk_ScreenDepthHierachical, m_hierarchicalDepth.get());
         GraphicsAPI::SetTexture(hash->pk_ScreenNormalsCurrent, m_renderTarget->GetColor(1));
-        GraphicsAPI::SetTexture(hash->pk_ScreenDepthPrevious, m_renderTargetPrevious->GetDepth());
-        GraphicsAPI::SetTexture(hash->pk_ScreenNormalsPrevious, m_renderTargetPrevious->GetColor(1));
-        GraphicsAPI::SetTexture(hash->pk_ScreenColorPrevious, m_renderTargetPrevious->GetColor(0));
+        GraphicsAPI::SetTexture(hash->pk_ScreenDepthPrevious, m_previousDepth.get());
+        GraphicsAPI::SetTexture(hash->pk_ScreenNormalsPrevious, m_previousNormals.get());
+        GraphicsAPI::SetTexture(hash->pk_ScreenColorPrevious, m_previousColor.get());
 
         auto cascadeZSplits = m_passLights.GetCascadeZSplits(m_znear, m_zfar);
         m_constantsPerFrame->Set<float4>(hash->pk_ShadowCascadeZSplits, reinterpret_cast<float4*>(cascadeZSplits.planes));
@@ -337,7 +351,7 @@ namespace PK::Rendering
         // @TODO Add trasparent forward stuff here
 
         // Cache forward output of current frame
-        cmdgraphics->Blit(m_renderTarget->GetColor(0u), m_renderTargetPrevious->GetColor(0u), {}, {}, FilterMode::Point);
+        cmdgraphics->Blit(m_renderTarget->GetColor(0u), m_previousColor.get(), {}, {}, FilterMode::Point);
 
         // Post Effects
         cmdgraphics->BeginDebugScope("PostEffects", PK_COLOR_YELLOW);
@@ -350,8 +364,8 @@ namespace PK::Rendering
         queues->Submit(QueueType::Graphics, &cmdgraphics);
 
         // Blit to window
-        cmdgraphics->Blit(m_renderTarget->GetDepth(), m_renderTargetPrevious->GetDepth(), {}, {}, FilterMode::Point);
-        cmdgraphics->Blit(m_renderTarget->GetColor(1), m_renderTargetPrevious->GetColor(1), {}, {}, FilterMode::Point);
+        cmdgraphics->Blit(m_renderTarget->GetDepth(), m_previousDepth.get(), {}, {}, FilterMode::Point);
+        cmdgraphics->Blit(m_renderTarget->GetColor(1), m_previousNormals.get(), {}, {}, FilterMode::Point);
         cmdgraphics->Blit(m_renderTarget->GetColor(0), window, FilterMode::Bilinear);
     }
 

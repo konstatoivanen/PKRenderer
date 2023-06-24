@@ -16,7 +16,7 @@ namespace PK::Rendering::Passes
         m_computeTAA = assetDatabase->Find<Shader>("CS_TemporalAntialiasing");
 
         TextureDescriptor descriptor{};
-        descriptor.format = TextureFormat::RGBA16F;
+        descriptor.format = TextureFormat::RGB9E5;
         descriptor.resolution.x = initialWidth * 2;
         descriptor.resolution.y = initialHeight * 2;
         descriptor.layers = 1 + PK_MAX_FRAMES_IN_FLIGHT;
@@ -25,7 +25,7 @@ namespace PK::Rendering::Passes
         descriptor.sampler.wrap[0] = WrapMode::Clamp;
         descriptor.sampler.wrap[1] = WrapMode::Clamp;
         descriptor.sampler.wrap[2] = WrapMode::Clamp;
-        descriptor.usage = TextureUsage::Default | TextureUsage::Storage;
+        descriptor.usage = TextureUsage::Default | TextureUsage::Storage | TextureUsage::Aliased;
         m_renderTarget = Texture::Create(descriptor, "TAA.HistoryTexture");
     }
 

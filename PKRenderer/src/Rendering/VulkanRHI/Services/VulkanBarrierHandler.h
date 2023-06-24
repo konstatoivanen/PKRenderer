@@ -86,13 +86,13 @@ namespace PK::Rendering::VulkanRHI::Services
                     auto defaultRecord = m_records.New(scope);
                     TInfo<T>::SetDefaultRange(defaultRecord);
                     m_resources.AddValue(key, defaultRecord);
+                    m_accessTimestamps[index] = 0ull;
                     index = m_resources.GetCount() - 1;
                 }
 
-                m_transferMask.SetAt(index, (options & PK_ACCESS_OPT_TRANSFER) == 0u);
-
                 if ((options & PK_ACCESS_OPT_TRANSFER) == 0u)
                 {
+                    m_accessTimestamps[index] = m_globalAccessCounter++;
                     m_accessMask.SetAt(index, true);
                 }
 
@@ -228,8 +228,9 @@ namespace PK::Rendering::VulkanRHI::Services
             PK::Utilities::FixedList<VkBufferMemoryBarrier, 256> m_bufferBarriers;
             PK::Utilities::FixedList<VkImageMemoryBarrier, 256> m_imageBarriers;
             PK::Utilities::Bitmask<1024> m_accessMask;
-            PK::Utilities::Bitmask<1024> m_transferMask;
+            size_t m_accessTimestamps[1024]{};
             VkPipelineStageFlags m_sourceStage = 0u;
             VkPipelineStageFlags m_destinationStage = 0u;
+            inline static size_t m_globalAccessCounter = 0ull;
     };
 }

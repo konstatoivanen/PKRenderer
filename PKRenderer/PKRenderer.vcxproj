@@ -854,6 +854,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\ClusterIndexing.glsl" />
     <None Include="res\shaders\includes\Common.glsl" />
     <None Include="res\shaders\includes\Constants.glsl" />
+    <None Include="res\shaders\CS_CompressBC6H.shader" />
     <None Include="res\shaders\includes\Encoding.glsl" />
     <None Include="res\shaders\includes\BRDF.glsl" />
     <None Include="res\shaders\includes\Kernels.glsl" />

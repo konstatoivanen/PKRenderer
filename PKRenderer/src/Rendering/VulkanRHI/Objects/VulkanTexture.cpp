@@ -195,12 +195,10 @@ namespace PK::Rendering::VulkanRHI::Objects
             return v;
         }
 
-        auto useAlias = mode == TextureBindMode::Image && (m_descriptor.usage & TextureUsage::Aliased) != 0;
-
         VkImageViewCreateInfo info{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
         info.pNext = nullptr;
         info.flags = 0;
-        info.image = useAlias ? m_rawImage->imageAlias : m_rawImage->image;
+        info.image = mode == TextureBindMode::Image && (m_descriptor.usage & TextureUsage::Aliased) != 0 ? m_rawImage->imageAlias : m_rawImage->image;
         info.viewType = m_viewType;
         info.format = mode == TextureBindMode::Image ? EnumConvert::GetImageStorageFormat(m_rawImage->format) : m_rawImage->format; 
         info.components = mode == TextureBindMode::SampledTexture ? m_swizzle : (VkComponentMapping{});

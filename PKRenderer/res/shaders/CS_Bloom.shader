@@ -68,5 +68,5 @@ void main()
 
 #endif
 
-    imageStore(_DestinationTex, coord, uint4(EncodeE5BGR9(color.bgr)));
+    imageStore(_DestinationTex, coord, uint4(EncodeE5BGR9(color)));
 }

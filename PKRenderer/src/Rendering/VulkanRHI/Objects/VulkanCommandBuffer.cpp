@@ -245,15 +245,12 @@ namespace PK::Rendering::VulkanRHI::Objects
         blitRegion.dstSubresource = { (uint32_t)srcHandle.image.range.aspectMask, dstHandle.image.range.baseMipLevel, srcHandle.image.range.baseArrayLayer, dstHandle.image.range.layerCount };
         blitRegion.srcOffsets[1] = { (int)srcHandle.image.extent.width, (int)srcHandle.image.extent.height, (int)srcHandle.image.extent.depth };
         blitRegion.dstOffsets[1] = { (int)dstHandle.image.extent.width, (int)dstHandle.image.extent.height, (int)dstHandle.image.extent.depth };
+        blitRegion.dstSubresource.layerCount = blitRegion.srcSubresource.layerCount = glm::min(blitRegion.srcSubresource.layerCount, blitRegion.dstSubresource.layerCount);
         Blit(&srcHandle, &dstHandle, blitRegion, filter);
     }
 
     void VulkanCommandBuffer::Blit(const VulkanBindHandle* src, const VulkanBindHandle* dst, const VkImageBlit& blitRegion, FilterMode filter)
     {
-        VkImageResolve resolveRegion{};
-        resolveRegion.srcSubresource = { (uint32_t)src->image.range.aspectMask, blitRegion.srcSubresource.mipLevel, blitRegion.srcSubresource.baseArrayLayer, blitRegion.srcSubresource.layerCount };
-        resolveRegion.dstSubresource = { (uint32_t)dst->image.range.aspectMask, blitRegion.dstSubresource.mipLevel, blitRegion.dstSubresource.baseArrayLayer, blitRegion.dstSubresource.layerCount };
-        resolveRegion.extent = src->image.extent;
         m_renderState->RecordImage(src, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
         m_renderState->RecordImage(dst, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0u, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
         m_renderState->RecordImage(dst, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -263,6 +260,10 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if (src->image.samples > 1 && dst->image.samples == 1)
         {
+            VkImageResolve resolveRegion{};
+            resolveRegion.srcSubresource = { (uint32_t)src->image.range.aspectMask, blitRegion.srcSubresource.mipLevel, blitRegion.srcSubresource.baseArrayLayer, blitRegion.srcSubresource.layerCount };
+            resolveRegion.dstSubresource = { (uint32_t)dst->image.range.aspectMask, blitRegion.dstSubresource.mipLevel, blitRegion.dstSubresource.baseArrayLayer, blitRegion.dstSubresource.layerCount };
+            resolveRegion.extent = src->image.extent;
             vkCmdResolveImage(m_commandBuffer, src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &resolveRegion);
         }
         else
@@ -318,7 +319,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::UploadTexture(Texture* texture, const void* data, size_t size, Structs::ImageUploadRange* ranges, uint32_t rangeCount)
     {
-        PK_THROW_ASSERT(texture->GetUsage() == TextureUsage::Default, "Texture upload is only supported for sampled | upload textures!");
+        PK_THROW_ASSERT(texture->GetUsage() == TextureUsage::DefaultDisk, "Texture upload is only supported for sampled | upload | readonly textures!");
 
         auto vkTexture = texture->GetNative<VulkanTexture>();
         auto layout = vkTexture->GetImageLayout();
@@ -355,7 +356,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::UploadTexture(Texture* texture, const void* data, size_t size, uint32_t level, uint32_t layer)
     {
-        PK_THROW_ASSERT(texture->GetUsage() == TextureUsage::Default, "Texture upload is only supported for sampled | upload textures!");
+        PK_THROW_ASSERT(texture->GetUsage() == TextureUsage::DefaultDisk, "Texture upload is only supported for sampled | upload | readonly textures!");
 
         auto vkTexture = texture->GetNative<VulkanTexture>();
         auto extent = vkTexture->GetRaw()->extent;
@@ -434,29 +435,29 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         switch (dstLayout)
         {
-        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-            imageBarrier.srcAccessMask = 0;
-            imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            barrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            break;
+            case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+                imageBarrier.srcAccessMask = 0;
+                imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                barrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                break;
 
-        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-            imageBarrier.srcAccessMask = 0;
-            imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-            barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            barrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            break;
+            case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+                imageBarrier.srcAccessMask = 0;
+                imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                barrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                break;
 
-        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-        case VK_IMAGE_LAYOUT_GENERAL:
-            imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            imageBarrier.dstAccessMask = 0u;
-            barrier.srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-            break;
-        default:
-            PK_THROW_ERROR("Unsupported layout transition!");
+            case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            case VK_IMAGE_LAYOUT_GENERAL:
+                imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                imageBarrier.dstAccessMask = 0u;
+                barrier.srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+                break;
+            default:
+                PK_THROW_ERROR("Unsupported layout transition!");
         }
 
         EndRenderPass();
