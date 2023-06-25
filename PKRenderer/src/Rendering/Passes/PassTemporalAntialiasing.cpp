@@ -19,7 +19,7 @@ namespace PK::Rendering::Passes
         descriptor.format = TextureFormat::RGB9E5;
         descriptor.resolution.x = initialWidth * 2;
         descriptor.resolution.y = initialHeight * 2;
-        descriptor.layers = 1 + PK_MAX_FRAMES_IN_FLIGHT;
+        descriptor.layers = 2;
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
         descriptor.sampler.wrap[0] = WrapMode::Clamp;
@@ -35,9 +35,9 @@ namespace PK::Rendering::Passes
 
         auto hash = HashCache::Get();
 
-        uint16_t historyRead = 1u + m_historyLayerIndex++;
-        m_historyLayerIndex %= PK_MAX_FRAMES_IN_FLIGHT;
-        uint16_t historyWrite = 1u + m_historyLayerIndex;
+        uint16_t historyRead = m_historyLayerIndex++;
+        m_historyLayerIndex %= 2;
+        uint16_t historyWrite = m_historyLayerIndex;
 
         auto resolution = source->GetResolution();
         resolution.x *= 2;
@@ -47,10 +47,9 @@ namespace PK::Rendering::Passes
 
         GraphicsAPI::SetTexture(hash->_SourceTex, source->GetColor(0u), { 0, 0, 1u, 1u });
         GraphicsAPI::SetTexture(hash->_HistoryReadTex, m_renderTarget.get(), { 0, historyRead, 1u, 1u });
-        GraphicsAPI::SetImage(hash->_DestinationTex, m_renderTarget.get(), { 0, 0, 1u, 1u });
         GraphicsAPI::SetImage(hash->_HistoryWriteTex, m_renderTarget.get(), { 0, historyWrite, 1u, 1u });
         cmd->Dispatch(m_computeTAA, { resolution.x, resolution.y, 1u });
-        cmd->Blit(m_renderTarget.get(), source->GetColor(0), { 0, 0, 1u, 1u }, { 0, 0, 1u, 1u }, FilterMode::Bilinear);
+        cmd->Blit(m_renderTarget.get(), source->GetColor(0), { 0, historyWrite, 1u, 1u }, { 0, 0, 1u, 1u }, FilterMode::Bilinear);
 
         cmd->EndDebugScope();
 

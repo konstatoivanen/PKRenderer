@@ -57,9 +57,9 @@ bool IntersectionTest(uint lightIndex)
 {
     switch (sharedLights[lightIndex].type)
     {
-    case LIGHT_TYPE_POINT: return IntersectPointLight(lightIndex);
-    case LIGHT_TYPE_SPOT: return IntersectPointLight(lightIndex) && IntersectSpotLight(lightIndex);
-    case LIGHT_TYPE_DIRECTIONAL: return true;
+        case LIGHT_TYPE_POINT: return IntersectPointLight(lightIndex);
+        case LIGHT_TYPE_SPOT: return IntersectPointLight(lightIndex) && IntersectSpotLight(lightIndex);
+        case LIGHT_TYPE_DIRECTIONAL: return true;
     }
 
     return false;

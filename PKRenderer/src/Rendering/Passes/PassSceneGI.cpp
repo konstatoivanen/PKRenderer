@@ -148,7 +148,7 @@ namespace PK::Rendering::Passes
         cmd->EndDebugScope();
     }
 
-    void PassSceneGI::RenderVoxels(CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup)
+    void PassSceneGI::Preprocess(CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup)
     {
         cmd->BeginDebugScope("SceneGI.Preprocess", PK_COLOR_GREEN);
 

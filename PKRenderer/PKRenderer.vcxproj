@@ -851,6 +851,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_VolumeFogScatter.shader" />
     <None Include="res\shaders\includes\Blit.glsl" />
     <None Include="res\shaders\includes\BlueNoise.glsl" />
+    <None Include="res\shaders\includes\CTASwizzling.glsl" />
     <None Include="res\shaders\includes\ClusterIndexing.glsl" />
     <None Include="res\shaders\includes\Common.glsl" />
     <None Include="res\shaders\includes\Constants.glsl" />

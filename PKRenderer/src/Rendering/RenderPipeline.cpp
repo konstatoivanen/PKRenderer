@@ -305,10 +305,7 @@ namespace PK::Rendering
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         cmdgraphics->ClearDepth(1.0f, 0u);
         m_passGeometry.RenderGBuffer(cmdgraphics);
-
-        // Compute HiZ
         ComputeHierarchicalDepth(cmdgraphics);
-
         queues->Submit(QueueType::Graphics, &cmdgraphics);
 
         m_passFilmGrain.Compute(cmdcompute);
@@ -326,8 +323,8 @@ namespace PK::Rendering
         // Wait for light list build instead of depth tile pass
         queues->Sync(QueueType::Compute, QueueType::Graphics, -1);
 
-        // Voxelize scene
-        m_passSceneGI.RenderVoxels(cmdgraphics, &m_batcher, m_passGeometry.GetPassGroup());
+        // Voxelize scene & reproject gi
+        m_passSceneGI.Preprocess(cmdgraphics, &m_batcher, m_passGeometry.GetPassGroup());
         queues->Submit(QueueType::Graphics, &cmdgraphics);
         queues->Sync(QueueType::Graphics, QueueType::Compute);
         queues->Sync(QueueType::Compute, QueueType::Graphics);
@@ -338,14 +335,8 @@ namespace PK::Rendering
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         m_passGeometry.RenderForward(cmdgraphics);
         cmdgraphics->Blit(m_OEMBackgroundShader);
-        queues->Submit(QueueType::Graphics, &cmdgraphics);
 
-        // Compute voxel volumes on async queue
-        m_passVolumeFog.Compute(cmdcompute, m_renderTarget->GetResolution());
-        queues->Submit(QueueType::Compute, &cmdcompute);
-        queues->Sync(QueueType::Compute, QueueType::Graphics);
-
-        // Forward Transparent on graphics queue
+        m_passVolumeFog.Compute(cmdgraphics, m_renderTarget->GetResolution());
         m_passVolumeFog.Render(cmdgraphics, m_renderTarget.get());
 
         // @TODO Add trasparent forward stuff here

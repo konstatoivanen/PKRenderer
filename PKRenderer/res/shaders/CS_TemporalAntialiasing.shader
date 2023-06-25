@@ -7,7 +7,6 @@
 
 PK_DECLARE_SET_DRAW uniform sampler2D _SourceTex;
 PK_DECLARE_SET_DRAW uniform sampler2D _HistoryReadTex;
-layout(r32ui, set = PK_SET_DRAW) uniform uimage2D _DestinationTex;
 layout(r32ui, set = PK_SET_DRAW) uniform uimage2D _HistoryWriteTex;
 
 #define SAMPLE_TAA_SOURCE(uv) tex2D(_SourceTex, uv).rgb
@@ -35,7 +34,5 @@ void main()
     desc.motionAmplification = pk_TAA_MotionAmplification;
 
     TAAOutput o = SolveTemporalAntiAliasing(desc);
-
-    imageStore(_DestinationTex, coord, uint4(EncodeE5BGR9(o.color)));
-    imageStore(_HistoryWriteTex, coord, uint4(EncodeE5BGR9(o.history)));
+    imageStore(_HistoryWriteTex, coord, uint4(EncodeE5BGR9(o.color)));
 }

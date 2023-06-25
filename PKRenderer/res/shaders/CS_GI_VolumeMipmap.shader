@@ -14,12 +14,12 @@ shared float4 lds_Data[GROUP_SIZE * GROUP_SIZE * GROUP_SIZE];
 layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = GROUP_SIZE) in;
 void main()
 {
-    uint thread = gl_LocalInvocationIndex;
-    uint3 localCoord = gl_LocalInvocationID;
-    uint3 baseSize = uint3(textureSize(_SourceTex, 0).xyz);
-    uint3 levelSize = gl_NumWorkGroups.xyz * gl_WorkGroupSize.xyz;
-    int level = int(log2(float(baseSize.x)) - log2(float(levelSize.x))) - 1;
-    float3 uvw = (float3(gl_GlobalInvocationID)+0.5f.xxx) / float3(levelSize);
+    const uint thread = gl_LocalInvocationIndex;
+    const uint3 localCoord = gl_LocalInvocationID;
+    const uint3 baseSize = uint3(textureSize(_SourceTex, 0).xyz);
+    const uint3 levelSize = gl_NumWorkGroups.xyz * gl_WorkGroupSize.xyz;
+    const int level = int(log2(float(baseSize.x)) - log2(float(levelSize.x))) - 1;
+    const float3 uvw = (gl_GlobalInvocationID + 1.0f.xxx) / levelSize;
 
     float4 local = lds_Data[thread] = tex2DLod(_SourceTex, uvw, level);
     imageStore(_DestinationTex, int3(gl_GlobalInvocationID), local);

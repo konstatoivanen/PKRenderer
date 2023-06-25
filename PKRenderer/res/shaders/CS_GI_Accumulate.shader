@@ -3,6 +3,7 @@
 #include includes/Lighting.glsl
 #include includes/SharedSceneGI.glsl
 #include includes/Reconstruction.glsl
+#include includes/CTASwizzling.glsl
 
 float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direction, const float dist, bool isMiss, const float roughness)
 {
@@ -44,11 +45,23 @@ float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direct
     return voxel.rgb / max(voxel.a, 1e-2f);
 }
 
+uint2 GetSwizzledThreadID()
+{
+    return ThreadGroupTilingX
+    (
+        gl_NumWorkGroups.xy,
+        uint2(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8),
+        8u,
+        gl_LocalInvocationID.xy,
+        gl_WorkGroupID.xy
+    );
+}
+
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
     const int2 size = int2(pk_ScreenSize.xy);
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
+    const int2 coord = int2(GetSwizzledThreadID());
     const float depth = SampleLinearDepth(coord);
 
     if (!Test_DepthFar(depth))

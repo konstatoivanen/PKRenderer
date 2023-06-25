@@ -33,6 +33,9 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 #define PK_GI_AO_SPEC_MAX_DISTANCE 1.0f
 #define PK_GI_AO_DIFF_POWER 0.25f
 #define PK_GI_AO_SPEC_POWER 0.4f
+#define PK_GI_MIN_ROUGH_SPEC 0.4f
+#define PK_GI_MAX_ROUGH_SPEC 0.5f
+#define PK_GI_APPROX_ROUGH_SPEC 0
 #define PK_GI_MAX_HISTORY 256u
 #define PK_GI_MIN_VXHISTORY 32.0
 #define PK_GI_SCREEN_MAX_MIP 4
@@ -204,6 +207,12 @@ float3 GI_Sample_Diffuse(const float2 uv, const float3 N)
 {
     const GISampleDiff s_diff = GI_Load_SampleDiff(int2(uv * pk_ScreenSize.xy));
     return SHToIrradiance(s_diff.sh, N, pk_GI_ChromaBias);
+}
+
+float3 GI_Sample_Specular(const float2 uv, const float3 N)
+{
+    const GISampleSpec s_spec = GI_Load_SampleSpec(int2(uv * pk_ScreenSize.xy));
+    return s_spec.radiance;
 }
 
 void GI_Sample_Lighting(const float2 uv, const float3 N, const float3 V, const float R, inout float3 diffuse, inout float3 specular) 

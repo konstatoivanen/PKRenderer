@@ -242,7 +242,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         VkImageBlit blitRegion{};
         blitRegion.srcSubresource = { (uint32_t)srcHandle.image.range.aspectMask, srcHandle.image.range.baseMipLevel, srcHandle.image.range.baseArrayLayer, srcHandle.image.range.layerCount };
-        blitRegion.dstSubresource = { (uint32_t)srcHandle.image.range.aspectMask, dstHandle.image.range.baseMipLevel, srcHandle.image.range.baseArrayLayer, dstHandle.image.range.layerCount };
+        blitRegion.dstSubresource = { (uint32_t)srcHandle.image.range.aspectMask, dstHandle.image.range.baseMipLevel, dstHandle.image.range.baseArrayLayer, dstHandle.image.range.layerCount };
         blitRegion.srcOffsets[1] = { (int)srcHandle.image.extent.width, (int)srcHandle.image.extent.height, (int)srcHandle.image.extent.depth };
         blitRegion.dstOffsets[1] = { (int)dstHandle.image.extent.width, (int)dstHandle.image.extent.height, (int)dstHandle.image.extent.depth };
         blitRegion.dstSubresource.layerCount = blitRegion.srcSubresource.layerCount = glm::min(blitRegion.srcSubresource.layerCount, blitRegion.dstSubresource.layerCount);

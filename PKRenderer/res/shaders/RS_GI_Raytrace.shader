@@ -104,6 +104,14 @@ void main()
         GIRayDirections directions = GI_GetRayDirections(coord, N, V, NR.w);
         GIRayHits hits;
         
+#if PK_GI_APPROX_ROUGH_SPEC == 1
+        if (NR.w >= PK_GI_MAX_ROUGH_SPEC)
+        {
+            hits.distSpec = uintBitsToFloat(0xFFFFFFFFu);
+            hits.isMissSpec = true;
+        }
+        else
+#endif
         {
             const uint result = SSRTRay(O, directions.spec, uv, depth, hits.distSpec);
             hits.isMissSpec = result != RT_HIT;

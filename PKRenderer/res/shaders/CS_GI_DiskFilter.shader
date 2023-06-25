@@ -6,6 +6,24 @@
 #include includes/Kernels.glsl
 #include includes/BRDF.glsl
 
+void ApproximateRoughSpecular(inout GISampleFull filtered, const float3 N, const float3 V, const float R)
+{
+#if PK_GI_APPROX_ROUGH_SPEC == 1
+    float sh_prime_dir_len = length(filtered.diff.sh.Y.wyz);
+    float3 sh_prime_dir = filtered.diff.sh.Y.wyz / sh_prime_dir_len;
+
+    float directionality = sh_prime_dir_len / (filtered.diff.sh.Y.x + 1e-6f);
+    float roughness = lerp(1.0f, R, saturate(directionality * 0.666f));
+    roughness = sqrt(roughness); // Sample distribution used wrong roughness scale. correct this based on that. :/
+
+    const float3 s_color = SHToColor(filtered.diff.sh) * 2.71f * pk_L1Basis_Irradiance.x;
+    const float3 specular = s_color * BRDF_GGX_SPECULAR(roughness, sh_prime_dir, V, N);
+    const float inter = smoothstep(PK_GI_MIN_ROUGH_SPEC, PK_GI_MAX_ROUGH_SPEC, R);
+
+    filtered.spec.radiance = lerp(filtered.spec.radiance, specular, smoothstep(0.4f, 0.5f, R));
+#endif
+}
+
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void main()
 {
@@ -24,12 +42,8 @@ void main()
     const float R = NR.w;
     const float3 O = SampleWorldPosition(coord, size, depth);
     const float3 V = normalize(O - pk_WorldSpaceCameraPos.xyz);
-   
-    const float3 s_dir = SHToDominantDir(filtered.diff.sh);
-    const float3 s_color = SHToIrradiance(filtered.diff.sh, s_dir, pk_GI_ChromaBias);
-    const float3 specular = BRDF_GGX_SPECULAR(s_color, R, s_dir, V, N) * saturate(dot(N, s_dir));
 
-    //filtered.spec.radiance = lerp(filtered.spec.radiance, specular, 1.0f / max(1.0f, filtered.meta.historyDiff * 4.0f));
+    ApproximateRoughSpecular(filtered, N, V, R);
 
     /*
     SH c_diff = GI_Load_SH(coord, PK_GI_DIFF_LVL);

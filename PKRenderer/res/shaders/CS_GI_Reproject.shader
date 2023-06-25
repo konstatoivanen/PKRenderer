@@ -61,7 +61,7 @@ void main()
     const float NoV = dot(normal, -normalize(viewpos.xyz));
     const float maxSpecHistory = PK_GI_MAX_HISTORY;// GetMaxSpecularHistory(normalRoughness.w, NoV, parallax);
 
-    const float2 uvPrev = ClipToUVW(mul(pk_MATRIX_LD_P, viewpos)).xy * size - 0.5.xx;
+    const float2 uvPrev = ClipToUVW(mul(pk_MATRIX_LD_P, viewpos)).xy * size - 0.49f.xx; // Bias to prevent drifting effect.
     const int2 coordPrev = int2(uvPrev);
     const float2 ddxy = uvPrev - coordPrev;
 

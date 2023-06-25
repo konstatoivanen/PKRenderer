@@ -2018,6 +2018,7 @@
     <None Include="res\shaders\CS_GI_ScreenMip.shader" />
     <None Include="res\shaders\CS_HierachicalDepth.shader" />
     <None Include="res\shaders\CS_CompressBC6H.shader" />
+    <None Include="res\shaders\includes\CTASwizzling.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

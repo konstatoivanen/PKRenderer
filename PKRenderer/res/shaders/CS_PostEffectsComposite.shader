@@ -45,7 +45,7 @@ void main()
     if (uv.x > 0.5)
     {
         float3 normal = SampleWorldNormal(uv);
-        float3 diff = GI_Sample_Diffuse(uv, normal) * 4.0f;
+        float3 diff = GI_Sample_Specular(uv, normal) * 4.0f;
        // GIRayHits hits = GI_Load_RayHits(coord);
       //  color = diff; //hits.isMissSpec ? 0.0f.xxx : 1.0f.xxx;// diff;
     }

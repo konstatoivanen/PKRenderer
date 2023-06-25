@@ -16,7 +16,7 @@ namespace PK::Rendering::Passes
             void PreRender(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
             void PruneVoxels(Objects::CommandBuffer* cmd);
             void DispatchRays(Objects::CommandBuffer* cmd);
-            void RenderVoxels(Objects::CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup);
+            void Preprocess(Objects::CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup);
             void RenderGI(Objects::CommandBuffer* cmd);
 
         private:

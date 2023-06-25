@@ -78,7 +78,14 @@ float TDF_Dice(float3 viewdir, float3 lightdir, float3 normal, float3 subsurface
     return pow(saturate(dot(viewdir, -(lightdir + normal * subsurface.x))), subsurface.y) * subsurface.z;
 }
 
-float3 BRDF_GGX_SPECULAR(const float3 specular, float roughness, const float3 lightdir, const float3 viewdir, const float3 normal)
+float3 GGX_DominantDirection(float3 normal, float3 reflection, float NdotV, float roughness)
+{
+	float smoothness = saturate(1.0f - roughness);
+	float factor = smoothness * (sqrt(smoothness) + roughness);
+	return normalize(lerp(normal, reflection,factor));
+}
+
+float BRDF_GGX_SPECULAR(float roughness, const float3 lightdir, const float3 viewdir, const float3 normal)
 {
     const float3 halfdir = normalize(viewdir + lightdir);
 
@@ -92,7 +99,7 @@ float3 BRDF_GGX_SPECULAR(const float3 specular, float roughness, const float3 li
     const float D = NDF_GGX(ldots.z, roughness);
     const float G = GSF_SmithGGX(ldots.x, ldots.y, roughness);
 
-    return D * G * FresnelTerm(specular, ldots.w);
+    return D * G * ldots.y;// * FresnelTerm(specular, ldots.w); Fresnel is handled by BRDF_PBS_DEFAULT_INDIRECT
 }
 
 void INIT_BRDF_CACHE(float3 diffuse, 
