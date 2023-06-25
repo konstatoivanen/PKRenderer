@@ -105,6 +105,7 @@ void main()
     }
 
     // Try to find valid samples with a bilateral cross filter
+    /*
     if (wSum <= 1e-4f)
     {
         wSum = 0.0f;
@@ -136,6 +137,7 @@ void main()
             }
         }
     }
+    */
 
     // Normalize weights
     if (wSum > 1e-4f)
