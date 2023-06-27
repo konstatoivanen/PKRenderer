@@ -47,7 +47,7 @@ void main()
         float3 normal = SampleWorldNormal(uv);
         float3 diff = GI_Sample_Specular(uv, normal) * 4.0f;
        // GIRayHits hits = GI_Load_RayHits(coord);
-      //  color = diff; //hits.isMissSpec ? 0.0f.xxx : 1.0f.xxx;// diff;
+        color = diff; //hits.isMissSpec ? 0.0f.xxx : 1.0f.xxx;// diff;
     }
 
     imageStore(_MainTex, coord, float4(color, 1.0f));

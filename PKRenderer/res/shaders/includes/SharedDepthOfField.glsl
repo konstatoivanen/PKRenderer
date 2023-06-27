@@ -18,12 +18,6 @@ struct AutoFocusData
 
 PK_DECLARE_ATOMIC_VARIABLE(AutoFocusData, pk_AutoFocusParams, PK_SET_PASS);
 
-float GetTargetDistance()
-{
-    float d = SampleLinearDepth(float2(0.5f, 0.5f));
-    return min(d, pk_ProjectionParams.y - 1e-4f);
-}
-
 float GetLensCoefficient(float focusDistance)
 {
     return pk_FocalLength * pk_FocalLength / (pk_FNumber * (focusDistance - pk_FocalLength) * pk_FilmHeight * 2);

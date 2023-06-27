@@ -20,6 +20,7 @@ namespace PK::Rendering::Passes
 
         public:
             PassDepthOfField(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
+            void ComputeAutoFocus(Objects::CommandBuffer* cmd, uint32_t screenHeight);
             void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* destination);
             void OnUpdateParameters(const Core::ApplicationConfig* config);
 

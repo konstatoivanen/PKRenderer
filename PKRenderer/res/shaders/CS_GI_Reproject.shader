@@ -7,7 +7,7 @@
 void AddWeightedSample(const int2 coord, inout GISampleFull o, const float weight)
 {
     GISampleFull s = GI_Load_SampleFull(coord);
-    o.diff.sh = SHAdd(o.diff.sh, s.diff.sh, weight);
+    o.diff.sh = SH_Add(o.diff.sh, s.diff.sh, weight);
     o.diff.ao += s.diff.ao * weight;
     o.spec.radiance += s.spec.radiance * weight;
     o.spec.ao += s.spec.ao * weight;
@@ -142,7 +142,7 @@ void main()
     // Normalize weights
     if (wSum > 1e-4f)
     {
-        filtered.diff.sh = SHScale(filtered.diff.sh, 1.0f / wSum);
+        filtered.diff.sh = SH_Scale(filtered.diff.sh, 1.0f / wSum);
         filtered.diff.ao /= wSum;
         filtered.spec.radiance /= wSum;
         filtered.spec.ao /= wSum;

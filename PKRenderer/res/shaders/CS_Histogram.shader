@@ -115,17 +115,16 @@ void main()
 
     if (gl_LocalInvocationIndex == 0)
     {
-        float2 size = textureSize(_MainTex, 0).xy;
+        const float2 size = textureSize(_MainTex, 0).xy;
+        const float numpx = size.x * size.y;
+        const float weightedLogAverage = (HistogramShared[0] / max(numpx - countForThisBin, 1.0)) - 1.0;
+        const float weightedAverageLuminance = exp2((weightedLogAverage / 254.0) * LOG_LUMINANCE_RANGE + LOG_LUMINANCE_MIN);
+        const float EV100 = ComputeEV100FromAvgLuminance(weightedAverageLuminance);
 
-        float numpx = size.x * size.y;
-        float weightedLogAverage = (HistogramShared[0] / max(numpx - countForThisBin, 1.0)) - 1.0;
-        float weightedAverageLuminance = exp2((weightedLogAverage / 254.0) * LOG_LUMINANCE_RANGE + LOG_LUMINANCE_MIN);
-
-        float EV100 = ComputeEV100FromAvgLuminance(weightedAverageLuminance);
-
-        float targetExposure = TARGET_EXPOSURE * ConvertEV100ToExposure(EV100);
-        float exposure = GetAutoExposure();
-        exposure = lerp(exposure, targetExposure, pk_DeltaTime.x * EXPOSURE_ADJUST_SPEED);
+        const float currentExposure = GetAutoExposure();
+        const float targetExposure = TARGET_EXPOSURE * ConvertEV100ToExposure(EV100);
+        const float interpolant = ReplaceIfResized(pk_DeltaTime.x * EXPOSURE_ADJUST_SPEED, 0.0f);
+        const float exposure = lerp_sat(currentExposure, targetExposure, interpolant);
 
         SetAutoExposure(exposure);
     }

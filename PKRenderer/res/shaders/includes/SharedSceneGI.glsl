@@ -206,7 +206,7 @@ float GI_AOPower(float ao) { return pow(ao, 0.4f); }
 float3 GI_Sample_Diffuse(const float2 uv, const float3 N)
 {
     const GISampleDiff s_diff = GI_Load_SampleDiff(int2(uv * pk_ScreenSize.xy));
-    return SHToIrradiance(s_diff.sh, N, pk_GI_ChromaBias);
+    return SH_ToIrradiance(s_diff.sh, N, pk_GI_ChromaBias);
 }
 
 float3 GI_Sample_Specular(const float2 uv, const float3 N)
@@ -221,7 +221,7 @@ void GI_Sample_Lighting(const float2 uv, const float3 N, const float3 V, const f
     const int2 coord = int2(uv * pk_ScreenSize.xy);
     const GISampleDiff s_diff = GI_Load_SampleDiff(coord);
     const GISampleSpec s_spec = GI_Load_SampleSpec(coord);
-    diffuse = SHToIrradiance(s_diff.sh, N, pk_GI_ChromaBias);
+    diffuse = SH_ToIrradiance(s_diff.sh, N, pk_GI_ChromaBias);
     specular = s_spec.radiance;
     diffuse *= pow(s_diff.ao, PK_GI_AO_DIFF_POWER);
     specular *= pow(s_spec.ao, PK_GI_AO_SPEC_POWER);

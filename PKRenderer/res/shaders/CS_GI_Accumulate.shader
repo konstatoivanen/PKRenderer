@@ -77,7 +77,7 @@ void main()
     GIRayDirections directions = GI_GetRayDirections(coord, N, V, NR.w);
     GIRayHits hits = GI_Load_RayHits(coord);
     GISampleFull filtered = GI_Load_SampleFull(coord);
-    const float wDiff = max(1.0f / (filtered.meta.historyDiff + 1.0f), 0.01f);
+    const float wDiff = max(1.0f / (filtered.meta.historyDiff + 1.0f), 0.03f);
     const float wSpec = max(1.0f / (filtered.meta.historySpec + 1.0f), 0.01f); 
 
     const float coneSizeDiff = 0.5f;
@@ -89,20 +89,23 @@ void main()
     // Construct new samples
     GISampleDiff s_diff;
     GISampleSpec s_spec;
-    s_diff.sh       = SHFromRadiance(radianceDiff, directions.diff);
+    s_diff.sh       = SH_FromRadiance(radianceDiff, directions.diff);
     s_spec.radiance = radianceSpec;
     s_diff.ao       = hits.isMissDiff ? 1.0f : saturate(hits.distDiff / PK_GI_AO_DIFF_MAX_DISTANCE);
     s_spec.ao       = hits.isMissSpec ? 1.0f : saturate(hits.distSpec / PK_GI_AO_SPEC_MAX_DISTANCE);
-    float luma      = SHToLuminance(s_diff.sh, N) + dot(pk_Luminance.rgb, radianceSpec);
 
     // Interpolate samples
-    filtered.diff.sh       = SHInterpolate(filtered.diff.sh, s_diff.sh, wDiff);
-    filtered.spec.radiance = lerp(filtered.spec.radiance, s_spec.radiance, wSpec);
+    filtered.diff.sh       = SH_Interpolate(filtered.diff.sh, s_diff.sh, wDiff);
     filtered.diff.ao       = lerp(filtered.diff.ao, s_diff.ao, wDiff);
-    filtered.spec.ao       = lerp(filtered.spec.ao, s_spec.ao, wSpec);
-    filtered.meta.moments  = lerp(filtered.meta.moments, float2(luma, pow2(luma)), wDiff);
-    filtered.spec.depth    = depth;
     filtered.diff.depth    = depth;
+    
+    filtered.spec.radiance = lerp(filtered.spec.radiance, s_spec.radiance, wSpec);
+    filtered.spec.ao       = lerp(filtered.spec.ao, s_spec.ao, wSpec);
+    filtered.spec.depth    = depth;
+    
+    //float luma      = SH_ToLuminance(s_diff.sh, N) + dot(pk_Luminance.rgb, radianceSpec);
+    //filtered.meta.moments  = lerp(filtered.meta.moments, float2(luma, pow2(luma)), wDiff);
 
-    GI_Store_SampleFull(coord, filtered);
+    GI_Store_SampleDiff(coord, filtered.diff);
+    GI_Store_SampleSpec(coord, filtered.spec);
 }

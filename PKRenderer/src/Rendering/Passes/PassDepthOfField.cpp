@@ -15,6 +15,8 @@ namespace PK::Rendering::Passes
         m_shaderBlur = assetDatabase->Find<Shader>("VS_DepthOfFieldBlur");
         m_shaderComposite = assetDatabase->Find<Shader>("VS_DepthOfFieldComposite");
         m_computeAutoFocus = assetDatabase->Find<Shader>("CS_AutoFocus");
+        m_passPrefilter = m_shaderBlur->GetVariantIndex(StringHashID::StringToID("PASS_PREFILTER"));
+        m_passDiskblur = m_shaderBlur->GetVariantIndex(StringHashID::StringToID("PASS_DISKBLUR"));
 
         m_constants.pk_FocalLength = config->CameraFocalLength;
         m_constants.pk_FNumber = config->CameraFNumber;
@@ -31,10 +33,16 @@ namespace PK::Rendering::Passes
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
         m_renderTarget = Texture::Create(descriptor, "DepthOfField.Texture");
-        m_autoFocusParams = Buffer::Create(ElementType::Float2, 1, BufferUsage::DefaultStorage, "DepthOfField.AutoFocus.Parameters");
 
-        m_passPrefilter = m_shaderBlur->GetVariantIndex(StringHashID::StringToID("PASS_PREFILTER"));
-        m_passDiskblur = m_shaderBlur->GetVariantIndex(StringHashID::StringToID("PASS_DISKBLUR"));
+        m_autoFocusParams = Buffer::Create(ElementType::Float2, 1, BufferUsage::DefaultStorage, "DepthOfField.AutoFocus.Parameters");
+        GraphicsAPI::SetBuffer(HashCache::Get()->pk_AutoFocusParams, m_autoFocusParams.get());
+    }
+
+    void PassDepthOfField::ComputeAutoFocus(Objects::CommandBuffer* cmd, uint32_t screenHeight)
+    {
+        m_constants.pk_MaximumCoC = std::min(0.05f, 10.0f / screenHeight);
+        GraphicsAPI::SetConstant<Constants>(HashCache::Get()->pk_DofParams, m_constants);
+        cmd->Dispatch(m_computeAutoFocus, 0, { 1u, 1u, 1u });
     }
 
     void PassDepthOfField::Render(Objects::CommandBuffer* cmd, RenderTexture* destination)
@@ -55,9 +63,6 @@ namespace PK::Rendering::Passes
         m_constants.pk_MaximumCoC = std::min(0.05f, 10.0f / destination->GetResolution().y);
         GraphicsAPI::SetConstant<Constants>(hash->pk_DofParams, m_constants);
 
-        GraphicsAPI::SetBuffer(hash->pk_AutoFocusParams, autoFocusParams);
-        cmd->Dispatch(m_computeAutoFocus, 0, { 1u, 1u, 1u });
-
         GraphicsAPI::SetTexture(hash->_MainTex, source);
         cmd->SetRenderTarget(renderTarget, 0, 2);
         cmd->DiscardColor(0u);
@@ -66,7 +71,6 @@ namespace PK::Rendering::Passes
         cmd->Blit(m_shaderBlur, m_passPrefilter);
 
         GraphicsAPI::SetTexture(hash->_MainTex, renderTarget, 0, 2);
-
         cmd->SetRenderTarget(renderTarget, { { 0u, 0u, 1u, 1u}, { 0u, 1u, 1u, 1u} });
         cmd->DiscardColor(0u);
         cmd->DiscardColor(1u);
