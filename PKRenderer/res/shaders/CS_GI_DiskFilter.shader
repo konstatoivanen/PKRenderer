@@ -13,25 +13,8 @@
 #define FILTER_RADIUS_PASS1	6.0f
 #define FILTER_RADIUS_PASS2	3.0f
 
-void ApproximateRoughSpecular(inout GISampleFull filtered, const float3 N, const float3 V, const float R)
-{
-#if PK_GI_APPROX_ROUGH_SPEC == 1
-    float3 worldN = mul(float3x3(pk_MATRIX_I_V), N);
-    float3 worldV = mul(float3x3(pk_MATRIX_I_V), V);
-
-    float directionality;
-    float3 sh_dir = SH_ToPrimeDir(filtered.diff.sh, directionality);
-
-    float roughness = lerp(1.0f, R, saturate(directionality * 0.666f));
-    roughness = sqrt(roughness); // Sample distribution used wrong roughness scale. correct this based on that. :/
-
-    const float3 s_color = SH_ToColor(filtered.diff.sh) * PK_TWO_PI;
-    const float3 specular = s_color * BRDF_GGX_SPECULAR(roughness, sh_dir, worldV, worldN);
-    const float inter = smoothstep(PK_GI_MIN_ROUGH_SPEC, PK_GI_MAX_ROUGH_SPEC, R);
-
-    filtered.spec.radiance = lerp(filtered.spec.radiance, specular, inter);
-#endif
-}
+// Source: https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
+// Source: https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
 
 float2 GetFilterRadiusAndScale(const float depth, const float variance, const float ao, const float history)
 {
@@ -47,6 +30,41 @@ float2 GetFilterRadiusAndScale(const float depth, const float variance, const fl
     radius *= sqrt(depth / pk_ProjectionParams.y);
 
     return float2(radius, scale);
+}
+
+float GetSpecularNormalWeight(const float3 c_n, const float3 s_n, const float roughness)
+{
+    float a0 = PK_HALF_PI * pow2(roughness) / (1.0f + pow2(roughness));
+    const float cosa = saturate(dot(c_n, s_n));
+    const float a = acos(cosa);
+    return float(a < a0);
+}
+
+
+float2 GetSampleUV(const float3 vpos, const float2x3 basis, const float2 rotation, uint index)
+{
+    const float3 o = SAMPLE_KERNEL[index];
+    const float3 v = vpos + basis * rotate2D(o.xy * o.z, rotation);
+    const float3 c = mul(pk_MATRIX_P, float4(v, 1.0f)).xyw;
+    return (c.xy / c.z) * 0.5f + 0.5f;
+}
+
+void ApproximateRoughSpecular(inout GISampleFull filtered, const float3 N, const float3 V, const float R)
+{
+    float3 worldN = mul(float3x3(pk_MATRIX_I_V), N);
+    float3 worldV = mul(float3x3(pk_MATRIX_I_V), V);
+
+    float directionality;
+    float3 sh_dir = SH_ToPrimeDir(filtered.diff.sh, directionality);
+
+    float roughness = lerp(1.0f, R, saturate(directionality * 0.666f));
+    roughness = sqrt(roughness); // Sample distribution used wrong roughness scale. correct this based on that. :/
+
+    const float3 s_color = SH_ToColor(filtered.diff.sh) * PK_TWO_PI;
+    const float3 specular = s_color * BRDF_GGX_SPECULAR(roughness, sh_dir, worldV, worldN);
+    const float inter = smoothstep(PK_GI_MIN_ROUGH_SPEC, PK_GI_MAX_ROUGH_SPEC, R);
+
+    filtered.spec.radiance = lerp(filtered.spec.radiance, specular, inter);
 }
 
 uint2 GetSwizzledThreadID()
@@ -79,7 +97,6 @@ void main()
     const float c_roughness = c_normalRoughness.w;
     const float3 c_vpos = SampleViewPosition(coord, size, depth);
     const float3 c_view = normalize(c_vpos);
-    const float3x3 c_tbn = ComposeTBNFast(c_normal);
     const float2 c_rot = make_rotation(pk_FrameIndex.y * (PK_PI / 3.0f));
 
     float2 mom;
@@ -117,46 +134,88 @@ void main()
     const uint step = lerp(uint(max(8.0f - sqrt(radius_scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip_filter);
     uint i = lerp(0u, 0xFFFFu, skip_filter);
 
-    float w_diff = 1.0f;
-    float w_spec = 1.0f;
+    float2x3 basis = ComposeTBFast(c_normal, radius);
+    float wSum = 1.0f;
 
-    for (; i < SAMPLE_COUNT; i += step)
+    // Filter Diff
     {
-        const float3 s_offs = SAMPLE_KERNEL[i];
-        const float3 s_pos = c_vpos + c_tbn * float3(rotate2D(s_offs.xy * s_offs.z * radius, c_rot), 0.0f);
-
-        float3 s_clip = mul(pk_MATRIX_P, float4(s_pos, 1.0f)).xyw;
-        s_clip.xy /= s_clip.z;
-
-        const float2 s_uv   = s_clip.xy * 0.5f + 0.5f;
-        const int2   s_px   = int2(s_uv * pk_ScreenSize.xy);
-        GISampleDiff s_diff = GI_Load_SampleDiff(s_px);
-
-        const float3 s_vpos = ClipToViewPos(s_clip.xy, s_diff.depth);
-        const float3 s_ray  = c_vpos - s_vpos;
-
-        const float w_h = saturate(1.0f - abs(dot(c_normal, s_ray)) * normV);
-        const float w_v = saturate(1.0f - dot(s_ray, s_ray) * normH);
-        const float w_s = float(All_InArea(s_uv, 0.0f.xx, 1.0f.xx));
-
-        float w = w_h * w_v * w_s;
-
-        if (!isnan(w) && w > 1e-4f)
+        for (; i < SAMPLE_COUNT; i += step)
         {
-            const float3 s_normal = SampleViewNormal(s_px);
-            const float w_n = max(0.0f, dot(s_normal, c_normal));
-            w *= w_n;
+            const float2 s_uv = GetSampleUV(c_vpos, basis, c_rot, i);
+            const int2 s_px = int2(s_uv * pk_ScreenSize.xy);
+            
+            GISampleDiff s_diff = GI_Load_SampleDiff(s_px);
 
-            filtered.diff.sh = SH_Add(filtered.diff.sh, s_diff.sh, w);
-            filtered.diff.ao += s_diff.ao * w;
-            w_diff += w;
+            const float3 s_vpos = ClipToViewPos(s_uv * 2 - 1, s_diff.depth);
+            const float3 s_ray = c_vpos - s_vpos;
+
+            const float w_h = saturate(1.0f - abs(dot(c_normal, s_ray)) * normV);
+            const float w_v = saturate(1.0f - dot(s_ray, s_ray) * normH);
+            const float w_s = float(All_InArea(s_px, int2(0), int2(pk_ScreenSize.xy)));
+
+            float w = w_h * w_v * w_s;
+
+            if (!isnan(w) && w > 1e-4f)
+            {
+                const float3 s_normal = SampleViewNormal(s_px);
+                const float w_n = max(0.0f, dot(s_normal, c_normal));
+                w *= w_n;
+
+                filtered.diff.sh = SH_Add(filtered.diff.sh, s_diff.sh, w);
+                filtered.diff.ao += s_diff.ao * w;
+                wSum += w;
+            }
         }
+
+        filtered.diff.sh = SH_Scale(filtered.diff.sh, 1.0f / wSum);
+        filtered.diff.ao /= wSum;
     }
 
-    filtered.diff.sh = SH_Scale(filtered.diff.sh, 1.0f / w_diff);
-    filtered.diff.ao /= w_diff;
+    // Filter Spec
+    #if PK_GI_APPROX_ROUGH_SPEC == 1
+    if (c_roughness > PK_GI_MIN_ROUGH_SPEC)
+    {
+        ApproximateRoughSpecular(filtered, c_normal, c_view, c_roughness);
+    }
+    
+    if (c_roughness < PK_GI_MAX_ROUGH_SPEC)
+    #endif
+    {
+        i = lerp(0u, 0xFFFFu, skip_filter);
+        wSum = 1.0f;
+        basis = GetPrimeBasisGGX(c_normal, c_view, c_roughness, radius); //@TODO use a different radius?
 
-    ApproximateRoughSpecular(filtered, c_normal, c_view, c_roughness);
+        for (; i < SAMPLE_COUNT; i += step)
+        {
+            const float2 s_uv = GetSampleUV(c_vpos, basis, c_rot, i);
+            const int2 s_px = int2(s_uv * pk_ScreenSize.xy);
+
+            GISampleSpec s_spec = GI_Load_SampleSpec(s_px);
+            const float4 s_nr = SampleViewNormalRoughness(s_px);
+
+            const float3 s_vpos = ClipToViewPos(s_uv * 2 - 1, s_spec.depth);
+            const float3 s_ray = c_vpos - s_vpos;
+
+            const float w_h = saturate(1.0f - abs(dot(c_normal, s_ray)) * normV);
+            const float w_v = saturate(1.0f - dot(s_ray, s_ray) * normH);
+            const float w_r = abs(c_roughness - s_nr.w) / (pow2(c_roughness) * 0.99f + 1e-2f);
+            const float w_n = GetSpecularNormalWeight(c_normal, s_nr.xyz, s_nr.w);
+            const float w_s = float(All_InArea(s_px, int2(0), int2(pk_ScreenSize.xy)));
+
+            const float w = w_h * w_v * w_s * w_r * w_n;
+
+            if (!isnan(w) && w > 1e-4f)
+            {
+                filtered.spec.radiance = s_spec.radiance * w;
+                filtered.diff.ao += s_spec.ao * w;
+                wSum += w;
+            }
+        }
+
+        filtered.spec.radiance /= wSum;
+        filtered.spec.ao /= wSum;
+    }
+
 
     GI_Store_SampleFull(coord, filtered);
 }

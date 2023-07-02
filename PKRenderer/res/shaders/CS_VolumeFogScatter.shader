@@ -18,7 +18,8 @@ void main()
         float depth = lerp(depths.x, depths.y, 0.5f);
         float slicewidth = depths.y - depths.x;
 
-        float4 slice = imageLoad(pk_Volume_Inject, pos);
+        float4 slice = texelFetch(pk_Volume_InjectRead, pos, 0);
+        slice.a = max(slice.a, VOLUME_MIN_DENSITY);
 
         float  transmittance = exp(-slice.a * slicewidth);
         float3 lightintegral = slice.rgb * (1.0f - transmittance) / slice.a;
@@ -26,9 +27,9 @@ void main()
         accumulation.rgb += lightintegral * accumulation.a;
         accumulation.a *= transmittance;
 
-        float4 preval = ReplaceIfResized(tex2D(pk_Volume_ScatterRead, ReprojectViewToCoord(vpos * depth)), 0.0f.xxxx);
-        float4 outval = lerp(preval, accumulation, VOLUME_ACCUMULATION);
-
-        imageStore(pk_Volume_Scatter, pos, outval);
+        imageStore(pk_Volume_Scatter, pos, accumulation);
+        
+        // Copy previous value for reprojection
+        imageStore(pk_Volume_Inject, pos, slice);
     }
 }

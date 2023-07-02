@@ -39,6 +39,10 @@ namespace PK::Math
     typedef glm::u16vec3 ushort3;
     typedef glm::u16vec4 ushort4;
 
+    typedef glm::u16mat2x2 ushort2x2;
+    typedef glm::u16mat2x2 ushort3x3;
+    typedef glm::u16mat4x4 ushort4x4;
+
     typedef glm::ivec2 int2;
     typedef glm::ivec3 int3;
     typedef glm::ivec4 int4;

@@ -10,7 +10,6 @@
 
 namespace PK::Rendering
 {
-    // @TODO investigate if this is can be fulfilled by a possible dx12 implementation?
     struct DriverMemoryInfo
     {
         uint32_t blockCount;

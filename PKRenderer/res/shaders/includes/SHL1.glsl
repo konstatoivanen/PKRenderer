@@ -9,9 +9,6 @@ struct SH
 	float2 CoCg;
 };
 
-#define pk_L1Basis float4(0.282095f, 0.488603f.xxx)
-#define pk_L1Basis_Cosine float4(0.88622692545f, 1.02332670795.xxx)
-#define pk_L1Basis_Irradiance float4(3.141593f, 2.094395f.xxx)
 #define pk_ZeroSH SH(0.0f.xxxx, 0.0f.xx)
 
 float4 SH_GetBasis(const float3 d) { return float4(1.0f, d.yzx) * pk_L1Basis; }

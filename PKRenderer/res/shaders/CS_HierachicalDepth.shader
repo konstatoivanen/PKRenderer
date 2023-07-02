@@ -94,5 +94,4 @@ void main()
         imageStore(_DestinationMip4, int3(coord / 8, 0), local_depth.xyxy);
         imageStore(_DestinationMip4, int3(coord / 8, 1), local_depth.xyxy);
     }
-    barrier();
 }

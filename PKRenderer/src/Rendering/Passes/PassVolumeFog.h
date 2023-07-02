@@ -18,6 +18,7 @@ namespace PK::Rendering::Passes
         private:
             Utilities::Ref<Objects::ConstantBuffer> m_volumeResources;
             Utilities::Ref<Objects::Texture> m_volumeInject;
+            Utilities::Ref<Objects::Texture> m_volumeInjectRead;
             Utilities::Ref<Objects::Texture> m_volumeScatter;
             Objects::Shader* m_computeInject = nullptr;
             Objects::Shader* m_computeScatter = nullptr;

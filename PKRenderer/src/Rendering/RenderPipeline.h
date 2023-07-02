@@ -63,7 +63,9 @@ namespace PK::Rendering
             Utilities::Ref<Objects::Texture> m_previousNormals;
             Utilities::Ref<Objects::Texture> m_previousDepth;
             Utilities::Ref<Objects::Texture> m_hierarchicalDepth;
-            Objects::Shader* m_OEMBackgroundShader;
+            Utilities::Ref<Objects::Buffer> m_EnvSHBuffer;
+            Objects::Shader* m_EnvBackgroundShader;
+            Objects::Shader* m_IntegrateEnvSHShader;
             Objects::Shader* m_computeHierachicalDepth;
 
             ECS::Tokens::VisibilityList m_visibilityList;

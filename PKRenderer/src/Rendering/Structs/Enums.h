@@ -287,64 +287,18 @@ namespace PK::Rendering::Structs
         RGBA32I,
 
         // compressed formats
-
-        // Mandatory in GLES 3.0 and GL 4.3
-        EAC_R11, 
-        EAC_R11_SIGNED, 
-        EAC_RG11, 
-        EAC_RG11_SIGNED,
-        ETC2_RGB8, 
-        ETC2_SRGB8,
-        ETC2_RGB8_A1, 
-        ETC2_SRGB8_A1,
-        ETC2_RGBA8, 
-        ETC2_SRGBA8, 
-
-        // Available everywhere except Android/iOS
-        DXT4, 
-        DXT1_RGB, 
-        DXT1_RGBA, 
-        DXT3_RGBA, 
-        DXT5_RGBA,
-        DXT1_SRGB, 
-        DXT1_SRGBA, 
-        DXT3_SRGBA, 
-        DXT5_SRGBA,
-
-        // Desktop hdr compression formats
+        BC1_RGB, 
+        BC1_RGBA, 
+        BC1_SRGB, 
+        BC1_SRGBA, 
+        BC4, 
+        BC2_RGBA, 
+        BC2_SRGBA, 
+        BC3_RGBA,
+        BC3_SRGBA,
         BC6H_RGBUF,
         BC6H_RGBF,
         BC7_UNORM,
-        
-        // ASTC formats are available with a GLES extension
-        RGBA_ASTC_4x4,
-        RGBA_ASTC_5x4,
-        RGBA_ASTC_5x5,
-        RGBA_ASTC_6x5,
-        RGBA_ASTC_6x6,
-        RGBA_ASTC_8x5,
-        RGBA_ASTC_8x6,
-        RGBA_ASTC_8x8,
-        RGBA_ASTC_10x5,
-        RGBA_ASTC_10x6,
-        RGBA_ASTC_10x8,
-        RGBA_ASTC_10x10,
-        RGBA_ASTC_12x10,
-        RGBA_ASTC_12x12,
-        SRGB8_ALPHA8_ASTC_4x4,
-        SRGB8_ALPHA8_ASTC_5x4,
-        SRGB8_ALPHA8_ASTC_5x5,
-        SRGB8_ALPHA8_ASTC_6x5,
-        SRGB8_ALPHA8_ASTC_6x6,
-        SRGB8_ALPHA8_ASTC_8x5,
-        SRGB8_ALPHA8_ASTC_8x6,
-        SRGB8_ALPHA8_ASTC_8x8,
-        SRGB8_ALPHA8_ASTC_10x5,
-        SRGB8_ALPHA8_ASTC_10x6,
-        SRGB8_ALPHA8_ASTC_10x8,
-        SRGB8_ALPHA8_ASTC_10x10,
-        SRGB8_ALPHA8_ASTC_12x10,
-        SRGB8_ALPHA8_ASTC_12x12,
     };
 
     enum class Cookie : uint8_t

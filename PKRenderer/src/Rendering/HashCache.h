@@ -50,8 +50,9 @@ namespace PK::Rendering
         
         DECLARE_HASH(pk_SceneStructure)
 
-        DECLARE_HASH(pk_SceneOEM_HDR)
-        DECLARE_HASH(pk_SceneOEM_Exposure)
+        DECLARE_HASH(pk_SceneEnv)
+        DECLARE_HASH(pk_SceneEnv_SH)
+        DECLARE_HASH(pk_SceneEnv_Exposure)
 
         DECLARE_HASH(pk_PerFrameConstants)
         DECLARE_HASH(pk_ModelMatrices)

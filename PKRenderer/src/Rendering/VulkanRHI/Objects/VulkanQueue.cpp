@@ -233,8 +233,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             signals[1] = *outSignal;
         }
 
-        // @TODO maybe optimize this based on submitted commands.
-        m_timeline.waitFlags = m_capabilityFlags;
+        m_timeline.waitFlags = commandBuffer->GetLastCommandStage();
         return vkQueueSubmit(m_queue, 1, &submitInfo, commandBuffer->GetFence());
     }
 

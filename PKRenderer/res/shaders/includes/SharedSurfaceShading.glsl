@@ -1,5 +1,6 @@
 #pragma once
 #include Lighting.glsl
+#include SceneEnv.glsl
 #include BRDF.glsl
 #include Reconstruction.glsl
 #include SharedSceneGI.glsl

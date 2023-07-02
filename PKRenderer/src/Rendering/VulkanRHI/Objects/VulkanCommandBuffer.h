@@ -20,6 +20,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         FenceRef GetFenceRef() const final;
         inline bool IsActive() const { return m_commandBuffer != VK_NULL_HANDLE; }
         inline VkCommandBuffer& GetNative() { return m_commandBuffer; }
+        inline VkPipelineStageFlags GetLastCommandStage() { return m_lastCommandStage; }
         inline const VkFence& GetFence() { return m_fence; }
         inline void Initialize(VkFence fence, uint16_t queueFamily, VkPipelineStageFlags capabilities) 
         {
@@ -87,10 +88,12 @@ namespace PK::Rendering::VulkanRHI::Objects
         void EndRenderPass();
         void BeginCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferLevel level, Objects::VulkanRenderState* renderState);
         void EndCommandBuffer();
+        inline void MarkLastCommandStage(VkPipelineStageFlags stage) { m_lastCommandStage = stage; }
         
         private:
             VkFence m_fence = VK_NULL_HANDLE;
             VkPipelineStageFlags m_capabilityFlags = 0u;
+            VkPipelineStageFlags m_lastCommandStage = 0u;
             uint16_t m_queueFamily = 0u;
 
             Objects::VulkanRenderState* m_renderState = nullptr;

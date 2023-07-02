@@ -24,20 +24,15 @@ float GetAttenuation(float ldist, float lradius)
     return pow2(saturate(1.0f - pow4(ldist/lradius))) / (pow2(ldist) + 1.0f); 
 }
 
-float GetLightAnisotropy(float3 viewdir, float3 posToLight, float anistropy)
+float HenyeyGreensteinPhase(float3 viewdir, float3 posToLight, float phase)
 {
-	float gsq = pow2(anistropy);
-	float denom = 1.0 + gsq - 2.0 * anistropy * dot(viewdir, posToLight);
-	return (1.0 - gsq) * inversesqrt(max(0, pow3(denom)));
+	float gsq = pow2(phase);
+	float denom = 1.0 + gsq - 2.0 * phase * dot(viewdir, posToLight);
+	//return (1.0 - gsq) / (PK_FOUR_PI * pow(denom, 3.0f / 2.0f));
+    return PK_INV_FOUR_PI * (1.0 - gsq) * inversesqrt(pow3(denom));
 }
 
-
-//----------INDIRECT SAMPLERS----------//
-float3 SampleEnvironment(float2 uv, float roughness) 
-{ 
-    return tex2DLod(pk_SceneOEM_HDR, uv, roughness * 4).rgb * pk_SceneOEM_Exposure; 
-}
-
+//----------SHADOW SAMPLERS----------//
 float SampleLightShadowmap(uint shadowmapIndex, float2 uv, float lightDistance)
 {
     float2 moments = tex2D(pk_ShadowmapAtlas, float3(uv, shadowmapIndex)).xy;
@@ -125,12 +120,12 @@ Light GetSurfaceLight(uint index, in float3 worldpos, uint cascade)
     return Light(color, posToLight, shadow);
 }
 
-float3 GetVolumeLightColor(uint index, in float3 worldpos, float3 viewdir, uint cascade, float anisotropy)
+float3 GetVolumeLightColor(uint index, in float3 worldpos, float3 viewdir, uint cascade, float phase)
 {
     float3 posToLight, color;
     float shadow;
     GetLight(PK_BUFFER_DATA(pk_GlobalLightsList, index), worldpos, cascade, color, posToLight, shadow);
-    return color * shadow * GetLightAnisotropy(viewdir, posToLight, anisotropy);
+    return color * shadow * HenyeyGreensteinPhase(viewdir, posToLight, phase);
 }
 
 LightTile GetLightTile(float3 clipuvw) 

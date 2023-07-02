@@ -25,6 +25,7 @@ namespace PK::Rendering::Passes
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::Concurrent;
 
         m_volumeInject = Texture::Create(descriptor, "Fog.InjectVolume");
+        m_volumeInjectRead = Texture::Create(descriptor, "Fog.InjectVolume.Previous");
         m_volumeScatter = Texture::Create(descriptor, "Fog.ScatterVolume");
         m_computeInject = assetDatabase->Find<Shader>("CS_VolumeFogLightDensity");
         m_computeScatter = assetDatabase->Find<Shader>("CS_VolumeFogScatter");
@@ -58,14 +59,20 @@ namespace PK::Rendering::Passes
         auto hash = HashCache::Get();
         const uint3 volumeResolution = { resolution.x / 8u, resolution.y / 8u, 128u };
         m_volumeInject->Validate(volumeResolution);
+        m_volumeInjectRead->Validate(volumeResolution);
         m_volumeScatter->Validate(volumeResolution);
+
+        GraphicsAPI::SetTexture(hash->pk_Volume_InjectRead, m_volumeInjectRead.get());
         GraphicsAPI::SetImage(hash->pk_Volume_Inject, m_volumeInject.get());
-        GraphicsAPI::SetImage(hash->pk_Volume_Scatter, m_volumeScatter.get());
-        GraphicsAPI::SetTexture(hash->pk_Volume_InjectRead, m_volumeInject.get());
-        GraphicsAPI::SetTexture(hash->pk_Volume_ScatterRead, m_volumeScatter.get());
         cmd->Dispatch(m_computeInject, 0, volumeResolution);
+
+        GraphicsAPI::SetImage(hash->pk_Volume_Scatter, m_volumeScatter.get());
+        GraphicsAPI::SetTexture(hash->pk_Volume_ScatterRead, m_volumeScatter.get());
+
+        GraphicsAPI::SetTexture(hash->pk_Volume_InjectRead, m_volumeInject.get());
+        GraphicsAPI::SetImage(hash->pk_Volume_Inject, m_volumeInjectRead.get());
         cmd->Dispatch(m_computeScatter, 0, { volumeResolution.x, volumeResolution.y, 1u });
-        
+
         cmd->EndDebugScope();
     }
 

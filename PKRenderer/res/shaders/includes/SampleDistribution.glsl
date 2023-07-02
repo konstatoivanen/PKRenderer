@@ -1,5 +1,27 @@
 #pragma once
 
+float2x3 ComposeTBFast(const float3 N, const float planeScale)
+{
+    float3 T, B;
+
+    if (N.z < 0.0)
+    {
+        const float a = 1.0f / (1.0f - N.z);
+        const float b = N.x * N.y * a;
+        T = float3(1.0f - N.x * N.x * a, -b, N.x);
+        B = float3(b, N.y * N.y * a - 1.0f, -N.y);
+    }
+    else
+    {
+        const float a = 1.0f / (1.0f + N.z);
+        const float b = -N.x * N.y * a;
+        T = float3(1.0f - N.x * N.x * a, b, -N.x);
+        B = float3(b, 1.0f - N.y * N.y * a, -N.y);
+    }
+    
+    return float2x3(T * planeScale, B * planeScale);
+}
+
 float3x3 ComposeTBNFast(const float3 N)
 {
     float3 T, B;
@@ -135,4 +157,19 @@ float3 ImportanceSampleLambert(const float2 Xi, const float3 N)
     b *= 0.98;
 
     return normalize(float3(N.x + b * cos(phi), N.y + b * sin(phi), N.z + a));
+}
+
+// Source https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
+float3 GetPrimeDirectionGGX(const float3 N, const float3 V, float R)
+{
+	return normalize(lerp(N, reflect(-V, N), (1.0f - R) * (sqrt(1.0f - R) + R)));
+}
+
+float2x3 GetPrimeBasisGGX(const float3 N, const float3 V, const float R, float radius)
+{
+    const float3 m = GetPrimeDirectionGGX(N, V, R);
+    const float3 l = reflect(-m, N);
+    const float3 t = normalize(cross(N,l));
+    const float3 b = cross(l,t);
+    return float2x3(t,b);
 }

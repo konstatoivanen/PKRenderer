@@ -33,8 +33,11 @@ namespace PK::Rendering
         m_visibilityList(1024),
         m_resizeFrameIndex(0ull)
     {
-        m_OEMBackgroundShader = assetDatabase->Find<Shader>("SH_VS_IBLBackground");
+        m_EnvBackgroundShader = assetDatabase->Find<Shader>("SH_VS_EnvBackground");
+        m_IntegrateEnvSHShader = assetDatabase->Find<Shader>("CS_IntegrateEnvSH");
         m_computeHierachicalDepth = assetDatabase->Find<Shader>("CS_HierachicalDepth");
+
+        m_EnvSHBuffer = Buffer::Create(ElementType::Float4, 4, BufferUsage::DefaultStorage, "Scene.Env.SHBuffer");
 
         RenderTextureDescriptor descriptor{};
         descriptor.resolution = { config->InitialWidth, config->InitialHeight, 1 };
@@ -55,7 +58,7 @@ namespace PK::Rendering
         
         prevDesc.format = TextureFormat::RGB10A2;
         m_previousNormals = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Color1");
-        
+
         prevDesc.format = TextureFormat::Depth32F;
         m_previousDepth = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Depth");
 
@@ -105,7 +108,7 @@ namespace PK::Rendering
                 { ElementType::Float4x4, hash->pk_MATRIX_L_I_V },
                 { ElementType::Float4x4, hash->pk_MATRIX_L_VP },
                 { ElementType::Float4x4, hash->pk_MATRIX_LD_P },
-                { ElementType::Float, hash->pk_SceneOEM_Exposure }
+                { ElementType::Float, hash->pk_SceneEnv_Exposure }
             }), "Constants.Frame");
 
         m_constantsPostProcess = CreateRef<ConstantBuffer>(BufferLayout(
@@ -168,6 +171,7 @@ namespace PK::Rendering
         GraphicsAPI::SetTexture(hash->pk_LightCookies, lightCookies);
         GraphicsAPI::SetBuffer(hash->pk_PerFrameConstants, *m_constantsPerFrame.get());
         GraphicsAPI::SetBuffer(hash->pk_PostEffectsParams, *m_constantsPostProcess.get());
+        GraphicsAPI::SetBuffer(hash->pk_SceneEnv_SH, m_EnvSHBuffer.get());
 
         PK_LOG_HEADER("----------RENDER PIPELINE INITIALIZED----------");
     }
@@ -312,6 +316,7 @@ namespace PK::Rendering
         m_passLights.ComputeClusters(cmdcompute);
         m_histogram.Render(cmdcompute, m_bloom.GetTexture());
         m_depthOfField.ComputeAutoFocus(cmdcompute, resolution.y);
+        cmdcompute->Dispatch(m_IntegrateEnvSHShader, 0, { 1u, 1u, 1u });
         queues->Submit(QueueType::Compute, &cmdcompute);
         queues->Sync(QueueType::Graphics, QueueType::Compute);
 
@@ -321,7 +326,7 @@ namespace PK::Rendering
 
         // Voxelize, subsequent passes depend on this
         m_passLights.RenderShadows(cmdgraphics);
-        queues->Submit(QueueType::Graphics, &cmdgraphics);
+        //queues->Submit(QueueType::Graphics, &cmdgraphics);
         // Wait for misc async compute instead of ray dispatch
         queues->Sync(QueueType::Compute, QueueType::Graphics, -1);
 
@@ -337,7 +342,7 @@ namespace PK::Rendering
         cmdgraphics->SetRenderTarget(m_renderTarget.get(), { 0 }, true, true);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         m_passGeometry.RenderForward(cmdgraphics);
-        cmdgraphics->Blit(m_OEMBackgroundShader);
+        cmdgraphics->Blit(m_EnvBackgroundShader);
 
         m_passVolumeFog.Render(cmdgraphics, m_renderTarget.get());
 
@@ -372,9 +377,9 @@ namespace PK::Rendering
         sampler.wrap[1] = WrapMode::Mirror;
         sampler.wrap[2] = WrapMode::Mirror;
         tex->SetSampler(sampler);
-        GraphicsAPI::SetTexture(hash->pk_SceneOEM_HDR, tex);
+        GraphicsAPI::SetTexture(hash->pk_SceneEnv, tex);
 
-        m_constantsPerFrame->Set<float>(hash->pk_SceneOEM_Exposure, config->BackgroundExposure);
+        m_constantsPerFrame->Set<float>(hash->pk_SceneEnv_Exposure, config->BackgroundExposure);
 
         m_constantsPostProcess->Set<float>(hash->pk_MinLogLuminance, config->AutoExposureLuminanceMin);
         m_constantsPostProcess->Set<float>(hash->pk_InvLogLuminanceRange, 1.0f / config->AutoExposureLuminanceRange);

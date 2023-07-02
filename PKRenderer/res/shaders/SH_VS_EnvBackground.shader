@@ -1,7 +1,9 @@
 #version 450
 #ZTest LEqual
 #ZWrite False
-#include includes/Lighting.glsl
+#include includes/Common.glsl
+#include includes/Encoding.glsl
+#include includes/SceneEnv.glsl
 #include includes/Blit.glsl
 
 #pragma PROGRAM_VERTEX

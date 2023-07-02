@@ -82,6 +82,8 @@ namespace PK::Rendering
         m_drawCalls.clear();
     }
 
+    //@TODO add a readonly usage mode to buffers that only have upload writes
+    // Removed partial writes as this was causing redundant barriers between small segments of the input buffers.
     void Batcher::EndCollectDrawCalls(Objects::CommandBuffer* cmd)
     {
         if (m_drawInfos.size() == 0)
@@ -92,7 +94,7 @@ namespace PK::Rendering
         std::sort(m_drawInfos.begin(), m_drawInfos.end());
 
         m_matrices->Validate(m_transforms.GetCapacity());
-        auto matrixView = cmd->BeginBufferWrite<float4x4>(m_matrices.get(), 0u, m_transforms.GetCount());
+        auto matrixView = cmd->BeginBufferWrite<float4x4>(m_matrices.get());
 
         for (auto& view : m_transforms)
         {
@@ -118,7 +120,7 @@ namespace PK::Rendering
         if (buffsize > 0)
         {
             m_properties->Validate(buffsize / sizeof(uint32_t));
-            auto propertyView = cmd->BeginBufferWrite<char>(m_properties.get(), 0ull, buffsize);
+            auto propertyView = cmd->BeginBufferWrite<char>(m_properties.get());
 
             for (auto& group : m_materials)
             {
@@ -140,7 +142,7 @@ namespace PK::Rendering
         auto current = m_drawInfos[0];
 
         m_indices->Validate(m_drawInfos.capacity());
-        auto indexView = cmd->BeginBufferWrite<PK_Draw>(m_indices.get(), 0u, m_drawInfos.size());
+        auto indexView = cmd->BeginBufferWrite<PK_Draw>(m_indices.get());
 
         for (auto i = 0u; i < m_drawInfos.size(); ++i)
         {
@@ -163,7 +165,7 @@ namespace PK::Rendering
         cmd->EndBufferWrite(m_indices.get());
 
         m_indirectArguments->Validate(indirectCount);
-        auto indirectView = cmd->BeginBufferWrite<DrawIndexedIndirectCommand>(m_indirectArguments.get(), 0u, indirectCount);
+        auto indirectView = cmd->BeginBufferWrite<DrawIndexedIndirectCommand>(m_indirectArguments.get());
 
         auto indirectIndex = 0u;
         auto pbase = 0ull;

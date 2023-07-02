@@ -19,3 +19,7 @@
 // standard dielectric reflectivity coef at incident angle (= 4%)
 #define pk_DielectricSpecular vec4(0.04, 0.04, 0.04, 1.0 - 0.04) 
 #define pk_Luminance vec4(0.2126729, 0.7151522, 0.0721750, 1.0f) //float4(0.0396819152, 0.458021790, 0.00609653955, 1.0)
+
+#define pk_L1Basis float4(0.282095f, 0.488603f.xxx)
+#define pk_L1Basis_Cosine float4(0.88622692545f, 1.02332670795.xxx)
+#define pk_L1Basis_Irradiance float4(3.141593f, 2.094395f.xxx)

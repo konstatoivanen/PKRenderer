@@ -14,8 +14,6 @@ namespace PK::Rendering::Objects
 {
     typedef std::initializer_list<const Structs::TextureViewRange> RenderTargetRanges;
 
-    // @TODO refactor object command buffer operations to happen through command buffers as under the hood they're dependent anyway.
-    // Current setup hides implicit dependencies on currently active command buffers.
     struct CommandBuffer : public PK::Utilities::NoCopy, public Utilities::NativeInterface<CommandBuffer>
     {
         virtual Structs::FenceRef GetFenceRef() const = 0;

@@ -13,7 +13,6 @@
 #define PK_W_ALIGNMENT_4 4u
 #define PK_W_ALIGNMENT_2 2u
 
-
 PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 {
     float4 pk_Time;      // Time since load (t/20, t, t*2, t*3), use to animate things inside the shaders.
@@ -42,8 +41,10 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float4x4 pk_MATRIX_L_I_V;   // Last inverse view matrix.
     float4x4 pk_MATRIX_L_VP;    // Last view * projection matrix.
     float4x4 pk_MATRIX_LD_P;    // Last view * projection * current inverse view matrix.
-    float pk_SceneOEM_Exposure; // Scene reflections exposure
+    float pk_SceneEnv_Exposure; // Scene background environment exposure
 };
+
+#define PK_SCENE_ENV_EXPOSURE pk_SceneEnv_Exposure
 
 #if !defined(PK_INSTANCING_ENABLED)
 PK_DECLARE_CBUFFER(pk_ModelMatrices, PK_SET_DRAW)
@@ -59,7 +60,6 @@ PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenDepthPrevious;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenNormalsCurrent;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenNormalsPrevious;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenColorPrevious;
-PK_DECLARE_SET_GLOBAL uniform sampler2D pk_SceneOEM_HDR;
 PK_DECLARE_ACCELERATION_STRUCTURE(PK_SET_SHADER, pk_SceneStructure)
 
 //----------GBUFFER ENCODING UTILITIES----------//

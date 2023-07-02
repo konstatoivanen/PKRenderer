@@ -28,7 +28,6 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::SetRenderTarget(const uint3& resolution)
     {
-        // @TODO move somewhere non static
         static VulkanBindHandle dummy{};
         dummy.image.image = VK_NULL_HANDLE;
         dummy.image.alias = VK_NULL_HANDLE;
@@ -130,17 +129,20 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanCommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
     {
         ValidatePipeline();
+        MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
         vkCmdDraw(m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
     void VulkanCommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
     {
         ValidatePipeline();
+        MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
         vkCmdDrawIndexed(m_commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
     void VulkanCommandBuffer::DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
     {
+
         auto vkbuffer = indirectArguments->GetNative<VulkanBuffer>()->GetRaw();
         static Services::VulkanBarrierHandler::AccessRecord record{};
         record.bufferRange.offset = (uint32_t)offset;
@@ -151,11 +153,13 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_renderState->GetServices()->barrierHandler->Record(vkbuffer->buffer, record, PK_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
+        MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
         vkCmdDrawIndexedIndirect(m_commandBuffer, vkbuffer->buffer, offset, drawCount, stride);
     }
 
     void VulkanCommandBuffer::Dispatch(uint3 dimensions)
     {
+        MarkLastCommandStage(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
         EndRenderPass();
         ValidatePipeline();
         
@@ -172,6 +176,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::DispatchRays(Math::uint3 dimensions)
     {
+        MarkLastCommandStage(VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
         EndRenderPass();
         ValidatePipeline();
         auto addresses = m_renderState->GetShaderBindingTableAddresses();
@@ -230,6 +235,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         EndRenderPass();
         ResolveBarriers();
+        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
         vkCmdCopyImageToBuffer(m_commandBuffer, vksrc->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vkbuff->GetRaw()->buffer, 1, &region);
     }
 
@@ -239,13 +245,15 @@ namespace PK::Rendering::VulkanRHI::Objects
         static VulkanBindHandle dstHandle;
         src->GetNative<VulkanTexture>()->FillBindHandle(&srcHandle, srcRange, TextureBindMode::RenderTarget);
         dst->GetNative<VulkanTexture>()->FillBindHandle(&dstHandle, dstRange, TextureBindMode::RenderTarget);
+        auto srcLayers = glm::min(srcHandle.image.range.layerCount, src->GetLayers());
+        auto dstLayers = glm::min(dstHandle.image.range.layerCount, dst->GetLayers());
 
         VkImageBlit blitRegion{};
-        blitRegion.srcSubresource = { (uint32_t)srcHandle.image.range.aspectMask, srcHandle.image.range.baseMipLevel, srcHandle.image.range.baseArrayLayer, srcHandle.image.range.layerCount };
-        blitRegion.dstSubresource = { (uint32_t)srcHandle.image.range.aspectMask, dstHandle.image.range.baseMipLevel, dstHandle.image.range.baseArrayLayer, dstHandle.image.range.layerCount };
+        blitRegion.srcSubresource = { (uint32_t)srcHandle.image.range.aspectMask, srcHandle.image.range.baseMipLevel, srcHandle.image.range.baseArrayLayer, 0u };
+        blitRegion.dstSubresource = { (uint32_t)srcHandle.image.range.aspectMask, dstHandle.image.range.baseMipLevel, dstHandle.image.range.baseArrayLayer, 0u };
         blitRegion.srcOffsets[1] = { (int)srcHandle.image.extent.width, (int)srcHandle.image.extent.height, (int)srcHandle.image.extent.depth };
         blitRegion.dstOffsets[1] = { (int)dstHandle.image.extent.width, (int)dstHandle.image.extent.height, (int)dstHandle.image.extent.depth };
-        blitRegion.dstSubresource.layerCount = blitRegion.srcSubresource.layerCount = glm::min(blitRegion.srcSubresource.layerCount, blitRegion.dstSubresource.layerCount);
+        blitRegion.dstSubresource.layerCount = blitRegion.srcSubresource.layerCount = glm::min(srcLayers, dstLayers);
         Blit(&srcHandle, &dstHandle, blitRegion, filter);
     }
 
@@ -257,6 +265,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         EndRenderPass();
         ResolveBarriers();
+        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
 
         if (src->image.samples > 1 && dst->image.samples == 1)
         {
@@ -276,6 +285,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     void VulkanCommandBuffer::Clear(Buffer* dst, size_t offset, size_t size, uint32_t value)
     {
         EndRenderPass();
+        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
         vkCmdFillBuffer(m_commandBuffer, dst->GetNative<VulkanBuffer>()->GetRaw()->buffer, offset, size, value);
     }
 
@@ -290,6 +300,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         m_renderState->RecordImage(handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_MEMORY_WRITE_BIT);
         ResolveBarriers();
+        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
         vkCmdClearColorImage(m_commandBuffer, vktex->GetRaw()->image, handle->image.layout, &clearValue, 1, &handle->image.range);
     }
 
@@ -306,6 +317,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto vkBuffer = buffer->GetNative<VulkanBuffer>();
         vkBuffer->EndWrite(&srcBuffer, &dstBuffer, &copyRegion, GetFenceRef());
 
+        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
         vkCmdCopyBuffer(m_commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
         static Services::VulkanBarrierHandler::AccessRecord record{};
@@ -349,6 +361,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         stage->SetData(data, size);
         TransitionImageLayout(vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
         vkCmdCopyBufferToImage(m_commandBuffer, stage->buffer, vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, (uint32_t)bufferCopyRegions.size(), bufferCopyRegions.data());
         TransitionImageLayout(vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout, range);
         m_renderState->GetServices()->stagingBufferCache->Release(stage, GetFenceRef());
@@ -377,6 +390,7 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         stage->SetData(data, size);
         TransitionImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range);
+        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
         vkCmdCopyBufferToImage(m_commandBuffer, stage->buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &copyRegion);
         TransitionImageLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout, range);
         m_renderState->GetServices()->stagingBufferCache->Release(stage, GetFenceRef());
@@ -398,11 +412,13 @@ namespace PK::Rendering::VulkanRHI::Objects
 
     void VulkanCommandBuffer::BuildAccelerationStructures(uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
     {
+        MarkLastCommandStage(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
         vkCmdBuildAccelerationStructuresKHR(m_commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
     }
 
     void VulkanCommandBuffer::CopyAccelerationStructure(const VkCopyAccelerationStructureInfoKHR* pInfo)
     {
+        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
         vkCmdCopyAccelerationStructureKHR(m_commandBuffer, pInfo);
     }
 

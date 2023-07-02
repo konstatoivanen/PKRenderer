@@ -26,11 +26,12 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 #define PK_GI_LVL_DIFF1 1
 #define PK_GI_LVL_SPEC 2
 #define PK_GI_LVL_META 3
-#define PK_GI_VOXEL_MAX_MIP 7
+#define PK_GI_VOXEL_MIP_COUNT 7
 #define PK_GI_RAY_MIN_DISTANCE 0.005f
 #define PK_GI_RAY_MAX_DISTANCE 100.0f
+#define PK_GI_RAY_CONE_SIZE 0.25f
 #define PK_GI_AO_DIFF_MAX_DISTANCE 6.0f
-#define PK_GI_AO_SPEC_MAX_DISTANCE 1.0f
+#define PK_GI_AO_SPEC_MAX_DISTANCE 6.0f
 #define PK_GI_AO_DIFF_POWER 0.25f
 #define PK_GI_AO_SPEC_POWER 0.4f
 #define PK_GI_MIN_ROUGH_SPEC 0.4f
@@ -62,7 +63,8 @@ struct GISampleMeta
 {
     float historyDiff;
     float historySpec;
-    float2 moments;
+    float distDiff;
+    float distSpec;
 };
 
 struct GISampleFull
@@ -88,7 +90,7 @@ struct GIRayHits
 
 #define pk_Zero_GISampleDiff GISampleDiff(pk_ZeroSH, 0.0f, 0.0f)
 #define pk_Zero_GISampleSpec GISampleSpec(0.0f.xxx, 0.0f, 0.0f)
-#define pk_Zero_GISampleMeta GISampleMeta(0.0f, 0.0f, 0.0f.xx)
+#define pk_Zero_GISampleMeta GISampleMeta(0.0f, 0.0f, 0.0f, 0.0f)
 #define pk_Zero_GISampleFull GISampleFull(pk_Zero_GISampleDiff, pk_Zero_GISampleSpec, pk_Zero_GISampleMeta)
 
 //----------UTILITIES----------//
@@ -114,7 +116,7 @@ float4 GI_WorldToVoxelNDCSpace(float3 worldpos)
 //----------PACK / UNPACK FUNCTIONS----------//
 uint4 GI_Pack_SampleDiff(const GISampleDiff u) { return uint4(packHalf4x16(u.sh.Y), packHalf4x16(float4(u.sh.CoCg, u.ao, u.depth))); }
 uint2 GI_Pack_SampleSpec(const GISampleSpec u) { return uint2(EncodeE5BGR9(u.radiance), packHalf2x16(float2(u.ao, u.depth))); }
-uint2 GI_Pack_SampleMeta(const GISampleMeta u) { return packHalf4x16(float4(u.historyDiff, u.historySpec, u.moments)); }
+uint2 GI_Pack_SampleMeta(const GISampleMeta u) { return packHalf4x16(float4(u.historyDiff, u.historySpec, u.distDiff, u.distSpec)); }
 
 GISampleDiff GI_Unpack_SampleDiff(const uint4 p) 
 {
@@ -132,7 +134,7 @@ GISampleSpec GI_Unpack_SampleSpec(const uint2 p)
 GISampleMeta GI_Unpack_SampleMeta(const uint2 p) 
 { 
     const float4 v0 = unpackHalf4x16(p.xy);
-    return GISampleMeta(v0.x, v0.y, v0.zw);
+    return GISampleMeta(v0.x, v0.y, v0.z, v0.w);
 }
 
 //----------LOAD FUNCTIONS----------//
@@ -232,12 +234,12 @@ float4 GI_ConeTrace_Volumetric(float3 position)
 {
     float4 color = float4(0.0.xxx, 1.0);
 
-    #pragma unroll 4
-    for (uint i = 0; i < 4; ++i)
+    #pragma unroll 7
+    for (uint i = 0; i < PK_GI_VOXEL_MIP_COUNT; ++i)
     {
-        float level = i * 1.25f;
+        float level = i * 0.75f;
         float4 voxel = GI_Load_Voxel(position, level);
-        color.rgb += voxel.rgb * (1.0 + level) * pow2(color.a) * i;
+        color.rgb += voxel.rgb;
         color.a *= saturate(1.0 - voxel.a * (1.0 + pow3(level) * 0.075));
     }
 

@@ -118,9 +118,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         memset(m_vertexBuffers, 0, sizeof(m_vertexBuffers));
         memset(m_descriptorSets, 0, sizeof(m_descriptorSets));
 
-        // @TODO refactor usage to allow for reset
-        //memset(m_sbtAddresses, 0, sizeof(m_sbtAddresses));
-
         m_clearValueCount = 0u;
         m_indexType = VK_INDEX_TYPE_UINT16;
         m_pipelineKey.fixedFunctionState = FixedFunctionState();
@@ -712,7 +709,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             {
                 auto binding = setkey.bindings[j];
 
-                // @TODO add array support
+                // No Array support as they're locally reserved for readonly resources
                 if (binding.isArray)
                 {
                     continue;
@@ -724,19 +721,19 @@ namespace PK::Rendering::VulkanRHI::Objects
 
                 switch (binding.type)
                 {
-                case ResourceType::SamplerTexture:
-                case ResourceType::Texture:
-                case ResourceType::Image:
-                    RecordImage(handle, stage, access | VK_ACCESS_SHADER_READ_BIT);
-                    break;
-                case ResourceType::StorageBuffer:
-                case ResourceType::DynamicStorageBuffer:
-                    RecordBuffer(handle, stage, access | VK_ACCESS_SHADER_READ_BIT);
-                    break;
-                case ResourceType::ConstantBuffer:
-                case ResourceType::DynamicConstantBuffer:
-                    RecordBuffer(handle, stage, access | VK_ACCESS_UNIFORM_READ_BIT);
-                    break;
+                    case ResourceType::SamplerTexture:
+                    case ResourceType::Texture:
+                    case ResourceType::Image:
+                        RecordImage(handle, stage, access | VK_ACCESS_SHADER_READ_BIT);
+                        break;
+                    case ResourceType::StorageBuffer:
+                    case ResourceType::DynamicStorageBuffer:
+                        RecordBuffer(handle, stage, access | VK_ACCESS_SHADER_READ_BIT);
+                        break;
+                    case ResourceType::ConstantBuffer:
+                    case ResourceType::DynamicConstantBuffer:
+                        RecordBuffer(handle, stage, access | VK_ACCESS_UNIFORM_READ_BIT);
+                        break;
                 }
             }
         }

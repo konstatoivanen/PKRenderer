@@ -1,11 +1,12 @@
 #version 460
 #pragma PROGRAM_COMPUTE
-#include includes/Lighting.glsl
-#include includes/SharedSceneGI.glsl
 #include includes/Reconstruction.glsl
+#include includes/SceneEnv.glsl
+#include includes/SharedSceneGI.glsl
 #include includes/CTASwizzling.glsl
 
-float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direction, const float dist, bool isMiss, const float roughness)
+
+float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direction, const float dist, bool isMiss)
 {
     const float3 worldpos = origin + direction * dist;
     float3 clipuvw;
@@ -37,11 +38,10 @@ float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direct
 
     if (isMiss)
     {
-        return SampleEnvironment(OctaUV(direction), roughness);
+        return SampleEnvironment(OctaUV(direction), 0.0f);
     }
 
-    const float level = roughness * roughness * log2(max(1.0f, dist) / pk_GI_VoxelSize);
-    const float4 voxel = GI_Load_Voxel(worldpos, level);
+    const float4 voxel = GI_Load_Voxel(worldpos, PK_GI_RAY_CONE_SIZE * log2(1.0f + (dist / pk_GI_VoxelSize)));
     return voxel.rgb / max(voxel.a, 1e-2f);
 }
 
@@ -78,13 +78,10 @@ void main()
     GIRayHits hits = GI_Load_RayHits(coord);
     GISampleFull filtered = GI_Load_SampleFull(coord);
     const float wDiff = max(1.0f / (filtered.meta.historyDiff + 1.0f), 0.03f);
-    const float wSpec = max(1.0f / (filtered.meta.historySpec + 1.0f), 0.01f); 
+    const float wSpec = max(1.0f / (filtered.meta.historySpec + 1.0f), 0.03f); 
 
-    const float coneSizeDiff = 0.5f;
-    const float coneSizeSpec = NR.w;
-    
-    float3 radianceDiff = SampleRadiance(coord, O, directions.diff, hits.distDiff, hits.isMissDiff, coneSizeDiff);
-    float3 radianceSpec = SampleRadiance(coord, O, directions.spec, hits.distSpec, hits.isMissSpec, coneSizeSpec);
+    float3 radianceDiff = SampleRadiance(coord, O, directions.diff, hits.distDiff, hits.isMissDiff);
+    float3 radianceSpec = SampleRadiance(coord, O, directions.spec, hits.distSpec, hits.isMissSpec);
 
     // Construct new samples
     GISampleDiff s_diff;
@@ -103,9 +100,8 @@ void main()
     filtered.spec.ao       = lerp(filtered.spec.ao, s_spec.ao, wSpec);
     filtered.spec.depth    = depth;
     
-    //float luma      = SH_ToLuminance(s_diff.sh, N) + dot(pk_Luminance.rgb, radianceSpec);
-    //filtered.meta.moments  = lerp(filtered.meta.moments, float2(luma, pow2(luma)), wDiff);
+    filtered.meta.distDiff = lerp(filtered.meta.distDiff, hits.isMissDiff ? PK_GI_RAY_MAX_DISTANCE : hits.distDiff, wDiff);
+    filtered.meta.distSpec = lerp(filtered.meta.distSpec, hits.isMissSpec ? PK_GI_RAY_MAX_DISTANCE : hits.distSpec, wSpec);
 
-    GI_Store_SampleDiff(coord, filtered.diff);
-    GI_Store_SampleSpec(coord, filtered.spec);
+    GI_Store_SampleFull(coord, filtered);
 }

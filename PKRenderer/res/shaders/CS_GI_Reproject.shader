@@ -13,12 +13,13 @@ void AddWeightedSample(const int2 coord, inout GISampleFull o, const float weigh
     o.spec.ao += s.spec.ao * weight;
     o.meta.historyDiff += s.meta.historyDiff * weight;
     o.meta.historySpec += s.meta.historySpec * weight;
-    o.meta.moments += s.meta.moments * weight;
+    o.meta.distDiff += s.meta.distDiff * weight;
+    o.meta.distSpec += s.meta.distSpec * weight;
 }
 
 // Source: https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
 #define SPEC_ACCUM_BASE_POWER 0.25
-#define SPEC_ACCUM_CURVE 32.0
+#define SPEC_ACCUM_CURVE 2.0
 
 float GetParallaxFactor(float3 motion, float distToSurf, float deltaTime)
 {
@@ -29,10 +30,10 @@ float GetMaxSpecularHistory(float roughness, float NoV, float parallax)
 {
     float acos01sq = saturate(1.0 - NoV);
     float a = pow(acos01sq, SPEC_ACCUM_CURVE);
-    float b = 1.001 + roughness * roughness;
+    float b = 1.001 + pow2(roughness);
     float angularSensitivity = (b + a) / (b - a);
     float power = SPEC_ACCUM_BASE_POWER * (1.0 + parallax * angularSensitivity);
-    return PK_GI_MAX_HISTORY * pow(roughness, power);
+    return max(1.0f, PK_GI_MAX_HISTORY * pow(roughness, power));
 }
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
@@ -59,7 +60,7 @@ void main()
 
     const float parallax = GetParallaxFactor(pk_ViewSpaceCameraDelta.xyz, length(viewpos), pk_DeltaTime.x);
     const float NoV = dot(normal, -normalize(viewpos.xyz));
-    const float maxSpecHistory = PK_GI_MAX_HISTORY;// GetMaxSpecularHistory(normalRoughness.w, NoV, parallax);
+    const float maxSpecHistory = GetMaxSpecularHistory(normalRoughness.w, NoV, parallax);
 
     const float2 uvPrev = ClipToUVW(mul(pk_MATRIX_LD_P, viewpos)).xy * size - 0.49f.xx; // Bias to prevent drifting effect.
     const int2 coordPrev = int2(uvPrev);
@@ -148,12 +149,13 @@ void main()
         filtered.spec.ao /= wSum;
         filtered.meta.historyDiff = min(PK_GI_MAX_HISTORY, (filtered.meta.historyDiff / wSum) + 1.0f);
         filtered.meta.historySpec = min(maxSpecHistory, (filtered.meta.historySpec / wSum) + 1.0f);
-        filtered.meta.moments /= wSum;
+        filtered.meta.distDiff /= wSum;
+        filtered.meta.distSpec /= wSum;
     }
 
     const bool invalidDiff = Any_IsNaN(filtered.diff.sh.Y) || Any_IsNaN(filtered.diff.sh.CoCg) || isnan(filtered.diff.ao);
     const bool invalidSpec = Any_IsNaN(filtered.spec.radiance) || isnan(filtered.spec.ao);
-    const bool invalidMeta = isnan(filtered.meta.historyDiff) || isnan(filtered.meta.historySpec) || Any_IsNaN(filtered.meta.moments);
+    const bool invalidMeta = isnan(filtered.meta.historyDiff) || isnan(filtered.meta.historySpec) || isnan(filtered.meta.distDiff) || isnan(filtered.meta.distSpec);
 
     uint4 packedDiff = invalidDiff ? uint4(0) : GI_Pack_SampleDiff(filtered.diff);
     uint2 packedSpec = invalidSpec ? uint2(0) : GI_Pack_SampleSpec(filtered.spec);
