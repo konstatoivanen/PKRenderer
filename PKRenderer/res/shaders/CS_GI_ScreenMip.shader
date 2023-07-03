@@ -2,6 +2,7 @@
 #pragma PROGRAM_COMPUTE
 #include includes/Common.glsl
 #include includes/SharedSceneGI.glsl
+#include includes/CTASWizzling.glsl
 
 layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray _DestinationMip1;
 layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray _DestinationMip2;
@@ -9,75 +10,81 @@ layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray _De
 layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray _DestinationMip4;
 
 #define GROUP_SIZE 8u
-shared uint4 lds_Data[GROUP_SIZE * GROUP_SIZE];
-
-void CombineSamplesDiff(inout GISampleDiff o, const uint4 s)
-{
-    const GISampleDiff u = GI_Unpack_SampleDiff(s);
-    o.sh.Y += u.sh.Y;
-    o.sh.CoCg += u.sh.CoCg;
-    o.ao += u.ao;
-    o.depth += u.depth;
-}
-
-void CombineSamplesSpec(inout GISampleSpec o, const uint2 s)
-{
-    const GISampleSpec u = GI_Unpack_SampleSpec(s);
-    o.radiance += u.radiance;
-    o.ao += u.ao;
-    o.depth += u.depth;
-}
+shared uint4 lds_Diff[GROUP_SIZE * GROUP_SIZE];
+shared uint2 lds_Spec[GROUP_SIZE * GROUP_SIZE];
 
 uint4 CombinePackedDiff(const uint4 u0, const uint4 u1, const uint4 u2, const uint4 u3)
 {
-    GISampleDiff flt = pk_Zero_GISampleDiff;
-    uint sum = 0u;
+    GISampleDiff o = pk_Zero_GISampleDiff;
+    const uint4 mask = uint4(u0.w != 0u, u1.w != 0u, u2.w != 0u, u3.w != 0u);
+    const float w = 1.0f / float(max(mask.x + mask.y + mask.z + mask.w, 1u));
 
-    if (u0.w != 0u) { CombineSamplesDiff(flt, u0); ++sum; }
-    if (u1.w != 0u) { CombineSamplesDiff(flt, u1); ++sum; }
-    if (u2.w != 0u) { CombineSamplesDiff(flt, u2); ++sum; }
-    if (u3.w != 0u) { CombineSamplesDiff(flt, u3); ++sum; }
-
-    if (sum == 0u)
+    const GISampleDiff s[4] =
     {
-        return uint4(0u);
+        GI_Unpack_SampleDiff(u0),
+        GI_Unpack_SampleDiff(u1),
+        GI_Unpack_SampleDiff(u2),
+        GI_Unpack_SampleDiff(u3)
+    };
+
+    #pragma unroll 4
+    for (uint i = 0u; i < 4; ++i)
+    {
+        o.sh.Y += s[i].sh.Y * mask[i];
+        o.sh.CoCg += s[i].sh.CoCg * mask[i];
+        o.ao += s[i].ao * mask[i];
     }
 
-    const float w = 1.0f / float(sum);
-    flt.sh.Y *= w;
-    flt.sh.CoCg *= w;
-    flt.ao *= w;
-    flt.depth *= w;
-    return GI_Pack_SampleDiff(flt);
+    o.sh.Y *= w;
+    o.sh.CoCg *= w;
+    o.ao *= w;
+
+    return GI_Pack_SampleDiff(o);
 }
 
 uint2 CombinePackedSpec(const uint2 u0, const uint2 u1, const uint2 u2, const uint2 u3)
 {
-    GISampleSpec flt = pk_Zero_GISampleSpec;
-    uint sum = 0u;
+    GISampleSpec o = pk_Zero_GISampleSpec;
+    const uint4 mask = uint4(u0.y != 0u, u1.y != 0u, u2.y != 0u, u3.y != 0u);
+    const float w = 1.0f / float(max(mask.x + mask.y + mask.z + mask.w, 1u));
 
-    if (u0.y != 0u) { CombineSamplesSpec(flt, u0); ++sum; }
-    if (u1.y != 0u) { CombineSamplesSpec(flt, u1); ++sum; }
-    if (u2.y != 0u) { CombineSamplesSpec(flt, u2); ++sum; }
-    if (u3.y != 0u) { CombineSamplesSpec(flt, u3); ++sum; }
-
-    if (sum == 0u)
+    const GISampleSpec s[4] =
     {
-        return uint2(0u);
+        GI_Unpack_SampleSpec(u0),
+        GI_Unpack_SampleSpec(u1),
+        GI_Unpack_SampleSpec(u2),
+        GI_Unpack_SampleSpec(u3)
+    };
+
+    #pragma unroll 4
+    for (uint i = 0u; i < 4; ++i)
+    {
+        o.radiance += s[i].radiance * mask[i];
+        o.ao += s[i].ao * mask[i];
     }
 
-    const float w = 1.0f / float(sum);
-    flt.radiance *= w;
-    flt.ao *= w;
-    flt.depth *= w;
-    return GI_Pack_SampleSpec(flt);
+    o.radiance *= w;
+    o.ao *= w;
+    return GI_Pack_SampleSpec(o);
+}
+
+uint2 GetSwizzledThreadID()
+{
+    return ThreadGroupTilingX
+    (
+        gl_NumWorkGroups.xy,
+        uint2(GROUP_SIZE, GROUP_SIZE),
+        8u,
+        gl_LocalInvocationID.xy,
+        gl_WorkGroupID.xy
+    );
 }
 
 layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
 void main()
 {
     const uint2 size = uint2(pk_ScreenSize.xy);
-    const uint2 coord = gl_GlobalInvocationID.xy;
+    const uint2 coord = GetSwizzledThreadID();
     const uint thread = gl_LocalInvocationIndex;
 
     uint2 baseCoords[4] =
@@ -89,74 +96,56 @@ void main()
     };
 
     uint4 packedDiff = uint4(0u);
+    uint2 packedSpec = uint2(0u);
 
     //----------DIFFUSE MIP----------//
     {
-        uint4 packed0 = GI_Load_Packed_SampleDiff(int2(baseCoords[0]));
-        uint4 packed1 = GI_Load_Packed_SampleDiff(int2(baseCoords[1]));
-        uint4 packed2 = GI_Load_Packed_SampleDiff(int2(baseCoords[2]));
-        uint4 packed3 = GI_Load_Packed_SampleDiff(int2(baseCoords[3]));
-        lds_Data[thread] = packedDiff = CombinePackedDiff(packed0, packed1, packed2, packed3);
+        uint4 s_diff0 = GI_Load_Packed_SampleDiff(int2(baseCoords[0]));
+        uint4 s_diff1 = GI_Load_Packed_SampleDiff(int2(baseCoords[1]));
+        uint4 s_diff2 = GI_Load_Packed_SampleDiff(int2(baseCoords[2]));
+        uint4 s_diff3 = GI_Load_Packed_SampleDiff(int2(baseCoords[3]));
+
+        uint2 s_spec0 = GI_Load_Packed_SampleSpec(int2(baseCoords[0]));
+        uint2 s_spec1 = GI_Load_Packed_SampleSpec(int2(baseCoords[1]));
+        uint2 s_spec2 = GI_Load_Packed_SampleSpec(int2(baseCoords[2]));
+        uint2 s_spec3 = GI_Load_Packed_SampleSpec(int2(baseCoords[3]));
+
+        lds_Diff[thread] = packedDiff = CombinePackedDiff(s_diff0, s_diff1, s_diff2, s_diff3);
+        lds_Spec[thread].xy = packedSpec = CombinePackedSpec(s_spec0, s_spec1, s_spec2, s_spec3);
+
         imageStore(_DestinationMip1, int3(coord, PK_GI_LVL_DIFF0), packedDiff.xyxy);
         imageStore(_DestinationMip1, int3(coord, PK_GI_LVL_DIFF1), packedDiff.zwzw);
-    }
-    barrier();
-
-    if ((thread & 0x9u) == 0u)
-    {
-        lds_Data[thread] = packedDiff = CombinePackedDiff(packedDiff, lds_Data[thread + 0x01u], lds_Data[thread + 0x08u], lds_Data[thread + 0x09u]);
-        imageStore(_DestinationMip2, int3(coord / 2u, PK_GI_LVL_DIFF0), packedDiff.xyxy);
-        imageStore(_DestinationMip2, int3(coord / 2u, PK_GI_LVL_DIFF1), packedDiff.zwzw);
-    }
-    barrier();
-
-    if ((thread & 0x1Bu) == 0u)
-    {
-        lds_Data[thread] = packedDiff = CombinePackedDiff(packedDiff, lds_Data[thread + 0x02u], lds_Data[thread + 0x10u], lds_Data[thread + 0x12u]);
-        imageStore(_DestinationMip3, int3(coord / 4u, PK_GI_LVL_DIFF0), packedDiff.xyxy);
-        imageStore(_DestinationMip3, int3(coord / 4u, PK_GI_LVL_DIFF1), packedDiff.zwzw);
-    }
-    barrier();
-
-    if (thread == 0u)
-    {
-        packedDiff = CombinePackedDiff(packedDiff, lds_Data[thread + 0x04u], lds_Data[thread + 0x20u], lds_Data[thread + 0x24u]);
-        imageStore(_DestinationMip4, int3(coord / 8u, PK_GI_LVL_DIFF0), packedDiff.xyxy);
-        imageStore(_DestinationMip4, int3(coord / 8u, PK_GI_LVL_DIFF1), packedDiff.zwzw);
-    }
-    barrier();
-
-
-    //----------SPEC MIP----------//
-    uint2 packedSpec = uint2(0u);
-    
-    {
-        uint2 packed0 = GI_Load_Packed_SampleSpec(int2(baseCoords[0]));
-        uint2 packed1 = GI_Load_Packed_SampleSpec(int2(baseCoords[1]));
-        uint2 packed2 = GI_Load_Packed_SampleSpec(int2(baseCoords[2]));
-        uint2 packed3 = GI_Load_Packed_SampleSpec(int2(baseCoords[3]));
-        lds_Data[thread].xy = packedSpec = CombinePackedSpec(packed0, packed1, packed2, packed3);
         imageStore(_DestinationMip1, int3(coord, PK_GI_LVL_SPEC), packedSpec.xyxy);
     }
+
     barrier();
 
     if ((thread & 0x9u) == 0u)
     {
-        lds_Data[thread].xy = packedSpec = CombinePackedSpec(packedSpec, lds_Data[thread + 0x01u].xy, lds_Data[thread + 0x08u].xy, lds_Data[thread + 0x09u].xy);
+        lds_Diff[thread] = packedDiff = CombinePackedDiff(packedDiff, lds_Diff[thread + 0x01u], lds_Diff[thread + 0x08u], lds_Diff[thread + 0x09u]);
+        lds_Spec[thread] = packedSpec = CombinePackedSpec(packedSpec, lds_Spec[thread + 0x01u], lds_Spec[thread + 0x08u], lds_Spec[thread + 0x09u]);
+        imageStore(_DestinationMip2, int3(coord / 2u, PK_GI_LVL_DIFF0), packedDiff.xyxy);
+        imageStore(_DestinationMip2, int3(coord / 2u, PK_GI_LVL_DIFF1), packedDiff.zwzw);
         imageStore(_DestinationMip2, int3(coord / 2u, PK_GI_LVL_SPEC), packedSpec.xyxy);
     }
     barrier();
 
     if ((thread & 0x1Bu) == 0u)
     {
-        lds_Data[thread].xy = packedSpec = CombinePackedSpec(packedSpec, lds_Data[thread + 0x02u].xy, lds_Data[thread + 0x10u].xy, lds_Data[thread + 0x12u].xy);
+        lds_Diff[thread] = packedDiff = CombinePackedDiff(packedDiff, lds_Diff[thread + 0x02u], lds_Diff[thread + 0x10u], lds_Diff[thread + 0x12u]);
+        lds_Spec[thread] = packedSpec = CombinePackedSpec(packedSpec, lds_Spec[thread + 0x02u], lds_Spec[thread + 0x10u], lds_Spec[thread + 0x12u]);
+        imageStore(_DestinationMip3, int3(coord / 4u, PK_GI_LVL_DIFF0), packedDiff.xyxy);
+        imageStore(_DestinationMip3, int3(coord / 4u, PK_GI_LVL_DIFF1), packedDiff.zwzw);
         imageStore(_DestinationMip3, int3(coord / 4u, PK_GI_LVL_SPEC), packedSpec.xyxy);
     }
     barrier();
 
     if (thread == 0u)
     {
-        lds_Data[thread].xy = packedSpec = CombinePackedSpec(packedSpec, lds_Data[thread + 0x04u].xy, lds_Data[thread + 0x20u].xy, lds_Data[thread + 0x24u].xy);
+        packedDiff = CombinePackedDiff(packedDiff, lds_Diff[thread + 0x04u], lds_Diff[thread + 0x20u], lds_Diff[thread + 0x24u]);
+        packedSpec = CombinePackedSpec(packedSpec, lds_Spec[thread + 0x04u], lds_Spec[thread + 0x20u], lds_Spec[thread + 0x24u]);
+        imageStore(_DestinationMip4, int3(coord / 8u, PK_GI_LVL_DIFF0), packedDiff.xyxy);
+        imageStore(_DestinationMip4, int3(coord / 8u, PK_GI_LVL_DIFF1), packedDiff.zwzw);
         imageStore(_DestinationMip4, int3(coord / 8u, PK_GI_LVL_SPEC), packedSpec.xyxy);
     }
 }

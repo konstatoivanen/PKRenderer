@@ -56,8 +56,8 @@ namespace PK::Rendering::Structs
         uint16_t levels = 0u;
         uint16_t layers = 0u;
 
-        TextureViewRange() {}
-        TextureViewRange(uint16_t level, uint16_t layer, uint16_t levels, uint16_t layers) : level(level), layer(layer), levels(levels), layers(layers) {}
+        constexpr TextureViewRange() {}
+        constexpr TextureViewRange(uint16_t level, uint16_t layer, uint16_t levels, uint16_t layers) : level(level), layer(layer), levels(levels), layers(layers) {}
     };
 
     struct MultisamplingParameters

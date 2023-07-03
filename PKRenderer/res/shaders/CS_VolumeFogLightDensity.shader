@@ -31,10 +31,10 @@ void main()
     float depth = GetVolumeCellDepth(id.z + dither.x);
 
     // Texel is inside dither & trilinear interpolation range. Let's clamp it so that we can avoid light leaking through thin surfaces.
-    if (zmin < zmax)
-    {
-        depth = min(zmax, depth);
-    }
+    //if (zmin < zmax)
+    //{
+    //    depth = min(zmax, depth);
+    //}
 
     depth = max(pk_ProjectionParams.x, depth);
 

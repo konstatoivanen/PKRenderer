@@ -49,22 +49,22 @@ float2 GetSampleUV(const float3 vpos, const float2x3 basis, const float2 rotatio
     return (c.xy / c.z) * 0.5f + 0.5f;
 }
 
-void ApproximateRoughSpecular(inout GISampleFull filtered, const float3 N, const float3 V, const float R)
+void ApproximateRoughSpecular(const SH sh, const float3 N, const float3 V, const float R, inout GISampleSpec spec)
 {
     float3 worldN = mul(float3x3(pk_MATRIX_I_V), N);
     float3 worldV = mul(float3x3(pk_MATRIX_I_V), V);
 
     float directionality;
-    float3 sh_dir = SH_ToPrimeDir(filtered.diff.sh, directionality);
+    float3 sh_dir = SH_ToPrimeDir(sh, directionality);
 
     float roughness = lerp(1.0f, R, saturate(directionality * 0.666f));
     roughness = sqrt(roughness); // Sample distribution used wrong roughness scale. correct this based on that. :/
 
-    const float3 s_color = SH_ToColor(filtered.diff.sh) * PK_TWO_PI;
+    const float3 s_color = SH_ToColor(sh) * PK_TWO_PI;
     const float3 specular = s_color * BRDF_GGX_SPECULAR(roughness, sh_dir, worldV, worldN);
     const float inter = smoothstep(PK_GI_MIN_ROUGH_SPEC, PK_GI_MAX_ROUGH_SPEC, R);
 
-    filtered.spec.radiance = lerp(filtered.spec.radiance, specular, inter);
+    spec.radiance = lerp(spec.radiance, specular, inter);
 }
 
 uint2 GetSwizzledThreadID()
@@ -91,7 +91,9 @@ void main()
         return;
     }
 
-    GISampleFull filtered = GI_Load_SampleFull(coord);
+    GISampleDiff c_diff = GI_Load_SampleDiff(coord);
+    GISampleSpec c_spec = GI_Load_SampleSpec(coord);
+
     const float4 c_normalRoughness = SampleViewNormalRoughness(coord);
     const float3 c_normal = c_normalRoughness.xyz;
     const float c_roughness = c_normalRoughness.w;
@@ -100,7 +102,7 @@ void main()
     const float2 c_rot = make_rotation(pk_FrameIndex.y * (PK_PI / 3.0f));
 
     float2 mom;
-    mom.x = log(1.0f + SH_ToLuminanceL0(filtered.diff.sh));
+    mom.x = log(1.0f + SH_ToLuminanceL0(c_diff.sh));
     mom.y = pow2(mom.x);
 
     float w_mom = 1.0f;
@@ -114,7 +116,9 @@ void main()
         }
 
         const GISampleDiff s_diff = GI_Load_SampleDiff(coord + int2(xx, yy));
-        const float s_w = (abs(depth - s_diff.depth) / depth) < 0.02f ? 1.0f : 0.0f;
+        const float s_depth = SampleMinZ(coord + int2(xx, yy), 0);
+
+        const float s_w = (abs(depth - s_depth) / depth) < 0.02f ? 1.0f : 0.0f;
         const float s_luma = log(1.0f + SH_ToLuminanceL0(s_diff.sh)) * s_w;
         mom += float2(s_luma, pow2(s_luma));
         w_mom += s_w;
@@ -123,7 +127,7 @@ void main()
     mom /= w_mom;
 
     const float variance = sqrt(saturate(mom.y - pow2(mom.x)));
-    const float2 radiusAndScale = GetFilterRadiusAndScale(depth, variance, filtered.diff.ao, filtered.meta.historyDiff);
+    const float2 radiusAndScale = GetFilterRadiusAndScale(depth, variance, c_diff.ao, c_diff.history);
     const float radius = radiusAndScale.x;
     const float radius_scale = radiusAndScale.y;
     const bool skip_filter = radius_scale < 0.05f;
@@ -145,37 +149,35 @@ void main()
             const int2 s_px = int2(s_uv * pk_ScreenSize.xy);
             
             GISampleDiff s_diff = GI_Load_SampleDiff(s_px);
+            const float s_depth = SampleMinZ(s_px, 0);
+            const float3 s_normal = SampleViewNormal(s_px);
 
-            const float3 s_vpos = ClipToViewPos(s_uv * 2 - 1, s_diff.depth);
+            const float3 s_vpos = ClipToViewPos(s_uv * 2 - 1, s_depth);
             const float3 s_ray = c_vpos - s_vpos;
 
             const float w_h = saturate(1.0f - abs(dot(c_normal, s_ray)) * normV);
             const float w_v = saturate(1.0f - dot(s_ray, s_ray) * normH);
             const float w_s = float(All_InArea(s_px, int2(0), int2(pk_ScreenSize.xy)));
-
-            float w = w_h * w_v * w_s;
+            const float w_n = max(0.0f, dot(s_normal, c_normal));
+            const float w = w_h * w_v * w_s * w_n;
 
             if (!isnan(w) && w > 1e-4f)
             {
-                const float3 s_normal = SampleViewNormal(s_px);
-                const float w_n = max(0.0f, dot(s_normal, c_normal));
-                w *= w_n;
-
-                filtered.diff.sh = SH_Add(filtered.diff.sh, s_diff.sh, w);
-                filtered.diff.ao += s_diff.ao * w;
+                c_diff.sh = SH_Add(c_diff.sh, s_diff.sh, w);
+                c_diff.ao += s_diff.ao * w;
                 wSum += w;
             }
         }
 
-        filtered.diff.sh = SH_Scale(filtered.diff.sh, 1.0f / wSum);
-        filtered.diff.ao /= wSum;
+        c_diff.sh = SH_Scale(c_diff.sh, 1.0f / wSum);
+        c_diff.ao /= wSum;
     }
 
     // Filter Spec
     #if PK_GI_APPROX_ROUGH_SPEC == 1
     if (c_roughness > PK_GI_MIN_ROUGH_SPEC)
     {
-        ApproximateRoughSpecular(filtered, c_normal, c_view, c_roughness);
+        ApproximateRoughSpecular(c_diff.sh, c_normal, c_view, c_roughness, c_spec);
     }
     
     if (c_roughness < PK_GI_MAX_ROUGH_SPEC)
@@ -191,9 +193,10 @@ void main()
             const int2 s_px = int2(s_uv * pk_ScreenSize.xy);
 
             GISampleSpec s_spec = GI_Load_SampleSpec(s_px);
+            const float s_depth = SampleMinZ(s_px, 0);
             const float4 s_nr = SampleViewNormalRoughness(s_px);
 
-            const float3 s_vpos = ClipToViewPos(s_uv * 2 - 1, s_spec.depth);
+            const float3 s_vpos = ClipToViewPos(s_uv * 2 - 1, s_depth);
             const float3 s_ray = c_vpos - s_vpos;
 
             const float w_h = saturate(1.0f - abs(dot(c_normal, s_ray)) * normV);
@@ -201,21 +204,20 @@ void main()
             const float w_r = abs(c_roughness - s_nr.w) / (pow2(c_roughness) * 0.99f + 1e-2f);
             const float w_n = GetSpecularNormalWeight(c_normal, s_nr.xyz, s_nr.w);
             const float w_s = float(All_InArea(s_px, int2(0), int2(pk_ScreenSize.xy)));
-
             const float w = w_h * w_v * w_s * w_r * w_n;
 
             if (!isnan(w) && w > 1e-4f)
             {
-                filtered.spec.radiance = s_spec.radiance * w;
-                filtered.diff.ao += s_spec.ao * w;
+                c_spec.radiance = s_spec.radiance * w;
+                c_diff.ao += s_spec.ao * w;
                 wSum += w;
             }
         }
 
-        filtered.spec.radiance /= wSum;
-        filtered.spec.ao /= wSum;
+        c_spec.radiance /= wSum;
+        c_spec.ao /= wSum;
     }
 
-
-    GI_Store_SampleFull(coord, filtered);
+    GI_Store_SampleDiff(coord, c_diff);
+    GI_Store_SampleSpec(coord, c_spec);
 }

@@ -23,6 +23,7 @@ namespace PK::Rendering::Passes
             Structs::FixedFunctionShaderAttributes m_voxelizeAttribs{};
             Objects::Shader* m_computeClear = nullptr;
             Objects::Shader* m_computeMipmap = nullptr;
+            Objects::Shader* m_computeShadeHits = nullptr;
             Objects::Shader* m_computeAccumulate = nullptr;
             Objects::Shader* m_computeReproject = nullptr;
             Objects::Shader* m_computeScreenMip = nullptr;

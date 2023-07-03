@@ -12,11 +12,15 @@ namespace PK::Rendering::Passes
     using namespace Structs;
     using namespace Objects;
 
+    constexpr static TextureViewRange DATA_RANGE0 = { 0,0,0,3 };
+    constexpr static TextureViewRange DATA_RANGE1 = { 0,3,0,3 };
+
     PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
         m_computeClear = assetDatabase->Find<Shader>("CS_GI_Clear");
         m_computeMipmap = assetDatabase->Find<Shader>("CS_GI_VolumeMipmap");
         m_computeAccumulate = assetDatabase->Find<Shader>("CS_GI_Accumulate");
+        m_computeShadeHits = assetDatabase->Find<Shader>("CS_GI_ShadeHits");
         m_computeReproject = assetDatabase->Find<Shader>("CS_GI_Reproject");
         m_computeScreenMip = assetDatabase->Find<Shader>("CS_GI_ScreenMip");
         m_computeHistoryFill = assetDatabase->Find<Shader>("CS_GI_HistoryFill");
@@ -52,7 +56,7 @@ namespace PK::Rendering::Passes
         descr.sampler.filterMag = FilterMode::Point;
         descr.usage = TextureUsage::Sample | TextureUsage::Storage;
         descr.format = TextureFormat::RG32UI;
-        descr.layers = 8;
+        descr.layers = 6;
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1 };
         m_screenData = Texture::Create(descr, "GI.ScreenData");
 
@@ -163,8 +167,8 @@ namespace PK::Rendering::Passes
             {0u, 0u, volres.y, volres.z },
         };
 
-        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), { 0,4,0,4 });
-        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), { 0,0,0,4 });
+        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), DATA_RANGE1);
+        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), DATA_RANGE0);
         cmd->Dispatch(m_computeReproject, 0, { resolution.x, resolution.y, 1u });
 
         cmd->SetRenderTarget({ viewports[m_rasterAxis].z, viewports[m_rasterAxis].w, 1 });
@@ -188,17 +192,20 @@ namespace PK::Rendering::Passes
     void PassSceneGI::RenderGI(CommandBuffer* cmd)
     {
         auto hash = HashCache::Get();
-        auto range0 = TextureViewRange(0, 0, 0, 4);
-        auto range1 = TextureViewRange(0, 4, 0, 4);
 
         auto resolution = m_screenData->GetResolution();
         uint3 dimension = { resolution.x, resolution.y, 1u };
 
         cmd->BeginDebugScope("SceneGI.Filter", PK_COLOR_GREEN);
 
-        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), range0);
-        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), range0);
+        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), DATA_RANGE1);
+        cmd->Dispatch(m_computeShadeHits, 0, dimension);
+
+        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), DATA_RANGE1);
+        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), DATA_RANGE0);
         cmd->Dispatch(m_computeAccumulate, 0, dimension);
+
+        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), DATA_RANGE0);
 
         GraphicsAPI::SetImage(hash->_DestinationMip1, m_screenDataMips.get(), { 0, 0, 1, 3 });
         GraphicsAPI::SetImage(hash->_DestinationMip2, m_screenDataMips.get(), { 1, 0, 1, 3 });
@@ -208,10 +215,10 @@ namespace PK::Rendering::Passes
 
         cmd->Dispatch(m_computeHistoryFill, 0, dimension);
 
-        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), range1);
+        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), DATA_RANGE1);
         cmd->Dispatch(m_computeDiskFilter, 0, dimension);
 
-        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), range1);
+        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), DATA_RANGE1);
         cmd->EndDebugScope();
     }
 }

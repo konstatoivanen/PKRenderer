@@ -2022,6 +2022,7 @@
     <None Include="res\shaders\CS_IntegrateEnvSH.shader" />
     <None Include="res\shaders\includes\SceneEnv.glsl" />
     <None Include="res\shaders\includes\TricubicSampler.glsl" />
+    <None Include="res\shaders\CS_GI_ShadeHits.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

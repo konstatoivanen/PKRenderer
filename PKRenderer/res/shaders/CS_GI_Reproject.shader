@@ -4,19 +4,6 @@
 #include includes/SharedSceneGI.glsl
 #include includes/Reconstruction.glsl
 
-void AddWeightedSample(const int2 coord, inout GISampleFull o, const float weight)
-{
-    GISampleFull s = GI_Load_SampleFull(coord);
-    o.diff.sh = SH_Add(o.diff.sh, s.diff.sh, weight);
-    o.diff.ao += s.diff.ao * weight;
-    o.spec.radiance += s.spec.radiance * weight;
-    o.spec.ao += s.spec.ao * weight;
-    o.meta.historyDiff += s.meta.historyDiff * weight;
-    o.meta.historySpec += s.meta.historySpec * weight;
-    o.meta.distDiff += s.meta.distDiff * weight;
-    o.meta.distSpec += s.meta.distSpec * weight;
-}
-
 // Source: https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
 #define SPEC_ACCUM_BASE_POWER 0.25
 #define SPEC_ACCUM_CURVE 2.0
@@ -47,11 +34,13 @@ void main()
     // Far clip or new backbuffer
     if (pk_FrameIndex.y == 0u || !Test_DepthFar(depth))
     {
-        GI_Store_Packed_SampleFull(coord, uint4(0), uint2(0), uint2(0));
+        GI_Store_Packed_SampleDiff(coord, uint4(0));
+        GI_Store_Packed_SampleSpec(coord, uint2(0));
         return;
     }
    
-    GISampleFull filtered = pk_Zero_GISampleFull;
+    GISampleDiff c_diff = pk_Zero_GISampleDiff;
+    GISampleSpec c_spec = pk_Zero_GISampleSpec;
 
     const float4 normalRoughness = SampleViewNormalRoughness(coord);
     const float3 normal = normalRoughness.xyz;
@@ -79,34 +68,34 @@ void main()
     {
         const int2 xy = coordPrev + int2(xx, yy);
         float weight = bilinearWeights[yy][xx];
-        
-        if (!All_InArea(xy, int2(0), size) || weight < 1e-4f)
-        {
-            continue;
-        }
 
         const float depthPrev = SamplePreviousLinearDepth(xy);
-
-        if (!Test_DepthFar(depthPrev))
-        {
-            continue;
-        }
-
         const float3 normalPrev = SamplePreviousViewNormal(xy);
+        const GISampleDiff s_diff = GI_Load_SampleDiff(xy);
+        const GISampleSpec s_spec = GI_Load_SampleSpec(xy);
+
         const float normalDot = dot(normalPrev, normal);
 
-        if (!Test_DepthReproject(depth, depthPrev, depthBias) || normalDot <= 0.05f)
+        if (weight > 1e-4f &&
+            All_InArea(xy, int2(0), size) &&
+            Test_DepthFar(depthPrev) && 
+            Test_DepthReproject(depth, depthPrev, depthBias) && 
+            normalDot > 0.05f)
         {
-            continue;
+            weight *= normalDot;
+            wSum += weight;
+
+            c_diff.sh = SH_Add(c_diff.sh, s_diff.sh, weight);
+            c_diff.ao += s_diff.ao * weight;
+            c_spec.radiance += s_spec.radiance * weight;
+            c_spec.ao += s_spec.ao * weight;
+            c_diff.history += s_diff.history * weight;
+            c_spec.history += s_spec.history * weight;
         }
      
-        weight *= normalDot;
-        wSum += weight;
-        AddWeightedSample(xy, filtered, weight);
     }
 
     // Try to find valid samples with a bilateral cross filter
-    /*
     if (wSum <= 1e-4f)
     {
         wSum = 0.0f;
@@ -116,50 +105,47 @@ void main()
         {
             const int2 xy = coordPrev + int2(xx, yy);
 
-            if (!All_InArea(xy, int2(0), size))
-            {
-                continue;
-            }
-
             const float depthPrev = SamplePreviousLinearDepth(xy);
-
-            if (!Test_DepthFar(depthPrev))
-            {
-                continue;
-            }
-
             const float3 normalPrev = SamplePreviousViewNormal(xy);
-            const float normalDot = dot(normalPrev, normal);
+            const GISampleDiff s_diff = GI_Load_SampleDiff(xy);
+            const GISampleSpec s_spec = GI_Load_SampleSpec(xy);
 
-            if (Test_DepthReproject(depth, depthPrev, depthBias) && normalDot > 0.05f)
+            const float normalDot = dot(normalPrev, normal);
+            const float weight = normalDot / (1e-4f + abs(depth - depthPrev));
+
+            if (All_InArea(xy, int2(0), size) &&
+                Test_DepthFar(depthPrev) &&
+                Test_DepthReproject(depth, depthPrev, depthBias) && 
+                normalDot > 0.05f)
             {
-                wSum += 1.0f;
-                AddWeightedSample(xy, filtered, 1.0f);
+                wSum += weight;
+                c_diff.sh = SH_Add(c_diff.sh, s_diff.sh, weight);
+                c_diff.ao += s_diff.ao * weight;
+                c_spec.radiance += s_spec.radiance * weight;
+                c_spec.ao += s_spec.ao * weight;
+                c_diff.history += s_diff.history * weight;
+                c_spec.history += s_spec.history * weight;
             }
         }
     }
-    */
 
     // Normalize weights
     if (wSum > 1e-4f)
     {
-        filtered.diff.sh = SH_Scale(filtered.diff.sh, 1.0f / wSum);
-        filtered.diff.ao /= wSum;
-        filtered.spec.radiance /= wSum;
-        filtered.spec.ao /= wSum;
-        filtered.meta.historyDiff = min(PK_GI_MAX_HISTORY, (filtered.meta.historyDiff / wSum) + 1.0f);
-        filtered.meta.historySpec = min(maxSpecHistory, (filtered.meta.historySpec / wSum) + 1.0f);
-        filtered.meta.distDiff /= wSum;
-        filtered.meta.distSpec /= wSum;
+        c_diff.sh = SH_Scale(c_diff.sh, 1.0f / wSum);
+        c_diff.ao /= wSum;
+        c_spec.radiance /= wSum;
+        c_spec.ao /= wSum;
+        c_diff.history = min(PK_GI_MAX_HISTORY, (c_diff.history / wSum) + 1.0f);
+        c_spec.history = min(maxSpecHistory, (c_spec.history / wSum) + 1.0f);
     }
 
-    const bool invalidDiff = Any_IsNaN(filtered.diff.sh.Y) || Any_IsNaN(filtered.diff.sh.CoCg) || isnan(filtered.diff.ao);
-    const bool invalidSpec = Any_IsNaN(filtered.spec.radiance) || isnan(filtered.spec.ao);
-    const bool invalidMeta = isnan(filtered.meta.historyDiff) || isnan(filtered.meta.historySpec) || isnan(filtered.meta.distDiff) || isnan(filtered.meta.distSpec);
+    const bool invalidDiff = Any_IsNaN(c_diff.sh.Y) || Any_IsNaN(c_diff.sh.CoCg) || isnan(c_diff.ao) || isnan(c_diff.history);
+    const bool invalidSpec = Any_IsNaN(c_spec.radiance) || isnan(c_spec.ao) || isnan(c_spec.history);
 
-    uint4 packedDiff = invalidDiff ? uint4(0) : GI_Pack_SampleDiff(filtered.diff);
-    uint2 packedSpec = invalidSpec ? uint2(0) : GI_Pack_SampleSpec(filtered.spec);
-    uint2 packedMeta = invalidMeta ? uint2(0) : GI_Pack_SampleMeta(filtered.meta);
+    uint4 packedDiff = invalidDiff ? uint4(0) : GI_Pack_SampleDiff(c_diff);
+    uint2 packedSpec = invalidSpec ? uint2(0) : GI_Pack_SampleSpec(c_spec);
 
-    GI_Store_Packed_SampleFull(coord, packedDiff, packedSpec, packedMeta);
+    GI_Store_Packed_SampleDiff(coord, packedDiff);
+    GI_Store_Packed_SampleSpec(coord, packedSpec);
 }

@@ -34,5 +34,6 @@ void main()
     desc.motionAmplification = pk_TAA_MotionAmplification;
 
     TAAOutput o = SolveTemporalAntiAliasing(desc);
+
     imageStore(_HistoryWriteTex, coord, uint4(EncodeE5BGR9(o.color)));
 }

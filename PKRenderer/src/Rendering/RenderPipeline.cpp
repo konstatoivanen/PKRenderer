@@ -74,7 +74,7 @@ namespace PK::Rendering
         hizDesc.sampler.mipMax = 8.0f;
         hizDesc.resolution = { config->InitialWidth, config->InitialHeight, 1 };
         hizDesc.levels = 9u;
-        hizDesc.layers = 2u;
+        hizDesc.layers = 3u;
         hizDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
         m_hierarchicalDepth = Texture::Create(hizDesc, "Scene.HierarchicalDepth");
 
@@ -420,19 +420,19 @@ namespace PK::Rendering
 
         resolution.x >>= 1u;
         resolution.y >>= 1u;
-        GraphicsAPI::SetImage(hash->_DestinationTex, m_hierarchicalDepth.get(), { 0, 0, 1, 2 });
-        GraphicsAPI::SetImage(hash->_DestinationMip1, m_hierarchicalDepth.get(), { 1, 0, 1, 2 });
-        GraphicsAPI::SetImage(hash->_DestinationMip2, m_hierarchicalDepth.get(), { 2, 0, 1, 2 });
-        GraphicsAPI::SetImage(hash->_DestinationMip3, m_hierarchicalDepth.get(), { 3, 0, 1, 2 });
-        GraphicsAPI::SetImage(hash->_DestinationMip4, m_hierarchicalDepth.get(), { 4, 0, 1, 2 });
+        GraphicsAPI::SetImage(hash->_DestinationTex, m_hierarchicalDepth.get(), { 0, 0, 1, 3 });
+        GraphicsAPI::SetImage(hash->_DestinationMip1, m_hierarchicalDepth.get(), { 1, 0, 1, 3 });
+        GraphicsAPI::SetImage(hash->_DestinationMip2, m_hierarchicalDepth.get(), { 2, 0, 1, 3 });
+        GraphicsAPI::SetImage(hash->_DestinationMip3, m_hierarchicalDepth.get(), { 3, 0, 1, 3 });
+        GraphicsAPI::SetImage(hash->_DestinationMip4, m_hierarchicalDepth.get(), { 4, 0, 1, 3 });
         cmd->Dispatch(m_computeHierachicalDepth, 0u, resolution);
 
         resolution.x >>= 4u;
         resolution.y >>= 4u;
-        GraphicsAPI::SetImage(hash->_DestinationMip1, m_hierarchicalDepth.get(), { 5, 0, 1, 2 });
-        GraphicsAPI::SetImage(hash->_DestinationMip2, m_hierarchicalDepth.get(), { 6, 0, 1, 2 });
-        GraphicsAPI::SetImage(hash->_DestinationMip3, m_hierarchicalDepth.get(), { 7, 0, 1, 2 });
-        GraphicsAPI::SetImage(hash->_DestinationMip4, m_hierarchicalDepth.get(), { 8, 0, 1, 2 });
+        GraphicsAPI::SetImage(hash->_DestinationMip1, m_hierarchicalDepth.get(), { 5, 0, 1, 3 });
+        GraphicsAPI::SetImage(hash->_DestinationMip2, m_hierarchicalDepth.get(), { 6, 0, 1, 3 });
+        GraphicsAPI::SetImage(hash->_DestinationMip3, m_hierarchicalDepth.get(), { 7, 0, 1, 3 });
+        GraphicsAPI::SetImage(hash->_DestinationMip4, m_hierarchicalDepth.get(), { 8, 0, 1, 3 });
         cmd->Dispatch(m_computeHierachicalDepth, 1u, resolution);
     }
 }

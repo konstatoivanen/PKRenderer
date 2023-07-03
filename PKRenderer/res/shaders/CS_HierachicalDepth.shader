@@ -5,14 +5,26 @@
 
 #multi_compile _ PK_HIZ_FINAL_PASS
 
-layout(rg16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationTex;
-layout(rg16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationMip1;
-layout(rg16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationMip2;
-layout(rg16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationMip3;
-layout(rg16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationMip4;
+layout(r16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationTex;
+layout(r16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationMip1;
+layout(r16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationMip2;
+layout(r16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationMip3;
+layout(r16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationMip4;
 
 #define GROUP_SIZE 8u
-shared float2 lds_Data[GROUP_SIZE * GROUP_SIZE];
+shared float lds_MinZ[GROUP_SIZE * GROUP_SIZE];
+shared float lds_MaxZ[GROUP_SIZE * GROUP_SIZE];
+shared float lds_AvgZ[GROUP_SIZE * GROUP_SIZE];
+
+#define STORE_DEPTHS(tex, px, depth)          \
+    imageStore(tex, int3(px, 0), depth.xxxx); \
+    imageStore(tex, int3(px, 1), depth.yyyy); \
+    imageStore(tex, int3(px, 2), depth.zzzz); \
+
+#define STORE_DEPTHS_LDS(t, depth) \
+    lds_MinZ[t] = depth.x;         \
+    lds_MaxZ[t] = depth.y;         \
+    lds_AvgZ[t] = depth.z;         \
 
 layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
 void main()
@@ -20,7 +32,7 @@ void main()
     const uint2 size = uint2(pk_ScreenSize.xy);
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const uint thread = gl_LocalInvocationIndex;
-    float2 local_depth = 0.0f.xx;
+    float3 local_depth = 0.0f.xxx;
 
     {
 #if defined(PK_HIZ_FINAL_PASS)
@@ -29,69 +41,77 @@ void main()
         const float min11 = SampleMinZ(coord * 2 + int2(1,1), 4);
         const float min10 = SampleMinZ(coord * 2 + int2(1,0), 4);
 
-        const float max00 = SampleMaxZ(coord * 2 + int2(0, 0), 4);
-        const float max01 = SampleMaxZ(coord * 2 + int2(0, 1), 4);
-        const float max11 = SampleMaxZ(coord * 2 + int2(1, 1), 4);
-        const float max10 = SampleMaxZ(coord * 2 + int2(1, 0), 4);
+        const float max00 = SampleMaxZ(coord * 2 + int2(0,0), 4);
+        const float max01 = SampleMaxZ(coord * 2 + int2(0,1), 4);
+        const float max11 = SampleMaxZ(coord * 2 + int2(1,1), 4);
+        const float max10 = SampleMaxZ(coord * 2 + int2(1,0), 4);
+
+        const float avg00 = SampleAvgZ(coord * 2 + int2(0, 0), 4);
+        const float avg01 = SampleAvgZ(coord * 2 + int2(0, 1), 4);
+        const float avg11 = SampleAvgZ(coord * 2 + int2(1, 1), 4);
+        const float avg10 = SampleAvgZ(coord * 2 + int2(1, 0), 4);
 
         local_depth.x = min(min(min(min00, min01), min11), min10);
         local_depth.y = max(max(max(max00, max01), max11), max10);
-        lds_Data[thread] = local_depth;
+        local_depth.z = (avg00 + avg01 + avg11 + avg10) * 0.25f;
 #else
         const float4 depths = GatherLinearDepths((coord * 2 + 1.0f.xx) / size);
         local_depth.x = cmin(depths);
         local_depth.y = cmax(depths);
-        lds_Data[thread] = local_depth;
+        local_depth.z = dot(depths, 0.25f.xxxx);
 
-        imageStore(_DestinationTex, int3(coord * 2 + int2(0,1), 0), depths.xxxx);
-        imageStore(_DestinationTex, int3(coord * 2 + int2(1,1), 0), depths.yyyy);
-        imageStore(_DestinationTex, int3(coord * 2 + int2(1,0), 0), depths.zzzz);
-        imageStore(_DestinationTex, int3(coord * 2 + int2(0,0), 0), depths.wwww);
-
-        imageStore(_DestinationTex, int3(coord * 2 + int2(0, 1), 1), depths.xxxx);
-        imageStore(_DestinationTex, int3(coord * 2 + int2(1, 1), 1), depths.yyyy);
-        imageStore(_DestinationTex, int3(coord * 2 + int2(1, 0), 1), depths.zzzz);
-        imageStore(_DestinationTex, int3(coord * 2 + int2(0, 0), 1), depths.wwww);
+        #pragma unroll 3
+        for (uint i = 0; i < 3; ++i)
+        {
+            imageStore(_DestinationTex, int3(coord * 2 + int2(0,1), i), depths.xxxx);
+            imageStore(_DestinationTex, int3(coord * 2 + int2(1,1), i), depths.yyyy);
+            imageStore(_DestinationTex, int3(coord * 2 + int2(1,0), i), depths.zzzz);
+            imageStore(_DestinationTex, int3(coord * 2 + int2(0,0), i), depths.wwww);
+        }
 #endif
-        imageStore(_DestinationMip1, int3(coord, 0), local_depth.xxxx);
-        imageStore(_DestinationMip1, int3(coord, 1), local_depth.yyyy);
+
+        STORE_DEPTHS_LDS(thread, local_depth)
+        STORE_DEPTHS(_DestinationMip1, coord, local_depth)
     }
     barrier();
 
     if ((thread & 0x9u) == 0u)
     {
-        const float2 depth1 = lds_Data[thread + 0x01u];
-        const float2 depth2 = lds_Data[thread + 0x08u];
-        const float2 depth3 = lds_Data[thread + 0x09u];
-        local_depth.x = min(min(local_depth.x, depth1.x), min(depth2.x, depth3.x));
-        local_depth.y = max(max(local_depth.y, depth1.y), max(depth2.y, depth3.y));
-        lds_Data[thread] = local_depth;
-        imageStore(_DestinationMip2, int3(coord / 2, 0), local_depth.xyxy);
-        imageStore(_DestinationMip2, int3(coord / 2, 1), local_depth.xyxy);
+        const float4 minz = float4(local_depth.x, lds_MinZ[thread + 0x01u], lds_MinZ[thread + 0x08u], lds_MinZ[thread + 0x09u]);
+        const float4 maxz = float4(local_depth.y, lds_MaxZ[thread + 0x01u], lds_MaxZ[thread + 0x08u], lds_MaxZ[thread + 0x09u]);
+        const float4 avgz = float4(local_depth.z, lds_AvgZ[thread + 0x01u], lds_AvgZ[thread + 0x08u], lds_AvgZ[thread + 0x09u]);
+        local_depth.x = cmin(minz);
+        local_depth.y = cmax(maxz);
+        local_depth.z = dot(avgz, 0.25f.xxxx);
+
+        STORE_DEPTHS_LDS(thread, local_depth)
+        STORE_DEPTHS(_DestinationMip2, coord / 2, local_depth)
     }
     barrier();
 
     if ((thread & 0x1Bu) == 0u)
     {
-        float2 depth1 = lds_Data[thread + 0x02u];
-        float2 depth2 = lds_Data[thread + 0x10u];
-        float2 depth3 = lds_Data[thread + 0x12u];
-        local_depth.x = min(min(local_depth.x, depth1.x), min(depth2.x, depth3.x));
-        local_depth.y = max(max(local_depth.y, depth1.y), max(depth2.y, depth3.y));
-        lds_Data[thread] = local_depth;
-        imageStore(_DestinationMip3, int3(coord / 4, 0), local_depth.xyxy);
-        imageStore(_DestinationMip3, int3(coord / 4, 1), local_depth.xyxy);
+        const float4 minz = float4(local_depth.x, lds_MinZ[thread + 0x02u], lds_MinZ[thread + 0x10u], lds_MinZ[thread + 0x12u]);
+        const float4 maxz = float4(local_depth.y, lds_MaxZ[thread + 0x02u], lds_MaxZ[thread + 0x10u], lds_MaxZ[thread + 0x12u]);
+        const float4 avgz = float4(local_depth.z, lds_AvgZ[thread + 0x02u], lds_AvgZ[thread + 0x10u], lds_AvgZ[thread + 0x12u]);
+        local_depth.x = cmin(minz);
+        local_depth.y = cmax(maxz);
+        local_depth.z = dot(avgz, 0.25f.xxxx);
+
+        STORE_DEPTHS_LDS(thread, local_depth)
+        STORE_DEPTHS(_DestinationMip3, coord / 4, local_depth)
     }
     barrier();
 
     if (thread == 0u)
     {
-        float2 depth1 = lds_Data[thread + 0x04u];
-        float2 depth2 = lds_Data[thread + 0x20u];
-        float2 depth3 = lds_Data[thread + 0x24u];
-        local_depth.x = min(min(local_depth.x, depth1.x), min(depth2.x, depth3.x));
-        local_depth.y = max(max(local_depth.y, depth1.y), max(depth2.y, depth3.y));
-        imageStore(_DestinationMip4, int3(coord / 8, 0), local_depth.xyxy);
-        imageStore(_DestinationMip4, int3(coord / 8, 1), local_depth.xyxy);
+        const float4 minz = float4(local_depth.x, lds_MinZ[thread + 0x04u], lds_MinZ[thread + 0x20u], lds_MinZ[thread + 0x24u]);
+        const float4 maxz = float4(local_depth.y, lds_MaxZ[thread + 0x04u], lds_MaxZ[thread + 0x20u], lds_MaxZ[thread + 0x24u]);
+        const float4 avgz = float4(local_depth.z, lds_AvgZ[thread + 0x04u], lds_AvgZ[thread + 0x20u], lds_AvgZ[thread + 0x24u]);
+        local_depth.x = cmin(minz);
+        local_depth.y = cmax(maxz);
+        local_depth.z = dot(avgz, 0.25f.xxxx);
+
+        STORE_DEPTHS(_DestinationMip4, coord / 8, local_depth)
     }
 }

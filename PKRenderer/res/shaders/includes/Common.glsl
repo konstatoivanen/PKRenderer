@@ -87,10 +87,13 @@ uint GetShadowCascadeIndex(float linearDepth)
 }
 
 //----------GBUFFER SAMPLING----------//
-float SampleMinZ(float2 uv, float l) { return textureLod(pk_ScreenDepthHierachical, float3(uv, 0), l).x; }
 float SampleMinZ(int2 coord, int l) { return texelFetch(pk_ScreenDepthHierachical, int3(coord, 0), l).x; }
-float SampleMaxZ(float2 uv, float l) { return textureLod(pk_ScreenDepthHierachical, float3(uv, 1), l).x; }
 float SampleMaxZ(int2 coord, int l) { return texelFetch(pk_ScreenDepthHierachical, int3(coord, 1), l).x; }
+float SampleAvgZ(int2 coord, int l) { return texelFetch(pk_ScreenDepthHierachical, int3(coord, 2), l).x; }
+
+float SampleMinZ(float2 uv, float l) { return textureLod(pk_ScreenDepthHierachical, float3(uv, 0), l).x; }
+float SampleMaxZ(float2 uv, float l) { return textureLod(pk_ScreenDepthHierachical, float3(uv, 1), l).x; }
+float SampleAvgZ(float2 uv, float l) { return textureLod(pk_ScreenDepthHierachical, float3(uv, 2), l).x; }
 
 float SampleLinearDepth(float2 uv) { return LinearizeDepth(tex2D(pk_ScreenDepthCurrent, uv).x); }
 float SampleLinearDepth(int2 coord) { return LinearizeDepth(texelFetch(pk_ScreenDepthCurrent, coord, 0).x); }
