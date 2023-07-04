@@ -156,6 +156,8 @@ bool Test_DepthReproject(const float z, const float zprev, const float bias) { r
 bool Test_DepthFar(const float depth) { return depth < (pk_ProjectionParams.z - 1e-2f); }
 bool Test_ClipPos(const float4 clippos) { return clippos.z > 0.0f && all(lessThan(abs(clippos.xy / clippos.w), 1.0f.xx)); }
 bool Test_WorldToClipSpace(float3 worldpos) { return Test_ClipPos(WorldToClipPos(worldpos)); }
+bool Test_InScreen(float2 uv) { return All_Equal(saturate( uv ), uv); }
+bool Test_InScreen(int2 coord) { return All_InArea(coord, int2(0), int2(pk_ScreenSize.xy)); }
 
 bool Test_ViewToClipUVW(float3 viewpos, inout float3 uvw)
 {

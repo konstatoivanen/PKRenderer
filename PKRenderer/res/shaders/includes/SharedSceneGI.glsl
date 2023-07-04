@@ -171,8 +171,6 @@ bool GI_Test_VX_Normal(float3 normal)
 }
 
 //----------SAMPLING FUNCTIONS----------//
-float GI_AOPower(float ao) { return pow(ao, 0.4f); }
-
 float3 GI_Sample_Diffuse(const float2 uv, const float3 N)
 {
     const GISampleDiff s_diff = GI_Load_SampleDiff(int2(uv * pk_ScreenSize.xy));

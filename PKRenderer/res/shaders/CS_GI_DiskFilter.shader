@@ -7,13 +7,10 @@
 #include includes/BRDF.glsl
 #include includes/CTASwizzling.glsl
 
-#define SAMPLE_KERNEL PK_POISSON_DISK_32_POW
-#define SAMPLE_COUNT 32u
-
 #define FILTER_RADIUS_PASS1	6.0f
 #define FILTER_RADIUS_PASS2	3.0f
 
-// Source: https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
+// Source: https://developer.download.nvidia.com/video/gputechconf/gtc/2019/presentation/s9985-exploring-ray-traced-future-in-metro-exodus.pdf
 // Source: https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
 
 float2 GetFilterRadiusAndScale(const float depth, const float variance, const float ao, const float history)
@@ -30,23 +27,6 @@ float2 GetFilterRadiusAndScale(const float depth, const float variance, const fl
     radius *= sqrt(depth / pk_ProjectionParams.y);
 
     return float2(radius, scale);
-}
-
-float GetSpecularNormalWeight(const float3 c_n, const float3 s_n, const float roughness)
-{
-    float a0 = PK_HALF_PI * pow2(roughness) / (1.0f + pow2(roughness));
-    const float cosa = saturate(dot(c_n, s_n));
-    const float a = acos(cosa);
-    return float(a < a0);
-}
-
-
-float2 GetSampleUV(const float3 vpos, const float2x3 basis, const float2 rotation, uint index)
-{
-    const float3 o = SAMPLE_KERNEL[index];
-    const float3 v = vpos + basis * rotate2D(o.xy * o.z, rotation);
-    const float3 c = mul(pk_MATRIX_P, float4(v, 1.0f)).xyw;
-    return (c.xy / c.z) * 0.5f + 0.5f;
 }
 
 void ApproximateRoughSpecular(const SH sh, const float3 N, const float3 V, const float R, inout GISampleSpec spec)
@@ -99,7 +79,6 @@ void main()
     const float c_roughness = c_normalRoughness.w;
     const float3 c_vpos = SampleViewPosition(coord, size, depth);
     const float3 c_view = normalize(c_vpos);
-    const float2 c_rot = make_rotation(pk_FrameIndex.y * (PK_PI / 3.0f));
 
     float2 mom;
     mom.x = log(1.0f + SH_ToLuminanceL0(c_diff.sh));
@@ -131,91 +110,66 @@ void main()
     const float radius = radiusAndScale.x;
     const float radius_scale = radiusAndScale.y;
     const bool skip_filter = radius_scale < 0.05f;
-
-    const float normV = 1.0f / (0.05f * depth);
-    const float normH = 1.0f / (2.0f * radius * radius);
-
     const uint step = lerp(uint(max(8.0f - sqrt(radius_scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip_filter);
-    uint i = lerp(0u, 0xFFFFu, skip_filter);
 
-    float2x3 basis = ComposeTBFast(c_normal, radius);
-    float wSum = 1.0f;
-
-    // Filter Diff
+    // Filter diff
     {
-        for (; i < SAMPLE_COUNT; i += step)
-        {
-            const float2 s_uv = GetSampleUV(c_vpos, basis, c_rot, i);
-            const int2 s_px = int2(s_uv * pk_ScreenSize.xy);
-            
-            GISampleDiff s_diff = GI_Load_SampleDiff(s_px);
-            const float s_depth = SampleMinZ(s_px, 0);
-            const float3 s_normal = SampleViewNormal(s_px);
+        #define SFLT_WEIGH_ROUGHNESS 0
+        #define SFLT_NORMAL c_normal
+        #define SFLT_DEPTH depth 
+        #define SFLT_ROUGHNESS 1.0f
+        #define SFLT_VIEW c_view 
+        #define SFLT_VPOS c_vpos
+        #define SFLT_HISTORY c_diff.history
+        #define SFLT_STEP step
+        #define SFLT_SKIP skip_filter
+        #define SFLT_RADIUS radius
+        #define SFLT_DATA_TYPE GISampleDiff
+        #define SFLT_DATA_LOAD(coord) GI_Load_SampleDiff(coord)
 
-            const float3 s_vpos = ClipToViewPos(s_uv * 2 - 1, s_depth);
-            const float3 s_ray = c_vpos - s_vpos;
+        #define SFLT_DATA_SUM(data, w)\
+            c_diff.sh = SH_Add(c_diff.sh, data.sh, w);\
+            c_diff.ao += data.ao * w;\
 
-            const float w_h = saturate(1.0f - abs(dot(c_normal, s_ray)) * normV);
-            const float w_v = saturate(1.0f - dot(s_ray, s_ray) * normH);
-            const float w_s = float(All_InArea(s_px, int2(0), int2(pk_ScreenSize.xy)));
-            const float w_n = max(0.0f, dot(s_normal, c_normal));
-            const float w = w_h * w_v * w_s * w_n;
+        #define SFLT_DATA_DIV(wSum)\
+            c_diff.sh = SH_Scale(c_diff.sh, 1.0f / wSum);\
+            c_diff.ao /= wSum;\
 
-            if (!isnan(w) && w > 1e-4f)
-            {
-                c_diff.sh = SH_Add(c_diff.sh, s_diff.sh, w);
-                c_diff.ao += s_diff.ao * w;
-                wSum += w;
-            }
-        }
-
-        c_diff.sh = SH_Scale(c_diff.sh, 1.0f / wSum);
-        c_diff.ao /= wSum;
+        #include includes/SpatialFilter.glsl
     }
 
     // Filter Spec
-    #if PK_GI_APPROX_ROUGH_SPEC == 1
+#if PK_GI_APPROX_ROUGH_SPEC == 1
     if (c_roughness > PK_GI_MIN_ROUGH_SPEC)
     {
         ApproximateRoughSpecular(c_diff.sh, c_normal, c_view, c_roughness, c_spec);
     }
-    
+
     if (c_roughness < PK_GI_MAX_ROUGH_SPEC)
-    #endif
+#endif
     {
-        i = lerp(0u, 0xFFFFu, skip_filter);
-        wSum = 1.0f;
-        basis = GetPrimeBasisGGX(c_normal, c_view, c_roughness, radius); //@TODO use a different radius?
+        #define SFLT_WEIGH_ROUGHNESS 1
+        #define SFLT_NORMAL c_normal
+        #define SFLT_DEPTH depth 
+        #define SFLT_ROUGHNESS c_roughness
+        #define SFLT_VIEW c_view 
+        #define SFLT_VPOS c_vpos
+        #define SFLT_HISTORY c_spec.history
+        #define SFLT_STEP step
+        #define SFLT_SKIP skip_filter
+        #define SFLT_RADIUS radius
+        #define SFLT_DATA_TYPE GISampleSpec
+        #define SFLT_DATA_LOAD(coord) GI_Load_SampleSpec(coord)
+        
+        #define SFLT_DATA_SUM(data, w)\
+            c_spec.radiance += data.radiance * w;\
+            c_spec.ao += data.ao * w;\
+        
+        #define SFLT_DATA_DIV(wSum)\
+            c_spec.radiance /= wSum;\
+            c_spec.ao /= wSum;\
 
-        for (; i < SAMPLE_COUNT; i += step)
-        {
-            const float2 s_uv = GetSampleUV(c_vpos, basis, c_rot, i);
-            const int2 s_px = int2(s_uv * pk_ScreenSize.xy);
-
-            GISampleSpec s_spec = GI_Load_SampleSpec(s_px);
-            const float s_depth = SampleMinZ(s_px, 0);
-            const float4 s_nr = SampleViewNormalRoughness(s_px);
-
-            const float3 s_vpos = ClipToViewPos(s_uv * 2 - 1, s_depth);
-            const float3 s_ray = c_vpos - s_vpos;
-
-            const float w_h = saturate(1.0f - abs(dot(c_normal, s_ray)) * normV);
-            const float w_v = saturate(1.0f - dot(s_ray, s_ray) * normH);
-            const float w_r = abs(c_roughness - s_nr.w) / (pow2(c_roughness) * 0.99f + 1e-2f);
-            const float w_n = GetSpecularNormalWeight(c_normal, s_nr.xyz, s_nr.w);
-            const float w_s = float(All_InArea(s_px, int2(0), int2(pk_ScreenSize.xy)));
-            const float w = w_h * w_v * w_s * w_r * w_n;
-
-            if (!isnan(w) && w > 1e-4f)
-            {
-                c_spec.radiance = s_spec.radiance * w;
-                c_diff.ao += s_spec.ao * w;
-                wSum += w;
-            }
-        }
-
-        c_spec.radiance /= wSum;
-        c_spec.ao /= wSum;
+        #include includes/SpatialFilter.glsl
     }
 
     GI_Store_SampleDiff(coord, c_diff);

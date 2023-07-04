@@ -165,11 +165,11 @@ float3 GetPrimeDirectionGGX(const float3 N, const float3 V, float R)
 	return normalize(lerp(N, reflect(-V, N), (1.0f - R) * (sqrt(1.0f - R) + R)));
 }
 
-float2x3 GetPrimeBasisGGX(const float3 N, const float3 V, const float R, float radius)
+float2x3 GetPrimeBasisGGX(const float3 N, const float3 V, const float R, const float radius, inout float3 P)
 {
-    const float3 m = GetPrimeDirectionGGX(N, V, R);
-    const float3 l = reflect(-m, N);
+    P = GetPrimeDirectionGGX(N, V, R);
+    const float3 l = reflect(-P, N);
     const float3 t = normalize(cross(N,l));
     const float3 b = cross(l,t);
-    return float2x3(t,b);
+    return float2x3(t * radius, b * radius);
 }

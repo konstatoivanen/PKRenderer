@@ -76,10 +76,10 @@ void main()
 
         const float normalDot = dot(normalPrev, normal);
 
-        if (weight > 1e-4f &&
-            All_InArea(xy, int2(0), size) &&
+        if (Test_InScreen(xy) &&
             Test_DepthFar(depthPrev) && 
             Test_DepthReproject(depth, depthPrev, depthBias) && 
+            weight > 1e-4f &&
             normalDot > 0.05f)
         {
             weight *= normalDot;
@@ -113,7 +113,7 @@ void main()
             const float normalDot = dot(normalPrev, normal);
             const float weight = normalDot / (1e-4f + abs(depth - depthPrev));
 
-            if (All_InArea(xy, int2(0), size) &&
+            if (Test_InScreen(xy) &&
                 Test_DepthFar(depthPrev) &&
                 Test_DepthReproject(depth, depthPrev, depthBias) && 
                 normalDot > 0.05f)

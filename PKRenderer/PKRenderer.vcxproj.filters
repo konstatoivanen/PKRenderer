@@ -2023,6 +2023,8 @@
     <None Include="res\shaders\includes\SceneEnv.glsl" />
     <None Include="res\shaders\includes\TricubicSampler.glsl" />
     <None Include="res\shaders\CS_GI_ShadeHits.shader" />
+    <None Include="res\shaders\includes\SpatialFilters.glsl" />
+    <None Include="res\shaders\includes\SpatialFilter.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
