@@ -28,7 +28,6 @@ float HenyeyGreensteinPhase(float3 viewdir, float3 posToLight, float phase)
 {
 	float gsq = pow2(phase);
 	float denom = 1.0 + gsq - 2.0 * phase * dot(viewdir, posToLight);
-	//return (1.0 - gsq) / (PK_FOUR_PI * pow(denom, 3.0f / 2.0f));
     return PK_INV_FOUR_PI * (1.0 - gsq) * inversesqrt(pow3(denom));
 }
 

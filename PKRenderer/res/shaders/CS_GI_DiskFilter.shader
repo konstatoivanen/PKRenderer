@@ -36,8 +36,8 @@ void ApproximateRoughSpecular(const SH sh, const float3 N, const float3 V, const
     float directionality;
     float3 sh_dir = SH_ToPrimeDir(sh, directionality);
 
-    float roughness = lerp(1.0f, R, saturate(directionality * 0.666f));
-    roughness = sqrt(roughness); // Sample distribution used wrong roughness scale. correct this based on that. :/
+    float roughness = lerp(1.0f, R * R, saturate(directionality * 0.666f));
+    roughness = sqrt(roughness);
 
     const float3 s_color = SH_ToColor(sh) * PK_TWO_PI;
     const float3 specular = s_color * BRDF_GGX_SPECULAR_APPROX(roughness, sh_dir, worldV, worldN);

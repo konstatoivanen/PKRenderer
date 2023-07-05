@@ -80,32 +80,6 @@ float3 GetSampleDirectionHammersLey(const float3 Xi, float blur)
     return normalize(float3(Xi.xy * sincos.xx, sincos.y));
 }
 
-float3 DistributeGGX(const float2 Xi, float roughness)
-{
-    float a = roughness * roughness;
-    float phi = 2.0 * 3.14159265 * Xi.x;
-    float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
-    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-
-    float3 H;
-    H.x = cos(phi) * sinTheta;
-    H.y = sin(phi) * sinTheta;
-    H.z = cosTheta;
-    return H;
-}
-
-float3 ImportanceSampleGGX(const float2 Xi, const float3 N, float roughness)
-{
-    float3 H = DistributeGGX(Xi, roughness);
-    return normalize(ComposeTBN(N) * H);
-}
-
-float3 ImportanceSampleGGX(uint i, uint s, const float3 N, const float R)
-{
-    float2 Xi = Hammersley(i,s);
-    return ImportanceSampleGGX(Xi, N, R);
-}
-
 // "Sampling the GGX Distribution of Visible Normals", Heitz
 float3 ImportanceSampleGGXVNDF(float2 Xi, const vec3 V, float R)
 {

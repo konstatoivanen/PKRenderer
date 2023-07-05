@@ -9,19 +9,19 @@
 struct BRDFSurf
 {
     float3 albedo;
-    float3 specular;
+    float3 F0;
     float3 sheen;
     float3 normal;
     float3 viewdir;
     float3 subsurface;
     float reflectivity;
     float roughness;
-    float perceptualRoughness;
+    float linearRoughness;
     float nv;
 };
 
 BRDFSurf MakeBRDFSurf(const float3 albedo, 
-                      const float3 specular, 
+                      const float3 F0, 
                       const float3 sheen, 
                       const float3 normal, 
                       const float3 viewdir, 
@@ -33,13 +33,13 @@ BRDFSurf MakeBRDFSurf(const float3 albedo,
 {
     BRDFSurf surf;
     surf.albedo = albedo;
-    surf.specular = specular;
+    surf.F0 = F0;
     surf.sheen = sheen;
     surf.normal = normal;
     surf.viewdir = viewdir;
     surf.reflectivity = reflectivity;
     surf.roughness = roughness;
-    surf.perceptualRoughness = sqrt(roughness);
+    surf.linearRoughness = sqrt(roughness);
     surf.subsurface = float3(subsurface_distortion, subsurface_power, subsurface_thickness);
     surf.nv = max(0.0f, dot(normal, viewdir));
     return surf;
@@ -51,31 +51,32 @@ float3 ComputeLightProducts(const float3 L, const float3 N, const float3 V)
     return max(0.0f.xxx, float3(dot(N,L), dot(N,H), dot(L,H)));
 }
 
-float3 FresnelTerm(float3 F0, float cosA)
+float3 F_Schlick(const float3 F0, float F90, float cosA)
 {
-    float t = pow5(1 - cosA);
-    return F0 + (1-F0).xxx * t;
+	return F0 + (F90 - F0) * pow5(1.0f - cosA);
 }
 
-float3 FresnelLerp(float3 F0, float3 F90, float cosA)
+float3 F_SchlickLerp(const float3 F0, float F90, float cosA)
 {
-    float t = pow5(1 - cosA);
-    return lerp(F0, F90, t);
+	return lerp(F0, F90.xxx, pow5(1 - cosA));
 }
 
-float Fd_DisneyDiffuse(float  NdotV, float NdotL, float LdotH, float perceptualRoughness)
+float Fd_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
 {
-    float fd90 = 0.5 + 2 * LdotH * LdotH * perceptualRoughness;
-    float lightScatter = (1 + (fd90 - 1) * pow5(1 - NdotL));
-    float viewScatter = (1 + (fd90 - 1) * pow5(1 - NdotV));
-    return lightScatter * viewScatter;
+    const float energyBias = lerp(0.0f, 0.5f, linearRoughness);
+	const float energyFactor = lerp(1.0f, 1.0f / 1.51f, linearRoughness);
+	const float FD90 = energyBias + 2.0f * LdotH * LdotH * linearRoughness;
+	const float lightScatter = F_Schlick(1.0f.xxx, FD90, NdotL).r;
+	const float viewScatter = F_Schlick(1.0f.xxx, FD90, NdotV).r;
+	return lightScatter * viewScatter * energyFactor;
 }
 
-float V_SmithGGX(float NdotL, float NdotV, float roughness)
+float V_SmithGGXCorrelated(float NdotL, float NdotV, float roughness)
 {
-    float lambdaV = NdotL * (NdotV * (1 - roughness) + roughness);
-    float lambdaL = NdotV * (NdotL * (1 - roughness) + roughness);
-    return 0.5f / (lambdaV + lambdaL + 1e-5f);
+	const float a2 = pow2(roughness);
+	const float LambdaV = NdotL * sqrt((-NdotV * a2 + NdotV) * NdotV + a2);
+	const float LambdaL = NdotV * sqrt((-NdotL * a2 + NdotL) * NdotL + a2);
+	return	0.5f / (LambdaV + LambdaL);
 }
 
 float V_Ashikhmin(float NdotV, float NdotL)
@@ -85,15 +86,15 @@ float V_Ashikhmin(float NdotV, float NdotL)
 
 float D_GGX(float NdotH, float roughness)
 {
-    float a2 = roughness * roughness;
-    float d = (NdotH * a2 - NdotH) * NdotH + 1.0f;
+    const float a2 = roughness * roughness;
+    const float d = (NdotH * a2 - NdotH) * NdotH + 1.0f;
     return PK_INV_PI * a2 / (d * d + 1e-7f);
 }
 
 float D_Charlie(float NdotH, float roughness) 
 {
-    float invAlpha  = 1.0 / roughness;
-    float sin2h = max(1.0 - pow2(NdotH), 0.0078125);
+    const float invAlpha  = 1.0 / roughness;
+    const float sin2h = max(1.0 - pow2(NdotH), 0.0078125);
     return (2.0 + invAlpha) * pow(sin2h, invAlpha * 0.5) * PK_INV_TWO_PI;
 }
 
@@ -107,28 +108,29 @@ float TDF_Dice(float3 viewdir, float3 lightdir, float3 normal, float3 subsurface
 float BRDF_GGX_SPECULAR_APPROX(float roughness, const float3 lightdir, const float3 viewdir, const float3 normal)
 {
     const float3 P = ComputeLightProducts(lightdir, normal, viewdir);
-    const float V = V_SmithGGX(P.NL, P.NH, roughness);
+    const float V = V_SmithGGXCorrelated(P.NL, max(0.0f, dot(-viewdir, normal)), roughness);
     const float D = D_GGX(P.LH, roughness);
     return D * V * P.NL;
 }
 
-float3 BRDF_PBS_DEFAULT_INDIRECT(const BRDFSurf surf, const Indirect gi)
+float3 BRDF_INDIRECT_DEFAULT(const BRDFSurf surf, const float3 diffuse, const float3 specular)
 {
-    float surfaceReduction = 1.0 / (surf.roughness * surf.roughness + 1.0);
-    float grazingTerm = saturate((1 - surf.perceptualRoughness) + surf.reflectivity);
-    return surf.albedo * gi.diffuse.rgb + surfaceReduction * gi.specular.rgb * FresnelLerp(surf.specular, grazingTerm.xxx, surf.nv);
+    const float surfaceReduction = 1.0 / (surf.roughness * surf.roughness + 1.0);
+    const float F90 = saturate((1 - surf.linearRoughness) + surf.reflectivity);
+    return surf.albedo * diffuse + surfaceReduction * specular * F_SchlickLerp(surf.F0, F90, surf.nv);
 }
 
 float3 BRDF_DEFAULT(const BRDFSurf surf, const Light light)
 {
-    float3 color = light.color * light.shadow;
+    const float3 color = light.color * light.shadow;
     const float3 P = ComputeLightProducts(light.direction, surf.normal, surf.viewdir);
-    float V = V_SmithGGX(P.NL, surf.nv, surf.roughness);
-    float D = D_GGX(P.NH, surf.roughness);
-    float Fd = Fd_DisneyDiffuse(surf.nv, P.NL, P.LH, surf.perceptualRoughness) * P.NL * PK_INV_PI;
-    float Fr = max(0.0f, V * D * P.NL);
+    const float V = V_SmithGGXCorrelated(P.NL, surf.nv, surf.roughness);
+    const float D = D_GGX(P.NH, surf.roughness);
+    const float Fd = Fd_DisneyDiffuse(surf.nv, P.NL, P.LH, surf.linearRoughness) * P.NL * PK_INV_PI;
+    const float Fr = max(0.0f, V * D * P.NL);
+    const float F90 = saturate(50.0 * surf.F0.g);
     return surf.albedo * color * Fd + 
-           FresnelTerm(surf.specular, P.NH) * color * Fr;
+           F_Schlick(surf.F0, F90, P.LH) * color * Fr;
 }
 
 float3 BRDF_SUBSURFACE(const BRDFSurf surf, const Light light)
@@ -136,13 +138,13 @@ float3 BRDF_SUBSURFACE(const BRDFSurf surf, const Light light)
     const float3 color = light.color * light.shadow;
     const float3 P = ComputeLightProducts(light.direction, surf.normal, surf.viewdir);
     const float S = TDF_Dice(surf.viewdir, light.direction, surf.normal, surf.subsurface);
-    const float V = V_SmithGGX(P.NL, surf.nv, surf.roughness);
+    const float V = V_SmithGGXCorrelated(P.NL, surf.nv, surf.roughness);
     const float D = D_GGX(P.NH, surf.roughness);
-    const float Fd = Fd_DisneyDiffuse(surf.nv, P.NL, P.LH, surf.perceptualRoughness) * P.NL * PK_INV_PI;
+    const float Fd = Fd_DisneyDiffuse(surf.nv, P.NL, P.LH, surf.linearRoughness) * P.NL * PK_INV_PI;
     const float Fr = max(0.0f, V * D * P.NL);
     return surf.albedo * color * Fd + 
            surf.albedo * light.color.rgb * S +
-           FresnelTerm(surf.specular, P.LH) * color * Fr * color;
+           F_Schlick(surf.F0, 1.0f, P.LH) * color * Fr * color;
 }
 
 float3 BRDF_CLOTH(const BRDFSurf surf, const Light light)
@@ -152,7 +154,7 @@ float3 BRDF_CLOTH(const BRDFSurf surf, const Light light)
     const float S = TDF_Dice(surf.viewdir, light.direction, surf.normal, surf.subsurface);
     const float V = V_Ashikhmin(surf.nv, P.NL);
     const float D = D_Charlie(P.NH, surf.roughness);
-    const float Fd = Fd_DisneyDiffuse(surf.nv, P.NL, P.LH, surf.perceptualRoughness) * P.NL * PK_INV_PI;
+    const float Fd = Fd_DisneyDiffuse(surf.nv, P.NL, P.LH, surf.linearRoughness) * P.NL * PK_INV_PI;
     const float Fr = max(0.0f, V * D * P.NL);
     return surf.albedo * color * Fd + 
            surf.albedo * light.color.rgb * S +

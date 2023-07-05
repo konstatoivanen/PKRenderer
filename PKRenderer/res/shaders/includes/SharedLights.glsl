@@ -25,12 +25,6 @@ struct Light
     float shadow;
 };
 
-struct Indirect
-{
-    float3 diffuse;
-    float3 specular;
-};
-
 struct LightTile 
 {
     uint start;

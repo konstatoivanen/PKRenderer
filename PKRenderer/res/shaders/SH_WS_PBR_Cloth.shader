@@ -1,4 +1,5 @@
 #version 460
+
 #MaterialProperty float4 _Color
 #MaterialProperty float4 _SheenColor
 #MaterialProperty float _Roughness
@@ -9,9 +10,11 @@
 #MaterialProperty texture2D _PBSTexture
 #MaterialProperty texture2D _NormalMap
 #MaterialProperty texture2D _HeightMap
+
 #define PK_NORMALMAPS
-#define PK_ACTIVE_BRDF BRDF_CLOTH
-#define PK_ACTIVE_VXGI_BRDF BRDF_VXGI_CLOTH
+#define PK_SURF_BRDF_MAIN BRDF_CLOTH
+#define PK_SURF_BRDF_VXGI BRDF_VXGI_CLOTH
+
 #include includes/SurfaceShaderBase.glsl
 
 #pragma PROGRAM_VERTEX

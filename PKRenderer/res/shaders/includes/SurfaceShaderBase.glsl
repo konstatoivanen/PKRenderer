@@ -5,29 +5,15 @@
 #include BRDF.glsl
 #include SharedSceneGI.glsl
 
-#if !defined(PK_ACTIVE_BRDF)
-    #define PK_ACTIVE_BRDF BRDF_DEFAULT
-#endif
-
-#if !defined(PK_ACTIVE_VXGI_BRDF)
-    #define PK_ACTIVE_VXGI_BRDF BRDF_VXGI_DEFAULT
-#endif
-
-#define SRC_METALLIC x
-#define SRC_OCCLUSION y
-#define SRC_ROUGHNESS z
-
 struct SurfaceData
 {
     float3 viewdir;
     float3 worldpos;
     float3 clipuvw;
-
     float3 albedo;      
     float3 normal;      
     float3 emission;
     float3 sheen;
-
     float alpha;
     float metallic;     
     float roughness;
@@ -56,45 +42,48 @@ float2 ParallaxOffset(float height, float heightAmount, float3 viewdir)
     return (height * heightAmount - heightAmount / 2.0f) * (viewdir.xy / (viewdir.z + 0.42f)); 
 }
 
-float3 GetSurfaceSpecularColor(float3 albedo, float metallic) { return lerp(pk_DielectricSpecular.rgb, albedo, metallic); }
-
-float GetSurfaceAlphaReflectivity(inout SurfaceData surf)
+float3 GetIndirectLight_Main(const BRDFSurf surf, const float3 worldpos, const float3 clipuvw)
 {
-    float reflectivity = pk_DielectricSpecular.r + surf.metallic * pk_DielectricSpecular.a;
-    surf.albedo *= 1.0f - reflectivity;
+    float3 diffuse, specular;
+    //diffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
+    //specular = SampleEnvironment(OctaUV(reflect(-surf.viewdir, surf.normal)), surf.roughness);
+    GI_Sample_Lighting(clipuvw.xy, surf.normal, surf.viewdir, surf.roughness, diffuse, specular);
+    return BRDF_INDIRECT_DEFAULT(surf, diffuse, specular);
+}
+
+// Multi bounce gi. Causes some very lingering light artifacts & bleeding. @TODO Consider adding a setting for this.
+float3 GetIndirectLight_VXGI(const BRDFSurf surf,const float3 worldpos, const float3 clipuvw)
+{
+    // Get unquantized clip uvw.
+    float deltaDepth = SampleLinearDepth(clipuvw.xy) - LinearizeDepth(clipuvw.z); 
     
-    #if defined(PK_TRANSPARENT_PBR)
-        surf.albedo *= surf.alpha;
-        surf.alpha = reflectivity + surf.alpha * (1.0f - reflectivity);
-    #endif
-
-    return reflectivity;
-}
-
-float3 GetViewShiftedNormal(float3 normal, float3 viewdir)
-{
-    float shiftAmount = dot(normal, viewdir);
-    return shiftAmount < 0.0f ? normal + viewdir * (-shiftAmount + 1e-5f) : normal;
-}
-
-float3 GetFragmentClipUVW()
-{
-    #if defined(SHADER_STAGE_FRAGMENT)
-        return float3(gl_FragCoord.xy * pk_ScreenParams.zw, gl_FragCoord.z);
-    #else
-        return 0.0f.xxx;
-    #endif
-}
-
-Indirect GetStaticSceneIndirect(const float3 normal, const float3 viewdir, float roughness)
-{
-    Indirect indirect;
-    indirect.diffuse = SampleEnvironment(OctaUV(normal), 1.0f);
-    indirect.specular = SampleEnvironment(OctaUV(reflect(-viewdir, normal)), roughness);
-    return indirect;
+    // Fragment is in view
+    if (deltaDepth > -0.01f && deltaDepth < 0.1f && !GI_Test_VX_History(clipuvw.xy))
+    {
+        // Sample screen space SH values for more accurate results.
+        return surf.albedo * GI_Sample_Diffuse(clipuvw.xy, surf.normal);
+    }
+    else
+    {
+        float3 environmentDiffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
+        float4 tracedDiffuse = GI_ConeTrace_Diffuse(worldpos, surf.normal, 0.0f);
+        return surf.albedo * (environmentDiffuse * tracedDiffuse.a + tracedDiffuse.rgb);
+    }
 }
 
 // Meta pass specific parameters (gi voxelization requires some changes from reqular view projection).
+#if !defined(PK_SURF_BRDF_MAIN)
+    #define PK_SURF_BRDF_MAIN BRDF_DEFAULT
+#endif
+
+#if !defined(PK_SURF_BRDF_VXGI)
+    #define PK_SURF_BRDF_VXGI BRDF_VXGI_DEFAULT
+#endif
+
+#define SRC_METALLIC x
+#define SRC_OCCLUSION y
+#define SRC_ROUGHNESS z
+
 #ZTest Equal
 #ZWrite False
 #Cull Back
@@ -105,28 +94,19 @@ Indirect GetStaticSceneIndirect(const float3 normal, const float3 viewdir, float
     #undef PK_HEIGHTMAPS
     // Prefilter by using a higher mip bias in voxelization.
     #define PK_SURF_TEX(t, uv) tex2D(t, uv, 4.0f)
-
-    #define PK_META_EARLY_CLIP_UVW(w, c, n)         \
-        float3 vq = GI_QuantizeWorldToVoxelSpace(w);\
-        if (!Test_WorldToClipUVW(vq, c) ||          \
-             GI_Test_VX_HasValue(w) ||              \
-             !GI_Test_VX_Normal(n))                 \
-        {                                           \
-            return;                                 \
-        }                                           \
-        c = WorldToClipUVW(w);                      \
-        c.xy = ClampClipUVBorder(c.xy);             \
-
-
     #define PK_META_DECLARE_SURFACE_OUTPUT
     #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) GI_Store_Voxel(worldpos, color)
     #define PK_META_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNDCSpace(position)
+    #define PK_META_BRDF PK_SURF_BRDF_VXGI
+    #define PK_META_BRDF_INDIRECT GetIndirectLight_VXGI
 #else
     #define PK_SURF_TEX(t, uv) tex2D(t, uv)
     #define PK_META_EARLY_CLIP_UVW(w, c, n) c = GetFragmentClipUVW(); 
     #define PK_META_DECLARE_SURFACE_OUTPUT out float4 SV_Target0;
     #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) SV_Target0 = color
     #define PK_META_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
+    #define PK_META_BRDF PK_SURF_BRDF_MAIN
+    #define PK_META_BRDF_INDIRECT GetIndirectLight_Main
 #endif
 
 struct SurfaceFragmentVaryings
@@ -206,7 +186,6 @@ struct SurfaceFragmentVaryings
     {
         float4 value = 0.0f.xxxx;
         
-        // Init defaults
         SurfaceData surf; 
         surf.worldpos = baseVaryings.vs_WORLDPOSITION;
         surf.viewdir = normalize(pk_WorldSpaceCameraPos.xyz - surf.worldpos);
@@ -222,22 +201,48 @@ struct SurfaceFragmentVaryings
         surf.subsurface_power = 1.0f;
         surf.subsurface_thickness = 0.0f;
 
-        PK_META_EARLY_CLIP_UVW(surf.worldpos, surf.clipuvw, PK_SURF_MESH_NORMAL)
-        
+        #if defined(PK_META_PASS_GIVOXELIZE)
+            float3 voxelPos = GI_QuantizeWorldToVoxelSpace(surf.worldpos);
+
+            if (!Test_WorldToClipUVW(voxelPos, surf.clipuvw) || GI_Test_VX_HasValue(surf.worldpos) || !GI_Test_VX_Normal(PK_SURF_MESH_NORMAL))                 
+            {                                           
+                return;                                 
+            }       
+            
+            surf.clipuvw = WorldToClipUVW(surf.worldpos);                      
+            surf.clipuvw.xy = ClampClipUVBorder(surf.clipuvw.xy);             
+        #else
+            surf.clipuvw = float3(gl_FragCoord.xy * pk_ScreenParams.zw, gl_FragCoord.z);
+        #endif
+
         PK_SURFACE_FUNC_FRAG(baseVaryings, surf);
 
         #if defined(PK_META_PASS_GBUFFER)
 
             value = EncodeGBufferN(normalize(WorldToViewDir(surf.normal)), surf.roughness);
 
-        #elif defined(PK_META_PASS_GIVOXELIZE)
-            float3 specColor = GetSurfaceSpecularColor(surf.albedo, surf.metallic);
-            float reflectivity = GetSurfaceAlphaReflectivity(surf);
+        #else
+
+            #if !defined(PK_META_PASS_GIVOXELIZE)
+                // Shift invalid normals to view
+                float shiftAmount = dot(surf.normal, surf.viewdir);
+                surf.normal = shiftAmount < 0.0f ? surf.normal + surf.viewdir * (-shiftAmount + 1e-5f) : surf.normal;
+                surf.roughness = max(surf.roughness, 0.002);
+            #endif
+
+            float3 F0 = lerp(pk_DielectricSpecular.rgb, surf.albedo, surf.metallic);
+            float reflectivity = pk_DielectricSpecular.r + surf.metallic * pk_DielectricSpecular.a;
+            surf.albedo *= 1.0f - reflectivity;
+            
+            #if defined(PK_SURF_TRANSPARENT)
+                surf.albedo *= surf.alpha;
+                surf.alpha = reflectivity + surf.alpha * (1.0f - reflectivity);
+            #endif
 
             BRDFSurf brdf_surf = MakeBRDFSurf
             (
                 surf.albedo, 
-                specColor, 
+                F0, 
                 surf.sheen, 
                 surf.normal, 
                 surf.viewdir, 
@@ -248,71 +253,21 @@ struct SurfaceFragmentVaryings
                 surf.subsurface_thickness
             );
 
+            value.rgb = PK_META_BRDF_INDIRECT(brdf_surf, surf.worldpos, surf.clipuvw);
+
+            #if !defined(PK_META_PASS_GIVOXELIZE)
+                value.rgb *= surf.occlusion;
+            #endif
+
             LightTile tile = GetLightTile(surf.clipuvw);
             for (uint i = tile.start; i < tile.end; ++i)
             {
                 Light light = GetSurfaceLight(i, surf.worldpos, tile.cascade);
-                value.rgb += PK_ACTIVE_VXGI_BRDF(brdf_surf, light);
-            }
-    
-            // Multi bounce gi. Causes some very lingering light artifacts & bleeding. @TODO Consider adding a setting for this.
-            float3 indirect = 0.0f.xxx;
-
-            // Get unquantized clip uvw.
-            float deltaDepth = SampleLinearDepth(surf.clipuvw.xy) - LinearizeDepth(surf.clipuvw.z); 
-            
-            // Fragment is in view
-            if (deltaDepth > -0.01f && deltaDepth < 0.1f && !GI_Test_VX_History(surf.clipuvw.xy))
-            {
-                // Sample screen space SH values for more accurate results.
-                indirect = GI_Sample_Diffuse(surf.clipuvw.xy, surf.normal);
-            }
-            else
-            {
-                float3 environmentDiffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
-                float4 tracedDiffuse = GI_ConeTrace_Diffuse(surf.worldpos, surf.normal, 0.0f);
-                indirect = (environmentDiffuse * tracedDiffuse.a + tracedDiffuse.rgb);
+                value.rgb += PK_META_BRDF(brdf_surf, light);
             }
 
-            value.rgb += surf.albedo * indirect;
             value.rgb += surf.emission;
             value.a = surf.alpha; 
-
-        #else
-            surf.roughness = max(surf.roughness, 0.002);
-            surf.normal = GetViewShiftedNormal(surf.normal, surf.viewdir);
-            float3 specColor = GetSurfaceSpecularColor(surf.albedo, surf.metallic);
-            float reflectivity = GetSurfaceAlphaReflectivity(surf);
-
-            Indirect indirect; // = GetStaticSceneIndirect(surf.normal, surf.viewdir, surf.roughness);
-            GI_Sample_Lighting(surf.clipuvw.xy, surf.normal, surf.viewdir, surf.roughness, indirect.diffuse, indirect.specular);
-
-            BRDFSurf brdf_surf = MakeBRDFSurf
-            (
-                surf.albedo, 
-                specColor, 
-                surf.sheen, 
-                surf.normal, 
-                surf.viewdir, 
-                reflectivity, 
-                surf.roughness, 
-                surf.subsurface_distortion, 
-                surf.subsurface_power, 
-                surf.subsurface_thickness
-            );
-    
-            value.rgb = BRDF_PBS_DEFAULT_INDIRECT(brdf_surf, indirect);
-            value.rgb *= surf.occlusion;
-
-            LightTile tile = GetLightTile(surf.clipuvw);
-            for (uint i = tile.start; i < tile.end; ++i)
-            {
-                Light light = GetSurfaceLight(i, surf.worldpos, tile.cascade);
-                value.rgb += PK_ACTIVE_BRDF(brdf_surf, light);
-            }
-    
-            value.rgb += surf.emission;
-            value.a = surf.alpha;
 
         #endif
 
