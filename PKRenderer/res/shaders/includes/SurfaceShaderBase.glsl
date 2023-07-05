@@ -5,6 +5,87 @@
 #include Reconstruction.glsl
 #include SharedSceneGI.glsl
 
+#define SRC_METALLIC x
+#define SRC_OCCLUSION y
+#define SRC_ROUGHNESS z
+
+struct SurfaceData
+{
+    float3 viewdir;
+    float3 worldpos;
+    float3 clipuvw;
+
+    float3 albedo;      
+    float3 normal;      
+    float3 emission;
+    float3 sheen;
+
+    float alpha;
+    float metallic;     
+    float roughness;
+    float occlusion;
+    float subsurface_distortion;
+    float subsurface_power;
+    float subsurface_thickness;
+};
+
+float3x3 ComposeMikkTangentSpaceMatrix(float3 normal, float4 tangent)
+{
+    float3 T = normalize(tangent.xyz);
+    float3 B = normalize(tangent.w * cross(normal, tangent.xyz));
+    float3 N = normalize(normal);
+    return mul(float3x3(pk_MATRIX_M), float3x3(T, B, N));
+}
+
+float3 SampleNormalTex(in sampler2D map, in float3x3 rotation, in float2 uv, float amount) 
+{   
+    const float3 n = tex2D(map, uv).xyz * 2.0f - 1.0f;
+    return normalize(mul(rotation, lerp(float3(0,0,1), n, amount))); 
+}
+
+float2 ParallaxOffset(float height, float heightAmount, float3 viewdir) 
+{ 
+    return (height * heightAmount - heightAmount / 2.0f) * (viewdir.xy / (viewdir.z + 0.42f)); 
+}
+
+float3 GetSurfaceSpecularColor(float3 albedo, float metallic) { return lerp(pk_DielectricSpecular.rgb, albedo, metallic); }
+
+float GetSurfaceAlphaReflectivity(inout SurfaceData surf)
+{
+    float reflectivity = pk_DielectricSpecular.r + surf.metallic * pk_DielectricSpecular.a;
+    surf.albedo *= 1.0f - reflectivity;
+    
+    #if defined(PK_TRANSPARENT_PBR)
+        surf.albedo *= surf.alpha;
+        surf.alpha = reflectivity + surf.alpha * (1.0f - reflectivity);
+    #endif
+
+    return reflectivity;
+}
+
+float3 GetViewShiftedNormal(float3 normal, float3 viewdir)
+{
+    float shiftAmount = dot(normal, viewdir);
+    return shiftAmount < 0.0f ? normal + viewdir * (-shiftAmount + 1e-5f) : normal;
+}
+
+float3 GetFragmentClipUVW()
+{
+    #if defined(SHADER_STAGE_FRAGMENT)
+        return float3(gl_FragCoord.xy * pk_ScreenParams.zw, gl_FragCoord.z);
+    #else
+        return 0.0f.xxx;
+    #endif
+}
+
+Indirect GetStaticSceneIndirect(const float3 normal, const float3 viewdir, float roughness)
+{
+    Indirect indirect;
+    indirect.diffuse = SampleEnvironment(OctaUV(normal), 1.0f);
+    indirect.specular = SampleEnvironment(OctaUV(reflect(-viewdir, normal)), roughness);
+    return indirect;
+}
+
 // Meta pass specific parameters (gi voxelization requires some changes from reqular view projection).
 #ZTest Equal
 #ZWrite False
@@ -40,10 +121,6 @@
     #define PK_META_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
 #endif
 
-#define SRC_METALLIC x
-#define SRC_OCCLUSION y
-#define SRC_ROUGHNESS z
-
 struct SurfaceFragmentVaryings
 {
     float2 vs_TEXCOORD0;
@@ -58,59 +135,9 @@ struct SurfaceFragmentVaryings
     #endif
 };
 
-struct SurfaceData
-{
-    float3 viewdir;
-    float3 worldpos;
-    float3 clipuvw;
-
-    float3 albedo;      
-    float3 normal;      
-    float3 emission;
-    float3 sheen;
-
-    float alpha;
-    float metallic;     
-    float roughness;
-    float occlusion;
-    float subsurface_distortion;
-    float subsurface_power;
-    float subsurface_thickness;
-};
-
-float3 GetSurfaceSpecularColor(float3 albedo, float metallic) { return lerp(pk_DielectricSpecular.rgb, albedo, metallic); }
-
-float GetSurfaceAlphaReflectivity(inout SurfaceData surf)
-{
-    float reflectivity = pk_DielectricSpecular.r + surf.metallic * pk_DielectricSpecular.a;
-    surf.albedo *= 1.0f - reflectivity;
-    
-    #if defined(PK_TRANSPARENT_PBR)
-        surf.albedo *= surf.alpha;
-        surf.alpha = reflectivity + surf.alpha * (1.0f - reflectivity);
-    #endif
-
-    return reflectivity;
-}
-
-// Fix edge artifacts for when normals are pointing away from camera.
-float3 GetViewShiftedNormal(float3 normal, float3 viewdir)
-{
-    float shiftAmount = dot(normal, viewdir);
-    return shiftAmount < 0.0f ? normal + viewdir * (-shiftAmount + 1e-5f) : normal;
-}
-
-Indirect GetStaticSceneIndirect(const float3 normal, const float3 viewdir, float roughness)
-{
-    Indirect indirect;
-    indirect.diffuse = SampleEnvironment(OctaUV(normal), 1.0f);
-    indirect.specular = SampleEnvironment(OctaUV(reflect(-viewdir, normal)), roughness);
-    return indirect;
-}
-
 #if defined(SHADER_STAGE_VERTEX)
 
-    // Use these to modify surface values in fragment or vertex stage
+    // Use these to modify surface values in vertex stage
     void PK_SURFACE_FUNC_VERT(inout SurfaceFragmentVaryings surf);
 
     in float3 in_POSITION;
@@ -137,7 +164,7 @@ Indirect GetStaticSceneIndirect(const float3 normal, const float3 viewdir, float
         #endif
     
         #if !defined(PK_NORMALMAPS)
-            baseVaryings.vs_NORMAL = ObjectToWorldDir(in_NORMAL.xyz);
+            baseVaryings.vs_NORMAL = normalize(ObjectToWorldDir(in_NORMAL.xyz));
         #endif
 
         PK_SURFACE_FUNC_VERT(baseVaryings);
@@ -155,14 +182,14 @@ Indirect GetStaticSceneIndirect(const float3 normal, const float3 viewdir, float
     #endif
 
     #if defined(PK_NORMALMAPS)
-         #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormal(normalmap, baseVaryings.vs_TSROTATION, uv, amount)
+         #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormalTex(normalmap, baseVaryings.vs_TSROTATION, uv, amount)
          #define PK_SURF_MESH_NORMAL normalize(baseVaryings.vs_TSROTATION[2])
     #else
          #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) baseVaryings.vs_NORMAL
          #define PK_SURF_MESH_NORMAL normalize(baseVaryings.vs_NORMAL)
     #endif
 
-    // Use these to modify surface values in fragment or vertex stage
+    // Use these to modify surface values in fragment stage
     void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData surf);
 
     in SurfaceFragmentVaryings baseVaryings;
@@ -193,7 +220,7 @@ Indirect GetStaticSceneIndirect(const float3 normal, const float3 viewdir, float
 
         #if defined(PK_META_PASS_GBUFFER)
 
-            value = EncodeGBufferN(WorldToViewDir(surf.normal), surf.roughness);
+            value = EncodeGBufferN(normalize(WorldToViewDir(surf.normal)), surf.roughness);
 
         #elif defined(PK_META_PASS_GIVOXELIZE)
             GetSurfaceAlphaReflectivity(surf);

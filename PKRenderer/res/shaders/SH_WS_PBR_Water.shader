@@ -2,7 +2,7 @@
 #MaterialProperty float4 _Color
 #MaterialProperty float4 _EmissionColor
 #define PK_ACTIVE_BRDF BRDF_PBS_DEFAULT_SS
-#include includes/SharedSurfaceShading.glsl
+#include includes/SurfaceShaderBase.glsl
 #include includes/Noise.glsl
 
 #pragma PROGRAM_VERTEX

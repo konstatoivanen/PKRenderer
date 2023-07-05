@@ -1,4 +1,5 @@
 #pragma once
+#include Constants.glsl
 
 float2x3 ComposeTBFast(const float3 N, const float planeScale)
 {
@@ -172,4 +173,11 @@ float2x3 GetPrimeBasisGGX(const float3 N, const float3 V, const float R, const f
     const float3 t = normalize(cross(N,l));
     const float3 b = cross(l,t);
     return float2x3(t * radius, b * radius);
+}
+
+//Source: https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf 
+float GetGGXLobeHalfAngle(const float R, const float volumeFactor)
+{
+    //return atan(pow2(R) * volumeFactor / ( 1.0 - volumeFactor));
+    return PK_HALF_PI * pow2(R) / (1.0f + pow2(R));
 }

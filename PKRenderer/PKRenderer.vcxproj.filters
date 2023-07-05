@@ -1929,7 +1929,7 @@
     <None Include="res\shaders\includes\ClusterIndexing.glsl" />
     <None Include="res\shaders\includes\Reconstruction.glsl" />
     <None Include="res\shaders\includes\BRDF.glsl" />
-    <None Include="res\shaders\includes\SharedSurfaceShading.glsl" />
+    <None Include="res\shaders\includes\SurfaceShaderBase.glsl" />
     <None Include="res\shaders\SH_WS_PBR_Default.shader" />
     <None Include="res\materials\M_Ground.material" />
     <None Include="res\textures\default\T_Black.ktx2" />

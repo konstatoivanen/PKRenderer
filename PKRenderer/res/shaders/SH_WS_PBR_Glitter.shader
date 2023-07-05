@@ -11,7 +11,7 @@
 #MaterialProperty texture2D _HeightMap
 #define PK_NORMALMAPS
 #define PK_HEIGHTMAPS
-#include includes/SharedSurfaceShading.glsl
+#include includes/SurfaceShaderBase.glsl
 
 #pragma PROGRAM_VERTEX
 void PK_SURFACE_FUNC_VERT(inout SurfaceFragmentVaryings surf) {}

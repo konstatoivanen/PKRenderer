@@ -17,7 +17,7 @@ float2 GetFilterRadiusAndScale(const float depth, const float variance, const fl
 {
     // @TODO sort out this non sense...
     const float near_field = saturate(depth * 0.5f);
-    float scale = 0.2f + 0.8f * smoothstep(0.0f, 0.3f, pow(ao, 0.4f));
+    float scale = 0.2f + 0.8f * smoothstep(0.0f, 0.3f, pow(ao, 0.125f));
     scale = lerp(0.2f + scale * 0.8f, scale, near_field);
     scale *= 0.05f + 0.95f * variance;
     scale = lerp(scale, 0.5f + scale * 0.5f, 1.0f / history);
@@ -105,7 +105,7 @@ void main()
 
     mom /= w_mom;
 
-    const float variance = sqrt(saturate(mom.y - pow2(mom.x)));
+    const float variance = sqrt(abs(mom.y - pow2(mom.x)));
     const float2 radiusAndScale = GetFilterRadiusAndScale(depth, variance, c_diff.ao, c_diff.history);
     const float radius = radiusAndScale.x;
     const float radius_scale = radiusAndScale.y;

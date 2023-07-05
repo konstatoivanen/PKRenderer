@@ -4,10 +4,6 @@
 
 #include Common.glsl
 
-float3 UnpackNormal(in float3 packedNormal) { return packedNormal * 2.0f - float3(1.0f); }
-float3 SampleNormal(in sampler2D map, in float3x3 rotation, in float2 uv, float amount) { return normalize(mul(rotation, lerp(float3(0,0,1), UnpackNormal(tex2D(map, uv).xyz), amount))); }
-float2 ParallaxOffset(float height, float heightAmount, float3 viewdir) { return (height * heightAmount - heightAmount / 2.0f) * (viewdir.xy / (viewdir.z + 0.42f)); }
-
 float3 SampleViewNormal(float2 uv) { return SampleViewNormalRoughness(uv).xyz; }
 float3 SampleViewNormal(int2 coord) { return SampleViewNormalRoughness(coord).xyz; }
 float3 SampleWorldNormal(float2 uv) { return mul(float3x3(pk_MATRIX_I_V), SampleViewNormal(uv)); }
@@ -35,14 +31,5 @@ float3 SamplePreviousViewPosition(float2 uv) { return ClipUVToViewPos(uv, Sample
 float3 SamplePreviousViewPosition(int2 coord, int2 size) { return ClipUVToViewPos((coord + 0.5f.xx) / float2(size), SamplePreviousLinearDepth(coord)); }
 float3 SamplePreviousWorldPosition(float2 uv) { return mul(pk_MATRIX_L_I_V, float4(SamplePreviousViewPosition(uv), 1.0f)).xyz; }
 float3 SamplePreviousWorldPosition(int2 coord, int2 size) { return mul(pk_MATRIX_L_I_V, float4(SamplePreviousViewPosition(coord, size), 1.0f)).xyz; }
-
-float3 GetFragmentClipUVW()
-{
-    #if defined(SHADER_STAGE_FRAGMENT)
-        return float3(gl_FragCoord.xy * pk_ScreenParams.zw, gl_FragCoord.z);
-    #else
-        return 0.0f.xxx;
-    #endif
-}
 
 #endif

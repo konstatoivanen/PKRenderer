@@ -871,7 +871,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\SharedLights.glsl" />
     <None Include="res\shaders\includes\SharedSceneGI.glsl" />
     <None Include="res\shaders\includes\SharedShadowmapping.glsl" />
-    <None Include="res\shaders\includes\SharedSurfaceShading.glsl" />
+    <None Include="res\shaders\includes\SurfaceShaderBase.glsl" />
     <None Include="res\shaders\CS_GI_VolumeMipmap.shader" />
     <None Include="res\shaders\includes\SHL1.glsl" />
     <None Include="res\shaders\includes\LDSLoader.glsl" />

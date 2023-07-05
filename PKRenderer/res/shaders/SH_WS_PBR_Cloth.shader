@@ -12,7 +12,7 @@
 #define PK_NORMALMAPS
 #define PK_ACTIVE_BRDF BRDF_PBS_CLOTH_DIRECT
 #define PK_ACTIVE_VXGI_BRDF BRDF_VXGI_CLOTH
-#include includes/SharedSurfaceShading.glsl
+#include includes/SurfaceShaderBase.glsl
 
 #pragma PROGRAM_VERTEX
 void PK_SURFACE_FUNC_VERT(inout SurfaceFragmentVaryings surf) {}

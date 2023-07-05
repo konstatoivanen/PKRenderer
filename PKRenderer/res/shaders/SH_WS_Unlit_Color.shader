@@ -12,7 +12,7 @@ in float3 in_POSITION;
 
 void main()
 {
-    gl_Position = ObjectToClipPos(float4(in_POSITION, 0));
+    gl_Position = ObjectToClipPos(in_POSITION);
     NORMALIZE_GL_Z;
 }
 
