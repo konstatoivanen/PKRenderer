@@ -1,8 +1,7 @@
 
 /*
 required includes
-includes/Common.glsl
-includes/Reconstruction.glsl
+includes/GBuffers.glsl
 includes/Kernels.glsl
 includes/BRDF.glsl
 

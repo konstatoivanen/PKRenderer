@@ -26,27 +26,27 @@ void main()
 
     switch (light.LIGHT_TYPE)
     {
-    case LIGHT_TYPE_POINT:
-    {
-        vs_depth = float4(wpos - light.position.xyz, SHADOW_NEAR_BIAS);
-        vs_pos = GetCubeClipPos(vs_depth.xyz, light.position.w, layer % 6);
-    }
-    break;
-    case LIGHT_TYPE_SPOT:
-    {
-        float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, projectionIndex);
-        vs_pos = mul(lightmatrix, float4(wpos, 1.0f));
-        vs_depth = float4(wpos - light.position.xyz, SHADOW_NEAR_BIAS);
-    }
-    break;
-    case LIGHT_TYPE_DIRECTIONAL:
-    {
-        float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, projectionIndex + layer);
-        vs_pos = mul(lightmatrix, float4(wpos, 1.0f));
-        float dist = ((vs_pos.z / vs_pos.w) + 1.0f) * light.position.w * 0.5f;
-        vs_depth = float4(dist * light.position.xyz, SHADOW_NEAR_BIAS * (layer + 1));
-    }
-    break;
+        case LIGHT_TYPE_POINT:
+        {
+            vs_depth = float4(wpos - light.position.xyz, SHADOW_NEAR_BIAS);
+            vs_pos = GetCubeClipPos(vs_depth.xyz, light.position.w, layer % 6);
+        }
+        break;
+        case LIGHT_TYPE_SPOT:
+        {
+            float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, projectionIndex);
+            vs_pos = mul(lightmatrix, float4(wpos, 1.0f));
+            vs_depth = float4(wpos - light.position.xyz, SHADOW_NEAR_BIAS);
+        }
+        break;
+        case LIGHT_TYPE_DIRECTIONAL:
+        {
+            float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, projectionIndex + layer);
+            vs_pos = mul(lightmatrix, float4(wpos, 1.0f));
+            float dist = ((vs_pos.z / vs_pos.w) + 1.0f) * light.position.w * 0.5f;
+            vs_depth = float4(dist * light.position.xyz, SHADOW_NEAR_BIAS * (layer + 1));
+        }
+        break;
     }
 
     gl_Layer = int(layer);

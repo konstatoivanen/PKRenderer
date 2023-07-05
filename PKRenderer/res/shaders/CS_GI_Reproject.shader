@@ -1,8 +1,7 @@
 #version 460
 #pragma PROGRAM_COMPUTE
-#include includes/Common.glsl
+#include includes/GBuffers.glsl
 #include includes/SharedSceneGI.glsl
-#include includes/Reconstruction.glsl
 
 // Source: https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
 #define SPEC_ACCUM_BASE_POWER 0.25

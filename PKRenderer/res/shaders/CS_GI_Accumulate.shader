@@ -1,6 +1,6 @@
 #version 460
 #pragma PROGRAM_COMPUTE
-#include includes/Common.glsl
+#include includes/GBuffers.glsl
 #include includes/SharedSceneGI.glsl
 #include includes/CTASwizzling.glsl
 

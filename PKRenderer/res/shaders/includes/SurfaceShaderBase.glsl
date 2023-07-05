@@ -1,9 +1,17 @@
 #pragma once
+#include GBuffers.glsl
 #include Lighting.glsl
 #include SceneEnv.glsl
 #include BRDF.glsl
-#include Reconstruction.glsl
 #include SharedSceneGI.glsl
+
+#if !defined(PK_ACTIVE_BRDF)
+    #define PK_ACTIVE_BRDF BRDF_DEFAULT
+#endif
+
+#if !defined(PK_ACTIVE_VXGI_BRDF)
+    #define PK_ACTIVE_VXGI_BRDF BRDF_VXGI_DEFAULT
+#endif
 
 #define SRC_METALLIC x
 #define SRC_OCCLUSION y
@@ -223,14 +231,28 @@ struct SurfaceFragmentVaryings
             value = EncodeGBufferN(normalize(WorldToViewDir(surf.normal)), surf.roughness);
 
         #elif defined(PK_META_PASS_GIVOXELIZE)
-            GetSurfaceAlphaReflectivity(surf);
+            float3 specColor = GetSurfaceSpecularColor(surf.albedo, surf.metallic);
+            float reflectivity = GetSurfaceAlphaReflectivity(surf);
+
+            BRDFSurf brdf_surf = MakeBRDFSurf
+            (
+                surf.albedo, 
+                specColor, 
+                surf.sheen, 
+                surf.normal, 
+                surf.viewdir, 
+                reflectivity, 
+                surf.roughness, 
+                surf.subsurface_distortion, 
+                surf.subsurface_power, 
+                surf.subsurface_thickness
+            );
 
             LightTile tile = GetLightTile(surf.clipuvw);
-    
             for (uint i = tile.start; i < tile.end; ++i)
             {
                 Light light = GetSurfaceLight(i, surf.worldpos, tile.cascade);
-                value.rgb += PK_ACTIVE_VXGI_BRDF(surf.albedo, surf.normal, light);
+                value.rgb += PK_ACTIVE_VXGI_BRDF(brdf_surf, light);
             }
     
             // Multi bounce gi. Causes some very lingering light artifacts & bleeding. @TODO Consider adding a setting for this.
@@ -257,17 +279,15 @@ struct SurfaceFragmentVaryings
             value.a = surf.alpha; 
 
         #else
-
             surf.roughness = max(surf.roughness, 0.002);
             surf.normal = GetViewShiftedNormal(surf.normal, surf.viewdir);
             float3 specColor = GetSurfaceSpecularColor(surf.albedo, surf.metallic);
             float reflectivity = GetSurfaceAlphaReflectivity(surf);
-            LightTile tile = GetLightTile(surf.clipuvw);
-    
+
             Indirect indirect; // = GetStaticSceneIndirect(surf.normal, surf.viewdir, surf.roughness);
             GI_Sample_Lighting(surf.clipuvw.xy, surf.normal, surf.viewdir, surf.roughness, indirect.diffuse, indirect.specular);
-    
-            INIT_BRDF_CACHE
+
+            BRDFSurf brdf_surf = MakeBRDFSurf
             (
                 surf.albedo, 
                 specColor, 
@@ -281,13 +301,14 @@ struct SurfaceFragmentVaryings
                 surf.subsurface_thickness
             );
     
-            value.rgb = BRDF_PBS_DEFAULT_INDIRECT(indirect);
+            value.rgb = BRDF_PBS_DEFAULT_INDIRECT(brdf_surf, indirect);
             value.rgb *= surf.occlusion;
 
+            LightTile tile = GetLightTile(surf.clipuvw);
             for (uint i = tile.start; i < tile.end; ++i)
             {
                 Light light = GetSurfaceLight(i, surf.worldpos, tile.cascade);
-                value.rgb += PK_ACTIVE_BRDF(light);
+                value.rgb += PK_ACTIVE_BRDF(brdf_surf, light);
             }
     
             value.rgb += surf.emission;

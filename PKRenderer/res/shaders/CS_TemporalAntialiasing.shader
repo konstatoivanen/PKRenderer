@@ -1,7 +1,6 @@
 #version 460
 #pragma PROGRAM_COMPUTE
-#include includes/Common.glsl
-#include includes/Reconstruction.glsl
+#include includes/GBuffers.glsl
 #include includes/SharedPostEffects.glsl
 #include includes/Encoding.glsl
 

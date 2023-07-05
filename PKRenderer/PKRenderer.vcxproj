@@ -863,7 +863,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\SpatialFilter.glsl" />
     <None Include="res\shaders\includes\SpatialFilters.glsl" />
     <None Include="res\shaders\includes\Kernels.glsl" />
-    <None Include="res\shaders\includes\Reconstruction.glsl" />
+    <None Include="res\shaders\includes\GBuffers.glsl" />
     <None Include="res\shaders\includes\SampleDistribution.glsl" />
     <None Include="res\shaders\includes\SceneEnv.glsl" />
     <None Include="res\shaders\includes\SharedTemporalAntialiasing.glsl" />
@@ -874,7 +874,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\SurfaceShaderBase.glsl" />
     <None Include="res\shaders\CS_GI_VolumeMipmap.shader" />
     <None Include="res\shaders\includes\SHL1.glsl" />
-    <None Include="res\shaders\includes\LDSLoader.glsl" />
     <None Include="res\shaders\includes\TricubicSampler.glsl" />
     <None Include="res\shaders\RS_GI_Raytrace.shader" />
     <None Include="res\shaders\SH_VS_VolumeFogComposite.shader" />

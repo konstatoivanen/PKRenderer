@@ -6,9 +6,8 @@
 #include includes/SharedHistogram.glsl
 #include includes/Common.glsl
 
-
+#include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl
-#include includes/Reconstruction.glsl
 #include includes/SharedSceneGI.glsl
 
 layout(rgba16f, set = PK_SET_DRAW) uniform image2D _MainTex;

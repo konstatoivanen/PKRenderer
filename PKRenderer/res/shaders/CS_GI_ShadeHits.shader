@@ -1,6 +1,6 @@
 #version 460
 #pragma PROGRAM_COMPUTE
-#include includes/Reconstruction.glsl
+#include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl
 #include includes/SharedSceneGI.glsl
 #include includes/CTASwizzling.glsl
@@ -30,7 +30,7 @@ float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direct
 
             if (isScreenHit)
             {
-                return tex2D(pk_ScreenColorPrevious, clipuvw.xy).rgb;
+                return SamplePreviousColor(clipuvw.xy);
             }
         }
     }

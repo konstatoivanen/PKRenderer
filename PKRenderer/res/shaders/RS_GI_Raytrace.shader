@@ -1,8 +1,7 @@
 #version 460
 #extension GL_KHR_shader_subgroup_ballot : enable
-#include includes/Common.glsl
+#include includes/GBuffers.glsl
 #include includes/SharedSceneGI.glsl
-#include includes/Reconstruction.glsl
 
 struct TracePayload
 {
@@ -61,6 +60,9 @@ uint RayTraceScreen(const float2 uv, const float depth, const float3 ws_dir, ino
             bool isOccluded = s_z < HIT_TOLERANCE * hit.z;
             half refinement = max(s_z, cmax(-fma(st.xy, fract(half2(hit.xy) / tx), st.zw) * tx));
             hit += dir * lerp(refinement, -advance, isOccluded);
+            // This has false negatives when hitting steep slopes
+            // Causes hw rt to miss surfaces due to hit distance over estimation
+            // @TODO FIX ME
             return isOccluded ? RT_MISS : RT_HIT;
         }
     }
@@ -72,11 +74,16 @@ uint RayTraceScreen(const float2 uv, const float depth, const float3 ws_dir, ino
 
 uint SSRTRay(const float3 origin, const float3 direction, const float2 uv, const float depth, inout float hitDistance)
 {
+#if PK_GI_SSRT_PRETRACE == 1
     float3 hitpos = 0.0f.xxx;
     const uint result = RayTraceScreen(uv, depth, direction, hitpos);
     hitpos = SampleWorldPosition(hitpos.xy, LinearizeDepth(hitpos.z));
     hitDistance = max(0.0f, dot(normalize(direction), hitpos - origin));
     return result;
+#else
+    hitDistance = 0.0f;
+    return RT_MISS;
+#endif
 }
 
 PK_DECLARE_RT_PAYLOAD_OUT(TracePayload, payload, 0);

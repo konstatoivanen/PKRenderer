@@ -10,7 +10,7 @@
 #MaterialProperty texture2D _NormalMap
 #MaterialProperty texture2D _HeightMap
 #define PK_NORMALMAPS
-#define PK_ACTIVE_BRDF BRDF_PBS_CLOTH_DIRECT
+#define PK_ACTIVE_BRDF BRDF_CLOTH
 #define PK_ACTIVE_VXGI_BRDF BRDF_VXGI_CLOTH
 #include includes/SurfaceShaderBase.glsl
 

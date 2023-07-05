@@ -1927,7 +1927,7 @@
     <None Include="res\shaders\SH_VS_ShadowmapBlur.shader" />
     <None Include="res\shaders\CS_LightAssignment.shader" />
     <None Include="res\shaders\includes\ClusterIndexing.glsl" />
-    <None Include="res\shaders\includes\Reconstruction.glsl" />
+    <None Include="res\shaders\includes\GBuffers.glsl" />
     <None Include="res\shaders\includes\BRDF.glsl" />
     <None Include="res\shaders\includes\SurfaceShaderBase.glsl" />
     <None Include="res\shaders\SH_WS_PBR_Default.shader" />
@@ -2012,7 +2012,6 @@
     <None Include="res\shaders\includes\Kernels.glsl" />
     <None Include="res\shaders\includes\BlueNoise.glsl" />
     <None Include="res\textures\default\T_Bluenoise128x64.ktx2" />
-    <None Include="res\shaders\includes\LDSLoader.glsl" />
     <None Include="res\shaders\CS_GI_HistoryFill.shader" />
     <None Include="res\shaders\CS_GI_DiskFilter.shader" />
     <None Include="res\shaders\CS_GI_ScreenMip.shader" />

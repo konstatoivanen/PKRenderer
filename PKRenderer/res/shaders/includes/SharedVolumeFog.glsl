@@ -1,5 +1,5 @@
 #pragma once
-#include Common.glsl
+#include GBuffers.glsl
 #include Noise.glsl
 #include BlueNoise.glsl
 #include TricubicSampler.glsl

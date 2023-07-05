@@ -1,7 +1,7 @@
 #version 460
 #MaterialProperty float4 _Color
 #MaterialProperty float4 _EmissionColor
-#define PK_ACTIVE_BRDF BRDF_PBS_DEFAULT_SS
+#define PK_ACTIVE_BRDF BRDF_SUBSURFACE
 #include includes/SurfaceShaderBase.glsl
 #include includes/Noise.glsl
 

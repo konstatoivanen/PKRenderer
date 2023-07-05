@@ -15,6 +15,14 @@
 #define PK_HALF_MAX         65504.0
 #define PK_HALF_MAX_MINUS1  65472.0
 
+// Backbuffer resolutions are always divisible by the following values
+// Kept here so that computes using these can be more easily refactored.
+#define PK_W_ALIGNMENT_32 32u
+#define PK_W_ALIGNMENT_16 16u
+#define PK_W_ALIGNMENT_8 8u
+#define PK_W_ALIGNMENT_4 4u
+#define PK_W_ALIGNMENT_2 2u
+
 #define pk_Grey vec4(0.214041144, 0.214041144, 0.214041144, 0.5)
 // standard dielectric reflectivity coef at incident angle (= 4%)
 #define pk_DielectricSpecular vec4(0.04, 0.04, 0.04, 1.0 - 0.04) 

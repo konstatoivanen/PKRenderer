@@ -1,8 +1,7 @@
 #version 460
 #pragma PROGRAM_COMPUTE
-#include includes/Common.glsl
+#include includes/GBuffers.glsl
 #include includes/SharedSceneGI.glsl
-#include includes/Reconstruction.glsl
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void main()

@@ -1,8 +1,7 @@
 #version 460
 #pragma PROGRAM_COMPUTE
-#include includes/Common.glsl
+#include includes/GBuffers.glsl
 #include includes/SharedSceneGI.glsl
-#include includes/Reconstruction.glsl
 #include includes/Kernels.glsl
 #include includes/BRDF.glsl
 #include includes/CTASwizzling.glsl
@@ -41,7 +40,7 @@ void ApproximateRoughSpecular(const SH sh, const float3 N, const float3 V, const
     roughness = sqrt(roughness); // Sample distribution used wrong roughness scale. correct this based on that. :/
 
     const float3 s_color = SH_ToColor(sh) * PK_TWO_PI;
-    const float3 specular = s_color * BRDF_GGX_SPECULAR(roughness, sh_dir, worldV, worldN);
+    const float3 specular = s_color * BRDF_GGX_SPECULAR_APPROX(roughness, sh_dir, worldV, worldN);
     const float inter = smoothstep(PK_GI_MIN_ROUGH_SPEC, PK_GI_MAX_ROUGH_SPEC, R);
 
     spec.radiance = lerp(spec.radiance, specular, inter);
