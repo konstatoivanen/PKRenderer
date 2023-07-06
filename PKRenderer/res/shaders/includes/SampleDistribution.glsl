@@ -45,19 +45,6 @@ float3x3 ComposeTBNFast(const float3 N)
     return float3x3(T, B, N);
 }
 
-float3x3 ComposeTBN(const float3 N, const float3 U)
-{
-    float3 T = normalize(cross(U, N));
-    float3 B = cross(N, T);
-    return float3x3(T, B, N);
-}
-
-float3x3 ComposeTBN(const float3 N)
-{
-    float3 U = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
-    return ComposeTBN(N, U);
-}
-
 float RadicalInverse_VdC(uint bits)
 {
     bits = (bits << 16u) | (bits >> 16u);
@@ -73,11 +60,12 @@ float2 Hammersley(uint i, uint N)
     return float2(float(i % N) / float(N), RadicalInverse_VdC(i));
 }
 
-float3 GetSampleDirectionHammersLey(const float3 Xi, float blur)
+float3 ConeDirectionHammersLey(uint i, uint count, float R)
 {
-    float theta = (1.0f - Xi.z) / (1.0f + (blur - 1.0f) * Xi.z);
-    float2 sincos = sqrt(float2(1.0f - theta, theta));
-    return normalize(float3(Xi.xy * sincos.xx, sincos.y));
+    const float2 Xi = Hammersley(i, count);
+    float theta = Xi.x * R;
+    float phi = 2.0 * 3.14159265 * Xi.y;
+    return float3(cos(phi) * sin(theta), sin(phi) * sin(theta), cos(theta));
 }
 
 // "Sampling the GGX Distribution of Visible Normals", Heitz
@@ -127,10 +115,8 @@ float3 ImportanceSampleLambert(const float2 Xi, const float3 N)
     float a = 1.0 - 2.0 * Xi.x;
     float b = sqrt(1.0 - a * a);
     float phi = 2.0 * 3.14159265 * Xi.y;
-
     a *= 0.98;
     b *= 0.98;
-
     return normalize(float3(N.x + b * cos(phi), N.y + b * sin(phi), N.z + a));
 }
 

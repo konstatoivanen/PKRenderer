@@ -7,17 +7,11 @@
 #define LIGHT_CLUSTER_TILE_COUNT_XY float2(16.0f, 9.0f)
 #define LIGHT_CLUSTER_GROUP_SIZE_Z 4
 #define LIGHT_CLUSTER_GROUP_SIZE_XYZ 576 // 16 * 9 * 4
-#define LIGHT_CLUSTER_DEPTH_BATCH_SIZE_PX 16
 #define LIGHT_CLUSTER_TILE_MAX_LIGHT_COUNT 128
 
 float ZCoordToLinearDepth(float index)
 {
     return pk_ProjectionParams.x * pow(pk_ExpProjectionParams.z, index / LIGHT_CLUSTER_TILE_COUNT_Z);
-}
-
-uint GetDepthTileIndexUV(float2 uv)
-{
-    return uint(uint(uv.x * LIGHT_CLUSTER_TILE_COUNT_X) + LIGHT_CLUSTER_TILE_COUNT_X * uint(uv.y * LIGHT_CLUSTER_TILE_COUNT_Y));
 }
 
 int3 GetTileIndexUV(float2 uv, float lineardepth)

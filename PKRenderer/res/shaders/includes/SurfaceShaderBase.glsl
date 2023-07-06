@@ -2,7 +2,6 @@
 #include GBuffers.glsl
 #include Lighting.glsl
 #include SceneEnv.glsl
-#include BRDF.glsl
 #include SharedSceneGI.glsl
 
 struct SurfaceData
@@ -262,8 +261,8 @@ struct SurfaceFragmentVaryings
             LightTile tile = GetLightTile(surf.clipuvw);
             for (uint i = tile.start; i < tile.end; ++i)
             {
-                Light light = GetSurfaceLight(i, surf.worldpos, tile.cascade);
-                value.rgb += PK_META_BRDF(brdf_surf, light);
+                Light light = GetLight(i, surf.worldpos, tile.cascade);
+                value.rgb += PK_META_BRDF(brdf_surf, light.direction, light.color, light.shadow);
             }
 
             value.rgb += surf.emission;

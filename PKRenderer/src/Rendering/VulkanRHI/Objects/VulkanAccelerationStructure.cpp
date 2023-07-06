@@ -194,7 +194,8 @@ namespace PK::Rendering::VulkanRHI::Objects
         {
             m_driver->DisposePooledBuffer(m_scratchBuffer, m_cmd->GetFenceRef());
             auto name = m_name + std::string(".ScratchBuffer");
-            m_scratchBuffer = m_driver->bufferPool.New(m_driver->device, m_driver->allocator, VulkanBufferCreateInfo(BufferUsage::DefaultStorage, scratchSize), name.c_str());
+            auto usage = BufferUsage::DefaultStorage | BufferUsage::AccelerationStructure;
+            m_scratchBuffer = m_driver->bufferPool.New(m_driver->device, m_driver->allocator, VulkanBufferCreateInfo(usage, scratchSize), name.c_str());
         }
 
         if (m_structureBuffer != nullptr && 

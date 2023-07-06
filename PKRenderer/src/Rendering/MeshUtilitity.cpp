@@ -459,7 +459,7 @@ namespace PK::Rendering::MeshUtility
 
             for (auto lon = 0u; lon <= longc; lon++)
             {
-                float a2 = PK_FLOAT_2PI * (float)(lon == longc ? 0 : lon) / longc;
+                float a2 = PK_FLOAT_TWO_PI * (float)(lon == longc ? 0 : lon) / longc;
                 float sin2 = sin(a2);
                 float cos2 = cos(a2);
                 vertices[lon + lat * (longc + 1) + 1].position = float3(sin1 * cos2, cos1, sin1 * sin2) * radius;

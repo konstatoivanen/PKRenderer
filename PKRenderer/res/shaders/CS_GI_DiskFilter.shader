@@ -30,8 +30,8 @@ float2 GetFilterRadiusAndScale(const float depth, const float variance, const fl
 
 void ApproximateRoughSpecular(const SH sh, const float3 N, const float3 V, const float R, inout GISampleSpec spec)
 {
-    float3 worldN = mul(float3x3(pk_MATRIX_I_V), N);
-    float3 worldV = mul(float3x3(pk_MATRIX_I_V), V);
+    float3 wN = mul(float3x3(pk_MATRIX_I_V), N);
+    float3 wV = mul(float3x3(pk_MATRIX_I_V), V);
 
     float directionality;
     float3 sh_dir = SH_ToPrimeDir(sh, directionality);
@@ -40,7 +40,7 @@ void ApproximateRoughSpecular(const SH sh, const float3 N, const float3 V, const
     roughness = sqrt(roughness);
 
     const float3 s_color = SH_ToColor(sh) * PK_TWO_PI;
-    const float3 specular = s_color * BRDF_GGX_SPECULAR_APPROX(roughness, sh_dir, worldV, worldN);
+    const float3 specular = s_color * BRDF_GGX_SPECULAR_APPROX(wN, wV, roughness, sh_dir);
     const float inter = smoothstep(PK_GI_MIN_ROUGH_SPEC, PK_GI_MAX_ROUGH_SPEC, R);
 
     spec.radiance = lerp(spec.radiance, specular, inter);

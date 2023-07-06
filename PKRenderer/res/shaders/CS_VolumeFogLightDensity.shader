@@ -55,7 +55,8 @@ void main()
 
     for (uint i = tile.start; i < tile.end; ++i)
     {
-        radiance += GetVolumeLightColor(i, worldpos, viewdir, tile.cascade, pk_Volume_Anisotropy);
+        Light light = GetLight(i, worldpos, tile.cascade);
+        radiance += BSDF_VOLUMETRIC(viewdir, pk_Volume_Anisotropy, light.direction, light.color, light.shadow);
     }
 
     const float density = Density(worldpos);

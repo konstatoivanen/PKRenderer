@@ -138,8 +138,18 @@ namespace PK::Math
     constexpr color32 PK_COLOR32_MAGENTA = { 255,   0, 255, 255 };
     constexpr color32 PK_COLOR32_YELLOW = { 255, 255,   0, 255 };
 
-    constexpr float PK_FLOAT_PI = 3.14159274F;
-    constexpr float PK_FLOAT_2PI = 2.0f * 3.14159274F;
+    constexpr float PK_FLOAT_PI = 3.1415926535f;
+    constexpr float PK_FLOAT_TWO_PI = 6.2831853071f;
+    constexpr float PK_FLOAT_FOUR_PI = 12.566370614f;
+    constexpr float PK_FLOAT_INV_PI = 0.3183098861f;
+    constexpr float PK_FLOAT_INV_TWO_PI = 0.1591549430f;
+    constexpr float PK_FLOAT_INV_FOUR_PI = 0.0795774715f;
+    constexpr float PK_FLOAT_HALF_PI = 1.5707963267f;
+    constexpr float PK_FLOAT_INV_HALF_PI = 0.6366197723f;
+    constexpr float PK_FLOAT_SQRT_PI = 1.7724538509f;
+    constexpr float PK_FLOAT_TWO_SQRT2 = 2.8284271247f;
+    constexpr float PK_FLOAT_SQRT2 = 1.4142135623f;
+    constexpr float PK_FLOAT_INV_SQRT2 = 0.7071067811f;
     constexpr float PK_FLOAT_DEG2RAD = 0.0174532924F;
     constexpr float PK_FLOAT_RAD2DEG = 57.29578F;
 

@@ -6,9 +6,27 @@
 #include includes/SharedHistogram.glsl
 #include includes/Common.glsl
 
+//@TODO move these to application config?
+#define PK_APPLY_VIGNETTE 0
+#define PK_APPLY_BLOOM 0
+#define PK_APPLY_TONEMAP 1
+#define PK_APPLY_FILMGRAIN 0
+#define PK_APPLY_COLORGRADING 0
+
+#define PK_DEBUG_MODE_NONE 0
+#define PK_DEBUG_MODE_GI_DIFF 1
+#define PK_DEBUG_MODE_GI_SPEC 2
+#define PK_DEBUG_MODE_NORMAL 3
+#define PK_DEBUG_MODE_ROUGHNESS 4
+
+#define PK_DEBUG_MODE PK_DEBUG_MODE_NONE
+#define PK_DEBUG_HALFSCREEN 1
+
+#if PK_DEBUG_MODE != PK_DEBUG_MODE_NONE
 #include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl
 #include includes/SharedSceneGI.glsl
+#endif
 
 layout(rgba16f, set = PK_SET_DRAW) uniform image2D _MainTex;
 
@@ -23,27 +41,55 @@ void main()
     color = max(0.0f.xxx, color);
 
     float exposure = GetAutoExposure();
-   // exposure *= Vignette(uv);
+    
+    #if PK_APPLY_VIGNETTE == 1
+        exposure *= Vignette(uv);
+    #endif
 
-    //color = Bloom(color, uv);
-    // Applying a bit of desaturation to reduce high intensity value color blowout
-    // A personal preference really (should probably try to deprecate this).
-    color = Saturation(color, 0.8f);
-    color = TonemapACESFilm(color, exposure);
-    //color = FilmGrain(color, float2(coord));
+    #if PK_APPLY_BLOOM == 1
+        color = Bloom(color, uv);
+    #endif
+
+    #if PK_APPLY_TONEMAP == 1
+        // Applying a bit of desaturation to reduce high intensity value color blowout
+        // A personal preference really (should probably try to deprecate this).
+        color = Saturation(color, 0.8f);
+        color = TonemapACESFilm(color, exposure);
+    #endif
+
+    #if PK_APPLY_FILMGRAIN == 1
+        color = FilmGrain(color, float2(coord));
+    #endif
+
     color = LinearToGamma(color);
-    // This should perhaps be done before gamma corretion.
-    // But doing so invalidates configurations done using external tools.
-  //  color = ApplyColorGrading(color);
 
-    // GI Debug
+    #if PK_APPLY_COLORGRADING == 1
+        color = ApplyColorGrading(color);
+    #endif
+
+    // Debug previews
+#if PK_DEBUG_MODE != PK_DEBUG_MODE_NONE
+    #if PK_DEBUG_HALFSCREEN == 1
     if (uv.x > 0.5)
+    #endif
     {
-        float3 normal = SampleWorldNormal(uv);
-        float3 gi = GI_Sample_Specular(uv, normal) * 4.0f;
-       // GIRayHits hits = GI_Load_RayHits(coord);
-        color = gi; //hits.isMissSpec ? 0.0f.xxx : 1.0f.xxx;// diff;
+        float4 nr = SampleWorldNormalRoughness(uv);
+        float3 normal = nr.xyz;
+        float roughness = nr.w;
+
+        #if PK_DEBUG_MODE == PK_DEBUG_MODE_GI_DIFF
+            float3 gi_diff = GI_Sample_Diffuse(uv, normal) * PK_PI;
+            color = gi_diff;
+        #elif PK_DEBUG_MODE == PK_DEBUG_MODE_GI_SPEC
+            float3 gi_spec = GI_Sample_Specular(uv, normal) * PK_PI;
+            color = gi_spec;
+        #elif PK_DEBUG_MODE == PK_DEBUG_MODE_NORMAL
+            color = normal * 0.5f + 0.5f;
+        #elif PK_DEBUG_MODE == PK_DEBUG_MODE_ROUGHNESS
+            color = roughness.xxx;
+        #endif
     }
+#endif
 
     imageStore(_MainTex, coord, float4(color, 1.0f));
 }

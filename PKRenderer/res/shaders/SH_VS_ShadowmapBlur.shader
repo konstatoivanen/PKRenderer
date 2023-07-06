@@ -37,35 +37,29 @@ void main()
     float2 uv = vs_TEXCOORD0;
     float layer = vs_LAYER;
     float2 A = float2(0.0f);
+    float R = pk_ShadowmapBlurAmount[vs_LAYER];
 
 #if defined(SHADOW_SOURCE_CUBE)
     float3 N = OctaDecode(uv);
-    float3 U = abs(N.z) < 0.999f ? half3(0.0f, 0.0f, 1.0f) : half3(1.0f, 0.0f, 0.0f);
-    float3 T = normalize(cross(U, N));
-    float3 B = cross(N, T);
-    float3 H = float3(0.0f);
-    float R = pow5(pk_ShadowmapBlurAmount[vs_LAYER]);
+    float3x3 TBN = ComposeTBNFast(N);
 
 #pragma unroll SAMPLE_COUNT
     for (uint i = 0u; i < SAMPLE_COUNT; ++i)
     {
-        float3 offset = GetSampleDirectionHammersLey(PK_HAMMERSLEY_SET_16[i], R);
-        H = T * offset.x + B * offset.y + N * offset.z;
-
+        float3 H = TBN * ConeDirectionHammersLey(i, SAMPLE_COUNT, R);
         // Cube y axis is flipped to avoid winding order change
         A += tex2D(pk_ShadowmapSource, float4(H.x, -H.y, H.z, layer)).rg;
     }
 
 #elif defined(SHADOW_SOURCE_2D)
-    float R = pow2(pk_ShadowmapBlurAmount[vs_LAYER]) * 0.25f;
 
 #pragma unroll SAMPLE_COUNT
+
     for (uint i = 0u; i < SAMPLE_COUNT; ++i)
     {
-        float2 offset = PK_POISSON_DISK_16[i] * R;
+        float2 offset = PK_POISSON_DISK_16[i] * R * 0.5f;
         A += tex2D(pk_ShadowmapSource, float3(uv + offset, layer)).rg;
     }
-
 #endif
 
     SV_Target0 = A * SAMPLE_COUNT_INV;

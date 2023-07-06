@@ -226,9 +226,10 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         VkBufferImageCopy region{};
         region.imageSubresource.aspectMask = vksrc->image.range.aspectMask;
-        region.imageSubresource.mipLevel = vksrc->image.range.baseMipLevel;
-        region.imageSubresource.baseArrayLayer = vksrc->image.range.baseArrayLayer;
-        region.imageSubresource.layerCount = vksrc->image.range.layerCount;
+        region.imageSubresource.mipLevel = 0u;
+        region.imageSubresource.baseArrayLayer = 0u;
+        region.imageSubresource.layerCount = 1u;
+        region.imageOffset = { 0,0,0 };
         region.imageExtent = vksrc->image.extent;
 
         m_renderState->RecordImage(vksrc, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
