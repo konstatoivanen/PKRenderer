@@ -55,7 +55,7 @@ void main()
         local_depth.y = max(max(max(max00, max01), max11), max10);
         local_depth.z = (avg00 + avg01 + avg11 + avg10) * 0.25f;
 #else
-        const float4 depths = GatherLinearDepths((coord * 2 + 1.0f.xx) / size);
+        const float4 depths = GatherViewDepths((coord * 2 + 1.0f.xx) / size);
         local_depth.x = cmin(depths);
         local_depth.y = cmax(depths);
         local_depth.z = dot(depths, 0.25f.xxxx);

@@ -33,26 +33,26 @@ float GetFocusDistance()
     return PK_ATOMIC_DATA(pk_AutoFocusParams).Distance; 
 }
 
-float GetCircleOfConfusion01(float linearDepth)
+float GetCircleOfConfusion01(float viewDepth)
 {
     AutoFocusData data = PK_ATOMIC_DATA(pk_AutoFocusParams);
-    return min(1.0f, abs(linearDepth - data.Distance) * data.LensCoefficient / linearDepth / pk_MaximumCoC);
+    return min(1.0f, abs(viewDepth - data.Distance) * data.LensCoefficient / viewDepth / pk_MaximumCoC);
 }
 
-float4 GetCirclesOfConfusion01(float4 linearDepths)
+float4 GetCirclesOfConfusion01(float4 viewDepths)
 {
     AutoFocusData data = PK_ATOMIC_DATA(pk_AutoFocusParams);
-    return min(float4(1.0f), abs(linearDepths - data.Distance) * data.LensCoefficient / linearDepths / pk_MaximumCoC);
+    return min(float4(1.0f), abs(viewDepths - data.Distance) * data.LensCoefficient / viewDepths / pk_MaximumCoC);
 }
 
-float GetCircleOfConfusion(float linearDepth)
+float GetCircleOfConfusion(float viewDepth)
 {
     AutoFocusData data = PK_ATOMIC_DATA(pk_AutoFocusParams);
-    return clamp((linearDepth - data.Distance) * data.LensCoefficient / linearDepth, -pk_MaximumCoC, pk_MaximumCoC);
+    return clamp((viewDepth - data.Distance) * data.LensCoefficient / viewDepth, -pk_MaximumCoC, pk_MaximumCoC);
 }
 
-float4 GetCirclesOfConfusion(float4 linearDepths)
+float4 GetCirclesOfConfusion(float4 viewDepths)
 {
     AutoFocusData data = PK_ATOMIC_DATA(pk_AutoFocusParams);
-    return clamp((linearDepths - data.Distance) * data.LensCoefficient / linearDepths, -pk_MaximumCoC, pk_MaximumCoC);
+    return clamp((viewDepths - data.Distance) * data.LensCoefficient / viewDepths, -pk_MaximumCoC, pk_MaximumCoC);
 }

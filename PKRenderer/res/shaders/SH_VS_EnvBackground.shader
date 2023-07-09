@@ -5,6 +5,7 @@
 #include includes/Encoding.glsl
 #include includes/SceneEnv.glsl
 #include includes/Blit.glsl
+#include includes/SharedVolumeFog.glsl
 
 #pragma PROGRAM_VERTEX
 
@@ -24,7 +25,9 @@ layout(location = 0) out float4 SV_Target0;
 
 void main()
 {
-    float2 reflUV = OctaUV(normalize(vs_TEXCOORD0));
-    float3 color = SampleEnvironment(reflUV, 0.0f);
+    const float3 viewdir = normalize(vs_TEXCOORD0);
+    const float2 octaUV = OctaUV(viewdir);
+    float3 color = SampleEnvironment(octaUV, 0.0f);
+    VolumeFog_ApplySky(viewdir, color);
     SV_Target0 = float4(color, 1.0f);
 }

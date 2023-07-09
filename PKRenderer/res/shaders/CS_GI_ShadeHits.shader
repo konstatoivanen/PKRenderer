@@ -18,12 +18,12 @@ float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direct
 
         if (isScreenHit)
         {
-            float sdepth = SamplePreviousLinearDepth(clipuvw.xy);
+            float sdepth = SamplePreviousViewDepth(clipuvw.xy);
             isScreenHit = isMiss && !Test_DepthFar(sdepth);
 
             if (!isScreenHit)
             {
-                float rdepth = LinearizeDepth(clipuvw.z);
+                float rdepth = ViewDepth(clipuvw.z);
                 float sviewz = -SamplePreviousViewNormal(clipuvw.xy).z + 0.15f;
                 isScreenHit = abs(sdepth - rdepth) < (rdepth * 0.01f / sviewz);
             }
@@ -61,7 +61,7 @@ void main()
 {
     const int2 size = int2(pk_ScreenSize.xy);
     const int2 coord = int2(GetSwizzledThreadID());
-    const float depth = SampleLinearDepth(coord);
+    const float depth = SampleViewDepth(coord);
 
     if (!Test_DepthFar(depth))
     {

@@ -68,22 +68,22 @@ bool IntersectionTest(uint lightIndex)
 layout(local_size_x = LIGHT_CLUSTER_TILE_COUNT_X, local_size_y = LIGHT_CLUSTER_TILE_COUNT_Y, local_size_z = LIGHT_CLUSTER_GROUP_SIZE_Z) in;
 void main()
 {
-    uint numBatches = (LightCount + LIGHT_CLUSTER_GROUP_SIZE_XYZ - 1) / LIGHT_CLUSTER_GROUP_SIZE_XYZ;
-    uint depthTileIndex = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * LIGHT_CLUSTER_TILE_COUNT_X;
+    const uint numBatches = (LightCount + LIGHT_CLUSTER_GROUP_SIZE_XYZ - 1) / LIGHT_CLUSTER_GROUP_SIZE_XYZ;
+    const uint depthTileIndex = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * LIGHT_CLUSTER_TILE_COUNT_X;
 
-    float near = ZCoordToLinearDepth(gl_GlobalInvocationID.z);
-    float far = ZCoordToLinearDepth(gl_GlobalInvocationID.z + 1);
+    const float near = ViewDepthExp(gl_GlobalInvocationID.z / float(LIGHT_CLUSTER_TILE_COUNT_Z));
+    const float far = ViewDepthExp((gl_GlobalInvocationID.z + 1u) / float(LIGHT_CLUSTER_TILE_COUNT_Z));
 
-    float2 invstep = 1.0f / float2(LIGHT_CLUSTER_TILE_COUNT_X, LIGHT_CLUSTER_TILE_COUNT_Y);
-    float4 screenminmax = float4(gl_GlobalInvocationID.xy * invstep, (gl_GlobalInvocationID.xy + 1.0f) * invstep);
+    const float2 invstep = 1.0f / float2(LIGHT_CLUSTER_TILE_COUNT_X, LIGHT_CLUSTER_TILE_COUNT_Y);
+    const float4 uvminmax = float4(gl_GlobalInvocationID.xy * invstep, (gl_GlobalInvocationID.xy + 1.0f) * invstep);
 
-    float3 min00 = ClipUVToViewPos(screenminmax.xy, near);
-    float3 max00 = ClipUVToViewPos(screenminmax.xy, far);
-    float3 min11 = ClipUVToViewPos(screenminmax.zw, near);
-    float3 max11 = ClipUVToViewPos(screenminmax.zw, far);
+    const float3 min00 = UVToViewPos(uvminmax.xy, near);
+    const float3 max00 = UVToViewPos(uvminmax.xy, far);
+    const float3 min11 = UVToViewPos(uvminmax.zw, near);
+    const float3 max11 = UVToViewPos(uvminmax.zw, far);
 
-    float3 aabbmin = min(min(min00, max00), min(min11, max11));
-    float3 aabbmax = max(max(min00, max00), max(min11, max11));
+    const float3 aabbmin = min(min(min00, max00), min(min11, max11));
+    const float3 aabbmax = max(max(min00, max00), max(min11, max11));
 
     currentCell.extents = (aabbmax - aabbmin) * 0.5f;
     currentCell.center = aabbmin + currentCell.extents;

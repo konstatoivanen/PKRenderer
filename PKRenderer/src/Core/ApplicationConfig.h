@@ -75,17 +75,18 @@ namespace PK::Core
         YAML::BoxedValue<float> TAABlendingMotion = YAML::BoxedValue<float>("TAABlendingMotion", 0.85f);
         YAML::BoxedValue<float> TAAMotionAmplification = YAML::BoxedValue<float>("TAAMotionAmplification", 600.0f);
 
-        YAML::BoxedValue<float> VolumeConstantFog = YAML::BoxedValue<float>("VolumeConstantFog", 0.0f);
-        YAML::BoxedValue<float> VolumeHeightFogExponent = YAML::BoxedValue<float>("VolumeHeightFogExponent", 0.0f);
-        YAML::BoxedValue<float> VolumeHeightFogOffset = YAML::BoxedValue<float>("VolumeHeightFogOffset", 0.0f);
-        YAML::BoxedValue<float> VolumeHeightFogAmount = YAML::BoxedValue<float>("VolumeHeightFogAmount", 0.0f);
-        YAML::BoxedValue<float> VolumeDensity = YAML::BoxedValue<float>("VolumeDensity", 0.0f);
-        YAML::BoxedValue<float> VolumeIntensity = YAML::BoxedValue<float>("VolumeIntensity", 0.0f);
-        YAML::BoxedValue<float> VolumeAnisotropy = YAML::BoxedValue<float>("VolumeAnisotropy", 0.0f);
-        YAML::BoxedValue<float> VolumeNoiseFogAmount = YAML::BoxedValue<float>("VolumeNoiseFogAmount", 0.0f);
-        YAML::BoxedValue<float> VolumeNoiseFogScale = YAML::BoxedValue<float>("VolumeNoiseFogScale", 0.0f);
-        YAML::BoxedValue<float> VolumeWindSpeed = YAML::BoxedValue<float>("VolumeWindSpeed", 0.0f);
-        YAML::BoxedValue<Math::float3> VolumeWindDirection = YAML::BoxedValue<Math::float3>("VolumeWindDirection", Math::PK_FLOAT3_FORWARD);
+        YAML::BoxedValue<Math::float3> FogAlbedo = YAML::BoxedValue <Math::float3> ("FogAlbedo", Math::PK_FLOAT3_ONE);
+        YAML::BoxedValue<Math::float3> FogAbsorption = YAML::BoxedValue <Math::float3> ("FogAbsorption", Math::PK_FLOAT3_ONE);
+        YAML::BoxedValue<float> FogAnisotropy = YAML::BoxedValue<float>("FogAnisotropy", 0.0f);
+        YAML::BoxedValue<Math::float3> FogWindDirection = YAML::BoxedValue<Math::float3>("FogWindDirection", Math::PK_FLOAT3_FORWARD);
+        YAML::BoxedValue<float> FogWindSpeed = YAML::BoxedValue<float>("FogWindSpeed", 0.0f);
+        YAML::BoxedValue<float> FogDensityConstant = YAML::BoxedValue<float>("FogDensityConstant", 0.0f);
+        YAML::BoxedValue<float> FogDensityHeightExponent = YAML::BoxedValue<float>("FogDensityHeightExponent", 0.0f);
+        YAML::BoxedValue<float> FogDensityHeightOffset = YAML::BoxedValue<float>("FogDensityHeightOffset", 0.0f);
+        YAML::BoxedValue<float> FogDensityHeightAmount = YAML::BoxedValue<float>("FogDensityHeightAmount", 0.0f);
+        YAML::BoxedValue<float> FogDensityNoiseAmount = YAML::BoxedValue<float>("FogDensityNoiseAmount", 0.0f);
+        YAML::BoxedValue<float> FogDensityNoiseScale = YAML::BoxedValue<float>("FogDensityNoiseScale", 0.0f);
+        YAML::BoxedValue<float> FogDensity = YAML::BoxedValue<float>("FogDensity", 0.0f);
 
         YAML::BoxedValue<std::string> FileBackgroundTexture = YAML::BoxedValue<std::string>("FileBackgroundTexture", "T_OEM_Mountains");
         YAML::BoxedValue<float> BackgroundExposure = YAML::BoxedValue<float>("BackgroundExposure", 1.0f);

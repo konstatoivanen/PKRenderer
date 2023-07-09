@@ -30,9 +30,13 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float4x4 pk_MATRIX_I_P;     // Current inverse projection matrix.
     float4x4 pk_MATRIX_VP;      // Current view * projection matrix.
     float4x4 pk_MATRIX_I_VP;    // Current inverse view * projection matrix.
+    
     float4x4 pk_MATRIX_L_I_V;   // Last inverse view matrix.
     float4x4 pk_MATRIX_L_VP;    // Last view * projection matrix.
-    float4x4 pk_MATRIX_LD_P;    // Last view * projection * current inverse view matrix.
+    float4x4 pk_MATRIX_L_VP_N;  // Last view * unjittered projection matrix.
+    float4x4 pk_MATRIX_L_DVP;   // Last view * projection * current inverse view matrix.
+    float4x4 pk_MATRIX_L_DVP_N; // Last view * unjittered projection * current inverse view matrix.
+
     float pk_SceneEnv_Exposure; // Scene background environment exposure
 };
 
@@ -48,11 +52,10 @@ PK_DECLARE_CBUFFER(pk_ModelMatrices, PK_SET_DRAW)
 
 PK_DECLARE_ACCELERATION_STRUCTURE(PK_SET_SHADER, pk_SceneStructure)
 
-uint GetShadowCascadeIndex(float linearDepth)
+uint GetShadowCascadeIndex(float viewDepth)
 {
-    return linearDepth > pk_ShadowCascadeZSplits[1] ? 
-           linearDepth > pk_ShadowCascadeZSplits[2] ? 
-           linearDepth > pk_ShadowCascadeZSplits[3] ? 3 : 2 : 1 : 0;
+    uint3 mask = uint3(greaterThan(viewDepth.xxx, pk_ShadowCascadeZSplits.yzw));
+    return mask.x + mask.y + mask.z;
 }
 
 //----------TRANSFORMS----------//
@@ -71,25 +74,32 @@ float4 WorldToClipDir(const float3 dir) { return mul(pk_MATRIX_VP, float4(dir, 0
 
 float4 ViewToClipPos(const float3 pos) { return mul(pk_MATRIX_P, float4(pos, 1.0)); }
 float4 ViewToClipDir(const float3 dir) { return mul(pk_MATRIX_P, float4(dir, 0.0)); }
+float4 ViewToPrevClipPos(const float3 pos) { return mul(pk_MATRIX_L_DVP, float4(pos, 1.0f)); }
 float3 ViewToWorldPos(const float3 pos) { return mul(pk_MATRIX_I_V, float4(pos, 1.0f)).xyz; }
 float3 ViewToWorldDir(const float3 dir) { return mul(float3x3(pk_MATRIX_I_V), dir); }
 
-float LinearizeDepth(const float z) { return 1.0f / (pk_MATRIX_I_P[2][3] * (z * 2.0f - 1.0f) + pk_MATRIX_I_P[3][3]); } 
-float4 LinearizeDepth(const float4 z) { return 1.0f / (pk_MATRIX_I_P[2][3] * (z * 2.0f - 1.0f) + pk_MATRIX_I_P[3][3]); } 
-float ProjectDepth(const float z) { return 0.5f * (z * (pk_MATRIX_I_P[2][3] - pk_MATRIX_I_P[3][3]) + 1.0f) / (z * pk_MATRIX_I_P[2][3]); }
-float4 ProjectDepth(const float4 z) { return 0.5f * (z * (pk_MATRIX_I_P[2][3] - pk_MATRIX_I_P[3][3]) + 1.0f) / (z * pk_MATRIX_I_P[2][3]); }
+float  ViewDepth(const float clip_z)      { return 1.0f / (pk_MATRIX_I_P[2][3] * (clip_z * 2.0f - 1.0f) + pk_MATRIX_I_P[3][3]); } 
+float4 ViewDepth(const float4 clip_z)     { return 1.0f / (pk_MATRIX_I_P[2][3] * (clip_z * 2.0f - 1.0f) + pk_MATRIX_I_P[3][3]); } 
+float  ClipDepth(const float view_z)      { return 0.5f * (view_z * (pk_MATRIX_I_P[2][3] - pk_MATRIX_I_P[3][3]) + 1.0f) / (view_z * pk_MATRIX_I_P[2][3]); }
+float4 ClipDepth(const float4 view_z)     { return 0.5f * (view_z * (pk_MATRIX_I_P[2][3] - pk_MATRIX_I_P[3][3]) + 1.0f) / (view_z * pk_MATRIX_I_P[2][3]); }
+float  ViewDepthExp(const float clip_z)   { return pk_ProjectionParams.x * pow(pk_ExpProjectionParams.z, clip_z); }
+float2 ViewDepthExp(const float2 clip_z)  { return pk_ProjectionParams.xx * pow(pk_ExpProjectionParams.zz, clip_z); }
+float  ClipDepthExp(const float view_z)   { return log2(view_z) * pk_ExpProjectionParams.x + pk_ExpProjectionParams.y; }
+float2 ClipDepthExp(const float2 view_z)  { return log2(view_z) * pk_ExpProjectionParams.xx + pk_ExpProjectionParams.yy; }
 
-float2 ClampClipUVBorder(const float2 uv) { return clamp(uv, 0.5f * pk_ScreenParams.zw, 1.0f.xx - pk_ScreenParams.zw * 0.5f); }
-float3 ClipToViewPos(const float2 clipcoord, float linearDepth) { return float3(clipcoord * float2(pk_MATRIX_I_P[0][0], pk_MATRIX_I_P[1][1]), 1) * linearDepth; }
-float3 ClipUVToViewPos(const float2 uv, float linearDepth) { return ClipToViewPos(uv * 2 - 1, linearDepth); }
-float3 ClipToViewPos(const float3 clippos) { return ClipToViewPos(clippos.xy, LinearizeDepth(clippos.z)); }
-float3 ClipToUVW(const float4 clippos) { return (clippos.xyz / clippos.w) * 0.5f + 0.5f; }
-float2 ClipToUV(const float3 clipposxyw) { return (clipposxyw.xy / clipposxyw.z) * 0.5f + 0.5f; }
-float4 ClipToScreenPos(const float4 clippos) { return float4(clippos.xy * 0.5f + clippos.w * 0.5f, clippos.zw); }
+float3 UVToViewPos(const float2 uv, float viewDepth) { return float3((uv * 2.0f - 1.0f) * float2(pk_MATRIX_I_P[0][0], pk_MATRIX_I_P[1][1]), 1.0f) * viewDepth; }
+float3 UVToWorldPos(const float2 uv, float viewDepth) { return ViewToWorldPos(UVToViewPos(uv, viewDepth)); }
+float3 ClipToUVW(const float4 clip) { return (clip.xyz / clip.w) * 0.5f + 0.5f; }
+float2 ClipToUV(const float3 clipxyw) { return (clipxyw.xy / clipxyw.z) * 0.5f + 0.5f; }
 float3 WorldToClipUVW(const float3 worldpos) { return ClipToUVW(WorldToClipPos(worldpos)); }
-float2 ViewToClipUV(const float3 viewpos) { return ClipToUV(mul(pk_MATRIX_P, float4(viewpos, 1.0f)).xyw); }
-float3 ScreenToViewPos(const float3 screenpos) { return ClipToViewPos(float3(screenpos.xy * pk_ScreenParams.zw.xy * 2.0f - 1.0f, screenpos.z)); }
-float3 ScreenToViewPos(const float2 screenpos, float linearDepth) { return ClipUVToViewPos(screenpos.xy * pk_ScreenParams.zw, linearDepth); }
+float2 ViewToClipUV(const float3 viewpos) { return ClipToUV(ViewToClipPos(viewpos).xyw); }
+float2 ViewToPrevClipUV(const float3 viewpos) { return ClipToUV(ViewToPrevClipPos(viewpos).xyw); }
+
+float2 ClampUVScreenBorder(const float2 uv) { return clamp(uv, 0.5f * pk_ScreenParams.zw, 1.0f.xx - pk_ScreenParams.zw * 0.5f); }
+float2 JitterUV(float2 uv) { return uv + pk_ProjectionJitter.xy * 0.5f * pk_ScreenParams.zw; }
+float2 DejitterUV(float2 uv) { return uv - pk_ProjectionJitter.xy * 0.5f * pk_ScreenParams.zw; }
+float2 JitterPrevUV(float2 uv) { return uv + pk_ProjectionJitter.zw * 0.5f * pk_ScreenParams.zw; }
+float2 DejitterPrevUV(float2 uv) { return uv - pk_ProjectionJitter.zw * 0.5f * pk_ScreenParams.zw; }
 
 //----------TESTS----------//
 bool Test_DepthReproject(const float z, const float zprev, const float bias) { return (abs(z - zprev - pk_ViewSpaceCameraDelta.z) / z) < bias; }

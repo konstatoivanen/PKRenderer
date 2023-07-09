@@ -21,8 +21,9 @@ struct PK_Light
 struct Light
 {
     float3 color;
-    float3 direction;
     float shadow;
+    float3 direction;
+    float linearDistance;
 };
 
 struct LightTile 

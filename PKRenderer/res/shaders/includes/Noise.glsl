@@ -33,8 +33,6 @@ int NoiseIhash(int n)
 	return (n * (n * n * 15731 + 789221) + 1376312589) & 2147483647;
 }
 
-float NoiseFhash(float n) { return fract(sin(n) * 753.5453123); }
-
 float NoiseFrand(int n) { return NoiseIhash(n) / 2147483647.0; }
 
 // Source: https://www.shadertoy.com/view/4sSXDW
@@ -87,13 +85,15 @@ float2 NoiseCell(int2 p)
 	return float2(NoiseFrand(i), NoiseFrand(i + 57)) - 0.5;//*2.0-1.0;
 }
 
+// Range 0 - 1
+// Input must be saturated
 float NoiseUniformToTriangle(float n)
 {
 	float orig = n * 2.0 - 1.0;
 	n = orig * inversesqrt(abs(orig));
 	n = max(-1.0, n); 
 	n = n - sign(orig) + 0.5;
-	return n;
+	return (n / 1.5f) + 0.5f;
 }
 
 float NoiseTriangle(float3 n)
@@ -107,33 +107,25 @@ float NoiseP(float3 x)
 {
 	float3 p = floor(x);
 	float3 f = fract(x);
-	f = f * f * (3.0 - 2.0 * f);
-
-	float n = p.x + p.y * 157.0 + 113.0 * p.z;
-	return lerp(lerp(lerp(NoiseFhash(n + 0.0), NoiseFhash(n + 1.0), f.x),
-		   lerp(NoiseFhash(n + 157.0), NoiseFhash(n + 158.0), f.x), f.y),
-		   lerp(lerp(NoiseFhash(n + 113.0), NoiseFhash(n + 114.0), f.x),
-			    lerp(NoiseFhash(n + 270.0), NoiseFhash(n + 271.0), f.x), f.y), f.z);
+	f = f * f * (3.0f - 2.0f * f);
+	float n = p.x + p.y * 157.0f + 113.0f * p.z;
+    float4 na = fract(sin(n + float4(0.0f, 1.0f, 157.0f, 158.0f)) * 753.5453123f); 
+    float4 nb = fract(sin(n + float4(113.0f, 114.0f, 270.0f, 271.0f)) * 753.5453123f); 
+	return lerp(lerp(lerp(na.x, na.y, f.x), lerp(na.z, na.w, f.x), f.y), lerp(lerp(nb.x, nb.y, f.x), lerp(nb.z, nb.w, f.x), f.y), f.z);
 }
 
 float NoiseScroll(float3 pos, float time, float scale, float3 dir, float amount, float bias, float mult)
 {
-	float noiseScale = scale;
 	float3 noiseScroll = dir * time;
-	float3 q = pos - noiseScroll;
-	q *= scale;
-	float f = 0;
-	f = 0.5 * NoiseP(q);
-	// scroll the next octave in the opposite direction to get some morphing instead of just scrolling
+	float3 q = (pos - noiseScroll) * scale;
+	float  f = 0.5f * NoiseP(q);
+	
+    // scroll the next octave in the opposite direction to get some morphing instead of just scrolling
 	q += noiseScroll * scale;
-	q = q * 2.01;
-	f += 0.25 * NoiseP(q);
+	q  = q * 2.01f;
+	f += 0.25f * NoiseP(q);
 
-	f += bias;
-	f *= mult;
-
-	f = max(f, 0.0);
-	return lerp(1.0, f, amount);
+    return lerp(1.0f, max((f + bias) * mult, 0.0f), amount);
 }
 
 float bayermatrix[4][4] =

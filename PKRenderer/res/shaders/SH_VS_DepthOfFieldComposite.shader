@@ -23,8 +23,8 @@ layout(location = 0) out float4 SV_Target0;
 
 void main()
 {
-    float linearDepth = SampleLinearDepth(vs_TEXCOORD0);
-    float coc = GetCircleOfConfusion(linearDepth);
+    float viewDepth = SampleViewDepth(vs_TEXCOORD0);
+    float coc = GetCircleOfConfusion(viewDepth);
 
     float4 foreground = tex2D(pk_Foreground, vs_TEXCOORD0);
     float4 background = tex2D(pk_Background, vs_TEXCOORD0);

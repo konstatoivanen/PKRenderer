@@ -15,62 +15,95 @@ namespace PK::Rendering::Passes
     {
         TextureDescriptor descriptor;
         descriptor.samplerType = SamplerType::Sampler3D;
-        descriptor.format = TextureFormat::RGBA16F;
-        descriptor.sampler.filterMin = FilterMode::Trilinear;
-        descriptor.sampler.filterMag = FilterMode::Trilinear;
+        descriptor.format = TextureFormat::RGB9E5;
+        descriptor.sampler.filterMin = FilterMode::Bilinear;
+        descriptor.sampler.filterMag = FilterMode::Bilinear;
         descriptor.sampler.wrap[0] = WrapMode::Clamp;
         descriptor.sampler.wrap[1] = WrapMode::Clamp;
         descriptor.sampler.wrap[2] = WrapMode::Clamp;
         descriptor.resolution = { config->InitialWidth / 8u, config->InitialHeight / 8u, 128 };
-        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::Concurrent;
-
-        m_volumeInject = Texture::Create(descriptor, "Fog.InjectVolume");
-        m_volumeInjectRead = Texture::Create(descriptor, "Fog.InjectVolume.Previous");
+        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::Aliased;
+        
         m_volumeScatter = Texture::Create(descriptor, "Fog.ScatterVolume");
-        m_computeInject = assetDatabase->Find<Shader>("CS_VolumeFogLightDensity");
+        m_volumeInject = Texture::Create(descriptor, "Fog.InjectVolume");
+        m_volumeInjectPrev = Texture::Create(descriptor, "Fog.InjectVolume.Previous");
+
+        descriptor.format = TextureFormat::B10G11R11UF;
+        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
+        m_volumeTransmittance = Texture::Create(descriptor, "Fog.TransmittanceVolume");
+
+        descriptor.format = TextureFormat::R16F;
+        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
+        m_volumeDensity = Texture::Create(descriptor, "Fog.DensityVolume");
+        m_volumeDensityPrev = Texture::Create(descriptor, "Fog.DensityVolume.Previous");
+
+        m_computeDensity = assetDatabase->Find<Shader>("CS_VolumeFogDensity");
+        m_computeInject = assetDatabase->Find<Shader>("CS_VolumeFogInject");
         m_computeScatter = assetDatabase->Find<Shader>("CS_VolumeFogScatter");
-        m_shaderComposite = assetDatabase->Find<Shader>("SH_VS_VolumeFogComposite");
+        m_shaderComposite = assetDatabase->Find<Shader>("CS_VolumeFogComposite");
 
         auto hash = HashCache::Get();
 
         m_volumeResources = CreateRef<ConstantBuffer>(BufferLayout(
             {
-                { ElementType::Float4, hash->pk_Volume_WindDir },
-                { ElementType::Float,  hash->pk_Volume_ConstantFog },
-                { ElementType::Float,  hash->pk_Volume_HeightFogExponent },
-                { ElementType::Float,  hash->pk_Volume_HeightFogOffset },
-                { ElementType::Float,  hash->pk_Volume_HeightFogAmount },
-                { ElementType::Float,  hash->pk_Volume_Density },
-                { ElementType::Float,  hash->pk_Volume_Intensity },
-                { ElementType::Float,  hash->pk_Volume_Anisotropy },
-                { ElementType::Float,  hash->pk_Volume_NoiseFogAmount },
-                { ElementType::Float,  hash->pk_Volume_NoiseFogScale },
-                { ElementType::Float,  hash->pk_Volume_WindSpeed },
+                { ElementType::Float4, hash->pk_Fog_Albedo },
+                { ElementType::Float4, hash->pk_Fog_Absorption },
+                { ElementType::Float4, hash->pk_Fog_WindDirSpeed },
+                { ElementType::Float,  hash->pk_Fog_Anisotropy },
+                { ElementType::Float,  hash->pk_Fog_DensityConstant },
+                { ElementType::Float,  hash->pk_Fog_DensityHeightExponent },
+                { ElementType::Float,  hash->pk_Fog_DensityHeightOffset },
+                { ElementType::Float,  hash->pk_Fog_DensityHeightAmount },
+                { ElementType::Float,  hash->pk_Fog_DensityNoiseAmount },
+                { ElementType::Float,  hash->pk_Fog_DensityNoiseScale },
+                { ElementType::Float,  hash->pk_Fog_DensityAmount }
             }), "Fog.Parameters");
 
         OnUpdateParameters(config);
-        GraphicsAPI::SetBuffer(hash->pk_VolumeResources, m_volumeResources->GetBuffer());
+        GraphicsAPI::SetBuffer(hash->pk_Fog_Parameters, m_volumeResources->GetBuffer());
+    }
+
+    void PassVolumeFog::ComputeDensity(Objects::CommandBuffer* cmd, const Math::uint3& resolution)
+    {
+        cmd->BeginDebugScope("Fog.InjectionScattering", PK_COLOR_MAGENTA);
+
+        auto hash = HashCache::Get();
+        const uint3 volumeResolution = { resolution.x / 8u, resolution.y / 8u, 128u };
+        m_volumeDensity->Validate(volumeResolution);
+        m_volumeDensityPrev->Validate(volumeResolution);
+        m_volumeInject->Validate(volumeResolution);
+        m_volumeInjectPrev->Validate(volumeResolution);
+        m_volumeScatter->Validate(volumeResolution);
+        m_volumeTransmittance->Validate(volumeResolution);
+
+        GraphicsAPI::SetImage(hash->pk_Fog_Inject, m_volumeInjectPrev.get());
+        GraphicsAPI::SetTexture(hash->pk_Fog_InjectRead, m_volumeInject.get());
+        GraphicsAPI::SetImage(hash->pk_Fog_Density, m_volumeDensity.get());
+        GraphicsAPI::SetTexture(hash->pk_Fog_DensityRead, m_volumeDensityPrev.get());
+        cmd->Dispatch(m_computeDensity, 0, volumeResolution);
+        GraphicsAPI::SetImage(hash->pk_Fog_Density, m_volumeDensityPrev.get());
+        GraphicsAPI::SetTexture(hash->pk_Fog_DensityRead, m_volumeDensity.get());
+
+        cmd->EndDebugScope();
     }
 
     void PassVolumeFog::Compute(Objects::CommandBuffer* cmd, const Math::uint3& resolution)
     {
-        cmd->BeginDebugScope("VolumetricFog.InjectionScattering", PK_COLOR_MAGENTA);
+        cmd->BeginDebugScope("Fog.InjectionScattering", PK_COLOR_MAGENTA);
 
         auto hash = HashCache::Get();
         const uint3 volumeResolution = { resolution.x / 8u, resolution.y / 8u, 128u };
-        m_volumeInject->Validate(volumeResolution);
-        m_volumeInjectRead->Validate(volumeResolution);
-        m_volumeScatter->Validate(volumeResolution);
 
-        GraphicsAPI::SetTexture(hash->pk_Volume_InjectRead, m_volumeInjectRead.get());
-        GraphicsAPI::SetImage(hash->pk_Volume_Inject, m_volumeInject.get());
+        GraphicsAPI::SetImage(hash->pk_Fog_Inject, m_volumeInject.get());
+        GraphicsAPI::SetTexture(hash->pk_Fog_InjectRead, m_volumeInjectPrev.get());
         cmd->Dispatch(m_computeInject, 0, volumeResolution);
+        GraphicsAPI::SetImage(hash->pk_Fog_Inject, m_volumeInjectPrev.get());
+        GraphicsAPI::SetTexture(hash->pk_Fog_InjectRead, m_volumeInject.get());
 
-        GraphicsAPI::SetImage(hash->pk_Volume_Scatter, m_volumeScatter.get());
-        GraphicsAPI::SetTexture(hash->pk_Volume_ScatterRead, m_volumeScatter.get());
-
-        GraphicsAPI::SetTexture(hash->pk_Volume_InjectRead, m_volumeInject.get());
-        GraphicsAPI::SetImage(hash->pk_Volume_Inject, m_volumeInjectRead.get());
+        GraphicsAPI::SetImage(hash->pk_Fog_Scatter, m_volumeScatter.get());
+        GraphicsAPI::SetTexture(hash->pk_Fog_ScatterRead, m_volumeScatter.get());
+        GraphicsAPI::SetImage(hash->pk_Fog_Transmittance, m_volumeTransmittance.get());
+        GraphicsAPI::SetTexture(hash->pk_Fog_TransmittanceRead, m_volumeTransmittance.get());
         cmd->Dispatch(m_computeScatter, 0, { volumeResolution.x, volumeResolution.y, 1u });
 
         cmd->EndDebugScope();
@@ -78,28 +111,26 @@ namespace PK::Rendering::Passes
 
     void PassVolumeFog::Render(CommandBuffer* cmd, RenderTexture* destination)
     {
-        cmd->BeginDebugScope("VolumetricFog.Composite", PK_COLOR_MAGENTA);
-
-        cmd->SetRenderTarget(destination, { 0 }, false, true);
-        cmd->Blit(m_shaderComposite, 0);
-
+        cmd->BeginDebugScope("Fog.Composite", PK_COLOR_MAGENTA);
+        GraphicsAPI::SetImage(HashCache::Get()->_MainTex, destination->GetColor(0));
+        cmd->Dispatch(m_shaderComposite, 0, destination->GetResolution());
         cmd->EndDebugScope();
     }
 
     void PassVolumeFog::OnUpdateParameters(const ApplicationConfig* config)
     {
         auto hash = HashCache::Get();
-        m_volumeResources->Set<float4>(hash->pk_Volume_WindDir, float4(config->VolumeWindDirection.value, 0.0f));
-        m_volumeResources->Set<float>(hash->pk_Volume_ConstantFog, config->VolumeConstantFog);
-        m_volumeResources->Set<float>(hash->pk_Volume_HeightFogExponent, config->VolumeHeightFogExponent);
-        m_volumeResources->Set<float>(hash->pk_Volume_HeightFogOffset, config->VolumeHeightFogOffset);
-        m_volumeResources->Set<float>(hash->pk_Volume_HeightFogAmount, config->VolumeHeightFogAmount);
-        m_volumeResources->Set<float>(hash->pk_Volume_Density, config->VolumeDensity);
-        m_volumeResources->Set<float>(hash->pk_Volume_Intensity, config->VolumeIntensity);
-        m_volumeResources->Set<float>(hash->pk_Volume_Anisotropy, config->VolumeAnisotropy);
-        m_volumeResources->Set<float>(hash->pk_Volume_NoiseFogAmount, config->VolumeNoiseFogAmount);
-        m_volumeResources->Set<float>(hash->pk_Volume_NoiseFogScale, config->VolumeNoiseFogScale);
-        m_volumeResources->Set<float>(hash->pk_Volume_WindSpeed, config->VolumeWindSpeed);
+        m_volumeResources->Set<float4>(hash->pk_Fog_Albedo, float4(config->FogAlbedo.value, 1.0f));
+        m_volumeResources->Set<float4>(hash->pk_Fog_Absorption, float4(config->FogAbsorption.value, 1.0f));
+        m_volumeResources->Set<float4>(hash->pk_Fog_WindDirSpeed, float4(config->FogWindDirection.value, config->FogWindSpeed));
+        m_volumeResources->Set<float>(hash->pk_Fog_Anisotropy, config->FogAnisotropy);
+        m_volumeResources->Set<float>(hash->pk_Fog_DensityConstant, config->FogDensityConstant);
+        m_volumeResources->Set<float>(hash->pk_Fog_DensityHeightExponent, config->FogDensityHeightExponent);
+        m_volumeResources->Set<float>(hash->pk_Fog_DensityHeightOffset, config->FogDensityHeightOffset);
+        m_volumeResources->Set<float>(hash->pk_Fog_DensityHeightAmount, config->FogDensityHeightAmount);
+        m_volumeResources->Set<float>(hash->pk_Fog_DensityNoiseAmount, config->FogDensityNoiseAmount);
+        m_volumeResources->Set<float>(hash->pk_Fog_DensityNoiseScale, config->FogDensityNoiseScale);
+        m_volumeResources->Set<float>(hash->pk_Fog_DensityAmount, config->FogDensity);
         m_volumeResources->FlushBuffer(QueueType::Transfer);
     }
 }

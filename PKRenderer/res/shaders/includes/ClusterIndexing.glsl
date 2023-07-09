@@ -9,14 +9,8 @@
 #define LIGHT_CLUSTER_GROUP_SIZE_XYZ 576 // 16 * 9 * 4
 #define LIGHT_CLUSTER_TILE_MAX_LIGHT_COUNT 128
 
-float ZCoordToLinearDepth(float index)
+int3 GetTileIndexUV(float2 uv, float viewdepth)
 {
-    return pk_ProjectionParams.x * pow(pk_ExpProjectionParams.z, index / LIGHT_CLUSTER_TILE_COUNT_Z);
-}
-
-int3 GetTileIndexUV(float2 uv, float lineardepth)
-{
-    // Source: http://www.aortiz.me/2018/12/21/CG.html
-    int zTile = int(log2(lineardepth) * (LIGHT_CLUSTER_TILE_COUNT_Z * pk_ExpProjectionParams.x) + (LIGHT_CLUSTER_TILE_COUNT_Z * pk_ExpProjectionParams.y));
-    return int3(int2(uv * LIGHT_CLUSTER_TILE_COUNT_XY), max(zTile, 0));
+    const int z = max(0, int(LIGHT_CLUSTER_TILE_COUNT_Z * ClipDepthExp(viewdepth)));
+    return int3(uv * LIGHT_CLUSTER_TILE_COUNT_XY, z);
 }

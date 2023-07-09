@@ -1921,7 +1921,6 @@
     <None Include="res\textures\T_OEM_Mountains.ktx2" />
     <None Include="res\textures\T_OEM_Night.ktx2" />
     <None Include="res\textures\default\T_Bluenoise256.ktx2" />
-    <None Include="res\shaders\includes\SharedShadowmapping.glsl" />
     <None Include="res\shaders\includes\SharedLights.glsl" />
     <None Include="res\shaders\SH_WS_Shadowmap_Generic.shader" />
     <None Include="res\shaders\SH_VS_ShadowmapBlur.shader" />
@@ -1983,9 +1982,8 @@
     <None Include="res\shaders\includes\SharedSceneGI.glsl" />
     <None Include="res\shaders\CS_GI_Accumulate.shader" />
     <None Include="res\shaders\includes\SharedVolumeFog.glsl" />
-    <None Include="res\shaders\CS_VolumeFogLightDensity.shader" />
     <None Include="res\shaders\CS_VolumeFogScatter.shader" />
-    <None Include="res\shaders\SH_VS_VolumeFogComposite.shader" />
+    <None Include="res\shaders\CS_VolumeFogComposite.shader" />
     <None Include="res\models\MDL_Rocks.mdl" />
     <None Include="res\textures\environment\T_Marble_D.ktx2" />
     <None Include="res\textures\environment\T_Marble_H.ktx2" />
@@ -2024,6 +2022,8 @@
     <None Include="res\shaders\CS_GI_ShadeHits.shader" />
     <None Include="res\shaders\includes\SpatialFilters.glsl" />
     <None Include="res\shaders\includes\SpatialFilter.glsl" />
+    <None Include="res\shaders\CS_VolumeFogInject.shader" />
+    <None Include="res\shaders\CS_VolumeFogDensity.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

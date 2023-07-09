@@ -107,7 +107,9 @@ namespace PK::Rendering
                 { ElementType::Float4x4, hash->pk_MATRIX_I_VP },
                 { ElementType::Float4x4, hash->pk_MATRIX_L_I_V },
                 { ElementType::Float4x4, hash->pk_MATRIX_L_VP },
-                { ElementType::Float4x4, hash->pk_MATRIX_LD_P },
+                { ElementType::Float4x4, hash->pk_MATRIX_L_VP_N },
+                { ElementType::Float4x4, hash->pk_MATRIX_L_DVP },
+                { ElementType::Float4x4, hash->pk_MATRIX_L_DVP_N },
                 { ElementType::Float, hash->pk_SceneEnv_Exposure }
             }), "Constants.Frame");
 
@@ -196,41 +198,48 @@ namespace PK::Rendering
             token->jitter.y / m_renderTarget->GetResolution().y
         };
 
-        // Nonnjittered projection matrix;
-        m_viewProjectionMatrix = token->projection * token->view;
+        auto matrix_p_n = token->projection;
+        auto matrix_p = Functions::GetPerspectiveJittered(matrix_p_n, jitter);
+        auto matrix_i_p = glm::inverse(matrix_p);
+        auto matrix_v = token->view;
+        auto matrix_i_v = glm::inverse(matrix_v);
+        auto matrix_vp = matrix_p * matrix_v;
+        auto matrix_i_vp = glm::inverse(matrix_vp);
+        auto matrix_vp_n = matrix_p_n * matrix_v;
+        float n = m_znear = Functions::GetZNearFromProj(matrix_p);
+        float f = m_zfar = Functions::GetZFarFromProj(matrix_p);
 
-        token->projection = Functions::GetPerspectiveJittered(token->projection, jitter);
+        auto matrix_l_i_v = matrix_i_v;
+        auto matrix_l_vp = matrix_vp;
+        auto matrix_l_vp_n = matrix_vp_n;
 
-        auto cameraMatrix = glm::inverse(token->view);
+        m_constantsPerFrame->TryGet(hash->pk_MATRIX_I_V, matrix_l_i_v);
 
-        auto n = Functions::GetZNearFromProj(token->projection);
-        auto f = Functions::GetZFarFromProj(token->projection);
-        auto vp = token->projection * token->view;
-        auto pvp = vp;
-        auto cameraMatrixPrev = cameraMatrix;
+        if (m_constantsPerFrame->TryGet(hash->pk_MATRIX_VP, matrix_l_vp))
+        {
+            // We can assume that m_viewProjectionMatrix has been assigned if the cbuffer has values for this.
+            matrix_l_vp_n = m_viewProjectionMatrix;
+        }
 
-        m_znear = n;
-        m_zfar = f;
-
-        m_constantsPerFrame->TryGet(hash->pk_MATRIX_VP, pvp);
-        m_constantsPerFrame->TryGet(hash->pk_MATRIX_I_V, cameraMatrixPrev);
-
-        float3 previousCameraPos = float3(cameraMatrixPrev[3].x, cameraMatrixPrev[3].y, cameraMatrixPrev[3].z);
+        m_viewProjectionMatrix = matrix_vp_n;
+        auto viewSpaceCameraDelta = matrix_v * float4(matrix_l_i_v[3].x, matrix_l_i_v[3].y, matrix_l_i_v[3].z, 1.0f);
 
         m_constantsPerFrame->Set<float4>(hash->pk_ProjectionParams, { n, f, f - n, 1.0f / f });
         m_constantsPerFrame->Set<float4>(hash->pk_ExpProjectionParams, { 1.0f / glm::log2(f / n), -log2(n) / log2(f / n), f / n, 1.0f / n });
-        m_constantsPerFrame->Set<float4>(hash->pk_WorldSpaceCameraPos, cameraMatrix[3]);
-        m_constantsPerFrame->Set<float4>(hash->pk_ViewSpaceCameraDelta, token->view * float4(previousCameraPos, 1.0f));
+        m_constantsPerFrame->Set<float4>(hash->pk_WorldSpaceCameraPos, matrix_i_v[3]);
+        m_constantsPerFrame->Set<float4>(hash->pk_ViewSpaceCameraDelta, viewSpaceCameraDelta);
         m_constantsPerFrame->Set<float4>(hash->pk_ProjectionJitter, token->jitter);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_V, token->view);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_V, cameraMatrix);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_P, token->projection);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_P, glm::inverse(token->projection));
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_VP, vp);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_VP, glm::inverse(vp));
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_I_V, cameraMatrixPrev);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP, pvp);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_LD_P, pvp * cameraMatrix);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_V, matrix_v);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_V, matrix_i_v);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_P, matrix_p);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_P, matrix_i_p);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_VP, matrix_vp);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_VP, matrix_i_vp);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_I_V, matrix_l_i_v);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP, matrix_l_vp);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP_N, matrix_l_vp_n);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_DVP, matrix_l_vp * matrix_i_v);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_DVP_N, matrix_l_vp_n * matrix_i_v);
     }
 
     void RenderPipeline::Step(PK::ECS::Tokens::TimeToken* token)
@@ -316,6 +325,7 @@ namespace PK::Rendering
         m_passLights.ComputeClusters(cmdcompute);
         m_histogram.Render(cmdcompute, m_bloom.GetTexture());
         m_depthOfField.ComputeAutoFocus(cmdcompute, resolution.y);
+        m_passVolumeFog.ComputeDensity(cmdcompute, resolution);
         cmdcompute->Dispatch(m_IntegrateEnvSHShader, 0, { 1u, 1u, 1u });
         queues->Submit(QueueType::Compute, &cmdcompute);
         queues->Sync(QueueType::Graphics, QueueType::Compute);

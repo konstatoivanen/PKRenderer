@@ -11,6 +11,7 @@ namespace PK::Rendering::Passes
     {
         public:
             PassVolumeFog(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
+            void ComputeDensity(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
             void Compute(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
             void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* destination);
             void OnUpdateParameters(const Core::ApplicationConfig* config);
@@ -18,8 +19,12 @@ namespace PK::Rendering::Passes
         private:
             Utilities::Ref<Objects::ConstantBuffer> m_volumeResources;
             Utilities::Ref<Objects::Texture> m_volumeInject;
-            Utilities::Ref<Objects::Texture> m_volumeInjectRead;
+            Utilities::Ref<Objects::Texture> m_volumeInjectPrev;
+            Utilities::Ref<Objects::Texture> m_volumeDensity;
+            Utilities::Ref<Objects::Texture> m_volumeDensityPrev;
             Utilities::Ref<Objects::Texture> m_volumeScatter;
+            Utilities::Ref<Objects::Texture> m_volumeTransmittance;
+            Objects::Shader* m_computeDensity = nullptr;
             Objects::Shader* m_computeInject = nullptr;
             Objects::Shader* m_computeScatter = nullptr;
             Objects::Shader* m_shaderComposite = nullptr;

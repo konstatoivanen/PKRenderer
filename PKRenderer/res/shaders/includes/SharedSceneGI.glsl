@@ -196,21 +196,22 @@ void GI_Sample_Lighting(const float2 uv, const float3 N, const float3 V, const f
     specular *= pow(s_spec.ao, PK_GI_AO_SPEC_POWER);
 }
 
-//----------VOXEL CONE TRACING FUNCTIONS----------//
-float4 GI_ConeTrace_Volumetric(float3 position)
+//----------VOXEL TRACING FUNCTIONS----------//
+float4 GI_SphereTrace_Diffuse(float3 position)
 {
-    float4 color = float4(0.0.xxx, 1.0);
+    float4 C = float4(0.0.xxx, 1.0);
 
     #pragma unroll 7
     for (uint i = 0; i < PK_GI_VOXEL_MIP_COUNT; ++i)
     {
         float level = i * 0.75f;
-        float4 voxel = GI_Load_Voxel(position, level);
-        color.rgb += voxel.rgb;
-        color.a *= saturate(1.0 - voxel.a * (1.0 + pow3(level) * 0.075));
+        float4 V = GI_Load_Voxel(position, level);
+        C.rgb += (1.0f - C.a) * V.a * (V.rgb / max(1e-4f, V.a));
+        C.a = min(1.0f, C.a + (1.0f - C.a) * V.a);
+        C.a *= saturate(1.0 - V.a * (1.0 + pow3(level) * 0.075));
     }
 
-    return color;
+    return C;
 }
 
 float4 GI_ConeTrace_Diffuse(const float3 O, const float3 N, const float dither) 

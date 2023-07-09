@@ -20,7 +20,7 @@ struct TracePayload
 uint RayTraceScreen(const float2 uv, const float depth, const float3 ws_dir, inout float3 hit)
 {
     const uint MIN_OCCUPANCY = gl_SubgroupSize - gl_SubgroupSize / 4;
-    const float3 start = float3(uv, ProjectDepth(depth)) * 2.0f - 1.0f;
+    const float3 start = float3(uv, ClipDepth(depth)) * 2.0f - 1.0f;
     const float4 end = float4(start.xyz, 1.0f) + WorldToClipDir(ws_dir);
 
     float3 cs_step = (end.xyz / end.w) - start;
@@ -47,7 +47,7 @@ uint RayTraceScreen(const float2 uv, const float depth, const float3 ws_dir, ino
         const half2 s_tx = tx * exp2(half(mip));
         const half2 s_px = half2(hit.xy) / s_tx;
         const half s_a = cmin(fma(st.xy, fract(s_px), st.zw) * s_tx);
-        const half s_z = half(ProjectDepth(max(SampleMinZ(hit.xy, mip), SampleMinZ(int2(s_px), mip))) - hit.z) * inv.z;
+        const half s_z = half(ClipDepth(max(SampleMinZ(hit.xy, mip), SampleMinZ(int2(s_px), mip))) - hit.z) * inv.z;
 
         if (s_z > s_a * isFwd)
         {
@@ -77,7 +77,7 @@ uint SSRTRay(const float3 origin, const float3 direction, const float2 uv, const
 #if PK_GI_SSRT_PRETRACE == 1
     float3 hitpos = 0.0f.xxx;
     const uint result = RayTraceScreen(uv, depth, direction, hitpos);
-    hitpos = SampleWorldPosition(hitpos.xy, LinearizeDepth(hitpos.z));
+    hitpos = SampleWorldPosition(hitpos.xy, ViewDepth(hitpos.z));
     hitDistance = max(0.0f, dot(normalize(direction), hitpos - origin));
     return result;
 #else
@@ -93,7 +93,7 @@ void main()
     const int2 size = int2(pk_ScreenSize.xy);
     const int2 coord = int2(gl_LaunchIDEXT.xy);
     const float2 uv = (coord + 0.5f.xx) / size;
-    float depth = SampleLinearDepth(coord);
+    float depth = SampleViewDepth(coord);
 
     if (Test_DepthFar(depth))
     {

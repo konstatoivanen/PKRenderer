@@ -54,7 +54,7 @@ float3 GetIndirectLight_Main(const BRDFSurf surf, const float3 worldpos, const f
 float3 GetIndirectLight_VXGI(const BRDFSurf surf,const float3 worldpos, const float3 clipuvw)
 {
     // Get unquantized clip uvw.
-    float deltaDepth = SampleLinearDepth(clipuvw.xy) - LinearizeDepth(clipuvw.z); 
+    float deltaDepth = SampleViewDepth(clipuvw.xy) - ViewDepth(clipuvw.z); 
     
     // Fragment is in view
     if (deltaDepth > -0.01f && deltaDepth < 0.1f && !GI_Test_VX_History(clipuvw.xy))
@@ -209,7 +209,7 @@ struct SurfaceFragmentVaryings
             }       
             
             surf.clipuvw = WorldToClipUVW(surf.worldpos);                      
-            surf.clipuvw.xy = ClampClipUVBorder(surf.clipuvw.xy);             
+            surf.clipuvw.xy = ClampUVScreenBorder(surf.clipuvw.xy);             
         #else
             surf.clipuvw = float3(gl_FragCoord.xy * pk_ScreenParams.zw, gl_FragCoord.z);
         #endif

@@ -55,7 +55,7 @@ SFLT_DATA_DIV(wSum) // Data div function
         const float s_depth = SampleMinZ(s_px, 0);
         const float4 s_nr = SampleViewNormalRoughness(s_px);
 
-        const float3 s_vpos = ClipToViewPos(s_uv * 2 - 1, s_depth);
+        const float3 s_vpos = UVToViewPos(s_uv, s_depth);
         const float3 s_ray = SFLT_VPOS - s_vpos;
 
         const float w_h = saturate(1.0f - abs(dot(disk_normal, s_ray)) * k_V);

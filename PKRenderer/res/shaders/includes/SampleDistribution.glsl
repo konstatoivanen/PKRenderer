@@ -139,5 +139,6 @@ float2x3 GetPrimeBasisGGX(const float3 N, const float3 V, const float R, const f
 float GetGGXLobeHalfAngle(const float R, const float volumeFactor)
 {
     //return atan(pow2(R) * volumeFactor / ( 1.0 - volumeFactor));
-    return PK_HALF_PI * pow2(R) / (1.0f + pow2(R));
+    float sqr = R * R;
+    return PK_HALF_PI * sqr / (1.0f + sqr);
 }

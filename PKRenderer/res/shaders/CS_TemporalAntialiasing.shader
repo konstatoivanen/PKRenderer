@@ -24,9 +24,9 @@ void main()
     desc.texcoord = (coord + 0.5f.xx) / size;
 
     const float3 viewpos = SampleViewPosition(desc.texcoord);
-    const float3 uvw = ClipToUVW(mul(pk_MATRIX_LD_P, float4(viewpos, 1.0f)));
+    const float2 uv = ViewToPrevClipUV(viewpos);
 
-    desc.motion = (desc.texcoord - uvw.xy) + pk_ProjectionJitter.zw * desc.texelSize * 0.5f;
+    desc.motion = (desc.texcoord - uv) + pk_ProjectionJitter.zw * desc.texelSize * 0.5f;
     desc.sharpness = pk_TAA_Sharpness;
     desc.blendingStatic = pk_TAA_BlendingStatic;
     desc.blendingMotion = pk_TAA_BlendingMotion;

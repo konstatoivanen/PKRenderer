@@ -1,12 +1,12 @@
 #version 460
-#include includes/SharedShadowmapping.glsl
+#include includes/Utilities.glsl
+#include includes/Constants.glsl
 #include includes/Kernels.glsl
+#include includes/Encoding.glsl
 #include includes/SampleDistribution.glsl
 #include includes/Blit.glsl
-#multi_compile SHADOW_SOURCE_CUBE SHADOW_SOURCE_2D
 
-#define SAMPLE_COUNT 16u
-#define SAMPLE_COUNT_INV 0.0625f
+#multi_compile SHADOW_SOURCE_CUBE SHADOW_SOURCE_2D
 
 #pragma PROGRAM_VERTEX
 out float2 vs_TEXCOORD0;
@@ -21,6 +21,14 @@ void main()
 }
 
 #pragma PROGRAM_FRAGMENT
+
+#define SAMPLE_COUNT 16u
+#define SAMPLE_COUNT_INV 0.0625f
+
+PK_DECLARE_LOCAL_CBUFFER(pk_ShadowmapData)
+{
+    float4 pk_ShadowmapBlurAmount;
+};
 
 #if defined(SHADOW_SOURCE_CUBE)
 PK_DECLARE_SET_DRAW uniform samplerCubeArray pk_ShadowmapSource;
@@ -43,7 +51,6 @@ void main()
     float3 N = OctaDecode(uv);
     float3x3 TBN = ComposeTBNFast(N);
 
-#pragma unroll SAMPLE_COUNT
     for (uint i = 0u; i < SAMPLE_COUNT; ++i)
     {
         float3 H = TBN * ConeDirectionHammersLey(i, SAMPLE_COUNT, R);
@@ -53,13 +60,12 @@ void main()
 
 #elif defined(SHADOW_SOURCE_2D)
 
-#pragma unroll SAMPLE_COUNT
-
     for (uint i = 0u; i < SAMPLE_COUNT; ++i)
     {
         float2 offset = PK_POISSON_DISK_16[i] * R * 0.5f;
         A += tex2D(pk_ShadowmapSource, float3(uv + offset, layer)).rg;
     }
+
 #endif
 
     SV_Target0 = A * SAMPLE_COUNT_INV;
