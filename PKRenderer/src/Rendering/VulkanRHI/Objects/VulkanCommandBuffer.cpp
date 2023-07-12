@@ -612,6 +612,7 @@ namespace PK::Rendering::VulkanRHI::Objects
     {
         // End possibly active render pass
         EndRenderPass();
+        m_renderState->GetServices()->barrierHandler->ClearBarriers();
         VK_ASSERT_RESULT(vkEndCommandBuffer(m_commandBuffer));
         m_renderState = nullptr;
     }

@@ -1473,6 +1473,9 @@
     <ClInclude Include="src\Utilities\Bitmask.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Rendering\BuiltInResources.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -1923,7 +1926,7 @@
     <None Include="res\textures\default\T_Bluenoise256.ktx2" />
     <None Include="res\shaders\includes\SharedLights.glsl" />
     <None Include="res\shaders\SH_WS_Shadowmap_Generic.shader" />
-    <None Include="res\shaders\SH_VS_ShadowmapBlur.shader" />
+    <None Include="res\shaders\CS_ShadowmapBlur.shader" />
     <None Include="res\shaders\CS_LightAssignment.shader" />
     <None Include="res\shaders\includes\ClusterIndexing.glsl" />
     <None Include="res\shaders\includes\GBuffers.glsl" />
@@ -2282,6 +2285,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Objects\ShaderBindingTable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\BuiltInResources.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -553,6 +553,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.h" />
     <ClInclude Include="src\ECS\Contextual\Engines\EngineScreenshot.h" />
     <ClInclude Include="src\ECS\Contextual\Tokens\AccelerationStructureBuildToken.h" />
+    <ClInclude Include="src\Rendering\BuiltInResources.h" />
     <ClInclude Include="src\Rendering\Objects\AccelerationStructure.h" />
     <ClInclude Include="src\Rendering\Objects\QueueSet.h" />
     <ClInclude Include="src\Rendering\Objects\RayTracingAccelerationStructure.h" />
@@ -896,7 +897,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\SH_VS_DepthOfFieldBlur.shader" />
     <None Include="res\shaders\SH_VS_DepthOfFieldComposite.shader" />
     <None Include="res\shaders\SH_VS_EnvBackground.shader" />
-    <None Include="res\shaders\SH_VS_ShadowmapBlur.shader" />
+    <None Include="res\shaders\CS_ShadowmapBlur.shader" />
     <None Include="res\shaders\SH_WS_PBR_Default.shader" />
     <None Include="res\shaders\SH_WS_PBR_Glitter.shader" />
     <None Include="res\shaders\SH_WS_PBR_Triplanar.shader" />
@@ -978,6 +979,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\ECS\Contextual\Engines\EngineDebug.cpp" />
     <ClCompile Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.cpp" />
     <ClCompile Include="src\ECS\Contextual\Engines\EngineScreenshot.cpp" />
+    <ClCompile Include="src\Rendering\BuiltInResources.cpp" />
     <ClCompile Include="src\Rendering\Objects\AccelerationStructure.cpp" />
     <ClCompile Include="src\Rendering\Objects\ShaderBindingTable.cpp" />
     <ClCompile Include="src\Rendering\Objects\VirtualMesh.cpp" />

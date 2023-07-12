@@ -56,8 +56,8 @@ namespace PK::Rendering::Passes
         m_batcher(batcher),
         m_lights(1024)
     {
-        m_computeLightAssignment = assetDatabase->Find<Shader>("LightAssignment");
-        m_shadowmapBlur = assetDatabase->Find<Shader>("ShadowmapBlur");
+        m_computeLightAssignment = assetDatabase->Find<Shader>("CS_LightAssignment");
+        m_shadowmapBlur = assetDatabase->Find<Shader>("CS_ShadowmapBlur");
 
         auto hash = HashCache::Get();
 
@@ -104,7 +104,7 @@ namespace PK::Rendering::Passes
         TextureDescriptor atlasDescriptor;
         atlasDescriptor.samplerType = SamplerType::Sampler2DArray;
         atlasDescriptor.format = TextureFormat::RG32F;
-        atlasDescriptor.usage = TextureUsage::RTColorSample;
+        atlasDescriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
         atlasDescriptor.layers = 32;
         atlasDescriptor.resolution = { m_shadowmapTileSize, m_shadowmapTileSize, 1u };
         atlasDescriptor.sampler.wrap[0] = WrapMode::Clamp;
@@ -137,10 +137,8 @@ namespace PK::Rendering::Passes
         m_lightMatricesBuffer = Buffer::Create(ElementType::Float4x4, 32, BufferUsage::PersistentStorage, "Lights.Matrices");
         m_lightDirectionsBuffer = Buffer::Create(ElementType::Float4, 32, BufferUsage::PersistentStorage, "Lights.Directions");
         m_globalLightsList = Buffer::Create(ElementType::Int, ClusterCount * MaxLightsPerTile, BufferUsage::DefaultStorage, "Lights.List");
-        m_globalLightIndex = Buffer::Create(ElementType::Uint, 1, BufferUsage::DefaultStorage, "Lights.IndexCounter");
 
         GraphicsAPI::SetBuffer(hash->pk_GlobalLightsList, m_globalLightsList.get());
-        GraphicsAPI::SetBuffer(hash->pk_GlobalListListIndex, m_globalLightIndex.get());
         GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
     }
 
@@ -289,12 +287,9 @@ namespace PK::Rendering::Passes
             GraphicsAPI::SetConstant(hash->pk_ShadowmapData, shadowBatch.shadowBlurAmounts);
             m_batcher->Render(cmd, shadowBatch.batchGroup);
 
-            cmd->SetViewPort({ 0, 0, m_shadowmapTileSize, m_shadowmapTileSize });
-            cmd->SetScissor({ 0, 0, m_shadowmapTileSize, m_shadowmapTileSize });
-
-            cmd->SetRenderTarget(m_shadowmaps.get(), TextureViewRange(0, atlasIndex, 1, tileCount));
             GraphicsAPI::SetTexture(hash->pk_ShadowmapSource, shadow.SceneRenderTarget->GetColor(0));
-            cmd->Blit(m_shadowmapBlur, tileCount, 0u, shadow.BlurPass0);
+            GraphicsAPI::SetImage(hash->_DestinationTex, m_shadowmaps.get(), TextureViewRange(0, atlasIndex, 1, tileCount));
+            cmd->DispatchWithCounter(m_shadowmapBlur, shadow.BlurPass0, { m_shadowmapTileSize, m_shadowmapTileSize, tileCount });
 
             cmd->EndDebugScope();
 
@@ -305,8 +300,7 @@ namespace PK::Rendering::Passes
     void PassLights::ComputeClusters(CommandBuffer* cmd)
     {
         cmd->BeginDebugScope("LightAssignment", PK_COLOR_CYAN);
-        cmd->Clear(m_globalLightIndex.get(), 0, sizeof(uint32_t), 0u);
-        cmd->Dispatch(m_computeLightAssignment, { GridSizeX , GridSizeY, GridSizeZ });
+        cmd->DispatchWithCounter(m_computeLightAssignment, { GridSizeX , GridSizeY, GridSizeZ });
         cmd->EndDebugScope();
     }
 

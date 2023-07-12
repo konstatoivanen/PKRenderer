@@ -83,6 +83,8 @@ namespace PK::Rendering::Objects
         void Blit(const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int32_t variantIndex = -1);
         void Dispatch(const Shader* shader, Math::uint3 dimensions);
         void Dispatch(const Shader* shader, uint32_t variantIndex, Math::uint3 dimensions);
+        void DispatchWithCounter(const Shader* shader, uint32_t variantIndex, Math::uint3 dimensions);
+        void DispatchWithCounter(const Shader* shader, Math::uint3 dimensions);
         void DispatchRays(const Shader* shader, Math::uint3 dimensions);
         void DispatchRays(const Shader* shader, uint32_t variantIndex, Math::uint3 dimensions);
         

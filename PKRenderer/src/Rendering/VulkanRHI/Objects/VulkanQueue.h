@@ -38,7 +38,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             const uint32_t m_queueIndex = 0u;
             VkPipelineStageFlags m_capabilityFlags = 0u;
             VkQueue m_queue = VK_NULL_HANDLE;
-            
+
             VulkanTimelineSemaphore m_timeline{};
             VulkanTimelineSemaphore m_waitTimelines[MAX_DEPENDENCIES]{};
 

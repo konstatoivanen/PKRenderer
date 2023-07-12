@@ -60,3 +60,66 @@ uint2 ThreadGroupTilingX(
 
 	return SwizzledvThreadID.xy;
 }
+
+// Dispatch 2d dimension must be divisible by 32
+uint3 GetMortonOrderSwizzle32(uint threadIndex, uint2 size)
+{
+    uint z = threadIndex / (size.x * size.y);
+    threadIndex -= z * (size.x * size.y);
+
+    uint index0 = threadIndex >> 0u;
+    uint index1 = threadIndex >> 2u;
+    uint index2 = threadIndex >> 4u;
+    uint index3 = threadIndex >> 6u;
+    uint index4 = threadIndex >> 8u;
+
+    uint2 coord = uint2(index0 % 2u, (index0 / 2u) % 2u) << 0u;
+    coord += uint2(index1 % 2u, (index1 / 2u) % 2u) << 1u;
+    coord += uint2(index2 % 2u, (index2 / 2u) % 2u) << 2u;
+    coord += uint2(index3 % 2u, (index3 / 2u) % 2u) << 3u;
+
+    size >>= 4u;
+    coord += uint2(index4 % size.x, index4 / size.x) << 4u;
+
+    return uint3(coord, z);
+}
+
+// Dispatch 2d dimension must be divisible by 16
+uint3 GetMortonOrderSwizzle16(uint threadIndex, uint2 size)
+{
+    uint z = threadIndex / (size.x * size.y);
+    threadIndex -= z * (size.x * size.y);
+
+    uint index0 = threadIndex >> 0u;
+    uint index1 = threadIndex >> 2u;
+    uint index2 = threadIndex >> 4u;
+    uint index3 = threadIndex >> 6u;
+
+    uint2 coord = uint2(index0 % 2u, (index0 / 2u) % 2u) << 0u;
+    coord += uint2(index1 % 2u, (index1 / 2u) % 2u) << 1u;
+    coord += uint2(index2 % 2u, (index2 / 2u) % 2u) << 2u;
+
+    size >>= 3u;
+    coord += uint2(index3 % size.x, index3 / size.x) << 3u;
+
+    return uint3(coord, z);
+}
+
+// Dispatch 2d dimension must be divisible by 8
+uint3 GetMortonOrderSwizzle8(uint threadIndex, uint2 size)
+{
+    uint z = threadIndex / (size.x * size.y);
+    threadIndex -= z * (size.x * size.y);
+
+    uint index0 = threadIndex >> 0u;
+    uint index1 = threadIndex >> 2u;
+    uint index2 = threadIndex >> 4u;
+
+    uint2 coord = uint2(index0 % 2u, (index0 / 2u) % 2u) << 0u;
+    coord += uint2(index1 % 2u, (index1 / 2u) % 2u) << 1u;
+
+    size >>= 2u;
+    coord += uint2(index2 % size.x, index2 / size.x) << 2u;
+
+    return uint3(coord, z);
+}

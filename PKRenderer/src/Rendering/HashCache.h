@@ -92,7 +92,6 @@ namespace PK::Rendering
         DECLARE_HASH(pk_LightCount)
         DECLARE_HASH(pk_GlobalLightsList)
         DECLARE_HASH(pk_LightTiles)
-        DECLARE_HASH(pk_GlobalListListIndex)
 
         DECLARE_HASH(pk_MinLogLuminance)
         DECLARE_HASH(pk_InvLogLuminanceRange)

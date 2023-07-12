@@ -259,11 +259,16 @@ namespace PK::Rendering::VulkanRHI::Services
         outBarrierInfo->bufferMemoryBarrierCount = (uint32_t)m_bufferBarriers.GetCount();
         outBarrierInfo->pImageMemoryBarriers = m_imageBarriers.GetData();
         outBarrierInfo->imageMemoryBarrierCount = (uint32_t)m_imageBarriers.GetCount();
+        ClearBarriers();
+        return true;
+    }
+
+    void VulkanBarrierHandler::ClearBarriers()
+    {
         m_bufferBarriers.SetCount(0u);
         m_imageBarriers.SetCount(0u);
         m_sourceStage = 0u;
         m_destinationStage = 0u;
-        return true;
     }
 
     void VulkanBarrierHandler::Prune()

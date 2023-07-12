@@ -1,26 +1,14 @@
 #version 460
+#pragma PROGRAM_COMPUTE
 #include includes/Utilities.glsl
 #include includes/Constants.glsl
 #include includes/Kernels.glsl
 #include includes/Encoding.glsl
 #include includes/SampleDistribution.glsl
-#include includes/Blit.glsl
+#include includes/CTASwizzling.glsl
 
 #multi_compile SHADOW_SOURCE_CUBE SHADOW_SOURCE_2D
-
-#pragma PROGRAM_VERTEX
-out float2 vs_TEXCOORD0;
-out flat uint vs_LAYER;
-
-void main()
-{
-    gl_Position = PK_BLIT_VERTEX_POSITION;
-    gl_Layer = gl_InstanceIndex;
-    vs_LAYER = gl_InstanceIndex;
-    vs_TEXCOORD0 = PK_BLIT_VERTEX_TEXCOORD;
-}
-
-#pragma PROGRAM_FRAGMENT
+#WithAtomicCounter
 
 #define SAMPLE_COUNT 16u
 #define SAMPLE_COUNT_INV 0.0625f
@@ -36,16 +24,20 @@ PK_DECLARE_SET_DRAW uniform samplerCubeArray pk_ShadowmapSource;
 PK_DECLARE_SET_DRAW uniform sampler2DArray pk_ShadowmapSource;
 #endif
 
-in float2 vs_TEXCOORD0;
-in flat uint vs_LAYER;
-out float2 SV_Target0;
+layout(rg32f, set = PK_SET_DRAW) uniform image2DArray _DestinationTex;
 
+layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
-    float2 uv = vs_TEXCOORD0;
-    float layer = vs_LAYER;
+    const uint thread = PK_AtomicCounterNext();
+    const int2 size = imageSize(_DestinationTex).xy;
+    const uint3 threadID = GetMortonOrderSwizzle32(thread, uint2(size));
+    const int2 coord = int2(threadID.xy);
+    const float2 uv = float2(coord + 0.5f.xx) / float2(size);
+    const float layer = float(threadID.z);
+
     float2 A = float2(0.0f);
-    float R = pk_ShadowmapBlurAmount[vs_LAYER];
+    float R = pk_ShadowmapBlurAmount[gl_GlobalInvocationID.z];
 
 #if defined(SHADOW_SOURCE_CUBE)
     float3 N = OctaDecode(uv);
@@ -68,5 +60,5 @@ void main()
 
 #endif
 
-    SV_Target0 = A * SAMPLE_COUNT_INV;
+    imageStore(_DestinationTex, int3(threadID), float4(A * SAMPLE_COUNT_INV, 0.0f.xx));
 }

@@ -42,10 +42,10 @@ namespace PK::Rendering::Objects
         {
             switch (element.Type)
             {
-            case ElementType::Texture2DHandle:
-                auto texIndex = textureSet->Set(*Get<Texture*>(element.NameHashId));
-                memcpy(dst + element.AlignedOffset, &texIndex, sizeof(int32_t));
-                break;
+                case ElementType::Texture2DHandle:
+                    auto texIndex = textureSet->Set(*Get<Texture*>(element.NameHashId));
+                    memcpy(dst + element.AlignedOffset, &texIndex, sizeof(int32_t));
+                    break;
             }
         }
     }
@@ -102,20 +102,20 @@ namespace PK::Rendering::Objects
 
                 switch (elementType)
                 {
-                case ElementType::Float: Set(nameHash, values.as<float>()); break;
-                case ElementType::Float2: Set(nameHash, values.as<float2>()); break;
-                case ElementType::Float3: Set(nameHash, values.as<float3>()); break;
-                case ElementType::Float4: Set(nameHash, values.as<float4>()); break;
-                case ElementType::Float2x2: Set(nameHash, values.as<float2x2>()); break;
-                case ElementType::Float3x3: Set(nameHash, values.as<float3x3>()); break;
-                case ElementType::Float4x4: Set(nameHash, values.as<float4x4>()); break;
-                case ElementType::Int: Set(nameHash, values.as<int>()); break;
-                case ElementType::Int2: Set(nameHash, values.as<int2>()); break;
-                case ElementType::Int3: Set(nameHash, values.as<int3>()); break;
-                case ElementType::Int4: Set(nameHash, values.as<int4>()); break;
-                case ElementType::Texture2DHandle: Set(nameHash, values.as<Texture*>()); break;
-                case ElementType::Texture3DHandle: Set(nameHash, values.as<Texture*>()); break;
-                case ElementType::TextureCubeHandle: Set(nameHash, values.as<Texture*>()); break;
+                    case ElementType::Float: Set(nameHash, values.as<float>()); break;
+                    case ElementType::Float2: Set(nameHash, values.as<float2>()); break;
+                    case ElementType::Float3: Set(nameHash, values.as<float3>()); break;
+                    case ElementType::Float4: Set(nameHash, values.as<float4>()); break;
+                    case ElementType::Float2x2: Set(nameHash, values.as<float2x2>()); break;
+                    case ElementType::Float3x3: Set(nameHash, values.as<float3x3>()); break;
+                    case ElementType::Float4x4: Set(nameHash, values.as<float4x4>()); break;
+                    case ElementType::Int: Set(nameHash, values.as<int>()); break;
+                    case ElementType::Int2: Set(nameHash, values.as<int2>()); break;
+                    case ElementType::Int3: Set(nameHash, values.as<int3>()); break;
+                    case ElementType::Int4: Set(nameHash, values.as<int4>()); break;
+                    case ElementType::Texture2DHandle: Set(nameHash, values.as<Texture*>()); break;
+                    case ElementType::Texture3DHandle: Set(nameHash, values.as<Texture*>()); break;
+                    case ElementType::TextureCubeHandle: Set(nameHash, values.as<Texture*>()); break;
                 }
             }
         }
@@ -125,9 +125,7 @@ namespace PK::Rendering::Objects
     {
         Clear();
 
-        auto assetDb = Application::GetService<AssetDatabase>();
-        auto defaultTexture2DBlack = assetDb->Load<Texture>(DEFAULT_PATH_TEXTURE_BLACK);
-        auto defaultTexture2DWhite = assetDb->Load<Texture>(DEFAULT_PATH_TEXTURE_WHITE);
+        auto builtIns = GraphicsAPI::GetBuiltInResources();
 
         PK_THROW_ASSERT(m_shader->SupportsMaterials(), "Shader is doesn't support materials!");
         ReserveLayout(m_shader->GetMaterialPropertyLayout());
@@ -136,7 +134,7 @@ namespace PK::Rendering::Objects
         {
             switch (element.Type)
             {
-            case ElementType::Texture2DHandle: Set(element.NameHashId, defaultTexture2DBlack); break;
+                case ElementType::Texture2DHandle: Set(element.NameHashId, builtIns->BlackTexture2D.get()); break;
             }
         }
     }

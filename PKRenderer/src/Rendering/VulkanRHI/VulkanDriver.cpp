@@ -167,7 +167,6 @@ namespace PK::Rendering::VulkanRHI
         vkDestroySurfaceKHR(instance, temporarySurface, nullptr);
         glfwDestroyWindow(temporaryWindow);
 
-
         frameBufferCache = CreateScope<VulkanFrameBufferCache>(device, properties.garbagePruneDelay);
         stagingBufferCache = CreateScope<VulkanStagingBufferCache>(device, allocator, properties.garbagePruneDelay);
         pipelineCache = CreateScope<VulkanPipelineCache>(device, properties.workingDirectory, physicalDeviceProperties, properties.garbagePruneDelay);
@@ -199,6 +198,7 @@ namespace PK::Rendering::VulkanRHI
 
     VulkanDriver::~VulkanDriver()
     {
+        ReleaseBuiltInResources();
         vkDeviceWaitIdle(device);
 
         descriptorCache = nullptr;

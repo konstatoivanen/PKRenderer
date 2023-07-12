@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "CommandBuffer.h"
+#include "Rendering/GraphicsAPI.h"
 
 namespace PK::Rendering::Objects
 {
@@ -191,6 +192,22 @@ namespace PK::Rendering::Objects
     void CommandBuffer::Dispatch(const Shader* shader, uint32_t variantIndex, uint3 dimensions)
     {
         SetShader(shader, variantIndex);
+        Dispatch(dimensions);
+    }
+
+    void CommandBuffer::DispatchWithCounter(const Shader* shader, uint32_t variantIndex, Math::uint3 dimensions)
+    {
+        auto counter = GraphicsAPI::GetBuiltInResources()->AtomicCounter.get();
+        Clear(counter, 0, sizeof(uint32_t), 0u);
+        SetShader(shader, variantIndex);
+        Dispatch(dimensions);
+    }
+
+    void CommandBuffer::DispatchWithCounter(const Shader* shader, Math::uint3 dimensions)
+    {
+        auto counter = GraphicsAPI::GetBuiltInResources()->AtomicCounter.get();
+        Clear(counter, 0, sizeof(uint32_t), 0u);
+        SetShader(shader);
         Dispatch(dimensions);
     }
 

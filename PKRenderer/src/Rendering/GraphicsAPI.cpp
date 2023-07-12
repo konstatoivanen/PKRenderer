@@ -21,6 +21,7 @@ namespace PK::Rendering
 
     Scope<GraphicsDriver> GraphicsDriver::Create(const std::string& workingDirectory, APIType api)
     {
+        Scope<GraphicsDriver> driver = nullptr;
 
         switch (api)
         {
@@ -50,7 +51,7 @@ namespace PK::Rendering
                     VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME
                 };
 
-                auto driver = CreateScope<VulkanDriver>(VulkanContextProperties
+                driver = CreateScope<VulkanDriver>(VulkanContextProperties
                 (
                     "PK Vulkan Engine",
                     workingDirectory,
@@ -63,12 +64,15 @@ namespace PK::Rendering
                 ));
 
                 s_currentDriver = driver.get();
-
                 PK_LOG_HEADER("----------VULKAN DRIVER INITIALIZED----------");
-                return driver;
         }
 
-        return nullptr;
+        if (driver)
+        {
+            driver->CreateBuiltInResources();
+        }
+
+        return driver;
     }
 
     GraphicsDriver* GraphicsAPI::GetActiveDriver() { return s_currentDriver; }
@@ -76,6 +80,7 @@ namespace PK::Rendering
     QueueSet* GraphicsAPI::GetQueues() { return s_currentDriver->GetQueues(); }
     DriverMemoryInfo GraphicsAPI::GetMemoryInfo() { return s_currentDriver->GetMemoryInfo(); }
     size_t GraphicsAPI::GetBufferOffsetAlignment(BufferUsage usage) { return s_currentDriver->GetBufferOffsetAlignment(usage); }
+    const BuiltInResources* GraphicsAPI::GetBuiltInResources() { return s_currentDriver->builtInResources; }
 
     void GraphicsAPI::SetBuffer(uint32_t nameHashId, Buffer* buffer, const IndexRange& range) { s_currentDriver->SetBuffer(nameHashId, buffer, range); }
     void GraphicsAPI::SetBuffer(uint32_t nameHashId, Buffer* buffer) { s_currentDriver->SetBuffer(nameHashId, buffer, buffer->GetFullRange()); }

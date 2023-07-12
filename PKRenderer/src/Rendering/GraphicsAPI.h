@@ -7,6 +7,7 @@
 #include "Rendering/Objects/Texture.h"
 #include "Rendering/Objects/BindArray.h"
 #include "Rendering/Objects/AccelerationStructure.h"
+#include "Rendering/BuiltInResources.h"
 
 namespace PK::Rendering
 {
@@ -46,9 +47,15 @@ namespace PK::Rendering
         virtual void WaitForIdle() const = 0;
         virtual void GC() = 0;
 
+        // @TODO this ownership model is bad. 
+        // Should be part of raii but destructor execution order prevents that.
+        inline void CreateBuiltInResources() { builtInResources = new BuiltInResources(); }
+        inline void ReleaseBuiltInResources() { delete builtInResources; }
+
         static Utilities::Scope<GraphicsDriver> Create(const std::string& workingDirectory, Structs::APIType api);
-    
+
         PK::Utilities::PropertyBlock globalResources = PK::Utilities::PropertyBlock(16384);
+        BuiltInResources* builtInResources;
     };
 
     namespace GraphicsAPI
@@ -66,6 +73,7 @@ namespace PK::Rendering
         PK::Rendering::Objects::QueueSet* GetQueues();
         DriverMemoryInfo GetMemoryInfo();
         size_t GetBufferOffsetAlignment(Structs::BufferUsage usage);
+        const BuiltInResources* GetBuiltInResources();
 
         void SetBuffer(uint32_t nameHashId, PK::Rendering::Objects::Buffer* buffer, const Structs::IndexRange& range);
         void SetBuffer(uint32_t nameHashId, PK::Rendering::Objects::Buffer* buffer);

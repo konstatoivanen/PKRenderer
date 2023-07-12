@@ -208,6 +208,7 @@ namespace PK::Rendering::VulkanRHI::Services
             
             void TransferRecords(VulkanBarrierHandler* target);
             bool Resolve(VulkanBarrierInfo* outBarrierInfo);
+            void ClearBarriers();
             void Prune();
 
         private:

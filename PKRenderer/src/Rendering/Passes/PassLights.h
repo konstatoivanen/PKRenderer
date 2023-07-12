@@ -79,7 +79,6 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Buffer> m_lightMatricesBuffer;
             Utilities::Ref<Objects::Buffer> m_lightDirectionsBuffer;
             Utilities::Ref<Objects::Buffer> m_globalLightsList;
-            Utilities::Ref<Objects::Buffer> m_globalLightIndex;
             Utilities::Ref<Objects::Texture> m_lightTiles;      
             Utilities::Ref<Objects::Texture> m_shadowmaps;        
     };

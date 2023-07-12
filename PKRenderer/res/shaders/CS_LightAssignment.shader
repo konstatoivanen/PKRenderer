@@ -4,6 +4,8 @@
 #include includes/ClusterIndexing.glsl
 #include includes/SharedLights.glsl
 
+#WithAtomicCounter
+
 PK_DECLARE_LOCAL_CBUFFER(pk_LightCount)
 {
     uint LightCount;
@@ -120,7 +122,7 @@ void main()
 
     barrier();
 
-    uint offset = atomicAdd(PK_ATOMIC_DATA(pk_GlobalListListIndex), visibleLightCount);
+    uint offset = PK_AtomicCounterAdd(visibleLightCount);
 
     for (uint i = 0; i < visibleLightCount; ++i)
     {
