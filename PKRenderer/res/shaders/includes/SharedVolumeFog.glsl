@@ -48,7 +48,7 @@ DEFINE_TRICUBIC_SAMPLER(pk_Fog_TransmittanceRead, VOLUMEFOG_SIZE)
 float VolumeFog_CalculateDensity(float3 pos)
 {
     float density = pk_Fog_DensityConstant;
-    density += clamp(exp(pk_Fog_DensityHeightExponent * (-pos.y + pk_Fog_DensityHeightOffset)) * pk_Fog_DensityHeightAmount, 0.0, 1e+3f);
+    density += min(exp(pk_Fog_DensityHeightExponent * (-pos.y + pk_Fog_DensityHeightOffset)) * pk_Fog_DensityHeightAmount, 1e+3f);
     density *= NoiseScroll(pos, pk_Time.y * pk_Fog_WindDirSpeed.w, pk_Fog_DensityNoiseScale, pk_Fog_WindDirSpeed.xyz, pk_Fog_DensityNoiseAmount, -0.3, 8.0);
     return max(density * pk_Fog_DensityAmount, 0.0f);
 }
@@ -56,7 +56,7 @@ float VolumeFog_CalculateDensity(float3 pos)
 float VolumeFog_CalculateDensitySky(float viewy, float far)
 {
     float density = pk_Fog_DensityConstant;
-    density += clamp(exp(pk_Fog_DensityHeightExponent * -viewy * far) * pk_Fog_DensityHeightAmount, 0.0f, 1e+3f);
+    density += min(exp(pk_Fog_DensityHeightExponent * -viewy * far) * pk_Fog_DensityHeightAmount, 1e+3f);
     density = max(density * pk_Fog_DensityAmount, VOLUMEFOG_MIN_DENSITY);
     return density;
 }
@@ -70,6 +70,7 @@ float VolumeFog_MarchTransmittance(const float3 origin, const float3 direction, 
     float prev_density = VolumeFog_CalculateDensity(origin);
     float transmittance = 1.0f;
 
+    #pragma unroll 1
     for (uint j = 0; j < 4; ++j)
     {
         const float3 pos = origin + direction * j * mstep + mstep * dither;

@@ -173,6 +173,7 @@ Physical Device Requirements:
 - accelerationStructure
 - rayTracingPipeline
 - rayQuery
+- maintenance4
 ```
 
 </details>

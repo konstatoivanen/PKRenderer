@@ -82,8 +82,6 @@ namespace PK::Rendering
         m_drawCalls.clear();
     }
 
-    //@TODO add a readonly usage mode to buffers that only have upload writes
-    // Removed partial writes as this was causing redundant barriers between small segments of the input buffers.
     void Batcher::EndCollectDrawCalls(Objects::CommandBuffer* cmd)
     {
         if (m_drawInfos.size() == 0)

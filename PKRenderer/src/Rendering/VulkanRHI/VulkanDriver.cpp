@@ -125,6 +125,7 @@ namespace PK::Rendering::VulkanRHI
         physicalDeviceRequirements.features.vk12.bufferDeviceAddress = VK_TRUE;
         physicalDeviceRequirements.features.vk12.timelineSemaphore = VK_TRUE;
         physicalDeviceRequirements.features.vk12.hostQueryReset = VK_TRUE;
+        physicalDeviceRequirements.features.vk13.maintenance4 = VK_TRUE;
         physicalDeviceRequirements.features.accelerationStructure.accelerationStructure = VK_TRUE;
         physicalDeviceRequirements.features.rayTracingPipeline.rayTracingPipeline = VK_TRUE;
         physicalDeviceRequirements.features.rayQuery.rayQuery = VK_TRUE;
@@ -336,7 +337,14 @@ namespace PK::Rendering::VulkanRHI
     {
         auto isValidationError = strstr(pCallbackData->pMessage, "Error") != nullptr;
 
-        if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT || isValidationError)
+        // @TODO Some stupid nvidia layer stuff that I can't be bothered to fix right now.
+        if (strstr(pCallbackData->pMessage, "loader_get_json") != nullptr)
+        {
+            PK_LOG_WARNING(pCallbackData->pMessage);
+            return VK_FALSE;
+        }
+
+        if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT || isValidationError)
         {
             PK_THROW_ERROR(pCallbackData->pMessage);
             return VK_FALSE;

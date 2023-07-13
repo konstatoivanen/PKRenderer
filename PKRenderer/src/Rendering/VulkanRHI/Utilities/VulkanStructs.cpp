@@ -12,7 +12,8 @@ namespace PK::Rendering::VulkanRHI
     {
         vk10.pNext = &vk11;
         vk11.pNext = &vk12;
-        vk12.pNext = &accelerationStructure;
+        vk12.pNext = &vk13;
+        vk13.pNext = &accelerationStructure;
         accelerationStructure.pNext = &rayTracingPipeline;
         rayTracingPipeline.pNext = &rayQuery;
     }

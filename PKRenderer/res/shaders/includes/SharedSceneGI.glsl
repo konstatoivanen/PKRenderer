@@ -137,6 +137,7 @@ GIRayHits GI_Load_RayHits(const int2 coord)
     return GIRayHits(hitDist.x, hitDist.y, isMissDiff, isMissSpec);
 }
 
+float4 GI_Load_Voxel_UVW(const half3 uvw, float lvl) { return tex2DLod(pk_GI_VolumeRead, float3(uvw), lvl); }
 float4 GI_Load_Voxel(const float3 worldpos, float lvl) { return tex2DLod(pk_GI_VolumeRead, GI_WorldToVoxelUVW(worldpos), lvl); }
 float4 GI_Load_Voxel_Discrete(const float3 worldpos, float lvl) { return tex2DLod(pk_GI_VolumeRead, GI_WorldToVoxelUVWDiscrete(worldpos), lvl); }
 
@@ -197,18 +198,18 @@ void GI_Sample_Lighting(const float2 uv, const float3 N, const float3 V, const f
 }
 
 //----------VOXEL TRACING FUNCTIONS----------//
-float4 GI_SphereTrace_Diffuse(float3 position)
+half4 GI_SphereTrace_Diffuse(float3 position)
 {
-    float4 C = float4(0.0.xxx, 1.0);
+    half4 C = half4(0.0hf.xxx, 1.0hf);
+    half3 uvw = half3(GI_WorldToVoxelUVW(position));
 
-    #pragma unroll 7
     for (uint i = 0; i < PK_GI_VOXEL_MIP_COUNT; ++i)
     {
         float level = i * 0.75f;
-        float4 V = GI_Load_Voxel(position, level);
-        C.rgb += (1.0f - C.a) * V.a * (V.rgb / max(1e-4f, V.a));
-        C.a = min(1.0f, C.a + (1.0f - C.a) * V.a);
-        C.a *= saturate(1.0 - V.a * (1.0 + pow3(level) * 0.075));
+        half4 V = half4(GI_Load_Voxel_UVW(uvw, level));
+        C.rgb += (1.0hf - C.a) * V.a * (V.rgb / max(1e-4hf, V.a));
+        C.a = min(1.0hf, C.a + (1.0hf - C.a) * V.a);
+        C.a *= clamp(1.0hf - V.a * (1.0hf + half(pow3(level)) * 0.075hf), 0.0hf, 1.0hf);
     }
 
     return C;
