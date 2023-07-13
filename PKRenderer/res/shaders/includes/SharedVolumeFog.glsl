@@ -70,7 +70,6 @@ float VolumeFog_MarchTransmittance(const float3 origin, const float3 direction, 
     float prev_density = VolumeFog_CalculateDensity(origin);
     float transmittance = 1.0f;
 
-    #pragma unroll 1
     for (uint j = 0; j < 4; ++j)
     {
         const float3 pos = origin + direction * j * mstep + mstep * dither;

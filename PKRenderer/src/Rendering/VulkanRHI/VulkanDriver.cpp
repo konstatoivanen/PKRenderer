@@ -17,6 +17,23 @@ namespace PK::Rendering::VulkanRHI
     using namespace Services;
     using namespace Objects;
 
+    static bool IsNVIDIADriverBug(const char* message)
+    {
+        // nv validation dll tries to load deprectaed json files.
+        if (strstr(message, "loader_get_json") != nullptr)
+        {
+            return true;
+        }
+
+        // This shouldn't be used but NSight does something with it & doesn't zero the flags :/
+        if (strstr(message, "VkPrivateDataSlotCreateInfo") != nullptr)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     VulkanDriver::VulkanDriver(const VulkanContextProperties& properties) : properties(properties)
     {
         glfwInit();
@@ -125,6 +142,7 @@ namespace PK::Rendering::VulkanRHI
         physicalDeviceRequirements.features.vk12.bufferDeviceAddress = VK_TRUE;
         physicalDeviceRequirements.features.vk12.timelineSemaphore = VK_TRUE;
         physicalDeviceRequirements.features.vk12.hostQueryReset = VK_TRUE;
+        physicalDeviceRequirements.features.vk13.privateData = VK_FALSE;
         physicalDeviceRequirements.features.vk13.maintenance4 = VK_TRUE;
         physicalDeviceRequirements.features.accelerationStructure.accelerationStructure = VK_TRUE;
         physicalDeviceRequirements.features.rayTracingPipeline.rayTracingPipeline = VK_TRUE;
@@ -338,7 +356,7 @@ namespace PK::Rendering::VulkanRHI
         auto isValidationError = strstr(pCallbackData->pMessage, "Error") != nullptr;
 
         // @TODO Some stupid nvidia layer stuff that I can't be bothered to fix right now.
-        if (strstr(pCallbackData->pMessage, "loader_get_json") != nullptr)
+        if (IsNVIDIADriverBug(pCallbackData->pMessage))
         {
             PK_LOG_WARNING(pCallbackData->pMessage);
             return VK_FALSE;

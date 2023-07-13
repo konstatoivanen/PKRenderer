@@ -121,6 +121,7 @@ GLSL Extensions:
 - GL_ARB_shader_viewport_layer_array
 - GL_EXT_ray_tracing
 - GL_KHR_shader_subgroup_ballot
+- GL_EXT_control_flow_attributes
 
 Validation layers:
 - VK_LAYER_KHRONOS_validation
