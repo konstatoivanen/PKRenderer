@@ -12,6 +12,7 @@
 #define VOLUMEFOG_SIZE uint3(pk_ScreenSize.xy / VOLUMEFOG_XY_ALIGNMENT, 128)
 #define VOLUMEFOG_MIN_DENSITY 1e-5f
 #define VOLUMEFOG_ACCUMULATION 0.5f
+#define VOLUMEFOG_MARCH_DISTANCE_EXP 2.0f
 
 PK_DECLARE_CBUFFER(pk_Fog_Parameters, PK_SET_SHADER)
 {
@@ -64,17 +65,15 @@ float VolumeFog_CalculateDensitySky(float viewy, float far)
 float VolumeFog_MarchTransmittance(const float3 origin, const float3 direction, const float dither, const float tMax)
 {
     const uint StepCount = 4u;
-    const float MaxStepSize = 0.25f;
-
-    float mstep = clamp(tMax / StepCount, 0.0f, MaxStepSize);
+    const float invT = tMax / StepCount;
     float prev_density = VolumeFog_CalculateDensity(origin);
     float transmittance = 1.0f;
 
     for (uint j = 0; j < 4; ++j)
     {
-        const float3 pos = origin + direction * j * mstep + mstep * dither;
+        const float3 pos = origin + direction * j * invT + invT * dither;
         const float density = VolumeFog_CalculateDensity(pos);
-        transmittance *= exp(-lerp(prev_density, density, 0.5f) * mstep);
+        transmittance *= exp(-lerp(prev_density, density, 0.5f) * invT);
         prev_density = density;
     }
 

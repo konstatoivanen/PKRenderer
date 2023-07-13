@@ -17,6 +17,7 @@ void main()
     // Clamp cell to surface to prevent light leaks
     const float depth = min(ViewDepthExp(uvw_cur.z), lerp(1e+38f, zmax, zmin < zmax));
     
+
     const float3 worldpos = UVToWorldPos(uvw_cur.xy, depth);
     const float3 uvw_prev = VolumeFog_WorldToPrevUVW(worldpos);
     const float3 viewdir  = normalize(worldpos - pk_WorldSpaceCameraPos.xyz);
@@ -29,12 +30,16 @@ void main()
     const float gi_static_occlusion = (viewdir.y * 0.5f + 0.5f) * gi_dynamic.a;
 
     float3 value_cur = gi_static.rgb * gi_static_occlusion + gi_dynamic.rgb;
+
+    // Distant texels are less dense, trace a longer distance to retain some depth.
+    const float maxMarchDistance = exp(uvw_cur.z * VOLUMEFOG_MARCH_DISTANCE_EXP);
     
     LightTile tile = GetLightTile(uvw_cur.xy, depth);
     for (uint i = tile.start; i < tile.end; ++i)
     {
         Light light = GetLight(i, worldpos, tile.cascade);
-        light.shadow *= VolumeFog_MarchTransmittance(worldpos, light.direction, dither.z, light.linearDistance);
+        const float marchDistance = clamp(light.linearDistance, 0.0f, maxMarchDistance);
+        light.shadow *= VolumeFog_MarchTransmittance(worldpos, light.direction, dither.z, marchDistance);
         value_cur += BSDF_VOLUMETRIC(viewdir, pk_Fog_Anisotropy, light.direction, light.color, light.shadow);
     }
 
