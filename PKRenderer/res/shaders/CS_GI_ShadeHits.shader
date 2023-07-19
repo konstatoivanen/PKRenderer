@@ -65,28 +65,35 @@ void main()
 
     if (!Test_DepthFar(depth))
     {
-        GI_Store_Packed_SampleDiff(coord, uint4(0));
-        GI_Store_Packed_SampleSpec(coord, uint2(0));
+        GI_Store_Packed_Diff(coord, uint4(0));
+        GI_Store_Packed_Spec(coord, uint2(0));
         return;
     }
 
-    const float4 NR = SampleWorldNormalRoughness(coord);
-    const float3 N = NR.xyz;
-    const float3 O = SampleWorldPosition(coord, size, depth);
-    const float3 V = normalize(O - pk_WorldSpaceCameraPos.xyz);
+    const float4 normalroughness = SampleWorldNormalRoughness(coord);
+    const float3 normal = normalroughness.xyz;
+    const float  roughness = normalroughness.w;
+    const float3 wpos = SampleWorldPosition(coord, size, depth);
+    const float3 viewdir = normalize(wpos - pk_WorldSpaceCameraPos.xyz);
 
-    GIRayDirections directions = GI_GetRayDirections(coord, N, V, NR.w);
+    GIRayDirections directions = GI_GetRayDirections(coord, normal, viewdir, roughness);
     GIRayHits hits = GI_Load_RayHits(coord);
 
     // Construct new samples
-    GISampleDiff s_diff;
-    s_diff.sh = SH_FromRadiance(SampleRadiance(coord, O, directions.diff, hits.distDiff, hits.isMissDiff), directions.diff);
+    GIDiff s_diff;
+    s_diff.sh = SH_FromRadiance(SampleRadiance(coord, wpos, directions.diff, hits.distDiff, hits.isMissDiff), directions.diff);
     s_diff.ao = hits.isMissDiff ? 1.0f : saturate(hits.distDiff / PK_GI_RAY_MAX_DISTANCE);
 
-    GISampleSpec s_spec;
-    s_spec.radiance = SampleRadiance(coord, O, directions.spec, hits.distSpec, hits.isMissSpec);
-    s_spec.ao = hits.isMissSpec ? 1.0f : saturate(hits.distSpec / PK_GI_RAY_MAX_DISTANCE);
 
-    GI_Store_SampleDiff(coord, s_diff);
-    GI_Store_SampleSpec(coord, s_spec);
+    GISpec s_spec = pk_Zero_GISpec;
+#if PK_GI_APPROX_ROUGH_SPEC == 1
+    if (roughness < PK_GI_MAX_ROUGH_SPEC)
+#endif
+    {
+        s_spec.radiance = SampleRadiance(coord, wpos, directions.spec, hits.distSpec, hits.isMissSpec);
+        s_spec.ao = hits.isMissSpec ? 1.0f : saturate(hits.distSpec / PK_GI_RAY_MAX_DISTANCE);
+    }
+
+    GI_Store_Diff(coord, s_diff);
+    GI_Store_Spec(coord, s_spec);
 }

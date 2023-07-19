@@ -50,6 +50,8 @@ float SamplePreviousRoughness(float2 uv) { return tex2D(pk_ScreenNormalsPrevious
 float SamplePreviousRoughness(int2 coord) { return texelFetch(pk_ScreenNormalsPrevious, coord, 0).y; }
 float4 SamplePreviousViewNormalRoughness(float2 uv) { return DecodeGBufferN(tex2D(pk_ScreenNormalsPrevious, uv)); }
 float4 SamplePreviousViewNormalRoughness(int2 coord) { return DecodeGBufferN(texelFetch(pk_ScreenNormalsPrevious, coord, 0)); }
+float4 SamplePreviousWorldNormalRoughness(float2 uv) { return mul3x3(float3x3(pk_MATRIX_L_I_V), SamplePreviousViewNormalRoughness(uv)); }
+float4 SamplePreviousWorldNormalRoughness(int2 coord) { return mul3x3(float3x3(pk_MATRIX_L_I_V), SamplePreviousViewNormalRoughness(coord)); }
 
 float3 SampleViewNormal(float2 uv) { return SampleViewNormalRoughness(uv).xyz; }
 float3 SampleViewNormal(int2 coord) { return SampleViewNormalRoughness(coord).xyz; }

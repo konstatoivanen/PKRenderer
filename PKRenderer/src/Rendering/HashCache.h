@@ -47,8 +47,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_MATRIX_L_I_V)
         DECLARE_HASH(pk_MATRIX_L_VP)
         DECLARE_HASH(pk_MATRIX_L_VP_N)
-        DECLARE_HASH(pk_MATRIX_L_DVP)
-        DECLARE_HASH(pk_MATRIX_L_DVP_N)
+        DECLARE_HASH(pk_MATRIX_L_VP_D)
         
         DECLARE_HASH(pk_SceneStructure)
 

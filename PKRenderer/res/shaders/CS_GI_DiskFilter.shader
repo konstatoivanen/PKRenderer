@@ -28,7 +28,7 @@ float2 GetFilterRadiusAndScale(const float depth, const float variance, const fl
     return float2(radius, scale);
 }
 
-void ApproximateRoughSpecular(const SH sh, const float3 N, const float3 V, const float R, inout GISampleSpec spec)
+void ApproximateRoughSpecular(const SH sh, const float3 N, const float3 V, const float R, inout GISpec spec)
 {
     float3 wN = mul(float3x3(pk_MATRIX_I_V), N);
     float3 wV = mul(float3x3(pk_MATRIX_I_V), V);
@@ -36,8 +36,7 @@ void ApproximateRoughSpecular(const SH sh, const float3 N, const float3 V, const
     float directionality;
     float3 sh_dir = SH_ToPrimeDir(sh, directionality);
 
-    float roughness = lerp(1.0f, R * R, saturate(directionality * 0.666f));
-    roughness = sqrt(roughness);
+    const float roughness = sqrt(lerp(1.0f, R * R, saturate(directionality * 0.666f)));
 
     const float3 s_color = SH_ToColor(sh) * PK_TWO_PI;
     const float3 specular = s_color * BRDF_GGX_SPECULAR_APPROX(wN, wV, roughness, sh_dir);
@@ -70,8 +69,8 @@ void main()
         return;
     }
 
-    GISampleDiff c_diff = GI_Load_SampleDiff(coord);
-    GISampleSpec c_spec = GI_Load_SampleSpec(coord);
+    GIDiff c_diff = GI_Load_Diff(coord);
+    GISpec c_spec = GI_Load_Spec(coord);
 
     const float4 c_normalRoughness = SampleViewNormalRoughness(coord);
     const float3 c_normal = c_normalRoughness.xyz;
@@ -93,7 +92,7 @@ void main()
             continue;
         }
 
-        const GISampleDiff s_diff = GI_Load_SampleDiff(coord + int2(xx, yy));
+        const GIDiff s_diff = GI_Load_Diff(coord + int2(xx, yy));
         const float s_depth = SampleMinZ(coord + int2(xx, yy), 0);
 
         const float s_w = (abs(depth - s_depth) / depth) < 0.02f ? 1.0f : 0.0f;
@@ -121,23 +120,18 @@ void main()
         #define SFLT_VPOS c_vpos
         #define SFLT_HISTORY c_diff.history
         #define SFLT_STEP step
-        #define SFLT_SKIP true
+        #define SFLT_SKIP skip_filter
         #define SFLT_RADIUS radius
-        #define SFLT_DATA_TYPE GISampleDiff
-        #define SFLT_DATA_LOAD(coord) GI_Load_SampleDiff(coord)
-
-        #define SFLT_DATA_SUM(data, w)\
-            c_diff.sh = SH_Add(c_diff.sh, data.sh, w);\
-            c_diff.ao += data.ao * w;\
-
-        #define SFLT_DATA_DIV(wSum)\
-            c_diff.sh = SH_Scale(c_diff.sh, 1.0f / wSum);\
-            c_diff.ao /= wSum;\
-
+        #define SFLT_DATA_TYPE GIDiff
+        #define SFLT_DATA_LOAD(coord) GI_Load_Diff(coord)
+        #define SFLT_DATA_SUM(data, w) c_diff = GI_Sum_NoHistory(c_diff, data, w);
+        #define SFLT_DATA_DIV(wSum)  c_diff = GI_Mul_NoHistory(c_diff, 1.0f / wSum);
         #include includes/SpatialFilter.glsl
     }
 
     // Filter Spec
+    // @TODO Approx causes weird blobs that stick around. possibly due to prefilter?
+    // @TODO Calculate different radius for this as diffuse variance is hardly usable & roughness is more of a relevant factor.
 #if PK_GI_APPROX_ROUGH_SPEC == 1
     if (c_roughness > PK_GI_MIN_ROUGH_SPEC)
     {
@@ -157,20 +151,13 @@ void main()
         #define SFLT_STEP step
         #define SFLT_SKIP true
         #define SFLT_RADIUS radius
-        #define SFLT_DATA_TYPE GISampleSpec
-        #define SFLT_DATA_LOAD(coord) GI_Load_SampleSpec(coord)
-        
-        #define SFLT_DATA_SUM(data, w)\
-            c_spec.radiance += data.radiance * w;\
-            c_spec.ao += data.ao * w;\
-        
-        #define SFLT_DATA_DIV(wSum)\
-            c_spec.radiance /= wSum;\
-            c_spec.ao /= wSum;\
-
+        #define SFLT_DATA_TYPE GISpec
+        #define SFLT_DATA_LOAD(coord) GI_Load_Spec(coord)
+        #define SFLT_DATA_SUM(data, w) c_spec = GI_Sum_NoHistory(c_spec, data, w);
+        #define SFLT_DATA_DIV(wSum) c_spec = GI_Mul_NoHistory(c_spec, 1.0f / wSum);
         #include includes/SpatialFilter.glsl
     }
 
-    GI_Store_SampleDiff(coord, c_diff);
-    GI_Store_SampleSpec(coord, c_spec);
+    GI_Store_Diff(coord, c_diff);
+    GI_Store_Spec(coord, c_spec);
 }

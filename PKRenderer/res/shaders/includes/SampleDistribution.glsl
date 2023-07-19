@@ -99,9 +99,10 @@ float3 ImportanceSampleGGXVNDF(float2 Xi, const vec3 V, float R)
 
 float3 ImportanceSampleSmithGGX(const float2 Xi, const float3 N, const float3 V, const float R)
 {
+   	const float a2 = R * R;
     const float3x3 basis = ComposeTBNFast(N);
     const float3 ve = transpose(basis) * -V;
-    const float3 m = ImportanceSampleGGXVNDF(Xi, ve, R);
+    const float3 m = ImportanceSampleGGXVNDF(Xi, ve, a2);
 
     // reflect viewer dir by a microfacet
     float3 l = reflect(-ve, m);
@@ -121,14 +122,21 @@ float3 ImportanceSampleLambert(const float2 Xi, const float3 N)
 }
 
 // Source https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
-float3 GetPrimeDirectionGGX(const float3 N, const float3 V, float R)
+float GetGGXDominantFactor(float nv, float linearRoughness)
 {
-	return normalize(lerp(N, reflect(-V, N), (1.0f - R) * (sqrt(1.0f - R) + R)));
+    const float a = 0.298475f * log(39.4115f - 39.0029f * linearRoughness);
+    return saturate(pow( 1.0 - nv, 10.8649f)) * (1.0f - a ) + a;
+}
+
+float3 GetGGXDominantDirection(const float3 N, const float3 V, float linearRoughness)
+{
+    const float factor = GetGGXDominantFactor(abs(dot(N, V)), linearRoughness);
+	return normalize(lerp(N, reflect(-V, N), factor));
 }
 
 float2x3 GetPrimeBasisGGX(const float3 N, const float3 V, const float R, const float radius, inout float3 P)
 {
-    P = GetPrimeDirectionGGX(N, V, R);
+    P = GetGGXDominantDirection(N, V, sqrt(R));
     const float3 l = reflect(-P, N);
     const float3 t = normalize(cross(N,l));
     const float3 b = cross(l,t);
@@ -138,7 +146,6 @@ float2x3 GetPrimeBasisGGX(const float3 N, const float3 V, const float R, const f
 //Source: https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf 
 float GetGGXLobeHalfAngle(const float R, const float volumeFactor)
 {
-    //return atan(pow2(R) * volumeFactor / ( 1.0 - volumeFactor));
-    float sqr = R * R;
-    return PK_HALF_PI * sqr / (1.0f + sqr);
+    return atan(R * volumeFactor / ( 1.0 - volumeFactor));
+    //return PK_HALF_PI * R / (1.0f + R);
 }

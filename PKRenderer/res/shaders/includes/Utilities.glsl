@@ -55,6 +55,8 @@ uint2 packHalf4x16(float4 v) { return uint2(packHalf2x16(v.xy), packHalf2x16(v.z
 #define All_Greater(a,b) all(greaterThan(a,b))
 #define All_InArea(a,b,c) (all(greaterThanEqual(a,b)) && all(lessThan(a,c)))
 
+#define Replace_NaN(v, r) (any(isnan(v)) ? (r) : (v))
+
 #define PK_SET_GLOBAL 0
 #define PK_SET_PASS 1
 #define PK_SET_SHADER 2

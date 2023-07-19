@@ -108,8 +108,7 @@ namespace PK::Rendering
                 { ElementType::Float4x4, hash->pk_MATRIX_L_I_V },
                 { ElementType::Float4x4, hash->pk_MATRIX_L_VP },
                 { ElementType::Float4x4, hash->pk_MATRIX_L_VP_N },
-                { ElementType::Float4x4, hash->pk_MATRIX_L_DVP },
-                { ElementType::Float4x4, hash->pk_MATRIX_L_DVP_N },
+                { ElementType::Float4x4, hash->pk_MATRIX_L_VP_D },
                 { ElementType::Float, hash->pk_SceneEnv_Exposure }
             }), "Constants.Frame");
 
@@ -238,8 +237,7 @@ namespace PK::Rendering
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_I_V, matrix_l_i_v);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP, matrix_l_vp);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP_N, matrix_l_vp_n);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_DVP, matrix_l_vp * matrix_i_v);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_DVP_N, matrix_l_vp_n * matrix_i_v);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP_D, matrix_l_vp * matrix_i_v);
     }
 
     void RenderPipeline::Step(PK::ECS::Tokens::TimeToken* token)

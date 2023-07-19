@@ -15,57 +15,47 @@ shared uint2 lds_Spec[GROUP_SIZE * GROUP_SIZE];
 
 uint4 CombinePackedDiff(const uint4 u0, const uint4 u1, const uint4 u2, const uint4 u3)
 {
-    GISampleDiff o = pk_Zero_GISampleDiff;
+    GIDiff o = pk_Zero_GIDiff;
     const uint4 mask = uint4(u0.w != 0u, u1.w != 0u, u2.w != 0u, u3.w != 0u);
     const float w = 1.0f / float(max(mask.x + mask.y + mask.z + mask.w, 1u));
 
-    const GISampleDiff s[4] =
+    const GIDiff s[4] =
     {
-        GI_Unpack_SampleDiff(u0),
-        GI_Unpack_SampleDiff(u1),
-        GI_Unpack_SampleDiff(u2),
-        GI_Unpack_SampleDiff(u3)
+        GI_Unpack_Diff(u0),
+        GI_Unpack_Diff(u1),
+        GI_Unpack_Diff(u2),
+        GI_Unpack_Diff(u3)
     };
 
     #pragma unroll 4
     for (uint i = 0u; i < 4; ++i)
     {
-        o.sh.Y += s[i].sh.Y * mask[i];
-        o.sh.CoCg += s[i].sh.CoCg * mask[i];
-        o.ao += s[i].ao * mask[i];
+        o = GI_Sum_NoHistory(o, s[i], mask[i]);
     }
 
-    o.sh.Y *= w;
-    o.sh.CoCg *= w;
-    o.ao *= w;
-
-    return GI_Pack_SampleDiff(o);
+    return GI_Pack_Diff(GI_Mul_NoHistory(o, w));
 }
 
 uint2 CombinePackedSpec(const uint2 u0, const uint2 u1, const uint2 u2, const uint2 u3)
 {
-    GISampleSpec o = pk_Zero_GISampleSpec;
+    GISpec o = pk_Zero_GISpec;
     const uint4 mask = uint4(u0.y != 0u, u1.y != 0u, u2.y != 0u, u3.y != 0u);
     const float w = 1.0f / float(max(mask.x + mask.y + mask.z + mask.w, 1u));
 
-    const GISampleSpec s[4] =
+    const GISpec s[4] =
     {
-        GI_Unpack_SampleSpec(u0),
-        GI_Unpack_SampleSpec(u1),
-        GI_Unpack_SampleSpec(u2),
-        GI_Unpack_SampleSpec(u3)
+        GI_Unpack_Spec(u0),
+        GI_Unpack_Spec(u1),
+        GI_Unpack_Spec(u2),
+        GI_Unpack_Spec(u3)
     };
 
-    #pragma unroll 4
     for (uint i = 0u; i < 4; ++i)
     {
-        o.radiance += s[i].radiance * mask[i];
-        o.ao += s[i].ao * mask[i];
+        o = GI_Sum_NoHistory(o, s[i], mask[i]);
     }
 
-    o.radiance *= w;
-    o.ao *= w;
-    return GI_Pack_SampleSpec(o);
+    return GI_Pack_Spec(GI_Mul_NoHistory(o, w));
 }
 
 uint2 GetSwizzledThreadID()
@@ -100,15 +90,15 @@ void main()
 
     //----------DIFFUSE MIP----------//
     {
-        uint4 s_diff0 = GI_Load_Packed_SampleDiff(int2(baseCoords[0]));
-        uint4 s_diff1 = GI_Load_Packed_SampleDiff(int2(baseCoords[1]));
-        uint4 s_diff2 = GI_Load_Packed_SampleDiff(int2(baseCoords[2]));
-        uint4 s_diff3 = GI_Load_Packed_SampleDiff(int2(baseCoords[3]));
+        uint4 s_diff0 = GI_Load_Packed_Diff(int2(baseCoords[0]));
+        uint4 s_diff1 = GI_Load_Packed_Diff(int2(baseCoords[1]));
+        uint4 s_diff2 = GI_Load_Packed_Diff(int2(baseCoords[2]));
+        uint4 s_diff3 = GI_Load_Packed_Diff(int2(baseCoords[3]));
 
-        uint2 s_spec0 = GI_Load_Packed_SampleSpec(int2(baseCoords[0]));
-        uint2 s_spec1 = GI_Load_Packed_SampleSpec(int2(baseCoords[1]));
-        uint2 s_spec2 = GI_Load_Packed_SampleSpec(int2(baseCoords[2]));
-        uint2 s_spec3 = GI_Load_Packed_SampleSpec(int2(baseCoords[3]));
+        uint2 s_spec0 = GI_Load_Packed_Spec(int2(baseCoords[0]));
+        uint2 s_spec1 = GI_Load_Packed_Spec(int2(baseCoords[1]));
+        uint2 s_spec2 = GI_Load_Packed_Spec(int2(baseCoords[2]));
+        uint2 s_spec3 = GI_Load_Packed_Spec(int2(baseCoords[3]));
 
         lds_Diff[thread] = packedDiff = CombinePackedDiff(s_diff0, s_diff1, s_diff2, s_diff3);
         lds_Spec[thread].xy = packedSpec = CombinePackedSpec(s_spec0, s_spec1, s_spec2, s_spec3);
