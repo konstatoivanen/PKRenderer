@@ -7,7 +7,7 @@
 #include "Rendering/Passes/PassHistogram.h"
 #include "Rendering/Passes/PassDepthOfField.h"
 #include "Rendering/Passes/PassTemporalAntiAliasing.h"
-#include "ECS/Contextual/Tokens/ViewProjectionToken.h"
+#include "ECS/Tokens/ViewProjectionToken.h"
 
 namespace PK::Rendering::Passes
 {

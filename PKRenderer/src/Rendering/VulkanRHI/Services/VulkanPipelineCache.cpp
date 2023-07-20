@@ -134,7 +134,7 @@ namespace PK::Rendering::VulkanRHI::Services
         vertexInputInfo.pVertexAttributeDescriptions = key.vertexAttributes;
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
-        inputAssembly.topology = key.topology;
+        inputAssembly.topology = EnumConvert::GetTopology(key.fixedFunctionState.rasterization.topology);
         inputAssembly.primitiveRestartEnable = key.primitiveRestart;
 
         VkPipelineViewportStateCreateInfo viewportState{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
@@ -192,8 +192,8 @@ namespace PK::Rendering::VulkanRHI::Services
         }
 
         VkPipelineColorBlendStateCreateInfo colorBlending{ VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
-        colorBlending.logicOpEnable = VK_FALSE;
-        colorBlending.logicOp = VK_LOGIC_OP_COPY;
+        colorBlending.logicOpEnable = key.fixedFunctionState.blending.isLogicOpEnabled();
+        colorBlending.logicOp = EnumConvert::GetLogicOp(key.fixedFunctionState.blending.logicOp);
         colorBlending.attachmentCount = key.fixedFunctionState.colorTargetCount;
         colorBlending.pAttachments = blendAttachments;
         colorBlending.blendConstants[0] = 0.0f;

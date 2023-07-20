@@ -1,7 +1,7 @@
 #pragma once
 #include "ECS/EntityDatabase.h"
-#include "ECS/Contextual/Components/Bounds.h"
-#include "ECS/Contextual/Components/Renderable.h"
+#include "ECS/Components/Bounds.h"
+#include "ECS/Components/Renderable.h"
 
 namespace PK::ECS::EntityViews
 {

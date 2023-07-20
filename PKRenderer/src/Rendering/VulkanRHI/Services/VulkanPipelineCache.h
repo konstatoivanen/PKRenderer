@@ -14,7 +14,6 @@ namespace PK::Rendering::VulkanRHI::Services
     {
         PK::Utilities::VersionHandle<Objects::VulkanShader> shader;
         Structs::FixedFunctionState fixedFunctionState{};
-        VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         VkBool32 primitiveRestart = VK_FALSE;
         VkRenderPass renderPass = VK_NULL_HANDLE;
         VkVertexInputAttributeDescription vertexAttributes[Structs::PK_MAX_VERTEX_ATTRIBUTES]{};

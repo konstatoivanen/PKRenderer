@@ -7,8 +7,8 @@
 #include "Rendering/Objects/BindSet.h"
 #include "Rendering/Objects/Material.h"
 #include "Rendering/Objects/CommandBuffer.h"
-#include "ECS/Contextual/Tokens/CullingTokens.h"
-#include "ECS/Contextual/Components/Transform.h"
+#include "ECS/Tokens/CullingTokens.h"
+#include "ECS/Components/Transform.h"
 #include "Utilities/IndexedSet.h"
 #include "Utilities/FixedList.h"
 

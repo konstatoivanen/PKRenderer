@@ -29,6 +29,7 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float4x4 pk_MATRIX_P;       // Current projection matrix.
     float4x4 pk_MATRIX_I_P;     // Current inverse projection matrix.
     float4x4 pk_MATRIX_VP;      // Current view * projection matrix.
+    float4x4 pk_MATRIX_VP_N;    // Current view * unjittered projection matrix.
     float4x4 pk_MATRIX_I_VP;    // Current inverse view * projection matrix.
     
     float4x4 pk_MATRIX_L_I_V;   // Last inverse view matrix.

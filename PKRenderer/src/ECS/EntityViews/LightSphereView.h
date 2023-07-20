@@ -1,6 +1,6 @@
 #pragma once
 #include "ECS/EntityDatabase.h"
-#include "ECS/Contextual/Components/Transform.h"
+#include "ECS/Components/Transform.h"
 
 namespace PK::ECS::EntityViews
 {

@@ -1,9 +1,9 @@
 #pragma once
 #include "ECS/EntityDatabase.h"
-#include "ECS/Contextual/Components/Transform.h"
-#include "ECS/Contextual/Components/Bounds.h"
-#include "ECS/Contextual/Components/Renderable.h"
-#include "ECS/Contextual/Components/Light.h"
+#include "ECS/Components/Transform.h"
+#include "ECS/Components/Bounds.h"
+#include "ECS/Components/Renderable.h"
+#include "ECS/Components/Light.h"
 
 namespace PK::ECS::Implementers
 {

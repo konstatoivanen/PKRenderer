@@ -43,6 +43,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_MATRIX_P)
         DECLARE_HASH(pk_MATRIX_I_P)
         DECLARE_HASH(pk_MATRIX_VP)
+        DECLARE_HASH(pk_MATRIX_VP_N)
         DECLARE_HASH(pk_MATRIX_I_VP)
         DECLARE_HASH(pk_MATRIX_L_I_V)
         DECLARE_HASH(pk_MATRIX_L_VP)

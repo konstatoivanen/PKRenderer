@@ -3,7 +3,7 @@
 #include "Utilities/VectorUtilities.h"
 #include "Math/FunctionsIntersect.h"
 #include "Math/FunctionsMisc.h"
-#include "ECS/Contextual/EntityViews/MeshRenderableView.h"
+#include "ECS/EntityViews/MeshRenderableView.h"
 #include "Rendering/HashCache.h"
 
 using namespace PK::Core;

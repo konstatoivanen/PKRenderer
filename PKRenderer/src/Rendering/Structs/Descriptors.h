@@ -62,10 +62,10 @@ namespace PK::Rendering::Structs
 
     struct MultisamplingParameters
     {
-        uint32_t rasterizationSamples = 1;
         bool sampleShadingEnable = false;
         bool alphaToCoverageEnable = false;
         bool alphaToOneEnable = false;
+        uint8_t rasterizationSamples = 1u;
         float minSampleShading = 1.0f;
     };
 
@@ -88,6 +88,7 @@ namespace PK::Rendering::Structs
         CullMode cullMode = CullMode::Off;
         FrontFace frontFace = FrontFace::CounterClockwise;
         RasterMode rasterMode = RasterMode::Default;
+        Topology topology = Topology::TriangleList;
         float overEstimation = 0.0f;
         float depthBiasConstantFactor = 0;
         float depthBiasClamp = 0;
@@ -97,19 +98,22 @@ namespace PK::Rendering::Structs
 
     struct BlendParameters
     {
-        BlendFactor srcColorFactor;
-        BlendFactor dstColorFactor;
-        BlendOp colorOp;
-        BlendFactor srcAlphaFactor;
-        BlendFactor dstAlphaFactor;
-        BlendOp alphaOp;
-        ColorMask colorMask;
+        ColorMask colorMask = ColorMask::RGBA;
+        LogicOp logicOp = LogicOp::None;
+        BlendFactor srcColorFactor = BlendFactor::None;
+        BlendFactor dstColorFactor = BlendFactor::None;
+        BlendOp colorOp = BlendOp::None;
+        BlendFactor srcAlphaFactor = BlendFactor::None;
+        BlendFactor dstAlphaFactor = BlendFactor::None;
+        BlendOp alphaOp = BlendOp::None;
 
         inline bool isBlendEnabled() const { return colorOp != BlendOp::None || alphaOp != BlendOp::None ||
                                                     srcColorFactor != BlendFactor::None || 
                                                     dstColorFactor != BlendFactor::None || 
                                                     srcAlphaFactor != BlendFactor::None || 
                                                     dstAlphaFactor != BlendFactor::None; }
+
+        inline bool isLogicOpEnabled() const { return logicOp != LogicOp::None; }
     };
 
     // Limited set of values that can be defined in the shader source

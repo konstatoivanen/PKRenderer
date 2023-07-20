@@ -4,7 +4,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <Core/UpdateStep.h>
-#include <ECS/Contextual/Tokens/TimeToken.h>
+#include <ECS/Tokens/TimeToken.h>
 
 namespace PK::Core::Services
 {

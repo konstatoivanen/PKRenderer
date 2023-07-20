@@ -113,6 +113,7 @@ namespace PK::Rendering::VulkanRHI
         physicalDeviceRequirements.versionMajor = supportedMajor;
         physicalDeviceRequirements.versionMinor = supportedMinor;
         physicalDeviceRequirements.features.vk10.features.alphaToOne = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.fillModeNonSolid = VK_TRUE;
         physicalDeviceRequirements.features.vk10.features.shaderImageGatherExtended = VK_TRUE;
         physicalDeviceRequirements.features.vk10.features.sparseBinding = VK_TRUE;
         physicalDeviceRequirements.features.vk10.features.sparseResidencyBuffer = VK_TRUE;

@@ -134,7 +134,6 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_renderPassKey[0].samples = 1;
         m_renderPassKey[1].samples = 1;
         m_pipelineKey.primitiveRestart = VK_FALSE;
-        m_pipelineKey.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     }
 
     void VulkanRenderState::SetRenderTarget(const VulkanBindHandle* const* renderTargets, const VulkanBindHandle* const* resolves, uint32_t count)

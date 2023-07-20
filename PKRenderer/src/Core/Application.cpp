@@ -10,15 +10,16 @@
 #include "Core/CommandConfig.h"
 #include "Core/UpdateStep.h"
 #include "ECS/EntityDatabase.h"
-#include "ECS/Contextual/Engines/EngineCommandInput.h"
-#include "ECS/Contextual/Engines/EngineEditorCamera.h"
-#include "ECS/Contextual/Engines/EngineBuildAccelerationStructure.h"
-#include "ECS/Contextual/Engines/EngineUpdateTransforms.h"
-#include "ECS/Contextual/Engines/EnginePKAssetBuilder.h"
-#include "ECS/Contextual/Engines/EngineCull.h"
-#include "ECS/Contextual/Engines/EngineDebug.h"
-#include "ECS/Contextual/Engines/EngineScreenshot.h"
-#include "ECS/Contextual/Tokens/TimeToken.h"
+#include "ECS/Engines/EngineCommandInput.h"
+#include "ECS/Engines/EngineEditorCamera.h"
+#include "ECS/Engines/EngineBuildAccelerationStructure.h"
+#include "ECS/Engines/EngineUpdateTransforms.h"
+#include "ECS/Engines/EnginePKAssetBuilder.h"
+#include "ECS/Engines/EngineCull.h"
+#include "ECS/Engines/EngineDebug.h"
+#include "ECS/Engines/EngineScreenshot.h"
+#include "ECS/Engines/EngineGizmos.h"
+#include "ECS/Tokens/TimeToken.h"
 #include "Rendering/RenderPipeline.h"
 #include "Rendering/HashCache.h"
 
@@ -87,6 +88,7 @@ namespace PK::Core
         auto engineDebug = m_services->Create<ECS::Engines::EngineDebug>(assetDatabase, entityDb, config);
         auto enginePKAssetBuilder = m_services->Create<ECS::Engines::EnginePKAssetBuilder>(arguments);
         auto engineScreenshot = m_services->Create<ECS::Engines::EngineScreenshot>();
+        auto engineGizmos = m_services->Create<ECS::Engines::EngineGizmos>(assetDatabase, sequencer, config);
 
         sequencer->SetSteps(
             {
@@ -119,7 +121,7 @@ namespace PK::Core
                         Step::Token<TokenConsoleCommand>(engineEditorCamera),
                         Step::Token<TokenConsoleCommand>(enginePKAssetBuilder),
                         Step::Token<TokenConsoleCommand>(engineScreenshot),
-                        //PK_STEP_T(gizmoRenderer, ConsoleCommandToken),
+                        Step::Token<TokenConsoleCommand>(engineGizmos),
                     }
                 },
                 {
@@ -134,13 +136,22 @@ namespace PK::Core
                         Step::Token<PK::ECS::Tokens::TokenCullFrustum>(engineCull),
                         Step::Token<PK::ECS::Tokens::TokenCullCascades>(engineCull),
                         Step::Token<PK::ECS::Tokens::TokenCullCubeFaces>(engineCull),
-                        Step::Token<PK::ECS::Tokens::AccelerationStructureBuildToken>(engineBuildAccelerationStructure)
+                        Step::Token<PK::ECS::Tokens::TokenAccelerationStructureBuild>(engineBuildAccelerationStructure),
+                        Step::Token<PK::ECS::Tokens::TokenRenderCollectDrawCalls>(engineGizmos),
+                        Step::Token<PK::ECS::Tokens::TokenRenderAfterPostEffects>(engineGizmos),
                     }
                 },
                 {
                     assetDatabase,
                     {
-                        Step::Token<AssetImportToken<ApplicationConfig>>(renderPipeline)
+                        Step::Token<AssetImportToken<ApplicationConfig>>(renderPipeline),
+                        Step::Token<AssetImportToken<ApplicationConfig>>(engineGizmos)
+                    }
+                },
+                {
+                    engineGizmos,
+                    {
+                        Step::Token<PK::ECS::Tokens::IGizmosRenderer>(engineDebug)
                     }
                 }
             });

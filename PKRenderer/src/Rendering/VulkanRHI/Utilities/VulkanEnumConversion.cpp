@@ -752,6 +752,30 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
         return VK_BLEND_FACTOR_MAX_ENUM;
     }
 
+    VkLogicOp GetLogicOp(Rendering::Structs::LogicOp op)
+    {
+        switch (op)
+        {
+            case LogicOp::Clear: return VK_LOGIC_OP_CLEAR;
+            case LogicOp::And: return VK_LOGIC_OP_AND;
+            case LogicOp::AndReverse: return VK_LOGIC_OP_AND_REVERSE;
+            case LogicOp::Copy: return VK_LOGIC_OP_COPY;
+            case LogicOp::AndInverted: return VK_LOGIC_OP_AND_INVERTED;
+            case LogicOp::None: return VK_LOGIC_OP_NO_OP;
+            case LogicOp::XOR: return VK_LOGIC_OP_XOR;
+            case LogicOp::OR: return VK_LOGIC_OP_OR;
+            case LogicOp::NOR: return VK_LOGIC_OP_NOR;
+            case LogicOp::Equal: return VK_LOGIC_OP_EQUIVALENT;
+            case LogicOp::Invert: return VK_LOGIC_OP_INVERT;
+            case LogicOp::OrReverse: return VK_LOGIC_OP_OR_REVERSE;
+            case LogicOp::CopyInverted: return VK_LOGIC_OP_COPY_INVERTED;
+            case LogicOp::OrInverted: return VK_LOGIC_OP_OR_INVERTED;
+            case LogicOp::NAND: return VK_LOGIC_OP_NAND;
+            case LogicOp::Set: return VK_LOGIC_OP_SET;
+        }
+        return VK_LOGIC_OP_MAX_ENUM;
+    }
+
     VkCullModeFlagBits GetCullMode(CullMode op)
     {
         switch (op)
@@ -774,6 +798,26 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
         }
 
         return VK_CONSERVATIVE_RASTERIZATION_MODE_MAX_ENUM_EXT;
+    }
+
+    VkPrimitiveTopology GetTopology(Rendering::Structs::Topology topology)
+    {
+        switch (topology)
+        {
+            case Topology::PointList: return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            case Topology::LineList: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            case Topology::LineStrip: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+            case Topology::TriangleList: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            case Topology::TriangleStrip: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            case Topology::TriangleFan: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
+            case Topology::LineListWithAdjacency: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
+            case Topology::LineStripWithAdjacency: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
+            case Topology::TriangleListWithAdjacency: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
+            case Topology::TriangleStripWithAdjacency: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
+            case Topology::PatchList: return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+        }
+
+        return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
     }
 
     VkFrontFace GetFrontFace(FrontFace face)

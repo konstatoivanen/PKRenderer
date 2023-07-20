@@ -86,6 +86,21 @@ namespace PK::Rendering::Structs
         Point,
     };
 
+    enum class Topology : uint8_t
+    {
+        PointList,
+        LineList,
+        LineStrip,
+        TriangleList,
+        TriangleStrip,
+        TriangleFan,
+        LineListWithAdjacency,
+        LineStripWithAdjacency,
+        TriangleListWithAdjacency,
+        TriangleStripWithAdjacency,
+        PatchList
+    };
+
     enum class WrapMode : uint8_t
     {
         Clamp,
@@ -95,16 +110,36 @@ namespace PK::Rendering::Structs
         Border
     };
 
-    enum class ColorMask
+    enum class ColorMask : uint8_t
     {
-        NONE = 0,
-        R = 0x00000001,
-        G = 0x00000002,
-        B = 0x00000004,
-        A = 0x00000008,
+        NONE = 0u,
+        R = 0x1u,
+        G = 0x2u,
+        B = 0x4u,
+        A = 0x8u,
         RG = R | G,
         RGB = RG | B,
         RGBA = RGB | A,
+    };
+
+    enum class LogicOp : uint8_t
+    {
+        Clear,
+        And,
+        AndReverse,
+        Copy,
+        AndInverted,
+        None,
+        XOR,
+        OR,
+        NOR,
+        Equal,
+        Invert,
+        OrReverse,
+        CopyInverted,
+        OrInverted,
+        NAND,
+        Set
     };
 
     enum class FrontFace : uint8_t

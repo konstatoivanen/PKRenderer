@@ -1,8 +1,8 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Core/ApplicationConfig.h"
-#include "ECS/Contextual/Tokens/CullingTokens.h"
-#include "ECS/Contextual/EntityViews/LightRenderableView.h"
+#include "ECS/Tokens/CullingTokens.h"
+#include "ECS/EntityViews/LightRenderableView.h"
 #include "Rendering/Objects/RenderTexture.h"
 #include "Rendering/Objects/ConstantBuffer.h"
 #include "Rendering/Objects/Shader.h"

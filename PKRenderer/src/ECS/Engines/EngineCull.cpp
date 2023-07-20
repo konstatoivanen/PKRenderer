@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "EngineCull.h"
-#include "ECS/Contextual/EntityViews/BaseRenderableView.h"
+#include "ECS/EntityViews/BaseRenderableView.h"
 #include "Math/FunctionsIntersect.h"
 
 namespace PK::ECS::Engines

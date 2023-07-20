@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "EngineDebug.h"
-#include "ECS/Contextual/Builders/Builders.h"
+#include "ECS/Builders/Builders.h"
 #include "Rendering/Objects/VirtualMesh.h"
 #include "Rendering/MeshUtility.h"
 #include "Rendering/HashCache.h"
@@ -115,5 +115,25 @@ namespace PK::ECS::Engines
             meshes[i].transform->position.y = sin(time + (10 * (float)i / meshes.count)) * 10;
         }
         */
+    }
+
+    void EngineDebug::Step(Tokens::IGizmosRenderer* gizmos)
+    {
+        auto cullables = m_entityDb->Query<EntityViews::BaseRenderableView>((uint32_t)ECS::ENTITY_GROUPS::ACTIVE);
+
+        gizmos->SetColor(PK_COLOR_GREEN);
+
+        for (auto i = 0u; i < cullables.count; ++i)
+        {
+            auto cullable = &cullables[i];
+            auto flags = cullable->renderable->flags;
+
+            if ((flags & RenderableFlags::Mesh) == 0u)
+            {
+                continue;
+            }
+
+            gizmos->DrawBounds(cullables[i].bounds->worldAABB);
+        }
     }
 }

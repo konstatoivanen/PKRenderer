@@ -1239,7 +1239,7 @@
     <ClInclude Include="src\Core\CommandConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Engines\EngineCommandInput.h">
+    <ClInclude Include="src\ECS\Engines\EngineCommandInput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\ApplicationConfig.h">
@@ -1251,16 +1251,16 @@
     <ClInclude Include="src\Rendering\HashCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Tokens\TimeToken.h">
+    <ClInclude Include="src\ECS\Tokens\TimeToken.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Tokens\ViewProjectionToken.h">
+    <ClInclude Include="src\ECS\Tokens\ViewProjectionToken.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Objects\ConstantBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Engines\EngineEditorCamera.h">
+    <ClInclude Include="src\ECS\Engines\EngineEditorCamera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Passes\PassPostEffects.h">
@@ -1281,58 +1281,58 @@
     <ClInclude Include="src\Rendering\Objects\BindArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Components\Transform.h">
+    <ClInclude Include="src\ECS\Components\Transform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Components\Bounds.h">
+    <ClInclude Include="src\ECS\Components\Bounds.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Components\Renderable.h">
+    <ClInclude Include="src\ECS\Components\Renderable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Components\MeshReference.h">
+    <ClInclude Include="src\ECS\Components\MeshReference.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Components\Light.h">
+    <ClInclude Include="src\ECS\Components\Light.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\EntityViews\BaseRenderableView.h">
+    <ClInclude Include="src\ECS\EntityViews\BaseRenderableView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\EntityViews\TransformView.h">
+    <ClInclude Include="src\ECS\EntityViews\TransformView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\EntityViews\MeshRenderableView.h">
+    <ClInclude Include="src\ECS\EntityViews\MeshRenderableView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\EntityViews\LightRenderableView.h">
+    <ClInclude Include="src\ECS\EntityViews\LightRenderableView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\EntityViews\LightSphereView.h">
+    <ClInclude Include="src\ECS\EntityViews\LightSphereView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Implementers\MeshRenderableImplementer.h">
+    <ClInclude Include="src\ECS\Implementers\MeshRenderableImplementer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Implementers\LightImplementer.h">
+    <ClInclude Include="src\ECS\Implementers\LightImplementer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Engines\EngineUpdateTransforms.h">
+    <ClInclude Include="src\ECS\Engines\EngineUpdateTransforms.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Engines\EngineCull.h">
+    <ClInclude Include="src\ECS\Engines\EngineCull.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Services\Batcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Tokens\CullingTokens.h">
+    <ClInclude Include="src\ECS\Tokens\CullingTokens.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Objects\Material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Components\Materials.h">
+    <ClInclude Include="src\ECS\Components\Materials.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utilities\Handle.h">
@@ -1344,7 +1344,7 @@
     <ClInclude Include="src\Rendering\Objects\ShaderPropertyBlock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Builders\Builders.h">
+    <ClInclude Include="src\ECS\Builders\Builders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utilities\VectorUtilities.h">
@@ -1365,7 +1365,7 @@
     <ClInclude Include="src\Math\FunctionsIntersect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Engines\EngineDebug.h">
+    <ClInclude Include="src\ECS\Engines\EngineDebug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Passes\PassGeometry.h">
@@ -1392,7 +1392,7 @@
     <ClInclude Include="src\Utilities\BufferIterator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.h">
+    <ClInclude Include="src\ECS\Engines\EnginePKAssetBuilder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanLayoutCache.h">
@@ -1404,7 +1404,7 @@
     <ClInclude Include="src\Rendering\Passes\PassVolumeFog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Engines\EngineScreenshot.h">
+    <ClInclude Include="src\ECS\Engines\EngineScreenshot.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Structs\FenceRef.h">
@@ -1437,10 +1437,10 @@
     <ClInclude Include="src\Rendering\VulkanRHI\Objects\VulkanAccelerationStructure.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Engines\EngineBuildAccelerationStructure.h">
+    <ClInclude Include="src\ECS\Engines\EngineBuildAccelerationStructure.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Contextual\Tokens\AccelerationStructureBuildToken.h">
+    <ClInclude Include="src\ECS\Tokens\AccelerationStructureBuildToken.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Objects\RayTracingAccelerationStructure.h">
@@ -1474,6 +1474,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\BuiltInResources.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Engines\EngineGizmos.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Tokens\GizmosToken.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Tokens\RenderingTokens.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2027,6 +2036,7 @@
     <None Include="res\shaders\includes\SpatialFilter.glsl" />
     <None Include="res\shaders\CS_VolumeFogInject.shader" />
     <None Include="res\shaders\CS_VolumeFogDensity.shader" />
+    <None Include="res\shaders\SH_VS_Gizmos.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
@@ -2155,7 +2165,7 @@
     <ClCompile Include="src\Core\CommandConfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ECS\Contextual\Engines\EngineCommandInput.cpp">
+    <ClCompile Include="src\ECS\Engines\EngineCommandInput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\ApplicationConfig.cpp">
@@ -2167,7 +2177,7 @@
     <ClCompile Include="src\Rendering\Objects\ConstantBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ECS\Contextual\Engines\EngineEditorCamera.cpp">
+    <ClCompile Include="src\ECS\Engines\EngineEditorCamera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Passes\PassPostEffects.cpp">
@@ -2191,16 +2201,16 @@
     <ClCompile Include="src\Rendering\Objects\BindArray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ECS\Contextual\Engines\EngineUpdateTransforms.cpp">
+    <ClCompile Include="src\ECS\Engines\EngineUpdateTransforms.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ECS\Contextual\Engines\EngineCull.cpp">
+    <ClCompile Include="src\ECS\Engines\EngineCull.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Services\Batcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ECS\Contextual\Tokens\CullingTokens.cpp">
+    <ClCompile Include="src\ECS\Tokens\CullingTokens.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Objects\Material.cpp">
@@ -2209,7 +2219,7 @@
     <ClCompile Include="src\Rendering\Objects\ShaderPropertyBlock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ECS\Contextual\Builders\Builders.cpp">
+    <ClCompile Include="src\ECS\Builders\Builders.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Math\FunctionsMatrix.cpp">
@@ -2224,7 +2234,7 @@
     <ClCompile Include="src\Math\FunctionsIntersect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ECS\Contextual\Engines\EngineDebug.cpp">
+    <ClCompile Include="src\ECS\Engines\EngineDebug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Passes\PassGeometry.cpp">
@@ -2236,7 +2246,7 @@
     <ClCompile Include="src\Utilities\HashHelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ECS\Contextual\Engines\EnginePKAssetBuilder.cpp">
+    <ClCompile Include="src\ECS\Engines\EnginePKAssetBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanLayoutCache.cpp">
@@ -2248,7 +2258,7 @@
     <ClCompile Include="src\Rendering\Passes\PassVolumeFog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ECS\Contextual\Engines\EngineScreenshot.cpp">
+    <ClCompile Include="src\ECS\Engines\EngineScreenshot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanSparsePageTable.cpp">
@@ -2266,7 +2276,7 @@
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanAccelerationStructure.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ECS\Contextual\Engines\EngineBuildAccelerationStructure.cpp">
+    <ClCompile Include="src\ECS\Engines\EngineBuildAccelerationStructure.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Passes\PassTemporalAntialiasing.cpp">
@@ -2288,6 +2298,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\BuiltInResources.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\Engines\EngineGizmos.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

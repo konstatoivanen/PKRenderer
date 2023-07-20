@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Core/ApplicationConfig.h"
-#include "ECS/Contextual/Tokens/CullingTokens.h"
+#include "ECS/Tokens/CullingTokens.h"
 #include "Rendering/Objects/RenderTexture.h"
 #include "Rendering/Objects/ConstantBuffer.h"
 #include "Rendering/Objects/Shader.h"

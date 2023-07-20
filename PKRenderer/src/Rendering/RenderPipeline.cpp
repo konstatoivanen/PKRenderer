@@ -3,7 +3,7 @@
 #include "RenderPipeline.h"
 #include "Rendering/MeshUtility.h"
 #include "Rendering/HashCache.h"
-#include "ECS/Contextual/Tokens/AccelerationStructureBuildToken.h"
+#include "ECS/Tokens/AccelerationStructureBuildToken.h"
 #include "Math/FunctionsMisc.h"
 #include "Math/FunctionsColor.h"
 
@@ -104,6 +104,7 @@ namespace PK::Rendering
                 { ElementType::Float4x4, hash->pk_MATRIX_P },
                 { ElementType::Float4x4, hash->pk_MATRIX_I_P },
                 { ElementType::Float4x4, hash->pk_MATRIX_VP },
+                { ElementType::Float4x4, hash->pk_MATRIX_VP_N },
                 { ElementType::Float4x4, hash->pk_MATRIX_I_VP },
                 { ElementType::Float4x4, hash->pk_MATRIX_L_I_V },
                 { ElementType::Float4x4, hash->pk_MATRIX_L_VP },
@@ -233,6 +234,7 @@ namespace PK::Rendering
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_P, matrix_p);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_P, matrix_i_p);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_VP, matrix_vp);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_VP_N, matrix_vp_n);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_VP, matrix_i_vp);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_I_V, matrix_l_i_v);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP, matrix_l_vp);
@@ -284,10 +286,17 @@ namespace PK::Rendering
 
         auto cmdtransfer = queues->GetCommandBuffer(QueueType::Transfer);
         m_passSceneGI.PreRender(cmdtransfer, resolution);
-
         m_batcher.BeginCollectDrawCalls();
-        m_passGeometry.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_zfar - m_znear);
-        m_passLights.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_znear, m_zfar);
+        {
+            m_sequencer->NextEmplace<Tokens::TokenRenderCollectDrawCalls>
+            (
+                this, 0, cmdtransfer, m_viewProjectionMatrix, m_znear, m_zfar, &m_visibilityList
+            );
+
+            // @TODO move these to engines
+            m_passGeometry.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_zfar - m_znear);
+            m_passLights.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_znear, m_zfar);
+        }
         m_batcher.EndCollectDrawCalls(cmdtransfer);
 
         auto* cmdgraphics = queues->GetCommandBuffer(QueueType::Graphics);
@@ -296,8 +305,10 @@ namespace PK::Rendering
         // Prune voxels & build AS.
         // These can happen before the end of last frame. 
         m_passSceneGI.PruneVoxels(cmdcompute);
-        Tokens::AccelerationStructureBuildToken token{ QueueType::Compute, m_sceneStructure.get(), RenderableFlags::DefaultMesh, {}, false };
-        m_sequencer->Next<Tokens::AccelerationStructureBuildToken>(this, &token);
+        m_sequencer->NextEmplace<Tokens::TokenAccelerationStructureBuild>
+        (
+            this, 0, QueueType::Compute, m_sceneStructure.get(), RenderableFlags::DefaultMesh, BoundingBox(), false
+        );
         GraphicsAPI::SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         queues->Submit(QueueType::Compute, &cmdcompute);
 
@@ -366,6 +377,14 @@ namespace PK::Rendering
         m_bloom.Render(cmdgraphics, m_renderTarget.get());
         m_passPostEffectsComposite.Render(cmdgraphics, m_renderTarget.get());
         cmdgraphics->EndDebugScope();
+
+        cmdgraphics->BeginDebugScope("AfterPostEffects", PK_COLOR_GREEN);
+        m_sequencer->NextEmplace<Tokens::TokenRenderAfterPostEffects>
+        (
+            this, 0, cmdgraphics, m_viewProjectionMatrix, m_znear, m_zfar, m_renderTarget.get()
+        );
+        cmdgraphics->EndDebugScope();
+
         queues->Submit(QueueType::Graphics, &cmdgraphics);
 
         // Blit to window

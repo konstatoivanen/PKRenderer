@@ -1,9 +1,9 @@
 #include "PrecompiledHeader.h"
 #include "Builders.h"
 #include "Rendering/HashCache.h"
-#include "ECS/Contextual/Implementers/MeshRenderableImplementer.h"
-#include "ECS/Contextual/Implementers/LightImplementer.h"
-#include "ECS/Contextual/EntityViews/LightSphereView.h"
+#include "ECS/Implementers/MeshRenderableImplementer.h"
+#include "ECS/Implementers/LightImplementer.h"
+#include "ECS/EntityViews/LightSphereView.h"
 #include "Math/FunctionsIntersect.h"
 
 namespace PK::ECS::Builders

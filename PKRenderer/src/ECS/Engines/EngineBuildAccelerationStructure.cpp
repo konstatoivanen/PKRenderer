@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "EngineBuildAccelerationStructure.h"
-#include "ECS/Contextual/EntityViews/BaseRenderableView.h"
-#include "ECS/Contextual/EntityViews/MeshRenderableView.h"
+#include "ECS/EntityViews/BaseRenderableView.h"
+#include "ECS/EntityViews/MeshRenderableView.h"
 #include "Math/FunctionsIntersect.h"
 
 namespace PK::ECS::Engines
@@ -14,7 +14,7 @@ namespace PK::ECS::Engines
     {
     }
 
-    void EngineBuildAccelerationStructure::Step(Tokens::AccelerationStructureBuildToken* token)
+    void EngineBuildAccelerationStructure::Step(Tokens::TokenAccelerationStructureBuild* token)
     {
         PK_THROW_ASSERT(token != nullptr && token->structure, "Invalid token supplied!");
 

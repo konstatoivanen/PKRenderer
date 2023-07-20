@@ -4,10 +4,10 @@
 #include "Rendering/Objects/Mesh.h"
 #include "Rendering/Objects/VirtualMesh.h"
 #include "Rendering/Objects/Material.h"
-#include "ECS/Contextual/EntityViews/TransformView.h"
-#include "ECS/Contextual/EntityViews/BaseRenderableView.h"
-#include "ECS/Contextual/EntityViews/MeshRenderableView.h"
-#include "ECS/Contextual/EntityViews/LightRenderableView.h"
+#include "ECS/EntityViews/TransformView.h"
+#include "ECS/EntityViews/BaseRenderableView.h"
+#include "ECS/EntityViews/MeshRenderableView.h"
+#include "ECS/EntityViews/LightRenderableView.h"
 
 namespace PK::ECS::Builders
 {

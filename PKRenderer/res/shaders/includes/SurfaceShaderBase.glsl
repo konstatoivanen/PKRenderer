@@ -100,7 +100,6 @@ float3 GetIndirectLight_VXGI(const BRDFSurf surf,const float3 worldpos, const fl
     #define PK_META_BRDF_INDIRECT GetIndirectLight_VXGI
 #else
     #define PK_SURF_TEX(t, uv) tex2D(t, uv)
-    #define PK_META_EARLY_CLIP_UVW(w, c, n) c = GetFragmentClipUVW(); 
     #define PK_META_DECLARE_SURFACE_OUTPUT out float4 SV_Target0;
     #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) SV_Target0 = color
     #define PK_META_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)

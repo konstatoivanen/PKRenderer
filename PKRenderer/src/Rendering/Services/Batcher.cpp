@@ -3,8 +3,8 @@
 #include "Rendering/HashCache.h"
 #include "Rendering/GraphicsAPI.h"
 #include "Rendering/Structs/StructIndirectArguments.h"
-#include "ECS/Contextual/EntityViews/MeshRenderableView.h"
-#include "ECS/Contextual/EntityViews/LightRenderableView.h"
+#include "ECS/EntityViews/MeshRenderableView.h"
+#include "ECS/EntityViews/LightRenderableView.h"
 #include "Utilities/VectorUtilities.h"
 #include "Math/FunctionsIntersect.h"
 

@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "PassGeometry.h"
-#include "ECS/Contextual/EntityViews/MeshRenderableView.h"
+#include "ECS/EntityViews/MeshRenderableView.h"
 #include "Math/FunctionsIntersect.h"
 #include "Rendering/HashCache.h"
 
@@ -57,7 +57,7 @@ namespace PK::Rendering::Passes
 
     void PassGeometry::RenderForward(CommandBuffer* cmd)
     {
-        cmd->BeginDebugScope("Forward Opaque", PK_COLOR_BLUE);
+        cmd->BeginDebugScope("Forward.Opaque", PK_COLOR_BLUE);
         m_batcher->Render(cmd, m_passGroup);
         cmd->EndDebugScope();
     }

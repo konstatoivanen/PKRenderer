@@ -97,6 +97,13 @@ namespace PK::Core::Services
 
             inline void Next(int condition) { Next<void>(this, nullptr, condition); }
 
+            template<typename T, typename ... Args>
+            void NextEmplace(const void* engine, int condition, Args&& ... args)
+            {
+                auto token = T(std::forward<Args>(args)...);
+                Next<T>(engine, &token, condition);
+            }
+
             inline void Release() { m_steps.clear(); }
 
         private:

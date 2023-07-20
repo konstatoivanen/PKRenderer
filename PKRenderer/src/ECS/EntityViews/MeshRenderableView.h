@@ -1,8 +1,8 @@
 #pragma once
 #include "ECS/EntityDatabase.h"
-#include "ECS/Contextual/Components/Transform.h"
-#include "ECS/Contextual/Components/MeshReference.h"
-#include "ECS/Contextual/Components/Materials.h"
+#include "ECS/Components/Transform.h"
+#include "ECS/Components/MeshReference.h"
+#include "ECS/Components/Materials.h"
 
 namespace PK::ECS::EntityViews
 {
