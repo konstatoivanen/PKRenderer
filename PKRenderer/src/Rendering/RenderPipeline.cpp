@@ -18,8 +18,9 @@ namespace PK::Rendering
     using namespace Structs;
 
     RenderPipeline::RenderPipeline(AssetDatabase* assetDatabase, EntityDatabase* entityDb, Sequencer* sequencer, ApplicationConfig* config) :
+        m_passHierarchicalDepth(assetDatabase, config),
+        m_passEnvBackground(assetDatabase),
         m_passPostEffectsComposite(assetDatabase, config),
-        m_passGeometry(entityDb, sequencer, &m_batcher),
         m_passLights(assetDatabase, entityDb, sequencer, &m_batcher, config),
         m_passSceneGI(assetDatabase, config),
         m_passVolumeFog(assetDatabase, config),
@@ -33,12 +34,6 @@ namespace PK::Rendering
         m_visibilityList(1024),
         m_resizeFrameIndex(0ull)
     {
-        m_EnvBackgroundShader = assetDatabase->Find<Shader>("SH_VS_EnvBackground");
-        m_IntegrateEnvSHShader = assetDatabase->Find<Shader>("CS_IntegrateEnvSH");
-        m_computeHierachicalDepth = assetDatabase->Find<Shader>("CS_HierachicalDepth");
-
-        m_EnvSHBuffer = Buffer::Create(ElementType::Float4, 4, BufferUsage::DefaultStorage, "Scene.Env.SHBuffer");
-
         RenderTextureDescriptor descriptor{};
         descriptor.resolution = { config->InitialWidth, config->InitialHeight, 1 };
         descriptor.colorFormats[0] = TextureFormat::RGBA16F;
@@ -61,22 +56,6 @@ namespace PK::Rendering
 
         prevDesc.format = TextureFormat::Depth32F;
         m_previousDepth = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Depth");
-
-        TextureDescriptor hizDesc{};
-        hizDesc.samplerType = SamplerType::Sampler2DArray;
-        hizDesc.format = TextureFormat::R16F;
-        hizDesc.sampler.filterMin = FilterMode::Bilinear;
-        hizDesc.sampler.filterMag = FilterMode::Bilinear;
-        hizDesc.sampler.wrap[0] = WrapMode::Border;
-        hizDesc.sampler.wrap[1] = WrapMode::Border;
-        hizDesc.sampler.wrap[2] = WrapMode::Border;
-        hizDesc.sampler.borderColor = BorderColor::FloatClear;
-        hizDesc.sampler.mipMax = 8.0f;
-        hizDesc.resolution = { config->InitialWidth, config->InitialHeight, 1 };
-        hizDesc.levels = 9u;
-        hizDesc.layers = 3u;
-        hizDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
-        m_hierarchicalDepth = Texture::Create(hizDesc, "Scene.HierarchicalDepth");
 
         m_sceneStructure = AccelerationStructure::Create("Scene");
 
@@ -173,8 +152,6 @@ namespace PK::Rendering
         GraphicsAPI::SetTexture(hash->pk_LightCookies, lightCookies);
         GraphicsAPI::SetBuffer(hash->pk_PerFrameConstants, *m_constantsPerFrame.get());
         GraphicsAPI::SetBuffer(hash->pk_PostEffectsParams, *m_constantsPostProcess.get());
-        GraphicsAPI::SetBuffer(hash->pk_SceneEnv_SH, m_EnvSHBuffer.get());
-
         PK_LOG_HEADER("----------RENDER PIPELINE INITIALIZED----------");
     }
 
@@ -200,11 +177,9 @@ namespace PK::Rendering
 
         auto matrix_p_n = token->projection;
         auto matrix_p = Functions::GetPerspectiveJittered(matrix_p_n, jitter);
-        auto matrix_i_p = glm::inverse(matrix_p);
         auto matrix_v = token->view;
         auto matrix_i_v = glm::inverse(matrix_v);
         auto matrix_vp = matrix_p * matrix_v;
-        auto matrix_i_vp = glm::inverse(matrix_vp);
         auto matrix_vp_n = matrix_p_n * matrix_v;
         float n = m_znear = Functions::GetZNearFromProj(matrix_p);
         float f = m_zfar = Functions::GetZFarFromProj(matrix_p);
@@ -232,10 +207,10 @@ namespace PK::Rendering
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_V, matrix_v);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_V, matrix_i_v);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_P, matrix_p);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_P, matrix_i_p);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_P, glm::inverse(matrix_p));
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_VP, matrix_vp);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_VP_N, matrix_vp_n);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_VP, matrix_i_vp);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_VP, glm::inverse(matrix_vp));
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_I_V, matrix_l_i_v);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP, matrix_l_vp);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP_N, matrix_l_vp_n);
@@ -269,10 +244,7 @@ namespace PK::Rendering
         m_previousColor->Validate(resolution);
         m_previousNormals->Validate(resolution);
         m_previousDepth->Validate(resolution);
-        m_hierarchicalDepth->Validate({ resolution.x, resolution.y, 1u });
-
         GraphicsAPI::SetTexture(hash->pk_ScreenDepthCurrent, m_renderTarget->GetDepth());
-        GraphicsAPI::SetTexture(hash->pk_ScreenDepthHierachical, m_hierarchicalDepth.get());
         GraphicsAPI::SetTexture(hash->pk_ScreenNormalsCurrent, m_renderTarget->GetColor(1));
         GraphicsAPI::SetTexture(hash->pk_ScreenDepthPrevious, m_previousDepth.get());
         GraphicsAPI::SetTexture(hash->pk_ScreenNormalsPrevious, m_previousNormals.get());
@@ -288,13 +260,7 @@ namespace PK::Rendering
         m_passSceneGI.PreRender(cmdtransfer, resolution);
         m_batcher.BeginCollectDrawCalls();
         {
-            m_sequencer->NextEmplace<Tokens::TokenRenderCollectDrawCalls>
-            (
-                this, 0, cmdtransfer, m_viewProjectionMatrix, m_znear, m_zfar, &m_visibilityList
-            );
-
-            // @TODO move these to engines
-            m_passGeometry.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_zfar - m_znear);
+            DispatchRenderEvent(cmdtransfer, Tokens::RenderEvent::CollectDraws, nullptr, &m_forwardPassGroup);
             m_passLights.Cull(this, &m_visibilityList, m_viewProjectionMatrix, m_znear, m_zfar);
         }
         m_batcher.EndCollectDrawCalls(cmdtransfer);
@@ -326,8 +292,9 @@ namespace PK::Rendering
         cmdgraphics->SetRenderTarget(m_renderTarget.get(), { 1 }, true, true);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         cmdgraphics->ClearDepth(1.0f, 0u);
-        m_passGeometry.RenderGBuffer(cmdgraphics);
-        ComputeHierarchicalDepth(cmdgraphics);
+
+        DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::GBuffer, "Forward.GBuffer", nullptr);
+        m_passHierarchicalDepth.Compute(cmdgraphics, resolution);
         queues->Submit(QueueType::Graphics, &cmdgraphics);
 
         m_passFilmGrain.Compute(cmdcompute);
@@ -335,7 +302,7 @@ namespace PK::Rendering
         m_histogram.Render(cmdcompute, m_bloom.GetTexture());
         m_depthOfField.ComputeAutoFocus(cmdcompute, resolution.y);
         m_passVolumeFog.ComputeDensity(cmdcompute, resolution);
-        cmdcompute->Dispatch(m_IntegrateEnvSHShader, 0, { 1u, 1u, 1u });
+        m_passEnvBackground.ComputeSH(cmdcompute);
         queues->Submit(QueueType::Compute, &cmdcompute);
         queues->Sync(QueueType::Graphics, QueueType::Compute);
 
@@ -350,7 +317,7 @@ namespace PK::Rendering
         queues->Sync(QueueType::Compute, QueueType::Graphics, -1);
 
         // Voxelize scene & reproject gi
-        m_passSceneGI.Preprocess(cmdgraphics, &m_batcher, m_passGeometry.GetPassGroup());
+        m_passSceneGI.Preprocess(cmdgraphics, &m_batcher, m_forwardPassGroup);
         m_passVolumeFog.Compute(cmdgraphics, m_renderTarget->GetResolution());
         queues->Submit(QueueType::Graphics, &cmdgraphics);
         queues->Sync(QueueType::Graphics, QueueType::Compute);
@@ -360,30 +327,27 @@ namespace PK::Rendering
         m_passSceneGI.RenderGI(cmdgraphics);
         cmdgraphics->SetRenderTarget(m_renderTarget.get(), { 0 }, true, true);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
-        m_passGeometry.RenderForward(cmdgraphics);
-        cmdgraphics->Blit(m_EnvBackgroundShader);
-
+        DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::ForwardOpaque, "Forward.Opaque", nullptr);
+        
+        m_passEnvBackground.RenderBackground(cmdgraphics);
         m_passVolumeFog.Render(cmdgraphics, m_renderTarget.get());
 
-        // @TODO Add trasparent forward stuff here
+        DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::ForwardTransparent, "Forward.Transparent", nullptr);
 
         // Cache forward output of current frame
         cmdgraphics->Blit(m_renderTarget->GetColor(0u), m_previousColor.get(), {}, {}, FilterMode::Point);
 
         // Post Effects
         cmdgraphics->BeginDebugScope("PostEffects", PK_COLOR_YELLOW);
-        m_temporalAntialiasing.Render(cmdgraphics, m_renderTarget.get());
-        m_depthOfField.Render(cmdgraphics, m_renderTarget.get());
-        m_bloom.Render(cmdgraphics, m_renderTarget.get());
-        m_passPostEffectsComposite.Render(cmdgraphics, m_renderTarget.get());
+        {
+            m_temporalAntialiasing.Render(cmdgraphics, m_renderTarget.get());
+            m_depthOfField.Render(cmdgraphics, m_renderTarget.get());
+            m_bloom.Render(cmdgraphics, m_renderTarget.get());
+            m_passPostEffectsComposite.Render(cmdgraphics, m_renderTarget.get());
+        }
         cmdgraphics->EndDebugScope();
 
-        cmdgraphics->BeginDebugScope("AfterPostEffects", PK_COLOR_GREEN);
-        m_sequencer->NextEmplace<Tokens::TokenRenderAfterPostEffects>
-        (
-            this, 0, cmdgraphics, m_viewProjectionMatrix, m_znear, m_zfar, m_renderTarget.get()
-        );
-        cmdgraphics->EndDebugScope();
+        DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::AfterPostEffects, "AfterPostEffects", nullptr);
 
         queues->Submit(QueueType::Graphics, &cmdgraphics);
 
@@ -397,14 +361,6 @@ namespace PK::Rendering
     {
         auto hash = HashCache::Get();
         auto config = token->asset;
-
-        auto tex = token->assetDatabase->Load<Texture>(token->asset->FileBackgroundTexture.value.c_str());
-        auto sampler = tex->GetSamplerDescriptor();
-        sampler.wrap[0] = WrapMode::Mirror;
-        sampler.wrap[1] = WrapMode::Mirror;
-        sampler.wrap[2] = WrapMode::Mirror;
-        tex->SetSampler(sampler);
-        GraphicsAPI::SetTexture(hash->pk_SceneEnv, tex);
 
         m_constantsPerFrame->Set<float>(hash->pk_SceneEnv_Exposure, config->BackgroundExposure);
 
@@ -436,30 +392,30 @@ namespace PK::Rendering
         m_constantsPostProcess->Set<float4>(hash->pk_ChannelMixerBlue, Functions::HexToRGB(config->CC_ChannelMixerBlue));
         m_constantsPostProcess->FlushBuffer(QueueType::Transfer);
 
+        m_passEnvBackground.OnUpdateParameters(token);
         m_depthOfField.OnUpdateParameters(config);
         m_passVolumeFog.OnUpdateParameters(config);
     }
 
-    void RenderPipeline::ComputeHierarchicalDepth(CommandBuffer* cmd)
+    void RenderPipeline::DispatchRenderEvent(Objects::CommandBuffer* cmd, ECS::Tokens::RenderEvent renderEvent, const char* name, uint32_t* outPassGroup)
     {
-        auto hash = HashCache::Get();
-        auto resolution = m_hierarchicalDepth->GetResolution();
+        if (name != nullptr)
+        {
+            cmd->BeginDebugScope(name, PK_COLOR_GREEN);
+        }
 
-        resolution.x >>= 1u;
-        resolution.y >>= 1u;
-        GraphicsAPI::SetImage(hash->_DestinationTex, m_hierarchicalDepth.get(), { 0, 0, 1, 3 });
-        GraphicsAPI::SetImage(hash->_DestinationMip1, m_hierarchicalDepth.get(), { 1, 0, 1, 3 });
-        GraphicsAPI::SetImage(hash->_DestinationMip2, m_hierarchicalDepth.get(), { 2, 0, 1, 3 });
-        GraphicsAPI::SetImage(hash->_DestinationMip3, m_hierarchicalDepth.get(), { 3, 0, 1, 3 });
-        GraphicsAPI::SetImage(hash->_DestinationMip4, m_hierarchicalDepth.get(), { 4, 0, 1, 3 });
-        cmd->Dispatch(m_computeHierachicalDepth, 0u, resolution);
+        auto token = Tokens::TokenRenderEvent(cmd, m_renderTarget.get(), &m_visibilityList, &m_batcher, m_viewProjectionMatrix, m_znear, m_zfar);
 
-        resolution.x >>= 4u;
-        resolution.y >>= 4u;
-        GraphicsAPI::SetImage(hash->_DestinationMip1, m_hierarchicalDepth.get(), { 5, 0, 1, 3 });
-        GraphicsAPI::SetImage(hash->_DestinationMip2, m_hierarchicalDepth.get(), { 6, 0, 1, 3 });
-        GraphicsAPI::SetImage(hash->_DestinationMip3, m_hierarchicalDepth.get(), { 7, 0, 1, 3 });
-        GraphicsAPI::SetImage(hash->_DestinationMip4, m_hierarchicalDepth.get(), { 8, 0, 1, 3 });
-        cmd->Dispatch(m_computeHierachicalDepth, 1u, resolution);
+        m_sequencer->Next<Tokens::TokenRenderEvent>(this, &token, (int)renderEvent);
+        
+        if (outPassGroup != nullptr)
+        {
+            *outPassGroup = token.outPassGroup;
+        }
+
+        if (name != nullptr)
+        {
+            cmd->EndDebugScope();
+        }
     }
 }

@@ -550,10 +550,12 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Core\Services\AssetDatabase.h" />
     <ClInclude Include="src\ECS\Engines\EngineBuildAccelerationStructure.h" />
     <ClInclude Include="src\ECS\Engines\EngineDebug.h" />
+    <ClInclude Include="src\ECS\Engines\EngineDrawGeometry.h" />
     <ClInclude Include="src\ECS\Engines\EngineGizmos.h" />
     <ClInclude Include="src\ECS\Engines\EnginePKAssetBuilder.h" />
     <ClInclude Include="src\ECS\Engines\EngineScreenshot.h" />
     <ClInclude Include="src\ECS\Tokens\AccelerationStructureBuildToken.h" />
+    <ClInclude Include="src\ECS\Tokens\BatcherToken.h" />
     <ClInclude Include="src\ECS\Tokens\GizmosToken.h" />
     <ClInclude Include="src\ECS\Tokens\RenderingTokens.h" />
     <ClInclude Include="src\Rendering\BuiltInResources.h" />
@@ -562,10 +564,11 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\Objects\RayTracingAccelerationStructure.h" />
     <ClInclude Include="src\Rendering\Objects\ShaderBindingTable.h" />
     <ClInclude Include="src\Rendering\Objects\VirtualMesh.h" />
+    <ClInclude Include="src\Rendering\Passes\PassEnvBackground.h" />
     <ClInclude Include="src\Rendering\Passes\PassFilmGrain.h" />
+    <ClInclude Include="src\Rendering\Passes\PassHierarchicalDepth.h" />
     <ClInclude Include="src\Rendering\Passes\PassTemporalAntialiasing.h" />
     <ClInclude Include="src\Rendering\Passes\PassVolumeFog.h" />
-    <ClInclude Include="src\Rendering\Passes\PassGeometry.h" />
     <ClInclude Include="src\Rendering\Passes\PassLights.h" />
     <ClInclude Include="src\Rendering\Passes\PassSceneGI.h" />
     <ClInclude Include="src\Rendering\Structs\ImageUploadRange.h" />
@@ -981,6 +984,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Core\Services\Input.cpp" />
     <ClCompile Include="src\ECS\Engines\EngineBuildAccelerationStructure.cpp" />
     <ClCompile Include="src\ECS\Engines\EngineDebug.cpp" />
+    <ClCompile Include="src\ECS\Engines\EngineDrawGeometry.cpp" />
     <ClCompile Include="src\ECS\Engines\EngineGizmos.cpp" />
     <ClCompile Include="src\ECS\Engines\EnginePKAssetBuilder.cpp" />
     <ClCompile Include="src\ECS\Engines\EngineScreenshot.cpp" />
@@ -988,10 +992,11 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Rendering\Objects\AccelerationStructure.cpp" />
     <ClCompile Include="src\Rendering\Objects\ShaderBindingTable.cpp" />
     <ClCompile Include="src\Rendering\Objects\VirtualMesh.cpp" />
+    <ClCompile Include="src\Rendering\Passes\PassEnvBackground.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassFilmGrain.cpp" />
+    <ClCompile Include="src\Rendering\Passes\PassHierarchicalDepth.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassTemporalAntialiasing.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassVolumeFog.cpp" />
-    <ClCompile Include="src\Rendering\Passes\PassGeometry.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassLights.cpp" />
     <ClCompile Include="src\Rendering\Passes\PassSceneGI.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanAccelerationStructure.cpp" />

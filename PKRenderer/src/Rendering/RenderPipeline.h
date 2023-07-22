@@ -6,8 +6,9 @@
 #include "ECS/Tokens/ViewProjectionToken.h"
 #include "ECS/Tokens/TimeToken.h"
 #include "ECS/Tokens/RenderingTokens.h"
+#include "Rendering/Passes/PassHierarchicalDepth.h"
+#include "Rendering/Passes/PassEnvBackground.h"
 #include "Rendering/Passes/PassPostEffects.h"
-#include "Rendering/Passes/PassGeometry.h"
 #include "Rendering/Passes/PassLights.h"
 #include "Rendering/Passes/PassSceneGI.h"
 #include "Rendering/Passes/PassVolumeFog.h"
@@ -38,13 +39,14 @@ namespace PK::Rendering
             void Step(Core::Services::AssetImportToken<Core::ApplicationConfig>* token) final;
 
         private:
-            void ComputeHierarchicalDepth(Objects::CommandBuffer* cmd);
+            void DispatchRenderEvent(Objects::CommandBuffer* cmd, ECS::Tokens::RenderEvent renderEvent, const char* name, uint32_t* outPassGroup);
 
-            Passes::PassGeometry m_passGeometry;
             Passes::PassLights m_passLights;
             Passes::PassSceneGI m_passSceneGI;
             Passes::PassVolumeFog m_passVolumeFog;
 
+            Passes::PassHierarchicalDepth m_passHierarchicalDepth;
+            Passes::PassEnvBackground m_passEnvBackground;
             Passes::PassFilmGrain m_passFilmGrain;
             Passes::PassDepthOfField m_depthOfField;
             Passes::PassTemporalAntialiasing m_temporalAntialiasing;
@@ -62,15 +64,11 @@ namespace PK::Rendering
             Utilities::Ref<Objects::Texture> m_previousColor;
             Utilities::Ref<Objects::Texture> m_previousNormals;
             Utilities::Ref<Objects::Texture> m_previousDepth;
-            Utilities::Ref<Objects::Texture> m_hierarchicalDepth;
-            Utilities::Ref<Objects::Buffer> m_EnvSHBuffer;
-            Objects::Shader* m_EnvBackgroundShader;
-            Objects::Shader* m_IntegrateEnvSHShader;
-            Objects::Shader* m_computeHierachicalDepth;
 
             ECS::Tokens::VisibilityList m_visibilityList;
             Math::float4x4 m_viewProjectionMatrix;
             uint64_t m_resizeFrameIndex;
+            uint32_t m_forwardPassGroup;
             float m_znear;
             float m_zfar;
     };

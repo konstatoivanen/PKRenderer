@@ -1368,9 +1368,6 @@
     <ClInclude Include="src\ECS\Engines\EngineDebug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Passes\PassGeometry.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Rendering\Passes\PassLights.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1483,6 +1480,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ECS\Tokens\RenderingTokens.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Tokens\BatcherToken.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Engines\EngineDrawGeometry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Passes\PassHierarchicalDepth.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Passes\PassEnvBackground.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2237,9 +2246,6 @@
     <ClCompile Include="src\ECS\Engines\EngineDebug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Passes\PassGeometry.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Rendering\Passes\PassLights.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -2301,6 +2307,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ECS\Engines\EngineGizmos.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\Engines\EngineDrawGeometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Passes\PassHierarchicalDepth.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Passes\PassEnvBackground.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

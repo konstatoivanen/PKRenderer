@@ -8,6 +8,7 @@
 #include "Rendering/Objects/Material.h"
 #include "Rendering/Objects/CommandBuffer.h"
 #include "ECS/Tokens/CullingTokens.h"
+#include "ECS/Tokens/BatcherToken.h"
 #include "ECS/Components/Transform.h"
 #include "Utilities/IndexedSet.h"
 #include "Utilities/FixedList.h"
@@ -57,15 +58,15 @@ namespace PK::Rendering
         }
     };
     
-    class Batcher : public Utilities::NoCopy
+    class Batcher : public Utilities::NoCopy, public ECS::Tokens::IBatcher
     {
         public:
             Batcher();
             void BeginCollectDrawCalls();
             void EndCollectDrawCalls(Objects::CommandBuffer* cmd);
-            constexpr uint32_t BeginNewGroup() { return m_groupIndex++; }
-            void SubmitDraw(ECS::Components::Transform* transform, Objects::Shader* shader, Objects::Material* material, Objects::Mesh* mesh, uint32_t submesh, uint32_t userdata);
-            bool Render(Objects::CommandBuffer* cmd, uint32_t group, Structs::FixedFunctionShaderAttributes* overrideAttributes = nullptr, uint32_t requireKeyword = 0u);
+            uint32_t BeginNewGroup() final { return m_groupIndex++; }
+            void SubmitDraw(ECS::Components::Transform* transform, Objects::Shader* shader, Objects::Material* material, Objects::Mesh* mesh, uint32_t submesh, uint32_t userdata) final;
+            bool Render(Objects::CommandBuffer* cmd, uint32_t group, Structs::FixedFunctionShaderAttributes* overrideAttributes = nullptr, uint32_t requireKeyword = 0u) final;
 
         private:
             Utilities::Ref<Objects::Buffer> m_matrices;

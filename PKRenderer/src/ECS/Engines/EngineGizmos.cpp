@@ -21,43 +21,50 @@ namespace PK::ECS::Engines
         m_fixedFunctionAttribs.rasterization.topology = Topology::LineList;
     }
 
-    void EngineGizmos::Step(Tokens::TokenRenderCollectDrawCalls* token)
+    void EngineGizmos::Step(Tokens::TokenRenderEvent* token, int condition)
     {
         if (!m_enabled)
         {
             return;
         }
 
-        m_vertexBuffer->Validate(m_vertexCount);
-        m_color = Math::PK_COLOR_WHITE;
-        m_matrix = Math::PK_FLOAT4X4_IDENTITY;
-        m_viewprojection = token->viewProjection;
-        m_vertexCount = 0u;
-        m_maxVertices = (uint32_t)m_vertexBuffer->GetCount();
-        m_vertexView = token->cmd->BeginBufferWrite<Vertex>(m_vertexBuffer.get());
-        m_sequencer->Next<IGizmosRenderer>(this, this, 0);
-        token->cmd->EndBufferWrite(m_vertexBuffer.get());
-    }
-
-    void EngineGizmos::Step(Tokens::TokenRenderAfterPostEffects* token)
-    {
-        if (m_vertexCount < 2 || !m_enabled)
+        switch ((Tokens::RenderEvent)condition)
         {
+            case Tokens::RenderEvent::CollectDraws:
+            {
+                m_vertexBuffer->Validate(m_vertexCount);
+                m_color = Math::PK_COLOR_WHITE;
+                m_matrix = Math::PK_FLOAT4X4_IDENTITY;
+                m_viewprojection = token->viewProjection;
+                m_vertexCount = 0u;
+                m_maxVertices = (uint32_t)m_vertexBuffer->GetCount();
+                m_vertexView = token->cmd->BeginBufferWrite<Vertex>(m_vertexBuffer.get());
+                m_sequencer->Next<IGizmosRenderer>(this, this, 0);
+                token->cmd->EndBufferWrite(m_vertexBuffer.get());
+            }
+            return;
+            case Tokens::RenderEvent::AfterPostEffects:
+            {
+                if (m_vertexCount < 2)
+                {
+                    return;
+                }
+
+                auto vertexCount = glm::min(m_vertexCount, m_maxVertices);
+                auto rect = token->renderTarget->GetRect();
+                const Buffer* vb = m_vertexBuffer.get();
+                const Buffer** vbptr = &vb;
+
+                token->cmd->SetVertexBuffers(vbptr, 1u);
+                token->cmd->SetShader(m_gizmosShader);
+                token->cmd->SetRenderTarget(token->renderTarget->GetColor(0));
+                token->cmd->SetViewPort(rect);
+                token->cmd->SetScissor(rect);
+                token->cmd->SetFixedStateAttributes(&m_fixedFunctionAttribs);
+                token->cmd->Draw(vertexCount, 1u, 0u, 0u);
+            }
             return;
         }
-     
-        auto vertexCount = glm::min(m_vertexCount, m_maxVertices);
-        auto rect = token->renderTarget->GetRect();
-        const Buffer* vb = m_vertexBuffer.get();
-        const Buffer** vbptr = &vb;
-
-        token->cmd->SetVertexBuffers(vbptr, 1u);
-        token->cmd->SetShader(m_gizmosShader);
-        token->cmd->SetRenderTarget(token->renderTarget->GetColor(0));
-        token->cmd->SetViewPort(rect);
-        token->cmd->SetScissor(rect);
-        token->cmd->SetFixedStateAttributes(&m_fixedFunctionAttribs);
-        token->cmd->Draw(vertexCount, 1u, 0u, 0u);
     }
 
     void EngineGizmos::Step(Core::Services::AssetImportToken<Core::ApplicationConfig>* token)

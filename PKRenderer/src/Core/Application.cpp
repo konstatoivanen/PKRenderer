@@ -16,10 +16,12 @@
 #include "ECS/Engines/EngineUpdateTransforms.h"
 #include "ECS/Engines/EnginePKAssetBuilder.h"
 #include "ECS/Engines/EngineCull.h"
+#include "ECS/Engines/EngineDrawGeometry.h"
 #include "ECS/Engines/EngineDebug.h"
 #include "ECS/Engines/EngineScreenshot.h"
 #include "ECS/Engines/EngineGizmos.h"
 #include "ECS/Tokens/TimeToken.h"
+#include "ECS/Tokens/RenderingTokens.h"
 #include "Rendering/RenderPipeline.h"
 #include "Rendering/HashCache.h"
 
@@ -84,6 +86,7 @@ namespace PK::Core
         auto renderPipeline = m_services->Create<RenderPipeline>(assetDatabase, entityDb, sequencer, config);
         auto engineCommands = m_services->Create<ECS::Engines::EngineCommandInput>(assetDatabase, sequencer, time, entityDb, commandConfig);
         auto engineCull = m_services->Create<ECS::Engines::EngineCull>(entityDb);
+        auto engineDrawGeometry = m_services->Create<ECS::Engines::EngineDrawGeometry>(entityDb, sequencer);
         auto engineBuildAccelerationStructure = m_services->Create<ECS::Engines::EngineBuildAccelerationStructure>(entityDb);
         auto engineDebug = m_services->Create<ECS::Engines::EngineDebug>(assetDatabase, entityDb, config);
         auto enginePKAssetBuilder = m_services->Create<ECS::Engines::EnginePKAssetBuilder>(arguments);
@@ -137,8 +140,20 @@ namespace PK::Core
                         Step::Token<PK::ECS::Tokens::TokenCullCascades>(engineCull),
                         Step::Token<PK::ECS::Tokens::TokenCullCubeFaces>(engineCull),
                         Step::Token<PK::ECS::Tokens::TokenAccelerationStructureBuild>(engineBuildAccelerationStructure),
-                        Step::Token<PK::ECS::Tokens::TokenRenderCollectDrawCalls>(engineGizmos),
-                        Step::Token<PK::ECS::Tokens::TokenRenderAfterPostEffects>(engineGizmos),
+                        Step::Conditional<PK::ECS::Tokens::TokenRenderEvent>(engineGizmos),
+                        Step::Conditional<PK::ECS::Tokens::TokenRenderEvent>(engineDrawGeometry),
+                    }
+                },
+                {
+                    engineDrawGeometry,
+                    {
+                        Step::Token<PK::ECS::Tokens::TokenCullFrustum>(engineCull)
+                    }
+                },
+                {
+                    engineGizmos,
+                    {
+                        Step::Token<PK::ECS::Tokens::IGizmosRenderer>(engineDebug)
                     }
                 },
                 {
@@ -148,12 +163,6 @@ namespace PK::Core
                         Step::Token<AssetImportToken<ApplicationConfig>>(engineGizmos)
                     }
                 },
-                {
-                    engineGizmos,
-                    {
-                        Step::Token<PK::ECS::Tokens::IGizmosRenderer>(engineDebug)
-                    }
-                }
             });
 
         PK_LOG_HEADER("----------INITIALIZATION COMPLETE----------");

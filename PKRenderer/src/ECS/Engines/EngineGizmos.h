@@ -10,8 +10,7 @@
 namespace PK::ECS::Engines
 {
     class EngineGizmos : public Core::Services::IService, 
-                         public Core::Services::IStep<Tokens::TokenRenderAfterPostEffects>,
-                         public Core::Services::IStep<Tokens::TokenRenderCollectDrawCalls>,
+                         public Core::Services::IConditionalStep<Tokens::TokenRenderEvent>,
                          public Core::Services::IStep<Core::Services::AssetImportToken<Core::ApplicationConfig>>,
                          public Core::Services::IStep<Core::TokenConsoleCommand>,
                          public Tokens::IGizmosRenderer
@@ -27,8 +26,7 @@ namespace PK::ECS::Engines
                          Core::Services::Sequencer* sequencer,
                          Core::ApplicationConfig* config);
 
-            void Step(Tokens::TokenRenderCollectDrawCalls* token) final;
-            void Step(Tokens::TokenRenderAfterPostEffects* token) final;
+            void Step(Tokens::TokenRenderEvent* token, int condition) final;
             void Step(Core::Services::AssetImportToken<Core::ApplicationConfig>* token) final;
             void Step(Core::TokenConsoleCommand* token) final;
 

@@ -49,69 +49,69 @@ namespace PK::Core::Services
 
         switch (step)
         {
-        case PK::Core::UpdateStep::OpenFrame:
-        {
-            m_frameStart = std::chrono::steady_clock::now();
-
-            PK::ECS::Tokens::TimeToken token;
-            token.timeScale = m_timeScale;
-            token.time = m_time;
-            token.unscaledTime = m_unscaledTime;
-            token.deltaTime = m_deltaTime;
-            token.unscaledDeltaTime = m_unscaledDeltaTime;
-            token.smoothDeltaTime = m_smoothDeltaTime;
-            token.unscaledDeltaTimeFixed = m_unscaledDeltaTimeFixed;
-            token.frameIndex = m_frameIndex;
-
-            m_sequencer->Next<PK::ECS::Tokens::TimeToken>(this, &token, 0);
-
-            if (token.logFrameRate)
+            case PK::Core::UpdateStep::OpenFrame:
             {
-                LogFrameRate();
+                m_frameStart = std::chrono::steady_clock::now();
+
+                PK::ECS::Tokens::TimeToken token;
+                token.timeScale = m_timeScale;
+                token.time = m_time;
+                token.unscaledTime = m_unscaledTime;
+                token.deltaTime = m_deltaTime;
+                token.unscaledDeltaTime = m_unscaledDeltaTime;
+                token.smoothDeltaTime = m_smoothDeltaTime;
+                token.unscaledDeltaTimeFixed = m_unscaledDeltaTimeFixed;
+                token.frameIndex = m_frameIndex;
+
+                m_sequencer->Next<PK::ECS::Tokens::TimeToken>(this, &token, 0);
+
+                if (token.logFrameRate)
+                {
+                    LogFrameRate();
+                }
             }
-        }
-        break;
-        case PK::Core::UpdateStep::CloseFrame:
-        {
-            std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double>> frameEnd = std::chrono::steady_clock::now();
-            m_unscaledDeltaTime = (frameEnd - m_frameStart).count();
-            m_deltaTime = m_unscaledDeltaTime * m_timeScale;
-
-            m_unscaledTime += m_unscaledDeltaTime;
-            m_time += m_deltaTime;
-
-            m_smoothDeltaTime = m_smoothDeltaTime + 0.5 * (m_deltaTime - m_smoothDeltaTime);
-
-            ++m_frameIndex;
-
-            if (m_unscaledDeltaTime > 0)
+            break;
+            case PK::Core::UpdateStep::CloseFrame:
             {
-                m_framerate = (uint64_t)(1.0 / m_unscaledDeltaTime);
-            }
+                std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double>> frameEnd = std::chrono::steady_clock::now();
+                m_unscaledDeltaTime = (frameEnd - m_frameStart).count();
+                m_deltaTime = m_unscaledDeltaTime * m_timeScale;
 
-            if ((uint64_t)m_unscaledTime != m_second)
-            {
-                m_framerateFixed = m_frameIndex - m_frameIndexFixed;
-                m_frameIndexFixed = m_frameIndex;
-                m_unscaledDeltaTimeFixed = 1.0 / m_framerateFixed;
-                m_second = (uint64_t)m_unscaledTime;
-                m_framerateMin = (uint64_t)-1;
-                m_framerateMax = 0;
-            }
+                m_unscaledTime += m_unscaledDeltaTime;
+                m_time += m_deltaTime;
 
-            if (m_framerate < m_framerateMin)
-            {
-                m_framerateMin = m_framerate;
-            }
+                m_smoothDeltaTime = m_smoothDeltaTime + 0.5 * (m_deltaTime - m_smoothDeltaTime);
 
-            if (m_framerate > m_framerateMax)
-            {
-                m_framerateMax = m_framerate;
-            }
+                ++m_frameIndex;
 
-            m_framerateAvg = (uint64_t)(m_frameIndex / m_unscaledTime);
-        }
-        break;
+                if (m_unscaledDeltaTime > 0)
+                {
+                    m_framerate = (uint64_t)(1.0 / m_unscaledDeltaTime);
+                }
+
+                if ((uint64_t)m_unscaledTime != m_second)
+                {
+                    m_framerateFixed = m_frameIndex - m_frameIndexFixed;
+                    m_frameIndexFixed = m_frameIndex;
+                    m_unscaledDeltaTimeFixed = 1.0 / m_framerateFixed;
+                    m_second = (uint64_t)m_unscaledTime;
+                    m_framerateMin = (uint64_t)-1;
+                    m_framerateMax = 0;
+                }
+
+                if (m_framerate < m_framerateMin)
+                {
+                    m_framerateMin = m_framerate;
+                }
+
+                if (m_framerate > m_framerateMax)
+                {
+                    m_framerateMax = m_framerate;
+                }
+
+                m_framerateAvg = (uint64_t)(m_frameIndex / m_unscaledTime);
+            }
+            break;
         }
     }
 }

@@ -158,5 +158,4 @@ namespace PK::ECS::Engines
             }
         }
     }
-
 }

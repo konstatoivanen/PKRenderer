@@ -11,7 +11,6 @@
 namespace PK::Rendering::Passes
 {
     typedef struct ShadowCascades { float planes[5]; } ShadowCascades;
-    typedef struct ShadowBlurAmounts { float values[4]{}; } ShadowBlurAmounts;
 
     struct ShadowmapLightTypeData
     {
@@ -30,7 +29,7 @@ namespace PK::Rendering::Passes
         uint32_t batchGroup = 0u;
         Structs::LightType batchType = Structs::LightType::TypeCount;
         float maxDepthRange = 0.0f;
-        ShadowBlurAmounts shadowBlurAmounts{};
+        float shadowBlurAmounts[4]{};
     };
 
     class PassLights : public Utilities::NoCopy

@@ -443,7 +443,7 @@ namespace PK::Rendering::Passes
         // @TODO FIX ME
         for (auto i = 0u; i < shadow.TileCount; ++i)
         {
-            batch.shadowBlurAmounts.values[batch.count + i] = shadowBlurAmount / (1.0f + i * 0.25f);
+            batch.shadowBlurAmounts[batch.count + i] = shadowBlurAmount / (1.0f + i * 0.25f);
         }
 
         batch.maxDepthRange = glm::max(batch.maxDepthRange, info->maxShadowDepth - info->minShadowDepth);
