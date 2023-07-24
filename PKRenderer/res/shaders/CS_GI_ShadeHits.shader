@@ -90,6 +90,7 @@ void main()
     if (roughness < PK_GI_MAX_ROUGH_SPEC)
 #endif
     {
+        s_spec.history = PK_GI_MAX_HISTORY;
         s_spec.radiance = SampleRadiance(coord, wpos, directions.spec, hits.distSpec, hits.isMissSpec);
         s_spec.ao = hits.isMissSpec ? 1.0f : saturate(hits.distSpec / PK_GI_RAY_MAX_DISTANCE);
     }

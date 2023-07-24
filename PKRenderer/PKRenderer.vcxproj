@@ -868,7 +868,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_CompressBC6H.shader" />
     <None Include="res\shaders\includes\Encoding.glsl" />
     <None Include="res\shaders\includes\BRDF.glsl" />
-    <None Include="res\shaders\includes\SpatialFilter.glsl" />
+    <None Include="res\shaders\includes\SceneGIFiltering.glsl" />
     <None Include="res\shaders\includes\SpatialFilters.glsl" />
     <None Include="res\shaders\includes\Kernels.glsl" />
     <None Include="res\shaders\includes\GBuffers.glsl" />

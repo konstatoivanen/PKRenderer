@@ -1,8 +1,6 @@
 #version 460
 #pragma PROGRAM_COMPUTE
-#include includes/GBuffers.glsl
-#include includes/SharedSceneGI.glsl
-#include includes/Kernels.glsl
+#include includes/SceneGIFiltering.glsl
 #include includes/BRDF.glsl
 #include includes/CTASwizzling.glsl
 
@@ -78,32 +76,7 @@ void main()
     const float3 c_vpos = SampleViewPosition(coord, size, depth);
     const float3 c_view = normalize(c_vpos);
 
-    float2 mom;
-    mom.x = log(1.0f + SH_ToLuminanceL0(c_diff.sh));
-    mom.y = pow2(mom.x);
-
-    float w_mom = 1.0f;
-
-    for (int yy = -1; yy <= 1; ++yy)
-    for (int xx = -1; xx <= 1; ++xx)
-    {
-        if (xx == 0 && yy == 0)
-        {
-            continue;
-        }
-
-        const GIDiff s_diff = GI_Load_Diff(coord + int2(xx, yy));
-        const float s_depth = SampleMinZ(coord + int2(xx, yy), 0);
-
-        const float s_w = (abs(depth - s_depth) / depth) < 0.02f ? 1.0f : 0.0f;
-        const float s_luma = log(1.0f + SH_ToLuminanceL0(s_diff.sh)) * s_w;
-        mom += float2(s_luma, pow2(s_luma));
-        w_mom += s_w;
-    }
-
-    mom /= w_mom;
-
-    const float variance = sqrt(abs(mom.y - pow2(mom.x)));
+    const float variance = GI_SFLT_EstimateDiffVariance(coord, depth, c_diff);
     const float2 radiusAndScale = GetFilterRadiusAndScale(depth, variance, c_diff.ao, c_diff.history);
     const float radius = radiusAndScale.x;
     const float radius_scale = radiusAndScale.y;
@@ -111,23 +84,7 @@ void main()
     const uint step = lerp(uint(max(8.0f - sqrt(radius_scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip_filter);
 
     // Filter diff
-    {
-        #define SFLT_WEIGH_ROUGHNESS 0
-        #define SFLT_NORMAL c_normal
-        #define SFLT_DEPTH depth 
-        #define SFLT_ROUGHNESS 1.0f
-        #define SFLT_VIEW c_view 
-        #define SFLT_VPOS c_vpos
-        #define SFLT_HISTORY c_diff.history
-        #define SFLT_STEP step
-        #define SFLT_SKIP skip_filter
-        #define SFLT_RADIUS radius
-        #define SFLT_DATA_TYPE GIDiff
-        #define SFLT_DATA_LOAD(coord) GI_Load_Diff(coord)
-        #define SFLT_DATA_SUM(data, w) c_diff = GI_Sum_NoHistory(c_diff, data, w);
-        #define SFLT_DATA_DIV(wSum)  c_diff = GI_Mul_NoHistory(c_diff, 1.0f / wSum);
-        #include includes/SpatialFilter.glsl
-    }
+    GI_SFLT_DISK_DIFF(c_normal, depth, c_view, c_vpos, c_diff.history, step, skip_filter, radius, c_diff)
 
     // Filter Spec
     // @TODO Approx causes weird blobs that stick around. possibly due to prefilter?
@@ -141,21 +98,7 @@ void main()
     if (c_roughness < PK_GI_MAX_ROUGH_SPEC)
 #endif
     {
-        #define SFLT_WEIGH_ROUGHNESS 1
-        #define SFLT_NORMAL c_normal
-        #define SFLT_DEPTH depth 
-        #define SFLT_ROUGHNESS c_roughness
-        #define SFLT_VIEW c_view 
-        #define SFLT_VPOS c_vpos
-        #define SFLT_HISTORY c_spec.history
-        #define SFLT_STEP step
-        #define SFLT_SKIP true
-        #define SFLT_RADIUS radius
-        #define SFLT_DATA_TYPE GISpec
-        #define SFLT_DATA_LOAD(coord) GI_Load_Spec(coord)
-        #define SFLT_DATA_SUM(data, w) c_spec = GI_Sum_NoHistory(c_spec, data, w);
-        #define SFLT_DATA_DIV(wSum) c_spec = GI_Mul_NoHistory(c_spec, 1.0f / wSum);
-        #include includes/SpatialFilter.glsl
+        GI_SFLT_DISK_SPEC(c_normal, depth, c_roughness, c_view, c_vpos, c_spec.history, step, true, radius, c_spec)
     }
 
     GI_Store_Diff(coord, c_diff);

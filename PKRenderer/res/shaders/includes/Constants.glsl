@@ -15,6 +15,10 @@
 #define PK_HALF_MAX         65504.0
 #define PK_HALF_MAX_MINUS1  65472.0
 
+#define PK_EPS2 1e-2f
+#define PK_EPS4 1e-4f
+#define PK_EPS6 1e-6f
+
 // Backbuffer resolutions are always divisible by the following values
 // Kept here so that computes using these can be more easily refactored.
 #define PK_W_ALIGNMENT_32 32u

@@ -120,32 +120,3 @@ float3 ImportanceSampleLambert(const float2 Xi, const float3 N)
     b *= 0.98;
     return normalize(float3(N.x + b * cos(phi), N.y + b * sin(phi), N.z + a));
 }
-
-// Source https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
-float GetGGXDominantFactor(float nv, float linearRoughness)
-{
-    const float a = 0.298475f * log(39.4115f - 39.0029f * linearRoughness);
-    return saturate(pow( 1.0 - nv, 10.8649f)) * (1.0f - a ) + a;
-}
-
-float3 GetGGXDominantDirection(const float3 N, const float3 V, float linearRoughness)
-{
-    const float factor = GetGGXDominantFactor(abs(dot(N, V)), linearRoughness);
-	return normalize(lerp(N, reflect(-V, N), factor));
-}
-
-float2x3 GetPrimeBasisGGX(const float3 N, const float3 V, const float R, const float radius, inout float3 P)
-{
-    P = GetGGXDominantDirection(N, V, sqrt(R));
-    const float3 l = reflect(-P, N);
-    const float3 t = normalize(cross(N,l));
-    const float3 b = cross(l,t);
-    return float2x3(t * radius, b * radius);
-}
-
-//Source: https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf 
-float GetGGXLobeHalfAngle(const float R, const float volumeFactor)
-{
-    return atan(R * volumeFactor / ( 1.0 - volumeFactor));
-    //return PK_HALF_PI * R / (1.0f + R);
-}

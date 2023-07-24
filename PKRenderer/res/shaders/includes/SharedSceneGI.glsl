@@ -22,7 +22,7 @@ PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataMips;
 PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 
-#define PK_GI_APPROX_ROUGH_SPEC 1
+#define PK_GI_APPROX_ROUGH_SPEC 0
 #define PK_GI_SSRT_PRETRACE 1
 #define PK_GI_SPEC_VIRT_REPROJECT 1
 
@@ -52,33 +52,10 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 #define PK_GI_DATA_STORE(c, l, d) imageStore(pk_GI_ScreenDataWrite, int3(c, l), uint4(d, 0,0))
 
 //----------STRUCTS----------//
-struct GIDiff
-{
-    SH sh;
-    float ao;
-    float history;
-};
-
-struct GISpec
-{
-    float3 radiance;
-    float ao;
-    float history;
-};
-
-struct GIRayDirections
-{
-    float3 diff;
-    float3 spec;
-};
-
-struct GIRayHits
-{
-    float distDiff;
-    float distSpec;
-    bool isMissDiff;
-    bool isMissSpec;
-};
+struct GIDiff { SH sh; float ao; float history; };
+struct GISpec { float3 radiance; float ao; float history; };
+struct GIRayDirections { float3 diff; float3 spec; };
+struct GIRayHits { float distDiff; float distSpec; bool isMissDiff; bool isMissSpec; };
 
 #define pk_Zero_GIDiff GIDiff(pk_ZeroSH, 0.0f, 0.0f)
 #define pk_Zero_GISpec GISpec(0.0f.xxx, 0.0f, 0.0f)

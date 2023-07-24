@@ -7,6 +7,17 @@
 #include "Math/FunctionsMisc.h"
 #include "Math/FunctionsColor.h"
 
+/*
+TODO:
+Fix roughness dominant factor usage
+Test nvidias radius scaling
+Investigate short hits
+Investigate camera moving bias
+Test checkerboard ray trace
+Test metro ssrt march
+Write subject analysis
+*/
+
 namespace PK::Rendering
 {
     using namespace Utilities;
@@ -50,7 +61,7 @@ namespace PK::Rendering
         prevDesc.sampler.filterMag = FilterMode::Bilinear;
         prevDesc.resolution = descriptor.resolution;
         m_previousColor = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Color0");
-        
+
         prevDesc.format = TextureFormat::RGB10A2;
         m_previousNormals = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Color1");
 
@@ -309,12 +320,10 @@ namespace PK::Rendering
         // Indirect GI ray tracing
         m_passSceneGI.DispatchRays(cmdcompute);
         queues->Submit(QueueType::Compute, &cmdcompute);
-
-        // Voxelize, subsequent passes depend on this
-        m_passLights.RenderShadows(cmdgraphics);
-        //queues->Submit(QueueType::Graphics, &cmdgraphics);
         // Wait for misc async compute instead of ray dispatch
         queues->Sync(QueueType::Compute, QueueType::Graphics, -1);
+
+        m_passLights.RenderShadows(cmdgraphics);
 
         // Voxelize scene & reproject gi
         m_passSceneGI.Preprocess(cmdgraphics, &m_batcher, m_forwardPassGroup);
