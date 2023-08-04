@@ -17,7 +17,7 @@ struct TracePayload
 #define RT_HIT 1u
 #define RT_SKY 2u
 
-uint RayTraceScreen(const float2 uv, const float depth, const float3 ws_dir, inout float3 hit)
+uint SSRT_HIZB(const float2 uv, const float depth, const float3 ws_dir, inout float3 hit)
 {
     const uint MIN_OCCUPANCY = gl_SubgroupSize - gl_SubgroupSize / 4;
     const float3 start = float3(uv, ClipDepth(depth)) * 2.0f - 1.0f;
@@ -72,11 +72,11 @@ uint RayTraceScreen(const float2 uv, const float depth, const float3 ws_dir, ino
     return isSky ? RT_SKY : RT_MISS;
 }
 
-uint SSRTRay(const float3 origin, const float3 direction, const float2 uv, const float depth, inout float hitDistance)
+uint SSRTRay(const float3 origin, const float3 direction, const int2 coord, const float2 uv, const float depth, inout float hitDistance)
 {
 #if PK_GI_SSRT_PRETRACE == 1
     float3 hitpos = 0.0f.xxx;
-    const uint result = RayTraceScreen(uv, depth, direction, hitpos);
+    const uint result = SSRT_HIZB(uv, depth, direction, hitpos);
     hitpos = SampleWorldPosition(hitpos.xy, ViewDepth(hitpos.z));
     hitDistance = max(0.0f, dot(normalize(direction), hitpos - origin));
     return result;
@@ -120,7 +120,7 @@ void main()
         else
 #endif
         {
-            const uint result = SSRTRay(O, directions.spec, uv, depth, hits.distSpec);
+            const uint result = SSRTRay(O, directions.spec, coord, uv, depth, hits.distSpec);
             hits.isMissSpec = result != RT_HIT;
 
             if (result == RT_MISS)
@@ -132,7 +132,7 @@ void main()
         }
 
         {
-            const uint result = SSRTRay(O, directions.diff, uv, depth, hits.distDiff);
+            const uint result = SSRTRay(O, directions.diff, coord, uv, depth, hits.distDiff);
             hits.isMissDiff = result != RT_HIT;
 
             if (result == RT_MISS)

@@ -14,7 +14,7 @@ Test nvidias radius scaling
 Investigate short hits
 Investigate camera moving bias
 Test checkerboard ray trace
-Test metro ssrt march
+Fix ssrt miss hit dist
 Write subject analysis
 */
 

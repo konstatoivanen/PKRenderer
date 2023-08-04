@@ -22,30 +22,31 @@ PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataMips;
 PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 
-#define PK_GI_APPROX_ROUGH_SPEC 0
-#define PK_GI_SSRT_PRETRACE 1
+#define PK_GI_APPROX_ROUGH_SPEC 1
+#define PK_GI_SSRT_PRETRACE 0
 #define PK_GI_SPEC_VIRT_REPROJECT 1
 
 #define PK_GI_LVL_DIFF0 0
 #define PK_GI_LVL_DIFF1 1
 #define PK_GI_LVL_SPEC 2
 #define PK_GI_VOXEL_MIP_COUNT 7
+#define PK_GI_SCREEN_MAX_MIP 4
 #define PK_GI_RAY_MIN_DISTANCE 0.005f
 #define PK_GI_RAY_MAX_DISTANCE 100.0f
 #define PK_GI_RAY_CONE_SIZE 0.25f
-#define PK_GI_AO_DIFF_POWER 0.125f
-#define PK_GI_AO_SPEC_POWER 0.05f
-#define PK_GI_MIN_ROUGH_SPEC 0.35f
-#define PK_GI_MAX_ROUGH_SPEC 0.45f
 #define PK_GI_MIN_ACCUM 0.03f
 #define PK_GI_MAX_LUMA_GAIN 0.5f
 #define PK_GI_MAX_HISTORY 256u
-#define PK_GI_MIN_VXHISTORY 32.0f
-#define PK_GI_SCREEN_MAX_MIP 4
+#define PK_GI_MIN_ROUGH_SPEC 0.35f
+#define PK_GI_MAX_ROUGH_SPEC 0.45f
 #define PK_GI_SPEC_ACCUM_BASE_POWER 0.5f
 #define PK_GI_SPEC_ACCUM_CURVE 0.66f
 #define PK_GI_SPEC_ACCUM_MIN 0.03f
 #define PK_GI_SPEC_ACCUM_MAX 1.0f
+#define PK_GI_DISK_FILTER_RADIUS 4.0f
+#define PK_GI_AO_DIFF_POWER 0.125f
+#define PK_GI_AO_SPEC_POWER 0.05f
+#define PK_GI_MIN_VXHISTORY 32.0f
 #define PK_GI_DATA_LOAD_MIP(c, l, m) texelFetch(pk_GI_ScreenDataMips, int3(c, l), m).xy
 #define PK_GI_DATA_LOAD_CUR(c, l) imageLoad(pk_GI_ScreenDataWrite, int3(c, l)).xy
 #define PK_GI_DATA_LOAD(c, l) texelFetch(pk_GI_ScreenDataRead, int3(c, l), 0).xy

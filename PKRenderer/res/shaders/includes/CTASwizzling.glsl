@@ -61,6 +61,8 @@ uint2 ThreadGroupTilingX(
 	return SwizzledvThreadID.xy;
 }
 
+#define GetXTiledThreadID(x, y, width) ThreadGroupTilingX(gl_NumWorkGroups.xy, uint2(x,y), width, gl_LocalInvocationID.xy, gl_WorkGroupID.xy)
+
 // Dispatch 2d dimension must be divisible by 32
 uint3 GetMortonOrderSwizzle32(uint threadIndex, uint2 size)
 {

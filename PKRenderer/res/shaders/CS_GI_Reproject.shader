@@ -42,35 +42,35 @@ void main()
         antilagSpec = GetAntilagSpecular(roughness, nv, parallax);
 
         // Reconstruct diff & naive spec
-        GI_SFLT_PrevBilinear(screenuvPrev, coordPrev, normal, depth, depthBias, roughness, wSumDiff, wSumSpec, diff, spec);
+        GI_SFLT_REPRO_BILINEAR(screenuvPrev, coordPrev, normal, depth, depthBias, roughness, wSumDiff, wSumSpec, diff, spec)
 
         #if PK_GI_SPEC_VIRT_REPROJECT == 1
-        if (wSumSpec > 1e-4f)
+        if (!Test_EPS6(wSumSpec))
         {
-            const float virtualDist = (spec.ao / wSumSpec) * PK_GI_RAY_MAX_DISTANCE * GetGGXDominantFactor(nv, sqrt(roughness));
-            GI_SFLT_PrevVirtualSpec(viewpos, viewdir, normal, depth, roughness, virtualDist, wSumVSpec, specVirtual);
+            const float virtualDist = (spec.ao / wSumSpec) * PK_GI_RAY_MAX_DISTANCE * GetSpecularDominantFactor(nv, sqrt(roughness));
+            GI_SFLT_REPRO_VIRTUAL_SPEC(viewpos, viewdir, normal, depth, roughness, virtualDist, wSumVSpec, specVirtual)
         }
         #endif
 
         // Try to find valid samples with a bilateral cross filter
-        GI_SFLT_PrevBilateralCross(coordPrev, normal, depth, depthBias, 1e-4f, wSumDiff, wSumSpec, diff, spec);
+        GI_SFLT_REPRO_BILATERAL_CROSS(coordPrev, normal, depth, depthBias, wSumDiff, wSumSpec, diff, spec)
     }
 
     // Normalization
-    if (wSumDiff > 1e-4f)
+    if (!Test_EPS6(wSumDiff))
     {
         diff.history = clamp((diff.history / wSumDiff) + 1.0f, 1.0f, PK_GI_MAX_HISTORY * antilagDiff);
         diff = GI_Mul_NoHistory(diff, 1.0f / wSumDiff);
     }
 
-    if (wSumSpec > 1e-4f)
+    if (!Test_EPS6(wSumSpec))
     {
         spec.history = clamp((spec.history / wSumSpec) + 1.0f, 1.0f, PK_GI_MAX_HISTORY * antilagSpec);
         spec = GI_Mul_NoHistory(spec, 1.0f / wSumSpec);
     }
 
     // Get min of virtual reprojected spec & naive spec to eliminate ghosting.
-    if (wSumVSpec > 1e-4f)
+    if (!Test_EPS6(wSumVSpec))
     {
         specVirtual.history = clamp((specVirtual.history / wSumVSpec) + 1.0f, 1.0f, PK_GI_MAX_HISTORY * antilagSpec);
         specVirtual = GI_Mul_NoHistory(specVirtual, 1.0f / wSumVSpec);

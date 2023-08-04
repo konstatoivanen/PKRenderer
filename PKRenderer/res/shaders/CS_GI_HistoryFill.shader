@@ -15,10 +15,10 @@ void main()
     }
 
     const float3 normal = SampleWorldNormal(coord);
-    float historyDiff = GI_Load_Diff(coord).history;
-    float historySpec = GI_Load_Spec(coord).history;
-    int iHistoryDiff = int(historyDiff);
-    int iHistorySpec = int(historySpec);
+    const float historyDiff = GI_Load_Diff(coord).history;
+    const float historySpec = GI_Load_Spec(coord).history;
+    const int iHistoryDiff = int(historyDiff);
+    const int iHistorySpec = int(historySpec);
 
     const int mip = 3 - min(iHistoryDiff, iHistorySpec);
 
@@ -34,7 +34,7 @@ void main()
     float wSumDiff = 0.0f;
     float wSumSpec = 0.0f;
 
-    GI_SFLT_HistoryFill(coord, mip, normal, depth, wSumDiff, wSumSpec, diff, spec);
+    GI_SFLT_HISTORY_FILL(coord, mip, normal, depth, wSumDiff, wSumSpec, diff, spec)
 
     if (iHistoryDiff <= 3 && !Test_NaN_EPS6(wSumDiff))
     {

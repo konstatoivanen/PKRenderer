@@ -20,7 +20,7 @@
 #define PK_DEBUG_MODE_ROUGHNESS 4
 #define PK_DEBUG_MODE_CUSTOM 5
 
-#define PK_DEBUG_MODE PK_DEBUG_MODE_NONE
+#define PK_DEBUG_MODE PK_DEBUG_MODE_GI_SPEC
 #define PK_DEBUG_HALFSCREEN 1
 
 #if PK_DEBUG_MODE != PK_DEBUG_MODE_NONE
@@ -79,10 +79,10 @@ void main()
         float roughness = nr.w;
 
         #if PK_DEBUG_MODE == PK_DEBUG_MODE_GI_DIFF
-            float3 gi_diff = GI_Sample_Diffuse(uv, normal) * PK_PI;
+            float3 gi_diff = GI_Sample_Diffuse(uv, normal) * exposure;
             color = gi_diff;
         #elif PK_DEBUG_MODE == PK_DEBUG_MODE_GI_SPEC
-            float3 gi_spec = GI_Sample_Specular(uv, normal) * PK_PI;
+            float3 gi_spec = GI_Sample_Specular(uv, normal) * exposure;
             color = gi_spec;
         #elif PK_DEBUG_MODE == PK_DEBUG_MODE_NORMAL
             color = normal * 0.5f + 0.5f;

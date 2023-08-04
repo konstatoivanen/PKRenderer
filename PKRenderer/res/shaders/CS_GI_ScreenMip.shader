@@ -58,23 +58,11 @@ uint2 CombinePackedSpec(const uint2 u0, const uint2 u1, const uint2 u2, const ui
     return GI_Pack_Spec(GI_Mul_NoHistory(o, w));
 }
 
-uint2 GetSwizzledThreadID()
-{
-    return ThreadGroupTilingX
-    (
-        gl_NumWorkGroups.xy,
-        uint2(GROUP_SIZE, GROUP_SIZE),
-        8u,
-        gl_LocalInvocationID.xy,
-        gl_WorkGroupID.xy
-    );
-}
-
 layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
 void main()
 {
     const uint2 size = uint2(pk_ScreenSize.xy);
-    const uint2 coord = GetSwizzledThreadID();
+    const uint2 coord = GetXTiledThreadID(GROUP_SIZE, GROUP_SIZE, 8u);
     const uint thread = gl_LocalInvocationIndex;
 
     uint2 baseCoords[4] =
