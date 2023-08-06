@@ -66,9 +66,10 @@ namespace PK::Core
         YAML::BoxedValue<float> BloomLensDirtIntensity = YAML::BoxedValue<float>("BloomLensDirtIntensity", 0.0f);
         YAML::BoxedValue<std::string> FileBloomDirt = YAML::BoxedValue<std::string>("FileBloomDirt", "T_Bloom_LensDirt");
 
-        YAML::BoxedValue<float> AmbientOcclusionIntensity = YAML::BoxedValue<float>("AmbientOcclusionIntensity", 1.0f);
-        YAML::BoxedValue<float> AmbientOcclusionRadius = YAML::BoxedValue<float>("AmbientOcclusionRadius", 1.0f);
-        YAML::BoxedValue<bool> AmbientOcclusionDownsample = YAML::BoxedValue<bool>("AmbientOcclusionDownsample", true);
+        YAML::BoxedValue<bool> GIApproximateRoughSpecular = YAML::BoxedValue<bool>("GIApproximateRoughSpecular", true);
+        YAML::BoxedValue<bool> GIScreenSpacePretrace = YAML::BoxedValue<bool>("GIScreenSpacePretrace", false);
+        YAML::BoxedValue<bool> GICheckerboardTrace = YAML::BoxedValue<bool>("GICheckerboardTrace", true);
+        YAML::BoxedValue<bool> GISpecularVirtualReproject = YAML::BoxedValue<bool>("GISpecularVirtualReproject", true);
 
         YAML::BoxedValue<float> TAASharpness = YAML::BoxedValue<float>("TAASharpness", 0.5f);
         YAML::BoxedValue<float> TAABlendingStatic = YAML::BoxedValue<float>("TAABlendingStatic", 0.99f);

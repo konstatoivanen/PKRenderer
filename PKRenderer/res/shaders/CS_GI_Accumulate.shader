@@ -1,18 +1,26 @@
 #version 460
 #pragma PROGRAM_COMPUTE
+
+#multi_compile _ PK_GI_CHECKERBOARD_TRACE
+
 #include includes/SceneGIFiltering.glsl
 #include includes/CTASwizzling.glsl
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
-    const int2   size = int2(pk_ScreenSize.xy);
-    const int2   coord = int2(GetXTiledThreadID(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 8u));
+    const int2   coord = GI_ExpandCheckerboardCoord(GetXTiledThreadID(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 8u));
     const float  depth = SampleMinZ(coord, 0);
     const float4 normalroughness = SampleViewNormalRoughness(coord);
     const float3 normal = normalroughness.xyz;
     const float  roughness = normalroughness.w;
     const float  depthBias = lerp(0.1f, 0.01f, -normal.z);
+
+    // Without anti firefly filter this isn't needed
+    if (!Test_DepthFar(depth))
+    {
+        return;
+    }
 
     GIDiff diff = GI_Load_Cur_Diff(coord);
     GISpec spec = GI_Load_Cur_Spec(coord);
@@ -33,13 +41,7 @@ void main()
     diff.ao = lerp(diff.ao, diffSample.ao, wDiff);
 
 #if PK_GI_APPROX_ROUGH_SPEC == 1
-    if (roughness >= PK_GI_MAX_ROUGH_SPEC)
-    {
-        // Use diff values for approx spec
-        spec.ao = diff.ao;
-        spec.history = diff.history;
-    }
-    else
+    if (roughness < PK_GI_MAX_ROUGH_SPEC)
 #endif
     {
         spec.radiance = lerp(spec.radiance, specSample.radiance, wSpec);

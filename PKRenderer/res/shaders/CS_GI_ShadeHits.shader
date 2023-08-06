@@ -1,46 +1,29 @@
 #version 460
 #pragma PROGRAM_COMPUTE
+
+#multi_compile _ PK_GI_CHECKERBOARD_TRACE
+
 #include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl
 #include includes/SharedSceneGI.glsl
 #include includes/CTASwizzling.glsl
 
-float3 SampleRadiance(const int2 coord, const float3 origin, const float3 direction, const float dist, bool isMiss)
+float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHit hit)
 {
-    const float3 worldpos = origin + direction * dist;
-    float3 clipuvw;
+    const float3 worldpos = origin + direction * hit.dist;
 
-    // Try sample previous forward output for better sampling.
-    if (Test_WorldToPrevClipUVW(worldpos, clipuvw))
+    if (hit.isScreen)
     {
-        float2 deltacoord = abs(coord - (clipuvw.xy * pk_ScreenParams.xy));
-        bool isScreenHit = dot(deltacoord, deltacoord) > 2.0f;
-
-        if (isScreenHit)
-        {
-            float sdepth = SamplePreviousViewDepth(clipuvw.xy);
-            isScreenHit = isMiss && !Test_DepthFar(sdepth);
-
-            if (!isScreenHit)
-            {
-                float rdepth = ViewDepth(clipuvw.z);
-                float sviewz = -SamplePreviousViewNormal(clipuvw.xy).z + 0.15f;
-                isScreenHit = abs(sdepth - rdepth) < (rdepth * 0.01f / sviewz);
-            }
-
-            if (isScreenHit)
-            {
-                return SamplePreviousColor(clipuvw.xy);
-            }
-        }
+        float2 uv = ClipToUV(mul(pk_MATRIX_L_VP, float4(worldpos, 1.0f)).xyw);
+        return SamplePreviousColor(uv);
     }
 
-    if (isMiss)
+    if (hit.isMiss)
     {
         return SampleEnvironment(OctaUV(direction), 0.0f);
     }
 
-    const float4 voxel = GI_Load_Voxel(worldpos, PK_GI_RAY_CONE_SIZE * log2(1.0f + (dist / pk_GI_VoxelSize)));
+    const float4 voxel = GI_Load_Voxel(worldpos, PK_GI_RAY_CONE_SIZE * log2(1.0f + (hit.dist / pk_GI_VoxelSize)));
     return voxel.rgb / max(voxel.a, 1e-2f);
 }
 
@@ -48,41 +31,47 @@ layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_8, local_
 void main()
 {
     const int2 size = int2(pk_ScreenSize.xy);
-    const int2 coord = int2(GetXTiledThreadID(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 8u));
+    const int2 raycoord = int2(GetXTiledThreadID(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 8u));
+    const int2 coord = GI_ExpandCheckerboardCoord(uint2(raycoord));
     const float depth = SampleViewDepth(coord);
+    
+    GIRayParams params;
+    uint4 packedDiff = uint4(0u);
+    uint2 packedSpec = uint2(0u);
 
-    if (!Test_DepthFar(depth))
+    if (Test_DepthFar(depth))
     {
-        GI_Store_Packed_Diff(coord, uint4(0));
-        GI_Store_Packed_Spec(coord, uint2(0));
-        return;
+        GI_GET_RAY_PARAMS(coord, raycoord, depth, params)
+    
+        GIDiff diff = pk_Zero_GIDiff;
+        GISpec spec = pk_Zero_GISpec;
+        const GIRayHits hits = GI_Load_RayHits(raycoord);
+        
+        diff.history = PK_GI_MAX_HISTORY;
+        diff.sh = SH_FromRadiance(SampleRadiance(params.origin, params.diffdir, hits.diff), params.diffdir);
+        diff.ao = hits.diff.isMiss ? 1.0f : saturate(hits.diff.dist / PK_GI_RAY_MAX_DISTANCE);
+    
+        #if PK_GI_APPROX_ROUGH_SPEC == 1
+        [[branch]]
+        if (params.roughness < PK_GI_MAX_ROUGH_SPEC)
+        #endif
+        {
+            spec.history = PK_GI_MAX_HISTORY;
+            spec.radiance = SampleRadiance(params.origin, params.specdir, hits.spec);
+            spec.ao = hits.spec.isMiss ? 1.0f : saturate(hits.spec.dist / PK_GI_RAY_MAX_DISTANCE);
+        }
+
+        packedDiff = GI_Pack_Diff(diff);
+        packedSpec = GI_Pack_Spec(spec);
     }
 
-    const float4 normalroughness = SampleWorldNormalRoughness(coord);
-    const float3 normal = normalroughness.xyz;
-    const float  roughness = normalroughness.w;
-    const float3 wpos = SampleWorldPosition(coord, size, depth);
-    const float3 viewdir = normalize(wpos - pk_WorldSpaceCameraPos.xyz);
-
-    GIRayDirections directions = GI_GetRayDirections(coord, normal, viewdir, roughness);
-    GIRayHits hits = GI_Load_RayHits(coord);
-
-    // Construct new samples
-    GIDiff s_diff;
-    s_diff.sh = SH_FromRadiance(SampleRadiance(coord, wpos, directions.diff, hits.distDiff, hits.isMissDiff), directions.diff);
-    s_diff.ao = hits.isMissDiff ? 1.0f : saturate(hits.distDiff / PK_GI_RAY_MAX_DISTANCE);
-
-
-    GISpec s_spec = pk_Zero_GISpec;
-#if PK_GI_APPROX_ROUGH_SPEC == 1
-    if (roughness < PK_GI_MAX_ROUGH_SPEC)
-#endif
-    {
-        s_spec.history = PK_GI_MAX_HISTORY;
-        s_spec.radiance = SampleRadiance(coord, wpos, directions.spec, hits.distSpec, hits.isMissSpec);
-        s_spec.ao = hits.isMissSpec ? 1.0f : saturate(hits.distSpec / PK_GI_RAY_MAX_DISTANCE);
-    }
-
-    GI_Store_Diff(coord, s_diff);
-    GI_Store_Spec(coord, s_spec);
+    GI_Store_Packed_Diff(coord, packedDiff);
+    GI_Store_Packed_Spec(coord, packedSpec);
+        
+    #if defined(PK_GI_CHECKERBOARD_TRACE)
+    // Fill blanks in neighbourhood to avoid nans on resize
+    const int2 ncoord = int2(raycoord.x * 2 + GI_GetCheckerboardOffset(uint2(raycoord), pk_FrameIndex.y + 1u), raycoord.y);
+    GI_Store_Packed_Diff(ncoord, packedDiff);
+    GI_Store_Packed_Spec(ncoord, packedSpec);
+    #endif
 }

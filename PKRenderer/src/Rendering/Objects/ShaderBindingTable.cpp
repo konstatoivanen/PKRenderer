@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "ShaderBindingTable.h"
+#include "Rendering/GraphicsAPI.h"
 
 namespace PK::Rendering::Objects
 {
@@ -7,13 +8,20 @@ namespace PK::Rendering::Objects
 
     void ShaderBindingTable::Validate(CommandBuffer* cmdUpload, CommandBuffer* cmdBind, Shader* shader)
     {
-        if (shader->GetAssetHash() == pipelineHash)
+        // @TODO parameterize this
+        auto selector = shader->GetVariantSelector();
+        selector.SetKeywordsFrom(GraphicsAPI::GetActiveDriver()->globalResources);
+        auto newVariantIndex = selector.GetIndex();
+        auto newHash = shader->GetAssetHash();
+
+        if (pipelineHash == newHash && variantIndex == newVariantIndex)
         {
             return;
         }
 
-        pipelineHash = shader->GetAssetHash();
-        tableInfo = shader->GetShaderBindingTableInfo();
+        pipelineHash = newHash;
+        variantIndex = newVariantIndex;
+        tableInfo = shader->GetVariant(newVariantIndex)->GetShaderBindingTableInfo();
         auto tableUintCount = tableInfo.totalTableSize / sizeof(uint32_t);
 
         if (buffer == nullptr)

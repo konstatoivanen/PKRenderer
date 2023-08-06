@@ -23,8 +23,6 @@ PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 
 #define PK_GI_APPROX_ROUGH_SPEC 1
-#define PK_GI_SSRT_PRETRACE 0
-#define PK_GI_SPEC_VIRT_REPROJECT 1
 
 #define PK_GI_LVL_DIFF0 0
 #define PK_GI_LVL_DIFF1 1
@@ -55,8 +53,9 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 //----------STRUCTS----------//
 struct GIDiff { SH sh; float ao; float history; };
 struct GISpec { float3 radiance; float ao; float history; };
-struct GIRayDirections { float3 diff; float3 spec; };
-struct GIRayHits { float distDiff; float distSpec; bool isMissDiff; bool isMissSpec; };
+struct GIRayHit { float dist; bool isMiss; bool isScreen; };
+struct GIRayHits { GIRayHit diff; GIRayHit spec; };
+struct GIRayParams { float3 origin; float3 diffdir; float3 specdir; float roughness; };
 
 #define pk_Zero_GIDiff GIDiff(pk_ZeroSH, 0.0f, 0.0f)
 #define pk_Zero_GISpec GISpec(0.0f.xxx, 0.0f, 0.0f)
@@ -69,11 +68,34 @@ GISpec GI_Sum_NoHistory(const GISpec a, const GISpec b, const float w) { return 
 GIDiff GI_Mul_NoHistory(const GIDiff a, const float w) { return GIDiff(SH_Scale(a.sh, w), a.ao * w, a.history); }
 GISpec GI_Mul_NoHistory(const GISpec a, const float w) { return GISpec(a.radiance * w, a.ao * w, a.history); }
 
-GIRayDirections GI_GetRayDirections(uint2 coord, in float3 N, in float3 V, in float R)
+#define GI_GET_RAY_PARAMS(COORD, RAYCOORD, DEPTH, OUT_PARAMS)                                                                   \
+{                                                                                                                               \
+    const float4 normalRoughness = SampleWorldNormalRoughness(COORD);                                                           \
+    float3 normal = normalRoughness.xyz;                                                                                        \
+    OUT_PARAMS.roughness = normalRoughness.w;                                                                                   \
+    /* Apply bias to avoid rays clipping with geo at high distances */                                                          \
+    OUT_PARAMS.origin = SampleWorldPosition(COORD, int2(pk_ScreenSize.xy), DEPTH - DEPTH * 1e-2f);                              \
+                                                                                                                                \
+    float3 viewdir = normalize(OUT_PARAMS.origin - pk_WorldSpaceCameraPos.xyz);                                                 \
+                                                                                                                                \
+    /* Apply bias to avoid rays clipping with geo at high angles */                                                             \
+    OUT_PARAMS.origin += normal * (0.01f / (saturate(dot(-viewdir, normal)) + 0.01f)) * 0.05f;                                  \
+                                                                                                                                \
+    const float3 v = GlobalNoiseBlue(RAYCOORD + pk_GI_RayDither, pk_FrameIndex.y);                                              \
+    const float2 Xi = saturate(v.xy + ((v.z - 0.5f) / 256.0f));                                                                 \
+    OUT_PARAMS.diffdir = ImportanceSampleLambert(Xi, normal);                                                                   \
+    OUT_PARAMS.specdir = ImportanceSampleSmithGGX(Xi.yx, normal, viewdir, OUT_PARAMS.roughness);                                \
+}                                                                                                                               \
+
+uint GI_GetCheckerboardOffset(uint2 coord, uint frame) { return ((coord.x ^ coord.y) ^ frame) & 0x1u; }
+
+int2 GI_ExpandCheckerboardCoord(uint2 coord)
 {
-    const float3 v = GlobalNoiseBlue(coord.xy + pk_GI_RayDither, pk_FrameIndex.y);
-    const float2 Xi = saturate(v.xy + ((v.z - 0.5f) / 256.0f));
-    return GIRayDirections(ImportanceSampleLambert(Xi, N), ImportanceSampleSmithGGX(Xi.yx, N, V, R));
+#if defined(PK_GI_CHECKERBOARD_TRACE)
+    return int2(coord.x * 2 + GI_GetCheckerboardOffset(coord, pk_FrameIndex.y), coord.y);
+#else
+    return int2(coord);
+#endif
 }
 
 float3 GI_VoxelToWorldSpace(int3 coord) { return coord * pk_GI_VoxelSize + pk_GI_VolumeST.xyz + pk_GI_VoxelSize * 0.5f; }
@@ -119,11 +141,14 @@ GISpec GI_Load_Cur_Spec(const int2 coord) { return GI_Unpack_Spec(GI_Load_Packed
 
 GIRayHits GI_Load_RayHits(const int2 coord)
 {
-    const uint packed = imageLoad(pk_GI_RayHits, coord).x;
+    uint packed = imageLoad(pk_GI_RayHits, coord).x;
+    const bool isScreenDiff = bitfieldExtract(packed, 15, 1) != 0;
+    const bool isScreenSpec = bitfieldExtract(packed, 31, 1) != 0;
+    packed &= 0x7FFF7FFFu; // Remove sign bits
     const bool isMissDiff = bitfieldExtract(packed, 0, 16) == 0x7C00u;
-    const bool isMissSpec = bitfieldExtract(packed, 16, 16)== 0x7C00u;
+    const bool isMissSpec = bitfieldExtract(packed, 16, 16) == 0x7C00u;
     const float2 hitDist = unpackHalf2x16(packed);
-    return GIRayHits(hitDist.x, hitDist.y, isMissDiff, isMissSpec);
+    return GIRayHits(GIRayHit(hitDist.x, isMissDiff, isScreenDiff), GIRayHit(hitDist.y, isMissSpec, isScreenSpec));
 }
 
 float4 GI_Load_Voxel_UVW(const half3 uvw, float lvl) { return tex2DLod(pk_GI_VolumeRead, float3(uvw), lvl); }
@@ -138,9 +163,11 @@ void GI_Store_Spec(const int2 coord, const GISpec u) { GI_Store_Packed_Spec(coor
 
 void GI_Store_RayHits(const int2 coord, const GIRayHits u)
 {
-    uint packed = packHalf2x16(float2(u.distDiff, u.distSpec));
-    packed = u.isMissDiff ? bitfieldInsert(packed, 0x7C00u, 0, 16) : packed;
-    packed = u.isMissSpec ? bitfieldInsert(packed, 0x7C00u, 16, 16) : packed;
+    uint packed = packHalf2x16(float2(u.diff.dist, u.spec.dist));
+    packed = u.diff.isMiss ? bitfieldInsert(packed, 0x7C00u, 0, 16) : packed;
+    packed = u.spec.isMiss ? bitfieldInsert(packed, 0x7C00u, 16, 16) : packed;
+    packed = bitfieldInsert(packed, u.diff.isScreen ? 0x1u : 0x0u, 15, 1);
+    packed = bitfieldInsert(packed, u.spec.isScreen ? 0x1u : 0x0u, 31, 1);
     imageStore(pk_GI_RayHits, coord, uint4(packed));
 }
 

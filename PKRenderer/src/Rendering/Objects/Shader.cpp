@@ -92,7 +92,7 @@ namespace PK::Rendering::Objects
         PK_THROW_ASSERT(PK::Assets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
         PK_THROW_ASSERT(asset.header->type == PK::Assets::PKAssetType::Shader, "Trying to read a shader from a non shader file!")
 
-            auto shader = PK::Assets::ReadAsShader(&asset);
+        auto shader = PK::Assets::ReadAsShader(&asset);
         auto base = asset.rawData;
 
         if (shader->variantcount == 0)

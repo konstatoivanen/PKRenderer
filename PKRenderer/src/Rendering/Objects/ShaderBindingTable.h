@@ -12,6 +12,7 @@ namespace PK::Rendering::Objects
         Utilities::Ref<Buffer> buffer = nullptr;
         Structs::ShaderBindingTableInfo tableInfo{};
         uint64_t pipelineHash = 0ull;
+        uint64_t variantIndex = 0ull;
         void Validate(CommandBuffer* cmdUpload, CommandBuffer* cmdBind, Shader* shader);
     };
 }

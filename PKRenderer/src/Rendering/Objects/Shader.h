@@ -73,7 +73,6 @@ namespace PK::Rendering::Objects
             inline bool SupportsMaterials() const { return m_materialPropertyLayout.size() > 0; }
             constexpr const Math::uint3 GetGroupSize() const { return m_variants.at(0)->GetGroupSize(); }
             constexpr const Structs::BufferLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
-            inline Structs::ShaderBindingTableInfo GetShaderBindingTableInfo() const { return m_variants.at(0)->GetShaderBindingTableInfo(); }
 
             void Import(const char* filepath) final;
             std::string GetMetaInfo() const final;

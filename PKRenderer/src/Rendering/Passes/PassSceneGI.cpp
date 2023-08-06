@@ -15,6 +15,11 @@ namespace PK::Rendering::Passes
     constexpr static TextureViewRange DATA_RANGE0 = { 0,0,0,3 };
     constexpr static TextureViewRange DATA_RANGE1 = { 0,3,0,3 };
 
+    uint3 GetCheckerboardResolution(const uint3& resolution, bool halfRes)
+    {
+        return { resolution.x / (halfRes ? 2 : 1), resolution.y, resolution.z };
+    }
+
     PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
         m_computeClear = assetDatabase->Find<Shader>("CS_GI_Clear");
@@ -26,6 +31,7 @@ namespace PK::Rendering::Passes
         m_computeHistoryFill = assetDatabase->Find<Shader>("CS_GI_HistoryFill");
         m_computeDiskFilter = assetDatabase->Find<Shader>("CS_GI_DiskFilter");
         m_rayTraceGatherGI = assetDatabase->Find<Shader>("RS_GI_Raytrace");
+        OnUpdateParameters(config);
 
         TextureDescriptor descr{};
         descr.samplerType = SamplerType::Sampler3D;
@@ -71,6 +77,7 @@ namespace PK::Rendering::Passes
         descr.usage = TextureUsage::Storage;
         descr.format = TextureFormat::R32UI;
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1u };
+        descr.resolution = GetCheckerboardResolution(descr.resolution, m_useCheckerboardTrace);
         m_rayhits = Texture::Create(descr, "GI.RayHits");
 
         m_voxelizeAttribs.depthStencil.depthCompareOp = Comparison::Off;
@@ -116,7 +123,7 @@ namespace PK::Rendering::Passes
             m_rayTraceGatherGI);
 
         m_screenData->Validate(resolution);
-        m_rayhits->Validate(resolution);
+        m_rayhits->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
         m_screenDataMips->Validate({ resolution.x / 2u, resolution.y / 2u, resolution.z });
 
         GraphicsAPI::SetImage(hash->pk_GI_RayHits, m_rayhits.get());
@@ -147,8 +154,7 @@ namespace PK::Rendering::Passes
     void PassSceneGI::DispatchRays(Objects::CommandBuffer* cmd)
     {
         cmd->BeginDebugScope("SceneGI.DispatchRays", PK_COLOR_GREEN);
-        auto resolution = m_rayhits->GetResolution();
-        cmd->DispatchRays(m_rayTraceGatherGI, { resolution.x, resolution.y, 1 });
+        cmd->DispatchRays(m_rayTraceGatherGI, m_rayhits->GetResolution());
         cmd->EndDebugScope();
     }
 
@@ -167,15 +173,18 @@ namespace PK::Rendering::Passes
             {0u, 0u, volres.y, volres.z },
         };
 
+        // Reproject
         GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), DATA_RANGE1);
         GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), DATA_RANGE0);
-        cmd->Dispatch(m_computeReproject, 0, { resolution.x, resolution.y, 1u });
+        cmd->Dispatch(m_computeReproject, { resolution.x, resolution.y, 1u });
 
+        // Voxelize raster
         cmd->SetRenderTarget({ viewports[m_rasterAxis].z, viewports[m_rasterAxis].w, 1 });
         cmd->SetViewPort(viewports[m_rasterAxis]);
         cmd->SetScissor(viewports[m_rasterAxis]);
         batcher->Render(cmd, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);
 
+        // Voxel mips
         GraphicsAPI::SetTexture(hash->_SourceTex, m_voxels.get());
         GraphicsAPI::SetImage(hash->_DestinationTex, m_voxels.get(), 1, 0);
         GraphicsAPI::SetImage(hash->_DestinationMip1, m_voxels.get(), 2, 0);
@@ -198,27 +207,39 @@ namespace PK::Rendering::Passes
 
         cmd->BeginDebugScope("SceneGI.Filter", PK_COLOR_GREEN);
 
+        // Shade hits
         GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), DATA_RANGE1);
-        cmd->Dispatch(m_computeShadeHits, 0, dimension);
+        cmd->Dispatch(m_computeShadeHits, GetCheckerboardResolution(dimension, m_useCheckerboardTrace));
 
+        // Accumulate
         GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), DATA_RANGE1);
         GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), DATA_RANGE0);
-        cmd->Dispatch(m_computeAccumulate, 0, dimension);
+        cmd->Dispatch(m_computeAccumulate, GetCheckerboardResolution(dimension, m_useCheckerboardTrace));
 
+        // Screen mip
         GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), DATA_RANGE0);
-
         GraphicsAPI::SetImage(hash->_DestinationMip1, m_screenDataMips.get(), { 0, 0, 1, 3 });
         GraphicsAPI::SetImage(hash->_DestinationMip2, m_screenDataMips.get(), { 1, 0, 1, 3 });
         GraphicsAPI::SetImage(hash->_DestinationMip3, m_screenDataMips.get(), { 2, 0, 1, 3 });
         GraphicsAPI::SetImage(hash->_DestinationMip4, m_screenDataMips.get(), { 3, 0, 1, 3 });
         cmd->Dispatch(m_computeScreenMip, 0, m_screenDataMips->GetResolution());
 
+        // History fill
         cmd->Dispatch(m_computeHistoryFill, 0, dimension);
 
+        // Disk filter
         GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), DATA_RANGE1);
         cmd->Dispatch(m_computeDiskFilter, 0, dimension);
 
         GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), DATA_RANGE1);
         cmd->EndDebugScope();
+    }
+
+    void PassSceneGI::OnUpdateParameters(const ApplicationConfig* config)
+    {
+        m_useCheckerboardTrace = config->GICheckerboardTrace;
+        GraphicsAPI::SetKeyword("PK_GI_CHECKERBOARD_TRACE", m_useCheckerboardTrace);
+        GraphicsAPI::SetKeyword("PK_GI_SPEC_VIRT_REPROJECT", config->GISpecularVirtualReproject);
+        GraphicsAPI::SetKeyword("PK_GI_SSRT_PRETRACE", config->GIScreenSpacePretrace);
     }
 }

@@ -222,7 +222,7 @@ struct SurfaceFragmentVaryings
         #else
 
             #if !defined(PK_META_PASS_GIVOXELIZE)
-                // Shift invalid normals to view
+                // Shift invalid normals to view (not as effective as above method but it's alot cheaper than two matrix muls.
                 float shiftAmount = dot(surf.normal, surf.viewdir);
                 surf.normal = shiftAmount < 0.0f ? surf.normal + surf.viewdir * (-shiftAmount + 1e-5f) : surf.normal;
                 surf.roughness = max(surf.roughness, 0.002);

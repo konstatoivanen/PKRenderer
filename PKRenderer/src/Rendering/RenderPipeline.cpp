@@ -402,6 +402,7 @@ namespace PK::Rendering
         m_constantsPostProcess->FlushBuffer(QueueType::Transfer);
 
         m_passEnvBackground.OnUpdateParameters(token);
+        m_passSceneGI.OnUpdateParameters(config);
         m_depthOfField.OnUpdateParameters(config);
         m_passVolumeFog.OnUpdateParameters(config);
     }

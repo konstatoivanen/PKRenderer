@@ -2,6 +2,8 @@
 #pragma PROGRAM_COMPUTE
 #include includes/SceneGIFiltering.glsl
 
+#multi_compile _ PK_GI_SPEC_VIRT_REPROJECT
+
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
@@ -44,7 +46,7 @@ void main()
         // Reconstruct diff & naive spec
         GI_SFLT_REPRO_BILINEAR(screenuvPrev, coordPrev, normal, depth, depthBias, roughness, wSumDiff, wSumSpec, diff, spec)
 
-        #if PK_GI_SPEC_VIRT_REPROJECT == 1
+        #if defined(PK_GI_SPEC_VIRT_REPROJECT)
         if (!Test_EPS6(wSumSpec))
         {
             const float virtualDist = (spec.ao / wSumSpec) * PK_GI_RAY_MAX_DISTANCE * GetSpecularDominantFactor(nv, sqrt(roughness));

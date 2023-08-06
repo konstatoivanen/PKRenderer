@@ -18,6 +18,7 @@ namespace PK::Rendering::Passes
             void DispatchRays(Objects::CommandBuffer* cmd);
             void Preprocess(Objects::CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup);
             void RenderGI(Objects::CommandBuffer* cmd);
+            void OnUpdateParameters(const Core::ApplicationConfig* config);
 
         private:
             Structs::FixedFunctionShaderAttributes m_voxelizeAttribs{};
@@ -39,5 +40,6 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Texture> m_rayhits;
             uint32_t m_frameIndex = 0u;
             int32_t m_rasterAxis = 0;
+            bool m_useCheckerboardTrace = false;
     };
 }
