@@ -31,8 +31,8 @@ void main()
     const float wSpec = max(1.0f / (spec.history + 1.0f), PK_GI_MIN_ACCUM);
     const float maxGainDiff = PK_GI_MAX_LUMA_GAIN / (1.0f - wDiff);
     const float maxGainSpec = PK_GI_MAX_LUMA_GAIN / (1.0f - wSpec);
-    const float2 lumaRangeDiff = float2(0.0f, SH_ToLuminanceL0(diff.sh) + maxGainDiff);
-    const float2 lumaRangeSpec = float2(0.0f, dot(pk_Luminance.rgb, spec.radiance) + maxGainSpec);
+    const float2 lumaRangeDiff = float2(0.0f, GI_Luminance(diff) + maxGainDiff);
+    const float2 lumaRangeSpec = float2(0.0f, GI_Luminance(spec) + maxGainSpec);
 
     GI_SFLT_ANTI_FIREFLY(coord, normal, depth, depthBias, roughness, lumaRangeDiff, lumaRangeSpec, diffSample, specSample)
 

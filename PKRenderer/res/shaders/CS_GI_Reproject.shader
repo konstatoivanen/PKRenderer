@@ -37,11 +37,11 @@ void main()
         const float3 viewpos = SampleViewPosition(coord, size, depth);
         const float3 viewdir = normalize(viewpos);
         const float nv = dot(normal, -viewdir);
-        const float parallax = GetParallax(viewdir, normalize(viewpos - pk_ViewSpaceCameraDelta.xyz));
+        const float parallax = GI_GetParallax(viewdir, normalize(viewpos - pk_ViewSpaceCameraDelta.xyz));
         const float2 screenuvPrev = GI_ViewToPrevScreenUV(viewpos);
         const int2 coordPrev = int2(screenuvPrev);
 
-        antilagSpec = GetAntilagSpecular(roughness, nv, parallax);
+        antilagSpec = GI_GetAntilagSpecular(roughness, nv, parallax);
 
         // Reconstruct diff & naive spec
         GI_SFLT_REPRO_BILINEAR(screenuvPrev, coordPrev, normal, depth, depthBias, roughness, wSumDiff, wSumSpec, diff, spec)
@@ -49,7 +49,7 @@ void main()
         #if defined(PK_GI_SPEC_VIRT_REPROJECT)
         if (!Test_EPS6(wSumSpec))
         {
-            const float virtualDist = (spec.ao / wSumSpec) * PK_GI_RAY_MAX_DISTANCE * GetSpecularDominantFactor(nv, sqrt(roughness));
+            const float virtualDist = (spec.ao / wSumSpec) * PK_GI_RAY_MAX_DISTANCE * GI_GetSpecularDominantFactor(nv, sqrt(roughness));
             GI_SFLT_REPRO_VIRTUAL_SPEC(viewpos, viewdir, normal, depth, roughness, virtualDist, wSumVSpec, specVirtual)
         }
         #endif

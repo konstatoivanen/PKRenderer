@@ -67,12 +67,17 @@ GIDiff GI_Sum_NoHistory(const GIDiff a, const GIDiff b, const float w) { return 
 GISpec GI_Sum_NoHistory(const GISpec a, const GISpec b, const float w) { return GISpec(a.radiance + b.radiance * w, a.ao + b.ao * w, a.history); }
 GIDiff GI_Mul_NoHistory(const GIDiff a, const float w) { return GIDiff(SH_Scale(a.sh, w), a.ao * w, a.history); }
 GISpec GI_Mul_NoHistory(const GISpec a, const float w) { return GISpec(a.radiance * w, a.ao * w, a.history); }
+float GI_Luminance(const GIDiff a) { return SH_ToLuminanceL0(a.sh); }
+float GI_Luminance(const GISpec a) { return dot(pk_Luminance.rgb, a.radiance); }
+float GI_LogLuminance(const GIDiff a) { return log(1.0f + GI_Luminance(a)); }
+float GI_LogLuminance(const GISpec a) { return log(1.0f + GI_Luminance(a)); }
 
 #define GI_GET_RAY_PARAMS(COORD, RAYCOORD, DEPTH, OUT_PARAMS)                                                                   \
 {                                                                                                                               \
     const float4 normalRoughness = SampleWorldNormalRoughness(COORD);                                                           \
     float3 normal = normalRoughness.xyz;                                                                                        \
     OUT_PARAMS.roughness = normalRoughness.w;                                                                                   \
+                                                                                                                                \
     /* Apply bias to avoid rays clipping with geo at high distances */                                                          \
     OUT_PARAMS.origin = SampleWorldPosition(COORD, int2(pk_ScreenSize.xy), DEPTH - DEPTH * 1e-2f);                              \
                                                                                                                                 \

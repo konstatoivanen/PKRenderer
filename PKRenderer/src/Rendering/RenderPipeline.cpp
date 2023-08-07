@@ -11,9 +11,8 @@
 TODO:
 Fix roughness dominant factor usage
 Test nvidias radius scaling
-Investigate short hits
 Investigate camera moving bias
-Test checkerboard ray trace
+Fix history fill fireflies & bad denoising quality (possibly 'dedirectionalize' diffuse?)
 Fix ssrt miss hit dist
 Write subject analysis
 */

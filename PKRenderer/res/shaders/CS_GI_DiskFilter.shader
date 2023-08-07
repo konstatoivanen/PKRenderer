@@ -49,7 +49,7 @@ void main()
         float variance = 0.0f;
         GI_SFLT_DIFF_VARIANCE(coord, depth, diff, variance)
 
-        const float2 radiusAndScale = GetDiskFilterRadiusAndScale(depth, variance, diff.ao, diff.history);
+        const float2 radiusAndScale = GI_GetDiskFilterRadiusAndScale(depth, variance, diff.ao, diff.history);
         const float scale = radiusAndScale.y;
         const float radius = radiusAndScale.x * (scale + 1e-4f);
         const bool skip = scale < 0.05f;
@@ -68,7 +68,7 @@ void main()
 #endif
     {
         // @TODO Calculate different radius for this as diffuse variance is hardly usable & roughness is more of a relevant factor.
-        const float2 radiusAndScale = GetDiskFilterRadiusAndScale(depth, 0.0f, spec.ao, spec.history);
+        const float2 radiusAndScale = GI_GetDiskFilterRadiusAndScale(depth, 0.0f, spec.ao, spec.history);
         const float scale = radiusAndScale.y * sqrt(roughness);
         const float radius = radiusAndScale.x * (scale + 1e-4f);
         const bool skip = scale < 0.05f;
