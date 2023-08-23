@@ -2,11 +2,14 @@
 #extension GL_KHR_shader_subgroup_ballot : enable
 #include includes/GBuffers.glsl
 #include includes/SharedSceneGI.glsl
+#include includes/Encoding.glsl
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE
 #multi_compile _ PK_GI_SSRT_PRETRACE
+#multi_compile _ PK_GI_RESTIR
 
 struct TracePayload
 {
+    uint hitNormal;
     uint hitDistance;
 };
 
@@ -81,14 +84,13 @@ bool IsScreenHit(const int2 coord, const float3 origin, const float3 direction, 
 
     if (Test_WorldToPrevClipUVW(worldpos, clipuvw))
     {
-        float2 deltacoord = abs(coord - (clipuvw.xy * pk_ScreenParams.xy));
-        float rdepth = ViewDepth(clipuvw.z);
-        float sdepth = SamplePreviousViewDepth(clipuvw.xy);
-        float sviewz = -SamplePreviousViewNormal(clipuvw.xy).z + 0.15;
-
-        bool isTexelOOB = dot(deltacoord, deltacoord) > 2.0f;
-        bool isValidSurf = abs(sdepth - rdepth) < (rdepth * 0.01f / sviewz);
-        bool isValidSky = hit.isMiss && !Test_DepthFar(sdepth);
+        const float2 deltacoord = abs(coord - (clipuvw.xy * pk_ScreenParams.xy));
+        const float rdepth = ViewDepth(clipuvw.z);
+        const float sdepth = SamplePreviousViewDepth(clipuvw.xy);
+        const float sviewz = -SamplePreviousViewNormal(clipuvw.xy).z + 0.15;
+        const bool isTexelOOB = dot(deltacoord, deltacoord) > 2.0f;
+        const bool isValidSurf = abs(sdepth - rdepth) < (rdepth * 0.01f / sviewz);
+        const bool isValidSky = hit.isMiss && !Test_DepthFar(sdepth);
         return isTexelOOB && (isValidSky || isValidSurf);
     }
 
@@ -109,29 +111,14 @@ uint TraceRay_ScreenSpace(const float3 origin, const float3 direction, inout flo
 #endif
 }
 
-#define TRACE_RAY(ORIGIN, DIRECTION, OUT_DIST, OUT_MISS)                                                                                        \
-{                                                                                                                                               \
-    const uint result = TraceRay_ScreenSpace(ORIGIN, DIRECTION, OUT_DIST);                                                                      \
-    OUT_MISS = result != RT_HIT;                                                                                                                \
-                                                                                                                                                \
-    [[branch]]                                                                                                                                  \
-    if (result == RT_MISS)                                                                                                                      \
-    {                                                                                                                                           \
-        traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ORIGIN, OUT_DIST * 0.9f, DIRECTION, PK_GI_RAY_MAX_DISTANCE, 0);     \
-        OUT_MISS = payload.hitDistance == 0xFFFFFFFFu;                                                                                          \
-        OUT_DIST = uintBitsToFloat(payload.hitDistance);                                                                                        \
-    }                                                                                                                                           \
-}                                                                                                                                               \
-
 PK_DECLARE_RT_PAYLOAD_OUT(TracePayload, payload, 0);
 
 void main()
 {
-    const int2 size = int2(pk_ScreenSize.xy);
     const int2 raycoord = int2(gl_LaunchIDEXT.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy);
-    const float2 uv = (coord + 0.5f.xx) / size;
-    float depth = SampleViewDepth(coord);
+    const float2 uv = (coord + 0.5f.xx) / int2(pk_ScreenSize.xy);
+    const float depth = SampleViewDepth(coord);
     
     GIRayParams params;
     GIRayHits hits;
@@ -149,9 +136,31 @@ void main()
         }
         else
         #endif
-        TRACE_RAY(params.origin, params.specdir, hits.spec.dist, hits.spec.isMiss)
+        {
+            const uint result = TraceRay_ScreenSpace(params.origin, params.specdir, hits.spec.dist);
+            hits.spec.isMiss = result != RT_HIT;
+            
+            [[branch]]
+            if (result == RT_MISS)
+            {
+                traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, params.origin, hits.spec.dist * 0.9f, params.specdir, PK_GI_RAY_MAX_DISTANCE, 0);
+                hits.spec.isMiss = payload.hitDistance == 0xFFFFFFFFu;
+                hits.spec.dist = uintBitsToFloat(payload.hitDistance);
+            }
+        }
 
-        TRACE_RAY(params.origin, params.diffdir, hits.diff.dist, hits.diff.isMiss)
+        {
+            const uint result = TraceRay_ScreenSpace(params.origin, params.diffdir, hits.diff.dist);
+            hits.diff.isMiss = result != RT_HIT;
+
+            [[branch]]
+            if (result == RT_MISS)
+            {
+                traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, params.origin, hits.diff.dist * 0.9f, params.diffdir, PK_GI_RAY_MAX_DISTANCE, 0);
+                hits.diff.isMiss = payload.hitDistance == 0xFFFFFFFFu;
+                hits.diff.dist = uintBitsToFloat(payload.hitDistance);
+            }
+        }
 
         {
             #if PK_GI_APPROX_ROUGH_SPEC == 1
@@ -166,6 +175,10 @@ void main()
             hits.diff.isScreen = IsScreenHit(coord, params.origin, params.diffdir, hits.diff);
         }
 
+        #if defined(PK_GI_RESTIR)   
+        imageStore(pk_GI_RayHitNormals, raycoord, uint4(payload.hitNormal));
+        #endif
+
         GI_Store_RayHits(raycoord, hits);
     }
 }
@@ -175,13 +188,50 @@ PK_DECLARE_RT_PAYLOAD_IN(TracePayload, payload, 0);
 
 void main() 
 {
+    #if defined(PK_GI_RESTIR)   
+        payload.hitNormal = EncodeOctaUV(-gl_WorldRayDirectionEXT);
+    #endif
+
     payload.hitDistance = 0xFFFFFFFFu;
 }
 
 #pragma PROGRAM_RAY_CLOSEST_HIT
 PK_DECLARE_RT_PAYLOAD_IN(TracePayload, payload, 0);
 
+// @TODO replace this crap with this extention when it comes out of beta.
+// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_KHR_ray_tracing_position_fetch.html
+PK_DECLARE_READONLY_BUFFER(float3, pk_RT_Vertices, PK_SET_DRAW);
+PK_DECLARE_READONLY_BUFFER(uint, pk_RT_Indices, PK_SET_DRAW);
+
 void main()
 {
+    #if defined(PK_GI_RESTIR)   
+        uint3 indices = uint3
+        (
+            PK_BUFFER_DATA(pk_RT_Indices, 3 * gl_PrimitiveID + 0),
+            PK_BUFFER_DATA(pk_RT_Indices, 3 * gl_PrimitiveID + 1),
+            PK_BUFFER_DATA(pk_RT_Indices, 3 * gl_PrimitiveID + 2)
+        );
+    
+        float3 positions[3] =
+        {
+            PK_BUFFER_DATA(pk_RT_Vertices, indices[0]),
+            PK_BUFFER_DATA(pk_RT_Vertices, indices[1]),
+            PK_BUFFER_DATA(pk_RT_Vertices, indices[2])
+        };
+    
+        float3 v0 = normalize(positions[1] - positions[0]);
+        float3 v1 = normalize(positions[2] - positions[0]);
+        float3 normal = cross(v0, v1);
+        normal = mul(gl_ObjectToWorldEXT, float4(normal, 0.0f));
+    
+        if (dot(normal, gl_WorldRayDirectionEXT) > 0)
+        {
+            normal *= -1;
+        }
+
+        payload.hitNormal = EncodeOctaUV(normal);
+    #endif
+
     payload.hitDistance = floatBitsToUint(PK_GET_RAY_HIT_DISTANCE);
 }

@@ -26,6 +26,7 @@ namespace PK::Rendering::Passes
         m_computeMipmap = assetDatabase->Find<Shader>("CS_GI_VolumeMipmap");
         m_computeAccumulate = assetDatabase->Find<Shader>("CS_GI_Accumulate");
         m_computeShadeHits = assetDatabase->Find<Shader>("CS_GI_ShadeHits");
+        m_computeRestir = assetDatabase->Find<Shader>("CS_GI_Restir");
         m_computeReproject = assetDatabase->Find<Shader>("CS_GI_Reproject");
         m_computeScreenMip = assetDatabase->Find<Shader>("CS_GI_ScreenMip");
         m_computeHistoryFill = assetDatabase->Find<Shader>("CS_GI_HistoryFill");
@@ -71,6 +72,7 @@ namespace PK::Rendering::Passes
         descr.resolution = { config->InitialWidth / 2u, config->InitialHeight / 2u, 1u };
         m_screenDataMips = Texture::Create(descr, "GI.ScreenDataMips");
 
+
         descr.samplerType = SamplerType::Sampler2D;
         descr.levels = 1u;
         descr.layers = 1u;
@@ -79,6 +81,12 @@ namespace PK::Rendering::Passes
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1u };
         descr.resolution = GetCheckerboardResolution(descr.resolution, m_useCheckerboardTrace);
         m_rayhits = Texture::Create(descr, "GI.RayHits");
+        m_rayhitNormals = Texture::Create(descr, "GI.RayHitNormals");
+        
+        descr.samplerType = SamplerType::Sampler2DArray;
+        descr.layers = 6;
+        descr.format = TextureFormat::RGBA32UI;
+        m_reservoirs = Texture::Create(descr, "GI.Reservoirs");
 
         m_voxelizeAttribs.depthStencil.depthCompareOp = Comparison::Off;
         m_voxelizeAttribs.depthStencil.depthWriteEnable = false;
@@ -124,10 +132,18 @@ namespace PK::Rendering::Passes
 
         m_screenData->Validate(resolution);
         m_rayhits->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
+        m_rayhitNormals->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
         m_screenDataMips->Validate({ resolution.x / 2u, resolution.y / 2u, resolution.z });
 
         GraphicsAPI::SetImage(hash->pk_GI_RayHits, m_rayhits.get());
+        GraphicsAPI::SetImage(hash->pk_GI_RayHitNormals, m_rayhitNormals.get());
         GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataMips, m_screenDataMips.get());
+        
+        if (m_useRestir)
+        {
+            m_reservoirs->Validate(resolution);
+            GraphicsAPI::SetImage(hash->pk_Reservoirs, m_reservoirs.get());
+        }
 
         m_rasterAxis = m_frameIndex % 3;
         auto checkerboardIndex = m_frameIndex % 4;
@@ -211,6 +227,12 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), DATA_RANGE1);
         cmd->Dispatch(m_computeShadeHits, GetCheckerboardResolution(dimension, m_useCheckerboardTrace));
 
+        // Restir
+        if (m_useRestir)
+        {
+            cmd->Dispatch(m_computeRestir, GetCheckerboardResolution(dimension, m_useCheckerboardTrace));
+        }
+
         // Accumulate
         GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), DATA_RANGE1);
         GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), DATA_RANGE0);
@@ -238,8 +260,10 @@ namespace PK::Rendering::Passes
     void PassSceneGI::OnUpdateParameters(const ApplicationConfig* config)
     {
         m_useCheckerboardTrace = config->GICheckerboardTrace;
+        m_useRestir = config->GIRestir;
         GraphicsAPI::SetKeyword("PK_GI_CHECKERBOARD_TRACE", m_useCheckerboardTrace);
         GraphicsAPI::SetKeyword("PK_GI_SPEC_VIRT_REPROJECT", config->GISpecularVirtualReproject);
         GraphicsAPI::SetKeyword("PK_GI_SSRT_PRETRACE", config->GIScreenSpacePretrace);
+        GraphicsAPI::SetKeyword("PK_GI_RESTIR", config->GIRestir);
     }
 }

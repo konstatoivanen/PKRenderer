@@ -49,6 +49,8 @@ namespace PK::Rendering
         DECLARE_HASH(pk_MATRIX_L_VP)
         DECLARE_HASH(pk_MATRIX_L_VP_N)
         DECLARE_HASH(pk_MATRIX_L_VP_D)
+        DECLARE_HASH(pk_RT_Vertices)
+        DECLARE_HASH(pk_RT_Indices)
         
         DECLARE_HASH(pk_SceneStructure)
 
@@ -79,12 +81,14 @@ namespace PK::Rendering
         DECLARE_HASH(pk_GI_ScreenDataWrite)
         DECLARE_HASH(pk_GI_ScreenDataMips)
         DECLARE_HASH(pk_GI_RayHits)
+        DECLARE_HASH(pk_GI_RayHitNormals)
         DECLARE_HASH(pk_GI_VolumeST)
         DECLARE_HASH(pk_GI_VolumeSwizzle)
         DECLARE_HASH(pk_GI_RayDither)
         DECLARE_HASH(pk_GI_Checkerboard_Offset)
         DECLARE_HASH(pk_GI_VoxelSize)
         DECLARE_HASH(pk_GI_ChromaBias)
+        DECLARE_HASH(pk_Reservoirs)
 
         DECLARE_HASH(pk_Lights)
         DECLARE_HASH(pk_LightMatrices)

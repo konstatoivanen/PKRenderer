@@ -15,6 +15,7 @@ PK_DECLARE_CBUFFER(pk_GI_Parameters, PK_SET_SHADER)
 };
 
 layout(r32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_RayHits;
+layout(r32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_RayHitNormals;
 layout(rg32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_ScreenDataWrite;
 layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_GI_VolumeMaskWrite;
 layout(rgba16f, set = PK_SET_SHADER) uniform image3D pk_GI_VolumeWrite;
@@ -98,6 +99,15 @@ int2 GI_ExpandCheckerboardCoord(uint2 coord)
 {
 #if defined(PK_GI_CHECKERBOARD_TRACE)
     return int2(coord.x * 2 + GI_GetCheckerboardOffset(coord, pk_FrameIndex.y), coord.y);
+#else
+    return int2(coord);
+#endif
+}
+
+int2 GI_CollapseCheckerboardCoord(uint2 coord)
+{
+#if defined(PK_GI_CHECKERBOARD_TRACE)
+    return int2((coord.x - GI_GetCheckerboardOffset(coord, pk_FrameIndex.y + 1u)) / 2, coord.y);
 #else
     return int2(coord);
 #endif

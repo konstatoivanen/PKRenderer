@@ -19,7 +19,7 @@ namespace PK::Rendering::VulkanRHI
 
     static bool IsNVIDIADriverBug(const char* message)
     {
-        // nv validation dll tries to load deprectaed json files.
+        // nv validation dll tries to load deprecated json files.
         if (strstr(message, "loader_get_json") != nullptr)
         {
             return true;

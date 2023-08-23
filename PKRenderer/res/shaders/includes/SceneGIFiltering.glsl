@@ -366,3 +366,105 @@ const float name[2][2] =                                            \
                                                                                                                                                     \
     SFLT_OUT = GI_Mul_NoHistory(SFLT_OUT, 1.0f / wSum);                                                                                             \
 }                                                                                                                                                   \
+
+/*
+    #define POISSON_SAMPLE_NUM      REBLUR_POISSON_SAMPLE_NUM
+    #define POISSON_SAMPLES( i )    REBLUR_POISSON_SAMPLES( i )
+
+{
+        float smc = GetSpecMagicCurve2( roughness );
+        float sum = 1.0;
+        float radiusScale = 1.0;
+        float fractionScale = REBLUR_BLUR_FRACTION_SCALE;
+
+        float lobeAngleFractionScale = gLobeAngleFraction * fractionScale;
+        float roughnessFractionScale = gRoughnessFraction * fractionScale;
+
+        float hitDistScale = _REBLUR_GetHitDistanceNormalization( viewZ, gHitDistParams, roughness );
+        float hitDist = ExtractHitDist( spec ) * hitDistScale;
+
+        // Min blur radius
+        float4 Dv = STL::ImportanceSampling::GetSpecularDominantDirection( Nv, Vv, roughness, STL_SPECULAR_DOMINANT_DIRECTION_G2 );
+        float NoD = abs( dot( Nv, Dv.xyz ) );
+        float lobeTanHalfAngle = STL::ImportanceSampling::GetSpecularLobeTanHalfAngle( roughness );
+        float lobeRadius = hitDist * NoD * lobeTanHalfAngle;
+        float minBlurRadius = lobeRadius / PixelRadiusToWorld( gUnproject, gOrthoMode, 1.0, viewZ + hitDist * Dv.w );
+        float frustumSize = GetFrustumSize( gMinRectDimMulUnproject, gOrthoMode, viewZ );
+        
+        float hitDistFactor = GetHitDistFactor( hitDist * NoD, frustumSize );
+        hitDistFactor = lerp( hitDistFactor, 1.0, data1.w );
+        
+        float boost = 1.0 - GetFadeBasedOnAccumulatedFrames( data1.z );
+        boost *= 1.0 - STL::BRDF::Pow5( NoV );
+        boost *= smc;
+
+        float specNonLinearAccumSpeed = 1.0 / ( 1.0 + ( 1.0 - boost ) * data1.z );
+
+        float relaxedHitDistFactor = lerp( 1.0, hitDistFactor, roughness );
+        hitDistFactor = lerp( hitDistFactor, relaxedHitDistFactor, specNonLinearAccumSpeed );
+
+        // Blur radius - main
+        float blurRadius = gBlurRadius * ( 1.0 + 2.0 * boost ) / 3.0;
+        blurRadius *= hitDistFactor * smc;
+        blurRadius = min( blurRadius, minBlurRadius );
+
+        blurRadius += smc;
+        blurRadius *= radiusScale;
+        blurRadius *= float( gBlurRadius != 0 );
+
+        float2 geometryWeightParams = GetGeometryWeightParams( gPlaneDistSensitivity, frustumSize, Xv, Nv, specNonLinearAccumSpeed );
+        float normalWeightParams = GetNormalWeightParams( specNonLinearAccumSpeed, lobeAngleFractionScale, roughness );
+        float2 hitDistanceWeightParams = GetHitDistanceWeightParams( ExtractHitDist( spec ), specNonLinearAccumSpeed, roughness );
+        float2 roughnessWeightParams = GetRoughnessWeightParams( roughness, roughnessFractionScale );
+        float minHitDistWeight = REBLUR_HIT_DIST_MIN_WEIGHT * fractionScale;
+
+        float minHitDist = ExtractHitDist( spec );
+        float minHitDistLuma = GetLuma( spec );
+
+        spec *= sum;
+
+        float2x3 TvBv = GetKernelBasis( Dv.xyz, Nv, NoD, roughness, specNonLinearAccumSpeed );
+
+        float worldRadius = PixelRadiusToWorld( gUnproject, gOrthoMode, blurRadius, viewZ );
+        TvBv[0] *= worldRadius;
+        TvBv[1] *= worldRadius;
+
+        [unroll]
+        for( uint n = 0; n < POISSON_SAMPLE_NUM; n++ )
+        {
+            float3 offset = POISSON_SAMPLES( n );
+
+            float2 uv = GetKernelSampleCoordinates( gViewToClip, offset, Xv, TvBv[ 0 ], TvBv[ 1 ], rotator );
+            float2 uvScaled = uv * gResolutionScale;
+
+            float zs = abs( gIn_ViewZ.SampleLevel( gNearestClamp, uvScaled + gRectOffset, 0 ) );
+
+            float2 checkerboardUvScaled = uvScaled;
+
+            REBLUR_TYPE s = gIn_Spec.SampleLevel( gNearestClamp, checkerboardUvScaled, 0 );
+
+            float3 Xvs = STL::Geometry::ReconstructViewPosition( uv, gFrustum, zs, gOrthoMode );
+
+            float materialIDs;
+            float4 Ns = gIn_Normal_Roughness.SampleLevel( gNearestClamp, uvScaled + gRectOffset, 0 );
+            Ns = NRD_FrontEnd_UnpackNormalAndRoughness( Ns, materialIDs );
+
+            float w = CompareMaterials( materialID, materialIDs, gSpecMaterialMask );
+            w *= GetGaussianWeight( offset.z );
+            w *= GetCombinedWeight( geometryWeightParams, Nv, Xvs, normalWeightParams, N, Ns, roughnessWeightParams );
+            w *= lerp( minHitDistWeight, 1.0, GetHitDistanceWeight( hitDistanceWeightParams, ExtractHitDist( s ) ) );
+
+            w = ( IsInScreen( uv ) && !isnan( w ) ) ? w : 0.0;
+            s = w != 0.0 ? s : 0.0;
+
+            sum += w;
+            spec += s * w;
+        }
+
+        float invSum = STL::Math::PositiveRcp( sum );
+        spec *= invSum;
+
+    // Output
+    gOut_Spec[ pixelPos ] = spec;
+}
+*/

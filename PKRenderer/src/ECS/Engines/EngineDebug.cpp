@@ -6,6 +6,7 @@
 #include "Rendering/HashCache.h"
 #include "Math/FunctionsMisc.h"
 #include "Math/FunctionsColor.h"
+#include "Rendering/HashCache.h"
 
 namespace PK::ECS::Engines
 {
@@ -13,6 +14,7 @@ namespace PK::ECS::Engines
     using namespace PK::Math;
     using namespace PK::Core;
     using namespace PK::Core::Services;
+    using namespace PK::Rendering;
     using namespace PK::Rendering::Structs;
     using namespace PK::Rendering::Objects;
 
@@ -31,15 +33,21 @@ namespace PK::ECS::Engines
         BufferLayout positionLayout = { { ElementType::Float3, PK_VS_POSITION } };
 
         auto virtualVBuffer0 = Buffer::Create(defaultLayout, 2000000, BufferUsage::SparseVertex, "VirtualMesh.VertexBuffer0");
-        auto virtualVBuffer1 = Buffer::Create(positionLayout, 2000000, BufferUsage::SparseVertex, "VirtualMesh.VertexBuffer1");
-        auto virtualIBuffer = Buffer::Create(ElementType::Uint, 2000000, BufferUsage::SparseIndex, "VirtualMesh.IndexBuffer");
+        auto virtualVBuffer1 = Buffer::Create(positionLayout, 2000000, BufferUsage::SparseVertex | BufferUsage::Storage, "VirtualMesh.VertexBuffer1");
+        auto virtualIBuffer = Buffer::Create(ElementType::Uint, 2000000, BufferUsage::SparseIndex | BufferUsage::Storage, "VirtualMesh.IndexBuffer");
         m_virtualBaseMesh = CreateRef<Mesh>(virtualVBuffer0, virtualIBuffer);
         m_virtualBaseMesh->AddVertexBuffer(virtualVBuffer1);
 
+        // @TODO replace this crap with this extention when it comes out of beta.
+        // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_KHR_ray_tracing_position_fetch.html
+        auto hash = HashCache::Get();
+        GraphicsAPI::SetBuffer(hash->pk_RT_Vertices, virtualVBuffer1.get());
+        GraphicsAPI::SetBuffer(hash->pk_RT_Indices, virtualIBuffer.get());
+
         auto columnMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Columns.pkmesh", &m_virtualBaseMesh);
         auto rocksMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Rocks.pkmesh", &m_virtualBaseMesh);
-        auto sphereMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Sphere", Rendering::MeshUtility::GetSphere(m_virtualBaseMesh, PK_FLOAT3_ZERO, 1.0f));
-        auto planeMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Plane16x16", Rendering::MeshUtility::GetPlane(m_virtualBaseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
+        auto sphereMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Sphere", MeshUtility::GetSphere(m_virtualBaseMesh, PK_FLOAT3_ZERO, 1.0f));
+        auto planeMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Plane16x16", MeshUtility::GetPlane(m_virtualBaseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
 
         auto materialSand = assetDatabase->Load<Material>("res/materials/M_Sand.material");
         auto materialAsphalt = assetDatabase->Load<Material>("res/materials/M_Asphalt.material");

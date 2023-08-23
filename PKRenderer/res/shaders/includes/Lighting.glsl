@@ -9,10 +9,7 @@
 #define SHADOWMAP_CASCADES 4
 
 #if defined(SHADOW_USE_LBR)
-    float LBR(float shadow) 
-    { 
-        return smoothstep(SHADOW_LBR, 1.0f, shadow);
-    }
+    float LBR(float shadow) { return smoothstep(SHADOW_LBR, 1.0f, shadow); }
 #else
     #define LBR(shadow) (shadow)
 #endif
@@ -88,17 +85,7 @@ Light GetLightDirect(uint index, in float3 worldpos, uint cascade)
     return Light(color, shadow, posToLight, linearDistance);
 }
 
-Light GetLight(uint index, in float3 worldpos, uint cascade)
-{
-    return GetLightDirect(PK_BUFFER_DATA(pk_GlobalLightsList, index), worldpos, cascade);
-}
+Light GetLight(uint index, in float3 worldpos, uint cascade) { return GetLightDirect(PK_BUFFER_DATA(pk_GlobalLightsList, index), worldpos, cascade); }
 
-LightTile GetLightTile(float2 uv, float viewDepth) 
-{
-    return GetLightTile(GetTileIndexUV(uv, viewDepth)); 
-}
-
-LightTile GetLightTile(float3 clipuvw) 
-{
-    return GetLightTile(clipuvw.xy, ViewDepth(clipuvw.z)); 
-}
+LightTile GetLightTile(float2 uv, float viewDepth) { return GetLightTile(GetTileIndexUV(uv, viewDepth)); }
+LightTile GetLightTile(float3 clipuvw) { return GetLightTile(clipuvw.xy, ViewDepth(clipuvw.z)); }

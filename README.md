@@ -31,6 +31,7 @@ The project's goal is to be a feature rich & performant renderer without any pre
 
 - Screen space radiance cache (for ray traced radiance).
 - Voxel cone traced world space radiance cache.
+- Basic ReSTIR for diffuse hits.
 - Recurrent blur denoiser.
 - Volumetrics integration.
 - Rough specular approximation from diffuse SH1.

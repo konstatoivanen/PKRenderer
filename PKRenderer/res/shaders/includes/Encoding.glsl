@@ -6,17 +6,6 @@ const float3x3 PK_YCoCgToRGB = float3x3(1.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, 1.0
 const float3x3 PK_RGBToYCoCgR = float3x3(0.25, 1.0, -0.5, 0.5, 0.0, 1.0, 0.25, -1.0, -0.5);
 const float3x3 PK_YCoCgRToRGB = float3x3(1.0, 1.0, 1.0, 0.5, 0.0, -0.5, -0.5, 0.5, -0.5);
 
-#define RGBMFactor 8.0
-
-float4 RGBMEncodde(float3 color) 
-{
-    color /= RGBMFactor;
-    float alpha = ceil(max(max(color.r, color.g), color.b) * 255.0) / 255.0;
-    return float4(color / alpha, alpha);
-}
-
-float3 RGBMDecode(float4 hdr) { return float3(hdr.rgb * hdr.a * RGBMFactor); }
-
 float2 OctaWrap(float2 v) { return (1.0 - abs(v.yx)) * float2(v.x >= 0.0 ? 1.0 : -1.0, v.y >= 0.0 ? 1.0 : -1.0); }
 
 float2 OctaEncode(float3 n)
@@ -44,34 +33,32 @@ float2 OctaUV(float3 direction) { return OctaEncode(direction); }
 
 float2 CylinderUV(float3 direction)
 {
-    float angleh = (atan(direction.x, direction.z) + 3.14159265359f) * 0.15915494309f;
-	float anglev = acos(dot(direction, float3(0, 1, 0))) * 0.31830988618f;
+    const float angleh = (atan(direction.x, direction.z) + 3.14159265359f) * 0.15915494309f;
+	const float anglev = acos(dot(direction, float3(0, 1, 0))) * 0.31830988618f;
 	return float2(angleh, anglev);
 }
 
 float3 RGBToHSV(float3 c)
 {
-	float4 k = float4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-	float4 p = lerp(float4(c.bg, k.wz), float4(c.gb, k.xy), step(c.b, c.g));
-	float4 q = lerp(float4(p.xyw, c.r), float4(c.r, p.yzx), step(p.x, c.r));
-
-	float d = q.x - min(q.w, q.y);
-	float e = 1.0e-10f;
-
+	const float4 k = float4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+	const float4 p = lerp(float4(c.bg, k.wz), float4(c.gb, k.xy), step(c.b, c.g));
+	const float4 q = lerp(float4(p.xyw, c.r), float4(c.r, p.yzx), step(p.x, c.r));
+	const float d = q.x - min(q.w, q.y);
+	const float e = 1.0e-10f;
 	return float3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
 }
 
 float3 HSVToRGB(float3 c)
 {
-	float4 k = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-	float3 p = abs(fract(c.xxx + k.xyz) * 6.0 - k.www);
+	const float4 k = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+	const float3 p = abs(fract(c.xxx + k.xyz) * 6.0 - k.www);
 	return c.zzz * lerp(k.xxx, saturate(p - k.xxx), c.y);
 }
 
-float3 HSVToRGB(float hue, float saturation, float value)
-{
-    return HSVToRGB(float3(hue, saturation, value));
-}
+float3 HSVToRGB(float hue, float saturation, float value) { return HSVToRGB(float3(hue, saturation, value)); }
+
+uint EncodeOctaUV(float3 direction) { return packHalf2x16(OctaUV(direction)); }
+float3 DecodeOctaUV(uint packed) { return OctaDecode(unpackHalf2x16(packed)); }
 
 //Source: https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_texture_shared_exponent.txt
 #define ENCODE_E5BGR9_EXPONENT_BITS 5
@@ -97,21 +84,16 @@ uint EncodeE5BGR9(float3 unpacked)
         return 0;
     }
 
-    int exp_shared_p = max(-B-1, int(floor(log2(max_c)))) + 1 + B;
-    int max_s = int(round(max_c * exp2(-float(exp_shared_p - B - N))));
+    const int exp_shared_p = max(-B-1, int(floor(log2(max_c)))) + 1 + B;
+    const int max_s = int(round(max_c * exp2(-float(exp_shared_p - B - N))));
+    const int exp_shared = max_s != Np2 ? exp_shared_p : exp_shared_p + 1;
+    const float s = exp2(-float(exp_shared - B - N));
+    const uint3 rgb_s = uint3(round(unpacked * s));
 
-    int exp_shared = max_s != Np2 ? 
-        exp_shared_p : 
-        exp_shared_p + 1;
-
-    float s = exp2(-float(exp_shared - B - N));
-    uint3 rgb_s = uint3(round(unpacked * s));
-
-    return 
-        (exp_shared << (3 * ENCODE_E5BGR9_MANTISSA_BITS)) |
-        (rgb_s.b    << (2 * ENCODE_E5BGR9_MANTISSA_BITS)) |
-        (rgb_s.g    << (1 * ENCODE_E5BGR9_MANTISSA_BITS)) |
-        (rgb_s.r);
+    return (exp_shared << (3 * ENCODE_E5BGR9_MANTISSA_BITS)) |
+           (rgb_s.b    << (2 * ENCODE_E5BGR9_MANTISSA_BITS)) |
+           (rgb_s.g    << (1 * ENCODE_E5BGR9_MANTISSA_BITS)) |
+           (rgb_s.r);
 }
 
 float3 DecodeE5BGR9(const uint _packed)

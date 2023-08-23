@@ -8,12 +8,11 @@ float NoiseGradient(float2 uv, float2 res) { return fract(52.9829189f * fract(do
 
 float NoiseWanghash(float3 seedvec)
 {
-    uint u = floatBitsToUint(seedvec.x);
-    uint v = floatBitsToUint(seedvec.y);
-    uint s = floatBitsToUint(seedvec.z);
+    const uint u = floatBitsToUint(seedvec.x);
+    const uint v = floatBitsToUint(seedvec.y);
+    const uint s = floatBitsToUint(seedvec.z);
     
     uint seed = (u * 1664525u + v) + s;
-
     seed = (seed ^ 61u) ^ (seed >> 16u);
     seed *= 9u;
     seed = seed ^ (seed >> 4u);
@@ -21,9 +20,7 @@ float NoiseWanghash(float3 seedvec)
     seed = seed ^ (seed >> 15u);
 
     float value = float(seed);
-
     value *= (1.0 / 4294967296.0);
-
     return value;
 }
 

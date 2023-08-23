@@ -888,13 +888,7 @@
     <ClInclude Include="include\vulkan\vk_platform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\vulkan\vk_sdk_platform.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\vulkan\vulkan.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\vulkan\vulkan.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\vulkan\vulkan_android.h">
@@ -909,19 +903,10 @@
     <ClInclude Include="include\vulkan\vulkan_directfb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\vulkan\vulkan_enums.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\vulkan\vulkan_fuchsia.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\vulkan\vulkan_funcs.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\vulkan\vulkan_ggp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\vulkan\vulkan_handles.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\vulkan\vulkan_ios.h">
@@ -933,13 +918,7 @@
     <ClInclude Include="include\vulkan\vulkan_metal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\vulkan\vulkan_raii.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\vulkan\vulkan_screen.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\vulkan\vulkan_structs.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\vulkan\vulkan_vi.h">
@@ -1494,6 +1473,27 @@
     <ClInclude Include="src\Rendering\Passes\PassEnvBackground.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\vulkan\vk_video\vulkan_video_codec_h264std.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\vulkan\vk_video\vulkan_video_codec_h264std_decode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\vulkan\vk_video\vulkan_video_codec_h264std_encode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\vulkan\vk_video\vulkan_video_codec_h265std.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\vulkan\vk_video\vulkan_video_codec_h265std_decode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\vulkan\vk_video\vulkan_video_codec_h265std_encode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\vulkan\vk_video\vulkan_video_codecs_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -2046,6 +2046,8 @@
     <None Include="res\shaders\CS_VolumeFogDensity.shader" />
     <None Include="res\shaders\SH_VS_Gizmos.shader" />
     <None Include="res\shaders\includes\SceneGIFiltering.glsl" />
+    <None Include="res\shaders\includes\SharedRestir.glsl" />
+    <None Include="res\shaders\CS_GI_Restir.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
