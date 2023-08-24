@@ -44,11 +44,7 @@ bool UpdateCombinedReservoir(inout Reservoir combined, const Reservoir b, float 
 
 void UpdateCombinedReservoir_NewSurf(inout Reservoir combined, const Reservoir b, float targetPdf_b, float rnd)
 {
-    // targetPdf_b is targetPdf(b.selected) for pixel q
-    // but b.selected_targetPdf was calculated for pixel q'
-    // so need to renormalize weight
     float weight = targetPdf_b * safePositiveRcp(b.targetPdf) * b.weightSum;
-
     combined.weightSum += weight;
     combined.M += b.M;
 

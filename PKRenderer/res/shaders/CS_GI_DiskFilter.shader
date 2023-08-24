@@ -54,7 +54,7 @@ void main()
         const float radius = radiusAndScale.x * (scale + 1e-4f);
         const bool skip = scale < 0.05f;
         const uint step = lerp(uint(max(8.0f - sqrt(scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip);
-        GI_SFLT_DISK_DIFF(normal, depth, viewdir, viewpos, diff.history, step, true, radius, diff)
+        GI_SFLT_DISK_DIFF(normal, depth, viewdir, viewpos, diff.history, step, skip, radius, diff)
     }
 
     // Filter Spec
