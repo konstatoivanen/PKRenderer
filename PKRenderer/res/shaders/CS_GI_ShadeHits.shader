@@ -67,12 +67,13 @@ void main()
         packedSpec = GI_Pack_Spec(spec);
         
         #if defined(PK_GI_RESTIR)
-            // @TODO replace this with proper geometry normal
-            const float inversePdf = PK_PI * safePositiveRcp(dot(params.diffdir, SampleWorldNormal(coord)));
-            const float3 hitnor = DecodeOctaUV(imageLoad(pk_GI_RayHitNormals, raycoord).r);
-            const float3 hitpos = params.origin + params.diffdir * (hits.diff.isMiss ? PK_GI_RAY_MAX_DISTANCE : hits.diff.dist);
-            Restir_Store_Hit(raycoord, hitpos, hitnor, radianceDiff, inversePdf);
-            Restir_CopyToPrev(raycoord);
+        Restir_Store_Hit
+        (
+            raycoord, 
+            params.origin + params.diffdir * (hits.diff.isMiss ? PK_GI_RAY_MAX_DISTANCE : hits.diff.dist),
+            imageLoad(pk_GI_RayHitNormals, raycoord).r,
+            radianceDiff 
+        );
         #endif
     }
 
