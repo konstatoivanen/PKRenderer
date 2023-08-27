@@ -10,9 +10,17 @@ struct ReservoirPacked { uint4 data0; uint4 data1; };
 #define RESTIR_LAYER_CUR 0
 #define RESTIR_LAYER_PRE 2
 #define RESTIR_LAYER_HIT 4
+#define RESTIR_NORMAL_THRESHOLD 0.6f
 #define RESTIR_SAMPLES_SPATIAL 6
 #define RESTIR_SAMPLES_TEMPORAL 1
-#define RESTIR_RADIUS_SPATIAL lerp(8.0f, 32.0f, saturate(pk_ScreenSize.y / 1080.0f)) 
+
+#if defined(PK_GI_CHECKERBOARD_TRACE)
+    // only apply horizontal bias if using checkerboarding.
+    // Vertical bias causes drifting due to data alignment.
+    #define RESTIR_TEXEL_BIAS float2(0.49f, 0.0f)
+#else
+    #define RESTIR_TEXEL_BIAS 0.49f.xx
+#endif
 
 float Restir_GetSampleWeight(const Reservoir r) { return safePositiveRcp(r.targetPdf) * (r.weightSum / max(1, r.M)); }
 float Restir_GetTargetPdf(const Reservoir r) { return dot(pk_Luminance.xyz, r.radiance); }

@@ -12,60 +12,54 @@
 #include includes/SharedRestir.glsl
 #include includes/CTASwizzling.glsl
 
-uint murmurHash13(uint3 src) 
+uint MurmurHash13(uint3 src) 
 {
     const uint M = 0x5bd1e995u;
     uint h = 1190494759u;
-    src *= M; 
-    src ^= src >> 24u; 
-    src *= M;
-    h *= M; 
-    h ^= src.x; 
-    h *= M; 
-    h ^= src.y;
-    h *= M; 
-    h ^= src.z;
-    h ^= h >> 13u; 
-    h *= M; 
-    h ^= h >> 15u;
+    src *= M; src ^= src >> 24u; src *= M;
+    h *= M; h ^= src.x; h *= M; h ^= src.y; h *= M; h ^= src.z;
+    h ^= h >> 13u; h *= M; h ^= h >> 15u;
     return h;
 }
 
 // https://nullprogram.com/blog/2018/07/31/
-float3 wellonsLowBias121(uint seed)
+uint WellonsLowBias(uint seed)
 {
     seed ^= seed >> 16;
     seed *= 0x7feb352dU;
     seed ^= seed >> 15;
     seed *= 0x846ca68bU;
     seed ^= seed >> 16;
-    
-    return float3
-    (
-        float((seed & 0x000000FF)) / float(255),
-        float((seed & 0x0000FF00) >> 8) / float(255),
-        float((seed & 0x0000FFFF)) / float(65535)
-    );
+    return seed;
 }
 
-// RTXDI_BOILING_FILTER_GROUP_SIZE must be defined - 16 is a reasonable value
-#define RTXDI_BOILING_FILTER_GROUP_SIZE PK_W_ALIGNMENT_8
-#define RTXDI_BOILING_FILTER_MIN_LANE_COUNT 32
+float UintToUnorm(uint x) { return uintBitsToFloat(x & 0x007fffffu | 0x3f800000u) - 1.0; }
+int2 UshortToSnormInt16(uint x) { return int2((x & 0x0000003F) - 32, ((x & 0x00003F00) >> 8) - 32); }
 
-shared float s_weights[(RTXDI_BOILING_FILTER_GROUP_SIZE * RTXDI_BOILING_FILTER_GROUP_SIZE + RTXDI_BOILING_FILTER_MIN_LANE_COUNT - 1) / RTXDI_BOILING_FILTER_MIN_LANE_COUNT];
-shared uint s_count[(RTXDI_BOILING_FILTER_GROUP_SIZE * RTXDI_BOILING_FILTER_GROUP_SIZE + RTXDI_BOILING_FILTER_MIN_LANE_COUNT - 1) / RTXDI_BOILING_FILTER_MIN_LANE_COUNT];
+int2 CalculateTemporalResamplingOffset(int sampleIdx, int radius)
+{
+    sampleIdx &= 7;
+    int mask2 = sampleIdx >> 1 & 0x01;       
+    int mask4 = 1 - (sampleIdx >> 2 & 0x01); 
+    int tmp0 = -1 + 2 * (sampleIdx & 0x01);  
+    int tmp1 = 1 - 2 * mask2;                
+    int tmp2 = mask4 | mask2;                
+    int tmp3 = mask4 | (1 - mask2);          
+    return int2(tmp0, tmp0 * tmp1) * int2(tmp2, tmp3) * radius;
+}
+
+#define BOIL_FLT_GROUP_SIZE PK_W_ALIGNMENT_8
+#define BOIL_FLT_MIN_LANE_COUNT 32
+shared float s_weights[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
+shared uint s_count[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
 
 bool BoilingFilter(uint2 LocalIndex, float filterStrength, float reservoirWeight)
 {
     float boilingFilterMultiplier = 10.f / clamp(filterStrength, 1e-6, 1.0) - 9.f;
-
-    // Start with average nonzero weight within the wavefront
     float waveWeight = subgroupAdd(reservoirWeight);
     uint4 weightMask = subgroupBallot(reservoirWeight > 0.0f);
     uint waveCount = subgroupBallotBitCount(weightMask);
-
-    // Store the results of each wavefront into shared memory
-    uint linearThreadIndex = LocalIndex.x + LocalIndex.y * RTXDI_BOILING_FILTER_GROUP_SIZE;
+    uint linearThreadIndex = LocalIndex.x + LocalIndex.y * BOIL_FLT_GROUP_SIZE;
     uint waveIndex = linearThreadIndex / gl_SubgroupSize;
 
     if (subgroupElect())
@@ -77,11 +71,10 @@ bool BoilingFilter(uint2 LocalIndex, float filterStrength, float reservoirWeight
     barrier();
 
     // Reduce the per-wavefront averages into a global average using one wavefront
-    if (linearThreadIndex < (RTXDI_BOILING_FILTER_GROUP_SIZE * RTXDI_BOILING_FILTER_GROUP_SIZE + gl_SubgroupSize - 1) / gl_SubgroupSize)
+    if (linearThreadIndex < (BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + gl_SubgroupSize - 1) / gl_SubgroupSize)
     {
         waveWeight = s_weights[linearThreadIndex];
         waveCount = s_count[linearThreadIndex];
-
         waveWeight = subgroupAdd(waveWeight);
         waveCount = subgroupAdd(waveCount);
 
@@ -93,30 +86,8 @@ bool BoilingFilter(uint2 LocalIndex, float filterStrength, float reservoirWeight
 
     barrier();
 
-    // Read the per-group average and apply the threshold
     float averageNonzeroWeight = s_weights[0];
-    if (reservoirWeight > averageNonzeroWeight * boilingFilterMultiplier)
-    {
-        return true;
-    }
-
-    return false;
-}
-
-void BoilingFilter(inout Reservoir r)
-{
-    float weight = Restir_GetTargetPdf(r) * r.weightSum;
-
-    if (BoilingFilter(gl_LocalInvocationID.xy, 0.2f, weight))
-    {
-        r = pk_Reservoir_Zero;
-    }
-
-    // reset reservoirs that have been sampled too many times.
-    if (r.M > 20)
-    {
-        r = pk_Reservoir_Zero;
-    }
+    return reservoirWeight > averageNonzeroWeight * boilingFilterMultiplier;
 }
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
@@ -137,15 +108,14 @@ void main()
     const float depthBias = lerp(0.1f, 0.01f, -normal.z);
     const float roughness = normalRoughness.w;
     const float3 origin = SampleWorldPosition(coord, int2(pk_ScreenSize.xy), depth);
-    uint seed = murmurHash13(uint3(baseCoord, pk_FrameRandom.x + 132u));
+    uint seed = MurmurHash13(uint3(baseCoord, pk_FrameRandom.x + 132u));
 
     Reservoir combined = Restir_Load_HitAsReservoir(baseCoord, origin, normal);
 
-    int spatialSamplesCount = RESTIR_SAMPLES_SPATIAL;    
     {
-        const float3 rnd = wellonsLowBias121(seed++);
-        const float2 screenuvPrev = WorldToPrevClipUV(origin) * int2(pk_ScreenSize.xy) + float2(0.49f, 0.0f);
-        const int2 xyFull = int2(screenuvPrev + (rnd.xy * 4.0f - 2.0f));
+        const float random = UintToUnorm(seed);
+        const int2 coordPrev = int2(WorldToPrevClipUV(origin) * int2(pk_ScreenSize.xy) + RESTIR_TEXEL_BIAS);
+        const int2 xyFull = coordPrev + CalculateTemporalResamplingOffset(int(seed), 2);
         const int2 xy = GI_CollapseCheckerboardCoord(xyFull);
 
         Reservoir s_reservoir = Restir_Load(xy, RESTIR_LAYER_PRE);
@@ -154,40 +124,39 @@ void main()
         const float3 s_direction = normalize(s_reservoir.position - origin);
         const float3 s_position = SampleWorldPosition(xyFull, int2(pk_ScreenSize.xy), s_depth);
 
-        if (Test_DepthFar(s_depth) && 
-            Test_InScreen(xyFull) && 
+        if (Test_InScreen(xyFull) && 
             Test_DepthReproject(depth, s_depth, depthBias) &&
-            dot(normal, s_normal) > 0.5f && 
-            dot(normal, s_direction) > 0.0f)
+            dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD &&
+            dot(normal, s_direction) > 0.05f)
         {
             float targetPdf = Restir_GetTargetPdf(s_reservoir) * Restir_GetJacobian(origin, s_position, s_reservoir);
-            Restir_CombineReservoir(combined, s_reservoir, targetPdf, rnd.z);
+            Restir_CombineReservoir(combined, s_reservoir, targetPdf, random);
         }
     }
 
     {
         uint nobiasM = combined.M;
     
-        for (int pixIndex = 0; pixIndex < spatialSamplesCount; pixIndex++)
+        for (uint i = 0u; i < RESTIR_SAMPLES_SPATIAL; ++i)
         {
-            const float3 rnd = wellonsLowBias121(seed++);
-            const int2 xy = int2(floor(baseCoord + 0.5f.xx + (rnd.xy * 2.0f - 1.0f) * RESTIR_RADIUS_SPATIAL));
+            const uint hash = WellonsLowBias(seed++);
+            const float random = UintToUnorm(hash);
+            const int2 xy = baseCoord + UshortToSnormInt16(hash);
             const int2 xyFull = GI_ExpandCheckerboardCoord(xy);
 
             const Reservoir s_reservoir = Restir_Load_HitAsReservoir(xy, origin, normal);
-            const float s_depth = SampleViewDepth(xyFull);
+            const float  s_depth = SampleViewDepth(xyFull);
             const float3 s_normal = SampleWorldNormal(xyFull);
             const float3 s_direction = normalize(s_reservoir.position - origin);
             const float3 s_position = SampleWorldPosition(xyFull, int2(pk_ScreenSize.xy), s_depth);
     
-            if (Test_DepthFar(s_depth) &&
-                Test_InScreen(xyFull) &&
+            if (Test_InScreen(xyFull) &&
                 Test_DepthReproject(depth, s_depth, depthBias) &&
-                dot(normal, s_normal) > 0.5f &&
-                dot(normal, s_direction) > 0.0f)
+                dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD &&
+                dot(normal, s_direction) > 0.05f)
             {
                 float targetPdf = Restir_GetTargetPdf(s_reservoir) * Restir_GetJacobian(origin, s_position, s_reservoir);
-                Restir_CombineReservoir(combined, s_reservoir, targetPdf, rnd.z);
+                Restir_CombineReservoir(combined, s_reservoir, targetPdf, random);
     
                 if (targetPdf > 0.0)
                 {
@@ -205,8 +174,12 @@ void main()
 
     GIDiff diff = GI_Load_Cur_Diff(coord);
     diff.sh = SH_FromRadiance(radiance, surfToHitPoint);
-    GI_Store_Diff(coord, diff);
 
-    BoilingFilter(combined);
+    if (BoilingFilter(gl_LocalInvocationID.xy, 0.2f, Restir_GetTargetPdf(combined) * combined.weightSum) || combined.M > 20)
+    {
+        combined = pk_Reservoir_Zero;
+    }
+
+    GI_Store_Diff(coord, diff);
     Restir_Store(baseCoord, RESTIR_LAYER_CUR, combined);
 }

@@ -55,6 +55,7 @@ void main()
         #endif
 
         // Try to find valid samples with a bilateral cross filter
+        // @TODO reduce antilag values if falling back to these.
         GI_SFLT_REPRO_BILATERAL_CROSS(coordPrev, normal, depth, depthBias, wSumDiff, wSumSpec, diff, spec)
     }
 

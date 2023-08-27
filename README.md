@@ -101,7 +101,6 @@ The project's goal is to be a feature rich & performant renderer without any pre
 - Debug visualization utilities.
 - DX12 backend (unlikely... cant do async ray trace afaik).
 - Serialized scene representation.
-- DX12 Rendering backend.
   
 </details>
 

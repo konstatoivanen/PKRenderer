@@ -63,26 +63,39 @@ uint2 ThreadGroupTilingX(
 
 #define GetXTiledThreadID(x, y, width) ThreadGroupTilingX(gl_NumWorkGroups.xy, uint2(x,y), width, gl_LocalInvocationID.xy, gl_WorkGroupID.xy)
 
+// Source: https://gist.github.com/franjaviersans/885c136932ef37d8905a6433d0828be6
+uint IntegerCompact2(uint x)
+{
+    x = (x & 0x11111111) | ((x & 0x44444444) >> 1);
+    x = (x & 0x03030303) | ((x & 0x30303030) >> 2);
+    x = (x & 0x000F000F) | ((x & 0x0F000F00) >> 4);
+    x = (x & 0x000000FF) | ((x & 0x00FF0000) >> 8);
+    return x;
+}
+
+uint IntegerCompact3(uint n)
+{
+	n &= 0x09249249;
+	n = (n ^ (n >> 2)) & 0x030c30c3;
+	n = (n ^ (n >> 4)) & 0x0300f00f;
+	n = (n ^ (n >> 8)) & 0xff0000ff;
+	n = (n ^ (n >> 16)) & 0x000003ff;
+	return n;
+}
+
+uint2 GetMortonOrderSwizzle2D(uint x) { return uint2(IntegerCompact2(x), IntegerCompact2(x >> 1u)); }
+uint3 GetMortonOrderSwizzle3D(uint x) { return uint3(IntegerCompact3(x), IntegerCompact3(x >> 1u), IntegerCompact3(x >> 2u)); }
+
 // Dispatch 2d dimension must be divisible by 32
 uint3 GetMortonOrderSwizzle32(uint threadIndex, uint2 size)
 {
     uint z = threadIndex / (size.x * size.y);
     threadIndex -= z * (size.x * size.y);
 
-    uint index0 = threadIndex >> 0u;
-    uint index1 = threadIndex >> 2u;
-    uint index2 = threadIndex >> 4u;
-    uint index3 = threadIndex >> 6u;
-    uint index4 = threadIndex >> 8u;
-
-    uint2 coord = uint2(index0 % 2u, (index0 / 2u) % 2u) << 0u;
-    coord += uint2(index1 % 2u, (index1 / 2u) % 2u) << 1u;
-    coord += uint2(index2 % 2u, (index2 / 2u) % 2u) << 2u;
-    coord += uint2(index3 % 2u, (index3 / 2u) % 2u) << 3u;
-
-    size >>= 4u;
-    coord += uint2(index4 % size.x, index4 / size.x) << 4u;
-
+	uint2 coord = GetMortonOrderSwizzle2D(threadIndex & 0x3FFu);
+	uint groupIndex = threadIndex >> 10u;
+	coord.x += (groupIndex % (size.x >> 5u)) << 5u;
+	coord.y += (groupIndex / (size.x >> 5u)) << 5u;
     return uint3(coord, z);
 }
 
@@ -92,18 +105,10 @@ uint3 GetMortonOrderSwizzle16(uint threadIndex, uint2 size)
     uint z = threadIndex / (size.x * size.y);
     threadIndex -= z * (size.x * size.y);
 
-    uint index0 = threadIndex >> 0u;
-    uint index1 = threadIndex >> 2u;
-    uint index2 = threadIndex >> 4u;
-    uint index3 = threadIndex >> 6u;
-
-    uint2 coord = uint2(index0 % 2u, (index0 / 2u) % 2u) << 0u;
-    coord += uint2(index1 % 2u, (index1 / 2u) % 2u) << 1u;
-    coord += uint2(index2 % 2u, (index2 / 2u) % 2u) << 2u;
-
-    size >>= 3u;
-    coord += uint2(index3 % size.x, index3 / size.x) << 3u;
-
+	uint2 coord = GetMortonOrderSwizzle2D(threadIndex & 0xFFu);
+	uint groupIndex = threadIndex >> 8u;
+	coord.x += (groupIndex % (size.x >> 4u)) << 4u;
+	coord.y += (groupIndex / (size.x >> 4u)) << 4u;
     return uint3(coord, z);
 }
 
@@ -113,15 +118,9 @@ uint3 GetMortonOrderSwizzle8(uint threadIndex, uint2 size)
     uint z = threadIndex / (size.x * size.y);
     threadIndex -= z * (size.x * size.y);
 
-    uint index0 = threadIndex >> 0u;
-    uint index1 = threadIndex >> 2u;
-    uint index2 = threadIndex >> 4u;
-
-    uint2 coord = uint2(index0 % 2u, (index0 / 2u) % 2u) << 0u;
-    coord += uint2(index1 % 2u, (index1 / 2u) % 2u) << 1u;
-
-    size >>= 2u;
-    coord += uint2(index2 % size.x, index2 / size.x) << 2u;
-
+	uint2 coord = GetMortonOrderSwizzle2D(threadIndex & 0x3Fu);
+	uint groupIndex = threadIndex >> 6u;
+	coord.x += (groupIndex % (size.x >> 3u)) << 3u;
+	coord.y += (groupIndex / (size.x >> 3u)) << 3u;
     return uint3(coord, z);
 }
