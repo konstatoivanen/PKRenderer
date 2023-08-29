@@ -90,6 +90,14 @@ float2 GI_GetDiskFilterRadiusAndScale(const float depth, const float variance, c
     return float2(radius, scale);
 }
 
+void GI_GetMipBilinearDerivatives(int2 coord, int mip, inout int2 base, inout float2 ddxy)
+{
+    ++mip;
+    int texelWidth = 1 << mip;
+    base = (coord >> mip) * 2;
+    ddxy = ((coord - (coord >> mip) * texelWidth) + 0.5f) / texelWidth;
+}
+
 #define MAKE_BILINEAR_WEIGHTS(name, ddxy)                           \
 const float name[2][2] =                                            \
 {                                                                   \
@@ -240,11 +248,22 @@ const float name[2][2] =                                            \
 
 #define GI_SFLT_HISTORY_FILL(SFLT_COORD, SFLT_MIP, SFLT_NORMAL, SFLT_DEPTH, SFLT_OUT_WSUM_DIFF, SFLT_OUT_WSUM_SPEC, SFLT_OUT_DIFF, SFLT_OUT_SPEC)   \
 {                                                                                                                                                   \
-    const int stride0 = 1 << (SFLT_MIP + 1);                                                                                                        \
-    const int stride1 = stride0 / 2;                                                                                                                \
-    const int2 base = (SFLT_COORD - stride1) / stride0;                                                                                             \
-    const float2 ddxy = float2(SFLT_COORD - stride1 - stride0 * base + 0.5f.xx) / stride0;                                                          \
+    const int fltmip = SFLT_MIP + 1;                                                                                                                \
+    const int texelWidth = 1 << fltmip;                                                                                                             \
+    const int texelHWidth = texelWidth >> 1;                                                                                                        \
+    const int2 base = ((SFLT_COORD + texelHWidth) >> fltmip) - 1;                                                                                   \
+    const float2 ddxy = (((SFLT_COORD + texelHWidth) & (texelWidth - 1)) + 0.5f.xx) / texelWidth;                                                   \
     MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                                                                    \
+                                                                                                                                                    \
+    float4 depthWeights = float4                                                                                                                    \
+    (                                                                                                                                               \
+        1.0f / (1e-2f + abs(SFLT_DEPTH - SampleAvgZ(base + int2(0, 0), fltmip))),                                                                   \
+        1.0f / (1e-2f + abs(SFLT_DEPTH - SampleAvgZ(base + int2(1, 0), fltmip))),                                                                   \
+        1.0f / (1e-2f + abs(SFLT_DEPTH - SampleAvgZ(base + int2(0, 1), fltmip))),                                                                   \
+        1.0f / (1e-2f + abs(SFLT_DEPTH - SampleAvgZ(base + int2(1, 1), fltmip)))                                                                    \
+    );                                                                                                                                              \
+                                                                                                                                                    \
+    depthWeights *= safePositiveRcp(dot(depthWeights, 1.0f.xxxx));                                                                                  \
                                                                                                                                                     \
     for (uint yy = 0; yy <= 1u; ++yy)                                                                                                               \
     for (uint xx = 0; xx <= 1u; ++xx)                                                                                                               \
@@ -253,14 +272,13 @@ const float name[2][2] =                                            \
         const uint2 p_spec = GI_Load_Packed_Mip_Spec(base + int2(xx, yy), SFLT_MIP);                                                                \
         const GIDiff s_diff = GI_Unpack_Diff(p_diff);                                                                                               \
         const GISpec s_spec = GI_Unpack_Spec(p_spec);                                                                                               \
-        const float s_depth = SampleAvgZ(base + int2(xx, yy), SFLT_MIP + 1);                                                                        \
                                                                                                                                                     \
         float directionality;                                                                                                                       \
         float3 sh_dir = SH_ToPrimeDir(s_diff.sh, directionality);                                                                                   \
                                                                                                                                                     \
         /* Filter out sh signals that are facing away from surface normal.*/                                                                        \
         const float w_n = float(dot(SFLT_NORMAL, sh_dir) > 0.0f || directionality < 0.5f);                                                          \
-        const float w_z = 1.0f / (1e-2f + abs(SFLT_DEPTH - s_depth));                                                                               \
+        const float w_z = depthWeights[yy * 2 + xx];                                                                                                \
         const float w_b = bilinearWeights[yy][xx];                                                                                                  \
         const float w = w_b * w_z;                                                                                                                  \
                                                                                                                                                     \
@@ -366,105 +384,3 @@ const float name[2][2] =                                            \
                                                                                                                                                     \
     SFLT_OUT = GI_Mul_NoHistory(SFLT_OUT, 1.0f / wSum);                                                                                             \
 }                                                                                                                                                   \
-
-/*
-    #define POISSON_SAMPLE_NUM      REBLUR_POISSON_SAMPLE_NUM
-    #define POISSON_SAMPLES( i )    REBLUR_POISSON_SAMPLES( i )
-
-{
-        float smc = GetSpecMagicCurve2( roughness );
-        float sum = 1.0;
-        float radiusScale = 1.0;
-        float fractionScale = REBLUR_BLUR_FRACTION_SCALE;
-
-        float lobeAngleFractionScale = gLobeAngleFraction * fractionScale;
-        float roughnessFractionScale = gRoughnessFraction * fractionScale;
-
-        float hitDistScale = _REBLUR_GetHitDistanceNormalization( viewZ, gHitDistParams, roughness );
-        float hitDist = ExtractHitDist( spec ) * hitDistScale;
-
-        // Min blur radius
-        float4 Dv = STL::ImportanceSampling::GetSpecularDominantDirection( Nv, Vv, roughness, STL_SPECULAR_DOMINANT_DIRECTION_G2 );
-        float NoD = abs( dot( Nv, Dv.xyz ) );
-        float lobeTanHalfAngle = STL::ImportanceSampling::GetSpecularLobeTanHalfAngle( roughness );
-        float lobeRadius = hitDist * NoD * lobeTanHalfAngle;
-        float minBlurRadius = lobeRadius / PixelRadiusToWorld( gUnproject, gOrthoMode, 1.0, viewZ + hitDist * Dv.w );
-        float frustumSize = GetFrustumSize( gMinRectDimMulUnproject, gOrthoMode, viewZ );
-        
-        float hitDistFactor = GetHitDistFactor( hitDist * NoD, frustumSize );
-        hitDistFactor = lerp( hitDistFactor, 1.0, data1.w );
-        
-        float boost = 1.0 - GetFadeBasedOnAccumulatedFrames( data1.z );
-        boost *= 1.0 - STL::BRDF::Pow5( NoV );
-        boost *= smc;
-
-        float specNonLinearAccumSpeed = 1.0 / ( 1.0 + ( 1.0 - boost ) * data1.z );
-
-        float relaxedHitDistFactor = lerp( 1.0, hitDistFactor, roughness );
-        hitDistFactor = lerp( hitDistFactor, relaxedHitDistFactor, specNonLinearAccumSpeed );
-
-        // Blur radius - main
-        float blurRadius = gBlurRadius * ( 1.0 + 2.0 * boost ) / 3.0;
-        blurRadius *= hitDistFactor * smc;
-        blurRadius = min( blurRadius, minBlurRadius );
-
-        blurRadius += smc;
-        blurRadius *= radiusScale;
-        blurRadius *= float( gBlurRadius != 0 );
-
-        float2 geometryWeightParams = GetGeometryWeightParams( gPlaneDistSensitivity, frustumSize, Xv, Nv, specNonLinearAccumSpeed );
-        float normalWeightParams = GetNormalWeightParams( specNonLinearAccumSpeed, lobeAngleFractionScale, roughness );
-        float2 hitDistanceWeightParams = GetHitDistanceWeightParams( ExtractHitDist( spec ), specNonLinearAccumSpeed, roughness );
-        float2 roughnessWeightParams = GetRoughnessWeightParams( roughness, roughnessFractionScale );
-        float minHitDistWeight = REBLUR_HIT_DIST_MIN_WEIGHT * fractionScale;
-
-        float minHitDist = ExtractHitDist( spec );
-        float minHitDistLuma = GetLuma( spec );
-
-        spec *= sum;
-
-        float2x3 TvBv = GetKernelBasis( Dv.xyz, Nv, NoD, roughness, specNonLinearAccumSpeed );
-
-        float worldRadius = PixelRadiusToWorld( gUnproject, gOrthoMode, blurRadius, viewZ );
-        TvBv[0] *= worldRadius;
-        TvBv[1] *= worldRadius;
-
-        [unroll]
-        for( uint n = 0; n < POISSON_SAMPLE_NUM; n++ )
-        {
-            float3 offset = POISSON_SAMPLES( n );
-
-            float2 uv = GetKernelSampleCoordinates( gViewToClip, offset, Xv, TvBv[ 0 ], TvBv[ 1 ], rotator );
-            float2 uvScaled = uv * gResolutionScale;
-
-            float zs = abs( gIn_ViewZ.SampleLevel( gNearestClamp, uvScaled + gRectOffset, 0 ) );
-
-            float2 checkerboardUvScaled = uvScaled;
-
-            REBLUR_TYPE s = gIn_Spec.SampleLevel( gNearestClamp, checkerboardUvScaled, 0 );
-
-            float3 Xvs = STL::Geometry::ReconstructViewPosition( uv, gFrustum, zs, gOrthoMode );
-
-            float materialIDs;
-            float4 Ns = gIn_Normal_Roughness.SampleLevel( gNearestClamp, uvScaled + gRectOffset, 0 );
-            Ns = NRD_FrontEnd_UnpackNormalAndRoughness( Ns, materialIDs );
-
-            float w = CompareMaterials( materialID, materialIDs, gSpecMaterialMask );
-            w *= GetGaussianWeight( offset.z );
-            w *= GetCombinedWeight( geometryWeightParams, Nv, Xvs, normalWeightParams, N, Ns, roughnessWeightParams );
-            w *= lerp( minHitDistWeight, 1.0, GetHitDistanceWeight( hitDistanceWeightParams, ExtractHitDist( s ) ) );
-
-            w = ( IsInScreen( uv ) && !isnan( w ) ) ? w : 0.0;
-            s = w != 0.0 ? s : 0.0;
-
-            sum += w;
-            spec += s * w;
-        }
-
-        float invSum = STL::Math::PositiveRcp( sum );
-        spec *= invSum;
-
-    // Output
-    gOut_Spec[ pixelPos ] = spec;
-}
-*/

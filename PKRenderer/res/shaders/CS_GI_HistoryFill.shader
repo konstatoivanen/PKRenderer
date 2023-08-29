@@ -5,7 +5,6 @@
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void main()
 {
-    const int2 size = int2(pk_ScreenSize.xy);
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float depth = SampleMinZ(coord, 0);
 

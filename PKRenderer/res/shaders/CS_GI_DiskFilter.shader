@@ -73,7 +73,7 @@ void main()
         const float radius = radiusAndScale.x * (scale + 1e-4f);
         const bool skip = scale < 0.05f;
         const uint step = lerp(uint(max(8.0f - sqrt(scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip);
-        GI_SFLT_DISK_SPEC(normal, depth, roughness, viewdir, viewpos, spec.history, step, true, radius, spec)
+        GI_SFLT_DISK_SPEC(normal, depth, roughness, viewdir, viewpos, spec.history, step, skip, radius, spec)
     }
 
     GI_Store_Diff(coord, diff);

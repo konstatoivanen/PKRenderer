@@ -55,9 +55,13 @@ void main()
         #endif
 
         // Try to find valid samples with a bilateral cross filter
-        // @TODO reduce antilag values if falling back to these.
+        // @TODO this may not be needed when using history fill.
         GI_SFLT_REPRO_BILATERAL_CROSS(coordPrev, normal, depth, depthBias, wSumDiff, wSumSpec, diff, spec)
+        
+        // Reduce diff antilag on poor reproject.
+        antilagDiff = lerp(0.1f, 1.0f, saturate(wSumDiff / 0.25f));
     }
+
 
     // Normalization
     if (!Test_EPS6(wSumDiff))
@@ -82,6 +86,8 @@ void main()
         spec.radiance = min(spec.radiance, specVirtual.radiance);
         spec.ao = min(spec.ao, specVirtual.ao);
     }
+
+  //  diff.history = 0.0f;
 
     const bool invalidDiff = Any_IsNaN(diff.sh.Y) || Any_IsNaN(diff.sh.CoCg) || isnan(diff.ao) || isnan(diff.history);
     const bool invalidSpec = Any_IsNaN(spec.radiance) || isnan(spec.ao) || isnan(spec.history);
