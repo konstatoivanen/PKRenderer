@@ -30,6 +30,7 @@ float3 SH_ToColor(const SH sh) { return PK_YCoCgRToRGB * float3(sh.Y.x / pk_L1Ba
 float SH_ToLuminance(const SH sh, const float3 d) { return dot(pk_Luminance.xyz, SH_ToIrradiance(sh, d)); }
 float SH_ToLuminance(const SH sh, const float3 d, const float chromaBias) { return dot(pk_Luminance.xyz, SH_ToIrradiance(sh, d, chromaBias)); }
 float SH_ToLuminanceL0(const SH sh) { return sh.Y.x / pk_L1Basis.x; }
+float3 SH_ToPrimeDir(const SH sh) { return sh.Y.wyz / (length(sh.Y.wyz) + 1e-6f); }
 
 float3 SH_ToPrimeDir(const SH sh, inout float directionality) 
 {

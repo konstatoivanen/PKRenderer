@@ -30,18 +30,17 @@ void main()
     GISpec spec = pk_Zero_GISpec;
     diff.history = historyDiff;
     spec.history = historySpec;
-    float wSumDiff = 0.0f;
-    float wSumSpec = 0.0f;
+    float wSum = 0.0f;
 
-    GI_SFLT_HISTORY_FILL(coord, mip, normal, depth, wSumDiff, wSumSpec, diff, spec)
+    GI_SFLT_HISTORY_FILL(coord, mip, normal, depth, wSum, diff, spec)
 
-    if (iHistoryDiff <= 3 && !Test_NaN_EPS6(wSumDiff))
+    if (iHistoryDiff <= 3 && !Test_NaN_EPS6(wSum))
     {
-        GI_Store_Diff(coord, GI_Mul_NoHistory(diff, 1.0f / wSumDiff));
+        GI_Store_Diff(coord, GI_Mul_NoHistory(diff, 1.0f / wSum));
     }
 
-    if (iHistorySpec <= 3 && !Test_NaN_EPS6(wSumSpec))
+    if (iHistorySpec <= 3 && !Test_NaN_EPS6(wSum))
     {
-        GI_Store_Spec(coord, GI_Mul_NoHistory(spec, 1.0f / wSumSpec));
+        GI_Store_Spec(coord, GI_Mul_NoHistory(spec, 1.0f / wSum));
     }
 }

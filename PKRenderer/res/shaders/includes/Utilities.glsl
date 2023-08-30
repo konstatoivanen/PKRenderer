@@ -23,7 +23,7 @@ float2 rotate2D(float2 v, float2 r)  { return float2(v.x * r.x - v.y * r.y, v.x 
 float4 mul3x3(const float3x3 matrix, const float4 v) { return float4(matrix * v.xyz, v.w); }
 float4 unpackHalf4x16(uint2 v) { return float4(unpackHalf2x16(v.x), unpackHalf2x16(v.y)); }
 uint2 packHalf4x16(float4 v) { return uint2(packHalf2x16(v.xy), packHalf2x16(v.zw)); }
-float safePositiveRcp(float f) { return f <= 0.0 ? 0.0 : 1.0 / f; }
+float safePositiveRcp(float f) { return f <= 1e-6f ? 0.0 : 1.0 / f; }
 
 #define lerp_sat(a,b,c) mix(a,b,clamp(c,0,1))
 #define lerp_outquad(a,b,c) (-((b) - (a)) * (c) * ((c) - 2) + (a))
