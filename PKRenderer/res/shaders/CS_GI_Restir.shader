@@ -99,7 +99,7 @@ void main()
 
     if (!Test_DepthFar(depth))
     {
-        Restir_Store_Packed(baseCoord, RESTIR_LAYER_CUR, pk_PackedReservoir_Zero);
+        Restir_Store_Empty(baseCoord, RESTIR_LAYER_CUR);
         return;
     }
 
@@ -110,27 +110,27 @@ void main()
     const float3 origin = SampleWorldPosition(coord, int2(pk_ScreenSize.xy), depth);
     uint seed = MurmurHash13(uint3(baseCoord, pk_FrameRandom.x + 132u));
 
-    Reservoir combined = Restir_Load_HitAsReservoir(baseCoord, origin, normal);
+    Reservoir combined = Restir_Load_HitAsReservoir(baseCoord, origin);
 
     {
         const float random = UintToUnorm(seed);
         const int2 coordPrev = int2(WorldToPrevClipUV(origin) * int2(pk_ScreenSize.xy) + RESTIR_TEXEL_BIAS);
-        const int2 xyFull = coordPrev + CalculateTemporalResamplingOffset(int(seed), 2);
-        const int2 xy = GI_CollapseCheckerboardCoord(xyFull);
+        const int2 xy = GI_CollapseCheckerboardCoord(int2(coordPrev), 1u) + CalculateTemporalResamplingOffset(int(seed), 2);
+        const int2 xyFull = GI_ExpandCheckerboardCoord(xy, 1u);
 
         Reservoir s_reservoir = Restir_Load(xy, RESTIR_LAYER_PRE);
         const float  s_depth = SamplePreviousViewDepth(xyFull);
         const float3 s_normal = SamplePreviousWorldNormal(xyFull);
         const float3 s_direction = normalize(s_reservoir.position - origin);
-        const float3 s_position = SampleWorldPosition(xyFull, int2(pk_ScreenSize.xy), s_depth);
 
         if (Test_InScreen(xyFull) && 
             Test_DepthReproject(depth, s_depth, depthBias) &&
             dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD &&
-            dot(normal, s_direction) > 0.05f)
+            dot(normal, s_direction) > 0.05f &&
+            s_reservoir.age < RESTIR_MAX_AGE)
         {
-            float targetPdf = Restir_GetTargetPdf(s_reservoir) * Restir_GetJacobian(origin, s_position, s_reservoir);
-            Restir_CombineReservoir(combined, s_reservoir, targetPdf, random);
+            Restir_Normalize(s_reservoir, 20);
+            Restir_CombineReservoirTemporal(combined, s_reservoir, random);
         }
     }
 
@@ -144,11 +144,11 @@ void main()
             const int2 xy = baseCoord + UshortToSnormInt16(hash);
             const int2 xyFull = GI_ExpandCheckerboardCoord(xy);
 
-            const Reservoir s_reservoir = Restir_Load_HitAsReservoir(xy, origin, normal);
             const float  s_depth = SampleViewDepth(xyFull);
             const float3 s_normal = SampleWorldNormal(xyFull);
-            const float3 s_direction = normalize(s_reservoir.position - origin);
             const float3 s_position = SampleWorldPosition(xyFull, int2(pk_ScreenSize.xy), s_depth);
+            const Reservoir s_reservoir = Restir_Load_HitAsReservoir(xy, s_position);
+            const float3 s_direction = normalize(s_reservoir.position - origin);
     
             if (Test_InScreen(xyFull) &&
                 Test_DepthReproject(depth, s_depth, depthBias) &&
@@ -156,7 +156,7 @@ void main()
                 dot(normal, s_direction) > 0.05f)
             {
                 float targetPdf = Restir_GetTargetPdf(s_reservoir) * Restir_GetJacobian(origin, s_position, s_reservoir);
-                Restir_CombineReservoir(combined, s_reservoir, targetPdf, random);
+                Restir_CombineReservoirSpatial(combined, s_reservoir, targetPdf, random);
     
                 if (targetPdf > 0.0)
                 {
@@ -168,14 +168,21 @@ void main()
         combined.M = nobiasM;
     }
 
+    combined.age++;
+
     const float3 surfToHitPoint = normalize(combined.position - origin);
     const float  nl = dot(normal, surfToHitPoint);
     const float3 radiance = combined.radiance * Restir_GetSampleWeight(combined) * nl * PK_INV_PI; 
+    const bool isValid = !Any_IsNaN(radiance);
 
     GIDiff diff = GI_Load_Cur_Diff(coord);
-    diff.sh = SH_FromRadiance(radiance, surfToHitPoint);
+    
+    if (isValid)
+    {
+        diff.sh = SH_FromRadiance(radiance, surfToHitPoint);
+    }
 
-    if (BoilingFilter(gl_LocalInvocationID.xy, 0.2f, Restir_GetTargetPdf(combined) * combined.weightSum) || combined.M > 20)
+    if (BoilingFilter(gl_LocalInvocationID.xy, 0.2f, Restir_GetTargetPdf(combined) * combined.weightSum) || !isValid)
     {
         combined = pk_Reservoir_Zero;
     }

@@ -69,8 +69,10 @@ void main()
         #if defined(PK_GI_RESTIR)
         Restir_Store_Hit
         (
-            raycoord, 
-            params.origin + params.diffdir * (hits.diff.isMiss ? PK_GI_RAY_MAX_DISTANCE : hits.diff.dist),
+            raycoord,
+            params.diffdir,
+            hits.diff.isMiss ? PK_GI_RAY_MAX_DISTANCE : hits.diff.dist,
+            params.normal,
             imageLoad(pk_GI_RayHitNormals, raycoord).r,
             radianceDiff 
         );

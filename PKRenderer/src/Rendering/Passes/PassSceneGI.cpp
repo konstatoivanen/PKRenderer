@@ -84,7 +84,7 @@ namespace PK::Rendering::Passes
         m_rayhitNormals = Texture::Create(descr, "GI.RayHitNormals");
         
         descr.samplerType = SamplerType::Sampler2DArray;
-        descr.layers = 6;
+        descr.layers = 5;
         descr.format = TextureFormat::RGBA32UI;
         m_reservoirs = Texture::Create(descr, "GI.Reservoirs");
 

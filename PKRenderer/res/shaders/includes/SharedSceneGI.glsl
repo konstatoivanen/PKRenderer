@@ -56,7 +56,7 @@ struct GIDiff { SH sh; float ao; float history; };
 struct GISpec { float3 radiance; float ao; float history; };
 struct GIRayHit { float dist; bool isMiss; bool isScreen; };
 struct GIRayHits { GIRayHit diff; GIRayHit spec; };
-struct GIRayParams { float3 origin; float3 diffdir; float3 specdir; float roughness; };
+struct GIRayParams { float3 origin; float3 normal; float3 diffdir; float3 specdir; float roughness; };
 
 #define pk_Zero_GIDiff GIDiff(pk_ZeroSH, 0.0f, 0.0f)
 #define pk_Zero_GISpec GISpec(0.0f.xxx, 0.0f, 0.0f)
@@ -76,42 +76,43 @@ float GI_LogLuminance(const GISpec a) { return log(1.0f + GI_Luminance(a)); }
 #define GI_GET_RAY_PARAMS(COORD, RAYCOORD, DEPTH, OUT_PARAMS)                                                                   \
 {                                                                                                                               \
     const float4 normalRoughness = SampleWorldNormalRoughness(COORD);                                                           \
-    float3 normal = normalRoughness.xyz;                                                                                        \
-    OUT_PARAMS.roughness = normalRoughness.w;                                                                                   \
-                                                                                                                                \
-    /* Apply bias to avoid rays clipping with geo at high distances */                                                          \
-    OUT_PARAMS.origin = SampleWorldPosition(COORD, int2(pk_ScreenSize.xy), DEPTH - DEPTH * 1e-2f);                              \
-                                                                                                                                \
-    float3 viewdir = normalize(OUT_PARAMS.origin - pk_WorldSpaceCameraPos.xyz);                                                 \
-                                                                                                                                \
-    /* Apply bias to avoid rays clipping with geo at high angles */                                                             \
-    OUT_PARAMS.origin += normal * (0.01f / (saturate(dot(-viewdir, normal)) + 0.01f)) * 0.05f;                                  \
-                                                                                                                                \
+    const float3 normal = normalRoughness.xyz;                                                                                  \
     const float3 v = GlobalNoiseBlue(RAYCOORD + pk_GI_RayDither, pk_FrameIndex.y);                                              \
     const float2 Xi = saturate(v.xy + ((v.z - 0.5f) / 256.0f));                                                                 \
+    /* Apply bias to avoid rays clipping with geo at high distances */                                                          \
+    float3 origin = SampleWorldPosition(COORD, int2(pk_ScreenSize.xy), DEPTH - DEPTH * 1e-2f);                                  \
+    float3 viewdir = normalize(origin - pk_WorldSpaceCameraPos.xyz);                                                            \
+    /* Apply bias to avoid rays clipping with geo at high angles */                                                             \
+    origin += normal * (0.01f / (saturate(dot(-viewdir, normal)) + 0.01f)) * 0.05f;                                             \
+    OUT_PARAMS.origin = origin;                                                                                                 \
+    OUT_PARAMS.normal = normal;                                                                                                 \
     OUT_PARAMS.diffdir = ImportanceSampleLambert(Xi, normal);                                                                   \
-    OUT_PARAMS.specdir = ImportanceSampleSmithGGX(Xi.yx, normal, viewdir, OUT_PARAMS.roughness);                                \
+    OUT_PARAMS.specdir = ImportanceSampleSmithGGX(Xi.yx, normal, viewdir, normalRoughness.w);                                   \
+    OUT_PARAMS.roughness = normalRoughness.w;                                                                                   \
 }                                                                                                                               \
 
 uint GI_GetCheckerboardOffset(uint2 coord, uint frame) { return ((coord.x ^ coord.y) ^ frame) & 0x1u; }
 
-int2 GI_ExpandCheckerboardCoord(uint2 coord)
+int2 GI_ExpandCheckerboardCoord(uint2 coord, uint offset)
 {
 #if defined(PK_GI_CHECKERBOARD_TRACE)
-    return int2(coord.x * 2 + GI_GetCheckerboardOffset(coord, pk_FrameIndex.y), coord.y);
+    return int2(coord.x * 2 + GI_GetCheckerboardOffset(coord, pk_FrameIndex.y + offset), coord.y);
 #else
     return int2(coord);
 #endif
 }
 
-int2 GI_CollapseCheckerboardCoord(uint2 coord)
+int2 GI_CollapseCheckerboardCoord(uint2 coord, uint offset)
 {
 #if defined(PK_GI_CHECKERBOARD_TRACE)
-    return int2((coord.x - GI_GetCheckerboardOffset(coord, pk_FrameIndex.y + 1u)) / 2, coord.y);
+    return int2((coord.x - GI_GetCheckerboardOffset(coord, pk_FrameIndex.y + offset)) / 2, coord.y);
 #else
     return int2(coord);
 #endif
 }
+
+int2 GI_ExpandCheckerboardCoord(uint2 coord) { return GI_ExpandCheckerboardCoord(coord, 0u); }
+int2 GI_CollapseCheckerboardCoord(uint2 coord) { return GI_CollapseCheckerboardCoord(coord, 0u); }
 
 float3 GI_VoxelToWorldSpace(int3 coord) { return coord * pk_GI_VoxelSize + pk_GI_VolumeST.xyz + pk_GI_VoxelSize * 0.5f; }
 int3   GI_WorldToVoxelSpace(float3 worldpos) { return int3((worldpos - pk_GI_VolumeST.xyz) * pk_GI_VolumeST.www); }
