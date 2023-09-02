@@ -13,9 +13,11 @@ void main()
         return;
     }
 
-    const float3 normal = SampleWorldNormal(coord);
-    const float historyDiff = GI_Load_Diff(coord).history;
-    const float historySpec = GI_Load_Spec(coord).history;
+    const float4 normalRoughness = SampleWorldNormalRoughness(coord);
+    const GIDiff originalDiff = GI_Load_Diff(coord);
+    const GISpec originalSpec = GI_Load_Spec(coord);
+    const float historyDiff = originalDiff.history;
+    const float historySpec = originalSpec.history;
     const int iHistoryDiff = int(historyDiff);
     const int iHistorySpec = int(historySpec);
 
@@ -32,7 +34,7 @@ void main()
     spec.history = historySpec;
     float wSum = 0.0f;
 
-    GI_SFLT_HISTORY_FILL(coord, mip, normal, depth, wSum, diff, spec)
+    GI_SFLT_HISTORY_FILL(coord, mip, normalRoughness.xyz, depth, wSum, diff, spec)
 
     if (iHistoryDiff <= 3 && !Test_NaN_EPS6(wSum))
     {
@@ -41,6 +43,9 @@ void main()
 
     if (iHistorySpec <= 3 && !Test_NaN_EPS6(wSum))
     {
-        GI_Store_Spec(coord, GI_Mul_NoHistory(spec, 1.0f / wSum));
+        spec = GI_Mul_NoHistory(spec, 1.0f / wSum);
+        // Dont use history fill for smooth surfaces.
+        spec.radiance = lerp(originalSpec.radiance, spec.radiance, smoothstep(0.1f, 0.6f, normalRoughness.w));
+        GI_Store_Spec(coord, spec);
     }
 }

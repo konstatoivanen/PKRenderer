@@ -66,7 +66,7 @@ namespace PK::Core
         YAML::BoxedValue<float> BloomLensDirtIntensity = YAML::BoxedValue<float>("BloomLensDirtIntensity", 0.0f);
         YAML::BoxedValue<std::string> FileBloomDirt = YAML::BoxedValue<std::string>("FileBloomDirt", "T_Bloom_LensDirt");
 
-        YAML::BoxedValue<bool> GIRestir = YAML::BoxedValue<bool>("GIRestir", true);
+        YAML::BoxedValue<bool> GIReSTIR = YAML::BoxedValue<bool>("GIReSTIR", true);
         YAML::BoxedValue<bool> GIApproximateRoughSpecular = YAML::BoxedValue<bool>("GIApproximateRoughSpecular", true);
         YAML::BoxedValue<bool> GIScreenSpacePretrace = YAML::BoxedValue<bool>("GIScreenSpacePretrace", false);
         YAML::BoxedValue<bool> GICheckerboardTrace = YAML::BoxedValue<bool>("GICheckerboardTrace", true);

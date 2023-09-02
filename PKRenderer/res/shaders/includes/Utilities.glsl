@@ -18,6 +18,7 @@ half cmin(half4 x) { return min(min(min(x.x, x.y), x.z), x.w); }
 half cmax(half2 x) { return max(x.x, x.y); }
 half cmax(half3 x) { return max(max(x.x, x.y), x.z); }
 half cmax(half4 x) { return max(max(max(x.x, x.y), x.z), x.w); }
+float2 make_moments(float v) { return float2(v, v * v); }
 float2 make_rotation(float radian)  { return float2(cos(radian), sin(radian)); }
 float2 rotate2D(float2 v, float2 r)  { return float2(v.x * r.x - v.y * r.y, v.x * r.y + v.y * r.x); }
 float4 mul3x3(const float3x3 matrix, const float4 v) { return float4(matrix * v.xyz, v.w); }

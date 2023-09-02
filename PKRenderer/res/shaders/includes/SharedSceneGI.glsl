@@ -17,6 +17,7 @@ PK_DECLARE_CBUFFER(pk_GI_Parameters, PK_SET_SHADER)
 layout(r32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_RayHits;
 layout(r32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_RayHitNormals;
 layout(rg32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_ScreenDataWrite;
+layout(r8ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_ScreenDataMipMask; 
 layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_GI_VolumeMaskWrite;
 layout(rgba16f, set = PK_SET_SHADER) uniform image3D pk_GI_VolumeWrite;
 PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataMips;
@@ -33,7 +34,7 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 #define PK_GI_RAY_MIN_DISTANCE 0.005f
 #define PK_GI_RAY_MAX_DISTANCE 100.0f
 #define PK_GI_RAY_CONE_SIZE 0.25f
-#define PK_GI_MIN_ACCUM 0.03f
+#define PK_GI_MIN_ACCUM 0.05f
 #define PK_GI_MAX_LUMA_GAIN 0.5f
 #define PK_GI_MAX_HISTORY 256u
 #define PK_GI_MIN_ROUGH_SPEC 0.35f
@@ -42,7 +43,7 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 #define PK_GI_SPEC_ACCUM_CURVE 0.66f
 #define PK_GI_SPEC_ACCUM_MIN 0.03f
 #define PK_GI_SPEC_ACCUM_MAX 1.0f
-#define PK_GI_DISK_FILTER_RADIUS 2.5f
+#define PK_GI_DISK_FILTER_RADIUS 1.0f
 #define PK_GI_AO_DIFF_POWER 0.125f
 #define PK_GI_AO_SPEC_POWER 0.05f
 #define PK_GI_MIN_VXHISTORY 32.0f
@@ -96,23 +97,26 @@ uint GI_GetCheckerboardOffset(uint2 coord, uint frame) { return ((coord.x ^ coor
 int2 GI_ExpandCheckerboardCoord(uint2 coord, uint offset)
 {
 #if defined(PK_GI_CHECKERBOARD_TRACE)
-    return int2(coord.x * 2 + GI_GetCheckerboardOffset(coord, pk_FrameIndex.y + offset), coord.y);
-#else
-    return int2(coord);
+    coord.x *= 2;
+    coord.x += GI_GetCheckerboardOffset(coord, pk_FrameIndex.y + offset);
 #endif
+    return int2(coord);
 }
 
-int2 GI_CollapseCheckerboardCoord(uint2 coord, uint offset)
+int2 GI_CollapseCheckerboardCoord(const float2 screenUV, const uint offset)
 {
+    int2 coord = int2(screenUV);
 #if defined(PK_GI_CHECKERBOARD_TRACE)
-    return int2((coord.x - GI_GetCheckerboardOffset(coord, pk_FrameIndex.y + offset)) / 2, coord.y);
-#else
-    return int2(coord);
+    float2 ddxy = (screenUV - coord) - 0.5f.xx;
+    int am = int(step(ddxy.x, ddxy.y));
+    int2 xy = int2(am, 1 - am) * int2(sign(ddxy));
+    coord += xy * int(GI_GetCheckerboardOffset(uint2(coord), pk_FrameIndex.y + offset));
+    coord.x /= 2;
 #endif
+    return coord;
 }
 
 int2 GI_ExpandCheckerboardCoord(uint2 coord) { return GI_ExpandCheckerboardCoord(coord, 0u); }
-int2 GI_CollapseCheckerboardCoord(uint2 coord) { return GI_CollapseCheckerboardCoord(coord, 0u); }
 
 float3 GI_VoxelToWorldSpace(int3 coord) { return coord * pk_GI_VoxelSize + pk_GI_VolumeST.xyz + pk_GI_VoxelSize * 0.5f; }
 int3   GI_WorldToVoxelSpace(float3 worldpos) { return int3((worldpos - pk_GI_VolumeST.xyz) * pk_GI_VolumeST.www); }
@@ -204,17 +208,8 @@ bool GI_Test_VX_Normal(float3 normal)
 }
 
 //----------SAMPLING FUNCTIONS----------//
-float3 GI_Sample_Diffuse(const float2 uv, const float3 N)
-{
-    const GIDiff s_diff = GI_Load_Diff(int2(uv * pk_ScreenSize.xy));
-    return SH_ToIrradiance(s_diff.sh, N, pk_GI_ChromaBias);
-}
-
-float3 GI_Sample_Specular(const float2 uv, const float3 N)
-{
-    const GISpec s_spec = GI_Load_Spec(int2(uv * pk_ScreenSize.xy));
-    return s_spec.radiance;
-}
+float3 GI_Sample_Diffuse(const float2 uv, const float3 N) { return SH_ToIrradiance(GI_Load_Diff(int2(uv * pk_ScreenSize.xy)).sh, N, pk_GI_ChromaBias); }
+float3 GI_Sample_Specular(const float2 uv, const float3 N) { return GI_Load_Spec(int2(uv * pk_ScreenSize.xy)).radiance; }
 
 void GI_Sample_Lighting(const float2 uv, const float3 N, const float3 V, const float R, inout float3 diffuse, inout float3 specular) 
 {

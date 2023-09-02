@@ -2046,8 +2046,7 @@
     <None Include="res\shaders\CS_VolumeFogDensity.shader" />
     <None Include="res\shaders\SH_VS_Gizmos.shader" />
     <None Include="res\shaders\includes\SceneGIFiltering.glsl" />
-    <None Include="res\shaders\includes\SharedRestir.glsl" />
-    <None Include="res\shaders\CS_GI_Restir.shader" />
+    <None Include="res\shaders\includes\SharedReSTIR.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

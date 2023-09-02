@@ -4,6 +4,20 @@
 
 #multi_compile _ PK_GI_SPEC_VIRT_REPROJECT
 
+void WriteMipMask(const int2 coord, const GIDiff diff, const GISpec spec)
+{
+    const int2 base = ((coord + 8) >> 4) - 1;
+    
+    [[branch]]
+    if (diff.history < 4.0f || spec.history < 4.0f)
+    {
+        imageStore(pk_GI_ScreenDataMipMask, base + int2(0, 0), uint4(1u));
+        imageStore(pk_GI_ScreenDataMipMask, base + int2(1, 0), uint4(1u));
+        imageStore(pk_GI_ScreenDataMipMask, base + int2(0, 1), uint4(1u));
+        imageStore(pk_GI_ScreenDataMipMask, base + int2(1, 1), uint4(1u));
+    }
+}
+
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
@@ -91,4 +105,5 @@ void main()
     const bool invalidSpec = Any_IsNaN(spec.radiance) || isnan(spec.ao) || isnan(spec.history);
     GI_Store_Packed_Diff(coord, invalidDiff ? uint4(0) : GI_Pack_Diff(diff));
     GI_Store_Packed_Spec(coord, invalidSpec ? uint2(0) : GI_Pack_Spec(spec));
+    WriteMipMask(coord, diff, spec);
 }

@@ -80,6 +80,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_GI_ScreenDataRead)
         DECLARE_HASH(pk_GI_ScreenDataWrite)
         DECLARE_HASH(pk_GI_ScreenDataMips)
+        DECLARE_HASH(pk_GI_ScreenDataMipMask)
         DECLARE_HASH(pk_GI_RayHits)
         DECLARE_HASH(pk_GI_RayHitNormals)
         DECLARE_HASH(pk_GI_VolumeST)

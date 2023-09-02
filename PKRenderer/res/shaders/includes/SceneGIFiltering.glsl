@@ -1,7 +1,6 @@
 #pragma once
 #include GBuffers.glsl
 #include SharedSceneGI.glsl
-#include SampleDistribution.glsl
 #include Kernels.glsl
 
 // Source https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
@@ -191,53 +190,6 @@ const float name[2][2] =                                            \
     }                                                                                                                                                   \
 }                                                                                                                                                       \
 
-#define GI_SFLT_ANTI_FIREFLY(SFLT_COORD, SFLT_NORMAL, SFLT_DEPTH, SFLT_DBIAS, SFLT_ROUGHNESS, SFLT_LUMA_RANGE_DIFF, SFLT_LUMA_RANGE_SPEC, SFLT_OUT_DIFF, SFLT_OUT_SPEC) \
-{                                                                                                                                                                       \
-    float wSumDiff = 1.0f;                                                                                                                                              \
-    float wSumSpec = 1.0f;                                                                                                                                              \
-    float lumaDiff = GI_Luminance(SFLT_OUT_DIFF);                                                                                                                       \
-    float lumaSpec = GI_Luminance(SFLT_OUT_SPEC);                                                                                                                       \
-    const float2 roughnessParams = GI_GetRoughnessWeightParams(SFLT_ROUGHNESS);                                                                                         \
-                                                                                                                                                                        \
-    [[unroll]]                                                                                                                                                          \
-    for (int i = 0; i < 9; ++i)                                                                                                                                         \
-    {                                                                                                                                                                   \
-        if (i != 4)                                                                                                                                                     \
-        {                                                                                                                                                               \
-            /* Sample a sparse 5x5 (3x3 with 1px padding on axis aligned samples) to retain hf noise & to only sample shaded hits if using checkerboard rendering. */   \
-            const int2 xy = SFLT_COORD + int2(i % 3, i / 3) * (1 + (i % 2));                                                                                            \
-            const float s_depth = SampleMinZ(xy, 0);                                                                                                                    \
-            const float4 s_nr = SampleViewNormalRoughness(xy);                                                                                                          \
-            const GIDiff s_diff = GI_Load_Diff(xy);                                                                                                                     \
-            const GISpec s_spec = GI_Load_Spec(xy);                                                                                                                     \
-                                                                                                                                                                        \
-            /* use higher power here to avoid sampling around corners*/                                                                                                 \
-            const float w_n = pow5(dot(SFLT_NORMAL, s_nr.xyz));                                                                                                         \
-            const float w_d = 1.0f / (1e-4f + abs(s_depth - SFLT_DEPTH));                                                                                               \
-            const float w_r = exp(-abs(s_nr.w * roughnessParams.x + roughnessParams.y));                                                                                \
-            const float w_h = float(s_spec.history > 1.0f); /* Don't sample ignored ray hits. */                                                                        \
-            const float w_s = float(Test_InScreen(xy) && Test_DepthReproject(SFLT_DEPTH, s_depth, SFLT_DBIAS));                                                         \
-                                                                                                                                                                        \
-            float w_diff = w_s * w_n * w_d;                                                                                                                             \
-            float w_spec = w_s * w_n * w_d * w_r * w_h;                                                                                                                 \
-            w_diff = lerp(0.0f, w_diff, !Test_NaN_EPS6(w_diff) && w_n > 0.05f);                                                                                         \
-            w_spec = lerp(0.0f, w_spec, !Test_NaN_EPS6(w_spec));                                                                                                        \
-                                                                                                                                                                        \
-            SFLT_OUT_DIFF = GI_Sum(SFLT_OUT_DIFF, s_diff, w_diff);                                                                                                      \
-            SFLT_OUT_SPEC = GI_Sum(SFLT_OUT_SPEC, s_spec, w_spec);                                                                                                      \
-            lumaDiff += GI_Luminance(s_diff) * w_diff;                                                                                                                  \
-            lumaSpec += GI_Luminance(s_spec) * w_spec;                                                                                                                  \
-            wSumDiff += w_diff;                                                                                                                                         \
-            wSumSpec += w_spec;                                                                                                                                         \
-        }                                                                                                                                                               \
-    }                                                                                                                                                                   \
-                                                                                                                                                                        \
-    lumaDiff = lumaDiff / wSumDiff + 1e-4f;                                                                                                                             \
-    lumaSpec = lumaSpec / wSumSpec + 1e-4f;                                                                                                                             \
-    SFLT_OUT_DIFF = GI_Mul_NoHistory(SFLT_OUT_DIFF, (clamp(lumaDiff, SFLT_LUMA_RANGE_DIFF.x, SFLT_LUMA_RANGE_DIFF.y) / lumaDiff) / wSumDiff);                           \
-    SFLT_OUT_SPEC = GI_Mul_NoHistory(SFLT_OUT_SPEC, (clamp(lumaSpec, SFLT_LUMA_RANGE_SPEC.x, SFLT_LUMA_RANGE_SPEC.y) / lumaSpec) / wSumSpec);                           \
-}                                                                                                                                                                       \
-
 #define GI_SFLT_HISTORY_FILL(SFLT_COORD, SFLT_MIP, SFLT_NORMAL, SFLT_DEPTH, SFLT_OUT_WSUM, SFLT_OUT_DIFF, SFLT_OUT_SPEC)                            \
 {                                                                                                                                                   \
     const int fltmip = SFLT_MIP + 1;                                                                                                                \
@@ -294,8 +246,7 @@ const float name[2][2] =                                            \
             const int2 xy = SFLT_COORD + int2(xx, yy);                                                  \
             const float s_depth = SampleMinZ(xy, 0);                                                    \
             const float s_w = lerp(0.0f, 1.0f, (abs(SFLT_DEPTH - s_depth) / SFLT_DEPTH) < 0.02f);       \
-            const float s_luma = GI_LogLuminance(GI_Load_Diff(xy)) * s_w;                               \
-            mom += float2(s_luma, pow2(s_luma));                                                        \
+            mom += make_moments(GI_LogLuminance(GI_Load_Diff(xy)) * s_w);                               \
             w_mom += s_w;                                                                               \
         }                                                                                               \
     }                                                                                                   \

@@ -7,7 +7,7 @@
 #include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl
 #include includes/SharedSceneGI.glsl
-#include includes/SharedRestir.glsl
+#include includes/SharedReSTIR.glsl
 #include includes/CTASwizzling.glsl
 
 float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHit hit)
@@ -52,7 +52,7 @@ void main()
         diff.history = PK_GI_MAX_HISTORY;
         diff.sh = SH_FromRadiance(radianceDiff, params.diffdir);
         diff.ao = hits.diff.isMiss ? 1.0f : saturate(hits.diff.dist / PK_GI_RAY_MAX_DISTANCE);
-    
+
         #if PK_GI_APPROX_ROUGH_SPEC == 1
         [[branch]]
         if (params.roughness < PK_GI_MAX_ROUGH_SPEC)
@@ -67,7 +67,7 @@ void main()
         packedSpec = GI_Pack_Spec(spec);
         
         #if defined(PK_GI_RESTIR)
-        Restir_Store_Hit
+        ReSTIR_Store_Hit
         (
             raycoord,
             params.diffdir,

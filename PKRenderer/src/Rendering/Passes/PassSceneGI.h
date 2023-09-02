@@ -25,7 +25,6 @@ namespace PK::Rendering::Passes
             Objects::Shader* m_computeClear = nullptr;
             Objects::Shader* m_computeMipmap = nullptr;
             Objects::Shader* m_computeShadeHits = nullptr;
-            Objects::Shader* m_computeRestir = nullptr;
             Objects::Shader* m_computeAccumulate = nullptr;
             Objects::Shader* m_computeReproject = nullptr;
             Objects::Shader* m_computeScreenMip = nullptr;
@@ -34,16 +33,19 @@ namespace PK::Rendering::Passes
             Objects::Shader* m_rayTraceGatherGI = nullptr;
             Objects::ShaderBindingTable m_shaderBindingTable;
             Utilities::Ref<Objects::ConstantBuffer> m_parameters;
+
             Utilities::Ref<Objects::Texture> m_voxels;
             Utilities::Ref<Objects::Texture> m_voxelMask;
             Utilities::Ref<Objects::Texture> m_screenData;
             Utilities::Ref<Objects::Texture> m_screenDataMips;
+            Utilities::Ref<Objects::Texture> m_screenDataMipMask;
             Utilities::Ref<Objects::Texture> m_reservoirs;
             Utilities::Ref<Objects::Texture> m_rayhits;
             Utilities::Ref<Objects::Texture> m_rayhitNormals;
+
             uint32_t m_frameIndex = 0u;
             int32_t m_rasterAxis = 0;
             bool m_useCheckerboardTrace = false;
-            bool m_useRestir = false;
+            bool m_useReSTIR = false;
     };
 }

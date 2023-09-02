@@ -851,7 +851,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_GI_DiskFilter.shader" />
     <None Include="res\shaders\CS_GI_HistoryFill.shader" />
     <None Include="res\shaders\CS_GI_Reproject.shader" />
-    <None Include="res\shaders\CS_GI_Restir.shader" />
     <None Include="res\shaders\CS_GI_ScreenMip.shader" />
     <None Include="res\shaders\CS_GI_ShadeHits.shader" />
     <None Include="res\shaders\CS_HierachicalDepth.shader" />
@@ -870,7 +869,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\Encoding.glsl" />
     <None Include="res\shaders\includes\BRDF.glsl" />
     <None Include="res\shaders\includes\SceneGIFiltering.glsl" />
-    <None Include="res\shaders\includes\SharedRestir.glsl" />
+    <None Include="res\shaders\includes\SharedReSTIR.glsl" />
     <None Include="res\shaders\includes\SpatialFilters.glsl" />
     <None Include="res\shaders\includes\Kernels.glsl" />
     <None Include="res\shaders\includes\GBuffers.glsl" />

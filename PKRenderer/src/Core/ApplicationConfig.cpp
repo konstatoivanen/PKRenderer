@@ -62,7 +62,7 @@ namespace PK::Core
             &BloomIntensity,
             &BloomLensDirtIntensity,
             &FileBloomDirt,
-            &GIRestir,
+            &GIReSTIR,
             &GIApproximateRoughSpecular,
             &GIScreenSpacePretrace,
             &GICheckerboardTrace,
