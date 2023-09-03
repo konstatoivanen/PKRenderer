@@ -162,7 +162,7 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
         const bool isNear = ReSTIR_IsNearField(depth, origin, initial, random01);
         isValid = !Any_IsNaN(radiance);
 
-        if (isValid && (diff.history > 32.0f || !isNear))
+        if (isValid && (diff.history < 32.0f || !isNear))
         {
             diff.sh = SH_FromRadiance(radiance, surfToHitPoint);
         }
@@ -197,7 +197,7 @@ void main()
 #endif
     {
         GISpec spec = GI_Load_Cur_Spec(coord);
-        GISpec specSample = GI_Load_Spec(coord);
+        GISpec specSample = GI_Load_Spec(baseCoord);
 
         const float wSpec = max(1.0f / (spec.history + 1.0f), PK_GI_MIN_ACCUM);
         const float maxLumaSpec = GI_Luminance(spec) + (PK_GI_MAX_LUMA_GAIN / (1.0f - wSpec));
@@ -213,7 +213,7 @@ void main()
     // Diffuse 
     GIDiff diff = GI_Load_Cur_Diff(coord);
     {
-        GIDiff diffSample = GI_Load_Diff(coord);
+        GIDiff diffSample = GI_Load_Diff(baseCoord);
 
         // ReSTIR
         #if defined(PK_GI_RESTIR)

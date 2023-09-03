@@ -10,9 +10,9 @@
 /*
 TODO:
 Fix roughness dominant factor usage
+Mip gen uses possibly invalid data due to checker board. Ignore checkerboard texels in mip gen.
 Test nvidias radius scaling
 Investigate camera moving bias
-Fix history fill fireflies & bad denoising quality (possibly 'dedirectionalize' diffuse?)
 Fix ssrt miss hit dist
 Write subject analysis
 */

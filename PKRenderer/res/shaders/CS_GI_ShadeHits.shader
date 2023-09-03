@@ -79,13 +79,13 @@ void main()
         #endif
     }
 
-    GI_Store_Packed_Diff(coord, packedDiff);
-    GI_Store_Packed_Spec(coord, packedSpec);
+    GI_Store_Packed_Diff(raycoord, packedDiff);
+    GI_Store_Packed_Spec(raycoord, packedSpec);
 
     #if defined(PK_GI_CHECKERBOARD_TRACE)
     // Fill blanks in neighbourhood to avoid nans on resize
-    const int2 ncoord = int2(raycoord.x * 2 + GI_GetCheckerboardOffset(uint2(raycoord), pk_FrameIndex.y + 1u), raycoord.y);
-    GI_Store_Packed_Diff(ncoord, packedDiff);
-    GI_Store_Packed_Spec(ncoord, packedSpec);
+    //const int2 ncoord = GI_ExpandCheckerboardCoord(raycoord, 1u);
+    //GI_Store_Packed_Diff(ncoord, packedDiff);
+    //GI_Store_Packed_Spec(ncoord, packedSpec);
     #endif
 }
