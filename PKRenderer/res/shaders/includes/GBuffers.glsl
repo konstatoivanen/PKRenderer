@@ -78,7 +78,9 @@ float3 SamplePreviousWorldNormal(int2 coord) { return mul(float3x3(pk_MATRIX_L_I
 
 float3 SamplePreviousViewPosition(float2 uv) { return UVToViewPos(uv, SamplePreviousViewDepth(uv)); }
 float3 SamplePreviousViewPosition(int2 coord, int2 size) { return UVToViewPos((coord + 0.5f.xx) / float2(size), SamplePreviousViewDepth(coord)); }
+float3 SamplePreviousViewPosition(int2 coord, int2 size, float viewDepth) { return UVToViewPos((coord + 0.5f.xx) / float2(size), viewDepth); }
 float3 SamplePreviousWorldPosition(float2 uv) { return mul(pk_MATRIX_L_I_V, float4(SamplePreviousViewPosition(uv), 1.0f)).xyz; }
 float3 SamplePreviousWorldPosition(int2 coord, int2 size) { return mul(pk_MATRIX_L_I_V, float4(SamplePreviousViewPosition(coord, size), 1.0f)).xyz; }
+float3 SamplePreviousWorldPosition(int2 coord, int2 size, float viewDepth) { return mul(pk_MATRIX_L_I_V, float4(SamplePreviousViewPosition(coord, size, viewDepth), 1.0f)).xyz; }
 
 #endif

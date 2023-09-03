@@ -31,7 +31,7 @@ void main()
 {
     const uint thread = PK_AtomicCounterNext();
     const int2 size = imageSize(_DestinationTex).xy;
-    const uint3 threadID = GetMortonOrderSwizzle32(thread, uint2(size));
+    const uint3 threadID = GetZCurveSwizzle32(thread, uint2(size));
     const int2 coord = int2(threadID.xy);
     const float2 uv = float2(coord + 0.5f.xx) / float2(size);
     const float layer = float(threadID.z);

@@ -89,6 +89,14 @@ float2 GI_GetDiskFilterRadiusAndScale(const float depth, const float variance, c
     return float2(radius, scale);
 }
 
+void GI_GetMipSampler(const int2 coord, int level, inout int2 outBaseCoord, inout float2 outDdxy)
+{
+    const int width = 1 << level;
+    const int hwidth = width >> 1;
+    outBaseCoord = ((coord + hwidth) >> level) - 1;
+    outDdxy = (((coord + hwidth) & (width - 1)) + 0.5f.xx) / width;
+}
+
 #define MAKE_BILINEAR_WEIGHTS(name, ddxy)                           \
 const float name[2][2] =                                            \
 {                                                                   \
@@ -159,77 +167,48 @@ const float name[2][2] =                                            \
     }                                                                                                                                       \
 }                                                                                                                                           \
 
-// A more relaxed filter for when bilinear reprojection filter fails
-#define GI_SFLT_REPRO_BILATERAL_CROSS(SFLT_COORD, SFLT_NORMAL, SFLT_DEPTH, SFLT_DBIAS, SFLT_WSUM_DIFF, SFLT_WSUM_SPEC, SFLT_OUT_DIFF, SFLT_OUT_SPEC)    \
-{                                                                                                                                                       \
-    bool filterDiff = Test_EPS6(SFLT_WSUM_DIFF);                                                                                                        \
-    bool filterSpec = Test_EPS6(SFLT_WSUM_SPEC);                                                                                                        \
-                                                                                                                                                        \
-    if (filterDiff || filterSpec)                                                                                                                       \
-    {                                                                                                                                                   \
-        for (int yy = -1; yy <= 1; yy++)                                                                                                                \
-        for (int xx = -1; xx <= 1; xx++)                                                                                                                \
-        {                                                                                                                                               \
-            const int2 xy = SFLT_COORD + int2(xx, yy);                                                                                                  \
-            const float  s_depth = SamplePreviousViewDepth(xy);                                                                                         \
-            const float3 s_normal = SamplePreviousViewNormal(xy);                                                                                       \
-                                                                                                                                                        \
-            const float w_z = 1.0f / (1e-4f + abs(SFLT_DEPTH - s_depth));                                                                               \
-            const float w_n = dot(SFLT_NORMAL, s_normal);                                                                                               \
-            const float w_s = float(Test_InScreen(xy) && Test_DepthReproject(SFLT_DEPTH, s_depth, SFLT_DBIAS));                                         \
-            float w_diff = w_s * w_z * w_n;                                                                                                             \
-            float w_spec = w_s * w_z * w_n;                                                                                                             \
-            w_diff = lerp(0.0f, w_diff, filterDiff && !Test_NaN_EPS4(w_diff) && w_n > 0.05f);                                                           \
-            w_spec = lerp(0.0f, w_spec, filterSpec && !Test_NaN_EPS4(w_spec));                                                                          \
-                                                                                                                                                        \
-            SFLT_OUT_DIFF = GI_Sum(SFLT_OUT_DIFF, GI_Load_Diff(xy), w_diff);                                                                            \
-            SFLT_OUT_SPEC = GI_Sum(SFLT_OUT_SPEC, GI_Load_Spec(xy), w_spec);                                                                            \
-            SFLT_WSUM_DIFF += w_diff;                                                                                                                   \
-            SFLT_WSUM_SPEC += w_spec;                                                                                                                   \
-        }                                                                                                                                               \
-    }                                                                                                                                                   \
-}                                                                                                                                                       \
-
-#define GI_SFLT_HISTORY_FILL(SFLT_COORD, SFLT_MIP, SFLT_NORMAL, SFLT_DEPTH, SFLT_OUT_WSUM, SFLT_OUT_DIFF, SFLT_OUT_SPEC)                            \
-{                                                                                                                                                   \
-    const int fltmip = SFLT_MIP + 1;                                                                                                                \
-    const int texelWidth = 1 << fltmip;                                                                                                             \
-    const int texelHWidth = texelWidth >> 1;                                                                                                        \
-    const int2 base = ((SFLT_COORD + texelHWidth) >> fltmip) - 1;                                                                                   \
-    const float2 ddxy = (((SFLT_COORD + texelHWidth) & (texelWidth - 1)) + 0.5f.xx) / texelWidth;                                                   \
-    MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                                                                    \
-                                                                                                                                                    \
-    float4 depthWeights = float4                                                                                                                    \
-    (                                                                                                                                               \
-        SampleAvgZ(base + int2(0, 0), fltmip),                                                                                                      \
-        SampleAvgZ(base + int2(1, 0), fltmip),                                                                                                      \
-        SampleAvgZ(base + int2(0, 1), fltmip),                                                                                                      \
-        SampleAvgZ(base + int2(1, 1), fltmip)                                                                                                       \
-    );                                                                                                                                              \
-                                                                                                                                                    \
-    depthWeights = 1.0f / (1e-3f + abs(SFLT_DEPTH.xxxx - depthWeights));                                                                            \
-    depthWeights *= safePositiveRcp(dot(depthWeights, 1.0f.xxxx));                                                                                  \
-                                                                                                                                                    \
-    for (uint yy = 0; yy <= 1u; ++yy)                                                                                                               \
-    for (uint xx = 0; xx <= 1u; ++xx)                                                                                                               \
-    {                                                                                                                                               \
-        const uint4 p_diff = GI_Load_Packed_Mip_Diff(base + int2(xx, yy), SFLT_MIP);                                                                \
-        const uint2 p_spec = GI_Load_Packed_Mip_Spec(base + int2(xx, yy), SFLT_MIP);                                                                \
-        GIDiff s_diff = GI_Unpack_Diff(p_diff);                                                                                                     \
-        GISpec s_spec = GI_Unpack_Spec(p_spec);                                                                                                     \
-                                                                                                                                                    \
-        /* Filter out sh l1 based on normal cosine so that we dont get signals facing away from the surface.*/                                      \
-        s_diff.sh.Y.zyw *= float(dot(SFLT_NORMAL, SH_ToPrimeDir(s_diff.sh)) > 0.05f);                                                               \
-        const float w = depthWeights[yy * 2 + xx] * bilinearWeights[yy][xx];                                                                        \
-                                                                                                                                                    \
-        if (p_diff.w != 0u && w > 1e-6f)                                                                                                            \
-        {                                                                                                                                           \
-            SFLT_OUT_DIFF = GI_Sum_NoHistory(SFLT_OUT_DIFF, s_diff, w);                                                                             \
-            SFLT_OUT_SPEC = GI_Sum_NoHistory(SFLT_OUT_SPEC, s_spec, w);                                                                             \
-            SFLT_OUT_WSUM += w;                                                                                                                     \
-        }                                                                                                                                           \
-    }                                                                                                                                               \
-}                                                                                                                                                   \
+#define GI_SFLT_HISTORY_MIP(SFLT_COORD, SFLT_MIP, SFLT_NORMAL, SFLT_DEPTH, SFLT_OUT_WSUM, SFLT_OUT_DIFF, SFLT_OUT_SPEC) \
+{                                                                                                                       \
+    for (int zz = int(SFLT_MIP); zz <= int(SFLT_MIP) + 1; ++zz)                                                         \
+    {                                                                                                                   \
+        const float levelWeight = 1.0f - abs(SFLT_MIP - zz);                                                            \
+                                                                                                                        \
+        int2 base; float2 ddxy;                                                                                         \
+        GI_GetMipSampler(SFLT_COORD, zz + 1, base, ddxy);                                                               \
+        MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                                    \
+                                                                                                                        \
+        float4 depthWeights = float4                                                                                    \
+        (                                                                                                               \
+            SampleAvgZ(base + int2(0, 0), zz + 1),                                                                      \
+            SampleAvgZ(base + int2(1, 0), zz + 1),                                                                      \
+            SampleAvgZ(base + int2(0, 1), zz + 1),                                                                      \
+            SampleAvgZ(base + int2(1, 1), zz + 1)                                                                       \
+        );                                                                                                              \
+                                                                                                                        \
+        depthWeights = exp(-abs(SFLT_DEPTH.xxxx - depthWeights));                                                       \
+        depthWeights *= safePositiveRcp(dot(depthWeights, 1.0f.xxxx));                                                  \
+                                                                                                                        \
+        for (uint yy = 0; yy <= 1u; ++yy)                                                                               \
+        for (uint xx = 0; xx <= 1u; ++xx)                                                                               \
+        {                                                                                                               \
+            const uint4 p_diff = GI_Load_Packed_Mip_Diff(base + int2(xx, yy), zz);                                      \
+            const uint2 p_spec = GI_Load_Packed_Mip_Spec(base + int2(xx, yy), zz);                                      \
+            GIDiff s_diff = GI_Unpack_Diff(p_diff);                                                                     \
+            GISpec s_spec = GI_Unpack_Spec(p_spec);                                                                     \
+                                                                                                                        \
+            /* Filter out sh l1 based on normal cosine so that we dont get signals facing away from the surface.*/      \
+            s_diff.sh.Y.zyw *= float(dot(SFLT_NORMAL, SH_ToPrimeDir(s_diff.sh)) > 0.05f);                               \
+            const float w = depthWeights[yy * 2 + xx] * bilinearWeights[yy][xx] * levelWeight;                          \
+                                                                                                                        \
+            if (p_diff.w != 0u && w > 1e-6f)                                                                            \
+            {                                                                                                           \
+                SFLT_OUT_DIFF = GI_Sum_NoHistory(SFLT_OUT_DIFF, s_diff, w);                                             \
+                SFLT_OUT_SPEC = GI_Sum_NoHistory(SFLT_OUT_SPEC, s_spec, w);                                             \
+                SFLT_OUT_WSUM += w;                                                                                     \
+            }                                                                                                           \
+        }                                                                                                               \
+    }                                                                                                                   \
+}                                                                                                                       \
 
 #define GI_SFLT_DIFF_VARIANCE(SFLT_COORD, SFLT_DEPTH, SFLT_DIFF, SFLT_OUT)                              \
 {                                                                                                       \

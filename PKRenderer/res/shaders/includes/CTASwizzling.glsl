@@ -83,16 +83,26 @@ uint IntegerCompact3(uint n)
 	return n;
 }
 
-uint2 GetMortonOrderSwizzle2D(uint x) { return uint2(IntegerCompact2(x), IntegerCompact2(x >> 1u)); }
-uint3 GetMortonOrderSwizzle3D(uint x) { return uint3(IntegerCompact3(x), IntegerCompact3(x >> 1u), IntegerCompact3(x >> 2u)); }
+uint IntegerExplode(uint x)
+{
+    x = (x | (x << 8)) & 0x00FF00FF;
+    x = (x | (x << 4)) & 0x0F0F0F0F;
+    x = (x | (x << 2)) & 0x33333333;
+    x = (x | (x << 1)) & 0x55555555;
+    return x;
+}
+
+uint ZCurveToIndex2D(uint2 xy) { return IntegerExplode(xy.x) | (IntegerExplode(xy.y) << 1); }
+uint2 IndexToZCurve2D(uint x) { return uint2(IntegerCompact2(x), IntegerCompact2(x >> 1u)); }
+uint3 IndexToZCurve3D(uint x) { return uint3(IntegerCompact3(x), IntegerCompact3(x >> 1u), IntegerCompact3(x >> 2u)); }
 
 // Dispatch 2d dimension must be divisible by 32
-uint3 GetMortonOrderSwizzle32(uint threadIndex, uint2 size)
+uint3 GetZCurveSwizzle32(uint threadIndex, uint2 size)
 {
     uint z = threadIndex / (size.x * size.y);
     threadIndex -= z * (size.x * size.y);
 
-	uint2 coord = GetMortonOrderSwizzle2D(threadIndex & 0x3FFu);
+	uint2 coord = IndexToZCurve2D(threadIndex & 0x3FFu);
 	uint groupIndex = threadIndex >> 10u;
 	coord.x += (groupIndex % (size.x >> 5u)) << 5u;
 	coord.y += (groupIndex / (size.x >> 5u)) << 5u;
@@ -100,12 +110,12 @@ uint3 GetMortonOrderSwizzle32(uint threadIndex, uint2 size)
 }
 
 // Dispatch 2d dimension must be divisible by 16
-uint3 GetMortonOrderSwizzle16(uint threadIndex, uint2 size)
+uint3 GetZCurveSwizzle16(uint threadIndex, uint2 size)
 {
     uint z = threadIndex / (size.x * size.y);
     threadIndex -= z * (size.x * size.y);
 
-	uint2 coord = GetMortonOrderSwizzle2D(threadIndex & 0xFFu);
+	uint2 coord = IndexToZCurve2D(threadIndex & 0xFFu);
 	uint groupIndex = threadIndex >> 8u;
 	coord.x += (groupIndex % (size.x >> 4u)) << 4u;
 	coord.y += (groupIndex / (size.x >> 4u)) << 4u;
@@ -113,12 +123,12 @@ uint3 GetMortonOrderSwizzle16(uint threadIndex, uint2 size)
 }
 
 // Dispatch 2d dimension must be divisible by 8
-uint3 GetMortonOrderSwizzle8(uint threadIndex, uint2 size)
+uint3 GetZCurveSwizzle8(uint threadIndex, uint2 size)
 {
     uint z = threadIndex / (size.x * size.y);
     threadIndex -= z * (size.x * size.y);
 
-	uint2 coord = GetMortonOrderSwizzle2D(threadIndex & 0x3Fu);
+	uint2 coord = IndexToZCurve2D(threadIndex & 0x3Fu);
 	uint groupIndex = threadIndex >> 6u;
 	coord.x += (groupIndex % (size.x >> 3u)) << 3u;
 	coord.y += (groupIndex / (size.x >> 3u)) << 3u;

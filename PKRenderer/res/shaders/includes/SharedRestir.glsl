@@ -1,6 +1,7 @@
 #pragma once
 #include Common.glsl
 #include Encoding.glsl
+#include CTASwizzling.glsl
 
 layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_Reservoirs;
 struct Reservoir { float3 position; float3 normal; float3 radiance; float targetPdf; float weightSum; uint M; uint age; };
@@ -11,8 +12,9 @@ struct Reservoir { float3 position; float3 normal; float3 radiance; float target
 #define RESITR_NEARFIELD 0.5f
 #define RESTIR_NORMAL_THRESHOLD 0.6f
 #define RESTIR_SAMPLES_SPATIAL 6
-#define RESTIR_SAMPLES_TEMPORAL 1
+#define RESTIR_SAMPLES_TEMPORAL 2
 #define RESTIR_MAX_AGE 32
+#define RESTIR_SEED_STRIDE (RESTIR_SAMPLES_SPATIAL + 1)
 
 #if defined(PK_GI_CHECKERBOARD_TRACE)
     // Approximate bias due to checkerboard pattern
@@ -24,9 +26,48 @@ struct Reservoir { float3 position; float3 normal; float3 radiance; float target
     #define RESTIR_TEMPORAL_RADIUS int2(2, 2)
 #endif
 
-
-bool ReSTIR_IsNearField(const float depth, const float3 origin, const Reservoir initial, float rnd)
+// Wellon Hash: https://nullprogram.com/blog/2018/07/31/
+uint ReSTIR_Hash(uint seed)
 {
+    seed ^= seed >> 16;
+    seed *= 0x7feb352dU;
+    seed ^= seed >> 15;
+    seed *= 0x846ca68bU;
+    seed ^= seed >> 16;
+    return seed;
+}
+
+// Stride seed by max number of contiguous offsets in restir pass
+// Wellons hash works well for low entropy input. 
+// By striding the seed we get different values for pixels while keeping low entropy input.
+uint ReSTIR_GetSeed(int2 baseCoord) { return ZCurveToIndex2D(baseCoord) * RESTIR_SEED_STRIDE + pk_FrameRandom.x; }
+float ReSTIR_ToUnorm(uint x) { return uintBitsToFloat(x & 0x007fffffu | 0x3f800000u) - 1.0; }
+
+int2 ReSTIR_PermutationSampling(int2 coord, bool mask)
+{
+    int2 offset = int2(pk_FrameRandom.y & 3, (pk_FrameRandom.y >> 2) & 3);
+    return mask ? ((coord + offset) ^ 3) - offset : coord;
+}
+
+int2 ReSTIR_GetTemporalResamplingCoord(const int2 coord, int hash, bool usePermutationSampling)
+{
+    hash &= 7;
+    const int m2 = hash >> 1 & 0x01;
+    const int m4 = 1 - (hash >> 2 & 0x01);
+    const int t = -1 + 2 * (hash & 0x01);
+    const int2 offset = int2(t, t * (1 - 2 * m2)) * int2(m4 | m2, m4 | (1 - m2)) * RESTIR_TEMPORAL_RADIUS;
+
+    return ReSTIR_PermutationSampling(coord + offset, usePermutationSampling); 
+}
+
+int2 ReSTIR_GetSpatialResmplingCoord(const int2 coord, uint hash)
+{
+    return coord + int2((hash & 0x0000001F) - 16, ((hash & 0x00001F00) >> 8) - 16); 
+}
+
+bool ReSTIR_IsNearField(const float depth, const float3 origin, const Reservoir initial, uint seed)
+{
+    const float rnd = ReSTIR_ToUnorm(ReSTIR_Hash(seed));
     return distance(origin, initial.position) / (RESITR_NEARFIELD * log2(depth + 1.0f)) < rnd;
 }
 
@@ -53,32 +94,23 @@ float ReSTIR_GetTargetPdfNewSurf(const float3 posCenter, const float3 normalCent
            PK_PI * max(0.0f, dot(normalCenter, directionSample));
 }
 
-int2 ReSTIR_CalculateTemporalResamplingOffset(int sampleIdx)
-{
-    sampleIdx &= 7;
-    int mask2 = sampleIdx >> 1 & 0x01;
-    int mask4 = 1 - (sampleIdx >> 2 & 0x01);
-    int tmp0 = -1 + 2 * (sampleIdx & 0x01);
-    int tmp1 = 1 - 2 * mask2;
-    int tmp2 = mask4 | mask2;
-    int tmp3 = mask4 | (1 - mask2);
-    return int2(tmp0, tmp0 * tmp1) * int2(tmp2, tmp3) * RESTIR_TEMPORAL_RADIUS;
-}
 
 void ReSTIR_Normalize(inout Reservoir r, uint maxM)
 {
     r.weightSum /= max(r.M, 1);
-    r.M = clamp(r.M, 0, maxM);
+    r.M = min(r.M, maxM);
     r.weightSum *= r.M;
 }
 
-void ReSTIR_CombineReservoir(inout Reservoir combined, const Reservoir b, float targetPdf, float rnd)
+void ReSTIR_CombineReservoir(inout Reservoir combined, const Reservoir b, float targetPdf, uint hash)
 {
-    float weight = targetPdf * safePositiveRcp(b.targetPdf) * b.weightSum;
+    const float random = ReSTIR_ToUnorm(hash);
+    const float weight = targetPdf * safePositiveRcp(b.targetPdf) * b.weightSum;
+    
     combined.weightSum += weight;
-    combined.M += b.M;
+    combined.M += uint(targetPdf > 0.0f) * b.M; 
 
-    if (rnd * combined.weightSum < weight)
+    if (random * combined.weightSum < weight)
     {
         combined.position = b.position;
         combined.normal = b.normal;

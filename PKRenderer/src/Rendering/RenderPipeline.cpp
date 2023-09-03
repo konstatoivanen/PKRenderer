@@ -10,7 +10,17 @@
 /*
 TODO:
 Fix roughness dominant factor usage
-Mip gen uses possibly invalid data due to checker board. Ignore checkerboard texels in mip gen.
+192 bit reservoirs:
+    0
+    x: pos.x
+    y: pos.y
+    1
+    x: pos.z
+    y: radiance
+    2
+    x: octa.xy 24b 8b M
+    y: 16b weightSum, 16b targetPdf
+
 Test nvidias radius scaling
 Investigate camera moving bias
 Fix ssrt miss hit dist

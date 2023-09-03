@@ -36,24 +36,33 @@ void main()
 
     {
 #if defined(PK_HIZ_FINAL_PASS)
-        const float min00 = SampleMinZ(coord * 2 + int2(0,0), 4);
-        const float min01 = SampleMinZ(coord * 2 + int2(0,1), 4);
-        const float min11 = SampleMinZ(coord * 2 + int2(1,1), 4);
-        const float min10 = SampleMinZ(coord * 2 + int2(1,0), 4);
+        const float4 minz = float4
+        (
+            SampleMinZ(coord * 2 + int2(0, 0), 4),
+            SampleMinZ(coord * 2 + int2(0, 1), 4),
+            SampleMinZ(coord * 2 + int2(1, 1), 4),
+            SampleMinZ(coord * 2 + int2(1, 0), 4)
+        );
 
-        const float max00 = SampleMaxZ(coord * 2 + int2(0,0), 4);
-        const float max01 = SampleMaxZ(coord * 2 + int2(0,1), 4);
-        const float max11 = SampleMaxZ(coord * 2 + int2(1,1), 4);
-        const float max10 = SampleMaxZ(coord * 2 + int2(1,0), 4);
+        const float4 maxz = float4
+        (
+            SampleMinZ(coord * 2 + int2(0, 0), 4),
+            SampleMinZ(coord * 2 + int2(0, 1), 4),
+            SampleMinZ(coord * 2 + int2(1, 1), 4),
+            SampleMinZ(coord * 2 + int2(1, 0), 4)
+        );
 
-        const float avg00 = SampleAvgZ(coord * 2 + int2(0, 0), 4);
-        const float avg01 = SampleAvgZ(coord * 2 + int2(0, 1), 4);
-        const float avg11 = SampleAvgZ(coord * 2 + int2(1, 1), 4);
-        const float avg10 = SampleAvgZ(coord * 2 + int2(1, 0), 4);
+        const float4 avgz = float4
+        (
+            SampleAvgZ(coord * 2 + int2(0, 0), 4),
+            SampleAvgZ(coord * 2 + int2(0, 1), 4),
+            SampleAvgZ(coord * 2 + int2(1, 1), 4),
+            SampleAvgZ(coord * 2 + int2(1, 0), 4)
+        );
 
-        local_depth.x = min(min(min(min00, min01), min11), min10);
-        local_depth.y = max(max(max(max00, max01), max11), max10);
-        local_depth.z = (avg00 + avg01 + avg11 + avg10) * 0.25f;
+        local_depth.x = cmin(minz);
+        local_depth.y = cmax(maxz);
+        local_depth.z = dot(avgz, 0.25f.xxxx);
 #else
         const float4 depths = GatherViewDepths((coord * 2 + 1.0f.xx) / size);
         local_depth.x = cmin(depths);

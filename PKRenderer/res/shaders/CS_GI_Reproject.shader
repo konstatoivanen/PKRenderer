@@ -68,41 +68,32 @@ void main()
         }
         #endif
 
-        // Try to find valid samples with a bilateral cross filter
-        // Note: not needed when using history fill.
-        //GI_SFLT_REPRO_BILATERAL_CROSS(coordPrev, normal, depth, depthBias, wSumDiff, wSumSpec, diff, spec)
-        
         // Reduce diff antilag on poor reproject.
         antilagDiff = lerp(0.1f, 1.0f, saturate(wSumDiff / 0.25f));
     }
 
-
     // Normalization
-    if (!Test_EPS6(wSumDiff))
     {
         diff.history = clamp((diff.history / wSumDiff) + 1.0f, 1.0f, PK_GI_MAX_HISTORY * antilagDiff);
         diff = GI_Mul_NoHistory(diff, 1.0f / wSumDiff);
-    }
 
-    if (!Test_EPS6(wSumSpec))
-    {
         spec.history = clamp((spec.history / wSumSpec) + 1.0f, 1.0f, PK_GI_MAX_HISTORY * antilagSpec);
         spec = GI_Mul_NoHistory(spec, 1.0f / wSumSpec);
+
+        // Get min of virtual reprojected spec & naive spec to eliminate ghosting.
+        if (!Test_EPS6(wSumVSpec))
+        {
+            specVirtual.history = clamp((specVirtual.history / wSumVSpec) + 1.0f, 1.0f, PK_GI_MAX_HISTORY * antilagSpec);
+            specVirtual = GI_Mul_NoHistory(specVirtual, 1.0f / wSumVSpec);
+
+            spec.history = min(specVirtual.history, spec.history);
+            spec.radiance = min(spec.radiance, specVirtual.radiance);
+            spec.ao = min(spec.ao, specVirtual.ao);
+        }
     }
 
-    // Get min of virtual reprojected spec & naive spec to eliminate ghosting.
-    if (!Test_EPS6(wSumVSpec))
-    {
-        specVirtual.history = clamp((specVirtual.history / wSumVSpec) + 1.0f, 1.0f, PK_GI_MAX_HISTORY * antilagSpec);
-        specVirtual = GI_Mul_NoHistory(specVirtual, 1.0f / wSumVSpec);
-
-        spec.history = min(specVirtual.history, spec.history);
-        spec.radiance = min(spec.radiance, specVirtual.radiance);
-        spec.ao = min(spec.ao, specVirtual.ao);
-    }
-
-    const bool invalidDiff = Any_IsNaN(diff.sh.Y) || Any_IsNaN(diff.sh.CoCg) || isnan(diff.ao) || isnan(diff.history);
-    const bool invalidSpec = Any_IsNaN(spec.radiance) || isnan(spec.ao) || isnan(spec.history);
+    const bool invalidDiff = Test_EPS6(wSumDiff) || Any_IsNaN(diff.sh.Y) || Any_IsNaN(diff.sh.CoCg) || isnan(diff.ao) || isnan(diff.history);
+    const bool invalidSpec = Test_EPS6(wSumSpec) || Any_IsNaN(spec.radiance) || isnan(spec.ao) || isnan(spec.history);
     GI_Store_Packed_Diff(coord, invalidDiff ? uint4(0) : GI_Pack_Diff(diff));
     GI_Store_Packed_Spec(coord, invalidSpec ? uint2(0) : GI_Pack_Spec(spec));
     WriteMipMask(coord, diff, spec);

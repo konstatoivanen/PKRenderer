@@ -16,8 +16,10 @@ shared uint2 lds_Spec[GROUP_SIZE * GROUP_SIZE];
 
 shared float lds_Diff_Mom1;
 shared float lds_Diff_Mom2;
+shared float lds_Diff_Weight;
 shared float lds_Spec_Mom1;
 shared float lds_Spec_Mom2;
+shared float lds_Spec_Weight;
 
 uint4 CombinePackedDiff(const uint4 u0, const uint4 u1, const uint4 u2, const uint4 u3)
 {
@@ -86,79 +88,60 @@ void main()
         {
             lds_Diff_Mom1 = 0.0f;
             lds_Diff_Mom2 = 0.0f;
+            lds_Diff_Weight = 0.0f;
             lds_Spec_Mom1 = 0.0f;
             lds_Spec_Mom2 = 0.0f;
+            lds_Spec_Weight = 0.0f;
         }
-
-        const int2 baseCoords[4] =
-        {
-            int2(coord) * 2 + int2(0, 0),
-            int2(coord) * 2 + int2(1, 0),
-            int2(coord) * 2 + int2(1, 1),
-            int2(coord) * 2 + int2(0, 1)
-        };
-
-        const uint4 sp_diff[4] =
-        {
-            GI_Load_Packed_Diff(baseCoords[0]),
-            GI_Load_Packed_Diff(baseCoords[1]),
-            GI_Load_Packed_Diff(baseCoords[2]),
-            GI_Load_Packed_Diff(baseCoords[3])
-        };
-
-        const uint2 sp_spec[4] =
-        {
-            GI_Load_Packed_Spec(baseCoords[0]),
-            GI_Load_Packed_Spec(baseCoords[1]),
-            GI_Load_Packed_Spec(baseCoords[2]),
-            GI_Load_Packed_Spec(baseCoords[3])
-        };
-
-        const byte4 maskDiff = byte4(sp_diff[0].w != 0u, sp_diff[1].w != 0u, sp_diff[2].w != 0u, sp_diff[3].w != 0u);
-        const byte4 maskSpec = byte4(sp_spec[0].y != 0u, sp_spec[1].y != 0u, sp_spec[2].y != 0u, sp_spec[3].y != 0u);
-        const float wDiff = 1.0f / float(max(maskDiff.x + maskDiff.y + maskDiff.z + maskDiff.w, 1u));
-        const float wSpec = 1.0f / float(max(maskSpec.x + maskSpec.y + maskSpec.z + maskSpec.w, 1u));
 
         GIDiff s_diff[4];
         GISpec s_spec[4];
-        float4 lumaDiff, lumaSpec;
+        byte4 maskDiff, maskSpec;
+        float2 momentsDiff, momentsSpec;
 
-        [[unroll]]
         for (int i = 0; i < 4; ++i)
         {
-            s_diff[i] = GI_Unpack_Diff(sp_diff[i]);
-            s_spec[i] = GI_Unpack_Spec(sp_spec[i]);
-            lumaDiff[i] = GI_Luminance(s_diff[i]);
-            lumaSpec[i] = GI_Luminance(s_diff[i]);
+            const int2 xy = int2(i & 0x1, i / 2);
+            
+            const uint4 sp_diff = GI_Load_Packed_Diff(int2(coord) * 2 + xy);
+            const uint2 sp_spec = GI_Load_Packed_Spec(int2(coord) * 2 + xy);
+
+            maskDiff[i] = byte(sp_diff.w != 0u);
+            maskSpec[i] = byte(sp_spec.y != 0u);
+
+            s_diff[i] = GI_Unpack_Diff(sp_diff);
+            s_spec[i] = GI_Unpack_Spec(sp_spec);
+            
+            momentsDiff += make_moments(GI_Luminance(s_diff[i]) * maskDiff[i]);
+            momentsSpec += make_moments(GI_Luminance(s_diff[i]) * maskSpec[i]);
         }
         
         barrier();
-        atomicAdd(lds_Diff_Mom1, dot(lumaDiff, maskDiff) * wDiff);
-        atomicAdd(lds_Diff_Mom2, dot(lumaDiff * lumaDiff, maskDiff) * wDiff);
-        atomicAdd(lds_Spec_Mom1, dot(lumaSpec, maskSpec) * wSpec);
-        atomicAdd(lds_Spec_Mom2, dot(lumaSpec * lumaSpec, maskSpec) * wSpec);
+        atomicAdd(lds_Diff_Mom1, momentsDiff.x);
+        atomicAdd(lds_Diff_Mom2, momentsDiff.y);
+        atomicAdd(lds_Spec_Mom1, momentsSpec.x);
+        atomicAdd(lds_Spec_Mom2, momentsSpec.y);
+        atomicAdd(lds_Diff_Weight, maskDiff.x + maskDiff.y + maskDiff.z + maskDiff.w);
+        atomicAdd(lds_Spec_Weight, maskSpec.x + maskSpec.y + maskSpec.z + maskSpec.w);
         barrier();
 
-        const float2 momentsDiff = float2(lds_Diff_Mom1, lds_Diff_Mom2) / (GROUP_SIZE * GROUP_SIZE);
-        const float2 momentsSpec = float2(lds_Spec_Mom1, lds_Spec_Mom2) / (GROUP_SIZE * GROUP_SIZE);
-        lumaDiff = min(lumaDiff, momentsDiff.x + pow(abs(momentsDiff.y - pow2(momentsDiff.x)), 0.25f) * 2.5f);
-        lumaSpec = min(lumaSpec, momentsSpec.x + pow(abs(momentsSpec.y - pow2(momentsSpec.x)), 0.25f) * 2.5f);
+        momentsDiff = float2(lds_Diff_Mom1, lds_Diff_Mom2) / (1.0f + lds_Diff_Weight);
+        momentsSpec = float2(lds_Spec_Mom1, lds_Spec_Mom2) / (1.0f + lds_Spec_Weight);
+        
+        const float maxLumaDiff = momentsDiff.x + pow(abs(momentsDiff.y - pow2(momentsDiff.x)), 0.25f) * 2.5f;
+        const float maxLumaSpec = momentsSpec.x + pow(abs(momentsSpec.y - pow2(momentsSpec.x)), 0.25f) * 2.5f;
 
         GIDiff filteredDiff = pk_Zero_GIDiff;
         GISpec filteredSpec = pk_Zero_GISpec;
 
-        [[unroll]]
         for (uint i = 0; i < 4; ++i)
         {
-            float scaleDiff = (lumaDiff[i] + 1e-6f) / (GI_Luminance(s_diff[i]) + 1e-6f);
-            float scaleSpec = (lumaSpec[i] + 1e-6f) / (GI_Luminance(s_spec[i]) + 1e-6f);
-            s_diff[i].sh.Y *= scaleDiff;
-            s_diff[i].sh.CoCg *= scaleDiff;
-            s_spec[i].radiance *= scaleSpec;
-            filteredDiff = GI_Sum_NoHistory(filteredDiff, s_diff[i], maskDiff[i]);
-            filteredSpec = GI_Sum_NoHistory(filteredSpec, s_spec[i], maskSpec[i]);
+            filteredDiff = GI_Sum_NoHistory(filteredDiff, GI_ClampLuma(s_diff[i], maxLumaDiff), maskDiff[i]);
+            filteredSpec = GI_Sum_NoHistory(filteredSpec, GI_ClampLuma(s_spec[i], maxLumaSpec), maskSpec[i]);
         }
 
+        const float wDiff = 1.0f / float(max(maskDiff.x + maskDiff.y + maskDiff.z + maskDiff.w, 1u));
+        const float wSpec = 1.0f / float(max(maskSpec.x + maskSpec.y + maskSpec.z + maskSpec.w, 1u));
         packedDiff = GI_Pack_Diff(GI_Mul_NoHistory(filteredDiff, wDiff));
         packedSpec = GI_Pack_Spec(GI_Mul_NoHistory(filteredSpec, wSpec));
 

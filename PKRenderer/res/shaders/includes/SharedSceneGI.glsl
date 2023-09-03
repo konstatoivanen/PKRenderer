@@ -73,6 +73,20 @@ float GI_Luminance(const GIDiff a) { return SH_ToLuminanceL0(a.sh); }
 float GI_Luminance(const GISpec a) { return dot(pk_Luminance.rgb, a.radiance); }
 float GI_LogLuminance(const GIDiff a) { return log(1.0f + GI_Luminance(a)); }
 float GI_LogLuminance(const GISpec a) { return log(1.0f + GI_Luminance(a)); }
+GIDiff GI_ClampLuma(GIDiff a, float maxLuma)
+{
+    const float luma = GI_Luminance(a);
+    const float scale = (min(luma, maxLuma) + 1e-6f) / (luma + 1e-6f);
+    a.sh = SH_Scale(a.sh, scale);
+    return a;
+}
+GISpec GI_ClampLuma(GISpec a, float maxLuma)
+{
+    const float luma = GI_Luminance(a);
+    const float scale = (min(luma, maxLuma) + 1e-6f) / (luma + 1e-6f);
+    a.radiance *= scale;
+    return a;
+}
 
 #define GI_GET_RAY_PARAMS(COORD, RAYCOORD, DEPTH, OUT_PARAMS)                                                                   \
 {                                                                                                                               \
