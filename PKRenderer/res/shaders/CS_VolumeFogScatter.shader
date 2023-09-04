@@ -11,7 +11,6 @@ void main()
 
     int3 pos = int3(gl_GlobalInvocationID.xy, 0);
 
-    #pragma unroll VOLUMEFOG_SIZE_Z
     for (; pos.z < VOLUMEFOG_SIZE_Z; ++pos.z)
     {
         const float2 depths = ViewDepthExp(float2(pos.z, pos.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV);

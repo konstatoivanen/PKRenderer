@@ -1,5 +1,6 @@
 #version 460
 #extension GL_EXT_shader_atomic_float : enable
+#extension GL_EXT_subgroup_uniform_control_flow : enable
 #pragma PROGRAM_COMPUTE
 #include includes/Common.glsl
 #include includes/SharedSceneGI.glsl
@@ -68,16 +69,16 @@ uint2 CombinePackedSpec(const uint2 u0, const uint2 u1, const uint2 u2, const ui
 }
 
 layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
-void main()
+void main() [[subgroup_uniform_control_flow]]
 {
     const uint2 coord = GetXTiledThreadID(GROUP_SIZE, GROUP_SIZE, 8u);
     const uint thread = gl_LocalInvocationIndex;
+    const bool skip = imageLoad(pk_GI_ScreenDataMipMask, int2(coord / 8u)).x == 0u;
     uint4 packedDiff = uint4(0u);
     uint2 packedSpec = uint2(0u);
-    bool doCompute = imageLoad(pk_GI_ScreenDataMipMask, int2(coord / 8u)).x != 0u;
 
     // Coherent for entire workgroup. barriers should behave as expected.
-    if (!doCompute)
+    if (skip)
     {
         return;
     }

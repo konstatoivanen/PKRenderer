@@ -57,8 +57,8 @@ float3 HSVToRGB(float3 c)
 
 float3 HSVToRGB(float hue, float saturation, float value) { return HSVToRGB(float3(hue, saturation, value)); }
 
-uint EncodeOctaUV(float3 direction) { return packHalf2x16(OctaUV(direction)); }
-float3 DecodeOctaUV(uint packed) { return OctaDecode(unpackHalf2x16(packed)); }
+uint EncodeOctaUV(float3 direction) { return packUnorm2x16(OctaUV(direction)); }
+float3 DecodeOctaUV(uint packed) { return OctaDecode(unpackUnorm2x16(packed)); }
 
 //Source: https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_texture_shared_exponent.txt
 #define ENCODE_E5BGR9_EXPONENT_BITS 5

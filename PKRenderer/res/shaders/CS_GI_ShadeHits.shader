@@ -8,7 +8,6 @@
 #include includes/SceneEnv.glsl
 #include includes/SharedSceneGI.glsl
 #include includes/SharedReSTIR.glsl
-#include includes/CTASwizzling.glsl
 
 float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHit hit)
 {
@@ -32,7 +31,7 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHi
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
-    const int2 raycoord = int2(GetXTiledThreadID(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 8u));
+    const int2 raycoord = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(raycoord));
     const float depth = SampleViewDepth(coord);
     

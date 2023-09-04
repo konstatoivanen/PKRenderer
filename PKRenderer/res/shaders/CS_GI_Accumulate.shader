@@ -74,11 +74,10 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
         {
             const int2 xy = ReSTIR_GetTemporalResamplingCoord(coordPrev, int(hash + i), i == 0);
             const int2 xyFull = GI_ExpandCheckerboardCoord(xy, 1u);
-
-            Reservoir s_reservoir = ReSTIR_Load(xy, RESTIR_LAYER_PRE);
-            const float  s_depth = SamplePreviousViewDepth(xyFull);
+            const float s_depth = SamplePreviousViewDepth(xyFull);
             const float3 s_normal = SamplePreviousWorldNormal(xyFull);
-            const float3 s_position = SamplePreviousWorldPosition(xyFull, int2(pk_ScreenSize.xy), s_depth);
+            
+            Reservoir s_reservoir = ReSTIR_Load(xy, RESTIR_LAYER_PRE);
 
             if (Test_InScreen(xyFull) &&
                 Test_DepthReproject(depth, s_depth, depthBias) &&
@@ -86,9 +85,10 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
                 s_reservoir.age < RESTIR_MAX_AGE)
             {
                 // Don't sample multiple temporal reservoirs to avoid boiling. Break on first accepted sample.
-                const float targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_position, s_reservoir);
+                const float3 s_position = SamplePreviousWorldPosition(xyFull, int2(pk_ScreenSize.xy), s_depth);
+                const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_position, s_reservoir);
                 ReSTIR_Normalize(s_reservoir, 20);
-                ReSTIR_CombineReservoir(combined, s_reservoir, targetPdf, hash);
+                ReSTIR_CombineReservoir(combined, s_reservoir, s_targetPdf, hash);
                 break;
             }
         }
@@ -96,23 +96,24 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
 
     // Spatial Resampling
     {
+        [[loop]]
         for (uint i = 0u; i < RESTIR_SAMPLES_SPATIAL; ++i)
         {
             const uint hash = ReSTIR_Hash(seed + i);
             const int2 xy = ReSTIR_GetSpatialResmplingCoord(baseCoord, hash);
             const int2 xyFull = GI_ExpandCheckerboardCoord(xy);
-
-            const float  s_depth = SampleMinZ(xyFull, 0);
+            const float s_depth = SampleMinZ(xyFull, 0);
             const float3 s_normal = SampleWorldNormal(xyFull);
-            const float3 s_position = SampleWorldPosition(xyFull, int2(pk_ScreenSize.xy), s_depth);
-            const Reservoir s_reservoir = ReSTIR_Load_HitAsReservoir(xy, s_position);
 
+            [[branch]]
             if (Test_InScreen(xyFull) &&
                 Test_DepthReproject(depth, s_depth, depthBias) &&
                 dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
             {
-                float targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_position, s_reservoir);
-                ReSTIR_CombineReservoir(combined, s_reservoir, targetPdf, hash);
+                const float3 s_position = SampleWorldPosition(xyFull, int2(pk_ScreenSize.xy), s_depth);
+                const Reservoir s_reservoir = ReSTIR_Load_HitAsReservoir(xy, s_position);
+                const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_position, s_reservoir);
+                ReSTIR_CombineReservoir(combined, s_reservoir, s_targetPdf, hash);
             }
         }
 
@@ -144,13 +145,12 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
     }
 
     ReSTIR_Store(baseCoord, RESTIR_LAYER_CUR, combined);
-    ReSTIR_Store(baseCoord, RESTIR_LAYER_PRE, combined);
 }
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
-    const int2 baseCoord = int2(GetXTiledThreadID(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 8u));
+    const int2 baseCoord = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(baseCoord));
     const float depth = SampleMinZ(coord, 0);
 
@@ -158,6 +158,26 @@ void main()
     if (!Test_DepthFar(depth))
     {
         return;
+    }
+
+    // Diffuse 
+    {
+        GIDiff current = GI_Load_Diff(baseCoord);
+
+        // ReSTIR
+        #if defined(PK_GI_RESTIR)
+        ReSTIR_ResampleSpatioTemporal(baseCoord, coord, depth, current);
+        #endif
+
+        GIDiff history = GI_Load_Cur_Diff(coord);
+
+        const float alpha = max(1.0f / (history.history + 1.0f), PK_GI_MIN_ACCUM);
+        const float maxLuma = GI_Luminance(history) + (PK_GI_MAX_LUMA_GAIN / (1.0f - alpha));
+        current = GI_ClampLuma(current, maxLuma);
+        
+        history.sh = SH_Interpolate(history.sh, current.sh, alpha);
+        history.ao = lerp(history.ao, current.ao, alpha);
+        GI_Store_Diff(coord, history);
     }
 
     // Specular
@@ -176,24 +196,5 @@ void main()
         history.radiance = lerp(history.radiance, current.radiance, alpha);
         history.ao = lerp(history.ao, current.ao, alpha);
         GI_Store_Spec(coord, history);
-    }
-
-    // Diffuse 
-    {
-        GIDiff history = GI_Load_Cur_Diff(coord);
-        GIDiff current = GI_Load_Diff(baseCoord);
-
-        // ReSTIR
-        #if defined(PK_GI_RESTIR)
-        ReSTIR_ResampleSpatioTemporal(baseCoord, coord, depth, current);
-        #endif
-
-        const float alpha = max(1.0f / (history.history + 1.0f), PK_GI_MIN_ACCUM);
-        const float maxLuma = GI_Luminance(history) + (PK_GI_MAX_LUMA_GAIN / (1.0f - alpha));
-        current = GI_ClampLuma(current, maxLuma);
-        
-        history.sh = SH_Interpolate(history.sh, current.sh, alpha);
-        history.ao = lerp(history.ao, current.ao, alpha);
-        GI_Store_Diff(coord, history);
     }
 }

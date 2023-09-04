@@ -6,10 +6,10 @@
 layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_Reservoirs;
 struct Reservoir { float3 position; float3 normal; float3 radiance; float targetPdf; float weightSum; uint M; uint age; };
 #define pk_Reservoir_Zero Reservoir(0.0f.xxx, 0.0f.xxx, 0.0f.xxx, 0.0f, 0.0f, 0u, 0u)
-#define RESTIR_LAYER_CUR 0
-#define RESTIR_LAYER_PRE 2
+#define RESTIR_LAYER_CUR int(( pk_FrameIndex.y & 0x1u) << 1u)
+#define RESTIR_LAYER_PRE int((~pk_FrameIndex.y & 0x1u) << 1u)
 #define RESTIR_LAYER_HIT 4
-#define RESITR_NEARFIELD 0.5f
+#define RESITR_NEARFIELD 0.05f
 #define RESTIR_NORMAL_THRESHOLD 0.6f
 #define RESTIR_SAMPLES_SPATIAL 6
 #define RESTIR_SAMPLES_TEMPORAL 2
@@ -68,7 +68,9 @@ int2 ReSTIR_GetSpatialResmplingCoord(const int2 coord, uint hash)
 bool ReSTIR_IsNearField(const float depth, const float3 origin, const Reservoir initial, uint seed)
 {
     const float rnd = ReSTIR_ToUnorm(ReSTIR_Hash(seed));
-    return distance(origin, initial.position) / (RESITR_NEARFIELD * log2(depth + 1.0f)) < rnd;
+    const float range = RESITR_NEARFIELD * depth;
+    const float3 vec = origin - initial.position;
+    return dot(vec, vec) / pow2(range) < rnd;
 }
 
 float ReSTIR_GetSampleWeight(const Reservoir r) { return safePositiveRcp(r.targetPdf) * (r.weightSum / max(1, r.M)); }
