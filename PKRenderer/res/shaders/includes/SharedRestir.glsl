@@ -4,8 +4,8 @@
 #include CTASwizzling.glsl
 
 layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_Reservoirs;
-struct Reservoir { float3 position; float3 normal; float3 radiance; float targetPdf; float weightSum; uint M; uint age; };
-#define pk_Reservoir_Zero Reservoir(0.0f.xxx, 0.0f.xxx, 0.0f.xxx, 0.0f, 0.0f, 0u, 0u)
+struct Reservoir { float3 position; float3 normal; float3 radiance; float targetPdf; float weightSum; uint M;};
+#define pk_Reservoir_Zero Reservoir(0.0f.xxx, 0.0f.xxx, 0.0f.xxx, 0.0f, 0.0f, 0u)
 #define RESTIR_LAYER_CUR int(( pk_FrameIndex.y & 0x1u) << 1u)
 #define RESTIR_LAYER_PRE int((~pk_FrameIndex.y & 0x1u) << 1u)
 #define RESTIR_LAYER_HIT 4
@@ -13,7 +13,7 @@ struct Reservoir { float3 position; float3 normal; float3 radiance; float target
 #define RESTIR_NORMAL_THRESHOLD 0.6f
 #define RESTIR_SAMPLES_SPATIAL 6
 #define RESTIR_SAMPLES_TEMPORAL 2
-#define RESTIR_MAX_AGE 32
+#define RESTIR_MAX_M 20
 #define RESTIR_SEED_STRIDE (RESTIR_SAMPLES_SPATIAL + 1)
 
 #if defined(PK_GI_CHECKERBOARD_TRACE)
@@ -60,17 +60,16 @@ int2 ReSTIR_GetTemporalResamplingCoord(const int2 coord, int hash, bool usePermu
     return ReSTIR_PermutationSampling(coord + offset, usePermutationSampling); 
 }
 
-int2 ReSTIR_GetSpatialResmplingCoord(const int2 coord, uint hash)
+int2 ReSTIR_GetSpatialResamplingCoord(const int2 coord, uint hash)
 {
     return coord + int2((hash & 0x0000001F) - 16, ((hash & 0x00001F00) >> 8) - 16); 
 }
 
-bool ReSTIR_IsNearField(const float depth, const float3 origin, const Reservoir initial, uint seed)
+float ReSTIR_GetNearField(const float depth, const float3 origin, const Reservoir r)
 {
-    const float rnd = ReSTIR_ToUnorm(ReSTIR_Hash(seed));
     const float range = RESITR_NEARFIELD * depth;
-    const float3 vec = origin - initial.position;
-    return dot(vec, vec) / pow2(range) < rnd;
+    const float3 vec = origin - r.position;
+    return saturate(dot(vec, vec) / pow2(range));
 }
 
 float ReSTIR_GetSampleWeight(const Reservoir r) { return safePositiveRcp(r.targetPdf) * (r.weightSum / max(1, r.M)); }
@@ -136,7 +135,7 @@ void ReSTIR_Store(const int2 coord, const int layer, const Reservoir r)
     packed1.x = EncodeE5BGR9(r.radiance);
     packed1.y = floatBitsToUint(r.targetPdf);
     packed1.z = floatBitsToUint(r.weightSum);
-    packed1.w = ((r.age & 0xFFFFu) << 16u) | (r.M & 0xFFFFu);
+    packed1.w = r.M;
     packed0 = isValid ? packed0 : uint4(0);
     packed1 = isValid ? packed1 : uint4(0);
     imageStore(pk_Reservoirs, int3(coord, layer + 0), packed0);
@@ -154,15 +153,13 @@ Reservoir ReSTIR_Load(const int2 coord, const int layer)
     r.radiance = DecodeE5BGR9(packed1.x);
     r.targetPdf = uintBitsToFloat(packed1.y);
     r.weightSum = uintBitsToFloat(packed1.z); 
-    r.M = packed1.w & 0xFFFF;
-    r.age = (packed1.w >> 16u) & 0xFFFFu;
+    r.M = packed1.w;
     return isValid ? r : pk_Reservoir_Zero;
 }
 
 void ReSTIR_Store_Hit(const int2 coord, const float3 direction, const float hitDist, const float3 normal, const uint hitNormal, const float3 radiance)
 {
     const float invPdf = PK_PI * safePositiveRcp(dot(normal, direction));
-
     uint4 packed;
     packed.xy = packHalf4x16(float4(direction.xyz * hitDist, invPdf));
     packed.z = hitNormal;
@@ -181,6 +178,5 @@ Reservoir ReSTIR_Load_HitAsReservoir(const int2 coord, const float3 origin)
     r.targetPdf = ReSTIR_GetTargetPdf(r);
     r.weightSum = r.targetPdf * offset_invPdf.w; 
     r.M = 1u;
-    r.age = 0u;
     return All_InArea(coord, int2(0), imageSize(pk_Reservoirs).xy) ? r : pk_Reservoir_Zero;
 }

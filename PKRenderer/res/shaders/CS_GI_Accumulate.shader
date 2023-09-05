@@ -76,18 +76,17 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
             const int2 xyFull = GI_ExpandCheckerboardCoord(xy, 1u);
             const float s_depth = SamplePreviousViewDepth(xyFull);
             const float3 s_normal = SamplePreviousWorldNormal(xyFull);
-            
-            Reservoir s_reservoir = ReSTIR_Load(xy, RESTIR_LAYER_PRE);
 
-            if (Test_InScreen(xyFull) &&
+            if (Any_NotEqual(xy, coordPrev) &&
+                Test_InScreen(xyFull) &&
                 Test_DepthReproject(depth, s_depth, depthBias) &&
-                dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD &&
-                s_reservoir.age < RESTIR_MAX_AGE)
+                dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
             {
                 // Don't sample multiple temporal reservoirs to avoid boiling. Break on first accepted sample.
+                Reservoir s_reservoir = ReSTIR_Load(xy, RESTIR_LAYER_PRE);
                 const float3 s_position = SamplePreviousWorldPosition(xyFull, int2(pk_ScreenSize.xy), s_depth);
                 const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_position, s_reservoir);
-                ReSTIR_Normalize(s_reservoir, 20);
+                ReSTIR_Normalize(s_reservoir, RESTIR_MAX_M);
                 ReSTIR_CombineReservoir(combined, s_reservoir, s_targetPdf, hash);
                 break;
             }
@@ -100,13 +99,14 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
         for (uint i = 0u; i < RESTIR_SAMPLES_SPATIAL; ++i)
         {
             const uint hash = ReSTIR_Hash(seed + i);
-            const int2 xy = ReSTIR_GetSpatialResmplingCoord(baseCoord, hash);
+            const int2 xy = ReSTIR_GetSpatialResamplingCoord(baseCoord, hash);
             const int2 xyFull = GI_ExpandCheckerboardCoord(xy);
             const float s_depth = SampleMinZ(xyFull, 0);
             const float3 s_normal = SampleWorldNormal(xyFull);
 
             [[branch]]
-            if (Test_InScreen(xyFull) &&
+            if (Any_NotEqual(xy, baseCoord) &&
+                Test_InScreen(xyFull) &&
                 Test_DepthReproject(depth, s_depth, depthBias) &&
                 dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
             {
@@ -120,27 +120,27 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
         seed += RESTIR_SAMPLES_SPATIAL;
     }
 
-    combined.age++;
-
     // Reshade hit
     {
+        const float nearField = ReSTIR_GetNearField(depth, origin, initial);
         const float3 sampledir = normalize(combined.position - origin);
+
         const float3 radiance = combined.radiance * 
                                 ReSTIR_GetSampleWeight(combined) * 
                                 dot(normal, sampledir) * 
                                 PK_INV_PI;
 
-        const bool isNear = ReSTIR_IsNearField(depth, origin, initial, seed);
         const bool isValid = !Any_IsNaN(radiance);
 
-        if (isValid && (diff.history < 32.0f || !isNear))
+        if (isValid)
         {
-            diff.sh = SH_FromRadiance(radiance, sampledir);
+            SH sh = SH_FromRadiance(radiance, sampledir);
+            diff.sh = SH_Interpolate(diff.sh, sh, nearField);
         }
 
         if (ReSTIR_BoilingFilter(gl_LocalInvocationID.xy, 0.2f, combined.targetPdf * combined.weightSum) || !isValid)
         {
-            combined = pk_Reservoir_Zero;
+            combined = initial;
         }
     }
 

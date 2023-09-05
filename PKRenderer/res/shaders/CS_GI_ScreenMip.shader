@@ -1,6 +1,5 @@
 #version 460
 #extension GL_EXT_shader_atomic_float : enable
-#extension GL_EXT_subgroup_uniform_control_flow : enable
 #pragma PROGRAM_COMPUTE
 #include includes/Common.glsl
 #include includes/SharedSceneGI.glsl
@@ -69,7 +68,7 @@ uint2 CombinePackedSpec(const uint2 u0, const uint2 u1, const uint2 u2, const ui
 }
 
 layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
-void main() [[subgroup_uniform_control_flow]]
+void main()
 {
     const uint2 coord = GetXTiledThreadID(GROUP_SIZE, GROUP_SIZE, 8u);
     const uint thread = gl_LocalInvocationIndex;
