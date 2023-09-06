@@ -71,6 +71,7 @@ Light GetLightDirect(uint index, in float3 worldpos, uint cascade)
             posToLight = -light.position.xyz;
 
             float4 coord = GetLightProjectionUVW(worldpos, light.LIGHT_PROJECTION);
+            // @TODO UNormDepthFIX
             linearDistance = ((coord.z / coord.w) + 1.0f) * light.position.w * 0.5f;
             lightuv = coord.xy;
         }

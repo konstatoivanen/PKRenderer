@@ -2,7 +2,6 @@
 #pragma PROGRAM_COMPUTE
 
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE
-#multi_compile _ PK_GI_RESTIR
 
 #include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl
@@ -43,39 +42,30 @@ void main()
     {
         GI_GET_RAY_PARAMS(coord, raycoord, depth, params)
     
-        GIDiff diff = pk_Zero_GIDiff;
-        GISpec spec = pk_Zero_GISpec;
         const GIRayHits hits = GI_Load_RayHits(raycoord);
-        
-        const float3 radianceDiff = SampleRadiance(params.origin, params.diffdir, hits.diff);
-        diff.history = PK_GI_MAX_HISTORY;
-        diff.sh = SH_FromRadiance(radianceDiff, params.diffdir);
-        diff.ao = hits.diff.isMiss ? 1.0f : saturate(hits.diff.dist / PK_GI_RAY_MAX_DISTANCE);
+
+        // Always use reservoir packing for diff hits.
+        // They can be used for neighbour reconstruction outside of ReSTIR
+        packedDiff = ReSTIR_Pack_Hit
+        (
+            params.diffdir,
+            hits.diff.isMiss ? PK_GI_RAY_MAX_DISTANCE : hits.diff.dist,
+            params.normal,
+            imageLoad(pk_GI_RayHitNormals, raycoord).r,
+            SampleRadiance(params.origin, params.diffdir, hits.diff)
+        );
 
         #if PK_GI_APPROX_ROUGH_SPEC == 1
         [[branch]]
         if (params.roughness < PK_GI_MAX_ROUGH_SPEC)
         #endif
         {
+            GISpec spec = pk_Zero_GISpec;
             spec.history = PK_GI_MAX_HISTORY;
             spec.radiance = SampleRadiance(params.origin, params.specdir, hits.spec);
             spec.ao = hits.spec.isMiss ? 1.0f : saturate(hits.spec.dist / PK_GI_RAY_MAX_DISTANCE);
+            packedSpec = GI_Pack_Spec(spec);
         }
-
-        packedDiff = GI_Pack_Diff(diff);
-        packedSpec = GI_Pack_Spec(spec);
-        
-        #if defined(PK_GI_RESTIR)
-        ReSTIR_Store_Hit
-        (
-            raycoord,
-            params.diffdir,
-            hits.diff.isMiss ? PK_GI_RAY_MAX_DISTANCE : hits.diff.dist,
-            params.normal,
-            imageLoad(pk_GI_RayHitNormals, raycoord).r,
-            radianceDiff 
-        );
-        #endif
     }
 
     GI_Store_Packed_Diff(raycoord, packedDiff);

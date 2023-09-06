@@ -15,6 +15,11 @@
 shared float s_weights[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
 shared uint s_count[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
 
+Reservoir ReSTIR_Load_HitAsReservoir(const int2 coord, const float3 origin)
+{
+    return ReSTIR_Unpack_Hit(GI_Load_Packed_Diff(coord), origin);
+}
+
 bool ReSTIR_BoilingFilter(uint2 LocalIndex, float filterStrength, float reservoirWeight)
 {
     float boilingFilterMultiplier = 10.f / clamp(filterStrength, 1e-6, 1.0) - 9.f;
@@ -52,15 +57,17 @@ bool ReSTIR_BoilingFilter(uint2 LocalIndex, float filterStrength, float reservoi
     return reservoirWeight > averageNonzeroWeight * boilingFilterMultiplier;
 }
 
-void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const float depth, inout GIDiff diff)
+void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, 
+                                   const int2 coord, 
+                                   const float depth,
+                                   const float3 origin,
+                                   const Reservoir initial,
+                                   inout SH outSH)
 {
     const float3 viewnormal = SampleViewNormal(coord);
     const float depthBias = lerp(0.1f, 0.01f, -viewnormal.z);
     const float3 normal = ViewToWorldDir(viewnormal);
-    const float3 origin = SampleWorldPosition(coord, int2(pk_ScreenSize.xy), depth);
     uint seed = ReSTIR_GetSeed(baseCoord);
-
-    const Reservoir initial = ReSTIR_Load_HitAsReservoir(baseCoord, origin);
 
     Reservoir combined = initial;
 
@@ -134,8 +141,8 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
 
         if (isValid)
         {
-            SH sh = SH_FromRadiance(radiance, sampledir);
-            diff.sh = SH_Interpolate(diff.sh, sh, nearField);
+            SH newSH = SH_FromRadiance(radiance, sampledir);
+            outSH = SH_Interpolate(outSH, newSH, nearField);
         }
 
         if (ReSTIR_BoilingFilter(gl_LocalInvocationID.xy, 0.2f, combined.targetPdf * combined.weightSum) || !isValid)
@@ -162,11 +169,18 @@ void main()
 
     // Diffuse 
     {
-        GIDiff current = GI_Load_Diff(baseCoord);
+        const float3 origin = SampleWorldPosition(coord, int2(pk_ScreenSize.xy), depth);
+        const Reservoir initial = ReSTIR_Load_HitAsReservoir(baseCoord, origin);
+        const float sampledist = distance(origin, initial.position);
+        const float3 sampledir = (initial.position - origin) * safePositiveRcp(sampledist);
+
+        GIDiff current;
+        current.sh = SH_FromRadiance(initial.radiance, sampledir);
+        current.ao = saturate(sampledist / PK_GI_RAY_MAX_DISTANCE);
 
         // ReSTIR
         #if defined(PK_GI_RESTIR)
-        ReSTIR_ResampleSpatioTemporal(baseCoord, coord, depth, current);
+        ReSTIR_ResampleSpatioTemporal(baseCoord, coord, depth, origin, initial, current.sh);
         #endif
 
         GIDiff history = GI_Load_Cur_Diff(coord);
