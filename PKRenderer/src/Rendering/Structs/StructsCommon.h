@@ -11,11 +11,18 @@ namespace PK::Rendering::Structs
         Math::uint userdata;
     };
 
-    struct PK_Light
+    // Packed into float4, float4, uint4
+    struct alignas(16) LightPacked
     {
-        Math::float4 position;
-        Math::float4 color;
-        Math::uint4 indices;
+        Math::float3 position;
+        float radius;
+        Math::float3 color;
+        float angle;
+        Math::ushort shadowIndex;
+        Math::ushort matrixIndex;
+        Math::ushort type;
+        Math::ushort cookie;
+        Math::uint direction;
     };
 
     struct Vertex_Simple

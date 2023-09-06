@@ -128,14 +128,13 @@ namespace PK::Rendering::Passes
 
         m_lightsBuffer = Buffer::Create(
             {
-                { ElementType::Float4, "POSITION"},
-                { ElementType::Float4, "COLOR"},
-                { ElementType::Uint4, "INDICES"},
+                { ElementType::Float4, "PACKED0"},
+                { ElementType::Float4, "PACKED1"},
+                { ElementType::Uint4, "PACKED2"},
             },
             1024, BufferUsage::PersistentStorage, "Lights");
 
         m_lightMatricesBuffer = Buffer::Create(ElementType::Float4x4, 32, BufferUsage::PersistentStorage, "Lights.Matrices");
-        m_lightDirectionsBuffer = Buffer::Create(ElementType::Float4, 32, BufferUsage::PersistentStorage, "Lights.Directions");
         m_globalLightsList = Buffer::Create(ElementType::Int, ClusterCount * MaxLightsPerTile, BufferUsage::DefaultStorage, "Lights.List");
 
         GraphicsAPI::SetBuffer(hash->pk_GlobalLightsList, m_globalLightsList.get());
@@ -144,126 +143,162 @@ namespace PK::Rendering::Passes
 
     void PassLights::Cull(void* engineRoot, VisibilityList* visibilityList, const float4x4& viewProjection, float znear, float zfar)
     {
-        m_shadowmapCount = 0u;
-        m_projectionCount = 0u;
-        m_cascadeSplits = GetCascadeZSplits(znear, zfar);
 
         CullTokens tokens{};
         tokens.frustum.results = visibilityList;
         tokens.cube.results = visibilityList;
         tokens.cascades.results = visibilityList;
-
         tokens.frustum.depthRange = zfar - znear;
         tokens.frustum.mask = RenderableFlags::Light;
         Functions::ExtractFrustrumPlanes(viewProjection, &tokens.frustum.planes, true);
 
         visibilityList->Clear();
         m_sequencer->Next(engineRoot, &tokens.frustum);
-        m_lightCount = (uint32_t)visibilityList->count;
+        auto lightCount = (uint32_t)visibilityList->count;
 
         if (visibilityList->count == 0)
         {
             return;
         }
 
-        auto inverseViewProjection = glm::inverse(viewProjection);
+        uint matrixCount = 0u;
+        uint matrixIndex = 0u;
+        uint shadowCount = 0u;
 
         for (auto i = 0U; i < visibilityList->count; ++i)
         {
-            m_lights[i] = m_entityDb->Query<LightRenderableView>(EGID((*visibilityList)[i].entityId, (uint)ENTITY_GROUPS::ACTIVE));
+            auto view = m_entityDb->Query<LightRenderableView>(EGID((*visibilityList)[i].entityId, (uint)ENTITY_GROUPS::ACTIVE));
+            matrixCount += m_shadowmapTypeData[(int)view->light->type].TileCount;
+            m_lights[i] = view;
         }
 
-        Vector::QuickSort(m_lights.GetData(), m_lightCount);
+        Vector::QuickSort(m_lights.GetData(), lightCount);
 
         m_shadowBatches.clear();
-
-        for (auto i = 0u; i < m_lightCount; ++i)
-        {
-            auto& view = m_lights[i];
-            auto info = view->lightFrameInfo;
-            info->batchGroup = 0xFFFF;
-            info->shadowmapIndex = 0xFFFF;
-            info->projectionIndex = view->light->type == LightType::Directional || view->light->type == LightType::Spot ? m_projectionCount : 0xFFFF;
-            m_projectionCount += view->light->type == LightType::Directional ? PK_SHADOW_CASCADE_COUNT : view->light->type == LightType::Spot ? 1 : 0;
-
-            if ((view->renderable->flags & RenderableFlags::CastShadows) != 0)
-            {
-                BuildShadowmapBatches(engineRoot, &tokens, view, i, inverseViewProjection);
-            }
-        }
-
-        m_lightsBuffer->Validate(m_lightCount + 1);
-        m_lightMatricesBuffer->Validate(m_projectionCount);
-        m_lightDirectionsBuffer->Validate(m_projectionCount);
+        m_lightsBuffer->Validate(lightCount + 1);
+        m_lightMatricesBuffer->Validate(matrixCount);
 
         auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer);
-        auto lightsView = cmd->BeginBufferWrite<PK_Light>(m_lightsBuffer.get(), 0u, m_lightCount + 1);
-        auto matricesView = m_projectionCount > 0 ? cmd->BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, m_projectionCount) : BufferView<float4x4>();
-        auto directionsView = m_projectionCount > 0 ? cmd->BeginBufferWrite<float4>(m_lightDirectionsBuffer.get(), 0u, m_projectionCount) : BufferView<float4>();
+        auto lightsView = cmd->BeginBufferWrite<LightPacked>(m_lightsBuffer.get(), 0u, lightCount + 1);
+        auto matricesView = matrixCount > 0 ? cmd->BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, projectionCount) : BufferView<float4x4>();
 
-        for (auto i = 0u; i < m_lightCount; ++i)
+        auto ivp = glm::inverse(viewProjection);
+        auto zsplits = GetCascadeZSplits(znear, zfar);
+        tokens.cube.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
+        tokens.frustum.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
+        tokens.cascades.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
+        FrustumPlanes planes[PK_SHADOW_CASCADE_COUNT];
+        tokens.cascades.cascades = planes;
+        tokens.cascades.count = PK_SHADOW_CASCADE_COUNT;
+
+        for (auto i = 0u; i < lightCount; ++i)
         {
             auto& view = m_lights[i];
-            auto info = view->lightFrameInfo;
-            auto position = PK_FLOAT4_ZERO;
+            auto& light = lightsView[i];
+            auto& transform = view->transform;
+            auto& worldToLocal = transform->worldToLocal;
+            light.matrixIndex = matrixIndex;
+            light.shadowIndex = 0xFFFFu;
+            light.color = view->light->color;
+            light.cookie = (ushort)view->light->cookie;
+            light.type = (ushort)view->light->type;
+            light.position = transform->position;
+            light.radius = view->light->radius;
+            light.angle = view->light->angle * PK_FLOAT_DEG2RAD;
+            light.direction = 0u;
+
+            auto castShadows = (view->renderable->flags & RenderableFlags::CastShadows) != 0;
+            visibilityList->Clear();
 
             switch (view->light->type)
             {
                 case LightType::Point:
-                    position = float4(view->transform->position, view->light->radius);
-                    break;
+                {
+                    if (castShadows)
+                    {
+                        auto shadowBlurAmount = 2.0f * glm::sin(view->light->shadowBlur * 0.5f * PK_FLOAT_HALF_PI);
+                        tokens.cube.depthRange = view->light->radius - 0.1f;
+                        tokens.cube.aabb = view->bounds->worldAABB;
+                        m_sequencer->Next(engineRoot, &tokens.cube);
+                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowCount, shadowBlurAmount, tokens.cube.depthRange);
+                    }
+                }
+                break;
 
                 case LightType::Spot:
-                    position = float4(view->transform->position, view->light->radius);
-                    matricesView[info->projectionIndex] = Functions::GetPerspective(view->light->angle, 1.0f, 0.1f, view->light->radius) * view->transform->worldToLocal;
-                    directionsView[info->projectionIndex] = float4(view->transform->rotation * PK_FLOAT3_FORWARD, view->light->angle * PK_FLOAT_DEG2RAD);
-                    break;
+                {
+                    matricesView[matrixIndex] = Functions::GetPerspective(view->light->angle, 1.0f, 0.1f, view->light->radius) * worldToLocal;
+                    light.direction = Math::Functions::OctaEncodeUint(transform->rotation * PK_FLOAT3_FORWARD);
+                    
+                    if (castShadows)
+                    {
+                        auto shadowBlurAmount = view->light->shadowBlur * glm::sin(0.5f * view->light->angle * PK_FLOAT_DEG2RAD) / PK_FLOAT_INV_SQRT2;
+                        tokens.frustum.depthRange = view->light->radius - 0.1f;
+                        Functions::ExtractFrustrumPlanes(matricesView[matrixIndex], &tokens.frustum.planes, true);
+                        m_sequencer->Next(engineRoot, &tokens.frustum);
+                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowCount, shadowBlurAmount, tokens.frustum.depthRange);
+                    }
+                }
+                break;
 
                 case LightType::Directional:
-                    position = float4(view->transform->rotation * PK_FLOAT3_FORWARD, 0.0f);
-                    position.w = Functions::GetShadowCascadeMatrices(
-                        view->transform->worldToLocal,
-                        inverseViewProjection,
-                        m_cascadeSplits.planes,
-                        -view->light->radius + info->minShadowDepth,
-                        m_shadowmapTileSize,
-                        PK_SHADOW_CASCADE_COUNT,
-                        matricesView.data + info->projectionIndex);
-                    break;
+                {
+                    light.position = transform->rotation * PK_FLOAT3_FORWARD;
+                    Functions::GetShadowCascadeMatrices(worldToLocal, ivp, zsplits.planes, -view->light->radius, m_shadowmapTileSize, PK_SHADOW_CASCADE_COUNT, matricesView.data + matrixIndex, &light.radius);
+
+                    if (castShadows)
+                    {
+                        for (auto j = 0u; j < PK_SHADOW_CASCADE_COUNT; ++j)
+                        {
+                            Functions::ExtractFrustrumPlanes(matricesView[matrixIndex + j], &planes[j], true);
+                        }
+
+                        tokens.cascades.depthRange = light.radius;
+                        m_sequencer->Next(engineRoot, &tokens.cascades);
+
+                        float minDepth = 0.0f;
+                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowCount, view->light->shadowBlur, tokens.cascades.depthRange, &minDepth);
+
+                        // Regenerate cascades as the depth range might change based on culling
+                        Functions::GetShadowCascadeMatrices(worldToLocal, ivp, zsplits.planes, -view->light->radius + minDepth, m_shadowmapTileSize, PK_SHADOW_CASCADE_COUNT, matricesView.data + matrixIndex, &light.radius);
+                    }
+                }
+                break;
             }
 
-            lightsView[i] =
-            {
-                position,
-                view->light->color,
-                {
-                    info->shadowmapIndex,
-                    info->projectionIndex,
-                    (ushort)view->light->cookie,
-                    (ushort)view->light->type
-                }
-            };
+            matrixIndex += m_shadowmapTypeData[(uint32_t)view->light->type].TileCount;
         }
 
-        lightsView[m_lightCount] = { PK_FLOAT4_ZERO, PK_COLOR_CLEAR, { 0xFFFF, 0u, 0xFFFF, 0xFFFF } };
+        // Empty last one for clustering
+        lightsView[lightCount] =
+        {
+            PK_FLOAT3_ZERO,
+            0.0f,
+            PK_FLOAT3_ZERO,
+            0.0f,
+            0xFFFFu,
+            0u,
+            0xFFFFu,
+            0xFFFFu,
+            0u
+        };
+            
         cmd->EndBufferWrite(m_lightsBuffer.get());
 
-        if (m_projectionCount > 0)
+        if (matrixCount > 0)
         {
             cmd->EndBufferWrite(m_lightMatricesBuffer.get());
-            cmd->EndBufferWrite(m_lightDirectionsBuffer.get());
         }
 
-        if (m_shadowmaps->GetLayers() < m_shadowmapCount + PK_SHADOW_CASCADE_COUNT)
+        if (m_shadowmaps->GetLayers() < shadowCount + PK_SHADOW_CASCADE_COUNT)
         {
-            m_shadowmaps->Validate(1u, m_shadowmapCount + PK_SHADOW_CASCADE_COUNT);
+            m_shadowmaps->Validate(1u, shadowCount + PK_SHADOW_CASCADE_COUNT);
         }
 
         auto hash = HashCache::Get();
-        GraphicsAPI::SetConstant<uint32_t>(hash->pk_LightCount, m_lightCount);
+        GraphicsAPI::SetConstant<uint32_t>(hash->pk_LightCount, lightCount);
         GraphicsAPI::SetBuffer(hash->pk_Lights, m_lightsBuffer.get());
         GraphicsAPI::SetBuffer(hash->pk_LightMatrices, m_lightMatricesBuffer.get());
-        GraphicsAPI::SetBuffer(hash->pk_LightDirections, m_lightDirectionsBuffer.get());
         GraphicsAPI::SetTexture(hash->pk_ShadowmapAtlas, m_shadowmaps.get());
     }
 
@@ -299,9 +334,7 @@ namespace PK::Rendering::Passes
 
     void PassLights::ComputeClusters(CommandBuffer* cmd)
     {
-        cmd->BeginDebugScope("LightAssignment", PK_COLOR_CYAN);
         cmd->DispatchWithCounter(m_computeLightAssignment, { GridSizeX , GridSizeY, GridSizeZ });
-        cmd->EndDebugScope();
     }
 
     ShadowCascades PassLights::GetCascadeZSplits(float znear, float zfar) const
@@ -322,78 +355,23 @@ namespace PK::Rendering::Passes
         return cascadeSplits;
     }
 
-    void PassLights::BuildShadowmapBatches(void* engineRoot,
-        CullTokens* tokens,
-        LightRenderableView* view,
-        uint32_t index,
-        const float4x4& inverseViewProjection)
+    uint32_t PassLights::BuildShadowBatch(VisibilityList* visibilityList,
+        LightRenderableView* view, 
+        uint32_t index, 
+        uint32_t& outShadowCount,
+        float shadowBlurAmount, 
+        float maxDepth, 
+        float* outMinDepth)
     {
-        float shadowBlurAmount = 0.01f;
-        auto info = view->lightFrameInfo;
-        auto visibilityList = tokens->frustum.results;
-        visibilityList->Clear();
-
-        switch (view->light->type)
-        {
-            case LightType::Point:
-            {
-                shadowBlurAmount = 2.0f * glm::sin(view->light->shadowBlur * 0.5f * PK_FLOAT_HALF_PI);
-                tokens->cube.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
-                tokens->cube.depthRange = info->maxShadowDepth = view->light->radius - 0.1f;
-                tokens->cube.aabb = view->bounds->worldAABB;
-                m_sequencer->Next(engineRoot, &tokens->cube);
-            }
-            break;
-
-            case LightType::Spot:
-            {
-                shadowBlurAmount = view->light->shadowBlur * glm::sin(0.5f * view->light->angle * PK_FLOAT_DEG2RAD) / PK_FLOAT_INV_SQRT2;
-                tokens->frustum.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
-                tokens->frustum.depthRange = info->maxShadowDepth = view->light->radius - 0.1f;
-                auto projection = Functions::GetPerspective(view->light->angle, 1.0f, 0.1f, view->light->radius) * view->transform->worldToLocal;
-                Functions::ExtractFrustrumPlanes(projection, &tokens->frustum.planes, true);
-                m_sequencer->Next(engineRoot, &tokens->frustum);
-            }
-            break;
-
-            case LightType::Directional:
-            {
-                float4x4 cascades[PK_SHADOW_CASCADE_COUNT];
-                FrustumPlanes planes[PK_SHADOW_CASCADE_COUNT];
-
-                auto lightRange = Functions::GetShadowCascadeMatrices(
-                    view->transform->worldToLocal,
-                    inverseViewProjection,
-                    m_cascadeSplits.planes,
-                    -view->light->radius,
-                    m_shadowmapTileSize,
-                    PK_SHADOW_CASCADE_COUNT,
-                    cascades);
-
-                for (auto j = 0u; j < PK_SHADOW_CASCADE_COUNT; ++j)
-                {
-                    Functions::ExtractFrustrumPlanes(cascades[j], &planes[j], true);
-                }
-
-                shadowBlurAmount = view->light->shadowBlur;
-                tokens->cascades.depthRange = info->maxShadowDepth = lightRange;
-                tokens->cascades.count = PK_SHADOW_CASCADE_COUNT;
-                tokens->cascades.cascades = planes;
-                tokens->cascades.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
-                m_sequencer->Next(engineRoot, &tokens->cascades);
-            }
-            break;
-        }
-
         if (visibilityList->count == 0)
         {
-            return;
+            return 0xFFFFu;
         }
 
         auto& shadow = m_shadowmapTypeData[(int)view->light->type];
 
-        if (m_shadowBatches.size() == 0 || 
-            m_shadowBatches.back().count >= shadow.MaxBatchSize || 
+        if (m_shadowBatches.size() == 0 ||
+            m_shadowBatches.back().count >= shadow.MaxBatchSize ||
             m_shadowBatches.back().batchType != view->light->type)
         {
             auto& newBatch = m_shadowBatches.emplace_back();
@@ -405,9 +383,8 @@ namespace PK::Rendering::Passes
         auto& batch = m_shadowBatches.back();
 
         uint32_t minDepth = 0xFFFFFFFF;
-        info->shadowmapIndex = m_shadowmapCount;
-        info->batchGroup = batch.batchGroup;
-        m_shadowmapCount += view->light->type == LightType::Directional ? PK_SHADOW_CASCADE_COUNT : 1;
+        uint32_t shadowmapIndex = outShadowCount;
+        outShadowCount += m_shadowmapTypeData[(int)view->light->type].TileCount;
 
         for (auto i = 0u; i < visibilityList->count; ++i)
         {
@@ -426,13 +403,11 @@ namespace PK::Rendering::Passes
 
                 if (shader != nullptr)
                 {
-                    uint32_t layerOffset = batch.count * shadow.LayerStride + item.clipId;
+                    auto layerOffset = batch.count * shadow.LayerStride + item.clipId;
                     m_batcher->SubmitDraw(transform, shader, nullptr, entity->mesh->sharedMesh, kv.submesh, (index & 0xFFFF) | (layerOffset << 16));
                 }
             }
         }
-
-        info->minShadowDepth = (minDepth * info->maxShadowDepth) / (float)0xFFFF;
 
         // Scale blur amount to valid range (now one wants to blur by 90 degrees).
         shadowBlurAmount *= PK_FLOAT_INV_FOUR_PI;
@@ -446,7 +421,15 @@ namespace PK::Rendering::Passes
             batch.shadowBlurAmounts[batch.count + i] = shadowBlurAmount / (1.0f + i * 0.25f);
         }
 
-        batch.maxDepthRange = glm::max(batch.maxDepthRange, info->maxShadowDepth - info->minShadowDepth);
+        auto minDepthView = (minDepth * maxDepth) / (float)0xFFFF;
+        batch.maxDepthRange = glm::max(batch.maxDepthRange, maxDepth - minDepthView);
         batch.count++;
+
+        if (outMinDepth)
+        {
+            *outMinDepth = minDepthView;
+        }
+
+        return shadowmapIndex;
     }
 }

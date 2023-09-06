@@ -148,6 +148,7 @@ namespace PK::Rendering::VulkanRHI
         physicalDeviceRequirements.features.accelerationStructure.accelerationStructure = VK_TRUE;
         physicalDeviceRequirements.features.rayTracingPipeline.rayTracingPipeline = VK_TRUE;
         physicalDeviceRequirements.features.rayQuery.rayQuery = VK_TRUE;
+        physicalDeviceRequirements.features.atomicFloat.shaderSharedFloat32AtomicAdd = VK_TRUE;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
 

@@ -83,9 +83,9 @@ namespace PK::Math::Functions
         float4x4 proj(0.0f);
         proj[0][0] = 1.0f / (aspect * tanHalfFovy);
         proj[1][1] = 1.0f / (tanHalfFovy);
-        proj[2][2] = (zFar + zNear) / (zFar - zNear);
+        proj[2][2] = zFar  / (zFar - zNear);
         proj[2][3] = 1.0;
-        proj[3][2] = -(2.0f * zFar * zNear) / (zFar - zNear);
+        proj[3][2] = -(zFar * zNear) / (zFar - zNear);
         return proj;
     }
 
@@ -98,13 +98,14 @@ namespace PK::Math::Functions
         float4x4 Result(1);
         Result[0][0] = -2.0f * rcpRL;
         Result[1][1] = -2.0f * rcpTB;
-        Result[2][2] = 2.0f * rcpFN;
+        Result[2][2] = rcpFN;
         Result[3][0] = (right + left) * rcpRL;
         Result[3][1] = (top + bottom) * rcpTB;
-        Result[3][2] = -(zFar + zNear) * rcpFN;
+        Result[3][2] = -zNear * rcpFN;
         return Result;
     }
 
+    // Produces Reverse Z
     float4x4 GetOffsetPerspective(float left, float right, float bottom, float top, float fovy, float aspect, float zNear, float zFar)
     {
         const float tanHalfFovy = tan((fovy * PK_FLOAT_DEG2RAD) / 2.0f);
@@ -117,9 +118,9 @@ namespace PK::Math::Functions
         Result[1][1] = (2.0f * rcpTB) / tanHalfFovy;
         Result[2][0] = -(right + left) * rcpRL;
         Result[2][1] = -(top + bottom) * rcpTB;
-        Result[2][2] = -(zFar + zNear) * rcpFN;
+        Result[2][2] = -zNear * rcpFN;
         Result[2][3] = 1.0f;
-        Result[3][2] = (2.0f * zFar * zNear) * rcpFN;
+        Result[3][2] = zFar * zNear * rcpFN;
 
         return Result;
     }
@@ -164,13 +165,22 @@ namespace PK::Math::Functions
             aabb.max.z + paddingRU.z) * worldToLocal;
     }
 
-    float GetShadowCascadeMatrices(const float4x4& worldToLocal, 
+    float4x4 GetPerspectiveJittered(const float4x4& matrix, const float2& jitter)
+    {
+        float4x4 returnValue = matrix;
+        returnValue[2][0] += jitter.x;
+        returnValue[2][1] += jitter.y;
+        return returnValue;
+    }
+
+    void GetShadowCascadeMatrices(const float4x4& worldToLocal, 
                                     const float4x4& inverseViewProjection, 
                                     const float* zPlanes, 
                                     float zPadding, 
                                     uint resolution,
                                     uint32_t count, 
-                                    float4x4* matrices)
+                                    float4x4* matrices,
+                                    float* depthRange)
     {
         auto matrix = worldToLocal * inverseViewProjection;
         auto minNear = std::numeric_limits<float>().max();
@@ -222,14 +232,10 @@ namespace PK::Math::Functions
         }
 
         minNear += zPadding;
-        return maxFar - minNear;
-    }
-
-    float4x4 GetPerspectiveJittered(const float4x4& matrix, const float2& jitter)
-    {
-        float4x4 returnValue = matrix;
-        returnValue[2][0] += jitter.x;
-        returnValue[2][1] += jitter.y;
-        return returnValue;
+        
+        if (depthRange)
+        {
+            *depthRange = maxFar - minNear;
+        }
     }
 }

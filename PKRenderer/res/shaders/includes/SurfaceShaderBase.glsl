@@ -156,7 +156,6 @@ struct SurfaceFragmentVaryings
         PK_SURFACE_FUNC_VERT(baseVaryings);
 
         gl_Position = PK_META_WORLD_TO_CLIPSPACE(baseVaryings.vs_WORLDPOSITION);
-        NORMALIZE_GL_Z;
     }
 
 #elif defined(SHADER_STAGE_FRAGMENT)

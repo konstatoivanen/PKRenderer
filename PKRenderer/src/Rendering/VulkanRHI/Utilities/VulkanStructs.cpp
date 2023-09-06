@@ -16,6 +16,7 @@ namespace PK::Rendering::VulkanRHI
         vk13.pNext = &accelerationStructure;
         accelerationStructure.pNext = &rayTracingPipeline;
         rayTracingPipeline.pNext = &rayQuery;
+        rayQuery.pNext = &atomicFloat;
     }
 
     VulkanBufferCreateInfo::VulkanBufferCreateInfo(BufferUsage usage, size_t size, const VulkanQueueFamilies* families)

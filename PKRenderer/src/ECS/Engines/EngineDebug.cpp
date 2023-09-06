@@ -7,6 +7,7 @@
 #include "Math/FunctionsMisc.h"
 #include "Math/FunctionsColor.h"
 #include "Rendering/HashCache.h"
+#include "Core/Services/Time.h"
 
 namespace PK::ECS::Engines
 {
@@ -142,6 +143,45 @@ namespace PK::ECS::Engines
             }
 
             gizmos->DrawBounds(cullables[i].bounds->worldAABB);
+        }
+
+        auto offset = float3(-100, 50, 0);
+        auto time = Application::GetService<Time>()->GetTime() * 0.1f;
+        auto aspect = Application::GetPrimaryWindow()->GetAspectRatioAligned();
+        auto proj = Functions::GetPerspective(50.0f, aspect, 0.2f, 25.0f);
+        auto view = Functions::GetMatrixInvTRS(offset, { 0, time, 0 }, PK_FLOAT3_ONE);
+        auto vp = proj * view;
+
+        float4x4 localToWorld = Functions::GetMatrixTRS(offset, float3(35, -35, 0) * PK_FLOAT_DEG2RAD, PK_FLOAT3_ONE);
+        float4x4 worldToLocal = glm::inverse(localToWorld);
+        float4x4 invvp = glm::inverse(vp);
+        float4x4 cascades[4];
+        float zplanes[5];
+        float depthRange;
+
+        Functions::GetCascadeDepths(0.2f, 25.0f, 0.5f, zplanes, 5);
+        Functions::GetShadowCascadeMatrices(worldToLocal, invvp, zplanes, -15.0f, 1024, 4, cascades, &depthRange);
+
+        for (auto i = 0; i < 4; ++i)
+        {
+            gizmos->SetColor(PK_COLOR_GREEN);
+            gizmos->DrawFrustrum(cascades[i]);
+        }
+
+        gizmos->SetColor(PK_COLOR_RED);
+        gizmos->DrawFrustrum(vp);
+
+        auto znear = 0.2f;
+        auto zfar = 25.0f;
+
+        for (int i = 0; i < 4; ++i)
+        {
+            float n = Functions::CascadeDepth(znear, zfar, 0.5f, (float)i / 4);
+            float f = Functions::CascadeDepth(znear, zfar, 0.5f, (float)(i + 1) / 4);
+
+            auto proj = Functions::GetOffsetPerspective(-1, 1, -1, 1, 50.0f, aspect, n, f);
+            vp = proj * view;
+            gizmos->DrawFrustrum(vp);
         }
     }
 }

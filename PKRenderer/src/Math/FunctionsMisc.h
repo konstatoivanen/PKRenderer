@@ -41,4 +41,7 @@ namespace PK::Math::Functions
     inline uint64_t ULongAdd(uint64_t a, int32_t b) { return (int64_t)a + b < 0 ? 0ull : a + b; }
     uint4 MurmurHash41(uint32_t seed);
     uint2 MurmurHash21(uint32_t seed);
+    float2 OctaWrap(const float2& v);
+    float2 OctaEncode(float3 n);
+    uint OctaEncodeUint(const float3& direction);
 }

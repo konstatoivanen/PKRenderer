@@ -3,6 +3,7 @@
 #define PK_WRITE_LIGHT_CLUSTERS
 #include includes/ClusterIndexing.glsl
 #include includes/SharedLights.glsl
+#include includes/Encoding.glsl
 
 #WithAtomicCounter
 
@@ -96,19 +97,17 @@ void main()
 
     for (uint batch = 0; batch < numBatches; ++batch)
     {
-        uint lightIndex = min(batch * LIGHT_CLUSTER_GROUP_SIZE_XYZ + gl_LocalInvocationIndex, LightCount);
+        const uint lightIndex = min(batch * LIGHT_CLUSTER_GROUP_SIZE_XYZ + gl_LocalInvocationIndex, LightCount);
+        const LightPacked packed = PK_BUFFER_DATA(pk_Lights, lightIndex);
 
-        PK_Light light = PK_BUFFER_DATA(pk_Lights, lightIndex);
-        float4 direction = PK_BUFFER_DATA(pk_LightDirections, light.LIGHT_PROJECTION);
+        SharedLight light;
+        light.position = WorldToViewPos(packed.LIGHT_POS);
+        light.direction = WorldToViewDir(DecodeOctaUV(packed.LIGHT_PACKED_DIRECTION));
+        light.radius = packed.LIGHT_RADIUS;
+        light.angle = packed.LIGHT_ANGLE;
+        light.type = packed.LIGHT_TYPE;
 
-        SharedLight slight;
-        slight.position = mul(pk_MATRIX_V, float4(light.position.xyz, 1.0f)).xyz;
-        slight.direction = mul(pk_MATRIX_V, float4(direction.xyz, 0.0f)).xyz;
-        slight.radius = light.position.w;
-        slight.angle = direction.w;
-        slight.type = light.LIGHT_TYPE;
-
-        sharedLights[gl_LocalInvocationIndex] = slight;
+        sharedLights[gl_LocalInvocationIndex] = light;
         barrier();
 
         for (uint index = 0; index < LIGHT_CLUSTER_GROUP_SIZE_XYZ && visibleLightCount < LIGHT_CLUSTER_TILE_MAX_LIGHT_COUNT; ++index)

@@ -25,14 +25,18 @@ float SampleLightShadowmap(uint shadowmapIndex, float2 uv, float lightDistance)
 float4 GetLightProjectionUVW(in float3 worldpos, uint projectionIndex)
 {
     float4 coord = mul(PK_BUFFER_DATA(pk_LightMatrices, projectionIndex), float4(worldpos, 1.0f));
-    coord.xy = (coord.xy * 0.5f + coord.ww * 0.5f) / coord.w;
+    coord.xy = (coord.xy / coord.w) * 0.5f.xx + 0.5f.xx; 
     return coord;
 }
 
-Light GetLightDirect(uint index, in float3 worldpos, uint cascade)
+Light GetLightDirect(const uint index, const float3 worldpos, const uint cascade)
 {
-    PK_Light light = PK_BUFFER_DATA(pk_Lights, index);
-    float3 color = light.color.rgb;
+    const LightPacked light = PK_BUFFER_DATA(pk_Lights, index);
+
+    uint index_shadow = light.LIGHT_SHADOW;
+    uint index_matrix  = light.LIGHT_PROJECTION;
+    
+    float3 color = light.LIGHT_COLOR;
     float shadow = 1.0f;
 
     float2 lightuv;
@@ -44,21 +48,21 @@ Light GetLightDirect(uint index, in float3 worldpos, uint cascade)
     {
         case LIGHT_TYPE_POINT:
         {
-            posToLight = light.position.xyz - worldpos;
+            posToLight = light.LIGHT_POS - worldpos;
             linearDistance = length(posToLight);
-            color *= AttenuateLight(linearDistance, light.position.w);
+            color *= AttenuateLight(linearDistance, light.LIGHT_RADIUS);
             posToLight /= linearDistance;
             lightuv = OctaEncode(-posToLight);
         }
         break;
         case LIGHT_TYPE_SPOT:
         {
-            posToLight = light.position.xyz - worldpos;
+            posToLight = light.LIGHT_POS - worldpos;
             linearDistance = length(posToLight);
-            color *= AttenuateLight(linearDistance, light.position.w);
+            color *= AttenuateLight(linearDistance, light.LIGHT_RADIUS);
             posToLight /= linearDistance;
 
-            float3 coord = GetLightProjectionUVW(worldpos, light.LIGHT_PROJECTION).xyz;
+            const float4 coord = GetLightProjectionUVW(worldpos, index_matrix);
             lightuv = coord.xy;
             color *= step(0.0f, coord.z);
             color *= tex2D(pk_LightCookies, float3(lightuv, light.LIGHT_COOKIE)).r;
@@ -66,21 +70,20 @@ Light GetLightDirect(uint index, in float3 worldpos, uint cascade)
         break;
         case LIGHT_TYPE_DIRECTIONAL:
         {
-            light.LIGHT_PROJECTION += cascade;
-            light.LIGHT_SHADOW += cascade;
-            posToLight = -light.position.xyz;
+            index_matrix += cascade;
+            index_shadow += cascade;
+            posToLight = -light.LIGHT_POS;
 
-            float4 coord = GetLightProjectionUVW(worldpos, light.LIGHT_PROJECTION);
-            // @TODO UNormDepthFIX
-            linearDistance = ((coord.z / coord.w) + 1.0f) * light.position.w * 0.5f;
+            const float4 coord = GetLightProjectionUVW(worldpos, index_matrix);
+            linearDistance = (coord.z / coord.w) * light.LIGHT_RADIUS;
             lightuv = coord.xy;
         }
         break;
     }
 
-    if (light.LIGHT_SHADOW < LIGHT_PARAM_INVALID)
+    if (index_shadow < LIGHT_PARAM_INVALID)
     {
-        shadow *= SampleLightShadowmap(light.LIGHT_SHADOW, lightuv, linearDistance);
+        shadow *= SampleLightShadowmap(index_shadow, lightuv, linearDistance);
     }
 
     return Light(color, shadow, posToLight, linearDistance);

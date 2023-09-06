@@ -22,8 +22,6 @@ void main()
     
     gl_Position = mul(pk_MATRIX_VP_N, float4(uintBitsToFloat(in_POSITION.xyz), 1.0f));
     vs_COLOR = color;
-
-    NORMALIZE_GL_Z;
 };
 
 #pragma PROGRAM_FRAGMENT

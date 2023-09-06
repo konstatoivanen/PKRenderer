@@ -322,4 +322,22 @@ namespace PK::Math::Functions
         h ^= h >> 15u;
         return h;
     }
+
+    float2 OctaWrap(const float2& v) { return (1.0f - glm::abs(float2(v.yx))) * float2(v.x >= 0.0 ? 1.0 : -1.0, v.y >= 0.0 ? 1.0 : -1.0); }
+
+    float2 OctaEncode(float3 n)
+    {
+        n /= (abs(n.x) + abs(n.y) + abs(n.z));
+        n.xz = n.y >= 0.0f ? n.xz : OctaWrap(n.xz);
+        n.xz = n.xz * 0.5f + 0.5f;
+        return n.xz;
+    }
+
+    uint OctaEncodeUint(const float3& direction)
+    {
+        auto uv = OctaEncode(direction);
+        auto x = (uint)glm::round(glm::clamp(uv.x, 0.0f, 1.0f) * 65535.0f);
+        auto y = (uint)glm::round(glm::clamp(uv.y, 0.0f, 1.0f) * 65535.0f);
+        return (x & 0xFFFFu) | ((y & 0xFFFFu) << 16u);
+    }
 }

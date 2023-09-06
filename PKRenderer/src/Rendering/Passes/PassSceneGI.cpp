@@ -71,6 +71,7 @@ namespace PK::Rendering::Passes
         descr.resolution = { config->InitialWidth / 2u, config->InitialHeight / 2u, 1u };
         m_screenDataMips = Texture::Create(descr, "GI.ScreenDataMips");
 
+        descr.samplerType = SamplerType::Sampler2D;
         descr.layers = 1u;
         descr.levels = 1u;
         descr.format = TextureFormat::R8UI;
@@ -78,7 +79,6 @@ namespace PK::Rendering::Passes
         descr.resolution = { config->InitialWidth >> 4u, config->InitialHeight >> 4u, 1u };
         m_screenDataMipMask = Texture::Create(descr, "GI.ScreenDataMipMask");
 
-        descr.samplerType = SamplerType::Sampler2D;
         descr.levels = 1u;
         descr.layers = 1u;
         descr.usage = TextureUsage::Storage;

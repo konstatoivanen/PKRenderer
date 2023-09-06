@@ -14,14 +14,4 @@ namespace PK::ECS::Components
         PK::Rendering::Structs::LightType type = PK::Rendering::Structs::LightType::Point;
         virtual ~Light() = default;
     };
-
-    struct LightFrameInfo
-    {
-        uint16_t batchGroup = 0u;
-        uint16_t shadowmapIndex = 0u;
-        uint16_t projectionIndex = 0u;
-        float maxShadowDepth = 0.0f;
-        float minShadowDepth = 0.0f;
-        virtual ~LightFrameInfo() = default;
-    };
 }

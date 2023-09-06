@@ -14,6 +14,7 @@ namespace PK::Math::Functions
     }
 
     // https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
+    // DirectX convention
     void ExtractFrustrumPlanes(const float4x4 viewprojection, FrustumPlanes* frustrum, bool normalize)
     {
         float4* planes = frustrum->planes;
@@ -38,10 +39,10 @@ namespace PK::Math::Functions
         planes[3].z = viewprojection[2][3] + viewprojection[2][1];
         planes[3].w = viewprojection[3][3] + viewprojection[3][1];
         // Near clipping plane
-        planes[4].x = viewprojection[0][3] + viewprojection[0][2];
-        planes[4].y = viewprojection[1][3] + viewprojection[1][2];
-        planes[4].z = viewprojection[2][3] + viewprojection[2][2];
-        planes[4].w = viewprojection[3][3] + viewprojection[3][2];
+        planes[4].x = viewprojection[0][2];
+        planes[4].y = viewprojection[1][2];
+        planes[4].z = viewprojection[2][2];
+        planes[4].w = viewprojection[3][2];
         // Far clipping plane
         planes[5].x = viewprojection[0][3] - viewprojection[0][2];
         planes[5].y = viewprojection[1][3] - viewprojection[1][2];
@@ -239,14 +240,14 @@ namespace PK::Math::Functions
     BoundingBox GetInverseFrustumBounds(const float4x4& inverseMatrix)
     {
         float4 positions[8];
-        positions[0] = inverseMatrix * float4(-1, -1, -1, 1);
-        positions[1] = inverseMatrix * float4(-1, 1, -1, 1);
-        positions[2] = inverseMatrix * float4(1, 1, -1, 1);
-        positions[3] = inverseMatrix * float4(1, -1, -1, 1);
+        positions[0] = inverseMatrix * float4(-1, -1, 0, 1);
+        positions[1] = inverseMatrix * float4(-1,  1, 0, 1);
+        positions[2] = inverseMatrix * float4( 1,  1, 0, 1);
+        positions[3] = inverseMatrix * float4( 1, -1, 0, 1);
         positions[4] = inverseMatrix * float4(-1, -1, 1, 1);
-        positions[5] = inverseMatrix * float4(-1, 1, 1, 1);
-        positions[6] = inverseMatrix * float4(1, 1, 1, 1);
-        positions[7] = inverseMatrix * float4(1, -1, 1, 1);
+        positions[5] = inverseMatrix * float4(-1,  1, 1, 1);
+        positions[6] = inverseMatrix * float4( 1,  1, 1, 1);
+        positions[7] = inverseMatrix * float4( 1, -1, 1, 1);
         float3 min = { std::numeric_limits<float>().max(), std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
         float3 max = { -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };
 
@@ -263,15 +264,14 @@ namespace PK::Math::Functions
     BoundingBox GetInverseFrustumBounds(const float4x4& inverseMatrix, float lznear, float lzfar)
     {
         float4 positions[8];
-        positions[0] = inverseMatrix * float4(-1, -1, -1, 1);
-        positions[1] = inverseMatrix * float4(-1, 1, -1, 1);
-        positions[2] = inverseMatrix * float4(1, 1, -1, 1);
-        positions[3] = inverseMatrix * float4(1, -1, -1, 1);
-
+        positions[0] = inverseMatrix * float4(-1, -1, 0, 1);
+        positions[1] = inverseMatrix * float4(-1,  1, 0, 1);
+        positions[2] = inverseMatrix * float4( 1,  1, 0, 1);
+        positions[3] = inverseMatrix * float4( 1, -1, 0, 1);
         positions[4] = inverseMatrix * float4(-1, -1, 1, 1);
-        positions[5] = inverseMatrix * float4(-1, 1, 1, 1);
-        positions[6] = inverseMatrix * float4(1, 1, 1, 1);
-        positions[7] = inverseMatrix * float4(1, -1, 1, 1);
+        positions[5] = inverseMatrix * float4(-1,  1, 1, 1);
+        positions[6] = inverseMatrix * float4( 1,  1, 1, 1);
+        positions[7] = inverseMatrix * float4( 1, -1, 1, 1);
 
         for (auto i = 0; i < 4; ++i)
         {
@@ -300,14 +300,14 @@ namespace PK::Math::Functions
     BoundingBox GetInverseFrustumBounds(const float4x4& worldToLocal, const float4x4& inverseMatrix)
     {
         float4 positions[8];
-        positions[0] = float4(-1, -1, -1, 1);
-        positions[1] = float4(-1, 1, -1, 1);
-        positions[2] = float4(1, 1, -1, 1);
-        positions[3] = float4(1, -1, -1, 1);
+        positions[0] = float4(-1, -1, 0, 1);
+        positions[1] = float4(-1,  1, 0, 1);
+        positions[2] = float4( 1,  1, 0, 1);
+        positions[3] = float4( 1, -1, 0, 1);
         positions[4] = float4(-1, -1, 1, 1);
-        positions[5] = float4(-1, 1, 1, 1);
-        positions[6] = float4(1, 1, 1, 1);
-        positions[7] = float4(1, -1, 1, 1);
+        positions[5] = float4(-1,  1, 1, 1);
+        positions[6] = float4( 1,  1, 1, 1);
+        positions[7] = float4( 1, -1, 1, 1);
 
         float3 min = { std::numeric_limits<float>().max(), std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
         float3 max = { -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };

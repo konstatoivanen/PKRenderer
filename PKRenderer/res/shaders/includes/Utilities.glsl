@@ -38,8 +38,6 @@ float safePositiveRcp(float f) { return f <= 1e-12f ? 0.0 : 1.0 / f; }
 #define POW4(x) ((x) * (x) * (x) * (x))
 #define POW5(x) ((x) * (x) * (x) * (x) * (x))
 #define mul(a,b) (a * b)
-// @TODO Refactor math to produce correct 0-1 z matrices & remove this hack.
-#define NORMALIZE_GL_Z gl_Position.z = (gl_Position.z + gl_Position.w) / 2.0
 
 #define Any_IsNaN(v) any(isnan(v))
 #define Any_GEqual(a, b) any(greaterThanEqual(a,b))

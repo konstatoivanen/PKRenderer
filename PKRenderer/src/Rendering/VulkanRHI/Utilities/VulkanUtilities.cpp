@@ -355,6 +355,7 @@ namespace PK::Rendering::VulkanRHI::Utilities
             VulkanPhysicalDeviceFeatures features{};
             vkGetPhysicalDeviceFeatures2(device, &features.vk10);
 
+            // @TODO refactor this to be part of the features struct
             if (!VulkanCheckRequirements(
                 features.vk10, requiredFeatures.vk10, offsetof(VkPhysicalDeviceFeatures2, features), 55,
                 features.vk11, requiredFeatures.vk11, offsetof(VkPhysicalDeviceVulkan11Features, storageBuffer16BitAccess), 12,
@@ -362,7 +363,8 @@ namespace PK::Rendering::VulkanRHI::Utilities
                 features.vk13, requiredFeatures.vk13, offsetof(VkPhysicalDeviceVulkan13Features, robustImageAccess), 15,
                 features.accelerationStructure, requiredFeatures.accelerationStructure, offsetof(VkPhysicalDeviceAccelerationStructureFeaturesKHR, accelerationStructure), 5,
                 features.rayTracingPipeline, requiredFeatures.rayTracingPipeline, offsetof(VkPhysicalDeviceRayTracingPipelineFeaturesKHR, rayTracingPipeline), 5,
-                features.rayQuery, requiredFeatures.rayQuery, offsetof(VkPhysicalDeviceRayQueryFeaturesKHR, rayQuery), 1))
+                features.rayQuery, requiredFeatures.rayQuery, offsetof(VkPhysicalDeviceRayQueryFeaturesKHR, rayQuery), 1,
+                features.atomicFloat, requiredFeatures.atomicFloat, offsetof(VkPhysicalDeviceShaderAtomicFloatFeaturesEXT, shaderBufferFloat32Atomics), 12))
             {
                 continue;
             }

@@ -70,7 +70,6 @@ namespace PK::ECS::Builders
 			&EntityViews::LightRenderableView::transform, 
 			&EntityViews::LightRenderableView::bounds, 
 			&EntityViews::LightRenderableView::light, 
-			&EntityViews::LightRenderableView::lightFrameInfo, 
 			&EntityViews::LightRenderableView::renderable);
 		implementer->color = color;
 		implementer->radius = radius;

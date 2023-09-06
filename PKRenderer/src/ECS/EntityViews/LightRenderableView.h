@@ -12,7 +12,6 @@ namespace PK::ECS::EntityViews
         Components::Transform* transform;
         Components::Bounds* bounds;
         Components::Light* light;
-        Components::LightFrameInfo* lightFrameInfo;
         Components::Renderable* renderable;
     };
 }

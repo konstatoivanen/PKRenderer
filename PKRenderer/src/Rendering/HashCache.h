@@ -93,7 +93,6 @@ namespace PK::Rendering
 
         DECLARE_HASH(pk_Lights)
         DECLARE_HASH(pk_LightMatrices)
-        DECLARE_HASH(pk_LightDirections)
         DECLARE_HASH(pk_LightCount)
         DECLARE_HASH(pk_GlobalLightsList)
         DECLARE_HASH(pk_LightTiles)
