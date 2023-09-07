@@ -31,7 +31,7 @@ namespace PK::ECS::Tokens
 
 	struct TokenCullFrustum : public TokenCullBase
 	{
-		Math::FrustumPlanes planes;
+		Math::float4x4 matrix;
 	};
 
 	struct TokenCullCubeFaces : public TokenCullBase
@@ -41,14 +41,7 @@ namespace PK::ECS::Tokens
 
 	struct TokenCullCascades : public TokenCullBase
 	{
-		Math::FrustumPlanes* cascades;
+		Math::float4x4* cascades;
 		uint32_t count;
-	};
-
-	struct CullTokens
-	{
-		TokenCullFrustum frustum;
-		TokenCullCubeFaces cube;
-		TokenCullCascades cascades;
 	};
 }

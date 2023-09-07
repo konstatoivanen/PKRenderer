@@ -10,7 +10,7 @@
 
 namespace PK::Rendering::Passes
 {
-    typedef struct ShadowCascades { float planes[5]; } ShadowCascades;
+    typedef std::array<float, 5> ShadowCascades;
 
     struct ShadowmapLightTypeData
     {

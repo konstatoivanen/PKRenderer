@@ -37,7 +37,7 @@ namespace PK::ECS::Engines
                 TokenCullFrustum tokenFrustum{};
                 tokenFrustum.results = token->visibilityList;
                 tokenFrustum.mask = RenderableFlags::Mesh;
-                Functions::ExtractFrustrumPlanes(token->viewProjection, &tokenFrustum.planes, true);
+                tokenFrustum.matrix = token->viewProjection;
                 m_sequencer->Next(this, &tokenFrustum);
                 m_passGroup = token->outPassGroup = 0xFFFFFFFF;
 

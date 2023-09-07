@@ -60,6 +60,7 @@ namespace PK::Rendering::VulkanRHI
         VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties;
         VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties;
         VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservativeRasterizationProperties;
+        VkPhysicalDeviceSubgroupProperties subgroupProperties;
     };
 
     struct VulkanTimelineSemaphore

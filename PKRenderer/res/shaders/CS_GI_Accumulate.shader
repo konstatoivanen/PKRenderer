@@ -15,10 +15,10 @@
 shared float s_weights[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
 shared uint s_count[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
 
-Reservoir ReSTIR_Load_HitAsReservoir(const int2 coord, const float3 origin)
-{
-    return ReSTIR_Unpack_Hit(GI_Load_Packed_Diff(coord), origin);
-}
+//Reservoir ReSTIR_Load_HitAsReservoir(const int2 coord, const float3 origin)
+//{
+//    return ReSTIR_Unpack_Hit(GI_Load_Packed_Diff(coord), origin);
+//}
 
 bool ReSTIR_BoilingFilter(uint2 LocalIndex, float filterStrength, float reservoirWeight)
 {

@@ -85,7 +85,7 @@ namespace PK::ECS::Engines
 
     void EngineGizmos::DrawBounds(const BoundingBox& aabb)
     {
-        if (!Functions::IntersectPlanesAABB(m_frustrumPlanes.planes, 6, aabb))
+        if (!Functions::IntersectPlanesAABB(m_frustrumPlanes.array_ptr(), 6, aabb))
         {
             return;
         }
@@ -160,18 +160,16 @@ namespace PK::ECS::Engines
 
         float3 nearCorners[4];
         float3 farCorners[4];
-        FrustumPlanes frustum;
+        auto planes = Functions::ExtractFrustrumPlanes(matrix, true);
 
-        Functions::ExtractFrustrumPlanes(matrix, &frustum, true);
-
-        auto temp = frustum.planes[1];
-        frustum.planes[1] = frustum.planes[2];
-        frustum.planes[2] = temp;
+        auto temp = planes[1];
+        planes[1] = planes[2];
+        planes[2] = temp;
 
         for (auto i = 0; i < 4; ++i)
         {
-            nearCorners[i] = Functions::IntesectPlanes3(frustum.planes[4], frustum.planes[i], frustum.planes[(i + 1) % 4]);
-            farCorners[i] = Functions::IntesectPlanes3(frustum.planes[5], frustum.planes[i], frustum.planes[(i + 1) % 4]);
+            nearCorners[i] = Functions::IntesectPlanes3(planes[4], planes[i], planes[(i + 1) % 4]);
+            farCorners[i] = Functions::IntesectPlanes3(planes[5], planes[i], planes[(i + 1) % 4]);
         }
 
         for (auto i = 0; i < 4; ++i)
@@ -193,7 +191,7 @@ namespace PK::ECS::Engines
     void EngineGizmos::SetMatrix(const float4x4& matrix)
     {
         auto vp = m_viewprojection * matrix;
-        Math::Functions::ExtractFrustrumPlanes(vp, &m_frustrumPlanes, true);
+        m_frustrumPlanes = Math::Functions::ExtractFrustrumPlanes(vp, true);
         m_matrix = matrix;
     }
 }

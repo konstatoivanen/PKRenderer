@@ -82,14 +82,13 @@ namespace PK::Rendering::Passes
         descr.levels = 1u;
         descr.layers = 1u;
         descr.usage = TextureUsage::Storage;
-        descr.format = TextureFormat::R32UI;
+        descr.format = TextureFormat::RG32UI;
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1u };
         descr.resolution = GetCheckerboardResolution(descr.resolution, m_useCheckerboardTrace);
         m_rayhits = Texture::Create(descr, "GI.RayHits");
-        m_rayhitNormals = Texture::Create(descr, "GI.RayHitNormals");
         
         descr.samplerType = SamplerType::Sampler2DArray;
-        descr.layers = 4;
+        descr.layers = 5;
         descr.format = TextureFormat::RGBA32UI;
         m_reservoirs = Texture::Create(descr, "GI.Reservoirs");
 
@@ -137,20 +136,14 @@ namespace PK::Rendering::Passes
 
         m_screenData->Validate(resolution);
         m_rayhits->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
-        m_rayhitNormals->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
         m_screenDataMips->Validate({ resolution.x / 2u, resolution.y / 2u, resolution.z });
         m_screenDataMipMask->Validate({ resolution.x >> 4u, resolution.y >> 4u, resolution.z });
+        m_reservoirs->Validate(resolution);
 
         GraphicsAPI::SetImage(hash->pk_GI_RayHits, m_rayhits.get());
-        GraphicsAPI::SetImage(hash->pk_GI_RayHitNormals, m_rayhitNormals.get());
         GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataMips, m_screenDataMips.get());
         GraphicsAPI::SetImage(hash->pk_GI_ScreenDataMipMask, m_screenDataMipMask.get());
-        
-        if (m_useReSTIR)
-        {
-            m_reservoirs->Validate(resolution);
-            GraphicsAPI::SetImage(hash->pk_Reservoirs, m_reservoirs.get());
-        }
+        GraphicsAPI::SetImage(hash->pk_Reservoirs, m_reservoirs.get());
 
         m_rasterAxis = m_frameIndex % 3;
         auto checkerboardIndex = m_frameIndex % 4;
@@ -261,7 +254,6 @@ namespace PK::Rendering::Passes
     void PassSceneGI::OnUpdateParameters(const ApplicationConfig* config)
     {
         m_useCheckerboardTrace = config->GICheckerboardTrace;
-        m_useReSTIR = config->GIReSTIR;
         GraphicsAPI::SetKeyword("PK_GI_CHECKERBOARD_TRACE", m_useCheckerboardTrace);
         GraphicsAPI::SetKeyword("PK_GI_SPEC_VIRT_REPROJECT", config->GISpecularVirtualReproject);
         GraphicsAPI::SetKeyword("PK_GI_SSRT_PRETRACE", config->GIScreenSpacePretrace);

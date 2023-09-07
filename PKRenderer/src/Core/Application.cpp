@@ -194,13 +194,11 @@ namespace PK::Core
             sequencer->Next((int)UpdateStep::OpenFrame);
 
             m_window->Begin();
-
             sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::OpenFrame);
             sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::UpdateInput);
             sequencer->Next((int)UpdateStep::UpdateEngines);
             sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::Render);
             sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::CloseFrame);
-
             m_window->End();
 
             sequencer->Next((int)UpdateStep::CloseFrame);

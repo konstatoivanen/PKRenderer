@@ -82,7 +82,6 @@ namespace PK::Rendering
         DECLARE_HASH(pk_GI_ScreenDataMips)
         DECLARE_HASH(pk_GI_ScreenDataMipMask)
         DECLARE_HASH(pk_GI_RayHits)
-        DECLARE_HASH(pk_GI_RayHitNormals)
         DECLARE_HASH(pk_GI_VolumeST)
         DECLARE_HASH(pk_GI_VolumeSwizzle)
         DECLARE_HASH(pk_GI_RayDither)

@@ -18,9 +18,9 @@ namespace PK::ECS::Engines
     {
         auto invDepthRange = (float)(0xFFFF) / token->depthRange;
         auto results = token->results;
-        auto planes = token->planes.planes;
         auto mask = token->mask;
         auto cullables = m_entityDb->Query<BaseRenderableView>((uint32_t)ECS::ENTITY_GROUPS::ACTIVE);
+        auto planes = Functions::ExtractFrustrumPlanes(token->matrix, true);
 
         for (auto i = 0u; i < cullables.count; ++i)
         {
@@ -32,14 +32,14 @@ namespace PK::ECS::Engines
                 continue;
             }
 
-            auto isVisible = (flags & RenderableFlags::Cullable) == 0 || Functions::IntersectPlanesAABB(planes, 6, cullable->bounds->worldAABB);
+            auto isVisible = (flags & RenderableFlags::Cullable) == 0 || Functions::IntersectPlanesAABB(planes.array_ptr(), 6, cullable->bounds->worldAABB);
 
             if (!isVisible)
             {
                 continue;
             }
 
-            auto depth = Functions::PlaneMaxDistanceToAABB(planes[4], cullable->bounds->worldAABB) * invDepthRange;
+            auto depth = Functions::PlaneMaxDistanceToAABB(planes.near, cullable->bounds->worldAABB) * invDepthRange;
             auto fixedDepth = glm::min(0xFFFFu, (uint32_t)glm::max(0.0f, depth));
             results->Add(cullable->GID.entityID(), (uint16_t)fixedDepth, 0u);
         }
@@ -120,6 +120,12 @@ namespace PK::ECS::Engines
         auto cascades = token->cascades;
         auto mask = token->mask;
         auto cullables = m_entityDb->Query<BaseRenderableView>((uint32_t)ECS::ENTITY_GROUPS::ACTIVE);
+        auto planes = PK_STACK_ALLOC(FrustumPlanes, count);
+
+        for (auto i = 0u; i < count; ++i)
+        {
+            planes[i] = Functions::ExtractFrustrumPlanes(token->cascades[i], true);
+        }
 
         for (auto i = 0; i < cullables.count; ++i)
         {
@@ -137,7 +143,7 @@ namespace PK::ECS::Engines
 
             for (auto j = 0u; j < count; ++j)
             {
-                isVisible |= visibilities[j] = !isCullable || Functions::IntersectPlanesAABB(cascades[j].planes, 6, bounds);
+                isVisible |= visibilities[j] = !isCullable || Functions::IntersectPlanesAABB(planes[j].array_ptr(), 6, bounds);
             }
 
             if (!isVisible)
@@ -151,7 +157,7 @@ namespace PK::ECS::Engines
             {
                 if (visibilities[j])
                 {
-                    auto depth = Functions::PlaneMinDistanceToAABB(cascades[j].planes[4], bounds) * invDepthRange;
+                    auto depth = Functions::PlaneMinDistanceToAABB(planes[j].near, bounds) * invDepthRange;
                     auto fixedDepth = glm::min(0xFFFFu, (uint32_t)glm::max(0.0f, depth));
                     results->Add(id, (uint16_t)fixedDepth, j);
                 }

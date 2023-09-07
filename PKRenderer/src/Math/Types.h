@@ -155,8 +155,14 @@ namespace PK::Math
 
     struct FrustumPlanes
     {
-        // left, right, top, bottom, near, far
-        float4 planes[6];
+        float4 left;
+        float4 right;
+        float4 top;
+        float4 bottom;
+        float4 near;
+        float4 far;
+        inline float4& operator[](size_t i) { return (&left)[i]; }
+        constexpr float4* array_ptr() { return &left; }
     };
 
     struct BoundingBox

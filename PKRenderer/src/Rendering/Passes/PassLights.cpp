@@ -143,24 +143,21 @@ namespace PK::Rendering::Passes
 
     void PassLights::Cull(void* engineRoot, VisibilityList* visibilityList, const float4x4& viewProjection, float znear, float zfar)
     {
-
-        CullTokens tokens{};
-        tokens.frustum.results = visibilityList;
-        tokens.cube.results = visibilityList;
-        tokens.cascades.results = visibilityList;
-        tokens.frustum.depthRange = zfar - znear;
-        tokens.frustum.mask = RenderableFlags::Light;
-        Functions::ExtractFrustrumPlanes(viewProjection, &tokens.frustum.planes, true);
+        TokenCullFrustum cullFrustum;
+        cullFrustum.results = visibilityList;
+        cullFrustum.depthRange = zfar - znear;
+        cullFrustum.mask = RenderableFlags::Light;
+        cullFrustum.matrix = viewProjection;
 
         visibilityList->Clear();
-        m_sequencer->Next(engineRoot, &tokens.frustum);
-        auto lightCount = (uint32_t)visibilityList->count;
+        m_sequencer->Next(engineRoot, &cullFrustum);
 
         if (visibilityList->count == 0)
         {
             return;
         }
 
+        uint lightCount = (uint)visibilityList->count;
         uint matrixCount = 0u;
         uint matrixIndex = 0u;
         uint shadowCount = 0u;
@@ -180,16 +177,18 @@ namespace PK::Rendering::Passes
 
         auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer);
         auto lightsView = cmd->BeginBufferWrite<LightPacked>(m_lightsBuffer.get(), 0u, lightCount + 1);
-        auto matricesView = matrixCount > 0 ? cmd->BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, projectionCount) : BufferView<float4x4>();
+        auto matricesView = matrixCount > 0 ? cmd->BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : BufferView<float4x4>();
 
         auto ivp = glm::inverse(viewProjection);
         auto zsplits = GetCascadeZSplits(znear, zfar);
-        tokens.cube.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
-        tokens.frustum.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
-        tokens.cascades.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
-        FrustumPlanes planes[PK_SHADOW_CASCADE_COUNT];
-        tokens.cascades.cascades = planes;
-        tokens.cascades.count = PK_SHADOW_CASCADE_COUNT;
+        TokenCullCubeFaces cullCube;
+        TokenCullCascades cullCascades;
+        cullCube.results = visibilityList;
+        cullCascades.results = visibilityList;
+        cullCube.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
+        cullFrustum.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
+        cullCascades.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
+        cullCascades.count = PK_SHADOW_CASCADE_COUNT;
 
         for (auto i = 0u; i < lightCount; ++i)
         {
@@ -216,11 +215,11 @@ namespace PK::Rendering::Passes
                 {
                     if (castShadows)
                     {
+                        cullCube.depthRange = view->light->radius - 0.1f;
+                        cullCube.aabb = view->bounds->worldAABB;
+                        m_sequencer->Next(engineRoot, &cullCube);
                         auto shadowBlurAmount = 2.0f * glm::sin(view->light->shadowBlur * 0.5f * PK_FLOAT_HALF_PI);
-                        tokens.cube.depthRange = view->light->radius - 0.1f;
-                        tokens.cube.aabb = view->bounds->worldAABB;
-                        m_sequencer->Next(engineRoot, &tokens.cube);
-                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowCount, shadowBlurAmount, tokens.cube.depthRange);
+                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowCount, shadowBlurAmount, cullCube.depthRange);
                     }
                 }
                 break;
@@ -232,11 +231,11 @@ namespace PK::Rendering::Passes
                     
                     if (castShadows)
                     {
+                        cullFrustum.depthRange = view->light->radius - 0.1f;
+                        cullFrustum.matrix = matricesView[matrixIndex];
+                        m_sequencer->Next(engineRoot, &cullFrustum);
                         auto shadowBlurAmount = view->light->shadowBlur * glm::sin(0.5f * view->light->angle * PK_FLOAT_DEG2RAD) / PK_FLOAT_INV_SQRT2;
-                        tokens.frustum.depthRange = view->light->radius - 0.1f;
-                        Functions::ExtractFrustrumPlanes(matricesView[matrixIndex], &tokens.frustum.planes, true);
-                        m_sequencer->Next(engineRoot, &tokens.frustum);
-                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowCount, shadowBlurAmount, tokens.frustum.depthRange);
+                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowCount, shadowBlurAmount, cullFrustum.depthRange);
                     }
                 }
                 break;
@@ -244,23 +243,17 @@ namespace PK::Rendering::Passes
                 case LightType::Directional:
                 {
                     light.position = transform->rotation * PK_FLOAT3_FORWARD;
-                    Functions::GetShadowCascadeMatrices(worldToLocal, ivp, zsplits.planes, -view->light->radius, m_shadowmapTileSize, PK_SHADOW_CASCADE_COUNT, matricesView.data + matrixIndex, &light.radius);
+                    Functions::GetShadowCascadeMatrices(worldToLocal, ivp, zsplits.data(), -view->light->radius, m_shadowmapTileSize, PK_SHADOW_CASCADE_COUNT, matricesView.data + matrixIndex, &light.radius);
 
                     if (castShadows)
                     {
-                        for (auto j = 0u; j < PK_SHADOW_CASCADE_COUNT; ++j)
-                        {
-                            Functions::ExtractFrustrumPlanes(matricesView[matrixIndex + j], &planes[j], true);
-                        }
-
-                        tokens.cascades.depthRange = light.radius;
-                        m_sequencer->Next(engineRoot, &tokens.cascades);
-
                         float minDepth = 0.0f;
-                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowCount, view->light->shadowBlur, tokens.cascades.depthRange, &minDepth);
-
+                        cullCascades.cascades = matricesView.data + matrixIndex;
+                        cullCascades.depthRange = light.radius;
+                        m_sequencer->Next(engineRoot, &cullCascades);
+                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowCount, view->light->shadowBlur, cullCascades.depthRange, &minDepth);
                         // Regenerate cascades as the depth range might change based on culling
-                        Functions::GetShadowCascadeMatrices(worldToLocal, ivp, zsplits.planes, -view->light->radius + minDepth, m_shadowmapTileSize, PK_SHADOW_CASCADE_COUNT, matricesView.data + matrixIndex, &light.radius);
+                        Functions::GetShadowCascadeMatrices(worldToLocal, ivp, zsplits.data(), -view->light->radius + minDepth, m_shadowmapTileSize, PK_SHADOW_CASCADE_COUNT, matricesView.data + matrixIndex, &light.radius);
                     }
                 }
                 break;
@@ -340,7 +333,7 @@ namespace PK::Rendering::Passes
     ShadowCascades PassLights::GetCascadeZSplits(float znear, float zfar) const
     {
         ShadowCascades cascadeSplits;
-        Functions::GetCascadeDepths(znear, zfar, m_cascadeLinearity, cascadeSplits.planes, 5);
+        Functions::GetCascadeDepths(znear, zfar, m_cascadeLinearity, cascadeSplits.data(), 5);
 
         // Snap z ranges to tile indices to make shader branching more coherent
         auto scale = GridSizeZ / glm::log2(zfar / znear);
@@ -348,8 +341,8 @@ namespace PK::Rendering::Passes
 
         for (auto i = 1; i < 4; ++i)
         {
-            float zTile = round(log2(cascadeSplits.planes[i]) * scale + bias);
-            cascadeSplits.planes[i] = znear * pow(zfar / znear, zTile / GridSizeZ);
+            float zTile = round(log2(cascadeSplits[i]) * scale + bias);
+            cascadeSplits[i] = znear * pow(zfar / znear, zTile / GridSizeZ);
         }
 
         return cascadeSplits;

@@ -5,7 +5,6 @@
 #include includes/Encoding.glsl
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE
 #multi_compile _ PK_GI_SSRT_PRETRACE
-#multi_compile _ PK_GI_RESTIR
 
 struct TracePayload
 {
@@ -175,10 +174,7 @@ void main()
             hits.diff.isScreen = IsScreenHit(coord, params.origin, params.diffdir, hits.diff);
         }
 
-        #if defined(PK_GI_RESTIR)   
-        imageStore(pk_GI_RayHitNormals, raycoord, uint4(payload.hitNormal));
-        #endif
-
+        hits.diffNormal = payload.hitNormal;
         GI_Store_RayHits(raycoord, hits);
     }
 }
@@ -188,10 +184,7 @@ PK_DECLARE_RT_PAYLOAD_IN(TracePayload, payload, 0);
 
 void main() 
 {
-    #if defined(PK_GI_RESTIR)   
-        payload.hitNormal = EncodeOctaUV(-gl_WorldRayDirectionEXT);
-    #endif
-
+    payload.hitNormal = EncodeOctaUV(-gl_WorldRayDirectionEXT);
     payload.hitDistance = 0xFFFFFFFFu;
 }
 
@@ -205,33 +198,30 @@ PK_DECLARE_READONLY_BUFFER(uint, pk_RT_Indices, PK_SET_DRAW);
 
 void main()
 {
-    #if defined(PK_GI_RESTIR)   
-        uint3 indices = uint3
-        (
-            PK_BUFFER_DATA(pk_RT_Indices, 3 * gl_PrimitiveID + 0),
-            PK_BUFFER_DATA(pk_RT_Indices, 3 * gl_PrimitiveID + 1),
-            PK_BUFFER_DATA(pk_RT_Indices, 3 * gl_PrimitiveID + 2)
-        );
-    
-        float3 positions[3] =
-        {
-            PK_BUFFER_DATA(pk_RT_Vertices, indices[0]),
-            PK_BUFFER_DATA(pk_RT_Vertices, indices[1]),
-            PK_BUFFER_DATA(pk_RT_Vertices, indices[2])
-        };
-    
-        float3 v0 = normalize(positions[1] - positions[0]);
-        float3 v1 = normalize(positions[2] - positions[0]);
-        float3 normal = cross(v0, v1);
-        normal = mul(gl_ObjectToWorldEXT, float4(normal, 0.0f));
-    
-        if (dot(normal, gl_WorldRayDirectionEXT) > 0)
-        {
-            normal *= -1;
-        }
+    uint3 indices = uint3
+    (
+        PK_BUFFER_DATA(pk_RT_Indices, 3 * gl_PrimitiveID + 0),
+        PK_BUFFER_DATA(pk_RT_Indices, 3 * gl_PrimitiveID + 1),
+        PK_BUFFER_DATA(pk_RT_Indices, 3 * gl_PrimitiveID + 2)
+    );
 
-        payload.hitNormal = EncodeOctaUV(normal);
-    #endif
+    float3 positions[3] =
+    {
+        PK_BUFFER_DATA(pk_RT_Vertices, indices[0]),
+        PK_BUFFER_DATA(pk_RT_Vertices, indices[1]),
+        PK_BUFFER_DATA(pk_RT_Vertices, indices[2])
+    };
 
+    float3 v0 = normalize(positions[1] - positions[0]);
+    float3 v1 = normalize(positions[2] - positions[0]);
+    float3 normal = cross(v0, v1);
+    normal = mul(gl_ObjectToWorldEXT, float4(normal, 0.0f));
+
+    if (dot(normal, gl_WorldRayDirectionEXT) > 0)
+    {
+        normal *= -1;
+    }
+
+    payload.hitNormal = EncodeOctaUV(normal);
     payload.hitDistance = floatBitsToUint(PK_GET_RAY_HIT_DISTANCE);
 }

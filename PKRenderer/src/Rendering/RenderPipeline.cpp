@@ -260,7 +260,7 @@ namespace PK::Rendering
         GraphicsAPI::SetTexture(hash->pk_ScreenColorPrevious, m_previousColor.get());
 
         auto cascadeZSplits = m_passLights.GetCascadeZSplits(m_znear, m_zfar);
-        m_constantsPerFrame->Set<float4>(hash->pk_ShadowCascadeZSplits, reinterpret_cast<float4*>(cascadeZSplits.planes));
+        m_constantsPerFrame->Set<float4>(hash->pk_ShadowCascadeZSplits, reinterpret_cast<float4*>(cascadeZSplits.data()));
         m_constantsPerFrame->Set<float4>(hash->pk_ScreenParams, { (float)resolution.x, (float)resolution.y, 1.0f / (float)resolution.x, 1.0f / (float)resolution.y });
         m_constantsPerFrame->Set<uint2>(hash->pk_ScreenSize, { resolution.x, resolution.y });
         m_constantsPerFrame->FlushBuffer(QueueType::Transfer);

@@ -2,6 +2,8 @@
 #include "Utilities/ISingleton.h"
 #include "Core/Services/IService.h"
 #include <conio.h>
+#include <ctime>
+#include <chrono>
 
 namespace PK::Core::Services::Debug
 {
@@ -100,6 +102,14 @@ namespace PK::Core::Services::Debug
             uint32_t m_filterFlags = PK_LOG_LVL_ALL_FLAGS;
             int32_t m_lineClearLength = 0;
     };
+
+    struct ScopeTimer : public Utilities::NoCopy
+    {
+        std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double>> start;
+        const char* name;
+        ScopeTimer(const char* name);
+        ~ScopeTimer();
+    };
 }
 
 #define PK_LOG_NEWLINE() PK::Core::Services::Debug::Logger::Get()->InsertNewLine()
@@ -113,3 +123,4 @@ namespace PK::Core::Services::Debug
 #define PK_THROW_ERROR(...) throw PK_GET_EXCEPTION(__VA_ARGS__)
 #define PK_THROW_ASSERT(value, ...) { if(!(value)) { PK_THROW_ERROR(__VA_ARGS__); } }
 #define PK_WARNING_ASSERT(value, ...) { if(!(value)) { PK_LOG_WARNING(__VA_ARGS__); } }
+#define PK_SCOPE_TIMER(name) auto PK_LOG_TIMER_##name = PK::Core::Services::Debug::ScopeTimer(#name)

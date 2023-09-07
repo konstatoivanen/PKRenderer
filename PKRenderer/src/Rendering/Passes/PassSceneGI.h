@@ -41,11 +41,9 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Texture> m_screenDataMipMask;
             Utilities::Ref<Objects::Texture> m_reservoirs;
             Utilities::Ref<Objects::Texture> m_rayhits;
-            Utilities::Ref<Objects::Texture> m_rayhitNormals;
 
             uint32_t m_frameIndex = 0u;
             int32_t m_rasterAxis = 0;
             bool m_useCheckerboardTrace = false;
-            bool m_useReSTIR = false;
     };
 }

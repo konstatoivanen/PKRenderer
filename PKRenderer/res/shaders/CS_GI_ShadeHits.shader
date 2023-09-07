@@ -51,7 +51,7 @@ void main()
             params.diffdir,
             hits.diff.isMiss ? PK_GI_RAY_MAX_DISTANCE : hits.diff.dist,
             params.normal,
-            imageLoad(pk_GI_RayHitNormals, raycoord).r,
+            hits.diffNormal,
             SampleRadiance(params.origin, params.diffdir, hits.diff)
         );
 
@@ -68,6 +68,7 @@ void main()
         }
     }
 
-    GI_Store_Packed_Diff(raycoord, packedDiff);
+    // Its slightly faster to use reservoirs texture than gi data texture
+    ReSTIR_Store_Hit(raycoord, packedDiff);
     GI_Store_Packed_Spec(raycoord, packedSpec);
 }

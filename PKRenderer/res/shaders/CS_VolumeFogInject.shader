@@ -16,7 +16,6 @@ void main()
     const float zmax = SampleMaxZ(int2(id.xy), 3);
     // Clamp cell to surface to prevent light leaks
     const float depth = min(ViewDepthExp(uvw_cur.z), lerp(1e+38f, zmax, zmin < zmax));
-    
 
     const float3 worldpos = UVToWorldPos(uvw_cur.xy, depth);
     const float3 uvw_prev = VolumeFog_WorldToPrevUVW(worldpos);
