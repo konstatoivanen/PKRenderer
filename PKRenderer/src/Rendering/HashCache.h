@@ -21,6 +21,7 @@ namespace PK::Rendering
         DECLARE_HASH(_DestinationMip4)
         DECLARE_HASH(_BlurOffset)
         DECLARE_HASH(_Color)
+        DECLARE_HASH(_ColorVoxelize)
         DECLARE_HASH(pk_Time)
         DECLARE_HASH(pk_SinTime)
         DECLARE_HASH(pk_CosTime)

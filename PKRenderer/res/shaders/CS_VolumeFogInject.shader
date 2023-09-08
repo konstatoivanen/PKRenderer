@@ -4,11 +4,15 @@
 #include includes/SharedVolumeFog.glsl
 #include includes/SharedSceneGI.glsl
 
+#define EARLY_Z_TEST 1
+
 layout(local_size_x = PK_W_ALIGNMENT_4, local_size_y = PK_W_ALIGNMENT_4, local_size_z = PK_W_ALIGNMENT_4) in;
 void main()
 {
     const uint3 id = gl_GlobalInvocationID;
-    const float3 dither = GlobalNoiseBlue(id.xy, pk_FrameIndex.x);
+    float3 dither = GlobalNoiseBlue(id.xy, pk_FrameIndex.x);
+
+    // @TODO figure out better z dither distribution that causes less shadow acne.
     const float3 uvw_cur = (id + dither) / VOLUMEFOG_SIZE;
 
     // Light leak threshold
@@ -16,6 +20,24 @@ void main()
     const float zmax = SampleMaxZ(int2(id.xy), 3);
     // Clamp cell to surface to prevent light leaks
     const float depth = min(ViewDepthExp(uvw_cur.z), lerp(1e+38f, zmax, zmin < zmax));
+
+#if EARLY_Z_TEST == 1
+    float4 maxdepths = float4
+    (
+        SampleMaxZ(float2(id.xy + float2(-0.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4),
+        SampleMaxZ(float2(id.xy + float2(-0.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
+        SampleMaxZ(float2(id.xy + float2(+1.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
+        SampleMaxZ(float2(id.xy + float2(+1.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4)
+    );
+
+    float maxTile = cmax(maxdepths);
+
+    [[branch]]
+    if (maxTile < depth)
+    {
+        return;
+    }
+#endif
 
     const float3 worldpos = UVToWorldPos(uvw_cur.xy, depth);
     const float3 uvw_prev = VolumeFog_WorldToPrevUVW(worldpos);
@@ -33,7 +55,7 @@ void main()
     // Distant texels are less dense, trace a longer distance to retain some depth.
     const float maxMarchDistance = exp(uvw_cur.z * VOLUMEFOG_MARCH_DISTANCE_EXP);
     
-    LightTile tile = GetLightTile(uvw_cur.xy, depth);
+    LightTile tile = GetLightTile_COORD(int2(gl_WorkGroupID.xy >> 1), depth);
     for (uint i = tile.start; i < tile.end; ++i)
     {
         Light light = GetLight(i, worldpos, tile.cascade);

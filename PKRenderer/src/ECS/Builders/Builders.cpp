@@ -128,6 +128,7 @@ namespace PK::ECS::Builders
         auto shader = assetDatabase->Find<Shader>("SH_WS_Unlit_Color");
         auto material = assetDatabase->RegisterProcedural("M_Point_Light_" + std::to_string(egid.entityID()), CreateRef<Material>(shader, nullptr));
         material->Set<float4>(HashCache::Get()->_Color, hdrColor);
+        material->Set<float4>(HashCache::Get()->_ColorVoxelize, PK_COLOR_BLACK);
 
         auto meshEgid = BuildMeshRenderableEntity(entityDb, mesh, { { material, 0 } }, position, PK_FLOAT3_ZERO, sphereRadius, RenderableFlags::Cullable);
         lightSphereView->transformMesh = entityDb->Query<EntityViews::TransformView>(meshEgid)->transform;

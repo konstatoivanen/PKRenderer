@@ -1946,7 +1946,6 @@
     <None Include="res\shaders\SH_WS_Shadowmap_Generic.shader" />
     <None Include="res\shaders\CS_ShadowmapBlur.shader" />
     <None Include="res\shaders\CS_LightAssignment.shader" />
-    <None Include="res\shaders\includes\ClusterIndexing.glsl" />
     <None Include="res\shaders\includes\GBuffers.glsl" />
     <None Include="res\shaders\includes\BRDF.glsl" />
     <None Include="res\shaders\includes\SurfaceShaderBase.glsl" />

@@ -35,12 +35,9 @@ namespace PK::Rendering::Passes
     class PassLights : public Utilities::NoCopy
     {
         public:
-            const uint32_t MaxLightsPerTile = 64;
-            const uint32_t GridSizeX = 16;
-            const uint32_t GridSizeY = 9;
-            const uint32_t GridSizeZ = 24;
-            const uint32_t ClusterCount = GridSizeX * GridSizeY * GridSizeZ;
-            const float DepthGroupSize = 32.0f;
+            const uint32_t MaxLightsPerTile = 32;
+            const uint32_t LightGridSizeZ = 32;
+            const uint32_t LightGridTileSizePx = 64;
 
             PassLights(Core::Services::AssetDatabase* assetDatabase, 
                        ECS::EntityDatabase* entityDb, 
@@ -49,16 +46,16 @@ namespace PK::Rendering::Passes
                        const Core::ApplicationConfig* config);
             void Cull(void* engineRoot, ECS::Tokens::VisibilityList* visibilityList, const Math::float4x4& viewProjection, float znear, float zfar);
             void RenderShadows(Objects::CommandBuffer* cmd);
-            void ComputeClusters(Objects::CommandBuffer* cmd);
+            void ComputeClusters(Objects::CommandBuffer* cmd, Math::uint3 resolution);
             ShadowCascades GetCascadeZSplits(float znear, float zfar) const;
         
         private:
             uint32_t BuildShadowBatch(ECS::Tokens::VisibilityList* visibilityList, 
                                         ECS::EntityViews::LightRenderableView* view, 
                                         uint32_t index, 
-                                        uint32_t& outShadowCount,
                                         float shadowBlurAmount,
                                         float maxDepth,
+                                        uint32_t* outShadowCount,
                                         float* outMinDepth = nullptr);
 
             ECS::EntityDatabase* m_entityDb = nullptr;

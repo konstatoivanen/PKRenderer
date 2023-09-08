@@ -74,15 +74,10 @@ float safePositiveRcp(float f) { return f <= 1e-12f ? 0.0 : 1.0 / f; }
 #define PK_DECLARE_WRITEONLY_BUFFER(ValueType, BufferName, Set) layout(std430, set = Set) writeonly buffer BufferName { ValueType BufferName##_Data[]; }
 #define PK_DECLARE_RESTRICTED_BUFFER(ValueType, BufferName, Set) layout(std430, set = Set) restrict buffer BufferName { ValueType BufferName##_Data[]; }
 #define PK_DECLARE_RESTRICTED_READONLY_BUFFER(ValueType, BufferName, Set) layout(std430, set = Set) restrict readonly buffer BufferName { ValueType BufferName##_Data[]; }
-
-#define PK_DECLARE_ATOMIC_VARIABLE(ValueType, BufferName, Set) layout(std430, set = Set) buffer BufferName { ValueType BufferName##_Data; }
-#define PK_DECLARE_ATOMIC_READONLY_VARIABLE(ValueType, BufferName, Set) layout(std430, set = Set) readonly buffer BufferName { ValueType BufferName##_Data; }
-#define PK_DECLARE_ATOMIC_WRITEONLY_VARIABLE(ValueType, BufferName, Set) layout(std430, set = Set) writeonly buffer BufferName { ValueType BufferName##_Data; }
-#define PK_DECLARE_ATOMIC_RESTRICTED_VARIABLE(ValueType, BufferName, Set) layout(std430, set = Set) restrict buffer BufferName { ValueType BufferName##_Data; }
-#define PK_DECLARE_ATOMIC_RESTRICTED_READONLY_VARIABLE(ValueType, BufferName, Set) layout(std430, set = Set) restrict readonly buffer BufferName { ValueType BufferName##_Data; }
+#define PK_DECLARE_VARIABLE(ValueType, BufferName, Set) layout(std430, set = Set) buffer BufferName { ValueType BufferName##_Data; }
 
 #define PK_BUFFER_DATA(BufferName, index) BufferName##_Data[index]
-#define PK_ATOMIC_DATA(BufferName) BufferName##_Data
+#define PK_VARIABLE_DATA(BufferName) BufferName##_Data
 
 // Ray tracing utilities
 #define PK_GET_RAY_HIT_POINT (gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT)

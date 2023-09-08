@@ -307,7 +307,7 @@ namespace PK::Rendering
         queues->Submit(QueueType::Graphics, &cmdgraphics);
 
         m_passFilmGrain.Compute(cmdcompute);
-        m_passLights.ComputeClusters(cmdcompute);
+        m_passLights.ComputeClusters(cmdcompute, resolution);
         m_histogram.Render(cmdcompute, m_bloom.GetTexture());
         m_depthOfField.ComputeAutoFocus(cmdcompute, resolution.y);
         m_passVolumeFog.ComputeDensity(cmdcompute, resolution);

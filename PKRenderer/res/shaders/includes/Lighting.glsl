@@ -1,6 +1,5 @@
 #pragma once
 #include SharedLights.glsl
-#include ClusterIndexing.glsl
 #include Encoding.glsl
 #include BRDF.glsl
 
@@ -90,6 +89,3 @@ Light GetLightDirect(const uint index, const float3 worldpos, const uint cascade
 }
 
 Light GetLight(uint index, in float3 worldpos, uint cascade) { return GetLightDirect(PK_BUFFER_DATA(pk_GlobalLightsList, index), worldpos, cascade); }
-
-LightTile GetLightTile(float2 uv, float viewDepth) { return GetLightTile(GetTileIndexUV(uv, viewDepth)); }
-LightTile GetLightTile(float3 clipuvw) { return GetLightTile(clipuvw.xy, ViewDepth(clipuvw.z)); }

@@ -22,16 +22,16 @@ struct Vector::Comparer<LightRenderableView*>
     int operator()(LightRenderableView*& a, LightRenderableView*& b)
     {
         auto shadowsA = (a->renderable->flags & RenderableFlags::CastShadows) != 0;
-        auto shadowsB = (a->renderable->flags & RenderableFlags::CastShadows) != 0;
+        auto shadowsB = (b->renderable->flags & RenderableFlags::CastShadows) != 0;
 
         if (shadowsA < shadowsB)
         {
-            return -1;
+            return 1;
         }
 
         if (shadowsA > shadowsB)
         {
-            return 1;
+            return -1;
         }
 
         if (a->light->type < b->light->type)
@@ -118,7 +118,7 @@ namespace PK::Rendering::Passes
         imageDescriptor.samplerType = SamplerType::Sampler3D;
         imageDescriptor.format = TextureFormat::R32UI;
         imageDescriptor.usage = TextureUsage::Storage | TextureUsage::Concurrent;
-        imageDescriptor.resolution = { GridSizeX, GridSizeY, GridSizeZ };
+        imageDescriptor.resolution = { config->InitialWidth / LightGridTileSizePx, config->InitialHeight / LightGridTileSizePx, LightGridSizeZ };
         imageDescriptor.sampler.filterMin = FilterMode::Point;
         imageDescriptor.sampler.filterMag = FilterMode::Point;
         imageDescriptor.sampler.wrap[0] = WrapMode::Clamp;
@@ -134,9 +134,13 @@ namespace PK::Rendering::Passes
             },
             1024, BufferUsage::PersistentStorage, "Lights");
 
-        m_lightMatricesBuffer = Buffer::Create(ElementType::Float4x4, 32, BufferUsage::PersistentStorage, "Lights.Matrices");
-        m_globalLightsList = Buffer::Create(ElementType::Int, ClusterCount * MaxLightsPerTile, BufferUsage::DefaultStorage, "Lights.List");
+        auto lightIndexCount = imageDescriptor.resolution.x *
+                               imageDescriptor.resolution.y *
+                               imageDescriptor.resolution.z *
+                               MaxLightsPerTile;
 
+        m_lightMatricesBuffer = Buffer::Create(ElementType::Float4x4, 32, BufferUsage::PersistentStorage, "Lights.Matrices");
+        m_globalLightsList = Buffer::Create(ElementType::Ushort, lightIndexCount, BufferUsage::DefaultStorage, "Lights.List");
         GraphicsAPI::SetBuffer(hash->pk_GlobalLightsList, m_globalLightsList.get());
         GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
     }
@@ -211,6 +215,24 @@ namespace PK::Rendering::Passes
 
             switch (view->light->type)
             {
+                case LightType::Directional:
+                {
+                    light.position = transform->rotation * PK_FLOAT3_FORWARD;
+                    Functions::GetShadowCascadeMatrices(worldToLocal, ivp, zsplits.data(), -view->light->radius, m_shadowmapTileSize, PK_SHADOW_CASCADE_COUNT, matricesView.data + matrixIndex, &light.radius);
+
+                    if (castShadows)
+                    {
+                        float minDepth = 0.0f;
+                        cullCascades.cascades = matricesView.data + matrixIndex;
+                        cullCascades.depthRange = light.radius;
+                        m_sequencer->Next(engineRoot, &cullCascades);
+                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, view->light->shadowBlur, cullCascades.depthRange, &shadowCount, &minDepth);
+                        // Regenerate cascades as the depth range might change based on culling
+                        Functions::GetShadowCascadeMatrices(worldToLocal, ivp, zsplits.data(), -view->light->radius + minDepth, m_shadowmapTileSize, PK_SHADOW_CASCADE_COUNT, matricesView.data + matrixIndex, &light.radius);
+                    }
+                }
+                break;
+
                 case LightType::Point:
                 {
                     if (castShadows)
@@ -219,7 +241,7 @@ namespace PK::Rendering::Passes
                         cullCube.aabb = view->bounds->worldAABB;
                         m_sequencer->Next(engineRoot, &cullCube);
                         auto shadowBlurAmount = 2.0f * glm::sin(view->light->shadowBlur * 0.5f * PK_FLOAT_HALF_PI);
-                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowCount, shadowBlurAmount, cullCube.depthRange);
+                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowBlurAmount, cullCube.depthRange, &shadowCount);
                     }
                 }
                 break;
@@ -235,25 +257,7 @@ namespace PK::Rendering::Passes
                         cullFrustum.matrix = matricesView[matrixIndex];
                         m_sequencer->Next(engineRoot, &cullFrustum);
                         auto shadowBlurAmount = view->light->shadowBlur * glm::sin(0.5f * view->light->angle * PK_FLOAT_DEG2RAD) / PK_FLOAT_INV_SQRT2;
-                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowCount, shadowBlurAmount, cullFrustum.depthRange);
-                    }
-                }
-                break;
-
-                case LightType::Directional:
-                {
-                    light.position = transform->rotation * PK_FLOAT3_FORWARD;
-                    Functions::GetShadowCascadeMatrices(worldToLocal, ivp, zsplits.data(), -view->light->radius, m_shadowmapTileSize, PK_SHADOW_CASCADE_COUNT, matricesView.data + matrixIndex, &light.radius);
-
-                    if (castShadows)
-                    {
-                        float minDepth = 0.0f;
-                        cullCascades.cascades = matricesView.data + matrixIndex;
-                        cullCascades.depthRange = light.radius;
-                        m_sequencer->Next(engineRoot, &cullCascades);
-                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowCount, view->light->shadowBlur, cullCascades.depthRange, &minDepth);
-                        // Regenerate cascades as the depth range might change based on culling
-                        Functions::GetShadowCascadeMatrices(worldToLocal, ivp, zsplits.data(), -view->light->radius + minDepth, m_shadowmapTileSize, PK_SHADOW_CASCADE_COUNT, matricesView.data + matrixIndex, &light.radius);
+                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowBlurAmount, cullFrustum.depthRange, &shadowCount);
                     }
                 }
                 break;
@@ -325,9 +329,30 @@ namespace PK::Rendering::Passes
         }
     }
 
-    void PassLights::ComputeClusters(CommandBuffer* cmd)
+    void PassLights::ComputeClusters(CommandBuffer* cmd, Math::uint3 resolution)
     {
-        cmd->DispatchWithCounter(m_computeLightAssignment, { GridSizeX , GridSizeY, GridSizeZ });
+        auto hash = HashCache::Get();
+
+        resolution.x /= LightGridTileSizePx;
+        resolution.y /= LightGridTileSizePx;
+        resolution.z = LightGridSizeZ;
+
+        auto lightIndexCount = resolution.x *
+                               resolution.y *
+                               resolution.z *
+                               MaxLightsPerTile;
+
+        if (m_globalLightsList->Validate(lightIndexCount))
+        {
+            GraphicsAPI::SetBuffer(hash->pk_GlobalLightsList, m_globalLightsList.get());
+        }
+
+        if (m_lightTiles->Validate(resolution))
+        {
+            GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
+        }
+
+        cmd->DispatchWithCounter(m_computeLightAssignment, m_lightTiles->GetResolution());
     }
 
     ShadowCascades PassLights::GetCascadeZSplits(float znear, float zfar) const
@@ -336,13 +361,13 @@ namespace PK::Rendering::Passes
         Functions::GetCascadeDepths(znear, zfar, m_cascadeLinearity, cascadeSplits.data(), 5);
 
         // Snap z ranges to tile indices to make shader branching more coherent
-        auto scale = GridSizeZ / glm::log2(zfar / znear);
-        auto bias = GridSizeZ * -log2(znear) / log2(zfar / znear);
+        auto scale = LightGridSizeZ / glm::log2(zfar / znear);
+        auto bias = LightGridSizeZ * -log2(znear) / log2(zfar / znear);
 
         for (auto i = 1; i < 4; ++i)
         {
             float zTile = round(log2(cascadeSplits[i]) * scale + bias);
-            cascadeSplits[i] = znear * pow(zfar / znear, zTile / GridSizeZ);
+            cascadeSplits[i] = znear * pow(zfar / znear, zTile / LightGridSizeZ);
         }
 
         return cascadeSplits;
@@ -351,9 +376,9 @@ namespace PK::Rendering::Passes
     uint32_t PassLights::BuildShadowBatch(VisibilityList* visibilityList,
         LightRenderableView* view, 
         uint32_t index, 
-        uint32_t& outShadowCount,
         float shadowBlurAmount, 
         float maxDepth, 
+        uint32_t* outShadowCount,
         float* outMinDepth)
     {
         if (visibilityList->count == 0)
@@ -376,8 +401,8 @@ namespace PK::Rendering::Passes
         auto& batch = m_shadowBatches.back();
 
         uint32_t minDepth = 0xFFFFFFFF;
-        uint32_t shadowmapIndex = outShadowCount;
-        outShadowCount += m_shadowmapTypeData[(int)view->light->type].TileCount;
+        uint32_t shadowmapIndex = *outShadowCount;
+        *outShadowCount += m_shadowmapTypeData[(int)view->light->type].TileCount;
 
         for (auto i = 0u; i < visibilityList->count; ++i)
         {

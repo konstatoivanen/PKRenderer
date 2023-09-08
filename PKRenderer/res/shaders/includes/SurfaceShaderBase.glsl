@@ -107,6 +107,20 @@ float3 GetIndirectLight_VXGI(const BRDFSurf surf,const float3 worldpos, const fl
     #define PK_META_BRDF_INDIRECT GetIndirectLight_Main
 #endif
 
+#if defined(PK_HEIGHTMAPS)
+    #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount) ParallaxOffset(tex2D(heightmap, varyings.vs_TEXCOORD0.xy).x, amount, normalize(baseVaryings.vs_TSVIEWDIRECTION));
+#else
+    #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount) 0.0f.xx 
+#endif
+
+#if defined(PK_NORMALMAPS)
+     #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormalTex(normalmap, baseVaryings.vs_TSROTATION, uv, amount)
+     #define PK_SURF_MESH_NORMAL normalize(baseVaryings.vs_TSROTATION[2])
+#else
+     #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) baseVaryings.vs_NORMAL
+     #define PK_SURF_MESH_NORMAL normalize(baseVaryings.vs_NORMAL)
+#endif
+
 struct SurfaceFragmentVaryings
 {
     float2 vs_TEXCOORD0;
@@ -160,28 +174,15 @@ struct SurfaceFragmentVaryings
 
 #elif defined(SHADER_STAGE_FRAGMENT)
 
-    #if defined(PK_HEIGHTMAPS)
-        #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount) ParallaxOffset(tex2D(heightmap, varyings.vs_TEXCOORD0.xy).x, amount, normalize(baseVaryings.vs_TSVIEWDIRECTION));
-    #else
-        #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount) 0.0f.xx 
-    #endif
-
-    #if defined(PK_NORMALMAPS)
-         #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormalTex(normalmap, baseVaryings.vs_TSROTATION, uv, amount)
-         #define PK_SURF_MESH_NORMAL normalize(baseVaryings.vs_TSROTATION[2])
-    #else
-         #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) baseVaryings.vs_NORMAL
-         #define PK_SURF_MESH_NORMAL normalize(baseVaryings.vs_NORMAL)
-    #endif
-
     // Use these to modify surface values in fragment stage
     void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData surf);
 
     in SurfaceFragmentVaryings baseVaryings;
     PK_META_DECLARE_SURFACE_OUTPUT
+
     void main()
     {
-        float4 value = 0.0f.xxxx;
+        float4 sv_output = 0.0f.xxxx;
         
         SurfaceData surf; 
         surf.worldpos = baseVaryings.vs_WORLDPOSITION;
@@ -197,78 +198,78 @@ struct SurfaceFragmentVaryings
         surf.subsurface_distortion = 0.0f;
         surf.subsurface_power = 1.0f;
         surf.subsurface_thickness = 0.0f;
+        
+        // Screen space pixel coord
+        int2 screencoord = int2(gl_FragCoord.xy);
 
-        #if defined(PK_META_PASS_GIVOXELIZE)
-            float3 voxelPos = GI_QuantizeWorldToVoxelSpace(surf.worldpos);
+    #if defined(PK_META_PASS_GIVOXELIZE)
+        float3 voxelPos = GI_QuantizeWorldToVoxelSpace(surf.worldpos);
 
-            if (!Test_WorldToClipUVW(voxelPos, surf.clipuvw) || GI_Test_VX_HasValue(surf.worldpos) || !GI_Test_VX_Normal(PK_SURF_MESH_NORMAL))                 
-            {                                           
-                return;                                 
-            }       
-            
-            surf.clipuvw = WorldToClipUVW(surf.worldpos);                      
-            surf.clipuvw.xy = ClampUVScreenBorder(surf.clipuvw.xy);             
-        #else
-            surf.clipuvw = float3(gl_FragCoord.xy * pk_ScreenParams.zw, gl_FragCoord.z);
-        #endif
+        if (!Test_WorldToClipUVW(voxelPos, surf.clipuvw) || GI_Test_VX_HasValue(surf.worldpos) || !GI_Test_VX_Normal(PK_SURF_MESH_NORMAL))                 
+        {                                           
+            return;                                 
+        }       
+        
+        surf.clipuvw = WorldToClipUVW(surf.worldpos);                      
+        surf.clipuvw.xy = ClampUVScreenBorder(surf.clipuvw.xy);          
+        screencoord = int2(surf.clipuvw.xy * pk_ScreenSize.xy);
+    #else
+        surf.clipuvw = float3(gl_FragCoord.xy * pk_ScreenParams.zw, gl_FragCoord.z);
+    #endif
 
         PK_SURFACE_FUNC_FRAG(baseVaryings, surf);
 
-        #if defined(PK_META_PASS_GBUFFER)
+    #if defined(PK_META_PASS_GBUFFER)
+        sv_output = EncodeGBufferWorldNR(surf.normal, surf.roughness);
+    #else
+        const float3 F0 = lerp(pk_DielectricSpecular.rgb, surf.albedo, surf.metallic);
+        const float reflectivity = pk_DielectricSpecular.r + surf.metallic * pk_DielectricSpecular.a;
+        surf.albedo *= 1.0f - reflectivity;
 
-            value = EncodeGBufferN(normalize(WorldToViewDir(surf.normal)), surf.roughness);
-
-        #else
-
-            #if !defined(PK_META_PASS_GIVOXELIZE)
-                // Shift invalid normals to view (not as effective as above method but it's alot cheaper than two matrix muls.
-                float shiftAmount = dot(surf.normal, surf.viewdir);
-                surf.normal = shiftAmount < 0.0f ? surf.normal + surf.viewdir * (-shiftAmount + 1e-5f) : surf.normal;
-                surf.roughness = max(surf.roughness, 0.002);
-            #endif
-
-            float3 F0 = lerp(pk_DielectricSpecular.rgb, surf.albedo, surf.metallic);
-            float reflectivity = pk_DielectricSpecular.r + surf.metallic * pk_DielectricSpecular.a;
-            surf.albedo *= 1.0f - reflectivity;
-            
-            #if defined(PK_SURF_TRANSPARENT)
-                surf.albedo *= surf.alpha;
-                surf.alpha = reflectivity + surf.alpha * (1.0f - reflectivity);
-            #endif
-
-            BRDFSurf brdf_surf = MakeBRDFSurf
-            (
-                surf.albedo, 
-                F0, 
-                surf.sheen, 
-                surf.normal, 
-                surf.viewdir, 
-                reflectivity, 
-                surf.roughness, 
-                surf.subsurface_distortion, 
-                surf.subsurface_power, 
-                surf.subsurface_thickness
-            );
-
-            value.rgb = PK_META_BRDF_INDIRECT(brdf_surf, surf.worldpos, surf.clipuvw);
-
-            #if !defined(PK_META_PASS_GIVOXELIZE)
-                value.rgb *= surf.occlusion;
-            #endif
-
-            LightTile tile = GetLightTile(surf.clipuvw);
-            for (uint i = tile.start; i < tile.end; ++i)
-            {
-                Light light = GetLight(i, surf.worldpos, tile.cascade);
-                value.rgb += PK_META_BRDF(brdf_surf, light.direction, light.color, light.shadow);
-            }
-
-            value.rgb += surf.emission;
-            value.a = surf.alpha; 
-
+        #if defined(PK_SURF_TRANSPARENT)
+        surf.albedo *= surf.alpha;
+        surf.alpha = reflectivity + surf.alpha * (1.0f - reflectivity);
         #endif
 
-        PK_META_STORE_SURFACE_OUTPUT(value, surf.worldpos);
+        #if !defined(PK_META_PASS_GIVOXELIZE)
+        // Shift invalid normals to view (not as effective as above method but it's alot cheaper than two matrix muls.
+        const float shiftAmount = dot(surf.normal, surf.viewdir);
+        surf.normal = shiftAmount < 0.0f ? surf.normal + surf.viewdir * (-shiftAmount + 1e-5f) : surf.normal;
+        surf.roughness = max(surf.roughness, 0.002);
+        #endif
+
+        BRDFSurf brdf_surf = MakeBRDFSurf
+        (
+            surf.albedo, 
+            F0, 
+            surf.sheen, 
+            surf.normal, 
+            surf.viewdir, 
+            reflectivity, 
+            surf.roughness, 
+            surf.subsurface_distortion, 
+            surf.subsurface_power, 
+            surf.subsurface_thickness
+        );
+
+        sv_output.rgb = PK_META_BRDF_INDIRECT(brdf_surf, surf.worldpos, surf.clipuvw);
+
+        #if !defined(PK_META_PASS_GIVOXELIZE)
+        sv_output.rgb *= surf.occlusion;
+        #endif
+
+        LightTile tile = GetLightTile_PX(screencoord, ViewDepth(surf.clipuvw.z));
+        for (uint i = tile.start; i < tile.end; ++i)
+        {
+            Light light = GetLight(i, surf.worldpos, tile.cascade);
+            sv_output.rgb += PK_META_BRDF(brdf_surf, light.direction, light.color, light.shadow);
+        }
+
+        sv_output.rgb += surf.emission;
+        sv_output.a = surf.alpha; 
+    #endif
+
+        PK_META_STORE_SURFACE_OUTPUT(sv_output, surf.worldpos);
     }
 
 #endif

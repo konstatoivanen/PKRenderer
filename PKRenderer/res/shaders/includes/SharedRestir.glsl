@@ -23,7 +23,7 @@ struct Reservoir { float3 position; float3 normal; float3 radiance; float target
     #define RESTIR_TEMPORAL_RADIUS int2(2, 4)
 #else
     #define RESTIR_TEXEL_BIAS 0.0f.xx
-    #define RESTIR_TEMPORAL_RADIUS int2(2, 2)
+    #define RESTIR_TEMPORAL_RADIUS int2(4, 4)
 #endif
 
 // Wellon Hash: https://nullprogram.com/blog/2018/07/31/
