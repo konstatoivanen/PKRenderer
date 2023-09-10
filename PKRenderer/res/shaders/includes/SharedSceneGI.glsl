@@ -4,6 +4,14 @@
 #include BlueNoise.glsl
 #include SHL1.glsl
 
+#ifndef PK_GI_LOAD_LVL
+    #define PK_GI_LOAD_LVL 0
+#endif
+
+#ifndef PK_GI_STORE_LVL
+    #define PK_GI_STORE_LVL 0
+#endif
+
 PK_DECLARE_CBUFFER(pk_GI_Parameters, PK_SET_SHADER)
 {
     float4 pk_GI_VolumeST;
@@ -15,12 +23,12 @@ PK_DECLARE_CBUFFER(pk_GI_Parameters, PK_SET_SHADER)
 };
 
 layout(rg32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_RayHits;
-layout(rg32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_ScreenDataWrite;
+layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedDiff;
+layout(rg32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedSpec;
 layout(r8ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_ScreenDataMipMask; 
 layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_GI_VolumeMaskWrite;
 layout(rgba16f, set = PK_SET_SHADER) uniform image3D pk_GI_VolumeWrite;
 PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataMips;
-PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 
 #define PK_GI_APPROX_ROUGH_SPEC 1
@@ -42,14 +50,11 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 #define PK_GI_SPEC_ACCUM_CURVE 0.66f
 #define PK_GI_SPEC_ACCUM_MIN 0.03f
 #define PK_GI_SPEC_ACCUM_MAX 1.0f
-#define PK_GI_DISK_FILTER_RADIUS 2.5f
+#define PK_GI_DISK_FILTER_RADIUS 3.0f
 #define PK_GI_AO_DIFF_POWER 0.125f
 #define PK_GI_AO_SPEC_POWER 0.05f
 #define PK_GI_MIN_VXHISTORY 32.0f
 #define PK_GI_DATA_LOAD_MIP(c, l, m) texelFetch(pk_GI_ScreenDataMips, int3(c, l), m).xy
-#define PK_GI_DATA_LOAD_CUR(c, l) imageLoad(pk_GI_ScreenDataWrite, int3(c, l)).xy
-#define PK_GI_DATA_LOAD(c, l) texelFetch(pk_GI_ScreenDataRead, int3(c, l), 0).xy
-#define PK_GI_DATA_STORE(c, l, d) imageStore(pk_GI_ScreenDataWrite, int3(c, l), uint4(d, 0,0))
 
 //----------STRUCTS----------//
 struct GIDiff { SH sh; float ao; float history; };
@@ -62,6 +67,8 @@ struct GIRayParams { float3 origin; float3 normal; float3 diffdir; float3 specdi
 #define pk_Zero_GISpec GISpec(0.0f.xxx, 0.0f, 0.0f)
 
 //----------UTILITIES----------//
+float GI_Alpha(const GIDiff a) { return max(1.0f / (a.history + 1.0f), PK_GI_MIN_ACCUM); }
+float GI_Alpha(const GISpec a) { return max(1.0f / (a.history + 1.0f), PK_GI_MIN_ACCUM); }
 GIDiff GI_Sum(const GIDiff a, const GIDiff b, const float w) { return GIDiff(SH_Add(a.sh, b.sh, w), a.ao + b.ao * w, a.history + b.history * w); }
 GISpec GI_Sum(const GISpec a, const GISpec b, const float w) { return GISpec(a.radiance + b.radiance * w, a.ao + b.ao * w, a.history + b.history * w); }
 GIDiff GI_Sum_NoHistory(const GIDiff a, const GIDiff b, const float w) { return GIDiff(SH_Add(a.sh, b.sh, w), a.ao + b.ao * w, a.history); }
@@ -163,10 +170,10 @@ GISpec GI_Unpack_Spec(const uint2 p)
 //----------LOAD FUNCTIONS----------//
 uint4 GI_Load_Packed_Mip_Diff(const int2 coord, const int mip) { return uint4(PK_GI_DATA_LOAD_MIP(coord, PK_GI_LVL_DIFF0, mip), PK_GI_DATA_LOAD_MIP(coord, PK_GI_LVL_DIFF1, mip)); }
 uint2 GI_Load_Packed_Mip_Spec(const int2 coord, const int mip) { return PK_GI_DATA_LOAD_MIP(coord, PK_GI_LVL_SPEC, mip); }
-uint4 GI_Load_Packed_Cur_Diff(const int2 coord) { return uint4(PK_GI_DATA_LOAD_CUR(coord, PK_GI_LVL_DIFF0), PK_GI_DATA_LOAD_CUR(coord, PK_GI_LVL_DIFF1)); }
-uint2 GI_Load_Packed_Cur_Spec(const int2 coord) { return PK_GI_DATA_LOAD_CUR(coord, PK_GI_LVL_SPEC); }
-uint4 GI_Load_Packed_Diff(const int2 coord) { return uint4(PK_GI_DATA_LOAD(coord, PK_GI_LVL_DIFF0), PK_GI_DATA_LOAD(coord, PK_GI_LVL_DIFF1)); }
-uint2 GI_Load_Packed_Spec(const int2 coord) { return PK_GI_DATA_LOAD(coord, PK_GI_LVL_SPEC); }
+uint4 GI_Load_Packed_Cur_Diff(const int2 coord) { return imageLoad(pk_GI_PackedDiff, int3(coord, PK_GI_STORE_LVL)); }
+uint2 GI_Load_Packed_Cur_Spec(const int2 coord) { return imageLoad(pk_GI_PackedSpec, int3(coord, PK_GI_STORE_LVL)).xy; }
+uint4 GI_Load_Packed_Diff(const int2 coord) { return imageLoad(pk_GI_PackedDiff, int3(coord, PK_GI_LOAD_LVL)); }
+uint2 GI_Load_Packed_Spec(const int2 coord) { return imageLoad(pk_GI_PackedSpec, int3(coord, PK_GI_LOAD_LVL)).xy; }
 GIDiff GI_Load_Diff(const int2 coord) { return GI_Unpack_Diff(GI_Load_Packed_Diff(coord)); }
 GISpec GI_Load_Spec(const int2 coord) { return GI_Unpack_Spec(GI_Load_Packed_Spec(coord)); }
 GIDiff GI_Load_Cur_Diff(const int2 coord) { return GI_Unpack_Diff(GI_Load_Packed_Cur_Diff(coord)); }
@@ -189,8 +196,8 @@ float4 GI_Load_Voxel(const float3 worldpos, float lvl) { return tex2DLod(pk_GI_V
 float4 GI_Load_Voxel_Discrete(const float3 worldpos, float lvl) { return tex2DLod(pk_GI_VolumeRead, GI_WorldToVoxelUVWDiscrete(worldpos), lvl); }
 
 //----------STORE FUNCTIONS----------//
-void GI_Store_Packed_Diff(const int2 coord, const uint4 p) { PK_GI_DATA_STORE(coord, PK_GI_LVL_DIFF0, p.xy); PK_GI_DATA_STORE(coord, PK_GI_LVL_DIFF1, p.zw); }
-void GI_Store_Packed_Spec(const int2 coord, const uint2 p) { PK_GI_DATA_STORE(coord, PK_GI_LVL_SPEC, p); }
+void GI_Store_Packed_Diff(const int2 coord, const uint4 p) { imageStore(pk_GI_PackedDiff, int3(coord, PK_GI_STORE_LVL), p); }
+void GI_Store_Packed_Spec(const int2 coord, const uint2 p) { imageStore(pk_GI_PackedSpec, int3(coord, PK_GI_STORE_LVL), p.xyxy); }
 void GI_Store_Diff(const int2 coord, const GIDiff u) { GI_Store_Packed_Diff(coord, GI_Pack_Diff(u)); }
 void GI_Store_Spec(const int2 coord, const GISpec u) { GI_Store_Packed_Spec(coord, GI_Pack_Spec(u)); }
 

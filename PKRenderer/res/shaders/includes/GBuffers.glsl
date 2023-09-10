@@ -47,6 +47,7 @@ float SampleViewDepth(const int2 coord) { return ViewDepth(texelFetch(pk_ScreenD
 
 float SamplePreviousViewDepth(const float2 uv) { return ViewDepth(tex2D(pk_ScreenDepthPrevious, uv).x); }
 float SamplePreviousViewDepth(const int2 coord) { return ViewDepth(texelFetch(pk_ScreenDepthPrevious, coord, 0).x); }
+#define GatherPreviousViewDepths(uv) ViewDepth(textureGather(pk_ScreenDepthPrevious, uv, 0))
 #define SamplePreviousViewDepthOffsets(uv, offsets) ViewDepth(textureGatherOffsets(pk_ScreenDepthPrevious, uv, offsets))
 
 float SampleRoughness(const float2 uv) { return tex2D(pk_ScreenNormalsCurrent, uv).y; }

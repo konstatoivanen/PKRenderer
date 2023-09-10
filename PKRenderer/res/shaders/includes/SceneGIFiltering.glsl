@@ -80,7 +80,7 @@ float2 GI_GetDiskFilterRadiusAndScale(const float depth, const float variance, c
     float scale = 0.2f + 0.8f * smoothstep(0.0f, 0.3f, pow(ao, 0.125f));
     scale = lerp(0.2f + scale * 0.8f, scale, near_field);
     scale *= 0.05f + 0.95f * variance;
-    scale = lerp(scale, 0.5f + scale * 0.5f, 1.0f / history);
+    scale = lerp(scale, 0.75f + scale * 0.25f, 1.0f / history);
 
     float radius = PK_GI_DISK_FILTER_RADIUS * (0.25f + 0.75f * near_field);
     radius *= sqrt(depth / pk_ProjectionParams.y);
@@ -122,14 +122,15 @@ const float name[2][2] =                                            \
     for (int xx = 0; xx <= 1; ++xx)                                                                                                                                     \
     {                                                                                                                                                                   \
         const int2 xy = SFLT_COORD + int2(xx, yy);                                                                                                                      \
-        const float  s_depth = SamplePreviousViewDepth(xy);                                                                                                             \
+        const float s_depth = SamplePreviousViewDepth(xy);                                                                                                              \
         const float4 s_nr = SamplePreviousViewNormalRoughness(xy);                                                                                                      \
                                                                                                                                                                         \
         const float w_b = bilinearWeights[yy][xx];                                                                                                                      \
         const float w_n = pow5(dot(SFLT_NORMAL, s_nr.xyz));                                                                                                             \
         const float w_r = exp(-abs(s_nr.w * roughnessParams.x + roughnessParams.y));                                                                                    \
         const float w_s = float(Test_InScreen(xy) && Test_DepthReproject(SFLT_DEPTH, s_depth, SFLT_DBIAS));                                                             \
-        float w_diff = w_s * w_b * w_n;                                                                                                                                 \
+        const float w_z = exp(-abs(SFLT_DEPTH - s_depth));                                                                                                              \
+        float w_diff = w_s * w_b * w_n * w_z;                                                                                                                           \
         float w_spec = w_s * w_b * w_n * w_r;                                                                                                                           \
         w_diff = lerp(0.0f, w_diff, !Test_NaN_EPS6(w_diff) && w_n > 0.05f);                                                                                             \
         w_spec = lerp(0.0f, w_spec, !Test_NaN_EPS6(w_spec));                                                                                                            \

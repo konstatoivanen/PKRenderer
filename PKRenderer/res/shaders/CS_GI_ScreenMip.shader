@@ -1,6 +1,10 @@
 #version 460
 #extension GL_EXT_shader_atomic_float : enable
 #pragma PROGRAM_COMPUTE
+
+#define PK_GI_LOAD_LVL 0
+#define PK_GI_STORE_LVL 0
+
 #include includes/Common.glsl
 #include includes/SharedSceneGI.glsl
 #include includes/CTASWizzling.glsl

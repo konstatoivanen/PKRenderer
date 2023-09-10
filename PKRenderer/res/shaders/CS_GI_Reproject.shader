@@ -1,5 +1,9 @@
 #version 460
 #pragma PROGRAM_COMPUTE
+
+#define PK_GI_LOAD_LVL 1
+#define PK_GI_STORE_LVL 0
+
 #include includes/SceneGIFiltering.glsl
 
 #multi_compile _ PK_GI_SPEC_VIRT_REPROJECT
@@ -9,7 +13,7 @@ void WriteMipMask(const int2 coord, const GIDiff diff, const GISpec spec)
     const int2 base = ((coord + 8) >> 4) - 1;
     
     [[branch]]
-    if (diff.history < 4.0f || spec.history < 4.0f)
+    if (diff.history < 4 || spec.history < 4)
     {
         imageStore(pk_GI_ScreenDataMipMask, base + int2(0, 0), uint4(1u));
         imageStore(pk_GI_ScreenDataMipMask, base + int2(1, 0), uint4(1u));

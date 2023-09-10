@@ -12,9 +12,6 @@ namespace PK::Rendering::Passes
     using namespace Structs;
     using namespace Objects;
 
-    constexpr static TextureViewRange DATA_RANGE0 = { 0,0,0,3 };
-    constexpr static TextureViewRange DATA_RANGE1 = { 0,3,0,3 };
-
     uint3 GetCheckerboardResolution(const uint3& resolution, bool halfRes)
     {
         return { resolution.x / (halfRes ? 2 : 1), resolution.y, resolution.z };
@@ -61,10 +58,13 @@ namespace PK::Rendering::Passes
         descr.sampler.filterMin = FilterMode::Point;
         descr.sampler.filterMag = FilterMode::Point;
         descr.usage = TextureUsage::Sample | TextureUsage::Storage;
-        descr.format = TextureFormat::RG32UI;
-        descr.layers = 6;
+        descr.format = TextureFormat::RGBA32UI;
+        descr.layers = 3;
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1 };
-        m_screenData = Texture::Create(descr, "GI.ScreenData");
+        m_packedDiff = Texture::Create(descr, "GI.PackedDiff");
+
+        descr.format = TextureFormat::RG32UI;
+        m_packedSpec = Texture::Create(descr, "GI.PackedSpec");
 
         descr.layers = 3u;
         descr.levels = 4u;
@@ -86,7 +86,7 @@ namespace PK::Rendering::Passes
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1u };
         descr.resolution = GetCheckerboardResolution(descr.resolution, m_useCheckerboardTrace);
         m_rayhits = Texture::Create(descr, "GI.RayHits");
-        
+
         descr.samplerType = SamplerType::Sampler2DArray;
         descr.layers = 5;
         descr.format = TextureFormat::RGBA32UI;
@@ -134,7 +134,8 @@ namespace PK::Rendering::Passes
             GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Compute),
             m_rayTraceGatherGI);
 
-        m_screenData->Validate(resolution);
+        m_packedDiff->Validate(resolution);
+        m_packedSpec->Validate(resolution);
         m_rayhits->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
         m_screenDataMips->Validate({ resolution.x / 2u, resolution.y / 2u, resolution.z });
         m_screenDataMipMask->Validate({ resolution.x >> 4u, resolution.y >> 4u, resolution.z });
@@ -144,6 +145,8 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataMips, m_screenDataMips.get());
         GraphicsAPI::SetImage(hash->pk_GI_ScreenDataMipMask, m_screenDataMipMask.get());
         GraphicsAPI::SetImage(hash->pk_Reservoirs, m_reservoirs.get());
+        GraphicsAPI::SetImage(hash->pk_GI_PackedDiff, m_packedDiff.get());
+        GraphicsAPI::SetImage(hash->pk_GI_PackedSpec, m_packedSpec.get());
 
         m_rasterAxis = m_frameIndex % 3;
         auto checkerboardIndex = m_frameIndex % 4;
@@ -179,7 +182,7 @@ namespace PK::Rendering::Passes
         cmd->BeginDebugScope("SceneGI.Preprocess", PK_COLOR_GREEN);
 
         auto hash = HashCache::Get();
-        auto resolution = m_screenData->GetResolution();
+        auto resolution = m_packedDiff->GetResolution();
         auto volres = m_voxels->GetResolution();
 
         uint4 viewports[3] =
@@ -190,8 +193,6 @@ namespace PK::Rendering::Passes
         };
 
         // Reproject
-        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), DATA_RANGE1);
-        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), DATA_RANGE0);
         cmd->Dispatch(m_computeReproject, { resolution.x, resolution.y, 1u });
 
         // Voxelize raster
@@ -218,36 +219,22 @@ namespace PK::Rendering::Passes
     {
         auto hash = HashCache::Get();
 
-        auto resolution = m_screenData->GetResolution();
+        auto resolution = m_packedDiff->GetResolution();
         uint3 dimension = { resolution.x, resolution.y, 1u };
 
         cmd->BeginDebugScope("SceneGI.Filter", PK_COLOR_GREEN);
 
-        // Shade hits
-        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), DATA_RANGE1);
         cmd->Dispatch(m_computeShadeHits, GetCheckerboardResolution(dimension, m_useCheckerboardTrace));
-
-        // Accumulate
-        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), DATA_RANGE1);
-        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), DATA_RANGE0);
         cmd->Dispatch(m_computeAccumulate, GetCheckerboardResolution(dimension, m_useCheckerboardTrace));
 
         // Screen mip
-        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), DATA_RANGE0);
         GraphicsAPI::SetImage(hash->_DestinationMip1, m_screenDataMips.get(), { 0, 0, 1, 3 });
         GraphicsAPI::SetImage(hash->_DestinationMip2, m_screenDataMips.get(), { 1, 0, 1, 3 });
         GraphicsAPI::SetImage(hash->_DestinationMip3, m_screenDataMips.get(), { 2, 0, 1, 3 });
         GraphicsAPI::SetImage(hash->_DestinationMip4, m_screenDataMips.get(), { 3, 0, 1, 3 });
         cmd->Dispatch(m_computeScreenMip, 0, m_screenDataMips->GetResolution());
-
-        // History fill
         cmd->Dispatch(m_computeHistoryFill, 0, dimension);
-
-        // Disk filter
-        GraphicsAPI::SetImage(hash->pk_GI_ScreenDataWrite, m_screenData.get(), DATA_RANGE1);
         cmd->Dispatch(m_computeDiskFilter, 0, dimension);
-
-        GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataRead, m_screenData.get(), DATA_RANGE1);
         cmd->EndDebugScope();
     }
 

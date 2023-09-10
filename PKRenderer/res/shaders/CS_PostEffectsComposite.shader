@@ -22,6 +22,7 @@
 
 #define PK_DEBUG_MODE PK_DEBUG_MODE_GI_DIFF
 #define PK_DEBUG_HALFSCREEN 1
+#define PK_DEBUG_ZOOM 0
 
 #if PK_DEBUG_MODE != PK_DEBUG_MODE_NONE
 #include includes/GBuffers.glsl
@@ -38,6 +39,7 @@ void main()
     int2 size = imageSize(_MainTex).xy;
 
     float2 uv = float2(coord + 0.5f.xx) / float2(size);
+
     float3 color = imageLoad(_MainTex, coord).rgb;
     color = max(0.0f.xxx, color);
 
@@ -74,6 +76,10 @@ void main()
     if (uv.x > 0.5)
     #endif
     {
+        #if PK_DEBUG_ZOOM == 1
+        uv = (uv - 0.5f) * 0.05f + 0.5f;
+        #endif
+
         float4 nr = SampleWorldNormalRoughness(uv);
         float3 normal = nr.xyz;
         float roughness = nr.w;

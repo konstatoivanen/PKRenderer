@@ -11,8 +11,8 @@ struct Reservoir { float3 position; float3 normal; float3 radiance; float target
 #define RESTIR_LAYER_HIT 4
 #define RESITR_NEARFIELD 0.05f
 #define RESTIR_NORMAL_THRESHOLD 0.6f
+#define RESTIR_SAMPLES_TEMPORAL 3
 #define RESTIR_SAMPLES_SPATIAL 6
-#define RESTIR_SAMPLES_TEMPORAL 2
 #define RESTIR_MAX_M 20
 #define RESTIR_SEED_STRIDE (RESTIR_SAMPLES_SPATIAL + 1)
 
@@ -20,7 +20,7 @@ struct Reservoir { float3 position; float3 normal; float3 radiance; float target
     // Approximate bias due to checkerboard pattern
     // @TODO calculate this correctly
     #define RESTIR_TEXEL_BIAS float2(0.2f, 0.07f)
-    #define RESTIR_TEMPORAL_RADIUS int2(2, 4)
+    #define RESTIR_TEMPORAL_RADIUS int2(3, 6)
 #else
     #define RESTIR_TEXEL_BIAS 0.0f.xx
     #define RESTIR_TEMPORAL_RADIUS int2(4, 4)
@@ -49,15 +49,15 @@ int2 ReSTIR_PermutationSampling(int2 coord, bool mask)
     return mask ? ((coord + offset) ^ 3) - offset : coord;
 }
 
-int2 ReSTIR_GetTemporalResamplingCoord(const int2 coord, int hash, bool usePermutationSampling)
+int2 ReSTIR_GetTemporalResamplingCoord(const int2 coord, int hash, bool usePermutationSampling, bool isFallBack)
 {
     hash &= 7;
     const int m2 = hash >> 1 & 0x01;
     const int m4 = 1 - (hash >> 2 & 0x01);
     const int t = -1 + 2 * (hash & 0x01);
     const int2 offset = int2(t, t * (1 - 2 * m2)) * int2(m4 | m2, m4 | (1 - m2)) * RESTIR_TEMPORAL_RADIUS;
-
-    return ReSTIR_PermutationSampling(coord + offset, usePermutationSampling); 
+    const int2 scoord = ReSTIR_PermutationSampling(coord + offset, usePermutationSampling);
+    return isFallBack ? coord : scoord;
 }
 
 int2 ReSTIR_GetSpatialResamplingCoord(const int2 coord, uint hash)

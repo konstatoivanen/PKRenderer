@@ -6,6 +6,9 @@
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE
 #multi_compile _ PK_GI_RESTIR
 
+#define PK_GI_LOAD_LVL 2
+#define PK_GI_STORE_LVL 0
+
 #include includes/GBuffers.glsl
 #include includes/SharedSceneGI.glsl
 #include includes/SharedReSTIR.glsl
@@ -14,11 +17,6 @@
 #define BOIL_FLT_MIN_LANE_COUNT 32
 shared float s_weights[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
 shared uint s_count[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
-
-//Reservoir ReSTIR_Load_HitAsReservoir(const int2 coord, const float3 origin)
-//{
-//    return ReSTIR_Unpack_Hit(GI_Load_Packed_Diff(coord), origin);
-//}
 
 bool ReSTIR_BoilingFilter(uint2 LocalIndex, float filterStrength, float reservoirWeight)
 {
@@ -79,7 +77,7 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
 
         for (uint i = 0u; i < RESTIR_SAMPLES_TEMPORAL; ++i)
         {
-            const int2 xy = ReSTIR_GetTemporalResamplingCoord(coordPrev, int(hash + i), i == 0);
+            const int2 xy = ReSTIR_GetTemporalResamplingCoord(coordPrev, int(hash + i), i == 0, i == 2);
             const int2 xyFull = GI_ExpandCheckerboardCoord(xy, 1u);
             const float s_depth = SamplePreviousViewDepth(xyFull);
             const float3 s_normal = SamplePreviousWorldNormal(xyFull);
@@ -170,22 +168,21 @@ void main()
     // Diffuse 
     {
         const float3 origin = SampleWorldPosition(coord, int2(pk_ScreenSize.xy), depth);
-        const Reservoir initial = ReSTIR_Load_HitAsReservoir(baseCoord, origin);
-        const float sampledist = distance(origin, initial.position);
-        const float3 sampledir = (initial.position - origin) * safePositiveRcp(sampledist);
+        Reservoir reservoir = ReSTIR_Load_HitAsReservoir(baseCoord, origin);
+        const float4 samplevec = normalizeLength(reservoir.position - origin);
 
         GIDiff current;
-        current.sh = SH_FromRadiance(initial.radiance, sampledir);
-        current.ao = saturate(sampledist / PK_GI_RAY_MAX_DISTANCE);
+        current.sh = SH_FromRadiance(reservoir.radiance, samplevec.xyz);
+        current.ao = saturate(samplevec.w / PK_GI_RAY_MAX_DISTANCE);
 
         // ReSTIR
         #if defined(PK_GI_RESTIR)
-        ReSTIR_ResampleSpatioTemporal(baseCoord, coord, depth, origin, initial, current.sh);
+        ReSTIR_ResampleSpatioTemporal(baseCoord, coord, depth, origin, reservoir, current.sh);
         #endif
 
         GIDiff history = GI_Load_Cur_Diff(coord);
 
-        const float alpha = max(1.0f / (history.history + 1.0f), PK_GI_MIN_ACCUM);
+        const float alpha = GI_Alpha(history);
         const float maxLuma = GI_Luminance(history) + (PK_GI_MAX_LUMA_GAIN / (1.0f - alpha));
         current = GI_ClampLuma(current, maxLuma);
         
@@ -203,7 +200,7 @@ void main()
         GISpec history = GI_Load_Cur_Spec(coord);
         GISpec current = GI_Load_Spec(baseCoord);
 
-        const float alpha = max(1.0f / (history.history + 1.0f), PK_GI_MIN_ACCUM);
+        const float alpha = GI_Alpha(history);
         const float maxLuma = GI_Luminance(history) + (PK_GI_MAX_LUMA_GAIN / (1.0f - alpha));
         current = GI_ClampLuma(current, maxLuma);
     

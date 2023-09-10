@@ -3,6 +3,9 @@
 
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE
 
+#define PK_GI_LOAD_LVL 2
+#define PK_GI_STORE_LVL 2
+
 #include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl
 #include includes/SharedSceneGI.glsl
