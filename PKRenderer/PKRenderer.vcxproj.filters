@@ -2046,6 +2046,7 @@
     <None Include="res\shaders\SH_VS_Gizmos.shader" />
     <None Include="res\shaders\includes\SceneGIFiltering.glsl" />
     <None Include="res\shaders\includes\SharedReSTIR.glsl" />
+    <None Include="res\shaders\includes\MortonOrder.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

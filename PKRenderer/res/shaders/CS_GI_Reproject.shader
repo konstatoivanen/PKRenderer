@@ -13,7 +13,7 @@ void WriteMipMask(const int2 coord, const GIDiff diff, const GISpec spec)
     const int2 base = ((coord + 8) >> 4) - 1;
     
     [[branch]]
-    if (diff.history < 4 || spec.history < 4)
+    if (diff.history < 16 || spec.history < 16)
     {
         imageStore(pk_GI_ScreenDataMipMask, base + int2(0, 0), uint4(1u));
         imageStore(pk_GI_ScreenDataMipMask, base + int2(1, 0), uint4(1u));

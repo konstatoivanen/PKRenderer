@@ -1,7 +1,7 @@
 #pragma once
 #include Common.glsl
 #include Encoding.glsl
-#include CTASwizzling.glsl
+#include MortonOrder.glsl
 
 layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_Reservoirs;
 struct Reservoir { float3 position; float3 normal; float3 radiance; float targetPdf; float weightSum; uint M;};
@@ -20,10 +20,10 @@ struct Reservoir { float3 position; float3 normal; float3 radiance; float target
     // Approximate bias due to checkerboard pattern
     // @TODO calculate this correctly
     #define RESTIR_TEXEL_BIAS float2(0.2f, 0.07f)
-    #define RESTIR_TEMPORAL_RADIUS int2(3, 6)
+    #define RESTIR_TEMPORAL_RADIUS int2(1, 2)
 #else
     #define RESTIR_TEXEL_BIAS 0.0f.xx
-    #define RESTIR_TEMPORAL_RADIUS int2(4, 4)
+    #define RESTIR_TEMPORAL_RADIUS int2(1, 1)
 #endif
 
 // Wellon Hash: https://nullprogram.com/blog/2018/07/31/
@@ -49,41 +49,45 @@ int2 ReSTIR_PermutationSampling(int2 coord, bool mask)
     return mask ? ((coord + offset) ^ 3) - offset : coord;
 }
 
-int2 ReSTIR_GetTemporalResamplingCoord(const int2 coord, int hash, bool usePermutationSampling, bool isFallBack)
+int2 ReSTIR_GetTemporalResamplingCoord(const int2 coord, int scale, int hash, bool permute, bool isFallBack)
 {
     hash &= 7;
     const int m2 = hash >> 1 & 0x01;
     const int m4 = 1 - (hash >> 2 & 0x01);
     const int t = -1 + 2 * (hash & 0x01);
-    const int2 offset = int2(t, t * (1 - 2 * m2)) * int2(m4 | m2, m4 | (1 - m2)) * RESTIR_TEMPORAL_RADIUS;
-    const int2 scoord = ReSTIR_PermutationSampling(coord + offset, usePermutationSampling);
+    const int2 offset = int2(t, t * (1 - 2 * m2)) * int2(m4 | m2, m4 | (1 - m2)) * RESTIR_TEMPORAL_RADIUS * scale;
+    const int2 scoord = ReSTIR_PermutationSampling(coord + offset, permute);
     return isFallBack ? coord : scoord;
 }
 
-int2 ReSTIR_GetSpatialResamplingCoord(const int2 coord, uint hash)
-{
-    return coord + int2((hash & 0x0000001F) - 16, ((hash & 0x00001F00) >> 8) - 16); 
+int2 ReSTIR_GetSpatialResamplingCoord(const int2 coord, int scale, uint hash) 
+{ 
+    const uint w = 1u << max(2u, uint(scale));
+    const uint m = w - 1u;
+    return coord + int2(hash & m, (hash >> 8u) & m) - int2(w / 2); 
 }
 
-float ReSTIR_GetNearField(const float depth, const float3 origin, const Reservoir r)
+bool ReSTIR_NearFieldReject(const float depth, const float3 origin, const Reservoir r, uint hash)
 {
+    const float random = ReSTIR_ToUnorm(hash);
     const float range = RESITR_NEARFIELD * depth;
     const float3 vec = origin - r.position;
-    return saturate(dot(vec, vec) / pow2(range));
+    return (dot(vec, vec) / pow2(range)) < random;
 }
 
-float ReSTIR_GetSampleWeight(const Reservoir r) { return safePositiveRcp(r.targetPdf) * (r.weightSum / max(1, r.M)); }
 float ReSTIR_GetTargetPdf(const Reservoir r) { return dot(pk_Luminance.xyz, r.radiance); }
+float ReSTIR_GetSampleWeight(const Reservoir r, const float3 n, const float3 d) 
+{ 
+    return safePositiveRcp(r.targetPdf) * (r.weightSum / max(1, r.M)) * dot(n, d) * PK_INV_PI; 
+}
 
 float ReSTIR_GetJacobian(const float3 posCenter, const float3 posSample, const Reservoir r)
 {
-    const float3 toCenter = posCenter - r.position;
-    const float3 toSample = posSample - r.position;
-    const float distCenter = length(toCenter);
-    const float distSample = length(toSample);
-    const float cosCenter = saturate(dot(r.normal, toCenter / distCenter));
-    const float cosSample = saturate(dot(r.normal, toSample / distSample));
-    const float jacobian = (cosCenter * pow2(distCenter)) / (cosSample * pow2(distSample));
+    const float4 centervec = normalizeLength(posCenter - r.position);
+    const float4 samplevec = normalizeLength(posSample - r.position);
+    const float cosCenter = saturate(dot(r.normal, centervec.xyz));
+    const float cosSample = saturate(dot(r.normal, samplevec.xyz));
+    const float jacobian = (cosCenter * pow2(centervec.w)) / (cosSample * pow2(samplevec.w));
     return isinf(jacobian) || isnan(jacobian) ? 0.0f : jacobian;
 }
 
@@ -167,10 +171,7 @@ uint4 ReSTIR_Pack_Hit(const float3 direction, const float hitDist, const float3 
     return packed;
 }
 
-void ReSTIR_Store_Hit(const int2 coord, uint4 packed)
-{
-    imageStore(pk_Reservoirs, int3(coord, RESTIR_LAYER_HIT), packed);
-}
+void ReSTIR_Store_Hit(const int2 coord, uint4 packed) { imageStore(pk_Reservoirs, int3(coord, RESTIR_LAYER_HIT), packed); }
 
 Reservoir ReSTIR_Load_HitAsReservoir(const int2 coord, const float3 origin)
 {

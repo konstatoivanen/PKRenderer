@@ -18,7 +18,8 @@ void main()
     const GISpec accumSpec = GI_Unpack_Spec(packedSpec);
     const float historyDiff = accumDiff.history;
     const float historySpec = accumSpec.history;
-    const float level = min(3.0f - 1e-4f, 4.0f - min(historyDiff, historySpec));
+    const float normHist = min(historyDiff, historySpec) / 16.0f;
+    const float level = min(3.0f - 1e-4f, 4.0f - 4.0f * normHist);
 
     [[branch]]
     if (level > 0.0f)
@@ -30,17 +31,17 @@ void main()
         diff.history = historyDiff;
         spec.history = historySpec;
         float wSum = 0.0f;
-
+    
         GI_SFLT_HISTORY_MIP(coord, level, normalRoughness.xyz, depth, wSum, diff, spec)
-
+    
         [[branch]]
-        if (int(historyDiff) <= 4 && !Test_NaN_EPS6(wSum))
+        if (int(historyDiff) <= 16 && !Test_NaN_EPS6(wSum))
         {
             packedDiff = GI_Pack_Diff(GI_Mul_NoHistory(diff, 1.0f / wSum));
         }
-
+    
         [[branch]]
-        if (int(historySpec) <= 4 && !Test_NaN_EPS6(wSum))
+        if (int(historySpec) <= 16 && !Test_NaN_EPS6(wSum))
         {
             spec = GI_Mul_NoHistory(spec, 1.0f / wSum);
             // Dont use history fill for smooth surfaces.
