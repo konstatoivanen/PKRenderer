@@ -52,7 +52,7 @@ void main()
         packedDiff = ReSTIR_Pack_Hit
         (
             params.diffdir,
-            hits.diff.isMiss ? PK_GI_RAY_MAX_DISTANCE : hits.diff.dist,
+            hits.diff.isMiss ? PK_GI_RAY_TMAX : hits.diff.dist,
             params.normal,
             hits.diffNormal,
             SampleRadiance(params.origin, params.diffdir, hits.diff)
@@ -66,7 +66,7 @@ void main()
             GISpec spec = pk_Zero_GISpec;
             spec.history = PK_GI_MAX_HISTORY;
             spec.radiance = SampleRadiance(params.origin, params.specdir, hits.spec);
-            spec.ao = hits.spec.isMiss ? 1.0f : saturate(hits.spec.dist / PK_GI_RAY_MAX_DISTANCE);
+            spec.ao = hits.spec.isMiss ? 1.0f : saturate(hits.spec.dist / PK_GI_RAY_TMAX);
             packedSpec = GI_Pack_Spec(spec);
         }
     }

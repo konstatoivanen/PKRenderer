@@ -37,9 +37,7 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 #define PK_GI_LVL_DIFF1 1
 #define PK_GI_LVL_SPEC 2
 #define PK_GI_VOXEL_MIP_COUNT 7
-#define PK_GI_SCREEN_MAX_MIP 4
-#define PK_GI_RAY_MIN_DISTANCE 0.005f
-#define PK_GI_RAY_MAX_DISTANCE 100.0f
+#define PK_GI_RAY_TMAX 100.0f
 #define PK_GI_RAY_CONE_SIZE 0.25f
 #define PK_GI_MIN_ACCUM 0.05f
 #define PK_GI_MAX_LUMA_GAIN 0.5f
@@ -62,7 +60,6 @@ struct GISpec { float3 radiance; float ao; float history; };
 struct GIRayHit { float dist; bool isMiss; bool isScreen; };
 struct GIRayHits { GIRayHit diff; GIRayHit spec; uint diffNormal; };
 struct GIRayParams { float3 origin; float3 normal; float3 diffdir; float3 specdir; float roughness; };
-
 #define pk_Zero_GIDiff GIDiff(pk_ZeroSH, 0.0f, 0.0f)
 #define pk_Zero_GISpec GISpec(0.0f.xxx, 0.0f, 0.0f)
 
@@ -75,24 +72,17 @@ GIDiff GI_Sum_NoHistory(const GIDiff a, const GIDiff b, const float w) { return 
 GISpec GI_Sum_NoHistory(const GISpec a, const GISpec b, const float w) { return GISpec(a.radiance + b.radiance * w, a.ao + b.ao * w, a.history); }
 GIDiff GI_Mul_NoHistory(const GIDiff a, const float w) { return GIDiff(SH_Scale(a.sh, w), a.ao * w, a.history); }
 GISpec GI_Mul_NoHistory(const GISpec a, const float w) { return GISpec(a.radiance * w, a.ao * w, a.history); }
+GIDiff GI_Interpolate(const GIDiff a, const GIDiff b, const float w) { return GIDiff(SH_Interpolate(a.sh, b.sh, w), lerp(a.ao, b.ao, w), a.history); }
+GISpec GI_Interpolate(const GISpec a, const GISpec b, const float w) { return GISpec(lerp(a.radiance, b.radiance, w), lerp(a.ao, b.ao, w), a.history); }
 float GI_Luminance(const GIDiff a) { return SH_ToLuminanceL0(a.sh); }
 float GI_Luminance(const GISpec a) { return dot(pk_Luminance.rgb, a.radiance); }
 float GI_LogLuminance(const GIDiff a) { return log(1.0f + GI_Luminance(a)); }
 float GI_LogLuminance(const GISpec a) { return log(1.0f + GI_Luminance(a)); }
-GIDiff GI_ClampLuma(GIDiff a, float maxLuma)
-{
-    const float luma = GI_Luminance(a);
-    const float scale = (min(luma, maxLuma) + 1e-6f) / (luma + 1e-6f);
-    a.sh = SH_Scale(a.sh, scale);
-    return a;
-}
-GISpec GI_ClampLuma(GISpec a, float maxLuma)
-{
-    const float luma = GI_Luminance(a);
-    const float scale = (min(luma, maxLuma) + 1e-6f) / (luma + 1e-6f);
-    a.radiance *= scale;
-    return a;
-}
+float GI_MaxLuma(const GIDiff a, float alpha) { return GI_Luminance(a) + (PK_GI_MAX_LUMA_GAIN / (1.0f - alpha)); }
+float GI_MaxLuma(const GISpec a, float alpha) { return GI_Luminance(a) + (PK_GI_MAX_LUMA_GAIN / (1.0f - alpha)); }
+float GI_LumaScale(float luma, float maxLuma) { return (min(luma, maxLuma) + 1e-6f) / (luma + 1e-6f); }
+GIDiff GI_ClampLuma(GIDiff a, float maxLuma) { return GIDiff(SH_Scale(a.sh, GI_LumaScale(GI_Luminance(a), maxLuma)), a.ao, a.history); }
+GISpec GI_ClampLuma(GISpec a, float maxLuma) { return GISpec(a.radiance * GI_LumaScale(GI_Luminance(a), maxLuma), a.ao, a.history); }
 
 #define GI_GET_RAY_PARAMS(COORD, RAYCOORD, DEPTH, OUT_PARAMS)                                                                   \
 {                                                                                                                               \
@@ -167,7 +157,7 @@ GISpec GI_Unpack_Spec(const uint2 p)
     return GISpec(DecodeE5BGR9(p.x), v.x, v.y);
 }
 
-//----------LOAD FUNCTIONS----------//
+//----------LOAD/STORE FUNCTIONS----------//
 uint4 GI_Load_Packed_Mip_Diff(const int2 coord, const int mip) { return uint4(PK_GI_DATA_LOAD_MIP(coord, PK_GI_LVL_DIFF0, mip), PK_GI_DATA_LOAD_MIP(coord, PK_GI_LVL_DIFF1, mip)); }
 uint2 GI_Load_Packed_Mip_Spec(const int2 coord, const int mip) { return PK_GI_DATA_LOAD_MIP(coord, PK_GI_LVL_SPEC, mip); }
 uint4 GI_Load_Packed_Diff(const int2 coord, const int l) { return imageLoad(pk_GI_PackedDiff, int3(coord, l)); }
@@ -178,6 +168,14 @@ GIDiff GI_Load_Diff(const int2 coord, int l) { return GI_Unpack_Diff(GI_Load_Pac
 GISpec GI_Load_Spec(const int2 coord, int l) { return GI_Unpack_Spec(GI_Load_Packed_Spec(coord, l)); }
 GIDiff GI_Load_Diff(const int2 coord) { return GI_Unpack_Diff(GI_Load_Packed_Diff(coord)); }
 GISpec GI_Load_Spec(const int2 coord) { return GI_Unpack_Spec(GI_Load_Packed_Spec(coord)); }
+void GI_Store_Packed_Diff(const int2 coord, const int l, const uint4 p) { imageStore(pk_GI_PackedDiff, int3(coord, l), p); }
+void GI_Store_Packed_Spec(const int2 coord, const int l, const uint2 p) { imageStore(pk_GI_PackedSpec, int3(coord, l), p.xyxy); }
+void GI_Store_Packed_Diff(const int2 coord, const uint4 p) { GI_Store_Packed_Diff(coord, PK_GI_STORE_LVL, p); }
+void GI_Store_Packed_Spec(const int2 coord, const uint2 p) { GI_Store_Packed_Spec(coord, PK_GI_STORE_LVL, p); }
+void GI_Store_Diff(const int2 coord, const int l, const GIDiff u) { GI_Store_Packed_Diff(coord, l, GI_Pack_Diff(u)); }
+void GI_Store_Spec(const int2 coord, const int l, const GISpec u) { GI_Store_Packed_Spec(coord, l, GI_Pack_Spec(u)); }
+void GI_Store_Diff(const int2 coord, const GIDiff u) { GI_Store_Packed_Diff(coord, GI_Pack_Diff(u)); }
+void GI_Store_Spec(const int2 coord, const GISpec u) { GI_Store_Packed_Spec(coord, GI_Pack_Spec(u)); }
 
 GIRayHits GI_Load_RayHits(const int2 coord)
 {
@@ -191,20 +189,6 @@ GIRayHits GI_Load_RayHits(const int2 coord)
     return GIRayHits(GIRayHit(hitDist.x, isMissDiff, isScreenDiff), GIRayHit(hitDist.y, isMissSpec, isScreenSpec), packed.y);
 }
 
-float4 GI_Load_Voxel_UVW(const half3 uvw, float lvl) { return tex2DLod(pk_GI_VolumeRead, float3(uvw), lvl); }
-float4 GI_Load_Voxel(const float3 worldpos, float lvl) { return tex2DLod(pk_GI_VolumeRead, GI_WorldToVoxelUVW(worldpos), lvl); }
-float4 GI_Load_Voxel_Discrete(const float3 worldpos, float lvl) { return tex2DLod(pk_GI_VolumeRead, GI_WorldToVoxelUVWDiscrete(worldpos), lvl); }
-
-//----------STORE FUNCTIONS----------//
-void GI_Store_Packed_Diff(const int2 coord, const int l, const uint4 p) { imageStore(pk_GI_PackedDiff, int3(coord, l), p); }
-void GI_Store_Packed_Spec(const int2 coord, const int l, const uint2 p) { imageStore(pk_GI_PackedSpec, int3(coord, l), p.xyxy); }
-void GI_Store_Packed_Diff(const int2 coord, const uint4 p) { GI_Store_Packed_Diff(coord, PK_GI_STORE_LVL, p); }
-void GI_Store_Packed_Spec(const int2 coord, const uint2 p) { GI_Store_Packed_Spec(coord, PK_GI_STORE_LVL, p); }
-void GI_Store_Diff(const int2 coord, const int l, const GIDiff u) { GI_Store_Packed_Diff(coord, l, GI_Pack_Diff(u)); }
-void GI_Store_Spec(const int2 coord, const int l, const GISpec u) { GI_Store_Packed_Spec(coord, l, GI_Pack_Spec(u)); }
-void GI_Store_Diff(const int2 coord, const GIDiff u) { GI_Store_Packed_Diff(coord, GI_Pack_Diff(u)); }
-void GI_Store_Spec(const int2 coord, const GISpec u) { GI_Store_Packed_Spec(coord, GI_Pack_Spec(u)); }
-
 void GI_Store_RayHits(const int2 coord, const GIRayHits u)
 {
     uint packed = packHalf2x16(float2(u.diff.dist, u.spec.dist));
@@ -215,6 +199,9 @@ void GI_Store_RayHits(const int2 coord, const GIRayHits u)
     imageStore(pk_GI_RayHits, coord, uint4(packed, u.diffNormal, 0u, 0u));
 }
 
+float4 GI_Load_Voxel_UVW(const half3 uvw, float lvl) { return tex2DLod(pk_GI_VolumeRead, float3(uvw), lvl); }
+float4 GI_Load_Voxel(const float3 worldpos, float lvl) { return tex2DLod(pk_GI_VolumeRead, GI_WorldToVoxelUVW(worldpos), lvl); }
+float4 GI_Load_Voxel_Discrete(const float3 worldpos, float lvl) { return tex2DLod(pk_GI_VolumeRead, GI_WorldToVoxelUVWDiscrete(worldpos), lvl); }
 void GI_Store_Voxel(float3 worldpos, float4 color) 
 { 
     int3 coord = GI_WorldToVoxelSpace(worldpos);
@@ -237,14 +224,11 @@ float3 GI_Sample_Specular(const float2 uv, const float3 N) { return GI_Load_Spec
 
 void GI_Sample_Lighting(const float2 uv, const float3 N, const float3 V, const float R, inout float3 diffuse, inout float3 specular) 
 {
-    //@ Todo get rough specular from diffuse dominant dir.
     const int2 coord = int2(uv * pk_ScreenSize.xy);
     const GIDiff s_diff = GI_Load_Diff(coord);
     const GISpec s_spec = GI_Load_Spec(coord);
-    diffuse = SH_ToIrradiance(s_diff.sh, N, pk_GI_ChromaBias);
-    specular = s_spec.radiance;
-    diffuse *= pow(s_diff.ao, PK_GI_AO_DIFF_POWER);
-    specular *= pow(s_spec.ao, PK_GI_AO_SPEC_POWER);
+    diffuse = SH_ToIrradiance(s_diff.sh, N, pk_GI_ChromaBias) * pow(s_diff.ao, PK_GI_AO_DIFF_POWER);
+    specular = s_spec.radiance * pow(s_spec.ao, PK_GI_AO_SPEC_POWER);
 }
 
 //----------VOXEL TRACING FUNCTIONS----------//

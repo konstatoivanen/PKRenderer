@@ -254,7 +254,7 @@ void main()
 
         GIDiff current;
         current.sh = SH_FromRadiance(reservoir.radiance, samplevec.xyz);
-        current.ao = saturate(samplevec.w / PK_GI_RAY_MAX_DISTANCE);
+        current.ao = saturate(samplevec.w / PK_GI_RAY_TMAX);
 
         GIDiff history = GI_Load_Diff(coord, PK_GI_STORE_LVL);
 
@@ -263,16 +263,9 @@ void main()
         #endif
 
         const float alpha = GI_Alpha(history);
-        const float maxLuma = GI_Luminance(history) + (PK_GI_MAX_LUMA_GAIN / (1.0f - alpha));
-        current = GI_ClampLuma(current, maxLuma);
-        
-        history.sh = SH_Interpolate(history.sh, current.sh, alpha);
-        history.ao = lerp(history.ao, current.ao, alpha);
-
-        if (isScene)
-        {
-            GI_Store_Diff(coord, history);
-        }
+        current = GI_ClampLuma(current, GI_MaxLuma(history, alpha));
+        history = GI_Interpolate(history, current, alpha);
+        GI_Store_Packed_Diff(coord, isScene ? GI_Pack_Diff(history) : uint4(0));
     }
 
     // Specular
@@ -283,17 +276,9 @@ void main()
     {
         GISpec history = GI_Load_Spec(coord, PK_GI_STORE_LVL);
         GISpec current = GI_Load_Spec(baseCoord);
-
         const float alpha = GI_Alpha(history);
-        const float maxLuma = GI_Luminance(history) + (PK_GI_MAX_LUMA_GAIN / (1.0f - alpha));
-        current = GI_ClampLuma(current, maxLuma);
-    
-        history.radiance = lerp(history.radiance, current.radiance, alpha);
-        history.ao = lerp(history.ao, current.ao, alpha);
-
-        if (isScene)
-        {
-            GI_Store_Spec(coord, history);
-        }
+        current = GI_ClampLuma(current, GI_MaxLuma(history, alpha));
+        history = GI_Interpolate(history, current, alpha);
+        GI_Store_Packed_Spec(coord, isScene ? GI_Pack_Spec(history) : uint2(0));
     }
 }

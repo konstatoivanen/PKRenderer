@@ -53,7 +53,7 @@ void main()
         GIDiff history = GI_Load_Diff(coord, PK_GI_STORE_LVL);
 
         float variance = 0.0f;
-        //GI_SFLT_DIFF_VARIANCE(coord, depth, diff, variance)
+        GI_SFLT_DIFF_VARIANCE(coord, depth, diff, variance)
 
         const float2 radiusAndScale = GI_GetDiskFilterRadiusAndScale(depth, variance, diff.ao, diff.history);
         const float scale = radiusAndScale.y;
@@ -63,12 +63,11 @@ void main()
         GI_SFLT_DISK_DIFF(normal, depth, viewdir, viewpos, diff.history, step, skip, radius, diff)
 
         const float alpha = GI_Alpha(history) * 0.25f;
-        const float maxLuma = GI_Luminance(diff) + (PK_GI_MAX_LUMA_GAIN / (1.0f - alpha));
-        history = GI_ClampLuma(history, maxLuma);
+        history = GI_ClampLuma(history, GI_MaxLuma(diff, alpha));
         history.sh = SH_Interpolate(history.sh, diff.sh, alpha);
         diff.ao = lerp(history.ao, 0.5f + diff.ao * 0.5f, alpha);
 
-        imageStore(pk_GI_PackedDiff, int3(coord, 1), GI_Pack_Diff(history));
+        GI_Store_Diff(coord, 1, history);
         GI_Store_Diff(coord, diff);
     }
 
@@ -95,13 +94,12 @@ void main()
             //GI_SFLT_DISK_SPEC(normal, depth, roughness, viewdir, viewpos, spec.history, step, skip, radius, spec)
     
             const float alpha = GI_Alpha(history) * 0.25f;
-            const float maxLuma = GI_Luminance(spec) + (PK_GI_MAX_LUMA_GAIN / (1.0f - alpha));
-            history = GI_ClampLuma(history, maxLuma);
+            history = GI_ClampLuma(history, GI_MaxLuma(spec, alpha));
             history.radiance = lerp(history.radiance, spec.radiance, alpha);
             spec.ao = lerp(history.ao, 0.5f + spec.ao * 0.5f, alpha);
         }
     
-        imageStore(pk_GI_PackedSpec, int3(coord, 1), GI_Pack_Spec(history).xyxy);
+        GI_Store_Spec(coord, 1, history);
         GI_Store_Spec(coord, spec);
     }
 }

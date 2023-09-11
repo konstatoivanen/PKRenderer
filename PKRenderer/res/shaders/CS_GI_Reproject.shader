@@ -67,7 +67,7 @@ void main()
         #if defined(PK_GI_SPEC_VIRT_REPROJECT)
         if (!Test_EPS6(wSumSpec))
         {
-            const float virtualDist = (spec.ao / wSumSpec) * PK_GI_RAY_MAX_DISTANCE * GI_GetSpecularDominantFactor(nv, sqrt(roughness));
+            const float virtualDist = (spec.ao / wSumSpec) * PK_GI_RAY_TMAX * GI_GetSpecularDominantFactor(nv, sqrt(roughness));
             GI_SFLT_REPRO_VIRTUAL_SPEC(viewpos, viewdir, normal, depth, roughness, virtualDist, wSumVSpec, specVirtual)
         }
         #endif

@@ -142,7 +142,7 @@ void main()
             [[branch]]
             if (result == RT_MISS)
             {
-                traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, params.origin, hits.spec.dist * 0.9f, params.specdir, PK_GI_RAY_MAX_DISTANCE, 0);
+                traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, params.origin, hits.spec.dist * 0.9f, params.specdir, PK_GI_RAY_TMAX, 0);
                 hits.spec.isMiss = payload.hitDistance == 0xFFFFFFFFu;
                 hits.spec.dist = uintBitsToFloat(payload.hitDistance);
             }
@@ -155,7 +155,7 @@ void main()
             [[branch]]
             if (result == RT_MISS)
             {
-                traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, params.origin, hits.diff.dist * 0.9f, params.diffdir, PK_GI_RAY_MAX_DISTANCE, 0);
+                traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, params.origin, hits.diff.dist * 0.9f, params.diffdir, PK_GI_RAY_TMAX, 0);
                 hits.diff.isMiss = payload.hitDistance == 0xFFFFFFFFu;
                 hits.diff.dist = uintBitsToFloat(payload.hitDistance);
             }
