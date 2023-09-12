@@ -86,7 +86,9 @@ bool IsScreenHit(const int2 coord, const float3 origin, const float3 direction, 
         const float2 deltacoord = abs(coord - (clipuvw.xy * pk_ScreenParams.xy));
         const float rdepth = ViewDepth(clipuvw.z);
         const float sdepth = SamplePreviousViewDepth(clipuvw.xy);
-        const float sviewz = -SamplePreviousViewNormal(clipuvw.xy).z + 0.15;
+        const float3 viewdir = normalize(UVToViewPos(clipuvw.xy, 1.0f));
+        const float3 viewnor = SamplePreviousViewNormal(clipuvw.xy);
+        const float sviewz = max(0.0f, dot(viewdir, -viewnor)) + 0.15;
         const bool isTexelOOB = dot(deltacoord, deltacoord) > 2.0f;
         const bool isValidSurf = abs(sdepth - rdepth) < (rdepth * 0.01f / sviewz);
         const bool isValidSky = hit.isMiss && !Test_DepthFar(sdepth);

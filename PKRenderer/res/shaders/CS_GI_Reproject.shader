@@ -8,24 +8,9 @@
 
 #multi_compile _ PK_GI_SPEC_VIRT_REPROJECT
 
-void WriteMipMask(const int2 coord, const GIDiff diff, const GISpec spec)
-{
-    const int2 base = ((coord + 8) >> 4) - 1;
-    
-    [[branch]]
-    if (diff.history < 16 || spec.history < 16)
-    {
-        imageStore(pk_GI_ScreenDataMipMask, base + int2(0, 0), uint4(1u));
-        imageStore(pk_GI_ScreenDataMipMask, base + int2(1, 0), uint4(1u));
-        imageStore(pk_GI_ScreenDataMipMask, base + int2(0, 1), uint4(1u));
-        imageStore(pk_GI_ScreenDataMipMask, base + int2(1, 1), uint4(1u));
-    }
-}
-
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
-    const int2 size = int2(pk_ScreenSize.xy);
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float depth = SampleViewDepth(coord);
 
@@ -45,6 +30,7 @@ void main()
     float wSumVSpec = 0.0f;
     float antilagSpec = 1.0f;
     float antilagDiff = 1.0f;
+    bool discardSpec = false;
 
     // Filters
     {
@@ -52,12 +38,16 @@ void main()
         const float3 normal = normalroughness.xyz;
         const float roughness = normalroughness.w;
         const float depthBias = lerp(0.1f, 0.01f, -normal.z);
-        const float3 viewpos = SampleViewPosition(coord, size, depth);
+        const float3 viewpos = SampleViewPosition(coord, depth);
         const float3 viewdir = normalize(viewpos);
         const float nv = dot(normal, -viewdir);
         const float parallax = GI_GetParallax(viewdir, normalize(viewpos - pk_ViewSpaceCameraDelta.xyz));
         const float2 screenuvPrev = GI_ViewToPrevScreenUV(viewpos);
         const int2 coordPrev = int2(screenuvPrev);
+
+        #if PK_GI_APPROX_ROUGH_SPEC == 1
+        discardSpec = roughness >= PK_GI_MAX_ROUGH_SPEC;
+        #endif
 
         antilagSpec = GI_GetAntilagSpecular(roughness, nv, parallax);
 
@@ -65,7 +55,7 @@ void main()
         GI_SFLT_REPRO_BILINEAR(screenuvPrev, coordPrev, normal, depth, depthBias, roughness, wSumDiff, wSumSpec, diff, spec)
 
         #if defined(PK_GI_SPEC_VIRT_REPROJECT)
-        if (!Test_EPS6(wSumSpec))
+        if (!Test_EPS6(wSumSpec) && !discardSpec)
         {
             const float virtualDist = (spec.ao / wSumSpec) * PK_GI_RAY_TMAX * GI_GetSpecularDominantFactor(nv, sqrt(roughness));
             GI_SFLT_REPRO_VIRTUAL_SPEC(viewpos, viewdir, normal, depth, roughness, virtualDist, wSumVSpec, specVirtual)
@@ -78,16 +68,16 @@ void main()
 
     // Normalization
     {
-        diff.history = clamp((diff.history / wSumDiff) + 1.0f, 1.0f, PK_GI_MAX_HISTORY * antilagDiff);
+        diff.history = clamp(diff.history / wSumDiff, 0.0f, PK_GI_DIFF_MAX_HISTORY * antilagDiff);
+        spec.history = clamp(spec.history / wSumSpec, 0.0f, PK_GI_SPEC_MAX_HISTORY * antilagSpec);
+        
         diff = GI_Mul_NoHistory(diff, 1.0f / wSumDiff);
-
-        spec.history = clamp((spec.history / wSumSpec) + 1.0f, 1.0f, PK_GI_MAX_HISTORY * antilagSpec);
         spec = GI_Mul_NoHistory(spec, 1.0f / wSumSpec);
 
         // Get min of virtual reprojected spec & naive spec to eliminate ghosting.
         if (!Test_EPS6(wSumVSpec))
         {
-            specVirtual.history = clamp((specVirtual.history / wSumVSpec) + 1.0f, 1.0f, PK_GI_MAX_HISTORY * antilagSpec);
+            specVirtual.history = clamp(specVirtual.history / wSumVSpec, 0.0f, PK_GI_SPEC_MAX_HISTORY * antilagSpec);
             specVirtual = GI_Mul_NoHistory(specVirtual, 1.0f / wSumVSpec);
 
             spec.history = min(specVirtual.history, spec.history);
@@ -100,5 +90,18 @@ void main()
     const bool invalidSpec = Test_EPS6(wSumSpec) || Any_IsNaN(spec.radiance) || isnan(spec.ao) || isnan(spec.history);
     GI_Store_Packed_Diff(coord, invalidDiff ? uint4(0) : GI_Pack_Diff(diff));
     GI_Store_Packed_Spec(coord, invalidSpec ? uint2(0) : GI_Pack_Spec(spec));
-    WriteMipMask(coord, diff, spec);
+
+    {
+        const int2 base = ((coord + 8) >> 4) - 1;
+
+        [[branch]]
+        if (diff.history < PK_GI_HISTORY_FILL_THRESHOLD || invalidDiff ||
+           (spec.history < PK_GI_HISTORY_FILL_THRESHOLD && !discardSpec))
+        {
+            imageStore(pk_GI_ScreenDataMipMask, base + int2(0, 0), uint4(1u));
+            imageStore(pk_GI_ScreenDataMipMask, base + int2(1, 0), uint4(1u));
+            imageStore(pk_GI_ScreenDataMipMask, base + int2(0, 1), uint4(1u));
+            imageStore(pk_GI_ScreenDataMipMask, base + int2(1, 1), uint4(1u));
+        }
+    }
 }

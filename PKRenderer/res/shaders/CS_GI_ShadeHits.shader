@@ -26,7 +26,7 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHi
         return SampleEnvironment(OctaUV(direction), 0.0f);
     }
 
-    const float4 voxel = GI_Load_Voxel(worldpos, PK_GI_RAY_CONE_SIZE * log2(1.0f + (hit.dist / pk_GI_VoxelSize)));
+    const float4 voxel = GI_Load_Voxel(worldpos, PK_GI_VX_CONE_SIZE * log2(1.0f + (hit.dist / pk_GI_VoxelSize)));
     return voxel.rgb / max(voxel.a, 1e-2f);
 }
 
@@ -64,9 +64,9 @@ void main()
         #endif
         {
             GISpec spec = pk_Zero_GISpec;
-            spec.history = PK_GI_MAX_HISTORY;
             spec.radiance = SampleRadiance(params.origin, params.specdir, hits.spec);
             spec.ao = hits.spec.isMiss ? 1.0f : saturate(hits.spec.dist / PK_GI_RAY_TMAX);
+            spec.history = PK_GI_SPEC_MAX_HISTORY;
             packedSpec = GI_Pack_Spec(spec);
         }
     }

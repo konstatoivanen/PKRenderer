@@ -36,22 +36,27 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 #define PK_GI_LVL_DIFF0 0
 #define PK_GI_LVL_DIFF1 1
 #define PK_GI_LVL_SPEC 2
-#define PK_GI_VOXEL_MIP_COUNT 7
-#define PK_GI_RAY_TMAX 100.0f
-#define PK_GI_RAY_CONE_SIZE 0.25f
-#define PK_GI_MIN_ACCUM 0.05f
-#define PK_GI_MAX_LUMA_GAIN 0.5f
-#define PK_GI_MAX_HISTORY 256u
+
+#define PK_GI_VX_MIP_COUNT 7
+#define PK_GI_VX_MIN_HISTORY 4.0f
+#define PK_GI_VX_CONE_SIZE 0.25f
 #define PK_GI_MIN_ROUGH_SPEC 0.35f
 #define PK_GI_MAX_ROUGH_SPEC 0.45f
-#define PK_GI_SPEC_ACCUM_BASE_POWER 0.5f
-#define PK_GI_SPEC_ACCUM_CURVE 0.66f
-#define PK_GI_SPEC_ACCUM_MIN 0.03f
-#define PK_GI_SPEC_ACCUM_MAX 1.0f
-#define PK_GI_DISK_FILTER_RADIUS 3.0f
 #define PK_GI_AO_DIFF_POWER 0.125f
 #define PK_GI_AO_SPEC_POWER 0.05f
-#define PK_GI_MIN_VXHISTORY 32.0f
+
+#define PK_GI_RAY_TMAX 100.0f
+#define PK_GI_MIN_ACCUM 0.05f
+#define PK_GI_DIFF_MAX_HISTORY 32u
+#define PK_GI_SPEC_MAX_HISTORY 128u
+#define PK_GI_SPEC_ANTILAG_BASE_POWER 0.5f
+#define PK_GI_SPEC_ANTILAG_CURVE 0.66f
+#define PK_GI_SPEC_ANTILAG_MIN 0.03f
+#define PK_GI_SPEC_ANTILAG_MAX 1.0f
+#define PK_GI_MAX_LUMA_GAIN 0.5f
+#define PK_GI_HISTORY_FILL_THRESHOLD 8
+#define PK_GI_DISK_FILTER_RADIUS 3.0f
+
 #define PK_GI_DATA_LOAD_MIP(c, l, m) texelFetch(pk_GI_ScreenDataMips, int3(c, l), m).xy
 
 //----------STRUCTS----------//
@@ -64,8 +69,8 @@ struct GIRayParams { float3 origin; float3 normal; float3 diffdir; float3 specdi
 #define pk_Zero_GISpec GISpec(0.0f.xxx, 0.0f, 0.0f)
 
 //----------UTILITIES----------//
-float GI_Alpha(const GIDiff a) { return max(1.0f / (a.history + 1.0f), PK_GI_MIN_ACCUM); }
-float GI_Alpha(const GISpec a) { return max(1.0f / (a.history + 1.0f), PK_GI_MIN_ACCUM); }
+float GI_Alpha(const GIDiff a) { return max(1.0f / (floor(a.history) + 1.0f), PK_GI_MIN_ACCUM); }
+float GI_Alpha(const GISpec a) { return max(1.0f / (floor(a.history) + 1.0f), PK_GI_MIN_ACCUM); }
 GIDiff GI_Sum(const GIDiff a, const GIDiff b, const float w) { return GIDiff(SH_Add(a.sh, b.sh, w), a.ao + b.ao * w, a.history + b.history * w); }
 GISpec GI_Sum(const GISpec a, const GISpec b, const float w) { return GISpec(a.radiance + b.radiance * w, a.ao + b.ao * w, a.history + b.history * w); }
 GIDiff GI_Sum_NoHistory(const GIDiff a, const GIDiff b, const float w) { return GIDiff(SH_Add(a.sh, b.sh, w), a.ao + b.ao * w, a.history); }
@@ -91,7 +96,7 @@ GISpec GI_ClampLuma(GISpec a, float maxLuma) { return GISpec(a.radiance * GI_Lum
     const float3 v = GlobalNoiseBlue(RAYCOORD + pk_GI_RayDither, pk_FrameIndex.y);                                              \
     const float2 Xi = saturate(v.xy + ((v.z - 0.5f) / 256.0f));                                                                 \
     /* Apply bias to avoid rays clipping with geo at high distances */                                                          \
-    float3 origin = SampleWorldPosition(COORD, int2(pk_ScreenSize.xy), DEPTH - DEPTH * 1e-2f);                                  \
+    float3 origin = SampleWorldPosition(COORD, DEPTH - DEPTH * 1e-2f);                                                          \
     float3 viewdir = normalize(origin - pk_WorldSpaceCameraPos.xyz);                                                            \
     /* Apply bias to avoid rays clipping with geo at high angles */                                                             \
     origin += normal * (0.01f / (saturate(dot(-viewdir, normal)) + 0.01f)) * 0.05f;                                             \
@@ -210,7 +215,7 @@ void GI_Store_Voxel(float3 worldpos, float4 color)
 }
 
 //----------PREDICATES----------//
-bool GI_Test_VX_History(const float2 uv) { return GI_Load_Diff(int2(uv * pk_ScreenSize.xy)).history < PK_GI_MIN_VXHISTORY; }
+bool GI_Test_VX_History(const float2 uv) { return GI_Load_Diff(int2(uv * pk_ScreenSize.xy)).history < PK_GI_VX_MIN_HISTORY; }
 bool GI_Test_VX_HasValue(float3 worldposition) { return imageLoad(pk_GI_VolumeMaskWrite, GI_WorldToVoxelSpace(worldposition)).x != 0; }
 bool GI_Test_VX_Normal(float3 normal)
 {
@@ -237,7 +242,7 @@ half4 GI_SphereTrace_Diffuse(float3 position)
     half4 C = half4(0.0hf.xxx, 1.0hf);
     half3 uvw = half3(GI_WorldToVoxelUVW(position));
 
-    for (uint i = 0; i < PK_GI_VOXEL_MIP_COUNT; ++i)
+    for (uint i = 0; i < PK_GI_VX_MIP_COUNT; ++i)
     {
         float level = i * 0.75f;
         half4 V = half4(GI_Load_Voxel_UVW(uvw, level));

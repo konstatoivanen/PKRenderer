@@ -42,13 +42,13 @@ float GI_GetParallax(float3 viewdir_cur, float3 viewdir_pre)
 float GI_GetAntilagSpecular(float roughness, float nv, float parallax)
 {
     float acos01sq = saturate(1.0f - nv);
-    float a = pow(acos01sq, PK_GI_SPEC_ACCUM_CURVE);
+    float a = pow(acos01sq, PK_GI_SPEC_ANTILAG_CURVE);
     float b = 1.1 + pow2(roughness);
     float parallaxSensitivity = (b + a) / (b - a);
     float powerScale = 1.0 + parallax * parallaxSensitivity;
     float f = 1.0 - exp2(-200.0 * roughness * roughness);
-    f *= pow(roughness, PK_GI_SPEC_ACCUM_BASE_POWER * powerScale);
-    return lerp(PK_GI_SPEC_ACCUM_MIN, PK_GI_SPEC_ACCUM_MAX, f);
+    f *= pow(roughness, PK_GI_SPEC_ANTILAG_BASE_POWER * powerScale);
+    return lerp(PK_GI_SPEC_ANTILAG_MIN, PK_GI_SPEC_ANTILAG_MAX, f);
 }
 
 // Add small bias (0.01) to prevent sampling from past root texel.
@@ -293,6 +293,9 @@ const float name[2][2] =                                            \
         w *= exp(-acos(dot(SFLT_NORMAL, s_nr.xyz) - 1e-6f) * k_N);                                                                                  \
         w *= exp(-abs(s_nr.w * k_R.x + k_R.y));                                                                                                     \
         w *= exp( -0.66 * s_offs.z *  s_offs.z);                                                                                                    \
+        #if PK_GI_APPROX_ROUGH_SPEC == 1                                                                                                            \
+        w *= float(s_nr.w < PK_GI_MAX_ROUGH_SPEC);                                                                                                  \
+        #endif                                                                                                                                      \
         w = lerp(0.0f, w, Test_InScreen(s_uv) && !Test_NaN_EPS4(w));                                                                                \
                                                                                                                                                     \
         SFLT_OUT = GI_Sum_NoHistory(SFLT_OUT, GI_Load_Spec(s_px), w);                                                                               \

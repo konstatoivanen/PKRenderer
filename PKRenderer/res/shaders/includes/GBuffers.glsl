@@ -72,13 +72,13 @@ float4 SampleWorldNormalRoughness(const int2 coord) { return mul3x3(float3x3(pk_
 
 float3 SampleViewPosition(const float2 uv) { return UVToViewPos(uv, SampleViewDepth(uv)); }
 float3 SampleViewPosition(const float2 uv, float viewDepth) { return UVToViewPos(uv, viewDepth); }
-float3 SampleViewPosition(const int2 coord, const int2 size) { return UVToViewPos((coord + 0.5f.xx) / float2(size), SampleViewDepth(coord)); }
-float3 SampleViewPosition(const int2 coord, const int2 size, const float viewDepth) { return UVToViewPos((coord + 0.5f.xx) / float2(size), viewDepth); }
+float3 SampleViewPosition(const int2 coord) { return UVToViewPos((coord + 0.5f.xx) * pk_ScreenParams.zw, SampleViewDepth(coord)); }
+float3 SampleViewPosition(const int2 coord, const float viewDepth) { return UVToViewPos((coord + 0.5f.xx) * pk_ScreenParams.zw, viewDepth); }
 
 float3 SampleWorldPosition(const float2 uv) { return ViewToWorldPos(SampleViewPosition(uv)); }
 float3 SampleWorldPosition(const float2 uv, float viewDepth) { return ViewToWorldPos(SampleViewPosition(uv, viewDepth)); }
-float3 SampleWorldPosition(const int2 coord, const int2 size) { return ViewToWorldPos(SampleViewPosition(coord, size)); }
-float3 SampleWorldPosition(const int2 coord, const int2 size, const float viewDepth) { return ViewToWorldPos(SampleViewPosition(coord, size, viewDepth)); }
+float3 SampleWorldPosition(const int2 coord) { return ViewToWorldPos(SampleViewPosition(coord)); }
+float3 SampleWorldPosition(const int2 coord, const float viewDepth) { return ViewToWorldPos(SampleViewPosition(coord, viewDepth)); }
 
 float3 SamplePreviousViewNormal(const float2 uv) { return SamplePreviousViewNormalRoughness(uv).xyz; }
 float3 SamplePreviousViewNormal(const int2 coord) { return SamplePreviousViewNormalRoughness(coord).xyz; }
@@ -86,10 +86,10 @@ float3 SamplePreviousWorldNormal(const float2 uv) { return mul(float3x3(pk_MATRI
 float3 SamplePreviousWorldNormal(const int2 coord) { return mul(float3x3(pk_MATRIX_L_I_V), SamplePreviousViewNormal(coord)); }
 
 float3 SamplePreviousViewPosition(const float2 uv) { return UVToViewPos(uv, SamplePreviousViewDepth(uv)); }
-float3 SamplePreviousViewPosition(const int2 coord, const int2 size) { return UVToViewPos((coord + 0.5f.xx) / float2(size), SamplePreviousViewDepth(coord)); }
-float3 SamplePreviousViewPosition(const int2 coord, const int2 size, const float viewDepth) { return UVToViewPos((coord + 0.5f.xx) / float2(size), viewDepth); }
+float3 SamplePreviousViewPosition(const int2 coord) { return UVToViewPos((coord + 0.5f.xx) * pk_ScreenParams.zw, SamplePreviousViewDepth(coord)); }
+float3 SamplePreviousViewPosition(const int2 coord, const float viewDepth) { return UVToViewPos((coord + 0.5f.xx) * pk_ScreenParams.zw, viewDepth); }
 float3 SamplePreviousWorldPosition(const float2 uv) { return mul(pk_MATRIX_L_I_V, float4(SamplePreviousViewPosition(uv), 1.0f)).xyz; }
-float3 SamplePreviousWorldPosition(const int2 coord, const int2 size) { return mul(pk_MATRIX_L_I_V, float4(SamplePreviousViewPosition(coord, size), 1.0f)).xyz; }
-float3 SamplePreviousWorldPosition(const int2 coord, const int2 size, const float viewDepth) { return mul(pk_MATRIX_L_I_V, float4(SamplePreviousViewPosition(coord, size, viewDepth), 1.0f)).xyz; }
+float3 SamplePreviousWorldPosition(const int2 coord) { return mul(pk_MATRIX_L_I_V, float4(SamplePreviousViewPosition(coord), 1.0f)).xyz; }
+float3 SamplePreviousWorldPosition(const int2 coord, const float viewDepth) { return mul(pk_MATRIX_L_I_V, float4(SamplePreviousViewPosition(coord, viewDepth), 1.0f)).xyz; }
 
 #endif

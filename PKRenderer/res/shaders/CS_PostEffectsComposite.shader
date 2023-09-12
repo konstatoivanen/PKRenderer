@@ -95,6 +95,10 @@ void main()
         #elif PK_DEBUG_MODE == PK_DEBUG_MODE_ROUGHNESS
             color = roughness.xxx;
         #endif
+
+        //const float3 viewdir = normalize(UVToViewPos(uv, 1.0f));
+        //const float3 viewnor = SamplePreviousViewNormal(uv.xy);
+        //color = dot(viewdir, -viewnor) < 0.0f ? 1.0f.xxx : 0.0f.xxx;
     }
 #endif
 

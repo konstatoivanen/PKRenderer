@@ -134,7 +134,7 @@ void ReSTIR_SubgroupSuffle(const int2 coord,
         Test_DepthReproject(depth, s_depth, depthBias) &&
         dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
     {
-        const float3 s_position = SampleWorldPosition(s_coord, int2(pk_ScreenSize.xy), s_depth);
+        const float3 s_position = SampleWorldPosition(s_coord, s_depth);
         const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_origin, suffled);
         ReSTIR_CombineReservoir(combined, suffled, s_targetPdf, hash);
     }
@@ -176,7 +176,7 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
             {
                 // Don't sample multiple temporal reservoirs to avoid boiling. Break on first accepted sample.
                 Reservoir s_reservoir = ReSTIR_Load(xy, RESTIR_LAYER_PRE);
-                const float3 s_position = SamplePreviousWorldPosition(xyFull, int2(pk_ScreenSize.xy), s_depth);
+                const float3 s_position = SamplePreviousWorldPosition(xyFull, s_depth);
                 const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_position, s_reservoir);
                 ReSTIR_Normalize(s_reservoir, RESTIR_MAX_M);
                 ReSTIR_CombineReservoir(combined, s_reservoir, s_targetPdf, hash);
@@ -202,7 +202,7 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
                 Test_DepthReproject(depth, s_depth, depthBias) &&
                 dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
             {
-                const float3 s_position = SampleWorldPosition(xyFull, int2(pk_ScreenSize.xy), s_depth);
+                const float3 s_position = SampleWorldPosition(xyFull, s_depth);
                 const Reservoir s_reservoir = ReSTIR_Load_HitAsReservoir(xy, s_position);
                 const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_position, s_reservoir);
                 ReSTIR_CombineReservoir(combined, s_reservoir, s_targetPdf, hash);
@@ -248,7 +248,7 @@ void main()
 
     // Diffuse 
     {
-        const float3 origin = SampleWorldPosition(coord, int2(pk_ScreenSize.xy), depth);
+        const float3 origin = SampleWorldPosition(coord, depth);
         const Reservoir reservoir = ReSTIR_Load_HitAsReservoir(baseCoord, origin);
         const float4 samplevec = normalizeLength(reservoir.position - origin);
 
