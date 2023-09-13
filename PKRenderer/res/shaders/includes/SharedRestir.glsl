@@ -11,7 +11,7 @@ struct Reservoir { float3 position; float3 normal; float3 radiance; float target
 #define RESTIR_LAYER_HIT 4
 #define RESITR_NEARFIELD 0.05f
 #define RESTIR_NORMAL_THRESHOLD 0.6f
-#define RESTIR_SAMPLES_TEMPORAL 3
+#define RESTIR_SAMPLES_TEMPORAL 6
 #define RESTIR_SAMPLES_SPATIAL 6
 #define RESTIR_MAX_M 20
 #define RESTIR_SEED_STRIDE (RESTIR_SAMPLES_SPATIAL + 1)
@@ -49,20 +49,19 @@ int2 ReSTIR_PermutationSampling(int2 coord, bool mask)
     return mask ? ((coord + offset) ^ 3) - offset : coord;
 }
 
-int2 ReSTIR_GetTemporalResamplingCoord(const int2 coord, int scale, int hash, bool permute, bool isFallBack)
+int2 ReSTIR_GetTemporalResamplingCoord(const int2 coord, int hash, int scale, bool permute)
 {
     hash &= 7;
     const int m2 = hash >> 1 & 0x01;
     const int m4 = 1 - (hash >> 2 & 0x01);
     const int t = -1 + 2 * (hash & 0x01);
     const int2 offset = int2(t, t * (1 - 2 * m2)) * int2(m4 | m2, m4 | (1 - m2)) * RESTIR_TEMPORAL_RADIUS * scale;
-    const int2 scoord = ReSTIR_PermutationSampling(coord + offset, permute);
-    return isFallBack ? coord : scoord;
+    return ReSTIR_PermutationSampling(coord + offset, permute);
 }
 
 int2 ReSTIR_GetSpatialResamplingCoord(const int2 coord, int scale, uint hash) 
 { 
-    const uint w = 1u << max(2u, uint(scale));
+    const uint w = 1u << uint(scale);
     const uint m = w - 1u;
     return coord + int2(hash & m, (hash >> 8u) & m) - int2(w / 2); 
 }
@@ -123,6 +122,22 @@ void ReSTIR_CombineReservoir(inout Reservoir combined, const Reservoir b, float 
         combined.targetPdf = targetPdf;
     }
 }
+
+void ReSTIR_CombineReservoirSimple(inout Reservoir combined, const Reservoir b, uint hash)
+{
+    const float random = ReSTIR_ToUnorm(hash);
+    combined.weightSum += b.weightSum;
+    combined.M += b.M; 
+
+    if (random * combined.weightSum < b.weightSum)
+    {
+        combined.position = b.position;
+        combined.normal = b.normal;
+        combined.radiance = b.radiance;
+        combined.targetPdf = b.targetPdf;
+    }
+}
+
 
 void ReSTIR_Store_Empty(const int2 coord, const int layer)
 {

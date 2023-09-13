@@ -1,6 +1,8 @@
 #version 460
 #pragma PROGRAM_COMPUTE
 
+#multi_compile _ PK_GI_CHECKERBOARD_TRACE
+
 #define PK_GI_LOAD_LVL 2
 #define PK_GI_STORE_LVL 0
 
@@ -64,9 +66,15 @@ void main()
         const float alpha = GI_Alpha(history) * 0.25f;
         history = GI_ClampLuma(history, GI_MaxLuma(diff, alpha));
         history.sh = SH_Interpolate(history.sh, diff.sh, alpha);
-        history.history += 1.0f;
-        diff.history += 1.0f;
         diff.ao = lerp(history.ao, 0.5f + diff.ao * 0.5f, alpha);
+        
+        #if defined(PK_GI_CHECKERBOARD_TRACE)
+        if (GI_GetCheckerboardOffset(coord, pk_FrameIndex.y) == 0u)
+        #endif
+        {
+            history.history += 1.0f;
+            diff.history += 1.0f;
+        }
 
         GI_Store_Diff(coord, 1, history);
         GI_Store_Diff(coord, diff);
@@ -97,8 +105,14 @@ void main()
             const float alpha = GI_Alpha(history) * 0.25f;
             history = GI_ClampLuma(history, GI_MaxLuma(spec, alpha));
             history.radiance = lerp(history.radiance, spec.radiance, alpha);
-            history.history += 1.0f;
             spec.ao = lerp(history.ao, 0.5f + spec.ao * 0.5f, alpha);
+            
+            #if defined(PK_GI_CHECKERBOARD_TRACE)
+            if (GI_GetCheckerboardOffset(coord, pk_FrameIndex.y) == 0u)
+            #endif
+            {
+                history.history += 1.0f;
+            }
         }
     
         GI_Store_Spec(coord, 1, history);

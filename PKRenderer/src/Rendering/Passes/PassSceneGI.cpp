@@ -234,7 +234,7 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetImage(hash->_DestinationMip4, m_screenDataMips.get(), { 3, 0, 1, 3 });
         cmd->Dispatch(m_computeScreenMip, 0, m_screenDataMips->GetResolution());
         cmd->Dispatch(m_computeHistoryFill, 0, dimension);
-        cmd->Dispatch(m_computeDiskFilter, 0, dimension);
+        cmd->Dispatch(m_computeDiskFilter, dimension);
         cmd->EndDebugScope();
     }
 

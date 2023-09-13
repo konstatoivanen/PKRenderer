@@ -36,9 +36,9 @@ float3 SampleNormalTex(in sampler2D map, in float3x3 rotation, in float2 uv, flo
     return normalize(mul(rotation, lerp(float3(0,0,1), n, amount))); 
 }
 
-float2 ParallaxOffset(float height, float heightAmount, float3 viewdir) 
+float2 ParallaxOffset(float height, float amount, float3 viewdir) 
 { 
-    return (height * heightAmount - heightAmount / 2.0f) * (viewdir.xy / (viewdir.z + 0.42f)); 
+    return (height * amount - amount / 2.0f) * (viewdir.xy / (viewdir.z + 0.42f)); 
 }
 
 float3 GetIndirectLight_Main(const BRDFSurf surf, const float3 worldpos, const float3 clipuvw)
@@ -219,6 +219,12 @@ struct SurfaceFragmentVaryings
 
         PK_SURFACE_FUNC_FRAG(baseVaryings, surf);
 
+    #if !defined(PK_META_PASS_GIVOXELIZE)
+        const float shiftAmount = dot(surf.normal, surf.viewdir);
+        surf.normal = shiftAmount < 0.0f ? surf.normal + surf.viewdir * (-shiftAmount + 1e-5f) : surf.normal;
+        surf.roughness = max(surf.roughness, 0.002);
+    #endif
+
     #if defined(PK_META_PASS_GBUFFER)
         sv_output = EncodeGBufferWorldNR(surf.normal, surf.roughness);
     #else
@@ -229,13 +235,6 @@ struct SurfaceFragmentVaryings
         #if defined(PK_SURF_TRANSPARENT)
         surf.albedo *= surf.alpha;
         surf.alpha = reflectivity + surf.alpha * (1.0f - reflectivity);
-        #endif
-
-        #if !defined(PK_META_PASS_GIVOXELIZE)
-        // Shift invalid normals to view (not as effective as above method but it's alot cheaper than two matrix muls.
-        const float shiftAmount = dot(surf.normal, surf.viewdir);
-        surf.normal = shiftAmount < 0.0f ? surf.normal + surf.viewdir * (-shiftAmount + 1e-5f) : surf.normal;
-        surf.roughness = max(surf.roughness, 0.002);
         #endif
 
         BRDFSurf brdf_surf = MakeBRDFSurf

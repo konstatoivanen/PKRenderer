@@ -3,8 +3,8 @@
 
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE
 
-#define PK_GI_LOAD_LVL 2
-#define PK_GI_STORE_LVL 2
+#define PK_GI_LOAD_LVL 1
+#define PK_GI_STORE_LVL 1
 
 #include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl

@@ -99,7 +99,7 @@ GISpec GI_ClampLuma(GISpec a, float maxLuma) { return GISpec(a.radiance * GI_Lum
     float3 origin = SampleWorldPosition(COORD, DEPTH - DEPTH * 1e-2f);                                                          \
     float3 viewdir = normalize(origin - pk_WorldSpaceCameraPos.xyz);                                                            \
     /* Apply bias to avoid rays clipping with geo at high angles */                                                             \
-    origin += normal * (0.01f / (saturate(dot(-viewdir, normal)) + 0.01f)) * 0.05f;                                             \
+    origin += normal * (0.01f / (saturate(-dot(viewdir, normal)) + 0.01f)) * 0.05f;                                             \
     OUT_PARAMS.origin = origin;                                                                                                 \
     OUT_PARAMS.normal = normal;                                                                                                 \
     OUT_PARAMS.diffdir = ImportanceSampleLambert(Xi, normal);                                                                   \

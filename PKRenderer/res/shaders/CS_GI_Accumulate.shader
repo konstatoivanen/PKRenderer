@@ -7,7 +7,7 @@
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE
 #multi_compile _ PK_GI_RESTIR
 
-#define PK_GI_LOAD_LVL 2
+#define PK_GI_LOAD_LVL 1
 #define PK_GI_STORE_LVL 0
 
 #include includes/GBuffers.glsl
@@ -18,14 +18,6 @@
 #define BOIL_FLT_MIN_LANE_COUNT 32
 shared float s_weights[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
 shared uint s_count[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
-
-// If sample area is low in depth complexity we can safely assume a larger radius.
-int ReSTIR_FilterScale(const int2 coord, bool isNewSurf)
-{
-    const float2 uv = (coord + 0.5f.xx) / pk_ScreenSize.xy;
-    const float zrange = SampleMinZ(uv, 5) / SampleMaxZ(uv, 5);
-    return isNewSurf ? 5 : (1 + int(zrange * 4.0f));
-}
 
 float SSRT_ValidateVisibility(const float3 start_ws, const float3 end_ws, const uint max_count)
 {
@@ -126,7 +118,6 @@ void ReSTIR_SubgroupSuffle(const int2 coord,
     const float3 s_origin = subgroupShuffle(origin, mask);
     const float3 s_normal = subgroupShuffle(normal, mask);
     const int2 s_coord = subgroupShuffle(coord, mask);
-    const bool isValid = combined.M < RESTIR_MAX_M;
 
     [[branch]]
     if (Test_InScreen(s_coord) &&
@@ -151,8 +142,8 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
     const float3 viewnormal = SampleViewNormal(coord);
     const float depthBias = lerp(0.1f, 0.01f, -viewnormal.z);
     const float3 normal = ViewToWorldDir(viewnormal);
-    const int scale = ReSTIR_FilterScale(coord, isNewSurf);
     uint seed = ReSTIR_GetSeed(coord);
+    int scale = 5;
 
     Reservoir combined = initial;
 
@@ -164,25 +155,25 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
 
         for (uint i = 0u; i < RESTIR_SAMPLES_TEMPORAL; ++i)
         {
-            const int2 xy = ReSTIR_GetTemporalResamplingCoord(coordPrev, scale, int(hash + i), i == 0, i == 2);
+            scale = int(RESTIR_SAMPLES_TEMPORAL - i - 1);
+            const int2 xy = ReSTIR_GetTemporalResamplingCoord(coordPrev, int(hash + i), scale, i == 0);
             const int2 xyFull = GI_ExpandCheckerboardCoord(xy, 1u);
             const float s_depth = SamplePreviousViewDepth(xyFull);
-            const float3 s_normal = SamplePreviousWorldNormal(xyFull);
+            const float3 s_normal = SamplePreviousViewNormal(xyFull);
 
-            if (Any_NotEqual(xy, coordPrev) &&
-                Test_InScreen(xyFull) &&
+            if (Test_InScreen(xyFull) &&
                 Test_DepthReproject(depth, s_depth, depthBias) &&
-                dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
+                dot(viewnormal, s_normal) > RESTIR_NORMAL_THRESHOLD)
             {
                 // Don't sample multiple temporal reservoirs to avoid boiling. Break on first accepted sample.
                 Reservoir s_reservoir = ReSTIR_Load(xy, RESTIR_LAYER_PRE);
-                const float3 s_position = SamplePreviousWorldPosition(xyFull, s_depth);
-                const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_position, s_reservoir);
                 ReSTIR_Normalize(s_reservoir, RESTIR_MAX_M);
-                ReSTIR_CombineReservoir(combined, s_reservoir, s_targetPdf, hash);
+                ReSTIR_CombineReservoirSimple(combined, s_reservoir, hash);
                 break;
             }
         }
+
+        scale = clamp(scale, 2, 5);
     }
 
     // Spatial Resampling
@@ -195,6 +186,8 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
             const int2 xyFull = GI_ExpandCheckerboardCoord(xy);
             const float s_depth = SampleMinZ(xyFull, 0);
             const float3 s_normal = SampleWorldNormal(xyFull);
+            const float3 s_position = SampleWorldPosition(xyFull, s_depth);
+            const Reservoir s_reservoir = ReSTIR_Load_HitAsReservoir(xy, s_position);
 
             [[branch]]
             if (Any_NotEqual(xy, baseCoord) &&
@@ -202,8 +195,6 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
                 Test_DepthReproject(depth, s_depth, depthBias) &&
                 dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
             {
-                const float3 s_position = SampleWorldPosition(xyFull, s_depth);
-                const Reservoir s_reservoir = ReSTIR_Load_HitAsReservoir(xy, s_position);
                 const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_position, s_reservoir);
                 ReSTIR_CombineReservoir(combined, s_reservoir, s_targetPdf, hash);
             }

@@ -80,9 +80,9 @@ void main()
         uv = (uv - 0.5f) * 0.05f + 0.5f;
         #endif
 
-        float4 nr = SampleWorldNormalRoughness(uv);
-        float3 normal = nr.xyz;
-        float roughness = nr.w;
+        const float4 nr = SampleWorldNormalRoughness(uv);
+        const float3 normal = nr.xyz;
+        const float roughness = nr.w;
 
         #if PK_DEBUG_MODE == PK_DEBUG_MODE_GI_DIFF
             float3 gi_diff = GI_Sample_Diffuse(uv, normal) * exposure;
@@ -95,10 +95,6 @@ void main()
         #elif PK_DEBUG_MODE == PK_DEBUG_MODE_ROUGHNESS
             color = roughness.xxx;
         #endif
-
-        //const float3 viewdir = normalize(UVToViewPos(uv, 1.0f));
-        //const float3 viewnor = SamplePreviousViewNormal(uv.xy);
-        //color = dot(viewdir, -viewnor) < 0.0f ? 1.0f.xxx : 0.0f.xxx;
     }
 #endif
 
