@@ -40,14 +40,14 @@ void main()
         return;
     }
 
-    GIDiff diff = GI_Load_Diff(coord);
-    GISpec spec = GI_Load_Spec(coord);
-
     const float4 normalRoughness = SampleViewNormalRoughness(coord);
     const float3 normal = normalRoughness.xyz;
     const float roughness = normalRoughness.w;
     const float3 viewpos = SampleViewPosition(coord, depth);
     const float3 viewdir = normalize(viewpos);
+
+    GIDiff diff = GI_Load_Diff(coord);
+    GISpec spec = GI_Load_Spec(coord);
 
     // Filter Diff
     {
