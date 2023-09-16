@@ -85,11 +85,9 @@ void main()
         const float roughness = nr.w;
 
         #if PK_DEBUG_MODE == PK_DEBUG_MODE_GI_DIFF
-            float3 gi_diff = GI_Sample_Diffuse(uv, normal) * exposure;
-            color = gi_diff;
+            color = GI_Load_Resolved_Diff(uv) * exposure;
         #elif PK_DEBUG_MODE == PK_DEBUG_MODE_GI_SPEC
-            float3 gi_spec = GI_Sample_Specular(uv, normal) * exposure;
-            color = gi_spec;
+            color = GI_Load_Resolved_Spec(uv) * exposure;
         #elif PK_DEBUG_MODE == PK_DEBUG_MODE_NORMAL
             color = normal * 0.5f + 0.5f;
         #elif PK_DEBUG_MODE == PK_DEBUG_MODE_ROUGHNESS

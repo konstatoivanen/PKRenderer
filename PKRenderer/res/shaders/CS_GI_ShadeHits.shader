@@ -71,7 +71,6 @@ void main()
         }
     }
 
-    // Its slightly faster to use reservoirs texture than gi data texture
-    ReSTIR_Store_Hit(raycoord, packedDiff);
+    GI_Store_Packed_Diff(raycoord, packedDiff);
     GI_Store_Packed_Spec(raycoord, packedSpec);
 }

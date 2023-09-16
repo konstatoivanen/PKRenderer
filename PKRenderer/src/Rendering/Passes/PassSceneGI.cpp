@@ -59,13 +59,13 @@ namespace PK::Rendering::Passes
         descr.sampler.filterMag = FilterMode::Point;
         descr.usage = TextureUsage::Sample | TextureUsage::Storage;
         descr.format = TextureFormat::RGBA32UI;
-        descr.layers = 3;
+        descr.layers = 2;
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1 };
         m_packedDiff = Texture::Create(descr, "GI.PackedDiff");
 
         descr.format = TextureFormat::RG32UI;
         m_packedSpec = Texture::Create(descr, "GI.PackedSpec");
-
+        
         descr.layers = 3u;
         descr.levels = 4u;
         descr.resolution = { config->InitialWidth / 2u, config->InitialHeight / 2u, 1u };
@@ -88,9 +88,15 @@ namespace PK::Rendering::Passes
         m_rayhits = Texture::Create(descr, "GI.RayHits");
 
         descr.samplerType = SamplerType::Sampler2DArray;
-        descr.layers = 5;
+        descr.layers = 4;
         descr.format = TextureFormat::RGBA32UI;
         m_reservoirs = Texture::Create(descr, "GI.Reservoirs");
+
+        descr.layers = 2;
+        descr.format = TextureFormat::RGB9E5;
+        descr.usage = TextureUsage::Aliased | TextureUsage::Storage | TextureUsage::Sample;
+        descr.resolution = { config->InitialWidth, config->InitialHeight, 1u };
+        m_resolvedGI = Texture::Create(descr, "GI.Resolved");
 
         m_voxelizeAttribs.depthStencil.depthCompareOp = Comparison::Off;
         m_voxelizeAttribs.depthStencil.depthWriteEnable = false;
@@ -139,7 +145,8 @@ namespace PK::Rendering::Passes
         m_rayhits->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
         m_screenDataMips->Validate({ resolution.x / 2u, resolution.y / 2u, resolution.z });
         m_screenDataMipMask->Validate({ resolution.x >> 4u, resolution.y >> 4u, resolution.z });
-        m_reservoirs->Validate(resolution);
+        m_reservoirs->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
+        m_resolvedGI->Validate(resolution);
 
         GraphicsAPI::SetImage(hash->pk_GI_RayHits, m_rayhits.get());
         GraphicsAPI::SetTexture(hash->pk_GI_ScreenDataMips, m_screenDataMips.get());
@@ -147,6 +154,8 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetImage(hash->pk_Reservoirs, m_reservoirs.get());
         GraphicsAPI::SetImage(hash->pk_GI_PackedDiff, m_packedDiff.get());
         GraphicsAPI::SetImage(hash->pk_GI_PackedSpec, m_packedSpec.get());
+        GraphicsAPI::SetImage(hash->pk_GI_ResolvedWrite, m_resolvedGI.get());
+        GraphicsAPI::SetTexture(hash->pk_GI_ResolvedRead, m_resolvedGI.get());
 
         m_rasterAxis = m_frameIndex % 3;
         auto checkerboardIndex = m_frameIndex % 4;
@@ -221,11 +230,12 @@ namespace PK::Rendering::Passes
 
         auto resolution = m_packedDiff->GetResolution();
         uint3 dimension = { resolution.x, resolution.y, 1u };
+        uint3 chbdimension = GetCheckerboardResolution(dimension, m_useCheckerboardTrace);
 
         cmd->BeginDebugScope("SceneGI.Filter", PK_COLOR_GREEN);
 
-        cmd->Dispatch(m_computeShadeHits, GetCheckerboardResolution(dimension, m_useCheckerboardTrace));
-        cmd->Dispatch(m_computeAccumulate, GetCheckerboardResolution(dimension, m_useCheckerboardTrace));
+        cmd->Dispatch(m_computeShadeHits, chbdimension);
+        cmd->Dispatch(m_computeAccumulate, chbdimension);
 
         // Screen mip
         GraphicsAPI::SetImage(hash->_DestinationMip1, m_screenDataMips.get(), { 0, 0, 1, 3 });
@@ -233,8 +243,7 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetImage(hash->_DestinationMip3, m_screenDataMips.get(), { 2, 0, 1, 3 });
         GraphicsAPI::SetImage(hash->_DestinationMip4, m_screenDataMips.get(), { 3, 0, 1, 3 });
         cmd->Dispatch(m_computeScreenMip, m_screenDataMips->GetResolution());
-        cmd->Dispatch(m_computeHistoryFill, dimension);
-        cmd->Dispatch(m_computeDiskFilter, dimension);
+        cmd->Dispatch(m_computeDiskFilter, chbdimension);
         cmd->EndDebugScope();
     }
 

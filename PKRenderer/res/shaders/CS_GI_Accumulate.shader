@@ -58,6 +58,11 @@ float SSRT_ValidateVisibility(const float3 start_ws, const float3 end_ws, const 
     return visibility;
 }
 
+Reservoir ReSTIR_Load_HitAsReservoir(const int2 coord, const float3 origin)
+{
+    return ReSTIR_Unpack_Hit(GI_Load_Packed_Diff(coord), origin);
+}
+
 bool ReSTIR_BoilingFilter(uint2 LocalIndex, float filterStrength, float reservoirWeight)
 {
     float boilingFilterMultiplier = 10.f / clamp(filterStrength, 1e-6, 1.0) - 9.f;
@@ -118,6 +123,8 @@ void ReSTIR_SubgroupSuffle(const int2 coord,
     const float3 s_origin = subgroupShuffle(origin, mask);
     const float3 s_normal = subgroupShuffle(normal, mask);
     const int2 s_coord = subgroupShuffle(coord, mask);
+
+    // Also check screen area in case receiving invalid values.
 
     [[branch]]
     if (Test_InScreen(s_coord) &&
@@ -247,7 +254,7 @@ void main()
         current.sh = SH_FromRadiance(reservoir.radiance, samplevec.xyz);
         current.ao = saturate(samplevec.w / PK_GI_RAY_TMAX);
 
-        GIDiff history = GI_Load_Diff(coord, PK_GI_STORE_LVL);
+        GIDiff history = GI_Load_Diff(baseCoord, PK_GI_STORE_LVL);
 
         #if defined(PK_GI_RESTIR)
         ReSTIR_ResampleSpatioTemporal(baseCoord, coord, depth, origin, int(history.history) < 4, reservoir, current.sh);
@@ -256,7 +263,7 @@ void main()
         const float alpha = GI_Alpha(history);
         current = GI_ClampLuma(current, GI_MaxLuma(history, alpha));
         history = GI_Interpolate(history, current, alpha);
-        GI_Store_Packed_Diff(coord, isScene ? GI_Pack_Diff(history) : uint4(0));
+        GI_Store_Packed_Diff(baseCoord, isScene ? GI_Pack_Diff(history) : uint4(0));
     }
 
     // Specular
@@ -265,11 +272,11 @@ void main()
     if (SampleRoughness(coord) < PK_GI_MAX_ROUGH_SPEC)
     #endif
     {
-        GISpec history = GI_Load_Spec(coord, PK_GI_STORE_LVL);
+        GISpec history = GI_Load_Spec(baseCoord, PK_GI_STORE_LVL);
         GISpec current = GI_Load_Spec(baseCoord);
         const float alpha = GI_Alpha(history);
         current = GI_ClampLuma(current, GI_MaxLuma(history, alpha));
         history = GI_Interpolate(history, current, alpha);
-        GI_Store_Packed_Spec(coord, isScene ? GI_Pack_Spec(history) : uint2(0));
+        GI_Store_Packed_Spec(baseCoord, isScene ? GI_Pack_Spec(history) : uint2(0));
     }
 }

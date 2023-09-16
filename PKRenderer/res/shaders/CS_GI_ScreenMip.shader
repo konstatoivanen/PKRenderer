@@ -2,6 +2,8 @@
 #extension GL_EXT_shader_atomic_float : enable
 #pragma PROGRAM_COMPUTE
 
+#multi_compile _ PK_GI_CHECKERBOARD_TRACE
+
 #define PK_GI_LOAD_LVL 0
 #define PK_GI_STORE_LVL 0
 
@@ -100,15 +102,22 @@ void main()
 
         GIDiff s_diff[4];
         GISpec s_spec[4];
-        byte4 maskDiff, maskSpec;
+        byte4 maskDiff = byte4(0);
+        byte4 maskSpec = byte4(0);
         float2 momentsDiff, momentsSpec;
 
+        #if defined(PK_GI_CHECKERBOARD_TRACE)
+        for (int i = 0; i < 2; ++i)
+        {
+            const int2 scoord = int2(coord.x, coord.y * 2 + i);
+        #else
         for (int i = 0; i < 4; ++i)
         {
-            const int2 xy = int2(i & 0x1, i / 2);
+            const int2 scoord = int2(coord.x * 2 + (i & 0x1), coord.y * 2 + (i / 2));
+        #endif
             
-            const uint4 sp_diff = GI_Load_Packed_Diff(int2(coord) * 2 + xy);
-            const uint2 sp_spec = GI_Load_Packed_Spec(int2(coord) * 2 + xy);
+            const uint4 sp_diff = GI_Load_Packed_Diff(scoord);
+            const uint2 sp_spec = GI_Load_Packed_Spec(scoord);
 
             maskDiff[i] = byte(sp_diff.w != 0u);
             maskSpec[i] = byte(sp_spec.y != 0u);
@@ -129,8 +138,8 @@ void main()
         atomicAdd(lds_Spec_Weight, maskSpec.x + maskSpec.y + maskSpec.z + maskSpec.w);
         barrier();
 
-        momentsDiff = float2(lds_Diff_Mom1, lds_Diff_Mom2) / (1.0f + lds_Diff_Weight);
-        momentsSpec = float2(lds_Spec_Mom1, lds_Spec_Mom2) / (1.0f + lds_Spec_Weight);
+        momentsDiff = float2(lds_Diff_Mom1, lds_Diff_Mom2) * safePositiveRcp(lds_Diff_Weight);
+        momentsSpec = float2(lds_Spec_Mom1, lds_Spec_Mom2) * safePositiveRcp(lds_Spec_Weight);
         
         const float maxLumaDiff = momentsDiff.x + pow(abs(momentsDiff.y - pow2(momentsDiff.x)), 0.25f) * 2.5f;
         const float maxLumaSpec = momentsSpec.x + pow(abs(momentsSpec.y - pow2(momentsSpec.x)), 0.25f) * 2.5f;
@@ -138,7 +147,11 @@ void main()
         GIDiff filteredDiff = pk_Zero_GIDiff;
         GISpec filteredSpec = pk_Zero_GISpec;
 
+        #if defined(PK_GI_CHECKERBOARD_TRACE)
+        for (uint i = 0; i < 2; ++i)
+        #else
         for (uint i = 0; i < 4; ++i)
+        #endif
         {
             filteredDiff = GI_Sum_NoHistory(filteredDiff, GI_ClampLuma(s_diff[i], maxLumaDiff), maskDiff[i]);
             filteredSpec = GI_Sum_NoHistory(filteredSpec, GI_ClampLuma(s_spec[i], maxLumaSpec), maskSpec[i]);

@@ -25,9 +25,11 @@ PK_DECLARE_CBUFFER(pk_GI_Parameters, PK_SET_SHADER)
 layout(rg32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_RayHits;
 layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedDiff;
 layout(rg32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedSpec;
+layout(r32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_ResolvedWrite;
 layout(r8ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_ScreenDataMipMask; 
 layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_GI_VolumeMaskWrite;
 layout(rgba16f, set = PK_SET_SHADER) uniform image3D pk_GI_VolumeWrite;
+PK_DECLARE_SET_SHADER uniform sampler2DArray pk_GI_ResolvedRead;
 PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataMips;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 
@@ -182,6 +184,21 @@ void GI_Store_Spec(const int2 coord, const int l, const GISpec u) { GI_Store_Pac
 void GI_Store_Diff(const int2 coord, const GIDiff u) { GI_Store_Packed_Diff(coord, GI_Pack_Diff(u)); }
 void GI_Store_Spec(const int2 coord, const GISpec u) { GI_Store_Packed_Spec(coord, GI_Pack_Spec(u)); }
 
+float3 GI_Load_Resolved_Diff(const float2 uv) { return texelFetch(pk_GI_ResolvedRead, int3(uv * pk_ScreenSize.xy, 0), 0).xyz; }
+float3 GI_Load_Resolved_Spec(const float2 uv) { return texelFetch(pk_GI_ResolvedRead, int3(uv * pk_ScreenSize.xy, 1), 0).xyz;; }
+
+void GI_Store_Resolved_Diff(const int2 coord, const float3 N, const GIDiff diff)
+{
+    const float3 radiance = SH_ToIrradiance(diff.sh, N, pk_GI_ChromaBias) * pow(diff.ao, PK_GI_AO_DIFF_POWER);
+    imageStore(pk_GI_ResolvedWrite, int3(coord, 0), uint4(EncodeE5BGR9(radiance)));
+}
+
+void GI_Store_Resolved_Spec(const int2 coord, const GISpec spec)
+{
+    const float3 radiance = spec.radiance * pow(spec.ao, PK_GI_AO_SPEC_POWER);
+    imageStore(pk_GI_ResolvedWrite, int3(coord, 1), uint4(EncodeE5BGR9(radiance)));
+}
+
 GIRayHits GI_Load_RayHits(const int2 coord)
 {
     uint2 packed = imageLoad(pk_GI_RayHits, coord).xy;
@@ -215,7 +232,6 @@ void GI_Store_Voxel(float3 worldpos, float4 color)
 }
 
 //----------PREDICATES----------//
-bool GI_Test_VX_History(const float2 uv) { return GI_Load_Diff(int2(uv * pk_ScreenSize.xy)).history < PK_GI_VX_MIN_HISTORY; }
 bool GI_Test_VX_HasValue(float3 worldposition) { return imageLoad(pk_GI_VolumeMaskWrite, GI_WorldToVoxelSpace(worldposition)).x != 0; }
 bool GI_Test_VX_Normal(float3 normal)
 {
@@ -224,17 +240,6 @@ bool GI_Test_VX_Normal(float3 normal)
 }
 
 //----------SAMPLING FUNCTIONS----------//
-float3 GI_Sample_Diffuse(const float2 uv, const float3 N) { return SH_ToIrradiance(GI_Load_Diff(int2(uv * pk_ScreenSize.xy)).sh, N, pk_GI_ChromaBias); }
-float3 GI_Sample_Specular(const float2 uv, const float3 N) { return GI_Load_Spec(int2(uv * pk_ScreenSize.xy)).radiance; }
-
-void GI_Sample_Lighting(const float2 uv, const float3 N, const float3 V, const float R, inout float3 diffuse, inout float3 specular) 
-{
-    const int2 coord = int2(uv * pk_ScreenSize.xy);
-    const GIDiff s_diff = GI_Load_Diff(coord);
-    const GISpec s_spec = GI_Load_Spec(coord);
-    diffuse = SH_ToIrradiance(s_diff.sh, N, pk_GI_ChromaBias) * pow(s_diff.ao, PK_GI_AO_DIFF_POWER);
-    specular = s_spec.radiance * pow(s_spec.ao, PK_GI_AO_SPEC_POWER);
-}
 
 //----------VOXEL TRACING FUNCTIONS----------//
 half4 GI_SphereTrace_Diffuse(float3 position)

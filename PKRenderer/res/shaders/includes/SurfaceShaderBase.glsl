@@ -43,24 +43,24 @@ float2 ParallaxOffset(float height, float amount, float3 viewdir)
 
 float3 GetIndirectLight_Main(const BRDFSurf surf, const float3 worldpos, const float3 clipuvw)
 {
-    float3 diffuse, specular;
-    //diffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
-    //specular = SampleEnvironment(OctaUV(reflect(-surf.viewdir, surf.normal)), surf.roughness);
-    GI_Sample_Lighting(clipuvw.xy, surf.normal, surf.viewdir, surf.roughness, diffuse, specular);
+    //float3 diffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
+    //float3 specular = SampleEnvironment(OctaUV(reflect(-surf.viewdir, surf.normal)), surf.roughness);
+    float3 diffuse = GI_Load_Resolved_Diff(clipuvw.xy);
+    float3 specular = GI_Load_Resolved_Spec(clipuvw.xy);
     return BRDF_INDIRECT_DEFAULT(surf, diffuse, specular);
 }
 
 // Multi bounce gi. Causes some very lingering light artifacts & bleeding. @TODO Consider adding a setting for this.
-float3 GetIndirectLight_VXGI(const BRDFSurf surf,const float3 worldpos, const float3 clipuvw)
+float3 GetIndirectLight_VXGI(const BRDFSurf surf, const float3 worldpos, const float3 clipuvw)
 {
     // Get unquantized clip uvw.
     float deltaDepth = SampleViewDepth(clipuvw.xy) - ViewDepth(clipuvw.z); 
     
     // Fragment is in view
-    if (deltaDepth > -0.01f && deltaDepth < 0.1f && !GI_Test_VX_History(clipuvw.xy))
+    if (deltaDepth > -0.01f && deltaDepth < 0.1f)
     {
         // Sample screen space SH values for more accurate results.
-        return surf.albedo * GI_Sample_Diffuse(clipuvw.xy, surf.normal);
+        return surf.albedo * GI_Load_Resolved_Diff(clipuvw.xy);
     }
     else
     {

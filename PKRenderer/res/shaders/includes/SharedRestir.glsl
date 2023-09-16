@@ -8,7 +8,6 @@ struct Reservoir { float3 position; float3 normal; float3 radiance; float target
 #define pk_Reservoir_Zero Reservoir(0.0f.xxx, 0.0f.xxx, 0.0f.xxx, 0.0f, 0.0f, 0u)
 #define RESTIR_LAYER_CUR int(( pk_FrameIndex.y & 0x1u) << 1u)
 #define RESTIR_LAYER_PRE int((~pk_FrameIndex.y & 0x1u) << 1u)
-#define RESTIR_LAYER_HIT 4
 #define RESITR_NEARFIELD 0.05f
 #define RESTIR_NORMAL_THRESHOLD 0.6f
 #define RESTIR_SAMPLES_TEMPORAL 6
@@ -138,13 +137,6 @@ void ReSTIR_CombineReservoirSimple(inout Reservoir combined, const Reservoir b, 
     }
 }
 
-
-void ReSTIR_Store_Empty(const int2 coord, const int layer)
-{
-    imageStore(pk_Reservoirs, int3(coord, layer + 0), uint4(0));
-    imageStore(pk_Reservoirs, int3(coord, layer + 1), uint4(0));
-}
-
 void ReSTIR_Store(const int2 coord, const int layer, const Reservoir r)
 {
     const bool isValid = !isinf(r.weightSum) && !isnan(r.weightSum) && r.weightSum >= 0.0;
@@ -186,11 +178,8 @@ uint4 ReSTIR_Pack_Hit(const float3 direction, const float hitDist, const float3 
     return packed;
 }
 
-void ReSTIR_Store_Hit(const int2 coord, uint4 packed) { imageStore(pk_Reservoirs, int3(coord, RESTIR_LAYER_HIT), packed); }
-
-Reservoir ReSTIR_Load_HitAsReservoir(const int2 coord, const float3 origin)
+Reservoir ReSTIR_Unpack_Hit(const uint4 packed, const float3 origin)
 {
-    const uint4 packed = imageLoad(pk_Reservoirs, int3(coord, RESTIR_LAYER_HIT));
     const float4 offset_invPdf = unpackHalf4x16(packed.xy);
     Reservoir r = pk_Reservoir_Zero;
     r.position = origin + offset_invPdf.xyz;

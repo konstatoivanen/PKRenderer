@@ -38,6 +38,7 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Texture> m_voxelMask;
             Utilities::Ref<Objects::Texture> m_packedDiff;
             Utilities::Ref<Objects::Texture> m_packedSpec;
+            Utilities::Ref<Objects::Texture> m_resolvedGI;
             Utilities::Ref<Objects::Texture> m_screenDataMips;
             Utilities::Ref<Objects::Texture> m_screenDataMipMask;
             Utilities::Ref<Objects::Texture> m_reservoirs;
