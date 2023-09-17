@@ -73,22 +73,34 @@ void HistoryFill(const int2 coord,
     }
 }
 
-void CheckerboardFillDiff(const int2 baseCoord, const GIDiff f_diff)
+void CheckerboardFillDiff(const int2 baseCoord, const GIDiff history, const GIDiff filtered)
 {
     const int2 ncoord = GI_ExpandCheckerboardCoord(uint2(baseCoord), 1u);
     const int2 hcoord = int2(baseCoord.x + pk_ScreenSize.x / 2, baseCoord.y);
-    const GIDiff n_diff = GI_Load_Diff(hcoord);
-    GI_Store_Diff(ncoord, n_diff);
-    GI_Store_Resolved_Diff(ncoord, SampleWorldNormal(ncoord), GI_Interpolate(n_diff, f_diff, GI_Alpha(n_diff)));
+    
+    const GIDiff neighbour = GI_Load_Diff(hcoord);
+    const float alpha = GI_Alpha(neighbour);
+    
+    const GIDiff n_history = GI_Interpolate(neighbour, history, pow2(alpha));
+    const GIDiff n_filtered = GI_Interpolate(neighbour, filtered, alpha);
+
+    GI_Store_Diff(ncoord, n_history);
+    GI_Store_Resolved_Diff(ncoord, SampleWorldNormal(ncoord), n_filtered);
 }
 
-void CheckerboardFillSpec(const int2 baseCoord, const GISpec f_spec)
+void CheckerboardFillSpec(const int2 baseCoord, const GISpec history, const GISpec filtered)
 {
     const int2 ncoord = GI_ExpandCheckerboardCoord(uint2(baseCoord), 1u);
     const int2 hcoord = int2(baseCoord.x + pk_ScreenSize.x / 2, baseCoord.y);
-    const GISpec n_spec = GI_Load_Spec(hcoord);
-    GI_Store_Spec(ncoord, n_spec);
-    GI_Store_Resolved_Spec(ncoord, GI_Interpolate(n_spec, f_spec, GI_Alpha(n_spec)));
+
+    const GISpec neighbour = GI_Load_Spec(hcoord);
+    const float alpha = GI_Alpha(neighbour);
+
+    const GISpec n_history = GI_Interpolate(neighbour, history, pow2(alpha));
+    const GISpec n_filtered = GI_Interpolate(neighbour, filtered, alpha);
+
+    GI_Store_Spec(ncoord, n_history);
+    GI_Store_Resolved_Spec(ncoord, n_filtered);
 }
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
@@ -138,7 +150,7 @@ void main()
         GI_Store_Diff(coord, h_diff);
         GI_Store_Resolved_Diff(coord, wnormal, f_diff);
         #if defined(PK_GI_CHECKERBOARD_TRACE)
-        CheckerboardFillDiff(baseCoord, f_diff);
+        CheckerboardFillDiff(baseCoord, h_diff, f_diff);
         #endif
     }
 
@@ -174,7 +186,7 @@ void main()
         GI_Store_Spec(coord, h_spec);
         GI_Store_Resolved_Spec(coord, f_spec);
         #if defined(PK_GI_CHECKERBOARD_TRACE)
-        CheckerboardFillSpec(baseCoord, f_spec);
+        CheckerboardFillSpec(baseCoord, h_spec, f_spec);
         #endif
     }
 

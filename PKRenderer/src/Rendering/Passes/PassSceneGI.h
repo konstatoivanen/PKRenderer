@@ -18,6 +18,7 @@ namespace PK::Rendering::Passes
             void DispatchRays(Objects::CommandBuffer* cmd);
             void Preprocess(Objects::CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup);
             void RenderGI(Objects::CommandBuffer* cmd);
+            void ValidateReservoirs(Objects::CommandBuffer* cmd);
             void OnUpdateParameters(const Core::ApplicationConfig* config);
 
         private:
@@ -31,7 +32,9 @@ namespace PK::Rendering::Passes
             Objects::Shader* m_computeHistoryFill = nullptr;
             Objects::Shader* m_computeDiskFilter = nullptr;
             Objects::Shader* m_rayTraceGatherGI = nullptr;
-            Objects::ShaderBindingTable m_shaderBindingTable;
+            Objects::Shader* m_rayTraceValidate = nullptr;
+            Objects::ShaderBindingTable m_sbtRaytrace;
+            Objects::ShaderBindingTable m_sbtValidate;
             Utilities::Ref<Objects::ConstantBuffer> m_parameters;
 
             Utilities::Ref<Objects::Texture> m_voxels;
@@ -47,5 +50,6 @@ namespace PK::Rendering::Passes
             uint32_t m_frameIndex = 0u;
             int32_t m_rasterAxis = 0;
             bool m_useCheckerboardTrace = false;
+            bool m_useReSTIR = false;
     };
 }

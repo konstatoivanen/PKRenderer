@@ -312,6 +312,7 @@ namespace PK::Rendering
         m_depthOfField.ComputeAutoFocus(cmdcompute, resolution.y);
         m_passVolumeFog.ComputeDensity(cmdcompute, resolution);
         m_passEnvBackground.ComputeSH(cmdcompute);
+        m_passSceneGI.ValidateReservoirs(cmdcompute);
         queues->Submit(QueueType::Compute, &cmdcompute);
         queues->Sync(QueueType::Graphics, QueueType::Compute);
 

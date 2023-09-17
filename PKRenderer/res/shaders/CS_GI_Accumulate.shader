@@ -19,45 +19,6 @@
 shared float s_weights[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
 shared uint s_count[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
 
-float SSRT_ValidateVisibility(const float3 start_ws, const float3 end_ws, const uint max_count)
-{
-    const float Z_THICKNESS = 0.05f;
-
-    float4 start_cs = WorldToClipPos(start_ws);
-    start_cs.xyz /= start_cs.w;
-    float4 end_cs = WorldToClipPos(end_ws);
-    end_cs.xyz /= end_cs.w;
-
-    const float2 delta_px = (end_cs.xy - start_cs.xy) * 0.5f * (pk_ScreenSize.xy / 2);
-    const uint count = min(max_count, uint(length(delta_px) / 2u));
-    const float z_step = (end_cs.z - start_cs.z) / length(end_cs.xy - start_cs.xy);
-    const float t_step = 1.0f / count;
-    
-    float t = 0.5f * t_step;
-    float visibility = 1.0f;
-
-    for (uint k = 0u; k < count; ++k)
-    {
-        const float3 clippos = lerp(start_cs.xyz, end_cs.xyz, t);
-        const float2 uv = clippos.xy * 0.5f + 0.5f;
-        const uint2 coord = uint2(uv * pk_ScreenSize.xy);
-        const float depth = ClipDepth(SampleAvgZ(coord >> 1u, 1u));
-        const float2 quantized = ((coord + 0.5f.xx) / pk_ScreenSize.xy) * 2.0f - 1.0f;
-        const float biased_z = start_cs.z + z_step * length(quantized - start_cs.xy);
-
-        if (depth > biased_z && Test_InScreen(uv))
-        {
-            const float diff = abs(max(1e-20, clippos.z) / max(1e-20, depth) - 1.0);
-            const float hit = smoothstep(Z_THICKNESS, Z_THICKNESS * 0.5f, diff);
-            visibility *= 1.0f - hit;
-        }
-
-        t += t_step;
-    }
-
-    return visibility;
-}
-
 Reservoir ReSTIR_Load_HitAsReservoir(const int2 coord, const float3 origin)
 {
     return ReSTIR_Unpack_Hit(GI_Load_Packed_Diff(coord), origin);
@@ -159,6 +120,7 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
         const float2 screenUvPrev = WorldToPrevClipUV(origin) * int2(pk_ScreenSize.xy) + RESTIR_TEXEL_BIAS;
         const int2 coordPrev = GI_CollapseCheckerboardCoord(screenUvPrev, 1u);
         const uint hash = ReSTIR_Hash(seed++);
+        int scaleBias = 0;
 
         for (uint i = 0u; i < RESTIR_SAMPLES_TEMPORAL; ++i)
         {
@@ -174,13 +136,20 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
             {
                 // Don't sample multiple temporal reservoirs to avoid boiling. Break on first accepted sample.
                 Reservoir s_reservoir = ReSTIR_Load(xy, RESTIR_LAYER_PRE);
-                ReSTIR_Normalize(s_reservoir, RESTIR_MAX_M);
-                ReSTIR_CombineReservoirSimple(combined, s_reservoir, hash);
-                break;
+                
+                if (s_reservoir.M > 0u)
+                {
+                    ReSTIR_Normalize(s_reservoir, RESTIR_MAX_M);
+                    ReSTIR_CombineReservoirSimple(combined, s_reservoir, hash);
+                    break;
+                }
+
+                // Sample vas invalidaded. reduce radius as this area is likely to have high frequency details.
+                scaleBias--;
             }
         }
 
-        scale = clamp(scale, 2, 5);
+        scale = clamp(scale + scaleBias, 2, 5);
     }
 
     // Spatial Resampling
@@ -214,8 +183,8 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
 
     // Reshade hit
     {
-        // Ignore visibility for disocclusions
-        const float visibility = isNewSurf ? 1.0f : SSRT_ValidateVisibility(origin, combined.position, 6);
+        // @TODO alternatively or rather we should retrace visibility here as to not accumulate invalid samples.
+        // This is expensive however, currently reservoirs are validated in async during present (which is virtually free).
         const bool reject = !isNewSurf && ReSTIR_NearFieldReject(depth, origin, initial, ReSTIR_Hash(seed + 1));
         const float3 direction = normalize(combined.position - origin);
         const float weight = ReSTIR_GetSampleWeight(combined, normal, direction);
@@ -223,8 +192,7 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
 
         if (isValid)
         {
-            SH newSH = SH_FromRadiance(combined.radiance * weight, direction);
-            outSH = SH_Interpolate(outSH, newSH, visibility);
+            outSH = SH_FromRadiance(combined.radiance * weight, direction);
         }
 
         if (ReSTIR_BoilingFilter(gl_LocalInvocationID.xy, 0.2f, combined.targetPdf * combined.weightSum) || !isValid)

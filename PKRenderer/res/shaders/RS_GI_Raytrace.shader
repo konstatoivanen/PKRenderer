@@ -118,7 +118,6 @@ void main()
 {
     const int2 raycoord = int2(gl_LaunchIDEXT.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy);
-    const float2 uv = (coord + 0.5f.xx) / int2(pk_ScreenSize.xy);
     const float depth = SampleViewDepth(coord);
     
     GIRayParams params;

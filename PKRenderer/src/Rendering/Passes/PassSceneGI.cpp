@@ -28,6 +28,7 @@ namespace PK::Rendering::Passes
         m_computeHistoryFill = assetDatabase->Find<Shader>("CS_GI_HistoryFill");
         m_computeDiskFilter = assetDatabase->Find<Shader>("CS_GI_DiskFilter");
         m_rayTraceGatherGI = assetDatabase->Find<Shader>("RS_GI_Raytrace");
+        m_rayTraceValidate = assetDatabase->Find<Shader>("RS_GI_ValidateReservoirs");
         OnUpdateParameters(config);
 
         TextureDescriptor descr{};
@@ -135,10 +136,13 @@ namespace PK::Rendering::Passes
              { 1u, 2u, 0u, 0u },
         };
 
-        m_shaderBindingTable.Validate(
+        m_sbtRaytrace.Validate(
             GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer),
-            GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Compute),
             m_rayTraceGatherGI);
+
+        m_sbtValidate.Validate(
+            GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer),
+            m_rayTraceValidate);
 
         m_packedDiff->Validate(resolution);
         m_packedSpec->Validate(resolution);
@@ -182,6 +186,7 @@ namespace PK::Rendering::Passes
     void PassSceneGI::DispatchRays(Objects::CommandBuffer* cmd)
     {
         cmd->BeginDebugScope("SceneGI.DispatchRays", PK_COLOR_GREEN);
+        m_sbtRaytrace.Bind(cmd);
         cmd->DispatchRays(m_rayTraceGatherGI, m_rayhits->GetResolution());
         cmd->EndDebugScope();
     }
@@ -247,9 +252,21 @@ namespace PK::Rendering::Passes
         cmd->EndDebugScope();
     }
 
+    void PassSceneGI::ValidateReservoirs(Objects::CommandBuffer* cmd)
+    {
+        if (m_useReSTIR)
+        {
+            cmd->BeginDebugScope("SceneGI.ValidateReservoirs", PK_COLOR_GREEN);
+            m_sbtValidate.Bind(cmd);
+            cmd->DispatchRays(m_rayTraceValidate, m_reservoirs->GetResolution());
+            cmd->EndDebugScope();
+        }
+    }
+
     void PassSceneGI::OnUpdateParameters(const ApplicationConfig* config)
     {
         m_useCheckerboardTrace = config->GICheckerboardTrace;
+        m_useReSTIR = config->GIReSTIR;
         GraphicsAPI::SetKeyword("PK_GI_CHECKERBOARD_TRACE", m_useCheckerboardTrace);
         GraphicsAPI::SetKeyword("PK_GI_SPEC_VIRT_REPROJECT", config->GISpecularVirtualReproject);
         GraphicsAPI::SetKeyword("PK_GI_SSRT_PRETRACE", config->GIScreenSpacePretrace);

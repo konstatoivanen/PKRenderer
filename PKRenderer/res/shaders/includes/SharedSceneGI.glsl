@@ -48,7 +48,7 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 #define PK_GI_AO_SPEC_POWER 0.05f
 
 #define PK_GI_RAY_TMAX 100.0f
-#define PK_GI_MIN_ACCUM 0.05f
+#define PK_GI_MIN_ACCUM 0.03f
 #define PK_GI_DIFF_MAX_HISTORY 32u
 #define PK_GI_SPEC_MAX_HISTORY 128u
 #define PK_GI_SPEC_ANTILAG_BASE_POWER 0.5f

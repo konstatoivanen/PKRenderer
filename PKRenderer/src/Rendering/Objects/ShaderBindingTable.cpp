@@ -6,7 +6,7 @@ namespace PK::Rendering::Objects
 {
     using namespace PK::Rendering::Structs;
 
-    void ShaderBindingTable::Validate(CommandBuffer* cmdUpload, CommandBuffer* cmdBind, Shader* shader)
+    void ShaderBindingTable::Validate(CommandBuffer* cmd, Shader* shader)
     {
         // @TODO parameterize this
         auto selector = shader->GetVariantSelector();
@@ -33,21 +33,24 @@ namespace PK::Rendering::Objects
             buffer->Validate(tableUintCount);
         }
 
-        cmdUpload->UploadBufferData(buffer.get(), tableInfo.handleData);
+        cmd->UploadBufferData(buffer.get(), tableInfo.handleData);
+    }
 
-        cmdBind->SetShaderBindingTable(RayTracingShaderGroup::RayGeneration,
+    void ShaderBindingTable::Bind(CommandBuffer* cmd)
+    {
+        cmd->SetShaderBindingTable(RayTracingShaderGroup::RayGeneration,
             buffer.get(),
             tableInfo.byteOffsets[(uint32_t)RayTracingShaderGroup::RayGeneration],
             tableInfo.handleSizeAligned,
             tableInfo.handleSizeAligned);
 
-        cmdBind->SetShaderBindingTable(RayTracingShaderGroup::Miss,
+        cmd->SetShaderBindingTable(RayTracingShaderGroup::Miss,
             buffer.get(),
             tableInfo.byteOffsets[(uint32_t)RayTracingShaderGroup::Miss],
             tableInfo.handleSizeAligned,
             tableInfo.handleSizeAligned);
 
-        cmdBind->SetShaderBindingTable(RayTracingShaderGroup::Hit,
+        cmd->SetShaderBindingTable(RayTracingShaderGroup::Hit,
             buffer.get(),
             tableInfo.byteOffsets[(uint32_t)RayTracingShaderGroup::Hit],
             tableInfo.handleSizeAligned,

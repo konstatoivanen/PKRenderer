@@ -885,6 +885,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\TricubicSampler.glsl" />
     <None Include="res\shaders\RS_GI_Raytrace.shader" />
     <None Include="res\shaders\CS_VolumeFogComposite.shader" />
+    <None Include="res\shaders\RS_GI_ValidateReservoirs.shader" />
     <None Include="res\shaders\SH_VS_Gizmos.shader" />
     <None Include="res\shaders\SH_WS_PBR_Cloth.shader" />
     <None Include="res\shaders\includes\Utilities.glsl" />
