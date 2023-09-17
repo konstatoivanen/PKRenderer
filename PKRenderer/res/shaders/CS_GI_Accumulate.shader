@@ -130,8 +130,7 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
             const float s_depth = SamplePreviousViewDepth(xyFull);
             const float3 s_normal = SamplePreviousViewNormal(xyFull);
 
-            if (Test_InScreen(xyFull) &&
-                Test_DepthReproject(depth, s_depth, depthBias) &&
+            if (Test_DepthReproject(depth, s_depth, depthBias) &&
                 dot(viewnormal, s_normal) > RESTIR_NORMAL_THRESHOLD)
             {
                 // Don't sample multiple temporal reservoirs to avoid boiling. Break on first accepted sample.
@@ -167,7 +166,6 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
 
             [[branch]]
             if (Any_NotEqual(xy, baseCoord) &&
-                Test_InScreen(xyFull) &&
                 Test_DepthReproject(depth, s_depth, depthBias) &&
                 dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
             {

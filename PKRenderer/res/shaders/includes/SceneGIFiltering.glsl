@@ -249,7 +249,8 @@ const float name[2][2] =                                            \
     {                                                                                                                               \
         const float3 s_offs = PK_POISSON_DISK_32_POW[i];                                                                            \
         const float2 s_uv = ViewToClipUV(SFLT_VPOS + basis * rotate2D(s_offs.xy, rotation));                                        \
-        const int2   s_px = int2(s_uv * pk_ScreenSize.xy);                                                                          \
+        const int2   s_gpx = GI_CollapseCheckerboardCoord(s_uv * pk_ScreenSize.xy, 0);                                              \
+        const int2   s_px = GI_ExpandCheckerboardCoord(s_gpx);                                                                      \
         const float4 s_nr = SampleViewNormalRoughness(s_px);                                                                        \
         const float3 s_ray = SFLT_VPOS - UVToViewPos(s_uv, SampleMinZ(s_px, 0));                                                    \
                                                                                                                                     \
@@ -260,7 +261,7 @@ const float name[2][2] =                                            \
         w *= exp( -0.66 * s_offs.z *  s_offs.z);                                                                                    \
         w = lerp(0.0f, w, Test_InScreen(s_uv) && !Test_NaN_EPS4(w));                                                                \
                                                                                                                                     \
-        SFLT_OUT = GI_Sum_NoHistory(SFLT_OUT, GI_Load_Diff(s_px), w);                                                               \
+        SFLT_OUT = GI_Sum_NoHistory(SFLT_OUT, GI_Load_Diff(s_gpx), w);                                                              \
         wSum += w;                                                                                                                  \
     }                                                                                                                               \
                                                                                                                                     \

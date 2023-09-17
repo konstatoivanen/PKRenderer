@@ -106,13 +106,14 @@ void main()
         byte4 maskSpec = byte4(0);
         float2 momentsDiff, momentsSpec;
 
-        #if defined(PK_GI_CHECKERBOARD_TRACE)
-        for (int i = 0; i < 2; ++i)
-        {
-            const int2 scoord = int2(coord.x, coord.y * 2 + i);
-        #else
         for (int i = 0; i < 4; ++i)
         {
+        #if defined(PK_GI_CHECKERBOARD_TRACE)
+            int2 scoord = int2(coord);
+            scoord.x += (i % 1) * int(pk_ScreenSize.x / 2);
+            scoord.y *= 2;
+            scoord.y += i / 2;
+        #else
             const int2 scoord = int2(coord.x * 2 + (i & 0x1), coord.y * 2 + (i / 2));
         #endif
             
@@ -147,11 +148,7 @@ void main()
         GIDiff filteredDiff = pk_Zero_GIDiff;
         GISpec filteredSpec = pk_Zero_GISpec;
 
-        #if defined(PK_GI_CHECKERBOARD_TRACE)
-        for (uint i = 0; i < 2; ++i)
-        #else
         for (uint i = 0; i < 4; ++i)
-        #endif
         {
             filteredDiff = GI_Sum_NoHistory(filteredDiff, GI_ClampLuma(s_diff[i], maxLumaDiff), maskDiff[i]);
             filteredSpec = GI_Sum_NoHistory(filteredSpec, GI_ClampLuma(s_spec[i], maxLumaSpec), maskSpec[i]);

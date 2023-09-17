@@ -3,7 +3,6 @@
 #include includes/SceneEnv.glsl
 #include includes/SharedSceneGI.glsl
 #include includes/SharedReSTIR.glsl
-#include includes/Encoding.glsl
 
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE
 
@@ -78,7 +77,7 @@ void main()
 
     if (IsScreenHit(worldpos, true))
     {
-        float2 uv = ClipToUV(mul(pk_MATRIX_L_VP, float4(worldpos, 1.0f)).xyw);
+        const float2 uv = ClipToUV(mul(pk_MATRIX_L_VP, float4(worldpos, 1.0f)).xyw);
         radiance = SamplePreviousColor(uv);
     }
     else
@@ -100,7 +99,7 @@ void main()
 
     if (IsScreenHit(worldpos, false))
     {
-        float2 uv = ClipToUV(mul(pk_MATRIX_L_VP, float4(worldpos, 1.0f)).xyw);
+        const float2 uv = ClipToUV(mul(pk_MATRIX_L_VP, float4(worldpos, 1.0f)).xyw);
         radiance = SamplePreviousColor(uv);
     }
     else

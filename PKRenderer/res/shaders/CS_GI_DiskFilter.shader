@@ -127,24 +127,22 @@ void main()
     // Filter Diff
     {
 
-        /*
-        float variance = 0.0f;
-        GI_SFLT_DIFF_VARIANCE(coord, depth, f_diff, variance)
-
-        const float2 radiusAndScale = GI_GetDiskFilterRadiusAndScale(depth, variance, f_diff.ao, f_diff.history);
-        const float scale = radiusAndScale.y;
-        const float radius = radiusAndScale.x * (scale + 1e-4f);
-        const bool skip = f_diff.history > 32.0f || scale < 0.05f;
-        const uint step = lerp(uint(max(8.0f - sqrt(scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip);
-        GI_SFLT_DISK_DIFF(normal, depth, viewdir, viewpos, f_diff.history, step, skip, radius, f_diff)
-        */
+        //float variance = 0.0f;
+        //GI_SFLT_DIFF_VARIANCE(coord, depth, f_diff, variance)
+        //
+        //const float2 radiusAndScale = GI_GetDiskFilterRadiusAndScale(depth, variance, f_diff.ao, f_diff.history);
+        //const float scale = radiusAndScale.y;
+        //const float radius = radiusAndScale.x * (scale + 1e-4f);
+        //const bool skip = f_diff.history > 30.0f || scale < 0.05f;
+        //const uint step = lerp(uint(max(8.0f - sqrt(scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip);
+        //GI_SFLT_DISK_DIFF(normal, depth, viewdir, viewpos, f_diff.history, step, skip, radius, f_diff)
 
         const float alpha = GI_Alpha(h_diff) * 0.25f;
         h_diff = GI_ClampLuma(h_diff, GI_MaxLuma(f_diff, alpha));
         h_diff.sh = SH_Interpolate(h_diff.sh, f_diff.sh, alpha);
-        h_diff.history += 1.0f;
-
         f_diff.ao = lerp(h_diff.ao, 0.5f + f_diff.ao * 0.5f, alpha);
+        
+        h_diff.history += 1.0f;
         f_diff.history += 1.0f;
 
         GI_Store_Diff(coord, h_diff);

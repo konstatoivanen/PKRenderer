@@ -20,10 +20,18 @@ struct Reservoir { float3 position; float3 normal; float3 radiance; float target
     // @TODO calculate this correctly
     #define RESTIR_TEXEL_BIAS float2(0.2f, 0.07f)
     #define RESTIR_TEMPORAL_RADIUS int2(1, 2)
+    #define RESTIR_SCREEN_SIZE_MINUSONE (int2(pk_ScreenSize.x / 2, pk_ScreenSize.y) - 1)
 #else
+    #define RESTIR_SCREEN_SIZE_MINUSONE (int2(pk_ScreenSize.xy) - 1)
     #define RESTIR_TEXEL_BIAS 0.0f.xx
     #define RESTIR_TEMPORAL_RADIUS int2(1, 1)
 #endif
+
+int2 ReSTIR_WrapCoord(int2 coord)
+{
+    const int2 size = RESTIR_SCREEN_SIZE_MINUSONE;
+    return size - abs(size - abs(coord));
+}
 
 // Wellon Hash: https://nullprogram.com/blog/2018/07/31/
 uint ReSTIR_Hash(uint seed)
@@ -55,14 +63,15 @@ int2 ReSTIR_GetTemporalResamplingCoord(const int2 coord, int hash, int scale, bo
     const int m4 = 1 - (hash >> 2 & 0x01);
     const int t = -1 + 2 * (hash & 0x01);
     const int2 offset = int2(t, t * (1 - 2 * m2)) * int2(m4 | m2, m4 | (1 - m2)) * RESTIR_TEMPORAL_RADIUS * scale;
-    return ReSTIR_PermutationSampling(coord + offset, permute);
+    const int2 scoord = ReSTIR_PermutationSampling(coord + offset, permute);
+    return ReSTIR_WrapCoord(scoord);
 }
 
 int2 ReSTIR_GetSpatialResamplingCoord(const int2 coord, int scale, uint hash) 
 { 
     const uint w = 1u << uint(scale);
     const uint m = w - 1u;
-    return coord + int2(hash & m, (hash >> 8u) & m) - int2(w / 2); 
+    return ReSTIR_WrapCoord(coord + int2(hash & m, (hash >> 8u) & m) - int2(w / 2));
 }
 
 bool ReSTIR_NearFieldReject(const float depth, const float3 origin, const Reservoir r, uint hash)
