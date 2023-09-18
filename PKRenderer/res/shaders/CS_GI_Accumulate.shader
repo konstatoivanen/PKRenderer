@@ -61,13 +61,13 @@ bool ReSTIR_BoilingFilter(uint2 LocalIndex, float filterStrength, float reservoi
     return reservoirWeight > averageNonzeroWeight * boilingFilterMultiplier;
 }
 
-void ReSTIR_SubgroupSuffle(const int2 coord, 
-                           const float depth,
-                           const float depthBias,
-                           const float3 origin, 
-                           const float3 normal, 
-                           const uint hash,
-                           inout Reservoir combined)
+void ReSTIR_SubgroupSuffle(const int2 coord,
+    const float depth,
+    const float depthBias,
+    const float3 origin,
+    const float3 normal,
+    const uint hash,
+    inout Reservoir combined)
 {
     const uint subgroupMask = gl_SubgroupSize - 1u;
     const uint mask = (gl_SubgroupInvocationID + (hash % subgroupMask) + 1u) & subgroupMask;
@@ -99,13 +99,13 @@ void ReSTIR_SubgroupSuffle(const int2 coord,
     }
 }
 
-void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, 
-                                   const int2 coord, 
-                                   const float depth,
-                                   const float3 origin,
-                                   const bool isNewSurf,
-                                   const Reservoir initial,
-                                   inout SH outSH)
+void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
+    const int2 coord,
+    const float depth,
+    const float3 origin,
+    const bool isNewSurf,
+    const Reservoir initial,
+    inout SH outSH)
 {
     const float3 viewnormal = SampleViewNormal(coord);
     const float depthBias = lerp(0.1f, 0.01f, -viewnormal.z);
@@ -135,7 +135,7 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
             {
                 // Don't sample multiple temporal reservoirs to avoid boiling. Break on first accepted sample.
                 Reservoir s_reservoir = ReSTIR_Load(xy, RESTIR_LAYER_PRE);
-                
+
                 if (s_reservoir.M > 0u)
                 {
                     ReSTIR_Normalize(s_reservoir, RESTIR_MAX_M);
@@ -222,9 +222,9 @@ void main()
 
         GIDiff history = GI_Load_Diff(baseCoord, PK_GI_STORE_LVL);
 
-        #if defined(PK_GI_RESTIR)
+#if defined(PK_GI_RESTIR)
         ReSTIR_ResampleSpatioTemporal(baseCoord, coord, depth, origin, int(history.history) < 4, reservoir, current.sh);
-        #endif
+#endif
 
         const float alpha = GI_Alpha(history);
         current = GI_ClampLuma(current, GI_MaxLuma(history, alpha));
@@ -233,10 +233,10 @@ void main()
     }
 
     // Specular
-    #if PK_GI_APPROX_ROUGH_SPEC == 1
+#if PK_GI_APPROX_ROUGH_SPEC == 1
     [[branch]]
     if (SampleRoughness(coord) < PK_GI_MAX_ROUGH_SPEC)
-    #endif
+#endif
     {
         GISpec history = GI_Load_Spec(baseCoord, PK_GI_STORE_LVL);
         GISpec current = GI_Load_Spec(baseCoord);

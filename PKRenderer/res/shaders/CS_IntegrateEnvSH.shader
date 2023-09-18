@@ -23,17 +23,17 @@ void main()
     float4 local_SH_B = 0.0f.xxxx;
 
     for (uint yy = 0u; yy < 4u; ++yy)
-    for (uint xx = 0u; xx < 4u; ++xx)
-    {
-        const float2 uv = (coord + uint2(xx, yy) + 0.5f.xx) / TEXTURE_DIM;
-        
-        const float4 basis = SH_GetBasis(OctaDecode(uv));
-        const float3 radiance = tex2DLod(pk_SceneEnv, uv, PK_SCENE_ENV_MAX_MIP).rgb;
-    
-        local_SH_R += basis * radiance.r;
-        local_SH_G += basis * radiance.g;
-        local_SH_B += basis * radiance.b;
-    }
+        for (uint xx = 0u; xx < 4u; ++xx)
+        {
+            const float2 uv = (coord + uint2(xx, yy) + 0.5f.xx) / TEXTURE_DIM;
+
+            const float4 basis = SH_GetBasis(OctaDecode(uv));
+            const float3 radiance = tex2DLod(pk_SceneEnv, uv, PK_SCENE_ENV_MAX_MIP).rgb;
+
+            local_SH_R += basis * radiance.r;
+            local_SH_G += basis * radiance.g;
+            local_SH_B += basis * radiance.b;
+        }
 
     lds_SH_R[thread] = local_SH_R;
     lds_SH_G[thread] = local_SH_G;
@@ -45,15 +45,15 @@ void main()
         local_SH_R += lds_SH_R[thread + 0x01u];
         local_SH_R += lds_SH_R[thread + 0x08u];
         local_SH_R += lds_SH_R[thread + 0x09u];
-        
+
         local_SH_G += lds_SH_G[thread + 0x01u];
         local_SH_G += lds_SH_G[thread + 0x08u];
         local_SH_G += lds_SH_G[thread + 0x09u];
-        
+
         local_SH_B += lds_SH_B[thread + 0x01u];
         local_SH_B += lds_SH_B[thread + 0x08u];
         local_SH_B += lds_SH_B[thread + 0x09u];
-        
+
         lds_SH_R[thread] = local_SH_R;
         lds_SH_G[thread] = local_SH_G;
         lds_SH_B[thread] = local_SH_B;
@@ -65,7 +65,7 @@ void main()
         local_SH_R += lds_SH_R[thread + 0x02u];
         local_SH_R += lds_SH_R[thread + 0x10u];
         local_SH_R += lds_SH_R[thread + 0x12u];
-        
+
         local_SH_G += lds_SH_G[thread + 0x02u];
         local_SH_G += lds_SH_G[thread + 0x10u];
         local_SH_G += lds_SH_G[thread + 0x12u];
@@ -89,7 +89,7 @@ void main()
         local_SH_G += lds_SH_G[thread + 0x04u];
         local_SH_G += lds_SH_G[thread + 0x20u];
         local_SH_G += lds_SH_G[thread + 0x24u];
-        
+
         local_SH_B += lds_SH_B[thread + 0x04u];
         local_SH_B += lds_SH_B[thread + 0x20u];
         local_SH_B += lds_SH_B[thread + 0x24u];

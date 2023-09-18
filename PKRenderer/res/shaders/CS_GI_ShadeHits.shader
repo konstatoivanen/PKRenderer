@@ -36,7 +36,7 @@ void main()
     const int2 raycoord = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(raycoord));
     const float depth = SampleViewDepth(coord);
-    
+
     GIRayParams params;
     uint4 packedDiff = uint4(0u);
     uint2 packedSpec = uint2(0u);
@@ -44,8 +44,8 @@ void main()
     if (Test_DepthFar(depth))
     {
         GI_GET_RAY_PARAMS(coord, raycoord, depth, params)
-    
-        const GIRayHits hits = GI_Load_RayHits(raycoord);
+
+            const GIRayHits hits = GI_Load_RayHits(raycoord);
 
         // Always use reservoir packing for diff hits.
         // They can be used for neighbour reconstruction outside of ReSTIR
@@ -58,10 +58,10 @@ void main()
             SampleRadiance(params.origin, params.diffdir, hits.diff)
         );
 
-        #if PK_GI_APPROX_ROUGH_SPEC == 1
+#if PK_GI_APPROX_ROUGH_SPEC == 1
         [[branch]]
         if (params.roughness < PK_GI_MAX_ROUGH_SPEC)
-        #endif
+#endif
         {
             GISpec spec = pk_Zero_GISpec;
             spec.radiance = SampleRadiance(params.origin, params.specdir, hits.spec);

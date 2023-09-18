@@ -11,10 +11,33 @@ PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenNormalsPrevious;
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_ScreenColorPrevious;
 PK_DECLARE_SET_GLOBAL uniform sampler2DArray pk_ScreenDepthHierachical;
 
+#define GBUFFER_NORMALS_10BIT 1
+
 // Source: https://aras-p.info/texts/CompactNormalStorage.html
 float4 EncodeGBufferViewNR(const float3 normal, const float roughness) 
 { 
-    return float4(normal.xy / sqrt(-normal.z * 8 + 8) + 0.5, roughness, 0.0f); 
+    float2 xy = normal.xy / sqrt(-normal.z * 8 + 8) + 0.5f;
+
+    #if defined(SHADER_STAGE_FRAGMENT) && GBUFFER_NORMALS_10BIT == 1
+        // Low precision normals cause visible snapping. 
+        // Dither them by generating some deterministic triangle noise.
+        uint2 px = uint2(gl_FragCoord.xy);
+        px = (px | (px << 8)) & 0x00FF00FF;
+        px = (px | (px << 4)) & 0x0F0F0F0F;
+        px = (px | (px << 2)) & 0x33333333;
+        px = (px | (px << 1)) & 0x55555555;
+        uint hash = px.x | (px.y << 1);
+        hash ^= hash >> 16; 
+        hash *= 0x7feb352dU;
+        hash ^= hash >> 15; 
+        hash *= 0x846ca68bU;
+        hash ^= hash >> 16;
+        const float d = uintBitsToFloat(hash & 0x007fffffu | 0x3f800000u) * 2.0f - 3.0f;
+	    const float t = max(-1.0f, d * inversesqrt(abs(d))) - sign(d) + 0.5f;
+        xy = saturate(xy + t * 9.775171065493646e-4f); // t / 1023.0f
+    #endif
+
+    return float4(xy, roughness, 0.0f); 
 }
 
 float4 EncodeGBufferWorldNR(const float3 normal, const float roughness)

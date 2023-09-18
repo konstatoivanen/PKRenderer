@@ -23,12 +23,12 @@ void main()
 
 #if EARLY_Z_TEST == 1
     float4 maxdepths = float4
-    (
-        SampleMaxZ(float2(id.xy + float2(-0.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4),
-        SampleMaxZ(float2(id.xy + float2(-0.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
-        SampleMaxZ(float2(id.xy + float2(+1.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
-        SampleMaxZ(float2(id.xy + float2(+1.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4)
-    );
+        (
+            SampleMaxZ(float2(id.xy + float2(-0.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4),
+            SampleMaxZ(float2(id.xy + float2(-0.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
+            SampleMaxZ(float2(id.xy + float2(+1.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
+            SampleMaxZ(float2(id.xy + float2(+1.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4)
+            );
 
     float maxTile = cmax(maxdepths);
 
@@ -41,9 +41,9 @@ void main()
 
     const float3 worldpos = UVToWorldPos(uvw_cur.xy, depth);
     const float3 uvw_prev = VolumeFog_WorldToPrevUVW(worldpos);
-    const float3 viewdir  = normalize(worldpos - pk_WorldSpaceCameraPos.xyz);
+    const float3 viewdir = normalize(worldpos - pk_WorldSpaceCameraPos.xyz);
 
-    const float3 gi_static  = SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Anisotropy);
+    const float3 gi_static = SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Anisotropy);
     const float4 gi_dynamic = GI_SphereTrace_Diffuse(worldpos);
 
     // Occlude ground as it should be lit mostly by dynamic gi.
@@ -54,7 +54,7 @@ void main()
 
     // Distant texels are less dense, trace a longer distance to retain some depth.
     const float maxMarchDistance = exp(uvw_cur.z * VOLUMEFOG_MARCH_DISTANCE_EXP);
-    
+
     LightTile tile = GetLightTile_COORD(int2(gl_WorkGroupID.xy >> 1), depth);
     for (uint i = tile.start; i < tile.end; ++i)
     {

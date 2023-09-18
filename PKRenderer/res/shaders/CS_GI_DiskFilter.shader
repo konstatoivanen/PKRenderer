@@ -29,21 +29,21 @@ void ApproximateRoughSpecular(const float3 N, const float3 V, const float R, con
     spec.radiance = lerp(spec.radiance, specular, inter);
 }
 
-void HistoryFill(const int2 coord, 
-                 const float depth, 
-                 const float3 normal, 
-                 const float roughness, 
-                 inout GIDiff outDiff, 
-                 inout GISpec outSpec)
+void HistoryFill(const int2 coord,
+    const float depth,
+    const float3 normal,
+    const float roughness,
+    inout GIDiff outDiff,
+    inout GISpec outSpec)
 {
     const float historyDiff = outDiff.history;
 
-    #if PK_GI_APPROX_ROUGH_SPEC == 1
+#if PK_GI_APPROX_ROUGH_SPEC == 1
     // Rough spec might have invalid data.
     const float historySpec = lerp(PK_GI_SPEC_MAX_HISTORY, outSpec.history, roughness < PK_GI_MAX_ROUGH_SPEC);
-    #else
+#else
     const float historySpec = outSpec.history;
-    #endif
+#endif
 
     const float interpolant = min(historyDiff, historySpec) / PK_GI_HISTORY_FILL_THRESHOLD;
     const float level = min(3.0f - 1e-4f, 4.0f - 4.0f * interpolant);
@@ -55,7 +55,7 @@ void HistoryFill(const int2 coord,
         GISpec spec = GISpec(0.0f.xxx, 0.0f, historySpec);
         float wSum = 0.0f;
 
-        GI_SFLT_HISTORY_MIP(coord, level, normal, depth, wSum, diff, spec)
+        GI_SF_HISTORY_MIP(coord, level, normal, depth, wSum, diff, spec)
 
         [[branch]]
         if (int(historyDiff) <= PK_GI_HISTORY_FILL_THRESHOLD && !Test_NaN_EPS6(wSum))
@@ -77,10 +77,10 @@ void CheckerboardFillDiff(const int2 baseCoord, const GIDiff history, const GIDi
 {
     const int2 ncoord = GI_ExpandCheckerboardCoord(uint2(baseCoord), 1u);
     const int2 hcoord = int2(baseCoord.x + pk_ScreenSize.x / 2, baseCoord.y);
-    
+
     const GIDiff neighbour = GI_Load_Diff(hcoord);
     const float alpha = GI_Alpha(neighbour);
-    
+
     const GIDiff n_history = GI_Interpolate(neighbour, history, pow2(alpha));
     const GIDiff n_filtered = GI_Interpolate(neighbour, filtered, alpha);
 
@@ -128,41 +128,41 @@ void main()
     {
 
         //float variance = 0.0f;
-        //GI_SFLT_DIFF_VARIANCE(coord, depth, f_diff, variance)
+        //GI_SF_DIFF_VARIANCE(coord, depth, f_diff, variance)
         //
         //const float2 radiusAndScale = GI_GetDiskFilterRadiusAndScale(depth, variance, f_diff.ao, f_diff.history);
         //const float scale = radiusAndScale.y;
         //const float radius = radiusAndScale.x * (scale + 1e-4f);
         //const bool skip = f_diff.history > 30.0f || scale < 0.05f;
         //const uint step = lerp(uint(max(8.0f - sqrt(scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip);
-        //GI_SFLT_DISK_DIFF(normal, depth, viewdir, viewpos, f_diff.history, step, skip, radius, f_diff)
+        //GI_SF_DISK_DIFF(normal, depth, viewdir, viewpos, f_diff.history, step, skip, radius, f_diff)
 
         const float alpha = GI_Alpha(h_diff) * 0.25f;
         h_diff = GI_ClampLuma(h_diff, GI_MaxLuma(f_diff, alpha));
         h_diff.sh = SH_Interpolate(h_diff.sh, f_diff.sh, alpha);
         f_diff.ao = lerp(h_diff.ao, 0.5f + f_diff.ao * 0.5f, alpha);
-        
+
         h_diff.history += 1.0f;
         f_diff.history += 1.0f;
 
         GI_Store_Diff(coord, h_diff);
         GI_Store_Resolved_Diff(coord, wnormal, f_diff);
-        #if defined(PK_GI_CHECKERBOARD_TRACE)
+#if defined(PK_GI_CHECKERBOARD_TRACE)
         CheckerboardFillDiff(baseCoord, h_diff, f_diff);
-        #endif
+#endif
     }
 
     // Filter Spec
     {
-        #if PK_GI_APPROX_ROUGH_SPEC == 1
+#if PK_GI_APPROX_ROUGH_SPEC == 1
         if (roughness > PK_GI_MIN_ROUGH_SPEC)
         {
             ApproximateRoughSpecular(normal, viewdir, roughness, f_diff, f_spec);
             h_spec = f_spec;
         }
-    
+
         if (roughness < PK_GI_MAX_ROUGH_SPEC)
-        #endif
+#endif
         {
             /*
             // @TODO Calculate different radius for this as diffuse variance is hardly usable & roughness is more of a relevant factor.
@@ -171,21 +171,21 @@ void main()
             const float radius = radiusAndScale.x * (scale + 1e-4f);
             const bool skip = scale < 0.05f;
             const uint step = lerp(uint(max(8.0f - sqrt(scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip);
-            GI_SFLT_DISK_SPEC(normal, depth, roughness, viewdir, viewpos, spec.history, step, skip, radius, spec)
+            GI_SF_DISK_SPEC(normal, depth, roughness, viewdir, viewpos, spec.history, step, skip, radius, spec)
             */
-    
+
             const float alpha = GI_Alpha(h_spec) * 0.25f;
             h_spec = GI_ClampLuma(h_spec, GI_MaxLuma(f_spec, alpha));
             h_spec.radiance = lerp(h_spec.radiance, f_spec.radiance, alpha);
             h_spec.history += 1.0f;
             f_spec.ao = lerp(h_spec.ao, 0.5f + f_spec.ao * 0.5f, alpha);
         }
-    
+
         GI_Store_Spec(coord, h_spec);
         GI_Store_Resolved_Spec(coord, f_spec);
-        #if defined(PK_GI_CHECKERBOARD_TRACE)
+#if defined(PK_GI_CHECKERBOARD_TRACE)
         CheckerboardFillSpec(baseCoord, h_spec, f_spec);
-        #endif
+#endif
     }
 
 }

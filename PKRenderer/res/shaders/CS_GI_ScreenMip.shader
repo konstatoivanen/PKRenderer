@@ -108,15 +108,15 @@ void main()
 
         for (int i = 0; i < 4; ++i)
         {
-        #if defined(PK_GI_CHECKERBOARD_TRACE)
+#if defined(PK_GI_CHECKERBOARD_TRACE)
             int2 scoord = int2(coord);
             scoord.x += (i % 1) * int(pk_ScreenSize.x / 2);
             scoord.y *= 2;
             scoord.y += i / 2;
-        #else
+#else
             const int2 scoord = int2(coord.x * 2 + (i & 0x1), coord.y * 2 + (i / 2));
-        #endif
-            
+#endif
+
             const uint4 sp_diff = GI_Load_Packed_Diff(scoord);
             const uint2 sp_spec = GI_Load_Packed_Spec(scoord);
 
@@ -125,11 +125,11 @@ void main()
 
             s_diff[i] = GI_Unpack_Diff(sp_diff);
             s_spec[i] = GI_Unpack_Spec(sp_spec);
-            
+
             momentsDiff += make_moments(GI_Luminance(s_diff[i]) * maskDiff[i]);
             momentsSpec += make_moments(GI_Luminance(s_diff[i]) * maskSpec[i]);
         }
-        
+
         barrier();
         atomicAdd(lds_Diff_Mom1, momentsDiff.x);
         atomicAdd(lds_Diff_Mom2, momentsDiff.y);
@@ -141,7 +141,7 @@ void main()
 
         momentsDiff = float2(lds_Diff_Mom1, lds_Diff_Mom2) * safePositiveRcp(lds_Diff_Weight);
         momentsSpec = float2(lds_Spec_Mom1, lds_Spec_Mom2) * safePositiveRcp(lds_Spec_Weight);
-        
+
         const float maxLumaDiff = momentsDiff.x + pow(abs(momentsDiff.y - pow2(momentsDiff.x)), 0.25f) * 2.5f;
         const float maxLumaSpec = momentsSpec.x + pow(abs(momentsSpec.y - pow2(momentsSpec.x)), 0.25f) * 2.5f;
 
@@ -160,7 +160,7 @@ void main()
         packedSpec = GI_Pack_Spec(GI_Mul_NoHistory(filteredSpec, wSpec));
 
         lds_Diff[thread] = packedDiff;
-        lds_Spec[thread] = packedSpec; 
+        lds_Spec[thread] = packedSpec;
         imageStore(_DestinationMip1, int3(coord, PK_GI_LVL_DIFF0), packedDiff.xyxy);
         imageStore(_DestinationMip1, int3(coord, PK_GI_LVL_DIFF1), packedDiff.zwzw);
         imageStore(_DestinationMip1, int3(coord, PK_GI_LVL_SPEC), packedSpec.xyxy);
@@ -200,7 +200,7 @@ void main()
         imageStore(_DestinationMip4, int3(coord / 8u, PK_GI_LVL_DIFF0), packedDiff.xyxy);
         imageStore(_DestinationMip4, int3(coord / 8u, PK_GI_LVL_DIFF1), packedDiff.zwzw);
         imageStore(_DestinationMip4, int3(coord / 8u, PK_GI_LVL_SPEC), packedSpec.xyxy);
-       
+
         imageStore(pk_GI_ScreenDataMipMask, int2(coord / 8u), uint4(0u));
     }
 }

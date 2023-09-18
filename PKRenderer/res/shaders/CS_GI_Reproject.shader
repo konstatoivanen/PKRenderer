@@ -1,4 +1,7 @@
 #version 460
+#extension GL_KHR_shader_subgroup_ballot : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_shuffle : enable
 #pragma PROGRAM_COMPUTE
 
 #multi_compile _ PK_GI_SPEC_VIRT_REPROJECT
@@ -16,10 +19,10 @@ void main()
 
 #if defined(PK_GI_CHECKERBOARD_TRACE)
     const int2 storeCoord = int2
-    (
-        coord.x / 2 + int(GI_GetCheckerboardOffset(coord, pk_FrameIndex.y) * (pk_ScreenSize.x / 2)),
-        coord.y
-    );
+        (
+            coord.x / 2 + int(GI_GetCheckerboardOffset(coord, pk_FrameIndex.y) * (pk_ScreenSize.x / 2)),
+            coord.y
+            );
 #else
     const int2 storeCoord = coord;
 #endif
@@ -42,6 +45,7 @@ void main()
     float wSumVSpec = 0.0f;
     float antilagSpec = 1.0f;
     float antilagDiff = 1.0f;
+    float deltaNdotV = 0.0f;
     bool discardSpec = false;
 
     // Filters
@@ -56,35 +60,48 @@ void main()
         const float parallax = GI_GetParallax(viewdir, normalize(viewpos - pk_ViewSpaceCameraDelta.xyz));
         const float2 screenuvPrev = GI_ViewToPrevScreenUV(viewpos);
         const int2 coordPrev = int2(screenuvPrev);
+        float prevNV = 0.0f;
 
-        #if PK_GI_APPROX_ROUGH_SPEC == 1
+#if PK_GI_APPROX_ROUGH_SPEC == 1
         discardSpec = roughness >= PK_GI_MAX_ROUGH_SPEC;
-        #endif
+#endif
+        // Reconstruct diff & naive spec
+        GI_SF_REPRO_BILINEAR(screenuvPrev, coordPrev, normal, depth, depthBias, roughness, wSumDiff, wSumSpec, diff, spec, prevNV)
 
+        // Reduce diff antilag on poor reproject.
+        deltaNdotV = prevNV * safePositiveRcp(wSumDiff) - nv;
+        antilagDiff = lerp(0.1f, 1.0f, saturate(wSumDiff / 0.25f));
         antilagSpec = GI_GetAntilagSpecular(roughness, nv, parallax);
 
-        // Reconstruct diff & naive spec
-        GI_SFLT_REPRO_BILINEAR(screenuvPrev, coordPrev, normal, depth, depthBias, roughness, wSumDiff, wSumSpec, diff, spec)
-
-        #if defined(PK_GI_SPEC_VIRT_REPROJECT)
+#if defined(PK_GI_SPEC_VIRT_REPROJECT)
         if (!Test_EPS6(wSumSpec) && !discardSpec)
         {
             const float virtualDist = (spec.ao / wSumSpec) * PK_GI_RAY_TMAX * GI_GetSpecularDominantFactor(nv, sqrt(roughness));
-            GI_SFLT_REPRO_VIRTUAL_SPEC(viewpos, viewdir, normal, depth, roughness, virtualDist, wSumVSpec, specVirtual)
+            GI_SF_REPRO_VIRTUAL_SPEC(viewpos, viewdir, normal, depth, roughness, virtualDist, wSumVSpec, specVirtual)
         }
-        #endif
-
-        // Reduce diff antilag on poor reproject.
-        antilagDiff = lerp(0.1f, 1.0f, saturate(wSumDiff / 0.25f));
+#endif
     }
 
     // Normalization
     {
         diff.history = clamp(diff.history / wSumDiff, 0.0f, PK_GI_DIFF_MAX_HISTORY * antilagDiff);
         spec.history = clamp(spec.history / wSumSpec, 0.0f, PK_GI_SPEC_MAX_HISTORY * antilagSpec);
-        
+
         diff = GI_Mul_NoHistory(diff, 1.0f / wSumDiff);
         spec = GI_Mul_NoHistory(spec, 1.0f / wSumSpec);
+        
+        // Anti firefly filter (eliminate new stretched samples that have high luminance compared to neighbourhood).
+        {
+            const float luma = GI_Luminance(diff);
+            const float sumLuma = subgroupAdd(luma);
+            const float sumWeight = subgroupAdd(1.0f);
+            const float lumaScale = (luma + 1.0f) / (1.0f + sumLuma / sumWeight);
+
+            if (diff.history < 8.0f)
+            {
+                diff.history *= exp(lumaScale * deltaNdotV * GI_Alpha(diff));
+            }
+        }
 
         // Get min of virtual reprojected spec & naive spec to eliminate ghosting.
         if (!Test_EPS6(wSumVSpec))

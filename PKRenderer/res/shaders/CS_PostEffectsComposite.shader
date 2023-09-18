@@ -20,7 +20,7 @@
 #define PK_DEBUG_MODE_ROUGHNESS 4
 #define PK_DEBUG_MODE_CUSTOM 5
 
-#define PK_DEBUG_MODE PK_DEBUG_MODE_GI_DIFF
+#define PK_DEBUG_MODE PK_DEBUG_MODE_NONE
 #define PK_DEBUG_HALFSCREEN 1
 #define PK_DEBUG_ZOOM 0
 
@@ -56,8 +56,9 @@ void main()
     #if PK_APPLY_TONEMAP == 1
         // Applying a bit of desaturation to reduce high intensity value color blowout
         // A personal preference really (should probably try to deprecate this).
-        color = Saturation(color, 0.8f);
-        color = TonemapACESFilm(color, exposure);
+        color = Saturate_BT2100(color, 0.8f);
+
+        color = TonemapUchimura(color, exposure);
     #endif
 
     #if PK_APPLY_FILMGRAIN == 1

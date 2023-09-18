@@ -15,7 +15,7 @@ float GI_GetSpecularDominantFactor(float nv, float linearRoughness)
 float3 GI_GetSpecularDominantDirection(const float3 N, const float3 V, float linearRoughness)
 {
     const float factor = GI_GetSpecularDominantFactor(abs(dot(N, V)), linearRoughness);
-	return normalize(lerp(N, reflect(-V, N), factor));
+    return normalize(lerp(N, reflect(-V, N), factor));
 }
 
 float2x3 GI_GetSpecularDominantBasis(const float3 N, const float3 V, const float R, const float radius, inout float3 P)
@@ -112,196 +112,199 @@ const float name[2][2] =                                            \
 
 // Profiling revealed that deferring these to functions yielded significantly worse performance, so they're macros for now.
 
-#define GI_SFLT_REPRO_BILINEAR(SFLT_UV, SFLT_COORD, SFLT_NORMAL, SFLT_DEPTH, SFLT_DBIAS, SFLT_ROUGHNESS, SFLT_WSUM_DIFF, SFLT_WSUM_SPEC, SFLT_OUT_DIFF, SFLT_OUT_SPEC)  \
-{                                                                                                                                                                       \
-    const float2 roughnessParams = GI_GetRoughnessWeightParams(SFLT_ROUGHNESS);                                                                                         \
-    const float2 ddxy = fract(SFLT_UV);                                                                                                                                 \
-    MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                                                                                        \
-                                                                                                                                                                        \
-    for (int yy = 0; yy <= 1; ++yy)                                                                                                                                     \
-    for (int xx = 0; xx <= 1; ++xx)                                                                                                                                     \
-    {                                                                                                                                                                   \
-        const int2 xy = SFLT_COORD + int2(xx, yy);                                                                                                                      \
-        const float s_depth = SamplePreviousViewDepth(xy);                                                                                                              \
-        const float4 s_nr = SamplePreviousViewNormalRoughness(xy);                                                                                                      \
-                                                                                                                                                                        \
-        const float w_b = bilinearWeights[yy][xx];                                                                                                                      \
-        const float w_n = pow5(dot(SFLT_NORMAL, s_nr.xyz));                                                                                                             \
-        const float w_r = exp(-abs(s_nr.w * roughnessParams.x + roughnessParams.y));                                                                                    \
-        const float w_s = float(Test_InScreen(xy) && Test_DepthReproject(SFLT_DEPTH, s_depth, SFLT_DBIAS));                                                             \
-        const float w_z = exp(-abs(SFLT_DEPTH - s_depth));                                                                                                              \
-        float w_diff = w_s * w_b * w_n * w_z;                                                                                                                           \
-        float w_spec = w_s * w_b * w_n * w_r;                                                                                                                           \
-        w_diff = lerp(0.0f, w_diff, !Test_NaN_EPS6(w_diff) && w_n > 0.05f);                                                                                             \
-        w_spec = lerp(0.0f, w_spec, !Test_NaN_EPS6(w_spec));                                                                                                            \
-                                                                                                                                                                        \
-        SFLT_OUT_DIFF = GI_Sum(SFLT_OUT_DIFF, GI_Load_Diff(xy), w_diff);                                                                                                \
-        SFLT_OUT_SPEC = GI_Sum(SFLT_OUT_SPEC, GI_Load_Spec(xy), w_spec);                                                                                                \
-        SFLT_WSUM_DIFF += w_diff;                                                                                                                                       \
-        SFLT_WSUM_SPEC += w_spec;                                                                                                                                       \
-    }                                                                                                                                                                   \
-}                                                                                                                                                                       \
+#define GI_SF_REPRO_BILINEAR(SF_UV, SF_COORD, SF_NORMAL, SF_DEPTH, SF_DBIAS, SF_ROUGHNESS, SF_WSUM_DIFF, SF_WSUM_SPEC, SF_OUT_DIFF, SF_OUT_SPEC, SF_OUT_NV) \
+{                                                                                                                                                           \
+    const float3 s_viewdir = normalize(UVToViewPos(float2(SF_UV) * pk_ScreenParams.zw, 1.0f));                                                              \
+    const float2 roughnessParams = GI_GetRoughnessWeightParams(SF_ROUGHNESS);                                                                               \
+    const float2 ddxy = fract(SF_UV);                                                                                                                       \
+    MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                                                                            \
+                                                                                                                                                            \
+                                                                                                                                                            \
+    for (int yy = 0; yy <= 1; ++yy)                                                                                                                         \
+    for (int xx = 0; xx <= 1; ++xx)                                                                                                                         \
+    {                                                                                                                                                       \
+        const int2 xy = SF_COORD + int2(xx, yy);                                                                                                            \
+        const float s_depth = SamplePreviousViewDepth(xy);                                                                                                  \
+        const float4 s_nr = SamplePreviousViewNormalRoughness(xy);                                                                                          \
+                                                                                                                                                            \
+        const float w_b = bilinearWeights[yy][xx];                                                                                                          \
+        const float w_n = pow5(dot(SF_NORMAL, s_nr.xyz));                                                                                                   \
+        const float w_r = exp(-abs(s_nr.w * roughnessParams.x + roughnessParams.y));                                                                        \
+        const float w_s = float(Test_InScreen(xy) && Test_DepthReproject(SF_DEPTH, s_depth, SF_DBIAS));                                                     \
+        const float w_z = exp(-abs(SF_DEPTH - s_depth));                                                                                                    \
+        float w_diff = w_s * w_b * w_n * w_z;                                                                                                               \
+        float w_spec = w_s * w_b * w_n * w_r;                                                                                                               \
+        w_diff = lerp(0.0f, w_diff, !Test_NaN_EPS6(w_diff) && w_n > 0.05f);                                                                                 \
+        w_spec = lerp(0.0f, w_spec, !Test_NaN_EPS6(w_spec));                                                                                                \
+                                                                                                                                                            \
+        SF_OUT_NV += dot(s_nr.xyz, -s_viewdir) * w_diff;                                                                                                    \
+        SF_OUT_DIFF = GI_Sum(SF_OUT_DIFF, GI_Load_Diff(xy), w_diff);                                                                                        \
+        SF_OUT_SPEC = GI_Sum(SF_OUT_SPEC, GI_Load_Spec(xy), w_spec);                                                                                        \
+        SF_WSUM_DIFF += w_diff;                                                                                                                             \
+        SF_WSUM_SPEC += w_spec;                                                                                                                             \
+    }                                                                                                                                                       \
+}                                                                                                                                                           \
 
-#define GI_SFLT_REPRO_VIRTUAL_SPEC(SFLT_VPOS, SFLT_VIEW, SFLT_NORMAL, SFLT_DEPTH, SFLT_ROUGHNESS, SFLT_VIRT_DIST, SFLT_OUT_WSUM, SFLT_OUT)  \
-{                                                                                                                                           \
-    const float2 roughnessParams = GI_GetRoughnessWeightParams(SFLT_ROUGHNESS);                                                             \
-    const float2 screenuv = GI_ViewToPrevScreenUV(SFLT_VPOS + SFLT_VIEW * SFLT_VIRT_DIST);                                                  \
-    const int2   coordSpec = int2(screenuv);                                                                                                \
-    const float2 ddxy = fract(screenuv);                                                                                                    \
-    MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                                                            \
-                                                                                                                                            \
-    for (int yy = 0; yy <= 1; ++yy)                                                                                                         \
-    for (int xx = 0; xx <= 1; ++xx)                                                                                                         \
-    {                                                                                                                                       \
-        const int2 xy = coordSpec + int2(xx, yy);                                                                                           \
-        const float  s_depth = SamplePreviousViewDepth(xy);                                                                                 \
-        const float4 s_nr = SamplePreviousViewNormalRoughness(xy);                                                                          \
-                                                                                                                                            \
-        float w = bilinearWeights[yy][xx];                                                                                                  \
-        w *= 1.0f / (1e-4f + abs(SFLT_DEPTH - s_depth));                                                                                    \
-        w *= pow(saturate(dot(SFLT_NORMAL, s_nr.xyz)), 256.0f);                                                                             \
-        w *= exp(-abs(s_nr.w * roughnessParams.x + roughnessParams.y));                                                                     \
-        w = lerp(0.0f, w, Test_InScreen(xy) && Test_DepthFar(s_depth) && !Test_NaN_EPS6(w));                                                \
-                                                                                                                                            \
-        SFLT_OUT = GI_Sum(SFLT_OUT, GI_Load_Spec(xy), w);                                                                                   \
-        SFLT_OUT_WSUM += w;                                                                                                                 \
-    }                                                                                                                                       \
-}                                                                                                                                           \
+#define GI_SF_REPRO_VIRTUAL_SPEC(SF_VPOS, SF_VIEW, SF_NORMAL, SF_DEPTH, SF_ROUGHNESS, SF_VIRT_DIST, SF_OUT_WSUM, SF_OUT)    \
+{                                                                                                                           \
+    const float2 roughnessParams = GI_GetRoughnessWeightParams(SF_ROUGHNESS);                                               \
+    const float2 screenuv = GI_ViewToPrevScreenUV(SF_VPOS + SF_VIEW * SF_VIRT_DIST);                                        \
+    const int2   coordSpec = int2(screenuv);                                                                                \
+    const float2 ddxy = fract(screenuv);                                                                                    \
+    MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                                            \
+                                                                                                                            \
+    for (int yy = 0; yy <= 1; ++yy)                                                                                         \
+    for (int xx = 0; xx <= 1; ++xx)                                                                                         \
+    {                                                                                                                       \
+        const int2 xy = coordSpec + int2(xx, yy);                                                                           \
+        const float  s_depth = SamplePreviousViewDepth(xy);                                                                 \
+        const float4 s_nr = SamplePreviousViewNormalRoughness(xy);                                                          \
+                                                                                                                            \
+        float w = bilinearWeights[yy][xx];                                                                                  \
+        w *= 1.0f / (1e-4f + abs(SF_DEPTH - s_depth));                                                                      \
+        w *= pow(saturate(dot(SF_NORMAL, s_nr.xyz)), 256.0f);                                                               \
+        w *= exp(-abs(s_nr.w * roughnessParams.x + roughnessParams.y));                                                     \
+        w = lerp(0.0f, w, Test_InScreen(xy) && Test_DepthFar(s_depth) && !Test_NaN_EPS6(w));                                \
+                                                                                                                            \
+        SF_OUT = GI_Sum(SF_OUT, GI_Load_Spec(xy), w);                                                                       \
+        SF_OUT_WSUM += w;                                                                                                   \
+    }                                                                                                                       \
+}                                                                                                                           \
 
-#define GI_SFLT_HISTORY_MIP(SFLT_COORD, SFLT_MIP, SFLT_NORMAL, SFLT_DEPTH, SFLT_OUT_WSUM, SFLT_OUT_DIFF, SFLT_OUT_SPEC) \
-{                                                                                                                       \
-    for (int zz = int(SFLT_MIP); zz <= int(SFLT_MIP) + 1; ++zz)                                                         \
-    {                                                                                                                   \
-        const float levelWeight = 1.0f - abs(SFLT_MIP - zz);                                                            \
-                                                                                                                        \
-        int2 base; float2 ddxy;                                                                                         \
-        GI_GetMipSampler(SFLT_COORD, zz + 1, base, ddxy);                                                               \
-        MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                                    \
-                                                                                                                        \
-        float4 depthWeights = float4                                                                                    \
-        (                                                                                                               \
-            SampleAvgZ(base + int2(0, 0), zz + 1),                                                                      \
-            SampleAvgZ(base + int2(1, 0), zz + 1),                                                                      \
-            SampleAvgZ(base + int2(0, 1), zz + 1),                                                                      \
-            SampleAvgZ(base + int2(1, 1), zz + 1)                                                                       \
-        );                                                                                                              \
-                                                                                                                        \
-        depthWeights = exp(-abs(SFLT_DEPTH.xxxx - depthWeights));                                                       \
-        depthWeights *= safePositiveRcp(dot(depthWeights, 1.0f.xxxx));                                                  \
-                                                                                                                        \
-        for (uint yy = 0; yy <= 1u; ++yy)                                                                               \
-        for (uint xx = 0; xx <= 1u; ++xx)                                                                               \
-        {                                                                                                               \
-            const uint4 p_diff = GI_Load_Packed_Mip_Diff(base + int2(xx, yy), zz);                                      \
-            const uint2 p_spec = GI_Load_Packed_Mip_Spec(base + int2(xx, yy), zz);                                      \
-            GIDiff s_diff = GI_Unpack_Diff(p_diff);                                                                     \
-            GISpec s_spec = GI_Unpack_Spec(p_spec);                                                                     \
-                                                                                                                        \
-            /* Filter out sh l1 based on normal cosine so that we dont get signals facing away from the surface.*/      \
-            s_diff.sh.Y.zyw *= float(dot(SFLT_NORMAL, SH_ToPrimeDir(s_diff.sh)) > 0.05f);                               \
-            const float w = depthWeights[yy * 2 + xx] * bilinearWeights[yy][xx] * levelWeight;                          \
-                                                                                                                        \
-            if (p_diff.w != 0u && w > 1e-6f)                                                                            \
-            {                                                                                                           \
-                SFLT_OUT_DIFF = GI_Sum_NoHistory(SFLT_OUT_DIFF, s_diff, w);                                             \
-                SFLT_OUT_SPEC = GI_Sum_NoHistory(SFLT_OUT_SPEC, s_spec, w);                                             \
-                SFLT_OUT_WSUM += w;                                                                                     \
-            }                                                                                                           \
-        }                                                                                                               \
-    }                                                                                                                   \
-}                                                                                                                       \
-
-#define GI_SFLT_DIFF_VARIANCE(SFLT_COORD, SFLT_DEPTH, SFLT_DIFF, SFLT_OUT)                              \
+#define GI_SF_HISTORY_MIP(SF_COORD, SF_MIP, SF_NORMAL, SF_DEPTH, SF_OUT_WSUM, SF_OUT_DIFF, SF_OUT_SPEC) \
 {                                                                                                       \
-    float2 mom;                                                                                         \
-    mom.x = GI_LogLuminance(SFLT_DIFF);                                                                 \
-    mom.y = pow2(mom.x);                                                                                \
-    float w_mom = 1.0f;                                                                                 \
-                                                                                                        \
-    for (int yy = -1; yy <= 1; ++yy)                                                                    \
-    for (int xx = -1; xx <= 1; ++xx)                                                                    \
+    for (int zz = int(SF_MIP); zz <= int(SF_MIP) + 1; ++zz)                                             \
     {                                                                                                   \
-        if (xx != 0 || yy != 0)                                                                         \
+        const float levelWeight = 1.0f - abs(SF_MIP - zz);                                              \
+                                                                                                        \
+        int2 base; float2 ddxy;                                                                         \
+        GI_GetMipSampler(SF_COORD, zz + 1, base, ddxy);                                                 \
+        MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                    \
+                                                                                                        \
+        float4 depthWeights = float4                                                                    \
+        (                                                                                               \
+            SampleAvgZ(base + int2(0, 0), zz + 1),                                                      \
+            SampleAvgZ(base + int2(1, 0), zz + 1),                                                      \
+            SampleAvgZ(base + int2(0, 1), zz + 1),                                                      \
+            SampleAvgZ(base + int2(1, 1), zz + 1)                                                       \
+        );                                                                                              \
+                                                                                                        \
+        depthWeights = exp(-abs(SF_DEPTH.xxxx - depthWeights));                                         \
+        depthWeights *= safePositiveRcp(dot(depthWeights, 1.0f.xxxx));                                  \
+                                                                                                        \
+        for (uint yy = 0; yy <= 1u; ++yy)                                                               \
+        for (uint xx = 0; xx <= 1u; ++xx)                                                               \
         {                                                                                               \
-            const int2 xy = SFLT_COORD + int2(xx, yy);                                                  \
-            const float s_depth = SampleMinZ(xy, 0);                                                    \
-            const float s_w = lerp(0.0f, 1.0f, (abs(SFLT_DEPTH - s_depth) / SFLT_DEPTH) < 0.02f);       \
-            mom += make_moments(GI_LogLuminance(GI_Load_Diff(xy)) * s_w);                               \
-            w_mom += s_w;                                                                               \
+            const uint4 p_diff = GI_Load_Packed_Mip_Diff(base + int2(xx, yy), zz);                      \
+            const uint2 p_spec = GI_Load_Packed_Mip_Spec(base + int2(xx, yy), zz);                      \
+            GIDiff s_diff = GI_Unpack_Diff(p_diff);                                                     \
+            GISpec s_spec = GI_Unpack_Spec(p_spec);                                                     \
+                                                                                                        \
+            /* Filter out sh l1 based on normal cosine so invalid signals are rejected.*/               \
+            s_diff.sh.Y.zyw *= float(dot(SF_NORMAL, SH_ToPrimeDir(s_diff.sh)) > 0.05f);                 \
+            const float w = depthWeights[yy * 2 + xx] * bilinearWeights[yy][xx] * levelWeight;          \
+                                                                                                        \
+            if (p_diff.w != 0u && w > 1e-6f)                                                            \
+            {                                                                                           \
+                SF_OUT_DIFF = GI_Sum_NoHistory(SF_OUT_DIFF, s_diff, w);                                 \
+                SF_OUT_SPEC = GI_Sum_NoHistory(SF_OUT_SPEC, s_spec, w);                                 \
+                SF_OUT_WSUM += w;                                                                       \
+            }                                                                                           \
         }                                                                                               \
     }                                                                                                   \
-                                                                                                        \
-    mom /= w_mom;                                                                                       \
-    SFLT_OUT = sqrt(abs(mom.y - pow2(mom.x)));                                                          \
 }                                                                                                       \
 
-#define GI_SFLT_DISK_DIFF(SFLT_NORMAL, SFLT_DEPTH, SFLT_VIEW, SFLT_VPOS, SFLT_HISTORY, SFLT_STEP, SFLT_SKIP, SFLT_RADIUS, SFLT_OUT) \
-{                                                                                                                                   \
-    const float2x3 basis = ComposeTBFast(SFLT_NORMAL, SFLT_RADIUS);                                                                 \
-    const float2 rotation = GI_GetRandomRotation();                                                                                 \
-    const float k_N = GI_GetNormalWeightParams(SFLT_NORMAL, 1.0f, SFLT_HISTORY);                                                    \
-    const float2 k_D = GI_GetDiskWeightParams(SFLT_RADIUS, SFLT_DEPTH);                                                             \
-                                                                                                                                    \
-    float wSum = 1.0f;                                                                                                              \
-    uint i = lerp(0u, 0xFFFFu, SFLT_SKIP);                                                                                          \
-                                                                                                                                    \
-    for (; i < 32u; i += SFLT_STEP)                                                                                                 \
-    {                                                                                                                               \
-        const float3 s_offs = PK_POISSON_DISK_32_POW[i];                                                                            \
-        const float2 s_uv = ViewToClipUV(SFLT_VPOS + basis * rotate2D(s_offs.xy, rotation));                                        \
-        const int2   s_gpx = GI_CollapseCheckerboardCoord(s_uv * pk_ScreenSize.xy, 0);                                              \
-        const int2   s_px = GI_ExpandCheckerboardCoord(s_gpx);                                                                      \
-        const float4 s_nr = SampleViewNormalRoughness(s_px);                                                                        \
-        const float3 s_ray = SFLT_VPOS - UVToViewPos(s_uv, SampleMinZ(s_px, 0));                                                    \
-                                                                                                                                    \
-        float w = 1.0f;                                                                                                             \
-        w *= saturate(1.0f - abs(dot(SFLT_NORMAL, s_ray)) * k_D.x);                                                                 \
-        w *= saturate(1.0f - dot(s_ray, s_ray) * k_D.y);                                                                            \
-        w *= exp(-acos(dot(SFLT_NORMAL, s_nr.xyz) - 1e-6f) * k_N);                                                                  \
-        w *= exp( -0.66 * s_offs.z *  s_offs.z);                                                                                    \
-        w = lerp(0.0f, w, Test_InScreen(s_uv) && !Test_NaN_EPS4(w));                                                                \
-                                                                                                                                    \
-        SFLT_OUT = GI_Sum_NoHistory(SFLT_OUT, GI_Load_Diff(s_gpx), w);                                                              \
-        wSum += w;                                                                                                                  \
-    }                                                                                                                               \
-                                                                                                                                    \
-    SFLT_OUT = GI_Mul_NoHistory(SFLT_OUT, 1.0f / wSum);                                                                             \
-}                                                                                                                                   \
+#define GI_SF_DIFF_VARIANCE(SF_COORD, SF_DEPTH, SF_DIFF, SF_OUT)                                \
+{                                                                                               \
+    float2 mom;                                                                                 \
+    mom.x = GI_LogLuminance(SF_DIFF);                                                           \
+    mom.y = pow2(mom.x);                                                                        \
+    float w_mom = 1.0f;                                                                         \
+                                                                                                \
+    for (int yy = -1; yy <= 1; ++yy)                                                            \
+    for (int xx = -1; xx <= 1; ++xx)                                                            \
+    {                                                                                           \
+        if (xx != 0 || yy != 0)                                                                 \
+        {                                                                                       \
+            const int2 xy = SF_COORD + int2(xx, yy);                                            \
+            const float s_depth = SampleMinZ(xy, 0);                                            \
+            const float s_w = lerp(0.0f, 1.0f, (abs(SF_DEPTH - s_depth) / SF_DEPTH) < 0.02f);   \
+            mom += make_moments(GI_LogLuminance(GI_Load_Diff(xy)) * s_w);                       \
+            w_mom += s_w;                                                                       \
+        }                                                                                       \
+    }                                                                                           \
+                                                                                                \
+    mom /= w_mom;                                                                               \
+    SF_OUT = sqrt(abs(mom.y - pow2(mom.x)));                                                    \
+}                                                                                               \
 
-#define GI_SFLT_DISK_SPEC(SFLT_NORMAL, SFLT_DEPTH, SFLT_ROUGHNESS, SFLT_VIEW, SFLT_VPOS, SFLT_HISTORY, SFLT_STEP, SFLT_SKIP, SFLT_RADIUS, SFLT_OUT) \
-{                                                                                                                                                   \
-    float3 disk_normal;                                                                                                                             \
-    const float2x3 basis = GI_GetSpecularDominantBasis(SFLT_NORMAL, SFLT_VIEW, SFLT_ROUGHNESS, SFLT_RADIUS, disk_normal);                           \
-    const float2 rotation = GI_GetRandomRotation();                                                                                                 \
-    const float k_N = GI_GetNormalWeightParams(SFLT_NORMAL, SFLT_ROUGHNESS, SFLT_HISTORY);                                                          \
-    const float2 k_D = GI_GetDiskWeightParams(SFLT_RADIUS, SFLT_DEPTH);                                                                             \
-    const float2 k_R = GI_GetRoughnessWeightParams(SFLT_ROUGHNESS);                                                                                 \
-                                                                                                                                                    \
-    float wSum = 1.0f;                                                                                                                              \
-    uint i = lerp(0u, 0xFFFFu, SFLT_SKIP);                                                                                                          \
-                                                                                                                                                    \
-    for (; i < 32u; i += SFLT_STEP)                                                                                                                 \
-    {                                                                                                                                               \
-        const float3 s_offs = PK_POISSON_DISK_32_POW[i];                                                                                            \
-        const float2 s_uv = ViewToClipUV(SFLT_VPOS + basis * rotate2D(s_offs.xy, rotation));                                                        \
-        const int2   s_px = int2(s_uv * pk_ScreenSize.xy);                                                                                          \
-        const float4 s_nr = SampleViewNormalRoughness(s_px);                                                                                        \
-        const float3 s_ray = SFLT_VPOS - UVToViewPos(s_uv, SampleMinZ(s_px, 0));                                                                    \
-                                                                                                                                                    \
-        float w = 1.0f;                                                                                                                             \
-        w *= saturate(1.0f - abs(dot(disk_normal, s_ray)) * k_D.x);                                                                                 \
-        w *= saturate(1.0f - dot(s_ray, s_ray) * k_D.y);                                                                                            \
-        w *= exp(-acos(dot(SFLT_NORMAL, s_nr.xyz) - 1e-6f) * k_N);                                                                                  \
-        w *= exp(-abs(s_nr.w * k_R.x + k_R.y));                                                                                                     \
-        w *= exp( -0.66 * s_offs.z *  s_offs.z);                                                                                                    \
-        #if PK_GI_APPROX_ROUGH_SPEC == 1                                                                                                            \
-        w *= float(s_nr.w < PK_GI_MAX_ROUGH_SPEC);                                                                                                  \
-        #endif                                                                                                                                      \
-        w = lerp(0.0f, w, Test_InScreen(s_uv) && !Test_NaN_EPS4(w));                                                                                \
-                                                                                                                                                    \
-        SFLT_OUT = GI_Sum_NoHistory(SFLT_OUT, GI_Load_Spec(s_px), w);                                                                               \
-        wSum += w;                                                                                                                                  \
-    }                                                                                                                                               \
-                                                                                                                                                    \
-    SFLT_OUT = GI_Mul_NoHistory(SFLT_OUT, 1.0f / wSum);                                                                                             \
-}                                                                                                                                                   \
+#define GI_SF_DISK_DIFF(SF_NORMAL, SF_DEPTH, SF_VIEW, SF_VPOS, SF_HISTORY, SF_STEP, SF_SKIP, SF_RADIUS, SF_OUT) \
+{                                                                                                               \
+    const float2x3 basis = ComposeTBFast(SF_NORMAL, SF_RADIUS);                                                 \
+    const float2 rotation = GI_GetRandomRotation();                                                             \
+    const float k_N = GI_GetNormalWeightParams(SF_NORMAL, 1.0f, SF_HISTORY);                                    \
+    const float2 k_D = GI_GetDiskWeightParams(SF_RADIUS, SF_DEPTH);                                             \
+                                                                                                                \
+    float wSum = 1.0f;                                                                                          \
+    uint i = lerp(0u, 0xFFFFu, SF_SKIP);                                                                        \
+                                                                                                                \
+    for (; i < 32u; i += SF_STEP)                                                                               \
+    {                                                                                                           \
+        const float3 s_offs = PK_POISSON_DISK_32_POW[i];                                                        \
+        const float2 s_uv = ViewToClipUV(SF_VPOS + basis * rotate2D(s_offs.xy, rotation));                      \
+        const int2   s_gpx = GI_CollapseCheckerboardCoord(s_uv * pk_ScreenSize.xy, 0);                          \
+        const int2   s_px = GI_ExpandCheckerboardCoord(s_gpx);                                                  \
+        const float4 s_nr = SampleViewNormalRoughness(s_px);                                                    \
+        const float3 s_ray = SF_VPOS - UVToViewPos(s_uv, SampleMinZ(s_px, 0));                                  \
+                                                                                                                \
+        float w = 1.0f;                                                                                         \
+        w *= saturate(1.0f - abs(dot(SF_NORMAL, s_ray)) * k_D.x);                                               \
+        w *= saturate(1.0f - dot(s_ray, s_ray) * k_D.y);                                                        \
+        w *= exp(-acos(dot(SF_NORMAL, s_nr.xyz) - 1e-6f) * k_N);                                                \
+        w *= exp( -0.66 * s_offs.z *  s_offs.z);                                                                \
+        w = lerp(0.0f, w, Test_InScreen(s_uv) && !Test_NaN_EPS4(w));                                            \
+                                                                                                                \
+        SF_OUT = GI_Sum_NoHistory(SF_OUT, GI_Load_Diff(s_gpx), w);                                              \
+        wSum += w;                                                                                              \
+    }                                                                                                           \
+                                                                                                                \
+    SF_OUT = GI_Mul_NoHistory(SF_OUT, 1.0f / wSum);                                                             \
+}                                                                                                               \
+
+#define GI_SF_DISK_SPEC(SF_NORMAL, SF_DEPTH, SF_ROUGHNESS, SF_VIEW, SF_VPOS, SF_HISTORY, SF_STEP, SF_SKIP, SF_RADIUS, SF_OUT)   \
+{                                                                                                                               \
+    float3 disk_normal;                                                                                                         \
+    const float2x3 basis = GI_GetSpecularDominantBasis(SF_NORMAL, SF_VIEW, SF_ROUGHNESS, SF_RADIUS, disk_normal);               \
+    const float2 rotation = GI_GetRandomRotation();                                                                             \
+    const float k_N = GI_GetNormalWeightParams(SF_NORMAL, SF_ROUGHNESS, SF_HISTORY);                                            \
+    const float2 k_D = GI_GetDiskWeightParams(SF_RADIUS, SF_DEPTH);                                                             \
+    const float2 k_R = GI_GetRoughnessWeightParams(SF_ROUGHNESS);                                                               \
+                                                                                                                                \
+    float wSum = 1.0f;                                                                                                          \
+    uint i = lerp(0u, 0xFFFFu, SF_SKIP);                                                                                        \
+                                                                                                                                \
+    for (; i < 32u; i += SF_STEP)                                                                                               \
+    {                                                                                                                           \
+        const float3 s_offs = PK_POISSON_DISK_32_POW[i];                                                                        \
+        const float2 s_uv = ViewToClipUV(SF_VPOS + basis * rotate2D(s_offs.xy, rotation));                                      \
+        const int2   s_px = int2(s_uv * pk_ScreenSize.xy);                                                                      \
+        const float4 s_nr = SampleViewNormalRoughness(s_px);                                                                    \
+        const float3 s_ray = SF_VPOS - UVToViewPos(s_uv, SampleMinZ(s_px, 0));                                                  \
+                                                                                                                                \
+        float w = 1.0f;                                                                                                         \
+        w *= saturate(1.0f - abs(dot(disk_normal, s_ray)) * k_D.x);                                                             \
+        w *= saturate(1.0f - dot(s_ray, s_ray) * k_D.y);                                                                        \
+        w *= exp(-acos(dot(SF_NORMAL, s_nr.xyz) - 1e-6f) * k_N);                                                                \
+        w *= exp(-abs(s_nr.w * k_R.x + k_R.y));                                                                                 \
+        w *= exp( -0.66 * s_offs.z *  s_offs.z);                                                                                \
+        #if PK_GI_APPROX_ROUGH_SPEC == 1                                                                                        \
+        w *= float(s_nr.w < PK_GI_MAX_ROUGH_SPEC);                                                                              \
+        #endif                                                                                                                  \
+        w = lerp(0.0f, w, Test_InScreen(s_uv) && !Test_NaN_EPS4(w));                                                            \
+                                                                                                                                \
+        SF_OUT = GI_Sum_NoHistory(SF_OUT, GI_Load_Spec(s_px), w);                                                               \
+        wSum += w;                                                                                                              \
+    }                                                                                                                           \
+                                                                                                                                \
+    SF_OUT = GI_Mul_NoHistory(SF_OUT, 1.0f / wSum);                                                                             \
+}                                                                                                                               \

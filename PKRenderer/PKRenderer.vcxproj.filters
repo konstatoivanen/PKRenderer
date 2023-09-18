@@ -1951,8 +1951,6 @@
     <None Include="res\shaders\includes\SurfaceShaderBase.glsl" />
     <None Include="res\shaders\SH_WS_PBR_Default.shader" />
     <None Include="res\materials\M_Ground.material" />
-    <None Include="res\textures\default\T_Black.ktx2" />
-    <None Include="res\textures\default\T_White.ktx2" />
     <None Include="res\textures\environment\T_Wood_Floor_S.ktx2" />
     <None Include="res\textures\environment\T_Asphalt_D.ktx2" />
     <None Include="res\textures\environment\T_Asphalt_H.ktx2" />

@@ -19,12 +19,12 @@ void main()
 
     const float historyDiff = accumDiff.history;
 
-    #if PK_GI_APPROX_ROUGH_SPEC == 1
+#if PK_GI_APPROX_ROUGH_SPEC == 1
     // Rough spec might have invalid data.
     const float historySpec = lerp(PK_GI_SPEC_MAX_HISTORY, accumSpec.history, normalRoughness.w < PK_GI_MAX_ROUGH_SPEC);
-    #else
+#else
     const float historySpec = accumSpec.history;
-    #endif
+#endif
 
     const float interpolant = min(historyDiff, historySpec) / PK_GI_HISTORY_FILL_THRESHOLD;
     const float level = min(3.0f - 1e-4f, 4.0f - 4.0f * interpolant);
@@ -36,15 +36,15 @@ void main()
         GIDiff diff = GIDiff(pk_ZeroSH, 0.0f, historyDiff);
         GISpec spec = GISpec(0.0f.xxx, 0.0f, historySpec);
         float wSum = 0.0f;
-    
-        GI_SFLT_HISTORY_MIP(coord, level, normalRoughness.xyz, depth, wSum, diff, spec)
-    
-        [[branch]]
+
+        GI_SF_HISTORY_MIP(coord, level, normalRoughness.xyz, depth, wSum, diff, spec)
+
+            [[branch]]
         if (int(historyDiff) <= PK_GI_HISTORY_FILL_THRESHOLD && !Test_NaN_EPS6(wSum))
         {
             packedDiff = GI_Pack_Diff(GI_Mul_NoHistory(diff, 1.0f / wSum));
         }
-    
+
         [[branch]]
         if (int(historySpec) <= PK_GI_HISTORY_FILL_THRESHOLD && !Test_NaN_EPS6(wSum))
         {

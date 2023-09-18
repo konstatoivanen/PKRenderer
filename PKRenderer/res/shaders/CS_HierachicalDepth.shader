@@ -37,28 +37,28 @@ void main()
     {
 #if defined(PK_HIZ_FINAL_PASS)
         const float4 minz = float4
-        (
-            SampleMinZ(coord * 2 + int2(0, 0), 4),
-            SampleMinZ(coord * 2 + int2(0, 1), 4),
-            SampleMinZ(coord * 2 + int2(1, 1), 4),
-            SampleMinZ(coord * 2 + int2(1, 0), 4)
-        );
+            (
+                SampleMinZ(coord * 2 + int2(0, 0), 4),
+                SampleMinZ(coord * 2 + int2(0, 1), 4),
+                SampleMinZ(coord * 2 + int2(1, 1), 4),
+                SampleMinZ(coord * 2 + int2(1, 0), 4)
+                );
 
         const float4 maxz = float4
-        (
-            SampleMinZ(coord * 2 + int2(0, 0), 4),
-            SampleMinZ(coord * 2 + int2(0, 1), 4),
-            SampleMinZ(coord * 2 + int2(1, 1), 4),
-            SampleMinZ(coord * 2 + int2(1, 0), 4)
-        );
+            (
+                SampleMinZ(coord * 2 + int2(0, 0), 4),
+                SampleMinZ(coord * 2 + int2(0, 1), 4),
+                SampleMinZ(coord * 2 + int2(1, 1), 4),
+                SampleMinZ(coord * 2 + int2(1, 0), 4)
+                );
 
         const float4 avgz = float4
-        (
-            SampleAvgZ(coord * 2 + int2(0, 0), 4),
-            SampleAvgZ(coord * 2 + int2(0, 1), 4),
-            SampleAvgZ(coord * 2 + int2(1, 1), 4),
-            SampleAvgZ(coord * 2 + int2(1, 0), 4)
-        );
+            (
+                SampleAvgZ(coord * 2 + int2(0, 0), 4),
+                SampleAvgZ(coord * 2 + int2(0, 1), 4),
+                SampleAvgZ(coord * 2 + int2(1, 1), 4),
+                SampleAvgZ(coord * 2 + int2(1, 0), 4)
+                );
 
         local_depth.x = cmin(minz);
         local_depth.y = cmax(maxz);
@@ -69,18 +69,18 @@ void main()
         local_depth.y = cmax(depths);
         local_depth.z = dot(depths, 0.25f.xxxx);
 
-        #pragma unroll 3
+#pragma unroll 3
         for (uint i = 0; i < 3; ++i)
         {
-            imageStore(_DestinationTex, int3(coord * 2 + int2(0,1), i), depths.xxxx);
-            imageStore(_DestinationTex, int3(coord * 2 + int2(1,1), i), depths.yyyy);
-            imageStore(_DestinationTex, int3(coord * 2 + int2(1,0), i), depths.zzzz);
-            imageStore(_DestinationTex, int3(coord * 2 + int2(0,0), i), depths.wwww);
+            imageStore(_DestinationTex, int3(coord * 2 + int2(0, 1), i), depths.xxxx);
+            imageStore(_DestinationTex, int3(coord * 2 + int2(1, 1), i), depths.yyyy);
+            imageStore(_DestinationTex, int3(coord * 2 + int2(1, 0), i), depths.zzzz);
+            imageStore(_DestinationTex, int3(coord * 2 + int2(0, 0), i), depths.wwww);
         }
 #endif
 
         STORE_DEPTHS_LDS(thread, local_depth)
-        STORE_DEPTHS(_DestinationMip1, coord, local_depth)
+            STORE_DEPTHS(_DestinationMip1, coord, local_depth)
     }
     barrier();
 
@@ -94,7 +94,7 @@ void main()
         local_depth.z = dot(avgz, 0.25f.xxxx);
 
         STORE_DEPTHS_LDS(thread, local_depth)
-        STORE_DEPTHS(_DestinationMip2, coord / 2, local_depth)
+            STORE_DEPTHS(_DestinationMip2, coord / 2, local_depth)
     }
     barrier();
 
@@ -108,7 +108,7 @@ void main()
         local_depth.z = dot(avgz, 0.25f.xxxx);
 
         STORE_DEPTHS_LDS(thread, local_depth)
-        STORE_DEPTHS(_DestinationMip3, coord / 4, local_depth)
+            STORE_DEPTHS(_DestinationMip3, coord / 4, local_depth)
     }
     barrier();
 

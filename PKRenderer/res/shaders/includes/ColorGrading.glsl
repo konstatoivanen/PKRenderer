@@ -3,50 +3,131 @@
 #include Encoding.glsl
 #include Constants.glsl
 
-const float3x3 LIN_2_LMS_MAT = float3x3(
+const float3x3 LIN_2_LMS_MAT = float3x3
+(
     3.90405e-1, 5.49941e-1, 8.92632e-3,
     7.08416e-2, 9.63172e-1, 1.35775e-3,
-    2.31082e-2, 1.28021e-1, 9.36245e-1);
+    2.31082e-2, 1.28021e-1, 9.36245e-1
+);
 
-const float3x3 LMS_2_LIN_MAT = float3x3(
+const float3x3 LMS_2_LIN_MAT = float3x3
+(
      2.85847e+0, -1.62879e+0, -2.48910e-2,
     -2.10182e-1,  1.15820e+0,  3.24281e-4,
-    -4.18120e-2, -1.18169e-1,  1.06867e+0);
+    -4.18120e-2, -1.18169e-1,  1.06867e+0
+);
 
 float3 TonemapACESFilm(float3 color, float exposure)
 {
+    const float a = 2.51f;
+    const float b = 0.03f;
+    const float c = 2.43f;
+    const float d = 0.59f;
+    const float e = 0.14f;
+
     color *= exposure;
-    float a = 2.51f;
-    float b = 0.03f;
-    float c = 2.43f;
-    float d = 0.59f;
-    float e = 0.14f;
-    return saturate((color * (a * color + b)) / (color * (c * color + d) + e));
+    return (color * (a * color + b)) / (color * (c * color + d) + e);
 }
 
 float3 TonemapHejlDawson(float3 color, float exposure)
 {
-	const float a = 6.2;
-	const float b = 0.5;
-	const float c = 1.7;
-	const float d = 0.06;
+	const float a = 6.2f;
+	const float b = 0.5f;
+	const float c = 1.7f;
+	const float d = 0.06f;
 
 	color *= exposure;
-	color = max(float3(0.0), color - 0.004);
+	color = max(0.0f.xxx, color - 0.004f);
 	color = (color * (a * color + b)) / (color * (a * color + c) + d);
 	return color * color;
 }
 
-float3 Saturation(float3 color, float amount) 
+float TonemapUchimura(float x, float P, float a, float m, float l, float c, float b) 
 {
-	float grayscale = dot(color, float3(0.3, 0.59, 0.11));
-	return lerp_true(grayscale.xxx, color, 0.8f);
+    // Uchimura 2017, "HDR theory and practice"
+    // Math: https://www.desmos.com/calculator/gslcdxvipg
+    // Source: https://www.slideshare.net/nikuque/hdr-theory-and-practicce-jp
+    float l0 = ((P - m) * l) / a;
+    float L0 = m - m / a;
+    float L1 = m + (1.0 - m) / a;
+    float S0 = m + l0;
+    float S1 = m + a * l0;
+    float C2 = (a * P) / (P - S1);
+    float CP = -C2 / P;
+
+    float w0 = 1.0 - smoothstep(0.0, m, x);
+    float w2 = step(m + l0, x);
+    float w1 = 1.0 - w0 - w2;
+
+    float T = m * pow(x / m, c) + b;
+    float S = P - (P - S1) * exp(CP * (x - S0));
+    float L = m + a * (x - m);
+
+    return T * w0 + L * w1 + S * w2;
+}
+
+float3 TonemapUchimura(float3 color, float exposure) 
+{
+    const float P = 1.0;  // max display brightness
+    const float a = 1.0;  // contrast
+    const float m = 0.22; // linear section start
+    const float l = 0.4;  // linear section length
+    const float c = 1.33; // black
+    const float b = 0.0;  // pedestal
+
+    color *= exposure;
+
+    return float3
+    (
+        TonemapUchimura(color.r, P, a, m, l, c, b),
+        TonemapUchimura(color.g, P, a, m, l, c, b),
+        TonemapUchimura(color.b, P, a, m, l, c, b)
+    );
+}
+
+float3 TonemapLottes(float3 color, float exposure) 
+{
+    // Lottes 2016, "Advanced Techniques and Optimization of HDR Color Pipelines"
+    const float a = 1.6;
+    const float d = 0.977;
+    const float hdrMax = 8.0;
+    const float midIn = 0.18;
+    const float midOut = 0.267;
+
+    // Can be precomputed
+    const float b =
+        (-pow(midIn, a) + pow(hdrMax, a) * midOut) /
+        ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);
+    const float c =
+        (pow(hdrMax, a * d) * pow(midIn, a) - pow(hdrMax, a) * pow(midIn, a * d) * midOut) /
+        ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);
+
+    color *= exposure;
+    return pow(color, a.xxx) / (pow(color, a.xxx * d) * b + c);
+}
+
+float3 Saturate_BT2100(float3 color, float amount) 
+{
+	float grayscale = dot(color, float3(0.2627f, 0.6780f, 0.0593f));
+	return lerp_true(grayscale.xxx, color, amount);
+}
+
+float3 Saturate_BT709(float3 color, float amount) 
+{
+	float grayscale = dot(color, float3(0.2126729f, 0.7151522f, 0.0721750f));
+	return lerp_true(grayscale.xxx, color, amount);
+}
+
+float3 Saturate_Rec601(float3 color, float amount) 
+{
+	float grayscale = dot(color, float3(0.3f, 0.59f, 0.11f));
+	return lerp_true(grayscale.xxx, color, amount);
 }
 
 float Vignette(float2 uv)
 {
-    uv *=  1.0 - uv.yx;   
-    return pow(uv.x * uv.y * pk_VignetteGrain.x, pk_VignetteGrain.y); 
+    uv *= 1.0 - uv.yx;   
+    return min(1.0f, pow(uv.x * uv.y * pk_VignetteGrain.x, pk_VignetteGrain.y)); 
 }
 
 float3 LinearToGamma(float3 color)
