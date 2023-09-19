@@ -112,38 +112,36 @@ const float name[2][2] =                                            \
 
 // Profiling revealed that deferring these to functions yielded significantly worse performance, so they're macros for now.
 
-#define GI_SF_REPRO_BILINEAR(SF_UV, SF_COORD, SF_NORMAL, SF_DEPTH, SF_DBIAS, SF_ROUGHNESS, SF_WSUM_DIFF, SF_WSUM_SPEC, SF_OUT_DIFF, SF_OUT_SPEC, SF_OUT_NV) \
-{                                                                                                                                                           \
-    const float3 s_viewdir = normalize(UVToViewPos(float2(SF_UV) * pk_ScreenParams.zw, 1.0f));                                                              \
-    const float2 roughnessParams = GI_GetRoughnessWeightParams(SF_ROUGHNESS);                                                                               \
-    const float2 ddxy = fract(SF_UV);                                                                                                                       \
-    MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                                                                            \
-                                                                                                                                                            \
-                                                                                                                                                            \
-    for (int yy = 0; yy <= 1; ++yy)                                                                                                                         \
-    for (int xx = 0; xx <= 1; ++xx)                                                                                                                         \
-    {                                                                                                                                                       \
-        const int2 xy = SF_COORD + int2(xx, yy);                                                                                                            \
-        const float s_depth = SamplePreviousViewDepth(xy);                                                                                                  \
-        const float4 s_nr = SamplePreviousViewNormalRoughness(xy);                                                                                          \
-                                                                                                                                                            \
-        const float w_b = bilinearWeights[yy][xx];                                                                                                          \
-        const float w_n = pow5(dot(SF_NORMAL, s_nr.xyz));                                                                                                   \
-        const float w_r = exp(-abs(s_nr.w * roughnessParams.x + roughnessParams.y));                                                                        \
-        const float w_s = float(Test_InScreen(xy) && Test_DepthReproject(SF_DEPTH, s_depth, SF_DBIAS));                                                     \
-        const float w_z = exp(-abs(SF_DEPTH - s_depth));                                                                                                    \
-        float w_diff = w_s * w_b * w_n * w_z;                                                                                                               \
-        float w_spec = w_s * w_b * w_n * w_r;                                                                                                               \
-        w_diff = lerp(0.0f, w_diff, !Test_NaN_EPS6(w_diff) && w_n > 0.05f);                                                                                 \
-        w_spec = lerp(0.0f, w_spec, !Test_NaN_EPS6(w_spec));                                                                                                \
-                                                                                                                                                            \
-        SF_OUT_NV += dot(s_nr.xyz, -s_viewdir) * w_diff;                                                                                                    \
-        SF_OUT_DIFF = GI_Sum(SF_OUT_DIFF, GI_Load_Diff(xy), w_diff);                                                                                        \
-        SF_OUT_SPEC = GI_Sum(SF_OUT_SPEC, GI_Load_Spec(xy), w_spec);                                                                                        \
-        SF_WSUM_DIFF += w_diff;                                                                                                                             \
-        SF_WSUM_SPEC += w_spec;                                                                                                                             \
-    }                                                                                                                                                       \
-}                                                                                                                                                           \
+#define GI_SF_REPRO_BILINEAR(SF_UV, SF_COORD, SF_NORMAL, SF_DEPTH, SF_DBIAS, SF_ROUGHNESS, SF_WSUM_DIFF, SF_WSUM_SPEC, SF_OUT_DIFF, SF_OUT_SPEC)    \
+{                                                                                                                                                   \
+    const float2 roughnessParams = GI_GetRoughnessWeightParams(SF_ROUGHNESS);                                                                       \
+    const float2 ddxy = fract(SF_UV);                                                                                                               \
+    MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                                                                    \
+                                                                                                                                                    \
+                                                                                                                                                    \
+    for (int yy = 0; yy <= 1; ++yy)                                                                                                                 \
+    for (int xx = 0; xx <= 1; ++xx)                                                                                                                 \
+    {                                                                                                                                               \
+        const int2 xy = SF_COORD + int2(xx, yy);                                                                                                    \
+        const float s_depth = SamplePreviousViewDepth(xy);                                                                                          \
+        const float4 s_nr = SamplePreviousViewNormalRoughness(xy);                                                                                  \
+                                                                                                                                                    \
+        const float w_b = bilinearWeights[yy][xx];                                                                                                  \
+        const float w_n = pow5(dot(SF_NORMAL, s_nr.xyz));                                                                                           \
+        const float w_r = exp(-abs(s_nr.w * roughnessParams.x + roughnessParams.y));                                                                \
+        const float w_s = float(Test_InScreen(xy) && Test_DepthReproject(SF_DEPTH, s_depth, SF_DBIAS));                                             \
+        const float w_z = exp(-abs(SF_DEPTH - s_depth));                                                                                            \
+        float w_diff = w_s * w_b * w_n * w_z;                                                                                                       \
+        float w_spec = w_s * w_b * w_n * w_r;                                                                                                       \
+        w_diff = lerp(0.0f, w_diff, !Test_NaN_EPS6(w_diff) && w_n > 0.05f);                                                                         \
+        w_spec = lerp(0.0f, w_spec, !Test_NaN_EPS6(w_spec));                                                                                        \
+                                                                                                                                                    \
+        SF_OUT_DIFF = GI_Sum(SF_OUT_DIFF, GI_Load_Diff(xy), w_diff);                                                                                \
+        SF_OUT_SPEC = GI_Sum(SF_OUT_SPEC, GI_Load_Spec(xy), w_spec);                                                                                \
+        SF_WSUM_DIFF += w_diff;                                                                                                                     \
+        SF_WSUM_SPEC += w_spec;                                                                                                                     \
+    }                                                                                                                                               \
+}                                                                                                                                                   \
 
 #define GI_SF_REPRO_VIRTUAL_SPEC(SF_VPOS, SF_VIEW, SF_NORMAL, SF_DEPTH, SF_ROUGHNESS, SF_VIRT_DIST, SF_OUT_WSUM, SF_OUT)    \
 {                                                                                                                           \

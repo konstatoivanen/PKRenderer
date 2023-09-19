@@ -1,7 +1,4 @@
 #version 460
-#extension GL_KHR_shader_subgroup_ballot : enable
-#extension GL_KHR_shader_subgroup_arithmetic : enable
-#extension GL_KHR_shader_subgroup_shuffle : enable
 #pragma PROGRAM_COMPUTE
 
 #multi_compile _ PK_GI_SPEC_VIRT_REPROJECT
@@ -60,16 +57,14 @@ void main()
         const float parallax = GI_GetParallax(viewdir, normalize(viewpos - pk_ViewSpaceCameraDelta.xyz));
         const float2 screenuvPrev = GI_ViewToPrevScreenUV(viewpos);
         const int2 coordPrev = int2(screenuvPrev);
-        float prevNV = 0.0f;
 
 #if PK_GI_APPROX_ROUGH_SPEC == 1
         discardSpec = roughness >= PK_GI_MAX_ROUGH_SPEC;
 #endif
         // Reconstruct diff & naive spec
-        GI_SF_REPRO_BILINEAR(screenuvPrev, coordPrev, normal, depth, depthBias, roughness, wSumDiff, wSumSpec, diff, spec, prevNV)
+        GI_SF_REPRO_BILINEAR(screenuvPrev, coordPrev, normal, depth, depthBias, roughness, wSumDiff, wSumSpec, diff, spec)
 
         // Reduce diff antilag on poor reproject.
-        deltaNdotV = prevNV * safePositiveRcp(wSumDiff) - nv;
         antilagDiff = lerp(0.1f, 1.0f, saturate(wSumDiff / 0.25f));
         antilagSpec = GI_GetAntilagSpecular(roughness, nv, parallax);
 
@@ -90,19 +85,6 @@ void main()
         diff = GI_Mul_NoHistory(diff, 1.0f / wSumDiff);
         spec = GI_Mul_NoHistory(spec, 1.0f / wSumSpec);
         
-        // Anti firefly filter (eliminate new stretched samples that have high luminance compared to neighbourhood).
-        {
-            const float luma = GI_Luminance(diff);
-            const float sumLuma = subgroupAdd(luma);
-            const float sumWeight = subgroupAdd(1.0f);
-            const float lumaScale = (luma + 1.0f) / (1.0f + sumLuma / sumWeight);
-
-            if (diff.history < 8.0f)
-            {
-                diff.history *= exp(lumaScale * deltaNdotV * GI_Alpha(diff));
-            }
-        }
-
         // Get min of virtual reprojected spec & naive spec to eliminate ghosting.
         if (!Test_EPS6(wSumVSpec))
         {
