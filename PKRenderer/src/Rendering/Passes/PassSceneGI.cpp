@@ -66,7 +66,7 @@ namespace PK::Rendering::Passes
 
         descr.format = TextureFormat::RG32UI;
         m_packedSpec = Texture::Create(descr, "GI.PackedSpec");
-        
+
         descr.layers = 3u;
         descr.levels = 4u;
         descr.resolution = { config->InitialWidth / 2u, config->InitialHeight / 2u, 1u };

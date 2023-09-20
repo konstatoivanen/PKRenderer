@@ -19,99 +19,32 @@
 shared float s_weights[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
 shared uint s_count[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
 
-Reservoir ReSTIR_Load_HitAsReservoir(const int2 coord, const float3 origin)
-{
-    return ReSTIR_Unpack_Hit(GI_Load_Packed_Diff(coord), origin);
-}
+// A novel anti-firefly filter using subgroup intrisics.
+// This is a lot cheaper than the classics 3x3 filter but a bit less effective due to larger sample area.
+#define SUBGROUP_ANTIFIREFLY_FILTER(condition, current, history, alpha, scale)                  \
+{                                                                                               \
+    const uint4 threadMask = subgroupBallot(condition);                                         \
+    const uint threadCount = max(1u, subgroupBallotBitCount(threadMask)) - 1u;                  \
+                                                                                                \
+    const float2 moments = make_moments(GI_Luminance(current));                                 \
+    const float2 momentsWave = (subgroupAdd(moments) - moments) / threadCount;                  \
+                                                                                                \
+    const float variance = pow(abs(momentsWave.y - pow2(momentsWave.x)), 0.25f);                \
+    const float lumaMax = lerp(GI_Luminance(history), momentsWave.x, alpha) + variance * scale; \
+                                                                                                \
+    current = GI_ClampLuma(current, lumaMax);                                                   \
+}                                                                                               \
 
-bool ReSTIR_BoilingFilter(uint2 LocalIndex, float filterStrength, float reservoirWeight)
-{
-    float boilingFilterMultiplier = 10.f / clamp(filterStrength, 1e-6, 1.0) - 9.f;
-    float waveWeight = subgroupAdd(reservoirWeight);
-    uint4 weightMask = subgroupBallot(reservoirWeight > 0.0f);
-    uint waveCount = subgroupBallotBitCount(weightMask);
-    uint linearThreadIndex = LocalIndex.x + LocalIndex.y * BOIL_FLT_GROUP_SIZE;
-    uint waveIndex = linearThreadIndex / gl_SubgroupSize;
+#define ReSTIR_Load_HitAsReservoir(coord, origin) ReSTIR_Unpack_Hit(GI_Load_Packed_Diff(coord), origin)
 
-    if (subgroupElect())
-    {
-        s_weights[waveIndex] = waveWeight;
-        s_count[waveIndex] = waveCount;
-    }
-
-    barrier();
-
-    // Reduce the per-wavefront averages into a global average using one wavefront
-    if (linearThreadIndex < (BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + gl_SubgroupSize - 1) / gl_SubgroupSize)
-    {
-        waveWeight = s_weights[linearThreadIndex];
-        waveCount = s_count[linearThreadIndex];
-        waveWeight = subgroupAdd(waveWeight);
-        waveCount = subgroupAdd(waveCount);
-
-        if (linearThreadIndex == 0)
-        {
-            s_weights[0] = (waveCount > 0) ? (waveWeight / float(waveCount)) : 0.0;
-        }
-    }
-
-    barrier();
-
-    float averageNonzeroWeight = s_weights[0];
-    return reservoirWeight > averageNonzeroWeight * boilingFilterMultiplier;
-}
-
-void ReSTIR_SubgroupSuffle(const int2 coord,
-    const float depth,
-    const float depthBias,
-    const float3 origin,
-    const float3 normal,
-    const uint hash,
-    inout Reservoir combined)
-{
-    const uint subgroupMask = gl_SubgroupSize - 1u;
-    const uint mask = (gl_SubgroupInvocationID + (hash % subgroupMask) + 1u) & subgroupMask;
-
-    Reservoir suffled;
-    suffled.radiance = subgroupShuffle(combined.radiance, mask);
-    suffled.position = subgroupShuffle(combined.position, mask);
-    suffled.normal = subgroupShuffle(combined.normal, mask);
-    suffled.targetPdf = subgroupShuffle(combined.targetPdf, mask);
-    suffled.weightSum = subgroupShuffle(combined.weightSum, mask);
-    suffled.M = subgroupShuffle(combined.M, mask);
-
-    const float s_depth = subgroupShuffle(depth, mask);
-    const float3 s_origin = subgroupShuffle(origin, mask);
-    const float3 s_normal = subgroupShuffle(normal, mask);
-    const int2 s_coord = subgroupShuffle(coord, mask);
-
-    // Also check screen area in case receiving invalid values.
-
-    [[branch]]
-    if (Test_InScreen(s_coord) &&
-        combined.M < RESTIR_MAX_M + 3 &&
-        Test_DepthReproject(depth, s_depth, depthBias) &&
-        dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
-    {
-        const float3 s_position = SampleWorldPosition(s_coord, s_depth);
-        const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_origin, suffled);
-        ReSTIR_CombineReservoir(combined, suffled, s_targetPdf, hash);
-    }
-}
-
-void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
-    const int2 coord,
-    const float depth,
-    const float3 origin,
-    const bool isNewSurf,
-    const Reservoir initial,
-    inout SH outSH)
+void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const float depth, const float3 origin, const bool isNewSurf, const Reservoir initial, inout SH outSH)
 {
     const float3 viewnormal = SampleViewNormal(coord);
     const float depthBias = lerp(0.1f, 0.01f, -viewnormal.z);
     const float3 normal = ViewToWorldDir(viewnormal);
     uint seed = ReSTIR_GetSeed(coord);
     int scale = 5;
+    bool isValid = true;
 
     Reservoir combined = initial;
 
@@ -177,7 +110,38 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
         seed += RESTIR_SAMPLES_SPATIAL;
     }
 
-    ReSTIR_SubgroupSuffle(coord, depth, depthBias, origin, normal, ReSTIR_Hash(seed), combined);
+    // Subgroup Resampling
+    {
+        const uint hash = ReSTIR_Hash(seed);
+        const uint subgroupMask = gl_SubgroupSize - 1u;
+        const uint mask = (gl_SubgroupInvocationID + (hash % subgroupMask) + 1u) & subgroupMask;
+
+        Reservoir suffled;
+        suffled.radiance = subgroupShuffle(combined.radiance, mask);
+        suffled.position = subgroupShuffle(combined.position, mask);
+        suffled.normal = subgroupShuffle(combined.normal, mask);
+        suffled.targetPdf = subgroupShuffle(combined.targetPdf, mask);
+        suffled.weightSum = subgroupShuffle(combined.weightSum, mask);
+        suffled.M = subgroupShuffle(combined.M, mask);
+
+        const float s_depth = subgroupShuffle(depth, mask);
+        const float3 s_origin = subgroupShuffle(origin, mask);
+        const float3 s_normal = subgroupShuffle(normal, mask);
+        const int2 s_coord = subgroupShuffle(coord, mask);
+
+        // Also check screen area in case receiving invalid values.
+
+        [[branch]]
+        if (Test_InScreen(s_coord) &&
+            combined.M < RESTIR_MAX_M + 3 &&
+            Test_DepthReproject(depth, s_depth, depthBias) &&
+            dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
+        {
+            const float3 s_position = SampleWorldPosition(s_coord, s_depth);
+            const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_origin, suffled);
+            ReSTIR_CombineReservoir(combined, suffled, s_targetPdf, hash);
+        }
+    }
 
     // Reshade hit
     {
@@ -186,14 +150,52 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord,
         const bool reject = !isNewSurf && ReSTIR_NearFieldReject(depth, origin, initial, ReSTIR_Hash(seed + 1));
         const float3 direction = normalize(combined.position - origin);
         const float weight = ReSTIR_GetSampleWeight(combined, normal, direction);
-        const bool isValid = !isnan(weight) && !isinf(weight) && weight > 0.0f && !reject;
+        isValid = !isnan(weight) && !isinf(weight) && weight > 0.0f && !reject;
 
         if (isValid)
         {
             outSH = SH_FromRadiance(combined.radiance * weight, direction);
         }
+    }
+   
+    // Boiling Filter
+    {
+        const float filterStrength = 0.2f;
+        const float reservoirWeight = combined.targetPdf * combined.weightSum;
+        const float boilingFilterMultiplier = 10.f / clamp(filterStrength, 1e-6, 1.0) - 9.0f;
+        
+        const uint linearThreadIndex = gl_LocalInvocationID.x + gl_LocalInvocationID.y * BOIL_FLT_GROUP_SIZE;
+        const uint waveIndex = linearThreadIndex / gl_SubgroupSize;
+        const uint4 threadMask = subgroupBallot(reservoirWeight > 0.0f);
+        
+        uint threadCount = subgroupBallotBitCount(threadMask);
+        float waveWeight = subgroupAdd(reservoirWeight);
 
-        if (ReSTIR_BoilingFilter(gl_LocalInvocationID.xy, 0.2f, combined.targetPdf * combined.weightSum) || !isValid)
+        if (subgroupElect())
+        {
+            s_weights[waveIndex] = waveWeight;
+            s_count[waveIndex] = threadCount;
+        }
+
+        barrier();
+
+        // Reduce the per-wavefront averages into a global average using one wavefront
+        if (linearThreadIndex < (BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + gl_SubgroupSize - 1) / gl_SubgroupSize)
+        {
+            waveWeight = s_weights[linearThreadIndex];
+            threadCount = s_count[linearThreadIndex];
+            waveWeight = subgroupAdd(waveWeight);
+            threadCount = subgroupAdd(threadCount);
+
+            if (linearThreadIndex == 0)
+            {
+                s_weights[0] = (threadCount > 0) ? (waveWeight / float(threadCount)) : 0.0;
+            }
+        }
+
+        barrier();
+
+        if (reservoirWeight > s_weights[0] * boilingFilterMultiplier || !isValid)
         {
             combined = initial;
         }
@@ -208,6 +210,7 @@ void main()
     const int2 baseCoord = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(baseCoord));
     const float depth = SampleMinZ(coord, 0);
+    const float roughness = SampleRoughness(coord);
     const bool isScene = Test_DepthFar(depth);
 
     // Diffuse 
@@ -222,26 +225,30 @@ void main()
 
         GIDiff history = GI_Load_Diff(baseCoord, PK_GI_STORE_LVL);
 
-#if defined(PK_GI_RESTIR)
+        #if defined(PK_GI_RESTIR)
         ReSTIR_ResampleSpatioTemporal(baseCoord, coord, depth, origin, int(history.history) < 4, reservoir, current.sh);
-#endif
+        #endif
 
         const float alpha = GI_Alpha(history);
-        current = GI_ClampLuma(current, GI_MaxLuma(history, alpha));
-        history = GI_Interpolate(history, current, alpha);
+        
+        SUBGROUP_ANTIFIREFLY_FILTER(isScene, current, history, alpha, 1.0f)
+
+        history = GI_Interpolate(history, current, GI_Alpha(history));
         GI_Store_Packed_Diff(baseCoord, isScene ? GI_Pack_Diff(history) : uint4(0));
     }
 
     // Specular
-#if PK_GI_APPROX_ROUGH_SPEC == 1
+    #if PK_GI_APPROX_ROUGH_SPEC == 1
     [[branch]]
-    if (SampleRoughness(coord) < PK_GI_MAX_ROUGH_SPEC)
-#endif
+    if (roughness < PK_GI_MAX_ROUGH_SPEC)
+    #endif
     {
         GISpec history = GI_Load_Spec(baseCoord, PK_GI_STORE_LVL);
         GISpec current = GI_Load_Spec(baseCoord);
         const float alpha = GI_Alpha(history);
-        current = GI_ClampLuma(current, GI_MaxLuma(history, alpha));
+
+        SUBGROUP_ANTIFIREFLY_FILTER(isScene, current, history, alpha, (1.0f / (1e-4f + roughness)))
+
         history = GI_Interpolate(history, current, alpha);
         GI_Store_Packed_Spec(baseCoord, isScene ? GI_Pack_Spec(history) : uint2(0));
     }

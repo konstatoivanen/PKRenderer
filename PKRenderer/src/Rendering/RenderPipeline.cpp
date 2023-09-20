@@ -9,6 +9,7 @@
 
 /*
 TODO:
+Gradient estimation (antilag alpha) from A-SVGF (without the denoiser).
 Fix roughness dominant factor usage
 Test nvidias radius scaling
 Investigate camera moving bias

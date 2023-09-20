@@ -130,17 +130,20 @@ void main()
             momentsSpec += make_moments(GI_Luminance(s_diff[i]) * maskSpec[i]);
         }
 
+        const float diffWsum = maskDiff.x + maskDiff.y + maskDiff.z + maskDiff.w;
+        const float specWsum = maskSpec.x + maskSpec.y + maskSpec.z + maskSpec.w;
+
         barrier();
         atomicAdd(lds_Diff_Mom1, momentsDiff.x);
         atomicAdd(lds_Diff_Mom2, momentsDiff.y);
         atomicAdd(lds_Spec_Mom1, momentsSpec.x);
         atomicAdd(lds_Spec_Mom2, momentsSpec.y);
-        atomicAdd(lds_Diff_Weight, maskDiff.x + maskDiff.y + maskDiff.z + maskDiff.w);
-        atomicAdd(lds_Spec_Weight, maskSpec.x + maskSpec.y + maskSpec.z + maskSpec.w);
+        atomicAdd(lds_Diff_Weight, diffWsum);
+        atomicAdd(lds_Spec_Weight, specWsum);
         barrier();
 
-        momentsDiff = float2(lds_Diff_Mom1, lds_Diff_Mom2) * safePositiveRcp(lds_Diff_Weight);
-        momentsSpec = float2(lds_Spec_Mom1, lds_Spec_Mom2) * safePositiveRcp(lds_Spec_Weight);
+        momentsDiff = (float2(lds_Diff_Mom1, lds_Diff_Mom2) - momentsDiff) * safePositiveRcp(lds_Diff_Weight - diffWsum);
+        momentsSpec = (float2(lds_Spec_Mom1, lds_Spec_Mom2) - momentsSpec) * safePositiveRcp(lds_Spec_Weight - specWsum);
 
         const float maxLumaDiff = momentsDiff.x + pow(abs(momentsDiff.y - pow2(momentsDiff.x)), 0.25f) * 2.5f;
         const float maxLumaSpec = momentsSpec.x + pow(abs(momentsSpec.y - pow2(momentsSpec.x)), 0.25f) * 2.5f;
@@ -154,8 +157,8 @@ void main()
             filteredSpec = GI_Sum_NoHistory(filteredSpec, GI_ClampLuma(s_spec[i], maxLumaSpec), maskSpec[i]);
         }
 
-        const float wDiff = 1.0f / float(max(maskDiff.x + maskDiff.y + maskDiff.z + maskDiff.w, 1u));
-        const float wSpec = 1.0f / float(max(maskSpec.x + maskSpec.y + maskSpec.z + maskSpec.w, 1u));
+        const float wDiff = 1.0f / max(diffWsum, 1.0f);
+        const float wSpec = 1.0f / max(specWsum, 1.0f);
         packedDiff = GI_Pack_Diff(GI_Mul_NoHistory(filteredDiff, wDiff));
         packedSpec = GI_Pack_Spec(GI_Mul_NoHistory(filteredSpec, wSpec));
 

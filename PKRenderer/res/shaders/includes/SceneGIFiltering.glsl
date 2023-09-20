@@ -118,7 +118,6 @@ const float name[2][2] =                                            \
     const float2 ddxy = fract(SF_UV);                                                                                                               \
     MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                                                                    \
                                                                                                                                                     \
-                                                                                                                                                    \
     for (int yy = 0; yy <= 1; ++yy)                                                                                                                 \
     for (int xx = 0; xx <= 1; ++xx)                                                                                                                 \
     {                                                                                                                                               \

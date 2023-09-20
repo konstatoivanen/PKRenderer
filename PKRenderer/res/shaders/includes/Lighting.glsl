@@ -13,15 +13,15 @@
     #define LBR(shadow) (shadow)
 #endif
 
-float SampleLightShadowmap(uint shadowmapIndex, float2 uv, float lightDistance)
+float SampleLightShadowmap(const uint shadowmapIndex, const float2 uv, const float lightDistance)
 {
-    float2 moments = tex2D(pk_ShadowmapAtlas, float3(uv, shadowmapIndex)).xy;
-    float variance = moments.y - moments.x * moments.x;
-    float difference = lightDistance - moments.x;
-    return min(LBR(variance / (variance + difference * difference)) + step(difference, 0.1f), 1.0f);
+    const float2 moments = tex2D(pk_ShadowmapAtlas, float3(uv, shadowmapIndex)).xy;
+    const float variance = moments.y - moments.x * moments.x;
+    const float difference = lightDistance - moments.x;
+    return min(LBR(variance / (variance + pow2(difference))) + step(difference, 0.1f), 1.0f);
 }
 
-float4 GetLightProjectionUVW(in float3 worldpos, uint projectionIndex)
+float4 GetLightProjectionUVW(const float3 worldpos, const uint projectionIndex)
 {
     float4 coord = mul(PK_BUFFER_DATA(pk_LightMatrices, projectionIndex), float4(worldpos, 1.0f));
     coord.xy = (coord.xy / coord.w) * 0.5f.xx + 0.5f.xx; 
