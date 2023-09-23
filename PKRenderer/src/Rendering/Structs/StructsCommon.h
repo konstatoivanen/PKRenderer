@@ -14,15 +14,15 @@ namespace PK::Rendering::Structs
     // Packed into float4, float4, uint4
     struct alignas(16) LightPacked
     {
-        Math::float3 position;
-        float radius;
-        Math::float3 color;
-        float angle;
-        Math::ushort shadowIndex;
-        Math::ushort matrixIndex;
-        Math::ushort type;
-        Math::ushort cookie;
-        Math::uint direction;
+        Math::float3 position = Math::PK_FLOAT3_ZERO;
+        float radius = 0.0f;
+        Math::float3 color = Math::PK_FLOAT3_ZERO;
+        float angle = 0.0f;
+        Math::ushort shadowIndex = 0xFFFFu;
+        Math::ushort matrixIndex = 0u;
+        Math::ushort type = 0xFFFFu;
+        Math::ushort cookie = 0xFFFFu;
+        Math::uint direction = 0u;
     };
 
     struct Vertex_Simple

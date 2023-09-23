@@ -218,7 +218,14 @@ namespace PK::Rendering::Passes
                 case LightType::Directional:
                 {
                     light.position = transform->rotation * PK_FLOAT3_FORWARD;
-                    Functions::GetShadowCascadeMatrices(worldToLocal, ivp, zsplits.data(), -view->light->radius, m_shadowmapTileSize, PK_SHADOW_CASCADE_COUNT, matricesView.data + matrixIndex, &light.radius);
+                    Functions::GetShadowCascadeMatrices(worldToLocal, 
+                                                        ivp, 
+                                                        zsplits.data(), 
+                                                        -view->light->radius, 
+                                                        m_shadowmapTileSize, 
+                                                        PK_SHADOW_CASCADE_COUNT, 
+                                                        matricesView.data + matrixIndex, 
+                                                        &light.radius);
 
                     if (castShadows)
                     {
@@ -228,7 +235,14 @@ namespace PK::Rendering::Passes
                         m_sequencer->Next(engineRoot, &cullCascades);
                         light.shadowIndex = BuildShadowBatch(visibilityList, view, i, view->light->shadowBlur, cullCascades.depthRange, &shadowCount, &minDepth);
                         // Regenerate cascades as the depth range might change based on culling
-                        Functions::GetShadowCascadeMatrices(worldToLocal, ivp, zsplits.data(), -view->light->radius + minDepth, m_shadowmapTileSize, PK_SHADOW_CASCADE_COUNT, matricesView.data + matrixIndex, &light.radius);
+                        Functions::GetShadowCascadeMatrices(worldToLocal, 
+                                                            ivp, 
+                                                            zsplits.data(), 
+                                                            -view->light->radius + minDepth, 
+                                                            m_shadowmapTileSize, 
+                                                            PK_SHADOW_CASCADE_COUNT, 
+                                                            matricesView.data + matrixIndex, 
+                                                            &light.radius);
                     }
                 }
                 break;
@@ -267,18 +281,7 @@ namespace PK::Rendering::Passes
         }
 
         // Empty last one for clustering
-        lightsView[lightCount] =
-        {
-            PK_FLOAT3_ZERO,
-            0.0f,
-            PK_FLOAT3_ZERO,
-            0.0f,
-            0xFFFFu,
-            0u,
-            0xFFFFu,
-            0xFFFFu,
-            0u
-        };
+        lightsView[lightCount] = LightPacked();
             
         cmd->EndBufferWrite(m_lightsBuffer.get());
 

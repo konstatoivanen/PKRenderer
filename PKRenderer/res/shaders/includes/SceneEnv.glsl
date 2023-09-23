@@ -18,10 +18,10 @@ float3 SampleEnvironment(float2 uv, float roughness)
 
 float3 SampleEnvironmentSH(float4 basis)
 {
-    const float4 shR = PK_BUFFER_DATA(pk_SceneEnv_SH, 0);
-    const float4 shG = PK_BUFFER_DATA(pk_SceneEnv_SH, 1);
-    const float4 shB = PK_BUFFER_DATA(pk_SceneEnv_SH, 2);
-    return float3(max(0.0, dot(shR, basis)), max(0.0, dot(shG, basis)), max(0.0, dot(shB, basis))) * PK_SCENE_ENV_EXPOSURE;
+    const float R = max(0.0f, dot(PK_BUFFER_DATA(pk_SceneEnv_SH, 0), basis));
+    const float G = max(0.0f, dot(PK_BUFFER_DATA(pk_SceneEnv_SH, 1), basis));
+    const float B = max(0.0f, dot(PK_BUFFER_DATA(pk_SceneEnv_SH, 2), basis));
+    return float3(R, G, B) * PK_SCENE_ENV_EXPOSURE;
 }
 
 float3 SampleEnvironmentSH(float3 direction)  { return SampleEnvironmentSH(float4(1.0f, direction.yzx) * pk_L1Basis_Cosine * 2.0f);  }

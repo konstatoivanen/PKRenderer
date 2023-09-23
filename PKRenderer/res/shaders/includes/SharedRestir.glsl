@@ -3,7 +3,7 @@
 #include Encoding.glsl
 #include MortonOrder.glsl
 
-layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_Reservoirs;
+layout(rgba32ui, set = PK_SET_DRAW) uniform uimage2DArray pk_Reservoirs;
 struct Reservoir { float3 position; float3 normal; float3 radiance; float targetPdf; float weightSum; uint M;};
 #define pk_Reservoir_Zero Reservoir(0.0f.xxx, 0.0f.xxx, 0.0f.xxx, 0.0f, 0.0f, 0u)
 #define RESTIR_LAYER_CUR int(( pk_FrameIndex.y & 0x1u) << 1u)

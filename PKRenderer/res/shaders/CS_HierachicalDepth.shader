@@ -5,11 +5,11 @@
 
 #multi_compile _ PK_HIZ_FINAL_PASS
 
-layout(r16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationTex;
-layout(r16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationMip1;
-layout(r16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationMip2;
-layout(r16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationMip3;
-layout(r16f, set = PK_SET_SHADER) uniform writeonly restrict image2DArray _DestinationMip4;
+layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray _DestinationTex;
+layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray _DestinationMip1;
+layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray _DestinationMip2;
+layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray _DestinationMip3;
+layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray _DestinationMip4;
 
 #define GROUP_SIZE 8u
 shared float lds_MinZ[GROUP_SIZE * GROUP_SIZE];

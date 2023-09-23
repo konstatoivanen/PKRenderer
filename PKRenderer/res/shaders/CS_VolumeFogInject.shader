@@ -1,6 +1,5 @@
 #version 460
 #pragma PROGRAM_COMPUTE
-#include includes/Lighting.glsl
 #include includes/SharedVolumeFog.glsl
 #include includes/SharedSceneGI.glsl
 
@@ -23,12 +22,12 @@ void main()
 
 #if EARLY_Z_TEST == 1
     float4 maxdepths = float4
-        (
-            SampleMaxZ(float2(id.xy + float2(-0.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4),
-            SampleMaxZ(float2(id.xy + float2(-0.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
-            SampleMaxZ(float2(id.xy + float2(+1.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
-            SampleMaxZ(float2(id.xy + float2(+1.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4)
-            );
+    (
+        SampleMaxZ(float2(id.xy + float2(-0.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4),
+        SampleMaxZ(float2(id.xy + float2(-0.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
+        SampleMaxZ(float2(id.xy + float2(+1.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
+        SampleMaxZ(float2(id.xy + float2(+1.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4)
+    );
 
     float maxTile = cmax(maxdepths);
 
@@ -43,7 +42,7 @@ void main()
     const float3 uvw_prev = VolumeFog_WorldToPrevUVW(worldpos);
     const float3 viewdir = normalize(worldpos - pk_WorldSpaceCameraPos.xyz);
 
-    const float3 gi_static = SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Anisotropy);
+    const float3 gi_static = SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Phase1);
     const float4 gi_dynamic = GI_SphereTrace_Diffuse(worldpos);
 
     // Occlude ground as it should be lit mostly by dynamic gi.
@@ -51,9 +50,16 @@ void main()
     const float gi_static_occlusion = (viewdir.y * 0.5f + 0.5f) * gi_dynamic.a;
 
     float3 value_cur = gi_static.rgb * gi_static_occlusion + gi_dynamic.rgb;
+    
+    // This is incorrect for the dynamic component. However, it introduces good depth to the colors so whatever.
+    value_cur *= VolumeFog_MarchTransmittanceStatic(uvw_cur, dither.z);
 
     // Distant texels are less dense, trace a longer distance to retain some depth.
     const float maxMarchDistance = exp(uvw_cur.z * VOLUMEFOG_MARCH_DISTANCE_EXP);
+
+    // Shadow cascades & transmittance march will cause a visible border between sky fog & volume fog.
+    // Fade out shadow contribution near far plane.
+    const float shadowFade = smoothstep(0.9f, 1.0f, uvw_cur.z);
 
     LightTile tile = GetLightTile_COORD(int2(gl_WorkGroupID.xy >> 1), depth);
     for (uint i = tile.start; i < tile.end; ++i)
@@ -61,7 +67,8 @@ void main()
         Light light = GetLight(i, worldpos, tile.cascade);
         const float marchDistance = clamp(light.linearDistance, 0.0f, maxMarchDistance);
         light.shadow *= VolumeFog_MarchTransmittance(worldpos, light.direction, dither.z, marchDistance);
-        value_cur += BSDF_VOLUMETRIC(viewdir, pk_Fog_Anisotropy, light.direction, light.color, light.shadow);
+        light.shadow = lerp(light.shadow, 1.0f, shadowFade);
+        value_cur += BSDF_VOLUMETRIC(viewdir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, light.direction, light.color, light.shadow);
     }
 
     const float accumulation = VolumeFog_GetAccumulation(uvw_prev);

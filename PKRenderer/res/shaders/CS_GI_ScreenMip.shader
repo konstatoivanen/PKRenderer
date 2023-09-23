@@ -11,10 +11,10 @@
 #include includes/SharedSceneGI.glsl
 #include includes/CTASWizzling.glsl
 
-layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray _DestinationMip1;
-layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray _DestinationMip2;
-layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray _DestinationMip3;
-layout(rg32ui, set = PK_SET_SHADER) uniform writeonly restrict uimage2DArray _DestinationMip4;
+layout(rg32ui, set = PK_SET_DRAW) uniform writeonly restrict uimage2DArray _DestinationMip1;
+layout(rg32ui, set = PK_SET_DRAW) uniform writeonly restrict uimage2DArray _DestinationMip2;
+layout(rg32ui, set = PK_SET_DRAW) uniform writeonly restrict uimage2DArray _DestinationMip3;
+layout(rg32ui, set = PK_SET_DRAW) uniform writeonly restrict uimage2DArray _DestinationMip4;
 
 #define GROUP_SIZE 8u
 shared uint4 lds_Diff[GROUP_SIZE * GROUP_SIZE];
@@ -78,7 +78,7 @@ void main()
 {
     const uint2 coord = GetXTiledThreadID(GROUP_SIZE, GROUP_SIZE, 8u);
     const uint thread = gl_LocalInvocationIndex;
-    const bool skip = imageLoad(pk_GI_ScreenDataMipMask, int2(coord / 8u)).x == 0u;
+    const bool skip = imageLoad(pk_GI_PackedMipMask, int2(coord / 8u)).x == 0u;
     uint4 packedDiff = uint4(0u);
     uint2 packedSpec = uint2(0u);
 
@@ -204,6 +204,6 @@ void main()
         imageStore(_DestinationMip4, int3(coord / 8u, PK_GI_LVL_DIFF1), packedDiff.zwzw);
         imageStore(_DestinationMip4, int3(coord / 8u, PK_GI_LVL_SPEC), packedSpec.xyxy);
 
-        imageStore(pk_GI_ScreenDataMipMask, int2(coord / 8u), uint4(0u));
+        imageStore(pk_GI_PackedMipMask, int2(coord / 8u), uint4(0u));
     }
 }

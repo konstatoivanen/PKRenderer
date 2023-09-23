@@ -57,11 +57,17 @@ float AttenuateLight(float dist, float radius)
     return pow2(saturate(1.0f - pow4(dist/radius))) / (pow2(dist) + 1.0f); 
 }
 
-float PF_HenyeyGreenstein(const float3 viewdir, const float3 posToLight, float phase)
+float PF_HenyeyGreenstein(const float cosA, const float phase)
 {
 	float gsq = pow2(phase);
-	float denom = 1.0 + gsq - 2.0 * phase * dot(viewdir, posToLight);
+	float denom = 1.0 + gsq - 2.0 * phase * cosA;
     return PK_INV_FOUR_PI * (1.0 - gsq) * inversesqrt(pow3(denom));
+}
+
+float PF_HenyeyGreensteinDual(const float3 viewdir, const float3 posToLight, const float phase0, const float phase1, const float w)
+{
+    const float cosA = dot(viewdir, posToLight);
+    return lerp(PF_HenyeyGreenstein(cosA, phase0), PF_HenyeyGreenstein(cosA, phase1), w);
 }
 
 float PF_Schlick(const float3 viewdir, const float3 posToLight, float phase)
@@ -180,9 +186,9 @@ float3 BRDF_CLOTH(const BRDFSurf surf, const float3 lightdir, const float3 light
            surf.sheen * color * Fr;
 }
 
-float3 BSDF_VOLUMETRIC(const float3 viewdir, const float phase, const float3 lightdir, const float3 lightcolor, float shadow)
+float3 BSDF_VOLUMETRIC(const float3 viewdir, const float phase0, const float phase1, const float phaseW, const float3 lightdir, const float3 lightcolor, float shadow)
 {
-    return lightcolor * shadow * PF_HenyeyGreenstein(viewdir, lightdir, phase);
+    return lightcolor * shadow * PF_HenyeyGreensteinDual(viewdir, lightdir, phase0, phase1, phaseW);
 }
 
 float3 BRDF_VXGI_DEFAULT(const BRDFSurf surf, const float3 lightdir, const float3 lightcolor, float shadow)

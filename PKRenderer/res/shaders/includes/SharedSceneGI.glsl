@@ -25,12 +25,12 @@ PK_DECLARE_CBUFFER(pk_GI_Parameters, PK_SET_SHADER)
 layout(rg32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_RayHits;
 layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedDiff;
 layout(rg32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedSpec;
+layout(r8ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_PackedMipMask; 
 layout(r32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_ResolvedWrite;
-layout(r8ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_ScreenDataMipMask; 
 layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_GI_VolumeMaskWrite;
 layout(rgba16f, set = PK_SET_SHADER) uniform image3D pk_GI_VolumeWrite;
 PK_DECLARE_SET_SHADER uniform sampler2DArray pk_GI_ResolvedRead;
-PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_ScreenDataMips;
+PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_PackedMips;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 
 #define PK_GI_APPROX_ROUGH_SPEC 1
@@ -59,7 +59,7 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 #define PK_GI_HISTORY_FILL_THRESHOLD 8
 #define PK_GI_DISK_FILTER_RADIUS 3.0f
 
-#define PK_GI_DATA_LOAD_MIP(c, l, m) texelFetch(pk_GI_ScreenDataMips, int3(c, l), m).xy
+#define PK_GI_DATA_LOAD_MIP(c, l, m) texelFetch(pk_GI_PackedMips, int3(c, l), m).xy
 
 //----------STRUCTS----------//
 struct GIDiff { SH sh; float ao; float history; };

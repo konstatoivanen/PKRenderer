@@ -110,10 +110,112 @@ void main()
         if (diff.history < PK_GI_HISTORY_FILL_THRESHOLD || invalidDiff ||
            (spec.history < PK_GI_HISTORY_FILL_THRESHOLD && !discardSpec))
         {
-            imageStore(pk_GI_ScreenDataMipMask, base + int2(0, 0), uint4(1u));
-            imageStore(pk_GI_ScreenDataMipMask, base + int2(1, 0), uint4(1u));
-            imageStore(pk_GI_ScreenDataMipMask, base + int2(0, 1), uint4(1u));
-            imageStore(pk_GI_ScreenDataMipMask, base + int2(1, 1), uint4(1u));
+            imageStore(pk_GI_PackedMipMask, base + int2(0, 0), uint4(1u));
+            imageStore(pk_GI_PackedMipMask, base + int2(1, 0), uint4(1u));
+            imageStore(pk_GI_PackedMipMask, base + int2(0, 1), uint4(1u));
+            imageStore(pk_GI_PackedMipMask, base + int2(1, 1), uint4(1u));
         }
     }
 }
+
+/*
+layout(rg32ui, set = PK_SET_DRAW) uniform uimage2D pk_Gradients;
+
+#define GRADIENT_STRATA_SIZE 3
+
+void GradientReproject(int2 coord)
+{
+    if (coord.x * GRADIENT_STRATA_SIZE >= pk_ScreenSize.x || coord.y * GRADIENT_STRATA_SIZE >= pk_ScreenSize.y)
+    {
+        return;
+    }
+
+    const uint2 prevPos = imageLoad(pk_Gradients, coord).y;
+
+    int2 prevShadingPix = int2(0);
+    uint curStrataPos = 0;
+    int2 curShadingPix = int2(0);
+    float2 prevLuminance = 0.0f.xx;
+
+    for (uint yy = 0u; yy < GRADIENT_STRATA_SIZE; ++yy)
+    for (uint xx = 0u; xx < GRADIENT_STRATA_SIZE; ++xx)
+    {
+        if (yy * GRADIENT_STRATA_SIZE + xx == prevPos)
+        {
+            continue;
+        }
+
+        const int2 iter_curPix = coord * COMPUTE_ASVGF_STRATA_SIZE + int2(xx, yy);
+        const int2 iter_prevPix = ivec2(floor(getPrevScreenPos(framebufMotion_Sampler, iter_curPix)));
+        const float iter_prevLuminance = imageLoad(framebufGradientInputs_Prev, iter_prevPix).x;
+
+        if (max(iter_prevLuminance.x, iter_prevLuminance.y) > max(prevLuminance.x, prevLuminance.y))
+        {
+            // (b) prevShadingPix is a forward-projected pixel of curShadingPix
+            prevShadingPix = iter_prevPix;
+            curShadingPix = iter_curPix;
+            curStrataPos = yy * COMPUTE_ASVGF_STRATA_SIZE + xx;
+            // (e) luminance of a shading sample from previous frame
+            prevLuminance = iter_prevLuminance;
+        }
+    }
+
+    if (!testPixInRenderArea(prevShadingPix, getCheckerboardedRenderArea(curShadingPix)) ||
+        isSkyPix(curShadingPix) ||
+        (prevLuminance.x <= 0.0 && prevLuminance.y <= 0.0))
+    {
+        imageStore(framebufDISPingGradient, gradPix, vec4(0.0));
+        imageStore(framebufGradientPrevPix, gradPix, uvec4(COMPUTE_ASVGF_STRATA_SIZE * COMPUTE_ASVGF_STRATA_SIZE + 1));
+        return;
+    }
+
+    // (f) get shading sample from current frame
+    const uint oldSeed = getRandomSeed(prevShadingPix, globalUniform.frameId - 1);
+
+    Surface prevSurf = fetchGbufferSurface_NoAlbedoViewDir_Prev(prevShadingPix);
+
+    // get exact position from visibility buffer, and fix up prevSurf
+    // to account subpix imprecision of G-buffer's surfacePosition
+    const vec4 visBufPrev = texelFetch(framebufVisibilityBuffer_Prev_Sampler, prevShadingPix, 0);
+    const bool matchedSurface = unpackPrevVisibilityBuffer(visBufPrev, prevSurf.position);
+    prevSurf.toViewerDir = normalize(globalUniform.cameraPositionPrev.xyz - prevSurf.position);
+
+    vec2 forwardProjectedLuminance = vec2(0.0);
+
+    if (matchedSurface)
+    {
+        Reservoir prevReservoir = imageLoadReservoir_Prev(prevShadingPix);
+
+        if (isReservoirValid(prevReservoir))
+        {
+            prevReservoir.selected = lightSources_Index_PrevToCur[prevReservoir.selected];
+
+            if (prevReservoir.selected != UINT32_MAX)
+            {
+                vec3 diffuse, specular;
+                processDirectIllumination(oldSeed, prevSurf, prevReservoir, diffuse, specular);
+
+                forwardProjectedLuminance = vec2(getLuminance(diffuse), getLuminance(specular));
+            }
+        }
+    }
+
+    vec3 gradDIS = vec3(0.0);
+
+    const float gradSample = forwardProjectedLuminance.x - prevLuminance.x;
+    const float normFactor = max(forwardProjectedLuminance.x, prevLuminance.x);
+    const float gradient = getAntilagAlpha(gradSample, normFactor);
+
+    // smooth temporally, to make antilag less aggressive over a small period of time
+    {
+        const ivec2 gradPixPrev = prevShadingPix / COMPUTE_ASVGF_STRATA_SIZE;
+
+        const vec3 gradDISPrev = imageLoad(framebufDISGradientHistory, gradPixPrev).xyz;
+        gradDIS = mix(gradient, gradDISPrev, 0.5);
+    }
+
+    imageStore(framebufDISPingGradient, gradPix, vec4(gradDIS, 0.0));
+    imageStore(framebufGradientPrevPix, gradPix, uvec4(curStrataPos));
+
+}
+*/

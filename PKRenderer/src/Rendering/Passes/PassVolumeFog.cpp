@@ -49,14 +49,20 @@ namespace PK::Rendering::Passes
                 { ElementType::Float4, hash->pk_Fog_Albedo },
                 { ElementType::Float4, hash->pk_Fog_Absorption },
                 { ElementType::Float4, hash->pk_Fog_WindDirSpeed },
-                { ElementType::Float,  hash->pk_Fog_Anisotropy },
-                { ElementType::Float,  hash->pk_Fog_DensityConstant },
-                { ElementType::Float,  hash->pk_Fog_DensityHeightExponent },
-                { ElementType::Float,  hash->pk_Fog_DensityHeightOffset },
-                { ElementType::Float,  hash->pk_Fog_DensityHeightAmount },
-                { ElementType::Float,  hash->pk_Fog_DensityNoiseAmount },
-                { ElementType::Float,  hash->pk_Fog_DensityNoiseScale },
-                { ElementType::Float,  hash->pk_Fog_DensityAmount }
+                { ElementType::Float,  hash->pk_Fog_Phase0 },
+                { ElementType::Float,  hash->pk_Fog_Phase1 },
+                { ElementType::Float,  hash->pk_Fog_PhaseW },
+                { ElementType::Float,  hash->pk_Fog_Density_Constant },
+                { ElementType::Float,  hash->pk_Fog_Density_HeightExponent },
+                { ElementType::Float,  hash->pk_Fog_Density_HeightOffset },
+                { ElementType::Float,  hash->pk_Fog_Density_HeightAmount },
+                { ElementType::Float,  hash->pk_Fog_Density_NoiseAmount },
+                { ElementType::Float,  hash->pk_Fog_Density_NoiseScale },
+                { ElementType::Float,  hash->pk_Fog_Density_Amount },
+                { ElementType::Float,  hash->pk_Fog_Density_Sky_Constant },
+                { ElementType::Float,  hash->pk_Fog_Density_Sky_HeightExponent },
+                { ElementType::Float,  hash->pk_Fog_Density_Sky_HeightOffset },
+                { ElementType::Float,  hash->pk_Fog_Density_Sky_HeightAmount }
             }), "Fog.Parameters");
 
         OnUpdateParameters(config);
@@ -123,14 +129,20 @@ namespace PK::Rendering::Passes
         m_volumeResources->Set<float4>(hash->pk_Fog_Albedo, float4(config->FogAlbedo.value, 1.0f));
         m_volumeResources->Set<float4>(hash->pk_Fog_Absorption, float4(config->FogAbsorption.value, 1.0f));
         m_volumeResources->Set<float4>(hash->pk_Fog_WindDirSpeed, float4(config->FogWindDirection.value, config->FogWindSpeed));
-        m_volumeResources->Set<float>(hash->pk_Fog_Anisotropy, config->FogAnisotropy);
-        m_volumeResources->Set<float>(hash->pk_Fog_DensityConstant, config->FogDensityConstant);
-        m_volumeResources->Set<float>(hash->pk_Fog_DensityHeightExponent, config->FogDensityHeightExponent);
-        m_volumeResources->Set<float>(hash->pk_Fog_DensityHeightOffset, config->FogDensityHeightOffset);
-        m_volumeResources->Set<float>(hash->pk_Fog_DensityHeightAmount, config->FogDensityHeightAmount);
-        m_volumeResources->Set<float>(hash->pk_Fog_DensityNoiseAmount, config->FogDensityNoiseAmount);
-        m_volumeResources->Set<float>(hash->pk_Fog_DensityNoiseScale, config->FogDensityNoiseScale);
-        m_volumeResources->Set<float>(hash->pk_Fog_DensityAmount, config->FogDensity);
+        m_volumeResources->Set<float>(hash->pk_Fog_Phase0, config->FogPhase0);
+        m_volumeResources->Set<float>(hash->pk_Fog_Phase1, config->FogPhase1);
+        m_volumeResources->Set<float>(hash->pk_Fog_PhaseW, config->FogPhaseW);
+        m_volumeResources->Set<float>(hash->pk_Fog_Density_Constant, config->FogDensityConstant);
+        m_volumeResources->Set<float>(hash->pk_Fog_Density_HeightExponent, config->FogDensityHeightExponent);
+        m_volumeResources->Set<float>(hash->pk_Fog_Density_HeightOffset, config->FogDensityHeightOffset);
+        m_volumeResources->Set<float>(hash->pk_Fog_Density_HeightAmount, config->FogDensityHeightAmount);
+        m_volumeResources->Set<float>(hash->pk_Fog_Density_NoiseAmount, config->FogDensityNoiseAmount);
+        m_volumeResources->Set<float>(hash->pk_Fog_Density_NoiseScale, config->FogDensityNoiseScale);
+        m_volumeResources->Set<float>(hash->pk_Fog_Density_Amount, config->FogDensity);
+        m_volumeResources->Set<float>(hash->pk_Fog_Density_Sky_Constant, config->FogDensitySkyConstant);
+        m_volumeResources->Set<float>(hash->pk_Fog_Density_Sky_HeightExponent, config->FogDensitySkyHeightExponent);
+        m_volumeResources->Set<float>(hash->pk_Fog_Density_Sky_HeightOffset, config->FogDensitySkyHeightOffset);
+        m_volumeResources->Set<float>(hash->pk_Fog_Density_Sky_HeightAmount, config->FogDensitySkyHeightAmount);
         m_volumeResources->FlushBuffer(QueueType::Transfer);
     }
 }

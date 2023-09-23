@@ -39,7 +39,7 @@ Light GetLightDirect(const uint index, const float3 worldpos, const uint cascade
     float shadow = 1.0f;
 
     float2 lightuv;
-    float3 posToLight; 
+    float4 posToLight; 
     float linearDistance;
 
     // @TODO Maybe refactor lights to separate by type lists 
@@ -47,19 +47,17 @@ Light GetLightDirect(const uint index, const float3 worldpos, const uint cascade
     {
         case LIGHT_TYPE_POINT:
         {
-            posToLight = light.LIGHT_POS - worldpos;
-            linearDistance = length(posToLight);
-            color *= AttenuateLight(linearDistance, light.LIGHT_RADIUS);
-            posToLight /= linearDistance;
-            lightuv = OctaEncode(-posToLight);
+            posToLight = normalizeLength(light.LIGHT_POS - worldpos);
+            color *= AttenuateLight(posToLight.w, light.LIGHT_RADIUS);
+            lightuv = OctaEncode(-posToLight.xyz);
+            linearDistance = posToLight.w;
         }
         break;
         case LIGHT_TYPE_SPOT:
         {
-            posToLight = light.LIGHT_POS - worldpos;
-            linearDistance = length(posToLight);
-            color *= AttenuateLight(linearDistance, light.LIGHT_RADIUS);
-            posToLight /= linearDistance;
+            posToLight = normalizeLength(light.LIGHT_POS - worldpos);
+            color *= AttenuateLight(posToLight.w, light.LIGHT_RADIUS);
+            linearDistance = posToLight.w;
 
             const float4 coord = GetLightProjectionUVW(worldpos, index_matrix);
             lightuv = coord.xy;
@@ -71,21 +69,22 @@ Light GetLightDirect(const uint index, const float3 worldpos, const uint cascade
         {
             index_matrix += cascade;
             index_shadow += cascade;
-            posToLight = -light.LIGHT_POS;
+            posToLight.xyz = -light.LIGHT_POS;
 
             const float4 coord = GetLightProjectionUVW(worldpos, index_matrix);
-            linearDistance = (coord.z / coord.w) * light.LIGHT_RADIUS;
+            posToLight.w = (coord.z / coord.w) * light.LIGHT_RADIUS;
             lightuv = coord.xy;
+            linearDistance = 1e+4f;
         }
         break;
     }
 
     if (index_shadow < LIGHT_PARAM_INVALID)
     {
-        shadow *= SampleLightShadowmap(index_shadow, lightuv, linearDistance);
+        shadow *= SampleLightShadowmap(index_shadow, lightuv, posToLight.w);
     }
 
-    return Light(color, shadow, posToLight, linearDistance);
+    return Light(color, shadow, posToLight.xyz, linearDistance);
 }
 
 Light GetLight(uint index, in float3 worldpos, uint cascade) { return GetLightDirect(PK_BUFFER_DATA(pk_GlobalLightsList, index), worldpos, cascade); }

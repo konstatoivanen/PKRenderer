@@ -4,6 +4,7 @@
 #include BlueNoise.glsl
 #include SceneEnv.glsl
 #include TricubicSampler.glsl
+#include Lighting.glsl
 
 #define VOLUMEFOG_XY_ALIGNMENT 8u
 #define VOLUMEFOG_SIZE_Z 128
@@ -19,14 +20,20 @@ PK_DECLARE_CBUFFER(pk_Fog_Parameters, PK_SET_SHADER)
     float4 pk_Fog_Albedo;
     float4 pk_Fog_Absorption;
     float4 pk_Fog_WindDirSpeed;
-    float pk_Fog_Anisotropy;
-    float pk_Fog_DensityConstant;
-    float pk_Fog_DensityHeightExponent;
-    float pk_Fog_DensityHeightOffset;
-    float pk_Fog_DensityHeightAmount;
-    float pk_Fog_DensityNoiseAmount;
-    float pk_Fog_DensityNoiseScale;
-    float pk_Fog_DensityAmount;
+    float pk_Fog_Phase0;
+    float pk_Fog_Phase1;
+    float pk_Fog_PhaseW;
+    float pk_Fog_Density_Constant;
+    float pk_Fog_Density_HeightExponent;
+    float pk_Fog_Density_HeightOffset;
+    float pk_Fog_Density_HeightAmount;
+    float pk_Fog_Density_NoiseAmount;
+    float pk_Fog_Density_NoiseScale;
+    float pk_Fog_Density_Amount;
+    float pk_Fog_Density_Sky_Constant;
+    float pk_Fog_Density_Sky_HeightExponent;
+    float pk_Fog_Density_Sky_HeightOffset;
+    float pk_Fog_Density_Sky_HeightAmount;
 };
 
 PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_ScatterRead;
@@ -48,36 +55,43 @@ DEFINE_TRICUBIC_SAMPLER(pk_Fog_TransmittanceRead, VOLUMEFOG_SIZE)
 
 float VolumeFog_CalculateDensity(float3 pos)
 {
-    float density = pk_Fog_DensityConstant;
-    density += min(exp(pk_Fog_DensityHeightExponent * (-pos.y + pk_Fog_DensityHeightOffset)) * pk_Fog_DensityHeightAmount, 1e+3f);
-    density *= NoiseScroll(pos, pk_Time.y * pk_Fog_WindDirSpeed.w, pk_Fog_DensityNoiseScale, pk_Fog_WindDirSpeed.xyz, pk_Fog_DensityNoiseAmount, -0.3, 8.0);
-    return max(density * pk_Fog_DensityAmount, 0.0f);
-}
-
-float VolumeFog_CalculateDensitySky(float viewy, float far)
-{
-    float density = pk_Fog_DensityConstant;
-    density += min(exp(pk_Fog_DensityHeightExponent * -viewy * far) * pk_Fog_DensityHeightAmount, 1e+3f);
-    density = max(density * pk_Fog_DensityAmount, VOLUMEFOG_MIN_DENSITY);
-    return density;
+    float density = pk_Fog_Density_Constant;
+    density += min(exp(pk_Fog_Density_HeightExponent * (-pos.y + pk_Fog_Density_HeightOffset)) * pk_Fog_Density_HeightAmount, 1e+3f);
+    density *= NoiseScroll(pos, pk_Time.y * pk_Fog_WindDirSpeed.w, pk_Fog_Density_NoiseScale, pk_Fog_WindDirSpeed.xyz, pk_Fog_Density_NoiseAmount, -0.3, 8.0);
+    return max(density * pk_Fog_Density_Amount, 0.0f);
 }
 
 float VolumeFog_MarchTransmittance(const float3 origin, const float3 direction, const float dither, const float tMax)
 {
-    const uint StepCount = 4u;
-    const float invT = tMax / StepCount;
+    const float invT = tMax / 4.0f;
     float prev_density = VolumeFog_CalculateDensity(origin);
     float transmittance = 1.0f;
 
-    for (uint j = 0; j < 4; ++j)
+    for (uint j = 0u; j < 4u; ++j)
     {
-        const float3 pos = origin + direction * j * invT + invT * dither;
+        const float3 pos = origin + direction * invT * (j + dither);
         const float density = VolumeFog_CalculateDensity(pos);
         transmittance *= exp(-lerp(prev_density, density, 0.5f) * invT);
         prev_density = density;
     }
 
     return transmittance;
+}
+
+float VolumeFog_MarchTransmittanceStatic(const float3 uvw, const float dither)
+{
+    float transmittance = 1.0f;
+
+    for (uint j = 0u; j < 4u; ++j)
+    {
+        const float2 zz = uvw.zz + (float2(j, j + 1u) + dither) * VOLUMEFOG_SIZE_Z_INV;
+        const float2 depths = ViewDepthExp(zz);
+        const float density = tex2D(pk_Fog_DensityRead, float3(uvw.xy, zz.x)).x;
+        transmittance *= exp(-density * (depths.y - depths.x));
+    }
+
+    // Fade out transmittance for static gi so that the fog blends with background fog.
+    return lerp(transmittance, 1.0f, pow2(uvw.z));
 }
 
 float VolumeFog_GetAccumulation(float3 uvw)
@@ -106,10 +120,23 @@ void VolumeFog_Apply(float2 uv, float viewDepth, inout float3 color)
 
 void VolumeFog_ApplySky(float3 viewdir, inout float3 color)
 {
-    const float far = pk_ProjectionParams.y;
-    const float density = VolumeFog_CalculateDensitySky(viewdir.y, far);
+    float density = pk_Fog_Density_Sky_Constant;
+    density += min(exp(pk_Fog_Density_Sky_HeightExponent * -(viewdir.y + pk_Fog_Density_Sky_HeightOffset)) * pk_Fog_Density_Sky_HeightAmount, 1e+3f);
+    density = max(density * pk_Fog_Density_Amount, VOLUMEFOG_MIN_DENSITY);
+
     const float occlusion = viewdir.y * 0.5f + 0.5f;
-    const float3 irradiance = pk_Fog_Albedo.rgb * occlusion * SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Anisotropy);
-    const float3 transmittance = exp(-density * pk_Fog_Absorption.rgb * far);
+    float3 irradiance = pk_Fog_Albedo.rgb * occlusion * SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Phase1);
+
+    // @TODO refactor to use somekind of global light cluster for this.
+    // For now get the first light as it is likely a directional light
+    const LightPacked light = PK_BUFFER_DATA(pk_Lights, 0u);
+
+    if ((light.LIGHT_TYPE) == LIGHT_TYPE_DIRECTIONAL)
+    {
+        irradiance += BSDF_VOLUMETRIC(viewdir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, -light.LIGHT_POS, light.LIGHT_COLOR, 1.0f);
+    }
+
+    const float virtualDistance = 1000.0f;
+    const float3 transmittance = exp(-density * pk_Fog_Absorption.rgb * virtualDistance);
     color = irradiance * (1.0f - transmittance) + color * transmittance;
 }

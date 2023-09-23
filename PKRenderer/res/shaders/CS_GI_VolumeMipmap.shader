@@ -4,9 +4,9 @@
 
 PK_DECLARE_SET_DRAW uniform sampler3D _SourceTex;
 layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D _DestinationTex;
-layout(rgba16f, set = PK_SET_SHADER) uniform writeonly restrict image3D _DestinationMip1;
-layout(rgba16f, set = PK_SET_SHADER) uniform writeonly restrict image3D _DestinationMip2;
-layout(rgba16f, set = PK_SET_SHADER) uniform writeonly restrict image3D _DestinationMip3;
+layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D _DestinationMip1;
+layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D _DestinationMip2;
+layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D _DestinationMip3;
 
 #define GROUP_SIZE 4u
 shared float4 lds_Data[GROUP_SIZE * GROUP_SIZE * GROUP_SIZE];

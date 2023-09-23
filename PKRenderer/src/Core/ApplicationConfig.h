@@ -79,7 +79,9 @@ namespace PK::Core
 
         YAML::BoxedValue<Math::float3> FogAlbedo = YAML::BoxedValue <Math::float3> ("FogAlbedo", Math::PK_FLOAT3_ONE);
         YAML::BoxedValue<Math::float3> FogAbsorption = YAML::BoxedValue <Math::float3> ("FogAbsorption", Math::PK_FLOAT3_ONE);
-        YAML::BoxedValue<float> FogAnisotropy = YAML::BoxedValue<float>("FogAnisotropy", 0.0f);
+        YAML::BoxedValue<float> FogPhase0 = YAML::BoxedValue<float>("FogPhase0", 0.25f);
+        YAML::BoxedValue<float> FogPhase1 = YAML::BoxedValue<float>("FogPhase1", 0.95f);
+        YAML::BoxedValue<float> FogPhaseW = YAML::BoxedValue<float>("FogPhaseW", 0.5f);
         YAML::BoxedValue<Math::float3> FogWindDirection = YAML::BoxedValue<Math::float3>("FogWindDirection", Math::PK_FLOAT3_FORWARD);
         YAML::BoxedValue<float> FogWindSpeed = YAML::BoxedValue<float>("FogWindSpeed", 0.0f);
         YAML::BoxedValue<float> FogDensityConstant = YAML::BoxedValue<float>("FogDensityConstant", 0.0f);
@@ -89,6 +91,10 @@ namespace PK::Core
         YAML::BoxedValue<float> FogDensityNoiseAmount = YAML::BoxedValue<float>("FogDensityNoiseAmount", 0.0f);
         YAML::BoxedValue<float> FogDensityNoiseScale = YAML::BoxedValue<float>("FogDensityNoiseScale", 0.0f);
         YAML::BoxedValue<float> FogDensity = YAML::BoxedValue<float>("FogDensity", 0.0f);
+        YAML::BoxedValue<float> FogDensitySkyConstant = YAML::BoxedValue<float>("FogDensitySkyConstant", 0.0f);
+        YAML::BoxedValue<float> FogDensitySkyHeightExponent = YAML::BoxedValue<float>("FogDensitySkyHeightExponent", 0.0f);
+        YAML::BoxedValue<float> FogDensitySkyHeightOffset = YAML::BoxedValue<float>("FogDensitySkyHeightOffset", 0.0f);
+        YAML::BoxedValue<float> FogDensitySkyHeightAmount = YAML::BoxedValue<float>("FogDensitySkyHeightAmount", 0.0f);
 
         YAML::BoxedValue<std::string> FileBackgroundTexture = YAML::BoxedValue<std::string>("FileBackgroundTexture", "T_OEM_Mountains");
         YAML::BoxedValue<float> BackgroundExposure = YAML::BoxedValue<float>("BackgroundExposure", 1.0f);

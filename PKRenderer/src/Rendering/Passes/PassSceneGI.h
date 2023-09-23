@@ -39,11 +39,11 @@ namespace PK::Rendering::Passes
 
             Utilities::Ref<Objects::Texture> m_voxels;
             Utilities::Ref<Objects::Texture> m_voxelMask;
-            Utilities::Ref<Objects::Texture> m_packedDiff;
-            Utilities::Ref<Objects::Texture> m_packedSpec;
+            Utilities::Ref<Objects::Texture> m_packedGIDiff;
+            Utilities::Ref<Objects::Texture> m_packedGISpec;
+            Utilities::Ref<Objects::Texture> m_packedGIMips;
+            Utilities::Ref<Objects::Texture> m_packedGIMipMask;
             Utilities::Ref<Objects::Texture> m_resolvedGI;
-            Utilities::Ref<Objects::Texture> m_screenDataMips;
-            Utilities::Ref<Objects::Texture> m_screenDataMipMask;
             Utilities::Ref<Objects::Texture> m_reservoirs;
             Utilities::Ref<Objects::Texture> m_rayhits;
 
