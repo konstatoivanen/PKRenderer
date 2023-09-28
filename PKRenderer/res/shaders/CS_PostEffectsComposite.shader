@@ -16,9 +16,10 @@
 #define PK_DEBUG_MODE_NONE 0
 #define PK_DEBUG_MODE_GI_DIFF 1
 #define PK_DEBUG_MODE_GI_SPEC 2
-#define PK_DEBUG_MODE_NORMAL 3
-#define PK_DEBUG_MODE_ROUGHNESS 4
-#define PK_DEBUG_MODE_CUSTOM 5
+#define PK_DEBUG_MODE_GI_VX 3
+#define PK_DEBUG_MODE_NORMAL 4
+#define PK_DEBUG_MODE_ROUGHNESS 5
+#define PK_DEBUG_MODE_CUSTOM 6
 
 #define PK_DEBUG_MODE PK_DEBUG_MODE_NONE
 #define PK_DEBUG_HALFSCREEN 1
@@ -89,6 +90,8 @@ void main()
             color = GI_Load_Resolved_Diff(uv) * exposure;
         #elif PK_DEBUG_MODE == PK_DEBUG_MODE_GI_SPEC
             color = GI_Load_Resolved_Spec(uv) * exposure;
+        #elif PK_DEBUG_MODE == PK_DEBUG_MODE_GI_VX
+            color = GI_Load_Voxel(SampleWorldPosition(uv), 0.0f).rgb * exposure;
         #elif PK_DEBUG_MODE == PK_DEBUG_MODE_NORMAL
             color = normal * 0.5f + 0.5f;
         #elif PK_DEBUG_MODE == PK_DEBUG_MODE_ROUGHNESS

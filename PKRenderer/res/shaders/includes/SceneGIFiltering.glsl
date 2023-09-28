@@ -97,76 +97,14 @@ void GI_GetMipSampler(const int2 coord, int level, inout int2 outBaseCoord, inou
     outDdxy = (((coord + hwidth) & (width - 1)) + 0.5f.xx) / width;
 }
 
-#define MAKE_BILINEAR_WEIGHTS(name, ddxy)                           \
-const float name[2][2] =                                            \
-{                                                                   \
-    { (1.0 - ddxy.x) * (1.0 - ddxy.y), ddxy.x * (1.0 - ddxy.y) },   \
-    { (1.0 - ddxy.x) * ddxy.y,         ddxy.x * ddxy.y         },   \
-};                                                                  \
-
+float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y), f.x * (1.0 - f.y), (1.0 - f.x) * f.y, f.x * f.y); }
 
 #define Test_NaN_EPS4(v) (isnan(v) || v <= 1e-4f)
 #define Test_NaN_EPS6(v) (isnan(v) || v <= 1e-6f)
 #define Test_EPS4(v) (v <= 1e-4f)
 #define Test_EPS6(v) (v <= 1e-6f)
 
-// Profiling revealed that deferring these to functions yielded significantly worse performance, so they're macros for now.
-
-#define GI_SF_REPRO_BILINEAR(SF_UV, SF_COORD, SF_NORMAL, SF_DEPTH, SF_DBIAS, SF_ROUGHNESS, SF_WSUM_DIFF, SF_WSUM_SPEC, SF_OUT_DIFF, SF_OUT_SPEC)    \
-{                                                                                                                                                   \
-    const float2 roughnessParams = GI_GetRoughnessWeightParams(SF_ROUGHNESS);                                                                       \
-    const float2 ddxy = fract(SF_UV);                                                                                                               \
-    MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                                                                    \
-                                                                                                                                                    \
-    for (int yy = 0; yy <= 1; ++yy)                                                                                                                 \
-    for (int xx = 0; xx <= 1; ++xx)                                                                                                                 \
-    {                                                                                                                                               \
-        const int2 xy = SF_COORD + int2(xx, yy);                                                                                                    \
-        const float s_depth = SamplePreviousViewDepth(xy);                                                                                          \
-        const float4 s_nr = SamplePreviousViewNormalRoughness(xy);                                                                                  \
-                                                                                                                                                    \
-        const float w_b = bilinearWeights[yy][xx];                                                                                                  \
-        const float w_n = pow5(dot(SF_NORMAL, s_nr.xyz));                                                                                           \
-        const float w_r = exp(-abs(s_nr.w * roughnessParams.x + roughnessParams.y));                                                                \
-        const float w_s = float(Test_InScreen(xy) && Test_DepthReproject(SF_DEPTH, s_depth, SF_DBIAS));                                             \
-        const float w_z = exp(-abs(SF_DEPTH - s_depth));                                                                                            \
-        float w_diff = w_s * w_b * w_n * w_z;                                                                                                       \
-        float w_spec = w_s * w_b * w_n * w_r;                                                                                                       \
-        w_diff = lerp(0.0f, w_diff, !Test_NaN_EPS6(w_diff) && w_n > 0.05f);                                                                         \
-        w_spec = lerp(0.0f, w_spec, !Test_NaN_EPS6(w_spec));                                                                                        \
-                                                                                                                                                    \
-        SF_OUT_DIFF = GI_Sum(SF_OUT_DIFF, GI_Load_Diff(xy), w_diff);                                                                                \
-        SF_OUT_SPEC = GI_Sum(SF_OUT_SPEC, GI_Load_Spec(xy), w_spec);                                                                                \
-        SF_WSUM_DIFF += w_diff;                                                                                                                     \
-        SF_WSUM_SPEC += w_spec;                                                                                                                     \
-    }                                                                                                                                               \
-}                                                                                                                                                   \
-
-#define GI_SF_REPRO_VIRTUAL_SPEC(SF_VPOS, SF_VIEW, SF_NORMAL, SF_DEPTH, SF_ROUGHNESS, SF_VIRT_DIST, SF_OUT_WSUM, SF_OUT)    \
-{                                                                                                                           \
-    const float2 roughnessParams = GI_GetRoughnessWeightParams(SF_ROUGHNESS);                                               \
-    const float2 screenuv = GI_ViewToPrevScreenUV(SF_VPOS + SF_VIEW * SF_VIRT_DIST);                                        \
-    const int2   coordSpec = int2(screenuv);                                                                                \
-    const float2 ddxy = fract(screenuv);                                                                                    \
-    MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                                            \
-                                                                                                                            \
-    for (int yy = 0; yy <= 1; ++yy)                                                                                         \
-    for (int xx = 0; xx <= 1; ++xx)                                                                                         \
-    {                                                                                                                       \
-        const int2 xy = coordSpec + int2(xx, yy);                                                                           \
-        const float  s_depth = SamplePreviousViewDepth(xy);                                                                 \
-        const float4 s_nr = SamplePreviousViewNormalRoughness(xy);                                                          \
-                                                                                                                            \
-        float w = bilinearWeights[yy][xx];                                                                                  \
-        w *= 1.0f / (1e-4f + abs(SF_DEPTH - s_depth));                                                                      \
-        w *= pow(saturate(dot(SF_NORMAL, s_nr.xyz)), 256.0f);                                                               \
-        w *= exp(-abs(s_nr.w * roughnessParams.x + roughnessParams.y));                                                     \
-        w = lerp(0.0f, w, Test_InScreen(xy) && Test_DepthFar(s_depth) && !Test_NaN_EPS6(w));                                \
-                                                                                                                            \
-        SF_OUT = GI_Sum(SF_OUT, GI_Load_Spec(xy), w);                                                                       \
-        SF_OUT_WSUM += w;                                                                                                   \
-    }                                                                                                                       \
-}                                                                                                                           \
+/* Profiling revealed that deferring these to functions yielded significantly worse performance, so they're macros for now. */
 
 #define GI_SF_HISTORY_MIP(SF_COORD, SF_MIP, SF_NORMAL, SF_DEPTH, SF_OUT_WSUM, SF_OUT_DIFF, SF_OUT_SPEC) \
 {                                                                                                       \
@@ -176,9 +114,8 @@ const float name[2][2] =                                            \
                                                                                                         \
         int2 base; float2 ddxy;                                                                         \
         GI_GetMipSampler(SF_COORD, zz + 1, base, ddxy);                                                 \
-        MAKE_BILINEAR_WEIGHTS(bilinearWeights, ddxy)                                                    \
                                                                                                         \
-        float4 depthWeights = float4                                                                    \
+        float4 depths = float4                                                                          \
         (                                                                                               \
             SampleAvgZ(base + int2(0, 0), zz + 1),                                                      \
             SampleAvgZ(base + int2(1, 0), zz + 1),                                                      \
@@ -186,8 +123,9 @@ const float name[2][2] =                                            \
             SampleAvgZ(base + int2(1, 1), zz + 1)                                                       \
         );                                                                                              \
                                                                                                         \
-        depthWeights = exp(-abs(SF_DEPTH.xxxx - depthWeights));                                         \
-        depthWeights *= safePositiveRcp(dot(depthWeights, 1.0f.xxxx));                                  \
+        float4 weights = GI_GetBilinearWeights(ddxy);                                                   \
+        weights *= exp(-abs(SF_DEPTH.xxxx - depths));                                                   \
+        weights *= safePositiveRcp(dot(weights, 1.0f.xxxx)) * levelWeight;                              \
                                                                                                         \
         for (uint yy = 0; yy <= 1u; ++yy)                                                               \
         for (uint xx = 0; xx <= 1u; ++xx)                                                               \
@@ -199,7 +137,7 @@ const float name[2][2] =                                            \
                                                                                                         \
             /* Filter out sh l1 based on normal cosine so invalid signals are rejected.*/               \
             s_diff.sh.Y.zyw *= float(dot(SF_NORMAL, SH_ToPrimeDir(s_diff.sh)) > 0.05f);                 \
-            const float w = depthWeights[yy * 2 + xx] * bilinearWeights[yy][xx] * levelWeight;          \
+            const float w = weights[yy * 2 + xx];                                                       \
                                                                                                         \
             if (p_diff.w != 0u && w > 1e-6f)                                                            \
             {                                                                                           \

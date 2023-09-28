@@ -36,9 +36,9 @@ float3 SampleNormalTex(in sampler2D map, in float3x3 rotation, in float2 uv, flo
     return normalize(mul(rotation, lerp(float3(0,0,1), n, amount))); 
 }
 
-float2 ParallaxOffset(float height, float amount, float3 viewdir) 
+float2 SampleParallaxOffset(in sampler2D map, in float2 uv, float amount, float3 viewdir) 
 { 
-    return (height * amount - amount / 2.0f) * (viewdir.xy / (viewdir.z + 0.42f)); 
+    return (tex2D(map, uv).x * amount - amount * 0.5f) * viewdir.xy / (viewdir.z + 0.5f); 
 }
 
 float3 GetIndirectLight_Main(const BRDFSurf surf, const float3 worldpos, const float3 clipuvw)
@@ -108,7 +108,7 @@ float3 GetIndirectLight_VXGI(const BRDFSurf surf, const float3 worldpos, const f
 #endif
 
 #if defined(PK_HEIGHTMAPS)
-    #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount) ParallaxOffset(tex2D(heightmap, varyings.vs_TEXCOORD0.xy).x, amount, normalize(baseVaryings.vs_TSVIEWDIRECTION));
+    #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount) SampleParallaxOffset(heightmap, varyings.vs_TEXCOORD0.xy, amount, normalize(baseVaryings.vs_TSVIEWDIRECTION));
 #else
     #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount) 0.0f.xx 
 #endif

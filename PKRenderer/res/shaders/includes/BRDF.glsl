@@ -193,13 +193,13 @@ float3 BSDF_VOLUMETRIC(const float3 viewdir, const float phase0, const float pha
 
 float3 BRDF_VXGI_DEFAULT(const BRDFSurf surf, const float3 lightdir, const float3 lightcolor, float shadow)
 {
-    return surf.albedo * lightcolor * shadow * max(0.0f, dot(lightdir, surf.normal));
+    return surf.albedo * lightcolor * shadow * max(0.0f, dot(lightdir, surf.normal)) * PK_INV_PI;
 }
 
 // @TODO make this more configurable
 float3 BRDF_VXGI_CLOTH(const BRDFSurf surf, const float3 lightdir, const float3 lightcolor, float shadow)
 {
-    return surf.albedo * lightcolor * lerp(shadow, 1.0f, 0.5f);
+    return surf.albedo * lightcolor * lerp(shadow, 1.0f, 0.5f) * PK_INV_PI;
 }
 
 #undef NL

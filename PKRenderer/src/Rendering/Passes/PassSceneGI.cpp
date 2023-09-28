@@ -25,7 +25,7 @@ namespace PK::Rendering::Passes
         m_computeShadeHits = assetDatabase->Find<Shader>("CS_GI_ShadeHits");
         m_computeReproject = assetDatabase->Find<Shader>("CS_GI_Reproject");
         m_computeScreenMip = assetDatabase->Find<Shader>("CS_GI_ScreenMip");
-        m_computeHistoryFill = assetDatabase->Find<Shader>("CS_GI_HistoryFill");
+        m_computeGradients = assetDatabase->Find<Shader>("CS_GI_GradientEstimation");
         m_computeDiskFilter = assetDatabase->Find<Shader>("CS_GI_DiskFilter");
         m_rayTraceGatherGI = assetDatabase->Find<Shader>("RS_GI_Raytrace");
         m_rayTraceValidate = assetDatabase->Find<Shader>("RS_GI_ValidateReservoirs");
@@ -69,7 +69,7 @@ namespace PK::Rendering::Passes
 
         descr.layers = 3u;
         descr.levels = 4u;
-        descr.resolution = { config->InitialWidth / 2u, config->InitialHeight / 2u, 1u };
+        descr.resolution = { config->InitialWidth >> 1u, config->InitialHeight >> 1u, 1u };
         m_packedGIMips = Texture::Create(descr, "GI.PackedGI.Mips");
 
         descr.samplerType = SamplerType::Sampler2D;
@@ -80,9 +80,6 @@ namespace PK::Rendering::Passes
         descr.resolution = { config->InitialWidth >> 4u, config->InitialHeight >> 4u, 1u };
         m_packedGIMipMask = Texture::Create(descr, "GI.PackedGI.Mips.Mask");
 
-        descr.levels = 1u;
-        descr.layers = 1u;
-        descr.usage = TextureUsage::Storage;
         descr.format = TextureFormat::RG32UI;
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1u };
         descr.resolution = GetCheckerboardResolution(descr.resolution, m_useCheckerboardTrace);
@@ -136,13 +133,9 @@ namespace PK::Rendering::Passes
              { 1u, 2u, 0u, 0u },
         };
 
-        m_sbtRaytrace.Validate(
-            GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer),
-            m_rayTraceGatherGI);
-
-        m_sbtValidate.Validate(
-            GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer),
-            m_rayTraceValidate);
+        auto cmdTransfer = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer);
+        m_sbtRaytrace.Validate(cmdTransfer, m_rayTraceGatherGI);
+        m_sbtValidate.Validate(cmdTransfer, m_rayTraceValidate);
 
         m_packedGIDiff->Validate(resolution);
         m_packedGISpec->Validate(resolution);

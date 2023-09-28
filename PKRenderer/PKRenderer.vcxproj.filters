@@ -2028,7 +2028,7 @@
     <None Include="res\shaders\includes\Kernels.glsl" />
     <None Include="res\shaders\includes\BlueNoise.glsl" />
     <None Include="res\textures\default\T_Bluenoise128x64.ktx2" />
-    <None Include="res\shaders\CS_GI_HistoryFill.shader" />
+    <None Include="res\shaders\CS_GI_GradientEstimation.shader" />
     <None Include="res\shaders\CS_GI_DiskFilter.shader" />
     <None Include="res\shaders\CS_GI_ScreenMip.shader" />
     <None Include="res\shaders\CS_HierachicalDepth.shader" />
@@ -2046,6 +2046,7 @@
     <None Include="res\shaders\includes\SharedReSTIR.glsl" />
     <None Include="res\shaders\includes\MortonOrder.glsl" />
     <None Include="res\shaders\RS_GI_ValidateReservoirs.shader" />
+    <None Include="res\shaders\includes\GradientEstimation.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

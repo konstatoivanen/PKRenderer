@@ -104,6 +104,8 @@ float2 JitterPrevUV(float2 uv) { return uv + pk_ProjectionJitter.zw * 0.5f * pk_
 float2 DejitterPrevUV(float2 uv) { return uv - pk_ProjectionJitter.zw * 0.5f * pk_ScreenParams.zw; }
 
 //----------TESTS----------//
+bool4 Test_DepthFar(const float4 depth) { return lessThan(depth, pk_ProjectionParams.zzzz - 1e-2f); }
+bool4 Test_DepthReproject(const float4 z, const float4 zprev, const float4 bias) { return lessThan(abs(z - zprev - pk_ViewSpaceCameraDelta.zzzz) / z, bias); }
 bool Test_DepthFar(const float depth) { return depth < (pk_ProjectionParams.z - 1e-2f); }
 bool Test_DepthReproject(const float z, const float zprev, const float bias) { return Test_DepthFar(zprev) && (abs(z - zprev - pk_ViewSpaceCameraDelta.z) / z) < bias; }
 bool Test_ClipPos(const float4 clippos) { return clippos.z > 0.0f && All_Less(abs(clippos.xy / clippos.w), 1.0f.xx); }

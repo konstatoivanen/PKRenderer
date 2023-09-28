@@ -480,8 +480,7 @@ namespace PK::Rendering::VulkanRHI::Objects
                 auto* attribute = m_pipelineKey.vertexAttributes + index++;
                 auto format = EnumConvert::GetFormat(element.Type);
 
-                if (attribute->location != element.Location ||
-                    attribute->format != format)
+                if (attribute->location != element.Location || attribute->format != format)
                 {
                     validateAttributes = true;
                     attribute->location = element.Location;

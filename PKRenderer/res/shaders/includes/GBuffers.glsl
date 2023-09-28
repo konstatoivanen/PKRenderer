@@ -65,6 +65,7 @@ float SampleAvgZ(const float2 uv, const float l) { return textureLod(pk_ScreenDe
 
 float SampleViewDepth(const float2 uv) { return ViewDepth(tex2D(pk_ScreenDepthCurrent, uv).x); }
 float SampleViewDepth(const int2 coord) { return ViewDepth(texelFetch(pk_ScreenDepthCurrent, coord, 0).x); }
+// Gather order: (0,1), (1,1), (1,0), (0,0) 
 #define GatherViewDepths(uv) ViewDepth(textureGather(pk_ScreenDepthCurrent, uv, 0))
 #define SampleViewDepthOffsets(uv, offsets) ViewDepth(textureGatherOffsets(pk_ScreenDepthCurrent, uv, offsets))
 

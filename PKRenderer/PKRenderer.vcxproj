@@ -849,7 +849,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_GI_Accumulate.shader" />
     <None Include="res\shaders\CS_GI_Clear.shader" />
     <None Include="res\shaders\CS_GI_DiskFilter.shader" />
-    <None Include="res\shaders\CS_GI_HistoryFill.shader" />
+    <None Include="res\shaders\CS_GI_GradientEstimation.shader" />
     <None Include="res\shaders\CS_GI_Reproject.shader" />
     <None Include="res\shaders\CS_GI_ScreenMip.shader" />
     <None Include="res\shaders\CS_GI_ShadeHits.shader" />
@@ -867,6 +867,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_CompressBC6H.shader" />
     <None Include="res\shaders\includes\Encoding.glsl" />
     <None Include="res\shaders\includes\BRDF.glsl" />
+    <None Include="res\shaders\includes\GradientEstimation.glsl" />
     <None Include="res\shaders\includes\MortonOrder.glsl" />
     <None Include="res\shaders\includes\SceneGIFiltering.glsl" />
     <None Include="res\shaders\includes\SharedReSTIR.glsl" />
