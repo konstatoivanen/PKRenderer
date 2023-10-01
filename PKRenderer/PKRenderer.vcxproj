@@ -874,7 +874,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\SpatialFilters.glsl" />
     <None Include="res\shaders\includes\Kernels.glsl" />
     <None Include="res\shaders\includes\GBuffers.glsl" />
-    <None Include="res\shaders\includes\SampleDistribution.glsl" />
     <None Include="res\shaders\includes\SceneEnv.glsl" />
     <None Include="res\shaders\includes\SharedTemporalAntialiasing.glsl" />
     <None Include="res\shaders\includes\SharedVolumeFog.glsl" />

@@ -17,19 +17,18 @@ const float3x3 LMS_2_LIN_MAT = float3x3
     -4.18120e-2, -1.18169e-1,  1.06867e+0
 );
 
-float3 TonemapACESFilm(float3 color, float exposure)
+float3 Tonemap_ACESFilm(float3 color, float exposure)
 {
     const float a = 2.51f;
     const float b = 0.03f;
     const float c = 2.43f;
     const float d = 0.59f;
     const float e = 0.14f;
-
     color *= exposure;
     return (color * (a * color + b)) / (color * (c * color + d) + e);
 }
 
-float3 TonemapHejlDawson(float3 color, float exposure)
+float3 Tonemap_HejlDawson(float3 color, float exposure)
 {
 	const float a = 6.2f;
 	const float b = 0.5f;
@@ -42,7 +41,7 @@ float3 TonemapHejlDawson(float3 color, float exposure)
 	return color * color;
 }
 
-float TonemapUchimura(float x, float P, float a, float m, float l, float c, float b) 
+float Tonemap_Uchimura(float x, float P, float a, float m, float l, float c, float b) 
 {
     // Uchimura 2017, "HDR theory and practice"
     // Math: https://www.desmos.com/calculator/gslcdxvipg
@@ -66,7 +65,7 @@ float TonemapUchimura(float x, float P, float a, float m, float l, float c, floa
     return T * w0 + L * w1 + S * w2;
 }
 
-float3 TonemapUchimura(float3 color, float exposure) 
+float3 Tonemap_Uchimura(float3 color, float exposure) 
 {
     const float P = 1.0;  // max display brightness
     const float a = 1.0;  // contrast
@@ -79,48 +78,46 @@ float3 TonemapUchimura(float3 color, float exposure)
 
     return float3
     (
-        TonemapUchimura(color.r, P, a, m, l, c, b),
-        TonemapUchimura(color.g, P, a, m, l, c, b),
-        TonemapUchimura(color.b, P, a, m, l, c, b)
+        Tonemap_Uchimura(color.r, P, a, m, l, c, b),
+        Tonemap_Uchimura(color.g, P, a, m, l, c, b),
+        Tonemap_Uchimura(color.b, P, a, m, l, c, b)
     );
 }
 
-float3 TonemapLottes(float3 color, float exposure) 
+float3 Tonemap_Lottes(float3 color, float exposure) 
 {
+
     // Lottes 2016, "Advanced Techniques and Optimization of HDR Color Pipelines"
-    const float a = 1.6;
-    const float d = 0.977;
-    const float hdrMax = 8.0;
-    const float midIn = 0.18;
-    const float midOut = 0.267;
+    const float a = 1.6f;
+    const float d = 0.977f;
+    const float hm = 8.0f; // hdr max
+    const float mi = 0.18f; // Mid in
+    const float mo = 0.267f; // Mid out
 
     // Can be precomputed
-    const float b =
-        (-pow(midIn, a) + pow(hdrMax, a) * midOut) /
-        ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);
-    const float c =
-        (pow(hdrMax, a * d) * pow(midIn, a) - pow(hdrMax, a) * pow(midIn, a * d) * midOut) /
-        ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);
-
+    const float b = (-pow(mi, a) + pow(hm, a) * mo) / ((pow(hm, a * d) - pow(mi, a * d)) * mo);
+    const float c = (pow(hm, a * d) * pow(mi, a) - pow(hm, a) * pow(mi, a * d) * mo) / ((pow(hm, a * d) - pow(mi, a * d)) * mo);
+    
     color *= exposure;
+
     return pow(color, a.xxx) / (pow(color, a.xxx * d) * b + c);
 }
 
 float3 Saturate_BT2100(float3 color, float amount) 
 {
-	float grayscale = dot(color, float3(0.2627f, 0.6780f, 0.0593f));
+	const float grayscale = dot(color, float3(0.2627f, 0.6780f, 0.0593f));
 	return lerp_true(grayscale.xxx, color, amount);
 }
 
 float3 Saturate_BT709(float3 color, float amount) 
 {
-	float grayscale = dot(color, float3(0.2126729f, 0.7151522f, 0.0721750f));
+	const float grayscale = dot(color, float3(0.2126729f, 0.7151522f, 0.0721750f));
 	return lerp_true(grayscale.xxx, color, amount);
 }
 
 float3 Saturate_Rec601(float3 color, float amount) 
 {
-	float grayscale = dot(color, float3(0.3f, 0.59f, 0.11f));
+	const float grayscale = dot(color, float3(0.3f, 0.59f, 0.11f));
 	return lerp_true(grayscale.xxx, color, amount);
 }
 
@@ -143,10 +140,10 @@ float3 ApplyColorGrading(float3 color)
 {
     float3 final = saturate(color);
 
-    float contrast = pk_ContrastGainGammaContribution.x;
-    float gain = pk_ContrastGainGammaContribution.y;
-    float gamma = pk_ContrastGainGammaContribution.z;
-    float contribution = pk_ContrastGainGammaContribution.w;
+    const float contrast = pk_ContrastGainGammaContribution.x;
+    const float gain = pk_ContrastGainGammaContribution.y;
+    const float gamma = pk_ContrastGainGammaContribution.z;
+    const float contribution = pk_ContrastGainGammaContribution.w;
 
     // White balance
     float3 lms = mul(LIN_2_LMS_MAT, final);
@@ -180,7 +177,8 @@ float3 ApplyColorGrading(float3 color)
     final = pow(final, gamma.xxx);
 
     // Color mixer
-    final = float3(
+    final = float3
+    (
         dot(final, pk_ChannelMixerRed.rgb),
         dot(final, pk_ChannelMixerGreen.rgb),
         dot(final, pk_ChannelMixerBlue.rgb)

@@ -33,43 +33,41 @@
 
 layout(rgba16f, set = PK_SET_DRAW) uniform image2D _MainTex;
 
-layout(local_size_x = 16, local_size_y = 4, local_size_z = 1) in;
+layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void main()
 {
-    int2 coord = int2(gl_GlobalInvocationID.xy);
-    int2 size = imageSize(_MainTex).xy;
-
+    const int2 size = imageSize(_MainTex).xy;
+    const int2 coord = int2(gl_GlobalInvocationID.xy);
     float2 uv = float2(coord + 0.5f.xx) / float2(size);
 
-    float3 color = imageLoad(_MainTex, coord).rgb;
-    color = max(0.0f.xxx, color);
+    float3 color = max(0.0f.xxx, imageLoad(_MainTex, coord).rgb);
 
     float exposure = GetAutoExposure();
     
     #if PK_APPLY_VIGNETTE == 1
-        exposure *= Vignette(uv);
+    exposure *= Vignette(uv);
     #endif
 
     #if PK_APPLY_BLOOM == 1
-        color = Bloom(color, uv);
+    color = Bloom(color, uv);
     #endif
 
     #if PK_APPLY_TONEMAP == 1
-        // Applying a bit of desaturation to reduce high intensity value color blowout
-        // A personal preference really (should probably try to deprecate this).
-        color = Saturate_BT2100(color, 0.8f);
-
-        color = TonemapUchimura(color, exposure);
+    // Applying a bit of desaturation to reduce high intensity value color blowout
+    // A personal preference really (should probably try to deprecate this).
+    color = Saturate_BT2100(color, 0.96f);
+    color = Tonemap_Uchimura(color, exposure);
+    color = Saturate_BT2100(color, 0.93f);
     #endif
 
     #if PK_APPLY_FILMGRAIN == 1
-        color = FilmGrain(color, float2(coord));
+    color = FilmGrain(color, float2(coord));
     #endif
 
     color = LinearToGamma(color);
 
     #if PK_APPLY_COLORGRADING == 1
-        color = ApplyColorGrading(color);
+    color = ApplyColorGrading(color);
     #endif
 
     // Debug previews

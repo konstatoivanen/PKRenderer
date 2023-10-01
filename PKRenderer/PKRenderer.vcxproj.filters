@@ -2023,7 +2023,6 @@
     <None Include="res\shaders\RS_GI_Raytrace.shader" />
     <None Include="res\shaders\CS_TemporalAntialiasing.shader" />
     <None Include="res\shaders\includes\SharedTemporalAntialiasing.glsl" />
-    <None Include="res\shaders\includes\SampleDistribution.glsl" />
     <None Include="res\shaders\includes\SHL1.glsl" />
     <None Include="res\shaders\includes\Kernels.glsl" />
     <None Include="res\shaders\includes\BlueNoise.glsl" />

@@ -4,7 +4,7 @@
 #include includes/Constants.glsl
 #include includes/Kernels.glsl
 #include includes/Encoding.glsl
-#include includes/SampleDistribution.glsl
+#include includes/Noise.glsl
 #include includes/CTASwizzling.glsl
 
 #multi_compile SHADOW_SOURCE_CUBE SHADOW_SOURCE_2D
@@ -35,17 +35,21 @@ void main()
     const int2 coord = int2(threadID.xy);
     const float2 uv = float2(coord + 0.5f.xx) / float2(size);
     const float layer = float(threadID.z);
+    const float R = pk_ShadowmapBlurAmount[gl_GlobalInvocationID.z];
 
     float2 A = float2(0.0f);
-    float R = pk_ShadowmapBlurAmount[gl_GlobalInvocationID.z];
 
 #if defined(SHADOW_SOURCE_CUBE)
-    float3 N = OctaDecode(uv);
-    float3x3 TBN = ComposeTBNFast(N);
+    const float3 N = OctaDecode(uv);
+    const float3x3 TBN = make_TBN(N);
 
     for (uint i = 0u; i < SAMPLE_COUNT; ++i)
     {
-        float3 H = TBN * ConeDirectionHammersLey(i, SAMPLE_COUNT, R);
+        const float2 Xi = Hammersley(i, SAMPLE_COUNT);
+        const float theta = Xi.x * R;
+        const float phi = PK_TWO_PI * Xi.y;
+        const float3 H = TBN * float3(cos(phi) * sin(theta), sin(phi) * sin(theta), cos(theta));
+        
         // Cube y axis is flipped to avoid winding order change
         A += tex2D(pk_ShadowmapSource, float4(H.x, -H.y, H.z, layer)).rg;
     }

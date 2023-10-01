@@ -3,7 +3,9 @@
 #MaterialProperty float4 _Color
 #MaterialProperty float4 _EmissionColor
 
-#define PK_SURF_BRDF_MAIN BRDF_SUBSURFACE
+#define BRDF_ENABLE_SUBSURFACE
+#define BRDF_ENABLE_CLEARCOAT
+#define PK_SURF_BRDF_MAIN BRDF_PRINCIPLED
 
 #include includes/SurfaceShaderBase.glsl
 #include includes/Noise.glsl
@@ -19,21 +21,24 @@ float3 GerstnerWave(float4 wave, float3 p, inout float3 tangent, inout float3 bi
     float f = k * (dot(d, p.xz) - c * pk_Time.y);
     float a = steepness / k;
 
-    tangent += float3(
-        -d.x * d.x * (steepness * sin(f)),
+    tangent += float3
+    (
+       -d.x * d.x * (steepness * sin(f)),
         d.x * (steepness * cos(f)),
-        -d.x * d.y * (steepness * sin(f))
-        );
-    binormal += float3(
-        -d.x * d.y * (steepness * sin(f)),
+       -d.x * d.y * (steepness * sin(f))
+    );
+    binormal += float3
+    (
+       -d.x * d.y * (steepness * sin(f)),
         d.y * (steepness * cos(f)),
-        -d.y * d.y * (steepness * sin(f))
-        );
-    return float3(
+       -d.y * d.y * (steepness * sin(f))
+    );
+    return float3
+    (
         d.x * (a * cos(f)),
         a * sin(f),
         d.y * (a * cos(f))
-        );
+    );
 }
 
 void PK_SURFACE_FUNC_VERT(inout SurfaceFragmentVaryings surf)
@@ -86,11 +91,11 @@ void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData
     surf.albedo = lerp(surf.albedo, float3(0.25f, 0.5f, 0.8f), nv); //PK_ACCESS_INSTANCED_PROP(_Color).xyz;
     surf.alpha = 1.0f;
 
-    surf.subsurface_distortion = 0.2f;
-    surf.subsurface_power = 2.0f;
-    surf.subsurface_thickness = 20.5f * depth;
+    surf.subsurface = 0.8f.xxx * depth;
 
     surf.metallic = max(0.0f, noise.y * 0.5f);
-    surf.roughness = max(0.0f, noise.x * 0.1f);
+    surf.roughness = max(0.0f, noise.x * 0.2f);
     surf.occlusion = 1.0f;
+    surf.clearCoatGloss = 0.5f;
+    surf.clearCoat = 1.0f.xxx;
 }

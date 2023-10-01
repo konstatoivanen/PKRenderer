@@ -11,8 +11,7 @@
 #MaterialProperty texture2D _NormalMap
 #MaterialProperty texture2D _HeightMap
 #MaterialProperty texture2D _EmissionTexture
-#define PK_NORMALMAPS
-#define PK_HEIGHTMAPS
+#define PK_USE_TANGENTS
 #include includes/SurfaceShaderBase.glsl
 
 #pragma PROGRAM_VERTEX
@@ -21,7 +20,8 @@ void PK_SURFACE_FUNC_VERT(inout SurfaceFragmentVaryings surf) {}
 #pragma PROGRAM_FRAGMENT
 void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData surf)
 {
-    float2 uv = varyings.vs_TEXCOORD0 + PK_SURF_SAMPLE_PARALLAX_OFFSET(_HeightMap, _HeightAmount);
+    float2 uv = varyings.vs_TEXCOORD0;
+    uv += PK_SURF_SAMPLE_PARALLAX_OFFSET(_HeightMap, _HeightAmount, uv, surf.viewdir);
 
     //// GI color test code
     //float lval = surf.worldpos.x * 0.025f + pk_Time.y * 0.25f;

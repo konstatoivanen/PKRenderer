@@ -151,6 +151,7 @@ void main()
             }
         }
 
+
         const bool invalidDiff = Test_NaN_EPS6(wSumDiff);
         const bool invalidSpec = Test_NaN_EPS6(wSumSpec);
         packedDiff = invalidDiff ? uint4(0) : GI_Pack_Diff(diff);

@@ -1,6 +1,5 @@
 #pragma once
-#include Utilities.glsl
-#include SampleDistribution.glsl
+#include BRDF.glsl
 #include BlueNoise.glsl
 #include SHL1.glsl
 
@@ -104,8 +103,8 @@ GISpec GI_ClampLuma(GISpec a, float maxLuma) { return GISpec(a.radiance * GI_Lum
     origin += normal * (0.01f / (saturate(-dot(viewdir, normal)) + 0.01f)) * 0.05f;                                             \
     OUT_PARAMS.origin = origin;                                                                                                 \
     OUT_PARAMS.normal = normal;                                                                                                 \
-    OUT_PARAMS.diffdir = ImportanceSampleLambert(Xi, normal);                                                                   \
-    OUT_PARAMS.specdir = ImportanceSampleSmithGGX(Xi.yx, normal, viewdir, normalRoughness.w);                                   \
+    OUT_PARAMS.diffdir = Fd_Inverse_Lambert(Xi, normal);                                                                        \
+    OUT_PARAMS.specdir = Fr_Inverse_GGXVNDF(Xi.yx, normal, viewdir, normalRoughness.w);                                         \
     OUT_PARAMS.roughness = normalRoughness.w;                                                                                   \
 }                                                                                                                               \
 

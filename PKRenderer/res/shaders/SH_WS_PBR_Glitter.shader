@@ -9,8 +9,9 @@
 #MaterialProperty texture2D _PBSTexture
 #MaterialProperty texture2D _NormalMap
 #MaterialProperty texture2D _HeightMap
-#define PK_NORMALMAPS
-#define PK_HEIGHTMAPS
+
+#define BRDF_ENABLE_SHEEN
+#define PK_USE_TANGENTS
 #include includes/SurfaceShaderBase.glsl
 
 #pragma PROGRAM_VERTEX
@@ -19,7 +20,9 @@ void PK_SURFACE_FUNC_VERT(inout SurfaceFragmentVaryings surf) {}
 #pragma PROGRAM_FRAGMENT
 void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData surf)
 {
-    float2 uv = varyings.vs_TEXCOORD0 + PK_SURF_SAMPLE_PARALLAX_OFFSET(_HeightMap, _HeightAmount);
+    float2 uv = varyings.vs_TEXCOORD0;
+    uv += PK_SURF_SAMPLE_PARALLAX_OFFSET(_HeightMap, _HeightAmount, uv, surf.viewdir);
+
     float3 textureval = PK_SURF_TEX(_PBSTexture, uv).xyz;
     surf.metallic = textureval.SRC_METALLIC * _Metallic;
     surf.roughness = textureval.SRC_ROUGHNESS * _Roughness;
@@ -34,4 +37,7 @@ void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData
     t *= 50.0f;
     t = max(0.0f, t);
     surf.roughness -= t;
+
+    surf.sheenTint = 0.5f;
+    surf.sheen = 1.0f.xxx;
 };

@@ -99,11 +99,6 @@ void GI_GetMipSampler(const int2 coord, int level, inout int2 outBaseCoord, inou
 
 float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y), f.x * (1.0 - f.y), (1.0 - f.x) * f.y, f.x * f.y); }
 
-#define Test_NaN_EPS4(v) (isnan(v) || v <= 1e-4f)
-#define Test_NaN_EPS6(v) (isnan(v) || v <= 1e-6f)
-#define Test_EPS4(v) (v <= 1e-4f)
-#define Test_EPS6(v) (v <= 1e-6f)
-
 /* Profiling revealed that deferring these to functions yielded significantly worse performance, so they're macros for now. */
 
 #define GI_SF_HISTORY_MIP(SF_COORD, SF_MIP, SF_NORMAL, SF_DEPTH, SF_OUT_WSUM, SF_OUT_DIFF, SF_OUT_SPEC) \
@@ -175,7 +170,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
 
 #define GI_SF_DISK_DIFF(SF_NORMAL, SF_DEPTH, SF_VIEW, SF_VPOS, SF_HISTORY, SF_STEP, SF_SKIP, SF_RADIUS, SF_OUT) \
 {                                                                                                               \
-    const float2x3 basis = ComposeTBFast(SF_NORMAL, SF_RADIUS);                                                 \
+    const float2x3 basis = make_TB(SF_NORMAL, SF_RADIUS);                                                       \
     const float2 rotation = GI_GetRandomRotation();                                                             \
     const float k_N = GI_GetNormalWeightParams(SF_NORMAL, 1.0f, SF_HISTORY);                                    \
     const float2 k_D = GI_GetDiskWeightParams(SF_RADIUS, SF_DEPTH);                                             \
