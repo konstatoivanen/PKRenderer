@@ -10,7 +10,7 @@
 #MaterialProperty texture2D _NormalMap
 #MaterialProperty texture2D _HeightMap
 
-#define BRDF_ENABLE_SHEEN
+#define BxDF_ENABLE_SHEEN
 #define PK_USE_TANGENTS
 #include includes/SurfaceShaderBase.glsl
 
@@ -25,7 +25,8 @@ void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData
 
     float3 textureval = PK_SURF_TEX(_PBSTexture, uv).xyz;
     surf.metallic = textureval.SRC_METALLIC * _Metallic;
-    surf.roughness = textureval.SRC_ROUGHNESS * _Roughness;
+    // @TODO this is a hack to fix a bad sand texture. Replace sand mat with a better one & get rid of this.
+    surf.roughness = sqrt(textureval.SRC_ROUGHNESS * _Roughness); 
     surf.occlusion = lerp(1.0f, textureval.SRC_OCCLUSION, _Occlusion);
     surf.normal = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
     surf.albedo = PK_SURF_TEX(_AlbedoTexture, uv).rgb * _Color.rgb;

@@ -35,6 +35,7 @@ Light GetLightDirect(const uint index, const float3 worldpos, const uint cascade
     uint index_shadow = light.LIGHT_SHADOW;
     uint index_matrix  = light.LIGHT_PROJECTION;
     
+    float sourceRadius = uintBitsToFloat(light.LIGHT_PACKED_SOURCERADIUS);
     float3 color = light.LIGHT_COLOR;
     float shadow = 1.0f;
 
@@ -48,16 +49,18 @@ Light GetLightDirect(const uint index, const float3 worldpos, const uint cascade
         case LIGHT_TYPE_POINT:
         {
             posToLight = normalizeLength(light.LIGHT_POS - worldpos);
-            color *= AttenuateLight(posToLight.w, light.LIGHT_RADIUS);
+            color *= Fatten_Default(posToLight.w, light.LIGHT_RADIUS);
             lightuv = OctaEncode(-posToLight.xyz);
             linearDistance = posToLight.w;
+            sourceRadius /= linearDistance;
         }
         break;
         case LIGHT_TYPE_SPOT:
         {
             posToLight = normalizeLength(light.LIGHT_POS - worldpos);
-            color *= AttenuateLight(posToLight.w, light.LIGHT_RADIUS);
+            color *= Fatten_Default(posToLight.w, light.LIGHT_RADIUS);
             linearDistance = posToLight.w;
+            sourceRadius /= linearDistance;
 
             const float4 coord = GetLightProjectionUVW(worldpos, index_matrix);
             lightuv = coord.xy;
@@ -84,7 +87,7 @@ Light GetLightDirect(const uint index, const float3 worldpos, const uint cascade
         shadow *= SampleLightShadowmap(index_shadow, lightuv, posToLight.w);
     }
 
-    return Light(color, shadow, posToLight.xyz, linearDistance);
+    return Light(color, shadow, posToLight.xyz, linearDistance, sourceRadius);
 }
 
 Light GetLight(uint index, in float3 worldpos, uint cascade) { return GetLightDirect(PK_BUFFER_DATA(pk_GlobalLightsList, index), worldpos, cascade); }

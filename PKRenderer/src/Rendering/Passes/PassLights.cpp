@@ -208,6 +208,7 @@ namespace PK::Rendering::Passes
             light.position = transform->position;
             light.radius = view->light->radius;
             light.angle = view->light->angle * PK_FLOAT_DEG2RAD;
+            light.sourceRadius = view->light->sourceRadius;
             light.direction = 0u;
 
             auto castShadows = (view->renderable->flags & RenderableFlags::CastShadows) != 0;

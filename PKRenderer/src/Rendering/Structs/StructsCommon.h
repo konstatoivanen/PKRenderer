@@ -23,6 +23,7 @@ namespace PK::Rendering::Structs
         Math::ushort type = 0xFFFFu;
         Math::ushort cookie = 0xFFFFu;
         Math::uint direction = 0u;
+        float sourceRadius = 0.0f;
     };
 
     struct Vertex_Simple

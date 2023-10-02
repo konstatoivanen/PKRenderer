@@ -133,7 +133,7 @@ void VolumeFog_ApplySky(float3 viewdir, inout float3 color)
 
     if ((light.LIGHT_TYPE) == LIGHT_TYPE_DIRECTIONAL)
     {
-        irradiance += BSDF_VOLUMETRIC(viewdir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, -light.LIGHT_POS, light.LIGHT_COLOR, 1.0f);
+        irradiance += EvaluateBxDF_Volumetric(viewdir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, -light.LIGHT_POS, light.LIGHT_COLOR, 1.0f);
     }
 
     const float virtualDistance = 1000.0f;

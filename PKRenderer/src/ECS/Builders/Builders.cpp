@@ -120,7 +120,7 @@ namespace PK::ECS::Builders
         BuildLightRenderableViews(entityDb, implementer, egid, type, cookie, color, 90.0f, -1.0f, castShadows);
         auto lightSphereView = entityDb->ReserveEntityView<LightSphereView>(egid);
 
-        const auto sphereRadius = 0.2f;
+        const auto sphereRadius = implementer->sourceRadius = 0.2f;
         const auto sphereTranslucency = 0.1f;
         auto hdrColor = implementer->color * sphereTranslucency * (1.0f / (sphereRadius * sphereRadius));
 

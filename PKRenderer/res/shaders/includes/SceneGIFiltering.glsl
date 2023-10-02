@@ -4,23 +4,24 @@
 #include Kernels.glsl
 
 // Source https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
-float GI_GetSpecularDominantFactor(float nv, float linearRoughness)
+float GI_GetSpecularDominantFactor(float nv, float roughness)
 {
     // @TODO investinage
+   float linearRoughness = sqrt(roughness);
    return (1.0f - linearRoughness) * (sqrt(1.0f - linearRoughness) + linearRoughness);
    // const float a = 0.298475f * log(39.4115f - 39.0029f * linearRoughness);
    // return saturate(pow( 1.0 - nv, 10.8649f)) * (1.0f - a ) + a;
 }
 
-float3 GI_GetSpecularDominantDirection(const float3 N, const float3 V, float linearRoughness)
+float3 GI_GetSpecularDominantDirection(const float3 N, const float3 V, float roughness)
 {
-    const float factor = GI_GetSpecularDominantFactor(abs(dot(N, V)), linearRoughness);
+    const float factor = GI_GetSpecularDominantFactor(abs(dot(N, V)), roughness);
     return normalize(lerp(N, reflect(-V, N), factor));
 }
 
 float2x3 GI_GetSpecularDominantBasis(const float3 N, const float3 V, const float R, const float radius, inout float3 P)
 {
-    P = GI_GetSpecularDominantDirection(N, V, sqrt(R));
+    P = GI_GetSpecularDominantDirection(N, V, R);
     const float3 l = reflect(-P, N);
     const float3 t = normalize(cross(N,l));
     const float3 b = cross(l,t);
@@ -46,7 +47,7 @@ float GI_GetAntilagSpecular(float roughness, float nv, float parallax)
     float b = 1.1 + pow2(roughness);
     float parallaxSensitivity = (b + a) / (b - a);
     float powerScale = 1.0 + parallax * parallaxSensitivity;
-    float f = 1.0 - exp2(-200.0 * roughness * roughness);
+    float f = 1.0 - exp2(-200.0 * pow2(roughness));
     f *= pow(roughness, PK_GI_SPEC_ANTILAG_BASE_POWER * powerScale);
     return lerp(PK_GI_SPEC_ANTILAG_MIN, PK_GI_SPEC_ANTILAG_MAX, f);
 }

@@ -7,6 +7,7 @@ namespace PK::ECS::Components
     struct Light
     {
         PK::Math::color color = PK::Math::PK_COLOR_WHITE;
+        float sourceRadius = 0.1f;
         float radius = 1.0f;
         float angle = 45.0f;
         float shadowBlur = 0.1f;

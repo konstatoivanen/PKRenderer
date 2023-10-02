@@ -3,10 +3,8 @@
 #MaterialProperty float4 _Color
 #MaterialProperty float4 _EmissionColor
 
-#define BRDF_ENABLE_SUBSURFACE
-#define BRDF_ENABLE_CLEARCOAT
-#define PK_SURF_BRDF_MAIN BRDF_PRINCIPLED
-
+#define BxDF_ENABLE_SUBSURFACE
+#define BxDF_ENABLE_CLEARCOAT
 #include includes/SurfaceShaderBase.glsl
 #include includes/Noise.glsl
 

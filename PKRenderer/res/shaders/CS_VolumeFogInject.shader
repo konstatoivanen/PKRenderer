@@ -68,7 +68,7 @@ void main()
         const float marchDistance = clamp(light.linearDistance, 0.0f, maxMarchDistance);
         light.shadow *= VolumeFog_MarchTransmittance(worldpos, light.direction, dither.z, marchDistance);
         light.shadow = lerp(light.shadow, 1.0f, shadowFade);
-        value_cur += BSDF_VOLUMETRIC(viewdir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, light.direction, light.color, light.shadow);
+        value_cur += EvaluateBxDF_Volumetric(viewdir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, light.direction, light.color, light.shadow);
     }
 
     const float accumulation = VolumeFog_GetAccumulation(uvw_prev);

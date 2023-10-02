@@ -17,6 +17,7 @@
 #define LIGHT_TYPE i.y & 0xFFFFu
 #define LIGHT_COOKIE i.y >> 16u
 #define LIGHT_PACKED_DIRECTION i.z
+#define LIGHT_PACKED_SOURCERADIUS i.w
 #define LIGHT_POS p.xyz
 #define LIGHT_RADIUS p.w
 #define LIGHT_COLOR c.xyz
@@ -28,6 +29,7 @@ struct Light
     float shadow;
     float3 direction;
     float linearDistance;
+    float sourceRadius;
 };
 
 struct LightTile 

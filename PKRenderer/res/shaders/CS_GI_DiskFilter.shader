@@ -10,19 +10,18 @@
 #include includes/BRDF.glsl
 #include includes/CTASwizzling.glsl
 
-void ApproximateRoughSpecular(const float3 N, const float3 V, const float R, const GIDiff diff, inout GISpec spec)
+void ApproximateRoughSpecular(const float3 vN, const float3 vV, const float roughness, const GIDiff diff, inout GISpec spec)
 {
-    float3 wN = mul(float3x3(pk_MATRIX_I_V), N);
-    float3 wV = mul(float3x3(pk_MATRIX_I_V), V);
+    float3 wN = mul(float3x3(pk_MATRIX_I_V), vN);
+    float3 wV = mul(float3x3(pk_MATRIX_I_V), vV);
 
     float directionality;
     float3 primedir = SH_ToPrimeDir(diff.sh, directionality);
 
-    const float roughness = sqrt(lerp(1.0f, R * R, saturate(directionality * 0.666f)));
-
+    const float newRoughness = sqrt(lerp(1.0f, pow2(roughness), saturate(directionality * 0.666f)));
     const float3 color = SH_ToColor(diff.sh) * PK_TWO_PI;
-    const float3 specular = color * BRDF_GGX_SPECULAR_APPROX(wN, wV, roughness, primedir);
-    const float inter = smoothstep(PK_GI_MIN_ROUGH_SPEC, PK_GI_MAX_ROUGH_SPEC, R);
+    const float3 specular = color * EvaluateBxDF_Specular(wN, wV, newRoughness, primedir);
+    const float inter = smoothstep(PK_GI_MIN_ROUGH_SPEC, PK_GI_MAX_ROUGH_SPEC, roughness);
 
     spec.ao = lerp(spec.ao, diff.ao, inter);
     spec.history = lerp(spec.history, diff.history, inter);

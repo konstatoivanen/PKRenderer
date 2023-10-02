@@ -8,8 +8,8 @@
 #MaterialProperty texture2D _PBSTexture
 #MaterialProperty texture2D _NormalMap
 
-#define BRDF_ENABLE_SHEEN
-#define BRDF_ENABLE_CLEARCOAT
+#define BxDF_ENABLE_SHEEN
+#define BxDF_ENABLE_CLEARCOAT
 #define PK_USE_TANGENTS
 #include includes/SurfaceShaderBase.glsl
 
@@ -53,6 +53,6 @@ void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData
     surf.albedo = SampleTriplanar(_AlbedoTexture, PK_SURF_MESH_NORMAL, surf.worldpos, 0.25f).rgb * _Color.xyz;
     surf.sheen = 1.0f.xxx;
     surf.sheenTint = 0.0f;
-    surf.clearCoat = 0.75f.xxx;
+    surf.clearCoat = 0.5f.xxx;
     surf.clearCoatGloss = 0.0f;
 }

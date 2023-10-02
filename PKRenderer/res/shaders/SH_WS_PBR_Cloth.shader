@@ -11,8 +11,8 @@
 #MaterialProperty texture2D _NormalMap
 #MaterialProperty texture2D _HeightMap
 
-#define BRDF_ENABLE_SUBSURFACE
-#define BRDF_ENABLE_SHEEN
+#define BxDF_ENABLE_SUBSURFACE
+#define BxDF_ENABLE_SHEEN
 #define PK_USE_TANGENTS
 #include includes/SurfaceShaderBase.glsl
 
