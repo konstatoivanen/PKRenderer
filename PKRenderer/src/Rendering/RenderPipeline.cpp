@@ -291,6 +291,8 @@ namespace PK::Rendering
         // End transfer operations
         queues->Sync(QueueType::Graphics, QueueType::Transfer, -1);
         queues->Submit(QueueType::Transfer);
+        // Sync previous frames graphics accesses to compute queue (image layouts etc.)
+        queues->Transfer(QueueType::Graphics, QueueType::Compute);
         queues->Sync(QueueType::Transfer, QueueType::Graphics);
         queues->Sync(QueueType::Transfer, QueueType::Compute);
 
@@ -323,14 +325,13 @@ namespace PK::Rendering
         // Wait for misc async compute instead of ray dispatch
         queues->Sync(QueueType::Compute, QueueType::Graphics, -1);
 
+        // Shadows, Voxelize scene & reproject gi
         m_passLights.RenderShadows(cmdgraphics);
-
-        // Voxelize scene & reproject gi
         m_passSceneGI.Preprocess(cmdgraphics, &m_batcher, m_forwardPassGroup);
         m_passVolumeFog.Compute(cmdgraphics, m_renderTarget->GetResolution());
         queues->Submit(QueueType::Graphics, &cmdgraphics);
-        queues->Sync(QueueType::Graphics, QueueType::Compute);
-        queues->Sync(QueueType::Compute, QueueType::Graphics);
+        queues->Transfer(QueueType::Graphics, QueueType::Compute);
+        queues->Wait(QueueType::Compute, QueueType::Graphics);
 
         // Forward Opaque on graphics queue
         m_passSceneGI.RenderGI(cmdgraphics);

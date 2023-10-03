@@ -69,6 +69,8 @@ namespace PK::Rendering::VulkanRHI::Objects
             VkResult SubmitCurrent(Structs::QueueType type, VkSemaphore* outSignal = nullptr);
             Rendering::Objects::CommandBuffer* Submit(Structs::QueueType type) final;
             void Sync(Structs::QueueType from, Structs::QueueType to, int32_t submitOffset = 0) final;
+            void Wait(Structs::QueueType from, Structs::QueueType to, int32_t submitOffset = 0) final;
+            void Transfer(Structs::QueueType from, Structs::QueueType to) final;
             inline Structs::FenceRef GetFenceRef(Structs::QueueType type, int32_t submitOffset = 0) final { return GetQueue(type)->GetFenceRef(submitOffset); }
             void Prune();
 

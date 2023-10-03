@@ -25,13 +25,13 @@ namespace PK::Rendering::Passes
             void OnUpdateParameters(const Core::ApplicationConfig* config);
 
         private:
-            Objects::Shader* m_shaderBlur = nullptr;
-            Objects::Shader* m_shaderComposite = nullptr;
+            Objects::Shader* m_computeDepthOfField = nullptr;
             Objects::Shader* m_computeAutoFocus = nullptr;
             Utilities::Ref<Objects::Texture> m_renderTarget;
             Utilities::Ref<Objects::Buffer> m_autoFocusParams;
             uint32_t m_passPrefilter = 0u;
             uint32_t m_passDiskblur = 0u;
+            uint32_t m_passUpsample = 0u;
             Constants m_constants{};
     };
 }

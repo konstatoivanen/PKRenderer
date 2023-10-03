@@ -5,7 +5,10 @@
 **A physically based real-time renderer made with C++, GLSL & Vulkan.**
 </div>
 
-The project's goal is to be a feature rich & performant renderer without any precomputed scene structures or light transport. Visually it aims to be as close as possible to path-traced reference lighting. Feature wise it aims to maintain a suite of modern rendering techniques and features commonly found in games & rendering software.  However, it is ultimately a hobby project & thus likely to remain perpetually a work in progress.
+The goal of this project is to be a feature rich & performant renderer without any precomputed scene structures or light transport. 
+The visual target is to get as close as possible to path-traced reference lighting.
+The performance target is to stay at a stable 6.94ms/144hz framerate at 1080p on a RTX 2080 TI.
+However, this is ultimately a hobby project & thus likely to remain perpetually a work in progress.
 
 <div align="center">
   
@@ -43,6 +46,7 @@ The project's goal is to be a feature rich & performant renderer without any pre
   <summary>Analytic Lights</summary>
   
   - Spot, point & directional lights.
+  - Spherical area light estimation for all types.
   - Variance shadow maps.
   - Directional shadow cascades.
   - Clustered forward rendering.
@@ -53,9 +57,15 @@ The project's goal is to be a feature rich & performant renderer without any pre
 <details>
   <summary>Shading</summary>
 
-  - PBR BRDF (GGX, Disney diffuse, Smith correlated).
+  - PBR BxDF
+    - Chan Diffuse term
+    - GGX normal distribution term.
+    - Smith GGX correlated visibility term.
+    - Hanrahan Krueger sub surface term.
+    - Clear coat support.
+    - Sheen support.
   - PBR volumetric fog.
-  - Octahedron mapped GGX HDR IBL.
+  - Octahedron mapped GGX HDR IBL (used for rt & sky).
   - Spherical harmonics convolution from from IBL (for volumetrics).
   - GBuffers (normals, roughness, min/max/avg hierarchical depth).
   
@@ -68,7 +78,7 @@ The project's goal is to be a feature rich & performant renderer without any pre
   - HDR bloom.
   - Luminance histogram based auto exposure.
   - Bokeh depth of field & auto focus.
-  - Filmic ACES  tone mapping.
+  - GT Uchimura tone mapping.
   - Color grading.
   - Film grain.
   - Vignette.

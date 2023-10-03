@@ -56,8 +56,8 @@ PK_DECLARE_READONLY_BUFFER(float4x4, pk_LightMatrices, PK_SET_PASS);
 
 LightTile CreateLightTile(uint data)
 {
-	uint offset = bitfieldExtract(data, 0, 22);
-	uint count = bitfieldExtract(data, 22, 8);
+    uint offset = bitfieldExtract(data, 0, 22);
+    uint count = bitfieldExtract(data, 22, 8);
     uint cascade = bitfieldExtract(data, 30, 2);
     return LightTile(offset, offset + count, cascade);
 }

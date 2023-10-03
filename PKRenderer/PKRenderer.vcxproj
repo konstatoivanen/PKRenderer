@@ -875,7 +875,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\Kernels.glsl" />
     <None Include="res\shaders\includes\GBuffers.glsl" />
     <None Include="res\shaders\includes\SceneEnv.glsl" />
-    <None Include="res\shaders\includes\SharedTemporalAntialiasing.glsl" />
     <None Include="res\shaders\includes\SharedVolumeFog.glsl" />
     <None Include="res\shaders\includes\SharedLights.glsl" />
     <None Include="res\shaders\includes\SharedSceneGI.glsl" />
@@ -903,8 +902,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_Histogram.shader" />
     <None Include="res\shaders\CS_LightAssignment.shader" />
     <None Include="res\shaders\CS_PostEffectsComposite.shader" />
-    <None Include="res\shaders\SH_VS_DepthOfFieldBlur.shader" />
-    <None Include="res\shaders\SH_VS_DepthOfFieldComposite.shader" />
+    <None Include="res\shaders\CS_DepthOfField.shader" />
     <None Include="res\shaders\SH_VS_EnvBackground.shader" />
     <None Include="res\shaders\CS_ShadowmapBlur.shader" />
     <None Include="res\shaders\SH_WS_PBR_Default.shader" />

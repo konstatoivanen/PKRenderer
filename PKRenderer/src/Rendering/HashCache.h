@@ -136,9 +136,10 @@ namespace PK::Rendering
         DECLARE_HASH(pk_FocusSpeed)
         DECLARE_HASH(pk_MaximumCoC)
         DECLARE_HASH(pk_DofParams)
-        DECLARE_HASH(pk_Foreground)
-        DECLARE_HASH(pk_Background)
         DECLARE_HASH(pk_AutoFocusParams)
+        DECLARE_HASH(pk_DoFTargetRead)
+        DECLARE_HASH(pk_DoFTargetWrite)
+
 
         DECLARE_HASH(pk_Fog_Albedo)
         DECLARE_HASH(pk_Fog_Absorption)

@@ -18,20 +18,11 @@ struct AutoFocusData
 
 PK_DECLARE_VARIABLE(AutoFocusData, pk_AutoFocusParams, PK_SET_PASS);
 
-float GetLensCoefficient(float focusDistance)
-{
-    return pk_FocalLength * pk_FocalLength / (pk_FNumber * (focusDistance - pk_FocalLength) * pk_FilmHeight * 2);
-}
+float GetLensCoefficient(float focusDistance) { return pk_FocalLength * pk_FocalLength / (pk_FNumber * (focusDistance - pk_FocalLength) * pk_FilmHeight * 2); }
 
-float GetLensCoefficient() 
-{ 
-    return PK_VARIABLE_DATA(pk_AutoFocusParams).LensCoefficient;
-}
+float GetLensCoefficient() { return PK_VARIABLE_DATA(pk_AutoFocusParams).LensCoefficient; }
 
-float GetFocusDistance() 
-{ 
-    return PK_VARIABLE_DATA(pk_AutoFocusParams).Distance; 
-}
+float GetFocusDistance() { return PK_VARIABLE_DATA(pk_AutoFocusParams).Distance;  }
 
 float GetCircleOfConfusion01(float viewDepth)
 {

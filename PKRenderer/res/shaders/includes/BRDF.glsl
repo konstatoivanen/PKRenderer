@@ -146,8 +146,6 @@ float F_Schlick(float F0, float F90, float cosA) { return F0 + (F90 - F0) * pow5
 
 float3 F_Schlick(float3 F0, float F90, float cosA) { return F0 + (F90 - F0) * pow5(1.0f - cosA); }
 
-float3 F_SchlickLerp(float3 F0, float F90, float cosA) { return lerp(F0, F90.xxx, pow5(1.0f - cosA)); }
-
 //Source: https://www.activision.com/cdn/research/MaterialAdvancesInWWII.pdf
 float Fd_Chan(float NoV, float NoL, float NoH, float LoH, float FbW, float alpha)
 {
@@ -203,7 +201,7 @@ float3 EvaluateBxDF_Indirect(const BxDFSurf surf, const float3 diffuse, const fl
 {
     const float surfaceReduction = 1.0f / (pow2(surf.alpha) + 1.0f);
     const float F90 = saturate((1.0f - sqrt(surf.alpha)) + surf.reflectivity);
-    return surf.albedo * diffuse + surfaceReduction * specular * F_SchlickLerp(surf.F0, F90, surf.nv);
+    return surf.albedo * diffuse + surfaceReduction * specular * F_Schlick(surf.F0, F90, surf.nv);
 }
 
 float3 EvaluateBxDF_Direct(const BxDFSurf surf, const float3 direction, const float3 radiance, float shadow, float sourceRadius)

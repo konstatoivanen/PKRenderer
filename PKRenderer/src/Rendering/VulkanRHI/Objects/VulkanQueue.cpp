@@ -395,6 +395,20 @@ namespace PK::Rendering::VulkanRHI::Objects
         queueFrom->barrierHandler->TransferRecords(queueTo->barrierHandler.get());
     }
 
+    void VulkanQueueSet::Wait(Structs::QueueType from, Structs::QueueType to, int32_t submitOffset)
+    {
+        auto queueFrom = GetQueue(from);
+        auto queueTo = GetQueue(to);
+        queueTo->QueueWait(queueFrom, submitOffset);
+    }
+
+    void VulkanQueueSet::Transfer(Structs::QueueType from, Structs::QueueType to)
+    {
+        auto queueFrom = GetQueue(from);
+        auto queueTo = GetQueue(to);
+        queueFrom->barrierHandler->TransferRecords(queueTo->barrierHandler.get());
+    }
+
     VulkanQueueSet::Initializer::Initializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
     {
         createInfos.clear();
