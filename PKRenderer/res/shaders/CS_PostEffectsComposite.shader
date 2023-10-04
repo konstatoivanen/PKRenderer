@@ -7,11 +7,11 @@
 #include includes/Common.glsl
 
 //@TODO move these to application config?
-#define PK_APPLY_VIGNETTE 0
-#define PK_APPLY_BLOOM 0
+#define PK_APPLY_VIGNETTE 1
+#define PK_APPLY_BLOOM 1
 #define PK_APPLY_TONEMAP 1
-#define PK_APPLY_FILMGRAIN 0
-#define PK_APPLY_COLORGRADING 0
+#define PK_APPLY_FILMGRAIN 1
+#define PK_APPLY_COLORGRADING 1
 
 #define PK_DEBUG_MODE_NONE 0
 #define PK_DEBUG_MODE_GI_DIFF 1

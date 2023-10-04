@@ -1,7 +1,6 @@
 #version 460
 #extension GL_KHR_shader_subgroup_ballot : enable
-#extension GL_KHR_shader_subgroup_arithmetic : enable
-#extension GL_KHR_shader_subgroup_shuffle : enable
+
 #pragma PROGRAM_COMPUTE
 #include includes/SharedDepthOfField.glsl
 #include includes/Kernels.glsl
@@ -17,10 +16,7 @@ layout(rgba16f, set = PK_SET_SHADER) uniform image2DArray pk_DoFTargetWrite;
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
-    const float2 texelSize = pk_ScreenParams.zw * 2.0f;
-    const half margin = 2.0hf * half(texelSize.y);
-    const float aspect = texelSize.x / texelSize.y;
-
+    const float2 texelSize = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float2 uv = (coord + 0.5f.xx) * texelSize;
 
@@ -43,6 +39,8 @@ void main()
 
 #elif defined(PASS_DISKBLUR)
 
+    const half margin = 2.0hf * half(texelSize.y);
+    const float aspect = texelSize.x / texelSize.y;
     const half4 center = half4(tex2D(pk_DoFTargetRead, float3(uv, 2)));
 
     #define SAMPLE_COUNT 22u
@@ -72,7 +70,7 @@ void main()
 
     #if 1
     // Upsample tent filter;
-    const float4 o = uv.xyxy * 0.5f + texelSize.xyxy * float2(-0.5f, 0.5f).xxyy;
+    const float4 o = uv.xyxy + texelSize.xyxy * float2(-1.0f, 1.0f).xxyy;
     foreground += half4(tex2D(pk_DoFTargetRead, float3(o.xy, 0)));
     foreground += half4(tex2D(pk_DoFTargetRead, float3(o.zy, 0)));
     foreground += half4(tex2D(pk_DoFTargetRead, float3(o.xw, 0)));
@@ -84,12 +82,12 @@ void main()
     foreground *= 0.25hf;
     background *= 0.25hf;
     #else
-    foreground = half4(tex2D(pk_DoFTargetRead, float3(uv * 0.5f, 0)));
-    background = half4(tex2D(pk_DoFTargetRead, float3(uv * 0.5f, 1)));
+    foreground = half4(tex2D(pk_DoFTargetRead, float3(uv, 0)));
+    background = half4(tex2D(pk_DoFTargetRead, float3(uv, 1)));
     #endif
-    background.a = half(smoothstep(texelSize.y, texelSize.y * 2.0f, coc));
+    background.a = half(smoothstep(texelSize.y * 2.0f, texelSize.y * 4.0f, coc));
 
-    const half  alpha = (1.0hf - foreground.a) * (1.0hf - background.a);
+    const half alpha = (1.0hf - foreground.a) * (1.0hf - background.a);
 
     const uint4 threadMask = subgroupBallot(alpha < 0.85f);
     const uint threadCount = subgroupBallotBitCount(threadMask);
