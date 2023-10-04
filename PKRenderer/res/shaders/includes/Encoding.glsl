@@ -1,11 +1,6 @@
 #pragma once
 #include Utilities.glsl
 
-const float3x3 PK_RGBToYCoCg = float3x3(0.25, 0.5, -0.25, 0.5, 0.0, 0.5, 0.25, -0.5, -0.25);
-const float3x3 PK_YCoCgToRGB = float3x3(1.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0, 1.0, -1.0);
-const float3x3 PK_RGBToYCoCgR = float3x3(0.25, 1.0, -0.5, 0.5, 0.0, 1.0, 0.25, -1.0, -0.5);
-const float3x3 PK_YCoCgRToRGB = float3x3(1.0, 1.0, 1.0, 0.5, 0.0, -0.5, -0.5, 0.5, -0.5);
-
 float2 OctaWrap(float2 v) { return (1.0 - abs(v.yx)) * float2(v.x >= 0.0 ? 1.0 : -1.0, v.y >= 0.0 ? 1.0 : -1.0); }
 
 float2 OctaEncode(float3 n)

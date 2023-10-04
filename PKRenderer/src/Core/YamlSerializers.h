@@ -43,15 +43,15 @@ namespace YAML
 		}														\
 	};															\
 
-	#define DECLARE_MATRIX_CONVERTER(type, count)							\
+	#define DECLARE_MATRIX_CONVERTER(type, countx, county)					\
 	template<>																\
-	struct convert<type##count##x##count>									\
+	struct convert<type##countx##x##county>									\
 	{																		\
-		static Node encode(const type##count##x##count & rhs)				\
+		static Node encode(const type##countx##x##county & rhs)				\
 		{																	\
 			Node node;														\
-			for (auto i = 0; i < count; ++i)								\
-			for (auto j = 0; j < count; ++j)								\
+			for (auto i = 0; i < countx; ++i)								\
+			for (auto j = 0; j < county; ++j)								\
 			{																\
 				node.push_back(rhs[i][j]);									\
 			}																\
@@ -59,17 +59,17 @@ namespace YAML
 			return node;													\
 		}																	\
 																			\
-		static bool decode(const Node& node, type##count##x##count & rhs)	\
+		static bool decode(const Node& node, type##countx##x##county & rhs)	\
 		{																	\
-			if (!node.IsSequence() || node.size() != count * count)			\
+			if (!node.IsSequence() || node.size() != countx * county)		\
 			{																\
 				return false;												\
 			}																\
 																			\
-			for (auto i = 0; i < count; ++i)								\
-			for (auto j = 0; j < count; ++j)								\
+			for (auto i = 0; i < countx; ++i)								\
+			for (auto j = 0; j < county; ++j)								\
 			{																\
-				rhs[i][j] = node[i * count + j].as<type>();					\
+				rhs[i][j] = node[i * county + j].as<type>();				\
 			}																\
 																			\
 			return true;													\
@@ -86,9 +86,10 @@ namespace YAML
 	DECLARE_VECTOR_CONVERTER(uint, 3)
 	DECLARE_VECTOR_CONVERTER(uint, 4)
 
-	DECLARE_MATRIX_CONVERTER(float, 2)
-	DECLARE_MATRIX_CONVERTER(float, 3)
-	DECLARE_MATRIX_CONVERTER(float, 4)
+	DECLARE_MATRIX_CONVERTER(float, 2, 2)
+	DECLARE_MATRIX_CONVERTER(float, 3, 3)
+	DECLARE_MATRIX_CONVERTER(float, 4, 4)
+	DECLARE_MATRIX_CONVERTER(float, 3, 4)
 
 	#undef DECLARE_VECTOR_CONVERTER
 	#undef DECLARE_MATRIX_CONVERTER

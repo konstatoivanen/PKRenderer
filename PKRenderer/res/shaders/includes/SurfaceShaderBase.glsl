@@ -126,10 +126,10 @@ struct SurfaceFragmentVaryings
         baseVaryings.vs_WORLDPOSITION = ObjectToWorldPos(in_POSITION.xyz);
         baseVaryings.vs_TEXCOORD0 = in_TEXCOORD0;
         baseVaryings.vs_NORMAL = ObjectToWorldDir(in_NORMAL);
-    #if defined(PK_USE_TANGENTS)
-        baseVaryings.vs_TANGENT.xyz = ObjectToWorldDir(in_TANGENT.xyz);
-        baseVaryings.vs_TANGENT.w = in_TANGENT.w;
-    #endif
+        #if defined(PK_USE_TANGENTS)
+            baseVaryings.vs_TANGENT.xyz = ObjectToWorldDir(in_TANGENT.xyz);
+            baseVaryings.vs_TANGENT.w = in_TANGENT.w;
+        #endif
         PK_SURFACE_FUNC_VERT(baseVaryings);
         gl_Position = PK_META_WORLD_TO_CLIPSPACE(baseVaryings.vs_WORLDPOSITION);
     }
@@ -160,30 +160,29 @@ struct SurfaceFragmentVaryings
         pk_MATRIX_TBN = half3x3(ComposeMikkTBN(baseVaryings.vs_NORMAL, baseVaryings.vs_TANGENT));
         #endif
 
-        float4 sv_output = 0.0f.xxxx;
-
-        SurfaceData surf; 
-        surf.worldpos = baseVaryings.vs_WORLDPOSITION;
-        surf.viewdir = normalize(pk_WorldSpaceCameraPos.xyz - surf.worldpos);
-        surf.albedo = 1.0f.xxx;
-        surf.normal = float3(0,1,0);
-        surf.emission = 0.0f.xxx;
-        surf.sheen = 0.0f.xxx;
-        surf.subsurface = 0.0f.xxx;
-        surf.clearCoat = 0.0f.xxx;
-        surf.sheenTint = 0.0f;
-        surf.clearCoatGloss = 0.0f;
-        surf.alpha = 1.0f;
-        surf.metallic = 0.0f;     
-        surf.roughness = 1.0f;
-        surf.occlusion = 0.0f;
+        SurfaceData surf = SurfaceData
+        (
+            normalize(pk_WorldSpaceCameraPos.xyz - baseVaryings.vs_WORLDPOSITION),
+            baseVaryings.vs_WORLDPOSITION,
+            0.0f.xxx,
+            1.0f.xxx,      
+            float3(0,0,1),      
+            0.0f.xxx,
+            0.0f.xxx,
+            0.0f.xxx,
+            0.0f.xxx,
+            0.0f,
+            0.0,
+            1.0f,
+            0.0f,     
+            1.0f,
+            0.0f
+        );
         
-        // Screen space pixel coord
-        int2 screencoord = int2(gl_FragCoord.xy);
-
-    #if defined(PK_META_PASS_GIVOXELIZE)
+        #if defined(PK_META_PASS_GIVOXELIZE)
         float3 voxelPos = GI_QuantizeWorldToVoxelSpace(surf.worldpos);
 
+        [[branch]]
         if (!Test_WorldToClipUVW(voxelPos, surf.clipuvw) || GI_Test_VX_HasValue(surf.worldpos) || !GI_Test_VX_Normal(PK_SURF_MESH_NORMAL))                 
         {                                           
             return;                                 
@@ -191,64 +190,70 @@ struct SurfaceFragmentVaryings
         
         surf.clipuvw = WorldToClipUVW(surf.worldpos);                      
         surf.clipuvw.xy = ClampUVScreenBorder(surf.clipuvw.xy);          
-        screencoord = int2(surf.clipuvw.xy * pk_ScreenSize.xy);
-    #else
+        int2 screencoord = int2(surf.clipuvw.xy * pk_ScreenSize.xy);
+        #else
         surf.clipuvw = float3(gl_FragCoord.xy * pk_ScreenParams.zw, gl_FragCoord.z);
-    #endif
+        int2 screencoord = int2(gl_FragCoord.xy);
+        #endif
 
         PK_SURFACE_FUNC_FRAG(baseVaryings, surf);
 
-    #if !defined(PK_META_PASS_GIVOXELIZE)
+        #if !defined(PK_META_PASS_GIVOXELIZE)
         const float shiftAmount = dot(surf.normal, surf.viewdir);
         surf.normal = shiftAmount < 0.0f ? surf.normal + surf.viewdir * (-shiftAmount + 1e-5f) : surf.normal;
-        surf.roughness = max(surf.roughness, 0.002);
-    #endif
-
-    #if defined(PK_META_PASS_GBUFFER)
-        sv_output = EncodeGBufferWorldNR(surf.normal, surf.roughness);
-    #else
-
-        const float3 F0 = lerp(pk_DielectricSpecular.rgb, surf.albedo, surf.metallic);
-        const float reflectivity = pk_DielectricSpecular.r + surf.metallic * pk_DielectricSpecular.a;
-        surf.albedo *= 1.0f - reflectivity;
-
-        #if defined(PK_SURF_TRANSPARENT)
-        surf.albedo *= surf.alpha;
-        surf.alpha = reflectivity + surf.alpha * (1.0f - reflectivity);
+        surf.roughness = max(surf.roughness, 0.002f);
         #endif
 
-        BxDFSurf bxdf_surf = BxDFSurf
-        (
-            surf.albedo, 
-            F0, 
-            surf.normal, 
-            surf.viewdir, 
-            surf.sheen, 
-            surf.subsurface, 
-            surf.clearCoat, 
-            surf.sheenTint,
-            surf.clearCoatGloss,
-            reflectivity, 
-            pow2(surf.roughness), // Convert linear roughness to roughness
-            max(0.0f, dot(surf.normal, surf.viewdir))
-        );
+        float4 sv_output = 0.0f.xxxx;
 
-        sv_output.rgb = PK_META_BxDF_INDIRECT(bxdf_surf, surf.worldpos, surf.clipuvw);
+        #if defined(PK_META_PASS_GBUFFER)
 
-        #if !defined(PK_META_PASS_GIVOXELIZE)
-        sv_output.rgb *= surf.occlusion;
+            sv_output = EncodeGBufferWorldNR(surf.normal, surf.roughness);
+
+        #else
+
+            const float3 F0 = lerp(pk_DielectricSpecular.rgb, surf.albedo, surf.metallic);
+            const float reflectivity = pk_DielectricSpecular.r + surf.metallic * pk_DielectricSpecular.a;
+            surf.albedo *= 1.0f - reflectivity;
+
+            #if defined(PK_SURF_TRANSPARENT)
+            surf.albedo *= surf.alpha;
+            surf.alpha = reflectivity + surf.alpha * (1.0f - reflectivity);
+            #endif
+
+            BxDFSurf bxdf_surf = BxDFSurf
+            (
+                surf.albedo, 
+                F0, 
+                surf.normal, 
+                surf.viewdir, 
+                surf.sheen, 
+                surf.subsurface, 
+                surf.clearCoat, 
+                surf.sheenTint,
+                surf.clearCoatGloss,
+                reflectivity, 
+                pow2(surf.roughness), // Convert linear roughness to roughness
+                max(0.0f, dot(surf.normal, surf.viewdir))
+            );
+
+            sv_output.rgb = PK_META_BxDF_INDIRECT(bxdf_surf, surf.worldpos, surf.clipuvw);
+
+            #if !defined(PK_META_PASS_GIVOXELIZE)
+            sv_output.rgb *= surf.occlusion;
+            #endif
+
+            LightTile tile = GetLightTile_PX(screencoord, ViewDepth(surf.clipuvw.z));
+            for (uint i = tile.start; i < tile.end; ++i)
+            {
+                Light light = GetLight(i, surf.worldpos, tile.cascade);
+                sv_output.rgb += PK_META_BxDF(bxdf_surf, light.direction, light.color, light.shadow, light.sourceRadius);
+            }
+
+            sv_output.rgb += surf.emission;
+            sv_output.a = surf.alpha; 
+
         #endif
-
-        LightTile tile = GetLightTile_PX(screencoord, ViewDepth(surf.clipuvw.z));
-        for (uint i = tile.start; i < tile.end; ++i)
-        {
-            Light light = GetLight(i, surf.worldpos, tile.cascade);
-            sv_output.rgb += PK_META_BxDF(bxdf_surf, light.direction, light.color, light.shadow, light.sourceRadius);
-        }
-
-        sv_output.rgb += surf.emission;
-        sv_output.a = surf.alpha; 
-    #endif
 
         PK_META_STORE_SURFACE_OUTPUT(sv_output, surf.worldpos);
     }

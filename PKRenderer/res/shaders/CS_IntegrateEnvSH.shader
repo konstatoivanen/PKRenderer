@@ -2,6 +2,7 @@
 #pragma PROGRAM_COMPUTE
 #include includes/Common.glsl
 #include includes/SceneEnv.glsl
+#include includes/Encoding.glsl
 #include includes/SHL1.glsl
 
 #define TEXTURE_DIM float2(PK_SCENE_ENV_MIN_SIZE, PK_SCENE_ENV_MIN_SIZE)

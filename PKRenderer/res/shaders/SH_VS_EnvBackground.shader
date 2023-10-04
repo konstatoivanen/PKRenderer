@@ -14,8 +14,7 @@ out float3 vs_TEXCOORD0;
 void main()
 {
     gl_Position = PK_BLIT_VERTEX_POSITION;
-    float3 vpos = mul(pk_MATRIX_I_P, float4(gl_Position.xy, 1.0f, 1.0f)).xyz;
-    vs_TEXCOORD0 = mul(pk_MATRIX_I_V, float4(vpos, 0.0f)).xyz;
+    vs_TEXCOORD0 = mul(float4(gl_Position.xy * pk_InvProjectionParams.xy, 1.0f, 0.0f), pk_MATRIX_I_V).xyz;
 }
 
 #pragma PROGRAM_FRAGMENT

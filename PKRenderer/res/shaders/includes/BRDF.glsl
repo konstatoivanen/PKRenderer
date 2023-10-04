@@ -182,11 +182,11 @@ float D_GGX(float NoH, float alpha)
 }
 
 // For specular approximation in ray traced gi
-float EvaluateBxDF_Specular(const float3 normal, const float3 viewdir, const float roughness, const float3 lightdir)
+float EvaluateBxDF_Specular(const float3 normal, const float3 viewdir, const float roughness, const float3 direction)
 {
-    const float nv = max(0.0f, dot(-viewdir, normal));
-    const float nl = max(0.0f, dot(normal, lightdir));
-    const float vl = dot(viewdir, lightdir);
+    const float nv = max(0.0f, dot(viewdir, normal));
+    const float nl = max(0.0f, dot(normal, direction));
+    const float vl = dot(viewdir, direction);
     const float ih = inversesqrt(2.0f + 2.0f * vl);
     const float nh = saturate((nl + nv) * ih);
     const float lh = saturate( ih + ih  * vl);
@@ -194,7 +194,7 @@ float EvaluateBxDF_Specular(const float3 normal, const float3 viewdir, const flo
     const float alpha = pow2(roughness);
     const float V = V_SmithGGXCorrelated(nl, nv, alpha);
     const float D = D_GGX(lh, alpha);
-    return D * V * nl;
+    return max(0.0f, D * V * nl);
 }
 
 float3 EvaluateBxDF_Indirect(const BxDFSurf surf, const float3 diffuse, const float3 specular)

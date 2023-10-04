@@ -94,6 +94,7 @@ namespace PK::Assets
         Float2x2,
         Float3x3,
         Float4x4,
+        Float3x4,
 
         Double2x2,
         Double3x3,

@@ -44,6 +44,7 @@ Light GetLightDirect(const uint index, const float3 worldpos, const uint cascade
     float linearDistance;
 
     // @TODO Maybe refactor lights to separate by type lists 
+    [[branch]]
     switch (light.LIGHT_TYPE)
     {
         case LIGHT_TYPE_POINT:
@@ -82,6 +83,7 @@ Light GetLightDirect(const uint index, const float3 worldpos, const uint cascade
         break;
     }
 
+    [[branch]]
     if (index_shadow < LIGHT_PARAM_INVALID)
     {
         shadow *= SampleLightShadowmap(index_shadow, lightuv, posToLight.w);

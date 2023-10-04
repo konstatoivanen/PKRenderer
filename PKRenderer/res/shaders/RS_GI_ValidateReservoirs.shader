@@ -45,9 +45,9 @@ void main()
     {
         const float3 normal = SamplePreviousWorldNormal(coord);
         const float3 viewpos = SampleViewPosition(coord, depth - depth * 1e-2f);
-        const float3 viewdir = mul(float3x3(pk_MATRIX_L_I_V), normalize(viewpos));
+        const float3 viewdir = mul(normalize(viewpos), float3x3(pk_MATRIX_L_I_V));
         const float3 normalOffset = normal * (0.01f / (saturate(-dot(viewdir, normal)) + 0.01f)) * 0.05f;
-        const float3 origin = mul(pk_MATRIX_L_I_V, float4(viewpos + normalOffset, 1.0f)).xyz;
+        const float3 origin = mul(float4(viewpos + normalOffset, 1.0f), pk_MATRIX_L_I_V).xyz;
         
         Reservoir r = ReSTIR_Load(raycoord, RESTIR_LAYER_PRE);
 

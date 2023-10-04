@@ -73,6 +73,17 @@ namespace PK::Rendering
 
         m_constantsPerFrame = CreateRef<ConstantBuffer>(BufferLayout(
             {
+                { ElementType::Float3x4, hash->pk_MATRIX_V },
+                { ElementType::Float3x4, hash->pk_MATRIX_I_V },
+                { ElementType::Float3x4, hash->pk_MATRIX_L_I_V },
+
+                { ElementType::Float4x4, hash->pk_MATRIX_P },
+                { ElementType::Float4x4, hash->pk_MATRIX_VP },
+                { ElementType::Float4x4, hash->pk_MATRIX_VP_N },
+                { ElementType::Float4x4, hash->pk_MATRIX_L_VP },
+                { ElementType::Float4x4, hash->pk_MATRIX_L_VP_N },
+                { ElementType::Float4x4, hash->pk_MATRIX_L_VP_D },
+                
                 { ElementType::Float4, hash->pk_Time },
                 { ElementType::Float4, hash->pk_SinTime },
                 { ElementType::Float4, hash->pk_CosTime },
@@ -81,6 +92,7 @@ namespace PK::Rendering
                 { ElementType::Float4, hash->pk_WorldSpaceCameraPos },
                 { ElementType::Float4, hash->pk_ViewSpaceCameraDelta },
                 { ElementType::Float4, hash->pk_ProjectionParams },
+                { ElementType::Float4, hash->pk_InvProjectionParams },
                 { ElementType::Float4, hash->pk_ExpProjectionParams },
                 { ElementType::Float4, hash->pk_ScreenParams },
                 { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
@@ -88,17 +100,6 @@ namespace PK::Rendering
                 { ElementType::Uint4, hash->pk_FrameRandom },
                 { ElementType::Uint2, hash->pk_ScreenSize },
                 { ElementType::Uint2, hash->pk_FrameIndex },
-                { ElementType::Float4x4, hash->pk_MATRIX_V },
-                { ElementType::Float4x4, hash->pk_MATRIX_I_V },
-                { ElementType::Float4x4, hash->pk_MATRIX_P },
-                { ElementType::Float4x4, hash->pk_MATRIX_I_P },
-                { ElementType::Float4x4, hash->pk_MATRIX_VP },
-                { ElementType::Float4x4, hash->pk_MATRIX_VP_N },
-                { ElementType::Float4x4, hash->pk_MATRIX_I_VP },
-                { ElementType::Float4x4, hash->pk_MATRIX_L_I_V },
-                { ElementType::Float4x4, hash->pk_MATRIX_L_VP },
-                { ElementType::Float4x4, hash->pk_MATRIX_L_VP_N },
-                { ElementType::Float4x4, hash->pk_MATRIX_L_VP_D },
                 { ElementType::Float, hash->pk_SceneEnv_Exposure }
             }), "Constants.Frame");
 
@@ -187,6 +188,7 @@ namespace PK::Rendering
 
         auto matrix_p_n = token->projection;
         auto matrix_p = Functions::GetPerspectiveJittered(matrix_p_n, jitter);
+        auto matrix_i_p = glm::inverse(matrix_p);
         auto matrix_v = token->view;
         auto matrix_i_v = glm::inverse(matrix_v);
         auto matrix_vp = matrix_p * matrix_v;
@@ -194,7 +196,7 @@ namespace PK::Rendering
         float n = m_znear = Functions::GetZNearFromProj(matrix_p);
         float f = m_zfar = Functions::GetZFarFromProj(matrix_p);
 
-        auto matrix_l_i_v = matrix_i_v;
+        auto matrix_l_i_v = Functions::TransposeTo3x4(matrix_i_v);
         auto matrix_l_vp = matrix_vp;
         auto matrix_l_vp_n = matrix_vp_n;
 
@@ -207,21 +209,20 @@ namespace PK::Rendering
         }
 
         m_viewProjectionMatrix = matrix_vp_n;
-        auto viewSpaceCameraDelta = matrix_v * float4(matrix_l_i_v[3].x, matrix_l_i_v[3].y, matrix_l_i_v[3].z, 1.0f);
+        auto viewSpaceCameraDelta = matrix_v * float4(matrix_l_i_v[0].w, matrix_l_i_v[1].w, matrix_l_i_v[2].w, 1.0f);
 
-        m_constantsPerFrame->Set<float4>(hash->pk_ProjectionParams, { n, f, f - n, 1.0f / f });
+        m_constantsPerFrame->Set<float4>(hash->pk_ProjectionParams, { n, f, -1.0f / f, -(n - f) / (f * n) });
+        m_constantsPerFrame->Set<float4>(hash->pk_InvProjectionParams, { matrix_i_p[0][0], matrix_i_p[1][1], matrix_i_p[2][3], matrix_i_p[3][3] });
         m_constantsPerFrame->Set<float4>(hash->pk_ExpProjectionParams, { 1.0f / glm::log2(f / n), -log2(n) / log2(f / n), f / n, 1.0f / n });
         m_constantsPerFrame->Set<float4>(hash->pk_WorldSpaceCameraPos, matrix_i_v[3]);
         m_constantsPerFrame->Set<float4>(hash->pk_ViewSpaceCameraDelta, viewSpaceCameraDelta);
         m_constantsPerFrame->Set<float4>(hash->pk_ProjectionJitter, token->jitter);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_V, matrix_v);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_V, matrix_i_v);
+        m_constantsPerFrame->Set<float3x4>(hash->pk_MATRIX_V, Functions::TransposeTo3x4(matrix_v));
+        m_constantsPerFrame->Set<float3x4>(hash->pk_MATRIX_I_V, Functions::TransposeTo3x4(matrix_i_v));
+        m_constantsPerFrame->Set<float3x4>(hash->pk_MATRIX_L_I_V, matrix_l_i_v);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_P, matrix_p);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_P, glm::inverse(matrix_p));
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_VP, matrix_vp);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_VP_N, matrix_vp_n);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_I_VP, glm::inverse(matrix_vp));
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_I_V, matrix_l_i_v);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP, matrix_l_vp);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP_N, matrix_l_vp_n);
         m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP_D, matrix_l_vp * matrix_i_v);

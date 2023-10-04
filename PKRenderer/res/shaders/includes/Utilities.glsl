@@ -22,9 +22,10 @@
     float2 make_rotation(float radian) { return float2(cos(radian), sin(radian)); }
     float2 rotate2D(float2 v, float2 r) { return float2(v.x * r.x - v.y * r.y, v.x * r.y + v.y * r.x); }
     float4 mul3x3(const float3x3 matrix, const float4 v) { return float4(matrix * v.xyz, v.w); }
+    float4 mul3x3(const float4 v, const float3x3 matrix) { return float4(v.xyz * matrix, v.w); }
     float4 unpackHalf4x16(uint2 v) { return float4(unpackHalf2x16(v.x), unpackHalf2x16(v.y)); }
     uint2 packHalf4x16(float4 v) { return uint2(packHalf2x16(v.xy), packHalf2x16(v.zw)); }
-    float safePositiveRcp(float f) { return f <= 1e-12f ? 0.0 : 1.0 / f; }
+    float safePositiveRcp(float f) { return mix(1.0f / f, 0.0f, f <= 1e-12f); }
     float4 normalizeLength(float3 v) { float l = length(v); return float4(v.xyz * safePositiveRcp(l), l); }
 
     // Source: https://graphics.pixar.com/library/OrthonormalB/paper.pdf

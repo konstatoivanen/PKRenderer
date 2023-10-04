@@ -105,6 +105,36 @@ namespace PK::Math::Functions
         return Result;
     }
 
+    float3x4 TransposeTo3x4(const float4x4& matrix)
+    {
+        float3x4 m;
+
+        for (auto i = 0; i < 3; ++i)
+        {
+            m[i][0] = matrix[0][i];
+            m[i][1] = matrix[1][i];
+            m[i][2] = matrix[2][i];
+            m[i][3] = matrix[3][i];
+        }
+
+        return m;
+    }
+
+    float4x4 TransposeTo4x4(const float3x4& matrix)
+    {
+        float4x4 m;
+
+        for (auto i = 0; i < 3; ++i)
+        {
+            m[0][i] = matrix[i][0];
+            m[1][i] = matrix[i][1];
+            m[2][i] = matrix[i][2];
+            m[3][i] = matrix[i][3];
+        }
+
+        return m;
+    }
+
     // Produces Reverse Z
     float4x4 GetOffsetPerspective(float left, float right, float bottom, float top, float fovy, float aspect, float zNear, float zFar)
     {

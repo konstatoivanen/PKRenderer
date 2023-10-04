@@ -27,6 +27,7 @@ namespace PK::Rendering::Objects
                 case ElementType::Float2x2:  Reserve<float2x2>(element.NameHashId, element.Count); break;
                 case ElementType::Float3x3:  Reserve<float3x3>(element.NameHashId, element.Count); break;
                 case ElementType::Float4x4:  Reserve<float4x4>(element.NameHashId, element.Count); break;
+                case ElementType::Float3x4:  Reserve<float3x4>(element.NameHashId, element.Count); break;
 
                 case ElementType::Double:    Reserve<double>(element.NameHashId, element.Count); break;
                 case ElementType::Double2:   Reserve<double2>(element.NameHashId, element.Count); break;

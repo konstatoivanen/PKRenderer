@@ -1,6 +1,7 @@
 #pragma once
 #include BRDF.glsl
 #include BlueNoise.glsl
+#include Encoding.glsl
 #include SHL1.glsl
 
 #ifndef PK_GI_LOAD_LVL

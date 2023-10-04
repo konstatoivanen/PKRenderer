@@ -189,7 +189,7 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
 
             if (linearThreadIndex == 0)
             {
-                s_weights[0] = (threadCount > 0) ? (waveWeight / float(threadCount)) : 0.0;
+                s_weights[0] = lerp(0.0f, waveWeight / float(threadCount), threadCount > 0);
             }
         }
 

@@ -109,6 +109,7 @@ namespace PK::Rendering::Objects
                     case ElementType::Float2x2: Set(nameHash, values.as<float2x2>()); break;
                     case ElementType::Float3x3: Set(nameHash, values.as<float3x3>()); break;
                     case ElementType::Float4x4: Set(nameHash, values.as<float4x4>()); break;
+                    case ElementType::Float3x4: Set(nameHash, values.as<float3x4>()); break;
                     case ElementType::Int: Set(nameHash, values.as<int>()); break;
                     case ElementType::Int2: Set(nameHash, values.as<int2>()); break;
                     case ElementType::Int3: Set(nameHash, values.as<int3>()); break;

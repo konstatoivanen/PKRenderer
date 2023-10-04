@@ -48,9 +48,8 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetTexture(hash->_SourceTex, source->GetColor(0u), { 0, 0, 1u, 1u });
         GraphicsAPI::SetTexture(hash->_HistoryReadTex, m_renderTarget.get(), { 0, historyRead, 1u, 1u });
         GraphicsAPI::SetImage(hash->_HistoryWriteTex, m_renderTarget.get(), { 0, historyWrite, 1u, 1u });
-        cmd->Dispatch(m_computeTAA, { resolution.x, resolution.y, 1u });
+        cmd->Dispatch(m_computeTAA, 0, { resolution.x, resolution.y, 1u });
         cmd->Blit(m_renderTarget.get(), source->GetColor(0), { 0, historyWrite, 1u, 1u }, { 0, 0, 1u, 1u }, FilterMode::Bilinear);
-
         cmd->EndDebugScope();
 
         m_jitter.z = m_jitter.x;

@@ -11,6 +11,8 @@ namespace PK::Math::Functions
     float4x4 GetPerspective(float fov, float aspect, float nearClip, float farClip);
     float4x4 GetOrtho(float left, float right, float bottom, float top, float zNear, float zFar);
     float4x4 GetOrtho(float left, float right, float bottom, float top, float zNear, float zFar);
+    float3x4 TransposeTo3x4(const float4x4& matrix);
+    float4x4 TransposeTo4x4(const float3x4& matrix);
     inline float GetZNearFromProj(const float4x4& matrix) { return -matrix[3][2] / (matrix[2][2] + 1.0f); }
     inline float GetZFarFromProj(const float4x4& matrix) { return -matrix[3][2] / (matrix[2][2] - 1.0f); }
     inline float GetSizeOnScreen(float depth, float sizePerDepth, float radius) { return radius / (sizePerDepth * depth); }

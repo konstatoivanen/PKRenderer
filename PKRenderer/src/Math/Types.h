@@ -26,6 +26,7 @@ namespace PK::Math
     typedef glm::mat2x2 float2x2;
     typedef glm::mat3x3 float3x3;
     typedef glm::mat4x4 float4x4;
+    typedef glm::mat3x4 float3x4;
 
     typedef glm::dmat2x2 double2x2;
     typedef glm::dmat3x3 double3x3;
