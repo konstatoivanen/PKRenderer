@@ -15,13 +15,16 @@ void ApproximateRoughSpecular(const float3 normal, const float3 viewdir, const f
     float directionality;
     const float3 primedir = WorldToViewDir(SH_ToPrimeDir(diff.sh, directionality));
     
+    directionality = saturate(directionality * 0.666f);
+
     // Remap roughness if lighting is uniform over hemisphere
-    const float newRoughness = lerp(1.0f, roughness, saturate(directionality * 0.666f));
+    const float newRoughness = lerp(1.0f, roughness, directionality);
 
     // If the lighting is uniform, regain some energy so that we are closer to ggx lobe.
-    const float boost = lerp(PK_TWO_PI, 1.0f, saturate(directionality * 0.666f));
-    
-    const float3 specular = SH_ToColor(diff.sh) * boost * EvaluateBxDF_Specular(normal, -viewdir, newRoughness, primedir);
+    // @TODO Exacerbates reprojection artefacts. Fixme.
+    const float factor = lerp(PK_TWO_PI, 1.0f, directionality);
+
+    const float3 specular = SH_ToColor(diff.sh) * factor * EvaluateBxDF_Specular(normal, -viewdir, newRoughness, primedir);
     const float inter = smoothstep(PK_GI_MIN_ROUGH_SPEC, PK_GI_MAX_ROUGH_SPEC, roughness);
 
     spec.ao = lerp(spec.ao, diff.ao, inter);

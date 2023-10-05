@@ -53,7 +53,7 @@ float ReSTIR_ToUnorm(uint x) { return uintBitsToFloat(x & 0x007fffffu | 0x3f8000
 int2 ReSTIR_PermutationSampling(int2 coord, bool mask)
 {
     int2 offset = int2(pk_FrameRandom.y & 3, (pk_FrameRandom.y >> 2) & 3);
-    return mask ? ((coord + offset) ^ 3) - offset : coord;
+    return lerp(coord, ((coord + offset) ^ 3) - offset, mask.xx);
 }
 
 int2 ReSTIR_GetTemporalResamplingCoord(const int2 coord, int hash, int scale, bool permute)
@@ -95,7 +95,7 @@ float ReSTIR_GetJacobian(const float3 posCenter, const float3 posSample, const R
     const float cosCenter = saturate(dot(r.normal, centervec.xyz));
     const float cosSample = saturate(dot(r.normal, samplevec.xyz));
     const float jacobian = (cosCenter * pow2(centervec.w)) / (cosSample * pow2(samplevec.w));
-    return isinf(jacobian) || isnan(jacobian) ? 0.0f : jacobian;
+    return lerp(jacobian, 0.0f, isinf(jacobian) || isnan(jacobian));
 }
 
 float ReSTIR_GetTargetPdfNewSurf(const float3 posCenter, const float3 normalCenter, const float3 posSample, const Reservoir r)
@@ -120,7 +120,7 @@ void ReSTIR_CombineReservoir(inout Reservoir combined, const Reservoir b, float 
     const float weight = targetPdf * safePositiveRcp(b.targetPdf) * b.weightSum;
     
     combined.weightSum += weight;
-    combined.M += uint(targetPdf > 0.0f) * b.M; 
+    combined.M += lerp(0u, b.M, targetPdf > 0.0f);
 
     if (random * combined.weightSum < weight)
     {
@@ -148,7 +148,6 @@ void ReSTIR_CombineReservoirSimple(inout Reservoir combined, const Reservoir b, 
 
 void ReSTIR_Store(const int2 coord, const int layer, const Reservoir r)
 {
-    const bool isValid = !isinf(r.weightSum) && !isnan(r.weightSum) && r.weightSum >= 0.0;
     uint4 packed0, packed1;
     packed0.xyz = floatBitsToUint(r.position);
     packed0.w = EncodeOctaUV(r.normal);
@@ -156,15 +155,12 @@ void ReSTIR_Store(const int2 coord, const int layer, const Reservoir r)
     packed1.y = floatBitsToUint(r.targetPdf);
     packed1.z = floatBitsToUint(r.weightSum);
     packed1.w = r.M;
-    packed0 = isValid ? packed0 : uint4(0);
-    packed1 = isValid ? packed1 : uint4(0);
     imageStore(pk_Reservoirs, int3(coord, layer + 0), packed0);
     imageStore(pk_Reservoirs, int3(coord, layer + 1), packed1);
 }
 
 Reservoir ReSTIR_Load(const int2 coord, const int layer) 
 {
-    const bool isValid = All_InArea(coord, int2(0), imageSize(pk_Reservoirs).xy);
     const uint4 packed0 = imageLoad(pk_Reservoirs, int3(coord, layer + 0));
     const uint4 packed1 = imageLoad(pk_Reservoirs, int3(coord, layer + 1));
     Reservoir r;
@@ -174,7 +170,7 @@ Reservoir ReSTIR_Load(const int2 coord, const int layer)
     r.targetPdf = uintBitsToFloat(packed1.y);
     r.weightSum = uintBitsToFloat(packed1.z); 
     r.M = packed1.w;
-    return isValid ? r : pk_Reservoir_Zero;
+    return r;
 }
 
 uint4 ReSTIR_Pack_Hit(const float3 direction, const float hitDist, const float3 normal, const uint hitNormal, const float3 radiance)

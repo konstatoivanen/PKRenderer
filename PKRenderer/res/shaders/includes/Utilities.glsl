@@ -27,6 +27,7 @@
     uint2 packHalf4x16(float4 v) { return uint2(packHalf2x16(v.xy), packHalf2x16(v.zw)); }
     float safePositiveRcp(float f) { return mix(1.0f / f, 0.0f, f <= 1e-12f); }
     float4 normalizeLength(float3 v) { float l = length(v); return float4(v.xyz * safePositiveRcp(l), l); }
+    float3 safeNormalize(float3 v) { return v * safePositiveRcp(length(v)); }
 
     // Source: https://graphics.pixar.com/library/OrthonormalB/paper.pdf
     void branchlessONB(const float3 n, out float3 b1, out float3 b2)

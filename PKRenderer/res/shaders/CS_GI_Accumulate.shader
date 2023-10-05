@@ -37,14 +37,12 @@ shared uint s_count[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LA
 
 #define ReSTIR_Load_HitAsReservoir(coord, origin) ReSTIR_Unpack_Hit(GI_Load_Packed_Diff(coord), origin)
 
-void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const float depth, const float3 origin, const bool isNewSurf, const Reservoir initial, inout SH outSH)
+SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const float depth, const float3 viewnormal, const float3 origin, const Reservoir initial)
 {
-    const float3 viewnormal = SampleViewNormal(coord);
     const float depthBias = lerp(0.1f, 0.01f, -viewnormal.z);
     const float3 normal = ViewToWorldDir(viewnormal);
     uint seed = ReSTIR_GetSeed(coord);
     int scale = 5;
-    bool isValid = true;
 
     Reservoir combined = initial;
 
@@ -63,8 +61,8 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
             const float s_depth = SamplePreviousViewDepth(xyFull);
             const float3 s_normal = SamplePreviousViewNormal(xyFull);
 
-            if (Test_DepthReproject(depth, s_depth, depthBias) &&
-                dot(viewnormal, s_normal) > RESTIR_NORMAL_THRESHOLD)
+            [[branch]]
+            if (Test_DepthReproject(depth, s_depth, depthBias) && dot(viewnormal, s_normal) > RESTIR_NORMAL_THRESHOLD)
             {
                 // Don't sample multiple temporal reservoirs to avoid boiling. Break on first accepted sample.
                 Reservoir s_reservoir = ReSTIR_Load(xy, RESTIR_LAYER_PRE);
@@ -98,9 +96,7 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
             const Reservoir s_reservoir = ReSTIR_Load_HitAsReservoir(xy, s_position);
 
             [[branch]]
-            if (Any_NotEqual(xy, baseCoord) &&
-                Test_DepthReproject(depth, s_depth, depthBias) &&
-                dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
+            if (Any_NotEqual(xy, baseCoord) && Test_DepthReproject(depth, s_depth, depthBias) && dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
             {
                 const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_position, s_reservoir);
                 ReSTIR_CombineReservoir(combined, s_reservoir, s_targetPdf, hash);
@@ -132,10 +128,7 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
         // Also check screen area in case receiving invalid values.
 
         [[branch]]
-        if (Test_InScreen(s_coord) &&
-            combined.M < RESTIR_MAX_M + 3 &&
-            Test_DepthReproject(depth, s_depth, depthBias) &&
-            dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
+        if (combined.M < RESTIR_MAX_M + 3 && Test_DepthReproject(depth, s_depth, depthBias) && dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
         {
             const float3 s_position = SampleWorldPosition(s_coord, s_depth);
             const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_origin, suffled);
@@ -143,22 +136,8 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
         }
     }
 
-    // Reshade hit
-    {
-        // @TODO alternatively or rather we should retrace visibility here as to not accumulate invalid samples.
-        // This is expensive however, currently reservoirs are validated in async during present (which is virtually free).
-        const bool reject = !isNewSurf && ReSTIR_NearFieldReject(depth, origin, initial, ReSTIR_Hash(seed + 1));
-        const float3 direction = normalize(combined.position - origin);
-        const float weight = ReSTIR_GetSampleWeight(combined, normal, direction);
-        isValid = !isnan(weight) && !isinf(weight) && weight > 0.0f && !reject;
-
-        if (isValid)
-        {
-            outSH = SH_FromRadiance(combined.radiance * weight, direction);
-        }
-    }
-   
     // Boiling Filter
+    bool isBoiling;
     {
         const float filterStrength = 0.2f;
         const float reservoirWeight = combined.targetPdf * combined.weightSum;
@@ -195,13 +174,24 @@ void ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const
 
         barrier();
 
-        if (reservoirWeight > s_weights[0] * boilingFilterMultiplier || !isValid)
-        {
-            combined = initial;
-        }
+        isBoiling = reservoirWeight > s_weights[0] * boilingFilterMultiplier;
     }
 
-    ReSTIR_Store(baseCoord, RESTIR_LAYER_CUR, combined);
+   
+    // Shade Hit & Store Temporal Reservoir
+    
+    // @TODO alternatively or rather we should retrace visibility here as to not accumulate invalid samples.
+    // This is expensive however, currently reservoirs are validated in async during present (which is virtually free).
+    const bool reject = ReSTIR_NearFieldReject(depth, origin, initial, ReSTIR_Hash(seed + 1));
+    const float3 combinedDirection = normalize(combined.position - origin);
+    const float weight = ReSTIR_GetSampleWeight(combined, normal, combinedDirection);
+    const bool isValid = !isnan(weight) && !isinf(weight) && weight > 0.0f && !reject;
+
+    ReSTIR_Store(baseCoord, RESTIR_LAYER_CUR, isValid && !isBoiling ? combined : initial);
+    
+    const float3 radiance = lerp(initial.radiance, combined.radiance * weight, isValid.xxx);
+    const float3 direction = lerp(safeNormalize(initial.position - origin), combinedDirection, isValid.xxx);
+    return SH_FromRadiance(radiance, direction);
 }
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
@@ -209,8 +199,8 @@ void main()
 {
     const int2 baseCoord = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(baseCoord));
+    const float4 normalroughness = SampleViewNormalRoughness(coord);
     const float depth = SampleMinZ(coord, 0);
-    const float roughness = SampleRoughness(coord);
     const bool isScene = Test_DepthFar(depth);
 
     // Diffuse 
@@ -220,15 +210,15 @@ void main()
         const float4 samplevec = normalizeLength(reservoir.position - origin);
 
         GIDiff current;
-        current.sh = SH_FromRadiance(reservoir.radiance, samplevec.xyz);
         current.ao = saturate(samplevec.w / PK_GI_RAY_TMAX);
-
-        GIDiff history = GI_Load_Diff(baseCoord, PK_GI_STORE_LVL);
-
+        
         #if defined(PK_GI_RESTIR)
-        ReSTIR_ResampleSpatioTemporal(baseCoord, coord, depth, origin, int(history.history) < 4, reservoir, current.sh);
+        current.sh = ReSTIR_ResampleSpatioTemporal(baseCoord, coord, depth, normalroughness.xyz, origin, reservoir);
+        #else
+        current.sh = SH_FromRadiance(reservoir.radiance, samplevec.xyz);
         #endif
 
+        GIDiff history = GI_Load_Diff(baseCoord, PK_GI_STORE_LVL);
         const float alpha = GI_Alpha(history);
         
         SUBGROUP_ANTIFIREFLY_FILTER(isScene, current, history, alpha, 1.0f)
@@ -240,14 +230,14 @@ void main()
     // Specular
     #if PK_GI_APPROX_ROUGH_SPEC == 1
     [[branch]]
-    if (roughness < PK_GI_MAX_ROUGH_SPEC)
+    if (normalroughness.w < PK_GI_MAX_ROUGH_SPEC)
     #endif
     {
         GISpec history = GI_Load_Spec(baseCoord, PK_GI_STORE_LVL);
         GISpec current = GI_Load_Spec(baseCoord);
         const float alpha = GI_Alpha(history);
 
-        SUBGROUP_ANTIFIREFLY_FILTER(isScene, current, history, alpha, (1.0f / (1e-4f + roughness)))
+        SUBGROUP_ANTIFIREFLY_FILTER(isScene, current, history, alpha, (1.0f / (1e-4f + normalroughness.w)))
 
         history = GI_Interpolate(history, current, alpha);
         GI_Store_Packed_Spec(baseCoord, isScene ? GI_Pack_Spec(history) : uint2(0));

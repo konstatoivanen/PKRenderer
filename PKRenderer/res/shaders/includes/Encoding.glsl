@@ -6,8 +6,8 @@ float2 OctaWrap(float2 v) { return (1.0 - abs(v.yx)) * float2(v.x >= 0.0 ? 1.0 :
 float2 OctaEncode(float3 n)
 {
     n /= (abs(n.x) + abs(n.y) + abs(n.z));
-    n.xz = n.y >= 0.0 ? n.xz : OctaWrap(n.xz);
-    n.xz = n.xz * 0.5 + 0.5;
+    n.xz = lerp(OctaWrap(n.xz), n.xz, (n.y >= 0.0f).xx);
+    n.xz = n.xz * 0.5f + 0.5f;
     return n.xz;
 }
 
@@ -16,9 +16,9 @@ float3 OctaDecode(float2 f)
 {
     f = f * 2.0f - 1.0f;
     float3 n = float3(f.x, 1.0f - abs(f.x) - abs(f.y), f.y);
-    float t = max(-n.y, 0.0);
-    n.x += n.x >= 0.0f ? -t : t;
-    n.z += n.z >= 0.0f ? -t : t;
+    float t = max(-n.y, 0.0f);
+    n.x += lerp(t, -t, n.x >= 0.0f);
+    n.z += lerp(t, -t, n.z >= 0.0f);
     return normalize(n);
 }
 
@@ -56,52 +56,22 @@ uint EncodeOctaUV(float3 direction) { return packUnorm2x16(OctaUV(direction)); }
 float3 DecodeOctaUV(uint packed) { return OctaDecode(unpackUnorm2x16(packed)); }
 
 //Source: https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_texture_shared_exponent.txt
-#define ENCODE_E5BGR9_EXPONENT_BITS 5
-#define ENCODE_E5BGR9_MANTISSA_BITS 9
-#define ENCODE_E5BGR9_MAX_VALID_BIASED_EXP 31
-#define ENCODE_E5BGR9_EXP_BIAS 15
-#define ENCODE_E5BGR9_MANTISSA_VALUES (1 << 9)
-#define ENCODE_E5BGR9_MANTISSA_MASK (ENCODE_E5BGR9_MANTISSA_VALUES - 1)
-#define ENCODE_E5BGR9_SHAREDEXP_MAX 65408
-
 uint EncodeE5BGR9(float3 unpacked)
 {
-    const int N = ENCODE_E5BGR9_MANTISSA_BITS;
-    const int Np2 = 1 << N;
-    const int B = ENCODE_E5BGR9_EXP_BIAS;
-
-    unpacked = clamp(unpacked, 0.0f.xxx, ENCODE_E5BGR9_SHAREDEXP_MAX.xxx);
-    float max_c = max(unpacked.r, max(unpacked.g, unpacked.b));
+    unpacked = clamp(unpacked, 0.0f, 65408.0f);
+    const float max_c = max(unpacked.r, max(unpacked.g, unpacked.b));
 
     // for log2
-    if (max_c == 0.0)
+    if (max_c == 0.0f)
     {
-        return 0;
+        return 0u;
     }
 
-    const int exp_shared_p = max(-B-1, int(floor(log2(max_c)))) + 1 + B;
-    const int max_s = int(round(max_c * exp2(-float(exp_shared_p - B - N))));
-    const int exp_shared = max_s != Np2 ? exp_shared_p : exp_shared_p + 1;
-    const float s = exp2(-float(exp_shared - B - N));
-    const uint3 rgb_s = uint3(round(unpacked * s));
-
-    return (exp_shared << (3 * ENCODE_E5BGR9_MANTISSA_BITS)) |
-           (rgb_s.b    << (2 * ENCODE_E5BGR9_MANTISSA_BITS)) |
-           (rgb_s.g    << (1 * ENCODE_E5BGR9_MANTISSA_BITS)) |
-           (rgb_s.r);
+    const int exp_shared_p = max(-16, int(floor(log2(max_c)))) + 16;
+    const int max_s = int(round(max_c * exp2(-exp_shared_p + 24)));
+    const int exp_shared = exp_shared_p + int(max_s == 512);
+    const uint3 rgb = uint3(round(unpacked * exp2(-exp_shared + 24)));
+    return (uint(exp_shared) << 27u) | (rgb.z << 18u) | (rgb.y << 9u) | rgb.x;
 }
 
-float3 DecodeE5BGR9(const uint _packed)
-{
-    const int N = ENCODE_E5BGR9_MANTISSA_BITS;
-    const int B = ENCODE_E5BGR9_EXP_BIAS;
-
-    int exp_shared = int(_packed >> (3 * ENCODE_E5BGR9_MANTISSA_BITS));
-    float s = exp2(float(exp_shared - B - N));
-
-    return s * float3(
-        (_packed                                       ) & ENCODE_E5BGR9_MANTISSA_MASK, 
-        (_packed >> (1 * ENCODE_E5BGR9_MANTISSA_BITS)) & ENCODE_E5BGR9_MANTISSA_MASK,
-        (_packed >> (2 * ENCODE_E5BGR9_MANTISSA_BITS)) & ENCODE_E5BGR9_MANTISSA_MASK
-    );
-}
+float3 DecodeE5BGR9(const uint p) { return float3(p & 511u, (p >> 9u) & 511u, (p >> 18u) & 511u) * exp2(int(p >> 27u) - 24); }
