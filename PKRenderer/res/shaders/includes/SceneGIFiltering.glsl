@@ -81,7 +81,7 @@ float2 GI_GetDiskFilterRadiusAndScale(const float depth, const float variance, c
     float scale = 0.2f + 0.8f * smoothstep(0.0f, 0.3f, pow(ao, 0.125f));
     scale = lerp(0.2f + scale * 0.8f, scale, near_field);
     scale *= 0.05f + 0.95f * variance;
-    scale = lerp(scale, 0.75f + scale * 0.25f, 1.0f / history);
+    scale = lerp(scale, 0.75f + scale * 0.25f, 1.0f / (history + 1.0f));
 
     float radius = PK_GI_DISK_FILTER_RADIUS * (0.25f + 0.75f * near_field);
     radius *= sqrt(depth / pk_ProjectionParams.y);
@@ -101,49 +101,6 @@ void GI_GetMipSampler(const int2 coord, int level, inout int2 outBaseCoord, inou
 float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y), f.x * (1.0 - f.y), (1.0 - f.x) * f.y, f.x * f.y); }
 
 /* Profiling revealed that deferring these to functions yielded significantly worse performance, so they're macros for now. */
-
-#define GI_SF_HISTORY_MIP(SF_COORD, SF_MIP, SF_NORMAL, SF_DEPTH, SF_OUT_WSUM, SF_OUT_DIFF, SF_OUT_SPEC) \
-{                                                                                                       \
-    for (int zz = int(SF_MIP); zz <= int(SF_MIP) + 1; ++zz)                                             \
-    {                                                                                                   \
-        const float levelWeight = 1.0f - abs(SF_MIP - zz);                                              \
-                                                                                                        \
-        int2 base; float2 ddxy;                                                                         \
-        GI_GetMipSampler(SF_COORD, zz + 1, base, ddxy);                                                 \
-                                                                                                        \
-        float4 depths = float4                                                                          \
-        (                                                                                               \
-            SampleAvgZ(base + int2(0, 0), zz + 1),                                                      \
-            SampleAvgZ(base + int2(1, 0), zz + 1),                                                      \
-            SampleAvgZ(base + int2(0, 1), zz + 1),                                                      \
-            SampleAvgZ(base + int2(1, 1), zz + 1)                                                       \
-        );                                                                                              \
-                                                                                                        \
-        float4 weights = GI_GetBilinearWeights(ddxy);                                                   \
-        weights *= exp(-abs(SF_DEPTH.xxxx - depths));                                                   \
-        weights *= safePositiveRcp(dot(weights, 1.0f.xxxx)) * levelWeight;                              \
-                                                                                                        \
-        for (uint yy = 0; yy <= 1u; ++yy)                                                               \
-        for (uint xx = 0; xx <= 1u; ++xx)                                                               \
-        {                                                                                               \
-            const uint4 p_diff = GI_Load_Packed_Mip_Diff(base + int2(xx, yy), zz);                      \
-            const uint2 p_spec = GI_Load_Packed_Mip_Spec(base + int2(xx, yy), zz);                      \
-            GIDiff s_diff = GI_Unpack_Diff(p_diff);                                                     \
-            GISpec s_spec = GI_Unpack_Spec(p_spec);                                                     \
-                                                                                                        \
-            /* Filter out sh l1 based on normal cosine so invalid signals are rejected.*/               \
-            s_diff.sh.Y.zyw *= float(dot(SF_NORMAL, SH_ToPrimeDir(s_diff.sh)) > 0.05f);                 \
-            const float w = weights[yy * 2 + xx];                                                       \
-                                                                                                        \
-            if (p_diff.w != 0u && w > 1e-6f)                                                            \
-            {                                                                                           \
-                SF_OUT_DIFF = GI_Sum_NoHistory(SF_OUT_DIFF, s_diff, w);                                 \
-                SF_OUT_SPEC = GI_Sum_NoHistory(SF_OUT_SPEC, s_spec, w);                                 \
-                SF_OUT_WSUM += w;                                                                       \
-            }                                                                                           \
-        }                                                                                               \
-    }                                                                                                   \
-}                                                                                                       \
 
 #define GI_SF_DIFF_VARIANCE(SF_COORD, SF_DEPTH, SF_DIFF, SF_OUT)                                \
 {                                                                                               \
@@ -182,7 +139,8 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
     for (; i < 32u; i += SF_STEP)                                                                               \
     {                                                                                                           \
         const float3 s_offs = PK_POISSON_DISK_32_POW[i];                                                        \
-        const float2 s_uv = ViewToClipUV(SF_VPOS + basis * rotate2D(s_offs.xy, rotation));                      \
+        float2 s_uv = ViewToClipUV(SF_VPOS + basis * rotate2D(s_offs.xy, rotation));                            \
+        s_uv = 1.0f - abs(1.0f - abs(s_uv));                                                                    \
         const int2   s_gpx = GI_CollapseCheckerboardCoord(s_uv * pk_ScreenSize.xy, 0);                          \
         const int2   s_px = GI_ExpandCheckerboardCoord(s_gpx);                                                  \
         const float4 s_nr = SampleViewNormalRoughness(s_px);                                                    \
@@ -193,7 +151,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
         w *= saturate(1.0f - dot(s_ray, s_ray) * k_D.y);                                                        \
         w *= exp(-acos(dot(SF_NORMAL, s_nr.xyz) - 1e-6f) * k_N);                                                \
         w *= exp( -0.66 * s_offs.z *  s_offs.z);                                                                \
-        w = lerp(0.0f, w, Test_InScreen(s_uv) && !Test_NaN_EPS4(w));                                            \
+        w = lerp(0.0f, w, !Test_NaN_EPS4(w));                                                                   \
                                                                                                                 \
         SF_OUT = GI_Sum_NoHistory(SF_OUT, GI_Load_Diff(s_gpx), w);                                              \
         wSum += w;                                                                                              \

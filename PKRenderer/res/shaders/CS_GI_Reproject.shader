@@ -52,7 +52,7 @@ void main()
             const float3 viewdir = normalize(viewpos);
             const float nv = dot(normal, -viewdir);
             const float parallax = GI_GetParallax(viewdir, normalize(viewpos - pk_ViewSpaceCameraDelta.xyz));
-
+            
             #if PK_GI_APPROX_ROUGH_SPEC == 1
             discardSpec = roughness >= PK_GI_MAX_ROUGH_SPEC;
             #endif
@@ -77,23 +77,20 @@ void main()
                     const int2 xy = s_coord + int2(i % 2u, i / 2u);
                     const float4 s_nr = SamplePreviousViewNormalRoughness(xy);
                     const float w_n = pow5(dot(normal, s_nr.xyz));
-                    
-                    // Diff
-                    {
-                        float w = weights[i] * w_n * float(w_n > 0.05f);
-                        w = lerp(0.0f, w, !Test_NaN_EPS6(w));
-                        diff = GI_Sum(diff, GI_Load_Diff(xy), w);
-                        wSumDiff += w;
-                    }
+                    float w_diff = weights[i] * w_n * float(w_n > 0.05f);
+                    float w_spec = weights[i] * w_n * exp(-abs(s_nr.w * k_R.x + k_R.y));
+                    w_diff = lerp(0.0f, w_diff, !Test_NaN_EPS6(w_diff));
+                    w_spec = lerp(0.0f, w_spec, !Test_NaN_EPS6(w_spec));
+
+                    diff = GI_Sum(diff, GI_Load_Diff(xy), w_spec);
+                    wSumDiff += w_spec;
 
                     // Spec
                     [[branch]]
-                    if (!discardSpec)
+                    if (!discardSpec && (PK_GI_APPROX_ROUGH_SPEC == 0 || s_nr.w < PK_GI_MAX_ROUGH_SPEC))
                     {
-                        float w = weights[i] * w_n * exp(-abs(s_nr.w * k_R.x + k_R.y));
-                        w = lerp(0.0f, w, !Test_NaN_EPS6(w));
-                        spec = GI_Sum(spec, GI_Load_Spec(xy), w);
-                        wSumSpec += w;
+                        spec = GI_Sum(spec, GI_Load_Spec(xy), w_spec);
+                        wSumSpec += w_spec;
                     }
                 }
             }
@@ -126,6 +123,9 @@ void main()
                     w *= pow(saturate(dot(normal, s_nr.xyz)), 256.0f);
                     w *= exp(-abs(s_nr.w * k_R.x + k_R.y));
                     w = lerp(0.0f, w, !Test_NaN_EPS6(w));
+                    #if PK_GI_APPROX_ROUGH_SPEC == 1
+                    w = lerp(0.0f, w, s_nr.w < PK_GI_MAX_ROUGH_SPEC);
+                    #endif
                     specVirtual = GI_Sum(specVirtual, GI_Load_Spec(xy), w);
                     wSumVSpec += w;
                 }
@@ -135,8 +135,8 @@ void main()
 
         // Normalization
         {
-            diff.history = clamp(diff.history / wSumDiff, 0.0f, PK_GI_DIFF_MAX_HISTORY * antilagDiff);
-            spec.history = clamp(spec.history / wSumSpec, 0.0f, PK_GI_SPEC_MAX_HISTORY * antilagSpec);
+            diff.history = min(diff.history / wSumDiff, PK_GI_DIFF_MAX_HISTORY * antilagDiff);
+            spec.history = min(spec.history / wSumSpec, PK_GI_SPEC_MAX_HISTORY * antilagSpec);
             diff = GI_Mul_NoHistory(diff, 1.0f / wSumDiff);
             spec = GI_Mul_NoHistory(spec, 1.0f / wSumSpec);
             
@@ -156,21 +156,6 @@ void main()
         const bool invalidSpec = Test_NaN_EPS6(wSumSpec);
         packedDiff = invalidDiff ? uint4(0) : GI_Pack_Diff(diff);
         packedSpec = invalidSpec ? uint2(0) : GI_Pack_Spec(spec);
-
-        // Write mip generation mask
-        {
-            const int2 base = ((coord + 8) >> 4) - 1;
-
-            [[branch]]
-            if (diff.history < PK_GI_HISTORY_FILL_THRESHOLD || invalidDiff ||
-               (spec.history < PK_GI_HISTORY_FILL_THRESHOLD && !discardSpec))
-            {
-                imageStore(pk_GI_PackedMipMask, base + int2(0, 0), uint4(1u));
-                imageStore(pk_GI_PackedMipMask, base + int2(1, 0), uint4(1u));
-                imageStore(pk_GI_PackedMipMask, base + int2(0, 1), uint4(1u));
-                imageStore(pk_GI_PackedMipMask, base + int2(1, 1), uint4(1u));
-            }
-        }
     }
 
     GI_Store_Packed_Diff(storeCoord, packedDiff);

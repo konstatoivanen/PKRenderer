@@ -16,7 +16,6 @@ PK_DECLARE_CBUFFER(pk_GI_Parameters, PK_SET_SHADER)
 {
     float4 pk_GI_VolumeST;
     uint4 pk_GI_VolumeSwizzle;
-    int4 pk_GI_Checkerboard_Offset;
     uint2 pk_GI_RayDither;
     float pk_GI_VoxelSize; 
     float pk_GI_ChromaBias; 
@@ -25,12 +24,10 @@ PK_DECLARE_CBUFFER(pk_GI_Parameters, PK_SET_SHADER)
 layout(rg32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_RayHits;
 layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedDiff;
 layout(rg32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedSpec;
-layout(r8ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_PackedMipMask; 
 layout(r32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_ResolvedWrite;
 layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_GI_VolumeMaskWrite;
 layout(rgba16f, set = PK_SET_SHADER) uniform image3D pk_GI_VolumeWrite;
 PK_DECLARE_SET_SHADER uniform sampler2DArray pk_GI_ResolvedRead;
-PK_DECLARE_SET_SHADER uniform usampler2DArray pk_GI_PackedMips;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 
 #define PK_GI_APPROX_ROUGH_SPEC 1
@@ -56,10 +53,8 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 #define PK_GI_SPEC_ANTILAG_MIN 0.03f
 #define PK_GI_SPEC_ANTILAG_MAX 1.0f
 #define PK_GI_MAX_LUMA_GAIN 0.5f
-#define PK_GI_HISTORY_FILL_THRESHOLD 8
+#define PK_GI_HISTORY_FILL_THRESHOLD 4
 #define PK_GI_DISK_FILTER_RADIUS 3.0f
-
-#define PK_GI_DATA_LOAD_MIP(c, l, m) texelFetch(pk_GI_PackedMips, int3(c, l), m).xy
 
 //----------STRUCTS----------//
 struct GIDiff { SH sh; float ao; float history; };
@@ -90,6 +85,7 @@ float GI_MaxLuma(const GISpec a, float alpha) { return GI_Luminance(a) + (PK_GI_
 float GI_LumaScale(float luma, float maxLuma) { return (min(luma, maxLuma) + 1e-6f) / (luma + 1e-6f); }
 GIDiff GI_ClampLuma(GIDiff a, float maxLuma) { return GIDiff(SH_Scale(a.sh, GI_LumaScale(GI_Luminance(a), maxLuma)), a.ao, a.history); }
 GISpec GI_ClampLuma(GISpec a, float maxLuma) { return GISpec(a.radiance * GI_LumaScale(GI_Luminance(a), maxLuma), a.ao, a.history); }
+float GI_RoughSpecWeight(float roughness) { return smoothstep(PK_GI_MIN_ROUGH_SPEC, PK_GI_MAX_ROUGH_SPEC, roughness); }
 
 #define GI_GET_RAY_PARAMS(COORD, RAYCOORD, DEPTH, OUT_PARAMS)                                                                   \
 {                                                                                                                               \
@@ -165,8 +161,6 @@ GISpec GI_Unpack_Spec(const uint2 p)
 }
 
 //----------LOAD/STORE FUNCTIONS----------//
-uint4 GI_Load_Packed_Mip_Diff(const int2 coord, const int mip) { return uint4(PK_GI_DATA_LOAD_MIP(coord, PK_GI_LVL_DIFF0, mip), PK_GI_DATA_LOAD_MIP(coord, PK_GI_LVL_DIFF1, mip)); }
-uint2 GI_Load_Packed_Mip_Spec(const int2 coord, const int mip) { return PK_GI_DATA_LOAD_MIP(coord, PK_GI_LVL_SPEC, mip); }
 uint4 GI_Load_Packed_Diff(const int2 coord, const int l) { return imageLoad(pk_GI_PackedDiff, int3(coord, l)); }
 uint2 GI_Load_Packed_Spec(const int2 coord, const int l) { return imageLoad(pk_GI_PackedSpec, int3(coord, l)).xy; }
 uint4 GI_Load_Packed_Diff(const int2 coord) { return GI_Load_Packed_Diff(coord, PK_GI_LOAD_LVL); }
@@ -185,7 +179,7 @@ void GI_Store_Diff(const int2 coord, const GIDiff u) { GI_Store_Packed_Diff(coor
 void GI_Store_Spec(const int2 coord, const GISpec u) { GI_Store_Packed_Spec(coord, GI_Pack_Spec(u)); }
 
 float3 GI_Load_Resolved_Diff(const float2 uv) { return texelFetch(pk_GI_ResolvedRead, int3(uv * pk_ScreenSize.xy, 0), 0).xyz; }
-float3 GI_Load_Resolved_Spec(const float2 uv) { return texelFetch(pk_GI_ResolvedRead, int3(uv * pk_ScreenSize.xy, 1), 0).xyz;; }
+float3 GI_Load_Resolved_Spec(const float2 uv) { return texelFetch(pk_GI_ResolvedRead, int3(uv * pk_ScreenSize.xy, 1), 0).xyz; }
 
 void GI_Store_Resolved_Diff(const int2 coord, const float3 N, const GIDiff diff)
 {
@@ -240,6 +234,20 @@ bool GI_Test_VX_Normal(float3 normal)
 }
 
 //----------SAMPLING FUNCTIONS----------//
+GISpec GI_ShadeRoughSpecular(const float3 normal, const float3 viewdir, const float roughness, const GIDiff diff)
+{
+    float directionality;
+    float3 direction = SH_ToPrimeDir(diff.sh, directionality);
+    
+    direction = WorldToViewDir(direction);
+    directionality = saturate(directionality * 0.666f);
+
+    // Remap roughness if lighting is uniform over hemisphere
+    const float newRoughness = lerp(1.0f, roughness, directionality);
+    const float3 specular = SH_ToColor(diff.sh) * EvaluateBxDF_Specular(normal, -viewdir, newRoughness, direction) * PK_PI;
+
+    return GISpec(specular, diff.ao, diff.history);
+}
 
 //----------VOXEL TRACING FUNCTIONS----------//
 half4 GI_SphereTrace_Diffuse(float3 position)

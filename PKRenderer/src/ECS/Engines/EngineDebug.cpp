@@ -95,7 +95,7 @@ namespace PK::ECS::Engines
                 true);
         }
 
-        auto color = glm::log(Functions::HexToRGB(0x6D563DFF) * 16.0f); // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF //0xFFA575FF
+        auto color = glm::log(Functions::HexToRGB(0x6D563DFF) * 32.0f); // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF //0xFFA575FF
         Builders::BuildLightRenderableEntity(m_entityDb, m_assetDatabase, PK_FLOAT3_ZERO, { 25, -35, 0 }, LightType::Directional, Cookie::Circle0, color, 90.0f, 1000.0f, true);
     }
 

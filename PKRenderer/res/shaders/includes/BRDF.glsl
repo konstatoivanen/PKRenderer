@@ -171,7 +171,7 @@ float V_SmithGGXCorrelated(float NoL, float NoV, float alpha)
     const float a2 = pow2(alpha);
     const float LambdaV = NoL * sqrt((-NoV * a2 + NoV) * NoV + a2);
     const float LambdaL = NoV * sqrt((-NoL * a2 + NoL) * NoL + a2);
-    return	0.5f / (LambdaV + LambdaL);
+    return 0.5f / (LambdaV + LambdaL);
 }
 
 float D_GGX(float NoH, float alpha)
@@ -189,11 +189,10 @@ float EvaluateBxDF_Specular(const float3 normal, const float3 viewdir, const flo
     const float vl = dot(viewdir, direction);
     const float ih = inversesqrt(2.0f + 2.0f * vl);
     const float nh = saturate((nl + nv) * ih);
-    const float lh = saturate( ih + ih  * vl);
 
     const float alpha = pow2(roughness);
     const float V = V_SmithGGXCorrelated(nl, nv, alpha);
-    const float D = D_GGX(lh, alpha);
+    const float D = D_GGX(nh, alpha);
     return max(0.0f, D * V * nl);
 }
 

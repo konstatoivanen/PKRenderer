@@ -30,7 +30,7 @@ namespace PK::Rendering::Passes
             Objects::Shader* m_computeReproject = nullptr;
             Objects::Shader* m_computeScreenMip = nullptr;
             Objects::Shader* m_computeGradients = nullptr;
-            Objects::Shader* m_computeDiskFilter = nullptr;
+            Objects::Shader* m_computePostFilter = nullptr;
             Objects::Shader* m_rayTraceGatherGI = nullptr;
             Objects::Shader* m_rayTraceValidate = nullptr;
             Objects::ShaderBindingTable m_sbtRaytrace;
@@ -41,8 +41,6 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Texture> m_voxelMask;
             Utilities::Ref<Objects::Texture> m_packedGIDiff;
             Utilities::Ref<Objects::Texture> m_packedGISpec;
-            Utilities::Ref<Objects::Texture> m_packedGIMips;
-            Utilities::Ref<Objects::Texture> m_packedGIMipMask;
             Utilities::Ref<Objects::Texture> m_resolvedGI;
             Utilities::Ref<Objects::Texture> m_reservoirs;
             Utilities::Ref<Objects::Texture> m_rayhits;
