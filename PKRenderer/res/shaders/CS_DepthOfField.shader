@@ -4,16 +4,19 @@
 #pragma PROGRAM_COMPUTE
 #include includes/SharedDepthOfField.glsl
 #include includes/Kernels.glsl
+#include includes/Encoding.glsl
 
 #multi_compile PASS_PREFILTER PASS_DISKBLUR PASS_UPSAMPLE
 
 PK_DECLARE_SET_PASS uniform sampler2D _MainTex; // Screen Color full res.
 layout(rgba16f, set = PK_SET_PASS) uniform image2D _DestinationTex; // Screen color full res.
 
-PK_DECLARE_SET_SHADER uniform sampler2DArray pk_DoFTargetRead;
-layout(rgba16f, set = PK_SET_SHADER) uniform image2DArray pk_DoFTargetWrite;
+PK_DECLARE_SET_SHADER uniform sampler2DArray pk_DoFColorRead;
+PK_DECLARE_SET_SHADER uniform sampler2DArray pk_DoFAlphaRead;
+layout(r32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_DoFColorWrite;
+layout(r16f, set = PK_SET_SHADER) uniform image2DArray pk_DoFAlphaWrite;
 
-layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
+layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
     const float2 texelSize = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
@@ -35,56 +38,62 @@ void main()
     average.g = dot(textureGatherOffsets(_MainTex, uv, offsets, 1), weights);
     average.b = dot(textureGatherOffsets(_MainTex, uv, offsets, 2), weights);
     average /= dot(weights, 1.0f.xxxx);
-    imageStore(pk_DoFTargetWrite, int3(coord, 2), float4(average, dot(cocs, 0.25f.xxxx)));
+    imageStore(pk_DoFColorWrite, int3(coord, 0), EncodeE5BGR9(average).xxxx);
+    imageStore(pk_DoFAlphaWrite, int3(coord, 0), dot(cocs, 0.25f.xxxx).xxxx);
 
 #elif defined(PASS_DISKBLUR)
 
     const half margin = 2.0hf * half(texelSize.y);
     const float aspect = texelSize.x / texelSize.y;
-    const half4 center = half4(tex2D(pk_DoFTargetRead, float3(uv, 2)));
+    const half centerCoC = half(tex2D(pk_DoFAlphaRead, float3(uv, 0)).r);
+
+    const half3 center = half3(tex2D(pk_DoFColorRead, float3(uv, 0)).rgb);
+    background = half4(center, 1.0hf) * clamp((max(0.0hf, centerCoC) + margin) / margin, 0.0hf, 1.0hf);
+    foreground = half4(center, 1.0hf) * clamp((-centerCoC + margin) / margin, 0.0hf, 1.0hf);
 
     #define SAMPLE_COUNT 22u
 
-    for (uint i = 0; i < SAMPLE_COUNT; ++i)
+    for (uint j = 1; j <= 2; ++j)
     {
-        const half2 offset = half2(PK_BOKEH_DISK_22[i] * pk_MaximumCoC);
-        const half  dist = length(offset) - margin;
-        
-        const half4 value = half4(tex2D(pk_DoFTargetRead, float3(uv + float2(offset.x * aspect, offset.y), 2)));
-        const half  bgcoc = max(min(center.a, value.a), 0.0hf);
+        const uint k = j * 7;
 
-        background += half4(value.rgb, 1.0hf) * clamp(( bgcoc - dist) / margin, 0.0hf, 1.0hf);
-        foreground += half4(value.rgb, 1.0hf) * clamp((-value.a - dist) / margin, 0.0hf, 1.0hf);
+        for (uint i = 0u; i < k; ++i)
+        {
+            const half phi = half(i) * 0.89759790102hf / half(j); // 2 * PI * (i / float(k))
+            const half radius = (half(j) + 0.14285714285hf) * 0.46666666666hf; // (RING + (1.0f / RING_POINTS)) / (RINGS + (1.0f / RING_POINTS))
+            const half2 offset = half2(cos(phi), sin(phi)) * radius * half(pk_MaximumCoC);
+
+            const half dist = length(offset) - margin;
+            const float3 uvw = float3(uv + float2(offset.x * aspect, offset.y), 0);
+            
+            const half3 color = half3(tex2D(pk_DoFColorRead, uvw).rgb);
+            const half coc = half(tex2D(pk_DoFAlphaRead, uvw).r);
+            const half bgcoc = max(min(centerCoC, coc), 0.0hf);
+
+            background += half4(color, 1.0hf) * clamp(( bgcoc - dist) / margin, 0.0hf, 1.0hf);
+            foreground += half4(color, 1.0hf) * clamp((-coc - dist) / margin, 0.0hf, 1.0hf);
+        }
     }
 
     background.rgb /= background.a + (background.a < 1e-4hf ? 1.0hf : 0.0hf);
     foreground.rgb /= foreground.a + (foreground.a < 1e-4hf ? 1.0hf : 0.0hf);
     foreground.a = clamp(foreground.a * half(PK_PI / SAMPLE_COUNT), 0.0hf, 1.0hf);
-    imageStore(pk_DoFTargetWrite, int3(coord, 0), foreground);
-    imageStore(pk_DoFTargetWrite, int3(coord, 1), background);
+
+    imageStore(pk_DoFColorWrite, int3(coord, 1), EncodeE5BGR9(foreground.rgb).xxxx);
+    imageStore(pk_DoFColorWrite, int3(coord, 2), EncodeE5BGR9(background.rgb).xxxx);
+    imageStore(pk_DoFAlphaWrite, int3(coord, 1), foreground.aaaa);
 
 #else
 
     const float viewDepth = SampleViewDepth(coord);
     const float coc = GetCircleOfConfusion(viewDepth);
-
-    #if 1
-    // Upsample tent filter;
     const float4 o = uv.xyxy + texelSize.xyxy * float2(-1.0f, 1.0f).xxyy;
-    foreground += half4(tex2D(pk_DoFTargetRead, float3(o.xy, 0)));
-    foreground += half4(tex2D(pk_DoFTargetRead, float3(o.zy, 0)));
-    foreground += half4(tex2D(pk_DoFTargetRead, float3(o.xw, 0)));
-    foreground += half4(tex2D(pk_DoFTargetRead, float3(o.zw, 0)));
-    background += half4(tex2D(pk_DoFTargetRead, float3(o.xy, 1)));
-    background += half4(tex2D(pk_DoFTargetRead, float3(o.zy, 1)));
-    background += half4(tex2D(pk_DoFTargetRead, float3(o.xw, 1)));
-    background += half4(tex2D(pk_DoFTargetRead, float3(o.zw, 1)));
-    foreground *= 0.25hf;
-    background *= 0.25hf;
-    #else
-    foreground = half4(tex2D(pk_DoFTargetRead, float3(uv, 0)));
-    background = half4(tex2D(pk_DoFTargetRead, float3(uv, 1)));
-    #endif
+
+    foreground.a += half(tex2D(pk_DoFAlphaRead, float3(o.xy, 1)).r);
+    foreground.a += half(tex2D(pk_DoFAlphaRead, float3(o.zy, 1)).r);
+    foreground.a += half(tex2D(pk_DoFAlphaRead, float3(o.xw, 1)).r);
+    foreground.a += half(tex2D(pk_DoFAlphaRead, float3(o.zw, 1)).r);
+    foreground.a *= 0.25hf;
     background.a = half(smoothstep(texelSize.y * 2.0f, texelSize.y * 4.0f, coc));
 
     const half alpha = (1.0hf - foreground.a) * (1.0hf - background.a);
@@ -95,6 +104,18 @@ void main()
     [[branch]]
     if (threadCount > 0u)
     {
+        foreground.rgb += half3(tex2D(pk_DoFColorRead, float3(o.xy, 1)).rgb);
+        foreground.rgb += half3(tex2D(pk_DoFColorRead, float3(o.zy, 1)).rgb);
+        foreground.rgb += half3(tex2D(pk_DoFColorRead, float3(o.xw, 1)).rgb);
+        foreground.rgb += half3(tex2D(pk_DoFColorRead, float3(o.zw, 1)).rgb);
+        foreground.rgb *= 0.25hf;
+
+        background.rgb += half3(tex2D(pk_DoFColorRead, float3(o.xy, 2)).rgb);
+        background.rgb += half3(tex2D(pk_DoFColorRead, float3(o.zy, 2)).rgb);
+        background.rgb += half3(tex2D(pk_DoFColorRead, float3(o.xw, 2)).rgb);
+        background.rgb += half3(tex2D(pk_DoFColorRead, float3(o.zw, 2)).rgb);
+        background.rgb *= 0.25hf;
+
         const half3 dof = lerp(background.rgb * background.a, foreground.rgb, foreground.a);
         const half3 scene = half3(imageLoad(_DestinationTex, coord).rgb);
         imageStore(_DestinationTex, coord, half4(scene * alpha + dof, 1.0hf));

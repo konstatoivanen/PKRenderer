@@ -133,8 +133,10 @@ namespace PK::Rendering
         DECLARE_HASH(pk_MaximumCoC)
         DECLARE_HASH(pk_DofParams)
         DECLARE_HASH(pk_AutoFocusParams)
-        DECLARE_HASH(pk_DoFTargetRead)
-        DECLARE_HASH(pk_DoFTargetWrite)
+        DECLARE_HASH(pk_DoFColorRead)
+        DECLARE_HASH(pk_DoFColorWrite)
+        DECLARE_HASH(pk_DoFAlphaRead)
+        DECLARE_HASH(pk_DoFAlphaWrite)
 
 
         DECLARE_HASH(pk_Fog_Albedo)

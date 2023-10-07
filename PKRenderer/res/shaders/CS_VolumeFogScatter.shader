@@ -26,7 +26,7 @@ void main()
         accum_irradiance += integral * accum_transmittance;
         accum_transmittance *= transmittance;
         
-        imageStore(pk_Fog_Scatter, pos, uint4(EncodeE5BGR9(accum_irradiance)));
+        imageStore(pk_Fog_Scatter, pos, EncodeE5BGR9(accum_irradiance).xxxx);
         imageStore(pk_Fog_Transmittance, pos, float4(accum_transmittance, 1.0f));
 
         // Copy previous values for reprojection

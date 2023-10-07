@@ -184,13 +184,13 @@ float3 GI_Load_Resolved_Spec(const float2 uv) { return texelFetch(pk_GI_Resolved
 void GI_Store_Resolved_Diff(const int2 coord, const float3 N, const GIDiff diff)
 {
     const float3 radiance = SH_ToIrradiance(diff.sh, N, pk_GI_ChromaBias) * pow(diff.ao, PK_GI_AO_DIFF_POWER);
-    imageStore(pk_GI_ResolvedWrite, int3(coord, 0), uint4(EncodeE5BGR9(radiance)));
+    imageStore(pk_GI_ResolvedWrite, int3(coord, 0), EncodeE5BGR9(radiance).xxxx);
 }
 
 void GI_Store_Resolved_Spec(const int2 coord, const GISpec spec)
 {
     const float3 radiance = spec.radiance * pow(spec.ao, PK_GI_AO_SPEC_POWER);
-    imageStore(pk_GI_ResolvedWrite, int3(coord, 1), uint4(EncodeE5BGR9(radiance)));
+    imageStore(pk_GI_ResolvedWrite, int3(coord, 1), EncodeE5BGR9(radiance).xxxx);
 }
 
 GIRayHits GI_Load_RayHits(const int2 coord)

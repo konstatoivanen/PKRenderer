@@ -75,5 +75,5 @@ void main()
     const float3 value_pre = ReplaceIfResized(SAMPLE_TRICUBIC(pk_Fog_InjectRead, uvw_prev).rgb, 0.0f.xxx);
     float3 value_out = lerp(value_pre, value_cur, accumulation);
     value_out = Any_IsNaN(value_out) ? 0.0f.xxx : value_out;
-    imageStore(pk_Fog_Inject, int3(id), uint4(EncodeE5BGR9(value_out)));
+    imageStore(pk_Fog_Inject, int3(id), EncodeE5BGR9(value_out).xxxx);
 }

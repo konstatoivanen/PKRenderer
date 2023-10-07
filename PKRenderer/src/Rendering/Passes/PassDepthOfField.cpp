@@ -25,14 +25,19 @@ namespace PK::Rendering::Passes
 
         TextureDescriptor descriptor{};
         descriptor.samplerType = SamplerType::Sampler2DArray;
-        descriptor.format = TextureFormat::RGBA16F;
+        descriptor.format = TextureFormat::RGB9E5;
         descriptor.resolution.x = config->InitialWidth / 2;
         descriptor.resolution.y = config->InitialHeight / 2;
         descriptor.layers = 3;
-        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
+        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::Aliased;
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
-        m_renderTarget = Texture::Create(descriptor, "DepthOfField.Texture");
+        m_colorTarget = Texture::Create(descriptor, "DepthOfField.Target.Color");
+
+        descriptor.format = TextureFormat::R16F;
+        descriptor.layers = 2;
+        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
+        m_alphaTarget = Texture::Create(descriptor, "DepthOfField.Target.Alpha");
 
         m_autoFocusParams = Buffer::Create(ElementType::Float2, 1, BufferUsage::DefaultStorage, "DepthOfField.AutoFocus.Parameters");
         GraphicsAPI::SetBuffer(HashCache::Get()->pk_AutoFocusParams, m_autoFocusParams.get());
@@ -49,19 +54,24 @@ namespace PK::Rendering::Passes
     {
         cmd->BeginDebugScope("DepthOfField", Math::PK_COLOR_MAGENTA);
 
-        auto renderTarget = m_renderTarget.get();
+        auto colorTarget = m_colorTarget.get();
+        auto alphaTarget = m_colorTarget.get();
+
         auto source = destination->GetColor(0);
         auto fullres = destination->GetResolution();
         auto quarterres = Math::uint3(fullres.x / 2, fullres.y / 2, 1u);
 
-        m_renderTarget->Validate(quarterres);
+        m_colorTarget->Validate(quarterres);
+        m_alphaTarget->Validate(quarterres);
 
         m_constants.pk_MaximumCoC = std::min(0.05f, 10.0f / destination->GetResolution().y);
         
         auto hash = HashCache::Get();
         GraphicsAPI::SetConstant<Constants>(hash->pk_DofParams, m_constants);
-        GraphicsAPI::SetImage(hash->pk_DoFTargetWrite, m_renderTarget.get());
-        GraphicsAPI::SetTexture(hash->pk_DoFTargetRead, m_renderTarget.get());
+        GraphicsAPI::SetImage(hash->pk_DoFColorWrite, m_colorTarget.get());
+        GraphicsAPI::SetImage(hash->pk_DoFAlphaWrite, m_alphaTarget.get());
+        GraphicsAPI::SetTexture(hash->pk_DoFColorRead, m_colorTarget.get());
+        GraphicsAPI::SetTexture(hash->pk_DoFAlphaRead, m_alphaTarget.get());
         GraphicsAPI::SetImage(hash->_DestinationTex, source);
         GraphicsAPI::SetTexture(hash->_MainTex, source);
         

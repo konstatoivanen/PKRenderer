@@ -19,5 +19,5 @@ void main()
     const float value_out = lerp(value_pre, value_cur, accumulation);
 
     imageStore(pk_Fog_Density, pos, isnan(value_out) ? 0.0f.xxxx : value_out.xxxx);
-    imageStore(pk_Fog_Inject, pos, uint4(EncodeE5BGR9(texelFetch(pk_Fog_InjectRead, pos, 0).rgb)));
+    imageStore(pk_Fog_Inject, pos, EncodeE5BGR9(texelFetch(pk_Fog_InjectRead, pos, 0).rgb).xxxx);
 }

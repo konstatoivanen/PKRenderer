@@ -27,7 +27,8 @@ namespace PK::Rendering::Passes
         private:
             Objects::Shader* m_computeDepthOfField = nullptr;
             Objects::Shader* m_computeAutoFocus = nullptr;
-            Utilities::Ref<Objects::Texture> m_renderTarget;
+            Utilities::Ref<Objects::Texture> m_colorTarget;
+            Utilities::Ref<Objects::Texture> m_alphaTarget;
             Utilities::Ref<Objects::Buffer> m_autoFocusParams;
             uint32_t m_passPrefilter = 0u;
             uint32_t m_passDiskblur = 0u;
