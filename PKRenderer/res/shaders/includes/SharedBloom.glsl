@@ -2,27 +2,30 @@
 #include SharedPostEffects.glsl
 
 PK_DECLARE_SET_PASS uniform sampler2D pk_BloomTexture;
-PK_DECLARE_SET_PASS uniform sampler2D pk_BloomTexture1;
 PK_DECLARE_SET_PASS uniform sampler2D pk_BloomLensDirtTex;
 
 float3 Bloom(float3 color, float2 uv)
 {
-	const float3 lensdirt = tex2D(pk_BloomLensDirtTex, uv).rrr;
-	const float3 b0 = tex2DLod(pk_BloomTexture, uv, 0.0f).rgb;
-	const float3 b1 = tex2DLod(pk_BloomTexture1, uv, 1.0f).rgb;
-	const float3 b2 = tex2DLod(pk_BloomTexture, uv, 2.0f).rgb;
-	const float3 b3 = tex2DLod(pk_BloomTexture1, uv, 3.0f).rgb;
-	const float3 b4 = tex2DLod(pk_BloomTexture, uv, 4.0f).rgb;
-	const float3 b5 = tex2DLod(pk_BloomTexture1, uv, 5.0f).rgb;
+	const float2 tx = 1.0f / textureSize(pk_BloomTexture, 0).xy;
 
-	float3 bloom = b0 * 0.5f + b1 * 0.6f + b2 * 0.6f + b3 * 0.45f + b4 * 0.35f + b5 * 0.23f;
-	float3 bloomLens = b0 * 1.0f + b1 * 0.8f + b2 * 0.6f + b3 * 0.45f + b4 * 0.35f + b5 * 0.23f;
-	
-	bloom /= 2.2f;
-	bloomLens /= 3.2f;
-	
+	float3 bloom = 0.0f.xxx;
+	bloom += tex2D(pk_BloomTexture, uv + (float2(0, 0) - 0.5f.xx) * tx).rgb;
+	bloom += tex2D(pk_BloomTexture, uv + (float2(0, 1) - 0.5f.xx) * tx).rgb;
+	bloom += tex2D(pk_BloomTexture, uv + (float2(1, 1) - 0.5f.xx) * tx).rgb;
+	bloom += tex2D(pk_BloomTexture, uv + (float2(1, 0) - 0.5f.xx) * tx).rgb;
+	bloom *= 0.25f;
+
+	float3 bloomLens = 0.0f.xxx;
+	bloomLens += tex2DLod(pk_BloomTexture, uv + (float2(0, 0) - 0.5f.xx) * tx * 4.0f, 3).rgb;
+	bloomLens += tex2DLod(pk_BloomTexture, uv + (float2(0, 1) - 0.5f.xx) * tx * 4.0f, 3).rgb;
+	bloomLens += tex2DLod(pk_BloomTexture, uv + (float2(1, 1) - 0.5f.xx) * tx * 4.0f, 3).rgb;
+	bloomLens += tex2DLod(pk_BloomTexture, uv + (float2(1, 0) - 0.5f.xx) * tx * 4.0f, 3).rgb;
+	bloomLens *= 0.25f;
+
+	const float lensdirt = tex2D(pk_BloomLensDirtTex, uv).r;
+
 	color = lerp(color, bloom, pk_BloomIntensity.xxx);
-	color = lerp(color, bloomLens, saturate(lensdirt * pk_BloomDirtIntensity));
+	color = lerp(color, bloomLens * 0.333f, lensdirt * pk_BloomDirtIntensity.xxx);
 
 	return color;
 }

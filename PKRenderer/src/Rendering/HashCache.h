@@ -19,7 +19,7 @@ namespace PK::Rendering
         DECLARE_HASH(_DestinationMip2)
         DECLARE_HASH(_DestinationMip3)
         DECLARE_HASH(_DestinationMip4)
-        DECLARE_HASH(_BlurOffset)
+        DECLARE_HASH(_Multiplier)
         DECLARE_HASH(_Color)
         DECLARE_HASH(_ColorVoxelize)
         DECLARE_HASH(pk_Time)
@@ -103,7 +103,6 @@ namespace PK::Rendering
         DECLARE_HASH(pk_BloomIntensity)
         DECLARE_HASH(pk_BloomDirtIntensity)
         DECLARE_HASH(pk_BloomTexture)
-        DECLARE_HASH(pk_BloomTexture1)
 
         DECLARE_HASH(pk_Vibrance)
         DECLARE_HASH(pk_VignetteGrain)

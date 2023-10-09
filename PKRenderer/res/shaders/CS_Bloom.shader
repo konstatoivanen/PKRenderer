@@ -1,72 +1,84 @@
 #version 450
-#multi_compile PASS_DOWNSAMPLE PASS_BLUR
-
 #pragma PROGRAM_COMPUTE
 #include includes/Utilities.glsl
+#include includes/Constants.glsl
 #include includes/Encoding.glsl
 
-#if defined(PASS_BLUR)
-PK_DECLARE_LOCAL_CBUFFER(_BlurOffset)
+#multi_compile PASS_DOWNSAMPLE0 PASS_DOWNSAMPLE1 PASS_UPSAMPLE
+
+#if defined(PASS_UPSAMPLE)
+PK_DECLARE_LOCAL_CBUFFER(_Multiplier)
 {
-    float2 blurOffset;
+    float multiplier;
 };
 #endif
-
-const float sample_weights[17] =
-{
-    0.0006428483,
-    0.002363721,
-    0.007306095,
-    0.0189835,
-    0.04146377,
-    0.07613125,
-    0.1175057,
-    0.1524602,
-    0.1662859,
-    0.1524602,
-    0.1175057,
-    0.07613125,
-    0.04146377,
-    0.0189835,
-    0.007306095,
-    0.002363721,
-    0.0006428483,
-};
 
 PK_DECLARE_SET_DRAW uniform sampler2D _SourceTex;
 layout(r32ui, set = PK_SET_DRAW) uniform uimage2D _DestinationTex;
 
-layout(local_size_x = 16, local_size_y = 4, local_size_z = 1) in;
+//Source: http://advances.realtimerendering.com/s2014/sledgehammer/Next-Generation-Post-Processing-in-Call-of-Duty-Advanced-Warfare-v17.pptx (page 139)
+
+layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void main()
 {
-    int2 coord = int2(gl_GlobalInvocationID.xy);
-    int2 size = imageSize(_DestinationTex).xy;
+    const int2 coord = int2(gl_GlobalInvocationID.xy);
+    const float2 tx_dst = 1.0f.xx / imageSize(_DestinationTex).xy;
+    const float2 tx_src = 1.0f.xx / textureSize(_SourceTex, 0).xy;
+    const float2 uv = float2(coord + 0.5f.xx) * tx_dst;
+    
+    float4 color = 0.0f.xxxx;
 
-    if (Any_GEqual(coord, size))
-    {
-        return;
-    }
+#if defined(PASS_DOWNSAMPLE0)
+    
+    const float4 uvs = uv.xyxy + float4(0.5f.xx, -0.5f.xx) * tx_dst.xyxy;
 
-    float2 uv = float2(coord + 0.5f.xx) / float2(size);
-    float2 texel = 1.0f.xx / textureSize(_SourceTex, 0).xy;
-    float3 color = 0.0f.xxx;
+    // Karis filter first mip
+    float3 bisample = 0.0f.xxx;
+    bisample = tex2D(_SourceTex, uvs.zw).rgb;
+    color += float4(bisample, 1.0f) / (1.0f + dot(bisample, pk_Luminance.rgb));
+    bisample = tex2D(_SourceTex, uvs.xw).rgb;
+    color += float4(bisample, 1.0f) / (1.0f + dot(bisample, pk_Luminance.rgb));
+    bisample = tex2D(_SourceTex, uvs.zy).rgb;
+    color += float4(bisample, 1.0f) / (1.0f + dot(bisample, pk_Luminance.rgb));
+    bisample = tex2D(_SourceTex, uvs.xy).rgb;
+    color += float4(bisample, 1.0f) / (1.0f + dot(bisample, pk_Luminance.rgb));
+    color /= color.w;
+    color.rgb = -min(-color.rgb, 0.0f.xxx);
 
-#if defined(PASS_DOWNSAMPLE)
-    color += tex2D(_SourceTex, uv + 0.5f * texel).rgb;
-    color += tex2D(_SourceTex, uv - 0.5f * texel).rgb;
-    color += tex2D(_SourceTex, uv + float2(0.5f, -0.5f) * texel).rgb;
-    color += tex2D(_SourceTex, uv - float2(0.5f, -0.5f) * texel).rgb;
-    color = max(color / 4.0f, 0.0f.xxx);
-#else
-    float2 offs = blurOffset * texel;
-    float2 coords = uv - offs * 8.0f;
+#elif defined(PASS_DOWNSAMPLE1)
 
-    for (uint i = 0u; i < 17; ++i)
-    {
-        color += tex2D(_SourceTex, coords + offs * i).rgb * sample_weights[i].xxx;
-    }
+    color.rgb += tex2D(_SourceTex, uv + float2( 2, -2) * tx_src).rgb * 0.125f;
+    color.rgb += tex2D(_SourceTex, uv + float2(-2, -2) * tx_src).rgb * 0.125f;
+    color.rgb += tex2D(_SourceTex, uv + float2( 0, -2) * tx_src).rgb * 0.25f;
+                                                       
+    color.rgb += tex2D(_SourceTex, uv + float2(-1, -1) * tx_src).rgb * 0.5f;    
+    color.rgb += tex2D(_SourceTex, uv + float2( 1, -1) * tx_src).rgb * 0.5f;
+
+    color.rgb += tex2D(_SourceTex, uv + float2(-2,  0) * tx_src).rgb * 0.25f;
+    color.rgb += tex2D(_SourceTex, uv + float2( 0,  0) * tx_src).rgb * 0.5f;
+    color.rgb += tex2D(_SourceTex, uv + float2( 2,  0) * tx_src).rgb * 0.25f;
+                                                      
+    color.rgb += tex2D(_SourceTex, uv + float2(-1,  1) * tx_src).rgb * 0.5f;
+    color.rgb += tex2D(_SourceTex, uv + float2( 1,  1) * tx_src).rgb * 0.5f;
+                                                      
+    color.rgb += tex2D(_SourceTex, uv + float2(-1,  2) * tx_src).rgb * 0.125f;
+    color.rgb += tex2D(_SourceTex, uv + float2( 0,  2) * tx_src).rgb * 0.25f;
+    color.rgb += tex2D(_SourceTex, uv + float2( 2,  2) * tx_src).rgb * 0.125f;
+
+    color.rgb *= 0.25f;
+
+#else // defined(PASS_UPSAMPLE)
+
+    const float4 uvs = uv.xyxy + float4(0.5f.xx, -0.5f.xx) * tx_src.xyxy;
+    color.rgb += tex2D(_SourceTex, uvs.zw).rgb;
+    color.rgb += tex2D(_SourceTex, uvs.zy).rgb;
+    color.rgb += tex2D(_SourceTex, uvs.xy).rgb;
+    color.rgb += tex2D(_SourceTex, uvs.xw).rgb;
+    color.rgb *= 0.25f;
+    color.rgb += DecodeE5BGR9(imageLoad(_DestinationTex, coord).r);
+    color.rgb *= multiplier;
 
 #endif
 
-    imageStore(_DestinationTex, coord, uint4(EncodeE5BGR9(color)));
+    imageStore(_DestinationTex, coord, uint4(EncodeE5BGR9(color.rgb)));
 }

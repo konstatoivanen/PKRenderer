@@ -16,7 +16,7 @@ namespace PK::Rendering::Passes
         descriptor.samplerType = SamplerType::Sampler2D;
         descriptor.usage = TextureUsage::DefaultStorage | TextureUsage::Aliased;
         descriptor.format = TextureFormat::RGB9E5;
-        descriptor.layers = 2;
+        descriptor.layers = 1;
         descriptor.levels = 6;
         descriptor.resolution = { initialWidth / 2u, initialHeight / 2u, 1u };
         descriptor.sampler.filterMin = FilterMode::Trilinear;
@@ -24,8 +24,9 @@ namespace PK::Rendering::Passes
 
         m_bloomTexture = Texture::Create(descriptor, "Bloom.Texture");
         m_computeBloom = assetDatabase->Find<Shader>("CS_Bloom");
-        m_passPrefilter = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_DOWNSAMPLE"));
-        m_passDiskblur = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_BLUR"));
+        m_passDownsample0 = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_DOWNSAMPLE0"));
+        m_passDownsample = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_DOWNSAMPLE1"));
+        m_passUpsample = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_UPSAMPLE"));
     }
 
     void PassBloom::Render(Objects::CommandBuffer* cmd, RenderTexture* source)
@@ -36,42 +37,33 @@ namespace PK::Rendering::Passes
         auto bloom = m_bloomTexture.get();
 
         auto res = source->GetResolution();
-        res.x /= 2;
-        res.y /= 2;
+        res.x >>= 1u;
+        res.y >>= 1u;
 
         bloom->Validate(res);
 
         auto hash = HashCache::Get();
-        auto ls = 0u;
-        auto ld = 1u;
 
-        for (auto i = 0u; i < 6u; ++i)
+        GraphicsAPI::SetTexture(hash->_SourceTex, color, 0, 0);
+        GraphicsAPI::SetImage(hash->_DestinationTex, bloom, 0, 0);
+        cmd->Dispatch(m_computeBloom, m_passDownsample0, { res.x, res.y, 1u });
+
+        for (auto i = 1u; i < 6u; ++i)
         {
-            uint3 dimension = { (res.x >> i), (res.y >> i), 1 };
-
-            GraphicsAPI::SetTexture(hash->_SourceTex, i == 0 ? color : bloom, i == 0 ? 0 : i - 1u, ls);
-            GraphicsAPI::SetImage(hash->_DestinationTex, bloom, i, ld);
-            cmd->Dispatch(m_computeBloom, m_passPrefilter, dimension);
-            ls ^= 1u;
-            ld ^= 1u;
-
-            GraphicsAPI::SetTexture(hash->_SourceTex, bloom, i, ls);
-            GraphicsAPI::SetImage(hash->_DestinationTex, bloom, i, ld);
-            GraphicsAPI::SetConstant<float2>(hash->_BlurOffset, { 1.0f, 0.0f });
-            cmd->Dispatch(m_computeBloom, m_passDiskblur, dimension);
-            ls ^= 1u;
-            ld ^= 1u;
-
-            GraphicsAPI::SetTexture(hash->_SourceTex, bloom, i, ls);
-            GraphicsAPI::SetImage(hash->_DestinationTex, bloom, i, ld);
-            GraphicsAPI::SetConstant<float2>(hash->_BlurOffset, { 0.0f, 1.0f });
-            cmd->Dispatch(m_computeBloom, m_passDiskblur, dimension);
-            ls ^= 1u;
-            ld ^= 1u;
+            GraphicsAPI::SetTexture(hash->_SourceTex, bloom, i - 1u, 0);
+            GraphicsAPI::SetImage(hash->_DestinationTex, bloom, i, 0);
+            cmd->Dispatch(m_computeBloom, m_passDownsample, { res.x >> i, res.y >> i, 1u });
         }
 
-        GraphicsAPI::SetTexture(hash->pk_BloomTexture, bloom, { 0, 1, 6, 1 });
-        GraphicsAPI::SetTexture(hash->pk_BloomTexture1, bloom, { 0, 0, 6, 1 });
+        for (auto i = 4; i >= 0; --i)
+        {
+            GraphicsAPI::SetTexture(hash->_SourceTex, bloom, i + 1u, 0u);
+            GraphicsAPI::SetImage(hash->_DestinationTex, bloom, i, 0u);
+            GraphicsAPI::SetConstant<float>(hash->_Multiplier, i == 0 ? 1.0f / 5.0f : 1.0f);
+            cmd->Dispatch(m_computeBloom, m_passUpsample, { res.x >> i, res.y >> i, 1u });
+        }
+
+        GraphicsAPI::SetTexture(hash->pk_BloomTexture, bloom);
 
         cmd->EndDebugScope();
     }

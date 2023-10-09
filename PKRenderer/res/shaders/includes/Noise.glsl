@@ -61,7 +61,7 @@ float NoiseUniformToTriangle(float n)
 {
 	const float o = n * 2.0 - 1.0;
     n = max(-1.0f, o * inversesqrt(abs(o))) - sign(o) + 0.5f;
-	return (n / 1.5f) + 0.5f;
+	return (n / 3.0f) + 0.5f;
 }
 
 float NoiseTriangle(const float3 n)

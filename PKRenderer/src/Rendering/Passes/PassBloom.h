@@ -17,7 +17,8 @@ namespace PK::Rendering::Passes
         private:
             Objects::Shader* m_computeBloom = nullptr;
             Utilities::Ref<Objects::Texture> m_bloomTexture;
-            uint32_t m_passPrefilter = 0;
-            uint32_t m_passDiskblur = 0;
+            uint32_t m_passDownsample0 = 0;
+            uint32_t m_passDownsample = 0;
+            uint32_t m_passUpsample = 0;
     };
 }
