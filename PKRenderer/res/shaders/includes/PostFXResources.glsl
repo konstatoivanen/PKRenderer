@@ -3,9 +3,6 @@
 
 PK_DECLARE_CBUFFER(pk_PostEffectsParams, PK_SET_PASS)
 {
-    float4 pk_Bloom_Intensity;
-    float4 pk_Bloom_DirtIntensity;
-
     float4 pk_CC_WhiteBalance;
 	float4 pk_CC_Lift;
 	float4 pk_CC_Gamma;
@@ -31,6 +28,9 @@ PK_DECLARE_CBUFFER(pk_PostEffectsParams, PK_SET_PASS)
     float pk_AutoExposure_LogLumaRange;
     float pk_AutoExposure_Target;
     float pk_AutoExposure_Speed;
+
+    float pk_Bloom_Intensity;
+    float pk_Bloom_DirtIntensity;
 
     float pk_TAA_Sharpness;
     float pk_TAA_BlendingStatic;

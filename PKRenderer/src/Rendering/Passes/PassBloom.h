@@ -19,6 +19,7 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Texture> m_bloomTexture;
             uint32_t m_passDownsample0 = 0;
             uint32_t m_passDownsample = 0;
+            uint32_t m_passSeparableBlur = 0;
             uint32_t m_passUpsample = 0;
     };
 }

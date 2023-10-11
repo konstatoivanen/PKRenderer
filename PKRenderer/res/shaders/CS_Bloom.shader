@@ -6,18 +6,10 @@
 
 #multi_compile PASS_DOWNSAMPLE0 PASS_DOWNSAMPLE1 PASS_UPSAMPLE
 
-#if defined(PASS_UPSAMPLE)
-PK_DECLARE_LOCAL_CBUFFER(_Multiplier)
-{
-    float multiplier;
-};
-#endif
-
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture;
 layout(r32ui, set = PK_SET_DRAW) uniform uimage2D pk_Image;
 
 //Source: http://advances.realtimerendering.com/s2014/sledgehammer/Next-Generation-Post-Processing-in-Call-of-Duty-Advanced-Warfare-v17.pptx (page 139)
-
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void main()
 {
@@ -67,7 +59,7 @@ void main()
 
     color.rgb *= 0.25f;
 
-#else // defined(PASS_UPSAMPLE)
+#else // defined(PASS_UPSAMPLE) 
 
     const float4 uvs = uv.xyxy + float4(0.5f.xx, -0.5f.xx) * tx_src.xyxy;
     color.rgb += tex2D(pk_Texture, uvs.zw).rgb;

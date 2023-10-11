@@ -19,7 +19,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_Image3)
         DECLARE_HASH(pk_Image4)
 
-        DECLARE_HASH(_Multiplier)
+        DECLARE_HASH(_Offset)
         DECLARE_HASH(_Color)
         DECLARE_HASH(_ColorVoxelize)
 

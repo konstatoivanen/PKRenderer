@@ -76,8 +76,8 @@ namespace PK::Core
         DECLARE_VALUE(Math::uint, CC_ChannelMixerGreen, 0x00FF00FF)
         DECLARE_VALUE(Math::uint, CC_ChannelMixerBlue, 0x0000FFFF)
 
-        DECLARE_VALUE(Math::float4, BloomIntensity, Math::PK_FLOAT4_ZERO)
-        DECLARE_VALUE(Math::float4, BloomLensDirtIntensity, Math::PK_FLOAT4_ZERO)
+        DECLARE_VALUE(float, BloomIntensity, 0.0f)
+        DECLARE_VALUE(float, BloomLensDirtIntensity, 0.0f)
         DECLARE_VALUE(std::string, FileBloomDirt, "T_Bloom_LensDirt")
 
         DECLARE_VALUE(float, TAASharpness, 0.5f)

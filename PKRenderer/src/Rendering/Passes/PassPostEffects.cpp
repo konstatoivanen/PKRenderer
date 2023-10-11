@@ -20,9 +20,6 @@ namespace PK::Rendering::Passes
 
         m_constantsPostProcess = CreateRef<ConstantBuffer>(BufferLayout(
             {
-                {ElementType::Float4, hash->pk_Bloom_Intensity },
-                {ElementType::Float4, hash->pk_Bloom_DirtIntensity },
-
                 {ElementType::Float4, hash->pk_CC_WhiteBalance },
                 {ElementType::Float4, hash->pk_CC_Lift },
                 {ElementType::Float4, hash->pk_CC_Gamma },
@@ -49,6 +46,9 @@ namespace PK::Rendering::Passes
                 {ElementType::Float, hash->pk_AutoExposure_LogLumaRange },
                 {ElementType::Float, hash->pk_AutoExposure_Target },
                 {ElementType::Float, hash->pk_AutoExposure_Speed },
+
+                {ElementType::Float, hash->pk_Bloom_Intensity },
+                {ElementType::Float, hash->pk_Bloom_DirtIntensity },
 
                 {ElementType::Float, hash->pk_TAA_Sharpness },
                 {ElementType::Float, hash->pk_TAA_BlendingStatic },
@@ -91,8 +91,8 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetTexture(hash->pk_Bloom_LensDirtTex, m_bloomLensDirtTexture);
         GraphicsAPI::SetTexture(hash->pk_CC_LutTex, m_lut);
 
-        m_constantsPostProcess->Set<float4>(hash->pk_Bloom_Intensity, glm::exp(float4(config->BloomIntensity)) - 1.0f);
-        m_constantsPostProcess->Set<float4>(hash->pk_Bloom_DirtIntensity, glm::exp(float4(config->BloomLensDirtIntensity)) - 1.0f);
+        m_constantsPostProcess->Set<float>(hash->pk_Bloom_Intensity, glm::exp(config->BloomIntensity) - 1.0f);
+        m_constantsPostProcess->Set<float>(hash->pk_Bloom_DirtIntensity, glm::exp(config->BloomLensDirtIntensity) - 1.0f);
 
         m_constantsPostProcess->Set<float>(hash->pk_AutoExposure_MinLogLuma, config->AutoExposureLuminanceMin);
         m_constantsPostProcess->Set<float>(hash->pk_AutoExposure_InvLogLumaRange, 1.0f / config->AutoExposureLuminanceRange);
