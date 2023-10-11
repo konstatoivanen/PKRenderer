@@ -954,6 +954,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\textures\T_Bloom_LensDirt.ktx2" />
     <None Include="res\textures\default\T_Bluenoise256.ktx2" />
     <None Include="res\textures\default\T_LightCookies.ktx2" />
+    <None Include="res\textures\T_CC_LUT32.ktx2" />
     <None Include="res\textures\T_OEM_Desert.ktx2" />
     <None Include="res\textures\T_OEM_Mountains.ktx2" />
     <None Include="res\textures\T_OEM_Night.ktx2" />

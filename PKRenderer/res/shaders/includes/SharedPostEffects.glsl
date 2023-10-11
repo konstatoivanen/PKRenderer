@@ -26,3 +26,5 @@ PK_DECLARE_CBUFFER(pk_PostEffectsParams, PK_SET_PASS)
 	float4 pk_ChannelMixerGreen;
 	float4 pk_ChannelMixerBlue;
 };
+
+PK_DECLARE_SET_DRAW uniform sampler3D pk_ColorGradingLutTex;

@@ -117,6 +117,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_ChannelMixerBlue)
         DECLARE_HASH(pk_FilmGrainTex)
         DECLARE_HASH(pk_BloomLensDirtTex)
+        DECLARE_HASH(pk_ColorGradingLutTex)
         DECLARE_HASH(pk_PostEffectsParams)
         DECLARE_HASH(pk_Histogram)
 

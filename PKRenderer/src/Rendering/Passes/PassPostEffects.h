@@ -20,5 +20,6 @@ namespace PK::Rendering::Passes
         private:
             Objects::Shader* m_computeComposite = nullptr;
             Objects::Texture* m_bloomLensDirtTexture;
+            Objects::Texture* m_lut;
     };
 }

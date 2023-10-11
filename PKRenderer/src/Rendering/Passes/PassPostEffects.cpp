@@ -15,7 +15,18 @@ namespace PK::Rendering::Passes
     {
         m_computeComposite = assetDatabase->Find<Shader>("CS_PostEffectsComposite");
         m_bloomLensDirtTexture = assetDatabase->Load<Texture>(config->FileBloomDirt.value.c_str());
+        m_lut = assetDatabase->Load<Texture>("res/textures/T_CC_LUT32.ktx2");
+
+        auto smp = m_lut->GetSamplerDescriptor();
+        smp.wrap[0] = WrapMode::Clamp;
+        smp.wrap[1] = WrapMode::Clamp;
+        smp.wrap[2] = WrapMode::Clamp;
+        smp.filterMin = FilterMode::Trilinear;
+        smp.filterMag = FilterMode::Trilinear;
+        m_lut->SetSampler(smp);
+
         GraphicsAPI::SetTexture(HashCache::Get()->pk_BloomLensDirtTex, m_bloomLensDirtTexture);
+        GraphicsAPI::SetTexture(HashCache::Get()->pk_ColorGradingLutTex, m_lut);
     }
 
     void PassPostEffectsComposite::Render(CommandBuffer* cmd, RenderTexture* destination)

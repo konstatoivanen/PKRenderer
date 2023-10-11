@@ -78,20 +78,20 @@ namespace PK::Rendering::Objects
         ktx_size_t ktxTextureSize = ktxTex2->dataSize;
         std::vector<ImageUploadRange> ranges;
 
-        auto slices = ktxTex2->isCubemap ? ktxTex2->numFaces : descriptor.resolution.z;
+        auto faces = ktxTex2->isCubemap ? ktxTex2->numFaces : 1u;
 
         for (auto layer = 0u; layer < descriptor.layers; ++layer)
         for (auto level = 0u; level < descriptor.levels; ++level)
-        for (auto slice = 0u; slice < slices; ++slice)
+        for (auto face = 0u; face < faces; ++face)
         {
             ktx_size_t offset;
-            PK_THROW_ASSERT(ktxTexture_GetImageOffset(ktxTexture(ktxTex2), level, layer, slice, &offset) == KTX_SUCCESS, "Failed to get image buffer offset");
+            PK_THROW_ASSERT(ktxTexture_GetImageOffset(ktxTexture(ktxTex2), level, layer, face, &offset) == KTX_SUCCESS, "Failed to get image buffer offset");
 
             ranges.push_back({});
             auto& range = ranges.back();
             range.bufferOffset = (uint32_t)offset;
             range.level = level;
-            range.layer = ktxTex2->isCubemap ? ((layer * slices) + slice) : layer;
+            range.layer = ktxTex2->isCubemap ? ((layer * faces) + face) : layer;
             range.layers = 1;
             range.offset = PK::Math::PK_UINT3_ZERO;
             range.extent =

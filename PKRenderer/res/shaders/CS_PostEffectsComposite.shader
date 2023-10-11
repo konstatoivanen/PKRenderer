@@ -11,7 +11,8 @@
 #define PK_APPLY_BLOOM 1
 #define PK_APPLY_TONEMAP 1
 #define PK_APPLY_FILMGRAIN 1
-#define PK_APPLY_COLORGRADING 1
+#define PK_APPLY_COLORGRADING 0
+#define PK_APPLY_LUT_COLORGRADING 1
 
 #define PK_DEBUG_MODE_NONE 0
 #define PK_DEBUG_MODE_GI_DIFF 1
@@ -68,6 +69,10 @@ void main()
 
     #if PK_APPLY_COLORGRADING == 1
     color = ApplyColorGrading(color);
+    #endif
+
+    #if PK_APPLY_LUT_COLORGRADING == 1
+    color = ApplyLutColorGrading(color);
     #endif
 
     // Debug previews

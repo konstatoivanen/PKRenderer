@@ -2043,6 +2043,7 @@
     <None Include="res\shaders\includes\MortonOrder.glsl" />
     <None Include="res\shaders\RS_GI_ValidateReservoirs.shader" />
     <None Include="res\shaders\includes\GradientEstimation.glsl" />
+    <None Include="res\textures\T_CC_LUT32.ktx2" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
