@@ -76,7 +76,6 @@ void main()
     color.rgb += tex2D(pk_Texture, uvs.xw).rgb;
     color.rgb *= 0.25f;
     color.rgb += DecodeE5BGR9(imageLoad(pk_Image, coord).r);
-    color.rgb *= multiplier;
 
 #endif
 

@@ -87,7 +87,9 @@ void main()
 
     if (gl_GlobalInvocationID.x < size.x && gl_GlobalInvocationID.y < size.y)
     {
-        float3 hdrColor = texelFetch(pk_Texture, int2(gl_GlobalInvocationID.xy), 0).xyz;
+        // @TODO normalize this. Currently this uses bloom layer 2, due to half res perf benefits, which is is not scaled down from upsampling. manual rescale here :/
+        float3 hdrColor = texelFetch(pk_Texture, int2(gl_GlobalInvocationID.xy), 0).xyz / 6.0f;
+
         uint binIndex = HDRToHistogramBin(hdrColor);
         atomicAdd(HistogramShared[binIndex], 1);
     }
