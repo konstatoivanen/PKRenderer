@@ -1,7 +1,7 @@
 #version 460
 #extension GL_KHR_shader_subgroup_ballot : enable
 #include includes/GBuffers.glsl
-#include includes/SharedSceneGI.glsl
+#include includes/SceneGI.glsl
 #include includes/Encoding.glsl
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE
 #multi_compile _ PK_GI_SSRT_PRETRACE

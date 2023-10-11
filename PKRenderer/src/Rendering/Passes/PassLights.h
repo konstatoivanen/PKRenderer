@@ -71,7 +71,7 @@ namespace PK::Rendering::Passes
             Utilities::MemoryBlock<ECS::EntityViews::LightRenderableView*> m_lights;
             Utilities::Ref<Objects::Buffer> m_lightsBuffer;
             Utilities::Ref<Objects::Buffer> m_lightMatricesBuffer;
-            Utilities::Ref<Objects::Buffer> m_globalLightsList;
+            Utilities::Ref<Objects::Buffer> m_lightsLists;
             Utilities::Ref<Objects::Texture> m_lightTiles;      
             Utilities::Ref<Objects::Texture> m_shadowmaps;        
     };

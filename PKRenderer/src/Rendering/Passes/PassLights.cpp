@@ -140,8 +140,8 @@ namespace PK::Rendering::Passes
                                MaxLightsPerTile;
 
         m_lightMatricesBuffer = Buffer::Create(ElementType::Float4x4, 32, BufferUsage::PersistentStorage, "Lights.Matrices");
-        m_globalLightsList = Buffer::Create(ElementType::Ushort, lightIndexCount, BufferUsage::DefaultStorage, "Lights.List");
-        GraphicsAPI::SetBuffer(hash->pk_GlobalLightsList, m_globalLightsList.get());
+        m_lightsLists = Buffer::Create(ElementType::Ushort, lightIndexCount, BufferUsage::DefaultStorage, "Lights.List");
+        GraphicsAPI::SetBuffer(hash->pk_LightLists, m_lightsLists.get());
         GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
     }
 
@@ -324,7 +324,7 @@ namespace PK::Rendering::Passes
             m_batcher->Render(cmd, shadowBatch.batchGroup);
 
             GraphicsAPI::SetTexture(hash->pk_ShadowmapSource, shadow.SceneRenderTarget->GetColor(0));
-            GraphicsAPI::SetImage(hash->_DestinationTex, m_shadowmaps.get(), TextureViewRange(0, atlasIndex, 1, tileCount));
+            GraphicsAPI::SetImage(hash->pk_Image, m_shadowmaps.get(), TextureViewRange(0, atlasIndex, 1, tileCount));
             cmd->DispatchWithCounter(m_shadowmapBlur, shadow.BlurPass0, { m_shadowmapTileSize, m_shadowmapTileSize, tileCount });
 
             cmd->EndDebugScope();
@@ -346,9 +346,9 @@ namespace PK::Rendering::Passes
                                resolution.z *
                                MaxLightsPerTile;
 
-        if (m_globalLightsList->Validate(lightIndexCount))
+        if (m_lightsLists->Validate(lightIndexCount))
         {
-            GraphicsAPI::SetBuffer(hash->pk_GlobalLightsList, m_globalLightsList.get());
+            GraphicsAPI::SetBuffer(hash->pk_LightLists, m_lightsLists.get());
         }
 
         if (m_lightTiles->Validate(resolution))

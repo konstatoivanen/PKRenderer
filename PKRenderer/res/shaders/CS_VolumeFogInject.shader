@@ -1,7 +1,7 @@
 #version 460
 #pragma PROGRAM_COMPUTE
-#include includes/SharedVolumeFog.glsl
-#include includes/SharedSceneGI.glsl
+#include includes/VolumeFog.glsl
+#include includes/SceneGIVX.glsl
 
 #define EARLY_Z_TEST 1
 

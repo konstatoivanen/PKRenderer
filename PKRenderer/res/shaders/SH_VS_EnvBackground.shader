@@ -4,16 +4,22 @@
 #include includes/Common.glsl
 #include includes/Encoding.glsl
 #include includes/SceneEnv.glsl
-#include includes/Blit.glsl
-#include includes/SharedVolumeFog.glsl
+#include includes/VolumeFog.glsl
 
 #pragma PROGRAM_VERTEX
+
+float4 PK_BLIT_VERTEX_POSITIONS[3] =
+{
+    float4(-1.0,  1.0, 1.0, 1.0),
+    float4(-1.0, -3.0, 1.0, 1.0),
+    float4( 3.0,  1.0, 1.0, 1.0),
+};
 
 out float3 vs_TEXCOORD0;
 
 void main()
 {
-    gl_Position = PK_BLIT_VERTEX_POSITION;
+    gl_Position = PK_BLIT_VERTEX_POSITIONS[gl_VertexIndex];
     vs_TEXCOORD0 = mul(float4(gl_Position.xy * pk_InvProjectionParams.xy, 1.0f, 0.0f), pk_MATRIX_I_V).xyz;
 }
 

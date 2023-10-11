@@ -10,15 +10,15 @@ struct SH
 
 #define pk_ZeroSH SH(0.0f.xxxx, 0.0f.xx)
 
-float4 SH_GetBasis(const float3 d) { return float4(1.0f, d.yzx) * pk_L1Basis; }
+float4 SH_GetBasis(const float3 d) { return float4(1.0f, d.yzx) * PK_L1BASIS; }
 SH SH_Interpolate(const SH sha, const SH shb, const float i) { return SH(lerp(sha.Y, shb.Y, i), lerp(sha.CoCg, shb.CoCg, i)); }
 SH SH_Scale(const SH sh, float s) { return SH(sh.Y * s, sh.CoCg * s); }
 SH SH_Add(const SH sha, const SH shb, float sb) { return SH(sha.Y + shb.Y * sb, sha.CoCg + shb.CoCg * sb); }
 
 float3 SH_ToIrradiance(const SH sh, const float3 dir, const float chromaBias)
 {
-	float Y = max(0.0f, 2.0f * (pk_L1Basis_Cosine.y * dot(sh.Y.wyz, dir) + pk_L1Basis_Cosine.x * sh.Y.x));
-	float2 CoCg = sh.CoCg * pk_L1Basis.x * Y / (sh.Y.x + 1e-6f);
+	float Y = max(0.0f, 2.0f * (PK_L1BASIS_COSINE.y * dot(sh.Y.wyz, dir) + PK_L1BASIS_COSINE.x * sh.Y.x));
+	float2 CoCg = sh.CoCg * PK_L1BASIS.x * Y / (sh.Y.x + 1e-6f);
 	
 	Y *= 1.0f - chromaBias;
 	CoCg *= 1.0f + chromaBias;
@@ -34,7 +34,7 @@ float3 SH_ToIrradiance(const SH sh, const float3 d) { return SH_ToIrradiance(sh,
 
 float3 SH_ToColor(const SH sh) 
 {
-	const float Y = sh.Y.x / pk_L1Basis.x;
+	const float Y = sh.Y.x / PK_L1BASIS.x;
 	const float T = Y - sh.CoCg.y * 0.5f;
 	const float G = sh.CoCg.y + T;
 	const float B = T - sh.CoCg.x * 0.5f;
@@ -42,9 +42,9 @@ float3 SH_ToColor(const SH sh)
 	return float3(R, G, B);
 }
 
-float SH_ToLuminance(const SH sh, const float3 d) { return dot(pk_Luminance.xyz, SH_ToIrradiance(sh, d)); }
-float SH_ToLuminance(const SH sh, const float3 d, const float chromaBias) { return dot(pk_Luminance.xyz, SH_ToIrradiance(sh, d, chromaBias)); }
-float SH_ToLuminanceL0(const SH sh) { return sh.Y.x / pk_L1Basis.x; }
+float SH_ToLuminance(const SH sh, const float3 d) { return dot(PK_LUMA_BT709, SH_ToIrradiance(sh, d)); }
+float SH_ToLuminance(const SH sh, const float3 d, const float chromaBias) { return dot(PK_LUMA_BT709, SH_ToIrradiance(sh, d, chromaBias)); }
+float SH_ToLuminanceL0(const SH sh) { return sh.Y.x / PK_L1BASIS.x; }
 float3 SH_ToPrimeDir(const SH sh) { return sh.Y.wyz / (length(sh.Y.wyz) + 1e-6f); }
 
 float3 SH_ToPrimeDir(const SH sh, inout float directionality) 

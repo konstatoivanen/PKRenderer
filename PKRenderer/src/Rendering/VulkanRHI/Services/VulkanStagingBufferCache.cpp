@@ -48,6 +48,7 @@ struct Vector::Bound<VulkanStagingBuffer*>
 
 namespace PK::Rendering::VulkanRHI::Services
 {
+
     VulkanStagingBufferCache::VulkanStagingBufferCache(VkDevice device, VmaAllocator allocator, uint64_t pruneDelay) :
         m_allocator(allocator),
         m_device(device),
@@ -75,6 +76,9 @@ namespace PK::Rendering::VulkanRHI::Services
     {
         VulkanStagingBuffer* buffer = nullptr;
 
+        // @TODO refactor to be non static
+        static uint64_t s_bufferIdCounter = 0ull;
+
         if (persistent)
         {
             VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size * PK_MAX_FRAMES_IN_FLIGHT);
@@ -92,7 +96,7 @@ namespace PK::Rendering::VulkanRHI::Services
             else
             {
                 VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging, size);
-                buffer = m_bufferPool.New(m_device, m_allocator, createInfo, (std::string("StagingBuffer") + std::to_string(m_currentPruneTick)).c_str());
+                buffer = m_bufferPool.New(m_device, m_allocator, createInfo, (std::string("StagingBuffer") + std::to_string(s_bufferIdCounter++)).c_str());
             }
         }
 

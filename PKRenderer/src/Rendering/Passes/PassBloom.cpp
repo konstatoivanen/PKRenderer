@@ -44,26 +44,26 @@ namespace PK::Rendering::Passes
 
         auto hash = HashCache::Get();
 
-        GraphicsAPI::SetTexture(hash->_SourceTex, color, 0, 0);
-        GraphicsAPI::SetImage(hash->_DestinationTex, bloom, 0, 0);
+        GraphicsAPI::SetTexture(hash->pk_Texture, color, 0, 0);
+        GraphicsAPI::SetImage(hash->pk_Image, bloom, 0, 0);
         cmd->Dispatch(m_computeBloom, m_passDownsample0, { res.x, res.y, 1u });
 
         for (auto i = 1u; i < 6u; ++i)
         {
-            GraphicsAPI::SetTexture(hash->_SourceTex, bloom, i - 1u, 0);
-            GraphicsAPI::SetImage(hash->_DestinationTex, bloom, i, 0);
+            GraphicsAPI::SetTexture(hash->pk_Texture, bloom, i - 1u, 0);
+            GraphicsAPI::SetImage(hash->pk_Image, bloom, i, 0);
             cmd->Dispatch(m_computeBloom, m_passDownsample, { res.x >> i, res.y >> i, 1u });
         }
 
         for (auto i = 4; i >= 0; --i)
         {
-            GraphicsAPI::SetTexture(hash->_SourceTex, bloom, i + 1u, 0u);
-            GraphicsAPI::SetImage(hash->_DestinationTex, bloom, i, 0u);
+            GraphicsAPI::SetTexture(hash->pk_Texture, bloom, i + 1u, 0u);
+            GraphicsAPI::SetImage(hash->pk_Image, bloom, i, 0u);
             GraphicsAPI::SetConstant<float>(hash->_Multiplier, i == 0 ? 1.0f / 5.0f : 1.0f);
             cmd->Dispatch(m_computeBloom, m_passUpsample, { res.x >> i, res.y >> i, 1u });
         }
 
-        GraphicsAPI::SetTexture(hash->pk_BloomTexture, bloom);
+        GraphicsAPI::SetTexture(hash->pk_Bloom_Texture, bloom);
 
         cmd->EndDebugScope();
     }

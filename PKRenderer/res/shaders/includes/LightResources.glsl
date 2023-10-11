@@ -47,10 +47,10 @@ PK_DECLARE_READONLY_BUFFER(LightPacked, pk_Lights, PK_SET_PASS);
 PK_DECLARE_READONLY_BUFFER(float4x4, pk_LightMatrices, PK_SET_PASS);
 
 #if defined(PK_WRITE_LIGHT_CLUSTERS)
-    PK_DECLARE_WRITEONLY_BUFFER(ushort, pk_GlobalLightsList, PK_SET_PASS);
+    PK_DECLARE_WRITEONLY_BUFFER(ushort, pk_LightLists, PK_SET_PASS);
     layout(r32ui, set = PK_SET_PASS) uniform writeonly uimage3D pk_LightTiles;
 #else
-    PK_DECLARE_READONLY_BUFFER(ushort, pk_GlobalLightsList, PK_SET_PASS);
+    PK_DECLARE_READONLY_BUFFER(ushort, pk_LightLists, PK_SET_PASS);
     layout(r32ui, set = PK_SET_PASS) uniform readonly uimage3D pk_LightTiles;
 #endif
 

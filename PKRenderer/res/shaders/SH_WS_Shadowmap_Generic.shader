@@ -4,7 +4,7 @@
 #ZWrite True
 #EnableInstancing
 
-#include includes/SharedLights.glsl
+#include includes/LightResources.glsl
 
 #pragma PROGRAM_VERTEX
 

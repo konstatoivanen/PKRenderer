@@ -24,13 +24,13 @@ PK_DECLARE_SET_DRAW uniform samplerCubeArray pk_ShadowmapSource;
 PK_DECLARE_SET_DRAW uniform sampler2DArray pk_ShadowmapSource;
 #endif
 
-layout(rg32f, set = PK_SET_DRAW) uniform image2DArray _DestinationTex;
+layout(rg32f, set = PK_SET_DRAW) uniform image2DArray pk_Image;
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
     const uint thread = PK_AtomicCounterNext();
-    const int2 size = imageSize(_DestinationTex).xy;
+    const int2 size = imageSize(pk_Image).xy;
     const uint3 threadID = GetZCurveSwizzle32(thread, uint2(size));
     const int2 coord = int2(threadID.xy);
     const float2 uv = float2(coord + 0.5f.xx) / float2(size);
@@ -64,5 +64,5 @@ void main()
 
 #endif
 
-    imageStore(_DestinationTex, int3(threadID), float4(A * SAMPLE_COUNT_INV, 0.0f.xx));
+    imageStore(pk_Image, int3(threadID), float4(A * SAMPLE_COUNT_INV, 0.0f.xx));
 }

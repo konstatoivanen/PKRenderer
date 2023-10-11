@@ -3,10 +3,6 @@
 #include "Core/ApplicationConfig.h"
 #include "Rendering/Objects/RenderTexture.h"
 #include "Rendering/Objects/ConstantBuffer.h"
-#include "Rendering/Passes/PassBloom.h"
-#include "Rendering/Passes/PassHistogram.h"
-#include "Rendering/Passes/PassDepthOfField.h"
-#include "Rendering/Passes/PassTemporalAntiAliasing.h"
 #include "ECS/Tokens/ViewProjectionToken.h"
 
 namespace PK::Rendering::Passes
@@ -16,9 +12,11 @@ namespace PK::Rendering::Passes
         public:
             PassPostEffectsComposite(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
             void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* destination);
+            void OnUpdateParameters(PK::Core::Services::AssetImportToken<PK::Core::ApplicationConfig>* token);
 
         private:
             Objects::Shader* m_computeComposite = nullptr;
+            Utilities::Ref<Objects::ConstantBuffer> m_constantsPostProcess;
             Objects::Texture* m_bloomLensDirtTexture;
             Objects::Texture* m_lut;
     };

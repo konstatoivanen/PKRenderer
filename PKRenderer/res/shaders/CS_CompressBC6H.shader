@@ -2,8 +2,8 @@
 #pragma PROGRAM_COMPUTE
 #include includes/Utilities.glsl
 
-PK_DECLARE_SET_SHADER uniform sampler2D _SourceTex;
-layout(rgba32ui, set = PK_SET_DRAW) uniform uimage2D _WriteTex;
+PK_DECLARE_SET_SHADER uniform sampler2D pk_Texture;
+layout(rgba32ui, set = PK_SET_DRAW) uniform uimage2D pk_Image;
 
 // Whether to use P2 modes (4 endpoints) for compression. Slow, but improves quality.
 #define ENCODE_P2 (QUALITY == 1)
@@ -793,18 +793,18 @@ void main()
     float2 block1UV = uv + float2(2.0f * texelSize.x, 0.0f);
     float2 block2UV = uv + float2(0.0f, 2.0f * texelSize.y);
     float2 block3UV = uv + float2(2.0f * texelSize.x, 2.0f * texelSize.y);
-    float4 block0X = textureGather(_SourceTex, block0UV, 0);
-    float4 block1X = textureGather(_SourceTex, block1UV, 0);
-    float4 block2X = textureGather(_SourceTex, block2UV, 0);
-    float4 block3X = textureGather(_SourceTex, block3UV, 0);
-    float4 block0Y = textureGather(_SourceTex, block0UV, 1);
-    float4 block1Y = textureGather(_SourceTex, block1UV, 1);
-    float4 block2Y = textureGather(_SourceTex, block2UV, 1);
-    float4 block3Y = textureGather(_SourceTex, block3UV, 1);
-    float4 block0Z = textureGather(_SourceTex, block0UV, 2);
-    float4 block1Z = textureGather(_SourceTex, block1UV, 2);
-    float4 block2Z = textureGather(_SourceTex, block2UV, 2);
-    float4 block3Z = textureGather(_SourceTex, block3UV, 2);
+    float4 block0X = textureGather(pk_Texture, block0UV, 0);
+    float4 block1X = textureGather(pk_Texture, block1UV, 0);
+    float4 block2X = textureGather(pk_Texture, block2UV, 0);
+    float4 block3X = textureGather(pk_Texture, block3UV, 0);
+    float4 block0Y = textureGather(pk_Texture, block0UV, 1);
+    float4 block1Y = textureGather(pk_Texture, block1UV, 1);
+    float4 block2Y = textureGather(pk_Texture, block2UV, 1);
+    float4 block3Y = textureGather(pk_Texture, block3UV, 1);
+    float4 block0Z = textureGather(pk_Texture, block0UV, 2);
+    float4 block1Z = textureGather(pk_Texture, block1UV, 2);
+    float4 block2Z = textureGather(pk_Texture, block2UV, 2);
+    float4 block3Z = textureGather(pk_Texture, block3UV, 2);
 
     float3 texels[16];
     texels[0] = float3(block0X.w, block0Y.w, block0Z.w);
@@ -848,5 +848,5 @@ void main()
     EncodeP2Pattern(block, blockMSLE, bestPattern, texels);
 #endif
 
-    imageStore(_WriteTex, int2(blockCoord), block);
+    imageStore(pk_Image, int2(blockCoord), block);
 }

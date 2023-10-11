@@ -3,27 +3,27 @@
 
 #pragma PROGRAM_COMPUTE
 #include includes/Common.glsl
-#include includes/SharedPostEffects.glsl
-#include includes/SharedHistogram.glsl
+#include includes/PostFXResources.glsl
+#include includes/PostFXAutoExposure.glsl
 
 #define HISTOGRAM_THREAD_COUNT 16
 #define NUM_HISTOGRAM_BINS 256
-#define EPSILON 0.0001
 
-#define LOG_LUMINANCE_MIN pk_MinLogLuminance
-#define LOG_LUMINANCE_INV_RANGE pk_InvLogLuminanceRange
-#define LOG_LUMINANCE_RANGE pk_LogLuminanceRange
-#define TARGET_EXPOSURE pk_TargetExposure
-#define EXPOSURE_ADJUST_SPEED pk_AutoExposureSpeed
+#define LOG_LUMINANCE_MIN pk_AutoExposure_MinLogLuma
+#define LOG_LUMINANCE_INV_RANGE pk_AutoExposure_InvLogLumaRange
+#define LOG_LUMINANCE_RANGE pk_AutoExposure_LogLumaRange
+#define TARGET_EXPOSURE pk_AutoExposure_Target
+#define EXPOSURE_ADJUST_SPEED pk_AutoExposure_Speed
 
-PK_DECLARE_SET_DRAW uniform sampler2D _MainTex;
+// Source texture
+PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture;
 
 // Source: http://www.alextardif.com/HistogramLuminance.html
 shared uint HistogramShared[NUM_HISTOGRAM_BINS];
 
 void SetAutoExposure(float exposure)
 {
-    PK_BUFFER_DATA(pk_Histogram, 256) = floatBitsToUint(exposure);
+    PK_BUFFER_DATA(pk_AutoExposure_Histogram, 256) = floatBitsToUint(exposure);
 }
 
 // Source: https://media.contentapi.ea.com/content/dam/eacom/frostbite/files/course-notes-moving-frostbite-to-pbr-v2.pdf
@@ -64,9 +64,9 @@ float ConvertEV100ToExposure(float EV100)
 
 uint HDRToHistogramBin(float3 hdrColor)
 {
-    float luminance = dot(pk_Luminance.rgb, hdrColor);
+    float luminance = dot(PK_LUMA_BT709, hdrColor);
 
-    if (luminance < EPSILON)
+    if (luminance < 1e-4f)
     {
         return 0;
     }
@@ -83,26 +83,25 @@ void main()
     HistogramShared[gl_LocalInvocationIndex] = 0;
     barrier();
 
-    float2 size = textureSize(_MainTex, 0).xy;
+    float2 size = textureSize(pk_Texture, 0).xy;
 
     if (gl_GlobalInvocationID.x < size.x && gl_GlobalInvocationID.y < size.y)
     {
-        float3 hdrColor = texelFetch(_MainTex, int2(gl_GlobalInvocationID.xy), 0).xyz;
+        float3 hdrColor = texelFetch(pk_Texture, int2(gl_GlobalInvocationID.xy), 0).xyz;
         uint binIndex = HDRToHistogramBin(hdrColor);
         atomicAdd(HistogramShared[binIndex], 1);
     }
 
     barrier();
-    atomicAdd(PK_BUFFER_DATA(pk_Histogram, gl_LocalInvocationIndex), HistogramShared[gl_LocalInvocationIndex]);
+    atomicAdd(PK_BUFFER_DATA(pk_AutoExposure_Histogram, gl_LocalInvocationIndex), HistogramShared[gl_LocalInvocationIndex]);
 #else
-    uint countForThisBin = PK_BUFFER_DATA(pk_Histogram, gl_LocalInvocationIndex);
+    uint countForThisBin = PK_BUFFER_DATA(pk_AutoExposure_Histogram, gl_LocalInvocationIndex);
     HistogramShared[gl_LocalInvocationIndex] = countForThisBin * gl_LocalInvocationIndex;
 
-    PK_BUFFER_DATA(pk_Histogram, gl_LocalInvocationIndex) = 0;
+    PK_BUFFER_DATA(pk_AutoExposure_Histogram, gl_LocalInvocationIndex) = 0;
 
     barrier();
 
-#pragma unroll
     for (uint histogramSampleIndex = (NUM_HISTOGRAM_BINS >> 1); histogramSampleIndex > 0; histogramSampleIndex >>= 1)
     {
         if (gl_LocalInvocationIndex < histogramSampleIndex)
@@ -115,7 +114,7 @@ void main()
 
     if (gl_LocalInvocationIndex == 0)
     {
-        const float2 size = textureSize(_MainTex, 0).xy;
+        const float2 size = textureSize(pk_Texture, 0).xy;
         const float numpx = size.x * size.y;
         const float weightedLogAverage = (HistogramShared[0] / max(numpx - countForThisBin, 1.0)) - 1.0;
         const float weightedAverageLuminance = exp2((weightedLogAverage / 254.0) * LOG_LUMINANCE_RANGE + LOG_LUMINANCE_MIN);

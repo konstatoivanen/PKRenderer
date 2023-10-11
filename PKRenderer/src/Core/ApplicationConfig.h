@@ -34,18 +34,28 @@ namespace PK::Core
         YAML::BoxedValue<Math::uint> LightCount = YAML::BoxedValue<Math::uint>("LightCount", 0u);
         YAML::BoxedValue<Math::uint> ShadowmapTileSize = YAML::BoxedValue<Math::uint>("ShadowmapTileSize", 512);
 
-        YAML::BoxedValue<float> CameraFocalLength = YAML::BoxedValue<float>("CameraFocalLength", 0.05f);
-        YAML::BoxedValue<float> CameraFNumber = YAML::BoxedValue<float>("CameraFNumber", 1.40f);
-        YAML::BoxedValue<float> CameraFilmHeight = YAML::BoxedValue<float>("CameraFilmHeight", 0.024f);
-        YAML::BoxedValue<float> CameraFocusSpeed = YAML::BoxedValue<float>("CameraFocusSpeed", 5.0f);
+        YAML::BoxedValue<bool> GIReSTIR = YAML::BoxedValue<bool>("GIReSTIR", true);
+        YAML::BoxedValue<bool> GIApproximateRoughSpecular = YAML::BoxedValue<bool>("GIApproximateRoughSpecular", true);
+        YAML::BoxedValue<bool> GIScreenSpacePretrace = YAML::BoxedValue<bool>("GIScreenSpacePretrace", false);
+        YAML::BoxedValue<bool> GICheckerboardTrace = YAML::BoxedValue<bool>("GICheckerboardTrace", true);
+        YAML::BoxedValue<bool> GISpecularVirtualReproject = YAML::BoxedValue<bool>("GISpecularVirtualReproject", true);
+
+        YAML::BoxedValue<float> DoFFocalLength = YAML::BoxedValue<float>("DoFFocalLength", 0.05f);
+        YAML::BoxedValue<float> DoFFNumber = YAML::BoxedValue<float>("DoFFNumber", 1.40f);
+        YAML::BoxedValue<float> DoFFilmHeight = YAML::BoxedValue<float>("DoFFilmHeight", 0.024f);
+        YAML::BoxedValue<float> DoFFocusSpeed = YAML::BoxedValue<float>("DoFFocusSpeed", 5.0f);
+
         YAML::BoxedValue<float> AutoExposureLuminanceMin = YAML::BoxedValue<float>("AutoExposureLuminanceMin", 1.0f);
         YAML::BoxedValue<float> AutoExposureLuminanceRange = YAML::BoxedValue<float>("AutoExposureLuminanceRange", 1.0f);
         YAML::BoxedValue<float> AutoExposureSpeed = YAML::BoxedValue<float>("AutoExposureSpeed", 1.0f);
-        YAML::BoxedValue<float> TonemapExposure = YAML::BoxedValue<float>("TonemapExposure", 1.0f);
+        YAML::BoxedValue<float> AutoExposureTarget = YAML::BoxedValue<float>("AutoExposureTarget", 1.0f);
+
         YAML::BoxedValue<float> VignetteIntensity = YAML::BoxedValue<float>("VignetteIntensity", 15.0f);
         YAML::BoxedValue<float> VignettePower = YAML::BoxedValue<float>("VignettePower", 0.25f);
+
         YAML::BoxedValue<float> FilmGrainIntensity = YAML::BoxedValue<float>("FilmGrainIntensity", 0.25f);
         YAML::BoxedValue<float> FilmGrainLuminance = YAML::BoxedValue<float>("FilmGrainLuminance", 0.25f);
+
         YAML::BoxedValue<float> CC_Contribution = YAML::BoxedValue<float>("CC_Contribution", 1.0f);
         YAML::BoxedValue<float> CC_TemperatureShift = YAML::BoxedValue<float>("CC_TemperatureShift", 0.0f);
         YAML::BoxedValue<float> CC_Tint = YAML::BoxedValue<float>("CC_Tint", 0.0f);
@@ -62,15 +72,10 @@ namespace PK::Core
         YAML::BoxedValue<Math::uint> CC_ChannelMixerRed = YAML::BoxedValue<Math::uint>("CC_ChannelMixerRed", 0xFF0000FF);
         YAML::BoxedValue<Math::uint> CC_ChannelMixerGreen = YAML::BoxedValue<Math::uint>("CC_ChannelMixerGreen", 0x00FF00FF);
         YAML::BoxedValue<Math::uint> CC_ChannelMixerBlue = YAML::BoxedValue<Math::uint>("CC_ChannelMixerBlue", 0x0000FFFF);
+
         YAML::BoxedValue<float> BloomIntensity = YAML::BoxedValue<float>("BloomIntensity", 0.0f);
         YAML::BoxedValue<float> BloomLensDirtIntensity = YAML::BoxedValue<float>("BloomLensDirtIntensity", 0.0f);
         YAML::BoxedValue<std::string> FileBloomDirt = YAML::BoxedValue<std::string>("FileBloomDirt", "T_Bloom_LensDirt");
-
-        YAML::BoxedValue<bool> GIReSTIR = YAML::BoxedValue<bool>("GIReSTIR", true);
-        YAML::BoxedValue<bool> GIApproximateRoughSpecular = YAML::BoxedValue<bool>("GIApproximateRoughSpecular", true);
-        YAML::BoxedValue<bool> GIScreenSpacePretrace = YAML::BoxedValue<bool>("GIScreenSpacePretrace", false);
-        YAML::BoxedValue<bool> GICheckerboardTrace = YAML::BoxedValue<bool>("GICheckerboardTrace", true);
-        YAML::BoxedValue<bool> GISpecularVirtualReproject = YAML::BoxedValue<bool>("GISpecularVirtualReproject", true);
 
         YAML::BoxedValue<float> TAASharpness = YAML::BoxedValue<float>("TAASharpness", 0.5f);
         YAML::BoxedValue<float> TAABlendingStatic = YAML::BoxedValue<float>("TAABlendingStatic", 0.99f);

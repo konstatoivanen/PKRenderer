@@ -1,15 +1,15 @@
 #version 460
 #pragma PROGRAM_COMPUTE
 #include includes/GBuffers.glsl
-#include includes/SharedSceneGI.glsl
+#include includes/SceneGI.glsl
 
 #multi_compile _ PK_HIZ_FINAL_PASS
 
-layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray _DestinationTex;
-layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray _DestinationMip1;
-layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray _DestinationMip2;
-layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray _DestinationMip3;
-layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray _DestinationMip4;
+layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image;
+layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image1;
+layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image2;
+layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image3;
+layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image4;
 
 #define GROUP_SIZE 8u
 shared float lds_MinZ[GROUP_SIZE * GROUP_SIZE];
@@ -72,15 +72,15 @@ void main()
 #pragma unroll 3
         for (uint i = 0; i < 3; ++i)
         {
-            imageStore(_DestinationTex, int3(coord * 2 + int2(0, 1), i), depths.xxxx);
-            imageStore(_DestinationTex, int3(coord * 2 + int2(1, 1), i), depths.yyyy);
-            imageStore(_DestinationTex, int3(coord * 2 + int2(1, 0), i), depths.zzzz);
-            imageStore(_DestinationTex, int3(coord * 2 + int2(0, 0), i), depths.wwww);
+            imageStore(pk_Image, int3(coord * 2 + int2(0, 1), i), depths.xxxx);
+            imageStore(pk_Image, int3(coord * 2 + int2(1, 1), i), depths.yyyy);
+            imageStore(pk_Image, int3(coord * 2 + int2(1, 0), i), depths.zzzz);
+            imageStore(pk_Image, int3(coord * 2 + int2(0, 0), i), depths.wwww);
         }
 #endif
 
         STORE_DEPTHS_LDS(thread, local_depth)
-            STORE_DEPTHS(_DestinationMip1, coord, local_depth)
+        STORE_DEPTHS(pk_Image1, coord, local_depth)
     }
     barrier();
 
@@ -94,7 +94,7 @@ void main()
         local_depth.z = dot(avgz, 0.25f.xxxx);
 
         STORE_DEPTHS_LDS(thread, local_depth)
-            STORE_DEPTHS(_DestinationMip2, coord / 2, local_depth)
+        STORE_DEPTHS(pk_Image2, coord / 2, local_depth)
     }
     barrier();
 
@@ -108,7 +108,7 @@ void main()
         local_depth.z = dot(avgz, 0.25f.xxxx);
 
         STORE_DEPTHS_LDS(thread, local_depth)
-            STORE_DEPTHS(_DestinationMip3, coord / 4, local_depth)
+        STORE_DEPTHS(pk_Image3, coord / 4, local_depth)
     }
     barrier();
 
@@ -121,6 +121,6 @@ void main()
         local_depth.y = cmax(maxz);
         local_depth.z = dot(avgz, 0.25f.xxxx);
 
-        STORE_DEPTHS(_DestinationMip4, coord / 8, local_depth)
+        STORE_DEPTHS(pk_Image4, coord / 8, local_depth)
     }
 }

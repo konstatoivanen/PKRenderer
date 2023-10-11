@@ -8,8 +8,8 @@
 
 #include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl
-#include includes/SharedSceneGI.glsl
-#include includes/SharedReSTIR.glsl
+#include includes/SceneGIVX.glsl
+#include includes/SceneGIReSTIR.glsl
 
 float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHit hit)
 {
@@ -63,7 +63,7 @@ void main()
         if (params.roughness < PK_GI_MAX_ROUGH_SPEC)
 #endif
         {
-            GISpec spec = pk_Zero_GISpec;
+            GISpec spec = PK_GI_SPEC_ZERO;
             spec.radiance = SampleRadiance(params.origin, params.specdir, hits.spec);
             spec.ao = hits.spec.isMiss ? 1.0f : saturate(hits.spec.dist / PK_GI_RAY_TMAX);
             spec.history = PK_GI_SPEC_MAX_HISTORY;

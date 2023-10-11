@@ -1,6 +1,6 @@
 #pragma once
 #include GBuffers.glsl
-#include SharedSceneGI.glsl
+#include SceneGI.glsl
 
 // Cant combine due to different res (well, can but shouldn't)
 layout(rg16f, set = PK_SET_DRAW) uniform image2D pk_GradientInputs;

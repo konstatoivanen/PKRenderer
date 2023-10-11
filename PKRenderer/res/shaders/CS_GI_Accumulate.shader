@@ -11,8 +11,8 @@
 #define PK_GI_STORE_LVL 0
 
 #include includes/GBuffers.glsl
-#include includes/SharedSceneGI.glsl
-#include includes/SharedReSTIR.glsl
+#include includes/SceneGI.glsl
+#include includes/SceneGIReSTIR.glsl
 
 #define BOIL_FLT_GROUP_SIZE PK_W_ALIGNMENT_8
 #define BOIL_FLT_MIN_LANE_COUNT 32

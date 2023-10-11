@@ -5,7 +5,7 @@
 
 layout(rgba32ui, set = PK_SET_DRAW) uniform uimage2DArray pk_Reservoirs;
 struct Reservoir { float3 position; float3 normal; float3 radiance; float targetPdf; float weightSum; uint M;};
-#define pk_Reservoir_Zero Reservoir(0.0f.xxx, 0.0f.xxx, 0.0f.xxx, 0.0f, 0.0f, 0u)
+#define RESTIR_RESERVOIR_ZERO Reservoir(0.0f.xxx, 0.0f.xxx, 0.0f.xxx, 0.0f, 0.0f, 0u)
 #define RESTIR_LAYER_CUR int(( pk_FrameIndex.y & 0x1u) << 1u)
 #define RESTIR_LAYER_PRE int((~pk_FrameIndex.y & 0x1u) << 1u)
 #define RESITR_NEARFIELD 0.05f
@@ -82,7 +82,7 @@ bool ReSTIR_NearFieldReject(const float depth, const float3 origin, const Reserv
     return (dot(vec, vec) / pow2(range)) < random;
 }
 
-float ReSTIR_GetTargetPdf(const Reservoir r) { return dot(pk_Luminance.xyz, r.radiance); }
+float ReSTIR_GetTargetPdf(const Reservoir r) { return dot(PK_LUMA_BT709, r.radiance); }
 float ReSTIR_GetSampleWeight(const Reservoir r, const float3 n, const float3 d) 
 { 
     return safePositiveRcp(r.targetPdf) * (r.weightSum / max(1, r.M)) * dot(n, d) * PK_INV_PI; 
@@ -186,7 +186,7 @@ uint4 ReSTIR_Pack_Hit(const float3 direction, const float hitDist, const float3 
 Reservoir ReSTIR_Unpack_Hit(const uint4 packed, const float3 origin)
 {
     const float4 offset_invPdf = unpackHalf4x16(packed.xy);
-    Reservoir r = pk_Reservoir_Zero;
+    Reservoir r = RESTIR_RESERVOIR_ZERO;
     r.position = origin + offset_invPdf.xyz;
     r.normal = DecodeOctaUV(packed.z);
     r.radiance = DecodeE5BGR9(packed.w);

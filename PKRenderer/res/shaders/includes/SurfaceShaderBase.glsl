@@ -2,7 +2,7 @@
 #include GBuffers.glsl
 #include Lighting.glsl
 #include SceneEnv.glsl
-#include SharedSceneGI.glsl
+#include SceneGIVX.glsl
 
 struct SurfaceData
 {
@@ -117,7 +117,9 @@ struct SurfaceFragmentVaryings
 
     in float3 in_POSITION;
     in float3 in_NORMAL;
+    #if defined(PK_USE_TANGENTS)
     in float4 in_TANGENT;
+    #endif
     in float2 in_TEXCOORD0;
     out SurfaceFragmentVaryings baseVaryings;
     
@@ -212,8 +214,8 @@ struct SurfaceFragmentVaryings
 
         #else
 
-            const float3 F0 = lerp(pk_DielectricSpecular.rgb, surf.albedo, surf.metallic);
-            const float reflectivity = pk_DielectricSpecular.r + surf.metallic * pk_DielectricSpecular.a;
+            const float3 F0 = lerp(PK_DIELECTRIC_SPEC.rgb, surf.albedo, surf.metallic);
+            const float reflectivity = PK_DIELECTRIC_SPEC.r + surf.metallic * PK_DIELECTRIC_SPEC.a;
             surf.albedo *= 1.0f - reflectivity;
 
             #if defined(PK_SURF_TRANSPARENT)

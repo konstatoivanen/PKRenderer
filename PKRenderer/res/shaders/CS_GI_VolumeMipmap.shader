@@ -2,11 +2,10 @@
 #pragma PROGRAM_COMPUTE
 #include includes/Utilities.glsl
 
-PK_DECLARE_SET_DRAW uniform sampler3D _SourceTex;
-layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D _DestinationTex;
-layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D _DestinationMip1;
-layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D _DestinationMip2;
-layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D _DestinationMip3;
+PK_DECLARE_SET_DRAW uniform sampler3D pk_Texture;
+layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D pk_Image;
+layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D pk_Image1;
+layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D pk_Image2;
 
 #define GROUP_SIZE 4u
 shared float4 lds_Data[GROUP_SIZE * GROUP_SIZE * GROUP_SIZE];
@@ -16,13 +15,13 @@ void main()
 {
     const uint thread = gl_LocalInvocationIndex;
     const uint3 localCoord = gl_LocalInvocationID;
-    const uint3 baseSize = uint3(textureSize(_SourceTex, 0).xyz);
+    const uint3 baseSize = uint3(textureSize(pk_Texture, 0).xyz);
     const uint3 levelSize = gl_NumWorkGroups.xyz * gl_WorkGroupSize.xyz;
     const int level = int(log2(float(baseSize.x)) - log2(float(levelSize.x))) - 1;
     const float3 uvw = (gl_GlobalInvocationID + 1.0f.xxx) / levelSize;
 
-    float4 local = lds_Data[thread] = tex2DLod(_SourceTex, uvw, level);
-    imageStore(_DestinationTex, int3(gl_GlobalInvocationID), local);
+    float4 local = lds_Data[thread] = tex2DLod(pk_Texture, uvw, level);
+    imageStore(pk_Image, int3(gl_GlobalInvocationID), local);
     barrier();
 
     // Cant use binary mask due to 3d coordinates
@@ -38,7 +37,7 @@ void main()
         local /= 8.0f;
 
         lds_Data[thread] = local;
-        imageStore(_DestinationMip1, int3(gl_GlobalInvocationID) >> 1, local);
+        imageStore(pk_Image1, int3(gl_GlobalInvocationID) >> 1, local);
     }
     barrier();
 
@@ -52,6 +51,6 @@ void main()
         local += lds_Data[thread + 0x28u];
         local += lds_Data[thread + 0x2au];
         local /= 8.0f;
-        imageStore(_DestinationMip2, int3(gl_GlobalInvocationID) >> 2, local);
+        imageStore(pk_Image2, int3(gl_GlobalInvocationID) >> 2, local);
     }
 }

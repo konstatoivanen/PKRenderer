@@ -49,7 +49,7 @@ void main()
     GISpec spec = GI_Load_Spec(baseCoord);
     GIDiff nh_diff = GI_Load_Diff(hcoord);
     GISpec nh_spec = GI_Load_Spec(hcoord);
-    GISpec ra_spec = pk_Zero_GISpec;
+    GISpec ra_spec = PK_GI_SPEC_ZERO;
 
     // Filter Diff
     {
@@ -126,8 +126,8 @@ void main()
         const float n_roughness = n_normalRoughness.w;
         const float2 k_R = GI_GetRoughnessWeightParams(n_roughness);
 
-        GIDiff n_diff = pk_Zero_GIDiff;
-        GISpec n_spec = pk_Zero_GISpec;
+        GIDiff n_diff = PK_GI_DIFF_ZERO;
+        GISpec n_spec = PK_GI_SPEC_ZERO;
         float wSumDiff = 0.0f;
         float wSumSpec = 0.0f;
     

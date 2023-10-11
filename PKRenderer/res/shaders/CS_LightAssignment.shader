@@ -1,7 +1,7 @@
 #version 460
 #pragma PROGRAM_COMPUTE
 #define PK_WRITE_LIGHT_CLUSTERS
-#include includes/SharedLights.glsl
+#include includes/LightResources.glsl
 #include includes/Encoding.glsl
 
 #WithAtomicCounter
@@ -134,7 +134,7 @@ void main()
 
         for (uint i = 0; i < visibleCount; ++i)
         {
-            PK_BUFFER_DATA(pk_GlobalLightsList, offset + i) = visibleIndices[i];
+            PK_BUFFER_DATA(pk_LightLists, offset + i) = visibleIndices[i];
         }
     }
 

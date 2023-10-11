@@ -1248,7 +1248,7 @@
     <ClInclude Include="src\Rendering\Passes\PassBloom.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Passes\PassHistogram.h">
+    <ClInclude Include="src\Rendering\Passes\PassAutoExposure.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Passes\PassDepthOfField.h">
@@ -1917,20 +1917,19 @@
     <None Include="res\shaders\includes\Encoding.glsl" />
     <None Include="res\shaders\includes\Lighting.glsl" />
     <None Include="res\textures\T_OEM_Quarry.ktx2" />
-    <None Include="res\shaders\includes\Blit.glsl" />
     <None Include="res\shaders\CS_PostEffectsComposite.shader" />
-    <None Include="res\shaders\includes\ColorGrading.glsl" />
-    <None Include="res\shaders\includes\SharedPostEffects.glsl" />
+    <None Include="res\shaders\includes\PostFXColorGrading.glsl" />
+    <None Include="res\shaders\includes\PostFXResources.glsl" />
     <None Include="res\shaders\includes\Constants.glsl" />
     <None Include="res\shaders\includes\Noise.glsl" />
     <None Include="res\shaders\CS_FilmGrain.shader" />
-    <None Include="res\shaders\includes\SharedFilmGrain.glsl" />
+    <None Include="res\shaders\includes\PostFXFilmGrain.glsl" />
     <None Include="res\shaders\CS_Bloom.shader" />
-    <None Include="res\shaders\includes\SharedBloom.glsl" />
+    <None Include="res\shaders\includes\PostFXBloom.glsl" />
     <None Include="res\textures\T_Bloom_LensDirt.ktx2" />
-    <None Include="res\shaders\CS_Histogram.shader" />
-    <None Include="res\shaders\includes\SharedHistogram.glsl" />
-    <None Include="res\shaders\includes\SharedDepthOfField.glsl" />
+    <None Include="res\shaders\CS_AutoExposure.shader" />
+    <None Include="res\shaders\includes\PostFXAutoExposure.glsl" />
+    <None Include="res\shaders\includes\PostFXDepthOfField.glsl" />
     <None Include="res\shaders\CS_AutoFocus.shader" />
     <None Include="res\shaders\CS_DepthOfField.shader" />
     <None Include="res\shaders\SH_WS_Unlit_Color.shader" />
@@ -1941,7 +1940,7 @@
     <None Include="res\textures\T_OEM_Mountains.ktx2" />
     <None Include="res\textures\T_OEM_Night.ktx2" />
     <None Include="res\textures\default\T_Bluenoise256.ktx2" />
-    <None Include="res\shaders\includes\SharedLights.glsl" />
+    <None Include="res\shaders\includes\LightResources.glsl" />
     <None Include="res\shaders\SH_WS_Shadowmap_Generic.shader" />
     <None Include="res\shaders\CS_ShadowmapBlur.shader" />
     <None Include="res\shaders\CS_LightAssignment.shader" />
@@ -1996,9 +1995,9 @@
     <None Include="res\models\MDL_Spiral.mdl" />
     <None Include="res\models\MDL_Columns.mdl" />
     <None Include="res\shaders\CS_GI_VolumeMipmap.shader" />
-    <None Include="res\shaders\includes\SharedSceneGI.glsl" />
+    <None Include="res\shaders\includes\SceneGI.glsl" />
     <None Include="res\shaders\CS_GI_Accumulate.shader" />
-    <None Include="res\shaders\includes\SharedVolumeFog.glsl" />
+    <None Include="res\shaders\includes\VolumeFog.glsl" />
     <None Include="res\shaders\CS_VolumeFogScatter.shader" />
     <None Include="res\shaders\CS_VolumeFogComposite.shader" />
     <None Include="res\models\MDL_Rocks.mdl" />
@@ -2023,7 +2022,7 @@
     <None Include="res\shaders\CS_TemporalAntialiasing.shader" />
     <None Include="res\shaders\includes\SHL1.glsl" />
     <None Include="res\shaders\includes\Kernels.glsl" />
-    <None Include="res\shaders\includes\BlueNoise.glsl" />
+    <None Include="res\shaders\includes\NoiseBlue.glsl" />
     <None Include="res\textures\default\T_Bluenoise128x64.ktx2" />
     <None Include="res\shaders\CS_GI_GradientEstimation.shader" />
     <None Include="res\shaders\CS_GI_PostFilter.shader" />
@@ -2039,11 +2038,12 @@
     <None Include="res\shaders\CS_VolumeFogDensity.shader" />
     <None Include="res\shaders\SH_VS_Gizmos.shader" />
     <None Include="res\shaders\includes\SceneGIFiltering.glsl" />
-    <None Include="res\shaders\includes\SharedReSTIR.glsl" />
+    <None Include="res\shaders\includes\SceneGIReSTIR.glsl" />
     <None Include="res\shaders\includes\MortonOrder.glsl" />
     <None Include="res\shaders\RS_GI_ValidateReservoirs.shader" />
-    <None Include="res\shaders\includes\GradientEstimation.glsl" />
+    <None Include="res\shaders\includes\SceneGIGradients.glsl" />
     <None Include="res\textures\T_CC_LUT32.ktx2" />
+    <None Include="res\shaders\includes\SceneGIVX.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
@@ -2193,7 +2193,7 @@
     <ClCompile Include="src\Rendering\Passes\PassBloom.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Passes\PassHistogram.cpp">
+    <ClCompile Include="src\Rendering\Passes\PassAutoExposure.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Passes\PassDepthOfField.cpp">

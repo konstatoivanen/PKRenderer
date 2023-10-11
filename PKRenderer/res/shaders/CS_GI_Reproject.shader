@@ -32,9 +32,9 @@ void main()
     [[branch]]
     if (pk_FrameIndex.y != 0u && Test_DepthFar(depth))
     {
-        GIDiff diff = pk_Zero_GIDiff;
-        GISpec spec = pk_Zero_GISpec;
-        GISpec specVirtual = pk_Zero_GISpec;
+        GIDiff diff = PK_GI_DIFF_ZERO;
+        GISpec spec = PK_GI_SPEC_ZERO;
+        GISpec specVirtual = PK_GI_SPEC_ZERO;
         float wSumDiff = 0.0f;
         float wSumSpec = 0.0f;
         float wSumVSpec = 0.0f;

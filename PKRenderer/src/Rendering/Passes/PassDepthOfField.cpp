@@ -18,10 +18,7 @@ namespace PK::Rendering::Passes
         m_passDiskblur = m_computeDepthOfField->GetVariantIndex(StringHashID::StringToID("PASS_DISKBLUR"));
         m_passUpsample = m_computeDepthOfField->GetVariantIndex(StringHashID::StringToID("PASS_UPSAMPLE"));
 
-        m_constants.pk_FocalLength = config->CameraFocalLength;
-        m_constants.pk_FNumber = config->CameraFNumber;
-        m_constants.pk_FilmHeight = config->CameraFilmHeight;
-        m_constants.pk_FocusSpeed = config->CameraFocusSpeed;
+        OnUpdateParameters(config);
 
         TextureDescriptor descriptor{};
         descriptor.samplerType = SamplerType::Sampler2DArray;
@@ -40,13 +37,13 @@ namespace PK::Rendering::Passes
         m_alphaTarget = Texture::Create(descriptor, "DepthOfField.Target.Alpha");
 
         m_autoFocusParams = Buffer::Create(ElementType::Float2, 1, BufferUsage::DefaultStorage, "DepthOfField.AutoFocus.Parameters");
-        GraphicsAPI::SetBuffer(HashCache::Get()->pk_AutoFocusParams, m_autoFocusParams.get());
+        GraphicsAPI::SetBuffer(HashCache::Get()->pk_DoF_AutoFocusParams, m_autoFocusParams.get());
     }
 
     void PassDepthOfField::ComputeAutoFocus(Objects::CommandBuffer* cmd, uint32_t screenHeight)
     {
-        m_constants.pk_MaximumCoC = std::min(0.05f, 10.0f / screenHeight);
-        GraphicsAPI::SetConstant<Constants>(HashCache::Get()->pk_DofParams, m_constants);
+        m_constants.pk_DoF_MaximumCoC = std::min(0.05f, 10.0f / screenHeight);
+        GraphicsAPI::SetConstant<Constants>(HashCache::Get()->pk_DoF_Params, m_constants);
         cmd->Dispatch(m_computeAutoFocus, 0, { 1u, 1u, 1u });
     }
 
@@ -64,16 +61,17 @@ namespace PK::Rendering::Passes
         m_colorTarget->Validate(quarterres);
         m_alphaTarget->Validate(quarterres);
 
-        m_constants.pk_MaximumCoC = std::min(0.05f, 10.0f / destination->GetResolution().y);
+        m_constants.pk_DoF_MaximumCoC = std::min(0.05f, 10.0f / destination->GetResolution().y);
         
         auto hash = HashCache::Get();
-        GraphicsAPI::SetConstant<Constants>(hash->pk_DofParams, m_constants);
-        GraphicsAPI::SetImage(hash->pk_DoFColorWrite, m_colorTarget.get());
-        GraphicsAPI::SetImage(hash->pk_DoFAlphaWrite, m_alphaTarget.get());
-        GraphicsAPI::SetTexture(hash->pk_DoFColorRead, m_colorTarget.get());
-        GraphicsAPI::SetTexture(hash->pk_DoFAlphaRead, m_alphaTarget.get());
-        GraphicsAPI::SetImage(hash->_DestinationTex, source);
-        GraphicsAPI::SetTexture(hash->_MainTex, source);
+        GraphicsAPI::SetConstant<Constants>(hash->pk_DoF_Params, m_constants);
+        GraphicsAPI::SetImage(hash->pk_DoF_ColorWrite, m_colorTarget.get());
+        GraphicsAPI::SetImage(hash->pk_DoF_AlphaWrite, m_alphaTarget.get());
+        GraphicsAPI::SetTexture(hash->pk_DoF_ColorRead, m_colorTarget.get());
+        GraphicsAPI::SetTexture(hash->pk_DoF_AlphaRead, m_alphaTarget.get());
+
+        GraphicsAPI::SetTexture(hash->pk_Texture, source); // Source
+        GraphicsAPI::SetImage(hash->pk_Image, source); // Dest
         
         cmd->Dispatch(m_computeDepthOfField, m_passPrefilter, quarterres);
         cmd->Dispatch(m_computeDepthOfField, m_passDiskblur, quarterres);
@@ -84,9 +82,9 @@ namespace PK::Rendering::Passes
 
     void PassDepthOfField::OnUpdateParameters(const ApplicationConfig* config)
     {
-        m_constants.pk_FocalLength = config->CameraFocalLength;
-        m_constants.pk_FNumber = config->CameraFNumber;
-        m_constants.pk_FilmHeight = config->CameraFilmHeight;
-        m_constants.pk_FocusSpeed = config->CameraFocusSpeed;
+        m_constants.pk_DoF_FocalLength = config->DoFFocalLength;
+        m_constants.pk_DoF_FNumber = config->DoFFNumber;
+        m_constants.pk_DoF_FilmHeight = config->DoFFilmHeight;
+        m_constants.pk_DoF_FocusSpeed = config->DoFFocusSpeed;
     }
 }

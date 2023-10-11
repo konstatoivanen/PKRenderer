@@ -1,5 +1,5 @@
 #pragma once
-#include SharedLights.glsl
+#include LightResources.glsl
 #include Encoding.glsl
 #include BRDF.glsl
 
@@ -92,4 +92,4 @@ Light GetLightDirect(const uint index, const float3 worldpos, const uint cascade
     return Light(color, shadow, posToLight.xyz, linearDistance, sourceRadius);
 }
 
-Light GetLight(uint index, in float3 worldpos, uint cascade) { return GetLightDirect(PK_BUFFER_DATA(pk_GlobalLightsList, index), worldpos, cascade); }
+Light GetLight(uint index, in float3 worldpos, uint cascade) { return GetLightDirect(PK_BUFFER_DATA(pk_LightLists, index), worldpos, cascade); }

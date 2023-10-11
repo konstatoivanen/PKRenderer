@@ -24,7 +24,7 @@ float3 SampleEnvironmentSH(float4 basis)
     return float3(R, G, B) * PK_SCENE_ENV_EXPOSURE;
 }
 
-float3 SampleEnvironmentSH(float3 direction)  { return SampleEnvironmentSH(float4(1.0f, direction.yzx) * pk_L1Basis_Cosine * 2.0f);  }
+float3 SampleEnvironmentSH(float3 direction)  { return SampleEnvironmentSH(float4(1.0f, direction.yzx) * PK_L1BASIS_COSINE * 2.0f);  }
 
 float3 SampleEnvironmentSHVolumetric(float3 viewdir, float phase) 
 { 

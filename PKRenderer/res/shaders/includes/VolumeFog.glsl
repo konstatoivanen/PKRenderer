@@ -1,7 +1,7 @@
 #pragma once
 #include GBuffers.glsl
 #include Noise.glsl
-#include BlueNoise.glsl
+#include NoiseBlue.glsl
 #include SceneEnv.glsl
 #include TricubicSampler.glsl
 #include Lighting.glsl

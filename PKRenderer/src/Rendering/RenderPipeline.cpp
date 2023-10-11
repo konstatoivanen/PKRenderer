@@ -5,7 +5,6 @@
 #include "Rendering/HashCache.h"
 #include "ECS/Tokens/AccelerationStructureBuildToken.h"
 #include "Math/FunctionsMisc.h"
-#include "Math/FunctionsColor.h"
 
 /*
 TODO:
@@ -38,7 +37,7 @@ namespace PK::Rendering
         m_depthOfField(assetDatabase, config),
         m_temporalAntialiasing(assetDatabase, config->InitialWidth, config->InitialHeight),
         m_bloom(assetDatabase, config->InitialWidth, config->InitialHeight),
-        m_histogram(assetDatabase),
+        m_autoExposure(assetDatabase),
         m_batcher(),
         m_sequencer(sequencer),
         m_visibilityList(1024),
@@ -101,33 +100,8 @@ namespace PK::Rendering
                 { ElementType::Uint2, hash->pk_ScreenSize },
                 { ElementType::Uint2, hash->pk_FrameIndex },
                 { ElementType::Float, hash->pk_SceneEnv_Exposure }
-            }), "Constants.Frame");
-
-        m_constantsPostProcess = CreateRef<ConstantBuffer>(BufferLayout(
-            {
-                {ElementType::Float, "pk_MinLogLuminance"},
-                {ElementType::Float, "pk_InvLogLuminanceRange"},
-                {ElementType::Float, "pk_LogLuminanceRange"},
-                {ElementType::Float, "pk_TargetExposure"},
-                {ElementType::Float, "pk_AutoExposureSpeed"},
-                {ElementType::Float, "pk_BloomIntensity"},
-                {ElementType::Float, "pk_BloomDirtIntensity"},
-                {ElementType::Float, "pk_Vibrance"},
-                {ElementType::Float, "pk_TAA_Sharpness"},
-                {ElementType::Float, "pk_TAA_BlendingStatic"},
-                {ElementType::Float, "pk_TAA_BlendingMotion"},
-                {ElementType::Float, "pk_TAA_MotionAmplification"},
-                {ElementType::Float4, "pk_VignetteGrain"},
-                {ElementType::Float4, "pk_WhiteBalance"},
-                {ElementType::Float4, "pk_Lift"},
-                {ElementType::Float4, "pk_Gamma"},
-                {ElementType::Float4, "pk_Gain"},
-                {ElementType::Float4, "pk_ContrastGainGammaContribution"},
-                {ElementType::Float4, "pk_HSV"},
-                {ElementType::Float4, "pk_ChannelMixerRed"},
-                {ElementType::Float4, "pk_ChannelMixerGreen"},
-                {ElementType::Float4, "pk_ChannelMixerBlue"},
-            }), "Constants.PostProcess");
+            }), 
+            "Constants.Frame");
 
         AssetImportToken<ApplicationConfig> token{ assetDatabase, config };
         Step(&token);
@@ -162,7 +136,6 @@ namespace PK::Rendering
         GraphicsAPI::SetTexture(hash->pk_Bluenoise128x64, bluenoise128x64);
         GraphicsAPI::SetTexture(hash->pk_LightCookies, lightCookies);
         GraphicsAPI::SetBuffer(hash->pk_PerFrameConstants, *m_constantsPerFrame.get());
-        GraphicsAPI::SetBuffer(hash->pk_PostEffectsParams, *m_constantsPostProcess.get());
         PK_LOG_HEADER("----------RENDER PIPELINE INITIALIZED----------");
     }
 
@@ -312,7 +285,7 @@ namespace PK::Rendering
 
         m_passFilmGrain.Compute(cmdcompute);
         m_passLights.ComputeClusters(cmdcompute, resolution);
-        m_histogram.Render(cmdcompute, m_bloom.GetTexture());
+        m_autoExposure.Render(cmdcompute, m_bloom.GetTexture());
         m_depthOfField.ComputeAutoFocus(cmdcompute, resolution.y);
         m_passVolumeFog.ComputeDensity(cmdcompute, resolution);
         m_passEnvBackground.ComputeSH(cmdcompute);
@@ -372,37 +345,8 @@ namespace PK::Rendering
     {
         auto hash = HashCache::Get();
         auto config = token->asset;
-
         m_constantsPerFrame->Set<float>(hash->pk_SceneEnv_Exposure, config->BackgroundExposure);
-
-        m_constantsPostProcess->Set<float>(hash->pk_MinLogLuminance, config->AutoExposureLuminanceMin);
-        m_constantsPostProcess->Set<float>(hash->pk_InvLogLuminanceRange, 1.0f / config->AutoExposureLuminanceRange);
-        m_constantsPostProcess->Set<float>(hash->pk_LogLuminanceRange, config->AutoExposureLuminanceRange);
-        m_constantsPostProcess->Set<float>(hash->pk_TargetExposure, config->TonemapExposure);
-        m_constantsPostProcess->Set<float>(hash->pk_AutoExposureSpeed, config->AutoExposureSpeed);
-        m_constantsPostProcess->Set<float>(hash->pk_BloomIntensity, glm::exp(config->BloomIntensity) - 1.0f);
-        m_constantsPostProcess->Set<float>(hash->pk_BloomDirtIntensity, glm::exp(config->BloomLensDirtIntensity) - 1.0f);
-
-        m_constantsPostProcess->Set<float>(hash->pk_TAA_Sharpness, config->TAASharpness);
-        m_constantsPostProcess->Set<float>(hash->pk_TAA_BlendingStatic, config->TAABlendingStatic);
-        m_constantsPostProcess->Set<float>(hash->pk_TAA_BlendingMotion, config->TAABlendingMotion);
-        m_constantsPostProcess->Set<float>(hash->pk_TAA_MotionAmplification, config->TAAMotionAmplification);
-
-        color lift, gamma, gain;
-        Functions::GenerateLiftGammaGain(Functions::HexToRGB(config->CC_Shadows), Functions::HexToRGB(config->CC_Midtones), Functions::HexToRGB(config->CC_Highlights), &lift, &gamma, &gain);
-        m_constantsPostProcess->Set<float>(hash->pk_Vibrance, config->CC_Vibrance);
-        m_constantsPostProcess->Set<float4>(hash->pk_VignetteGrain, { config->VignetteIntensity, config->VignettePower, config->FilmGrainLuminance, config->FilmGrainIntensity });
-        m_constantsPostProcess->Set<float4>(hash->pk_WhiteBalance, Functions::GetWhiteBalance(config->CC_TemperatureShift, config->CC_Tint));
-        m_constantsPostProcess->Set<float4>(hash->pk_Lift, lift);
-        m_constantsPostProcess->Set<float4>(hash->pk_Gamma, gamma);
-        m_constantsPostProcess->Set<float4>(hash->pk_Gain, gain);
-        m_constantsPostProcess->Set<float4>(hash->pk_ContrastGainGammaContribution, float4(config->CC_Contrast, config->CC_Gain, 1.0f / config->CC_Gamma, config->CC_Contribution));
-        m_constantsPostProcess->Set<float4>(hash->pk_HSV, float4(config->CC_Hue, config->CC_Saturation, config->CC_Value, 1.0f));
-        m_constantsPostProcess->Set<float4>(hash->pk_ChannelMixerRed, Functions::HexToRGB(config->CC_ChannelMixerRed));
-        m_constantsPostProcess->Set<float4>(hash->pk_ChannelMixerGreen, Functions::HexToRGB(config->CC_ChannelMixerGreen));
-        m_constantsPostProcess->Set<float4>(hash->pk_ChannelMixerBlue, Functions::HexToRGB(config->CC_ChannelMixerBlue));
-        m_constantsPostProcess->FlushBuffer(QueueType::Transfer);
-
+        m_passPostEffectsComposite.OnUpdateParameters(token);
         m_passEnvBackground.OnUpdateParameters(token);
         m_passSceneGI.OnUpdateParameters(config);
         m_depthOfField.OnUpdateParameters(config);

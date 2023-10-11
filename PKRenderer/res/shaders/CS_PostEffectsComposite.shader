@@ -1,9 +1,9 @@
 #version 450
 #pragma PROGRAM_COMPUTE
-#include includes/ColorGrading.glsl
-#include includes/SharedFilmGrain.glsl
-#include includes/SharedBloom.glsl
-#include includes/SharedHistogram.glsl
+#include includes/PostFXColorGrading.glsl
+#include includes/PostFXFilmGrain.glsl
+#include includes/PostFXBloom.glsl
+#include includes/PostFXAutoExposure.glsl
 #include includes/Common.glsl
 
 //@TODO move these to application config?
@@ -29,19 +29,19 @@
 #if PK_DEBUG_MODE != PK_DEBUG_MODE_NONE
 #include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl
-#include includes/SharedSceneGI.glsl
+#include includes/SceneGI.glsl
 #endif
 
-layout(rgba16f, set = PK_SET_DRAW) uniform image2D _MainTex;
+layout(rgba16f, set = PK_SET_DRAW) uniform image2D pk_Image;
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void main()
 {
-    const int2 size = imageSize(_MainTex).xy;
+    const int2 size = imageSize(pk_Image).xy;
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     float2 uv = float2(coord + 0.5f.xx) / float2(size);
 
-    float3 color = max(0.0f.xxx, imageLoad(_MainTex, coord).rgb);
+    float3 color = max(0.0f.xxx, imageLoad(pk_Image, coord).rgb);
 
     float exposure = GetAutoExposure();
     
@@ -103,5 +103,5 @@ void main()
     }
 #endif
 
-    imageStore(_MainTex, coord, float4(color, 1.0f));
+    imageStore(pk_Image, coord, float4(color, 1.0f));
 }

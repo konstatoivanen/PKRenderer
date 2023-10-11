@@ -1,5 +1,5 @@
 #pragma once
-#include SharedPostEffects.glsl
+#include PostFXResources.glsl
 #include Encoding.glsl
 #include Constants.glsl
 
@@ -86,7 +86,6 @@ float3 Tonemap_Uchimura(float3 color, float exposure)
 
 float3 Tonemap_Lottes(float3 color, float exposure) 
 {
-
     // Lottes 2016, "Advanced Techniques and Optimization of HDR Color Pipelines"
     const float a = 1.6f;
     const float d = 0.977f;
@@ -103,28 +102,16 @@ float3 Tonemap_Lottes(float3 color, float exposure)
     return pow(color, a.xxx) / (pow(color, a.xxx * d) * b + c);
 }
 
-float3 Saturate_BT2100(float3 color, float amount) 
-{
-	const float grayscale = dot(color, float3(0.2627f, 0.6780f, 0.0593f));
-	return lerp_true(grayscale.xxx, color, amount);
-}
+float3 Saturate_BT2100(float3 color, float amount) { return lerp_true(dot(color, PK_LUMA_BT2100).xxx, color, amount); }
 
-float3 Saturate_BT709(float3 color, float amount) 
-{
-	const float grayscale = dot(color, float3(0.2126729f, 0.7151522f, 0.0721750f));
-	return lerp_true(grayscale.xxx, color, amount);
-}
+float3 Saturate_BT709(float3 color, float amount) { return lerp_true(dot(color, PK_LUMA_BT709).xxx, color, amount); }
 
-float3 Saturate_Rec601(float3 color, float amount) 
-{
-	const float grayscale = dot(color, float3(0.3f, 0.59f, 0.11f));
-	return lerp_true(grayscale.xxx, color, amount);
-}
+float3 Saturate_Rec601(float3 color, float amount) { return lerp_true(dot(color, PK_LUMA_REC601).xxx, color, amount); }
 
 float Vignette(float2 uv)
 {
     uv *= 1.0 - uv.yx;   
-    return min(1.0f, pow(uv.x * uv.y * pk_VignetteGrain.x, pk_VignetteGrain.y)); 
+    return min(1.0f, pow(uv.x * uv.y * pk_Vignette_Intensity, pk_Vignette_Power)); 
 }
 
 float3 LinearToGamma(float3 color)
@@ -140,57 +127,53 @@ float3 ApplyColorGrading(float3 color)
 {
     float3 final = saturate(color);
 
-    const float contrast = pk_ContrastGainGammaContribution.x;
-    const float gain = pk_ContrastGainGammaContribution.y;
-    const float gamma = pk_ContrastGainGammaContribution.z;
-    const float contribution = pk_ContrastGainGammaContribution.w;
-
     // White balance
     float3 lms = mul(LIN_2_LMS_MAT, final);
-    lms *= pk_WhiteBalance.xyz;
+    lms *= pk_CC_WhiteBalance.xyz;
     final = mul(LMS_2_LIN_MAT, lms);
 
     // Lift/gamma/gain
     final = max(final, 0.0);
-    final = pk_Gain.xyz * (pk_Lift.xyz * (1.0 - final) + pow(final, pk_Gamma.xyz));
+    final = pk_CC_Gain.xyz * (pk_CC_Lift.xyz * (1.0 - final) + pow(final, pk_CC_Gamma.xyz));
 
     // Hue/saturation/value
     float3 hsv = RGBToHSV(final);
-    hsv.x = mod(hsv.x + pk_HSV.x, 1.0);
-    hsv.yz *= pk_HSV.yz;
+    hsv.x = mod(hsv.x + pk_CC_HSV.x, 1.0);
+    hsv.yz *= pk_CC_HSV.yz;
     final = saturate(HSVToRGB(hsv));
     
     // Vibrance
-    float sat = max(final.r, max(final.g, final.b)) - min(final.r, min(final.g, final.b));
-    final = lerp(dot(final, pk_Luminance.xyz).xxx, final, (1.0 + (pk_Vibrance * (1.0 - (sign(pk_Vibrance) * sat)))));
+    const float sat = max(final.r, max(final.g, final.b)) - min(final.r, min(final.g, final.b));
+    final = lerp(dot(final, PK_LUMA_BT709).xxx, final, (1.0 + (pk_CC_Vibrance * (1.0 - (sign(pk_CC_Vibrance) * sat)))));
     
     // Contrast
-    final = saturate((final - 0.5) * contrast + 0.5);
+    final = saturate((final - 0.5) * pk_CC_LumaContrast + 0.5);
 
     // Gain
-    float f = pow(2.0, gain) * 0.5;
-    final.r = final.r < 0.5f ? pow(final.r, gain) * f : 1.0f - pow(1.0f - final.r, gain) * f;
-    final.g = final.g < 0.5f ? pow(final.g, gain) * f : 1.0f - pow(1.0f - final.g, gain) * f;
-    final.b = final.b < 0.5f ? pow(final.b, gain) * f : 1.0f - pow(1.0f - final.b, gain) * f;
+    const float g = pk_CC_LumaGain;
+    const float f = pow(2.0, g) * 0.5;
+    final.r = final.r < 0.5f ? pow(final.r, g) * f : 1.0f - pow(1.0f - final.r, g) * f;
+    final.g = final.g < 0.5f ? pow(final.g, g) * f : 1.0f - pow(1.0f - final.g, g) * f;
+    final.b = final.b < 0.5f ? pow(final.b, g) * f : 1.0f - pow(1.0f - final.b, g) * f;
 
     // Gamma
-    final = pow(final, gamma.xxx);
+    final = pow(final, pk_CC_LumaGamma.xxx);
 
     // Color mixer
     final = float3
     (
-        dot(final, pk_ChannelMixerRed.rgb),
-        dot(final, pk_ChannelMixerGreen.rgb),
-        dot(final, pk_ChannelMixerBlue.rgb)
+        dot(final, pk_CC_MixRed.rgb),
+        dot(final, pk_CC_MixGreen.rgb),
+        dot(final, pk_CC_MixBlue.rgb)
     );
 
-    return lerp(color, final, contribution);
+    return lerp(color, final, pk_CC_Contribution);
 }
 
 float3 ApplyLutColorGrading(float3 color)
 {
     const float3 uvw = saturate(color);
-    const float3 final = tex2D(pk_ColorGradingLutTex, uvw).rgb;
-    const float contribution = pk_ContrastGainGammaContribution.w;
+    const float3 final = tex2D(pk_CC_LutTex, uvw).rgb;
+    const float contribution = pk_CC_Contribution;
     return lerp(color, final, contribution);
 }

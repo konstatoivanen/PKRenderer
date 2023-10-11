@@ -1,8 +1,8 @@
 #version 460
 #include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl
-#include includes/SharedSceneGI.glsl
-#include includes/SharedReSTIR.glsl
+#include includes/SceneGIVX.glsl
+#include includes/SceneGIReSTIR.glsl
 
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE
 
@@ -62,7 +62,7 @@ void main()
         if (abs(direction.w - payload.linearDistance) > (0.01f * depth) || 
             abs(ReSTIR_GetTargetPdf(r) - payload.targetPdf) > 0.5f)
         {
-            ReSTIR_Store(raycoord, RESTIR_LAYER_PRE, pk_Reservoir_Zero);
+            ReSTIR_Store(raycoord, RESTIR_LAYER_PRE, RESTIR_RESERVOIR_ZERO);
         }
     }
 }
@@ -85,7 +85,7 @@ void main()
         radiance = SampleEnvironment(OctaUV(gl_WorldRayDirectionEXT), 0.0f);
     }
 
-    payload.targetPdf = dot(pk_Luminance.rgb, radiance);
+    payload.targetPdf = dot(PK_LUMA_BT709, radiance);
 }
 
 #pragma PROGRAM_RAY_CLOSEST_HIT
@@ -109,5 +109,5 @@ void main()
     }
 
     payload.linearDistance = hitdist;
-    payload.targetPdf = dot(pk_Luminance.rgb, radiance);
+    payload.targetPdf = dot(PK_LUMA_BT709, radiance);
 }

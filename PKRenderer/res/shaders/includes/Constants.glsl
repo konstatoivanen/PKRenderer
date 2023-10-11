@@ -27,10 +27,12 @@
 #define PK_W_ALIGNMENT_4 4u
 #define PK_W_ALIGNMENT_2 2u
 
-#define pk_Grey vec4(0.214041144, 0.214041144, 0.214041144, 0.5)
 // standard dielectric reflectivity coef at incident angle (= 4%)
-#define pk_DielectricSpecular vec4(0.04, 0.04, 0.04, 1.0 - 0.04) 
-#define pk_Luminance vec4(0.2126729, 0.7151522, 0.0721750, 1.0f) 
+#define PK_DIELECTRIC_SPEC vec4(0.04, 0.04, 0.04, 1.0 - 0.04) 
 
-#define pk_L1Basis vec4(0.282095f, 0.488603f.xxx)
-#define pk_L1Basis_Cosine vec4(0.88622692545f, 1.02332670795.xxx)
+#define PK_LUMA_BT709 vec3(0.2126729, 0.7151522, 0.0721750) 
+#define PK_LUMA_BT2100 vec3(0.2627, 0.6780, 0.0593)
+#define PK_LUMA_REC601 vec3(0.3, 0.59, 0.11)
+
+#define PK_L1BASIS vec4(0.282095f, 0.488603f.xxx)
+#define PK_L1BASIS_COSINE vec4(0.88622692545f, 1.02332670795.xxx)

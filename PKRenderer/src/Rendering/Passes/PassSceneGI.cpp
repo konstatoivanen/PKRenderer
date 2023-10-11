@@ -153,7 +153,7 @@ namespace PK::Rendering::Passes
         if (m_rasterAxis == 0)
         {
             cmd->BeginDebugScope("SceneGI.PruneVoxels", PK_COLOR_GREEN);
-            GraphicsAPI::SetImage(HashCache::Get()->_DestinationTex, m_voxels.get(), 0, 0);
+            GraphicsAPI::SetImage(HashCache::Get()->pk_Image, m_voxels.get(), 0, 0);
             cmd->Dispatch(m_computeClear, m_voxels->GetResolution());
             cmd->EndDebugScope();
         }
@@ -192,14 +192,14 @@ namespace PK::Rendering::Passes
         batcher->Render(cmd, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);
 
         // Voxel mips
-        GraphicsAPI::SetTexture(hash->_SourceTex, m_voxels.get());
-        GraphicsAPI::SetImage(hash->_DestinationTex, m_voxels.get(), 1, 0);
-        GraphicsAPI::SetImage(hash->_DestinationMip1, m_voxels.get(), 2, 0);
-        GraphicsAPI::SetImage(hash->_DestinationMip2, m_voxels.get(), 3, 0);
+        GraphicsAPI::SetTexture(hash->pk_Texture, m_voxels.get());
+        GraphicsAPI::SetImage(hash->pk_Image, m_voxels.get(), 1, 0);
+        GraphicsAPI::SetImage(hash->pk_Image1, m_voxels.get(), 2, 0);
+        GraphicsAPI::SetImage(hash->pk_Image2, m_voxels.get(), 3, 0);
         cmd->Dispatch(m_computeMipmap, 0, volres >> 1u);
-        GraphicsAPI::SetImage(hash->_DestinationTex, m_voxels.get(), 4, 0);
-        GraphicsAPI::SetImage(hash->_DestinationMip1, m_voxels.get(), 5, 0);
-        GraphicsAPI::SetImage(hash->_DestinationMip2, m_voxels.get(), 6, 0);
+        GraphicsAPI::SetImage(hash->pk_Image, m_voxels.get(), 4, 0);
+        GraphicsAPI::SetImage(hash->pk_Image1, m_voxels.get(), 5, 0);
+        GraphicsAPI::SetImage(hash->pk_Image2, m_voxels.get(), 6, 0);
         cmd->Dispatch(m_computeMipmap, 0, volres >> 4u);
 
         cmd->EndDebugScope();

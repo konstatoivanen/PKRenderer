@@ -1,15 +1,15 @@
 #version 460
 #pragma PROGRAM_COMPUTE
 #include includes/GBuffers.glsl
-#include includes/SharedPostEffects.glsl
+#include includes/PostFXResources.glsl
 #include includes/Encoding.glsl
 
-PK_DECLARE_SET_DRAW uniform sampler2D _SourceTex;
-PK_DECLARE_SET_DRAW uniform sampler2D _HistoryReadTex;
-layout(r32ui, set = PK_SET_DRAW) uniform uimage2D _HistoryWriteTex;
+PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture; // Current Screen
+PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture1; // History Read
+layout(r32ui, set = PK_SET_DRAW) uniform uimage2D pk_Image; // History Write
 
-#define SAMPLE_TAA_SOURCE(uv) tex2D(_SourceTex, uv).rgb
-#define SAMPLE_TAA_HISTORY(uv) tex2D(_HistoryReadTex, uv).rgb
+#define SAMPLE_TAA_SOURCE(uv) tex2D(pk_Texture, uv).rgb
+#define SAMPLE_TAA_HISTORY(uv) tex2D(pk_Texture1, uv).rgb
 
 struct TAADescriptor
 {
@@ -37,7 +37,7 @@ float3 SolveTemporalAntiAliasing(TAADescriptor desc)
     color = clamp(color, 0.0, PK_HALF_MAX_MINUS1);
 
     float3 average = (corners + color) * 0.142857f;
-    float2 luminance = float2(dot(average, pk_Luminance.rgb), dot(color, pk_Luminance.rgb));
+    float2 luminance = float2(dot(average, PK_LUMA_BT709), dot(color, PK_LUMA_BT709));
 
     float motionLength = length(desc.motion);
     float colorOffset = lerp(4.0f, 0.25f, saturate(motionLength * 100.0f)) * abs(luminance.x - luminance.y);
@@ -85,5 +85,5 @@ void main()
 
     const float3 color = SolveTemporalAntiAliasing(desc);
 
-    imageStore(_HistoryWriteTex, coord, uint4(EncodeE5BGR9(color)));
+    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color)));
 }

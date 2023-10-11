@@ -11,11 +11,11 @@ namespace PK::Rendering::Passes
     {
         struct Constants
         {
-            float pk_FocalLength;
-            float pk_FNumber;
-            float pk_FilmHeight;
-            float pk_FocusSpeed;
-            float pk_MaximumCoC;
+            float pk_DoF_FocalLength;
+            float pk_DoF_FNumber;
+            float pk_DoF_FilmHeight;
+            float pk_DoF_FocusSpeed;
+            float pk_DoF_MaximumCoC;
         };
 
         public:

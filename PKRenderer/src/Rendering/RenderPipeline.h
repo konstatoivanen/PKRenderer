@@ -15,6 +15,8 @@
 #include "Rendering/Passes/PassFilmGrain.h"
 #include "Rendering/Passes/PassDepthOfField.h"
 #include "Rendering/Passes/PassTemporalAntiAliasing.h"
+#include "Rendering/Passes/PassAutoExposure.h"
+#include "Rendering/Passes/PassBloom.h"
 #include "Rendering/Services/Batcher.h"
 
 namespace PK::Rendering
@@ -51,14 +53,13 @@ namespace PK::Rendering
             Passes::PassDepthOfField m_depthOfField;
             Passes::PassTemporalAntialiasing m_temporalAntialiasing;
             Passes::PassBloom m_bloom;
-            Passes::PassHistogram m_histogram;
+            Passes::PassAutoExposure m_autoExposure;
             Passes::PassPostEffectsComposite m_passPostEffectsComposite;
 
             Batcher m_batcher;
             Core::Services::Sequencer* m_sequencer;
 
             Utilities::Ref<Objects::AccelerationStructure> m_sceneStructure;
-            Utilities::Ref<Objects::ConstantBuffer> m_constantsPostProcess;
             Utilities::Ref<Objects::ConstantBuffer> m_constantsPerFrame;
             Utilities::Ref<Objects::RenderTexture> m_renderTarget;
             Utilities::Ref<Objects::Texture> m_previousColor;

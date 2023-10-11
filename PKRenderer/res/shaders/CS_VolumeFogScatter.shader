@@ -1,7 +1,7 @@
 #version 460
 #extension GL_KHR_shader_subgroup_ballot : enable
 #pragma PROGRAM_COMPUTE
-#include includes/SharedVolumeFog.glsl
+#include includes/VolumeFog.glsl
 #include includes/Encoding.glsl
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
