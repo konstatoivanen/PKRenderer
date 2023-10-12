@@ -28,7 +28,6 @@ namespace PK::Rendering::Passes
             Objects::Shader* m_computeShadeHits = nullptr;
             Objects::Shader* m_computeAccumulate = nullptr;
             Objects::Shader* m_computeReproject = nullptr;
-            Objects::Shader* m_computeScreenMip = nullptr;
             Objects::Shader* m_computeGradients = nullptr;
             Objects::Shader* m_computePostFilter = nullptr;
             Objects::Shader* m_rayTraceGatherGI = nullptr;

@@ -24,7 +24,6 @@ namespace PK::Rendering::Passes
         m_computeAccumulate = assetDatabase->Find<Shader>("CS_GI_Accumulate");
         m_computeShadeHits = assetDatabase->Find<Shader>("CS_GI_ShadeHits");
         m_computeReproject = assetDatabase->Find<Shader>("CS_GI_Reproject");
-        m_computeScreenMip = assetDatabase->Find<Shader>("CS_GI_ScreenMip");
         m_computeGradients = assetDatabase->Find<Shader>("CS_GI_GradientEstimation");
         m_computePostFilter = assetDatabase->Find<Shader>("CS_GI_PostFilter");
         m_rayTraceGatherGI = assetDatabase->Find<Shader>("RS_GI_Raytrace");

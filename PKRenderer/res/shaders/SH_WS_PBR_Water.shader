@@ -71,7 +71,7 @@ void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData
 {
     float2 uv = varyings.vs_TEXCOORD0;
 
-    float yorigin = pk_MATRIX_M[3].y;
+    float yorigin = pk_ObjectToWorld[3].y;
 
     float3 noise;
     noise.xy = NoiseCell(int2(surf.worldpos.xz * 8.0f + surf.worldpos.yy * 30.0f));

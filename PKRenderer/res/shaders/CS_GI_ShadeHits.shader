@@ -17,7 +17,7 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHi
 
     if (hit.isScreen)
     {
-        float2 uv = ClipToUV(mul(pk_MATRIX_L_VP, float4(worldpos, 1.0f)).xyw);
+        float2 uv = ClipToUV(mul(pk_WorldToProjPrev, float4(worldpos, 1.0f)).xyw);
         return SamplePreviousColor(uv);
     }
 

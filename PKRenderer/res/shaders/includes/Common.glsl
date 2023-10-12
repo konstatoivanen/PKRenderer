@@ -7,17 +7,17 @@
 
 PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 {
-    float3x4 pk_MATRIX_V;       // Current view matrix.
-    float3x4 pk_MATRIX_I_V;     // Current inverse view matrix.
-    float3x4 pk_MATRIX_L_I_V;   // Last inverse view matrix.
+    float3x4 pk_WorldToView;     // Current view matrix.
+    float3x4 pk_ViewToWorld;     // Current inverse view matrix.
+    float3x4 pk_ViewToWorldPrev; // Last inverse view matrix.
 
-    float4x4 pk_MATRIX_P;       // Current projection matrix.
-    float4x4 pk_MATRIX_VP;      // Current view * projection matrix.
-    float4x4 pk_MATRIX_VP_N;    // Current view * unjittered projection matrix.
+    float4x4 pk_ViewToProj;             // Current projection matrix.
+    float4x4 pk_WorldToProj;            // Current view * projection matrix.
+    float4x4 pk_WorldToProj_NoJitter;   // Current view * unjittered projection matrix.
 
-    float4x4 pk_MATRIX_L_VP;    // Last view * projection matrix.
-    float4x4 pk_MATRIX_L_VP_N;  // Last view * unjittered projection matrix.
-    float4x4 pk_MATRIX_L_VP_D;  // Last view * projection * current inverse view matrix.
+    float4x4 pk_WorldToProjPrev;           // Last view * projection matrix.
+    float4x4 pk_WorldToProjPrev_NoJitter;  // Last view * unjittered projection matrix.
+    float4x4 pk_ViewToProjDelta;           // Last view * projection * current inverse view matrix.
 
     float4 pk_Time;      // Time since load (t/20, t, t*2, t*3), use to animate things inside the shaders.
     float4 pk_SinTime;   // Sine of time: (t/8, t/4, t/2, t).
@@ -45,8 +45,8 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 #if !defined(PK_INSTANCING_ENABLED)
 PK_DECLARE_CBUFFER(pk_ModelMatrices, PK_SET_DRAW)
 {
-    float4x4 pk_MATRIX_M; // Current model matrix.
-    float4x4 pk_MATRIX_I_M; // Current inverse model matrix.
+    float4x4 pk_ObjectToWorld; // Current model matrix.
+    float4x4 pk_WorldToObject; // Current inverse model matrix.
 };
 #endif
 
@@ -59,25 +59,25 @@ uint GetShadowCascadeIndex(float viewDepth)
 }
 
 //----------TRANSFORMS----------//
-float3 ObjectToWorldPos(const float3 pos) { return mul(pk_MATRIX_M, float4(pos, 1.0f)).xyz; }
-float3 ObjectToWorldDir(const float3 dir) { return mul(float3x3(pk_MATRIX_M), dir); }
-float3 ObjectToViewPos(const float3 pos) { return mul(mul(pk_MATRIX_M, float4(pos, 1.0f)), pk_MATRIX_V).xyz; }
-float3 ObjectToViewDir(const float3 dir) { return mul(ObjectToWorldDir(dir), float3x3(pk_MATRIX_V)); }
-float4 ObjectToClipPos(const float3 pos) { return mul(pk_MATRIX_VP, mul(pk_MATRIX_M, float4(pos, 1.0f))); }
+float3 ObjectToWorldPos(const float3 pos) { return mul(pk_ObjectToWorld, float4(pos, 1.0f)).xyz; }
+float3 ObjectToWorldDir(const float3 dir) { return mul(float3x3(pk_ObjectToWorld), dir); }
+float3 ObjectToViewPos(const float3 pos) { return mul(mul(pk_ObjectToWorld, float4(pos, 1.0f)), pk_WorldToView).xyz; }
+float3 ObjectToViewDir(const float3 dir) { return mul(ObjectToWorldDir(dir), float3x3(pk_WorldToView)); }
+float4 ObjectToClipPos(const float3 pos) { return mul(pk_WorldToProj, mul(pk_ObjectToWorld, float4(pos, 1.0f))); }
 
-float3 WorldToObjectPos(const float3 pos) { return mul(pk_MATRIX_I_M, float4(pos, 1.0f)).xyz; }
-float3 WorldToObjectDir(const float3 dir) { return mul(float3x3(pk_MATRIX_I_M), dir); }
-float3 WorldToViewPos(const float3 pos) { return mul(float4(pos, 1.0f), pk_MATRIX_V).xyz; }
-float3 WorldToViewDir(const float3 dir) { return mul(dir, float3x3(pk_MATRIX_V)); }
-float4 WorldToClipPos(const float3 pos) { return mul(pk_MATRIX_VP, float4(pos, 1.0f)); }
-float4 WorldToClipDir(const float3 dir) { return mul(pk_MATRIX_VP, float4(dir, 0.0f)); }
-float4 WorldToPrevClipPos(const float3 pos) { return mul(pk_MATRIX_L_VP, float4(pos, 1.0f)); }
+float3 WorldToObjectPos(const float3 pos) { return mul(pk_WorldToObject, float4(pos, 1.0f)).xyz; }
+float3 WorldToObjectDir(const float3 dir) { return mul(float3x3(pk_WorldToObject), dir); }
+float3 WorldToViewPos(const float3 pos) { return mul(float4(pos, 1.0f), pk_WorldToView).xyz; }
+float3 WorldToViewDir(const float3 dir) { return mul(dir, float3x3(pk_WorldToView)); }
+float4 WorldToClipPos(const float3 pos) { return mul(pk_WorldToProj, float4(pos, 1.0f)); }
+float4 WorldToClipDir(const float3 dir) { return mul(pk_WorldToProj, float4(dir, 0.0f)); }
+float4 WorldToPrevClipPos(const float3 pos) { return mul(pk_WorldToProjPrev, float4(pos, 1.0f)); }
 
-float4 ViewToClipPos(const float3 pos) { return mul(pk_MATRIX_P, float4(pos, 1.0f)); }
-float4 ViewToClipDir(const float3 dir) { return mul(pk_MATRIX_P, float4(dir, 0.0f)); }
-float4 ViewToPrevClipPos(const float3 pos) { return mul(pk_MATRIX_L_VP_D, float4(pos, 1.0f)); }
-float3 ViewToWorldPos(const float3 pos) { return mul(float4(pos, 1.0f), pk_MATRIX_I_V).xyz; }
-float3 ViewToWorldDir(const float3 dir) { return mul(dir, float3x3(pk_MATRIX_I_V)); }
+float4 ViewToClipPos(const float3 pos) { return mul(pk_ViewToProj, float4(pos, 1.0f)); }
+float4 ViewToClipDir(const float3 dir) { return mul(pk_ViewToProj, float4(dir, 0.0f)); }
+float4 ViewToPrevClipPos(const float3 pos) { return mul(pk_ViewToProjDelta, float4(pos, 1.0f)); }
+float3 ViewToWorldPos(const float3 pos) { return mul(float4(pos, 1.0f), pk_ViewToWorld).xyz; }
+float3 ViewToWorldDir(const float3 dir) { return mul(dir, float3x3(pk_ViewToWorld)); }
 
 float  ViewDepth(const float clip_z)      { return 1.0f / (pk_InvProjectionParams.z * clip_z + pk_InvProjectionParams.w); } 
 float4 ViewDepth(const float4 clip_z)     { return 1.0f / (pk_InvProjectionParams.z * clip_z + pk_InvProjectionParams.w); } 
@@ -129,7 +129,7 @@ bool Test_WorldToClipUVW(float3 worldpos, inout float3 uvw)
 
 bool Test_WorldToPrevClipUVW(float3 worldpos, inout float3 uvw)
 {
-    float4 clippos = mul(pk_MATRIX_L_VP, float4(worldpos, 1.0f));
+    float4 clippos = mul(pk_WorldToProjPrev, float4(worldpos, 1.0f));
     uvw = ClipToUVW(clippos);
     return Test_ClipPos(clippos);
 }

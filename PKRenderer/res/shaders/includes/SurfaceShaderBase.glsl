@@ -23,6 +23,27 @@ struct SurfaceData
     float occlusion;
 };
 
+/*
+@TODO consider using this as opposed to vertex attributes
+Saves memory but costs alu....
+float3x3 CotangentFrame(float3 N, float3 P, float2 UV)
+{
+	N = normalize(N);
+
+	float3 dp1	= ddx(P);
+	float3 dp2	= ddy(P);
+	float2 duv1 = ddx(UV);
+	float2 duv2 = ddy(UV);
+
+	float3x3 M = float3x3(dp1, dp2, cross(dp1, dp2));
+	float2x3 inverseM = float2x3( cross( M[1], M[2] ), cross( M[2], M[0] ) );
+	float3 T = mul(float2(duv1.x, duv2.x), inverseM);
+	float3 B = mul(float2(duv1.y, duv2.y), inverseM);
+
+	return float3x3(normalize(T), normalize(B), N);
+}
+*/
+
 float3x3 ComposeMikkTBN(float3 normal, float4 tangent)
 {
     float3 T = normalize(tangent.xyz);

@@ -72,16 +72,16 @@ namespace PK::Rendering
 
         m_constantsPerFrame = CreateRef<ConstantBuffer>(BufferLayout(
             {
-                { ElementType::Float3x4, hash->pk_MATRIX_V },
-                { ElementType::Float3x4, hash->pk_MATRIX_I_V },
-                { ElementType::Float3x4, hash->pk_MATRIX_L_I_V },
+                { ElementType::Float3x4, hash->pk_WorldToView },
+                { ElementType::Float3x4, hash->pk_ViewToWorld },
+                { ElementType::Float3x4, hash->pk_ViewToWorldPrev },
 
-                { ElementType::Float4x4, hash->pk_MATRIX_P },
-                { ElementType::Float4x4, hash->pk_MATRIX_VP },
-                { ElementType::Float4x4, hash->pk_MATRIX_VP_N },
-                { ElementType::Float4x4, hash->pk_MATRIX_L_VP },
-                { ElementType::Float4x4, hash->pk_MATRIX_L_VP_N },
-                { ElementType::Float4x4, hash->pk_MATRIX_L_VP_D },
+                { ElementType::Float4x4, hash->pk_ViewToProj },
+                { ElementType::Float4x4, hash->pk_WorldToProj },
+                { ElementType::Float4x4, hash->pk_WorldToProj_NoJitter },
+                { ElementType::Float4x4, hash->pk_WorldToProjPrev },
+                { ElementType::Float4x4, hash->pk_WorldToProjPrev_NoJitter },
+                { ElementType::Float4x4, hash->pk_ViewToProjDelta },
                 
                 { ElementType::Float4, hash->pk_Time },
                 { ElementType::Float4, hash->pk_SinTime },
@@ -159,46 +159,46 @@ namespace PK::Rendering
             token->jitter.y / m_renderTarget->GetResolution().y
         };
 
-        auto matrix_p_n = token->projection;
-        auto matrix_p = Functions::GetPerspectiveJittered(matrix_p_n, jitter);
-        auto matrix_i_p = glm::inverse(matrix_p);
-        auto matrix_v = token->view;
-        auto matrix_i_v = glm::inverse(matrix_v);
-        auto matrix_vp = matrix_p * matrix_v;
-        auto matrix_vp_n = matrix_p_n * matrix_v;
-        float n = m_znear = Functions::GetZNearFromProj(matrix_p);
-        float f = m_zfar = Functions::GetZFarFromProj(matrix_p);
+        auto viewToProjNoJitter = token->projection;
+        auto viewToProj = Functions::GetPerspectiveJittered(viewToProjNoJitter, jitter);
+        auto projToView = glm::inverse(viewToProj);
+        auto worldToView = token->view;
+        auto viewToWorld = glm::inverse(worldToView);
+        auto worldToProj = viewToProj * worldToView;
+        auto worldToProjNoJitter = viewToProjNoJitter * worldToView;
+        float n = m_znear = Functions::GetZNearFromProj(viewToProj);
+        float f = m_zfar = Functions::GetZFarFromProj(viewToProj);
 
-        auto matrix_l_i_v = Functions::TransposeTo3x4(matrix_i_v);
-        auto matrix_l_vp = matrix_vp;
-        auto matrix_l_vp_n = matrix_vp_n;
+        auto viewToWorldPrev = Functions::TransposeTo3x4(viewToWorld);
+        auto worldToProjPrev = worldToProj;
+        auto worldToProjPrevNoJitter = worldToProjNoJitter;
 
-        m_constantsPerFrame->TryGet(hash->pk_MATRIX_I_V, matrix_l_i_v);
+        m_constantsPerFrame->TryGet(hash->pk_ViewToWorld, viewToWorldPrev);
 
-        if (m_constantsPerFrame->TryGet(hash->pk_MATRIX_VP, matrix_l_vp))
+        if (m_constantsPerFrame->TryGet(hash->pk_WorldToProj, worldToProjPrev))
         {
             // We can assume that m_viewProjectionMatrix has been assigned if the cbuffer has values for this.
-            matrix_l_vp_n = m_viewProjectionMatrix;
+            worldToProjPrevNoJitter = m_viewProjectionMatrix;
         }
 
-        m_viewProjectionMatrix = matrix_vp_n;
-        auto viewSpaceCameraDelta = matrix_v * float4(matrix_l_i_v[0].w, matrix_l_i_v[1].w, matrix_l_i_v[2].w, 1.0f);
+        m_viewProjectionMatrix = worldToProjNoJitter;
+        auto viewSpaceCameraDelta = worldToView * float4(viewToWorldPrev[0].w, viewToWorldPrev[1].w, viewToWorldPrev[2].w, 1.0f);
 
         m_constantsPerFrame->Set<float4>(hash->pk_ProjectionParams, { n, f, -1.0f / f, -(n - f) / (f * n) });
-        m_constantsPerFrame->Set<float4>(hash->pk_InvProjectionParams, { matrix_i_p[0][0], matrix_i_p[1][1], matrix_i_p[2][3], matrix_i_p[3][3] });
+        m_constantsPerFrame->Set<float4>(hash->pk_InvProjectionParams, { projToView[0][0], projToView[1][1], projToView[2][3], projToView[3][3] });
         m_constantsPerFrame->Set<float4>(hash->pk_ExpProjectionParams, { 1.0f / glm::log2(f / n), -log2(n) / log2(f / n), f / n, 1.0f / n });
-        m_constantsPerFrame->Set<float4>(hash->pk_WorldSpaceCameraPos, matrix_i_v[3]);
+        m_constantsPerFrame->Set<float4>(hash->pk_WorldSpaceCameraPos, viewToWorld[3]);
         m_constantsPerFrame->Set<float4>(hash->pk_ViewSpaceCameraDelta, viewSpaceCameraDelta);
         m_constantsPerFrame->Set<float4>(hash->pk_ProjectionJitter, token->jitter);
-        m_constantsPerFrame->Set<float3x4>(hash->pk_MATRIX_V, Functions::TransposeTo3x4(matrix_v));
-        m_constantsPerFrame->Set<float3x4>(hash->pk_MATRIX_I_V, Functions::TransposeTo3x4(matrix_i_v));
-        m_constantsPerFrame->Set<float3x4>(hash->pk_MATRIX_L_I_V, matrix_l_i_v);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_P, matrix_p);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_VP, matrix_vp);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_VP_N, matrix_vp_n);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP, matrix_l_vp);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP_N, matrix_l_vp_n);
-        m_constantsPerFrame->Set<float4x4>(hash->pk_MATRIX_L_VP_D, matrix_l_vp * matrix_i_v);
+        m_constantsPerFrame->Set<float3x4>(hash->pk_WorldToView, Functions::TransposeTo3x4(worldToView));
+        m_constantsPerFrame->Set<float3x4>(hash->pk_ViewToWorld, Functions::TransposeTo3x4(viewToWorld));
+        m_constantsPerFrame->Set<float3x4>(hash->pk_ViewToWorldPrev, viewToWorldPrev);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_ViewToProj, viewToProj);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_WorldToProj, worldToProj);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_WorldToProj_NoJitter, worldToProjNoJitter);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_WorldToProjPrev, worldToProjPrev);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_WorldToProjPrev_NoJitter, worldToProjPrevNoJitter);
+        m_constantsPerFrame->Set<float4x4>(hash->pk_ViewToProjDelta, worldToProjPrev * viewToWorld);
     }
 
     void RenderPipeline::Step(PK::ECS::Tokens::TimeToken* token)

@@ -41,7 +41,10 @@ void main()
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     float2 uv = float2(coord + 0.5f.xx) / float2(size);
 
-    float3 color = max(0.0f.xxx, imageLoad(pk_Image, coord).rgb);
+    float3 color = imageLoad(pk_Image, coord).rgb;
+
+    // Remove nans
+    color = -min(-color, 0.0f.xxx);
 
     float exposure = GetAutoExposure();
     
