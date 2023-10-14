@@ -48,7 +48,6 @@ uint ReSTIR_Hash(uint seed)
 // Wellons hash works well for low entropy input. 
 // By striding the seed we get different values for pixels while keeping low entropy input.
 uint ReSTIR_GetSeed(int2 baseCoord) { return ZCurveToIndex2D(baseCoord) * RESTIR_SEED_STRIDE + pk_FrameRandom.x; }
-float ReSTIR_ToUnorm(uint x) { return uintBitsToFloat(x & 0x007fffffu | 0x3f800000u) - 1.0; }
 
 int2 ReSTIR_PermutationSampling(int2 coord, bool mask)
 {
@@ -76,7 +75,7 @@ int2 ReSTIR_GetSpatialResamplingCoord(const int2 coord, int scale, uint hash)
 
 bool ReSTIR_NearFieldReject(const float depth, const float3 origin, const Reservoir r, uint hash)
 {
-    const float random = ReSTIR_ToUnorm(hash);
+    const float random = make_unorm(hash);
     const float range = RESITR_NEARFIELD * depth;
     const float3 vec = origin - r.position;
     return (dot(vec, vec) / pow2(range)) < random;
@@ -116,7 +115,7 @@ void ReSTIR_Normalize(inout Reservoir r, uint maxM)
 
 void ReSTIR_CombineReservoir(inout Reservoir combined, const Reservoir b, float targetPdf, uint hash)
 {
-    const float random = ReSTIR_ToUnorm(hash);
+    const float random = make_unorm(hash);
     const float weight = targetPdf * safePositiveRcp(b.targetPdf) * b.weightSum;
     
     combined.weightSum += weight;
@@ -133,7 +132,7 @@ void ReSTIR_CombineReservoir(inout Reservoir combined, const Reservoir b, float 
 
 void ReSTIR_CombineReservoirSimple(inout Reservoir combined, const Reservoir b, uint hash)
 {
-    const float random = ReSTIR_ToUnorm(hash);
+    const float random = make_unorm(hash);
     combined.weightSum += b.weightSum;
     combined.M += b.M; 
 

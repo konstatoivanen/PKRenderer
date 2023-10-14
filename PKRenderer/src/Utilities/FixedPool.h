@@ -24,9 +24,9 @@ namespace PK::Utilities
                 alloc_traits::deallocate(m_alloc, m_data, capacity);
             }
 
-            T*& operator [](uint32_t index) { return m_data + index; }
+            T* operator [](uint32_t index) { return m_data + index; }
 
-            const T*& operator [](uint32_t index) const { return m_data + index; }
+            const T* operator [](uint32_t index) const { return m_data + index; }
 
             uint32_t GetIndex(const T* ptr) const 
             {

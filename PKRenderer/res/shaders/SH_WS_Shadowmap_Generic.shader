@@ -98,12 +98,11 @@ void main()
 }
 
 #pragma PROGRAM_FRAGMENT
+
 in float4 vs_DEPTH;
 layout(early_fragment_tests) in;
-layout(location = 0) out float2 SV_Target0;
-
+layout(location = 0) out float SV_Target0;
 void main()
-{
-    float d = length(vs_DEPTH.xyz) + vs_DEPTH.w;
-    SV_Target0 = float2(d, d * d);
-};
+{ 
+    SV_Target0 = length(vs_DEPTH.xyz) + vs_DEPTH.w; 
+}

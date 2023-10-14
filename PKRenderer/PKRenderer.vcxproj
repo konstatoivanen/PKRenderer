@@ -870,6 +870,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\MortonOrder.glsl" />
     <None Include="res\shaders\includes\SceneGIFiltering.glsl" />
     <None Include="res\shaders\includes\SceneGIReSTIR.glsl" />
+    <None Include="res\shaders\includes\Shadows.glsl" />
     <None Include="res\shaders\includes\SpatialFilters.glsl" />
     <None Include="res\shaders\includes\Kernels.glsl" />
     <None Include="res\shaders\includes\GBuffers.glsl" />
@@ -903,7 +904,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_PostEffectsComposite.shader" />
     <None Include="res\shaders\CS_DepthOfField.shader" />
     <None Include="res\shaders\SH_VS_EnvBackground.shader" />
-    <None Include="res\shaders\CS_ShadowmapBlur.shader" />
+    <None Include="res\shaders\CS_ShadowCopyCube.shader" />
     <None Include="res\shaders\SH_WS_PBR_Default.shader" />
     <None Include="res\shaders\SH_WS_PBR_Glitter.shader" />
     <None Include="res\shaders\SH_WS_PBR_Triplanar.shader" />

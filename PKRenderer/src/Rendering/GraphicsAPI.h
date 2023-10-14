@@ -40,6 +40,7 @@ namespace PK::Rendering
         virtual void SetBufferArray(uint32_t nameHashId, Objects::BindArray<Objects::Buffer>* bufferArray) = 0;
         virtual void SetTextureArray(uint32_t nameHashId, Objects::BindArray<Objects::Texture>* textureArray) = 0;
         virtual void SetImage(uint32_t nameHashId, Objects::Texture* texture, const Structs::TextureViewRange& range) = 0;
+        virtual void SetSampler(uint32_t nameHashId, const Structs::SamplerDescriptor& sampler) = 0;
         virtual void SetAccelerationStructure(uint32_t nameHashId, Objects::AccelerationStructure* structure) = 0;
         virtual void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) = 0;
         virtual void SetKeyword(uint32_t nameHashId, bool value) = 0;
@@ -91,6 +92,8 @@ namespace PK::Rendering
         void SetImage(const char* name, PK::Rendering::Objects::Texture* texture);
         void SetImage(const char* name, PK::Rendering::Objects::Texture* texture, uint16_t level, uint16_t layer);
         void SetImage(const char* name, PK::Rendering::Objects::Texture* texture, const Structs::TextureViewRange& range);
+        void SetSampler(uint32_t nameHashId, const PK::Rendering::Structs::SamplerDescriptor& sampler);
+        void SetSampler(const char* name, const PK::Rendering::Structs::SamplerDescriptor& sampler);
         void SetAccelerationStructure(uint32_t nameHashId, PK::Rendering::Objects::AccelerationStructure* structure);
         void SetAccelerationStructure(const char* name, PK::Rendering::Objects::AccelerationStructure* structure);
         void SetBufferArray(uint32_t nameHashId, PK::Rendering::Objects::BindArray<PK::Rendering::Objects::Buffer>* bufferArray);

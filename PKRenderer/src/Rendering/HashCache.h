@@ -178,16 +178,12 @@ namespace PK::Rendering
         DECLARE_HASH(pk_Fog_Transmittance)
         DECLARE_HASH(pk_Fog_Parameters)
 
-        DECLARE_HASH(pk_ShadowmapSource)
-        DECLARE_HASH(pk_ShadowmapData)
-
         DECLARE_HASH(PK_INSTANCING_ENABLED)
         DECLARE_HASH(PK_META_PASS_GBUFFER)
         DECLARE_HASH(PK_META_PASS_GIVOXELIZE)
         DECLARE_HASH(SHADOW_SOURCE_CUBE)
         DECLARE_HASH(SHADOW_SOURCE_2D)
-        DECLARE_HASH(SHADOW_BLUR_PASS0)
-        DECLARE_HASH(SHADOW_BLUR_PASS1)
+        DECLARE_HASH(SHADOW_USE_VSM)
 
         #undef DEFINE_HASH_CACHE
 

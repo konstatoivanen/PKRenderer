@@ -2,24 +2,11 @@
 #include LightResources.glsl
 #include Encoding.glsl
 #include BRDF.glsl
+#include Shadows.glsl
 
-#define SHADOW_USE_LBR 
-#define SHADOW_LBR 0.2f
-#define SHADOWMAP_CASCADES 4
-
-#if defined(SHADOW_USE_LBR)
-    float LBR(float shadow) { return smoothstep(SHADOW_LBR, 1.0f, shadow); }
-#else
-    #define LBR(shadow) (shadow)
+#ifndef SHADOW_TEST 
+    #define SHADOW_TEST ShadowTest_Dither8
 #endif
-
-float SampleLightShadowmap(const uint shadowmapIndex, const float2 uv, const float lightDistance)
-{
-    const float2 moments = tex2D(pk_ShadowmapAtlas, float3(uv, shadowmapIndex)).xy;
-    const float variance = moments.y - moments.x * moments.x;
-    const float difference = lightDistance - moments.x;
-    return min(LBR(variance / (variance + pow2(difference))) + step(difference, 0.1f), 1.0f);
-}
 
 float4 GetLightProjectionUVW(const float3 worldpos, const uint projectionIndex)
 {
@@ -86,7 +73,7 @@ Light GetLightDirect(const uint index, const float3 worldpos, const uint cascade
     [[branch]]
     if (index_shadow < LIGHT_PARAM_INVALID)
     {
-        shadow *= SampleLightShadowmap(index_shadow, lightuv, posToLight.w);
+        shadow *= SHADOW_TEST(index_shadow, float3(lightuv, posToLight.w));
     }
 
     return Light(color, shadow, posToLight.xyz, linearDistance, sourceRadius);

@@ -1,4 +1,10 @@
 #pragma once
+
+// needs to be declared before lighting include.
+#if defined(PK_META_PASS_GIVOXELIZE) 
+    #define SHADOW_TEST ShadowTest_Fast
+#endif
+
 #include GBuffers.glsl
 #include Lighting.glsl
 #include SceneEnv.glsl

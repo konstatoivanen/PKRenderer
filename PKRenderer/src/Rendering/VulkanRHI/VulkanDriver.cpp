@@ -325,6 +325,11 @@ namespace PK::Rendering::VulkanRHI
         globalResources.Set(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::Image)));
     }
 
+    void VulkanDriver::SetSampler(uint32_t nameHashId, const Structs::SamplerDescriptor& sampler)
+    {
+        globalResources.Set(nameHashId, Handle(samplerCache->GetBindHandle(sampler)));
+    }
+
     void VulkanDriver::SetAccelerationStructure(uint32_t nameHashId, AccelerationStructure* structure)
     {
         globalResources.Set(nameHashId, Handle(structure->GetNative<VulkanAccelerationStructure>()->GetBindHandle()));

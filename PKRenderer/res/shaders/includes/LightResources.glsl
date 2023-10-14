@@ -42,7 +42,6 @@ struct LightTile
 struct LightPacked { float4 p; float4 c; uint4 i; };
 
 PK_DECLARE_SET_GLOBAL uniform sampler2DArray pk_LightCookies;
-PK_DECLARE_SET_PASS uniform sampler2DArray pk_ShadowmapAtlas;
 PK_DECLARE_READONLY_BUFFER(LightPacked, pk_Lights, PK_SET_PASS);
 PK_DECLARE_READONLY_BUFFER(float4x4, pk_LightMatrices, PK_SET_PASS);
 

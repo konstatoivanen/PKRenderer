@@ -129,6 +129,8 @@ namespace PK::Rendering::VulkanRHI::Services
                 {
                     write->pImageInfo = reinterpret_cast<decltype(write->pImageInfo)>(imageCount + 1);
                     auto newSize = imageCount + bind->count;
+                    auto bindSampler = type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                    auto bindImage = type != VK_DESCRIPTOR_TYPE_SAMPLER;
 
                     if (m_writeImages.size() < newSize)
                     {
@@ -140,9 +142,9 @@ namespace PK::Rendering::VulkanRHI::Services
 
                     for (auto i = 0; i < bind->count; ++i)
                     {
-                        images[i].sampler = handles[i]->image.sampler;
-                        images[i].imageView = handles[i]->image.view;
-                        images[i].imageLayout = handles[i]->image.layout;
+                        images[i].sampler = bindSampler ? handles[i]->image.sampler : VK_NULL_HANDLE;
+                        images[i].imageView = bindImage ? handles[i]->image.view : VK_NULL_HANDLE;
+                        images[i].imageLayout = bindImage ? handles[i]->image.layout : VK_IMAGE_LAYOUT_UNDEFINED;
                     }
                 }
                 break;

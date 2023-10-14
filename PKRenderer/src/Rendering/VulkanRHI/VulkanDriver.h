@@ -64,6 +64,7 @@ namespace PK::Rendering::VulkanRHI
         void SetBufferArray(uint32_t nameHashId, Objects::BindArray<Objects::Buffer>* bufferArray) final;
         void SetTextureArray(uint32_t nameHashId, Objects::BindArray<Objects::Texture>* textureArray) final;
         void SetImage(uint32_t nameHashId, Objects::Texture* texture, const Structs::TextureViewRange& range) final;
+        void SetSampler(uint32_t nameHashId, const Structs::SamplerDescriptor& sampler) final;
         void SetAccelerationStructure(uint32_t nameHashId, Objects::AccelerationStructure* structure) final;
         void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) final;
         void SetKeyword(uint32_t nameHashId, bool value) final;

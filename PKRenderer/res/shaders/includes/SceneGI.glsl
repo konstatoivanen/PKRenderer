@@ -25,7 +25,7 @@ layout(rg32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_RayHits;
 layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedDiff;
 layout(rg32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedSpec;
 layout(r32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_ResolvedWrite;
-PK_DECLARE_SET_SHADER uniform sampler2DArray pk_GI_ResolvedRead;
+PK_DECLARE_SET_SHADER uniform texture2DArray pk_GI_ResolvedRead;
 
 #define PK_GI_APPROX_ROUGH_SPEC 1
 

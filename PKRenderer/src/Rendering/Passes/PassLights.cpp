@@ -57,7 +57,7 @@ namespace PK::Rendering::Passes
         m_lights(1024)
     {
         m_computeLightAssignment = assetDatabase->Find<Shader>("CS_LightAssignment");
-        m_shadowmapBlur = assetDatabase->Find<Shader>("CS_ShadowmapBlur");
+        m_computeCopyCubeShadow = assetDatabase->Find<Shader>("CS_ShadowCopyCube");
 
         auto hash = HashCache::Get();
 
@@ -65,51 +65,49 @@ namespace PK::Rendering::Passes
         m_shadowmapTileSize = config->ShadowmapTileSize;
         m_shadowmapCubeFaceSize = (uint)sqrt((m_shadowmapTileSize * m_shadowmapTileSize) / 6);
 
-        auto descriptor = RenderTextureDescriptor();
-        descriptor.samplerType = SamplerType::CubemapArray;
-        descriptor.resolution = { m_shadowmapCubeFaceSize, m_shadowmapCubeFaceSize , 1u };
-        descriptor.colorFormats[0] = { TextureFormat::RG32F };
-        descriptor.depthFormat = TextureFormat::Depth16;
-        descriptor.layers = 6 * PK_SHADOW_CASCADE_COUNT;
-        descriptor.sampler.wrap[0] = WrapMode::Clamp;
-        descriptor.sampler.wrap[1] = WrapMode::Clamp;
-        descriptor.sampler.wrap[2] = WrapMode::Clamp;
-        descriptor.sampler.filterMin = FilterMode::Bilinear;
-        descriptor.sampler.filterMag = FilterMode::Bilinear;
-        descriptor.usage = TextureUsage::Sample;
-        m_shadowmapTypeData[(int)LightType::Point].SceneRenderTarget = CreateRef<RenderTexture>(descriptor, "Lights.Shadowmap.PointRenderTarget");
-        m_shadowmapTypeData[(int)LightType::Point].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_CUBE });
-        m_shadowmapTypeData[(int)LightType::Point].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D });
         m_shadowmapTypeData[(int)LightType::Point].TileCount = 1u;
         m_shadowmapTypeData[(int)LightType::Point].MaxBatchSize = PK_SHADOW_CASCADE_COUNT;
         m_shadowmapTypeData[(int)LightType::Point].LayerStride = 6u;
-
-        descriptor.samplerType = SamplerType::Sampler2DArray;
-        descriptor.resolution = { m_shadowmapTileSize, m_shadowmapTileSize, 1u };
-        descriptor.layers = PK_SHADOW_CASCADE_COUNT;
-        m_shadowmapTypeData[(int)LightType::Spot].SceneRenderTarget = CreateRef<RenderTexture>(descriptor, "Lights.Shadowmap.SpotRenderTarget");
-        m_shadowmapTypeData[(int)LightType::Spot].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D });
-        m_shadowmapTypeData[(int)LightType::Spot].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D });
         m_shadowmapTypeData[(int)LightType::Spot].TileCount = 1u;
         m_shadowmapTypeData[(int)LightType::Spot].MaxBatchSize = PK_SHADOW_CASCADE_COUNT;
         m_shadowmapTypeData[(int)LightType::Spot].LayerStride = 1u;
-
-        m_shadowmapTypeData[(int)LightType::Directional].SceneRenderTarget = m_shadowmapTypeData[(int)LightType::Spot].SceneRenderTarget;
-        m_shadowmapTypeData[(int)LightType::Directional].BlurPass0 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D });
-        m_shadowmapTypeData[(int)LightType::Directional].BlurPass1 = m_shadowmapBlur->GetVariantIndex({ hash->SHADOW_SOURCE_2D });
         m_shadowmapTypeData[(int)LightType::Directional].TileCount = PK_SHADOW_CASCADE_COUNT;
         m_shadowmapTypeData[(int)LightType::Directional].MaxBatchSize = 1u;
         m_shadowmapTypeData[(int)LightType::Directional].LayerStride = PK_SHADOW_CASCADE_COUNT;
 
+        TextureDescriptor depthDesc;
+        depthDesc.samplerType = SamplerType::CubemapArray;
+        depthDesc.resolution = { m_shadowmapCubeFaceSize, m_shadowmapCubeFaceSize , 1u };
+        depthDesc.format = TextureFormat::Depth16;
+        depthDesc.layers = 6 * PK_SHADOW_CASCADE_COUNT;
+        depthDesc.sampler.wrap[0] = WrapMode::Clamp;
+        depthDesc.sampler.wrap[1] = WrapMode::Clamp;
+        depthDesc.sampler.wrap[2] = WrapMode::Clamp;
+        depthDesc.sampler.filterMin = FilterMode::Bilinear;
+        depthDesc.sampler.filterMag = FilterMode::Bilinear;
+        depthDesc.usage = TextureUsage::RTDepth;
+        m_depthTargetCube = Texture::Create(depthDesc, "Lights.DepthTarget.Cube");
+
+        depthDesc.usage = TextureUsage::RTColor;
+        depthDesc.format = TextureFormat::R32F;
+        m_shadowTargetCube = Texture::Create(depthDesc, "Lights.ShadowTarget.Cube");
+
+        depthDesc.samplerType = SamplerType::Sampler2DArray;
+        depthDesc.format = TextureFormat::Depth16;
+        depthDesc.resolution = { m_shadowmapTileSize, m_shadowmapTileSize, 1u };
+        depthDesc.layers = PK_SHADOW_CASCADE_COUNT;
+        depthDesc.usage = TextureUsage::RTDepth;
+        m_depthTarget2D = Texture::Create(depthDesc, "Lights.DepthTarget.2D");
+
         TextureDescriptor atlasDescriptor;
         atlasDescriptor.samplerType = SamplerType::Sampler2DArray;
-        atlasDescriptor.format = TextureFormat::RG32F;
-        atlasDescriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
+        atlasDescriptor.format = TextureFormat::R32F;
+        atlasDescriptor.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::RTColor;
         atlasDescriptor.layers = 32;
         atlasDescriptor.resolution = { m_shadowmapTileSize, m_shadowmapTileSize, 1u };
-        atlasDescriptor.sampler.wrap[0] = WrapMode::Clamp;
-        atlasDescriptor.sampler.wrap[1] = WrapMode::Clamp;
-        atlasDescriptor.sampler.wrap[2] = WrapMode::Clamp;
+        atlasDescriptor.sampler.wrap[0] = WrapMode::Border;
+        atlasDescriptor.sampler.wrap[1] = WrapMode::Border;
+        atlasDescriptor.sampler.wrap[2] = WrapMode::Border;
         atlasDescriptor.sampler.filterMin = FilterMode::Bilinear;
         atlasDescriptor.sampler.filterMag = FilterMode::Bilinear;
         m_shadowmaps = Texture::Create(atlasDescriptor, "Lights.Shadowmap.Atlas");
@@ -234,7 +232,7 @@ namespace PK::Rendering::Passes
                         cullCascades.cascades = matricesView.data + matrixIndex;
                         cullCascades.depthRange = light.radius;
                         m_sequencer->Next(engineRoot, &cullCascades);
-                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, view->light->shadowBlur, cullCascades.depthRange, &shadowCount, &minDepth);
+                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, cullCascades.depthRange, &shadowCount, &minDepth);
                         // Regenerate cascades as the depth range might change based on culling
                         Functions::GetShadowCascadeMatrices(worldToLocal, 
                                                             ivp, 
@@ -255,8 +253,7 @@ namespace PK::Rendering::Passes
                         cullCube.depthRange = view->light->radius - 0.1f;
                         cullCube.aabb = view->bounds->worldAABB;
                         m_sequencer->Next(engineRoot, &cullCube);
-                        auto shadowBlurAmount = 2.0f * glm::sin(view->light->shadowBlur * 0.5f * PK_FLOAT_HALF_PI);
-                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowBlurAmount, cullCube.depthRange, &shadowCount);
+                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, cullCube.depthRange, &shadowCount);
                     }
                 }
                 break;
@@ -271,8 +268,7 @@ namespace PK::Rendering::Passes
                         cullFrustum.depthRange = view->light->radius - 0.1f;
                         cullFrustum.matrix = matricesView[matrixIndex];
                         m_sequencer->Next(engineRoot, &cullFrustum);
-                        auto shadowBlurAmount = view->light->shadowBlur * glm::sin(0.5f * view->light->angle * PK_FLOAT_DEG2RAD) / PK_FLOAT_INV_SQRT2;
-                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, shadowBlurAmount, cullFrustum.depthRange, &shadowCount);
+                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, cullFrustum.depthRange, &shadowCount);
                     }
                 }
                 break;
@@ -308,6 +304,9 @@ namespace PK::Rendering::Passes
         auto hash = HashCache::Get();
         auto atlasIndex = 0u;
 
+        Texture* renderTargets[2]{ nullptr, nullptr };
+        TextureViewRange viewRanges[2]{};
+
         for (const auto& shadowBatch : m_shadowBatches)
         {
             auto batchType = shadowBatch.batchType;
@@ -316,16 +315,26 @@ namespace PK::Rendering::Passes
 
             cmd->BeginDebugScope("ShadowBatch", PK_COLOR_RED);
 
-            cmd->SetRenderTarget(shadow.SceneRenderTarget.get(), true);
+            renderTargets[0] = batchType == LightType::Point ? m_shadowTargetCube.get() : m_shadowmaps.get();
+            renderTargets[1] = batchType == LightType::Point ? m_depthTargetCube.get() : m_depthTarget2D.get();
+            viewRanges[1] = TextureViewRange(0, 0, 0, shadow.LayerStride * shadowBatch.count);
+            viewRanges[0] = batchType == LightType::Point ? viewRanges[0] : TextureViewRange(0, atlasIndex, 1, tileCount);
+            auto rect = renderTargets[0]->GetRect();
+
+            cmd->SetRenderTarget(renderTargets, nullptr, viewRanges, 2);
+            cmd->SetViewPort(rect);
+            cmd->SetScissor(rect);
             cmd->ClearColor(color(shadowBatch.maxDepthRange, shadowBatch.maxDepthRange * shadowBatch.maxDepthRange, 0.0f, 0.0f), 0u);
             cmd->ClearDepth(1.0f, 0u);
 
-            GraphicsAPI::SetConstant(hash->pk_ShadowmapData, shadowBatch.shadowBlurAmounts);
             m_batcher->Render(cmd, shadowBatch.batchGroup);
 
-            GraphicsAPI::SetTexture(hash->pk_ShadowmapSource, shadow.SceneRenderTarget->GetColor(0));
-            GraphicsAPI::SetImage(hash->pk_Image, m_shadowmaps.get(), TextureViewRange(0, atlasIndex, 1, tileCount));
-            cmd->DispatchWithCounter(m_shadowmapBlur, shadow.BlurPass0, { m_shadowmapTileSize, m_shadowmapTileSize, tileCount });
+            if (batchType == LightType::Point)
+            {
+                GraphicsAPI::SetTexture(hash->pk_Texture, m_shadowTargetCube.get());
+                GraphicsAPI::SetImage(hash->pk_Image, m_shadowmaps.get(), TextureViewRange(0, atlasIndex, 1, tileCount));
+                cmd->DispatchWithCounter(m_computeCopyCubeShadow, 0, { m_shadowmapTileSize, m_shadowmapTileSize, tileCount });
+            }
 
             cmd->EndDebugScope();
 
@@ -380,7 +389,6 @@ namespace PK::Rendering::Passes
     uint32_t PassLights::BuildShadowBatch(VisibilityList* visibilityList,
         LightRenderableView* view, 
         uint32_t index, 
-        float shadowBlurAmount, 
         float maxDepth, 
         uint32_t* outShadowCount,
         float* outMinDepth)
@@ -429,18 +437,6 @@ namespace PK::Rendering::Passes
                     m_batcher->SubmitDraw(transform, shader, nullptr, entity->mesh->sharedMesh, kv.submesh, (index & 0xFFFF) | (layerOffset << 16));
                 }
             }
-        }
-
-        // Scale blur amount to valid range (now one wants to blur by 90 degrees).
-        shadowBlurAmount *= PK_FLOAT_INV_FOUR_PI;
-
-        // Directional lights use same blur amount for all cascades.
-        // Fill the vector so that every tile gets the correct value.
-        // "Correct" is debatable as this should be calculated in accordance to cascade distribution.
-        // @TODO FIX ME
-        for (auto i = 0u; i < shadow.TileCount; ++i)
-        {
-            batch.shadowBlurAmounts[batch.count + i] = shadowBlurAmount / (1.0f + i * 0.25f);
         }
 
         auto minDepthView = (minDepth * maxDepth) / (float)0xFFFF;

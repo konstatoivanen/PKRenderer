@@ -99,6 +99,8 @@ namespace PK::Rendering
     void GraphicsAPI::SetImage(const char* name, Texture* texture) { SetImage(StringHashID::StringToID(name), texture); }
     void GraphicsAPI::SetImage(const char* name, Texture* texture, uint16_t level, uint16_t layer) { SetImage(StringHashID::StringToID(name), texture, level, layer); }
     void GraphicsAPI::SetImage(const char* name, Texture* texture, const TextureViewRange& range) { SetImage(StringHashID::StringToID(name), texture, range); }
+    void GraphicsAPI::SetSampler(uint32_t nameHashId, const PK::Rendering::Structs::SamplerDescriptor& sampler) { s_currentDriver->SetSampler(nameHashId, sampler); }
+    void GraphicsAPI::SetSampler(const char* name, const PK::Rendering::Structs::SamplerDescriptor& sampler) { SetSampler(StringHashID::StringToID(name), sampler); }
     void GraphicsAPI::SetAccelerationStructure(uint32_t nameHashId, AccelerationStructure* structure) { s_currentDriver->SetAccelerationStructure(nameHashId, structure); }
     void GraphicsAPI::SetAccelerationStructure(const char* name, AccelerationStructure* structure) { SetAccelerationStructure(StringHashID::StringToID(name), structure); }
     void GraphicsAPI::SetBufferArray(uint32_t nameHashId, BindArray<Buffer>* bufferArray) { s_currentDriver->SetBufferArray(nameHashId, bufferArray); }
