@@ -2,7 +2,7 @@
 #pragma PROGRAM_COMPUTE
 
 #define EARLY_Z_TEST 1
-#define SHADOW_TEST ShadowTest_Fast
+#define SHADOW_TEST ShadowTest_PCF2x2
 
 #include includes/VolumeFog.glsl
 #include includes/SceneGIVX.glsl
@@ -13,8 +13,7 @@ void main()
     const uint3 id = gl_GlobalInvocationID;
     float3 dither = GlobalNoiseBlue(id.xy, pk_FrameIndex.x);
 
-    // @TODO figure out better z dither distribution that causes less shadow acne.
-    const float3 uvw_cur = (id + dither) / VOLUMEFOG_SIZE;
+    const float3 uvw_cur = (id + float3(0.5f.xx, dither.z)) / VOLUMEFOG_SIZE;
 
     // Light leak threshold
     const float zmin = ViewDepthExp((id.z - 1.5f) * VOLUMEFOG_SIZE_Z_INV);
@@ -54,7 +53,7 @@ void main()
     float3 value_cur = gi_static.rgb * gi_static_occlusion + gi_dynamic.rgb;
     
     // This is incorrect for the dynamic component. However, it introduces good depth to the colors so whatever.
-    value_cur *= VolumeFog_MarchTransmittanceStatic(uvw_cur, dither.z);
+    value_cur *= VolumeFog_MarchTransmittanceStatic(uvw_cur, dither.x);
 
     // Distant texels are less dense, trace a longer distance to retain some depth.
     const float maxMarchDistance = exp(uvw_cur.z * VOLUMEFOG_MARCH_DISTANCE_EXP);
@@ -66,9 +65,10 @@ void main()
     LightTile tile = GetLightTile_COORD(int2(gl_WorkGroupID.xy >> 1), depth);
     for (uint i = tile.start; i < tile.end; ++i)
     {
-        Light light = GetLight(i, worldpos, tile.cascade);
-        const float marchDistance = clamp(light.linearDistance, 0.0f, maxMarchDistance);
-        light.shadow *= VolumeFog_MarchTransmittance(worldpos, light.direction, dither.z, marchDistance);
+        // @TODO current 1spp shadow test for fog is prone to banding. implement better filter.
+        Light light = GetLight(i, worldpos, -viewdir, tile.cascade);
+        const float marchDistance = min(light.linearDistance, maxMarchDistance);
+        light.shadow *= VolumeFog_MarchTransmittance(worldpos, light.direction, dither.y, marchDistance);
         light.shadow = lerp(light.shadow, 1.0f, shadowFade);
         value_cur += EvaluateBxDF_Volumetric(viewdir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, light.direction, light.color, light.shadow);
     }

@@ -18,9 +18,9 @@ void main()
     const uint3 baseSize = uint3(textureSize(pk_Texture, 0).xyz);
     const uint3 levelSize = gl_NumWorkGroups.xyz * gl_WorkGroupSize.xyz;
     const int level = int(log2(float(baseSize.x)) - log2(float(levelSize.x))) - 1;
-    const float3 uvw = (gl_GlobalInvocationID + 1.0f.xxx) / levelSize;
+    const float3 uvw = (gl_GlobalInvocationID + 0.5f.xxx) / levelSize;
 
-    float4 local = lds_Data[thread] = tex2DLod(pk_Texture, uvw, level);
+    float4 local = lds_Data[thread] = textureLod(pk_Texture, uvw, level);
     imageStore(pk_Image, int3(gl_GlobalInvocationID), local);
     barrier();
 

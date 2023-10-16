@@ -78,6 +78,22 @@ namespace PK::Rendering::Objects
         SetRenderTarget(renderTarget, indices, count, true, updateViewPort);
     }
 
+    void CommandBuffer::SetRenderTarget(const std::initializer_list<Texture*>& renderTargets, const RenderTargetRanges& ranges, bool updateViewPort)
+    {
+        const uint32_t targetCount = (uint32_t)(renderTargets.end() - renderTargets.begin());
+        const uint32_t rangeCount = (uint32_t)(ranges.end() - ranges.begin());
+        PK_THROW_ASSERT(targetCount == rangeCount, "target & view range count missmatch!");
+
+        SetRenderTarget(renderTargets.begin(), nullptr, ranges.begin(), targetCount);
+
+        if (updateViewPort)
+        {
+            auto rect = renderTargets.begin()[0]->GetRect();
+            SetViewPort(rect);
+            SetScissor(rect);
+        }
+    }
+
     void CommandBuffer::SetRenderTarget(Texture* renderTarget)
     {
         TextureViewRange range{};

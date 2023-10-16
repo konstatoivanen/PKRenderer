@@ -173,7 +173,7 @@ float3 ApplyColorGrading(float3 color)
 float3 ApplyLutColorGrading(float3 color)
 {
     const float3 uvw = saturate(color);
-    const float3 final = tex2D(pk_CC_LutTex, uvw).rgb;
+    const float3 final = texture(pk_CC_LutTex, uvw).rgb;
     const float contribution = pk_CC_Contribution;
     return lerp(color, final, contribution);
 }

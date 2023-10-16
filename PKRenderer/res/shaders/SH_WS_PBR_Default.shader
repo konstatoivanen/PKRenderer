@@ -33,7 +33,7 @@ void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData
     //lval *= pow5(lval);
     //float3 c = HSVToRGB(0.025f, 0.8f, lval * 20.0f);
     //
-    //surf.emission = tex2D(_EmissionTexture, uv * 4.0f).xxx * c * _EmissionColor.rgb;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;
+    //surf.emission = texture(sampler2D(_EmissionTexture, pk_Sampler_SurfDefault), uv * 4.0f).xxx * c * _EmissionColor.rgb;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;
 
     /*
         float lval = surf.worldpos.y * 2.0f - 0.01f;

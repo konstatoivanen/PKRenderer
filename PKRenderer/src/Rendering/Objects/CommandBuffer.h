@@ -18,7 +18,7 @@ namespace PK::Rendering::Objects
     {
         virtual Structs::FenceRef GetFenceRef() const = 0;
         virtual void SetRenderTarget(const Math::uint3& resolution) = 0;
-        virtual void SetRenderTarget(Texture** renderTarget, Texture** resolveTargets, const Structs::TextureViewRange* ranges, uint32_t count) = 0;
+        virtual void SetRenderTarget(Texture* const* renderTarget, Texture* const* resolveTargets, const Structs::TextureViewRange* ranges, uint32_t count) = 0;
         virtual void ClearColor(const Math::color& color, uint32_t index) = 0;
         virtual void ClearDepth(float depth, uint32_t stencil) = 0;
         virtual void DiscardColor(uint32_t index) = 0;
@@ -68,6 +68,7 @@ namespace PK::Rendering::Objects
         void SetRenderTarget(RenderTexture* renderTarget, const uint32_t* targets, uint32_t targetCount, bool bindDepth, bool updateViewPort);
         void SetRenderTarget(RenderTexture* renderTarget, std::initializer_list<uint32_t> targets, bool bindDepth, bool updateViewPort);
         void SetRenderTarget(RenderTexture* renderTarget, bool updateViewPort);
+        void SetRenderTarget(const std::initializer_list<Texture*>& renderTargets, const RenderTargetRanges& ranges, bool updateViewPort);
         void SetRenderTarget(Texture* renderTarget);
         void SetRenderTarget(Texture* renderTarget, const Structs::TextureViewRange& range);
         void SetRenderTarget(Texture* renderTarget, uint16_t level, uint16_t layer);

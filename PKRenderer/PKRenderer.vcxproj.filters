@@ -1942,7 +1942,7 @@
     <None Include="res\textures\default\T_Bluenoise256.ktx2" />
     <None Include="res\shaders\includes\LightResources.glsl" />
     <None Include="res\shaders\SH_WS_Shadowmap_Generic.shader" />
-    <None Include="res\shaders\CS_ShadowCopyCube.shader" />
+    <None Include="res\shaders\CS_CopyCubeShadow.shader" />
     <None Include="res\shaders\CS_LightAssignment.shader" />
     <None Include="res\shaders\includes\GBuffers.glsl" />
     <None Include="res\shaders\includes\BRDF.glsl" />
@@ -2036,7 +2036,7 @@
     <None Include="res\shaders\includes\SpatialFilters.glsl" />
     <None Include="res\shaders\CS_VolumeFogInject.shader" />
     <None Include="res\shaders\CS_VolumeFogDensity.shader" />
-    <None Include="res\shaders\SH_VS_Gizmos.shader" />
+    <None Include="res\shaders\SH_WS_Gizmos.shader" />
     <None Include="res\shaders\includes\SceneGIFiltering.glsl" />
     <None Include="res\shaders\includes\SceneGIReSTIR.glsl" />
     <None Include="res\shaders\includes\MortonOrder.glsl" />

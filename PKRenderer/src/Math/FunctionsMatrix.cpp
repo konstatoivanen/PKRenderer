@@ -89,6 +89,18 @@ namespace PK::Math::Functions
         return proj;
     }
 
+    float4x4 GetPerspectiveInvZ(float fov, float aspect, float zNear, float zFar)
+    {
+        const float tanHalfFovy = tan(fov * PK_FLOAT_DEG2RAD / 2.0f);
+        float4x4 proj(0.0f);
+        proj[0][0] = 1.0f / (aspect * tanHalfFovy);
+        proj[1][1] = 1.0f / (tanHalfFovy);
+        proj[2][2] = -zNear / (zFar - zNear);
+        proj[2][3] = 1.0;
+        proj[3][2] = (zNear * zFar) / (zFar - zNear);
+        return proj;
+    }
+
     float4x4 GetOrtho(float left, float right, float bottom, float top, float zNear, float zFar)
     {
         const float rcpRL = 1.0f / (right - left);
@@ -102,6 +114,18 @@ namespace PK::Math::Functions
         Result[3][0] = (right + left) * rcpRL;
         Result[3][1] = (top + bottom) * rcpTB;
         Result[3][2] = -zNear * rcpFN;
+        return Result;
+    }
+
+    float4x4 GetOrthoInvZ(float left, float right, float bottom, float top, float zNear, float zFar)
+    {
+        float4x4 Result(1);
+        Result[0][0] = 2.0f / (right - left);
+        Result[1][1] = 2.0f / (top - bottom);
+        Result[2][2] = -1.0f / (zFar - zNear);
+        Result[3][0] = -(right + left) / (right - left);
+        Result[3][1] = -(top + bottom) / (top - bottom);
+        Result[3][2] = zFar / (zFar - zNear);
         return Result;
     }
 
@@ -203,26 +227,19 @@ namespace PK::Math::Functions
         return returnValue;
     }
 
-    void GetShadowCascadeMatrices(const float4x4& worldToLocal, 
-                                    const float4x4& inverseViewProjection, 
-                                    const float* zPlanes, 
-                                    float zPadding, 
-                                    uint resolution,
-                                    uint32_t count, 
-                                    float4x4* matrices,
-                                    float* depthRange)
+    void GetShadowCascadeMatrices(const ShadowCascadeCreateInfo info, float4x4* outMatrices, float* outRange)
     {
-        auto matrix = worldToLocal * inverseViewProjection;
+        auto matrix = info.worldToLocal * info.projToWorld;
         auto minNear = std::numeric_limits<float>().max();
         auto maxFar = -std::numeric_limits<float>().max();
-        auto zrange = zPlanes[count] - zPlanes[0];
+        auto zrange = info.splitPlanes[info.count] - info.splitPlanes[0];
 
-        BoundingBox* aabbs = reinterpret_cast<BoundingBox*>(alloca(sizeof(BoundingBox) * count));
+        BoundingBox* aabbs = reinterpret_cast<BoundingBox*>(alloca(sizeof(BoundingBox) * info.count));
 
-        for (auto i = 0u; i < count; ++i)
+        for (auto i = 0u; i < info.count; ++i)
         {
-            auto lnear = zPlanes[i] / zrange;
-            auto lfar = zPlanes[i + 1] / zrange;
+            auto lnear = info.splitPlanes[i] / zrange;
+            auto lfar = info.splitPlanes[i + 1] / zrange;
 
             aabbs[i] = GetInverseFrustumBounds(matrix, lnear, lfar);
 
@@ -232,7 +249,7 @@ namespace PK::Math::Functions
             auto w = aabbs[i].GetWidth();
             auto h = aabbs[i].GetHeight();
             auto c = float2(aabbs[i].GetCenter().xy);
-            auto offset = glm::mod(c, float2(w / resolution, h / resolution));
+            auto offset = glm::mod(c, float2(w / info.resolution, h / info.resolution));
 
             aabbs[i].min.x -= offset.x;
             aabbs[i].min.y -= offset.y;
@@ -250,22 +267,22 @@ namespace PK::Math::Functions
             }
         }
 
-        for (auto i = 0u; i < count; ++i)
+        for (auto i = 0u; i < info.count; ++i)
         {
-            matrices[i] = GetOrtho(
+            outMatrices[i] = GetOrthoInvZ(
                 aabbs[i].min.x,
                 aabbs[i].max.x,
                 aabbs[i].min.y,
                 aabbs[i].max.y,
-                minNear + zPadding,
-                aabbs[i].max.z) * worldToLocal;
+                minNear + info.zPadding,
+                aabbs[i].max.z) * info.worldToLocal;
         }
 
-        minNear += zPadding;
+        minNear += info.zPadding;
         
-        if (depthRange)
+        if (outRange)
         {
-            *depthRange = maxFar - minNear;
+            *outRange = maxFar - minNear;
         }
     }
 }

@@ -31,7 +31,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         inline void Release() { m_commandBuffer = VK_NULL_HANDLE; ++m_invocationIndex; }
 
         void SetRenderTarget(const uint3& resolution) final;
-        void SetRenderTarget(Texture** renderTargets, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count) final;
+        void SetRenderTarget(Texture* const* renderTargets, Texture* const* resolveTargets, const TextureViewRange* ranges, uint32_t count) final;
         void SetViewPorts(const uint4* rects, uint32_t count) final;
         void SetScissors(const uint4* rects, uint32_t count) final;
 

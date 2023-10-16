@@ -16,19 +16,21 @@ namespace PK::Rendering::Passes
         TextureDescriptor descriptor;
         descriptor.samplerType = SamplerType::Sampler3D;
         descriptor.format = TextureFormat::RGB9E5;
+        descriptor.formatAlias = TextureFormat::R32UI;
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
         descriptor.sampler.wrap[0] = WrapMode::Clamp;
         descriptor.sampler.wrap[1] = WrapMode::Clamp;
         descriptor.sampler.wrap[2] = WrapMode::Clamp;
         descriptor.resolution = { config->InitialWidth / 8u, config->InitialHeight / 8u, 128 };
-        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::Aliased;
+        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
         
         m_volumeScatter = Texture::Create(descriptor, "Fog.ScatterVolume");
         m_volumeInject = Texture::Create(descriptor, "Fog.InjectVolume");
         m_volumeInjectPrev = Texture::Create(descriptor, "Fog.InjectVolume.Previous");
 
         descriptor.format = TextureFormat::B10G11R11UF;
+        descriptor.formatAlias = TextureFormat::Invalid;
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
         m_volumeTransmittance = Texture::Create(descriptor, "Fog.TransmittanceVolume");
 

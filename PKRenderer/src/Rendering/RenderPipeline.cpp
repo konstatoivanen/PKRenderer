@@ -118,24 +118,31 @@ namespace PK::Rendering
 
         sampler = bluenoise256->GetSamplerDescriptor();
         sampler.anisotropy = 0.0f;
-        sampler.mipMin = 0.0f;
-        sampler.mipMax = 0.0f;
         sampler.filterMin = FilterMode::Point;
         sampler.filterMag = FilterMode::Bilinear;
         bluenoise256->SetSampler(sampler);
 
         sampler = bluenoise128x64->GetSamplerDescriptor();
         sampler.anisotropy = 0.0f;
-        sampler.mipMin = 0.0f;
-        sampler.mipMax = 0.0f;
         sampler.filterMin = FilterMode::Point;
         sampler.filterMag = FilterMode::Bilinear;
         bluenoise128x64->SetSampler(sampler);
+
 
         GraphicsAPI::SetTexture(hash->pk_Bluenoise256, bluenoise256);
         GraphicsAPI::SetTexture(hash->pk_Bluenoise128x64, bluenoise128x64);
         GraphicsAPI::SetTexture(hash->pk_LightCookies, lightCookies);
         GraphicsAPI::SetBuffer(hash->pk_PerFrameConstants, *m_constantsPerFrame.get());
+
+        Structs::SamplerDescriptor samplerSurface{};
+        samplerSurface.anisotropy = 16.0f;
+        samplerSurface.filterMin = FilterMode::Trilinear;
+        samplerSurface.filterMag = FilterMode::Trilinear;
+        samplerSurface.wrap[0] = WrapMode::Repeat;
+        samplerSurface.wrap[1] = WrapMode::Repeat;
+        samplerSurface.wrap[2] = WrapMode::Repeat;
+        GraphicsAPI::SetSampler(hash->pk_Sampler_SurfDefault, samplerSurface);
+
         PK_LOG_HEADER("----------RENDER PIPELINE INITIALIZED----------");
     }
 
@@ -324,10 +331,10 @@ namespace PK::Rendering
         // Post Effects
         cmdgraphics->BeginDebugScope("PostEffects", PK_COLOR_YELLOW);
         {
-            m_temporalAntialiasing.Render(cmdgraphics, m_renderTarget.get());
+            m_temporalAntialiasing.Render(cmdgraphics, m_renderTarget->GetColor(0));
             m_depthOfField.Render(cmdgraphics, m_renderTarget.get());
             m_bloom.Render(cmdgraphics, m_renderTarget.get());
-            m_passPostEffectsComposite.Render(cmdgraphics, m_renderTarget.get());
+            m_passPostEffectsComposite.Render(cmdgraphics, m_renderTarget->GetColor(0));
         }
         cmdgraphics->EndDebugScope();
 

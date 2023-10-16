@@ -65,8 +65,6 @@ namespace PK::Rendering::Objects
         }
 
         descriptor.sampler.anisotropy = 16.0f;
-        descriptor.sampler.mipMin = 0.0f;
-        descriptor.sampler.mipMax = (float)ktxTex2->numLevels;
         descriptor.sampler.filterMin = ktxTex2->numLevels > 1 ? FilterMode::Trilinear : FilterMode::Bilinear;
         descriptor.sampler.filterMag = ktxTex2->numLevels > 1 ? FilterMode::Trilinear : FilterMode::Bilinear;
         descriptor.sampler.wrap[0] = WrapMode::Repeat;

@@ -14,6 +14,6 @@ void main()
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float2 uv = float2(coord + 0.5f.xx) / float2(size);
     const float3 direction = OctaDecode(uv);
-    const float depth = tex2D(pk_Texture, float4(direction.x, -direction.y, direction.z, float(gl_GlobalInvocationID.z))).x;
-    imageStore(pk_Image, int3(gl_GlobalInvocationID.xyz), depth.xxxx);
+    const float4 depth = texture(pk_Texture, float4(direction.x, -direction.y, direction.z, float(gl_GlobalInvocationID.z)));
+    imageStore(pk_Image, int3(gl_GlobalInvocationID.xyz), depth);
 }

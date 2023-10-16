@@ -26,46 +26,46 @@ void main()
 
     // Karis filter first mip
     float3 bisample = 0.0f.xxx;
-    bisample = tex2D(pk_Texture, uvs.zw).rgb;
+    bisample = texture(pk_Texture, uvs.zw).rgb;
     color += float4(bisample, 1.0f) / (1.0f + dot(bisample, PK_LUMA_BT709));
-    bisample = tex2D(pk_Texture, uvs.xw).rgb;
+    bisample = texture(pk_Texture, uvs.xw).rgb;
     color += float4(bisample, 1.0f) / (1.0f + dot(bisample, PK_LUMA_BT709));
-    bisample = tex2D(pk_Texture, uvs.zy).rgb;
+    bisample = texture(pk_Texture, uvs.zy).rgb;
     color += float4(bisample, 1.0f) / (1.0f + dot(bisample, PK_LUMA_BT709));
-    bisample = tex2D(pk_Texture, uvs.xy).rgb;
+    bisample = texture(pk_Texture, uvs.xy).rgb;
     color += float4(bisample, 1.0f) / (1.0f + dot(bisample, PK_LUMA_BT709));
     color /= color.w;
     color.rgb = -min(-color.rgb, 0.0f.xxx);
 
 #elif defined(PASS_DOWNSAMPLE1)
 
-    color.rgb += tex2D(pk_Texture, uv + float2( 2, -2) * tx_src).rgb * 0.125f;
-    color.rgb += tex2D(pk_Texture, uv + float2(-2, -2) * tx_src).rgb * 0.125f;
-    color.rgb += tex2D(pk_Texture, uv + float2( 0, -2) * tx_src).rgb * 0.25f;
+    color.rgb += texture(pk_Texture, uv + float2( 2, -2) * tx_src).rgb * 0.125f;
+    color.rgb += texture(pk_Texture, uv + float2(-2, -2) * tx_src).rgb * 0.125f;
+    color.rgb += texture(pk_Texture, uv + float2( 0, -2) * tx_src).rgb * 0.25f;
                                                        
-    color.rgb += tex2D(pk_Texture, uv + float2(-1, -1) * tx_src).rgb * 0.5f;
-    color.rgb += tex2D(pk_Texture, uv + float2( 1, -1) * tx_src).rgb * 0.5f;
+    color.rgb += texture(pk_Texture, uv + float2(-1, -1) * tx_src).rgb * 0.5f;
+    color.rgb += texture(pk_Texture, uv + float2( 1, -1) * tx_src).rgb * 0.5f;
 
-    color.rgb += tex2D(pk_Texture, uv + float2(-2,  0) * tx_src).rgb * 0.25f;
-    color.rgb += tex2D(pk_Texture, uv + float2( 0,  0) * tx_src).rgb * 0.5f;
-    color.rgb += tex2D(pk_Texture, uv + float2( 2,  0) * tx_src).rgb * 0.25f;
+    color.rgb += texture(pk_Texture, uv + float2(-2,  0) * tx_src).rgb * 0.25f;
+    color.rgb += texture(pk_Texture, uv + float2( 0,  0) * tx_src).rgb * 0.5f;
+    color.rgb += texture(pk_Texture, uv + float2( 2,  0) * tx_src).rgb * 0.25f;
                                                       
-    color.rgb += tex2D(pk_Texture, uv + float2(-1,  1) * tx_src).rgb * 0.5f;
-    color.rgb += tex2D(pk_Texture, uv + float2( 1,  1) * tx_src).rgb * 0.5f;
+    color.rgb += texture(pk_Texture, uv + float2(-1,  1) * tx_src).rgb * 0.5f;
+    color.rgb += texture(pk_Texture, uv + float2( 1,  1) * tx_src).rgb * 0.5f;
                                                       
-    color.rgb += tex2D(pk_Texture, uv + float2(-1,  2) * tx_src).rgb * 0.125f;
-    color.rgb += tex2D(pk_Texture, uv + float2( 0,  2) * tx_src).rgb * 0.25f;
-    color.rgb += tex2D(pk_Texture, uv + float2( 2,  2) * tx_src).rgb * 0.125f;
+    color.rgb += texture(pk_Texture, uv + float2(-1,  2) * tx_src).rgb * 0.125f;
+    color.rgb += texture(pk_Texture, uv + float2( 0,  2) * tx_src).rgb * 0.25f;
+    color.rgb += texture(pk_Texture, uv + float2( 2,  2) * tx_src).rgb * 0.125f;
 
     color.rgb *= 0.25f;
 
 #else // defined(PASS_UPSAMPLE) 
 
     const float4 uvs = uv.xyxy + float4(0.5f.xx, -0.5f.xx) * tx_src.xyxy;
-    color.rgb += tex2D(pk_Texture, uvs.zw).rgb;
-    color.rgb += tex2D(pk_Texture, uvs.zy).rgb;
-    color.rgb += tex2D(pk_Texture, uvs.xy).rgb;
-    color.rgb += tex2D(pk_Texture, uvs.xw).rgb;
+    color.rgb += texture(pk_Texture, uvs.zw).rgb;
+    color.rgb += texture(pk_Texture, uvs.zy).rgb;
+    color.rgb += texture(pk_Texture, uvs.xy).rgb;
+    color.rgb += texture(pk_Texture, uvs.xw).rgb;
     color.rgb *= 0.25f;
     color.rgb += DecodeE5BGR9(imageLoad(pk_Image, coord).r);
 

@@ -60,14 +60,13 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetBuffer(hash->pk_PostEffectsParams, *m_constantsPostProcess.get());
     }
 
-    void PassPostEffectsComposite::Render(CommandBuffer* cmd, RenderTexture* destination)
+    void PassPostEffectsComposite::Render(CommandBuffer* cmd, Texture* destination)
     {
         auto hash = HashCache::Get();
-        auto color = destination->GetColor(0);
         auto resolution = destination->GetResolution();
 
         cmd->BeginDebugScope("PostEffects.Composite", PK_COLOR_YELLOW);
-        GraphicsAPI::SetImage(hash->pk_Image, color, 0, 0);
+        GraphicsAPI::SetImage(hash->pk_Image, destination, 0, 0);
         cmd->Dispatch(m_computeComposite, { resolution.x, resolution.y, 1u });
         cmd->EndDebugScope();
     }

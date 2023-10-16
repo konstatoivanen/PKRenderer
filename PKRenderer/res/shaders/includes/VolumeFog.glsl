@@ -86,7 +86,7 @@ float VolumeFog_MarchTransmittanceStatic(const float3 uvw, const float dither)
     {
         const float2 zz = uvw.zz + (float2(j, j + 1u) + dither) * VOLUMEFOG_SIZE_Z_INV;
         const float2 depths = ViewDepthExp(zz);
-        const float density = tex2D(pk_Fog_DensityRead, float3(uvw.xy, zz.x)).x;
+        const float density = texture(pk_Fog_DensityRead, float3(uvw.xy, zz.x)).x;
         transmittance *= exp(-density * (depths.y - depths.x));
     }
 

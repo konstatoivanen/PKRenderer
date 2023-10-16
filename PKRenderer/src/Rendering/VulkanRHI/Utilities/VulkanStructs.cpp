@@ -126,7 +126,7 @@ namespace PK::Rendering::VulkanRHI
         image.pQueueFamilyIndices = queueFamilies.indices;
         image.queueFamilyIndexCount = queueFamilies.count;
         allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-        aspect = EnumConvert::GetFormatAspect(image.format);
+        formatAlias = EnumConvert::GetFormat(descriptor.formatAlias);
 
         if (descriptor.samplerType == SamplerType::Cubemap ||
             descriptor.samplerType == SamplerType::CubemapArray)
@@ -134,7 +134,7 @@ namespace PK::Rendering::VulkanRHI
             image.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         }
 
-        if ((descriptor.usage & TextureUsage::Aliased) != 0)
+        if (descriptor.formatAlias != TextureFormat::Invalid && descriptor.formatAlias != descriptor.format)
         {
             image.flags |= VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_ALIAS_BIT;
             allocation.flags |= VMA_ALLOCATION_CREATE_CAN_ALIAS_BIT;
@@ -292,7 +292,7 @@ namespace PK::Rendering::VulkanRHI
         levels(createInfo.image.mipLevels),
         layers(createInfo.image.arrayLayers),
         samples(createInfo.image.samples),
-        aspect(createInfo.aspect)
+        formatAlias(createInfo.formatAlias)
     {
         if (createInfo.image.flags & VK_IMAGE_CREATE_ALIAS_BIT)
         {

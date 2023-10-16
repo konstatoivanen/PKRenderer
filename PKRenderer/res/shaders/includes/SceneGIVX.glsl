@@ -23,9 +23,9 @@ float4 GI_WorldToVoxelNDCSpace(float3 worldpos)
 }
 
 //----------LOAD/STORE FUNCTIONS----------//
-float4 GI_Load_Voxel_UVW(const half3 uvw, float lvl) { return tex2DLod(pk_GI_VolumeRead, float3(uvw), lvl); }
-float4 GI_Load_Voxel(const float3 worldpos, float lvl) { return tex2DLod(pk_GI_VolumeRead, GI_WorldToVoxelUVW(worldpos), lvl); }
-float4 GI_Load_Voxel_Discrete(const float3 worldpos, float lvl) { return tex2DLod(pk_GI_VolumeRead, GI_WorldToVoxelUVWDiscrete(worldpos), lvl); }
+float4 GI_Load_Voxel_UVW(const half3 uvw, float lvl) { return textureLod(pk_GI_VolumeRead, float3(uvw), lvl); }
+float4 GI_Load_Voxel(const float3 worldpos, float lvl) { return textureLod(pk_GI_VolumeRead, GI_WorldToVoxelUVW(worldpos), lvl); }
+float4 GI_Load_Voxel_Discrete(const float3 worldpos, float lvl) { return textureLod(pk_GI_VolumeRead, GI_WorldToVoxelUVWDiscrete(worldpos), lvl); }
 void GI_Store_Voxel(float3 worldpos, float4 color) 
 { 
     int3 coord = GI_WorldToVoxelSpace(worldpos);
@@ -44,19 +44,20 @@ bool GI_Test_VX_Normal(float3 normal)
 //----------VOXEL TRACING FUNCTIONS----------//
 half4 GI_SphereTrace_Diffuse(float3 position)
 {
-    half4 C = half4(0.0hf.xxx, 1.0hf);
+    half4 C = 0.0hf.xxxx;
     half3 uvw = half3(GI_WorldToVoxelUVW(position));
+    half AO = 1.0hf;
 
     for (uint i = 0; i < PK_GI_VX_MIP_COUNT; ++i)
     {
-        float level = i * 0.75f;
+        float level = i * 0.75f + 0.5f;
         half4 V = half4(GI_Load_Voxel_UVW(uvw, level));
-        C.rgb += (1.0hf - C.a) * V.a * (V.rgb / max(1e-4hf, V.a));
+        C.rgb += (1.0hf - C.a) * V.rgb;
         C.a = min(1.0hf, C.a + (1.0hf - C.a) * V.a);
-        C.a *= clamp(1.0hf - V.a * (1.0hf + half(pow3(level)) * 0.075hf), 0.0hf, 1.0hf);
+        AO *= max(0.0hf, 1.0hf - V.a * (1.0hf + half(level) * 0.5hf));
     }
 
-    return C;
+    return half4(C.rgb, AO);
 }
 
 float4 GI_ConeTrace_Diffuse(const float3 O, const float3 N, const float dither) 

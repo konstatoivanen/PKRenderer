@@ -165,6 +165,7 @@ namespace PK::Math
         inline float4& operator[](size_t i) { return (&left)[i]; }
         constexpr float4* array_ptr() { return &left; }
     };
+    
 
     struct BoundingBox
     {

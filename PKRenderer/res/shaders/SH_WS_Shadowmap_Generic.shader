@@ -1,14 +1,12 @@
 #version 460
 #Cull Back
-#ZTest LEqual
+#ZTest GEqual
 #ZWrite True
 #EnableInstancing
 
 #include includes/LightResources.glsl
 
 #pragma PROGRAM_VERTEX
-
-#define SHADOW_NEAR_BIAS 0.1f
 
 // As opposed to default order y axis is flipped here to avoid having to switch winding order for cube depth rendering
 const float3x3 PK_CUBE_FACE_MATRICES[6] =
@@ -46,14 +44,16 @@ const float3x3 PK_CUBE_FACE_MATRICES[6] =
 
 float4 GetCubeClipPos(float3 viewvec, float radius, uint faceIndex)
 {
-	float3 vpos = viewvec * PK_CUBE_FACE_MATRICES[faceIndex];
-    float4 clip = float4(vpos.xy, 1.020202f * vpos.z - radius * 0.020202f, vpos.z);
-    clip.z = (clip.z + clip.w) / 2.0f;
-    return clip;
+	const float3 vpos = viewvec * PK_CUBE_FACE_MATRICES[faceIndex];
+    const float near = 0.1f;
+    const float far = radius;
+    const float m22 = -near / (far - near);
+    const float m32 = (near * far) / (far - near);
+    return float4(vpos.xy, m22 * vpos.z + m32, vpos.z);
 }
 
 in float3 in_POSITION;
-out float4 vs_DEPTH;
+out float3 vs_DEPTH;
 
 void main()
 {
@@ -62,16 +62,17 @@ void main()
     const LightPacked light = PK_BUFFER_DATA(pk_Lights, lightIndex);
     const float3 wpos = ObjectToWorldPos(in_POSITION);
     const uint projectionIndex = light.LIGHT_PROJECTION;
-    
-    float4 vs_pos = 0.0f.xxxx;
-    float4 vs_depth = 0.0f.xxxx;
 
+    float4 vs_pos = 0.0f.xxxx;
+    float3 vs_depth = 0.0f.xxx;
+
+    [[branch]]
     switch (light.LIGHT_TYPE)
     {
         case LIGHT_TYPE_POINT:
         {
-            vs_depth = float4(wpos - light.LIGHT_POS, SHADOW_NEAR_BIAS);
-            vs_pos = GetCubeClipPos(vs_depth.xyz, light.LIGHT_RADIUS, layer % 6);
+            vs_depth = wpos - light.LIGHT_POS;
+            vs_pos = GetCubeClipPos(vs_depth, light.LIGHT_RADIUS, layer % 6);
         }
         break;
         case LIGHT_TYPE_SPOT:
@@ -79,15 +80,15 @@ void main()
             float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, projectionIndex);
             vs_pos = mul(lightmatrix, float4(wpos, 1.0f));
             vs_depth.xyz = wpos - light.LIGHT_POS;
-            vs_depth.w = SHADOW_NEAR_BIAS;
         }
         break;
         case LIGHT_TYPE_DIRECTIONAL:
         {
             float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, projectionIndex + layer);
             vs_pos = mul(lightmatrix, float4(wpos, 1.0f));
-            vs_depth.x = (vs_pos.z / vs_pos.w) * light.LIGHT_RADIUS;
-            vs_depth.w = SHADOW_NEAR_BIAS * (layer + 1);
+
+            // Depth test uses reverse z for precision reasons. revert range for actual distance.
+            vs_depth.x = (1.0f - (vs_pos.z / vs_pos.w)) * light.LIGHT_RADIUS;
         }
         break;
     }
@@ -99,10 +100,11 @@ void main()
 
 #pragma PROGRAM_FRAGMENT
 
-in float4 vs_DEPTH;
+in float3 vs_DEPTH;
+
 layout(early_fragment_tests) in;
 layout(location = 0) out float SV_Target0;
 void main()
-{ 
-    SV_Target0 = length(vs_DEPTH.xyz) + vs_DEPTH.w; 
+{
+    SV_Target0 = length(vs_DEPTH.xyz);
 }

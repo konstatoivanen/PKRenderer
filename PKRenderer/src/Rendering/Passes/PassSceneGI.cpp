@@ -39,7 +39,6 @@ namespace PK::Rendering::Passes
         descr.sampler.wrap[1] = WrapMode::Border;
         descr.sampler.wrap[2] = WrapMode::Border;
         descr.sampler.borderColor = BorderColor::FloatClear;
-        descr.sampler.mipMax = 6.0f;
         descr.resolution = { 256u, 128u, 256u };
         descr.levels = 7u;
         descr.usage = TextureUsage::Sample | TextureUsage::Storage;
@@ -48,7 +47,6 @@ namespace PK::Rendering::Passes
         descr.format = TextureFormat::R8UI;
         descr.sampler.borderColor = BorderColor::IntClear;
         descr.levels = 1u;
-        descr.sampler.mipMax = 0.0f;
         m_voxelMask = Texture::Create(descr, "GI.VoxelVolumeMask");
 
         descr.samplerType = SamplerType::Sampler2DArray;
@@ -82,7 +80,8 @@ namespace PK::Rendering::Passes
 
         descr.layers = 2;
         descr.format = TextureFormat::RGB9E5;
-        descr.usage = TextureUsage::Aliased | TextureUsage::Storage | TextureUsage::Sample;
+        descr.formatAlias = TextureFormat::R32UI;
+        descr.usage = TextureUsage::Storage | TextureUsage::Sample;
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1u };
         m_resolvedGI = Texture::Create(descr, "GI.Resolved");
 

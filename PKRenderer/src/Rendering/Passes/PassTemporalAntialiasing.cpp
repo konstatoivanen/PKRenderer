@@ -17,6 +17,7 @@ namespace PK::Rendering::Passes
 
         TextureDescriptor descriptor{};
         descriptor.format = TextureFormat::RGB9E5;
+        descriptor.formatAlias = TextureFormat::R32UI;
         descriptor.resolution.x = initialWidth * 2;
         descriptor.resolution.y = initialHeight * 2;
         descriptor.layers = 2;
@@ -25,11 +26,11 @@ namespace PK::Rendering::Passes
         descriptor.sampler.wrap[0] = WrapMode::Clamp;
         descriptor.sampler.wrap[1] = WrapMode::Clamp;
         descriptor.sampler.wrap[2] = WrapMode::Clamp;
-        descriptor.usage = TextureUsage::Default | TextureUsage::Storage | TextureUsage::Aliased;
+        descriptor.usage = TextureUsage::Default | TextureUsage::Storage;
         m_renderTarget = Texture::Create(descriptor, "TAA.HistoryTexture");
     }
 
-    void PassTemporalAntialiasing::Render(CommandBuffer* cmd, RenderTexture* source)
+    void PassTemporalAntialiasing::Render(CommandBuffer* cmd, Texture* source)
     {
         cmd->BeginDebugScope("TemporalAntialiasing", PK_COLOR_MAGENTA);
 
@@ -45,11 +46,11 @@ namespace PK::Rendering::Passes
 
         m_renderTarget->Validate(resolution);
 
-        GraphicsAPI::SetTexture(hash->pk_Texture, source->GetColor(0u), { 0, 0, 1u, 1u });
+        GraphicsAPI::SetTexture(hash->pk_Texture, source, { 0, 0, 1u, 1u });
         GraphicsAPI::SetTexture(hash->pk_Texture1, m_renderTarget.get(), { 0, historyRead, 1u, 1u });
         GraphicsAPI::SetImage(hash->pk_Image, m_renderTarget.get(), { 0, historyWrite, 1u, 1u });
         cmd->Dispatch(m_computeTAA, 0, { resolution.x, resolution.y, 1u });
-        cmd->Blit(m_renderTarget.get(), source->GetColor(0), { 0, historyWrite, 1u, 1u }, { 0, 0, 1u, 1u }, FilterMode::Bilinear);
+        cmd->Blit(m_renderTarget.get(), source, { 0, historyWrite, 1u, 1u }, { 0, 0, 1u, 1u }, FilterMode::Bilinear);
         cmd->EndDebugScope();
 
         m_jitter.z = m_jitter.x;

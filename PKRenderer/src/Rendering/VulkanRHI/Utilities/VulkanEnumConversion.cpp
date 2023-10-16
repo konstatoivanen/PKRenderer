@@ -270,50 +270,6 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
         }
     }
 
-    VkFormat GetImageStorageFormat(VkFormat format)
-    {
-        switch (format)
-        {
-
-            case VK_FORMAT_R5G6B5_UNORM_PACK16:       
-            case VK_FORMAT_R5G5B5A1_UNORM_PACK16:     
-            case VK_FORMAT_R4G4B4A4_UNORM_PACK16: 
-                return VK_FORMAT_R16_UINT;
-            
-            case VK_FORMAT_B10G11R11_UFLOAT_PACK32:   
-            case VK_FORMAT_E5B9G9R9_UFLOAT_PACK32:   
-            case VK_FORMAT_A2B10G10R10_UNORM_PACK32: 
-                return VK_FORMAT_R32_UINT;
-            
-            case VK_FORMAT_BC1_RGB_UNORM_BLOCK:       
-            case VK_FORMAT_BC1_RGB_SRGB_BLOCK:        
-            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:      
-            case VK_FORMAT_BC1_RGBA_SRGB_BLOCK: 
-                return VK_FORMAT_R32G32_UINT;
-
-            case VK_FORMAT_BC2_UNORM_BLOCK:           
-            case VK_FORMAT_BC2_SRGB_BLOCK: 
-            case VK_FORMAT_BC3_UNORM_BLOCK:  
-            case VK_FORMAT_BC3_SRGB_BLOCK: 
-                return VK_FORMAT_R32G32B32A32_UINT;
-
-            case VK_FORMAT_BC4_UNORM_BLOCK:
-            case VK_FORMAT_BC4_SNORM_BLOCK: 
-                return VK_FORMAT_R32G32_UINT;
-
-            case VK_FORMAT_BC5_UNORM_BLOCK:
-            case VK_FORMAT_BC5_SNORM_BLOCK: 
-                return VK_FORMAT_R32G32B32A32_UINT;
-
-            case VK_FORMAT_BC6H_UFLOAT_BLOCK:         
-            case VK_FORMAT_BC6H_SFLOAT_BLOCK:         
-            case VK_FORMAT_BC7_UNORM_BLOCK:
-                return VK_FORMAT_R32G32B32A32_UINT;
-
-            default: return format;
-        }
-    }
-
     VkImageAspectFlagBits GetFormatAspect(VkFormat format)
     {
         if (IsDepthStencilFormat(format))

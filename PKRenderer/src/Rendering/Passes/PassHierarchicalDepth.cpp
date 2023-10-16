@@ -21,11 +21,6 @@ namespace PK::Rendering::Passes
         hizDesc.format = TextureFormat::R16F;
         hizDesc.sampler.filterMin = FilterMode::Bilinear;
         hizDesc.sampler.filterMag = FilterMode::Bilinear;
-        hizDesc.sampler.wrap[0] = WrapMode::Border;
-        hizDesc.sampler.wrap[1] = WrapMode::Border;
-        hizDesc.sampler.wrap[2] = WrapMode::Border;
-        hizDesc.sampler.borderColor = BorderColor::FloatClear;
-        hizDesc.sampler.mipMax = 8.0f;
         hizDesc.resolution = { config->InitialWidth, config->InitialHeight, 1 };
         hizDesc.levels = 9u;
         hizDesc.layers = 3u;

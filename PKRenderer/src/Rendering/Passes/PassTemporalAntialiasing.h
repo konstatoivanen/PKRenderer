@@ -1,6 +1,5 @@
 #pragma once
 #include "Utilities/NoCopy.h"
-#include "Rendering/Objects/RenderTexture.h"
 #include "Rendering/Objects/Shader.h"
 #include "Rendering/Objects/CommandBuffer.h"
 
@@ -10,7 +9,7 @@ namespace PK::Rendering::Passes
     {
         public:
             PassTemporalAntialiasing(Core::Services::AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight);
-            void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* source);
+            void Render(Objects::CommandBuffer* cmd, Objects::Texture* source);
 
             constexpr Math::float4 GetJitter() const { return m_jitter; };
 

@@ -159,8 +159,15 @@ namespace PK::ECS::Engines
         float zplanes[5];
         float depthRange;
 
+        Functions::ShadowCascadeCreateInfo cascadeInfo{};
+        cascadeInfo.worldToLocal = worldToLocal;
+        cascadeInfo.projToWorld = invvp;
+        cascadeInfo.splitPlanes = zplanes;
+        cascadeInfo.zPadding = -15.0f;
+        cascadeInfo.resolution = 1024;
+        cascadeInfo.count = 4;
         Functions::GetCascadeDepths(0.2f, 25.0f, 0.5f, zplanes, 5);
-        Functions::GetShadowCascadeMatrices(worldToLocal, invvp, zplanes, -15.0f, 1024, 4, cascades, &depthRange);
+        Functions::GetShadowCascadeMatrices(cascadeInfo, cascades, &depthRange);
 
         for (auto i = 0; i < 4; ++i)
         {

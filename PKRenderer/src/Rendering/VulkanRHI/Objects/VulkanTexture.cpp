@@ -170,7 +170,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         handle->image.samples = m_descriptor.samples;
         handle->image.range =
         {
-            (uint32_t)m_rawImage->aspect,
+            (uint32_t)EnumConvert::GetFormatAspect(handle->image.format),
             normalizedRange.level,
             EnumConvert::ExpandVkRange16(normalizedRange.levels),
             normalizedRange.layer,
@@ -195,18 +195,18 @@ namespace PK::Rendering::VulkanRHI::Objects
             return v;
         }
 
-        auto useAlias = mode == TextureBindMode::Image && (m_descriptor.usage & TextureUsage::Aliased) != 0;
+        auto useAlias = mode != TextureBindMode::SampledTexture && m_rawImage->imageAlias != VK_NULL_HANDLE;
 
         VkImageViewCreateInfo info{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
         info.pNext = nullptr;
         info.flags = 0;
         info.image = useAlias ? m_rawImage->imageAlias : m_rawImage->image;
         info.viewType = m_viewType;
-        info.format = useAlias ? EnumConvert::GetImageStorageFormat(m_rawImage->format) : m_rawImage->format;
+        info.format = useAlias ? m_rawImage->formatAlias : m_rawImage->format;
         info.components = mode == TextureBindMode::SampledTexture ? m_swizzle : (VkComponentMapping{});
         info.subresourceRange =
         {
-            (uint32_t)m_rawImage->aspect,
+            (uint32_t)EnumConvert::GetFormatAspect(info.format),
             normalizedRange.level,
             EnumConvert::ExpandVkRange16(normalizedRange.levels),
             normalizedRange.layer,

@@ -57,7 +57,7 @@ namespace PK::Rendering::Passes
             Core::Services::Sequencer* m_sequencer = nullptr;
             Batcher* m_batcher = nullptr;
             Objects::Shader* m_computeLightAssignment = nullptr;
-            Objects::Shader* m_computeCopyCubeShadow = nullptr;
+            Objects::Shader* m_computeCopyCubeShadow  = nullptr;
             float m_cascadeLinearity;
             uint32_t m_shadowmapCubeFaceSize;
             uint32_t m_shadowmapTileSize;

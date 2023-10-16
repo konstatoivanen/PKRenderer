@@ -13,7 +13,7 @@ PK_DECLARE_BUFFER(float4, pk_SceneEnv_SH, PK_SET_GLOBAL);
 
 float3 SampleEnvironment(float2 uv, float roughness) 
 { 
-    return tex2DLod(pk_SceneEnv, uv, roughness * PK_SCENE_ENV_MAX_MIP).rgb * PK_SCENE_ENV_EXPOSURE; 
+    return textureLod(pk_SceneEnv, uv, roughness * PK_SCENE_ENV_MAX_MIP).rgb * PK_SCENE_ENV_EXPOSURE; 
 }
 
 float3 SampleEnvironmentSH(float4 basis)

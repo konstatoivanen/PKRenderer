@@ -23,15 +23,17 @@ namespace PK::Rendering::Passes
         TextureDescriptor descriptor{};
         descriptor.samplerType = SamplerType::Sampler2DArray;
         descriptor.format = TextureFormat::RGB9E5;
+        descriptor.formatAlias = TextureFormat::R32UI;
         descriptor.resolution.x = config->InitialWidth / 2;
         descriptor.resolution.y = config->InitialHeight / 2;
         descriptor.layers = 3;
-        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::Aliased;
+        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
         m_colorTarget = Texture::Create(descriptor, "DepthOfField.Target.Color");
 
         descriptor.format = TextureFormat::R16F;
+        descriptor.formatAlias = TextureFormat::Invalid;
         descriptor.layers = 2;
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
         m_alphaTarget = Texture::Create(descriptor, "DepthOfField.Target.Alpha");

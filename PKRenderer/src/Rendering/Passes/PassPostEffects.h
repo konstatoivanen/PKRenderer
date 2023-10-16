@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Core/ApplicationConfig.h"
-#include "Rendering/Objects/RenderTexture.h"
+#include "Rendering/Objects/Texture.h"
 #include "Rendering/Objects/ConstantBuffer.h"
 #include "ECS/Tokens/ViewProjectionToken.h"
 
@@ -11,7 +11,7 @@ namespace PK::Rendering::Passes
     {
         public:
             PassPostEffectsComposite(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
-            void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* destination);
+            void Render(Objects::CommandBuffer* cmd, Objects::Texture* destination);
             void OnUpdateParameters(PK::Core::Services::AssetImportToken<PK::Core::ApplicationConfig>* token);
 
         private:

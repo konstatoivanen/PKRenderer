@@ -2,13 +2,17 @@
 
 // needs to be declared before lighting include.
 #if defined(PK_META_PASS_GIVOXELIZE) 
-    #define SHADOW_TEST ShadowTest_Fast
+    #define SHADOW_TEST ShadowTest_PCF2x2
 #endif
 
 #include GBuffers.glsl
 #include Lighting.glsl
 #include SceneEnv.glsl
 #include SceneGIVX.glsl
+
+//@TODO move common samplers somewhere else & have some utility logic for using these
+// traditional syntax is a bit cumbersome.
+layout(set = PK_SET_PASS) uniform sampler pk_Sampler_SurfDefault;
 
 struct SurfaceData
 {
@@ -28,11 +32,11 @@ struct SurfaceData
     float roughness;
     float occlusion;
 };
-
+ 
 /*
 @TODO consider using this as opposed to vertex attributes
 Saves memory but costs alu....
-float3x3 CotangentFrame(float3 N, float3 P, float2 UV)
+float3x3 ComposeDerivativeTBN(float3 N, float3 P, float2 UV)
 {
 	N = normalize(N);
 
@@ -58,15 +62,15 @@ float3x3 ComposeMikkTBN(float3 normal, float4 tangent)
     return float3x3(T, B, N);
 }
 
-float3 SampleNormalTex(in sampler2D map, in float3x3 rotation, in float2 uv, float amount) 
+float3 SampleNormalTex(in texture2D map, in float3x3 rotation, in float2 uv, float amount) 
 {   
-    const float3 n = tex2D(map, uv).xyz * 2.0f - 1.0f;
+    const float3 n = texture(sampler2D(map, pk_Sampler_SurfDefault), uv).xyz * 2.0f - 1.0f;
     return normalize(mul(rotation, lerp(float3(0,0,1), n, amount))); 
 }
 
-float2 SampleParallaxOffset(in sampler2D map, in float2 uv, float amount, float3 viewdir) 
+float2 SampleParallaxOffset(in texture2D map, in float2 uv, float amount, float3 viewdir) 
 { 
-    return (tex2D(map, uv).x * amount - amount * 0.5f) * viewdir.xy / (viewdir.z + 0.5f); 
+    return (texture(sampler2D(map, pk_Sampler_SurfDefault), uv).x * amount - amount * 0.5f) * viewdir.xy / (viewdir.z + 0.5f); 
 }
 
 float3 GetIndirectLight_Main(const BxDFSurf surf, const float3 worldpos, const float3 clipuvw)
@@ -111,14 +115,14 @@ float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const f
 #if defined(PK_META_PASS_GIVOXELIZE) 
     #undef PK_USE_TANGENTS
     // Prefilter by using a higher mip bias in voxelization.
-    #define PK_SURF_TEX(t, uv) tex2D(t, uv, 4.0f)
+    #define PK_SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv, 4.0f)
     #define PK_META_DECLARE_SURFACE_OUTPUT
     #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) GI_Store_Voxel(worldpos, color)
     #define PK_META_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNDCSpace(position)
     #define PK_META_BxDF EvaluateBxDF_DirectMinimal
     #define PK_META_BxDF_INDIRECT GetIndirectLight_VXGI
 #else
-    #define PK_SURF_TEX(t, uv) tex2D(t, uv)
+    #define PK_SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv)
     #define PK_META_DECLARE_SURFACE_OUTPUT out float4 SV_Target0;
     #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) SV_Target0 = color
     #define PK_META_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
@@ -275,7 +279,7 @@ struct SurfaceFragmentVaryings
             LightTile tile = GetLightTile_PX(screencoord, ViewDepth(surf.clipuvw.z));
             for (uint i = tile.start; i < tile.end; ++i)
             {
-                Light light = GetLight(i, surf.worldpos, tile.cascade);
+                Light light = GetLight(i, surf.worldpos, surf.normal, tile.cascade);
                 sv_output.rgb += PK_META_BxDF(bxdf_surf, light.direction, light.color, light.shadow, light.sourceRadius);
             }
 

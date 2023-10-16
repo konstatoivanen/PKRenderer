@@ -52,7 +52,7 @@ float4 DecodeGBufferViewNR(const float4 encoded)
     return float4(fenc * sqrt(1 - f / 4), -(1 - f / 2), encoded.y);
 }
 
-float3 SamplePreviousColor(const float2 uv) { return tex2D(pk_ScreenColorPrevious, uv).rgb; }
+float3 SamplePreviousColor(const float2 uv) { return texture(pk_ScreenColorPrevious, uv).rgb; }
 float3 SamplePreviousColor(const int2 coord) { return texelFetch(pk_ScreenColorPrevious, coord, 0).rgb; }
 
 float SampleMinZ(const int2 coord, const int l) { return texelFetch(pk_ScreenDepthHierachical, int3(coord, 0), l).x; }
@@ -63,25 +63,25 @@ float SampleMinZ(const float2 uv, const float l) { return textureLod(pk_ScreenDe
 float SampleMaxZ(const float2 uv, const float l) { return textureLod(pk_ScreenDepthHierachical, float3(uv, 1), l).x; }
 float SampleAvgZ(const float2 uv, const float l) { return textureLod(pk_ScreenDepthHierachical, float3(uv, 2), l).x; }
 
-float SampleViewDepth(const float2 uv) { return ViewDepth(tex2D(pk_ScreenDepthCurrent, uv).x); }
+float SampleViewDepth(const float2 uv) { return ViewDepth(texture(pk_ScreenDepthCurrent, uv).x); }
 float SampleViewDepth(const int2 coord) { return ViewDepth(texelFetch(pk_ScreenDepthCurrent, coord, 0).x); }
 // Gather order: (0,1), (1,1), (1,0), (0,0) 
 #define GatherViewDepths(uv) ViewDepth(textureGather(pk_ScreenDepthCurrent, uv, 0))
 #define SampleViewDepthOffsets(uv, offsets) ViewDepth(textureGatherOffsets(pk_ScreenDepthCurrent, uv, offsets))
 
-float SamplePreviousViewDepth(const float2 uv) { return ViewDepth(tex2D(pk_ScreenDepthPrevious, uv).x); }
+float SamplePreviousViewDepth(const float2 uv) { return ViewDepth(texture(pk_ScreenDepthPrevious, uv).x); }
 float SamplePreviousViewDepth(const int2 coord) { return ViewDepth(texelFetch(pk_ScreenDepthPrevious, coord, 0).x); }
 #define GatherPreviousViewDepths(uv) ViewDepth(textureGather(pk_ScreenDepthPrevious, uv, 0))
 #define SamplePreviousViewDepthOffsets(uv, offsets) ViewDepth(textureGatherOffsets(pk_ScreenDepthPrevious, uv, offsets))
 
-float SampleRoughness(const float2 uv) { return tex2D(pk_ScreenNormalsCurrent, uv).y; }
+float SampleRoughness(const float2 uv) { return texture(pk_ScreenNormalsCurrent, uv).y; }
 float SampleRoughness(const int2 coord) { return texelFetch(pk_ScreenNormalsCurrent, coord, 0).y; }
-float4 SampleViewNormalRoughness(const float2 uv) { return DecodeGBufferViewNR(tex2D(pk_ScreenNormalsCurrent, uv)); }
+float4 SampleViewNormalRoughness(const float2 uv) { return DecodeGBufferViewNR(texture(pk_ScreenNormalsCurrent, uv)); }
 float4 SampleViewNormalRoughness(const int2 coord) { return DecodeGBufferViewNR(texelFetch(pk_ScreenNormalsCurrent, coord, 0)); }
 
-float SamplePreviousRoughness(const float2 uv) { return tex2D(pk_ScreenNormalsPrevious, uv).y; }
+float SamplePreviousRoughness(const float2 uv) { return texture(pk_ScreenNormalsPrevious, uv).y; }
 float SamplePreviousRoughness(const int2 coord) { return texelFetch(pk_ScreenNormalsPrevious, coord, 0).y; }
-float4 SamplePreviousViewNormalRoughness(const float2 uv) { return DecodeGBufferViewNR(tex2D(pk_ScreenNormalsPrevious, uv)); }
+float4 SamplePreviousViewNormalRoughness(const float2 uv) { return DecodeGBufferViewNR(texture(pk_ScreenNormalsPrevious, uv)); }
 float4 SamplePreviousViewNormalRoughness(const int2 coord) { return DecodeGBufferViewNR(texelFetch(pk_ScreenNormalsPrevious, coord, 0)); }
 float4 SamplePreviousWorldNormalRoughness(const float2 uv) { return mul3x3(SamplePreviousViewNormalRoughness(uv), float3x3(pk_ViewToWorldPrev)); }
 float4 SamplePreviousWorldNormalRoughness(const int2 coord) { return mul3x3(SamplePreviousViewNormalRoughness(coord), float3x3(pk_ViewToWorldPrev)); }

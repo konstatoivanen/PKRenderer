@@ -226,8 +226,7 @@ namespace PK::Rendering::Structs
         Input = 0x20,
         Storage = 0x40,
         Concurrent = 0x80,
-        Aliased = 0x100,
-        ReadOnly = 0x200,
+        ReadOnly = 0x100,
         DefaultDisk = Upload | Sample | ReadOnly,
         Default = Upload | Sample,
         DefaultStorage = Upload | Sample | Storage,
@@ -235,7 +234,7 @@ namespace PK::Rendering::Structs
         RTDepthSample = RTDepth | Sample,
 
         ValidRTTypes = RTColor | RTDepth | RTStencil,
-        ValidRTColorUsages = Sample | Storage | Input | Concurrent | Aliased,
+        ValidRTColorUsages = Sample | Storage | Input | Concurrent,
         ValidRTDepthUsages = Sample | Input | Concurrent,
     };
 

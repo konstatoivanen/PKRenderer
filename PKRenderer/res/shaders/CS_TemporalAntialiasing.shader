@@ -8,8 +8,8 @@ PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture; // Current Screen
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture1; // History Read
 layout(r32ui, set = PK_SET_DRAW) uniform uimage2D pk_Image; // History Write
 
-#define SAMPLE_TAA_SOURCE(uv) tex2D(pk_Texture, uv).rgb
-#define SAMPLE_TAA_HISTORY(uv) tex2D(pk_Texture1, uv).rgb
+#define SAMPLE_TAA_SOURCE(uv) texture(pk_Texture, uv).rgb
+#define SAMPLE_TAA_HISTORY(uv) texture(pk_Texture1, uv).rgb
 
 struct TAADescriptor
 {

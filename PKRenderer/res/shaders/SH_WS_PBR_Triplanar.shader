@@ -8,6 +8,14 @@
 #MaterialProperty texture2D _PBSTexture
 #MaterialProperty texture2D _NormalMap
 
+/*
+@TODO use separate samplers for these textures. they take a lot of register space by having them combined.
+layout(set = 0, binding = 0) uniform sampler albedoSampler;
+layout(set = 0, binding = 1) uniform texture2D albedo[];
+
+texture(sampler2D(albedo[material.albedoTextureIndex], albedoSampler), uv);
+*/
+
 #define BxDF_ENABLE_SHEEN
 #define BxDF_ENABLE_CLEARCOAT
 #define PK_USE_TANGENTS
@@ -18,17 +26,13 @@ void PK_SURFACE_FUNC_VERT(inout SurfaceFragmentVaryings surf) {}
 
 #pragma PROGRAM_FRAGMENT
 
-
-float4 SampleTriplanar(sampler2D tex, float3 normal, float3 position, float scale)
+float4 SampleTriplanar(texture2D tex, float3 normal, float3 position, float scale)
 {
     float3 blend = abs(normal);
-
     blend /= dot(blend, 1.0.xxx);
-
-    float4 cx = PK_SURF_TEX(tex, position.yz * scale);
-    float4 cy = PK_SURF_TEX(tex, position.xz * scale);
-    float4 cz = PK_SURF_TEX(tex, position.xy * scale);
-
+    const float4 cx = PK_SURF_TEX(tex, position.yz * scale);
+    const float4 cy = PK_SURF_TEX(tex, position.xz * scale);
+    const float4 cz = PK_SURF_TEX(tex, position.xy * scale);
     return cx * blend.x + cy * blend.y + cz * blend.z;
 }
 
@@ -36,9 +40,9 @@ float3 SampleNormalTriplanar(in SurfaceFragmentVaryings varyings, inout SurfaceD
 {
     float3 blend = abs(PK_SURF_MESH_NORMAL);
     blend /= dot(blend, 1.0.xxx);
-    float3 cx = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, surf.worldpos.yz * scale);
-    float3 cy = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, surf.worldpos.xz * scale);
-    float3 cz = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, surf.worldpos.xy * scale);
+    const float3 cx = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, surf.worldpos.yz * scale);
+    const float3 cy = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, surf.worldpos.xz * scale);
+    const float3 cz = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, surf.worldpos.xy * scale);
     return normalize(cx * blend.x + cy * blend.y + cz * blend.z);
 }
 

@@ -55,6 +55,8 @@ namespace PK::Rendering
         DECLARE_HASH(pk_RT_Vertices)
         DECLARE_HASH(pk_RT_Indices)
         
+        DECLARE_HASH(pk_Sampler_SurfDefault)
+
         DECLARE_HASH(pk_SceneStructure)
 
         DECLARE_HASH(pk_SceneEnv)

@@ -19,7 +19,7 @@ namespace PK::Rendering::VulkanRHI::Objects
             void Rebuild(const Structs::TextureDescriptor& descriptor);
 
             inline VkImageLayout GetImageLayout() const { return EnumConvert::GetImageLayout(m_descriptor.usage); }
-            inline VkImageAspectFlags GetAspectFlags() const { return m_rawImage->aspect; }
+            inline VkImageAspectFlags GetAspectFlags() const { return EnumConvert::GetFormatAspect(m_rawImage->format); }
             inline VkFormat GetNativeFormat() const { return m_rawImage->format; }
             inline const VulkanRawImage* GetRaw() const { return m_rawImage; }
             inline const VulkanBindHandle* GetBindHandle() const { return GetView({})->bindHandle; }

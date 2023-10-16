@@ -87,7 +87,7 @@ namespace PK::Rendering::VulkanRHI
 
         VkImageCreateInfo image = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
         VmaAllocationCreateInfo allocation = {};
-        VkImageAspectFlagBits aspect = (VkImageAspectFlagBits)0;
+        VkFormat formatAlias = VK_FORMAT_MAX_ENUM;
         VulkanQueueFamilies queueFamilies{};
     };
 
@@ -147,9 +147,9 @@ namespace PK::Rendering::VulkanRHI
         VkImage image;
         VkImage imageAlias;
         VmaAllocation memory;
-        VkImageAspectFlagBits aspect;
         VkSampleCountFlagBits samples;
         VkFormat format;
+        VkFormat formatAlias;
         VkImageType type;
         VkExtent3D extent;
         uint32_t levels;

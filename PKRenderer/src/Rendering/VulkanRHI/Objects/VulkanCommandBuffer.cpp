@@ -42,7 +42,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         m_renderState->SetRenderTarget(&handles, nullptr, 0u);
     }
 
-    void VulkanCommandBuffer::SetRenderTarget(Texture** renderTargets, Texture** resolveTargets, const TextureViewRange* ranges, uint32_t count)
+    void VulkanCommandBuffer::SetRenderTarget(Texture* const* renderTargets, Texture* const* resolveTargets, const TextureViewRange* ranges, uint32_t count)
     {
         auto colors = PK_STACK_ALLOC(const VulkanBindHandle*, count);
         auto resolves = resolveTargets != nullptr ? PK_STACK_ALLOC(const VulkanBindHandle*, count) : nullptr;

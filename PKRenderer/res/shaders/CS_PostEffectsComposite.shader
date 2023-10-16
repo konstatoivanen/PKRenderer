@@ -29,7 +29,7 @@
 #if PK_DEBUG_MODE != PK_DEBUG_MODE_NONE
 #include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl
-#include includes/SceneGI.glsl
+#include includes/SceneGIVX.glsl
 #endif
 
 layout(rgba16f, set = PK_SET_DRAW) uniform image2D pk_Image;
@@ -97,7 +97,9 @@ void main()
         #elif PK_DEBUG_MODE == PK_DEBUG_MODE_GI_SPEC
             color = GI_Load_Resolved_Spec(uv) * exposure;
         #elif PK_DEBUG_MODE == PK_DEBUG_MODE_GI_VX
-            color = GI_Load_Voxel(SampleWorldPosition(uv), 0.0f).rgb * exposure;
+            float4 voxel = GI_Load_Voxel(SampleWorldPosition(uv), 1.5f);
+            voxel.rgb *= safePositiveRcp(voxel.a);
+            color = voxel.rgb * exposure;
         #elif PK_DEBUG_MODE == PK_DEBUG_MODE_NORMAL
             color = normal * 0.5f + 0.5f;
         #elif PK_DEBUG_MODE == PK_DEBUG_MODE_ROUGHNESS

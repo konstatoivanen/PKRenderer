@@ -48,9 +48,9 @@ void main()
 
     const half margin = 2.0hf * half(texelSize.y);
     const float aspect = texelSize.x / texelSize.y;
-    const half centerCoC = half(tex2D(pk_DoF_AlphaRead, float3(uv, 0)).r);
+    const half centerCoC = half(texture(pk_DoF_AlphaRead, float3(uv, 0)).r);
 
-    const half3 center = half3(tex2D(pk_DoF_ColorRead, float3(uv, 0)).rgb);
+    const half3 center = half3(texture(pk_DoF_ColorRead, float3(uv, 0)).rgb);
     background = half4(center, 1.0hf) * clamp((max(0.0hf, centerCoC) + margin) / margin, 0.0hf, 1.0hf);
     foreground = half4(center, 1.0hf) * clamp((-centerCoC + margin) / margin, 0.0hf, 1.0hf);
 
@@ -69,8 +69,8 @@ void main()
             const half dist = length(offset) - margin;
             const float3 uvw = float3(uv + float2(offset.x * aspect, offset.y), 0);
             
-            const half3 color = half3(tex2D(pk_DoF_ColorRead, uvw).rgb);
-            const half coc = half(tex2D(pk_DoF_AlphaRead, uvw).r);
+            const half3 color = half3(texture(pk_DoF_ColorRead, uvw).rgb);
+            const half coc = half(texture(pk_DoF_AlphaRead, uvw).r);
             const half bgcoc = max(min(centerCoC, coc), 0.0hf);
 
             background += half4(color, 1.0hf) * clamp(( bgcoc - dist) / margin, 0.0hf, 1.0hf);
@@ -92,10 +92,10 @@ void main()
     const float coc = GetCircleOfConfusion(viewDepth);
     const float4 o = uv.xyxy + texelSize.xyxy * float2(-1.0f, 1.0f).xxyy;
 
-    foreground.a += half(tex2D(pk_DoF_AlphaRead, float3(o.xy, 1)).r);
-    foreground.a += half(tex2D(pk_DoF_AlphaRead, float3(o.zy, 1)).r);
-    foreground.a += half(tex2D(pk_DoF_AlphaRead, float3(o.xw, 1)).r);
-    foreground.a += half(tex2D(pk_DoF_AlphaRead, float3(o.zw, 1)).r);
+    foreground.a += half(texture(pk_DoF_AlphaRead, float3(o.xy, 1)).r);
+    foreground.a += half(texture(pk_DoF_AlphaRead, float3(o.zy, 1)).r);
+    foreground.a += half(texture(pk_DoF_AlphaRead, float3(o.xw, 1)).r);
+    foreground.a += half(texture(pk_DoF_AlphaRead, float3(o.zw, 1)).r);
     foreground.a *= 0.25hf;
     background.a = half(smoothstep(texelSize.y * 2.0f, texelSize.y * 4.0f, coc));
 
@@ -107,16 +107,16 @@ void main()
     [[branch]]
     if (threadCount > 0u)
     {
-        foreground.rgb += half3(tex2D(pk_DoF_ColorRead, float3(o.xy, 1)).rgb);
-        foreground.rgb += half3(tex2D(pk_DoF_ColorRead, float3(o.zy, 1)).rgb);
-        foreground.rgb += half3(tex2D(pk_DoF_ColorRead, float3(o.xw, 1)).rgb);
-        foreground.rgb += half3(tex2D(pk_DoF_ColorRead, float3(o.zw, 1)).rgb);
+        foreground.rgb += half3(texture(pk_DoF_ColorRead, float3(o.xy, 1)).rgb);
+        foreground.rgb += half3(texture(pk_DoF_ColorRead, float3(o.zy, 1)).rgb);
+        foreground.rgb += half3(texture(pk_DoF_ColorRead, float3(o.xw, 1)).rgb);
+        foreground.rgb += half3(texture(pk_DoF_ColorRead, float3(o.zw, 1)).rgb);
         foreground.rgb *= 0.25hf;
 
-        background.rgb += half3(tex2D(pk_DoF_ColorRead, float3(o.xy, 2)).rgb);
-        background.rgb += half3(tex2D(pk_DoF_ColorRead, float3(o.zy, 2)).rgb);
-        background.rgb += half3(tex2D(pk_DoF_ColorRead, float3(o.xw, 2)).rgb);
-        background.rgb += half3(tex2D(pk_DoF_ColorRead, float3(o.zw, 2)).rgb);
+        background.rgb += half3(texture(pk_DoF_ColorRead, float3(o.xy, 2)).rgb);
+        background.rgb += half3(texture(pk_DoF_ColorRead, float3(o.zy, 2)).rgb);
+        background.rgb += half3(texture(pk_DoF_ColorRead, float3(o.xw, 2)).rgb);
+        background.rgb += half3(texture(pk_DoF_ColorRead, float3(o.zw, 2)).rgb);
         background.rgb *= 0.25hf;
 
         const half3 dof = lerp(background.rgb * background.a, foreground.rgb, foreground.a);
