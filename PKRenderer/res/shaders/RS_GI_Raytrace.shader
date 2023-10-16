@@ -83,7 +83,7 @@ bool IsScreenHit(const int2 coord, const float3 origin, const float3 direction, 
 
     if (Test_WorldToPrevClipUVW(worldpos, clipuvw))
     {
-        const float2 deltacoord = abs(coord - (clipuvw.xy * pk_ScreenParams.xy));
+        const float2 deltacoord = abs(coord - clipuvw.xy * pk_ScreenParams.xy);
         const float rdepth = ViewDepth(clipuvw.z);
         const float sdepth = SamplePreviousViewDepth(clipuvw.xy);
         const float3 viewdir = normalize(UVToViewPos(clipuvw.xy, 1.0f));

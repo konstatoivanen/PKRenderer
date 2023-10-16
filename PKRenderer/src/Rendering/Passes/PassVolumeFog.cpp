@@ -117,10 +117,10 @@ namespace PK::Rendering::Passes
         cmd->EndDebugScope();
     }
 
-    void PassVolumeFog::Render(CommandBuffer* cmd, RenderTexture* destination)
+    void PassVolumeFog::Render(CommandBuffer* cmd, Texture* destination)
     {
         cmd->BeginDebugScope("Fog.Composite", PK_COLOR_MAGENTA);
-        GraphicsAPI::SetImage(HashCache::Get()->pk_Image, destination->GetColor(0));
+        GraphicsAPI::SetImage(HashCache::Get()->pk_Image, destination);
         cmd->Dispatch(m_shaderComposite, 0, destination->GetResolution());
         cmd->EndDebugScope();
     }

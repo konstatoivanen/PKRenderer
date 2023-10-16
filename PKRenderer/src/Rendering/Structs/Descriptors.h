@@ -37,19 +37,6 @@ namespace PK::Rendering::Structs
         SamplerDescriptor sampler = {};
     };
 
-    struct RenderTextureDescriptor
-    {
-        TextureFormat colorFormats[PK_MAX_RENDER_TARGETS] = { TextureFormat::RGBA8 };
-        TextureFormat depthFormat = TextureFormat::Depth24_Stencil8;
-        SamplerType samplerType = SamplerType::Sampler2D;
-        TextureUsage usage = TextureUsage::Default;
-        Math::uint3 resolution = Math::PK_UINT3_ONE;
-        uint8_t levels = 1;
-        uint8_t samples = 1;
-        uint16_t layers = 1;
-        SamplerDescriptor sampler = {};
-    };
-
     struct TextureViewRange
     {
         uint16_t level = 0u;

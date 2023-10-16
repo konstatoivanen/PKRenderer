@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Core/ApplicationConfig.h"
-#include "Rendering/Objects/RenderTexture.h"
+#include "Rendering/Objects/Texture.h"
 #include "Rendering/Objects/ConstantBuffer.h"
 #include "Rendering/Objects/Shader.h"
 
@@ -13,7 +13,7 @@ namespace PK::Rendering::Passes
             PassVolumeFog(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
             void ComputeDensity(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
             void Compute(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
-            void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* destination);
+            void Render(Objects::CommandBuffer* cmd, Objects::Texture* destination);
             void OnUpdateParameters(const Core::ApplicationConfig* config);
 
         private:

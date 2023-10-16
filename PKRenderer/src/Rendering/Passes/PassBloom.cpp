@@ -31,11 +31,10 @@ namespace PK::Rendering::Passes
         m_passSeparableBlur = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_BLUR"));
     }
 
-    void PassBloom::Render(Objects::CommandBuffer* cmd, RenderTexture* source)
+    void PassBloom::Render(Objects::CommandBuffer* cmd, Texture* source)
     {
         cmd->BeginDebugScope("Bloom", PK_COLOR_MAGENTA);
 
-        auto color = source->GetColor(0);
         auto bloom = m_bloomTexture.get();
 
         auto res = source->GetResolution();
@@ -46,7 +45,7 @@ namespace PK::Rendering::Passes
 
         auto hash = HashCache::Get();
 
-        GraphicsAPI::SetTexture(hash->pk_Texture, color, 0, 0);
+        GraphicsAPI::SetTexture(hash->pk_Texture, source, 0, 0);
         GraphicsAPI::SetImage(hash->pk_Image, bloom, 0, 0);
         GraphicsAPI::SetTexture(hash->pk_Bloom_Texture, bloom);
         

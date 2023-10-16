@@ -43,28 +43,36 @@ namespace PK::Rendering
         m_visibilityList(1024),
         m_resizeFrameIndex(0ull)
     {
-        RenderTextureDescriptor descriptor{};
-        descriptor.resolution = { config->InitialWidth, config->InitialHeight, 1 };
-        descriptor.colorFormats[0] = TextureFormat::RGBA16F;
-        descriptor.colorFormats[1] = TextureFormat::RGB10A2;
-        descriptor.depthFormat = TextureFormat::Depth32F;
-        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
-        descriptor.sampler.filterMin = FilterMode::Bilinear;
-        descriptor.sampler.filterMag = FilterMode::Bilinear;
-        m_renderTarget = CreateRef<RenderTexture>(descriptor, "Scene.RenderTarget");
+        TextureDescriptor curDesc{};
+        curDesc.resolution = { config->InitialWidth, config->InitialHeight, 1 };
+        curDesc.sampler.filterMin = FilterMode::Bilinear;
+        curDesc.sampler.filterMag = FilterMode::Bilinear;
+        
+        curDesc.format = TextureFormat::RGBA16F;
+        curDesc.usage = TextureUsage::RTColorSample | TextureUsage::Storage;
+        m_gbuffers.current.color = Texture::Create(curDesc, "Scene.RenderTarget.Color");
 
+        curDesc.format = TextureFormat::RGB10A2;
+        curDesc.usage = TextureUsage::RTColorSample;
+        m_gbuffers.current.normals = Texture::Create(curDesc, "Scene.RenderTarget.Normals");
+
+        curDesc.format = TextureFormat::Depth32F;
+        curDesc.usage = TextureUsage::RTDepthSample;
+        m_gbuffers.current.depth = Texture::Create(curDesc, "Scene.RenderTarget.Depth");
+
+        // @TODO refactor to use RGB9E5 as this has very poor bit depth. needs a compute copy pass to work as RGB9E5 is not blittable.
         TextureDescriptor prevDesc{};
-        prevDesc.format = TextureFormat::B10G11R11UF; // @TODO refactor to use RGB9E5 as this has very poor bit depth. needs a compute copy pass to work as RGB9E5 is not blittable.
+        prevDesc.format = TextureFormat::B10G11R11UF; 
         prevDesc.sampler.filterMin = FilterMode::Bilinear;
         prevDesc.sampler.filterMag = FilterMode::Bilinear;
-        prevDesc.resolution = descriptor.resolution;
-        m_previousColor = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Color0");
+        prevDesc.resolution = curDesc.resolution;
+        m_gbuffers.previous.color = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Color");
 
         prevDesc.format = TextureFormat::RGB10A2;
-        m_previousNormals = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Color1");
+        m_gbuffers.previous.normals = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Normals");
 
         prevDesc.format = TextureFormat::Depth32F;
-        m_previousDepth = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Depth");
+        m_gbuffers.previous.depth = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Depth");
 
         m_sceneStructure = AccelerationStructure::Create("Scene");
 
@@ -128,20 +136,27 @@ namespace PK::Rendering
         sampler.filterMag = FilterMode::Bilinear;
         bluenoise128x64->SetSampler(sampler);
 
-
         GraphicsAPI::SetTexture(hash->pk_Bluenoise256, bluenoise256);
         GraphicsAPI::SetTexture(hash->pk_Bluenoise128x64, bluenoise128x64);
         GraphicsAPI::SetTexture(hash->pk_LightCookies, lightCookies);
         GraphicsAPI::SetBuffer(hash->pk_PerFrameConstants, *m_constantsPerFrame.get());
 
-        Structs::SamplerDescriptor samplerSurface{};
-        samplerSurface.anisotropy = 16.0f;
-        samplerSurface.filterMin = FilterMode::Trilinear;
-        samplerSurface.filterMag = FilterMode::Trilinear;
-        samplerSurface.wrap[0] = WrapMode::Repeat;
-        samplerSurface.wrap[1] = WrapMode::Repeat;
-        samplerSurface.wrap[2] = WrapMode::Repeat;
-        GraphicsAPI::SetSampler(hash->pk_Sampler_SurfDefault, samplerSurface);
+        Structs::SamplerDescriptor samplerDesc{};
+        samplerDesc.anisotropy = 16.0f;
+        samplerDesc.filterMin = FilterMode::Trilinear;
+        samplerDesc.filterMag = FilterMode::Trilinear;
+        samplerDesc.wrap[0] = WrapMode::Repeat;
+        samplerDesc.wrap[1] = WrapMode::Repeat;
+        samplerDesc.wrap[2] = WrapMode::Repeat;
+        GraphicsAPI::SetSampler(hash->pk_Sampler_SurfDefault, samplerDesc);
+
+        samplerDesc.anisotropy = 0.0f;
+        samplerDesc.filterMin = FilterMode::Bilinear;
+        samplerDesc.filterMag = FilterMode::Bilinear;
+        samplerDesc.wrap[0] = WrapMode::Clamp;
+        samplerDesc.wrap[1] = WrapMode::Clamp;
+        samplerDesc.wrap[2] = WrapMode::Clamp;
+        GraphicsAPI::SetSampler(hash->pk_Sampler_GBuffer, samplerDesc);
 
         PK_LOG_HEADER("----------RENDER PIPELINE INITIALIZED----------");
     }
@@ -150,7 +165,8 @@ namespace PK::Rendering
     {
         GraphicsAPI::GetActiveDriver()->WaitForIdle();
         m_constantsPerFrame = nullptr;
-        m_renderTarget = nullptr;
+        m_sceneStructure = nullptr;
+        m_gbuffers = {};
     }
 
     void RenderPipeline::Step(PK::ECS::Tokens::ViewProjectionUpdateToken* token)
@@ -162,8 +178,8 @@ namespace PK::Rendering
 
         float2 jitter =
         {
-            token->jitter.x / m_renderTarget->GetResolution().x,
-            token->jitter.y / m_renderTarget->GetResolution().y
+            token->jitter.x / m_gbuffers.current.color->GetResolution().x,
+            token->jitter.y / m_gbuffers.current.color->GetResolution().y
         };
 
         auto viewToProjNoJitter = token->projection;
@@ -225,21 +241,19 @@ namespace PK::Rendering
         auto hash = HashCache::Get();
         auto queues = GraphicsAPI::GetQueues();
         auto resolution = window->GetResolutionAligned();
+        auto gbuffers = m_gbuffers.GetView();
 
-        if (m_renderTarget->Validate(resolution))
+        if (m_gbuffers.Validate(resolution))
         {
             m_resizeFrameIndex = m_constantsPerFrame->Get<uint2>(hash->pk_FrameIndex)->x;
             m_constantsPerFrame->Set<uint2>(hash->pk_FrameIndex, { m_resizeFrameIndex, 0u });
         }
 
-        m_previousColor->Validate(resolution);
-        m_previousNormals->Validate(resolution);
-        m_previousDepth->Validate(resolution);
-        GraphicsAPI::SetTexture(hash->pk_ScreenDepthCurrent, m_renderTarget->GetDepth());
-        GraphicsAPI::SetTexture(hash->pk_ScreenNormalsCurrent, m_renderTarget->GetColor(1));
-        GraphicsAPI::SetTexture(hash->pk_ScreenDepthPrevious, m_previousDepth.get());
-        GraphicsAPI::SetTexture(hash->pk_ScreenNormalsPrevious, m_previousNormals.get());
-        GraphicsAPI::SetTexture(hash->pk_ScreenColorPrevious, m_previousColor.get());
+        GraphicsAPI::SetTexture(hash->pk_GB_Current_Normals, gbuffers.current.normals);
+        GraphicsAPI::SetTexture(hash->pk_GB_Current_Depth, gbuffers.current.depth);
+        GraphicsAPI::SetTexture(hash->pk_GB_Previous_Color, gbuffers.previous.color);
+        GraphicsAPI::SetTexture(hash->pk_GB_Previous_Normals, gbuffers.previous.normals);
+        GraphicsAPI::SetTexture(hash->pk_GB_Previous_Depth, gbuffers.previous.depth);
 
         auto cascadeZSplits = m_passLights.GetCascadeZSplits(m_znear, m_zfar);
         m_constantsPerFrame->Set<float4>(hash->pk_ShadowCascadeZSplits, reinterpret_cast<float4*>(cascadeZSplits.data()));
@@ -282,7 +296,7 @@ namespace PK::Rendering
         window->SetFrameFence(queues->GetFenceRef(QueueType::Transfer));
 
         // Concurrent Shadows & gbuffer
-        cmdgraphics->SetRenderTarget(m_renderTarget.get(), { 1 }, true, true);
+        cmdgraphics->SetRenderTarget({ gbuffers.current.depth, gbuffers.current.normals }, true);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         cmdgraphics->ClearDepth(1.0f, 0u);
 
@@ -290,6 +304,7 @@ namespace PK::Rendering
         m_passHierarchicalDepth.Compute(cmdgraphics, resolution);
         queues->Submit(QueueType::Graphics, &cmdgraphics);
 
+        // Async compute during last present.
         m_passFilmGrain.Compute(cmdcompute);
         m_passLights.ComputeClusters(cmdcompute, resolution);
         m_autoExposure.Render(cmdcompute, m_bloom.GetTexture());
@@ -309,32 +324,32 @@ namespace PK::Rendering
         // Shadows, Voxelize scene & reproject gi
         m_passLights.RenderShadows(cmdgraphics);
         m_passSceneGI.Preprocess(cmdgraphics, &m_batcher, m_forwardPassGroup);
-        m_passVolumeFog.Compute(cmdgraphics, m_renderTarget->GetResolution());
+        m_passVolumeFog.Compute(cmdgraphics, gbuffers.current.color->GetResolution());
         queues->Submit(QueueType::Graphics, &cmdgraphics);
         queues->Transfer(QueueType::Graphics, QueueType::Compute);
         queues->Wait(QueueType::Compute, QueueType::Graphics);
 
         // Forward Opaque on graphics queue
         m_passSceneGI.RenderGI(cmdgraphics);
-        cmdgraphics->SetRenderTarget(m_renderTarget.get(), { 0 }, true, true);
+        cmdgraphics->SetRenderTarget({ gbuffers.current.depth, gbuffers.current.color }, true);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::ForwardOpaque, "Forward.Opaque", nullptr);
         
         m_passEnvBackground.RenderBackground(cmdgraphics);
-        m_passVolumeFog.Render(cmdgraphics, m_renderTarget.get());
+        m_passVolumeFog.Render(cmdgraphics, gbuffers.current.color);
 
         DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::ForwardTransparent, "Forward.Transparent", nullptr);
 
         // Cache forward output of current frame
-        cmdgraphics->Blit(m_renderTarget->GetColor(0u), m_previousColor.get(), {}, {}, FilterMode::Point);
+        cmdgraphics->Blit(gbuffers.current.color, gbuffers.previous.color, {}, {}, FilterMode::Point);
 
         // Post Effects
         cmdgraphics->BeginDebugScope("PostEffects", PK_COLOR_YELLOW);
         {
-            m_temporalAntialiasing.Render(cmdgraphics, m_renderTarget->GetColor(0));
-            m_depthOfField.Render(cmdgraphics, m_renderTarget.get());
-            m_bloom.Render(cmdgraphics, m_renderTarget.get());
-            m_passPostEffectsComposite.Render(cmdgraphics, m_renderTarget->GetColor(0));
+            m_temporalAntialiasing.Render(cmdgraphics, gbuffers.current.color);
+            m_depthOfField.Render(cmdgraphics, gbuffers.current.color);
+            m_bloom.Render(cmdgraphics, gbuffers.current.color);
+            m_passPostEffectsComposite.Render(cmdgraphics, gbuffers.current.color);
         }
         cmdgraphics->EndDebugScope();
 
@@ -343,9 +358,9 @@ namespace PK::Rendering
         queues->Submit(QueueType::Graphics, &cmdgraphics);
 
         // Blit to window
-        cmdgraphics->Blit(m_renderTarget->GetDepth(), m_previousDepth.get(), {}, {}, FilterMode::Point);
-        cmdgraphics->Blit(m_renderTarget->GetColor(1), m_previousNormals.get(), {}, {}, FilterMode::Point);
-        cmdgraphics->Blit(m_renderTarget->GetColor(0), window, FilterMode::Bilinear);
+        cmdgraphics->Blit(gbuffers.current.depth, gbuffers.previous.depth, {}, {}, FilterMode::Point);
+        cmdgraphics->Blit(gbuffers.current.normals, gbuffers.previous.normals, {}, {}, FilterMode::Point);
+        cmdgraphics->Blit(gbuffers.current.color, window, FilterMode::Bilinear);
     }
 
     void RenderPipeline::Step(AssetImportToken<ApplicationConfig>* token)
@@ -367,7 +382,7 @@ namespace PK::Rendering
             cmd->BeginDebugScope(name, PK_COLOR_GREEN);
         }
 
-        auto token = Tokens::TokenRenderEvent(cmd, m_renderTarget.get(), &m_visibilityList, &m_batcher, m_viewProjectionMatrix, m_znear, m_zfar);
+        auto token = Tokens::TokenRenderEvent(cmd, m_gbuffers.GetView(), &m_visibilityList, &m_batcher, m_viewProjectionMatrix, m_znear, m_zfar);
 
         m_sequencer->Next<Tokens::TokenRenderEvent>(this, &token, (int)renderEvent);
         

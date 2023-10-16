@@ -255,8 +255,8 @@ namespace PK::Rendering::Structs
     enum class LightType : uint8_t
     {
         Directional = 0,
-        Point = 1,
-        Spot = 2,
+        Spot = 1,
+        Point = 2,
         TypeCount
     };
 

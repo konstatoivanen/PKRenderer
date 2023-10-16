@@ -4,7 +4,6 @@
 #include "ECS/Tokens/CullingTokens.h"
 #include "ECS/Tokens/RenderingTokens.h"
 #include "ECS/EntityDatabase.h"
-#include "Rendering/Objects/RenderTexture.h"
 #include "Rendering/Objects/ConstantBuffer.h"
 #include "Rendering/Objects/Shader.h"
 

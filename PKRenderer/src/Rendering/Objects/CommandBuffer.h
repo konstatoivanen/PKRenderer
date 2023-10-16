@@ -5,7 +5,6 @@
 #include "Rendering/Objects/Mesh.h"
 #include "Rendering/Objects/Shader.h"
 #include "Rendering/Objects/Texture.h"
-#include "Rendering/Objects/RenderTexture.h"
 #include "Rendering/Objects/AccelerationStructure.h"
 #include "Rendering/Objects/BindArray.h"
 #include "Rendering/Structs/FenceRef.h"
@@ -65,14 +64,12 @@ namespace PK::Rendering::Objects
 
         void SetFixedStateAttributes(Structs::FixedFunctionShaderAttributes* attribs);
 
-        void SetRenderTarget(RenderTexture* renderTarget, const uint32_t* targets, uint32_t targetCount, bool bindDepth, bool updateViewPort);
-        void SetRenderTarget(RenderTexture* renderTarget, std::initializer_list<uint32_t> targets, bool bindDepth, bool updateViewPort);
-        void SetRenderTarget(RenderTexture* renderTarget, bool updateViewPort);
-        void SetRenderTarget(const std::initializer_list<Texture*>& renderTargets, const RenderTargetRanges& ranges, bool updateViewPort);
-        void SetRenderTarget(Texture* renderTarget);
-        void SetRenderTarget(Texture* renderTarget, const Structs::TextureViewRange& range);
-        void SetRenderTarget(Texture* renderTarget, uint16_t level, uint16_t layer);
-        void SetRenderTarget(Texture* renderTarget, const RenderTargetRanges& ranges);
+        void SetRenderTarget(const std::initializer_list<Texture*>& targets, const RenderTargetRanges& ranges, bool updateViewPort);
+        void SetRenderTarget(const std::initializer_list<Texture*>& targets, bool updateViewPort);
+        void SetRenderTarget(Texture* target);
+        void SetRenderTarget(Texture* target, const Structs::TextureViewRange& range);
+        void SetRenderTarget(Texture* target, uint16_t level, uint16_t layer);
+        void SetRenderTarget(Texture* target, const RenderTargetRanges& ranges);
         void SetMesh(const Mesh* mesh);
         
         void DrawMesh(const Mesh* mesh, int32_t submesh);

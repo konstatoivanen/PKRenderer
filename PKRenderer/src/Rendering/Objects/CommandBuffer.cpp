@@ -31,64 +31,34 @@ namespace PK::Rendering::Objects
         SetRasterization(attribs->rasterization);
     }
 
-    void CommandBuffer::SetRenderTarget(RenderTexture* renderTarget, const uint32_t* targets, uint32_t targetCount, bool bindDepth, bool updateViewPort)
+    void CommandBuffer::SetRenderTarget(const std::initializer_list<Texture*>& targets, const RenderTargetRanges& ranges, bool updateViewPort)
     {
-        auto i = 0u;
-        Texture* renderTargets[PK_MAX_RENDER_TARGETS + 1]{};
-        TextureViewRange ranges[PK_MAX_RENDER_TARGETS + 1]{};
+        const uint32_t targetCount = (uint32_t)(targets.end() - targets.begin());
+        const uint32_t rangeCount = (uint32_t)(ranges.end() - ranges.begin());
+        PK_THROW_ASSERT(targetCount == rangeCount, "target & view range count missmatch!");
 
-        for (; i < targetCount; ++i)
-        {
-            renderTargets[i] = renderTarget->GetColor(targets[i]);
-        }
-
-        auto depth = renderTarget->GetDepth();
-
-        if (bindDepth && depth != nullptr)
-        {
-            renderTargets[i++] = depth;
-        }
-
-        SetRenderTarget(renderTargets, nullptr, ranges, i);
+        SetRenderTarget(targets.begin(), nullptr, ranges.begin(), targetCount);
 
         if (updateViewPort)
         {
-            auto rect = renderTarget->GetRect();
+            auto rect = targets.begin()[0]->GetRect();
             SetViewPort(rect);
             SetScissor(rect);
         }
     }
 
-    void CommandBuffer::SetRenderTarget(RenderTexture* renderTarget, std::initializer_list<uint32_t> targets, bool bindDepth, bool updateViewPort)
+    void CommandBuffer::SetRenderTarget(const std::initializer_list<Texture*>& targets, bool updateViewPort)
     {
-        uint32_t count = (uint32_t)(targets.end() - targets.begin());
-        SetRenderTarget(renderTarget, targets.begin(), count, bindDepth, updateViewPort);
-    }
+        const uint32_t targetCount = (uint32_t)(targets.end() - targets.begin());
 
-    void CommandBuffer::SetRenderTarget(RenderTexture* renderTarget, bool updateViewPort)
-    {
-        auto count = renderTarget->GetColorCount();
-        uint32_t indices[PK_MAX_RENDER_TARGETS];
+        // Zero ranges as they will be reset to default anyhow.
+        TextureViewRange ranges[PK_MAX_RENDER_TARGETS + 1]{};
 
-        for (auto i = 0u; i < count; ++i)
-        {
-            indices[i] = i;
-        }
-
-        SetRenderTarget(renderTarget, indices, count, true, updateViewPort);
-    }
-
-    void CommandBuffer::SetRenderTarget(const std::initializer_list<Texture*>& renderTargets, const RenderTargetRanges& ranges, bool updateViewPort)
-    {
-        const uint32_t targetCount = (uint32_t)(renderTargets.end() - renderTargets.begin());
-        const uint32_t rangeCount = (uint32_t)(ranges.end() - ranges.begin());
-        PK_THROW_ASSERT(targetCount == rangeCount, "target & view range count missmatch!");
-
-        SetRenderTarget(renderTargets.begin(), nullptr, ranges.begin(), targetCount);
+        SetRenderTarget(targets.begin(), nullptr, ranges, targetCount);
 
         if (updateViewPort)
         {
-            auto rect = renderTargets.begin()[0]->GetRect();
+            auto rect = targets.begin()[0]->GetRect();
             SetViewPort(rect);
             SetScissor(rect);
         }
@@ -100,25 +70,25 @@ namespace PK::Rendering::Objects
         SetRenderTarget(&renderTarget, nullptr, &range, 1u);
     }
 
-    void CommandBuffer::SetRenderTarget(Texture* renderTarget, const TextureViewRange& range)
+    void CommandBuffer::SetRenderTarget(Texture* target, const TextureViewRange& range)
     {
-        SetRenderTarget(&renderTarget, nullptr, &range, 1u);
+        SetRenderTarget(&target, nullptr, &range, 1u);
     }
 
-    void CommandBuffer::SetRenderTarget(Texture* renderTarget, uint16_t level, uint16_t layer)
+    void CommandBuffer::SetRenderTarget(Texture* target, uint16_t level, uint16_t layer)
     {
         TextureViewRange range = { level, layer, 1u, 1u };
-        SetRenderTarget(&renderTarget, nullptr, &range, 1u);
+        SetRenderTarget(&target, nullptr, &range, 1u);
     }
 
-    void CommandBuffer::SetRenderTarget(Texture* renderTarget, const RenderTargetRanges& ranges)
+    void CommandBuffer::SetRenderTarget(Texture* target, const RenderTargetRanges& ranges)
     {
         auto count = (uint32_t)(ranges.end() - ranges.begin());
         auto targets = PK_STACK_ALLOC(Texture*, count);
 
         for (auto i = 0u; i < count; ++i)
         {
-            targets[i] = renderTarget;
+            targets[i] = target;
         }
 
         SetRenderTarget(targets, nullptr, ranges.begin(), count);

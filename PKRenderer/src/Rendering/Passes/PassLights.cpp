@@ -59,25 +59,27 @@ namespace PK::Rendering::Passes
         m_computeLightAssignment = assetDatabase->Find<Shader>("CS_LightAssignment");
         m_computeCopyCubeShadow = assetDatabase->Find<Shader>("CS_CopyCubeShadow");
 
-        auto hash = HashCache::Get();
-
         m_cascadeLinearity = config->CascadeLinearity;
-        m_shadowmapTileSize = config->ShadowmapTileSize;
-        m_shadowmapCubeFaceSize = (uint)sqrt((m_shadowmapTileSize * m_shadowmapTileSize) / 6);
 
-        m_shadowmapTypeData[(int)LightType::Point].TileCount = 1u;
-        m_shadowmapTypeData[(int)LightType::Point].MaxBatchSize = PK_SHADOW_CASCADE_COUNT;
-        m_shadowmapTypeData[(int)LightType::Point].LayerStride = 6u;
-        m_shadowmapTypeData[(int)LightType::Spot].TileCount = 1u;
-        m_shadowmapTypeData[(int)LightType::Spot].MaxBatchSize = PK_SHADOW_CASCADE_COUNT;
-        m_shadowmapTypeData[(int)LightType::Spot].LayerStride = 1u;
-        m_shadowmapTypeData[(int)LightType::Directional].TileCount = PK_SHADOW_CASCADE_COUNT;
-        m_shadowmapTypeData[(int)LightType::Directional].MaxBatchSize = 1u;
-        m_shadowmapTypeData[(int)LightType::Directional].LayerStride = PK_SHADOW_CASCADE_COUNT;
+        m_shadowTypeData[(int)LightType::Point].MatrixCount = 0u;
+        m_shadowTypeData[(int)LightType::Point].TileCount = 1u;
+        m_shadowTypeData[(int)LightType::Point].MaxBatchSize = PK_SHADOW_CASCADE_COUNT;
+        m_shadowTypeData[(int)LightType::Point].LayerStride = 6u;
 
+        m_shadowTypeData[(int)LightType::Spot].MatrixCount = 1u;
+        m_shadowTypeData[(int)LightType::Spot].TileCount = 1u;
+        m_shadowTypeData[(int)LightType::Spot].MaxBatchSize = PK_SHADOW_CASCADE_COUNT;
+        m_shadowTypeData[(int)LightType::Spot].LayerStride = 1u;
+
+        m_shadowTypeData[(int)LightType::Directional].MatrixCount = PK_SHADOW_CASCADE_COUNT;
+        m_shadowTypeData[(int)LightType::Directional].TileCount = PK_SHADOW_CASCADE_COUNT;
+        m_shadowTypeData[(int)LightType::Directional].MaxBatchSize = 1u;
+        m_shadowTypeData[(int)LightType::Directional].LayerStride = PK_SHADOW_CASCADE_COUNT;
+
+        auto shadowCubeFaceSize = (uint)sqrt((config->ShadowmapTileSize * config->ShadowmapTileSize) / 6);
         TextureDescriptor depthDesc;
         depthDesc.samplerType = SamplerType::CubemapArray;
-        depthDesc.resolution = { m_shadowmapCubeFaceSize, m_shadowmapCubeFaceSize , 1u };
+        depthDesc.resolution = { shadowCubeFaceSize , shadowCubeFaceSize , 1u };
         depthDesc.format = TextureFormat::Depth16;
         depthDesc.layers = 6 * PK_SHADOW_CASCADE_COUNT;
         depthDesc.sampler.wrap[0] = WrapMode::Mirror;
@@ -94,7 +96,7 @@ namespace PK::Rendering::Passes
 
         depthDesc.samplerType = SamplerType::Sampler2DArray;
         depthDesc.format = TextureFormat::Depth16;
-        depthDesc.resolution = { m_shadowmapTileSize, m_shadowmapTileSize, 1u };
+        depthDesc.resolution = { config->ShadowmapTileSize, config->ShadowmapTileSize, 1u };
         depthDesc.layers = PK_SHADOW_CASCADE_COUNT;
         depthDesc.usage = TextureUsage::RTDepth;
         m_depthTarget2D = Texture::Create(depthDesc, "Lights.DepthTarget.2D");
@@ -104,7 +106,7 @@ namespace PK::Rendering::Passes
         atlasDescriptor.format = TextureFormat::R32F;
         atlasDescriptor.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::RTColor;
         atlasDescriptor.layers = 32;
-        atlasDescriptor.resolution = { m_shadowmapTileSize, m_shadowmapTileSize, 1u };
+        atlasDescriptor.resolution = { config->ShadowmapTileSize, config->ShadowmapTileSize, 1u };
         atlasDescriptor.sampler.wrap[0] = WrapMode::Clamp;
         atlasDescriptor.sampler.wrap[1] = WrapMode::Clamp;
         atlasDescriptor.sampler.wrap[2] = WrapMode::Clamp;
@@ -139,8 +141,75 @@ namespace PK::Rendering::Passes
 
         m_lightMatricesBuffer = Buffer::Create(ElementType::Float4x4, 32, BufferUsage::PersistentStorage, "Lights.Matrices");
         m_lightsLists = Buffer::Create(ElementType::Ushort, lightIndexCount, BufferUsage::DefaultStorage, "Lights.List");
+        
+        auto hash = HashCache::Get();
         GraphicsAPI::SetBuffer(hash->pk_LightLists, m_lightsLists.get());
         GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
+    }
+
+    void PassLights::RenderShadows(Objects::CommandBuffer* cmd)
+    {
+        auto hash = HashCache::Get();
+        auto atlasIndex = 0u;
+
+        for (const auto& batch : m_shadowBatches)
+        {
+            auto& shadow = m_shadowTypeData[(int)batch.type];
+            auto tileCount = shadow.TileCount * batch.count;
+
+            cmd->BeginDebugScope("ShadowBatch", PK_COLOR_RED);
+            
+            auto range0 = TextureViewRange(0, 0, 0, shadow.LayerStride * batch.count);
+            auto range1 = TextureViewRange(0u, atlasIndex, 1u, tileCount);
+
+            if (batch.type == LightType::Point)
+            { 
+                cmd->SetRenderTarget({ m_depthTargetCube.get(), m_shadowTargetCube.get() }, { range0, range0 }, true);
+                cmd->ClearDepth(0.0f, 0u);
+                cmd->ClearColor(color(batch.maxDepthRange), 0u);
+                m_batcher->Render(cmd, batch.batchGroup);
+                GraphicsAPI::SetTexture(hash->pk_Texture, m_shadowTargetCube.get());
+                GraphicsAPI::SetImage(hash->pk_Image, m_shadowmaps.get(), range1);
+                cmd->DispatchWithCounter(m_computeCopyCubeShadow, 0, { m_shadowmaps->GetResolution().xy, tileCount });
+            }
+            else
+            {
+                cmd->SetRenderTarget({ m_depthTarget2D.get(), m_shadowmaps.get() }, { range0, range1 }, true);
+                cmd->ClearColor(color(batch.maxDepthRange), 0u);
+                cmd->ClearDepth(0.0f, 0u);
+                m_batcher->Render(cmd, batch.batchGroup);
+            }
+
+            cmd->EndDebugScope();
+
+            atlasIndex += tileCount;
+        }
+    }
+
+    void PassLights::ComputeClusters(CommandBuffer* cmd, Math::uint3 resolution)
+    {
+        auto hash = HashCache::Get();
+
+        resolution.x /= LightGridTileSizePx;
+        resolution.y /= LightGridTileSizePx;
+        resolution.z = LightGridSizeZ;
+
+        auto lightIndexCount = resolution.x *
+                               resolution.y *
+                               resolution.z *
+                               MaxLightsPerTile;
+
+        if (m_lightsLists->Validate(lightIndexCount))
+        {
+            GraphicsAPI::SetBuffer(hash->pk_LightLists, m_lightsLists.get());
+        }
+
+        if (m_lightTiles->Validate(resolution))
+        {
+            GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
+        }
+
+        cmd->DispatchWithCounter(m_computeLightAssignment, m_lightTiles->GetResolution());
     }
 
     void PassLights::Cull(void* engineRoot, VisibilityList* visibilityList, const float4x4& viewProjection, float znear, float zfar)
@@ -167,7 +236,7 @@ namespace PK::Rendering::Passes
         for (auto i = 0U; i < visibilityList->count; ++i)
         {
             auto view = m_entityDb->Query<LightRenderableView>(EGID((*visibilityList)[i].entityId, (uint)ENTITY_GROUPS::ACTIVE));
-            matrixCount += m_shadowmapTypeData[(int)view->light->type].TileCount;
+            matrixCount += m_shadowTypeData[(int)view->light->type].MatrixCount;
             m_lights[i] = view;
         }
 
@@ -218,12 +287,12 @@ namespace PK::Rendering::Passes
                 {
                     light.position = transform->rotation * PK_FLOAT3_FORWARD;
 
-                    Functions::ShadowCascadeCreateInfo cascadeInfo{};
+                    ShadowCascadeCreateInfo cascadeInfo{};
                     cascadeInfo.worldToLocal = worldToLocal;
                     cascadeInfo.projToWorld = ivp;
                     cascadeInfo.splitPlanes = zsplits.data();
                     cascadeInfo.zPadding = -view->light->radius;
-                    cascadeInfo.resolution = m_shadowmapTileSize;
+                    cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
                     cascadeInfo.count = PK_SHADOW_CASCADE_COUNT;
                     Functions::GetShadowCascadeMatrices(cascadeInfo, matricesView.data + matrixIndex, &light.radius);
 
@@ -242,18 +311,6 @@ namespace PK::Rendering::Passes
                 }
                 break;
 
-                case LightType::Point:
-                {
-                    if (castShadows)
-                    {
-                        cullCube.depthRange = view->light->radius - 0.1f;
-                        cullCube.aabb = view->bounds->worldAABB;
-                        m_sequencer->Next(engineRoot, &cullCube);
-                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, cullCube.depthRange, &shadowCount);
-                    }
-                }
-                break;
-
                 case LightType::Spot:
                 {
                     matricesView[matrixIndex] = Functions::GetPerspectiveInvZ(view->light->angle, 1.0f, 0.1f, view->light->radius) * worldToLocal;
@@ -268,9 +325,21 @@ namespace PK::Rendering::Passes
                     }
                 }
                 break;
+
+                case LightType::Point:
+                {
+                    if (castShadows)
+                    {
+                        cullCube.depthRange = view->light->radius - 0.1f;
+                        cullCube.aabb = view->bounds->worldAABB;
+                        m_sequencer->Next(engineRoot, &cullCube);
+                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, cullCube.depthRange, &shadowCount);
+                    }
+                }
+                break;
             }
 
-            matrixIndex += m_shadowmapTypeData[(uint32_t)view->light->type].TileCount;
+            matrixIndex += m_shadowTypeData[(uint32_t)view->light->type].MatrixCount;
         }
 
         // Empty last one for clustering
@@ -295,73 +364,6 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetTexture(hash->pk_ShadowmapAtlas, m_shadowmaps.get());
     }
 
-    void PassLights::RenderShadows(Objects::CommandBuffer* cmd)
-    {
-        auto hash = HashCache::Get();
-        auto atlasIndex = 0u;
-
-        Texture* renderTargets[2]{ nullptr, nullptr };
-        TextureViewRange viewRanges[2]{};
-
-        for (const auto& batch : m_shadowBatches)
-        {
-            auto batchType = batch.batchType;
-            auto& shadow = m_shadowmapTypeData[(int)batchType];
-            auto tileCount = shadow.TileCount * batch.count;
-
-            cmd->BeginDebugScope("ShadowBatch", PK_COLOR_RED);
-
-            if (batchType == LightType::Point)
-            { 
-                auto range = TextureViewRange(0, 0, 0, shadow.LayerStride * batch.count);
-                cmd->SetRenderTarget({ m_depthTargetCube.get(), m_shadowTargetCube.get() }, { range, range }, true);
-                cmd->ClearDepth(0.0f, 0u);
-                cmd->ClearColor(color(batch.maxDepthRange), 0u);
-                m_batcher->Render(cmd, batch.batchGroup);
-                GraphicsAPI::SetTexture(hash->pk_Texture, m_shadowTargetCube.get());
-                GraphicsAPI::SetImage(hash->pk_Image, m_shadowmaps.get(), TextureViewRange(0, atlasIndex, 1, tileCount));
-                cmd->DispatchWithCounter(m_computeCopyCubeShadow, 0, { m_shadowmapTileSize, m_shadowmapTileSize, tileCount });
-            }
-            else
-            {
-                cmd->SetRenderTarget({ m_depthTarget2D.get(), m_shadowmaps.get() }, { { 0u, 0u, 0u, (uint16_t)tileCount }, { 0u, (uint16_t)atlasIndex, 1u, (uint16_t)tileCount } }, true);
-                cmd->ClearColor(color(batch.maxDepthRange), 0u);
-                cmd->ClearDepth(0.0f, 0u);
-                m_batcher->Render(cmd, batch.batchGroup);
-            }
-
-            cmd->EndDebugScope();
-
-            atlasIndex += tileCount;
-        }
-    }
-
-    void PassLights::ComputeClusters(CommandBuffer* cmd, Math::uint3 resolution)
-    {
-        auto hash = HashCache::Get();
-
-        resolution.x /= LightGridTileSizePx;
-        resolution.y /= LightGridTileSizePx;
-        resolution.z = LightGridSizeZ;
-
-        auto lightIndexCount = resolution.x *
-                               resolution.y *
-                               resolution.z *
-                               MaxLightsPerTile;
-
-        if (m_lightsLists->Validate(lightIndexCount))
-        {
-            GraphicsAPI::SetBuffer(hash->pk_LightLists, m_lightsLists.get());
-        }
-
-        if (m_lightTiles->Validate(resolution))
-        {
-            GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
-        }
-
-        cmd->DispatchWithCounter(m_computeLightAssignment, m_lightTiles->GetResolution());
-    }
-
     ShadowCascades PassLights::GetCascadeZSplits(float znear, float zfar) const
     {
         ShadowCascades cascadeSplits;
@@ -381,34 +383,33 @@ namespace PK::Rendering::Passes
     }
 
     uint32_t PassLights::BuildShadowBatch(VisibilityList* visibilityList,
-        LightRenderableView* view, 
-        uint32_t index, 
-        float maxDepth, 
-        uint32_t* outShadowCount,
-        float* outMinDepth)
+                                          LightRenderableView* view, 
+                                          uint32_t index, 
+                                          float maxDepth, 
+                                          uint32_t* outShadowCount,
+                                          float* outMinDepth)
     {
         if (visibilityList->count == 0)
         {
             return 0xFFFFu;
         }
 
-        auto& shadow = m_shadowmapTypeData[(int)view->light->type];
+        auto& shadow = m_shadowTypeData[(int)view->light->type];
 
         if (m_shadowBatches.size() == 0 ||
             m_shadowBatches.back().count >= shadow.MaxBatchSize ||
-            m_shadowBatches.back().batchType != view->light->type)
+            m_shadowBatches.back().type != view->light->type)
         {
             auto& newBatch = m_shadowBatches.emplace_back();
             newBatch.batchGroup = m_batcher->BeginNewGroup();
-            newBatch.firstIndex = index;
-            newBatch.batchType = view->light->type;
+            newBatch.type = view->light->type;
         }
 
         auto& batch = m_shadowBatches.back();
 
         uint32_t minDepth = 0xFFFFFFFF;
         uint32_t shadowmapIndex = *outShadowCount;
-        *outShadowCount += m_shadowmapTypeData[(int)view->light->type].TileCount;
+        *outShadowCount += m_shadowTypeData[(int)view->light->type].TileCount;
 
         for (auto i = 0u; i < visibilityList->count; ++i)
         {

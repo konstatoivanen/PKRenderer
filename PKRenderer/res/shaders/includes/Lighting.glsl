@@ -38,15 +38,17 @@ Light GetLightDirect(const uint index, const float3 worldpos, const float3 norma
     [[branch]]
     switch (light.LIGHT_TYPE)
     {
-        case LIGHT_TYPE_POINT:
+        case LIGHT_TYPE_DIRECTIONAL:
         {
-            const float4 L = normalizeLength(light.LIGHT_POS - worldpos);
-            color *= Fatten_Default(L.w, light.LIGHT_RADIUS);
-            coord.xy = OctaEncode(-L.xyz);
-            linearDistance = L.w;
-            sourceRadius /= L.w;
-            shadowDistance = L.w - SHADOW_NEAR_BIAS;
-            posToLight = L.xyz;
+            index_matrix += cascade;
+            index_shadow += cascade;
+            linearDistance = 1e+4f;
+            posToLight = -light.LIGHT_POS;
+
+            const float3 shadowPos = worldpos + Shadow_GetSamplingOffset(normal, posToLight) * (1.0f + cascade);
+            coord = GetLightProjectionUVW(shadowPos, index_matrix);
+            
+            shadowDistance = coord.z * light.LIGHT_RADIUS;
         }
         break;
         case LIGHT_TYPE_SPOT:
@@ -63,17 +65,15 @@ Light GetLightDirect(const uint index, const float3 worldpos, const float3 norma
             color *= texture(pk_LightCookies, float3(coord.xy, light.LIGHT_COOKIE)).r;
         }
         break;
-        case LIGHT_TYPE_DIRECTIONAL:
+        case LIGHT_TYPE_POINT:
         {
-            index_matrix += cascade;
-            index_shadow += cascade;
-            linearDistance = 1e+4f;
-            posToLight = -light.LIGHT_POS;
-
-            const float3 shadowPos = worldpos + Shadow_GetSamplingOffset(normal, posToLight) * (1.0f + cascade);
-            coord = GetLightProjectionUVW(shadowPos, index_matrix);
-            
-            shadowDistance = coord.z * light.LIGHT_RADIUS;
+            const float4 L = normalizeLength(light.LIGHT_POS - worldpos);
+            color *= Fatten_Default(L.w, light.LIGHT_RADIUS);
+            coord.xy = OctaEncode(-L.xyz);
+            linearDistance = L.w;
+            sourceRadius /= L.w;
+            shadowDistance = L.w - SHADOW_NEAR_BIAS;
+            posToLight = L.xyz;
         }
         break;
     }

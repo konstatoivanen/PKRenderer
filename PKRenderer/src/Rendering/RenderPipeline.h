@@ -18,6 +18,7 @@
 #include "Rendering/Passes/PassAutoExposure.h"
 #include "Rendering/Passes/PassBloom.h"
 #include "Rendering/Services/Batcher.h"
+#include "Rendering/GBuffers.h"
 
 namespace PK::Rendering
 {
@@ -61,11 +62,8 @@ namespace PK::Rendering
 
             Utilities::Ref<Objects::AccelerationStructure> m_sceneStructure;
             Utilities::Ref<Objects::ConstantBuffer> m_constantsPerFrame;
-            Utilities::Ref<Objects::RenderTexture> m_renderTarget;
-            Utilities::Ref<Objects::Texture> m_previousColor;
-            Utilities::Ref<Objects::Texture> m_previousNormals;
-            Utilities::Ref<Objects::Texture> m_previousDepth;
-
+            GBuffersFull m_gbuffers;
+            
             ECS::Tokens::VisibilityList m_visibilityList;
             Math::float4x4 m_viewProjectionMatrix;
             uint64_t m_resizeFrameIndex;

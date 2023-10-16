@@ -166,6 +166,15 @@ namespace PK::Math
         constexpr float4* array_ptr() { return &left; }
     };
     
+    struct ShadowCascadeCreateInfo
+    {
+        float4x4 worldToLocal;
+        float4x4 projToWorld;
+        float* splitPlanes;
+        float zPadding;
+        uint32_t resolution;
+        uint32_t count;
+    };
 
     struct BoundingBox
     {

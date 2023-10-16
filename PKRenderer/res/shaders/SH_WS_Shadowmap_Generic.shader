@@ -106,5 +106,7 @@ layout(early_fragment_tests) in;
 layout(location = 0) out float SV_Target0;
 void main()
 {
+    // Store linear distance into shadowmaps.
+    // Point lights use an octahedral layout which doesnt mesh well with clip space depth.
     SV_Target0 = length(vs_DEPTH.xyz);
 }

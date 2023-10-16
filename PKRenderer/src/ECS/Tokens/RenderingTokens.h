@@ -4,6 +4,7 @@
 #include "BatcherToken.h"
 #include "Rendering/Structs/Enums.h"
 #include "Rendering/Objects/CommandBuffer.h"
+#include "Rendering/GBuffers.h"
 
 namespace PK::ECS::Tokens
 {
@@ -20,7 +21,7 @@ namespace PK::ECS::Tokens
 	struct TokenRenderEvent
 	{
 		Rendering::Objects::CommandBuffer* cmd;
-		Rendering::Objects::RenderTexture* renderTarget;
+		Rendering::GBuffersViewFull gbuffers;
 		VisibilityList* visibilityList;
 		IBatcher* batcher;
 
@@ -30,14 +31,14 @@ namespace PK::ECS::Tokens
 		float zfar;
 
 		TokenRenderEvent(Rendering::Objects::CommandBuffer* cmd,
-						 Rendering::Objects::RenderTexture* renderTarget,
+						 Rendering::GBuffersViewFull gbuffers,
 						 VisibilityList* visibilityList,
 						 IBatcher* batcher,
 						 const Math::float4x4& vp, 
 						 float znear, 
 						 float zfar) :
 			cmd(cmd),
-			renderTarget(renderTarget),
+			gbuffers(gbuffers),
 			visibilityList(visibilityList),
 			batcher(batcher),
 			viewProjection(vp),

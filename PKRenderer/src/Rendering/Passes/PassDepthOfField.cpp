@@ -49,14 +49,13 @@ namespace PK::Rendering::Passes
         cmd->Dispatch(m_computeAutoFocus, 0, { 1u, 1u, 1u });
     }
 
-    void PassDepthOfField::Render(Objects::CommandBuffer* cmd, RenderTexture* destination)
+    void PassDepthOfField::Render(Objects::CommandBuffer* cmd, Texture* destination)
     {
         cmd->BeginDebugScope("DepthOfField", Math::PK_COLOR_MAGENTA);
 
         auto colorTarget = m_colorTarget.get();
         auto alphaTarget = m_colorTarget.get();
 
-        auto source = destination->GetColor(0);
         auto fullres = destination->GetResolution();
         auto quarterres = Math::uint3(fullres.x / 2, fullres.y / 2, 1u);
 
@@ -72,8 +71,8 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetTexture(hash->pk_DoF_ColorRead, m_colorTarget.get());
         GraphicsAPI::SetTexture(hash->pk_DoF_AlphaRead, m_alphaTarget.get());
 
-        GraphicsAPI::SetTexture(hash->pk_Texture, source); // Source
-        GraphicsAPI::SetImage(hash->pk_Image, source); // Dest
+        GraphicsAPI::SetTexture(hash->pk_Texture, destination); // Prefilter Source
+        GraphicsAPI::SetImage(hash->pk_Image, destination); // Upsample Dest
         
         cmd->Dispatch(m_computeDepthOfField, m_passPrefilter, quarterres);
         cmd->Dispatch(m_computeDepthOfField, m_passDiskblur, quarterres);

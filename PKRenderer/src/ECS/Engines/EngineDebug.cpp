@@ -159,7 +159,7 @@ namespace PK::ECS::Engines
         float zplanes[5];
         float depthRange;
 
-        Functions::ShadowCascadeCreateInfo cascadeInfo{};
+        ShadowCascadeCreateInfo cascadeInfo{};
         cascadeInfo.worldToLocal = worldToLocal;
         cascadeInfo.projToWorld = invvp;
         cascadeInfo.splitPlanes = zplanes;

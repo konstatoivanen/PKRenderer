@@ -2,7 +2,6 @@
 #include "Utilities/NoCopy.h"
 #include "Rendering/Objects/CommandBuffer.h"
 #include "Rendering/Objects/Shader.h"
-#include "Rendering/Objects/RenderTexture.h"
 
 namespace PK::Rendering::Passes
 {

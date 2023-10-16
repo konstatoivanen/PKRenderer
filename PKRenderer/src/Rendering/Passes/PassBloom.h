@@ -1,6 +1,6 @@
 #pragma once
 #include "Utilities/NoCopy.h"
-#include "Rendering/Objects/RenderTexture.h"
+#include "Rendering/Objects/Texture.h"
 #include "Rendering/Objects/Shader.h"
 #include "Rendering/Objects/CommandBuffer.h"
 
@@ -10,7 +10,7 @@ namespace PK::Rendering::Passes
     {
         public:
             PassBloom(Core::Services::AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight);
-            void Render(Objects::CommandBuffer* cmd, Objects::RenderTexture* source);
+            void Render(Objects::CommandBuffer* cmd, Objects::Texture* source);
 
             Objects::Texture* GetTexture() { return m_bloomTexture.get(); }
 

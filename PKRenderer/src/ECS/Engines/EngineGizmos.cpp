@@ -51,13 +51,13 @@ namespace PK::ECS::Engines
                 }
 
                 auto vertexCount = glm::min(m_vertexCount, m_maxVertices);
-                auto rect = token->renderTarget->GetRect();
+                auto rect = token->gbuffers.current.color->GetRect();
                 const Buffer* vb = m_vertexBuffer.get();
                 const Buffer** vbptr = &vb;
 
                 token->cmd->SetVertexBuffers(vbptr, 1u);
                 token->cmd->SetShader(m_gizmosShader);
-                token->cmd->SetRenderTarget(token->renderTarget->GetColor(0));
+                token->cmd->SetRenderTarget(token->gbuffers.current.color);
                 token->cmd->SetViewPort(rect);
                 token->cmd->SetScissor(rect);
                 token->cmd->SetFixedStateAttributes(&m_fixedFunctionAttribs);

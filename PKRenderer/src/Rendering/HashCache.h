@@ -56,6 +56,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_RT_Indices)
         
         DECLARE_HASH(pk_Sampler_SurfDefault)
+        DECLARE_HASH(pk_Sampler_GBuffer)
 
         DECLARE_HASH(pk_SceneStructure)
 
@@ -67,12 +68,13 @@ namespace PK::Rendering
         DECLARE_HASH(pk_ModelMatrices)
         DECLARE_HASH(pk_GizmoVertices)
         
-        DECLARE_HASH(pk_ScreenDepthCurrent)
-        DECLARE_HASH(pk_ScreenDepthHierachical)
-        DECLARE_HASH(pk_ScreenDepthPrevious)
-        DECLARE_HASH(pk_ScreenNormalsCurrent)
-        DECLARE_HASH(pk_ScreenNormalsPrevious)
-        DECLARE_HASH(pk_ScreenColorPrevious)
+        DECLARE_HASH(pk_GB_Current_Normals)
+        DECLARE_HASH(pk_GB_Current_Depth)
+        DECLARE_HASH(pk_GB_Current_DepthMips)
+        DECLARE_HASH(pk_GB_Previous_Color)
+        DECLARE_HASH(pk_GB_Previous_Normals)
+        DECLARE_HASH(pk_GB_Previous_Depth)
+
         DECLARE_HASH(pk_ShadowmapAtlas)
         DECLARE_HASH(pk_LightCookies)
         DECLARE_HASH(pk_Bluenoise256)

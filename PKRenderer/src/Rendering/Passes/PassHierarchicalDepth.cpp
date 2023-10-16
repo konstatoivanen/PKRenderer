@@ -33,7 +33,7 @@ namespace PK::Rendering::Passes
         auto hash = HashCache::Get();
 
         m_hierarchicalDepth->Validate({ resolution.x, resolution.y, 1u });
-        GraphicsAPI::SetTexture(hash->pk_ScreenDepthHierachical, m_hierarchicalDepth.get());
+        GraphicsAPI::SetTexture(hash->pk_GB_Current_DepthMips, m_hierarchicalDepth.get());
 
         resolution.x >>= 1u;
         resolution.y >>= 1u;
