@@ -14,6 +14,14 @@
 // traditional syntax is a bit cumbersome.
 layout(set = PK_SET_PASS) uniform sampler pk_Sampler_SurfDefault;
 
+struct SurfaceVaryings
+{
+    float3 worldpos;
+    float3 normal;
+    float4 tangent;
+    float2 texcoord;
+};
+
 struct SurfaceData
 {
     float3 viewdir;
@@ -130,73 +138,92 @@ float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const f
     #define PK_META_BxDF_INDIRECT GetIndirectLight_Main
 #endif
 
-struct SurfaceFragmentVaryings
-{
-    float3 vs_WORLDPOSITION;
-    float3 vs_NORMAL;
-    #if defined(PK_USE_TANGENTS)
-    float4 vs_TANGENT;
-    #endif
-    float2 vs_TEXCOORD0;
-};
+#if defined(PK_USE_TANGENTS)
 
+    #define DECLARE_VS_INTEFRACE(io) \
+    io float3 vs_WORLDPOSITION;      \
+    io float3 vs_NORMAL;             \
+    io float4 vs_TANGENT;            \
+    io float2 vs_TEXCOORD0;          \
+    
+    half3x3 pk_MATRIX_TBN;
+    #define PK_SURF_MESH_NORMAL pk_MATRIX_TBN[2]
+    #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount, uv, viewdir) SampleParallaxOffset(heightmap, uv, amount, mul(transpose(pk_MATRIX_TBN), viewdir))
+    #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormalTex(normalmap, pk_MATRIX_TBN, uv, amount)
+
+#else
+
+    #define DECLARE_VS_INTEFRACE(io) \
+    io float3 vs_WORLDPOSITION;      \
+    io float3 vs_NORMAL;             \
+    io float2 vs_TEXCOORD0;          \
+    
+    #define PK_SURF_MESH_NORMAL normalize(vs_NORMAL)
+    #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount, uv, viewdir) 0.0f.xx 
+    #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) PK_SURF_MESH_NORMAL
+
+#endif
+                           
 //// ---------- VERTEX STAGE ---------- ////
 #if defined(SHADER_STAGE_VERTEX)
 
     // Use these to modify surface values in vertex stage
-    void PK_SURFACE_FUNC_VERT(inout SurfaceFragmentVaryings surf);
+    void PK_SURFACE_FUNC_VERT(inout SurfaceVaryings surf);
 
+    // Inptu interface
     in float3 in_POSITION;
     in float3 in_NORMAL;
     #if defined(PK_USE_TANGENTS)
     in float4 in_TANGENT;
     #endif
     in float2 in_TEXCOORD0;
-    out SurfaceFragmentVaryings baseVaryings;
-    
+
+    DECLARE_VS_INTEFRACE(out)
+
     void main()
     {
-        baseVaryings.vs_WORLDPOSITION = ObjectToWorldPos(in_POSITION.xyz);
-        baseVaryings.vs_TEXCOORD0 = in_TEXCOORD0;
-        baseVaryings.vs_NORMAL = ObjectToWorldDir(in_NORMAL);
+        SurfaceVaryings varyings;
+
+        varyings.worldpos = ObjectToWorldPos(in_POSITION.xyz);
+        varyings.texcoord = in_TEXCOORD0;
+        varyings.normal = ObjectToWorldDir(in_NORMAL);
+        
         #if defined(PK_USE_TANGENTS)
-            baseVaryings.vs_TANGENT.xyz = ObjectToWorldDir(in_TANGENT.xyz);
-            baseVaryings.vs_TANGENT.w = in_TANGENT.w;
+            varyings.tangent.xyz = ObjectToWorldDir(in_TANGENT.xyz);
+            varyings.tangent.w = in_TANGENT.w;
         #endif
-        PK_SURFACE_FUNC_VERT(baseVaryings);
-        gl_Position = PK_META_WORLD_TO_CLIPSPACE(baseVaryings.vs_WORLDPOSITION);
+
+        PK_SURFACE_FUNC_VERT(varyings);
+
+        gl_Position = PK_META_WORLD_TO_CLIPSPACE(varyings.worldpos);
+        vs_WORLDPOSITION = varyings.worldpos;
+        vs_NORMAL = varyings.normal;
+        #if defined(PK_USE_TANGENTS)
+        vs_TANGENT = varyings.tangent;
+        #endif
+        vs_TEXCOORD0 = varyings.texcoord;
     }
 
 //// ---------- FRAGMENT STAGE ---------- ////
 #elif defined(SHADER_STAGE_FRAGMENT)
 
-    #if defined(PK_USE_TANGENTS)
-        half3x3 pk_MATRIX_TBN;
-        #define PK_SURF_MESH_NORMAL pk_MATRIX_TBN[2]
-        #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount, uv, viewdir) SampleParallaxOffset(heightmap, uv, amount, mul(transpose(pk_MATRIX_TBN), viewdir))
-        #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormalTex(normalmap, pk_MATRIX_TBN, uv, amount)
-    #else
-        #define PK_SURF_MESH_NORMAL normalize(baseVaryings.vs_NORMAL)
-        #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount, uv, viewdir) 0.0f.xx 
-        #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) PK_SURF_MESH_NORMAL
-    #endif
-
     // Use these to modify surface values in fragment stage
-    void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData surf);
+    void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf);
 
-    in SurfaceFragmentVaryings baseVaryings;
+    DECLARE_VS_INTEFRACE(in)
+
     PK_META_DECLARE_SURFACE_OUTPUT
 
     void main()
     {
         #if defined(PK_USE_TANGENTS)
-        pk_MATRIX_TBN = half3x3(ComposeMikkTBN(baseVaryings.vs_NORMAL, baseVaryings.vs_TANGENT));
+        pk_MATRIX_TBN = half3x3(ComposeMikkTBN(vs_NORMAL, vs_TANGENT));
         #endif
 
         SurfaceData surf = SurfaceData
         (
-            normalize(pk_WorldSpaceCameraPos.xyz - baseVaryings.vs_WORLDPOSITION),
-            baseVaryings.vs_WORLDPOSITION,
+            normalize(pk_WorldSpaceCameraPos.xyz - vs_WORLDPOSITION),
+            vs_WORLDPOSITION,
             0.0f.xxx,
             1.0f.xxx,      
             float3(0,0,1),      
@@ -220,7 +247,7 @@ struct SurfaceFragmentVaryings
         {                                           
             return;                                 
         }       
-        
+
         surf.clipuvw = WorldToClipUVW(surf.worldpos);                      
         surf.clipuvw.xy = ClampUVScreenBorder(surf.clipuvw.xy);          
         int2 screencoord = int2(surf.clipuvw.xy * pk_ScreenSize.xy);
@@ -229,7 +256,7 @@ struct SurfaceFragmentVaryings
         int2 screencoord = int2(gl_FragCoord.xy);
         #endif
 
-        PK_SURFACE_FUNC_FRAG(baseVaryings, surf);
+        PK_SURFACE_FUNC_FRAG(vs_TEXCOORD0, surf);
 
         #if !defined(PK_META_PASS_GIVOXELIZE)
         const float shiftAmount = dot(surf.normal, surf.viewdir);
@@ -276,7 +303,7 @@ struct SurfaceFragmentVaryings
             sv_output.rgb *= surf.occlusion;
             #endif
 
-            LightTile tile = GetLightTile_PX(screencoord, ViewDepth(surf.clipuvw.z));
+            LightTile tile = Lights_GetTile_PX(screencoord, ViewDepth(surf.clipuvw.z));
             for (uint i = tile.start; i < tile.end; ++i)
             {
                 Light light = GetLight(i, surf.worldpos, surf.normal, tile.cascade);

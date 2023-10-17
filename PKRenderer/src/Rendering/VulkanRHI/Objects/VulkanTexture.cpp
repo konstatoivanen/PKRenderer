@@ -167,7 +167,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         handle->image.layout = GetImageLayout();
         handle->image.format = m_rawImage->format;
         handle->image.extent = m_rawImage->extent;
-        handle->image.samples = m_descriptor.samples;
+        handle->image.samples = m_rawImage->samples;
         handle->image.range =
         {
             (uint32_t)EnumConvert::GetFormatAspect(handle->image.format),
@@ -223,7 +223,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         viewValue->bindHandle->image.format = info.format;
         viewValue->bindHandle->image.extent = m_rawImage->extent;
         viewValue->bindHandle->image.range = info.subresourceRange;
-        viewValue->bindHandle->image.samples = m_descriptor.samples;
+        viewValue->bindHandle->image.samples = m_rawImage->samples;
         viewValue->bindHandle->isConcurrent = IsConcurrent();
         viewValue->bindHandle->isTracked = IsTracked();
 

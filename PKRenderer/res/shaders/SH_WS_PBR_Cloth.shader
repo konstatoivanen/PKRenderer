@@ -17,12 +17,11 @@
 #include includes/SurfaceShaderBase.glsl
 
 #pragma PROGRAM_VERTEX
-void PK_SURFACE_FUNC_VERT(inout SurfaceFragmentVaryings surf) {}
+void PK_SURFACE_FUNC_VERT(inout SurfaceVaryings surf) {}
 
 #pragma PROGRAM_FRAGMENT
-void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData surf)
+void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf)
 {
-    float2 uv = varyings.vs_TEXCOORD0;
     //uv += PK_SURF_SAMPLE_PARALLAX_OFFSET(_HeightMap, _HeightAmount, uv, surf.viewdir);
 
     float3 textureval = PK_SURF_TEX(_PBSTexture, uv).xyz;

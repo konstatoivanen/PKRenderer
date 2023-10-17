@@ -37,7 +37,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         dummy.image.format = VK_FORMAT_UNDEFINED;
         dummy.image.extent = { resolution.x, resolution.y, resolution.z };
         dummy.image.range = { VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM, 0u, 1u, 0u, 1u };
-        dummy.image.samples = 1u;
+        dummy.image.samples = VK_SAMPLE_COUNT_1_BIT;
         const VulkanBindHandle* handles = &dummy;
         m_renderState->SetRenderTarget(&handles, nullptr, 0u);
     }
@@ -268,7 +268,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         ResolveBarriers();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-        if (src->image.samples > 1 && dst->image.samples == 1)
+        if (src->image.samples > VK_SAMPLE_COUNT_1_BIT && dst->image.samples == VK_SAMPLE_COUNT_1_BIT)
         {
             VkImageResolve resolveRegion{};
             resolveRegion.srcSubresource = { (uint32_t)src->image.range.aspectMask, blitRegion.srcSubresource.mipLevel, blitRegion.srcSubresource.baseArrayLayer, blitRegion.srcSubresource.layerCount };

@@ -41,7 +41,6 @@ namespace PK::Rendering
         DECLARE_HASH(pk_FrameIndex)
 
         DECLARE_HASH(pk_ObjectToWorld)
-        DECLARE_HASH(pk_WorldToObject)
         DECLARE_HASH(pk_WorldToView)
         DECLARE_HASH(pk_ViewToWorld)
         DECLARE_HASH(pk_ViewToWorldPrev)

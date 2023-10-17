@@ -131,8 +131,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         m_frameBufferKey[0].layers = 1;
         m_frameBufferKey[1].layers = 1;
-        m_renderPassKey[0].samples = 1;
-        m_renderPassKey[1].samples = 1;
+        m_renderPassKey[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        m_renderPassKey[1].samples = VK_SAMPLE_COUNT_1_BIT;
         m_pipelineKey.primitiveRestart = VK_FALSE;
     }
 
@@ -152,7 +152,7 @@ namespace PK::Rendering::VulkanRHI::Objects
         auto imageDepth = imagesResolve + Structs::PK_MAX_RENDER_TARGETS;
 
         // These should be the same for all targets. Validation will assert if not.
-        passKey->samples = renderTargets[0]->image.samples;
+        passKey->samples = (VkSampleCountFlagBits)renderTargets[0]->image.samples;
         fboKey->layers = renderTargets[0]->image.range.layerCount;
         fboKey->extent = { renderTargets[0]->image.extent.width, renderTargets[0]->image.extent.height };
 

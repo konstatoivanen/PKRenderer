@@ -142,7 +142,7 @@ namespace PK::Rendering::VulkanRHI::Services
 
             auto* attachment = attachments + attachmentIndex++;
             attachment->format = key.colors[i].format;
-            attachment->samples = EnumConvert::GetSampleCountFlags(key.samples);
+            attachment->samples = key.samples;
             attachment->loadOp = EnumConvert::GetLoadOp(key.colors[i].initialLayout, key.colors[i].loadop);
             attachment->storeOp = EnumConvert::GetStoreOp(key.colors[i].storeop);
             attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -188,7 +188,7 @@ namespace PK::Rendering::VulkanRHI::Services
 
             auto* attachment = attachments + attachmentIndex++;
             attachment->format = key.depth.format;
-            attachment->samples = EnumConvert::GetSampleCountFlags(key.samples);
+            attachment->samples = key.samples;
             attachment->loadOp = EnumConvert::GetLoadOp(key.depth.initialLayout, key.depth.loadop);
             attachment->storeOp = EnumConvert::GetStoreOp(key.depth.storeop);
             attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;

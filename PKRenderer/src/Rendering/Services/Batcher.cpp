@@ -35,7 +35,7 @@ namespace PK::Rendering
         m_shaders(32),
         m_transforms(1024)
     {
-        m_matrices = Buffer::Create(ElementType::Float4x4, 1024, BufferUsage::PersistentStorage, "Batching.Matrices");
+        m_matrices = Buffer::Create(ElementType::Float3x4, 1024, BufferUsage::PersistentStorage, "Batching.Matrices");
 
         m_indices = Buffer::Create(
             {
@@ -92,11 +92,11 @@ namespace PK::Rendering
         std::sort(m_drawInfos.begin(), m_drawInfos.end());
 
         m_matrices->Validate(m_transforms.GetCapacity());
-        auto matrixView = cmd->BeginBufferWrite<float4x4>(m_matrices.get(), 0u, m_transforms.GetCount());
+        auto matrixView = cmd->BeginBufferWrite<float3x4>(m_matrices.get(), 0u, m_transforms.GetCount());
 
         for (auto& view : m_transforms)
         {
-            matrixView[view.index] = (*view)->localToWorld;
+            matrixView[view.index] = Functions::TransposeTo3x4((*view)->localToWorld);
         }
 
         cmd->EndBufferWrite(m_matrices.get());

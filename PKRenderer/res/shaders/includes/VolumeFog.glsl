@@ -129,7 +129,7 @@ void VolumeFog_ApplySky(float3 viewdir, inout float3 color)
 
     // @TODO refactor to use somekind of global light cluster for this.
     // For now get the first light as it is likely a directional light
-    const LightPacked light = PK_BUFFER_DATA(pk_Lights, 0u);
+    const LightPacked light = Lights_LoadPacked(0u);
 
     if ((light.LIGHT_TYPE) == LIGHT_TYPE_DIRECTIONAL)
     {

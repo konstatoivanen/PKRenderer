@@ -59,7 +59,7 @@ void main()
 {
     const uint lightIndex = bitfieldExtract(pk_Instancing_Userdata, 0, 16);
     const uint layer = bitfieldExtract(pk_Instancing_Userdata, 16, 16);
-    const LightPacked light = PK_BUFFER_DATA(pk_Lights, lightIndex);
+    const LightPacked light = Lights_LoadPacked(lightIndex);
     const float3 wpos = ObjectToWorldPos(in_POSITION);
     const uint projectionIndex = light.LIGHT_PROJECTION;
 

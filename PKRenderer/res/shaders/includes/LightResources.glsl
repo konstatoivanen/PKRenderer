@@ -42,7 +42,7 @@ struct LightTile
 struct LightPacked { float4 p; float4 c; uint4 i; };
 
 PK_DECLARE_SET_GLOBAL uniform sampler2DArray pk_LightCookies;
-PK_DECLARE_READONLY_BUFFER(LightPacked, pk_Lights, PK_SET_PASS);
+PK_DECLARE_READONLY_BUFFER(uint4, pk_Lights, PK_SET_PASS);
 PK_DECLARE_READONLY_BUFFER(float4x4, pk_LightMatrices, PK_SET_PASS);
 
 #if defined(PK_WRITE_LIGHT_CLUSTERS)
@@ -53,7 +53,16 @@ PK_DECLARE_READONLY_BUFFER(float4x4, pk_LightMatrices, PK_SET_PASS);
     layout(r32ui, set = PK_SET_PASS) uniform readonly uimage3D pk_LightTiles;
 #endif
 
-LightTile CreateLightTile(uint data)
+LightPacked Lights_LoadPacked(uint index)
+{
+    LightPacked l;
+    l.p = uintBitsToFloat(PK_BUFFER_DATA(pk_Lights, index * 3u));
+    l.c = uintBitsToFloat(PK_BUFFER_DATA(pk_Lights, index * 3u + 1u));
+    l.i = PK_BUFFER_DATA(pk_Lights, index * 3u + 2u);
+    return l;
+}
+
+LightTile Lights_CreateTile(uint data)
 {
     uint offset = bitfieldExtract(data, 0, 22);
     uint count = bitfieldExtract(data, 22, 8);
@@ -61,15 +70,15 @@ LightTile CreateLightTile(uint data)
     return LightTile(offset, offset + count, cascade);
 }
 
-LightTile GetLightTile(const int3 coord)
+LightTile Lights_GetTile(const int3 coord)
 {
     #if defined(PK_WRITE_LIGHT_CLUSTERS)
         return LightTile(0,0,0);
     #else
-        return CreateLightTile(imageLoad(pk_LightTiles, coord).x);
+        return Lights_CreateTile(imageLoad(pk_LightTiles, coord).x);
     #endif
 }
 
-LightTile GetLightTile_COORD(const int2 coord, const float viewdepth) { return GetLightTile(int3(coord, max(0, int(LIGHT_TILE_COUNT_Z * ClipDepthExp(viewdepth))))); }
-LightTile GetLightTile_PX(const int2 px, const float viewdepth) { return GetLightTile_COORD(px >> LIGHT_TILE_SHIFT_PX, viewdepth); }
-LightTile GetLightTile_UV(const float2 uv, const float viewdepth) { return GetLightTile_PX(int2(uv * pk_ScreenSize.xy), viewdepth); }
+LightTile Lights_GetTile_COORD(const int2 coord, const float viewdepth) { return Lights_GetTile(int3(coord, max(0, int(LIGHT_TILE_COUNT_Z * ClipDepthExp(viewdepth))))); }
+LightTile Lights_GetTile_PX(const int2 px, const float viewdepth) { return Lights_GetTile_COORD(px >> LIGHT_TILE_SHIFT_PX, viewdepth); }
+LightTile Lights_GetTile_UV(const float2 uv, const float viewdepth) { return Lights_GetTile_PX(int2(uv * pk_ScreenSize.xy), viewdepth); }

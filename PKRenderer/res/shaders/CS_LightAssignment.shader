@@ -102,7 +102,7 @@ void main()
     for (uint batch = 0; batch < numBatches; ++batch)
     {
         const uint lightIndex = min(batch * THREAD_COUNT + thread, LightCount);
-        const LightPacked packed = PK_BUFFER_DATA(pk_Lights, lightIndex);
+        const LightPacked packed = Lights_LoadPacked(lightIndex);
 
         SharedLight light;
         light.position = WorldToViewPos(packed.LIGHT_POS);

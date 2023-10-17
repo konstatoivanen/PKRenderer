@@ -41,7 +41,7 @@ namespace PK::Rendering::VulkanRHI::Services
         AttachmentKey depth;
         VkAccessFlags accessMask;
         VkPipelineStageFlags stageMask;
-        uint32_t samples = 1;
+        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
 
         // Allows the use of barriers inside a render pass. Intended for multiviewport shenanigans.
         bool dynamicTargets;

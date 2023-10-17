@@ -5,7 +5,7 @@
 #include Shadows.glsl
 
 #ifndef SHADOW_TEST 
-    #define SHADOW_TEST ShadowTest_Poisson16
+    #define SHADOW_TEST ShadowTest_PCSS
 #endif
 
 float4 GetLightProjectionUVW(const float3 worldpos, const uint projectionIndex)
@@ -19,7 +19,7 @@ float4 GetLightProjectionUVW(const float3 worldpos, const uint projectionIndex)
 
 Light GetLightDirect(const uint index, const float3 worldpos, const float3 normal, const uint cascade)
 {
-    const LightPacked light = PK_BUFFER_DATA(pk_Lights, index);
+    const LightPacked light = Lights_LoadPacked(index);
 
     uint index_shadow = light.LIGHT_SHADOW;
     uint index_matrix  = light.LIGHT_PROJECTION;
@@ -81,7 +81,7 @@ Light GetLightDirect(const uint index, const float3 worldpos, const float3 norma
     [[branch]]
     if (index_shadow < LIGHT_PARAM_INVALID)
     {
-        shadow *= SHADOW_TEST(index_shadow, coord.xy, shadowDistance);
+        shadow *= SHADOW_TEST(index_shadow, half2(coord.xy), shadowDistance);
     }
 
     return Light(color, shadow, posToLight, linearDistance, sourceRadius);

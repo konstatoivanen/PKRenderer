@@ -22,7 +22,7 @@ texture(sampler2D(albedo[material.albedoTextureIndex], albedoSampler), uv);
 #include includes/SurfaceShaderBase.glsl
 
 #pragma PROGRAM_VERTEX
-void PK_SURFACE_FUNC_VERT(inout SurfaceFragmentVaryings surf) {}
+void PK_SURFACE_FUNC_VERT(inout SurfaceVaryings surf) {}
 
 #pragma PROGRAM_FRAGMENT
 
@@ -36,7 +36,7 @@ float4 SampleTriplanar(texture2D tex, float3 normal, float3 position, float scal
     return cx * blend.x + cy * blend.y + cz * blend.z;
 }
 
-float3 SampleNormalTriplanar(in SurfaceFragmentVaryings varyings, inout SurfaceData surf, float scale)
+float3 SampleNormalTriplanar(inout SurfaceData surf, float scale)
 {
     float3 blend = abs(PK_SURF_MESH_NORMAL);
     blend /= dot(blend, 1.0.xxx);
@@ -46,14 +46,13 @@ float3 SampleNormalTriplanar(in SurfaceFragmentVaryings varyings, inout SurfaceD
     return normalize(cx * blend.x + cy * blend.y + cz * blend.z);
 }
 
-void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData surf)
+void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf)
 {
-    float2 uv = varyings.vs_TEXCOORD0;
     float3 textureval = SampleTriplanar(_PBSTexture, PK_SURF_MESH_NORMAL, surf.worldpos, 0.25f).xyz;
     surf.metallic = textureval.SRC_METALLIC * _Metallic;
     surf.roughness = textureval.SRC_ROUGHNESS * _Roughness;
     surf.occlusion = lerp(1.0f, textureval.SRC_OCCLUSION, _Occlusion);
-    surf.normal = SampleNormalTriplanar(varyings, surf, 0.25f);
+    surf.normal = SampleNormalTriplanar(surf, 0.25f);
     surf.albedo = SampleTriplanar(_AlbedoTexture, PK_SURF_MESH_NORMAL, surf.worldpos, 0.25f).rgb * _Color.xyz;
     surf.sheen = 1.0f.xxx;
     surf.sheenTint = 0.0f;

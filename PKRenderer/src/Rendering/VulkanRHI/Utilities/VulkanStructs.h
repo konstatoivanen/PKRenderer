@@ -262,7 +262,7 @@ namespace PK::Rendering::VulkanRHI
                 VkFormat format = VK_FORMAT_UNDEFINED;
                 VkExtent3D extent = { 0u, 0u, 0u };
                 VkImageSubresourceRange range = { VK_IMAGE_ASPECT_NONE, 0u, VK_REMAINING_MIP_LEVELS, 0u, VK_REMAINING_ARRAY_LAYERS };
-                uint16_t samples = 1u;
+                uint16_t samples = (uint16_t)VK_SAMPLE_COUNT_1_BIT; // VkSampleCountFlagBits
             } 
             image;
 

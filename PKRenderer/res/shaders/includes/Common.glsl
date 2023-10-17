@@ -45,8 +45,7 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 #if !defined(PK_INSTANCING_ENABLED)
 PK_DECLARE_CBUFFER(pk_ModelMatrices, PK_SET_DRAW)
 {
-    float4x4 pk_ObjectToWorld; // Current model matrix.
-    float4x4 pk_WorldToObject; // Current inverse model matrix.
+    float3x4 pk_ObjectToWorld; // Current model matrix.
 };
 #endif
 
@@ -59,25 +58,23 @@ uint GetShadowCascadeIndex(float viewDepth)
 }
 
 //----------TRANSFORMS----------//
-float3 ObjectToWorldPos(const float3 pos) { return mul(pk_ObjectToWorld, float4(pos, 1.0f)).xyz; }
-float3 ObjectToWorldDir(const float3 dir) { return mul(float3x3(pk_ObjectToWorld), dir); }
-float3 ObjectToViewPos(const float3 pos) { return mul(mul(pk_ObjectToWorld, float4(pos, 1.0f)), pk_WorldToView).xyz; }
-float3 ObjectToViewDir(const float3 dir) { return mul(ObjectToWorldDir(dir), float3x3(pk_WorldToView)); }
-float4 ObjectToClipPos(const float3 pos) { return mul(pk_WorldToProj, mul(pk_ObjectToWorld, float4(pos, 1.0f))); }
-
-float3 WorldToObjectPos(const float3 pos) { return mul(pk_WorldToObject, float4(pos, 1.0f)).xyz; }
-float3 WorldToObjectDir(const float3 dir) { return mul(float3x3(pk_WorldToObject), dir); }
-float3 WorldToViewPos(const float3 pos) { return mul(float4(pos, 1.0f), pk_WorldToView).xyz; }
-float3 WorldToViewDir(const float3 dir) { return mul(dir, float3x3(pk_WorldToView)); }
-float4 WorldToClipPos(const float3 pos) { return mul(pk_WorldToProj, float4(pos, 1.0f)); }
-float4 WorldToClipDir(const float3 dir) { return mul(pk_WorldToProj, float4(dir, 0.0f)); }
-float4 WorldToPrevClipPos(const float3 pos) { return mul(pk_WorldToProjPrev, float4(pos, 1.0f)); }
-
 float4 ViewToClipPos(const float3 pos) { return mul(pk_ViewToProj, float4(pos, 1.0f)); }
 float4 ViewToClipDir(const float3 dir) { return mul(pk_ViewToProj, float4(dir, 0.0f)); }
 float4 ViewToPrevClipPos(const float3 pos) { return mul(pk_ViewToProjDelta, float4(pos, 1.0f)); }
 float3 ViewToWorldPos(const float3 pos) { return mul(float4(pos, 1.0f), pk_ViewToWorld).xyz; }
 float3 ViewToWorldDir(const float3 dir) { return mul(dir, float3x3(pk_ViewToWorld)); }
+
+float3 WorldToViewPos(const float3 pos) { return mul(float4(pos, 1.0f), pk_WorldToView); }
+float3 WorldToViewDir(const float3 dir) { return mul(dir, float3x3(pk_WorldToView)); }
+float4 WorldToClipPos(const float3 pos) { return mul(pk_WorldToProj, float4(pos, 1.0f)); }
+float4 WorldToClipDir(const float3 dir) { return mul(pk_WorldToProj, float4(dir, 0.0f)); }
+float4 WorldToPrevClipPos(const float3 pos) { return mul(pk_WorldToProjPrev, float4(pos, 1.0f)); }
+
+float3 ObjectToWorldPos(const float3 pos) { return mul(float4(pos, 1.0f), pk_ObjectToWorld); }
+float3 ObjectToWorldDir(const float3 dir) { return mul(dir, float3x3(pk_ObjectToWorld)); }
+float3 ObjectToViewPos(const float3 pos) { return WorldToViewPos(ObjectToWorldPos(pos)); }
+float3 ObjectToViewDir(const float3 dir) { return WorldToViewDir(ObjectToWorldDir(dir)); }
+float4 ObjectToClipPos(const float3 pos) { return mul(pk_WorldToProj, float4(ObjectToWorldPos(pos), 1.0f)); }
 
 float  ViewDepth(const float clip_z)      { return 1.0f / (pk_InvProjectionParams.z * clip_z + pk_InvProjectionParams.w); } 
 float4 ViewDepth(const float4 clip_z)     { return 1.0f / (pk_InvProjectionParams.z * clip_z + pk_InvProjectionParams.w); } 

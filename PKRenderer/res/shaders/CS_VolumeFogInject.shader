@@ -62,7 +62,7 @@ void main()
     // Fade out shadow contribution near far plane.
     const float shadowFade = smoothstep(0.9f, 1.0f, uvw_cur.z);
 
-    LightTile tile = GetLightTile_COORD(int2(gl_WorkGroupID.xy >> 1), depth);
+    LightTile tile = Lights_GetTile_COORD(int2(gl_WorkGroupID.xy >> 1), depth);
     for (uint i = tile.start; i < tile.end; ++i)
     {
         // @TODO current 1spp shadow test for fog is prone to banding. implement better filter.

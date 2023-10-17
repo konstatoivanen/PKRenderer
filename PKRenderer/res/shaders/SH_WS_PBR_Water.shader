@@ -39,13 +39,13 @@ float3 GerstnerWave(float4 wave, float3 p, inout float3 tangent, inout float3 bi
     );
 }
 
-void PK_SURFACE_FUNC_VERT(inout SurfaceFragmentVaryings surf)
+void PK_SURFACE_FUNC_VERT(inout SurfaceVaryings surf)
 {
     float4 wavea = float4(1, 0, 0.4f, 10);
     float4 waveb = float4(1, 1, 0.1f, 3);
     float4 wavec = float4(-1, 1, 0.2f, 5);
 
-    float3 gridPoint = surf.vs_WORLDPOSITION.xyz;
+    float3 gridPoint = surf.worldpos.xyz;
     float3 tangent = float3(1, 0, 0);
     float3 binormal = float3(0, 0, 1);
     float3 p = gridPoint;
@@ -54,24 +54,19 @@ void PK_SURFACE_FUNC_VERT(inout SurfaceFragmentVaryings surf)
     p += GerstnerWave(waveb, gridPoint, tangent, binormal) * 0.8f;
     p += GerstnerWave(wavec, gridPoint, tangent, binormal) * 0.8f;
 
-    float3 normal = normalize(cross(binormal, tangent));
-    normal = normalize(normal);
+    surf.normal = normalize(cross(binormal, tangent));
 
-    surf.vs_WORLDPOSITION.xyz = p;
+    surf.worldpos.xyz = p;
 
 #if defined(PK_META_PASS_GIVOXELIZE)
-    surf.vs_WORLDPOSITION.y -= 1.0f;
+    surf.worldpos.y -= 1.0f;
 #endif
-
-    surf.vs_NORMAL = normal;
 }
 
 #pragma PROGRAM_FRAGMENT
-void PK_SURFACE_FUNC_FRAG(in SurfaceFragmentVaryings varyings, inout SurfaceData surf)
+void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf)
 {
-    float2 uv = varyings.vs_TEXCOORD0;
-
-    float yorigin = pk_ObjectToWorld[3].y;
+    float yorigin = pk_ObjectToWorld[2].w;
 
     float3 noise;
     noise.xy = NoiseCell(int2(surf.worldpos.xz * 8.0f + surf.worldpos.yy * 30.0f));
