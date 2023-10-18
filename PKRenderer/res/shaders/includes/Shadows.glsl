@@ -36,9 +36,8 @@ float Shadow_GradientNoise()
     // http://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare
     const float3 magic = float3(0.06711056f, 0.00583715f, 52.9829189f);
     const float frameRandom = make_unorm(pk_FrameRandom.x);
-    float n = -1.0f + 2.0f * fract(magic.z * fract(dot(gl_FragCoord.xy + frameRandom.xx, magic.xy))); 
-    n *= PK_PI;
-    return n;
+    float n = fract(magic.z * fract(dot(gl_FragCoord.xy + frameRandom.xx, magic.xy))); 
+    return n * PK_TWO_PI;
 #else
     return 0.0f;
 #endif
@@ -53,16 +52,16 @@ float3 Shadow_GetSamplingOffset(const float3 N, const float3 L)
     return (N * scaleN + L * min(2, scaleL)) * SHADOW_NEAR_BIAS;
 }
 
-half ShadowTest_PCF2x2(const uint index, const half2 uv, const float z) 
+half ShadowTest_PCF2x2(const uint index, const float2 uv, const float z) 
 { 
-    const half2 f = fract(uv * half2(SHADOW_SIZE.xx) - 0.5hf.xx).xy;
+    const half2 f = fract(half2(uv) * half2(SHADOW_SIZE.xx) - 0.5hf.xx).xy;
     const half4 fw = half4(f.xy, 1.0hf - f.xy);
     half4 s = half4(textureGather(pk_ShadowmapAtlas, float3(uv, index), 0) - z.xxxx);
     s = clamp(s * SHADOW_HARD_EDGE_FADE_FACTOR + 1.0hf, 0.0hf, 1.0hf);
     return dot(s, fw.zxzx * fw.wwyy);
 }
 
-half ShadowTest_Spiral16(const uint index, const half2 uv, const float z)
+half ShadowTest_Spiral16(const uint index, const float2 uv, const float z)
 {
     SHADOW_DECLARE_SPIRAL_OFFFSETS(offsets)
 
@@ -80,15 +79,14 @@ half ShadowTest_Spiral16(const uint index, const half2 uv, const float z)
     return shadow / 16.0hf;
 }
 
-half ShadowTest_PCSS(const uint index, const half2 uv, const float z)
+half ShadowTest_PCSS(const uint index, float2 uv, const float z)
 {
     SHADOW_DECLARE_SPIRAL_OFFFSETS(offsets);
 
     const half dither = half(Shadow_GradientNoise());
     half2 rotation = make_rotation(dither);
-    half minOffset = 1.0hf / half(SHADOW_SIZE.x);
-    half maxOffset = 16.0hf / half(SHADOW_SIZE.x);
     
+    const half maxOffset = 16.0hf / half(SHADOW_SIZE.x);
     half2 avg_z = 0.0hf.xx;
 
     for (uint i = 0u; i < 16u; ++i)
@@ -98,16 +96,23 @@ half ShadowTest_PCSS(const uint index, const half2 uv, const float z)
         avg_z += half2(half(s_z), 1.0hf) * half(step(s_z, z));
     }
 
-    half penumbra = minOffset;
-
-    if (avg_z.y > 0.0hf)
+    [[branch]]
+    if (avg_z.y == 0.0hf)
     {
-        avg_z.x /= avg_z.y;
-        avg_z.x = clamp(SHADOW_PCSS_PENUMBRA_SIZE * half(z - avg_z.x) / avg_z.x, 0.0hf, 1.0hf);
-        penumbra = lerp(minOffset, maxOffset, avg_z.x);
+        return 1.0hf;
     }
 
-    rotation *= penumbra;
+    [[branch]]
+    if (avg_z.y > 15.5hf)
+    {
+        return 0.0hf;
+    }
+
+    avg_z.x /= avg_z.y;
+    avg_z.x = clamp(SHADOW_PCSS_PENUMBRA_SIZE * half(z - avg_z.x) / avg_z.x, 0.0hf, 1.0hf);
+
+    const half minOffset = 1.0hf / half(SHADOW_SIZE.x);
+    rotation *= lerp(minOffset, maxOffset, avg_z.x);
 
     half shadow = 0.0hf;
     

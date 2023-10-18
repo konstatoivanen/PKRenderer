@@ -81,7 +81,7 @@ Light GetLightDirect(const uint index, const float3 worldpos, const float3 norma
     [[branch]]
     if (index_shadow < LIGHT_PARAM_INVALID)
     {
-        shadow *= SHADOW_TEST(index_shadow, half2(coord.xy), shadowDistance);
+        shadow *= SHADOW_TEST(index_shadow, coord.xy, shadowDistance);
     }
 
     return Light(color, shadow, posToLight, linearDistance, sourceRadius);

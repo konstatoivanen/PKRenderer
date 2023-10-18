@@ -52,60 +52,59 @@ half4 GI_SphereTrace_Diffuse(float3 position)
     {
         float level = i * 0.75f + 0.5f;
         half4 V = half4(GI_Load_Voxel_UVW(uvw, level));
-        C.rgb += (1.0hf - C.a) * V.rgb;
-        C.a = min(1.0hf, C.a + (1.0hf - C.a) * V.a);
+        C += (1.0hf - C.a) * V;
         AO *= max(0.0hf, 1.0hf - V.a * (1.0hf + half(level) * 0.5hf));
     }
 
     return half4(C.rgb, AO);
 }
 
-float4 GI_ConeTrace_Diffuse(const float3 O, const float3 N, const float dither) 
+half4 GI_ConeTrace_Diffuse(const float3 O, const float3 N) 
 {
     const float angle = PK_PI / 3.0f;
     const float levelscale = 2.0f * tan(angle / 2.0f) / pk_GI_VoxelSize;
     const float correctionAngle = tan(angle / 8.0f);
     const float S = (1.0f + correctionAngle) / (1.0f - correctionAngle) * pk_GI_VoxelSize / 2.0f;
-    
-    float4 A = 0.0.xxxx;
-    float3 T = cross(N, float3(0.0f, 1.0f, 0.0f));
-    float3 B = cross(T, N);
 
-    const float3 directions[6] =
+    const half3 directions[6] =
     {
-        N, 
-        0.7071f * N + 0.7071f * T,
-        0.7071f * N + 0.7071f * (0.309f * T + 0.951f * B),
-        0.7071f * N + 0.7071f * (-0.809f * T + 0.588f * B),
-        0.7071f * N - 0.7071f * (-0.809f * T - 0.588f * B),
-        0.7071f * N - 0.7071f * (0.309f * T - 0.951f * B)
+        half3( 0.0hf,        0.0hf,       1.0hf), 
+        half3( 0.7071hf,     0.0hf,       0.7071hf),
+        half3( 0.2184939hf,  0.6724521hf, 0.7071hf),
+        half3(-0.5720439hf,  0.4157748hf, 0.7071hf),
+        half3( 0.5720439hf,  0.4157748hf, 0.7071hf),
+        half3(-0.2184939hf,  0.6724521hf, 0.7071hf)
     };
+    
+    float3x3 TBN = make_TBN(N);
+    
+    half4 A = 0.0hf.xxxx;
 
+    [[unroll]]
     for (uint i = 0u; i < 6; ++i)
     {
-        const float3 D = directions[i];
+        const float3 D = mul(TBN, directions[i]);
         
-        float4 C = 0.0.xxxx;
-        float AO = 1.0f;
-        float DI = S;
+        half4 C = 0.0hf.xxxx;
+        half AO = 1.0hf;
+        half DI = half(S);
 
+        [[unroll]]
         for (uint j = 0u; j < 11u; ++j)
         {
-            float level = max(1.0f, log2(levelscale * DI));
-            float4 V = GI_Load_Voxel(O + D * DI, level);
-            C.rgb += (1.0f - C.a) * V.a * (V.rgb / max(1e-4f, V.a));
-            C.a = min(1.0f, C.a + (1.0f - C.a) * V.a);
-            DI += S * level;
-            AO *= max(0.0f, 1.0f - V.a * (1.0f + level * 0.5f));
+            half level = max(1.0hf, log2(half(levelscale) * DI));
+            half4 V = half4(GI_Load_Voxel(O + D * DI, level));
+            C += (1.0hf - C.a) * V;
+            DI += half(S) * level;
+            AO *= max(0.0hf, 1.0hf - V.a * (1.0hf + level * 0.5hf));
         }
 
         C.a = AO;
-        A += C * max(0.0f, dot(N, D));
+        A += C * half(dot(N, D));
     }
  
     // Ground Occlusion
-    A.a *= saturate(N.y + 1.0f);
-    A /= 6.0f;
+    A.a *= clamp(half(N.y) + 1.0hf, 0.0hf, 1.0hf);
 
-    return A;
+    return A / 6.0hf;
 }
