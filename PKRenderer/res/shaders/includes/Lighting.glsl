@@ -5,7 +5,11 @@
 #include Shadows.glsl
 
 #ifndef SHADOW_TEST 
-    #define SHADOW_TEST ShadowTest_PCSS
+    #define SHADOW_TEST ShadowTest_Spiral16
+#endif
+
+#ifndef SHADOW_SAMPLE_SCREENSPACE
+    #define SHADOW_SAMPLE_SCREENSPACE 1
 #endif
 
 float4 GetLightProjectionUVW(const float3 worldpos, const uint projectionIndex)
@@ -34,7 +38,6 @@ Light GetLightDirect(const uint index, const float3 worldpos, const float3 norma
     // This is only needed for volumetrics
     float linearDistance; 
 
-    // @TODO Maybe refactor lights to separate by type lists 
     [[branch]]
     switch (light.LIGHT_TYPE)
     {
@@ -49,6 +52,16 @@ Light GetLightDirect(const uint index, const float3 worldpos, const float3 norma
             coord = GetLightProjectionUVW(shadowPos, index_matrix);
             
             shadowDistance = coord.z * light.LIGHT_RADIUS;
+
+            // First Directional light has a screen space shadow.
+            // @TODO Maybe parameterize this better.
+            #if defined(SHADER_STAGE_FRAGMENT) && SHADOW_SAMPLE_SCREENSPACE == 1
+            if ((light.LIGHT_SHADOW) == 0u)
+            {
+                shadow *= texelFetch(pk_ShadowmapScreenSpace, int2(gl_FragCoord.xy), 0).r;
+                index_shadow = LIGHT_PARAM_INVALID;
+            }
+            #endif
         }
         break;
         case LIGHT_TYPE_SPOT:

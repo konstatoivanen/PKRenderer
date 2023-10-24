@@ -75,6 +75,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_GB_Previous_Depth)
 
         DECLARE_HASH(pk_ShadowmapAtlas)
+        DECLARE_HASH(pk_ShadowmapScreenSpace)
         DECLARE_HASH(pk_LightCookies)
         DECLARE_HASH(pk_Bluenoise256)
         DECLARE_HASH(pk_Bluenoise128x64)
@@ -92,11 +93,11 @@ namespace PK::Rendering
         DECLARE_HASH(pk_GI_VolumeSwizzle)
         DECLARE_HASH(pk_GI_RayDither)
         DECLARE_HASH(pk_GI_VoxelSize)
-        DECLARE_HASH(pk_GI_ChromaBias)
         DECLARE_HASH(pk_Reservoirs)
 
         DECLARE_HASH(pk_Lights)
         DECLARE_HASH(pk_LightMatrices)
+        DECLARE_HASH(pk_LightIndex)
         DECLARE_HASH(pk_LightCount)
         DECLARE_HASH(pk_LightLists)
         DECLARE_HASH(pk_LightTiles)

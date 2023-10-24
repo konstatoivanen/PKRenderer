@@ -326,4 +326,52 @@ namespace PK::Math::Functions
 
         return BoundingBox::MinMax(min, max);
     }
+
+    BoundingBox GetInverseFrustumInvariantBounds(const float4x4& inverseMatrix, float lznear, float lzfar)
+    {
+        float4 positions[8];
+        positions[0] = inverseMatrix * float4(-1, -1, 0, 1);
+        positions[1] = inverseMatrix * float4(-1,  1, 0, 1);
+        positions[2] = inverseMatrix * float4( 1,  1, 0, 1);
+        positions[3] = inverseMatrix * float4( 1, -1, 0, 1);
+        positions[4] = inverseMatrix * float4(-1, -1, 1, 1);
+        positions[5] = inverseMatrix * float4(-1,  1, 1, 1);
+        positions[6] = inverseMatrix * float4( 1,  1, 1, 1);
+        positions[7] = inverseMatrix * float4( 1, -1, 1, 1);
+
+        auto center = PK_FLOAT3_ZERO;
+
+        for (auto i = 0; i < 4; ++i)
+        {
+            positions[i] /= positions[i].w;
+            positions[i + 4] /= positions[i + 4].w;
+
+            auto pnear = glm::mix(positions[i], positions[i + 4], lznear);
+            auto pfar = glm::mix(positions[i], positions[i + 4], lzfar);
+
+            positions[i] = pnear;
+            positions[i + 4] = pfar;
+
+            center += float3(pnear.xyz);
+            center += float3(pfar.xyz);
+        }
+
+        center /= 8.0f;
+
+        auto radius = 0.0f;
+        auto zmin = std::numeric_limits<float>().max();
+        auto zmax = -std::numeric_limits<float>().max();
+
+        for (auto i = 0; i < 8; ++i)
+        {
+            zmin = glm::min(positions[i].z, zmin);
+            zmax = glm::max(positions[i].z, zmax);
+            radius = glm::max(radius, glm::distance(float3(positions[i].xyz), center));
+        }
+
+        auto min = float3(-radius, -radius, zmin);
+        auto max = float3( radius,  radius, zmax);
+
+        return BoundingBox::MinMax(min, max);
+    }
 }

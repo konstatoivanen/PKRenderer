@@ -38,7 +38,7 @@ float4 EncodeGBufferViewNR(const float3 normal, const float roughness)
         hash *= 0x846ca68bU;
         hash ^= hash >> 16;
         const float d = uintBitsToFloat(hash & 0x007fffffu | 0x3f800000u) * 2.0f - 3.0f;
-	    const float t = max(-1.0f, d * inversesqrt(abs(d))) - sign(d) + 0.5f;
+        const float t = max(-1.0f, d * inversesqrt(abs(d))) - sign(d) + 0.5f;
         xy = saturate(xy + t * 9.775171065493646e-4f); // t / 1023.0f
     #endif
 

@@ -97,12 +97,10 @@ namespace PK::Rendering::Passes
             { ElementType::Uint4, hash->pk_GI_VolumeSwizzle },
             { ElementType::Uint2, hash->pk_GI_RayDither },
             { ElementType::Float, hash->pk_GI_VoxelSize },
-            { ElementType::Float, hash->pk_GI_ChromaBias },
         }), "GI.Parameters");
 
         m_parameters->Set<float4>(hash->pk_GI_VolumeST, float4(-76.8f, -6.0f, -76.8f, 1.0f / 0.6f));
         m_parameters->Set<float>(hash->pk_GI_VoxelSize, 0.6f);
-        m_parameters->Set<float>(hash->pk_GI_ChromaBias, 0.1f);
 
         GraphicsAPI::SetBuffer(hash->pk_GI_Parameters, m_parameters->GetBuffer());
         GraphicsAPI::SetImage(hash->pk_GI_VolumeMaskWrite, m_voxelMask.get());

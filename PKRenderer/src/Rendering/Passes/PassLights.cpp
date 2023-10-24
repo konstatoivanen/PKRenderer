@@ -58,6 +58,7 @@ namespace PK::Rendering::Passes
     {
         m_computeLightAssignment = assetDatabase->Find<Shader>("CS_LightAssignment");
         m_computeCopyCubeShadow = assetDatabase->Find<Shader>("CS_CopyCubeShadow");
+        m_computeScreenSpaceShadow = assetDatabase->Find<Shader>("CS_ScreenspaceShadow");
 
         m_cascadeLinearity = config->CascadeLinearity;
 
@@ -101,18 +102,31 @@ namespace PK::Rendering::Passes
         depthDesc.usage = TextureUsage::RTDepth;
         m_depthTarget2D = Texture::Create(depthDesc, "Lights.DepthTarget.2D");
 
-        TextureDescriptor atlasDescriptor;
-        atlasDescriptor.samplerType = SamplerType::Sampler2DArray;
-        atlasDescriptor.format = TextureFormat::R32F;
-        atlasDescriptor.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::RTColor;
-        atlasDescriptor.layers = 32;
-        atlasDescriptor.resolution = { config->ShadowmapTileSize, config->ShadowmapTileSize, 1u };
-        atlasDescriptor.sampler.wrap[0] = WrapMode::Clamp;
-        atlasDescriptor.sampler.wrap[1] = WrapMode::Clamp;
-        atlasDescriptor.sampler.wrap[2] = WrapMode::Clamp;
-        atlasDescriptor.sampler.filterMin = FilterMode::Bilinear;
-        atlasDescriptor.sampler.filterMag = FilterMode::Bilinear;
-        m_shadowmaps = Texture::Create(atlasDescriptor, "Lights.Shadowmap.Atlas");
+        TextureDescriptor atlasDesc;
+        atlasDesc.samplerType = SamplerType::Sampler2DArray;
+        atlasDesc.format = TextureFormat::R32F;
+        atlasDesc.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::RTColor;
+        atlasDesc.layers = 32;
+        atlasDesc.resolution = { config->ShadowmapTileSize, config->ShadowmapTileSize, 1u };
+        atlasDesc.sampler.wrap[0] = WrapMode::Clamp;
+        atlasDesc.sampler.wrap[1] = WrapMode::Clamp;
+        atlasDesc.sampler.wrap[2] = WrapMode::Clamp;
+        atlasDesc.sampler.filterMin = FilterMode::Bilinear;
+        atlasDesc.sampler.filterMag = FilterMode::Bilinear;
+        m_shadowmaps = Texture::Create(atlasDesc, "Lights.Shadowmap.Atlas");
+
+        TextureDescriptor screenSpaceDesc;
+        screenSpaceDesc.samplerType = SamplerType::Sampler2D;
+        screenSpaceDesc.format = TextureFormat::RGBA8;
+        screenSpaceDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
+        screenSpaceDesc.layers = 1;
+        screenSpaceDesc.resolution = { config->InitialWidth, config->InitialHeight, 1u };
+        screenSpaceDesc.sampler.wrap[0] = WrapMode::Clamp;
+        screenSpaceDesc.sampler.wrap[1] = WrapMode::Clamp;
+        screenSpaceDesc.sampler.wrap[2] = WrapMode::Clamp;
+        screenSpaceDesc.sampler.filterMin = FilterMode::Bilinear;
+        screenSpaceDesc.sampler.filterMag = FilterMode::Bilinear;
+        m_screenSpaceShadowmaps = Texture::Create(screenSpaceDesc, "Lights.Shadowmap.ScreenSpace");
 
         TextureDescriptor imageDescriptor;
         imageDescriptor.samplerType = SamplerType::Sampler3D;
@@ -147,7 +161,7 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
     }
 
-    void PassLights::RenderShadows(Objects::CommandBuffer* cmd)
+    void PassLights::RenderShadows(Objects::CommandBuffer* cmd, const uint3& resolution)
     {
         auto hash = HashCache::Get();
         auto atlasIndex = 0u;
@@ -183,6 +197,16 @@ namespace PK::Rendering::Passes
             cmd->EndDebugScope();
 
             atlasIndex += tileCount;
+        }
+
+        if (m_shadowBatches.size() > 0u &&
+            m_shadowBatches.at(0).type == LightType::Directional)
+        {
+            m_screenSpaceShadowmaps->Validate(resolution);
+            GraphicsAPI::SetTexture(hash->pk_ShadowmapScreenSpace, m_screenSpaceShadowmaps.get());
+            GraphicsAPI::SetImage(hash->pk_Image, m_screenSpaceShadowmaps.get());
+            GraphicsAPI::SetConstant<uint>(hash->pk_LightIndex, 0u);
+            cmd->Dispatch(m_computeScreenSpaceShadow, 0, resolution);
         }
     }
 

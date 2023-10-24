@@ -18,7 +18,6 @@ PK_DECLARE_CBUFFER(pk_GI_Parameters, PK_SET_SHADER)
     uint4 pk_GI_VolumeSwizzle;
     uint2 pk_GI_RayDither;
     float pk_GI_VoxelSize; 
-    float pk_GI_ChromaBias; 
 };
 
 layout(rg32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_RayHits;
@@ -180,7 +179,7 @@ float3 GI_Load_Resolved_Spec(const float2 uv) { return texelFetch(pk_GI_Resolved
 
 void GI_Store_Resolved_Diff(const int2 coord, const float3 N, const GIDiff diff)
 {
-    const float3 radiance = SH_ToIrradiance(diff.sh, N, pk_GI_ChromaBias) * pow(diff.ao, PK_GI_AO_DIFF_POWER);
+    const float3 radiance = SH_ToIrradiance(diff.sh, N) * pow(diff.ao, PK_GI_AO_DIFF_POWER);
     imageStore(pk_GI_ResolvedWrite, int3(coord, 0), EncodeE5BGR9(radiance).xxxx);
 }
 

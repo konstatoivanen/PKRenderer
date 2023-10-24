@@ -108,8 +108,8 @@ float3 VolumeFog_WorldToPrevUVW(float3 worldpos)
 
 void VolumeFog_Apply(float2 uv, float viewDepth, inout float3 color)
 {
-	float3 uvw = float3(uv, ClipDepthExp(viewDepth));
-	float2 dither = GlobalNoiseBlue(uint2(uv * pk_ScreenSize.xy), pk_FrameIndex.x).xy;
+    float3 uvw = float3(uv, ClipDepthExp(viewDepth));
+    float2 dither = GlobalNoiseBlue(uint2(uv * pk_ScreenSize.xy), pk_FrameIndex.x).xy;
     uvw.xy += (dither - 0.5f) * 2.0f.xx / VOLUMEFOG_SIZE_XY;
 
     float3 scatter = SAMPLE_TRICUBIC(pk_Fog_ScatterRead, uvw).rgb;

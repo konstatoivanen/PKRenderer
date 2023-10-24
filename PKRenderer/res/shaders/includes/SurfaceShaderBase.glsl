@@ -3,6 +3,7 @@
 // needs to be declared before lighting include.
 #if defined(PK_META_PASS_GIVOXELIZE) 
     #define SHADOW_TEST ShadowTest_PCF2x2
+    #define SHADOW_SAMPLE_SCREENSPACE 0
 #endif
 
 #include GBuffers.glsl

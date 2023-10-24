@@ -30,15 +30,15 @@ float3 Tonemap_ACESFilm(float3 color, float exposure)
 
 float3 Tonemap_HejlDawson(float3 color, float exposure)
 {
-	const float a = 6.2f;
-	const float b = 0.5f;
-	const float c = 1.7f;
-	const float d = 0.06f;
+    const float a = 6.2f;
+    const float b = 0.5f;
+    const float c = 1.7f;
+    const float d = 0.06f;
 
-	color *= exposure;
-	color = max(0.0f.xxx, color - 0.004f);
-	color = (color * (a * color + b)) / (color * (a * color + c) + d);
-	return color * color;
+    color *= exposure;
+    color = max(0.0f.xxx, color - 0.004f);
+    color = (color * (a * color + b)) / (color * (a * color + c) + d);
+    return color * color;
 }
 
 float Tonemap_Uchimura(float x, float P, float a, float m, float l, float c, float b) 
@@ -116,11 +116,11 @@ float Vignette(float2 uv)
 
 float3 LinearToGamma(float3 color)
 {
-	//Source: http://chilliant.blogspot.com.au/2012/08/srgb-approximations-for-hlsl.html?m=1
-	float3 S1 = sqrt(color);
-	float3 S2 = sqrt(S1);
-	float3 S3 = sqrt(S2);
-	return 0.662002687 * S1 + 0.684122060 * S2 - 0.323583601 * S3 - 0.0225411470 * color;
+    //Source: http://chilliant.blogspot.com.au/2012/08/srgb-approximations-for-hlsl.html?m=1
+    float3 S1 = sqrt(color);
+    float3 S2 = sqrt(S1);
+    float3 S3 = sqrt(S2);
+    return 0.662002687 * S1 + 0.684122060 * S2 - 0.323583601 * S3 - 0.0225411470 * color;
 }
 
 float3 ApplyColorGrading(float3 color)

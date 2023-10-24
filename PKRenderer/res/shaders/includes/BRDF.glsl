@@ -41,45 +41,45 @@ void Fsal_MaximumNHLH(float sina, float NoV, float VoL, float NoL, inout float L
         return;
     }
 
-	const float cosa = sqrt(1 - pow2(sina));
-	const float RoL = 2 * NoL * NoV - VoL;
-	
-	if (RoL >= cosa)
-	{
-		NoH = 1;
-		LoH = abs(NoV);
+    const float cosa = sqrt(1 - pow2(sina));
+    const float RoL = 2 * NoL * NoV - VoL;
+    
+    if (RoL >= cosa)
+    {
+        NoH = 1;
+        LoH = abs(NoV);
         return;
-	}
-
-	const float rInvLengthT = sina * inversesqrt(1 - RoL * RoL);
-	float NoTr = rInvLengthT * (NoV - RoL * NoL );
-	float VoTr = rInvLengthT * (2 * NoV * NoV - 1 - RoL * VoL);
-
-	// Newton iteration
-	{
-	    const float NxLoV = sqrt(saturate(1 - pow2(NoL) - pow2(NoV) - pow2(VoL) + 2 * NoL * NoV * VoL));
-	    const float NoBr = rInvLengthT * NxLoV;
-	    const float VoBr = rInvLengthT * NxLoV * 2 * NoV;
-	    const float NoLVTr = NoL * cosa + NoV + NoTr;
-	    const float VoLVTr = VoL * cosa + 1.0 + VoTr;
-	    const float p = NoBr   * VoLVTr;
-	    const float q = NoLVTr * VoLVTr;
-	    const float s = VoBr   * NoLVTr;
-	    const float xNum = q * (-0.5 * p + 0.25 * VoBr * NoLVTr);
-	    const float xDenom = p*p + s * (s - 2 * p) + NoLVTr * ((NoL * cosa + NoV) * pow2(VoLVTr) + q * (-0.5 * (VoLVTr + VoL * cosa) - 0.5));
-	    const float TwoX1 = 2 * xNum / ( pow2(xDenom) + pow2(xNum) );
-	    const float SinTheta = TwoX1 * xDenom;
-	    const float CosTheta = 1.0 - TwoX1 * xNum;
-	    NoTr = CosTheta * NoTr + SinTheta * NoBr;
-	    VoTr = CosTheta * VoTr + SinTheta * VoBr;
     }
 
-	NoL = NoL * cosa + NoTr; 
-	VoL = VoL * cosa + VoTr;
+    const float rInvLengthT = sina * inversesqrt(1 - RoL * RoL);
+    float NoTr = rInvLengthT * (NoV - RoL * NoL );
+    float VoTr = rInvLengthT * (2 * NoV * NoV - 1 - RoL * VoL);
 
-	float InvLenH = inversesqrt(2 + 2 * VoL);
-	NoH = saturate((NoL + NoV ) * InvLenH);
-	LoH = saturate(InvLenH + InvLenH * VoL);
+    // Newton iteration
+    {
+        const float NxLoV = sqrt(saturate(1 - pow2(NoL) - pow2(NoV) - pow2(VoL) + 2 * NoL * NoV * VoL));
+        const float NoBr = rInvLengthT * NxLoV;
+        const float VoBr = rInvLengthT * NxLoV * 2 * NoV;
+        const float NoLVTr = NoL * cosa + NoV + NoTr;
+        const float VoLVTr = VoL * cosa + 1.0 + VoTr;
+        const float p = NoBr   * VoLVTr;
+        const float q = NoLVTr * VoLVTr;
+        const float s = VoBr   * NoLVTr;
+        const float xNum = q * (-0.5 * p + 0.25 * VoBr * NoLVTr);
+        const float xDenom = p*p + s * (s - 2 * p) + NoLVTr * ((NoL * cosa + NoV) * pow2(VoLVTr) + q * (-0.5 * (VoLVTr + VoL * cosa) - 0.5));
+        const float TwoX1 = 2 * xNum / ( pow2(xDenom) + pow2(xNum) );
+        const float SinTheta = TwoX1 * xDenom;
+        const float CosTheta = 1.0 - TwoX1 * xNum;
+        NoTr = CosTheta * NoTr + SinTheta * NoBr;
+        VoTr = CosTheta * VoTr + SinTheta * VoBr;
+    }
+
+    NoL = NoL * cosa + NoTr; 
+    VoL = VoL * cosa + VoTr;
+
+    float InvLenH = inversesqrt(2 + 2 * VoL);
+    NoH = saturate((NoL + NoV ) * InvLenH);
+    LoH = saturate(InvLenH + InvLenH * VoL);
 }
 
 // Sphere area light ggx D energy conservation factor

@@ -4,13 +4,13 @@
 PK_DECLARE_CBUFFER(pk_PostEffectsParams, PK_SET_PASS)
 {
     float4 pk_CC_WhiteBalance;
-	float4 pk_CC_Lift;
-	float4 pk_CC_Gamma;
-	float4 pk_CC_Gain;
-	float4 pk_CC_HSV;
-	float4 pk_CC_MixRed;
-	float4 pk_CC_MixGreen;
-	float4 pk_CC_MixBlue;
+    float4 pk_CC_Lift;
+    float4 pk_CC_Gamma;
+    float4 pk_CC_Gain;
+    float4 pk_CC_HSV;
+    float4 pk_CC_MixRed;
+    float4 pk_CC_MixGreen;
+    float4 pk_CC_MixBlue;
     float pk_CC_LumaContrast;
     float pk_CC_LumaGain;
     float pk_CC_LumaGamma;

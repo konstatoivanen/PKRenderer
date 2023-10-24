@@ -25,7 +25,7 @@ namespace PK::Rendering::Passes
                        Batcher* batcher, 
                        const Core::ApplicationConfig* config);
 
-            void RenderShadows(Objects::CommandBuffer* cmd);
+            void RenderShadows(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
             void ComputeClusters(Objects::CommandBuffer* cmd, Math::uint3 resolution);
             void Cull(void* engineRoot, ECS::Tokens::VisibilityList* visibilityList, const Math::float4x4& viewProjection, float znear, float zfar);
             ShadowCascades GetCascadeZSplits(float znear, float zfar) const;
@@ -59,12 +59,14 @@ namespace PK::Rendering::Passes
             Batcher* m_batcher = nullptr;
 
             Objects::Shader* m_computeLightAssignment = nullptr;
-            Objects::Shader* m_computeCopyCubeShadow  = nullptr;
+            Objects::Shader* m_computeCopyCubeShadow = nullptr;
+            Objects::Shader* m_computeScreenSpaceShadow = nullptr;
             Utilities::Ref<Objects::Buffer> m_lightsBuffer;
             Utilities::Ref<Objects::Buffer> m_lightMatricesBuffer;
             Utilities::Ref<Objects::Buffer> m_lightsLists;
             Utilities::Ref<Objects::Texture> m_lightTiles;
             Utilities::Ref<Objects::Texture> m_shadowmaps;
+            Utilities::Ref<Objects::Texture> m_screenSpaceShadowmaps;
             Utilities::Ref<Objects::Texture> m_depthTarget2D;
             Utilities::Ref<Objects::Texture> m_depthTargetCube;
             Utilities::Ref<Objects::Texture> m_shadowTargetCube;

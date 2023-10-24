@@ -48,10 +48,10 @@ float3 NoiseGrainColor(const float2 uv, const float x)
 
 float2 NoiseCell(const int2 p)
 {
-	int i = p.y * 256 + p.x;
+    int i = p.y * 256 + p.x;
     int2 n = int2(i, i + 57);
     n = (n << 13) ^ n;
-	n = (n * (n * n * 15731 + 789221) + 1376312589) & 2147483647;
+    n = (n * (n * n * 15731 + 789221) + 1376312589) & 2147483647;
     return (n / 2147483647.0f) - 0.5f; 
 }
 
@@ -59,24 +59,24 @@ float2 NoiseCell(const int2 p)
 // Input must be saturated
 float NoiseUniformToTriangle(float n)
 {
-	const float o = n * 2.0 - 1.0;
+    const float o = n * 2.0 - 1.0;
     n = max(-1.0f, o * inversesqrt(abs(o))) - sign(o) + 0.5f;
-	return (n / 3.0f) + 0.5f;
+    return (n / 3.0f) + 0.5f;
 }
 
 float NoiseTriangle(const float3 n)
 {
-	const float t = fract(n.z);
-	const float r = fract(sin(dot(n.xy + 0.07 * t, float2(12.9898, 78.233))) * 43758.5453);
-	return NoiseUniformToTriangle(r);
+    const float t = fract(n.z);
+    const float r = fract(sin(dot(n.xy + 0.07 * t, float2(12.9898, 78.233))) * 43758.5453);
+    return NoiseUniformToTriangle(r);
 }
 
 float NoiseP(const float3 x)
 {
-	float3 p = floor(x);
-	float3 f = fract(x);
-	f = f * f * (3.0f - 2.0f * f);
-	float n = p.x + p.y * 157.0f + 113.0f * p.z;
+    float3 p = floor(x);
+    float3 f = fract(x);
+    f = f * f * (3.0f - 2.0f * f);
+    float n = p.x + p.y * 157.0f + 113.0f * p.z;
     float4 na = fract(sin(n + float4(0.0f, 1.0f, 157.0f, 158.0f)) * 753.5453123f); 
     float4 nb = fract(sin(n + float4(113.0f, 114.0f, 270.0f, 271.0f)) * 753.5453123f); 
     na = lerp(na, nb, f.z);
@@ -86,14 +86,14 @@ float NoiseP(const float3 x)
 
 float NoiseScroll(const float3 pos, const float time, const float scale, const float3 dir, const float amount, const float bias, const float mult)
 {
-	float3 noiseScroll = dir * time;
-	float3 q = (pos - noiseScroll) * scale;
-	float  f = 0.5f * NoiseP(q);
-	
+    float3 noiseScroll = dir * time;
+    float3 q = (pos - noiseScroll) * scale;
+    float  f = 0.5f * NoiseP(q);
+    
     // scroll the next octave in the opposite direction to get some morphing instead of just scrolling
-	q += noiseScroll * scale;
-	q  = q * 2.01f;
-	f += 0.25f * NoiseP(q);
+    q += noiseScroll * scale;
+    q  = q * 2.01f;
+    f += 0.25f * NoiseP(q);
 
     return lerp(1.0f, max((f + bias) * mult, 0.0f), amount);
 }

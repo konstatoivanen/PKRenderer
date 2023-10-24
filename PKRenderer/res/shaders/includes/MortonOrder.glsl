@@ -12,12 +12,12 @@ uint IntegerCompact2(uint x)
 
 uint IntegerCompact3(uint n)
 {
-	n &= 0x09249249;
-	n = (n ^ (n >> 2)) & 0x030c30c3;
-	n = (n ^ (n >> 4)) & 0x0300f00f;
-	n = (n ^ (n >> 8)) & 0xff0000ff;
-	n = (n ^ (n >> 16)) & 0x000003ff;
-	return n;
+    n &= 0x09249249;
+    n = (n ^ (n >> 2)) & 0x030c30c3;
+    n = (n ^ (n >> 4)) & 0x0300f00f;
+    n = (n ^ (n >> 8)) & 0xff0000ff;
+    n = (n ^ (n >> 16)) & 0x000003ff;
+    return n;
 }
 
 uint IntegerExplode(uint x)

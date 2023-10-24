@@ -322,7 +322,7 @@ namespace PK::Rendering
         queues->Sync(QueueType::Compute, QueueType::Graphics, -1);
 
         // Shadows, Voxelize scene & reproject gi
-        m_passLights.RenderShadows(cmdgraphics);
+        m_passLights.RenderShadows(cmdgraphics, resolution);
         m_passSceneGI.Preprocess(cmdgraphics, &m_batcher, m_forwardPassGroup);
         m_passVolumeFog.Compute(cmdgraphics, gbuffers.current.color->GetResolution());
         queues->Submit(QueueType::Graphics, &cmdgraphics);
