@@ -37,6 +37,21 @@ namespace PK::Core
         DECLARE_VALUE(Math::uint, LightCount, 0u)
         DECLARE_VALUE(Math::uint, ShadowmapTileSize, 512u)
 
+        DECLARE_VALUE(bool, PostFXApplyVignette, true)
+        DECLARE_VALUE(bool, PostFXApplyBloom, true)
+        DECLARE_VALUE(bool, PostFXApplyTonemap, true)
+        DECLARE_VALUE(bool, PostFXApplyFilmgrain, true)
+        DECLARE_VALUE(bool, PostFXApplyColorgrading, false)
+        DECLARE_VALUE(bool, PostFXApplyLUTColorGrading, true)
+
+        DECLARE_VALUE(bool, PostFXDebugGIDiff, false)
+        DECLARE_VALUE(bool, PostFXDebugGISpec, false)
+        DECLARE_VALUE(bool, PostFXDebugGIVX, false)
+        DECLARE_VALUE(bool, PostFXDebugNormal, false)
+        DECLARE_VALUE(bool, PostFXDebugRoughness, false)
+        DECLARE_VALUE(bool, PostFXDebugHalfScreen, false)
+        DECLARE_VALUE(bool, PostFXDebugZoom, false)
+
         DECLARE_VALUE(bool, GIReSTIR, true)
         DECLARE_VALUE(bool, GIApproximateRoughSpecular, true)
         DECLARE_VALUE(bool, GIScreenSpacePretrace, false)

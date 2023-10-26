@@ -584,20 +584,20 @@ namespace PK::Rendering::VulkanRHI::Objects
             {
                 auto* binding = bindings + index++;
 
-                if (element.Count > 1)
+                if (element->Count > 1)
                 {
-                    PK_THROW_ASSERT(resources->TryGet(element.NameHashId, wrappedHandleArray), "Descriptors (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
+                    PK_THROW_ASSERT(resources->TryGet(element->NameHashId, wrappedHandleArray), "Descriptors (%s) not bound!", StringHashID::IDToString(element->NameHashId).c_str());
 
                     uint32_t version = 0u;
                     uint32_t count = 0u;
                     auto handles = wrappedHandleArray.handle->GetHandles(&version, &count);
-                    count = count < element.Count ? (uint16_t)count : element.Count;
+                    count = count < element->Count ? (uint16_t)count : element->Count;
 
-                    if (binding->count != count || binding->type != element.Type || binding->handles != handles || binding->version != version || !binding->isArray)
+                    if (binding->count != count || binding->type != element->Type || binding->handles != handles || binding->version != version || !binding->isArray)
                     {
                         m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
                         binding->count = count;
-                        binding->type = element.Type;
+                        binding->type = element->Type;
                         binding->handles = handles;
                         binding->version = version;
                         binding->isArray = true;
@@ -606,14 +606,14 @@ namespace PK::Rendering::VulkanRHI::Objects
                     continue;
                 }
 
-                PK_THROW_ASSERT(resources->TryGet(element.NameHashId, wrappedHandle), "Descriptor (%s) not bound!", StringHashID::IDToString(element.NameHashId).c_str());
+                PK_THROW_ASSERT(resources->TryGet(element->NameHashId, wrappedHandle), "Descriptor (%s) not bound!", StringHashID::IDToString(element->NameHashId).c_str());
                 auto handle = wrappedHandle.handle;
 
-                if (binding->count != element.Count || binding->type != element.Type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)
+                if (binding->count != element->Count || binding->type != element->Type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)
                 {
                     m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
-                    binding->count = element.Count;
-                    binding->type = element.Type;
+                    binding->count = element->Count;
+                    binding->type = element->Type;
                     binding->handle = handle;
                     binding->version = handle->Version();
                     binding->isArray = false;

@@ -103,6 +103,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_LightTiles)
 
         DECLARE_HASH(pk_PostEffectsParams)
+        DECLARE_HASH(pk_PostEffectsFeatureMask)
 
         DECLARE_HASH(pk_AutoExposure_MinLogLuma)
         DECLARE_HASH(pk_AutoExposure_InvLogLumaRange)

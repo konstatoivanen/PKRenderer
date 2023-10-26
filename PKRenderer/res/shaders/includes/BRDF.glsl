@@ -196,6 +196,47 @@ float EvaluateBxDF_Specular(const float3 normal, const float3 viewdir, const flo
     return max(0.0f, D * V * nl);
 }
 
+// For additional sh approximations
+float3 EvaluateBxDF_SpecularExtra(const BxDFSurf surf, const float3 direction, const float3 radiance)
+{
+    const float nl = max(0.0f, dot(surf.normal, direction));
+    const float vl = dot(surf.viewdir, direction);
+    const float ih = inversesqrt(2.0f + 2.0f * vl);
+    float nh = saturate((nl + surf.nv) * ih);
+    float lh = saturate(ih + ih * vl);
+
+    float3 brdf = 0.0f.xxx;
+
+    // Sheen
+    #if defined(BxDF_ENABLE_SHEEN)
+    {
+        const float3 Csheen = surf.albedo / (dot(float3(0.3f, 0.6f, 0.1f), surf.albedo) + 1e-2f);
+        const float3 Fsheen = surf.sheen * lerp(1.0f.xxx, Csheen, surf.sheenTint);
+        brdf += Fsheen * F_Schlick(0.0f, 1.0f, lh) * nl;
+    }
+    #endif
+
+    // End of diffuse eval. Normalize.
+    brdf *= PK_INV_PI;
+
+    // Clear coat specular
+    #if defined(BxDF_ENABLE_CLEARCOAT)
+    {
+        // As this function is intended for sh approximations 
+        // the roughness for clear coat needs to be much lower 
+        // due to the uniform input singal.
+        const float Rc = lerp(0.3f, 0.001f, surf.clearCoatGloss);
+        const float V = V_SmithGGXCorrelated(nl, surf.nv, 0.25f);
+        const float D = D_GGX(nh, Rc);
+        const float Fr = max(0.0f, 0.25f * V * D * nl);
+        brdf += surf.clearCoat * F_Schlick(0.04f, 1.0f, lh) * Fr;
+    }
+    #endif
+
+    return brdf * radiance;
+}
+
+
 float3 EvaluateBxDF_Indirect(const BxDFSurf surf, const float3 diffuse, const float3 specular)
 {
     const float surfaceReduction = 1.0f / (pow2(surf.alpha) + 1.0f);

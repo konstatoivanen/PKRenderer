@@ -42,36 +42,32 @@ struct SurfaceData
     float occlusion;
 };
  
-/*
-//@TODO consider using this as opposed to vertex attributes
-//Saves memory but costs alu....
-float3x3 ComposeDerivativeTBN(float3 N, float3 P, float2 UV)
+// http://www.thetenthplanet.de/archives/1180
+float3x3 ComposeDerivativeTBN(float3 normal, float3 position, float2 texcoord)
 {
-    N = normalize(N);
+    normal = normalize(normal);
 
     #if defined(SHADER_STAGE_FRAGMENT)
-    float3 dp1 = dFdx(P);
-    float3 dp2 = dFdy(P);
-    float2 duv1 = dFdx(UV);
-    float2 duv2 = dFdy(UV);
-    
-    float3x3 M = float3x3(dp1, dp2, cross(dp1, dp2));
-    float2x3 inverseM = float2x3( cross( M[1], M[2] ), cross( M[2], M[0] ) );
-    float3 T = mul(float2(duv1.x, duv2.x), inverseM);
-    float3 B = mul(float2(duv1.y, duv2.y), inverseM);
-
-    return float3x3(normalize(T), normalize(B), N);
+        const float3 dp1 = dFdxFine(position);
+        const float3 dp2 = dFdyFine(position);
+        const float2 duv1 = dFdxFine(texcoord);
+        const float2 duv2 = dFdyFine(texcoord);
+        const float3 dp2perp = cross(dp2, normal);
+        const float3 dp1perp = cross(normal, dp1);
+        const float3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+        const float3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+        const float invmax = inversesqrt(max(dot(T,T), dot(B,B)));
+        return float3x3(-T * invmax, -B * invmax, normal);
     #else
-    return make_TBN(N);
+        return make_TBN(normal);
     #endif
 }
-*/
 
 float3x3 ComposeMikkTBN(float3 normal, float4 tangent)
 {
-    float3 T = normalize(tangent.xyz);
-    float3 N = normalize(normal);
-    float3 B = sign(tangent.w) * cross(N, T);
+    const float3 T = normalize(tangent.xyz);
+    const float3 N = normalize(normal);
+    const float3 B = sign(tangent.w) * cross(N, T);
     return float3x3(T, B, N);
 }
 
@@ -86,13 +82,25 @@ float2 SampleParallaxOffset(in texture2D map, in float2 uv, float amount, float3
     return (texture(sampler2D(map, pk_Sampler_SurfDefault), uv).x * amount - amount * 0.5f) * viewdir.xy / (viewdir.z + 0.5f); 
 }
 
-float3 GetIndirectLight_Main(const BxDFSurf surf, const float3 worldpos, const float3 clipuvw)
+float3 GetIndirectLight_Main(BxDFSurf surf, const float3 worldpos, const float3 clipuvw)
 {
     //float3 diffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
     //float3 specular = SampleEnvironment(OctaUV(reflect(-surf.viewdir, surf.normal)), surf.alpha);
+
     float3 diffuse = GI_Load_Resolved_Diff(clipuvw.xy);
     float3 specular = GI_Load_Resolved_Spec(clipuvw.xy);
-    return EvaluateBxDF_Indirect(surf, diffuse, specular);
+
+    float3 color = 0.0f.xxx;
+    color += EvaluateBxDF_Indirect(surf, diffuse, specular);
+
+    // Optional approximate specular details from diffuse sh
+    // @TODO this check should be in gi code.
+    #if PK_GI_APPROX_ROUGH_SPEC_EXTRA == 1
+    GIDiff diff = GI_Load_Diff(int2(clipuvw.xy * pk_ScreenSize.xy), 1);
+    color += GI_ShadeRoughSpecularDetails(surf, diff);
+    #endif
+
+    return color;
 }
 
 // Multi bounce gi. Causes some very lingering light artifacts & bleeding. @TODO Consider adding a setting for this.
@@ -134,6 +142,7 @@ float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const f
     #define PK_META_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNDCSpace(position)
     #define PK_META_BxDF EvaluateBxDF_DirectMinimal
     #define PK_META_BxDF_INDIRECT GetIndirectLight_VXGI
+    #define DECLARE_VS_INTERFACE_WORLDPOSITION(io) io float3 vs_WORLDPOSITION;
 #else
     #define PK_SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv)
     #define PK_META_DECLARE_SURFACE_OUTPUT out float4 SV_Target0;
@@ -141,32 +150,28 @@ float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const f
     #define PK_META_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
     #define PK_META_BxDF EvaluateBxDF_Direct
     #define PK_META_BxDF_INDIRECT GetIndirectLight_Main
+    #define DECLARE_VS_INTERFACE_WORLDPOSITION(io)
 #endif
 
-#if defined(PK_USE_TANGENTS)
+#define DECLARE_VS_INTERFACE_BASE(io) \
+io float3 vs_NORMAL;                  \
+io float2 vs_TEXCOORD0;               \
 
-    #define DECLARE_VS_INTEFRACE(io) \
-    io float3 vs_WORLDPOSITION;      \
-    io float3 vs_NORMAL;             \
-    io float4 vs_TANGENT;            \
-    io float2 vs_TEXCOORD0;          \
-    
+#if defined(PK_USE_TANGENTS)
     half3x3 pk_MATRIX_TBN;
     #define PK_SURF_MESH_NORMAL pk_MATRIX_TBN[2]
     #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount, uv, viewdir) SampleParallaxOffset(heightmap, uv, amount, mul(transpose(pk_MATRIX_TBN), viewdir))
     #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormalTex(normalmap, pk_MATRIX_TBN, uv, amount)
-
+    #if defined(PK_USE_DERIVATIVE_TANGENTS)
+        #define DECLARE_VS_INTERFACE_TANGENT(io)
+    #else
+        #define DECLARE_VS_INTERFACE_TANGENT(io) io float4 vs_TANGENT;
+    #endif
 #else
-
-    #define DECLARE_VS_INTEFRACE(io) \
-    io float3 vs_WORLDPOSITION;      \
-    io float3 vs_NORMAL;             \
-    io float2 vs_TEXCOORD0;          \
-    
+    #define DECLARE_VS_INTERFACE_TANGENT(io)
     #define PK_SURF_MESH_NORMAL normalize(vs_NORMAL)
     #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount, uv, viewdir) 0.0f.xx 
     #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) PK_SURF_MESH_NORMAL
-
 #endif
                            
 //// ---------- VERTEX STAGE ---------- ////
@@ -183,7 +188,9 @@ float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const f
     #endif
     in float2 in_TEXCOORD0;
 
-    DECLARE_VS_INTEFRACE(out)
+    DECLARE_VS_INTERFACE_TANGENT(out)
+    DECLARE_VS_INTERFACE_WORLDPOSITION(out)
+    DECLARE_VS_INTERFACE_BASE(out)
 
     void main()
     {
@@ -201,12 +208,16 @@ float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const f
         PK_SURFACE_FUNC_VERT(varyings);
 
         gl_Position = PK_META_WORLD_TO_CLIPSPACE(varyings.worldpos);
-        vs_WORLDPOSITION = varyings.worldpos;
         vs_NORMAL = varyings.normal;
-        #if defined(PK_USE_TANGENTS)
-        vs_TANGENT = varyings.tangent;
-        #endif
         vs_TEXCOORD0 = varyings.texcoord;
+
+        #if defined(PK_META_PASS_GIVOXELIZE)
+            vs_WORLDPOSITION = varyings.worldpos;
+        #endif
+        
+        #if defined(PK_USE_TANGENTS)
+            vs_TANGENT = varyings.tangent;
+        #endif
     }
 
 //// ---------- FRAGMENT STAGE ---------- ////
@@ -214,15 +225,23 @@ float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const f
 
     // Use these to modify surface values in fragment stage
     void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf);
-
-    DECLARE_VS_INTEFRACE(in)
-
+    DECLARE_VS_INTERFACE_TANGENT(in)
+    DECLARE_VS_INTERFACE_WORLDPOSITION(in)
+    DECLARE_VS_INTERFACE_BASE(in)
     PK_META_DECLARE_SURFACE_OUTPUT
 
     void main()
     {
+        #if !defined(PK_META_PASS_GIVOXELIZE)
+        const float3 vs_WORLDPOSITION = UVToWorldPos(gl_FragCoord.xy * pk_ScreenParams.zw, ViewDepth(gl_FragCoord.z));
+        #endif
+
         #if defined(PK_USE_TANGENTS)
-        pk_MATRIX_TBN = half3x3(ComposeMikkTBN(vs_NORMAL, vs_TANGENT));
+            #if defined(PK_USE_DERIVATIVE_TANGENTS)
+                pk_MATRIX_TBN = half3x3(ComposeDerivativeTBN(vs_NORMAL, vs_WORLDPOSITION, vs_TEXCOORD0));
+            #else
+                pk_MATRIX_TBN = half3x3(ComposeMikkTBN(vs_NORMAL, vs_TANGENT));
+            #endif
         #endif
 
         SurfaceData surf = SurfaceData

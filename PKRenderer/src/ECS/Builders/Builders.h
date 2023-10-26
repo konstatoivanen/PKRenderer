@@ -89,11 +89,11 @@ namespace PK::ECS::Builders
 								   float radius,
 								   bool castShadows)
 	{
-		const auto intensityThreshold = 0.2f;
-		auto lightColor = glm::exp(color);
-		auto gammaColor = glm::pow(Math::float3(lightColor.rgb), Math::float3(1.0f / 2.2f));
-		auto intensity = glm::compMax(gammaColor);
-		auto autoRadius = radius < 0.0f ? intensity / intensityThreshold : radius;
+		// Light radius based on phyiscal attenuation at minAtten cutoff.
+		const auto minAtten = 0.2f;
+		auto intensity = glm::compMax(color);
+		radius = radius < 0.0f ? (intensity * intensity) / (minAtten * minAtten) : radius;
+		
 		auto flags = Rendering::Structs::RenderableFlags::Light;
 
 		if (castShadows)
@@ -107,18 +107,18 @@ namespace PK::ECS::Builders
 				implementer->localAABB = Math::BoundingBox::CenterExtents(Math::PK_FLOAT3_ZERO, Math::PK_FLOAT3_ONE);
 				break;
 			case Rendering::Structs::LightType::Point:
-				implementer->localAABB = Math::BoundingBox::CenterExtents(Math::PK_FLOAT3_ZERO, Math::PK_FLOAT3_ONE * autoRadius);
+				implementer->localAABB = Math::BoundingBox::CenterExtents(Math::PK_FLOAT3_ZERO, Math::PK_FLOAT3_ONE * radius);
 				flags = flags | Rendering::Structs::RenderableFlags::Cullable;
 				break;
 			case Rendering::Structs::LightType::Spot:
-				auto a = autoRadius * glm::tan(angle * 0.5f * Math::PK_FLOAT_DEG2RAD);
-				implementer->localAABB = Math::BoundingBox::CenterExtents({ 0.0f, 0.0f, autoRadius * 0.5f }, { a, a, autoRadius * 0.5f });
+				auto a = radius * glm::tan(angle * 0.5f * Math::PK_FLOAT_DEG2RAD);
+				implementer->localAABB = Math::BoundingBox::CenterExtents({ 0.0f, 0.0f, radius * 0.5f }, { a, a, radius * 0.5f });
 				flags = flags | Rendering::Structs::RenderableFlags::Cullable;
 				break;
 		}
 
 		BuildBaseRenderableView(entityDb, implementer, egid, flags);
-		BuildLightRenderableView(entityDb, implementer, egid, type, cookie, lightColor, autoRadius, angle);
+		BuildLightRenderableView(entityDb, implementer, egid, type, cookie, color, radius, angle);
 	}
 
 	EGID BuildMeshRenderableEntity(EntityDatabase* entityDb,

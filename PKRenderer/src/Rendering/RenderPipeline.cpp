@@ -6,16 +6,6 @@
 #include "ECS/Tokens/AccelerationStructureBuildToken.h"
 #include "Math/FunctionsMisc.h"
 
-/*
-TODO:
-Gradient estimation (antilag alpha) from A-SVGF (without the denoiser).
-Fix roughness dominant factor usage
-Test nvidias radius scaling
-Investigate camera moving bias
-Fix ssrt miss hit dist
-Write subject analysis
-*/
-
 namespace PK::Rendering
 {
     using namespace Utilities;

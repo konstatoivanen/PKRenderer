@@ -27,6 +27,8 @@ layout(r32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_ResolvedWrite;
 PK_DECLARE_SET_SHADER uniform texture2DArray pk_GI_ResolvedRead;
 
 #define PK_GI_APPROX_ROUGH_SPEC 1
+// Should surface shading approximate sheen & clear coat from diffuse sh
+#define PK_GI_APPROX_ROUGH_SPEC_EXTRA 1
 
 #define PK_GI_LVL_DIFF0 0
 #define PK_GI_LVL_DIFF1 1
@@ -137,6 +139,21 @@ GISpec GI_ShadeRoughSpecular(const float3 normal, const float3 viewdir, const fl
     const float3 specular = SH_ToColor(diff.sh) * EvaluateBxDF_Specular(normal, -viewdir, newRoughness, direction) * PK_PI;
 
     return GISpec(specular, diff.ao, diff.history);
+}
+
+float3 GI_ShadeRoughSpecularDetails(BxDFSurf surf, const GIDiff diff)
+{
+    float directionality;
+    float3 direction = SH_ToPrimeDir(diff.sh, directionality);
+    
+    direction = WorldToViewDir(direction);
+    directionality = saturate(directionality * 0.666f);
+
+    // Remap roughness if lighting is uniform over hemisphere
+    const float newRoughness = lerp(1.0f, sqrt(surf.alpha), directionality);
+    surf.alpha = pow2(newRoughness);
+
+    return EvaluateBxDF_SpecularExtra(surf, direction, SH_ToColor(diff.sh));
 }
 
 //----------PACK / UNPACK FUNCTIONS----------//

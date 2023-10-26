@@ -2,6 +2,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/Services/StringHashID.h"
 #include "Math/Types.h"
+#include "Utilities/FixedList.h"
 #include "Rendering/Structs/Enums.h"
 
 namespace PK::Rendering::Structs
@@ -64,26 +65,12 @@ namespace PK::Rendering::Structs
         }
     };
 
-    class ResourceLayout : public std::vector<ResourceElement>
+    struct ResourceLayout : public PK::Utilities::FixedList<ResourceElement, PK_MAX_DESCRIPTORS_PER_SET>
     {
-        public:
-            ResourceLayout() {}
-
-            ResourceLayout(std::initializer_list<ResourceElement> elements) : std::vector<ResourceElement>(elements)
-            {
-                FillElementMap();
-            }
-
-            ResourceLayout(std::vector<ResourceElement> elements) : std::vector<ResourceElement>(elements)
-            {
-                FillElementMap();
-            }
-
-            const ResourceElement* TryGetElement(uint32_t nameHashId, uint32_t* index) const;
-
-        private:
-            void FillElementMap();
-            std::unordered_map<uint32_t, uint32_t> m_elementMap;
+        ResourceLayout() {}
+        ResourceLayout(std::initializer_list<ResourceElement> elements) : PK::Utilities::FixedList<ResourceElement, PK_MAX_DESCRIPTORS_PER_SET>(elements) {}
+        ResourceLayout(std::vector<ResourceElement> elements) : PK::Utilities::FixedList<ResourceElement, PK_MAX_DESCRIPTORS_PER_SET>(elements.data(), elements.size()) {}
+        const ResourceElement* TryGetElement(uint32_t nameHashId, uint32_t* index) const;
     };
 
 
@@ -161,12 +148,10 @@ namespace PK::Rendering::Structs
             constexpr inline uint32_t GetStride() const { return m_stride; }
             constexpr inline uint32_t GetAlignedStride() const { return m_alignedStride; }
             constexpr inline uint32_t GetPaddedStride() const { return m_paddedStride; }
-        
             const BufferElement* TryGetElement(uint32_t nameHashId, uint32_t* index) const;
-    
-        private:
             void CalculateOffsetsAndStride(bool applyOffsets);
 
+        private:
             std::map<uint32_t, uint32_t> m_elementMap;
             uint32_t m_stride = 0;
             uint32_t m_alignedStride = 0;

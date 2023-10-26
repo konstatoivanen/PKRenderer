@@ -117,7 +117,7 @@ namespace PK::Rendering::Passes
 
         TextureDescriptor screenSpaceDesc;
         screenSpaceDesc.samplerType = SamplerType::Sampler2D;
-        screenSpaceDesc.format = TextureFormat::RGBA8;
+        screenSpaceDesc.format = TextureFormat::R8;
         screenSpaceDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
         screenSpaceDesc.layers = 1;
         screenSpaceDesc.resolution = { config->InitialWidth, config->InitialHeight, 1u };

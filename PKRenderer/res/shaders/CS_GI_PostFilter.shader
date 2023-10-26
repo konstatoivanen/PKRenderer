@@ -47,8 +47,10 @@ void main()
 
     GIDiff diff = GI_Load_Diff(baseCoord);
     GISpec spec = GI_Load_Spec(baseCoord);
+#if defined(PK_GI_CHECKERBOARD_TRACE)
     GIDiff nh_diff = GI_Load_Diff(hcoord);
     GISpec nh_spec = GI_Load_Spec(hcoord);
+#endif
     GISpec ra_spec = PK_GI_SPEC_ZERO;
 
     // Filter Diff

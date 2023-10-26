@@ -5,7 +5,7 @@
 #include Shadows.glsl
 
 #ifndef SHADOW_TEST 
-    #define SHADOW_TEST ShadowTest_Spiral16
+    #define SHADOW_TEST ShadowTest_Dither16
 #endif
 
 #ifndef SHADOW_SAMPLE_SCREENSPACE

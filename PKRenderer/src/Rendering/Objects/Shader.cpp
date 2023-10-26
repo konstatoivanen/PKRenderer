@@ -260,7 +260,7 @@ namespace PK::Rendering::Objects
 
                 for (auto& element : set)
                 {
-                    meta.append("       " + StringHashID::IDToString(element.NameHashId) + ", " + std::to_string((uint32_t)element.Type) + "\n");
+                    meta.append("       " + StringHashID::IDToString(element->NameHashId) + ", " + std::to_string((uint32_t)element->Type) + "\n");
                 }
             }
         }

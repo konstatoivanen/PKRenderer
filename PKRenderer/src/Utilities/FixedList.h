@@ -18,6 +18,22 @@ namespace PK::Utilities
                 m_count = 0ull;
             }
 
+            FixedList(const T* elements, size_t count)
+            {
+                if (count >= capacity)
+                {
+                    throw std::exception("FixedList capacity exceeded!");
+                }
+
+                m_data = alloc_traits::allocate(m_alloc, capacity);
+                m_count = count;
+                memcpy(m_data, elements, sizeof(T) * count);
+            }
+
+            FixedList(std::initializer_list<T> elements) : FixedList(elements.begin(), (size_t)(elements.end() - elements.begin()))
+            {
+            }
+
             ~FixedList()
             {
                 for (auto i = 0u; i < m_count; ++i)
@@ -32,7 +48,7 @@ namespace PK::Utilities
             {
                 if (m_count >= capacity)
                 {
-                    throw std::exception("FList capacity exceeded!");
+                    throw std::exception("FixedList capacity exceeded!");
                 }
 
                 auto ptr = m_data + m_count++;
@@ -45,7 +61,7 @@ namespace PK::Utilities
             {
                 if (m_count >= capacity)
                 {
-                    throw std::exception("FList capacity exceeded!");
+                    throw std::exception("FixedList capacity exceeded!");
                 }
 
                 auto ptr = m_data + m_count++;
@@ -77,9 +93,13 @@ namespace PK::Utilities
                 return m_data + i; 
             }
 
+            const T& operator [](size_t i) const { return m_data[i]; }
+
             constexpr size_t GetCount() const { return m_count; }
 
             void SetCount(size_t count) { m_count = count; }
+
+            void Clear() { SetCount(0u); }
 
             constexpr const T* GetData() const { return m_data; }
 

@@ -54,6 +54,8 @@ namespace PK::Rendering::Passes
                 {ElementType::Float, hash->pk_TAA_BlendingStatic },
                 {ElementType::Float, hash->pk_TAA_BlendingMotion },
                 {ElementType::Float, hash->pk_TAA_MotionAmplification },
+
+                {ElementType::Uint, hash->pk_PostEffectsFeatureMask}
             }), 
             "Constants.PostProcess");
 
@@ -67,7 +69,7 @@ namespace PK::Rendering::Passes
 
         cmd->BeginDebugScope("PostEffects.Composite", PK_COLOR_YELLOW);
         GraphicsAPI::SetImage(hash->pk_Image, destination, 0, 0);
-        cmd->Dispatch(m_computeComposite, { resolution.x, resolution.y, 1u });
+        cmd->Dispatch(m_computeComposite, m_passIndex, { resolution.x, resolution.y, 1u });
         cmd->EndDebugScope();
     }
 
@@ -125,6 +127,35 @@ namespace PK::Rendering::Passes
         m_constantsPostProcess->Set<float>(hash->pk_CC_LumaGamma, 1.0f / config->CC_Gamma);
         m_constantsPostProcess->Set<float>(hash->pk_CC_Vibrance, config->CC_Vibrance);
         m_constantsPostProcess->Set<float>(hash->pk_CC_Contribution, config->CC_Contribution);
+
+        uint featureMask = 0u;
+        featureMask |= (uint)(config->PostFXApplyVignette) << 0;
+        featureMask |= (uint)(config->PostFXApplyBloom) << 1;
+        featureMask |= (uint)(config->PostFXApplyTonemap) << 2;
+        featureMask |= (uint)(config->PostFXApplyFilmgrain) << 3;
+        featureMask |= (uint)(config->PostFXApplyColorgrading) << 4;
+        featureMask |= (uint)(config->PostFXApplyLUTColorGrading) << 5;
+        
+        featureMask |= (uint)(config->PostFXDebugGIDiff) << 6;
+        featureMask |= (uint)(config->PostFXDebugGISpec) << 7;
+        featureMask |= (uint)(config->PostFXDebugGIVX) << 8;
+        featureMask |= (uint)(config->PostFXDebugNormal) << 9;
+        featureMask |= (uint)(config->PostFXDebugRoughness) << 10;
+        featureMask |= (uint)(config->PostFXDebugHalfScreen) << 11;
+        featureMask |= (uint)(config->PostFXDebugZoom) << 12;
+
+        m_constantsPostProcess->Set<uint>(hash->pk_PostEffectsFeatureMask, featureMask);
         m_constantsPostProcess->FlushBuffer(QueueType::Transfer);
+
+        // All but lut regular color grading
+        const uint fullFeatureMask = 0x2Fu;
+        const bool useFullFeaturePass = (featureMask & fullFeatureMask) == fullFeatureMask;
+
+        // Half screen & debug zoom are additive features;
+        const uint debugFeatureMask = 0x7C0u;
+        const bool useDebugPass = (featureMask & debugFeatureMask) != 0u;
+
+        m_passIndex = useFullFeaturePass ? 0u : 1u;
+        m_passIndex = useDebugPass ? 2u : m_passIndex;
     }
 }

@@ -22,5 +22,4 @@ namespace PK::Math::Functions
     BoundingBox GetInverseFrustumBounds(const float4x4& inverseMatrix);
     BoundingBox GetInverseFrustumBounds(const float4x4& inverseMatrix, float lznear, float lzfar);
     BoundingBox GetInverseFrustumBounds(const float4x4& worldToLocal, const float4x4& inverseMatrix);
-    BoundingBox GetInverseFrustumInvariantBounds(const float4x4& inverseMatrix, float lznear, float lzfar);
 }

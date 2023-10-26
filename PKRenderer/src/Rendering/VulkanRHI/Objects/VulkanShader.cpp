@@ -58,7 +58,6 @@ namespace PK::Rendering::VulkanRHI::Objects
 
         if (variant->descriptorSetCount > 0)
         {
-            std::vector<ResourceElement> elements;
             auto* pDescriptorSets = variant->descriptorSets.Get(base);
 
             for (auto i = 0u; i < variant->descriptorSetCount; ++i)
@@ -67,7 +66,8 @@ namespace PK::Rendering::VulkanRHI::Objects
 
                 auto pDescriptorSet = pDescriptorSets + i;
                 auto pDescriptors = pDescriptorSet->descriptors.Get(base);
-                elements.clear();
+                auto& elements = m_resourceLayouts[i];
+                elements.Clear();
 
                 PK_WARNING_ASSERT(pDescriptorSet->descriptorCount <= PK_MAX_DESCRIPTORS_PER_SET, "Warning: Shader descriptor count exceeds the maximum count per set!");
 
@@ -75,13 +75,12 @@ namespace PK::Rendering::VulkanRHI::Objects
                 {
                     key.counts[j] = pDescriptors[j].count;
                     key.types[j] = EnumConvert::GetDescriptorType(pDescriptors[j].type);
-                    elements.emplace_back(pDescriptors[j].type, std::string(pDescriptors[j].name), pDescriptors[j].writeStageMask, pDescriptors[j].count);
+                    elements.Add(pDescriptors[j].type, std::string(pDescriptors[j].name), pDescriptors[j].writeStageMask, pDescriptors[j].count);
                 }
 
                 key.stageFlags = EnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags);
                 m_descriptorSetLayouts[i] = layoutCache->GetSetLayout(key);
                 pipelineKey.setlayouts[i] = m_descriptorSetLayouts[i]->layout;
-                m_resourceLayouts[i] = ResourceLayout(elements);
             }
         }
 

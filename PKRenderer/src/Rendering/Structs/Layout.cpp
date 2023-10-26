@@ -61,25 +61,18 @@ namespace PK::Rendering::Structs
 
     const ResourceElement* ResourceLayout::TryGetElement(uint32_t nameHashId, uint32_t* index) const
     {
-        auto iterator = m_elementMap.find(nameHashId);
-
-        if (iterator != m_elementMap.end())
+        // This will always have a small amount of elements (max 16) so mapping is redundant
+        // Additionally this is only used for debug.
+        for (auto i = 0u; i < GetCount(); ++i)
         {
-            *index = iterator->second;
-            return (data() + iterator->second);
+            if (GetData()[i].NameHashId == nameHashId)
+            {
+                *index = i;
+                return GetData() + i;
+            }
         }
-
+        
         return nullptr;
-    }
-
-    void ResourceLayout::FillElementMap()
-    {
-        auto* elements = data();
-
-        for (auto i = 0u; i < size(); ++i)
-        {
-            m_elementMap[elements[i].NameHashId] = i;
-        }
     }
 
     const ConstantVariable* ConstantBufferLayout::TryGetElement(uint32_t nameHashId) const

@@ -2,7 +2,7 @@
 #pragma PROGRAM_COMPUTE
 
 #define EARLY_Z_TEST 1
-#define SHADOW_TEST ShadowTest_PCF2x2
+#define SHADOW_TEST ShadowTest_PCF3x3Gaussian
 
 #include includes/VolumeFog.glsl
 #include includes/SceneGIVX.glsl
@@ -35,6 +35,7 @@ void main()
     [[branch]]
     if (maxTile < depth)
     {
+        imageStore(pk_Fog_Inject, int3(id), uint4(0));
         return;
     }
 #endif
@@ -67,15 +68,29 @@ void main()
     {
         // @TODO current 1spp shadow test for fog is prone to banding. implement better filter.
         Light light = GetLight(i, worldpos, -viewdir, tile.cascade);
+
         const float marchDistance = min(light.linearDistance, maxMarchDistance);
         light.shadow *= VolumeFog_MarchTransmittance(worldpos, light.direction, dither.y, marchDistance);
         light.shadow = lerp(light.shadow, 1.0f, shadowFade);
-        value_cur += EvaluateBxDF_Volumetric(viewdir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, light.direction, light.color, light.shadow);
+
+        value_cur += EvaluateBxDF_Volumetric
+        (
+            viewdir, 
+            pk_Fog_Phase0, 
+            pk_Fog_Phase1, 
+            pk_Fog_PhaseW, 
+            light.direction, 
+            light.color, 
+            light.shadow
+        );
     }
 
-    const float accumulation = VolumeFog_GetAccumulation(uvw_prev);
     const float3 value_pre = ReplaceIfResized(SAMPLE_TRICUBIC(pk_Fog_InjectRead, uvw_prev).rgb, 0.0f.xxx);
+    
+    const float accumulation = VolumeFog_GetAccumulation(uvw_prev);
+    
     float3 value_out = lerp(value_pre, value_cur, accumulation);
     value_out = Any_IsNaN(value_out) ? 0.0f.xxx : value_out;
+    
     imageStore(pk_Fog_Inject, int3(id), EncodeE5BGR9(value_out).xxxx);
 }

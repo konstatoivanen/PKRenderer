@@ -19,5 +19,6 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::ConstantBuffer> m_constantsPostProcess;
             Objects::Texture* m_bloomLensDirtTexture;
             Objects::Texture* m_lut;
+            uint32_t m_passIndex = 0u;
     };
 }
