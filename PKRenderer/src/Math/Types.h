@@ -153,6 +153,8 @@ namespace PK::Math
     constexpr float PK_FLOAT_INV_SQRT2 = 0.7071067811f;
     constexpr float PK_FLOAT_DEG2RAD = 0.0174532924F;
     constexpr float PK_FLOAT_RAD2DEG = 57.29578F;
+    constexpr float PK_CLIPZ_NEAR = 1.0f;
+    constexpr float PK_CLIPZ_FAR = 0.0f;
 
     struct FrustumPlanes
     {

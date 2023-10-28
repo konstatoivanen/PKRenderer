@@ -107,19 +107,8 @@ namespace PK::Math::Functions
         return m;
     }
 
+    // Produces Reverse Z
     float4x4 GetPerspective(float fov, float aspect, float zNear, float zFar)
-    {
-        const float tanHalfFovy = tan(fov * PK_FLOAT_DEG2RAD / 2.0f);
-        float4x4 proj(0.0f);
-        proj[0][0] = 1.0f / (aspect * tanHalfFovy);
-        proj[1][1] = 1.0f / (tanHalfFovy);
-        proj[2][2] = zFar  / (zFar - zNear);
-        proj[2][3] = 1.0;
-        proj[3][2] = -(zFar * zNear) / (zFar - zNear);
-        return proj;
-    }
-
-    float4x4 GetPerspectiveInvZ(float fov, float aspect, float zNear, float zFar)
     {
         const float tanHalfFovy = tan(fov * PK_FLOAT_DEG2RAD / 2.0f);
         float4x4 proj(0.0f);
@@ -131,23 +120,8 @@ namespace PK::Math::Functions
         return proj;
     }
 
+    // Produces Reverse Z
     float4x4 GetOrtho(float left, float right, float bottom, float top, float zNear, float zFar)
-    {
-        const float rcpRL = 1.0f / (right - left);
-        const float rcpTB = 1.0f / (top - bottom);
-        const float rcpFN = 1.0f / (zFar - zNear);
-
-        float4x4 Result(1);
-        Result[0][0] = -2.0f * rcpRL;
-        Result[1][1] = -2.0f * rcpTB;
-        Result[2][2] = rcpFN;
-        Result[3][0] = (right + left) * rcpRL;
-        Result[3][1] = (top + bottom) * rcpTB;
-        Result[3][2] = -zNear * rcpFN;
-        return Result;
-    }
-
-    float4x4 GetOrthoInvZ(float left, float right, float bottom, float top, float zNear, float zFar)
     {
         float4x4 Result(1);
         Result[0][0] = 2.0f / (right - left);
@@ -199,12 +173,7 @@ namespace PK::Math::Functions
         return GetOffsetPerspective(x, x + ix, y, y + iy, fovy, aspect, znear + zrange * z, znear + zrange * (z + iz));
     }
 
-    float4x4 GetFrustumBoundingOrthoMatrix(const float4x4& worldToLocal, 
-                                            const float4x4& clipToView, 
-                                            const float3& paddingLD, 
-                                            const float3& paddingRU, 
-                                            float* outZNear, 
-                                            float* outZFar)
+    float4x4 GetFrustumBoundingOrthoMatrix(const float4x4& worldToLocal, const float4x4& clipToView, const float3& paddingLD, const float3& paddingRU, float* outZNear, float* outZFar)
     {
         auto aabb = GetInverseFrustumBounds(worldToLocal * clipToView);
 
@@ -269,7 +238,7 @@ namespace PK::Math::Functions
 
         for (auto i = 0u; i < info.count; ++i)
         {
-            outMatrices[i] = GetOrthoInvZ(
+            outMatrices[i] = GetOrtho(
                 aabbs[i].min.x,
                 aabbs[i].max.x,
                 aabbs[i].min.y,

@@ -148,7 +148,7 @@ namespace PK::ECS::Engines
         auto offset = float3(-100, 50, 0);
         auto time = Application::GetService<Time>()->GetTime() * 0.1f;
         auto aspect = Application::GetPrimaryWindow()->GetAspectRatioAligned();
-        auto viewToClip = Functions::GetPerspectiveInvZ(50.0f, aspect, 0.2f, 25.0f);
+        auto viewToClip = Functions::GetPerspective(50.0f, aspect, 0.2f, 25.0f);
         auto worldToView = Functions::GetMatrixInvTRS(offset, { 0, time, 0 }, PK_FLOAT3_ONE);
         auto worldToClip = viewToClip * worldToView;
 

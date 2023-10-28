@@ -337,7 +337,7 @@ namespace PK::Rendering::Passes
 
                 case LightType::Spot:
                 {
-                    matricesView[matrixIndex] = Functions::GetPerspectiveInvZ(view->light->angle, 1.0f, 0.1f, view->light->radius) * worldToLocal;
+                    matricesView[matrixIndex] = Functions::GetPerspective(view->light->angle, 1.0f, 0.1f, view->light->radius) * worldToLocal;
                     light.direction = Math::Functions::OctaEncodeUint(transform->rotation * PK_FLOAT3_FORWARD);
                     
                     if (castShadows)

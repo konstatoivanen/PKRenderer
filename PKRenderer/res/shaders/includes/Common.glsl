@@ -11,6 +11,8 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float3x4 pk_ViewToWorld;     // Current inverse view matrix.
     float3x4 pk_ViewToWorldPrev; // Last inverse view matrix.
 
+    // Note that projection uses reverse Z
+    // This is also in all clip uvw z coordinates.
     float4x4 pk_ViewToClip;             // Current projection matrix.
     float4x4 pk_WorldToClip;            // Current view * projection matrix.
     float4x4 pk_WorldToClip_NoJitter;   // Current view * unjittered projection matrix.
@@ -80,6 +82,7 @@ float  ViewDepth(const float clip_z)      { return 1.0f / (pk_ClipParamsInv.z * 
 float4 ViewDepth(const float4 clip_z)     { return 1.0f / (pk_ClipParamsInv.z * clip_z + pk_ClipParamsInv.w); } 
 float  ClipDepth(const float view_z)      { return fma(1.0f / view_z, pk_ClipParams.w, pk_ClipParams.z); }
 float4 ClipDepth(const float4 view_z)     { return fma(1.0f / view_z, pk_ClipParams.wwww, pk_ClipParams.zzzz); }
+// Note that these dont produce reverse Z as theyre used for exponential mapping of volumes where 
 float  ViewDepthExp(const float clip_z)   { return pk_ClipParams.x * pow(pk_ClipParamsExp.z, clip_z); }
 float2 ViewDepthExp(const float2 clip_z)  { return pk_ClipParams.x * pow(pk_ClipParamsExp.zz, clip_z); }
 float  ClipDepthExp(const float view_z)   { return log2(view_z) * pk_ClipParamsExp.x + pk_ClipParamsExp.y; }
