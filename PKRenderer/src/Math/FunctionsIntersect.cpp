@@ -243,14 +243,14 @@ namespace PK::Math::Functions
     BoundingBox GetInverseFrustumBounds(const float4x4& inverseMatrix)
     {
         float4 positions[8];
-        positions[0] = inverseMatrix * float4(-1, -1, 0, 1);
-        positions[1] = inverseMatrix * float4(-1,  1, 0, 1);
-        positions[2] = inverseMatrix * float4( 1,  1, 0, 1);
-        positions[3] = inverseMatrix * float4( 1, -1, 0, 1);
-        positions[4] = inverseMatrix * float4(-1, -1, 1, 1);
-        positions[5] = inverseMatrix * float4(-1,  1, 1, 1);
-        positions[6] = inverseMatrix * float4( 1,  1, 1, 1);
-        positions[7] = inverseMatrix * float4( 1, -1, 1, 1);
+        positions[0] = inverseMatrix * float4(-1, -1, 1, 1);
+        positions[1] = inverseMatrix * float4(-1,  1, 1, 1);
+        positions[2] = inverseMatrix * float4( 1,  1, 1, 1);
+        positions[3] = inverseMatrix * float4( 1, -1, 1, 1);
+        positions[4] = inverseMatrix * float4(-1, -1, 0, 1);
+        positions[5] = inverseMatrix * float4(-1,  1, 0, 1);
+        positions[6] = inverseMatrix * float4( 1,  1, 0, 1);
+        positions[7] = inverseMatrix * float4( 1, -1, 0, 1);
         float3 min = { std::numeric_limits<float>().max(), std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
         float3 max = { -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };
 
@@ -267,14 +267,14 @@ namespace PK::Math::Functions
     BoundingBox GetInverseFrustumBounds(const float4x4& inverseMatrix, float lznear, float lzfar)
     {
         float4 positions[8];
-        positions[0] = inverseMatrix * float4(-1, -1, 0, 1);
-        positions[1] = inverseMatrix * float4(-1,  1, 0, 1);
-        positions[2] = inverseMatrix * float4( 1,  1, 0, 1);
-        positions[3] = inverseMatrix * float4( 1, -1, 0, 1);
-        positions[4] = inverseMatrix * float4(-1, -1, 1, 1);
-        positions[5] = inverseMatrix * float4(-1,  1, 1, 1);
-        positions[6] = inverseMatrix * float4( 1,  1, 1, 1);
-        positions[7] = inverseMatrix * float4( 1, -1, 1, 1);
+        positions[0] = inverseMatrix * float4(-1, -1, 1, 1);
+        positions[1] = inverseMatrix * float4(-1,  1, 1, 1);
+        positions[2] = inverseMatrix * float4( 1,  1, 1, 1);
+        positions[3] = inverseMatrix * float4( 1, -1, 1, 1);
+        positions[4] = inverseMatrix * float4(-1, -1, 0, 1);
+        positions[5] = inverseMatrix * float4(-1,  1, 0, 1);
+        positions[6] = inverseMatrix * float4( 1,  1, 0, 1);
+        positions[7] = inverseMatrix * float4( 1, -1, 0, 1);
 
         for (auto i = 0; i < 4; ++i)
         {
@@ -303,14 +303,14 @@ namespace PK::Math::Functions
     BoundingBox GetInverseFrustumBounds(const float4x4& worldToLocal, const float4x4& inverseMatrix)
     {
         float4 positions[8];
-        positions[0] = float4(-1, -1, 0, 1);
-        positions[1] = float4(-1,  1, 0, 1);
-        positions[2] = float4( 1,  1, 0, 1);
-        positions[3] = float4( 1, -1, 0, 1);
-        positions[4] = float4(-1, -1, 1, 1);
-        positions[5] = float4(-1,  1, 1, 1);
-        positions[6] = float4( 1,  1, 1, 1);
-        positions[7] = float4( 1, -1, 1, 1);
+        positions[0] = float4(-1, -1, 1, 1);
+        positions[1] = float4(-1,  1, 1, 1);
+        positions[2] = float4( 1,  1, 1, 1);
+        positions[3] = float4( 1, -1, 1, 1);
+        positions[4] = float4(-1, -1, 0, 1);
+        positions[5] = float4(-1,  1, 0, 1);
+        positions[6] = float4( 1,  1, 0, 1);
+        positions[7] = float4( 1, -1, 0, 1);
 
         float3 min = { std::numeric_limits<float>().max(), std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
         float3 max = { -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };

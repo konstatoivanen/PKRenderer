@@ -238,8 +238,6 @@ namespace PK::Math::Functions
 
         for (auto i = 0u; i < info.count; ++i)
         {
-            //auto lnear = 1.0f - (info.splitPlanes[i] / zrange);
-            //auto lfar = 1.0f - (info.splitPlanes[i + 1] / zrange);
             auto lnear = (info.splitPlanes[i] / zrange);
             auto lfar = (info.splitPlanes[i + 1] / zrange);
 

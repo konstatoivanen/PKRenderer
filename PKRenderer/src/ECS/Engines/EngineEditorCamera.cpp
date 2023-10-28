@@ -75,7 +75,7 @@ namespace PK::ECS::Engines
 
         Tokens::ViewProjectionUpdateToken token;
         token.worldToView = Functions::GetMatrixInvTRS(m_smoothPosition, m_smoothRotation, PK_FLOAT3_ONE);
-        token.viewToClip = Functions::GetPerspective(m_fieldOfView, Application::GetPrimaryWindow()->GetAspectRatioAligned(), m_zNear, m_zFar);
+        token.viewToClip = Functions::GetPerspectiveInvZ(m_fieldOfView, Application::GetPrimaryWindow()->GetAspectRatioAligned(), m_zNear, m_zFar);
         token.jitter = Math::PK_FLOAT4_ZERO;
         m_sequencer->Next<Tokens::ViewProjectionUpdateToken>(this, &token, 0);
     }

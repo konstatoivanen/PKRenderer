@@ -179,8 +179,8 @@ namespace PK::Rendering
         auto viewToWorld = glm::inverse(worldToView);
         auto worldToClip = viewToClip * worldToView;
         auto worldToClipNoJitter = viewToClipNoJitter * worldToView;
-        float n = m_znear = Functions::GetZNearFromClip(viewToClip);
-        float f = m_zfar = Functions::GetZFarFromClip(viewToClip);
+        float n = m_znear = Functions::GetZNearFromClipInvZ(viewToClip);
+        float f = m_zfar = Functions::GetZFarFromClipInvZ(viewToClip);
 
         auto viewToWorldPrev = Functions::TransposeTo3x4(viewToWorld);
         auto worldToClipPrev = worldToClip;
@@ -288,7 +288,7 @@ namespace PK::Rendering
         // Concurrent Shadows & gbuffer
         cmdgraphics->SetRenderTarget({ gbuffers.current.depth, gbuffers.current.normals }, true);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
-        cmdgraphics->ClearDepth(1.0f, 0u);
+        cmdgraphics->ClearDepth(0.0f, 0u);
 
         DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::GBuffer, "Forward.GBuffer", nullptr);
         m_passHierarchicalDepth.Compute(cmdgraphics, resolution);

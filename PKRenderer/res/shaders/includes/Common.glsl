@@ -104,7 +104,7 @@ bool4 Test_DepthFar(const float4 depth) { return lessThan(depth, pk_ClipParams.y
 bool4 Test_DepthReproject(const float4 z, const float4 zprev, const float4 bias) { return lessThan(abs(z - zprev - pk_ViewSpaceCameraDelta.zzzz) / z, bias); }
 bool Test_DepthFar(const float depth) { return depth < (pk_ClipParams.y - 1e-2f); }
 bool Test_DepthReproject(const float z, const float zprev, const float bias) { return Test_DepthFar(zprev) && (abs(z - zprev - pk_ViewSpaceCameraDelta.z) / z) < bias; }
-bool Test_ClipPos(const float4 clippos) { return clippos.z > 0.0f && All_Less(abs(clippos.xy / clippos.w), 1.0f.xx); }
+bool Test_ClipPos(const float4 clippos) { return clippos.z < 1.0f && All_Less(abs(clippos.xy / clippos.w), 1.0f.xx); }
 bool Test_WorldToClipSpace(float3 worldpos) { return Test_ClipPos(WorldToClipPos(worldpos)); }
 bool Test_InScreen(float2 uv) { return All_Equal(saturate( uv ), uv); }
 bool Test_InScreen(int2 coord) { return All_InArea(coord, int2(0), int2(pk_ScreenSize.xy)); }
