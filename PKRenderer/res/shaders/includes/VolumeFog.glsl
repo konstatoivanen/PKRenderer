@@ -101,7 +101,7 @@ float VolumeFog_GetAccumulation(float3 uvw)
 
 float3 VolumeFog_WorldToPrevUVW(float3 worldpos)
 {
-    float3 uvw = ClipToUVW(mul(pk_WorldToProjPrev_NoJitter, float4(worldpos, 1.0f)));
+    float3 uvw = ClipToUVW(mul(pk_WorldToClipPrev_NoJitter, float4(worldpos, 1.0f)));
     uvw.z = ClipDepthExp(ViewDepth(uvw.z));
     return uvw;
 }

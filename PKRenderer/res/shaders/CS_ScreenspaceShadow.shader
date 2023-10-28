@@ -32,18 +32,18 @@ void main()
     // Only directional lights are supported here.
     const uint cascade = GetShadowCascadeIndex(depth);
     const uint index_shadow = (light.LIGHT_SHADOW) + cascade;
-    const uint index_matrix = (light.LIGHT_PROJECTION) + cascade;
+    const uint index_matrix = (light.LIGHT_MATRIX) + cascade;
 
     // Correct offsets by taking projection aspect into account
     const float4x4 lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, index_matrix);
-    const float projWidth = length(lightMatrix[0].xyz);
-    const float projHeight = length(lightMatrix[1].xyz);
-    const half aspect = half(projWidth / projHeight);
+    const float clipWidth = length(lightMatrix[0].xyz);
+    const float clipHeight = length(lightMatrix[1].xyz);
+    const half aspect = half(clipWidth / clipHeight);
 
     const float3 posToLight = -light.LIGHT_POS;
     const float3 shadowPos = worldpos + Shadow_GetSamplingOffset(normal, posToLight) * (1.0f + cascade);
     
-    const float4 uvw = GetLightProjectionUVW(shadowPos, index_matrix);
+    const float4 uvw = GetLightClipUVW(shadowPos, index_matrix);
     const float z = uvw.z * light.LIGHT_RADIUS;
 
     half shadow = 0.0hf;

@@ -77,7 +77,7 @@ void main()
 
     if (IsScreenHit(worldpos, true))
     {
-        const float2 uv = ClipToUV(mul(pk_WorldToProjPrev, float4(worldpos, 1.0f)).xyw);
+        const float2 uv = ClipToUV(WorldToPrevClipPos(worldpos).xyw);
         radiance = SamplePreviousColor(uv);
     }
     else
@@ -99,7 +99,7 @@ void main()
 
     if (IsScreenHit(worldpos, false))
     {
-        const float2 uv = ClipToUV(mul(pk_WorldToProjPrev, float4(worldpos, 1.0f)).xyw);
+        const float2 uv = ClipToUV(WorldToPrevClipPos(worldpos).xyw);
         radiance = SamplePreviousColor(uv);
     }
     else

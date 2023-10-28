@@ -94,11 +94,7 @@ float3 GetIndirectLight_Main(BxDFSurf surf, const float3 worldpos, const float3 
     color += EvaluateBxDF_Indirect(surf, diffuse, specular);
 
     // Optional approximate specular details from diffuse sh
-    // @TODO this check should be in gi code.
-    #if PK_GI_APPROX_ROUGH_SPEC_EXTRA == 1
-    GIDiff diff = GI_Load_Diff(int2(clipuvw.xy * pk_ScreenSize.xy), 1);
-    color += GI_ShadeRoughSpecularDetails(surf, diff);
-    #endif
+    color += GI_ShadeRoughSpecularDetails(surf, clipuvw.xy);
 
     return color;
 }

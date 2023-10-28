@@ -236,7 +236,6 @@ float3 EvaluateBxDF_SpecularExtra(const BxDFSurf surf, const float3 direction, c
     return brdf * radiance;
 }
 
-
 float3 EvaluateBxDF_Indirect(const BxDFSurf surf, const float3 diffuse, const float3 specular)
 {
     const float surfaceReduction = 1.0f / (pow2(surf.alpha) + 1.0f);

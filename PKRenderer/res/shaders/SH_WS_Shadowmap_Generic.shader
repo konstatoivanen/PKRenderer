@@ -61,7 +61,7 @@ void main()
     const uint layer = bitfieldExtract(pk_Instancing_Userdata, 16, 16);
     const LightPacked light = Lights_LoadPacked(lightIndex);
     const float3 wpos = ObjectToWorldPos(in_POSITION);
-    const uint projectionIndex = light.LIGHT_PROJECTION;
+    const uint matrixIndex = light.LIGHT_MATRIX;
 
     float4 vs_pos = 0.0f.xxxx;
     float3 vs_depth = 0.0f.xxx;
@@ -77,14 +77,14 @@ void main()
         break;
         case LIGHT_TYPE_SPOT:
         {
-            float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, projectionIndex);
+            float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex);
             vs_pos = mul(lightmatrix, float4(wpos, 1.0f));
             vs_depth.xyz = wpos - light.LIGHT_POS;
         }
         break;
         case LIGHT_TYPE_DIRECTIONAL:
         {
-            float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, projectionIndex + layer);
+            float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex + layer);
             vs_pos = mul(lightmatrix, float4(wpos, 1.0f));
 
             // Depth test uses reverse z for precision reasons. revert range for actual distance.

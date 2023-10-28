@@ -5,8 +5,8 @@ namespace PK::ECS::Tokens
 {
     struct ViewProjectionUpdateToken
     {
-        Math::float4x4 view;
-        Math::float4x4 projection;
+        Math::float4x4 worldToView;
+        Math::float4x4 viewToClip;
         Math::float4 jitter;
     };
 }

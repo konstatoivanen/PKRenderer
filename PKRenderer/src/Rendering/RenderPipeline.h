@@ -65,7 +65,7 @@ namespace PK::Rendering
             GBuffersFull m_gbuffers;
             
             ECS::Tokens::VisibilityList m_visibilityList;
-            Math::float4x4 m_viewProjectionMatrix;
+            Math::float4x4 m_worldToClip;
             uint64_t m_resizeFrameIndex;
             uint32_t m_forwardPassGroup;
             float m_znear;

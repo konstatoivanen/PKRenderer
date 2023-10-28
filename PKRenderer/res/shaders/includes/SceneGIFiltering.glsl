@@ -84,7 +84,7 @@ float2 GI_GetDiskFilterRadiusAndScale(const float depth, const float variance, c
     scale = lerp(scale, 0.75f + scale * 0.25f, 1.0f / (history + 1.0f));
 
     float radius = PK_GI_DISK_FILTER_RADIUS * (0.25f + 0.75f * near_field);
-    radius *= sqrt(depth / pk_ProjectionParams.y);
+    radius *= sqrt(depth / pk_ClipParams.y);
     radius *= sqrt(3840.0 * pk_ScreenParams.z);	
 
     return float2(radius, scale);

@@ -77,6 +77,36 @@ namespace PK::Math::Functions
         return m;
     }
 
+    float3x4 TransposeTo3x4(const float4x4& matrix)
+    {
+        float3x4 m;
+
+        for (auto i = 0; i < 3; ++i)
+        {
+            m[i][0] = matrix[0][i];
+            m[i][1] = matrix[1][i];
+            m[i][2] = matrix[2][i];
+            m[i][3] = matrix[3][i];
+        }
+
+        return m;
+    }
+
+    float4x4 TransposeTo4x4(const float3x4& matrix)
+    {
+        float4x4 m;
+
+        for (auto i = 0; i < 3; ++i)
+        {
+            m[0][i] = matrix[i][0];
+            m[1][i] = matrix[i][1];
+            m[2][i] = matrix[i][2];
+            m[3][i] = matrix[i][3];
+        }
+
+        return m;
+    }
+
     float4x4 GetPerspective(float fov, float aspect, float zNear, float zFar)
     {
         const float tanHalfFovy = tan(fov * PK_FLOAT_DEG2RAD / 2.0f);
@@ -129,36 +159,6 @@ namespace PK::Math::Functions
         return Result;
     }
 
-    float3x4 TransposeTo3x4(const float4x4& matrix)
-    {
-        float3x4 m;
-
-        for (auto i = 0; i < 3; ++i)
-        {
-            m[i][0] = matrix[0][i];
-            m[i][1] = matrix[1][i];
-            m[i][2] = matrix[2][i];
-            m[i][3] = matrix[3][i];
-        }
-
-        return m;
-    }
-
-    float4x4 TransposeTo4x4(const float3x4& matrix)
-    {
-        float4x4 m;
-
-        for (auto i = 0; i < 3; ++i)
-        {
-            m[0][i] = matrix[i][0];
-            m[1][i] = matrix[i][1];
-            m[2][i] = matrix[i][2];
-            m[3][i] = matrix[i][3];
-        }
-
-        return m;
-    }
-
     // Produces Reverse Z
     float4x4 GetOffsetPerspective(float left, float right, float bottom, float top, float fovy, float aspect, float zNear, float zFar)
     {
@@ -200,13 +200,13 @@ namespace PK::Math::Functions
     }
 
     float4x4 GetFrustumBoundingOrthoMatrix(const float4x4& worldToLocal, 
-                                            const float4x4& inverseViewProjection, 
+                                            const float4x4& clipToView, 
                                             const float3& paddingLD, 
                                             const float3& paddingRU, 
                                             float* outZNear, 
                                             float* outZFar)
     {
-        auto aabb = GetInverseFrustumBounds(worldToLocal * inverseViewProjection);
+        auto aabb = GetInverseFrustumBounds(worldToLocal * clipToView);
 
         *outZNear = (aabb.min.z + paddingLD.z);
         *outZFar = (aabb.max.z + paddingRU.z);
@@ -229,7 +229,7 @@ namespace PK::Math::Functions
 
     void GetShadowCascadeMatrices(const ShadowCascadeCreateInfo info, float4x4* outMatrices, float* outRange)
     {
-        auto matrix = info.worldToLocal * info.projToWorld;
+        auto matrix = info.worldToLocal * info.clipToWorld;
         auto minNear = std::numeric_limits<float>().max();
         auto maxFar = -std::numeric_limits<float>().max();
         auto zrange = info.splitPlanes[info.count] - info.splitPlanes[0];
@@ -238,8 +238,10 @@ namespace PK::Math::Functions
 
         for (auto i = 0u; i < info.count; ++i)
         {
-            auto lnear = info.splitPlanes[i] / zrange;
-            auto lfar = info.splitPlanes[i + 1] / zrange;
+            //auto lnear = 1.0f - (info.splitPlanes[i] / zrange);
+            //auto lfar = 1.0f - (info.splitPlanes[i + 1] / zrange);
+            auto lnear = (info.splitPlanes[i] / zrange);
+            auto lfar = (info.splitPlanes[i + 1] / zrange);
 
             aabbs[i] = GetInverseFrustumBounds(matrix, lnear, lfar);
 

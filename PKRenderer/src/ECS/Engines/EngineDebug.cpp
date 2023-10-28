@@ -146,12 +146,34 @@ namespace PK::ECS::Engines
         }
 
         auto offset = float3(-100, 50, 0);
-        auto time = Application::GetService<Time>()->GetTime() * 0.1f;
+        auto time = 0.0f; //Application::GetService<Time>()->GetTime() * 0.1f;
         auto aspect = Application::GetPrimaryWindow()->GetAspectRatioAligned();
-        auto proj = Functions::GetPerspective(50.0f, aspect, 0.2f, 25.0f);
-        auto view = Functions::GetMatrixInvTRS(offset, { 0, time, 0 }, PK_FLOAT3_ONE);
-        auto vp = proj * view;
+        auto viewToClip = Functions::GetPerspectiveInvZ(50.0f, aspect, 0.2f, 25.0f);
+        auto worldToView = Functions::GetMatrixInvTRS(offset, { 0, time, 0 }, PK_FLOAT3_ONE);
+        auto worldToClip = viewToClip * worldToView;
 
+        gizmos->SetColor(PK_COLOR_GREEN);
+        gizmos->DrawFrustrum(worldToClip);
+
+        //auto n = -viewToClip[3][2] / (viewToClip[2][2] + 1.0f); 
+        //auto f = -viewToClip[3][2] / (viewToClip[2][2] - 1.0f);
+        //auto z = 25.0f;
+        //auto n = (z * viewToClip[2][2] + viewToClip[3][2]) / z;
+        auto n = Functions::GetZNearFromClipInvZ(viewToClip);
+        auto f = Functions::GetZFarFromClipInvZ(viewToClip);
+        auto np0 = float3((worldToView * float4(0, 0, n, 1.0f)).xyz);
+        auto np1 = float3((worldToView * float4(0, 1, n, 1.0f)).xyz);
+        auto fp0 = float3((worldToView * float4(0, 0, f, 1.0f)).xyz);
+        auto fp1 = float3((worldToView * float4(0, 1, f, 1.0f)).xyz);
+
+        //(m[2][2] * v[2] + m[3][2]) / v[2]
+
+        gizmos->SetColor(PK_COLOR_RED);
+        gizmos->DrawLine(np0, np1);
+        gizmos->SetColor(PK_COLOR_BLUE);
+        gizmos->DrawLine(fp0, fp1);
+
+        /*
         float4x4 localToWorld = Functions::GetMatrixTRS(offset, float3(35, -35, 0) * PK_FLOAT_DEG2RAD, PK_FLOAT3_ONE);
         float4x4 worldToLocal = glm::inverse(localToWorld);
         float4x4 invvp = glm::inverse(vp);
@@ -161,7 +183,7 @@ namespace PK::ECS::Engines
 
         ShadowCascadeCreateInfo cascadeInfo{};
         cascadeInfo.worldToLocal = worldToLocal;
-        cascadeInfo.projToWorld = invvp;
+        cascadeInfo.clipToWorld = invvp;
         cascadeInfo.splitPlanes = zplanes;
         cascadeInfo.zPadding = -15.0f;
         cascadeInfo.resolution = 1024;
@@ -186,9 +208,10 @@ namespace PK::ECS::Engines
             float n = Functions::CascadeDepth(znear, zfar, 0.5f, (float)i / 4);
             float f = Functions::CascadeDepth(znear, zfar, 0.5f, (float)(i + 1) / 4);
 
-            auto proj = Functions::GetOffsetPerspective(-1, 1, -1, 1, 50.0f, aspect, n, f);
-            vp = proj * view;
-            gizmos->DrawFrustrum(vp);
+            auto viewToClipSub = Functions::GetOffsetPerspective(-1, 1, -1, 1, 50.0f, aspect, n, f);
+            auto worldToClipSub = viewToClipSub * worldToView;
+            gizmos->DrawFrustrum(worldToClipSub);
         }
+        */
     }
 }

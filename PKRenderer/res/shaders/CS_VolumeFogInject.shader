@@ -2,7 +2,8 @@
 #pragma PROGRAM_COMPUTE
 
 #define EARLY_Z_TEST 1
-#define SHADOW_TEST ShadowTest_PCF3x3Gaussian
+#define SHADOW_TEST ShadowTest_PCF2x2
+#define SHADOW_SAMPLE_VOLUMETRICS 1
 
 #include includes/VolumeFog.glsl
 #include includes/SceneGIVX.glsl
@@ -11,7 +12,7 @@ layout(local_size_x = PK_W_ALIGNMENT_4, local_size_y = PK_W_ALIGNMENT_4, local_s
 void main()
 {
     const uint3 id = gl_GlobalInvocationID;
-    float3 dither = GlobalNoiseBlue(id.xy, pk_FrameIndex.x);
+    const float3 dither = GlobalNoiseBlue(id.xy, pk_FrameIndex.x);
 
     const float3 uvw_cur = (id + float3(0.5f.xx, dither.z)) / VOLUMEFOG_SIZE;
 
@@ -63,11 +64,14 @@ void main()
     // Fade out shadow contribution near far plane.
     const float shadowFade = smoothstep(0.9f, 1.0f, uvw_cur.z);
 
+    const float shadowBiasRange = ViewDepthExp((id.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV) - ViewDepthExp(id.z * VOLUMEFOG_SIZE_Z_INV);
+    const float3 shadowBias = viewdir * shadowBiasRange * 0.5f;
+
     LightTile tile = Lights_GetTile_COORD(int2(gl_WorkGroupID.xy >> 1), depth);
     for (uint i = tile.start; i < tile.end; ++i)
     {
         // @TODO current 1spp shadow test for fog is prone to banding. implement better filter.
-        Light light = GetLight(i, worldpos, -viewdir, tile.cascade);
+        Light light = GetLight(i, worldpos, shadowBias, tile.cascade);
 
         const float marchDistance = min(light.linearDistance, maxMarchDistance);
         light.shadow *= VolumeFog_MarchTransmittance(worldpos, light.direction, dither.y, marchDistance);

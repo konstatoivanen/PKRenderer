@@ -15,40 +15,40 @@ namespace PK::Math::Functions
 
     // https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
     // DirectX convention
-    FrustumPlanes ExtractFrustrumPlanes(const float4x4 viewprojection, bool normalize)
+    FrustumPlanes ExtractFrustrumPlanes(const float4x4 viewToClip, bool normalize)
     {
         FrustumPlanes planes;
 
         // Left clipping plane
-        planes[0].x = viewprojection[0][3] + viewprojection[0][0];
-        planes[0].y = viewprojection[1][3] + viewprojection[1][0];
-        planes[0].z = viewprojection[2][3] + viewprojection[2][0];
-        planes[0].w = viewprojection[3][3] + viewprojection[3][0];
+        planes[0].x = viewToClip[0][3] + viewToClip[0][0];
+        planes[0].y = viewToClip[1][3] + viewToClip[1][0];
+        planes[0].z = viewToClip[2][3] + viewToClip[2][0];
+        planes[0].w = viewToClip[3][3] + viewToClip[3][0];
         // Right clipping plane
-        planes[1].x = viewprojection[0][3] - viewprojection[0][0];
-        planes[1].y = viewprojection[1][3] - viewprojection[1][0];
-        planes[1].z = viewprojection[2][3] - viewprojection[2][0];
-        planes[1].w = viewprojection[3][3] - viewprojection[3][0];
+        planes[1].x = viewToClip[0][3] - viewToClip[0][0];
+        planes[1].y = viewToClip[1][3] - viewToClip[1][0];
+        planes[1].z = viewToClip[2][3] - viewToClip[2][0];
+        planes[1].w = viewToClip[3][3] - viewToClip[3][0];
         // Top clipping plane
-        planes[2].x = viewprojection[0][3] - viewprojection[0][1];
-        planes[2].y = viewprojection[1][3] - viewprojection[1][1];
-        planes[2].z = viewprojection[2][3] - viewprojection[2][1];
-        planes[2].w = viewprojection[3][3] - viewprojection[3][1];
+        planes[2].x = viewToClip[0][3] - viewToClip[0][1];
+        planes[2].y = viewToClip[1][3] - viewToClip[1][1];
+        planes[2].z = viewToClip[2][3] - viewToClip[2][1];
+        planes[2].w = viewToClip[3][3] - viewToClip[3][1];
         // Bottom clipping plane
-        planes[3].x = viewprojection[0][3] + viewprojection[0][1];
-        planes[3].y = viewprojection[1][3] + viewprojection[1][1];
-        planes[3].z = viewprojection[2][3] + viewprojection[2][1];
-        planes[3].w = viewprojection[3][3] + viewprojection[3][1];
+        planes[3].x = viewToClip[0][3] + viewToClip[0][1];
+        planes[3].y = viewToClip[1][3] + viewToClip[1][1];
+        planes[3].z = viewToClip[2][3] + viewToClip[2][1];
+        planes[3].w = viewToClip[3][3] + viewToClip[3][1];
         // Near clipping plane
-        planes[4].x = viewprojection[0][2];
-        planes[4].y = viewprojection[1][2];
-        planes[4].z = viewprojection[2][2];
-        planes[4].w = viewprojection[3][2];
+        planes[4].x = viewToClip[0][2];
+        planes[4].y = viewToClip[1][2];
+        planes[4].z = viewToClip[2][2];
+        planes[4].w = viewToClip[3][2];
         // Far clipping plane
-        planes[5].x = viewprojection[0][3] - viewprojection[0][2];
-        planes[5].y = viewprojection[1][3] - viewprojection[1][2];
-        planes[5].z = viewprojection[2][3] - viewprojection[2][2];
-        planes[5].w = viewprojection[3][3] - viewprojection[3][2];
+        planes[5].x = viewToClip[0][3] - viewToClip[0][2];
+        planes[5].y = viewToClip[1][3] - viewToClip[1][2];
+        planes[5].z = viewToClip[2][3] - viewToClip[2][2];
+        planes[5].w = viewToClip[3][3] - viewToClip[3][2];
 
         // Normalize the plane equations, if requested
         if (normalize)

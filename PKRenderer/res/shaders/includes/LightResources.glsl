@@ -13,7 +13,7 @@
 #define LIGHT_TYPE_POINT 2
 
 #define LIGHT_SHADOW i.x & 0xFFFFu
-#define LIGHT_PROJECTION i.x >> 16u 
+#define LIGHT_MATRIX i.x >> 16u 
 #define LIGHT_TYPE i.y & 0xFFFFu
 #define LIGHT_COOKIE i.y >> 16u
 #define LIGHT_PACKED_DIRECTION i.z

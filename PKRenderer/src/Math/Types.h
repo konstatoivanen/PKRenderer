@@ -169,7 +169,7 @@ namespace PK::Math
     struct ShadowCascadeCreateInfo
     {
         float4x4 worldToLocal;
-        float4x4 projToWorld;
+        float4x4 clipToWorld;
         float* splitPlanes;
         float zPadding;
         uint32_t resolution;

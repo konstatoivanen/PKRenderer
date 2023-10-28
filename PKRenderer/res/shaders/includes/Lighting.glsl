@@ -12,22 +12,39 @@
     #define SHADOW_SAMPLE_SCREENSPACE 1
 #endif
 
-float4 GetLightProjectionUVW(const float3 worldpos, const uint projectionIndex)
+#ifndef SHADOW_SAMPLE_VOLUMETRICS
+    #define SHADOW_SAMPLE_VOLUMETRICS 0
+#endif
+
+#ifndef SHADOW_SAMPLE_VOLUMETRICS_COUNT
+    #define SHADOW_SAMPLE_VOLUMETRICS_COUNT 4
+#endif
+
+float4 GetLightClipUVW(const float3 worldpos, const uint matrixIndex)
 {
-    float4 coord = mul(PK_BUFFER_DATA(pk_LightMatrices, projectionIndex), float4(worldpos, 1.0f));
+    float4 coord = mul(PK_BUFFER_DATA(pk_LightMatrices, matrixIndex), float4(worldpos, 1.0f));
     coord.xy = (coord.xy / coord.w) * 0.5f.xx + 0.5f.xx;
     // Light depth test uses reverse z. Reverse range for actual distance.
     coord.z = 1.0f - (coord.z / coord.w);
     return coord;
 }
 
-Light GetLightDirect(const uint index, const float3 worldpos, const float3 normal, const uint cascade)
+float4 GetLightClipUVMinMax(const float3 worldpos, const float3 shadowBias, const uint matrixIndex)
+{
+    const float4x4 lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex);
+    float3 coord0 = mul(lightMatrix, float4(worldpos + shadowBias.xyz, 1.0f)).xyw;
+    float3 coord1 = mul(lightMatrix, float4(worldpos - shadowBias.xyz, 1.0f)).xyw;
+    coord0.xy = (coord0.xy / coord0.z) * 0.5f.xx + 0.5f.xx;
+    coord1.xy = (coord1.xy / coord1.z) * 0.5f.xx + 0.5f.xx;
+    return float4(coord0.xy, coord1.xy);
+}
+
+Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias, const uint cascade)
 {
     const LightPacked light = Lights_LoadPacked(index);
 
-    uint index_shadow = light.LIGHT_SHADOW;
-    uint index_matrix  = light.LIGHT_PROJECTION;
-    
+    uint indexShadow = light.LIGHT_SHADOW;
+    uint indexMatrix = light.LIGHT_MATRIX; 
     float sourceRadius = uintBitsToFloat(light.LIGHT_PACKED_SOURCERADIUS);
     float3 color = light.LIGHT_COLOR;
     float shadow = 1.0f;
@@ -35,32 +52,31 @@ Light GetLightDirect(const uint index, const float3 worldpos, const float3 norma
     float4 coord;
     float3 posToLight; 
     float shadowDistance;
-    // This is only needed for volumetrics
-    float linearDistance; 
+    float linearDistance = 0.0f; 
+
+    #if SHADOW_SAMPLE_VOLUMETRICS == 1
+    float4 shadowUVMinMax;
+    #endif
 
     [[branch]]
     switch (light.LIGHT_TYPE)
     {
         case LIGHT_TYPE_DIRECTIONAL:
         {
-            index_matrix += cascade;
-            index_shadow += cascade;
-            linearDistance = 1e+4f;
+            indexMatrix += cascade;
+            indexShadow += cascade;
             posToLight = -light.LIGHT_POS;
-
-            const float3 shadowPos = worldpos + Shadow_GetSamplingOffset(normal, posToLight) * (1.0f + cascade);
-            coord = GetLightProjectionUVW(shadowPos, index_matrix);
             
-            shadowDistance = coord.z * light.LIGHT_RADIUS;
+            #if SHADOW_SAMPLE_VOLUMETRICS == 0
+            worldpos += Shadow_GetSamplingOffset(shadowBias, posToLight) * (1.0f + cascade);
+            #endif
 
-            // First Directional light has a screen space shadow.
-            // @TODO Maybe parameterize this better.
-            #if defined(SHADER_STAGE_FRAGMENT) && SHADOW_SAMPLE_SCREENSPACE == 1
-            if ((light.LIGHT_SHADOW) == 0u)
-            {
-                shadow *= texelFetch(pk_ShadowmapScreenSpace, int2(gl_FragCoord.xy), 0).r;
-                index_shadow = LIGHT_PARAM_INVALID;
-            }
+            coord = GetLightClipUVW(worldpos, indexMatrix);
+            shadowDistance = coord.z * light.LIGHT_RADIUS;
+                
+            #if SHADOW_SAMPLE_VOLUMETRICS == 1
+            linearDistance = 1e+4f;
+            shadowUVMinMax = GetLightClipUVMinMax(worldpos, shadowBias, indexMatrix);
             #endif
         }
         break;
@@ -68,14 +84,18 @@ Light GetLightDirect(const uint index, const float3 worldpos, const float3 norma
         {
             const float4 L = normalizeLength(light.LIGHT_POS - worldpos);
             color *= Fatten_Default(L.w, light.LIGHT_RADIUS);
-            linearDistance = L.w;
             sourceRadius /= L.w;
             posToLight = L.xyz;
             shadowDistance = L.w - SHADOW_NEAR_BIAS;
-
-            coord = GetLightProjectionUVW(worldpos, index_matrix);
+            coord = GetLightClipUVW(worldpos, indexMatrix);
             color *= step(0.0f, coord.w);
             color *= texture(pk_LightCookies, float3(coord.xy, light.LIGHT_COOKIE)).r;
+
+            #if SHADOW_SAMPLE_VOLUMETRICS == 1
+            linearDistance = L.w;
+            shadowUVMinMax = GetLightClipUVW(worldpos, indexMatrix);
+            #endif
+
         }
         break;
         case LIGHT_TYPE_POINT:
@@ -83,24 +103,53 @@ Light GetLightDirect(const uint index, const float3 worldpos, const float3 norma
             const float4 L = normalizeLength(light.LIGHT_POS - worldpos);
             color *= Fatten_Default(L.w, light.LIGHT_RADIUS);
             coord.xy = OctaEncode(-L.xyz);
-            linearDistance = L.w;
             sourceRadius /= L.w;
             shadowDistance = L.w - SHADOW_NEAR_BIAS;
             posToLight = L.xyz;
+            
+            #if SHADOW_SAMPLE_VOLUMETRICS == 1
+            linearDistance = L.w;
+            //@TODO add support for uv range
+            shadowUVMinMax = coord.xyxy;
+            #endif
         }
         break;
     }
 
+    // First Directional light has a screen space shadow.
+    // @TODO Maybe parameterize this better.
+    #if defined(SHADER_STAGE_FRAGMENT) && SHADOW_SAMPLE_SCREENSPACE == 1
     [[branch]]
-    if (index_shadow < LIGHT_PARAM_INVALID)
+    if ((light.LIGHT_TYPE) == LIGHT_TYPE_DIRECTIONAL && (light.LIGHT_SHADOW) == 0u)
     {
-        shadow *= SHADOW_TEST(index_shadow, coord.xy, shadowDistance);
+        shadow *= texelFetch(pk_ShadowmapScreenSpace, int2(gl_FragCoord.xy), 0).r;
+    }
+    else
+    #endif
+    [[branch]]
+    if (indexShadow < LIGHT_PARAM_INVALID)
+    {
+        #if SHADOW_SAMPLE_VOLUMETRICS == 1
+            shadow = 0.0f;
+
+            // Volumetrics pcf by dithering along view axis. More stable than random offsets on shadow plane.
+            for (uint i = 0u; i < SHADOW_SAMPLE_VOLUMETRICS_COUNT; ++i)
+            {
+                const float dither = Shadow_GradientNoise(pk_FrameIndex.y + i);
+                const float2 uv = lerp(shadowUVMinMax.xy, shadowUVMinMax.zw, dither);
+                shadow += SHADOW_TEST(indexShadow, uv, shadowDistance);
+            }
+
+            shadow /= SHADOW_SAMPLE_VOLUMETRICS_COUNT;
+        #else
+            shadow *= SHADOW_TEST(indexShadow, coord.xy, shadowDistance);
+        #endif
     }
 
     return Light(color, shadow, posToLight, linearDistance, sourceRadius);
 }
 
-Light GetLight(const uint index, const float3 worldpos, const float3 normal, const uint cascade) 
+Light GetLight(const uint index, const float3 worldpos, const float3 shadowBias, const uint cascade) 
 { 
-    return GetLightDirect(PK_BUFFER_DATA(pk_LightLists, index), worldpos, normal, cascade); 
+    return GetLightDirect(PK_BUFFER_DATA(pk_LightLists, index), worldpos, shadowBias, cascade); 
 }

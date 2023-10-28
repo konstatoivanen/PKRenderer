@@ -26,7 +26,7 @@ namespace PK::ECS::Tokens
 		IBatcher* batcher;
 
 		uint32_t outPassGroup = 0xFFFFFFFFu;
-		Math::float4x4 viewProjection;
+		Math::float4x4 viewToClip;
 		float znear;
 		float zfar;
 
@@ -34,14 +34,14 @@ namespace PK::ECS::Tokens
 						 Rendering::GBuffersViewFull gbuffers,
 						 VisibilityList* visibilityList,
 						 IBatcher* batcher,
-						 const Math::float4x4& vp, 
+						 const Math::float4x4& viewToClip, 
 						 float znear, 
 						 float zfar) :
 			cmd(cmd),
 			gbuffers(gbuffers),
 			visibilityList(visibilityList),
 			batcher(batcher),
-			viewProjection(vp),
+			viewToClip(viewToClip),
 			znear(znear),
 			zfar(zfar)
 		{

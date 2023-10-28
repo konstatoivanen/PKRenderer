@@ -49,7 +49,7 @@ namespace PK::ECS::Engines
             uint32_t m_vertexCount = 0;
             uint32_t m_maxVertices = 4096u;
             Math::color32 m_color = Math::PK_COLOR32_WHITE;
-            Math::float4x4 m_viewprojection = Math::PK_FLOAT4X4_IDENTITY;
+            Math::float4x4 m_ViewToClip = Math::PK_FLOAT4X4_IDENTITY;
             Math::float4x4 m_matrix = Math::PK_FLOAT4X4_IDENTITY;
             bool m_enabled = true;
     };

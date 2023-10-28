@@ -236,13 +236,13 @@ namespace PK::Rendering::Passes
         cmd->DispatchWithCounter(m_computeLightAssignment, m_lightTiles->GetResolution());
     }
 
-    void PassLights::Cull(void* engineRoot, VisibilityList* visibilityList, const float4x4& viewProjection, float znear, float zfar)
+    void PassLights::Cull(void* engineRoot, VisibilityList* visibilityList, const float4x4& worldToClip, float znear, float zfar)
     {
         TokenCullFrustum cullFrustum;
         cullFrustum.results = visibilityList;
         cullFrustum.depthRange = zfar - znear;
         cullFrustum.mask = RenderableFlags::Light;
-        cullFrustum.matrix = viewProjection;
+        cullFrustum.matrix = worldToClip;
 
         visibilityList->Clear();
         m_sequencer->Next(engineRoot, &cullFrustum);
@@ -274,7 +274,7 @@ namespace PK::Rendering::Passes
         auto lightsView = cmd->BeginBufferWrite<LightPacked>(m_lightsBuffer.get(), 0u, lightCount + 1);
         auto matricesView = matrixCount > 0 ? cmd->BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : BufferView<float4x4>();
 
-        auto ivp = glm::inverse(viewProjection);
+        auto clipToWorld = glm::inverse(worldToClip);
         auto zsplits = GetCascadeZSplits(znear, zfar);
         TokenCullCubeFaces cullCube;
         TokenCullCascades cullCascades;
@@ -291,8 +291,8 @@ namespace PK::Rendering::Passes
             auto& light = lightsView[i];
             auto& transform = view->transform;
             auto& worldToLocal = transform->worldToLocal;
-            light.matrixIndex = matrixIndex;
-            light.shadowIndex = 0xFFFFu;
+            light.indexShadow = 0xFFFFu;
+            light.indexMatrix = matrixIndex;
             light.color = view->light->color;
             light.cookie = (ushort)view->light->cookie;
             light.type = (ushort)view->light->type;
@@ -313,7 +313,7 @@ namespace PK::Rendering::Passes
 
                     ShadowCascadeCreateInfo cascadeInfo{};
                     cascadeInfo.worldToLocal = worldToLocal;
-                    cascadeInfo.projToWorld = ivp;
+                    cascadeInfo.clipToWorld = clipToWorld;
                     cascadeInfo.splitPlanes = zsplits.data();
                     cascadeInfo.zPadding = -view->light->radius;
                     cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
@@ -326,7 +326,7 @@ namespace PK::Rendering::Passes
                         cullCascades.cascades = matricesView.data + matrixIndex;
                         cullCascades.depthRange = light.radius;
                         m_sequencer->Next(engineRoot, &cullCascades);
-                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, cullCascades.depthRange, &shadowCount, &minDepth);
+                        light.indexShadow = BuildShadowBatch(visibilityList, view, i, cullCascades.depthRange, &shadowCount, &minDepth);
 
                         // Regenerate cascades as the depth range might change based on culling
                         cascadeInfo.zPadding = -view->light->radius + minDepth;
@@ -345,7 +345,7 @@ namespace PK::Rendering::Passes
                         cullFrustum.depthRange = view->light->radius - 0.1f;
                         cullFrustum.matrix = matricesView[matrixIndex];
                         m_sequencer->Next(engineRoot, &cullFrustum);
-                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, cullFrustum.depthRange, &shadowCount);
+                        light.indexShadow = BuildShadowBatch(visibilityList, view, i, cullFrustum.depthRange, &shadowCount);
                     }
                 }
                 break;
@@ -357,7 +357,7 @@ namespace PK::Rendering::Passes
                         cullCube.depthRange = view->light->radius - 0.1f;
                         cullCube.aabb = view->bounds->worldAABB;
                         m_sequencer->Next(engineRoot, &cullCube);
-                        light.shadowIndex = BuildShadowBatch(visibilityList, view, i, cullCube.depthRange, &shadowCount);
+                        light.indexShadow = BuildShadowBatch(visibilityList, view, i, cullCube.depthRange, &shadowCount);
                     }
                 }
                 break;

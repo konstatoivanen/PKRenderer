@@ -20,7 +20,7 @@ out float3 vs_TEXCOORD0;
 void main()
 {
     gl_Position = PK_BLIT_VERTEX_POSITIONS[gl_VertexIndex];
-    vs_TEXCOORD0 = mul(float4(gl_Position.xy * pk_InvProjectionParams.xy, 1.0f, 0.0f), pk_ViewToWorld).xyz;
+    vs_TEXCOORD0 = mul(float4(gl_Position.xy * pk_ClipParamsInv.xy, 1.0f, 0.0f), pk_ViewToWorld).xyz;
 }
 
 #pragma PROGRAM_FRAGMENT

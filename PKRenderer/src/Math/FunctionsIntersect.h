@@ -4,7 +4,7 @@
 namespace PK::Math::Functions
 {
     void NormalizePlane(float4* plane);
-    FrustumPlanes ExtractFrustrumPlanes(const float4x4 viewprojection, bool normalize);
+    FrustumPlanes ExtractFrustrumPlanes(const float4x4 viewToClip, bool normalize);
     float PlaneMaxDistanceToAABB(const float4& plane, const BoundingBox& aabb);
     float PlaneMinDistanceToAABB(const float4& plane, const BoundingBox& aabb);
     float PlaneDistanceToPoint(const float4& plane, const float3& point);

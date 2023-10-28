@@ -149,9 +149,8 @@ float3 GI_ShadeRoughSpecularDetails(BxDFSurf surf, const GIDiff diff)
     direction = WorldToViewDir(direction);
     directionality = saturate(directionality * 0.666f);
 
-    // Remap roughness if lighting is uniform over hemisphere
-    const float newRoughness = lerp(1.0f, sqrt(surf.alpha), directionality);
-    surf.alpha = pow2(newRoughness);
+    // Remap clearcoat if lighting is uniform over hemisphere
+    surf.clearCoatGloss *= directionality;
 
     return EvaluateBxDF_SpecularExtra(surf, direction, SH_ToColor(diff.sh));
 }
@@ -226,4 +225,13 @@ void GI_Store_RayHits(const int2 coord, const GIRayHits u)
     packed = bitfieldInsert(packed, u.diff.isScreen ? 0x1u : 0x0u, 15, 1);
     packed = bitfieldInsert(packed, u.spec.isScreen ? 0x1u : 0x0u, 31, 1);
     imageStore(pk_GI_RayHits, coord, uint4(packed, u.diffNormal, 0u, 0u));
+}
+float3 GI_ShadeRoughSpecularDetails(const BxDFSurf surf, const float2 uv)
+{
+    #if PK_GI_APPROX_ROUGH_SPEC_EXTRA == 1
+    const GIDiff diff = GI_Load_Diff(int2(uv * pk_ScreenSize.xy), 1);
+    return GI_ShadeRoughSpecularDetails(surf, diff);
+    #else
+    return 0.0f.xxx;
+    #endif
 }

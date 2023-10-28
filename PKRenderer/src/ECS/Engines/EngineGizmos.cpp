@@ -35,7 +35,7 @@ namespace PK::ECS::Engines
                 m_vertexBuffer->Validate(m_vertexCount);
                 m_color = Math::PK_COLOR_WHITE;
                 m_matrix = Math::PK_FLOAT4X4_IDENTITY;
-                m_viewprojection = token->viewProjection;
+                m_ViewToClip = token->viewToClip;
                 m_vertexCount = 0u;
                 m_maxVertices = (uint32_t)m_vertexBuffer->GetCount();
                 m_vertexView = token->cmd->BeginBufferWrite<Vertex>(m_vertexBuffer.get());
@@ -190,7 +190,7 @@ namespace PK::ECS::Engines
 
     void EngineGizmos::SetMatrix(const float4x4& matrix)
     {
-        auto vp = m_viewprojection * matrix;
+        auto vp = m_ViewToClip * matrix;
         m_frustrumPlanes = Math::Functions::ExtractFrustrumPlanes(vp, true);
         m_matrix = matrix;
     }

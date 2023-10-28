@@ -27,7 +27,7 @@ namespace PK::Rendering::Passes
 
             void RenderShadows(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
             void ComputeClusters(Objects::CommandBuffer* cmd, Math::uint3 resolution);
-            void Cull(void* engineRoot, ECS::Tokens::VisibilityList* visibilityList, const Math::float4x4& viewProjection, float znear, float zfar);
+            void Cull(void* engineRoot, ECS::Tokens::VisibilityList* visibilityList, const Math::float4x4& worldToCLip, float znear, float zfar);
             ShadowCascades GetCascadeZSplits(float znear, float zfar) const;
         
         private:

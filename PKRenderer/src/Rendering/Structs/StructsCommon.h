@@ -18,8 +18,8 @@ namespace PK::Rendering::Structs
         float radius = 0.0f;
         Math::float3 color = Math::PK_FLOAT3_ZERO;
         float angle = 0.0f;
-        Math::ushort shadowIndex = 0xFFFFu;
-        Math::ushort matrixIndex = 0u;
+        Math::ushort indexShadow = 0xFFFFu;
+        Math::ushort indexMatrix = 0u;
         Math::ushort type = 0xFFFFu;
         Math::ushort cookie = 0xFFFFu;
         Math::uint direction = 0u;
