@@ -197,7 +197,7 @@ namespace PK::Rendering
         m_worldToClip = worldToClipNoJitter;
         auto viewSpaceCameraDelta = worldToView * float4(viewToWorldPrev[0].w, viewToWorldPrev[1].w, viewToWorldPrev[2].w, 1.0f);
 
-        m_constantsPerFrame->Set<float4>(hash->pk_ClipParams, { n, f, -1.0f / f, -(n - f) / (f * n) });
+        m_constantsPerFrame->Set<float4>(hash->pk_ClipParams, { n, f, viewToClip[2][2], viewToClip[3][2] });
         m_constantsPerFrame->Set<float4>(hash->pk_ClipParamsInv, { clipToView[0][0], clipToView[1][1], clipToView[2][3], clipToView[3][3] });
         m_constantsPerFrame->Set<float4>(hash->pk_ClipParamsExp, { 1.0f / glm::log2(f / n), -log2(n) / log2(f / n), f / n, 1.0f / n });
         m_constantsPerFrame->Set<float4>(hash->pk_WorldSpaceCameraPos, viewToWorld[3]);
