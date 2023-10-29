@@ -8,52 +8,24 @@
 #MaterialProperty texture2D _PBSTexture
 #MaterialProperty texture2D _NormalMap
 
-/*
-@TODO use separate samplers for these textures. they take a lot of register space by having them combined.
-layout(set = 0, binding = 0) uniform sampler albedoSampler;
-layout(set = 0, binding = 1) uniform texture2D albedo[];
-
-texture(sampler2D(albedo[material.albedoTextureIndex], albedoSampler), uv);
-*/
-
 #define BxDF_ENABLE_SHEEN
 #define BxDF_ENABLE_CLEARCOAT
-#define PK_USE_TANGENTS
+#define SURF_USE_TANGENTS
 #include includes/SurfaceShaderBase.glsl
 
 #pragma PROGRAM_VERTEX
-void PK_SURFACE_FUNC_VERT(inout SurfaceVaryings surf) {}
+void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf) {}
 
 #pragma PROGRAM_FRAGMENT
 
-float4 SampleTriplanar(texture2D tex, float3 normal, float3 position, float scale)
+void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 {
-    float3 blend = abs(normal);
-    blend /= dot(blend, 1.0.xxx);
-    const float4 cx = PK_SURF_TEX(tex, position.yz * scale);
-    const float4 cy = PK_SURF_TEX(tex, position.xz * scale);
-    const float4 cz = PK_SURF_TEX(tex, position.xy * scale);
-    return cx * blend.x + cy * blend.y + cz * blend.z;
-}
-
-float3 SampleNormalTriplanar(inout SurfaceData surf, float scale)
-{
-    float3 blend = abs(PK_SURF_MESH_NORMAL);
-    blend /= dot(blend, 1.0.xxx);
-    const float3 cx = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, surf.worldpos.yz * scale);
-    const float3 cy = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, surf.worldpos.xz * scale);
-    const float3 cz = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, surf.worldpos.xy * scale);
-    return normalize(cx * blend.x + cy * blend.y + cz * blend.z);
-}
-
-void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf)
-{
-    float3 textureval = SampleTriplanar(_PBSTexture, PK_SURF_MESH_NORMAL, surf.worldpos, 0.25f).xyz;
+    float3 textureval = SURF_TEX_TRIPLANAR(_PBSTexture, SURF_MESH_NORMAL, surf.worldpos * 0.25f).xyz;
     surf.metallic = textureval.SRC_METALLIC * _Metallic;
     surf.roughness = textureval.SRC_ROUGHNESS * _Roughness;
     surf.occlusion = lerp(1.0f, textureval.SRC_OCCLUSION, _Occlusion);
-    surf.normal = SampleNormalTriplanar(surf, 0.25f);
-    surf.albedo = SampleTriplanar(_AlbedoTexture, PK_SURF_MESH_NORMAL, surf.worldpos, 0.25f).rgb * _Color.xyz;
+    surf.normal = SURF_SAMPLE_NORMAL_TRIPLANAR(_NormalMap, _NormalAmount, surf.worldpos * 0.25f);
+    surf.albedo = SURF_TEX_TRIPLANAR(_AlbedoTexture, SURF_MESH_NORMAL, surf.worldpos * 0.25f).rgb * _Color.xyz;
     surf.sheen = 1.0f.xxx;
     surf.sheenTint = 0.0f;
     surf.clearCoat = 0.5f.xxx;

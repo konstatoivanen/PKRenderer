@@ -39,7 +39,7 @@ void main()
 {
     const int2 raycoord = int2(gl_LaunchIDEXT.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy);
-    const float depth = SamplePreviousViewDepth(coord);
+    const float depth = SamplePreviousViewDepthBiased(coord);
 
     if (Test_DepthFar(depth))
     {

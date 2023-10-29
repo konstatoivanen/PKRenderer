@@ -68,12 +68,13 @@ namespace PK::Rendering
         DECLARE_HASH(pk_GizmoVertices)
         
         DECLARE_HASH(pk_GB_Current_Normals)
-        DECLARE_HASH(pk_GB_Current_ZBias)
         DECLARE_HASH(pk_GB_Current_Depth)
+        DECLARE_HASH(pk_GB_Current_DepthBiased)
         DECLARE_HASH(pk_GB_Current_DepthMips)
         DECLARE_HASH(pk_GB_Previous_Color)
         DECLARE_HASH(pk_GB_Previous_Normals)
         DECLARE_HASH(pk_GB_Previous_Depth)
+        DECLARE_HASH(pk_GB_Previous_DepthBiased)
 
         DECLARE_HASH(pk_ShadowmapAtlas)
         DECLARE_HASH(pk_ShadowmapScreenSpace)

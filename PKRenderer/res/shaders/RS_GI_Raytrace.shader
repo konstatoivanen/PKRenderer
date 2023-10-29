@@ -118,7 +118,7 @@ void main()
 {
     const int2 raycoord = int2(gl_LaunchIDEXT.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy);
-    const float depth = SampleViewDepth(coord);
+    const float depth = SampleViewDepthBiased(coord);
     
     GIRayParams params;
     GIRayHits hits;

@@ -11,26 +11,26 @@
 #MaterialProperty texture2D _HeightMap
 
 #define BxDF_ENABLE_SHEEN
-#define PK_USE_TANGENTS
+#define SURF_USE_TANGENTS
 #include includes/SurfaceShaderBase.glsl
 
 #pragma PROGRAM_VERTEX
-void PK_SURFACE_FUNC_VERT(inout SurfaceVaryings surf) {}
+void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf) {}
 
 #pragma PROGRAM_FRAGMENT
-void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf)
+void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 {
-    float height = PK_SURF_SAMPLE_HEIGHT_MAP(_HeightMap, uv);
-    uv += PK_SURF_MAKE_PARALLAX_OFFSET(height, _HeightAmount, surf.viewdir);
+    float height = SURF_TEX(_HeightMap, uv).x;
+    uv += SURF_MAKE_PARALLAX_OFFSET(height, _HeightAmount, surf.viewdir);
 
-    float3 textureval = PK_SURF_TEX(_PBSTexture, uv).xyz;
+    float3 textureval = SURF_TEX(_PBSTexture, uv).xyz;
     surf.metallic = textureval.SRC_METALLIC * _Metallic;
     // @TODO this is a hack to fix a bad sand texture. Replace sand mat with a better one & get rid of this.
     surf.roughness = sqrt(textureval.SRC_ROUGHNESS * _Roughness); 
     surf.occlusion = lerp(1.0f, textureval.SRC_OCCLUSION, _Occlusion);
-    surf.normal = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
-    surf.albedo = PK_SURF_TEX(_AlbedoTexture, uv).rgb * _Color.rgb;
-    surf.depthBias = (1.0f - PK_SURF_SAMPLE_HEIGHT_MAP(_HeightMap, uv)) * -_HeightAmount * 10.0f;
+    surf.normal = SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
+    surf.albedo = SURF_TEX(_AlbedoTexture, uv).rgb * _Color.rgb;
+    surf.depthBias = SURF_TEX(_HeightMap, uv).x * _HeightAmount * 10.0f;
     surf.depthBias = pow3(surf.depthBias);
 
     // Add glitter

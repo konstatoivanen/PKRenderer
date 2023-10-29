@@ -7,7 +7,7 @@ namespace PK::Rendering
     {
         Objects::Texture* color;
         Objects::Texture* normals;
-        Objects::Texture* zbias;
+        Objects::Texture* depthBiased;
         Objects::Texture* depth;
     };
 
@@ -21,7 +21,7 @@ namespace PK::Rendering
     {
         Utilities::Ref<Objects::Texture> color;
         Utilities::Ref<Objects::Texture> normals;
-        Utilities::Ref<Objects::Texture> zbias;
+        Utilities::Ref<Objects::Texture> depthBiased;
         Utilities::Ref<Objects::Texture> depth;
     };
 
@@ -34,8 +34,8 @@ namespace PK::Rendering
         {
             return 
             { 
-                { current.color.get(), current.normals.get(), current.zbias.get(), current.depth.get()}, 
-                { previous.color.get(), previous.normals.get(), nullptr, previous.depth.get()}
+                { current.color.get(), current.normals.get(), current.depthBiased.get(), current.depth.get()},
+                { previous.color.get(), previous.normals.get(), previous.depthBiased.get(), previous.depth.get()}
             };
         }
 
@@ -45,10 +45,11 @@ namespace PK::Rendering
             value |= current.color->Validate(resolution);
             value |= current.depth->Validate(resolution);
             value |= current.normals->Validate(resolution);
-            value |= current.zbias->Validate(resolution);
+            value |= current.depthBiased->Validate(resolution);
             value |= previous.color->Validate(resolution);
             value |= previous.normals->Validate(resolution);
             value |= previous.depth->Validate(resolution);
+            value |= previous.depthBiased->Validate(resolution);
             return value;
         }
     };

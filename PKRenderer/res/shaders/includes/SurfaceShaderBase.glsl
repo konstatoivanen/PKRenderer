@@ -28,8 +28,8 @@ struct SurfaceData
     float3 viewdir;
     float3 worldpos;
     float3 clipuvw;
-    float3 albedo;      
-    float3 normal;      
+    float3 albedo;
+    float3 normal;
     float3 emission;
     float3 sheen;
     float3 subsurface;
@@ -44,7 +44,7 @@ struct SurfaceData
 };
  
 // http://www.thetenthplanet.de/archives/1180
-float3x3 ComposeDerivativeTBN(float3 normal, float3 position, float2 texcoord)
+float3x3 ComposeDerivativeTBN(float3 normal, const float3 position, const float2 texcoord)
 {
     normal = normalize(normal);
 
@@ -72,13 +72,42 @@ float3x3 ComposeMikkTBN(float3 normal, float4 tangent)
     return float3x3(T, B, N);
 }
 
-float3 SampleNormalTex(in texture2D map, in float3x3 rotation, in float2 uv, float amount) 
-{   
-    const float3 n = texture(sampler2D(map, pk_Sampler_SurfDefault), uv).xyz * 2.0f - 1.0f;
-    return normalize(mul(rotation, lerp(float3(0,0,1), n, amount))); 
+float3 SampleNormalTex(const texture2D map, const float3x3 rotation, const float2 uv, const float amount) 
+{
+    float3 normal = texture(sampler2D(map, pk_Sampler_SurfDefault), uv).xyz * 2.0f - 1.0f;
+    normal = lerp(float3(0,0,1), normal, amount);
+    return normalize(mul(rotation, normal)); 
 }
 
-float3 GetIndirectLight_Main(BxDFSurf surf, const float3 worldpos, const float3 clipuvw)
+float3 SampleNormalTexTriplanar(const texture2D tex, const float3x3 rotation, const float3 uvw, const float amount) 
+{
+    float3 blend = abs(rotation[2]);
+    blend /= dot(blend, 1.0.xxx);
+    const float3 cx = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.yz).xyz;
+    const float3 cy = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xz).xyz;
+    const float3 cz = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xy).xyz;
+    float3 normal = (cx * blend.x + cy * blend.y + cz * blend.z) * 2.0f - 1.0f;
+    normal = lerp(float3(0,0,1), normal, amount);
+    return normalize(mul(rotation, normal)); 
+}
+
+float4 SampleTexTriplanar(const texture2D tex, const float3 normal, const float3 uvw, float bias)
+{
+    float3 blend = abs(normal);
+    blend /= dot(blend, 1.0.xxx);
+    #if defined(SHADER_STAGE_FRAGMENT)
+    const float4 cx = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.yz, bias);
+    const float4 cy = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xz, bias);
+    const float4 cz = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xy, bias);
+    #else
+    const float4 cx = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.yz);
+    const float4 cy = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xz);
+    const float4 cz = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xy);
+    #endif
+    return cx * blend.x + cy * blend.y + cz * blend.z;
+}
+
+float3 GetIndirectLight_Main(const BxDFSurf surf, const float3 worldpos, const float3 clipuvw)
 {
     //float3 diffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
     //float3 specular = SampleEnvironment(OctaUV(reflect(-surf.viewdir, surf.normal)), surf.alpha);
@@ -126,165 +155,156 @@ float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const f
 #multi_compile _ PK_META_PASS_GBUFFER PK_META_PASS_GIVOXELIZE
 
 #if defined(PK_META_PASS_GIVOXELIZE) 
-    #undef PK_USE_TANGENTS
+    #undef SURF_USE_TANGENTS
     // Prefilter by using a higher mip bias in voxelization.
-    #define PK_SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv, 4.0f)
-    #define PK_META_DECLARE_SURFACE_OUTPUT
-    #define PK_META_STORE_SURFACE_OUTPUT(value0, value1, worldpos) GI_Store_Voxel(worldpos, value0)
-    #define PK_META_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNDCSpace(position)
-    #define PK_META_BxDF EvaluateBxDF_DirectMinimal
-    #define PK_META_BxDF_INDIRECT GetIndirectLight_VXGI
-    #define DECLARE_VS_INTERFACE_WORLDPOSITION(io) io float3 vs_WORLDPOSITION;
+    #define SURF_DECLARE_RASTER_OUTPUT
+    #define SURF_STORE_OUTPUT(value0, value1, worldpos) GI_Store_Voxel(worldpos, value0);
+    #define SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv, 4.0f)
+    #define SURF_TEX_TRIPLANAR(t, n, uvw) SampleTexTriplanar(t,n,uvw,4.0f)
+    #define SURF_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNDCSpace(position)
+    #define SURF_EVALUATE_BxDF EvaluateBxDF_DirectMinimal
+    #define SURF_EVALUATE_BxDF_INDIRECT GetIndirectLight_VXGI
+    #define SURF_DECLARE_VS_INTERFACE_WORLDPOSITION(io) io float3 vs_WORLDPOSITION;
+    #define SURF_ASSIGN_WORLDPOSITION
 #else
-    #define PK_SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv)
     #if defined(PK_META_PASS_GBUFFER)
-        #define PK_META_DECLARE_SURFACE_OUTPUT out float4 SV_Target0; out float SV_Target1;
-        #define PK_META_STORE_SURFACE_OUTPUT(value0, value1, worldpos) SV_Target0 = value0; SV_Target1 = value1
+        #define SURF_DECLARE_RASTER_OUTPUT out float4 SV_Target0; out float SV_Target1;
+        #define SURF_STORE_OUTPUT(value0, value1, worldpos) SV_Target0 = value0; SV_Target1 = value1;
     #else
-        #define PK_META_DECLARE_SURFACE_OUTPUT out float4 SV_Target0;
-        #define PK_META_STORE_SURFACE_OUTPUT(value0, value1, worldpos) SV_Target0 = value0
+        #define SURF_DECLARE_RASTER_OUTPUT out float4 SV_Target0;
+        #define SURF_STORE_OUTPUT(value0, value1, worldpos) SV_Target0 = value0;
     #endif
-    #define PK_META_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
-    #define PK_META_BxDF EvaluateBxDF_Direct
-    #define PK_META_BxDF_INDIRECT GetIndirectLight_Main
-    #define DECLARE_VS_INTERFACE_WORLDPOSITION(io)
+    #define SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv)
+    #define SURF_TEX_TRIPLANAR(t, n, uvw) SampleTexTriplanar(t,n,uvw,0.0f)
+    #define SURF_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
+    #define SURF_EVALUATE_BxDF EvaluateBxDF_Direct
+    #define SURF_EVALUATE_BxDF_INDIRECT GetIndirectLight_Main
+    #define SURF_DECLARE_VS_INTERFACE_WORLDPOSITION(io) float3 vs_WORLDPOSITION;
+    #define SURF_ASSIGN_WORLDPOSITION vs_WORLDPOSITION = UVToWorldPos(gl_FragCoord.xy * pk_ScreenParams.zw, ViewDepth(gl_FragCoord.z));
 #endif
 
-#define DECLARE_VS_INTERFACE_BASE(io) \
-io float3 vs_NORMAL;                  \
-io float2 vs_TEXCOORD0;               \
+#define SURF_DECLARE_VS_INTERFACE_BASE(io) \
+io float3 vs_NORMAL; \
+io float2 vs_TEXCOORD0; \
 
-#if defined(PK_USE_TANGENTS)
+#if defined(SURF_USE_TANGENTS)
     half3x3 pk_MATRIX_TBN;
-    #define PK_SURF_MESH_NORMAL pk_MATRIX_TBN[2]
-    float2 PK_SURF_MAKE_PARALLAX_OFFSET(float height, float amount, float3 viewdir) 
+    #define SURF_MESH_NORMAL pk_MATRIX_TBN[2]
+    float2 SURF_MAKE_PARALLAX_OFFSET(float height, float amount, float3 viewdir) 
     { 
         viewdir = mul(transpose(pk_MATRIX_TBN), viewdir);
         return (height * amount - amount * 0.5f) * viewdir.xy / (viewdir.z + 0.5f); 
     }
-    #define PK_SURF_SAMPLE_HEIGHT_MAP(heightmap, uv) textureLod(sampler2D(heightmap, pk_Sampler_SurfDefault), uv, 0.0f).x
-    #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormalTex(normalmap, pk_MATRIX_TBN, uv, amount)
+    #define SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormalTex(normalmap, pk_MATRIX_TBN, uv, amount)
+    #define SURF_SAMPLE_NORMAL_TRIPLANAR(normalmap, amount, uvw) SampleNormalTexTriplanar(normalmap, pk_MATRIX_TBN, uvw, amount)
     #if defined(PK_USE_DERIVATIVE_TANGENTS)
-        #define DECLARE_VS_INTERFACE_TANGENT(io)
+        #define SURF_DECLARE_VS_INTERFACE_TANGENT(io) float4 vs_TANGENT;
+        #define SURF_ASSIGN_TBN pk_MATRIX_TBN = half3x3(ComposeDerivativeTBN(vs_NORMAL, vs_WORLDPOSITION, vs_TEXCOORD0));
     #else
-        #define DECLARE_VS_INTERFACE_TANGENT(io) io float4 vs_TANGENT;
+        #define SURF_DECLARE_VS_INTERFACE_TANGENT(io) io float4 vs_TANGENT;
+        #define SURF_ASSIGN_TBN pk_MATRIX_TBN = half3x3(ComposeMikkTBN(vs_NORMAL, vs_TANGENT));
     #endif
 #else
-    #define DECLARE_VS_INTERFACE_TANGENT(io)
-    #define PK_SURF_MESH_NORMAL normalize(vs_NORMAL)
-    #define PK_SURF_MAKE_PARALLAX_OFFSET(height, amount, viewdir) 0.0f.xx 
-    #define PK_SURF_SAMPLE_HEIGHT_MAP(heightmap, uv) 0.0f
-    #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) PK_SURF_MESH_NORMAL
+    #define SURF_DECLARE_VS_INTERFACE_TANGENT(io) float4 vs_TANGENT;
+    #define SURF_MESH_NORMAL normalize(vs_NORMAL)
+    #define SURF_MAKE_PARALLAX_OFFSET(height, amount, viewdir) 0.0f.xx 
+    #define SURF_SAMPLE_NORMAL(normalmap, amount, uv) SURF_MESH_NORMAL
+    #define SURF_SAMPLE_NORMAL_TRIPLANAR(normalmap, amount, uvw) SURF_MESH_NORMAL
+    #define SURF_ASSIGN_TBN 
 #endif
-                           
+
 //// ---------- VERTEX STAGE ---------- ////
 #if defined(SHADER_STAGE_VERTEX)
 
     // Use these to modify surface values in vertex stage
-    void PK_SURFACE_FUNC_VERT(inout SurfaceVaryings surf);
+    void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf);
 
-    // Inptu interface
+    // Input interface
     in float3 in_POSITION;
     in float3 in_NORMAL;
-    #if defined(PK_USE_TANGENTS)
+    #if defined(SURF_USE_TANGENTS)
     in float4 in_TANGENT;
+    #else
+    #define in_TANGENT float4(0.0f.xxxx)
     #endif
     in float2 in_TEXCOORD0;
 
-    DECLARE_VS_INTERFACE_TANGENT(out)
-    DECLARE_VS_INTERFACE_WORLDPOSITION(out)
-    DECLARE_VS_INTERFACE_BASE(out)
+    SURF_DECLARE_VS_INTERFACE_TANGENT(out)
+    SURF_DECLARE_VS_INTERFACE_WORLDPOSITION(out)
+    SURF_DECLARE_VS_INTERFACE_BASE(out)
 
     void main()
     {
-        SurfaceVaryings varyings;
+        SurfaceVaryings varyings = SurfaceVaryings
+        (
+            ObjectToWorldPos(in_POSITION.xyz),
+            ObjectToWorldDir(in_NORMAL),
+            float4(ObjectToWorldDir(in_TANGENT.xyz), in_TANGENT.w),
+            in_TEXCOORD0
+        );
 
-        varyings.worldpos = ObjectToWorldPos(in_POSITION.xyz);
-        varyings.texcoord = in_TEXCOORD0;
-        varyings.normal = ObjectToWorldDir(in_NORMAL);
-        
-        #if defined(PK_USE_TANGENTS)
-            varyings.tangent.xyz = ObjectToWorldDir(in_TANGENT.xyz);
-            varyings.tangent.w = in_TANGENT.w;
-        #endif
+        SURF_FUNCTION_VERTEX(varyings);
 
-        PK_SURFACE_FUNC_VERT(varyings);
-
-        gl_Position = PK_META_WORLD_TO_CLIPSPACE(varyings.worldpos);
+        gl_Position = SURF_WORLD_TO_CLIPSPACE(varyings.worldpos);
         vs_NORMAL = varyings.normal;
         vs_TEXCOORD0 = varyings.texcoord;
-
-        #if defined(PK_META_PASS_GIVOXELIZE)
-            vs_WORLDPOSITION = varyings.worldpos;
-        #endif
-        
-        #if defined(PK_USE_TANGENTS)
-            vs_TANGENT = varyings.tangent;
-        #endif
+        vs_WORLDPOSITION = varyings.worldpos;
+        vs_TANGENT = varyings.tangent;
     }
 
 //// ---------- FRAGMENT STAGE ---------- ////
 #elif defined(SHADER_STAGE_FRAGMENT)
 
     // Use these to modify surface values in fragment stage
-    void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf);
-    DECLARE_VS_INTERFACE_TANGENT(in)
-    DECLARE_VS_INTERFACE_WORLDPOSITION(in)
-    DECLARE_VS_INTERFACE_BASE(in)
-    PK_META_DECLARE_SURFACE_OUTPUT
+    void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf);
+    SURF_DECLARE_VS_INTERFACE_TANGENT(in)
+    SURF_DECLARE_VS_INTERFACE_WORLDPOSITION(in)
+    SURF_DECLARE_VS_INTERFACE_BASE(in)
+    SURF_DECLARE_RASTER_OUTPUT
 
     void main()
     {
-        #if !defined(PK_META_PASS_GIVOXELIZE)
-        const float3 vs_WORLDPOSITION = UVToWorldPos(gl_FragCoord.xy * pk_ScreenParams.zw, ViewDepth(gl_FragCoord.z));
-        #endif
-
-        #if defined(PK_USE_TANGENTS)
-            #if defined(PK_USE_DERIVATIVE_TANGENTS)
-                pk_MATRIX_TBN = half3x3(ComposeDerivativeTBN(vs_NORMAL, vs_WORLDPOSITION, vs_TEXCOORD0));
-            #else
-                pk_MATRIX_TBN = half3x3(ComposeMikkTBN(vs_NORMAL, vs_TANGENT));
-            #endif
-        #endif
+        SURF_ASSIGN_WORLDPOSITION
+        SURF_ASSIGN_TBN
 
         SurfaceData surf = SurfaceData
         (
-            normalize(pk_WorldSpaceCameraPos.xyz - vs_WORLDPOSITION),
-            vs_WORLDPOSITION,
-            0.0f.xxx,
-            1.0f.xxx,      
-            float3(0,0,1),      
-            0.0f.xxx,
-            0.0f.xxx,
-            0.0f.xxx,
-            0.0f.xxx,
-            0.0f,
-            0.0,
-            1.0f,
-            0.0f,     
-            1.0f,
-            0.0f,
-            0.0f
+            normalize(pk_WorldSpaceCameraPos.xyz - vs_WORLDPOSITION), //float3 viewdir;
+            vs_WORLDPOSITION,                                         //float3 worldpos;
+            0.0f.xxx,                                                 //float3 clipuvw;
+            1.0f.xxx,                                                 //float3 albedo;
+            float3(0,0,1),                                            //float3 normal;
+            0.0f.xxx,                                                 //float3 emission;
+            0.0f.xxx,                                                 //float3 sheen;
+            0.0f.xxx,                                                 //float3 subsurface;
+            0.0f.xxx,                                                 //float3 clearCoat;
+            0.0f,                                                     //float sheenTint;
+            0.0,                                                      //float clearCoatGloss;
+            1.0f,                                                     //float alpha;
+            0.0f,                                                     //float metallic;     
+            1.0f,                                                     //float roughness;
+            0.0f,                                                     //float occlusion;
+            0.0f                                                      //float depthBias;
         );
         
         #if defined(PK_META_PASS_GIVOXELIZE)
             float3 voxelPos = GI_QuantizeWorldToVoxelSpace(surf.worldpos);
 
             [[branch]]
-            if (!Test_WorldToClipUVW(voxelPos, surf.clipuvw) || GI_Test_VX_HasValue(surf.worldpos) || !GI_Test_VX_Normal(PK_SURF_MESH_NORMAL))                 
-            {                                           
-                return;                                 
-            }       
+            if (!Test_WorldToClipUVW(voxelPos, surf.clipuvw) || GI_Test_VX_HasValue(surf.worldpos) || !GI_Test_VX_Normal(SURF_MESH_NORMAL))                 
+            {
+                return;
+            }
 
-            surf.clipuvw = WorldToClipUVW(surf.worldpos);                      
-            surf.clipuvw.xy = ClampUVScreenBorder(surf.clipuvw.xy);          
+            surf.clipuvw = WorldToClipUVW(surf.worldpos);
+            surf.clipuvw.xy = ClampUVScreenBorder(surf.clipuvw.xy);
             int2 screencoord = int2(surf.clipuvw.xy * pk_ScreenSize.xy);
         #else
             surf.clipuvw = float3(gl_FragCoord.xy * pk_ScreenParams.zw, gl_FragCoord.z);
             int2 screencoord = int2(gl_FragCoord.xy);
         #endif
 
-        PK_SURFACE_FUNC_FRAG(vs_TEXCOORD0, surf);
+        SURF_FUNCTION_FRAGMENT(vs_TEXCOORD0, surf);
 
         #if !defined(PK_META_PASS_GIVOXELIZE)
             const float shiftAmount = dot(surf.normal, surf.viewdir);
@@ -297,35 +317,34 @@ io float2 vs_TEXCOORD0;               \
 
         #if defined(PK_META_PASS_GBUFFER)
             sv_output0 = EncodeGBufferWorldNR(surf.normal, surf.roughness, surf.metallic);
-            const float biasedDepth = max(pk_ClipParams.x, ViewDepth(surf.clipuvw.z) + surf.depthBias);
-            sv_output1 = surf.clipuvw.z - ClipDepth(biasedDepth);
+            sv_output1 = EncodeBiasedDepth(surf.clipuvw.z, surf.depthBias);
         #else
             const float3 F0 = lerp(PK_DIELECTRIC_SPEC.rgb, surf.albedo, surf.metallic);
             const float reflectivity = PK_DIELECTRIC_SPEC.r + surf.metallic * PK_DIELECTRIC_SPEC.a;
             surf.albedo *= 1.0f - reflectivity;
 
-            #if defined(PK_SURF_TRANSPARENT)
+            #if defined(SURF_TRANSPARENT)
                 surf.albedo *= surf.alpha;
                 surf.alpha = reflectivity + surf.alpha * (1.0f - reflectivity);
             #endif
 
             BxDFSurf bxdf_surf = BxDFSurf
             (
-                surf.albedo, 
-                F0, 
-                surf.normal, 
-                surf.viewdir, 
-                surf.sheen, 
-                surf.subsurface, 
-                surf.clearCoat, 
+                surf.albedo,
+                F0,
+                surf.normal,
+                surf.viewdir,
+                surf.sheen,
+                surf.subsurface,
+                surf.clearCoat,
                 surf.sheenTint,
                 surf.clearCoatGloss,
-                reflectivity, 
+                reflectivity,
                 pow2(surf.roughness), // Convert linear roughness to roughness
                 max(0.0f, dot(surf.normal, surf.viewdir))
             );
 
-            sv_output0.rgb = PK_META_BxDF_INDIRECT(bxdf_surf, surf.worldpos, surf.clipuvw);
+            sv_output0.rgb = SURF_EVALUATE_BxDF_INDIRECT(bxdf_surf, surf.worldpos, surf.clipuvw);
 
             #if !defined(PK_META_PASS_GIVOXELIZE)
                 sv_output0.rgb *= surf.occlusion;
@@ -335,14 +354,14 @@ io float2 vs_TEXCOORD0;               \
             for (uint i = tile.start; i < tile.end; ++i)
             {
                 Light light = GetLight(i, surf.worldpos, surf.normal, tile.cascade);
-                sv_output0.rgb += PK_META_BxDF(bxdf_surf, light.direction, light.color, light.shadow, light.sourceRadius);
+                sv_output0.rgb += SURF_EVALUATE_BxDF(bxdf_surf, light.direction, light.color, light.shadow, light.sourceRadius);
             }
 
             sv_output0.rgb += surf.emission;
-            sv_output0.a = surf.alpha; 
+            sv_output0.a = surf.alpha;
         #endif
 
-        PK_META_STORE_SURFACE_OUTPUT(sv_output0, sv_output1, surf.worldpos);
+        SURF_STORE_OUTPUT(sv_output0, sv_output1, surf.worldpos)
     }
 
 #endif

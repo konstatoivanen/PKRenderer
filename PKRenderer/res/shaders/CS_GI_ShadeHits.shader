@@ -35,7 +35,7 @@ void main()
 {
     const int2 raycoord = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(raycoord));
-    const float depth = SampleViewDepth(coord);
+    const float depth = SampleViewDepthBiased(coord);
 
     GIRayParams params;
     uint4 packedDiff = uint4(0u);

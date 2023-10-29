@@ -46,8 +46,8 @@ namespace PK::Rendering
         curDesc.usage = TextureUsage::RTColorSample;
         m_gbuffers.current.normals = Texture::Create(curDesc, "Scene.RenderTarget.Normals");
 
-        curDesc.format = TextureFormat::R16F;
-        m_gbuffers.current.zbias = Texture::Create(curDesc, "Scene.RenderTarget.ZBias");
+        curDesc.format = TextureFormat::R32F;
+        m_gbuffers.current.depthBiased = Texture::Create(curDesc, "Scene.RenderTarget.DepthBiased");
 
         curDesc.format = TextureFormat::Depth32F;
         curDesc.usage = TextureUsage::RTDepthSample;
@@ -63,6 +63,9 @@ namespace PK::Rendering
 
         prevDesc.format = TextureFormat::RGB10A2;
         m_gbuffers.previous.normals = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Normals");
+
+        curDesc.format = TextureFormat::R32F;
+        m_gbuffers.previous.depthBiased = Texture::Create(curDesc, "Scene.RenderTarget.Previous.DepthBiased");
 
         prevDesc.format = TextureFormat::Depth32F;
         m_gbuffers.previous.depth = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Depth");
@@ -243,11 +246,12 @@ namespace PK::Rendering
         }
 
         GraphicsAPI::SetTexture(hash->pk_GB_Current_Normals, gbuffers.current.normals);
-        GraphicsAPI::SetTexture(hash->pk_GB_Current_ZBias, gbuffers.current.zbias);
         GraphicsAPI::SetTexture(hash->pk_GB_Current_Depth, gbuffers.current.depth);
+        GraphicsAPI::SetTexture(hash->pk_GB_Current_DepthBiased, gbuffers.current.depthBiased);
         GraphicsAPI::SetTexture(hash->pk_GB_Previous_Color, gbuffers.previous.color);
         GraphicsAPI::SetTexture(hash->pk_GB_Previous_Normals, gbuffers.previous.normals);
         GraphicsAPI::SetTexture(hash->pk_GB_Previous_Depth, gbuffers.previous.depth);
+        GraphicsAPI::SetTexture(hash->pk_GB_Previous_DepthBiased, gbuffers.previous.depthBiased);
 
         auto cascadeZSplits = m_passLights.GetCascadeZSplits(m_znear, m_zfar);
         m_constantsPerFrame->Set<float4>(hash->pk_ShadowCascadeZSplits, reinterpret_cast<float4*>(cascadeZSplits.data()));
@@ -290,7 +294,7 @@ namespace PK::Rendering
         window->SetFrameFence(queues->GetFenceRef(QueueType::Transfer));
 
         // Concurrent Shadows & gbuffer
-        cmdgraphics->SetRenderTarget({ gbuffers.current.depth, gbuffers.current.normals, gbuffers.current.zbias }, true);
+        cmdgraphics->SetRenderTarget({ gbuffers.current.depth, gbuffers.current.normals, gbuffers.current.depthBiased }, true);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 1);
         cmdgraphics->ClearDepth(PK_CLIPZ_FAR, 0u);
@@ -357,6 +361,7 @@ namespace PK::Rendering
 
         // Blit to window
         cmdgraphics->Blit(gbuffers.current.depth, gbuffers.previous.depth, {}, {}, FilterMode::Point);
+        cmdgraphics->Blit(gbuffers.current.depthBiased, gbuffers.previous.depthBiased, {}, {}, FilterMode::Point);
         cmdgraphics->Blit(gbuffers.current.normals, gbuffers.previous.normals, {}, {}, FilterMode::Point);
         cmdgraphics->Blit(gbuffers.current.color, window, FilterMode::Bilinear);
     }

@@ -4,13 +4,16 @@
 
 #include Common.glsl
 
+#define USE_BIASED_DEPTH 1
+
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_Normals;
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_Depth;
-PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_ZBias;
+PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_DepthBiased;
 PK_DECLARE_SET_GLOBAL uniform texture2DArray pk_GB_Current_DepthMips;
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_Color;
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_Normals;
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_Depth;
+PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_DepthBiased;
 PK_DECLARE_SET_GLOBAL uniform sampler pk_Sampler_GBuffer;
 
 #define GBUFFER_SAMPLE(t, uv) texture(sampler2D(t, pk_Sampler_GBuffer), uv)
@@ -59,6 +62,16 @@ float4 DecodeGBufferViewNR(const float4 encoded)
     return float4(fenc * sqrt(1 - f / 4), -(1 - f / 2), encoded.y);
 }
 
+float EncodeBiasedDepth(float clipDepth, float bias)
+{
+    const float viewDepth = ViewDepth(clipDepth);
+    const float viewDepthBiased = max(pk_ClipParams.x, viewDepth - bias);
+    float clipDepthBiased = ClipDepth(viewDepthBiased);
+    // Only allow bias towards camera as forward bias will cause clipping issues.
+    //return clipDepth;
+    return max(clipDepth, clipDepthBiased);
+}
+
 float3 SamplePreviousColor(const float2 uv) { return GBUFFER_SAMPLE(pk_GB_Previous_Color, uv).rgb; }
 float3 SamplePreviousColor(const int2 coord) { return texelFetch(pk_GB_Previous_Color, coord, 0).rgb; }
 
@@ -70,14 +83,26 @@ float SampleMinZ(const float2 uv, const float l) { return GBUFFER_SMP_ARR_LOD(pk
 float SampleMaxZ(const float2 uv, const float l) { return GBUFFER_SMP_ARR_LOD(pk_GB_Current_DepthMips, float3(uv, 1), l).x; }
 float SampleAvgZ(const float2 uv, const float l) { return GBUFFER_SMP_ARR_LOD(pk_GB_Current_DepthMips, float3(uv, 2), l).x; }
 
+float SampleClipDepthBiased(const int2 coord) { return texelFetch(pk_GB_Current_DepthBiased, coord, 0).x; }
+float SampleViewDepthBiased(const float2 uv) { return ViewDepth(GBUFFER_SAMPLE(pk_GB_Current_DepthBiased, uv).x); }
+float SampleViewDepthBiased(const int2 coord) { return ViewDepth(texelFetch(pk_GB_Current_DepthBiased, coord, 0).x); }
+
+float SampleClipDepth(const int2 coord) { return texelFetch(pk_GB_Current_Depth, coord, 0).x; }
 float SampleViewDepth(const float2 uv) { return ViewDepth(GBUFFER_SAMPLE(pk_GB_Current_Depth, uv).x); }
 float SampleViewDepth(const int2 coord) { return ViewDepth(texelFetch(pk_GB_Current_Depth, coord, 0).x); }
+
 // Gather order: (0,1), (1,1), (1,0), (0,0) 
 #define GatherViewDepths(uv) ViewDepth(GBUFFER_GATHER(pk_GB_Current_Depth, uv, 0))
 #define SampleViewDepthOffsets(uv, offsets) ViewDepth(GBUFFER_GATHER_OFFSETS(pk_GB_Current_Depth, uv, offsets))
 
+float SamplePreviousClipDepthBiased(const int2 coord) { return texelFetch(pk_GB_Previous_Depth, coord, 0).x; }
+float SamplePreviousViewDepthBiased(const float2 uv) { return ViewDepth(GBUFFER_SAMPLE(pk_GB_Previous_Depth, uv).x); }
+float SamplePreviousViewDepthBiased(const int2 coord) { return ViewDepth(texelFetch(pk_GB_Previous_Depth, coord, 0).x); }
+
+float SamplePreviousClipDepth(const int2 coord) { return texelFetch(pk_GB_Previous_Depth, coord, 0).x; }
 float SamplePreviousViewDepth(const float2 uv) { return ViewDepth(GBUFFER_SAMPLE(pk_GB_Previous_Depth, uv).x); }
 float SamplePreviousViewDepth(const int2 coord) { return ViewDepth(texelFetch(pk_GB_Previous_Depth, coord, 0).x); }
+
 #define GatherPreviousViewDepths(uv) ViewDepth(GBUFFER_GATHER(pk_GB_Previous_Depth, uv, 0))
 #define SamplePreviousViewDepthOffsets(uv, offsets) ViewDepth(GBUFFER_GATHER_OFFSETS(pk_GB_Previous_Depth, uv, offsets))
 

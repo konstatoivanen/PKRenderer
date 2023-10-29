@@ -39,7 +39,7 @@ float3 GerstnerWave(float4 wave, float3 p, inout float3 tangent, inout float3 bi
     );
 }
 
-void PK_SURFACE_FUNC_VERT(inout SurfaceVaryings surf)
+void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf)
 {
     float4 wavea = float4(1, 0, 0.4f, 10);
     float4 waveb = float4(1, 1, 0.1f, 3);
@@ -64,7 +64,7 @@ void PK_SURFACE_FUNC_VERT(inout SurfaceVaryings surf)
 }
 
 #pragma PROGRAM_FRAGMENT
-void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf)
+void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 {
     float yorigin = pk_ObjectToWorld[2].w;
 
@@ -72,7 +72,7 @@ void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf)
     noise.xy = NoiseCell(int2(surf.worldpos.xz * 8.0f + surf.worldpos.yy * 30.0f));
     noise.y = 1.0f;
 
-    surf.normal = normalize(PK_SURF_MESH_NORMAL + noise * 0.15f);
+    surf.normal = normalize(SURF_MESH_NORMAL + noise * 0.15f);
 
     float nv = saturate(1.0f - dot(surf.normal, surf.viewdir));
 

@@ -78,7 +78,7 @@ half ShadowTest_Dither16(const uint index, const float2 uv, const float z)
 
     half shadow = 0.0hf;
     
-    [[unroll]]
+    //[[unroll]]
     for (uint i = 0u; i < 16u; ++i)
     {
         shadow += ShadowTest_PCF2x2(index, uv + basis * half2(PK_SPIRAL_DISK_16[i]), z);

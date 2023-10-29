@@ -11,17 +11,17 @@
 #MaterialProperty texture2D _NormalMap
 #MaterialProperty texture2D _HeightMap
 #MaterialProperty texture2D _EmissionTexture
-#define PK_USE_TANGENTS
+#define SURF_USE_TANGENTS
 #include includes/SurfaceShaderBase.glsl
 
 #pragma PROGRAM_VERTEX
-void PK_SURFACE_FUNC_VERT(inout SurfaceVaryings surf) {}
+void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf) {}
 
 #pragma PROGRAM_FRAGMENT
-void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf)
+void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 {
-    float height = PK_SURF_SAMPLE_HEIGHT_MAP(_HeightMap, uv);
-    uv += PK_SURF_MAKE_PARALLAX_OFFSET(height, _HeightAmount, surf.viewdir);
+    float height = SURF_TEX(_HeightMap, uv).x;
+    uv += SURF_MAKE_PARALLAX_OFFSET(height, _HeightAmount, surf.viewdir);
 
     //// GI color test code
     //float lval = surf.worldpos.x * 0.025f + pk_Time.y * 0.25f;
@@ -63,12 +63,12 @@ void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf)
         surf.emission = ecolor;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;
     */
 
-    float3 textureval = PK_SURF_TEX(_PBSTexture, uv).xyz;
+    float3 textureval = SURF_TEX(_PBSTexture, uv).xyz;
     surf.metallic = textureval.SRC_METALLIC * _Metallic;
     surf.roughness = textureval.SRC_ROUGHNESS * _Roughness;
     surf.occlusion = lerp(1.0f, textureval.SRC_OCCLUSION, _Occlusion);
-    surf.normal = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
-    surf.albedo = PK_SURF_TEX(_AlbedoTexture, uv).rgb * _Color.xyz;
-    surf.depthBias = (1.0f - PK_SURF_SAMPLE_HEIGHT_MAP(_HeightMap, uv)) * -_HeightAmount;
+    surf.normal = SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
+    surf.albedo = SURF_TEX(_AlbedoTexture, uv).rgb * _Color.xyz;
+    surf.depthBias = SURF_TEX(_HeightMap, uv).x * _HeightAmount;
     surf.depthBias *= 5.0f;
 }

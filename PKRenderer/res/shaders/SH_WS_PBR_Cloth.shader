@@ -13,22 +13,22 @@
 
 #define BxDF_ENABLE_SUBSURFACE
 #define BxDF_ENABLE_SHEEN
-#define PK_USE_TANGENTS
+#define SURF_USE_TANGENTS
 #include includes/SurfaceShaderBase.glsl
 
 #pragma PROGRAM_VERTEX
-void PK_SURFACE_FUNC_VERT(inout SurfaceVaryings surf) {}
+void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf) {}
 
 #pragma PROGRAM_FRAGMENT
-void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf)
+void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 {
     //uv += PK_SURF_SAMPLE_PARALLAX_OFFSET(_HeightMap, _HeightAmount, uv, surf.viewdir);
 
-    float3 textureval = PK_SURF_TEX(_PBSTexture, uv).xyz;
+    float3 textureval = SURF_TEX(_PBSTexture, uv).xyz;
     surf.roughness = textureval.SRC_ROUGHNESS * _Roughness;
     surf.occlusion = lerp(1.0f, textureval.SRC_OCCLUSION, _Occlusion);
     surf.subsurface = 0.1f.xxx;
     surf.sheen = _SheenColor.rgb;
-    surf.normal = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
-    surf.albedo = PK_SURF_TEX(_AlbedoTexture, uv).rgb * _Color.rgb;
+    surf.normal = SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
+    surf.albedo = SURF_TEX(_AlbedoTexture, uv).rgb * _Color.rgb;
 };

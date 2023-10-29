@@ -7,7 +7,7 @@
 
 #include includes/GBuffers.glsl
 
-layout(r8, set = PK_SET_DRAW) uniform image2D pk_Image;
+layout(rg8, set = PK_SET_DRAW) uniform image2D pk_Image;
 
 #if defined(PASS_SHADOWMAP)
 
@@ -24,7 +24,7 @@ layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_
 void main()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const float depth = SampleViewDepth(coord);
+    const float depth = SampleViewDepthBiased(coord);
     const float3 normal = SampleWorldNormal(coord);
     const float3 worldpos = SampleWorldPosition(coord, depth);
 
@@ -70,6 +70,8 @@ void main()
     }
 
     const uint validSamples = uint(avgZ.y + 0.1hf);
+    // @TODO Fix this fade. Needed to avoid penumbra artefacts with screen space trace
+    const half penumbra = 0.0hf;// min(1.0hf, (sourceAngle * avgZ.x / avgZ.y));
 
     [[branch]]
     if (subgroupAll(validSamples == 0u))
@@ -94,7 +96,7 @@ void main()
         shadow /= 16.0hf;
     }
 
-    imageStore(pk_Image, coord, float4(shadow));
+    imageStore(pk_Image, coord, float4(shadow, penumbra, 0.0f.xx));
 }
 
 #else
@@ -108,12 +110,7 @@ void main()
 // Number of samples that will fade out at the end of the shadow (for a minor cost).
 #define FADE_OUT_SAMPLES 8
 
-float BEND_SAMPLE_DEPTH(float2 uv) 
-{
-    float depth = texelFetch(pk_GB_Current_Depth, int2(uv * pk_ScreenSize.xy), 0).x;
-    float bias = texelFetch(pk_GB_Current_ZBias, int2(uv * pk_ScreenSize.xy), 0).x;
-    return bias + depth;
-}
+float BEND_SAMPLE_DEPTH(float2 uv) { return SampleClipDepthBiased(int2(uv * pk_ScreenSize.xy)); }
 
 #include includes/ScreenSpaceShadow.glsl
 
@@ -149,9 +146,12 @@ void main()
     int2 coord = int2(0);
     WriteScreenSpaceShadow(dispatchParams, int3(gl_WorkGroupID), int(gl_LocalInvocationIndex), shadow, coord);
 
-    shadow = min(shadow, imageLoad(pk_Image, coord).x);
+    float2 current = imageLoad(pk_Image, coord).xy;
 
-    imageStore(pk_Image, coord, float4(shadow));
+    shadow = min(shadow, current.x);
+    current.x = lerp(shadow, current.x, current.y);
+
+    imageStore(pk_Image, coord, float4(current, 0.0f.xx));
 }
 
 #endif
