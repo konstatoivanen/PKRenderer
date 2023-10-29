@@ -6,6 +6,7 @@
 
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_Normals;
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_Depth;
+PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_ZBias;
 PK_DECLARE_SET_GLOBAL uniform texture2DArray pk_GB_Current_DepthMips;
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_Color;
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_Normals;
@@ -13,13 +14,14 @@ PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_Depth;
 PK_DECLARE_SET_GLOBAL uniform sampler pk_Sampler_GBuffer;
 
 #define GBUFFER_SAMPLE(t, uv) texture(sampler2D(t, pk_Sampler_GBuffer), uv)
+#define GBUFFER_SAMPLE_OFFSET(t, uv, offs) textureOffset(sampler2D(t, pk_Sampler_GBuffer), uv, offs)
 #define GBUFFER_GATHER(t, uv, cmp) textureGather(sampler2D(t, pk_Sampler_GBuffer), uv, cmp)
 #define GBUFFER_GATHER_OFFSETS(t, uv, offs) textureGatherOffsets(sampler2D(t, pk_Sampler_GBuffer), uv, offs)
 #define GBUFFER_SMP_ARR_LOD(t, uv, l) textureLod(sampler2DArray(t, pk_Sampler_GBuffer), uv, l)
 #define GBUFFER_NORMALS_10BIT 1
 
 // Source: https://aras-p.info/texts/CompactNormalStorage.html
-float4 EncodeGBufferViewNR(const float3 normal, const float roughness) 
+float4 EncodeGBufferViewNR(const float3 normal, const float roughness, const float metallic) 
 { 
     float2 xy = normal.xy / sqrt(-normal.z * 8 + 8) + 0.5f;
 
@@ -42,12 +44,12 @@ float4 EncodeGBufferViewNR(const float3 normal, const float roughness)
         xy = saturate(xy + t * 9.775171065493646e-4f); // t / 1023.0f
     #endif
 
-    return float4(xy, roughness, 0.0f); 
+    return float4(xy, roughness, metallic); 
 }
 
-float4 EncodeGBufferWorldNR(const float3 normal, const float roughness)
+float4 EncodeGBufferWorldNR(const float3 normal, const float roughness, const float metallic)
 {
-    return EncodeGBufferViewNR(normalize(WorldToViewDir(normal)), roughness);
+    return EncodeGBufferViewNR(normalize(WorldToViewDir(normal)), roughness, metallic);
 }
 
 float4 DecodeGBufferViewNR(const float4 encoded)

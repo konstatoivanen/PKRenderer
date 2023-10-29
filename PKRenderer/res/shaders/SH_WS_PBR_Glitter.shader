@@ -20,7 +20,8 @@ void PK_SURFACE_FUNC_VERT(inout SurfaceVaryings surf) {}
 #pragma PROGRAM_FRAGMENT
 void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf)
 {
-    uv += PK_SURF_SAMPLE_PARALLAX_OFFSET(_HeightMap, _HeightAmount, uv, surf.viewdir);
+    float height = PK_SURF_SAMPLE_HEIGHT_MAP(_HeightMap, uv);
+    uv += PK_SURF_MAKE_PARALLAX_OFFSET(height, _HeightAmount, surf.viewdir);
 
     float3 textureval = PK_SURF_TEX(_PBSTexture, uv).xyz;
     surf.metallic = textureval.SRC_METALLIC * _Metallic;
@@ -29,6 +30,8 @@ void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf)
     surf.occlusion = lerp(1.0f, textureval.SRC_OCCLUSION, _Occlusion);
     surf.normal = PK_SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
     surf.albedo = PK_SURF_TEX(_AlbedoTexture, uv).rgb * _Color.rgb;
+    surf.depthBias = (1.0f - PK_SURF_SAMPLE_HEIGHT_MAP(_HeightMap, uv)) * -_HeightAmount * 10.0f;
+    surf.depthBias = pow3(surf.depthBias);
 
     // Add glitter
     float t = GlobalNoiseBlueUV(uv).r;

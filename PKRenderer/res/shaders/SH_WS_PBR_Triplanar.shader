@@ -58,4 +58,5 @@ void PK_SURFACE_FUNC_FRAG(float2 uv, inout SurfaceData surf)
     surf.sheenTint = 0.0f;
     surf.clearCoat = 0.5f.xxx;
     surf.clearCoatGloss = 0.0f;
+    surf.depthBias = 0.0f;
 }

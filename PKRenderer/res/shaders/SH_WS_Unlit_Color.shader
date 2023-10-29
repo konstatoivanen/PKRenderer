@@ -34,7 +34,7 @@ out float4 SV_Target0;
 void main()
 {
 #if defined(PK_META_PASS_GBUFFER)
-    SV_Target0 = EncodeGBufferWorldNR(vs_Normal, 0.0f);
+    SV_Target0 = EncodeGBufferWorldNR(vs_Normal, 0.0f, 0.0f);
 #elif defined(PK_META_PASS_GIVOXELIZE)
     SV_Target0 = _ColorVoxelize;
 #else

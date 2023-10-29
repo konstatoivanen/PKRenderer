@@ -114,23 +114,20 @@ bool Test_InScreen(int2 coord) { return All_InArea(coord, int2(0), int2(pk_Scree
 
 bool Test_ViewToClipUVW(float3 viewpos, inout float3 uvw)
 {
-    float4 clippos = ViewToClipPos(viewpos);
-    uvw = ClipToUVW(clippos);
-    return Test_ClipPos(clippos);
+    uvw = ClipToUVW(ViewToClipPos(viewpos));
+    return All_Equal(saturate(uvw), uvw);
 }
 
 bool Test_WorldToClipUVW(float3 worldpos, inout float3 uvw)
 {
-    float4 clippos = WorldToClipPos(worldpos);
-    uvw = ClipToUVW(clippos);
-    return Test_ClipPos(clippos);
+    uvw = WorldToClipUVW(worldpos);
+    return All_Equal(saturate(uvw), uvw);
 }
 
 bool Test_WorldToPrevClipUVW(float3 worldpos, inout float3 uvw)
 {
-    float4 clippos = WorldToPrevClipPos(worldpos);
-    uvw = ClipToUVW(clippos);
-    return Test_ClipPos(clippos);
+    uvw = ClipToUVW(WorldToPrevClipPos(worldpos));
+    return All_Equal(saturate(uvw), uvw);
 }
 
 #define ReplaceIfResized(v, r) (pk_FrameIndex.y == 0u? r : v)

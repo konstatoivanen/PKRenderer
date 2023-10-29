@@ -45,7 +45,7 @@ void main()
     {
         GI_GET_RAY_PARAMS(coord, raycoord, depth, params)
 
-            const GIRayHits hits = GI_Load_RayHits(raycoord);
+        const GIRayHits hits = GI_Load_RayHits(raycoord);
 
         // Always use reservoir packing for diff hits.
         // They can be used for neighbour reconstruction outside of ReSTIR

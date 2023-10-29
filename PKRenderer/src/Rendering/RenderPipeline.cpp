@@ -46,6 +46,9 @@ namespace PK::Rendering
         curDesc.usage = TextureUsage::RTColorSample;
         m_gbuffers.current.normals = Texture::Create(curDesc, "Scene.RenderTarget.Normals");
 
+        curDesc.format = TextureFormat::R16F;
+        m_gbuffers.current.zbias = Texture::Create(curDesc, "Scene.RenderTarget.ZBias");
+
         curDesc.format = TextureFormat::Depth32F;
         curDesc.usage = TextureUsage::RTDepthSample;
         m_gbuffers.current.depth = Texture::Create(curDesc, "Scene.RenderTarget.Depth");
@@ -240,6 +243,7 @@ namespace PK::Rendering
         }
 
         GraphicsAPI::SetTexture(hash->pk_GB_Current_Normals, gbuffers.current.normals);
+        GraphicsAPI::SetTexture(hash->pk_GB_Current_ZBias, gbuffers.current.zbias);
         GraphicsAPI::SetTexture(hash->pk_GB_Current_Depth, gbuffers.current.depth);
         GraphicsAPI::SetTexture(hash->pk_GB_Previous_Color, gbuffers.previous.color);
         GraphicsAPI::SetTexture(hash->pk_GB_Previous_Normals, gbuffers.previous.normals);
@@ -286,8 +290,9 @@ namespace PK::Rendering
         window->SetFrameFence(queues->GetFenceRef(QueueType::Transfer));
 
         // Concurrent Shadows & gbuffer
-        cmdgraphics->SetRenderTarget({ gbuffers.current.depth, gbuffers.current.normals }, true);
+        cmdgraphics->SetRenderTarget({ gbuffers.current.depth, gbuffers.current.normals, gbuffers.current.zbias }, true);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
+        cmdgraphics->ClearColor(PK_COLOR_CLEAR, 1);
         cmdgraphics->ClearDepth(PK_CLIPZ_FAR, 0u);
 
         DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::GBuffer, "Forward.GBuffer", nullptr);
@@ -312,7 +317,8 @@ namespace PK::Rendering
         queues->Sync(QueueType::Compute, QueueType::Graphics, -1);
 
         // Shadows, Voxelize scene & reproject gi
-        m_passLights.RenderShadows(cmdgraphics, resolution);
+        m_passLights.RenderShadows(cmdgraphics);
+        m_passLights.RenderScreenSpaceShadows(cmdgraphics, m_worldToClip, resolution);
         m_passSceneGI.Preprocess(cmdgraphics, &m_batcher, m_forwardPassGroup);
         m_passVolumeFog.Compute(cmdgraphics, gbuffers.current.color->GetResolution());
         queues->Submit(QueueType::Graphics, &cmdgraphics);
@@ -321,6 +327,8 @@ namespace PK::Rendering
 
         // Forward Opaque on graphics queue
         m_passSceneGI.RenderGI(cmdgraphics);
+
+
         cmdgraphics->SetRenderTarget({ gbuffers.current.depth, gbuffers.current.color }, true);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::ForwardOpaque, "Forward.Opaque", nullptr);

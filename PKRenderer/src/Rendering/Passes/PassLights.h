@@ -25,9 +25,10 @@ namespace PK::Rendering::Passes
                        Batcher* batcher, 
                        const Core::ApplicationConfig* config);
 
-            void RenderShadows(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
+            void RenderShadows(Objects::CommandBuffer* cmd);
+            void RenderScreenSpaceShadows(Objects::CommandBuffer* cmd, const Math::float4x4& worldToClip, const Math::uint3& resolution);
             void ComputeClusters(Objects::CommandBuffer* cmd, Math::uint3 resolution);
-            void Cull(void* engineRoot, ECS::Tokens::VisibilityList* visibilityList, const Math::float4x4& worldToCLip, float znear, float zfar);
+            void Cull(void* engineRoot, ECS::Tokens::VisibilityList* visibilityList, const Math::float4x4& worldToClip, float znear, float zfar);
             ShadowCascades GetCascadeZSplits(float znear, float zfar) const;
         
         private:
@@ -41,6 +42,7 @@ namespace PK::Rendering::Passes
 
             struct ShadowbatchInfo
             {
+                uint32_t baseLightIndex = 0u;
                 uint32_t count = 0u;
                 uint32_t batchGroup = 0u;
                 Structs::LightType type = Structs::LightType::TypeCount;

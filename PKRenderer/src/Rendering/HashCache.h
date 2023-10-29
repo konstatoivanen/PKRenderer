@@ -68,6 +68,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_GizmoVertices)
         
         DECLARE_HASH(pk_GB_Current_Normals)
+        DECLARE_HASH(pk_GB_Current_ZBias)
         DECLARE_HASH(pk_GB_Current_Depth)
         DECLARE_HASH(pk_GB_Current_DepthMips)
         DECLARE_HASH(pk_GB_Previous_Color)
@@ -101,6 +102,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_LightCount)
         DECLARE_HASH(pk_LightLists)
         DECLARE_HASH(pk_LightTiles)
+        DECLARE_HASH(pk_BendShadowDispatchData)
 
         DECLARE_HASH(pk_PostEffectsParams)
         DECLARE_HASH(pk_PostEffectsFeatureMask)

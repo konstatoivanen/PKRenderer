@@ -1494,6 +1494,9 @@
     <ClInclude Include="src\Rendering\GBuffers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\bend\bend_sss_cpu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -2046,6 +2049,7 @@
     <None Include="res\shaders\includes\SceneGIVX.glsl" />
     <None Include="res\shaders\includes\Shadows.glsl" />
     <None Include="res\shaders\CS_ScreenspaceShadow.shader" />
+    <None Include="res\shaders\includes\ScreenSpaceShadow.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

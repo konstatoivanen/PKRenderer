@@ -40,6 +40,7 @@ struct SurfaceData
     float metallic;     
     float roughness;
     float occlusion;
+    float depthBias;
 };
  
 // http://www.thetenthplanet.de/archives/1180
@@ -75,11 +76,6 @@ float3 SampleNormalTex(in texture2D map, in float3x3 rotation, in float2 uv, flo
 {   
     const float3 n = texture(sampler2D(map, pk_Sampler_SurfDefault), uv).xyz * 2.0f - 1.0f;
     return normalize(mul(rotation, lerp(float3(0,0,1), n, amount))); 
-}
-
-float2 SampleParallaxOffset(in texture2D map, in float2 uv, float amount, float3 viewdir) 
-{ 
-    return (texture(sampler2D(map, pk_Sampler_SurfDefault), uv).x * amount - amount * 0.5f) * viewdir.xy / (viewdir.z + 0.5f); 
 }
 
 float3 GetIndirectLight_Main(BxDFSurf surf, const float3 worldpos, const float3 clipuvw)
@@ -134,15 +130,20 @@ float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const f
     // Prefilter by using a higher mip bias in voxelization.
     #define PK_SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv, 4.0f)
     #define PK_META_DECLARE_SURFACE_OUTPUT
-    #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) GI_Store_Voxel(worldpos, color)
+    #define PK_META_STORE_SURFACE_OUTPUT(value0, value1, worldpos) GI_Store_Voxel(worldpos, value0)
     #define PK_META_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNDCSpace(position)
     #define PK_META_BxDF EvaluateBxDF_DirectMinimal
     #define PK_META_BxDF_INDIRECT GetIndirectLight_VXGI
     #define DECLARE_VS_INTERFACE_WORLDPOSITION(io) io float3 vs_WORLDPOSITION;
 #else
     #define PK_SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv)
-    #define PK_META_DECLARE_SURFACE_OUTPUT out float4 SV_Target0;
-    #define PK_META_STORE_SURFACE_OUTPUT(color, worldpos) SV_Target0 = color
+    #if defined(PK_META_PASS_GBUFFER)
+        #define PK_META_DECLARE_SURFACE_OUTPUT out float4 SV_Target0; out float SV_Target1;
+        #define PK_META_STORE_SURFACE_OUTPUT(value0, value1, worldpos) SV_Target0 = value0; SV_Target1 = value1
+    #else
+        #define PK_META_DECLARE_SURFACE_OUTPUT out float4 SV_Target0;
+        #define PK_META_STORE_SURFACE_OUTPUT(value0, value1, worldpos) SV_Target0 = value0
+    #endif
     #define PK_META_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
     #define PK_META_BxDF EvaluateBxDF_Direct
     #define PK_META_BxDF_INDIRECT GetIndirectLight_Main
@@ -156,7 +157,12 @@ io float2 vs_TEXCOORD0;               \
 #if defined(PK_USE_TANGENTS)
     half3x3 pk_MATRIX_TBN;
     #define PK_SURF_MESH_NORMAL pk_MATRIX_TBN[2]
-    #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount, uv, viewdir) SampleParallaxOffset(heightmap, uv, amount, mul(transpose(pk_MATRIX_TBN), viewdir))
+    float2 PK_SURF_MAKE_PARALLAX_OFFSET(float height, float amount, float3 viewdir) 
+    { 
+        viewdir = mul(transpose(pk_MATRIX_TBN), viewdir);
+        return (height * amount - amount * 0.5f) * viewdir.xy / (viewdir.z + 0.5f); 
+    }
+    #define PK_SURF_SAMPLE_HEIGHT_MAP(heightmap, uv) textureLod(sampler2D(heightmap, pk_Sampler_SurfDefault), uv, 0.0f).x
     #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormalTex(normalmap, pk_MATRIX_TBN, uv, amount)
     #if defined(PK_USE_DERIVATIVE_TANGENTS)
         #define DECLARE_VS_INTERFACE_TANGENT(io)
@@ -166,7 +172,8 @@ io float2 vs_TEXCOORD0;               \
 #else
     #define DECLARE_VS_INTERFACE_TANGENT(io)
     #define PK_SURF_MESH_NORMAL normalize(vs_NORMAL)
-    #define PK_SURF_SAMPLE_PARALLAX_OFFSET(heightmap, amount, uv, viewdir) 0.0f.xx 
+    #define PK_SURF_MAKE_PARALLAX_OFFSET(height, amount, viewdir) 0.0f.xx 
+    #define PK_SURF_SAMPLE_HEIGHT_MAP(heightmap, uv) 0.0f
     #define PK_SURF_SAMPLE_NORMAL(normalmap, amount, uv) PK_SURF_MESH_NORMAL
 #endif
                            
@@ -256,49 +263,50 @@ io float2 vs_TEXCOORD0;               \
             1.0f,
             0.0f,     
             1.0f,
+            0.0f,
             0.0f
         );
         
         #if defined(PK_META_PASS_GIVOXELIZE)
-        float3 voxelPos = GI_QuantizeWorldToVoxelSpace(surf.worldpos);
+            float3 voxelPos = GI_QuantizeWorldToVoxelSpace(surf.worldpos);
 
-        [[branch]]
-        if (!Test_WorldToClipUVW(voxelPos, surf.clipuvw) || GI_Test_VX_HasValue(surf.worldpos) || !GI_Test_VX_Normal(PK_SURF_MESH_NORMAL))                 
-        {                                           
-            return;                                 
-        }       
+            [[branch]]
+            if (!Test_WorldToClipUVW(voxelPos, surf.clipuvw) || GI_Test_VX_HasValue(surf.worldpos) || !GI_Test_VX_Normal(PK_SURF_MESH_NORMAL))                 
+            {                                           
+                return;                                 
+            }       
 
-        surf.clipuvw = WorldToClipUVW(surf.worldpos);                      
-        surf.clipuvw.xy = ClampUVScreenBorder(surf.clipuvw.xy);          
-        int2 screencoord = int2(surf.clipuvw.xy * pk_ScreenSize.xy);
+            surf.clipuvw = WorldToClipUVW(surf.worldpos);                      
+            surf.clipuvw.xy = ClampUVScreenBorder(surf.clipuvw.xy);          
+            int2 screencoord = int2(surf.clipuvw.xy * pk_ScreenSize.xy);
         #else
-        surf.clipuvw = float3(gl_FragCoord.xy * pk_ScreenParams.zw, gl_FragCoord.z);
-        int2 screencoord = int2(gl_FragCoord.xy);
+            surf.clipuvw = float3(gl_FragCoord.xy * pk_ScreenParams.zw, gl_FragCoord.z);
+            int2 screencoord = int2(gl_FragCoord.xy);
         #endif
 
         PK_SURFACE_FUNC_FRAG(vs_TEXCOORD0, surf);
 
         #if !defined(PK_META_PASS_GIVOXELIZE)
-        const float shiftAmount = dot(surf.normal, surf.viewdir);
-        surf.normal = shiftAmount < 0.0f ? surf.normal + surf.viewdir * (-shiftAmount + 1e-5f) : surf.normal;
-        surf.roughness = max(surf.roughness, 0.002f);
+            const float shiftAmount = dot(surf.normal, surf.viewdir);
+            surf.normal = shiftAmount < 0.0f ? surf.normal + surf.viewdir * (-shiftAmount + 1e-5f) : surf.normal;
+            surf.roughness = max(surf.roughness, 0.002f);
         #endif
 
-        float4 sv_output = 0.0f.xxxx;
+        float4 sv_output0 = 0.0f.xxxx;
+        float sv_output1 = 0.0f;
 
         #if defined(PK_META_PASS_GBUFFER)
-
-            sv_output = EncodeGBufferWorldNR(surf.normal, surf.roughness);
-
+            sv_output0 = EncodeGBufferWorldNR(surf.normal, surf.roughness, surf.metallic);
+            const float biasedDepth = max(pk_ClipParams.x, ViewDepth(surf.clipuvw.z) + surf.depthBias);
+            sv_output1 = surf.clipuvw.z - ClipDepth(biasedDepth);
         #else
-
             const float3 F0 = lerp(PK_DIELECTRIC_SPEC.rgb, surf.albedo, surf.metallic);
             const float reflectivity = PK_DIELECTRIC_SPEC.r + surf.metallic * PK_DIELECTRIC_SPEC.a;
             surf.albedo *= 1.0f - reflectivity;
 
             #if defined(PK_SURF_TRANSPARENT)
-            surf.albedo *= surf.alpha;
-            surf.alpha = reflectivity + surf.alpha * (1.0f - reflectivity);
+                surf.albedo *= surf.alpha;
+                surf.alpha = reflectivity + surf.alpha * (1.0f - reflectivity);
             #endif
 
             BxDFSurf bxdf_surf = BxDFSurf
@@ -317,25 +325,24 @@ io float2 vs_TEXCOORD0;               \
                 max(0.0f, dot(surf.normal, surf.viewdir))
             );
 
-            sv_output.rgb = PK_META_BxDF_INDIRECT(bxdf_surf, surf.worldpos, surf.clipuvw);
+            sv_output0.rgb = PK_META_BxDF_INDIRECT(bxdf_surf, surf.worldpos, surf.clipuvw);
 
             #if !defined(PK_META_PASS_GIVOXELIZE)
-            sv_output.rgb *= surf.occlusion;
+                sv_output0.rgb *= surf.occlusion;
             #endif
 
             LightTile tile = Lights_GetTile_PX(screencoord, ViewDepth(surf.clipuvw.z));
             for (uint i = tile.start; i < tile.end; ++i)
             {
                 Light light = GetLight(i, surf.worldpos, surf.normal, tile.cascade);
-                sv_output.rgb += PK_META_BxDF(bxdf_surf, light.direction, light.color, light.shadow, light.sourceRadius);
+                sv_output0.rgb += PK_META_BxDF(bxdf_surf, light.direction, light.color, light.shadow, light.sourceRadius);
             }
 
-            sv_output.rgb += surf.emission;
-            sv_output.a = surf.alpha; 
-
+            sv_output0.rgb += surf.emission;
+            sv_output0.a = surf.alpha; 
         #endif
 
-        PK_META_STORE_SURFACE_OUTPUT(sv_output, surf.worldpos);
+        PK_META_STORE_SURFACE_OUTPUT(sv_output0, sv_output1, surf.worldpos);
     }
 
 #endif

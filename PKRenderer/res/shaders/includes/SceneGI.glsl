@@ -48,7 +48,6 @@ PK_DECLARE_SET_SHADER uniform texture2DArray pk_GI_ResolvedRead;
 #define PK_GI_SPEC_ANTILAG_MIN 0.03f
 #define PK_GI_SPEC_ANTILAG_MAX 1.0f
 #define PK_GI_MAX_LUMA_GAIN 0.5f
-#define PK_GI_HISTORY_FILL_THRESHOLD 4
 #define PK_GI_DISK_FILTER_RADIUS 3.0f
 
 //----------STRUCTS----------//

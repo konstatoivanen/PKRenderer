@@ -5,6 +5,7 @@
 #include "Math/FunctionsMisc.h"
 #include "ECS/EntityViews/MeshRenderableView.h"
 #include "Rendering/HashCache.h"
+#include "bend/bend_sss_cpu.h"
 
 using namespace PK::Core;
 using namespace PK::Core::Services;
@@ -161,7 +162,7 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
     }
 
-    void PassLights::RenderShadows(Objects::CommandBuffer* cmd, const uint3& resolution)
+    void PassLights::RenderShadows(Objects::CommandBuffer* cmd)
     {
         auto hash = HashCache::Get();
         auto atlasIndex = 0u;
@@ -198,15 +199,45 @@ namespace PK::Rendering::Passes
 
             atlasIndex += tileCount;
         }
+    }
 
-        if (m_shadowBatches.size() > 0u &&
-            m_shadowBatches.at(0).type == LightType::Directional)
+    void PassLights::RenderScreenSpaceShadows(Objects::CommandBuffer* cmd, const Math::float4x4& worldToClip, const Math::uint3& resolution)
+    {
+        if (m_shadowBatches.size() == 0u || m_shadowBatches.at(0).type != LightType::Directional)
         {
-            m_screenSpaceShadowmaps->Validate(resolution);
-            GraphicsAPI::SetTexture(hash->pk_ShadowmapScreenSpace, m_screenSpaceShadowmaps.get());
-            GraphicsAPI::SetImage(hash->pk_Image, m_screenSpaceShadowmaps.get());
-            GraphicsAPI::SetConstant<uint>(hash->pk_LightIndex, 0u);
-            cmd->Dispatch(m_computeScreenSpaceShadow, 0, resolution);
+            return;
+        }
+
+        auto hash = HashCache::Get();
+        m_screenSpaceShadowmaps->Validate(resolution);
+        GraphicsAPI::SetTexture(hash->pk_ShadowmapScreenSpace, m_screenSpaceShadowmaps.get());
+        GraphicsAPI::SetImage(hash->pk_Image, m_screenSpaceShadowmaps.get());
+        GraphicsAPI::SetConstant<uint>(hash->pk_LightIndex, 0u);
+        cmd->Dispatch(m_computeScreenSpaceShadow, 0, resolution);
+
+        // Bend screen space shadows.
+        // https://www.bendstudio.com/blog/inside-bend-screen-space-shadows/
+        auto lightView = m_lights[m_shadowBatches.at(0).baseLightIndex];
+        auto lightDirection = lightView->transform->rotation * PK_FLOAT3_FORWARD;
+        auto lightProjection = worldToClip * float4(-lightDirection, 0.0f);
+        int viewMin[2] = { 0, 0 };
+        int viewMax[2] = { (int)resolution.x, (int)resolution.y };
+        float projection[4] = { lightProjection.x, -lightProjection.y, lightProjection.z, lightProjection.w };
+        auto dispatchList = Bend::BuildDispatchList(projection, viewMax, viewMin, viewMax, false, 64);
+
+        for (auto i = 0; i < dispatchList.DispatchCount; ++i)
+        {
+            const auto& dispatch = dispatchList.Dispatch[i];
+            Bend::DispatchDataGPU dispatchData;
+            memcpy(dispatchData.LightCoordinate_Shader, dispatchList.LightCoordinate_Shader, sizeof(dispatchList.LightCoordinate_Shader));
+            memcpy(dispatchData.WaveOffset_Shader, dispatch.WaveOffset_Shader, sizeof(dispatch.WaveOffset_Shader));
+            GraphicsAPI::SetConstant<Bend::DispatchDataGPU>(hash->pk_BendShadowDispatchData, dispatchData);
+
+            uint3 dim;
+            dim.x = 64 * dispatch.WaveCount[0];
+            dim.y = 1 * dispatch.WaveCount[1];
+            dim.z = 1 * dispatch.WaveCount[2];
+            cmd->Dispatch(m_computeScreenSpaceShadow, 1, dim);
         }
     }
 
@@ -427,6 +458,7 @@ namespace PK::Rendering::Passes
             auto& newBatch = m_shadowBatches.emplace_back();
             newBatch.batchGroup = m_batcher->BeginNewGroup();
             newBatch.type = view->light->type;
+            newBatch.baseLightIndex = index;
         }
 
         auto& batch = m_shadowBatches.back();
