@@ -78,14 +78,14 @@ void main()
         case LIGHT_TYPE_SPOT:
         {
             float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex);
-            vs_pos = mul(lightmatrix, float4(wpos, 1.0f));
+            vs_pos = lightmatrix * float4(wpos, 1.0f);
             vs_depth.xyz = wpos - light.LIGHT_POS;
         }
         break;
         case LIGHT_TYPE_DIRECTIONAL:
         {
             float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex + layer);
-            vs_pos = mul(lightmatrix, float4(wpos, 1.0f));
+            vs_pos = lightmatrix * float4(wpos, 1.0f);
 
             // Depth test uses reverse z for precision reasons. revert range for actual distance.
             vs_depth.x = (1.0f - (vs_pos.z / vs_pos.w)) * light.LIGHT_RADIUS;

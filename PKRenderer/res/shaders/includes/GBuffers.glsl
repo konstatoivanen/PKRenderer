@@ -4,8 +4,6 @@
 
 #include Common.glsl
 
-#define USE_BIASED_DEPTH 1
-
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_Normals;
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_Depth;
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_DepthBiased;
@@ -31,18 +29,8 @@ float4 EncodeGBufferViewNR(const float3 normal, const float roughness, const flo
     #if defined(SHADER_STAGE_FRAGMENT) && GBUFFER_NORMALS_10BIT == 1
         // Low precision normals cause visible snapping. 
         // Dither them by generating some deterministic triangle noise.
-        uint2 px = uint2(gl_FragCoord.xy);
-        px = (px | (px << 8)) & 0x00FF00FF;
-        px = (px | (px << 4)) & 0x0F0F0F0F;
-        px = (px | (px << 2)) & 0x33333333;
-        px = (px | (px << 1)) & 0x55555555;
-        uint hash = px.x | (px.y << 1);
-        hash ^= hash >> 16; 
-        hash *= 0x7feb352dU;
-        hash ^= hash >> 15; 
-        hash *= 0x846ca68bU;
-        hash ^= hash >> 16;
-        const float d = uintBitsToFloat(hash & 0x007fffffu | 0x3f800000u) * 2.0f - 3.0f;
+        const float n = fract(52.9829189f * fract(0.06711056f * gl_FragCoord.x + 0.00583715f * gl_FragCoord.y));
+        const float d = n * 2.0f - 1.0f;
         const float t = max(-1.0f, d * inversesqrt(abs(d))) - sign(d) + 0.5f;
         xy = saturate(xy + t * 9.775171065493646e-4f); // t / 1023.0f
     #endif
@@ -62,9 +50,14 @@ float4 DecodeGBufferViewNR(const float4 encoded)
     return float4(fenc * sqrt(1 - f / 4), -(1 - f / 2), encoded.y);
 }
 
-float EncodeBiasedDepth(float clipDepth, float bias)
+float EncodeBiasedDepth(float clipDepth, float factor, float bias)
 {
     const float viewDepth = ViewDepth(clipDepth);
+
+    bias *= 0.32f;
+    bias *= exp(-factor * 0.5f);
+    bias /= clipDepth + 0.01f;
+
     const float viewDepthBiased = max(pk_ClipParams.x, viewDepth - bias);
     float clipDepthBiased = ClipDepth(viewDepthBiased);
     // Only allow bias towards camera as forward bias will cause clipping issues.
@@ -93,6 +86,7 @@ float SampleViewDepth(const int2 coord) { return ViewDepth(texelFetch(pk_GB_Curr
 
 // Gather order: (0,1), (1,1), (1,0), (0,0) 
 #define GatherViewDepths(uv) ViewDepth(GBUFFER_GATHER(pk_GB_Current_Depth, uv, 0))
+#define GatherViewDepthsBiased(uv) ViewDepth(GBUFFER_GATHER(pk_GB_Current_DepthBiased, uv, 0))
 #define SampleViewDepthOffsets(uv, offsets) ViewDepth(GBUFFER_GATHER_OFFSETS(pk_GB_Current_Depth, uv, offsets))
 
 float SamplePreviousClipDepthBiased(const int2 coord) { return texelFetch(pk_GB_Previous_Depth, coord, 0).x; }
@@ -104,23 +98,8 @@ float SamplePreviousViewDepth(const float2 uv) { return ViewDepth(GBUFFER_SAMPLE
 float SamplePreviousViewDepth(const int2 coord) { return ViewDepth(texelFetch(pk_GB_Previous_Depth, coord, 0).x); }
 
 #define GatherPreviousViewDepths(uv) ViewDepth(GBUFFER_GATHER(pk_GB_Previous_Depth, uv, 0))
+#define GatherPreviousViewDepthsBiased(uv) ViewDepth(GBUFFER_GATHER(pk_GB_Previous_DepthBiased, uv, 0))
 #define SamplePreviousViewDepthOffsets(uv, offsets) ViewDepth(GBUFFER_GATHER_OFFSETS(pk_GB_Previous_Depth, uv, offsets))
-
-float3 SampleViewPosition(const float2 uv) { return UVToViewPos(uv, SampleViewDepth(uv)); }
-float3 SampleViewPosition(const float2 uv, float viewDepth) { return UVToViewPos(uv, viewDepth); }
-float3 SampleViewPosition(const int2 coord) { return UVToViewPos((coord + 0.5f.xx) * pk_ScreenParams.zw, SampleViewDepth(coord)); }
-float3 SampleViewPosition(const int2 coord, const float viewDepth) { return UVToViewPos((coord + 0.5f.xx) * pk_ScreenParams.zw, viewDepth); }
-float3 SampleWorldPosition(const float2 uv) { return ViewToWorldPos(SampleViewPosition(uv)); }
-float3 SampleWorldPosition(const float2 uv, float viewDepth) { return ViewToWorldPos(SampleViewPosition(uv, viewDepth)); }
-float3 SampleWorldPosition(const int2 coord) { return ViewToWorldPos(SampleViewPosition(coord)); }
-float3 SampleWorldPosition(const int2 coord, const float viewDepth) { return ViewToWorldPos(SampleViewPosition(coord, viewDepth)); }
-
-float3 SamplePreviousViewPosition(const float2 uv) { return UVToViewPos(uv, SamplePreviousViewDepth(uv)); }
-float3 SamplePreviousViewPosition(const int2 coord) { return UVToViewPos((coord + 0.5f.xx) * pk_ScreenParams.zw, SamplePreviousViewDepth(coord)); }
-float3 SamplePreviousViewPosition(const int2 coord, const float viewDepth) { return UVToViewPos((coord + 0.5f.xx) * pk_ScreenParams.zw, viewDepth); }
-float3 SamplePreviousWorldPosition(const float2 uv) { return mul(float4(SamplePreviousViewPosition(uv), 1.0f), pk_ViewToWorldPrev).xyz; }
-float3 SamplePreviousWorldPosition(const int2 coord) { return mul(float4(SamplePreviousViewPosition(coord), 1.0f), pk_ViewToWorldPrev).xyz; }
-float3 SamplePreviousWorldPosition(const int2 coord, const float viewDepth) { return mul(float4(SamplePreviousViewPosition(coord, viewDepth), 1.0f), pk_ViewToWorldPrev).xyz; }
 
 float SamplePreviousRoughness(const float2 uv) { return GBUFFER_SAMPLE(pk_GB_Previous_Normals, uv).y; }
 float SamplePreviousRoughness(const int2 coord) { return texelFetch(pk_GB_Previous_Normals, coord, 0).y; }
@@ -130,8 +109,8 @@ float4 SamplePreviousWorldNormalRoughness(const float2 uv) { return mul3x3(Sampl
 float4 SamplePreviousWorldNormalRoughness(const int2 coord) { return mul3x3(SamplePreviousViewNormalRoughness(coord), float3x3(pk_ViewToWorldPrev)); }
 float3 SamplePreviousViewNormal(const float2 uv) { return SamplePreviousViewNormalRoughness(uv).xyz; }
 float3 SamplePreviousViewNormal(const int2 coord) { return SamplePreviousViewNormalRoughness(coord).xyz; }
-float3 SamplePreviousWorldNormal(const float2 uv) { return mul(SamplePreviousViewNormal(uv), float3x3(pk_ViewToWorldPrev)); }
-float3 SamplePreviousWorldNormal(const int2 coord) { return mul(SamplePreviousViewNormal(coord), float3x3(pk_ViewToWorldPrev)); }
+float3 SamplePreviousWorldNormal(const float2 uv) { return SamplePreviousViewNormal(uv) * float3x3(pk_ViewToWorldPrev); }
+float3 SamplePreviousWorldNormal(const int2 coord) { return SamplePreviousViewNormal(coord) * float3x3(pk_ViewToWorldPrev); }
 
 float SampleRoughness(const float2 uv) { return GBUFFER_SAMPLE(pk_GB_Current_Normals, uv).y; }
 float SampleRoughness(const int2 coord) { return texelFetch(pk_GB_Current_Normals, coord, 0).y; }

@@ -8,9 +8,9 @@
 
 bool IsScreenHit(const float3 worldpos, bool isMiss)
 {
-    float3 clipuvw;
+    const float3 clipuvw = WorldToClipUVWPrev(worldpos);
 
-    if (Test_WorldToPrevClipUVW(worldpos, clipuvw))
+    if (Test_InUVW(clipuvw))
     {
         const float rdepth = ViewDepth(clipuvw.z);
         const float sdepth = SamplePreviousViewDepth(clipuvw.xy);
@@ -39,17 +39,18 @@ void main()
 {
     const int2 raycoord = int2(gl_LaunchIDEXT.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy);
-    const float depth = SamplePreviousViewDepthBiased(coord);
+    const float depth = PK_GI_SAMPLE_PREV_DEPTH(coord);
 
     if (Test_DepthFar(depth))
     {
+        // Copy from SceneGI.glsl
         const float3 normal = SamplePreviousWorldNormal(coord);
-        const float3 viewpos = SampleViewPosition(coord, depth - depth * 1e-2f);
-        const float3 viewdir = mul(normalize(viewpos), float3x3(pk_ViewToWorldPrev));
+        const float3 viewpos = CoordToViewPos(coord, depth - depth * 1e-2f);
+        const float3 viewdir = normalize(viewpos) * float3x3(pk_ViewToWorldPrev);
         const float3 normalOffset = normal * (0.01f / (saturate(-dot(viewdir, normal)) + 0.01f)) * 0.05f;
-        const float3 origin = mul(float4(viewpos + normalOffset, 1.0f), pk_ViewToWorldPrev).xyz;
+        const float3 origin = float4(viewpos + normalOffset, 1.0f) * pk_ViewToWorldPrev;
         
-        Reservoir r = ReSTIR_Load(raycoord, RESTIR_LAYER_PRE);
+        Reservoir r = ReSTIR_Load_Previous(raycoord);
 
         const float4 direction = normalizeLength(r.position - origin);
         const float tmax = direction.w + 0.5f * depth;
@@ -58,11 +59,14 @@ void main()
         payload.targetPdf = 0.0f;
         traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction.xyz, tmax, 0);
 
+        //@TODO this is quite high. investigate why lower values cause issues.
+        const float maxErrorDist = 0.25f * direction.w;
+        const float maxErrorPdf = 0.5f;
+
         // Validate
-        if (abs(direction.w - payload.linearDistance) > (0.01f * depth) || 
-            abs(ReSTIR_GetTargetPdf(r) - payload.targetPdf) > 0.5f)
+        if (abs(direction.w - payload.linearDistance) > maxErrorDist || abs(ReSTIR_GetTargetPdf(r) - payload.targetPdf) > maxErrorPdf)
         {
-            ReSTIR_Store(raycoord, RESTIR_LAYER_PRE, RESTIR_RESERVOIR_ZERO);
+            ReSTIR_StoreZero(raycoord, RESTIR_LAYER_PRE);
         }
     }
 }
@@ -77,7 +81,7 @@ void main()
 
     if (IsScreenHit(worldpos, true))
     {
-        const float2 uv = ClipToUV(WorldToPrevClipPos(worldpos).xyw);
+        const float2 uv = WorldToClipUVPrev(worldpos);
         radiance = SamplePreviousColor(uv);
     }
     else
@@ -99,7 +103,7 @@ void main()
 
     if (IsScreenHit(worldpos, false))
     {
-        const float2 uv = ClipToUV(WorldToPrevClipPos(worldpos).xyw);
+        const float2 uv = WorldToClipUVPrev(worldpos);
         radiance = SamplePreviousColor(uv);
     }
     else

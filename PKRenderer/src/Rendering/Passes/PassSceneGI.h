@@ -41,7 +41,8 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Texture> m_packedGIDiff;
             Utilities::Ref<Objects::Texture> m_packedGISpec;
             Utilities::Ref<Objects::Texture> m_resolvedGI;
-            Utilities::Ref<Objects::Texture> m_reservoirs;
+            Utilities::Ref<Objects::Texture> m_reservoirs0;
+            Utilities::Ref<Objects::Texture> m_reservoirs1;
             Utilities::Ref<Objects::Texture> m_rayhits;
 
             uint32_t m_frameIndex = 0u;

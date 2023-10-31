@@ -155,8 +155,34 @@ namespace PK::ECS::Engines
         gizmos->SetColor(PK_COLOR_GREEN);
         gizmos->DrawFrustrum(worldToClip);
 
-        //(m[2][2] * v[2] + m[3][2]) / v[2]
+        /*
+        float n = 0.2f;
+        float f = 200.0f;
+        float4 exp = { 1.0f / glm::log2(f / n), -log2(n) / log2(f / n), f / n, 1.0f / n };
 
+        gizmos->DrawLine({ -100, 25, n }, { -100, 75, n });
+        gizmos->DrawLine({ -100, 25, f }, { -100, 75, f });
+        gizmos->SetColor(PK_COLOR_RED);
+
+        for (auto i = 0; i < 128; ++i)
+        {
+            float z = (i + 0.5f) / 128.0f;
+            z = glm::sqrt(z);
+            float e = n * pow(exp.z, z);
+            gizmos->DrawLine({ -100, 25, e }, { -100, 50, e });
+            
+            z = log2(e) * exp.x + exp.y;
+            z = z * z;
+
+            e = n * pow(exp.z, glm::sqrt(z));
+            gizmos->DrawLine({ -100, 50, e }, { -100, 75, e });
+        }
+        */
+
+        //log2(view_z) * pk_ClipParamsExp.x + pk_ClipParamsExp.y;
+
+        //(m[2][2] * v[2] + m[3][2]) / v[2]
+        /*
         float4x4 localToWorld = Functions::GetMatrixTRS(offset, float3(35, -35, 0) * PK_FLOAT_DEG2RAD, PK_FLOAT3_ONE);
         float4x4 worldToLocal = glm::inverse(localToWorld);
         float4x4 invvp = glm::inverse(worldToClip);
@@ -195,5 +221,6 @@ namespace PK::ECS::Engines
             auto worldToClipSub = viewToClipSub * worldToView;
             gizmos->DrawFrustrum(worldToClipSub);
         }
+        */
     }
 }

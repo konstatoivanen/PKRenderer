@@ -53,7 +53,7 @@ float GI_GetAntilagSpecular(float roughness, float nv, float parallax)
 }
 
 // Add small bias (0.01) to prevent sampling from past root texel.
-float2 GI_ViewToPrevScreenUV(const float3 viewpos) { return ViewToPrevClipUV(viewpos) * int2(pk_ScreenSize.xy) - 0.49f.xx; }
+float2 GI_ViewToPrevScreenUV(const float3 viewpos) { return ViewToClipUVPrev(viewpos) * int2(pk_ScreenSize.xy) - 0.49f.xx; }
 
 float2 GI_GetRandomRotation() { return make_rotation(make_unorm(pk_FrameRandom.x) * PK_TWO_PI); }
 

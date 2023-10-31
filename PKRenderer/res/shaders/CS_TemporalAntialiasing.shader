@@ -8,8 +8,8 @@ PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture; // Current Screen
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture1; // History Read
 layout(r32ui, set = PK_SET_DRAW) uniform uimage2D pk_Image; // History Write
 
-#define SAMPLE_TAA_SOURCE(uv) texture(pk_Texture, uv).rgb
-#define SAMPLE_TAA_HISTORY(uv) texture(pk_Texture1, uv).rgb
+#define SAMPLE_TAA_SOURCE(uv) texture(pk_Texture, uv)
+#define SAMPLE_TAA_HISTORY(uv) texture(pk_Texture1, uv)
 
 struct TAADescriptor
 {
@@ -17,20 +17,22 @@ struct TAADescriptor
     float2 jitter;
     float2 texcoord;
     float2 motion;
+    float alphaMult;
     float sharpness;
-    float blendingStatic;
-    float blendingMotion;
-    float motionAmplification;
+    float blendStatic;
+    float blendMotion;
+    float motionMult;
 };
 
 float3 SolveTemporalAntiAliasing(TAADescriptor desc)
 {
     float2 uv = desc.texcoord - desc.jitter;
 
-    float3 history = SAMPLE_TAA_HISTORY(desc.texcoord - desc.motion);
-    float3 color = SAMPLE_TAA_SOURCE(uv);
-    float3 color11 = SAMPLE_TAA_SOURCE(uv - desc.texelSize * 0.5f);
-    float3 color00 = SAMPLE_TAA_SOURCE(uv + desc.texelSize * 0.5f);
+    float4 colorAlpha = SAMPLE_TAA_SOURCE(uv);
+    float3 color = colorAlpha.rgb;
+    float3 history = SAMPLE_TAA_HISTORY(desc.texcoord - desc.motion).rgb;
+    float3 color11 = SAMPLE_TAA_SOURCE(uv - desc.texelSize * 0.5f).rgb;
+    float3 color00 = SAMPLE_TAA_SOURCE(uv + desc.texelSize * 0.5f).rgb;
     float3 corners = 4.0f * (color11 + color00) - 2.0f * color;
 
     color += (color - (corners * 0.166667f)) * 2.718282f * desc.sharpness;
@@ -55,7 +57,9 @@ float3 SolveTemporalAntiAliasing(TAADescriptor desc)
         history = center + offset * t;
     }
 
-    float weight = clamp(lerp(desc.blendingStatic, desc.blendingMotion, motionLength * desc.motionAmplification), desc.blendingMotion, desc.blendingStatic);
+    float weight = lerp(desc.blendStatic, desc.blendMotion, motionLength * desc.motionMult);
+    weight *= lerp(1.0f, colorAlpha.a, desc.alphaMult);
+    weight = clamp(weight, desc.blendMotion, desc.blendStatic);
 
     color = lerp(color, history, weight);
     color = clamp(color, 0.0f, PK_HALF_MAX_MINUS1);
@@ -74,14 +78,16 @@ void main()
     desc.jitter = pk_ProjectionJitter.xy * desc.texelSize;
     desc.texcoord = (coord + 0.5f.xx) / size;
 
-    const float3 viewpos = SampleViewPosition(desc.texcoord);
-    const float2 uv = ViewToPrevClipUV(viewpos);
+    const float depth = SampleViewDepth(desc.texcoord);
+    const float3 viewpos = UVToViewPos(desc.texcoord, depth);
+    const float2 uv = ViewToClipUVPrev(viewpos);
 
     desc.motion = (desc.texcoord - uv) + pk_ProjectionJitter.zw * desc.texelSize * 0.5f;
     desc.sharpness = pk_TAA_Sharpness;
-    desc.blendingStatic = pk_TAA_BlendingStatic;
-    desc.blendingMotion = pk_TAA_BlendingMotion;
-    desc.motionAmplification = pk_TAA_MotionAmplification;
+    desc.blendStatic = pk_TAA_BlendingStatic;
+    desc.blendMotion = pk_TAA_BlendingMotion;
+    desc.motionMult = pk_TAA_MotionAmplification;
+    desc.alphaMult = 0.0f;
 
     const float3 color = SolveTemporalAntiAliasing(desc);
 

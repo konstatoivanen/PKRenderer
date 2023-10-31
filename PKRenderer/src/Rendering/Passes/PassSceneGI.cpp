@@ -74,9 +74,11 @@ namespace PK::Rendering::Passes
         m_rayhits = Texture::Create(descr, "GI.RayHits");
 
         descr.samplerType = SamplerType::Sampler2DArray;
-        descr.layers = 4;
+        descr.layers = 2;
         descr.format = TextureFormat::RGBA32UI;
-        m_reservoirs = Texture::Create(descr, "GI.Reservoirs");
+        m_reservoirs0 = Texture::Create(descr, "GI.Reservoirs0");
+        descr.format = TextureFormat::RG32UI;
+        m_reservoirs1 = Texture::Create(descr, "GI.Reservoirs1");
 
         descr.layers = 2;
         descr.format = TextureFormat::RGB9E5;
@@ -126,11 +128,13 @@ namespace PK::Rendering::Passes
         m_packedGIDiff->Validate(resolution);
         m_packedGISpec->Validate(resolution);
         m_rayhits->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
-        m_reservoirs->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
+        m_reservoirs0->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
+        m_reservoirs1->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
         m_resolvedGI->Validate(resolution);
 
         GraphicsAPI::SetImage(hash->pk_GI_RayHits, m_rayhits.get());
-        GraphicsAPI::SetImage(hash->pk_Reservoirs, m_reservoirs.get());
+        GraphicsAPI::SetImage(hash->pk_Reservoirs0, m_reservoirs0.get());
+        GraphicsAPI::SetImage(hash->pk_Reservoirs1, m_reservoirs1.get());
         GraphicsAPI::SetImage(hash->pk_GI_PackedDiff, m_packedGIDiff.get());
         GraphicsAPI::SetImage(hash->pk_GI_PackedSpec, m_packedGISpec.get());
         GraphicsAPI::SetImage(hash->pk_GI_ResolvedWrite, m_resolvedGI.get());
@@ -224,7 +228,7 @@ namespace PK::Rendering::Passes
         {
             cmd->BeginDebugScope("SceneGI.ValidateReservoirs", PK_COLOR_GREEN);
             m_sbtValidate.Bind(cmd);
-            cmd->DispatchRays(m_rayTraceValidate, m_reservoirs->GetResolution());
+            cmd->DispatchRays(m_rayTraceValidate, m_reservoirs0->GetResolution());
             cmd->EndDebugScope();
         }
     }

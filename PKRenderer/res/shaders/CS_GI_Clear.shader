@@ -8,9 +8,10 @@ layout(rgba16, set = PK_SET_DRAW) uniform image3D pk_Image;
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 void main()
 {
-    float3 worldpos = GI_VoxelToWorldSpace(int3(gl_GlobalInvocationID));
+    const float3 worldpos = GI_VoxelToWorldSpace(int3(gl_GlobalInvocationID));
+    const float3 clipuvw = WorldToClipUVW(worldpos);
 
-    if (!Test_WorldToClipSpace(worldpos))
+    if (!Test_InUVW(clipuvw))
     {
         return;
     }

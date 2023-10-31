@@ -872,7 +872,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\MortonOrder.glsl" />
     <None Include="res\shaders\includes\SceneGIFiltering.glsl" />
     <None Include="res\shaders\includes\SceneGIReSTIR.glsl" />
-    <None Include="res\shaders\includes\ScreenSpaceShadow.glsl" />
+    <None Include="res\shaders\includes\bend_sss_gpu.glsl" />
     <None Include="res\shaders\includes\Shadows.glsl" />
     <None Include="res\shaders\includes\SpatialFilters.glsl" />
     <None Include="res\shaders\includes\Kernels.glsl" />

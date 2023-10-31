@@ -12,6 +12,6 @@ void main()
     int2 size = imageSize(pk_Image).xy;
     float2 uv = float2(coord + 0.5f.xx) / float2(size);
     float3 color = imageLoad(pk_Image, coord).rgb;
-    VolumeFog_Apply(uv, SampleViewDepth(uv), color);
-    imageStore(pk_Image, coord, float4(color, 1.0f));
+    float4 colorTransmittance = VFog_Apply(uv, SampleViewDepth(uv), color);
+    imageStore(pk_Image, coord, colorTransmittance);
 }

@@ -29,6 +29,7 @@ PK_DECLARE_SET_SHADER uniform texture2DArray pk_GI_ResolvedRead;
 #define PK_GI_APPROX_ROUGH_SPEC 1
 // Should surface shading approximate sheen & clear coat from diffuse sh
 #define PK_GI_APPROX_ROUGH_SPEC_EXTRA 1
+#define PK_GI_USE_BIASED_DEPTH 1
 
 #define PK_GI_LVL_DIFF0 0
 #define PK_GI_LVL_DIFF1 1
@@ -49,6 +50,16 @@ PK_DECLARE_SET_SHADER uniform texture2DArray pk_GI_ResolvedRead;
 #define PK_GI_SPEC_ANTILAG_MAX 1.0f
 #define PK_GI_MAX_LUMA_GAIN 0.5f
 #define PK_GI_DISK_FILTER_RADIUS 3.0f
+
+#if PK_GI_USE_BIASED_DEPTH == 1
+#define PK_GI_SAMPLE_DEPTH(coord) SampleViewDepthBiased(coord)
+#define PK_GI_GATHER_PREV_DEPTH(uv) GatherPreviousViewDepthsBiased(uv)
+#define PK_GI_SAMPLE_PREV_DEPTH(coord) SamplePreviousViewDepthBiased(coord)
+#else
+#define PK_GI_SAMPLE_DEPTH(coord) SampleViewDepth(coord)
+#define PK_GI_GATHER_PREV_DEPTH(uv) GatherPreviousViewDepths(uv)
+#define PK_GI_SAMPLE_PREV_DEPTH(coord) SamplePreviousViewDepth(coord)
+#endif
 
 //----------STRUCTS----------//
 struct GIDiff { SH sh; float ao; float history; };
@@ -88,8 +99,8 @@ float GI_RoughSpecWeight(float roughness) { return smoothstep(PK_GI_MIN_ROUGH_SP
     const float3 v = GlobalNoiseBlue(RAYCOORD + pk_GI_RayDither, pk_FrameIndex.y);                                              \
     const float2 Xi = saturate(v.xy + ((v.z - 0.5f) / 256.0f));                                                                 \
     /* Apply bias to avoid rays clipping with geo at high distances */                                                          \
-    float3 origin = SampleWorldPosition(COORD, DEPTH - DEPTH * 1e-2f);                                                          \
-    float3 viewdir = normalize(origin - pk_WorldSpaceCameraPos.xyz);                                                            \
+    float3 origin = CoordToWorldPos(COORD, DEPTH - DEPTH * 1e-2f);                                                              \
+    float3 viewdir = normalize(origin - pk_ViewWorldOrigin.xyz);                                                                \
     /* Apply bias to avoid rays clipping with geo at high angles */                                                             \
     origin += normal * (0.01f / (saturate(-dot(viewdir, normal)) + 0.01f)) * 0.05f;                                             \
     OUT_PARAMS.origin = origin;                                                                                                 \

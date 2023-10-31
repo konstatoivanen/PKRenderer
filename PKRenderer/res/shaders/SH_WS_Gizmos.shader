@@ -20,7 +20,7 @@ void main()
     color.b = ((in_POSITION.w >> 16u) & 0xFFu) / 255.0f;
     color.a = ((in_POSITION.w >> 24u) & 0xFFu) / 255.0f;
     
-    gl_Position = mul(pk_WorldToClip_NoJitter, float4(uintBitsToFloat(in_POSITION.xyz), 1.0f));
+    gl_Position = pk_WorldToClip_NoJitter * float4(uintBitsToFloat(in_POSITION.xyz), 1.0f);
     vs_COLOR = color;
 };
 

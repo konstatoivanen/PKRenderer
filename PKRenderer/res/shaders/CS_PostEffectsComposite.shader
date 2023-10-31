@@ -88,8 +88,9 @@ void main()
         }
 
         IF_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_GI_VX)
-        {
-            float4 voxel = GI_Load_Voxel(SampleWorldPosition(uv), 1.5f);
+        {   
+            float depth = SampleViewDepth(uv);
+            float4 voxel = GI_Load_Voxel(UVToWorldPos(uv, depth), 1.5f);
             voxel.rgb *= safePositiveRcp(voxel.a);
             color = voxel.rgb * exposure;
         }

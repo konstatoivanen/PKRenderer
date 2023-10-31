@@ -10,12 +10,12 @@ void main()
     const float3 dither = GlobalNoiseBlue(pos.xy, pk_FrameIndex.x);
     const float3 uvw_cur = (pos + dither) / VOLUMEFOG_SIZE;
 
-    const float3 worldpos = UVToWorldPos(uvw_cur.xy, ViewDepthExp(uvw_cur.z));
-    const float3 uvw_prev = VolumeFog_WorldToPrevUVW(worldpos);
+    const float3 worldpos = UVToWorldPos(uvw_cur.xy, VFog_ZToView(uvw_cur.z));
+    const float3 uvw_prev = VFog_WorldToPrevUVW(worldpos);
 
-    const float accumulation = VolumeFog_GetAccumulation(uvw_prev);
+    const float accumulation = VFog_GetAccumulation(uvw_prev);
     const float value_pre = ReplaceIfResized(SAMPLE_TRICUBIC(pk_Fog_DensityRead, uvw_prev).x, 0.0f);
-    const float value_cur = VolumeFog_CalculateDensity(worldpos);
+    const float value_cur = VFog_CalculateDensity(worldpos);
     const float value_out = lerp(value_pre, value_cur, accumulation);
 
     imageStore(pk_Fog_Density, pos, isnan(value_out) ? 0.0f.xxxx : value_out.xxxx);

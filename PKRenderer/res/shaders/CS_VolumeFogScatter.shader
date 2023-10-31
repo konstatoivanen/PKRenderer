@@ -14,8 +14,9 @@ void main()
 
     for (; pos.z < VOLUMEFOG_SIZE_Z; ++pos.z)
     {
-        const float2 depths = ViewDepthExp(float2(pos.z, pos.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV);
-        const float slicewidth = depths.y - depths.x;
+        const float depthMin = VFog_ZToView(pos.z * VOLUMEFOG_SIZE_Z_INV);
+        const float depthMax = VFog_ZToView((pos.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV);
+        const float slicewidth = depthMax - depthMin;
 
         const float  density = texelFetch(pk_Fog_DensityRead, pos, 0).x;
 

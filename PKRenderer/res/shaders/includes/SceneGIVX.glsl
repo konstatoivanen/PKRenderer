@@ -83,7 +83,7 @@ half4 GI_ConeTrace_Diffuse(const float3 O, const float3 N)
     [[unroll]]
     for (uint i = 0u; i < 6; ++i)
     {
-        const float3 D = mul(TBN, directions[i]);
+        const float3 D = TBN * directions[i];
         
         half4 C = 0.0hf.xxxx;
         half AO = 1.0hf;

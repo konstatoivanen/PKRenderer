@@ -3,11 +3,22 @@
 #include Encoding.glsl
 #include MortonOrder.glsl
 
-layout(rgba32ui, set = PK_SET_DRAW) uniform uimage2DArray pk_Reservoirs;
-struct Reservoir { float3 position; float3 normal; float3 radiance; float targetPdf; float weightSum; uint M;};
+layout(rgba32ui, set = PK_SET_DRAW) uniform uimage2DArray pk_Reservoirs0;
+layout(rg32ui, set = PK_SET_DRAW) uniform uimage2DArray pk_Reservoirs1;
+
+struct Reservoir 
+{ 
+    float3 position; 
+    float3 normal; 
+    float3 radiance; 
+    float targetPdf; 
+    float weightSum; 
+    uint M;
+};
+
 #define RESTIR_RESERVOIR_ZERO Reservoir(0.0f.xxx, 0.0f.xxx, 0.0f.xxx, 0.0f, 0.0f, 0u)
-#define RESTIR_LAYER_CUR int(( pk_FrameIndex.y & 0x1u) << 1u)
-#define RESTIR_LAYER_PRE int((~pk_FrameIndex.y & 0x1u) << 1u)
+#define RESTIR_LAYER_CUR int(( pk_FrameIndex.y & 0x1u))
+#define RESTIR_LAYER_PRE int((~pk_FrameIndex.y & 0x1u))
 #define RESITR_NEARFIELD 0.05f
 #define RESTIR_NORMAL_THRESHOLD 0.6f
 #define RESTIR_SAMPLES_TEMPORAL 6
@@ -145,30 +156,43 @@ void ReSTIR_CombineReservoirSimple(inout Reservoir combined, const Reservoir b, 
     }
 }
 
-void ReSTIR_Store(const int2 coord, const int layer, const Reservoir r)
+void ReSTIR_StoreZero(const int2 coord, const int layer)
 {
-    uint4 packed0, packed1;
-    packed0.xyz = floatBitsToUint(r.position);
-    packed0.w = EncodeOctaUV(r.normal);
-    packed1.x = EncodeE5BGR9(r.radiance);
-    packed1.y = floatBitsToUint(r.targetPdf);
-    packed1.z = floatBitsToUint(r.weightSum);
-    packed1.w = r.M;
-    imageStore(pk_Reservoirs, int3(coord, layer + 0), packed0);
-    imageStore(pk_Reservoirs, int3(coord, layer + 1), packed1);
+    imageStore(pk_Reservoirs0, int3(coord, layer), uint4(0));
+    imageStore(pk_Reservoirs1, int3(coord, layer), uint4(0));
 }
 
-Reservoir ReSTIR_Load(const int2 coord, const int layer) 
+void ReSTIR_Store_Current(const int2 coord, const Reservoir r)
 {
-    const uint4 packed0 = imageLoad(pk_Reservoirs, int3(coord, layer + 0));
-    const uint4 packed1 = imageLoad(pk_Reservoirs, int3(coord, layer + 1));
+    uint4 packed0;
+    uint2 packed1;
+    float3 viewpos = WorldToViewPos(r.position);
+    packed0.x = packHalf2x16(viewpos.xy);
+    packed0.y = floatBitsToUint(viewpos.z);
+    packed0.z = r.M;
+    packed0.w = EncodeOctaUV(r.normal);
+    packed1.x = EncodeE5BGR9(r.radiance);
+    packed1.y = packHalf2x16(float2(r.targetPdf, r.weightSum));
+    imageStore(pk_Reservoirs0, int3(coord, RESTIR_LAYER_CUR), packed0);
+    imageStore(pk_Reservoirs1, int3(coord, RESTIR_LAYER_CUR), packed1.xyxy);
+}
+
+
+Reservoir ReSTIR_Load_Previous(const int2 coord) 
+{
+    const uint4 packed0 = imageLoad(pk_Reservoirs0, int3(coord, RESTIR_LAYER_PRE));
+    const uint2 packed1 = imageLoad(pk_Reservoirs1, int3(coord, RESTIR_LAYER_PRE)).xy;
     Reservoir r;
-    r.position = uintBitsToFloat(packed0.xyz);
+
+    float2 xy = unpackHalf2x16(packed0.x);
+    float z = uintBitsToFloat(packed0.y);
+    r.position = ViewToWorldPosPrev(float3(xy, z));
+    r.M = packed0.z;
     r.normal = DecodeOctaUV(packed0.w);
     r.radiance = DecodeE5BGR9(packed1.x);
-    r.targetPdf = uintBitsToFloat(packed1.y);
-    r.weightSum = uintBitsToFloat(packed1.z); 
-    r.M = packed1.w;
+    float2 packedh2 = unpackHalf2x16(packed1.y);
+    r.targetPdf = packedh2.x;
+    r.weightSum = packedh2.y;
     return r;
 }
 

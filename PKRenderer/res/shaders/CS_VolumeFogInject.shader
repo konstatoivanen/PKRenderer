@@ -17,10 +17,10 @@ void main()
     const float3 uvw_cur = (id + float3(0.5f.xx, dither.z)) / VOLUMEFOG_SIZE;
 
     // Light leak threshold
-    const float zmin = ViewDepthExp((id.z - 1.5f) * VOLUMEFOG_SIZE_Z_INV);
+    const float zmin = VFog_ZToView((id.z - 1.5f) * VOLUMEFOG_SIZE_Z_INV);
     const float zmax = SampleMaxZ(int2(id.xy), 3);
     // Clamp cell to surface to prevent light leaks
-    const float depth = min(ViewDepthExp(uvw_cur.z), lerp(1e+38f, zmax, zmin < zmax));
+    const float depth = min(VFog_ZToView(uvw_cur.z), lerp(1e+38f, zmax, zmin < zmax));
 
 #if EARLY_Z_TEST == 1
     float4 maxdepths = float4
@@ -42,8 +42,8 @@ void main()
 #endif
 
     const float3 worldpos = UVToWorldPos(uvw_cur.xy, depth);
-    const float3 uvw_prev = VolumeFog_WorldToPrevUVW(worldpos);
-    const float3 viewdir = normalize(worldpos - pk_WorldSpaceCameraPos.xyz);
+    const float3 uvw_prev = VFog_WorldToPrevUVW(worldpos);
+    const float3 viewdir = normalize(worldpos - pk_ViewWorldOrigin.xyz);
 
     const float3 gi_static = SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Phase1);
     const float4 gi_dynamic = GI_SphereTrace_Diffuse(worldpos);
@@ -55,7 +55,7 @@ void main()
     float3 value_cur = gi_static.rgb * gi_static_occlusion + gi_dynamic.rgb;
     
     // This is incorrect for the dynamic component. However, it introduces good depth to the colors so whatever.
-    value_cur *= VolumeFog_MarchTransmittanceStatic(uvw_cur, dither.x);
+    value_cur *= VFog_MarchTransmittanceStatic(uvw_cur, dither.x);
 
     // Distant texels are less dense, trace a longer distance to retain some depth.
     const float maxMarchDistance = exp(uvw_cur.z * VOLUMEFOG_MARCH_DISTANCE_EXP);
@@ -64,7 +64,7 @@ void main()
     // Fade out shadow contribution near far plane.
     const float shadowFade = smoothstep(0.9f, 1.0f, uvw_cur.z);
 
-    const float shadowBiasRange = ViewDepthExp((id.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV) - ViewDepthExp(id.z * VOLUMEFOG_SIZE_Z_INV);
+    const float shadowBiasRange = VFog_ZToView((id.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV) - VFog_ZToView(id.z * VOLUMEFOG_SIZE_Z_INV);
     const float3 shadowBias = viewdir * shadowBiasRange * 0.5f;
 
     LightTile tile = Lights_GetTile_COORD(int2(gl_WorkGroupID.xy >> 1), depth);
@@ -74,7 +74,7 @@ void main()
         Light light = GetLight(i, worldpos, shadowBias, tile.cascade);
 
         const float marchDistance = min(light.linearDistance, maxMarchDistance);
-        light.shadow *= VolumeFog_MarchTransmittance(worldpos, light.direction, dither.y, marchDistance);
+        light.shadow *= VFog_MarchTransmittance(worldpos, light.direction, dither.y, marchDistance);
         light.shadow = lerp(light.shadow, 1.0f, shadowFade);
 
         value_cur += EvaluateBxDF_Volumetric
@@ -91,7 +91,7 @@ void main()
 
     const float3 value_pre = ReplaceIfResized(SAMPLE_TRICUBIC(pk_Fog_InjectRead, uvw_prev).rgb, 0.0f.xxx);
     
-    const float accumulation = VolumeFog_GetAccumulation(uvw_prev);
+    const float accumulation = VFog_GetAccumulation(uvw_prev);
     
     float3 value_out = lerp(value_pre, value_cur, accumulation);
     value_out = Any_IsNaN(value_out) ? 0.0f.xxx : value_out;

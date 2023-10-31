@@ -22,7 +22,7 @@
 
 float4 GetLightClipUVW(const float3 worldpos, const uint matrixIndex)
 {
-    float4 coord = mul(PK_BUFFER_DATA(pk_LightMatrices, matrixIndex), float4(worldpos, 1.0f));
+    float4 coord = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex) * float4(worldpos, 1.0f);
     coord.xy = (coord.xy / coord.w) * 0.5f.xx + 0.5f.xx;
     // Light depth test uses reverse z. Reverse range for actual distance.
     coord.z = 1.0f - (coord.z / coord.w);
@@ -32,8 +32,8 @@ float4 GetLightClipUVW(const float3 worldpos, const uint matrixIndex)
 float4 GetLightClipUVMinMax(const float3 worldpos, const float3 shadowBias, const uint matrixIndex)
 {
     const float4x4 lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex);
-    float3 coord0 = mul(lightMatrix, float4(worldpos + shadowBias.xyz, 1.0f)).xyw;
-    float3 coord1 = mul(lightMatrix, float4(worldpos - shadowBias.xyz, 1.0f)).xyw;
+    float3 coord0 = (lightMatrix * float4(worldpos + shadowBias.xyz, 1.0f)).xyw;
+    float3 coord1 = (lightMatrix * float4(worldpos - shadowBias.xyz, 1.0f)).xyw;
     coord0.xy = (coord0.xy / coord0.z) * 0.5f.xx + 0.5f.xx;
     coord1.xy = (coord1.xy / coord1.z) * 0.5f.xx + 0.5f.xx;
     return float4(coord0.xy, coord1.xy);

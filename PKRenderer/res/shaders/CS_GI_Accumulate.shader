@@ -1,7 +1,8 @@
 #version 460
-#extension GL_KHR_shader_subgroup_ballot : enable
+#extension GL_KHR_shader_subgroup_ballot : require
 #extension GL_KHR_shader_subgroup_arithmetic : enable
-#extension GL_KHR_shader_subgroup_shuffle : enable
+#extension GL_KHR_shader_subgroup_shuffle : require
+#extension GL_KHR_shader_subgroup_vote : require
 #pragma PROGRAM_COMPUTE
 
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE
@@ -48,7 +49,7 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
 
     // Temporal Resampling
     {
-        const float2 screenUvPrev = WorldToPrevClipUV(origin) * int2(pk_ScreenSize.xy) + RESTIR_TEXEL_BIAS;
+        const float2 screenUvPrev = WorldToClipUVPrev(origin) * int2(pk_ScreenSize.xy) + RESTIR_TEXEL_BIAS;
         const int2 coordPrev = GI_CollapseCheckerboardCoord(screenUvPrev, 1u);
         const uint hash = ReSTIR_Hash(seed++);
         int scaleBias = 0;
@@ -58,14 +59,14 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
             scale = int(RESTIR_SAMPLES_TEMPORAL - i - 1);
             const int2 xy = ReSTIR_GetTemporalResamplingCoord(coordPrev, int(hash + i), scale, i == 0);
             const int2 xyFull = GI_ExpandCheckerboardCoord(xy, 1u);
-            const float s_depth = SamplePreviousViewDepth(xyFull);
+            const float s_depth = PK_GI_SAMPLE_PREV_DEPTH(xyFull);
             const float3 s_normal = SamplePreviousViewNormal(xyFull);
 
             [[branch]]
             if (Test_DepthReproject(depth, s_depth, depthBias) && dot(viewnormal, s_normal) > RESTIR_NORMAL_THRESHOLD)
             {
                 // Don't sample multiple temporal reservoirs to avoid boiling. Break on first accepted sample.
-                Reservoir s_reservoir = ReSTIR_Load(xy, RESTIR_LAYER_PRE);
+                Reservoir s_reservoir = ReSTIR_Load_Previous(xy);
 
                 if (s_reservoir.M > 0u)
                 {
@@ -90,9 +91,9 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
             const uint hash = ReSTIR_Hash(seed + i);
             const int2 xy = ReSTIR_GetSpatialResamplingCoord(baseCoord, scale, hash);
             const int2 xyFull = GI_ExpandCheckerboardCoord(xy);
-            const float s_depth = SampleMinZ(xyFull, 0);
+            const float s_depth = PK_GI_SAMPLE_DEPTH(xyFull);
             const float3 s_normal = SampleWorldNormal(xyFull);
-            const float3 s_position = SampleWorldPosition(xyFull, s_depth);
+            const float3 s_position = CoordToWorldPos(xyFull, s_depth);
             const Reservoir s_reservoir = ReSTIR_Load_HitAsReservoir(xy, s_position);
 
             [[branch]]
@@ -130,7 +131,7 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
         [[branch]]
         if (combined.M < RESTIR_MAX_M + 3 && Test_DepthReproject(depth, s_depth, depthBias) && dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
         {
-            const float3 s_position = SampleWorldPosition(s_coord, s_depth);
+            const float3 s_position = CoordToWorldPos(s_coord, s_depth);
             const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_origin, suffled);
             ReSTIR_CombineReservoir(combined, suffled, s_targetPdf, hash);
         }
@@ -187,7 +188,7 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
     const float weight = ReSTIR_GetSampleWeight(combined, normal, combinedDirection);
     const bool isValid = !isnan(weight) && !isinf(weight) && weight > 0.0f && !reject;
 
-    ReSTIR_Store(baseCoord, RESTIR_LAYER_CUR, isValid && !isBoiling ? combined : initial);
+    ReSTIR_Store_Current(baseCoord, isValid && !isBoiling ? combined : initial);
     
     const float3 radiance = lerp(initial.radiance, combined.radiance * weight, isValid.xxx);
     const float3 direction = lerp(safeNormalize(initial.position - origin), combinedDirection, isValid.xxx);
@@ -200,17 +201,17 @@ void main()
     const int2 baseCoord = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(baseCoord));
     const float4 normalroughness = SampleViewNormalRoughness(coord);
-    const float depth = SampleMinZ(coord, 0);
+    const float depth = PK_GI_SAMPLE_DEPTH(coord);
     const bool isScene = Test_DepthFar(depth);
 
     // Diffuse 
     {
-        const float3 origin = SampleWorldPosition(coord, depth);
+        const float3 origin = CoordToWorldPos(coord, depth);
         const Reservoir reservoir = ReSTIR_Load_HitAsReservoir(baseCoord, origin);
         const float4 samplevec = normalizeLength(reservoir.position - origin);
 
         GIDiff current;
-        current.ao = saturate(samplevec.w / PK_GI_RAY_TMAX);
+        current.ao = min(1.0f, samplevec.w / PK_GI_RAY_TMAX);
         
         #if defined(PK_GI_RESTIR)
         current.sh = ReSTIR_ResampleSpatioTemporal(baseCoord, coord, depth, normalroughness.xyz, origin, reservoir);
@@ -233,13 +234,17 @@ void main()
     if (normalroughness.w < PK_GI_MAX_ROUGH_SPEC)
     #endif
     {
-        GISpec history = GI_Load_Spec(baseCoord, PK_GI_STORE_LVL);
-        GISpec current = GI_Load_Spec(baseCoord);
-        const float alpha = GI_Alpha(history);
+        [[branch]]
+        if (subgroupAny(isScene))
+        {
+            GISpec history = GI_Load_Spec(baseCoord, PK_GI_STORE_LVL);
+            GISpec current = GI_Load_Spec(baseCoord);
+            const float alpha = GI_Alpha(history);
 
-        SUBGROUP_ANTIFIREFLY_FILTER(isScene, current, history, alpha, (1.0f / (1e-4f + normalroughness.w)))
+            SUBGROUP_ANTIFIREFLY_FILTER(isScene, current, history, alpha, (1.0f / (1e-4f + normalroughness.w)))
 
-        history = GI_Interpolate(history, current, alpha);
-        GI_Store_Packed_Spec(baseCoord, isScene ? GI_Pack_Spec(history) : uint2(0));
+            history = GI_Interpolate(history, current, alpha);
+            GI_Store_Packed_Spec(baseCoord, isScene ? GI_Pack_Spec(history) : uint2(0));
+        }
     }
 }

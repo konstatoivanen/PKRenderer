@@ -37,7 +37,7 @@ void main()
     float4 normalRoughness = SampleViewNormalRoughness(coord);
     float3 normal = normalRoughness.xyz;
     float roughness = normalRoughness.w;
-    float3 viewpos = SampleViewPosition(coord, depth);
+    float3 viewpos = CoordToViewPos(coord, depth);
     float3 viewdir = normalize(viewpos);
 
     const bool isScene = Test_DepthFar(depth);
@@ -188,7 +188,7 @@ void main()
     
             #if PK_GI_APPROX_ROUGH_SPEC == 1
             {
-                const float3 viewdir = normalize(SampleViewPosition(ncoord, n_depth));
+                const float3 viewdir = normalize(CoordToViewPos(ncoord, n_depth));
                 ra_spec = GI_ShadeRoughSpecular(n_normal, viewdir, n_roughness, n_diff);
                 n_spec = GI_Interpolate(n_spec, ra_spec, GI_RoughSpecWeight(n_roughness));
             }

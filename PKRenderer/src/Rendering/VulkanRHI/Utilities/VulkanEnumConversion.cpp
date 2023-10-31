@@ -166,6 +166,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
             case TextureFormat::RGBA32F:            return VK_FORMAT_R32G32B32A32_SFLOAT;
             case TextureFormat::RGBA32UI:           return VK_FORMAT_R32G32B32A32_UINT;
             case TextureFormat::RGBA32I:            return VK_FORMAT_R32G32B32A32_SINT;
+            case TextureFormat::RGBA64UI:           return VK_FORMAT_R64G64B64A64_UINT;
             case TextureFormat::BC1_RGB:            return VK_FORMAT_BC1_RGB_UNORM_BLOCK;
             case TextureFormat::BC1_SRGB:           return VK_FORMAT_BC1_RGB_SRGB_BLOCK;
             case TextureFormat::BC1_RGBA:           return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
@@ -252,6 +253,7 @@ namespace PK::Rendering::VulkanRHI::EnumConvert
             case VK_FORMAT_R32G32B32A32_SFLOAT:       return TextureFormat::RGBA32F;
             case VK_FORMAT_R32G32B32A32_UINT:         return TextureFormat::RGBA32UI;
             case VK_FORMAT_R32G32B32A32_SINT:         return TextureFormat::RGBA32I;
+            case VK_FORMAT_R64G64B64A64_UINT:         return TextureFormat::RGBA64UI;
             case VK_FORMAT_BC1_RGB_UNORM_BLOCK:       return TextureFormat::BC1_RGB;
             case VK_FORMAT_BC1_RGB_SRGB_BLOCK:        return TextureFormat::BC1_SRGB;
             case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:      return TextureFormat::BC1_RGBA;

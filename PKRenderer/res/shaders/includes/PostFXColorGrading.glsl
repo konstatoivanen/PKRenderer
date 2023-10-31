@@ -128,9 +128,9 @@ float3 ApplyColorGrading(float3 color)
     float3 final = saturate(color);
 
     // White balance
-    float3 lms = mul(LIN_2_LMS_MAT, final);
+    float3 lms = LIN_2_LMS_MAT * final;
     lms *= pk_CC_WhiteBalance.xyz;
-    final = mul(LMS_2_LIN_MAT, lms);
+    final = LMS_2_LIN_MAT * lms;
 
     // Lift/gamma/gain
     final = max(final, 0.0);

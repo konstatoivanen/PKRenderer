@@ -92,7 +92,8 @@ namespace PK::Rendering
                 { ElementType::Float4, hash->pk_CosTime },
                 { ElementType::Float4, hash->pk_DeltaTime },
                 { ElementType::Float4, hash->pk_CursorParams },
-                { ElementType::Float4, hash->pk_WorldSpaceCameraPos },
+                { ElementType::Float4, hash->pk_ViewWorldOrigin },
+                { ElementType::Float4, hash->pk_ViewWorldOriginPrev },
                 { ElementType::Float4, hash->pk_ViewSpaceCameraDelta },
                 { ElementType::Float4, hash->pk_ClipParams },
                 { ElementType::Float4, hash->pk_ClipParamsInv },
@@ -206,7 +207,8 @@ namespace PK::Rendering
         m_constantsPerFrame->Set<float4>(hash->pk_ClipParams, { n, f, viewToClip[2][2], viewToClip[3][2] });
         m_constantsPerFrame->Set<float4>(hash->pk_ClipParamsInv, { clipToView[0][0], clipToView[1][1], clipToView[2][3], clipToView[3][3] });
         m_constantsPerFrame->Set<float4>(hash->pk_ClipParamsExp, { 1.0f / glm::log2(f / n), -log2(n) / log2(f / n), f / n, 1.0f / n });
-        m_constantsPerFrame->Set<float4>(hash->pk_WorldSpaceCameraPos, viewToWorld[3]);
+        m_constantsPerFrame->Set<float4>(hash->pk_ViewWorldOrigin, viewToWorld[3]);
+        m_constantsPerFrame->Set<float4>(hash->pk_ViewWorldOriginPrev, float4(viewToWorldPrev[0].w, viewToWorldPrev[1].w, viewToWorldPrev[2].w, 1.0f));
         m_constantsPerFrame->Set<float4>(hash->pk_ViewSpaceCameraDelta, viewSpaceCameraDelta);
         m_constantsPerFrame->Set<float4>(hash->pk_ProjectionJitter, token->jitter);
         m_constantsPerFrame->Set<float3x4>(hash->pk_WorldToView, Functions::TransposeTo3x4(worldToView));

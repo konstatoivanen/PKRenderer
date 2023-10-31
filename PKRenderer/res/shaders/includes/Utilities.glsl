@@ -56,7 +56,6 @@ float3x3 make_TBN(const float3 n) { float3 t, b; branchlessONB(n,t,b); return fl
 #define POW3(x) ((x) * (x) * (x))
 #define POW4(x) ((x) * (x) * (x) * (x))
 #define POW5(x) ((x) * (x) * (x) * (x) * (x))
-#define mul(a,b) (a * b)
 
 #define Any_IsNaN(v) any(isnan(v))
 #define Any_GEqual(a, b) any(greaterThanEqual(a,b))

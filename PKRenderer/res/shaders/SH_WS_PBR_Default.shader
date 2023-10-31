@@ -70,5 +70,4 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
     surf.normal = SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
     surf.albedo = SURF_TEX(_AlbedoTexture, uv).rgb * _Color.xyz;
     surf.depthBias = SURF_TEX(_HeightMap, uv).x * _HeightAmount;
-    surf.depthBias *= 5.0f;
 }

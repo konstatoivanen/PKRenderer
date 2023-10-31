@@ -79,9 +79,9 @@ uint SreenSpaceRaymarch(const float3 ws_origin, const float3 ws_dir, inout float
 bool IsScreenHit(const int2 coord, const float3 origin, const float3 direction, const GIRayHit hit)
 {
     const float3 worldpos = origin + direction * hit.dist;
-    float3 clipuvw;
+    const float3 clipuvw = WorldToClipUVWPrev(worldpos);
 
-    if (Test_WorldToPrevClipUVW(worldpos, clipuvw))
+    if (Test_InUVW(clipuvw))
     {
         const float2 deltacoord = abs(coord - clipuvw.xy * pk_ScreenParams.xy);
         const float rdepth = ViewDepth(clipuvw.z);
@@ -103,7 +103,7 @@ uint TraceRay_ScreenSpace(const float3 origin, const float3 direction, inout flo
 #if defined(PK_GI_SSRT_PRETRACE)
     float3 hitpos = 0.0f.xxx;
     const uint result = SreenSpaceRaymarch(origin, direction, hitpos);
-    hitpos = SampleWorldPosition(hitpos.xy, ViewDepth(hitpos.z));
+    hitpos = UVToWorldPos(hitpos.xy, ViewDepth(hitpos.z));
     hitDistance = max(0.0f, dot(normalize(direction), hitpos - origin));
     return result;
 #else
@@ -118,7 +118,7 @@ void main()
 {
     const int2 raycoord = int2(gl_LaunchIDEXT.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy);
-    const float depth = SampleViewDepthBiased(coord);
+    const float depth = PK_GI_SAMPLE_DEPTH(coord);
     
     GIRayParams params;
     GIRayHits hits;
@@ -216,7 +216,7 @@ void main()
     float3 v0 = normalize(positions[1] - positions[0]);
     float3 v1 = normalize(positions[2] - positions[0]);
     float3 normal = cross(v0, v1);
-    normal = mul(gl_ObjectToWorldEXT, float4(normal, 0.0f));
+    normal = gl_ObjectToWorldEXT * float4(normal, 0.0f);
 
     if (dot(normal, gl_WorldRayDirectionEXT) > 0)
     {

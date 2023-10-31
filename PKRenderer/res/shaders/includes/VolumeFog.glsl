@@ -53,7 +53,11 @@ DEFINE_TRICUBIC_SAMPLER(pk_Fog_InjectRead, VOLUMEFOG_SIZE)
 
 DEFINE_TRICUBIC_SAMPLER(pk_Fog_TransmittanceRead, VOLUMEFOG_SIZE)
 
-float VolumeFog_CalculateDensity(float3 pos)
+// Direct exp transform packs too much resolution to near clip. linearize a bit with sqrt
+float VFog_ZToView(float z) { return ViewDepthExp(sqrt(z)); }
+float VFog_ViewToZ(float viewdepth) { return pow2(ClipDepthExp(viewdepth)); }
+
+float VFog_CalculateDensity(float3 pos)
 {
     float density = pk_Fog_Density_Constant;
     density += min(exp(pk_Fog_Density_HeightExponent * (-pos.y + pk_Fog_Density_HeightOffset)) * pk_Fog_Density_HeightAmount, 1e+3f);
@@ -61,16 +65,16 @@ float VolumeFog_CalculateDensity(float3 pos)
     return max(density * pk_Fog_Density_Amount, 0.0f);
 }
 
-float VolumeFog_MarchTransmittance(const float3 origin, const float3 direction, const float dither, const float tMax)
+float VFog_MarchTransmittance(const float3 origin, const float3 direction, const float dither, const float tMax)
 {
     const float invT = tMax / 4.0f;
-    float prev_density = VolumeFog_CalculateDensity(origin);
+    float prev_density = VFog_CalculateDensity(origin);
     float transmittance = 1.0f;
 
     for (uint j = 0u; j < 4u; ++j)
     {
         const float3 pos = origin + direction * invT * (j + dither);
-        const float density = VolumeFog_CalculateDensity(pos);
+        const float density = VFog_CalculateDensity(pos);
         transmittance *= exp(-lerp(prev_density, density, 0.5f) * invT);
         prev_density = density;
     }
@@ -78,7 +82,7 @@ float VolumeFog_MarchTransmittance(const float3 origin, const float3 direction, 
     return transmittance;
 }
 
-float VolumeFog_MarchTransmittanceStatic(const float3 uvw, const float dither)
+float VFog_MarchTransmittanceStatic(const float3 uvw, const float dither)
 {
     float transmittance = 1.0f;
 
@@ -94,31 +98,31 @@ float VolumeFog_MarchTransmittanceStatic(const float3 uvw, const float dither)
     return lerp(transmittance, 1.0f, pow2(uvw.z));
 }
 
-float VolumeFog_GetAccumulation(float3 uvw)
+float VFog_GetAccumulation(float3 uvw)
 {
     return pk_FrameIndex.y == 0u || uvw.z < 0.0f || Any_NotEqual(saturate(uvw.xy), uvw.xy) ? 1.0f : VOLUMEFOG_ACCUMULATION;
 }
 
-float3 VolumeFog_WorldToPrevUVW(float3 worldpos)
+float3 VFog_WorldToPrevUVW(float3 worldpos)
 {
-    float3 uvw = ClipToUVW(mul(pk_WorldToClipPrev_NoJitter, float4(worldpos, 1.0f)));
-    uvw.z = ClipDepthExp(ViewDepth(uvw.z));
+    float3 uvw = ClipToUVW(pk_WorldToClipPrev_NoJitter * float4(worldpos, 1.0f));
+    uvw.z = VFog_ViewToZ(ViewDepth(uvw.z));
     return uvw;
 }
 
-void VolumeFog_Apply(float2 uv, float viewDepth, inout float3 color)
+float4 VFog_Apply(float2 uv, float viewDepth, float3 color)
 {
-    float3 uvw = float3(uv, ClipDepthExp(viewDepth));
+    float3 uvw = float3(uv, VFog_ViewToZ(viewDepth));
     float2 dither = GlobalNoiseBlue(uint2(uv * pk_ScreenSize.xy), pk_FrameIndex.x).xy;
     uvw.xy += (dither - 0.5f) * 2.0f.xx / VOLUMEFOG_SIZE_XY;
 
     float3 scatter = SAMPLE_TRICUBIC(pk_Fog_ScatterRead, uvw).rgb;
     float3 transmittance = SAMPLE_TRICUBIC(pk_Fog_TransmittanceRead, uvw).rgb;
 
-    color = scatter + color * transmittance;
+    return float4(scatter + color * transmittance, transmittance);
 }
 
-void VolumeFog_ApplySky(float3 viewdir, inout float3 color)
+void VFog_ApplySky(float3 viewdir, inout float3 color)
 {
     float density = pk_Fog_Density_Sky_Constant;
     density += min(exp(pk_Fog_Density_Sky_HeightExponent * -(viewdir.y + pk_Fog_Density_Sky_HeightOffset)) * pk_Fog_Density_Sky_HeightAmount, 1e+3f);

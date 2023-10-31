@@ -318,6 +318,7 @@ namespace PK::Rendering::Structs
         RGBA32F, 
         RGBA32UI, 
         RGBA32I,
+        RGBA64UI,
 
         // compressed formats
         BC1_RGB, 

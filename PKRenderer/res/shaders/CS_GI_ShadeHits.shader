@@ -17,7 +17,7 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHi
 
     if (hit.isScreen)
     {
-        float2 uv = ClipToUV(WorldToPrevClipPos(worldpos).xyw);
+        float2 uv = WorldToClipUVPrev(worldpos);
         return SamplePreviousColor(uv);
     }
 
@@ -35,7 +35,7 @@ void main()
 {
     const int2 raycoord = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(raycoord));
-    const float depth = SampleViewDepthBiased(coord);
+    const float depth = PK_GI_SAMPLE_DEPTH(coord);
 
     GIRayParams params;
     uint4 packedDiff = uint4(0u);

@@ -24,7 +24,7 @@ void main()
     const int2 storeCoord = coord;
     #endif
 
-    const float depth = SampleViewDepth(coord);
+    const float depth = PK_GI_SAMPLE_DEPTH(coord);
     uint4 packedDiff = uint4(0u);
     uint2 packedSpec = uint2(0u);
 
@@ -48,7 +48,7 @@ void main()
             const float3 normal = normalroughness.xyz;
             const float roughness = normalroughness.w;
             const float depthBias = lerp(0.1f, 0.01f, -normal.z);
-            const float3 viewpos = SampleViewPosition(coord, depth);
+            const float3 viewpos = CoordToViewPos(coord, depth);
             const float3 viewdir = normalize(viewpos);
             const float nv = dot(normal, -viewdir);
             const float parallax = GI_GetParallax(viewdir, normalize(viewpos - pk_ViewSpaceCameraDelta.xyz));
@@ -62,14 +62,14 @@ void main()
                 const float2 k_R = GI_GetRoughnessWeightParams(roughness);
                 const float2 s_screenuv = GI_ViewToPrevScreenUV(viewpos);
                 const int2   s_coord = int2(s_screenuv);
-                const float4 s_depths = GatherPreviousViewDepths((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
+                const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
                 
                 float4 weights = GI_GetBilinearWeights(s_screenuv - s_coord);
                 weights *= exp(-abs(depth.xxxx - s_depths));
                 weights *= safePositiveRcp(dot(weights, 1.0f.xxxx));
                 weights *= float4(Test_DepthReproject(depth.xxxx, s_depths, depthBias.xxxx));
                 weights *= float4(Test_DepthFar(s_depths));
-                weights *= float(Test_InScreen(s_screenuv * pk_ScreenParams.zw));
+                weights *= float(Test_InUV(s_screenuv * pk_ScreenParams.zw));
                 
                 [[loop]]
                 for (uint i = 0u; i < 4; ++i)
@@ -107,12 +107,12 @@ void main()
                 const float2 k_R = GI_GetRoughnessWeightParams(roughness);
                 const float2 s_screenuv = GI_ViewToPrevScreenUV(viewpos + viewdir * s_vdist);
                 const int2   s_coord = int2(s_screenuv);
-                const float4 s_depths = GatherPreviousViewDepths((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
+                const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
                 
                 float4 weights = GI_GetBilinearWeights(s_screenuv - s_coord);
                 weights *= 1.0f.xxxx / (1e-4f + abs(depth.xxxx - s_depths));
                 weights *= float4(Test_DepthFar(s_depths));
-                weights *= float(Test_InScreen(s_screenuv * pk_ScreenParams.zw));
+                weights *= float(Test_InUV(s_screenuv * pk_ScreenParams.zw));
                 
                 [[loop]]
                 for (uint i = 0u; i < 4; ++i)

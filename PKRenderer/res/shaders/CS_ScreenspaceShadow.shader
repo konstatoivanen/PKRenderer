@@ -7,7 +7,7 @@
 
 #include includes/GBuffers.glsl
 
-layout(rg8, set = PK_SET_DRAW) uniform image2D pk_Image;
+layout(r8, set = PK_SET_DRAW) uniform image2D pk_Image;
 
 #if defined(PASS_SHADOWMAP)
 
@@ -26,7 +26,7 @@ void main()
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float depth = SampleViewDepthBiased(coord);
     const float3 normal = SampleWorldNormal(coord);
-    const float3 worldpos = SampleWorldPosition(coord, depth);
+    const float3 worldpos = CoordToWorldPos(coord, depth);
 
     const LightPacked light = Lights_LoadPacked(LightIndex);
     const half sourceAngle = half(0.5f * uintBitsToFloat(light.LIGHT_PACKED_SOURCERADIUS));
@@ -70,8 +70,6 @@ void main()
     }
 
     const uint validSamples = uint(avgZ.y + 0.1hf);
-    // @TODO Fix this fade. Needed to avoid penumbra artefacts with screen space trace
-    const half penumbra = 0.0hf;// min(1.0hf, (sourceAngle * avgZ.x / avgZ.y));
 
     [[branch]]
     if (subgroupAll(validSamples == 0u))
@@ -96,7 +94,7 @@ void main()
         shadow /= 16.0hf;
     }
 
-    imageStore(pk_Image, coord, float4(shadow, penumbra, 0.0f.xx));
+    imageStore(pk_Image, coord, float4(shadow));
 }
 
 #else
@@ -112,7 +110,7 @@ void main()
 
 float BEND_SAMPLE_DEPTH(float2 uv) { return SampleClipDepthBiased(int2(uv * pk_ScreenSize.xy)); }
 
-#include includes/ScreenSpaceShadow.glsl
+#include includes/bend_sss_gpu.glsl
 
 PK_DECLARE_LOCAL_CBUFFER(pk_BendShadowDispatchData)
 {
@@ -146,12 +144,9 @@ void main()
     int2 coord = int2(0);
     WriteScreenSpaceShadow(dispatchParams, int3(gl_WorkGroupID), int(gl_LocalInvocationIndex), shadow, coord);
 
-    float2 current = imageLoad(pk_Image, coord).xy;
+    shadow = min(shadow, imageLoad(pk_Image, coord).x);
 
-    shadow = min(shadow, current.x);
-    current.x = lerp(shadow, current.x, current.y);
-
-    imageStore(pk_Image, coord, float4(current, 0.0f.xx));
+    imageStore(pk_Image, coord, float4(shadow));
 }
 
 #endif

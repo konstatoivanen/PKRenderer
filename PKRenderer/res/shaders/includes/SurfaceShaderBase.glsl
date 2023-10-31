@@ -76,7 +76,7 @@ float3 SampleNormalTex(const texture2D map, const float3x3 rotation, const float
 {
     float3 normal = texture(sampler2D(map, pk_Sampler_SurfDefault), uv).xyz * 2.0f - 1.0f;
     normal = lerp(float3(0,0,1), normal, amount);
-    return normalize(mul(rotation, normal)); 
+    return normalize(rotation * normal); 
 }
 
 float3 SampleNormalTexTriplanar(const texture2D tex, const float3x3 rotation, const float3 uvw, const float amount) 
@@ -88,7 +88,7 @@ float3 SampleNormalTexTriplanar(const texture2D tex, const float3x3 rotation, co
     const float3 cz = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xy).xyz;
     float3 normal = (cx * blend.x + cy * blend.y + cz * blend.z) * 2.0f - 1.0f;
     normal = lerp(float3(0,0,1), normal, amount);
-    return normalize(mul(rotation, normal)); 
+    return normalize(rotation * normal); 
 }
 
 float4 SampleTexTriplanar(const texture2D tex, const float3 normal, const float3 uvw, float bias)
@@ -192,7 +192,7 @@ io float2 vs_TEXCOORD0; \
     #define SURF_MESH_NORMAL pk_MATRIX_TBN[2]
     float2 SURF_MAKE_PARALLAX_OFFSET(float height, float amount, float3 viewdir) 
     { 
-        viewdir = mul(transpose(pk_MATRIX_TBN), viewdir);
+        viewdir = transpose(pk_MATRIX_TBN) * viewdir;
         return (height * amount - amount * 0.5f) * viewdir.xy / (viewdir.z + 0.5f); 
     }
     #define SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormalTex(normalmap, pk_MATRIX_TBN, uv, amount)
@@ -269,7 +269,7 @@ io float2 vs_TEXCOORD0; \
 
         SurfaceData surf = SurfaceData
         (
-            normalize(pk_WorldSpaceCameraPos.xyz - vs_WORLDPOSITION), //float3 viewdir;
+            normalize(pk_ViewWorldOrigin.xyz - vs_WORLDPOSITION),     //float3 viewdir;
             vs_WORLDPOSITION,                                         //float3 worldpos;
             0.0f.xxx,                                                 //float3 clipuvw;
             1.0f.xxx,                                                 //float3 albedo;
@@ -289,9 +289,10 @@ io float2 vs_TEXCOORD0; \
         
         #if defined(PK_META_PASS_GIVOXELIZE)
             float3 voxelPos = GI_QuantizeWorldToVoxelSpace(surf.worldpos);
+            voxelPos = WorldToClipUVW(voxelPos);
 
             [[branch]]
-            if (!Test_WorldToClipUVW(voxelPos, surf.clipuvw) || GI_Test_VX_HasValue(surf.worldpos) || !GI_Test_VX_Normal(SURF_MESH_NORMAL))                 
+            if (!Test_InUVW(voxelPos) || GI_Test_VX_HasValue(surf.worldpos) || !GI_Test_VX_Normal(SURF_MESH_NORMAL))                 
             {
                 return;
             }
@@ -317,7 +318,7 @@ io float2 vs_TEXCOORD0; \
 
         #if defined(PK_META_PASS_GBUFFER)
             sv_output0 = EncodeGBufferWorldNR(surf.normal, surf.roughness, surf.metallic);
-            sv_output1 = EncodeBiasedDepth(surf.clipuvw.z, surf.depthBias);
+            sv_output1 = EncodeBiasedDepth(surf.clipuvw.z, dot(surf.viewdir, surf.normal), surf.depthBias);
         #else
             const float3 F0 = lerp(PK_DIELECTRIC_SPEC.rgb, surf.albedo, surf.metallic);
             const float reflectivity = PK_DIELECTRIC_SPEC.r + surf.metallic * PK_DIELECTRIC_SPEC.a;

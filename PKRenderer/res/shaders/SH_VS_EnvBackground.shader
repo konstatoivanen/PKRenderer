@@ -20,7 +20,7 @@ out float3 vs_TEXCOORD0;
 void main()
 {
     gl_Position = PK_BLIT_VERTEX_POSITIONS[gl_VertexIndex];
-    vs_TEXCOORD0 = mul(float4(gl_Position.xy * pk_ClipParamsInv.xy, 1.0f, 0.0f), pk_ViewToWorld).xyz;
+    vs_TEXCOORD0 = float4(gl_Position.xy * pk_ClipParamsInv.xy, 1.0f, 0.0f) * pk_ViewToWorld;
 }
 
 #pragma PROGRAM_FRAGMENT
@@ -33,6 +33,6 @@ void main()
     const float3 viewdir = normalize(vs_TEXCOORD0);
     const float2 octaUV = OctaUV(viewdir);
     float3 color = SampleEnvironment(octaUV, 0.0f);
-    VolumeFog_ApplySky(viewdir, color);
+    VFog_ApplySky(viewdir, color);
     SV_Target0 = float4(color, 1.0f);
 }

@@ -30,7 +30,7 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
     surf.occlusion = lerp(1.0f, textureval.SRC_OCCLUSION, _Occlusion);
     surf.normal = SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
     surf.albedo = SURF_TEX(_AlbedoTexture, uv).rgb * _Color.rgb;
-    surf.depthBias = SURF_TEX(_HeightMap, uv).x * _HeightAmount * 10.0f;
+    surf.depthBias = SURF_TEX(_HeightMap, uv).x * _HeightAmount;
     surf.depthBias = pow3(surf.depthBias);
 
     // Add glitter

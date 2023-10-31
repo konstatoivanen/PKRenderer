@@ -68,7 +68,8 @@ void main()
         const int2 s_coordCur = coord * GRADIENT_STRATA_SIZE + int2(xx, yy);
 
         const int2 s_coordFull = GI_ExpandCheckerboardCoord(s_coordCur, 1u);
-        const float2 s_screenuv = ViewToPrevClipUV(SampleViewPosition(s_coordFull)) * int2(pk_ScreenSize.xy);
+        const float s_depth = SamplePreviousViewDepth(s_coordFull);
+        const float2 s_screenuv = ViewToClipUVPrev(CoordToViewPos(s_coordFull, s_depth)) * int2(pk_ScreenSize.xy);
 
         const int2 s_coordPre = GI_CollapseCheckerboardCoord(s_screenuv, 1u);
         const float2 s_inputs = Gradient_Load_Input(s_coordPre);
