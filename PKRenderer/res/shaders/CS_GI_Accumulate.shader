@@ -61,6 +61,7 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
             const int2 xyFull = GI_ExpandCheckerboardCoord(xy, 1u);
             const float s_depth = PK_GI_SAMPLE_PREV_DEPTH(xyFull);
             const float3 s_normal = SamplePreviousViewNormal(xyFull);
+            const float3 s_position = CoordToWorldPosPrev(xyFull, s_depth);
 
             [[branch]]
             if (Test_DepthReproject(depth, s_depth, depthBias) && dot(viewnormal, s_normal) > RESTIR_NORMAL_THRESHOLD)
@@ -124,14 +125,10 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
         const float s_depth = subgroupShuffle(depth, mask);
         const float3 s_origin = subgroupShuffle(origin, mask);
         const float3 s_normal = subgroupShuffle(normal, mask);
-        const int2 s_coord = subgroupShuffle(coord, mask);
-
-        // Also check screen area in case receiving invalid values.
 
         [[branch]]
         if (combined.M < RESTIR_MAX_M + 3 && Test_DepthReproject(depth, s_depth, depthBias) && dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
         {
-            const float3 s_position = CoordToWorldPos(s_coord, s_depth);
             const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_origin, suffled);
             ReSTIR_CombineReservoir(combined, suffled, s_targetPdf, hash);
         }

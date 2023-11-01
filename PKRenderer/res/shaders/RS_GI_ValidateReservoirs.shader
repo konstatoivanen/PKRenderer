@@ -2,84 +2,63 @@
 #include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl
 #include includes/SceneGIVX.glsl
+#include includes/SceneGIRT.glsl
 #include includes/SceneGIReSTIR.glsl
 
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE
 
-bool IsScreenHit(const float3 worldpos, bool isMiss)
-{
-    const float3 clipuvw = WorldToClipUVWPrev(worldpos);
-
-    if (Test_InUVW(clipuvw))
-    {
-        const float rdepth = ViewDepth(clipuvw.z);
-        const float sdepth = SamplePreviousViewDepth(clipuvw.xy);
-        const float3 viewdir = normalize(UVToViewPos(clipuvw.xy, 1.0f));
-        const float3 viewnor = SamplePreviousViewNormal(clipuvw.xy);
-        const float sviewz = max(0.0f, dot(viewdir, -viewnor)) + 0.15;
-        const bool isValidSurf = abs(sdepth - rdepth) < (rdepth * 0.01f / sviewz);
-        const bool isValidSky = isMiss && !Test_DepthFar(sdepth);
-        return isValidSky || isValidSurf;
-    }
-
-    return false;
-}
-
-struct TracePayload
-{
-    float targetPdf;
-    float linearDistance;
-};
+#define HIT_LOGLUMINANCE x
+#define HIT_DISTANCE y
 
 #pragma PROGRAM_RAY_GENERATION
 
-PK_DECLARE_RT_PAYLOAD_OUT(TracePayload, payload, 0);
+PK_DECLARE_RT_PAYLOAD_OUT(float2, payload, 0);
 
 void main()
 {
     const int2 raycoord = int2(gl_LaunchIDEXT.xy);
-    const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy);
+    const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy, 1u);
     const float depth = PK_GI_SAMPLE_PREV_DEPTH(coord);
 
     if (Test_DepthFar(depth))
     {
-        // Copy from SceneGI.glsl
         const float3 normal = SamplePreviousWorldNormal(coord);
-        const float3 viewpos = CoordToViewPos(coord, depth - depth * 1e-2f);
+        const float3 viewpos = GI_GetRayViewOrigin(coord, depth);
         const float3 viewdir = normalize(viewpos) * float3x3(pk_ViewToWorldPrev);
-        const float3 normalOffset = normal * (0.01f / (saturate(-dot(viewdir, normal)) + 0.01f)) * 0.05f;
-        const float3 origin = float4(viewpos + normalOffset, 1.0f) * pk_ViewToWorldPrev;
+        const float3 normalOffset = GI_GetRayOriginNormalOffset(normal, viewdir);
+        const float3 origin = ViewToWorldPosPrev(viewpos) + normalOffset;
         
-        Reservoir r = ReSTIR_Load_Previous(raycoord);
+        const Reservoir reservoir = ReSTIR_Load_Previous(raycoord);
+        const float4 direction = normalizeLength(reservoir.position - origin);
+       
+        const float maxErrorDist = RESTIR_VALIDATION_ERROR_DIST * direction.w;
+        const float maxErrorLuma = RESTIR_VALIDATION_ERROR_LUMA;
+        const float tmax = direction.w + maxErrorDist;
 
-        const float4 direction = normalizeLength(r.position - origin);
-        const float tmax = direction.w + 0.5f * depth;
-
-        payload.linearDistance = direction.w;
-        payload.targetPdf = 0.0f;
+        payload.HIT_LOGLUMINANCE = 0.0f;
+        payload.HIT_DISTANCE = direction.w;
         traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction.xyz, tmax, 0);
 
-        //@TODO this is quite high. investigate why lower values cause issues.
-        const float maxErrorDist = 0.25f * direction.w;
-        const float maxErrorPdf = 0.5f;
+        const float logLuminance = log(1.0f + dot(PK_LUMA_BT709, reservoir.radiance));
 
         // Validate
-        if (abs(direction.w - payload.linearDistance) > maxErrorDist || abs(ReSTIR_GetTargetPdf(r) - payload.targetPdf) > maxErrorPdf)
+        if (abs(direction.w - payload.HIT_DISTANCE) > maxErrorDist || 
+            abs(logLuminance - payload.HIT_LOGLUMINANCE) > maxErrorLuma)
         {
-            ReSTIR_StoreZero(raycoord, RESTIR_LAYER_PRE);
+            ReSTIR_StoreZero(raycoord);
         }
     }
 }
 
 #pragma PROGRAM_RAY_MISS
-PK_DECLARE_RT_PAYLOAD_IN(TracePayload, payload, 0);
+PK_DECLARE_RT_PAYLOAD_IN(float2, payload, 0);
 
 void main()
 {
-    const float3 worldpos = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * payload.linearDistance;
+    const float3 worldpos = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * payload.HIT_DISTANCE;
     float3 radiance = 0.0f.xxx;
 
-    if (IsScreenHit(worldpos, true))
+    if (GI_IsScreenHit(worldpos, true))
     {
         const float2 uv = WorldToClipUVPrev(worldpos);
         radiance = SamplePreviousColor(uv);
@@ -89,11 +68,11 @@ void main()
         radiance = SampleEnvironment(OctaUV(gl_WorldRayDirectionEXT), 0.0f);
     }
 
-    payload.targetPdf = dot(PK_LUMA_BT709, radiance);
+    payload.HIT_LOGLUMINANCE = log(1.0f + dot(PK_LUMA_BT709, radiance));
 }
 
 #pragma PROGRAM_RAY_CLOSEST_HIT
-PK_DECLARE_RT_PAYLOAD_IN(TracePayload, payload, 0);
+PK_DECLARE_RT_PAYLOAD_IN(float2, payload, 0);
 
 void main()
 {
@@ -101,7 +80,7 @@ void main()
     const float hitdist = PK_GET_RAY_HIT_DISTANCE;
     float3 radiance = 0.0f.xxx;
 
-    if (IsScreenHit(worldpos, false))
+    if (GI_IsScreenHit(worldpos, false))
     {
         const float2 uv = WorldToClipUVPrev(worldpos);
         radiance = SamplePreviousColor(uv);
@@ -112,6 +91,6 @@ void main()
         radiance = voxel.rgb / max(voxel.a, 1e-2f);
     }
 
-    payload.linearDistance = hitdist;
-    payload.targetPdf = dot(PK_LUMA_BT709, radiance);
+    payload.HIT_DISTANCE = hitdist;
+    payload.HIT_LOGLUMINANCE = log(1.0f + dot(PK_LUMA_BT709, radiance));
 }

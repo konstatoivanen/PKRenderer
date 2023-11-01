@@ -9,6 +9,7 @@
 #include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl
 #include includes/SceneGIVX.glsl
+#include includes/SceneGIRT.glsl
 #include includes/SceneGIReSTIR.glsl
 
 float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHit hit)
@@ -37,34 +38,40 @@ void main()
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(raycoord));
     const float depth = PK_GI_SAMPLE_DEPTH(coord);
 
-    GIRayParams params;
     uint4 packedDiff = uint4(0u);
     uint2 packedSpec = uint2(0u);
 
+    [[branch]]
     if (Test_DepthFar(depth))
     {
-        GI_GET_RAY_PARAMS(coord, raycoord, depth, params)
-
+        const float4 normalRoughness = SampleWorldNormalRoughness(coord);
         const GIRayHits hits = GI_Load_RayHits(raycoord);
+
+        GI_LOAD_RAY_PARAMS(coord, raycoord, depth, normalRoughness.xyz, normalRoughness.w)
+
+        // Convert ray to unbiased space
+        const float3 hitpos = origin + directionDiff * lerp(hits.diff.dist, PK_GI_RAY_TMAX, hits.diff.isMiss);
+        const float3 unbiasedOrigin = CoordToWorldPos(coord, depth);
+        const float4 unbiasedHitVec = normalizeLength(hitpos - unbiasedOrigin);
 
         // Always use reservoir packing for diff hits.
         // They can be used for neighbour reconstruction outside of ReSTIR
         packedDiff = ReSTIR_Pack_Hit
         (
-            params.diffdir,
-            hits.diff.isMiss ? PK_GI_RAY_TMAX : hits.diff.dist,
-            params.normal,
+            unbiasedHitVec.xyz,
+            unbiasedHitVec.w,
+            normalRoughness.xyz,
             hits.diffNormal,
-            SampleRadiance(params.origin, params.diffdir, hits.diff)
+            SampleRadiance(origin, directionDiff, hits.diff)
         );
 
 #if PK_GI_APPROX_ROUGH_SPEC == 1
         [[branch]]
-        if (params.roughness < PK_GI_MAX_ROUGH_SPEC)
+        if (normalRoughness.w < PK_GI_MAX_ROUGH_SPEC)
 #endif
         {
             GISpec spec = PK_GI_SPEC_ZERO;
-            spec.radiance = SampleRadiance(params.origin, params.specdir, hits.spec);
+            spec.radiance = SampleRadiance(origin, directionSpec, hits.spec);
             spec.ao = hits.spec.isMiss ? 1.0f : saturate(hits.spec.dist / PK_GI_RAY_TMAX);
             spec.history = PK_GI_SPEC_MAX_HISTORY;
             packedSpec = GI_Pack_Spec(spec);

@@ -13,6 +13,7 @@
 #define BxDF_ENABLE_SHEEN
 #define SURF_USE_TANGENTS
 #include includes/SurfaceShaderBase.glsl
+#include includes/NoiseBlue.glsl
 
 #pragma PROGRAM_VERTEX
 void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf) {}
