@@ -145,14 +145,14 @@ void main()
     
         // Shuffle with chb neighbour.
         {
-            depth = subgroupQuadSwapVertical(depth);
-            normal = subgroupQuadSwapVertical(normal);
-            roughness = subgroupQuadSwapVertical(roughness);
-            diff.sh.Y = subgroupQuadSwapVertical(diff.sh.Y);
-            diff.sh.CoCg = subgroupQuadSwapVertical(diff.sh.CoCg);
-            diff.ao = subgroupQuadSwapVertical(diff.ao);
-            spec.radiance = subgroupQuadSwapVertical(spec.radiance);
-            spec.ao = subgroupQuadSwapVertical(spec.ao);
+            depth = swap_vertical(depth);
+            normal = swap_vertical(normal);
+            roughness = swap_vertical(roughness);
+            diff.sh.Y = swap_vertical(diff.sh.Y);
+            diff.sh.CoCg = swap_vertical(diff.sh.CoCg);
+            diff.ao = swap_vertical(diff.ao);
+            spec.radiance = swap_vertical(spec.radiance);
+            spec.ao = swap_vertical(spec.ao);
         }
     
         // Weight neighbour sample

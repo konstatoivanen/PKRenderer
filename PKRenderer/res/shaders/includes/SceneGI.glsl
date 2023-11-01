@@ -90,13 +90,11 @@ GIDiff GI_ClampLuma(GIDiff a, float maxLuma) { return GIDiff(SH_Scale(a.sh, GI_L
 GISpec GI_ClampLuma(GISpec a, float maxLuma) { return GISpec(a.radiance * GI_LumaScale(GI_Luminance(a), maxLuma), a.ao, a.history); }
 float GI_RoughSpecWeight(float roughness) { return smoothstep(PK_GI_MIN_ROUGH_SPEC, PK_GI_MAX_ROUGH_SPEC, roughness); }
 
-uint GI_GetCheckerboardOffset(uint2 coord, uint frame) { return ((coord.x ^ coord.y) ^ frame) & 0x1u; }
-
 int2 GI_ExpandCheckerboardCoord(uint2 coord, uint offset)
 {
 #if defined(PK_GI_CHECKERBOARD_TRACE)
     coord.x *= 2;
-    coord.x += GI_GetCheckerboardOffset(coord, pk_FrameIndex.y + offset);
+    coord.x += checkerboard(coord, pk_FrameIndex.y + offset);
 #endif
     return int2(coord);
 }
@@ -108,7 +106,7 @@ int2 GI_CollapseCheckerboardCoord(const float2 screenUV, const uint offset)
     float2 ddxy = (screenUV - coord) - 0.5f.xx;
     int am = int(step(ddxy.x, ddxy.y));
     int2 xy = int2(am, 1 - am) * int2(sign(ddxy));
-    coord += xy * int(GI_GetCheckerboardOffset(uint2(coord), pk_FrameIndex.y + offset));
+    coord += xy * int(checkerboard(uint2(coord), pk_FrameIndex.y + offset));
     coord.x /= 2;
 #endif
     return coord;

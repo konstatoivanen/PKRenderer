@@ -31,6 +31,7 @@ uint2 packHalf4x16(float4 v) { return uint2(packHalf2x16(v.xy), packHalf2x16(v.z
 float safePositiveRcp(float f) { return mix(1.0f / f, 0.0f, f <= 1e-12f); }
 float4 normalizeLength(float3 v) { float l = length(v); return float4(v.xyz * safePositiveRcp(l), l); }
 float3 safeNormalize(float3 v) { return v * safePositiveRcp(length(v)); }
+uint checkerboard(uint2 coord, uint frame) { return ((coord.x ^ coord.y) ^ frame) & 0x1u; }
 
 // Source: https://graphics.pixar.com/library/OrthonormalB/paper.pdf
 void branchlessONB(const float3 n, out float3 b1, out float3 b2)
@@ -44,6 +45,10 @@ void branchlessONB(const float3 n, out float3 b1, out float3 b2)
 
 float2x3 make_TB(const float3 n, float scale) { float3 t, b; branchlessONB(n, t, b); return float2x3(t * scale, b * scale); }
 float3x3 make_TBN(const float3 n) { float3 t, b; branchlessONB(n,t,b); return float3x3(t, b, n); }
+
+// For some reason these are inverted
+#define swap_vertical subgroupQuadSwapHorizontal
+#define swap_horizontal subgroupQuadSwapVertical
 
 #define lerp_true(x,y,s) ((x) + (s) * ((y) - (x)))
 #define lerp_sat(a,b,c) mix(a,b,clamp(c,0,1))

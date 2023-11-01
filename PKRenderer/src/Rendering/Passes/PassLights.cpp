@@ -213,7 +213,7 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetTexture(hash->pk_ShadowmapScreenSpace, m_screenSpaceShadowmaps.get());
         GraphicsAPI::SetImage(hash->pk_Image, m_screenSpaceShadowmaps.get());
         GraphicsAPI::SetConstant<uint>(hash->pk_LightIndex, 0u);
-        cmd->Dispatch(m_computeScreenSpaceShadow, 0, resolution);
+        cmd->Dispatch(m_computeScreenSpaceShadow, 0, uint3(resolution.x / 2, resolution.y, 1u));
 
         // Bend screen space shadows.
         // https://www.bendstudio.com/blog/inside-bend-screen-space-shadows/

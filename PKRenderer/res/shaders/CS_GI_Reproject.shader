@@ -17,7 +17,7 @@ void main()
     #if defined(PK_GI_CHECKERBOARD_TRACE)
     const int2 storeCoord = int2
     (
-        coord.x / 2 + int(GI_GetCheckerboardOffset(coord, pk_FrameIndex.y) * (pk_ScreenSize.x / 2)),
+        coord.x / 2 + int(checkerboard(coord, pk_FrameIndex.y) * (pk_ScreenSize.x / 2)),
         coord.y
     );
     #else

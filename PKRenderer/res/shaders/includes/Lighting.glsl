@@ -135,7 +135,7 @@ Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias,
             // Volumetrics pcf by dithering along view axis. More stable than random offsets on shadow plane.
             for (uint i = 0u; i < SHADOW_SAMPLE_VOLUMETRICS_COUNT; ++i)
             {
-                const float dither = Shadow_GradientNoise(pk_FrameIndex.y + i);
+                const float dither = Shadow_GradientNoise(PK_GET_PROG_COORD, pk_FrameIndex.y + i);
                 const float2 uv = lerp(shadowUVMinMax.xy, shadowUVMinMax.zw, dither);
                 shadow += SHADOW_TEST(indexShadow, uv, shadowDistance);
             }
