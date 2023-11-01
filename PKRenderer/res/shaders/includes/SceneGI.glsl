@@ -51,10 +51,12 @@ PK_DECLARE_SET_SHADER uniform texture2DArray pk_GI_ResolvedRead;
 #define PK_GI_DISK_FILTER_RADIUS 3.0f
 
 #if PK_GI_USE_BIASED_DEPTH == 1
+#define PK_GI_SAMPLE_CLIP_DEPTH(uv) SampleClipDepthBiased(uv)
 #define PK_GI_SAMPLE_DEPTH(coord) SampleViewDepthBiased(coord)
 #define PK_GI_GATHER_PREV_DEPTH(uv) GatherPreviousViewDepthsBiased(uv)
 #define PK_GI_SAMPLE_PREV_DEPTH(coord) SamplePreviousViewDepthBiased(coord)
 #else
+#define PK_GI_SAMPLE_CLIP_DEPTH(uv) SampleClipDepth(uv)
 #define PK_GI_SAMPLE_DEPTH(coord) SampleViewDepth(coord)
 #define PK_GI_GATHER_PREV_DEPTH(uv) GatherPreviousViewDepths(uv)
 #define PK_GI_SAMPLE_PREV_DEPTH(coord) SamplePreviousViewDepth(coord)

@@ -40,10 +40,10 @@ void main()
         traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction.xyz, tmax, 0);
 
         const float logLuminance = log(1.0f + dot(PK_LUMA_BT709, reservoir.radiance));
+        const bool invalidDist = abs(direction.w - payload.HIT_DISTANCE) > maxErrorDist;
+        const bool invalidLuma = abs(logLuminance - payload.HIT_LOGLUMINANCE) > maxErrorLuma;
 
-        // Validate
-        if (abs(direction.w - payload.HIT_DISTANCE) > maxErrorDist || 
-            abs(logLuminance - payload.HIT_LOGLUMINANCE) > maxErrorLuma)
+        if (invalidDist || invalidLuma)
         {
             ReSTIR_StoreZero(raycoord);
         }

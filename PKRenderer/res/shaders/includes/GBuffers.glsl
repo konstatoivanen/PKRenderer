@@ -76,10 +76,12 @@ float SampleMinZ(const float2 uv, const float l) { return GBUFFER_SMP_ARR_LOD(pk
 float SampleMaxZ(const float2 uv, const float l) { return GBUFFER_SMP_ARR_LOD(pk_GB_Current_DepthMips, float3(uv, 1), l).x; }
 float SampleAvgZ(const float2 uv, const float l) { return GBUFFER_SMP_ARR_LOD(pk_GB_Current_DepthMips, float3(uv, 2), l).x; }
 
+float SampleClipDepthBiased(const float2 uv) { return GBUFFER_SAMPLE(pk_GB_Current_DepthBiased, uv).x; }
 float SampleClipDepthBiased(const int2 coord) { return texelFetch(pk_GB_Current_DepthBiased, coord, 0).x; }
 float SampleViewDepthBiased(const float2 uv) { return ViewDepth(GBUFFER_SAMPLE(pk_GB_Current_DepthBiased, uv).x); }
 float SampleViewDepthBiased(const int2 coord) { return ViewDepth(texelFetch(pk_GB_Current_DepthBiased, coord, 0).x); }
 
+float SampleClipDepth(const float2 uv) { return GBUFFER_SAMPLE(pk_GB_Current_Depth, uv).x; }
 float SampleClipDepth(const int2 coord) { return texelFetch(pk_GB_Current_Depth, coord, 0).x; }
 float SampleViewDepth(const float2 uv) { return ViewDepth(GBUFFER_SAMPLE(pk_GB_Current_Depth, uv).x); }
 float SampleViewDepth(const int2 coord) { return ViewDepth(texelFetch(pk_GB_Current_Depth, coord, 0).x); }

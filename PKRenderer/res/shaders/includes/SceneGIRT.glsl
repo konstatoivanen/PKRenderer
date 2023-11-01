@@ -53,9 +53,20 @@ float3 GI_GetRayViewOrigin(const int2 coord, float depth)
     return CoordToViewPos(coord, depth - depth * 1e-2f);
 }
 
+// Normal mapped normals often lead to self intersections.
+// Apply a small bias away from surface.
 float3 GI_GetRayOriginNormalOffset(const float3 normal, const float3 viewdir) 
 {
     return normal * (0.01f / (saturate(-dot(viewdir, normal)) + 0.01f)) * 0.05f;
+}
+
+// Check if normal biased origin clips with geometry
+float3 GI_ApplyNormalOffset(const float3 origin, const float3 normal, const float3 viewdir)
+{
+    const float3 offset = GI_GetRayOriginNormalOffset(normal, viewdir);
+    const float3 uvw = WorldToClipUVW(origin + offset);
+    const float z = PK_GI_SAMPLE_CLIP_DEPTH(uvw.xy);
+    return origin + offset * step(z, uvw.z);
 }
 
 float2 GI_GetRayXi(int2 raycoord)
@@ -67,7 +78,7 @@ float2 GI_GetRayXi(int2 raycoord)
 #define GI_LOAD_RAY_PARAMS(COORD, RAYCOORD, DEPTH, NORMAL, ROUGHNESS)           \
 float3 origin = ViewToWorldPos(GI_GetRayViewOrigin(COORD, DEPTH));              \
 float3 viewdir = normalize(origin - pk_ViewWorldOrigin.xyz);                    \
-origin += GI_GetRayOriginNormalOffset(NORMAL, viewdir);                         \
+origin = GI_ApplyNormalOffset(origin, NORMAL, viewdir);                         \
 const float2 Xi = GI_GetRayXi(RAYCOORD);                                        \
 float3 directionDiff = Fd_Inverse_Lambert(Xi, NORMAL);                          \
 float3 directionSpec = Fr_Inverse_GGXVNDF(Xi.yx, NORMAL, viewdir, ROUGHNESS);   \
