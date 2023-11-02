@@ -127,7 +127,10 @@ namespace PK::Rendering::Passes
         screenSpaceDesc.sampler.wrap[2] = WrapMode::Clamp;
         screenSpaceDesc.sampler.filterMin = FilterMode::Bilinear;
         screenSpaceDesc.sampler.filterMag = FilterMode::Bilinear;
-        m_screenSpaceShadowmaps = Texture::Create(screenSpaceDesc, "Lights.Shadowmap.ScreenSpace");
+        m_screenSpaceShadowmap = Texture::Create(screenSpaceDesc, "Lights.Shadowmap.ScreenSpace");
+
+        screenSpaceDesc.resolution = { config->InitialWidth >> 1u, config->InitialHeight >> 1u, 1u };
+        m_screenSpaceShadowmapDownsampled = Texture::Create(screenSpaceDesc, "Lights.Shadowmap.ScreenSpaceQuareterRes");
 
         TextureDescriptor imageDescriptor;
         imageDescriptor.samplerType = SamplerType::Sampler3D;
@@ -209,11 +212,19 @@ namespace PK::Rendering::Passes
         }
 
         auto hash = HashCache::Get();
-        m_screenSpaceShadowmaps->Validate(resolution);
-        GraphicsAPI::SetTexture(hash->pk_ShadowmapScreenSpace, m_screenSpaceShadowmaps.get());
-        GraphicsAPI::SetImage(hash->pk_Image, m_screenSpaceShadowmaps.get());
-        GraphicsAPI::SetConstant<uint>(hash->pk_LightIndex, 0u);
-        cmd->Dispatch(m_computeScreenSpaceShadow, 0, uint3(resolution.x / 2, resolution.y, 1u));
+        auto quarterResolution = uint3(resolution.x >> 1u, resolution.y >> 1u, 1u);
+        
+        m_screenSpaceShadowmap->Validate(resolution);
+        m_screenSpaceShadowmapDownsampled->Validate(quarterResolution);
+
+        GraphicsAPI::SetTexture(hash->pk_ShadowmapScreenSpace, m_screenSpaceShadowmap.get());
+
+        GraphicsAPI::SetImage(hash->pk_Image, m_screenSpaceShadowmapDownsampled.get());
+        cmd->Dispatch(m_computeScreenSpaceShadow, 0, quarterResolution);
+
+        GraphicsAPI::SetTexture(hash->pk_Texture, m_screenSpaceShadowmapDownsampled.get());
+        GraphicsAPI::SetImage(hash->pk_Image, m_screenSpaceShadowmap.get());
+        cmd->Dispatch(m_computeScreenSpaceShadow, 1, resolution);
 
         // Bend screen space shadows.
         // https://www.bendstudio.com/blog/inside-bend-screen-space-shadows/
@@ -237,7 +248,7 @@ namespace PK::Rendering::Passes
             dim.x = 64 * dispatch.WaveCount[0];
             dim.y = 1 * dispatch.WaveCount[1];
             dim.z = 1 * dispatch.WaveCount[2];
-            cmd->Dispatch(m_computeScreenSpaceShadow, 1, dim);
+            cmd->Dispatch(m_computeScreenSpaceShadow, 2, dim);
         }
     }
 

@@ -20,12 +20,16 @@
     #define SHADOW_SAMPLE_VOLUMETRICS_COUNT 4
 #endif
 
+// Light depth test uses reverse z. Reverse range for actual distance.
+float3 LightClipToUVW(const float4 clip) 
+{
+    return fma((clip.xyz / clip.w), float3(0.5f.xx, -1.0f), float3(0.5f.xx, 1.0f)); 
+}
+
 float4 GetLightClipUVW(const float3 worldpos, const uint matrixIndex)
 {
     float4 coord = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex) * float4(worldpos, 1.0f);
-    coord.xy = (coord.xy / coord.w) * 0.5f.xx + 0.5f.xx;
-    // Light depth test uses reverse z. Reverse range for actual distance.
-    coord.z = 1.0f - (coord.z / coord.w);
+    coord.xyz = LightClipToUVW(coord);
     return coord;
 }
 

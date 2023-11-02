@@ -64,8 +64,8 @@ namespace PK::Rendering
         prevDesc.format = TextureFormat::RGB10A2;
         m_gbuffers.previous.normals = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Normals");
 
-        curDesc.format = TextureFormat::R32F;
-        m_gbuffers.previous.depthBiased = Texture::Create(curDesc, "Scene.RenderTarget.Previous.DepthBiased");
+        prevDesc.format = TextureFormat::R32F;
+        m_gbuffers.previous.depthBiased = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.DepthBiased");
 
         prevDesc.format = TextureFormat::Depth32F;
         m_gbuffers.previous.depth = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Depth");
@@ -299,6 +299,7 @@ namespace PK::Rendering
         cmdgraphics->SetRenderTarget({ gbuffers.current.depth, gbuffers.current.normals, gbuffers.current.depthBiased }, true);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 1);
+        cmdgraphics->ClearColor(PK_COLOR_CLEAR, 2);
         cmdgraphics->ClearDepth(PK_CLIPZ_FAR, 0u);
 
         DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::GBuffer, "Forward.GBuffer", nullptr);

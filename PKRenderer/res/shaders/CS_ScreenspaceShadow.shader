@@ -1,147 +1,199 @@
 #version 460
 #extension GL_KHR_shader_subgroup_vote : require
 #extension GL_KHR_shader_subgroup_quad : require
+#extension GL_KHR_shader_subgroup_arithmetic : require
 
-#multi_compile PASS_SHADOWMAP PASS_SCREEN_DEPTH
+#multi_compile PASS_SHADOWMAP PASS_SHADOWMAP_UPSAMPLE PASS_SCREEN_DEPTH
 
 #pragma PROGRAM_COMPUTE
 
 #include includes/GBuffers.glsl
-
-layout(r8, set = PK_SET_DRAW) uniform image2D pk_Image;
-
-#if defined(PASS_SHADOWMAP)
-
 #include includes/NoiseBlue.glsl
 #include includes/Lighting.glsl
 #include includes/Kernels.glsl
 
-PK_DECLARE_LOCAL_CBUFFER(pk_LightIndex)
-{
-    uint LightIndex;
-};
+layout(r8, set = PK_SET_DRAW) uniform image2D pk_Image;
+layout(set = PK_SET_DRAW) uniform sampler2D pk_Texture;
+
+#if defined(PASS_SHADOWMAP)
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
-    const uint2 baseCoord = gl_GlobalInvocationID.xy;
-    const int2 coord = int2(baseCoord.x * 2 + checkerboard(baseCoord, pk_FrameIndex.y), baseCoord.y);
+    // This is only run on the first light.
+    // Through sorting it should be a directional shadow casting light.
+    // Appropriate checks are done on cpp side.
+    // Note: Only directional lights are supported here!
+    const uint LightIndex = 0u;
 
-    const float depth = SampleViewDepthBiased(coord);
+    const uint2 baseCoord = gl_GlobalInvocationID.xy;
+    const int2 coord = int2(gl_GlobalInvocationID.xy * 2);
+
+    // Quarter res needs a higher mip. biased depth is not build to hierarchical depth.
+    // Resolve via gather4
+
+    //@TODO this causes bad bias vectors in corners as they average towards view which can offset out of shadow unintentionally.
+    // Perhaps solve this in the upsampling by eliminating outliers
+    const float2 gatheruv = (coord + 1.0f) * pk_ScreenParams.zw;
+    const float4 gatherGZ = GBUFFER_GATHER(pk_GB_Current_Normals, gatheruv, 2);
+    const float4 gatherGW = GBUFFER_GATHER(pk_GB_Current_Normals, gatheruv, 3);
+    const float4 gbuffernr = float4(0.0f.xx, dot(gatherGZ, 0.25f.xxxx), dot(gatherGW, 0.25f.xxxx));
+    const float3 vnormal = DecodeGBufferViewNR(gbuffernr).xyz;
+    const float3 normal = ViewToWorldDir(normalize(vnormal));
+
+    const float4 depths = GatherViewDepthsBiased(gatheruv);
+    const float  depth = cmin(depths);
 
     const LightPacked light = Lights_LoadPacked(LightIndex);
-    const half sourceAngle = half(0.5f * uintBitsToFloat(light.LIGHT_PACKED_SOURCERADIUS));
     const float3 posToLight = -light.LIGHT_POS;
 
-    // Only directional lights are supported here.
-    half shadow = 0.0hf;
-    
-    const float3 normal = SampleWorldNormal(coord);
+    const half ditherAngle = half(Shadow_GradientNoise(float2(baseCoord), pk_FrameIndex.y) * PK_TWO_PI);
+    const half ditherScale = half(Shadow_GradientNoise(float2(baseCoord), pk_FrameIndex.y + 1u));
 
-    // PCSS
+    const float sourceAngle = uintBitsToFloat(light.LIGHT_PACKED_SOURCERADIUS);
+    const half maxRadius = half(sourceAngle * 2.0f);
+    const half sinAlpha = half(sourceAngle * 0.5f);
+
+    // Correct offsets by taking projection size into account
+    const uint cascade = GetShadowCascadeIndex(depth);
+    const float4x4 lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, cascade);
+    const half scalex = half(length(lightMatrix[0].xyz)) * maxRadius;
+    const half scaley = half(length(lightMatrix[1].xyz)) * maxRadius;
+    const half2 scale = half2(scalex, scaley) * fma(ditherScale, 0.3hf, 0.7hf);
+
+    const half2 minOffset = half(1.5f / SHADOW_SIZE.x) / scale;
+    const half cosa = cos(ditherAngle);
+    const half sina = sin(ditherAngle);
+    const half2x2 basis = half2x2(sina * scale.x, cosa * scale.x, -cosa * scale.y, sina * scale.y);
+
+    const float3 worldpos = CoordToWorldPos(coord, depth);
+    const float3 shadowpos = worldpos + Shadow_GetSamplingOffset(normal, posToLight) * (1.0f + cascade);
+    const float3 uvw = LightClipToUVW(lightMatrix * float4(shadowpos, 1.0f));;
+    const float z = uvw.z * light.LIGHT_RADIUS;
+
+    half2 avgZ = 0.0hf.xx;
+
+    for (uint i = 0u; i < 16u; ++i)
     {
-        const uint cascade = GetShadowCascadeIndex(depth);
-        const uint index_shadow = (light.LIGHT_SHADOW) + cascade;
-        const uint index_matrix = (light.LIGHT_MATRIX) + cascade;
-        const float4x4 lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, index_matrix);
+        const half2 offset = basis * half2(PK_POISSON_DISK_16_POW[i].xy);
+        avgZ += Shadow_GatherMax(cascade, uvw.xy + offset, z);
+    }
 
-        // Correct offsets by taking projection aspect into account
-        const float clipWidth = length(lightMatrix[0].xyz);
-        const float clipHeight = length(lightMatrix[1].xyz);
-        const half aspect = half(clipWidth / clipHeight);
-        
-        const float3 worldpos = CoordToWorldPos(coord, depth);
-        const float3 shadowPos = worldpos + Shadow_GetSamplingOffset(normal, posToLight) * (1.0f + cascade);
-        
-        float4 uvw = lightMatrix * float4(shadowPos, 1.0f);
-        uvw.xy = (uvw.xy / uvw.w) * 0.5f.xx + 0.5f.xx;
-        uvw.z = 1.0f - (uvw.z / uvw.w);
+    const uint validSamples = uint(avgZ.y);
 
-        const float z = uvw.z * light.LIGHT_RADIUS;
+    half shadow = 0.0hf;
 
-        const half ditherAngle = half(Shadow_GradientNoise(float2(baseCoord), pk_FrameIndex.y) * PK_TWO_PI);
-        const half ditherScale = half(Shadow_GradientNoise(float2(baseCoord), pk_FrameIndex.y + 1u));
-        const half scale = fma(ditherScale, 0.3hf, 0.7hf) / half(cascade + 1u);
-        const half maxOffset = 16.0hf * scale / half(SHADOW_SIZE.x);
-        const half minOffset = (1.5hf / half(SHADOW_SIZE.x)) / maxOffset;
-
-        const half sina = sin(ditherAngle) * maxOffset;
-        const half cosa = cos(ditherAngle) * maxOffset;
-        const half2x2 basis = half2x2(sina, cosa, -cosa * aspect, sina * aspect);
-
-        half2 avgZ = 0.0hf.xx;
+    [[branch]]
+    if (subgroupAll(validSamples == 0u))
+    {
+        shadow = 1.0hf;
+    }
+    else [[branch]] if (subgroupAll(validSamples == 16u))
+    {
+        shadow = 0.0hf;
+    }
+    else
+    {
+        avgZ.x /= avgZ.y;
+        half2 penumbra = clamp(sinAlpha * avgZ.xx, minOffset, 1.0hf.xx);
 
         for (uint i = 0u; i < 16u; ++i)
         {
-            const half2 offset = basis * half2(PK_POISSON_DISK_16_POW[i].xy);
-            avgZ += Shadow_GatherMax(index_shadow, uvw.xy + offset, z);
+            const half2 offset = basis * half2(PK_POISSON_DISK_16_POW[i].xy) * penumbra;
+            shadow += ShadowTest_PCF2x2(cascade, uvw.xy + offset, z);
         }
 
-        const uint validSamples = uint(avgZ.y);
-
-        [[branch]]
-        if (subgroupAll(validSamples == 0u))
-        {
-            shadow = 1.0hf;
-        }
-        else if (subgroupAll(validSamples == 16u))
-        {
-            shadow = 0.0hf;
-        }
-        else
-        {
-            avgZ.x /= avgZ.y;
-            avgZ.x = clamp(sourceAngle * avgZ.x, minOffset, 1.0hf);
-
-            for (uint i = 0u; i < 16u; ++i)
-            {
-                const half2 offset = basis * half2(PK_POISSON_DISK_16_POW[i].xy) * avgZ.x;
-                shadow += ShadowTest_PCF2x2(index_shadow, uvw.xy + offset, z);
-            }
-
-            shadow /= 16.0hf;
-        }
+        shadow /= 16.0hf;
     }
 
+    imageStore(pk_Image, int2(baseCoord), float4(shadow));
+}
+
+#elif defined(PASS_SHADOWMAP_UPSAMPLE)
+
+#define GROUP_SIZE 8
+shared half lds_shadow[GROUP_SIZE * GROUP_SIZE];
+shared float lds_depth[GROUP_SIZE * GROUP_SIZE];
+
+layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
+void main()
+{
+    const int thread = int(gl_LocalInvocationIndex);
+    const int2 baseCoord = int2(gl_WorkGroupID.xy) * GROUP_SIZE - int2(4);
+    const int2 ldsCoord = baseCoord + int2(thread % GROUP_SIZE, thread / GROUP_SIZE) * 2;
     
+    const float4 baseDepths = GatherViewDepths((ldsCoord + 1.0f.xx) * pk_ScreenParams.zw);
+    const bool farclip = Any_GEqual(baseDepths, pk_ClipParams.yyyy - 1e-2f);
+    const float baseDepth = lerp(cmin(baseDepths), -pk_ClipParams.y * 2.0f, farclip);
+    lds_depth[thread] = baseDepth;
+
+    const float depth = SampleViewDepth(int2(gl_GlobalInvocationID.xy));
+    const float k_depth = 20.0f / sqrt(depth);
+
+    half2 offset = half2(GlobalNoiseBlue(gl_GlobalInvocationID.xy, pk_FrameIndex.y).xy) * 2.0hf - 1.0hf;
+    half2 baseuv = half2(gl_LocalInvocationID.xy + 0.5f) * 0.5hf + 2.0hf.xx + offset;
+    
+    half2 offsets[4] =
     {
+        half2(-1.5hf, -1.5hf),
+        half2(-1.5hf, +1.5hf),
+        half2(+1.5hf, -1.5hf),
+        half2(+1.5hf, +1.5hf)
+    };
 
-        const int2 ncoord = int2(baseCoord.x * 2 + checkerboard(baseCoord, pk_FrameIndex.y + 1u), baseCoord.y);
-        const float ndepth = SampleViewDepthBiased(ncoord);
-        const float3 nnormal = SampleWorldNormal(ncoord);
-        const float3 worldpos = CoordToWorldPos(ncoord, ndepth);
+    byte4 indices[4];
+    half4 weights[4];
 
-        const uint cascade = GetShadowCascadeIndex(ndepth);
-        const uint index_shadow = (light.LIGHT_SHADOW) + cascade;
-        const uint index_matrix = (light.LIGHT_MATRIX) + cascade;
-        const float4x4 lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, index_matrix);
+    lds_shadow[thread] = half(texelFetch(pk_Texture, ldsCoord / 2, 0).x);
 
-        const float3 shadowPos = worldpos + Shadow_GetSamplingOffset(nnormal, posToLight) * (1.0f + cascade);
+    [[unroll]]
+    for (uint i = 0u; i < 4; ++i)
+    {
+        const half2 sampleUV = clamp(baseuv + offsets[i], 0.0hf, half(GROUP_SIZE)-1.01hf);
+        const byte2 sampleCoord = byte2(sampleUV);
 
-        float4 uvw = lightMatrix * float4(shadowPos, 1.0f);
-        uvw.xy = (uvw.xy / uvw.w) * 0.5f.xx + 0.5f.xx;
-        uvw.z = 1.0f - (uvw.z / uvw.w);
+        byte4 s_indices = sampleCoord.yyyy;
+        s_indices += byte4(0u, 0u, 1u, 1u);
+        s_indices *= byte(8u);
+        s_indices += sampleCoord.xxxx;
+        s_indices += byte4(0, 1, 0, 1);
 
-        const float z = uvw.z * light.LIGHT_RADIUS;
-
-        const float fallback = ShadowTest_PCF2x2(index_shadow, uvw.xy, z);
-
-        const float shadow00 = float(shadow);
-        const float shadow11 = swap_vertical(shadow00);
-        const float depth11 = swap_vertical(depth);
-        const float w00 = exp(-abs(ndepth - depth));
-        const float w11 = exp(-abs(ndepth - depth11));
-        const float wsum = w00 + w11;
-
-        float nshadow = (shadow00 * w00 + shadow11 * w11) / (w00 + w11);
-        nshadow = lerp(fallback, nshadow, smoothstep(0.5f, 0.8f, wsum));
-
-        float lw11 = exp(-abs(depth - depth11)) * 0.25f;
-        float lshadow = (shadow00 + shadow11 * lw11) / (1.0f + lw11);
-
-        imageStore(pk_Image, coord, float4(lshadow));
-        imageStore(pk_Image, ncoord, float4(nshadow));
+        half2 f = fract(sampleUV);
+        half4 fw = half4(f.xy, 1.0hf - f.xy);
+        weights[i] = fw.zxzx * fw.wwyy;
+        indices[i] = s_indices;
     }
+
+    barrier();
+
+    half shadow = 0.0hf;
+    half wsum = 0.0hf;
+
+    [[unroll]]
+    for (uint i = 0u; i < 4; ++i)
+    {
+        byte4 s_indices = indices[i];
+        half4 s_weights = weights[i];
+        
+        float4 depths;
+        depths.x = lds_depth[s_indices.x];
+        depths.y = lds_depth[s_indices.y];
+        depths.z = lds_depth[s_indices.z];
+        depths.w = lds_depth[s_indices.w];
+
+        s_weights *= half4(exp(-abs(depths - depth.xxxx) * k_depth));
+        s_weights = lerp(s_weights, 0.0hf.xxxx, isnan(s_weights));
+        
+        shadow = fma(lds_shadow[s_indices.x], s_weights.x, shadow);
+        shadow = fma(lds_shadow[s_indices.y], s_weights.y, shadow);
+        shadow = fma(lds_shadow[s_indices.z], s_weights.z, shadow);
+        shadow = fma(lds_shadow[s_indices.w], s_weights.w, shadow);
+        wsum += dot(s_weights, 1.0hf.xxxx);
+    }
+    
+    shadow /= wsum;
+
+    imageStore(pk_Image, int2(gl_GlobalInvocationID.xy), float4(shadow));
 }
 
 #else

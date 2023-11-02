@@ -68,7 +68,8 @@ namespace PK::Rendering::Passes
             Utilities::Ref<Objects::Buffer> m_lightsLists;
             Utilities::Ref<Objects::Texture> m_lightTiles;
             Utilities::Ref<Objects::Texture> m_shadowmaps;
-            Utilities::Ref<Objects::Texture> m_screenSpaceShadowmaps;
+            Utilities::Ref<Objects::Texture> m_screenSpaceShadowmapDownsampled;
+            Utilities::Ref<Objects::Texture> m_screenSpaceShadowmap;
             Utilities::Ref<Objects::Texture> m_depthTarget2D;
             Utilities::Ref<Objects::Texture> m_depthTargetCube;
             Utilities::Ref<Objects::Texture> m_shadowTargetCube;
@@ -76,6 +77,8 @@ namespace PK::Rendering::Passes
             std::vector<ShadowbatchInfo> m_shadowBatches;
             Utilities::MemoryBlock<ECS::EntityViews::LightRenderableView*> m_lights;
             
+            float m_directionalHack;
+
             float m_cascadeLinearity;
             ShadowTypeData m_shadowTypeData[(int)Structs::LightType::TypeCount];
     };

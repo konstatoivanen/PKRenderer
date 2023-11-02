@@ -37,28 +37,28 @@ void main()
     {
 #if defined(PK_HIZ_FINAL_PASS)
         const float4 minz = float4
-            (
-                SampleMinZ(coord * 2 + int2(0, 0), 4),
-                SampleMinZ(coord * 2 + int2(0, 1), 4),
-                SampleMinZ(coord * 2 + int2(1, 1), 4),
-                SampleMinZ(coord * 2 + int2(1, 0), 4)
-                );
+        (
+            SampleMinZ(coord * 2 + int2(0, 0), 4),
+            SampleMinZ(coord * 2 + int2(0, 1), 4),
+            SampleMinZ(coord * 2 + int2(1, 1), 4),
+            SampleMinZ(coord * 2 + int2(1, 0), 4)
+        );
 
         const float4 maxz = float4
-            (
-                SampleMinZ(coord * 2 + int2(0, 0), 4),
-                SampleMinZ(coord * 2 + int2(0, 1), 4),
-                SampleMinZ(coord * 2 + int2(1, 1), 4),
-                SampleMinZ(coord * 2 + int2(1, 0), 4)
-                );
+        (
+            SampleMinZ(coord * 2 + int2(0, 0), 4),
+            SampleMinZ(coord * 2 + int2(0, 1), 4),
+            SampleMinZ(coord * 2 + int2(1, 1), 4),
+            SampleMinZ(coord * 2 + int2(1, 0), 4)
+        );
 
         const float4 avgz = float4
-            (
-                SampleAvgZ(coord * 2 + int2(0, 0), 4),
-                SampleAvgZ(coord * 2 + int2(0, 1), 4),
-                SampleAvgZ(coord * 2 + int2(1, 1), 4),
-                SampleAvgZ(coord * 2 + int2(1, 0), 4)
-                );
+        (
+            SampleAvgZ(coord * 2 + int2(0, 0), 4),
+            SampleAvgZ(coord * 2 + int2(0, 1), 4),
+            SampleAvgZ(coord * 2 + int2(1, 1), 4),
+            SampleAvgZ(coord * 2 + int2(1, 0), 4)
+        );
 
         local_depth.x = cmin(minz);
         local_depth.y = cmax(maxz);
