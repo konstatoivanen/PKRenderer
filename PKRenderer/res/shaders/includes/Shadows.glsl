@@ -21,12 +21,12 @@ float Shadow_GradientNoise(float2 coord, uint frame)
 }
 
 //Source: http://the-witness.net/news/2013/09/shadow-mapping-summary-part-1/
-float3 Shadow_GetSamplingOffset(const float3 N, const float3 L) 
+float2 Shadow_GetBiasFactors(const float3 N, const float3 L)
 {
-    float cosa = saturate(dot(N, L));
-    float scaleN = sqrt(1.0f - pow2(cosa));
-    float scaleL = scaleN / (1e-4f + cosa);
-    return (N * scaleN + L * min(2, scaleL)) * SHADOW_NEAR_BIAS;
+    const float cosa = saturate(dot(N, L));
+    const float scaleN = sqrt(1.0f - pow2(cosa));
+    const float scaleL = scaleN / (1e-4f + cosa);
+    return float2(scaleN, min(2.0f, scaleL));
 }
 
 half2 Shadow_GatherMax(const uint index, const float2 uv, const float z)

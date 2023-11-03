@@ -48,6 +48,8 @@ However, this is ultimately a hobby project & thus likely to remain perpetually 
   - Spot, point & directional lights.
   - Spherical area light estimation for all types.
   - Poisson PCF shadow filtering.
+  - PCSS shadow filtering for directional lights.
+  - [Bend screen space shadows.](https://www.bendstudio.com/blog/inside-bend-screen-space-shadows/)
   - Directional shadow cascades.
   - Clustered forward rendering.
   

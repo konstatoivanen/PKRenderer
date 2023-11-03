@@ -1,4 +1,3 @@
-#version 460
 #pragma PROGRAM_COMPUTE
 
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE

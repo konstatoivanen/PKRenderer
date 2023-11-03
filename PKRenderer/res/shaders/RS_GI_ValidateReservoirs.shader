@@ -1,4 +1,3 @@
-#version 460
 #include includes/GBuffers.glsl
 #include includes/SceneEnv.glsl
 #include includes/SceneGIVX.glsl

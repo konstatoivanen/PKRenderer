@@ -1,10 +1,13 @@
-#version 450
+#extension GL_KHR_shader_subgroup_shuffle : require
+
 #pragma PROGRAM_COMPUTE
 #include includes/PostFXColorGrading.glsl
 #include includes/PostFXFilmGrain.glsl
 #include includes/PostFXBloom.glsl
 #include includes/PostFXAutoExposure.glsl
 #include includes/Common.glsl
+
+#include includes/ComputeQuadSwap.glsl
 
 #multi_compile FX_APPLY_ALL FX_APPLY_MASK FX_APPLY_DEBUG
 

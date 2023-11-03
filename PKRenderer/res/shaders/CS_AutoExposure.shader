@@ -1,4 +1,3 @@
-#version 450
 #multi_compile PASS_HISTOGRAM PASS_AVG
 
 #pragma PROGRAM_COMPUTE

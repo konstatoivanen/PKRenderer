@@ -1,4 +1,3 @@
-#version 460
 #pragma PROGRAM_COMPUTE
 
 #multi_compile _ PK_GI_SPEC_VIRT_REPROJECT
@@ -150,7 +149,6 @@ void main()
                 spec.ao = min(spec.ao, specVirtual.ao);
             }
         }
-
 
         const bool invalidDiff = Test_NaN_EPS6(wSumDiff);
         const bool invalidSpec = Test_NaN_EPS6(wSumSpec);

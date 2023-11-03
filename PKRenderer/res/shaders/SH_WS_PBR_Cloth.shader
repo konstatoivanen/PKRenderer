@@ -1,5 +1,3 @@
-#version 460
-
 #MaterialProperty float4 _Color
 #MaterialProperty float4 _SheenColor
 #MaterialProperty float _Roughness

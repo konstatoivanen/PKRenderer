@@ -1,4 +1,3 @@
-#version 450
 #Cull Back
 #ZTest LEqual
 #ZWrite Off

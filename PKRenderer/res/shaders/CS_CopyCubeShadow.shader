@@ -1,4 +1,3 @@
-#version 460
 #pragma PROGRAM_COMPUTE
 #include includes/Utilities.glsl
 #include includes/Constants.glsl

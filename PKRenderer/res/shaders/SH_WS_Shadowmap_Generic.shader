@@ -1,4 +1,3 @@
-#version 460
 #Cull Back
 #ZTest GEqual
 #ZWrite True

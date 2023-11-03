@@ -1,5 +1,3 @@
-#version 460
-
 #BlendColor Add SrcAlpha OneMinusSrcAlpha
 #ZTest Off
 #ZWrite False

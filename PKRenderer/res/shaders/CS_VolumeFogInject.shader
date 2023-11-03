@@ -1,4 +1,3 @@
-#version 460
 #pragma PROGRAM_COMPUTE
 
 #define EARLY_Z_TEST 1

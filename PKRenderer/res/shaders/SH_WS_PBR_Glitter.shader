@@ -1,4 +1,3 @@
-#version 460
 #MaterialProperty float4 _Color
 #MaterialProperty float _Metallic
 #MaterialProperty float _Roughness

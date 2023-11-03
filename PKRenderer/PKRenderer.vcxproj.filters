@@ -2051,6 +2051,7 @@
     <None Include="res\shaders\CS_ScreenspaceShadow.shader" />
     <None Include="res\shaders\includes\bend_sss_gpu.glsl" />
     <None Include="res\shaders\includes\SceneGIRT.glsl" />
+    <None Include="res\shaders\includes\ComputeQuadSwap.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

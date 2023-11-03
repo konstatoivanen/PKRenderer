@@ -1,4 +1,3 @@
-#version 450
 #pragma PROGRAM_COMPUTE
 #include includes/Common.glsl
 #include includes/SceneEnv.glsl

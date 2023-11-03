@@ -1,4 +1,3 @@
-#version 460
 #pragma PROGRAM_COMPUTE
 #define PK_WRITE_LIGHT_CLUSTERS
 #include includes/LightResources.glsl

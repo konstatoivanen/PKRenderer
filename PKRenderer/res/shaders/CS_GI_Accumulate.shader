@@ -111,20 +111,22 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
     // Subgroup Resampling
     {
         const uint hash = ReSTIR_Hash(seed);
+        
+        // Random sawp. tested quad swap but it produces more low freq noise.
         const uint subgroupMask = gl_SubgroupSize - 1u;
-        const uint mask = (gl_SubgroupInvocationID + (hash % subgroupMask) + 1u) & subgroupMask;
+        const uint shuffleId = (gl_SubgroupInvocationID + (hash % subgroupMask) + 1u) & subgroupMask;
 
         Reservoir suffled;
-        suffled.radiance = subgroupShuffle(combined.radiance, mask);
-        suffled.position = subgroupShuffle(combined.position, mask);
-        suffled.normal = subgroupShuffle(combined.normal, mask);
-        suffled.targetPdf = subgroupShuffle(combined.targetPdf, mask);
-        suffled.weightSum = subgroupShuffle(combined.weightSum, mask);
-        suffled.M = subgroupShuffle(combined.M, mask);
+        suffled.radiance = subgroupShuffle(combined.radiance, shuffleId);
+        suffled.position = subgroupShuffle(combined.position, shuffleId);
+        suffled.normal = subgroupShuffle(combined.normal, shuffleId);
+        suffled.targetPdf = subgroupShuffle(combined.targetPdf, shuffleId);
+        suffled.weightSum = subgroupShuffle(combined.weightSum, shuffleId);
+        suffled.M = subgroupShuffle(combined.M, shuffleId);
 
-        const float s_depth = subgroupShuffle(depth, mask);
-        const float3 s_origin = subgroupShuffle(origin, mask);
-        const float3 s_normal = subgroupShuffle(normal, mask);
+        const float s_depth = subgroupShuffle(depth, shuffleId);
+        const float3 s_origin = subgroupShuffle(origin, shuffleId);
+        const float3 s_normal = subgroupShuffle(normal, shuffleId);
 
         [[branch]]
         if (combined.M < RESTIR_MAX_M + 3 && Test_DepthReproject(depth, s_depth, depthBias) && dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)

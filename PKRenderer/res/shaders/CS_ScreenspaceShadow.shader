@@ -1,6 +1,4 @@
-#version 460
 #extension GL_KHR_shader_subgroup_vote : require
-#extension GL_KHR_shader_subgroup_quad : require
 #extension GL_KHR_shader_subgroup_arithmetic : require
 
 #multi_compile PASS_SHADOWMAP PASS_SHADOWMAP_UPSAMPLE PASS_SCREEN_DEPTH
@@ -35,9 +33,17 @@ void main()
     //@TODO this causes bad bias vectors in corners as they average towards view which can offset out of shadow unintentionally.
     // Perhaps solve this in the upsampling by eliminating outliers
     const float2 gatheruv = (coord + 1.0f) * pk_ScreenParams.zw;
-    const float4 gatherGZ = GBUFFER_GATHER(pk_GB_Current_Normals, gatheruv, 2);
-    const float4 gatherGW = GBUFFER_GATHER(pk_GB_Current_Normals, gatheruv, 3);
-    const float4 gbuffernr = float4(0.0f.xx, dot(gatherGZ, 0.25f.xxxx), dot(gatherGW, 0.25f.xxxx));
+    const float4 gatherGZ = GBUFFER_GATHER(pk_GB_Current_Normals, gatheruv, 2) - 0.5f;
+    const float4 gatherGW = GBUFFER_GATHER(pk_GB_Current_Normals, gatheruv, 3) - 0.5f;
+
+    const float2 n0 = float2(gatherGZ.x, gatherGW.x);
+    const float2 n1 = float2(gatherGZ.y, gatherGW.y);
+    const float2 n2 = float2(gatherGZ.z, gatherGW.z);
+    const float2 n3 = float2(gatherGZ.w, gatherGW.w);
+    const float4 normalDots = float4(dot(n0, n1), dot(n0, n2), dot(n3, n1), dot(n3, n2));
+    const bool normalclip = Any_LEqual(normalDots, -1.0f.xxxx);
+
+    const float4 gbuffernr = float4(0.0f.xx, dot(gatherGZ, 0.25f.xxxx) + 0.5f, dot(gatherGW, 0.25f.xxxx) + 0.5f);
     const float3 vnormal = DecodeGBufferViewNR(gbuffernr).xyz;
     const float3 normal = ViewToWorldDir(normalize(vnormal));
 
@@ -61,14 +67,17 @@ void main()
     const half scaley = half(length(lightMatrix[1].xyz)) * maxRadius;
     const half2 scale = half2(scalex, scaley) * fma(ditherScale, 0.3hf, 0.7hf);
 
-    const half2 minOffset = half(1.5f / SHADOW_SIZE.x) / scale;
+    const half2 minOffset = half(1.0f / SHADOW_SIZE.x) / scale;
     const half cosa = cos(ditherAngle);
     const half sina = sin(ditherAngle);
     const half2x2 basis = half2x2(sina * scale.x, cosa * scale.x, -cosa * scale.y, sina * scale.y);
 
-    const float3 worldpos = CoordToWorldPos(coord, depth);
-    const float3 shadowpos = worldpos + Shadow_GetSamplingOffset(normal, posToLight) * (1.0f + cascade);
-    const float3 uvw = LightClipToUVW(lightMatrix * float4(shadowpos, 1.0f));;
+    float3 worldpos = CoordToWorldPos(coord, depth);
+    const float2 biasFactors = Shadow_GetBiasFactors(normal, posToLight);
+    worldpos += biasFactors.x * normal * SHADOW_NEAR_BIAS * float(normalclip) * (1.0f + cascade);
+    worldpos += biasFactors.y * posToLight * SHADOW_NEAR_BIAS * (1.0f + cascade) * (1.0f + 0.1f / sqrt(depth));
+    
+    const float3 uvw = LightClipToUVW(lightMatrix * float4(worldpos, 1.0f));
     const float z = uvw.z * light.LIGHT_RADIUS;
 
     half2 avgZ = 0.0hf.xx;

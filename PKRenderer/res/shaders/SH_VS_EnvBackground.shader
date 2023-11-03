@@ -1,4 +1,3 @@
-#version 450
 #ZTest GEqual
 #ZWrite False
 #include includes/Common.glsl

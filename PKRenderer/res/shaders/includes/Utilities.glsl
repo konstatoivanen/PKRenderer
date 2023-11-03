@@ -46,10 +46,6 @@ void branchlessONB(const float3 n, out float3 b1, out float3 b2)
 float2x3 make_TB(const float3 n, float scale) { float3 t, b; branchlessONB(n, t, b); return float2x3(t * scale, b * scale); }
 float3x3 make_TBN(const float3 n) { float3 t, b; branchlessONB(n,t,b); return float3x3(t, b, n); }
 
-// For some reason these are inverted
-#define swap_vertical subgroupQuadSwapHorizontal
-#define swap_horizontal subgroupQuadSwapVertical
-
 #define lerp_true(x,y,s) ((x) + (s) * ((y) - (x)))
 #define lerp_sat(a,b,c) mix(a,b,clamp(c,0,1))
 #define lerp_outquad(a,b,c) (-((b) - (a)) * (c) * ((c) - 2) + (a))

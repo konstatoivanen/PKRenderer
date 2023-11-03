@@ -1,4 +1,3 @@
-#version 460
 #pragma PROGRAM_COMPUTE
 #include includes/VolumeFog.glsl
 #include includes/CTASwizzling.glsl

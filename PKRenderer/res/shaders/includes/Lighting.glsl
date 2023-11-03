@@ -72,7 +72,9 @@ Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias,
             posToLight = -light.LIGHT_POS;
             
             #if SHADOW_SAMPLE_VOLUMETRICS == 0
-            worldpos += Shadow_GetSamplingOffset(shadowBias, posToLight) * (1.0f + cascade);
+            const float2 biasFactors = Shadow_GetBiasFactors(shadowBias, posToLight);
+            worldpos += biasFactors.x * shadowBias * SHADOW_NEAR_BIAS * (1.0f + cascade);
+            worldpos += biasFactors.y * posToLight * SHADOW_NEAR_BIAS * (1.0f + cascade);
             #endif
 
             coord = GetLightClipUVW(worldpos, indexMatrix);

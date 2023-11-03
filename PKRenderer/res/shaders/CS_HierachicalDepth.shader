@@ -1,4 +1,3 @@
-#version 460
 #pragma PROGRAM_COMPUTE
 #include includes/GBuffers.glsl
 #include includes/SceneGI.glsl
