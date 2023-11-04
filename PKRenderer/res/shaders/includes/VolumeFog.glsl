@@ -119,7 +119,7 @@ float4 VFog_Apply(float2 uv, float viewDepth, float3 color)
     float3 scatter = SAMPLE_TRICUBIC(pk_Fog_ScatterRead, uvw).rgb;
     float3 transmittance = SAMPLE_TRICUBIC(pk_Fog_TransmittanceRead, uvw).rgb;
 
-    return float4(scatter + color * transmittance, transmittance);
+    return float4(scatter + color * transmittance, dot(transmittance, 0.333f.xxx));
 }
 
 void VFog_ApplySky(float3 viewdir, inout float3 color)

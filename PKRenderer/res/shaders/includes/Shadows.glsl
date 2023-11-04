@@ -34,7 +34,7 @@ half2 Shadow_GatherMax(const uint index, const float2 uv, const float z)
     const float4 depths = textureGather(pk_ShadowmapAtlas, float3(uv, index), 0);
     const half deltaDepth = half(z - max(max(max(depths.x, depths.y), depths.z), depths.w));
     const half shadowFade = -deltaDepth * SHADOW_HARD_EDGE_FADE_FACTOR + 1.0hf;
-    return half2(deltaDepth, 1.0hf) * step(shadowFade, 0.0hf);
+    return half2(deltaDepth, 1.0f) * step(shadowFade, 0.0hf);
 }
 
 half ShadowTest_PCF2x2(const uint index, const float2 uv, const float z) 
@@ -87,74 +87,17 @@ half ShadowTest_Dither16(const uint index, const float2 uv, const float z)
     return shadow / 16.0hf;
 }
 
-half ShadowTest_PCSS(const uint index, float2 uv, const float z, float radius)
+half ShadowTest_Volumetrics4(const uint index, const float4 uvrange, const float z)
 {
-    const half ditherAngle = half(Shadow_GradientNoise(PK_GET_PROG_COORD, pk_FrameRandom.y) * PK_TWO_PI);
-    const half maxOffset = 16.0hf / half(SHADOW_SIZE.x);
-    const half sina = sin(ditherAngle) * maxOffset;
-    const half cosa = cos(ditherAngle) * maxOffset;
-    const half2x2 basis = half2x2(sina, cosa, -cosa, sina);
-
-    half2 avgZ = 0.0hf.xx;
-
-    for (uint i = 0u; i < 16u; ++i)
-    {
-        const half2 offset = basis * half2(PK_POISSON_DISK_16_POW[i].xy);
-        avgZ += Shadow_GatherMax(index, uv + offset, z);
-    }
-
-    const half minOffset = 1.5hf / half(SHADOW_SIZE.x);
-
-#if defined(SHADER_STAGE_FRAGMENT) && SHADOW_PCSS_SUBGROUP == 1
-    float2 maxDerivative = max(abs(dFdx(uv)), abs(dFdy(uv)));
-    float quadWeight = 0.8f * max(1.0f - max(maxDerivative.x, maxDerivative.y) / float(minOffset), 0.0f);
-    const float2 gradients = floor(2.0f * fract(gl_FragCoord.xy * 0.5f));
-    
-    float depthAvg = avgZ.x;
-    depthAvg = depthAvg + (0.5f - gradients.x) * dFdxFine(depthAvg);
-    depthAvg = depthAvg + (0.5f - gradients.y) * dFdyFine(depthAvg);
-    depthAvg = lerp(float(avgZ.x), 4.0f * depthAvg, quadWeight);
-
-    float sumAvg = avgZ.y;
-    sumAvg = sumAvg + (0.5f - gradients.x) * dFdxFine(sumAvg);
-    sumAvg = sumAvg + (0.5f - gradients.y) * dFdyFine(sumAvg);
-    sumAvg = lerp(float(avgZ.y), 4.0f * sumAvg, quadWeight);
-
-    avgZ.x = half(depthAvg);
-    avgZ.y = half(sumAvg);
-#endif
-
-    [[branch]]
-    if (avgZ.y == 0.0hf)
-    {
-        return 1.0hf;
-    }
-
-    [[branch]]
-    if (avgZ.y > 15.5hf)
-    {
-        return 0.0hf;
-    }
-
-    avgZ.x /= avgZ.y;
-    avgZ.x = clamp(half(radius) * avgZ.x, minOffset / maxOffset, 1.0hf);
-
     half shadow = 0.0hf;
-    
-    for (uint i = 0u; i < 16u; ++i)
+
+    // Volumetrics pcf by dithering along view axis. More stable than random offsets on the shadow plane.
+    for (uint i = 0u; i < 4u; ++i)
     {
-        const half2 offset = basis * half2(PK_POISSON_DISK_16_POW[i].xy) * avgZ.x;
-        shadow += ShadowTest_PCF2x2(index, uv + offset, z);
+        const float dither = Shadow_GradientNoise(PK_GET_PROG_COORD, pk_FrameIndex.y + i);
+        const float2 uv = lerp(uvrange.xy, uvrange.zw, dither);
+        shadow += ShadowTest_PCF2x2(index, uv, z);
     }
 
-    shadow /= 16.0hf;
-
-#if defined(SHADER_STAGE_FRAGMENT) && SHADOW_PCSS_SUBGROUP == 1
-    float shadowAvg = shadow;
-    shadowAvg = shadowAvg + (0.5f - gradients.x) * dFdxFine(shadowAvg);
-    shadowAvg = shadowAvg + (0.5f - gradients.y) * dFdyFine(shadowAvg);
-    shadow = half(lerp(float(shadow), shadowAvg, quadWeight * 0.5f));
-#endif
-
-    return shadow;
+    return shadow * 0.25hf;
 }

@@ -55,12 +55,14 @@ namespace PK::Rendering
 
         // @TODO refactor to use RGB9E5 as this has very poor bit depth. needs a compute copy pass to work as RGB9E5 is not blittable.
         TextureDescriptor prevDesc{};
-        prevDesc.format = TextureFormat::B10G11R11UF; 
+        prevDesc.format = TextureFormat::RGBA16F;
         prevDesc.sampler.filterMin = FilterMode::Bilinear;
         prevDesc.sampler.filterMag = FilterMode::Bilinear;
         prevDesc.resolution = curDesc.resolution;
+        prevDesc.usage = TextureUsage::Default | TextureUsage::Storage;
         m_gbuffers.previous.color = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Color");
 
+        prevDesc.usage = TextureUsage::Default;
         prevDesc.format = TextureFormat::RGB10A2;
         m_gbuffers.previous.normals = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Normals");
 
@@ -313,6 +315,7 @@ namespace PK::Rendering
         m_depthOfField.ComputeAutoFocus(cmdcompute, resolution.y);
         m_passVolumeFog.ComputeDensity(cmdcompute, resolution);
         m_passEnvBackground.ComputeSH(cmdcompute);
+        m_passSceneGI.VoxelMips(cmdcompute);
         m_passSceneGI.ValidateReservoirs(cmdcompute);
         queues->Submit(QueueType::Compute, &cmdcompute);
         queues->Sync(QueueType::Graphics, QueueType::Compute);
@@ -325,8 +328,9 @@ namespace PK::Rendering
 
         // Shadows, Voxelize scene & reproject gi
         m_passLights.RenderShadows(cmdgraphics);
+        m_passSceneGI.Voxelize(cmdgraphics, &m_batcher, m_forwardPassGroup);
         m_passLights.RenderScreenSpaceShadows(cmdgraphics, m_worldToClip, resolution);
-        m_passSceneGI.Preprocess(cmdgraphics, &m_batcher, m_forwardPassGroup);
+        m_passSceneGI.ReprojectGI(cmdgraphics);
         m_passVolumeFog.Compute(cmdgraphics, gbuffers.current.color->GetResolution());
         queues->Submit(QueueType::Graphics, &cmdgraphics);
         queues->Transfer(QueueType::Graphics, QueueType::Compute);
@@ -351,7 +355,8 @@ namespace PK::Rendering
         // Post Effects
         cmdgraphics->BeginDebugScope("PostEffects", PK_COLOR_YELLOW);
         {
-            m_temporalAntialiasing.Render(cmdgraphics, gbuffers.current.color);
+            // Previous color has been updated. leverage that and do taa without extra blit.
+            m_temporalAntialiasing.Render(cmdgraphics, gbuffers.previous.color, gbuffers.current.color);
             m_depthOfField.Render(cmdgraphics, gbuffers.current.color);
             m_bloom.Render(cmdgraphics, gbuffers.current.color);
             m_passPostEffectsComposite.Render(cmdgraphics, gbuffers.current.color);
@@ -363,9 +368,9 @@ namespace PK::Rendering
         queues->Submit(QueueType::Graphics, &cmdgraphics);
 
         // Blit to window
-        cmdgraphics->Blit(gbuffers.current.depth, gbuffers.previous.depth, {}, {}, FilterMode::Point);
-        cmdgraphics->Blit(gbuffers.current.depthBiased, gbuffers.previous.depthBiased, {}, {}, FilterMode::Point);
         cmdgraphics->Blit(gbuffers.current.normals, gbuffers.previous.normals, {}, {}, FilterMode::Point);
+        cmdgraphics->Blit(gbuffers.current.depthBiased, gbuffers.previous.depthBiased, {}, {}, FilterMode::Point);
+        cmdgraphics->Blit(gbuffers.current.depth, gbuffers.previous.depth, {}, {}, FilterMode::Point);
         cmdgraphics->Blit(gbuffers.current.color, window, FilterMode::Bilinear);
     }
 

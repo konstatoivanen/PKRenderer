@@ -26,7 +26,7 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHi
         return SampleEnvironment(OctaUV(direction), 0.0f);
     }
 
-    const float4 voxel = GI_Load_Voxel(worldpos, PK_GI_VX_CONE_SIZE * log2(1.0f + (hit.dist / pk_GI_VoxelSize)));
+    const float4 voxel = GI_Load_Voxel(worldpos, PK_GI_GET_VX_MI_BIAS(hit.dist));
     return voxel.rgb / max(voxel.a, 1e-2f);
 }
 

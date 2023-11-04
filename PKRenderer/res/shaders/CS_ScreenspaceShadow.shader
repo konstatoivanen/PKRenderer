@@ -36,6 +36,9 @@ void main()
     const float4 gatherGZ = GBUFFER_GATHER(pk_GB_Current_Normals, gatheruv, 2) - 0.5f;
     const float4 gatherGW = GBUFFER_GATHER(pk_GB_Current_Normals, gatheruv, 3) - 0.5f;
 
+    // Normal downsampling causes viewdirection aligned vectors.
+    // This yields bad bias offsets that pull corners out of shadow.
+    // Fix this by clipping normal bias if the high res normals point to each other.
     const float2 n0 = float2(gatherGZ.x, gatherGW.x);
     const float2 n1 = float2(gatherGZ.y, gatherGW.y);
     const float2 n2 = float2(gatherGZ.z, gatherGW.z);
@@ -80,6 +83,7 @@ void main()
     const float3 uvw = LightClipToUVW(lightMatrix * float4(worldpos, 1.0f));
     const float z = uvw.z * light.LIGHT_RADIUS;
 
+    // PCSS 
     half2 avgZ = 0.0hf.xx;
 
     for (uint i = 0u; i < 16u; ++i)
@@ -129,18 +133,15 @@ void main()
 {
     const int thread = int(gl_LocalInvocationIndex);
     const int2 baseCoord = int2(gl_WorkGroupID.xy) * GROUP_SIZE - int2(4);
-    const int2 ldsCoord = baseCoord + int2(thread % GROUP_SIZE, thread / GROUP_SIZE) * 2;
+    const int2 loadCoord = baseCoord + int2(thread % GROUP_SIZE, thread / GROUP_SIZE) * 2;
     
-    const float4 baseDepths = GatherViewDepths((ldsCoord + 1.0f.xx) * pk_ScreenParams.zw);
+    const float4 baseDepths = GatherViewDepths((loadCoord + 1.0f.xx) * pk_ScreenParams.zw);
     const bool farclip = Any_GEqual(baseDepths, pk_ClipParams.yyyy - 1e-2f);
     const float baseDepth = lerp(cmin(baseDepths), -pk_ClipParams.y * 2.0f, farclip);
     lds_depth[thread] = baseDepth;
 
-    const float depth = SampleViewDepth(int2(gl_GlobalInvocationID.xy));
-    const float k_depth = 20.0f / sqrt(depth);
-
-    half2 offset = half2(GlobalNoiseBlue(gl_GlobalInvocationID.xy, pk_FrameIndex.y).xy) * 2.0hf - 1.0hf;
-    half2 baseuv = half2(gl_LocalInvocationID.xy + 0.5f) * 0.5hf + 2.0hf.xx + offset;
+    const half2 offset = half2(GlobalNoiseBlue(gl_GlobalInvocationID.xy, pk_FrameIndex.y).xy) * 2.0hf - 1.0hf;
+    const half2 baseuv = half2(gl_LocalInvocationID.xy + 0.5f) * 0.5hf + 2.0hf.xx + offset;
     
     half2 offsets[4] =
     {
@@ -153,7 +154,7 @@ void main()
     byte4 indices[4];
     half4 weights[4];
 
-    lds_shadow[thread] = half(texelFetch(pk_Texture, ldsCoord / 2, 0).x);
+    lds_shadow[thread] = half(texelFetch(pk_Texture, loadCoord / 2, 0).x);
 
     [[unroll]]
     for (uint i = 0u; i < 4; ++i)
@@ -174,6 +175,9 @@ void main()
     }
 
     barrier();
+
+    const float depth = SampleViewDepth(int2(gl_GlobalInvocationID.xy));
+    const float k_depth = 20.0f / sqrt(depth);
 
     half shadow = 0.0hf;
     half wsum = 0.0hf;

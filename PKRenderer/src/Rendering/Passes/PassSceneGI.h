@@ -16,8 +16,10 @@ namespace PK::Rendering::Passes
             void PreRender(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
             void PruneVoxels(Objects::CommandBuffer* cmd);
             void DispatchRays(Objects::CommandBuffer* cmd);
-            void Preprocess(Objects::CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup);
+            void ReprojectGI(Objects::CommandBuffer* cmd);
+            void Voxelize(Objects::CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup);
             void RenderGI(Objects::CommandBuffer* cmd);
+            void VoxelMips(Objects::CommandBuffer* cmd);
             void ValidateReservoirs(Objects::CommandBuffer* cmd);
             void OnUpdateParameters(const Core::ApplicationConfig* config);
 

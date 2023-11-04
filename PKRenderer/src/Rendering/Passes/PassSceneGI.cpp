@@ -167,40 +167,33 @@ namespace PK::Rendering::Passes
         cmd->EndDebugScope();
     }
 
-    void PassSceneGI::Preprocess(CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup)
+    void PassSceneGI::ReprojectGI(Objects::CommandBuffer* cmd)
     {
-        cmd->BeginDebugScope("SceneGI.Preprocess", PK_COLOR_GREEN);
+        cmd->BeginDebugScope("SceneGI.Reproject", PK_COLOR_GREEN);
+        auto resolution = m_packedGIDiff->GetResolution();
+        cmd->Dispatch(m_computeReproject, { resolution.x, resolution.y, 1u });
+        cmd->EndDebugScope();
+    }
+
+    void PassSceneGI::Voxelize(Objects::CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup)
+    {
+        cmd->BeginDebugScope("SceneGI.Voxelize", PK_COLOR_GREEN);
 
         auto hash = HashCache::Get();
-        auto resolution = m_packedGIDiff->GetResolution();
-        auto volres = m_voxels->GetResolution();
+        auto volumesize = m_voxels->GetResolution();
 
         uint4 viewports[3] =
         {
-            {0u, 0u, volres.x, volres.z },
-            {0u, 0u, volres.x, volres.y },
-            {0u, 0u, volres.y, volres.z },
+            {0u, 0u, volumesize.x, volumesize.z },
+            {0u, 0u, volumesize.x, volumesize.y },
+            {0u, 0u, volumesize.y, volumesize.z },
         };
-
-        // Reproject
-        cmd->Dispatch(m_computeReproject, { resolution.x, resolution.y, 1u });
 
         // Voxelize raster
         cmd->SetRenderTarget({ viewports[m_rasterAxis].z, viewports[m_rasterAxis].w, 1 });
         cmd->SetViewPort(viewports[m_rasterAxis]);
         cmd->SetScissor(viewports[m_rasterAxis]);
         batcher->Render(cmd, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);
-
-        // Voxel mips
-        GraphicsAPI::SetTexture(hash->pk_Texture, m_voxels.get());
-        GraphicsAPI::SetImage(hash->pk_Image, m_voxels.get(), 1, 0);
-        GraphicsAPI::SetImage(hash->pk_Image1, m_voxels.get(), 2, 0);
-        GraphicsAPI::SetImage(hash->pk_Image2, m_voxels.get(), 3, 0);
-        cmd->Dispatch(m_computeMipmap, 0, volres >> 1u);
-        GraphicsAPI::SetImage(hash->pk_Image, m_voxels.get(), 4, 0);
-        GraphicsAPI::SetImage(hash->pk_Image1, m_voxels.get(), 5, 0);
-        GraphicsAPI::SetImage(hash->pk_Image2, m_voxels.get(), 6, 0);
-        cmd->Dispatch(m_computeMipmap, 0, volres >> 4u);
 
         cmd->EndDebugScope();
     }
@@ -220,6 +213,22 @@ namespace PK::Rendering::Passes
         cmd->Dispatch(m_computePostFilter, m_useCheckerboardTrace ? 1 : 0, chbdimension);
 
         cmd->EndDebugScope();
+    }
+
+    void PassSceneGI::VoxelMips(Objects::CommandBuffer* cmd)
+    {
+        // Voxel mips
+        auto hash = HashCache::Get();
+        auto volumesize = m_voxels->GetResolution();
+        GraphicsAPI::SetTexture(hash->pk_Texture, m_voxels.get());
+        GraphicsAPI::SetImage(hash->pk_Image, m_voxels.get(), 1, 0);
+        GraphicsAPI::SetImage(hash->pk_Image1, m_voxels.get(), 2, 0);
+        GraphicsAPI::SetImage(hash->pk_Image2, m_voxels.get(), 3, 0);
+        cmd->Dispatch(m_computeMipmap, 0, volumesize >> 1u);
+        GraphicsAPI::SetImage(hash->pk_Image, m_voxels.get(), 4, 0);
+        GraphicsAPI::SetImage(hash->pk_Image1, m_voxels.get(), 5, 0);
+        GraphicsAPI::SetImage(hash->pk_Image2, m_voxels.get(), 6, 0);
+        cmd->Dispatch(m_computeMipmap, 0, volumesize >> 4u);
     }
 
     void PassSceneGI::ValidateReservoirs(Objects::CommandBuffer* cmd)

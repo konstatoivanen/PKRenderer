@@ -28,6 +28,7 @@ PK_DECLARE_SET_SHADER uniform texture2DArray pk_GI_ResolvedRead;
 // Should surface shading approximate sheen & clear coat from diffuse sh
 #define PK_GI_APPROX_ROUGH_SPEC_EXTRA 1
 #define PK_GI_USE_BIASED_DEPTH 1
+#define PK_GI_USE_VOXEL_MIP_BIAS 0
 
 #define PK_GI_LVL_DIFF0 0
 #define PK_GI_LVL_DIFF1 1
@@ -60,6 +61,12 @@ PK_DECLARE_SET_SHADER uniform texture2DArray pk_GI_ResolvedRead;
 #define PK_GI_SAMPLE_DEPTH(coord) SampleViewDepth(coord)
 #define PK_GI_GATHER_PREV_DEPTH(uv) GatherPreviousViewDepths(uv)
 #define PK_GI_SAMPLE_PREV_DEPTH(coord) SamplePreviousViewDepth(coord)
+#endif
+
+#if PK_GI_USE_VOXEL_MIP_BIAS == 1
+#define PK_GI_GET_VX_MI_BIAS(t) (PK_GI_VX_CONE_SIZE * log2(1.0f + (t / pk_GI_VoxelSize)))
+#else
+#define PK_GI_GET_VX_MI_BIAS(t) 0.0f
 #endif
 
 //----------STRUCTS----------//

@@ -211,6 +211,8 @@ namespace PK::Rendering::Passes
             return;
         }
 
+        cmd->BeginDebugScope("ScreenSpaceShadows", PK_COLOR_RED);
+
         auto hash = HashCache::Get();
         auto quarterResolution = uint3(resolution.x >> 1u, resolution.y >> 1u, 1u);
         
@@ -250,6 +252,8 @@ namespace PK::Rendering::Passes
             dim.z = 1 * dispatch.WaveCount[2];
             cmd->Dispatch(m_computeScreenSpaceShadow, 2, dim);
         }
+
+        cmd->EndDebugScope();
     }
 
     void PassLights::ComputeClusters(CommandBuffer* cmd, Math::uint3 resolution)

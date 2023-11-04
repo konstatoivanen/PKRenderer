@@ -122,7 +122,7 @@ Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias,
         break;
     }
 
-    // First Directional light has a screen space shadow.
+    // First Directional light has a screen space shadows.
     // @TODO Maybe parameterize this better.
     #if defined(SHADER_STAGE_FRAGMENT) && SHADOW_SAMPLE_SCREENSPACE == 1
     [[branch]]
@@ -136,17 +136,7 @@ Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias,
     if (indexShadow < LIGHT_PARAM_INVALID)
     {
         #if SHADOW_SAMPLE_VOLUMETRICS == 1
-            shadow = 0.0f;
-
-            // Volumetrics pcf by dithering along view axis. More stable than random offsets on shadow plane.
-            for (uint i = 0u; i < SHADOW_SAMPLE_VOLUMETRICS_COUNT; ++i)
-            {
-                const float dither = Shadow_GradientNoise(PK_GET_PROG_COORD, pk_FrameIndex.y + i);
-                const float2 uv = lerp(shadowUVMinMax.xy, shadowUVMinMax.zw, dither);
-                shadow += SHADOW_TEST(indexShadow, uv, shadowDistance);
-            }
-
-            shadow /= SHADOW_SAMPLE_VOLUMETRICS_COUNT;
+            shadow = ShadowTest_Volumetrics4(indexShadow, shadowUVMinMax, shadowDistance);
         #else
             shadow *= SHADOW_TEST(indexShadow, coord.xy, shadowDistance);
         #endif

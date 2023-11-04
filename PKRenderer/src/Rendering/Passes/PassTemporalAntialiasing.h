@@ -9,7 +9,7 @@ namespace PK::Rendering::Passes
     {
         public:
             PassTemporalAntialiasing(Core::Services::AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight);
-            void Render(Objects::CommandBuffer* cmd, Objects::Texture* source);
+            void Render(Objects::CommandBuffer* cmd, Objects::Texture* source, Objects::Texture* destination);
 
             constexpr Math::float4 GetJitter() const { return m_jitter; };
 

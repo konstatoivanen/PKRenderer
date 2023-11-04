@@ -86,7 +86,7 @@ void main()
     }
     else
     {
-        const float4 voxel = GI_Load_Voxel(worldpos, PK_GI_VX_CONE_SIZE * log2(1.0f + (hitdist / pk_GI_VoxelSize)));
+        const float4 voxel = GI_Load_Voxel(worldpos, PK_GI_GET_VX_MI_BIAS(hitdist));
         radiance = voxel.rgb / max(voxel.a, 1e-2f);
     }
 

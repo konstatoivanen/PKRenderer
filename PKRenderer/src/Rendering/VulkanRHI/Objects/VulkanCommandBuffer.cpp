@@ -255,7 +255,9 @@ namespace PK::Rendering::VulkanRHI::Objects
         blitRegion.srcOffsets[1] = { (int)srcHandle.image.extent.width, (int)srcHandle.image.extent.height, (int)srcHandle.image.extent.depth };
         blitRegion.dstOffsets[1] = { (int)dstHandle.image.extent.width, (int)dstHandle.image.extent.height, (int)dstHandle.image.extent.depth };
         blitRegion.dstSubresource.layerCount = blitRegion.srcSubresource.layerCount = glm::min(srcLayers, dstLayers);
+        BeginDebugScope("Blit Image", PK_COLOR_RED);
         Blit(&srcHandle, &dstHandle, blitRegion, filter);
+        EndDebugScope();
     }
 
     void VulkanCommandBuffer::Blit(const VulkanBindHandle* src, const VulkanBindHandle* dst, const VkImageBlit& blitRegion, FilterMode filter)
@@ -268,6 +270,17 @@ namespace PK::Rendering::VulkanRHI::Objects
         ResolveBarriers();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
 
+        // @TODO format is limiting. should check block size instead.
+        auto useCopy = src->image.format == dst->image.format;
+        useCopy &= blitRegion.srcOffsets[0].x == blitRegion.dstOffsets[0].x;
+        useCopy &= blitRegion.srcOffsets[0].y == blitRegion.dstOffsets[0].y;
+        useCopy &= blitRegion.srcOffsets[0].z == blitRegion.dstOffsets[0].z;
+        useCopy &= blitRegion.dstOffsets[1].x == blitRegion.dstOffsets[1].x;
+        useCopy &= blitRegion.srcOffsets[1].y == blitRegion.dstOffsets[1].y;
+        useCopy &= blitRegion.srcOffsets[1].z == blitRegion.dstOffsets[1].z;
+        useCopy &= blitRegion.srcSubresource.mipLevel == blitRegion.dstSubresource.mipLevel;
+        useCopy &= blitRegion.srcSubresource.layerCount == blitRegion.dstSubresource.layerCount;
+
         if (src->image.samples > VK_SAMPLE_COUNT_1_BIT && dst->image.samples == VK_SAMPLE_COUNT_1_BIT)
         {
             VkImageResolve resolveRegion{};
@@ -275,6 +288,16 @@ namespace PK::Rendering::VulkanRHI::Objects
             resolveRegion.dstSubresource = { (uint32_t)dst->image.range.aspectMask, blitRegion.dstSubresource.mipLevel, blitRegion.dstSubresource.baseArrayLayer, blitRegion.dstSubresource.layerCount };
             resolveRegion.extent = src->image.extent;
             vkCmdResolveImage(m_commandBuffer, src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &resolveRegion);
+        }
+        else if (useCopy)
+        {
+            VkImageCopy copyRegion;
+            copyRegion.srcSubresource = blitRegion.srcSubresource;
+            copyRegion.srcOffset = blitRegion.srcOffsets[0];
+            copyRegion.dstSubresource = blitRegion.dstSubresource;
+            copyRegion.dstOffset = blitRegion.srcOffsets[0];
+            copyRegion.extent = { (uint32_t)blitRegion.dstOffsets[1].x, (uint32_t)blitRegion.dstOffsets[1].y, (uint32_t)blitRegion.dstOffsets[1].z };
+            vkCmdCopyImage(m_commandBuffer, src->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
         }
         else
         {

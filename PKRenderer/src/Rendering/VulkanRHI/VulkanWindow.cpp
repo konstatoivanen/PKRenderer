@@ -76,7 +76,7 @@ namespace PK::Rendering::VulkanRHI
         swapchainCreateInfo.desiredColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
         swapchainCreateInfo.desiredExtent = VkExtent2D{ properties.width, properties.height };
         swapchainCreateInfo.desiredFormat = VK_FORMAT_B8G8R8A8_UNORM;
-        swapchainCreateInfo.desiredImageCount = 3;
+        swapchainCreateInfo.desiredImageCount = 4; // More images yields faster release of next image by present. But causes some instability.
         swapchainCreateInfo.desiredPresentMode = VK_PRESENT_MODE_FIFO_KHR;
         swapchainCreateInfo.maxFramesInFlight = PK_MAX_FRAMES_IN_FLIGHT;
         m_swapchain = CreateScope<VulkanSwapchain>(m_driver->physicalDevice,

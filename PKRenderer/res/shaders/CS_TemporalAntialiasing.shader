@@ -1,11 +1,15 @@
+#extension GL_KHR_shader_subgroup_shuffle : enable
+
 #pragma PROGRAM_COMPUTE
 #include includes/GBuffers.glsl
 #include includes/PostFXResources.glsl
 #include includes/Encoding.glsl
+#include includes/ComputeQuadSwap.glsl
 
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture; // Current Screen
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture1; // History Read
 layout(r32ui, set = PK_SET_DRAW) uniform uimage2D pk_Image; // History Write
+layout(rgba16f, set = PK_SET_DRAW) uniform image2D pk_Image1; // Color Write
 
 #define SAMPLE_TAA_SOURCE(uv) texture(pk_Texture, uv)
 #define SAMPLE_TAA_HISTORY(uv) texture(pk_Texture1, uv)
@@ -88,7 +92,23 @@ void main()
     desc.motionMult = pk_TAA_MotionAmplification;
     desc.alphaMult = 0.0f;
 
-    const float3 color = SolveTemporalAntiAliasing(desc);
+    const float3 history = SolveTemporalAntiAliasing(desc);
 
-    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color)));
+    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(history)));
+        
+    uint shuffleH = QuadSwapIdHorizontal(gl_SubgroupInvocationID);
+    uint shulffeV = QuadSwapIdVertical16x2(gl_SubgroupInvocationID);
+    uint shulffeD = QuadSwapIdDiagonal16x2(gl_SubgroupInvocationID);
+    
+    float3 color = history;
+    color += subgroupShuffle(history, shuffleH);
+    color += subgroupShuffle(history, shuffleH);
+    color += subgroupShuffle(history, shulffeD);
+    color *= 0.25f;
+
+    [[branch]]
+    if ((gl_LocalInvocationID.x & 0x1u) == 0 && (gl_LocalInvocationID.y & 0x1u) == 0)
+    {
+        imageStore(pk_Image1, coord / 2, float4(color, 1.0f));
+    }
 }
