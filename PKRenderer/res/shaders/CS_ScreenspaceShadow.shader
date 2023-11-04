@@ -141,14 +141,14 @@ void main()
     lds_depth[thread] = baseDepth;
 
     const half2 offset = half2(GlobalNoiseBlue(gl_GlobalInvocationID.xy, pk_FrameIndex.y).xy) * 2.0hf - 1.0hf;
-    const half2 baseuv = half2(gl_LocalInvocationID.xy + 0.5f) * 0.5hf + 2.0hf.xx + offset;
+    const half2 baseuv = half2(gl_LocalInvocationID.xy + 0.5f) * 0.5hf + 1.5hf.xx + offset;
     
     half2 offsets[4] =
     {
-        half2(-1.5hf, -1.5hf),
-        half2(-1.5hf, +1.5hf),
-        half2(+1.5hf, -1.5hf),
-        half2(+1.5hf, +1.5hf)
+        half2(-1.0hf, -1.0hf),
+        half2(-1.0hf, +1.0hf),
+        half2(+1.0hf, -1.0hf),
+        half2(+1.0hf, +1.0hf)
     };
 
     byte4 indices[4];
@@ -159,7 +159,9 @@ void main()
     [[unroll]]
     for (uint i = 0u; i < 4; ++i)
     {
-        const half2 sampleUV = clamp(baseuv + offsets[i], 0.0hf, half(GROUP_SIZE)-1.01hf);
+        // Filter radius can clip into lds bounds. Smaller filter is less effective.
+        // Clamp offset instead.
+        const half2 sampleUV = clamp(baseuv + offsets[i], 0.0hf, 6.999hf);
         const byte2 sampleCoord = byte2(sampleUV);
 
         byte4 s_indices = sampleCoord.yyyy;
@@ -195,7 +197,6 @@ void main()
         depths.w = lds_depth[s_indices.w];
 
         s_weights *= half4(exp(-abs(depths - depth.xxxx) * k_depth));
-        s_weights = lerp(s_weights, 0.0hf.xxxx, isnan(s_weights));
         
         shadow = fma(lds_shadow[s_indices.x], s_weights.x, shadow);
         shadow = fma(lds_shadow[s_indices.y], s_weights.y, shadow);
