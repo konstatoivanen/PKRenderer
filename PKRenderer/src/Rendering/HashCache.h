@@ -1,4 +1,5 @@
 #pragma once
+#include <PKAssets/PKAsset.h>
 #include "Utilities/ISingleton.h"
 #include "Core/Services/IService.h"
 #include "Core/Services/StringHashID.h"

@@ -1,15 +1,15 @@
 #include "PrecompiledHeader.h"
-#include "PassAutoExposure.h"
 #include "Rendering/HashCache.h"
-#include "Rendering/GraphicsAPI.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "PassAutoExposure.h"
 
 namespace PK::Rendering::Passes
 {
-    using namespace Core;
-    using namespace Core::Services;
-    using namespace Math;
-    using namespace Objects;
-    using namespace Structs;
+    using namespace PK::Math;
+    using namespace PK::Core;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     PassAutoExposure::PassAutoExposure(AssetDatabase* assetDatabase)
     {
@@ -20,7 +20,7 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetBuffer(HashCache::Get()->pk_AutoExposure_Histogram, m_histogram.get());
     }
 
-    void PassAutoExposure::Render(Objects::CommandBuffer* cmd, Texture* target)
+    void PassAutoExposure::Render(CommandBuffer* cmd, Texture* target)
     {
         cmd->BeginDebugScope("AutoExposure", PK_COLOR_MAGENTA);
 

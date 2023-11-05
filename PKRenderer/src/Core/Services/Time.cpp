@@ -1,10 +1,10 @@
 #include "PrecompiledHeader.h"
-#include "Core/Services/Log.h"
-#include "Core/Services/Time.h"
 #include <ctime>
 #include <cstdlib>
-#include <Core/UpdateStep.h>
-#include <ECS/Tokens/TimeToken.h>
+#include "Core/Services/Log.h"
+#include "Core/UpdateStep.h"
+#include "ECS/Tokens/TimeToken.h"
+#include "Time.h"
 
 namespace PK::Core::Services
 {

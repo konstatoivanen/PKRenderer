@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include "Application.h"
 #include "Core/Services/Log.h"
 #include "Core/Services/StringHashID.h"
 #include "Core/Services/Input.h"
@@ -24,14 +23,16 @@
 #include "ECS/Tokens/RenderingTokens.h"
 #include "Rendering/RenderPipeline.h"
 #include "Rendering/HashCache.h"
+#include "Application.h"
 
 namespace PK::Core
 {
-    using namespace Utilities;
-    using namespace Rendering;
-    using namespace Rendering::Structs;
-    using namespace Rendering::Objects;
-    using namespace Services;
+    using namespace PK::Utilities;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering;
+    using namespace PK::Rendering::Structs;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     Application* Application::s_Instance = nullptr;
 
@@ -64,7 +65,7 @@ namespace PK::Core
         auto input = m_services->Create<Input>(sequencer);
 
         auto workingDirectory = std::filesystem::path(arguments.args[0]).remove_filename().string();
-        m_graphicsDriver = GraphicsDriver::Create(workingDirectory, APIType::Vulkan);
+        m_graphicsDriver = RHI::CreateRHIDriver(workingDirectory, APIType::Vulkan);
 
         m_window = Window::Create(WindowProperties(name + m_graphicsDriver->GetDriverHeader(),
             config->FileWindowIcon,

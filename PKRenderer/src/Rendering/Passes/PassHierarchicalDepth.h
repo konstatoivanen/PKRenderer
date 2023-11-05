@@ -1,9 +1,7 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Core/ApplicationConfig.h"
-#include "Rendering/Objects/CommandBuffer.h"
-#include "Rendering/Objects/Shader.h"
-#include "Rendering/Objects/Texture.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::Rendering::Passes
 {
@@ -11,10 +9,10 @@ namespace PK::Rendering::Passes
     {
         public:
             PassHierarchicalDepth(Core::Services::AssetDatabase* assetDatabase, Core::ApplicationConfig* config);
-            void Compute(Objects::CommandBuffer* cmd, Math::uint3 resolution);
+            void Compute(RHI::Objects::CommandBuffer* cmd, Math::uint3 resolution);
 
         private:
-            Objects::Shader* m_computeHierachicalDepth = nullptr;
-            Utilities::Ref<Objects::Texture> m_hierarchicalDepth;
+            RHI::Objects::Shader* m_computeHierachicalDepth = nullptr;
+            RHI::Objects::TextureRef m_hierarchicalDepth;
     };
 }

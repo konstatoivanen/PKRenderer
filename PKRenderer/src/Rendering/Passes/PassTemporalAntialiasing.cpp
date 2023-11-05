@@ -1,15 +1,15 @@
 #include "PrecompiledHeader.h"
-#include "PassTemporalAntiAliasing.h"
-#include "Rendering/HashCache.h"
-#include "Rendering/GraphicsAPI.h"
 #include "Math/FunctionsMisc.h"
+#include "Rendering/HashCache.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "PassTemporalAntiAliasing.h"
 
 namespace PK::Rendering::Passes
 {
-    using namespace Core::Services;
-    using namespace Math;
-    using namespace Objects;
-    using namespace Structs;
+    using namespace PK::Math;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     PassTemporalAntialiasing::PassTemporalAntialiasing(AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight)
     {
@@ -30,7 +30,7 @@ namespace PK::Rendering::Passes
         m_renderTarget = Texture::Create(descriptor, "TAA.HistoryTexture");
     }
 
-    void PassTemporalAntialiasing::Render(CommandBuffer* cmd, Texture* source, Objects::Texture* destination)
+    void PassTemporalAntialiasing::Render(CommandBuffer* cmd, Texture* source, Texture* destination)
     {
         cmd->BeginDebugScope("TemporalAntialiasing", PK_COLOR_MAGENTA);
 

@@ -1,14 +1,14 @@
 #include "PrecompiledHeader.h"
-#include "PassBloom.h"
-#include "Rendering/GraphicsAPI.h"
 #include "Rendering/HashCache.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "PassBloom.h"
 
 namespace PK::Rendering::Passes
 {
-    using namespace Core::Services;
-    using namespace Math;
-    using namespace Objects;
-    using namespace Structs;
+    using namespace PK::Math;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     PassBloom::PassBloom(AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight)
     {
@@ -31,7 +31,7 @@ namespace PK::Rendering::Passes
         m_passSeparableBlur = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_BLUR"));
     }
 
-    void PassBloom::Render(Objects::CommandBuffer* cmd, Texture* source)
+    void PassBloom::Render(CommandBuffer* cmd, Texture* source)
     {
         cmd->BeginDebugScope("Bloom", PK_COLOR_MAGENTA);
 

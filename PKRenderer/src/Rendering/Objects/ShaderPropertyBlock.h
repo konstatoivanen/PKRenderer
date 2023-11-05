@@ -1,6 +1,6 @@
 #pragma once
 #include "Utilities/PropertyBlock.h"
-#include "Rendering/Structs/Layout.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::Rendering::Objects
 {
@@ -9,6 +9,6 @@ namespace PK::Rendering::Objects
         public:
             ShaderPropertyBlock(uint64_t capacity) : Utilities::PropertyBlock(capacity) {}
             ShaderPropertyBlock(void* foreignBuffer, uint64_t capacity) : Utilities::PropertyBlock(foreignBuffer, capacity) {}
-            void ReserveLayout(const Structs::BufferLayout& layout);
+            void ReserveLayout(const RHI::BufferLayout& layout);
     };
 }

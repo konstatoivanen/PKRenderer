@@ -1,6 +1,5 @@
 #pragma once
 #include "Math/Types.h"
-#include "Rendering/Structs/Enums.h"
 
 namespace PK::ECS::Tokens
 {

@@ -1,13 +1,12 @@
 #pragma once
-#include "ECS/EntityDatabase.h"
 #include "Math/Types.h"
-#include "Rendering/Objects/Mesh.h"
-#include "Rendering/Objects/VirtualMesh.h"
-#include "Rendering/Objects/Material.h"
+#include "ECS/EntityDatabase.h"
 #include "ECS/EntityViews/TransformView.h"
 #include "ECS/EntityViews/BaseRenderableView.h"
 #include "ECS/EntityViews/MeshRenderableView.h"
 #include "ECS/EntityViews/LightRenderableView.h"
+#include "Rendering/Objects/Mesh.h"
+#include "Rendering/Objects/Material.h"
 
 namespace PK::ECS::Builders
 {

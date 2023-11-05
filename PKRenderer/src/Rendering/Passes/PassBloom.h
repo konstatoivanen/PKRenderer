@@ -1,8 +1,6 @@
 #pragma once
 #include "Utilities/NoCopy.h"
-#include "Rendering/Objects/Texture.h"
-#include "Rendering/Objects/Shader.h"
-#include "Rendering/Objects/CommandBuffer.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::Rendering::Passes
 {
@@ -10,13 +8,13 @@ namespace PK::Rendering::Passes
     {
         public:
             PassBloom(Core::Services::AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight);
-            void Render(Objects::CommandBuffer* cmd, Objects::Texture* source);
+            void Render(RHI::Objects::CommandBuffer* cmd, RHI::Objects::Texture* source);
 
-            Objects::Texture* GetTexture() { return m_bloomTexture.get(); }
+            RHI::Objects::Texture* GetTexture() { return m_bloomTexture.get(); }
 
         private:
-            Objects::Shader* m_computeBloom = nullptr;
-            Utilities::Ref<Objects::Texture> m_bloomTexture;
+            RHI::Objects::Shader* m_computeBloom = nullptr;
+            RHI::Objects::TextureRef m_bloomTexture;
             uint32_t m_passDownsample0 = 0;
             uint32_t m_passDownsample = 0;
             uint32_t m_passSeparableBlur = 0;

@@ -1,7 +1,6 @@
 #pragma once
 #include "Utilities/NoCopy.h"
-#include "Rendering/Objects/Shader.h"
-#include "Rendering/Objects/CommandBuffer.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::Rendering::Passes
 {
@@ -9,15 +8,15 @@ namespace PK::Rendering::Passes
     {
         public:
             PassTemporalAntialiasing(Core::Services::AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight);
-            void Render(Objects::CommandBuffer* cmd, Objects::Texture* source, Objects::Texture* destination);
+            void Render(RHI::Objects::CommandBuffer* cmd, RHI::Objects::Texture* source, RHI::Objects::Texture* destination);
 
             constexpr Math::float4 GetJitter() const { return m_jitter; };
 
         private:
             const uint32_t JitterSampleCount = 16u;
 
-            Objects::Shader* m_computeTAA = nullptr;
-            Utilities::Ref<Objects::Texture> m_renderTarget;
+            RHI::Objects::Shader* m_computeTAA = nullptr;
+            RHI::Objects::TextureRef m_renderTarget;
             uint32_t m_historyLayerIndex = 0u;
     
             Math::float4 m_jitter = Math::PK_FLOAT4_ZERO;

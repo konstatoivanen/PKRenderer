@@ -1,16 +1,16 @@
 #include "PrecompiledHeader.h"
-#include "PassFilmGrain.h"
 #include "Rendering/HashCache.h"
-#include "Rendering/GraphicsAPI.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "PassFilmGrain.h"
 
 namespace PK::Rendering::Passes
 {
-    using namespace Core;
-    using namespace Core::Services;
-    using namespace Math;
-    using namespace Utilities;
-    using namespace Structs;
-    using namespace Objects;
+    using namespace PK::Math;
+    using namespace PK::Utilities;
+    using namespace PK::Core;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     PassFilmGrain::PassFilmGrain(AssetDatabase* assetDatabase)
     {
@@ -30,7 +30,7 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetTexture(HashCache::Get()->pk_FilmGrain_Texture, m_filmGrainTexture.get());
     }
 
-    void PassFilmGrain::Compute(Objects::CommandBuffer* cmd)
+    void PassFilmGrain::Compute(RHI::Objects::CommandBuffer* cmd)
     {
         auto hash = HashCache::Get();
         cmd->BeginDebugScope("Noise Compute", PK_COLOR32_BLUE);

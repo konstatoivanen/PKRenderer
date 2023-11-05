@@ -1,11 +1,10 @@
 #pragma once
+#include "Core/ApplicationConfig.h"
 #include "Core/Services/IService.h"
 #include "Core/Services/Sequencer.h"
-#include "Core/ApplicationConfig.h"
-#include "Rendering/Objects/Buffer.h"
-#include "Rendering/Objects/Shader.h"
 #include "ECS/Tokens/RenderingTokens.h"
 #include "ECS/Tokens/GizmosToken.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::ECS::Engines
 {
@@ -40,10 +39,10 @@ namespace PK::ECS::Engines
 
         private:
             Core::Services::Sequencer* m_sequencer = nullptr;
-            Rendering::Objects::Shader* m_gizmosShader = nullptr;
-            Utilities::Ref<Rendering::Objects::Buffer> m_vertexBuffer;
+            Rendering::RHI::Objects::Shader* m_gizmosShader = nullptr;
+            Rendering::RHI::Objects::BufferRef m_vertexBuffer;
             PK::Utilities::BufferView<Vertex> m_vertexView;
-            PK::Rendering::Structs::FixedFunctionShaderAttributes m_fixedFunctionAttribs;
+            PK::Rendering::RHI::FixedFunctionShaderAttributes m_fixedFunctionAttribs;
 
             Math::FrustumPlanes m_frustrumPlanes{};
             uint32_t m_vertexCount = 0;

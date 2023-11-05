@@ -1,19 +1,20 @@
 #include "PrecompiledHeader.h"
-#include "EngineCommandInput.h"
+#include "Math/FunctionsMisc.h"
 #include "Core/Application.h"
 #include "Core/ApplicationConfig.h"
-#include "Rendering/GraphicsAPI.h"
-#include "Rendering/Objects/Texture.h"
 #include "Rendering/Objects/Material.h"
-#include "Math/FunctionsMisc.h"
+#include "Rendering/Objects/Mesh.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "EngineCommandInput.h"
 
 namespace PK::ECS::Engines
 {
-    using namespace Math;
-    using namespace Core;
-    using namespace Core::Services;
-    using namespace Rendering::Objects;
-    using namespace Rendering::Structs;
+    using namespace PK::Math;
+    using namespace PK::Core;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering::Objects;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     const std::unordered_map<std::string, CommandArgument> EngineCommandInput::ArgumentMap =
     {
@@ -59,7 +60,7 @@ namespace PK::ECS::Engines
     void EngineCommandInput::QueryGPUMemory(const ConsoleCommand& arguments)
     {
         PK_LOG_HEADER("----------GPU MEMORY INFO----------");
-        auto info = Rendering::GraphicsAPI::GetMemoryInfo();
+        auto info = GraphicsAPI::GetMemoryInfo();
         PK_LOG_NEWLINE();
         PK_LOG_INFO("Block count: %i", info.blockCount);
         PK_LOG_INFO("Allocation count: %i", info.allocationCount);

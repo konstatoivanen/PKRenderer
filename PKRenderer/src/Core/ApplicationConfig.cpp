@@ -3,7 +3,7 @@
 
 namespace PK::Core
 {
-    using namespace Services;
+    using namespace PK::Core::Services;
 
     ApplicationConfig::ApplicationConfig()
     {

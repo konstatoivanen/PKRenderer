@@ -1,16 +1,19 @@
 #include "PrecompiledHeader.h"
-#include "Mesh.h"
+#include <PKAssets/PKAssetLoader.h>
 #include "Math/FunctionsIntersect.h"
 #include "Math/FunctionsMisc.h"
-#include "Rendering/GraphicsAPI.h"
-#include <PKAssets/PKAssetLoader.h>
+#include "Core/Services/StringHashID.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "Mesh.h"
 
 using namespace PK::Math;
 using namespace PK::Core;
+using namespace PK::Core::Services;
 using namespace PK::Utilities;
 using namespace PK::Rendering;
 using namespace PK::Rendering::Objects;
-using namespace PK::Rendering::Structs;
+using namespace PK::Rendering::RHI;
+using namespace PK::Rendering::RHI::Objects;
 
 namespace PK::Rendering::Objects
 {
@@ -97,13 +100,13 @@ namespace PK::Rendering::Objects
 
     Mesh::Mesh() {}
 
-    Mesh::Mesh(const Ref<Buffer>& vertexBuffer, const Ref<Buffer>& indexBuffer) : Mesh()
+    Mesh::Mesh(const BufferRef& vertexBuffer, const BufferRef& indexBuffer) : Mesh()
     {
         AddVertexBuffer(vertexBuffer);
         SetIndexBuffer(indexBuffer);
     }
 
-    Mesh::Mesh(const Ref<Buffer>& vertexBuffer, const Ref<Buffer>& indexBuffer, const BoundingBox& bounds) : Mesh(vertexBuffer, indexBuffer)
+    Mesh::Mesh(const BufferRef& vertexBuffer, const BufferRef& indexBuffer, const BoundingBox& bounds) : Mesh(vertexBuffer, indexBuffer)
     {
         m_fullRange = { 0u, (uint32_t)vertexBuffer->GetCount(), 0u, (uint32_t)indexBuffer->GetCount(), bounds };
     }
@@ -167,9 +170,7 @@ namespace PK::Rendering::Objects
         PK::Assets::CloseAsset(&asset);
     }
 
-    void Mesh::AllocateSubmeshRange(const SubmeshRangeAllocationInfo& allocationInfo,
-        SubMesh* outAllocationRange,
-        uint32_t* outSubmeshIndices)
+    void Mesh::AllocateSubmeshRange(const SubmeshRangeAllocationInfo& allocationInfo, SubMesh* outAllocationRange, uint32_t* outSubmeshIndices)
     {
         SubMesh range = { 0u, allocationInfo.vertexCount, 0u, allocationInfo.indexCount, BoundingBox::GetMinBounds() };
         FindAllocationRange(m_submeshes, &range);
@@ -258,7 +259,7 @@ namespace PK::Rendering::Objects
         }
     }
 
-    void Mesh::AddVertexBuffer(const Ref<Buffer>& vertexBuffer)
+    void Mesh::AddVertexBuffer(const BufferRef& vertexBuffer)
     {
         if (m_vertexBuffers.size() >= PK_MAX_VERTEX_ATTRIBUTES)
         {
@@ -266,6 +267,7 @@ namespace PK::Rendering::Objects
         }
 
         m_vertexBuffers.push_back(vertexBuffer);
+        UpdatePositionAttributeInfo();
     }
 
     void Mesh::SetSubMeshes(const SubMesh* submeshes, size_t submeshCount)
@@ -284,9 +286,48 @@ namespace PK::Rendering::Objects
         }
     }
 
-    const std::vector<const Structs::BufferLayout*> Mesh::GetVertexBufferLayouts() const
+    void Mesh::UpdatePositionAttributeInfo()
     {
-        std::vector<const Structs::BufferLayout*> layouts;
+        auto vertexPositionHash = StringHashID::StringToID(PK_VS_POSITION);
+
+        for (auto j = 0u; j < m_vertexBuffers.size(); ++j)
+        {
+            uint32_t positionIndex = 0u;
+            auto vertexBuffer = m_vertexBuffers.at(j).get();
+            auto vertexElement = vertexBuffer->GetLayout().TryGetElement(vertexPositionHash, &positionIndex);
+
+            if (vertexElement != nullptr && vertexElement->Type == ElementType::Float3)
+            {
+                m_vertexPositionBufferIndex = j;
+                m_vertexPositionOffset = vertexElement->Offset;
+                return;
+            }
+        }
+    }
+
+    bool Mesh::TryGetAccelerationStructureGeometryInfo(uint32_t submesh, RHI::Objects::AccelerationStructureGeometryInfo* outInfo)
+    {
+        if (HasPendingUpload() || m_vertexPositionBufferIndex == ~0u)
+        {
+            return false;
+        }
+
+        auto& sm = GetSubmesh(submesh);
+        outInfo->vertexBuffer = m_vertexBuffers.at(m_vertexPositionBufferIndex).get();
+        outInfo->indexBuffer = m_indexBuffer.get();
+        outInfo->vertexOffset = m_vertexPositionOffset;
+        outInfo->firstVertex = sm.firstVertex;
+        outInfo->vertexCount = sm.vertexCount;
+        outInfo->firstIndex = sm.firstIndex;
+        outInfo->indexCount = sm.indexCount;
+        outInfo->customIndex = 0u;
+        outInfo->nameHashId = 0u; //@TODO fill this with something.
+        return true;
+    }
+
+    const std::vector<const BufferLayout*> Mesh::GetVertexBufferLayouts() const
+    {
+        std::vector<const BufferLayout*> layouts;
 
         for (auto& vertexBuffer : m_vertexBuffers)
         {
@@ -306,6 +347,87 @@ namespace PK::Rendering::Objects
         auto idx = glm::min((uint)submesh, (uint)m_submeshes.size());
         return m_submeshes.at(idx);
     }
+
+
+    VirtualMesh::VirtualMesh()
+    {
+    }
+
+    VirtualMesh::VirtualMesh(const SubmeshRangeAllocationInfo& data, Ref<Mesh> mesh)
+    {
+        m_mesh = mesh;
+        m_submeshIndices.resize(data.submeshCount);
+        m_mesh->AllocateSubmeshRange(data, &m_fullRange, m_submeshIndices.data());
+    }
+
+    VirtualMesh::~VirtualMesh()
+    {
+        if (m_mesh)
+        {
+            m_mesh->DeallocateSubmeshRange(m_fullRange, m_submeshIndices.data(), (uint32_t)m_submeshIndices.size());
+        }
+    }
+
+    void VirtualMesh::Import(const char* filepath, Ref<Mesh>* pParams)
+    {
+        PK_THROW_ASSERT(pParams, "Cannot create a virtual mesh without a base mesh!");
+
+        m_mesh = *pParams;
+
+        PK::Assets::PKAsset asset;
+
+        PK_THROW_ASSERT(PK::Assets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
+        PK_THROW_ASSERT(asset.header->type == PK::Assets::PKAssetType::Mesh, "Trying to read a mesh from a non mesh file!")
+
+            auto mesh = PK::Assets::ReadAsMesh(&asset);
+        auto base = asset.rawData;
+
+        PK_THROW_ASSERT(mesh->vertexAttributeCount > 0, "Trying to read a mesh with 0 vertex attributes!");
+        PK_THROW_ASSERT(mesh->vertexCount > 0, "Trying to read a shader with 0 vertices!");
+        PK_THROW_ASSERT(mesh->indexCount > 0, "Trying to read a shader with 0 indices!");
+        PK_THROW_ASSERT(mesh->submeshCount > 0, "Trying to read a shader with 0 submeshes!");
+
+        auto pAttributes = mesh->vertexAttributes.Get(base);
+        auto pVertices = mesh->vertexBuffer.Get(base);
+        auto pIndices = mesh->indexBuffer.Get(base);
+        auto pSubmeshes = mesh->submeshes.Get(base);
+
+        std::vector<BufferElement> bufferElements;
+        std::vector<SubMesh> submeshes;
+        submeshes.reserve(mesh->submeshCount);
+
+        for (auto i = 0u; i < mesh->submeshCount; ++i)
+        {
+            auto bounds = BoundingBox::MinMax(Functions::ToFloat3(pSubmeshes[i].bbmin), Functions::ToFloat3(pSubmeshes[i].bbmax));
+            submeshes.push_back({ 0u, mesh->vertexCount, pSubmeshes[i].firstIndex, pSubmeshes[i].indexCount, bounds });
+        }
+
+        for (auto i = 0u; i < mesh->vertexAttributeCount; ++i)
+        {
+            bufferElements.emplace_back(pAttributes[i].type, std::string(pAttributes[i].name), (byte)1u, (byte)pAttributes[i].stream, pAttributes[i].offset);
+        }
+
+        m_submeshIndices.resize(mesh->submeshCount);
+
+        SubmeshRangeAllocationInfo allocInfo{};
+        allocInfo.pVertices = pVertices;
+        allocInfo.pIndices = pIndices;
+        allocInfo.vertexLayout = BufferLayout(bufferElements, false);
+        allocInfo.pSubmeshes = submeshes.data();
+        allocInfo.indexType = mesh->indexType;
+        allocInfo.vertexCount = mesh->vertexCount;
+        allocInfo.indexCount = mesh->indexCount;
+        allocInfo.submeshCount = mesh->submeshCount;
+        m_mesh->AllocateSubmeshRange(allocInfo, &m_fullRange, m_submeshIndices.data());
+
+        PK::Assets::CloseAsset(&asset);
+    }
+
+    uint32_t VirtualMesh::GetSubmeshIndex(uint32_t submesh) const
+    {
+        auto idx = glm::min((uint32_t)submesh, (uint32_t)m_submeshIndices.size());
+        return m_submeshIndices.at(idx);
+    }
 }
 
 template<>
@@ -315,4 +437,10 @@ template<>
 Ref<Mesh> PK::Core::Services::AssetImporters::Create()
 {
     return CreateRef<Mesh>();
+}
+
+template<>
+PK::Utilities::Ref<PK::Rendering::Objects::VirtualMesh> PK::Core::Services::AssetImporters::Create()
+{
+    return PK::Utilities::CreateRef<PK::Rendering::Objects::VirtualMesh>();
 }

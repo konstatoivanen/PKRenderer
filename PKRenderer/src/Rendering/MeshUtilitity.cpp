@@ -1,15 +1,17 @@
 #include "PrecompiledHeader.h"
-#include "MeshUtility.h"
-#include "Rendering/Structs/StructsCommon.h"
-#include "Rendering/GraphicsAPI.h"
 #include <mikktspace/mikktspace.h>
+#include "Rendering/Structs/StructsCommon.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "MeshUtility.h"
 
 namespace PK::Rendering::MeshUtility
 {
-    using namespace Utilities;
-    using namespace Math;
-    using namespace Objects;
-    using namespace Structs;
+    using namespace PK::Math;
+    using namespace PK::Utilities;
+    using namespace PK::Rendering::Objects;
+    using namespace PK::Rendering::Structs;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     namespace MikktsInterface0
     {

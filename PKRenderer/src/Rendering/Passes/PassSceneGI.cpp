@@ -1,16 +1,17 @@
 #include "PrecompiledHeader.h"
-#include "PassSceneGI.h"
-#include "Rendering/HashCache.h"
 #include "Math/FunctionsMisc.h"
+#include "Rendering/HashCache.h"
+#include "PassSceneGI.h"
 
 namespace PK::Rendering::Passes
 {
-    using namespace Core;
-    using namespace Core::Services;
-    using namespace Math;
-    using namespace Utilities;
-    using namespace Structs;
-    using namespace Objects;
+    using namespace PK::Math;
+    using namespace PK::Utilities;
+    using namespace PK::Core;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering::Objects;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     uint3 GetCheckerboardResolution(const uint3& resolution, bool halfRes)
     {
@@ -147,7 +148,7 @@ namespace PK::Rendering::Passes
         m_frameIndex++;
     }
 
-    void PassSceneGI::PruneVoxels(Objects::CommandBuffer* cmd)
+    void PassSceneGI::PruneVoxels(CommandBuffer* cmd)
     {
         // Clear transparencies every axis cycle
         if (m_rasterAxis == 0)
@@ -159,7 +160,7 @@ namespace PK::Rendering::Passes
         }
     }
 
-    void PassSceneGI::DispatchRays(Objects::CommandBuffer* cmd)
+    void PassSceneGI::DispatchRays(CommandBuffer* cmd)
     {
         cmd->BeginDebugScope("SceneGI.DispatchRays", PK_COLOR_GREEN);
         m_sbtRaytrace.Bind(cmd);
@@ -167,7 +168,7 @@ namespace PK::Rendering::Passes
         cmd->EndDebugScope();
     }
 
-    void PassSceneGI::ReprojectGI(Objects::CommandBuffer* cmd)
+    void PassSceneGI::ReprojectGI(CommandBuffer* cmd)
     {
         cmd->BeginDebugScope("SceneGI.Reproject", PK_COLOR_GREEN);
         auto resolution = m_packedGIDiff->GetResolution();
@@ -175,7 +176,7 @@ namespace PK::Rendering::Passes
         cmd->EndDebugScope();
     }
 
-    void PassSceneGI::Voxelize(Objects::CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup)
+    void PassSceneGI::Voxelize(CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup)
     {
         cmd->BeginDebugScope("SceneGI.Voxelize", PK_COLOR_GREEN);
 
@@ -215,7 +216,7 @@ namespace PK::Rendering::Passes
         cmd->EndDebugScope();
     }
 
-    void PassSceneGI::VoxelMips(Objects::CommandBuffer* cmd)
+    void PassSceneGI::VoxelMips(CommandBuffer* cmd)
     {
         // Voxel mips
         auto hash = HashCache::Get();
@@ -231,7 +232,7 @@ namespace PK::Rendering::Passes
         cmd->Dispatch(m_computeMipmap, 0, volumesize >> 4u);
     }
 
-    void PassSceneGI::ValidateReservoirs(Objects::CommandBuffer* cmd)
+    void PassSceneGI::ValidateReservoirs(CommandBuffer* cmd)
     {
         if (m_useReSTIR)
         {

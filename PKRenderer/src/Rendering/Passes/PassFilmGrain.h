@@ -1,7 +1,6 @@
 #pragma once
 #include "Utilities/NoCopy.h"
-#include "Rendering/Objects/CommandBuffer.h"
-#include "Rendering/Objects/Shader.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::Rendering::Passes
 {
@@ -9,10 +8,10 @@ namespace PK::Rendering::Passes
     {
         public:
             PassFilmGrain(Core::Services::AssetDatabase* assetDatabase);
-            void Compute(Objects::CommandBuffer* cmd);
+            void Compute(RHI::Objects::CommandBuffer* cmd);
 
         private:
-            Objects::Shader* m_computeFilmGrain = nullptr;
-            Utilities::Ref<Objects::Texture> m_filmGrainTexture;
+            RHI::Objects::Shader* m_computeFilmGrain = nullptr;
+            RHI::Objects::TextureRef m_filmGrainTexture;
     };
 }

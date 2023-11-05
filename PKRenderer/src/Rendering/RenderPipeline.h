@@ -2,10 +2,11 @@
 #include "Core/Services/IService.h"
 #include "Core/Services/Sequencer.h"
 #include "Core/ApplicationConfig.h"
-#include "Core/Window.h"
 #include "ECS/Tokens/ViewProjectionToken.h"
 #include "ECS/Tokens/TimeToken.h"
 #include "ECS/Tokens/RenderingTokens.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/Structs/GBuffers.h"
 #include "Rendering/Passes/PassHierarchicalDepth.h"
 #include "Rendering/Passes/PassEnvBackground.h"
 #include "Rendering/Passes/PassPostEffects.h"
@@ -17,15 +18,14 @@
 #include "Rendering/Passes/PassTemporalAntiAliasing.h"
 #include "Rendering/Passes/PassAutoExposure.h"
 #include "Rendering/Passes/PassBloom.h"
-#include "Rendering/Services/Batcher.h"
-#include "Rendering/GBuffers.h"
+#include "Rendering/Passes/Batcher.h"
 
 namespace PK::Rendering
 {
     class RenderPipeline : public Core::Services::IService,
                            public Core::Services::IStep<PK::ECS::Tokens::ViewProjectionUpdateToken>,
                            public Core::Services::IStep<PK::ECS::Tokens::TimeToken>,
-                           public Core::Services::IConditionalStep<Core::Window>,
+                           public Core::Services::IConditionalStep<RHI::Window>,
                            public Core::Services::IStep<Core::Services::AssetImportToken<Core::ApplicationConfig>>
     {
         public:
@@ -38,11 +38,11 @@ namespace PK::Rendering
 
             void Step(PK::ECS::Tokens::ViewProjectionUpdateToken* token) final;
             void Step(PK::ECS::Tokens::TimeToken* token) final;
-            void Step(Core::Window* window, int condition) final;
+            void Step(RHI::Window* window, int condition) final;
             void Step(Core::Services::AssetImportToken<Core::ApplicationConfig>* token) final;
 
         private:
-            void DispatchRenderEvent(Objects::CommandBuffer* cmd, ECS::Tokens::RenderEvent renderEvent, const char* name, uint32_t* outPassGroup);
+            void DispatchRenderEvent(RHI::Objects::CommandBuffer* cmd, ECS::Tokens::RenderEvent renderEvent, const char* name, uint32_t* outPassGroup);
 
             Passes::PassLights m_passLights;
             Passes::PassSceneGI m_passSceneGI;
@@ -56,12 +56,12 @@ namespace PK::Rendering
             Passes::PassBloom m_bloom;
             Passes::PassAutoExposure m_autoExposure;
             Passes::PassPostEffectsComposite m_passPostEffectsComposite;
-
-            Batcher m_batcher;
+            Passes::Batcher m_batcher;
+            
             Core::Services::Sequencer* m_sequencer;
 
-            Utilities::Ref<Objects::AccelerationStructure> m_sceneStructure;
-            Utilities::Ref<Objects::ConstantBuffer> m_constantsPerFrame;
+            RHI::Objects::AccelerationStructureRef m_sceneStructure;
+            Rendering::Objects::ConstantBufferRef m_constantsPerFrame;
             GBuffersFull m_gbuffers;
             
             ECS::Tokens::VisibilityList m_visibilityList;

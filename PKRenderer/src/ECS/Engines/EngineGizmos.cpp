@@ -1,14 +1,16 @@
 #include "PrecompiledHeader.h"
-#include "EngineGizmos.h"
 #include "Math/FunctionsIntersect.h"
+#include "EngineGizmos.h"
 
 namespace PK::ECS::Engines
 {
-    using namespace Math;
-    using namespace Core;
-    using namespace Core::Services;
-    using namespace Rendering::Objects;
-    using namespace Rendering::Structs;
+    using namespace PK::Math;
+    using namespace PK::Core;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering::Objects;
+    using namespace PK::Rendering::Structs;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     EngineGizmos::EngineGizmos(AssetDatabase* assetDatabase, Sequencer* sequencer, ApplicationConfig* config) :
         m_sequencer(sequencer)

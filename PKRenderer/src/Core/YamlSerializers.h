@@ -1,16 +1,17 @@
 #pragma once
+#include <yaml-cpp/yaml.h>
+#include "Math/Types.h"
 #include "Core/Application.h"
 #include "Core/ConsoleCommandBinding.h"
-#include "Rendering/Objects/Texture.h"
-#include "Math/Types.h"
-#include <yaml-cpp/yaml.h>
+#include "Rendering/RHI/Objects/Texture.h"
 
 namespace YAML
 {
+	using namespace PK::Math;
 	using namespace PK::Utilities;
 	using namespace PK::Core::Services;
-	using namespace PK::Rendering::Objects;
-	using namespace PK::Math;
+	using namespace PK::Rendering::RHI;
+	using namespace PK::Rendering::RHI::Objects;
 
 	#define DECLARE_VECTOR_CONVERTER(type, count)				\
 	template<>													\
@@ -108,7 +109,7 @@ namespace YAML
 		static bool decode(const Node& node, Texture*& rhs)
 		{
 			auto path = node.as<std::string>();
-			rhs = PK::Core::Application::GetService<AssetDatabase>()->Load<PK::Rendering::Objects::Texture>(path);
+			rhs = PK::Core::Application::GetService<AssetDatabase>()->Load<Texture>(path);
 			return true;
 		}
 	};

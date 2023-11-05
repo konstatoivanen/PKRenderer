@@ -1,15 +1,16 @@
 #include "PrecompiledHeader.h"
-#include "Material.h"
-#include "Core/YamlSerializers.h"
 #include <yaml-cpp/yaml.h>
+#include "Core/YamlSerializers.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "Material.h"
 
 using namespace PK::Core;
 using namespace PK::Core::Services;
 using namespace PK::Math;
 using namespace PK::Utilities;
 using namespace PK::Rendering::Objects;
-using namespace PK::Rendering::Structs;
-using namespace PK::Rendering::Structs;
+using namespace PK::Rendering::RHI;
+using namespace PK::Rendering::RHI::Objects;
 
 namespace YAML
 {

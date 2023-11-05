@@ -1,16 +1,16 @@
 #include "PrecompiledHeader.h"
-#include "EngineScreenshot.h"
-#include "Rendering/GraphicsAPI.h"
 #include "Utilities/FileIOBMP.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "EngineScreenshot.h"
 
 namespace PK::ECS::Engines
 {
-    using namespace Math;
-    using namespace Core;
-    using namespace Core::Services;
-    using namespace Rendering;
-    using namespace Rendering::Structs;
-    using namespace Rendering::Objects;
+    using namespace PK::Math;
+    using namespace PK::Core;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     EngineScreenshot::EngineScreenshot() : m_accumulatedPixels(1)
     {

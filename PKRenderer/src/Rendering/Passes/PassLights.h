@@ -3,10 +3,9 @@
 #include "Core/ApplicationConfig.h"
 #include "ECS/Tokens/CullingTokens.h"
 #include "ECS/EntityViews/LightRenderableView.h"
-#include "Rendering/Objects/Texture.h"
 #include "Rendering/Objects/ConstantBuffer.h"
-#include "Rendering/Objects/Shader.h"
-#include "Rendering/Services/Batcher.h"
+#include "Rendering/Passes/Batcher.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::Rendering::Passes
 {
@@ -25,9 +24,9 @@ namespace PK::Rendering::Passes
                        Batcher* batcher, 
                        const Core::ApplicationConfig* config);
 
-            void RenderShadows(Objects::CommandBuffer* cmd);
-            void RenderScreenSpaceShadows(Objects::CommandBuffer* cmd, const Math::float4x4& worldToClip, const Math::uint3& resolution);
-            void ComputeClusters(Objects::CommandBuffer* cmd, Math::uint3 resolution);
+            void RenderShadows(RHI::Objects::CommandBuffer* cmd);
+            void RenderScreenSpaceShadows(RHI::Objects::CommandBuffer* cmd, const Math::float4x4& worldToClip, const Math::uint3& resolution);
+            void ComputeClusters(RHI::Objects::CommandBuffer* cmd, Math::uint3 resolution);
             void Cull(void* engineRoot, ECS::Tokens::VisibilityList* visibilityList, const Math::float4x4& worldToClip, float znear, float zfar);
             ShadowCascades GetCascadeZSplits(float znear, float zfar) const;
         
@@ -60,19 +59,19 @@ namespace PK::Rendering::Passes
             Core::Services::Sequencer* m_sequencer = nullptr;
             Batcher* m_batcher = nullptr;
 
-            Objects::Shader* m_computeLightAssignment = nullptr;
-            Objects::Shader* m_computeCopyCubeShadow = nullptr;
-            Objects::Shader* m_computeScreenSpaceShadow = nullptr;
-            Utilities::Ref<Objects::Buffer> m_lightsBuffer;
-            Utilities::Ref<Objects::Buffer> m_lightMatricesBuffer;
-            Utilities::Ref<Objects::Buffer> m_lightsLists;
-            Utilities::Ref<Objects::Texture> m_lightTiles;
-            Utilities::Ref<Objects::Texture> m_shadowmaps;
-            Utilities::Ref<Objects::Texture> m_screenSpaceShadowmapDownsampled;
-            Utilities::Ref<Objects::Texture> m_screenSpaceShadowmap;
-            Utilities::Ref<Objects::Texture> m_depthTarget2D;
-            Utilities::Ref<Objects::Texture> m_depthTargetCube;
-            Utilities::Ref<Objects::Texture> m_shadowTargetCube;
+            RHI::Objects::Shader* m_computeLightAssignment = nullptr;
+            RHI::Objects::Shader* m_computeCopyCubeShadow = nullptr;
+            RHI::Objects::Shader* m_computeScreenSpaceShadow = nullptr;
+            RHI::Objects::BufferRef m_lightsBuffer;
+            RHI::Objects::BufferRef m_lightMatricesBuffer;
+            RHI::Objects::BufferRef m_lightsLists;
+            RHI::Objects::TextureRef m_lightTiles;
+            RHI::Objects::TextureRef m_shadowmaps;
+            RHI::Objects::TextureRef m_screenSpaceShadowmapDownsampled;
+            RHI::Objects::TextureRef m_screenSpaceShadowmap;
+            RHI::Objects::TextureRef m_depthTarget2D;
+            RHI::Objects::TextureRef m_depthTargetCube;
+            RHI::Objects::TextureRef m_shadowTargetCube;
             
             std::vector<ShadowbatchInfo> m_shadowBatches;
             Utilities::MemoryBlock<ECS::EntityViews::LightRenderableView*> m_lights;

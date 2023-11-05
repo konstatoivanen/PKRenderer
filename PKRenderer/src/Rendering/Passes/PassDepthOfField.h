@@ -1,9 +1,8 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Core/ApplicationConfig.h"
-#include "Rendering/Objects/Texture.h"
 #include "Rendering/Objects/ConstantBuffer.h"
-#include "Rendering/Objects/Shader.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::Rendering::Passes
 {
@@ -20,16 +19,16 @@ namespace PK::Rendering::Passes
 
         public:
             PassDepthOfField(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
-            void ComputeAutoFocus(Objects::CommandBuffer* cmd, uint32_t screenHeight);
-            void Render(Objects::CommandBuffer* cmd, Objects::Texture* destination);
+            void ComputeAutoFocus(RHI::Objects::CommandBuffer* cmd, uint32_t screenHeight);
+            void Render(RHI::Objects::CommandBuffer* cmd, RHI::Objects::Texture* destination);
             void OnUpdateParameters(const Core::ApplicationConfig* config);
 
         private:
-            Objects::Shader* m_computeDepthOfField = nullptr;
-            Objects::Shader* m_computeAutoFocus = nullptr;
-            Utilities::Ref<Objects::Texture> m_colorTarget;
-            Utilities::Ref<Objects::Texture> m_alphaTarget;
-            Utilities::Ref<Objects::Buffer> m_autoFocusParams;
+            RHI::Objects::Shader* m_computeDepthOfField = nullptr;
+            RHI::Objects::Shader* m_computeAutoFocus = nullptr;
+            RHI::Objects::TextureRef m_colorTarget;
+            RHI::Objects::TextureRef m_alphaTarget;
+            RHI::Objects::BufferRef m_autoFocusParams;
             uint32_t m_passPrefilter = 0u;
             uint32_t m_passDiskblur = 0u;
             uint32_t m_passUpsample = 0u;

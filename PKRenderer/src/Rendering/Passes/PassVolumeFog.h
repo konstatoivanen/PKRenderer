@@ -1,9 +1,8 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Core/ApplicationConfig.h"
-#include "Rendering/Objects/Texture.h"
 #include "Rendering/Objects/ConstantBuffer.h"
-#include "Rendering/Objects/Shader.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::Rendering::Passes
 {
@@ -11,22 +10,22 @@ namespace PK::Rendering::Passes
     {
         public:
             PassVolumeFog(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
-            void ComputeDensity(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
-            void Compute(Objects::CommandBuffer* cmd, const Math::uint3& resolution);
-            void Render(Objects::CommandBuffer* cmd, Objects::Texture* destination);
+            void ComputeDensity(RHI::Objects::CommandBuffer* cmd, const Math::uint3& resolution);
+            void Compute(RHI::Objects::CommandBuffer* cmd, const Math::uint3& resolution);
+            void Render(RHI::Objects::CommandBuffer* cmd, RHI::Objects::Texture* destination);
             void OnUpdateParameters(const Core::ApplicationConfig* config);
 
         private:
-            Utilities::Ref<Objects::ConstantBuffer> m_volumeResources;
-            Utilities::Ref<Objects::Texture> m_volumeInject;
-            Utilities::Ref<Objects::Texture> m_volumeInjectPrev;
-            Utilities::Ref<Objects::Texture> m_volumeDensity;
-            Utilities::Ref<Objects::Texture> m_volumeDensityPrev;
-            Utilities::Ref<Objects::Texture> m_volumeScatter;
-            Utilities::Ref<Objects::Texture> m_volumeTransmittance;
-            Objects::Shader* m_computeDensity = nullptr;
-            Objects::Shader* m_computeInject = nullptr;
-            Objects::Shader* m_computeScatter = nullptr;
-            Objects::Shader* m_shaderComposite = nullptr;
+            Rendering::Objects::ConstantBufferRef m_volumeResources;
+            RHI::Objects::TextureRef m_volumeInject;
+            RHI::Objects::TextureRef m_volumeInjectPrev;
+            RHI::Objects::TextureRef m_volumeDensity;
+            RHI::Objects::TextureRef m_volumeDensityPrev;
+            RHI::Objects::TextureRef m_volumeScatter;
+            RHI::Objects::TextureRef m_volumeTransmittance;
+            RHI::Objects::Shader* m_computeDensity = nullptr;
+            RHI::Objects::Shader* m_computeInject = nullptr;
+            RHI::Objects::Shader* m_computeScatter = nullptr;
+            RHI::Objects::Shader* m_shaderComposite = nullptr;
     };
 }

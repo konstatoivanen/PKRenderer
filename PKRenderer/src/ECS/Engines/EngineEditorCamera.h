@@ -1,10 +1,10 @@
 #pragma once
+#include "Core/ApplicationConfig.h"
+#include "Core/ConsoleCommandBinding.h"
 #include "Core/Services/Input.h"
 #include "Core/Services/Time.h"
 #include "Core/Services/IService.h"
 #include "Core/Services/Sequencer.h"
-#include "Core/ConsoleCommandBinding.h"
-#include "Core/ApplicationConfig.h"
 
 namespace PK::ECS::Engines
 {

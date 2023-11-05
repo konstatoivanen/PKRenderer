@@ -1,6 +1,6 @@
 #pragma once
-#include "BindArray.h"
 #include "Utilities/IndexedSet.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::Rendering::Objects
 {
@@ -8,7 +8,7 @@ namespace PK::Rendering::Objects
     class BindSet : public Utilities::NoCopy
     {
         public:
-            BindSet(uint32_t capacity) : m_array(BindArray<T>::Create(capacity)), m_indices(capacity) {}
+            BindSet(uint32_t capacity) : m_array(RHI::Objects::BindArray<T>::Create(capacity)), m_indices(capacity) {}
 
             uint32_t Set(T* value)
             {
@@ -35,11 +35,11 @@ namespace PK::Rendering::Objects
                 m_array->Clear();
             }
 
-            operator BindArray<T>* () { return m_array.get(); }
-            operator const BindArray<T>* () { return m_array.get(); }
+            operator RHI::Objects::BindArray<T>* () { return m_array.get(); }
+            operator const RHI::Objects::BindArray<T>* () { return m_array.get(); }
 
         private:
-            Utilities::Ref<BindArray<T>> m_array;
+            RHI::Objects::BindArrayRef<T> m_array;
             Utilities::IndexedSet<T> m_indices;
     };
 }

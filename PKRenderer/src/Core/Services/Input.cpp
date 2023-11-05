@@ -1,11 +1,13 @@
 #include "PreCompiledHeader.h"
-#include "Input.h"
-#include "Core/Services/Log.h"
 #include "Core/UpdateStep.h"
-#include "Rendering/GraphicsAPI.h"
+#include "Core/Services/Log.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "Input.h"
 
 namespace PK::Core::Services
 {
+    using namespace PK::Rendering::RHI;
+
     void Input::OnKeyInput(int key, int scancode, int action, int mods)
     {
         if (key < 0 || key >= (int)KeyCode::COUNT)

@@ -1,16 +1,17 @@
 #include "PrecompiledHeader.h"
-#include "PassPostEffects.h"
-#include "Rendering/HashCache.h"
 #include "Math/FunctionsColor.h"
+#include "Rendering/HashCache.h"
+#include "PassPostEffects.h"
 
 namespace PK::Rendering::Passes
 {
-    using namespace Core;
-    using namespace Core::Services;
-    using namespace Math;
-    using namespace Utilities;
-    using namespace Structs;
-    using namespace Objects;
+    using namespace PK::Math;
+    using namespace PK::Utilities;
+    using namespace PK::Core;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering::Objects;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     PassPostEffectsComposite::PassPostEffectsComposite(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {

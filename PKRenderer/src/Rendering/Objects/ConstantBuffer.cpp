@@ -3,7 +3,8 @@
 
 namespace PK::Rendering::Objects
 {
-    using namespace Structs;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     ConstantBuffer::ConstantBuffer(const BufferLayout& layout, const char* name) :
         ShaderPropertyBlock(layout.GetStride()),

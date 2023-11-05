@@ -1,13 +1,11 @@
 #include "PrecompiledHeader.h"
-#include "EngineDebug.h"
-#include "ECS/Builders/Builders.h"
-#include "Rendering/Objects/VirtualMesh.h"
-#include "Rendering/MeshUtility.h"
-#include "Rendering/HashCache.h"
 #include "Math/FunctionsMisc.h"
 #include "Math/FunctionsColor.h"
-#include "Rendering/HashCache.h"
 #include "Core/Services/Time.h"
+#include "ECS/Builders/Builders.h"
+#include "Rendering/MeshUtility.h"
+#include "Rendering/HashCache.h"
+#include "EngineDebug.h"
 
 namespace PK::ECS::Engines
 {
@@ -18,6 +16,8 @@ namespace PK::ECS::Engines
     using namespace PK::Rendering;
     using namespace PK::Rendering::Structs;
     using namespace PK::Rendering::Objects;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     EngineDebug::EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, const ApplicationConfig* config)
     {

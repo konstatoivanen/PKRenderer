@@ -4,7 +4,7 @@
 namespace PK::Rendering::Objects
 {
     using namespace PK::Math;
-    using namespace PK::Rendering::Structs;
+    using namespace PK::Rendering::RHI;
 
     void ShaderPropertyBlock::ReserveLayout(const BufferLayout& layout)
     {

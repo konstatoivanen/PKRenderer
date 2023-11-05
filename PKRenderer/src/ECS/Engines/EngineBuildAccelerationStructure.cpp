@@ -1,14 +1,15 @@
 #include "PrecompiledHeader.h"
-#include "EngineBuildAccelerationStructure.h"
+#include "Math/FunctionsIntersect.h"
 #include "ECS/EntityViews/BaseRenderableView.h"
 #include "ECS/EntityViews/MeshRenderableView.h"
-#include "Math/FunctionsIntersect.h"
+#include "EngineBuildAccelerationStructure.h"
 
 namespace PK::ECS::Engines
 {
-    using namespace PK::Rendering::Structs;
-    using namespace PK::ECS::EntityViews;
     using namespace PK::Math;
+    using namespace PK::ECS::EntityViews;
+    using namespace PK::Rendering::Structs;
+    using namespace PK::Rendering::RHI::Objects;
 
     EngineBuildAccelerationStructure::EngineBuildAccelerationStructure(EntityDatabase* entityDb) : m_entityDb(entityDb)
     {
@@ -49,13 +50,19 @@ namespace PK::ECS::Engines
 
         structure->BeginWrite(token->queue, (uint32_t)m_renderableEgids.size());
 
+        AccelerationStructureGeometryInfo geometry{};
+        geometry.customIndex = 0u;
+
         for (const auto& egid : m_renderableEgids)
         {
             auto renderable = m_entityDb->Query<MeshRenderableView>(egid);
 
             for (const auto& material : renderable->materials->materials)
             {
-                structure->AddInstance(renderable->mesh->sharedMesh, material.submesh, 0u, renderable->transform->localToWorld);
+                if (renderable->mesh->sharedMesh->TryGetAccelerationStructureGeometryInfo(material.submesh, &geometry))
+                {
+                    structure->AddInstance(geometry, renderable->transform->localToWorld);
+                }
             }
         }
 

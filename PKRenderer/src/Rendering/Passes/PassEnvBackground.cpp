@@ -1,15 +1,16 @@
 #include "PrecompiledHeader.h"
-#include "PassEnvBackground.h"
 #include "Rendering/HashCache.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "PassEnvBackground.h"
 
 namespace PK::Rendering::Passes
 {
-    using namespace Utilities;
-    using namespace Core;
-    using namespace Core::Services;
-    using namespace Math;
-    using namespace Objects;
-    using namespace Structs;
+    using namespace PK::Math;
+    using namespace PK::Utilities;
+    using namespace PK::Core;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     PassEnvBackground::PassEnvBackground(AssetDatabase* assetDatabase)
     {

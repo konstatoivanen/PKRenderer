@@ -1,9 +1,7 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Core/ApplicationConfig.h"
-#include "Rendering/Objects/CommandBuffer.h"
-#include "Rendering/Objects/Shader.h"
-#include "Rendering/Objects/Texture.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::Rendering::Passes
 {
@@ -11,13 +9,13 @@ namespace PK::Rendering::Passes
     {
         public:
             PassEnvBackground(Core::Services::AssetDatabase* assetDatabase);
-            void ComputeSH(Objects::CommandBuffer* cmd);
-            void RenderBackground(Objects::CommandBuffer* cmd);
+            void ComputeSH(RHI::Objects::CommandBuffer* cmd);
+            void RenderBackground(RHI::Objects::CommandBuffer* cmd);
             void OnUpdateParameters(PK::Core::Services::AssetImportToken<PK::Core::ApplicationConfig>* token);
 
         private:
-            Utilities::Ref<Objects::Buffer> m_shBuffer;
-            Objects::Shader* m_backgroundShader = nullptr;
-            Objects::Shader* m_integrateSHShader = nullptr;
+            RHI::Objects::BufferRef m_shBuffer;
+            RHI::Objects::Shader* m_backgroundShader = nullptr;
+            RHI::Objects::Shader* m_integrateSHShader = nullptr;
     };
 }

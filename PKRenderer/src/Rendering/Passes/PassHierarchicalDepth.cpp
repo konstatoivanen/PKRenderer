@@ -1,16 +1,16 @@
 #include "PrecompiledHeader.h"
-#include "PassHierarchicalDepth.h"
-#include "Rendering/GraphicsAPI.h"
 #include "Rendering/HashCache.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "PassHierarchicalDepth.h"
 
 namespace PK::Rendering::Passes
 {
-    using namespace Utilities;
-    using namespace Core;
-    using namespace Core::Services;
-    using namespace Math;
-    using namespace Objects;
-    using namespace Structs;
+    using namespace PK::Math;
+    using namespace PK::Utilities;
+    using namespace PK::Core;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     PassHierarchicalDepth::PassHierarchicalDepth(AssetDatabase* assetDatabase, Core::ApplicationConfig* config)
     {
@@ -28,7 +28,7 @@ namespace PK::Rendering::Passes
         m_hierarchicalDepth = Texture::Create(hizDesc, "Scene.HierarchicalDepth");
     }
     
-    void PassHierarchicalDepth::Compute(Objects::CommandBuffer* cmd, uint3 resolution)
+    void PassHierarchicalDepth::Compute(RHI::Objects::CommandBuffer* cmd, uint3 resolution)
     {
         auto hash = HashCache::Get();
 

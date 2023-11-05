@@ -2,8 +2,7 @@
 #include "PrecompiledHeader.h"
 #include "Utilities/NoCopy.h"
 #include "Core/Services/ServiceRegister.h"
-#include "Core/Window.h"
-#include "Rendering/GraphicsAPI.h"
+#include "Rendering/RHI/Driver.h"
 
 int main(int argc, char** argv);
 
@@ -27,7 +26,7 @@ namespace PK::Core
         template<typename T>
         inline static T* GetService() { return Get().m_services->Get<T>(); }
 
-        inline static Window* GetPrimaryWindow() { return Get().m_window.get(); }
+        inline static Rendering::RHI::Window* GetPrimaryWindow() { return Get().m_window.get(); }
 
     private:
         void Execute();
@@ -36,8 +35,8 @@ namespace PK::Core
         static Application* s_Instance;
         bool m_Running = true;
 
-        Utilities::Scope<Rendering::GraphicsDriver> m_graphicsDriver;
-        Utilities::Scope<Window> m_window;
+        Utilities::Scope<Rendering::RHI::Driver> m_graphicsDriver;
+        Utilities::Scope<Rendering::RHI::Window> m_window;
         Utilities::Scope<Services::ServiceRegister> m_services;
 
         friend int ::main(int argc, char** argv);

@@ -4,12 +4,13 @@
 
 namespace PK::Rendering::Passes
 {
-    using namespace Math;
-    using namespace Core;
-    using namespace Core::Services;
-    using namespace Utilities;
-    using namespace Structs;
-    using namespace Objects;
+    using namespace PK::Math;
+    using namespace PK::Utilities;
+    using namespace PK::Core;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering::Objects;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     PassVolumeFog::PassVolumeFog(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
@@ -71,7 +72,7 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetBuffer(hash->pk_Fog_Parameters, m_volumeResources->GetBuffer());
     }
 
-    void PassVolumeFog::ComputeDensity(Objects::CommandBuffer* cmd, const Math::uint3& resolution)
+    void PassVolumeFog::ComputeDensity(CommandBuffer* cmd, const Math::uint3& resolution)
     {
         cmd->BeginDebugScope("Fog.InjectionScattering", PK_COLOR_MAGENTA);
 
@@ -95,7 +96,7 @@ namespace PK::Rendering::Passes
         cmd->EndDebugScope();
     }
 
-    void PassVolumeFog::Compute(Objects::CommandBuffer* cmd, const Math::uint3& resolution)
+    void PassVolumeFog::Compute(CommandBuffer* cmd, const Math::uint3& resolution)
     {
         cmd->BeginDebugScope("Fog.InjectionScattering", PK_COLOR_MAGENTA);
 

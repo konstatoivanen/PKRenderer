@@ -1,10 +1,10 @@
 #include "PrecompiledHeader.h"
-#include "EnginePKAssetBuilder.h"
 #include "Core/Services/Log.h"
+#include "EnginePKAssetBuilder.h"
 
 namespace PK::ECS::Engines
 {
-    using namespace Core;
+    using namespace PK::Core;
 
     EnginePKAssetBuilder::EnginePKAssetBuilder(const ApplicationArguments& arguments) : m_executablePath(L"")
     {

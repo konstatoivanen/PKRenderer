@@ -3,8 +3,8 @@
 #include "CullingTokens.h"
 #include "BatcherToken.h"
 #include "Rendering/Structs/Enums.h"
-#include "Rendering/Objects/CommandBuffer.h"
-#include "Rendering/GBuffers.h"
+#include "Rendering/Structs/GBuffers.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::ECS::Tokens
 {
@@ -20,7 +20,7 @@ namespace PK::ECS::Tokens
 
 	struct TokenRenderEvent
 	{
-		Rendering::Objects::CommandBuffer* cmd;
+		Rendering::RHI::Objects::CommandBuffer* cmd;
 		Rendering::GBuffersViewFull gbuffers;
 		VisibilityList* visibilityList;
 		IBatcher* batcher;
@@ -30,7 +30,7 @@ namespace PK::ECS::Tokens
 		float znear;
 		float zfar;
 
-		TokenRenderEvent(Rendering::Objects::CommandBuffer* cmd,
+		TokenRenderEvent(Rendering::RHI::Objects::CommandBuffer* cmd,
 						 Rendering::GBuffersViewFull gbuffers,
 						 VisibilityList* visibilityList,
 						 IBatcher* batcher,

@@ -8,13 +8,15 @@
 
 namespace PK::Rendering
 {
-    using namespace Utilities;
-    using namespace Core;
-    using namespace Core::Services;
-    using namespace Math;
-    using namespace ECS;
-    using namespace Objects;
-    using namespace Structs;
+    using namespace PK::Math;
+    using namespace PK::Utilities;
+    using namespace PK::Core;
+    using namespace PK::Core::Services;
+    using namespace PK::ECS;
+    using namespace PK::Rendering::Structs;
+    using namespace PK::Rendering::Objects;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     RenderPipeline::RenderPipeline(AssetDatabase* assetDatabase, EntityDatabase* entityDb, Sequencer* sequencer, ApplicationConfig* config) :
         m_passHierarchicalDepth(assetDatabase, config),
@@ -140,7 +142,7 @@ namespace PK::Rendering
         GraphicsAPI::SetTexture(hash->pk_LightCookies, lightCookies);
         GraphicsAPI::SetBuffer(hash->pk_PerFrameConstants, *m_constantsPerFrame.get());
 
-        Structs::SamplerDescriptor samplerDesc{};
+        SamplerDescriptor samplerDesc{};
         samplerDesc.anisotropy = 16.0f;
         samplerDesc.filterMin = FilterMode::Trilinear;
         samplerDesc.filterMag = FilterMode::Trilinear;
@@ -162,7 +164,7 @@ namespace PK::Rendering
 
     RenderPipeline::~RenderPipeline()
     {
-        GraphicsAPI::GetActiveDriver()->WaitForIdle();
+        GraphicsAPI::GetDriver()->WaitForIdle();
         m_constantsPerFrame = nullptr;
         m_sceneStructure = nullptr;
         m_gbuffers = {};
@@ -386,7 +388,7 @@ namespace PK::Rendering
         m_passVolumeFog.OnUpdateParameters(config);
     }
 
-    void RenderPipeline::DispatchRenderEvent(Objects::CommandBuffer* cmd, ECS::Tokens::RenderEvent renderEvent, const char* name, uint32_t* outPassGroup)
+    void RenderPipeline::DispatchRenderEvent(CommandBuffer* cmd, ECS::Tokens::RenderEvent renderEvent, const char* name, uint32_t* outPassGroup)
     {
         if (name != nullptr)
         {

@@ -1,14 +1,14 @@
 #include "PrecompiledHeader.h"
 #include "PassDepthOfField.h"
 #include "Rendering/HashCache.h"
-#include "Rendering/GraphicsAPI.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::Rendering::Passes
 {
-    using namespace Core;
-    using namespace Core::Services;
-    using namespace Rendering::Objects;
-    using namespace Rendering::Structs;
+    using namespace PK::Core;
+    using namespace PK::Core::Services;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     PassDepthOfField::PassDepthOfField(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
@@ -42,14 +42,14 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetBuffer(HashCache::Get()->pk_DoF_AutoFocusParams, m_autoFocusParams.get());
     }
 
-    void PassDepthOfField::ComputeAutoFocus(Objects::CommandBuffer* cmd, uint32_t screenHeight)
+    void PassDepthOfField::ComputeAutoFocus(CommandBuffer* cmd, uint32_t screenHeight)
     {
         m_constants.pk_DoF_MaximumCoC = std::min(0.05f, 10.0f / screenHeight);
         GraphicsAPI::SetConstant<Constants>(HashCache::Get()->pk_DoF_Params, m_constants);
         cmd->Dispatch(m_computeAutoFocus, 0, { 1u, 1u, 1u });
     }
 
-    void PassDepthOfField::Render(Objects::CommandBuffer* cmd, Texture* destination)
+    void PassDepthOfField::Render(CommandBuffer* cmd, Texture* destination)
     {
         cmd->BeginDebugScope("DepthOfField", Math::PK_COLOR_MAGENTA);
 

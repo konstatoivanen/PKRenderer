@@ -39,20 +39,4 @@ namespace PK::Rendering::Structs
         Math::float4 tangent;
         Math::float2 texcoord;
     };
-
-    struct IndexRange
-    {
-        size_t offset = 0;
-        size_t count = 0;
-
-        constexpr bool operator < (const IndexRange& other) const
-        {
-            return offset != other.offset ? offset < other.offset : count < other.count;
-        }
-
-        constexpr bool operator == (const IndexRange& other) const
-        {
-            return offset == other.offset && count == other.count;
-        }
-    };
 }

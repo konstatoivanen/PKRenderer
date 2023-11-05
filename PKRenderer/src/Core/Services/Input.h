@@ -1,9 +1,9 @@
 #pragma once
+#include <gfx.h>
+#include "Math/Types.h"
 #include "Core/Services/ServiceRegister.h"
 #include "Core/Services/Sequencer.h"
-#include "Math/Types.h"
-#include "Core/Window.h"
-#include <gfx.h>
+#include "Rendering/RHI/Window.h"
 
 namespace PK::Core::Services
 {
@@ -140,7 +140,7 @@ namespace PK::Core::Services
         COUNT           = GLFW_KEY_LAST + 1,
     };
     
-    class Input : public IService, public IConditionalStep<Window>
+    class Input : public IService, public IConditionalStep<Rendering::RHI::Window>
     {
         public:
             Input(Sequencer* sequencer) : m_sequencer(sequencer) {}
@@ -164,7 +164,7 @@ namespace PK::Core::Services
             inline float GetMouseScrollX() const { return m_mouseScroll.x; }
             inline float GetMouseScrollY() const { return m_mouseScroll.y; }
     
-            void Step(Window* window, int condition) final;
+            void Step(Rendering::RHI::Window* window, int condition) final;
     
             void OnKeyInput(int key, int scancode, int action, int mods);
             void OnScrollInput(double scrollX, double scrollY);

@@ -1,16 +1,17 @@
 #include "PrecompiledHeader.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 #include "ShaderBindingTable.h"
-#include "Rendering/GraphicsAPI.h"
 
 namespace PK::Rendering::Objects
 {
-    using namespace PK::Rendering::Structs;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
     void ShaderBindingTable::Validate(CommandBuffer* cmd, Shader* shader)
     {
         // @TODO parameterize this
         auto selector = shader->GetVariantSelector();
-        selector.SetKeywordsFrom(GraphicsAPI::GetActiveDriver()->globalResources);
+        selector.SetKeywordsFrom(GraphicsAPI::GetDriver()->globalResources);
         auto newVariantIndex = selector.GetIndex();
         auto newHash = shader->GetAssetHash();
 

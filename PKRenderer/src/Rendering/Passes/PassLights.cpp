@@ -1,11 +1,12 @@
 #include "PrecompiledHeader.h"
-#include "PassLights.h"
-#include "Utilities/VectorUtilities.h"
+#include <bend/bend_sss_cpu.h>
 #include "Math/FunctionsIntersect.h"
 #include "Math/FunctionsMisc.h"
+#include "Utilities/VectorUtilities.h"
 #include "ECS/EntityViews/MeshRenderableView.h"
 #include "Rendering/HashCache.h"
-#include "bend/bend_sss_cpu.h"
+#include "Rendering/Structs/StructsCommon.h"
+#include "PassLights.h"
 
 using namespace PK::Core;
 using namespace PK::Core::Services;
@@ -16,6 +17,8 @@ using namespace PK::ECS::Tokens;
 using namespace PK::ECS::EntityViews;
 using namespace PK::Rendering::Objects;
 using namespace PK::Rendering::Structs;
+using namespace PK::Rendering::RHI;
+using namespace PK::Rendering::RHI::Objects;
 
 template<>
 struct Vector::Comparer<LightRenderableView*>
@@ -165,7 +168,7 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
     }
 
-    void PassLights::RenderShadows(Objects::CommandBuffer* cmd)
+    void PassLights::RenderShadows(CommandBuffer* cmd)
     {
         auto hash = HashCache::Get();
         auto atlasIndex = 0u;
@@ -204,7 +207,7 @@ namespace PK::Rendering::Passes
         }
     }
 
-    void PassLights::RenderScreenSpaceShadows(Objects::CommandBuffer* cmd, const Math::float4x4& worldToClip, const Math::uint3& resolution)
+    void PassLights::RenderScreenSpaceShadows(CommandBuffer* cmd, const Math::float4x4& worldToClip, const Math::uint3& resolution)
     {
         if (m_shadowBatches.size() == 0u || m_shadowBatches.at(0).type != LightType::Directional)
         {

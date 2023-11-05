@@ -1,6 +1,5 @@
 #pragma once
 #include "Rendering/Objects/Mesh.h"
-#include "Rendering/Objects/VirtualMesh.h"
 #include "Math/Types.h"
 
 namespace PK::Rendering::MeshUtility

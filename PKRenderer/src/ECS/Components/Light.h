@@ -1,6 +1,6 @@
 #pragma once
-#include "Rendering/Structs/Enums.h"
 #include "Math/Types.h"
+#include "Rendering/Structs/Enums.h"
 
 namespace PK::ECS::Components
 {
