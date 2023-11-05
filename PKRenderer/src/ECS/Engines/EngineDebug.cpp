@@ -39,12 +39,6 @@ namespace PK::ECS::Engines
         m_virtualBaseMesh = CreateRef<Mesh>(virtualVBuffer0, virtualIBuffer);
         m_virtualBaseMesh->AddVertexBuffer(virtualVBuffer1);
 
-        // @TODO replace this crap with this extention when it comes out of beta.
-        // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_KHR_ray_tracing_position_fetch.html
-        auto hash = HashCache::Get();
-        GraphicsAPI::SetBuffer(hash->pk_RT_Vertices, virtualVBuffer1.get());
-        GraphicsAPI::SetBuffer(hash->pk_RT_Indices, virtualIBuffer.get());
-
         auto columnMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Columns.pkmesh", &m_virtualBaseMesh);
         auto rocksMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Rocks.pkmesh", &m_virtualBaseMesh);
         auto sphereMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Sphere", MeshUtility::GetSphere(m_virtualBaseMesh, PK_FLOAT3_ZERO, 1.0f));

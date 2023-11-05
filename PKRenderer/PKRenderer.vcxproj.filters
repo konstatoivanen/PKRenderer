@@ -1497,6 +1497,9 @@
     <ClInclude Include="include\bend\bend_sss_cpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanPhysicalDeviceRequirements.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -2319,6 +2322,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Passes\PassEnvBackground.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\VulkanRHI\Utilities\VulkanPhysicalDeviceRequirements.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

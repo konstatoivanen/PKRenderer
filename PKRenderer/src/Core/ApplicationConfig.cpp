@@ -77,6 +77,7 @@ namespace PK::Core
             &CC_ChannelMixerRed,
             &CC_ChannelMixerGreen,
             &CC_ChannelMixerBlue,
+            &CC_FileLookupTexture,
             &BloomIntensity,
             &BloomLensDirtIntensity,
             &FileBloomDirt,

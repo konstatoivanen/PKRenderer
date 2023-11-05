@@ -18,7 +18,7 @@ namespace PK::Rendering::Passes
             Objects::Shader* m_computeComposite = nullptr;
             Utilities::Ref<Objects::ConstantBuffer> m_constantsPostProcess;
             Objects::Texture* m_bloomLensDirtTexture;
-            Objects::Texture* m_lut;
+            Objects::Texture* m_colorgradingLut;
             uint32_t m_passIndex = 0u;
     };
 }

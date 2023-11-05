@@ -2,6 +2,7 @@
 #include "Core/Services/Log.h"
 #include "VulkanUtilities.h"
 #include "VulkanExtensions.h"
+#include "VulkanPhysicalDeviceRequirements.h"
 #include <gfx.h>
 #include <vulkan/vk_enum_string_helper.h>
 
@@ -271,34 +272,6 @@ namespace PK::Rendering::VulkanRHI::Utilities
         return presentSupport;
     }
 
-    template<typename TVal>
-    static bool VulkanCheckRequirements(const TVal& values, const TVal& requirements, size_t offset, size_t count)
-    {
-        auto valuesPtr = reinterpret_cast<const VkBool32*>(reinterpret_cast<const char*>(&values) + offset);
-        auto requirementsPtr = reinterpret_cast<const VkBool32*>(reinterpret_cast<const char*>(&requirements) + offset);
-
-        for (auto i = 0u; i < count; ++i)
-        {
-            if (!valuesPtr[i] && requirementsPtr[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    template<typename TVal, typename ... Args>
-    static bool VulkanCheckRequirements(const TVal& values, const TVal& requirements, size_t offset, size_t count, Args&&... args)
-    {
-        if (!VulkanCheckRequirements(values, requirements, offset, count))
-        {
-            return false;
-        }
-
-        return VulkanCheckRequirements(args...);
-    }
-
     void VulkanSelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, const VulkanPhysicalDeviceRequirements& requirements, VkPhysicalDevice* selectedDevice)
     {
         auto devices = VulkanGetPhysicalDevices(instance);
@@ -358,16 +331,7 @@ namespace PK::Rendering::VulkanRHI::Utilities
             VulkanPhysicalDeviceFeatures features{};
             vkGetPhysicalDeviceFeatures2(device, &features.vk10);
 
-            // @TODO refactor this to be part of the features struct
-            if (!VulkanCheckRequirements(
-                features.vk10, requiredFeatures.vk10, offsetof(VkPhysicalDeviceFeatures2, features), 55,
-                features.vk11, requiredFeatures.vk11, offsetof(VkPhysicalDeviceVulkan11Features, storageBuffer16BitAccess), 12,
-                features.vk12, requiredFeatures.vk12, offsetof(VkPhysicalDeviceVulkan12Features, samplerMirrorClampToEdge), 47,
-                features.vk13, requiredFeatures.vk13, offsetof(VkPhysicalDeviceVulkan13Features, robustImageAccess), 15,
-                features.accelerationStructure, requiredFeatures.accelerationStructure, offsetof(VkPhysicalDeviceAccelerationStructureFeaturesKHR, accelerationStructure), 5,
-                features.rayTracingPipeline, requiredFeatures.rayTracingPipeline, offsetof(VkPhysicalDeviceRayTracingPipelineFeaturesKHR, rayTracingPipeline), 5,
-                features.rayQuery, requiredFeatures.rayQuery, offsetof(VkPhysicalDeviceRayQueryFeaturesKHR, rayQuery), 1,
-                features.atomicFloat, requiredFeatures.atomicFloat, offsetof(VkPhysicalDeviceShaderAtomicFloatFeaturesEXT, shaderBufferFloat32Atomics), 12))
+            if (!VulkanPhysicalDeviceFeatures::CheckRequirements(requirements.features, features))
             {
                 continue;
             }

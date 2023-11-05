@@ -582,6 +582,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanBarrierHandler.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Services\VulkanLayoutCache.h" />
     <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanExtensions.h" />
+    <ClInclude Include="src\Rendering\VulkanRHI\Utilities\VulkanPhysicalDeviceRequirements.h" />
     <ClInclude Include="src\Utilities\Bitmask.h" />
     <ClInclude Include="src\Utilities\BufferIterator.h" />
     <ClInclude Include="src\Utilities\BufferView.h" />
@@ -1008,6 +1009,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Rendering\VulkanRHI\Objects\VulkanSparsePageTable.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanBarrierHandler.cpp" />
     <ClCompile Include="src\Rendering\VulkanRHI\Services\VulkanLayoutCache.cpp" />
+    <ClCompile Include="src\Rendering\VulkanRHI\Utilities\VulkanPhysicalDeviceRequirements.cpp" />
     <ClCompile Include="src\Utilities\FileIO.cpp" />
     <ClCompile Include="src\Utilities\FileIOBMP.cpp" />
     <ClCompile Include="src\Utilities\HashHelpers.cpp" />

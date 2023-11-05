@@ -49,7 +49,8 @@ namespace PK::Rendering
                     VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
                     VK_KHR_RAY_QUERY_EXTENSION_NAME,
                     VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME,
-                    VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME
+                    VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME,
+                    VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME
                 };
 
                 driver = CreateScope<VulkanDriver>(VulkanContextProperties

@@ -1,4 +1,3 @@
-#extension GL_KHR_shader_subgroup_ballot : enable
 #include includes/GBuffers.glsl
 #include includes/SceneGI.glsl
 #include includes/SceneGIRT.glsl
@@ -147,31 +146,18 @@ void main()
 }
 
 #pragma PROGRAM_RAY_CLOSEST_HIT
-PK_DECLARE_RT_PAYLOAD_IN(uint2, payload, 0);
+#extension GL_EXT_ray_tracing_position_fetch : require
 
-// @TODO replace this crap with this extention when it comes out of beta.
-// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_KHR_ray_tracing_position_fetch.html
-PK_DECLARE_READONLY_BUFFER(float3, pk_RT_Vertices, PK_SET_DRAW);
-PK_DECLARE_READONLY_BUFFER(uint, pk_RT_Indices, PK_SET_DRAW);
+PK_DECLARE_RT_PAYLOAD_IN(uint2, payload, 0);
 
 void main()
 {
-    uint3 indices = uint3
-    (
-        PK_BUFFER_DATA(pk_RT_Indices, 3 * gl_PrimitiveID + 0),
-        PK_BUFFER_DATA(pk_RT_Indices, 3 * gl_PrimitiveID + 1),
-        PK_BUFFER_DATA(pk_RT_Indices, 3 * gl_PrimitiveID + 2)
-    );
+    const float3 p0 = gl_HitTriangleVertexPositionsEXT[0];
+    const float3 p1 = gl_HitTriangleVertexPositionsEXT[1];
+    const float3 p2 = gl_HitTriangleVertexPositionsEXT[2];
+    const float3 v0 = normalize(p1 - p0);
+    const float3 v1 = normalize(p2 - p0);
 
-    float3 positions[3] =
-    {
-        PK_BUFFER_DATA(pk_RT_Vertices, indices[0]),
-        PK_BUFFER_DATA(pk_RT_Vertices, indices[1]),
-        PK_BUFFER_DATA(pk_RT_Vertices, indices[2])
-    };
-
-    float3 v0 = normalize(positions[1] - positions[0]);
-    float3 v1 = normalize(positions[2] - positions[0]);
     float3 normal = cross(v0, v1);
     normal = gl_ObjectToWorldEXT * float4(normal, 0.0f);
 

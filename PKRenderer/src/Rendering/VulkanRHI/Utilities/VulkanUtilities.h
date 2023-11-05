@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Services/Log.h"
 #include "VulkanStructs.h"
+#include "VulkanPhysicalDeviceRequirements.h"
 #include "Rendering/Structs/Enums.h"
 #include "Rendering/Structs/Descriptors.h"
 #include "Rendering/VulkanRHI/Utilities/VulkanEnumConversion.h"

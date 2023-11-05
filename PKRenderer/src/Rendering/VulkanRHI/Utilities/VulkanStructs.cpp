@@ -8,17 +8,6 @@ namespace PK::Rendering::VulkanRHI
 {
     using namespace Structs;
 
-    VulkanPhysicalDeviceFeatures::VulkanPhysicalDeviceFeatures()
-    {
-        vk10.pNext = &vk11;
-        vk11.pNext = &vk12;
-        vk12.pNext = &vk13;
-        vk13.pNext = &accelerationStructure;
-        accelerationStructure.pNext = &rayTracingPipeline;
-        rayTracingPipeline.pNext = &rayQuery;
-        rayQuery.pNext = &atomicFloat;
-    }
-
     VulkanBufferCreateInfo::VulkanBufferCreateInfo(BufferUsage usage, size_t size, const VulkanQueueFamilies* families)
     {
         if (families)

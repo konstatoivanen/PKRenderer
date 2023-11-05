@@ -90,6 +90,7 @@ namespace PK::Core
         DECLARE_VALUE(Math::uint, CC_ChannelMixerRed, 0xFF0000FF)
         DECLARE_VALUE(Math::uint, CC_ChannelMixerGreen, 0x00FF00FF)
         DECLARE_VALUE(Math::uint, CC_ChannelMixerBlue, 0x0000FFFF)
+        DECLARE_VALUE(std::string, CC_FileLookupTexture, "T_CC_LUT32")
 
         DECLARE_VALUE(float, BloomIntensity, 0.0f)
         DECLARE_VALUE(float, BloomLensDirtIntensity, 0.0f)

@@ -79,18 +79,18 @@ namespace PK::Rendering::Passes
         auto config = token->asset;
 
         m_bloomLensDirtTexture = token->assetDatabase->Load<Texture>(config->FileBloomDirt.value.c_str());
-        m_lut = token->assetDatabase->Load<Texture>("res/textures/T_CC_LUT32.ktx2");
+        m_colorgradingLut = token->assetDatabase->Load<Texture>(config->CC_FileLookupTexture.value.c_str());
 
-        auto smp = m_lut->GetSamplerDescriptor();
+        auto smp = m_colorgradingLut->GetSamplerDescriptor();
         smp.wrap[0] = WrapMode::Clamp;
         smp.wrap[1] = WrapMode::Clamp;
         smp.wrap[2] = WrapMode::Clamp;
         smp.filterMin = FilterMode::Trilinear;
         smp.filterMag = FilterMode::Trilinear;
-        m_lut->SetSampler(smp);
+        m_colorgradingLut->SetSampler(smp);
 
         GraphicsAPI::SetTexture(hash->pk_Bloom_LensDirtTex, m_bloomLensDirtTexture);
-        GraphicsAPI::SetTexture(hash->pk_CC_LutTex, m_lut);
+        GraphicsAPI::SetTexture(hash->pk_CC_LutTex, m_colorgradingLut);
 
         m_constantsPostProcess->Set<float>(hash->pk_Bloom_Intensity, glm::exp(config->BloomIntensity) - 1.0f);
         m_constantsPostProcess->Set<float>(hash->pk_Bloom_DirtIntensity, glm::exp(config->BloomLensDirtIntensity) - 1.0f);

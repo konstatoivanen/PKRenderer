@@ -134,6 +134,11 @@ GLSL Extensions:
 - GL_EXT_ray_tracing
 - GL_KHR_shader_subgroup_ballot
 - GL_EXT_control_flow_attributes
+- GL_KHR_shader_subgroup_ballot
+- GL_KHR_shader_subgroup_arithmetic
+- GL_KHR_shader_subgroup_shuffle
+- GL_KHR_shader_subgroup_vote
+- GL_EXT_ray_tracing_position_fetch
 
 Validation layers:
 - VK_LAYER_KHRONOS_validation
@@ -151,6 +156,7 @@ Device Extensions:
 - VK_KHR_ray_tracing_pipeline
 - VK_KHR_ray_query
 - VK_EXT_conservative_rasterization
+- VK_KHR_ray_tracing_position_fetch
 
 Physical Device Requirements:
 - alphaToOne
@@ -187,6 +193,7 @@ Physical Device Requirements:
 - rayTracingPipeline
 - rayQuery
 - maintenance4
+- rayTracingPositionFetch
 ```
 
 </details>
