@@ -52,8 +52,11 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) final;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) final;
         void DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) final;
-        void Dispatch(Math::uint3 dimensions) final;
-        void DispatchRays(Math::uint3 dimensions) final;
+        void DrawMeshTasks(const Math::uint3& dimensions) final;
+        void DrawMeshTasksIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) final;
+        void DrawMeshTasksIndirectCount(const Buffer* indirectArguments, size_t offset, const Buffer* countBuffer, size_t countOffset, uint32_t maxDrawCount, uint32_t stride) final;
+        void Dispatch(const Math::uint3& dimensions) final;
+        void DispatchRays(const Math::uint3& dimensions) final;
         
         void Blit(Texture* src, Window* dst, FilterMode filter) final;
         void Blit(Window* src, Buffer* dst) final;

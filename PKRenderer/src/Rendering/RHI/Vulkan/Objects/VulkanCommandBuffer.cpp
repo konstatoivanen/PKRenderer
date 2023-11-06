@@ -142,9 +142,9 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
     void VulkanCommandBuffer::DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
     {
+        static Services::VulkanBarrierHandler::AccessRecord record{};
 
         auto vkbuffer = indirectArguments->GetNative<VulkanBuffer>()->GetRaw();
-        static Services::VulkanBarrierHandler::AccessRecord record{};
         record.bufferRange.offset = (uint32_t)offset;
         record.bufferRange.size = drawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
@@ -157,7 +157,61 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         vkCmdDrawIndexedIndirect(m_commandBuffer, vkbuffer->buffer, offset, drawCount, stride);
     }
 
-    void VulkanCommandBuffer::Dispatch(uint3 dimensions)
+    void VulkanCommandBuffer::DrawMeshTasks(const Math::uint3& dimensions)
+    {
+        ValidatePipeline();
+        MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+        vkCmdDrawMeshTasksEXT(m_commandBuffer, dimensions.x, dimensions.y, dimensions.z);
+    }
+
+    void VulkanCommandBuffer::DrawMeshTasksIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
+    {
+        static Services::VulkanBarrierHandler::AccessRecord record{};
+
+        auto vkbuffer = indirectArguments->GetNative<VulkanBuffer>()->GetRaw();
+        record.bufferRange.offset = (uint32_t)offset;
+        record.bufferRange.size = drawCount * stride;
+        record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+        record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+        record.queueFamily = indirectArguments->IsConcurrent() ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        m_renderState->GetServices()->barrierHandler->Record(vkbuffer->buffer, record, PK_ACCESS_OPT_BARRIER);
+
+        ValidatePipeline();
+        MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+        vkCmdDrawMeshTasksIndirectEXT(m_commandBuffer, vkbuffer->buffer, offset, drawCount, stride);
+    }
+
+    void VulkanCommandBuffer::DrawMeshTasksIndirectCount(const Buffer* indirectArguments, 
+                                                         size_t offset, 
+                                                         const Buffer* countBuffer, 
+                                                         size_t countOffset, 
+                                                         uint32_t maxDrawCount, 
+                                                         uint32_t stride)
+    {
+        static Services::VulkanBarrierHandler::AccessRecord record{};
+
+        auto vkbufferIndirect = indirectArguments->GetNative<VulkanBuffer>()->GetRaw();
+        record.bufferRange.offset = (uint32_t)offset;
+        record.bufferRange.size = maxDrawCount * stride;
+        record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+        record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+        record.queueFamily = indirectArguments->IsConcurrent() ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        m_renderState->GetServices()->barrierHandler->Record(vkbufferIndirect->buffer, record, PK_ACCESS_OPT_BARRIER);
+
+        auto vkbufferCount = countBuffer->GetNative<VulkanBuffer>()->GetRaw();
+        record.bufferRange.offset = (uint32_t)countOffset;
+        record.bufferRange.size = sizeof(uint32_t);
+        record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+        record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+        record.queueFamily = indirectArguments->IsConcurrent() ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        m_renderState->GetServices()->barrierHandler->Record(vkbufferCount->buffer, record, PK_ACCESS_OPT_BARRIER);
+
+        ValidatePipeline();
+        MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+        vkCmdDrawMeshTasksIndirectCountEXT(m_commandBuffer, vkbufferIndirect->buffer, offset, vkbufferCount->buffer, countOffset, maxDrawCount, stride);
+    }
+
+    void VulkanCommandBuffer::Dispatch(const uint3& dimensions)
     {
         MarkLastCommandStage(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
         EndRenderPass();
@@ -174,7 +228,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         EndDebugScope();
     }
 
-    void VulkanCommandBuffer::DispatchRays(Math::uint3 dimensions)
+    void VulkanCommandBuffer::DispatchRays(const Math::uint3& dimensions)
     {
         MarkLastCommandStage(VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR);
         EndRenderPass();

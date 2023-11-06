@@ -38,8 +38,11 @@ namespace PK::Rendering::RHI::Objects
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;
         virtual void DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) = 0;
-        virtual void Dispatch(Math::uint3 dimensions) = 0;
-        virtual void DispatchRays(Math::uint3 dimensions) = 0;
+        virtual void DrawMeshTasks(const Math::uint3& dimensions) = 0;
+        virtual void DrawMeshTasksIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) = 0;
+        virtual void DrawMeshTasksIndirectCount(const Buffer* indirectArguments, size_t offset, const Buffer* countBuffer, size_t countOffset, uint32_t maxDrawCount, uint32_t stride) = 0;
+        virtual void Dispatch(const Math::uint3& dimensions) = 0;
+        virtual void DispatchRays(const Math::uint3& dimensions) = 0;
 
         virtual void Blit(Texture* src, Window* dst, FilterMode filter) = 0;
         virtual void Blit(Window* src, Buffer* dst) = 0;

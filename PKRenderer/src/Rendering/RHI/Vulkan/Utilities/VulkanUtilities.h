@@ -7,15 +7,15 @@
 
 namespace PK::Rendering::RHI::Vulkan::Utilities
 {
-    #define VK_ASSERT_RESULT_CTX(cmd, ctx)                                                                                  \
-            {                                                                                                               \
-                auto result = cmd;                                                                                          \
-                                                                                                                            \
-                if (result != VK_SUCCESS)                                                                                   \
-                {                                                                                                           \
-                    PK_THROW_ERROR(ctx " (%s)", PK::Rendering::RHI::Vulkan::Utilities::VulkanResultToString(result).c_str()); \
-                }                                                                                                           \
-            }                                                                                                               \
+    #define VK_ASSERT_RESULT_CTX(cmd, ctx)                                                                              \
+    {                                                                                                                   \
+        auto result = cmd;                                                                                              \
+                                                                                                                        \
+        if (result != VK_SUCCESS)                                                                                       \
+        {                                                                                                               \
+            PK_THROW_ERROR(ctx " (%s)", PK::Rendering::RHI::Vulkan::Utilities::VulkanResultToString(result).c_str());   \
+        }                                                                                                               \
+    }                                                                                                                   \
 
     #define VK_ASSERT_RESULT(cmd) VK_ASSERT_RESULT_CTX(cmd, "VK COMMAND FAILED! ");
     #define VK_THROW_RESULT(result) PK_THROW_ERROR(PK::Rendering::RHI::Vulkan::Utilities::VulkanResultToString(result).c_str())
