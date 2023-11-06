@@ -25,7 +25,7 @@ namespace PK::Rendering::RHI::Vulkan::EnumConvert
     VkDescriptorType GetDescriptorType(ResourceType type);
     ResourceType GetResourceType(VkDescriptorType type, uint32_t count);
     VkShaderStageFlagBits GetShaderStage(ShaderStage stage);
-    VkPipelineBindPoint GetPipelineBindPoint(ShaderType type);
+    VkPipelineBindPoint GetPipelineBindPoint(ShaderStageFlags stageFlags);
     VkSampleCountFlagBits GetSampleCountFlags(uint32_t samples);
     VkVertexInputRate GetInputRate(InputRate inputRate);
     VkShaderStageFlagBits GetShaderStageFlags(uint32_t pkStageFlags);

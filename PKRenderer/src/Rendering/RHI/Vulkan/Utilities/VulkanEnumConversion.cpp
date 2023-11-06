@@ -550,6 +550,8 @@ namespace PK::Rendering::RHI::Vulkan::EnumConvert
             case ShaderStage::Geometry: return VK_SHADER_STAGE_GEOMETRY_BIT;
             case ShaderStage::Fragment: return VK_SHADER_STAGE_FRAGMENT_BIT;
             case ShaderStage::Compute: return VK_SHADER_STAGE_COMPUTE_BIT;
+            case ShaderStage::MeshTask: return VK_SHADER_STAGE_TASK_BIT_EXT;
+            case ShaderStage::MeshAssembly: return VK_SHADER_STAGE_MESH_BIT_EXT;
             case ShaderStage::RayGeneration: return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
             case ShaderStage::RayMiss: return VK_SHADER_STAGE_MISS_BIT_KHR;
             case ShaderStage::RayClosestHit: return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
@@ -560,13 +562,21 @@ namespace PK::Rendering::RHI::Vulkan::EnumConvert
         return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
     }
 
-    VkPipelineBindPoint GetPipelineBindPoint(ShaderType type)
+    VkPipelineBindPoint GetPipelineBindPoint(ShaderStageFlags stageFlags)
     {
-        switch (type)
+        if ((stageFlags & ShaderStageFlags::StagesGraphics) != 0u)
         {
-            case ShaderType::Graphics: return VK_PIPELINE_BIND_POINT_GRAPHICS;
-            case ShaderType::Compute: return VK_PIPELINE_BIND_POINT_COMPUTE;
-            case ShaderType::RayTracing: return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+            return VK_PIPELINE_BIND_POINT_GRAPHICS;
+        }
+
+        if ((stageFlags & ShaderStageFlags::StagesCompute) != 0u)
+        {
+            return VK_PIPELINE_BIND_POINT_COMPUTE;
+        }
+
+        if ((stageFlags & ShaderStageFlags::StagesRayTrace) != 0u)
+        {
+            return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
         }
 
         return VK_PIPELINE_BIND_POINT_MAX_ENUM;
@@ -627,6 +637,16 @@ namespace PK::Rendering::RHI::Vulkan::EnumConvert
         if ((pkStageFlags & (1 << (int)ShaderStage::Compute)) != 0)
         {
             flags |= VK_SHADER_STAGE_COMPUTE_BIT;
+        }
+
+        if ((pkStageFlags & (1 << (int)ShaderStage::MeshTask)) != 0)
+        {
+            flags |= VK_SHADER_STAGE_TASK_BIT_EXT;
+        }
+
+        if ((pkStageFlags & (1 << (int)ShaderStage::MeshAssembly)) != 0)
+        {
+            flags |= VK_SHADER_STAGE_MESH_BIT_EXT;
         }
 
         if ((pkStageFlags & (1 << (int)ShaderStage::RayGeneration)) != 0)
@@ -819,6 +839,16 @@ namespace PK::Rendering::RHI::Vulkan::EnumConvert
         if (flags & VK_SHADER_STAGE_COMPUTE_BIT)
         {
             outflags |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        }
+
+        if (flags & VK_SHADER_STAGE_TASK_BIT_EXT)
+        {
+            outflags |= VK_PIPELINE_STAGE_TASK_SHADER_BIT_EXT;
+        }
+
+        if (flags & VK_SHADER_STAGE_MESH_BIT_EXT)
+        {
+            outflags |= VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT;
         }
 
         if (flags &

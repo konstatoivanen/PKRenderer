@@ -70,7 +70,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             constexpr bool HasPipeline() const { return m_pipeline != nullptr; }
             constexpr bool HasDynamicTargets() const { return m_renderPassKey->dynamicTargets; }
             const char* GetShaderName() const { return m_pipelineKey.shader->GetName(); }
-            inline VkPipelineBindPoint GetPipelineBindPoint() const { return EnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetType()); }
+            inline VkPipelineBindPoint GetPipelineBindPoint() const { return EnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags()); }
             VkRenderPassBeginInfo GetRenderPassInfo() const;
             VulkanVertexBufferBundle GetVertexBufferBundle() const;
             VulkanDescriptorSetBundle GetDescriptorSetBundle(const FenceRef& fence, uint32_t dirtyFlags);

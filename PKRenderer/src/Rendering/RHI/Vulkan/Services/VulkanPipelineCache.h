@@ -24,10 +24,24 @@ namespace PK::Rendering::RHI::Vulkan::Services
             return memcmp(reinterpret_cast<const void*>(this), reinterpret_cast<const void*>(&r), sizeof(PipelineKey)) == 0;
         }
     };
+        
+    // Copied from pipeline key in GetPipeline
+    struct MeshPipelineKey
+    {
+        PK::Utilities::VersionHandle<Objects::VulkanShader> shader;
+        FixedFunctionState fixedFunctionState{};
+        VkRenderPass renderPass = VK_NULL_HANDLE;
+
+        inline bool operator == (const MeshPipelineKey& r) const noexcept
+        {
+            return memcmp(reinterpret_cast<const void*>(this), reinterpret_cast<const void*>(&r), sizeof(MeshPipelineKey)) == 0;
+        }
+    };
 
     class VulkanPipelineCache : public PK::Utilities::NoCopy
     {
         using PipelineKeyHash = PK::Utilities::HashHelpers::TMurmurHash<PipelineKey>;
+        using MeshPipelineKeyHash = PK::Utilities::HashHelpers::TMurmurHash<MeshPipelineKey>;
 
         public:
             constexpr const static char* PIPELINE_CACHE_FILENAME = "shadercache.cache";
@@ -42,7 +56,8 @@ namespace PK::Rendering::RHI::Vulkan::Services
             };
 
             const VulkanPipeline* GetPipeline(const PipelineKey& key);
-            const VulkanPipeline* GetGraphicsPipeline(const PipelineKey& key);
+            const VulkanPipeline* GetVertexPipeline(const PipelineKey& key);
+            const VulkanPipeline* GetMeshPipeline(const MeshPipelineKey& key);
             const VulkanPipeline* GetComputePipeline(const PK::Utilities::VersionHandle<Objects::VulkanShader>& shader);
             const VulkanPipeline* GetRayTracingPipeline(const PK::Utilities::VersionHandle<Objects::VulkanShader>& shader);
             void Prune();
@@ -55,7 +70,8 @@ namespace PK::Rendering::RHI::Vulkan::Services
             VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
             std::string m_workingDirectory;
             FixedPool<VulkanPipeline, 2048> m_pipelinePool;
-            FastMap<PipelineKey, PipelineValue, PipelineKeyHash> m_graphicsPipelines;
+            FastMap<PipelineKey, PipelineValue, PipelineKeyHash> m_vertexPipelines;
+            FastMap<MeshPipelineKey, PipelineValue, MeshPipelineKeyHash> m_meshPipelines;
             FastMap<VersionHandle<Objects::VulkanShader>, PipelineValue, VersionHandle<Objects::VulkanShader>::Hash> m_otherPipelines;
             uint64_t m_currentPruneTick = 0;
             uint64_t m_pruneDelay = 0;

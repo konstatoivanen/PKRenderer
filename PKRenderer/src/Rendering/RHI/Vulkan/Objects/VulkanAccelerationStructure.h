@@ -21,26 +21,22 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         inline const VulkanBindHandle* GetBindHandle() const { return &m_bindHandle; };
 
         private:
-            struct alignas(16) GeometryKey
+            struct BLASKey
             {
-                // These are very unlikely to be the same for two geometries.
-                // Or at least it doesn't make sense that they would be.
-                // Good enough key.
-                Buffer* vertexBuffer;
-                uint64_t offsetCount;
+                void* value0;
+                uint64_t value1;
 
-                constexpr bool operator == (const GeometryKey& other) const
+                constexpr bool operator == (const BLASKey& other) const
                 {
-                    return vertexBuffer == other.vertexBuffer && offsetCount == other.offsetCount;
+                    return value0 == other.value0 && value1 == other.value1;
                 }
             };
 
-            using GeometryKeyHash = PK::Utilities::HashHelpers::TFNV1AHash<GeometryKey>;
+            using GeometryKeyHash = PK::Utilities::HashHelpers::TFNV1AHash<BLASKey>;
             constexpr static uint32_t MAX_SUBSTRUCTURES = 1024u;
 
             struct BLAS
             {
-                uint32_t nameHashId;
                 VulkanRawAccelerationStructure* raw = nullptr;
                 VkAccelerationStructureGeometryKHR geometry{};
                 VkAccelerationStructureBuildRangeInfoKHR range{};
@@ -49,6 +45,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
                 VkDeviceSize bufferOffset = 0ull;
                 VkDeviceSize scratchOffset = 0ull;
                 int32_t queryIndex = -1;
+                uint32_t nameHashId = 0u;
                 bool isCompacted = false;
             };
 
@@ -76,7 +73,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             VulkanRawBuffer* m_structureBuffer = nullptr;
             VulkanQueryPool* m_queryPool = nullptr;
             TLAS m_structure{};
-            PK::Utilities::FastMap<GeometryKey, BLAS, GeometryKeyHash> m_substructures;
+            PK::Utilities::FastMap<BLASKey, BLAS, GeometryKeyHash> m_substructures;
             VulkanBindHandle m_bindHandle{};
             uint32_t m_instanceCount = 0u;
             uint32_t m_instanceLimit = 0u;

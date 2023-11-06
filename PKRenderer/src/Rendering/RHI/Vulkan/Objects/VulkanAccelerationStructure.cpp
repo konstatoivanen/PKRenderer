@@ -57,7 +57,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
     uint64_t VulkanAccelerationStructure::GetGeometryIndex(const AccelerationStructureGeometryInfo& geometry)
     {
-        GeometryKey key{ geometry.vertexBuffer, (uint64_t)geometry.firstVertex | ((uint64_t)geometry.vertexCount << 32ull) };
+        BLASKey key{ geometry.indexBuffer, ((uint64_t)geometry.firstIndex & 0xFFFFFFFFu) | (((uint64_t)geometry.indexCount) << 32ull) };
         uint32_t index = 0u;
 
         if (!m_substructures.AddKey(key, &index))

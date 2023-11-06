@@ -40,18 +40,16 @@ namespace PK::Rendering::RHI::Objects
             constexpr const BufferLayout& GetVertexLayout() const { return m_vertexLayout; }
             constexpr const ConstantBufferLayout& GetConstantLayout() const { return m_constantLayout; }
             constexpr const ResourceLayout& GetResourceLayout(uint32_t set) const { return m_resourceLayouts[set]; }
-            constexpr const ShaderType GetType() const { return m_type; }
-            constexpr const uint32_t GetStageFlags() const { return m_stageFlags; }
+            constexpr const ShaderStageFlags GetStageFlags() const { return m_stageFlags; }
             constexpr const Math::uint3& GetGroupSize() const { return m_groupSize; }
             virtual ShaderBindingTableInfo GetShaderBindingTableInfo() const = 0;
-            bool HasRayTracingShaderGroup(RayTracingShaderGroup group) const;
+            inline bool HasRayTracingShaderGroup(RayTracingShaderGroup group) const { return (PK_RAYTRACING_GROUP_SHADER_STAGE[(uint32_t)group] & m_stageFlags) != 0; }
 
         protected:
             BufferLayout m_vertexLayout;
             ConstantBufferLayout m_constantLayout;
             ResourceLayout m_resourceLayouts[PK_MAX_DESCRIPTOR_SETS];
-            ShaderType m_type = ShaderType::Graphics;
-            uint32_t m_stageFlags = 0u;
+            ShaderStageFlags m_stageFlags = (ShaderStageFlags)0u;
             Math::uint3 m_groupSize{};
     };
 
@@ -60,7 +58,7 @@ namespace PK::Rendering::RHI::Objects
         friend Utilities::Ref<Shader> Core::Services::AssetImporters::Create();
 
         public:
-            constexpr ShaderType GetType() const { return m_variants.at(0)->GetType(); }
+            constexpr ShaderStageFlags GetStageFlags() const { return m_variants.at(0)->GetStageFlags(); }
             constexpr const FixedFunctionShaderAttributes& GetFixedFunctionAttributes() const { return m_attributes; }
             inline uint32_t GetVariantIndex(const uint32_t* keywords, uint32_t count) const { return m_variantMap.GetIndex(keywords, count); }
             inline uint32_t GetVariantIndex(uint32_t keyword) const { return m_variantMap.GetIndex(&keyword, 1); }

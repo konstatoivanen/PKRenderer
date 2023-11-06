@@ -15,7 +15,8 @@ namespace PK::Rendering::RHI::Vulkan::Services
         m_pruneDelay(pruneDelay),
         m_allowUnderEstimation(physicalDeviceProperties.conservativeRasterizationProperties.primitiveUnderestimation),
         m_maxOverEstimation(physicalDeviceProperties.conservativeRasterizationProperties.maxExtraPrimitiveOverestimationSize),
-        m_graphicsPipelines(1024),
+        m_vertexPipelines(1024),
+        m_meshPipelines(1024),
         m_otherPipelines(1024),
         m_pipelinePool()
     {
@@ -46,55 +47,50 @@ namespace PK::Rendering::RHI::Vulkan::Services
         }
 
         m_pipelinePool.Clear();
-        m_graphicsPipelines.Clear();
+        m_vertexPipelines.Clear();
+        m_meshPipelines.Clear();
         m_otherPipelines.Clear();
     }
 
     const VulkanPipeline* VulkanPipelineCache::GetPipeline(const PipelineKey& key)
     {
-        auto type = key.shader->GetType();
+        auto stageFlags = key.shader->GetStageFlags();
 
-        switch (type)
+        if ((ShaderStageFlags::StagesMesh & stageFlags) != 0u)
         {
-            case ShaderType::Graphics: return GetGraphicsPipeline(key);
-            case ShaderType::Compute: return GetComputePipeline(key.shader);
-            case ShaderType::RayTracing: return GetRayTracingPipeline(key.shader);
+            MeshPipelineKey meshKey = { key.shader, key.fixedFunctionState, key.renderPass };
+            // this doesn't matter for mesh shaders. set it to a default to prevent duplicate pipelines.
+            meshKey.fixedFunctionState.rasterization.topology = Topology::TriangleList; 
+            return GetMeshPipeline(meshKey);
+        }
+
+        if ((ShaderStageFlags::StagesVertex & stageFlags) != 0u)
+        {
+            return GetVertexPipeline(key);
+        }
+
+        if ((ShaderStageFlags::StagesCompute & stageFlags) != 0u)
+        {
+            return GetComputePipeline(key.shader);
+        }
+
+        if ((ShaderStageFlags::StagesRayTrace & stageFlags) != 0u)
+        {
+            return GetRayTracingPipeline(key.shader);
         }
 
         PK_THROW_ERROR("Pipeline retrieval failed! Unknown shader type!");
     }
 
-    const VulkanPipeline* VulkanPipelineCache::GetComputePipeline(const VersionHandle<VulkanShader>& shader)
+    const VulkanPipeline* VulkanPipelineCache::GetVertexPipeline(const PipelineKey& key)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
         uint32_t index = 0u;
         PipelineValue* value = nullptr;
 
-        if (!m_otherPipelines.AddKey(shader, &index))
+        if (!m_vertexPipelines.AddKey(key, &index))
         {
-            value = m_otherPipelines.GetValueAtRef(index);
-            value->pruneTick = nextPruneTick;
-            return value->pipeline;
-        }
-
-        VkComputePipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
-        pipelineInfo.stage = shader->GetModule((int)ShaderStage::Compute)->stageInfo;
-        pipelineInfo.layout = shader->GetPipelineLayout()->layout;
-        value = m_otherPipelines.GetValueAtRef(index);
-        value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
-        value->pruneTick = nextPruneTick;
-        return value->pipeline;
-    }
-
-    const VulkanPipeline* VulkanPipelineCache::GetGraphicsPipeline(const PipelineKey& key)
-    {
-        auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
-        uint32_t index = 0u;
-        PipelineValue* value = nullptr;
-
-        if (!m_graphicsPipelines.AddKey(key, &index))
-        {
-            value = m_graphicsPipelines.GetValueAtRef(index);
+            value = m_vertexPipelines.GetValueAtRef(index);
             value->pruneTick = nextPruneTick;
             return value->pipeline;
         }
@@ -227,8 +223,151 @@ namespace PK::Rendering::RHI::Vulkan::Services
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
 
-        value = m_graphicsPipelines.GetValueAtRef(index);
+        value = m_vertexPipelines.GetValueAtRef(index);
         value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, key.shader->GetName());
+        value->pruneTick = nextPruneTick;
+        return value->pipeline;
+    }
+
+    const VulkanPipeline* VulkanPipelineCache::GetMeshPipeline(const MeshPipelineKey& key)
+    {
+        auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
+        uint32_t index = 0u;
+        PipelineValue* value = nullptr;
+
+        if (!m_meshPipelines.AddKey(key, &index))
+        {
+            value = m_meshPipelines.GetValueAtRef(index);
+            value->pruneTick = nextPruneTick;
+            return value->pipeline;
+        }
+
+        auto stageCount = 0u;
+        VkPipelineShaderStageCreateInfo shaderStages[(int)ShaderStage::MaxCount];
+
+        for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
+        {
+            if (key.shader->GetModule(i) != nullptr)
+            {
+                shaderStages[stageCount++] = key.shader->GetModule(i)->stageInfo;
+            }
+        }
+
+        VkPipelineViewportStateCreateInfo viewportState{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
+        viewportState.viewportCount = key.fixedFunctionState.viewportCount;
+        viewportState.pViewports = nullptr;
+        viewportState.scissorCount = key.fixedFunctionState.viewportCount;
+        viewportState.pScissors = nullptr;
+
+        VkPipelineRasterizationStateCreateInfo rasterizer{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
+        rasterizer.depthClampEnable = key.fixedFunctionState.rasterization.depthClampEnable;
+        rasterizer.rasterizerDiscardEnable = key.fixedFunctionState.rasterization.rasterizerDiscardEnable;
+        rasterizer.polygonMode = EnumConvert::GetPolygonMode(key.fixedFunctionState.rasterization.polygonMode);
+        rasterizer.lineWidth = key.fixedFunctionState.rasterization.lineWidth;
+        rasterizer.cullMode = EnumConvert::GetCullMode(key.fixedFunctionState.rasterization.cullMode);
+        rasterizer.frontFace = EnumConvert::GetFrontFace(key.fixedFunctionState.rasterization.frontFace);
+        rasterizer.depthBiasEnable = key.fixedFunctionState.rasterization.depthBiasEnable;
+        rasterizer.depthBiasConstantFactor = key.fixedFunctionState.rasterization.depthBiasConstantFactor;
+        rasterizer.depthBiasClamp = key.fixedFunctionState.rasterization.depthBiasClamp;
+        rasterizer.depthBiasSlopeFactor = key.fixedFunctionState.rasterization.depthBiasSlopeFactor;
+
+        VkPipelineRasterizationConservativeStateCreateInfoEXT conservativeRaster{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT };
+        conservativeRaster.conservativeRasterizationMode = EnumConvert::GetRasterMode(key.fixedFunctionState.rasterization.rasterMode);
+        conservativeRaster.extraPrimitiveOverestimationSize = std::fminf(m_maxOverEstimation, key.fixedFunctionState.rasterization.overEstimation);
+        rasterizer.pNext = key.fixedFunctionState.rasterization.rasterMode != RasterMode::Default ? &conservativeRaster : nullptr;
+
+        VkPipelineMultisampleStateCreateInfo multisampling{ VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
+        multisampling.sampleShadingEnable = key.fixedFunctionState.multisampling.sampleShadingEnable;
+        multisampling.rasterizationSamples = EnumConvert::GetSampleCountFlags(key.fixedFunctionState.multisampling.rasterizationSamples);
+        multisampling.minSampleShading = key.fixedFunctionState.multisampling.minSampleShading;
+        multisampling.pSampleMask = nullptr;
+        multisampling.alphaToCoverageEnable = key.fixedFunctionState.multisampling.alphaToCoverageEnable;
+        multisampling.alphaToOneEnable = key.fixedFunctionState.multisampling.alphaToOneEnable;
+
+        VkPipelineDepthStencilStateCreateInfo depthStencil{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
+        depthStencil.depthTestEnable = key.fixedFunctionState.depthStencil.depthCompareOp != Comparison::Off;
+        depthStencil.depthWriteEnable = key.fixedFunctionState.depthStencil.depthWriteEnable;
+        depthStencil.depthCompareOp = EnumConvert::GetCompareOp(key.fixedFunctionState.depthStencil.depthCompareOp);
+        depthStencil.depthBoundsTestEnable = key.fixedFunctionState.depthStencil.depthBoundsTestEnable;
+        depthStencil.stencilTestEnable = key.fixedFunctionState.depthStencil.stencilTestEnable;
+        depthStencil.minDepthBounds = key.fixedFunctionState.depthStencil.minDepthBounds;
+        depthStencil.maxDepthBounds = key.fixedFunctionState.depthStencil.maxDepthBounds;
+
+        VkPipelineColorBlendAttachmentState blendAttachments[PK_MAX_RENDER_TARGETS];
+
+        for (auto i = 0u; i < key.fixedFunctionState.colorTargetCount; ++i)
+        {
+            blendAttachments[i].blendEnable = key.fixedFunctionState.blending.isBlendEnabled();
+            blendAttachments[i].srcColorBlendFactor = EnumConvert::GetBlendFactor(key.fixedFunctionState.blending.srcColorFactor, VK_BLEND_FACTOR_ONE);
+            blendAttachments[i].dstColorBlendFactor = EnumConvert::GetBlendFactor(key.fixedFunctionState.blending.dstColorFactor, VK_BLEND_FACTOR_ZERO);
+            blendAttachments[i].colorBlendOp = EnumConvert::GetBlendOp(key.fixedFunctionState.blending.colorOp);
+            blendAttachments[i].srcAlphaBlendFactor = EnumConvert::GetBlendFactor(key.fixedFunctionState.blending.srcAlphaFactor, VK_BLEND_FACTOR_ONE);
+            blendAttachments[i].dstAlphaBlendFactor = EnumConvert::GetBlendFactor(key.fixedFunctionState.blending.dstAlphaFactor, VK_BLEND_FACTOR_ZERO);
+            blendAttachments[i].alphaBlendOp = EnumConvert::GetBlendOp(key.fixedFunctionState.blending.alphaOp);
+            blendAttachments[i].colorWriteMask = (VkColorComponentFlagBits)key.fixedFunctionState.blending.colorMask & 0xF;
+        }
+
+        VkPipelineColorBlendStateCreateInfo colorBlending{ VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
+        colorBlending.logicOpEnable = key.fixedFunctionState.blending.isLogicOpEnabled();
+        colorBlending.logicOp = EnumConvert::GetLogicOp(key.fixedFunctionState.blending.logicOp);
+        colorBlending.attachmentCount = key.fixedFunctionState.colorTargetCount;
+        colorBlending.pAttachments = blendAttachments;
+        colorBlending.blendConstants[0] = 0.0f;
+        colorBlending.blendConstants[1] = 0.0f;
+        colorBlending.blendConstants[2] = 0.0f;
+        colorBlending.blendConstants[3] = 0.0f;
+
+        VkDynamicState dynamicStates[] =
+        {
+            VK_DYNAMIC_STATE_VIEWPORT,
+            VK_DYNAMIC_STATE_SCISSOR,
+        };
+
+        VkPipelineDynamicStateCreateInfo dynamicState{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
+        dynamicState.dynamicStateCount = 2;
+        dynamicState.pDynamicStates = dynamicStates;
+
+        VkGraphicsPipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
+        pipelineInfo.stageCount = stageCount;
+        pipelineInfo.pStages = shaderStages;
+        pipelineInfo.pVertexInputState = nullptr;
+        pipelineInfo.pInputAssemblyState = nullptr;
+        pipelineInfo.pViewportState = &viewportState;
+        pipelineInfo.pRasterizationState = &rasterizer;
+        pipelineInfo.pMultisampleState = &multisampling;
+        pipelineInfo.pDepthStencilState = &depthStencil;
+        pipelineInfo.pColorBlendState = &colorBlending;
+        pipelineInfo.pDynamicState = &dynamicState;
+        pipelineInfo.layout = key.shader->GetPipelineLayout()->layout;
+        pipelineInfo.renderPass = key.renderPass;
+        pipelineInfo.subpass = 0;
+        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+        pipelineInfo.basePipelineIndex = -1;
+
+        value = m_meshPipelines.GetValueAtRef(index);
+        value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, key.shader->GetName());
+        value->pruneTick = nextPruneTick;
+        return value->pipeline;
+    }
+
+    const VulkanPipeline* VulkanPipelineCache::GetComputePipeline(const VersionHandle<VulkanShader>& shader)
+    {
+        auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
+        uint32_t index = 0u;
+        PipelineValue* value = nullptr;
+
+        if (!m_otherPipelines.AddKey(shader, &index))
+        {
+            value = m_otherPipelines.GetValueAtRef(index);
+            value->pruneTick = nextPruneTick;
+            return value->pipeline;
+        }
+
+        VkComputePipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
+        pipelineInfo.stage = shader->GetModule((int)ShaderStage::Compute)->stageInfo;
+        pipelineInfo.layout = shader->GetPipelineLayout()->layout;
+        value = m_otherPipelines.GetValueAtRef(index);
+        value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
         value->pruneTick = nextPruneTick;
         return value->pipeline;
     }
@@ -299,14 +438,25 @@ namespace PK::Rendering::RHI::Vulkan::Services
     {
         m_currentPruneTick++;
 
-        for (int32_t i = m_graphicsPipelines.GetCount() - 1; i >= 0; --i)
+        for (int32_t i = m_vertexPipelines.GetCount() - 1; i >= 0; --i)
         {
-            auto value = m_graphicsPipelines.GetValueAtRef(i);
+            auto value = m_vertexPipelines.GetValueAtRef(i);
 
             if (value->pruneTick < m_currentPruneTick)
             {
                 m_pipelinePool.Delete(value->pipeline);
-                m_graphicsPipelines.RemoveAt(i);
+                m_vertexPipelines.RemoveAt(i);
+            }
+        }
+
+        for (int32_t i = m_meshPipelines.GetCount() - 1; i >= 0; --i)
+        {
+            auto value = m_meshPipelines.GetValueAtRef(i);
+
+            if (value->pruneTick < m_currentPruneTick)
+            {
+                m_pipelinePool.Delete(value->pipeline);
+                m_meshPipelines.RemoveAt(i);
             }
         }
 

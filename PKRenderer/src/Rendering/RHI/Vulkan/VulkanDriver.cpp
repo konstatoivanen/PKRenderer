@@ -150,6 +150,11 @@ namespace PK::Rendering::RHI::Vulkan
         physicalDeviceRequirements.features.rayQuery.rayQuery = VK_TRUE;
         physicalDeviceRequirements.features.atomicFloat.shaderSharedFloat32AtomicAdd = VK_TRUE;
         physicalDeviceRequirements.features.positionFetch.rayTracingPositionFetch = VK_TRUE;
+        physicalDeviceRequirements.features.meshshader.taskShader = VK_TRUE;
+        physicalDeviceRequirements.features.meshshader.meshShader = VK_TRUE;
+        physicalDeviceRequirements.features.meshshader.multiviewMeshShader = VK_TRUE;
+        //physicalDeviceRequirements.features.meshshader.primitiveFragmentShadingRateMeshShader;
+        //physicalDeviceRequirements.features.meshshader.meshShaderQueries;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
 

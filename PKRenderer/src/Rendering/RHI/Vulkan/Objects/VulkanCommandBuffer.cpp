@@ -92,7 +92,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         auto& fixedAttrib = shader->GetFixedFunctionAttributes();
 
         // No need to assign raster params for a non graphics pipeline
-        if (shader->GetType() == ShaderType::Graphics)
+        if ((ShaderStageFlags::StagesGraphics & shader->GetStageFlags()) != 0u)
         {
             m_renderState->SetBlending(fixedAttrib.blending);
             m_renderState->SetDepthStencil(fixedAttrib.depthStencil);

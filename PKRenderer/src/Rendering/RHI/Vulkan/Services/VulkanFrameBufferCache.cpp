@@ -129,24 +129,22 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         for (auto i = 0u; i < PK_MAX_RENDER_TARGETS; i++)
         {
-            if (key.colors[i].format == VK_FORMAT_UNDEFINED)
+            if (key.colors[i].format != VK_FORMAT_UNDEFINED)
             {
-                continue;
+                uint32_t index = subpass.colorAttachmentCount++;
+                colorAttachmentRefs[index].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                colorAttachmentRefs[index].attachment = attachmentIndex;
+
+                auto* attachment = attachments + attachmentIndex++;
+                attachment->format = key.colors[i].format;
+                attachment->samples = key.samples;
+                attachment->loadOp = EnumConvert::GetLoadOp(key.colors[i].initialLayout, key.colors[i].loadop);
+                attachment->storeOp = EnumConvert::GetStoreOp(key.colors[i].storeop);
+                attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+                attachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                attachment->initialLayout = key.colors[i].loadop == LoadOp::Keep ? key.colors[i].initialLayout : VK_IMAGE_LAYOUT_UNDEFINED;
+                attachment->finalLayout = key.colors[i].finalLayout;
             }
-
-            uint32_t index = subpass.colorAttachmentCount++;
-            colorAttachmentRefs[index].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            colorAttachmentRefs[index].attachment = attachmentIndex;
-
-            auto* attachment = attachments + attachmentIndex++;
-            attachment->format = key.colors[i].format;
-            attachment->samples = key.samples;
-            attachment->loadOp = EnumConvert::GetLoadOp(key.colors[i].initialLayout, key.colors[i].loadop);
-            attachment->storeOp = EnumConvert::GetStoreOp(key.colors[i].storeop);
-            attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            attachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            attachment->initialLayout = key.colors[i].loadop == LoadOp::Keep ? key.colors[i].initialLayout : VK_IMAGE_LAYOUT_UNDEFINED;
-            attachment->finalLayout = key.colors[i].finalLayout;
         }
 
         VkAttachmentReference* pResolveAttachment = resolveAttachmentRef;

@@ -55,7 +55,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
         if (m_pipelineKey.shader != nullptr)
         {
-            bundle.bindPoint = EnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetType());
+            bundle.bindPoint = EnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags());
             bundle.layout = m_pipelineKey.shader->GetPipelineLayout()->layout;
             bundle.firstSet = 0xFFFFu;
             bundle.count = 0u;
@@ -416,9 +416,9 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     void VulkanRenderState::ValidateRenderTarget()
     {
         auto shader = m_pipelineKey.shader;
-        auto shaderType = shader->GetType();
+        auto stageFlags = shader->GetStageFlags();
 
-        if (shaderType != ShaderType::Graphics || (m_dirtyFlags & PK_RENDER_STATE_DIRTY_RENDERTARGET) == 0)
+        if ((stageFlags & ShaderStageFlags::StagesGraphics) == 0u || (m_dirtyFlags & PK_RENDER_STATE_DIRTY_RENDERTARGET) == 0)
         {
             return;
         }
@@ -448,6 +448,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             {
                 m_pipelineKey.fixedFunctionState.colorTargetCount = i;
                 m_clearValueCount = i;
+                // Last attachment is depth. this sets depth clear.
                 m_clearValues[i] = m_clearValues[PK_MAX_RENDER_TARGETS];
                 break;
             }
@@ -462,9 +463,9 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     void VulkanRenderState::ValidateVertexBuffers()
     {
         auto shader = m_pipelineKey.shader;
-        auto shaderType = shader->GetType();
+        auto stageFlags = shader->GetStageFlags();
 
-        if (shaderType != ShaderType::Graphics)
+        if ((ShaderStageFlags::StagesVertex & stageFlags) == 0u)
         {
             return;
         }
@@ -663,9 +664,6 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     {
         PK_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
-        auto shaderType = m_pipelineKey.shader->GetType();
-        auto graphicsFlags = m_dirtyFlags & (PK_RENDER_STATE_DIRTY_VERTEXBUFFERS | PK_RENDER_STATE_DIRTY_INDEXBUFFER | PK_RENDER_STATE_DIRTY_RENDERTARGET);
-
         ValidateRenderTarget();
         ValidateVertexBuffers();
         ValidateDescriptorSets(fence);
@@ -676,26 +674,35 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             m_pipeline = m_services.pipelineCache->GetPipeline(m_pipelineKey);
         }
 
-        auto flags = (PKRenderStateDirtyFlags)m_dirtyFlags;
+        auto stageFlags = m_pipelineKey.shader->GetStageFlags();
+        auto vertexFlags = m_dirtyFlags & (PK_RENDER_STATE_DIRTY_VERTEXBUFFERS | PK_RENDER_STATE_DIRTY_INDEXBUFFER);
+        auto graphicsFlags = m_dirtyFlags & PK_RENDER_STATE_DIRTY_RENDERTARGET;
+        auto flags = m_dirtyFlags;
         m_dirtyFlags = 0u;
 
-        // Dont dirty render pass or vertex buffers when not using a graphics pipeline
-        if (shaderType != ShaderType::Graphics)
+        // Dont dirty pipeline type specific flags when not required.
+        // Restore dirty state for future resolve.
+        if ((ShaderStageFlags::StagesVertex & stageFlags) == 0u)
         {
-            flags = (PKRenderStateDirtyFlags)(flags & ~graphicsFlags);
+            flags &= ~vertexFlags;
+            m_dirtyFlags |= vertexFlags;
 
-            // Restore graphics specific dirty flags so that a later pipeline validation can pick these up pipeline assignment can pickup this change.
-            m_dirtyFlags |= graphicsFlags;
         }
 
-        return flags;
+        if ((ShaderStageFlags::StagesGraphics & stageFlags) == 0)
+        {
+            flags &= ~graphicsFlags;
+            m_dirtyFlags |= graphicsFlags;
+        }
+        
+        return (PKRenderStateDirtyFlags)flags;
     }
 
 
     void VulkanRenderState::RecordResourceAccess()
     {
         auto shader = m_pipelineKey.shader;
-        auto shaderType = shader->GetType();
+        auto stageFlags = shader->GetStageFlags();
         auto setCount = m_pipelineKey.shader->GetDescriptorSetCount();
 
         for (auto i = 0u; i < setCount; ++i)
@@ -735,19 +742,17 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             }
         }
 
-        if (shaderType != ShaderType::Graphics)
+        if ((ShaderStageFlags::StagesVertex & stageFlags) != 0u)
         {
-            return;
-        }
+            for (auto i = 0u; i < PK_MAX_VERTEX_ATTRIBUTES && m_vertexBuffers[i]; ++i)
+            {
+                RecordBuffer(m_vertexBuffers[i], VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
+            }
 
-        for (auto i = 0u; i < PK_MAX_VERTEX_ATTRIBUTES && m_vertexBuffers[i]; ++i)
-        {
-            RecordBuffer(m_vertexBuffers[i], VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
-        }
-
-        if (m_indexBuffer != nullptr)
-        {
-            RecordBuffer(m_indexBuffer, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_INDEX_READ_BIT);
+            if (m_indexBuffer != nullptr)
+            {
+                RecordBuffer(m_indexBuffer, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_INDEX_READ_BIT);
+            }
         }
     }
 

@@ -14,17 +14,27 @@ namespace PK::Rendering::RHI::Vulkan
         rayTracingPipeline.pNext = &rayQuery;
         rayQuery.pNext = &atomicFloat;
         atomicFloat.pNext = &positionFetch;
+        positionFetch.pNext = &meshshader;
     }
     
-    #define PK_TEST_FEATURE(field)              \
-    if (requirements.field && !available.field) \
-    {                                           \
-        PK_LOG_INFO(#field " not available.");  \
-        return false;                           \
-    }                                           \
+    #define PK_TEST_FEATURE(field)                             \
+    if (requirements.field && !available.field)                \
+    {                                                          \
+        PK_LOG_INFO("   Feature Unavailable: " #field);        \
+        missingFeatures |= true;                               \
+    }                                                          \
+    else if (requirements.field)                               \
+    {                                                          \
+        PK_LOG_INFO("   Feature Available: " #field);          \
+    }                                                          \
     
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
     {
+        PK_LOG_NEWLINE();
+        PK_LOG_INFO(" Physical device feature check:");
+
+        bool missingFeatures = false;
+
         PK_TEST_FEATURE(vk10.features.robustBufferAccess)
         PK_TEST_FEATURE(vk10.features.fullDrawIndexUint32)
         PK_TEST_FEATURE(vk10.features.imageCubeArray)
@@ -187,7 +197,24 @@ namespace PK::Rendering::RHI::Vulkan
 
         PK_TEST_FEATURE(positionFetch.rayTracingPositionFetch)
 
-        return true;
+        PK_TEST_FEATURE(meshshader.taskShader)
+        PK_TEST_FEATURE(meshshader.meshShader)
+        PK_TEST_FEATURE(meshshader.multiviewMeshShader)
+        PK_TEST_FEATURE(meshshader.primitiveFragmentShadingRateMeshShader)
+        PK_TEST_FEATURE(meshshader.meshShaderQueries)
+
+        if (missingFeatures)
+        {
+            PK_LOG_INFO(" Check failure.");
+        }
+        else
+        {
+            PK_LOG_INFO(" Check successful.");
+        }
+
+        PK_LOG_NEWLINE();
+
+        return !missingFeatures;
     }
     
     #undef PK_TEST_FEATURE

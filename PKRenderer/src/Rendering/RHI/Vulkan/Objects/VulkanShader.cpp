@@ -17,7 +17,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         m_name(name)
     {
         m_groupSize = { variant->groupSize[0], variant->groupSize[1], variant->groupSize[2] };
-        m_stageFlags = 0u;
+        m_stageFlags = (ShaderStageFlags)0u;
 
         for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
         {
@@ -32,7 +32,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             auto stage = EnumConvert::GetShaderStage((ShaderStage)i);
             auto moduleName = std::string(name) + std::string(".") + string_VkShaderStageFlagBits(stage);
             m_modules[i] = new VulkanShaderModule(m_device, stage, spirv, spirvSize, moduleName.c_str());
-            m_stageFlags |= 1 << i;
+            m_stageFlags = m_stageFlags | (ShaderStageFlags)(1u << i);
         }
 
         BufferElement vertexElements[PK::Assets::PK_ASSET_MAX_VERTEX_ATTRIBUTES];
@@ -102,7 +102,6 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         }
 
         m_pipelineLayout = layoutCache->GetPipelineLayout(pipelineKey);
-        m_type = m_modules[(int)ShaderStage::Compute] != nullptr ? ShaderType::Compute : m_modules[(int)ShaderStage::RayGeneration] ? ShaderType::RayTracing : ShaderType::Graphics;
     }
 
     VulkanShader::~VulkanShader()

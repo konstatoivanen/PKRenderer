@@ -7,12 +7,12 @@ namespace PK::Rendering::RHI
     typedef PK::Assets::PKDescriptorType ResourceType;
     typedef PK::Assets::PKElementType ElementType;
     typedef PK::Assets::PKShaderStage ShaderStage;
+    typedef PK::Assets::PKShaderStageFlags ShaderStageFlags;
     typedef PK::Assets::PKBlendFactor BlendFactor;
     typedef PK::Assets::PKBlendOp BlendOp;
     typedef PK::Assets::PKComparison Comparison;
     typedef PK::Assets::PKCullMode CullMode;
     typedef PK::Assets::PKRasterMode RasterMode;
-    typedef PK::Assets::Shader::Type ShaderType;
 
     constexpr static const uint32_t PK_DESIRED_SWAP_CHAIN_IMAGE_COUNT = 4;
     constexpr static const uint32_t PK_MAX_FRAMES_IN_FLIGHT = 2;
@@ -314,6 +314,7 @@ namespace PK::Rendering::RHI
         BC7_UNORM,
     };
 
+    //@TODO Should not need these enums
     enum class RayTracingShaderGroup
     {
         RayGeneration,
@@ -323,13 +324,13 @@ namespace PK::Rendering::RHI
         MaxCount
     };
 
-    enum class RayTracingShaderGroupStageMask
+    constexpr const static ShaderStageFlags PK_RAYTRACING_GROUP_SHADER_STAGE[(uint32_t)RayTracingShaderGroup::MaxCount + 1] =
     {
-        RayGeneration = 1 << (uint32_t)ShaderStage::RayGeneration,
-        Miss = 1 << (uint32_t)ShaderStage::RayMiss,
-        Hit = 1 << (uint32_t)ShaderStage::RayClosestHit | 1 << (uint32_t)ShaderStage::RayAnyHit | 1 << (uint32_t)ShaderStage::RayIntersection,
-        Callable = 0, 
-        MaxCount
+        ShaderStageFlags::RayTraceGroupGeneration,
+        ShaderStageFlags::RayTraceGroupMiss,
+        ShaderStageFlags::RayTraceGroupHit,
+        ShaderStageFlags::RayTraceGroupCallable,
+        ShaderStageFlags::None
     };
 
     constexpr const static RayTracingShaderGroup PK_SHADER_STAGE_RAYTRACING_GROUP[(uint32_t)ShaderStage::MaxCount] =
@@ -340,6 +341,8 @@ namespace PK::Rendering::RHI
         RayTracingShaderGroup::MaxCount,        //Geometry,
         RayTracingShaderGroup::MaxCount,        //Fragment,
         RayTracingShaderGroup::MaxCount,        //Compute,
+        RayTracingShaderGroup::MaxCount,        //MeshTask
+        RayTracingShaderGroup::MaxCount,        //MeshAssembly,
         RayTracingShaderGroup::RayGeneration,   //RayGeneration,
         RayTracingShaderGroup::Miss,            //RayMiss,
         RayTracingShaderGroup::Hit,             //RayClosestHit,
@@ -359,7 +362,7 @@ namespace PK::Rendering::RHI
     PK_DECLARE_ENUM_OPERATORS(ColorMask)
     PK_DECLARE_ENUM_OPERATORS(BufferUsage)
     PK_DECLARE_ENUM_OPERATORS(TextureUsage)
-    PK_DECLARE_ENUM_OPERATORS(RayTracingShaderGroupStageMask)
+    PK_DECLARE_ENUM_OPERATORS(ShaderStageFlags)
 
     #undef PK_DECLARE_ENUM_OPERATORS
 

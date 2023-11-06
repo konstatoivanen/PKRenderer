@@ -117,12 +117,42 @@ namespace PK::Assets
         Geometry,
         Fragment,
         Compute,
+        MeshTask,
+        MeshAssembly,
         RayGeneration,
         RayMiss,
         RayClosestHit,
         RayAnyHit,
         RayIntersection,
         MaxCount
+    };
+
+    // maps directly to the above values, exists for convenience.
+    enum class PKShaderStageFlags : unsigned short
+    {
+        None = 0u,
+        Vertex = 1 << 0u,
+        TesselationControl = 1 << 1u,
+        TesselationEvaluation = 1 << 2u,
+        Geometry = 1 << 3u,
+        Fragment = 1 << 4u,
+        Compute = 1 << 5u,
+        MeshTask = 1 << 6u,
+        MeshAssembly = 1 << 7u,
+        RayGeneration = 1 << 8u,
+        RayMiss = 1 << 9u,
+        RayClosestHit = 1 << 10u,
+        RayAnyHit = 1 << 11u,
+        RayIntersection = 1 << 12u,
+        StagesGraphics = Vertex | TesselationControl | TesselationEvaluation | Geometry | Fragment | MeshTask | MeshAssembly,
+        StagesVertex = Vertex | TesselationControl | TesselationEvaluation | Geometry,
+        StagesMesh = MeshTask | MeshAssembly,
+        StagesCompute = Compute,
+        StagesRayTrace = RayGeneration | RayMiss | RayClosestHit | RayAnyHit | RayIntersection,
+        RayTraceGroupGeneration = RayGeneration,
+        RayTraceGroupMiss = RayMiss,
+        RayTraceGroupHit = RayClosestHit | RayAnyHit | RayIntersection,
+        RayTraceGroupCallable = 0u // Not supported atm
     };
 
     enum class PKDescriptorType : unsigned char
@@ -226,6 +256,7 @@ namespace PK::Assets
 
     namespace Shader
     {
+        constexpr const static char* PK_SHADER_ATTRIB_LOGVERBOSE = "#LogVerbose";
         constexpr const static char* PK_SHADER_ATTRIB_ZWRITE = "#ZWrite ";
         constexpr const static char* PK_SHADER_ATTRIB_ZTEST = "#ZTest ";
         constexpr const static char* PK_SHADER_ATTRIB_BLENDCOLOR = "#BlendColor ";
@@ -246,13 +277,6 @@ namespace PK::Assets
         constexpr const static char* PK_SHADER_INSTANCING_TEXTURES3D = "pk_Instancing_Textures3D";
         constexpr const static char* PK_SHADER_INSTANCING_TEXTURESCUBE = "pk_Instancing_TexturesCube";
         constexpr const static char* PK_SHADER_ATOMIC_COUNTER = "pk_BuiltInAtomicCounter";
-
-        enum class Type : unsigned char
-        {
-            Graphics,
-            Compute,
-            RayTracing
-        };
 
         struct alignas(4) PKVertexAttribute
         {
@@ -327,7 +351,6 @@ namespace PK::Assets
 
         struct alignas(4) PKShader
         {
-            Type type = Type::Graphics;
             uint32_t materialPropertyCount = 0;
             uint32_t keywordCount = 0;
             uint32_t variantcount = 0;

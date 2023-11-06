@@ -14,19 +14,6 @@ using namespace PK::Rendering::RHI::Objects;
 
 namespace PK::Rendering::RHI::Objects
 {
-    bool ShaderVariant::HasRayTracingShaderGroup(RayTracingShaderGroup group) const
-    {
-        switch (group)
-        {
-            case RayTracingShaderGroup::RayGeneration: return (RayTracingShaderGroupStageMask::RayGeneration & m_stageFlags) != 0;
-            case RayTracingShaderGroup::Miss: return (RayTracingShaderGroupStageMask::Miss & m_stageFlags) != 0;
-            case RayTracingShaderGroup::Hit: return (RayTracingShaderGroupStageMask::Hit & m_stageFlags) != 0;
-            case RayTracingShaderGroup::Callable: return (RayTracingShaderGroupStageMask::Callable & m_stageFlags) != 0;
-        }
-
-        return false;
-    }
-
     bool ShaderVariantMap::SupportsKeywords(const uint32_t* hashIds, const uint32_t count) const
     {
         for (auto i = 0u; i < count; ++i)
