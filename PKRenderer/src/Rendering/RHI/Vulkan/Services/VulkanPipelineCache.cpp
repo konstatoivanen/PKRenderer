@@ -96,11 +96,15 @@ namespace PK::Rendering::RHI::Vulkan::Services
         }
 
         auto stageCount = 0u;
+        auto stageMask = ShaderStageFlags::StagesVertex | ShaderStageFlags::Fragment;
         VkPipelineShaderStageCreateInfo shaderStages[(int)ShaderStage::MaxCount];
 
         for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
         {
-            if (key.shader->GetModule(i) != nullptr)
+            auto stageFlag = (ShaderStageFlags)(1u << i);
+
+            // Skip null modules & modules not viable for this pipeline type
+            if (key.shader->GetModule(i) != nullptr && (stageFlag & stageMask) != 0u)
             {
                 shaderStages[stageCount++] = key.shader->GetModule(i)->stageInfo;
             }
@@ -243,11 +247,15 @@ namespace PK::Rendering::RHI::Vulkan::Services
         }
 
         auto stageCount = 0u;
+        auto stageMask = ShaderStageFlags::StagesMesh | ShaderStageFlags::Fragment;
         VkPipelineShaderStageCreateInfo shaderStages[(int)ShaderStage::MaxCount];
 
         for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
         {
-            if (key.shader->GetModule(i) != nullptr)
+            auto stageFlag = (ShaderStageFlags)(1u << i);
+
+            // Skip null modules & modules not viable for this pipeline type
+            if (key.shader->GetModule(i) != nullptr && (stageFlag & stageMask) != 0u)
             {
                 shaderStages[stageCount++] = key.shader->GetModule(i)->stageInfo;
             }
@@ -387,18 +395,21 @@ namespace PK::Rendering::RHI::Vulkan::Services
         }
 
         auto stageCount = 0u;
+        auto stageMask = ShaderStageFlags::StagesRayTrace;
         VkPipelineShaderStageCreateInfo shaderStages[(int)ShaderStage::MaxCount]{};
         VkRayTracingShaderGroupCreateInfoKHR shaderGroups[(int)ShaderStage::MaxCount]{};
 
         for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
         {
-            if (shader->GetModule(i) == nullptr)
+            auto stageFlag = (ShaderStageFlags)(1u << i);
+
+            // Skip null modules & modules not viable for this pipeline type
+            if (shader->GetModule(i) == nullptr || (stageFlag & stageMask) == 0u)
             {
                 continue;
             }
 
             auto stage = (ShaderStage)i;
-
             shaderGroups[stageCount].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
             shaderGroups[stageCount].type = EnumConvert::GetRayTracingStageGroupType(stage);
             shaderGroups[stageCount].generalShader = VK_SHADER_UNUSED_KHR;

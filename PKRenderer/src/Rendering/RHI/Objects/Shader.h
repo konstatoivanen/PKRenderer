@@ -49,7 +49,7 @@ namespace PK::Rendering::RHI::Objects
             BufferLayout m_vertexLayout;
             ConstantBufferLayout m_constantLayout;
             ResourceLayout m_resourceLayouts[PK_MAX_DESCRIPTOR_SETS];
-            ShaderStageFlags m_stageFlags = (ShaderStageFlags)0u;
+            ShaderStageFlags m_stageFlags = ShaderStageFlags::None;
             Math::uint3 m_groupSize{};
     };
 

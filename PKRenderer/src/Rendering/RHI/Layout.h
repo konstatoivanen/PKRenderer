@@ -10,13 +10,13 @@ namespace PK::Rendering::RHI
     struct ConstantVariable
     {
         uint32_t NameHashId = 0;
+        ShaderStageFlags StageFlags;
         uint16_t Size;
         uint16_t Offset;
-        uint32_t StageFlags;
 
         ConstantVariable() = default;
 
-        ConstantVariable(const std::string & name, uint16_t size, uint16_t offset, uint32_t stageFlags) : 
+        ConstantVariable(const std::string & name, uint16_t size, uint16_t offset, ShaderStageFlags stageFlags) :
             NameHashId(Core::Services::StringHashID::StringToID(name)), 
             Size(size),
             Offset(offset),
@@ -50,13 +50,13 @@ namespace PK::Rendering::RHI
     struct ResourceElement
     {
         uint32_t NameHashId = 0;
-        ResourceType Type = ResourceType::Invalid;
-        uint8_t WriteStageMask = 0u;
+        ShaderStageFlags WriteStageMask = ShaderStageFlags::None;
         uint16_t Count = 0;
+        ResourceType Type = ResourceType::Invalid;
     
         ResourceElement() = default;
 
-        ResourceElement(ResourceType type, const std::string& name, uint8_t writeStageMask, uint16_t count) :
+        ResourceElement(ResourceType type, const std::string& name, ShaderStageFlags writeStageMask, uint16_t count) :
             NameHashId(Core::Services::StringHashID::StringToID(name)),
             Type(type),
             WriteStageMask(writeStageMask),

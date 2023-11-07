@@ -605,71 +605,71 @@ namespace PK::Rendering::RHI::Vulkan::EnumConvert
         return VK_VERTEX_INPUT_RATE_MAX_ENUM;
     }
 
-    VkShaderStageFlagBits GetShaderStageFlags(uint32_t pkStageFlags)
+    VkShaderStageFlagBits GetShaderStageFlags(ShaderStageFlags stageFlags)
     {
         uint32_t flags = 0;
 
-        if ((pkStageFlags & (1 << (int)ShaderStage::Vertex)) != 0)
+        if ((stageFlags & ShaderStageFlags::Vertex) != 0)
         {
             flags |= VK_SHADER_STAGE_VERTEX_BIT;
         }
 
-        if ((pkStageFlags & (1 << (int)ShaderStage::TesselationControl)) != 0)
+        if ((stageFlags & ShaderStageFlags::TesselationControl) != 0)
         {
             flags |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
         }
 
-        if ((pkStageFlags & (1 << (int)ShaderStage::TesselationEvaluation)) != 0)
+        if ((stageFlags & ShaderStageFlags::TesselationEvaluation) != 0)
         {
             flags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
         }
 
-        if ((pkStageFlags & (1 << (int)ShaderStage::Geometry)) != 0)
+        if ((stageFlags & ShaderStageFlags::Geometry) != 0)
         {
             flags |= VK_SHADER_STAGE_GEOMETRY_BIT;
         }
 
-        if ((pkStageFlags & (1 << (int)ShaderStage::Fragment)) != 0)
+        if ((stageFlags & ShaderStageFlags::Fragment) != 0)
         {
             flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
         }
 
-        if ((pkStageFlags & (1 << (int)ShaderStage::Compute)) != 0)
+        if ((stageFlags & ShaderStageFlags::Compute) != 0)
         {
             flags |= VK_SHADER_STAGE_COMPUTE_BIT;
         }
 
-        if ((pkStageFlags & (1 << (int)ShaderStage::MeshTask)) != 0)
+        if ((stageFlags & ShaderStageFlags::MeshTask) != 0)
         {
             flags |= VK_SHADER_STAGE_TASK_BIT_EXT;
         }
 
-        if ((pkStageFlags & (1 << (int)ShaderStage::MeshAssembly)) != 0)
+        if ((stageFlags & ShaderStageFlags::MeshAssembly) != 0)
         {
             flags |= VK_SHADER_STAGE_MESH_BIT_EXT;
         }
 
-        if ((pkStageFlags & (1 << (int)ShaderStage::RayGeneration)) != 0)
+        if ((stageFlags & ShaderStageFlags::RayGeneration) != 0)
         {
             flags |= VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         }
 
-        if ((pkStageFlags & (1 << (int)ShaderStage::RayMiss)) != 0)
+        if ((stageFlags & ShaderStageFlags::RayMiss) != 0)
         {
             flags |= VK_SHADER_STAGE_MISS_BIT_KHR;
         }
 
-        if ((pkStageFlags & (1 << (int)ShaderStage::RayClosestHit)) != 0)
+        if ((stageFlags & ShaderStageFlags::RayClosestHit) != 0)
         {
             flags |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
         }
 
-        if ((pkStageFlags & (1 << (int)ShaderStage::RayAnyHit)) != 0)
+        if ((stageFlags & ShaderStageFlags::RayAnyHit) != 0)
         {
             flags |= VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
         }
 
-        if ((pkStageFlags & (1 << (int)ShaderStage::RayIntersection)) != 0)
+        if ((stageFlags & ShaderStageFlags::RayIntersection) != 0)
         {
             flags |= VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
         }
