@@ -35,44 +35,40 @@ namespace PK::Rendering
         m_visibilityList(1024),
         m_resizeFrameIndex(0ull)
     {
-        TextureDescriptor curDesc{};
-        curDesc.resolution = { config->InitialWidth, config->InitialHeight, 1 };
-        curDesc.sampler.filterMin = FilterMode::Bilinear;
-        curDesc.sampler.filterMag = FilterMode::Bilinear;
+        TextureDescriptor targetDesc{};
+        targetDesc.resolution = { config->InitialWidth, config->InitialHeight, 1 };
+        targetDesc.sampler.filterMin = FilterMode::Bilinear;
+        targetDesc.sampler.filterMag = FilterMode::Bilinear;
         
-        curDesc.format = TextureFormat::RGBA16F;
-        curDesc.usage = TextureUsage::RTColorSample | TextureUsage::Storage;
-        m_gbuffers.current.color = Texture::Create(curDesc, "Scene.RenderTarget.Color");
+        targetDesc.format = TextureFormat::RGBA16F;
+        targetDesc.usage = TextureUsage::RTColorSample | TextureUsage::Storage;
+        m_gbuffers.current.color = Texture::Create(targetDesc, "Scene.RenderTarget.Color");
 
-        curDesc.format = TextureFormat::RGB10A2;
-        curDesc.usage = TextureUsage::RTColorSample;
-        m_gbuffers.current.normals = Texture::Create(curDesc, "Scene.RenderTarget.Normals");
+        targetDesc.format = TextureFormat::RGB10A2;
+        targetDesc.usage = TextureUsage::RTColorSample;
+        m_gbuffers.current.normals = Texture::Create(targetDesc, "Scene.RenderTarget.Normals");
 
-        curDesc.format = TextureFormat::R32F;
-        m_gbuffers.current.depthBiased = Texture::Create(curDesc, "Scene.RenderTarget.DepthBiased");
+        targetDesc.format = TextureFormat::R32F;
+        m_gbuffers.current.depthBiased = Texture::Create(targetDesc, "Scene.RenderTarget.DepthBiased");
 
-        curDesc.format = TextureFormat::Depth32F;
-        curDesc.usage = TextureUsage::RTDepthSample;
-        m_gbuffers.current.depth = Texture::Create(curDesc, "Scene.RenderTarget.Depth");
+        targetDesc.format = TextureFormat::Depth32F;
+        targetDesc.usage = TextureUsage::RTDepthSample;
+        m_gbuffers.current.depth = Texture::Create(targetDesc, "Scene.RenderTarget.Depth");
 
-        // @TODO refactor to use RGB9E5 as this has very poor bit depth. needs a compute copy pass to work as RGB9E5 is not blittable.
-        TextureDescriptor prevDesc{};
-        prevDesc.format = TextureFormat::RGBA16F;
-        prevDesc.sampler.filterMin = FilterMode::Bilinear;
-        prevDesc.sampler.filterMag = FilterMode::Bilinear;
-        prevDesc.resolution = curDesc.resolution;
-        prevDesc.usage = TextureUsage::Default | TextureUsage::Storage;
-        m_gbuffers.previous.color = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Color");
+        // @TODO refactor to use RGB9E5 as rgba16f redundantly big.
+        targetDesc.format = TextureFormat::RGBA16F;
+        targetDesc.usage = TextureUsage::Default | TextureUsage::Storage;
+        m_gbuffers.previous.color = Texture::Create(targetDesc, "Scene.RenderTarget.Previous.Color");
 
-        prevDesc.usage = TextureUsage::Default;
-        prevDesc.format = TextureFormat::RGB10A2;
-        m_gbuffers.previous.normals = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Normals");
+        targetDesc.usage = TextureUsage::Default;
+        targetDesc.format = TextureFormat::RGB10A2;
+        m_gbuffers.previous.normals = Texture::Create(targetDesc, "Scene.RenderTarget.Previous.Normals");
 
-        prevDesc.format = TextureFormat::R32F;
-        m_gbuffers.previous.depthBiased = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.DepthBiased");
+        targetDesc.format = TextureFormat::R32F;
+        m_gbuffers.previous.depthBiased = Texture::Create(targetDesc, "Scene.RenderTarget.Previous.DepthBiased");
 
-        prevDesc.format = TextureFormat::Depth32F;
-        m_gbuffers.previous.depth = Texture::Create(prevDesc, "Scene.RenderTarget.Previous.Depth");
+        targetDesc.format = TextureFormat::Depth32F;
+        m_gbuffers.previous.depth = Texture::Create(targetDesc, "Scene.RenderTarget.Previous.Depth");
 
         m_sceneStructure = AccelerationStructure::Create("Scene");
 

@@ -16,7 +16,7 @@ namespace PK::ECS::Engines
         m_sequencer(sequencer)
     {
         m_enabled = config->EnableGizmos;
-        m_gizmosShader = assetDatabase->Find<Shader>("SH_WS_Gizmos");
+        m_gizmosShader = assetDatabase->Find<Shader>("VS_Gizmos");
         m_vertexBuffer = Buffer::Create(BufferLayout({ { ElementType::Uint4, "in_POSITION" } }), m_maxVertices, BufferUsage::DefaultVertex | BufferUsage::PersistentStage, "Gizmos.VertexBuffer");
         m_fixedFunctionAttribs = m_gizmosShader->GetFixedFunctionAttributes();
         m_fixedFunctionAttribs.rasterization.polygonMode = PolygonMode::Line;

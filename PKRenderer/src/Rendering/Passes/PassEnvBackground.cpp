@@ -15,7 +15,7 @@ namespace PK::Rendering::Passes
     PassEnvBackground::PassEnvBackground(AssetDatabase* assetDatabase)
     {
         auto hash = HashCache::Get();
-        m_backgroundShader = assetDatabase->Find<Shader>("SH_VS_EnvBackground");
+        m_backgroundShader = assetDatabase->Find<Shader>("VS_EnvBackground");
         m_integrateSHShader = assetDatabase->Find<Shader>("CS_IntegrateEnvSH");
         m_shBuffer = Buffer::Create(ElementType::Float4, 4, BufferUsage::DefaultStorage, "Scene.Env.SHBuffer");
         GraphicsAPI::SetBuffer(hash->pk_SceneEnv_SH, m_shBuffer.get());

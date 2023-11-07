@@ -1916,7 +1916,7 @@
     <None Include="res\configs\CommandConfig-Active.keycfg" />
     <None Include="res\shaders\includes\Utilities.glsl" />
     <None Include="res\shaders\includes\Common.glsl" />
-    <None Include="res\shaders\SH_VS_EnvBackground.shader" />
+    <None Include="res\shaders\VS_EnvBackground.shader" />
     <None Include="res\shaders\includes\Encoding.glsl" />
     <None Include="res\shaders\includes\Lighting.glsl" />
     <None Include="res\textures\T_OEM_Quarry.ktx2" />
@@ -1935,7 +1935,7 @@
     <None Include="res\shaders\includes\PostFXDepthOfField.glsl" />
     <None Include="res\shaders\CS_AutoFocus.shader" />
     <None Include="res\shaders\CS_DepthOfField.shader" />
-    <None Include="res\shaders\SH_WS_Unlit_Color.shader" />
+    <None Include="res\shaders\VS_Mat_Unlit_Color.shader" />
     <None Include="res\textures\T_OEM_Trail.ktx2" />
     <None Include="res\textures\T_OEM_Park.ktx2" />
     <None Include="res\textures\default\T_LightCookies.ktx2" />
@@ -1944,13 +1944,13 @@
     <None Include="res\textures\T_OEM_Night.ktx2" />
     <None Include="res\textures\default\T_Bluenoise256.ktx2" />
     <None Include="res\shaders\includes\LightResources.glsl" />
-    <None Include="res\shaders\SH_WS_Shadowmap_Generic.shader" />
+    <None Include="res\shaders\VS_Mat_Shadow_Default.shader" />
     <None Include="res\shaders\CS_CopyCubeShadow.shader" />
     <None Include="res\shaders\CS_LightAssignment.shader" />
     <None Include="res\shaders\includes\GBuffers.glsl" />
     <None Include="res\shaders\includes\BRDF.glsl" />
     <None Include="res\shaders\includes\SurfaceShaderBase.glsl" />
-    <None Include="res\shaders\SH_WS_PBR_Default.shader" />
+    <None Include="res\shaders\VS_Mat_Surf_Default.shader" />
     <None Include="res\materials\M_Ground.material" />
     <None Include="res\textures\environment\T_Wood_Floor_S.ktx2" />
     <None Include="res\textures\environment\T_Asphalt_D.ktx2" />
@@ -1988,9 +1988,9 @@
     <None Include="res\materials\M_Sand.material" />
     <None Include="res\materials\M_Water.material" />
     <None Include="res\materials\M_Wood_Floor.material" />
-    <None Include="res\shaders\SH_WS_PBR_Cloth.shader" />
-    <None Include="res\shaders\SH_WS_PBR_Glitter.shader" />
-    <None Include="res\shaders\SH_WS_PBR_Water.shader" />
+    <None Include="res\shaders\VS_Mat_Surf_Cloth.shader" />
+    <None Include="res\shaders\VS_Mat_Surf_Glitter.shader" />
+    <None Include="res\shaders\VS_Mat_Surf_Water.shader" />
     <None Include="res\textures\environment\T_Gravel_H.ktx2" />
     <None Include="res\textures\environment\T_Metal_Plates_H.ktx2" />
     <None Include="res\textures\environment\T_Metal_Rust_H.ktx2" />
@@ -2008,7 +2008,7 @@
     <None Include="res\textures\environment\T_Marble_H.ktx2" />
     <None Include="res\textures\environment\T_Marble_N.ktx2" />
     <None Include="res\textures\environment\T_Marble_S.ktx2" />
-    <None Include="res\shaders\SH_WS_PBR_Triplanar.shader" />
+    <None Include="res\shaders\VS_Mat_Surf_Triplanar.shader" />
     <None Include="res\materials\M_Marble.material" />
     <None Include="res\materials\M_Plaster.material" />
     <None Include="res\textures\environment\T_Plaster_D.ktx2" />
@@ -2039,7 +2039,7 @@
     <None Include="res\shaders\includes\SpatialFilters.glsl" />
     <None Include="res\shaders\CS_VolumeFogInject.shader" />
     <None Include="res\shaders\CS_VolumeFogDensity.shader" />
-    <None Include="res\shaders\SH_WS_Gizmos.shader" />
+    <None Include="res\shaders\VS_Gizmos.shader" />
     <None Include="res\shaders\includes\SceneGIFiltering.glsl" />
     <None Include="res\shaders\includes\SceneGIReSTIR.glsl" />
     <None Include="res\shaders\includes\MortonOrder.glsl" />
@@ -2052,6 +2052,7 @@
     <None Include="res\shaders\includes\bend_sss_gpu.glsl" />
     <None Include="res\shaders\includes\SceneGIRT.glsl" />
     <None Include="res\shaders\includes\ComputeQuadSwap.glsl" />
+    <None Include="res\shaders\MS_EnvBackground.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
