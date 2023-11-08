@@ -200,6 +200,7 @@ Reservoir ReSTIR_Load_Previous(const int2 coord)
 
 uint4 ReSTIR_Pack_Hit(const float3 direction, const float hitDist, const float3 normal, const uint hitNormal, const float3 radiance)
 {
+    // assuming lambertian distribution
     const float invPdf = PK_PI * safePositiveRcp(dot(normal, direction));
     uint4 packed;
     packed.xy = packHalf4x16(float4(direction.xyz * hitDist, invPdf));

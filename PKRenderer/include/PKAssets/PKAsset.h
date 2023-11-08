@@ -380,6 +380,56 @@ namespace PK::Assets
         constexpr const static char* PK_VS_TEXCOORD2 = "in_TEXCOORD2";
         constexpr const static char* PK_VS_TEXCOORD3 = "in_TEXCOORD3";
 
+        // Meshlets
+        namespace Meshlet
+        {
+            // packed as uint4
+            struct PKVertex
+            {
+                uint32_t position; // 11r11g10b normalized
+                uint32_t texcoord; // 16r16g half
+                uint32_t normal;   // 16r16g normal octa encoded
+                uint32_t tangent;  // 15r15g2b tangent octa encoded & tangent sign
+            };
+
+            // packed as 2x uint4
+            struct PKMeshlet
+            {
+                uint32_t firstTriangle;   // 4
+                uint32_t firstVertex;     // 8
+                uint16_t triangleCount;   // 10
+                uint16_t vertexCount;     // 12
+                uint16_t coneAxis[2];     // 16 // float16_t
+                uint16_t center[3];       // 22 // float16_t
+                uint16_t radius;          // 24 // float16_t
+                uint16_t coneApex[3];     // 30 // float16_t
+                uint16_t coneangle;       // 32 // float16_t
+            };
+
+            // packed as 3x uint4
+            struct PKSubmesh
+            {
+                uint32_t firstTriangle; // 4 bytes
+                uint32_t firstVertex;   // 8 bytes
+                uint32_t firstMeshlet;  // 12 bytes
+                uint32_t triangleCount; // 16 bytes
+                uint32_t vertexCount;   // 20 bytes
+                uint32_t meshletCount;  // 24 bytes
+                float bbmin[3];         // 36 bytes
+                float bbmax[3];         // 48 bytes
+            };
+
+            struct PKMesh
+            {
+                uint32_t triangleCount;           // 4 bytes
+                uint32_t vertexCount;             // 8 bytes
+                uint32_t submeshCount;            // 12 bytes
+                RelativePtr<PKSubmesh> submeshes; // 16 bytes
+                RelativePtr<PKVertex> vertices;   // 20 bytes
+                RelativePtr<uint8_t> indices;     // 24 bytes
+            };
+        }
+
         struct PKVertexAttribute
         {
             char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
@@ -407,9 +457,10 @@ namespace PK::Assets
             RelativePtr<PKSubmesh> submeshes;                   // 24 bytes
             RelativePtr<void> vertexBuffer;                     // 28 bytes
             RelativePtr<void> indexBuffer;                      // 32 bytes
-            PKElementType indexType;                            // 34 bytes
+            RelativePtr<Meshlet::PKMesh> meshletMesh;           // 36 bytes
+            PKElementType indexType;                            // 38 bytes
 
-            uint16_t __padding = 0u;                            // 36 bytes
+            uint16_t __padding = 0u;                            // 40 bytes
         };
     }
 
