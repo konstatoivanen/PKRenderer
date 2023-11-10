@@ -395,10 +395,10 @@ namespace PK::Assets
             // packed as 2x uint4
             struct PKMeshlet
             {
-                uint32_t firstTriangle;   // 4
-                uint32_t firstVertex;     // 8
-                uint16_t triangleCount;   // 10
-                uint16_t vertexCount;     // 12
+                uint32_t firstVertex;     // 4
+                uint32_t firstTriangle;   // 8
+                uint16_t vertexCount;     // 10
+                uint16_t triangleCount;   // 12
                 uint16_t coneAxis[2];     // 16 // float16_t
                 uint16_t center[3];       // 22 // float16_t
                 uint16_t radius;          // 24 // float16_t
@@ -409,24 +409,27 @@ namespace PK::Assets
             // packed as 3x uint4
             struct PKSubmesh
             {
-                uint32_t firstTriangle; // 4 bytes
+                uint32_t firstMeshlet;  // 4 bytes
                 uint32_t firstVertex;   // 8 bytes
-                uint32_t firstMeshlet;  // 12 bytes
-                uint32_t triangleCount; // 16 bytes
+                uint32_t firstTriangle; // 12 bytes
+                uint32_t meshletCount;  // 16 bytes
                 uint32_t vertexCount;   // 20 bytes
-                uint32_t meshletCount;  // 24 bytes
+                uint32_t triangleCount; // 24 bytes
                 float bbmin[3];         // 36 bytes
                 float bbmax[3];         // 48 bytes
             };
+
 
             struct PKMesh
             {
                 uint32_t triangleCount;           // 4 bytes
                 uint32_t vertexCount;             // 8 bytes
                 uint32_t submeshCount;            // 12 bytes
-                RelativePtr<PKSubmesh> submeshes; // 16 bytes
-                RelativePtr<PKVertex> vertices;   // 20 bytes
-                RelativePtr<uint8_t> indices;     // 24 bytes
+                uint32_t meshletCount;            // 16 bytes
+                RelativePtr<PKMeshlet> meshlets;  // 20 bytes
+                RelativePtr<PKSubmesh> submeshes; // 24 bytes
+                RelativePtr<PKVertex> vertices;   // 28 bytes
+                RelativePtr<uint8_t> indices;     // 32 bytes
             };
         }
 

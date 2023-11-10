@@ -86,6 +86,12 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     }
 
 
+    IndexRange VulkanBuffer::AllocateAligned(const size_t size, QueueType type)
+    {
+        PK_THROW_ASSERT(m_pageTable, "Non sparse buffer cannot be allocated from!");
+        return m_pageTable->AllocateAligned(size, type);
+    }
+
     void VulkanBuffer::MakeRangeResident(const IndexRange& range, QueueType type)
     {
         if (m_pageTable != nullptr)

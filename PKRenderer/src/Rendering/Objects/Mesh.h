@@ -1,7 +1,5 @@
 #pragma once
 #include "Core/Services/AssetDatabase.h"
-
-// This causes a circular dependency at the moment. Meshes are references by rhi. this shouldn't be allowed.
 #include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::Rendering::Objects
@@ -83,7 +81,6 @@ namespace PK::Rendering::Objects
             // Cached for blas geometry infos
             uint32_t m_vertexPositionBufferIndex = ~0u;
             uint32_t m_vertexPositionOffset = ~0u;
-
             std::vector<SubMesh> m_submeshes;
             std::vector<uint32_t> m_freeSubmeshIndices;
     };

@@ -50,6 +50,7 @@ namespace PK::Rendering::RHI::Objects
                 return { reinterpret_cast<const T*>(BeginRead(offset * tsize, count * tsize)), count };
             }
 
+            virtual IndexRange AllocateAligned(const size_t size, QueueType type) = 0;
             virtual void MakeRangeResident(const IndexRange& range, QueueType type) = 0;
             virtual void MakeRangeNonResident(const IndexRange& range) = 0;
 

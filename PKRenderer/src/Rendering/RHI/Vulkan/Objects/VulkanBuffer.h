@@ -23,6 +23,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             const VulkanBindHandle* GetBindHandle(const IndexRange& range);
             inline const VulkanBindHandle* GetBindHandle() const { return m_bindHandles.GetValueAt(0); } // Default range is always the first one
 
+            IndexRange AllocateAligned(const size_t size, QueueType type) final;
             void MakeRangeResident(const IndexRange& range, QueueType type) final;
             void MakeRangeNonResident(const IndexRange& range) final;
 

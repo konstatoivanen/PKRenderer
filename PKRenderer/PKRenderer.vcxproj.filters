@@ -1497,6 +1497,9 @@
     <ClInclude Include="src\Rendering\MeshRendering.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Rendering\Objects\MeshletMesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\glm\detail\func_common.inl">
@@ -2323,6 +2326,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\MeshRendering.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Objects\MeshletMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
