@@ -559,8 +559,12 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\ECS\Tokens\BatcherToken.h" />
     <ClInclude Include="src\ECS\Tokens\GizmosToken.h" />
     <ClInclude Include="src\ECS\Tokens\RenderingTokens.h" />
-    <ClInclude Include="src\Rendering\MeshRendering.h" />
+    <ClInclude Include="src\Rendering\MeshUtilities\AttributeUtility.h" />
+    <ClInclude Include="src\Rendering\MeshUtilities\MeshletBuilder.h" />
+    <ClInclude Include="src\Rendering\MeshUtilities\RenderingUtility.h" />
+    <ClInclude Include="src\Rendering\MeshUtilities\PrimitiveBuilders.h" />
     <ClInclude Include="src\Rendering\Objects\MeshletMesh.h" />
+    <ClInclude Include="src\Rendering\Objects\VirtualMesh.h" />
     <ClInclude Include="src\Rendering\RHI\BuiltInResources.h" />
     <ClInclude Include="src\Rendering\RHI\Driver.h" />
     <ClInclude Include="src\Rendering\Structs\GBuffers.h" />
@@ -592,6 +596,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Utilities\FileIOBMP.h" />
     <ClInclude Include="src\Utilities\FastMap.h" />
     <ClInclude Include="src\Utilities\FixedList.h" />
+    <ClInclude Include="src\Utilities\RangeTable.h" />
     <ClInclude Include="src\Utilities\VersionedObject.h" />
     <ClInclude Include="src\Utilities\IndexedSet.h" />
     <ClInclude Include="src\Utilities\Handle.h" />
@@ -641,7 +646,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\Passes\Batcher.h" />
     <ClInclude Include="src\Rendering\RHI\GraphicsAPI.h" />
     <ClInclude Include="src\Rendering\HashCache.h" />
-    <ClInclude Include="src\Rendering\MeshUtility.h" />
     <ClInclude Include="src\Rendering\Objects\BindSet.h" />
     <ClInclude Include="src\Rendering\RHI\Objects\Buffer.h" />
     <ClInclude Include="src\Rendering\RHI\Objects\CommandBuffer.h" />
@@ -994,8 +998,11 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\ECS\Engines\EngineGizmos.cpp" />
     <ClCompile Include="src\ECS\Engines\EnginePKAssetBuilder.cpp" />
     <ClCompile Include="src\ECS\Engines\EngineScreenshot.cpp" />
-    <ClCompile Include="src\Rendering\MeshRendering.cpp" />
+    <ClCompile Include="src\Rendering\MeshUtilities\AttributeUtility.cpp" />
+    <ClCompile Include="src\Rendering\MeshUtilities\MeshletBuilder.cpp" />
+    <ClCompile Include="src\Rendering\MeshUtilities\RenderingUtility.cpp" />
     <ClCompile Include="src\Rendering\Objects\MeshletMesh.cpp" />
+    <ClCompile Include="src\Rendering\Objects\VirtualMesh.cpp" />
     <ClCompile Include="src\Rendering\RHI\BuiltInResources.cpp" />
     <ClCompile Include="src\Rendering\RHI\Driver.cpp" />
     <ClCompile Include="src\Rendering\RHI\Objects\AccelerationStructure.cpp" />
@@ -1038,7 +1045,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PrecompiledHeader.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="src\Rendering\Passes\Batcher.cpp" />
-    <ClCompile Include="src\Rendering\MeshUtilitity.cpp" />
+    <ClCompile Include="src\Rendering\MeshUtilities\PrimitiveBuilders.cpp" />
     <ClCompile Include="src\Rendering\RHI\Objects\Buffer.cpp" />
     <ClCompile Include="src\Rendering\RHI\Objects\CommandBuffer.cpp" />
     <ClCompile Include="src\Rendering\Objects\ConstantBuffer.cpp" />

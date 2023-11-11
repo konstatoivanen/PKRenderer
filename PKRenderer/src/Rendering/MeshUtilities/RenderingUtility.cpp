@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
-#include "MeshRendering.h"
+#include "RenderingUtility.h"
 
-namespace PK::Rendering::MeshRendering
+namespace PK::Rendering::MeshUtilities
 {
     using namespace PK::Rendering::Objects;
     using namespace PK::Rendering::RHI;
@@ -10,14 +10,14 @@ namespace PK::Rendering::MeshRendering
     void SetMesh(CommandBuffer* cmd, const Mesh* mesh)
     {
         auto& vbuffers = mesh->GetVertexBuffers();
-        auto* pVBuffers = PK_STACK_ALLOC(const Buffer*, vbuffers.size());
+        const Buffer* pVBuffers[PK_MAX_VERTEX_ATTRIBUTES];
 
-        for (auto i = 0u; i < vbuffers.size(); ++i)
+        for (auto i = 0u; i < vbuffers.GetCount(); ++i)
         {
             pVBuffers[i] = vbuffers[i].get();
         }
 
-        cmd->SetVertexBuffers(pVBuffers, (uint32_t)vbuffers.size());
+        cmd->SetVertexBuffers(pVBuffers, (uint32_t)vbuffers.GetCount());
         cmd->SetIndexBuffer(mesh->GetIndexBuffer(), 0);
     }
 
@@ -68,5 +68,4 @@ namespace PK::Rendering::MeshRendering
         SetMesh(cmd, mesh);
         cmd->DrawIndexedIndirect(indirectArguments, offset, drawCount, stride);
     }
-
 }

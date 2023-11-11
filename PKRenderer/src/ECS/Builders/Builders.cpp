@@ -33,7 +33,6 @@ namespace PK::ECS::Builders
     static BoundingBox GetSubmeshRangeBounds(VirtualMesh* mesh, const std::initializer_list<MaterialTarget>& materials)
     {
         auto bounds = BoundingBox::GetMinBounds();
-        auto baseIdx = mesh->GetBaseSubmeshIndex();
 
         for (auto& target : materials)
         {

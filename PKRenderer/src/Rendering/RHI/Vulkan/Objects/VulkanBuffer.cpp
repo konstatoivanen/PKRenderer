@@ -86,26 +86,22 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     }
 
 
-    IndexRange VulkanBuffer::AllocateAligned(const size_t size, QueueType type)
+    size_t VulkanBuffer::SparseAllocate(const size_t size, QueueType type)
     {
         PK_THROW_ASSERT(m_pageTable, "Non sparse buffer cannot be allocated from!");
-        return m_pageTable->AllocateAligned(size, type);
+        return m_pageTable->Allocate(size, type);
     }
 
-    void VulkanBuffer::MakeRangeResident(const IndexRange& range, QueueType type)
+    void VulkanBuffer::SparseAllocateRange(const IndexRange& range, QueueType type)
     {
-        if (m_pageTable != nullptr)
-        {
-            m_pageTable->AllocateRange(range, type);
-        }
+        PK_THROW_ASSERT(m_pageTable, "Non sparse buffer cannot be allocated from!");
+        m_pageTable->AllocateRange(range, type);
     }
 
-    void VulkanBuffer::MakeRangeNonResident(const IndexRange& range)
+    void VulkanBuffer::SparseDeallocate(const IndexRange& range)
     {
-        if (m_pageTable != nullptr)
-        {
-            m_pageTable->FreeRange(range);
-        }
+        PK_THROW_ASSERT(m_pageTable, "Non sparse buffer cannot be deallocated from!");
+        m_pageTable->DeallocateRange(range);
     }
 
 
@@ -143,7 +139,8 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
         if ((m_usage & BufferUsage::Sparse) != 0)
         {
-            m_pageTable = new VulkanSparsePageTable(m_driver, m_rawBuffer->buffer, bufferCreateInfo.allocation.usage);
+            auto name = m_name + std::string(".PageTable");
+            m_pageTable = new VulkanSparsePageTable(m_driver, m_rawBuffer->buffer, bufferCreateInfo.allocation.usage, name.c_str());
         }
 
         GetBindHandle({ 0, m_count });

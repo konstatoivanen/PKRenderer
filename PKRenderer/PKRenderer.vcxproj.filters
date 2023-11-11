@@ -1080,9 +1080,6 @@
     <ClInclude Include="src\Rendering\Objects\Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\MeshUtility.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\mikktspace\mikktspace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1494,10 +1491,25 @@
     <ClInclude Include="src\Rendering\RHI\Driver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\MeshRendering.h">
+    <ClInclude Include="src\Rendering\MeshUtilities\RenderingUtility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Objects\MeshletMesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utilities\RangeTable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Objects\VirtualMesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\MeshUtilities\MeshletBuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\MeshUtilities\PrimitiveBuilders.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\MeshUtilities\AttributeUtility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2166,7 +2178,7 @@
     <ClCompile Include="src\Rendering\Objects\Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\MeshUtilitity.cpp">
+    <ClCompile Include="src\Rendering\MeshUtilities\PrimitiveBuilders.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="include\mikktspace\mikktspace.c">
@@ -2325,10 +2337,19 @@
     <ClCompile Include="src\Rendering\RHI\Driver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\MeshRendering.cpp">
+    <ClCompile Include="src\Rendering\MeshUtilities\RenderingUtility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Objects\MeshletMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Objects\VirtualMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\MeshUtilities\MeshletBuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\MeshUtilities\AttributeUtility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

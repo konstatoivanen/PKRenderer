@@ -101,6 +101,16 @@ namespace PK::Utilities
 
             void Clear() { SetCount(0u); }
 
+            void ClearFull() 
+            {
+                for (auto i = 0u; i < m_count; ++i)
+                {
+                    alloc_traits::destroy(m_alloc, m_data + i);
+                }
+
+                SetCount(0u);
+            }
+
             constexpr const T* GetData() const { return m_data; }
 
             ConstBufferIterator<T> begin() const { return ConstBufferIterator<T>(m_data, 0ull); }

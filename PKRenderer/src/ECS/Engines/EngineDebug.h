@@ -3,6 +3,7 @@
 #include "Core/Services/AssetDataBase.h"
 #include "ECS/EntityDatabase.h"
 #include "ECS/Tokens/GizmosToken.h"
+#include "Rendering/Objects/MeshletMesh.h"
 
 namespace PK::ECS::Engines
 {
@@ -19,5 +20,6 @@ namespace PK::ECS::Engines
             EntityDatabase* m_entityDb;
             Core::Services::AssetDatabase* m_assetDatabase;
             Utilities::Ref<Rendering::Objects::Mesh> m_virtualBaseMesh = nullptr;
+            Utilities::Ref<Rendering::Objects::MeshletMesh> m_meshletMesh = nullptr;
     };
 }

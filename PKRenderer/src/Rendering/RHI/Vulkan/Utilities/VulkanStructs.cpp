@@ -287,6 +287,8 @@ namespace PK::Rendering::RHI::Vulkan
             aliasInfo.usage &= ~VK_IMAGE_USAGE_STORAGE_BIT;
             VK_ASSERT_RESULT_CTX(vmaCreateImage(allocator, &aliasInfo, &createInfo.allocation, &image, &memory, nullptr), "Failed to create an image!");
             vmaCreateAliasingImage(allocator, memory, &createInfo.image, &imageAlias);
+            auto aliasName = std::string(name) + std::string(".Alias");
+            Utilities::VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_IMAGE, (uint64_t)imageAlias, aliasName.c_str());
         }
         else
         {

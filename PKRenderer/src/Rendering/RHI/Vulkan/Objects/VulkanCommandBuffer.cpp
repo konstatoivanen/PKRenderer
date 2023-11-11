@@ -104,7 +104,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
     void VulkanCommandBuffer::SetVertexBuffers(const Buffer** buffers, uint32_t count)
     {
-        auto pHandles = PK_STACK_ALLOC(const VulkanBindHandle*, count);
+        const VulkanBindHandle* pHandles[PK_MAX_VERTEX_ATTRIBUTES];
 
         for (auto i = 0u; i < count; ++i)
         {

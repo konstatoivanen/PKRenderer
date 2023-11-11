@@ -44,15 +44,19 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         }
     }
 
-    bool VulkanTexture::Validate(const uint3& resolution)
+    bool VulkanTexture::Validate(const TextureDescriptor& descriptor)
     {
-        if (m_descriptor.resolution == resolution)
+        if (m_descriptor.samplerType == descriptor.samplerType &&
+            m_descriptor.format == descriptor.format &&
+            m_descriptor.usage == descriptor.usage &&
+            m_descriptor.resolution == descriptor.resolution &&
+            m_descriptor.levels == descriptor.levels &&
+            m_descriptor.samples == descriptor.samples &&
+            m_descriptor.layers == descriptor.layers)
         {
             return false;
         }
 
-        auto descriptor = m_descriptor;
-        descriptor.resolution = resolution;
         Rebuild(descriptor);
         return true;
     }
@@ -71,46 +75,37 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         return true;
     }
 
-    bool VulkanTexture::Validate(const TextureDescriptor& descriptor)
+    bool VulkanTexture::Validate(const uint3& resolution)
     {
-        if (m_descriptor.samplerType == descriptor.samplerType &&
-            m_descriptor.format == descriptor.format &&
-            m_descriptor.usage == descriptor.usage &&
-            m_descriptor.resolution == descriptor.resolution &&
-            m_descriptor.levels == descriptor.levels &&
-            m_descriptor.samples == descriptor.samples &&
-            m_descriptor.layers == descriptor.layers)
+        if (m_descriptor.resolution == resolution)
         {
             return false;
         }
 
+        auto descriptor = m_descriptor;
+        descriptor.resolution = resolution;
         Rebuild(descriptor);
         return true;
     }
 
+
     void VulkanTexture::Rebuild(const TextureDescriptor& descriptor)
     {
         Dispose();
-
         auto& families = m_driver->queues->GetSelectedFamilies();
-
         m_descriptor = descriptor;
         m_rawImage = m_driver->imagePool.New(m_driver->device, m_driver->allocator, VulkanImageCreateInfo(descriptor, &families), m_name.c_str());
         m_viewType = EnumConvert::GetViewType(descriptor.samplerType);
         m_swizzle = EnumConvert::GetSwizzle(m_rawImage->format);
-
-        GetView({});
-
-        if ((descriptor.usage & TextureUsage::ValidRTTypes) != 0)
-        {
-            GetView({}, TextureBindMode::RenderTarget);
-        }
     }
 
     TextureViewRange VulkanTexture::NormalizeViewRange(const TextureViewRange& range) const
     {
         auto out = range;
+        auto levels = (uint16_t)m_rawImage->levels;
+        auto layers = (uint16_t)m_rawImage->layers;
 
+        // Remove layers from non layered image types
         switch (m_viewType)
         {
             case VK_IMAGE_VIEW_TYPE_1D:
@@ -119,38 +114,17 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             case VK_IMAGE_VIEW_TYPE_CUBE: out.layers = 6u; break;
         }
 
-        if (out.level >= m_descriptor.levels)
-        {
-            out.level = m_descriptor.levels - 1u;
-        }
-
-        if (out.layer >= m_descriptor.layers)
-        {
-            out.layer = m_descriptor.layers - 1u;
-        }
-
-        if (out.levels == 0 || out.level + out.levels >= m_descriptor.levels)
-        {
-            out.levels = 0x7FFF;
-        }
-
-        if (out.layers == 0 || out.layer + out.layers >= m_descriptor.layers)
-        {
-            out.layers = 0x7FFF;
-        }
+        if (out.level >= levels) out.level = levels - 1u;
+        if (out.layer >= layers) out.layer = layers - 1u;
+        if (out.levels == 0 || out.level + out.levels >= levels) out.levels = 0x7FFF;
+        if (out.layers == 0 || out.layer + out.layers >= layers) out.layers = 0x7FFF;
 
         // Use clamped range for render targets as framebuffers cannot have unbounded layer ranges
+        // Not checked based on bind type because of access tracking 
         if ((m_descriptor.usage & TextureUsage::ValidRTTypes) != 0)
         {
-            if (out.layers == 0x7FFF)
-            {
-                out.layers = glm::max(1, m_descriptor.layers - out.layer);
-            }
-
-            if (out.levels == 0x7FFF)
-            {
-                out.levels = glm::max(1, m_descriptor.levels - out.level);
-            }
+            if (out.levels == 0x7FFF) out.levels = glm::max(1, levels - out.level);
+            if (out.layers == 0x7FFF) out.layers = glm::max(1, layers - out.layer);
         }
 
         return out;

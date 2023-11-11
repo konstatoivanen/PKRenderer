@@ -3,7 +3,7 @@
 #include "Math/FunctionsColor.h"
 #include "Core/Services/Time.h"
 #include "ECS/Builders/Builders.h"
-#include "Rendering/MeshUtility.h"
+#include "Rendering/MeshUtilities/PrimitiveBuilders.h"
 #include "Rendering/HashCache.h"
 #include "EngineDebug.h"
 
@@ -33,16 +33,26 @@ namespace PK::ECS::Engines
 
         BufferLayout positionLayout = { { ElementType::Float3, PK_VS_POSITION } };
 
-        auto virtualVBuffer0 = Buffer::Create(defaultLayout, 2000000, BufferUsage::SparseVertex, "VirtualMesh.VertexBuffer0");
-        auto virtualVBuffer1 = Buffer::Create(positionLayout, 2000000, BufferUsage::SparseVertex | BufferUsage::Storage, "VirtualMesh.VertexBuffer1");
-        auto virtualIBuffer = Buffer::Create(ElementType::Uint, 2000000, BufferUsage::SparseIndex | BufferUsage::Storage, "VirtualMesh.IndexBuffer");
-        m_virtualBaseMesh = CreateRef<Mesh>(virtualVBuffer0, virtualIBuffer);
-        m_virtualBaseMesh->AddVertexBuffer(virtualVBuffer1);
+        BufferRef virtualVertexBuffers[2] = 
+        {
+            Buffer::Create(defaultLayout, 2000000, BufferUsage::SparseVertex, "VirtualMesh.VertexAttributes"),
+            Buffer::Create(positionLayout, 2000000, BufferUsage::SparseVertex | BufferUsage::Storage, "VirtualMesh.VertexPositions")
+        };
 
-        auto columnMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Columns.pkmesh", &m_virtualBaseMesh);
-        auto rocksMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Rocks.pkmesh", &m_virtualBaseMesh);
-        auto sphereMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Sphere", MeshUtility::GetSphere(m_virtualBaseMesh, PK_FLOAT3_ZERO, 1.0f));
-        auto planeMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Plane16x16", MeshUtility::GetPlane(m_virtualBaseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
+        auto virtualIBuffer = Buffer::Create(ElementType::Uint, 2000000, BufferUsage::SparseIndex | BufferUsage::Storage, "VirtualMesh.IndexBuffer");
+        
+        m_virtualBaseMesh = CreateRef<Mesh>(virtualIBuffer, virtualVertexBuffers, 2u, nullptr, 0u);
+
+        const uint32_t maxSubmeshes = 65535u;
+        const uint32_t maxMeshlets = 65535u * 4u;
+        const uint32_t maxVertices = 65535u * 32u;
+        const uint32_t maxTriangles = 65535u * 16u * 3u;
+        m_meshletMesh = CreateRef<MeshletMesh>(maxSubmeshes, maxMeshlets, maxVertices, maxTriangles);
+
+        auto columnMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Columns.pkmesh", &m_virtualBaseMesh, &m_meshletMesh);
+        auto rocksMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Rocks.pkmesh", &m_virtualBaseMesh, &m_meshletMesh);
+        auto sphereMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Sphere", MeshUtilities::CreateSphereVirtualMesh(m_virtualBaseMesh, m_meshletMesh, PK_FLOAT3_ZERO, 1.0f));
+        auto planeMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Plane16x16", MeshUtilities::CreatePlaneVirtualMesh(m_virtualBaseMesh, m_meshletMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
 
         auto materialSand = assetDatabase->Load<Material>("res/materials/M_Sand.material");
         auto materialAsphalt = assetDatabase->Load<Material>("res/materials/M_Asphalt.material");

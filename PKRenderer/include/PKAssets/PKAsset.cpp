@@ -429,3 +429,168 @@ namespace PK::Assets
         return 0;
     }
 }
+
+namespace PK::Assets::Mesh::Meshlet
+{
+    uint16_t PackHalf(float v)
+    {
+        if (v < -65536.0f)
+        {
+            v = -65536.0f;
+        }
+
+        if (v > 65536.0f)
+        {
+            v = 65536.0f;
+        }
+
+        v *= 1.925930e-34f;
+        int32_t i = *(int*)&v;
+        uint32_t ui = (uint32_t)i;
+        return ((i >> 16) & (int)0xffff8000) | ((int)(ui >> 13));
+    }
+
+    float abs(float v) { return v < 0.0f ? -v : v; }
+
+    void OctaEncode(const float* n, float* outuv)
+    {
+        float t[3] = { n[0], n[1], n[2] };
+        float f = abs(n[0]) + abs(n[1]) + abs(n[2]);
+        t[0] /= f;
+        t[1] /= f;
+        t[2] /= f;
+
+        if (t[1] >= 0.0f)
+        {
+            outuv[0] = t[0];
+            outuv[1] = t[2];
+        }
+        else
+        {
+            outuv[0] = (1.0f - abs(t[2])) * (t[0] >= 0.0f ? 1.0f : -1.0f);
+            outuv[1] = (1.0f - abs(t[0])) * (t[2] >= 0.0f ? 1.0f : -1.0f);
+        }
+
+        outuv[0] = outuv[0] * 0.5f + 0.5f;
+        outuv[1] = outuv[1] * 0.5f + 0.5f;
+    }
+
+    uint32_t EncodeVertexPosition(const float* pPosition, const float* center, float radius)
+    {
+        float position[3] =
+        {
+            ((pPosition[0] - center[0]) / radius) * 0.5f + 0.5f,
+            ((pPosition[1] - center[1]) / radius) * 0.5f + 0.5f,
+            ((pPosition[2] - center[2]) / radius) * 0.5f + 0.5f
+        };
+
+        int16_t qposition[3];
+        qposition[0] = (int16_t)(position[0] * 2047.0f);
+        qposition[1] = (int16_t)(position[1] * 2047.0f);
+        qposition[2] = (int16_t)(position[2] * 1023.0f);
+
+        if (qposition[0] < 0) { qposition[0] = 0; }
+        if (qposition[1] < 0) { qposition[1] = 0; }
+        if (qposition[2] < 0) { qposition[2] = 0; }
+        if (qposition[0] > 2047) { qposition[0] = 2047; }
+        if (qposition[1] > 2047) { qposition[1] = 2047; }
+        if (qposition[2] > 1023) { qposition[2] = 1023; }
+
+        uint32_t encoded = 0u;
+        encoded = ((uint32_t)qposition[0]) & 0x7FFu;
+        encoded |= (((uint32_t)qposition[1]) & 0x7FFu) << 11u;
+        encoded |= (((uint32_t)qposition[1]) & 0x3FFu) << 10u;
+        return encoded;
+    }
+
+    uint32_t EncodeTexcoord(const float* pTexcoord)
+    {
+        auto u = (uint32_t)PackHalf(pTexcoord[0]);
+        auto v = (uint32_t)PackHalf(pTexcoord[1]);
+        return (u & 0xFFFFu) | ((v & 0xFFFFu) << 16u);
+    }
+
+    uint32_t EncodeNormal(const float* pNormal)
+    {
+        float octauv[2];
+        OctaEncode(pNormal, octauv);
+
+        auto ui = (int32_t)(octauv[0] * 65535.0f);
+        auto vi = (int32_t)(octauv[1] * 65535.0f);
+        if (ui < 0) { ui = 0; }
+        if (vi < 0) { vi = 0; }
+        if (ui > 65535) { ui = 65535; }
+        if (vi > 65535) { vi = 65535; }
+
+        auto u = (uint32_t)ui;
+        auto v = (uint32_t)vi;
+
+        return (u & 0xFFFFu) | ((v & 0xFFFFu) << 16u);
+    }
+
+    uint32_t EncodeTangent(const float* pTangent)
+    {
+        float octauv[2];
+        OctaEncode(pTangent, octauv);
+        uint8_t sign = pTangent[4] < 0.0f ? 0u : 3u;
+
+        auto ui = (int32_t)(octauv[0] * 32767.0f);
+        auto vi = (int32_t)(octauv[1] * 32767.0f);
+        if (ui < 0) { ui = 0; }
+        if (vi < 0) { vi = 0; }
+        if (ui > 32767) { ui = 32767; }
+        if (vi > 32767) { vi = 32767; }
+
+        auto u = (uint32_t)ui;
+        auto v = (uint32_t)vi;
+
+        return (u & 0x7FFFu) | ((v & 0x7FFFu) << 15u) | ((sign & 0x3) << 30u);
+    }
+
+    PKVertex PackVertex(const float* pPosition,
+                        const float* pTexcoord,
+                        const float* pNormal,
+                        const float* pTangent,
+                        const float* center,
+                        float radius)
+    {
+        PKVertex vertex = { 0u, 0u, 0u };
+        vertex.position = EncodeVertexPosition(pPosition, center, radius);
+        vertex.texcoord = pTexcoord ? EncodeTexcoord(pTexcoord) : 0u;
+        vertex.normal = pNormal ? EncodeNormal(pNormal) : 0u;
+        vertex.tangent = pTangent ? EncodeTangent(pTangent) : 0u;
+        return vertex;
+    }
+    
+    PKMeshlet PackMeshlet(uint32_t firstVertex, 
+                          uint32_t firstTriangle, 
+                          uint32_t vertexCount, 
+                          uint32_t triangleCount, 
+                          const float* coneAxis, 
+                          const float* center, 
+                          float radius, 
+                          const float* coneApex, 
+                          float coneCutoff)
+    {
+        float octauv[2];
+        OctaEncode(coneAxis, octauv);
+
+        PKMeshlet meshlet;
+        meshlet.firstTriangle = firstTriangle;
+        meshlet.firstVertex = firstVertex;
+        meshlet.vertexCount = vertexCount;
+        meshlet.triangleCount = triangleCount;
+        meshlet.coneAxis[0] = PackHalf(octauv[0]);
+        meshlet.coneAxis[1] = PackHalf(octauv[1]);
+        meshlet.center[0] = PackHalf(center[0]);// - center[0]);
+        meshlet.center[1] = PackHalf(center[1]);// - center[1]);
+        meshlet.center[2] = PackHalf(center[2]);// - center[2]);
+        meshlet.radius = PackHalf(radius);
+        meshlet.coneApex[0] = PackHalf(coneApex[0]);// - center[0]);
+        meshlet.coneApex[1] = PackHalf(coneApex[1]);// - center[1]);
+        meshlet.coneApex[2] = PackHalf(coneApex[2]);// - center[2]);
+        meshlet.coneCutoff = PackHalf(coneCutoff);
+        return meshlet;
+    }
+
+}

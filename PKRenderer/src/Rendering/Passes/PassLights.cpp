@@ -110,7 +110,7 @@ namespace PK::Rendering::Passes
         atlasDesc.samplerType = SamplerType::Sampler2DArray;
         atlasDesc.format = TextureFormat::R32F;
         atlasDesc.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::RTColor;
-        atlasDesc.layers = 32;
+        atlasDesc.layers = PK_SHADOW_CASCADE_COUNT * 2; // initial size assume 1 active directional light.
         atlasDesc.resolution = { config->ShadowmapTileSize, config->ShadowmapTileSize, 1u };
         atlasDesc.sampler.wrap[0] = WrapMode::Clamp;
         atlasDesc.sampler.wrap[1] = WrapMode::Clamp;

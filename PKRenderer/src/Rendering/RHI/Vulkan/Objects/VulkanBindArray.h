@@ -17,10 +17,8 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
             int32_t Add(RHI::Objects::Texture* value, void* bindInfo) final;
             int32_t Add(RHI::Objects::Texture* value) final;
-            int32_t Add(const RHI::Objects::Texture* value) final;
             int32_t Add(RHI::Objects::Buffer* value, void* bindInfo) final;
             int32_t Add(RHI::Objects::Buffer* value) final;
-            int32_t Add(const RHI::Objects::Buffer* value) final;
 
             void Clear() final { m_count = 0; }
 

@@ -13,16 +13,16 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             ~VulkanTexture();
             
             void SetSampler(const SamplerDescriptor& sampler) final;
-            bool Validate(const Math::uint3& resolution) final;
-            bool Validate(const uint32_t levels, const uint32_t layers) final;
             bool Validate(const TextureDescriptor& descriptor) final;
+            bool Validate(const uint32_t levels, const uint32_t layers) final;
+            bool Validate(const Math::uint3& resolution) final;
             void Rebuild(const TextureDescriptor& descriptor);
 
             inline VkImageLayout GetImageLayout() const { return EnumConvert::GetImageLayout(m_descriptor.usage); }
             inline VkImageAspectFlags GetAspectFlags() const { return EnumConvert::GetFormatAspect(m_rawImage->format); }
             inline VkFormat GetNativeFormat() const { return m_rawImage->format; }
             inline const VulkanRawImage* GetRaw() const { return m_rawImage; }
-            inline const VulkanBindHandle* GetBindHandle() const { return GetView({})->bindHandle; }
+            inline const VulkanBindHandle* GetBindHandle() { return GetView({})->bindHandle; }
             inline const VulkanBindHandle* GetBindHandle(TextureBindMode bindMode) { return GetView({}, bindMode)->bindHandle; }
             inline const VulkanBindHandle* GetBindHandle(const TextureViewRange& range, TextureBindMode bindMode) { return GetView(range, bindMode)->bindHandle; }
             void FillBindHandle(VulkanBindHandle* handle, const TextureViewRange& range, TextureBindMode bindMode) const;
@@ -47,11 +47,6 @@ namespace PK::Rendering::RHI::Vulkan::Objects
                 VulkanBindHandle* bindHandle = nullptr;
                 VulkanImageView* view = nullptr;
             };
-
-            inline const ViewValue* GetView(const TextureViewRange& range, TextureBindMode mode = TextureBindMode::SampledTexture) const
-            {
-                return m_imageViews.GetValueRef(GetViewKey(NormalizeViewRange(range), mode));
-            }
 
             const ViewValue* GetView(const TextureViewRange& range, TextureBindMode mode = TextureBindMode::SampledTexture);
 

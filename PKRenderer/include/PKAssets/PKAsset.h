@@ -383,6 +383,10 @@ namespace PK::Assets
         // Meshlets
         namespace Meshlet
         {
+            constexpr static const uint32_t PK_MAX_VERTICES = 64u;
+            constexpr static const uint32_t PK_MAX_TRIANGLES = 124u;
+            constexpr static const float PK_CONE_WEIGHT = 0.5f;
+
             // packed as uint4
             struct PKVertex
             {
@@ -403,7 +407,7 @@ namespace PK::Assets
                 uint16_t center[3];       // 22 // float16_t
                 uint16_t radius;          // 24 // float16_t
                 uint16_t coneApex[3];     // 30 // float16_t
-                uint16_t coneangle;       // 32 // float16_t
+                uint16_t coneCutoff;      // 32 // float16_t
             };
 
             // packed as 3x uint4
@@ -431,6 +435,23 @@ namespace PK::Assets
                 RelativePtr<PKVertex> vertices;   // 28 bytes
                 RelativePtr<uint8_t> indices;     // 32 bytes
             };
+
+            PKVertex PackVertex(const float* pPosition, 
+                                const float* pTexcoord, 
+                                const float* pNormal, 
+                                const float* pTangent, 
+                                const float* center, 
+                                float radius);
+
+            PKMeshlet PackMeshlet(uint32_t firstVertex, 
+                                  uint32_t firstTriangle, 
+                                  uint32_t vertexCount, 
+                                  uint32_t triangleCount,
+                                  const float* coneAxis,
+                                  const float* center,
+                                  float radius,
+                                  const float* coneApex,
+                                  float coneCutoff);
         }
 
         struct PKVertexAttribute

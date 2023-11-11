@@ -1,5 +1,6 @@
 #pragma once
 #include "Utilities/FixedPool.h"
+#include "Utilities/RangeTable.h"
 #include "Rendering/RHI/Structs.h"
 #include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
 #include "Rendering/RHI/Vulkan/VulkanDriver.h"
@@ -10,7 +11,11 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     {
         struct Page
         {
-            Page(const VmaAllocator allocator, const VkMemoryRequirements& requirements, const VmaAllocationCreateInfo& createInfo);
+            Page(const VkDevice device,
+                const VmaAllocator allocator,
+                const VkMemoryRequirements& requirements,
+                const VmaAllocationCreateInfo& createInfo,
+                const char* name);
             ~Page();
 
             const VmaAllocator allocator;
@@ -23,15 +28,15 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             size_t end = 0ull;
         };
 
-        Page* CreatePage(Page* next, Page* prev, size_t start, size_t end, std::vector<VkSparseMemoryBind>& outBindIfos);
+        Page* CreatePage(Page* next, size_t start, size_t end, std::vector<VkSparseMemoryBind>& outBindIfos);
         
         public:
-            VulkanSparsePageTable(const VulkanDriver* driver, const VkBuffer buffer, VmaMemoryUsage memoryUsage);
+            VulkanSparsePageTable(const VulkanDriver* driver, const VkBuffer buffer, VmaMemoryUsage memoryUsage, const char* name);
             ~VulkanSparsePageTable();
 
             void AllocateRange(const IndexRange& range, QueueType type);
-            IndexRange AllocateAligned(size_t size, QueueType type);
-            void FreeRange(const IndexRange& range);
+            size_t Allocate(size_t size, QueueType type);
+            void DeallocateRange(const IndexRange& range);
 
         private:
             VmaAllocationCreateInfo m_pageCreateInfo{};
@@ -41,5 +46,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             const VkBuffer m_targetBuffer = VK_NULL_HANDLE;
             Page* m_firstPage = nullptr;
             PK::Utilities::FixedPool<Page, 1024> m_pages;
+            PK::Utilities::RangeTable<1024> m_residency;
+            std::string m_name;
     };
 }

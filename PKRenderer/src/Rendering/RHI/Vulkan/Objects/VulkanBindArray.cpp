@@ -50,11 +50,6 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         return Add(value->GetNative<VulkanTexture>()->GetBindHandle());
     }
 
-    int32_t VulkanBindArray::Add(const Texture* value)
-    {
-        return Add(value->GetNative<VulkanTexture>()->GetBindHandle());
-    }
-
     int32_t VulkanBindArray::Add(Buffer* value, void* bindInfo)
     {
         if (bindInfo)
@@ -66,11 +61,6 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     }
 
     int32_t VulkanBindArray::Add(Buffer* value)
-    {
-        return Add(value->GetNative<VulkanBuffer>()->GetBindHandle());
-    }
-
-    int32_t VulkanBindArray::Add(const Buffer* value)
     {
         return Add(value->GetNative<VulkanBuffer>()->GetBindHandle());
     }

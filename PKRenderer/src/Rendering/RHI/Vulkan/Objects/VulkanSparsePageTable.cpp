@@ -7,13 +7,17 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 {
     using namespace PK::Utilities;
 
-    VulkanSparsePageTable::Page::Page(const VmaAllocator allocator, const VkMemoryRequirements& requirements, const VmaAllocationCreateInfo& createInfo) :
+    VulkanSparsePageTable::Page::Page(const VkDevice device, 
+                                      const VmaAllocator allocator, 
+                                      const VkMemoryRequirements& requirements, 
+                                      const VmaAllocationCreateInfo& createInfo, 
+                                      const char* name) :
         allocator(allocator),
         start(start),
         end(end)
     {
         VK_ASSERT_RESULT_CTX(vmaAllocateMemoryPages(allocator, &requirements, &createInfo, 1, &memory, &allocationInfo), "Failed to allocate memory page!");
-        PK_LOG_INFO("New: SparsePage %u bytes", (uint32_t)requirements.size);
+        Utilities::VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)allocationInfo.deviceMemory, name);
     }
 
     VulkanSparsePageTable::Page::~Page()
@@ -21,21 +25,24 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         vmaFreeMemoryPages(allocator, 1, &memory);
     }
 
-    VulkanSparsePageTable::Page* VulkanSparsePageTable::CreatePage(Page* next, Page* prev, size_t start, size_t end, std::vector<VkSparseMemoryBind>& outBindIfos)
+    VulkanSparsePageTable::Page* VulkanSparsePageTable::CreatePage(Page* next, size_t start, size_t end, std::vector<VkSparseMemoryBind>& outBindIfos)
     {
-        VkMemoryRequirements requirements = m_memoryRequirements;
-        requirements.size = (end - start);
+        auto name = m_name + std::string(".Page(") + std::to_string(start) + std::string("-") + std::to_string(end) + std::string(")");
 
-        auto page = m_pages.New(m_driver->allocator, requirements, m_pageCreateInfo);
+        auto page = m_pages.New(m_driver->device,
+                                m_driver->allocator, 
+                                VkMemoryRequirements
+                                { 
+                                    end - start, 
+                                    m_memoryRequirements.alignment, 
+                                    m_memoryRequirements.memoryTypeBits 
+                                }, 
+                                m_pageCreateInfo,
+                                name.c_str());
         
         page->start = start;
         page->end = end;
         page->next = next;
-
-        if (prev)
-        {
-            prev->next = page;
-        }
         
         VkSparseMemoryBind bind{};
         bind.resourceOffset = start;
@@ -46,9 +53,10 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         return page;
     }
 
-    VulkanSparsePageTable::VulkanSparsePageTable(const VulkanDriver* driver, const VkBuffer buffer, VmaMemoryUsage memoryUsage) :
+    VulkanSparsePageTable::VulkanSparsePageTable(const VulkanDriver* driver, const VkBuffer buffer, VmaMemoryUsage memoryUsage, const char* name) :
         m_driver(driver),
-        m_targetBuffer(buffer)
+        m_targetBuffer(buffer),
+        m_name(name)
     {
         m_pageCreateInfo.usage = memoryUsage;
         vkGetBufferMemoryRequirements(m_driver->device, buffer, &m_memoryRequirements);
@@ -56,6 +64,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
     VulkanSparsePageTable::~VulkanSparsePageTable()
     {
+        PK_WARNING_ASSERT(m_firstPage == nullptr, "not all ranges were deallocated!");
     }
 
     void VulkanSparsePageTable::AllocateRange(const IndexRange& range, QueueType type)
@@ -64,38 +73,35 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         auto start = (range.offset / alignment) * alignment;
         auto end = ((range.offset + range.count + alignment - 1) / alignment) * alignment;
 
+        m_residency.Reserve(range.offset, range.offset + range.count);
+
         std::vector<VkSparseMemoryBind> bindInfos;
 
-        Page* prev = nullptr;
         size_t head = 0ull;
-        auto curr = m_firstPage;
+        auto next = &m_firstPage;
 
-        while (curr)
+        for(auto curr = *next; curr && curr->start < end; head = curr->end, curr = *next)
         {
-            if (curr->start != head && curr->start > start)
+            if (curr->end > start || curr->start == head)
             {
-                auto pageStart = head > start ? head : start;
-                auto pageEnd = end < curr->start ? end : curr->start;
-                auto page = CreatePage(curr, prev, pageStart, pageEnd, bindInfos);
+                next = &curr->next;
+                continue;
             }
 
-            head = curr->end;
-            prev = curr;
-            curr = curr->next;
+            auto pageStart = head > start ? head : start;
+            auto pageEnd = end < curr->start ? end : curr->start;
+
+            // Fill hole
+            *next = CreatePage(curr, pageStart, pageEnd, bindInfos);
+            next = &curr->next;
         }
 
-        // Linked list end add page if range exceed
+        // Append list end if range exceeded
         if (head < end)
         {
             auto pageStart = head > start ? head : start;
             auto pageEnd = end;
-            auto page = CreatePage(nullptr, prev, pageStart, pageEnd, bindInfos);
-
-            // Set first page if unset
-            if (!m_firstPage)
-            {
-                m_firstPage = page;
-            }
+            *next = CreatePage(*next, pageStart, pageEnd, bindInfos);
         }
 
         if (bindInfos.size() > 0)
@@ -105,83 +111,39 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         }
     }
 
-    IndexRange VulkanSparsePageTable::AllocateAligned(size_t size, QueueType type)
+    size_t VulkanSparsePageTable::Allocate(size_t size, QueueType type)
     {
-        auto alignment = m_memoryRequirements.alignment;
-        size = ((size + alignment - 1) / alignment) * alignment;
-
-        std::vector<VkSparseMemoryBind> bindInfos;
-
-        Page* prev = nullptr;
-        size_t head = 0ull;
-        auto curr = m_firstPage;
-
-        while (curr)
-        {
-            auto space = curr->start - head;
-
-            if (space >= size)
-            {
-                auto page = CreatePage(curr, prev, head, head + size, bindInfos);
-                break;
-            }
-
-            head = curr->end;
-            prev = curr;
-            curr = curr->next;
-        }
-
-        // Linked list end add page if range exceed
-        if (!curr)
-        {
-            auto page = CreatePage(nullptr, prev, head, head + size, bindInfos);
-
-            // Set first page if unset
-            if (!m_firstPage)
-            {
-                m_firstPage = page;
-            }
-        }
-
-        if (bindInfos.size() > 0)
-        {
-            auto queue = m_driver->queues->GetQueue(type);
-            queue->BindSparse(m_targetBuffer, bindInfos.data(), (uint32_t)bindInfos.size());
-        }
-
-        return { head, size };
+        size_t offset = m_residency.FindFreeOffset(size);
+        AllocateRange({ offset, size }, type);
+        return offset;
     }
 
-    void VulkanSparsePageTable::FreeRange(const IndexRange& range)
+    void VulkanSparsePageTable::DeallocateRange(const IndexRange& range)
     {
         auto alignment = m_memoryRequirements.alignment;
         auto start = (range.offset / alignment) * alignment;
         auto end = ((range.offset + range.count + alignment - 1) / alignment) * alignment;
 
-        Page* prev = nullptr;
-        auto curr = m_firstPage;
+        m_residency.Unreserve(range.offset, range.offset + range.count);
 
-        while (curr)
+        auto next = &m_firstPage;
+
+        for (auto curr = *next; curr && curr->start < end; curr = *next)
         {
-            if (curr->start >= end || curr->end <= start)
+            if (curr->end <= start)
             {
-                prev = curr;
-                curr = curr->next;
+                next = &curr->next;
                 continue;
             }
 
-            PK_WARNING_ASSERT(curr->start >= start && curr->end <= end, "Sub page range deallocation isn't supported!. @TODO FIX THIS!!!");
-
-            auto temp = curr->next;
-            m_pages.Delete(curr);
-
-            // Update link
-            if (prev)
+            if (!m_residency.IsReservedAny(curr->start, curr->end))
             {
-                prev->next = temp;
+                *next = curr->next;
+                m_pages.Delete(curr);
+                continue;
             }
-            
-            curr = temp;
+
+            next = &curr->next;
         }
     }
 

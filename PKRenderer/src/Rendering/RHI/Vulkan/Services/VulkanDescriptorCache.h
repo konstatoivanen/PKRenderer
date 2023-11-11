@@ -57,7 +57,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
             const VkDevice m_device;
             const size_t m_maxSets;
             const uint64_t m_pruneDelay;
-            size_t m_sizeMultiplier = 0ull;
+            size_t m_sizeMultiplier = 1ull;
             uint64_t m_currentPruneTick = 0ull;
             
             VulkanDescriptorPool* m_currentPool = nullptr;

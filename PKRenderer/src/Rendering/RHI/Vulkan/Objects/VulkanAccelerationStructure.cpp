@@ -253,6 +253,8 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         createInfo.size = m_structure.size.accelerationStructureSize;
         createInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
         m_structure.raw = new VulkanRawAccelerationStructure(m_driver->device, createInfo, (m_name + std::string(".TLAS")).c_str());
+        m_bindHandle.acceleration.structure = m_structure.raw->structure;
+        m_bindHandle.IncrementVersion();
 
         if (deployBuild)
         {
@@ -332,9 +334,6 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         buildInfo.scratchData.deviceAddress = m_scratchBuffer->deviceAddress + m_structure.scratchOffset;
         const auto* pBuildStructureRangeInfo = &m_structure.range;
         m_cmd->BuildAccelerationStructures(1, &buildInfo, &pBuildStructureRangeInfo);
-
-        m_bindHandle.acceleration.structure = m_structure.raw->structure;
-        m_bindHandle.IncrementVersion();
         m_cmd = nullptr;
     }
 }

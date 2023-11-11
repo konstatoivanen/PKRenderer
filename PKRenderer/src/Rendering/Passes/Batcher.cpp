@@ -5,7 +5,7 @@
 #include "ECS/EntityViews/LightRenderableView.h"
 #include "Rendering/Structs/StructsCommon.h"
 #include "Rendering/HashCache.h"
-#include "Rendering/MeshRendering.h"
+#include "Rendering/MeshUtilities/RenderingUtility.h"
 #include "Rendering/RHI/GraphicsAPI.h"
 #include "Batcher.h"
 
@@ -286,7 +286,7 @@ namespace PK::Rendering::Passes
 
             cmd->SetShader(shader);
             cmd->SetFixedStateAttributes(overrideAttributes);
-            MeshRendering::DrawMeshIndirect(cmd, dc.mesh, m_indirectArguments.get(), offset, (uint32_t)dc.indices.count, (uint32_t)stride);
+            MeshUtilities::DrawMeshIndirect(cmd, dc.mesh, m_indirectArguments.get(), offset, (uint32_t)dc.indices.count, (uint32_t)stride);
         }
 
         if (requireKeyword > 0u)

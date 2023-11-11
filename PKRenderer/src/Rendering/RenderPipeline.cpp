@@ -1,7 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Services/Log.h"
 #include "RenderPipeline.h"
-#include "Rendering/MeshUtility.h"
 #include "Rendering/HashCache.h"
 #include "ECS/Tokens/AccelerationStructureBuildToken.h"
 #include "Math/FunctionsMisc.h"
