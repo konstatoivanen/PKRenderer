@@ -629,7 +629,8 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
             if (m_dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i))
             {
-                m_descriptorSets[i] = m_services.descriptorCache->GetDescriptorSet(shader->GetDescriptorSetLayout(i), m_descriptorSetKeys[i], fence);
+                auto name = shader->GetName();
+                m_descriptorSets[i] = m_services.descriptorCache->GetDescriptorSet(shader->GetDescriptorSetLayout(i), m_descriptorSetKeys[i], fence, name);
             }
         }
 

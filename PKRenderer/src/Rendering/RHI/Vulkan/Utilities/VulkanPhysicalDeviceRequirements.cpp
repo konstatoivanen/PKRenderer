@@ -17,21 +17,21 @@ namespace PK::Rendering::RHI::Vulkan
         positionFetch.pNext = &meshshader;
     }
     
-    #define PK_TEST_FEATURE(field)                             \
-    if (requirements.field && !available.field)                \
-    {                                                          \
-        PK_LOG_INFO("   Feature Unavailable: " #field);        \
-        missingFeatures |= true;                               \
-    }                                                          \
-    else if (requirements.field)                               \
-    {                                                          \
-        PK_LOG_INFO("   Feature Available: " #field);          \
-    }                                                          \
+    #define PK_TEST_FEATURE(field)                   \
+    if (requirements.field && !available.field)      \
+    {                                                \
+        PK_LOG_INFO("Feature Unavailable: " #field); \
+        missingFeatures |= true;                     \
+    }                                                \
+    else if (requirements.field)                     \
+    {                                                \
+        PK_LOG_INFO("Feature Available: " #field);   \
+    }                                                \
     
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
     {
-        PK_LOG_NEWLINE();
-        PK_LOG_INFO(" Physical device feature check:");
+        PK_LOG_INFO("Physical device feature check:");
+        PK_LOG_ADD_INDENT();
 
         bool missingFeatures = false;
 
@@ -203,13 +203,15 @@ namespace PK::Rendering::RHI::Vulkan
         PK_TEST_FEATURE(meshshader.primitiveFragmentShadingRateMeshShader)
         PK_TEST_FEATURE(meshshader.meshShaderQueries)
 
+        PK_LOG_SUB_INDENT();
+
         if (missingFeatures)
         {
-            PK_LOG_INFO(" Check failure.");
+            PK_LOG_INFO("Check failure.");
         }
         else
         {
-            PK_LOG_INFO(" Check successful.");
+            PK_LOG_INFO("Check successful.");
         }
 
         PK_LOG_NEWLINE();

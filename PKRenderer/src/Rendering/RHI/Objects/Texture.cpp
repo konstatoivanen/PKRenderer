@@ -29,7 +29,7 @@ namespace PK::Rendering::RHI::Objects
 
     void Texture::Import(const char* filepath)
     {
-        m_name = GetFileName();
+        m_name = std::filesystem::path(GetFileName()).stem().string();
 
         ktxTexture2* ktxTex2;
 

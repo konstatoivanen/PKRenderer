@@ -420,7 +420,8 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         context.queueFamilies = queueFamilies;
         context.createInfos = &createInfos;
 
-        PK_LOG_INFO(" Found '%i' Physical Device Queue Families:", context.families->size());
+        PK_LOG_INFO("Found '%i' Physical Device Queue Families:", context.families->size());
+        PK_LOG_ADD_INDENT();
 
         for (auto i = 0u; i < context.families->size(); ++i)
         {
@@ -433,9 +434,10 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
             auto& props = context.families->at(i);
             auto flagsString = string_VkQueueFlags(props.queueFlags);
-            PK_LOG_INFO("   Family: %i, NumQueues: %i, Flags: %s", i, props.queueCount, flagsString.c_str());
+            PK_LOG_INFO("Family: %i, NumQueues: %i, Flags: %s", i, props.queueCount, flagsString.c_str());
         }
 
+        PK_LOG_SUB_INDENT();
         PK_LOG_NEWLINE();
 
         auto maskTransfer = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
@@ -456,13 +458,15 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             }
         }
 
-        PK_LOG_INFO(" Selected '%i' Queues From '%i' Physical Device Queue Families:", queueCount, createInfos.size());
+        PK_LOG_INFO("Selected '%i' Queues From '%i' Physical Device Queue Families:", queueCount, createInfos.size());
+        PK_LOG_ADD_INDENT();
 
         for (auto i = 0u; i < queueCount; ++i)
         {
-            PK_LOG_INFO("   Family: %i", queueFamilies[i]);
+            PK_LOG_INFO("Family: %i", queueFamilies[i]);
         }
 
+        PK_LOG_SUB_INDENT();
         PK_LOG_NEWLINE();
     }
 }

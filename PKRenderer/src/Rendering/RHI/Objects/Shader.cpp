@@ -138,7 +138,7 @@ namespace PK::Rendering::RHI::Objects
 
         auto api = Driver::Get()->GetAPI();
         auto pVariants = shader->variants.Get(base);
-        auto fileName = GetFileName();
+        auto fileName = std::filesystem::path(GetFileName()).stem().string();
 
         for (auto i = 0u; i < shader->variantcount; ++i)
         {

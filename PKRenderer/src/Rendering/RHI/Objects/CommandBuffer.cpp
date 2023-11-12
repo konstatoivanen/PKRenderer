@@ -93,6 +93,12 @@ namespace PK::Rendering::RHI::Objects
         SetRenderTarget(targets, nullptr, ranges.begin(), count);
     }
 
+    void CommandBuffer::ResetBuiltInAtomicCounter()
+    {
+        auto counter = Driver::Get()->builtInResources->AtomicCounter.get();
+        Clear(counter, 0, sizeof(uint32_t), 0u);
+    }
+
     void CommandBuffer::Blit(const Shader* shader, int32_t variantIndex)
     {
         SetShader(shader, variantIndex);
@@ -119,16 +125,14 @@ namespace PK::Rendering::RHI::Objects
 
     void CommandBuffer::DispatchWithCounter(const Shader* shader, uint32_t variantIndex, Math::uint3 dimensions)
     {
-        auto counter = Driver::Get()->builtInResources->AtomicCounter.get();
-        Clear(counter, 0, sizeof(uint32_t), 0u);
+        ResetBuiltInAtomicCounter();
         SetShader(shader, variantIndex);
         Dispatch(dimensions);
     }
 
     void CommandBuffer::DispatchWithCounter(const Shader* shader, Math::uint3 dimensions)
     {
-        auto counter = Driver::Get()->builtInResources->AtomicCounter.get();
-        Clear(counter, 0, sizeof(uint32_t), 0u);
+        ResetBuiltInAtomicCounter();
         SetShader(shader);
         Dispatch(dimensions);
     }

@@ -37,8 +37,9 @@ namespace PK::Rendering::RHI::Vulkan::Services
         }
 
         bindingFlagsInfo.bindingCount = layoutCreateInfo.bindingCount = count;
+        auto layoutName = std::string("SetLayout") + std::string(index < 10u ? "0" : "") + std::to_string(index);
         auto value = m_setlayouts.GetValueAtRef(index);
-        *value = m_setLayoutPool.New(m_device, layoutCreateInfo, (VkShaderStageFlagBits)key.stageFlags);
+        *value = m_setLayoutPool.New(m_device, layoutCreateInfo, (VkShaderStageFlagBits)key.stageFlags, layoutName.c_str());
         return *value;
     }
 

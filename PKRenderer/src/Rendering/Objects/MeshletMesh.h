@@ -46,6 +46,8 @@ namespace PK::Rendering::Objects
             MeshletAllocation Allocate(RHI::Objects::CommandBuffer* commandBuffer, MeshletRangeData* data);
             void Deallocate(const MeshletAllocation& alloc);
 
+            void AssignBuffers();
+
         private:
             uint32_t m_submeshCount = 0u;
             uint32_t m_meshletCount = 0u;

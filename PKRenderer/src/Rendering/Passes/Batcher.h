@@ -2,6 +2,7 @@
 #include "Utilities/IndexedSet.h"
 #include "Utilities/FixedList.h"
 #include "Core/Services/Sequencer.h"
+#include "Core/Services/AssetDatabase.h"
 #include "ECS/EntityDatabase.h"
 #include "ECS/Tokens/CullingTokens.h"
 #include "ECS/Tokens/BatcherToken.h"
@@ -59,7 +60,7 @@ namespace PK::Rendering::Passes
     class Batcher : public Utilities::NoCopy, public ECS::Tokens::IBatcher
     {
         public:
-            Batcher();
+            Batcher(PK::Core::Services::AssetDatabase* assetDatabase);
             void BeginCollectDrawCalls();
             void EndCollectDrawCalls(RHI::Objects::CommandBuffer* cmd);
             uint32_t BeginNewGroup() final { return m_groupIndex++; }
@@ -75,6 +76,9 @@ namespace PK::Rendering::Passes
                         uint32_t group, 
                         RHI::FixedFunctionShaderAttributes* overrideAttributes = nullptr, 
                         uint32_t requireKeyword = 0u) final;
+
+            void DebugComputeMeshTasks(RHI::Objects::CommandBuffer* cmd, uint32_t group);
+            void DebugRenderMeshlets(RHI::Objects::CommandBuffer* cmd, uint32_t group);
 
         private:
             RHI::Objects::BufferRef m_matrices;
@@ -92,5 +96,13 @@ namespace PK::Rendering::Passes
             Utilities::IndexedSet<RHI::Objects::Shader> m_shaders;
             Utilities::IndexedSet<ECS::Components::Transform> m_transforms;
             uint16_t m_groupIndex = 0u;
+
+            // Meshlet debug
+            std::vector<RHI::IndexRange> m_passGroupRanges;
+            RHI::Objects::BufferRef m_Meshlet_TaskDisptaches;
+            RHI::Objects::BufferRef m_Meshlet_TaskDisptachCounter;
+            RHI::Objects::BufferRef m_Meshlet_TaskIndices;
+            RHI::Objects::Shader* m_meshletComputeTasks;
+            RHI::Objects::Shader* m_meshletRender;
     };
 }

@@ -13,6 +13,9 @@ namespace PK::Rendering::Passes
 
     PassTemporalAntialiasing::PassTemporalAntialiasing(AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight)
     {
+        PK_LOG_VERBOSE("Initializing TAA");
+        PK_LOG_SCOPE_INDENT(local);
+
         m_computeTAA = assetDatabase->Find<Shader>("CS_TemporalAntialiasing");
 
         TextureDescriptor descriptor{};

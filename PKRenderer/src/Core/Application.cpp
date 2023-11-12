@@ -41,14 +41,9 @@ namespace PK::Core
         PK_THROW_ASSERT(!s_Instance, "Application already exists!");
         s_Instance = this;
 
-        uint32_t logfilter = 0u;
-        logfilter |= Debug::PK_LOG_LVL_INFO;
-        logfilter |= Debug::PK_LOG_LVL_ERROR;
-        logfilter |= Debug::PK_LOG_LVL_WARNING;
-        logfilter |= Debug::PK_LOG_LVL_VERBOSE;
 
         m_services = CreateScope<ServiceRegister>();
-        m_services->Create<Debug::Logger>(logfilter);
+        m_services->Create<Debug::Logger>(Debug::PK_LOG_LVL_ALL_FLAGS);
         m_services->Create<StringHashID>();
         m_services->Create<HashCache>();
 
@@ -60,6 +55,14 @@ namespace PK::Core
         assetDatabase->LoadDirectory<CommandConfig>("res/configs/");
         auto config = assetDatabase->Find<ApplicationConfig>("Active");
         auto commandConfig = assetDatabase->Find<CommandConfig>("Active");
+
+        uint32_t logfilter = 0u;
+        logfilter |= config->EnableLogRHI ? Debug::PK_LOG_LVL_RHI : 0u;
+        logfilter |= config->EnableLogVerbose ? Debug::PK_LOG_LVL_VERBOSE : 0u;
+        logfilter |= config->EnableLogInfo ? Debug::PK_LOG_LVL_INFO : 0u;
+        logfilter |= config->EnableLogWarning ? Debug::PK_LOG_LVL_WARNING : 0u;
+        logfilter |= config->EnableLogError ? Debug::PK_LOG_LVL_ERROR : 0u;
+        m_services->Get<Debug::Logger>()->SetFilter(logfilter);
 
         auto time = m_services->Create<Time>(sequencer, config->TimeScale);
         auto input = m_services->Create<Input>(sequencer);

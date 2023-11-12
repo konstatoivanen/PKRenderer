@@ -17,6 +17,10 @@ namespace PK::Rendering::RHI
     {
         PK_THROW_ASSERT(Driver::s_instance == nullptr, "A driver instance already exists!");
 
+        PK_LOG_HEADER("----------INITIALIZING RHI----------");
+        PK_LOG_NEWLINE();
+        PK_LOG_ADD_INDENT();
+
         Utilities::Scope<Driver> driver = nullptr;
     
         switch (api)
@@ -69,6 +73,10 @@ namespace PK::Rendering::RHI
         {
             driver->CreateBuiltInResources();
         }
+
+        PK_LOG_SUB_INDENT();
+        PK_LOG_NEWLINE();
+        PK_LOG_HEADER("----------RHI INITIALIZED----------");
 
         return driver;
     }

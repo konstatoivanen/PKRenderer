@@ -25,7 +25,10 @@ namespace PK::Rendering::RHI::Vulkan::Services
         return variableSize;
     }
 
-    VulkanDescriptorCache::VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, size_t maxSets, std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes) :
+    VulkanDescriptorCache::VulkanDescriptorCache(VkDevice device, 
+        uint64_t pruneDelay, 
+        size_t maxSets, 
+        std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes) :
         m_device(device),
         m_maxSets(maxSets),
         m_poolSizes(poolSizes),
@@ -35,9 +38,10 @@ namespace PK::Rendering::RHI::Vulkan::Services
         GrowPool({});
     }
 
-    const VulkanDescriptorSet* VulkanDescriptorCache::GetDescriptorSet(const VulkanDescriptorSetLayout* layout,
-        const DescriptorSetKey& key,
-        const FenceRef& fence)
+    const VulkanDescriptorSet* VulkanDescriptorCache::GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
+                                                                       const DescriptorSetKey& key, 
+                                                                       const FenceRef& fence,
+                                                                       const char* name)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
         VulkanDescriptorSet* value = nullptr;
@@ -60,6 +64,9 @@ namespace PK::Rendering::RHI::Vulkan::Services
         variableSizeInfo.descriptorSetCount = 1;
         VkDescriptorSet vkdescriptorset;
         GetDescriptorSets(&allocInfo, &vkdescriptorset, fence, false);
+
+        auto setName = layout->name + std::string(".") + std::string(name);
+        Utilities::VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)vkdescriptorset, setName.c_str());
 
         value = m_setsPool.New();
         value->set = vkdescriptorset;

@@ -14,6 +14,9 @@ namespace PK::Rendering::Passes
 
     PassFilmGrain::PassFilmGrain(AssetDatabase* assetDatabase)
     {
+        PK_LOG_VERBOSE("Initializing Film Grain");
+        PK_LOG_SCOPE_INDENT(local);
+
         m_computeFilmGrain = assetDatabase->Find<Shader>("CS_FilmGrain");
 
         TextureDescriptor descriptor{};

@@ -12,6 +12,9 @@ namespace PK::Rendering::Passes
 
     PassBloom::PassBloom(AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight)
     {
+        PK_LOG_VERBOSE("Initializing Bloom");
+        PK_LOG_SCOPE_INDENT(local);
+
         TextureDescriptor descriptor{};
         descriptor.samplerType = SamplerType::Sampler2D;
         descriptor.usage = TextureUsage::DefaultStorage;

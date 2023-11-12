@@ -17,6 +17,9 @@ namespace PK::Core::Services
             {
                 static_assert(std::is_base_of<IService, T>::value, "Template argument type does not derive from IService!");
 
+                printf("Creating Service: %s \n", typeid(T).name());
+                PK_LOG_SCOPE_INDENT(service);
+
                 auto idx = std::type_index(typeid(T));
                 PK_THROW_ASSERT(m_services.count(idx) == 0, "Service of type (%s) is already registered", typeid(T).name());
                 auto service = new T(std::forward<Args>(args)...);

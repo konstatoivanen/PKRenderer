@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include <gfx.h>
+#include <vulkan/vk_enum_string_helper.h>
 #include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
 #include "Rendering/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanSwapchain.h"
@@ -13,13 +14,13 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         if (result == VK_ERROR_OUT_OF_DATE_KHR && !outofdate)
         {
             outofdate = true;
-            PK_LOG_VERBOSE("Swap chain image acquire failed! Swap chain is out of date!");
+            PK_LOG_RHI("Swap chain image acquire failed! Swap chain is out of date!");
         }
 
         if (result == VK_SUBOPTIMAL_KHR && !submoptimal)
         {
             submoptimal = true;
-            PK_LOG_VERBOSE("Swap chain is sub optimal!");
+            PK_LOG_RHI("Swap chain is sub optimal!");
         }
 
         return result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR;
@@ -43,6 +44,9 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
     void VulkanSwapchain::Rebuild(const SwapchainCreateInfo& createInfo)
     {
+        PK_LOG_INFO("Swap Chain Rebuild:");
+        PK_LOG_SCOPE_INDENT(local);
+
         m_cachedCreateInfo = createInfo;
 
         vkDeviceWaitIdle(m_device);
@@ -96,6 +100,11 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         m_format = surfaceFormat.format;
         m_extent = extent;
 
+        PK_LOG_INFO("Width: %i", m_extent.width);
+        PK_LOG_INFO("Height: %i", m_extent.height);
+        PK_LOG_INFO("Images: %i", m_imageCount);
+        PK_LOG_INFO("Format: %s", string_VkFormat(m_format));
+
         vkGetSwapchainImagesKHR(m_device, m_swapchain, &m_imageCount, nullptr);
         vkGetSwapchainImagesKHR(m_device, m_swapchain, &m_imageCount, m_images);
 
@@ -135,8 +144,6 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         }
 
         m_outofdate = false;
-
-        PK_LOG_VERBOSE("Swapchain rebuilt! (%i,%i)", m_extent.width, m_extent.height);
     }
 
     void VulkanSwapchain::Release()

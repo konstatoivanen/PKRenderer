@@ -60,6 +60,9 @@ namespace PK::Rendering::Passes
         m_batcher(batcher),
         m_lights(1024)
     {
+        PK_LOG_VERBOSE("Initializing Lights Pass");
+        PK_LOG_SCOPE_INDENT(local);
+
         m_computeLightAssignment = assetDatabase->Find<Shader>("CS_LightAssignment");
         m_computeCopyCubeShadow = assetDatabase->Find<Shader>("CS_CopyCubeShadow");
         m_computeScreenSpaceShadow = assetDatabase->Find<Shader>("CS_ScreenspaceShadow");

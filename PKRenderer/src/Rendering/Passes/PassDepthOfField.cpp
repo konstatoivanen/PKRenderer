@@ -12,6 +12,9 @@ namespace PK::Rendering::Passes
 
     PassDepthOfField::PassDepthOfField(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
+        PK_LOG_VERBOSE("Initializing Depth Of Field");
+        PK_LOG_SCOPE_INDENT(local);
+
         m_computeDepthOfField = assetDatabase->Find<Shader>("CS_DepthOfField");
         m_computeAutoFocus = assetDatabase->Find<Shader>("CS_AutoFocus");
         m_passPrefilter = m_computeDepthOfField->GetVariantIndex(StringHashID::StringToID("PASS_PREFILTER"));

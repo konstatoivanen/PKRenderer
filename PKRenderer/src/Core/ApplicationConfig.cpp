@@ -10,6 +10,11 @@ namespace PK::Core
         values =
         {
             &EnableConsole,
+            &EnableLogRHI,
+            &EnableLogVerbose,
+            &EnableLogInfo,
+            &EnableLogWarning,
+            &EnableLogError,
             &EnableVsync,
             &EnableGizmos,
             &EnableLightingDebug,

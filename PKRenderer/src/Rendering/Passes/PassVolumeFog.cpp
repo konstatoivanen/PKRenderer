@@ -14,6 +14,9 @@ namespace PK::Rendering::Passes
 
     PassVolumeFog::PassVolumeFog(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
+        PK_LOG_VERBOSE("Initializing Volumetric Fog");
+        PK_LOG_SCOPE_INDENT(local);
+
         TextureDescriptor descriptor;
         descriptor.samplerType = SamplerType::Sampler3D;
         descriptor.format = TextureFormat::RGB9E5;

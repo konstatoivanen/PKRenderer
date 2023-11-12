@@ -495,7 +495,7 @@ namespace PK::Rendering::MeshUtilities
             );
 
             output.indices.resize(output.indices.size() + meshlet.triangle_count * 3);
-            memcpy(output.indices.data() + indicesOffset, meshlet_triangles.data() + meshlet.triangle_offset * 3u, meshlet.triangle_count * 3u);
+            memcpy(output.indices.data() + indicesOffset, meshlet_triangles.data() + meshlet.triangle_offset, meshlet.triangle_count * 3u);
 
             for (auto j = 0u; j < meshlet.vertex_count; ++j)
             {

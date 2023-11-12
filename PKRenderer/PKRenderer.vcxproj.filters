@@ -2067,7 +2067,9 @@
     <None Include="res\shaders\includes\bend_sss_gpu.glsl" />
     <None Include="res\shaders\includes\SceneGIRT.glsl" />
     <None Include="res\shaders\includes\ComputeQuadSwap.glsl" />
-    <None Include="res\shaders\MS_EnvBackground.shader" />
+    <None Include="res\shaders\MS_Debug.shader" />
+    <None Include="res\shaders\includes\Meshlets.glsl" />
+    <None Include="res\shaders\CS_BuildMeshletTasks.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

@@ -173,12 +173,16 @@ namespace PK::Rendering::RHI::Vulkan
 
     struct VulkanDescriptorSetLayout : public PK::Utilities::NoCopy
     {
-        VulkanDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& createInfo, VkShaderStageFlagBits stageFlags);
+        VulkanDescriptorSetLayout(VkDevice device, 
+                                  const VkDescriptorSetLayoutCreateInfo& createInfo, 
+                                  VkShaderStageFlagBits stageFlags, 
+                                  const char* name);
         ~VulkanDescriptorSetLayout();
 
         const VkDevice device;
         VkDescriptorSetLayout layout;
         VkShaderStageFlagBits stageFlags;
+        std::string name;
     };
 
     struct VulkanDescriptorPool : public PK::Utilities::NoCopy
@@ -201,7 +205,7 @@ namespace PK::Rendering::RHI::Vulkan
 
     struct VulkanSampler : public PK::Utilities::NoCopy
     {
-        VulkanSampler(VkDevice device, const SamplerDescriptor& descriptor);
+        VulkanSampler(VkDevice device, const SamplerDescriptor& descriptor, const char* name);
         ~VulkanSampler();
 
         const VkDevice device;

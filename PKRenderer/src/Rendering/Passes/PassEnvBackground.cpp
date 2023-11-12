@@ -14,6 +14,9 @@ namespace PK::Rendering::Passes
 
     PassEnvBackground::PassEnvBackground(AssetDatabase* assetDatabase)
     {
+        PK_LOG_VERBOSE("Initializing Environment Background");
+        PK_LOG_SCOPE_INDENT(local);
+
         auto hash = HashCache::Get();
         m_backgroundShader = assetDatabase->Find<Shader>("VS_EnvBackground");
         m_integrateSHShader = assetDatabase->Find<Shader>("CS_IntegrateEnvSH");

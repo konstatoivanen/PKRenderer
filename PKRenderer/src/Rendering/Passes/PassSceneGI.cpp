@@ -20,6 +20,9 @@ namespace PK::Rendering::Passes
 
     PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
+        PK_LOG_VERBOSE("Initializing Scene GI");
+        PK_LOG_SCOPE_INDENT(local);
+
         m_computeClear = assetDatabase->Find<Shader>("CS_GI_Clear");
         m_computeMipmap = assetDatabase->Find<Shader>("CS_GI_VolumeMipmap");
         m_computeAccumulate = assetDatabase->Find<Shader>("CS_GI_Accumulate");

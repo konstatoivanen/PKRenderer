@@ -450,6 +450,14 @@ namespace PK::Assets::Mesh::Meshlet
         return ((i >> 16) & (int)0xffff8000) | ((int)(ui >> 13));
     }
 
+    uint16_t PackUnorm16(float v)
+    {
+        auto i = (int32_t)(v * 65535.0f);
+        if (i < 0) { i = 0; }
+        if (i > 65535) { i = 65535; }
+        return (uint16_t)(i & 0xFFFFu);
+    }
+
     float abs(float v) { return v < 0.0f ? -v : v; }
 
     void OctaEncode(const float* n, float* outuv)
@@ -477,17 +485,12 @@ namespace PK::Assets::Mesh::Meshlet
 
     uint32_t EncodeVertexPosition(const float* pPosition, const float* center, float radius)
     {
-        float position[3] =
+        int16_t qposition[3] =
         {
-            ((pPosition[0] - center[0]) / radius) * 0.5f + 0.5f,
-            ((pPosition[1] - center[1]) / radius) * 0.5f + 0.5f,
-            ((pPosition[2] - center[2]) / radius) * 0.5f + 0.5f
+            (int16_t)((((pPosition[0] - center[0]) / radius) * 0.5f + 0.5f) * 2047.0f),
+            (int16_t)((((pPosition[1] - center[1]) / radius) * 0.5f + 0.5f) * 2047.0f),
+            (int16_t)((((pPosition[2] - center[2]) / radius) * 0.5f + 0.5f) * 1023.0f)
         };
-
-        int16_t qposition[3];
-        qposition[0] = (int16_t)(position[0] * 2047.0f);
-        qposition[1] = (int16_t)(position[1] * 2047.0f);
-        qposition[2] = (int16_t)(position[2] * 1023.0f);
 
         if (qposition[0] < 0) { qposition[0] = 0; }
         if (qposition[1] < 0) { qposition[1] = 0; }
@@ -499,7 +502,7 @@ namespace PK::Assets::Mesh::Meshlet
         uint32_t encoded = 0u;
         encoded = ((uint32_t)qposition[0]) & 0x7FFu;
         encoded |= (((uint32_t)qposition[1]) & 0x7FFu) << 11u;
-        encoded |= (((uint32_t)qposition[1]) & 0x3FFu) << 10u;
+        encoded |= (((uint32_t)qposition[2]) & 0x3FFu) << 22u;
         return encoded;
     }
 
@@ -514,17 +517,8 @@ namespace PK::Assets::Mesh::Meshlet
     {
         float octauv[2];
         OctaEncode(pNormal, octauv);
-
-        auto ui = (int32_t)(octauv[0] * 65535.0f);
-        auto vi = (int32_t)(octauv[1] * 65535.0f);
-        if (ui < 0) { ui = 0; }
-        if (vi < 0) { vi = 0; }
-        if (ui > 65535) { ui = 65535; }
-        if (vi > 65535) { vi = 65535; }
-
-        auto u = (uint32_t)ui;
-        auto v = (uint32_t)vi;
-
+        auto u = (uint32_t)PackUnorm16(octauv[0]);
+        auto v = (uint32_t)PackUnorm16(octauv[1]);
         return (u & 0xFFFFu) | ((v & 0xFFFFu) << 16u);
     }
 
@@ -580,8 +574,8 @@ namespace PK::Assets::Mesh::Meshlet
         meshlet.firstVertex = firstVertex;
         meshlet.vertexCount = vertexCount;
         meshlet.triangleCount = triangleCount;
-        meshlet.coneAxis[0] = PackHalf(octauv[0]);
-        meshlet.coneAxis[1] = PackHalf(octauv[1]);
+        meshlet.coneAxis[0] = PackUnorm16(octauv[0]);
+        meshlet.coneAxis[1] = PackUnorm16(octauv[1]);
         meshlet.center[0] = PackHalf(center[0]);// - center[0]);
         meshlet.center[1] = PackHalf(center[1]);// - center[1]);
         meshlet.center[2] = PackHalf(center[2]);// - center[2]);

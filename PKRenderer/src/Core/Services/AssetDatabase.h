@@ -94,6 +94,9 @@ namespace PK::Core::Services
 
             std::static_pointer_cast<Asset>(asset)->m_version++;
 
+            PK_LOG_VERBOSE("Asset Import: %s, %s", typeid(T).name(), filepath.c_str());
+            PK_LOG_SCOPE_INDENT(asset);
+
             static_cast<IAssetImport<Args...>*>(asset.get())->Import(filepath.c_str(), std::forward<Args>(args)...);
 
             AssetImportToken<T> importToken = { this, asset.get() };
@@ -130,6 +133,7 @@ namespace PK::Core::Services
             auto assetId = StringHashID::StringToID(name);
 
             PK_THROW_ASSERT(collection.count(assetId) < 1, "Procedural asset (%s) already exists", name.c_str());
+            PK_LOG_VERBOSE("Asset Procedural Register: %s, %s", typeid(T).name(), name.c_str());
 
             collection[assetId] = asset;
             std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
@@ -199,6 +203,9 @@ namespace PK::Core::Services
                 return;
             }
 
+            PK_LOG_VERBOSE("Asset Load Directory: %s, %s", typeid(T).name(), directory.c_str());
+            PK_LOG_SCOPE_INDENT(load);
+
             for (const auto& entry : std::filesystem::directory_iterator(directory))
             {
                 auto& path = entry.path();
@@ -219,6 +226,9 @@ namespace PK::Core::Services
             {
                 return;
             }
+
+            PK_LOG_VERBOSE("Asset Reload Directory: %s, %s", typeid(T).name(), directory.c_str());
+            PK_LOG_SCOPE_INDENT(reload);
 
             for (const auto& entry : std::filesystem::directory_iterator(directory))
             {

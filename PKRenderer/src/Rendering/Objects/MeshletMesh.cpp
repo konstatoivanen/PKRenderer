@@ -35,6 +35,9 @@ namespace PK::Rendering::Objects
 
     MeshletAllocation MeshletMesh::Allocate(CommandBuffer* commandBuffer, MeshletRangeData* data)
     {
+        PK_LOG_VERBOSE("Meshlet Allocation");
+        PK_LOG_SCOPE_INDENT(meshlet);
+
         m_submeshCount += data->submeshCount;
         m_meshletCount += data->meshletCount;
         m_vertexCount += data->vertexCount;
@@ -49,11 +52,13 @@ namespace PK::Rendering::Objects
         auto verticesSize = data->vertexCount * vertexStride;
         auto indicesSize = ((size_t)data->triangleCount * 3ull);
         PK_THROW_ASSERT((indicesSize % 4ull) == 0ull, "Index counts must be aligned to 4!");
-        
+
         auto submeshOffset = m_submeshBuffer->SparseAllocate(submeshesSize, QueueType::Transfer);
         auto meshletOffset = m_meshletBuffer->SparseAllocate(meshletsSize, QueueType::Transfer);
         auto vertexOffset = m_vertexBuffer->SparseAllocate(verticesSize, QueueType::Transfer);
         auto indexOffset = m_indexBuffer->SparseAllocate(indicesSize, QueueType::Transfer);
+
+        PK_THROW_ASSERT((indexOffset % 12ull) == 0ull, "Index offsets must be aligned to 12!");
 
         MeshletAllocation alloc{};
         alloc.firstSubmesh = (uint32_t)(submeshOffset / submeshStride);
@@ -64,7 +69,6 @@ namespace PK::Rendering::Objects
         alloc.meshletCount = data->meshletCount;
         alloc.vertexCount = data->vertexCount;
         alloc.triangleCount = data->triangleCount;
-
 
         for (auto i = 0u; i < data->submeshCount; ++i)
         {
@@ -113,5 +117,13 @@ namespace PK::Rendering::Objects
         m_meshletBuffer->SparseDeallocate({ meshletOffset, meshletsSize });
         m_vertexBuffer->SparseDeallocate({ vertexOffset, verticesSize });
         m_indexBuffer->SparseDeallocate({ indexOffset, indicesSize });
+    }
+
+    void MeshletMesh::AssignBuffers()
+    {
+        GraphicsAPI::SetBuffer("pk_Meshlet_Submeshes", m_submeshBuffer.get());
+        GraphicsAPI::SetBuffer("pk_Meshlets", m_meshletBuffer.get());
+        GraphicsAPI::SetBuffer("pk_Meshlet_Vertices", m_vertexBuffer.get());
+        GraphicsAPI::SetBuffer("pk_Meshlet_Indices", m_indexBuffer.get());
     }
 }

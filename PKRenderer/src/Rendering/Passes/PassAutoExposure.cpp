@@ -13,6 +13,9 @@ namespace PK::Rendering::Passes
 
     PassAutoExposure::PassAutoExposure(AssetDatabase* assetDatabase)
     {
+        PK_LOG_VERBOSE("Initializing Auto Exposure");
+        PK_LOG_SCOPE_INDENT(local);
+
         m_compute = assetDatabase->Find<Shader>("CS_AutoExposure");
         m_histogram = Buffer::Create(ElementType::Uint, 257, BufferUsage::DefaultStorage, "Histogram");
         m_passHistogramBins = m_compute->GetVariantIndex(StringHashID::StringToID("PASS_HISTOGRAM"));

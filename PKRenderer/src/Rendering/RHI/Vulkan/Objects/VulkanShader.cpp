@@ -61,6 +61,8 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
             for (auto i = 0u; i < variant->descriptorSetCount; ++i)
             {
+                PK_LOG_SCOPE_INDENT(sets);
+
                 DescriptorSetLayoutKey key{};
 
                 auto pDescriptorSet = pDescriptorSets + i;
@@ -77,6 +79,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
                     elements.Add(pDescriptors[j].type, std::string(pDescriptors[j].name), pDescriptors[j].writeStageMask, pDescriptors[j].count);
                 }
 
+                // Cache these so that we can optimize shaders easier based on profiling tools.
                 key.stageFlags = EnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags);
                 m_descriptorSetLayouts[i] = layoutCache->GetSetLayout(key);
                 pipelineKey.setlayouts[i] = m_descriptorSetLayouts[i]->layout;

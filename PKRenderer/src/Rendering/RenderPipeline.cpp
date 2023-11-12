@@ -29,11 +29,14 @@ namespace PK::Rendering
         m_temporalAntialiasing(assetDatabase, config->InitialWidth, config->InitialHeight),
         m_bloom(assetDatabase, config->InitialWidth, config->InitialHeight),
         m_autoExposure(assetDatabase),
-        m_batcher(),
+        m_batcher(assetDatabase),
         m_sequencer(sequencer),
         m_visibilityList(1024),
         m_resizeFrameIndex(0ull)
     {
+        PK_LOG_VERBOSE("Initializing Render Pipeline Resources");
+        PK_LOG_SCOPE_INDENT(local);
+
         TextureDescriptor targetDesc{};
         targetDesc.resolution = { config->InitialWidth, config->InitialHeight, 1 };
         targetDesc.sampler.filterMin = FilterMode::Bilinear;
@@ -153,8 +156,6 @@ namespace PK::Rendering
         samplerDesc.wrap[1] = WrapMode::Clamp;
         samplerDesc.wrap[2] = WrapMode::Clamp;
         GraphicsAPI::SetSampler(hash->pk_Sampler_GBuffer, samplerDesc);
-
-        PK_LOG_HEADER("----------RENDER PIPELINE INITIALIZED----------");
     }
 
     RenderPipeline::~RenderPipeline()
@@ -333,15 +334,19 @@ namespace PK::Rendering
         queues->Transfer(QueueType::Graphics, QueueType::Compute);
         queues->Wait(QueueType::Compute, QueueType::Graphics);
 
-        // Forward Opaque on graphics queue
         m_passSceneGI.RenderGI(cmdgraphics);
 
+        m_batcher.DebugComputeMeshTasks(cmdgraphics, 0u);
 
+        // Forward Opaque on graphics queue
         cmdgraphics->SetRenderTarget({ gbuffers.current.depth, gbuffers.current.color }, true);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::ForwardOpaque, "Forward.Opaque", nullptr);
         
         m_passEnvBackground.RenderBackground(cmdgraphics);
+        
+        m_batcher.DebugRenderMeshlets(cmdgraphics, 0u);
+
         m_passVolumeFog.Render(cmdgraphics, gbuffers.current.color);
 
         DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::ForwardTransparent, "Forward.Transparent", nullptr);

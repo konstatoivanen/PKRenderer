@@ -126,6 +126,13 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         auto hasCompactedResults = m_queryPool->TryGetResults(m_queryResults, sizeof(VkDeviceSize), VK_QUERY_RESULT_WAIT_BIT);
 
         {
+            if (hasCompactedResults)
+            {
+                PK_LOG_RHI("Bottom Level Compaction Update: %s", m_name.c_str());
+            }
+
+            PK_LOG_SCOPE_INDENT(compaction);
+
             for (auto i = 0u; i < m_substructures.GetCount(); ++i)
             {
                 auto structure = m_substructures.GetValueAtRef(i);
@@ -135,7 +142,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
                     auto size0 = structure->size.accelerationStructureSize;
                     auto size1 = m_queryResults[structure->queryIndex];
                     structure->size.accelerationStructureSize = size1;
-                    PK_LOG_VERBOSE("BLAS Compacted from %i to %i bytes", size0, size1);
+                    PK_LOG_RHI("BLAS Compacted from %i to %i bytes", size0, size1);
                 }
 
                 structure->bufferOffset = bufferSize;
@@ -187,6 +194,9 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         {
             return;
         }
+
+        PK_LOG_RHI("Acceleration Structure Update: %s", m_name.c_str());
+        PK_LOG_SCOPE_INDENT(local);
 
         {
             m_driver->DisposePooledBuffer(m_structureBuffer, m_cmd->GetFenceRef());

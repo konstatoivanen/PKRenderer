@@ -9,6 +9,11 @@ namespace PK::Core
         #define DECLARE_VALUE(type, name, defaultValue) YAML::BoxedValue<type> name = YAML::BoxedValue<type>(#name, defaultValue);
 
         DECLARE_VALUE(bool, EnableConsole, true)
+        DECLARE_VALUE(bool, EnableLogRHI, false)
+        DECLARE_VALUE(bool, EnableLogVerbose, true)
+        DECLARE_VALUE(bool, EnableLogInfo, true)
+        DECLARE_VALUE(bool, EnableLogWarning, true)
+        DECLARE_VALUE(bool, EnableLogError, true)
         DECLARE_VALUE(bool, EnableVsync, true)
         DECLARE_VALUE(bool, EnableGizmos, false)
         DECLARE_VALUE(bool, EnableLightingDebug, false)

@@ -48,6 +48,7 @@ namespace PK::ECS::Engines
         const uint32_t maxVertices = 65535u * 32u;
         const uint32_t maxTriangles = 65535u * 16u * 3u;
         m_meshletMesh = CreateRef<MeshletMesh>(maxSubmeshes, maxMeshlets, maxVertices, maxTriangles);
+        m_meshletMesh->AssignBuffers();
 
         auto columnMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Columns.pkmesh", &m_virtualBaseMesh, &m_meshletMesh);
         auto rocksMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Rocks.pkmesh", &m_virtualBaseMesh, &m_meshletMesh);

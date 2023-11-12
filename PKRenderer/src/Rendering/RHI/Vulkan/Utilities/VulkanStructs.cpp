@@ -377,9 +377,16 @@ namespace PK::Rendering::RHI::Vulkan
         vkDestroyPipelineLayout(device, layout, nullptr);
     }
 
-    VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo& createInfo, VkShaderStageFlagBits stageFlags) : device(device), stageFlags(stageFlags)
+    VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice device, 
+                                                         const VkDescriptorSetLayoutCreateInfo& createInfo, 
+                                                         VkShaderStageFlagBits stageFlags, 
+                                                         const char* name) :
+        device(device), 
+        stageFlags(stageFlags),
+        name(name)
     {
         VK_ASSERT_RESULT_CTX(vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &layout), "Failed to create a descriptor set layout!");
+        Utilities::VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)layout, name);
     }
 
     VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout()
@@ -397,7 +404,7 @@ namespace PK::Rendering::RHI::Vulkan
         vkDestroyDescriptorPool(device, pool, nullptr);
     }
 
-    VulkanSampler::VulkanSampler(VkDevice device, const SamplerDescriptor& descriptor) : device(device)
+    VulkanSampler::VulkanSampler(VkDevice device, const SamplerDescriptor& descriptor, const char* name) : device(device)
     {
         VkSamplerCreateInfo info{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
         info.addressModeU = EnumConvert::GetSamplerAddressMode(descriptor.wrap[0]);
@@ -422,6 +429,7 @@ namespace PK::Rendering::RHI::Vulkan
         }
 
         VK_ASSERT_RESULT_CTX(vkCreateSampler(device, &info, nullptr, &sampler), "Failed to create a sampler!");
+        Utilities::VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, name);
     }
 
     VulkanSampler::~VulkanSampler()

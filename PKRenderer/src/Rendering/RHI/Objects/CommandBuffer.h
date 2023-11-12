@@ -72,6 +72,8 @@ namespace PK::Rendering::RHI::Objects
         void SetRenderTarget(Texture* target, uint16_t level, uint16_t layer);
         void SetRenderTarget(Texture* target, const RenderTargetRanges& ranges);
 
+        void ResetBuiltInAtomicCounter();
+
         void Blit(const Shader* shader, int32_t variantIndex = -1);
         void Blit(const Shader* shader, uint32_t instanceCount, uint32_t firstInstance, int32_t variantIndex = -1);
         void Dispatch(const Shader* shader, Math::uint3 dimensions);

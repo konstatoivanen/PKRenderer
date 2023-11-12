@@ -281,6 +281,13 @@ namespace PK::Assets
         constexpr const static char* PK_SHADER_INSTANCING_TEXTURES3D = "pk_Instancing_Textures3D";
         constexpr const static char* PK_SHADER_INSTANCING_TEXTURESCUBE = "pk_Instancing_TexturesCube";
         constexpr const static char* PK_SHADER_ATOMIC_COUNTER = "pk_BuiltInAtomicCounter";
+        constexpr const static char* PK_SHADER_SET_NAMES[4] =
+        {
+            "GLOBAL",
+            "PASS",
+            "SHADER",
+            "DRAW"
+        };
 
         struct alignas(4) PKVertexAttribute
         {

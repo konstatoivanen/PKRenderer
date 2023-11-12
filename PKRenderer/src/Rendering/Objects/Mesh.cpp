@@ -185,6 +185,9 @@ namespace PK::Rendering::Objects
 
     SubmeshAllocation Mesh::AllocateSubmeshRange(const SubmeshRangeData* data)
     {
+        PK_LOG_VERBOSE("Submesh Allocation %", GetFileName().c_str());
+        PK_LOG_SCOPE_INDENT(submesh);
+
         auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer);
 
         auto indexStride = m_indexBuffer->GetLayout().GetStride();

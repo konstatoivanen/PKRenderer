@@ -852,6 +852,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\models\MDL_Rocks.mdl.pkmeta" />
     <None Include="res\models\MDL_Spiral.mdl" />
     <None Include="res\models\MDL_Spiral.mdl.pkmeta" />
+    <None Include="res\shaders\CS_BuildMeshletTasks.shader" />
     <None Include="res\shaders\CS_GI_Accumulate.shader" />
     <None Include="res\shaders\CS_GI_Clear.shader" />
     <None Include="res\shaders\CS_GI_PostFilter.shader" />
@@ -866,6 +867,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_VolumeFogInject.shader" />
     <None Include="res\shaders\CS_VolumeFogScatter.shader" />
     <None Include="res\shaders\includes\ComputeQuadSwap.glsl" />
+    <None Include="res\shaders\includes\Meshlets.glsl" />
     <None Include="res\shaders\includes\NoiseBlue.glsl" />
     <None Include="res\shaders\includes\CTASwizzling.glsl" />
     <None Include="res\shaders\includes\Common.glsl" />
@@ -892,7 +894,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_GI_VolumeMipmap.shader" />
     <None Include="res\shaders\includes\SHL1.glsl" />
     <None Include="res\shaders\includes\TricubicSampler.glsl" />
-    <None Include="res\shaders\MS_EnvBackground.shader" />
+    <None Include="res\shaders\MS_Debug.shader" />
     <None Include="res\shaders\RS_GI_Raytrace.shader" />
     <None Include="res\shaders\CS_VolumeFogComposite.shader" />
     <None Include="res\shaders\RS_GI_ValidateReservoirs.shader" />

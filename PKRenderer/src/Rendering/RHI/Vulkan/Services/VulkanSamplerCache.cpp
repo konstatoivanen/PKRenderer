@@ -25,8 +25,9 @@ namespace PK::Rendering::RHI::Vulkan::Services
         }
 
         auto sampler = m_samplers.GetValueAtRef(index);
-        *sampler = m_samplerPool.New(m_device, descriptor);
-
+        auto name = std::string("Sampler") + std::to_string(index);
+        *sampler = m_samplerPool.New(m_device, descriptor, name.c_str());
+        
         auto bindHandle = m_bindhandlePool.New();
         bindHandle->isConcurrent = false;
         bindHandle->isTracked = false;

@@ -14,6 +14,9 @@ namespace PK::Rendering::Passes
 
     PassHierarchicalDepth::PassHierarchicalDepth(AssetDatabase* assetDatabase, Core::ApplicationConfig* config)
     {
+        PK_LOG_VERBOSE("Initializing Hierarchical Depth");
+        PK_LOG_SCOPE_INDENT(local);
+
         m_computeHierachicalDepth = assetDatabase->Find<Shader>("CS_HierachicalDepth");
 
         TextureDescriptor hizDesc{};

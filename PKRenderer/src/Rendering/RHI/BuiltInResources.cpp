@@ -4,6 +4,9 @@
 
 PK::Rendering::RHI::BuiltInResources::BuiltInResources()
 {
+    PK_LOG_RHI("Initializing RHI Builtin Resources");
+    PK_LOG_SCOPE_INDENT(local);
+
     auto cmd = Driver::Get()->GetQueues()->GetCommandBuffer(QueueType::Transfer);
 
     const uint32_t blackData[4] = { 0xFF000000u, 0xFF000000u, 0xFF000000u, 0xFF000000u };

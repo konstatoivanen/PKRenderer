@@ -32,12 +32,15 @@ namespace PK::Rendering::Passes
         return (uint16_t)materials.Add(material);
     }
 
-    Batcher::Batcher() :
+    Batcher::Batcher(AssetDatabase* assetDatabase) :
         m_textures2D(PK_MAX_UNBOUNDED_SIZE),
         m_meshes(32),
         m_shaders(32),
         m_transforms(1024)
     {
+        PK_LOG_VERBOSE("Initializing Batcher");
+        PK_LOG_SCOPE_INDENT(local);
+
         m_matrices = Buffer::Create(ElementType::Float3x4, 1024, BufferUsage::PersistentStorage, "Batching.Matrices");
 
         m_indices = Buffer::Create(
@@ -67,6 +70,14 @@ namespace PK::Rendering::Passes
 
         m_drawCalls.reserve(512);
         m_passGroups.reserve(512);
+
+
+        //std::vector<RHI::IndexRange> m_passGroupRanges;
+        m_Meshlet_TaskDisptaches = Buffer::Create(ElementType::Uint, 32u * 3u, BufferUsage::TransferDst | BufferUsage::Storage | BufferUsage::Indirect, "Batching.Meshlet.TaskDispatches");
+        m_Meshlet_TaskDisptachCounter = Buffer::Create(ElementType::Uint, 1u, BufferUsage::TransferDst | BufferUsage::Storage | BufferUsage::Indirect, "Batching.Meshlet.TaskDispatchCounter");
+        m_Meshlet_TaskIndices = Buffer::Create(ElementType::Uint2, 65536u, BufferUsage::Storage, "Batching.Meshlet.TaskIndices");
+        m_meshletComputeTasks = assetDatabase->Find<Shader>("CS_BuildMeshletTasks");
+        m_meshletRender = assetDatabase->Find<Shader>("MS_Debug");
     }
 
     void Batcher::BeginCollectDrawCalls()
@@ -83,6 +94,9 @@ namespace PK::Rendering::Passes
         m_drawInfos.clear();
         m_passGroups.clear();
         m_drawCalls.clear();
+
+        // Meshlet debug
+        m_passGroupRanges.clear();
     }
 
     void Batcher::EndCollectDrawCalls(CommandBuffer* cmd)
@@ -141,6 +155,8 @@ namespace PK::Rendering::Passes
 
         auto indirectCount = 1u;
         auto current = m_drawInfos[0];
+        // Meshlet Debug
+        auto rangeStart = 0u;
 
         m_indices->Validate(m_drawInfos.capacity());
         auto indexView = cmd->BeginBufferWrite<PK_Draw>(m_indices.get(), 0u, m_drawInfos.size());
@@ -150,8 +166,15 @@ namespace PK::Rendering::Passes
             const auto info = m_drawInfos.data() + i;
             indexView[i].material = (uint32_t)info->material + (uint32_t)m_materials[info->shader]->firstIndex;
             indexView[i].transfrom = info->transform;
-            indexView[i].mesh = 0;
+            indexView[i].mesh = info->submesh;
             indexView[i].userdata = info->userdata;
+
+            // Meshlet Debug
+            if (info->group != current.group)
+            {
+                m_passGroupRanges.push_back({ rangeStart, i - rangeStart });
+                rangeStart = i;
+            }
 
             if (info->group != current.group ||
                 info->shader != current.shader ||
@@ -295,5 +318,34 @@ namespace PK::Rendering::Passes
         }
 
         return true;
+    }
+
+    void Batcher::DebugComputeMeshTasks(CommandBuffer* cmd, uint32_t group)
+    {
+        if (group >= m_passGroupRanges.size())
+        {
+            return;
+        }
+
+        auto& passGroup = m_passGroupRanges.at(group);
+        GraphicsAPI::SetBuffer("pk_Meshlet_TaskDisptaches", m_Meshlet_TaskDisptaches.get());
+        GraphicsAPI::SetBuffer("pk_Meshlet_TaskDisptachCounter", m_Meshlet_TaskDisptachCounter.get());
+        GraphicsAPI::SetBuffer("pk_Tasklets", m_Meshlet_TaskIndices.get());
+        GraphicsAPI::SetConstant<uint2>("pk_DrawRange", { passGroup.offset, passGroup.count });
+
+        cmd->Clear(m_Meshlet_TaskDisptaches.get(), 0, m_Meshlet_TaskDisptaches->GetCapacity(), 0u);
+        cmd->Clear(m_Meshlet_TaskDisptachCounter.get(), 0, sizeof(uint32_t), 1u);
+
+        cmd->DispatchWithCounter(m_meshletComputeTasks, 0u, { passGroup.count, 1u, 1u });
+        cmd->ResetBuiltInAtomicCounter();
+    }
+
+    void Batcher::DebugRenderMeshlets(CommandBuffer* cmd, uint32_t group)
+    {
+        if (group < m_passGroupRanges.size())
+        {
+            cmd->SetShader(m_meshletRender, 0u);
+            cmd->DrawMeshTasksIndirectCount(m_Meshlet_TaskDisptaches.get(), 0u, m_Meshlet_TaskDisptachCounter.get(), 0u, 32u, sizeof(uint32_t) * 3u);
+        }
     }
 }

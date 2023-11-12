@@ -91,17 +91,21 @@ namespace PK::Rendering::RHI::Vulkan
         VK_ASSERT_RESULT_CTX(vkCreateInstance(&instanceCreateInfo, nullptr, &instance), "Failed to create vulkan instance!");
         Utilities::VulkanBindExtensionMethods(instance);
 
-        PK_LOG_NEWLINE();
-        PK_LOG_HEADER(" Created Vulkan Instace With '%i' layers and '%i' extensions:", instanceCreateInfo.enabledLayerCount, instanceCreateInfo.enabledExtensionCount);
-
-        for (auto i = 0u; i < instanceCreateInfo.enabledExtensionCount; ++i)
         {
-            PK_LOG_INFO("   %s", instanceCreateInfo.ppEnabledExtensionNames[i]);
-        }
+            PK_LOG_INFO("Created Vulkan Instace With '%i' layers and '%i' extensions:", instanceCreateInfo.enabledLayerCount, instanceCreateInfo.enabledExtensionCount);
+            PK_LOG_SCOPE_INDENT(instance);
 
-        for (auto i = 0u; i < instanceCreateInfo.enabledLayerCount; ++i)
-        {
-            PK_LOG_INFO("   %s", instanceCreateInfo.ppEnabledLayerNames[i]);
+            for (auto i = 0u; i < instanceCreateInfo.enabledExtensionCount; ++i)
+            {
+                PK_LOG_INFO(instanceCreateInfo.ppEnabledExtensionNames[i]);
+            }
+
+            for (auto i = 0u; i < instanceCreateInfo.enabledLayerCount; ++i)
+            {
+                PK_LOG_INFO(instanceCreateInfo.ppEnabledLayerNames[i]);
+            }
+
+            PK_LOG_NEWLINE();
         }
 
         VK_ASSERT_RESULT_CTX(vkCreateDebugUtilsMessengerEXT(instance, &debugMessengerCreateInfo, nullptr, &debugMessenger), "Failed to create debug messenger");
@@ -142,6 +146,7 @@ namespace PK::Rendering::RHI::Vulkan
         physicalDeviceRequirements.features.vk12.shaderOutputLayer = VK_TRUE;
         physicalDeviceRequirements.features.vk12.bufferDeviceAddress = VK_TRUE;
         physicalDeviceRequirements.features.vk12.timelineSemaphore = VK_TRUE;
+        physicalDeviceRequirements.features.vk12.storageBuffer8BitAccess = VK_TRUE;
         physicalDeviceRequirements.features.vk12.hostQueryReset = VK_TRUE;
         physicalDeviceRequirements.features.vk13.privateData = VK_FALSE;
         physicalDeviceRequirements.features.vk13.maintenance4 = VK_TRUE;
@@ -174,14 +179,17 @@ namespace PK::Rendering::RHI::Vulkan
         createInfo.pNext = &physicalDeviceRequirements.features.vk10;
         VK_ASSERT_RESULT_CTX(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Failed to create logical device!");
 
-        PK_LOG_INFO(" Created Vulkan Device With '%i' extensions:", createInfo.enabledExtensionCount);
-
-        for (auto i = 0u; i < createInfo.enabledExtensionCount; ++i)
         {
-            PK_LOG_INFO("   %s", createInfo.ppEnabledExtensionNames[i]);
-        }
+            PK_LOG_INFO("Created Vulkan Device With '%i' extensions:", createInfo.enabledExtensionCount);
+            PK_LOG_SCOPE_INDENT(device);
 
-        PK_LOG_NEWLINE();
+            for (auto i = 0u; i < createInfo.enabledExtensionCount; ++i)
+            {
+                PK_LOG_INFO(createInfo.ppEnabledExtensionNames[i]);
+            }
+
+            PK_LOG_NEWLINE();
+        }
 
         VmaAllocatorCreateInfo allocatorInfo{};
         allocatorInfo.vulkanApiVersion = physicalDeviceProperties.properties.apiVersion;
@@ -221,8 +229,6 @@ namespace PK::Rendering::RHI::Vulkan
                 nullptr, // Assigned by queues
                 disposer.get()
             });
-    
-        PK_LOG_HEADER("----------VULKAN DRIVER INITIALIZED----------");
     }
 
     VulkanDriver::~VulkanDriver()
@@ -395,7 +401,7 @@ namespace PK::Rendering::RHI::Vulkan
             return VK_FALSE;
         }
 
-        PK_LOG_VERBOSE(pCallbackData->pMessage);
+        PK_LOG_RHI(pCallbackData->pMessage);
         return VK_FALSE;
     }
 

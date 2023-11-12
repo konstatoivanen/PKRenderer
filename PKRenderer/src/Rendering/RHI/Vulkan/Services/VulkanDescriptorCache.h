@@ -46,7 +46,10 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         public:
             VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, size_t maxSets, std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes);
-            const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, const DescriptorSetKey& key, const FenceRef& fence);
+            const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
+                                                        const DescriptorSetKey& key, 
+                                                        const FenceRef& fence,
+                                                        const char* name);
             void Prune();
 
         private:

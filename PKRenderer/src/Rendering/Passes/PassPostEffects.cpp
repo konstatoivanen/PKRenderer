@@ -15,6 +15,9 @@ namespace PK::Rendering::Passes
 
     PassPostEffectsComposite::PassPostEffectsComposite(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
+        PK_LOG_VERBOSE("Initializing Post Effects Composite");
+        PK_LOG_SCOPE_INDENT(local);
+
         m_computeComposite = assetDatabase->Find<Shader>("CS_PostEffectsComposite");
 
         auto hash = HashCache::Get();
