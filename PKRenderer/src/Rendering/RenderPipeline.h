@@ -18,7 +18,7 @@
 #include "Rendering/Passes/PassTemporalAntiAliasing.h"
 #include "Rendering/Passes/PassAutoExposure.h"
 #include "Rendering/Passes/PassBloom.h"
-#include "Rendering/Passes/Batcher.h"
+#include "Rendering/StaticDrawBatcher.h"
 
 namespace PK::Rendering
 {
@@ -32,7 +32,8 @@ namespace PK::Rendering
             RenderPipeline(Core::Services::AssetDatabase* assetDatabase, 
                            ECS::EntityDatabase* entityDb, 
                            Core::Services::Sequencer* sequencer, 
-                           Core::ApplicationConfig* config);
+                           Core::ApplicationConfig* config,
+                           StaticDrawBatcher* batcher);
 
             ~RenderPipeline();
 
@@ -56,8 +57,8 @@ namespace PK::Rendering
             Passes::PassBloom m_bloom;
             Passes::PassAutoExposure m_autoExposure;
             Passes::PassPostEffectsComposite m_passPostEffectsComposite;
-            Passes::Batcher m_batcher;
             
+            StaticDrawBatcher* m_batcher;
             Core::Services::Sequencer* m_sequencer;
 
             RHI::Objects::AccelerationStructureRef m_sceneStructure;

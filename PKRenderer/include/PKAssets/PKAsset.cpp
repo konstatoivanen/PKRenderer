@@ -452,10 +452,26 @@ namespace PK::Assets::Mesh::Meshlet
 
     uint16_t PackUnorm16(float v)
     {
-        auto i = (int32_t)(v * 65535.0f);
+        auto i = (int32_t)roundf(v * 65535.0f);
         if (i < 0) { i = 0; }
         if (i > 65535) { i = 65535; }
         return (uint16_t)(i & 0xFFFFu);
+    }
+
+    uint32_t PackUnorm12(float v)
+    {
+        auto i = (int32_t)roundf(v * 4095.0f);
+        if (i < 0) { i = 0; }
+        if (i > 4095) { i = 4095; }
+        return (uint32_t)(i & 0xFFFu);
+    }
+
+    uint8_t PackUnorm8(float v)
+    {
+        auto i = (int32_t)roundf(v * 255.0f);
+        if (i < 0) { i = 0; }
+        if (i > 255) { i = 255; }
+        return (uint8_t)(i & 0xFFu);
     }
 
     float abs(float v) { return v < 0.0f ? -v : v; }
@@ -483,107 +499,98 @@ namespace PK::Assets::Mesh::Meshlet
         outuv[1] = outuv[1] * 0.5f + 0.5f;
     }
 
-    uint32_t EncodeVertexPosition(const float* pPosition, const float* center, float radius)
-    {
-        int16_t qposition[3] =
-        {
-            (int16_t)((((pPosition[0] - center[0]) / radius) * 0.5f + 0.5f) * 2047.0f),
-            (int16_t)((((pPosition[1] - center[1]) / radius) * 0.5f + 0.5f) * 2047.0f),
-            (int16_t)((((pPosition[2] - center[2]) / radius) * 0.5f + 0.5f) * 1023.0f)
-        };
-
-        if (qposition[0] < 0) { qposition[0] = 0; }
-        if (qposition[1] < 0) { qposition[1] = 0; }
-        if (qposition[2] < 0) { qposition[2] = 0; }
-        if (qposition[0] > 2047) { qposition[0] = 2047; }
-        if (qposition[1] > 2047) { qposition[1] = 2047; }
-        if (qposition[2] > 1023) { qposition[2] = 1023; }
-
-        uint32_t encoded = 0u;
-        encoded = ((uint32_t)qposition[0]) & 0x7FFu;
-        encoded |= (((uint32_t)qposition[1]) & 0x7FFu) << 11u;
-        encoded |= (((uint32_t)qposition[2]) & 0x3FFu) << 22u;
-        return encoded;
-    }
-
-    uint32_t EncodeTexcoord(const float* pTexcoord)
-    {
-        auto u = (uint32_t)PackHalf(pTexcoord[0]);
-        auto v = (uint32_t)PackHalf(pTexcoord[1]);
-        return (u & 0xFFFFu) | ((v & 0xFFFFu) << 16u);
-    }
-
-    uint32_t EncodeNormal(const float* pNormal)
-    {
-        float octauv[2];
-        OctaEncode(pNormal, octauv);
-        auto u = (uint32_t)PackUnorm16(octauv[0]);
-        auto v = (uint32_t)PackUnorm16(octauv[1]);
-        return (u & 0xFFFFu) | ((v & 0xFFFFu) << 16u);
-    }
-
-    uint32_t EncodeTangent(const float* pTangent)
-    {
-        float octauv[2];
-        OctaEncode(pTangent, octauv);
-        uint8_t sign = pTangent[4] < 0.0f ? 0u : 3u;
-
-        auto ui = (int32_t)(octauv[0] * 32767.0f);
-        auto vi = (int32_t)(octauv[1] * 32767.0f);
-        if (ui < 0) { ui = 0; }
-        if (vi < 0) { vi = 0; }
-        if (ui > 32767) { ui = 32767; }
-        if (vi > 32767) { vi = 32767; }
-
-        auto u = (uint32_t)ui;
-        auto v = (uint32_t)vi;
-
-        return (u & 0x7FFFu) | ((v & 0x7FFFu) << 15u) | ((sign & 0x3) << 30u);
-    }
-
     PKVertex PackVertex(const float* pPosition,
                         const float* pTexcoord,
                         const float* pNormal,
                         const float* pTangent,
-                        const float* center,
-                        float radius)
+                        const float* bbmin,
+                        const float* bbmax)
     {
         PKVertex vertex = { 0u, 0u, 0u };
-        vertex.position = EncodeVertexPosition(pPosition, center, radius);
-        vertex.texcoord = pTexcoord ? EncodeTexcoord(pTexcoord) : 0u;
-        vertex.normal = pNormal ? EncodeNormal(pNormal) : 0u;
-        vertex.tangent = pTangent ? EncodeTangent(pTangent) : 0u;
+
+        uint32_t unormPositions[3] =
+        {
+            PackUnorm16((pPosition[0] - bbmin[0]) / (bbmax[0] - bbmin[0])),
+            PackUnorm16((pPosition[1] - bbmin[1]) / (bbmax[1] - bbmin[1])),
+            PackUnorm16((pPosition[2] - bbmin[2]) / (bbmax[2] - bbmin[2]))
+        };
+
+        vertex.packed0 = unormPositions[0] | (unormPositions[1] << 16u);
+        vertex.packed1 = unormPositions[2];
+
+        if (pTexcoord)
+        {
+            auto t0 = PackUnorm12(pTexcoord[0]);
+            auto t1 = PackUnorm12(pTexcoord[1]);
+            vertex.packed1 |= t0 << 16u;
+            vertex.packed1 |= (t1 & 0xF) << 28u;
+            vertex.packed2 |= (t1 >> 4u) & 0xFFu;
+        }
+
+        if (pNormal)
+        {
+            float normalOctaUV[2];
+            OctaEncode(pNormal, normalOctaUV);
+            auto n0 = PackUnorm12(normalOctaUV[0]);
+            auto n1 = PackUnorm12(normalOctaUV[1]);
+            vertex.packed2 |= n0 << 8u;
+            vertex.packed2 |= n1 << 20u;
+        }
+
+        if (pTangent)
+        {
+            float octauv[2];
+            OctaEncode(pTangent, octauv);
+            uint8_t sign = pTangent[4] < 0.0f ? 0u : 3u;
+
+            auto ui = (int32_t)(octauv[0] * 32766.0f);
+            auto vi = (int32_t)(octauv[1] * 32766.0f);
+            if (ui < 0) { ui = 0; }
+            if (vi < 0) { vi = 0; }
+            if (ui > 32766) { ui = 32766; }
+            if (vi > 32766) { vi = 32766; }
+
+            auto u = (uint32_t)ui;
+            auto v = (uint32_t)vi;
+
+            vertex.packed3 = (u & 0x7FFFu) | ((v & 0x7FFFu) << 15u) | ((sign & 0x3) << 30u);
+        }
+
         return vertex;
     }
     
-    PKMeshlet PackMeshlet(uint32_t firstVertex, 
-                          uint32_t firstTriangle, 
-                          uint32_t vertexCount, 
-                          uint32_t triangleCount, 
-                          const float* coneAxis, 
-                          const float* center, 
-                          float radius, 
-                          const float* coneApex, 
+    PKMeshlet PackMeshlet(uint32_t vertexFirst,
+                          uint32_t triangleFirst,
+                          uint32_t vertexCount,
+                          uint32_t triangleCount,
+                          const float* bbmin,
+                          const float* bbmax,
+                          const float* submeshbbmin,
+                          const float* submeshbbmax,
+                          const float* coneAxis,
+                          const float* coneApex,
                           float coneCutoff)
     {
         float octauv[2];
         OctaEncode(coneAxis, octauv);
 
         PKMeshlet meshlet;
-        meshlet.firstTriangle = firstTriangle;
-        meshlet.firstVertex = firstVertex;
-        meshlet.vertexCount = vertexCount;
-        meshlet.triangleCount = triangleCount;
-        meshlet.coneAxis[0] = PackUnorm16(octauv[0]);
-        meshlet.coneAxis[1] = PackUnorm16(octauv[1]);
-        meshlet.center[0] = PackHalf(center[0]);// - center[0]);
-        meshlet.center[1] = PackHalf(center[1]);// - center[1]);
-        meshlet.center[2] = PackHalf(center[2]);// - center[2]);
-        meshlet.radius = PackHalf(radius);
-        meshlet.coneApex[0] = PackHalf(coneApex[0]);// - center[0]);
-        meshlet.coneApex[1] = PackHalf(coneApex[1]);// - center[1]);
-        meshlet.coneApex[2] = PackHalf(coneApex[2]);// - center[2]);
-        meshlet.coneCutoff = PackHalf(coneCutoff);
+        meshlet.vertexFirst = vertexFirst;
+        meshlet.triangleFirst = triangleFirst;
+        meshlet.bbmin[0] = PackUnorm16((bbmin[0] - submeshbbmin[0]) / (submeshbbmax[0] - submeshbbmin[0]));
+        meshlet.bbmin[1] = PackUnorm16((bbmin[1] - submeshbbmin[1]) / (submeshbbmax[1] - submeshbbmin[1]));
+        meshlet.bbmin[2] = PackUnorm16((bbmin[2] - submeshbbmin[2]) / (submeshbbmax[2] - submeshbbmin[2]));
+        meshlet.vertexCount = (uint8_t)vertexCount;
+        meshlet.triangleCount = (uint8_t)triangleCount;
+        meshlet.bbmax[0] = PackUnorm16((bbmax[0] - submeshbbmin[0]) / (submeshbbmax[0] - submeshbbmin[0]));
+        meshlet.bbmax[1] = PackUnorm16((bbmax[1] - submeshbbmin[1]) / (submeshbbmax[1] - submeshbbmin[1]));
+        meshlet.bbmax[2] = PackUnorm16((bbmax[2] - submeshbbmin[2]) / (submeshbbmax[2] - submeshbbmin[2]));
+        meshlet.coneAxis[0] = PackUnorm8(octauv[0]);
+        meshlet.coneAxis[1] = PackUnorm8(octauv[1]);
+        meshlet.coneApex[0] = PackUnorm16((coneApex[0] - bbmin[0]) / (bbmax[0] - bbmin[0]));
+        meshlet.coneApex[1] = PackUnorm16((coneApex[1] - bbmin[1]) / (bbmax[1] - bbmin[1]));
+        meshlet.coneApex[2] = PackUnorm16((coneApex[2] - bbmin[2]) / (bbmax[2] - bbmin[2]));
+        meshlet.coneCutoff = PackUnorm16(coneCutoff * 0.5f + 0.5f);
         return meshlet;
     }
 

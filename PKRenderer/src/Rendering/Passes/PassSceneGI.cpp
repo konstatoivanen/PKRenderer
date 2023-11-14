@@ -179,7 +179,7 @@ namespace PK::Rendering::Passes
         cmd->EndDebugScope();
     }
 
-    void PassSceneGI::Voxelize(CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup)
+    void PassSceneGI::Voxelize(CommandBuffer* cmd, StaticDrawBatcher* batcher, uint32_t batchGroup)
     {
         cmd->BeginDebugScope("SceneGI.Voxelize", PK_COLOR_GREEN);
 
@@ -197,7 +197,7 @@ namespace PK::Rendering::Passes
         cmd->SetRenderTarget({ viewports[m_rasterAxis].z, viewports[m_rasterAxis].w, 1 });
         cmd->SetViewPort(viewports[m_rasterAxis]);
         cmd->SetScissor(viewports[m_rasterAxis]);
-        batcher->Render(cmd, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);
+        batcher->RenderMeshlets(cmd, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);
 
         cmd->EndDebugScope();
     }

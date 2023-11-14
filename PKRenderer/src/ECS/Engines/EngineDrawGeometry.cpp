@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Math/FunctionsIntersect.h"
-#include "ECS/EntityViews/MeshRenderableView.h"
+#include "ECS/EntityViews/StaticMeshRenderableView.h"
 #include "Rendering/HashCache.h"
 #include "EngineDrawGeometry.h"
 
@@ -52,25 +52,25 @@ namespace PK::ECS::Engines
                 for (auto i = 0u; i < token->visibilityList->count; ++i)
                 {
                     auto& item = (*token->visibilityList)[i];
-                    auto entity = m_entityDb->Query<MeshRenderableView>(EGID(item.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
+                    auto entity = m_entityDb->Query<StaticMeshRenderableView>(EGID(item.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
 
                     for (auto& kv : entity->materials->materials)
                     {
                         auto transform = entity->transform;
                         auto shader = kv.material->GetShader();
-                        token->batcher->SubmitDraw(transform, shader, kv.material, entity->mesh->sharedMesh, kv.submesh, 0u);
+                        token->batcher->SubmitStaticDraw(transform, shader, kv.material, entity->staticMesh->sharedMesh, kv.submesh, 0u);
                     }
                 }
             }
             return;
             case RenderEvent::GBuffer:
             {
-                token->batcher->Render(token->cmd, m_passGroup, &m_gbufferAttribs, HashCache::Get()->PK_META_PASS_GBUFFER);
+                token->batcher->RenderMeshlets(token->cmd, m_passGroup, &m_gbufferAttribs, HashCache::Get()->PK_META_PASS_GBUFFER);
             }
             return;
             case RenderEvent::ForwardOpaque:
             {
-                token->batcher->Render(token->cmd, m_passGroup);
+                token->batcher->RenderMeshlets(token->cmd, m_passGroup);
             }
             return;
         }

@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Services/StringHashID.h"
 #include "Rendering/Structs/StructsCommon.h"
 #include "Rendering/MeshUtilities/AttributeUtility.h"
 #include "Rendering/MeshUtilities/MeshletBuilder.h"
@@ -8,6 +9,7 @@ namespace PK::Rendering::MeshUtilities
 {
     using namespace PK::Math;
     using namespace PK::Utilities;
+    using namespace PK::Core::Services;
     using namespace PK::Rendering::Objects;
     using namespace PK::Rendering::Structs;
     using namespace PK::Rendering::RHI;
@@ -111,7 +113,7 @@ namespace PK::Rendering::MeshUtilities
             24, BufferUsage::DefaultVertex, "Box.VertexBuffer");
 
         auto indexBuffer = Buffer::Create(ElementType::Uint, 36, BufferUsage::DefaultIndex, "Box.IndexBuffer");
-        auto submesh = SubMesh{ 0u, 24u, 0u, 36u, BoundingBox::MinMax(p3, p5) };
+        auto submesh = Mesh::SubMesh{ 0u, 24u, 0u, 36u, BoundingBox::MinMax(p3, p5) };
 
         auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer);
         cmd->UploadBufferData(vertexBuffer.get(), vertices);
@@ -141,14 +143,14 @@ namespace PK::Rendering::MeshUtilities
 
         auto vertexBuffer = Buffer::Create({ {ElementType::Float3, PK_VS_POSITION }, { ElementType::Float2, PK_VS_TEXCOORD0 } }, 4, BufferUsage::DefaultVertex, "Quad.VertexBuffer");
         auto indexBuffer = Buffer::Create(ElementType::Uint, 6, BufferUsage::DefaultIndex, "Quad.IndexBuffer");
-        auto submesh = SubMesh{ 0u, 4u, 0u, 6u, Math::BoundingBox::MinMax({min.x, min.y, 0.0f}, {max.x, max.y, 0.0f}) };
+        auto submesh = Mesh::SubMesh{ 0u, 4u, 0u, 6u, Math::BoundingBox::MinMax({min.x, min.y, 0.0f}, {max.x, max.y, 0.0f}) };
         auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer);
         cmd->UploadBufferData(vertexBuffer.get(), vertices);
         cmd->UploadBufferData(indexBuffer.get(), indices);
         return CreateRef<Mesh>(indexBuffer, &vertexBuffer, 1u, &submesh, 1u);
     }
 
-    Ref<VirtualMesh> CreatePlaneVirtualMesh(Ref<Mesh> baseMesh, Ref<MeshletMesh> baseMeshletMesh, const float2& center, const float2& extents, uint2 resolution)
+    VirtualStaticMeshRef CreatePlaneVirtualMesh(StaticSceneMesh* baseMesh, const float2& center, const float2& extents, uint2 resolution)
     {
         auto vcount = resolution.x * resolution.y * 4;
         auto icount = resolution.x * resolution.y * 6;
@@ -178,12 +180,22 @@ namespace PK::Rendering::MeshUtilities
             indices[baseIndex + 5] = baseVertex + 0;
         }
 
-        SubMesh submesh = { 0u, vcount, 0u, icount, BoundingBox::CenterExtents({ center.x, center.y, 0.0f }, { extents.x, extents.y, 0.0f }) };
+        StaticMeshAllocationData::SubMesh submesh = 
+        { 
+            0u, 
+            vcount, 
+            0u, 
+            icount, 
+            BoundingBox::CenterExtents({ center.x, center.y, 0.0f }, { extents.x, extents.y, 0.0f }) 
+        };
        
-        SubmeshRangeData data{};
-        data.pVertices = vertices;
-        data.pIndices = indices;
-        data.vertexLayout =
+        StaticMeshAllocationData alloc{};
+
+        alloc.nameHashId = StringHashID::StringToID("Primitive_Plane");
+
+        alloc.regular.pVertices = vertices;
+        alloc.regular.pIndices = indices;
+        alloc.regular.vertexLayout =
         {
             { ElementType::Float3, PK_VS_POSITION },
             { ElementType::Float3, PK_VS_NORMAL },
@@ -191,13 +203,13 @@ namespace PK::Rendering::MeshUtilities
             { ElementType::Float2, PK_VS_TEXCOORD0 }
         };
 
-        data.pSubmeshes = &submesh;
-        data.indexType = ElementType::Uint;
-        data.vertexCount = vcount;
-        data.indexCount = icount;
-        data.submeshCount = 1u;
+        alloc.regular.pSubmeshes = &submesh;
+        alloc.regular.indexType = ElementType::Uint;
+        alloc.regular.vertexCount = vcount;
+        alloc.regular.indexCount = icount;
+        alloc.regular.submeshCount = 1u;
 
-        CalculateTangents(reinterpret_cast<float*>(vertices), data.vertexLayout.GetStride() / 4, 0, 3, 6, 10, indices, vcount, icount);
+        CalculateTangents(reinterpret_cast<float*>(vertices), alloc.regular.vertexLayout.GetStride() / 4, 0, 3, 6, 10, indices, vcount, icount);
 
         auto meshlets = BuildMeshletsMonotone
         (
@@ -206,23 +218,22 @@ namespace PK::Rendering::MeshUtilities
             reinterpret_cast<float*>(vertices) + 3ull,
             reinterpret_cast<float*>(vertices) + 6ull,
             indices,
-            data.vertexLayout.GetStride(),
+            alloc.regular.vertexLayout.GetStride(),
             vcount,
             icount,
             submesh.bounds
         );
 
-        MeshletRangeData meshletData;
-        meshletData.pSubmeshes = &meshlets.submesh;
-        meshletData.submeshCount = 1u;
-        meshletData.pMeshlets = meshlets.meshlets.data();
-        meshletData.meshletCount = (uint32_t)meshlets.meshlets.size();
-        meshletData.pVertices = meshlets.vertices.data();
-        meshletData.vertexCount = (uint32_t)meshlets.vertices.size();
-        meshletData.pIndices = meshlets.indices.data();
-        meshletData.triangleCount = (uint32_t)(meshlets.indices.size() / 3ull);
+        alloc.meshlet.pSubmeshes = &meshlets.submesh;
+        alloc.meshlet.submeshCount = 1u;
+        alloc.meshlet.pMeshlets = meshlets.meshlets.data();
+        alloc.meshlet.meshletCount = (uint32_t)meshlets.meshlets.size();
+        alloc.meshlet.pVertices = meshlets.vertices.data();
+        alloc.meshlet.vertexCount = (uint32_t)meshlets.vertices.size();
+        alloc.meshlet.pIndices = meshlets.indices.data();
+        alloc.meshlet.triangleCount = (uint32_t)(meshlets.indices.size() / 3ull);
 
-        auto virtualMesh = CreateRef<VirtualMesh>(baseMesh, &data, baseMeshletMesh, &meshletData);
+        auto virtualMesh = CreateRef<VirtualStaticMesh>(baseMesh, &alloc);
 
         free(vertices);
         free(indices);
@@ -230,7 +241,7 @@ namespace PK::Rendering::MeshUtilities
         return virtualMesh;
     }
 
-    Ref<VirtualMesh> CreateSphereVirtualMesh(Ref<Mesh> baseMesh, Ref<MeshletMesh> baseMeshletMesh, const float3& offset, const float radius)
+    VirtualStaticMeshRef CreateSphereVirtualMesh(StaticSceneMesh* baseMesh, const float3& offset, const float radius)
     {
         const int32_t longc = 24;
         const int32_t lattc = 16;
@@ -314,13 +325,23 @@ namespace PK::Rendering::MeshUtilities
             indices[i++] = vcount - (lon + 2) - 1;
             indices[i++] = vcount - (lon + 1) - 1;
         }
-
-        SubMesh submesh = { 0u, vcount, 0u, icount, BoundingBox::CenterExtents(offset, PK_FLOAT3_ONE * radius) };
         
-        SubmeshRangeData data{};
-        data.pVertices = vertices;
-        data.pIndices = indices;
-        data.vertexLayout =
+        StaticMeshAllocationData::SubMesh submesh = 
+        { 
+            0u, 
+            vcount, 
+            0u, 
+            icount, 
+            BoundingBox::CenterExtents(offset, PK_FLOAT3_ONE * radius) 
+        };
+
+        StaticMeshAllocationData alloc{};
+
+        alloc.nameHashId = StringHashID::StringToID("Primitive_Sphere");
+
+        alloc.regular.pVertices = vertices;
+        alloc.regular.pIndices = indices;
+        alloc.regular.vertexLayout =
         {
             { ElementType::Float3, PK_VS_POSITION },
             { ElementType::Float3, PK_VS_NORMAL },
@@ -328,13 +349,13 @@ namespace PK::Rendering::MeshUtilities
             { ElementType::Float2, PK_VS_TEXCOORD0 }
         };
 
-        data.pSubmeshes = &submesh;
-        data.indexType = ElementType::Uint;
-        data.vertexCount = vcount;
-        data.indexCount = icount;
-        data.submeshCount = 1u;
+        alloc.regular.pSubmeshes = &submesh;
+        alloc.regular.indexType = ElementType::Uint;
+        alloc.regular.vertexCount = vcount;
+        alloc.regular.indexCount = icount;
+        alloc.regular.submeshCount = 1u;
 
-        CalculateTangents(reinterpret_cast<float*>(vertices), data.vertexLayout.GetStride() / 4, 0, 3, 6, 10, indices, vcount, icount);
+        CalculateTangents(reinterpret_cast<float*>(vertices), alloc.regular.vertexLayout.GetStride() / 4, 0, 3, 6, 10, indices, vcount, icount);
 
         auto meshlets = BuildMeshletsMonotone
         (
@@ -343,23 +364,22 @@ namespace PK::Rendering::MeshUtilities
             reinterpret_cast<float*>(vertices) + 3ull,
             reinterpret_cast<float*>(vertices) + 6ull,
             indices,
-            data.vertexLayout.GetStride(),
+            alloc.regular.vertexLayout.GetStride(),
             vcount,
             icount,
             submesh.bounds
         );
 
-        MeshletRangeData meshletData;
-        meshletData.pSubmeshes = &meshlets.submesh;
-        meshletData.submeshCount = 1u;
-        meshletData.pMeshlets = meshlets.meshlets.data();
-        meshletData.meshletCount = (uint32_t)meshlets.meshlets.size();
-        meshletData.pVertices = meshlets.vertices.data();
-        meshletData.vertexCount = (uint32_t)meshlets.vertices.size();
-        meshletData.pIndices = meshlets.indices.data();
-        meshletData.triangleCount = (uint32_t)(meshlets.indices.size() / 3ull);
+        alloc.meshlet.pSubmeshes = &meshlets.submesh;
+        alloc.meshlet.submeshCount = 1u;
+        alloc.meshlet.pMeshlets = meshlets.meshlets.data();
+        alloc.meshlet.meshletCount = (uint32_t)meshlets.meshlets.size();
+        alloc.meshlet.pVertices = meshlets.vertices.data();
+        alloc.meshlet.vertexCount = (uint32_t)meshlets.vertices.size();
+        alloc.meshlet.pIndices = meshlets.indices.data();
+        alloc.meshlet.triangleCount = (uint32_t)(meshlets.indices.size() / 3ull);
 
-        auto virtualMesh = CreateRef<VirtualMesh>(baseMesh, &data, baseMeshletMesh, &meshletData);
+        auto virtualMesh = CreateRef<VirtualStaticMesh>(baseMesh, &alloc);
 
         free(vertices);
         free(indices);

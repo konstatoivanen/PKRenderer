@@ -24,12 +24,24 @@ namespace PK::Core::Services
                 PK_THROW_ASSERT(m_services.count(idx) == 0, "Service of type (%s) is already registered", typeid(T).name());
                 auto service = new T(std::forward<Args>(args)...);
                 m_services[idx] = PK::Utilities::Scope<IService>(service);
+                m_creationOrder.push_back(idx);
                 return service;
             }
     
-            inline void Clear() { m_services.clear(); }
+            inline void Clear() 
+            {
+                // Release services in reverse insertion order to ensure correct order of memory release
+                for (auto i = (int32_t)m_creationOrder.size() - 1; i >= 0; --i)
+                {
+                    m_services[m_creationOrder.at(i)] = nullptr;
+                }
+
+                m_creationOrder.clear();
+                m_services.clear(); 
+            }
     
         private:
+            std::vector<std::type_index> m_creationOrder;
             std::unordered_map<std::type_index, PK::Utilities::Scope<IService>> m_services;
     };
 }

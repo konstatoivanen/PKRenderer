@@ -21,6 +21,7 @@
 #include "ECS/Engines/EngineGizmos.h"
 #include "ECS/Tokens/TimeToken.h"
 #include "ECS/Tokens/RenderingTokens.h"
+#include "Rendering/StaticDrawBatcher.h"
 #include "Rendering/RenderPipeline.h"
 #include "Rendering/HashCache.h"
 #include "Application.h"
@@ -87,12 +88,15 @@ namespace PK::Core
 
         auto engineEditorCamera = m_services->Create<ECS::Engines::EngineEditorCamera>(sequencer, time, config);
         auto engineUpdateTransforms = m_services->Create<ECS::Engines::EngineUpdateTransforms>(entityDb);
-        auto renderPipeline = m_services->Create<RenderPipeline>(assetDatabase, entityDb, sequencer, config);
+
+        auto staticDrawBatcher = m_services->Create<StaticDrawBatcher>(assetDatabase);
+        auto renderPipeline = m_services->Create<RenderPipeline>(assetDatabase, entityDb, sequencer, config, staticDrawBatcher);
+        
         auto engineCommands = m_services->Create<ECS::Engines::EngineCommandInput>(assetDatabase, sequencer, time, entityDb, commandConfig);
         auto engineCull = m_services->Create<ECS::Engines::EngineCull>(entityDb);
         auto engineDrawGeometry = m_services->Create<ECS::Engines::EngineDrawGeometry>(entityDb, sequencer);
         auto engineBuildAccelerationStructure = m_services->Create<ECS::Engines::EngineBuildAccelerationStructure>(entityDb);
-        auto engineDebug = m_services->Create<ECS::Engines::EngineDebug>(assetDatabase, entityDb, config);
+        auto engineDebug = m_services->Create<ECS::Engines::EngineDebug>(assetDatabase, entityDb, staticDrawBatcher->GetStaticSceneMesh(), config);
         auto enginePKAssetBuilder = m_services->Create<ECS::Engines::EnginePKAssetBuilder>(arguments);
         auto engineScreenshot = m_services->Create<ECS::Engines::EngineScreenshot>();
         auto engineGizmos = m_services->Create<ECS::Engines::EngineGizmos>(assetDatabase, sequencer, config);

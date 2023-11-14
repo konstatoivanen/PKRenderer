@@ -8,20 +8,27 @@
 #multi_compile _ PK_META_PASS_GBUFFER PK_META_PASS_GIVOXELIZE
 
 #include includes/GBuffers.glsl
+#include includes/Meshlets.glsl
 
-#pragma PROGRAM_VERTEX
-in float3 in_POSITION;
+#pragma PROGRAM_MESH_TASK
+
+bool PK_IS_VISIBLE_MESHLET(const PKMeshlet meshlet)
+{
+    return true;
+}
+
+#pragma PROGRAM_MESH_ASSEMBLY
+
 #if defined(PK_META_PASS_GBUFFER)
-in float3 in_NORMAL;
-out float3 vs_Normal;
+out float3 vs_Normal[];
 #endif
 
-void main()
+void PK_MESHLET_ASSIGN_VERTEX_OUTPUTS(uint vertexIndex, PKVertex vertex)
 {
-    gl_Position = ObjectToClipPos(in_POSITION);
-    #if defined(PK_META_PASS_GBUFFER)
-    vs_Normal = ObjectToWorldDir(in_NORMAL);
-    #endif
+    gl_MeshVerticesEXT[vertexIndex].gl_Position = ObjectToClipPos(vertex.position);
+#if defined(PK_META_PASS_GBUFFER)
+    vs_Normal[vertexIndex] = ObjectToWorldDir(vertex.normal);
+#endif
 }
 
 #pragma PROGRAM_FRAGMENT

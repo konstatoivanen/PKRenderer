@@ -6,7 +6,11 @@
 #include includes/SurfaceShaderBase.glsl
 #include includes/Noise.glsl
 
-#pragma PROGRAM_VERTEX
+#pragma PROGRAM_MESH_TASK
+// Surface shader handles this
+
+#pragma PROGRAM_MESH_ASSEMBLY
+
 float3 GerstnerWave(float4 wave, float3 p, inout float3 tangent, inout float3 binormal)
 {
     float steepness = wave.z;

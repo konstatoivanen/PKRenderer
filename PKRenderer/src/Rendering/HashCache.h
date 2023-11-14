@@ -185,6 +185,13 @@ namespace PK::Rendering
         DECLARE_HASH(pk_Fog_Transmittance)
         DECLARE_HASH(pk_Fog_Parameters)
 
+        DECLARE_HASH(pk_Meshlet_Tasklets)
+        DECLARE_HASH(pk_Meshlet_DispatchOffset)
+        DECLARE_HASH(pk_Meshlet_Submeshes)
+        DECLARE_HASH(pk_Meshlets)
+        DECLARE_HASH(pk_Meshlet_Vertices)
+        DECLARE_HASH(pk_Meshlet_Indices)
+
         DECLARE_HASH(PK_INSTANCING_ENABLED)
         DECLARE_HASH(PK_META_PASS_GBUFFER)
         DECLARE_HASH(PK_META_PASS_GIVOXELIZE)

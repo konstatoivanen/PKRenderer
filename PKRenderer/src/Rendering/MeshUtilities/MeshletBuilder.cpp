@@ -415,6 +415,40 @@ namespace PK::Rendering::MeshUtilities
         }
     }
 
+    static void CalculateMeshletAABB(const float* positions,
+                                     const uint32_t* vertexIndices,
+                                     uint32_t vertexStridef32,
+                                     uint32_t vertexFirst,
+                                     uint32_t vertexCount,
+                                     float* bbmin,
+                                     float* bbmax)
+    {
+        bbmin[0] = std::numeric_limits<float>().max();
+        bbmin[1] = std::numeric_limits<float>().max();
+        bbmin[2] = std::numeric_limits<float>().max();
+        bbmax[0] = -std::numeric_limits<float>().max();
+        bbmax[1] = -std::numeric_limits<float>().max();
+        bbmax[2] = -std::numeric_limits<float>().max();
+
+        for (auto i = 0u; i < vertexCount; ++i)
+        {
+            auto vertexIndex = vertexIndices[vertexFirst + i];
+            auto pPosition = positions + vertexIndex * vertexStridef32;
+
+            for (auto j = 0u; j < 3u; ++j)
+            {
+                if (pPosition[j] < bbmin[j])
+                {
+                    bbmin[j] = pPosition[j];
+                }
+
+                if (pPosition[j] > bbmax[j])
+                {
+                    bbmax[j] = pPosition[j];
+                }
+            }
+        }
+    }
 
     MeshletBuildData BuildMeshletsMonotone(const float* pPositions,
                                            const float* pTexcoords,
@@ -447,11 +481,7 @@ namespace PK::Rendering::MeshUtilities
             PK_MAX_TRIANGLES
         );
 
-        output.submesh.firstTriangle = 0u;
-        output.submesh.firstVertex = 0u; 
         output.submesh.firstMeshlet = 0u;
-        output.submesh.triangleCount = 0u;
-        output.submesh.vertexCount = 0u;
         output.submesh.meshletCount = (uint32_t)meshlet_count;
         output.submesh.bbmin[0] = aabb.min[0];
         output.submesh.bbmin[1] = aabb.min[1];
@@ -478,8 +508,9 @@ namespace PK::Rendering::MeshUtilities
             auto triangleOffset = indicesOffset / 3ull;
             auto verticesOffset = output.vertices.size();
 
-            output.submesh.triangleCount += meshlet.triangle_count;
-            output.submesh.vertexCount += meshlet.vertex_count;
+            float bbmin[3];
+            float bbmax[3];
+            CalculateMeshletAABB(pPositions, meshlet_vertices.data(), (uint32_t)vertexStridef32, meshlet.vertex_offset, meshlet.vertex_count, bbmin, bbmax);
 
             PKMeshlet pkmeshlet = PackMeshlet
             (
@@ -487,9 +518,11 @@ namespace PK::Rendering::MeshUtilities
                 (uint32_t)triangleOffset,
                 meshlet.vertex_count,
                 meshlet.triangle_count,
+                bbmin,
+                bbmax,
+                output.submesh.bbmin,
+                output.submesh.bbmax,
                 bounds.cone_axis,
-                bounds.center,
-                bounds.radius,
                 bounds.cone_apex,
                 bounds.cone_cutoff
             );
@@ -507,8 +540,8 @@ namespace PK::Rendering::MeshUtilities
                     pTexcoords + vertexIndex * vertexStridef32,
                     pNormals + vertexIndex * vertexStridef32,
                     pTangents + vertexIndex * vertexStridef32,
-                    bounds.center,
-                    bounds.radius
+                    bbmin,
+                    bbmax
                 );
 
                 output.vertices.push_back(vertex);

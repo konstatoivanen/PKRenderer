@@ -17,11 +17,15 @@ namespace PK::Rendering
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
-    RenderPipeline::RenderPipeline(AssetDatabase* assetDatabase, EntityDatabase* entityDb, Sequencer* sequencer, ApplicationConfig* config) :
+    RenderPipeline::RenderPipeline(AssetDatabase* assetDatabase, 
+                                   EntityDatabase* entityDb, 
+                                   Sequencer* sequencer, 
+                                   ApplicationConfig* config, 
+                                   StaticDrawBatcher* batcher) :
         m_passHierarchicalDepth(assetDatabase, config),
         m_passEnvBackground(assetDatabase),
         m_passPostEffectsComposite(assetDatabase, config),
-        m_passLights(assetDatabase, entityDb, sequencer, &m_batcher, config),
+        m_passLights(assetDatabase, entityDb, sequencer, batcher, config),
         m_passSceneGI(assetDatabase, config),
         m_passVolumeFog(assetDatabase, config),
         m_passFilmGrain(assetDatabase),
@@ -29,8 +33,8 @@ namespace PK::Rendering
         m_temporalAntialiasing(assetDatabase, config->InitialWidth, config->InitialHeight),
         m_bloom(assetDatabase, config->InitialWidth, config->InitialHeight),
         m_autoExposure(assetDatabase),
-        m_batcher(assetDatabase),
         m_sequencer(sequencer),
+        m_batcher(batcher),
         m_visibilityList(1024),
         m_resizeFrameIndex(0ull)
     {
@@ -263,12 +267,12 @@ namespace PK::Rendering
 
         auto cmdtransfer = queues->GetCommandBuffer(QueueType::Transfer);
         m_passSceneGI.PreRender(cmdtransfer, resolution);
-        m_batcher.BeginCollectDrawCalls();
+        m_batcher->BeginCollectDrawCalls();
         {
             DispatchRenderEvent(cmdtransfer, Tokens::RenderEvent::CollectDraws, nullptr, &m_forwardPassGroup);
             m_passLights.Cull(this, &m_visibilityList, m_worldToClip, m_znear, m_zfar);
         }
-        m_batcher.EndCollectDrawCalls(cmdtransfer);
+        m_batcher->EndCollectDrawCalls(cmdtransfer);
 
         auto* cmdgraphics = queues->GetCommandBuffer(QueueType::Graphics);
         auto* cmdcompute = queues->GetCommandBuffer(QueueType::Compute);
@@ -326,7 +330,7 @@ namespace PK::Rendering
 
         // Shadows, Voxelize scene & reproject gi
         m_passLights.RenderShadows(cmdgraphics);
-        m_passSceneGI.Voxelize(cmdgraphics, &m_batcher, m_forwardPassGroup);
+        m_passSceneGI.Voxelize(cmdgraphics, m_batcher, m_forwardPassGroup);
         m_passLights.RenderScreenSpaceShadows(cmdgraphics, m_worldToClip, resolution);
         m_passSceneGI.ReprojectGI(cmdgraphics);
         m_passVolumeFog.Compute(cmdgraphics, gbuffers.current.color->GetResolution());
@@ -336,8 +340,6 @@ namespace PK::Rendering
 
         m_passSceneGI.RenderGI(cmdgraphics);
 
-        m_batcher.DebugComputeMeshTasks(cmdgraphics, 0u);
-
         // Forward Opaque on graphics queue
         cmdgraphics->SetRenderTarget({ gbuffers.current.depth, gbuffers.current.color }, true);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
@@ -345,8 +347,6 @@ namespace PK::Rendering
         
         m_passEnvBackground.RenderBackground(cmdgraphics);
         
-        m_batcher.DebugRenderMeshlets(cmdgraphics, 0u);
-
         m_passVolumeFog.Render(cmdgraphics, gbuffers.current.color);
 
         DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::ForwardTransparent, "Forward.Transparent", nullptr);
@@ -395,7 +395,7 @@ namespace PK::Rendering
             cmd->BeginDebugScope(name, PK_COLOR_GREEN);
         }
 
-        auto token = Tokens::TokenRenderEvent(cmd, m_gbuffers.GetView(), &m_visibilityList, &m_batcher, m_worldToClip, m_znear, m_zfar);
+        auto token = Tokens::TokenRenderEvent(cmd, m_gbuffers.GetView(), &m_visibilityList, m_batcher, m_worldToClip, m_znear, m_zfar);
 
         m_sequencer->Next<Tokens::TokenRenderEvent>(this, &token, (int)renderEvent);
         

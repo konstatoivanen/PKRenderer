@@ -10,6 +10,9 @@
 #include Lighting.glsl
 #include SceneEnv.glsl
 #include SceneGIVX.glsl
+#include Meshlets.glsl
+
+#LogVerbose
 
 //@TODO move common samplers somewhere else & have some utility logic for using these
 // traditional syntax is a bit cumbersome.
@@ -164,8 +167,9 @@ float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const f
     #define SURF_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNDCSpace(position)
     #define SURF_EVALUATE_BxDF EvaluateBxDF_DirectMinimal
     #define SURF_EVALUATE_BxDF_INDIRECT GetIndirectLight_VXGI
-    #define SURF_DECLARE_VS_INTERFACE_WORLDPOSITION(io) io float3 vs_WORLDPOSITION;
-    #define SURF_ASSIGN_WORLDPOSITION
+    #define SURF_VS_INTERFACE_WORLDPOSITION PK_DECLARE_INTERFACE(float3 vs_WORLDPOSITION);
+    #define SURF_VS_INTERFACE_ASSIGN_WORLDPOSITION(index, value) PK_SET_INTERFACE(vs_WORLDPOSITION, index, value);
+    #define SURF_FS_ASSIGN_WORLDPOSITION
 #else
     #if defined(PK_META_PASS_GBUFFER)
         #define SURF_DECLARE_RASTER_OUTPUT out float4 SV_Target0; out float SV_Target1;
@@ -179,13 +183,14 @@ float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const f
     #define SURF_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
     #define SURF_EVALUATE_BxDF EvaluateBxDF_Direct
     #define SURF_EVALUATE_BxDF_INDIRECT GetIndirectLight_Main
-    #define SURF_DECLARE_VS_INTERFACE_WORLDPOSITION(io) float3 vs_WORLDPOSITION;
-    #define SURF_ASSIGN_WORLDPOSITION vs_WORLDPOSITION = UVToWorldPos(gl_FragCoord.xy * pk_ScreenParams.zw, ViewDepth(gl_FragCoord.z));
+    #define SURF_VS_INTERFACE_WORLDPOSITION float3 vs_WORLDPOSITION;
+    #define SURF_VS_INTERFACE_ASSIGN_WORLDPOSITION(index, value)
+    #define SURF_FS_ASSIGN_WORLDPOSITION vs_WORLDPOSITION = UVToWorldPos(gl_FragCoord.xy * pk_ScreenParams.zw, ViewDepth(gl_FragCoord.z));
 #endif
 
-#define SURF_DECLARE_VS_INTERFACE_BASE(io) \
-io float3 vs_NORMAL; \
-io float2 vs_TEXCOORD0; \
+#define SURF_VS_INTERFACE_BASE              \
+PK_DECLARE_INTERFACE(float3 vs_NORMAL);     \
+PK_DECLARE_INTERFACE(float2 vs_TEXCOORD0);  \
 
 #if defined(SURF_USE_TANGENTS)
     half3x3 pk_MATRIX_TBN;
@@ -198,74 +203,74 @@ io float2 vs_TEXCOORD0; \
     #define SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormalTex(normalmap, pk_MATRIX_TBN, uv, amount)
     #define SURF_SAMPLE_NORMAL_TRIPLANAR(normalmap, amount, uvw) SampleNormalTexTriplanar(normalmap, pk_MATRIX_TBN, uvw, amount)
     #if defined(PK_USE_DERIVATIVE_TANGENTS)
-        #define SURF_DECLARE_VS_INTERFACE_TANGENT(io) float4 vs_TANGENT;
-        #define SURF_ASSIGN_TBN pk_MATRIX_TBN = half3x3(ComposeDerivativeTBN(vs_NORMAL, vs_WORLDPOSITION, vs_TEXCOORD0));
+        #define SURF_VS_INTERFACE_TANGENT
+        #define SURF_VS_INTERFACE_ASSIGN_TANGENT(index, value)
+        #define SURF_FS_ASSIGN_TBN pk_MATRIX_TBN = half3x3(ComposeDerivativeTBN(vs_NORMAL, vs_WORLDPOSITION, vs_TEXCOORD0));
     #else
-        #define SURF_DECLARE_VS_INTERFACE_TANGENT(io) io float4 vs_TANGENT;
-        #define SURF_ASSIGN_TBN pk_MATRIX_TBN = half3x3(ComposeMikkTBN(vs_NORMAL, vs_TANGENT));
+        #define SURF_VS_INTERFACE_TANGENT PK_DECLARE_INTERFACE(float4 vs_TANGENT);
+        #define SURF_VS_INTERFACE_ASSIGN_TANGENT(index, value) PK_SET_INTERFACE(vs_TANGENT, index, value);
+        #define SURF_FS_ASSIGN_TBN pk_MATRIX_TBN = half3x3(ComposeMikkTBN(vs_NORMAL, vs_TANGENT));
     #endif
 #else
-    #define SURF_DECLARE_VS_INTERFACE_TANGENT(io) float4 vs_TANGENT;
+    #define SURF_VS_INTERFACE_TANGENT
+    #define SURF_VS_INTERFACE_ASSIGN_TANGENT(index, value)
+    #define SURF_FS_ASSIGN_TBN
     #define SURF_MESH_NORMAL normalize(vs_NORMAL)
     #define SURF_MAKE_PARALLAX_OFFSET(height, amount, viewdir) 0.0f.xx 
     #define SURF_SAMPLE_NORMAL(normalmap, amount, uv) SURF_MESH_NORMAL
     #define SURF_SAMPLE_NORMAL_TRIPLANAR(normalmap, amount, uvw) SURF_MESH_NORMAL
-    #define SURF_ASSIGN_TBN 
 #endif
 
+#if defined(SHADER_STAGE_MESH_TASK)
+
+bool PK_IS_VISIBLE_MESHLET(const PKMeshlet meshlet)
+{
+    return true;
+}
+
 //// ---------- VERTEX STAGE ---------- ////
-#if defined(SHADER_STAGE_VERTEX)
+#elif defined(SHADER_STAGE_MESH_ASSEMBLY)
 
     // Use these to modify surface values in vertex stage
     void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf);
 
-    // Input interface
-    in float3 in_POSITION;
-    in float3 in_NORMAL;
-    #if defined(SURF_USE_TANGENTS)
-    in float4 in_TANGENT;
-    #else
-    #define in_TANGENT float4(0.0f.xxxx)
-    #endif
-    in float2 in_TEXCOORD0;
-
-    SURF_DECLARE_VS_INTERFACE_TANGENT(out)
-    SURF_DECLARE_VS_INTERFACE_WORLDPOSITION(out)
-    SURF_DECLARE_VS_INTERFACE_BASE(out)
-
-    void main()
+    SURF_VS_INTERFACE_TANGENT
+    SURF_VS_INTERFACE_WORLDPOSITION
+    SURF_VS_INTERFACE_BASE
+    void PK_MESHLET_ASSIGN_VERTEX_OUTPUTS(uint vertexIndex, PKVertex vertex)
     {
         SurfaceVaryings varyings = SurfaceVaryings
         (
-            ObjectToWorldPos(in_POSITION.xyz),
-            ObjectToWorldDir(in_NORMAL),
-            float4(ObjectToWorldDir(in_TANGENT.xyz), in_TANGENT.w),
-            in_TEXCOORD0
+            ObjectToWorldPos(vertex.position.xyz),
+            ObjectToWorldDir(vertex.normal),
+            float4(ObjectToWorldDir(vertex.tangent.xyz), vertex.tangent.w),
+            vertex.texcoord
         );
 
         SURF_FUNCTION_VERTEX(varyings);
 
-        gl_Position = SURF_WORLD_TO_CLIPSPACE(varyings.worldpos);
-        vs_NORMAL = varyings.normal;
-        vs_TEXCOORD0 = varyings.texcoord;
-        vs_WORLDPOSITION = varyings.worldpos;
-        vs_TANGENT = varyings.tangent;
+        gl_MeshVerticesEXT[vertexIndex].gl_Position =  SURF_WORLD_TO_CLIPSPACE(varyings.worldpos);
+        vs_NORMAL[vertexIndex] = varyings.normal;
+        vs_TEXCOORD0[vertexIndex] = varyings.texcoord;
+        SURF_VS_INTERFACE_ASSIGN_WORLDPOSITION(vertexIndex, varyings.worldpos)
+        SURF_VS_INTERFACE_ASSIGN_TANGENT(vertexIndex, varyings.tangent)
     }
 
 //// ---------- FRAGMENT STAGE ---------- ////
 #elif defined(SHADER_STAGE_FRAGMENT)
 
+    
     // Use these to modify surface values in fragment stage
     void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf);
-    SURF_DECLARE_VS_INTERFACE_TANGENT(in)
-    SURF_DECLARE_VS_INTERFACE_WORLDPOSITION(in)
-    SURF_DECLARE_VS_INTERFACE_BASE(in)
+    
+    SURF_VS_INTERFACE_TANGENT
+    SURF_VS_INTERFACE_WORLDPOSITION
+    SURF_VS_INTERFACE_BASE
     SURF_DECLARE_RASTER_OUTPUT
-
     void main()
     {
-        SURF_ASSIGN_WORLDPOSITION
-        SURF_ASSIGN_TBN
+        SURF_FS_ASSIGN_WORLDPOSITION
+        SURF_FS_ASSIGN_TBN
 
         SurfaceData surf = SurfaceData
         (

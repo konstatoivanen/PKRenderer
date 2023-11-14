@@ -67,7 +67,6 @@ namespace PK::Core::Services
         [[nodiscard]] T* LoadInternal(const std::string& filepath, AssetID assetId, bool reload, Args&& ... args)
         {
             static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-            static_assert(std::is_base_of<IAssetImport<Args...>, T>::value, "Template argument type does not derive from IAssetImport!");
             PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
 
             auto importType = reload ? AssetImportType::RELOAD : AssetImportType::IMPORT;

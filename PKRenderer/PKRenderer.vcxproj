@@ -549,6 +549,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Core\Application.h" />
     <ClInclude Include="src\Core\ApplicationConfig.h" />
     <ClInclude Include="src\Core\Services\AssetDatabase.h" />
+    <ClInclude Include="src\Rendering\StaticDrawBatcher.h" />
     <ClInclude Include="src\ECS\Engines\EngineBuildAccelerationStructure.h" />
     <ClInclude Include="src\ECS\Engines\EngineDebug.h" />
     <ClInclude Include="src\ECS\Engines\EngineDrawGeometry.h" />
@@ -563,10 +564,10 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\MeshUtilities\MeshletBuilder.h" />
     <ClInclude Include="src\Rendering\MeshUtilities\RenderingUtility.h" />
     <ClInclude Include="src\Rendering\MeshUtilities\PrimitiveBuilders.h" />
-    <ClInclude Include="src\Rendering\Objects\MeshletMesh.h" />
-    <ClInclude Include="src\Rendering\Objects\VirtualMesh.h" />
+    <ClInclude Include="src\Rendering\Objects\VirtualStaticMesh.h" />
     <ClInclude Include="src\Rendering\RHI\BuiltInResources.h" />
     <ClInclude Include="src\Rendering\RHI\Driver.h" />
+    <ClInclude Include="src\Rendering\Objects\StaticSceneMesh.h" />
     <ClInclude Include="src\Rendering\Structs\GBuffers.h" />
     <ClInclude Include="src\Rendering\RHI\Objects\AccelerationStructure.h" />
     <ClInclude Include="src\Rendering\RHI\Objects\QueueSet.h" />
@@ -618,7 +619,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\ECS\Components\Bounds.h" />
     <ClInclude Include="src\ECS\Components\Light.h" />
     <ClInclude Include="src\ECS\Components\Materials.h" />
-    <ClInclude Include="src\ECS\Components\MeshReference.h" />
+    <ClInclude Include="src\ECS\Components\StaticMeshReference.h" />
     <ClInclude Include="src\ECS\Components\Renderable.h" />
     <ClInclude Include="src\ECS\Components\Transform.h" />
     <ClInclude Include="src\ECS\Engines\EngineCull.h" />
@@ -628,10 +629,10 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\ECS\Engines\EngineEditorCamera.h" />
     <ClInclude Include="src\ECS\EntityViews\LightRenderableView.h" />
     <ClInclude Include="src\ECS\EntityViews\LightSphereView.h" />
-    <ClInclude Include="src\ECS\EntityViews\MeshRenderableView.h" />
+    <ClInclude Include="src\ECS\EntityViews\StaticMeshRenderableView.h" />
     <ClInclude Include="src\ECS\EntityViews\TransformView.h" />
     <ClInclude Include="src\ECS\Implementers\LightImplementer.h" />
-    <ClInclude Include="src\ECS\Implementers\MeshRenderableImplementer.h" />
+    <ClInclude Include="src\ECS\Implementers\StaticMeshRenderableImplementer.h" />
     <ClInclude Include="src\ECS\Tokens\CullingTokens.h" />
     <ClInclude Include="src\ECS\Tokens\ViewProjectionToken.h" />
     <ClInclude Include="src\ECS\Tokens\TimeToken.h" />
@@ -643,7 +644,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Math\FunctionsIntersect.h" />
     <ClInclude Include="src\Math\Types.h" />
     <ClInclude Include="src\PrecompiledHeader.h" />
-    <ClInclude Include="src\Rendering\Passes\Batcher.h" />
     <ClInclude Include="src\Rendering\RHI\GraphicsAPI.h" />
     <ClInclude Include="src\Rendering\HashCache.h" />
     <ClInclude Include="src\Rendering\Objects\BindSet.h" />
@@ -852,7 +852,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\models\MDL_Rocks.mdl.pkmeta" />
     <None Include="res\models\MDL_Spiral.mdl" />
     <None Include="res\models\MDL_Spiral.mdl.pkmeta" />
-    <None Include="res\shaders\CS_BuildMeshletTasks.shader" />
     <None Include="res\shaders\CS_GI_Accumulate.shader" />
     <None Include="res\shaders\CS_GI_Clear.shader" />
     <None Include="res\shaders\CS_GI_PostFilter.shader" />
@@ -894,7 +893,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_GI_VolumeMipmap.shader" />
     <None Include="res\shaders\includes\SHL1.glsl" />
     <None Include="res\shaders\includes\TricubicSampler.glsl" />
-    <None Include="res\shaders\MS_Debug.shader" />
     <None Include="res\shaders\RS_GI_Raytrace.shader" />
     <None Include="res\shaders\CS_VolumeFogComposite.shader" />
     <None Include="res\shaders\RS_GI_ValidateReservoirs.shader" />
@@ -1000,11 +998,12 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\ECS\Engines\EngineGizmos.cpp" />
     <ClCompile Include="src\ECS\Engines\EnginePKAssetBuilder.cpp" />
     <ClCompile Include="src\ECS\Engines\EngineScreenshot.cpp" />
+    <ClCompile Include="src\Rendering\StaticDrawBatcher.cpp" />
     <ClCompile Include="src\Rendering\MeshUtilities\AttributeUtility.cpp" />
     <ClCompile Include="src\Rendering\MeshUtilities\MeshletBuilder.cpp" />
     <ClCompile Include="src\Rendering\MeshUtilities\RenderingUtility.cpp" />
-    <ClCompile Include="src\Rendering\Objects\MeshletMesh.cpp" />
-    <ClCompile Include="src\Rendering\Objects\VirtualMesh.cpp" />
+    <ClCompile Include="src\Rendering\Objects\StaticSceneMesh.cpp" />
+    <ClCompile Include="src\Rendering\Objects\VirtualStaticMesh.cpp" />
     <ClCompile Include="src\Rendering\RHI\BuiltInResources.cpp" />
     <ClCompile Include="src\Rendering\RHI\Driver.cpp" />
     <ClCompile Include="src\Rendering\RHI\Objects\AccelerationStructure.cpp" />
@@ -1046,7 +1045,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PrecompiledHeader.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Passes\Batcher.cpp" />
     <ClCompile Include="src\Rendering\MeshUtilities\PrimitiveBuilders.cpp" />
     <ClCompile Include="src\Rendering\RHI\Objects\Buffer.cpp" />
     <ClCompile Include="src\Rendering\RHI\Objects\CommandBuffer.cpp" />

@@ -12,7 +12,11 @@
 #define SURF_USE_TANGENTS
 #include includes/SurfaceShaderBase.glsl
 
-#pragma PROGRAM_VERTEX
+#pragma PROGRAM_MESH_TASK
+// Surface shader handles this
+
+#pragma PROGRAM_MESH_ASSEMBLY
+
 void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf) {}
 
 #pragma PROGRAM_FRAGMENT

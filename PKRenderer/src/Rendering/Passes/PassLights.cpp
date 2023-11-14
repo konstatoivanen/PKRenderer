@@ -3,7 +3,7 @@
 #include "Math/FunctionsIntersect.h"
 #include "Math/FunctionsMisc.h"
 #include "Utilities/VectorUtilities.h"
-#include "ECS/EntityViews/MeshRenderableView.h"
+#include "ECS/EntityViews/StaticMeshRenderableView.h"
 #include "Rendering/HashCache.h"
 #include "Rendering/Structs/StructsCommon.h"
 #include "PassLights.h"
@@ -54,7 +54,11 @@ struct Vector::Comparer<LightRenderableView*>
 
 namespace PK::Rendering::Passes
 {
-    PassLights::PassLights(AssetDatabase* assetDatabase, EntityDatabase* entityDb, Sequencer* sequencer, Batcher* batcher, const ApplicationConfig* config) :
+    PassLights::PassLights(AssetDatabase* assetDatabase, 
+                           EntityDatabase* entityDb, 
+                           Sequencer* sequencer, 
+                           StaticDrawBatcher* batcher, 
+                           const ApplicationConfig* config) :
         m_entityDb(entityDb),
         m_sequencer(sequencer),
         m_batcher(batcher),
@@ -491,7 +495,7 @@ namespace PK::Rendering::Passes
         for (auto i = 0u; i < visibilityList->count; ++i)
         {
             auto& item = (*visibilityList)[i];
-            auto entity = m_entityDb->Query<MeshRenderableView>(EGID(item.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
+            auto entity = m_entityDb->Query<StaticMeshRenderableView>(EGID(item.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
 
             if (item.depth < minDepth)
             {
@@ -506,7 +510,7 @@ namespace PK::Rendering::Passes
                 if (shader != nullptr)
                 {
                     auto layerOffset = batch.count * shadow.LayerStride + item.clipId;
-                    m_batcher->SubmitDraw(transform, shader, nullptr, entity->mesh->sharedMesh, kv.submesh, (index & 0xFFFF) | (layerOffset << 16));
+                    m_batcher->SubmitStaticDraw(transform, shader, nullptr, entity->staticMesh->sharedMesh, kv.submesh, (index & 0xFFFF) | (layerOffset << 16));
                 }
             }
         }

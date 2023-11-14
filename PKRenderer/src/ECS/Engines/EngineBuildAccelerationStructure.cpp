@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Math/FunctionsIntersect.h"
 #include "ECS/EntityViews/BaseRenderableView.h"
-#include "ECS/EntityViews/MeshRenderableView.h"
+#include "ECS/EntityViews/StaticMeshRenderableView.h"
 #include "EngineBuildAccelerationStructure.h"
 
 namespace PK::ECS::Engines
@@ -55,11 +55,11 @@ namespace PK::ECS::Engines
 
         for (const auto& egid : m_renderableEgids)
         {
-            auto renderable = m_entityDb->Query<MeshRenderableView>(egid);
+            auto renderable = m_entityDb->Query<StaticMeshRenderableView>(egid);
 
             for (const auto& material : renderable->materials->materials)
             {
-                if (renderable->mesh->sharedMesh->TryGetAccelerationStructureGeometryInfo(material.submesh, &geometry))
+                if (renderable->staticMesh->sharedMesh->TryGetAccelerationStructureGeometryInfo(material.submesh, &geometry))
                 {
                     structure->AddInstance(geometry, renderable->transform->localToWorld);
                 }

@@ -3,10 +3,9 @@
 #include "ECS/EntityDatabase.h"
 #include "ECS/EntityViews/TransformView.h"
 #include "ECS/EntityViews/BaseRenderableView.h"
-#include "ECS/EntityViews/MeshRenderableView.h"
+#include "ECS/EntityViews/StaticMeshRenderableView.h"
 #include "ECS/EntityViews/LightRenderableView.h"
-#include "Rendering/Objects/Mesh.h"
-#include "Rendering/Objects/VirtualMesh.h"
+#include "Rendering/Objects/VirtualStaticMesh.h"
 #include "Rendering/Objects/Material.h"
 
 namespace PK::ECS::Builders
@@ -42,18 +41,18 @@ namespace PK::ECS::Builders
 	}
 
 	template<typename T>
-	void BuildMeshRenderableView(EntityDatabase* entityDb, 
-								 T* implementer, 
-								 const EGID& egid, 
-								 Rendering::Objects::Mesh* mesh,
-								 const std::initializer_list<Rendering::Objects::MaterialTarget>& materials)
+	void BuildStaticMeshRenderableView(EntityDatabase* entityDb, 
+									   T* implementer, 
+									   const EGID& egid, 
+									   Rendering::Objects::StaticMesh* staticMesh,
+									   const std::initializer_list<Rendering::Objects::MaterialTarget>& materials)
 	{
 		auto view = entityDb->ReserveEntityView(implementer, egid, 
-			&EntityViews::MeshRenderableView::materials, 
-			&EntityViews::MeshRenderableView::mesh, 
-			&EntityViews::MeshRenderableView::transform);
+			&EntityViews::StaticMeshRenderableView::materials, 
+			&EntityViews::StaticMeshRenderableView::staticMesh,
+			&EntityViews::StaticMeshRenderableView::transform);
 		implementer->materials = materials;
-		implementer->sharedMesh = mesh;
+		implementer->sharedMesh = staticMesh;
 	}
 
 	template<typename T>
@@ -121,32 +120,32 @@ namespace PK::ECS::Builders
 		BuildLightRenderableView(entityDb, implementer, egid, type, cookie, color, radius, angle);
 	}
 
-	EGID BuildMeshRenderableEntity(EntityDatabase* entityDb,
-								   Rendering::Objects::Mesh* mesh,
+	EGID BuildStaticMeshRenderableEntity(EntityDatabase* entityDb,
+								   Rendering::Objects::StaticMesh* mesh,
 								   const std::initializer_list<Rendering::Objects::MaterialTarget>& materials,
 								   const Math::float3& position,
 								   const Math::float3& rotation,
 								   float size = 1.0f, 
 								   Rendering::Structs::RenderableFlags flags = Rendering::Structs::RenderableFlags::DefaultMesh);
 
-	EGID BuildMeshRenderableEntity(EntityDatabase* entityDb, 
-								   Rendering::Objects::VirtualMesh* mesh,
-								   const std::initializer_list<Rendering::Objects::MaterialTarget>& materials,
-								   const Math::float3& position,
-								   const Math::float3& rotation,
-								   float size = 1.0f, 
-								   Rendering::Structs::RenderableFlags flags = Rendering::Structs::RenderableFlags::DefaultMesh);
+	EGID BuildStaticMeshRenderableEntity(EntityDatabase* entityDb, 
+										 Rendering::Objects::VirtualStaticMesh* mesh,
+										 const std::initializer_list<Rendering::Objects::MaterialTarget>& materials,
+										 const Math::float3& position,
+										 const Math::float3& rotation,
+										 float size = 1.0f, 
+										 Rendering::Structs::RenderableFlags flags = Rendering::Structs::RenderableFlags::DefaultMesh);
 
 	EGID BuildLightRenderableEntity(EntityDatabase* entityDb,
-								Core::Services::AssetDatabase* assetDatabase,
-								const Math::float3& position,
-								const Math::float3& rotation,
-								Rendering::Structs::LightType type,
-								Rendering::Structs::Cookie cookie,
-								const Math::color& color,
-								float angle,
-								float radius,
-								bool castShadows);
+									Core::Services::AssetDatabase* assetDatabase,
+									const Math::float3& position,
+									const Math::float3& rotation,
+									Rendering::Structs::LightType type,
+									Rendering::Structs::Cookie cookie,
+									const Math::color& color,
+									float angle,
+									float radius,
+									bool castShadows);
 
 	EGID BuildLightSphereRenderableEntity(EntityDatabase* entityDb,
 										Core::Services::AssetDatabase* assetDatabase,

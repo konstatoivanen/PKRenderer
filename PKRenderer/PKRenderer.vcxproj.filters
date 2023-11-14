@@ -1263,7 +1263,7 @@
     <ClInclude Include="src\ECS\Components\Renderable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Components\MeshReference.h">
+    <ClInclude Include="src\ECS\Components\StaticMeshReference.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ECS\Components\Light.h">
@@ -1275,7 +1275,7 @@
     <ClInclude Include="src\ECS\EntityViews\TransformView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\EntityViews\MeshRenderableView.h">
+    <ClInclude Include="src\ECS\EntityViews\StaticMeshRenderableView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ECS\EntityViews\LightRenderableView.h">
@@ -1284,7 +1284,7 @@
     <ClInclude Include="src\ECS\EntityViews\LightSphereView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Implementers\MeshRenderableImplementer.h">
+    <ClInclude Include="src\ECS\Implementers\StaticMeshRenderableImplementer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ECS\Implementers\LightImplementer.h">
@@ -1294,9 +1294,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ECS\Engines\EngineCull.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Rendering\Passes\Batcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ECS\Tokens\CullingTokens.h">
@@ -1494,13 +1491,10 @@
     <ClInclude Include="src\Rendering\MeshUtilities\RenderingUtility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Objects\MeshletMesh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Utilities\RangeTable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Objects\VirtualMesh.h">
+    <ClInclude Include="src\Rendering\Objects\VirtualStaticMesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\MeshUtilities\MeshletBuilder.h">
@@ -1510,6 +1504,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\MeshUtilities\AttributeUtility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\StaticDrawBatcher.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Objects\StaticSceneMesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2067,9 +2067,7 @@
     <None Include="res\shaders\includes\bend_sss_gpu.glsl" />
     <None Include="res\shaders\includes\SceneGIRT.glsl" />
     <None Include="res\shaders\includes\ComputeQuadSwap.glsl" />
-    <None Include="res\shaders\MS_Debug.shader" />
     <None Include="res\shaders\includes\Meshlets.glsl" />
-    <None Include="res\shaders\CS_BuildMeshletTasks.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">
@@ -2234,9 +2232,6 @@
     <ClCompile Include="src\ECS\Engines\EngineCull.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Passes\Batcher.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ECS\Tokens\CullingTokens.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -2342,16 +2337,19 @@
     <ClCompile Include="src\Rendering\MeshUtilities\RenderingUtility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Objects\MeshletMesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Rendering\Objects\VirtualMesh.cpp">
+    <ClCompile Include="src\Rendering\Objects\VirtualStaticMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\MeshUtilities\MeshletBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\MeshUtilities\AttributeUtility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\StaticDrawBatcher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\Objects\StaticSceneMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

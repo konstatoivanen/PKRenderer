@@ -125,4 +125,16 @@ float3x3 make_TBN(const float3 n) { float3 t, b; branchlessONB(n,t,b); return fl
 #else
     #define PK_DECLARE_ACCELERATION_STRUCTURE(Set, Name)
 #endif
+
+#if defined(SHADER_STAGE_MESH_ASSEMBLY)
+    #define PK_DECLARE_INTERFACE(variable) out variable[]
+    #define PK_SET_INTERFACE(variable, index, value) variable[index] = value
+#elif defined(SHADER_STAGE_VERTEX)
+    #define PK_DECLARE_INTERFACE(variable) out variable
+    #define PK_SET_INTERFACE(variable, index, value) variable = value
+#elif defined(SHADER_STAGE_FRAGMENT)
+    #define PK_DECLARE_INTERFACE(variable) in variable
+    #define PK_SET_INTERFACE(variable, index, value)
+#endif
+
 #endif

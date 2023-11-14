@@ -4,7 +4,7 @@
 #include "ECS/Tokens/CullingTokens.h"
 #include "ECS/EntityViews/LightRenderableView.h"
 #include "Rendering/Objects/ConstantBuffer.h"
-#include "Rendering/Passes/Batcher.h"
+#include "Rendering/StaticDrawBatcher.h"
 #include "Rendering/RHI/GraphicsAPI.h"
 
 namespace PK::Rendering::Passes
@@ -21,7 +21,7 @@ namespace PK::Rendering::Passes
             PassLights(Core::Services::AssetDatabase* assetDatabase, 
                        ECS::EntityDatabase* entityDb, 
                        Core::Services::Sequencer* sequencer, 
-                       Batcher* batcher, 
+                       StaticDrawBatcher* batcher,
                        const Core::ApplicationConfig* config);
 
             void RenderShadows(RHI::Objects::CommandBuffer* cmd);
@@ -57,7 +57,7 @@ namespace PK::Rendering::Passes
 
             ECS::EntityDatabase* m_entityDb = nullptr;
             Core::Services::Sequencer* m_sequencer = nullptr;
-            Batcher* m_batcher = nullptr;
+            StaticDrawBatcher* m_batcher = nullptr;
 
             RHI::Objects::Shader* m_computeLightAssignment = nullptr;
             RHI::Objects::Shader* m_computeCopyCubeShadow = nullptr;

@@ -1,15 +1,15 @@
 #pragma once
 #include "ECS/EntityDatabase.h"
 #include "ECS/Components/Transform.h"
-#include "ECS/Components/MeshReference.h"
+#include "ECS/Components/StaticMeshReference.h"
 #include "ECS/Components/Materials.h"
 
 namespace PK::ECS::EntityViews
 {
-    struct MeshRenderableView : public IEntityView
+    struct StaticMeshRenderableView : public IEntityView
     {
         Components::Transform* transform;
-        Components::MeshReference* mesh;
+        Components::StaticMeshReference* staticMesh;
         Components::Materials* materials;
     };
 }

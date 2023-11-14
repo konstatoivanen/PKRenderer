@@ -19,41 +19,15 @@ namespace PK::ECS::Engines
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
-    EngineDebug::EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, const ApplicationConfig* config)
+    EngineDebug::EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, StaticSceneMesh* baseMesh, const ApplicationConfig* config)
     {
         m_entityDb = entityDb;
         m_assetDatabase = assetDatabase;
 
-        BufferLayout defaultLayout =
-        {
-            { ElementType::Float3, PK_VS_NORMAL },
-            { ElementType::Float4, PK_VS_TANGENT },
-            { ElementType::Float2, PK_VS_TEXCOORD0 },
-        };
-
-        BufferLayout positionLayout = { { ElementType::Float3, PK_VS_POSITION } };
-
-        BufferRef virtualVertexBuffers[2] = 
-        {
-            Buffer::Create(defaultLayout, 2000000, BufferUsage::SparseVertex, "VirtualMesh.VertexAttributes"),
-            Buffer::Create(positionLayout, 2000000, BufferUsage::SparseVertex | BufferUsage::Storage, "VirtualMesh.VertexPositions")
-        };
-
-        auto virtualIBuffer = Buffer::Create(ElementType::Uint, 2000000, BufferUsage::SparseIndex | BufferUsage::Storage, "VirtualMesh.IndexBuffer");
-        
-        m_virtualBaseMesh = CreateRef<Mesh>(virtualIBuffer, virtualVertexBuffers, 2u, nullptr, 0u);
-
-        const uint32_t maxSubmeshes = 65535u;
-        const uint32_t maxMeshlets = 65535u * 4u;
-        const uint32_t maxVertices = 65535u * 32u;
-        const uint32_t maxTriangles = 65535u * 16u * 3u;
-        m_meshletMesh = CreateRef<MeshletMesh>(maxSubmeshes, maxMeshlets, maxVertices, maxTriangles);
-        m_meshletMesh->AssignBuffers();
-
-        auto columnMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Columns.pkmesh", &m_virtualBaseMesh, &m_meshletMesh);
-        auto rocksMesh = assetDatabase->Load<VirtualMesh>("res/models/MDL_Rocks.pkmesh", &m_virtualBaseMesh, &m_meshletMesh);
-        auto sphereMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Sphere", MeshUtilities::CreateSphereVirtualMesh(m_virtualBaseMesh, m_meshletMesh, PK_FLOAT3_ZERO, 1.0f));
-        auto planeMesh = assetDatabase->RegisterProcedural<VirtualMesh>("Primitive_Plane16x16", MeshUtilities::CreatePlaneVirtualMesh(m_virtualBaseMesh, m_meshletMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
+        auto columnMesh = assetDatabase->Load<VirtualStaticMesh>("res/models/MDL_Columns.pkmesh", baseMesh);
+        auto rocksMesh = assetDatabase->Load<VirtualStaticMesh>("res/models/MDL_Rocks.pkmesh", baseMesh);
+        auto sphereMesh = assetDatabase->RegisterProcedural<VirtualStaticMesh>("Primitive_Sphere", MeshUtilities::CreateSphereVirtualMesh(baseMesh, PK_FLOAT3_ZERO, 1.0f));
+        auto planeMesh = assetDatabase->RegisterProcedural<VirtualStaticMesh>("Primitive_Plane16x16", MeshUtilities::CreatePlaneVirtualMesh(baseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
 
         auto materialSand = assetDatabase->Load<Material>("res/materials/M_Sand.material");
         auto materialAsphalt = assetDatabase->Load<Material>("res/materials/M_Asphalt.material");
@@ -65,8 +39,8 @@ namespace PK::ECS::Engines
 
         srand(config->RandomSeed);
 
-        Builders::BuildMeshRenderableEntity(m_entityDb, planeMesh, { {materialSand,0} }, { 0, -5, 0 }, { 90, 0, 0 }, 80.0f);
-        Builders::BuildMeshRenderableEntity(m_entityDb, columnMesh, { {materialAsphalt,0} }, { -20, 5, -20 }, PK_FLOAT3_ZERO, 3.0f);
+        Builders::BuildStaticMeshRenderableEntity(m_entityDb, planeMesh, { {materialSand,0} }, { 0, -5, 0 }, { 90, 0, 0 }, 80.0f);
+        Builders::BuildStaticMeshRenderableEntity(m_entityDb, columnMesh, { {materialAsphalt,0} }, { -20, 5, -20 }, PK_FLOAT3_ZERO, 3.0f);
 
         auto submeshCount = rocksMesh->GetSubmeshCount();
 
@@ -76,7 +50,7 @@ namespace PK::ECS::Engines
             auto pos = Functions::RandomRangeFloat3(minpos, maxpos);
             auto rot = Functions::RandomEuler();
             auto size = Functions::RandomRangeFloat(1.0f, 3.0f);
-            Builders::BuildMeshRenderableEntity(m_entityDb, rocksMesh, { {materialMarble,submesh} }, pos, rot, size);
+            Builders::BuildStaticMeshRenderableEntity(m_entityDb, rocksMesh, { {materialMarble,submesh} }, pos, rot, size);
         }
 
         for (auto i = 0; i < 128; ++i)
@@ -85,7 +59,7 @@ namespace PK::ECS::Engines
             auto pos = Functions::RandomRangeFloat3(minpos, maxpos);
             auto rot = Functions::RandomEuler();
             auto size = Functions::RandomRangeFloat(1.0f, 3.0f);
-            Builders::BuildMeshRenderableEntity(m_entityDb, rocksMesh, { {materialPlaster,submesh} }, pos, rot, size);
+            Builders::BuildStaticMeshRenderableEntity(m_entityDb, rocksMesh, { {materialPlaster,submesh} }, pos, rot, size);
         }
 
         for (uint32_t i = 0u; i < config->LightCount; ++i)

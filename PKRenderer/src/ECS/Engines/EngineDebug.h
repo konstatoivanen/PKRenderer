@@ -3,7 +3,7 @@
 #include "Core/Services/AssetDataBase.h"
 #include "ECS/EntityDatabase.h"
 #include "ECS/Tokens/GizmosToken.h"
-#include "Rendering/Objects/MeshletMesh.h"
+#include "Rendering/Objects/StaticSceneMesh.h"
 
 namespace PK::ECS::Engines
 {
@@ -12,14 +12,12 @@ namespace PK::ECS::Engines
                         public Core::Services::IStep<Tokens::IGizmosRenderer>
     {
         public:
-            EngineDebug(Core::Services::AssetDatabase* assetDatabase, EntityDatabase* entityDb, const Core::ApplicationConfig* config);
+            EngineDebug(Core::Services::AssetDatabase* assetDatabase, EntityDatabase* entityDb, PK::Rendering::Objects::StaticSceneMesh* baseMesh, const Core::ApplicationConfig* config);
             void Step(int condition) final;
             void Step(Tokens::IGizmosRenderer* gizmos) final;
 
         private:
             EntityDatabase* m_entityDb;
             Core::Services::AssetDatabase* m_assetDatabase;
-            Utilities::Ref<Rendering::Objects::Mesh> m_virtualBaseMesh = nullptr;
-            Utilities::Ref<Rendering::Objects::MeshletMesh> m_meshletMesh = nullptr;
     };
 }

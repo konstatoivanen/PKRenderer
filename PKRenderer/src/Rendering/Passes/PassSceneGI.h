@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Core/ApplicationConfig.h"
-#include "Rendering/Passes/Batcher.h"
+#include "Rendering/StaticDrawBatcher.h"
 #include "Rendering/Objects/ConstantBuffer.h"
 #include "Rendering/Objects/ShaderBindingTable.h"
 #include "Rendering/RHI/GraphicsAPI.h"
@@ -16,7 +16,7 @@ namespace PK::Rendering::Passes
             void PruneVoxels(RHI::Objects::CommandBuffer* cmd);
             void DispatchRays(RHI::Objects::CommandBuffer* cmd);
             void ReprojectGI(RHI::Objects::CommandBuffer* cmd);
-            void Voxelize(RHI::Objects::CommandBuffer* cmd, Batcher* batcher, uint32_t batchGroup);
+            void Voxelize(RHI::Objects::CommandBuffer* cmd, StaticDrawBatcher* batcher, uint32_t batchGroup);
             void RenderGI(RHI::Objects::CommandBuffer* cmd);
             void VoxelMips(RHI::Objects::CommandBuffer* cmd);
             void ValidateReservoirs(RHI::Objects::CommandBuffer* cmd);
