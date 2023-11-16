@@ -237,19 +237,19 @@ bool PK_IS_VISIBLE_MESHLET(const PKMeshlet meshlet)
     SURF_VS_INTERFACE_TANGENT
     SURF_VS_INTERFACE_WORLDPOSITION
     SURF_VS_INTERFACE_BASE
-    void PK_MESHLET_ASSIGN_VERTEX_OUTPUTS(uint vertexIndex, PKVertex vertex)
+    void PK_MESHLET_ASSIGN_VERTEX_OUTPUTS(uint vertexIndex, PKVertex vertex, inout float4 sv_Position)
     {
         SurfaceVaryings varyings = SurfaceVaryings
         (
             ObjectToWorldPos(vertex.position.xyz),
-            ObjectToWorldDir(vertex.normal),
-            float4(ObjectToWorldDir(vertex.tangent.xyz), vertex.tangent.w),
+            ObjectToWorldVec(vertex.normal),
+            float4(ObjectToWorldVec(vertex.tangent.xyz), vertex.tangent.w),
             vertex.texcoord
         );
 
         SURF_FUNCTION_VERTEX(varyings);
 
-        gl_MeshVerticesEXT[vertexIndex].gl_Position =  SURF_WORLD_TO_CLIPSPACE(varyings.worldpos);
+        sv_Position = SURF_WORLD_TO_CLIPSPACE(varyings.worldpos);
         vs_NORMAL[vertexIndex] = varyings.normal;
         vs_TEXCOORD0[vertexIndex] = varyings.texcoord;
         SURF_VS_INTERFACE_ASSIGN_WORLDPOSITION(vertexIndex, varyings.worldpos)

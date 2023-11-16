@@ -51,7 +51,8 @@ namespace PK::Rendering::RHI
                     VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME,
                     VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME,
                     VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME,
-                    VK_EXT_MESH_SHADER_EXTENSION_NAME
+                    VK_EXT_MESH_SHADER_EXTENSION_NAME,
+                    VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
                 };
         
                 driver = CreateScope<VulkanDriver>(VulkanContextProperties

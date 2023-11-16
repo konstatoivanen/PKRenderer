@@ -397,8 +397,8 @@ namespace PK::Assets
             // packed as uint4
             struct PKVertex
             {
-                uint32_t posxy;      // half2       position.xy
-                uint16_t posz;       // half1       position.z
+                uint32_t posxy;      // unorm16     position.xy
+                uint16_t posz;       // unorm16     position.z
                 uint16_t colorSigns; // 4r4g4b color, 4a tangent sign
                 uint32_t texcoord;   // half2       texcoord
                 uint32_t rotation;   // r10g10b10a2 quaternion
@@ -407,16 +407,15 @@ namespace PK::Assets
             // packed as 2x uint4
             struct PKMeshlet
             {
-                uint32_t vertexFirst;     // 4  bytes
-                uint32_t triangleFirst;   // 8  bytes
-                uint16_t vertexCount;     // 10 bytes
-                uint16_t triangleCount;   // 12 bytes
-                uint16_t coneAxis[2];     // 16 bytes unorm Octa encoded direction uv
-
-                uint16_t center[3];       // 22 bytes half3
-                uint16_t radius;          // 24 bytes half
-                uint16_t coneApex[3];     // 30 bytes half3
-                uint16_t coneCutoff;      // 32 bytes snorm16
+                uint32_t vertexFirst;   // 4  bytes
+                uint32_t triangleFirst; // 8  bytes
+                int8_t   coneAxis[3];   // 11 bytes snorm direction
+                int8_t   coneCutoff;    // 12 bytes snorm8
+                uint8_t  vertexCount;   // 13 bytes
+                uint8_t  triangleCount; // 14 bytes
+                uint16_t coneApex[3];   // 20 bytes half3
+                uint16_t center[3];     // 26 bytes half3
+                uint16_t extents[3];    // 32 bytes half3
             };
 
             // packed as 2x uint4
@@ -451,11 +450,11 @@ namespace PK::Assets
                                   uint32_t triangleFirst, 
                                   uint32_t vertexCount, 
                                   uint32_t triangleCount,
-                                  const float* center,
-                                  const float radius,
-                                  const float* coneAxis,
+                                  const int8_t* coneAxis,
+                                  int8_t coneCutoff,
                                   const float* coneApex,
-                                  float coneCutoff);
+                                  const float* center,
+                                  const float* extents);
         }
 
         struct PKVertexAttribute

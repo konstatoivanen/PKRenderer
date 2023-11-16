@@ -23,11 +23,11 @@ bool PK_IS_VISIBLE_MESHLET(const PKMeshlet meshlet)
 out float3 vs_Normal[];
 #endif
 
-void PK_MESHLET_ASSIGN_VERTEX_OUTPUTS(uint vertexIndex, PKVertex vertex)
+void PK_MESHLET_ASSIGN_VERTEX_OUTPUTS(uint vertexIndex, PKVertex vertex, inout float4 sv_Position)
 {
-    gl_MeshVerticesEXT[vertexIndex].gl_Position = ObjectToClipPos(vertex.position);
+    sv_Position = ObjectToClipPos(vertex.position);
 #if defined(PK_META_PASS_GBUFFER)
-    vs_Normal[vertexIndex] = ObjectToWorldDir(vertex.normal);
+    vs_Normal[vertexIndex] = ObjectToWorldVec(vertex.normal);
 #endif
 }
 

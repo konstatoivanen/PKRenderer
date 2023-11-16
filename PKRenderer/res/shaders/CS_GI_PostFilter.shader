@@ -72,7 +72,7 @@ void main()
         diff.ao = lerp(history.ao, 0.5f + diff.ao * 0.5f, alpha);
 
         GI_Store_Diff(coord, history);
-        GI_Store_Resolved_Diff(coord, ViewToWorldDir(normal), diff);
+        GI_Store_Resolved_Diff(coord, ViewToWorldVec(normal), diff);
 
         #if PK_GI_APPROX_ROUGH_SPEC == 1
         ra_spec = GI_ShadeRoughSpecular(normal, viewdir, roughness, diff);
@@ -169,7 +169,7 @@ void main()
             n_diff = GI_Mul_NoHistory(n_diff, Test_NaN_EPS6(wSumDiff) ? 0.0f : 1.0f / wSumDiff);
             n_diff = GI_Interpolate(nh_diff, n_diff, alpha);
             GI_Store_Diff(ncoord, GI_Interpolate(nh_diff, n_diff, alpha));
-            GI_Store_Resolved_Diff(ncoord, ViewToWorldDir(n_normal), n_diff);
+            GI_Store_Resolved_Diff(ncoord, ViewToWorldVec(n_normal), n_diff);
         }
     
         // Store spec

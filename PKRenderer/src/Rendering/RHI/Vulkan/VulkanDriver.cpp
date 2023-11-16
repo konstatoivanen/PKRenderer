@@ -158,7 +158,8 @@ namespace PK::Rendering::RHI::Vulkan
         physicalDeviceRequirements.features.meshshader.taskShader = VK_TRUE;
         physicalDeviceRequirements.features.meshshader.meshShader = VK_TRUE;
         physicalDeviceRequirements.features.meshshader.multiviewMeshShader = VK_TRUE;
-        //physicalDeviceRequirements.features.meshshader.primitiveFragmentShadingRateMeshShader;
+        //physicalDeviceRequirements.features.meshshader.primitiveFragmentShadingRateMeshShader = VK_TRUE;
+        //physicalDeviceRequirements.features.shadingRate.pipelineFragmentShadingRate = VK_TRUE;
         //physicalDeviceRequirements.features.meshshader.meshShaderQueries;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;

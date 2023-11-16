@@ -510,7 +510,7 @@ namespace PK::Assets::Mesh::Meshlet
         outuv[1] = outuv[1] * 0.5f + 0.5f;
     }
 
-    uint32_t EncodeQuaternion(const float* n, const float* t, uint32_t* outSignBit)
+    uint32_t EncodeQuaternion(const float* n, const float* t)
     {
         float m[3][3];
         m[0][0] = t[0];
@@ -571,14 +571,14 @@ namespace PK::Assets::Mesh::Meshlet
         }
 
         // Normalize
-        length = abs(quat[0]);
+        length = quat[0];
         index = 0u;
 
         for (auto i = 1u; i < 4u; ++i)
         {
-            if (abs(quat[i]) > length)
+            if (abs(quat[i]) > abs(length))
             {
-                length = abs(quat[i]);
+                length = quat[i];
                 index = i;
             }
         }
@@ -591,7 +591,6 @@ namespace PK::Assets::Mesh::Meshlet
             quantized[i] = PackUnorm10(e * 0.5f + 0.5f);
         }
 
-        *outSignBit = quat[index] < 0.0f ? 0u : 1u;
         return quantized[0] | (quantized[1] << 10u) | (quantized[2] << 20u) | ((index & 0x3u) << 30u);
     }
 
@@ -626,9 +625,8 @@ namespace PK::Assets::Mesh::Meshlet
 
         if (pNormal && pTangent)
         {
-            uint32_t rotationSign;
-            vertex.rotation = EncodeQuaternion(pNormal, pTangent, &rotationSign);
-            vertex.colorSigns |= rotationSign << 13u;
+            vertex.rotation = EncodeQuaternion(pNormal, pTangent);
+            vertex.colorSigns |= (pTangent[3] < 0.0f ? 0u : 1u) << 12u;
         }
 
         return vertex;
@@ -638,31 +636,30 @@ namespace PK::Assets::Mesh::Meshlet
                           uint32_t triangleFirst, 
                           uint32_t vertexCount, 
                           uint32_t triangleCount,
-                          const float* center,
-                          const float radius,
-                          const float* coneAxis,
+                          const int8_t* coneAxis,
+                          int8_t coneCutoff,
                           const float* coneApex,
-                          float coneCutoff)
+                          const float* center,
+                          const float* extents)
     {
-        float octauv[2];
-        OctaEncode(coneAxis, octauv);
-
         PKMeshlet meshlet;
         meshlet.vertexFirst = vertexFirst;
         meshlet.triangleFirst = triangleFirst;
-        meshlet.vertexCount = vertexCount;
-        meshlet.triangleCount = triangleCount;
-        meshlet.coneAxis[0] = PackUnorm16(octauv[0]);
-        meshlet.coneAxis[1] = PackUnorm16(octauv[1]);
-
-        meshlet.center[0] = PackHalf(center[0]);
-        meshlet.center[1] = PackHalf(center[1]);
-        meshlet.center[2] = PackHalf(center[2]);
-        meshlet.radius = PackHalf(radius);
+        meshlet.coneAxis[0] = coneAxis[0];
+        meshlet.coneAxis[1] = coneAxis[1];
+        meshlet.coneAxis[2] = coneAxis[2];
+        meshlet.coneCutoff = coneCutoff;
+        meshlet.vertexCount = (uint8_t)vertexCount;
+        meshlet.triangleCount = (uint8_t)triangleCount;
         meshlet.coneApex[0] = PackHalf(coneApex[0]);
         meshlet.coneApex[1] = PackHalf(coneApex[1]);
         meshlet.coneApex[2] = PackHalf(coneApex[2]);
-        meshlet.coneCutoff = PackUnorm16(coneCutoff * 0.5f + 0.5f);
+        meshlet.center[0] = PackHalf(center[0]);
+        meshlet.center[1] = PackHalf(center[1]);
+        meshlet.center[2] = PackHalf(center[2]);
+        meshlet.extents[0] = PackHalf(extents[0]);
+        meshlet.extents[1] = PackHalf(extents[1]);
+        meshlet.extents[2] = PackHalf(extents[2]);
         return meshlet;
     }
 

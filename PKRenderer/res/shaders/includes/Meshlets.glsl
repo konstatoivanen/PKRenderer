@@ -10,18 +10,12 @@
 #define MESHLET_LOCAL_GROUP_SIZE 32u
 #define TRIANGLES_PER_MESHLET_THREAD 4u
 #define VERTICES_PER_MESHLET_THREAD 2u
-#define CONE_CULL_BIAS 0.3f
 
 PK_DECLARE_RESTRICTED_READONLY_BUFFER(uint2, pk_Meshlet_Tasklets, PK_SET_PASS);
 PK_DECLARE_RESTRICTED_READONLY_BUFFER(uint4, pk_Meshlet_Submeshes, PK_SET_PASS);
 PK_DECLARE_RESTRICTED_READONLY_BUFFER(uint4, pk_Meshlets, PK_SET_PASS);
 PK_DECLARE_RESTRICTED_READONLY_BUFFER(uint4, pk_Meshlet_Vertices, PK_SET_PASS);
 PK_DECLARE_RESTRICTED_READONLY_BUFFER(byte, pk_Meshlet_Indices, PK_SET_PASS);
-
-#define MP_MATERIAL instance.x
-#define MP_TRANSFORM instance.y
-#define MP_FIRSTMESHLET instance.z
-#define MP_USERDATA instance.w
 
 struct PKMeshTaskPayload
 {
@@ -62,13 +56,13 @@ struct PKMeshlet
 {
     uint vertexFirst;
     uint triangleFirst;
+    float3 coneAxis;
+    float coneCutoff;
     uint vertexCount;
     uint triangleCount;
-    float3 center;
-    float radius;
-    float3 coneAxis;
     float3 coneApex;
-    float coneCutoff;
+    float3 center;
+    float3 extents;
 };
 
 // Based on PK::Assets::Mesh::Meshlet
@@ -92,7 +86,7 @@ float4 Meshlet_QuaternionMul(float4 q1, float4 q2)
 float3 Meshlet_QuaternionMulVector(float4 q, float3 v)
 {
     float4 qc = q * float4(-1, -1, -1, 1);
-	return Meshlet_QuaternionMul(q, Meshlet_QuaternionMul(float4(v, 0), qc)).xyz;
+    return Meshlet_QuaternionMul(q, Meshlet_QuaternionMul(float4(v, 0), qc)).xyz;
 }
 
 // Unpacking functions 
@@ -120,8 +114,8 @@ PKMeshletLite Meshlet_Unpack_MeshletLite(const uint4 packed)
     PKMeshletLite m;
     m.vertexFirst = packed.x;
     m.triangleFirst = packed.y;
-    m.vertexCount = bitfieldExtract(packed.z, 0, 16);
-    m.triangleCount = bitfieldExtract(packed.z, 16, 16);
+    m.vertexCount = bitfieldExtract(packed.w, 0, 8);
+    m.triangleCount = bitfieldExtract(packed.w, 8, 8);
     return m;
 }
 
@@ -130,17 +124,16 @@ PKMeshlet Meshlet_Unpack_Meshlet(const uint4 packed0, const uint4 packed1)
     PKMeshlet m;
     m.vertexFirst = packed0.x;
     m.triangleFirst = packed0.y;
-    m.vertexCount = bitfieldExtract(packed0.z, 0, 16);
-    m.triangleCount = bitfieldExtract(packed0.z, 16, 16);
-    m.coneAxis.xy = unpackUnorm2x16(packed0.w);
-    m.coneAxis = OctaDecode(m.coneAxis.xy);
-    
-    m.center.xy = unpackHalf2x16(packed1.x);
-    m.center.z = unpackHalf2x16(packed1.y).x;
-    m.radius = unpackHalf2x16(packed1.y).y;
-    m.coneApex.xy = unpackHalf2x16(packed1.z);
-    m.coneApex.z = unpackHalf2x16(packed1.w).x;
-    m.coneCutoff = unpackSnorm2x16(packed1.w).y;
+    m.coneAxis = unpackSnorm4x8(packed0.z).xyz;
+    m.coneCutoff = unpackUnorm4x8(packed0.z).w;
+    m.vertexCount = bitfieldExtract(packed0.w, 0, 8);
+    m.triangleCount = bitfieldExtract(packed0.w, 8, 8);
+    m.coneApex.x = unpackHalf2x16(packed0.w).y;
+    m.coneApex.yz = unpackHalf2x16(packed1.x);
+    m.center.xy = unpackHalf2x16(packed1.y);
+    m.center.z = unpackHalf2x16(packed1.z).x;
+    m.extents.x = unpackHalf2x16(packed1.z).y;
+    m.extents.yz = unpackHalf2x16(packed1.w);
     return m;
 }
 
@@ -156,10 +149,9 @@ PKVertex Meshlet_Unpack_Vertex(const uint4 packed, const float3 smbbmin, const f
     float4 quat;
     {
         const uint swizzleIndex = bitfieldExtract(packed.w, 30, 2);
-        const float swizzleSign = bitfieldExtract(packed.y, 29, 1) == 0 ? -1.0f : 1.0f;
         const float4 swizzledquat = float4
         (
-            swizzleSign,
+            1.0f,
             (bitfieldExtract(packed.w, 0,  10) / 1023.0f) * 2.0f - 1.0f,
             (bitfieldExtract(packed.w, 10, 10) / 1023.0f) * 2.0f - 1.0f,
             (bitfieldExtract(packed.w, 20, 10) / 1023.0f) * 2.0f - 1.0f
@@ -172,8 +164,8 @@ PKVertex Meshlet_Unpack_Vertex(const uint4 packed, const float3 smbbmin, const f
         quat = normalize(quat);
     }
 
-    v.normal = normalize(Meshlet_QuaternionMulVector(quat, float3(0,0,1)));
-    v.tangent.xyz = normalize(Meshlet_QuaternionMulVector(quat, float3(1,0,0)));
+    v.normal = Meshlet_QuaternionMulVector(quat, float3(0,0,1));
+    v.tangent.xyz = Meshlet_QuaternionMulVector(quat, float3(1,0,0));
     v.position = lerp(smbbmin, smbbmax, v.position);
     return v;
 }
@@ -249,15 +241,15 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
         const uint meshletIndex = meshletFirst + meshletLocalIndex;
         const PKMeshlet meshlet = Meshlet_Load_Meshlet(meshletIndex);
         
-        const float3 coneAxis = ObjectToWorldDir(meshlet.coneAxis);
+        const float  coneClip = step(dot(meshlet.coneAxis, meshlet.coneAxis), 0.01f);
+        const float3 coneAxis = safeNormalize(ObjectToWorldVec(meshlet.coneAxis)) * coneClip;
         const float3 coneApex = ObjectToWorldPos(meshlet.coneApex);
         const float3 coneView = normalize(coneApex - pk_ViewWorldOrigin.xyz);
         
         bool isVisible = true;
         isVisible = isVisible && meshletLocalIndex < meshletCount;
+        isVisible = isVisible && dot(coneView, coneAxis) < meshlet.coneCutoff;
         isVisible = isVisible && PK_IS_VISIBLE_MESHLET(meshlet);
-        //@TODO this is unrealiable with low poly meshes.
-        isVisible = isVisible && dot(coneView, coneAxis) < (meshlet.coneCutoff + CONE_CULL_BIAS);
     
         uint4 visibleMask = subgroupBallot(isVisible);
         uint visibleCount = subgroupBallotBitCount(visibleMask);
@@ -272,74 +264,63 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
     }
 
 #elif defined(SHADER_STAGE_MESH_ASSEMBLY)
-    void PK_MESHLET_ASSIGN_VERTEX_OUTPUTS(uint vertexIndex, PKVertex vertex);
+
+    void PK_MESHLET_ASSIGN_VERTEX_OUTPUTS(uint vertexIndex, PKVertex vertex, inout float4 sv_Position);
 
     taskPayloadSharedEXT PKMeshTaskPayload payload;
-    
+
     layout(local_size_x = MESHLET_LOCAL_GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
     layout(triangles, max_vertices = MAX_VERTICES_PER_MESHLET, max_primitives = MAX_TRIANGLES_PER_MESHLET) out;
     void main()
     {
         const uint meshletFirst = payload.packed0.w;
         const uint instanceId = payload.packed1.w;
-        uint vertexFirst;
-        uint vertexCount;
-        uint triangleFirst;
-        uint triangleCount;
 
-        [[branch]]
-        if (subgroupElect())
-        {
-            const uint meshletIndex = meshletFirst + uint(payload.deltaIDs[gl_WorkGroupID.x]);
-            const PKMeshletLite meshlet = Meshlet_Load_MeshletLite(meshletIndex);
-            
-            PK_INSTANCING_ASSIGN_STAGE_LOCALS_MANUAL(instanceId);
-
-            vertexFirst = meshlet.vertexFirst;
-            vertexCount = meshlet.vertexCount;
-            triangleFirst = meshlet.triangleFirst;
-            triangleCount = meshlet.triangleCount;
-        }
+        const uint meshletIndex = meshletFirst + payload.deltaIDs[gl_WorkGroupID.x];
+        const PKMeshletLite meshlet = Meshlet_Load_MeshletLite(meshletIndex);
         
-        subgroupBarrier();
+        PK_INSTANCING_ASSIGN_STAGE_LOCALS_MANUAL(instanceId);
 
+        const uint vertexFirst = meshlet.vertexFirst;
+        const uint vertexCount = meshlet.vertexCount;
+        const uint triangleFirst = meshlet.triangleFirst;
+        const uint triangleCount = meshlet.triangleCount;
         const float3 smbbmin = uintBitsToFloat(payload.packed0.xyz);
         const float3 smbbmax = uintBitsToFloat(payload.packed1.xyz);
-        vertexFirst = subgroupBroadcastFirst(vertexFirst);
-        vertexCount = subgroupBroadcastFirst(vertexCount);
-        triangleFirst = subgroupBroadcastFirst(triangleFirst);
-        triangleCount = subgroupBroadcastFirst(triangleCount);
 
         SetMeshOutputsEXT(vertexCount, triangleCount);
-        
-        [[unroll]]
-        for (uint i = 0u; i < VERTICES_PER_MESHLET_THREAD; ++i)
-        {
-            const uint vertexIndex = gl_LocalInvocationID.x * VERTICES_PER_MESHLET_THREAD + i;
-        
-            [[branch]]
-            if (vertexIndex < vertexCount)
-            {
-                const PKVertex vertex = Meshlet_Load_Vertex(vertexFirst + vertexIndex, smbbmin, smbbmax);
-                PK_SET_VERTEX_INSTANCE_ID(vertexIndex, instanceId);
-                PK_MESHLET_ASSIGN_VERTEX_OUTPUTS(vertexIndex, vertex);
-            }
-        }
-        
-        [[unroll]]
+
+        [[loop]]
         for (uint i = 0u; i < TRIANGLES_PER_MESHLET_THREAD; ++i)
         {
             const uint triangleIndex = gl_LocalInvocationID.x * TRIANGLES_PER_MESHLET_THREAD + i;
+            const uint3 indices = uint3
+            (
+                PK_BUFFER_DATA(pk_Meshlet_Indices, triangleFirst * 3u + triangleIndex * 3u + 0u),
+                PK_BUFFER_DATA(pk_Meshlet_Indices, triangleFirst * 3u + triangleIndex * 3u + 1u),
+                PK_BUFFER_DATA(pk_Meshlet_Indices, triangleFirst * 3u + triangleIndex * 3u + 2u)
+            );
             
             [[branch]]
             if (triangleIndex < triangleCount)
             {
-                gl_PrimitiveTriangleIndicesEXT[triangleIndex] = uint3
-                (
-                    PK_BUFFER_DATA(pk_Meshlet_Indices, triangleFirst * 3u + triangleIndex * 3u + 0u),
-                    PK_BUFFER_DATA(pk_Meshlet_Indices, triangleFirst * 3u + triangleIndex * 3u + 1u),
-                    PK_BUFFER_DATA(pk_Meshlet_Indices, triangleFirst * 3u + triangleIndex * 3u + 2u)
-                );
+                gl_PrimitiveTriangleIndicesEXT[triangleIndex] = indices;
+            }
+        }        
+
+        [[loop]]
+        for (uint i = 0u; i < VERTICES_PER_MESHLET_THREAD; ++i)
+        {
+            const uint vertexIndex = gl_LocalInvocationID.x * VERTICES_PER_MESHLET_THREAD + i;
+            const PKVertex vertex = Meshlet_Load_Vertex(vertexFirst + vertexIndex, smbbmin, smbbmax);
+            float4 sv_Position;
+
+            [[branch]]
+            if (vertexIndex < vertexCount)
+            {
+                PK_SET_VERTEX_INSTANCE_ID(vertexIndex, instanceId);
+                PK_MESHLET_ASSIGN_VERTEX_OUTPUTS(vertexIndex, vertex, sv_Position);
+                gl_MeshVerticesEXT[vertexIndex].gl_Position = sv_Position;
             }
         }
     }

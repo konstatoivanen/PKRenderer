@@ -105,7 +105,7 @@ void main()
 
         SharedLight light;
         light.position = WorldToViewPos(packed.LIGHT_POS);
-        light.direction = WorldToViewDir(DecodeOctaUV(packed.LIGHT_PACKED_DIRECTION));
+        light.direction = WorldToViewVec(DecodeOctaUV(packed.LIGHT_PACKED_DIRECTION));
         light.radius = packed.LIGHT_RADIUS;
         light.angle = packed.LIGHT_ANGLE;
         light.type = packed.LIGHT_TYPE;

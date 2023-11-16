@@ -40,7 +40,7 @@ float4 EncodeGBufferViewNR(const float3 normal, const float roughness, const flo
 
 float4 EncodeGBufferWorldNR(const float3 normal, const float roughness, const float metallic)
 {
-    return EncodeGBufferViewNR(normalize(WorldToViewDir(normal)), roughness, metallic);
+    return EncodeGBufferViewNR(normalize(WorldToViewVec(normal)), roughness, metallic);
 }
 
 float4 DecodeGBufferViewNR(const float4 encoded)
@@ -122,7 +122,7 @@ float4 SampleWorldNormalRoughness(const float2 uv) { return mul3x3(SampleViewNor
 float4 SampleWorldNormalRoughness(const int2 coord) { return mul3x3(SampleViewNormalRoughness(coord), float3x3(pk_ViewToWorld)); }
 float3 SampleViewNormal(const float2 uv) { return SampleViewNormalRoughness(uv).xyz; }
 float3 SampleViewNormal(const int2 coord) { return SampleViewNormalRoughness(coord).xyz; }
-float3 SampleWorldNormal(const float2 uv) { return ViewToWorldDir(SampleViewNormal(uv)); }
-float3 SampleWorldNormal(const int2 coord) { return ViewToWorldDir(SampleViewNormal(coord)); }
+float3 SampleWorldNormal(const float2 uv) { return ViewToWorldVec(SampleViewNormal(uv)); }
+float3 SampleWorldNormal(const int2 coord) { return ViewToWorldVec(SampleViewNormal(coord)); }
 
 #endif

@@ -15,7 +15,7 @@ bool TraceRay_ScreenSpace(const int2 coord, const float3 origin, const float3 di
 {
 #if defined(PK_GI_SSRT_PRETRACE)
     const float3 viewpos = WorldToViewPos(origin);
-    const float3 viewdir = WorldToViewDir(direction);
+    const float3 viewdir = WorldToViewVec(direction);
     const float maxt = 0.05f * viewpos.z;
     const float2 dims = pk_ScreenParams.xy;
 

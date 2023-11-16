@@ -126,7 +126,7 @@ GISpec GI_ShadeRoughSpecular(const float3 normal, const float3 viewdir, const fl
     float directionality;
     float3 direction = SH_ToPrimeDir(diff.sh, directionality);
     
-    direction = WorldToViewDir(direction);
+    direction = WorldToViewVec(direction);
     directionality = saturate(directionality * 0.666f);
 
     // Remap roughness if lighting is uniform over hemisphere
@@ -141,7 +141,7 @@ float3 GI_ShadeRoughSpecularDetails(BxDFSurf surf, const GIDiff diff)
     float directionality;
     float3 direction = SH_ToPrimeDir(diff.sh, directionality);
     
-    direction = WorldToViewDir(direction);
+    direction = WorldToViewVec(direction);
     directionality = saturate(directionality * 0.666f);
 
     // Remap clearcoat if lighting is uniform over hemisphere

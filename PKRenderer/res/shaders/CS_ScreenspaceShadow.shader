@@ -48,7 +48,7 @@ void main()
 
     const float4 gbuffernr = float4(0.0f.xx, dot(gatherGZ, 0.25f.xxxx) + 0.5f, dot(gatherGW, 0.25f.xxxx) + 0.5f);
     const float3 vnormal = DecodeGBufferViewNR(gbuffernr).xyz;
-    const float3 normal = ViewToWorldDir(normalize(vnormal));
+    const float3 normal = ViewToWorldVec(normalize(vnormal));
 
     const float4 depths = GatherViewDepthsBiased(gatheruv);
     const float  depth = cmin(depths);

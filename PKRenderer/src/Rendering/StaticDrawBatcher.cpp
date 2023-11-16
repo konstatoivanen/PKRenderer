@@ -152,7 +152,7 @@ namespace PK::Rendering
         auto taskletView = cmd->BeginBufferWrite<uint2>(m_tasklets.get(), 0u, m_taskletCount);
         auto indexView = cmd->BeginBufferWrite<PK_Draw>(m_indices.get(), 0u, m_drawInfos.size());
         auto current = m_drawInfos[0];
-        
+
         // Meshlet Debug
         auto taskletCount = 0u;
         auto taskletPassStart = 0u;

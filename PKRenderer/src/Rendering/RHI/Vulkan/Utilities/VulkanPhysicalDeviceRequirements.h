@@ -15,6 +15,7 @@ namespace PK::Rendering::RHI::Vulkan
         VkPhysicalDeviceShaderAtomicFloatFeaturesEXT atomicFloat{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT };
         VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR positionFetch{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR };
         VkPhysicalDeviceMeshShaderFeaturesEXT meshshader{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT };
+        VkPhysicalDeviceFragmentShadingRateFeaturesKHR shadingRate{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR };
         VulkanPhysicalDeviceFeatures();
         static bool CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available);
     };

@@ -41,7 +41,7 @@ shared uint s_count[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LA
 SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const float depth, const float3 viewnormal, const float3 origin, const Reservoir initial)
 {
     const float depthBias = lerp(0.1f, 0.01f, -viewnormal.z);
-    const float3 normal = ViewToWorldDir(viewnormal);
+    const float3 normal = ViewToWorldVec(viewnormal);
     uint seed = ReSTIR_GetSeed(coord);
     int scale = 5;
 

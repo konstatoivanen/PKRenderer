@@ -15,6 +15,7 @@ namespace PK::Rendering::RHI::Vulkan
         rayQuery.pNext = &atomicFloat;
         atomicFloat.pNext = &positionFetch;
         positionFetch.pNext = &meshshader;
+        meshshader.pNext = &shadingRate;
     }
     
     #define PK_TEST_FEATURE(field)                   \
@@ -202,6 +203,10 @@ namespace PK::Rendering::RHI::Vulkan
         PK_TEST_FEATURE(meshshader.multiviewMeshShader)
         PK_TEST_FEATURE(meshshader.primitiveFragmentShadingRateMeshShader)
         PK_TEST_FEATURE(meshshader.meshShaderQueries)
+
+        PK_TEST_FEATURE(shadingRate.pipelineFragmentShadingRate)
+        PK_TEST_FEATURE(shadingRate.primitiveFragmentShadingRate)
+        PK_TEST_FEATURE(shadingRate.attachmentFragmentShadingRate)
 
         PK_LOG_SUB_INDENT();
 

@@ -76,28 +76,28 @@ float2 ClipToUV(const float3 clipxyw) { return (clipxyw.xy / clipxyw.z) * 0.5f +
 
 float4 ViewToClipPos(const float3 pos) { return pk_ViewToClip * float4(pos, 1.0f); }
 float4 ViewToClipPosPrev(const float3 pos) { return pk_ViewToClipDelta * float4(pos, 1.0f); }
-float4 ViewToClipDir(const float3 dir) { return pk_ViewToClip * float4(dir, 0.0f); }
+float4 ViewToClipVec(const float3 vec) { return pk_ViewToClip * float4(vec, 0.0f); }
 float3 ViewToWorldPos(const float3 pos) { return float4(pos, 1.0f) * pk_ViewToWorld; }
 float3 ViewToWorldPosPrev(const float3 pos) { return float4(pos, 1.0f) * pk_ViewToWorldPrev; }
-float3 ViewToWorldDir(const float3 dir) { return dir * float3x3(pk_ViewToWorld); }
+float3 ViewToWorldVec(const float3 vec) { return vec * float3x3(pk_ViewToWorld); }
 float2 ViewToClipUV(const float3 viewpos) { return ClipToUV(ViewToClipPos(viewpos).xyw); }
 float2 ViewToClipUVPrev(const float3 viewpos) { return ClipToUV(ViewToClipPosPrev(viewpos).xyw); }
 float3 ViewToClipUVW(const float3 viewpos) { return ClipToUVW(ViewToClipPos(viewpos)); }
 float3 ViewToClipUVWPrev(const float3 viewpos) { return ClipToUVW(ViewToClipPosPrev(viewpos)); }
 
 float3 WorldToViewPos(const float3 pos) { return float4(pos, 1.0f) * pk_WorldToView; }
-float3 WorldToViewDir(const float3 dir) { return dir * float3x3(pk_WorldToView); }
+float3 WorldToViewVec(const float3 vec) { return vec * float3x3(pk_WorldToView); }
 float4 WorldToClipPos(const float3 pos) { return pk_WorldToClip * float4(pos, 1.0f); }
 float4 WorldToClipPosPrev(const float3 pos) { return pk_WorldToClipPrev * float4(pos, 1.0f); }
-float4 WorldToClipDir(const float3 dir) { return pk_WorldToClip * float4(dir, 0.0f); }
+float4 WorldToClipVec(const float3 vec) { return pk_WorldToClip * float4(vec, 0.0f); }
 float3 WorldToClipUVW(const float3 worldpos) { return ClipToUVW(WorldToClipPos(worldpos)); }
 float2 WorldToClipUVPrev(const float3 viewpos) { return ClipToUV(WorldToClipPosPrev(viewpos).xyw); }
 float3 WorldToClipUVWPrev(const float3 viewpos) { return ClipToUVW(WorldToClipPosPrev(viewpos)); }
 
 float3 ObjectToWorldPos(const float3 pos) { return float4(pos, 1.0f) * pk_ObjectToWorld; }
-float3 ObjectToWorldDir(const float3 dir) { return dir * float3x3(pk_ObjectToWorld); }
+float3 ObjectToWorldVec(const float3 vec) { return vec * float3x3(pk_ObjectToWorld); }
 float3 ObjectToViewPos(const float3 pos) { return WorldToViewPos(ObjectToWorldPos(pos)); }
-float3 ObjectToViewDir(const float3 dir) { return WorldToViewDir(ObjectToWorldDir(dir)); }
+float3 ObjectToViewVec(const float3 vec) { return WorldToViewVec(ObjectToWorldVec(vec)); }
 float4 ObjectToClipPos(const float3 pos) { return pk_WorldToClip * float4(ObjectToWorldPos(pos), 1.0f); }
 
 float3 UVToViewPos(const float2 uv, float viewDepth) { return float3((uv * 2.0f - 1.0f) * pk_ClipParamsInv.xy, 1.0f) * viewDepth; }

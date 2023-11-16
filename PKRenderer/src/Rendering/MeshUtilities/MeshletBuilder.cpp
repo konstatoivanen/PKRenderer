@@ -415,6 +415,49 @@ namespace PK::Rendering::MeshUtilities
         }
     }
 
+    static void CalculateMeshletCenterExtents(const float* positions,
+                                              const uint32_t* vertexIndices,
+                                              uint32_t vertexStridef32,
+                                              uint32_t vertexFirst,
+                                              uint32_t vertexCount,
+                                              float* center,
+                                              float* extents)
+    {
+        float bbmin[3];
+        float bbmax[3];
+        bbmin[0] = std::numeric_limits<float>().max();
+        bbmin[1] = std::numeric_limits<float>().max();
+        bbmin[2] = std::numeric_limits<float>().max();
+        bbmax[0] = -std::numeric_limits<float>().max();
+        bbmax[1] = -std::numeric_limits<float>().max();
+        bbmax[2] = -std::numeric_limits<float>().max();
+
+        for (auto i = 0u; i < vertexCount; ++i)
+        {
+            auto vertexIndex = vertexIndices[vertexFirst + i];
+            auto pPosition = positions + vertexIndex * vertexStridef32;
+
+            for (auto j = 0u; j < 3u; ++j)
+            {
+                if (pPosition[j] < bbmin[j])
+                {
+                    bbmin[j] = pPosition[j];
+                }
+
+                if (pPosition[j] > bbmax[j])
+                {
+                    bbmax[j] = pPosition[j];
+                }
+            }
+        }
+
+        for (auto i = 0u; i < 3; ++i)
+        {
+            center[i] = bbmin[i] + (bbmax[i] - bbmin[i]) * 0.5f;
+            extents[i] = (bbmax[i] - bbmin[i]) * 0.5f;
+        }
+    }
+
     MeshletBuildData BuildMeshletsMonotone(const float* pPositions,
                                            const float* pTexcoords,
                                            const float* pNormals,
@@ -473,17 +516,21 @@ namespace PK::Rendering::MeshUtilities
             auto triangleOffset = indicesOffset / 3ull;
             auto verticesOffset = output.vertices.size();
 
+            float center[3];
+            float extents[3];
+            CalculateMeshletCenterExtents(pPositions, meshlet_vertices.data(), (uint32_t)vertexStridef32, meshlet.vertex_offset, meshlet.vertex_count, center, extents);
+
             PKMeshlet pkmeshlet = PackMeshlet
             (
                 (uint32_t)verticesOffset,
                 (uint32_t)triangleOffset,
                 meshlet.vertex_count,
                 meshlet.triangle_count,
-                bounds.center,
-                bounds.radius,
-                bounds.cone_axis,
+                bounds.cone_axis_s8,
+                bounds.cone_cutoff_s8,
                 bounds.cone_apex,
-                bounds.cone_cutoff
+                center,
+                extents
             );
 
             output.indices.resize(output.indices.size() + meshlet.triangle_count * 3);
