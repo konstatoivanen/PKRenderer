@@ -397,10 +397,11 @@ namespace PK::Assets
             // packed as uint4
             struct PKVertex
             {
-                uint32_t packed0; // position.xy half
-                uint32_t packed1; // position.z half, 12b unorm texcoord.x 4bits texcoord.y
-                uint32_t packed2; // 8bits texcoord.y, 12r12g normal octa encoded
-                uint32_t packed3; // 15r15g2b tangent octa encoded & tangent sign
+                uint32_t posxy;      // half2       position.xy
+                uint16_t posz;       // half1       position.z
+                uint16_t colorSigns; // 4r4g4b color, 4a tangent sign
+                uint32_t texcoord;   // half2       texcoord
+                uint32_t rotation;   // r10g10b10a2 quaternion
             };
 
             // packed as 2x uint4
@@ -408,13 +409,14 @@ namespace PK::Assets
             {
                 uint32_t vertexFirst;     // 4  bytes
                 uint32_t triangleFirst;   // 8  bytes
-                uint16_t bbmin[3];        // 14 bytes unorm relative to parent submesh aabb
-                uint16_t coneCutoff;      // 16 bytes snorm
-                uint16_t bbmax[3];        // 22 bytes unorm relative to parent submesh aabb
-                uint16_t coneApex[3];     // 28 bytes unorm relative to aabb
-                uint8_t coneAxis[2];      // 30 bytes unorm Octa encoded direction uv
-                uint8_t vertexCount;      // 31 bytes
-                uint8_t triangleCount;    // 32 bytes
+                uint16_t vertexCount;     // 10 bytes
+                uint16_t triangleCount;   // 12 bytes
+                uint16_t coneAxis[2];     // 16 bytes unorm Octa encoded direction uv
+
+                uint16_t center[3];       // 22 bytes half3
+                uint16_t radius;          // 24 bytes half
+                uint16_t coneApex[3];     // 30 bytes half3
+                uint16_t coneCutoff;      // 32 bytes snorm16
             };
 
             // packed as 2x uint4
@@ -442,17 +444,15 @@ namespace PK::Assets
                                 const float* pTexcoord, 
                                 const float* pNormal, 
                                 const float* pTangent, 
-                                const float* bbmin, 
-                                const float* bbmax);
+                                const float* submeshbbmin, 
+                                const float* submeshbbmax);
 
             PKMeshlet PackMeshlet(uint32_t vertexFirst, 
                                   uint32_t triangleFirst, 
                                   uint32_t vertexCount, 
                                   uint32_t triangleCount,
-                                  const float* bbmin,
-                                  const float* bbmax,
-                                  const float* submeshbbmin,
-                                  const float* submeshbbmax,
+                                  const float* center,
+                                  const float radius,
                                   const float* coneAxis,
                                   const float* coneApex,
                                   float coneCutoff);

@@ -466,6 +466,14 @@ namespace PK::Assets::Mesh::Meshlet
         return (uint32_t)(i & 0xFFFu);
     }
 
+    uint32_t PackUnorm10(float v)
+    {
+        auto i = (int32_t)roundf(v * 1023.0f);
+        if (i < 0) { i = 0; }
+        if (i > 1023) { i = 1023; }
+        return (uint32_t)(i & 0x3FFu);
+    }
+
     uint8_t PackUnorm8(float v)
     {
         auto i = (int32_t)roundf(v * 255.0f);
@@ -473,6 +481,9 @@ namespace PK::Assets::Mesh::Meshlet
         if (i > 255) { i = 255; }
         return (uint8_t)(i & 0xFFu);
     }
+
+    uint32_t asuint(float v) { return *reinterpret_cast<uint32_t*>(&v); }
+    float asfloat(uint32_t u) { return *reinterpret_cast<float*>(&u); }
 
     float abs(float v) { return v < 0.0f ? -v : v; }
 
@@ -499,74 +510,136 @@ namespace PK::Assets::Mesh::Meshlet
         outuv[1] = outuv[1] * 0.5f + 0.5f;
     }
 
+    uint32_t EncodeQuaternion(const float* n, const float* t, uint32_t* outSignBit)
+    {
+        float m[3][3];
+        m[0][0] = t[0];
+        m[0][1] = t[1];
+        m[0][2] = t[2];
+        m[1][0] = n[1] * t[2] - t[1] * n[2];
+        m[1][1] = n[2] * t[0] - t[2] * n[0];
+        m[1][2] = n[0] * t[1] - t[0] * n[1];
+        m[2][0] = n[0];
+        m[2][1] = n[1];
+        m[2][2] = n[2];
+
+        float lengths[4]
+        {
+            m[0][0] - m[1][1] - m[2][2],
+            m[1][1] - m[0][0] - m[2][2],
+            m[2][2] - m[0][0] - m[1][1],
+            m[0][0] + m[1][1] + m[2][2]
+        };
+
+        auto index = 0u;
+        auto length = lengths[0];
+
+        for (auto i = 1u; i < 4u; ++i)
+        {
+            if (lengths[i] > length)
+            {
+                length = lengths[i];
+                index = i;
+            }
+        }
+
+        float quat[4];
+        quat[index] = sqrtf(length + 1.0f) * 0.5f;
+
+        switch (index)
+        {
+            case 0:
+                quat[1] = (m[0][1] + m[1][0]) * (0.25f / quat[index]);
+                quat[2] = (m[2][0] + m[0][2]) * (0.25f / quat[index]);
+                quat[3] = (m[1][2] - m[2][1]) * (0.25f / quat[index]);
+                break;
+            case 1:
+                quat[0] = (m[0][1] + m[1][0]) * (0.25f / quat[index]);
+                quat[2] = (m[1][2] + m[2][1]) * (0.25f / quat[index]);
+                quat[3] = (m[2][0] - m[0][2]) * (0.25f / quat[index]);
+                break;
+            case 2:
+                quat[0] = (m[2][0] + m[0][2]) * (0.25f / quat[index]);
+                quat[1] = (m[1][2] + m[2][1]) * (0.25f / quat[index]);
+                quat[3] = (m[0][1] - m[1][0]) * (0.25f / quat[index]);
+                break;
+            case 3:
+                quat[0] = (m[1][2] - m[2][1]) * (0.25f / quat[index]);
+                quat[1] = (m[2][0] - m[0][2]) * (0.25f / quat[index]);
+                quat[2] = (m[0][1] - m[1][0]) * (0.25f / quat[index]);
+                break;
+        }
+
+        // Normalize
+        length = abs(quat[0]);
+        index = 0u;
+
+        for (auto i = 1u; i < 4u; ++i)
+        {
+            if (abs(quat[i]) > length)
+            {
+                length = abs(quat[i]);
+                index = i;
+            }
+        }
+
+        uint32_t quantized[3];
+
+        for (auto i = 0u; i < 3u; ++i)
+        {
+            auto e = quat[(i + index + 1u) % 4u] / length;
+            quantized[i] = PackUnorm10(e * 0.5f + 0.5f);
+        }
+
+        *outSignBit = quat[index] < 0.0f ? 0u : 1u;
+        return quantized[0] | (quantized[1] << 10u) | (quantized[2] << 20u) | ((index & 0x3u) << 30u);
+    }
+
     PKVertex PackVertex(const float* pPosition,
                         const float* pTexcoord,
                         const float* pNormal,
                         const float* pTangent,
-                        const float* bbmin,
-                        const float* bbmax)
+                        const float* submeshbbmin,
+                        const float* submeshbbmax)
     {
-        PKVertex vertex = { 0u, 0u, 0u };
+        PKVertex vertex = { 0u, 0u, 0u, 0u, 0u };
 
         uint32_t unormPositions[3] =
         {
-            PackUnorm16((pPosition[0] - bbmin[0]) / (bbmax[0] - bbmin[0])),
-            PackUnorm16((pPosition[1] - bbmin[1]) / (bbmax[1] - bbmin[1])),
-            PackUnorm16((pPosition[2] - bbmin[2]) / (bbmax[2] - bbmin[2]))
+            PackUnorm16((pPosition[0] - submeshbbmin[0]) / (submeshbbmax[0] - submeshbbmin[0])),
+            PackUnorm16((pPosition[1] - submeshbbmin[1]) / (submeshbbmax[1] - submeshbbmin[1])),
+            PackUnorm16((pPosition[2] - submeshbbmin[2]) / (submeshbbmax[2] - submeshbbmin[2]))
         };
 
-        vertex.packed0 = unormPositions[0] | (unormPositions[1] << 16u);
-        vertex.packed1 = unormPositions[2];
+        vertex.posxy = unormPositions[0] | (unormPositions[1] << 16u);
+        vertex.posz = unormPositions[2];
+
+        // @TODO encode color 12 bit rgb
+        vertex.colorSigns = 0u;
 
         if (pTexcoord)
         {
-            auto t0 = PackUnorm12(pTexcoord[0]);
-            auto t1 = PackUnorm12(pTexcoord[1]);
-            vertex.packed1 |= t0 << 16u;
-            vertex.packed1 |= (t1 & 0xF) << 28u;
-            vertex.packed2 |= (t1 >> 4u) & 0xFFu;
+            auto t0 = (uint32_t)PackHalf(pTexcoord[0]);
+            auto t1 = (uint32_t)PackHalf(pTexcoord[1]);
+            vertex.texcoord = t0 | (t1 << 16u);
         }
 
-        if (pNormal)
+        if (pNormal && pTangent)
         {
-            float normalOctaUV[2];
-            OctaEncode(pNormal, normalOctaUV);
-            auto n0 = PackUnorm12(normalOctaUV[0]);
-            auto n1 = PackUnorm12(normalOctaUV[1]);
-            vertex.packed2 |= n0 << 8u;
-            vertex.packed2 |= n1 << 20u;
-        }
-
-        if (pTangent)
-        {
-            float octauv[2];
-            OctaEncode(pTangent, octauv);
-            uint8_t sign = pTangent[4] < 0.0f ? 0u : 3u;
-
-            auto ui = (int32_t)(octauv[0] * 32766.0f);
-            auto vi = (int32_t)(octauv[1] * 32766.0f);
-            if (ui < 0) { ui = 0; }
-            if (vi < 0) { vi = 0; }
-            if (ui > 32766) { ui = 32766; }
-            if (vi > 32766) { vi = 32766; }
-
-            auto u = (uint32_t)ui;
-            auto v = (uint32_t)vi;
-
-            vertex.packed3 = (u & 0x7FFFu) | ((v & 0x7FFFu) << 15u) | ((sign & 0x3) << 30u);
+            uint32_t rotationSign;
+            vertex.rotation = EncodeQuaternion(pNormal, pTangent, &rotationSign);
+            vertex.colorSigns |= rotationSign << 13u;
         }
 
         return vertex;
     }
     
-    PKMeshlet PackMeshlet(uint32_t vertexFirst,
-                          uint32_t triangleFirst,
-                          uint32_t vertexCount,
+    PKMeshlet PackMeshlet(uint32_t vertexFirst, 
+                          uint32_t triangleFirst, 
+                          uint32_t vertexCount, 
                           uint32_t triangleCount,
-                          const float* bbmin,
-                          const float* bbmax,
-                          const float* submeshbbmin,
-                          const float* submeshbbmax,
+                          const float* center,
+                          const float radius,
                           const float* coneAxis,
                           const float* coneApex,
                           float coneCutoff)
@@ -577,19 +650,18 @@ namespace PK::Assets::Mesh::Meshlet
         PKMeshlet meshlet;
         meshlet.vertexFirst = vertexFirst;
         meshlet.triangleFirst = triangleFirst;
-        meshlet.bbmin[0] = PackUnorm16((bbmin[0] - submeshbbmin[0]) / (submeshbbmax[0] - submeshbbmin[0]));
-        meshlet.bbmin[1] = PackUnorm16((bbmin[1] - submeshbbmin[1]) / (submeshbbmax[1] - submeshbbmin[1]));
-        meshlet.bbmin[2] = PackUnorm16((bbmin[2] - submeshbbmin[2]) / (submeshbbmax[2] - submeshbbmin[2]));
-        meshlet.vertexCount = (uint8_t)vertexCount;
-        meshlet.triangleCount = (uint8_t)triangleCount;
-        meshlet.bbmax[0] = PackUnorm16((bbmax[0] - submeshbbmin[0]) / (submeshbbmax[0] - submeshbbmin[0]));
-        meshlet.bbmax[1] = PackUnorm16((bbmax[1] - submeshbbmin[1]) / (submeshbbmax[1] - submeshbbmin[1]));
-        meshlet.bbmax[2] = PackUnorm16((bbmax[2] - submeshbbmin[2]) / (submeshbbmax[2] - submeshbbmin[2]));
-        meshlet.coneAxis[0] = PackUnorm8(octauv[0]);
-        meshlet.coneAxis[1] = PackUnorm8(octauv[1]);
-        meshlet.coneApex[0] = PackUnorm16((coneApex[0] - bbmin[0]) / (bbmax[0] - bbmin[0]));
-        meshlet.coneApex[1] = PackUnorm16((coneApex[1] - bbmin[1]) / (bbmax[1] - bbmin[1]));
-        meshlet.coneApex[2] = PackUnorm16((coneApex[2] - bbmin[2]) / (bbmax[2] - bbmin[2]));
+        meshlet.vertexCount = vertexCount;
+        meshlet.triangleCount = triangleCount;
+        meshlet.coneAxis[0] = PackUnorm16(octauv[0]);
+        meshlet.coneAxis[1] = PackUnorm16(octauv[1]);
+
+        meshlet.center[0] = PackHalf(center[0]);
+        meshlet.center[1] = PackHalf(center[1]);
+        meshlet.center[2] = PackHalf(center[2]);
+        meshlet.radius = PackHalf(radius);
+        meshlet.coneApex[0] = PackHalf(coneApex[0]);
+        meshlet.coneApex[1] = PackHalf(coneApex[1]);
+        meshlet.coneApex[2] = PackHalf(coneApex[2]);
         meshlet.coneCutoff = PackUnorm16(coneCutoff * 0.5f + 0.5f);
         return meshlet;
     }

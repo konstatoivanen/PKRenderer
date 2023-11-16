@@ -178,7 +178,7 @@ namespace PK::Rendering
                 {
                     auto drawCount = m_meshletDrawCalls.size();
                     m_meshletPassGroups.push_back({ taskletPassStart, drawCount - taskletPassStart });
-                    taskletPassStart = drawCount;
+                    taskletPassStart = (uint32_t)drawCount;
                 }
 
                 auto sm = m_staticGeometry->GetSubmesh(info->submesh);
