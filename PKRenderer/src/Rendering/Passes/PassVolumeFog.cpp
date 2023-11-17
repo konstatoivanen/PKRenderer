@@ -33,10 +33,10 @@ namespace PK::Rendering::Passes
         m_volumeInject = Texture::Create(descriptor, "Fog.InjectVolume");
         m_volumeInjectPrev = Texture::Create(descriptor, "Fog.InjectVolume.Previous");
 
-        descriptor.format = TextureFormat::B10G11R11UF;
+        descriptor.format = TextureFormat::R16F;
         descriptor.formatAlias = TextureFormat::Invalid;
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
-        m_volumeTransmittance = Texture::Create(descriptor, "Fog.TransmittanceVolume");
+        m_volumeExtinction = Texture::Create(descriptor, "Fog.ExtinctionVolume");
 
         descriptor.format = TextureFormat::R16F;
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
@@ -86,7 +86,7 @@ namespace PK::Rendering::Passes
         m_volumeInject->Validate(volumeResolution);
         m_volumeInjectPrev->Validate(volumeResolution);
         m_volumeScatter->Validate(volumeResolution);
-        m_volumeTransmittance->Validate(volumeResolution);
+        m_volumeExtinction->Validate(volumeResolution);
 
         GraphicsAPI::SetImage(hash->pk_Fog_Inject, m_volumeInjectPrev.get());
         GraphicsAPI::SetTexture(hash->pk_Fog_InjectRead, m_volumeInject.get());
@@ -114,8 +114,8 @@ namespace PK::Rendering::Passes
 
         GraphicsAPI::SetImage(hash->pk_Fog_Scatter, m_volumeScatter.get());
         GraphicsAPI::SetTexture(hash->pk_Fog_ScatterRead, m_volumeScatter.get());
-        GraphicsAPI::SetImage(hash->pk_Fog_Transmittance, m_volumeTransmittance.get());
-        GraphicsAPI::SetTexture(hash->pk_Fog_TransmittanceRead, m_volumeTransmittance.get());
+        GraphicsAPI::SetImage(hash->pk_Fog_Extinction, m_volumeExtinction.get());
+        GraphicsAPI::SetTexture(hash->pk_Fog_ExtinctionRead, m_volumeExtinction.get());
         cmd->Dispatch(m_computeScatter, 0, { volumeResolution.x, volumeResolution.y, 1u });
 
         cmd->EndDebugScope();

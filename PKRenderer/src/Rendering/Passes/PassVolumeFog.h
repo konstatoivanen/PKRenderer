@@ -22,7 +22,7 @@ namespace PK::Rendering::Passes
             RHI::Objects::TextureRef m_volumeDensity;
             RHI::Objects::TextureRef m_volumeDensityPrev;
             RHI::Objects::TextureRef m_volumeScatter;
-            RHI::Objects::TextureRef m_volumeTransmittance;
+            RHI::Objects::TextureRef m_volumeExtinction;
             RHI::Objects::Shader* m_computeDensity = nullptr;
             RHI::Objects::Shader* m_computeInject = nullptr;
             RHI::Objects::Shader* m_computeScatter = nullptr;

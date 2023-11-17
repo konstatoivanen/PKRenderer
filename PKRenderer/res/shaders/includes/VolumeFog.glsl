@@ -39,11 +39,11 @@ PK_DECLARE_CBUFFER(pk_Fog_Parameters, PK_SET_SHADER)
 PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_ScatterRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_InjectRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_DensityRead;
-PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_TransmittanceRead;
+PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_ExtinctionRead;
 layout(r32ui, set = PK_SET_SHADER) uniform uimage3D pk_Fog_Inject;
 layout(r16f, set = PK_SET_SHADER) uniform image3D pk_Fog_Density;
+layout(r16f, set = PK_SET_SHADER) uniform image3D pk_Fog_Extinction;
 layout(r32ui, set = PK_SET_SHADER) uniform uimage3D pk_Fog_Scatter;
-layout(r11f_g11f_b10f, set = PK_SET_SHADER) uniform image3D pk_Fog_Transmittance;
 
 DEFINE_TRICUBIC_SAMPLER(pk_Fog_ScatterRead, VOLUMEFOG_SIZE)
 
@@ -51,7 +51,7 @@ DEFINE_TRICUBIC_SAMPLER(pk_Fog_DensityRead, VOLUMEFOG_SIZE)
 
 DEFINE_TRICUBIC_SAMPLER(pk_Fog_InjectRead, VOLUMEFOG_SIZE)
 
-DEFINE_TRICUBIC_SAMPLER(pk_Fog_TransmittanceRead, VOLUMEFOG_SIZE)
+DEFINE_TRICUBIC_SAMPLER(pk_Fog_ExtinctionRead, VOLUMEFOG_SIZE)
 
 // Direct exp transform packs too much resolution to near clip. linearize a bit with sqrt
 float VFog_ZToView(float z) { return ViewDepthExp(sqrt(z)); }
@@ -65,37 +65,42 @@ float VFog_CalculateDensity(float3 pos)
     return max(density * pk_Fog_Density_Amount, 0.0f);
 }
 
-float VFog_MarchTransmittance(const float3 origin, const float3 direction, const float dither, const float tMax)
+float3 VFog_MarchTransmittance(const float3 origin, const float3 direction, const float dither, const float tMax, const float fadeout)
 {
     const float invT = tMax / 4.0f;
     float prev_density = VFog_CalculateDensity(origin);
-    float transmittance = 1.0f;
+    float extinction = 0.0f;
 
     for (uint j = 0u; j < 4u; ++j)
     {
         const float3 pos = origin + direction * invT * (j + dither);
         const float density = VFog_CalculateDensity(pos);
-        transmittance *= exp(-lerp(prev_density, density, 0.5f) * invT);
+        extinction += lerp(prev_density, density, 0.5f) * invT;
         prev_density = density;
     }
 
-    return transmittance;
+    // Fade out extinction for static gi so that the fog blends with background fog.
+    extinction = lerp(extinction, 0.0f, fadeout);
+
+    return exp(-extinction * pk_Fog_Absorption.rgb);
 }
 
-float VFog_MarchTransmittanceStatic(const float3 uvw, const float dither)
+float3 VFog_MarchTransmittanceStatic(const float3 uvw, const float dither)
 {
-    float transmittance = 1.0f;
+    float extinction = 0.0f;
 
     for (uint j = 0u; j < 4u; ++j)
     {
         const float2 zz = uvw.zz + (float2(j, j + 1u) + dither) * VOLUMEFOG_SIZE_Z_INV;
         const float2 depths = ViewDepthExp(zz);
         const float density = texture(pk_Fog_DensityRead, float3(uvw.xy, zz.x)).x;
-        transmittance *= exp(-density * (depths.y - depths.x));
+        extinction += density * (depths.y - depths.x);
     }
 
-    // Fade out transmittance for static gi so that the fog blends with background fog.
-    return lerp(transmittance, 1.0f, pow2(uvw.z));
+    // Fade out extinction for static gi so that the fog blends with background fog.
+    extinction = lerp(extinction, 0.0f, pow2(uvw.z));
+
+    return exp(-extinction * pk_Fog_Absorption.rgb);
 }
 
 float VFog_GetAccumulation(float3 uvw)
@@ -117,7 +122,8 @@ float4 VFog_Apply(float2 uv, float viewDepth, float3 color)
     uvw.xy += (dither - 0.5f) * 2.0f.xx / VOLUMEFOG_SIZE_XY;
 
     float3 scatter = SAMPLE_TRICUBIC(pk_Fog_ScatterRead, uvw).rgb;
-    float3 transmittance = SAMPLE_TRICUBIC(pk_Fog_TransmittanceRead, uvw).rgb;
+    float extinction = SAMPLE_TRICUBIC(pk_Fog_ExtinctionRead, uvw).r;
+    float3 transmittance = exp(-extinction * pk_Fog_Absorption.rgb);
 
     return float4(scatter + color * transmittance, dot(transmittance, 0.333f.xxx));
 }

@@ -178,11 +178,11 @@ namespace PK::Rendering
         DECLARE_HASH(pk_Fog_InjectRead)
         DECLARE_HASH(pk_Fog_DensityRead)
         DECLARE_HASH(pk_Fog_ScatterRead)
-        DECLARE_HASH(pk_Fog_TransmittanceRead)
+        DECLARE_HASH(pk_Fog_ExtinctionRead)
         DECLARE_HASH(pk_Fog_Inject)
         DECLARE_HASH(pk_Fog_Density)
         DECLARE_HASH(pk_Fog_Scatter)
-        DECLARE_HASH(pk_Fog_Transmittance)
+        DECLARE_HASH(pk_Fog_Extinction)
         DECLARE_HASH(pk_Fog_Parameters)
 
         DECLARE_HASH(pk_Meshlet_Tasklets)

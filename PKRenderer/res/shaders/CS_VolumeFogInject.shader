@@ -73,7 +73,7 @@ void main()
         Light light = GetLight(i, worldpos, shadowBias, tile.cascade);
 
         const float marchDistance = min(light.linearDistance, maxMarchDistance);
-        light.shadow *= VFog_MarchTransmittance(worldpos, light.direction, dither.y, marchDistance);
+        light.color *= VFog_MarchTransmittance(worldpos, light.direction, dither.y, marchDistance, shadowFade);
         light.shadow = lerp(light.shadow, 1.0f, shadowFade);
 
         value_cur += EvaluateBxDF_Volumetric

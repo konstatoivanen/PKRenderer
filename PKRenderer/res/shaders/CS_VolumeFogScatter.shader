@@ -8,6 +8,7 @@ void main()
 {
     float3 accum_scatter = 0.0f.xxx;
     float3 accum_transmittance = 1.0f.xxx;
+    float  accum_extinction = 0.0f;
 
     int3 pos = int3(gl_GlobalInvocationID.xy, 0);
 
@@ -18,15 +19,17 @@ void main()
         const float slicewidth = depthMax - depthMin;
 
         const float  density = texelFetch(pk_Fog_DensityRead, pos, 0).x;
+        const float  extinction = density * slicewidth;
+        const float3 transmittance = exp(-extinction * pk_Fog_Absorption.rgb);
         const float3 irradiance = texelFetch(pk_Fog_InjectRead, pos, 0).rgb * pk_Fog_Albedo.rgb;
-        const float3 transmittance = exp(-density * pk_Fog_Absorption.rgb * slicewidth);
         const float3 integral = irradiance * (1.0f - transmittance);
 
         accum_scatter += integral * accum_transmittance;
         accum_transmittance *= transmittance;
+        accum_extinction += extinction;
 
         imageStore(pk_Fog_Scatter, pos, EncodeE5BGR9(accum_scatter).xxxx);
-        imageStore(pk_Fog_Transmittance, pos, float4(accum_transmittance, 1.0f));
+        imageStore(pk_Fog_Extinction, pos, accum_extinction.xxxx);
 
         // Copy previous values for reprojection
         // Iraddiance is copied in density pass to alleviate memory load of this pass
