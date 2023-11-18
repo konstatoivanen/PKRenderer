@@ -12,6 +12,7 @@ namespace PK::ECS::Tokens
 	enum class RenderEvent
 	{
 		CollectDraws,
+		Depth,
 		GBuffer,
 		ForwardOpaque,
 		ForwardTransparent,

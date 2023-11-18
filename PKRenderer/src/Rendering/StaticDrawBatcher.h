@@ -42,7 +42,8 @@ namespace PK::Rendering
             uint16_t shader = 0u;
             uint16_t material = 0u;
             uint16_t transform = 0u;
-            uint32_t submesh = 0u;
+            uint16_t submesh = 0u;
+            uint16_t sortDepth = 0u;
             uint32_t userdata = 0u;
 
             bool operator < (DrawInfo& b)
@@ -53,6 +54,7 @@ namespace PK::Rendering
                 if (userdata != b.userdata) return userdata < b.userdata;
                 if (material != b.material) return material < b.material;
                 if (transform != b.transform) return transform < b.transform;
+                if (sortDepth != b.sortDepth) return sortDepth < b.sortDepth;
                 return false;
             }
 
@@ -75,8 +77,9 @@ namespace PK::Rendering
                                   RHI::Objects::Shader* shader, 
                                   Rendering::Objects::Material* material, 
                                   Rendering::Objects::StaticMesh* mesh,
-                                  uint32_t submesh, 
-                                  uint32_t userdata) final;
+                                  uint16_t submesh, 
+                                  uint32_t userdata,
+                                  uint16_t sortDepth) final;
 
             bool Render(RHI::Objects::CommandBuffer* cmd, 
                         uint32_t group, 

@@ -88,6 +88,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             bool SetScissors(const Math::uint4* rects, uint32_t& count, VkRect2D** outScissors);
 
             void SetShader(const Objects::VulkanShader* shader);
+            void SetStageExcludeMask(const ShaderStageFlags mask);
             void SetBlending(const BlendParameters& blend);
             void SetRasterization(const RasterizationParameters& rasterization);
             void SetDepthStencil(const DepthStencilParameters& depthStencil);

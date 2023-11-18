@@ -510,7 +510,7 @@ namespace PK::Rendering::Passes
                 if (shader != nullptr)
                 {
                     auto layerOffset = batch.count * shadow.LayerStride + item.clipId;
-                    m_batcher->SubmitStaticDraw(transform, shader, nullptr, entity->staticMesh->sharedMesh, kv.submesh, (index & 0xFFFF) | (layerOffset << 16));
+                    m_batcher->SubmitStaticDraw(transform, shader, nullptr, entity->staticMesh->sharedMesh, kv.submesh, (index & 0xFFFF) | (layerOffset << 16), item.depth);
                 }
             }
         }

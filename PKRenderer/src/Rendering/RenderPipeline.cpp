@@ -299,12 +299,18 @@ namespace PK::Rendering
         // Eliminate redundant rendering waits by waiting for transfer instead.
         window->SetFrameFence(queues->GetFenceRef(QueueType::Transfer));
 
-        // Concurrent Shadows & gbuffer
+        // Depth pre pass. Meshlet cull based on prev frame hizb
+        cmdgraphics->SetRenderTarget({ gbuffers.current.depth }, true);
+        cmdgraphics->ClearDepth(PK_CLIPZ_FAR, 0u);
+        cmdgraphics->SetStageExcludeMask(ShaderStageFlags::Fragment);
+        DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::Depth, "Forward.Depth", nullptr);
+        cmdgraphics->SetStageExcludeMask(ShaderStageFlags::None);
+
+        // Gbuffer pass & possible depth writes from invalid z culls.
         cmdgraphics->SetRenderTarget({ gbuffers.current.depth, gbuffers.current.normals, gbuffers.current.depthBiased }, true);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 1);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 2);
-        cmdgraphics->ClearDepth(PK_CLIPZ_FAR, 0u);
 
         DispatchRenderEvent(cmdgraphics, Tokens::RenderEvent::GBuffer, "Forward.GBuffer", nullptr);
         m_passHierarchicalDepth.Compute(cmdgraphics, resolution);

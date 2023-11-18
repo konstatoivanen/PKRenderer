@@ -529,7 +529,8 @@ namespace PK::Rendering::RHI
         BlendParameters blending{};
         DepthStencilParameters depthStencil{};
         MultisamplingParameters multisampling{};
-        uint32_t colorTargetCount = 0;
-        uint32_t viewportCount = 1;
+        uint8_t colorTargetCount = 0u;
+        uint8_t viewportCount = 1u;
+        uint16_t excludeStageMask = 0u;
     };
 }

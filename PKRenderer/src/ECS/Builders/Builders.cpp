@@ -106,7 +106,7 @@ namespace PK::ECS::Builders
         implementer->sourceRadius = kLightSourceRadius;
 
         auto mesh = assetDatabase->Find<VirtualStaticMesh>("Primitive_Sphere");
-        auto shader = assetDatabase->Find<Shader>("VS_Mat_Unlit_Color");
+        auto shader = assetDatabase->Find<Shader>("MS_Mat_Unlit_Color");
         auto material = assetDatabase->RegisterProcedural("M_Point_Light_" + std::to_string(egid.entityID()), CreateRef<Material>(shader, nullptr));
         material->Set<float4>(HashCache::Get()->_Color, color);
         material->Set<float4>(HashCache::Get()->_ColorVoxelize, PK_COLOR_BLACK);

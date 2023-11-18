@@ -32,11 +32,12 @@ namespace PK::Rendering::RHI::Vulkan
 
     struct VulkanPhysicalDeviceProperties
     {
-        VkPhysicalDeviceProperties properties;
-        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties;
-        VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties;
-        VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservativeRasterizationProperties;
-        VkPhysicalDeviceSubgroupProperties subgroupProperties;
+        VkPhysicalDeviceProperties core;
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracing;
+        VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructure;
+        VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservativeRasterization;
+        VkPhysicalDeviceSubgroupProperties subgroup;
+        VkPhysicalDeviceMeshShaderPropertiesEXT meshShader;
     };
 
     struct VulkanTimelineSemaphore

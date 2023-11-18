@@ -13,8 +13,8 @@ namespace PK::Rendering::RHI::Vulkan::Services
         m_device(device),
         m_workingDirectory(workingDirectory),
         m_pruneDelay(pruneDelay),
-        m_allowUnderEstimation(physicalDeviceProperties.conservativeRasterizationProperties.primitiveUnderestimation),
-        m_maxOverEstimation(physicalDeviceProperties.conservativeRasterizationProperties.maxExtraPrimitiveOverestimationSize),
+        m_allowUnderEstimation(physicalDeviceProperties.conservativeRasterization.primitiveUnderestimation),
+        m_maxOverEstimation(physicalDeviceProperties.conservativeRasterization.maxExtraPrimitiveOverestimationSize),
         m_vertexPipelines(1024),
         m_meshPipelines(1024),
         m_otherPipelines(1024),
@@ -104,7 +104,9 @@ namespace PK::Rendering::RHI::Vulkan::Services
             auto stageFlag = (ShaderStageFlags)(1u << i);
 
             // Skip null modules & modules not viable for this pipeline type
-            if (key.shader->GetModule(i) != nullptr && (stageFlag & stageMask) != 0u)
+            if (key.shader->GetModule(i) != nullptr && 
+               (stageFlag & stageMask) != 0u &&
+               (stageFlag & key.fixedFunctionState.excludeStageMask) == 0u)
             {
                 shaderStages[stageCount++] = key.shader->GetModule(i)->stageInfo;
             }
@@ -255,7 +257,9 @@ namespace PK::Rendering::RHI::Vulkan::Services
             auto stageFlag = (ShaderStageFlags)(1u << i);
 
             // Skip null modules & modules not viable for this pipeline type
-            if (key.shader->GetModule(i) != nullptr && (stageFlag & stageMask) != 0u)
+            if (key.shader->GetModule(i) != nullptr && 
+                (stageFlag & stageMask) != 0u &&
+                (stageFlag & key.fixedFunctionState.excludeStageMask) == 0u)
             {
                 shaderStages[stageCount++] = key.shader->GetModule(i)->stageInfo;
             }

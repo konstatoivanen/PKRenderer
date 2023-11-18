@@ -17,7 +17,6 @@ namespace PK::Rendering
     using namespace PK::Rendering::RHI::Objects;
 
     constexpr const static uint32_t PK_MAX_MESHLETS_PER_TASK = 32u;
-    constexpr const static uint32_t PK_MAX_TASKS_PER_DRAW = 2047u;
 
     uint16_t StaticDrawBatcher::MaterialGroup::Add(Material* material)
     {
@@ -292,7 +291,13 @@ namespace PK::Rendering
         GraphicsAPI::SetTextureArray(hash->pk_Instancing_Textures2D, m_textures2D);
     }
 
-    void StaticDrawBatcher::SubmitStaticDraw(Components::Transform* transform, Shader* shader, Material* material, StaticMesh* mesh, uint32_t submesh, uint32_t userdata)
+    void StaticDrawBatcher::SubmitStaticDraw(Components::Transform* transform, 
+                                             Shader* shader, 
+                                             Material* material, 
+                                             StaticMesh* mesh, 
+                                             uint16_t submesh, 
+                                             uint32_t userdata, 
+                                             uint16_t sortDepth)
     {
         PK_THROW_ASSERT(mesh->baseMesh == m_staticGeometry.get(), "Cannot submit draws for meshes not registered in the scene mesh of this geometry batcher!");
 
@@ -309,6 +314,7 @@ namespace PK::Rendering
         info.submesh = mesh->GetGlobalSubmeshIndex(submesh);
         info.userdata = userdata;
         info.group = m_groupIndex - 1;
+        info.sortDepth = sortDepth;
         m_drawInfos.push_back(info);
 
         auto meshletCount = mesh->GetSubmesh(submesh)->meshletCount;
@@ -388,22 +394,12 @@ namespace PK::Rendering
             auto& dc = m_meshletDrawCalls.at(i);
             auto shader = dc.shader;
 
-            if (requireKeyword > 0u && !shader->SupportsKeyword(requireKeyword))
+            if (requireKeyword == 0u || shader->SupportsKeyword(requireKeyword))
             {
-                continue;
-            }
-
-            auto offset = dc.indices.offset;
-            auto drawCount = (dc.indices.count + PK_MAX_TASKS_PER_DRAW - 1) / PK_MAX_TASKS_PER_DRAW;
-            
-            cmd->SetShader(shader);
-            cmd->SetFixedStateAttributes(overrideAttributes);
-
-            for (auto j = 0u; j < drawCount; ++j)
-            {
-                auto taskCount = glm::min(PK_MAX_TASKS_PER_DRAW, (uint32_t)dc.indices.count - j * PK_MAX_TASKS_PER_DRAW);
-                GraphicsAPI::SetConstant<uint>(hash->pk_Meshlet_DispatchOffset, (uint32_t)dc.indices.offset + j * PK_MAX_TASKS_PER_DRAW);
-                cmd->DrawMeshTasks({ taskCount, 1u, 1u });
+                GraphicsAPI::SetConstant<uint>(hash->pk_Meshlet_DispatchOffset, (uint32_t)dc.indices.offset);
+                cmd->SetShader(shader);
+                cmd->SetFixedStateAttributes(overrideAttributes);
+                cmd->DrawMeshTasks({ (uint32_t)dc.indices.count, 1u, 1u });
             }
         }
 

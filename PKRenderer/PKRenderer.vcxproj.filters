@@ -1950,7 +1950,7 @@
     <None Include="res\shaders\includes\PostFXDepthOfField.glsl" />
     <None Include="res\shaders\CS_AutoFocus.shader" />
     <None Include="res\shaders\CS_DepthOfField.shader" />
-    <None Include="res\shaders\VS_Mat_Unlit_Color.shader" />
+    <None Include="res\shaders\MS_Mat_Unlit_Color.shader" />
     <None Include="res\textures\T_OEM_Trail.ktx2" />
     <None Include="res\textures\T_OEM_Park.ktx2" />
     <None Include="res\textures\default\T_LightCookies.ktx2" />
@@ -1965,7 +1965,7 @@
     <None Include="res\shaders\includes\GBuffers.glsl" />
     <None Include="res\shaders\includes\BRDF.glsl" />
     <None Include="res\shaders\includes\SurfaceShaderBase.glsl" />
-    <None Include="res\shaders\VS_Mat_Surf_Default.shader" />
+    <None Include="res\shaders\MS_Mat_Surf_Default.shader" />
     <None Include="res\materials\M_Ground.material" />
     <None Include="res\textures\environment\T_Wood_Floor_S.ktx2" />
     <None Include="res\textures\environment\T_Asphalt_D.ktx2" />
@@ -2003,9 +2003,9 @@
     <None Include="res\materials\M_Sand.material" />
     <None Include="res\materials\M_Water.material" />
     <None Include="res\materials\M_Wood_Floor.material" />
-    <None Include="res\shaders\VS_Mat_Surf_Cloth.shader" />
-    <None Include="res\shaders\VS_Mat_Surf_Glitter.shader" />
-    <None Include="res\shaders\VS_Mat_Surf_Water.shader" />
+    <None Include="res\shaders\MS_Mat_Surf_Cloth.shader" />
+    <None Include="res\shaders\MS_Mat_Surf_Glitter.shader" />
+    <None Include="res\shaders\MS_Mat_Surf_Water.shader" />
     <None Include="res\textures\environment\T_Gravel_H.ktx2" />
     <None Include="res\textures\environment\T_Metal_Plates_H.ktx2" />
     <None Include="res\textures\environment\T_Metal_Rust_H.ktx2" />
@@ -2023,7 +2023,7 @@
     <None Include="res\textures\environment\T_Marble_H.ktx2" />
     <None Include="res\textures\environment\T_Marble_N.ktx2" />
     <None Include="res\textures\environment\T_Marble_S.ktx2" />
-    <None Include="res\shaders\VS_Mat_Surf_Triplanar.shader" />
+    <None Include="res\shaders\MS_Mat_Surf_Triplanar.shader" />
     <None Include="res\materials\M_Marble.material" />
     <None Include="res\materials\M_Plaster.material" />
     <None Include="res\textures\environment\T_Plaster_D.ktx2" />
@@ -2068,6 +2068,7 @@
     <None Include="res\shaders\includes\SceneGIRT.glsl" />
     <None Include="res\shaders\includes\ComputeQuadSwap.glsl" />
     <None Include="res\shaders\includes\Meshlets.glsl" />
+    <None Include="res\shaders\includes\Gizmos.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\glm\detail\glm.cpp">

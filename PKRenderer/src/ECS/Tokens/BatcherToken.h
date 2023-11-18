@@ -16,8 +16,9 @@ namespace PK::ECS::Tokens
                                       Rendering::RHI::Objects::Shader* shader, 
                                       Rendering::Objects::Material* material, 
                                       Rendering::Objects::StaticMesh* mesh, 
-                                      uint32_t submesh, 
-                                      uint32_t userdata) = 0;
+                                      uint16_t submesh,
+                                      uint32_t userdata,
+                                      uint16_t sortDepth) = 0;
 
         virtual bool Render(Rendering::RHI::Objects::CommandBuffer* cmd,
                             uint32_t group, 

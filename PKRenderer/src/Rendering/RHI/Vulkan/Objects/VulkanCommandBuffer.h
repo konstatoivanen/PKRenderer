@@ -44,12 +44,14 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         inline void DiscardColor(uint32_t index) final { m_renderState->DiscardColor(index); }
         inline void DiscardDepth() final { m_renderState->DiscardDepth(); }
 
+        inline void SetStageExcludeMask(const ShaderStageFlags mask) final { m_renderState->SetStageExcludeMask(mask); }
         inline void SetBlending(const BlendParameters& blend) final { m_renderState->SetBlending(blend); }
         inline void SetRasterization(const RasterizationParameters& rasterization) final { m_renderState->SetRasterization(rasterization); }
         inline void SetDepthStencil(const DepthStencilParameters& depthStencil) final { m_renderState->SetDepthStencil(depthStencil); }
         inline void SetMultisampling(const MultisamplingParameters& multisampling) final { m_renderState->SetMultisampling(multisampling); }
 
         void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) final;
+        void DrawIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) final;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) final;
         void DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) final;
         void DrawMeshTasks(const Math::uint3& dimensions) final;
@@ -64,6 +66,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         void Blit(const VulkanBindHandle* src, const VulkanBindHandle* dst, const VkImageBlit& blitRegion, FilterMode filter);
 
         void Clear(Buffer* dst, size_t offset, size_t size, uint32_t value) final;
+        void Clear(Buffer* dst, size_t offset, size_t size, void* data) final;
         void Clear(Texture* dst, const TextureViewRange& range, const uint4& value) final;
 
         void* BeginBufferWrite(Buffer* buffer, size_t offset, size_t size) final;

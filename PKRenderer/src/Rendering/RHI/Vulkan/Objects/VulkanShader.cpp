@@ -134,9 +134,9 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         auto driver = RHI::Driver::GetNative<VulkanDriver>();
 
         const auto& deviceProperties = driver->physicalDeviceProperties;
-        const auto handleSize = deviceProperties.rayTracingProperties.shaderGroupHandleSize;
-        const auto handleAlignment = deviceProperties.rayTracingProperties.shaderGroupHandleAlignment;
-        const auto tableAlignment = deviceProperties.rayTracingProperties.shaderGroupBaseAlignment;
+        const auto handleSize = deviceProperties.rayTracing.shaderGroupHandleSize;
+        const auto handleAlignment = deviceProperties.rayTracing.shaderGroupHandleAlignment;
+        const auto tableAlignment = deviceProperties.rayTracing.shaderGroupBaseAlignment;
 
         info.handleSize = handleSize;
         info.handleSizeAligned = PK::Math::Functions::GetAlignedSize(handleSize, handleAlignment);

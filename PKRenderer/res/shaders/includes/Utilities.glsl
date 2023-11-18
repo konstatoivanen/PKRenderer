@@ -127,14 +127,14 @@ float3x3 make_TBN(const float3 n) { float3 t, b; branchlessONB(n,t,b); return fl
 #endif
 
 #if defined(SHADER_STAGE_MESH_ASSEMBLY)
-    #define PK_DECLARE_INTERFACE(variable) out variable[]
-    #define PK_SET_INTERFACE(variable, index, value) variable[index] = value
+    #define PK_DECLARE_VS_ATTRIB(variable) out variable[]
+    #define PK_SET_VS_ATTRIB(variable, index, value) variable[index] = value
 #elif defined(SHADER_STAGE_VERTEX)
-    #define PK_DECLARE_INTERFACE(variable) out variable
-    #define PK_SET_INTERFACE(variable, index, value) variable = value
+    #define PK_DECLARE_VS_ATTRIB(variable) out variable
+    #define PK_SET_VS_ATTRIB(variable, index, value) variable = value
 #elif defined(SHADER_STAGE_FRAGMENT)
-    #define PK_DECLARE_INTERFACE(variable) in variable
-    #define PK_SET_INTERFACE(variable, index, value)
+    #define PK_DECLARE_VS_ATTRIB(variable) in variable
+    #define PK_SET_VS_ATTRIB(variable, index, value)
 #endif
 
 #endif

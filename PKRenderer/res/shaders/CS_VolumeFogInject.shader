@@ -47,6 +47,9 @@ void main()
     const float3 gi_static = SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Phase1);
     const float4 gi_dynamic = GI_SphereTrace_Diffuse(worldpos);
 
+    // Fade value for properties not present in backgroung fog
+    const float farFade = smoothstep(1.0f, 0.7f, uvw_cur.z);
+
     // Occlude ground as it should be lit mostly by dynamic gi.
     // Apply visibility mask from cone trace.
     const float gi_static_occlusion = (viewdir.y * 0.5f + 0.5f) * gi_dynamic.a;
@@ -54,14 +57,10 @@ void main()
     float3 value_cur = gi_static.rgb * gi_static_occlusion + gi_dynamic.rgb;
     
     // This is incorrect for the dynamic component. However, it introduces good depth to the colors so whatever.
-    value_cur *= VFog_MarchTransmittanceStatic(uvw_cur, dither.x);
+    value_cur *= VFog_EstimateTransmittance(uvw_cur, farFade);
 
     // Distant texels are less dense, trace a longer distance to retain some depth.
     const float maxMarchDistance = exp(uvw_cur.z * VOLUMEFOG_MARCH_DISTANCE_EXP);
-
-    // Shadow cascades & transmittance march will cause a visible border between sky fog & volume fog.
-    // Fade out shadow contribution near far plane.
-    const float shadowFade = smoothstep(0.9f, 1.0f, uvw_cur.z);
 
     const float shadowBiasRange = VFog_ZToView((id.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV) - VFog_ZToView(id.z * VOLUMEFOG_SIZE_Z_INV);
     const float3 shadowBias = viewdir * shadowBiasRange * 0.5f;
@@ -73,8 +72,8 @@ void main()
         Light light = GetLight(i, worldpos, shadowBias, tile.cascade);
 
         const float marchDistance = min(light.linearDistance, maxMarchDistance);
-        light.color *= VFog_MarchTransmittance(worldpos, light.direction, dither.y, marchDistance, shadowFade);
-        light.shadow = lerp(light.shadow, 1.0f, shadowFade);
+        light.color *= VFog_MarchTransmittance(worldpos, light.direction, dither.y, marchDistance, farFade);
+        light.shadow = lerp(1.0f, light.shadow, farFade);
 
         value_cur += EvaluateBxDF_Volumetric
         (

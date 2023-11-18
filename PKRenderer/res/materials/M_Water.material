@@ -1,5 +1,5 @@
 Material:
-    Shader: res/shaders/VS_Mat_Surf_Water.pkshader
+    Shader: res/shaders/MS_Mat_Surf_Water.pkshader
     Keywords:
     Properties:
         _Color:

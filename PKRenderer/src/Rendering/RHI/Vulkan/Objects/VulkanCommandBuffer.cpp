@@ -133,6 +133,23 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         vkCmdDraw(m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
+    void VulkanCommandBuffer::DrawIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride)
+    {
+        static Services::VulkanBarrierHandler::AccessRecord record{};
+
+        auto vkbuffer = indirectArguments->GetNative<VulkanBuffer>()->GetRaw();
+        record.bufferRange.offset = (uint32_t)offset;
+        record.bufferRange.size = drawCount * stride;
+        record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+        record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+        record.queueFamily = indirectArguments->IsConcurrent() ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        m_renderState->GetServices()->barrierHandler->Record(vkbuffer->buffer, record, PK_ACCESS_OPT_BARRIER);
+
+        ValidatePipeline();
+        MarkLastCommandStage(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
+        vkCmdDrawIndirect(m_commandBuffer, vkbuffer->buffer, offset, drawCount, stride);
+    }
+
     void VulkanCommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
     {
         ValidatePipeline();
@@ -365,6 +382,13 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         EndRenderPass();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
         vkCmdFillBuffer(m_commandBuffer, dst->GetNative<VulkanBuffer>()->GetRaw()->buffer, offset, size, value);
+    }
+
+    void VulkanCommandBuffer::Clear(Buffer* dst, size_t offset, size_t size, void* data)
+    {
+        EndRenderPass();
+        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
+        vkCmdUpdateBuffer(m_commandBuffer, dst->GetNative<VulkanBuffer>()->GetRaw()->buffer, offset, size, data);
     }
 
     void VulkanCommandBuffer::Clear(Texture* dst, const TextureViewRange& range, const uint4& value)

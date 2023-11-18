@@ -6,10 +6,17 @@
 #define MAX_VERTICES_PER_MESHLET 64u
 #define MAX_TRIANGLES_PER_MESHLET 124u
 #define MAX_MESHLETS_PER_TASK 32u
-#define MAX_TASK_WORK_GROUPS 2047u
 #define MESHLET_LOCAL_GROUP_SIZE 32u
 #define TRIANGLES_PER_MESHLET_THREAD 4u
 #define VERTICES_PER_MESHLET_THREAD 2u
+
+#ifndef PK_MESHLET_USE_CONE_CULL
+    #define PK_MESHLET_USE_CONE_CULL 1
+#endif
+
+#ifndef PK_USE_TRIANGLE_EDIT
+    #define PK_USE_TRIANGLE_EDIT 0
+#endif
 
 PK_DECLARE_RESTRICTED_READONLY_BUFFER(uint2, pk_Meshlet_Tasklets, PK_SET_PASS);
 PK_DECLARE_RESTRICTED_READONLY_BUFFER(uint4, pk_Meshlet_Submeshes, PK_SET_PASS);
@@ -125,7 +132,7 @@ PKMeshlet Meshlet_Unpack_Meshlet(const uint4 packed0, const uint4 packed1)
     m.vertexFirst = packed0.x;
     m.triangleFirst = packed0.y;
     m.coneAxis = unpackSnorm4x8(packed0.z).xyz;
-    m.coneCutoff = unpackUnorm4x8(packed0.z).w;
+    m.coneCutoff = unpackSnorm4x8(packed0.z).w;
     m.vertexCount = bitfieldExtract(packed0.w, 0, 8);
     m.triangleCount = bitfieldExtract(packed0.w, 8, 8);
     m.coneApex.x = unpackHalf2x16(packed0.w).y;
@@ -200,6 +207,17 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
     return Meshlet_Unpack_Vertex(PK_BUFFER_DATA(pk_Meshlet_Vertices, index), smbbmin, smbbmax);
 }
 
+bool Meshlet_Cone_Cull(const PKMeshlet meshlet)
+{
+    #if PK_MESHLET_USE_CONE_CULL == 1
+        const float3 coneAxis = safeNormalize(ObjectToWorldVec(meshlet.coneAxis));
+        const float3 coneApex = ObjectToWorldPos(meshlet.coneApex);
+        const float3 coneView = normalize(coneApex - pk_ViewWorldOrigin.xyz);
+        return dot(coneView, coneAxis) < meshlet.coneCutoff;
+    #else
+        return true;
+    #endif
+}
 
 #if defined(SHADER_STAGE_MESH_TASK)
 
@@ -241,16 +259,11 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
         const uint meshletIndex = meshletFirst + meshletLocalIndex;
         const PKMeshlet meshlet = Meshlet_Load_Meshlet(meshletIndex);
         
-        const float  coneClip = step(dot(meshlet.coneAxis, meshlet.coneAxis), 0.01f);
-        const float3 coneAxis = safeNormalize(ObjectToWorldVec(meshlet.coneAxis)) * coneClip;
-        const float3 coneApex = ObjectToWorldPos(meshlet.coneApex);
-        const float3 coneView = normalize(coneApex - pk_ViewWorldOrigin.xyz);
-        
         bool isVisible = true;
         isVisible = isVisible && meshletLocalIndex < meshletCount;
-        isVisible = isVisible && dot(coneView, coneAxis) < meshlet.coneCutoff;
+        isVisible = isVisible && Meshlet_Cone_Cull(meshlet);
         isVisible = isVisible && PK_IS_VISIBLE_MESHLET(meshlet);
-    
+
         uint4 visibleMask = subgroupBallot(isVisible);
         uint visibleCount = subgroupBallotBitCount(visibleMask);
         uint deltaIndex = subgroupBallotExclusiveBitCount(visibleMask);
@@ -266,6 +279,10 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
 #elif defined(SHADER_STAGE_MESH_ASSEMBLY)
 
     void PK_MESHLET_ASSIGN_VERTEX_OUTPUTS(uint vertexIndex, PKVertex vertex, inout float4 sv_Position);
+
+    #if PK_USE_TRIANGLE_EDIT == 1
+    void PK_MESHLET_EDIT_TRIANGLE(inout uint3 indices);
+    #endif
 
     taskPayloadSharedEXT PKMeshTaskPayload payload;
 
@@ -291,24 +308,6 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
         SetMeshOutputsEXT(vertexCount, triangleCount);
 
         [[loop]]
-        for (uint i = 0u; i < TRIANGLES_PER_MESHLET_THREAD; ++i)
-        {
-            const uint triangleIndex = gl_LocalInvocationID.x * TRIANGLES_PER_MESHLET_THREAD + i;
-            const uint3 indices = uint3
-            (
-                PK_BUFFER_DATA(pk_Meshlet_Indices, triangleFirst * 3u + triangleIndex * 3u + 0u),
-                PK_BUFFER_DATA(pk_Meshlet_Indices, triangleFirst * 3u + triangleIndex * 3u + 1u),
-                PK_BUFFER_DATA(pk_Meshlet_Indices, triangleFirst * 3u + triangleIndex * 3u + 2u)
-            );
-            
-            [[branch]]
-            if (triangleIndex < triangleCount)
-            {
-                gl_PrimitiveTriangleIndicesEXT[triangleIndex] = indices;
-            }
-        }        
-
-        [[loop]]
         for (uint i = 0u; i < VERTICES_PER_MESHLET_THREAD; ++i)
         {
             const uint vertexIndex = gl_LocalInvocationID.x * VERTICES_PER_MESHLET_THREAD + i;
@@ -323,5 +322,27 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
                 gl_MeshVerticesEXT[vertexIndex].gl_Position = sv_Position;
             }
         }
+
+        [[loop]]
+        for (uint i = 0u; i < TRIANGLES_PER_MESHLET_THREAD; ++i)
+        {
+            const uint triangleIndex = gl_LocalInvocationID.x * TRIANGLES_PER_MESHLET_THREAD + i;
+            uint3 indices = uint3
+            (
+                PK_BUFFER_DATA(pk_Meshlet_Indices, triangleFirst * 3u + triangleIndex * 3u + 0u),
+                PK_BUFFER_DATA(pk_Meshlet_Indices, triangleFirst * 3u + triangleIndex * 3u + 1u),
+                PK_BUFFER_DATA(pk_Meshlet_Indices, triangleFirst * 3u + triangleIndex * 3u + 2u)
+            );
+            
+            [[branch]]
+            if (triangleIndex < triangleCount)
+            {
+                #if PK_USE_TRIANGLE_EDIT == 1
+                PK_MESHLET_EDIT_TRIANGLE(indices);
+                #endif    
+
+                gl_PrimitiveTriangleIndicesEXT[triangleIndex] = indices;
+            }
+        }        
     }
 #endif

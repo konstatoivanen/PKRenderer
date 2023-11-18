@@ -866,6 +866,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_VolumeFogInject.shader" />
     <None Include="res\shaders\CS_VolumeFogScatter.shader" />
     <None Include="res\shaders\includes\ComputeQuadSwap.glsl" />
+    <None Include="res\shaders\includes\Gizmos.glsl" />
     <None Include="res\shaders\includes\Meshlets.glsl" />
     <None Include="res\shaders\includes\NoiseBlue.glsl" />
     <None Include="res\shaders\includes\CTASwizzling.glsl" />
@@ -897,7 +898,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_VolumeFogComposite.shader" />
     <None Include="res\shaders\RS_GI_ValidateReservoirs.shader" />
     <None Include="res\shaders\VS_Gizmos.shader" />
-    <None Include="res\shaders\VS_Mat_Surf_Cloth.shader" />
+    <None Include="res\shaders\MS_Mat_Surf_Cloth.shader" />
     <None Include="res\shaders\includes\Utilities.glsl" />
     <None Include="res\shaders\includes\Lighting.glsl" />
     <None Include="res\shaders\includes\PostFXColorGrading.glsl" />
@@ -916,12 +917,12 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\CS_DepthOfField.shader" />
     <None Include="res\shaders\VS_EnvBackground.shader" />
     <None Include="res\shaders\CS_CopyCubeShadow.shader" />
-    <None Include="res\shaders\VS_Mat_Surf_Default.shader" />
-    <None Include="res\shaders\VS_Mat_Surf_Glitter.shader" />
-    <None Include="res\shaders\VS_Mat_Surf_Triplanar.shader" />
-    <None Include="res\shaders\VS_Mat_Surf_Water.shader" />
+    <None Include="res\shaders\MS_Mat_Surf_Default.shader" />
+    <None Include="res\shaders\MS_Mat_Surf_Glitter.shader" />
+    <None Include="res\shaders\MS_Mat_Surf_Triplanar.shader" />
+    <None Include="res\shaders\MS_Mat_Surf_Water.shader" />
     <None Include="res\shaders\VS_Mat_Shadow_Default.shader" />
-    <None Include="res\shaders\VS_Mat_Unlit_Color.shader" />
+    <None Include="res\shaders\MS_Mat_Unlit_Color.shader" />
     <None Include="res\textures\default\T_Bluenoise128x64.ktx2" />
     <None Include="res\textures\environment\T_Asphalt_D.ktx2" />
     <None Include="res\textures\environment\T_Asphalt_H.ktx2" />

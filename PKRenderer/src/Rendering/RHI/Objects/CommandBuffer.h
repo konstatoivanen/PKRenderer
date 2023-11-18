@@ -25,6 +25,7 @@ namespace PK::Rendering::RHI::Objects
         virtual void SetViewPorts(const Math::uint4* rects, uint32_t count) = 0;
         virtual void SetScissors(const Math::uint4* rects, uint32_t count) = 0;
 
+        virtual void SetStageExcludeMask(const ShaderStageFlags mask) = 0;
         virtual void SetBlending(const BlendParameters& blend) = 0;
         virtual void SetRasterization(const RasterizationParameters& rasterization) = 0;
         virtual void SetDepthStencil(const DepthStencilParameters& depthStencil) = 0;
@@ -36,6 +37,7 @@ namespace PK::Rendering::RHI::Objects
         virtual void SetShaderBindingTable(RayTracingShaderGroup group, const Buffer* buffer, size_t offset = 0, size_t stride = 0, size_t size = 0) = 0;
 
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
+        virtual void DrawIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) = 0;
         virtual void DrawIndexedIndirect(const Buffer* indirectArguments, size_t offset, uint32_t drawCount, uint32_t stride) = 0;
         virtual void DrawMeshTasks(const Math::uint3& dimensions) = 0;
@@ -49,6 +51,7 @@ namespace PK::Rendering::RHI::Objects
         virtual void Blit(Texture* src, Texture* dst, const TextureViewRange& srcRange, const TextureViewRange& dstRange, FilterMode filter) = 0;
 
         virtual void Clear(Buffer* dst, size_t offset, size_t size, uint32_t value) = 0;
+        virtual void Clear(Buffer* dst, size_t offset, size_t size, void* data) = 0;
         virtual void Clear(Texture* dst, const TextureViewRange& range, const Math::uint4& value) = 0;
         
         virtual void* BeginBufferWrite(Buffer* buffer, size_t offset, size_t size) = 0;

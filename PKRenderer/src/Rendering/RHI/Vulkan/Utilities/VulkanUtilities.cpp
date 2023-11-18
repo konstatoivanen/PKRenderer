@@ -178,19 +178,22 @@ namespace PK::Rendering::RHI::Vulkan::Utilities
         VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
         VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservativeRasterizationProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT };
         VkPhysicalDeviceSubgroupProperties subgroupProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES };
+        VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT };
         deviceProperties.pNext = &accelerationStructureProperties;
         accelerationStructureProperties.pNext = &rayTracingProperties;
         rayTracingProperties.pNext = &conservativeRasterizationProperties;
         conservativeRasterizationProperties.pNext = &subgroupProperties;
+        subgroupProperties.pNext = &meshShaderProperties;
 
         vkGetPhysicalDeviceProperties2(device, &deviceProperties);
 
         VulkanPhysicalDeviceProperties returnProperties;
-        returnProperties.properties = deviceProperties.properties;
-        returnProperties.accelerationStructureProperties = accelerationStructureProperties;
-        returnProperties.rayTracingProperties = rayTracingProperties;
-        returnProperties.conservativeRasterizationProperties = conservativeRasterizationProperties;
-        returnProperties.subgroupProperties = subgroupProperties;
+        returnProperties.core = deviceProperties.properties;
+        returnProperties.accelerationStructure = accelerationStructureProperties;
+        returnProperties.rayTracing = rayTracingProperties;
+        returnProperties.conservativeRasterization = conservativeRasterizationProperties;
+        returnProperties.subgroup = subgroupProperties;
+        returnProperties.meshShader = meshShaderProperties;
         return returnProperties;
     }
 
@@ -288,8 +291,8 @@ namespace PK::Rendering::RHI::Vulkan::Utilities
         for (auto& device : devices)
         {
             auto properties = VulkanGetPhysicalDeviceProperties(device);
-            auto versionMajor = VK_API_VERSION_MAJOR(properties.properties.apiVersion);
-            auto versionMinor = VK_API_VERSION_MINOR(properties.properties.apiVersion);
+            auto versionMajor = VK_API_VERSION_MAJOR(properties.core.apiVersion);
+            auto versionMinor = VK_API_VERSION_MINOR(properties.core.apiVersion);
 
             if (versionMajor < requirements.versionMajor)
             {
@@ -326,7 +329,7 @@ namespace PK::Rendering::RHI::Vulkan::Utilities
                 hasPresent |= VulkanIsPresentSupported(device, i, surface);
             }
 
-            if (properties.properties.deviceType != requirements.deviceType ||
+            if (properties.core.deviceType != requirements.deviceType ||
                 !extensionSupported ||
                 !swapChainSupported ||
                 !hasPresent ||
@@ -345,11 +348,11 @@ namespace PK::Rendering::RHI::Vulkan::Utilities
             }
 
             {
-                PK_LOG_INFO("Selected Physical Device '%s' from '%i' Physical Devices:", properties.properties.deviceName, devices.size());
+                PK_LOG_INFO("Selected Physical Device '%s' from '%i' Physical Devices:", properties.core.deviceName, devices.size());
                 PK_LOG_SCOPE_INDENT(selected);
-                PK_LOG_INFO("Vendor: %i", properties.properties.vendorID);
-                PK_LOG_INFO("Device: %i", properties.properties.deviceID);
-                PK_LOG_INFO("Driver: %i", properties.properties.driverVersion);
+                PK_LOG_INFO("Vendor: %i", properties.core.vendorID);
+                PK_LOG_INFO("Device: %i", properties.core.deviceID);
+                PK_LOG_INFO("Driver: %i", properties.core.driverVersion);
                 PK_LOG_INFO("API VER: %i.%i", versionMajor, versionMinor);
                 PK_LOG_NEWLINE();
             }

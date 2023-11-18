@@ -12,14 +12,8 @@ out float4 vs_COLOR;
 
 void main()
 {
-    float4 color = 0.0f.xxxx;
-    color.r = ((in_POSITION.w >> 0) & 0xFFu) / 255.0f;
-    color.g = ((in_POSITION.w >> 8u) & 0xFFu) / 255.0f;
-    color.b = ((in_POSITION.w >> 16u) & 0xFFu) / 255.0f;
-    color.a = ((in_POSITION.w >> 24u) & 0xFFu) / 255.0f;
-    
     gl_Position = pk_WorldToClip_NoJitter * float4(uintBitsToFloat(in_POSITION.xyz), 1.0f);
-    vs_COLOR = color;
+    vs_COLOR = unpackUnorm4x8(in_POSITION.w);
 };
 
 #pragma PROGRAM_FRAGMENT

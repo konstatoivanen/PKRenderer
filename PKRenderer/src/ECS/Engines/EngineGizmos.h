@@ -41,6 +41,8 @@ namespace PK::ECS::Engines
             Core::Services::Sequencer* m_sequencer = nullptr;
             Rendering::RHI::Objects::Shader* m_gizmosShader = nullptr;
             Rendering::RHI::Objects::BufferRef m_vertexBuffer;
+            Rendering::RHI::Objects::BufferRef m_indirectVertexBuffer;
+            Rendering::RHI::Objects::BufferRef m_indirectArgsBuffer;
             PK::Utilities::BufferView<Vertex> m_vertexView;
             PK::Rendering::RHI::FixedFunctionShaderAttributes m_fixedFunctionAttribs;
 
@@ -50,6 +52,7 @@ namespace PK::ECS::Engines
             Math::color32 m_color = Math::PK_COLOR32_WHITE;
             Math::float4x4 m_ViewToClip = Math::PK_FLOAT4X4_IDENTITY;
             Math::float4x4 m_matrix = Math::PK_FLOAT4X4_IDENTITY;
-            bool m_enabled = true;
+            bool m_enabledCPU = false;
+            bool m_enabledGPU = false;
     };
 }

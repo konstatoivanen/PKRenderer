@@ -193,7 +193,7 @@ namespace PK::Rendering::RHI::Vulkan
         }
 
         VmaAllocatorCreateInfo allocatorInfo{};
-        allocatorInfo.vulkanApiVersion = physicalDeviceProperties.properties.apiVersion;
+        allocatorInfo.vulkanApiVersion = physicalDeviceProperties.core.apiVersion;
         allocatorInfo.physicalDevice = physicalDevice;
         allocatorInfo.device = device;
         allocatorInfo.instance = instance;
@@ -299,17 +299,17 @@ namespace PK::Rendering::RHI::Vulkan
     {
         if ((usage & BufferUsage::Storage) != 0)
         {
-            return physicalDeviceProperties.properties.limits.minStorageBufferOffsetAlignment;
+            return physicalDeviceProperties.core.limits.minStorageBufferOffsetAlignment;
         }
 
         if ((usage & BufferUsage::Constant) != 0)
         {
-            return physicalDeviceProperties.properties.limits.minUniformBufferOffsetAlignment;
+            return physicalDeviceProperties.core.limits.minUniformBufferOffsetAlignment;
         }
 
         if ((usage & BufferUsage::ShaderBindingTable) != 0)
         {
-            return physicalDeviceProperties.rayTracingProperties.shaderGroupBaseAlignment;
+            return physicalDeviceProperties.rayTracing.shaderGroupBaseAlignment;
         }
 
         return sizeof(char);

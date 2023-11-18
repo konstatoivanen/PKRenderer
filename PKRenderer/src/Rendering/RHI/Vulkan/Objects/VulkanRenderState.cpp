@@ -278,6 +278,15 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         }
     }
 
+    void VulkanRenderState::SetStageExcludeMask(const ShaderStageFlags mask)
+    {
+        if (m_pipelineKey.fixedFunctionState.excludeStageMask != (uint16_t)mask)
+        {
+            m_pipelineKey.fixedFunctionState.excludeStageMask = (uint16_t)mask;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+        }
+    }
+
     void VulkanRenderState::SetBlending(const BlendParameters& blend)
     {
         if (memcmp(&m_pipelineKey.fixedFunctionState.blending, &blend, sizeof(BlendParameters)) != 0)

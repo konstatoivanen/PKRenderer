@@ -27,7 +27,7 @@ namespace PK::ECS::Engines
         m_gbufferAttribs.blending.colorMask = ColorMask::RGBA;
     }
 
-    void Engines::EngineDrawGeometry::Step(TokenRenderEvent* token, int condition)
+    void EngineDrawGeometry::Step(TokenRenderEvent* token, int condition)
     {
         switch ((RenderEvent)condition)
         {
@@ -58,14 +58,19 @@ namespace PK::ECS::Engines
                     {
                         auto transform = entity->transform;
                         auto shader = kv.material->GetShader();
-                        token->batcher->SubmitStaticDraw(transform, shader, kv.material, entity->staticMesh->sharedMesh, kv.submesh, 0u);
+                        token->batcher->SubmitStaticDraw(transform, shader, kv.material, entity->staticMesh->sharedMesh, kv.submesh, 0u, item.depth);
                     }
                 }
             }
             return;
-            case RenderEvent::GBuffer:
+            case RenderEvent::Depth:
             {
                 token->batcher->RenderMeshlets(token->cmd, m_passGroup, &m_gbufferAttribs, HashCache::Get()->PK_META_PASS_GBUFFER);
+            }
+            return;
+            case RenderEvent::GBuffer:
+            {
+                token->batcher->RenderMeshlets(token->cmd, m_passGroup, nullptr, HashCache::Get()->PK_META_PASS_GBUFFER);
             }
             return;
             case RenderEvent::ForwardOpaque:

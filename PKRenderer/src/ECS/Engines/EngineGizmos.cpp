@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Math/FunctionsIntersect.h"
+#include "Rendering/HashCache.h"
 #include "EngineGizmos.h"
 
 namespace PK::ECS::Engines
@@ -9,61 +10,78 @@ namespace PK::ECS::Engines
     using namespace PK::Core::Services;
     using namespace PK::Rendering::Objects;
     using namespace PK::Rendering::Structs;
+    using namespace PK::Rendering;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
     EngineGizmos::EngineGizmos(AssetDatabase* assetDatabase, Sequencer* sequencer, ApplicationConfig* config) :
         m_sequencer(sequencer)
     {
-        m_enabled = config->EnableGizmos;
+        m_enabledCPU = config->EnableGizmosCPU;
+        m_enabledGPU = config->EnableGizmosGPU;
         m_gizmosShader = assetDatabase->Find<Shader>("VS_Gizmos");
         m_vertexBuffer = Buffer::Create(BufferLayout({ { ElementType::Uint4, "in_POSITION" } }), m_maxVertices, BufferUsage::DefaultVertex | BufferUsage::PersistentStage, "Gizmos.VertexBuffer");
+        m_indirectVertexBuffer = Buffer::Create(BufferLayout({ { ElementType::Uint4, "in_POSITION" } }), 16384u, BufferUsage::Vertex | BufferUsage::Storage, "Gizmos.Indirect.VertexBuffer");
+        m_indirectArgsBuffer = Buffer::Create(ElementType::Uint4, 1u, BufferUsage::Storage | BufferUsage::Indirect | BufferUsage::TransferDst, "Gizmos.Indirect.Arguments");
         m_fixedFunctionAttribs = m_gizmosShader->GetFixedFunctionAttributes();
         m_fixedFunctionAttribs.rasterization.polygonMode = PolygonMode::Line;
         m_fixedFunctionAttribs.rasterization.topology = Topology::LineList;
+        
+        auto hash = HashCache::Get();
+        GraphicsAPI::SetBuffer("pk_Gizmos_IndirectVertices", m_indirectVertexBuffer.get());
+        GraphicsAPI::SetBuffer("pk_Gizmos_IndirectArguments", m_indirectArgsBuffer.get());
     }
 
     void EngineGizmos::Step(Tokens::TokenRenderEvent* token, int condition)
     {
-        if (!m_enabled)
-        {
-            return;
-        }
-
         switch ((Tokens::RenderEvent)condition)
         {
             case Tokens::RenderEvent::CollectDraws:
             {
-                m_vertexBuffer->Validate(m_vertexCount);
-                m_color = Math::PK_COLOR_WHITE;
-                m_matrix = Math::PK_FLOAT4X4_IDENTITY;
-                m_ViewToClip = token->viewToClip;
-                m_vertexCount = 0u;
-                m_maxVertices = (uint32_t)m_vertexBuffer->GetCount();
-                m_vertexView = token->cmd->BeginBufferWrite<Vertex>(m_vertexBuffer.get());
-                m_sequencer->Next<IGizmosRenderer>(this, this, 0);
-                token->cmd->EndBufferWrite(m_vertexBuffer.get());
+                if (m_enabledCPU)
+                {
+                    m_vertexBuffer->Validate(m_vertexCount);
+                    m_color = Math::PK_COLOR_WHITE;
+                    m_matrix = Math::PK_FLOAT4X4_IDENTITY;
+                    m_ViewToClip = token->viewToClip;
+                    m_vertexCount = 0u;
+                    m_maxVertices = (uint32_t)m_vertexBuffer->GetCount();
+                    m_vertexView = token->cmd->BeginBufferWrite<Vertex>(m_vertexBuffer.get());
+                    m_sequencer->Next<IGizmosRenderer>(this, this, 0);
+                    token->cmd->EndBufferWrite(m_vertexBuffer.get());
+                }
+
+                uint4 clearValue{ 0u, 1u, 0u, 0u };
+                token->cmd->Clear(m_indirectArgsBuffer.get(), 0u, sizeof(uint4), &clearValue);
             }
             return;
             case Tokens::RenderEvent::AfterPostEffects:
             {
-                if (m_vertexCount < 2)
+                if (m_enabledGPU)
                 {
-                    return;
+                    auto rect = token->gbuffers.current.color->GetRect();
+                    const Buffer* vb = m_indirectVertexBuffer.get();
+                    token->cmd->SetVertexBuffers(&vb, 1u);
+                    token->cmd->SetShader(m_gizmosShader);
+                    token->cmd->SetRenderTarget(token->gbuffers.current.color);
+                    token->cmd->SetViewPort(rect);
+                    token->cmd->SetScissor(rect);
+                    token->cmd->SetFixedStateAttributes(&m_fixedFunctionAttribs);
+                    token->cmd->DrawIndirect(m_indirectArgsBuffer.get(), 0u, 1u, sizeof(uint4));
                 }
 
-                auto vertexCount = glm::min(m_vertexCount, m_maxVertices);
-                auto rect = token->gbuffers.current.color->GetRect();
-                const Buffer* vb = m_vertexBuffer.get();
-                const Buffer** vbptr = &vb;
-
-                token->cmd->SetVertexBuffers(vbptr, 1u);
-                token->cmd->SetShader(m_gizmosShader);
-                token->cmd->SetRenderTarget(token->gbuffers.current.color);
-                token->cmd->SetViewPort(rect);
-                token->cmd->SetScissor(rect);
-                token->cmd->SetFixedStateAttributes(&m_fixedFunctionAttribs);
-                token->cmd->Draw(vertexCount, 1u, 0u, 0u);
+                if (m_enabledCPU && m_vertexCount >= 2)
+                {
+                    auto rect = token->gbuffers.current.color->GetRect();
+                    const Buffer* vb = m_vertexBuffer.get();
+                    token->cmd->SetVertexBuffers(&vb, 1u);
+                    token->cmd->SetShader(m_gizmosShader);
+                    token->cmd->SetRenderTarget(token->gbuffers.current.color);
+                    token->cmd->SetViewPort(rect);
+                    token->cmd->SetScissor(rect);
+                    token->cmd->SetFixedStateAttributes(&m_fixedFunctionAttribs);
+                    token->cmd->Draw(glm::min(m_vertexCount, m_maxVertices), 1u, 0u, 0u);
+                }
             }
             return;
         }
@@ -71,16 +89,24 @@ namespace PK::ECS::Engines
 
     void EngineGizmos::Step(Core::Services::AssetImportToken<Core::ApplicationConfig>* token)
     {
-        m_enabled = token->asset->EnableGizmos;
+        m_enabledCPU = token->asset->EnableGizmosCPU;
+        m_enabledGPU = token->asset->EnableGizmosGPU;
     }
 
     void EngineGizmos::Step(Core::TokenConsoleCommand* token)
     {
-        if (!token->isConsumed && token->argument == "toggle_gizmos")
+        if (!token->isConsumed && token->argument == "toggle_gizmos_cpu")
         {
-            m_enabled ^= true;
+            m_enabledCPU ^= true;
             token->isConsumed = true;
-            PK_LOG_INFO("Gizmos %s", (m_enabled ? "Enabled" : "Disabled"));
+            PK_LOG_INFO("Gizmos CPU %s", (m_enabledCPU ? "Enabled" : "Disabled"));
+        }
+
+        if (!token->isConsumed && token->argument == "toggle_gizmos_gpu")
+        {
+            m_enabledGPU ^= true;
+            token->isConsumed = true;
+            PK_LOG_INFO("Gizmos GPU %s", (m_enabledGPU ? "Enabled" : "Disabled"));
         }
     }
 
