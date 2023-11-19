@@ -1,8 +1,6 @@
 #version 460
-#extension GL_KHR_shader_subgroup_ballot : require
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 #extension GL_KHR_shader_subgroup_shuffle : require
-#extension GL_KHR_shader_subgroup_vote : require
 #pragma PROGRAM_COMPUTE
 
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE

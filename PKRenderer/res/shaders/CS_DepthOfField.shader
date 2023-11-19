@@ -1,5 +1,3 @@
-#extension GL_KHR_shader_subgroup_ballot : enable
-
 #pragma PROGRAM_COMPUTE
 #include includes/PostFXDepthOfField.glsl
 #include includes/Kernels.glsl

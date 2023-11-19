@@ -12,10 +12,7 @@
 
 #pragma PROGRAM_MESH_TASK
 
-bool PK_IS_VISIBLE_MESHLET(const PKMeshlet meshlet)
-{
-    return true;
-}
+// Defined in meshlets glsl
 
 #pragma PROGRAM_MESH_ASSEMBLY
 
@@ -23,7 +20,7 @@ bool PK_IS_VISIBLE_MESHLET(const PKMeshlet meshlet)
 out float3 vs_Normal[];
 #endif
 
-void PK_MESHLET_ASSIGN_VERTEX_OUTPUTS(uint vertexIndex, PKVertex vertex, inout float4 sv_Position)
+void PK_MESHLET_FUNC_VERTEX(uint vertexIndex, PKVertex vertex, inout float4 sv_Position)
 {
     sv_Position = ObjectToClipPos(vertex.position);
 #if defined(PK_META_PASS_GBUFFER)

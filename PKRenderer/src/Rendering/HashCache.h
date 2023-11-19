@@ -94,6 +94,8 @@ namespace PK::Rendering
         DECLARE_HASH(pk_GI_VolumeSwizzle)
         DECLARE_HASH(pk_GI_RayDither)
         DECLARE_HASH(pk_GI_VoxelSize)
+        DECLARE_HASH(pk_GI_VoxelStepSize)
+        DECLARE_HASH(pk_GI_VoxelLevelScale)
         DECLARE_HASH(pk_Reservoirs0)
         DECLARE_HASH(pk_Reservoirs1)
 
@@ -190,12 +192,16 @@ namespace PK::Rendering
         DECLARE_HASH(pk_Meshlet_Vertices)
         DECLARE_HASH(pk_Meshlet_Indices)
 
+        DECLARE_HASH(pk_Gizmos_IndirectVertices)
+        DECLARE_HASH(pk_Gizmos_IndirectArguments)
+
+        DECLARE_HASH(PK_LIGHT_PASS_DIRECTIONAL)
+        DECLARE_HASH(PK_LIGHT_PASS_SPOT)
+        DECLARE_HASH(PK_LIGHT_PASS_POINT)
+
         DECLARE_HASH(PK_INSTANCING_ENABLED)
         DECLARE_HASH(PK_META_PASS_GBUFFER)
         DECLARE_HASH(PK_META_PASS_GIVOXELIZE)
-        DECLARE_HASH(SHADOW_SOURCE_CUBE)
-        DECLARE_HASH(SHADOW_SOURCE_2D)
-        DECLARE_HASH(SHADOW_USE_VSM)
 
         #undef DEFINE_HASH_CACHE
 

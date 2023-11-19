@@ -1,11 +1,14 @@
 #pragma once
 
-// needs to be declared before lighting include.
+// needs to be declared before lighting & meshlets include.
+#define PK_MESHLET_USE_FRUSTUM_CULL 1
+#define PK_MESHLET_USE_FUNC_CULL 1
+#define PK_MESHLET_USE_FUNC_TASKLET 1
+
 #if defined(PK_META_PASS_GIVOXELIZE) 
     #define SHADOW_TEST ShadowTest_PCF2x2
     #define SHADOW_SAMPLE_SCREENSPACE 0
-    #define PK_MESHLET_USE_CONE_CULL 0
-    #define PK_USE_TRIANGLE_EDIT 1
+    #define PK_MESHLET_USE_FUNC_TRIANGLE 1
 #endif
 
 #include Common.glsl
@@ -37,9 +40,7 @@
     #define SURF_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNDCSpace(position)
     #define SURF_EVALUATE_BxDF EvaluateBxDF_DirectMinimal
     #define SURF_EVALUATE_BxDF_INDIRECT GetIndirectLight_VXGI
-    #define SURF_VS_ATTRIB_WORLDPOSITION PK_DECLARE_VS_ATTRIB(float3 vs_WORLDPOSITION);
-    #define SURF_VS_ASSIGN_WORLDPOSITION(index, value) PK_SET_VS_ATTRIB(vs_WORLDPOSITION, index, value);
-    #define SURF_FS_ASSIGN_WORLDPOSITION
+    #define SURF_FS_ASSIGN_WORLDPOSITION vs_WORLDPOSITION = GI_FragVoxelToWorldSpace(gl_FragCoord.xyz);
 #else
     #if defined(PK_META_PASS_GBUFFER)
         #define SURF_DECLARE_RASTER_OUTPUT out float4 SV_Target0; out float SV_Target1;
@@ -53,8 +54,6 @@
     #define SURF_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
     #define SURF_EVALUATE_BxDF EvaluateBxDF_Direct
     #define SURF_EVALUATE_BxDF_INDIRECT GetIndirectLight_Main
-    #define SURF_VS_ATTRIB_WORLDPOSITION float3 vs_WORLDPOSITION;
-    #define SURF_VS_ASSIGN_WORLDPOSITION(index, value)
     #define SURF_FS_ASSIGN_WORLDPOSITION vs_WORLDPOSITION = UVToWorldPos(gl_FragCoord.xy * pk_ScreenParams.zw, ViewDepth(gl_FragCoord.z));
 #endif
 
@@ -89,10 +88,19 @@
 
 #if defined(SHADER_STAGE_MESH_TASK)
 
-bool PK_IS_VISIBLE_MESHLET(const PKMeshlet meshlet)
-{
-    return true;
-}
+    void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
+    {
+        Meshlet_Store_FrustumPlanes(pk_WorldToClip);
+    }
+
+    bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
+    {
+        #if defined(PK_META_PASS_GIVOXELIZE)
+        return true;
+        #else
+        return Meshlet_Cone_Cull(meshlet, pk_ViewWorldOrigin.xyz) && Meshlet_Frustum_Cull(meshlet);
+        #endif
+    }
 
 //// ---------- VERTEX STAGE ---------- ////
 #elif defined(SHADER_STAGE_MESH_ASSEMBLY)
@@ -113,10 +121,9 @@ bool PK_IS_VISIBLE_MESHLET(const PKMeshlet meshlet)
     #endif
 
     SURF_VS_ATTRIB_TANGENT
-    SURF_VS_ATTRIB_WORLDPOSITION
     PK_DECLARE_VS_ATTRIB(float3 vs_NORMAL);
     PK_DECLARE_VS_ATTRIB(float2 vs_TEXCOORD0);
-    void PK_MESHLET_ASSIGN_VERTEX_OUTPUTS(uint vertexIndex, PKVertex vertex, inout float4 sv_Position)
+    void PK_MESHLET_FUNC_VERTEX(uint vertexIndex, PKVertex vertex, inout float4 sv_Position)
     {
         SurfaceVaryings varyings = SurfaceVaryings
         (
@@ -135,13 +142,12 @@ bool PK_IS_VISIBLE_MESHLET(const PKMeshlet meshlet)
         sv_Position = SURF_WORLD_TO_CLIPSPACE(varyings.worldpos);
         vs_NORMAL[vertexIndex] = varyings.normal;
         vs_TEXCOORD0[vertexIndex] = varyings.texcoord;
-        SURF_VS_ASSIGN_WORLDPOSITION(vertexIndex, varyings.worldpos)
         SURF_VS_ASSIGN_TANGENT(vertexIndex, varyings.tangent)
     }
 
     #if defined(PK_META_PASS_GIVOXELIZE)
     // Cull triangles that should be rasterized through another axis
-    void PK_MESHLET_EDIT_TRIANGLE(inout uint3 triangle)
+    void PK_MESHLET_FUNC_TRIANGLE(uint triangleIndex, inout uint3 triangle)
     {
         const float3 a = lds_Positions[triangle.x];
         const float3 b = normalize(lds_Positions[triangle.y] - a);
@@ -269,9 +275,10 @@ bool PK_IS_VISIBLE_MESHLET(const PKMeshlet meshlet)
     float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const float3 clipuvw)
     {
         // Get unquantized clip uvw.
-        float deltaDepth = SampleViewDepth(clipuvw.xy) - ViewDepth(clipuvw.z); 
-        
+        const float deltaDepth = SampleViewDepth(clipuvw.xy) - ViewDepth(clipuvw.z); 
+
         // Fragment is in view
+        [[branch]]
         if (deltaDepth > -0.01f && deltaDepth < 0.1f)
         {
             // Sample screen space SH values for more accurate results.
@@ -279,8 +286,8 @@ bool PK_IS_VISIBLE_MESHLET(const PKMeshlet meshlet)
         }
         else
         {
-            float3 environmentDiffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
-            float4 tracedDiffuse = GI_ConeTrace_Diffuse(worldpos, surf.normal);
+            const float3 environmentDiffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
+            const float4 tracedDiffuse = GI_ConeTrace_Diffuse(worldpos, surf.normal);
             return surf.albedo * (environmentDiffuse * tracedDiffuse.a + tracedDiffuse.rgb);
         }
     }
@@ -288,8 +295,8 @@ bool PK_IS_VISIBLE_MESHLET(const PKMeshlet meshlet)
     // Use these to modify surface values in fragment stage
     void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf);
 
+    float3 vs_WORLDPOSITION;
     SURF_VS_ATTRIB_TANGENT
-    SURF_VS_ATTRIB_WORLDPOSITION
     PK_DECLARE_VS_ATTRIB(float3 vs_NORMAL);
     PK_DECLARE_VS_ATTRIB(float2 vs_TEXCOORD0);
     SURF_DECLARE_RASTER_OUTPUT

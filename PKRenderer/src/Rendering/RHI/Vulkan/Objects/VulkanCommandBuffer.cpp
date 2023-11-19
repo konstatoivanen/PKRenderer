@@ -384,12 +384,6 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         vkCmdFillBuffer(m_commandBuffer, dst->GetNative<VulkanBuffer>()->GetRaw()->buffer, offset, size, value);
     }
 
-    void VulkanCommandBuffer::Clear(Buffer* dst, size_t offset, size_t size, void* data)
-    {
-        EndRenderPass();
-        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdUpdateBuffer(m_commandBuffer, dst->GetNative<VulkanBuffer>()->GetRaw()->buffer, offset, size, data);
-    }
 
     void VulkanCommandBuffer::Clear(Texture* dst, const TextureViewRange& range, const uint4& value)
     {
@@ -404,6 +398,13 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         ResolveBarriers();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
         vkCmdClearColorImage(m_commandBuffer, vktex->GetRaw()->image, handle->image.layout, &clearValue, 1, &handle->image.range);
+    }
+
+    void VulkanCommandBuffer::UpdateBuffer(Buffer* dst, size_t offset, size_t size, void* data)
+    {
+        EndRenderPass();
+        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
+        vkCmdUpdateBuffer(m_commandBuffer, dst->GetNative<VulkanBuffer>()->GetRaw()->buffer, offset, size, data);
     }
 
     void* VulkanCommandBuffer::BeginBufferWrite(Buffer* buffer, size_t offset, size_t size)

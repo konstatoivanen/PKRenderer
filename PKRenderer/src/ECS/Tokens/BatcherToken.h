@@ -20,11 +20,6 @@ namespace PK::ECS::Tokens
                                       uint32_t userdata,
                                       uint16_t sortDepth) = 0;
 
-        virtual bool Render(Rendering::RHI::Objects::CommandBuffer* cmd,
-                            uint32_t group, 
-                            Rendering::RHI::FixedFunctionShaderAttributes* overrideAttributes = nullptr, 
-                            uint32_t requireKeyword = 0u) = 0;
-
         virtual bool RenderMeshlets(Rendering::RHI::Objects::CommandBuffer* cmd,
                                     uint32_t group,
                                     Rendering::RHI::FixedFunctionShaderAttributes* overrideAttributes = nullptr,

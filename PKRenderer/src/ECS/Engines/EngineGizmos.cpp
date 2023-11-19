@@ -28,8 +28,8 @@ namespace PK::ECS::Engines
         m_fixedFunctionAttribs.rasterization.topology = Topology::LineList;
         
         auto hash = HashCache::Get();
-        GraphicsAPI::SetBuffer("pk_Gizmos_IndirectVertices", m_indirectVertexBuffer.get());
-        GraphicsAPI::SetBuffer("pk_Gizmos_IndirectArguments", m_indirectArgsBuffer.get());
+        GraphicsAPI::SetBuffer(hash->pk_Gizmos_IndirectVertices, m_indirectVertexBuffer.get());
+        GraphicsAPI::SetBuffer(hash->pk_Gizmos_IndirectArguments, m_indirectArgsBuffer.get());
     }
 
     void EngineGizmos::Step(Tokens::TokenRenderEvent* token, int condition)
@@ -52,7 +52,7 @@ namespace PK::ECS::Engines
                 }
 
                 uint4 clearValue{ 0u, 1u, 0u, 0u };
-                token->cmd->Clear(m_indirectArgsBuffer.get(), 0u, sizeof(uint4), &clearValue);
+                token->cmd->UpdateBuffer(m_indirectArgsBuffer.get(), 0u, sizeof(uint4), &clearValue);
             }
             return;
             case Tokens::RenderEvent::AfterPostEffects:

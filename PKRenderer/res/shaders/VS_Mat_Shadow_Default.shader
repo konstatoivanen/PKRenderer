@@ -2,43 +2,95 @@
 #ZTest GEqual
 #ZWrite True
 #EnableInstancing
+#DisableFragmentInstancing
 
+#multi_compile PK_LIGHT_PASS_DIRECTIONAL PK_LIGHT_PASS_SPOT PK_LIGHT_PASS_POINT
+
+struct LightPayload
+{
+    float4x4 lightMatrix;
+    float3 lightPosition;
+    float lightRadius;
+    uint layer;
+};
+
+#define PK_MESHLET_USE_FRUSTUM_CULL 1
+#define PK_MESHLET_USE_FUNC_CULL 1
+#define PK_MESHLET_USE_FUNC_TRIANGLE 1
+#define PK_MESHLET_USE_FUNC_TASKLET 1
+#define PK_MESHLET_HAS_EXTRA_PAYLOAD_DATA 1
+#define PK_MESHLET_EXTRA_PAYLOAD_DATA LightPayload
 #include includes/LightResources.glsl
+#include includes/Meshlets.glsl
 
-#pragma PROGRAM_VERTEX
+#pragma PROGRAM_MESH_TASK
+
+void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
+{
+    const uint lightIndex = bitfieldExtract(pk_Instancing_Userdata, 0, 16);
+    const LightPacked light = Lights_LoadPacked(lightIndex);
+    const uint matrixIndex = light.LIGHT_MATRIX;
+    const uint layer = bitfieldExtract(pk_Instancing_Userdata, 16, 16);
+    
+    payload.extra.lightPosition = light.LIGHT_POS;
+    payload.extra.lightRadius = light.LIGHT_RADIUS;
+    payload.extra.layer = layer;
+
+    float4x4 lightMatrix;
+
+    #if defined(PK_LIGHT_PASS_DIRECTIONAL)
+        lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex + layer);
+    #elif defined(PK_LIGHT_PASS_SPOT)
+        lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex);
+    #endif
+
+    payload.extra.lightMatrix = lightMatrix;
+    Meshlet_Store_FrustumPlanes(lightMatrix);
+}
+
+bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
+{
+#if defined(PK_LIGHT_PASS_DIRECTIONAL)
+    return Meshlet_Cone_Cull_Directional(meshlet, payload.extra.lightPosition) && Meshlet_Frustum_Cull(meshlet);
+#else
+    return Meshlet_Cone_Cull(meshlet, payload.extra.lightPosition) && Meshlet_Frustum_Cull(meshlet);
+#endif
+}
+
+#pragma PROGRAM_MESH_ASSEMBLY
 
 // As opposed to default order y axis is flipped here to avoid having to switch winding order for cube depth rendering
 const float3x3 PK_CUBE_FACE_MATRICES[6] =
 {
 	// Right
-	float3x3( 0,  0, -1, 
-			 0,  1,  0,
-			 1,  0,  0), 
+	float3x3(+0,+0,-1, 
+			 +0,+1,+0,
+			 +1,+0,+0), 
 
 	// Left
-	float3x3( 0,  0,  1, 
-			 0,  1,  0,
-			-1,  0,  0), 
+	float3x3(+0,+0,+1, 
+			 +0,+1,+0,
+			 -1,+0,+0), 
 
 	// Down
-	float3x3( 1,  0,  0, 
-			 0,  0,  1,
-			 0, -1,  0), 
+	float3x3(+1,+0,+0, 
+			 +0,+0,+1,
+			 +0,-1,+0), 
 
 	// Up
-	float3x3( 1,  0,  0, 
-			 0,  0, -1,
-			 0,  1,  0), 
+	float3x3(+1,+0,+0, 
+			 +0,+0,-1,
+			 +0,+1,+0), 
 
 	// Front
-	float3x3( 1,  0,  0, 
-			  0,  1,  0,
-			  0,  0,  1), 
+	float3x3(+1,+0,+0, 
+			 +0,+1,+0,
+			 +0,+0,+1), 
 
 	// Back
-	float3x3(-1,  0,  0, 
-			 0,  1,  0,
-			 0,  0, -1), 
+	float3x3(-1,+0,+0, 
+			 +0,+1,+0,
+			 +0,+0,-1), 
 };
 
 float4 GetCubeClipPos(float3 viewvec, float radius, uint faceIndex)
@@ -51,50 +103,32 @@ float4 GetCubeClipPos(float3 viewvec, float radius, uint faceIndex)
     return float4(vpos.xy, m22 * vpos.z + m32, vpos.z);
 }
 
-in float3 in_POSITION;
-out float3 vs_DEPTH;
+out float3 vs_DEPTH[];
 
-void main()
+void PK_MESHLET_FUNC_TRIANGLE(uint triangleIndex, inout uint3 indices)
 {
-    const uint lightIndex = bitfieldExtract(pk_Instancing_Userdata, 0, 16);
-    const uint layer = bitfieldExtract(pk_Instancing_Userdata, 16, 16);
-    const LightPacked light = Lights_LoadPacked(lightIndex);
-    const float3 wpos = ObjectToWorldPos(in_POSITION);
-    const uint matrixIndex = light.LIGHT_MATRIX;
+    gl_MeshPrimitivesEXT[triangleIndex].gl_Layer = int(payload.extra.layer);
+}
 
-    float4 vs_pos = 0.0f.xxxx;
+void PK_MESHLET_FUNC_VERTEX(uint vertexIndex, PKVertex vertex, inout float4 sv_Position)
+{
+    const float3 wpos = ObjectToWorldPos(vertex.position);
+
     float3 vs_depth = 0.0f.xxx;
 
-    [[branch]]
-    switch (light.LIGHT_TYPE)
-    {
-        case LIGHT_TYPE_POINT:
-        {
-            vs_depth = wpos - light.LIGHT_POS;
-            vs_pos = GetCubeClipPos(vs_depth, light.LIGHT_RADIUS, layer % 6);
-        }
-        break;
-        case LIGHT_TYPE_SPOT:
-        {
-            float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex);
-            vs_pos = lightmatrix * float4(wpos, 1.0f);
-            vs_depth.xyz = wpos - light.LIGHT_POS;
-        }
-        break;
-        case LIGHT_TYPE_DIRECTIONAL:
-        {
-            float4x4 lightmatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex + layer);
-            vs_pos = lightmatrix * float4(wpos, 1.0f);
+    #if defined(PK_LIGHT_PASS_DIRECTIONAL)
+        sv_Position = payload.extra.lightMatrix * float4(wpos, 1.0f);
+        // Depth test uses reverse z for precision reasons. revert range for actual distance.
+        vs_depth.x = (1.0f - (sv_Position.z / sv_Position.w)) * payload.extra.lightRadius;
+    #elif defined(PK_LIGHT_PASS_SPOT)
+        sv_Position = payload.extra.lightMatrix * float4(wpos, 1.0f);
+        vs_depth.xyz = wpos - payload.extra.lightPosition;
+    #elif defined(PK_LIGHT_PASS_POINT)
+        vs_depth = wpos - payload.extra.lightPosition;
+        sv_Position = GetCubeClipPos(vs_depth, payload.extra.lightRadius, payload.extra.layer % 6);
+    #endif
 
-            // Depth test uses reverse z for precision reasons. revert range for actual distance.
-            vs_depth.x = (1.0f - (vs_pos.z / vs_pos.w)) * light.LIGHT_RADIUS;
-        }
-        break;
-    }
-
-    gl_Layer = int(layer);
-    gl_Position = vs_pos;
-    vs_DEPTH = vs_depth;
+    vs_DEPTH[vertexIndex] = vs_depth;
 }
 
 #pragma PROGRAM_FRAGMENT

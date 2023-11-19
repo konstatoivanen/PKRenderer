@@ -13,6 +13,7 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 float3 GI_VoxelToWorldSpace(int3 coord) { return coord * pk_GI_VoxelSize + pk_GI_VolumeST.xyz + pk_GI_VoxelSize * 0.5f; }
 int3   GI_WorldToVoxelSpace(float3 worldpos) { return int3((worldpos - pk_GI_VolumeST.xyz) * pk_GI_VolumeST.www); }
 float3 GI_QuantizeWorldToVoxelSpace(float3 worldpos) { return GI_VoxelToWorldSpace(GI_WorldToVoxelSpace(worldpos)); }
+float3 GI_GetVoxelTexelScale() { return pk_GI_VolumeST.www / textureSize(pk_GI_VolumeRead, 0).xyz; }
 float3 GI_WorldToVoxelUVW(float3 worldpos) { return ((worldpos - pk_GI_VolumeST.xyz) * pk_GI_VolumeST.www) / textureSize(pk_GI_VolumeRead, 0).xyz;  }
 float3 GI_WorldToVoxelUVWDiscrete(float3 worldpos) { return (GI_WorldToVoxelSpace(worldpos) + 0.5f.xxx) / textureSize(pk_GI_VolumeRead, 0).xyz;  }
 float3 GI_WorldToVoxelClipSpace(float3 worldpos) { return GI_WorldToVoxelUVW(worldpos) * 2.0f - 1.0f; }
@@ -20,6 +21,15 @@ float4 GI_WorldToVoxelNDCSpace(float3 worldpos)
 { 
     float3 clippos = GI_WorldToVoxelClipSpace(worldpos);
     return float4(clippos[pk_GI_VolumeSwizzle.x], clippos[pk_GI_VolumeSwizzle.y], clippos[pk_GI_VolumeSwizzle.z] * 0.5f + 0.5f, 1);
+}
+float3 GI_FragVoxelToWorldSpace(float3 fragCoord)
+{
+    fragCoord.z *= textureSize(pk_GI_VolumeRead, 0)[pk_GI_VolumeSwizzle.z];
+    float3 coord = fragCoord;
+    coord[pk_GI_VolumeSwizzle.x] = fragCoord.x;
+    coord[pk_GI_VolumeSwizzle.y] = fragCoord.y;
+    coord[pk_GI_VolumeSwizzle.z] = fragCoord.z;
+    return coord * pk_GI_VoxelSize + pk_GI_VolumeST.xyz;
 }
 
 //----------LOAD/STORE FUNCTIONS----------//
@@ -59,52 +69,41 @@ half4 GI_SphereTrace_Diffuse(float3 position)
     return half4(C.rgb, AO);
 }
 
-half4 GI_ConeTrace_Diffuse(const float3 O, const float3 N) 
+half4 GI_ConeTrace_Diffuse(const float3 origin, const float3 normal) 
 {
-    const float angle = PK_PI / 3.0f;
-    const float levelscale = 2.0f * tan(angle / 2.0f) / pk_GI_VoxelSize;
-    const float correctionAngle = tan(angle / 8.0f);
-    const float S = (1.0f + correctionAngle) / (1.0f - correctionAngle) * pk_GI_VoxelSize / 2.0f;
+    const float3x3 basis = make_TBN(normal);
 
-    const half3 directions[6] =
-    {
-        half3( 0.0hf,        0.0hf,       1.0hf), 
-        half3( 0.7071hf,     0.0hf,       0.7071hf),
-        half3( 0.2184939hf,  0.6724521hf, 0.7071hf),
-        half3(-0.5720439hf,  0.4157748hf, 0.7071hf),
-        half3( 0.5720439hf,  0.4157748hf, 0.7071hf),
-        half3(-0.2184939hf,  0.6724521hf, 0.7071hf)
-    };
-    
-    float3x3 TBN = make_TBN(N);
-    
-    half4 A = 0.0hf.xxxx;
+    half4 accumulation = 0.0hf.xxxx;
 
-    [[unroll]]
+    [[loop]]
     for (uint i = 0u; i < 6; ++i)
     {
-        const float3 D = TBN * directions[i];
+        const float isLast = step(5.0f, i);
+        const float f = (i / 5.0f) * PK_TWO_PI;
+        const float3 direction = basis * normalize(float3(sin(f) * isLast, cos(f) * isLast, 1.0f));
         
-        half4 C = 0.0hf.xxxx;
-        half AO = 1.0hf;
-        half DI = half(S);
+        half4 value = 0.0hf.xxxx;
+        half occlusion = 1.0hf;
+        half t = half(pk_GI_VoxelStepSize) * 2.0hf; // Skip first texel of mip 1
 
-        [[unroll]]
+        [[loop]]
         for (uint j = 0u; j < 11u; ++j)
         {
-            half level = max(1.0hf, log2(half(levelscale) * DI));
-            half4 V = half4(GI_Load_Voxel(O + D * DI, level));
-            C += (1.0hf - C.a) * V;
-            DI += half(S) * level;
-            AO *= max(0.0hf, 1.0hf - V.a * (1.0hf + level * 0.5hf));
+            half level = max(1.0hf, log2(half(pk_GI_VoxelLevelScale) * t));
+            half4 voxel = half4(GI_Load_Voxel(origin + direction * t, level));
+
+            value += (1.0hf - value.a) * voxel;
+            occlusion *= max(0.0hf, 1.0hf - voxel.a * (1.0hf + level * 0.5hf));
+            t += half(pk_GI_VoxelStepSize) * level;
         }
 
-        C.a = AO;
-        A += C * half(dot(N, D));
+        value.a = occlusion;
+        // cosine distribution. no need to multiply half(lerp(PK_INV_SQRT2, 1.0f, isLast));
+        accumulation += value;
     }
  
     // Ground Occlusion
-    A.a *= clamp(half(N.y) + 1.0hf, 0.0hf, 1.0hf);
+    accumulation.a *= clamp(half(normal.y) + 1.0hf, 0.0hf, 1.0hf);
 
-    return A / 6.0hf;
+    return accumulation / 6.0hf;
 }

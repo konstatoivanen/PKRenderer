@@ -1,4 +1,3 @@
-#extension GL_KHR_shader_subgroup_ballot : enable
 #pragma PROGRAM_COMPUTE
 #include includes/VolumeFog.glsl
 #include includes/Encoding.glsl

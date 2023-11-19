@@ -51,9 +51,10 @@ namespace PK::Rendering::RHI::Objects
         virtual void Blit(Texture* src, Texture* dst, const TextureViewRange& srcRange, const TextureViewRange& dstRange, FilterMode filter) = 0;
 
         virtual void Clear(Buffer* dst, size_t offset, size_t size, uint32_t value) = 0;
-        virtual void Clear(Buffer* dst, size_t offset, size_t size, void* data) = 0;
         virtual void Clear(Texture* dst, const TextureViewRange& range, const Math::uint4& value) = 0;
         
+        // For small (usually ubo updates)
+        virtual void UpdateBuffer(Buffer* dst, size_t offset, size_t size, void* data) = 0;
         virtual void* BeginBufferWrite(Buffer* buffer, size_t offset, size_t size) = 0;
         virtual void EndBufferWrite(Buffer* buffer) = 0;
 

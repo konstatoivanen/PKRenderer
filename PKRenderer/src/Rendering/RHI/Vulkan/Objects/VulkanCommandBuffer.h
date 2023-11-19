@@ -66,9 +66,9 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         void Blit(const VulkanBindHandle* src, const VulkanBindHandle* dst, const VkImageBlit& blitRegion, FilterMode filter);
 
         void Clear(Buffer* dst, size_t offset, size_t size, uint32_t value) final;
-        void Clear(Buffer* dst, size_t offset, size_t size, void* data) final;
         void Clear(Texture* dst, const TextureViewRange& range, const uint4& value) final;
 
+        void UpdateBuffer(Buffer* dst, size_t offset, size_t size, void* data) final;
         void* BeginBufferWrite(Buffer* buffer, size_t offset, size_t size) final;
         void EndBufferWrite(Buffer* buffer) final;
 

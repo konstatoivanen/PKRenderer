@@ -81,11 +81,6 @@ namespace PK::Rendering
                                   uint32_t userdata,
                                   uint16_t sortDepth) final;
 
-            bool Render(RHI::Objects::CommandBuffer* cmd, 
-                        uint32_t group, 
-                        RHI::FixedFunctionShaderAttributes* overrideAttributes = nullptr, 
-                        uint32_t requireKeyword = 0u) final;
-
             bool RenderMeshlets(RHI::Objects::CommandBuffer* cmd, uint32_t group,
                                 RHI::FixedFunctionShaderAttributes* overrideAttributes = nullptr,
                                 uint32_t requireKeyword = 0u) final;
@@ -93,24 +88,19 @@ namespace PK::Rendering
         private:
             void UploadTransforms(RHI::Objects::CommandBuffer* cmd);
             void UploadMaterials(RHI::Objects::CommandBuffer* cmd);
-            void UploadDrawIndices(RHI::Objects::CommandBuffer* cmd, uint32_t* outIndirectCount);
-            void UploadDrawArguments(RHI::Objects::CommandBuffer* cmd, uint32_t indirectCount);
+            void UploadDrawIndices(RHI::Objects::CommandBuffer* cmd);
 
             Utilities::Scope<Rendering::Objects::StaticSceneMesh> m_staticGeometry;
 
             RHI::Objects::BufferRef m_matrices;
             RHI::Objects::BufferRef m_indices;
             RHI::Objects::BufferRef m_properties;
-            RHI::Objects::BufferRef m_indirectArguments;
             RHI::Objects::BufferRef m_tasklets;
             Rendering::Objects::BindSet<RHI::Objects::Texture> m_textures2D;
 
-            std::vector<DrawCall> m_drawCalls;
             std::vector<DrawInfo> m_drawInfos;
+            std::vector<DrawCall> m_drawCalls;
             std::vector<RHI::IndexRange> m_passGroups;
-
-            std::vector<DrawCall> m_meshletDrawCalls;
-            std::vector<RHI::IndexRange> m_meshletPassGroups;
 
             Utilities::FixedList<MaterialGroup, 32> m_materials;
             Utilities::IndexedSet<RHI::Objects::Shader> m_shaders;

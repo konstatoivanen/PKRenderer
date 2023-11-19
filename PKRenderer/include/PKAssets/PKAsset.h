@@ -261,6 +261,7 @@ namespace PK::Assets
     namespace Shader
     {
         constexpr const static char* PK_SHADER_ATTRIB_LOGVERBOSE = "#LogVerbose";
+        constexpr const static char* PK_SHADER_ATTRIB_GENERATEDEBUGINFO = "#GenerateDebugInfo";
         constexpr const static char* PK_SHADER_ATTRIB_ZWRITE = "#ZWrite ";
         constexpr const static char* PK_SHADER_ATTRIB_ZTEST = "#ZTest ";
         constexpr const static char* PK_SHADER_ATTRIB_BLENDCOLOR = "#BlendColor ";
@@ -272,6 +273,7 @@ namespace PK::Assets
         constexpr const static char* PK_SHADER_ATTRIB_MULTI_COMPILE = "#multi_compile ";
         constexpr const static char* PK_SHADER_ATTRIB_MATERIAL_PROP = "#MaterialProperty ";
         constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_PROP = "#EnableInstancing";
+        constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_NOFRAG_PROP = "#DisableFragmentInstancing";
         constexpr const static char* PK_SHADER_ATTRIB_ATOMICCOUNTER = "#WithAtomicCounter";
 
         constexpr const static char* PK_SHADER_INSTANCING_TRANSFORMS = "pk_Instancing_Transforms";

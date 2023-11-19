@@ -55,21 +55,10 @@ namespace PK::Rendering
             },
             4096, BufferUsage::PersistentStorage, "Batching.MaterialProperties");
 
-        m_indirectArguments = Buffer::Create(
-            {
-                { ElementType::Uint, "indexCount"},
-                { ElementType::Uint, "instanceCount"},
-                { ElementType::Uint, "firstIndex"},
-                { ElementType::Int,  "vertexOffset"},
-                { ElementType::Uint, "firstInstance"}
-            },
-            256, BufferUsage::PersistentStorage | BufferUsage::Indirect, "Batching.IndirectDrawArguments");
-
-        m_drawCalls.reserve(512);
-        m_meshletDrawCalls.reserve(512);
-        m_passGroups.reserve(512);
-
         m_tasklets = Buffer::Create(ElementType::Uint2, 4096u, BufferUsage::PersistentStorage, "Batching.Meshlet.Tasklets");
+        
+        m_drawCalls.reserve(512);
+        m_passGroups.reserve(512);
     }
 
     void StaticDrawBatcher::BeginCollectDrawCalls()
@@ -86,9 +75,6 @@ namespace PK::Rendering
         m_drawInfos.clear();
         m_passGroups.clear();
         m_drawCalls.clear();
-
-        m_meshletPassGroups.clear();
-        m_meshletDrawCalls.clear();
     }
 
     void StaticDrawBatcher::UploadTransforms(CommandBuffer* cmd)
@@ -142,10 +128,8 @@ namespace PK::Rendering
         }
     }
 
-    void StaticDrawBatcher::UploadDrawIndices(CommandBuffer* cmd, uint32_t* outIndirectCount)
+    void StaticDrawBatcher::UploadDrawIndices(CommandBuffer* cmd)
     {
-        *outIndirectCount = 1u;
-
         m_indices->Validate(m_drawInfos.capacity());
         m_tasklets->Validate(m_taskletCount);
         auto taskletView = cmd->BeginBufferWrite<uint2>(m_tasklets.get(), 0u, m_taskletCount);
@@ -169,14 +153,14 @@ namespace PK::Rendering
             {
                 if (info->group != current.group || info->shader != current.shader)
                 {
-                    m_meshletDrawCalls.push_back({ m_shaders[current.shader], { taskletDrawStart, taskletCount - taskletDrawStart } });
+                    m_drawCalls.push_back({ m_shaders[current.shader], { taskletDrawStart, taskletCount - taskletDrawStart } });
                     taskletDrawStart = taskletCount;
                 }
 
                 if (info->group != current.group)
                 {
-                    auto drawCount = m_meshletDrawCalls.size();
-                    m_meshletPassGroups.push_back({ taskletPassStart, drawCount - taskletPassStart });
+                    auto drawCount = m_drawCalls.size();
+                    m_passGroups.push_back({ taskletPassStart, drawCount - taskletPassStart });
                     taskletPassStart = (uint32_t)drawCount;
                 }
 
@@ -197,74 +181,14 @@ namespace PK::Rendering
             if (!DrawInfo::IsBatchable(*info, current))
             {
                 current = *info;
-                ++(*outIndirectCount);
             }
         }
 
-        m_meshletPassGroups.push_back({ taskletPassStart, m_meshletDrawCalls.size() - taskletPassStart });
-        m_meshletDrawCalls.push_back({ m_shaders[current.shader], { taskletDrawStart, taskletCount - taskletDrawStart} });
+        m_drawCalls.push_back({ m_shaders[current.shader], { taskletDrawStart, taskletCount - taskletDrawStart} });
+        m_passGroups.push_back({ taskletPassStart, m_drawCalls.size() - taskletPassStart });
 
         cmd->EndBufferWrite(m_indices.get());
         cmd->EndBufferWrite(m_tasklets.get());
-    }
-
-    void StaticDrawBatcher::UploadDrawArguments(CommandBuffer* cmd, uint32_t indirectCount)
-    {
-        m_indirectArguments->Validate(indirectCount);
-        auto indirectView = cmd->BeginBufferWrite<DrawIndexedIndirectCommand>(m_indirectArguments.get(), 0u, indirectCount);
-
-        auto indirectIndex = 0u;
-        auto pbase = 0ull;
-        auto dbase = 0ull;
-        auto ibase = 0ull;
-        auto current = m_drawInfos[0];
-
-        for (auto i = 0u; i < m_drawInfos.size(); ++i)
-        {
-            const auto info = m_drawInfos.data() + i;
-
-            if (DrawInfo::IsBatchable(*info, current))
-            {
-                continue;
-            }
-
-            const auto& sm = m_staticGeometry->GetSubmesh(current.submesh);
-            auto indirect = &indirectView[indirectIndex++];
-            indirect->indexCount = sm->indexCount;
-            indirect->instanceCount = i - (uint32_t)dbase;
-            indirect->firstIndex = sm->indexFirst;
-            indirect->vertexOffset = sm->vertexFirst;
-            indirect->firstInstance = (uint32_t)dbase;
-            current.submesh = info->submesh;
-            dbase = i;
-
-            if (info->group == current.group && info->shader == current.shader)
-            {
-                continue;
-            }
-
-            m_drawCalls.push_back({ m_shaders[current.shader], { ibase, indirectIndex - ibase } });
-
-            if (info->group != current.group)
-            {
-                m_passGroups.push_back({ pbase, m_drawCalls.size() - pbase });
-                pbase = m_drawCalls.size();
-            }
-
-            ibase = indirectIndex;
-            current = *info;
-        }
-
-        const auto& lastsm = m_staticGeometry->GetSubmesh(current.submesh);
-        indirectView[indirectIndex].indexCount = lastsm->indexCount;
-        indirectView[indirectIndex].instanceCount = (uint32_t)m_drawInfos.size() - (uint32_t)dbase;
-        indirectView[indirectIndex].firstIndex = lastsm->indexFirst;
-        indirectView[indirectIndex].vertexOffset = lastsm->vertexFirst;
-        indirectView[indirectIndex++].firstInstance = (uint32_t)dbase;
-        m_drawCalls.push_back({ m_shaders[current.shader], { ibase, indirectIndex - ibase } });
-        m_passGroups.push_back({ pbase, m_drawCalls.size() - pbase });
-
-        cmd->EndBufferWrite(m_indirectArguments.get());
     }
 
     void StaticDrawBatcher::EndCollectDrawCalls(CommandBuffer* cmd)
@@ -280,8 +204,7 @@ namespace PK::Rendering
 
         UploadTransforms(cmd);
         UploadMaterials(cmd);
-        UploadDrawIndices(cmd, &indirectCount);
-        UploadDrawArguments(cmd, indirectCount);
+        UploadDrawIndices(cmd);
 
         auto hash = HashCache::Get();
         GraphicsAPI::SetBuffer(hash->pk_Meshlet_Tasklets, m_tasklets.get());
@@ -321,11 +244,11 @@ namespace PK::Rendering
         m_taskletCount += (meshletCount + PK_MAX_MESHLETS_PER_TASK - 1u) / PK_MAX_MESHLETS_PER_TASK;
     }
 
-    bool StaticDrawBatcher::Render(CommandBuffer* cmd, uint32_t group, FixedFunctionShaderAttributes* overrideAttributes, uint32_t requireKeyword)
+    bool StaticDrawBatcher::RenderMeshlets(CommandBuffer* cmd, uint32_t group, FixedFunctionShaderAttributes* overrideAttributes, uint32_t requireKeyword)
     {
         if (group >= m_passGroups.size())
         {
-            return false;
+            return true;
         }
 
         if (requireKeyword > 0u)
@@ -337,61 +260,10 @@ namespace PK::Rendering
         auto& passGroup = m_passGroups.at(group);
         auto start = passGroup.offset;
         auto end = passGroup.offset + passGroup.count;
-        auto stride = sizeof(DrawIndexedIndirectCommand);
-        
-        const Buffer* vertexBuffers[2] =
-        {
-            m_staticGeometry->GetPositionBuffer(),
-            m_staticGeometry->GetAttributeBuffer()
-        };
 
         for (auto i = start; i < end; ++i)
         {
             auto& dc = m_drawCalls.at(i);
-            auto shader = dc.shader;
-
-            if (requireKeyword > 0u && !shader->SupportsKeyword(requireKeyword))
-            {
-                continue;
-            }
-
-            auto offset = dc.indices.offset * stride;
-   
-            cmd->SetShader(shader);
-            cmd->SetFixedStateAttributes(overrideAttributes);
-            cmd->SetVertexBuffers(vertexBuffers, 2u);
-            cmd->SetIndexBuffer(m_staticGeometry->GetIndexBuffer(), 0);
-            cmd->DrawIndexedIndirect(m_indirectArguments.get(), offset, (uint32_t)dc.indices.count, (uint32_t)stride);
-        }
-
-        if (requireKeyword > 0u)
-        {
-            GraphicsAPI::SetKeyword(requireKeyword, false);
-        }
-
-        return true;
-    }
-
-    bool StaticDrawBatcher::RenderMeshlets(CommandBuffer* cmd, uint32_t group, FixedFunctionShaderAttributes* overrideAttributes, uint32_t requireKeyword)
-    {
-        if (group >= m_meshletPassGroups.size())
-        {
-            return true;
-        }
-
-        if (requireKeyword > 0u)
-        {
-            GraphicsAPI::SetKeyword(requireKeyword, true);
-        }
-
-        auto hash = HashCache::Get();
-        auto& passGroup = m_meshletPassGroups.at(group);
-        auto start = passGroup.offset;
-        auto end = passGroup.offset + passGroup.count;
-
-        for (auto i = start; i < end; ++i)
-        {
-            auto& dc = m_meshletDrawCalls.at(i);
             auto shader = dc.shader;
 
             if (requireKeyword == 0u || shader->SupportsKeyword(requireKeyword))

@@ -180,13 +180,21 @@ namespace PK::Rendering::Passes
         auto hash = HashCache::Get();
         auto atlasIndex = 0u;
 
+        uint32_t passKeywords[(uint32_t)LightType::TypeCount]
+        {
+            hash->PK_LIGHT_PASS_DIRECTIONAL,
+            hash->PK_LIGHT_PASS_SPOT,
+            hash->PK_LIGHT_PASS_POINT,
+        };
+
         for (const auto& batch : m_shadowBatches)
         {
             auto& shadow = m_shadowTypeData[(int)batch.type];
             auto tileCount = shadow.TileCount * batch.count;
+            auto keyword = passKeywords[(uint32_t)batch.type];
 
             cmd->BeginDebugScope("ShadowBatch", PK_COLOR_RED);
-            
+
             auto range0 = TextureViewRange(0, 0, 0, shadow.LayerStride * batch.count);
             auto range1 = TextureViewRange(0u, atlasIndex, 1u, tileCount);
 
@@ -195,7 +203,7 @@ namespace PK::Rendering::Passes
                 cmd->SetRenderTarget({ m_depthTargetCube.get(), m_shadowTargetCube.get() }, { range0, range0 }, true);
                 cmd->ClearDepth(0.0f, 0u);
                 cmd->ClearColor(color(batch.maxDepthRange), 0u);
-                m_batcher->Render(cmd, batch.batchGroup);
+                m_batcher->RenderMeshlets(cmd, batch.batchGroup, nullptr, keyword);
                 GraphicsAPI::SetTexture(hash->pk_Texture, m_shadowTargetCube.get());
                 GraphicsAPI::SetImage(hash->pk_Image, m_shadowmaps.get(), range1);
                 cmd->DispatchWithCounter(m_computeCopyCubeShadow, 0, { m_shadowmaps->GetResolution().xy, tileCount });
@@ -205,7 +213,7 @@ namespace PK::Rendering::Passes
                 cmd->SetRenderTarget({ m_depthTarget2D.get(), m_shadowmaps.get() }, { range0, range1 }, true);
                 cmd->ClearColor(color(batch.maxDepthRange), 0u);
                 cmd->ClearDepth(0.0f, 0u);
-                m_batcher->Render(cmd, batch.batchGroup);
+                m_batcher->RenderMeshlets(cmd, batch.batchGroup, nullptr, keyword);
             }
 
             cmd->EndDebugScope();

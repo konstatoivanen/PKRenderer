@@ -103,10 +103,20 @@ namespace PK::Rendering::Passes
             { ElementType::Uint4, hash->pk_GI_VolumeSwizzle },
             { ElementType::Uint2, hash->pk_GI_RayDither },
             { ElementType::Float, hash->pk_GI_VoxelSize },
+            { ElementType::Float, hash->pk_GI_VoxelStepSize },
+            { ElementType::Float, hash->pk_GI_VoxelLevelScale },
         }), "GI.Parameters");
 
-        m_parameters->Set<float4>(hash->pk_GI_VolumeST, float4(-76.8f, -6.0f, -76.8f, 1.0f / 0.6f));
-        m_parameters->Set<float>(hash->pk_GI_VoxelSize, 0.6f);
+        const auto voxelSize = 0.6f;
+        const auto angle = Math::PK_FLOAT_PI / 3.0f;
+        const auto levelscale = 2.0f * tan(angle / 2.0f) / voxelSize;
+        const auto correctionAngle = tan(angle / 8.0f);
+        const auto stepSize = (1.0f + correctionAngle) / (1.0f - correctionAngle) * voxelSize / 2.0f;
+
+        m_parameters->Set<float4>(hash->pk_GI_VolumeST, float4(-76.8f, -6.0f, -76.8f, 1.0f / voxelSize));
+        m_parameters->Set<float>(hash->pk_GI_VoxelSize, voxelSize);
+        m_parameters->Set<float>(hash->pk_GI_VoxelStepSize, stepSize);
+        m_parameters->Set<float>(hash->pk_GI_VoxelLevelScale, levelscale);
 
         GraphicsAPI::SetBuffer(hash->pk_GI_Parameters, m_parameters->GetBuffer());
         GraphicsAPI::SetImage(hash->pk_GI_VolumeMaskWrite, m_voxelMask.get());

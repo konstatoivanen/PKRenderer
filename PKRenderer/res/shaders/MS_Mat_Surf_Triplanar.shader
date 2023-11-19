@@ -33,5 +33,5 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
     surf.sheenTint = 0.0f;
     surf.clearCoat = 0.5f.xxx;
     surf.clearCoatGloss = 0.0f;
-    surf.depthBias = 0.0f;
+//    surf.depthBias = dot(float3(SURF_MESH_NORMAL), surf.normal) * 0.04f;
 }

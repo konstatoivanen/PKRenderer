@@ -17,6 +17,8 @@ PK_DECLARE_CBUFFER(pk_GI_Parameters, PK_SET_SHADER)
     uint4 pk_GI_VolumeSwizzle;
     uint2 pk_GI_RayDither;
     float pk_GI_VoxelSize; 
+    float pk_GI_VoxelStepSize;
+    float pk_GI_VoxelLevelScale;
 };
 
 layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedDiff;
