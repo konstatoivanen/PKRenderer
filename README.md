@@ -90,17 +90,31 @@ However, this is ultimately a hobby project & thus likely to remain perpetually 
 </details>
 
 <details>
+  <summary>Meshlet Rendering</summary>
+  
+  - 16 byte vertex packing.
+    - unorm 16 xyz vertex position relative to submesh aabb.
+    - r4g4b4 color
+    - tangent sign 1 bit
+    - half2 texcoord
+    - 10r10b10g2a quaternion.
+  - task shader cone culling.
+  - task shader frustum culling.
+  - global virtual buffers for all geometry resources.
+  - dynamically batched draw calls.
+  - material batching.
+    - all material properties in a single buffer.
+    - shader specific property layout & offset to property buffer.
+
+</details>
+
+<details>
   <summary>Architecture</summary>
 
   - Vulkan 1.3 rendering backend.
   - Async compute & transfer queues.
   - Multiple buffering.
   - Automatic resource barrier management.
-  - Geometry Rendering
-    - Meshlet rendering.
-    - GPU meshlet culling.
-    - Virtualized geometry buffers.
-    - Material batching.
   - Entity component system.
   - Custom compressed mesh & shader formats.
   - Asset hot reloading
@@ -111,11 +125,11 @@ However, this is ultimately a hobby project & thus likely to remain perpetually 
 <details>
   <summary>Planned</summary>
 
+- geometry lods.
 - skinned geometry.
 - GPU culling.
 - SH probe based world space radiance cache.
 - GPU particle engine.
-- Debug visualization utilities.
 - DX12 backend (unlikely... cant do async ray trace afaik).
 - Serialized scene representation.
   
