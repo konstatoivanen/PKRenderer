@@ -70,7 +70,7 @@ namespace PK::ECS::Engines
                 Functions::RandomRangeFloat3(minpos, maxpos) + PK_FLOAT3_UP,
                 i % 2 == 0 ? LightType::Spot : LightType::Point,
                 Cookie::Circle0,
-                Functions::HueToRGB(Functions::RandomRangeFloat(0.0f, 1.0f)) * Functions::RandomRangeFloat(2.0f, 7.0f),
+                Functions::HueToRGB(Functions::RandomRangeFloat(0.0f, 1.0f)) * Functions::RandomRangeFloat(4.0f, 32.0f),
                 true);
         }
 

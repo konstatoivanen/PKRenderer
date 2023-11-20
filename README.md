@@ -23,6 +23,8 @@ However, this is ultimately a hobby project & thus likely to remain perpetually 
   <img src="T_Preview_04.jpg" height="216" width="384">
   <img src="T_Preview_05.jpg" height="216" width="384">
   <img src="T_Preview_06.jpg" height="216" width="384">
+  <img src="T_Preview_07.jpg" height="216" width="384">
+  <img src="T_Preview_08.jpg" height="216" width="384">
 </p>
 
 --- 
@@ -94,8 +96,11 @@ However, this is ultimately a hobby project & thus likely to remain perpetually 
   - Async compute & transfer queues.
   - Multiple buffering.
   - Automatic resource barrier management.
-  - Dynamic scene material batching & instanced rendering.
-  - Virtualized mesh geometry buffers.
+  - Geometry Rendering
+    - Meshlet rendering.
+    - GPU meshlet culling.
+    - Virtualized geometry buffers.
+    - Material batching.
   - Entity component system.
   - Custom compressed mesh & shader formats.
   - Asset hot reloading
@@ -126,6 +131,7 @@ However, this is ultimately a hobby project & thus likely to remain perpetually 
 
 ```
 Vulkan Version 1.3
+SPRIV Version 1.6
 
 GLSL Extensions:
 - GL_EXT_shader_explicit_arithmetic_types
@@ -139,6 +145,7 @@ GLSL Extensions:
 - GL_KHR_shader_subgroup_shuffle
 - GL_KHR_shader_subgroup_vote
 - GL_EXT_ray_tracing_position_fetch
+- GL_EXT_mesh_shader
 
 Validation layers:
 - VK_LAYER_KHRONOS_validation
@@ -157,6 +164,8 @@ Device Extensions:
 - VK_KHR_ray_query
 - VK_EXT_conservative_rasterization
 - VK_KHR_ray_tracing_position_fetch
+- VK_EXT_mesh_shader
+- VK_KHR_fragment_shading_rate
 
 Physical Device Requirements:
 - alphaToOne
@@ -194,6 +203,11 @@ Physical Device Requirements:
 - rayQuery
 - maintenance4
 - rayTracingPositionFetch
+- taskShader
+- meshShader
+- multiviewMeshShader
+- primitiveFragmentShadingRateMeshShader
+- pipelineFragmentShadingRate
 ```
 
 </details>
@@ -233,3 +247,5 @@ Build using MSBuild CLI:
 `msbuild.exe PKRenderer.sln /property:Configuration=Debug` or
 
 through Visual Studio (you know how that goes).
+
+Transfer to a more portable build system is planned but has a very low priority.

@@ -200,17 +200,23 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
     
     void Meshlet_Store_FrustumPlanes(const float4x4 m)
     {
-        float4 planeL = float4(m[0][3] + m[0][0], m[1][3] + m[1][0], m[2][3] + m[2][0], m[3][3] + m[3][0]);
+        const float4 c0 = m[0];
+        const float4 c1 = m[1];
+        const float4 c2 = m[2];
+        const float4 c3 = m[3];
+
+        float4 planeL = float4(c0.w + c0.x, c1.w + c1.x, c2.w + c2.x, c3.w + c3.x);
         lds_ClipPlanes[0] = planeL / length(planeL.xyz);
-        float4 planeR = float4(m[0][3] - m[0][0], m[1][3] - m[1][0], m[2][3] - m[2][0], m[3][3] - m[3][0]);
+        float4 planeR = float4(c0.w - c0.x, c1.w - c1.x, c2.w - c2.x, c3.w - c3.x);
         lds_ClipPlanes[1] = planeR / length(planeR.xyz);
-        float4 planeT = float4(m[0][3] - m[0][1], m[1][3] - m[1][1], m[2][3] - m[2][1], m[3][3] - m[3][1]);
+        float4 planeT = float4(c0.w - c0.y, c1.w - c1.y, c2.w - c2.y, c3.w - c3.y);
         lds_ClipPlanes[2] = planeT / length(planeT.xyz);
-        float4 planeB = float4(m[0][3] + m[0][1], m[1][3] + m[1][1], m[2][3] + m[2][1], m[3][3] + m[3][1]);
+        float4 planeB = float4(c0.w + c0.y, c1.w + c1.y, c2.w + c2.y, c3.w + c3.y);
         lds_ClipPlanes[3] = planeB / length(planeB.xyz);
-        //float4 planeN = float4(m[0][2], m[1][2], m[2][2], m[3][2]);
+        
+        //float4 planeN = float4(c0.z, c1.z, c2.z, c3.z);
         //lds_ClipPlanes[4] = planeN / length(planeN.xyz);
-        //float4 planeF = float4(m[0][3] - m[0][2], m[1][3] - m[1][2], m[2][3] - m[2][2], m[3][3] - m[3][2]);
+        //float4 planeF = float4(c0.w - c0.z, c1.w - c1.z, c2.w - c2.z, c3.w - c3.z);
         //lds_ClipPlanes[5] = planeF / length(planeF.xyz);
     }
     

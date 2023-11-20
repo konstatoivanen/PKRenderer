@@ -136,6 +136,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
     float wSum = 1.0f;                                                                                          \
     uint i = lerp(0u, 0xFFFFu, SF_SKIP);                                                                        \
                                                                                                                 \
+    [[loop]]                                                                                                    \
     for (; i < 32u; i += SF_STEP)                                                                               \
     {                                                                                                           \
         const float3 s_offs = PK_POISSON_DISK_32_POW[i];                                                        \
@@ -172,6 +173,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
     float wSum = 1.0f;                                                                                                          \
     uint i = lerp(0u, 0xFFFFu, SF_SKIP);                                                                                        \
                                                                                                                                 \
+    [[loop]]                                                                                                                    \
     for (; i < 32u; i += SF_STEP)                                                                                               \
     {                                                                                                                           \
         const float3 s_offs = PK_POISSON_DISK_32_POW[i];                                                                        \

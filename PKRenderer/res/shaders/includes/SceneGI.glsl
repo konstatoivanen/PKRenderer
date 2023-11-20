@@ -26,7 +26,7 @@ layout(rg32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedSpec;
 layout(r32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_ResolvedWrite;
 PK_DECLARE_SET_SHADER uniform texture2DArray pk_GI_ResolvedRead;
 
-#define PK_GI_APPROX_ROUGH_SPEC 1
+#define PK_GI_APPROX_ROUGH_SPEC 0
 // Should surface shading approximate sheen & clear coat from diffuse sh
 #define PK_GI_APPROX_ROUGH_SPEC_EXTRA 1
 #define PK_GI_USE_BIASED_DEPTH 1

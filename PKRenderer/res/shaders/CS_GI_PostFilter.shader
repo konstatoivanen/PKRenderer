@@ -1,6 +1,5 @@
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 #extension GL_KHR_shader_subgroup_shuffle : enable
-
 #pragma PROGRAM_COMPUTE
 
 #multi_compile _ PK_GI_CHECKERBOARD_TRACE

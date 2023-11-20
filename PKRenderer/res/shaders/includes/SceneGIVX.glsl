@@ -86,7 +86,7 @@ half4 GI_ConeTrace_Diffuse(const float3 origin, const float3 normal)
         half occlusion = 1.0hf;
         half t = half(pk_GI_VoxelStepSize) * 2.0hf; // Skip first texel of mip 1
 
-        [[loop]]
+        [[unroll]]
         for (uint j = 0u; j < 11u; ++j)
         {
             half level = max(1.0hf, log2(half(pk_GI_VoxelLevelScale) * t));
