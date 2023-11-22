@@ -275,10 +275,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
     #if PK_MESHLET_USE_FUNC_CULL == 1
     bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet);
     #else
-    bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
-    {
-        return Meshlet_Cone_Cull(meshlet, pk_ViewWorldOrigin.xyz);
-    }
+    bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet) {}
     #endif
 
     PK_DECLARE_LOCAL_CBUFFER(pk_Meshlet_DispatchOffset)
@@ -291,12 +288,12 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
     layout(local_size_x = MAX_MESHLETS_PER_TASK) in;
     void main()
     {
-        const uint taskId = firstTasklet + gl_WorkGroupID.x;
         uint meshletCount;
         
         [[branch]]
         if (subgroupElect())
         {
+            const uint taskId = firstTasklet + gl_WorkGroupID.x;
             const PKTasklet tasklet = Meshlet_Load_Tasklet(taskId);
             PK_INSTANCING_ASSIGN_LOCALS(tasklet.instanceId);
             const PKSubmesh submesh = Meshlet_Load_Submesh(pk_Instancing_Submesh);

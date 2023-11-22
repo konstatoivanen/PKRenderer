@@ -300,6 +300,7 @@
     PK_DECLARE_VS_ATTRIB(float3 vs_NORMAL);
     PK_DECLARE_VS_ATTRIB(float2 vs_TEXCOORD0);
     SURF_DECLARE_RASTER_OUTPUT
+    layout(early_fragment_tests) in;
     void main()
     {
         SURF_FS_ASSIGN_WORLDPOSITION

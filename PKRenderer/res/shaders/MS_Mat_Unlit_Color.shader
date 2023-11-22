@@ -1,5 +1,5 @@
 #Cull Back
-#ZTest LEqual
+#ZTest GEqual
 #ZWrite Off
 
 #MaterialProperty float4 _Color
@@ -7,12 +7,16 @@
 
 #multi_compile _ PK_META_PASS_GBUFFER PK_META_PASS_GIVOXELIZE
 
+#define PK_MESHLET_USE_FUNC_CULL 1
 #include includes/GBuffers.glsl
 #include includes/Meshlets.glsl
 
 #pragma PROGRAM_MESH_TASK
 
-// Defined in meshlets glsl
+bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
+{
+    return Meshlet_Cone_Cull(meshlet, pk_ViewWorldOrigin.xyz);
+}
 
 #pragma PROGRAM_MESH_ASSEMBLY
 

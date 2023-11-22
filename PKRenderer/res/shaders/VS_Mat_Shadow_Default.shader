@@ -103,7 +103,11 @@ float4 GetCubeClipPos(float3 viewvec, float radius, uint faceIndex)
     return float4(vpos.xy, m22 * vpos.z + m32, vpos.z);
 }
 
+#if defined(PK_LIGHT_PASS_DIRECTIONAL)
+out float vs_DEPTH[];
+#else
 out float3 vs_DEPTH[];
+#endif
 
 void PK_MESHLET_FUNC_TRIANGLE(uint triangleIndex, inout uint3 indices)
 {
@@ -114,26 +118,27 @@ void PK_MESHLET_FUNC_VERTEX(uint vertexIndex, PKVertex vertex, inout float4 sv_P
 {
     const float3 wpos = ObjectToWorldPos(vertex.position);
 
-    float3 vs_depth = 0.0f.xxx;
-
     #if defined(PK_LIGHT_PASS_DIRECTIONAL)
         sv_Position = payload.extra.lightMatrix * float4(wpos, 1.0f);
         // Depth test uses reverse z for precision reasons. revert range for actual distance.
-        vs_depth.x = (1.0f - (sv_Position.z / sv_Position.w)) * payload.extra.lightRadius;
+        vs_DEPTH[vertexIndex] = (1.0f - (sv_Position.z / sv_Position.w)) * payload.extra.lightRadius;
     #elif defined(PK_LIGHT_PASS_SPOT)
         sv_Position = payload.extra.lightMatrix * float4(wpos, 1.0f);
-        vs_depth.xyz = wpos - payload.extra.lightPosition;
+        vs_DEPTH[vertexIndex] = wpos - payload.extra.lightPosition;
     #elif defined(PK_LIGHT_PASS_POINT)
-        vs_depth = wpos - payload.extra.lightPosition;
+        const float3 vs_depth = wpos - payload.extra.lightPosition;
         sv_Position = GetCubeClipPos(vs_depth, payload.extra.lightRadius, payload.extra.layer % 6);
+        vs_DEPTH[vertexIndex] = vs_depth;
     #endif
-
-    vs_DEPTH[vertexIndex] = vs_depth;
 }
 
 #pragma PROGRAM_FRAGMENT
 
+#if defined(PK_LIGHT_PASS_DIRECTIONAL)
+in float vs_DEPTH;
+#else
 in float3 vs_DEPTH;
+#endif
 
 layout(early_fragment_tests) in;
 layout(location = 0) out float SV_Target0;
@@ -141,5 +146,9 @@ void main()
 {
     // Store linear distance into shadowmaps.
     // Point lights use an octahedral layout which doesnt mesh well with clip space depth.
+    #if defined(PK_LIGHT_PASS_DIRECTIONAL)
+    SV_Target0 = vs_DEPTH;
+    #else
     SV_Target0 = length(vs_DEPTH.xyz);
+    #endif
 }

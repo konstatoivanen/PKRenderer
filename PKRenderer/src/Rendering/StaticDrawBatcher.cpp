@@ -56,7 +56,7 @@ namespace PK::Rendering
             4096, BufferUsage::PersistentStorage, "Batching.MaterialProperties");
 
         m_tasklets = Buffer::Create(ElementType::Uint2, 4096u, BufferUsage::PersistentStorage, "Batching.Meshlet.Tasklets");
-        
+
         m_drawCalls.reserve(512);
         m_passGroups.reserve(512);
     }
@@ -214,7 +214,7 @@ namespace PK::Rendering
         GraphicsAPI::SetTextureArray(hash->pk_Instancing_Textures2D, m_textures2D);
     }
 
-    void StaticDrawBatcher::SubmitStaticDraw(Components::Transform* transform, 
+    void StaticDrawBatcher::SubmitStaticDraw(Components::Transform* transform,
                                              Shader* shader, 
                                              Material* material, 
                                              StaticMesh* mesh, 
