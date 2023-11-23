@@ -21,16 +21,15 @@
 #endif
 
 // Light depth test uses reverse z. Reverse range for actual distance.
-float3 LightClipToUVW(const float4 clip) 
+float2 LightClipToUV(const float4 clip) 
 {
-    return fma((clip.xyz / clip.w), float3(0.5f.xx, -1.0f), float3(0.5f.xx, 1.0f)); 
+    return fma((clip.xy / clip.w), 0.5f.xx, 0.5f.xx); 
 }
 
-float4 GetLightClipUVW(const float3 worldpos, const uint matrixIndex)
+float3 GetLightClipUVW(const float3 worldpos, const uint matrixIndex)
 {
     float4 coord = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex) * float4(worldpos, 1.0f);
-    coord.xyz = LightClipToUVW(coord);
-    return coord;
+    return float3(LightClipToUV(coord), coord.w);
 }
 
 float4 GetLightClipUVMinMax(const float3 worldpos, const float3 shadowBias, const uint matrixIndex)
@@ -53,7 +52,7 @@ Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias,
     float3 color = light.LIGHT_COLOR;
     float shadow = 1.0f;
 
-    float4 coord;
+    float3 coord;
     float3 posToLight; 
     float shadowDistance;
     float linearDistance = 0.0f; 
@@ -78,7 +77,7 @@ Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias,
             #endif
 
             coord = GetLightClipUVW(worldpos, indexMatrix);
-            shadowDistance = coord.z * light.LIGHT_RADIUS;
+            shadowDistance = dot(light.LIGHT_POS, worldpos) + light.LIGHT_RADIUS;
                 
             #if SHADOW_SAMPLE_VOLUMETRICS == 1
             linearDistance = 1e+4f;
@@ -94,12 +93,12 @@ Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias,
             posToLight = L.xyz;
             shadowDistance = L.w - SHADOW_NEAR_BIAS;
             coord = GetLightClipUVW(worldpos, indexMatrix);
-            color *= step(0.0f, coord.w);
+            color *= step(0.0f, coord.z);
             color *= texture(pk_LightCookies, float3(coord.xy, light.LIGHT_COOKIE)).r;
 
             #if SHADOW_SAMPLE_VOLUMETRICS == 1
             linearDistance = L.w;
-            shadowUVMinMax = GetLightClipUVW(worldpos, indexMatrix);
+            shadowUVMinMax = GetLightClipUVMinMax(worldpos, shadowBias, indexMatrix);
             #endif
 
         }

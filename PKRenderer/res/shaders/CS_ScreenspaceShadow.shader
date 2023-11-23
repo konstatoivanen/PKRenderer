@@ -79,8 +79,8 @@ void main()
     worldpos += biasFactors.x * normal * SHADOW_NEAR_BIAS * float(normalclip) * (1.0f + cascade);
     worldpos += biasFactors.y * posToLight * SHADOW_NEAR_BIAS * (1.0f + cascade) * (1.0f + 0.1f / sqrt(depth));
     
-    const float3 uvw = LightClipToUVW(lightMatrix * float4(worldpos, 1.0f));
-    const float z = uvw.z * light.LIGHT_RADIUS;
+    const float2 uv = LightClipToUV(lightMatrix * float4(worldpos, 1.0f)).xy;
+    const float z = dot(light.LIGHT_POS, worldpos) + light.LIGHT_RADIUS;
 
     // PCSS 
     half2 avgZ = 0.0hf.xx;
@@ -88,7 +88,7 @@ void main()
     for (uint i = 0u; i < 16u; ++i)
     {
         const half2 offset = basis * half2(PK_POISSON_DISK_16_POW[i].xy);
-        avgZ += Shadow_GatherMax(cascade, uvw.xy + offset, z);
+        avgZ += Shadow_GatherMax(cascade, uv + offset, z);
     }
 
     const uint validSamples = uint(avgZ.y);
@@ -112,7 +112,7 @@ void main()
         for (uint i = 0u; i < 16u; ++i)
         {
             const half2 offset = basis * half2(PK_POISSON_DISK_16_POW[i].xy) * penumbra;
-            shadow += ShadowTest_PCF2x2(cascade, uvw.xy + offset, z);
+            shadow += ShadowTest_PCF2x2(cascade, uv + offset, z);
         }
 
         shadow /= 16.0hf;

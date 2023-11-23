@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Math/FunctionsMisc.h"
 #include "Math/FunctionsColor.h"
+#include "Math/FunctionsIntersect.h"
 #include "Core/Services/Time.h"
 #include "ECS/Builders/Builders.h"
 #include "Rendering/MeshUtilities/PrimitiveBuilders.h"
@@ -157,27 +158,24 @@ namespace PK::ECS::Engines
             gizmos->DrawLine({ -100, 50, e }, { -100, 75, e });
         }
         */
-
         //log2(view_z) * pk_ClipParamsExp.x + pk_ClipParamsExp.y;
 
         //(m[2][2] * v[2] + m[3][2]) / v[2]
-        /*
         float4x4 localToWorld = Functions::GetMatrixTRS(offset, float3(35, -35, 0) * PK_FLOAT_DEG2RAD, PK_FLOAT3_ONE);
         float4x4 worldToLocal = glm::inverse(localToWorld);
         float4x4 invvp = glm::inverse(worldToClip);
         float4x4 cascades[4];
         float zplanes[5];
-        float depthRange;
 
         ShadowCascadeCreateInfo cascadeInfo{};
         cascadeInfo.worldToLocal = worldToLocal;
         cascadeInfo.clipToWorld = invvp;
         cascadeInfo.splitPlanes = zplanes;
-        cascadeInfo.zPadding = -15.0f;
+        cascadeInfo.nearPlaneOffset = 0.0f;
         cascadeInfo.resolution = 1024;
         cascadeInfo.count = 4;
         Functions::GetCascadeDepths(0.2f, 25.0f, 0.5f, zplanes, 5);
-        Functions::GetShadowCascadeMatrices(cascadeInfo, cascades, &depthRange);
+        Functions::GetShadowCascadeMatrices(cascadeInfo, cascades);
 
         for (auto i = 0; i < 4; ++i)
         {
@@ -185,6 +183,7 @@ namespace PK::ECS::Engines
             gizmos->DrawFrustrum(cascades[i]);
         }
 
+        /*
         gizmos->SetColor(PK_COLOR_RED);
         gizmos->DrawFrustrum(worldToClip);
 

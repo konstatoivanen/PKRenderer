@@ -202,7 +202,7 @@ namespace PK::Rendering::Passes
             { 
                 cmd->SetRenderTarget({ m_depthTargetCube.get(), m_shadowTargetCube.get() }, { range0, range0 }, true);
                 cmd->ClearDepth(0.0f, 0u);
-                cmd->ClearColor(color(batch.maxDepthRange), 0u);
+                cmd->ClearColor(color(batch.maxDepth), 0u);
                 m_batcher->RenderMeshlets(cmd, batch.batchGroup, nullptr, keyword);
                 GraphicsAPI::SetTexture(hash->pk_Texture, m_shadowTargetCube.get());
                 GraphicsAPI::SetImage(hash->pk_Image, m_shadowmaps.get(), range1);
@@ -211,7 +211,7 @@ namespace PK::Rendering::Passes
             else
             {
                 cmd->SetRenderTarget({ m_depthTarget2D.get(), m_shadowmaps.get() }, { range0, range1 }, true);
-                cmd->ClearColor(color(batch.maxDepthRange), 0u);
+                cmd->ClearColor(color(batch.maxDepth), 0u);
                 cmd->ClearDepth(0.0f, 0u);
                 m_batcher->RenderMeshlets(cmd, batch.batchGroup, nullptr, keyword);
             }
@@ -373,28 +373,35 @@ namespace PK::Rendering::Passes
             {
                 case LightType::Directional:
                 {
-                    light.position = transform->rotation * PK_FLOAT3_FORWARD;
-
                     ShadowCascadeCreateInfo cascadeInfo{};
                     cascadeInfo.worldToLocal = worldToLocal;
                     cascadeInfo.clipToWorld = clipToWorld;
+                    cascadeInfo.nearPlaneOffset = 0.0f;
                     cascadeInfo.splitPlanes = zsplits.data();
-                    cascadeInfo.zPadding = -view->light->radius;
                     cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
                     cascadeInfo.count = PK_SHADOW_CASCADE_COUNT;
-                    Functions::GetShadowCascadeMatrices(cascadeInfo, matricesView.data + matrixIndex, &light.radius);
+                    Functions::GetShadowCascadeMatrices(cascadeInfo, matricesView.data + matrixIndex);
 
+                    {
+                        const auto nearPlane = Functions::GetNearPlane(matricesView.data[matrixIndex]);
+                        light.position = float3(nearPlane.xyz);
+                        light.radius = nearPlane.w;
+                    }
+
+                    // Only shadow casting lights need matrices.
                     if (castShadows)
                     {
-                        float minDepth = 0.0f;
                         cullCascades.cascades = matricesView.data + matrixIndex;
-                        cullCascades.depthRange = light.radius;
                         m_sequencer->Next(engineRoot, &cullCascades);
-                        light.indexShadow = BuildShadowBatch(visibilityList, view, i, cullCascades.depthRange, &shadowCount, &minDepth);
+                        light.indexShadow = BuildShadowBatch(visibilityList, view, i, cullCascades.depthRange, &shadowCount);
 
                         // Regenerate cascades as the depth range might change based on culling
-                        cascadeInfo.zPadding = -view->light->radius + minDepth;
-                        Functions::GetShadowCascadeMatrices(cascadeInfo, matricesView.data + matrixIndex, &light.radius);
+                        cascadeInfo.nearPlaneOffset = cullCascades.outNearOffset;
+                        Functions::GetShadowCascadeMatrices(cascadeInfo, matricesView.data + matrixIndex);
+
+                        const auto nearPlane = Functions::GetNearPlane(matricesView.data[matrixIndex]);
+                        light.position = float3(nearPlane.xyz);
+                        light.radius = nearPlane.w;
                     }
                 }
                 break;
@@ -474,8 +481,7 @@ namespace PK::Rendering::Passes
                                           LightRenderableView* view, 
                                           uint32_t index, 
                                           float maxDepth, 
-                                          uint32_t* outShadowCount,
-                                          float* outMinDepth)
+                                          uint32_t* outShadowCount)
     {
         if (visibilityList->count == 0)
         {
@@ -496,7 +502,6 @@ namespace PK::Rendering::Passes
 
         auto& batch = m_shadowBatches.back();
 
-        uint32_t minDepth = 0xFFFFFFFF;
         uint32_t shadowmapIndex = *outShadowCount;
         *outShadowCount += m_shadowTypeData[(int)view->light->type].TileCount;
 
@@ -504,11 +509,6 @@ namespace PK::Rendering::Passes
         {
             auto& item = (*visibilityList)[i];
             auto entity = m_entityDb->Query<StaticMeshRenderableView>(EGID(item.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
-
-            if (item.depth < minDepth)
-            {
-                minDepth = item.depth;
-            }
 
             for (auto& kv : entity->materials->materials)
             {
@@ -523,14 +523,8 @@ namespace PK::Rendering::Passes
             }
         }
 
-        auto minDepthView = (minDepth * maxDepth) / (float)0xFFFF;
-        batch.maxDepthRange = glm::max(batch.maxDepthRange, maxDepth - minDepthView);
+        batch.maxDepth = glm::max(batch.maxDepth, maxDepth);
         batch.count++;
-
-        if (outMinDepth)
-        {
-            *outMinDepth = minDepthView;
-        }
 
         return shadowmapIndex;
     }

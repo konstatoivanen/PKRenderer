@@ -45,15 +45,14 @@ namespace PK::Rendering::Passes
                 uint32_t count = 0u;
                 uint32_t batchGroup = 0u;
                 Structs::LightType type = Structs::LightType::TypeCount;
-                float maxDepthRange = 0.0f;
+                float maxDepth = 0.0f;
             };
 
             uint32_t BuildShadowBatch(ECS::Tokens::VisibilityList* visibilityList, 
-                                        ECS::EntityViews::LightRenderableView* view, 
-                                        uint32_t index, 
-                                        float maxDepth,
-                                        uint32_t* outShadowCount,
-                                        float* outMinDepth = nullptr);
+                                      ECS::EntityViews::LightRenderableView* view, 
+                                      uint32_t index, 
+                                      float maxDepth,
+                                      uint32_t* outShadowCount);
 
             ECS::EntityDatabase* m_entityDb = nullptr;
             Core::Services::Sequencer* m_sequencer = nullptr;

@@ -196,7 +196,7 @@ namespace PK::Math::Functions
         return returnValue;
     }
 
-    void GetShadowCascadeMatrices(const ShadowCascadeCreateInfo info, float4x4* outMatrices, float* outRange)
+    void GetShadowCascadeMatrices(const ShadowCascadeCreateInfo info, float4x4* outMatrices)
     {
         auto matrix = info.worldToLocal * info.clipToWorld;
         auto minNear = std::numeric_limits<float>().max();
@@ -243,15 +243,8 @@ namespace PK::Math::Functions
                 aabbs[i].max.x,
                 aabbs[i].min.y,
                 aabbs[i].max.y,
-                minNear + info.zPadding,
+                minNear + info.nearPlaneOffset,
                 aabbs[i].max.z) * info.worldToLocal;
-        }
-
-        minNear += info.zPadding;
-        
-        if (outRange)
-        {
-            *outRange = maxFar - minNear;
         }
     }
 }

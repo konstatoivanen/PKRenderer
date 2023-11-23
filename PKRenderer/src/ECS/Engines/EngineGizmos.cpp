@@ -196,8 +196,8 @@ namespace PK::ECS::Engines
 
         for (auto i = 0; i < 4; ++i)
         {
-            nearCorners[i] = Functions::IntesectPlanes3(planes[4], planes[i], planes[(i + 1) % 4]);
-            farCorners[i] = Functions::IntesectPlanes3(planes[5], planes[i], planes[(i + 1) % 4]);
+            nearCorners[i] = Functions::IntesectPlanes3(planes.near, planes[i], planes[(i + 1) % 4]);
+            farCorners[i] = Functions::IntesectPlanes3(planes.far, planes[i], planes[(i + 1) % 4]);
         }
 
         for (auto i = 0; i < 4; ++i)

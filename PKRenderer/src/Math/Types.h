@@ -162,8 +162,8 @@ namespace PK::Math
         float4 right;
         float4 top;
         float4 bottom;
-        float4 near;
         float4 far;
+        float4 near;
         inline float4& operator[](size_t i) { return (&left)[i]; }
         constexpr float4* array_ptr() { return &left; }
     };
@@ -173,7 +173,7 @@ namespace PK::Math
         float4x4 worldToLocal;
         float4x4 clipToWorld;
         float* splitPlanes;
-        float zPadding;
+        float nearPlaneOffset;
         uint32_t resolution;
         uint32_t count;
     };

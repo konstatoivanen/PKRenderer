@@ -20,6 +20,7 @@ namespace PK::ECS::Tokens
 		void Add(uint32_t entityId, uint16_t depth, uint16_t clipId);
 		inline void Clear() { count = 0ull; }
 		inline const VisibleItem& operator [] (size_t index) const { return results[index]; }
+		inline VisibleItem& GetAt(size_t index) { return results[index]; }
 	};
 
 	struct TokenCullBase
@@ -42,6 +43,7 @@ namespace PK::ECS::Tokens
 	struct TokenCullCascades : public TokenCullBase
 	{
 		Math::float4x4* cascades;
+		float outNearOffset;
 		uint32_t count;
 	};
 }

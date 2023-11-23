@@ -121,7 +121,7 @@ void PK_MESHLET_FUNC_VERTEX(uint vertexIndex, PKVertex vertex, inout float4 sv_P
     #if defined(PK_LIGHT_PASS_DIRECTIONAL)
         sv_Position = payload.extra.lightMatrix * float4(wpos, 1.0f);
         // Depth test uses reverse z for precision reasons. revert range for actual distance.
-        vs_DEPTH[vertexIndex] = (1.0f - (sv_Position.z / sv_Position.w)) * payload.extra.lightRadius;
+        vs_DEPTH[vertexIndex] = dot(payload.extra.lightPosition, wpos) + payload.extra.lightRadius;
     #elif defined(PK_LIGHT_PASS_SPOT)
         sv_Position = payload.extra.lightMatrix * float4(wpos, 1.0f);
         vs_DEPTH[vertexIndex] = wpos - payload.extra.lightPosition;

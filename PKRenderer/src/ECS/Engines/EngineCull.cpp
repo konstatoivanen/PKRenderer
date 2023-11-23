@@ -1,5 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Math/FunctionsIntersect.h"
+#include "Math/FunctionsMisc.h"
+#include "Math/FunctionsMatrix.h"
 #include "ECS/EntityViews/BaseRenderableView.h"
 #include "Rendering/RHI/GraphicsAPI.h"
 #include "EngineCull.h"
@@ -115,19 +117,27 @@ namespace PK::ECS::Engines
 
     void EngineCull::Step(TokenCullCascades* token)
     {
+        // Near plane is unkwown & based on this cull step.
+        // Far plane can be shifted forwards based on the results of this cull step.
         auto count = token->count;
         auto visibilities = PK_STACK_ALLOC(bool, count);
-        auto invDepthRange = (float)(0xFFFF) / token->depthRange;
         auto results = token->results;
         auto cascades = token->cascades;
         auto mask = token->mask;
         auto cullables = m_entityDb->Query<BaseRenderableView>((uint32_t)ECS::ENTITY_GROUPS::ACTIVE);
         auto planes = PK_STACK_ALLOC(FrustumPlanes, count);
+        // Skip near plane eval
+        const auto planeCount = 5;
+
+        auto maxFar = 0.0f;
 
         for (auto i = 0u; i < count; ++i)
         {
             planes[i] = Functions::ExtractFrustrumPlanes(token->cascades[i], true);
+            maxFar = glm::max(maxFar, planes[i].near.w + planes[i].far.w);
         }
+
+        auto minDist = maxFar;
 
         for (auto i = 0; i < cullables.count; ++i)
         {
@@ -145,7 +155,7 @@ namespace PK::ECS::Engines
 
             for (auto j = 0u; j < count; ++j)
             {
-                isVisible |= visibilities[j] = !isCullable || Functions::IntersectPlanesAABB(planes[j].array_ptr(), 6, bounds);
+                isVisible |= visibilities[j] = !isCullable || Functions::IntersectPlanesAABB(planes[j].array_ptr(), planeCount, bounds);
             }
 
             if (!isVisible)
@@ -159,11 +169,26 @@ namespace PK::ECS::Engines
             {
                 if (visibilities[j])
                 {
-                    auto depth = Functions::PlaneMinDistanceToAABB(planes[j].near, bounds) * invDepthRange;
-                    auto fixedDepth = glm::min(0xFFFFu, (uint32_t)glm::max(0.0f, depth));
-                    results->Add(id, (uint16_t)fixedDepth, j);
+                    auto minDistLocal = Functions::PlaneMinDistanceToAABB(planes[j].near, bounds);
+                    minDist = glm::min(minDist, minDistLocal);
+                    
+                    // Need to do another loop to calculate this based on min-max.
+                    results->Add(id, Functions::PackHalf(minDistLocal), j);
                 }
             }
         }
+        
+        auto depthRange = maxFar - minDist;
+        auto invDepthRange = (float)(0xFFFF) / depthRange;
+
+        for (auto i = 0u; i < results->count; ++i)
+        {
+            auto nearOffset = Functions::UnPackHalf(results->GetAt(i).depth);
+            auto fixedDepth = glm::min(0xFFFFu, (uint32_t)((nearOffset - minDist) * invDepthRange));
+            results->GetAt(i).depth = fixedDepth;
+        }
+
+        token->depthRange = depthRange;
+        token->outNearOffset = minDist;
     }
 }

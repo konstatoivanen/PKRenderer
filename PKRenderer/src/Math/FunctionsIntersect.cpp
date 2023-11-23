@@ -39,12 +39,12 @@ namespace PK::Math::Functions
         planes[3].y = viewToClip[1][3] + viewToClip[1][1];
         planes[3].z = viewToClip[2][3] + viewToClip[2][1];
         planes[3].w = viewToClip[3][3] + viewToClip[3][1];
-        // Near clipping plane
+        // Far clipping plane
         planes[4].x = viewToClip[0][2];
         planes[4].y = viewToClip[1][2];
         planes[4].z = viewToClip[2][2];
         planes[4].w = viewToClip[3][2];
-        // Far clipping plane
+        // Near clipping plane
         planes[5].x = viewToClip[0][3] - viewToClip[0][2];
         planes[5].y = viewToClip[1][3] - viewToClip[1][2];
         planes[5].z = viewToClip[2][3] - viewToClip[2][2];
@@ -62,6 +62,17 @@ namespace PK::Math::Functions
         }
 
         return planes;
+    }
+
+    float4 GetNearPlane(const float4x4 viewToClip)
+    {
+        float4 plane;
+        plane.x = viewToClip[0][3] - viewToClip[0][2];
+        plane.y = viewToClip[1][3] - viewToClip[1][2];
+        plane.z = viewToClip[2][3] - viewToClip[2][2];
+        plane.w = viewToClip[3][3] - viewToClip[3][2];
+        NormalizePlane(&plane);
+        return plane;
     }
 
     float PlaneMaxDistanceToAABB(const float4& plane, const BoundingBox& aabb)
