@@ -1959,7 +1959,7 @@
     <None Include="res\textures\T_OEM_Night.ktx2" />
     <None Include="res\textures\default\T_Bluenoise256.ktx2" />
     <None Include="res\shaders\includes\LightResources.glsl" />
-    <None Include="res\shaders\VS_Mat_Shadow_Default.shader" />
+    <None Include="res\shaders\MS_Mat_Shadow_Default.shader" />
     <None Include="res\shaders\CS_CopyCubeShadow.shader" />
     <None Include="res\shaders\CS_LightAssignment.shader" />
     <None Include="res\shaders\includes\GBuffers.glsl" />

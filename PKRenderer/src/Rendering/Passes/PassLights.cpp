@@ -339,7 +339,7 @@ namespace PK::Rendering::Passes
         auto matricesView = matrixCount > 0 ? cmd->BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : BufferView<float4x4>();
 
         auto clipToWorld = glm::inverse(worldToClip);
-        auto zsplits = GetCascadeZSplits(znear, zfar);
+        auto cascadePlaneOffsets = GetCascadeZSplits(znear, zfar);
         TokenCullCubeFaces cullCube;
         TokenCullCascades cullCascades;
         cullCube.results = visibilityList;
@@ -377,7 +377,7 @@ namespace PK::Rendering::Passes
                     cascadeInfo.worldToLocal = worldToLocal;
                     cascadeInfo.clipToWorld = clipToWorld;
                     cascadeInfo.nearPlaneOffset = 0.0f;
-                    cascadeInfo.splitPlanes = zsplits.data();
+                    cascadeInfo.splitPlanes = cascadePlaneOffsets.data();
                     cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
                     cascadeInfo.count = PK_SHADOW_CASCADE_COUNT;
                     Functions::GetShadowCascadeMatrices(cascadeInfo, matricesView.data + matrixIndex);
@@ -392,6 +392,11 @@ namespace PK::Rendering::Passes
                     if (castShadows)
                     {
                         cullCascades.cascades = matricesView.data + matrixIndex;
+                        cullCascades.cascadeDirection = light.position;
+                        cullCascades.viewFrustumPlane = Functions::GetNearPlane(worldToClip);
+                        // Offsets are measured from view origin. remove near offset from plane
+                        cullCascades.viewFrustumPlane.w += cascadePlaneOffsets[0];
+                        cullCascades.cascadeSplitOffsets = cascadePlaneOffsets.data();
                         m_sequencer->Next(engineRoot, &cullCascades);
                         light.indexShadow = BuildShadowBatch(visibilityList, view, i, cullCascades.depthRange, &shadowCount);
 

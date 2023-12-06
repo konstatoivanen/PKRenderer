@@ -1,6 +1,6 @@
 Material:
     Shader: res/shaders/MS_Mat_Surf_Cloth.pkshader
-    ShadowShader: res/shaders/VS_Mat_Shadow_Default.pkshader
+    ShadowShader: res/shaders/MS_Mat_Shadow_Default.pkshader
     Properties:
         _AlbedoTexture:
             Type: texture2D

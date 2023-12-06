@@ -43,6 +43,10 @@ namespace PK::ECS::Tokens
 	struct TokenCullCascades : public TokenCullBase
 	{
 		Math::float4x4* cascades;
+		Math::float4 viewFrustumPlane;
+		Math::float3 cascadeDirection;
+		// Needs to be valid for count + 1
+		float* cascadeSplitOffsets;
 		float outNearOffset;
 		uint32_t count;
 	};

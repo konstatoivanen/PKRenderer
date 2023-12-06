@@ -120,11 +120,12 @@ namespace PK::ECS::Engines
         // Near plane is unkwown & based on this cull step.
         // Far plane can be shifted forwards based on the results of this cull step.
         auto count = token->count;
-        auto visibilities = PK_STACK_ALLOC(bool, count);
         auto results = token->results;
         auto cascades = token->cascades;
         auto mask = token->mask;
+        auto offsetSign = glm::dot(token->cascadeDirection, float3(token->viewFrustumPlane.xyz)) < 0.0f ? 0 : 1;
         auto cullables = m_entityDb->Query<BaseRenderableView>((uint32_t)ECS::ENTITY_GROUPS::ACTIVE);
+        auto viewPlanes = PK_STACK_ALLOC(float4, count);
         auto planes = PK_STACK_ALLOC(FrustumPlanes, count);
         // Skip near plane eval
         const auto planeCount = 5;
@@ -135,6 +136,14 @@ namespace PK::ECS::Engines
         {
             planes[i] = Functions::ExtractFrustrumPlanes(token->cascades[i], true);
             maxFar = glm::max(maxFar, planes[i].near.w + planes[i].far.w);
+
+            // Check against cascade splits as well. 
+            // this eliminates some draws that do not contribute to the sampled portion of the shadow map.
+            // Cascades should be further optimized however, as now most of the texel density is wasted by the axis aligned rect fitting
+            // @TODO A potential optimization would be to find the rotations for minimum bound cascade frustums.
+            viewPlanes[i] = token->viewFrustumPlane;
+            viewPlanes[i].w -= token->cascadeSplitOffsets[i + offsetSign];
+            viewPlanes[i] *= offsetSign == 0 ? 1.0f : -1.0f;
         }
 
         auto minDist = maxFar;
@@ -149,16 +158,20 @@ namespace PK::ECS::Engines
                 continue;
             }
 
-            auto isVisible = false;
+            auto isVisible = 0u;
             auto isCullable = (flags & RenderableFlags::Cullable) != 0;
             auto bounds = cullable->bounds->worldAABB;
 
             for (auto j = 0u; j < count; ++j)
             {
-                isVisible |= visibilities[j] = !isCullable || Functions::IntersectPlanesAABB(planes[j].array_ptr(), planeCount, bounds);
+                auto visibility = !isCullable || 
+                    (Functions::IntersectPlanesAABB(planes[j].array_ptr(), planeCount, bounds) && 
+                     Functions::IntersectPlanesAABB(&viewPlanes[j], 1u, bounds));
+
+                isVisible |= (uint32_t)visibility << j;
             }
 
-            if (!isVisible)
+            if (isVisible == 0u)
             {
                 continue;
             }
@@ -167,7 +180,7 @@ namespace PK::ECS::Engines
 
             for (auto j = 0u; j < count; ++j)
             {
-                if (visibilities[j])
+                if ((isVisible & (1 << j)) != 0u)
                 {
                     auto minDistLocal = Functions::PlaneMinDistanceToAABB(planes[j].near, bounds);
                     minDist = glm::min(minDist, minDistLocal);

@@ -921,7 +921,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\MS_Mat_Surf_Glitter.shader" />
     <None Include="res\shaders\MS_Mat_Surf_Triplanar.shader" />
     <None Include="res\shaders\MS_Mat_Surf_Water.shader" />
-    <None Include="res\shaders\VS_Mat_Shadow_Default.shader" />
+    <None Include="res\shaders\MS_Mat_Shadow_Default.shader" />
     <None Include="res\shaders\MS_Mat_Unlit_Color.shader" />
     <None Include="res\textures\default\T_Bluenoise128x64.ktx2" />
     <None Include="res\textures\environment\T_Asphalt_D.ktx2" />
