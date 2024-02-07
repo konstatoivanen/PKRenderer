@@ -1,6 +1,11 @@
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_shuffle : enable
+
+#GenerateDebugInfo
+
 #pragma PROGRAM_COMPUTE
 #include includes/GBuffers.glsl
-#include includes/SceneGI.glsl
+#include includes/ComputeQuadSwap.glsl
 
 #multi_compile _ PK_HIZ_FINAL_PASS
 
@@ -10,20 +15,10 @@ layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image
 layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image3;
 layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image4;
 
+// @TODO use subgroup intrisics for the first 2 level combinations
+
 #define GROUP_SIZE 8u
-shared float lds_MinZ[GROUP_SIZE * GROUP_SIZE];
-shared float lds_MaxZ[GROUP_SIZE * GROUP_SIZE];
-shared float lds_AvgZ[GROUP_SIZE * GROUP_SIZE];
-
-#define STORE_DEPTHS(tex, px, depth)          \
-    imageStore(tex, int3(px, 0), depth.xxxx); \
-    imageStore(tex, int3(px, 1), depth.yyyy); \
-    imageStore(tex, int3(px, 2), depth.zzzz); \
-
-#define STORE_DEPTHS_LDS(t, depth) \
-    lds_MinZ[t] = depth.x;         \
-    lds_MaxZ[t] = depth.y;         \
-    lds_AvgZ[t] = depth.z;         \
+shared float2 lds_Depth;
 
 layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
 void main()
@@ -31,95 +26,113 @@ void main()
     const uint2 size = uint2(pk_ScreenSize.xy);
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const uint thread = gl_LocalInvocationIndex;
-    float3 local_depth = 0.0f.xxx;
+
+    float2 local_depth = 0.0f.xx;
 
     {
 #if defined(PK_HIZ_FINAL_PASS)
-        const float4 minz = float4
-        (
-            SampleMinZ(coord * 2 + int2(0, 0), 4),
-            SampleMinZ(coord * 2 + int2(0, 1), 4),
-            SampleMinZ(coord * 2 + int2(1, 1), 4),
-            SampleMinZ(coord * 2 + int2(1, 0), 4)
-        );
+        float4 depths[2];
+        
+        [[unroll]]
+        for (int i = 0; i < 2; ++i)
+        {
+            depths[i] = float4
+            (
+                SampleHiZ(coord * 2 + int2(0, 0), i, 4),
+                SampleHiZ(coord * 2 + int2(0, 1), i, 4),
+                SampleHiZ(coord * 2 + int2(1, 1), i, 4),
+                SampleHiZ(coord * 2 + int2(1, 0), i, 4)
+            );
+        }
 
-        const float4 maxz = float4
-        (
-            SampleMinZ(coord * 2 + int2(0, 0), 4),
-            SampleMinZ(coord * 2 + int2(0, 1), 4),
-            SampleMinZ(coord * 2 + int2(1, 1), 4),
-            SampleMinZ(coord * 2 + int2(1, 0), 4)
-        );
-
-        const float4 avgz = float4
-        (
-            SampleAvgZ(coord * 2 + int2(0, 0), 4),
-            SampleAvgZ(coord * 2 + int2(0, 1), 4),
-            SampleAvgZ(coord * 2 + int2(1, 1), 4),
-            SampleAvgZ(coord * 2 + int2(1, 0), 4)
-        );
-
-        local_depth.x = cmin(minz);
-        local_depth.y = cmax(maxz);
-        local_depth.z = dot(avgz, 0.25f.xxxx);
+        local_depth.x = cmin(depths[0]);
+        local_depth.y = cmax(depths[1]);
 #else
         const float4 depths = GatherViewDepths((coord * 2 + 1.0f.xx) / size);
-        local_depth.x = cmin(depths);
-        local_depth.y = cmax(depths);
-        local_depth.z = dot(depths, 0.25f.xxxx);
 
-#pragma unroll 3
-        for (uint i = 0; i < 3; ++i)
+        [[unroll]]
+        for (uint i = 0; i < 2; ++i)
         {
             imageStore(pk_Image, int3(coord * 2 + int2(0, 1), i), depths.xxxx);
             imageStore(pk_Image, int3(coord * 2 + int2(1, 1), i), depths.yyyy);
             imageStore(pk_Image, int3(coord * 2 + int2(1, 0), i), depths.zzzz);
             imageStore(pk_Image, int3(coord * 2 + int2(0, 0), i), depths.wwww);
         }
+
+        local_depth.x = cmin(depths);
+        local_depth.y = cmax(depths);
 #endif
 
-        STORE_DEPTHS_LDS(thread, local_depth)
-        STORE_DEPTHS(pk_Image1, coord, local_depth)
+        imageStore(pk_Image1, int3(coord, 0), local_depth.xxxx);
+        imageStore(pk_Image1, int3(coord, 1), local_depth.yyyy);
     }
-    barrier();
 
-    if ((thread & 0x9u) == 0u)
+    // Mip 2
     {
-        const float4 minz = float4(local_depth.x, lds_MinZ[thread + 0x01u], lds_MinZ[thread + 0x08u], lds_MinZ[thread + 0x09u]);
-        const float4 maxz = float4(local_depth.y, lds_MaxZ[thread + 0x01u], lds_MaxZ[thread + 0x08u], lds_MaxZ[thread + 0x09u]);
-        const float4 avgz = float4(local_depth.z, lds_AvgZ[thread + 0x01u], lds_AvgZ[thread + 0x08u], lds_AvgZ[thread + 0x09u]);
-        local_depth.x = cmin(minz);
-        local_depth.y = cmax(maxz);
-        local_depth.z = dot(avgz, 0.25f.xxxx);
+        const uint swapIdVertical = QuadSwapIdVertical8x8(gl_SubgroupInvocationID);
+        const float2 vertical_depth = subgroupShuffle(local_depth, swapIdVertical);
+        local_depth.x = min(local_depth.x, vertical_depth.x);
+        local_depth.y = max(local_depth.y, vertical_depth.y);
 
-        STORE_DEPTHS_LDS(thread, local_depth)
-        STORE_DEPTHS(pk_Image2, coord / 2, local_depth)
+        const uint swapIdHorizontal = QuadSwapIdHorizontal(gl_SubgroupInvocationID);
+        const float2 horizontal_depth = subgroupShuffle(local_depth, swapIdHorizontal);
+        local_depth.x = min(local_depth.x, horizontal_depth.x);
+        local_depth.y = max(local_depth.y, horizontal_depth.y);
+
+        if ((thread & 0x9u) == 0u)
+        {
+            imageStore(pk_Image2, int3(coord / 2, 0), local_depth.xxxx);
+            imageStore(pk_Image2, int3(coord / 2, 1), local_depth.yyyy);
+        }
     }
-    barrier();
 
-    if ((thread & 0x1Bu) == 0u)
+    subgroupBarrier();
+
+    // Mip 3
     {
-        const float4 minz = float4(local_depth.x, lds_MinZ[thread + 0x02u], lds_MinZ[thread + 0x10u], lds_MinZ[thread + 0x12u]);
-        const float4 maxz = float4(local_depth.y, lds_MaxZ[thread + 0x02u], lds_MaxZ[thread + 0x10u], lds_MaxZ[thread + 0x12u]);
-        const float4 avgz = float4(local_depth.z, lds_AvgZ[thread + 0x02u], lds_AvgZ[thread + 0x10u], lds_AvgZ[thread + 0x12u]);
-        local_depth.x = cmin(minz);
-        local_depth.y = cmax(maxz);
-        local_depth.z = dot(avgz, 0.25f.xxxx);
+        const uint2 subgroupCoord = uint2(gl_SubgroupInvocationID % 8u, gl_SubgroupInvocationID / 8u);
+        const uint2 subgroupBase = subgroupCoord / 2;
+        const uint2 subgroupSwapped = (subgroupBase / 2) * 4 + ((subgroupBase + 1) % 2) * 2;
 
-        STORE_DEPTHS_LDS(thread, local_depth)
-        STORE_DEPTHS(pk_Image3, coord / 4, local_depth)
+        const uint swapIdVertical = subgroupSwapped.y * 8 + subgroupCoord.x;
+        const uint swapIdHorizontal = subgroupCoord.y * 8 + subgroupSwapped.x;
+
+        const float2 vertical_depth = subgroupShuffle(local_depth, swapIdVertical);
+        local_depth.x = min(local_depth.x, vertical_depth.x);
+        local_depth.y = max(local_depth.y, vertical_depth.y);
+
+        const float2 horizontal_depth = subgroupShuffle(local_depth, swapIdHorizontal);
+        local_depth.x = min(local_depth.x, horizontal_depth.x);
+        local_depth.y = max(local_depth.y, horizontal_depth.y);
+
+        if ((thread & 0x1Bu) == 0u)
+        {
+            imageStore(pk_Image3, int3(coord / 4, 0), local_depth.xxxx);
+            imageStore(pk_Image3, int3(coord / 4, 1), local_depth.yyyy);
+        }
     }
+
+    subgroupBarrier();
+
+    // Combine subgroups
+    {
+        local_depth.x = subgroupMin(local_depth.x);
+        local_depth.y = subgroupMax(local_depth.y);
+
+        if (gl_SubgroupInvocationID == 0 && gl_SubgroupID == 1)
+        {
+            lds_Depth = local_depth;
+        }
+    }
+
     barrier();
 
+    // Mip 4
     if (thread == 0u)
     {
-        const float4 minz = float4(local_depth.x, lds_MinZ[thread + 0x04u], lds_MinZ[thread + 0x20u], lds_MinZ[thread + 0x24u]);
-        const float4 maxz = float4(local_depth.y, lds_MaxZ[thread + 0x04u], lds_MaxZ[thread + 0x20u], lds_MaxZ[thread + 0x24u]);
-        const float4 avgz = float4(local_depth.z, lds_AvgZ[thread + 0x04u], lds_AvgZ[thread + 0x20u], lds_AvgZ[thread + 0x24u]);
-        local_depth.x = cmin(minz);
-        local_depth.y = cmax(maxz);
-        local_depth.z = dot(avgz, 0.25f.xxxx);
-
-        STORE_DEPTHS(pk_Image4, coord / 8, local_depth)
+        local_depth.x = min(local_depth.x, lds_Depth.x);
+        local_depth.y = max(local_depth.y, lds_Depth.y);
+        imageStore(pk_Image4, int3(coord / 8, 0), local_depth.xxxx);
+        imageStore(pk_Image4, int3(coord / 8, 1), local_depth.yyyy);
     }
 }

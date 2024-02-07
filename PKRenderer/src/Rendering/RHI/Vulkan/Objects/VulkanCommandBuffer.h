@@ -33,6 +33,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         void SetRenderTarget(Texture* const* renderTargets, Texture* const* resolveTargets, const TextureViewRange* ranges, uint32_t count) final;
         void SetViewPorts(const uint4* rects, uint32_t count) final;
         void SetScissors(const uint4* rects, uint32_t count) final;
+        void SetUnorderedOverlap(bool value) final { m_isInUnorderedOverlap = value; }
 
         void SetShader(const Shader* shader, int32_t variantIndex = -1) final;
         void SetVertexBuffers(const Buffer** buffers, uint32_t count) final;
@@ -106,5 +107,6 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             VkCommandBufferLevel m_level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
             uint64_t m_invocationIndex = 0ull;
             bool m_isInActiveRenderPass = false;
+            bool m_isInUnorderedOverlap = false;
     };
 }

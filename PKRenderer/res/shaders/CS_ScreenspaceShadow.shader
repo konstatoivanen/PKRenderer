@@ -234,7 +234,6 @@ layout(local_size_x = WAVE_SIZE, local_size_y = 1, local_size_z = 1) in;
 void main()
 {
     DispatchParameters dispatchParams;
-
     dispatchParams.LightCoordinate = LightCoordinate;				// Values stored in DispatchList::LightCoordinate_Shader by BuildDispatchList()
     dispatchParams.WaveOffset = WaveOffset;					// Values stored in DispatchData::WaveOffset_Shader by BuildDispatchList()
     dispatchParams.FarDepthValue = 0.0f;				// Set to the Depth Buffer Value for the far clip plane, as determined by renderer projection matrix setup (typically 0).
@@ -250,15 +249,8 @@ void main()
     dispatchParams.DebugOutputThreadIndex = false;
     dispatchParams.DebugOutputWaveIndex = false;
     dispatchParams.DepthBounds = float2(0, 1);
-    dispatchParams.UseEarlyOut = false;
-
-    float shadow = 0.0f;
-    int2 coord = int2(0);
-    WriteScreenSpaceShadow(dispatchParams, int3(gl_WorkGroupID), int(gl_LocalInvocationIndex), shadow, coord);
-
-    shadow = min(shadow, imageLoad(pk_Image, coord).x);
-
-    imageStore(pk_Image, coord, float4(shadow));
+    dispatchParams.UseEarlyOut = true;
+    WriteScreenSpaceShadow(dispatchParams, int3(gl_WorkGroupID), int(gl_LocalInvocationIndex));
 }
 
 #endif

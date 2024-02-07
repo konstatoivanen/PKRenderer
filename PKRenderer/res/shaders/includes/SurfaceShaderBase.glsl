@@ -318,6 +318,7 @@
             float3 voxelPos = GI_QuantizeWorldToVoxelSpace(surf.worldpos);
             voxelPos = WorldToClipUVW(voxelPos);
 
+            // @TODO performance test. see if vx value test has better perf at output stage, as this introduces a read dependency.
             [[branch]]
             if (!Test_InUVW(voxelPos) || GI_Test_VX_HasValue(surf.worldpos))                 
             {

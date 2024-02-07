@@ -24,6 +24,7 @@ namespace PK::Rendering::RHI::Objects
 
         virtual void SetViewPorts(const Math::uint4* rects, uint32_t count) = 0;
         virtual void SetScissors(const Math::uint4* rects, uint32_t count) = 0;
+        virtual void SetUnorderedOverlap(bool value) = 0;
 
         virtual void SetStageExcludeMask(const ShaderStageFlags mask) = 0;
         virtual void SetBlending(const BlendParameters& blend) = 0;

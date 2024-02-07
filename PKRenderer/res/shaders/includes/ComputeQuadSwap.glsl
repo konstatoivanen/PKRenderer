@@ -1,5 +1,7 @@
 #pragma once
 
+// Assumes nvidia subgroup size 32
+
 uint LinearSwapId(uint id) 
 { 
     return (id & 0xFEu) + (~id & 0x1u); 

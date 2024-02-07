@@ -614,7 +614,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     {
         static VulkanBarrierInfo barrierInfo{};
 
-        if (m_renderState->GetServices()->barrierHandler->Resolve(&barrierInfo))
+        if (!m_isInUnorderedOverlap && m_renderState->GetServices()->barrierHandler->Resolve(&barrierInfo))
         {
             PipelineBarrier(barrierInfo);
             return true;
@@ -700,6 +700,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
     void VulkanCommandBuffer::BeginCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferLevel level, Objects::VulkanRenderState* renderState)
     {
+        m_isInUnorderedOverlap = false;
         m_level = level;
         m_commandBuffer = commandBuffer;
         m_renderState = renderState;

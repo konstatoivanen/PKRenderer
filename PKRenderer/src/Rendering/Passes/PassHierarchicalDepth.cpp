@@ -26,7 +26,7 @@ namespace PK::Rendering::Passes
         hizDesc.sampler.filterMag = FilterMode::Bilinear;
         hizDesc.resolution = { config->InitialWidth, config->InitialHeight, 1 };
         hizDesc.levels = 9u;
-        hizDesc.layers = 3u;
+        hizDesc.layers = 4u;//2
         hizDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
         m_hierarchicalDepth = Texture::Create(hizDesc, "Scene.HierarchicalDepth");
     }
@@ -40,19 +40,19 @@ namespace PK::Rendering::Passes
 
         resolution.x >>= 1u;
         resolution.y >>= 1u;
-        GraphicsAPI::SetImage(hash->pk_Image, m_hierarchicalDepth.get(), { 0, 0, 1, 3 });
-        GraphicsAPI::SetImage(hash->pk_Image1, m_hierarchicalDepth.get(), { 1, 0, 1, 3 });
-        GraphicsAPI::SetImage(hash->pk_Image2, m_hierarchicalDepth.get(), { 2, 0, 1, 3 });
-        GraphicsAPI::SetImage(hash->pk_Image3, m_hierarchicalDepth.get(), { 3, 0, 1, 3 });
-        GraphicsAPI::SetImage(hash->pk_Image4, m_hierarchicalDepth.get(), { 4, 0, 1, 3 });
+        GraphicsAPI::SetImage(hash->pk_Image, m_hierarchicalDepth.get(), { 0, 0, 1, 2 });
+        GraphicsAPI::SetImage(hash->pk_Image1, m_hierarchicalDepth.get(), { 1, 0, 1, 2 });
+        GraphicsAPI::SetImage(hash->pk_Image2, m_hierarchicalDepth.get(), { 2, 0, 1, 2 });
+        GraphicsAPI::SetImage(hash->pk_Image3, m_hierarchicalDepth.get(), { 3, 0, 1, 2 });
+        GraphicsAPI::SetImage(hash->pk_Image4, m_hierarchicalDepth.get(), { 4, 0, 1, 2 });
         cmd->Dispatch(m_computeHierachicalDepth, 0u, resolution);
 
         resolution.x >>= 4u;
         resolution.y >>= 4u;
-        GraphicsAPI::SetImage(hash->pk_Image1, m_hierarchicalDepth.get(), { 5, 0, 1, 3 });
-        GraphicsAPI::SetImage(hash->pk_Image2, m_hierarchicalDepth.get(), { 6, 0, 1, 3 });
-        GraphicsAPI::SetImage(hash->pk_Image3, m_hierarchicalDepth.get(), { 7, 0, 1, 3 });
-        GraphicsAPI::SetImage(hash->pk_Image4, m_hierarchicalDepth.get(), { 8, 0, 1, 3 });
+        GraphicsAPI::SetImage(hash->pk_Image1, m_hierarchicalDepth.get(), { 5, 0, 1, 2 });
+        GraphicsAPI::SetImage(hash->pk_Image2, m_hierarchicalDepth.get(), { 6, 0, 1, 2 });
+        GraphicsAPI::SetImage(hash->pk_Image3, m_hierarchicalDepth.get(), { 7, 0, 1, 2 });
+        GraphicsAPI::SetImage(hash->pk_Image4, m_hierarchicalDepth.get(), { 8, 0, 1, 2 });
         cmd->Dispatch(m_computeHierachicalDepth, 1u, resolution);
     }
 }

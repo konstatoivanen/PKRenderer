@@ -130,6 +130,8 @@ struct DispatchParameters
 
     //SamplerState PointBorderSampler;	// A point sampler, with Wrap Mode set to Clamp-To-Border-Color (D3D12_TEXTURE_ADDRESS_MODE_BORDER), and Border Color set to "FarDepthValue" (typically zero), or some other far-depth value out of DepthBounds.
                                         // If you have issues where invalid shadows are appearing from off-screen, it is likely that this sampler is not correctly setup
+    // PK MOD
+    float CurrentShadow;
 };
 
 bool EarlyOutPixel(DispatchParameters inParameters, int2 pixel_xy, float depth)
@@ -141,7 +143,8 @@ bool EarlyOutPixel(DispatchParameters inParameters, int2 pixel_xy, float depth)
     // return inParameters.CustomShadowMapTerm[pixel_xy] == 0;
 
     // The compiled code will be more optimal if the 'depth' value is not referenced.
-    return depth >= inParameters.DepthBounds.y || depth <= inParameters.DepthBounds.x;
+    // depth >= inParameters.DepthBounds.y || depth <= inParameters.DepthBounds.x;
+    return inParameters.CurrentShadow <= 1e-4f;
 }
 
 // Gets the start pixel coordinates for the pixels in the wavefront
@@ -215,7 +218,7 @@ shared bool LdsEarlyOut;
 // 
 //	(int3)	inGroupID:			Compute shader group id register (SV_GroupID)
 //	(int)	inGroupThreadId:	Compute shader group thread id register (SV_GroupThreadID)
-void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int inGroupThreadID, inout float out_result, inout int2 out_coord)
+void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int inGroupThreadID)
 {
     float2 xy_delta;
     float2 pixel_xy;
@@ -223,6 +226,9 @@ void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int
     bool x_axis_major;	// major axis is x axis? abs(xy_delta.x) > abs(xy_delta.y).
 
     ComputeWavefrontExtents(inParameters, int3(inGroupID), inGroupThreadID.x, xy_delta, pixel_xy, pixel_distance, x_axis_major);
+
+    // PK_MOD_READ_CURRENT
+    inParameters.CurrentShadow = imageLoad(pk_Image, int2(pixel_xy)).x;
 
     // Read in the depth values
     float sampling_depth[READ_COUNT];
@@ -450,9 +456,8 @@ void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int
         
         // Asking the GPU to write scattered single-byte pixels isn't great,
         // But thankfully the latency is hidden by all the work we're doing...
+        // PK Mod
         //inParameters.OutputTexture[(int2)write_xy] = result;
-
-        out_result = result;
-        out_coord = int2(write_xy);
+        imageStore(pk_Image, int2(write_xy), float4(min(inParameters.CurrentShadow, result)));
     }
 }
