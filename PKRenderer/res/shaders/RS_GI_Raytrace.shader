@@ -125,7 +125,7 @@ void main()
             hits.diff.dist = hits.diff.isMiss ? uint16BitsToHalf(0x7C00us) : hits.diff.dist;
 
             [[branch]]
-            if (!hits.spec.isScreen)
+            if (!hits.diff.isScreen)
             {
                 hits.diff.isScreen = GI_IsScreenHit(coord, origin + directionDiff * hits.diff.dist, hits.diff.isMiss);
             }

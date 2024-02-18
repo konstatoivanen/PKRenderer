@@ -49,7 +49,6 @@ namespace PK::Rendering::Objects
 
         m_meshletVertexBuffer = Buffer::Create(ElementType::Uint4, maxVertices, flags, "Meshlet.VertexBuffer");
         m_meshletIndexBuffer = Buffer::Create(ElementType::Uint, (maxTriangles * 3ull) / 4ull, flags, "Meshlet.IndexBuffer");
-        AssignMeshletBuffers();
     }
 
     StaticMesh* StaticSceneMesh::Allocate(StaticMeshAllocationData* data)
@@ -214,15 +213,6 @@ namespace PK::Rendering::Objects
         }
 
         m_staticMeshes.Delete(mesh);
-    }
-
-    void StaticSceneMesh::AssignMeshletBuffers() const
-    {
-        auto hash = HashCache::Get();
-        GraphicsAPI::SetBuffer(hash->pk_Meshlet_Submeshes, m_submeshBuffer.get());
-        GraphicsAPI::SetBuffer(hash->pk_Meshlets, m_meshletBuffer.get());
-        GraphicsAPI::SetBuffer(hash->pk_Meshlet_Vertices, m_meshletVertexBuffer.get());
-        GraphicsAPI::SetBuffer(hash->pk_Meshlet_Indices, m_meshletIndexBuffer.get());
     }
 
     bool StaticSceneMesh::TryGetAccelerationStructureGeometryInfo(uint32_t globalSubmeshIndex, RHI::Objects::AccelerationStructureGeometryInfo* outInfo) const

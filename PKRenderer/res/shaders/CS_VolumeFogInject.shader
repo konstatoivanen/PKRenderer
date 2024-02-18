@@ -49,6 +49,10 @@ void main()
 
     // Fade value for properties not present in backgroung fog
     const float farFade = smoothstep(1.0f, 0.7f, uvw_cur.z);
+    // Distant texels are less dense, trace a longer distance to retain some depth.
+    const float maxMarchDistance = exp(uvw_cur.z * VOLUMEFOG_MARCH_DISTANCE_EXP);
+    const float shadowBiasRange = VFog_ZToView((id.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV) - VFog_ZToView(id.z * VOLUMEFOG_SIZE_Z_INV);
+    const float3 shadowBias = viewdir * shadowBiasRange * 0.5f;
 
     // Occlude ground as it should be lit mostly by dynamic gi.
     // Apply visibility mask from cone trace.
@@ -59,13 +63,8 @@ void main()
     // This is incorrect for the dynamic component. However, it introduces good depth to the colors so whatever.
     value_cur *= VFog_EstimateTransmittance(uvw_cur, farFade);
 
-    // Distant texels are less dense, trace a longer distance to retain some depth.
-    const float maxMarchDistance = exp(uvw_cur.z * VOLUMEFOG_MARCH_DISTANCE_EXP);
-
-    const float shadowBiasRange = VFog_ZToView((id.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV) - VFog_ZToView(id.z * VOLUMEFOG_SIZE_Z_INV);
-    const float3 shadowBias = viewdir * shadowBiasRange * 0.5f;
-
     LightTile tile = Lights_GetTile_COORD(int2(gl_WorkGroupID.xy >> 1), depth);
+
     for (uint i = tile.start; i < tile.end; ++i)
     {
         // @TODO current 1spp shadow test for fog is prone to banding. implement better filter.

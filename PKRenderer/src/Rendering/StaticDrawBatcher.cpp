@@ -257,6 +257,11 @@ namespace PK::Rendering
         }
 
         auto hash = HashCache::Get();
+        GraphicsAPI::SetBuffer(hash->pk_Meshlet_Submeshes, m_staticGeometry->GetMeshletSubmeshBuffer());
+        GraphicsAPI::SetBuffer(hash->pk_Meshlets, m_staticGeometry->GetMeshletBuffer());
+        GraphicsAPI::SetBuffer(hash->pk_Meshlet_Vertices, m_staticGeometry->GetMeshletVertexBuffer());
+        GraphicsAPI::SetBuffer(hash->pk_Meshlet_Indices, m_staticGeometry->GetMeshletIndexBuffer());
+
         auto& passGroup = m_passGroups.at(group);
         auto start = passGroup.offset;
         auto end = passGroup.offset + passGroup.count;

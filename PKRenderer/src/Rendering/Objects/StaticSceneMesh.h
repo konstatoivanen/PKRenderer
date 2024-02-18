@@ -88,13 +88,16 @@ namespace PK::Rendering::Objects
             inline RHI::Objects::Buffer* GetPositionBuffer() const { return m_positionsBuffer.get(); }
             inline RHI::Objects::Buffer* GetAttributeBuffer() const { return m_attributesBuffer.get(); }
             inline RHI::Objects::Buffer* GetIndexBuffer() const { return m_indexBuffer.get(); }
+            inline RHI::Objects::Buffer* GetMeshletVertexBuffer() const { return m_meshletVertexBuffer.get(); }
+            inline RHI::Objects::Buffer* GetMeshletIndexBuffer() const { return m_meshletIndexBuffer.get(); }
+            inline RHI::Objects::Buffer* GetMeshletSubmeshBuffer() const { return m_submeshBuffer.get(); }
+            inline RHI::Objects::Buffer* GetMeshletBuffer() const { return m_meshletBuffer.get(); }
             inline const StaticSubMesh* GetSubmesh(uint32_t index) const { return m_staticSubmeshes[index]; }
             const bool HasPendingUpload() const { return !m_uploadFence.WaitInvalidate(0ull); }
             
             StaticMesh* Allocate(StaticMeshAllocationData* data);
             void Deallocate(StaticMesh* mesh);
-            
-            void AssignMeshletBuffers() const;
+
             bool TryGetAccelerationStructureGeometryInfo(uint32_t globalSubmeshIndex, RHI::Objects::AccelerationStructureGeometryInfo* outInfo) const;
 
         private:
