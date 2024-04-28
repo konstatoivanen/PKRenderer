@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Services/Log.h"
+#include "Core/CLI/Log.h"
 #include "Utilities/FileIOBMP.h"
 #include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
 #include "VulkanWindow.h"
@@ -7,6 +7,7 @@
 namespace PK::Rendering::RHI::Vulkan
 {
     using namespace PK::Utilities;
+    using namespace PK::Core::Services;
     using namespace PK::Rendering::RHI::Vulkan::Services;
     using namespace PK::Rendering::RHI::Vulkan::Objects;
 
@@ -59,11 +60,6 @@ namespace PK::Rendering::RHI::Vulkan
                 window->m_alive = false;
                 SafeInvokeFunction(window->OnClose);
             });
-        glfwSetKeyCallback(m_window, [](GLFWwindow* nativeWindow, int key, int scancode, int action, int mods) { SafeInvokeFunction(GetWindowPtr(nativeWindow)->OnKeyInput, key, scancode, action, mods); });
-        glfwSetCharCallback(m_window, [](GLFWwindow* nativeWindow, uint32_t keycode) { SafeInvokeFunction(GetWindowPtr(nativeWindow)->OnCharInput, keycode); });
-        glfwSetMouseButtonCallback(m_window, [](GLFWwindow* nativeWindow, int button, int action, int mods) { SafeInvokeFunction(GetWindowPtr(nativeWindow)->OnMouseButtonInput, button, action, mods); });
-        glfwSetScrollCallback(m_window, [](GLFWwindow* nativeWindow, double xOffset, double yOffset) { SafeInvokeFunction(GetWindowPtr(nativeWindow)->OnScrollInput, xOffset, yOffset); });
-        glfwSetCursorPosCallback(m_window, [](GLFWwindow* nativeWindow, double xPos, double yPos) {SafeInvokeFunction(GetWindowPtr(nativeWindow)->OnCursorInput, xPos, yPos); });
         glfwSetErrorCallback([](int error, const char* description) { PK_THROW_ERROR("GLFW Error (%i) : %s", error, description); });
         VK_ASSERT_RESULT_CTX(glfwCreateWindowSurface(m_driver->instance, m_window, nullptr, &m_surface), "Failed to create window surface!");
 
@@ -107,7 +103,7 @@ namespace PK::Rendering::RHI::Vulkan
     {
         while (!m_swapchain->TryAcquireNextImage(&m_imageAvailableSignal))
         {
-            PollEvents();
+            glfwPollEvents();
         }
 
         m_inWindowScope = true;

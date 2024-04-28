@@ -1,31 +1,19 @@
 #pragma once
+#include "Utilities/ForwardDeclareUtility.h"
 #include "Utilities/NoCopy.h"
 #include "Utilities/NativeInterface.h"
+#include "Utilities/PropertyBlock.h"
 #include "Rendering/RHI/Structs.h"
-#include "Rendering/RHI/Objects/QueueSet.h"
-#include "Rendering/RHI/Objects/Buffer.h"
-#include "Rendering/RHI/Objects/Texture.h"
 #include "Rendering/RHI/Objects/BindArray.h"
-#include "Rendering/RHI/Objects/AccelerationStructure.h"
-#include "Rendering/RHI/BuiltInResources.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI, struct BuiltInResources)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct QueueSet)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Buffer)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Texture)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class AccelerationStructure)
 
 namespace PK::Rendering::RHI
 {
-    struct DriverMemoryInfo
-    {
-        uint32_t blockCount;
-        uint32_t allocationCount;
-        uint32_t unusedRangeCount;
-        size_t usedBytes;
-        size_t unusedBytes;
-        size_t allocationSizeMin;
-        size_t allocationSizeAvg;
-        size_t allocationSizeMax;
-        size_t unusedRangeSizeMin;
-        size_t unusedRangeSizeAvg; 
-        size_t unusedRangeSizeMax;
-    };
-
     Utilities::Scope<struct Driver> CreateRHIDriver(const std::string& workingDirectory, APIType api);
 
     struct Driver : public PK::Utilities::NoCopy, public PK::Utilities::NativeInterface<Driver>
@@ -74,8 +62,8 @@ namespace PK::Rendering::RHI
 
         // @TODO this ownership model is bad. 
         // Should be part of raii but destructor execution order prevents that.
-        inline void CreateBuiltInResources() { builtInResources = new BuiltInResources(); }
-        inline void ReleaseBuiltInResources() { delete builtInResources; }
+        void CreateBuiltInResources();
+        void ReleaseBuiltInResources();
         
         static inline Driver* Get() { return s_instance; }
 

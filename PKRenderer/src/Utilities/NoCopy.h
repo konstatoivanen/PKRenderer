@@ -1,5 +1,4 @@
 #pragma once
-
 namespace PK::Utilities
 {
     class NoCopy

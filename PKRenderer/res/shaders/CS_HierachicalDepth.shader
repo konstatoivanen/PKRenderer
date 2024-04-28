@@ -15,8 +15,6 @@ layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image
 layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image3;
 layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image4;
 
-// @TODO use subgroup intrisics for the first 2 level combinations
-
 #define GROUP_SIZE 8u
 shared float2 lds_Depth;
 

@@ -18,6 +18,30 @@ namespace PK::Math::Functions
         }
     }
 
+    void GetCascadeDepths(float znear, float zfar, float linearity, float* cascades, uint32_t gridSizeZ, uint32_t count)
+    {
+        assert(count > 2);
+
+        GetCascadeDepths(znear, zfar, linearity, cascades, count);
+
+        // Snap z ranges to tile indices to make shader branching more coherent
+        auto scale = gridSizeZ / glm::log2(zfar / znear);
+        auto bias = gridSizeZ * -log2(znear) / log2(zfar / znear);
+
+        for (auto i = 1; i < (int32_t)(count - 1u); ++i)
+        {
+            float zTile = round(log2(cascades[i]) * scale + bias);
+            cascades[i] = znear * pow(zfar / znear, zTile / gridSizeZ);
+        }
+    }
+
+    float4 GetCascadeDepthsFloat4(float znear, float zfar, float linearity, uint32_t gridSizeZ)
+    {
+        float cascades[5]{};
+        Functions::GetCascadeDepths(znear, zfar, linearity, cascades, gridSizeZ, 5);
+        return *reinterpret_cast<Math::float4*>(cascades);
+    }
+
     float CascadeDepth(float znear, float zfar, float linearity, float interpolant)
     {
         return linearity * (znear * powf(zfar / znear, interpolant)) + (1.0f - linearity) * (znear + (zfar - znear) * interpolant);
@@ -240,7 +264,7 @@ namespace PK::Math::Functions
         return (value + alignment - 1ull) & ~(alignment - 1ull);
     }
 
-    uint2 GetAlignedResolution2D(const uint2& resolution, uint32_t alignment)
+    uint2 GetAlignedSize(const uint2& resolution, uint32_t alignment)
     {
         return
         {
@@ -249,7 +273,17 @@ namespace PK::Math::Functions
         };
     }
 
-    uint3 GetAlignedResolution2D(const uint3& resolution, uint32_t alignment)
+    uint3 GetAlignedSize(const uint3& resolution, uint32_t alignment)
+    {
+        return
+        {
+            GetAlignedSize(resolution.x, alignment),
+            GetAlignedSize(resolution.y, alignment),
+            GetAlignedSize(resolution.z, alignment)
+        };
+    }
+
+    uint3 GetAlignedSizeXY(const uint3& resolution, uint32_t alignment)
     {
         return
         {
@@ -259,7 +293,7 @@ namespace PK::Math::Functions
         };
     }
 
-    uint4 GetAlignedSize(uint4 value, uint32_t alignment)
+    uint4 GetAlignedSize(const uint4& value, uint32_t alignment)
     {
         return
         {

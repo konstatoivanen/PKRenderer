@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <gfx.h>
 #include <vulkan/vk_enum_string_helper.h>
-#include "Core/Services/Log.h"
+#include "Core/CLI/Log.h"
 #include "Rendering/RHI/Vulkan/Utilities/VulkanExtensions.h"
 #include "Rendering/RHI/Vulkan/Utilities/VulkanPhysicalDeviceRequirements.h"
 #include "VulkanUtilities.h"
@@ -348,8 +348,9 @@ namespace PK::Rendering::RHI::Vulkan::Utilities
             }
 
             {
-                PK_LOG_INFO("Selected Physical Device '%s' from '%i' Physical Devices:", properties.core.deviceName, devices.size());
+                PK_LOG_INFO("VulkanSelectPhysicalDevice: from '%i' Physical Devices:", devices.size());
                 PK_LOG_SCOPE_INDENT(selected);
+                PK_LOG_INFO("Name: %s", properties.core.deviceName);
                 PK_LOG_INFO("Vendor: %i", properties.core.vendorID);
                 PK_LOG_INFO("Device: %i", properties.core.deviceID);
                 PK_LOG_INFO("Driver: %i", properties.core.driverVersion);

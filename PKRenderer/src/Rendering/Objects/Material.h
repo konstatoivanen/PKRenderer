@@ -1,27 +1,30 @@
 #pragma once
-#include "Core/Services/AssetDataBase.h"
+#include "Utilities/ForwardDeclareUtility.h"
+#include "Core/Assets/Asset.h"
 #include "Rendering/Objects/BindSet.h"
 #include "Rendering/Objects/ShaderPropertyBlock.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Texture)
 
 namespace PK::Rendering::Objects
 {
-    class Material : public Core::Services::Asset, public Core::Services::IAssetImportSimple, public ShaderPropertyBlock
+    class Material : public Core::Assets::AssetWithImport<>, public ShaderPropertyBlock
     {
-        friend Utilities::Ref<Material> Core::Services::AssetImporters::Create();
-
         public:
             Material() : ShaderPropertyBlock(1024) {}
             Material(RHI::Objects::Shader* shader) : ShaderPropertyBlock(1024), m_shader(shader) { InitializeShaderLayout(); }
             Material(RHI::Objects::Shader* shader, RHI::Objects::Shader* shadowShader) : ShaderPropertyBlock(1024), m_shader(shader), m_shadowShader(shadowShader) { InitializeShaderLayout(); }
+            
             constexpr RHI::Objects::Shader* GetShader() const { return m_shader; }
             constexpr RHI::Objects::Shader* GetShadowShader() const { return m_shadowShader; }
-            inline bool SupportsKeyword(const uint32_t hashId) const { return m_shader->SupportsKeyword(hashId); }
-            inline bool SupportsKeywords(const uint32_t* hashIds, const uint32_t count) const { return m_shader->SupportsKeywords(hashIds, count); }
+
+            bool SupportsKeyword(const uint32_t hashId) const;
+            bool SupportsKeywords(const uint32_t* hashIds, const uint32_t count) const;
 
             void CopyTo(char* dst, BindSet<RHI::Objects::Texture>* textureSet) const;
 
-            void Import(const char* filepath) final;
+            void AssetImport(const char* filepath) final;
 
             void InitializeShaderLayout();
 

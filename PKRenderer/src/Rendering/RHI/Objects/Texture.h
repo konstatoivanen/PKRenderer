@@ -1,22 +1,21 @@
 #pragma once
 #include "Utilities/NativeInterface.h"
-#include "Core/Services/AssetDatabase.h"
+#include "Core/Assets/Asset.h"
 #include "Rendering/RHI/Structs.h"
 
 namespace PK::Rendering::RHI::Objects
 {
     typedef Utilities::Ref<class Texture> TextureRef;
 
-    class Texture : public Core::Services::Asset, public Core::Services::IAssetImportSimple, public Utilities::NativeInterface<Texture>
+    class Texture : public Core::Assets::AssetWithImport<>, public Utilities::NativeInterface<Texture>
     {
-        friend TextureRef Core::Services::AssetImporters::Create();
-
         public:
             static TextureRef Create(const TextureDescriptor& descriptor, const char* name);
+            static bool Validate(TextureRef& inoutTexture, const TextureDescriptor& descriptor, const char* name);
 
             Texture(const char* name) : m_name(name){}
             virtual ~Texture() = default;
-            void Import(const char* filepath) final;
+            void AssetImport(const char* filepath) final;
             virtual void SetSampler(const SamplerDescriptor& sampler) = 0;
             virtual bool Validate(const Math::uint3& resolution) = 0;
             virtual bool Validate(const uint32_t levels, const uint32_t layers) = 0;

@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities/NativeInterface.h"
 #include "Utilities/PropertyBlock.h"
-#include "Core/Services/AssetDatabase.h"
+#include "Core/Assets/Asset.h"
 #include "Rendering/RHI/Structs.h"
 #include "Rendering/RHI/Layout.h"
 
@@ -53,10 +53,8 @@ namespace PK::Rendering::RHI::Objects
             Math::uint3 m_groupSize{};
     };
 
-    class Shader : public Core::Services::Asset, public Core::Services::IAssetImportSimple
+    class Shader : public Core::Assets::AssetWithImport<>
     {
-        friend Utilities::Ref<Shader> Core::Services::AssetImporters::Create();
-
         public:
             constexpr ShaderStageFlags GetStageFlags() const { return m_variants.at(0)->GetStageFlags(); }
             constexpr const FixedFunctionShaderAttributes& GetFixedFunctionAttributes() const { return m_attributes; }
@@ -72,7 +70,7 @@ namespace PK::Rendering::RHI::Objects
             constexpr const Math::uint3 GetGroupSize() const { return m_variants.at(0)->GetGroupSize(); }
             constexpr const BufferLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
 
-            void Import(const char* filepath) final;
+            void AssetImport(const char* filepath) final;
             std::string GetMetaInfo() const final;
 
         protected:

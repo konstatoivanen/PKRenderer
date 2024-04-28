@@ -7,7 +7,7 @@ namespace PK::Rendering::Passes
     class PassTemporalAntialiasing : public Utilities::NoCopy
     {
         public:
-            PassTemporalAntialiasing(Core::Services::AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight);
+            PassTemporalAntialiasing(Core::Assets::AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight);
             void Render(RHI::Objects::CommandBuffer* cmd, RHI::Objects::Texture* source, RHI::Objects::Texture* destination);
 
             constexpr Math::float4 GetJitter() const { return m_jitter; };

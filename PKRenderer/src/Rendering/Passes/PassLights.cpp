@@ -1,32 +1,60 @@
 #include "PrecompiledHeader.h"
 #include <bend/bend_sss_cpu.h>
+#include "Utilities/VectorUtilities.h"
 #include "Math/FunctionsIntersect.h"
 #include "Math/FunctionsMisc.h"
-#include "Utilities/VectorUtilities.h"
-#include "ECS/EntityViews/StaticMeshRenderableView.h"
+#include "Core/Assets/AssetDatabase.h"
+#include "Core/ApplicationConfig.h"
+#include "ECS/EntityDatabase.h"
+#include "ECS/EntityViewStaticMesh.h"
+#include "ECS/EntityViewLight.h"
 #include "Rendering/HashCache.h"
-#include "Rendering/Structs/StructsCommon.h"
+#include "Rendering/Objects/RenderView.h"
+#include "Rendering/Geometry/IBatcher.h"
+#include "Rendering/RHI/Objects/CommandBuffer.h"
+#include "Rendering/RHI/Objects/Shader.h"
+#include "Rendering/RHI/Objects/Texture.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/EntityCulling.h"
+#include "Rendering/IRenderPipeline.h"
 #include "PassLights.h"
 
-using namespace PK::Core;
-using namespace PK::Core::Services;
-using namespace PK::Math;
-using namespace PK::Utilities;
-using namespace PK::ECS;
-using namespace PK::ECS::Tokens;
-using namespace PK::ECS::EntityViews;
-using namespace PK::Rendering::Objects;
-using namespace PK::Rendering::Structs;
-using namespace PK::Rendering::RHI;
-using namespace PK::Rendering::RHI::Objects;
-
-template<>
-struct Vector::Comparer<LightRenderableView*>
+namespace PK::Rendering::Passes
 {
-    int operator()(LightRenderableView*& a, LightRenderableView*& b)
+    using namespace PK::Core;
+    using namespace PK::Core::Services;
+    using namespace PK::Core::Assets;
+    using namespace PK::Math;
+    using namespace PK::Utilities;
+    using namespace PK::ECS;
+    using namespace PK::Rendering;
+    using namespace PK::Rendering::Objects;
+    using namespace PK::Rendering::Geometry;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
+    
+    // Packed into float4, float4, uint4
+    struct alignas(16) LightPacked
     {
-        auto shadowsA = (a->renderable->flags & RenderableFlags::CastShadows) != 0;
-        auto shadowsB = (b->renderable->flags & RenderableFlags::CastShadows) != 0;
+        Math::float3 position = Math::PK_FLOAT3_ZERO;
+        float radius = 0.0f;
+        Math::float3 color = Math::PK_FLOAT3_ZERO;
+        float angle = 0.0f;
+        Math::ushort indexShadow = 0xFFFFu;
+        Math::ushort indexMatrix = 0u;
+        Math::ushort type = 0xFFFFu;
+        Math::ushort cookie = 0xFFFFu;
+        Math::uint direction = 0u;
+        float sourceRadius = 0.0f;
+    };
+
+    static int EntityViewLightPtrCompare(const void* a, const void* b)
+    {
+        auto lightA = *reinterpret_cast<EntityViewLight* const*>(a);
+        auto lightB = *reinterpret_cast<EntityViewLight* const*>(b);
+
+        auto shadowsA = (lightA->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0;
+        auto shadowsB = (lightB->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0;
 
         if (shadowsA < shadowsB)
         {
@@ -38,33 +66,22 @@ struct Vector::Comparer<LightRenderableView*>
             return -1;
         }
 
-        if (a->light->type < b->light->type)
+        if (lightA->light->type < lightB->light->type)
         {
             return -1;
         }
 
-        if (a->light->type > b->light->type)
+        if (lightA->light->type > lightB->light->type)
         {
             return 1;
         }
 
         return 0;
     }
-};
 
-namespace PK::Rendering::Passes
-{
-    PassLights::PassLights(AssetDatabase* assetDatabase, 
-                           EntityDatabase* entityDb, 
-                           Sequencer* sequencer, 
-                           StaticDrawBatcher* batcher, 
-                           const ApplicationConfig* config) :
-        m_entityDb(entityDb),
-        m_sequencer(sequencer),
-        m_batcher(batcher),
-        m_lights(1024)
+    PassLights::PassLights(AssetDatabase* assetDatabase, const ApplicationConfig* config) : m_lights(1024)
     {
-        PK_LOG_VERBOSE("Initializing Lights Pass");
+        PK_LOG_VERBOSE("PassLights.Ctor");
         PK_LOG_SCOPE_INDENT(local);
 
         m_computeLightAssignment = assetDatabase->Find<Shader>("CS_LightAssignment");
@@ -108,7 +125,7 @@ namespace PK::Rendering::Passes
 
         depthDesc.samplerType = SamplerType::Sampler2DArray;
         depthDesc.format = TextureFormat::Depth16;
-        depthDesc.resolution = { config->ShadowmapTileSize, config->ShadowmapTileSize, 1u };
+        depthDesc.resolution = { (int)config->ShadowmapTileSize, (int)config->ShadowmapTileSize, 1u };
         depthDesc.layers = PK_SHADOW_CASCADE_COUNT;
         depthDesc.usage = TextureUsage::RTDepth;
         m_depthTarget2D = Texture::Create(depthDesc, "Lights.DepthTarget.2D");
@@ -118,7 +135,7 @@ namespace PK::Rendering::Passes
         atlasDesc.format = TextureFormat::R32F;
         atlasDesc.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::RTColor;
         atlasDesc.layers = PK_SHADOW_CASCADE_COUNT * 2; // initial size assume 1 active directional light.
-        atlasDesc.resolution = { config->ShadowmapTileSize, config->ShadowmapTileSize, 1u };
+        atlasDesc.resolution = { (int)config->ShadowmapTileSize, (int)config->ShadowmapTileSize, 1u };
         atlasDesc.sampler.wrap[0] = WrapMode::Clamp;
         atlasDesc.sampler.wrap[1] = WrapMode::Clamp;
         atlasDesc.sampler.wrap[2] = WrapMode::Clamp;
@@ -171,11 +188,21 @@ namespace PK::Rendering::Passes
         m_lightsLists = Buffer::Create(ElementType::Ushort, lightIndexCount, BufferUsage::DefaultStorage, "Lights.List");
         
         auto hash = HashCache::Get();
+
         GraphicsAPI::SetBuffer(hash->pk_LightLists, m_lightsLists.get());
         GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
+
+        auto lightCookies = assetDatabase->Load<Texture>("res/textures/default/T_LightCookies.ktx2");
+
+        auto sampler = lightCookies->GetSamplerDescriptor();
+        sampler.wrap[0] = WrapMode::Clamp;
+        sampler.wrap[1] = WrapMode::Clamp;
+        sampler.wrap[2] = WrapMode::Clamp;
+        lightCookies->SetSampler(sampler);
+        GraphicsAPI::SetTexture(hash->pk_LightCookies, lightCookies);
     }
 
-    void PassLights::RenderShadows(CommandBuffer* cmd)
+    void PassLights::RenderShadows(CommandBuffer* cmd, RenderPipelineContext* context)
     {
         auto hash = HashCache::Get();
         auto atlasIndex = 0u;
@@ -202,8 +229,8 @@ namespace PK::Rendering::Passes
             { 
                 cmd->SetRenderTarget({ m_depthTargetCube.get(), m_shadowTargetCube.get() }, { range0, range0 }, true);
                 cmd->ClearDepth(0.0f, 0u);
-                cmd->ClearColor(color(batch.maxDepth), 0u);
-                m_batcher->RenderMeshlets(cmd, batch.batchGroup, nullptr, keyword);
+                cmd->ClearColor(color(PK_HALF_MAX), 0u);
+                context->batcher->RenderGroup(cmd, batch.batchGroup, nullptr, keyword);
                 GraphicsAPI::SetTexture(hash->pk_Texture, m_shadowTargetCube.get());
                 GraphicsAPI::SetImage(hash->pk_Image, m_shadowmaps.get(), range1);
                 cmd->DispatchWithCounter(m_computeCopyCubeShadow, 0, { m_shadowmaps->GetResolution().xy, tileCount });
@@ -211,9 +238,9 @@ namespace PK::Rendering::Passes
             else
             {
                 cmd->SetRenderTarget({ m_depthTarget2D.get(), m_shadowmaps.get() }, { range0, range1 }, true);
-                cmd->ClearColor(color(batch.maxDepth), 0u);
+                cmd->ClearColor(color(PK_HALF_MAX), 0u);
                 cmd->ClearDepth(0.0f, 0u);
-                m_batcher->RenderMeshlets(cmd, batch.batchGroup, nullptr, keyword);
+                context->batcher->RenderGroup(cmd, batch.batchGroup, nullptr, keyword);
             }
 
             cmd->EndDebugScope();
@@ -222,7 +249,7 @@ namespace PK::Rendering::Passes
         }
     }
 
-    void PassLights::RenderScreenSpaceShadows(CommandBuffer* cmd, const Math::float4x4& worldToClip, const Math::uint3& resolution)
+    void PassLights::RenderScreenSpaceShadows(CommandBuffer* cmd, RenderPipelineContext* context)
     {
         if (m_shadowBatches.size() == 0u || m_shadowBatches.at(0).type != LightType::Directional)
         {
@@ -231,7 +258,9 @@ namespace PK::Rendering::Passes
 
         cmd->BeginDebugScope("ScreenSpaceShadows", PK_COLOR_RED);
 
+        auto renderView = context->views[0];
         auto hash = HashCache::Get();
+        auto resolution = renderView->GetResolution();
         auto quarterResolution = uint3(resolution.x >> 1u, resolution.y >> 1u, 1u);
         
         m_screenSpaceShadowmap->Validate(resolution);
@@ -250,7 +279,7 @@ namespace PK::Rendering::Passes
         // https://www.bendstudio.com/blog/inside-bend-screen-space-shadows/
         auto lightView = m_lights[m_shadowBatches.at(0).baseLightIndex];
         auto lightDirection = lightView->transform->rotation * PK_FLOAT3_FORWARD;
-        auto lightProjection = worldToClip * float4(-lightDirection, 0.0f);
+        auto lightProjection = renderView->worldToClip * float4(-lightDirection, 0.0f);
         int viewMin[2] = { 0, 0 };
         int viewMax[2] = { (int)resolution.x, (int)resolution.y };
         float projection[4] = { lightProjection.x, -lightProjection.y, lightProjection.z, lightProjection.w };
@@ -274,10 +303,11 @@ namespace PK::Rendering::Passes
         cmd->EndDebugScope();
     }
 
-    void PassLights::ComputeClusters(CommandBuffer* cmd, Math::uint3 resolution)
+    void PassLights::ComputeClusters(CommandBuffer* cmd, RenderPipelineContext* context)
     {
         auto hash = HashCache::Get();
-
+        auto renderView = context->views[0];
+        auto resolution = renderView->GetResolution();
         resolution.x /= LightGridTileSizePx;
         resolution.y /= LightGridTileSizePx;
         resolution.z = LightGridSizeZ;
@@ -300,54 +330,42 @@ namespace PK::Rendering::Passes
         cmd->DispatchWithCounter(m_computeLightAssignment, m_lightTiles->GetResolution());
     }
 
-    void PassLights::Cull(void* engineRoot, VisibilityList* visibilityList, const float4x4& worldToClip, float znear, float zfar)
+    void PassLights::BuildLights(RenderPipelineContext* context)
     {
-        TokenCullFrustum cullFrustum;
-        cullFrustum.results = visibilityList;
-        cullFrustum.depthRange = zfar - znear;
-        cullFrustum.mask = RenderableFlags::Light;
-        cullFrustum.matrix = worldToClip;
+        auto renderView = context->views[0];
+        auto culledLights = context->cullingProxy->CullFrustum(ScenePrimitiveFlags::Light, renderView->worldToClip);
 
-        visibilityList->Clear();
-        m_sequencer->Next(engineRoot, &cullFrustum);
-
-        if (visibilityList->count == 0)
+        if (culledLights.Count() == 0)
         {
             return;
         }
 
-        uint lightCount = (uint)visibilityList->count;
+        uint lightCount = (uint)culledLights.Count();
         uint matrixCount = 0u;
         uint matrixIndex = 0u;
         uint shadowCount = 0u;
 
-        for (auto i = 0U; i < visibilityList->count; ++i)
+        for (auto i = 0U; i < culledLights.Count(); ++i)
         {
-            auto view = m_entityDb->Query<LightRenderableView>(EGID((*visibilityList)[i].entityId, (uint)ENTITY_GROUPS::ACTIVE));
+            auto view = context->entityDb->Query<EntityViewLight>(EGID(culledLights[i].entityId, (uint)ENTITY_GROUPS::ACTIVE));
             matrixCount += m_shadowTypeData[(int)view->light->type].MatrixCount;
             m_lights[i] = view;
         }
 
-        Vector::QuickSort(m_lights.GetData(), lightCount);
+        // Sort could be faster but whatever.
+        qsort(m_lights.GetData(), lightCount, sizeof(EntityViewLight*), EntityViewLightPtrCompare);
 
         m_shadowBatches.clear();
         m_lightsBuffer->Validate(lightCount + 1);
         m_lightMatricesBuffer->Validate(matrixCount);
 
-        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer);
+        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Transfer);
         auto lightsView = cmd->BeginBufferWrite<LightPacked>(m_lightsBuffer.get(), 0u, lightCount + 1);
         auto matricesView = matrixCount > 0 ? cmd->BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : BufferView<float4x4>();
 
-        auto clipToWorld = glm::inverse(worldToClip);
-        auto cascadePlaneOffsets = GetCascadeZSplits(znear, zfar);
-        TokenCullCubeFaces cullCube;
-        TokenCullCascades cullCascades;
-        cullCube.results = visibilityList;
-        cullCascades.results = visibilityList;
-        cullCube.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
-        cullFrustum.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
-        cullCascades.mask = RenderableFlags::Mesh | RenderableFlags::CastShadows;
-        cullCascades.count = PK_SHADOW_CASCADE_COUNT;
+        auto clipToWorld = glm::inverse(renderView->worldToClip);
+        auto cascadeZSplits = GetCascadeZSplits(renderView->znear, renderView->zfar);
+        auto shadowCasterMask = ScenePrimitiveFlags::Mesh | ScenePrimitiveFlags::CastShadows;
 
         for (auto i = 0u; i < lightCount; ++i)
         {
@@ -366,8 +384,7 @@ namespace PK::Rendering::Passes
             light.sourceRadius = view->light->sourceRadius;
             light.direction = 0u;
 
-            auto castShadows = (view->renderable->flags & RenderableFlags::CastShadows) != 0;
-            visibilityList->Clear();
+            auto castShadows = (view->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0;
 
             switch (view->light->type)
             {
@@ -377,37 +394,25 @@ namespace PK::Rendering::Passes
                     cascadeInfo.worldToLocal = worldToLocal;
                     cascadeInfo.clipToWorld = clipToWorld;
                     cascadeInfo.nearPlaneOffset = 0.0f;
-                    cascadeInfo.splitPlanes = cascadePlaneOffsets.data();
+                    cascadeInfo.splitPlanes = cascadeZSplits.data();
                     cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
                     cascadeInfo.count = PK_SHADOW_CASCADE_COUNT;
                     Functions::GetShadowCascadeMatrices(cascadeInfo, matricesView.data + matrixIndex);
-
-                    {
-                        const auto nearPlane = Functions::GetNearPlane(matricesView.data[matrixIndex]);
-                        light.position = float3(nearPlane.xyz);
-                        light.radius = nearPlane.w;
-                    }
-
+                    
                     // Only shadow casting lights need matrices.
                     if (castShadows)
                     {
-                        cullCascades.cascades = matricesView.data + matrixIndex;
-                        cullCascades.cascadeDirection = light.position;
-                        cullCascades.viewFrustumPlane = Functions::GetNearPlane(worldToClip);
-                        // Offsets are measured from view origin. remove near offset from plane
-                        cullCascades.viewFrustumPlane.w += cascadePlaneOffsets[0];
-                        cullCascades.cascadeSplitOffsets = cascadePlaneOffsets.data();
-                        m_sequencer->Next(engineRoot, &cullCascades);
-                        light.indexShadow = BuildShadowBatch(visibilityList, view, i, cullCascades.depthRange, &shadowCount);
+                        auto shadowCasters = context->cullingProxy->CullCascades(shadowCasterMask, matricesView.data + matrixIndex, renderView->forwardPlane, cascadeZSplits.data(), PK_SHADOW_CASCADE_COUNT);
+                        light.indexShadow = BuildShadowBatch(context, shadowCasters, view, i, &shadowCount);
 
                         // Regenerate cascades as the depth range might change based on culling
-                        cascadeInfo.nearPlaneOffset = cullCascades.outNearOffset;
+                        cascadeInfo.nearPlaneOffset = shadowCasters.outMinDepth;
                         Functions::GetShadowCascadeMatrices(cascadeInfo, matricesView.data + matrixIndex);
-
-                        const auto nearPlane = Functions::GetNearPlane(matricesView.data[matrixIndex]);
-                        light.position = float3(nearPlane.xyz);
-                        light.radius = nearPlane.w;
                     }
+
+                    const auto nearPlane = Functions::GetNearPlane(matricesView.data[matrixIndex]);
+                    light.position = float3(nearPlane.xyz);
+                    light.radius = nearPlane.w;
                 }
                 break;
 
@@ -418,10 +423,8 @@ namespace PK::Rendering::Passes
                     
                     if (castShadows)
                     {
-                        cullFrustum.depthRange = view->light->radius - 0.1f;
-                        cullFrustum.matrix = matricesView[matrixIndex];
-                        m_sequencer->Next(engineRoot, &cullFrustum);
-                        light.indexShadow = BuildShadowBatch(visibilityList, view, i, cullFrustum.depthRange, &shadowCount);
+                        auto shadowCasters = context->cullingProxy->CullFrustum(shadowCasterMask, matricesView[matrixIndex]);
+                        light.indexShadow = BuildShadowBatch(context, shadowCasters, view, i, &shadowCount);
                     }
                 }
                 break;
@@ -430,10 +433,8 @@ namespace PK::Rendering::Passes
                 {
                     if (castShadows)
                     {
-                        cullCube.depthRange = view->light->radius - 0.1f;
-                        cullCube.aabb = view->bounds->worldAABB;
-                        m_sequencer->Next(engineRoot, &cullCube);
-                        light.indexShadow = BuildShadowBatch(visibilityList, view, i, cullCube.depthRange, &shadowCount);
+                        auto shadowCasters = context->cullingProxy->CullCubeFaces(shadowCasterMask, view->bounds->worldAABB);
+                        light.indexShadow = BuildShadowBatch(context, shadowCasters, view, i, &shadowCount);
                     }
                 }
                 break;
@@ -467,53 +468,38 @@ namespace PK::Rendering::Passes
     ShadowCascades PassLights::GetCascadeZSplits(float znear, float zfar) const
     {
         ShadowCascades cascadeSplits;
-        Functions::GetCascadeDepths(znear, zfar, m_cascadeLinearity, cascadeSplits.data(), 5);
-
-        // Snap z ranges to tile indices to make shader branching more coherent
-        auto scale = LightGridSizeZ / glm::log2(zfar / znear);
-        auto bias = LightGridSizeZ * -log2(znear) / log2(zfar / znear);
-
-        for (auto i = 1; i < 4; ++i)
-        {
-            float zTile = round(log2(cascadeSplits[i]) * scale + bias);
-            cascadeSplits[i] = znear * pow(zfar / znear, zTile / LightGridSizeZ);
-        }
-
+        Functions::GetCascadeDepths(znear, zfar, m_cascadeLinearity, cascadeSplits.data(), LightGridSizeZ, 5);
         return cascadeSplits;
     }
 
-    uint32_t PassLights::BuildShadowBatch(VisibilityList* visibilityList,
-                                          LightRenderableView* view, 
-                                          uint32_t index, 
-                                          float maxDepth, 
-                                          uint32_t* outShadowCount)
+    uint32_t PassLights::BuildShadowBatch(RenderPipelineContext* context, const RequestEntityCullResults& shadowCasters, EntityViewLight* lightView, uint32_t index, uint32_t* outShadowCount)
     {
-        if (visibilityList->count == 0)
+        if (shadowCasters.Count() == 0)
         {
             return 0xFFFFu;
         }
 
-        auto& shadow = m_shadowTypeData[(int)view->light->type];
+        auto& shadow = m_shadowTypeData[(int)lightView->light->type];
 
         if (m_shadowBatches.size() == 0 ||
             m_shadowBatches.back().count >= shadow.MaxBatchSize ||
-            m_shadowBatches.back().type != view->light->type)
+            m_shadowBatches.back().type != lightView->light->type)
         {
             auto& newBatch = m_shadowBatches.emplace_back();
-            newBatch.batchGroup = m_batcher->BeginNewGroup();
-            newBatch.type = view->light->type;
+            newBatch.batchGroup = context->batcher->BeginNewGroup();
+            newBatch.type = lightView->light->type;
             newBatch.baseLightIndex = index;
         }
 
         auto& batch = m_shadowBatches.back();
 
         uint32_t shadowmapIndex = *outShadowCount;
-        *outShadowCount += m_shadowTypeData[(int)view->light->type].TileCount;
+        *outShadowCount += m_shadowTypeData[(int)lightView->light->type].TileCount;
 
-        for (auto i = 0u; i < visibilityList->count; ++i)
+        for (auto i = 0u; i < shadowCasters.Count(); ++i)
         {
-            auto& item = (*visibilityList)[i];
-            auto entity = m_entityDb->Query<StaticMeshRenderableView>(EGID(item.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
+            auto& info = shadowCasters[i];
+            auto entity = context->entityDb->Query<EntityViewStaticMesh>(EGID(info.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
 
             for (auto& kv : entity->materials->materials)
             {
@@ -522,15 +508,13 @@ namespace PK::Rendering::Passes
 
                 if (shader != nullptr)
                 {
-                    auto layerOffset = batch.count * shadow.LayerStride + item.clipId;
-                    m_batcher->SubmitStaticDraw(transform, shader, nullptr, entity->staticMesh->sharedMesh, kv.submesh, (index & 0xFFFF) | (layerOffset << 16), item.depth);
+                    auto layerOffset = batch.count * shadow.LayerStride + info.clipId;
+                    context->batcher->SubmitStaticMeshDraw(transform, shader, nullptr, entity->staticMesh->sharedMesh, kv.submesh, (index & 0xFFFF) | (layerOffset << 16), info.depth);
                 }
             }
         }
 
-        batch.maxDepth = glm::max(batch.maxDepth, maxDepth);
         batch.count++;
-
         return shadowmapIndex;
     }
 }

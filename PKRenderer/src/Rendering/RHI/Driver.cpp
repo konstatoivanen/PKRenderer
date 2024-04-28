@@ -1,5 +1,10 @@
 #include "PrecompiledHeader.h"
+#include "Math/FunctionsMisc.h"
+#include "Core/CLI/Log.h"
+#include "Core/CLI/CVariableRegister.h"
 #include "Core/Services/StringHashID.h"
+#include "Rendering/RHI/BuiltInResources.h"
+#include "Rendering/RHI/Objects/Buffer.h"
 #include "Rendering/RHI/Vulkan/VulkanDriver.h"
 #include "Driver.h"
 
@@ -8,7 +13,9 @@
 
 namespace PK::Rendering::RHI
 {
+    using namespace PK::Math;
     using namespace PK::Utilities;
+    using namespace PK::Core::CLI;
     using namespace PK::Core::Services;
     using namespace PK::Rendering::RHI::Objects;
     using namespace PK::Rendering::RHI::Vulkan;
@@ -20,6 +27,25 @@ namespace PK::Rendering::RHI
         PK_LOG_HEADER("----------INITIALIZING RHI----------");
         PK_LOG_NEWLINE();
         PK_LOG_ADD_INDENT();
+
+        CVariableRegister::Create<CVariableFunc>("RHI.Query.Memory", [](const char** args, uint32_t count)
+            {
+                PK_LOG_HEADER("----------GPU MEMORY INFO----------");
+                auto info = Driver::Get()->GetMemoryInfo();
+                PK_LOG_NEWLINE();
+                PK_LOG_INFO("Block count: %i", info.blockCount);
+                PK_LOG_INFO("Allocation count: %i", info.allocationCount);
+                PK_LOG_INFO("Unused range count: %i", info.unusedRangeCount);
+                PK_LOG_INFO("Used: %s", Functions::BytesToString(info.usedBytes).c_str());
+                PK_LOG_INFO("Unused: %s", Functions::BytesToString(info.unusedBytes).c_str());
+                PK_LOG_INFO("Allocation size min: %s", Functions::BytesToString(info.allocationSizeMin).c_str());
+                PK_LOG_INFO("Allocation size avg: %s", Functions::BytesToString(info.allocationSizeAvg).c_str());
+                PK_LOG_INFO("Allocation size max: %s", Functions::BytesToString(info.allocationSizeMax).c_str());
+                PK_LOG_INFO("Unused range size min: %s", Functions::BytesToString(info.unusedRangeSizeMin).c_str());
+                PK_LOG_INFO("Unused range size avg: %s", Functions::BytesToString(info.unusedRangeSizeAvg).c_str());
+                PK_LOG_INFO("Unused range size max: %s", Functions::BytesToString(info.unusedRangeSizeMax).c_str());
+                PK_LOG_NEWLINE();
+            });
 
         Utilities::Scope<Driver> driver = nullptr;
     
@@ -101,4 +127,7 @@ namespace PK::Rendering::RHI
     void Driver::SetAccelerationStructure(const char* name, AccelerationStructure* structure) { SetAccelerationStructure(StringHashID::StringToID(name), structure); }
     void Driver::SetConstant(const char* name, const void* data, uint32_t size) { SetConstant(StringHashID::StringToID(name), data, size); }
     void Driver::SetKeyword(const char* name, bool value) { SetKeyword(StringHashID::StringToID(name), value); }
+
+    void Driver::CreateBuiltInResources() { builtInResources = new BuiltInResources(); }
+    void Driver::ReleaseBuiltInResources() { delete builtInResources; }
 }

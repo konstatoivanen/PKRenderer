@@ -3,13 +3,15 @@
 #include "Math/FunctionsIntersect.h"
 #include "Math/FunctionsMisc.h"
 #include "Core/Services/StringHashID.h"
+#include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/RHI/GraphicsAPI.h"
 #include "Mesh.h"
 
 using namespace PK::Math;
+using namespace PK::Utilities;
 using namespace PK::Core;
 using namespace PK::Core::Services;
-using namespace PK::Utilities;
+using namespace PK::Core::Assets;
 using namespace PK::Rendering;
 using namespace PK::Rendering::Objects;
 using namespace PK::Rendering::RHI;
@@ -62,7 +64,7 @@ namespace PK::Rendering::Objects
         }
     }
 
-    void Mesh::Import(const char* filepath)
+    void Mesh::AssetImport(const char* filepath)
     {
         PK::Assets::PKAsset asset;
 
@@ -100,7 +102,7 @@ namespace PK::Rendering::Objects
         auto pBufferOffset = 0ull;
         auto vertexBufferName = GetFileName() + std::string(".VertexBuffer");
         auto indexBufferName = GetFileName() + std::string(".IndexBuffer");
-        auto cmd = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer);
+        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Transfer);
 
         BufferRef vertexBuffers[PK_MAX_VERTEX_ATTRIBUTES];
         auto bufferCount = 0u;
@@ -156,10 +158,7 @@ namespace PK::Rendering::Objects
 }
 
 template<>
-bool PK::Core::Services::AssetImporters::IsValidExtension<Mesh>(const std::filesystem::path& extension) { return extension.compare(".pkmesh") == 0; }
+bool Asset::IsValidExtension<Mesh>(const std::string& extension) { return extension.compare(".pkmesh") == 0; }
 
 template<>
-Ref<Mesh> PK::Core::Services::AssetImporters::Create()
-{
-    return CreateRef<Mesh>();
-}
+Ref<Mesh> Asset::Create() { return CreateRef<Mesh>(); }

@@ -1,5 +1,4 @@
 #pragma once
-#include "PrecompiledHeader.h"
 #include <gfx.h>
 #include "Rendering/RHI/Window.h"
 #include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"

@@ -1,5 +1,5 @@
 #pragma once
-#include "PrecompiledHeader.h"
+#include <memory>
 
 #define PK_BIND_FUNCTION(o, fn) [o](auto&&... args) -> decltype(auto) { return o->fn(std::forward<decltype(args)>(args)...); }
 

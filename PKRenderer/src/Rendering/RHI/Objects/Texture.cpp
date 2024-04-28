@@ -1,13 +1,16 @@
 #include "PrecompiledHeader.h"
 #include <KTX/ktx.h>
+#include <filesystem>
+#include "Core/CLI/Log.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanTexture.h"
 #include "Rendering/RHI/Vulkan/Utilities/VulkanEnumConversion.h"
 #include "Rendering/RHI/Driver.h"
 #include "Texture.h"
 
+using namespace PK::Utilities;
 using namespace PK::Core;
 using namespace PK::Core::Services;
-using namespace PK::Utilities;
+using namespace PK::Core::Assets;
 using namespace PK::Rendering;
 using namespace PK::Rendering::RHI;
 using namespace PK::Rendering::RHI::Objects;
@@ -15,7 +18,7 @@ using namespace PK::Rendering::RHI::Vulkan::Objects;
 
 namespace PK::Rendering::RHI::Objects
 {
-    Ref<Texture> Texture::Create(const TextureDescriptor& descriptor, const char* name)
+    TextureRef Texture::Create(const TextureDescriptor& descriptor, const char* name)
     {
         auto api = Driver::Get()->GetAPI();
 
@@ -27,7 +30,20 @@ namespace PK::Rendering::RHI::Objects
         return nullptr;
     }
 
-    void Texture::Import(const char* filepath)
+    bool Texture::Validate(TextureRef& inoutTexture, const TextureDescriptor& descriptor, const char* name)
+    {
+        if (!inoutTexture)
+        {
+            inoutTexture = Create(descriptor, name);
+            return true;
+        }
+        else
+        {
+            return inoutTexture->Validate(descriptor);
+        }
+    }
+
+    void Texture::AssetImport(const char* filepath)
     {
         m_name = std::filesystem::path(GetFileName()).stem().string();
 
@@ -108,10 +124,10 @@ namespace PK::Rendering::RHI::Objects
 }
 
 template<>
-bool AssetImporters::IsValidExtension<Texture>(const std::filesystem::path& extension) { return extension.compare(".ktx2") == 0; }
+bool Asset::IsValidExtension<Texture>(const std::string& extension) { return extension.compare(".ktx2") == 0; }
 
 template<>
-Ref<Texture> AssetImporters::Create()
+TextureRef Asset::Create<Texture>()
 {
     auto api = Driver::Get()->GetAPI();
 

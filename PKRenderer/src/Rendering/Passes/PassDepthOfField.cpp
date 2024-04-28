@@ -1,18 +1,23 @@
 #include "PrecompiledHeader.h"
-#include "PassDepthOfField.h"
-#include "Rendering/HashCache.h"
+#include "Core/Assets/AssetDatabase.h"
+#include "Core/ApplicationConfig.h"
+#include "Rendering/RHI/Objects/Shader.h"
+#include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/HashCache.h"
+#include "PassDepthOfField.h"
 
 namespace PK::Rendering::Passes
 {
     using namespace PK::Core;
+    using namespace PK::Core::Assets;
     using namespace PK::Core::Services;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
     PassDepthOfField::PassDepthOfField(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
-        PK_LOG_VERBOSE("Initializing Depth Of Field");
+        PK_LOG_VERBOSE("PassDepthOfField.Ctor");
         PK_LOG_SCOPE_INDENT(local);
 
         m_computeDepthOfField = assetDatabase->Find<Shader>("CS_DepthOfField");

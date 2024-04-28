@@ -1,13 +1,15 @@
 #include "PrecompiledHeader.h"
 #include <ctime>
 #include <cstdlib>
-#include "Core/Services/Log.h"
-#include "Core/UpdateStep.h"
-#include "ECS/Tokens/TimeToken.h"
+#include "Core/CLI/CVariableRegister.h"
+#include "Core/CLI/Log.h"
 #include "Time.h"
 
 namespace PK::Core::Services
 {
+    using namespace PK::Core::CLI;
+    using namespace PK::Core::ControlFlow;
+
     const clock_t Time::GetClockTicks()
     {
         return clock();
@@ -18,100 +20,86 @@ namespace PK::Core::Services
         return clock() / (double)CLOCKS_PER_SEC;
     }
 
-    Time::Time(Sequencer* sequencer, float timeScale) : m_sequencer(sequencer), m_timeScale(timeScale)
+    Time::Time(Sequencer* sequencer, float timeScale, bool logFramerate) : 
+        m_sequencer(sequencer),
+        m_logFramerate(logFramerate)
     {
+        m_info.timeScale = timeScale;
+        CVariableRegister::Create<CVariableFunc>("Time.Reset", [this](const char** args, uint32_t count) { Reset(); PK_LOG_INFO("Time.Reset"); });
+        CVariableRegister::Create<bool*>("Time.LogFramerate", &m_logFramerate, "0 = 0ff, 1 = On", 1u, 1u);
     }
 
 
     void Time::Reset()
     {
-        m_time = 0;
-        m_unscaledTime = 0;
-
-        m_frameIndex = 0;
-        m_frameIndexFixed = 0;
-        m_framerate = 0;
-        m_framerateMin = (uint64_t)-1;
-        m_framerateMax = 0;
-        m_framerateAvg = 0;
-        m_framerateFixed = 0;
+        auto timeScale = m_info.timeScale;
+        m_info = {};
+        m_info.timeScale = timeScale;
         m_second = 0;
     }
 
     void Time::LogFrameRate()
     {
-        PK_LOG_OVERWRITE("FPS: %4.1i, FIXED: %i, MIN: %i, MAX: %i, AVG: %i MS: %4.2f", m_framerate, m_framerateFixed, m_framerateMin, m_framerateMax, m_framerateAvg, m_unscaledDeltaTimeFixed * 1000.0f);
+        PK_LOG_OVERWRITE("FPS: %4.1i, FIXED: %i, MIN: %i, MAX: %i, AVG: %i MS: %4.2f", 
+            m_info.framerate,
+            m_info.framerateFixed,
+            m_info.framerateMin,
+            m_info.framerateMax,
+            m_info.framerateAvg,
+            m_info.unscaledDeltaTimeFixed * 1000.0f);
     }
 
-    void Time::Step(int condition)
+    void Time::OnApplicationOpenFrame()
     {
-        auto step = (PK::Core::UpdateStep)condition;
+        m_frameStart = std::chrono::steady_clock::now();
+        auto frameTimeInfo = m_info;
+        m_sequencer->Next(this, &frameTimeInfo);
+    }
 
-        switch (step)
+    void Time::OnApplicationCloseFrame()
+    {
+        std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double>> frameEnd = std::chrono::steady_clock::now();
+        m_info.unscaledDeltaTime = (frameEnd - m_frameStart).count();
+        m_info.deltaTime = m_info.unscaledDeltaTime * m_info.timeScale;
+
+        m_info.unscaledTime += m_info.unscaledDeltaTime;
+        m_info.time += m_info.deltaTime;
+        m_info.smoothDeltaTime = m_info.smoothDeltaTime + 0.5 * (m_info.deltaTime - m_info.smoothDeltaTime);
+
+        ++m_info.frameIndex;
+
+        if (m_info.unscaledDeltaTime > 0)
         {
-            case PK::Core::UpdateStep::OpenFrame:
-            {
-                m_frameStart = std::chrono::steady_clock::now();
+            m_info.framerate = (uint64_t)(1.0 / m_info.unscaledDeltaTime);
+        }
 
-                PK::ECS::Tokens::TimeToken token;
-                token.timeScale = m_timeScale;
-                token.time = m_time;
-                token.unscaledTime = m_unscaledTime;
-                token.deltaTime = m_deltaTime;
-                token.unscaledDeltaTime = m_unscaledDeltaTime;
-                token.smoothDeltaTime = m_smoothDeltaTime;
-                token.unscaledDeltaTimeFixed = m_unscaledDeltaTimeFixed;
-                token.frameIndex = m_frameIndex;
+        if (m_info.framerate < m_framerateMinRaw)
+        {
+            m_framerateMinRaw = m_info.framerate;
+        }
 
-                m_sequencer->Next<PK::ECS::Tokens::TimeToken>(this, &token, 0);
+        if (m_info.framerate > m_framerateMaxRaw)
+        {
+            m_framerateMaxRaw = m_info.framerate;
+        }
 
-                if (token.logFrameRate)
-                {
-                    LogFrameRate();
-                }
-            }
-            break;
-            case PK::Core::UpdateStep::CloseFrame:
-            {
-                std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double>> frameEnd = std::chrono::steady_clock::now();
-                m_unscaledDeltaTime = (frameEnd - m_frameStart).count();
-                m_deltaTime = m_unscaledDeltaTime * m_timeScale;
+        m_info.framerateAvg = (uint64_t)(m_info.frameIndex / m_info.unscaledTime);
 
-                m_unscaledTime += m_unscaledDeltaTime;
-                m_time += m_deltaTime;
+        if ((uint64_t)m_info.unscaledTime != m_second)
+        {
+            m_info.framerateFixed = m_info.frameIndex - m_frameIndexFixed;
+            m_frameIndexFixed = m_info.frameIndex;
+            m_info.unscaledDeltaTimeFixed = 1.0 / m_info.framerateFixed;
+            m_info.framerateMin = m_framerateMinRaw;
+            m_info.framerateMax = m_framerateMaxRaw;
+            m_second = (uint64_t)m_info.unscaledTime;
+            m_framerateMinRaw = (uint64_t)-1;
+            m_framerateMaxRaw = 0ull;
+        }
 
-                m_smoothDeltaTime = m_smoothDeltaTime + 0.5 * (m_deltaTime - m_smoothDeltaTime);
-
-                ++m_frameIndex;
-
-                if (m_unscaledDeltaTime > 0)
-                {
-                    m_framerate = (uint64_t)(1.0 / m_unscaledDeltaTime);
-                }
-
-                if ((uint64_t)m_unscaledTime != m_second)
-                {
-                    m_framerateFixed = m_frameIndex - m_frameIndexFixed;
-                    m_frameIndexFixed = m_frameIndex;
-                    m_unscaledDeltaTimeFixed = 1.0 / m_framerateFixed;
-                    m_second = (uint64_t)m_unscaledTime;
-                    m_framerateMin = (uint64_t)-1;
-                    m_framerateMax = 0;
-                }
-
-                if (m_framerate < m_framerateMin)
-                {
-                    m_framerateMin = m_framerate;
-                }
-
-                if (m_framerate > m_framerateMax)
-                {
-                    m_framerateMax = m_framerate;
-                }
-
-                m_framerateAvg = (uint64_t)(m_frameIndex / m_unscaledTime);
-            }
-            break;
+        if (m_logFramerate)
+        {
+            LogFrameRate();
         }
     }
 }

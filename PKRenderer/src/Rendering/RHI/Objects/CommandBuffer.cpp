@@ -1,4 +1,7 @@
 #include "PrecompiledHeader.h"
+#include "Core/CLI/Log.h"
+#include "Rendering/RHI/Objects/Texture.h"
+#include "Rendering/RHI/BuiltInResources.h"
 #include "Rendering/RHI/Driver.h"
 #include "CommandBuffer.h"
 

@@ -1,8 +1,12 @@
 #pragma once
+#include "Utilities/ForwardDeclareUtility.h"
 #include "Utilities/NoCopy.h"
-#include "Core/ApplicationConfig.h"
-#include "Rendering/Objects/ConstantBuffer.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/Objects/Buffer.h"
+#include "Rendering/RHI/Objects/Texture.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core, struct ApplicationConfig)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct CommandBuffer)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
 
 namespace PK::Rendering::Passes
 {
@@ -18,7 +22,7 @@ namespace PK::Rendering::Passes
         };
 
         public:
-            PassDepthOfField(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
+            PassDepthOfField(Core::Assets::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
             void ComputeAutoFocus(RHI::Objects::CommandBuffer* cmd, uint32_t screenHeight);
             void Render(RHI::Objects::CommandBuffer* cmd, RHI::Objects::Texture* destination);
             void OnUpdateParameters(const Core::ApplicationConfig* config);

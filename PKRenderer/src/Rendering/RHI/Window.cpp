@@ -22,8 +22,4 @@ namespace PK::Rendering::RHI
 
         return nullptr;
     }
-
-    Math::uint3 Window::GetResolutionAligned() const { return Math::Functions::GetAlignedResolution2D(GetResolution(), SIZE_ALIGNMENT); }
-    Math::uint4 Window::GetRectAligned() const { return { 0u, 0u, GetResolutionAligned().xy }; };
-    float Window::GetAspectRatioAligned() const { return float(GetResolutionAligned().x) / float(GetResolutionAligned().y); }
 }

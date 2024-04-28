@@ -44,7 +44,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
     void VulkanSwapchain::Rebuild(const SwapchainCreateInfo& createInfo)
     {
-        PK_LOG_INFO("Swap Chain Rebuild:");
+        PK_LOG_INFO("VulkanSwapChain.Rebuild:");
         PK_LOG_SCOPE_INDENT(local);
 
         m_cachedCreateInfo = createInfo;

@@ -1,14 +1,18 @@
 #pragma once
+#include "Utilities/ForwardDeclareUtility.h"
 #include "Utilities/NoCopy.h"
-#include "Core/ApplicationConfig.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/Objects/Texture.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core, struct ApplicationConfig)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct CommandBuffer)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
 
 namespace PK::Rendering::Passes
 {
     class PassHierarchicalDepth : public PK::Utilities::NoCopy
     {
         public:
-            PassHierarchicalDepth(Core::Services::AssetDatabase* assetDatabase, Core::ApplicationConfig* config);
+            PassHierarchicalDepth(Core::Assets::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
             void Compute(RHI::Objects::CommandBuffer* cmd, Math::uint3 resolution);
 
         private:

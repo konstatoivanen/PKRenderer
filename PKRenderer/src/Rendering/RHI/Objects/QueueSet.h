@@ -1,7 +1,11 @@
 #pragma once
+#include "Utilities/ForwardDeclareUtility.h"
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
-#include "Rendering/RHI/Objects/CommandBuffer.h"
+#include "Rendering/RHI/Structs.h"
+#include "Rendering/RHI/FenceRef.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct CommandBuffer)
 
 namespace PK::Rendering::RHI::Objects
 {
@@ -14,10 +18,6 @@ namespace PK::Rendering::RHI::Objects
         virtual void Sync(QueueType from, QueueType to, int32_t submitOffset = 0) = 0;
         virtual void Wait(QueueType from, QueueType to, int32_t submitOffset = 0) = 0;
         virtual void Transfer(QueueType from, QueueType to) = 0;
-
-        inline void Submit(QueueType type, CommandBuffer** commandBuffer)
-        {
-            *commandBuffer = Submit(type);
-        }
+        inline void Submit(QueueType type, CommandBuffer** commandBuffer) { *commandBuffer = Submit(type); }
     };
 }

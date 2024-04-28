@@ -13,7 +13,9 @@ namespace PK::Math
     typedef uint16_t ushort;
     typedef uint32_t uint;
     typedef uint64_t ulong;
-    typedef signed char sbyte;
+    typedef std::uint8_t byte;
+    typedef std::int8_t sbyte;
+
 
     typedef glm::vec2 float2;
     typedef glm::vec3 float3;
@@ -41,8 +43,11 @@ namespace PK::Math
     typedef glm::u16vec4 ushort4;
 
     typedef glm::u16mat2x2 ushort2x2;
-    typedef glm::u16mat2x2 ushort3x3;
+    typedef glm::u16mat3x3 ushort3x3;
     typedef glm::u16mat4x4 ushort4x4;
+
+    typedef glm::lowp_i8vec4 sbyte4;
+    typedef glm::lowp_u8vec4 byte4;
 
     typedef glm::ivec2 int2;
     typedef glm::ivec3 int3;
@@ -64,7 +69,7 @@ namespace PK::Math
     typedef glm::bvec3 bool3;
     typedef glm::bvec4 bool4;
 
-    typedef glm::lowp_i8vec4 color32;
+    typedef glm::lowp_u8vec4 color32;
     typedef glm::vec4 color;
 
     typedef glm::quat quaternion;
@@ -80,6 +85,7 @@ namespace PK::Math
     constexpr uint2 PK_UINT2_ZERO = { 0, 0 };
     constexpr uint3 PK_UINT3_ZERO = { 0, 0, 0 };
     constexpr uint4 PK_UINT4_ZERO = { 0, 0, 0, 0 };
+    constexpr uint4 PK_UINT4_MAX = { 0, 0, ~0u, ~0u };
 
     constexpr bool2 PK_BOOL2_ZERO = { false, false };
     constexpr bool3 PK_BOOL3_ZERO = { false, false, false };
@@ -155,6 +161,8 @@ namespace PK::Math
     constexpr float PK_FLOAT_RAD2DEG = 57.29578F;
     constexpr float PK_CLIPZ_NEAR = 1.0f;
     constexpr float PK_CLIPZ_FAR = 0.0f;
+    constexpr float PK_HALF_MAX = 65504.0;
+    constexpr float PK_HALF_MAX_MINUS1 = 65472.0;
 
     struct FrustumPlanes
     {

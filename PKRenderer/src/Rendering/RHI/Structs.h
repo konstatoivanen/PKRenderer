@@ -533,4 +533,19 @@ namespace PK::Rendering::RHI
         uint8_t viewportCount = 1u;
         uint16_t excludeStageMask = 0u;
     };
+
+    struct DriverMemoryInfo
+    {
+        uint32_t blockCount;
+        uint32_t allocationCount;
+        uint32_t unusedRangeCount;
+        size_t usedBytes;
+        size_t unusedBytes;
+        size_t allocationSizeMin;
+        size_t allocationSizeAvg;
+        size_t allocationSizeMax;
+        size_t unusedRangeSizeMin;
+        size_t unusedRangeSizeAvg;
+        size_t unusedRangeSizeMax;
+    };
 }

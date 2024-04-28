@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <vulkan/vk_enum_string_helper.h>
 #include "Math/FunctionsMisc.h"
-#include "Core/Services/Log.h"
+#include "Core/CLI/Log.h"
 #include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
 #include "VulkanQueue.h"
 
@@ -420,7 +420,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         context.queueFamilies = queueFamilies;
         context.createInfos = &createInfos;
 
-        PK_LOG_INFO("Found '%i' Physical Device Queue Families:", context.families->size());
+        PK_LOG_INFO("VulkanQueueSet.Initializer: Found '%i' Physical Device Queue Families:", context.families->size());
         PK_LOG_ADD_INDENT();
 
         for (auto i = 0u; i < context.families->size(); ++i)
@@ -458,7 +458,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             }
         }
 
-        PK_LOG_INFO("Selected '%i' Queues From '%i' Physical Device Queue Families:", queueCount, createInfos.size());
+        PK_LOG_INFO("VulkanQueueSet.Initializer: Selected '%i' Queues From '%i' Physical Device Queue Families:", queueCount, createInfos.size());
         PK_LOG_ADD_INDENT();
 
         for (auto i = 0u; i < queueCount; ++i)

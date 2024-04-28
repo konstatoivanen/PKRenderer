@@ -1,6 +1,9 @@
 #include "PrecompiledHeader.h"
-#include "Rendering/HashCache.h"
+#include "Core/Assets/AssetDatabase.h"
+#include "Rendering/RHI/Objects/Shader.h"
+#include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/HashCache.h"
 #include "PassFilmGrain.h"
 
 namespace PK::Rendering::Passes
@@ -8,13 +11,13 @@ namespace PK::Rendering::Passes
     using namespace PK::Math;
     using namespace PK::Utilities;
     using namespace PK::Core;
-    using namespace PK::Core::Services;
+    using namespace PK::Core::Assets;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
     PassFilmGrain::PassFilmGrain(AssetDatabase* assetDatabase)
     {
-        PK_LOG_VERBOSE("Initializing Film Grain");
+        PK_LOG_VERBOSE("PassFilmGrain.Ctor");
         PK_LOG_SCOPE_INDENT(local);
 
         m_computeFilmGrain = assetDatabase->Find<Shader>("CS_FilmGrain");

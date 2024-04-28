@@ -1,19 +1,24 @@
 #include "PrecompiledHeader.h"
-#include "Rendering/HashCache.h"
+#include "Core/Assets/AssetDatabase.h"
+#include "Rendering/RHI/Objects/Shader.h"
+#include "Rendering/RHI/Objects/Texture.h"
+#include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/HashCache.h"
 #include "PassAutoExposure.h"
 
 namespace PK::Rendering::Passes
 {
     using namespace PK::Math;
     using namespace PK::Core;
+    using namespace PK::Core::Assets;
     using namespace PK::Core::Services;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
     PassAutoExposure::PassAutoExposure(AssetDatabase* assetDatabase)
     {
-        PK_LOG_VERBOSE("Initializing Auto Exposure");
+        PK_LOG_VERBOSE("PassAutoExposure.Ctor");
         PK_LOG_SCOPE_INDENT(local);
 
         m_compute = assetDatabase->Find<Shader>("CS_AutoExposure");

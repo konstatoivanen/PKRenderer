@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "ConstantBuffer.h"
 
 namespace PK::Rendering::Objects
@@ -12,5 +13,10 @@ namespace PK::Rendering::Objects
     {
         ReserveLayout(layout);
         FreezeLayout();
+    }
+
+    void ConstantBuffer::FlushBuffer(RHI::Objects::CommandBuffer* cmd)
+    {
+        cmd->UpdateBuffer(m_graphicsBuffer.get(), 0ull, m_graphicsBuffer->GetCapacity(), m_buffer);
     }
 }

@@ -1,0 +1,19 @@
+#include "PrecompiledHeader.h"
+#include "Core/CLI/Log.h"
+#include "LogScopeTimer.h"
+
+namespace PK::Core::CLI
+{
+    LogScopeTimer::LogScopeTimer(const char* name) :
+        start(std::chrono::steady_clock::now()),
+        name(name)
+    {
+    }
+
+    LogScopeTimer::~LogScopeTimer()
+    {
+        std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double>> end = std::chrono::steady_clock::now();
+        auto delta = (end - start) * 1000.0;
+        StaticLog::Log(LogSeverity::PK_LOG_LVL_INFO, LogColor::PK_LOG_COLOR_INFO, "ScopeTimer: %s, %4.4f ms", name, delta);
+    }
+}

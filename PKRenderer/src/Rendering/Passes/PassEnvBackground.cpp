@@ -1,6 +1,11 @@
 #include "PrecompiledHeader.h"
-#include "Rendering/HashCache.h"
+#include "Core/Assets/AssetDatabase.h"
+#include "Core/ApplicationConfig.h"
+#include "Rendering/RHI/Objects/Shader.h"
+#include "Rendering/RHI/Objects/Texture.h"
+#include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/HashCache.h"
 #include "PassEnvBackground.h"
 
 namespace PK::Rendering::Passes
@@ -8,13 +13,13 @@ namespace PK::Rendering::Passes
     using namespace PK::Math;
     using namespace PK::Utilities;
     using namespace PK::Core;
-    using namespace PK::Core::Services;
+    using namespace PK::Core::Assets;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
     PassEnvBackground::PassEnvBackground(AssetDatabase* assetDatabase)
     {
-        PK_LOG_VERBOSE("Initializing Environment Background");
+        PK_LOG_VERBOSE("PassEnvBackground.Ctor");
         PK_LOG_SCOPE_INDENT(local);
 
         auto hash = HashCache::Get();
@@ -34,10 +39,10 @@ namespace PK::Rendering::Passes
         cmd->Blit(m_backgroundShader);
     }
 
-    void PassEnvBackground::OnUpdateParameters(AssetImportToken<ApplicationConfig>* token)
+    void PassEnvBackground::OnUpdateParameters(AssetImportEvent<ApplicationConfig>* token)
     {
         auto hash = HashCache::Get();
-        auto tex = token->assetDatabase->Load<Texture>(token->asset->FileBackgroundTexture.value.c_str());
+        auto tex = token->assetDatabase->Load<Texture>(token->asset->FileBackgroundTexture.c_str());
         auto sampler = tex->GetSamplerDescriptor();
         sampler.wrap[0] = WrapMode::Mirror;
         sampler.wrap[1] = WrapMode::Mirror;

@@ -15,7 +15,7 @@ namespace PK::Math::Functions
 
     // https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
     // DirectX convention
-    FrustumPlanes ExtractFrustrumPlanes(const float4x4 viewToClip, bool normalize)
+    FrustumPlanes ExtractFrustrumPlanes(const float4x4& viewToClip, bool normalize)
     {
         FrustumPlanes planes;
 
@@ -64,7 +64,7 @@ namespace PK::Math::Functions
         return planes;
     }
 
-    float4 GetNearPlane(const float4x4 viewToClip)
+    float4 GetNearPlane(const float4x4& viewToClip)
     {
         float4 plane;
         plane.x = viewToClip[0][3] - viewToClip[0][2];
@@ -73,6 +73,13 @@ namespace PK::Math::Functions
         plane.w = viewToClip[3][3] - viewToClip[3][2];
         NormalizePlane(&plane);
         return plane;
+    }
+
+    float4 TransformPlane(const float4x4& matrix, const float4& plane)
+    {
+        const auto direction = float3((matrix * float4(plane.xyz, 0.0f)).xyz);
+        const auto offset = float3((matrix * float4(plane.xyz * plane.w, 1.0f)).xyz);
+        return float4(direction, -dot(direction, offset));
     }
 
     float PlaneMaxDistanceToAABB(const float4& plane, const BoundingBox& aabb)

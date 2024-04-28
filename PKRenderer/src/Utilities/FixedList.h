@@ -1,6 +1,7 @@
 #pragma once
 #include "NoCopy.h"
 #include "BufferIterator.h"
+#include "BufferView.h"
 #include <exception>
 
 namespace PK::Utilities
@@ -118,6 +119,8 @@ namespace PK::Utilities
 
             BufferIterator<T> begin() { return BufferIterator<T>(m_data, 0ull); }
             BufferIterator<T> end() { return BufferIterator<T>(m_data + m_count, m_count); }
+
+            BufferView<T> GetView() { return { m_data, m_count }; }
 
         private:
             T* m_data;

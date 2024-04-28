@@ -1,6 +1,7 @@
 #pragma once
 #include "NoCopy.h"
 #include "BufferView.h"
+#include <cstdint>
 #include <exception>
 
 namespace PK::Utilities
@@ -53,6 +54,12 @@ namespace PK::Utilities
 
                 m_data = newbuffer;
                 m_count = newCount;
+            }
+
+            void SetValidate(size_t i, const T& value)
+            {
+                Validate(i + 1ull);
+                GetData()[i] = value;
             }
 
             void Clear() { memset(m_data, 0, sizeof(T) * m_count); }

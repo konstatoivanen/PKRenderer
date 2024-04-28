@@ -1,5 +1,8 @@
 #include "PrecompiledHeader.h"
+#include "Rendering/RHI/Objects/Shader.h"
+#include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/Driver.h"
 #include "ShaderBindingTable.h"
 
 namespace PK::Rendering::Objects

@@ -1,6 +1,8 @@
 #include "PrecompiledHeader.h"
 #include "Math/FunctionsMisc.h"
 #include "Rendering/HashCache.h"
+#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "StaticSceneMesh.h"
 
 namespace PK::Rendering::Objects
@@ -53,7 +55,13 @@ namespace PK::Rendering::Objects
 
     StaticMesh* StaticSceneMesh::Allocate(StaticMeshAllocationData* data)
     {
-        PK_LOG_VERBOSE("Static Mesh Allocation");
+        PK_LOG_VERBOSE("StaticSceneMesh.Allocate: sm:%u, ml:%u, mlvc:%u, mltc:%u, vc:%u, tc:%u", 
+            data->meshlet.submeshCount, 
+            data->meshlet.meshletCount,
+            data->meshlet.vertexCount,
+            data->meshlet.triangleCount,
+            data->regular.vertexCount,
+            data->regular.indexCount);
         PK_LOG_SCOPE_INDENT(meshlet);
         
         PK_THROW_ASSERT(data->meshlet.submeshCount == data->regular.submeshCount, "Submesh count missmatch");
@@ -137,7 +145,7 @@ namespace PK::Rendering::Objects
             data->meshlet.pMeshlets[i].triangleFirst += staticMesh->meshletTriangleFirst;
         }
 
-        auto commandBuffer = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer);
+        auto commandBuffer = GraphicsAPI::GetCommandBuffer(QueueType::Transfer);
         commandBuffer->UploadBufferSubData(m_submeshBuffer.get(), data->meshlet.pSubmeshes, submeshOffset, submeshesSize);
         commandBuffer->UploadBufferSubData(m_meshletBuffer.get(), data->meshlet.pMeshlets, meshletOffset, meshletsSize);
         commandBuffer->UploadBufferSubData(m_meshletVertexBuffer.get(), data->meshlet.pVertices, meshletVertexOffset, meshletVerticesSize);

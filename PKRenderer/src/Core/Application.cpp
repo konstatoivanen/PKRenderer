@@ -1,72 +1,82 @@
 #include "PrecompiledHeader.h"
-#include "Core/Services/Log.h"
+#include "Core/Assets/AssetDatabase.h"
+#include "Core/CLI/CVariableRegister.h"
+#include "Core/CLI/Log.h"
+#include "Core/CLI/LoggerPrintf.h"
+#include "Core/ControlFlow/Sequencer.h"
+#include "Core/ControlFlow/IStepApplication.h"
+#include "Core/ControlFlow/IStepApplicationWindow.h"
+#include "Core/ControlFlow/RemoteProcessRunner.h"
+#include "Core/Input/InputSystem.h"
 #include "Core/Services/StringHashID.h"
-#include "Core/Services/Input.h"
 #include "Core/Services/Time.h"
-#include "Core/Services/AssetDatabase.h"
-#include "Core/Services/Sequencer.h"
 #include "Core/ApplicationConfig.h"
-#include "Core/CommandConfig.h"
-#include "Core/UpdateStep.h"
 #include "ECS/EntityDatabase.h"
-#include "ECS/Engines/EngineCommandInput.h"
-#include "ECS/Engines/EngineEditorCamera.h"
-#include "ECS/Engines/EngineBuildAccelerationStructure.h"
-#include "ECS/Engines/EngineUpdateTransforms.h"
-#include "ECS/Engines/EnginePKAssetBuilder.h"
-#include "ECS/Engines/EngineCull.h"
-#include "ECS/Engines/EngineDrawGeometry.h"
-#include "ECS/Engines/EngineDebug.h"
-#include "ECS/Engines/EngineScreenshot.h"
-#include "ECS/Engines/EngineGizmos.h"
-#include "ECS/Tokens/TimeToken.h"
-#include "ECS/Tokens/RenderingTokens.h"
-#include "Rendering/StaticDrawBatcher.h"
-#include "Rendering/RenderPipeline.h"
+#include "Engines/EngineCommandInput.h"
+#include "Engines/EngineFlyCamera.h"
+#include "Engines/EngineGatherRayTracingGeometry.h"
+#include "Engines/EngineUpdateTransforms.h"
+#include "Engines/EngineEntityCull.h"
+#include "Engines/EngineDrawGeometry.h"
+#include "Engines/EngineDebug.h"
+#include "Engines/EngineScreenshot.h"
+#include "Engines/EngineGizmos.h"
+#include "Rendering/Objects/RenderView.h"
+#include "Rendering/Geometry/BatcherStaticMesh.h"
+#include "Rendering/RHI/Objects/Shader.h"
 #include "Rendering/HashCache.h"
+#include "Rendering/RenderPipelineDisptacher.h"
+#include "Rendering/RenderPipelineScene.h"
 #include "Application.h"
 
 namespace PK::Core
 {
     using namespace PK::Utilities;
+    using namespace PK::Core::Assets;
+    using namespace PK::Core::CLI;
+    using namespace PK::Core::ControlFlow;
+    using namespace PK::Core::Input;
     using namespace PK::Core::Services;
     using namespace PK::Rendering;
-    using namespace PK::Rendering::Structs;
+    using namespace PK::Rendering::Objects;
+    using namespace PK::Rendering::Geometry;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
-    Application* Application::s_Instance = nullptr;
+    Application* Application::s_instance = nullptr;
 
-    Application::Application(ApplicationArguments arguments, const std::string& name)
+    Application::Application(CLI::CArguments arguments, const std::string& name)
     {
-        PK_THROW_ASSERT(!s_Instance, "Application already exists!");
-        s_Instance = this;
+        PK_THROW_ASSERT(!s_instance, "Application already exists!");
+        s_instance = this;
 
+        m_logger = CreateRef<LoggerPrintf>();
+        StaticLog::SetLogger(m_logger);
 
         m_services = CreateScope<ServiceRegister>();
-        m_services->Create<Debug::Logger>(Debug::PK_LOG_LVL_ALL_FLAGS);
         m_services->Create<StringHashID>();
         m_services->Create<HashCache>();
 
+        auto remoteProcessRunner = m_services->Create<RemoteProcessRunner>();
+        auto cvariableRegister = m_services->Create<CVariableRegister>();
         auto entityDb = m_services->Create<PK::ECS::EntityDatabase>();
         auto sequencer = m_services->Create<Sequencer>();
         auto assetDatabase = m_services->Create<AssetDatabase>(sequencer);
 
         assetDatabase->LoadDirectory<ApplicationConfig>("res/configs/");
-        assetDatabase->LoadDirectory<CommandConfig>("res/configs/");
         auto config = assetDatabase->Find<ApplicationConfig>("Active");
-        auto commandConfig = assetDatabase->Find<CommandConfig>("Active");
+
+        assetDatabase->LoadDirectory<InputKeyConfig>("res/configs/");
+        auto keyConfig = assetDatabase->Find<InputKeyConfig>("Active");
 
         uint32_t logfilter = 0u;
-        logfilter |= config->EnableLogRHI ? Debug::PK_LOG_LVL_RHI : 0u;
-        logfilter |= config->EnableLogVerbose ? Debug::PK_LOG_LVL_VERBOSE : 0u;
-        logfilter |= config->EnableLogInfo ? Debug::PK_LOG_LVL_INFO : 0u;
-        logfilter |= config->EnableLogWarning ? Debug::PK_LOG_LVL_WARNING : 0u;
-        logfilter |= config->EnableLogError ? Debug::PK_LOG_LVL_ERROR : 0u;
-        m_services->Get<Debug::Logger>()->SetFilter(logfilter);
-
-        auto time = m_services->Create<Time>(sequencer, config->TimeScale);
-        auto input = m_services->Create<Input>(sequencer);
+        logfilter |= config->EnableLogRHI ? PK_LOG_LVL_RHI : 0u;
+        logfilter |= config->EnableLogVerbose ? PK_LOG_LVL_VERBOSE : 0u;
+        logfilter |= config->EnableLogInfo ? PK_LOG_LVL_INFO : 0u;
+        logfilter |= config->EnableLogWarning ? PK_LOG_LVL_WARNING : 0u;
+        logfilter |= config->EnableLogError ? PK_LOG_LVL_ERROR : 0u;
+        m_logger->SetSeverityMask((LogSeverity)logfilter);
+        m_logger->SetShowConsole(config->EnableConsole);
 
         auto workingDirectory = std::filesystem::path(arguments.args[0]).remove_filename().string();
         m_graphicsDriver = RHI::CreateRHIDriver(workingDirectory, APIType::Vulkan);
@@ -78,118 +88,131 @@ namespace PK::Core
             config->EnableVsync,
             config->EnableCursor));
 
-        Window::SetConsole(config->EnableConsole);
-        m_window->OnKeyInput = PK_BIND_FUNCTION(input, OnKeyInput);
-        m_window->OnScrollInput = PK_BIND_FUNCTION(input, OnScrollInput);
-        m_window->OnMouseButtonInput = PK_BIND_FUNCTION(input, OnMouseButtonInput);
         m_window->OnClose = PK_BIND_FUNCTION(this, Application::Close);
 
         assetDatabase->LoadDirectory<Shader>("res/shaders/");
 
-        auto engineEditorCamera = m_services->Create<ECS::Engines::EngineEditorCamera>(sequencer, time, config);
-        auto engineUpdateTransforms = m_services->Create<ECS::Engines::EngineUpdateTransforms>(entityDb);
-
-        auto staticDrawBatcher = m_services->Create<StaticDrawBatcher>(assetDatabase);
-        auto renderPipeline = m_services->Create<RenderPipeline>(assetDatabase, entityDb, sequencer, config, staticDrawBatcher);
+        auto time = m_services->Create<Time>(sequencer, config->TimeScale, config->EnableFrameRateLog);
+        auto inputSystem = m_services->Create<InputSystem>(sequencer);
+        auto batcherStaticMesh = m_services->Create<BatcherStaticMesh>(assetDatabase);
+        auto renderPipelineDispatcher = m_services->Create<RenderPipelineDisptacher>(entityDb, assetDatabase, sequencer, batcherStaticMesh);
+        auto renderPipelineScene = m_services->Create<RenderPipelineScene>(entityDb, assetDatabase, config);
         
-        auto engineCommands = m_services->Create<ECS::Engines::EngineCommandInput>(assetDatabase, sequencer, time, entityDb, commandConfig);
-        auto engineCull = m_services->Create<ECS::Engines::EngineCull>(entityDb);
-        auto engineDrawGeometry = m_services->Create<ECS::Engines::EngineDrawGeometry>(entityDb, sequencer);
-        auto engineBuildAccelerationStructure = m_services->Create<ECS::Engines::EngineBuildAccelerationStructure>(entityDb);
-        auto engineDebug = m_services->Create<ECS::Engines::EngineDebug>(assetDatabase, entityDb, staticDrawBatcher->GetStaticSceneMesh(), config);
-        auto enginePKAssetBuilder = m_services->Create<ECS::Engines::EnginePKAssetBuilder>(arguments);
-        auto engineScreenshot = m_services->Create<ECS::Engines::EngineScreenshot>();
-        auto engineGizmos = m_services->Create<ECS::Engines::EngineGizmos>(assetDatabase, sequencer, config);
+        renderPipelineDispatcher->SetRenderPipeline(RenderViewType::Scene, renderPipelineScene);
+
+        auto engineFlyCamera = m_services->Create<Engines::EngineFlyCamera>(entityDb, keyConfig);
+        auto engineUpdateTransforms = m_services->Create<Engines::EngineUpdateTransforms>(entityDb);
+        auto engineCommands = m_services->Create<Engines::EngineCommandInput>(sequencer, keyConfig, arguments);
+        auto engineEntityCull = m_services->Create<Engines::EngineEntityCull>(entityDb);
+        auto engineDrawGeometry = m_services->Create<Engines::EngineDrawGeometry>(entityDb, sequencer);
+        auto engineGatherRayTracingGeometry = m_services->Create<Engines::EngineGatherRayTracingGeometry>(entityDb);
+        auto engineDebug = m_services->Create<Engines::EngineDebug>(assetDatabase, entityDb, batcherStaticMesh->GetStaticSceneMesh(), config);
+        auto engineScreenshot = m_services->Create<Engines::EngineScreenshot>();
+        auto engineGizmos = m_services->Create<Engines::EngineGizmos>(assetDatabase, sequencer, config);
 
         sequencer->SetSteps(
             {
                 {
                     sequencer->GetRoot(),
                     {
-                        { (int)UpdateStep::OpenFrame,		{ Step::Simple(time) }},
-                        { (int)UpdateStep::UpdateInput,		{ Step::Conditional<Window>(input) } },
-                        { (int)UpdateStep::UpdateEngines,   { Step::Simple(engineUpdateTransforms) } },
-                        { (int)UpdateStep::Render,			{ Step::Conditional<Window>(renderPipeline), Step::Token<Window>(engineScreenshot) } },
-                        { (int)UpdateStep::CloseFrame,		{ Step::Conditional<Window>(input), Step::Simple(time) }},
+                        Sequencer::Step::Create<ApplicationStep::OpenFrame>(time),
+                        Sequencer::Step::Create<ApplicationStep::UpdateInput, Window*>(inputSystem),
+                        Sequencer::Step::Create<ApplicationStep::UpdateEngines>(engineUpdateTransforms),
+                        Sequencer::Step::Create<ApplicationStep::Render, Window*>(renderPipelineDispatcher),
+                        Sequencer::Step::Create<ApplicationStep::Render, Window*>(engineScreenshot),
+                        Sequencer::Step::Create<ApplicationStep::CloseFrame>(time),
+                        Sequencer::Step::Create<ApplicationStep::CloseFrame, Window*>(inputSystem),
+                        Sequencer::Step::Create<CLI::CArgumentsConst>(cvariableRegister),
+                        Sequencer::Step::Create<CLI::CArgumentConst>(cvariableRegister),
+                        Sequencer::Step::Create<RemoteProcessCommand*>(remoteProcessRunner)
                     }
                 },
                 {
                     time,
                     {
-                        Step::Token<PK::ECS::Tokens::TimeToken>(renderPipeline)
+                        Sequencer::Step::Create<TimeFrameInfo*>(renderPipelineDispatcher),
+                        Sequencer::Step::Create<TimeFrameInfo*>(engineFlyCamera),
                     }
                 },
                 {
-                    input,
+                    inputSystem,
                     {
-                        Step::Token<Input>(engineCommands),
-                        Step::Token<Input>(engineEditorCamera),
+                        Sequencer::Step::Create<InputDevice*>(engineCommands),
+                        Sequencer::Step::Create<InputDevice*>(engineFlyCamera),
                     }
                 },
                 {
-                    engineCommands,
+                    renderPipelineScene,
                     {
-                        Step::Token<TokenConsoleCommand>(engineEditorCamera),
-                        Step::Token<TokenConsoleCommand>(enginePKAssetBuilder),
-                        Step::Token<TokenConsoleCommand>(engineScreenshot),
-                        Step::Token<TokenConsoleCommand>(engineGizmos),
-                    }
-                },
-                {
-                    engineEditorCamera,
-                    {
-                        Step::Token<PK::ECS::Tokens::ViewProjectionUpdateToken>(renderPipeline)
-                    }
-                },
-                {
-                    renderPipeline,
-                    {
-                        Step::Token<PK::ECS::Tokens::TokenCullFrustum>(engineCull),
-                        Step::Token<PK::ECS::Tokens::TokenCullCascades>(engineCull),
-                        Step::Token<PK::ECS::Tokens::TokenCullCubeFaces>(engineCull),
-                        Step::Token<PK::ECS::Tokens::TokenAccelerationStructureBuild>(engineBuildAccelerationStructure),
-                        Step::Conditional<PK::ECS::Tokens::TokenRenderEvent>(engineGizmos),
-                        Step::Conditional<PK::ECS::Tokens::TokenRenderEvent>(engineDrawGeometry),
+                        Sequencer::Step::Create<RequestRayTracingGeometry*>(engineGatherRayTracingGeometry),
+                        Sequencer::Step::Create<RequestEntityCullFrustum*>(engineEntityCull),
+                        Sequencer::Step::Create<RequestEntityCullCascades*>(engineEntityCull),
+                        Sequencer::Step::Create<RequestEntityCullCubeFaces*>(engineEntityCull),
+                        Sequencer::Step::Create<RenderPipelineEvent*>(engineGizmos),
+                        Sequencer::Step::Create<RenderPipelineEvent*>(engineDrawGeometry),
                     }
                 },
                 {
                     engineDrawGeometry,
                     {
-                        Step::Token<PK::ECS::Tokens::TokenCullFrustum>(engineCull)
+                        Sequencer::Step::Create<RequestEntityCullFrustum*>(engineEntityCull)
                     }
                 },
                 {
                     engineGizmos,
                     {
-                        Step::Token<PK::ECS::Tokens::IGizmosRenderer>(engineDebug)
+                        Sequencer::Step::Create<IGizmos*>(engineDebug)
                     }
                 },
                 {
                     assetDatabase,
                     {
-                        Step::Token<AssetImportToken<ApplicationConfig>>(renderPipeline),
-                        Step::Token<AssetImportToken<ApplicationConfig>>(engineGizmos)
+                        Sequencer::Step::Create<AssetImportEvent<ApplicationConfig>*>(renderPipelineScene),
+                        Sequencer::Step::Create<AssetImportEvent<ApplicationConfig>*>(engineGizmos),
+                        Sequencer::Step::Create<AssetImportEvent<ApplicationConfig>*>(engineDebug),
+                        Sequencer::Step::Create<AssetImportEvent<InputKeyConfig>*>(engineFlyCamera),
+                        Sequencer::Step::Create<AssetImportEvent<InputKeyConfig>*>(engineCommands)
                     }
                 },
             });
+
+        CVariableRegister::Create<CVariableFunc>("Application.Close", [](const char** args, uint32_t count) { Application::Get().Close(); });
+        CVariableRegister::Create<CVariableFunc>("Application.VSync", [](const char** args, uint32_t count) { Application::GetPrimaryWindow()->SetVSync((bool)atoi(args[0])); }, "0 = 0ff, 1 = On", 1u, 1u);
+        CVariableRegister::Create<CVariableFunc>("Application.VSync.Toggle", [](const char** args, uint32_t count) { Application::GetPrimaryWindow()->SetVSync(!Application::GetPrimaryWindow()->IsVSync()); });
+
+        // PKAssetTools execute cvar binding
+        if (arguments.count >= 4)
+        {
+            auto workingdir = std::filesystem::path(arguments.args[0]).string();
+            auto executablePath = std::filesystem::path(arguments.args[1]).string();
+            auto sourcedirectory = std::filesystem::path(arguments.args[2]).string();
+            auto targetdirectory = std::filesystem::path(arguments.args[3]).string();
+            auto executableArgs = std::string("\"" + sourcedirectory + "\" \"" + targetdirectory + "");
+
+            CVariableRegister::Create<CVariableFunc>("Application.Run.PKAssetTools", [remoteProcessRunner, executablePath, executableArgs](const char** args, uint32_t count)
+            {
+                remoteProcessRunner->ExecuteRemoteProcess({ executablePath.c_str(), executableArgs.c_str() });
+            });
+        }
 
         PK_LOG_HEADER("----------INITIALIZATION COMPLETE----------");
     }
 
     Application::~Application()
     {
-        GetService<Services::Sequencer>()->Release();
+        GetService<Sequencer>()->Release();
         GetService<AssetDatabase>()->Unload();
         m_services->Clear();
         m_window = nullptr;
         m_graphicsDriver = nullptr;
+        PK_LOG_HEADER("----------APPLICATION TERMINATED----------");
     }
 
     void Application::Execute()
     {
-        auto sequencer = GetService<Services::Sequencer>();
+        auto sequencer = GetService<Sequencer>();
 
-        while (m_window->IsAlive() && m_Running)
+        while (m_window->IsAlive() && m_isRunning)
         {
             m_window->PollEvents();
 
@@ -199,17 +222,17 @@ namespace PK::Core
                 continue;
             }
 
-            sequencer->Next((int)UpdateStep::OpenFrame);
+            sequencer->NextRoot(ApplicationStep::OpenFrame());
 
             m_window->Begin();
-            sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::OpenFrame);
-            sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::UpdateInput);
-            sequencer->Next((int)UpdateStep::UpdateEngines);
-            sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::Render);
-            sequencer->Next<PK::Core::Window>(m_window.get(), (int)UpdateStep::CloseFrame);
+            sequencer->NextRoot(ApplicationStep::OpenFrame(), m_window.get());
+            sequencer->NextRoot(ApplicationStep::UpdateInput(), m_window.get());
+            sequencer->NextRoot(ApplicationStep::UpdateEngines());
+            sequencer->NextRoot(ApplicationStep::Render(), m_window.get());
+            sequencer->NextRoot(ApplicationStep::CloseFrame(), m_window.get());
             m_window->End();
 
-            sequencer->Next((int)UpdateStep::CloseFrame);
+            sequencer->NextRoot(ApplicationStep::CloseFrame());
 
             GraphicsAPI::GC();
         }
@@ -217,6 +240,7 @@ namespace PK::Core
 
     void Application::Close()
     {
-        m_Running = false;
+        PK_LOG_INFO("Application.Close Requested.");
+        m_isRunning = false;
     }
 }

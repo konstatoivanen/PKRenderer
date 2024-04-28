@@ -1,13 +1,19 @@
 #pragma once
+#include "Utilities/ForwardDeclareUtility.h"
 #include "Utilities/NoCopy.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/Objects/Buffer.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::Assets, class AssetDatabase)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct CommandBuffer)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Texture)
 
 namespace PK::Rendering::Passes
 {
     class PassAutoExposure : public Utilities::NoCopy
     {
         public:
-            PassAutoExposure(Core::Services::AssetDatabase* assetDatabase);
+            PassAutoExposure(Core::Assets::AssetDatabase* assetDatabase);
             void Render(RHI::Objects::CommandBuffer* cmd, RHI::Objects::Texture* target);
 
         private:

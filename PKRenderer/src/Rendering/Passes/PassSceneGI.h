@@ -1,22 +1,24 @@
 #pragma once
 #include "Utilities/NoCopy.h"
-#include "Core/ApplicationConfig.h"
-#include "Rendering/StaticDrawBatcher.h"
+#include "Rendering/Geometry/IBatcher.h"
 #include "Rendering/Objects/ConstantBuffer.h"
 #include "Rendering/Objects/ShaderBindingTable.h"
 #include "Rendering/RHI/GraphicsAPI.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core, struct ApplicationConfig)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::Assets, class AssetDatabase)
 
 namespace PK::Rendering::Passes
 {
     class PassSceneGI : public PK::Utilities::NoCopy
     {
         public:
-            PassSceneGI(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
+            PassSceneGI(Core::Assets::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
             void PreRender(RHI::Objects::CommandBuffer* cmd, const Math::uint3& resolution);
             void PruneVoxels(RHI::Objects::CommandBuffer* cmd);
             void DispatchRays(RHI::Objects::CommandBuffer* cmd);
             void ReprojectGI(RHI::Objects::CommandBuffer* cmd);
-            void Voxelize(RHI::Objects::CommandBuffer* cmd, StaticDrawBatcher* batcher, uint32_t batchGroup);
+            void Voxelize(RHI::Objects::CommandBuffer* cmd, Geometry::IBatcher* batcher, uint32_t batchGroup);
             void RenderGI(RHI::Objects::CommandBuffer* cmd);
             void VoxelMips(RHI::Objects::CommandBuffer* cmd);
             void ValidateReservoirs(RHI::Objects::CommandBuffer* cmd);

@@ -1,6 +1,6 @@
 #pragma once
 #include "Utilities/IndexedSet.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/Objects/BindArray.h"
 
 namespace PK::Rendering::Objects
 {

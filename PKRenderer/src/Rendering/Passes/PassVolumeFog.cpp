@@ -1,6 +1,11 @@
 #include "PrecompiledHeader.h"
-#include "PassVolumeFog.h"
+#include "Core/Assets/AssetDatabase.h"
+#include "Core/ApplicationConfig.h"
+#include "Rendering/RHI/Objects/Shader.h"
+#include "Rendering/RHI/Objects/Texture.h"
+#include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/HashCache.h"
+#include "PassVolumeFog.h"
 
 namespace PK::Rendering::Passes
 {
@@ -8,13 +13,14 @@ namespace PK::Rendering::Passes
     using namespace PK::Utilities;
     using namespace PK::Core;
     using namespace PK::Core::Services;
+    using namespace PK::Core::Assets;
     using namespace PK::Rendering::Objects;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
     PassVolumeFog::PassVolumeFog(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
-        PK_LOG_VERBOSE("Initializing Volumetric Fog");
+        PK_LOG_VERBOSE("PassVolumeFog.Ctor");
         PK_LOG_SCOPE_INDENT(local);
 
         TextureDescriptor descriptor{};
@@ -126,9 +132,9 @@ namespace PK::Rendering::Passes
     void PassVolumeFog::OnUpdateParameters(const ApplicationConfig* config)
     {
         auto hash = HashCache::Get();
-        m_volumeResources->Set<float4>(hash->pk_Fog_Albedo, float4(config->FogAlbedo.value, 1.0f));
-        m_volumeResources->Set<float4>(hash->pk_Fog_Absorption, float4(config->FogAbsorption.value, 1.0f));
-        m_volumeResources->Set<float4>(hash->pk_Fog_WindDirSpeed, float4(config->FogWindDirection.value, config->FogWindSpeed));
+        m_volumeResources->Set<float4>(hash->pk_Fog_Albedo, float4(config->FogAlbedo, 1.0f));
+        m_volumeResources->Set<float4>(hash->pk_Fog_Absorption, float4(config->FogAbsorption, 1.0f));
+        m_volumeResources->Set<float4>(hash->pk_Fog_WindDirSpeed, float4(config->FogWindDirection, config->FogWindSpeed));
         m_volumeResources->Set<float>(hash->pk_Fog_Phase0, config->FogPhase0);
         m_volumeResources->Set<float>(hash->pk_Fog_Phase1, config->FogPhase1);
         m_volumeResources->Set<float>(hash->pk_Fog_PhaseW, config->FogPhaseW);
@@ -143,6 +149,6 @@ namespace PK::Rendering::Passes
         m_volumeResources->Set<float>(hash->pk_Fog_Density_Sky_HeightExponent, config->FogDensitySkyHeightExponent);
         m_volumeResources->Set<float>(hash->pk_Fog_Density_Sky_HeightOffset, config->FogDensitySkyHeightOffset);
         m_volumeResources->Set<float>(hash->pk_Fog_Density_Sky_HeightAmount, config->FogDensitySkyHeightAmount);
-        m_volumeResources->FlushBuffer(QueueType::Transfer);
+        m_volumeResources->FlushBuffer(GraphicsAPI::GetCommandBuffer(QueueType::Transfer));
     }
 }

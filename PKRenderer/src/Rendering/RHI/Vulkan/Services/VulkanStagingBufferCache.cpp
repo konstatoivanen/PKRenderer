@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Utilities/VectorUtilities.h"
-#include "Core/Services/Log.h"
+#include "Core/CLI/Log.h"
 #include "Rendering/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanStagingBufferCache.h"
 
@@ -47,7 +47,6 @@ struct Vector::Bound<VulkanStagingBuffer*>
 
 namespace PK::Rendering::RHI::Vulkan::Services
 {
-
     VulkanStagingBufferCache::VulkanStagingBufferCache(VkDevice device, VmaAllocator allocator, uint64_t pruneDelay) :
         m_allocator(allocator),
         m_device(device),

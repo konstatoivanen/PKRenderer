@@ -1,18 +1,23 @@
 #include "PrecompiledHeader.h"
-#include "Rendering/HashCache.h"
+#include "Core/CLI/Log.h"
+#include "Core/Assets/AssetDatabase.h"
+#include "Rendering/RHI/Objects/Shader.h"
+#include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/HashCache.h"
 #include "PassBloom.h"
 
 namespace PK::Rendering::Passes
 {
     using namespace PK::Math;
     using namespace PK::Core::Services;
+    using namespace PK::Core::Assets;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
     PassBloom::PassBloom(AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight)
     {
-        PK_LOG_VERBOSE("Initializing Bloom");
+        PK_LOG_VERBOSE("PassBloom.Ctor");
         PK_LOG_SCOPE_INDENT(local);
 
         TextureDescriptor descriptor{};

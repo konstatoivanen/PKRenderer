@@ -1,6 +1,5 @@
 #pragma once
 #include "Utilities/NoCopy.h"
-#include "Core/ApplicationConfig.h"
 #include "Rendering/Objects/ConstantBuffer.h"
 #include "Rendering/RHI/GraphicsAPI.h"
 
@@ -9,7 +8,7 @@ namespace PK::Rendering::Passes
     class PassVolumeFog : public PK::Utilities::NoCopy
     {
         public:
-            PassVolumeFog(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
+            PassVolumeFog(Core::Assets::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
             void ComputeDensity(RHI::Objects::CommandBuffer* cmd, const Math::uint3& resolution);
             void Compute(RHI::Objects::CommandBuffer* cmd, const Math::uint3& resolution);
             void Render(RHI::Objects::CommandBuffer* cmd, RHI::Objects::Texture* destination);

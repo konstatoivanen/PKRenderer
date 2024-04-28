@@ -6,10 +6,10 @@
 
 namespace PK::Rendering
 {
-    struct HashCache : public Core::Services::IService, 
-                       public Utilities::ISingleton<HashCache>
+    struct HashCache : public Core::Services::IService,
+        public Utilities::ISingleton<HashCache>
     {
-        #define DECLARE_HASH(name) uint32_t name = Core::Services::StringHashID::StringToID(#name); \
+#define DECLARE_HASH(name) uint32_t name = Core::Services::StringHashID::StringToID(#name); \
 
         // Generic variable names for generic use cases.
         DECLARE_HASH(pk_Texture)
@@ -52,7 +52,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_WorldToClipPrev)
         DECLARE_HASH(pk_WorldToClipPrev_NoJitter)
         DECLARE_HASH(pk_ViewToClipDelta)
-        
+
         DECLARE_HASH(pk_Sampler_SurfDefault)
         DECLARE_HASH(pk_Sampler_GBuffer)
 
@@ -65,7 +65,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_PerFrameConstants)
         DECLARE_HASH(pk_ModelMatrices)
         DECLARE_HASH(pk_GizmoVertices)
-        
+
         DECLARE_HASH(pk_GB_Current_Normals)
         DECLARE_HASH(pk_GB_Current_Depth)
         DECLARE_HASH(pk_GB_Current_DepthBiased)
@@ -80,7 +80,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_LightCookies)
         DECLARE_HASH(pk_Bluenoise256)
         DECLARE_HASH(pk_Bluenoise128x64)
-        
+
         DECLARE_HASH(pk_GI_Parameters)
         DECLARE_HASH(pk_GI_VolumeMaskWrite)
         DECLARE_HASH(pk_GI_VolumeWrite)
@@ -127,7 +127,7 @@ namespace PK::Rendering
         DECLARE_HASH(pk_FilmGrain_Luminance)
         DECLARE_HASH(pk_FilmGrain_Intensity)
         DECLARE_HASH(pk_FilmGrain_Texture)
-        
+
         DECLARE_HASH(pk_CC_WhiteBalance)
         DECLARE_HASH(pk_CC_Lift)
         DECLARE_HASH(pk_CC_Gamma)
@@ -203,7 +203,7 @@ namespace PK::Rendering
         DECLARE_HASH(PK_META_PASS_GBUFFER)
         DECLARE_HASH(PK_META_PASS_GIVOXELIZE)
 
-        #undef DEFINE_HASH_CACHE
+#undef DEFINE_HASH_CACHE
 
         uint32_t pk_Instancing_Transforms = Core::Services::StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TRANSFORMS);
         uint32_t pk_Instancing_Indices = Core::Services::StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_INDICES);

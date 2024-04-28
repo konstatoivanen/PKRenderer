@@ -1,11 +1,16 @@
 #pragma once
+#include "Utilities/ForwardDeclareUtility.h"
 #include "Utilities/NoCopy.h"
-#include "Core/ApplicationConfig.h"
-#include "ECS/Tokens/CullingTokens.h"
-#include "ECS/EntityViews/LightRenderableView.h"
-#include "Rendering/Objects/ConstantBuffer.h"
-#include "Rendering/StaticDrawBatcher.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Utilities/MemoryBlock.h"
+#include "Math/FunctionsMisc.h"
+#include "Rendering/EntityEnums.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::Assets, class AssetDatabase)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core, struct ApplicationConfig)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering, struct RequestEntityCullResults)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering, struct RenderPipelineContext)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::ECS, struct EntityViewLight)
 
 namespace PK::Rendering::Passes
 {
@@ -18,17 +23,13 @@ namespace PK::Rendering::Passes
             const uint32_t LightGridSizeZ = 32;
             const uint32_t LightGridTileSizePx = 64;
 
-            PassLights(Core::Services::AssetDatabase* assetDatabase, 
-                       ECS::EntityDatabase* entityDb, 
-                       Core::Services::Sequencer* sequencer, 
-                       StaticDrawBatcher* batcher,
-                       const Core::ApplicationConfig* config);
-
-            void RenderShadows(RHI::Objects::CommandBuffer* cmd);
-            void RenderScreenSpaceShadows(RHI::Objects::CommandBuffer* cmd, const Math::float4x4& worldToClip, const Math::uint3& resolution);
-            void ComputeClusters(RHI::Objects::CommandBuffer* cmd, Math::uint3 resolution);
-            void Cull(void* engineRoot, ECS::Tokens::VisibilityList* visibilityList, const Math::float4x4& worldToClip, float znear, float zfar);
+            PassLights(Core::Assets::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
+            void RenderShadows(RHI::Objects::CommandBuffer* cmd, RenderPipelineContext* context);
+            void RenderScreenSpaceShadows(RHI::Objects::CommandBuffer* cmd, RenderPipelineContext* context);
+            void ComputeClusters(RHI::Objects::CommandBuffer* cmd, RenderPipelineContext* context);
+            void BuildLights(RenderPipelineContext* context);
             ShadowCascades GetCascadeZSplits(float znear, float zfar) const;
+            inline Math::float4 GetCascadeZSplitsFloat4(float znear, float zfar) const { return Math::Functions::GetCascadeDepthsFloat4(znear, zfar, m_cascadeLinearity, LightGridSizeZ); }
         
         private:
             struct ShadowTypeData
@@ -44,19 +45,14 @@ namespace PK::Rendering::Passes
                 uint32_t baseLightIndex = 0u;
                 uint32_t count = 0u;
                 uint32_t batchGroup = 0u;
-                Structs::LightType type = Structs::LightType::TypeCount;
-                float maxDepth = 0.0f;
+                LightType type = LightType::TypeCount;
             };
 
-            uint32_t BuildShadowBatch(ECS::Tokens::VisibilityList* visibilityList, 
-                                      ECS::EntityViews::LightRenderableView* view, 
+            uint32_t BuildShadowBatch(RenderPipelineContext* context,
+                                      const RequestEntityCullResults& shadowCasters,
+                                      ECS::EntityViewLight* lightView, 
                                       uint32_t index, 
-                                      float maxDepth,
                                       uint32_t* outShadowCount);
-
-            ECS::EntityDatabase* m_entityDb = nullptr;
-            Core::Services::Sequencer* m_sequencer = nullptr;
-            StaticDrawBatcher* m_batcher = nullptr;
 
             RHI::Objects::Shader* m_computeLightAssignment = nullptr;
             RHI::Objects::Shader* m_computeCopyCubeShadow = nullptr;
@@ -73,11 +69,9 @@ namespace PK::Rendering::Passes
             RHI::Objects::TextureRef m_shadowTargetCube;
             
             std::vector<ShadowbatchInfo> m_shadowBatches;
-            Utilities::MemoryBlock<ECS::EntityViews::LightRenderableView*> m_lights;
+            Utilities::MemoryBlock<ECS::EntityViewLight*> m_lights;
             
-            float m_directionalHack;
-
             float m_cascadeLinearity;
-            ShadowTypeData m_shadowTypeData[(int)Structs::LightType::TypeCount];
+            ShadowTypeData m_shadowTypeData[(int)LightType::TypeCount];
     };
 }

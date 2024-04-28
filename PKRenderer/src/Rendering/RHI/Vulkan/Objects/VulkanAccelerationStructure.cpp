@@ -325,7 +325,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     {
         if (m_instanceCount <= 0)
         {
-            PK_LOG_WARNING("Ray tracing structure build has no instances!");
+            PK_LOG_WARNING("VulkanAccelerationStructure.EndWrite: write has 0 instances!");
         }
 
         ValidateResources();

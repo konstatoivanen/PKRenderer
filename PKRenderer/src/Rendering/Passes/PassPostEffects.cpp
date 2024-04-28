@@ -1,5 +1,10 @@
 #include "PrecompiledHeader.h"
 #include "Math/FunctionsColor.h"
+#include "Core/Assets/AssetDatabase.h"
+#include "Core/ApplicationConfig.h"
+#include "Rendering/RHI/Objects/Shader.h"
+#include "Rendering/RHI/Objects/Texture.h"
+#include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/HashCache.h"
 #include "PassPostEffects.h"
 
@@ -8,6 +13,7 @@ namespace PK::Rendering::Passes
     using namespace PK::Math;
     using namespace PK::Utilities;
     using namespace PK::Core;
+    using namespace PK::Core::Assets;
     using namespace PK::Core::Services;
     using namespace PK::Rendering::Objects;
     using namespace PK::Rendering::RHI;
@@ -15,7 +21,7 @@ namespace PK::Rendering::Passes
 
     PassPostEffectsComposite::PassPostEffectsComposite(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
-        PK_LOG_VERBOSE("Initializing Post Effects Composite");
+        PK_LOG_VERBOSE("PassPostEffectsComposite.Ctor");
         PK_LOG_SCOPE_INDENT(local);
 
         m_computeComposite = assetDatabase->Find<Shader>("CS_PostEffectsComposite");
@@ -77,13 +83,13 @@ namespace PK::Rendering::Passes
         cmd->EndDebugScope();
     }
 
-    void PassPostEffectsComposite::OnUpdateParameters(AssetImportToken<ApplicationConfig>* token)
+    void PassPostEffectsComposite::OnUpdateParameters(AssetImportEvent<ApplicationConfig>* token)
     {
         auto hash = HashCache::Get();
         auto config = token->asset;
 
-        m_bloomLensDirtTexture = token->assetDatabase->Load<Texture>(config->FileBloomDirt.value.c_str());
-        m_colorgradingLut = token->assetDatabase->Load<Texture>(config->CC_FileLookupTexture.value.c_str());
+        m_bloomLensDirtTexture = token->assetDatabase->Load<Texture>(config->FileBloomDirt);
+        m_colorgradingLut = token->assetDatabase->Load<Texture>(config->CC_FileLookupTexture);
 
         auto smp = m_colorgradingLut->GetSamplerDescriptor();
         smp.wrap[0] = WrapMode::Clamp;
@@ -122,7 +128,7 @@ namespace PK::Rendering::Passes
         m_constantsPostProcess->Set<float4>(hash->pk_CC_Lift, lift);
         m_constantsPostProcess->Set<float4>(hash->pk_CC_Gamma, gamma);
         m_constantsPostProcess->Set<float4>(hash->pk_CC_Gain, gain);
-        m_constantsPostProcess->Set<float4>(hash->pk_CC_HSV, float4(config->CC_Hue, config->CC_Saturation, config->CC_Value, 1.0f));
+        m_constantsPostProcess->Set<float4>(hash->pk_CC_HSV, float4((float)config->CC_Hue, (float)config->CC_Saturation, (float)config->CC_Value, 1.0f));
         m_constantsPostProcess->Set<float4>(hash->pk_CC_MixRed, Functions::HexToRGB(config->CC_ChannelMixerRed));
         m_constantsPostProcess->Set<float4>(hash->pk_CC_MixGreen, Functions::HexToRGB(config->CC_ChannelMixerGreen));
         m_constantsPostProcess->Set<float4>(hash->pk_CC_MixBlue, Functions::HexToRGB(config->CC_ChannelMixerBlue));
@@ -149,7 +155,7 @@ namespace PK::Rendering::Passes
         featureMask |= (uint)(config->PostFXDebugZoom) << 12;
 
         m_constantsPostProcess->Set<uint>(hash->pk_PostEffectsFeatureMask, featureMask);
-        m_constantsPostProcess->FlushBuffer(QueueType::Transfer);
+        m_constantsPostProcess->FlushBuffer(GraphicsAPI::GetCommandBuffer(QueueType::Transfer));
 
         // All but lut regular color grading
         const uint fullFeatureMask = 0x2Fu;

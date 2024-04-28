@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "VulkanPhysicalDeviceRequirements.h"
-#include "Core/Services/Log.h"
+#include "Core/CLI/Log.h"
 
 namespace PK::Rendering::RHI::Vulkan
 {
@@ -21,17 +21,17 @@ namespace PK::Rendering::RHI::Vulkan
     #define PK_TEST_FEATURE(field)                   \
     if (requirements.field && !available.field)      \
     {                                                \
-        PK_LOG_INFO("Feature Unavailable: " #field); \
+        PK_LOG_INFO("Feature.Unavailable: " #field); \
         missingFeatures |= true;                     \
     }                                                \
     else if (requirements.field)                     \
     {                                                \
-        PK_LOG_INFO("Feature Available: " #field);   \
+        PK_LOG_INFO("Feature.Available: " #field);   \
     }                                                \
     
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
     {
-        PK_LOG_INFO("Physical device feature check:");
+        PK_LOG_INFO("VulkanPhysicalDeviceFeatures.CheckRequirements:");
         PK_LOG_ADD_INDENT();
 
         bool missingFeatures = false;
@@ -212,11 +212,11 @@ namespace PK::Rendering::RHI::Vulkan
 
         if (missingFeatures)
         {
-            PK_LOG_INFO("Check failure.");
+            PK_LOG_INFO("Feature requirement missmatch.");
         }
         else
         {
-            PK_LOG_INFO("Check successful.");
+            PK_LOG_INFO("Feature requirements fulfilled.");
         }
 
         PK_LOG_NEWLINE();

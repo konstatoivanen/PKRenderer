@@ -1,38 +1,27 @@
 #include "PrecompiledHeader.h"
-#include <yaml-cpp/yaml.h>
-#include "Core/YamlSerializers.h"
+#include "Core/CLI/Log.h"
+#include "Core/Yaml/ConvertMathTypes.h"
+#include "Core/Yaml/ConvertTexture.h"
+#include "Core/Yaml/ConvertShader.h"
 #include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/BuiltInResources.h"
 #include "Material.h"
 
-using namespace PK::Core;
-using namespace PK::Core::Services;
 using namespace PK::Math;
 using namespace PK::Utilities;
+using namespace PK::Core;
+using namespace PK::Core::Services;
+using namespace PK::Core::Assets;
 using namespace PK::Rendering::Objects;
 using namespace PK::Rendering::RHI;
 using namespace PK::Rendering::RHI::Objects;
 
-namespace YAML
-{
-    using namespace PK::Math;
-
-    Emitter& operator<<(Emitter& out, const float3& v)
-    {
-        out << Flow;
-        out << BeginSeq << v.x << v.y << v.z << EndSeq;
-        return out;
-    }
-
-    Emitter& operator<<(Emitter& out, const float4& v)
-    {
-        out << Flow;
-        out << BeginSeq << v.x << v.y << v.z << v.w << EndSeq;
-        return out;
-    }
-}
-
 namespace PK::Rendering::Objects
 {
+    bool Material::SupportsKeyword(const uint32_t hashId) const { return m_shader->SupportsKeyword(hashId); }
+
+    bool Material::SupportsKeywords(const uint32_t* hashIds, const uint32_t count) const { return m_shader->SupportsKeywords(hashIds, count); }
+
     void Material::CopyTo(char* dst, BindSet<Texture>* textureSet) const
     {
         auto& layout = m_shader->GetMaterialPropertyLayout();
@@ -51,11 +40,9 @@ namespace PK::Rendering::Objects
         }
     }
 
-    void Material::Import(const char* filepath)
+    void Material::AssetImport(const char* filepath)
     {
         YAML::Node root = YAML::LoadFile(filepath);
-
-        auto assetDb = Application::GetService<AssetDatabase>();
 
         auto data = root["Material"];
         auto shaderPathProp = data["Shader"];
@@ -66,14 +53,12 @@ namespace PK::Rendering::Objects
         PK_THROW_ASSERT(data, "Could not locate material (%s) header in file.", filepath);
         PK_THROW_ASSERT(shaderPathProp, "Material (%s) doesn't define a shader.", filepath);
 
-        auto shaderPath = shaderPathProp.as<std::string>();
-        m_shader = assetDb->Load<Shader>(shaderPath);
+        m_shader = shaderPathProp.as<Shader*>();
         InitializeShaderLayout();
 
         if (shadowShaderPathProp)
         {
-            shaderPath = shadowShaderPathProp.as<std::string>();
-            m_shadowShader = assetDb->Load<Shader>(shaderPath);
+            m_shadowShader = shadowShaderPathProp.as<Shader*>();
         }
 
         if (keywords)
@@ -143,7 +128,7 @@ namespace PK::Rendering::Objects
 }
 
 template<>
-bool AssetImporters::IsValidExtension<Material>(const std::filesystem::path& extension) { return extension.compare(".material") == 0; }
+bool Asset::IsValidExtension<Material>(const std::string& extension) { return extension.compare(".material") == 0; }
 
 template<>
-Ref<Material> AssetImporters::Create() { return CreateRef<Material>(); }
+Ref<Material> Asset::Create() { return CreateRef<Material>(); }

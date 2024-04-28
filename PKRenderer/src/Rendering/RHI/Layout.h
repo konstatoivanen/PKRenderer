@@ -1,5 +1,4 @@
 #pragma once
-#include "PrecompiledHeader.h"
 #include "Math/Types.h"
 #include "Utilities/FixedList.h"
 #include "Core/Services/StringHashID.h"
@@ -148,11 +147,14 @@ namespace PK::Rendering::RHI
             constexpr inline uint32_t GetStride() const { return m_stride; }
             constexpr inline uint32_t GetAlignedStride() const { return m_alignedStride; }
             constexpr inline uint32_t GetPaddedStride() const { return m_paddedStride; }
+            constexpr inline uint64_t GetHash() const { return m_hash; }
+            constexpr inline bool CompareFast(const BufferLayout& other) const { return m_stride == other.m_stride && m_hash == other.m_hash; }
             const BufferElement* TryGetElement(uint32_t nameHashId, uint32_t* index) const;
             void CalculateOffsetsAndStride(bool applyOffsets);
 
         private:
             std::map<uint32_t, uint32_t> m_elementMap;
+            uint64_t m_hash = 0ull;
             uint32_t m_stride = 0;
             uint32_t m_alignedStride = 0;
             uint32_t m_paddedStride = 0;

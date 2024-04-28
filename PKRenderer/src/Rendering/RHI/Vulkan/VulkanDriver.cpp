@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <gfx.h>
 #include "Utilities/Handle.h"
-#include "Core/Services/Log.h"
+#include "Core/CLI/Log.h"
 #include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
 #include "Rendering/RHI/Vulkan/Utilities/VulkanExtensions.h"
 #include "Rendering/RHI/Vulkan/Utilities/VulkanPhysicalDeviceRequirements.h"
@@ -92,7 +92,8 @@ namespace PK::Rendering::RHI::Vulkan
         Utilities::VulkanBindExtensionMethods(instance);
 
         {
-            PK_LOG_INFO("Created Vulkan Instace With '%i' layers and '%i' extensions:", instanceCreateInfo.enabledLayerCount, instanceCreateInfo.enabledExtensionCount);
+            PK_LOG_NEWLINE();
+            PK_LOG_INFO("VulkanDriver.vkCreateInstance: with '%i' layers and '%i' extensions:", instanceCreateInfo.enabledLayerCount, instanceCreateInfo.enabledExtensionCount);
             PK_LOG_SCOPE_INDENT(instance);
 
             for (auto i = 0u; i < instanceCreateInfo.enabledExtensionCount; ++i)
@@ -181,7 +182,7 @@ namespace PK::Rendering::RHI::Vulkan
         VK_ASSERT_RESULT_CTX(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Failed to create logical device!");
 
         {
-            PK_LOG_INFO("Created Vulkan Device With '%i' extensions:", createInfo.enabledExtensionCount);
+            PK_LOG_INFO("VulkanDriver.vkCreateDevice: with '%i' extensions", createInfo.enabledExtensionCount);
             PK_LOG_SCOPE_INDENT(device);
 
             for (auto i = 0u; i < createInfo.enabledExtensionCount; ++i)

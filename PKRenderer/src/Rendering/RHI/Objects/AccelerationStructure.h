@@ -1,8 +1,11 @@
 #pragma once
+#include "Utilities/ForwardDeclareUtility.h"
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
 #include "Utilities/NativeInterface.h"
-#include "Rendering/RHI/Objects/Buffer.h"
+#include "Rendering/RHI/Structs.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Buffer)
 
 namespace PK::Rendering::RHI::Objects
 {

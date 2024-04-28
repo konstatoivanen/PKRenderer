@@ -1,13 +1,17 @@
 #pragma once
+#include "Utilities/ForwardDeclareUtility.h"
 #include "Utilities/NoCopy.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/Objects/Texture.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct CommandBuffer)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
 
 namespace PK::Rendering::Passes
 {
     class PassBloom : public Utilities::NoCopy
     {
         public:
-            PassBloom(Core::Services::AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight);
+            PassBloom(Core::Assets::AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight);
             void Render(RHI::Objects::CommandBuffer* cmd, RHI::Objects::Texture* source);
 
             RHI::Objects::Texture* GetTexture() { return m_bloomTexture.get(); }

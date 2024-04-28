@@ -1,6 +1,6 @@
 #pragma once
 #include "Utilities/PropertyBlock.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/Layout.h"
 
 namespace PK::Rendering::Objects
 {

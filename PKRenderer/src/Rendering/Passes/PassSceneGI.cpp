@@ -1,5 +1,11 @@
 #include "PrecompiledHeader.h"
 #include "Math/FunctionsMisc.h"
+#include "Core/ApplicationConfig.h"
+#include "Core/Assets/AssetDatabase.h"
+#include "Rendering/RHI/Objects/Shader.h"
+#include "Rendering/RHI/Objects/Texture.h"
+#include "Rendering/RHI/Objects/CommandBuffer.h"
+#include "Rendering/RHI/Objects/QueueSet.h"
 #include "Rendering/HashCache.h"
 #include "PassSceneGI.h"
 
@@ -8,8 +14,9 @@ namespace PK::Rendering::Passes
     using namespace PK::Math;
     using namespace PK::Utilities;
     using namespace PK::Core;
-    using namespace PK::Core::Services;
+    using namespace PK::Core::Assets;
     using namespace PK::Rendering::Objects;
+    using namespace PK::Rendering::Geometry;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
@@ -20,7 +27,7 @@ namespace PK::Rendering::Passes
 
     PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase, const ApplicationConfig* config)
     {
-        PK_LOG_VERBOSE("Initializing Scene GI");
+        PK_LOG_VERBOSE("PassSceneGI.Ctor");
         PK_LOG_SCOPE_INDENT(local);
 
         m_computeClear = assetDatabase->Find<Shader>("CS_GI_Clear");
@@ -157,7 +164,7 @@ namespace PK::Rendering::Passes
         m_rasterAxis = m_frameIndex % 3;
         m_parameters->Set<uint4>(hash->pk_GI_VolumeSwizzle, swizzles[m_rasterAxis]);
         m_parameters->Set<uint2>(hash->pk_GI_RayDither, Functions::MurmurHash21(m_frameIndex / 64u));
-        m_parameters->FlushBuffer(QueueType::Transfer);
+        m_parameters->FlushBuffer(GraphicsAPI::GetCommandBuffer(QueueType::Transfer));
         m_frameIndex++;
     }
 
@@ -189,7 +196,7 @@ namespace PK::Rendering::Passes
         cmd->EndDebugScope();
     }
 
-    void PassSceneGI::Voxelize(CommandBuffer* cmd, StaticDrawBatcher* batcher, uint32_t batchGroup)
+    void PassSceneGI::Voxelize(CommandBuffer* cmd, IBatcher* batcher, uint32_t batchGroup)
     {
         cmd->BeginDebugScope("SceneGI.Voxelize", PK_COLOR_GREEN);
 
@@ -207,7 +214,7 @@ namespace PK::Rendering::Passes
         cmd->SetRenderTarget({ viewports[m_rasterAxis].z, viewports[m_rasterAxis].w, 1 });
         cmd->SetViewPort(viewports[m_rasterAxis]);
         cmd->SetScissor(viewports[m_rasterAxis]);
-        batcher->RenderMeshlets(cmd, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);
+        batcher->RenderGroup(cmd, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);
 
         cmd->EndDebugScope();
     }

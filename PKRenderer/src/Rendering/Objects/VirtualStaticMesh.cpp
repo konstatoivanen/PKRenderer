@@ -1,10 +1,11 @@
 #include "PrecompiledHeader.h"
+#include <filesystem>
 #include <PKAssets/PKAssetLoader.h>
 #include "Math/FunctionsIntersect.h"
 #include "Math/FunctionsMisc.h"
 #include "Core/Services/StringHashID.h"
+#include "Rendering/Objects/StaticSceneMesh.h"
 #include "VirtualStaticMesh.h"
-
 
 namespace PK::Rendering::Objects
 {
@@ -21,7 +22,7 @@ namespace PK::Rendering::Objects
     VirtualStaticMesh::VirtualStaticMesh(StaticSceneMesh* baseMesh, StaticMeshAllocationData* allocData) { m_staticMesh = baseMesh->Allocate(allocData); }
     VirtualStaticMesh::~VirtualStaticMesh() { m_staticMesh->baseMesh->Deallocate(m_staticMesh); }
 
-    void VirtualStaticMesh::Import(const char* filepath, StaticSceneMesh*& baseMesh)
+    void VirtualStaticMesh::AssetImport(const char* filepath, StaticSceneMesh*& baseMesh)
     {
         PK::Assets::PKAsset asset;
 
@@ -86,10 +87,13 @@ namespace PK::Rendering::Objects
 
         PK::Assets::CloseAsset(&asset);
     }
+
+    const StaticSubMesh* VirtualStaticMesh::GetStaticSubmesh(uint32_t localIndex) const { return m_staticMesh->GetSubmesh(localIndex); }
+    uint32_t VirtualStaticMesh::GetSubmeshCount() const { return m_staticMesh->submeshCount;  }
 }
 
 template<>
-PK::Utilities::Ref<PK::Rendering::Objects::VirtualStaticMesh> PK::Core::Services::AssetImporters::Create()
+PK::Utilities::Ref<PK::Rendering::Objects::VirtualStaticMesh> PK::Core::Assets::Asset::Create()
 {
     return PK::Utilities::CreateRef<PK::Rendering::Objects::VirtualStaticMesh>();
 }

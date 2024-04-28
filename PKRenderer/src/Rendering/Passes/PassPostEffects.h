@@ -1,7 +1,6 @@
 #pragma once
 #include "Utilities/NoCopy.h"
-#include "Core/ApplicationConfig.h"
-#include "ECS/Tokens/ViewProjectionToken.h"
+#include "Core/Assets/AssetImportEvent.h"
 #include "Rendering/Objects/ConstantBuffer.h"
 #include "Rendering/RHI/GraphicsAPI.h"
 
@@ -10,9 +9,9 @@ namespace PK::Rendering::Passes
     class PassPostEffectsComposite : public PK::Utilities::NoCopy
     {
         public:
-            PassPostEffectsComposite(Core::Services::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
+            PassPostEffectsComposite(Core::Assets::AssetDatabase* assetDatabase, const Core::ApplicationConfig* config);
             void Render(RHI::Objects::CommandBuffer* cmd, RHI::Objects::Texture* destination);
-            void OnUpdateParameters(PK::Core::Services::AssetImportToken<PK::Core::ApplicationConfig>* token);
+            void OnUpdateParameters(PK::Core::Assets::AssetImportEvent<PK::Core::ApplicationConfig>* token);
 
         private:
             RHI::Objects::Shader* m_computeComposite = nullptr;

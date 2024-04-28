@@ -1,16 +1,18 @@
-#pragma once
 #include "PrecompiledHeader.h"
+#include <filesystem>
 #include <PKAssets/PKAssetLoader.h>
+#include "Core/CLI/Log.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanShader.h"
 #include "Rendering/RHI/Driver.h"
 #include "Shader.h"
 
+using namespace PK::Utilities;
 using namespace PK::Core;
 using namespace PK::Core::Services;
-using namespace PK::Utilities;
+using namespace PK::Core::Assets;
 using namespace PK::Rendering;
-using namespace PK::Rendering::RHI::Vulkan::Objects;
 using namespace PK::Rendering::RHI::Objects;
+using namespace PK::Rendering::RHI::Vulkan::Objects;
 
 namespace PK::Rendering::RHI::Objects
 {
@@ -64,7 +66,7 @@ namespace PK::Rendering::RHI::Objects
         }
     }
 
-    void Shader::Import(const char* filepath)
+    void Shader::AssetImport(const char* filepath)
     {
         for (auto& variant : m_variants)
         {
@@ -255,7 +257,7 @@ namespace PK::Rendering::RHI::Objects
 }
 
 template<>
-bool AssetImporters::IsValidExtension<Shader>(const std::filesystem::path& extension) { return extension.compare(".pkshader") == 0; }
+bool Asset::IsValidExtension<Shader>(const std::string& extension) { return extension.compare(".pkshader") == 0; }
 
 template<>
-Ref<Shader> AssetImporters::Create() { return CreateRef<Shader>(); }
+Ref<Shader> Asset::Create() { return CreateRef<Shader>(); }

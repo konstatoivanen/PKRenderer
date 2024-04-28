@@ -1,9 +1,9 @@
 #pragma once
-#include "PrecompiledHeader.h"
 #include "Utilities/BufferView.h"
 #include "Utilities/Ref.h"
-#include "Core/Services/Log.h"
+#include "Core/CLI/Log.h"
 #include "Core/Services/IService.h"
+#include "ECS/EGID.h"
 
 namespace PK::ECS
 {
@@ -14,28 +14,6 @@ namespace PK::ECS
         ACTIVE = 2,
         FREE = 3
     };
-
-    struct EGID
-    {
-        public:
-            constexpr uint32_t entityID() const { return (uint32_t)(m_GID & 0xFFFFFFFF); }
-            constexpr uint32_t groupID() const { return (uint32_t)(m_GID >> 32); }
-            constexpr EGID() : m_GID(0) {}
-            constexpr EGID(const EGID& other) : m_GID(other.m_GID) {}
-            constexpr EGID(uint64_t identifier) : m_GID(identifier) {}
-            constexpr EGID(uint32_t entityID, uint32_t groupID) : m_GID((uint64_t)groupID << 32 | ((uint64_t)(uint32_t)entityID & 0xFFFFFFFF)) {}
-            constexpr bool IsValid() const { return m_GID > 0; }
-            constexpr bool operator ==(const EGID& obj2) const { return m_GID == obj2.m_GID; }
-            constexpr bool operator !=(const EGID& obj2) const { return m_GID != obj2.m_GID; }
-            constexpr bool operator <(const EGID& obj2) const { return m_GID < obj2.m_GID; }
-            constexpr bool operator >(const EGID& obj2) const { return m_GID > obj2.m_GID; }
-
-        private:
-            uint64_t m_GID;
-    };
-
-    constexpr static const EGID EGIDDefault = EGID(1);
-    constexpr static const EGID EGIDInvalid = EGID(0);
 
     struct IImplementer
     {
@@ -113,7 +91,7 @@ namespace PK::ECS
             }
 
             template<typename TView>
-            TView* ReserveEntityView(const EGID& egid)
+            TView* ReserveView(const EGID& egid)
             {
                 static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
                 PK_THROW_ASSERT(egid.IsValid(), "Trying to acquire resources for an invalid egid!");
@@ -128,9 +106,9 @@ namespace PK::ECS
             }
 
             template<typename TImpl, typename TView, typename ...M>
-            TView* ReserveEntityView(TImpl* implementer, const EGID& egid, M TView::* ...params)
+            TView* ReserveView(TImpl* implementer, const EGID& egid, M TView::* ...params)
             {
-                auto* view = ReserveEntityView<TView>(egid);
+                auto* view = ReserveView<TView>(egid);
                 static_assert((... && std::is_assignable<decltype(view->*params), TImpl*>::value), "Components are not present in implementer");
                 ((view->*params = static_cast<M>(implementer)), ...);
                 return view;

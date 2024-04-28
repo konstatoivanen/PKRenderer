@@ -1,13 +1,17 @@
 #pragma once
+#include "Utilities/ForwardDeclareUtility.h"
 #include "Utilities/NoCopy.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/Objects/Texture.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct CommandBuffer)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
 
 namespace PK::Rendering::Passes
 {
     class PassFilmGrain : public PK::Utilities::NoCopy
     {
         public:
-            PassFilmGrain(Core::Services::AssetDatabase* assetDatabase);
+            PassFilmGrain(Core::Assets::AssetDatabase* assetDatabase);
             void Compute(RHI::Objects::CommandBuffer* cmd);
 
         private:

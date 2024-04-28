@@ -1,13 +1,14 @@
 #pragma once
-#include "Core/Services/AssetDatabase.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Utilities/FixedList.h"
+#include "Core/Assets/Asset.h"
+#include "Rendering/RHI/FenceRef.h"
+#include "Rendering/RHI/Objects/Buffer.h"
+#include "Rendering/RHI/Objects/AccelerationStructure.h"
 
 namespace PK::Rendering::Objects
 {
-    class Mesh : public Core::Services::Asset, public Core::Services::IAssetImportSimple
+    class Mesh : public Core::Assets::AssetWithImport<>
     {
-        friend Utilities::Ref<Mesh> Core::Services::AssetImporters::Create();
-
         public:
             struct SubMesh
             {
@@ -23,7 +24,7 @@ namespace PK::Rendering::Objects
             Mesh();
             Mesh(const RHI::Objects::BufferRef& indexBuffer, RHI::Objects::BufferRef* vertexBuffers, uint32_t vertexBufferCount, SubMesh* submeshes, uint32_t submeshCount);
             void SetResources(const RHI::Objects::BufferRef& indexBuffer, RHI::Objects::BufferRef* vertexBuffers, uint32_t vertexBufferCount, SubMesh* submeshes, uint32_t submeshCount);
-            void Import(const char* filepath) final;
+            void AssetImport(const char* filepath) final;
             bool TryGetAccelerationStructureGeometryInfo(uint32_t submesh, RHI::Objects::AccelerationStructureGeometryInfo* outInfo);
 
             constexpr const VertexBuffers& GetVertexBuffers() const { return m_vertexBuffers; }

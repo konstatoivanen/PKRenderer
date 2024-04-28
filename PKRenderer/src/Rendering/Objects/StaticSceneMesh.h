@@ -1,7 +1,8 @@
 #pragma once
 #include "Utilities/FixedPool.h"
-#include "Core/Services/AssetDatabase.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/FenceRef.h"
+#include "Rendering/RHI/Objects/Buffer.h"
+#include "Rendering/RHI/Objects/AccelerationStructure.h"
 
 namespace PK::Rendering::Objects
 {

@@ -1,10 +1,12 @@
 #include "PrecompiledHeader.h"
+#include "Utilities/HashHelpers.h"
 #include "Layout.h"
 
 namespace PK::Rendering::RHI
 {
     void BufferLayout::CalculateOffsetsAndStride(bool applyOffsets)
     {
+        m_hash = 0ull;
         m_stride = 0;
         m_alignedStride = 0;
         m_paddedStride = 0;
@@ -43,6 +45,7 @@ namespace PK::Rendering::RHI
         // As per std140 a structure has a base alignment equal to the largest base alignment of any of its members, rounded up to a multiple of 16.
         maxAlignment = 16 * (uint32_t)glm::ceil(maxAlignment / 16.0f);
         m_paddedStride = maxAlignment * (uint32_t)glm::ceil(m_alignedStride / (float)maxAlignment);
+        m_hash = Utilities::HashHelpers::FNV1AHash(data(), size() * sizeof(BufferElement));
     }
 
     const BufferElement* BufferLayout::TryGetElement(uint32_t nameHashId, uint32_t* index) const

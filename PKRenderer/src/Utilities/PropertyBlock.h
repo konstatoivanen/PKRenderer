@@ -1,5 +1,4 @@
 #pragma once
-#include "PrecompiledHeader.h"
 #include "Utilities/NoCopy.h"
 
 namespace PK::Utilities
@@ -14,7 +13,7 @@ namespace PK::Utilities
 			};
 
 			template<typename T>
-			const T* Get(const PropertyInfo& info) const
+			const T* GetInternal(const PropertyInfo& info) const
 			{
 				if ((info.offset + (uint64_t)info.size) > m_capacity)
 				{
@@ -25,8 +24,35 @@ namespace PK::Utilities
 			}
 
 			template<typename T>
-			inline std::unordered_map<uint32_t, PropertyInfo>& GetGroup() { return m_properties[std::type_index(typeid(T))]; }
+			inline std::unordered_map<uint32_t, PropertyInfo>& GetGroupInternal() { return m_properties[std::type_index(typeid(T))]; }
 		
+			template<typename T>
+			bool SetInternal(uint32_t hashId, const T* src, uint32_t count)
+			{
+				if (count > 0u)
+				{
+					auto wsize = (uint16_t)(sizeof(T) * count);
+					auto& group = GetGroupInternal<T>();
+					auto& info = group[hashId];
+
+					if (info.size == 0)
+					{
+						if (m_explicitLayout)
+						{
+							return false;
+						}
+
+						ValidateBufferSize(m_head + wsize);
+						info = { (uint32_t)m_head, wsize };
+						m_head += wsize;
+					}
+
+					return TryWriteValue(src, info, wsize);
+				}
+
+				return false;
+			}
+
 		public:
 			PropertyBlock(uint64_t initialCapacity);
 			PropertyBlock(void* buffer, uint64_t initialCapacity);
@@ -40,13 +66,13 @@ namespace PK::Utilities
 			{
 				auto group = m_properties.find(std::type_index(typeid(T)));
 
-				if (group == m_properties.end())
+				if (group != m_properties.end())
 				{
-					return nullptr;
+					auto iter = group->second.find(hashId);
+					return iter != group->second.end() ? GetInternal<T>(iter->second) : nullptr;
 				}
 
-				auto iter = group->second.find(hashId);
-				return iter != group->second.end() ? Get<T>(iter->second) : nullptr;
+				return nullptr;
 			}
 
 			template<typename T>
@@ -54,22 +80,20 @@ namespace PK::Utilities
 			{
 				auto group = m_properties.find(std::type_index(typeid(T)));
 
-				if (group == m_properties.end())
+				if (group != m_properties.end())
 				{
-					return false;
-				}
+					auto iter = group->second.find(hashId);
 
-				auto iter = group->second.find(hashId);
-
-				if (iter != group->second.end())
-				{
-					if (size != nullptr)
+					if (iter != group->second.end())
 					{
-						*size = (uint64_t)iter->second.size;
-					}
+						if (size != nullptr)
+						{
+							*size = (uint64_t)iter->second.size;
+						}
 
-					value = Get<T>(iter->second);
-					return true;
+						value = GetInternal<T>(iter->second);
+						return true;
+					}
 				}
 
 				return false;
@@ -91,63 +115,38 @@ namespace PK::Utilities
 			inline void FreezeLayout() { m_explicitLayout = true; }
 		
 			template<typename T>
-			void Set(uint32_t hashId, const T* src, uint32_t count = 1u)
-			{
-				if (count < 1u)
-				{
-					return;
-				}
-
-				auto wsize = (uint16_t)(sizeof(T) * count);
-				auto& group = GetGroup<T>();
-				auto& info = group[hashId];
-
-				if (info.size == 0)
-				{
-					if (m_explicitLayout)
-					{
-						throw std::runtime_error("Cannot add elements to explicitly mapped property block!");
-					}
-
-					ValidateBufferSize(m_head + wsize);
-					info = { (uint32_t)m_head, wsize };
-					m_head += wsize;
-				}
-
-				if (!TryWriteValue(src, info, wsize))
-				{
-					throw std::invalid_argument("Trying to write values to a block that has insufficient capacity!");
-				}
-			}
+			void Set(uint32_t hashId, const T* src, uint32_t count = 1u) { if (!SetInternal(hashId, src, count)) { throw std::runtime_error("Could not write property to block!"); } }
 
 			template<typename T>
 			void Set(uint32_t hashId, const T& src) { Set(hashId, &src); }
+			
+			template<typename T>
+			bool TrySet(uint32_t hashId, const T* src, uint32_t count = 1u) { return SetInternal(hashId, src, count); }
+
+			template<typename T>
+			bool TrySet(uint32_t hashId, const T& src) { return TrySet(hashId, &src); }
 
 			template<typename T>
 			void Reserve(uint32_t hashId, uint32_t count = 1u)
 			{
-				if (count < 1u)
+				if (count > 0u)
 				{
-					return;
+					auto& group = GetGroupInternal<T>();
+
+					if (group.count(hashId) == 0)
+					{
+						if (m_explicitLayout)
+						{
+							throw std::runtime_error("Cannot add elements to explicitly mapped property block!");
+						}
+						
+						auto wsize = (uint16_t)(sizeof(T) * count);
+
+						ValidateBufferSize(m_head + wsize);
+						group[hashId] = { (uint32_t)m_head, wsize };
+						m_head += wsize;
+					}
 				}
-
-				auto& group = GetGroup<T>();
-
-				if (group.count(hashId) > 0)
-				{
-					return;
-				}
-
-				if (m_explicitLayout)
-				{
-					throw std::runtime_error("Cannot add elements to explicitly mapped property block!");
-				}
-				
-				auto wsize = (uint16_t)(sizeof(T) * count);
-
-				ValidateBufferSize(m_head + wsize);
-				group[hashId] = { (uint32_t)m_head, wsize };
-				m_head += wsize;
 			}
 	
 		protected:

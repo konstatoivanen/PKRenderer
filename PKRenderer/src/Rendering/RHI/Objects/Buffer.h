@@ -1,11 +1,8 @@
 #pragma once
-#include "Core/Services/Log.h"
+#include "Core/CLI/Log.h"
 #include "Utilities/Ref.h"
-#include "Utilities/NoCopy.h"
-#include "Utilities/BufferView.h"
 #include "Utilities/NativeInterface.h"
 #include "Rendering/RHI/Layout.h"
-#include "Rendering/RHI/Structs.h"
 
 namespace PK::Rendering::RHI::Objects
 {
