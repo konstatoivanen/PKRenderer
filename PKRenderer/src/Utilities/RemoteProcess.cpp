@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "ExecuteRemoteProcess.h"
+#include "RemoteProcess.h"
 #include <codecvt>
 #include <locale>
 
@@ -25,11 +25,11 @@ namespace PK::Utilities
 #if defined(WIN32)
         STARTUPINFO si;
         PROCESS_INFORMATION pi;
-    
+
         ZeroMemory(&si, sizeof(si));
         si.cb = sizeof(si);
         ZeroMemory(&pi, sizeof(pi));
-    
+
         const auto wideExecutableLen = MultiByteToWideChar(CP_UTF8, 0, executable, (int)executableLen, nullptr, 0);
         const auto wideArgumentsLen = MultiByteToWideChar(CP_UTF8, 0, arguments, (int)argumentsLen, nullptr, 0);
         std::wstring wideExecutable(wideExecutableLen, 0);
@@ -49,20 +49,20 @@ namespace PK::Utilities
         }
 
         auto result = CreateProcess(wideExecutable.data(), wideArguments.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
-        
+
         if (result == 0)
         {
             outError = "Execute remote processs failed with error code:" + std::to_string(GetLastError());
             return false;
         }
-    
+
         WaitForSingleObject(pi.hProcess, INFINITE);
         CloseHandle(pi.hProcess);
 #endif
 
         return true;
     }
-    
+
     bool ExecuteRemoteProcess(const std::string& executablePath, const std::string& arguments, std::string& outError)
     {
         return ExecuteRemoteProcess(executablePath.c_str(), arguments.c_str(), outError);

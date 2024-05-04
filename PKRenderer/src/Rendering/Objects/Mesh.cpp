@@ -2,7 +2,7 @@
 #include <PKAssets/PKAssetLoader.h>
 #include "Math/FunctionsIntersect.h"
 #include "Math/FunctionsMisc.h"
-#include "Core/Services/StringHashID.h"
+#include "Core/CLI/Log.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/RHI/GraphicsAPI.h"
 #include "Mesh.h"
@@ -10,7 +10,6 @@
 using namespace PK::Math;
 using namespace PK::Utilities;
 using namespace PK::Core;
-using namespace PK::Core::Services;
 using namespace PK::Core::Assets;
 using namespace PK::Rendering;
 using namespace PK::Rendering::Objects;
@@ -21,34 +20,46 @@ namespace PK::Rendering::Objects
 {
     Mesh::Mesh() {}
 
-    Mesh::Mesh(const BufferRef& indexBuffer, BufferRef* vertexBuffers, uint32_t vertexBufferCount, SubMesh* submeshes, uint32_t submeshCount)
+    Mesh::Mesh(const BufferRef& indexBuffer,
+        ElementType indexType,
+        BufferRef* vertexBuffers,
+        uint32_t vertexBufferCount,
+        const VertexStreamLayout& streamLayout,
+        SubMesh* submeshes,
+        uint32_t submeshCount)
     {
-        SetResources(indexBuffer, vertexBuffers, vertexBufferCount, submeshes, submeshCount);
+        SetResources(indexBuffer, indexType, vertexBuffers, vertexBufferCount, streamLayout, submeshes, submeshCount);
     }
 
-    void Mesh::SetResources(const BufferRef& indexBuffer, BufferRef* vertexBuffers, uint32_t vertexBufferCount, SubMesh* submeshes, uint32_t submeshCount)
+    void Mesh::SetResources(const BufferRef& indexBuffer,
+        ElementType indexType,
+        BufferRef* vertexBuffers,
+        uint32_t vertexBufferCount,
+        const VertexStreamLayout& streamLayout,
+        SubMesh* submeshes,
+        uint32_t submeshCount)
     {
         m_indexBuffer = indexBuffer;
+        m_indexType = indexType;
         m_vertexBuffers.ClearFull();
+        m_streamLayout = streamLayout;
 
         for (auto i = 0u; i < vertexBufferCount; ++i)
         {
             m_vertexBuffers.Add(vertexBuffers[i]);
         }
 
-        auto vertexPositionHash = StringHashID::StringToID(PK_VS_POSITION);
+        auto vertexPositionName = NameID(PK_VS_POSITION);
 
-        for (auto i = 0u; i < vertexBufferCount; ++i)
+        for (auto i = 0u; i < m_streamLayout.GetCount(); ++i)
         {
-            uint32_t positionIndex = 0u;
-            auto vertexBuffer = m_vertexBuffers[i]->get();
-            auto vertexElement = vertexBuffer->GetLayout().TryGetElement(vertexPositionHash, &positionIndex);
+            const auto& attribute = m_streamLayout[i];
 
-            if (vertexElement != nullptr && vertexElement->Type == ElementType::Float3)
+            if (attribute.name == vertexPositionName &&
+                attribute.stream < vertexBufferCount &&
+                attribute.size == (uint16_t)sizeof(float3))
             {
-                m_vertexPositionBufferIndex = i;
-                m_vertexPositionOffset = vertexElement->Offset;
-                break;
+                m_positionAttributeIndex = i;
             }
         }
 
@@ -59,8 +70,8 @@ namespace PK::Rendering::Objects
         {
             m_submeshes[i] = submeshes[i];
             Functions::BoundsEncapsulate(&m_fullRange.bounds, submeshes[i].bounds);
-            m_fullRange.vertexCount = glm::max(m_fullRange.vertexCount, submeshes[i].firstVertex + submeshes[i].vertexCount);
-            m_fullRange.indexCount = glm::max(m_fullRange.indexCount, submeshes[i].firstIndex + submeshes[i].indexCount);
+            m_fullRange.vertexCount = glm::max(m_fullRange.vertexCount, submeshes[i].vertexFirst + submeshes[i].vertexCount);
+            m_fullRange.indexCount = glm::max(m_fullRange.indexCount, submeshes[i].indexFirst + submeshes[i].indexCount);
         }
     }
 
@@ -75,6 +86,7 @@ namespace PK::Rendering::Objects
         auto base = asset.rawData;
 
         PK_THROW_ASSERT(mesh->vertexAttributeCount > 0, "Trying to read a mesh with 0 vertex attributes!");
+        PK_THROW_ASSERT(mesh->vertexAttributeCount <= PK_MAX_VERTEX_ATTRIBUTES, "Trying to read a mesh with more than maximum allowed vertex attributes!");
         PK_THROW_ASSERT(mesh->vertexCount > 0, "Trying to read a shader with 0 vertices!");
         PK_THROW_ASSERT(mesh->indexCount > 0, "Trying to read a shader with 0 indices!");
         PK_THROW_ASSERT(mesh->submeshCount > 0, "Trying to read a shader with 0 submeshes!");
@@ -84,7 +96,6 @@ namespace PK::Rendering::Objects
         auto pIndexBuffer = mesh->indexBuffer.Get(base);
         auto pSubmeshes = mesh->submeshes.Get(base);
 
-        std::map<uint32_t, std::vector<BufferElement>> layoutMap;
         std::vector<SubMesh> submeshes;
 
         for (auto i = 0u; i < mesh->submeshCount; ++i)
@@ -94,31 +105,52 @@ namespace PK::Rendering::Objects
             Functions::BoundsEncapsulate(&m_fullRange.bounds, bounds);
         }
 
+        VertexStreamLayout streamLayout;
+        std::string bufferNames[PK_MAX_VERTEX_ATTRIBUTES]{};
+        BufferRef vertexBuffers[PK_MAX_VERTEX_ATTRIBUTES];
+
         for (auto i = 0u; i < mesh->vertexAttributeCount; ++i)
         {
-            layoutMap[pAttributes[i].stream].emplace_back(pAttributes[i].type, std::string(pAttributes[i].name));
+            auto attribute = streamLayout.Add();
+            attribute->stream = (uint8_t)pAttributes[i].stream;
+            attribute->inputRate = InputRate::PerVertex;
+            attribute->stride = 0u;
+            attribute->offset = pAttributes[i].offset;
+            attribute->size = pAttributes[i].size;
+            attribute->name = pAttributes[i].name;
+            bufferNames[attribute->stream] += std::string(".") + std::string(pAttributes[i].name);
         }
 
-        auto pBufferOffset = 0ull;
+        streamLayout.CalculateOffsetsAndStride();
+
         auto vertexBufferName = GetFileName() + std::string(".VertexBuffer");
         auto indexBufferName = GetFileName() + std::string(".IndexBuffer");
         auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Transfer);
 
-        BufferRef vertexBuffers[PK_MAX_VERTEX_ATTRIBUTES];
+        auto pVerticesOffset = (char*)pVertices;
         auto bufferCount = 0u;
 
-        for (auto& kv : layoutMap)
+        for (auto i = 0u; i < PK_MAX_VERTEX_ATTRIBUTES && streamLayout.GetStride(i) != 0u; ++i)
         {
-            vertexBuffers[bufferCount] = Buffer::Create(BufferLayout(kv.second), mesh->vertexCount, BufferUsage::DefaultVertex, vertexBufferName.c_str());
-            cmd->UploadBufferData(vertexBuffers[bufferCount].get(), (char*)pVertices + pBufferOffset);
-            pBufferOffset += vertexBuffers[bufferCount]->GetLayout().GetStride() * mesh->vertexCount;
+            auto stride = streamLayout.GetStride(i);
+            auto bufferName = vertexBufferName + bufferNames[i];
+            vertexBuffers[bufferCount] = Buffer::Create(stride * mesh->vertexCount, BufferUsage::DefaultVertex, bufferName.c_str());
+            cmd->UploadBufferData(vertexBuffers[bufferCount].get(), pVerticesOffset);
+            pVerticesOffset += stride * mesh->vertexCount;
             bufferCount++;
         }
 
-        auto indexBuffer = Buffer::Create(mesh->indexType, mesh->indexCount, BufferUsage::DefaultIndex, indexBufferName.c_str());
-        cmd->UploadBufferData(m_indexBuffer.get(), (char*)pVertices + pBufferOffset);
+        auto indexStride = GetElementSize(mesh->indexType);
+        auto indexBuffer = Buffer::Create(indexStride * mesh->indexCount, BufferUsage::DefaultIndex, indexBufferName.c_str());
+        cmd->UploadBufferData(m_indexBuffer.get(), pVerticesOffset);
 
-        SetResources(indexBuffer, vertexBuffers, bufferCount, submeshes.data(), (uint32_t)submeshes.size());
+        SetResources(indexBuffer,
+            mesh->indexType,
+            vertexBuffers,
+            bufferCount,
+            streamLayout,
+            submeshes.data(),
+            (uint32_t)submeshes.size());
 
         m_uploadFence = cmd->GetFenceRef();
 
@@ -127,21 +159,24 @@ namespace PK::Rendering::Objects
 
     bool Mesh::TryGetAccelerationStructureGeometryInfo(uint32_t submesh, RHI::Objects::AccelerationStructureGeometryInfo* outInfo)
     {
-        if (HasPendingUpload() || m_vertexPositionBufferIndex == ~0u)
+        if (HasPendingUpload() || m_positionAttributeIndex == ~0u)
         {
             return false;
         }
 
         auto& sm = GetSubmesh(submesh);
-        outInfo->vertexBuffer = m_vertexBuffers[m_vertexPositionBufferIndex]->get();
+        auto positionStream = &m_streamLayout[m_positionAttributeIndex];
+        outInfo->name = GetAssetID();
+        outInfo->vertexBuffer = m_vertexBuffers[positionStream->stream].get();
         outInfo->indexBuffer = m_indexBuffer.get();
-        outInfo->vertexOffset = m_vertexPositionOffset;
-        outInfo->firstVertex = sm.firstVertex;
+        outInfo->vertexOffset = positionStream->offset;
+        outInfo->vertexStride = positionStream->stride;
+        outInfo->vertexFirst = sm.vertexFirst;
         outInfo->vertexCount = sm.vertexCount;
-        outInfo->firstIndex = sm.firstIndex;
+        outInfo->indexStride = GetElementSize(m_indexType);
+        outInfo->indexFirst = sm.indexFirst;
         outInfo->indexCount = sm.indexCount;
         outInfo->customIndex = 0u;
-        outInfo->nameHashId = 0u; //@TODO fill this with something.
         return true;
     }
 

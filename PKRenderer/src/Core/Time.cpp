@@ -3,9 +3,10 @@
 #include <cstdlib>
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/CLI/Log.h"
+#include "Core/ControlFlow/Sequencer.h"
 #include "Time.h"
 
-namespace PK::Core::Services
+namespace PK::Core
 {
     using namespace PK::Core::CLI;
     using namespace PK::Core::ControlFlow;
@@ -20,7 +21,7 @@ namespace PK::Core::Services
         return clock() / (double)CLOCKS_PER_SEC;
     }
 
-    Time::Time(Sequencer* sequencer, float timeScale, bool logFramerate) : 
+    Time::Time(Sequencer* sequencer, float timeScale, bool logFramerate) :
         m_sequencer(sequencer),
         m_logFramerate(logFramerate)
     {
@@ -40,7 +41,7 @@ namespace PK::Core::Services
 
     void Time::LogFrameRate()
     {
-        PK_LOG_OVERWRITE("FPS: %4.1i, FIXED: %i, MIN: %i, MAX: %i, AVG: %i MS: %4.2f", 
+        PK_LOG_OVERWRITE("FPS: %4.1i, FIXED: %i, MIN: %i, MAX: %i, AVG: %i MS: %4.2f",
             m_info.framerate,
             m_info.framerateFixed,
             m_info.framerateMin,

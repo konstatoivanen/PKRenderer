@@ -1,6 +1,6 @@
 #pragma once
 #include "Utilities/FixedPool.h"
-#include "Rendering/RHI/FenceRef.h"
+#include "Utilities/FenceRef.h"
 #include "Rendering/RHI/Objects/Buffer.h"
 #include "Rendering/RHI/Objects/AccelerationStructure.h"
 
@@ -19,14 +19,14 @@ namespace PK::Rendering::Objects
             Math::BoundingBox bounds = Math::BoundingBox::GetMinBounds();
         };
 
-        uint32_t nameHashId = 0u;
+        Utilities::NameID name = 0u;
 
         struct Regular
         {
             void* pVertices;
             void* pIndices;
             SubMesh* pSubmeshes;
-            RHI::BufferLayout vertexLayout;
+            RHI::VertexStreamLayout streamLayout;
             RHI::ElementType indexType;
             uint32_t vertexCount;
             uint32_t indexCount;
@@ -50,7 +50,7 @@ namespace PK::Rendering::Objects
 
     struct StaticSubMesh
     {
-        uint32_t nameHashId = 0u;
+        Utilities::NameID name = 0u;
         uint32_t meshletFirst = 0u;
         uint32_t meshletCount = 0u;
         uint32_t vertexFirst = 0u;
@@ -63,7 +63,7 @@ namespace PK::Rendering::Objects
     struct StaticMesh
     {
         StaticSceneMesh* baseMesh = nullptr;
-        uint32_t nameHashId = 0u;
+        Utilities::NameID name = 0u;
         uint32_t submeshFirst = 0u;
         uint32_t submeshCount = 0u;
         uint32_t meshletFirst = 0u;
@@ -102,8 +102,6 @@ namespace PK::Rendering::Objects
             bool TryGetAccelerationStructureGeometryInfo(uint32_t globalSubmeshIndex, RHI::Objects::AccelerationStructureGeometryInfo* outInfo) const;
 
         private:
-            void AlignVertices(char* vertices, size_t vcount, const RHI::BufferLayout& layout);
-
             Utilities::FixedPool<StaticMesh, 4096> m_staticMeshes;
             Utilities::FixedPool<StaticSubMesh, 8192> m_staticSubmeshes;
 
@@ -114,6 +112,9 @@ namespace PK::Rendering::Objects
             uint32_t m_vertexCount = 0u;
             uint32_t m_indexCount = 0u;
 
+            RHI::ElementType m_indexType = RHI::ElementType::Uint;
+            RHI::VertexStreamLayout m_streamLayout;
+
             RHI::Objects::BufferRef m_positionsBuffer;
             RHI::Objects::BufferRef m_attributesBuffer;
             RHI::Objects::BufferRef m_indexBuffer;
@@ -122,6 +123,6 @@ namespace PK::Rendering::Objects
             RHI::Objects::BufferRef m_meshletBuffer;
             RHI::Objects::BufferRef m_meshletVertexBuffer;
             RHI::Objects::BufferRef m_meshletIndexBuffer;
-            mutable RHI::FenceRef m_uploadFence;
+            mutable Utilities::FenceRef m_uploadFence;
     };
 }

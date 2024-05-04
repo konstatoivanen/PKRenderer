@@ -223,7 +223,7 @@ namespace PK::Math::Functions
             aabbs[i].min.x -= offset.x;
             aabbs[i].min.y -= offset.y;
             aabbs[i].max.x -= offset.x;
-            aabbs[i].max.y -= offset.y; 
+            aabbs[i].max.y -= offset.y;
 
             if (aabbs[i].min.z < minNear)
             {
@@ -238,13 +238,11 @@ namespace PK::Math::Functions
 
         for (auto i = 0u; i < info.count; ++i)
         {
-            outMatrices[i] = GetOrtho(
-                aabbs[i].min.x,
-                aabbs[i].max.x,
-                aabbs[i].min.y,
-                aabbs[i].max.y,
-                minNear + info.nearPlaneOffset,
-                aabbs[i].max.z) * info.worldToLocal;
+            auto znear = minNear + info.nearPlaneOffset;
+            auto zfar = aabbs[i].max.z;
+            // Ensure that z direction is retained in case near plane offset is beyond cascade z range (can happen when cascade has no shadow casters).
+            zfar = glm::max(znear + 1e-4f, zfar);
+            outMatrices[i] = GetOrtho(aabbs[i].min.x, aabbs[i].max.x, aabbs[i].min.y, aabbs[i].max.y, znear, zfar) * info.worldToLocal;
         }
     }
 }

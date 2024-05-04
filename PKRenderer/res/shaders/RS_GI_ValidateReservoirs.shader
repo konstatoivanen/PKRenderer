@@ -26,10 +26,10 @@ void main()
         const float3 viewdir = normalize(viewpos) * float3x3(pk_ViewToWorldPrev);
         const float3 normalOffset = GI_GetRayOriginNormalOffset(normal, viewdir);
         const float3 origin = ViewToWorldPosPrev(viewpos) + normalOffset;
-        
+
         const Reservoir reservoir = ReSTIR_Load_Previous(raycoord);
         const float4 direction = normalizeLength(reservoir.position - origin);
-       
+
         const float maxErrorDist = RESTIR_VALIDATION_ERROR_DIST * direction.w;
         const float maxErrorLuma = RESTIR_VALIDATION_ERROR_LUMA;
         const float tmax = direction.w + maxErrorDist;

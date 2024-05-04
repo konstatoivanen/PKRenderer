@@ -1,9 +1,8 @@
 #pragma once
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
-#include "Math/FunctionsMisc.h"
 #include "Utilities/FixedPool.h"
 #include "Utilities/FastMap.h"
 #include "Utilities/Ref.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK::Rendering::RHI::Vulkan::Services
 {
@@ -38,23 +37,23 @@ namespace PK::Rendering::RHI::Vulkan::Services
             struct ExtinctPool
             {
                 uint32_t poolIndex;
-                mutable FenceRef fence;
+                mutable PK::Utilities::FenceRef fence;
                 PK::Utilities::Bitmask<2048> indexMask;
             };
 
-            using DescriptorSetKeyHash = PK::Utilities::HashHelpers::TMurmurHash<DescriptorSetKey>;
+            using DescriptorSetKeyHash = PK::Utilities::Hash::TMurmurHash<DescriptorSetKey>;
 
         public:
             VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, size_t maxSets, std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes);
             const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
                                                         const DescriptorSetKey& key, 
-                                                        const FenceRef& fence,
+                                                        const PK::Utilities::FenceRef& fence,
                                                         const char* name);
             void Prune();
 
         private:
-            void GrowPool(const FenceRef& fence);
-            void GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const FenceRef& fence, bool throwOnFail);
+            void GrowPool(const PK::Utilities::FenceRef& fence);
+            void GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const PK::Utilities::FenceRef& fence, bool throwOnFail);
 
             const std::map<VkDescriptorType, size_t> m_poolSizes;
             const VkDevice m_device;

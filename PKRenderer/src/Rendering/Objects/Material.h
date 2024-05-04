@@ -1,5 +1,5 @@
 #pragma once
-#include "Utilities/ForwardDeclareUtility.h"
+#include "Utilities/ForwardDeclare.h"
 #include "Core/Assets/Asset.h"
 #include "Rendering/Objects/BindSet.h"
 #include "Rendering/Objects/ShaderPropertyBlock.h"
@@ -11,26 +11,26 @@ namespace PK::Rendering::Objects
 {
     class Material : public Core::Assets::AssetWithImport<>, public ShaderPropertyBlock
     {
-        public:
-            Material() : ShaderPropertyBlock(1024) {}
-            Material(RHI::Objects::Shader* shader) : ShaderPropertyBlock(1024), m_shader(shader) { InitializeShaderLayout(); }
-            Material(RHI::Objects::Shader* shader, RHI::Objects::Shader* shadowShader) : ShaderPropertyBlock(1024), m_shader(shader), m_shadowShader(shadowShader) { InitializeShaderLayout(); }
-            
-            constexpr RHI::Objects::Shader* GetShader() const { return m_shader; }
-            constexpr RHI::Objects::Shader* GetShadowShader() const { return m_shadowShader; }
+    public:
+        Material() : ShaderPropertyBlock(1024) {}
+        Material(RHI::Objects::Shader* shader) : ShaderPropertyBlock(1024), m_shader(shader) { InitializeShaderLayout(); }
+        Material(RHI::Objects::Shader* shader, RHI::Objects::Shader* shadowShader) : ShaderPropertyBlock(1024), m_shader(shader), m_shadowShader(shadowShader) { InitializeShaderLayout(); }
 
-            bool SupportsKeyword(const uint32_t hashId) const;
-            bool SupportsKeywords(const uint32_t* hashIds, const uint32_t count) const;
+        constexpr RHI::Objects::Shader* GetShader() const { return m_shader; }
+        constexpr RHI::Objects::Shader* GetShadowShader() const { return m_shadowShader; }
 
-            void CopyTo(char* dst, BindSet<RHI::Objects::Texture>* textureSet) const;
+        bool SupportsKeyword(const Utilities::NameID keyword) const;
+        bool SupportsKeywords(const Utilities::NameID* keywords, const uint32_t count) const;
 
-            void AssetImport(const char* filepath) final;
+        void CopyTo(char* dst, BindSet<RHI::Objects::Texture>* textureSet) const;
 
-            void InitializeShaderLayout();
+        void AssetImport(const char* filepath) final;
 
-        private:
-            RHI::Objects::Shader* m_shader = nullptr;
-            RHI::Objects::Shader* m_shadowShader = nullptr;
+        void InitializeShaderLayout();
+
+    private:
+        RHI::Objects::Shader* m_shader = nullptr;
+        RHI::Objects::Shader* m_shadowShader = nullptr;
     };
 
     struct MaterialTarget

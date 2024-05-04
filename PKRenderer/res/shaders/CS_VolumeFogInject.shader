@@ -23,12 +23,12 @@ void main()
 
 #if EARLY_Z_TEST == 1
     float4 maxdepths = float4
-    (
-        SampleMaxZ(float2(id.xy + float2(-0.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4),
-        SampleMaxZ(float2(id.xy + float2(-0.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
-        SampleMaxZ(float2(id.xy + float2(+1.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
-        SampleMaxZ(float2(id.xy + float2(+1.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4)
-    );
+        (
+            SampleMaxZ(float2(id.xy + float2(-0.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4),
+            SampleMaxZ(float2(id.xy + float2(-0.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
+            SampleMaxZ(float2(id.xy + float2(+1.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
+            SampleMaxZ(float2(id.xy + float2(+1.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4)
+            );
 
     float maxTile = cmax(maxdepths);
 
@@ -59,7 +59,7 @@ void main()
     const float gi_static_occlusion = (viewdir.y * 0.5f + 0.5f) * gi_dynamic.a;
 
     float3 value_cur = gi_static.rgb * gi_static_occlusion + gi_dynamic.rgb;
-    
+
     // This is incorrect for the dynamic component. However, it introduces good depth to the colors so whatever.
     value_cur *= VFog_EstimateTransmittance(uvw_cur, farFade);
 
@@ -76,22 +76,22 @@ void main()
 
         value_cur += EvaluateBxDF_Volumetric
         (
-            viewdir, 
-            pk_Fog_Phase0, 
-            pk_Fog_Phase1, 
-            pk_Fog_PhaseW, 
-            light.direction, 
-            light.color, 
+            viewdir,
+            pk_Fog_Phase0,
+            pk_Fog_Phase1,
+            pk_Fog_PhaseW,
+            light.direction,
+            light.color,
             light.shadow
         );
     }
 
     const float3 value_pre = ReplaceIfResized(SAMPLE_TRICUBIC(pk_Fog_InjectRead, uvw_prev).rgb, 0.0f.xxx);
-    
+
     const float accumulation = VFog_GetAccumulation(uvw_prev);
-    
+
     float3 value_out = lerp(value_pre, value_cur, accumulation);
     value_out = Any_IsNaN(value_out) ? 0.0f.xxx : value_out;
-    
+
     imageStore(pk_Fog_Inject, int3(id), EncodeE5BGR9(value_out).xxxx);
 }

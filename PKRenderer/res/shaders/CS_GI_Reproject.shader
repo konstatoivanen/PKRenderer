@@ -13,15 +13,15 @@ void main()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
 
-    #if defined(PK_GI_CHECKERBOARD_TRACE)
+#if defined(PK_GI_CHECKERBOARD_TRACE)
     const int2 storeCoord = int2
-    (
-        coord.x / 2 + int(checkerboard(coord, pk_FrameIndex.y) * (pk_ScreenSize.x / 2)),
-        coord.y
-    );
-    #else
+        (
+            coord.x / 2 + int(checkerboard(coord, pk_FrameIndex.y) * (pk_ScreenSize.x / 2)),
+            coord.y
+            );
+#else
     const int2 storeCoord = coord;
-    #endif
+#endif
 
     const float depth = PK_GI_SAMPLE_DEPTH(coord);
     uint4 packedDiff = uint4(0u);
@@ -51,10 +51,10 @@ void main()
             const float3 viewdir = normalize(viewpos);
             const float nv = dot(normal, -viewdir);
             const float parallax = GI_GetParallax(viewdir, normalize(viewpos - pk_ViewSpaceCameraDelta.xyz));
-            
-            #if PK_GI_APPROX_ROUGH_SPEC == 1
+
+#if PK_GI_APPROX_ROUGH_SPEC == 1
             discardSpec = roughness >= PK_GI_MAX_ROUGH_SPEC;
-            #endif
+#endif
 
             // Reconstruct diff & naive spec
             {
@@ -62,14 +62,14 @@ void main()
                 const float2 s_screenuv = GI_ViewToPrevScreenUV(viewpos);
                 const int2   s_coord = int2(s_screenuv);
                 const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
-                
+
                 float4 weights = GI_GetBilinearWeights(s_screenuv - s_coord);
                 weights *= exp(-abs(depth.xxxx - s_depths));
                 weights *= safePositiveRcp(dot(weights, 1.0f.xxxx));
                 weights *= float4(Test_DepthReproject(depth.xxxx, s_depths, depthBias.xxxx));
                 weights *= float4(Test_DepthFar(s_depths));
                 weights *= float(Test_InUV(s_screenuv * pk_ScreenParams.zw));
-                
+
                 [[loop]]
                 for (uint i = 0u; i < 4; ++i)
                 {
@@ -98,7 +98,7 @@ void main()
             antilagDiff = lerp(0.1f, 1.0f, saturate(wSumDiff));
             antilagSpec = GI_GetAntilagSpecular(roughness, nv, parallax);
 
-            #if defined(PK_GI_SPEC_VIRT_REPROJECT)
+#if defined(PK_GI_SPEC_VIRT_REPROJECT)
             [[branch]]
             if (!Test_EPS6(wSumSpec) && !discardSpec)
             {
@@ -107,12 +107,12 @@ void main()
                 const float2 s_screenuv = GI_ViewToPrevScreenUV(viewpos + viewdir * s_vdist);
                 const int2   s_coord = int2(s_screenuv);
                 const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
-                
+
                 float4 weights = GI_GetBilinearWeights(s_screenuv - s_coord);
                 weights *= 1.0f.xxxx / (1e-4f + abs(depth.xxxx - s_depths));
                 weights *= float4(Test_DepthFar(s_depths));
                 weights *= float(Test_InUV(s_screenuv * pk_ScreenParams.zw));
-                
+
                 [[loop]]
                 for (uint i = 0u; i < 4; ++i)
                 {
@@ -122,14 +122,14 @@ void main()
                     w *= pow(saturate(dot(normal, s_nr.xyz)), 256.0f);
                     w *= exp(-abs(s_nr.w * k_R.x + k_R.y));
                     w = lerp(0.0f, w, !Test_NaN_EPS6(w));
-                    #if PK_GI_APPROX_ROUGH_SPEC == 1
+#if PK_GI_APPROX_ROUGH_SPEC == 1
                     w = lerp(0.0f, w, s_nr.w < PK_GI_MAX_ROUGH_SPEC);
-                    #endif
+#endif
                     specVirtual = GI_Sum(specVirtual, GI_Load_Spec(xy), w);
                     wSumVSpec += w;
                 }
             }
-            #endif
+#endif
         }
 
         // Normalization
@@ -138,7 +138,7 @@ void main()
             spec.history = min(spec.history / wSumSpec, PK_GI_SPEC_MAX_HISTORY * antilagSpec);
             diff = GI_Mul_NoHistory(diff, 1.0f / wSumDiff);
             spec = GI_Mul_NoHistory(spec, 1.0f / wSumSpec);
-            
+
             // Get min of virtual reprojected spec & naive spec to eliminate ghosting.
             if (!Test_NaN_EPS6(wSumVSpec))
             {

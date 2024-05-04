@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "TypeUtility.h"
+#include "TypeInfo.h"
 
 namespace PK::Utilities
 {
@@ -9,7 +9,7 @@ namespace PK::Utilities
         auto namespaceEnd = name.find_last_of(":");
         return name.substr(namespaceEnd + 1);
     }
-    
+
     std::string GetTypeNameSpace(const std::type_index& typeIndex)
     {
         auto name = std::string(typeIndex.name());
@@ -24,7 +24,7 @@ namespace PK::Utilities
         auto namespaceEnd = name.find_last_of(":");
         return name.substr(namespaceEnd + 1);
     }
-    
+
     std::string GetTypeNameSpace(const std::type_info& typeInfo)
     {
         auto name = std::string(typeInfo.name());

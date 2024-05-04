@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-namespace PK::Rendering::RHI
+namespace PK::Utilities
 {
     struct FenceRef
     {

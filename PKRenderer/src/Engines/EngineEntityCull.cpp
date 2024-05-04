@@ -13,7 +13,7 @@ namespace PK::Engines
     using namespace PK::Rendering;
     using namespace PK::Rendering::RHI;
 
-    EngineEntityCull::EngineEntityCull(EntityDatabase* entityDb) : 
+    EngineEntityCull::EngineEntityCull(EntityDatabase* entityDb) :
         m_entityDb(entityDb),
         m_synchronousResults(1024, 0)
     {
@@ -142,7 +142,7 @@ namespace PK::Engines
     {
         // Skip near plane eval
         const auto cullingCascadeTestPlaneCount = 5u;
-        
+
         auto cullingMask = request->mask;
         auto cullingCascadeCount = request->count;
         auto cullingCascadePlanes = PK_STACK_ALLOC(FrustumPlanes, cullingCascadeCount);
@@ -164,7 +164,7 @@ namespace PK::Engines
             cullingViewPlanes[i].w -= request->viewZOffsets[i + offsetSign];
             cullingViewPlanes[i] *= offsetSign == 0 ? 1.0f : -1.0f;
         }
-        
+
         auto cullingMinDepth = cullingMaxDepth;
 
         auto entityViews = m_entityDb->Query<EntityViewScenePrimitive>((uint32_t)ECS::ENTITY_GROUPS::ACTIVE);
@@ -184,9 +184,9 @@ namespace PK::Engines
 
                 for (auto j = 0u; j < cullingCascadeCount; ++j)
                 {
-                    auto visibility = ignoreCulling || 
+                    auto visibility = ignoreCulling ||
                         (Functions::IntersectPlanesAABB(cullingCascadePlanes[j].array_ptr(), cullingCascadeTestPlaneCount, entityBounds) &&
-                         Functions::IntersectPlanesAABB(&cullingViewPlanes[j], 1u, entityBounds));
+                            Functions::IntersectPlanesAABB(&cullingViewPlanes[j], 1u, entityBounds));
 
                     isVisible |= (uint32_t)visibility << j;
                 }
@@ -208,7 +208,8 @@ namespace PK::Engines
                 }
             }
         }
-        
+
+        // In case of 0 results this will also output 0 which should be taken into account by users.
         auto cullingRange = cullingMaxDepth - cullingMinDepth;
         auto cullingInvRange = (float)(0xFFFF) / cullingRange;
 

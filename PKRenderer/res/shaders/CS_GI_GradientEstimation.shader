@@ -28,14 +28,14 @@ void main()
     float wSum = 0.0f;
 
     for (int yy = -1; yy <= 1; ++yy)
-    for (int xx = -1; xx <= 1; ++xx)
-    {
-        const int2 xy = coord + int2(xx, yy);
-        const float s_gradient = Gradient_Load(xy, 1).gradient;
-        const float s_w = waveletKernel[abs(yy)][abs(xx)] * float(All_InArea(xy, int2(0), size));
-        gradient.gradient += s_gradient * s_w;
-        wSum += s_w;
-    }
+        for (int xx = -1; xx <= 1; ++xx)
+        {
+            const int2 xy = coord + int2(xx, yy);
+            const float s_gradient = Gradient_Load(xy, 1).gradient;
+            const float s_w = waveletKernel[abs(yy)][abs(xx)] * float(All_InArea(xy, int2(0), size));
+            gradient.gradient += s_gradient * s_w;
+            wSum += s_w;
+        }
 
     gradient.gradient /= wSum;
     Gradient_Store(coord, 0, gradient);
@@ -57,30 +57,30 @@ void main()
     float2 inputs = 0.0f.xx;
 
     for (uint yy = 0u; yy < GRADIENT_STRATA_SIZE; ++yy)
-    for (uint xx = 0u; xx < GRADIENT_STRATA_SIZE; ++xx)
-    {
-        if (yy * GRADIENT_STRATA_SIZE + xx == gradientPre.index)
+        for (uint xx = 0u; xx < GRADIENT_STRATA_SIZE; ++xx)
         {
-            continue;
+            if (yy * GRADIENT_STRATA_SIZE + xx == gradientPre.index)
+            {
+                continue;
+            }
+
+            const int2 s_coordCur = coord * GRADIENT_STRATA_SIZE + int2(xx, yy);
+
+            const int2 s_coordFull = GI_ExpandCheckerboardCoord(s_coordCur, 1u);
+            const float s_depth = SamplePreviousViewDepth(s_coordFull);
+            const float2 s_screenuv = ViewToClipUVPrev(CoordToViewPos(s_coordFull, s_depth)) * int2(pk_ScreenSize.xy);
+
+            const int2 s_coordPre = GI_CollapseCheckerboardCoord(s_screenuv, 1u);
+            const float2 s_inputs = Gradient_Load_Input(s_coordPre);
+
+            if (s_inputs.y > inputs.y)
+            {
+                coordCur = s_coordCur;
+                coordPre = s_coordPre;
+                inputs = s_inputs;
+                gradientCur.index = yy * GRADIENT_STRATA_SIZE + xx;
+            }
         }
-
-        const int2 s_coordCur = coord * GRADIENT_STRATA_SIZE + int2(xx, yy);
-
-        const int2 s_coordFull = GI_ExpandCheckerboardCoord(s_coordCur, 1u);
-        const float s_depth = SamplePreviousViewDepth(s_coordFull);
-        const float2 s_screenuv = ViewToClipUVPrev(CoordToViewPos(s_coordFull, s_depth)) * int2(pk_ScreenSize.xy);
-
-        const int2 s_coordPre = GI_CollapseCheckerboardCoord(s_screenuv, 1u);
-        const float2 s_inputs = Gradient_Load_Input(s_coordPre);
-
-        if (s_inputs.y > inputs.y)
-        {
-            coordCur = s_coordCur;
-            coordPre = s_coordPre;
-            inputs = s_inputs;
-            gradientCur.index = yy * GRADIENT_STRATA_SIZE + xx;
-        }
-    }
 
     const float c_depth = SampleViewDepth(GI_ExpandCheckerboardCoord(coordCur));
     const float p_depth = SamplePreviousViewDepth(GI_ExpandCheckerboardCoord(coordPre, 1u));

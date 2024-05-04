@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
+#include "Rendering/RHI/Vulkan/Objects/VulkanRenderState.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanCommandBuffer.h"
 
 namespace PK::Rendering::RHI::Vulkan::Services

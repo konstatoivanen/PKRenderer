@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
+#include "Core/CLI/Log.h"
 #include "Rendering/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanSparsePageTable.h"
 
@@ -7,17 +7,17 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 {
     using namespace PK::Utilities;
 
-    VulkanSparsePageTable::Page::Page(const VkDevice device, 
-                                      const VmaAllocator allocator, 
-                                      const VkMemoryRequirements& requirements, 
-                                      const VmaAllocationCreateInfo& createInfo, 
-                                      const char* name) :
+    VulkanSparsePageTable::Page::Page(const VkDevice device,
+        const VmaAllocator allocator,
+        const VkMemoryRequirements& requirements,
+        const VmaAllocationCreateInfo& createInfo,
+        const char* name) :
         allocator(allocator),
         start(start),
         end(end)
     {
         VK_ASSERT_RESULT_CTX(vmaAllocateMemoryPages(allocator, &requirements, &createInfo, 1, &memory, &allocationInfo), "Failed to allocate memory page!");
-        Utilities::VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)allocationInfo.deviceMemory, name);
+        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)allocationInfo.deviceMemory, name);
     }
 
     VulkanSparsePageTable::Page::~Page()
@@ -30,20 +30,20 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         auto name = m_name + std::string(".Page(") + std::to_string(start) + std::string("-") + std::to_string(end) + std::string(")");
 
         auto page = m_pages.New(m_driver->device,
-                                m_driver->allocator, 
-                                VkMemoryRequirements
-                                { 
-                                    end - start, 
-                                    m_memoryRequirements.alignment, 
-                                    m_memoryRequirements.memoryTypeBits 
-                                }, 
-                                m_pageCreateInfo,
-                                name.c_str());
-        
+            m_driver->allocator,
+            VkMemoryRequirements
+            {
+                end - start,
+                m_memoryRequirements.alignment,
+                m_memoryRequirements.memoryTypeBits
+            },
+            m_pageCreateInfo,
+            name.c_str());
+
         page->start = start;
         page->end = end;
         page->next = next;
-        
+
         VkSparseMemoryBind bind{};
         bind.resourceOffset = start;
         bind.size = end - start;
@@ -80,7 +80,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         size_t head = 0ull;
         auto next = &m_firstPage;
 
-        for(auto curr = *next; curr && curr->start < end; head = curr->end, curr = *next)
+        for (auto curr = *next; curr && curr->start < end; head = curr->end, curr = *next)
         {
             if (curr->end > start || curr->start == head)
             {

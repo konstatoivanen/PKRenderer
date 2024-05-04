@@ -1,13 +1,14 @@
 #include "PrecompiledHeader.h"
-#include "Core/Services/StringHashID.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanExtensions.h"
+#include "Core/CLI/Log.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanBuffer.h"
+#include "Rendering/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanAccelerationStructure.h"
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {
-    using namespace PK::Core::Services;
+    using namespace PK::Math;
+    using namespace PK::Core;
     using namespace PK::Rendering::RHI::Objects;
 
     static void CopyVkMatrix(VkTransformMatrixKHR& dst, const float4x4& src)
@@ -57,7 +58,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
     uint64_t VulkanAccelerationStructure::GetGeometryIndex(const AccelerationStructureGeometryInfo& geometry)
     {
-        BLASKey key{ geometry.indexBuffer, ((uint64_t)geometry.firstIndex & 0xFFFFFFFFu) | (((uint64_t)geometry.indexCount) << 32ull) };
+        BLASKey key{ geometry.indexBuffer, ((uint64_t)geometry.indexFirst & 0xFFFFFFFFu) | (((uint64_t)geometry.indexCount) << 32ull) };
         uint32_t index = 0u;
 
         if (!m_substructures.AddKey(key, &index))
@@ -65,41 +66,36 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             return (uint64_t)index;
         }
 
-        auto structure = m_substructures.GetValueAtRef(index);
+        auto structure = &m_substructures.GetValueAt(index);
 
         *structure = BLAS();
-        structure->nameHashId = geometry.nameHashId;
+        structure->name = geometry.name;
 
-        auto nativeVertexBuffer = geometry.vertexBuffer->GetNative<VulkanBuffer>();
-        auto adressVertex = nativeVertexBuffer->GetRaw()->deviceAddress;
-        auto strideVertex = (uint64_t)nativeVertexBuffer->GetLayout().GetStride();
-
-        auto nativeIndexBuffer = geometry.indexBuffer->GetNative<VulkanBuffer>();
-        auto adressIndex = nativeIndexBuffer->GetRaw()->deviceAddress;
-        auto strideIndex = nativeIndexBuffer->GetLayout().GetStride();
+        auto adressVertex = geometry.vertexBuffer->GetNative<VulkanBuffer>()->GetRaw()->deviceAddress;
+        auto adressIndex = geometry.indexBuffer->GetNative<VulkanBuffer>()->GetRaw()->deviceAddress;
 
         structure->geometry = VkAccelerationStructureGeometryKHR{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR };
         structure->geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
         structure->geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
         structure->geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-        structure->geometry.geometry.triangles.vertexStride = strideVertex;
+        structure->geometry.geometry.triangles.vertexStride = geometry.vertexStride;
         structure->geometry.geometry.triangles.vertexData.deviceAddress = adressVertex + geometry.vertexOffset;
-        structure->geometry.geometry.triangles.maxVertex = geometry.firstVertex + geometry.vertexCount - 1;
-        structure->geometry.geometry.triangles.indexType = strideIndex > 2 ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
+        structure->geometry.geometry.triangles.maxVertex = geometry.vertexFirst + geometry.vertexCount - 1;
+        structure->geometry.geometry.triangles.indexType = geometry.indexStride > 2 ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
         structure->geometry.geometry.triangles.indexData.deviceAddress = adressIndex;
         structure->geometry.geometry.triangles.transformData.deviceAddress = 0ull;
         structure->geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-        structure->range = { geometry.indexCount / 3 , strideIndex * geometry.firstIndex, geometry.firstVertex, 0u};
+        structure->range = { geometry.indexCount / 3 , geometry.indexStride * geometry.indexFirst, geometry.vertexFirst, 0u };
 
         structure->buildInfo = VkAccelerationStructureBuildGeometryInfoKHR{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
         structure->buildInfo.geometryCount = 1u;
         structure->buildInfo.pGeometries = &structure->geometry;
         structure->buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-        structure->buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | 
-                                     VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR |
-                                     VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR;
+        structure->buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR |
+            VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR |
+            VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR;
         structure->buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-        structure->size = Vulkan::Utilities::VulkanGetAccelerationBuildSizesInfo(m_driver->device, structure->buildInfo, structure->range.primitiveCount);
+        structure->size = VulkanGetAccelerationBuildSizesInfo(m_driver->device, structure->buildInfo, structure->range.primitiveCount);
         return index;
     }
 
@@ -114,7 +110,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         {
             for (auto i = 0u; i < m_substructures.GetCount(); ++i)
             {
-                auto structure = m_substructures.GetValueAtRef(i);
+                auto structure = &m_substructures.GetValueAt(i);
 
                 if (structure->raw && !structure->isCompacted && structure->queryIndex == -1)
                 {
@@ -135,7 +131,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
             for (auto i = 0u; i < m_substructures.GetCount(); ++i)
             {
-                auto structure = m_substructures.GetValueAtRef(i);
+                auto structure = &m_substructures.GetValueAt(i);
 
                 if (hasCompactedResults && structure->raw && !structure->isCompacted && structure->queryIndex != -1)
                 {
@@ -170,7 +166,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             m_structure.buildInfo.geometryCount = 1u;
             m_structure.buildInfo.pGeometries = &m_structure.geometry;
             m_structure.range = { m_instanceCount, 0u, 0u, 0u };
-            m_structure.size = Vulkan::Utilities::VulkanGetAccelerationBuildSizesInfo(m_driver->device, m_structure.buildInfo, m_instanceCount);
+            m_structure.size = VulkanGetAccelerationBuildSizesInfo(m_driver->device, m_structure.buildInfo, m_instanceCount);
             m_structure.needsRealloc = prevSize < m_structure.size.accelerationStructureSize;
             m_structure.bufferOffset = bufferSize;
             m_structure.scratchOffset = scratchSize;
@@ -186,9 +182,9 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             m_scratchBuffer = m_driver->bufferPool.New(m_driver->device, m_driver->allocator, VulkanBufferCreateInfo(usage, scratchSize), name.c_str());
         }
 
-        if (m_structureBuffer != nullptr && 
-            m_structureBuffer->capacity >= bufferSize && 
-            !m_structure.needsRealloc && 
+        if (m_structureBuffer != nullptr &&
+            m_structureBuffer->capacity >= bufferSize &&
+            !m_structure.needsRealloc &&
             buildCount == 0u &&
             !hasCompactedResults)
         {
@@ -213,13 +209,13 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
         for (auto i = 0u; i < m_substructures.GetCount(); ++i)
         {
-            auto structure = m_substructures.GetValueAtRef(i);
+            auto structure = &m_substructures.GetValueAt(i);
             VkAccelerationStructureCreateInfoKHR info{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
             info.buffer = m_structureBuffer->buffer;
             info.offset = structure->bufferOffset;
             info.size = structure->size.accelerationStructureSize;
             info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-            auto name = StringHashID::IDToString(structure->nameHashId) + std::string(".BLAS");
+            auto name = structure->name.to_string() + std::string(".BLAS");
             auto newstructure = new VulkanRawAccelerationStructure(m_driver->device, info, name.c_str());
 
             if (structure->raw == nullptr)
@@ -237,7 +233,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
                 copyInfo.src = structure->raw->structure;
                 copyInfo.dst = newstructure->structure;
                 copyInfo.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
-                
+
                 if (hasCompactedResults && !structure->isCompacted && structure->queryIndex != -1)
                 {
                     structure->isCompacted = true;
@@ -251,7 +247,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
             structure->raw = newstructure;
         }
-        
+
         if (m_structure.raw != nullptr)
         {
             m_driver->disposer->Dispose(m_structure.raw, m_cmd->GetFenceRef());
@@ -333,7 +329,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         for (auto i = 0u; i < m_instanceCount; ++i)
         {
             auto index = m_writeBuffer[i].accelerationStructureReference;
-            m_writeBuffer[i].accelerationStructureReference = m_substructures.GetValueAtRef((uint32_t)index)->raw->deviceAddress;
+            m_writeBuffer[i].accelerationStructureReference = m_substructures.GetValueAt((uint32_t)index).raw->deviceAddress;
         }
 
         m_instanceInputBuffer->EndMap(m_instanceBufferOffset, sizeof(VkAccelerationStructureInstanceKHR) * m_instanceLimit);

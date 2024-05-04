@@ -3,7 +3,7 @@
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
 #include "Utilities/NativeInterface.h"
-#include "Rendering/RHI/FenceRef.h"
+#include "Utilities/FenceRef.h"
 
 namespace PK::Rendering::RHI
 {
@@ -48,7 +48,7 @@ namespace PK::Rendering::RHI
             
         virtual void Begin() = 0;
         virtual void End() = 0;
-        virtual void SetFrameFence(const FenceRef& fence) = 0;
+        virtual void SetFrameFence(const Utilities::FenceRef& fence) = 0;
         virtual void SetCursorVisible(bool value) = 0;
         virtual void SetVSync(bool enabled) = 0;
         virtual void PollEvents() const = 0;

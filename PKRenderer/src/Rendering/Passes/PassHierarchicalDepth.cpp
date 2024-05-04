@@ -12,7 +12,6 @@ namespace PK::Rendering::Passes
     using namespace PK::Math;
     using namespace PK::Utilities;
     using namespace PK::Core;
-    using namespace PK::Core::Services;
     using namespace PK::Core::Assets;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
@@ -35,7 +34,7 @@ namespace PK::Rendering::Passes
         hizDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
         m_hierarchicalDepth = Texture::Create(hizDesc, "Scene.HierarchicalDepth");
     }
-    
+
     void PassHierarchicalDepth::Compute(RHI::Objects::CommandBuffer* cmd, uint3 resolution)
     {
         auto hash = HashCache::Get();

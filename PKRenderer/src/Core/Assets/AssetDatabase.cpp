@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Utilities/TypeUtility.h"
+#include "Utilities/TypeInfo.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "AssetDatabase.h"
 
@@ -7,12 +7,12 @@ namespace PK::Core::Assets
 {
     using namespace PK::Core::CLI;
 
-    AssetDatabase::AssetDatabase(ControlFlow::Sequencer* sequencer) : 
-        m_sequencer(sequencer) 
+    AssetDatabase::AssetDatabase(ControlFlow::Sequencer* sequencer) :
+        m_sequencer(sequencer)
     {
-        CVariableRegister::Create<CVariableFunc>("AssetDatabase.Query.Loaded", [this](const char** args, uint32_t count) 
-            { 
-                LogAssetsAll(); 
+        CVariableRegister::Create<CVariableFunc>("AssetDatabase.Query.Loaded", [this](const char** args, uint32_t count)
+            {
+                LogAssetsAll();
             });
     }
 
@@ -26,17 +26,17 @@ namespace PK::Core::Assets
             LogAssetsOfTypeInternal(typecollection.first);
         }
     }
-    
+
     void AssetDatabase::LogAssetsOfTypeInternal(const std::type_index& typeIndex) const
     {
         PK_LOG_HEADER("AssetDatabase.Log.Type: %s", typeIndex.name());
         PK_LOG_SCOPE_INDENT(logassetsoftype);
-    
+
         if (m_assets.count(typeIndex) > 0)
         {
             for (auto& kv : m_assets.at(typeIndex))
             {
-                PK_LOG_INFO(Asset::IdToName(kv.first).c_str());
+                PK_LOG_INFO(kv.first.c_str());
             }
         }
     }
@@ -97,7 +97,7 @@ namespace PK::Core::Assets
         for (const auto& entry : std::filesystem::directory_iterator(directory))
         {
             auto name = entry.path().string();
-            auto assetId = Asset::NameToId(entry.path().string());
+            auto assetId = AssetID(entry.path().string());
             auto assetIter = collection.find(assetId);
 
             if (assetIter != collection.end())
@@ -111,11 +111,11 @@ namespace PK::Core::Assets
     {
         if (m_assets.count(typeIndex) > 0)
         {
-            for (auto& i : m_assets.at(typeIndex))
+            for (const auto& kv : m_assets.at(typeIndex))
             {
-                if (Asset::IdToName(i.first).find(name) != std::string::npos)
+                if (kv.first.to_string().find(name) != std::string::npos)
                 {
-                    return i.second;
+                    return kv.second;
                 }
             }
         }
@@ -134,7 +134,7 @@ namespace PK::Core::Assets
         auto name = PK::Utilities::GetTypeShortName(typeIndex);
         auto cvarnameMeta = std::string("AssetDatabase.Query.Meta.") + name;
         CVariableRegister::Create<CVariableFunc>(cvarnameMeta.c_str(), [this, typeIndex, name](const char** args, uint32_t count)
-            { 
+            {
                 PK_LOG_NEWLINE();
                 auto asset = FindInternal(typeIndex, args[0]);
                 if (asset == nullptr)
@@ -145,23 +145,23 @@ namespace PK::Core::Assets
                 PK_LOG_NEWLINE();
 
             }, "Expected a keyword argument", 1u, 1u);
-        
+
         auto cvarnameLoaded = std::string("AssetDatabase.Query.Loaded.") + name;
         CVariableRegister::Create<CVariableFunc>(cvarnameLoaded.c_str(), [this, typeIndex](const char** args, uint32_t count)
-            { 
-                LogAssetsOfTypeInternal(typeIndex); 
+            {
+                LogAssetsOfTypeInternal(typeIndex);
             });
 
         auto cvarnameReloadAll = std::string("AssetDatabase.Reload.Cached.All.") + name;
         CVariableRegister::Create<CVariableFunc>(cvarnameReloadAll.c_str(), [this, typeIndex](const char** args, uint32_t count)
-            { 
+            {
                 ReloadCachedAllInternal(typeIndex);
             });
 
         auto cvarnameReload = std::string("AssetDatabase.Reload.Cached.") + name;
         CVariableRegister::Create<CVariableFunc>(cvarnameReload.c_str(), [this, typeIndex](const char** args, uint32_t count)
             {
-                ReloadCachedInternal(typeIndex, Asset::NameToId(args[0]));
+                ReloadCachedInternal(typeIndex, AssetID(args[0]));
             }, "Expected a filepath argument", 1u, 1u);
 
         auto cvarnameReloadDirectory = std::string("AssetDatabase.Reload.Cached.Directory.") + name;
@@ -169,5 +169,5 @@ namespace PK::Core::Assets
             {
                 ReloadCachedDirectoryInternal(typeIndex, std::string(args[0]));
             }, "Expected a directory argument", 1u, 1u);
-    }    
+    }
 }

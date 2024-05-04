@@ -1,8 +1,7 @@
 #pragma once
 #include "Utilities/BufferView.h"
 #include "Utilities/Ref.h"
-#include "Core/CLI/Log.h"
-#include "Core/Services/IService.h"
+#include "Core/IService.h"
 #include "ECS/EGID.h"
 
 namespace PK::ECS
@@ -25,7 +24,7 @@ namespace PK::ECS
         EGID GID;
         virtual ~IEntityView() = default;
     };
-    
+
     constexpr static const uint32_t PK_ECS_BUCKET_SIZE = 32000;
 
     struct ImplementerBucket
@@ -52,7 +51,7 @@ namespace PK::ECS
     {
         std::type_index type;
         uint32_t group;
-        
+
         inline bool operator < (const ViewCollectionKey& r) const noexcept
         {
             return (type < r.type) || ((type == r.type) && (group < r.group));
@@ -60,85 +59,97 @@ namespace PK::ECS
     };
 
 
-    class EntityDatabase : public Core::Services::IService
+    class EntityDatabase : public Core::IService
     {
-        public:
-            constexpr uint32_t ReserveEntityId() { return ++m_idCounter; }
-            inline EGID ReserveEntityId(uint32_t groupId) { return EGID(ReserveEntityId(), groupId); }
+    public:
+        constexpr uint32_t ReserveEntityId() { return ++m_idCounter; }
+        inline EGID ReserveEntityId(uint32_t groupId) { return EGID(ReserveEntityId(), groupId); }
 
-            template<typename T>
-            T* ReserveImplementer()
+        template<typename T>
+        T* ReserveImplementer()
+        {
+            static_assert(std::is_base_of<IImplementer, T>::value, "Template argument type does not derive from IImplementer!");
+
+            auto type = std::type_index(typeid(T));
+            auto& container = m_implementerBuckets[type];
+
+            uint64_t elementsPerBucket = PK_ECS_BUCKET_SIZE / sizeof(T);
+            uint64_t bucketIndex = container.count / elementsPerBucket;
+            uint64_t subIndex = container.count - bucketIndex * elementsPerBucket;
+            ++container.count;
+
+            if (container.buckets.size() <= bucketIndex)
             {
-                static_assert(std::is_base_of<IImplementer, T>::value, "Template argument type does not derive from IImplementer!");
-
-                auto type = std::type_index(typeid(T));
-                auto& container = m_implementerBuckets[type];
-
-                uint64_t elementsPerBucket = PK_ECS_BUCKET_SIZE / sizeof(T);
-                uint64_t bucketIndex = container.count / elementsPerBucket;
-                uint64_t subIndex = container.count - bucketIndex * elementsPerBucket;
-                ++container.count;
-
-                if (container.buckets.size() <= bucketIndex)
-                {
-                    auto newBucket = new ImplementerBucket();
-                    newBucket->data = new T[elementsPerBucket];
-                    newBucket->destructor = [](void* v) { delete[] reinterpret_cast<T*>(v); };
-                    container.buckets.push_back(Utilities::Scope<ImplementerBucket>(newBucket));
-                }
-
-                return reinterpret_cast<T*>(container.buckets.at(bucketIndex).get()->data) + subIndex;
+                auto newBucket = new ImplementerBucket();
+                newBucket->data = new T[elementsPerBucket];
+                newBucket->destructor = [](void* v) { delete[] reinterpret_cast<T*>(v); };
+                container.buckets.push_back(Utilities::Scope<ImplementerBucket>(newBucket));
             }
 
-            template<typename TView>
-            TView* ReserveView(const EGID& egid)
-            {
-                static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
-                PK_THROW_ASSERT(egid.IsValid(), "Trying to acquire resources for an invalid egid!");
+            return reinterpret_cast<T*>(container.buckets.at(bucketIndex).get()->data) + subIndex;
+        }
 
-                auto& views = m_entityViews[{ std::type_index(typeid(TView)), egid.groupID() }];
-                auto offset = views.buffer.size();
-                views.buffer.resize(offset + sizeof(TView));
-                views.indices[egid.entityID()] = offset;
-                auto* element = reinterpret_cast<TView*>(views.buffer.data() + offset);
-                element->GID = egid;
-                return element;
+        template<typename TView>
+        TView* ReserveView(const EGID& egid)
+        {
+            static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
+
+            if (!egid.IsValid())
+            {
+                throw std::runtime_error("Trying to acquire resources for an invalid egid!");
             }
 
-            template<typename TImpl, typename TView, typename ...M>
-            TView* ReserveView(TImpl* implementer, const EGID& egid, M TView::* ...params)
+            auto& views = m_entityViews[{ std::type_index(typeid(TView)), egid.groupID() }];
+            auto offset = views.buffer.size();
+            views.buffer.resize(offset + sizeof(TView));
+            views.indices[egid.entityID()] = offset;
+            auto* element = reinterpret_cast<TView*>(views.buffer.data() + offset);
+            element->GID = egid;
+            return element;
+        }
+
+        template<typename TImpl, typename TView, typename ...M>
+        TView* ReserveView(TImpl* implementer, const EGID& egid, M TView::* ...params)
+        {
+            auto* view = ReserveView<TView>(egid);
+            static_assert((... && std::is_assignable<decltype(view->*params), TImpl*>::value), "Components are not present in implementer");
+            ((view->*params = static_cast<M>(implementer)), ...);
+            return view;
+        }
+
+        template<typename TView>
+        const Utilities::BufferView<TView> Query(const uint32_t group)
+        {
+            static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
+
+            if (!group)
             {
-                auto* view = ReserveView<TView>(egid);
-                static_assert((... && std::is_assignable<decltype(view->*params), TImpl*>::value), "Components are not present in implementer");
-                ((view->*params = static_cast<M>(implementer)), ...);
-                return view;
+                throw std::runtime_error("Trying to acquire resources for an invalid egid!");
             }
 
-            template<typename TView>
-            const Utilities::BufferView<TView> Query(const uint32_t group)
-            {
-                static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
-                PK_THROW_ASSERT(group, "Trying to acquire resources for an invalid egid!");
+            auto& views = m_entityViews[{ std::type_index(typeid(TView)), group }];
+            auto count = views.buffer.size() / sizeof(TView);
+            return { reinterpret_cast<TView*>(views.buffer.data()), count };
+        }
 
-                auto& views = m_entityViews[{ std::type_index(typeid(TView)), group }];
-                auto count = views.buffer.size() / sizeof(TView);
-                return { reinterpret_cast<TView*>(views.buffer.data()), count };
+        template<typename TView>
+        TView* Query(const EGID& egid)
+        {
+            static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
+
+            if (!egid.IsValid())
+            {
+                throw std::runtime_error("Trying to acquire resources for an invalid egid!");
             }
 
-            template<typename TView>
-            TView* Query(const EGID& egid)
-            {
-                static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
-                PK_THROW_ASSERT(egid.IsValid(), "Trying to acquire resources for an invalid egid!");
+            auto& views = m_entityViews.at({ std::type_index(typeid(TView)), egid.groupID() });
+            auto offset = views.indices.at(egid.entityID());
+            return reinterpret_cast<TView*>(views.buffer.data() + offset);
+        }
 
-                auto& views = m_entityViews.at({ std::type_index(typeid(TView)), egid.groupID() });
-                auto offset = views.indices.at(egid.entityID());
-                return reinterpret_cast<TView*>(views.buffer.data() + offset);
-            }
-
-        private:
-            std::map<ViewCollectionKey, EntityViewsCollection> m_entityViews;
-            std::map<std::type_index, ImplementerContainer> m_implementerBuckets;
-            uint32_t m_idCounter = 0;
+    private:
+        std::map<ViewCollectionKey, EntityViewsCollection> m_entityViews;
+        std::map<std::type_index, ImplementerContainer> m_implementerBuckets;
+        uint32_t m_idCounter = 0;
     };
 }

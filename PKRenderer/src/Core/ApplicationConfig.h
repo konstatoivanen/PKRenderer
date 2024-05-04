@@ -71,10 +71,10 @@ namespace PK::Core
         PK_YAML_MEMBER(float, AutoExposureLuminanceRange, 1.0f)
         PK_YAML_MEMBER(float, AutoExposureSpeed, 1.0f)
         PK_YAML_MEMBER(float, AutoExposureTarget, 1.0f)
-        
+
         PK_YAML_MEMBER(float, VignetteIntensity, 15.0f)
         PK_YAML_MEMBER(float, VignettePower, 0.25f)
-        
+
         PK_YAML_MEMBER(float, FilmGrainIntensity, 0.25f)
         PK_YAML_MEMBER(float, FilmGrainLuminance, 0.25f)
 
@@ -126,7 +126,7 @@ namespace PK::Core
 
         PK_YAML_MEMBER(std::string, FileBackgroundTexture, "T_OEM_Mountains")
         PK_YAML_MEMBER(float, BackgroundExposure, 1.0f)
-    PK_YAML_ASSET_END()
+        PK_YAML_ASSET_END()
 }
 
 PK_YAML_ASSET_ASSETDATABSE_INTERFACE(PK::Core::ApplicationConfig)

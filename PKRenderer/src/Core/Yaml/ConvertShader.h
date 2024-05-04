@@ -4,10 +4,10 @@
 
 namespace YAML
 {
-	template<>
-	struct convert<PK::Rendering::RHI::Objects::Shader*>
-	{
-		static Node encode(const PK::Rendering::RHI::Objects::Shader*& rhs);
-		static bool decode(const Node& node, PK::Rendering::RHI::Objects::Shader*& rhs);
-	};
+    template<>
+    struct convert<PK::Rendering::RHI::Objects::Shader*>
+    {
+        static Node encode(const PK::Rendering::RHI::Objects::Shader*& rhs);
+        static bool decode(const Node& node, PK::Rendering::RHI::Objects::Shader*& rhs);
+    };
 }

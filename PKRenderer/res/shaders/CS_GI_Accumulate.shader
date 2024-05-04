@@ -109,7 +109,7 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
     // Subgroup Resampling
     {
         const uint hash = ReSTIR_Hash(seed);
-        
+
         // Random sawp. tested quad swap but it produces more low freq noise.
         const uint subgroupMask = gl_SubgroupSize - 1u;
         const uint shuffleId = (gl_SubgroupInvocationID + (hash % subgroupMask) + 1u) & subgroupMask;
@@ -140,11 +140,11 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
         const float filterStrength = 0.2f;
         const float reservoirWeight = combined.targetPdf * combined.weightSum;
         const float boilingFilterMultiplier = 10.f / clamp(filterStrength, 1e-6, 1.0) - 9.0f;
-        
+
         const uint linearThreadIndex = gl_LocalInvocationID.x + gl_LocalInvocationID.y * BOIL_FLT_GROUP_SIZE;
         const uint waveIndex = linearThreadIndex / gl_SubgroupSize;
         const uint4 threadMask = subgroupBallot(reservoirWeight > 0.0f);
-        
+
         uint threadCount = subgroupBallotBitCount(threadMask);
         float waveWeight = subgroupAdd(reservoirWeight);
 
@@ -175,9 +175,9 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
         isBoiling = reservoirWeight > s_weights[0] * boilingFilterMultiplier;
     }
 
-   
+
     // Shade Hit & Store Temporal Reservoir
-    
+
     // @TODO alternatively or rather we should retrace visibility here as to not accumulate invalid samples.
     // This is expensive however, currently reservoirs are validated in async during present (which is virtually free).
     const bool reject = ReSTIR_NearFieldReject(depth, origin, initial, ReSTIR_Hash(seed + 1));
@@ -186,7 +186,7 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
     const bool isValid = !isnan(weight) && !isinf(weight) && weight > 0.0f && !reject;
 
     ReSTIR_Store_Current(baseCoord, isValid && !isBoiling ? combined : initial);
-    
+
     const float3 radiance = lerp(initial.radiance, combined.radiance * weight, isValid.xxx);
     const float3 direction = lerp(safeNormalize(initial.position - origin), combinedDirection, isValid.xxx);
     return SH_FromRadiance(radiance, direction);
@@ -209,27 +209,27 @@ void main()
 
         GIDiff current;
         current.ao = min(1.0f, samplevec.w / PK_GI_RAY_TMAX);
-        
-        #if defined(PK_GI_RESTIR)
+
+#if defined(PK_GI_RESTIR)
         current.sh = ReSTIR_ResampleSpatioTemporal(baseCoord, coord, depth, normalroughness.xyz, origin, reservoir);
-        #else
+#else
         current.sh = SH_FromRadiance(reservoir.radiance, samplevec.xyz);
-        #endif
+#endif
 
         GIDiff history = GI_Load_Diff(baseCoord, PK_GI_STORE_LVL);
         const float alpha = GI_Alpha(history);
-        
+
         SUBGROUP_ANTIFIREFLY_FILTER(isScene, current, history, alpha, 1.0f)
 
-        history = GI_Interpolate(history, current, GI_Alpha(history));
+            history = GI_Interpolate(history, current, GI_Alpha(history));
         GI_Store_Packed_Diff(baseCoord, isScene ? GI_Pack_Diff(history) : uint4(0));
     }
 
     // Specular
-    #if PK_GI_APPROX_ROUGH_SPEC == 1
+#if PK_GI_APPROX_ROUGH_SPEC == 1
     [[branch]]
     if (normalroughness.w < PK_GI_MAX_ROUGH_SPEC)
-    #endif
+#endif
     {
         [[branch]]
         if (subgroupAny(isScene))

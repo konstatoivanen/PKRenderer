@@ -1,5 +1,5 @@
 #pragma once
-#include "Utilities/ForwardDeclareUtility.h"
+#include "Utilities/ForwardDeclare.h"
 #include "Core/Assets/Asset.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, class StaticSceneMesh)

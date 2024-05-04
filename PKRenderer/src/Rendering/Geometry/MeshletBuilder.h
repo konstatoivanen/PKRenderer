@@ -13,12 +13,12 @@ namespace PK::Rendering::Geometry
     };
 
     MeshletBuildData BuildMeshletsMonotone(const float* pPositions,
-                                           const float* pTexcoords,
-                                           const float* pNormals,
-                                           const float* pTangents,
-                                           const uint32_t* indices,
-                                           uint32_t vertexStride,
-                                           uint32_t vertexCount,
-                                           uint32_t indexCount,
-                                           const Math::BoundingBox& aabb);
+        const float* pTexcoords,
+        const float* pNormals,
+        const float* pTangents,
+        const uint32_t* indices,
+        uint32_t vertexStride,
+        uint32_t vertexCount,
+        uint32_t indexCount,
+        const Math::BoundingBox& aabb);
 }

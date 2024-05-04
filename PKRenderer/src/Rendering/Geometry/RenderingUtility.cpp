@@ -20,7 +20,8 @@ namespace PK::Rendering::Geometry
         }
 
         cmd->SetVertexBuffers(pVBuffers, (uint32_t)vbuffers.GetCount());
-        cmd->SetIndexBuffer(mesh->GetIndexBuffer(), 0);
+        cmd->SetVertexStreams(mesh->GetVertexStreamLayout());
+        cmd->SetIndexBuffer(mesh->GetIndexBuffer(), 0, mesh->GetIndexType());
     }
 
     void DrawMesh(CommandBuffer* cmd, const Mesh* mesh, int32_t submesh, uint32_t instanceCount, uint32_t firstInstance)
@@ -34,7 +35,7 @@ namespace PK::Rendering::Geometry
             for (auto i = 0u; i < smc; ++i)
             {
                 auto& sm = mesh->GetSubmesh(i);
-                cmd->DrawIndexed(sm.indexCount, 1u, sm.firstIndex, sm.firstVertex, 0u);
+                cmd->DrawIndexed(sm.indexCount, 1u, sm.indexFirst, sm.vertexFirst, 0u);
             }
 
             return;
@@ -46,7 +47,7 @@ namespace PK::Rendering::Geometry
         }
 
         auto& sm = mesh->GetSubmesh(submesh);
-        cmd->DrawIndexed(sm.indexCount, instanceCount, sm.firstIndex, sm.firstVertex, firstInstance);
+        cmd->DrawIndexed(sm.indexCount, instanceCount, sm.indexFirst, sm.vertexFirst, firstInstance);
     }
 
     void DrawMesh(CommandBuffer* cmd, const Mesh* mesh, int32_t submesh)

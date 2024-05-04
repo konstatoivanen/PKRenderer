@@ -8,7 +8,6 @@
 namespace PK::Rendering::RHI::Objects
 {
     using namespace PK::Math;
-    using namespace PK::Core::Services;
     using namespace PK::Rendering::RHI;
 
     void CommandBuffer::SetViewPort(const uint4& rect)
@@ -94,6 +93,11 @@ namespace PK::Rendering::RHI::Objects
         }
 
         SetRenderTarget(targets, nullptr, ranges.begin(), count);
+    }
+
+    void CommandBuffer::SetVertexStreams(const VertexStreamLayout& layout)
+    {
+        SetVertexStreams(layout.GetData(), (uint32_t)layout.GetCount());
     }
 
     void CommandBuffer::ResetBuiltInAtomicCounter()

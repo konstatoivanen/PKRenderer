@@ -8,8 +8,8 @@
 #include "Core/ControlFlow/IStepApplicationWindow.h"
 #include "Core/ControlFlow/RemoteProcessRunner.h"
 #include "Core/Input/InputSystem.h"
-#include "Core/Services/StringHashID.h"
-#include "Core/Services/Time.h"
+#include "Core/StringHashRegister.h"
+#include "Core/Time.h"
 #include "Core/ApplicationConfig.h"
 #include "ECS/EntityDatabase.h"
 #include "Engines/EngineCommandInput.h"
@@ -36,7 +36,6 @@ namespace PK::Core
     using namespace PK::Core::CLI;
     using namespace PK::Core::ControlFlow;
     using namespace PK::Core::Input;
-    using namespace PK::Core::Services;
     using namespace PK::Rendering;
     using namespace PK::Rendering::Objects;
     using namespace PK::Rendering::Geometry;
@@ -54,7 +53,7 @@ namespace PK::Core
         StaticLog::SetLogger(m_logger);
 
         m_services = CreateScope<ServiceRegister>();
-        m_services->Create<StringHashID>();
+        m_services->Create<StringHashRegister>();
         m_services->Create<HashCache>();
 
         auto remoteProcessRunner = m_services->Create<RemoteProcessRunner>();
@@ -88,7 +87,7 @@ namespace PK::Core
             config->EnableVsync,
             config->EnableCursor));
 
-        m_window->OnClose = PK_BIND_FUNCTION(this, Application::Close);
+        m_window->OnClose = [this]() { Close(); };
 
         assetDatabase->LoadDirectory<Shader>("res/shaders/");
 
@@ -97,7 +96,7 @@ namespace PK::Core
         auto batcherStaticMesh = m_services->Create<BatcherStaticMesh>(assetDatabase);
         auto renderPipelineDispatcher = m_services->Create<RenderPipelineDisptacher>(entityDb, assetDatabase, sequencer, batcherStaticMesh);
         auto renderPipelineScene = m_services->Create<RenderPipelineScene>(entityDb, assetDatabase, config);
-        
+
         renderPipelineDispatcher->SetRenderPipeline(RenderViewType::Scene, renderPipelineScene);
 
         auto engineFlyCamera = m_services->Create<Engines::EngineFlyCamera>(entityDb, keyConfig);
@@ -190,9 +189,9 @@ namespace PK::Core
             auto executableArgs = std::string("\"" + sourcedirectory + "\" \"" + targetdirectory + "");
 
             CVariableRegister::Create<CVariableFunc>("Application.Run.PKAssetTools", [remoteProcessRunner, executablePath, executableArgs](const char** args, uint32_t count)
-            {
-                remoteProcessRunner->ExecuteRemoteProcess({ executablePath.c_str(), executableArgs.c_str() });
-            });
+                {
+                    remoteProcessRunner->ExecuteRemoteProcess({ executablePath.c_str(), executableArgs.c_str() });
+                });
         }
 
         PK_LOG_HEADER("----------INITIALIZATION COMPLETE----------");

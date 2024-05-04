@@ -10,7 +10,7 @@
 namespace PK::Rendering::Passes
 {
     using namespace PK::Math;
-    using namespace PK::Core::Services;
+    using namespace PK::Core;
     using namespace PK::Core::Assets;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
@@ -33,10 +33,10 @@ namespace PK::Rendering::Passes
 
         m_bloomTexture = Texture::Create(descriptor, "Bloom.Texture");
         m_computeBloom = assetDatabase->Find<Shader>("CS_Bloom");
-        m_passDownsample0 = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_DOWNSAMPLE0"));
-        m_passDownsample = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_DOWNSAMPLE1"));
-        m_passUpsample = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_UPSAMPLE"));
-        m_passSeparableBlur = m_computeBloom->GetVariantIndex(StringHashID::StringToID("PASS_BLUR"));
+        m_passDownsample0 = m_computeBloom->GetVariantIndex("PASS_DOWNSAMPLE0");
+        m_passDownsample = m_computeBloom->GetVariantIndex("PASS_DOWNSAMPLE1");
+        m_passUpsample = m_computeBloom->GetVariantIndex("PASS_UPSAMPLE");
+        m_passSeparableBlur = m_computeBloom->GetVariantIndex("PASS_BLUR");
     }
 
     void PassBloom::Render(CommandBuffer* cmd, Texture* source)
@@ -56,7 +56,7 @@ namespace PK::Rendering::Passes
         GraphicsAPI::SetTexture(hash->pk_Texture, source, 0, 0);
         GraphicsAPI::SetImage(hash->pk_Image, bloom, 0, 0);
         GraphicsAPI::SetTexture(hash->pk_Bloom_Texture, bloom);
-        
+
         cmd->Dispatch(m_computeBloom, m_passDownsample0, { res.x, res.y, 1u });
 
         for (auto i = 1u; i < 8u; ++i)

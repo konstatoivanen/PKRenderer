@@ -1,5 +1,5 @@
 #pragma once
-#include "Utilities/ForwardDeclareUtility.h"
+#include "Utilities/ForwardDeclare.h"
 #include "Rendering/Objects/ShaderPropertyBlock.h"
 #include "Rendering/RHI/Objects/Buffer.h"
 
@@ -11,19 +11,20 @@ namespace PK::Rendering::Objects
 
     class ConstantBuffer : public ShaderPropertyBlock
     {
-        public:
-            ConstantBuffer(const RHI::BufferLayout& layout, const char* name);
-            
-            void FlushBuffer(RHI::Objects::CommandBuffer* cmd);
+    public:
+        ConstantBuffer(const RHI::BufferLayout& layout, const char* name);
 
-            const RHI::BufferLayout& GetLayout() const { return m_graphicsBuffer->GetLayout(); }
-            const RHI::Objects::Buffer* GetBuffer() const { return m_graphicsBuffer.get(); }
-            RHI::Objects::Buffer* GetBuffer() { return m_graphicsBuffer.get(); }
+        void FlushBuffer(RHI::Objects::CommandBuffer* cmd);
 
-            operator RHI::Objects::Buffer* () { return m_graphicsBuffer.get(); }
-            operator const RHI::Objects::Buffer* () { return m_graphicsBuffer.get(); }
+        const RHI::BufferLayout& GetLayout() const { return m_layout; }
+        const RHI::Objects::Buffer* GetBuffer() const { return m_graphicsBuffer.get(); }
+        RHI::Objects::Buffer* GetBuffer() { return m_graphicsBuffer.get(); }
 
-        private:
-            RHI::Objects::BufferRef m_graphicsBuffer;
+        operator RHI::Objects::Buffer* () { return m_graphicsBuffer.get(); }
+        operator const RHI::Objects::Buffer* () { return m_graphicsBuffer.get(); }
+
+    private:
+        RHI::Objects::BufferRef m_graphicsBuffer;
+        RHI::BufferLayout m_layout;
     };
 }

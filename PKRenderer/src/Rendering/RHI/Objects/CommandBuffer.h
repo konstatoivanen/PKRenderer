@@ -1,9 +1,9 @@
 #pragma once
-#include "Utilities/ForwardDeclareUtility.h"
+#include "Utilities/ForwardDeclare.h"
 #include "Utilities/NoCopy.h"
 #include "Utilities/BufferView.h"
+#include "Utilities/FenceRef.h"
 #include "Rendering/RHI/Structs.h"
-#include "Rendering/RHI/FenceRef.h"
 #include "Rendering/RHI/Objects/Buffer.h"
 #include "Rendering/RHI/Objects/BindArray.h"
 
@@ -18,7 +18,7 @@ namespace PK::Rendering::RHI::Objects
 
     struct CommandBuffer : public PK::Utilities::NoCopy, public Utilities::NativeInterface<CommandBuffer>
     {
-        virtual FenceRef GetFenceRef() const = 0;
+        virtual Utilities::FenceRef GetFenceRef() const = 0;
         virtual void SetRenderTarget(const Math::uint3& resolution) = 0;
         virtual void SetRenderTarget(Texture* const* renderTarget, Texture* const* resolveTargets, const TextureViewRange* ranges, uint32_t count) = 0;
         virtual void ClearColor(const Math::color& color, uint32_t index) = 0;
@@ -38,7 +38,8 @@ namespace PK::Rendering::RHI::Objects
 
         virtual void SetShader(const Shader* shader, int32_t variantIndex = -1) = 0;
         virtual void SetVertexBuffers(const Buffer** buffers, uint32_t count) = 0;
-        virtual void SetIndexBuffer(const Buffer* buffer, size_t offset) = 0;
+        virtual void SetVertexStreams(const VertexStreamElement* elements, uint32_t count) = 0;
+        virtual void SetIndexBuffer(const Buffer* buffer, size_t offset, ElementType indexType) = 0;
         virtual void SetShaderBindingTable(RayTracingShaderGroup group, const Buffer* buffer, size_t offset = 0, size_t stride = 0, size_t size = 0) = 0;
 
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
@@ -80,6 +81,8 @@ namespace PK::Rendering::RHI::Objects
         void SetRenderTarget(Texture* target, const TextureViewRange& range);
         void SetRenderTarget(Texture* target, uint16_t level, uint16_t layer);
         void SetRenderTarget(Texture* target, const RenderTargetRanges& ranges);
+        
+        void SetVertexStreams(const VertexStreamLayout& layout);
 
         void ResetBuiltInAtomicCounter();
 
@@ -99,6 +102,7 @@ namespace PK::Rendering::RHI::Objects
         template<typename T>
         Utilities::BufferView<T> BeginBufferWrite(Buffer* buffer)
         {
+            // @TODO this forces buffer.h to be included. maybe fix?
             auto bufSize = buffer->GetCapacity();
             return { reinterpret_cast<T*>(BeginBufferWrite(buffer, 0, bufSize)), bufSize / sizeof(T) };
         }
@@ -106,23 +110,12 @@ namespace PK::Rendering::RHI::Objects
         template<typename T>
         Utilities::BufferView<T> BeginBufferWrite(Buffer* buffer, size_t offset, size_t count)
         {
-            auto tsize = sizeof(T);
-            auto mapSize = tsize * count + tsize * offset;
-            auto bufSize = buffer->GetCapacity();
-
-            PK_THROW_ASSERT(mapSize <= bufSize, "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", mapSize, bufSize);
-
-            return { reinterpret_cast<T*>(BeginBufferWrite(buffer, offset * tsize, count * tsize)), count };
+            return { reinterpret_cast<T*>(BeginBufferWrite(buffer, offset * sizeof(T), count * sizeof(T))), count };
         }
 
         template<typename T>
         Utilities::InterleavedBufferView<T> BeginBufferWrite(Buffer* buffer, size_t stride, size_t elementOffset, size_t bufferOffset, size_t count)
         {
-            auto mapSize = stride * count + stride * bufferOffset;
-            auto bufSize = buffer->GetCapacity();
-
-            PK_THROW_ASSERT(mapSize <= bufSize, "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", mapSize, bufSize);
-
             return { reinterpret_cast<uint8_t*>(BeginBufferWrite(buffer, bufferOffset * stride, count * stride)), count, stride, elementOffset };
         }
     };

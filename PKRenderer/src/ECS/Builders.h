@@ -1,5 +1,5 @@
 #pragma once
-#include "Utilities/ForwardDeclareUtility.h"
+#include "Utilities/ForwardDeclare.h"
 #include "Math/Types.h"
 #include "Rendering/Objects/Material.h"
 #include "Rendering/EntityEnums.h"

@@ -15,7 +15,7 @@ namespace PK::Rendering::Objects
         alignedResolution.y = Functions::GetAlignedSize(resolution.y, RESOLUTION_ALIGNMENT);
 
         TextureDescriptor textureDescriptor{};
-        textureDescriptor.resolution = { resolution.x, resolution.y, 1 };
+        textureDescriptor.resolution = { alignedResolution.x, alignedResolution.y, 1 };
         textureDescriptor.sampler.filterMin = FilterMode::Bilinear;
         textureDescriptor.sampler.filterMag = FilterMode::Bilinear;
 

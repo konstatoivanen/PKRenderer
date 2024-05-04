@@ -5,6 +5,7 @@ CommandInputKeys:
     - ["Move.Right", "D"]
     - ["Move.Up", "Q"]
     - ["Move.Down", "E"]
+    - ["Camera.LookDrag", "Mouse1"]
     - ["Camera.FovControl", "LeftControl"]
     - ["Camera.ResetSmoothing", "LeftShift"]
     - ["Camera.DollyZoom", "LeftShift"]

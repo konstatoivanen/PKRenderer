@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-namespace PK::Utilities::HashHelpers
+namespace PK::Utilities::Hash
 {
     constexpr static const int32_t MaxPrimeArrayLength = 0x7FEFFFFD;
     constexpr static const int32_t HashPrime = 101;
@@ -27,7 +27,7 @@ namespace PK::Utilities::HashHelpers
         std::size_t operator()(const T& k) const noexcept
         {
             constexpr uint64_t seed = 18446744073709551557;
-            return PK::Utilities::HashHelpers::MurmurHash(&k, sizeof(T), seed);
+            return PK::Utilities::Hash::MurmurHash(&k, sizeof(T), seed);
         }
     };
 
@@ -36,7 +36,7 @@ namespace PK::Utilities::HashHelpers
     {
         size_t operator()(const T& k) const noexcept
         {
-            return PK::Utilities::HashHelpers::FNV1AHash(&k, sizeof(T));
+            return PK::Utilities::Hash::FNV1AHash(&k, sizeof(T));
         }
     };
 }

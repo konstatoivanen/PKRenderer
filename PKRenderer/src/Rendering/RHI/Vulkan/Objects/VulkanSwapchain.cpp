@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <gfx.h>
 #include <vulkan/vk_enum_string_helper.h>
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
+#include "Core/CLI/Log.h"
 #include "Rendering/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanSwapchain.h"
 
@@ -57,11 +57,11 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
         VkSurfaceCapabilitiesKHR capabilities;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevice, m_surface, &capabilities);
-        auto availableFormats = Utilities::VulkanGetPhysicalDeviceSurfaceFormatsKHR(m_physicalDevice, m_surface);
-        auto availablePresentModes = Utilities::VulkanGetPhysicalDeviceSurfacePresentModesKHR(m_physicalDevice, m_surface);
-        auto surfaceFormat = Utilities::VulkanSelectSurfaceFormat(availableFormats, createInfo.desiredFormat, createInfo.desiredColorSpace);
-        auto presentMode = Utilities::VulkanSelectPresentMode(availablePresentModes, createInfo.desiredPresentMode);
-        auto extent = Utilities::VulkanSelectSurfaceExtent(capabilities, createInfo.desiredExtent);
+        auto availableFormats = VulkanGetPhysicalDeviceSurfaceFormatsKHR(m_physicalDevice, m_surface);
+        auto availablePresentModes = VulkanGetPhysicalDeviceSurfacePresentModesKHR(m_physicalDevice, m_surface);
+        auto surfaceFormat = VulkanSelectSurfaceFormat(availableFormats, createInfo.desiredFormat, createInfo.desiredColorSpace);
+        auto presentMode = VulkanSelectPresentMode(availablePresentModes, createInfo.desiredPresentMode);
+        auto extent = VulkanSelectSurfaceExtent(capabilities, createInfo.desiredExtent);
 
         auto maxImageCount = capabilities.maxImageCount > 0 ? capabilities.maxImageCount : UINT32_MAX;
         auto minImageCount = capabilities.minImageCount;

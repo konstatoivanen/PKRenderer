@@ -1,12 +1,10 @@
 #include "PrecompiledHeader.h"
-#include "Core/Services/StringHashID.h"
 #include "Core/CLI/Log.h"
 #include "CVariableRegister.h"
 
 namespace PK::Core::CLI
 {
     using namespace PK::Utilities;
-    using namespace PK::Core::Services;
 
     void CVariableRegister::Bind(ICVariable* variable)
     {
@@ -65,37 +63,35 @@ namespace PK::Core::CLI
 
     void CVariableRegister::BindInstance(ICVariable* variable)
     {
-        auto name = variable->CVarGetName();
-        auto variableId = variable->variableId = StringHashID::StringToID(name);
-        PK_THROW_ASSERT(m_variables.count(variableId) == 0, "CVar is already bound! (%s)", name);
-        PK_LOG_VERBOSE("CVariableRegister.Bind: %s", name);
-        m_variables[variableId] = variable;
+        auto name = variable->name;
+        PK_THROW_ASSERT(m_variables.count(name) == 0, "CVar is already bound! (%s)", name.c_str());
+        PK_LOG_VERBOSE("CVariableRegister.Bind: %s", name.c_str());
+        m_variables[name] = variable;
     }
 
     void CVariableRegister::UnbindInstance(ICVariable* variable)
     {
-        const auto& name = StringHashID::IDToString(variable->variableId);
-        PK_THROW_ASSERT(variable->variableId != 0, "Cant unbind a unbound CVar! (%s)", name);
-        m_variables.erase(variable->variableId);
-        variable->variableId = 0u;
+        auto name = variable->name;
+        m_variables.erase(name);
     }
 
     bool CVariableRegister::IsBoundInstance(const char* name) const
     {
-        return m_variables.count(StringHashID::StringToID(name)) > 0;
+        return m_variables.count(NameID(name)) > 0;
     }
 
     void CVariableRegister::ExecuteInstance(const char** args, uint32_t count)
     {
         if (count > 0)
         {
-            auto variableName = args[0];
-            auto variableId = StringHashID::StringToID(variableName);
+            auto name = NameID(args[0]);
             --count;
 
-            if (m_variables.count(variableId))
+            auto iter = m_variables.find(name);
+
+            if (iter != m_variables.end())
             {
-                auto& variable = m_variables.at(variableId);
+                auto& variable = iter->second;
 
                 if (count < variable->CVarGetMinArgs() || count > variable->CVarGetMaxArgs())
                 {
@@ -103,7 +99,7 @@ namespace PK::Core::CLI
                     return;
                 }
 
-                m_variables.at(variableId)->CVarExecute(args + 1, count);
+                variable->CVarExecute(args + 1, count);
             }
         }
     }

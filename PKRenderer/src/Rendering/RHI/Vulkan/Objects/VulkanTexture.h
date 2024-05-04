@@ -1,7 +1,10 @@
 #pragma once
+#include "Utilities/ForwardDeclare.h"
+#include "Utilities/FastMap.h"
 #include "Rendering/RHI/Objects/Texture.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanEnumConversion.h"
-#include "Rendering/RHI/Vulkan/VulkanDriver.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Vulkan, struct VulkanDriver)
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {

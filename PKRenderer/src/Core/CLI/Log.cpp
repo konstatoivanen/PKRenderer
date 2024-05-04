@@ -5,11 +5,11 @@ namespace PK::Core::CLI
 {
     using namespace PK::Utilities;
 
-    #define PK_FORWAD_VARGS_FUNC(fmt, args, Func)   \
-        va_list args;                               \
-        va_start(args, fmt);                        \
-        Func                                        \
-        va_end(args);                               \
+#define PK_FORWAD_VARGS_FUNC(fmt, args, Func) \
+        va_list args; \
+        va_start(args, fmt); \
+        Func \
+        va_end(args); \
 
     void StaticLog::SetLogger(Weak<ILogger> logger)
     {
@@ -117,5 +117,5 @@ namespace PK::Core::CLI
         return std::runtime_error(format);
     }
 
-    #undef PK_FORWAD_VARGS_FUNC
+#undef PK_FORWAD_VARGS_FUNC
 }

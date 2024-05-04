@@ -1,7 +1,7 @@
 #pragma once
-#include "Math/Types.h"
+#include <cstdint>
 
-namespace PK::Core::Services
+namespace PK::Core
 {
     struct TimeFrameInfo
     {

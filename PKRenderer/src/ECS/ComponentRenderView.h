@@ -1,5 +1,5 @@
 #pragma once
-#include "Utilities/ForwardDeclareUtility.h"
+#include "Utilities/ForwardDeclare.h"
 #include "Rendering/EntityEnums.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, struct RenderView)

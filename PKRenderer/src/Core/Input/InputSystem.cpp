@@ -1,12 +1,12 @@
 #include "PrecompiledHeader.h"
 #include "Core/Input/InputDeviceGLFW.h"
+#include "Core/ControlFlow/Sequencer.h"
 #include "InputSystem.h"
 
 namespace PK::Core::Input
 {
     using namespace PK::Math;
     using namespace PK::Core;
-    using namespace PK::Core::Services;
     using namespace PK::Rendering::RHI;
 
     InputDevice* InputSystem::GetDevice(Rendering::RHI::Window* window)

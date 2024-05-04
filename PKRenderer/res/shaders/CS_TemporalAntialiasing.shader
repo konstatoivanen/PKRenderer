@@ -95,11 +95,11 @@ void main()
     const float3 history = SolveTemporalAntiAliasing(desc);
 
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(history)));
-        
+
     uint shuffleH = QuadSwapIdHorizontal(gl_SubgroupInvocationID);
     uint shulffeV = QuadSwapIdVertical16x2(gl_SubgroupInvocationID);
     uint shulffeD = QuadSwapIdDiagonal16x2(gl_SubgroupInvocationID);
-    
+
     float3 color = history;
     color += subgroupShuffle(history, shuffleH);
     color += subgroupShuffle(history, shuffleH);

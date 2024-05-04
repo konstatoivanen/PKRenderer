@@ -20,7 +20,6 @@ namespace PK::Rendering
     using namespace PK::Core;
     using namespace PK::Core::Assets;
     using namespace PK::Core::ControlFlow;
-    using namespace PK::Core::Services;
     using namespace PK::ECS;
     using namespace PK::Rendering::Objects;
     using namespace PK::Rendering::Geometry;
@@ -117,7 +116,7 @@ namespace PK::Rendering
     void RenderPipelineScene::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
-        
+
         auto& constants = view->constants;
         auto resolution = view->GetResolution();
         auto isOutOfDate = view->timeRender.frameIndex == view->timeResize.frameIndex;
@@ -182,7 +181,7 @@ namespace PK::Rendering
         constants->Set<float4>(hash->pk_ProjectionJitter, projectionJitter);
         constants->Set<uint4>(hash->pk_FrameRandom, Functions::MurmurHash41((uint32_t)(frameIndex % ~0u)));
         constants->Set<uint2>(hash->pk_ScreenSize, { resolution.x, resolution.y });
-        constants->Set<uint2>(hash->pk_FrameIndex, { frameIndex % 0xFFFFFFFFu, (frameIndex - frameIndexResize) % 0xFFFFFFFFu }); 
+        constants->Set<uint2>(hash->pk_FrameIndex, { frameIndex % 0xFFFFFFFFu, (frameIndex - frameIndexResize) % 0xFFFFFFFFu });
         constants->Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
         constants->Set<float>(hash->pk_SceneEnv_Exposure, m_backgroundExposure);
     }
@@ -208,7 +207,7 @@ namespace PK::Rendering
         GraphicsAPI::SetTexture(hash->pk_GB_Previous_Depth, gbuffers.previous.depth);
         GraphicsAPI::SetTexture(hash->pk_GB_Previous_DepthBiased, gbuffers.previous.depthBiased);
         GraphicsAPI::SetBuffer(hash->pk_PerFrameConstants, *view->constants.get());
-        
+
         m_passSceneGI.PreRender(cmdtransfer, resolution);
         context->batcher->BeginCollectDrawCalls();
         {
@@ -221,9 +220,9 @@ namespace PK::Rendering
         // These can happen before the end of last frame. 
         m_passSceneGI.PruneVoxels(cmdcompute);
         context->sequencer->NextEmplace<RequestRayTracingGeometry>
-        (
-            this, QueueType::Compute, m_sceneStructure.get(), ScenePrimitiveFlags::DefaultMesh, BoundingBox(), false
-        );
+            (
+                this, QueueType::Compute, m_sceneStructure.get(), ScenePrimitiveFlags::DefaultMesh, BoundingBox(), false
+                );
         GraphicsAPI::SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         queues->Submit(QueueType::Compute, &cmdcompute);
 

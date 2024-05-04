@@ -1,5 +1,5 @@
 #pragma once
-#include "Utilities/ForwardDeclareUtility.h"
+#include "Utilities/ForwardDeclare.h"
 #include <cstdint>
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::ECS, struct ComponentTransform)
@@ -18,9 +18,9 @@ namespace PK::Rendering::Geometry
         virtual void EndCollectDrawCalls(RHI::Objects::CommandBuffer* cmd) = 0;
         virtual uint32_t BeginNewGroup() = 0;
         virtual void SubmitStaticMeshDraw(ECS::ComponentTransform* transform,
-            Rendering::RHI::Objects::Shader* shader, 
-            Rendering::Objects::Material* material, 
-            Rendering::Objects::StaticMesh* mesh, 
+            Rendering::RHI::Objects::Shader* shader,
+            Rendering::Objects::Material* material,
+            Rendering::Objects::StaticMesh* mesh,
             uint16_t submesh,
             uint32_t userdata,
             uint16_t sortDepth) = 0;

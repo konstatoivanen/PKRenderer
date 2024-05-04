@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Utilities/VectorUtilities.h"
+#include "Utilities/VectorHelpers.h"
 #include "Core/CLI/Log.h"
 #include "Rendering/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanStagingBufferCache.h"

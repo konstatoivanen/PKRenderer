@@ -50,8 +50,8 @@ void main()
         {
             float variance = 0.0f;
             GI_SF_DIFF_VARIANCE(coord, depth, diff, variance)
-            
-            const float2 radiusAndScale = GI_GetDiskFilterRadiusAndScale(depth, variance, diff.ao, diff.history);
+
+                const float2 radiusAndScale = GI_GetDiskFilterRadiusAndScale(depth, variance, diff.ao, diff.history);
             const float scale = radiusAndScale.y;
             const float radius = radiusAndScale.x * (scale + 1e-4f);
             const bool skip = diff.history > 30.0f || scale < 0.05f;
@@ -64,7 +64,7 @@ void main()
         float lumaMax;
         SUBGROUP_ANTIFIREFLY_MAXLUMA(isScene, diff, history, alpha, lumaMax)
 
-        history = GI_ClampLuma(history, lumaMax);
+            history = GI_ClampLuma(history, lumaMax);
         history.history += 1.0f;
 
         diff.ao = lerp(history.ao, 0.5f + diff.ao * 0.5f, alpha);
@@ -72,20 +72,20 @@ void main()
         GI_Store_Diff(coord, history);
         GI_Store_Resolved_Diff(coord, ViewToWorldVec(normal), diff);
 
-        #if PK_GI_APPROX_ROUGH_SPEC == 1
+#if PK_GI_APPROX_ROUGH_SPEC == 1
         ra_spec = GI_ShadeRoughSpecular(normal, viewdir, roughness, diff);
-        #endif
+#endif
     }
 
     // Filter Spec
     {
-        #if PK_GI_APPROX_ROUGH_SPEC == 1
+#if PK_GI_APPROX_ROUGH_SPEC == 1
         [[branch]]
         if (roughness < PK_GI_MAX_ROUGH_SPEC)
-        #endif
+#endif
         {
             GISpec history = spec;
-            
+
             /*
             // @TODO Calculate different radius for this as diffuse variance is hardly usable & roughness is more of a relevant factor.
             const float2 radiusAndScale = GI_GetDiskFilterRadiusAndScale(depth, 0.0f, spec.ao, spec.history);
@@ -105,14 +105,14 @@ void main()
             GI_Store_Spec(coord, history);
         }
 
-        #if PK_GI_APPROX_ROUGH_SPEC == 1
+#if PK_GI_APPROX_ROUGH_SPEC == 1
         spec = GI_Interpolate(spec, ra_spec, GI_RoughSpecWeight(roughness));
-        #endif
+#endif
 
         GI_Store_Resolved_Spec(coord, spec);
     }
 
-    #if defined(PK_GI_CHECKERBOARD_TRACE)
+#if defined(PK_GI_CHECKERBOARD_TRACE)
     {
         const float n_depth = SampleMinZ(ncoord, 0);
         const float4 n_normalRoughness = SampleViewNormalRoughness(ncoord);
@@ -124,7 +124,7 @@ void main()
         GISpec n_spec = PK_GI_SPEC_ZERO;
         float wSumDiff = 0.0f;
         float wSumSpec = 0.0f;
-    
+
         // Weight current sample
         {
             const float w_diff = max(0.0f, dot(n_normal, normal)) * exp(-abs(n_depth - depth));
@@ -134,7 +134,7 @@ void main()
             wSumDiff += w_diff;
             wSumSpec += w_spec;
         }
-    
+
         // Shuffle with chb neighbour.
         {
             uint swapId = QuadSwapIdVertical8x8(gl_SubgroupInvocationID);
@@ -147,7 +147,7 @@ void main()
             spec.radiance = subgroupShuffle(spec.radiance, swapId);
             spec.ao = subgroupShuffle(spec.ao, swapId);
         }
-    
+
 
         // Weight neighbour sample
         {
@@ -158,7 +158,7 @@ void main()
             wSumDiff += w_diff;
             wSumSpec += w_spec;
         }
-    
+
         // Store diff
         {
             GIDiff nh_diff = GI_Load_Diff(hcoord);
@@ -169,13 +169,13 @@ void main()
             GI_Store_Diff(ncoord, GI_Interpolate(nh_diff, n_diff, alpha));
             GI_Store_Resolved_Diff(ncoord, ViewToWorldVec(n_normal), n_diff);
         }
-    
+
         // Store spec
         {
-            #if PK_GI_APPROX_ROUGH_SPEC == 1
+#if PK_GI_APPROX_ROUGH_SPEC == 1
             [[branch]]
             if (n_roughness < PK_GI_MAX_ROUGH_SPEC)
-            #endif
+#endif
             {
                 GISpec nh_spec = GI_Load_Spec(hcoord);
 
@@ -184,17 +184,17 @@ void main()
                 n_spec = GI_Interpolate(nh_spec, n_spec, alpha);
                 GI_Store_Spec(ncoord, GI_Interpolate(nh_spec, n_spec, alpha));
             }
-    
-            #if PK_GI_APPROX_ROUGH_SPEC == 1
+
+#if PK_GI_APPROX_ROUGH_SPEC == 1
             {
                 const float3 viewdir = normalize(CoordToViewPos(ncoord, n_depth));
                 ra_spec = GI_ShadeRoughSpecular(n_normal, viewdir, n_roughness, n_diff);
                 n_spec = GI_Interpolate(n_spec, ra_spec, GI_RoughSpecWeight(n_roughness));
             }
-            #endif
-    
+#endif
+
             GI_Store_Resolved_Spec(ncoord, n_spec);
         }
     }
-    #endif
+#endif
 }

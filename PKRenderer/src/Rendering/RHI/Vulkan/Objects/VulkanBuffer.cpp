@@ -1,21 +1,25 @@
 #include "PrecompiledHeader.h"
+#include "Core/CLI/Log.h"
 #include "Rendering/RHI/Vulkan/VulkanDriver.h"
+#include "Rendering/RHI/Vulkan/Objects/VulkanSparsePageTable.h"
 #include "VulkanBuffer.h"
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {
     using namespace PK::Rendering::RHI::Vulkan::Services;
 
-    VulkanBuffer::VulkanBuffer(const BufferLayout& layout, size_t count, BufferUsage usage, const char* name) :
-        Buffer(layout, count, usage),
+    VulkanBuffer::VulkanBuffer(size_t size, BufferUsage usage, const char* name) :
+        Buffer(size, usage),
         m_driver(RHI::Driver::GetNative<VulkanDriver>()),
         m_name(name)
     {
-        Rebuild(count);
+        Rebuild(size);
     }
 
     void* VulkanBuffer::BeginWrite(size_t offset, size_t size)
     {
+        PK_THROW_ASSERT((offset + size) <= GetCapacity(), "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", offset + size, GetCapacity());
+
         m_mapRange.region.dstOffset = offset;
         m_mapRange.region.size = size;
 
@@ -52,6 +56,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
     const void* VulkanBuffer::BeginRead(size_t offset, size_t size)
     {
+        PK_THROW_ASSERT((offset + size) <= GetCapacity(), "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", offset + size, GetCapacity());
         m_rawBuffer->Invalidate(offset, size);
         return m_rawBuffer->BeginMap(offset);
     }
@@ -64,7 +69,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
     const VulkanBindHandle* VulkanBuffer::GetBindHandle(const IndexRange& range)
     {
-        PK_THROW_ASSERT(range.offset + range.count <= m_count, "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
+        PK_THROW_ASSERT(range.offset + range.count <= m_size, "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
 
         auto index = 0u;
 
@@ -73,16 +78,13 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             return m_bindHandles.GetValueAt(index);
         }
 
-        auto stride = m_layout.GetStride(m_usage);
-        auto handle = m_bindHandles.GetValueAtRef(index);
-        *handle = m_driver->bindhandlePool.New();
-        (*handle)->buffer.buffer = m_rawBuffer->buffer;
-        (*handle)->buffer.range = stride * range.count;
-        (*handle)->buffer.offset = stride * range.offset;
-        (*handle)->buffer.layout = &m_layout;
-        (*handle)->buffer.inputRate = EnumConvert::GetInputRate(m_inputRate);
-        (*handle)->isConcurrent = IsConcurrent();
-        return *handle;
+        auto& handle = m_bindHandles.GetValueAt(index);
+        handle = m_driver->bindhandlePool.New();
+        handle->buffer.buffer = m_rawBuffer->buffer;
+        handle->buffer.range = range.count;
+        handle->buffer.offset = range.offset;
+        handle->isConcurrent = IsConcurrent();
+        return handle;
     }
 
 
@@ -105,18 +107,18 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     }
 
 
-    bool VulkanBuffer::Validate(size_t count)
+    bool VulkanBuffer::Validate(size_t size)
     {
-        if (m_count >= count)
+        if (m_size >= size)
         {
             return false;
         }
 
-        Rebuild(count);
+        Rebuild(size);
         return true;
     }
 
-    void VulkanBuffer::Rebuild(size_t count)
+    void VulkanBuffer::Rebuild(size_t size)
     {
         // Sparse buffers cannot be persistently mapped
         if ((m_usage & BufferUsage::Sparse) != 0)
@@ -126,10 +128,9 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
         Dispose();
 
-        auto size = m_layout.GetStride(m_usage) * count;
         auto bufferCreateInfo = VulkanBufferCreateInfo(m_usage, size, &m_driver->queues->GetSelectedFamilies());
         m_rawBuffer = m_driver->bufferPool.New(m_driver->device, m_driver->allocator, bufferCreateInfo, m_name.c_str());
-        m_count = count;
+        m_size = size;
 
         if ((m_usage & BufferUsage::PersistentStage) != 0)
         {
@@ -143,7 +144,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             m_pageTable = new VulkanSparsePageTable(m_driver, m_rawBuffer->buffer, bufferCreateInfo.allocation.usage, name.c_str());
         }
 
-        GetBindHandle({ 0, m_count });
+        GetBindHandle({ 0, m_size });
     }
 
     void VulkanBuffer::Dispose()

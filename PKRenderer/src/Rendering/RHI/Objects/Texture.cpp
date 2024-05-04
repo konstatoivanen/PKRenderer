@@ -3,13 +3,12 @@
 #include <filesystem>
 #include "Core/CLI/Log.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanTexture.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanEnumConversion.h"
+#include "Rendering/RHI/Vulkan/Objects/VulkanQueue.h"
 #include "Rendering/RHI/Driver.h"
 #include "Texture.h"
 
 using namespace PK::Utilities;
 using namespace PK::Core;
-using namespace PK::Core::Services;
 using namespace PK::Core::Assets;
 using namespace PK::Rendering;
 using namespace PK::Rendering::RHI;

@@ -31,18 +31,18 @@ void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
     const LightPacked light = Lights_LoadPacked(lightIndex);
     const uint matrixIndex = light.LIGHT_MATRIX;
     const uint layer = bitfieldExtract(pk_Instancing_Userdata, 16, 16);
-    
+
     payload.extra.lightPosition = light.LIGHT_POS;
     payload.extra.lightRadius = light.LIGHT_RADIUS;
     payload.extra.layer = layer;
 
     float4x4 lightMatrix;
 
-    #if defined(PK_LIGHT_PASS_DIRECTIONAL)
-        lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex + layer);
-    #elif defined(PK_LIGHT_PASS_SPOT)
-        lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex);
-    #endif
+#if defined(PK_LIGHT_PASS_DIRECTIONAL)
+    lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex + layer);
+#elif defined(PK_LIGHT_PASS_SPOT)
+    lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex);
+#endif
 
     payload.extra.lightMatrix = lightMatrix;
     Meshlet_Store_FrustumPlanes(lightMatrix);
@@ -62,40 +62,40 @@ bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
 // As opposed to default order y axis is flipped here to avoid having to switch winding order for cube depth rendering
 const float3x3 PK_CUBE_FACE_MATRICES[6] =
 {
-	// Right
-	float3x3(+0,+0,-1, 
-			 +0,+1,+0,
-			 +1,+0,+0), 
+    // Right
+    float3x3(+0,+0,-1,
+             +0,+1,+0,
+             +1,+0,+0),
 
-	// Left
-	float3x3(+0,+0,+1, 
-			 +0,+1,+0,
-			 -1,+0,+0), 
+    // Left
+    float3x3(+0,+0,+1,
+             +0,+1,+0,
+             -1,+0,+0),
 
-	// Down
-	float3x3(+1,+0,+0, 
-			 +0,+0,+1,
-			 +0,-1,+0), 
+    // Down
+    float3x3(+1,+0,+0,
+             +0,+0,+1,
+             +0,-1,+0),
 
-	// Up
-	float3x3(+1,+0,+0, 
-			 +0,+0,-1,
-			 +0,+1,+0), 
+    // Up
+    float3x3(+1,+0,+0,
+             +0,+0,-1,
+             +0,+1,+0),
 
-	// Front
-	float3x3(+1,+0,+0, 
-			 +0,+1,+0,
-			 +0,+0,+1), 
+    // Front
+    float3x3(+1,+0,+0,
+             +0,+1,+0,
+             +0,+0,+1),
 
-	// Back
-	float3x3(-1,+0,+0, 
-			 +0,+1,+0,
-			 +0,+0,-1), 
+    // Back
+    float3x3(-1,+0,+0,
+             +0,+1,+0,
+             +0,+0,-1),
 };
 
 float4 GetCubeClipPos(float3 viewvec, float radius, uint faceIndex)
 {
-	const float3 vpos = viewvec * PK_CUBE_FACE_MATRICES[faceIndex];
+    const float3 vpos = viewvec * PK_CUBE_FACE_MATRICES[faceIndex];
     const float near = 0.1f;
     const float far = radius;
     const float m22 = -near / (far - near);
@@ -118,18 +118,18 @@ void PK_MESHLET_FUNC_VERTEX(uint vertexIndex, PKVertex vertex, inout float4 sv_P
 {
     const float3 wpos = ObjectToWorldPos(vertex.position);
 
-    #if defined(PK_LIGHT_PASS_DIRECTIONAL)
-        sv_Position = payload.extra.lightMatrix * float4(wpos, 1.0f);
-        // Depth test uses reverse z for precision reasons. revert range for actual distance.
-        vs_DEPTH[vertexIndex] = dot(payload.extra.lightPosition, wpos) + payload.extra.lightRadius;
-    #elif defined(PK_LIGHT_PASS_SPOT)
-        sv_Position = payload.extra.lightMatrix * float4(wpos, 1.0f);
-        vs_DEPTH[vertexIndex] = wpos - payload.extra.lightPosition;
-    #elif defined(PK_LIGHT_PASS_POINT)
-        const float3 vs_depth = wpos - payload.extra.lightPosition;
-        sv_Position = GetCubeClipPos(vs_depth, payload.extra.lightRadius, payload.extra.layer % 6);
-        vs_DEPTH[vertexIndex] = vs_depth;
-    #endif
+#if defined(PK_LIGHT_PASS_DIRECTIONAL)
+    sv_Position = payload.extra.lightMatrix * float4(wpos, 1.0f);
+    // Depth test uses reverse z for precision reasons. revert range for actual distance.
+    vs_DEPTH[vertexIndex] = dot(payload.extra.lightPosition, wpos) + payload.extra.lightRadius;
+#elif defined(PK_LIGHT_PASS_SPOT)
+    sv_Position = payload.extra.lightMatrix * float4(wpos, 1.0f);
+    vs_DEPTH[vertexIndex] = wpos - payload.extra.lightPosition;
+#elif defined(PK_LIGHT_PASS_POINT)
+    const float3 vs_depth = wpos - payload.extra.lightPosition;
+    sv_Position = GetCubeClipPos(vs_depth, payload.extra.lightRadius, payload.extra.layer % 6);
+    vs_DEPTH[vertexIndex] = vs_depth;
+#endif
 }
 
 #pragma PROGRAM_FRAGMENT
@@ -146,9 +146,9 @@ void main()
 {
     // Store linear distance into shadowmaps.
     // Point lights use an octahedral layout which doesnt mesh well with clip space depth.
-    #if defined(PK_LIGHT_PASS_DIRECTIONAL)
+#if defined(PK_LIGHT_PASS_DIRECTIONAL)
     SV_Target0 = vs_DEPTH;
-    #else
+#else
     SV_Target0 = length(vs_DEPTH.xyz);
-    #endif
+#endif
 }

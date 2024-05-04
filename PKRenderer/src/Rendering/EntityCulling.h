@@ -1,5 +1,5 @@
 #pragma once
-#include "Utilities/ForwardDeclareUtility.h"
+#include "Utilities/ForwardDeclare.h"
 #include "Utilities/NoCopy.h"
 #include "Utilities/MemoryBlock.h"
 #include "Math/Types.h"
@@ -39,7 +39,7 @@ namespace PK::Rendering
 			return outResults.data[i];
 		}
 
-		size_t Count() const { return outResults.count; }
+		size_t GetCount() const { return outResults.count; }
 	};
 
 	struct RequestEntityCullFrustum : public RequestEntityCullResults

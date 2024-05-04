@@ -1,7 +1,6 @@
 #pragma once
 #include "Math/Types.h"
 #include "Utilities/NoCopy.h"
-#include "Utilities/ISingleton.h"
 #include "Utilities/NativeInterface.h"
 #include "Core/Input/InputKey.h"
 

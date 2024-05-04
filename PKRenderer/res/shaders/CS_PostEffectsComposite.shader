@@ -32,7 +32,7 @@ void main()
     color = -min(-color, 0.0f.xxx);
 
     float exposure = GetAutoExposure();
-    
+
     IF_FX_FEATURE_ENABLED(FX_FEAT_VIGNETTE)
     {
         exposure *= Vignette(uv);
@@ -59,12 +59,12 @@ void main()
     color = LinearToGamma(color);
 
     // Prefer lut color grading in apply all mode.
-    #if !defined(FX_APPLY_ALL)
+#if !defined(FX_APPLY_ALL)
     IF_FX_FEATURE_ENABLED(FX_FEAT_COLORGRADING)
     {
         color = ApplyColorGrading(color);
     }
-    #endif
+#endif
 
     IF_FX_FEATURE_ENABLED(FX_FEAT_LUTCOLORGRADING)
     {
@@ -72,7 +72,7 @@ void main()
     }
 
     // Debug previews
-    #if defined(FX_APPLY_DEBUG)
+#if defined(FX_APPLY_DEBUG)
     if (uv.x > 0.5 && IS_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_HALFSCREEN))
     {
         IF_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_ZOOM)
@@ -84,14 +84,14 @@ void main()
         {
             color = GI_Load_Resolved_Diff(uv) * exposure;
         }
-        
+
         IF_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_GI_SPEC)
         {
             color = GI_Load_Resolved_Spec(uv) * exposure;
         }
 
         IF_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_GI_VX)
-        {   
+        {
             float depth = SampleViewDepth(uv);
             float4 voxel = GI_Load_Voxel(UVToWorldPos(uv, depth), 1.5f);
             voxel.rgb *= safePositiveRcp(voxel.a);
@@ -108,7 +108,7 @@ void main()
             color = SampleRoughness(uv).xxx;
         }
     }
-    #endif
+#endif
 
     imageStore(pk_Image, coord, float4(color, 1.0f));
 }

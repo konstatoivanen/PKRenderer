@@ -2,15 +2,13 @@
 #include <PKAssets/PKAssetLoader.h>
 #include <vulkan/vk_enum_string_helper.h>
 #include "Math/FunctionsMisc.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanExtensions.h"
+#include "Core/CLI/Log.h" 
 #include "Rendering/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanShader.h"
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {
     using namespace PK::Rendering::RHI::Vulkan::Services;
-    using namespace PK::Rendering::RHI::Vulkan::Utilities;
 
     VulkanShader::VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant, const char* name) :
         m_device(RHI::Driver::GetNative<VulkanDriver>()->device),
@@ -88,20 +86,19 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
         if (variant->constantVariableCount > 0)
         {
-            std::vector<ConstantVariable> variables;
-
             auto pVariables = variant->constantVariables.Get(base);
+            auto variables = PK_STACK_ALLOC(PushConstant, variant->constantVariableCount);
 
             for (auto i = 0u; i < variant->constantVariableCount; ++i)
             {
                 auto pVariable = pVariables + i;
-                variables.emplace_back(pVariable->name, pVariable->size, pVariable->offset, pVariable->stageFlags);
+                variables[i] = PushConstant(pVariable->name, pVariable->size, pVariable->offset, pVariable->stageFlags);
                 pipelineKey.pushConstants[i].stageFlags = EnumConvert::GetShaderStageFlags(pVariable->stageFlags);
                 pipelineKey.pushConstants[i].offset = pVariable->offset;
                 pipelineKey.pushConstants[i].size = pVariable->size;
             }
 
-            m_constantLayout = ConstantBufferLayout(variables);
+            m_pushConstantLayout = PushConstantLayout(variables, variant->constantVariableCount);
         }
 
         m_pipelineLayout = layoutCache->GetPipelineLayout(pipelineKey);

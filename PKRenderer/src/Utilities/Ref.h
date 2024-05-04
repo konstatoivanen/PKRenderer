@@ -1,8 +1,6 @@
 #pragma once
 #include <memory>
 
-#define PK_BIND_FUNCTION(o, fn) [o](auto&&... args) -> decltype(auto) { return o->fn(std::forward<decltype(args)>(args)...); }
-
 #define PK_STACK_ALLOC(Type, count) reinterpret_cast<Type*>(alloca(sizeof(Type) * count))
 
 #define PK_CONTIGUOUS_ALLOC(Type, count) reinterpret_cast<Type*>(calloc(count, sizeof(Type)));

@@ -11,7 +11,7 @@ float4 PK_BLIT_VERTEX_POSITIONS[3] =
 {
     float4(-1.0,  1.0, 0.0, 1.0),
     float4(-1.0, -3.0, 0.0, 1.0),
-    float4( 3.0,  1.0, 0.0, 1.0),
+    float4(3.0,  1.0, 0.0, 1.0),
 };
 
 out float3 vs_TEXCOORD0;

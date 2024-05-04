@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
-#include "HashHelpers.h"
+#include "Hash.h"
 
-namespace PK::Utilities::HashHelpers
+namespace PK::Utilities::Hash
 {
     bool IsPrime(int32_t candidate)
     {
@@ -133,7 +133,7 @@ namespace PK::Utilities::HashHelpers
             case 3: h2 ^= ((unsigned char*)data)[2] << 16;
             case 2: h2 ^= ((unsigned char*)data)[1] << 8;
             case 1: h2 ^= ((unsigned char*)data)[0];
-            h2 *= m;
+                h2 *= m;
         };
 
         h1 ^= h2 >> 18; h1 *= m;

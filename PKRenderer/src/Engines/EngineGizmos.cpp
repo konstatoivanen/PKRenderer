@@ -2,6 +2,7 @@
 #include "Math/FunctionsIntersect.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"
+#include "Core/ApplicationConfig.h"
 #include "Rendering/RHI/Objects/Shader.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/Objects/RenderView.h"
@@ -14,7 +15,6 @@ namespace PK::Engines
     using namespace PK::Math;
     using namespace PK::Core;
     using namespace PK::Core::Assets;
-    using namespace PK::Core::Services;
     using namespace PK::Core::ControlFlow;
     using namespace PK::Core::CLI;
     using namespace PK::Rendering;
@@ -28,13 +28,20 @@ namespace PK::Engines
         m_enabledCPU = config->EnableGizmosCPU;
         m_enabledGPU = config->EnableGizmosGPU;
         m_gizmosShader = assetDatabase->Find<Shader>("VS_Gizmos");
-        m_vertexBuffer = Buffer::Create(BufferLayout({ { ElementType::Uint4, "in_POSITION" } }), m_maxVertices, BufferUsage::DefaultVertex | BufferUsage::PersistentStage, "Gizmos.VertexBuffer");
-        m_indirectVertexBuffer = Buffer::Create(BufferLayout({ { ElementType::Uint4, "in_POSITION" } }), 16384u, BufferUsage::Vertex | BufferUsage::Storage, "Gizmos.Indirect.VertexBuffer");
-        m_indirectArgsBuffer = Buffer::Create(ElementType::Uint4, 1u, BufferUsage::Storage | BufferUsage::Indirect | BufferUsage::TransferDst, "Gizmos.Indirect.Arguments");
+        m_vertexBuffer = Buffer::Create<uint4>(m_maxVertices, BufferUsage::DefaultVertex | BufferUsage::PersistentStage, "Gizmos.VertexBuffer");
+        m_indirectVertexBuffer = Buffer::Create<uint4>(16384u, BufferUsage::Vertex | BufferUsage::Storage, "Gizmos.Indirect.VertexBuffer");
+        m_indirectArgsBuffer = Buffer::Create<uint4>(1u, BufferUsage::Storage | BufferUsage::Indirect | BufferUsage::TransferDst, "Gizmos.Indirect.Arguments");
         m_fixedFunctionAttribs = m_gizmosShader->GetFixedFunctionAttributes();
         m_fixedFunctionAttribs.rasterization.polygonMode = PolygonMode::Line;
         m_fixedFunctionAttribs.rasterization.topology = Topology::LineList;
-        
+
+        m_vertexStreamElement.name = PK::Assets::Mesh::PK_VS_POSITION;
+        m_vertexStreamElement.stream = 0u;
+        m_vertexStreamElement.inputRate = InputRate::PerVertex;
+        m_vertexStreamElement.stride = sizeof(uint4);
+        m_vertexStreamElement.offset = 0u;
+        m_vertexStreamElement.size = sizeof(uint4);
+
         auto hash = HashCache::Get();
         GraphicsAPI::SetBuffer(hash->pk_Gizmos_IndirectVertices, m_indirectVertexBuffer.get());
         GraphicsAPI::SetBuffer(hash->pk_Gizmos_IndirectArguments, m_indirectArgsBuffer.get());
@@ -56,12 +63,12 @@ namespace PK::Engines
             {
                 if (m_enabledCPU)
                 {
-                    m_vertexBuffer->Validate(m_vertexCount);
+                    m_vertexBuffer->Validate<uint4>(m_vertexCount);
                     m_color = Math::PK_COLOR_WHITE;
                     m_matrix = Math::PK_FLOAT4X4_IDENTITY;
                     m_worldToClip = view->worldToClip;
                     m_vertexCount = 0u;
-                    m_maxVertices = (uint32_t)m_vertexBuffer->GetCount();
+                    m_maxVertices = (uint32_t)m_vertexBuffer->GetCount<uint4>();
                     m_vertexView = renderEvent->cmd->BeginBufferWrite<Vertex>(m_vertexBuffer.get());
                     m_sequencer->Next<IGizmos*>(this, this);
                     renderEvent->cmd->EndBufferWrite(m_vertexBuffer.get());
@@ -78,6 +85,7 @@ namespace PK::Engines
                     auto rect = gbuffers.current.color->GetRect();
                     const Buffer* vb = m_indirectVertexBuffer.get();
                     renderEvent->cmd->SetVertexBuffers(&vb, 1u);
+                    renderEvent->cmd->SetVertexStreams(&m_vertexStreamElement, 1u);
                     renderEvent->cmd->SetShader(m_gizmosShader);
                     renderEvent->cmd->SetRenderTarget(gbuffers.current.color);
                     renderEvent->cmd->SetViewPort(rect);
@@ -91,6 +99,7 @@ namespace PK::Engines
                     auto rect = gbuffers.current.color->GetRect();
                     const Buffer* vb = m_vertexBuffer.get();
                     renderEvent->cmd->SetVertexBuffers(&vb, 1u);
+                    renderEvent->cmd->SetVertexStreams(&m_vertexStreamElement, 1u);
                     renderEvent->cmd->SetShader(m_gizmosShader);
                     renderEvent->cmd->SetRenderTarget(gbuffers.current.color);
                     renderEvent->cmd->SetViewPort(rect);
@@ -115,7 +124,7 @@ namespace PK::Engines
         {
             return;
         }
-        
+
         auto idx = m_vertexCount;
         m_vertexCount += 24u;
 

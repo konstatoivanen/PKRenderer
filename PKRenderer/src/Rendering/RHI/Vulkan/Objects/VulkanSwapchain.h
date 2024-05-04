@@ -1,9 +1,10 @@
 #pragma once
+#include "Utilities/ForwardDeclare.h"
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
-#include "Rendering/RHI/Vulkan/Objects/VulkanQueue.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanEnumConversion.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Vulkan::Objects, class VulkanQueue)
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {
@@ -35,7 +36,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             void Rebuild(const SwapchainCreateInfo& createInfo);
             void Release();
 
-            void SetFrameFence(const FenceRef& fence);
+            void SetFrameFence(const PK::Utilities::FenceRef& fence);
             bool TryAcquireNextImage(VkSemaphore* imageAvailableSignal);
             void Present(VkSemaphore waitSignal);
             void OnWindowResize(int w, int h);
@@ -61,7 +62,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
             VkImage m_images[MaxImageCount];
             VulkanImageView* m_imageViews[MaxImageCount];
-            FenceRef m_frameFences[MaxImageCount];
+            PK::Utilities::FenceRef m_frameFences[MaxImageCount];
             VulkanBindHandle m_bindHandles[MaxImageCount];
             uint32_t m_imageCount;
             VkFormat m_format;

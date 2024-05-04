@@ -9,7 +9,8 @@ namespace PK::Rendering::Objects
 
     ConstantBuffer::ConstantBuffer(const BufferLayout& layout, const char* name) :
         ShaderPropertyBlock(layout.GetStride()),
-        m_graphicsBuffer(Buffer::Create(layout, BufferUsage::DefaultConstant, name))
+        m_graphicsBuffer(Buffer::Create(layout.GetAlignedStride(), BufferUsage::DefaultConstant, name)),
+        m_layout(layout)
     {
         ReserveLayout(layout);
         FreezeLayout();

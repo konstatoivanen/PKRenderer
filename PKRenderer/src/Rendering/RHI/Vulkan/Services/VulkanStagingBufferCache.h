@@ -2,7 +2,7 @@
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
 #include "Utilities/FixedPool.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK::Rendering::RHI::Vulkan::Services
 {

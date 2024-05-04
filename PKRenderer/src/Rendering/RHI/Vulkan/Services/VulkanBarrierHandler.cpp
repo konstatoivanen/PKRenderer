@@ -1,16 +1,13 @@
 #include "PrecompiledHeader.h"
-#include "VulkanBarrierHandler.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanEnumConversion.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
-#include "Utilities/VectorUtilities.h"
-#include "Math/FunctionsIntersect.h"
 #include <vulkan/vk_enum_string_helper.h>
+#include "Math/FunctionsIntersect.h"
+#include "Utilities/VectorHelpers.h"
+#include "VulkanBarrierHandler.h"
 
 namespace PK::Rendering::RHI::Vulkan::Services
 {
-    using namespace PK::Utilities;
-    using namespace PK::Rendering::RHI::Vulkan::Utilities;
     using namespace PK::Math;
+    using namespace PK::Utilities;
 
     struct urect1D
     {
@@ -203,7 +200,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         for (auto i = 0u; i < m_resources.GetCount(); ++i)
         {
-            auto& key = keyValues.keys[i].key;
+            auto& key = keyValues.nodes[i].key;
             auto index = target->m_resources.GetIndex(key);
 
             // Dont override newer data with older one

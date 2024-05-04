@@ -1,9 +1,11 @@
 #pragma once
+#include "Utilities/ForwardDeclare.h"
 #include "Utilities/FixedPool.h"
 #include "Utilities/RangeTable.h"
 #include "Rendering/RHI/Structs.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
-#include "Rendering/RHI/Vulkan/VulkanDriver.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI, struct VulkanDriver)
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {

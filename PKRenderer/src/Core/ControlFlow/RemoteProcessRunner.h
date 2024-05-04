@@ -1,7 +1,6 @@
 #pragma once
-#include "Core/Services/IService.h"
 #include "Core/ControlFlow/IStep.h"
-#include "Core/ControlFlow/IStep.h"
+#include "Core/IService.h"
 
 namespace PK::Core::ControlFlow
 {
@@ -11,17 +10,15 @@ namespace PK::Core::ControlFlow
         const char* arguments;
     };
 
-    class RemoteProcessRunner : 
-        public PK::Core::Services::IService,
-        public IStep<RemoteProcessCommand*>
+    class RemoteProcessRunner : public PK::Core::IService, public IStep<RemoteProcessCommand*>
     {
-        public:
-            RemoteProcessRunner() {};
+    public:
+        RemoteProcessRunner() {};
 
-            void ExecuteRemoteProcess(const RemoteProcessCommand& command);
+        void ExecuteRemoteProcess(const RemoteProcessCommand& command);
 
-            virtual void Step(RemoteProcessCommand* command) final { ExecuteRemoteProcess(*command); }
+        virtual void Step(RemoteProcessCommand* command) final { ExecuteRemoteProcess(*command); }
 
-            // @TODO add multithreading support
+        // @TODO add multithreading support
     };
 }

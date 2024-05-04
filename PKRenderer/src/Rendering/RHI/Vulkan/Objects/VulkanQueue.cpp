@@ -2,7 +2,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include "Math/FunctionsMisc.h"
 #include "Core/CLI/Log.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
 #include "VulkanQueue.h"
 
 namespace PK::Rendering::RHI::Vulkan::Objects
@@ -35,7 +35,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         {
             const auto familyIndex = ctx.queueFamilies[i];
             const auto& family = ctx.families->at(familyIndex);
-            auto presentSupport = Utilities::VulkanIsPresentSupported(ctx.physicalDevice, familyIndex, ctx.surface);
+            auto presentSupport = VulkanIsPresentSupported(ctx.physicalDevice, familyIndex, ctx.surface);
 
             if ((family.queueFlags & requiredFlags) != requiredFlags ||
                 (!presentSupport && requirePresent))
@@ -56,7 +56,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         for (auto i = 0u; i < ctx.families->size(); ++i)
         {
             auto& family = ctx.families->at(i);
-            auto presentSupport = Utilities::VulkanIsPresentSupported(ctx.physicalDevice, i, ctx.surface);
+            auto presentSupport = VulkanIsPresentSupported(ctx.physicalDevice, i, ctx.surface);
 
             if ((family.queueFlags & requiredFlags) != requiredFlags ||
                 (*ctx.createInfos)[i].queueCount > 0 ||
@@ -411,7 +411,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     {
         createInfos.clear();
 
-        familyProperties = Utilities::VulkanGetPhysicalDeviceQueueFamilyProperties(physicalDevice);
+        familyProperties = VulkanGetPhysicalDeviceQueueFamilyProperties(physicalDevice);
 
         QueueFindContext context;
         context.families = &familyProperties;

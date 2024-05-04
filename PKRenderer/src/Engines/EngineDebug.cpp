@@ -3,10 +3,10 @@
 #include "Math/FunctionsColor.h"
 #include "Math/FunctionsMatrix.h"
 #include "Math/FunctionsIntersect.h"
-#include "Core/Application.h"
-#include "Core/ApplicationConfig.h"
 #include "Core/Assets/AssetDatabase.h"
-#include "Core/Services/Time.h"
+#include "Core/ApplicationConfig.h"
+#include "Core/Application.h"
+#include "Core/Time.h"
 #include "ECS/Builders.h"
 #include "ECS/EntityViewScenePrimitive.h"
 #include "ECS/EntityViewFlyCamera.h"
@@ -22,7 +22,6 @@ namespace PK::Engines
     using namespace PK::Utilities;
     using namespace PK::Math;
     using namespace PK::Core;
-    using namespace PK::Core::Services;
     using namespace PK::Core::Assets;
     using namespace PK::ECS;
     using namespace PK::Rendering;
@@ -170,7 +169,7 @@ namespace PK::Engines
             z = glm::sqrt(z);
             float e = n * pow(exp.z, z);
             gizmos->DrawLine({ -100, 25, e }, { -100, 50, e });
-            
+
             z = log2(e) * exp.x + exp.y;
             z = z * z;
 

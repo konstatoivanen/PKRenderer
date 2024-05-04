@@ -2,9 +2,6 @@
 #include <gfx.h>
 #include "Utilities/Handle.h"
 #include "Core/CLI/Log.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanExtensions.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanPhysicalDeviceRequirements.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanBuffer.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanTexture.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanAccelerationStructure.h"
@@ -74,9 +71,9 @@ namespace PK::Rendering::RHI::Vulkan
         instanceCreateInfo.pApplicationInfo = &appInfo;
         instanceCreateInfo.pNext = &debugMessengerCreateInfo;
 
-        auto instanceExtensions = Utilities::VulkanGetRequiredInstanceExtensions(properties.contextualInstanceExtensions);
-        PK_THROW_ASSERT(Utilities::VulkanValidateInstanceExtensions(&instanceExtensions), "Trying to enable unavailable extentions!");
-        PK_THROW_ASSERT(Utilities::VulkanValidateValidationLayers(properties.validationLayers), "Trying to enable unavailable validation layers!");
+        auto instanceExtensions = VulkanGetRequiredInstanceExtensions(properties.contextualInstanceExtensions);
+        PK_THROW_ASSERT(VulkanValidateInstanceExtensions(&instanceExtensions), "Trying to enable unavailable extentions!");
+        PK_THROW_ASSERT(VulkanValidateValidationLayers(properties.validationLayers), "Trying to enable unavailable validation layers!");
 
         instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
         instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
@@ -89,7 +86,7 @@ namespace PK::Rendering::RHI::Vulkan
         }
 
         VK_ASSERT_RESULT_CTX(vkCreateInstance(&instanceCreateInfo, nullptr, &instance), "Failed to create vulkan instance!");
-        Utilities::VulkanBindExtensionMethods(instance);
+        VulkanBindExtensionMethods(instance);
 
         {
             PK_LOG_NEWLINE();
@@ -165,8 +162,8 @@ namespace PK::Rendering::RHI::Vulkan
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
 
-        Utilities::VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice);
-        physicalDeviceProperties = Utilities::VulkanGetPhysicalDeviceProperties(physicalDevice);
+        VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice);
+        physicalDeviceProperties = VulkanGetPhysicalDeviceProperties(physicalDevice);
 
         VulkanQueueSet::Initializer queueInitializer(physicalDevice, temporarySurface);
 
@@ -316,49 +313,49 @@ namespace PK::Rendering::RHI::Vulkan
         return sizeof(char);
     }
 
-    void VulkanDriver::SetBuffer(uint32_t nameHashId, Buffer* buffer, const IndexRange& range)
+    void VulkanDriver::SetBuffer(NameID name, Buffer* buffer, const IndexRange& range)
     {
-        globalResources.Set(nameHashId, Handle(buffer->GetNative<VulkanBuffer>()->GetBindHandle(range)));
+        globalResources.Set(name, Handle(buffer->GetNative<VulkanBuffer>()->GetBindHandle(range)));
     }
 
-    void VulkanDriver::SetTexture(uint32_t nameHashId, Texture* texture, const TextureViewRange& range)
+    void VulkanDriver::SetTexture(NameID name, Texture* texture, const TextureViewRange& range)
     {
-        globalResources.Set(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::SampledTexture)));
+        globalResources.Set(name, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::SampledTexture)));
     }
 
-    void VulkanDriver::SetBufferArray(uint32_t nameHashId, BindArray<Buffer>* bufferArray)
+    void VulkanDriver::SetBufferArray(NameID name, BindArray<Buffer>* bufferArray)
     {
-        globalResources.Set(nameHashId, Handle(bufferArray->GetNative<VulkanBindArray>()));
+        globalResources.Set(name, Handle(bufferArray->GetNative<VulkanBindArray>()));
     }
 
-    void VulkanDriver::SetTextureArray(uint32_t nameHashId, BindArray<Texture>* textureArray)
+    void VulkanDriver::SetTextureArray(NameID name, BindArray<Texture>* textureArray)
     {
-        globalResources.Set(nameHashId, Handle(textureArray->GetNative<VulkanBindArray>()));
+        globalResources.Set(name, Handle(textureArray->GetNative<VulkanBindArray>()));
     }
 
-    void VulkanDriver::SetImage(uint32_t nameHashId, Texture* texture, const TextureViewRange& range)
+    void VulkanDriver::SetImage(NameID name, Texture* texture, const TextureViewRange& range)
     {
-        globalResources.Set(nameHashId, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::Image)));
+        globalResources.Set(name, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::Image)));
     }
 
-    void VulkanDriver::SetSampler(uint32_t nameHashId, const SamplerDescriptor& sampler)
+    void VulkanDriver::SetSampler(NameID name, const SamplerDescriptor& sampler)
     {
-        globalResources.Set(nameHashId, Handle(samplerCache->GetBindHandle(sampler)));
+        globalResources.Set(name, Handle(samplerCache->GetBindHandle(sampler)));
     }
 
-    void VulkanDriver::SetAccelerationStructure(uint32_t nameHashId, AccelerationStructure* structure)
+    void VulkanDriver::SetAccelerationStructure(NameID name, AccelerationStructure* structure)
     {
-        globalResources.Set(nameHashId, Handle(structure->GetNative<VulkanAccelerationStructure>()->GetBindHandle()));
+        globalResources.Set(name, Handle(structure->GetNative<VulkanAccelerationStructure>()->GetBindHandle()));
     }
 
-    void VulkanDriver::SetConstant(uint32_t nameHashId, const void* data, uint32_t size)
+    void VulkanDriver::SetConstant(NameID name, const void* data, uint32_t size)
     {
-        globalResources.Set<char>(nameHashId, reinterpret_cast<const char*>(data), size);
+        globalResources.Set<char>(name, reinterpret_cast<const char*>(data), size);
     }
 
-    void VulkanDriver::SetKeyword(uint32_t nameHashId, bool value)
+    void VulkanDriver::SetKeyword(NameID name, bool value)
     {
-        globalResources.Set<bool>(nameHashId, value);
+        globalResources.Set<bool>(name, value);
     }
 
     void VulkanDriver::GC()

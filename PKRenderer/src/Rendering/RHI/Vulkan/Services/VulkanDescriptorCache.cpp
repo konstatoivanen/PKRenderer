@@ -1,10 +1,11 @@
 #include "PrecompiledHeader.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
+#include "Core/CLI/Log.h"
 #include "VulkanDescriptorCache.h"
 
 namespace PK::Rendering::RHI::Vulkan::Services
 {
+    using namespace PK::Utilities;
+
     static uint32_t GetArraySize(const DescriptorSetKey& key)
     {
         uint32_t variableSize = 0u;
@@ -25,9 +26,9 @@ namespace PK::Rendering::RHI::Vulkan::Services
         return variableSize;
     }
 
-    VulkanDescriptorCache::VulkanDescriptorCache(VkDevice device, 
-        uint64_t pruneDelay, 
-        size_t maxSets, 
+    VulkanDescriptorCache::VulkanDescriptorCache(VkDevice device,
+        uint64_t pruneDelay,
+        size_t maxSets,
         std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes) :
         m_device(device),
         m_maxSets(maxSets),
@@ -38,19 +39,21 @@ namespace PK::Rendering::RHI::Vulkan::Services
         GrowPool({});
     }
 
-    const VulkanDescriptorSet* VulkanDescriptorCache::GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
-                                                                       const DescriptorSetKey& key, 
-                                                                       const FenceRef& fence,
-                                                                       const char* name)
+    const VulkanDescriptorSet* VulkanDescriptorCache::GetDescriptorSet(const VulkanDescriptorSetLayout* layout,
+        const DescriptorSetKey& key,
+        const FenceRef& fence,
+        const char* name)
     {
         auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
-        VulkanDescriptorSet* value = nullptr;
 
-        if (m_sets.TryGetValue(key, &value))
+        uint32_t index = 0u;
+
+        if (!m_sets.AddKey(key, &index))
         {
-            value->pruneTick = nextPruneTick;
-            value->fence = fence;
-            return value;
+            auto set = m_sets.GetValueAt(index);
+            set->pruneTick = nextPruneTick;
+            set->fence = fence;
+            return set;
         }
 
         auto arraySize = GetArraySize(key);
@@ -66,13 +69,12 @@ namespace PK::Rendering::RHI::Vulkan::Services
         GetDescriptorSets(&allocInfo, &vkdescriptorset, fence, false);
 
         auto setName = layout->name + std::string(".") + std::string(name);
-        Utilities::VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)vkdescriptorset, setName.c_str());
+        VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)vkdescriptorset, setName.c_str());
 
-        value = m_setsPool.New();
+        auto value = m_setsPool.New();
         value->set = vkdescriptorset;
         value->pruneTick = nextPruneTick;
         value->fence = fence;
-        m_sets.AddValue(key, value);
 
         VkWriteDescriptorSet writes[PK_MAX_DESCRIPTORS_PER_SET]{};
         auto count = 0u;
@@ -178,7 +180,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
                 }
 
                 default:
-                    PK_THROW_ERROR("Binding type not yet implemented!");
+                    PK_THROW_ERROR("Unsuppored binding type!");
             }
         }
 
@@ -203,6 +205,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
         }
 
         vkUpdateDescriptorSets(m_device, count, writes, 0, nullptr);
+        m_sets.SetValueAt(index, value);
         return value;
     }
 
@@ -220,7 +223,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
             m_setsPool.Delete(m_extinctPools[i].indexMask);
             m_poolPool.Delete(m_extinctPools[i].poolIndex);
             auto n = m_extinctPools.size() - 1;
-            
+
             if (i != n)
             {
                 m_extinctPools[i] = m_extinctPools[n];
@@ -233,7 +236,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         for (int32_t i = (int32_t)keyvalues.count - 1; i >= 0; --i)
         {
-            auto& key = keyvalues.keys[i].key;
+            auto& key = keyvalues.nodes[i].key;
             auto& value = keyvalues.values[i];
 
             if (!value->fence.IsComplete() || value->pruneTick >= m_currentPruneTick)

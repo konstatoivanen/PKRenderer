@@ -1,13 +1,11 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
 #include "Utilities/FileIOBMP.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
 #include "VulkanWindow.h"
 
 namespace PK::Rendering::RHI::Vulkan
 {
     using namespace PK::Utilities;
-    using namespace PK::Core::Services;
     using namespace PK::Rendering::RHI::Vulkan::Services;
     using namespace PK::Rendering::RHI::Vulkan::Objects;
 

@@ -1,7 +1,9 @@
 #include "PrecompiledHeader.h"
 #include "Math/FunctionsMisc.h"
 #include "Math/FunctionsMatrix.h"
+#include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
+#include "Core/Input/InputDevice.h"
 #include "ECS/EntityViewFlyCamera.h"
 #include "EngineFlyCamera.h"
 
@@ -12,10 +14,9 @@ namespace PK::Engines
     using namespace PK::Core::Assets;
     using namespace PK::Core::CLI;
     using namespace PK::Core::Input;
-    using namespace PK::Core::Services;
     using namespace PK::ECS;
 
-    EngineFlyCamera::EngineFlyCamera(EntityDatabase* entityDb, Core::Input::InputKeyConfig* keyConfig) :  m_entityDb(entityDb)
+    EngineFlyCamera::EngineFlyCamera(EntityDatabase* entityDb, Core::Input::InputKeyConfig* keyConfig) : m_entityDb(entityDb)
     {
         m_keys.SetKeysFrom(keyConfig);
         CVariableRegister::Create<CVariableFunc>("Engine.FlyCamera.Transforms.Log", [this](const char** args, uint32_t count) { TransformsLog(); });
@@ -90,7 +91,7 @@ namespace PK::Engines
 
             transform->position = glm::mix(transform->position, camera->targetPosition, interpolantPos);
             transform->rotation = glm::slerp(transform->rotation, targetRotation, interpolantRot);
-            
+
             // Force automatic perspective projection for this view.
             view.projection->mode = ComponentProjection::Perspective;
         }

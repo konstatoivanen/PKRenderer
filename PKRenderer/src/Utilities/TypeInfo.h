@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <typeinfo>
+#include <typeindex>
 
 namespace PK::Utilities
 {
@@ -14,4 +15,7 @@ namespace PK::Utilities
 
     template<typename T>
     std::string GetTypeNameSpace() { return GetTypeNameSpace(typeid(T)); }
+
+    template<typename T>
+    std::type_index GetTypeIndex() { return std::type_index(typeid(T)); }
 }

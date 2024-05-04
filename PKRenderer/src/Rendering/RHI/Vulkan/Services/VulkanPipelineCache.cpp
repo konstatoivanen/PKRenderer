@@ -1,7 +1,6 @@
 #include "PrecompiledHeader.h"
-#include "Utilities/FileIO.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanEnumConversion.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
+#include "Utilities/FileIOBinary.h"
+#include "Core/CLI/Log.h"
 #include "VulkanPipelineCache.h"
 
 namespace PK::Rendering::RHI::Vulkan::Services
@@ -60,7 +59,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
         {
             MeshPipelineKey meshKey = { key.shader, key.fixedFunctionState, key.renderPass };
             // this doesn't matter for mesh shaders. set it to a default to prevent duplicate pipelines.
-            meshKey.fixedFunctionState.rasterization.topology = Topology::TriangleList; 
+            meshKey.fixedFunctionState.rasterization.topology = Topology::TriangleList;
             return GetMeshPipeline(meshKey);
         }
 
@@ -90,7 +89,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         if (!m_vertexPipelines.AddKey(key, &index))
         {
-            value = m_vertexPipelines.GetValueAtRef(index);
+            value = &m_vertexPipelines.GetValueAt(index);
             value->pruneTick = nextPruneTick;
             return value->pipeline;
         }
@@ -104,9 +103,9 @@ namespace PK::Rendering::RHI::Vulkan::Services
             auto stageFlag = (ShaderStageFlags)(1u << i);
 
             // Skip null modules & modules not viable for this pipeline type
-            if (key.shader->GetModule(i) != nullptr && 
-               (stageFlag & stageMask) != 0u &&
-               (stageFlag & key.fixedFunctionState.excludeStageMask) == 0u)
+            if (key.shader->GetModule(i) != nullptr &&
+                (stageFlag & stageMask) != 0u &&
+                (stageFlag & key.fixedFunctionState.excludeStageMask) == 0u)
             {
                 shaderStages[stageCount++] = key.shader->GetModule(i)->stageInfo;
             }
@@ -229,7 +228,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
 
-        value = m_vertexPipelines.GetValueAtRef(index);
+        value = &m_vertexPipelines.GetValueAt(index);
         value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, key.shader->GetName());
         value->pruneTick = nextPruneTick;
         return value->pipeline;
@@ -243,7 +242,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         if (!m_meshPipelines.AddKey(key, &index))
         {
-            value = m_meshPipelines.GetValueAtRef(index);
+            value = &m_meshPipelines.GetValueAt(index);
             value->pruneTick = nextPruneTick;
             return value->pipeline;
         }
@@ -257,7 +256,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
             auto stageFlag = (ShaderStageFlags)(1u << i);
 
             // Skip null modules & modules not viable for this pipeline type
-            if (key.shader->GetModule(i) != nullptr && 
+            if (key.shader->GetModule(i) != nullptr &&
                 (stageFlag & stageMask) != 0u &&
                 (stageFlag & key.fixedFunctionState.excludeStageMask) == 0u)
             {
@@ -356,7 +355,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
 
-        value = m_meshPipelines.GetValueAtRef(index);
+        value = &m_meshPipelines.GetValueAt(index);
         value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, key.shader->GetName());
         value->pruneTick = nextPruneTick;
         return value->pipeline;
@@ -370,7 +369,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         if (!m_otherPipelines.AddKey(shader, &index))
         {
-            value = m_otherPipelines.GetValueAtRef(index);
+            value = &m_otherPipelines.GetValueAt(index);
             value->pruneTick = nextPruneTick;
             return value->pipeline;
         }
@@ -378,7 +377,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
         VkComputePipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
         pipelineInfo.stage = shader->GetModule((int)ShaderStage::Compute)->stageInfo;
         pipelineInfo.layout = shader->GetPipelineLayout()->layout;
-        value = m_otherPipelines.GetValueAtRef(index);
+        value = &m_otherPipelines.GetValueAt(index);
         value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
         value->pruneTick = nextPruneTick;
         return value->pipeline;
@@ -393,7 +392,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         if (!m_otherPipelines.AddKey(shader, &index))
         {
-            value = m_otherPipelines.GetValueAtRef(index);
+            value = &m_otherPipelines.GetValueAt(index);
             value->pruneTick = nextPruneTick;
             return value->pipeline;
         }
@@ -443,7 +442,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
         pipelineInfo.flags |= VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
         pipelineInfo.layout = shader->GetPipelineLayout()->layout;
 
-        value = m_otherPipelines.GetValueAtRef(index);
+        value = &m_otherPipelines.GetValueAt(index);
         value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
         value->pruneTick = nextPruneTick;
         return value->pipeline;
@@ -455,7 +454,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         for (int32_t i = m_vertexPipelines.GetCount() - 1; i >= 0; --i)
         {
-            auto value = m_vertexPipelines.GetValueAtRef(i);
+            auto value = &m_vertexPipelines.GetValueAt(i);
 
             if (value->pruneTick < m_currentPruneTick)
             {
@@ -466,7 +465,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         for (int32_t i = m_meshPipelines.GetCount() - 1; i >= 0; --i)
         {
-            auto value = m_meshPipelines.GetValueAtRef(i);
+            auto value = &m_meshPipelines.GetValueAt(i);
 
             if (value->pruneTick < m_currentPruneTick)
             {
@@ -477,7 +476,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         for (int32_t i = m_otherPipelines.GetCount() - 1; i >= 0; --i)
         {
-            auto value = m_otherPipelines.GetValueAtRef(i);
+            auto value = &m_otherPipelines.GetValueAt(i);
 
             if (value->pruneTick < m_currentPruneTick)
             {

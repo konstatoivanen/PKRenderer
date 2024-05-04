@@ -1,10 +1,10 @@
 #pragma once
+#include <string>
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
 #include "Core/CLI/ILogger.h"
 #include "Core/CLI/LogScopeIndent.h"
 #include "Core/CLI/LogScopeTimer.h"
-#include <string>
 
 namespace PK::Core::CLI
 {
@@ -32,7 +32,7 @@ namespace PK::Core::CLI
         static std::exception Exception(LogSeverity severity, LogColor color, const std::string& format, ...);
         static std::exception ExceptionV(LogSeverity severity, LogColor color, const char* format, va_list args);
 
-        private: inline static Utilities::Weak<ILogger> s_ActiveLogger;
+    private: inline static Utilities::Weak<ILogger> s_ActiveLogger;
     };
 }
 

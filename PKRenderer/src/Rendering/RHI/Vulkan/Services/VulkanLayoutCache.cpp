@@ -38,9 +38,9 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         bindingFlagsInfo.bindingCount = layoutCreateInfo.bindingCount = count;
         auto layoutName = std::string("SetLayout") + std::string(index < 10u ? "0" : "") + std::to_string(index);
-        auto value = m_setlayouts.GetValueAtRef(index);
-        *value = m_setLayoutPool.New(m_device, layoutCreateInfo, (VkShaderStageFlagBits)key.stageFlags, layoutName.c_str());
-        return *value;
+        auto value = m_setLayoutPool.New(m_device, layoutCreateInfo, (VkShaderStageFlagBits)key.stageFlags, layoutName.c_str());
+        m_setlayouts.SetValueAt(index, value);
+        return value;
     }
 
     const VulkanPipelineLayout* VulkanLayoutCache::GetPipelineLayout(const PipelineLayoutKey& key)
@@ -75,8 +75,8 @@ namespace PK::Rendering::RHI::Vulkan::Services
             }
         }
 
-        auto value = m_pipelineLayouts.GetValueAtRef(index);
-        *value = m_pipelineLayoutPool.New(m_device, pipelineLayoutInfo);
-        return *value;
+        auto value = m_pipelineLayoutPool.New(m_device, pipelineLayoutInfo);
+        m_pipelineLayouts.SetValueAt(index, value);
+        return value;
     }
 }

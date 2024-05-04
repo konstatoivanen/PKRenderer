@@ -8,7 +8,6 @@
 
 using namespace PK::Utilities;
 using namespace PK::Core;
-using namespace PK::Core::Services;
 using namespace PK::Core::Assets;
 using namespace PK::Rendering;
 using namespace PK::Rendering::RHI::Objects;
@@ -16,11 +15,11 @@ using namespace PK::Rendering::RHI::Vulkan::Objects;
 
 namespace PK::Rendering::RHI::Objects
 {
-    bool ShaderVariantMap::SupportsKeywords(const uint32_t* hashIds, const uint32_t count) const
+    bool ShaderVariantMap::SupportsKeywords(const NameID* names, const uint32_t count) const
     {
         for (auto i = 0u; i < count; ++i)
         {
-            if (!SupportsKeyword(hashIds[i]))
+            if (!SupportsKeyword(names[i]))
             {
                 return false;
             }
@@ -29,13 +28,13 @@ namespace PK::Rendering::RHI::Objects
         return true;
     }
 
-    uint32_t ShaderVariantMap::GetIndex(const uint32_t* hashIds, size_t count) const
+    uint32_t ShaderVariantMap::GetIndex(const NameID* names, size_t count) const
     {
-        uint8_t flags[16]{};
+        uint8_t flags[MAX_DIRECTIVES]{};
 
         for (auto i = 0u; i < count; ++i)
         {
-            auto kv = keywords.find(hashIds[i]);
+            auto kv = keywords.find(names[i]);
 
             if (kv != keywords.end())
             {
@@ -115,11 +114,10 @@ namespace PK::Rendering::RHI::Objects
         for (auto i = 0u; i < shader->keywordCount; ++i)
         {
             auto pKeyword = pKeywords + i;
-            auto hashId = StringHashID::StringToID(pKeyword->name);
             auto o = pKeyword->offsets;
             auto d = (o >> 28) & 0xF;
             m_variantMap.directives[d++] = o & 0xFFFFFF;
-            m_variantMap.keywords[hashId] = (o >> 24) & 0xFF;
+            m_variantMap.keywords[pKeyword->name] = (o >> 24) & 0xFF;
             m_variantMap.directivecount = d > m_variantMap.directivecount ? d : m_variantMap.directivecount;
         }
 
@@ -168,12 +166,12 @@ namespace PK::Rendering::RHI::Objects
 
             for (const auto& prop : m_materialPropertyLayout)
             {
-                meta.append("   " + StringHashID::IDToString(prop.NameHashId));
-                meta.append("," + std::to_string((uint32_t)prop.Type));
-                meta.append("," + std::to_string(prop.Count));
-                meta.append("," + std::to_string(prop.Location));
-                meta.append("," + std::to_string(prop.Offset));
-                meta.append("," + std::to_string(prop.AlignedOffset) + "\n");
+                meta.append("   " + prop.name.to_string());
+                meta.append("," + std::to_string((uint32_t)prop.type));
+                meta.append("," + std::to_string(prop.count));
+                meta.append("," + std::to_string(prop.location));
+                meta.append("," + std::to_string(prop.offset));
+                meta.append("," + std::to_string(prop.alignedOffset) + "\n");
             }
         }
 
@@ -183,7 +181,7 @@ namespace PK::Rendering::RHI::Objects
 
         for (auto& kv : m_variantMap.keywords)
         {
-            const auto& keyword = StringHashID::IDToString(kv.first);
+            const auto& keyword = kv.first.to_string();
             auto index0 = (kv.second >> 4) & 0xF;
             auto index1 = kv.second & 0xF;
 
@@ -228,15 +226,15 @@ namespace PK::Rendering::RHI::Objects
 
             for (auto& element : variant->GetVertexLayout())
             {
-                meta.append("       " + StringHashID::IDToString(element.NameHashId) + ", " + std::to_string(element.Location) + ", " + std::to_string((uint32_t)element.Type) + "\n");
+                meta.append("       " + element.name.to_string() + ", " + std::to_string(element.location) + ", " + std::to_string((uint32_t)element.type) + "\n");
             }
 
             meta.append("       Dynamic Constants:\n");
 
-            for (auto& kv : variant->GetConstantLayout())
+            for (auto& kv : variant->GetPushConstantLayout())
             {
                 auto& element = kv.second;
-                meta.append("       " + StringHashID::IDToString(element.NameHashId) + ", " + std::to_string(element.Offset) + ", " + std::to_string((uint32_t)element.Size) + "\n");
+                meta.append("       " + element.name.to_string() + ", " + std::to_string(element.offset) + ", " + std::to_string((uint32_t)element.size) + "\n");
             }
 
             for (auto i = 0u; i < PK_MAX_DESCRIPTOR_SETS; ++i)
@@ -247,7 +245,7 @@ namespace PK::Rendering::RHI::Objects
 
                 for (auto& element : set)
                 {
-                    meta.append("       " + StringHashID::IDToString(element->NameHashId) + ", " + std::to_string((uint32_t)element->Type) + "\n");
+                    meta.append("       " + element->name.to_string() + ", " + std::to_string((uint32_t)element->type) + "\n");
                 }
             }
         }

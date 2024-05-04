@@ -1,5 +1,5 @@
 #pragma once
-#include "Utilities/ForwardDeclareUtility.h"
+#include "Utilities/ForwardDeclare.h"
 #include "Utilities/NoCopy.h"
 #include "Rendering/RHI/Objects/Buffer.h"
 

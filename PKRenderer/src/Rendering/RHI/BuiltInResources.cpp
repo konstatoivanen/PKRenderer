@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/CLI/Log.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/RHI/GraphicsAPI.h"
 #include "BuiltInResources.h"
@@ -25,6 +26,6 @@ PK::Rendering::RHI::BuiltInResources::BuiltInResources()
     cmd->UploadTexture(WhiteTexture2D.get(), whiteData, sizeof(whiteData), 0u, 0u);
     cmd->UploadTexture(TransparentTexture2D.get(), transparentData, sizeof(transparentData), 0u, 0u);
 
-    AtomicCounter = Objects::Buffer::Create(ElementType::Uint, 1, BufferUsage::DefaultStorage, "PKBuiltIn.AtomicCounter");
+    AtomicCounter = Objects::Buffer::Create<uint32_t>(1ull, BufferUsage::DefaultStorage, "PKBuiltIn.AtomicCounter");
     GraphicsAPI::SetBuffer(PK::Assets::Shader::PK_SHADER_ATOMIC_COUNTER, AtomicCounter.get());
 }

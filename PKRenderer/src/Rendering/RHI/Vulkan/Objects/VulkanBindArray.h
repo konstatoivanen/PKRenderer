@@ -2,8 +2,7 @@
 #include "Rendering/RHI/Objects/Buffer.h"
 #include "Rendering/RHI/Objects/Texture.h"
 #include "Rendering/RHI/Objects/BindArray.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
-#include "Rendering/RHI/Vulkan/VulkanDriver.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {

@@ -1,6 +1,6 @@
 #pragma once
-#include "Rendering/RHI/Objects/Texture.h"
 #include <stdexcept>
+#include "Rendering/RHI/Objects/Texture.h"
 
 namespace PK::Rendering::Objects
 {

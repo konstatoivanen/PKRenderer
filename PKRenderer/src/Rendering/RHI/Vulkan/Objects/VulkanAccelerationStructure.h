@@ -1,8 +1,12 @@
 #pragma once
+#include "Utilities/ForwardDeclare.h"
 #include "Utilities/IndexedSet.h"
-#include "Rendering/RHI/Vulkan/VulkanDriver.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanEnumConversion.h"
+#include "Utilities/FastMap.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
 #include "Rendering/RHI/Objects/AccelerationStructure.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Vulkan, struct VulkanDriver)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Vulkan::Objects, struct VulkanCommandBuffer)
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {
@@ -12,7 +16,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         ~VulkanAccelerationStructure();
         
         void BeginWrite(QueueType queue, uint32_t instanceLimit) final;
-        void AddInstance(AccelerationStructureGeometryInfo& geometry, const PK::Math::float4x4& matrix) final;
+        void AddInstance(RHI::Objects::AccelerationStructureGeometryInfo& geometry, const PK::Math::float4x4& matrix) final;
         void EndWrite() final;
 
         uint32_t GetInstanceCount() const final { return m_instanceCount; }
@@ -32,7 +36,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
                 }
             };
 
-            using GeometryKeyHash = PK::Utilities::HashHelpers::TFNV1AHash<BLASKey>;
+            using GeometryKeyHash = PK::Utilities::Hash::TFNV1AHash<BLASKey>;
             constexpr static uint32_t MAX_SUBSTRUCTURES = 1024u;
 
             struct BLAS
@@ -45,7 +49,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
                 VkDeviceSize bufferOffset = 0ull;
                 VkDeviceSize scratchOffset = 0ull;
                 int32_t queryIndex = -1;
-                uint32_t nameHashId = 0u;
+                PK::Utilities::NameID name = 0u;
                 bool isCompacted = false;
             };
 
@@ -61,12 +65,13 @@ namespace PK::Rendering::RHI::Vulkan::Objects
                 bool needsRealloc = false;
             };
 
-            uint64_t GetGeometryIndex(const AccelerationStructureGeometryInfo& geometry);
+            uint64_t GetGeometryIndex(const RHI::Objects::AccelerationStructureGeometryInfo& geometry);
             void ValidateResources();
 
             const VulkanDriver* m_driver = nullptr;
             std::string m_name = "AccelerationStructure";
 
+            //@TODO This shouldnt be here. replace begin end with cmd injection
             Objects::VulkanCommandBuffer* m_cmd = nullptr;
             VulkanRawBuffer* m_instanceInputBuffer = nullptr;
             VulkanRawBuffer* m_scratchBuffer = nullptr;

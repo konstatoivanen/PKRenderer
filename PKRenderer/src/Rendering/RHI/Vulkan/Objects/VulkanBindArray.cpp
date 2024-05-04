@@ -5,6 +5,8 @@
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {
+    using namespace PK::Rendering::RHI::Objects;
+
     VulkanBindArray::VulkanBindArray(size_t capacity) : m_capacity(capacity)
     {
         m_handles = reinterpret_cast<const VulkanBindHandle**>(malloc(sizeof(const VulkanBindHandle*) * capacity));

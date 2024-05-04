@@ -8,16 +8,16 @@ namespace PK::Utilities
         ValidateBufferSize(initialCapacity);
     }
 
-    PropertyBlock::PropertyBlock(void* buffer, uint64_t initialCapacity)
+    PropertyBlock::PropertyBlock(void* externalBuffer, uint64_t initialCapacity)
     {
         m_capacity = initialCapacity;
-        m_buffer = buffer;
-        m_foreignBuffer = true;
+        m_buffer = externalBuffer;
+        m_externalBuffer = true;
     }
 
     PropertyBlock::~PropertyBlock()
     {
-        if (m_buffer != nullptr && !m_foreignBuffer)
+        if (m_buffer != nullptr && !m_externalBuffer)
         {
             free(m_buffer);
         }
@@ -25,29 +25,16 @@ namespace PK::Utilities
 
     void PropertyBlock::CopyFrom(PropertyBlock& from)
     {
-        auto& groupsm = m_properties;
-        auto& groupst = from.m_properties;
+        auto keyvalues = from.m_propertyInfos.GetKeyValues();
 
-        for (auto& kvm : groupsm)
+        for (auto i = 0u; i < keyvalues.count; ++i)
         {
-            auto kvt = groupst.find(kvm.first);
+            auto index = m_propertyInfos.GetIndex(keyvalues.nodes[i].key);
 
-            if (kvt == groupst.end())
+            if (index != -1)
             {
-                continue;
-            }
-
-            auto& gm = kvm.second;
-            auto& gt = kvt->second;
-
-            for (auto& mine : gm)
-            {
-                auto theirs = gt.find(mine.first);
-
-                if (theirs != gt.end())
-                {
-                    TryWriteValue(reinterpret_cast<char*>(from.m_buffer) + theirs->second.offset, mine.second, theirs->second.size);
-                }
+                const auto& info = keyvalues.values[i];
+                TryWriteValue(reinterpret_cast<char*>(from.m_buffer) + info.offset, (uint32_t)index, info.size);
             }
         }
     }
@@ -55,12 +42,19 @@ namespace PK::Utilities
     void PropertyBlock::Clear()
     {
         m_head = 0;
-        m_properties.clear();
+        m_propertyInfos.Clear();
         memset(m_buffer, 0, m_capacity);
     }
 
-    bool PropertyBlock::TryWriteValue(const void* src, PropertyInfo& info, uint64_t writeSize)
+    bool PropertyBlock::TryWriteValue(const void* src, uint32_t index, uint64_t writeSize)
     {
+        if (index >= m_propertyInfos.GetCount())
+        {
+            return false;
+        }
+
+        const auto& info = m_propertyInfos.GetValueAt(index);
+
         if (info.size < writeSize)
         {
             return false;
@@ -78,9 +72,9 @@ namespace PK::Utilities
             return;
         }
 
-        if (m_foreignBuffer)
+        if (m_externalBuffer)
         {
-            throw std::runtime_error("Cannot resize a foreign buffer!");
+            throw std::runtime_error("Cannot resize an external buffer!");
         }
 
         auto newBuffer = calloc(1, size);
@@ -100,11 +94,11 @@ namespace PK::Utilities
         m_buffer = newBuffer;
     }
 
-    void PropertyBlock::SetForeign(void* buffer, uint64_t capacity)
+    void PropertyBlock::SetExternalBuffer(void* externalBuffer, uint64_t capacity)
     {
-        m_buffer = buffer;
+        m_buffer = externalBuffer;
         m_capacity = capacity;
-        m_foreignBuffer = true;
+        m_externalBuffer = true;
         Clear();
     }
 }

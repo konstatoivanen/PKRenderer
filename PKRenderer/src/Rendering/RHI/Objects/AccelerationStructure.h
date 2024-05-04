@@ -1,7 +1,8 @@
 #pragma once
-#include "Utilities/ForwardDeclareUtility.h"
+#include "Utilities/ForwardDeclare.h"
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
+#include "Utilities/NameID.h"
 #include "Utilities/NativeInterface.h"
 #include "Rendering/RHI/Structs.h"
 
@@ -11,15 +12,17 @@ namespace PK::Rendering::RHI::Objects
 {
     struct alignas(16) AccelerationStructureGeometryInfo
     {
-        uint32_t vertexOffset;
-        uint32_t firstVertex;
-        uint32_t vertexCount;
-        uint32_t firstIndex;
-        uint32_t indexCount;
-        uint32_t customIndex;
-        uint32_t nameHashId;
+        Utilities::NameID name;
         Buffer* vertexBuffer;
         Buffer* indexBuffer;
+        uint32_t vertexOffset;
+        uint32_t vertexStride;
+        uint32_t vertexFirst;
+        uint32_t vertexCount;
+        uint32_t indexStride;
+        uint32_t indexFirst;
+        uint32_t indexCount;
+        uint32_t customIndex;
     };
 
     typedef Utilities::Ref<class AccelerationStructure> AccelerationStructureRef;

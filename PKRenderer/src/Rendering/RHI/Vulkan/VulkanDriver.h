@@ -3,7 +3,7 @@
 #include "Utilities/Ref.h"
 #include "Rendering/RHI/Driver.h"
 #include "Rendering/RHI/Disposer.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
 #include "Rendering/RHI/Vulkan/Services/VulkanDescriptorCache.h"
 #include "Rendering/RHI/Vulkan/Services/VulkanSamplerCache.h"
 #include "Rendering/RHI/Vulkan/Services/VulkanPipelineCache.h"
@@ -59,15 +59,15 @@ namespace PK::Rendering::RHI::Vulkan
         DriverMemoryInfo GetMemoryInfo() const final;
         size_t GetBufferOffsetAlignment(BufferUsage usage) const final;
 
-        void SetBuffer(uint32_t nameHashId, RHI::Objects::Buffer* buffer, const IndexRange& range) final;
-        void SetTexture(uint32_t nameHashId, RHI::Objects::Texture* texture, const TextureViewRange& range) final;
-        void SetBufferArray(uint32_t nameHashId, RHI::Objects::BindArray<RHI::Objects::Buffer>* bufferArray) final;
-        void SetTextureArray(uint32_t nameHashId, RHI::Objects::BindArray<RHI::Objects::Texture>* textureArray) final;
-        void SetImage(uint32_t nameHashId, RHI::Objects::Texture* texture, const TextureViewRange& range) final;
-        void SetSampler(uint32_t nameHashId, const SamplerDescriptor& sampler) final;
-        void SetAccelerationStructure(uint32_t nameHashId, RHI::Objects::AccelerationStructure* structure) final;
-        void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) final;
-        void SetKeyword(uint32_t nameHashId, bool value) final;
+        void SetBuffer(PK::Utilities::NameID name, RHI::Objects::Buffer* buffer, const IndexRange& range) final;
+        void SetTexture(PK::Utilities::NameID name, RHI::Objects::Texture* texture, const TextureViewRange& range) final;
+        void SetBufferArray(PK::Utilities::NameID name, RHI::Objects::BindArray<RHI::Objects::Buffer>* bufferArray) final;
+        void SetTextureArray(PK::Utilities::NameID name, RHI::Objects::BindArray<RHI::Objects::Texture>* textureArray) final;
+        void SetImage(PK::Utilities::NameID name, RHI::Objects::Texture* texture, const TextureViewRange& range) final;
+        void SetSampler(PK::Utilities::NameID name, const SamplerDescriptor& sampler) final;
+        void SetAccelerationStructure(PK::Utilities::NameID name, RHI::Objects::AccelerationStructure* structure) final;
+        void SetConstant(PK::Utilities::NameID name, const void* data, uint32_t size) final;
+        void SetKeyword(PK::Utilities::NameID name, bool value) final;
 
         void WaitForIdle() const final { vkDeviceWaitIdle(device); }
         void GC() final;
@@ -77,9 +77,9 @@ namespace PK::Rendering::RHI::Vulkan
                                                                   const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                                                   void* pUserData);
 
-        void DisposePooledImageView(VulkanImageView* view, const FenceRef& fence) const;
-        void DisposePooledImage(VulkanRawImage* image, const FenceRef& fence) const;
-        void DisposePooledBuffer(VulkanRawBuffer* buffer, const FenceRef& fence) const;
+        void DisposePooledImageView(VulkanImageView* view, const PK::Utilities::FenceRef& fence) const;
+        void DisposePooledImage(VulkanRawImage* image, const PK::Utilities::FenceRef& fence) const;
+        void DisposePooledBuffer(VulkanRawBuffer* buffer, const PK::Utilities::FenceRef& fence) const;
 
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;

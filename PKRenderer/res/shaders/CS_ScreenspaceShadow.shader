@@ -78,7 +78,7 @@ void main()
     const float2 biasFactors = Shadow_GetBiasFactors(normal, posToLight);
     worldpos += biasFactors.x * normal * SHADOW_NEAR_BIAS * float(normalclip) * (1.0f + cascade);
     worldpos += biasFactors.y * posToLight * SHADOW_NEAR_BIAS * (1.0f + cascade) * (1.0f + 0.1f / sqrt(depth));
-    
+
     const float2 uv = LightClipToUV(lightMatrix * float4(worldpos, 1.0f)).xy;
     const float z = dot(light.LIGHT_POS, worldpos) + light.LIGHT_RADIUS;
 
@@ -133,7 +133,7 @@ void main()
     const int thread = int(gl_LocalInvocationIndex);
     const int2 baseCoord = int2(gl_WorkGroupID.xy) * GROUP_SIZE - int2(4);
     const int2 loadCoord = baseCoord + int2(thread % GROUP_SIZE, thread / GROUP_SIZE) * 2;
-    
+
     const float4 baseDepths = GatherViewDepths((loadCoord + 1.0f.xx) * pk_ScreenParams.zw);
     const bool farclip = Any_GEqual(baseDepths, pk_ClipParams.yyyy - 1e-2f);
     const float baseDepth = lerp(cmin(baseDepths), -pk_ClipParams.y * 2.0f, farclip);
@@ -141,7 +141,7 @@ void main()
 
     const half2 offset = half2(GlobalNoiseBlue(gl_GlobalInvocationID.xy, pk_FrameIndex.y).xy) * 2.0hf - 1.0hf;
     const half2 baseuv = half2(gl_LocalInvocationID.xy + 0.5f) * 0.5hf + 1.5hf.xx + offset;
-    
+
     half2 offsets[4] =
     {
         half2(-1.0hf, -1.0hf),
@@ -188,7 +188,7 @@ void main()
     {
         byte4 s_indices = indices[i];
         half4 s_weights = weights[i];
-        
+
         float4 depths;
         depths.x = lds_depth[s_indices.x];
         depths.y = lds_depth[s_indices.y];
@@ -196,14 +196,14 @@ void main()
         depths.w = lds_depth[s_indices.w];
 
         s_weights *= half4(exp(-abs(depths - depth.xxxx) * k_depth));
-        
+
         shadow = fma(lds_shadow[s_indices.x], s_weights.x, shadow);
         shadow = fma(lds_shadow[s_indices.y], s_weights.y, shadow);
         shadow = fma(lds_shadow[s_indices.z], s_weights.z, shadow);
         shadow = fma(lds_shadow[s_indices.w], s_weights.w, shadow);
         wsum += dot(s_weights, 1.0hf.xxxx);
     }
-    
+
     shadow /= wsum;
 
     imageStore(pk_Image, int2(gl_GlobalInvocationID.xy), float4(shadow));

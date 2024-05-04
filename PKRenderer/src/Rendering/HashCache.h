@@ -1,15 +1,14 @@
 #pragma once
 #include <PKAssets/PKAsset.h>
 #include "Utilities/ISingleton.h"
-#include "Core/Services/IService.h"
-#include "Core/Services/StringHashID.h"
+#include "Utilities/NameID.h"
+#include "Core/IService.h"
 
 namespace PK::Rendering
 {
-    struct HashCache : public Core::Services::IService,
-        public Utilities::ISingleton<HashCache>
+    struct HashCache : public Core::IService, public Utilities::ISingleton<HashCache>
     {
-#define DECLARE_HASH(name) uint32_t name = Core::Services::StringHashID::StringToID(#name); \
+#define DECLARE_HASH(name) Utilities::NameID name = #name; \
 
         // Generic variable names for generic use cases.
         DECLARE_HASH(pk_Texture)
@@ -205,11 +204,11 @@ namespace PK::Rendering
 
 #undef DEFINE_HASH_CACHE
 
-        uint32_t pk_Instancing_Transforms = Core::Services::StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TRANSFORMS);
-        uint32_t pk_Instancing_Indices = Core::Services::StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_INDICES);
-        uint32_t pk_Instancing_Properties = Core::Services::StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_PROPERTIES);
-        uint32_t pk_Instancing_Textures2D = Core::Services::StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURES2D);
-        uint32_t pk_Instancing_Textures3D = Core::Services::StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURES3D);
-        uint32_t pk_Instancing_TexturesCube = Core::Services::StringHashID::StringToID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURESCUBE);
+        Utilities::NameID pk_Instancing_Transforms = Utilities::NameID(PK::Assets::Shader::PK_SHADER_INSTANCING_TRANSFORMS);
+        Utilities::NameID pk_Instancing_Indices = Utilities::NameID(PK::Assets::Shader::PK_SHADER_INSTANCING_INDICES);
+        Utilities::NameID pk_Instancing_Properties = Utilities::NameID(PK::Assets::Shader::PK_SHADER_INSTANCING_PROPERTIES);
+        Utilities::NameID pk_Instancing_Textures2D = Utilities::NameID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURES2D);
+        Utilities::NameID pk_Instancing_Textures3D = Utilities::NameID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURES3D);
+        Utilities::NameID pk_Instancing_TexturesCube = Utilities::NameID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURESCUBE);
     };
 }

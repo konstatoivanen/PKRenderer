@@ -2,7 +2,6 @@
 #include "Math/FunctionsMisc.h"
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
-#include "Core/Services/StringHashID.h"
 #include "Rendering/RHI/BuiltInResources.h"
 #include "Rendering/RHI/Objects/Buffer.h"
 #include "Rendering/RHI/Vulkan/VulkanDriver.h"
@@ -15,8 +14,8 @@ namespace PK::Rendering::RHI
 {
     using namespace PK::Math;
     using namespace PK::Utilities;
+    using namespace PK::Core;
     using namespace PK::Core::CLI;
-    using namespace PK::Core::Services;
     using namespace PK::Rendering::RHI::Objects;
     using namespace PK::Rendering::RHI::Vulkan;
 
@@ -48,7 +47,7 @@ namespace PK::Rendering::RHI
             });
 
         Utilities::Scope<Driver> driver = nullptr;
-    
+
         switch (api)
         {
             case APIType::Vulkan:
@@ -60,13 +59,13 @@ namespace PK::Rendering::RHI
 #else
                 const std::vector<const char*> PK_VALIDATION_LAYERS = {};
 #endif
-        
+
                 const std::vector<const char*> PK_INSTANCE_EXTENTIONS =
                 {
                     "VK_EXT_debug_utils",
                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
                 };
-        
+
                 const std::vector<const char*> PK_DEVICE_EXTENTIONS =
                 {
                     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -80,7 +79,7 @@ namespace PK::Rendering::RHI
                     VK_EXT_MESH_SHADER_EXTENSION_NAME,
                     VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
                 };
-        
+
                 driver = CreateScope<VulkanDriver>(VulkanContextProperties
                 (
                     "PK Vulkan Engine",
@@ -92,8 +91,9 @@ namespace PK::Rendering::RHI
                     &PK_INSTANCE_EXTENTIONS,
                     &PK_DEVICE_EXTENTIONS
                 ));
+                break;
         }
-    
+
         Driver::s_instance = driver.get();
 
         if (driver)
@@ -107,26 +107,12 @@ namespace PK::Rendering::RHI
 
         return driver;
     }
-    
-    void Driver::SetBuffer(uint32_t nameHashId, Buffer* buffer) { SetBuffer(nameHashId, buffer, buffer->GetFullRange()); }
-    void Driver::SetBuffer(const char* name, Buffer* buffer, const IndexRange& range) { SetBuffer(StringHashID::StringToID(name), buffer, range); }
-    void Driver::SetBuffer(const char* name, Buffer* buffer) { SetBuffer(StringHashID::StringToID(name), buffer, buffer->GetFullRange()); }
-    void Driver::SetTexture(uint32_t nameHashId, Texture* texture, uint16_t level, uint16_t layer) { SetTexture(nameHashId, texture, { level, layer, 1u, 1u }); }
-    void Driver::SetTexture(uint32_t nameHashId, Texture* texture) { SetTexture(nameHashId, texture, {}); }
-    void Driver::SetTexture(const char* name, Texture* texture, const TextureViewRange& range) { SetTexture(StringHashID::StringToID(name), texture, range); }
-    void Driver::SetTexture(const char* name, Texture* texture, uint16_t level, uint16_t layer) { SetTexture(StringHashID::StringToID(name), texture, level, layer); }
-    void Driver::SetTexture(const char* name, Texture* texture) { SetTexture(StringHashID::StringToID(name), texture); }
-    void Driver::SetBufferArray(const char* name, BindArray<Buffer>* bufferArray){ SetBufferArray(StringHashID::StringToID(name), bufferArray); }
-    void Driver::SetTextureArray(const char* name, BindArray<Texture>* textureArray) { SetTextureArray(StringHashID::StringToID(name), textureArray); }
-    void Driver::SetImage(uint32_t nameHashId, Texture* texture, uint16_t level, uint16_t layer) { SetImage(nameHashId, texture, { level, layer, 1u, 1u }); }
-    void Driver::SetImage(uint32_t nameHashId, Texture* texture) { SetImage(nameHashId, texture, {}); }
-    void Driver::SetImage(const char* name, Texture* texture, const TextureViewRange& range) { SetImage(StringHashID::StringToID(name), texture, range); }
-    void Driver::SetImage(const char* name, Texture* texture, uint16_t level, uint16_t layer) { SetImage(StringHashID::StringToID(name), texture, level, layer); }
-    void Driver::SetImage(const char* name, Texture* texture) { SetImage(StringHashID::StringToID(name), texture); }
-    void Driver::SetSampler(const char* name, const SamplerDescriptor& sampler) { SetSampler(StringHashID::StringToID(name), sampler); }
-    void Driver::SetAccelerationStructure(const char* name, AccelerationStructure* structure) { SetAccelerationStructure(StringHashID::StringToID(name), structure); }
-    void Driver::SetConstant(const char* name, const void* data, uint32_t size) { SetConstant(StringHashID::StringToID(name), data, size); }
-    void Driver::SetKeyword(const char* name, bool value) { SetKeyword(StringHashID::StringToID(name), value); }
+
+    void Driver::SetBuffer(Utilities::NameID name, Buffer* buffer) { SetBuffer(name, buffer, buffer->GetFullRange()); }
+    void Driver::SetTexture(Utilities::NameID name, Texture* texture, uint16_t level, uint16_t layer) { SetTexture(name, texture, { level, layer, 1u, 1u }); }
+    void Driver::SetTexture(Utilities::NameID name, Texture* texture) { SetTexture(name, texture, {}); }
+    void Driver::SetImage(Utilities::NameID name, Texture* texture, uint16_t level, uint16_t layer) { SetImage(name, texture, { level, layer, 1u, 1u }); }
+    void Driver::SetImage(Utilities::NameID name, Texture* texture) { SetImage(name, texture, {}); }
 
     void Driver::CreateBuiltInResources() { builtInResources = new BuiltInResources(); }
     void Driver::ReleaseBuiltInResources() { delete builtInResources; }

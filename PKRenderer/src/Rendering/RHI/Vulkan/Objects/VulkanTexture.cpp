@@ -1,9 +1,10 @@
 #include "PrecompiledHeader.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
+#include "Rendering/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanTexture.h"
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {
+    using namespace PK::Math;
     using namespace PK::Utilities;
     using namespace PK::Rendering::RHI::Vulkan::Services;
     using namespace PK::Rendering::RHI::Vulkan::Objects;
@@ -34,7 +35,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
         for (auto i = 0u; i < m_imageViews.GetCount(); ++i)
         {
-            auto value = m_imageViews.GetValueAtRef(i);
+            auto value = &m_imageViews.GetValueAt(i);
 
             if (value->bindHandle->image.sampler != VK_NULL_HANDLE)
             {
@@ -165,8 +166,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
         if (!m_imageViews.AddKey(key, &index))
         {
-            auto v = m_imageViews.GetValueAtRef(index);
-            return v;
+            return &m_imageViews.GetValueAt(index);
         }
 
         auto useAlias = mode != TextureBindMode::SampledTexture && m_rawImage->imageAlias != VK_NULL_HANDLE;
@@ -187,7 +187,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             EnumConvert::ExpandVkRange16(normalizedRange.layers)
         };
 
-        auto viewValue = m_imageViews.GetValueAtRef(index);
+        auto viewValue = &m_imageViews.GetValueAt(index);
         viewValue->view = m_driver->imageViewPool.New(m_driver->device, info, m_name.c_str());
         viewValue->bindHandle = m_driver->bindhandlePool.New();
         viewValue->bindHandle->image.view = viewValue->view->view;
@@ -215,7 +215,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
         for (auto i = 0u; i < m_imageViews.GetCount(); ++i)
         {
-            auto value = m_imageViews.GetValueAtRef(i);
+            auto value = &m_imageViews.GetValueAt(i);
             m_driver->bindhandlePool.Delete(value->bindHandle);
             m_driver->DisposePooledImageView(value->view, fence);
         }

@@ -3,7 +3,7 @@
 
 namespace PK::Rendering::Geometry
 {
-	using namespace PK::Assets::Mesh::Meshlet;
+    using namespace PK::Assets::Mesh::Meshlet;
 
     // Zeux meshoptimizer code insert here. Workaround for now.
     // @TODO implement your own stuff. 
@@ -238,7 +238,7 @@ namespace PK::Rendering::Geometry
             }
 
             assert(meshlet_offset <= meshopt_buildMeshletsBound(index_count, max_vertices, max_triangles));
-            
+
             free(used);
 
             return meshlet_offset;
@@ -416,12 +416,12 @@ namespace PK::Rendering::Geometry
     }
 
     static void CalculateMeshletCenterExtents(const float* positions,
-                                              const uint32_t* vertexIndices,
-                                              uint32_t vertexStridef32,
-                                              uint32_t vertexFirst,
-                                              uint32_t vertexCount,
-                                              float* center,
-                                              float* extents)
+        const uint32_t* vertexIndices,
+        uint32_t vertexStridef32,
+        uint32_t vertexFirst,
+        uint32_t vertexCount,
+        float* center,
+        float* extents)
     {
         float bbmin[3];
         float bbmax[3];
@@ -459,14 +459,14 @@ namespace PK::Rendering::Geometry
     }
 
     MeshletBuildData BuildMeshletsMonotone(const float* pPositions,
-                                           const float* pTexcoords,
-                                           const float* pNormals,
-                                           const float* pTangents,
-                                           const uint32_t* indices,
-                                           uint32_t vertexStride,
-                                           uint32_t vertexCount,
-                                           uint32_t indexCount,
-                                           const Math::BoundingBox& aabb)
+        const float* pTexcoords,
+        const float* pNormals,
+        const float* pTangents,
+        const uint32_t* indices,
+        uint32_t vertexStride,
+        uint32_t vertexCount,
+        uint32_t indexCount,
+        const Math::BoundingBox& aabb)
     {
         MeshletBuildData output{};
 
@@ -539,7 +539,7 @@ namespace PK::Rendering::Geometry
             for (auto j = 0u; j < meshlet.vertex_count; ++j)
             {
                 auto vertexIndex = meshlet_vertices[meshlet.vertex_offset + j];
- 
+
                 PKVertex vertex = PackVertex
                 (
                     pPositions + vertexIndex * vertexStridef32,
@@ -555,7 +555,7 @@ namespace PK::Rendering::Geometry
 
             output.meshlets.push_back(pkmeshlet);
         }
-        
+
         // Align triangles array size to 4bytes
         {
             auto alignedIndicesSize = 12u * ((output.indices.size() + 11ull) / 12u);

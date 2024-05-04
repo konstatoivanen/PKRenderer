@@ -1,10 +1,10 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 
-namespace PK::Core::Services
+namespace PK::Core
 {
     class IService : public PK::Utilities::NoCopy
     {
-        public: virtual ~IService() = 0 {};
+    public: virtual ~IService() = 0 {};
     };
 }

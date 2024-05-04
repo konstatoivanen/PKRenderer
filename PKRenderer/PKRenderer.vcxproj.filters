@@ -1143,19 +1143,19 @@
     <ClInclude Include="src\Core\Input\InputSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Services\IService.h">
+    <ClInclude Include="src\Core\IService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Services\ServiceRegister.h">
+    <ClInclude Include="src\Core\ServiceRegister.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Services\StringHashID.h">
+    <ClInclude Include="src\Core\StringHashRegister.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Services\Time.h">
+    <ClInclude Include="src\Core\Time.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Services\TimeFrameInfo.h">
+    <ClInclude Include="src\Core\TimeFrameInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\Yaml\ConfigMacros.h">
@@ -1434,22 +1434,7 @@
     <ClInclude Include="src\Rendering\RHI\Vulkan\Services\VulkanStagingBufferCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\RHI\Vulkan\Utilities\VulkanEnumConversion.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Rendering\RHI\Vulkan\Utilities\VulkanExtensions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Rendering\RHI\Vulkan\Utilities\VulkanMemory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Rendering\RHI\Vulkan\Utilities\VulkanPhysicalDeviceRequirements.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Rendering\RHI\Vulkan\Utilities\VulkanStructs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Rendering\RHI\Vulkan\Utilities\VulkanUtilities.h">
+    <ClInclude Include="src\Rendering\RHI\Vulkan\VulkanCommon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\RHI\Vulkan\VulkanDriver.h">
@@ -1467,7 +1452,7 @@
     <ClInclude Include="src\Rendering\RHI\Driver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\RHI\FenceRef.h">
+    <ClInclude Include="src\Utilities\FenceRef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\RHI\GraphicsAPI.h">
@@ -1518,7 +1503,7 @@
     <ClInclude Include="src\Utilities\FastMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utilities\FileIO.h">
+    <ClInclude Include="src\Utilities\FileIOBinary.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utilities\FileIOBMP.h">
@@ -1533,7 +1518,7 @@
     <ClInclude Include="src\Utilities\Handle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utilities\HashHelpers.h">
+    <ClInclude Include="src\Utilities\Hash.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utilities\IndexedSet.h">
@@ -1560,7 +1545,7 @@
     <ClInclude Include="src\Utilities\Ref.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utilities\VectorUtilities.h">
+    <ClInclude Include="src\Utilities\VectorHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utilities\VersionedObject.h">
@@ -1569,10 +1554,10 @@
     <ClInclude Include="src\PrecompiledHeader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utilities\ExecuteRemoteProcess.h">
+    <ClInclude Include="src\Utilities\RemoteProcess.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utilities\TypeUtility.h">
+    <ClInclude Include="src\Utilities\TypeInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\ControlFlow\RemoteProcessRunner.h">
@@ -1590,7 +1575,7 @@
     <ClInclude Include="src\Rendering\IRenderPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utilities\ForwardDeclareUtility.h">
+    <ClInclude Include="src\Utilities\ForwardDeclare.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Geometry\IBatcher.h">
@@ -1600,6 +1585,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Objects\GBuffers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utilities\NameID.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2141,7 +2129,6 @@
     <None Include="res\shaders\includes\SceneEnv.glsl" />
     <None Include="res\shaders\includes\TricubicSampler.glsl" />
     <None Include="res\shaders\CS_GI_ShadeHits.shader" />
-    <None Include="res\shaders\includes\SpatialFilters.glsl" />
     <None Include="res\shaders\CS_VolumeFogInject.shader" />
     <None Include="res\shaders\CS_VolumeFogDensity.shader" />
     <None Include="res\shaders\VS_Gizmos.shader" />
@@ -2171,9 +2158,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="include\PKAssets\PKAsset.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Core\Assets\Asset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Assets\AssetDatabase.cpp">
@@ -2209,10 +2193,10 @@
     <ClCompile Include="src\Core\Input\InputSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\Services\StringHashID.cpp">
+    <ClCompile Include="src\Core\StringHashRegister.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\Services\Time.cpp">
+    <ClCompile Include="src\Core\Time.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Yaml\ConfigMacros.cpp">
@@ -2413,19 +2397,7 @@
     <ClCompile Include="src\Rendering\RHI\Vulkan\Services\VulkanStagingBufferCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\RHI\Vulkan\Utilities\VulkanEnumConversion.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Rendering\RHI\Vulkan\Utilities\VulkanMemory.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Rendering\RHI\Vulkan\Utilities\VulkanPhysicalDeviceRequirements.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Rendering\RHI\Vulkan\Utilities\VulkanStructs.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Rendering\RHI\Vulkan\Utilities\VulkanUtilities.cpp">
+    <ClCompile Include="src\Rendering\RHI\Vulkan\VulkanCommon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\RHI\Vulkan\VulkanDriver.cpp">
@@ -2458,13 +2430,13 @@
     <ClCompile Include="src\Rendering\Geometry\BatcherStaticMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utilities\FileIO.cpp">
+    <ClCompile Include="src\Utilities\FileIOBinary.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Utilities\FileIOBMP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utilities\HashHelpers.cpp">
+    <ClCompile Include="src\Utilities\Hash.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Utilities\PropertyBlock.cpp">
@@ -2476,10 +2448,10 @@
     <ClCompile Include="src\PrecompiledHeader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utilities\ExecuteRemoteProcess.cpp">
+    <ClCompile Include="src\Utilities\RemoteProcess.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utilities\TypeUtility.cpp">
+    <ClCompile Include="src\Utilities\TypeInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\ControlFlow\RemoteProcessRunner.cpp">

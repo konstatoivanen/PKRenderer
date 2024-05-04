@@ -1,6 +1,5 @@
 #include "PrecompiledHeader.h"
 #include <bend/bend_sss_cpu.h>
-#include "Utilities/VectorUtilities.h"
 #include "Math/FunctionsIntersect.h"
 #include "Math/FunctionsMisc.h"
 #include "Core/Assets/AssetDatabase.h"
@@ -21,18 +20,17 @@
 
 namespace PK::Rendering::Passes
 {
-    using namespace PK::Core;
-    using namespace PK::Core::Services;
-    using namespace PK::Core::Assets;
     using namespace PK::Math;
     using namespace PK::Utilities;
+    using namespace PK::Core;
+    using namespace PK::Core::Assets;
     using namespace PK::ECS;
     using namespace PK::Rendering;
     using namespace PK::Rendering::Objects;
     using namespace PK::Rendering::Geometry;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
-    
+
     // Packed into float4, float4, uint4
     struct alignas(16) LightPacked
     {
@@ -171,22 +169,15 @@ namespace PK::Rendering::Passes
         imageDescriptor.sampler.wrap[2] = WrapMode::Clamp;
         m_lightTiles = Texture::Create(imageDescriptor, "Lights.Tiles");
 
-        m_lightsBuffer = Buffer::Create(
-            {
-                { ElementType::Float4, "PACKED0"},
-                { ElementType::Float4, "PACKED1"},
-                { ElementType::Uint4, "PACKED2"},
-            },
-            1024, BufferUsage::PersistentStorage, "Lights");
-
         auto lightIndexCount = imageDescriptor.resolution.x *
-                               imageDescriptor.resolution.y *
-                               imageDescriptor.resolution.z *
-                               MaxLightsPerTile;
+            imageDescriptor.resolution.y *
+            imageDescriptor.resolution.z *
+            MaxLightsPerTile;
 
-        m_lightMatricesBuffer = Buffer::Create(ElementType::Float4x4, 32, BufferUsage::PersistentStorage, "Lights.Matrices");
-        m_lightsLists = Buffer::Create(ElementType::Ushort, lightIndexCount, BufferUsage::DefaultStorage, "Lights.List");
-        
+        m_lightsBuffer = Buffer::Create<LightPacked>(1024ull, BufferUsage::PersistentStorage, "Lights");
+        m_lightMatricesBuffer = Buffer::Create<float4x4>(32ull, BufferUsage::PersistentStorage, "Lights.Matrices");
+        m_lightsLists = Buffer::Create<ushort>(lightIndexCount, BufferUsage::DefaultStorage, "Lights.List");
+
         auto hash = HashCache::Get();
 
         GraphicsAPI::SetBuffer(hash->pk_LightLists, m_lightsLists.get());
@@ -226,7 +217,7 @@ namespace PK::Rendering::Passes
             auto range1 = TextureViewRange(0u, atlasIndex, 1u, tileCount);
 
             if (batch.type == LightType::Point)
-            { 
+            {
                 cmd->SetRenderTarget({ m_depthTargetCube.get(), m_shadowTargetCube.get() }, { range0, range0 }, true);
                 cmd->ClearDepth(0.0f, 0u);
                 cmd->ClearColor(color(PK_HALF_MAX), 0u);
@@ -262,7 +253,7 @@ namespace PK::Rendering::Passes
         auto hash = HashCache::Get();
         auto resolution = renderView->GetResolution();
         auto quarterResolution = uint3(resolution.x >> 1u, resolution.y >> 1u, 1u);
-        
+
         m_screenSpaceShadowmap->Validate(resolution);
         m_screenSpaceShadowmapDownsampled->Validate(quarterResolution);
 
@@ -313,11 +304,11 @@ namespace PK::Rendering::Passes
         resolution.z = LightGridSizeZ;
 
         auto lightIndexCount = resolution.x *
-                               resolution.y *
-                               resolution.z *
-                               MaxLightsPerTile;
+            resolution.y *
+            resolution.z *
+            MaxLightsPerTile;
 
-        if (m_lightsLists->Validate(lightIndexCount))
+        if (m_lightsLists->Validate<ushort>(lightIndexCount))
         {
             GraphicsAPI::SetBuffer(hash->pk_LightLists, m_lightsLists.get());
         }
@@ -327,7 +318,7 @@ namespace PK::Rendering::Passes
             GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
         }
 
-        cmd->DispatchWithCounter(m_computeLightAssignment, m_lightTiles->GetResolution());
+        cmd->DispatchWithCounter(m_computeLightAssignment, resolution);
     }
 
     void PassLights::BuildLights(RenderPipelineContext* context)
@@ -335,17 +326,17 @@ namespace PK::Rendering::Passes
         auto renderView = context->views[0];
         auto culledLights = context->cullingProxy->CullFrustum(ScenePrimitiveFlags::Light, renderView->worldToClip);
 
-        if (culledLights.Count() == 0)
+        if (culledLights.GetCount() == 0)
         {
             return;
         }
 
-        uint lightCount = (uint)culledLights.Count();
+        uint lightCount = (uint)culledLights.GetCount();
         uint matrixCount = 0u;
         uint matrixIndex = 0u;
         uint shadowCount = 0u;
 
-        for (auto i = 0U; i < culledLights.Count(); ++i)
+        for (auto i = 0U; i < culledLights.GetCount(); ++i)
         {
             auto view = context->entityDb->Query<EntityViewLight>(EGID(culledLights[i].entityId, (uint)ENTITY_GROUPS::ACTIVE));
             matrixCount += m_shadowTypeData[(int)view->light->type].MatrixCount;
@@ -356,8 +347,8 @@ namespace PK::Rendering::Passes
         qsort(m_lights.GetData(), lightCount, sizeof(EntityViewLight*), EntityViewLightPtrCompare);
 
         m_shadowBatches.clear();
-        m_lightsBuffer->Validate(lightCount + 1);
-        m_lightMatricesBuffer->Validate(matrixCount);
+        m_lightsBuffer->Validate<LightPacked>(lightCount + 1);
+        m_lightMatricesBuffer->Validate<float4x4>(matrixCount);
 
         auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Transfer);
         auto lightsView = cmd->BeginBufferWrite<LightPacked>(m_lightsBuffer.get(), 0u, lightCount + 1);
@@ -393,19 +384,21 @@ namespace PK::Rendering::Passes
                     ShadowCascadeCreateInfo cascadeInfo{};
                     cascadeInfo.worldToLocal = worldToLocal;
                     cascadeInfo.clipToWorld = clipToWorld;
-                    cascadeInfo.nearPlaneOffset = 0.0f;
+                    cascadeInfo.nearPlaneOffset = 1.0f;
                     cascadeInfo.splitPlanes = cascadeZSplits.data();
                     cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
                     cascadeInfo.count = PK_SHADOW_CASCADE_COUNT;
                     Functions::GetShadowCascadeMatrices(cascadeInfo, matricesView.data + matrixIndex);
-                    
+
+                    // @TODO Something is very wrong here. position radius output stays invariant & lighting flickers when nothing is rendered.
+                    // Fix this shit.
                     // Only shadow casting lights need matrices.
                     if (castShadows)
                     {
                         auto shadowCasters = context->cullingProxy->CullCascades(shadowCasterMask, matricesView.data + matrixIndex, renderView->forwardPlane, cascadeZSplits.data(), PK_SHADOW_CASCADE_COUNT);
                         light.indexShadow = BuildShadowBatch(context, shadowCasters, view, i, &shadowCount);
 
-                        // Regenerate cascades as the depth range might change based on culling
+                        // Regenerate cascades as the depth range might change based on culling. 
                         cascadeInfo.nearPlaneOffset = shadowCasters.outMinDepth;
                         Functions::GetShadowCascadeMatrices(cascadeInfo, matricesView.data + matrixIndex);
                     }
@@ -420,7 +413,7 @@ namespace PK::Rendering::Passes
                 {
                     matricesView[matrixIndex] = Functions::GetPerspective(view->light->angle, 1.0f, 0.1f, view->light->radius) * worldToLocal;
                     light.direction = Math::Functions::OctaEncodeUint(transform->rotation * PK_FLOAT3_FORWARD);
-                    
+
                     if (castShadows)
                     {
                         auto shadowCasters = context->cullingProxy->CullFrustum(shadowCasterMask, matricesView[matrixIndex]);
@@ -445,7 +438,7 @@ namespace PK::Rendering::Passes
 
         // Empty last one for clustering
         lightsView[lightCount] = LightPacked();
-            
+
         cmd->EndBufferWrite(m_lightsBuffer.get());
 
         if (matrixCount > 0)
@@ -474,7 +467,7 @@ namespace PK::Rendering::Passes
 
     uint32_t PassLights::BuildShadowBatch(RenderPipelineContext* context, const RequestEntityCullResults& shadowCasters, EntityViewLight* lightView, uint32_t index, uint32_t* outShadowCount)
     {
-        if (shadowCasters.Count() == 0)
+        if (shadowCasters.GetCount() == 0)
         {
             return 0xFFFFu;
         }
@@ -496,7 +489,7 @@ namespace PK::Rendering::Passes
         uint32_t shadowmapIndex = *outShadowCount;
         *outShadowCount += m_shadowTypeData[(int)lightView->light->type].TileCount;
 
-        for (auto i = 0u; i < shadowCasters.Count(); ++i)
+        for (auto i = 0u; i < shadowCasters.GetCount(); ++i)
         {
             auto& info = shadowCasters[i];
             auto entity = context->entityDb->Query<EntityViewStaticMesh>(EGID(info.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));

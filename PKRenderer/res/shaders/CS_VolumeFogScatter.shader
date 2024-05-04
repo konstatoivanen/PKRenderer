@@ -25,7 +25,7 @@ void main()
 
         accum_scatter.rgb += integral;
         // Store transmittance as it suffers less from fp16 reduction than extinction.
-        accum_scatter.a *= exp(-extinction); 
+        accum_scatter.a *= exp(-extinction);
         accum_transmittance *= transmittance;
 
         imageStore(pk_Fog_Scatter, pos, accum_scatter);

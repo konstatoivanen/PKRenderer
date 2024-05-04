@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities/Ref.h"
+#include "Utilities/FenceRef.h"
 #include "Utilities/VersionedObject.h"
-#include "Rendering/RHI/FenceRef.h"
 
 namespace PK::Rendering::RHI
 {
@@ -14,14 +14,14 @@ namespace PK::Rendering::RHI
             {
                 void* disposable = nullptr;
                 DeletaFunction destructor = nullptr;
-                FenceRef fence{};
+                Utilities::FenceRef fence{};
             };
 
             Disposer() {}
             ~Disposer();
 
             template<typename T>
-            void Dispose(T* disposable, const FenceRef& releaseFence)
+            void Dispose(T* disposable, const Utilities::FenceRef& releaseFence)
             {
                 if (disposable != nullptr)
                 {
@@ -30,7 +30,7 @@ namespace PK::Rendering::RHI
             }
 
             template<typename T>
-            void Dispose(T* disposable, DeletaFunction deleter, const FenceRef& releaseFence)
+            void Dispose(T* disposable, DeletaFunction deleter, const Utilities::FenceRef& releaseFence)
             {
                 if (disposable != nullptr)
                 {

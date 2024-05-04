@@ -1,10 +1,10 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
-#include "Utilities/HashHelpers.h"
+#include "Utilities/Hash.h"
 #include "Utilities/FixedPool.h"
 #include "Utilities/FastMap.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK::Rendering::RHI::Vulkan::Services
 {
@@ -54,8 +54,8 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
     class VulkanFrameBufferCache : public PK::Utilities::NoCopy
     {
-        using FrameBufferKeyHash = PK::Utilities::HashHelpers::TMurmurHash<FrameBufferKey>;
-        using RenderPassKeyHash = PK::Utilities::HashHelpers::TMurmurHash<RenderPassKey>;
+        using FrameBufferKeyHash = PK::Utilities::Hash::TMurmurHash<FrameBufferKey>;
+        using RenderPassKeyHash = PK::Utilities::Hash::TMurmurHash<RenderPassKey>;
 
         public:
             VulkanFrameBufferCache(VkDevice device, uint64_t pruneDelay);

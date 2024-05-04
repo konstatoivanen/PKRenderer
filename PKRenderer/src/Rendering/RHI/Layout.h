@@ -1,65 +1,51 @@
 #pragma once
 #include "Math/Types.h"
 #include "Utilities/FixedList.h"
-#include "Core/Services/StringHashID.h"
+#include "Utilities/NameID.h"
 #include "Rendering/RHI/Structs.h"
 
 namespace PK::Rendering::RHI
 {
-    struct ConstantVariable
+    struct PushConstant
     {
-        uint32_t NameHashId = 0;
-        ShaderStageFlags StageFlags;
-        uint16_t Size;
-        uint16_t Offset;
+        Utilities::NameID name = 0u;
+        ShaderStageFlags stageFlags;
+        uint16_t size;
+        uint16_t offset;
 
-        ConstantVariable() = default;
+        PushConstant() = default;
 
-        ConstantVariable(const std::string & name, uint16_t size, uint16_t offset, ShaderStageFlags stageFlags) :
-            NameHashId(Core::Services::StringHashID::StringToID(name)), 
-            Size(size),
-            Offset(offset),
-            StageFlags(stageFlags)
+        PushConstant(Utilities::NameID name, uint16_t size, uint16_t offset, ShaderStageFlags stageFlags) :
+            name(name),
+            size(size),
+            offset(offset),
+            stageFlags(stageFlags)
         {
         }
     };
 
-    class ConstantBufferLayout : public std::map<uint32_t, ConstantVariable>
+    struct PushConstantLayout : public std::map<Utilities::NameID, PushConstant>
     {
-        public:
-            ConstantBufferLayout() {}
-
-            ConstantBufferLayout(std::initializer_list<ConstantVariable> elements)
-            {
-                FillElementMap(elements.begin(), elements.size());
-            }
-
-            ConstantBufferLayout(std::vector<ConstantVariable> elements)
-            {
-                FillElementMap(elements.data(), elements.size());
-            }
-
-            const ConstantVariable* TryGetElement(uint32_t nameHashId) const;
-
-        private:
-            void FillElementMap(const ConstantVariable* variables, size_t count);
+        PushConstantLayout() {}
+        PushConstantLayout(const PushConstant* variables, size_t count);
+        const PushConstant* TryGetElement(Utilities::NameID name) const;
     };
 
 
     struct ResourceElement
     {
-        uint32_t NameHashId = 0;
-        ShaderStageFlags WriteStageMask = ShaderStageFlags::None;
-        uint16_t Count = 0;
-        ResourceType Type = ResourceType::Invalid;
-    
+        Utilities::NameID name = 0u;
+        ShaderStageFlags writeStageMask = ShaderStageFlags::None;
+        uint16_t count = 0;
+        ResourceType type = ResourceType::Invalid;
+
         ResourceElement() = default;
 
-        ResourceElement(ResourceType type, const std::string& name, ShaderStageFlags writeStageMask, uint16_t count) :
-            NameHashId(Core::Services::StringHashID::StringToID(name)),
-            Type(type),
-            WriteStageMask(writeStageMask),
-            Count(count)
+        ResourceElement(ResourceType type, Utilities::NameID name, ShaderStageFlags writeStageMask, uint16_t count) :
+            name(name),
+            type(type),
+            writeStageMask(writeStageMask),
+            count(count)
         {
         }
     };
@@ -69,52 +55,37 @@ namespace PK::Rendering::RHI
         ResourceLayout() {}
         ResourceLayout(std::initializer_list<ResourceElement> elements) : PK::Utilities::FixedList<ResourceElement, PK_MAX_DESCRIPTORS_PER_SET>(elements) {}
         ResourceLayout(std::vector<ResourceElement> elements) : PK::Utilities::FixedList<ResourceElement, PK_MAX_DESCRIPTORS_PER_SET>(elements.data(), elements.size()) {}
-        const ResourceElement* TryGetElement(uint32_t nameHashId, uint32_t* index) const;
+        const ResourceElement* TryGetElement(Utilities::NameID name, uint32_t* index) const;
     };
 
 
     struct BufferElement
     {
-        uint32_t NameHashId = 0;
-        ElementType Type = ElementType::Invalid;
-        byte Count = 1;
-        byte Location = 0;
+        Utilities::NameID name = 0u;
+        ElementType type = ElementType::Invalid;
+        byte count = 1;
+        byte location = 0;
+        uint16_t offset = 0;
+        uint16_t alignedOffset = 0;
 
-        uint16_t Offset = 0;
-        uint16_t AlignedOffset = 0;
-        uint16_t Size() const { return ElementConvert::Size(Type) * Count; }
+        uint16_t GetSize() const { return ElementConvert::Size(type) * count; }
 
         BufferElement() = default;
 
-        BufferElement(ElementType type, const std::string& name, byte count = 1, byte location = 0, uint16_t offset = 0, uint16_t alignedOffset = 0) : 
-            NameHashId(Core::Services::StringHashID::StringToID(name)),
-            Type(type), 
-            Count(count), 
-            Offset(offset),
-            AlignedOffset(alignedOffset),
-            Location(location)
-        {
-        }
-
-        BufferElement(ElementType type, uint32_t nameHashId, byte count = 1, byte location = 0, uint16_t offset = 0, uint16_t alignedOffset = 0) :
-            NameHashId(nameHashId), 
-            Type(type), 
-            Count(count), 
-            Offset(offset),
-            AlignedOffset(alignedOffset),
-            Location(location)
+        BufferElement(ElementType type, Utilities::NameID name, byte count = 1, byte location = 0, uint16_t offset = 0, uint16_t alignedOffset = 0) :
+            name(name),
+            type(type), 
+            count(count), 
+            offset(offset),
+            alignedOffset(alignedOffset),
+            location(location)
         {
         }
     };
 
     constexpr static bool operator == (const BufferElement& a, const BufferElement& b)
     {
-        return a.NameHashId == b.NameHashId &&
-               a.Type == b.Type &&
-               a.Count == b.Count &&
-               a.Location == b.Location &&
-               a.Offset == b.Offset &&
-               a.AlignedOffset == b.AlignedOffset;
+        return a.name == b.name && a.type == b.type && a.count == b.count && a.location == b.location && a.offset == b.offset && a.alignedOffset == b.alignedOffset;
     }
 
     constexpr static bool operator != (const BufferElement& a, const BufferElement& b)
@@ -122,43 +93,112 @@ namespace PK::Rendering::RHI
         return !(a == b);
     }
     
-    class BufferLayout : public std::vector<BufferElement>
+    struct BufferLayout : public std::vector<BufferElement>
     {
-        public:
+        BufferLayout() {}
 
-            BufferLayout() {}
+        BufferLayout(BufferElement* elements, size_t count, bool applyOffsets = true) : std::vector<BufferElement>(elements, elements + count)
+        {
+            CalculateOffsetsAndStride(applyOffsets);
+        }
+
+        BufferLayout(std::initializer_list<BufferElement> elements, bool applyOffsets = true) : std::vector<BufferElement>(elements)
+        {
+            CalculateOffsetsAndStride(applyOffsets);
+        }
+
+        BufferLayout(std::vector<BufferElement> elements, bool applyOffsets = true) : std::vector<BufferElement>(elements)
+        {
+            CalculateOffsetsAndStride(applyOffsets);
+        }
     
-            BufferLayout(BufferElement* elements, size_t count, bool applyOffsets = true) : std::vector<BufferElement>(elements, elements + count)
-            {
-                CalculateOffsetsAndStride(applyOffsets);
-            }
+        inline uint32_t GetStride(BufferUsage usage) const { return (usage & BufferUsage::AlignedTypes) != 0 ? m_alignedStride : m_stride; }
+        constexpr inline uint32_t GetStride() const { return m_stride; }
+        constexpr inline uint32_t GetAlignedStride() const { return m_alignedStride; }
+        constexpr inline uint32_t GetPaddedStride() const { return m_paddedStride; }
+        constexpr inline uint64_t GetHash() const { return m_hash; }
+        constexpr inline bool CompareFast(const BufferLayout& other) const { return m_stride == other.m_stride && m_hash == other.m_hash; }
+        const BufferElement* TryGetElement(Utilities::NameID name, uint32_t* index) const;
+        void CalculateOffsetsAndStride(bool applyOffsets);
 
-            BufferLayout(std::initializer_list<BufferElement> elements, bool applyOffsets = true) : std::vector<BufferElement>(elements)
-            {
-                CalculateOffsetsAndStride(applyOffsets);
-            }
-    
-            BufferLayout(std::vector<BufferElement> elements, bool applyOffsets = true) : std::vector<BufferElement>(elements)
-            {
-                CalculateOffsetsAndStride(applyOffsets);
-            }
-        
-            inline uint32_t GetStride(BufferUsage usage) const { return (usage & BufferUsage::AlignedTypes) != 0 ? m_alignedStride : m_stride; }
-            constexpr inline uint32_t GetStride() const { return m_stride; }
-            constexpr inline uint32_t GetAlignedStride() const { return m_alignedStride; }
-            constexpr inline uint32_t GetPaddedStride() const { return m_paddedStride; }
-            constexpr inline uint64_t GetHash() const { return m_hash; }
-            constexpr inline bool CompareFast(const BufferLayout& other) const { return m_stride == other.m_stride && m_hash == other.m_hash; }
-            const BufferElement* TryGetElement(uint32_t nameHashId, uint32_t* index) const;
-            void CalculateOffsetsAndStride(bool applyOffsets);
-
-        private:
-            std::map<uint32_t, uint32_t> m_elementMap;
-            uint64_t m_hash = 0ull;
-            uint32_t m_stride = 0;
-            uint32_t m_alignedStride = 0;
-            uint32_t m_paddedStride = 0;
+    private:
+        std::unordered_map<Utilities::NameID, uint32_t> m_elementMap;
+        uint64_t m_hash = 0ull;
+        uint32_t m_stride = 0;
+        uint32_t m_alignedStride = 0;
+        uint32_t m_paddedStride = 0;
     };
+
+
+    struct VertexStreamElement
+    {
+        Utilities::NameID name = 0u;
+        uint8_t stream = 0u;
+        InputRate inputRate = InputRate::PerVertex;
+        uint16_t stride = 0u;
+        uint16_t offset = 0u;
+        uint16_t size = 0u;
+        
+        VertexStreamElement() = default;
+
+        VertexStreamElement(uint16_t size, Utilities::NameID name, uint8_t stream = 0u, InputRate inputRate = InputRate::PerVertex) :
+            name(name),
+            stream(stream),
+            inputRate(inputRate),
+            stride(0u),
+            offset(0u),
+            size(size)
+        {
+        }
+
+        VertexStreamElement(ElementType type, Utilities::NameID name, uint8_t stream = 0u, InputRate inputRate = InputRate::PerVertex) :
+            name(name),
+            stream(stream),
+            inputRate(inputRate),
+            stride(0u),
+            offset(0u),
+            size(ElementConvert::Size(type))
+        {
+        }
+    };
+
+    struct VertexStreamLayout : public PK::Utilities::InlineList<VertexStreamElement, PK_MAX_VERTEX_ATTRIBUTES>
+    {
+        using PK::Utilities::InlineList<VertexStreamElement, PK_MAX_VERTEX_ATTRIBUTES>::Add;
+
+        VertexStreamLayout() {}
+
+        VertexStreamLayout(const VertexStreamElement* elements, size_t count) :
+            PK::Utilities::InlineList<VertexStreamElement, PK_MAX_VERTEX_ATTRIBUTES>(elements, count)
+        {
+            CalculateOffsetsAndStride();
+        }
+
+        VertexStreamLayout(std::initializer_list<VertexStreamElement> elements) : 
+            PK::Utilities::InlineList<VertexStreamElement, PK_MAX_VERTEX_ATTRIBUTES>(elements)
+        {
+            CalculateOffsetsAndStride();
+        }
+
+        VertexStreamLayout(std::vector<VertexStreamElement> elements) :
+            PK::Utilities::InlineList<VertexStreamElement, PK_MAX_VERTEX_ATTRIBUTES>(elements.data(), elements.size())
+        {
+            CalculateOffsetsAndStride();
+        }
+
+        inline uint16_t GetStride(uint32_t stream) const { return m_streamStrides[stream]; }
+        inline uint16_t GetStride() const { return m_totalStride; }
+        
+        void Add(const VertexStreamLayout& other);
+        void Add(const VertexStreamLayout& other, uint32_t stream);
+
+        void CalculateOffsetsAndStride();
+
+    private:
+        uint16_t m_streamStrides[PK_MAX_VERTEX_ATTRIBUTES]{};
+        uint16_t m_totalStride = 0u;
+    };
+
 
     struct ShaderBindingTableInfo
     {

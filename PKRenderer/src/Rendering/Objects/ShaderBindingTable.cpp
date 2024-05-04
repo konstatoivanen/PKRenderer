@@ -26,15 +26,14 @@ namespace PK::Rendering::Objects
         pipelineHash = newHash;
         variantIndex = newVariantIndex;
         tableInfo = shader->GetVariant(newVariantIndex)->GetShaderBindingTableInfo();
-        auto tableUintCount = tableInfo.totalTableSize / sizeof(uint32_t);
 
         if (buffer == nullptr)
         {
-            buffer = Buffer::Create(ElementType::Uint, tableUintCount, BufferUsage::DefaultShaderBindingTable, "ShaderBindingTable");
+            buffer = Buffer::Create(tableInfo.totalTableSize, BufferUsage::DefaultShaderBindingTable, "ShaderBindingTable");
         }
         else
         {
-            buffer->Validate(tableUintCount);
+            buffer->Validate(tableInfo.totalTableSize);
         }
 
         cmd->UploadBufferData(buffer.get(), tableInfo.handleData);

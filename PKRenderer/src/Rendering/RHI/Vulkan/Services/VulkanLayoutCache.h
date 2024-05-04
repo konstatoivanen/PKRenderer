@@ -5,7 +5,7 @@
 #include "Utilities/FixedPool.h"
 #include "Utilities/FastMap.h"
 #include "Rendering/RHI/Structs.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK::Rendering::RHI::Vulkan::Services
 {
@@ -34,8 +34,8 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
     class VulkanLayoutCache : public PK::Utilities::NoCopy
     {
-        using TDescriptorHash = PK::Utilities::HashHelpers::TMurmurHash<DescriptorSetLayoutKey>;
-        using TPipelineHash = PK::Utilities::HashHelpers::TMurmurHash<PipelineLayoutKey>;
+        using TDescriptorHash = PK::Utilities::Hash::TMurmurHash<DescriptorSetLayoutKey>;
+        using TPipelineHash = PK::Utilities::Hash::TMurmurHash<PipelineLayoutKey>;
 
         public:
             VulkanLayoutCache(VkDevice device) : m_device(device) {}

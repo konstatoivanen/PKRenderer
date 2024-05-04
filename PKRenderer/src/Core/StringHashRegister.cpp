@@ -1,9 +1,9 @@
 #include "PrecompiledHeader.h"
-#include "Core/Services/StringHashID.h"
+#include "StringHashRegister.h"
 
-namespace PK::Core::Services
+namespace PK::Core
 {
-    uint32_t StringHashID::LocalStringToID(const std::string& str)
+    uint32_t StringHashRegister::LocalStringToID(const std::string& str)
     {
         auto iter = m_stringIdMap.find(str);
 
@@ -17,12 +17,12 @@ namespace PK::Core::Services
         return m_idCounter;
     }
 
-    uint32_t StringHashID::LocalStringToID(const char* str)
+    uint32_t StringHashRegister::LocalStringToID(const char* str)
     {
         return StringToID(std::string(str));
     }
 
-    const std::string& StringHashID::LocalIDToString(uint32_t id)
+    const std::string& StringHashRegister::LocalIDToString(const uint32_t& id)
     {
         if (id > m_idCounter)
         {

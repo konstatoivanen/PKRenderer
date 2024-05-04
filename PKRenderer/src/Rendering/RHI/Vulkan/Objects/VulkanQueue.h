@@ -1,8 +1,5 @@
 #pragma once
-#include "Utilities/NoCopy.h"
-#include "Utilities/Ref.h"
 #include "Rendering/RHI/Objects/QueueSet.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
 #include "Rendering/RHI/Vulkan/Services/VulkanCommandBufferPool.h"
 
 namespace PK::Rendering::RHI::Vulkan::Objects
@@ -27,7 +24,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             constexpr VkQueue GetNative() const { return m_queue; }
             constexpr uint32_t GetFamily() const { return m_family; }
             constexpr VkPipelineStageFlags GetCapabilityFlags() const { return m_capabilityFlags; }
-            FenceRef GetFenceRef(int32_t timelineOffset = 0) const;
+            PK::Utilities::FenceRef GetFenceRef(int32_t timelineOffset = 0) const;
 
             PK::Utilities::Scope<Services::VulkanCommandBufferPool> commandPool = nullptr;
             PK::Utilities::Scope<Services::VulkanBarrierHandler> barrierHandler = nullptr;
@@ -71,7 +68,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             void Sync(QueueType from, QueueType to, int32_t submitOffset = 0) final;
             void Wait(QueueType from, QueueType to, int32_t submitOffset = 0) final;
             void Transfer(QueueType from, QueueType to) final;
-            inline FenceRef GetFenceRef(QueueType type, int32_t submitOffset = 0) final { return GetQueue(type)->GetFenceRef(submitOffset); }
+            inline PK::Utilities::FenceRef GetFenceRef(QueueType type, int32_t submitOffset = 0) final { return GetQueue(type)->GetFenceRef(submitOffset); }
             void Prune();
 
         private:

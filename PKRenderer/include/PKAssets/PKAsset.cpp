@@ -595,11 +595,11 @@ namespace PK::Assets::Mesh::Meshlet
     }
 
     PKVertex PackVertex(const float* pPosition,
-                        const float* pTexcoord,
-                        const float* pNormal,
-                        const float* pTangent,
-                        const float* submeshbbmin,
-                        const float* submeshbbmax)
+        const float* pTexcoord,
+        const float* pNormal,
+        const float* pTangent,
+        const float* submeshbbmin,
+        const float* submeshbbmax)
     {
         PKVertex vertex = { 0u, 0u, 0u, 0u, 0u };
 
@@ -631,16 +631,16 @@ namespace PK::Assets::Mesh::Meshlet
 
         return vertex;
     }
-    
-    PKMeshlet PackMeshlet(uint32_t vertexFirst, 
-                          uint32_t triangleFirst, 
-                          uint32_t vertexCount, 
-                          uint32_t triangleCount,
-                          const int8_t* coneAxis,
-                          int8_t coneCutoff,
-                          const float* coneApex,
-                          const float* center,
-                          const float* extents)
+
+    PKMeshlet PackMeshlet(uint32_t vertexFirst,
+        uint32_t triangleFirst,
+        uint32_t vertexCount,
+        uint32_t triangleCount,
+        const int8_t* coneAxis,
+        int8_t coneCutoff,
+        const float* coneApex,
+        const float* center,
+        const float* extents)
     {
         PKMeshlet meshlet;
         meshlet.vertexFirst = vertexFirst;
@@ -662,5 +662,4 @@ namespace PK::Assets::Mesh::Meshlet
         meshlet.extents[2] = PackHalf(extents[2]);
         return meshlet;
     }
-
 }

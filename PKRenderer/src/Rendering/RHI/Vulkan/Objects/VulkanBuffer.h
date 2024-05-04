@@ -1,20 +1,24 @@
 #pragma once
+#include "Utilities/ForwardDeclare.h"
 #include "Utilities/FastMap.h"
 #include "Rendering/RHI/Objects/Buffer.h"
-#include "Rendering/RHI/Vulkan/Objects/VulkanSparsePageTable.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
-#include "Rendering/RHI/Vulkan/VulkanDriver.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Vulkan::Objects, class VulkanSparsePageTable)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Vulkan::Services, struct VulkanStagingBuffer)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Vulkan, struct VulkanSparsePageTable)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Vulkan, struct VulkanDriver)
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {
     class VulkanBuffer : public RHI::Objects::Buffer
     {
         public:
-            VulkanBuffer(const BufferLayout& layout, size_t count, BufferUsage usage, const char* name);
+            VulkanBuffer(size_t size, BufferUsage usage, const char* name);
             ~VulkanBuffer() { Dispose(); }
 
             void* BeginWrite(size_t offset, size_t size);
-            void EndWrite(VkBuffer* src, VkBuffer* dst, VkBufferCopy* region, const FenceRef& fence);
+            void EndWrite(VkBuffer* src, VkBuffer* dst, VkBufferCopy* region, const PK::Utilities::FenceRef& fence);
             const void* BeginRead(size_t offset, size_t size) final;
             void EndRead() final;
 
@@ -27,7 +31,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             void SparseAllocateRange(const IndexRange& range, QueueType type) final;
             void SparseDeallocate(const IndexRange& range) final;
 
-            bool Validate(size_t count) final;
+            bool Validate(size_t size) final;
 
         private:
             struct MapRange
@@ -36,9 +40,9 @@ namespace PK::Rendering::RHI::Vulkan::Objects
                 VkBufferCopy region = { 0ull, 0ull, 0ull };
             };
 
-            using RangeHash = PK::Utilities::HashHelpers::TMurmurHash<IndexRange>;
+            using RangeHash = PK::Utilities::Hash::TMurmurHash<IndexRange>;
 
-            void Rebuild(size_t count);
+            void Rebuild(size_t size);
             void Dispose();
 
             const VulkanDriver* m_driver = nullptr;

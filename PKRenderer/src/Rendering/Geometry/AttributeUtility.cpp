@@ -1,11 +1,14 @@
 #include "PrecompiledHeader.h"
 #include <mikktspace/mikktspace.h>
 #include "Core/CLI/Log.h"
+#include "Rendering/RHI/Layout.h"
 #include "AttributeUtility.h"
 
 namespace PK::Rendering::Geometry
 {
     using namespace PK::Math;
+    using namespace PK::Core;
+    using namespace PK::Rendering::RHI;
 
     namespace MikktsInterface0
     {
@@ -243,5 +246,55 @@ namespace PK::Rendering::Geometry
         context.m_pUserData = &data;
 
         PK_THROW_ASSERT(genTangSpaceDefault(&context), "Failed to calculate tangents");
+    }
+
+    void AlignVertexStreams(char* vertices, size_t count, const VertexStreamLayout& src, const VertexStreamLayout& dst)
+    {
+        auto needsAlignment = false;
+        uint32_t* remap = PK_STACK_ALLOC(uint32_t, dst.GetCount());
+
+        // @TODO nasty double loop due to simple arrays
+        for (auto i = 0u; i < dst.GetCount(); ++i)
+        {
+            const auto& vdst = dst[i];
+
+            for (auto j = 0u; j < src.GetCount(); ++j)
+            {
+                const auto& vsrc = src[j];
+
+                if (vsrc.name == vdst.name)
+                {
+                    PK_THROW_ASSERT(vsrc.size == vdst.size, "Element '%s' size missmatch '%u' & '%u'", vdst.name.c_str(), vdst.size, vsrc.size);
+                    PK_THROW_ASSERT(vsrc.inputRate == vdst.inputRate, "Element '%s' input rate missmatch '%i' & '%i'", vdst.name.c_str(), (int)vdst.inputRate, (int)vsrc.inputRate);
+                    needsAlignment |= vsrc.stream != vdst.stream || vsrc.offset != vdst.offset;
+                    remap[i] = j;
+                    break;
+                }
+            }
+        }
+
+
+        PK_THROW_ASSERT(dst.GetStride() == src.GetStride(), "Layout stride missmatch!");
+
+        if (needsAlignment)
+        {
+            auto buffer = (char*)calloc(count, dst.GetStride());
+
+            for (auto i = 0u; i < dst.GetCount(); ++i)
+            {
+                const auto& vdst = dst[i];
+                const auto& vsrc = src[remap[i]];
+                const auto srcOffset = vsrc.stream == 0 ? 0ull : src.GetStride(vsrc.stream - 1) * count;
+                const auto dstOffset = vdst.stream == 0 ? 0ull : dst.GetStride(vdst.stream - 1) * count;
+
+                for (auto i = 0u; i < count; ++i)
+                {
+                    memcpy(buffer + dstOffset + vdst.stride * i + vdst.offset, vertices + srcOffset + vsrc.stride * i + vsrc.offset, vdst.size);
+                }
+            }
+
+            memcpy(vertices, buffer, count * dst.GetStride());
+            free(buffer);
+        }
     }
 }

@@ -3,10 +3,10 @@
 #include "Core/ControlFlow/Sequencer.h"
 #include "ECS/EntityDatabase.h"
 #include "ECS/EntityViewStaticMesh.h"
-#include "Rendering/HashCache.h"
-#include "Rendering/EntityCulling.h"
 #include "Rendering/Geometry/IBatcher.h"
 #include "Rendering/Objects/RenderView.h"
+#include "Rendering/HashCache.h"
+#include "Rendering/EntityCulling.h"
 #include "Rendering/IRenderPipeline.h"
 #include "EngineDrawGeometry.h"
 
@@ -14,7 +14,6 @@ namespace PK::Engines
 {
     using namespace PK::Math;
     using namespace PK::Core;
-    using namespace PK::Core::Services;
     using namespace PK::Core::ControlFlow;
     using namespace PK::ECS;
     using namespace PK::Rendering;
@@ -22,7 +21,7 @@ namespace PK::Engines
     using namespace PK::Rendering::RHI;
 
     EngineDrawGeometry::EngineDrawGeometry(EntityDatabase* entityDb, Sequencer* sequencer) :
-        m_entityDb(entityDb), 
+        m_entityDb(entityDb),
         m_sequencer(sequencer)
     {
         m_gbufferAttribs.depthStencil.depthCompareOp = Comparison::GreaterEqual;
@@ -45,11 +44,11 @@ namespace PK::Engines
                 m_sequencer->Next(this, &cullRequest);
                 view->primaryPassGroup = 0xFFFFFFFF;
 
-                if (cullRequest.Count() > 0)
+                if (cullRequest.GetCount() > 0)
                 {
                     view->primaryPassGroup = renderEvent->context->batcher->BeginNewGroup();
 
-                    for (auto i = 0u; i < cullRequest.Count(); ++i)
+                    for (auto i = 0u; i < cullRequest.GetCount(); ++i)
                     {
                         auto& info = cullRequest[i];
                         auto entity = m_entityDb->Query<EntityViewStaticMesh>(EGID(info.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
@@ -80,6 +79,5 @@ namespace PK::Engines
             }
             return;
         }
-
     }
 }

@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Math/FunctionsMatrix.h"
+#include "Core/CLI/Log.h"
 #include "ECS/ComponentTransform.h"
 #include "Rendering/RHI/Objects/Shader.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
@@ -12,7 +13,6 @@ namespace PK::Rendering::Geometry
 {
     using namespace PK::Math;
     using namespace PK::Core;
-    using namespace PK::Core::Services;
     using namespace PK::Core::Assets;
     using namespace PK::ECS;
     using namespace PK::Rendering;
@@ -49,26 +49,10 @@ namespace PK::Rendering::Geometry
         PK_LOG_SCOPE_INDENT(local);
 
         m_staticGeometry = PK::Utilities::CreateScope<StaticSceneMesh>();
-
-        m_matrices = Buffer::Create(ElementType::Float3x4, 1024, BufferUsage::PersistentStorage, "Batching.Matrices");
-
-        m_indices = Buffer::Create(
-            {
-                {ElementType::Uint, "transform"},
-                {ElementType::Uint, "material"},
-                {ElementType::Uint, "mesh"},
-                {ElementType::Uint, "userdata"}
-            },
-            1024, BufferUsage::PersistentStorage, "Batching.DrawInfos");
-
-        m_properties = Buffer::Create(
-            {
-                { ElementType::Uint, "DATA"},
-            },
-            4096, BufferUsage::PersistentStorage, "Batching.MaterialProperties");
-
-        m_tasklets = Buffer::Create(ElementType::Uint2, 4096u, BufferUsage::PersistentStorage, "Batching.Meshlet.Tasklets");
-
+        m_matrices = Buffer::Create<float3x4>(1024ull, BufferUsage::PersistentStorage, "Batching.Matrices");
+        m_indices = Buffer::Create<PK_Draw>(1024ull, BufferUsage::PersistentStorage, "Batching.DrawInfos");
+        m_properties = Buffer::Create(16384ull, BufferUsage::PersistentStorage, "Batching.MaterialProperties");
+        m_tasklets = Buffer::Create<uint2>(4096u, BufferUsage::PersistentStorage, "Batching.Meshlet.Tasklets");
         m_drawCalls.reserve(512);
         m_passGroups.reserve(512);
     }
@@ -77,7 +61,7 @@ namespace PK::Rendering::Geometry
     {
         for (auto i = 0u; i < m_materials.GetCount(); ++i)
         {
-            m_materials[i]->Clear();
+            m_materials[i].Clear();
         }
 
         m_taskletCount = 0u;
@@ -91,7 +75,7 @@ namespace PK::Rendering::Geometry
 
     void BatcherStaticMesh::UploadTransforms(CommandBuffer* cmd)
     {
-        m_matrices->Validate(m_transforms.GetCapacity());
+        m_matrices->Validate<float3x4>(m_transforms.GetCapacity());
         auto matrixView = cmd->BeginBufferWrite<float3x4>(m_matrices.get(), 0u, m_transforms.GetCount());
 
         for (auto& view : m_transforms)
@@ -120,7 +104,7 @@ namespace PK::Rendering::Geometry
 
         if (buffsize > 0)
         {
-            m_properties->Validate(buffsize / sizeof(uint32_t));
+            m_properties->Validate(buffsize);
             auto propertyView = cmd->BeginBufferWrite<char>(m_properties.get(), 0ull, buffsize);
 
             for (auto& group : m_materials)
@@ -142,8 +126,8 @@ namespace PK::Rendering::Geometry
 
     void BatcherStaticMesh::UploadDrawIndices(CommandBuffer* cmd)
     {
-        m_indices->Validate(m_drawInfos.capacity());
-        m_tasklets->Validate(m_taskletCount);
+        m_indices->Validate<PK_Draw>(m_drawInfos.capacity());
+        m_tasklets->Validate<uint2>(m_taskletCount);
         auto taskletView = cmd->BeginBufferWrite<uint2>(m_tasklets.get(), 0u, m_taskletCount);
         auto indexView = cmd->BeginBufferWrite<PK_Draw>(m_indices.get(), 0u, m_drawInfos.size());
         auto current = m_drawInfos[0];
@@ -156,7 +140,7 @@ namespace PK::Rendering::Geometry
         for (auto i = 0u; i < m_drawInfos.size(); ++i)
         {
             const auto info = m_drawInfos.data() + i;
-            indexView[i].material = (uint32_t)info->material + (uint32_t)m_materials[info->shader]->firstIndex;
+            indexView[i].material = (uint32_t)info->material + (uint32_t)m_materials[info->shader].firstIndex;
             indexView[i].transfrom = info->transform;
             indexView[i].mesh = info->submesh;
             indexView[i].userdata = info->userdata;
@@ -242,7 +226,7 @@ namespace PK::Rendering::Geometry
 
         if (material != nullptr)
         {
-            info.material = m_materials[info.shader]->Add(material);
+            info.material = m_materials[info.shader].Add(material);
         }
 
         info.transform = m_transforms.Add(transform);

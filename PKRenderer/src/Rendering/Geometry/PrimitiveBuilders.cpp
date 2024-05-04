@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include "Core/Services/StringHashID.h"
 #include "Rendering/Geometry/AttributeUtility.h"
 #include "Rendering/Geometry/MeshletBuilder.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
@@ -10,17 +9,35 @@ namespace PK::Rendering::Geometry
 {
     using namespace PK::Math;
     using namespace PK::Utilities;
-    using namespace PK::Core::Services;
+    using namespace PK::Core;
     using namespace PK::Rendering::Objects;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
     struct Vertex_Full
     {
-        float3 position;
-        float3 normal;
-        float4 tangent;
-        float2 texcoord;
+        float3 in_POSITION;
+        float3 in_NORMAL;
+        float4 in_TANGENT;
+        float2 in_TEXCOORD0;
+    };
+
+    struct Vertex_Lite
+    {
+        Math::float3 in_POSITION;
+        Math::float2 in_TEXCOORD0;
+    };
+
+    struct Vertex_Position
+    {
+        Math::float3 in_POSITION;
+    };
+
+    struct Vertex_NormalTangentTexCoord
+    {
+        Math::float3 in_NORMAL;
+        Math::float4 in_TANGENT;
+        Math::float2 in_TEXCOORD0;
     };
 
     Ref<Mesh> CreateBoxMesh(const float3& offset, const float3& extents)
@@ -111,22 +128,22 @@ namespace PK::Rendering::Geometry
             3 + 4 * 5, 2 + 4 * 5, 1 + 4 * 5,
         };
 
-        auto vertexBuffer = Buffer::Create(
-            {
-                { ElementType::Float3, PK_VS_POSITION },
-                { ElementType::Float3, PK_VS_NORMAL },
-                { ElementType::Float3, PK_VS_TANGENT },
-                { ElementType::Float2, PK_VS_TEXCOORD0 }
-            },
-            24, BufferUsage::DefaultVertex, "Box.VertexBuffer");
-
-        auto indexBuffer = Buffer::Create(ElementType::Uint, 36, BufferUsage::DefaultIndex, "Box.IndexBuffer");
+        auto vertexBuffer = Buffer::Create<Vertex_Full>(24ull, BufferUsage::DefaultVertex, "Box.VertexBuffer");
+        auto indexBuffer = Buffer::Create<uint32_t>(36ull, BufferUsage::DefaultIndex, "Box.IndexBuffer");
         auto submesh = Mesh::SubMesh{ 0u, 24u, 0u, 36u, BoundingBox::MinMax(p3, p5) };
+
+        VertexStreamLayout streamLayout =
+        {
+            { ElementType::Float3, PK_VS_POSITION, 0 },
+            { ElementType::Float3, PK_VS_NORMAL, 0 },
+            { ElementType::Float4, PK_VS_TANGENT, 0 },
+            { ElementType::Float2, PK_VS_TEXCOORD0, 0 },
+        };
 
         auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Transfer);
         cmd->UploadBufferData(vertexBuffer.get(), vertices);
         cmd->UploadBufferData(indexBuffer.get(), indices);
-        return CreateRef<Mesh>(indexBuffer, &vertexBuffer, 1u, &submesh, 1u);
+        return CreateRef<Mesh>(indexBuffer, ElementType::Uint, &vertexBuffer, 1u, streamLayout, &submesh, 1u);
     }
 
     Ref<Mesh> CreateQuadMesh(const float2& min, const float2& max)
@@ -149,13 +166,20 @@ namespace PK::Rendering::Geometry
             2,3,0
         };
 
-        auto vertexBuffer = Buffer::Create({ {ElementType::Float3, PK_VS_POSITION }, { ElementType::Float2, PK_VS_TEXCOORD0 } }, 4, BufferUsage::DefaultVertex, "Quad.VertexBuffer");
-        auto indexBuffer = Buffer::Create(ElementType::Uint, 6, BufferUsage::DefaultIndex, "Quad.IndexBuffer");
+        auto vertexBuffer = Buffer::Create<Vertex_Lite>(4, BufferUsage::DefaultVertex, "Quad.VertexBuffer");
+        auto indexBuffer = Buffer::Create<uint32_t>(6, BufferUsage::DefaultIndex, "Quad.IndexBuffer");
         auto submesh = Mesh::SubMesh{ 0u, 4u, 0u, 6u, Math::BoundingBox::MinMax({min.x, min.y, 0.0f}, {max.x, max.y, 0.0f}) };
+
+        VertexStreamLayout streamLayout =
+        {
+            { ElementType::Float3, PK_VS_POSITION, 0 },
+            { ElementType::Float2, PK_VS_TEXCOORD0, 0 },
+        };
+
         auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Transfer);
         cmd->UploadBufferData(vertexBuffer.get(), vertices);
         cmd->UploadBufferData(indexBuffer.get(), indices);
-        return CreateRef<Mesh>(indexBuffer, &vertexBuffer, 1u, &submesh, 1u);
+        return CreateRef<Mesh>(indexBuffer, ElementType::Uint, &vertexBuffer, 1u, streamLayout, &submesh, 1u);
     }
 
     VirtualStaticMeshRef CreatePlaneVirtualMesh(StaticSceneMesh* baseMesh, const float2& center, const float2& extents, uint2 resolution)
@@ -168,56 +192,54 @@ namespace PK::Rendering::Geometry
         auto min = float3(center - extents, 0);
 
         for (auto x = 0u; x < resolution.x; ++x)
-        for (auto y = 0u; y < resolution.y; ++y)
+            for (auto y = 0u; y < resolution.y; ++y)
+            {
+                auto vmin = min + isize * float3(x, y, 0);
+                auto baseVertex = (y * resolution.x + x) * 4;
+                auto baseIndex = (y * resolution.x + x) * 6;
+
+                vertices[baseVertex + 0] = { vmin + isize.zzz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(0, 0) };
+                vertices[baseVertex + 1] = { vmin + isize.zyz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(0, 1) };
+                vertices[baseVertex + 2] = { vmin + isize.xyz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(1, 1) };
+                vertices[baseVertex + 3] = { vmin + isize.xzz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(1, 0) };
+
+                indices[baseIndex + 0] = baseVertex + 0;
+                indices[baseIndex + 1] = baseVertex + 1;
+                indices[baseIndex + 2] = baseVertex + 2;
+
+                indices[baseIndex + 3] = baseVertex + 2;
+                indices[baseIndex + 4] = baseVertex + 3;
+                indices[baseIndex + 5] = baseVertex + 0;
+            }
+
+        StaticMeshAllocationData::SubMesh submesh =
         {
-            auto vmin = min + isize * float3(x, y, 0);
-            auto baseVertex = (y * resolution.x + x) * 4;
-            auto baseIndex = (y * resolution.x + x) * 6;
-
-            vertices[baseVertex + 0] = { vmin + isize.zzz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(0, 0) };
-            vertices[baseVertex + 1] = { vmin + isize.zyz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(0, 1) };
-            vertices[baseVertex + 2] = { vmin + isize.xyz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(1, 1) };
-            vertices[baseVertex + 3] = { vmin + isize.xzz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(1, 0) };
-
-            indices[baseIndex + 0] = baseVertex + 0;
-            indices[baseIndex + 1] = baseVertex + 1;
-            indices[baseIndex + 2] = baseVertex + 2;
-
-            indices[baseIndex + 3] = baseVertex + 2;
-            indices[baseIndex + 4] = baseVertex + 3;
-            indices[baseIndex + 5] = baseVertex + 0;
-        }
-
-        StaticMeshAllocationData::SubMesh submesh = 
-        { 
-            0u, 
-            vcount, 
-            0u, 
-            icount, 
-            BoundingBox::CenterExtents({ center.x, center.y, 0.0f }, { extents.x, extents.y, 0.0f }) 
+            0u,
+            vcount,
+            0u,
+            icount,
+            BoundingBox::CenterExtents({ center.x, center.y, 0.0f }, { extents.x, extents.y, 0.0f })
         };
-       
+
         StaticMeshAllocationData alloc{};
 
-        alloc.nameHashId = StringHashID::StringToID("Primitive_Plane");
-
+        alloc.name = "Primitive_Plane";
         alloc.regular.pVertices = vertices;
         alloc.regular.pIndices = indices;
-        alloc.regular.vertexLayout =
-        {
-            { ElementType::Float3, PK_VS_POSITION },
-            { ElementType::Float3, PK_VS_NORMAL },
-            { ElementType::Float4, PK_VS_TANGENT },
-            { ElementType::Float2, PK_VS_TEXCOORD0 }
-        };
-
         alloc.regular.pSubmeshes = &submesh;
         alloc.regular.indexType = ElementType::Uint;
         alloc.regular.vertexCount = vcount;
         alloc.regular.indexCount = icount;
         alloc.regular.submeshCount = 1u;
+        alloc.regular.streamLayout =
+        {
+            { ElementType::Float3, PK_VS_POSITION, 0 },
+            { ElementType::Float3, PK_VS_NORMAL, 0 },
+            { ElementType::Float4, PK_VS_TANGENT, 0 },
+            { ElementType::Float2, PK_VS_TEXCOORD0, 0 },
+        };
 
-        CalculateTangents(reinterpret_cast<float*>(vertices), alloc.regular.vertexLayout.GetStride() / 4, 0, 3, 6, 10, indices, vcount, icount);
+        CalculateTangents(reinterpret_cast<float*>(vertices), sizeof(Vertex_Full) / 4, 0, 3, 6, 10, indices, vcount, icount);
 
         auto meshlets = BuildMeshletsMonotone
         (
@@ -226,7 +248,7 @@ namespace PK::Rendering::Geometry
             reinterpret_cast<float*>(vertices) + 3ull,
             reinterpret_cast<float*>(vertices) + 6ull,
             indices,
-            alloc.regular.vertexLayout.GetStride(),
+            sizeof(Vertex_Full),
             vcount,
             icount,
             submesh.bounds
@@ -258,7 +280,7 @@ namespace PK::Rendering::Geometry
         //Vertex_Full
         auto vertices = PK_CONTIGUOUS_ALLOC(Vertex_Full, vcount);
 
-        vertices[0].position = PK_FLOAT3_UP * radius;
+        vertices[0].in_POSITION = PK_FLOAT3_UP * radius;
 
         for (auto lat = 0u; lat < lattc; lat++)
         {
@@ -271,25 +293,25 @@ namespace PK::Rendering::Geometry
                 float a2 = PK_FLOAT_TWO_PI * (float)(lon == longc ? 0 : lon) / longc;
                 float sin2 = sin(a2);
                 float cos2 = cos(a2);
-                vertices[lon + lat * (longc + 1) + 1].position = float3(sin1 * cos2, cos1, sin1 * sin2) * radius;
+                vertices[lon + lat * (longc + 1) + 1].in_POSITION = float3(sin1 * cos2, cos1, sin1 * sin2) * radius;
             }
         }
 
-        vertices[vcount - 1].position = PK_FLOAT3_UP * -radius;
+        vertices[vcount - 1].in_POSITION = PK_FLOAT3_UP * -radius;
 
         for (int n = 0; n < vcount; ++n)
         {
-            vertices[n].normal = glm::normalize(vertices[n].position);
+            vertices[n].in_NORMAL = glm::normalize(vertices[n].in_POSITION);
         }
 
-        vertices[0].texcoord = PK_FLOAT2_UP;
-        vertices[vcount - 1].texcoord = PK_FLOAT2_ZERO;
+        vertices[0].in_TEXCOORD0 = PK_FLOAT2_UP;
+        vertices[vcount - 1].in_TEXCOORD0 = PK_FLOAT2_ZERO;
 
         for (auto lat = 0u; lat < lattc; lat++)
         {
             for (int lon = 0u; lon <= longc; lon++)
             {
-                vertices[lon + lat * (longc + 1) + 1].texcoord = float2((float)lon / longc, 1.0f - (float)(lat + 1) / (lattc + 1));
+                vertices[lon + lat * (longc + 1) + 1].in_TEXCOORD0 = float2((float)lon / longc, 1.0f - (float)(lat + 1) / (lattc + 1));
             }
         }
 
@@ -333,37 +355,35 @@ namespace PK::Rendering::Geometry
             indices[i++] = vcount - (lon + 2) - 1;
             indices[i++] = vcount - (lon + 1) - 1;
         }
-        
-        StaticMeshAllocationData::SubMesh submesh = 
-        { 
-            0u, 
-            vcount, 
-            0u, 
-            icount, 
-            BoundingBox::CenterExtents(offset, PK_FLOAT3_ONE * radius) 
+
+        StaticMeshAllocationData::SubMesh submesh =
+        {
+            0u,
+            vcount,
+            0u,
+            icount,
+            BoundingBox::CenterExtents(offset, PK_FLOAT3_ONE * radius)
         };
 
         StaticMeshAllocationData alloc{};
 
-        alloc.nameHashId = StringHashID::StringToID("Primitive_Sphere");
-
+        alloc.name = "Primitive_Sphere";
         alloc.regular.pVertices = vertices;
         alloc.regular.pIndices = indices;
-        alloc.regular.vertexLayout =
-        {
-            { ElementType::Float3, PK_VS_POSITION },
-            { ElementType::Float3, PK_VS_NORMAL },
-            { ElementType::Float4, PK_VS_TANGENT },
-            { ElementType::Float2, PK_VS_TEXCOORD0 }
-        };
-
         alloc.regular.pSubmeshes = &submesh;
         alloc.regular.indexType = ElementType::Uint;
         alloc.regular.vertexCount = vcount;
         alloc.regular.indexCount = icount;
         alloc.regular.submeshCount = 1u;
+        alloc.regular.streamLayout =
+        {
+            { ElementType::Float3, PK_VS_POSITION, 0 },
+            { ElementType::Float3, PK_VS_NORMAL, 0 },
+            { ElementType::Float4, PK_VS_TANGENT, 0 },
+            { ElementType::Float2, PK_VS_TEXCOORD0, 0 },
+        };
 
-        CalculateTangents(reinterpret_cast<float*>(vertices), alloc.regular.vertexLayout.GetStride() / 4, 0, 3, 6, 10, indices, vcount, icount);
+        CalculateTangents(reinterpret_cast<float*>(vertices), sizeof(Vertex_Full) / 4, 0, 3, 6, 10, indices, vcount, icount);
 
         auto meshlets = BuildMeshletsMonotone
         (
@@ -372,7 +392,7 @@ namespace PK::Rendering::Geometry
             reinterpret_cast<float*>(vertices) + 3ull,
             reinterpret_cast<float*>(vertices) + 6ull,
             indices,
-            alloc.regular.vertexLayout.GetStride(),
+            sizeof(Vertex_Full),
             vcount,
             icount,
             submesh.bounds

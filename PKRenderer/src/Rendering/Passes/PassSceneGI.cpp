@@ -105,14 +105,14 @@ namespace PK::Rendering::Passes
 
         auto hash = HashCache::Get();
         m_parameters = CreateRef<ConstantBuffer>(BufferLayout(
-        {
-            { ElementType::Float4, hash->pk_GI_VolumeST },
-            { ElementType::Uint4, hash->pk_GI_VolumeSwizzle },
-            { ElementType::Uint2, hash->pk_GI_RayDither },
-            { ElementType::Float, hash->pk_GI_VoxelSize },
-            { ElementType::Float, hash->pk_GI_VoxelStepSize },
-            { ElementType::Float, hash->pk_GI_VoxelLevelScale },
-        }), "GI.Parameters");
+            {
+                { ElementType::Float4, hash->pk_GI_VolumeST },
+                { ElementType::Uint4, hash->pk_GI_VolumeSwizzle },
+                { ElementType::Uint2, hash->pk_GI_RayDither },
+                { ElementType::Float, hash->pk_GI_VoxelSize },
+                { ElementType::Float, hash->pk_GI_VoxelStepSize },
+                { ElementType::Float, hash->pk_GI_VoxelLevelScale },
+            }), "GI.Parameters");
 
         const auto voxelSize = 0.6f;
         const auto angle = Math::PK_FLOAT_PI / 3.0f;

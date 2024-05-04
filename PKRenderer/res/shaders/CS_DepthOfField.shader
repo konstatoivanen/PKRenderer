@@ -51,7 +51,7 @@ void main()
     background = half4(center, 1.0hf) * clamp((max(0.0hf, centerCoC) + margin) / margin, 0.0hf, 1.0hf);
     foreground = half4(center, 1.0hf) * clamp((-centerCoC + margin) / margin, 0.0hf, 1.0hf);
 
-    #define SAMPLE_COUNT 22u
+#define SAMPLE_COUNT 22u
 
     for (uint j = 1; j <= 2; ++j)
     {
@@ -60,17 +60,17 @@ void main()
         for (uint i = 0u; i < k; ++i)
         {
             const half phi = half(i) * 0.89759790102hf / half(j); // 2 * PI * (i / float(k))
-            const half radius = (half(j) + 0.14285714285hf) * 0.46666666666hf; // (RING + (1.0f / RING_POINTS)) / (RINGS + (1.0f / RING_POINTS))
+            const half radius = (half(j)+0.14285714285hf) * 0.46666666666hf; // (RING + (1.0f / RING_POINTS)) / (RINGS + (1.0f / RING_POINTS))
             const half2 offset = half2(cos(phi), sin(phi)) * radius * half(pk_DoF_MaximumCoC);
 
             const half dist = length(offset) - margin;
             const float3 uvw = float3(uv + float2(offset.x * aspect, offset.y), 0);
-            
+
             const half3 color = half3(texture(pk_DoF_ColorRead, uvw).rgb);
             const half coc = half(texture(pk_DoF_AlphaRead, uvw).r);
             const half bgcoc = max(min(centerCoC, coc), 0.0hf);
 
-            background += half4(color, 1.0hf) * clamp(( bgcoc - dist) / margin, 0.0hf, 1.0hf);
+            background += half4(color, 1.0hf) * clamp((bgcoc - dist) / margin, 0.0hf, 1.0hf);
             foreground += half4(color, 1.0hf) * clamp((-coc - dist) / margin, 0.0hf, 1.0hf);
         }
     }

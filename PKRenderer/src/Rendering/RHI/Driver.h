@@ -1,6 +1,7 @@
 #pragma once
-#include "Utilities/ForwardDeclareUtility.h"
+#include "Utilities/ForwardDeclare.h"
 #include "Utilities/NoCopy.h"
+#include "Utilities/NameID.h"
 #include "Utilities/NativeInterface.h"
 #include "Utilities/PropertyBlock.h"
 #include "Rendering/RHI/Structs.h"
@@ -27,35 +28,21 @@ namespace PK::Rendering::RHI
         virtual std::string GetDriverHeader() const = 0;
         virtual size_t GetBufferOffsetAlignment(BufferUsage usage) const = 0;
 
-        virtual void SetBuffer(uint32_t nameHashId, RHI::Objects::Buffer* buffer, const IndexRange& range) = 0;
-        virtual void SetTexture(uint32_t nameHashId, RHI::Objects::Texture* texture, const TextureViewRange& range) = 0;
-        virtual void SetBufferArray(uint32_t nameHashId, RHI::Objects::BindArray<RHI::Objects::Buffer>* bufferArray) = 0;
-        virtual void SetTextureArray(uint32_t nameHashId, RHI::Objects::BindArray<RHI::Objects::Texture>* textureArray) = 0;
-        virtual void SetImage(uint32_t nameHashId, RHI::Objects::Texture* texture, const TextureViewRange& range) = 0;
-        virtual void SetSampler(uint32_t nameHashId, const SamplerDescriptor& sampler) = 0;
-        virtual void SetAccelerationStructure(uint32_t nameHashId, RHI::Objects::AccelerationStructure* structure) = 0;
-        virtual void SetConstant(uint32_t nameHashId, const void* data, uint32_t size) = 0;
-        virtual void SetKeyword(uint32_t nameHashId, bool value) = 0;
+        virtual void SetBuffer(Utilities::NameID name, RHI::Objects::Buffer* buffer, const IndexRange& range) = 0;
+        virtual void SetTexture(Utilities::NameID name, RHI::Objects::Texture* texture, const TextureViewRange& range) = 0;
+        virtual void SetBufferArray(Utilities::NameID name, RHI::Objects::BindArray<RHI::Objects::Buffer>* bufferArray) = 0;
+        virtual void SetTextureArray(Utilities::NameID name, RHI::Objects::BindArray<RHI::Objects::Texture>* textureArray) = 0;
+        virtual void SetImage(Utilities::NameID name, RHI::Objects::Texture* texture, const TextureViewRange& range) = 0;
+        virtual void SetSampler(Utilities::NameID name, const SamplerDescriptor& sampler) = 0;
+        virtual void SetAccelerationStructure(Utilities::NameID name, RHI::Objects::AccelerationStructure* structure) = 0;
+        virtual void SetConstant(Utilities::NameID name, const void* data, uint32_t size) = 0;
+        virtual void SetKeyword(Utilities::NameID name, bool value) = 0;
 
-        void SetBuffer(uint32_t nameHashId, RHI::Objects::Buffer* buffer);
-        void SetBuffer(const char* name, RHI::Objects::Buffer* buffer, const IndexRange& range);
-        void SetBuffer(const char* name, RHI::Objects::Buffer* buffer);
-        void SetTexture(uint32_t nameHashId, RHI::Objects::Texture* texture, uint16_t level, uint16_t layer);
-        void SetTexture(uint32_t nameHashId, RHI::Objects::Texture* texture);
-        void SetTexture(const char* name, RHI::Objects::Texture* texture, const TextureViewRange& range);
-        void SetTexture(const char* name, RHI::Objects::Texture* texture, uint16_t level, uint16_t layer);
-        void SetTexture(const char* name, RHI::Objects::Texture* texture);
-        void SetBufferArray(const char* name, RHI::Objects::BindArray<RHI::Objects::Buffer>* bufferArray);
-        void SetTextureArray(const char* name, RHI::Objects::BindArray<RHI::Objects::Texture>* textureArray);
-        void SetImage(uint32_t nameHashId, RHI::Objects::Texture* texture, uint16_t level, uint16_t layer);
-        void SetImage(const char* name, RHI::Objects::Texture* texture, const TextureViewRange& range);
-        void SetImage(const char* name, RHI::Objects::Texture* texture, uint16_t level, uint16_t layer);
-        void SetImage(uint32_t nameHashId, RHI::Objects::Texture* texture);
-        void SetImage(const char* name, RHI::Objects::Texture* texture);
-        void SetSampler(const char* name, const SamplerDescriptor& sampler);
-        void SetAccelerationStructure(const char* name, RHI::Objects::AccelerationStructure* structure);
-        void SetConstant(const char* name, const void* data, uint32_t size);
-        void SetKeyword(const char* name, bool value);
+        void SetBuffer(Utilities::NameID name, RHI::Objects::Buffer* buffer);
+        void SetTexture(Utilities::NameID name, RHI::Objects::Texture* texture, uint16_t level, uint16_t layer);
+        void SetTexture(Utilities::NameID name, RHI::Objects::Texture* texture);
+        void SetImage(Utilities::NameID name, RHI::Objects::Texture* texture, uint16_t level, uint16_t layer);
+        void SetImage(Utilities::NameID name, RHI::Objects::Texture* texture);
 
         virtual void WaitForIdle() const = 0;
         virtual void GC() = 0;

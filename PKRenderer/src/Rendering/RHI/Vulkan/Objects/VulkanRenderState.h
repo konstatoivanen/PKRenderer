@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities/PropertyBlock.h"
 #include "Rendering/RHI/Disposer.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanEnumConversion.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
 #include "Rendering/RHI/Vulkan/Services/VulkanDescriptorCache.h"
 #include "Rendering/RHI/Vulkan/Services/VulkanPipelineCache.h"
 #include "Rendering/RHI/Vulkan/Services/VulkanSamplerCache.h"
@@ -63,7 +63,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             VulkanRenderState(const VulkanServiceContext& services) : m_services(services) {}
 
             constexpr VulkanServiceContext* GetServices() { return &m_services; }
-            constexpr const ConstantBufferLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetConstantLayout(); }
+            constexpr const PushConstantLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetPushConstantLayout(); }
             constexpr VkPipelineLayout GetPipelineLayout() const { return m_pipelineKey.shader->GetPipelineLayout()->layout; }
             constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
             constexpr Math::uint3 GetComputeGroupSize() const { return m_pipelineKey.shader->GetGroupSize(); }
@@ -73,7 +73,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             inline VkPipelineBindPoint GetPipelineBindPoint() const { return EnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags()); }
             VkRenderPassBeginInfo GetRenderPassInfo() const;
             VulkanVertexBufferBundle GetVertexBufferBundle() const;
-            VulkanDescriptorSetBundle GetDescriptorSetBundle(const FenceRef& fence, uint32_t dirtyFlags);
+            VulkanDescriptorSetBundle GetDescriptorSetBundle(const PK::Utilities::FenceRef& fence, uint32_t dirtyFlags);
             VkStridedDeviceAddressRegionKHR* GetShaderBindingTableAddresses();
             const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
 
@@ -94,6 +94,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             void SetDepthStencil(const DepthStencilParameters& depthStencil);
             void SetMultisampling(const MultisamplingParameters& multisampling);
             void SetVertexBuffers(const VulkanBindHandle** handles, uint32_t count);
+            void SetVertexStreams(const VertexStreamElement* elements, uint32_t count);
             void SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType);
             void SetShaderBindingTableAddress(RayTracingShaderGroup group, VkDeviceAddress address, size_t stride, size_t size);
 
@@ -102,12 +103,12 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             void RecordImage(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access, VkImageLayout overrideLayout = VK_IMAGE_LAYOUT_MAX_ENUM, uint8_t options = Services::PK_ACCESS_OPT_BARRIER);
             Services::VulkanBarrierHandler::AccessRecord ExchangeImage(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access);
 
-            PKRenderStateDirtyFlags ValidatePipeline(const FenceRef& fence);
+            PKRenderStateDirtyFlags ValidatePipeline(const PK::Utilities::FenceRef& fence);
 
         private:
             void ValidateRenderTarget();
             void ValidateVertexBuffers();
-            void ValidateDescriptorSets(const FenceRef& fence);
+            void ValidateDescriptorSets(const PK::Utilities::FenceRef& fence);
 
             void RecordResourceAccess();
             void RecordRenderTargetAccess();
@@ -121,6 +122,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             const VulkanBindHandle* m_frameBufferImages[PK_MAX_RENDER_TARGETS * 2 + 1]{};
             VkStridedDeviceAddressRegionKHR m_sbtAddresses[(uint32_t)RayTracingShaderGroup::MaxCount]{};
         
+            VertexStreamElement m_vertexStreamLayout[PK_MAX_VERTEX_ATTRIBUTES]{};
             const VulkanBindHandle* m_vertexBuffers[PK_MAX_VERTEX_ATTRIBUTES]{};
             const VulkanBindHandle* m_indexBuffer = nullptr;
             VkIndexType m_indexType = VK_INDEX_TYPE_UINT16;

@@ -139,16 +139,16 @@ namespace PK::Core::Input
         "Count"
     };
 
-    std::string KeyToString(InputKey key)
+    const char* KeyToString(InputKey key)
     {
         return PK_INPUTKEY_NAMES[(int)key];
     }
-    
-    InputKey StringToKey(const std::string& string)
+
+    InputKey StringToKey(const char* string)
     {
         for (uint32_t i = 0u; i < (uint32_t)InputKey::Count; ++i)
         {
-            if (PK_INPUTKEY_NAMES[i] == string)
+            if (strncmp(PK_INPUTKEY_NAMES[i], string, 20) == 0)
             {
                 return (InputKey)i;
             }

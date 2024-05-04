@@ -3,13 +3,13 @@
 #include "Utilities/Ref.h"
 #include "Utilities/FixedPool.h"
 #include "Utilities/FastMap.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK::Rendering::RHI::Vulkan::Services
 {
     class VulkanSamplerCache : PK::Utilities::NoCopy
     {
-        using SampelerKeyHash = PK::Utilities::HashHelpers::TMurmurHash<SamplerDescriptor>;
+        using SampelerKeyHash = PK::Utilities::Hash::TMurmurHash<SamplerDescriptor>;
 
         public:
             VulkanSamplerCache(VkDevice device) : m_device(device) {}

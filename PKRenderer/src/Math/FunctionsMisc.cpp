@@ -334,10 +334,10 @@ namespace PK::Math::Functions
         seed *= M;
         seed ^= seed >> 24u;
         seed *= M;
-        h *= M; 
+        h *= M;
         h ^= seed;
-        h ^= h >> 13u; 
-        h *= M; 
+        h ^= h >> 13u;
+        h *= M;
         h ^= h >> 15u;
         return h;
     }
@@ -346,13 +346,13 @@ namespace PK::Math::Functions
     {
         const uint M = 0x5bd1e995u;
         uint2 h = uint2(1190494759u, 2147483647u);
-        seed *= M; 
-        seed ^= seed >> 24u; 
         seed *= M;
-        h *= M; 
+        seed ^= seed >> 24u;
+        seed *= M;
+        h *= M;
         h ^= seed;
-        h ^= h >> 13u; 
-        h *= M; 
+        h ^= h >> 13u;
+        h *= M;
         h ^= h >> 15u;
         return h;
     }

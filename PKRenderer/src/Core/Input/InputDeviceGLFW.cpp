@@ -140,11 +140,11 @@ namespace PK::Core::Input
 
         GLFWwindow* glfwWIndow = static_cast<GLFWwindow*>(m_window->GetNativeWindow());
         glfwSetKeyCallback(glfwWIndow, [](GLFWwindow* nativeWindow, int key, int scancode, int action, int mods) { InputSystem::Get()->GetDevice<InputDeviceGLFW>(nativeWindow)->OnKeyInput(key, scancode, action, mods); });
-       // glfwSetCharCallback(glfwWIndow, [](GLFWwindow* nativeWindow, uint32_t keycode) { Input::Get()->GetDevice<InputDeviceGLFW>(nativeWindow)->OnCharInput(keycode); });
+        // glfwSetCharCallback(glfwWIndow, [](GLFWwindow* nativeWindow, uint32_t keycode) { Input::Get()->GetDevice<InputDeviceGLFW>(nativeWindow)->OnCharInput(keycode); });
         glfwSetMouseButtonCallback(glfwWIndow, [](GLFWwindow* nativeWindow, int button, int action, int mods) { InputSystem::Get()->GetDevice<InputDeviceGLFW>(nativeWindow)->OnMouseButtonInput(button, action, mods); });
         glfwSetScrollCallback(glfwWIndow, [](GLFWwindow* nativeWindow, double xOffset, double yOffset) { InputSystem::Get()->GetDevice<InputDeviceGLFW>(nativeWindow)->OnScrollInput(xOffset, yOffset); });
-       // glfwSetCursorPosCallback(glfwWIndow, [](GLFWwindow* nativeWindow, double xPos, double yPos) { Input::Get()->GetDevice<InputDeviceGLFW>(nativeWindow)->OnCursorInput(xPos, yPos); });
-    }   
+        // glfwSetCursorPosCallback(glfwWIndow, [](GLFWwindow* nativeWindow, double xPos, double yPos) { Input::Get()->GetDevice<InputDeviceGLFW>(nativeWindow)->OnCursorInput(xPos, yPos); });
+    }
 
     bool InputDeviceGLFW::GetKeyDown(InputKey key) const
     {

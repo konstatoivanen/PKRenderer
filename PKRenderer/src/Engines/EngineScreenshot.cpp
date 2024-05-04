@@ -1,16 +1,17 @@
 #include "PrecompiledHeader.h"
 #include <filesystem>
 #include "Utilities/FileIOBMP.h"
+#include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
-#include "Rendering/RHI/GraphicsAPI.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
+#include "Rendering/RHI/Window.h"
+#include "Rendering/RHI/GraphicsAPI.h"
 #include "EngineScreenshot.h"
 
 namespace PK::Engines
 {
     using namespace PK::Math;
     using namespace PK::Core;
-    using namespace PK::Core::Services;
     using namespace PK::Core::CLI;
     using namespace PK::Rendering;
     using namespace PK::Rendering::RHI;
@@ -18,7 +19,7 @@ namespace PK::Engines
 
     EngineScreenshot::EngineScreenshot() : m_accumulatedPixels(1)
     {
-        CVariableRegister::Create<CVariableFunc>("Engine.Screenshot.QueueCapture", [this ](const char** args, uint32_t count) { QueueCapture(); });
+        CVariableRegister::Create<CVariableFunc>("Engine.Screenshot.QueueCapture", [this](const char** args, uint32_t count) { QueueCapture(); });
     }
 
     void EngineScreenshot::OnApplicationRender(Window* window)
@@ -102,15 +103,13 @@ namespace PK::Engines
 
         if (m_copyBuffer == nullptr)
         {
-            m_copyBuffer = Buffer::Create(
-                { { ElementType::Uint, "DATA"} },
-                m_currentResolution.x * m_currentResolution.y,
+            m_copyBuffer = Buffer::Create<uint32_t>(m_currentResolution.x * m_currentResolution.y,
                 BufferUsage::GPUToCPU | BufferUsage::TransferDst | BufferUsage::TransferSrc,
-                "Screenshot Copy Buffer");
+                "Screenshot.CopyBuffer");
         }
         else
         {
-            m_copyBuffer->Validate(m_currentResolution.x * m_currentResolution.y);
+            m_copyBuffer->Validate<uint32_t>(m_currentResolution.x * m_currentResolution.y);
         }
 
         m_copyFence.Invalidate();

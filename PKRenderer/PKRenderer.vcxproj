@@ -572,11 +572,11 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Core\Input\InputKeyBinding.h" />
     <ClInclude Include="src\Core\Input\InputKeyStructMacros.h" />
     <ClInclude Include="src\Core\Input\InputSystem.h" />
-    <ClInclude Include="src\Core\Services\IService.h" />
-    <ClInclude Include="src\Core\Services\ServiceRegister.h" />
-    <ClInclude Include="src\Core\Services\StringHashID.h" />
-    <ClInclude Include="src\Core\Services\Time.h" />
-    <ClInclude Include="src\Core\Services\TimeFrameInfo.h" />
+    <ClInclude Include="src\Core\IService.h" />
+    <ClInclude Include="src\Core\ServiceRegister.h" />
+    <ClInclude Include="src\Core\StringHashRegister.h" />
+    <ClInclude Include="src\Core\Time.h" />
+    <ClInclude Include="src\Core\TimeFrameInfo.h" />
     <ClInclude Include="src\Core\Yaml\ConfigMacros.h" />
     <ClInclude Include="src\Core\Yaml\ConvertInputKeyBindings.h" />
     <ClInclude Include="src\Core\Yaml\ConvertMathTypes.h" />
@@ -652,7 +652,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\RHI\BuiltInResources.h" />
     <ClInclude Include="src\Rendering\RHI\Disposer.h" />
     <ClInclude Include="src\Rendering\RHI\Driver.h" />
-    <ClInclude Include="src\Rendering\RHI\FenceRef.h" />
+    <ClInclude Include="src\Utilities\FenceRef.h" />
     <ClInclude Include="src\Rendering\RHI\GraphicsAPI.h" />
     <ClInclude Include="src\Rendering\RHI\Layout.h" />
     <ClInclude Include="src\Rendering\RHI\Objects\AccelerationStructure.h" />
@@ -681,12 +681,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Rendering\RHI\Vulkan\Services\VulkanPipelineCache.h" />
     <ClInclude Include="src\Rendering\RHI\Vulkan\Services\VulkanSamplerCache.h" />
     <ClInclude Include="src\Rendering\RHI\Vulkan\Services\VulkanStagingBufferCache.h" />
-    <ClInclude Include="src\Rendering\RHI\Vulkan\Utilities\VulkanEnumConversion.h" />
-    <ClInclude Include="src\Rendering\RHI\Vulkan\Utilities\VulkanExtensions.h" />
-    <ClInclude Include="src\Rendering\RHI\Vulkan\Utilities\VulkanMemory.h" />
-    <ClInclude Include="src\Rendering\RHI\Vulkan\Utilities\VulkanPhysicalDeviceRequirements.h" />
-    <ClInclude Include="src\Rendering\RHI\Vulkan\Utilities\VulkanStructs.h" />
-    <ClInclude Include="src\Rendering\RHI\Vulkan\Utilities\VulkanUtilities.h" />
+    <ClInclude Include="src\Rendering\RHI\Vulkan\VulkanCommon.h" />
     <ClInclude Include="src\Rendering\RHI\Vulkan\VulkanDriver.h" />
     <ClInclude Include="src\Rendering\RHI\Vulkan\VulkanWindow.h" />
     <ClInclude Include="src\Rendering\RHI\Window.h" />
@@ -700,24 +695,25 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClInclude Include="src\Utilities\BufferIterator.h" />
     <ClInclude Include="src\Utilities\BufferView.h" />
     <ClInclude Include="src\Utilities\FastMap.h" />
-    <ClInclude Include="src\Utilities\FileIO.h" />
+    <ClInclude Include="src\Utilities\FileIOBinary.h" />
     <ClInclude Include="src\Utilities\FileIOBMP.h" />
     <ClInclude Include="src\Utilities\FixedList.h" />
     <ClInclude Include="src\Utilities\FixedPool.h" />
-    <ClInclude Include="src\Utilities\ForwardDeclareUtility.h" />
+    <ClInclude Include="src\Utilities\ForwardDeclare.h" />
     <ClInclude Include="src\Utilities\Handle.h" />
-    <ClInclude Include="src\Utilities\HashHelpers.h" />
+    <ClInclude Include="src\Utilities\Hash.h" />
     <ClInclude Include="src\Utilities\IndexedSet.h" />
     <ClInclude Include="src\Utilities\ISingleton.h" />
     <ClInclude Include="src\Utilities\MemoryBlock.h" />
+    <ClInclude Include="src\Utilities\NameID.h" />
     <ClInclude Include="src\Utilities\NativeInterface.h" />
     <ClInclude Include="src\Utilities\NoCopy.h" />
     <ClInclude Include="src\Utilities\PropertyBlock.h" />
     <ClInclude Include="src\Utilities\RangeTable.h" />
     <ClInclude Include="src\Utilities\Ref.h" />
-    <ClInclude Include="src\Utilities\ExecuteRemoteProcess.h" />
-    <ClInclude Include="src\Utilities\TypeUtility.h" />
-    <ClInclude Include="src\Utilities\VectorUtilities.h" />
+    <ClInclude Include="src\Utilities\RemoteProcess.h" />
+    <ClInclude Include="src\Utilities\TypeInfo.h" />
+    <ClInclude Include="src\Utilities\VectorHelpers.h" />
     <ClInclude Include="src\Utilities\VersionedObject.h" />
   </ItemGroup>
   <ItemGroup>
@@ -913,7 +909,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <None Include="res\shaders\includes\SceneGIReSTIR.glsl" />
     <None Include="res\shaders\includes\bend_sss_gpu.glsl" />
     <None Include="res\shaders\includes\Shadows.glsl" />
-    <None Include="res\shaders\includes\SpatialFilters.glsl" />
     <None Include="res\shaders\includes\Kernels.glsl" />
     <None Include="res\shaders\includes\GBuffers.glsl" />
     <None Include="res\shaders\includes\SceneEnv.glsl" />
@@ -1020,7 +1015,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Core\Application.cpp" />
-    <ClCompile Include="src\Core\Assets\Asset.cpp" />
     <ClCompile Include="src\Core\Assets\AssetDatabase.cpp" />
     <ClCompile Include="src\Core\CLI\CVariableRegister.cpp" />
     <ClCompile Include="src\Core\CLI\CVariable.cpp" />
@@ -1034,8 +1028,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Core\Input\InputKey.cpp" />
     <ClCompile Include="src\Core\Input\InputKeyBinding.cpp" />
     <ClCompile Include="src\Core\Input\InputSystem.cpp" />
-    <ClCompile Include="src\Core\Services\StringHashID.cpp" />
-    <ClCompile Include="src\Core\Services\Time.cpp" />
+    <ClCompile Include="src\Core\StringHashRegister.cpp" />
+    <ClCompile Include="src\Core\Time.cpp" />
     <ClCompile Include="src\Core\Yaml\ConfigMacros.cpp" />
     <ClCompile Include="src\Core\Yaml\ConvertInputKeyBindings.cpp" />
     <ClCompile Include="src\Core\Yaml\ConvertMathTypes.cpp" />
@@ -1115,22 +1109,18 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     <ClCompile Include="src\Rendering\RHI\Vulkan\Services\VulkanPipelineCache.cpp" />
     <ClCompile Include="src\Rendering\RHI\Vulkan\Services\VulkanSamplerCache.cpp" />
     <ClCompile Include="src\Rendering\RHI\Vulkan\Services\VulkanStagingBufferCache.cpp" />
-    <ClCompile Include="src\Rendering\RHI\Vulkan\Utilities\VulkanEnumConversion.cpp" />
-    <ClCompile Include="src\Rendering\RHI\Vulkan\Utilities\VulkanMemory.cpp" />
-    <ClCompile Include="src\Rendering\RHI\Vulkan\Utilities\VulkanPhysicalDeviceRequirements.cpp" />
-    <ClCompile Include="src\Rendering\RHI\Vulkan\Utilities\VulkanStructs.cpp" />
-    <ClCompile Include="src\Rendering\RHI\Vulkan\Utilities\VulkanUtilities.cpp" />
+    <ClCompile Include="src\Rendering\RHI\Vulkan\VulkanCommon.cpp" />
     <ClCompile Include="src\Rendering\RHI\Vulkan\VulkanDriver.cpp" />
     <ClCompile Include="src\Rendering\RHI\Vulkan\VulkanWindow.cpp" />
     <ClCompile Include="src\Rendering\RHI\Window.cpp" />
     <ClCompile Include="src\Rendering\RenderPipelineScene.cpp" />
     <ClCompile Include="src\Rendering\Geometry\BatcherStaticMesh.cpp" />
-    <ClCompile Include="src\Utilities\FileIO.cpp" />
+    <ClCompile Include="src\Utilities\FileIOBinary.cpp" />
     <ClCompile Include="src\Utilities\FileIOBMP.cpp" />
-    <ClCompile Include="src\Utilities\HashHelpers.cpp" />
+    <ClCompile Include="src\Utilities\Hash.cpp" />
     <ClCompile Include="src\Utilities\PropertyBlock.cpp" />
-    <ClCompile Include="src\Utilities\ExecuteRemoteProcess.cpp" />
-    <ClCompile Include="src\Utilities\TypeUtility.cpp" />
+    <ClCompile Include="src\Utilities\RemoteProcess.cpp" />
+    <ClCompile Include="src\Utilities\TypeInfo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\glfw3.lib" />

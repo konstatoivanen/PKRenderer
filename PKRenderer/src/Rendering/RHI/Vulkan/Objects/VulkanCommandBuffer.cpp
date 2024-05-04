@@ -1,19 +1,19 @@
 #include "PrecompiledHeader.h"
 #include "Utilities/Handle.h"
+#include "Core/CLI/Log.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanBuffer.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanTexture.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanAccelerationStructure.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanBindArray.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanExtensions.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
+#include "Rendering/RHI/Vulkan/Objects/VulkanRenderState.h"
 #include "Rendering/RHI/Vulkan/VulkanWindow.h"
 #include "VulkanCommandBuffer.h"
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {
+    using namespace PK::Math;
     using namespace PK::Utilities;
     using namespace PK::Core;
-    using namespace PK::Rendering::RHI::Vulkan::Utilities;
     using namespace PK::Rendering::RHI::Vulkan::Services;
 
     FenceRef VulkanCommandBuffer::GetFenceRef() const
@@ -114,16 +114,66 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         m_renderState->SetVertexBuffers(pHandles, count);
     }
 
-    void VulkanCommandBuffer::SetIndexBuffer(const Buffer* buffer, size_t offset)
+    void VulkanCommandBuffer::SetVertexStreams(const VertexStreamElement* elements, uint32_t count) 
+    { 
+        m_renderState->SetVertexStreams(elements, count); 
+    }
+
+    void VulkanCommandBuffer::SetIndexBuffer(const Buffer* buffer, size_t offset, ElementType indexType)
     {
         auto handle = buffer->GetNative<VulkanBuffer>()->GetBindHandle();
-        m_renderState->SetIndexBuffer(handle, EnumConvert::GetIndexType(handle->buffer.layout->begin()->Type));
+        m_renderState->SetIndexBuffer(handle, EnumConvert::GetIndexType(indexType));
     }
 
     void VulkanCommandBuffer::SetShaderBindingTable(RayTracingShaderGroup group, const Buffer* buffer, size_t offset, size_t stride, size_t size)
     {
         auto address = buffer->GetNative<VulkanBuffer>()->GetRaw()->deviceAddress;
         m_renderState->SetShaderBindingTableAddress(group, address + offset, stride, size);
+    }
+
+    void VulkanCommandBuffer::ClearColor(const Math::color& color, uint32_t index)
+    {
+        m_renderState->ClearColor(color, index);
+    }
+
+    void VulkanCommandBuffer::ClearDepth(float depth, uint32_t stencil)
+    {
+        m_renderState->ClearDepth(depth, stencil);
+    }
+
+    void VulkanCommandBuffer::DiscardColor(uint32_t index)
+    {
+        m_renderState->DiscardColor(index);
+    }
+
+    void VulkanCommandBuffer::DiscardDepth()
+    {
+        m_renderState->DiscardDepth();
+    }
+
+    void VulkanCommandBuffer::SetStageExcludeMask(const ShaderStageFlags mask)
+    {
+        m_renderState->SetStageExcludeMask(mask);
+    }
+
+    void VulkanCommandBuffer::SetBlending(const BlendParameters& blend)
+    {
+        m_renderState->SetBlending(blend);
+    }
+
+    void VulkanCommandBuffer::SetRasterization(const RasterizationParameters& rasterization)
+    {
+        m_renderState->SetRasterization(rasterization);
+    }
+
+    void VulkanCommandBuffer::SetDepthStencil(const DepthStencilParameters& depthStencil)
+    {
+        m_renderState->SetDepthStencil(depthStencil);
+    }
+
+    void VulkanCommandBuffer::SetMultisampling(const MultisamplingParameters& multisampling)
+    {
+        m_renderState->SetMultisampling(multisampling);
     }
 
     void VulkanCommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
@@ -198,12 +248,12 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         vkCmdDrawMeshTasksIndirectEXT(m_commandBuffer, vkbuffer->buffer, offset, drawCount, stride);
     }
 
-    void VulkanCommandBuffer::DrawMeshTasksIndirectCount(const Buffer* indirectArguments, 
-                                                         size_t offset, 
-                                                         const Buffer* countBuffer, 
-                                                         size_t countOffset, 
-                                                         uint32_t maxDrawCount, 
-                                                         uint32_t stride)
+    void VulkanCommandBuffer::DrawMeshTasksIndirectCount(const Buffer* indirectArguments,
+        size_t offset,
+        const Buffer* countBuffer,
+        size_t countOffset,
+        uint32_t maxDrawCount,
+        uint32_t stride)
     {
         static Services::VulkanBarrierHandler::AccessRecord record{};
 
@@ -233,12 +283,12 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         MarkLastCommandStage(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
         EndRenderPass();
         ValidatePipeline();
-        
+
         uint3 groupSize = m_renderState->GetComputeGroupSize();
         uint32_t groupCountX = (uint32_t)ceilf(dimensions.x / (float)groupSize.x);
         uint32_t groupCountY = (uint32_t)ceilf(dimensions.y / (float)groupSize.y);
         uint32_t groupCountZ = (uint32_t)ceilf(dimensions.z / (float)groupSize.z);
-        
+
         // Add debug scopes to compute calls as they're not otherwise visible in NSight timeline
         BeginDebugScope(m_renderState->GetShaderName(), PK_COLOR_MAGENTA);
         vkCmdDispatch(m_commandBuffer, groupCountX, groupCountY, groupCountZ);
@@ -680,10 +730,10 @@ namespace PK::Rendering::RHI::Vulkan::Objects
                 size_t dataSize = 0u;
                 auto& element = kv.second;
 
-                if (props->TryGet<char>(kv.second.NameHashId, data, &dataSize) && dataSize <= element.Size)
+                if (props->TryGet<char>(kv.second.name, data, &dataSize) && dataSize <= element.size)
                 {
-                    auto stageFlags = EnumConvert::GetShaderStageFlags(element.StageFlags);
-                    vkCmdPushConstants(m_commandBuffer, m_renderState->GetPipelineLayout(), stageFlags, element.Offset, (uint32_t)dataSize, data);
+                    auto stageFlags = EnumConvert::GetShaderStageFlags(element.stageFlags);
+                    vkCmdPushConstants(m_commandBuffer, m_renderState->GetPipelineLayout(), stageFlags, element.offset, (uint32_t)dataSize, data);
                 }
             }
         }

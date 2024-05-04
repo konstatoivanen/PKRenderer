@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
-#include "Utilities/HashHelpers.h"
+#include "Utilities/Hash.h"
 #include "Utilities/FixedPool.h"
 #include "Utilities/FastMap.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanShader.h"
@@ -40,8 +40,8 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
     class VulkanPipelineCache : public PK::Utilities::NoCopy
     {
-        using PipelineKeyHash = PK::Utilities::HashHelpers::TMurmurHash<PipelineKey>;
-        using MeshPipelineKeyHash = PK::Utilities::HashHelpers::TMurmurHash<MeshPipelineKey>;
+        using PipelineKeyHash = PK::Utilities::Hash::TMurmurHash<PipelineKey>;
+        using MeshPipelineKeyHash = PK::Utilities::Hash::TMurmurHash<MeshPipelineKey>;
 
         public:
             constexpr const static char* PIPELINE_CACHE_FILENAME = "shadercache.cache";

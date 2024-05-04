@@ -1,10 +1,9 @@
 #pragma once
 #include "Utilities/NoCopy.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanEnumConversion.h"
 #include "Utilities/FixedPool.h"
 #include "Utilities/FixedList.h"
 #include "Utilities/FastMap.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK::Rendering::RHI::Vulkan::Services
 {
@@ -96,7 +95,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
                     m_accessMask.SetAt(index, true);
                 }
 
-                auto current = m_resources.GetValueAtRef(index);
+                auto current = &m_resources.GetValueAt(index);
 
                 for (auto next = &(*current)->next; *current; current = next, next = &(*current)->next)
                 {

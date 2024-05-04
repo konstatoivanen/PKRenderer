@@ -2,16 +2,14 @@
 #include "Utilities/Handle.h"
 #include "Core/CLI/Log.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanBindArray.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanEnumConversion.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
 #include "Rendering/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanRenderState.h"
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {
+    using namespace PK::Math;
     using namespace PK::Utilities;
-    using namespace PK::Core::Services;
-    using namespace PK::Rendering::RHI::Vulkan::Utilities;
+    using namespace PK::Core;
     using namespace PK::Rendering::RHI::Vulkan::Services;
 
     VkRenderPassBeginInfo VulkanRenderState::GetRenderPassInfo() const
@@ -116,6 +114,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         memset(m_clearValues, 0, sizeof(m_clearValues));
         memset(m_vertexBuffers, 0, sizeof(m_vertexBuffers));
         memset(m_descriptorSets, 0, sizeof(m_descriptorSets));
+        memset(m_vertexStreamLayout, 0, sizeof(m_vertexStreamLayout));
 
         m_clearValueCount = 0u;
         m_indexType = VK_INDEX_TYPE_UINT16;
@@ -346,6 +345,22 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         }
     }
 
+    void VulkanRenderState::SetVertexStreams(const VertexStreamElement* elements, uint32_t count)
+    {
+        PK_THROW_ASSERT(count <= PK_MAX_VERTEX_ATTRIBUTES, "Tried to bind more vertex attributes than currently supported!");
+
+        if (memcmp(m_vertexStreamLayout, elements, sizeof(VertexStreamElement) * count) != 0)
+        {
+            memcpy(m_vertexStreamLayout, elements, sizeof(VertexStreamElement) * count);
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
+        }
+
+        if (count < PK_MAX_VERTEX_ATTRIBUTES && m_vertexStreamLayout[count].stride != 0)
+        {
+            memset(m_vertexStreamLayout + count, 0, sizeof(VertexStreamElement) * (PK_MAX_VERTEX_ATTRIBUTES - count));
+        }
+    }
+
     void VulkanRenderState::SetIndexBuffer(const VulkanBindHandle* handle, VkIndexType indexType)
     {
         if (m_indexBuffer != handle || (handle != nullptr && indexType != m_indexType))
@@ -385,7 +400,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             VulkanBarrierHandler::AccessRecord record{};
             record.stage = stage;
             record.access = access;
-            record.imageRange = Utilities::VulkanConvertRange(handle->image.range);
+            record.imageRange = VulkanConvertRange(handle->image.range);
             record.aspect = handle->image.range.aspectMask;
             record.layout = overrideLayout != VK_IMAGE_LAYOUT_MAX_ENUM ? overrideLayout : handle->image.layout;
             record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
@@ -406,7 +421,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         VulkanBarrierHandler::AccessRecord record{};
         record.stage = stage;
         record.access = access;
-        record.imageRange = Utilities::VulkanConvertRange(handle->image.range);
+        record.imageRange = VulkanConvertRange(handle->image.range);
         record.aspect = handle->image.range.aspectMask;
         record.layout = handle->image.layout;
         record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
@@ -481,18 +496,19 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
         auto index = 0u;
         auto validateAttributes = false;
+        const auto& shaderLayout = shader->GetVertexLayout();
 
         if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_SHADER)
         {
-            for (const auto& element : shader->GetVertexLayout())
+            for (const auto& element : shaderLayout)
             {
                 auto* attribute = m_pipelineKey.vertexAttributes + index++;
-                auto format = EnumConvert::GetFormat(element.Type);
+                auto format = EnumConvert::GetFormat(element.type);
 
-                if (attribute->location != element.Location || attribute->format != format)
+                if (attribute->location != element.location || attribute->format != format)
                 {
                     validateAttributes = true;
-                    attribute->location = element.Location;
+                    attribute->location = element.location;
                     attribute->format = format;
                 }
             }
@@ -510,55 +526,59 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             return;
         }
 
-        const auto& shaderLayout = shader->GetVertexLayout();
+        auto indexBindingBuffer = 0u;
+        auto boundElementCount = 0u;
+        const VertexStreamElement* elementPrev = nullptr;
 
-        for (index = 0u; index < PK_MAX_VERTEX_ATTRIBUTES; ++index)
+        for (index = 0u; index < PK_MAX_VERTEX_ATTRIBUTES && m_vertexStreamLayout[index].stride != 0; ++index)
         {
-            auto vertexBuffer = m_vertexBuffers[index];
+            const auto& element = m_vertexStreamLayout[index];
+            auto elementIdx = 0u;
 
-            if (vertexBuffer == nullptr)
+            if (m_vertexBuffers[element.stream] && shaderLayout.TryGetElement(element.name, &elementIdx))
             {
-                break;
-            }
-
-            const auto& bufferLayout = *vertexBuffer->buffer.layout;
-            auto stride = bufferLayout.GetStride();
-
-            auto bufferAttribute = &m_pipelineKey.vertexBuffers[index];
-            bufferAttribute->binding = index;
-
-            if (bufferAttribute->inputRate != vertexBuffer->buffer.inputRate || bufferAttribute->stride != stride)
-            {
-                bufferAttribute->inputRate = vertexBuffer->buffer.inputRate;
-                bufferAttribute->stride = stride;
-                m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-            }
-
-            for (const auto& element : bufferLayout)
-            {
-                uint32_t elementIdx = 0u;
-                if (shaderLayout.TryGetElement(element.NameHashId, &elementIdx) == nullptr)
+                // Merge adjacent buffer bindings if possible
+                if (elementPrev && (elementPrev->stream != element.stream ||
+                    elementPrev->inputRate != element.inputRate ||
+                    elementPrev->stride != element.stride))
                 {
-                    continue;
+                    ++indexBindingBuffer;
                 }
 
-                auto* attribute = &m_pipelineKey.vertexAttributes[elementIdx];
+                ++boundElementCount;
+                elementPrev = &element;
+                auto inputRate = EnumConvert::GetInputRate(element.inputRate);
+                auto bindingBuffer = &m_pipelineKey.vertexBuffers[indexBindingBuffer];
+                auto bindingAttribute = &m_pipelineKey.vertexAttributes[elementIdx];
 
-                // Format equality isn't checked against so that meshes without certain attributes can still be bound.
-                if (attribute->binding != index || attribute->offset != element.Offset)
+                if (bindingBuffer->binding != element.stream || bindingBuffer->inputRate != inputRate || bindingBuffer->stride != element.stride)
                 {
                     m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-                    attribute->binding = index;
-                    attribute->offset = element.Offset;
+                    bindingBuffer->binding = element.stream;
+                    bindingBuffer->inputRate = inputRate;
+                    bindingBuffer->stride = element.stride;
+                }
+
+                if (bindingAttribute->binding != indexBindingBuffer || bindingAttribute->offset != element.offset)
+                {
+                    m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+                    bindingAttribute->binding = indexBindingBuffer;
+                    bindingAttribute->offset = element.offset;
                 }
             }
         }
 
-        // Buffer count changed!
-        if (index < PK_MAX_VERTEX_ATTRIBUTES && m_pipelineKey.vertexBuffers[index].stride != 0)
+        if (boundElementCount != shaderLayout.size())
+        {
+            PK_LOG_WARNING("Warning only '%u' out of '%u' shader vertex input streams were bound.", boundElementCount, (uint32_t)shaderLayout.size());
+        }
+
+        auto bindingBufferCount = indexBindingBuffer + 1u;
+
+        if (bindingBufferCount < PK_MAX_VERTEX_ATTRIBUTES && m_pipelineKey.vertexBuffers[bindingBufferCount].stride != 0)
         {
             m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-            memset(m_pipelineKey.vertexBuffers + index, 0, sizeof(VkVertexInputBindingDescription) * (PK_MAX_VERTEX_ATTRIBUTES - index));
+            memset(m_pipelineKey.vertexBuffers + bindingBufferCount, 0, sizeof(VkVertexInputBindingDescription) * (PK_MAX_VERTEX_ATTRIBUTES - bindingBufferCount));
         }
     }
 
@@ -593,20 +613,20 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             {
                 auto* binding = bindings + index++;
 
-                if (element->Count > 1)
+                if (element->count > 1)
                 {
-                    PK_THROW_ASSERT(resources->TryGet(element->NameHashId, wrappedHandleArray), "Descriptors (%s) not bound!", StringHashID::IDToString(element->NameHashId).c_str());
+                    PK_THROW_ASSERT(resources->TryGet(element->name, wrappedHandleArray), "Descriptors (%s) not bound!", element->name.c_str());
 
                     uint32_t version = 0u;
                     uint32_t count = 0u;
                     auto handles = wrappedHandleArray.handle->GetHandles(&version, &count);
-                    count = count < element->Count ? (uint16_t)count : element->Count;
+                    count = count < element->count ? (uint16_t)count : element->count;
 
-                    if (binding->count != count || binding->type != element->Type || binding->handles != handles || binding->version != version || !binding->isArray)
+                    if (binding->count != count || binding->type != element->type || binding->handles != handles || binding->version != version || !binding->isArray)
                     {
                         m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
                         binding->count = count;
-                        binding->type = element->Type;
+                        binding->type = element->type;
                         binding->handles = handles;
                         binding->version = version;
                         binding->isArray = true;
@@ -615,14 +635,14 @@ namespace PK::Rendering::RHI::Vulkan::Objects
                     continue;
                 }
 
-                PK_THROW_ASSERT(resources->TryGet(element->NameHashId, wrappedHandle), "Descriptor (%s) not bound!", StringHashID::IDToString(element->NameHashId).c_str());
+                PK_THROW_ASSERT(resources->TryGet(element->name, wrappedHandle), "Descriptor (%s) not bound!", element->name.c_str());
                 auto handle = wrappedHandle.handle;
 
-                if (binding->count != element->Count || binding->type != element->Type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)
+                if (binding->count != element->count || binding->type != element->type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)
                 {
                     m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
-                    binding->count = element->Count;
-                    binding->type = element->Type;
+                    binding->count = element->count;
+                    binding->type = element->type;
                     binding->handle = handle;
                     binding->version = handle->Version();
                     binding->isArray = false;
@@ -704,7 +724,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             flags &= ~graphicsFlags;
             m_dirtyFlags |= graphicsFlags;
         }
-        
+
         return (PKRenderStateDirtyFlags)flags;
     }
 
@@ -731,7 +751,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
                 auto handle = binding.handle;
                 auto stage = EnumConvert::GetPipelineStageFlags(setkey.stageFlags);
-                auto access = shader->GetResourceLayout(i)[j].WriteStageMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
+                auto access = shader->GetResourceLayout(i)[j].writeStageMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
 
                 switch (binding.type)
                 {

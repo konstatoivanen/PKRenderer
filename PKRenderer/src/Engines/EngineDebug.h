@@ -1,5 +1,5 @@
 #pragma once
-#include "Utilities/ForwardDeclareUtility.h"
+#include "Utilities/ForwardDeclare.h"
 #include "Core/ControlFlow/IStepApplication.h"
 #include "ECS/EGID.h"
 
@@ -12,24 +12,24 @@ PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, class StaticSceneMesh)
 namespace PK::Engines
 {
     // Dumping ground for all loose hooks that have not been implemented yet.
-    class EngineDebug : public Core::Services::IService, 
-                        public Core::ControlFlow::IStepApplicationUpdateEngines,
-                        public Core::ControlFlow::IStep<Rendering::Geometry::IGizmos*>,
-                        public Core::ControlFlow::IStep<Core::Assets::AssetImportEvent<Core::ApplicationConfig>*>
+    class EngineDebug : public Core::IService,
+        public Core::ControlFlow::IStepApplicationUpdateEngines,
+        public Core::ControlFlow::IStep<Rendering::Geometry::IGizmos*>,
+        public Core::ControlFlow::IStep<Core::Assets::AssetImportEvent<Core::ApplicationConfig>*>
     {
-        public:
-            EngineDebug(Core::Assets::AssetDatabase* assetDatabase, 
-                ECS::EntityDatabase* entityDb, 
-                PK::Rendering::Objects::StaticSceneMesh* baseMesh, 
-                const Core::ApplicationConfig* config);
+    public:
+        EngineDebug(Core::Assets::AssetDatabase* assetDatabase,
+            ECS::EntityDatabase* entityDb,
+            PK::Rendering::Objects::StaticSceneMesh* baseMesh,
+            const Core::ApplicationConfig* config);
 
-            virtual void OnApplicationUpdateEngines() final;
-            virtual void Step(Rendering::Geometry::IGizmos* gizmos) final;
-            virtual void Step(Core::Assets::AssetImportEvent<Core::ApplicationConfig>* token) final;
+        virtual void OnApplicationUpdateEngines() final;
+        virtual void Step(Rendering::Geometry::IGizmos* gizmos) final;
+        virtual void Step(Core::Assets::AssetImportEvent<Core::ApplicationConfig>* token) final;
 
-        private:
-            ECS::EGID m_cameraEgid{};
-            ECS::EntityDatabase* m_entityDb;
-            Core::Assets::AssetDatabase* m_assetDatabase;
+    private:
+        ECS::EGID m_cameraEgid{};
+        ECS::EntityDatabase* m_entityDb;
+        Core::Assets::AssetDatabase* m_assetDatabase;
     };
 }

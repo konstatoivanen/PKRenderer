@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities/IndexedSet.h"
 #include "Utilities/FixedList.h"
-#include "Core/Services/IService.h"
+#include "Core/IService.h"
 #include "Rendering/Geometry/IBatcher.h"
 #include "Rendering/Objects/StaticSceneMesh.h"
 #include "Rendering/Objects/BindSet.h"
@@ -14,7 +14,7 @@ PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Texture)
 
 namespace PK::Rendering::Geometry
 {
-    class BatcherStaticMesh : public PK::Core::Services::IService, public IBatcher
+    class BatcherStaticMesh : public Core::IService, public IBatcher
     {
         struct DrawCall
         {

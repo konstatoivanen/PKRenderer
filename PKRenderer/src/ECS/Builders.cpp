@@ -21,7 +21,7 @@ namespace PK::ECS::Build
 {
     using namespace PK::Math;
     using namespace PK::Utilities;
-    using namespace PK::Core::Services;
+    using namespace PK::Core;
     using namespace PK::Core::Assets;
     using namespace PK::ECS;
     using namespace PK::Rendering;
@@ -42,12 +42,12 @@ namespace PK::ECS::Build
     }
 
     template<typename T>
-    static void EntityViewTransform(EntityDatabase* entityDb, 
-        T* implementer, 
-        const EGID& egid, 
-        const Math::float3& position, 
-        const Math::float3& rotation, 
-        const Math::float3& scale, 
+    static void EntityViewTransform(EntityDatabase* entityDb,
+        T* implementer,
+        const EGID& egid,
+        const Math::float3& position,
+        const Math::float3& rotation,
+        const Math::float3& scale,
         const Math::BoundingBox& localBounds)
     {
         auto view = entityDb->ReserveView(implementer, egid, &EntityViewTransform::bounds, &EntityViewTransform::transform);

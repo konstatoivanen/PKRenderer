@@ -1,7 +1,6 @@
 #pragma once
 #include <gfx.h>
 #include "Rendering/RHI/Window.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanSwapchain.h"
 #include "Rendering/RHI/Vulkan/VulkanDriver.h"
 
@@ -23,7 +22,7 @@ namespace PK::Rendering::RHI::Vulkan
 
             void Begin() final;
             void End() final;
-            void SetFrameFence(const FenceRef& fence) final;
+            void SetFrameFence(const PK::Utilities::FenceRef& fence) final;
             void SetCursorVisible(bool value) final;
             void SetVSync(bool enabled) final { m_vsync = enabled; };
             inline void PollEvents() const final { glfwPollEvents(); }

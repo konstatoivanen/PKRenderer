@@ -12,7 +12,6 @@ namespace PK::Rendering::Passes
     using namespace PK::Math;
     using namespace PK::Core;
     using namespace PK::Core::Assets;
-    using namespace PK::Core::Services;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
@@ -22,9 +21,9 @@ namespace PK::Rendering::Passes
         PK_LOG_SCOPE_INDENT(local);
 
         m_compute = assetDatabase->Find<Shader>("CS_AutoExposure");
-        m_histogram = Buffer::Create(ElementType::Uint, 257, BufferUsage::DefaultStorage, "Histogram");
-        m_passHistogramBins = m_compute->GetVariantIndex(StringHashID::StringToID("PASS_HISTOGRAM"));
-        m_passHistogramAvg = m_compute->GetVariantIndex(StringHashID::StringToID("PASS_AVG"));
+        m_histogram = Buffer::Create<uint>(257ull, BufferUsage::DefaultStorage, "Histogram");
+        m_passHistogramBins = m_compute->GetVariantIndex("PASS_HISTOGRAM");
+        m_passHistogramAvg = m_compute->GetVariantIndex("PASS_AVG");
         GraphicsAPI::SetBuffer(HashCache::Get()->pk_AutoExposure_Histogram, m_histogram.get());
     }
 

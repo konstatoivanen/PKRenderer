@@ -30,7 +30,7 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
     float3 textureval = SURF_TEX(_PBSTexture, uv).xyz;
     surf.metallic = textureval.SRC_METALLIC * _Metallic;
     // @TODO this is a hack to fix a bad sand texture. Replace sand mat with a better one & get rid of this.
-    surf.roughness = sqrt(textureval.SRC_ROUGHNESS * _Roughness); 
+    surf.roughness = sqrt(textureval.SRC_ROUGHNESS * _Roughness);
     surf.occlusion = lerp(1.0f, textureval.SRC_OCCLUSION, _Occlusion);
     surf.normal = SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
     surf.albedo = SURF_TEX(_AlbedoTexture, uv).rgb * _Color.rgb;

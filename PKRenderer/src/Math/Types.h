@@ -175,7 +175,7 @@ namespace PK::Math
         inline float4& operator[](size_t i) { return (&left)[i]; }
         constexpr float4* array_ptr() { return &left; }
     };
-    
+
     struct ShadowCascadeCreateInfo
     {
         float4x4 worldToLocal;
@@ -201,7 +201,7 @@ namespace PK::Math
         BoundingBox(const float3& _min, const float3& _max) : min(_min), max(_max) {}
         inline static BoundingBox MinMax(const float3& min, const float3& max) { return BoundingBox(min, max); }
         inline static BoundingBox CenterExtents(const float3& center, const float3& extents) { return BoundingBox(center - extents, center + extents); }
-        inline static BoundingBox GetMinBounds() 
+        inline static BoundingBox GetMinBounds()
         {
             constexpr const float fmi = -std::numeric_limits<float>().max();
             constexpr const float fma = std::numeric_limits<float>().max();

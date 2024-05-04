@@ -1,8 +1,8 @@
 #pragma once
+#include "Core/TimeFrameInfo.h"
 #include "Rendering/Objects/ConstantBuffer.h"
 #include "Rendering/Objects/GBuffers.h"
 #include "Rendering/EntityEnums.h"
-#include "Core/Services/TimeFrameInfo.h"
 
 namespace PK::Rendering::Objects
 {
@@ -13,13 +13,13 @@ namespace PK::Rendering::Objects
 
         RenderViewType type = RenderViewType::Scene;
         bool isWindowTarget = false;
-        
+
         uint32_t viewEntityId = 0u;
         uint32_t primaryPassGroup;
-        
+
         Math::uint4 renderAreaRect;
         Math::uint4 finalViewRect;
-        
+
         Math::float4x4 worldToView;
         Math::float4x4 viewToClip;
         Math::float4x4 worldToClip;
@@ -27,8 +27,8 @@ namespace PK::Rendering::Objects
         float znear;
         float zfar;
 
-        Core::Services::TimeFrameInfo timeRender;
-        Core::Services::TimeFrameInfo timeResize;
+        Core::TimeFrameInfo timeRender;
+        Core::TimeFrameInfo timeResize;
 
         inline Math::uint3 GetResolution() const { return gbuffers.GetResolution(); }
         inline GBuffersFull::View GetGBuffersFullView() { return gbuffers.GetView(); }

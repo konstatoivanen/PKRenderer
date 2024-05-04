@@ -67,11 +67,13 @@ namespace PK::Core::CLI
     {
         if ((severity & m_severityMask) != 0)
         {
+            SetColor(LogColor::PK_LOG_COLOR_BLACK);
+            LogNewLine();
             SetColor(color);
-            LogIndent();
             printf("--------------------PK BEGIN ERROR--------------------\n");
             auto lineLength = vprintf(format, args);
-            printf("--------------------PK END ERROR--------------------\n");
+            printf("\n--------------------PK END ERROR--------------------");
+            SetColor(LogColor::PK_LOG_COLOR_BLACK);
             LogNewLine();
         }
 
@@ -82,7 +84,7 @@ namespace PK::Core::CLI
         _getch();
         return std::runtime_error(format);
     }
-    
+
     void LoggerPrintf::LogIndent()
     {
         if (m_indentation > 0)

@@ -1,15 +1,17 @@
 #include "PrecompiledHeader.h"
 #include "Math/FunctionsMisc.h"
-#include "Rendering/HashCache.h"
+#include "Core/CLI/Log.h"
+#include "Rendering/Geometry/AttributeUtility.h"
 #include "Rendering/RHI/GraphicsAPI.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
+#include "Rendering/HashCache.h"
 #include "StaticSceneMesh.h"
 
 namespace PK::Rendering::Objects
 {
     using namespace PK::Math;
     using namespace PK::Utilities;
-    using namespace PK::Core::Services;
+    using namespace PK::Core;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
@@ -23,49 +25,36 @@ namespace PK::Rendering::Objects
 
         PK_THROW_ASSERT((maxTriangles * 3ull) % 4ull == 0ull, "Input triangle count x3 must be divisible by 4");
 
-        m_positionsBuffer = Buffer::Create({ { ElementType::Float3, PK_VS_POSITION } }, 2000000, BufferUsage::SparseVertex | BufferUsage::Storage, "StaticSceneMesh.VertexPositions");
-        
-        m_attributesBuffer = Buffer::Create(
+        m_streamLayout = VertexStreamLayout(
             {
-                { ElementType::Float3, PK_VS_NORMAL },
-                { ElementType::Float4, PK_VS_TANGENT },
-                { ElementType::Float2, PK_VS_TEXCOORD0 },
-            },
-            2000000, BufferUsage::SparseVertex, "StaticSceneMesh.VertexAttributes");
+                { ElementType::Float3, PK_VS_NORMAL, 0 },
+                { ElementType::Float4, PK_VS_TANGENT, 0 },
+                { ElementType::Float2, PK_VS_TEXCOORD0, 0 },
+                { ElementType::Float3, PK_VS_POSITION, 1 },
+            });
 
-        m_indexBuffer = Buffer::Create(ElementType::Uint, 2000000, BufferUsage::SparseIndex | BufferUsage::Storage, "StaticSceneMesh.IndexBuffer");
-
-        m_submeshBuffer = Buffer::Create(
-            {
-                { ElementType::Uint4, "PACKED0" },
-                { ElementType::Uint4, "PACKED1" },
-            },
-            maxSubmeshes, flags, "Meshlet.SubmeshBuffer");
-
-        m_meshletBuffer = Buffer::Create(
-            {
-                { ElementType::Uint4, "PACKED0" },
-                { ElementType::Uint4, "PACKED1" },
-            },
-            maxMeshlets, flags, "Meshlet.MeshletBuffer");
-
-        m_meshletVertexBuffer = Buffer::Create(ElementType::Uint4, maxVertices, flags, "Meshlet.VertexBuffer");
-        m_meshletIndexBuffer = Buffer::Create(ElementType::Uint, (maxTriangles * 3ull) / 4ull, flags, "Meshlet.IndexBuffer");
+        m_positionsBuffer = Buffer::Create(m_streamLayout.GetStride(1u) * 2000000, BufferUsage::SparseVertex | BufferUsage::Storage, "StaticSceneMesh.VertexPositions");
+        m_attributesBuffer = Buffer::Create(m_streamLayout.GetStride(0u) * 2000000, BufferUsage::SparseVertex, "StaticSceneMesh.VertexAttributes");
+        m_indexBuffer = Buffer::Create(ElementConvert::Size(m_indexType) * 2000000, BufferUsage::SparseIndex | BufferUsage::Storage, "StaticSceneMesh.IndexBuffer");
+        m_submeshBuffer = Buffer::Create<PK::Assets::Mesh::Meshlet::PKSubmesh>(maxSubmeshes, flags, "Meshlet.SubmeshBuffer");
+        m_meshletBuffer = Buffer::Create<PK::Assets::Mesh::Meshlet::PKMeshlet>(maxMeshlets, flags, "Meshlet.MeshletBuffer");
+        m_meshletVertexBuffer = Buffer::Create<uint4>(maxVertices, flags, "Meshlet.VertexBuffer");
+        m_meshletIndexBuffer = Buffer::Create<uint32_t>((maxTriangles * 3ull) / 4ull, flags, "Meshlet.IndexBuffer");
     }
 
     StaticMesh* StaticSceneMesh::Allocate(StaticMeshAllocationData* data)
     {
-        PK_LOG_VERBOSE("StaticSceneMesh.Allocate: sm:%u, ml:%u, mlvc:%u, mltc:%u, vc:%u, tc:%u", 
-            data->meshlet.submeshCount, 
+        PK_LOG_VERBOSE("StaticSceneMesh.Allocate: sm:%u, ml:%u, mlvc:%u, mltc:%u, vc:%u, tc:%u",
+            data->meshlet.submeshCount,
             data->meshlet.meshletCount,
             data->meshlet.vertexCount,
             data->meshlet.triangleCount,
             data->regular.vertexCount,
             data->regular.indexCount);
         PK_LOG_SCOPE_INDENT(meshlet);
-        
+
         PK_THROW_ASSERT(data->meshlet.submeshCount == data->regular.submeshCount, "Submesh count missmatch");
-        
+
         auto staticMesh = m_staticMeshes.New();
         staticMesh->baseMesh = this;
 
@@ -79,9 +68,9 @@ namespace PK::Rendering::Objects
         auto submeshStride = sizeof(PK::Assets::Mesh::Meshlet::PKSubmesh);
         auto meshletStride = sizeof(PK::Assets::Mesh::Meshlet::PKMeshlet);
         auto meshletVertexStride = sizeof(PK::Assets::Mesh::Meshlet::PKVertex);
-        auto positionsStride = m_positionsBuffer->GetLayout().GetStride();
-        auto attributesStride = m_attributesBuffer->GetLayout().GetStride();
-        auto indexStride = m_indexBuffer->GetLayout().GetStride();
+        auto positionsStride = m_streamLayout.GetStride(1u);
+        auto attributesStride = m_streamLayout.GetStride(0u);
+        auto indexStride = GetElementSize(m_indexType);
 
         auto submeshesSize = data->meshlet.submeshCount * submeshStride;
         auto meshletsSize = data->meshlet.meshletCount * meshletStride;
@@ -119,8 +108,7 @@ namespace PK::Rendering::Objects
         staticMesh->vertexCount = (uint32_t)(positionsSize / positionsStride);
         staticMesh->indexFirst = (uint32_t)(indexOffset / indexStride);
         staticMesh->indexCount = (uint32_t)(indicesSize / indexStride);
-        
-        staticMesh->nameHashId = data->nameHashId;
+        staticMesh->name = data->name;
 
         for (auto i = 0u; i < staticMesh->submeshCount; ++i)
         {
@@ -134,9 +122,7 @@ namespace PK::Rendering::Objects
             submesh->indexFirst = data->regular.pSubmeshes[i].indexFirst + staticMesh->indexFirst;
             submesh->indexCount = data->regular.pSubmeshes[i].indexCount;
             submesh->bounds = data->regular.pSubmeshes[i].bounds;
-
-            auto name = StringHashID::IDToString(data->nameHashId) + std::string(".Submesh") + std::to_string(i);
-            submesh->nameHashId = StringHashID::StringToID(name.c_str());
+            submesh->name = data->name.to_string() + std::string(".Submesh") + std::to_string(i);
         }
 
         for (auto i = 0u; i < staticMesh->meshletCount; ++i)
@@ -150,7 +136,7 @@ namespace PK::Rendering::Objects
         commandBuffer->UploadBufferSubData(m_meshletBuffer.get(), data->meshlet.pMeshlets, meshletOffset, meshletsSize);
         commandBuffer->UploadBufferSubData(m_meshletVertexBuffer.get(), data->meshlet.pVertices, meshletVertexOffset, meshletVerticesSize);
         commandBuffer->UploadBufferSubData(m_meshletIndexBuffer.get(), data->meshlet.pIndices, meshletIndexOffset, meshletIndicesSize);
-        
+
         // Rewrite indices if using a different index format
         if (ElementConvert::Size(data->regular.indexType) == 2 && indexStride == 4u)
         {
@@ -162,9 +148,9 @@ namespace PK::Rendering::Objects
         {
             commandBuffer->UploadBufferSubData(m_indexBuffer.get(), data->regular.pIndices, indexOffset, indicesSize);
         }
-            
+
         // Align vertices into split layout if necessary
-        AlignVertices((char*)data->regular.pVertices, data->regular.vertexCount, data->regular.vertexLayout);
+        Geometry::AlignVertexStreams((char*)data->regular.pVertices, data->regular.vertexCount, data->regular.streamLayout, m_streamLayout);
 
         commandBuffer->UploadBufferSubData(m_attributesBuffer.get(), (char*)data->regular.pVertices, attributesOffset, attributesSize);
         commandBuffer->UploadBufferSubData(m_positionsBuffer.get(), (char*)data->regular.pVertices + attributesSize, positionsOffset, positionsSize);
@@ -179,9 +165,9 @@ namespace PK::Rendering::Objects
         auto submeshStride = sizeof(PK::Assets::Mesh::Meshlet::PKSubmesh);
         auto meshletStride = sizeof(PK::Assets::Mesh::Meshlet::PKMeshlet);
         auto meshletVertexStride = sizeof(PK::Assets::Mesh::Meshlet::PKVertex);
-        auto positionsStride = m_positionsBuffer->GetLayout().GetStride();
-        auto attributesStride = m_attributesBuffer->GetLayout().GetStride();
-        auto indexStride = m_indexBuffer->GetLayout().GetStride();
+        auto positionsStride = m_streamLayout.GetStride(1u);
+        auto attributesStride = m_streamLayout.GetStride(0u);
+        auto indexStride = GetElementSize(m_indexType);
 
         auto submeshOffset = mesh->submeshFirst * submeshStride;
         auto meshletOffset = mesh->meshletFirst * meshletStride;
@@ -228,87 +214,28 @@ namespace PK::Rendering::Objects
         if (!HasPendingUpload())
         {
             const auto& sm = GetSubmesh(globalSubmeshIndex);
+            outInfo->name = sm->name;
             outInfo->vertexBuffer = m_positionsBuffer.get();
             outInfo->indexBuffer = m_indexBuffer.get();
             outInfo->vertexOffset = 0u;
-            outInfo->firstVertex = sm->vertexFirst;
+            outInfo->vertexStride = m_streamLayout.GetStride(1u);
+            outInfo->vertexFirst = sm->vertexFirst;
             outInfo->vertexCount = sm->vertexCount;
-            outInfo->firstIndex = sm->indexFirst;
+            outInfo->indexStride = GetElementSize(m_indexType);
+            outInfo->indexFirst = sm->indexFirst;
             outInfo->indexCount = sm->indexCount;
             outInfo->customIndex = 0u;
-            outInfo->nameHashId = sm->nameHashId; 
             return true;
         }
 
         return false;
     }
 
-    void StaticSceneMesh::AlignVertices(char* vertices, size_t vcount, const RHI::BufferLayout& layout)
-    {
-        auto stride = layout.GetStride();
-        auto fullStride = 0ull;
-        auto needsAlignment = false;
-        auto streamIndex = 0u;
-
-        auto vertexBuffers = { m_attributesBuffer.get(), m_positionsBuffer.get() };
-
-        for (auto& vertexBuffer : vertexBuffers)
-        {
-            const auto& targetLayout = vertexBuffer->GetLayout();
-
-            for (auto& element : targetLayout)
-            {
-                uint32_t elementIndex = 0u;
-                auto other = layout.TryGetElement(element.NameHashId, &elementIndex);
-                PK_THROW_ASSERT(other, "Required element not present in source layout!");
-                PK_THROW_ASSERT(other->Type == element.Type, "Element type missmatch!");
-                needsAlignment |= other->Location != streamIndex || other->Offset != element.Offset;
-            }
-
-            fullStride += targetLayout.GetStride();
-            ++streamIndex;
-        }
-
-        PK_THROW_ASSERT(fullStride == stride, "Layout stride missmatch!");
-
-        if (!needsAlignment)
-        {
-            return;
-        }
-
-        auto buffer = (char*)calloc(vcount, stride);
-        auto subBuffer = buffer;
-
-        for (auto& vertexBuffer : vertexBuffers)
-        {
-            const auto& targetLayout = vertexBuffer->GetLayout();
-            auto targetStride = targetLayout.GetStride();
-
-            for (auto& targetElement : targetLayout)
-            {
-                uint32_t elementIndex = 0u;
-                auto element = layout.TryGetElement(targetElement.NameHashId, &elementIndex);
-                auto srcOffset = element->Offset;
-                auto size = targetElement.Size();
-
-                for (auto i = 0u; i < vcount; ++i)
-                {
-                    memcpy(subBuffer + targetStride * i + targetElement.Offset, vertices + stride * i + srcOffset, size);
-                }
-            }
-
-            subBuffer += targetStride * vcount;
-        }
-
-        memcpy(vertices, buffer, vcount * stride);
-        free(buffer);
-    }
-
     const StaticSubMesh* StaticMesh::GetSubmesh(uint32_t localIndex) const
     {
         return baseMesh->GetSubmesh(GetGlobalSubmeshIndex(localIndex));
     }
-   
+
     bool StaticMesh::TryGetAccelerationStructureGeometryInfo(uint32_t localIndex, RHI::Objects::AccelerationStructureGeometryInfo* outInfo) const
     {
         return baseMesh->TryGetAccelerationStructureGeometryInfo(GetGlobalSubmeshIndex(localIndex), outInfo);

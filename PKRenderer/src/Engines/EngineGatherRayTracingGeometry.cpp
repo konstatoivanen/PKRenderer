@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Math/FunctionsIntersect.h"
+#include "Core/CLI/Log.h"
 #include "ECS/EntityViewScenePrimitive.h"
 #include "ECS/EntityViewStaticMesh.h"
 #include "Rendering/RequestRayTracingGeometry.h"

@@ -64,7 +64,7 @@ void main()
     const int2 raycoord = int2(gl_LaunchIDEXT.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy);
     const float depth = PK_GI_SAMPLE_DEPTH(coord);
-    
+
     GIRayHits hits;
 
     if (Test_DepthFar(depth))
@@ -72,28 +72,28 @@ void main()
         const float4 normalRoughness = SampleWorldNormalRoughness(coord);
 
         GI_LOAD_RAY_PARAMS(coord, raycoord, depth, normalRoughness.xyz, normalRoughness.w)
-        
-        #if PK_GI_APPROX_ROUGH_SPEC == 1
-        if (normalRoughness.w >= PK_GI_MAX_ROUGH_SPEC)
-        {
-            hits.spec.dist = 1e+38f;
-            hits.spec.isMiss = true;
-            hits.spec.isScreen = false;
-        }
-        else
-        #endif
-        {
-            hits.spec.isScreen = TraceRay_ScreenSpace(coord, origin, directionSpec, hits.spec.dist);
-            hits.spec.isMiss = !hits.spec.isScreen;
-            
-            [[branch]]
-            if (hits.spec.isMiss)
+
+#if PK_GI_APPROX_ROUGH_SPEC == 1
+            if (normalRoughness.w >= PK_GI_MAX_ROUGH_SPEC)
             {
-                traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, directionSpec, PK_GI_RAY_TMAX, 0);
-                hits.spec.isMiss = payload.HIT_DISTANCE == 0xFFFFFFFFu;
-                hits.spec.dist = uintBitsToFloat(payload.HIT_DISTANCE);
+                hits.spec.dist = 1e+38f;
+                hits.spec.isMiss = true;
+                hits.spec.isScreen = false;
             }
-        }
+            else
+#endif
+            {
+                hits.spec.isScreen = TraceRay_ScreenSpace(coord, origin, directionSpec, hits.spec.dist);
+                hits.spec.isMiss = !hits.spec.isScreen;
+
+                [[branch]]
+                if (hits.spec.isMiss)
+                {
+                    traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, directionSpec, PK_GI_RAY_TMAX, 0);
+                    hits.spec.isMiss = payload.HIT_DISTANCE == 0xFFFFFFFFu;
+                    hits.spec.dist = uintBitsToFloat(payload.HIT_DISTANCE);
+                }
+            }
 
         {
             hits.diff.isScreen = TraceRay_ScreenSpace(coord, origin, directionDiff, hits.diff.dist);
@@ -109,12 +109,12 @@ void main()
         }
 
         {
-            #if PK_GI_APPROX_ROUGH_SPEC == 1
+#if PK_GI_APPROX_ROUGH_SPEC == 1
             if (normalRoughness.w < PK_GI_MAX_ROUGH_SPEC)
-            #endif
+#endif
             {
                 hits.spec.dist = hits.spec.isMiss ? uint16BitsToHalf(0x7C00us) : hits.spec.dist;
-                
+
                 [[branch]]
                 if (!hits.spec.isScreen)
                 {
@@ -139,7 +139,7 @@ void main()
 #pragma PROGRAM_RAY_MISS
 PK_DECLARE_RT_PAYLOAD_IN(uint2, payload, 0);
 
-void main() 
+void main()
 {
     payload.HIT_NORMAL = EncodeOctaUV(-gl_WorldRayDirectionEXT);
     payload.HIT_DISTANCE = 0xFFFFFFFFu;

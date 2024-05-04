@@ -1,11 +1,10 @@
 #include "PrecompiledHeader.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
 #include "VulkanFrameBufferCache.h"
 
 namespace PK::Rendering::RHI::Vulkan::Services
 {
-    VulkanFrameBufferCache::VulkanFrameBufferCache(VkDevice device, uint64_t pruneDelay) : 
-        m_device(device), 
+    VulkanFrameBufferCache::VulkanFrameBufferCache(VkDevice device, uint64_t pruneDelay) :
+        m_device(device),
         m_pruneDelay(pruneDelay),
         m_frameBuffers(512),
         m_renderPasses(512)
@@ -28,7 +27,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         if (!m_frameBuffers.AddKey(key, &index))
         {
-            value = m_frameBuffers.GetValueAtRef(index);
+            value = &m_frameBuffers.GetValueAt(index);
             value->pruneTick = nextPruneTick;
             return value->frameBuffer;
         }
@@ -65,7 +64,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
         info.height = key.extent.height;
         info.layers = key.layers;
 
-        value = m_frameBuffers.GetValueAtRef(index);
+        value = &m_frameBuffers.GetValueAt(index);
         value->frameBuffer = m_frameBufferPool.New(m_device, info);
         value->pruneTick = nextPruneTick;
         m_renderPassReferenceCounts[key.renderPass]++;
@@ -80,7 +79,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         if (!m_renderPasses.AddKey(key, &index))
         {
-            value = m_renderPasses.GetValueAtRef(index);
+            value = &m_renderPasses.GetValueAt(index);
             value->pruneTick = nextPruneTick;
             return value->renderPass;
         }
@@ -197,7 +196,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         renderPassInfo.attachmentCount = attachmentIndex;
 
-        value = m_renderPasses.GetValueAtRef(index);
+        value = &m_renderPasses.GetValueAt(index);
         value->renderPass = m_renderPassPool.New(m_device, renderPassInfo);
         value->pruneTick = nextPruneTick;
         return value->renderPass;
@@ -209,7 +208,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         for (int32_t i = m_frameBuffers.GetCount() - 1; i >= 0; --i)
         {
-            auto value = m_frameBuffers.GetValueAtRef(i);
+            auto value = &m_frameBuffers.GetValueAt(i);
 
             if (value->pruneTick < m_currentPruneTick)
             {
@@ -221,7 +220,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         for (int32_t i = m_renderPasses.GetCount() - 1; i >= 0; --i)
         {
-            auto value = m_renderPasses.GetValueAtRef(i);
+            auto value = &m_renderPasses.GetValueAt(i);
 
             if (value->pruneTick < m_currentPruneTick && m_renderPassReferenceCounts[value->renderPass->renderPass] == 0u)
             {

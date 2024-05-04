@@ -14,7 +14,6 @@ namespace PK::Rendering::Passes
     using namespace PK::Utilities;
     using namespace PK::Core;
     using namespace PK::Core::Assets;
-    using namespace PK::Core::Services;
     using namespace PK::Rendering::Objects;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
@@ -66,7 +65,7 @@ namespace PK::Rendering::Passes
                 {ElementType::Float, hash->pk_TAA_MotionAmplification },
 
                 {ElementType::Uint, hash->pk_PostEffectsFeatureMask}
-            }), 
+            }),
             "Constants.PostProcess");
 
         GraphicsAPI::SetBuffer(hash->pk_PostEffectsParams, *m_constantsPostProcess.get());
@@ -145,7 +144,7 @@ namespace PK::Rendering::Passes
         featureMask |= (uint)(config->PostFXApplyFilmgrain) << 3;
         featureMask |= (uint)(config->PostFXApplyColorgrading) << 4;
         featureMask |= (uint)(config->PostFXApplyLUTColorGrading) << 5;
-        
+
         featureMask |= (uint)(config->PostFXDebugGIDiff) << 6;
         featureMask |= (uint)(config->PostFXDebugGISpec) << 7;
         featureMask |= (uint)(config->PostFXDebugGIVX) << 8;

@@ -16,11 +16,11 @@ void main()
     const float2 tx_dst = 1.0f.xx / imageSize(pk_Image).xy;
     const float2 tx_src = 1.0f.xx / textureSize(pk_Texture, 0).xy;
     const float2 uv = float2(coord + 0.5f.xx) * tx_dst;
-    
+
     float4 color = 0.0f.xxxx;
 
 #if defined(PASS_DOWNSAMPLE0)
-    
+
     const float4 uvs = uv.xyxy + float4(0.5f.xx, -0.5f.xx) * tx_dst.xyxy;
 
     // Karis filter first mip
@@ -38,23 +38,23 @@ void main()
 
 #elif defined(PASS_DOWNSAMPLE1)
 
-    color.rgb += texture(pk_Texture, uv + float2( 2, -2) * tx_src).rgb * 0.125f;
+    color.rgb += texture(pk_Texture, uv + float2(2, -2) * tx_src).rgb * 0.125f;
     color.rgb += texture(pk_Texture, uv + float2(-2, -2) * tx_src).rgb * 0.125f;
-    color.rgb += texture(pk_Texture, uv + float2( 0, -2) * tx_src).rgb * 0.25f;
-                                                       
-    color.rgb += texture(pk_Texture, uv + float2(-1, -1) * tx_src).rgb * 0.5f;
-    color.rgb += texture(pk_Texture, uv + float2( 1, -1) * tx_src).rgb * 0.5f;
+    color.rgb += texture(pk_Texture, uv + float2(0, -2) * tx_src).rgb * 0.25f;
 
-    color.rgb += texture(pk_Texture, uv + float2(-2,  0) * tx_src).rgb * 0.25f;
-    color.rgb += texture(pk_Texture, uv + float2( 0,  0) * tx_src).rgb * 0.5f;
-    color.rgb += texture(pk_Texture, uv + float2( 2,  0) * tx_src).rgb * 0.25f;
-                                                      
-    color.rgb += texture(pk_Texture, uv + float2(-1,  1) * tx_src).rgb * 0.5f;
-    color.rgb += texture(pk_Texture, uv + float2( 1,  1) * tx_src).rgb * 0.5f;
-                                                      
-    color.rgb += texture(pk_Texture, uv + float2(-1,  2) * tx_src).rgb * 0.125f;
-    color.rgb += texture(pk_Texture, uv + float2( 0,  2) * tx_src).rgb * 0.25f;
-    color.rgb += texture(pk_Texture, uv + float2( 2,  2) * tx_src).rgb * 0.125f;
+    color.rgb += texture(pk_Texture, uv + float2(-1, -1) * tx_src).rgb * 0.5f;
+    color.rgb += texture(pk_Texture, uv + float2(1, -1) * tx_src).rgb * 0.5f;
+
+    color.rgb += texture(pk_Texture, uv + float2(-2, 0) * tx_src).rgb * 0.25f;
+    color.rgb += texture(pk_Texture, uv + float2(0, 0) * tx_src).rgb * 0.5f;
+    color.rgb += texture(pk_Texture, uv + float2(2, 0) * tx_src).rgb * 0.25f;
+
+    color.rgb += texture(pk_Texture, uv + float2(-1, 1) * tx_src).rgb * 0.5f;
+    color.rgb += texture(pk_Texture, uv + float2(1, 1) * tx_src).rgb * 0.5f;
+
+    color.rgb += texture(pk_Texture, uv + float2(-1, 2) * tx_src).rgb * 0.125f;
+    color.rgb += texture(pk_Texture, uv + float2(0, 2) * tx_src).rgb * 0.25f;
+    color.rgb += texture(pk_Texture, uv + float2(2, 2) * tx_src).rgb * 0.125f;
 
     color.rgb *= 0.25f;
 

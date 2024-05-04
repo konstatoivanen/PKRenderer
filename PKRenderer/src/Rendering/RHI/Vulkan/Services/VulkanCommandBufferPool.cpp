@@ -1,7 +1,6 @@
 #include "PrecompiledHeader.h"
-#include "VulkanCommandBufferPool.h"
 #include "Core/CLI/Log.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanUtilities.h"
+#include "VulkanCommandBufferPool.h"
 
 namespace PK::Rendering::RHI::Vulkan::Services
 {

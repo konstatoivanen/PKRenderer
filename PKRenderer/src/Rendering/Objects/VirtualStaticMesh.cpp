@@ -3,7 +3,7 @@
 #include <PKAssets/PKAssetLoader.h>
 #include "Math/FunctionsIntersect.h"
 #include "Math/FunctionsMisc.h"
-#include "Core/Services/StringHashID.h"
+#include "Core/CLI/Log.h"
 #include "Rendering/Objects/StaticSceneMesh.h"
 #include "VirtualStaticMesh.h"
 
@@ -11,7 +11,6 @@ namespace PK::Rendering::Objects
 {
     using namespace PK::Math;
     using namespace PK::Core;
-    using namespace PK::Core::Services;
     using namespace PK::Utilities;
     using namespace PK::Rendering;
     using namespace PK::Rendering::Objects;
@@ -29,7 +28,7 @@ namespace PK::Rendering::Objects
         PK_THROW_ASSERT(PK::Assets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
         PK_THROW_ASSERT(asset.header->type == PK::Assets::PKAssetType::Mesh, "Trying to read a mesh from a non mesh file!")
 
-        auto mesh = PK::Assets::ReadAsMesh(&asset);
+            auto mesh = PK::Assets::ReadAsMesh(&asset);
         auto base = asset.rawData;
 
         PK_THROW_ASSERT(mesh->vertexAttributeCount > 0, "Trying to read a mesh with 0 vertex attributes!");
@@ -42,7 +41,6 @@ namespace PK::Rendering::Objects
         auto pIndices = mesh->indexBuffer.Get(base);
         auto pSubmeshes = mesh->submeshes.Get(base);
 
-        std::vector<BufferElement> bufferElements;
         std::vector<StaticMeshAllocationData::SubMesh> submeshes;
         submeshes.reserve(mesh->submeshCount);
 
@@ -52,20 +50,29 @@ namespace PK::Rendering::Objects
             submeshes.push_back({ 0u, mesh->vertexCount, pSubmeshes[i].firstIndex, pSubmeshes[i].indexCount, bounds });
         }
 
+        VertexStreamLayout streamLayout;
         for (auto i = 0u; i < mesh->vertexAttributeCount; ++i)
         {
-            bufferElements.emplace_back(pAttributes[i].type, std::string(pAttributes[i].name), (byte)1u, (byte)pAttributes[i].stream, pAttributes[i].offset);
+            auto stream = streamLayout.Add();
+            stream->name = pAttributes[i].name;
+            stream->stream = (byte)pAttributes[i].stream;
+            stream->inputRate = InputRate::PerVertex;
+            stream->stride = 0u;
+            stream->offset = pAttributes[i].offset;
+            stream->size = pAttributes[i].size;
         }
+
+        streamLayout.CalculateOffsetsAndStride();
 
         {
             PK_THROW_ASSERT(baseMesh, "Cannot create a virtual mesh without a base mesh!");
-            
+
             StaticMeshAllocationData alloc{};
-            alloc.nameHashId = StringHashID::StringToID(std::filesystem::path(GetFileName()).stem().string());
+            alloc.name = std::filesystem::path(GetFileName()).stem().string();
 
             alloc.regular.pVertices = pVertices;
             alloc.regular.pIndices = pIndices;
-            alloc.regular.vertexLayout = BufferLayout(bufferElements, false);
+            alloc.regular.streamLayout = streamLayout;
             alloc.regular.pSubmeshes = submeshes.data();
             alloc.regular.indexType = mesh->indexType;
             alloc.regular.vertexCount = mesh->vertexCount;
@@ -89,7 +96,7 @@ namespace PK::Rendering::Objects
     }
 
     const StaticSubMesh* VirtualStaticMesh::GetStaticSubmesh(uint32_t localIndex) const { return m_staticMesh->GetSubmesh(localIndex); }
-    uint32_t VirtualStaticMesh::GetSubmeshCount() const { return m_staticMesh->submeshCount;  }
+    uint32_t VirtualStaticMesh::GetSubmeshCount() const { return m_staticMesh->submeshCount; }
 }
 
 template<>

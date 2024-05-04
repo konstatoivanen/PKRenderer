@@ -12,7 +12,6 @@ namespace PK::Rendering::Passes
     using namespace PK::Math;
     using namespace PK::Utilities;
     using namespace PK::Core;
-    using namespace PK::Core::Services;
     using namespace PK::Core::Assets;
     using namespace PK::Rendering::Objects;
     using namespace PK::Rendering::RHI;

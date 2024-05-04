@@ -238,22 +238,22 @@ namespace PK::Math::Functions
         BoundingBox out(matrix[3].xyz, matrix[3].xyz);
 
         for (auto i = 0u; i < 3u; ++i)
-        for (auto j = 0u; j < 3u; ++j)
-        {
-            auto a = matrix[j][i] * bounds.min[j];
-            auto b = matrix[j][i] * bounds.max[j];
+            for (auto j = 0u; j < 3u; ++j)
+            {
+                auto a = matrix[j][i] * bounds.min[j];
+                auto b = matrix[j][i] * bounds.max[j];
 
-            if (a < b)
-            {
-                out.min[i] += a;
-                out.max[i] += b;
+                if (a < b)
+                {
+                    out.min[i] += a;
+                    out.max[i] += b;
+                }
+                else
+                {
+                    out.min[i] += b;
+                    out.max[i] += a;
+                }
             }
-            else
-            {
-                out.min[i] += b;
-                out.max[i] += a;
-            }
-        }
 
         return out;
     }
@@ -262,13 +262,13 @@ namespace PK::Math::Functions
     {
         float4 positions[8];
         positions[0] = inverseMatrix * float4(-1, -1, PK_CLIPZ_NEAR, 1);
-        positions[1] = inverseMatrix * float4(-1,  1, PK_CLIPZ_NEAR, 1);
-        positions[2] = inverseMatrix * float4( 1,  1, PK_CLIPZ_NEAR, 1);
-        positions[3] = inverseMatrix * float4( 1, -1, PK_CLIPZ_NEAR, 1);
+        positions[1] = inverseMatrix * float4(-1, 1, PK_CLIPZ_NEAR, 1);
+        positions[2] = inverseMatrix * float4(1, 1, PK_CLIPZ_NEAR, 1);
+        positions[3] = inverseMatrix * float4(1, -1, PK_CLIPZ_NEAR, 1);
         positions[4] = inverseMatrix * float4(-1, -1, PK_CLIPZ_FAR, 1);
-        positions[5] = inverseMatrix * float4(-1,  1, PK_CLIPZ_FAR, 1);
-        positions[6] = inverseMatrix * float4( 1,  1, PK_CLIPZ_FAR, 1);
-        positions[7] = inverseMatrix * float4( 1, -1, PK_CLIPZ_FAR, 1);
+        positions[5] = inverseMatrix * float4(-1, 1, PK_CLIPZ_FAR, 1);
+        positions[6] = inverseMatrix * float4(1, 1, PK_CLIPZ_FAR, 1);
+        positions[7] = inverseMatrix * float4(1, -1, PK_CLIPZ_FAR, 1);
         float3 min = { std::numeric_limits<float>().max(), std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
         float3 max = { -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };
 
@@ -286,13 +286,13 @@ namespace PK::Math::Functions
     {
         float4 positions[8];
         positions[0] = inverseMatrix * float4(-1, -1, PK_CLIPZ_NEAR, 1);
-        positions[1] = inverseMatrix * float4(-1,  1, PK_CLIPZ_NEAR, 1);
-        positions[2] = inverseMatrix * float4( 1,  1, PK_CLIPZ_NEAR, 1);
-        positions[3] = inverseMatrix * float4( 1, -1, PK_CLIPZ_NEAR, 1);
+        positions[1] = inverseMatrix * float4(-1, 1, PK_CLIPZ_NEAR, 1);
+        positions[2] = inverseMatrix * float4(1, 1, PK_CLIPZ_NEAR, 1);
+        positions[3] = inverseMatrix * float4(1, -1, PK_CLIPZ_NEAR, 1);
         positions[4] = inverseMatrix * float4(-1, -1, PK_CLIPZ_FAR, 1);
-        positions[5] = inverseMatrix * float4(-1,  1, PK_CLIPZ_FAR, 1);
-        positions[6] = inverseMatrix * float4( 1,  1, PK_CLIPZ_FAR, 1);
-        positions[7] = inverseMatrix * float4( 1, -1, PK_CLIPZ_FAR, 1);
+        positions[5] = inverseMatrix * float4(-1, 1, PK_CLIPZ_FAR, 1);
+        positions[6] = inverseMatrix * float4(1, 1, PK_CLIPZ_FAR, 1);
+        positions[7] = inverseMatrix * float4(1, -1, PK_CLIPZ_FAR, 1);
 
         for (auto i = 0; i < 4; ++i)
         {
@@ -322,13 +322,13 @@ namespace PK::Math::Functions
     {
         float4 positions[8];
         positions[0] = float4(-1, -1, PK_CLIPZ_NEAR, 1);
-        positions[1] = float4(-1,  1, PK_CLIPZ_NEAR, 1);
-        positions[2] = float4( 1,  1, PK_CLIPZ_NEAR, 1);
-        positions[3] = float4( 1, -1, PK_CLIPZ_NEAR, 1);
+        positions[1] = float4(-1, 1, PK_CLIPZ_NEAR, 1);
+        positions[2] = float4(1, 1, PK_CLIPZ_NEAR, 1);
+        positions[3] = float4(1, -1, PK_CLIPZ_NEAR, 1);
         positions[4] = float4(-1, -1, PK_CLIPZ_FAR, 1);
-        positions[5] = float4(-1,  1, PK_CLIPZ_FAR, 1);
-        positions[6] = float4( 1,  1, PK_CLIPZ_FAR, 1);
-        positions[7] = float4( 1, -1, PK_CLIPZ_FAR, 1);
+        positions[5] = float4(-1, 1, PK_CLIPZ_FAR, 1);
+        positions[6] = float4(1, 1, PK_CLIPZ_FAR, 1);
+        positions[7] = float4(1, -1, PK_CLIPZ_FAR, 1);
 
         float3 min = { std::numeric_limits<float>().max(), std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
         float3 max = { -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };

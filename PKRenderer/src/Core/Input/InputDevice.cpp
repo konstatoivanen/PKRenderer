@@ -20,7 +20,7 @@ namespace PK::Core::Input
     {
         return { GetAxis(xneg, xpos), GetAxis(yneg, ypos), GetAxis(zneg, zpos) };
     }
-    
+
     float InputDevice::GetAxisDown(InputKey xneg, InputKey xpos) const
     {
         return GetKeyDown(xpos) ? 1.0f : GetKeyDown(xneg) ? -1.0f : 0.0f;

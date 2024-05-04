@@ -1,164 +1,141 @@
 #pragma once
 #include "Utilities/NoCopy.h"
+#include "Utilities/FastMap.h"
 
 namespace PK::Utilities
 {
-    class PropertyBlock : public Utilities::NoCopy
+    class PropertyBlock : public NoCopy
     {
-		protected:
-			struct PropertyInfo
-			{
-				uint32_t offset = 0;
-				uint32_t size = 0;
-			};
+        protected:
+            struct PropertyKey
+            {
+                const type_info* typeInfo;
+                uint32_t hashId;
+                inline bool operator == (const PropertyKey& r) const noexcept { return hashId == r.hashId && *typeInfo == *r.typeInfo; }
 
-			template<typename T>
-			const T* GetInternal(const PropertyInfo& info) const
-			{
-				if ((info.offset + (uint64_t)info.size) > m_capacity)
-				{
-					throw std::invalid_argument("Out of bounds array index!");
-				}
+                template<typename T>
+                inline static PropertyKey Make(uint32_t hashId) { return { &typeid(T), hashId }; }
+            };
 
-				return reinterpret_cast<const T*>(reinterpret_cast<char*>(m_buffer) + info.offset);
-			}
+            struct PropertyInfo
+            {
+                uint32_t offset = 0;
+                uint32_t size = 0;
+            };
 
-			template<typename T>
-			inline std::unordered_map<uint32_t, PropertyInfo>& GetGroupInternal() { return m_properties[std::type_index(typeid(T))]; }
-		
-			template<typename T>
-			bool SetInternal(uint32_t hashId, const T* src, uint32_t count)
-			{
-				if (count > 0u)
-				{
-					auto wsize = (uint16_t)(sizeof(T) * count);
-					auto& group = GetGroupInternal<T>();
-					auto& info = group[hashId];
+            struct PropertyKeyHash
+            {
+                std::size_t operator()(const PropertyKey& k) const noexcept
+                {
+                    return k.typeInfo->hash_code() ^ k.hashId;
+                }
+            };
 
-					if (info.size == 0)
-					{
-						if (m_explicitLayout)
-						{
-							return false;
-						}
+            template<typename T>
+            const T* GetInternal(const PropertyInfo& info) const
+            {
+                if ((info.offset + (uint64_t)info.size) > m_capacity)
+                {
+                    throw std::invalid_argument("Out of bounds array index!");
+                }
 
-						ValidateBufferSize(m_head + wsize);
-						info = { (uint32_t)m_head, wsize };
-						m_head += wsize;
-					}
+                return reinterpret_cast<const T*>(reinterpret_cast<char*>(m_buffer) + info.offset);
+            }
 
-					return TryWriteValue(src, info, wsize);
-				}
+            template<typename T>
+            uint32_t ReserveInternal(uint32_t hashId, uint32_t count)
+            {
+                if (count > 0 && !m_fixedLayout)
+                {
+                    uint32_t index = 0u;
+                    if (m_propertyInfos.AddKey(PropertyKey::Make<T>(hashId), &index))
+                    {
+                        const auto wsize = (uint32_t)(sizeof(T) * count);
+                        ValidateBufferSize(m_head + wsize);
+                        m_propertyInfos.SetValueAt(index, { (uint32_t)m_head, wsize });
+                        m_head += wsize;
+                    }
 
-				return false;
-			}
+                    return index;
+                }
 
-		public:
-			PropertyBlock(uint64_t initialCapacity);
-			PropertyBlock(void* buffer, uint64_t initialCapacity);
-			~PropertyBlock();
+                return ~0u;
+            }
 
-			void CopyFrom(PropertyBlock& from);
-			virtual void Clear();
+            template<typename T>
+            bool SetInternal(uint32_t hashId, const T* src, uint32_t count)
+            {
+                const auto wsize = (uint16_t)(sizeof(T) * count);
+                const auto key = PropertyKey::Make<T>(hashId);
+                const auto index = m_fixedLayout ? (uint32_t)m_propertyInfos.GetIndex(key) : ReserveInternal<T>(hashId, count);
+                return TryWriteValue(src, index, wsize);
+            }
 
-			template<typename T>
-			const T* Get(const uint32_t hashId) const 
-			{
-				auto group = m_properties.find(std::type_index(typeid(T)));
+        public:
+            PropertyBlock(uint64_t initialCapacity);
+            PropertyBlock(void* buffer, uint64_t initialCapacity);
+            ~PropertyBlock();
 
-				if (group != m_properties.end())
-				{
-					auto iter = group->second.find(hashId);
-					return iter != group->second.end() ? GetInternal<T>(iter->second) : nullptr;
-				}
+            void CopyFrom(PropertyBlock& from);
+            virtual void Clear();
+        
+            inline void FreezeLayout() { m_fixedLayout = true; }
 
-				return nullptr;
-			}
+            template<typename T>
+            const T* Get(const uint32_t hashId) const 
+            {
+                auto info = m_propertyInfos.GetValueRef(PropertyKey::Make<T>(hashId));
+                return info != nullptr ? GetInternal<T>(*info) : nullptr;
+            }
 
-			template<typename T>
-			const bool TryGet(const uint32_t hashId, const T*& value, uint64_t* size = nullptr) const
-			{
-				auto group = m_properties.find(std::type_index(typeid(T)));
+            template<typename T>
+            const bool TryGet(const uint32_t hashId, T& value) const 
+            {
+                auto ptr = Get<T>(hashId);
+                if (ptr != nullptr) value = *ptr;
+                return ptr != nullptr;
+            }
+        
+            template<typename T>
+            const bool TryGet(const uint32_t hashId, const T*& value, uint64_t* size = nullptr) const
+            {
+                auto info = m_propertyInfos.GetValueRef(PropertyKey::Make<T>(hashId));
 
-				if (group != m_properties.end())
-				{
-					auto iter = group->second.find(hashId);
+                if (info != nullptr)
+                {
+                    if (size != nullptr) *size = (uint64_t)info->size;
+                    value = GetInternal<T>(*info);
+                    return true;
+                }
 
-					if (iter != group->second.end())
-					{
-						if (size != nullptr)
-						{
-							*size = (uint64_t)iter->second.size;
-						}
+                return false;
+            }
 
-						value = GetInternal<T>(iter->second);
-						return true;
-					}
-				}
+            template<typename T>
+            void Set(uint32_t hashId, const T* src, uint32_t count = 1u) { if (!SetInternal(hashId, src, count)) throw std::runtime_error("Could not write property to block!"); }
 
-				return false;
-			}
+            template<typename T>
+            void Set(uint32_t hashId, const T& src) { Set(hashId, &src); }
 
-			template<typename T>
-			const bool TryGet(const uint32_t hashId, T& value) const 
-			{
-				auto ptr = Get<T>(hashId);
-				
-				if (ptr != nullptr)
-				{
-					value = *ptr;
-				}
+            template<typename T>
+            bool TrySet(uint32_t hashId, const T* src, uint32_t count = 1u) { return SetInternal(hashId, src, count); }
+            template<typename T>
 
-				return ptr != nullptr;
-			}
+            bool TrySet(uint32_t hashId, const T& src) { return TrySet(hashId, &src); }
 
-			inline void FreezeLayout() { m_explicitLayout = true; }
-		
-			template<typename T>
-			void Set(uint32_t hashId, const T* src, uint32_t count = 1u) { if (!SetInternal(hashId, src, count)) { throw std::runtime_error("Could not write property to block!"); } }
+            template<typename T>
+            void Reserve(uint32_t hashId, uint32_t count = 1u) { ReserveInternal<T>(hashId, count); }
+    
+        protected:
+            bool TryWriteValue(const void* src, uint32_t index, uint64_t writeSize);
+            void ValidateBufferSize(uint64_t size);
+            void SetExternalBuffer(void* buffer, uint64_t capacity);
 
-			template<typename T>
-			void Set(uint32_t hashId, const T& src) { Set(hashId, &src); }
-			
-			template<typename T>
-			bool TrySet(uint32_t hashId, const T* src, uint32_t count = 1u) { return SetInternal(hashId, src, count); }
-
-			template<typename T>
-			bool TrySet(uint32_t hashId, const T& src) { return TrySet(hashId, &src); }
-
-			template<typename T>
-			void Reserve(uint32_t hashId, uint32_t count = 1u)
-			{
-				if (count > 0u)
-				{
-					auto& group = GetGroupInternal<T>();
-
-					if (group.count(hashId) == 0)
-					{
-						if (m_explicitLayout)
-						{
-							throw std::runtime_error("Cannot add elements to explicitly mapped property block!");
-						}
-						
-						auto wsize = (uint16_t)(sizeof(T) * count);
-
-						ValidateBufferSize(m_head + wsize);
-						group[hashId] = { (uint32_t)m_head, wsize };
-						m_head += wsize;
-					}
-				}
-			}
-	
-		protected:
-			bool TryWriteValue(const void* src, PropertyInfo& info, uint64_t writeSize);
-			void ValidateBufferSize(uint64_t size);
-			void SetForeign(void* buffer, uint64_t capacity);
-
-			bool m_foreignBuffer = false;
-			bool m_explicitLayout = false;
-			void* m_buffer = nullptr;
-			uint64_t m_capacity = 0ull;
-			uint64_t m_head = 0ll;
-			std::unordered_map<std::type_index, std::unordered_map<uint32_t, PropertyInfo>> m_properties;
+            bool m_externalBuffer = false;
+            bool m_fixedLayout = false;
+            void* m_buffer = nullptr;
+            uint64_t m_capacity = 0ull;
+            uint64_t m_head = 0ll;
+            FastMap<PropertyKey, PropertyInfo, PropertyKeyHash> m_propertyInfos;
     };
 }

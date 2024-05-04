@@ -8,6 +8,7 @@
 #include "Rendering/EntityCulling.h"
 #include "Rendering/RHI/Objects/Texture.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
+#include "Rendering/RHI/Window.h"
 #include "Rendering/RHI/GraphicsAPI.h"
 #include "Rendering/Objects/RenderView.h"
 #include "Rendering/IRenderPipeline.h"
@@ -19,7 +20,6 @@ namespace PK::Rendering
     using namespace PK::Utilities;
     using namespace PK::Core;
     using namespace PK::Core::Assets;
-    using namespace PK::Core::Services;
     using namespace PK::Core::ControlFlow;
     using namespace PK::ECS;
     using namespace PK::Rendering;
@@ -77,7 +77,7 @@ namespace PK::Rendering
         auto entityViews = m_entityDb->Query<EntityViewRenderView>((uint32_t)ECS::ENTITY_GROUPS::ACTIVE);
 
         PK_WARNING_ASSERT(entityViews.count < MAX_SCENE_VIEWS, "Active scene view count exceeds predefined maximum (%i)", MAX_SCENE_VIEWS);
-        
+
         auto hash = HashCache::Get();
         auto time = m_timeFrameInfo.time;
         auto deltaTime = m_timeFrameInfo.deltaTime;
@@ -99,7 +99,7 @@ namespace PK::Rendering
             if (pipeline != nullptr)
             {
                 uint4 viewrect = entity.renderView->desiredRect;
-                
+
                 if (entity.renderView->isWindowTarget)
                 {
                     viewrect.z = glm::max(0, (int)glm::min(viewrect.x + viewrect.z, window->GetResolution().x) - (int)viewrect.x);
@@ -109,7 +109,7 @@ namespace PK::Rendering
                 if (viewrect.z > 0 && viewrect.w > 0 && m_renderViewCount < MAX_SCENE_VIEWS)
                 {
                     auto renderView = &m_renderViews[m_renderViewCount++];
-                    
+
                     auto isViewChanged = renderView->viewEntityId != entity.GID.entityID();
 
                     renderView->viewEntityId = entity.GID.entityID();
@@ -162,7 +162,7 @@ namespace PK::Rendering
         {
             if (viewFamilySizes[familyIndex] > 0)
             {
-                EntityCullSequencerProxy cullingProxy(m_sequencer, m_renderPipelines[familyIndex]);
+                auto cullingProxy = EntityCullSequencerProxy(m_sequencer, m_renderPipelines[familyIndex]);
 
                 RenderPipelineContext context;
                 context.sequencer = m_sequencer;
@@ -193,7 +193,7 @@ namespace PK::Rendering
 
     void IRenderPipeline::DispatchRenderPipelineEvent(CommandBuffer* cmd, RenderPipelineContext* context, RenderPipelineEvent::Type type)
     {
-        // @TODO add multiview support
+        // all active views should be of the same type
         auto view = context->views[0];
 
         if (type != RenderPipelineEvent::CollectDraws)

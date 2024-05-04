@@ -1,6 +1,6 @@
 #pragma once
 #include "Rendering/RHI/Objects/Shader.h"
-#include "Rendering/RHI/Vulkan/Utilities/VulkanStructs.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {

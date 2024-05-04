@@ -10,7 +10,6 @@
 using namespace PK::Math;
 using namespace PK::Utilities;
 using namespace PK::Core;
-using namespace PK::Core::Services;
 using namespace PK::Core::Assets;
 using namespace PK::Rendering::Objects;
 using namespace PK::Rendering::RHI;
@@ -18,9 +17,9 @@ using namespace PK::Rendering::RHI::Objects;
 
 namespace PK::Rendering::Objects
 {
-    bool Material::SupportsKeyword(const uint32_t hashId) const { return m_shader->SupportsKeyword(hashId); }
+    bool Material::SupportsKeyword(const NameID keyword) const { return m_shader->SupportsKeyword(keyword); }
 
-    bool Material::SupportsKeywords(const uint32_t* hashIds, const uint32_t count) const { return m_shader->SupportsKeywords(hashIds, count); }
+    bool Material::SupportsKeywords(const NameID* keywords, const uint32_t count) const { return m_shader->SupportsKeywords(keywords, count); }
 
     void Material::CopyTo(char* dst, BindSet<Texture>* textureSet) const
     {
@@ -30,11 +29,11 @@ namespace PK::Rendering::Objects
 
         for (auto& element : layout)
         {
-            switch (element.Type)
+            switch (element.type)
             {
                 case ElementType::Texture2DHandle:
-                    auto texIndex = textureSet->Set(*Get<Texture*>(element.NameHashId));
-                    memcpy(dst + element.AlignedOffset, &texIndex, sizeof(int32_t));
+                    auto texIndex = textureSet->Set(*Get<Texture*>(element.name));
+                    memcpy(dst + element.alignedOffset, &texIndex, sizeof(int32_t));
                     break;
             }
         }
@@ -65,7 +64,7 @@ namespace PK::Rendering::Objects
         {
             for (auto keyword : keywords)
             {
-                Set<bool>(StringHashID::StringToID(keyword.as<std::string>()), true);
+                Set<bool>(NameID(keyword.as<std::string>()), true);
             }
         }
 
@@ -81,28 +80,28 @@ namespace PK::Rendering::Objects
                     continue;
                 }
 
-                auto nameHash = StringHashID::StringToID(propertyName);
+                auto nameId = NameID(propertyName);
                 auto typeName = type.as<std::string>();
                 auto elementType = PK::Assets::GetElementType(typeName.c_str());
                 auto values = property.second["Value"];
 
                 switch (elementType)
                 {
-                    case ElementType::Float: Set(nameHash, values.as<float>()); break;
-                    case ElementType::Float2: Set(nameHash, values.as<float2>()); break;
-                    case ElementType::Float3: Set(nameHash, values.as<float3>()); break;
-                    case ElementType::Float4: Set(nameHash, values.as<float4>()); break;
-                    case ElementType::Float2x2: Set(nameHash, values.as<float2x2>()); break;
-                    case ElementType::Float3x3: Set(nameHash, values.as<float3x3>()); break;
-                    case ElementType::Float4x4: Set(nameHash, values.as<float4x4>()); break;
-                    case ElementType::Float3x4: Set(nameHash, values.as<float3x4>()); break;
-                    case ElementType::Int: Set(nameHash, values.as<int>()); break;
-                    case ElementType::Int2: Set(nameHash, values.as<int2>()); break;
-                    case ElementType::Int3: Set(nameHash, values.as<int3>()); break;
-                    case ElementType::Int4: Set(nameHash, values.as<int4>()); break;
-                    case ElementType::Texture2DHandle: Set(nameHash, values.as<Texture*>()); break;
-                    case ElementType::Texture3DHandle: Set(nameHash, values.as<Texture*>()); break;
-                    case ElementType::TextureCubeHandle: Set(nameHash, values.as<Texture*>()); break;
+                    case ElementType::Float: Set(nameId, values.as<float>()); break;
+                    case ElementType::Float2: Set(nameId, values.as<float2>()); break;
+                    case ElementType::Float3: Set(nameId, values.as<float3>()); break;
+                    case ElementType::Float4: Set(nameId, values.as<float4>()); break;
+                    case ElementType::Float2x2: Set(nameId, values.as<float2x2>()); break;
+                    case ElementType::Float3x3: Set(nameId, values.as<float3x3>()); break;
+                    case ElementType::Float4x4: Set(nameId, values.as<float4x4>()); break;
+                    case ElementType::Float3x4: Set(nameId, values.as<float3x4>()); break;
+                    case ElementType::Int: Set(nameId, values.as<int>()); break;
+                    case ElementType::Int2: Set(nameId, values.as<int2>()); break;
+                    case ElementType::Int3: Set(nameId, values.as<int3>()); break;
+                    case ElementType::Int4: Set(nameId, values.as<int4>()); break;
+                    case ElementType::Texture2DHandle: Set(nameId, values.as<Texture*>()); break;
+                    case ElementType::Texture3DHandle: Set(nameId, values.as<Texture*>()); break;
+                    case ElementType::TextureCubeHandle: Set(nameId, values.as<Texture*>()); break;
                 }
             }
         }
@@ -119,9 +118,9 @@ namespace PK::Rendering::Objects
 
         for (auto& element : m_shader->GetMaterialPropertyLayout())
         {
-            switch (element.Type)
+            switch (element.type)
             {
-                case ElementType::Texture2DHandle: Set(element.NameHashId, builtIns->BlackTexture2D.get()); break;
+                case ElementType::Texture2DHandle: Set(element.name, builtIns->BlackTexture2D.get()); break;
             }
         }
     }
