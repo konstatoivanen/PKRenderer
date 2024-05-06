@@ -139,7 +139,7 @@ namespace PK::Rendering
         const auto viewToClip = Functions::GetPerspectiveJittered(viewToClipNoJitter, jitter);
         const auto clipToView = glm::inverse(viewToClip);
         const auto worldToView = view->worldToView;
-        const auto viewToWorld = glm::inverse(worldToView);
+        const auto viewToWorld = glm::affineInverse(worldToView);
         const auto worldToClip = viewToClip * worldToView;
         const auto worldToClipNoJitter = viewToClipNoJitter * worldToView;
         const auto n = view->znear;

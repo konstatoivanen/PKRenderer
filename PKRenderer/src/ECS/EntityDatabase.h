@@ -43,7 +43,7 @@ namespace PK::ECS
 
     struct EntityViewsCollection
     {
-        std::map<uint32_t, size_t> indices;
+        std::unordered_map<uint32_t, size_t> indices;
         std::vector<uint8_t> buffer;
     };
 
@@ -52,12 +52,19 @@ namespace PK::ECS
         std::type_index type;
         uint32_t group;
 
-        inline bool operator < (const ViewCollectionKey& r) const noexcept
+        inline bool operator == (const ViewCollectionKey& r) const noexcept
         {
-            return (type < r.type) || ((type == r.type) && (group < r.group));
+            return type == r.type && group == r.group;
         }
     };
 
+    struct ViewCollectionKeyHash 
+    {
+        std::size_t operator()(const ViewCollectionKey& k) const
+        {
+            return k.type.hash_code() ^ k.group;
+        }
+    };
 
     class EntityDatabase : public Core::IService
     {
@@ -148,8 +155,9 @@ namespace PK::ECS
         }
 
     private:
-        std::map<ViewCollectionKey, EntityViewsCollection> m_entityViews;
-        std::map<std::type_index, ImplementerContainer> m_implementerBuckets;
+        std::unordered_map<ViewCollectionKey, EntityViewsCollection, ViewCollectionKeyHash> m_entityViews;
+        std::unordered_map<std::type_index, ImplementerContainer> m_implementerBuckets;
         uint32_t m_idCounter = 0;
     };
 }
+

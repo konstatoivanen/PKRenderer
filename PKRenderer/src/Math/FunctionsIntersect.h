@@ -7,6 +7,7 @@ namespace PK::Math::Functions
     FrustumPlanes ExtractFrustrumPlanes(const float4x4& viewToClip, bool normalize);
     float4 GetNearPlane(const float4x4& viewToClip);
     float4 TransformPlane(const float4x4& matrix, const float4& plane);
+    float4 TransformPlane(const float3x4& matrix, const float4& plane);
     float PlaneMaxDistanceToAABB(const float4& plane, const BoundingBox& aabb);
     float PlaneMinDistanceToAABB(const float4& plane, const BoundingBox& aabb);
     float PlaneDistanceToPoint(const float4& plane, const float3& point);
@@ -21,6 +22,7 @@ namespace PK::Math::Functions
     void BoundsSplit(const BoundingBox& bounds, uint32_t axis, BoundingBox* out0, BoundingBox* out1);
     bool BoundsContains(const BoundingBox& bounds, const float3& point);
     BoundingBox BoundsTransform(const float4x4& matrix, const BoundingBox& bounds);
+    BoundingBox BoundsTransform(const float3x4& matrix, const BoundingBox& bounds);
     BoundingBox GetInverseFrustumBounds(const float4x4& inverseMatrix);
     BoundingBox GetInverseFrustumBounds(const float4x4& inverseMatrix, float lznear, float lzfar);
     BoundingBox GetInverseFrustumBounds(const float4x4& worldToLocal, const float4x4& inverseMatrix);

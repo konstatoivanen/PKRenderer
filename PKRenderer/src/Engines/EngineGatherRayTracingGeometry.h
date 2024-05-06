@@ -18,6 +18,5 @@ namespace PK::Engines
 
     private:
         ECS::EntityDatabase* m_entityDb = nullptr;
-        std::vector<ECS::EGID> m_entityViewEgids;
     };
 }

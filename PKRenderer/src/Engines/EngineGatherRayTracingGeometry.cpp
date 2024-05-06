@@ -21,8 +21,9 @@ namespace PK::Engines
     {
         PK_THROW_ASSERT(request != nullptr && request->structure, "Invalid token supplied!");
 
-        m_entityViewEgids.clear();
+        size_t instanceCount = 0u;
 
+        // Testing all view types using the common primitive alias
         auto entityViews = m_entityDb->Query<EntityViewScenePrimitive>((uint32_t)ECS::ENTITY_GROUPS::ACTIVE);
         auto mask = (request->mask | ScenePrimitiveFlags::Mesh | ScenePrimitiveFlags::RayTraceable);
         auto aabb = request->bounds;
@@ -31,26 +32,35 @@ namespace PK::Engines
 
         for (auto i = 0u; i < entityViews.count; ++i)
         {
-            if ((entityViews[i].primitive->flags & mask) == mask && (skipCulling || Functions::IntersectAABB(aabb, entityViews[i].bounds->worldAABB)))
+            auto& view = entityViews[i];
+            view.primitive->isVisibleInRayTracing = (view.primitive->flags & mask) == mask && (skipCulling || Functions::IntersectAABB(aabb, view.bounds->worldAABB));
+
+            if (entityViews[i].primitive->isVisibleInRayTracing)
             {
-                m_entityViewEgids.push_back(entityViews[i].GID);
+                instanceCount++;
             }
         }
 
-        structure->BeginWrite(request->queue, (uint32_t)m_entityViewEgids.size());
+        structure->BeginWrite(request->queue, (uint32_t)instanceCount);
 
         AccelerationStructureGeometryInfo geometry{};
         geometry.customIndex = 0u;
 
-        for (const auto& egid : m_entityViewEgids)
-        {
-            auto entityView = m_entityDb->Query<EntityViewStaticMesh>(egid);
+        // Static scene mesh instances
+        auto staticMeshViews = m_entityDb->Query<EntityViewStaticMesh>((uint32_t)ECS::ENTITY_GROUPS::ACTIVE);
 
-            for (const auto& material : entityView->materials->materials)
+        for (auto i = 0u; i < staticMeshViews.count; ++i)
+        {
+            auto view = staticMeshViews[i];
+
+            if (view.primitive->isVisibleInRayTracing)
             {
-                if (entityView->staticMesh->sharedMesh->TryGetAccelerationStructureGeometryInfo(material.submesh, &geometry))
+                for (const auto& material : view.materials->materials)
                 {
-                    structure->AddInstance(geometry, entityView->transform->localToWorld);
+                    if (view.staticMesh->sharedMesh->TryGetAccelerationStructureGeometryInfo(material.submesh, &geometry))
+                    {
+                        structure->AddInstance(geometry, view.transform->localToWorld);
+                    }
                 }
             }
         }

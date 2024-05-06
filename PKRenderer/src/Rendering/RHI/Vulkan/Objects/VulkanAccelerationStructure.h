@@ -16,7 +16,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         ~VulkanAccelerationStructure();
         
         void BeginWrite(QueueType queue, uint32_t instanceLimit) final;
-        void AddInstance(RHI::Objects::AccelerationStructureGeometryInfo& geometry, const PK::Math::float4x4& matrix) final;
+        void AddInstance(RHI::Objects::AccelerationStructureGeometryInfo& geometry, const PK::Math::float3x4& matrix) final;
         void EndWrite() final;
 
         uint32_t GetInstanceCount() const final { return m_instanceCount; }

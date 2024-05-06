@@ -74,7 +74,7 @@ namespace PK::ECS::Build
         Rendering::Objects::StaticMesh* staticMesh,
         const std::initializer_list<Rendering::Objects::MaterialTarget>& materials)
     {
-        auto view = entityDb->ReserveView(implementer, egid, &EntityViewStaticMesh::materials, &EntityViewStaticMesh::staticMesh, &EntityViewStaticMesh::transform);
+        auto view = entityDb->ReserveView(implementer, egid, &EntityViewStaticMesh::primitive, &EntityViewStaticMesh::materials, &EntityViewStaticMesh::staticMesh, &EntityViewStaticMesh::transform);
         implementer->materials = materials;
         implementer->sharedMesh = staticMesh;
     }

@@ -20,8 +20,8 @@ namespace PK::Engines
         for (auto i = 0; i < views.count; ++i)
         {
             auto view = &views[i];
-            view->transform->localToWorld = view->transform->GetLocalToWorld();
-            view->transform->worldToLocal = glm::inverse(view->transform->localToWorld);
+            view->transform->localToWorld= view->transform->GetLocalToWorld();
+            view->transform->worldToLocal = Functions::GetMatrixTransposeAffineInverse(view->transform->localToWorld);
             view->bounds->worldAABB = Functions::BoundsTransform(view->transform->localToWorld, view->bounds->localAABB);
         }
     }

@@ -18,17 +18,49 @@ namespace PK::Math::Functions
 
         float4x4 m(1.0f);
         m[3].xyz = position;
-        m[0][0] = scale[0] * (1.0f - 2.0f * (qyy + qzz));
-        m[0][1] = scale[0] * (2.0f * (qxy + qwz));
-        m[0][2] = scale[0] * (2.0f * (qxz - qwy));
+        m[0].x = scale[0] * (1.0f - 2.0f * (qyy + qzz));
+        m[0].y = scale[0] * (2.0f * (qxy + qwz));
+        m[0].z = scale[0] * (2.0f * (qxz - qwy));
 
-        m[1][0] = scale[1] * (2.0f * (qxy - qwz));
-        m[1][1] = scale[1] * (1.0f - 2.0f * (qxx + qzz));
-        m[1][2] = scale[1] * (2.0f * (qyz + qwx));
+        m[1].x = scale[1] * (2.0f * (qxy - qwz));
+        m[1].y = scale[1] * (1.0f - 2.0f * (qxx + qzz));
+        m[1].z = scale[1] * (2.0f * (qyz + qwx));
 
-        m[2][0] = scale[2] * (2.0f * (qxz + qwy));
-        m[2][1] = scale[2] * (2.0f * (qyz - qwx));
-        m[2][2] = scale[2] * (1.0f - 2.0f * (qxx + qyy));
+        m[2].x = scale[2] * (2.0f * (qxz + qwy));
+        m[2].y = scale[2] * (2.0f * (qyz - qwx));
+        m[2].z = scale[2] * (1.0f - 2.0f * (qxx + qyy));
+
+        return m;
+    }
+
+    float3x4 GetMatrixTRS3x4(const float3& position, const quaternion& rotation, const float3& scale)
+    {
+        float qxx(rotation.x * rotation.x);
+        float qyy(rotation.y * rotation.y);
+        float qzz(rotation.z * rotation.z);
+        float qxz(rotation.x * rotation.z);
+        float qxy(rotation.x * rotation.y);
+        float qyz(rotation.y * rotation.z);
+        float qwx(rotation.w * rotation.x);
+        float qwy(rotation.w * rotation.y);
+        float qwz(rotation.w * rotation.z);
+
+        float3x4 m(0.0f);
+        m[0].w = position.x;
+        m[1].w = position.y;
+        m[2].w = position.z;
+
+        m[0].x = scale[0] * (1.0f - 2.0f * (qyy + qzz));
+        m[1].x = scale[0] * (2.0f * (qxy + qwz));
+        m[2].x = scale[0] * (2.0f * (qxz - qwy));
+
+        m[0].y = scale[1] * (2.0f * (qxy - qwz));
+        m[1].y = scale[1] * (1.0f - 2.0f * (qxx + qzz));
+        m[2].y = scale[1] * (2.0f * (qyz + qwx));
+
+        m[0].z = scale[2] * (2.0f * (qxz + qwy));
+        m[1].z = scale[2] * (2.0f * (qyz - qwx));
+        m[2].z = scale[2] * (1.0f - 2.0f * (qxx + qyy));
 
         return m;
     }
@@ -40,12 +72,37 @@ namespace PK::Math::Functions
 
     float4x4 GetMatrixInvTRS(const float3& position, const quaternion& rotation, const float3& scale)
     {
-        return glm::inverse(GetMatrixTRS(position, rotation, scale));
+        return glm::affineInverse(GetMatrixTRS(position, rotation, scale));
     }
 
     float4x4 GetMatrixInvTRS(const float3& position, const float3& euler, const float3& scale)
     {
         return GetMatrixInvTRS(position, glm::quat(euler), scale);
+    }
+
+    float4x4 GetMatrixTransposeAffineInverse(const float3x4& matrix)
+    {
+        const float4* m = &matrix[0];
+
+        float invDeterminant = 1.0f / (
+            +m[0].x * (m[1].y * m[2].z - m[1].z * m[2].y)
+           - m[0].y * (m[1].x * m[2].z - m[1].z * m[2].x)
+           + m[0].z * (m[1].x * m[2].y - m[1].y * m[2].x));
+
+        float3x3 inverse;
+        float3* inv = &inverse[0];
+        inv[0].x = +(m[1].y * m[2].z - m[1].z * m[2].y) * invDeterminant;
+        inv[1].x = -(m[0].y * m[2].z - m[0].z * m[2].y) * invDeterminant;
+        inv[2].x = +(m[0].y * m[1].z - m[0].z * m[1].y) * invDeterminant;
+        inv[0].y = -(m[1].x * m[2].z - m[1].z * m[2].x) * invDeterminant;
+        inv[1].y = +(m[0].x * m[2].z - m[0].z * m[2].x) * invDeterminant;
+        inv[2].y = -(m[0].x * m[1].z - m[0].z * m[1].x) * invDeterminant;
+        inv[0].z = +(m[1].x * m[2].y - m[1].y * m[2].x) * invDeterminant;
+        inv[1].z = -(m[0].x * m[2].y - m[0].y * m[2].x) * invDeterminant;
+        inv[2].z = +(m[0].x * m[1].y - m[0].y * m[1].x) * invDeterminant;
+
+        auto offs = float3(m[0].w, m[1].w, m[2].w);
+        return float4x4(float4(inv[0], 0), float4(inv[1], 0), float4(inv[2], 0), float4(-(inverse * offs), 1));
     }
 
     float4x4 GetMatrixTR(const float3& position, const quaternion& rotation)

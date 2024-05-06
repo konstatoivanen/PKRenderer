@@ -11,17 +11,6 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     using namespace PK::Core;
     using namespace PK::Rendering::RHI::Objects;
 
-    static void CopyVkMatrix(VkTransformMatrixKHR& dst, const float4x4& src)
-    {
-        for (auto i = 0; i < 3; ++i)
-        {
-            dst.matrix[i][0] = src[0][i];
-            dst.matrix[i][1] = src[1][i];
-            dst.matrix[i][2] = src[2][i];
-            dst.matrix[i][3] = src[3][i];
-        }
-    }
-
     VulkanAccelerationStructure::VulkanAccelerationStructure(const char* name) :
         m_driver(RHI::Driver::GetNative<VulkanDriver>()),
         m_name(name),
@@ -303,13 +292,13 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         m_writeBuffer = reinterpret_cast<VkAccelerationStructureInstanceKHR*>(m_instanceInputBuffer->BeginMap(m_instanceBufferOffset));
     }
 
-    void VulkanAccelerationStructure::AddInstance(AccelerationStructureGeometryInfo& geometry, const PK::Math::float4x4& matrix)
+    void VulkanAccelerationStructure::AddInstance(AccelerationStructureGeometryInfo& geometry, const PK::Math::float3x4& matrix)
     {
         PK_THROW_ASSERT(m_instanceCount < m_instanceLimit, "Instance limit exceeded!");
 
         VkAccelerationStructureInstanceKHR* instance = m_writeBuffer + m_instanceCount++;
 
-        CopyVkMatrix(instance->transform, matrix);
+        *reinterpret_cast<float4x4*>(instance->transform.matrix) = matrix;
         instance->instanceCustomIndex = 0;
         instance->mask = 0xFF;
         instance->instanceShaderBindingTableRecordOffset = 0;

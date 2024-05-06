@@ -33,7 +33,7 @@ namespace PK::Rendering::RHI::Objects
         static AccelerationStructureRef Create(const char* name);
 
         virtual void BeginWrite(QueueType queue, uint32_t instanceLimit) = 0;
-        virtual void AddInstance(AccelerationStructureGeometryInfo& geometry, const PK::Math::float4x4& matrix) = 0;
+        virtual void AddInstance(AccelerationStructureGeometryInfo& geometry, const PK::Math::float3x4& matrix) = 0;
         virtual void EndWrite() = 0;
 
         virtual uint32_t GetInstanceCount() const = 0;

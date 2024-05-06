@@ -80,7 +80,7 @@ namespace PK::Rendering::Geometry
 
         for (auto& view : m_transforms)
         {
-            matrixView[view.index] = Functions::TransposeTo3x4((*view)->localToWorld);
+            matrixView[view.index] = (*view)->localToWorld;
         }
 
         cmd->EndBufferWrite(m_matrices.get());

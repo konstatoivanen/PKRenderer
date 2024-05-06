@@ -82,6 +82,13 @@ namespace PK::Math::Functions
         return float4(direction, -dot(direction, offset));
     }
 
+    float4 TransformPlane(const float3x4& matrix, const float4& plane)
+    {
+        const auto direction = float4(plane.xyz, 0.0f) * matrix;
+        const auto offset = float4(plane.xyz * plane.w, 1.0f) * matrix;
+        return float4(direction, -dot(direction, offset));
+    }
+
     float PlaneMaxDistanceToAABB(const float4& plane, const BoundingBox& aabb)
     {
         auto bx = plane.x > 0 ? aabb.max.x : aabb.min.x;
@@ -238,22 +245,66 @@ namespace PK::Math::Functions
         BoundingBox out(matrix[3].xyz, matrix[3].xyz);
 
         for (auto i = 0u; i < 3u; ++i)
-            for (auto j = 0u; j < 3u; ++j)
-            {
-                auto a = matrix[j][i] * bounds.min[j];
-                auto b = matrix[j][i] * bounds.max[j];
+        for (auto j = 0u; j < 3u; ++j)
+        {
+            auto a = matrix[j][i] * bounds.min[j];
+            auto b = matrix[j][i] * bounds.max[j];
 
-                if (a < b)
-                {
-                    out.min[i] += a;
-                    out.max[i] += b;
-                }
-                else
-                {
-                    out.min[i] += b;
-                    out.max[i] += a;
-                }
+            if (a < b)
+            {
+                out.min[i] += a;
+                out.max[i] += b;
             }
+            else
+            {
+                out.min[i] += b;
+                out.max[i] += a;
+            }
+        }
+
+        return out;
+    }
+
+    BoundingBox BoundsTransform(const float3x4& matrix, const BoundingBox& bounds)
+    {
+        auto offs = float3(matrix[0].w, matrix[1].w, matrix[2].w);
+        BoundingBox out(offs, offs);
+
+        {
+            auto a = float3(matrix[0]) * bounds.min;
+            auto b = float3(matrix[0]) * bounds.max;
+            auto s = bool3(a.x < b.x, a.y < b.y, a.z < b.z);
+            out.min.x += s.x ? a.x : b.x;
+            out.min.x += s.y ? a.y : b.y;
+            out.min.x += s.z ? a.z : b.z;
+            out.max.x += s.x ? b.x : a.x;
+            out.max.x += s.y ? b.y : a.y;
+            out.max.x += s.z ? b.z : a.z;
+        }
+
+        {
+            auto a = float3(matrix[1]) * bounds.min;
+            auto b = float3(matrix[1]) * bounds.max;
+            auto s = bool3(a.x < b.x, a.y < b.y, a.z < b.z);
+            out.min.y += s.x ? a.x : b.x;
+            out.min.y += s.y ? a.y : b.y;
+            out.min.y += s.z ? a.z : b.z;
+            out.max.y += s.x ? b.x : a.x;
+            out.max.y += s.y ? b.y : a.y;
+            out.max.y += s.z ? b.z : a.z;
+        }
+
+        {
+            auto a = float3(matrix[2]) * bounds.min;
+            auto b = float3(matrix[2]) * bounds.max;
+            auto s = bool3(a.x < b.x, a.y < b.y, a.z < b.z);
+            out.min.z += s.x ? a.x : b.x;
+            out.min.z += s.y ? a.y : b.y;
+            out.min.z += s.z ? a.z : b.z;
+            out.max.z += s.x ? b.x : a.x;
+            out.max.z += s.y ? b.y : a.y;
+            out.max.z += s.z ? b.z : a.z;
+        }
 
         return out;
     }

@@ -121,6 +121,7 @@ namespace PK::Math
 
     constexpr quaternion PK_QUATERNION_IDENTITY = { 1.0f, 0.0f, 0.0f, 0.0f };
 
+    constexpr float4x4 PK_FLOAT3X4_IDENTITY = float3x4(1.0f);
     constexpr float4x4 PK_FLOAT4X4_IDENTITY = float4x4(1.0f);
 
     constexpr color PK_COLOR_WHITE = { 1.0f, 1.0f, 1.0f, 1.0f };

@@ -4,9 +4,11 @@
 namespace PK::Math::Functions
 {
     float4x4 GetMatrixTRS(const float3& position, const quaternion& rotation, const float3& scale);
+    float3x4 GetMatrixTRS3x4(const float3& position, const quaternion& rotation, const float3& scale);
     float4x4 GetMatrixTRS(const float3& position, const float3& euler, const float3& scale);
     float4x4 GetMatrixInvTRS(const float3& position, const quaternion& rotation, const float3& scale);
     float4x4 GetMatrixInvTRS(const float3& position, const float3& euler, const float3& scale);
+    float4x4 GetMatrixTransposeAffineInverse(const float3x4& matrix);
     float4x4 GetMatrixTR(const float3& position, const quaternion& rotation);
     float4x4 GetPerspective(float fov, float aspect, float zNear, float zFar);
     float4x4 GetOrtho(float left, float right, float bottom, float top, float zNear, float zFar);
