@@ -18,8 +18,7 @@ namespace PK::Rendering::RHI
         switch (api)
         {
             case APIType::Vulkan: return CreateScope<VulkanWindow>(RHI::Driver::GetNative<VulkanDriver>(), properties);
+            default: return nullptr;
         }
-
-        return nullptr;
     }
 }

@@ -92,7 +92,6 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     {
         VkDeviceSize scratchSize = 0ull;
         VkDeviceSize bufferSize = 0ull;
-        uint32_t compactionCount = 0u;
         uint32_t buildCount = 0u;
 
         // Compaction queries

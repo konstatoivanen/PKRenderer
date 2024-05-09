@@ -1,9 +1,16 @@
 #include "PrecompiledHeader.h"
 #include "Log.h"
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wvarargs"
+#endif
+
 namespace PK::Core::CLI
 {
     using namespace PK::Utilities;
+
+    ILogger::~ILogger() = default;
 
 #define PK_FORWAD_VARGS_FUNC(fmt, args, Func) \
         va_list args; \
@@ -119,3 +126,7 @@ namespace PK::Core::CLI
 
 #undef PK_FORWAD_VARGS_FUNC
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif

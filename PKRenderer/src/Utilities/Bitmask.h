@@ -53,16 +53,16 @@ namespace PK::Utilities
         {
             for (auto i = 0ull; i < Size; ++i)
             {
-#if defined(WIN32)
+#if defined(_MSC_VER) && defined(_WIN64)
                 unsigned long idx = 0ul;
                 if (_BitScanForward64(&idx, ~m_mask[i]))
                 {
                     return i * Stride + idx;
                 }
-#else
-                // @TODO probably doesn't work on arm.
-                // Cant test as I have no arm devices.
-                auto idx = __lzcnt64(m_mask[i]);
+
+#elif defined __GNUC__ || defined __clang__
+                auto idx = __builtin_ffsll(~m_mask[i])) - 1ull;
+     
                 if (idx >= 0)
                 {
                     return i * Stride + idx;

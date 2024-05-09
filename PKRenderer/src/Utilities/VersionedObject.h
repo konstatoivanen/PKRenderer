@@ -7,7 +7,7 @@ namespace PK::Utilities
     struct VersionedObject : public NoCopy
     {
         VersionedObject() : m_version(++s_globalVersion) {}
-        virtual ~VersionedObject() = 0 {};
+        virtual ~VersionedObject() = 0;
 
         constexpr uint64_t Version() const { return m_version; }
         inline void IncrementVersion() { m_version = ++s_globalVersion; }

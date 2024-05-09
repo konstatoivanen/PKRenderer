@@ -244,7 +244,7 @@ namespace PK::Assets
         uint32_t left : 11;
         uint32_t right : 11;
         uint32_t isLeaf : 2;
-        uint32_t value : 8;
+        int32_t value : 8;
     };
 
     struct alignas(8) PKAssetHeader

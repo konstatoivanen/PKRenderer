@@ -1,4 +1,3 @@
-#pragma once
 #include "PKAssetLoader.h"
 #include <stdio.h>
 #include <stdlib.h>

@@ -109,6 +109,8 @@ namespace PK::Engines
                 }
             }
             return;
+
+            default: return;
         }
     }
 

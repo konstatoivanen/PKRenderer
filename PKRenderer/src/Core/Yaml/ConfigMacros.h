@@ -6,9 +6,8 @@ namespace YAML
 {
     struct IYamlConfig
     {
-        virtual ~IYamlConfig() = 0 {};
         void YamlLoadFromFile(const std::string& filepath);
-        virtual void YamlParse(const Node& parent) = 0;
+        protected: virtual void YamlParse(const Node& parent) = 0;
     };
 }
 

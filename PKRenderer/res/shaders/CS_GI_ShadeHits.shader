@@ -48,8 +48,8 @@ void main()
 
         GI_LOAD_RAY_PARAMS(coord, raycoord, depth, normalRoughness.xyz, normalRoughness.w)
 
-            // Convert ray to unbiased space
-            const float3 hitpos = origin + directionDiff * lerp(hits.diff.dist, PK_GI_RAY_TMAX, hits.diff.isMiss);
+        // Convert ray to unbiased space
+        const float3 hitpos = origin + directionDiff * lerp(hits.diff.dist, PK_GI_RAY_TMAX, hits.diff.isMiss);
         const float3 unbiasedOrigin = CoordToWorldPos(coord, depth);
         const float4 unbiasedHitVec = normalizeLength(hitpos - unbiasedOrigin);
 

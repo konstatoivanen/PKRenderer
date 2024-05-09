@@ -61,9 +61,6 @@ namespace PK::Rendering::Passes
     {
         cmd->BeginDebugScope("DepthOfField", Math::PK_COLOR_MAGENTA);
 
-        auto colorTarget = m_colorTarget.get();
-        auto alphaTarget = m_colorTarget.get();
-
         auto fullres = destination->GetResolution();
         auto quarterres = Math::uint3(fullres.x / 2, fullres.y / 2, 1u);
 

@@ -8,6 +8,8 @@ namespace PK::Rendering::RHI::Objects
     using namespace PK::Utilities;
     using namespace PK::Rendering::RHI::Vulkan::Objects;
 
+    Buffer::~Buffer() = default;
+
     BufferRef Buffer::Create(size_t size, BufferUsage usage, const char* name)
     {
         auto api = Driver::Get()->GetAPI();
@@ -15,8 +17,7 @@ namespace PK::Rendering::RHI::Objects
         switch (api)
         {
             case APIType::Vulkan: return CreateRef<VulkanBuffer>(size, usage, name);
+            default: return nullptr;
         }
-
-        return nullptr;
     }
 }

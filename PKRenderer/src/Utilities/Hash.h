@@ -26,7 +26,7 @@ namespace PK::Utilities::Hash
     {
         std::size_t operator()(const T& k) const noexcept
         {
-            constexpr uint64_t seed = 18446744073709551557;
+            constexpr uint64_t seed = 18446744073709551557ull;
             return PK::Utilities::Hash::MurmurHash(&k, sizeof(T), seed);
         }
     };

@@ -32,9 +32,12 @@ namespace PK::Rendering::Objects
             switch (element.type)
             {
                 case ElementType::Texture2DHandle:
+                {
                     auto texIndex = textureSet->Set(*Get<Texture*>(element.name));
                     memcpy(dst + element.alignedOffset, &texIndex, sizeof(int32_t));
-                    break;
+                }
+                break;
+                default: break;
             }
         }
     }
@@ -102,6 +105,7 @@ namespace PK::Rendering::Objects
                     case ElementType::Texture2DHandle: Set(nameId, values.as<Texture*>()); break;
                     case ElementType::Texture3DHandle: Set(nameId, values.as<Texture*>()); break;
                     case ElementType::TextureCubeHandle: Set(nameId, values.as<Texture*>()); break;
+                    default: PK_LOG_WARNING("Unsupported material parameter type"); break;
                 }
             }
         }
@@ -121,6 +125,7 @@ namespace PK::Rendering::Objects
             switch (element.type)
             {
                 case ElementType::Texture2DHandle: Set(element.name, builtIns->BlackTexture2D.get()); break;
+                default: break;
             }
         }
     }

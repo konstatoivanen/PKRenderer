@@ -24,7 +24,7 @@ namespace PK::Core::Assets
         static bool IsValidExtension(const std::string& extension);
 
         template<typename T>
-        static [[nodiscard]] Utilities::Ref<T> Create();
+        [[nodiscard]] static Utilities::Ref<T> Create();
 
     private:
         AssetID m_assetId = 0u;

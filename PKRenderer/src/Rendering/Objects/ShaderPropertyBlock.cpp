@@ -1,10 +1,13 @@
 #include "PrecompiledHeader.h"
+#include "Core/CLI/Log.h"
 #include "ShaderPropertyBlock.h"
 
 namespace PK::Rendering::Objects
 {
     using namespace PK::Math;
     using namespace PK::Rendering::RHI;
+
+    ShaderPropertyBlock::~ShaderPropertyBlock() = default;
 
     void ShaderPropertyBlock::ReserveLayout(const BufferLayout& layout)
     {
@@ -70,6 +73,8 @@ namespace PK::Rendering::Objects
                 case ElementType::Texture2DHandle:
                 case ElementType::Texture3DHandle:
                 case ElementType::TextureCubeHandle: Reserve<uint>(element.name, element.count); break;
+
+                default: PK_LOG_WARNING("Trying to append an unsupported type to shader propertyblock!");
             }
         }
     }

@@ -71,7 +71,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
             template<typename T>
             void Record(const T resource, const AccessRecord& record, uint8_t options)
             {
-                typedef TInfo<T>::BarrierType TBarrier;
+                typedef typename TInfo<T>::BarrierType TBarrier;
                 TBarrier* barrier = nullptr;
 
                 auto scope = record;

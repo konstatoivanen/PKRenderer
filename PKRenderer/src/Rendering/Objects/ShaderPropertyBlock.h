@@ -9,6 +9,7 @@ namespace PK::Rendering::Objects
         public:
             ShaderPropertyBlock(uint64_t capacity) : Utilities::PropertyBlock(capacity) {}
             ShaderPropertyBlock(void* foreignBuffer, uint64_t capacity) : Utilities::PropertyBlock(foreignBuffer, capacity) {}
+            virtual ~ShaderPropertyBlock() = 0;
             void ReserveLayout(const RHI::BufferLayout& layout);
     };
 }

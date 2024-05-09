@@ -2,7 +2,7 @@
 #include "IService.h"
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
-#include "Core/CLI/Log.h"
+#include "Core/CLI/LogScopeIndent.h"
 
 namespace PK::Core
 {
@@ -16,12 +16,9 @@ namespace PK::Core
         T* Create(Args&& ... args)
         {
             static_assert(std::is_base_of<IService, T>::value, "Template argument type does not derive from IService!");
-
-            printf("ServiceRegister.Create: %s \n", typeid(T).name());
-            PK_LOG_SCOPE_INDENT(service);
-
             auto idx = std::type_index(typeid(T));
-            PK_THROW_ASSERT(m_services.count(idx) == 0, "Service of type (%s) is already registered!", typeid(T).name());
+            AssertTypeExists(idx);
+            auto logIndent = PK::Core::CLI::LogScopeIndent();
             auto service = new T(std::forward<Args>(args)...);
             m_services[idx] = PK::Utilities::Scope<IService>(service);
             m_releaseOrder.push_back(idx);
@@ -41,6 +38,8 @@ namespace PK::Core
         }
 
     private:
+        void AssertTypeExists(std::type_index index);
+
         std::vector<std::type_index> m_releaseOrder;
         std::unordered_map<std::type_index, PK::Utilities::Scope<IService>> m_services;
     };

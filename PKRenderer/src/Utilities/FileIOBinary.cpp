@@ -81,7 +81,7 @@ namespace PK::Utilities::FileIO
             }
             catch (std::exception& e)
             {
-                printf(e.what());
+                printf("%s", e.what());
             }
         }
 

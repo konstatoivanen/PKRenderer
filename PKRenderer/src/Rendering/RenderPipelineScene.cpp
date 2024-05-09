@@ -27,17 +27,17 @@ namespace PK::Rendering
     using namespace PK::Rendering::RHI::Objects;
 
     RenderPipelineScene::RenderPipelineScene(EntityDatabase* entityDb, AssetDatabase* assetDatabase, ApplicationConfig* config) :
-        m_passHierarchicalDepth(assetDatabase, config),
-        m_passEnvBackground(assetDatabase),
-        m_passPostEffectsComposite(assetDatabase, config),
         m_passLights(assetDatabase, config),
         m_passSceneGI(assetDatabase, config),
         m_passVolumeFog(assetDatabase, config),
+        m_passHierarchicalDepth(assetDatabase, config),
+        m_passEnvBackground(assetDatabase),
         m_passFilmGrain(assetDatabase),
         m_depthOfField(assetDatabase, config),
         m_temporalAntialiasing(assetDatabase, config->InitialWidth, config->InitialHeight),
         m_bloom(assetDatabase, config->InitialWidth, config->InitialHeight),
-        m_autoExposure(assetDatabase)
+        m_autoExposure(assetDatabase),
+        m_passPostEffectsComposite(assetDatabase, config)
     {
         PK_LOG_VERBOSE("SceneRenderPipeline.Ctor");
         PK_LOG_SCOPE_INDENT(local);
@@ -89,9 +89,9 @@ namespace PK::Rendering
         m_sceneStructure = nullptr;
     }
 
-    GBuffersFull::Descriptor RenderPipelineScene::GetViewGBufferDescriptors() const
+    GBuffersFullDescriptor RenderPipelineScene::GetViewGBufferDescriptors() const
     {
-        GBuffersFull::Descriptor desc;
+        GBuffersFullDescriptor desc;
         desc.current.usages[GBuffers::Color] = TextureUsage::RTColorSample | TextureUsage::Storage;
         desc.current.usages[GBuffers::Normals] = TextureUsage::RTColorSample;
         desc.current.usages[GBuffers::DepthBiased] = TextureUsage::RTColorSample;
@@ -119,7 +119,6 @@ namespace PK::Rendering
 
         auto& constants = view->constants;
         auto resolution = view->GetResolution();
-        auto isOutOfDate = view->timeRender.frameIndex == view->timeResize.frameIndex;
 
         const auto shadowCascadeZSplits = m_passLights.GetCascadeZSplitsFloat4(view->znear, view->zfar);
         const auto projectionJitter = m_temporalAntialiasing.GetJitter();
@@ -321,7 +320,6 @@ namespace PK::Rendering
 
     void RenderPipelineScene::Step(AssetImportEvent<ApplicationConfig>* token)
     {
-        auto hash = HashCache::Get();
         auto config = token->asset;
         m_backgroundExposure = config->BackgroundExposure;
         m_passPostEffectsComposite.OnUpdateParameters(token);

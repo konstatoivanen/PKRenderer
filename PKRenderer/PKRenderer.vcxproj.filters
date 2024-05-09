@@ -2003,7 +2003,6 @@
     <None Include="libs\ktx.dll" />
     <None Include="libs\ktx_read.dll" />
     <None Include="libs\vulkan-1.pdb" />
-    <None Include="libs\VulkanMemoryAllocatord.pdb" />
     <None Include="res\models\MDL_Cloth.mdl" />
     <None Include="res\configs\ApplicationConfig-Active.cfg" />
     <None Include="res\configs\CommandConfig-Active.keycfg" />
@@ -2472,14 +2471,21 @@
     <ClCompile Include="src\Rendering\EntityCulling.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Utilities\VersionedObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\ServiceRegister.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Rendering\RHI\Objects\QueueSet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\glfw3.lib" />
     <Library Include="libs\ktx.lib" />
     <Library Include="libs\ktx_read.lib" />
     <Library Include="libs\vulkan-1.lib" />
-    <Library Include="libs\VulkanMemoryAllocator.lib" />
-    <Library Include="libs\VulkanMemoryAllocatord.lib" />
     <Library Include="libs\yaml-cpp.lib" />
     <Library Include="libs\yaml-cppd.lib" />
   </ItemGroup>

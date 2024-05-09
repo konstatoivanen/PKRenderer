@@ -17,9 +17,9 @@ namespace PK::Rendering::RHI
 
         PushConstant(Utilities::NameID name, uint16_t size, uint16_t offset, ShaderStageFlags stageFlags) :
             name(name),
+            stageFlags(stageFlags),
             size(size),
-            offset(offset),
-            stageFlags(stageFlags)
+            offset(offset)
         {
         }
     };
@@ -43,9 +43,9 @@ namespace PK::Rendering::RHI
 
         ResourceElement(ResourceType type, Utilities::NameID name, ShaderStageFlags writeStageMask, uint16_t count) :
             name(name),
-            type(type),
             writeStageMask(writeStageMask),
-            count(count)
+            count(count),
+            type(type)
         {
         }
     };
@@ -63,8 +63,8 @@ namespace PK::Rendering::RHI
     {
         Utilities::NameID name = 0u;
         ElementType type = ElementType::Invalid;
-        byte count = 1;
-        byte location = 0;
+        uint8_t count = 1;
+        uint8_t location = 0;
         uint16_t offset = 0;
         uint16_t alignedOffset = 0;
 
@@ -72,13 +72,13 @@ namespace PK::Rendering::RHI
 
         BufferElement() = default;
 
-        BufferElement(ElementType type, Utilities::NameID name, byte count = 1, byte location = 0, uint16_t offset = 0, uint16_t alignedOffset = 0) :
+        BufferElement(ElementType type, Utilities::NameID name, uint8_t count = 1, uint8_t location = 0, uint16_t offset = 0, uint16_t alignedOffset = 0) :
             name(name),
             type(type), 
             count(count), 
+            location(location),
             offset(offset),
-            alignedOffset(alignedOffset),
-            location(location)
+            alignedOffset(alignedOffset)
         {
         }
     };

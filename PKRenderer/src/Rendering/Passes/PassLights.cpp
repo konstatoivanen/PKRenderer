@@ -431,6 +431,8 @@ namespace PK::Rendering::Passes
                     }
                 }
                 break;
+
+                default: PK_THROW_ERROR("Invalid light type");
             }
 
             matrixIndex += m_shadowTypeData[(uint32_t)view->light->type].MatrixCount;

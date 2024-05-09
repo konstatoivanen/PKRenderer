@@ -60,10 +60,10 @@ namespace PK::Rendering::RHI::Vulkan::Objects
 
             SwapchainCreateInfo m_cachedCreateInfo;
             VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
-            VkImage m_images[MaxImageCount];
-            VulkanImageView* m_imageViews[MaxImageCount];
-            PK::Utilities::FenceRef m_frameFences[MaxImageCount];
-            VulkanBindHandle m_bindHandles[MaxImageCount];
+            VkImage m_images[MaxImageCount]{};
+            VulkanImageView* m_imageViews[MaxImageCount]{};
+            PK::Utilities::FenceRef m_frameFences[MaxImageCount]{};
+            VulkanBindHandle m_bindHandles[MaxImageCount]{};
             uint32_t m_imageCount;
             VkFormat m_format;
             VkExtent2D m_extent;

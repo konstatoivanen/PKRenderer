@@ -7,7 +7,7 @@ PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::ControlFlow, class Sequencer)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::ECS, class EntityDatabase)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Geometry, struct IBatcher)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, struct RenderView)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, struct GBuffersFull::Descriptor)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, struct GBuffersFullDescriptor)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI, struct BufferLayout)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI, struct Window)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct CommandBuffer)
@@ -56,11 +56,10 @@ namespace PK::Rendering
 
     struct IRenderPipeline : public Core::IService
     {
-        virtual ~IRenderPipeline() = 0 {};
-        virtual Rendering::Objects::GBuffersFull::Descriptor GetViewGBufferDescriptors() const = 0;
+        virtual Rendering::Objects::GBuffersFullDescriptor GetViewGBufferDescriptors() const = 0;
         virtual const RHI::BufferLayout& GetViewConstantsLayout() const = 0;
         virtual void SetViewConstants(Rendering::Objects::RenderView* view) = 0;
         virtual void RenderViews(RenderPipelineContext* context) = 0;
-    protected: void DispatchRenderPipelineEvent(RHI::Objects::CommandBuffer* cmd, RenderPipelineContext* context, RenderPipelineEvent::Type type);
+        protected: void DispatchRenderPipelineEvent(RHI::Objects::CommandBuffer* cmd, RenderPipelineContext* context, RenderPipelineEvent::Type type);
     };
 }

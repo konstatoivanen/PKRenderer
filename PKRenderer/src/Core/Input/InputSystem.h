@@ -3,7 +3,7 @@
 #include "Utilities/ForwardDeclare.h"
 #include "Utilities/Ref.h"
 #include "Utilities/ISingleton.h"
-#include "Core/ControlFLow/IStepApplicationWindow.h"
+#include "Core/ControlFlow/IStepApplicationWindow.h"
 #include "Core/Input/InputKey.h"
 #include "Core/Input/InputDevice.h"
 #include "Core/IService.h"

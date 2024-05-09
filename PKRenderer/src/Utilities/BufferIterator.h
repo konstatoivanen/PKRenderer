@@ -23,7 +23,7 @@ namespace PK::Utilities
         using pointer = const Node*;
         using reference = const Node&;
 
-        ConstBufferIterator(T const* value, size_t index) : node(value, index), data(value), index(index) {}
+        ConstBufferIterator(T const* value, size_t index) : data(value), index(index), node(value, index) {}
 
         reference operator*() const { return node; }
         pointer operator->() const { return &node; }
@@ -44,7 +44,7 @@ namespace PK::Utilities
     { 
         a.data++;
         a.index++;
-        a.node = ConstBufferIterator<T>::Node(a.data, a.index);
+        a.node = typename ConstBufferIterator<T>::Node(a.data, a.index);
         return a;
     }
 
@@ -66,7 +66,7 @@ namespace PK::Utilities
         using pointer = Node*;
         using reference = Node&;
 
-        BufferIterator(T* value, size_t index) : node(value, index), data(value), index(index) {}
+        BufferIterator(T* value, size_t index) : data(value), index(index), node(value, index) {}
 
         reference operator*() { return node; }
         pointer operator->() { return &node; }
@@ -87,7 +87,7 @@ namespace PK::Utilities
     { 
         a.data++;
         a.index++;
-        a.node = BufferIterator<T>::Node(a.data, a.index);
+        a.node = typename BufferIterator<T>::Node(a.data, a.index);
         return a;
     }
 }

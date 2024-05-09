@@ -167,7 +167,7 @@ namespace PK::Core::Assets
             const auto& filepath = assetId.to_string();
 
             PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
-            PK_LOG_VERBOSE("AssetDatabae.Load: %s, %s", typeid(T).name(), filepath.c_str());
+            PK_LOG_VERBOSE("AssetDatabase.Load: %s, %s", typeid(T).name(), filepath.c_str());
             PK_LOG_SCOPE_INDENT(asset);
 
             auto typeIndex = std::type_index(typeid(T));
@@ -209,7 +209,7 @@ namespace PK::Core::Assets
                         auto asset = assetWeakRef.lock();
                         auto& fileName = std::static_pointer_cast<Asset>(asset)->GetFileName();
                         std::static_pointer_cast<Asset>(asset)->m_version++;
-                        PK_LOG_VERBOSE("AssetDatabae.Reload.Cached: %s, %s", typeid(T).name(), fileName.c_str());
+                        PK_LOG_VERBOSE("AssetDatabase.Reload.Cached: %s, %s", typeid(T).name(), fileName.c_str());
                         PK_LOG_SCOPE_INDENT(asset);
                         std::dynamic_pointer_cast<IAssetImport<>>(asset)->AssetImport(fileName.c_str());
                         AssetImportEvent<T> importToken = { this, asset.get() };

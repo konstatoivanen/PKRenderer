@@ -15,8 +15,7 @@ namespace PK::Rendering::RHI::Objects
         switch (api)
         {
             case APIType::Vulkan: return CreateRef<VulkanAccelerationStructure>(name);
+            default: return nullptr;
         }
-
-        return nullptr;
     }
 }

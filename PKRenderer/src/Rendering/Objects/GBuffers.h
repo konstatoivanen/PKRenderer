@@ -50,14 +50,14 @@ namespace PK::Rendering::Objects
         bool Validate(const Math::uint2& resolution, const Descriptor& descriptor, const char* namePrefix);
     };
 
+    struct GBuffersFullDescriptor
+    {
+        GBuffers::Descriptor current{};
+        GBuffers::Descriptor previous{};
+    };
+
     struct GBuffersFull
     {
-        struct Descriptor
-        {
-            GBuffers::Descriptor current{};
-            GBuffers::Descriptor previous{};
-        };
-
         struct View
         {
             GBuffers::View current;
@@ -70,7 +70,7 @@ namespace PK::Rendering::Objects
         inline Math::uint3 GetResolution() const { return current.GetResolution(); }
         inline float GetAspectRatio() const { return current.GetAspectRatio(); }
         inline View GetView() { return { current.GetView(), previous.GetView() }; }
-        bool Validate(const Math::uint2& resolution, const Descriptor& descriptor, const char* namePrefix);
+        bool Validate(const Math::uint2& resolution, const GBuffersFullDescriptor& descriptor, const char* namePrefix);
     };
 
 }

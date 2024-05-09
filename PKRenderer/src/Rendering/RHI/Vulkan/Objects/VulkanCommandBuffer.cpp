@@ -192,7 +192,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         record.bufferRange.size = drawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = indirectArguments->IsConcurrent() ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
         m_renderState->GetServices()->barrierHandler->Record(vkbuffer->buffer, record, PK_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
@@ -216,7 +216,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         record.bufferRange.size = drawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = indirectArguments->IsConcurrent() ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
         m_renderState->GetServices()->barrierHandler->Record(vkbuffer->buffer, record, PK_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
@@ -240,7 +240,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         record.bufferRange.size = drawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = indirectArguments->IsConcurrent() ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
         m_renderState->GetServices()->barrierHandler->Record(vkbuffer->buffer, record, PK_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
@@ -262,7 +262,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         record.bufferRange.size = maxDrawCount * stride;
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = indirectArguments->IsConcurrent() ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
         m_renderState->GetServices()->barrierHandler->Record(vkbufferIndirect->buffer, record, PK_ACCESS_OPT_BARRIER);
 
         auto vkbufferCount = countBuffer->GetNative<VulkanBuffer>()->GetRaw();
@@ -270,7 +270,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         record.bufferRange.size = sizeof(uint32_t);
         record.stage = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
         record.access = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-        record.queueFamily = indirectArguments->IsConcurrent() ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = indirectArguments->IsConcurrent() ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
         m_renderState->GetServices()->barrierHandler->Record(vkbufferCount->buffer, record, PK_ACCESS_OPT_BARRIER);
 
         ValidatePipeline();
@@ -438,7 +438,6 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     void VulkanCommandBuffer::Clear(Texture* dst, const TextureViewRange& range, const uint4& value)
     {
         auto vktex = dst->GetNative<VulkanTexture>();
-        auto rawtex = vktex->GetRaw();
         auto handle = vktex->GetBindHandle(range, TextureBindMode::Image);
 
         VkClearColorValue clearValue{};
@@ -478,7 +477,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         record.bufferRange.size = (uint32_t)copyRegion.size;
         record.stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         record.access = VK_ACCESS_TRANSFER_WRITE_BIT;
-        record.queueFamily = buffer->IsConcurrent() ? VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
+        record.queueFamily = buffer->IsConcurrent() ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : m_queueFamily;
         m_renderState->GetServices()->barrierHandler->Record(dstBuffer, record, PK_ACCESS_OPT_BARRIER);
     }
 

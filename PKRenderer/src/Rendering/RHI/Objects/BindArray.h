@@ -9,6 +9,7 @@ namespace PK::Rendering::RHI::Objects
     struct BindArray : public Utilities::NoCopy, public Utilities::NativeInterface<BindArray<T>>
     {
         static PK::Utilities::Ref<BindArray<T>> Create(size_t capacity);
+        virtual ~BindArray() = 0;
         virtual int32_t Add(T* value, void* bindInfo) = 0;
         virtual int32_t Add(T* value) = 0;
         virtual void Clear() = 0;

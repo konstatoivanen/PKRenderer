@@ -17,6 +17,8 @@ using namespace PK::Rendering::RHI::Vulkan::Objects;
 
 namespace PK::Rendering::RHI::Objects
 {
+    Texture::~Texture() = default;
+
     TextureRef Texture::Create(const TextureDescriptor& descriptor, const char* name)
     {
         auto api = Driver::Get()->GetAPI();
@@ -24,9 +26,8 @@ namespace PK::Rendering::RHI::Objects
         switch (api)
         {
             case APIType::Vulkan: return CreateRef<VulkanTexture>(descriptor, name);
+            default: return nullptr;
         }
-
-        return nullptr;
     }
 
     bool Texture::Validate(TextureRef& inoutTexture, const TextureDescriptor& descriptor, const char* name)
@@ -133,7 +134,6 @@ TextureRef Asset::Create<Texture>()
     switch (api)
     {
         case APIType::Vulkan: return CreateRef<VulkanTexture>();
+        default: return nullptr;
     }
-
-    return nullptr;
 }

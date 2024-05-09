@@ -147,7 +147,8 @@ namespace PK::Rendering::RHI::Objects
 
             switch (api)
             {
-                case APIType::Vulkan: m_variants.push_back(CreateRef<VulkanShader>(base, pVariant, name.c_str()));
+                case APIType::Vulkan: m_variants.push_back(CreateRef<VulkanShader>(base, pVariant, name.c_str())); break;
+                default: PK_THROW_ERROR("Unsupported Graphics API!");
             }
         }
 

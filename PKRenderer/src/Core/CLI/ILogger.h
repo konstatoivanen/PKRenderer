@@ -43,7 +43,8 @@ namespace PK::Core::CLI
 
     struct ILogger
     {
-        virtual ~ILogger() = 0 {};
+        virtual ~ILogger() = 0;
+
         virtual void Indent() = 0;
         virtual void Unindent() = 0;
         virtual void SetSeverityMask(LogSeverity mask) = 0;

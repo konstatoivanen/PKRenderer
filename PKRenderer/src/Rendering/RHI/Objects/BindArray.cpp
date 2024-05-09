@@ -8,6 +8,9 @@ namespace PK::Rendering::RHI::Objects
     using namespace PK::Utilities;
     using namespace PK::Rendering::RHI::Vulkan::Objects;
 
+    template<> BindArray<Texture>::~BindArray() = default;
+    template<> BindArray<Buffer>::~BindArray() = default;
+
     template<>
     BindArrayRef<Texture> BindArray<Texture>::Create(size_t capacity)
     {
@@ -16,9 +19,8 @@ namespace PK::Rendering::RHI::Objects
         switch (api)
         {
             case APIType::Vulkan: return CreateRef<VulkanBindArray>(capacity);
+            default: return nullptr;
         }
-
-        return nullptr;
     }
 
     template<>
@@ -29,8 +31,7 @@ namespace PK::Rendering::RHI::Objects
         switch (api)
         {
             case APIType::Vulkan: return CreateRef<VulkanBindArray>(capacity);
+            default: return nullptr;
         }
-
-        return nullptr;
     }
 }

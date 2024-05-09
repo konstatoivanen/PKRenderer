@@ -5,6 +5,8 @@
 
 namespace PK::Core::CLI
 {
+    ICVariable::~ICVariable() = default;
+
     void ICVariable::CVarBind() { CVariableRegister::Bind(this); }
     void ICVariable::CVarUnbind() { CVariableRegister::Unbind(this); }
 

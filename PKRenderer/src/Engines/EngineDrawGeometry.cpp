@@ -78,6 +78,7 @@ namespace PK::Engines
                 renderEvent->context->batcher->RenderGroup(renderEvent->cmd, view->primaryPassGroup);
             }
             return;
+            default: return;
         }
     }
 }

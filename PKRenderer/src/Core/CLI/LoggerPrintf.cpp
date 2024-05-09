@@ -71,7 +71,7 @@ namespace PK::Core::CLI
             LogNewLine();
             SetColor(color);
             printf("--------------------PK BEGIN ERROR--------------------\n");
-            auto lineLength = vprintf(format, args);
+            vprintf(format, args);
             printf("\n--------------------PK END ERROR--------------------");
             SetColor(LogColor::PK_LOG_COLOR_BLACK);
             LogNewLine();
@@ -89,7 +89,7 @@ namespace PK::Core::CLI
     {
         if (m_indentation > 0)
         {
-            printf(std::string(m_indentation * 4ull, ' ').c_str());
+            printf("%s", std::string(m_indentation * 4ull, ' ').c_str());
         }
     }
 
@@ -104,7 +104,7 @@ namespace PK::Core::CLI
 
         if (remainder > 0)
         {
-            printf(std::string(remainder, ' ').c_str());
+            printf("%s", std::string(remainder, ' ').c_str());
         }
     }
 }

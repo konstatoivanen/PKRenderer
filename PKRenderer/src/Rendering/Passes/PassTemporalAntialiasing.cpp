@@ -5,7 +5,7 @@
 #include "Rendering/RHI/Objects/Texture.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/HashCache.h"
-#include "PassTemporalAntiAliasing.h"
+#include "PassTemporalAntialiasing.h"
 
 namespace PK::Rendering::Passes
 {

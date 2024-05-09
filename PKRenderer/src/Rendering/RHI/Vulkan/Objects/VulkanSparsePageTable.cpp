@@ -12,9 +12,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         const VkMemoryRequirements& requirements,
         const VmaAllocationCreateInfo& createInfo,
         const char* name) :
-        allocator(allocator),
-        start(start),
-        end(end)
+        allocator(allocator)
     {
         VK_ASSERT_RESULT_CTX(vmaAllocateMemoryPages(allocator, &requirements, &createInfo, 1, &memory, &allocationInfo), "Failed to allocate memory page!");
         VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)allocationInfo.deviceMemory, name);

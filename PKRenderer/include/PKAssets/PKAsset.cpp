@@ -255,7 +255,7 @@ namespace PK::Assets
         return PKElementType::Invalid;
     }
 
-    uint32_t Assets::GetElementSize(PKElementType type)
+    uint32_t GetElementSize(PKElementType type)
     {
         switch (type)
         {
@@ -308,12 +308,11 @@ namespace PK::Assets
             case PKElementType::Texture2DHandle: return 4;
             case PKElementType::Texture3DHandle: return 4;
             case PKElementType::TextureCubeHandle: return 4;
+            default: return 0;
         }
-
-        return 0;
     }
 
-    uint32_t Assets::GetElementAlignment(PKElementType type)
+    uint32_t GetElementAlignment(PKElementType type)
     {
         switch (type)
         {
@@ -366,12 +365,11 @@ namespace PK::Assets
             case PKElementType::Texture2DHandle: return 4;
             case PKElementType::Texture3DHandle: return 4;
             case PKElementType::TextureCubeHandle: return 4;
+            default: return 0;
         }
-
-        return 0;
     }
 
-    uint32_t Assets::GetElementComponents(PKElementType type)
+    uint32_t GetElementComponents(PKElementType type)
     {
         switch (type)
         {
@@ -424,9 +422,8 @@ namespace PK::Assets
             case PKElementType::Texture2DHandle: return 1;
             case PKElementType::Texture3DHandle: return 1;
             case PKElementType::TextureCubeHandle: return 1;
+            default: return 0;
         }
-
-        return 0;
     }
 }
 
@@ -662,5 +659,4 @@ namespace PK::Assets::Mesh::Meshlet
         meshlet.extents[2] = PackHalf(extents[2]);
         return meshlet;
     }
-
 }

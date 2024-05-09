@@ -33,11 +33,11 @@ namespace PK::Utilities
 
     public:
         IndexedSet(uint32_t size) : 
-            m_collisions(0u), 
-            m_count(0u), 
             m_values(size), 
             m_nodes(size),
-            m_buckets(Hash::GetPrime(size))
+            m_buckets(Hash::GetPrime(size)),
+            m_collisions(0u), 
+            m_count(0u)
         {
         }
 

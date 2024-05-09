@@ -3,8 +3,8 @@
 
 namespace PK::Core
 {
-    class IService : public PK::Utilities::NoCopy
+    struct IService : public PK::Utilities::NoCopy
     {
-    public: virtual ~IService() = 0 {};
+        virtual ~IService() = 0;
     };
 }

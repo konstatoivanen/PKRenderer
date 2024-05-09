@@ -142,7 +142,7 @@ namespace PK::Rendering::Objects
 
         auto indexStride = GetElementSize(mesh->indexType);
         auto indexBuffer = Buffer::Create(indexStride * mesh->indexCount, BufferUsage::DefaultIndex, indexBufferName.c_str());
-        cmd->UploadBufferData(m_indexBuffer.get(), pVerticesOffset);
+        cmd->UploadBufferData(m_indexBuffer.get(), pIndexBuffer);
 
         SetResources(indexBuffer,
             mesh->indexType,

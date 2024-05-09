@@ -221,18 +221,13 @@ namespace PK::Rendering::Passes
 
     void PassSceneGI::RenderGI(CommandBuffer* cmd)
     {
-        auto hash = HashCache::Get();
-
         auto resolution = m_packedGIDiff->GetResolution();
         uint3 dimension = { resolution.x, resolution.y, 1u };
         uint3 chbdimension = GetCheckerboardResolution(dimension, m_useCheckerboardTrace);
-
         cmd->BeginDebugScope("SceneGI.Filter", PK_COLOR_GREEN);
-
         cmd->Dispatch(m_computeShadeHits, chbdimension);
         cmd->Dispatch(m_computeAccumulate, chbdimension);
         cmd->Dispatch(m_computePostFilter, m_useCheckerboardTrace ? 1 : 0, chbdimension);
-
         cmd->EndDebugScope();
     }
 

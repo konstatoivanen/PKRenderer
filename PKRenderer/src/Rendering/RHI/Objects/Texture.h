@@ -14,7 +14,7 @@ namespace PK::Rendering::RHI::Objects
             static bool Validate(TextureRef& inoutTexture, const TextureDescriptor& descriptor, const char* name);
 
             Texture(const char* name) : m_name(name){}
-            virtual ~Texture() = default;
+            virtual ~Texture() = 0;
             void AssetImport(const char* filepath) final;
             virtual void SetSampler(const SamplerDescriptor& sampler) = 0;
             virtual bool Validate(const Math::uint3& resolution) = 0;

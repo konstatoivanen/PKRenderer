@@ -9,11 +9,11 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     using namespace PK::Rendering::RHI::Vulkan::Services;
     using namespace PK::Rendering::RHI::Vulkan::Objects;
 
-    VulkanTexture::VulkanTexture() : m_driver(RHI::Driver::GetNative<VulkanDriver>()), Texture("Textrue")
+    VulkanTexture::VulkanTexture() : Texture("Textrue"), m_driver(RHI::Driver::GetNative<VulkanDriver>())
     {
     }
 
-    VulkanTexture::VulkanTexture(const TextureDescriptor& descriptor, const char* name) : m_driver(RHI::Driver::GetNative<VulkanDriver>()), Texture(name)
+    VulkanTexture::VulkanTexture(const TextureDescriptor& descriptor, const char* name) : Texture(name), m_driver(RHI::Driver::GetNative<VulkanDriver>())
     {
         Rebuild(descriptor);
     }
@@ -113,6 +113,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             case VK_IMAGE_VIEW_TYPE_2D:
             case VK_IMAGE_VIEW_TYPE_3D: out.layers = 1u; break;
             case VK_IMAGE_VIEW_TYPE_CUBE: out.layers = 6u; break;
+            default: break;
         }
 
         if (out.level >= levels) out.level = levels - 1u;

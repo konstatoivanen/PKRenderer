@@ -50,7 +50,7 @@ namespace PK::ECS::Build
         const Math::float3& scale,
         const Math::BoundingBox& localBounds)
     {
-        auto view = entityDb->ReserveView(implementer, egid, &EntityViewTransform::bounds, &EntityViewTransform::transform);
+        entityDb->ReserveView(implementer, egid, &EntityViewTransform::bounds, &EntityViewTransform::transform);
         implementer->localAABB = localBounds;
         implementer->position = position;
         implementer->rotation = glm::quat(rotation);
@@ -63,7 +63,7 @@ namespace PK::ECS::Build
         const EGID& egid,
         Rendering::ScenePrimitiveFlags flags)
     {
-        auto view = entityDb->ReserveView(implementer, egid, &EntityViewScenePrimitive::primitive, &EntityViewScenePrimitive::bounds);
+        entityDb->ReserveView(implementer, egid, &EntityViewScenePrimitive::primitive, &EntityViewScenePrimitive::bounds);
         implementer->flags = flags;
     }
 
@@ -74,7 +74,7 @@ namespace PK::ECS::Build
         Rendering::Objects::StaticMesh* staticMesh,
         const std::initializer_list<Rendering::Objects::MaterialTarget>& materials)
     {
-        auto view = entityDb->ReserveView(implementer, egid, &EntityViewStaticMesh::primitive, &EntityViewStaticMesh::materials, &EntityViewStaticMesh::staticMesh, &EntityViewStaticMesh::transform);
+        entityDb->ReserveView(implementer, egid, &EntityViewStaticMesh::primitive, &EntityViewStaticMesh::materials, &EntityViewStaticMesh::staticMesh, &EntityViewStaticMesh::transform);
         implementer->materials = materials;
         implementer->sharedMesh = staticMesh;
     }
@@ -89,7 +89,7 @@ namespace PK::ECS::Build
         float radius,
         float angle)
     {
-        auto view = entityDb->ReserveView(implementer, egid, &EntityViewLight::transform, &EntityViewLight::bounds, &EntityViewLight::light, &EntityViewLight::primitive);
+        entityDb->ReserveView(implementer, egid, &EntityViewLight::transform, &EntityViewLight::bounds, &EntityViewLight::light, &EntityViewLight::primitive);
         implementer->color = color;
         implementer->radius = radius;
         implementer->angle = angle;
@@ -122,17 +122,24 @@ namespace PK::ECS::Build
 
         switch (type)
         {
-            case Rendering::LightType::Directional:
-                implementer->localAABB = Math::BoundingBox::CenterExtents(Math::PK_FLOAT3_ZERO, Math::PK_FLOAT3_ONE);
-                flags = flags | Rendering::ScenePrimitiveFlags::NeverCull;
-                break;
-            case Rendering::LightType::Point:
-                implementer->localAABB = Math::BoundingBox::CenterExtents(Math::PK_FLOAT3_ZERO, Math::PK_FLOAT3_ONE * radius);
-                break;
-            case Rendering::LightType::Spot:
-                auto a = radius * glm::tan(angle * 0.5f * Math::PK_FLOAT_DEG2RAD);
-                implementer->localAABB = Math::BoundingBox::CenterExtents({ 0.0f, 0.0f, radius * 0.5f }, { a, a, radius * 0.5f });
-                break;
+            case LightType::Directional:
+            {
+                implementer->localAABB = BoundingBox::CenterExtents(PK_FLOAT3_ZERO, PK_FLOAT3_ONE);
+                flags = flags | ScenePrimitiveFlags::NeverCull;
+            }
+            break;
+            case LightType::Point:
+            {
+                implementer->localAABB = BoundingBox::CenterExtents(PK_FLOAT3_ZERO, PK_FLOAT3_ONE * radius);
+            }
+            break;
+            case LightType::Spot:
+            {
+                auto a = radius * glm::tan(angle * 0.5f * PK_FLOAT_DEG2RAD);
+                implementer->localAABB = BoundingBox::CenterExtents({ 0.0f, 0.0f, radius * 0.5f }, { a, a, radius * 0.5f });
+            }
+            break;
+            default: PK_THROW_ERROR("Invalid Light Type");
         }
 
         EntityViewScenePrimitive(entityDb, implementer, egid, flags);
@@ -142,7 +149,7 @@ namespace PK::ECS::Build
     template<typename T>
     static void EntityViewRenderView(EntityDatabase* entityDb, T* implementer, const EGID& egid, Rendering::RenderViewType type, const Math::uint4& desiredRect, bool isWindowTarget)
     {
-        auto view = entityDb->ReserveView(implementer, egid, &EntityViewRenderView::transform, &EntityViewRenderView::projection, &EntityViewRenderView::renderView);
+        entityDb->ReserveView(implementer, egid, &EntityViewRenderView::transform, &EntityViewRenderView::projection, &EntityViewRenderView::renderView);
         implementer->type = type;
         implementer->desiredRect = desiredRect;
         implementer->isWindowTarget = isWindowTarget;
@@ -160,7 +167,7 @@ namespace PK::ECS::Build
         float rotationSmoothing,
         float sensitivity)
     {
-        auto view = entityDb->ReserveView(implementer, egid, &EntityViewFlyCamera::transform, &EntityViewFlyCamera::projection, &EntityViewFlyCamera::flyCamera);
+        entityDb->ReserveView(implementer, egid, &EntityViewFlyCamera::transform, &EntityViewFlyCamera::projection, &EntityViewFlyCamera::flyCamera);
         implementer->mode = ComponentProjection::Perspective;
         implementer->snashotPosition = implementer->position;
         implementer->snashotRotation = glm::eulerAngles(implementer->rotation);

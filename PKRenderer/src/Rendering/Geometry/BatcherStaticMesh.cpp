@@ -196,8 +196,6 @@ namespace PK::Rendering::Geometry
 
         std::sort(m_drawInfos.begin(), m_drawInfos.end());
 
-        auto indirectCount = 0u;
-
         UploadTransforms(cmd);
         UploadMaterials(cmd);
         UploadDrawIndices(cmd);

@@ -10,14 +10,14 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
     VulkanPipelineCache::VulkanPipelineCache(VkDevice device, const std::string& workingDirectory, const VulkanPhysicalDeviceProperties& physicalDeviceProperties, uint64_t pruneDelay) :
         m_device(device),
-        m_workingDirectory(workingDirectory),
-        m_pruneDelay(pruneDelay),
-        m_allowUnderEstimation(physicalDeviceProperties.conservativeRasterization.primitiveUnderestimation),
         m_maxOverEstimation(physicalDeviceProperties.conservativeRasterization.maxExtraPrimitiveOverestimationSize),
+        m_allowUnderEstimation(physicalDeviceProperties.conservativeRasterization.primitiveUnderestimation),
+        m_workingDirectory(workingDirectory),
+        m_pipelinePool(),
         m_vertexPipelines(1024),
         m_meshPipelines(1024),
         m_otherPipelines(1024),
-        m_pipelinePool()
+        m_pruneDelay(pruneDelay)
     {
         if (!workingDirectory.empty())
         {
@@ -427,6 +427,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
                 case ShaderStage::RayClosestHit: shaderGroups[stageCount].closestHitShader = stageCount; break;
                 case ShaderStage::RayAnyHit: shaderGroups[stageCount].anyHitShader = stageCount; break;
                 case ShaderStage::RayIntersection: shaderGroups[stageCount].intersectionShader = stageCount; break;
+                default: break;
             }
 
             shaderStages[stageCount++] = shader->GetModule(i)->stageInfo;

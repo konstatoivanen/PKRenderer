@@ -19,7 +19,7 @@ namespace PK::Rendering::RHI
     using namespace PK::Rendering::RHI::Objects;
     using namespace PK::Rendering::RHI::Vulkan;
 
-    Utilities::Scope<Driver> PK::Rendering::RHI::CreateRHIDriver(const std::string& workingDirectory, APIType api)
+    Scope<Driver> CreateRHIDriver(const std::string& workingDirectory, APIType api)
     {
         PK_THROW_ASSERT(Driver::s_instance == nullptr, "A driver instance already exists!");
 
@@ -46,11 +46,12 @@ namespace PK::Rendering::RHI
                 PK_LOG_NEWLINE();
             });
 
-        Utilities::Scope<Driver> driver = nullptr;
+        Scope<Driver> driver = nullptr;
 
         switch (api)
         {
             case APIType::Vulkan:
+            {
 #if defined(PK_DEBUG) && !defined(PK_NO_VK_VALIDATION) || defined(PK_FORCE_VK_VALIDATION)
                 const std::vector<const char*> PK_VALIDATION_LAYERS =
                 {
@@ -91,7 +92,10 @@ namespace PK::Rendering::RHI
                     &PK_INSTANCE_EXTENTIONS,
                     &PK_DEVICE_EXTENTIONS
                 ));
-                break;
+            }
+            break;
+
+            default: PK_THROW_ERROR("Unsupproted graphics API"); break;
         }
 
         Driver::s_instance = driver.get();

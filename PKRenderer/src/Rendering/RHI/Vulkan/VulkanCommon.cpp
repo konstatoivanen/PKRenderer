@@ -348,6 +348,7 @@ namespace PK::Rendering::RHI::Vulkan
             case BufferUsage::CPUToGPU: allocation.usage = VMA_MEMORY_USAGE_CPU_TO_GPU; break;
             case BufferUsage::GPUToCPU: allocation.usage = VMA_MEMORY_USAGE_GPU_TO_CPU; break;
             case BufferUsage::CPUCopy: allocation.usage = VMA_MEMORY_USAGE_CPU_COPY; break;
+            default: break;
         }
     }
 
@@ -459,10 +460,10 @@ namespace PK::Rendering::RHI::Vulkan
 
 
     VulkanRawBuffer::VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo, const char* name) :
+        persistentmap(createInfo.allocation.flags& VMA_ALLOCATION_CREATE_MAPPED_BIT),
         allocator(allocator),
         usage(createInfo.buffer.usage),
-        capacity(createInfo.buffer.size),
-        persistentmap(createInfo.allocation.flags& VMA_ALLOCATION_CREATE_MAPPED_BIT)
+        capacity(createInfo.buffer.size)
     {
         if ((createInfo.buffer.flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0)
         {
@@ -530,13 +531,13 @@ namespace PK::Rendering::RHI::Vulkan
 
     VulkanRawImage::VulkanRawImage(VkDevice device, VmaAllocator allocator, const VulkanImageCreateInfo& createInfo, const char* name) :
         allocator(allocator),
+        samples(createInfo.image.samples),
         format(createInfo.image.format),
+        formatAlias(createInfo.formatAlias),
         type(createInfo.image.imageType),
         extent(createInfo.image.extent),
         levels(createInfo.image.mipLevels),
-        layers(createInfo.image.arrayLayers),
-        samples(createInfo.image.samples),
-        formatAlias(createInfo.formatAlias)
+        layers(createInfo.image.arrayLayers)
     {
         if (createInfo.image.flags & VK_IMAGE_CREATE_ALIAS_BIT)
         {
@@ -704,10 +705,10 @@ namespace PK::Rendering::RHI::Vulkan
 
     VulkanQueryPool::VulkanQueryPool(VkDevice device, VkQueryType type, uint32_t size) :
         device(device),
-        type(type),
         size(size),
-        count(0u),
-        lastQueryFence()
+        type(type),
+        lastQueryFence(),
+        count(0u)
     {
         VkQueryPoolCreateInfo info{ VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO };
         info.queryCount = size;
@@ -794,9 +795,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case ElementType::Half2x2: return VK_FORMAT_R16G16_SFLOAT;
                 case ElementType::Half3x3: return VK_FORMAT_R16G16B16_SFLOAT;
                 case ElementType::Half4x4: return VK_FORMAT_R16G16B16A16_SFLOAT;
+                default: return VK_FORMAT_UNDEFINED;
             }
-
-            return VK_FORMAT_UNDEFINED;
         }
 
         ElementType GetElementType(VkFormat format)
@@ -839,9 +839,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case VK_FORMAT_R64G64_UINT: return ElementType::Ulong2;
                 case VK_FORMAT_R64G64B64_UINT: return ElementType::Ulong3;
                 case VK_FORMAT_R64G64B64A64_UINT: return ElementType::Ulong4;
+                default: return ElementType::Invalid;
             }
-
-            return ElementType::Invalid;
         }
 
         VkFormat GetFormat(TextureFormat format)
@@ -927,9 +926,8 @@ namespace PK::Rendering::RHI::Vulkan
             {
                 case ElementType::Ushort: return VK_INDEX_TYPE_UINT16;
                 case ElementType::Uint: return VK_INDEX_TYPE_UINT32;
+                default: return VK_INDEX_TYPE_MAX_ENUM;
             }
-
-            return VK_INDEX_TYPE_MAX_ENUM;
         }
 
         TextureFormat GetTextureFormat(VkFormat format)
@@ -1004,9 +1002,7 @@ namespace PK::Rendering::RHI::Vulkan
                 case VK_FORMAT_BC6H_UFLOAT_BLOCK:         return TextureFormat::BC6H_RGBUF;
                 case VK_FORMAT_BC6H_SFLOAT_BLOCK:         return TextureFormat::BC6H_RGBF;
                 case VK_FORMAT_BC7_UNORM_BLOCK:           return TextureFormat::BC7_UNORM;
-                
-                default:
-                    PK_THROW_ERROR("Unsupported format conversion");
+                default:                                  return TextureFormat::Invalid;
             }
         }
 
@@ -1125,8 +1121,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case VK_FORMAT_B8G8R8A8_SRGB:
                     return { VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY };
 
-                default:
-                    PK_THROW_ERROR("Swizzle conversion for supplied format is not defined!");
+                default: 
+                    return { VK_COMPONENT_SWIZZLE_MAX_ENUM, VK_COMPONENT_SWIZZLE_MAX_ENUM, VK_COMPONENT_SWIZZLE_MAX_ENUM, VK_COMPONENT_SWIZZLE_MAX_ENUM };
             }
         }
 
@@ -1139,9 +1135,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case SamplerType::Sampler3D: return VK_IMAGE_VIEW_TYPE_3D;
                 case SamplerType::Cubemap: return VK_IMAGE_VIEW_TYPE_CUBE;
                 case SamplerType::CubemapArray: return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+                default: return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
             }
-
-            return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
         }
 
         VkImageLayout GetImageLayout(TextureUsage usage)
@@ -1161,9 +1156,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case LoadOp::Keep: return  VK_ATTACHMENT_LOAD_OP_LOAD;
                 case LoadOp::Clear: return VK_ATTACHMENT_LOAD_OP_CLEAR;
                 case LoadOp::Discard: return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+                default: return VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
             }
-
-            return VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
         }
 
         VkAttachmentLoadOp GetLoadOp(VkImageLayout layout, LoadOp loadOp)
@@ -1177,9 +1171,8 @@ namespace PK::Rendering::RHI::Vulkan
             {
                 case StoreOp::Store: return  VK_ATTACHMENT_STORE_OP_STORE;
                 case StoreOp::Discard: return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                default: return VK_ATTACHMENT_STORE_OP_MAX_ENUM;
             }
-
-            return VK_ATTACHMENT_STORE_OP_MAX_ENUM;
         }
 
         VkCompareOp GetCompareOp(Comparison comparison)
@@ -1195,9 +1188,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case Comparison::NotEqual: return VK_COMPARE_OP_NOT_EQUAL;
                 case Comparison::GreaterEqual: return VK_COMPARE_OP_GREATER_OR_EQUAL;
                 case Comparison::Always: return VK_COMPARE_OP_ALWAYS;
+                default: return VK_COMPARE_OP_MAX_ENUM;
             }
-
-            return VK_COMPARE_OP_MAX_ENUM;
         }
 
         VkBorderColor GetBorderColor(BorderColor color)
@@ -1210,9 +1202,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case BorderColor::IntBlack: return VK_BORDER_COLOR_INT_OPAQUE_BLACK;
                 case BorderColor::FloatWhite: return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
                 case BorderColor::IntWhite: return VK_BORDER_COLOR_INT_OPAQUE_WHITE;
+                default: return VK_BORDER_COLOR_MAX_ENUM;
             }
-
-            return VK_BORDER_COLOR_MAX_ENUM;
         }
 
         VkSamplerAddressMode GetSamplerAddressMode(WrapMode wrap)
@@ -1224,9 +1215,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case WrapMode::Mirror: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
                 case WrapMode::MirrorOnce: return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
                 case WrapMode::Border: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+                default: return VK_SAMPLER_ADDRESS_MODE_MAX_ENUM;
             }
-
-            return VK_SAMPLER_ADDRESS_MODE_MAX_ENUM;
         }
 
         VkFilter GetFilterMode(FilterMode filter)
@@ -1237,9 +1227,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case FilterMode::Bilinear: return VK_FILTER_LINEAR;
                 case FilterMode::Trilinear: return VK_FILTER_LINEAR;
                 case FilterMode::Bicubic: return VK_FILTER_CUBIC_IMG;
+                default: return VK_FILTER_MAX_ENUM;
             }
-
-            return VK_FILTER_MAX_ENUM;
         }
 
         VkDescriptorType GetDescriptorType(ResourceType type)
@@ -1256,9 +1245,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case ResourceType::DynamicStorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
                 case ResourceType::InputAttachment: return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
                 case ResourceType::AccelerationStructure: return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+                default: return VK_DESCRIPTOR_TYPE_MAX_ENUM;
             }
-
-            return VK_DESCRIPTOR_TYPE_MAX_ENUM;
         }
 
         ResourceType GetResourceType(VkDescriptorType type, uint32_t count)
@@ -1275,9 +1263,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: return ResourceType::DynamicStorageBuffer;
                 case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: return ResourceType::InputAttachment;
                 case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: return ResourceType::AccelerationStructure;
+                default: return ResourceType::Invalid;
             }
-
-            return ResourceType::Invalid;
         }
 
         VkShaderStageFlagBits GetShaderStage(ShaderStage stage)
@@ -1297,9 +1284,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case ShaderStage::RayClosestHit: return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
                 case ShaderStage::RayAnyHit: return VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
                 case ShaderStage::RayIntersection: return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+                default: return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
             }
-
-            return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
         }
 
         VkPipelineBindPoint GetPipelineBindPoint(ShaderStageFlags stageFlags)
@@ -1340,9 +1326,8 @@ namespace PK::Rendering::RHI::Vulkan
             {
                 case InputRate::PerVertex: return VK_VERTEX_INPUT_RATE_VERTEX;
                 case InputRate::PerInstance: return VK_VERTEX_INPUT_RATE_INSTANCE;
+                default: return VK_VERTEX_INPUT_RATE_MAX_ENUM;
             }
-
-            return VK_VERTEX_INPUT_RATE_MAX_ENUM;
         }
 
         VkShaderStageFlagBits GetShaderStageFlags(ShaderStageFlags stageFlags)
@@ -1424,9 +1409,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case PolygonMode::Fill: return VK_POLYGON_MODE_FILL;
                 case PolygonMode::Line: return VK_POLYGON_MODE_LINE;
                 case PolygonMode::Point: return VK_POLYGON_MODE_POINT;
+                default: return VK_POLYGON_MODE_MAX_ENUM;
             }
-
-            return VK_POLYGON_MODE_MAX_ENUM;
         }
 
         VkBlendOp GetBlendOp(BlendOp op)
@@ -1439,9 +1423,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case BlendOp::ReverseSubtract: return VK_BLEND_OP_REVERSE_SUBTRACT;
                 case BlendOp::Min: return VK_BLEND_OP_MIN;
                 case BlendOp::Max: return VK_BLEND_OP_MAX;
+                default: return VK_BLEND_OP_MAX_ENUM;
             }
-
-            return VK_BLEND_OP_MAX_ENUM;;
         }
 
         VkBlendFactor GetBlendFactor(BlendFactor factor, VkBlendFactor fallback)
@@ -1463,9 +1446,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case BlendFactor::OneMinusConstColor: return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
                 case BlendFactor::ConstAlpha: return VK_BLEND_FACTOR_CONSTANT_ALPHA;
                 case BlendFactor::OneMinusConstAlpha: return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+                default: return VK_BLEND_FACTOR_MAX_ENUM;
             }
-
-            return VK_BLEND_FACTOR_MAX_ENUM;
         }
 
         VkLogicOp GetLogicOp(LogicOp op)
@@ -1488,9 +1470,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case LogicOp::OrInverted: return VK_LOGIC_OP_OR_INVERTED;
                 case LogicOp::NAND: return VK_LOGIC_OP_NAND;
                 case LogicOp::Set: return VK_LOGIC_OP_SET;
+                default: return VK_LOGIC_OP_MAX_ENUM;
             }
-
-            return VK_LOGIC_OP_MAX_ENUM;
         }
 
         VkCullModeFlagBits GetCullMode(CullMode op)
@@ -1500,9 +1481,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case CullMode::Off: return VK_CULL_MODE_NONE;
                 case CullMode::Back: return VK_CULL_MODE_BACK_BIT;
                 case CullMode::Front: return VK_CULL_MODE_FRONT_BIT;
+                default: return VK_CULL_MODE_FLAG_BITS_MAX_ENUM;
             }
-
-            return VK_CULL_MODE_FLAG_BITS_MAX_ENUM;
         }
 
         VkConservativeRasterizationModeEXT GetRasterMode(RasterMode mode)
@@ -1512,9 +1492,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case RasterMode::Default: return VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
                 case RasterMode::OverEstimate: return VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT;
                 case RasterMode::UnderEstimate: return VK_CONSERVATIVE_RASTERIZATION_MODE_UNDERESTIMATE_EXT;
+                default: return VK_CONSERVATIVE_RASTERIZATION_MODE_MAX_ENUM_EXT;
             }
-
-            return VK_CONSERVATIVE_RASTERIZATION_MODE_MAX_ENUM_EXT;
         }
 
         VkPrimitiveTopology GetTopology(Topology topology)
@@ -1532,9 +1511,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case Topology::TriangleListWithAdjacency: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
                 case Topology::TriangleStripWithAdjacency: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
                 case Topology::PatchList: return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+                default: return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
             }
-
-            return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
         }
 
         VkFrontFace GetFrontFace(FrontFace face)
@@ -1543,9 +1521,8 @@ namespace PK::Rendering::RHI::Vulkan
             {
                 case FrontFace::Clockwise: return VK_FRONT_FACE_CLOCKWISE;
                 case FrontFace::CounterClockwise: return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+                default: return VK_FRONT_FACE_MAX_ENUM;
             }
-
-            return VK_FRONT_FACE_MAX_ENUM;
         }
 
         VkPipelineStageFlags GetPipelineStageFlags(VkShaderStageFlags flags)
@@ -1615,9 +1592,8 @@ namespace PK::Rendering::RHI::Vulkan
                 case ShaderStage::RayClosestHit:
                 case ShaderStage::RayAnyHit: return VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
                 case ShaderStage::RayIntersection: return VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
+                default: return VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
             }
-
-            return VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         }
 
         bool IsReadAccess(VkAccessFlags flags)
@@ -1937,7 +1913,6 @@ namespace PK::Rendering::RHI::Vulkan
                 continue;
             }
 
-            auto& requiredFeatures = requirements.features;
             VulkanPhysicalDeviceFeatures features{};
             vkGetPhysicalDeviceFeatures2(device, &features.vk10);
 
@@ -2084,10 +2059,10 @@ namespace PK::Rendering::RHI::Vulkan
     {
         return
         {
-            (uint16_t)resourceRange.baseMipLevel,     //level
-            (uint16_t)resourceRange.baseArrayLayer,   //layer
-            (uint16_t)resourceRange.levelCount & 0x7FFFu,       //levels
-            (uint16_t)resourceRange.layerCount & 0x7FFFu        //layers
+            (uint16_t)resourceRange.baseMipLevel,           //level
+            (uint16_t)resourceRange.baseArrayLayer,         //layer
+            (uint16_t)(resourceRange.levelCount & 0x7FFFu), //levels
+            (uint16_t)(resourceRange.layerCount & 0x7FFFu)  //layers
         };
     }
 

@@ -64,8 +64,8 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         private:
             const VkDevice m_device;
-            const bool m_allowUnderEstimation;
             const float m_maxOverEstimation;
+            const bool m_allowUnderEstimation;
 
             VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
             std::string m_workingDirectory;

@@ -29,8 +29,8 @@ namespace PK::Rendering
     using namespace PK::Rendering::RHI::Objects;
 
     RenderPipelineDisptacher::RenderPipelineDisptacher(EntityDatabase* entityDb, AssetDatabase* assetDatabase, Sequencer* sequencer, IBatcher* batcher) :
-        m_entityDb(entityDb),
         m_sequencer(sequencer),
+        m_entityDb(entityDb),
         m_batcher(batcher),
         m_renderViewCount(0u)
     {
@@ -77,13 +77,6 @@ namespace PK::Rendering
         auto entityViews = m_entityDb->Query<EntityViewRenderView>((uint32_t)ECS::ENTITY_GROUPS::ACTIVE);
 
         PK_WARNING_ASSERT(entityViews.count < MAX_SCENE_VIEWS, "Active scene view count exceeds predefined maximum (%i)", MAX_SCENE_VIEWS);
-
-        auto hash = HashCache::Get();
-        auto time = m_timeFrameInfo.time;
-        auto deltaTime = m_timeFrameInfo.deltaTime;
-        auto smoothDeltaTime = m_timeFrameInfo.smoothDeltaTime;
-        auto frameIndex = m_timeFrameInfo.frameIndex;
-        auto windowTargetCount = 0u;
 
         m_renderViewCount = 0u;
 

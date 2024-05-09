@@ -11,7 +11,7 @@
 #include "Rendering/Passes/PassVolumeFog.h"
 #include "Rendering/Passes/PassFilmGrain.h"
 #include "Rendering/Passes/PassDepthOfField.h"
-#include "Rendering/Passes/PassTemporalAntiAliasing.h"
+#include "Rendering/Passes/PassTemporalAntialiasing.h"
 #include "Rendering/Passes/PassAutoExposure.h"
 #include "Rendering/Passes/PassBloom.h"
 #include "Rendering/RHI/Objects/AccelerationStructure.h"
@@ -29,15 +29,15 @@ namespace PK::Rendering
             RenderPipelineScene(ECS::EntityDatabase* entityDb, Core::Assets::AssetDatabase* assetDatabase, Core::ApplicationConfig* config);
             ~RenderPipelineScene();
 
-            virtual const RHI::BufferLayout& GetViewConstantsLayout() const { return m_constantsLayout; }
+            const RHI::BufferLayout& GetViewConstantsLayout() const final { return m_constantsLayout; }
 
-            virtual Rendering::Objects::GBuffersFull::Descriptor GetViewGBufferDescriptors() const;
+            Rendering::Objects::GBuffersFullDescriptor GetViewGBufferDescriptors() const final;
 
-            virtual void SetViewConstants(Rendering::Objects::RenderView* view) final;
+            void SetViewConstants(Rendering::Objects::RenderView* view) final;
 
-            virtual void RenderViews(struct RenderPipelineContext* context) final;
+            void RenderViews(struct RenderPipelineContext* context) final;
 
-            virtual void Step(Core::Assets::AssetImportEvent<Core::ApplicationConfig>* token) final;
+            void Step(Core::Assets::AssetImportEvent<Core::ApplicationConfig>* token) final;
 
         private:
             Passes::PassLights m_passLights;

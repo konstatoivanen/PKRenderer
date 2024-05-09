@@ -30,9 +30,9 @@ namespace PK::Rendering::RHI::Vulkan::Services
         uint64_t pruneDelay,
         size_t maxSets,
         std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes) :
+        m_poolSizes(poolSizes),
         m_device(device),
         m_maxSets(maxSets),
-        m_poolSizes(poolSizes),
         m_pruneDelay(pruneDelay),
         m_sets(1024)
     {
@@ -136,7 +136,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
                 {
                     write->pImageInfo = reinterpret_cast<decltype(write->pImageInfo)>(imageCount + 1);
                     auto newSize = imageCount + bind->count;
-                    auto bindSampler = type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                    auto bindSampler = type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || type == VK_DESCRIPTOR_TYPE_SAMPLER;
                     auto bindImage = type != VK_DESCRIPTOR_TYPE_SAMPLER;
 
                     if (m_writeImages.size() < newSize)
@@ -236,7 +236,6 @@ namespace PK::Rendering::RHI::Vulkan::Services
 
         for (int32_t i = (int32_t)keyvalues.count - 1; i >= 0; --i)
         {
-            auto& key = keyvalues.nodes[i].key;
             auto& value = keyvalues.values[i];
 
             if (!value->fence.IsComplete() || value->pruneTick >= m_currentPruneTick)

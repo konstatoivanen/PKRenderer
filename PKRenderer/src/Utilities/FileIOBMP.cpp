@@ -96,15 +96,14 @@ namespace PK::Utilities::FileIO
         fwrite(&colorsUsed, 4, 1, outputFile);
         uint32_t importantColors = ALL_COLORS_REQUIRED;
         fwrite(&importantColors, 4, 1, outputFile);
-        int32_t unpaddedRowSize = width * BYTES_PER_PIXEL;
 
         for (int32_t y = height - 1; y >= 0; --y)
-            for (uint32_t x = 0u; x < width; ++x)
-            {
-                uint32_t index = (x + y * width) * BYTES_PER_PIXEL;
-                byte color[4] = { pixels[index + 0], pixels[index + 1], pixels[index + 2], pixels[index + 3] };
-                fwrite(color, sizeof(byte), 4, outputFile);
-            }
+        for (uint32_t x = 0u; x < width; ++x)
+        {
+            uint32_t index = (x + y * width) * BYTES_PER_PIXEL;
+            byte color[4] = { pixels[index + 0], pixels[index + 1], pixels[index + 2], pixels[index + 3] };
+            fwrite(color, sizeof(byte), 4, outputFile);
+        }
 
         fclose(outputFile);
     }

@@ -104,7 +104,6 @@ namespace PK::Engines
         for (auto i = 0; i < views.count; ++i)
         {
             auto& view = views[i];
-            auto camera = view.flyCamera;
             auto transform = view.transform;
             auto position = transform->position;
             auto rotation = glm::eulerAngles(transform->rotation);

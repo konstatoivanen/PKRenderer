@@ -15,7 +15,7 @@ namespace PK::Rendering::RHI::Objects
             template<typename T>
             inline static BufferRef Create(size_t count, BufferUsage usage, const char* name) { return Create(sizeof(T) * count, usage, name); }
 
-            virtual ~Buffer() = default;
+            virtual ~Buffer() = 0;
 
             // This will likely throw for memory types that cannot be host read (i.e. GPU only).
             virtual const void* BeginRead(size_t offset, size_t size) = 0;

@@ -169,7 +169,7 @@ namespace PK::Rendering::Geometry
 
     void CalculateNormals(const float3* vertices, const uint32_t* indices, float3* normals, uint32_t vcount, uint32_t icount, float sign)
     {
-        for (auto i = 0u, j = 0u; i < icount; i += 3u)
+        for (auto i = 0u; i < icount; i += 3u)
         {
             auto i0 = indices[i + 0];
             auto i1 = indices[i + 1];

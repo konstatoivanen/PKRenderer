@@ -12,7 +12,7 @@ int main(int argc, char** argv)
 {
 #if defined(PK_DEBUG) && defined(_WIN32)
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    // _crtBreakAlloc(49891);
+   //_crtBreakAlloc = 68461;
 #endif
 
     auto application = new PK::Core::Application({ argc, argv }, "PK Renderer");

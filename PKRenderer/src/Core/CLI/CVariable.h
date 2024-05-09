@@ -12,7 +12,7 @@ namespace PK::Core::CLI
 
         ICVariable(const char* name) : name(name) {}
 
-        virtual ~ICVariable() = 0 {};
+        virtual ~ICVariable() = 0;
 
         void CVarBind();
         void CVarUnbind();

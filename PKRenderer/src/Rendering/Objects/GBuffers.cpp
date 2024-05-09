@@ -41,7 +41,7 @@ namespace PK::Rendering::Objects
         return isOutOfDate;
     }
 
-    bool GBuffersFull::Validate(const uint2& resolution, const Descriptor& descriptor, const char* namePrefix)
+    bool GBuffersFull::Validate(const uint2& resolution, const GBuffersFullDescriptor& descriptor, const char* namePrefix)
     {
         bool isOutOfDate = false;
         isOutOfDate |= current.Validate(resolution, descriptor.current, (std::string(namePrefix) + ".Current.").c_str());

@@ -5,9 +5,9 @@ namespace PK::Rendering::RHI::Vulkan::Services
 {
     VulkanFrameBufferCache::VulkanFrameBufferCache(VkDevice device, uint64_t pruneDelay) :
         m_device(device),
-        m_pruneDelay(pruneDelay),
         m_frameBuffers(512),
-        m_renderPasses(512)
+        m_renderPasses(512),
+        m_pruneDelay(pruneDelay)
     {
     }
 

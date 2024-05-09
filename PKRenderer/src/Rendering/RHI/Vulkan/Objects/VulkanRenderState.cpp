@@ -387,7 +387,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             record.access = access;
             record.bufferRange.offset = (uint32_t)handle->buffer.offset;
             record.bufferRange.size = (uint32_t)handle->buffer.range;
-            record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
+            record.queueFamily = handle->isConcurrent ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
             handler->Record(handle->buffer.buffer, record, PK_ACCESS_OPT_BARRIER);
         }
     }
@@ -403,7 +403,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             record.imageRange = VulkanConvertRange(handle->image.range);
             record.aspect = handle->image.range.aspectMask;
             record.layout = overrideLayout != VK_IMAGE_LAYOUT_MAX_ENUM ? overrideLayout : handle->image.layout;
-            record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
+            record.queueFamily = handle->isConcurrent ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
             handler->Record(handle->image.image, record, options);
 
             // Track alias as well so that layout stays consistent
@@ -424,7 +424,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         record.imageRange = VulkanConvertRange(handle->image.range);
         record.aspect = handle->image.range.aspectMask;
         record.layout = handle->image.layout;
-        record.queueFamily = handle->isConcurrent ? VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
+        record.queueFamily = handle->isConcurrent ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
 
         if (handle->isTracked)
         {
@@ -768,6 +768,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
                     case ResourceType::DynamicConstantBuffer:
                         RecordBuffer(handle, stage, access | VK_ACCESS_UNIFORM_READ_BIT);
                         break;
+                    default: break;
                 }
             }
         }

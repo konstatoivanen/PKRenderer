@@ -1,6 +1,11 @@
 #pragma once
 #include <typeindex>
 
+// Note clang complains about hidden virtuals. we dont care about that. lets ignore it.
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#endif
+
 namespace PK::Core::ControlFlow
 {
     class IBaseStep

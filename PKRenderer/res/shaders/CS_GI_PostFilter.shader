@@ -51,7 +51,7 @@ void main()
             float variance = 0.0f;
             GI_SF_DIFF_VARIANCE(coord, depth, diff, variance)
 
-                const float2 radiusAndScale = GI_GetDiskFilterRadiusAndScale(depth, variance, diff.ao, diff.history);
+            const float2 radiusAndScale = GI_GetDiskFilterRadiusAndScale(depth, variance, diff.ao, diff.history);
             const float scale = radiusAndScale.y;
             const float radius = radiusAndScale.x * (scale + 1e-4f);
             const bool skip = diff.history > 30.0f || scale < 0.05f;
