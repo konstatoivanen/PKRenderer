@@ -3,61 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <malloc.h>
 
 namespace PK::Assets
 {
-    void Decompress(PKAsset* asset)
-    {
-        auto base = reinterpret_cast<char*>(asset->rawData);
-        auto head = base + sizeof(PKAssetHeader);
-
-        uint32_t osize = *reinterpret_cast<uint32_t*>(head);
-        head += sizeof(uint32_t);
-
-        uint32_t binOffs = *reinterpret_cast<uint32_t*>(head);
-        head += sizeof(uint32_t);
-
-        size_t binSize = *reinterpret_cast<size_t*>(head);
-        head += sizeof(size_t);
-
-        auto decomp = reinterpret_cast<char*>(calloc(osize, sizeof(char)));
-        memcpy(decomp, base, sizeof(PKAssetHeader));
-
-        auto dh = 0ull;
-        auto dl = binSize;
-        auto rn = reinterpret_cast<PKEncNode*>(head);
-        auto cn = rn;
-        auto comp = base + binOffs;
-        head = decomp + sizeof(PKAssetHeader);
-
-        for (auto i = 0ull; i < dl; ++i)
-        {
-            if (cn->isLeaf)
-            {
-                head[dh++] = cn->value;
-                cn = rn;
-            }
-
-            auto ch = i / 8;
-            auto co = i - (ch * 8);
-            auto lr = comp[ch] & (1 << co);
-
-            if (lr == 0)
-            {
-                cn = cn->left.Get(base);
-            }
-            else
-            {
-                cn = cn->right.Get(base);
-            }
-        }
-
-        free(asset->rawData);
-        asset->rawData = decomp;
-        asset->header = reinterpret_cast<PKAssetHeader*>(decomp);
-        asset->header->isCompressed = false;
-    }
-
     FILE* OpenFile(const char* filepath, const char* option, size_t* size)
     {
         FILE* file = nullptr;
@@ -78,9 +28,15 @@ namespace PK::Assets
             return nullptr;
         }
 
-        fseek(file, 0, SEEK_END);
-        *size = ftell(file);
-        rewind(file);
+        struct stat filestat;
+        int fileNumber = _fileno(file);
+        if (fstat(fileNumber, &filestat) != 0)
+        {
+            fclose(file);
+            return nullptr;
+        }
+
+        *size = filestat.st_size;
 
         if (*size == 0)
         {
@@ -91,46 +47,77 @@ namespace PK::Assets
         return file;
     }
 
-
     int OpenAsset(const char* filepath, PKAsset* asset)
     {
         size_t size = 0ull;
         FILE* file = OpenFile(filepath, "rb", &size);
+        constexpr auto headerSize = sizeof(PKAssetHeader);
 
-        if (file == nullptr)
+        if (file == nullptr || size < headerSize)
         {
             return -1;
         }
 
-        uint64_t magicNumber = 0ull;
-        fread(&magicNumber, sizeof(decltype(magicNumber)), 1, file);
+        PKAssetHeader header;
+        fread(&header, headerSize, 1, file);
 
-        if (magicNumber != PK_ASSET_MAGIC_NUMBER)
-        {
-            fclose(file);
-            return -1;
-        }
-
-        rewind(file);
-
-        auto buffer = malloc(size);
-
-        if (buffer == nullptr)
+        if (header.magicNumber != PK_ASSET_MAGIC_NUMBER)
         {
             fclose(file);
             return -1;
         }
 
-        asset->rawData = buffer;
-        fread(buffer, sizeof(char), size, file);
+        char* buffer = nullptr;
+
+        if (!header.isCompressed)
+        {
+            buffer = reinterpret_cast<char*>(malloc(size));
+            fread(buffer + headerSize, sizeof(char), size - headerSize, file);
+        }
+        else
+        {
+            buffer = reinterpret_cast<char*>(calloc(header.uncompressedSize, sizeof(char)));
+
+            auto nodesSize = header.compressedOffset - sizeof(PKAssetHeader);
+            auto nodeCount = nodesSize / sizeof(PKEncNode);
+            auto nodes = reinterpret_cast<PKEncNode*>(alloca(nodesSize));
+
+            fread(nodes, sizeof(PKEncNode), nodeCount, file);
+
+            auto root = nodes;
+            auto curr = nodes;
+            auto head = buffer + sizeof(PKAssetHeader);
+
+            uint8_t block[64];
+            constexpr auto blockSize = sizeof(block) * 8ull;
+            auto blockCount = (header.compressedBitCount + blockSize - 1ull) / blockSize;
+
+            for (auto blockIdx = 0ull; blockIdx < blockCount; ++blockIdx)
+            {
+                auto blockBitCount = header.compressedBitCount - blockIdx * blockSize;
+                blockBitCount = blockBitCount > blockSize ? blockSize : blockBitCount;
+                fread(block, sizeof(uint8_t), (blockBitCount + 7ull) >> 3ull, file);
+
+                for (auto i = 0ull; i < blockBitCount; ++i)
+                {
+                    if (curr->isLeaf)
+                    {
+                        *head = curr->value;
+                        ++head;
+                        curr = root;
+                    }
+
+                    curr = root + ((block[i >> 3ull] & (1ull << (i & 0x7ull))) ? curr->right : curr->left);
+                }
+            }
+
+            header.isCompressed = false;
+        }
+
         fclose(file);
-
-        asset->header = reinterpret_cast<PKAssetHeader*>(asset->rawData);
-
-        if (asset->header->isCompressed)
-        {
-            Decompress(asset);
-        }
+            
+        asset->rawData = buffer;
+        *(asset->header) = header;
 
         return 0;
     }
@@ -142,7 +129,6 @@ namespace PK::Assets
             return;
         }
 
-        asset->header = nullptr;
         free(asset->rawData);
     }
 

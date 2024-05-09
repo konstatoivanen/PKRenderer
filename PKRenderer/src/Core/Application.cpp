@@ -46,6 +46,7 @@ namespace PK::Core
 
     Application::Application(CLI::CArguments arguments, const std::string& name)
     {
+        PK_LOG_SCOPE_TIMER(Initialize);
         PK_THROW_ASSERT(!s_instance, "Application already exists!");
         s_instance = this;
 

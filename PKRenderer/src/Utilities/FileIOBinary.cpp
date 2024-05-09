@@ -36,9 +36,16 @@ namespace PK::Utilities::FileIO
             return -1;
         }
 
-        fseek(file, 0, SEEK_END);
-        *size = ftell(file);
-        rewind(file);
+        struct stat filestat;
+        int fileNumber = _fileno(file);
+
+        if (fstat(fileNumber, &filestat) != 0)
+        {
+            fclose(file);
+            return -1;
+        }
+
+        *size = filestat.st_size;
 
         if (*size == 0)
         {

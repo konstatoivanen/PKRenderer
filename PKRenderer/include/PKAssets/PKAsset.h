@@ -241,21 +241,22 @@ namespace PK::Assets
 
     struct PKEncNode
     {
-        RelativePtr<PKEncNode> left;
-        RelativePtr<PKEncNode> right;
-        char value;
-        bool isLeaf;
+        uint32_t left : 11;
+        uint32_t right : 11;
+        uint32_t isLeaf : 2;
+        uint32_t value : 8;
     };
 
-    struct alignas(16) PKAssetHeader
+    struct alignas(8) PKAssetHeader
     {
         uint64_t magicNumber = PK_ASSET_MAGIC_NUMBER;   // 8 bytes
         char name[PK_ASSET_NAME_MAX_LENGTH]{};          // 72 bytes
         PKAssetType type = PKAssetType::Invalid;        // 73 bytes
         bool isCompressed = false;                      // 74 bytes
 
-        uint16_t __padding0 = 0u;                       // 76 bytes
-        uint32_t __padding1 = 0u;                       // 80 bytes
+        uint16_t compressedOffset = 0u;                 // 76 bytes
+        uint32_t uncompressedSize = 0u;                 // 80 bytes
+        uint64_t compressedBitCount = 0u;               // 88 bytes
     };
 
     namespace Shader
@@ -441,22 +442,22 @@ namespace PK::Assets
                 RelativePtr<uint8_t> indices;     // 32 bytes
             };
 
-            PKVertex PackVertex(const float* pPosition,
-                const float* pTexcoord,
-                const float* pNormal,
-                const float* pTangent,
-                const float* submeshbbmin,
-                const float* submeshbbmax);
+            PKVertex PackVertex(const float* pPosition, 
+                                const float* pTexcoord, 
+                                const float* pNormal, 
+                                const float* pTangent, 
+                                const float* submeshbbmin, 
+                                const float* submeshbbmax);
 
-            PKMeshlet PackMeshlet(uint32_t vertexFirst,
-                uint32_t triangleFirst,
-                uint32_t vertexCount,
-                uint32_t triangleCount,
-                const int8_t* coneAxis,
-                int8_t coneCutoff,
-                const float* coneApex,
-                const float* center,
-                const float* extents);
+            PKMeshlet PackMeshlet(uint32_t vertexFirst, 
+                                  uint32_t triangleFirst, 
+                                  uint32_t vertexCount, 
+                                  uint32_t triangleCount,
+                                  const int8_t* coneAxis,
+                                  int8_t coneCutoff,
+                                  const float* coneApex,
+                                  const float* center,
+                                  const float* extents);
         }
 
         struct PKVertexAttribute
@@ -495,7 +496,10 @@ namespace PK::Assets
 
     struct PKAsset
     {
-        PKAssetHeader* header = nullptr;
-        void* rawData = nullptr;
+        union
+        {
+            void* rawData = nullptr;
+            PKAssetHeader* header;
+        };
     };
 }

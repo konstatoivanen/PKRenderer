@@ -50,5 +50,5 @@ namespace PK::Core::CLI
 #define PK_THROW_ERROR(...) throw PK_LOG_EXCEPTION(__VA_ARGS__)
 #define PK_THROW_ASSERT(value, ...) { if(!(value)) { PK_THROW_ERROR(__VA_ARGS__); } }
 #define PK_WARNING_ASSERT(value, ...) { if(!(value)) { PK_LOG_WARNING(__VA_ARGS__); } }
-#define PK_LOG_SCOPE_TIMER(name) auto PK_LOG_TIMER_##name = PK::Core::CLI::LogScopeTimer(#name)
+#define PK_LOG_SCOPE_TIMER(name) volatile auto PK_LOG_TIMER_##name = PK::Core::CLI::LogScopeTimer(#name)
 #define PK_LOG_SCOPE_INDENT(name) auto PK_LOG_SCOPE_INDENT_##name = PK::Core::CLI::LogScopeIndent()
