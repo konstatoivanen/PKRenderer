@@ -2,15 +2,13 @@
 #include "Utilities/ForwardDeclare.h"
 #include "Core/IService.h"
 #include "Rendering/EntityEnums.h"
+#include "Rendering/RHI/RHI.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::ControlFlow, class Sequencer)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::ECS, class EntityDatabase)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Geometry, struct IBatcher)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, struct RenderView)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, struct GBuffersFullDescriptor)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI, struct BufferLayout)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI, struct Window)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct CommandBuffer)
 
 namespace PK::Rendering
 {
@@ -20,7 +18,7 @@ namespace PK::Rendering
         PK::ECS::EntityDatabase* entityDb;
         struct EntityCullSequencerProxy* cullingProxy;
         Geometry::IBatcher* batcher;
-        RHI::Window* window;
+        RHI::Objects::Window* window;
         Rendering::Objects::RenderView** views;
         uint32_t viewCount;
     };

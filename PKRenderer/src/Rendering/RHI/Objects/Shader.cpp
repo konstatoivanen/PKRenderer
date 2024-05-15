@@ -123,17 +123,18 @@ namespace PK::Rendering::RHI::Objects
 
         if (shader->materialPropertyCount > 0)
         {
-            auto pMaterialProperties = shader->materialProperties.Get(base);
+            m_materialPropertyLayout.clear();
+            m_materialPropertyLayout.reserve(shader->materialPropertyCount + 1u);
 
-            auto elements = PK_STACK_ALLOC(BufferElement, shader->materialPropertyCount);
+            auto pMaterialProperties = shader->materialProperties.Get(base);
 
             for (auto i = 0u; i < shader->materialPropertyCount; ++i)
             {
                 auto& prop = pMaterialProperties[i];
-                elements[i] = { prop.type, prop.name };
+                m_materialPropertyLayout.push_back({ prop.type, prop.name });
             }
 
-            m_materialPropertyLayout = BufferLayout(elements, shader->materialPropertyCount);
+            m_materialPropertyLayout.CalculateOffsetsAndStride(true);
         }
 
         auto api = Driver::Get()->GetAPI();
@@ -227,15 +228,14 @@ namespace PK::Rendering::RHI::Objects
 
             for (auto& element : variant->GetVertexLayout())
             {
-                meta.append("       " + element.name.to_string() + ", " + std::to_string(element.location) + ", " + std::to_string((uint32_t)element.type) + "\n");
+                meta.append("       " + element->name.to_string() + ", " + std::to_string(element->location) + ", " + std::to_string((uint32_t)element->type) + "\n");
             }
 
             meta.append("       Dynamic Constants:\n");
 
-            for (auto& kv : variant->GetPushConstantLayout())
+            for (auto& element : variant->GetPushConstantLayout())
             {
-                auto& element = kv.second;
-                meta.append("       " + element.name.to_string() + ", " + std::to_string(element.offset) + ", " + std::to_string((uint32_t)element.size) + "\n");
+                meta.append("       " + element->name.to_string() + ", " + std::to_string(element->offset) + ", " + std::to_string((uint32_t)element->size) + "\n");
             }
 
             for (auto i = 0u; i < PK_MAX_DESCRIPTOR_SETS; ++i)

@@ -1,9 +1,8 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
 #include "Core/Yaml/ConvertMathTypes.h"
-#include "Core/Yaml/ConvertTexture.h"
+#include "Core/Yaml/ConvertTextureAsset.h"
 #include "Core/Yaml/ConvertShader.h"
-#include "Rendering/RHI/GraphicsAPI.h"
 #include "Rendering/RHI/BuiltInResources.h"
 #include "Material.h"
 
@@ -102,9 +101,9 @@ namespace PK::Rendering::Objects
                     case ElementType::Int2: Set(nameId, values.as<int2>()); break;
                     case ElementType::Int3: Set(nameId, values.as<int3>()); break;
                     case ElementType::Int4: Set(nameId, values.as<int4>()); break;
-                    case ElementType::Texture2DHandle: Set(nameId, values.as<Texture*>()); break;
-                    case ElementType::Texture3DHandle: Set(nameId, values.as<Texture*>()); break;
-                    case ElementType::TextureCubeHandle: Set(nameId, values.as<Texture*>()); break;
+                    case ElementType::Texture2DHandle: Set(nameId, values.as<TextureAsset*>()->GetRHI()); break;
+                    case ElementType::Texture3DHandle: Set(nameId, values.as<TextureAsset*>()->GetRHI()); break;
+                    case ElementType::TextureCubeHandle: Set(nameId, values.as<TextureAsset*>()->GetRHI()); break;
                     default: PK_LOG_WARNING("Unsupported material parameter type"); break;
                 }
             }
@@ -115,7 +114,7 @@ namespace PK::Rendering::Objects
     {
         Clear();
 
-        auto builtIns = GraphicsAPI::GetBuiltInResources();
+        auto builtIns = RHIGetBuiltInResources();
 
         PK_THROW_ASSERT(m_shader->SupportsMaterials(), "Shader is doesn't support materials!");
         ReserveLayout(m_shader->GetMaterialPropertyLayout());

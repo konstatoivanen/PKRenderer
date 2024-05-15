@@ -8,9 +8,9 @@
 #include "Rendering/EntityCulling.h"
 #include "Rendering/RHI/Objects/Texture.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
-#include "Rendering/RHI/Window.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/Objects/Window.h"
 #include "Rendering/Objects/RenderView.h"
+#include "Rendering/Objects/TextureAsset.h"
 #include "Rendering/IRenderPipeline.h"
 #include "RenderPipelineDisptacher.h"
 
@@ -36,8 +36,8 @@ namespace PK::Rendering
     {
         auto hash = HashCache::Get();
 
-        auto bluenoise256 = assetDatabase->Load<Texture>("res/textures/default/T_Bluenoise256.ktx2");
-        auto bluenoise128x64 = assetDatabase->Load<Texture>("res/textures/default/T_Bluenoise128x64.ktx2");
+        auto bluenoise256 = assetDatabase->Load<TextureAsset>("res/textures/default/T_Bluenoise256.ktx2")->GetRHI();
+        auto bluenoise128x64 = assetDatabase->Load<TextureAsset>("res/textures/default/T_Bluenoise128x64.ktx2")->GetRHI();
 
         auto sampler = bluenoise256->GetSamplerDescriptor();
         sampler.anisotropy = 0.0f;
@@ -51,8 +51,8 @@ namespace PK::Rendering
         sampler.filterMag = FilterMode::Bilinear;
         bluenoise128x64->SetSampler(sampler);
 
-        GraphicsAPI::SetTexture(hash->pk_Bluenoise256, bluenoise256);
-        GraphicsAPI::SetTexture(hash->pk_Bluenoise128x64, bluenoise128x64);
+        RHISetTexture(hash->pk_Bluenoise256, bluenoise256);
+        RHISetTexture(hash->pk_Bluenoise128x64, bluenoise128x64);
 
         SamplerDescriptor samplerDesc{};
         samplerDesc.anisotropy = 16.0f;
@@ -61,7 +61,7 @@ namespace PK::Rendering
         samplerDesc.wrap[0] = WrapMode::Repeat;
         samplerDesc.wrap[1] = WrapMode::Repeat;
         samplerDesc.wrap[2] = WrapMode::Repeat;
-        GraphicsAPI::SetSampler(hash->pk_Sampler_SurfDefault, samplerDesc);
+        RHISetSampler(hash->pk_Sampler_SurfDefault, samplerDesc);
 
         samplerDesc.anisotropy = 0.0f;
         samplerDesc.filterMin = FilterMode::Bilinear;
@@ -69,7 +69,7 @@ namespace PK::Rendering
         samplerDesc.wrap[0] = WrapMode::Clamp;
         samplerDesc.wrap[1] = WrapMode::Clamp;
         samplerDesc.wrap[2] = WrapMode::Clamp;
-        GraphicsAPI::SetSampler(hash->pk_Sampler_GBuffer, samplerDesc);
+        RHISetSampler(hash->pk_Sampler_GBuffer, samplerDesc);
     }
 
     void RenderPipelineDisptacher::OnApplicationRender(Window* window)
@@ -144,7 +144,7 @@ namespace PK::Rendering
 
                     pipeline->SetViewConstants(renderView);
 
-                    renderView->constants->FlushBuffer(GraphicsAPI::GetCommandBuffer(QueueType::Transfer));
+                    renderView->constants->FlushBuffer(RHIGetCommandBuffer(QueueType::Transfer));
 
                     viewFamilies[viewTypeIndex][viewFamilySizes[viewTypeIndex]++] = renderView;
                 }
@@ -169,7 +169,7 @@ namespace PK::Rendering
             }
         }
 
-        auto* cmdgraphics = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
+        auto* cmdgraphics = RHIGetCommandBuffer(QueueType::Graphics);
 
         // @TODO composite multiple views to an intermediate window target
 

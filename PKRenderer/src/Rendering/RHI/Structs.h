@@ -1,9 +1,15 @@
 #pragma once
-#include "Math/Types.h"
 #include <PKAssets/PKAsset.h>
+#include "Utilities/NameID.h"
+#include "Math/Types.h"
 
 namespace PK::Rendering::RHI
 {
+    namespace Objects
+    {
+        struct Buffer;
+    }
+
     typedef PK::Assets::PKDescriptorType ResourceType;
     typedef PK::Assets::PKElementType ElementType;
     typedef PK::Assets::PKShaderStage ShaderStage;
@@ -20,6 +26,7 @@ namespace PK::Rendering::RHI
     constexpr static const uint32_t PK_SHADOW_CASCADE_COUNT = 4;
     constexpr static const uint32_t PK_MAX_DESCRIPTOR_SETS = PK::Assets::PK_ASSET_MAX_DESCRIPTOR_SETS;
     constexpr static const uint32_t PK_MAX_DESCRIPTORS_PER_SET = PK::Assets::PK_ASSET_MAX_DESCRIPTORS_PER_SET;
+    constexpr static const uint32_t PK_MAX_PUSH_CONSTANTS = PK::Assets::PK_ASSET_MAX_PUSH_CONSTANTS;
     constexpr static const uint32_t PK_MAX_VERTEX_ATTRIBUTES = PK::Assets::PK_ASSET_MAX_VERTEX_ATTRIBUTES;
     constexpr static const uint32_t PK_MAX_UNBOUNDED_SIZE = PK::Assets::PK_ASSET_MAX_UNBOUNDED_SIZE;
     constexpr static const uint32_t PK_MAX_VIEWPORTS = 16;
@@ -547,5 +554,45 @@ namespace PK::Rendering::RHI
         size_t unusedRangeSizeMin;
         size_t unusedRangeSizeAvg;
         size_t unusedRangeSizeMax;
+    };
+
+    struct alignas(16) AccelerationStructureGeometryInfo
+    {
+        Utilities::NameID name;
+        RHI::Objects::Buffer* vertexBuffer;
+        RHI::Objects::Buffer* indexBuffer;
+        uint32_t vertexOffset;
+        uint32_t vertexStride;
+        uint32_t vertexFirst;
+        uint32_t vertexCount;
+        uint32_t indexStride;
+        uint32_t indexFirst;
+        uint32_t indexCount;
+        uint32_t customIndex;
+    };
+
+    struct WindowProperties
+    {
+        std::string title;
+        std::string iconPath;
+        uint32_t width;
+        uint32_t height;
+        bool vsync;
+        bool cursorVisible;
+
+        WindowProperties(const std::string& title = "PK Window",
+            const std::string& iconPath = std::string(),
+            uint32_t width = 1600u,
+            uint32_t height = 912u,
+            bool vsync = true,
+            bool cursorVisible = true) :
+            title(title),
+            iconPath(iconPath),
+            width(width),
+            height(height),
+            vsync(vsync),
+            cursorVisible(cursorVisible)
+        {
+        }
     };
 }

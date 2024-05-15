@@ -3,7 +3,7 @@
 #include "Rendering/Geometry/IBatcher.h"
 #include "Rendering/Objects/ConstantBuffer.h"
 #include "Rendering/Objects/ShaderBindingTable.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/RHI.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core, struct ApplicationConfig)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::Assets, class AssetDatabase)

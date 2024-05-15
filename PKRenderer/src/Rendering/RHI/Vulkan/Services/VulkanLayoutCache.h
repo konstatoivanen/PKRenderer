@@ -24,7 +24,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
     struct PipelineLayoutKey
     {
         VkDescriptorSetLayout setlayouts[PK_MAX_DESCRIPTOR_SETS]{};
-        VkPushConstantRange pushConstants[(int)ShaderStage::MaxCount]{};
+        VkPushConstantRange pushConstants[PK_MAX_PUSH_CONSTANTS]{};
 
         inline bool operator == (const PipelineLayoutKey& r) const noexcept
         {
@@ -47,7 +47,9 @@ namespace PK::Rendering::RHI::Vulkan::Services
             VkDevice m_device;
             PK::Utilities::FixedPool<VulkanDescriptorSetLayout, 1024> m_setLayoutPool;
             PK::Utilities::FixedPool<VulkanPipelineLayout, 1024> m_pipelineLayoutPool;
-            PK::Utilities::PointerMap<DescriptorSetLayoutKey, VulkanDescriptorSetLayout, TDescriptorHash> m_setlayouts;
-            PK::Utilities::PointerMap<PipelineLayoutKey, VulkanPipelineLayout, TPipelineHash> m_pipelineLayouts;
+            PK::Utilities::PointerMap<DescriptorSetLayoutKey, VulkanDescriptorSetLayout, TDescriptorHash> m_setlayouts = 
+                PK::Utilities::PointerMap<DescriptorSetLayoutKey, VulkanDescriptorSetLayout, TDescriptorHash>(128ull);
+            PK::Utilities::PointerMap<PipelineLayoutKey, VulkanPipelineLayout, TPipelineHash> m_pipelineLayouts = 
+                PK::Utilities::PointerMap<PipelineLayoutKey, VulkanPipelineLayout, TPipelineHash>(128ull);
     };
 }

@@ -1,11 +1,8 @@
 #pragma once
-#include "Utilities/ForwardDeclare.h"
 #include "Utilities/NoCopy.h"
-#include "Utilities/Ref.h"
 #include "Utilities/FenceRef.h"
 #include "Rendering/RHI/Structs.h"
-
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct CommandBuffer)
+#include "Rendering/RHI/RHI.h"
 
 namespace PK::Rendering::RHI::Objects
 {

@@ -1170,7 +1170,7 @@
     <ClInclude Include="src\Core\Yaml\ConvertShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Yaml\ConvertTexture.h">
+    <ClInclude Include="src\Core\Yaml\ConvertTextureAsset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\Application.h">
@@ -1320,10 +1320,10 @@
     <ClInclude Include="src\Rendering\Objects\ShaderPropertyBlock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Objects\StaticSceneMesh.h">
+    <ClInclude Include="src\Rendering\Objects\StaticMeshCollection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Objects\VirtualStaticMesh.h">
+    <ClInclude Include="src\Rendering\Objects\StaticMeshAsset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\Passes\PassAutoExposure.h">
@@ -1440,13 +1440,13 @@
     <ClInclude Include="src\Rendering\RHI\Vulkan\VulkanDriver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\RHI\Vulkan\VulkanWindow.h">
+    <ClInclude Include="src\Rendering\RHI\Vulkan\Objects\VulkanWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\RHI\BuiltInResources.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\RHI\Disposer.h">
+    <ClInclude Include="src\Utilities\Disposer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\RHI\Driver.h">
@@ -1455,7 +1455,7 @@
     <ClInclude Include="src\Utilities\FenceRef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\RHI\GraphicsAPI.h">
+    <ClInclude Include="src\Rendering\RHI\RHI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\RHI\Layout.h">
@@ -1464,7 +1464,7 @@
     <ClInclude Include="src\Rendering\RHI\Structs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\RHI\Window.h">
+    <ClInclude Include="src\Rendering\RHI\Objects\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Rendering\EntityEnums.h">
@@ -1521,7 +1521,7 @@
     <ClInclude Include="src\Utilities\Hash.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utilities\IndexedSet.h">
+    <ClInclude Include="src\Utilities\FastSet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utilities\ISingleton.h">
@@ -1584,10 +1584,10 @@
     <ClInclude Include="src\ECS\EGID.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Objects\GBuffers.h">
+    <ClInclude Include="src\Utilities\NameID.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utilities\NameID.h">
+    <ClInclude Include="src\Rendering\Objects\TextureAsset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2210,7 +2210,7 @@
     <ClCompile Include="src\Core\Yaml\ConvertShader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\Yaml\ConvertTexture.cpp">
+    <ClCompile Include="src\Core\Yaml\ConvertTextureAsset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Application.cpp">
@@ -2285,10 +2285,10 @@
     <ClCompile Include="src\Rendering\Objects\ShaderPropertyBlock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Objects\StaticSceneMesh.cpp">
+    <ClCompile Include="src\Rendering\Objects\StaticMeshCollection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Objects\VirtualStaticMesh.cpp">
+    <ClCompile Include="src\Rendering\Objects\StaticMeshAsset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\Passes\PassAutoExposure.cpp">
@@ -2324,22 +2324,10 @@
     <ClCompile Include="src\Rendering\Passes\PassVolumeFog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\RHI\Objects\AccelerationStructure.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Rendering\RHI\Objects\BindArray.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Rendering\RHI\Objects\Buffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Rendering\RHI\Objects\CommandBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\RHI\Objects\Shader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Rendering\RHI\Objects\Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\RHI\Vulkan\Objects\VulkanAccelerationStructure.cpp">
@@ -2402,22 +2390,19 @@
     <ClCompile Include="src\Rendering\RHI\Vulkan\VulkanDriver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\RHI\Vulkan\VulkanWindow.cpp">
+    <ClCompile Include="src\Rendering\RHI\Vulkan\Objects\VulkanWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\RHI\BuiltInResources.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\RHI\Disposer.cpp">
+    <ClCompile Include="src\Utilities\Disposer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\RHI\Driver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\RHI\Layout.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Rendering\RHI\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\RenderPipelineDispatcher.cpp">
@@ -2459,13 +2444,13 @@
     <ClCompile Include="src\Core\Input\InputKeyBinding.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Objects\GBuffers.cpp">
+    <ClCompile Include="src\Rendering\Objects\RenderView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ECS\ComponentProjection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\RHI\GraphicsAPI.cpp">
+    <ClCompile Include="src\Rendering\RHI\RHI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Rendering\EntityCulling.cpp">
@@ -2477,7 +2462,7 @@
     <ClCompile Include="src\Core\ServiceRegister.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\RHI\Objects\QueueSet.cpp">
+    <ClCompile Include="src\Rendering\Objects\TextureAsset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

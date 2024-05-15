@@ -4,12 +4,12 @@
 #include "Utilities/MemoryBlock.h"
 #include "Math/FunctionsMisc.h"
 #include "Rendering/EntityEnums.h"
+#include "Rendering/RHI/RHI.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::Assets, class AssetDatabase)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core, struct ApplicationConfig)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering, struct RequestEntityCullResults)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering, struct RenderPipelineContext)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::ECS, struct EntityViewLight)
 
 namespace PK::Rendering::Passes

@@ -2,7 +2,8 @@
 #include "Utilities/ForwardDeclare.h"
 #include "Core/IService.h"
 #include "Core/ControlFlow/IStep.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/Layout.h"
+#include "Rendering/RHI/RHI.h"
 #include "Rendering/Geometry/IGizmos.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core, struct ApplicationConfig)

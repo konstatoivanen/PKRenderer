@@ -55,7 +55,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
         pipelineLayoutInfo.pSetLayouts = key.setlayouts;
         pipelineLayoutInfo.pPushConstantRanges = key.pushConstants;
         pipelineLayoutInfo.setLayoutCount = PK_MAX_DESCRIPTOR_SETS;
-        pipelineLayoutInfo.pushConstantRangeCount = (uint32_t)ShaderStage::MaxCount;
+        pipelineLayoutInfo.pushConstantRangeCount = PK_MAX_PUSH_CONSTANTS;
 
         for (auto i = 0u; i < PK_MAX_DESCRIPTOR_SETS; ++i)
         {
@@ -66,7 +66,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
             }
         }
 
-        for (auto i = 0u; i < (uint32_t)ShaderStage::MaxCount; ++i)
+        for (auto i = 0u; i < PK_MAX_PUSH_CONSTANTS; ++i)
         {
             if (key.pushConstants[i].size == 0)
             {

@@ -1,7 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Rendering/RHI/Objects/Shader.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
-#include "Rendering/RHI/GraphicsAPI.h"
 #include "Rendering/RHI/Driver.h"
 #include "ShaderBindingTable.h"
 
@@ -14,7 +13,7 @@ namespace PK::Rendering::Objects
     {
         // @TODO parameterize this
         auto selector = shader->GetVariantSelector();
-        selector.SetKeywordsFrom(GraphicsAPI::GetDriver()->globalResources);
+        selector.SetKeywordsFrom(RHIGetDriver()->globalResources);
         auto newVariantIndex = selector.GetIndex();
         auto newHash = shader->GetAssetHash();
 
@@ -26,16 +25,7 @@ namespace PK::Rendering::Objects
         pipelineHash = newHash;
         variantIndex = newVariantIndex;
         tableInfo = shader->GetVariant(newVariantIndex)->GetShaderBindingTableInfo();
-
-        if (buffer == nullptr)
-        {
-            buffer = Buffer::Create(tableInfo.totalTableSize, BufferUsage::DefaultShaderBindingTable, "ShaderBindingTable");
-        }
-        else
-        {
-            buffer->Validate(tableInfo.totalTableSize);
-        }
-
+        RHIValidateBuffer(buffer, tableInfo.totalTableSize, BufferUsage::DefaultShaderBindingTable, "ShaderBindingTable");
         cmd->UploadBufferData(buffer.get(), tableInfo.handleData);
     }
 

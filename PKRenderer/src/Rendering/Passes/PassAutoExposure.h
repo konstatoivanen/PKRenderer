@@ -1,12 +1,9 @@
 #pragma once
 #include "Utilities/ForwardDeclare.h"
 #include "Utilities/NoCopy.h"
-#include "Rendering/RHI/Objects/Buffer.h"
+#include "Rendering/RHI/RHI.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::Assets, class AssetDatabase)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct CommandBuffer)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Texture)
 
 namespace PK::Rendering::Passes
 {

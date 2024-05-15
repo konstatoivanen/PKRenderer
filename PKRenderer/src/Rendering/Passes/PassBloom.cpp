@@ -2,8 +2,8 @@
 #include "Core/CLI/Log.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Rendering/RHI/Objects/Shader.h"
+#include "Rendering/RHI/Objects/Texture.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
-#include "Rendering/RHI/GraphicsAPI.h"
 #include "Rendering/HashCache.h"
 #include "PassBloom.h"
 
@@ -31,7 +31,7 @@ namespace PK::Rendering::Passes
         descriptor.sampler.filterMin = FilterMode::Trilinear;
         descriptor.sampler.filterMag = FilterMode::Trilinear;
 
-        m_bloomTexture = Texture::Create(descriptor, "Bloom.Texture");
+        m_bloomTexture = RHICreateTexture(descriptor, "Bloom.Texture");
         m_computeBloom = assetDatabase->Find<Shader>("CS_Bloom");
         m_passDownsample0 = m_computeBloom->GetVariantIndex("PASS_DOWNSAMPLE0");
         m_passDownsample = m_computeBloom->GetVariantIndex("PASS_DOWNSAMPLE1");
@@ -53,26 +53,28 @@ namespace PK::Rendering::Passes
 
         auto hash = HashCache::Get();
 
-        GraphicsAPI::SetTexture(hash->pk_Texture, source, 0, 0);
-        GraphicsAPI::SetImage(hash->pk_Image, bloom, 0, 0);
-        GraphicsAPI::SetTexture(hash->pk_Bloom_Texture, bloom);
+        RHISetTexture(hash->pk_Texture, source, 0, 0);
+        RHISetImage(hash->pk_Image, bloom, 0, 0);
+        RHISetTexture(hash->pk_Bloom_Texture, bloom);
 
         cmd->Dispatch(m_computeBloom, m_passDownsample0, { res.x, res.y, 1u });
 
         for (auto i = 1u; i < 8u; ++i)
         {
-            GraphicsAPI::SetTexture(hash->pk_Texture, bloom, i - 1u, 0);
-            GraphicsAPI::SetImage(hash->pk_Image, bloom, i, 0);
+            RHISetTexture(hash->pk_Texture, bloom, i - 1u, 0);
+            RHISetImage(hash->pk_Image, bloom, i, 0);
             cmd->Dispatch(m_computeBloom, m_passDownsample, { res.x >> i, res.y >> i, 1u });
         }
 
         for (auto i = 6; i >= 0; --i)
         {
-            GraphicsAPI::SetTexture(hash->pk_Texture, bloom, i + 1u, 0u);
-            GraphicsAPI::SetImage(hash->pk_Image, bloom, i, 0u);
+            RHISetTexture(hash->pk_Texture, bloom, i + 1u, 0u);
+            RHISetImage(hash->pk_Image, bloom, i, 0u);
             cmd->Dispatch(m_computeBloom, m_passUpsample, { res.x >> i, res.y >> i, 1u });
         }
 
         cmd->EndDebugScope();
     }
+
+    Texture* PassBloom::GetTexture() { return m_bloomTexture.get(); }
 }

@@ -1,8 +1,8 @@
 #include "PrecompiledHeader.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Rendering/RHI/Objects/Shader.h"
+#include "Rendering/RHI/Objects/Texture.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
-#include "Rendering/RHI/GraphicsAPI.h"
 #include "Rendering/HashCache.h"
 #include "PassFilmGrain.h"
 
@@ -32,15 +32,15 @@ namespace PK::Rendering::Passes
         descriptor.sampler.wrap[1] = WrapMode::Repeat;
         descriptor.sampler.wrap[2] = WrapMode::Repeat;
         descriptor.usage = TextureUsage::DefaultStorage | TextureUsage::Concurrent;
-        m_filmGrainTexture = Texture::Create(descriptor, "FilmGrain.Texture");
-        GraphicsAPI::SetTexture(HashCache::Get()->pk_FilmGrain_Texture, m_filmGrainTexture.get());
+        m_filmGrainTexture = RHICreateTexture(descriptor, "FilmGrain.Texture");
+        RHISetTexture(HashCache::Get()->pk_FilmGrain_Texture, m_filmGrainTexture.get());
     }
 
     void PassFilmGrain::Compute(RHI::Objects::CommandBuffer* cmd)
     {
         auto hash = HashCache::Get();
         cmd->BeginDebugScope("Noise Compute", PK_COLOR32_BLUE);
-        GraphicsAPI::SetImage(hash->pk_Image, m_filmGrainTexture.get(), 0, 0);
+        RHISetImage(hash->pk_Image, m_filmGrainTexture.get(), 0, 0);
         cmd->Dispatch(m_computeFilmGrain, { 256, 256, 1 });
         cmd->EndDebugScope();
     }

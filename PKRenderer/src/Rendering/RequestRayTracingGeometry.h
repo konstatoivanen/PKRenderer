@@ -1,7 +1,7 @@
 #pragma once
 #include "Math/Types.h"
 #include "Rendering/EntityEnums.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/RHI.h"
 
 namespace PK::Rendering
 {

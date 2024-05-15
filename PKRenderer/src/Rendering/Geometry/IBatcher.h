@@ -1,13 +1,11 @@
 #pragma once
-#include "Utilities/ForwardDeclare.h"
 #include <cstdint>
+#include "Utilities/ForwardDeclare.h"
+#include "Rendering/RHI/RHI.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::ECS, struct ComponentTransform)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, class Material)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, struct StaticMesh)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI, struct FixedFunctionShaderAttributes)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct CommandBuffer)
 
 namespace PK::Rendering::Geometry
 {

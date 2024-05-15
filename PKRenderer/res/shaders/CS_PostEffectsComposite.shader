@@ -73,7 +73,7 @@ void main()
 
     // Debug previews
 #if defined(FX_APPLY_DEBUG)
-    if (uv.x > 0.5 && IS_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_HALFSCREEN))
+    if (uv.x > 0.5 || !IS_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_HALFSCREEN))
     {
         IF_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_ZOOM)
         {

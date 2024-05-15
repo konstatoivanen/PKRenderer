@@ -503,12 +503,12 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             for (const auto& element : shaderLayout)
             {
                 auto* attribute = m_pipelineKey.vertexAttributes + index++;
-                auto format = EnumConvert::GetFormat(element.type);
+                auto format = EnumConvert::GetFormat(element->type);
 
-                if (attribute->location != element.location || attribute->format != format)
+                if (attribute->location != element->location || attribute->format != format)
                 {
                     validateAttributes = true;
-                    attribute->location = element.location;
+                    attribute->location = element->location;
                     attribute->format = format;
                 }
             }
@@ -568,9 +568,9 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             }
         }
 
-        if (boundElementCount != shaderLayout.size())
+        if (boundElementCount != shaderLayout.GetCount())
         {
-            PK_LOG_WARNING("Warning only '%u' out of '%u' shader vertex input streams were bound.", boundElementCount, (uint32_t)shaderLayout.size());
+            PK_LOG_WARNING("Warning only '%u' out of '%u' shader vertex input streams were bound.", boundElementCount, shaderLayout.GetCount());
         }
 
         auto bindingBufferCount = indexBindingBuffer + 1u;

@@ -3,6 +3,7 @@
 #include "Core/CLI/Log.h"
 #include "ECS/EntityViewScenePrimitive.h"
 #include "ECS/EntityViewStaticMesh.h"
+#include "Rendering/RHI/Objects/AccelerationStructure.h"
 #include "Rendering/RequestRayTracingGeometry.h"
 #include "EngineGatherRayTracingGeometry.h"
 
@@ -11,6 +12,7 @@ namespace PK::Engines
     using namespace PK::Math;
     using namespace PK::ECS;
     using namespace PK::Rendering;
+    using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
     EngineGatherRayTracingGeometry::EngineGatherRayTracingGeometry(EntityDatabase* entityDb) : m_entityDb(entityDb)

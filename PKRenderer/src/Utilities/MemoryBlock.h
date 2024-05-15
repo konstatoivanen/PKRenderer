@@ -14,6 +14,8 @@ namespace PK::Utilities
             {
                 Validate(count); 
             }
+
+            MemoryBlock() {}
             
             ~MemoryBlock()
             {
@@ -60,6 +62,13 @@ namespace PK::Utilities
             {
                 Validate(i + 1ull);
                 GetData()[i] = value;
+            }
+
+            void CopyFrom(const MemoryBlock& other)
+            {
+                Validate(other.m_count, true);
+                std::copy(other.GetData(), other.GetData() + other.m_count, GetData());
+                //memcpy(m_data, other.m_data, other.m_count * sizeof(T));
             }
 
             void Clear() { memset(m_data, 0, sizeof(T) * m_count); }

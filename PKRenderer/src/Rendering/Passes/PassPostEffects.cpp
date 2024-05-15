@@ -5,6 +5,7 @@
 #include "Rendering/RHI/Objects/Shader.h"
 #include "Rendering/RHI/Objects/Texture.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
+#include "Rendering/Objects/TextureAsset.h"
 #include "Rendering/HashCache.h"
 #include "PassPostEffects.h"
 
@@ -68,7 +69,7 @@ namespace PK::Rendering::Passes
             }),
             "Constants.PostProcess");
 
-        GraphicsAPI::SetBuffer(hash->pk_PostEffectsParams, *m_constantsPostProcess.get());
+        RHISetBuffer(hash->pk_PostEffectsParams, *m_constantsPostProcess.get());
     }
 
     void PassPostEffectsComposite::Render(CommandBuffer* cmd, Texture* destination)
@@ -77,7 +78,7 @@ namespace PK::Rendering::Passes
         auto resolution = destination->GetResolution();
 
         cmd->BeginDebugScope("PostEffects.Composite", PK_COLOR_YELLOW);
-        GraphicsAPI::SetImage(hash->pk_Image, destination, 0, 0);
+        RHISetImage(hash->pk_Image, destination, 0, 0);
         cmd->Dispatch(m_computeComposite, m_passIndex, { resolution.x, resolution.y, 1u });
         cmd->EndDebugScope();
     }
@@ -87,8 +88,8 @@ namespace PK::Rendering::Passes
         auto hash = HashCache::Get();
         auto config = token->asset;
 
-        m_bloomLensDirtTexture = token->assetDatabase->Load<Texture>(config->FileBloomDirt);
-        m_colorgradingLut = token->assetDatabase->Load<Texture>(config->CC_FileLookupTexture);
+        m_bloomLensDirtTexture = token->assetDatabase->Load<TextureAsset>(config->FileBloomDirt)->GetRHI();
+        m_colorgradingLut = token->assetDatabase->Load<TextureAsset>(config->CC_FileLookupTexture)->GetRHI();
 
         auto smp = m_colorgradingLut->GetSamplerDescriptor();
         smp.wrap[0] = WrapMode::Clamp;
@@ -98,8 +99,8 @@ namespace PK::Rendering::Passes
         smp.filterMag = FilterMode::Trilinear;
         m_colorgradingLut->SetSampler(smp);
 
-        GraphicsAPI::SetTexture(hash->pk_Bloom_LensDirtTex, m_bloomLensDirtTexture);
-        GraphicsAPI::SetTexture(hash->pk_CC_LutTex, m_colorgradingLut);
+        RHISetTexture(hash->pk_Bloom_LensDirtTex, m_bloomLensDirtTexture);
+        RHISetTexture(hash->pk_CC_LutTex, m_colorgradingLut);
 
         m_constantsPostProcess->Set<float>(hash->pk_Bloom_Intensity, glm::exp(config->BloomIntensity) - 1.0f);
         m_constantsPostProcess->Set<float>(hash->pk_Bloom_DirtIntensity, glm::exp(config->BloomLensDirtIntensity) - 1.0f);
@@ -154,7 +155,7 @@ namespace PK::Rendering::Passes
         featureMask |= (uint)(config->PostFXDebugZoom) << 12;
 
         m_constantsPostProcess->Set<uint>(hash->pk_PostEffectsFeatureMask, featureMask);
-        m_constantsPostProcess->FlushBuffer(GraphicsAPI::GetCommandBuffer(QueueType::Transfer));
+        m_constantsPostProcess->FlushBuffer(RHIGetCommandBuffer(QueueType::Transfer));
 
         // All but lut regular color grading
         const uint fullFeatureMask = 0x2Fu;

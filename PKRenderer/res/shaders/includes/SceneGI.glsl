@@ -133,7 +133,7 @@ GISpec GI_ShadeRoughSpecular(const float3 normal, const float3 viewdir, const fl
 
     // Remap roughness if lighting is uniform over hemisphere
     const float newRoughness = lerp(1.0f, roughness, directionality);
-    const float3 specular = SH_ToColor(diff.sh) * EvaluateBxDF_Specular(normal, -viewdir, newRoughness, direction) * PK_PI;
+    const float3 specular = SH_ToColor(diff.sh) * EvaluateBxDF_Specular(normal, -viewdir, newRoughness, direction);
 
     return GISpec(specular, diff.ao, diff.history);
 }

@@ -1,7 +1,5 @@
 #pragma once
-#include <iterator> 
-#include <cstddef>  
-#include <functional>
+#include <iterator>
 
 namespace PK::Utilities
 {

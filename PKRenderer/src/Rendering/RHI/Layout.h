@@ -1,6 +1,8 @@
 #pragma once
+#include <vector>
 #include "Math/Types.h"
 #include "Utilities/FixedList.h"
+#include "Utilities/FastSet.h"
 #include "Utilities/NameID.h"
 #include "Rendering/RHI/Structs.h"
 
@@ -24,11 +26,10 @@ namespace PK::Rendering::RHI
         }
     };
 
-    struct PushConstantLayout : public std::map<Utilities::NameID, PushConstant>
+    struct PushConstantLayout : public PK::Utilities::InlineList<PushConstant, PK_MAX_PUSH_CONSTANTS>
     {
         PushConstantLayout() {}
-        PushConstantLayout(const PushConstant* variables, size_t count);
-        const PushConstant* TryGetElement(Utilities::NameID name) const;
+        PushConstantLayout(const PushConstant* variables, size_t count) : InlineList(variables, count) {}
     };
 
 
@@ -50,11 +51,11 @@ namespace PK::Rendering::RHI
         }
     };
 
-    struct ResourceLayout : public PK::Utilities::FixedList<ResourceElement, PK_MAX_DESCRIPTORS_PER_SET>
+    struct ResourceLayout : public PK::Utilities::InlineList<ResourceElement, PK_MAX_DESCRIPTORS_PER_SET>
     {
         ResourceLayout() {}
-        ResourceLayout(std::initializer_list<ResourceElement> elements) : PK::Utilities::FixedList<ResourceElement, PK_MAX_DESCRIPTORS_PER_SET>(elements) {}
-        ResourceLayout(std::vector<ResourceElement> elements) : PK::Utilities::FixedList<ResourceElement, PK_MAX_DESCRIPTORS_PER_SET>(elements.data(), elements.size()) {}
+        ResourceLayout(std::initializer_list<ResourceElement> elements) : InlineList(elements) {}
+        ResourceLayout(std::vector<ResourceElement> elements) : InlineList(elements.data(), elements.size()) {}
         const ResourceElement* TryGetElement(Utilities::NameID name, uint32_t* index) const;
     };
 
@@ -81,18 +82,21 @@ namespace PK::Rendering::RHI
             alignedOffset(alignedOffset)
         {
         }
+
+        constexpr bool operator== (const BufferElement& b)
+        {
+            return name == b.name && type == b.type && count == b.count && location == b.location && offset == b.offset && alignedOffset == b.alignedOffset;
+        }
     };
 
-    constexpr static bool operator == (const BufferElement& a, const BufferElement& b)
+    struct BufferElementNameHash
     {
-        return a.name == b.name && a.type == b.type && a.count == b.count && a.location == b.location && a.offset == b.offset && a.alignedOffset == b.alignedOffset;
-    }
+        size_t operator()(const BufferElement& k) const noexcept
+        {
+            return (size_t)k.name.identifier;
+        }
+    };
 
-    constexpr static bool operator != (const BufferElement& a, const BufferElement& b)
-    {
-        return !(a == b);
-    }
-    
     struct BufferLayout : public std::vector<BufferElement>
     {
         BufferLayout() {}
@@ -118,15 +122,20 @@ namespace PK::Rendering::RHI
         constexpr inline uint32_t GetPaddedStride() const { return m_paddedStride; }
         constexpr inline uint64_t GetHash() const { return m_hash; }
         constexpr inline bool CompareFast(const BufferLayout& other) const { return m_stride == other.m_stride && m_hash == other.m_hash; }
-        const BufferElement* TryGetElement(Utilities::NameID name, uint32_t* index) const;
         void CalculateOffsetsAndStride(bool applyOffsets);
 
     private:
-        std::unordered_map<Utilities::NameID, uint32_t> m_elementMap;
         uint64_t m_hash = 0ull;
         uint32_t m_stride = 0;
         uint32_t m_alignedStride = 0;
         uint32_t m_paddedStride = 0;
+    };
+
+
+    struct VertexInputLayout : public Utilities::FastSet<BufferElement, BufferElementNameHash>
+    {
+        VertexInputLayout() : FastSet() {}
+        const BufferElement* TryGetElement(Utilities::NameID name, uint32_t* index) const;
     };
 
 
@@ -168,20 +177,17 @@ namespace PK::Rendering::RHI
 
         VertexStreamLayout() {}
 
-        VertexStreamLayout(const VertexStreamElement* elements, size_t count) :
-            PK::Utilities::InlineList<VertexStreamElement, PK_MAX_VERTEX_ATTRIBUTES>(elements, count)
+        VertexStreamLayout(const VertexStreamElement* elements, size_t count) : InlineList(elements, count)
         {
             CalculateOffsetsAndStride();
         }
 
-        VertexStreamLayout(std::initializer_list<VertexStreamElement> elements) : 
-            PK::Utilities::InlineList<VertexStreamElement, PK_MAX_VERTEX_ATTRIBUTES>(elements)
+        VertexStreamLayout(std::initializer_list<VertexStreamElement> elements) : InlineList(elements)
         {
             CalculateOffsetsAndStride();
         }
 
-        VertexStreamLayout(std::vector<VertexStreamElement> elements) :
-            PK::Utilities::InlineList<VertexStreamElement, PK_MAX_VERTEX_ATTRIBUTES>(elements.data(), elements.size())
+        VertexStreamLayout(std::vector<VertexStreamElement> elements) : InlineList(elements.data(), elements.size())
         {
             CalculateOffsetsAndStride();
         }

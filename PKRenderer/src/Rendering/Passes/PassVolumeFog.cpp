@@ -32,18 +32,18 @@ namespace PK::Rendering::Passes
         descriptor.sampler.wrap[2] = WrapMode::Clamp;
         descriptor.resolution = { config->InitialWidth / 8u, config->InitialHeight / 8u, 128 };
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
-        m_volumeScatter = Texture::Create(descriptor, "Fog.ScatterVolume");
+        m_volumeScatter = RHICreateTexture(descriptor, "Fog.ScatterVolume");
 
         descriptor.format = TextureFormat::RGB9E5;
         descriptor.formatAlias = TextureFormat::R32UI;
-        m_volumeInject = Texture::Create(descriptor, "Fog.InjectVolume");
-        m_volumeInjectPrev = Texture::Create(descriptor, "Fog.InjectVolume.Previous");
+        m_volumeInject = RHICreateTexture(descriptor, "Fog.InjectVolume");
+        m_volumeInjectPrev = RHICreateTexture(descriptor, "Fog.InjectVolume.Previous");
 
         descriptor.format = TextureFormat::R16F;
         descriptor.formatAlias = TextureFormat::Invalid;
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
-        m_volumeDensity = Texture::Create(descriptor, "Fog.DensityVolume");
-        m_volumeDensityPrev = Texture::Create(descriptor, "Fog.DensityVolume.Previous");
+        m_volumeDensity = RHICreateTexture(descriptor, "Fog.DensityVolume");
+        m_volumeDensityPrev = RHICreateTexture(descriptor, "Fog.DensityVolume.Previous");
 
         m_computeDensity = assetDatabase->Find<Shader>("CS_VolumeFogDensity");
         m_computeInject = assetDatabase->Find<Shader>("CS_VolumeFogInject");
@@ -74,7 +74,7 @@ namespace PK::Rendering::Passes
             }), "Fog.Parameters");
 
         OnUpdateParameters(config);
-        GraphicsAPI::SetBuffer(hash->pk_Fog_Parameters, m_volumeResources->GetBuffer());
+        RHISetBuffer(hash->pk_Fog_Parameters, m_volumeResources->GetRHI());
     }
 
     void PassVolumeFog::ComputeDensity(CommandBuffer* cmd, const Math::uint3& resolution)
@@ -89,13 +89,13 @@ namespace PK::Rendering::Passes
         m_volumeInjectPrev->Validate(volumeResolution);
         m_volumeScatter->Validate(volumeResolution);
 
-        GraphicsAPI::SetImage(hash->pk_Fog_Inject, m_volumeInjectPrev.get());
-        GraphicsAPI::SetTexture(hash->pk_Fog_InjectRead, m_volumeInject.get());
-        GraphicsAPI::SetImage(hash->pk_Fog_Density, m_volumeDensity.get());
-        GraphicsAPI::SetTexture(hash->pk_Fog_DensityRead, m_volumeDensityPrev.get());
+        RHISetImage(hash->pk_Fog_Inject, m_volumeInjectPrev.get());
+        RHISetTexture(hash->pk_Fog_InjectRead, m_volumeInject.get());
+        RHISetImage(hash->pk_Fog_Density, m_volumeDensity.get());
+        RHISetTexture(hash->pk_Fog_DensityRead, m_volumeDensityPrev.get());
         cmd->Dispatch(m_computeDensity, 0, volumeResolution);
-        GraphicsAPI::SetImage(hash->pk_Fog_Density, m_volumeDensityPrev.get());
-        GraphicsAPI::SetTexture(hash->pk_Fog_DensityRead, m_volumeDensity.get());
+        RHISetImage(hash->pk_Fog_Density, m_volumeDensityPrev.get());
+        RHISetTexture(hash->pk_Fog_DensityRead, m_volumeDensity.get());
 
         cmd->EndDebugScope();
     }
@@ -107,14 +107,14 @@ namespace PK::Rendering::Passes
         auto hash = HashCache::Get();
         const uint3 volumeResolution = { resolution.x / 8u, resolution.y / 8u, 128u };
 
-        GraphicsAPI::SetImage(hash->pk_Fog_Inject, m_volumeInject.get());
-        GraphicsAPI::SetTexture(hash->pk_Fog_InjectRead, m_volumeInjectPrev.get());
+        RHISetImage(hash->pk_Fog_Inject, m_volumeInject.get());
+        RHISetTexture(hash->pk_Fog_InjectRead, m_volumeInjectPrev.get());
         cmd->Dispatch(m_computeInject, 0, volumeResolution);
-        GraphicsAPI::SetImage(hash->pk_Fog_Inject, m_volumeInjectPrev.get());
-        GraphicsAPI::SetTexture(hash->pk_Fog_InjectRead, m_volumeInject.get());
+        RHISetImage(hash->pk_Fog_Inject, m_volumeInjectPrev.get());
+        RHISetTexture(hash->pk_Fog_InjectRead, m_volumeInject.get());
 
-        GraphicsAPI::SetImage(hash->pk_Fog_Scatter, m_volumeScatter.get());
-        GraphicsAPI::SetTexture(hash->pk_Fog_ScatterRead, m_volumeScatter.get());
+        RHISetImage(hash->pk_Fog_Scatter, m_volumeScatter.get());
+        RHISetTexture(hash->pk_Fog_ScatterRead, m_volumeScatter.get());
         cmd->Dispatch(m_computeScatter, 0, { volumeResolution.x, volumeResolution.y, 1u });
 
         cmd->EndDebugScope();
@@ -123,7 +123,7 @@ namespace PK::Rendering::Passes
     void PassVolumeFog::Render(CommandBuffer* cmd, Texture* destination)
     {
         cmd->BeginDebugScope("Fog.Composite", PK_COLOR_MAGENTA);
-        GraphicsAPI::SetImage(HashCache::Get()->pk_Image, destination);
+        RHISetImage(HashCache::Get()->pk_Image, destination);
         cmd->Dispatch(m_shaderComposite, 0, destination->GetResolution());
         cmd->EndDebugScope();
     }
@@ -148,6 +148,6 @@ namespace PK::Rendering::Passes
         m_volumeResources->Set<float>(hash->pk_Fog_Density_Sky_HeightExponent, config->FogDensitySkyHeightExponent);
         m_volumeResources->Set<float>(hash->pk_Fog_Density_Sky_HeightOffset, config->FogDensitySkyHeightOffset);
         m_volumeResources->Set<float>(hash->pk_Fog_Density_Sky_HeightAmount, config->FogDensitySkyHeightAmount);
-        m_volumeResources->FlushBuffer(GraphicsAPI::GetCommandBuffer(QueueType::Transfer));
+        m_volumeResources->FlushBuffer(RHIGetCommandBuffer(QueueType::Transfer));
     }
 }

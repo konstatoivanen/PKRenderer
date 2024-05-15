@@ -11,7 +11,6 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     class VulkanTexture : public RHI::Objects::Texture
     {
         public:
-            VulkanTexture();
             VulkanTexture(const TextureDescriptor& descriptor, const char* name);
             ~VulkanTexture();
             

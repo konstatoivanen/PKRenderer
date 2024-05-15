@@ -3,9 +3,9 @@
 #include "Utilities/FileIOBMP.h"
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
+#include "Rendering/RHI/Objects/Buffer.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
-#include "Rendering/RHI/Window.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/Objects/Window.h"
 #include "EngineScreenshot.h"
 
 namespace PK::Engines
@@ -40,7 +40,7 @@ namespace PK::Engines
 
         auto elementCount = m_captureResolution.x * m_captureResolution.y * 4;
 
-        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Graphics);
+        auto cmd = RHIGetCommandBuffer(QueueType::Graphics);
 
         if (m_copyFence.IsValid() && m_copyFence.IsComplete())
         {
@@ -101,16 +101,8 @@ namespace PK::Engines
 
         m_captureResolution = m_currentResolution;
 
-        if (m_copyBuffer == nullptr)
-        {
-            m_copyBuffer = Buffer::Create<uint32_t>(m_currentResolution.x * m_currentResolution.y,
-                BufferUsage::GPUToCPU | BufferUsage::TransferDst | BufferUsage::TransferSrc,
-                "Screenshot.CopyBuffer");
-        }
-        else
-        {
-            m_copyBuffer->Validate<uint32_t>(m_currentResolution.x * m_currentResolution.y);
-        }
+        auto usage = BufferUsage::GPUToCPU | BufferUsage::TransferDst | BufferUsage::TransferSrc;
+        RHIValidateBuffer<uint32_t>(m_copyBuffer, m_currentResolution.x * m_currentResolution.y, usage, "Screenshot.CopyBuffer");
 
         m_copyFence.Invalidate();
         m_accumulatedPixels.Validate(m_currentResolution.x * m_currentResolution.y * 4, true);

@@ -1,16 +1,14 @@
 #pragma once
-#include "Utilities/IndexedSet.h"
+#include "Utilities/FastSet.h"
 #include "Utilities/FixedList.h"
 #include "Core/IService.h"
 #include "Rendering/Geometry/IBatcher.h"
-#include "Rendering/Objects/StaticSceneMesh.h"
+#include "Rendering/Objects/StaticMeshCollection.h"
 #include "Rendering/Objects/BindSet.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::Assets, class AssetDatabase)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::ECS, struct ComponentTransform)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, class Material)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Texture)
 
 namespace PK::Rendering::Geometry
 {
@@ -24,7 +22,7 @@ namespace PK::Rendering::Geometry
 
         struct MaterialGroup
         {
-            Utilities::IndexedSet<Rendering::Objects::Material> materials;
+            Utilities::PointerSet<Rendering::Objects::Material> materials;
             size_t firstIndex = 0ull;
             size_t stride = 0ull;
 
@@ -66,7 +64,7 @@ namespace PK::Rendering::Geometry
     public:
         BatcherStaticMesh(PK::Core::Assets::AssetDatabase* assetDatabase);
 
-        inline Rendering::Objects::StaticSceneMesh* GetStaticSceneMesh() { return m_staticGeometry.get(); }
+        inline Rendering::Objects::StaticMeshCollection* GetStaticMeshCollection() { return m_staticGeometry.get(); }
 
         void BeginCollectDrawCalls() final;
         void EndCollectDrawCalls(RHI::Objects::CommandBuffer* cmd) final;
@@ -90,7 +88,7 @@ namespace PK::Rendering::Geometry
         void UploadMaterials(RHI::Objects::CommandBuffer* cmd);
         void UploadDrawIndices(RHI::Objects::CommandBuffer* cmd);
 
-        Utilities::Scope<Rendering::Objects::StaticSceneMesh> m_staticGeometry;
+        Utilities::Scope<Rendering::Objects::StaticMeshCollection> m_staticGeometry;
 
         RHI::Objects::BufferRef m_matrices;
         RHI::Objects::BufferRef m_indices;
@@ -103,8 +101,8 @@ namespace PK::Rendering::Geometry
         std::vector<RHI::IndexRange> m_passGroups;
 
         Utilities::FixedList<MaterialGroup, 32> m_materials;
-        Utilities::IndexedSet<RHI::Objects::Shader> m_shaders;
-        Utilities::IndexedSet<ECS::ComponentTransform> m_transforms;
+        Utilities::PointerSet<RHI::Objects::Shader> m_shaders;
+        Utilities::PointerSet<ECS::ComponentTransform> m_transforms;
         uint16_t m_groupIndex = 0u;
         uint32_t m_taskletCount = 0u;
     };

@@ -39,4 +39,13 @@ namespace PK::Utilities::Hash
             return PK::Utilities::Hash::FNV1AHash(&k, sizeof(T));
         }
     };
+
+    template<typename T>
+    struct TPointerHash
+    {
+        size_t operator()(const T* k) const noexcept
+        {
+            return reinterpret_cast<size_t>(k);
+        }
+    };
 }

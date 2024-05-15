@@ -7,7 +7,7 @@ PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core, struct ApplicationConfig)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::Assets, class AssetDatabase)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::ECS, class EntityDatabase)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Geometry, struct IGizmos)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, class StaticSceneMesh)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, class StaticMeshCollection)
 
 namespace PK::Engines
 {
@@ -20,7 +20,7 @@ namespace PK::Engines
     public:
         EngineDebug(Core::Assets::AssetDatabase* assetDatabase,
             ECS::EntityDatabase* entityDb,
-            PK::Rendering::Objects::StaticSceneMesh* baseMesh,
+            PK::Rendering::Objects::StaticMeshCollection* baseMesh,
             const Core::ApplicationConfig* config);
 
         virtual void OnApplicationUpdateEngines() final;

@@ -7,10 +7,12 @@
 #include "Rendering/HashCache.h"
 #include "Rendering/RequestRayTracingGeometry.h"
 #include "Rendering/Objects/RenderView.h"
-#include "Rendering/RHI/Driver.h"
+#include "Rendering/RHI/Objects/Texture.h"
+#include "Rendering/RHI/Objects/AccelerationStructure.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/RHI/Objects/QueueSet.h"
-#include "Rendering/RHI/Window.h"
+#include "Rendering/RHI/Objects/Window.h"
+#include "Rendering/RHI/Driver.h"
 #include "RenderPipelineScene.h"
 
 namespace PK::Rendering
@@ -42,50 +44,50 @@ namespace PK::Rendering
         PK_LOG_VERBOSE("SceneRenderPipeline.Ctor");
         PK_LOG_SCOPE_INDENT(local);
 
-        m_sceneStructure = AccelerationStructure::Create("Scene");
-
+        m_sceneStructure = RHICreateAccelerationStructure("Scene");
+        
         auto hash = HashCache::Get();
 
+        m_constantsLayout = BufferLayout(
+        {
+            { ElementType::Float3x4, hash->pk_WorldToView },
+            { ElementType::Float3x4, hash->pk_ViewToWorld },
+            { ElementType::Float3x4, hash->pk_ViewToWorldPrev },
+
+            { ElementType::Float4x4, hash->pk_ViewToClip },
+            { ElementType::Float4x4, hash->pk_WorldToClip },
+            { ElementType::Float4x4, hash->pk_WorldToClip_NoJitter },
+            { ElementType::Float4x4, hash->pk_WorldToClipPrev },
+            { ElementType::Float4x4, hash->pk_WorldToClipPrev_NoJitter },
+            { ElementType::Float4x4, hash->pk_ViewToClipDelta },
+
+            { ElementType::Float4, hash->pk_Time },
+            { ElementType::Float4, hash->pk_SinTime },
+            { ElementType::Float4, hash->pk_CosTime },
+            { ElementType::Float4, hash->pk_DeltaTime },
+            { ElementType::Float4, hash->pk_CursorParams },
+            { ElementType::Float4, hash->pk_ViewWorldOrigin },
+            { ElementType::Float4, hash->pk_ViewWorldOriginPrev },
+            { ElementType::Float4, hash->pk_ViewSpaceCameraDelta },
+            { ElementType::Float4, hash->pk_ClipParams },
+            { ElementType::Float4, hash->pk_ClipParamsInv },
+            { ElementType::Float4, hash->pk_ClipParamsExp },
+            { ElementType::Float4, hash->pk_ScreenParams },
+            { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
+            { ElementType::Float4, hash->pk_ProjectionJitter },
+            { ElementType::Uint4, hash->pk_FrameRandom },
+            { ElementType::Uint2, hash->pk_ScreenSize },
+            { ElementType::Uint2, hash->pk_FrameIndex },
+            { ElementType::Float, hash->pk_SceneEnv_Exposure }
+        });
+        
         AssetImportEvent<ApplicationConfig> token{ assetDatabase, config };
         Step(&token);
-
-        m_constantsLayout = BufferLayout(
-            {
-                { ElementType::Float3x4, hash->pk_WorldToView },
-                { ElementType::Float3x4, hash->pk_ViewToWorld },
-                { ElementType::Float3x4, hash->pk_ViewToWorldPrev },
-
-                { ElementType::Float4x4, hash->pk_ViewToClip },
-                { ElementType::Float4x4, hash->pk_WorldToClip },
-                { ElementType::Float4x4, hash->pk_WorldToClip_NoJitter },
-                { ElementType::Float4x4, hash->pk_WorldToClipPrev },
-                { ElementType::Float4x4, hash->pk_WorldToClipPrev_NoJitter },
-                { ElementType::Float4x4, hash->pk_ViewToClipDelta },
-
-                { ElementType::Float4, hash->pk_Time },
-                { ElementType::Float4, hash->pk_SinTime },
-                { ElementType::Float4, hash->pk_CosTime },
-                { ElementType::Float4, hash->pk_DeltaTime },
-                { ElementType::Float4, hash->pk_CursorParams },
-                { ElementType::Float4, hash->pk_ViewWorldOrigin },
-                { ElementType::Float4, hash->pk_ViewWorldOriginPrev },
-                { ElementType::Float4, hash->pk_ViewSpaceCameraDelta },
-                { ElementType::Float4, hash->pk_ClipParams },
-                { ElementType::Float4, hash->pk_ClipParamsInv },
-                { ElementType::Float4, hash->pk_ClipParamsExp },
-                { ElementType::Float4, hash->pk_ScreenParams },
-                { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
-                { ElementType::Float4, hash->pk_ProjectionJitter },
-                { ElementType::Uint4, hash->pk_FrameRandom },
-                { ElementType::Uint2, hash->pk_ScreenSize },
-                { ElementType::Uint2, hash->pk_FrameIndex },
-                { ElementType::Float, hash->pk_SceneEnv_Exposure }
-            });
     }
 
     RenderPipelineScene::~RenderPipelineScene()
     {
-        GraphicsAPI::GetDriver()->WaitForIdle();
+        RHIGetDriver()->WaitForIdle();
         m_sceneStructure = nullptr;
     }
 
@@ -191,21 +193,21 @@ namespace PK::Rendering
         auto view = context->views[0];
 
         auto hash = HashCache::Get();
-        auto queues = GraphicsAPI::GetQueues();
+        auto queues = RHIGetQueues();
         auto* cmdtransfer = queues->GetCommandBuffer(QueueType::Transfer);
         auto* cmdgraphics = queues->GetCommandBuffer(QueueType::Graphics);
         auto* cmdcompute = queues->GetCommandBuffer(QueueType::Compute);
 
         auto gbuffers = view->GetGBuffersFullView();
         auto resolution = view->GetResolution();
-        GraphicsAPI::SetTexture(hash->pk_GB_Current_Normals, gbuffers.current.normals);
-        GraphicsAPI::SetTexture(hash->pk_GB_Current_Depth, gbuffers.current.depth);
-        GraphicsAPI::SetTexture(hash->pk_GB_Current_DepthBiased, gbuffers.current.depthBiased);
-        GraphicsAPI::SetTexture(hash->pk_GB_Previous_Color, gbuffers.previous.color);
-        GraphicsAPI::SetTexture(hash->pk_GB_Previous_Normals, gbuffers.previous.normals);
-        GraphicsAPI::SetTexture(hash->pk_GB_Previous_Depth, gbuffers.previous.depth);
-        GraphicsAPI::SetTexture(hash->pk_GB_Previous_DepthBiased, gbuffers.previous.depthBiased);
-        GraphicsAPI::SetBuffer(hash->pk_PerFrameConstants, *view->constants.get());
+        RHISetTexture(hash->pk_GB_Current_Normals, gbuffers.current.normals);
+        RHISetTexture(hash->pk_GB_Current_Depth, gbuffers.current.depth);
+        RHISetTexture(hash->pk_GB_Current_DepthBiased, gbuffers.current.depthBiased);
+        RHISetTexture(hash->pk_GB_Previous_Color, gbuffers.previous.color);
+        RHISetTexture(hash->pk_GB_Previous_Normals, gbuffers.previous.normals);
+        RHISetTexture(hash->pk_GB_Previous_Depth, gbuffers.previous.depth);
+        RHISetTexture(hash->pk_GB_Previous_DepthBiased, gbuffers.previous.depthBiased);
+        RHISetBuffer(hash->pk_PerFrameConstants, *view->constants.get());
 
         m_passSceneGI.PreRender(cmdtransfer, resolution);
         context->batcher->BeginCollectDrawCalls();
@@ -219,10 +221,10 @@ namespace PK::Rendering
         // These can happen before the end of last frame. 
         m_passSceneGI.PruneVoxels(cmdcompute);
         context->sequencer->NextEmplace<RequestRayTracingGeometry>
-            (
-                this, QueueType::Compute, m_sceneStructure.get(), ScenePrimitiveFlags::DefaultMesh, BoundingBox(), false
-                );
-        GraphicsAPI::SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
+        (
+            this, QueueType::Compute, m_sceneStructure.get(), ScenePrimitiveFlags::DefaultMesh, BoundingBox(), false
+        );
+        RHISetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         queues->Submit(QueueType::Compute, &cmdcompute);
 
         // End transfer operations

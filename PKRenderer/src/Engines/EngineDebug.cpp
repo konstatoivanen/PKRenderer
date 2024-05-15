@@ -12,8 +12,8 @@
 #include "ECS/EntityViewFlyCamera.h"
 #include "Rendering/Geometry/PrimitiveBuilders.h"
 #include "Rendering/Geometry/IGizmos.h"
-#include "Rendering/Objects/VirtualStaticMesh.h"
-#include "Rendering/Objects/StaticSceneMesh.h"
+#include "Rendering/Objects/StaticMeshAsset.h"
+#include "Rendering/Objects/StaticMeshCollection.h"
 #include "Rendering/HashCache.h"
 #include "EngineDebug.h"
 
@@ -29,15 +29,15 @@ namespace PK::Engines
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
-    EngineDebug::EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, StaticSceneMesh* baseMesh, const ApplicationConfig* config)
+    EngineDebug::EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, StaticMeshCollection* baseMesh, const ApplicationConfig* config)
     {
         m_entityDb = entityDb;
         m_assetDatabase = assetDatabase;
 
-        auto columnMesh = assetDatabase->Load<VirtualStaticMesh>("res/models/MDL_Columns.pkmesh", baseMesh);
-        auto rocksMesh = assetDatabase->Load<VirtualStaticMesh>("res/models/MDL_Rocks.pkmesh", baseMesh);
-        auto sphereMesh = assetDatabase->Register<VirtualStaticMesh>("Primitive_Sphere", Geometry::CreateSphereVirtualMesh(baseMesh, PK_FLOAT3_ZERO, 1.0f));
-        auto planeMesh = assetDatabase->Register<VirtualStaticMesh>("Primitive_Plane16x16", Geometry::CreatePlaneVirtualMesh(baseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
+        auto columnMesh = assetDatabase->Load<StaticMeshAsset>("res/models/MDL_Columns.pkmesh", baseMesh);
+        auto rocksMesh = assetDatabase->Load<StaticMeshAsset>("res/models/MDL_Rocks.pkmesh", baseMesh);
+        auto sphereMesh = assetDatabase->Register<StaticMeshAsset>("Primitive_Sphere", Geometry::CreateSphereVirtualMesh(baseMesh, PK_FLOAT3_ZERO, 1.0f));
+        auto planeMesh = assetDatabase->Register<StaticMeshAsset>("Primitive_Plane16x16", Geometry::CreatePlaneVirtualMesh(baseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
 
         auto materialSand = assetDatabase->Load<Material>("res/materials/M_Sand.material");
         auto materialAsphalt = assetDatabase->Load<Material>("res/materials/M_Asphalt.material");

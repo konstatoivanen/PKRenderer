@@ -1,15 +1,15 @@
 #pragma once
 #include <gfx.h>
-#include "Rendering/RHI/Window.h"
+#include "Rendering/RHI/Objects/Window.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanSwapchain.h"
 #include "Rendering/RHI/Vulkan/VulkanDriver.h"
 
-namespace PK::Rendering::RHI::Vulkan
+namespace PK::Rendering::RHI::Vulkan::Objects
 {
-    class VulkanWindow : public Rendering::RHI::Window
+    class VulkanWindow : public Rendering::RHI::Objects::Window
     {
         public:
-            using PK::Rendering::RHI::Window::GetRect;
+            using PK::Rendering::RHI::Objects::Window::GetRect;
 
             VulkanWindow(VulkanDriver* driver, const WindowProperties& properties);
             ~VulkanWindow();

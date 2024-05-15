@@ -4,20 +4,6 @@
 
 namespace PK::Rendering::RHI
 {
-    PushConstantLayout::PushConstantLayout(const PushConstant* variables, size_t count)
-    {
-        for (auto i = 0u; i < count; ++i)
-        {
-            (*this)[variables[i].name] = variables[i];
-        }
-    }
-
-    const PushConstant* PushConstantLayout::TryGetElement(Utilities::NameID name) const
-    {
-        auto iter = find(name);
-        return iter != end() ? &iter->second : nullptr;
-    }
-
     const ResourceElement* ResourceLayout::TryGetElement(Utilities::NameID name, uint32_t* index) const
     {
         // This will always have a small amount of elements (max 16) so mapping is redundant
@@ -41,51 +27,50 @@ namespace PK::Rendering::RHI
         m_alignedStride = 0;
         m_paddedStride = 0;
         auto maxAlignment = 0u;
-        auto* elements = data();
+        auto elements = data();
+        auto count = size();
 
-        for (auto i = 0u; i < size(); ++i)
+        for (auto i = 0u; i < count; ++i)
         {
-            auto element = elements + i;
-            auto alignment = ElementConvert::Alignment(element->type);
+            auto& element = elements[i];
+            auto alignment = ElementConvert::Alignment(element.type);
 
             if (applyOffsets)
             {
-                element->offset = m_stride;
+                element.offset = m_stride;
             }
 
-            m_stride += element->GetSize();
+            m_stride += element.GetSize();
 
             m_alignedStride = alignment * (uint32_t)glm::ceil(m_alignedStride / (float)alignment);
 
             if (applyOffsets)
             {
-                element->alignedOffset = m_alignedStride;
+                element.alignedOffset = m_alignedStride;
             }
 
-            m_alignedStride += element->GetSize();
+            m_alignedStride += element.GetSize();
 
             if (alignment > maxAlignment)
             {
                 maxAlignment = alignment;
             }
-
-            m_elementMap[element->name] = i;
         }
 
         // As per std140 a structure has a base alignment equal to the largest base alignment of any of its members, rounded up to a multiple of 16.
         maxAlignment = 16 * (uint32_t)glm::ceil(maxAlignment / 16.0f);
         m_paddedStride = maxAlignment * (uint32_t)glm::ceil(m_alignedStride / (float)maxAlignment);
-        m_hash = Utilities::Hash::FNV1AHash(data(), size() * sizeof(BufferElement));
+        m_hash = Utilities::Hash::FNV1AHash(elements, count * sizeof(BufferElement));
     }
 
-    const BufferElement* BufferLayout::TryGetElement(Utilities::NameID name, uint32_t* index) const
+    const BufferElement* VertexInputLayout::TryGetElement(Utilities::NameID name, uint32_t* index) const
     {
-        auto iterator = m_elementMap.find(name);
+        auto valueIndex = GetHashIndex((size_t)name.identifier);
 
-        if (iterator != m_elementMap.end())
+        if (valueIndex != -1)
         {
-            *index = iterator->second;
-            return (data() + iterator->second);
+            *index = (uint32_t)valueIndex;
+            return &GetValue(valueIndex);
         }
 
         return nullptr;

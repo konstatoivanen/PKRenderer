@@ -1,16 +1,10 @@
 #pragma once
-#include "Utilities/ForwardDeclare.h"
 #include "Utilities/NoCopy.h"
 #include "Utilities/BufferView.h"
 #include "Utilities/FenceRef.h"
 #include "Rendering/RHI/Structs.h"
 #include "Rendering/RHI/Objects/Buffer.h"
-#include "Rendering/RHI/Objects/BindArray.h"
-
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI, struct Window)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Texture)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class AccelerationStructure)
+#include "Rendering/RHI/RHI.h"
 
 namespace PK::Rendering::RHI::Objects
 {

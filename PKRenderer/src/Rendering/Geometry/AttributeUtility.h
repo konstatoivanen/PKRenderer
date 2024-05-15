@@ -1,8 +1,6 @@
 #pragma once
-#include "Utilities/ForwardDeclare.h"
 #include "Math/Types.h"
-
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI, struct VertexStreamLayout)
+#include "Rendering/RHI/RHI.h"
 
 namespace PK::Rendering::Geometry
 {

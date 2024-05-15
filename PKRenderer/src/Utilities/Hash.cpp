@@ -31,6 +31,11 @@ namespace PK::Utilities::Hash
             return -1;
         }
 
+        if (min == 0)
+        {
+            return 0;
+        }
+
         for (int32_t i = 0; i < PrimesLength; ++i)
         {
             int32_t prime = Primes[i];

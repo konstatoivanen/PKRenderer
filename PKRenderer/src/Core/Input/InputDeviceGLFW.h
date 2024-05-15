@@ -2,13 +2,13 @@
 #include <gfx.h>
 #include <bitset>
 #include "Core/Input/InputDevice.h"
-#include "Rendering/RHI/Window.h"
+#include "Rendering/RHI/RHI.h"
 
 namespace PK::Core::Input
 {
     struct InputDeviceGLFW : public InputDevice
     {
-        InputDeviceGLFW(Rendering::RHI::Window* window);
+        InputDeviceGLFW(Rendering::RHI::Objects::Window* window);
 
         bool GetKeyDown(InputKey key) const final;
         bool GetKeyUp(InputKey key) const final;
@@ -23,7 +23,7 @@ namespace PK::Core::Input
         void OnMouseButtonInput(int button, int action, int mods);
         void OnScrollInput(double xOffset, double yOffset);
 
-        Rendering::RHI::Window* m_window;
+        Rendering::RHI::Objects::Window* m_window;
         std::bitset<(int)InputKey::Count> m_keyStatesCurrent;
         std::bitset<(int)InputKey::Count> m_keyStatesPrevious;
         InputKey m_keymap[GLFW_KEY_LAST + 1]{};

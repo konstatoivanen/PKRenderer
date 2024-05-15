@@ -64,7 +64,7 @@ void main()
         float lumaMax;
         SUBGROUP_ANTIFIREFLY_MAXLUMA(isScene, diff, history, alpha, lumaMax)
 
-            history = GI_ClampLuma(history, lumaMax);
+        history = GI_ClampLuma(history, lumaMax);
         history.history += 1.0f;
 
         diff.ao = lerp(history.ao, 0.5f + diff.ao * 0.5f, alpha);

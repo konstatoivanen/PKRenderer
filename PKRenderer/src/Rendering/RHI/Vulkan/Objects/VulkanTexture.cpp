@@ -9,10 +9,6 @@ namespace PK::Rendering::RHI::Vulkan::Objects
     using namespace PK::Rendering::RHI::Vulkan::Services;
     using namespace PK::Rendering::RHI::Vulkan::Objects;
 
-    VulkanTexture::VulkanTexture() : Texture("Textrue"), m_driver(RHI::Driver::GetNative<VulkanDriver>())
-    {
-    }
-
     VulkanTexture::VulkanTexture(const TextureDescriptor& descriptor, const char* name) : Texture(name), m_driver(RHI::Driver::GetNative<VulkanDriver>())
     {
         Rebuild(descriptor);

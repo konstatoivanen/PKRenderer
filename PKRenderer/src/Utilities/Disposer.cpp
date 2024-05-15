@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Disposer.h"
 
-namespace PK::Rendering::RHI
+namespace PK::Utilities
 {
     Disposer::~Disposer()
     {

@@ -1,8 +1,8 @@
 #pragma once
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
+#include "Utilities/Disposer.h"
 #include "Rendering/RHI/Driver.h"
-#include "Rendering/RHI/Disposer.h"
 #include "Rendering/RHI/Vulkan/VulkanCommon.h"
 #include "Rendering/RHI/Vulkan/Services/VulkanDescriptorCache.h"
 #include "Rendering/RHI/Vulkan/Services/VulkanSamplerCache.h"
@@ -59,6 +59,13 @@ namespace PK::Rendering::RHI::Vulkan
         DriverMemoryInfo GetMemoryInfo() const final;
         size_t GetBufferOffsetAlignment(BufferUsage usage) const final;
 
+        RHI::Objects::BufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name) final;
+        RHI::Objects::TextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name) final;
+        RHI::Objects::AccelerationStructureRef CreateAccelerationStructure(const char* name) final;
+        RHI::Objects::TextureBindArrayRef CreateTextureBindArray(size_t capacity) final;
+        RHI::Objects::BufferBindArrayRef CreateBufferBindArray(size_t capacity) final;
+        RHI::Objects::WindowScope CreateRHIWindow(const WindowProperties& properties) final;
+
         void SetBuffer(PK::Utilities::NameID name, RHI::Objects::Buffer* buffer, const IndexRange& range) final;
         void SetTexture(PK::Utilities::NameID name, RHI::Objects::Texture* texture, const TextureViewRange& range) final;
         void SetBufferArray(PK::Utilities::NameID name, RHI::Objects::BindArray<RHI::Objects::Buffer>* bufferArray) final;
@@ -97,7 +104,7 @@ namespace PK::Rendering::RHI::Vulkan
         PK::Utilities::Scope<Services::VulkanPipelineCache> pipelineCache;
         PK::Utilities::Scope<Services::VulkanSamplerCache> samplerCache;
         PK::Utilities::Scope<Services::VulkanLayoutCache> layoutCache;
-        PK::Utilities::Scope<Disposer> disposer;
+        PK::Utilities::Scope<PK::Utilities::Disposer> disposer;
         mutable PK::Utilities::FixedPool<VulkanBindHandle, 4096> bindhandlePool;
         mutable PK::Utilities::FixedPool<VulkanImageView, 2048> imageViewPool;
         mutable PK::Utilities::FixedPool<VulkanRawImage, 2048> imagePool;

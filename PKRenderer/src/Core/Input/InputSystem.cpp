@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/Input/InputDeviceGLFW.h"
 #include "Core/ControlFlow/Sequencer.h"
+#include "Rendering/RHI/Objects/Window.h"
 #include "InputSystem.h"
 
 namespace PK::Core::Input
@@ -9,7 +10,7 @@ namespace PK::Core::Input
     using namespace PK::Core;
     using namespace PK::Rendering::RHI;
 
-    InputDevice* InputSystem::GetDevice(Rendering::RHI::Window* window)
+    InputDevice* InputSystem::GetDevice(Rendering::RHI::Objects::Window* window)
     {
         // @TODO add support for other input devices
         auto nativeHandle = window->GetNativeWindow();
@@ -25,14 +26,14 @@ namespace PK::Core::Input
         return device;
     }
 
-    void InputSystem::OnApplicationUpdateInput(Rendering::RHI::Window* window)
+    void InputSystem::OnApplicationUpdateInput(Rendering::RHI::Objects::Window* window)
     {
         auto device = GetDevice(window);
         device->UpdateBegin();
         m_sequencer->Next<InputDevice*>(this, device);
     }
 
-    void InputSystem::OnApplicationCloseFrame(Rendering::RHI::Window* window)
+    void InputSystem::OnApplicationCloseFrame(Rendering::RHI::Objects::Window* window)
     {
         GetDevice(window)->UpdateEnd();
     }

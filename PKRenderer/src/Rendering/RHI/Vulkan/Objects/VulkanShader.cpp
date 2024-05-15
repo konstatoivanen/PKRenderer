@@ -33,20 +33,26 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             m_stageFlags = m_stageFlags | (ShaderStageFlags)(1u << i);
         }
 
-        BufferElement vertexElements[PK::Assets::PK_ASSET_MAX_VERTEX_ATTRIBUTES];
-        uint32_t vertexElementCount = 0u;
+        auto vertexAttributeCount = 0u;
 
-        for (auto i = 0; i < PK::Assets::PK_ASSET_MAX_VERTEX_ATTRIBUTES; ++i)
+        for (; vertexAttributeCount < PK::Assets::PK_ASSET_MAX_VERTEX_ATTRIBUTES; ++vertexAttributeCount)
         {
-            auto attribute = &variant->vertexAttributes[i];
-
-            if (attribute->type != ElementType::Invalid)
+            if (variant->vertexAttributes[vertexAttributeCount].type == ElementType::Invalid)
             {
-                vertexElements[vertexElementCount++] = BufferElement(attribute->type, attribute->name, 1, (byte)attribute->location);
+                break;
             }
         }
 
-        m_vertexLayout = BufferLayout(vertexElements, vertexElementCount, true);
+        if (vertexAttributeCount > 0)
+        {
+            m_vertexLayout.Reserve(vertexAttributeCount);
+
+            for (auto i = 0; i < vertexAttributeCount; ++i)
+            {
+                auto attribute = &variant->vertexAttributes[i];
+                m_vertexLayout.Add(BufferElement(attribute->type, attribute->name, 1, (byte)attribute->location));
+            }
+        }
 
         auto layoutCache = RHI::Driver::GetNative<VulkanDriver>()->layoutCache.get();
 
@@ -87,18 +93,22 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         if (variant->constantVariableCount > 0)
         {
             auto pVariables = variant->constantVariables.Get(base);
-            auto variables = PK_STACK_ALLOC(PushConstant, variant->constantVariableCount);
+
+            m_pushConstantLayout.Clear();
 
             for (auto i = 0u; i < variant->constantVariableCount; ++i)
             {
                 auto pVariable = pVariables + i;
-                variables[i] = PushConstant(pVariable->name, pVariable->size, pVariable->offset, pVariable->stageFlags);
+                auto constant = m_pushConstantLayout.Add();
+                constant->name = pVariable->name;
+                constant->stageFlags = pVariable->stageFlags;
+                constant->size = pVariable->size;
+                constant->offset = pVariable->offset;
+                // @TODO this is not right. this format only supports one push constant per stage. not cool
                 pipelineKey.pushConstants[i].stageFlags = EnumConvert::GetShaderStageFlags(pVariable->stageFlags);
                 pipelineKey.pushConstants[i].offset = pVariable->offset;
                 pipelineKey.pushConstants[i].size = pVariable->size;
             }
-
-            m_pushConstantLayout = PushConstantLayout(variables, variant->constantVariableCount);
         }
 
         m_pipelineLayout = layoutCache->GetPipelineLayout(pipelineKey);

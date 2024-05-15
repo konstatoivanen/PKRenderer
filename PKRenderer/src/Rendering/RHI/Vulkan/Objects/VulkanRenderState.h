@@ -1,6 +1,6 @@
 #pragma once
 #include "Utilities/PropertyBlock.h"
-#include "Rendering/RHI/Disposer.h"
+#include "Utilities/Disposer.h"
 #include "Rendering/RHI/Vulkan/VulkanCommon.h"
 #include "Rendering/RHI/Vulkan/Services/VulkanDescriptorCache.h"
 #include "Rendering/RHI/Vulkan/Services/VulkanPipelineCache.h"
@@ -38,7 +38,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         Services::VulkanFrameBufferCache* frameBufferCache = nullptr;
         Services::VulkanStagingBufferCache* stagingBufferCache = nullptr;
         Services::VulkanBarrierHandler* barrierHandler = nullptr;
-        Disposer* disposer = nullptr;
+        PK::Utilities::Disposer* disposer = nullptr;
     };
 
     struct VulkanVertexBufferBundle

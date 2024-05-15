@@ -2,7 +2,6 @@
 #include "Rendering/Geometry/AttributeUtility.h"
 #include "Rendering/Geometry/MeshletBuilder.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
-#include "Rendering/RHI/GraphicsAPI.h"
 #include "PrimitiveBuilders.h"
 
 namespace PK::Rendering::Geometry
@@ -128,8 +127,8 @@ namespace PK::Rendering::Geometry
             3 + 4 * 5, 2 + 4 * 5, 1 + 4 * 5,
         };
 
-        auto vertexBuffer = Buffer::Create<Vertex_Full>(24ull, BufferUsage::DefaultVertex, "Box.VertexBuffer");
-        auto indexBuffer = Buffer::Create<uint32_t>(36ull, BufferUsage::DefaultIndex, "Box.IndexBuffer");
+        auto vertexBuffer = RHICreateBuffer<Vertex_Full>(24ull, BufferUsage::DefaultVertex, "Box.VertexBuffer");
+        auto indexBuffer = RHICreateBuffer<uint32_t>(36ull, BufferUsage::DefaultIndex, "Box.IndexBuffer");
         auto submesh = Mesh::SubMesh{ 0u, 24u, 0u, 36u, BoundingBox::MinMax(p3, p5) };
 
         VertexStreamLayout streamLayout =
@@ -140,7 +139,7 @@ namespace PK::Rendering::Geometry
             { ElementType::Float2, PK_VS_TEXCOORD0, 0 },
         };
 
-        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Transfer);
+        auto cmd = RHIGetCommandBuffer(QueueType::Transfer);
         cmd->UploadBufferData(vertexBuffer.get(), vertices);
         cmd->UploadBufferData(indexBuffer.get(), indices);
         return CreateRef<Mesh>(indexBuffer, ElementType::Uint, &vertexBuffer, 1u, streamLayout, &submesh, 1u);
@@ -166,8 +165,8 @@ namespace PK::Rendering::Geometry
             2,3,0
         };
 
-        auto vertexBuffer = Buffer::Create<Vertex_Lite>(4, BufferUsage::DefaultVertex, "Quad.VertexBuffer");
-        auto indexBuffer = Buffer::Create<uint32_t>(6, BufferUsage::DefaultIndex, "Quad.IndexBuffer");
+        auto vertexBuffer = RHICreateBuffer<Vertex_Lite>(4, BufferUsage::DefaultVertex, "Quad.VertexBuffer");
+        auto indexBuffer = RHICreateBuffer<uint32_t>(6, BufferUsage::DefaultIndex, "Quad.IndexBuffer");
         auto submesh = Mesh::SubMesh{ 0u, 4u, 0u, 6u, Math::BoundingBox::MinMax({min.x, min.y, 0.0f}, {max.x, max.y, 0.0f}) };
 
         VertexStreamLayout streamLayout =
@@ -176,13 +175,13 @@ namespace PK::Rendering::Geometry
             { ElementType::Float2, PK_VS_TEXCOORD0, 0 },
         };
 
-        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Transfer);
+        auto cmd = RHIGetCommandBuffer(QueueType::Transfer);
         cmd->UploadBufferData(vertexBuffer.get(), vertices);
         cmd->UploadBufferData(indexBuffer.get(), indices);
         return CreateRef<Mesh>(indexBuffer, ElementType::Uint, &vertexBuffer, 1u, streamLayout, &submesh, 1u);
     }
 
-    VirtualStaticMeshRef CreatePlaneVirtualMesh(StaticSceneMesh* baseMesh, const float2& center, const float2& extents, uint2 resolution)
+    StaticMeshAssetRef CreatePlaneVirtualMesh(StaticMeshCollection* baseMesh, const float2& center, const float2& extents, uint2 resolution)
     {
         auto vcount = resolution.x * resolution.y * 4;
         auto icount = resolution.x * resolution.y * 6;
@@ -192,25 +191,25 @@ namespace PK::Rendering::Geometry
         auto min = float3(center - extents, 0);
 
         for (auto x = 0u; x < resolution.x; ++x)
-            for (auto y = 0u; y < resolution.y; ++y)
-            {
-                auto vmin = min + isize * float3(x, y, 0);
-                auto baseVertex = (y * resolution.x + x) * 4;
-                auto baseIndex = (y * resolution.x + x) * 6;
+        for (auto y = 0u; y < resolution.y; ++y)
+        {
+            auto vmin = min + isize * float3(x, y, 0);
+            auto baseVertex = (y * resolution.x + x) * 4;
+            auto baseIndex = (y * resolution.x + x) * 6;
 
-                vertices[baseVertex + 0] = { vmin + isize.zzz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(0, 0) };
-                vertices[baseVertex + 1] = { vmin + isize.zyz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(0, 1) };
-                vertices[baseVertex + 2] = { vmin + isize.xyz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(1, 1) };
-                vertices[baseVertex + 3] = { vmin + isize.xzz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(1, 0) };
+            vertices[baseVertex + 0] = { vmin + isize.zzz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(0, 0) };
+            vertices[baseVertex + 1] = { vmin + isize.zyz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(0, 1) };
+            vertices[baseVertex + 2] = { vmin + isize.xyz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(1, 1) };
+            vertices[baseVertex + 3] = { vmin + isize.xzz, PK_FLOAT3_BACKWARD, PK_FLOAT4_ZERO, float2(1, 0) };
 
-                indices[baseIndex + 0] = baseVertex + 0;
-                indices[baseIndex + 1] = baseVertex + 1;
-                indices[baseIndex + 2] = baseVertex + 2;
+            indices[baseIndex + 0] = baseVertex + 0;
+            indices[baseIndex + 1] = baseVertex + 1;
+            indices[baseIndex + 2] = baseVertex + 2;
 
-                indices[baseIndex + 3] = baseVertex + 2;
-                indices[baseIndex + 4] = baseVertex + 3;
-                indices[baseIndex + 5] = baseVertex + 0;
-            }
+            indices[baseIndex + 3] = baseVertex + 2;
+            indices[baseIndex + 4] = baseVertex + 3;
+            indices[baseIndex + 5] = baseVertex + 0;
+        }
 
         StaticMeshAllocationData::SubMesh submesh =
         {
@@ -263,7 +262,7 @@ namespace PK::Rendering::Geometry
         alloc.meshlet.pIndices = meshlets.indices.data();
         alloc.meshlet.triangleCount = (uint32_t)(meshlets.indices.size() / 3ull);
 
-        auto virtualMesh = CreateRef<VirtualStaticMesh>(baseMesh, &alloc);
+        auto virtualMesh = CreateRef<StaticMeshAsset>(baseMesh, &alloc);
 
         free(vertices);
         free(indices);
@@ -271,7 +270,7 @@ namespace PK::Rendering::Geometry
         return virtualMesh;
     }
 
-    VirtualStaticMeshRef CreateSphereVirtualMesh(StaticSceneMesh* baseMesh, const float3& offset, const float radius)
+    StaticMeshAssetRef CreateSphereVirtualMesh(StaticMeshCollection* baseMesh, const float3& offset, const float radius)
     {
         const int32_t longc = 24;
         const int32_t lattc = 16;
@@ -407,7 +406,7 @@ namespace PK::Rendering::Geometry
         alloc.meshlet.pIndices = meshlets.indices.data();
         alloc.meshlet.triangleCount = (uint32_t)(meshlets.indices.size() / 3ull);
 
-        auto virtualMesh = CreateRef<VirtualStaticMesh>(baseMesh, &alloc);
+        auto virtualMesh = CreateRef<StaticMeshAsset>(baseMesh, &alloc);
 
         free(vertices);
         free(indices);

@@ -182,6 +182,10 @@ float D_GGX(float NoH, float alpha)
 }
 
 // For specular approximation in ray traced gi
+// Reminders:
+// - Not multiplied by NdotL as gi data is already calculated with NdotL distribution.
+// - Fresnel not present as that is applied by sampling.
+// - multiplied by pi inorder to compensate for lacking energy due to NdotL distribution
 float EvaluateBxDF_Specular(const float3 normal, const float3 viewdir, const float roughness, const float3 direction)
 {
     const float nv = max(0.0f, dot(viewdir, normal));
@@ -193,10 +197,15 @@ float EvaluateBxDF_Specular(const float3 normal, const float3 viewdir, const flo
     const float alpha = pow2(roughness);
     const float V = V_SmithGGXCorrelated(nl, nv, alpha);
     const float D = D_GGX(nh, alpha);
-    return max(0.0f, D * V * nl);
+    // Initial diff gi samples might have zero vectors. clip them
+    return max(0.0f, D * V) * step(1e-4f, nl) * PK_PI;
 }
 
 // For additional sh approximations
+// Reminders:
+// - Not multiplied by NdotL as gi data is already calculated with NdotL distribution.
+// - Fresnel not present as that is applied by sampling.
+// - multiplied by pi inorder to compensate for lacking energy due to NdotL distribution
 float3 EvaluateBxDF_SpecularExtra(const BxDFSurf surf, const float3 direction, const float3 radiance)
 {
     const float nl = max(0.0f, dot(surf.normal, direction));
@@ -212,7 +221,7 @@ float3 EvaluateBxDF_SpecularExtra(const BxDFSurf surf, const float3 direction, c
     {
         const float3 Csheen = surf.albedo / (dot(float3(0.3f, 0.6f, 0.1f), surf.albedo) + 1e-2f);
         const float3 Fsheen = surf.sheen * lerp(1.0f.xxx, Csheen, surf.sheenTint);
-        brdf += Fsheen * F_Schlick(0.0f, 1.0f, lh) * nl;
+        brdf += Fsheen * F_Schlick(0.0f, 1.0f, lh);
     }
     #endif
 
@@ -223,17 +232,17 @@ float3 EvaluateBxDF_SpecularExtra(const BxDFSurf surf, const float3 direction, c
     #if defined(BxDF_ENABLE_CLEARCOAT)
     {
         // As this function is intended for sh approximations 
-        // the roughness for clear coat needs to be much lower 
+        // the roughness for clear coat needs to be a tad bit higher
         // due to the uniform input singal.
-        const float Rc = lerp(0.3f, 0.001f, surf.clearCoatGloss);
+        const float Rc = lerp(0.15f, 0.001f, surf.clearCoatGloss);
         const float V = V_SmithGGXCorrelated(nl, surf.nv, 0.25f);
         const float D = D_GGX(nh, Rc);
-        const float Fr = max(0.0f, 0.25f * V * D * nl);
+        const float Fr = max(0.0f, 0.25f * V * D);
         brdf += surf.clearCoat * F_Schlick(0.04f, 1.0f, lh) * Fr;
     }
     #endif
 
-    return brdf * radiance;
+    return brdf * radiance * PK_PI;
 }
 
 float3 EvaluateBxDF_Indirect(const BxDFSurf surf, const float3 diffuse, const float3 specular)

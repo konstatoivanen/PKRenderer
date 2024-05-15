@@ -4,7 +4,6 @@
 #include "ECS/ComponentTransform.h"
 #include "Rendering/RHI/Objects/Shader.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
-#include "Rendering/RHI/GraphicsAPI.h"
 #include "Rendering/Objects/Material.h"
 #include "Rendering/HashCache.h"
 #include "BatcherStaticMesh.h"
@@ -48,11 +47,11 @@ namespace PK::Rendering::Geometry
         PK_LOG_VERBOSE("StaticDrawBatcher.Ctor");
         PK_LOG_SCOPE_INDENT(local);
 
-        m_staticGeometry = PK::Utilities::CreateScope<StaticSceneMesh>();
-        m_matrices = Buffer::Create<float3x4>(1024ull, BufferUsage::PersistentStorage, "Batching.Matrices");
-        m_indices = Buffer::Create<PK_Draw>(1024ull, BufferUsage::PersistentStorage, "Batching.DrawInfos");
-        m_properties = Buffer::Create(16384ull, BufferUsage::PersistentStorage, "Batching.MaterialProperties");
-        m_tasklets = Buffer::Create<uint2>(4096u, BufferUsage::PersistentStorage, "Batching.Meshlet.Tasklets");
+        m_staticGeometry = PK::Utilities::CreateScope<StaticMeshCollection>();
+        m_matrices = RHICreateBuffer<float3x4>(1024ull, BufferUsage::PersistentStorage, "Batching.Matrices");
+        m_indices = RHICreateBuffer<PK_Draw>(1024ull, BufferUsage::PersistentStorage, "Batching.DrawInfos");
+        m_properties = RHICreateBuffer(16384ull, BufferUsage::PersistentStorage, "Batching.MaterialProperties");
+        m_tasklets = RHICreateBuffer<uint2>(4096u, BufferUsage::PersistentStorage, "Batching.Meshlet.Tasklets");
         m_drawCalls.reserve(512);
         m_passGroups.reserve(512);
     }
@@ -201,11 +200,11 @@ namespace PK::Rendering::Geometry
         UploadDrawIndices(cmd);
 
         auto hash = HashCache::Get();
-        GraphicsAPI::SetBuffer(hash->pk_Meshlet_Tasklets, m_tasklets.get());
-        GraphicsAPI::SetBuffer(hash->pk_Instancing_Transforms, m_matrices.get());
-        GraphicsAPI::SetBuffer(hash->pk_Instancing_Indices, m_indices.get());
-        GraphicsAPI::SetBuffer(hash->pk_Instancing_Properties, m_properties.get());
-        GraphicsAPI::SetTextureArray(hash->pk_Instancing_Textures2D, m_textures2D);
+        RHISetBuffer(hash->pk_Meshlet_Tasklets, m_tasklets.get());
+        RHISetBuffer(hash->pk_Instancing_Transforms, m_matrices.get());
+        RHISetBuffer(hash->pk_Instancing_Indices, m_indices.get());
+        RHISetBuffer(hash->pk_Instancing_Properties, m_properties.get());
+        RHISetTextureArray(hash->pk_Instancing_Textures2D, m_textures2D);
     }
 
     void BatcherStaticMesh::SubmitStaticMeshDraw(ComponentTransform* transform,
@@ -247,14 +246,14 @@ namespace PK::Rendering::Geometry
 
         if (requireKeyword > 0u)
         {
-            GraphicsAPI::SetKeyword(requireKeyword, true);
+            RHISetKeyword(requireKeyword, true);
         }
 
         auto hash = HashCache::Get();
-        GraphicsAPI::SetBuffer(hash->pk_Meshlet_Submeshes, m_staticGeometry->GetMeshletSubmeshBuffer());
-        GraphicsAPI::SetBuffer(hash->pk_Meshlets, m_staticGeometry->GetMeshletBuffer());
-        GraphicsAPI::SetBuffer(hash->pk_Meshlet_Vertices, m_staticGeometry->GetMeshletVertexBuffer());
-        GraphicsAPI::SetBuffer(hash->pk_Meshlet_Indices, m_staticGeometry->GetMeshletIndexBuffer());
+        RHISetBuffer(hash->pk_Meshlet_Submeshes, m_staticGeometry->GetMeshletSubmeshBuffer());
+        RHISetBuffer(hash->pk_Meshlets, m_staticGeometry->GetMeshletBuffer());
+        RHISetBuffer(hash->pk_Meshlet_Vertices, m_staticGeometry->GetMeshletVertexBuffer());
+        RHISetBuffer(hash->pk_Meshlet_Indices, m_staticGeometry->GetMeshletIndexBuffer());
 
         auto& passGroup = m_passGroups.at(group);
         auto start = passGroup.offset;
@@ -267,7 +266,7 @@ namespace PK::Rendering::Geometry
 
             if (requireKeyword == 0u || shader->SupportsKeyword(requireKeyword))
             {
-                GraphicsAPI::SetConstant<uint>(hash->pk_Meshlet_DispatchOffset, (uint32_t)dc.indices.offset);
+                RHISetConstant<uint>(hash->pk_Meshlet_DispatchOffset, (uint32_t)dc.indices.offset);
                 cmd->SetShader(shader);
                 cmd->SetFixedStateAttributes(overrideAttributes);
                 cmd->DrawMeshTasks({ (uint32_t)dc.indices.count, 1u, 1u });
@@ -276,7 +275,7 @@ namespace PK::Rendering::Geometry
 
         if (requireKeyword > 0u)
         {
-            GraphicsAPI::SetKeyword(requireKeyword, false);
+            RHISetKeyword(requireKeyword, false);
         }
 
         return true;

@@ -4,7 +4,6 @@
 #include "Math/FunctionsMisc.h"
 #include "Core/CLI/Log.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
-#include "Rendering/RHI/GraphicsAPI.h"
 #include "Mesh.h"
 
 using namespace PK::Math;
@@ -125,7 +124,7 @@ namespace PK::Rendering::Objects
 
         auto vertexBufferName = GetFileName() + std::string(".VertexBuffer");
         auto indexBufferName = GetFileName() + std::string(".IndexBuffer");
-        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Transfer);
+        auto cmd = RHIGetCommandBuffer(QueueType::Transfer);
 
         auto pVerticesOffset = (char*)pVertices;
         auto bufferCount = 0u;
@@ -134,14 +133,14 @@ namespace PK::Rendering::Objects
         {
             auto stride = streamLayout.GetStride(i);
             auto bufferName = vertexBufferName + bufferNames[i];
-            vertexBuffers[bufferCount] = Buffer::Create(stride * mesh->vertexCount, BufferUsage::DefaultVertex, bufferName.c_str());
+            vertexBuffers[bufferCount] = RHICreateBuffer(stride * mesh->vertexCount, BufferUsage::DefaultVertex, bufferName.c_str());
             cmd->UploadBufferData(vertexBuffers[bufferCount].get(), pVerticesOffset);
             pVerticesOffset += stride * mesh->vertexCount;
             bufferCount++;
         }
 
         auto indexStride = GetElementSize(mesh->indexType);
-        auto indexBuffer = Buffer::Create(indexStride * mesh->indexCount, BufferUsage::DefaultIndex, indexBufferName.c_str());
+        auto indexBuffer = RHICreateBuffer(indexStride * mesh->indexCount, BufferUsage::DefaultIndex, indexBufferName.c_str());
         cmd->UploadBufferData(m_indexBuffer.get(), pIndexBuffer);
 
         SetResources(indexBuffer,
@@ -157,7 +156,7 @@ namespace PK::Rendering::Objects
         PK::Assets::CloseAsset(&asset);
     }
 
-    bool Mesh::TryGetAccelerationStructureGeometryInfo(uint32_t submesh, RHI::Objects::AccelerationStructureGeometryInfo* outInfo)
+    bool Mesh::TryGetAccelerationStructureGeometryInfo(uint32_t submesh, RHI::AccelerationStructureGeometryInfo* outInfo)
     {
         if (HasPendingUpload() || m_positionAttributeIndex == ~0u)
         {

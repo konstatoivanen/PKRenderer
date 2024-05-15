@@ -1,9 +1,7 @@
 #pragma once
-#include "Utilities/ForwardDeclare.h"
 #include "Utilities/NoCopy.h"
 #include "Rendering/RHI/Objects/Buffer.h"
-
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
+#include "Rendering/RHI/RHI.h"
 
 namespace PK::Rendering::Objects
 {

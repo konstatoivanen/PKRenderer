@@ -8,8 +8,8 @@ namespace PK::Rendering::Objects
     using namespace PK::Rendering::RHI::Objects;
 
     ConstantBuffer::ConstantBuffer(const BufferLayout& layout, const char* name) :
-        ShaderPropertyBlock(layout.GetStride()),
-        m_graphicsBuffer(Buffer::Create(layout.GetAlignedStride(), BufferUsage::DefaultConstant, name)),
+        ShaderPropertyBlock(layout.GetStride(), layout.size()),
+        m_graphicsBuffer(RHICreateBuffer(layout.GetAlignedStride(), BufferUsage::DefaultConstant, name)),
         m_layout(layout)
     {
         ReserveLayout(layout);

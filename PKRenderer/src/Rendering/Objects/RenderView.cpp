@@ -1,12 +1,17 @@
 #include "PrecompiledHeader.h"
 #include "Math/FunctionsMisc.h"
-#include "GBuffers.h"
+#include "Rendering/RHI/Objects/Texture.h"
+#include "RenderView.h"
 
 namespace PK::Rendering::Objects
 {
     using namespace PK::Math;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
+
+    uint3 GBuffers::GetResolution() const { return color->GetResolution(); }
+    float GBuffers::GetAspectRatio() const { return float(color->GetResolution().x) / float(color->GetResolution().y); }
+    GBuffers::View GBuffers::GetView() { return { color.get(), normals.get(), depthBiased.get(), depth.get() }; }
 
     bool GBuffers::Validate(const uint2& resolution, const Descriptor& descriptor, const char* namePrefix)
     {
@@ -34,7 +39,7 @@ namespace PK::Rendering::Objects
             }
             else
             {
-                isOutOfDate |= Texture::Validate((&color)[i], textureDescriptor, (std::string(namePrefix) + Names[i]).c_str());
+                isOutOfDate |= RHIValidateTexture((&color)[i], textureDescriptor, (std::string(namePrefix) + Names[i]).c_str());
             }
         }
 

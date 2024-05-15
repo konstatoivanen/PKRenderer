@@ -6,7 +6,7 @@
 #include "Rendering/RHI/Vulkan/Objects/VulkanAccelerationStructure.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanBindArray.h"
 #include "Rendering/RHI/Vulkan/Objects/VulkanRenderState.h"
-#include "Rendering/RHI/Vulkan/VulkanWindow.h"
+#include "Rendering/RHI/Vulkan/Objects/VulkanWindow.h"
 #include "VulkanCommandBuffer.h"
 
 namespace PK::Rendering::RHI::Vulkan::Objects
@@ -723,16 +723,15 @@ namespace PK::Rendering::RHI::Vulkan::Objects
             auto& constantLayout = m_renderState->GetPipelinePushConstantLayout();
             auto props = m_renderState->GetServices()->globalResources;
 
-            for (auto& kv : constantLayout)
+            for (auto& element : constantLayout)
             {
                 const char* data = nullptr;
                 size_t dataSize = 0u;
-                auto& element = kv.second;
 
-                if (props->TryGet<char>(kv.second.name, data, &dataSize) && dataSize <= element.size)
+                if (props->TryGet<char>(element->name, data, &dataSize) && dataSize <= element->size)
                 {
-                    auto stageFlags = EnumConvert::GetShaderStageFlags(element.stageFlags);
-                    vkCmdPushConstants(m_commandBuffer, m_renderState->GetPipelineLayout(), stageFlags, element.offset, (uint32_t)dataSize, data);
+                    auto stageFlags = EnumConvert::GetShaderStageFlags(element->stageFlags);
+                    vkCmdPushConstants(m_commandBuffer, m_renderState->GetPipelineLayout(), stageFlags, element->offset, (uint32_t)dataSize, data);
                 }
             }
         }

@@ -2,9 +2,10 @@
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/ApplicationConfig.h"
 #include "Rendering/RHI/Objects/Shader.h"
+#include "Rendering/RHI/Objects/Buffer.h"
 #include "Rendering/RHI/Objects/Texture.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/Objects/TextureAsset.h"
 #include "Rendering/HashCache.h"
 #include "PassEnvBackground.h"
 
@@ -14,6 +15,7 @@ namespace PK::Rendering::Passes
     using namespace PK::Utilities;
     using namespace PK::Core;
     using namespace PK::Core::Assets;
+    using namespace PK::Rendering::Objects;
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
@@ -25,8 +27,8 @@ namespace PK::Rendering::Passes
         auto hash = HashCache::Get();
         m_backgroundShader = assetDatabase->Find<Shader>("VS_EnvBackground");
         m_integrateSHShader = assetDatabase->Find<Shader>("CS_IntegrateEnvSH");
-        m_shBuffer = Buffer::Create<float4>(4ull, BufferUsage::DefaultStorage, "Scene.Env.SHBuffer");
-        GraphicsAPI::SetBuffer(hash->pk_SceneEnv_SH, m_shBuffer.get());
+        m_shBuffer = RHICreateBuffer<float4>(4ull, BufferUsage::DefaultStorage, "Scene.Env.SHBuffer");
+        RHISetBuffer(hash->pk_SceneEnv_SH, m_shBuffer.get());
     }
 
     void PassEnvBackground::ComputeSH(CommandBuffer* cmd)
@@ -42,12 +44,12 @@ namespace PK::Rendering::Passes
     void PassEnvBackground::OnUpdateParameters(AssetImportEvent<ApplicationConfig>* token)
     {
         auto hash = HashCache::Get();
-        auto tex = token->assetDatabase->Load<Texture>(token->asset->FileBackgroundTexture.c_str());
+        auto tex = token->assetDatabase->Load<TextureAsset>(token->asset->FileBackgroundTexture)->GetRHI();
         auto sampler = tex->GetSamplerDescriptor();
         sampler.wrap[0] = WrapMode::Mirror;
         sampler.wrap[1] = WrapMode::Mirror;
         sampler.wrap[2] = WrapMode::Mirror;
         tex->SetSampler(sampler);
-        GraphicsAPI::SetTexture(hash->pk_SceneEnv, tex);
+        RHISetTexture(hash->pk_SceneEnv, tex);
     }
 }

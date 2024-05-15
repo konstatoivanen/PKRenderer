@@ -10,6 +10,7 @@ namespace PK::Assets
     constexpr static const uint32_t PK_ASSET_MAX_VERTEX_ATTRIBUTES = 8;
     constexpr static const uint32_t PK_ASSET_MAX_DESCRIPTOR_SETS = 4;
     constexpr static const uint32_t PK_ASSET_MAX_DESCRIPTORS_PER_SET = 16;
+    constexpr static const uint32_t PK_ASSET_MAX_PUSH_CONSTANTS = 16;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_KEYWORDS = 256;
     constexpr static const uint32_t PK_ASSET_MAX_UNBOUNDED_SIZE = 2048;
 

@@ -4,6 +4,7 @@
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/ApplicationConfig.h"
 #include "Rendering/RHI/Objects/Shader.h"
+#include "Rendering/RHI/Objects/Texture.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/Objects/RenderView.h"
 #include "Rendering/IRenderPipeline.h"
@@ -28,9 +29,9 @@ namespace PK::Engines
         m_enabledCPU = config->EnableGizmosCPU;
         m_enabledGPU = config->EnableGizmosGPU;
         m_gizmosShader = assetDatabase->Find<Shader>("VS_Gizmos");
-        m_vertexBuffer = Buffer::Create<uint4>(m_maxVertices, BufferUsage::DefaultVertex | BufferUsage::PersistentStage, "Gizmos.VertexBuffer");
-        m_indirectVertexBuffer = Buffer::Create<uint4>(16384u, BufferUsage::Vertex | BufferUsage::Storage, "Gizmos.Indirect.VertexBuffer");
-        m_indirectArgsBuffer = Buffer::Create<uint4>(1u, BufferUsage::Storage | BufferUsage::Indirect | BufferUsage::TransferDst, "Gizmos.Indirect.Arguments");
+        m_vertexBuffer = RHICreateBuffer<uint4>(m_maxVertices, BufferUsage::DefaultVertex | BufferUsage::PersistentStage, "Gizmos.VertexBuffer");
+        m_indirectVertexBuffer = RHICreateBuffer<uint4>(16384u, BufferUsage::Vertex | BufferUsage::Storage, "Gizmos.Indirect.VertexBuffer");
+        m_indirectArgsBuffer = RHICreateBuffer<uint4>(1u, BufferUsage::Storage | BufferUsage::Indirect | BufferUsage::TransferDst, "Gizmos.Indirect.Arguments");
         m_fixedFunctionAttribs = m_gizmosShader->GetFixedFunctionAttributes();
         m_fixedFunctionAttribs.rasterization.polygonMode = PolygonMode::Line;
         m_fixedFunctionAttribs.rasterization.topology = Topology::LineList;
@@ -43,8 +44,8 @@ namespace PK::Engines
         m_vertexStreamElement.size = sizeof(uint4);
 
         auto hash = HashCache::Get();
-        GraphicsAPI::SetBuffer(hash->pk_Gizmos_IndirectVertices, m_indirectVertexBuffer.get());
-        GraphicsAPI::SetBuffer(hash->pk_Gizmos_IndirectArguments, m_indirectArgsBuffer.get());
+        RHISetBuffer(hash->pk_Gizmos_IndirectVertices, m_indirectVertexBuffer.get());
+        RHISetBuffer(hash->pk_Gizmos_IndirectArguments, m_indirectArgsBuffer.get());
 
         CVariableRegister::Create<bool*>("Engine.Gizmos.CPU.Enabled", &m_enabledCPU, "0 = 0ff, 1 = On", 1u, 1u);
         CVariableRegister::Create<bool*>("Engine.Gizmos.GPU.Enabled", &m_enabledGPU, "0 = 0ff, 1 = On", 1u, 1u);

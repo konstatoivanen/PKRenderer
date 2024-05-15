@@ -7,13 +7,13 @@
 #include "ECS/EntityDatabase.h"
 #include "ECS/EntityViewStaticMesh.h"
 #include "ECS/EntityViewLight.h"
-#include "Rendering/HashCache.h"
 #include "Rendering/Objects/RenderView.h"
 #include "Rendering/Geometry/IBatcher.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/RHI/Objects/Shader.h"
 #include "Rendering/RHI/Objects/Texture.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/Objects/TextureAsset.h"
+#include "Rendering/HashCache.h"
 #include "Rendering/EntityCulling.h"
 #include "Rendering/IRenderPipeline.h"
 #include "PassLights.h"
@@ -115,18 +115,18 @@ namespace PK::Rendering::Passes
         depthDesc.sampler.filterMin = FilterMode::Bilinear;
         depthDesc.sampler.filterMag = FilterMode::Bilinear;
         depthDesc.usage = TextureUsage::RTDepthSample;
-        m_depthTargetCube = Texture::Create(depthDesc, "Lights.DepthTarget.Cube");
+        m_depthTargetCube = RHICreateTexture(depthDesc, "Lights.DepthTarget.Cube");
 
         depthDesc.usage = TextureUsage::RTColorSample;
         depthDesc.format = TextureFormat::R32F;
-        m_shadowTargetCube = Texture::Create(depthDesc, "Lights.ShadowTarget.Cube");
+        m_shadowTargetCube = RHICreateTexture(depthDesc, "Lights.ShadowTarget.Cube");
 
         depthDesc.samplerType = SamplerType::Sampler2DArray;
         depthDesc.format = TextureFormat::Depth16;
         depthDesc.resolution = { (int)config->ShadowmapTileSize, (int)config->ShadowmapTileSize, 1u };
         depthDesc.layers = PK_SHADOW_CASCADE_COUNT;
         depthDesc.usage = TextureUsage::RTDepth;
-        m_depthTarget2D = Texture::Create(depthDesc, "Lights.DepthTarget.2D");
+        m_depthTarget2D = RHICreateTexture(depthDesc, "Lights.DepthTarget.2D");
 
         TextureDescriptor atlasDesc;
         atlasDesc.samplerType = SamplerType::Sampler2DArray;
@@ -139,7 +139,7 @@ namespace PK::Rendering::Passes
         atlasDesc.sampler.wrap[2] = WrapMode::Clamp;
         atlasDesc.sampler.filterMin = FilterMode::Bilinear;
         atlasDesc.sampler.filterMag = FilterMode::Bilinear;
-        m_shadowmaps = Texture::Create(atlasDesc, "Lights.Shadowmap.Atlas");
+        m_shadowmaps = RHICreateTexture(atlasDesc, "Lights.Shadowmap.Atlas");
 
         TextureDescriptor screenSpaceDesc;
         screenSpaceDesc.samplerType = SamplerType::Sampler2D;
@@ -152,10 +152,10 @@ namespace PK::Rendering::Passes
         screenSpaceDesc.sampler.wrap[2] = WrapMode::Clamp;
         screenSpaceDesc.sampler.filterMin = FilterMode::Bilinear;
         screenSpaceDesc.sampler.filterMag = FilterMode::Bilinear;
-        m_screenSpaceShadowmap = Texture::Create(screenSpaceDesc, "Lights.Shadowmap.ScreenSpace");
+        m_screenSpaceShadowmap = RHICreateTexture(screenSpaceDesc, "Lights.Shadowmap.ScreenSpace");
 
         screenSpaceDesc.resolution = { config->InitialWidth >> 1u, config->InitialHeight >> 1u, 1u };
-        m_screenSpaceShadowmapDownsampled = Texture::Create(screenSpaceDesc, "Lights.Shadowmap.ScreenSpaceQuareterRes");
+        m_screenSpaceShadowmapDownsampled = RHICreateTexture(screenSpaceDesc, "Lights.Shadowmap.ScreenSpaceQuareterRes");
 
         TextureDescriptor imageDescriptor;
         imageDescriptor.samplerType = SamplerType::Sampler3D;
@@ -167,30 +167,30 @@ namespace PK::Rendering::Passes
         imageDescriptor.sampler.wrap[0] = WrapMode::Clamp;
         imageDescriptor.sampler.wrap[1] = WrapMode::Clamp;
         imageDescriptor.sampler.wrap[2] = WrapMode::Clamp;
-        m_lightTiles = Texture::Create(imageDescriptor, "Lights.Tiles");
+        m_lightTiles = RHICreateTexture(imageDescriptor, "Lights.Tiles");
 
         auto lightIndexCount = imageDescriptor.resolution.x *
             imageDescriptor.resolution.y *
             imageDescriptor.resolution.z *
             MaxLightsPerTile;
 
-        m_lightsBuffer = Buffer::Create<LightPacked>(1024ull, BufferUsage::PersistentStorage, "Lights");
-        m_lightMatricesBuffer = Buffer::Create<float4x4>(32ull, BufferUsage::PersistentStorage, "Lights.Matrices");
-        m_lightsLists = Buffer::Create<ushort>(lightIndexCount, BufferUsage::DefaultStorage, "Lights.List");
+        m_lightsBuffer = RHICreateBuffer<LightPacked>(1024ull, BufferUsage::PersistentStorage, "Lights");
+        m_lightMatricesBuffer = RHICreateBuffer<float4x4>(32ull, BufferUsage::PersistentStorage, "Lights.Matrices");
+        m_lightsLists = RHICreateBuffer<ushort>(lightIndexCount, BufferUsage::DefaultStorage, "Lights.List");
 
         auto hash = HashCache::Get();
 
-        GraphicsAPI::SetBuffer(hash->pk_LightLists, m_lightsLists.get());
-        GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
+        RHISetBuffer(hash->pk_LightLists, m_lightsLists.get());
+        RHISetImage(hash->pk_LightTiles, m_lightTiles.get());
 
-        auto lightCookies = assetDatabase->Load<Texture>("res/textures/default/T_LightCookies.ktx2");
+        auto lightCookies = assetDatabase->Load<TextureAsset>("res/textures/default/T_LightCookies.ktx2")->GetRHI();
 
         auto sampler = lightCookies->GetSamplerDescriptor();
         sampler.wrap[0] = WrapMode::Clamp;
         sampler.wrap[1] = WrapMode::Clamp;
         sampler.wrap[2] = WrapMode::Clamp;
         lightCookies->SetSampler(sampler);
-        GraphicsAPI::SetTexture(hash->pk_LightCookies, lightCookies);
+        RHISetTexture(hash->pk_LightCookies, lightCookies);
     }
 
     void PassLights::RenderShadows(CommandBuffer* cmd, RenderPipelineContext* context)
@@ -222,8 +222,8 @@ namespace PK::Rendering::Passes
                 cmd->ClearDepth(0.0f, 0u);
                 cmd->ClearColor(color(PK_HALF_MAX), 0u);
                 context->batcher->RenderGroup(cmd, batch.batchGroup, nullptr, keyword);
-                GraphicsAPI::SetTexture(hash->pk_Texture, m_shadowTargetCube.get());
-                GraphicsAPI::SetImage(hash->pk_Image, m_shadowmaps.get(), range1);
+                RHISetTexture(hash->pk_Texture, m_shadowTargetCube.get());
+                RHISetImage(hash->pk_Image, m_shadowmaps.get(), range1);
                 cmd->DispatchWithCounter(m_computeCopyCubeShadow, 0, { m_shadowmaps->GetResolution().xy, tileCount });
             }
             else
@@ -257,13 +257,13 @@ namespace PK::Rendering::Passes
         m_screenSpaceShadowmap->Validate(resolution);
         m_screenSpaceShadowmapDownsampled->Validate(quarterResolution);
 
-        GraphicsAPI::SetTexture(hash->pk_ShadowmapScreenSpace, m_screenSpaceShadowmap.get());
+        RHISetTexture(hash->pk_ShadowmapScreenSpace, m_screenSpaceShadowmap.get());
 
-        GraphicsAPI::SetImage(hash->pk_Image, m_screenSpaceShadowmapDownsampled.get());
+        RHISetImage(hash->pk_Image, m_screenSpaceShadowmapDownsampled.get());
         cmd->Dispatch(m_computeScreenSpaceShadow, 0, quarterResolution);
 
-        GraphicsAPI::SetTexture(hash->pk_Texture, m_screenSpaceShadowmapDownsampled.get());
-        GraphicsAPI::SetImage(hash->pk_Image, m_screenSpaceShadowmap.get());
+        RHISetTexture(hash->pk_Texture, m_screenSpaceShadowmapDownsampled.get());
+        RHISetImage(hash->pk_Image, m_screenSpaceShadowmap.get());
         cmd->Dispatch(m_computeScreenSpaceShadow, 1, resolution);
 
         // Bend screen space shadows.
@@ -282,7 +282,7 @@ namespace PK::Rendering::Passes
             Bend::DispatchDataGPU dispatchData;
             memcpy(dispatchData.LightCoordinate_Shader, dispatchList.LightCoordinate_Shader, sizeof(dispatchList.LightCoordinate_Shader));
             memcpy(dispatchData.WaveOffset_Shader, dispatch.WaveOffset_Shader, sizeof(dispatch.WaveOffset_Shader));
-            GraphicsAPI::SetConstant<Bend::DispatchDataGPU>(hash->pk_BendShadowDispatchData, dispatchData);
+            RHISetConstant<Bend::DispatchDataGPU>(hash->pk_BendShadowDispatchData, dispatchData);
 
             uint3 dim;
             dim.x = 64 * dispatch.WaveCount[0];
@@ -310,12 +310,12 @@ namespace PK::Rendering::Passes
 
         if (m_lightsLists->Validate<ushort>(lightIndexCount))
         {
-            GraphicsAPI::SetBuffer(hash->pk_LightLists, m_lightsLists.get());
+            RHISetBuffer(hash->pk_LightLists, m_lightsLists.get());
         }
 
         if (m_lightTiles->Validate(resolution))
         {
-            GraphicsAPI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
+            RHISetImage(hash->pk_LightTiles, m_lightTiles.get());
         }
 
         cmd->DispatchWithCounter(m_computeLightAssignment, resolution);
@@ -350,7 +350,7 @@ namespace PK::Rendering::Passes
         m_lightsBuffer->Validate<LightPacked>(lightCount + 1);
         m_lightMatricesBuffer->Validate<float4x4>(matrixCount);
 
-        auto cmd = GraphicsAPI::GetCommandBuffer(QueueType::Transfer);
+        auto cmd = RHIGetCommandBuffer(QueueType::Transfer);
         auto lightsView = cmd->BeginBufferWrite<LightPacked>(m_lightsBuffer.get(), 0u, lightCount + 1);
         auto matricesView = matrixCount > 0 ? cmd->BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : BufferView<float4x4>();
 
@@ -454,10 +454,10 @@ namespace PK::Rendering::Passes
         }
 
         auto hash = HashCache::Get();
-        GraphicsAPI::SetConstant<uint32_t>(hash->pk_LightCount, lightCount);
-        GraphicsAPI::SetBuffer(hash->pk_Lights, m_lightsBuffer.get());
-        GraphicsAPI::SetBuffer(hash->pk_LightMatrices, m_lightMatricesBuffer.get());
-        GraphicsAPI::SetTexture(hash->pk_ShadowmapAtlas, m_shadowmaps.get());
+        RHISetConstant<uint32_t>(hash->pk_LightCount, lightCount);
+        RHISetBuffer(hash->pk_Lights, m_lightsBuffer.get());
+        RHISetBuffer(hash->pk_LightMatrices, m_lightMatricesBuffer.get());
+        RHISetTexture(hash->pk_ShadowmapAtlas, m_shadowmaps.get());
     }
 
     ShadowCascades PassLights::GetCascadeZSplits(float znear, float zfar) const

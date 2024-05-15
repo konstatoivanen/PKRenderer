@@ -1,9 +1,10 @@
 #pragma once
 #include "Utilities/MemoryBlock.h"
+#include "Utilities/FenceRef.h"
+#include "Math/Types.h"
 #include "Core/ControlFlow/IStepApplicationWindow.h"
 #include "Core/IService.h"
-#include "Rendering/RHI/Objects/Buffer.h"
-#include "Utilities/FenceRef.h"
+#include "Rendering/RHI/RHI.h"
 
 namespace PK::Engines
 {
@@ -12,7 +13,7 @@ namespace PK::Engines
     {
     public:
         EngineScreenshot();
-        virtual void OnApplicationRender(Rendering::RHI::Window* window) final;
+        virtual void OnApplicationRender(Rendering::RHI::Objects::Window* window) final;
 
         void QueueCapture();
 

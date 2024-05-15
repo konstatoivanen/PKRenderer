@@ -2,10 +2,9 @@
 #include "Math/FunctionsMisc.h"
 #include "Core/CLI/Log.h"
 #include "Rendering/Geometry/AttributeUtility.h"
-#include "Rendering/RHI/GraphicsAPI.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"
 #include "Rendering/HashCache.h"
-#include "StaticSceneMesh.h"
+#include "StaticMeshCollection.h"
 
 namespace PK::Rendering::Objects
 {
@@ -15,7 +14,7 @@ namespace PK::Rendering::Objects
     using namespace PK::Rendering::RHI;
     using namespace PK::Rendering::RHI::Objects;
 
-    StaticSceneMesh::StaticSceneMesh()
+    StaticMeshCollection::StaticMeshCollection()
     {
         const uint32_t maxSubmeshes = 65535u;
         const uint32_t maxMeshlets = 65535u * 4u;
@@ -33,18 +32,18 @@ namespace PK::Rendering::Objects
                 { ElementType::Float3, PK_VS_POSITION, 1 },
             });
 
-        m_positionsBuffer = Buffer::Create(m_streamLayout.GetStride(1u) * 2000000, BufferUsage::SparseVertex | BufferUsage::Storage, "StaticSceneMesh.VertexPositions");
-        m_attributesBuffer = Buffer::Create(m_streamLayout.GetStride(0u) * 2000000, BufferUsage::SparseVertex, "StaticSceneMesh.VertexAttributes");
-        m_indexBuffer = Buffer::Create(ElementConvert::Size(m_indexType) * 2000000, BufferUsage::SparseIndex | BufferUsage::Storage, "StaticSceneMesh.IndexBuffer");
-        m_submeshBuffer = Buffer::Create<PK::Assets::Mesh::Meshlet::PKSubmesh>(maxSubmeshes, flags, "Meshlet.SubmeshBuffer");
-        m_meshletBuffer = Buffer::Create<PK::Assets::Mesh::Meshlet::PKMeshlet>(maxMeshlets, flags, "Meshlet.MeshletBuffer");
-        m_meshletVertexBuffer = Buffer::Create<uint4>(maxVertices, flags, "Meshlet.VertexBuffer");
-        m_meshletIndexBuffer = Buffer::Create<uint32_t>((maxTriangles * 3ull) / 4ull, flags, "Meshlet.IndexBuffer");
+        m_positionsBuffer = RHICreateBuffer(m_streamLayout.GetStride(1u) * 2000000, BufferUsage::SparseVertex | BufferUsage::Storage, "StaticMeshCollection.VertexPositions");
+        m_attributesBuffer = RHICreateBuffer(m_streamLayout.GetStride(0u) * 2000000, BufferUsage::SparseVertex, "StaticMeshCollection.VertexAttributes");
+        m_indexBuffer = RHICreateBuffer(ElementConvert::Size(m_indexType) * 2000000, BufferUsage::SparseIndex | BufferUsage::Storage, "StaticMeshCollection.IndexBuffer");
+        m_submeshBuffer = RHICreateBuffer<PK::Assets::Mesh::Meshlet::PKSubmesh>(maxSubmeshes, flags, "Meshlet.SubmeshBuffer");
+        m_meshletBuffer = RHICreateBuffer<PK::Assets::Mesh::Meshlet::PKMeshlet>(maxMeshlets, flags, "Meshlet.MeshletBuffer");
+        m_meshletVertexBuffer = RHICreateBuffer<uint4>(maxVertices, flags, "Meshlet.VertexBuffer");
+        m_meshletIndexBuffer = RHICreateBuffer<uint32_t>((maxTriangles * 3ull) / 4ull, flags, "Meshlet.IndexBuffer");
     }
 
-    StaticMesh* StaticSceneMesh::Allocate(StaticMeshAllocationData* data)
+    StaticMesh* StaticMeshCollection::Allocate(StaticMeshAllocationData* data)
     {
-        PK_LOG_VERBOSE("StaticSceneMesh.Allocate: sm:%u, ml:%u, mlvc:%u, mltc:%u, vc:%u, tc:%u",
+        PK_LOG_VERBOSE("StaticMeshCollection.Allocate: sm:%u, ml:%u, mlvc:%u, mltc:%u, vc:%u, tc:%u",
             data->meshlet.submeshCount,
             data->meshlet.meshletCount,
             data->meshlet.vertexCount,
@@ -131,7 +130,7 @@ namespace PK::Rendering::Objects
             data->meshlet.pMeshlets[i].triangleFirst += staticMesh->meshletTriangleFirst;
         }
 
-        auto commandBuffer = GraphicsAPI::GetCommandBuffer(QueueType::Transfer);
+        auto commandBuffer = RHIGetCommandBuffer(QueueType::Transfer);
         commandBuffer->UploadBufferSubData(m_submeshBuffer.get(), data->meshlet.pSubmeshes, submeshOffset, submeshesSize);
         commandBuffer->UploadBufferSubData(m_meshletBuffer.get(), data->meshlet.pMeshlets, meshletOffset, meshletsSize);
         commandBuffer->UploadBufferSubData(m_meshletVertexBuffer.get(), data->meshlet.pVertices, meshletVertexOffset, meshletVerticesSize);
@@ -160,7 +159,7 @@ namespace PK::Rendering::Objects
         return staticMesh;
     }
 
-    void StaticSceneMesh::Deallocate(StaticMesh* mesh)
+    void StaticMeshCollection::Deallocate(StaticMesh* mesh)
     {
         auto submeshStride = sizeof(PK::Assets::Mesh::Meshlet::PKSubmesh);
         auto meshletStride = sizeof(PK::Assets::Mesh::Meshlet::PKMeshlet);
@@ -209,7 +208,7 @@ namespace PK::Rendering::Objects
         m_staticMeshes.Delete(mesh);
     }
 
-    bool StaticSceneMesh::TryGetAccelerationStructureGeometryInfo(uint32_t globalSubmeshIndex, RHI::Objects::AccelerationStructureGeometryInfo* outInfo) const
+    bool StaticMeshCollection::TryGetAccelerationStructureGeometryInfo(uint32_t globalSubmeshIndex, RHI::AccelerationStructureGeometryInfo* outInfo) const
     {
         if (!HasPendingUpload())
         {
@@ -236,7 +235,7 @@ namespace PK::Rendering::Objects
         return baseMesh->GetSubmesh(GetGlobalSubmeshIndex(localIndex));
     }
 
-    bool StaticMesh::TryGetAccelerationStructureGeometryInfo(uint32_t localIndex, RHI::Objects::AccelerationStructureGeometryInfo* outInfo) const
+    bool StaticMesh::TryGetAccelerationStructureGeometryInfo(uint32_t localIndex, RHI::AccelerationStructureGeometryInfo* outInfo) const
     {
         return baseMesh->TryGetAccelerationStructureGeometryInfo(GetGlobalSubmeshIndex(localIndex), outInfo);
     }

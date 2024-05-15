@@ -5,7 +5,7 @@
 #include "Rendering/RHI/Structs.h"
 #include "Rendering/RHI/Vulkan/VulkanCommon.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI, struct VulkanDriver)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Vulkan, struct VulkanDriver)
 
 namespace PK::Rendering::RHI::Vulkan::Objects
 {

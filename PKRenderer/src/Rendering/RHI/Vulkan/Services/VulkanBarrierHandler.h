@@ -223,7 +223,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
             }
 
             const uint32_t m_queueFamily = 0u;
-            PK::Utilities::PointerMap<uint64_t, AccessRecord> m_resources;
+            PK::Utilities::PointerMap<uint64_t, AccessRecord> m_resources = PK::Utilities::PointerMap<uint64_t, AccessRecord>(1024ull);
             PK::Utilities::FixedPool<AccessRecord, 1024> m_records;
             PK::Utilities::FixedList<VkBufferMemoryBarrier, 256> m_bufferBarriers;
             PK::Utilities::FixedList<VkImageMemoryBarrier, 256> m_imageBarriers;

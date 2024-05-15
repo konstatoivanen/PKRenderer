@@ -1,6 +1,5 @@
 #pragma once
 #include "Utilities/ForwardDeclare.h"
-#include "Utilities/IndexedSet.h"
 #include "Utilities/FastMap.h"
 #include "Rendering/RHI/Vulkan/VulkanCommon.h"
 #include "Rendering/RHI/Objects/AccelerationStructure.h"
@@ -16,7 +15,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
         ~VulkanAccelerationStructure();
         
         void BeginWrite(QueueType queue, uint32_t instanceLimit) final;
-        void AddInstance(RHI::Objects::AccelerationStructureGeometryInfo& geometry, const PK::Math::float3x4& matrix) final;
+        void AddInstance(AccelerationStructureGeometryInfo& geometry, const PK::Math::float3x4& matrix) final;
         void EndWrite() final;
 
         uint32_t GetInstanceCount() const final { return m_instanceCount; }
@@ -65,7 +64,7 @@ namespace PK::Rendering::RHI::Vulkan::Objects
                 bool needsRealloc = false;
             };
 
-            uint64_t GetGeometryIndex(const RHI::Objects::AccelerationStructureGeometryInfo& geometry);
+            uint64_t GetGeometryIndex(const AccelerationStructureGeometryInfo& geometry);
             void ValidateResources();
 
             const VulkanDriver* m_driver = nullptr;

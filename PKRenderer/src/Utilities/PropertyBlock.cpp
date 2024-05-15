@@ -3,21 +3,14 @@
 
 namespace PK::Utilities
 {
-    PropertyBlock::PropertyBlock(uint64_t initialCapacity)
+    PropertyBlock::PropertyBlock(uint64_t capacityBytes, uint64_t capacityProperties) : m_propertyInfos(capacityProperties)
     {
-        ValidateBufferSize(initialCapacity);
-    }
-
-    PropertyBlock::PropertyBlock(void* externalBuffer, uint64_t initialCapacity)
-    {
-        m_capacity = initialCapacity;
-        m_buffer = externalBuffer;
-        m_externalBuffer = true;
+        ValidateBufferSize(capacityBytes);
     }
 
     PropertyBlock::~PropertyBlock()
     {
-        if (m_buffer != nullptr && !m_externalBuffer)
+        if (m_buffer != nullptr)
         {
             free(m_buffer);
         }
@@ -72,11 +65,6 @@ namespace PK::Utilities
             return;
         }
 
-        if (m_externalBuffer)
-        {
-            throw std::runtime_error("Cannot resize an external buffer!");
-        }
-
         auto newBuffer = calloc(1, size);
 
         if (newBuffer == nullptr)
@@ -92,13 +80,5 @@ namespace PK::Utilities
 
         m_capacity = size;
         m_buffer = newBuffer;
-    }
-
-    void PropertyBlock::SetExternalBuffer(void* externalBuffer, uint64_t capacity)
-    {
-        m_buffer = externalBuffer;
-        m_capacity = capacity;
-        m_externalBuffer = true;
-        Clear();
     }
 }

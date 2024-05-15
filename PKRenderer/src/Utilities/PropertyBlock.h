@@ -72,8 +72,7 @@ namespace PK::Utilities
             }
 
         public:
-            PropertyBlock(uint64_t initialCapacity);
-            PropertyBlock(void* buffer, uint64_t initialCapacity);
+            PropertyBlock(uint64_t capacityBytes, uint64_t capacityProperties);
             ~PropertyBlock();
 
             void CopyFrom(PropertyBlock& from);
@@ -129,9 +128,7 @@ namespace PK::Utilities
         protected:
             bool TryWriteValue(const void* src, uint32_t index, uint64_t writeSize);
             void ValidateBufferSize(uint64_t size);
-            void SetExternalBuffer(void* buffer, uint64_t capacity);
 
-            bool m_externalBuffer = false;
             bool m_fixedLayout = false;
             void* m_buffer = nullptr;
             uint64_t m_capacity = 0ull;

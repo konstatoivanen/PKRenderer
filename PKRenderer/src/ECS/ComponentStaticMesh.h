@@ -1,5 +1,5 @@
 #pragma once
-#include "Rendering/Objects/StaticSceneMesh.h"
+#include "Rendering/Objects/StaticMeshCollection.h"
 
 namespace PK::ECS
 {

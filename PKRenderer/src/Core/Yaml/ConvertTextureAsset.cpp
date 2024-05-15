@@ -1,15 +1,15 @@
 #include "PrecompiledHeader.h"
 #include "Core/Application.h"
 #include "Core/Assets/AssetDatabase.h"
-#include "ConvertTexture.h"
+#include "ConvertTextureAsset.h"
 
 namespace YAML
 {
     using namespace PK::Core;
     using namespace PK::Core::Assets;
-    using namespace PK::Rendering::RHI::Objects;
+    using namespace PK::Rendering::Objects;
 
-    Node convert<Texture*>::encode(const Texture*& rhs)
+    Node convert<TextureAsset*>::encode(const TextureAsset*& rhs)
     {
         Node node;
         node.push_back(rhs->GetFileName());
@@ -17,9 +17,9 @@ namespace YAML
         return node;
     }
 
-    bool convert<Texture*>::decode(const Node& node, Texture*& rhs)
+    bool convert<TextureAsset*>::decode(const Node& node, TextureAsset*& rhs)
     {
-        rhs = PK::Core::Application::GetService<AssetDatabase>()->Load<Texture>(node.as<std::string>());
+        rhs = PK::Core::Application::GetService<AssetDatabase>()->Load<TextureAsset>(node.as<std::string>());
         return true;
     }
 }

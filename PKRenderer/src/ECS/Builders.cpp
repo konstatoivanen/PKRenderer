@@ -13,7 +13,7 @@
 #include "ECS/EntityViewLight.h"
 #include "ECS/EntityViewFlyCamera.h"
 #include "Rendering/RHI/Objects/Shader.h"
-#include "Rendering/Objects/VirtualStaticMesh.h"
+#include "Rendering/Objects/StaticMeshAsset.h"
 #include "Rendering/HashCache.h"
 #include "Builders.h"
 
@@ -234,7 +234,7 @@ namespace PK::ECS::Build
 
         implementer->sourceRadius = kLightSourceRadius;
 
-        auto mesh = assetDatabase->Find<VirtualStaticMesh>("Primitive_Sphere")->GetStaticMesh();
+        auto mesh = assetDatabase->Find<StaticMeshAsset>("Primitive_Sphere")->GetStaticMesh();
         auto shader = assetDatabase->Find<Shader>("MS_Mat_Unlit_Color");
         auto material = assetDatabase->Register("M_Point_Light_" + std::to_string(egid.entityID()), CreateRef<Material>(shader, nullptr));
         material->Set<float4>(HashCache::Get()->_Color, color);

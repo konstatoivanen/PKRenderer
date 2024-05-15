@@ -2,7 +2,7 @@
 #include "Utilities/NoCopy.h"
 #include "Core/Assets/AssetImportEvent.h"
 #include "Rendering/Objects/ConstantBuffer.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/RHI.h"
 
 namespace PK::Rendering::Passes
 {

@@ -140,7 +140,7 @@ namespace PK::Utilities
             }
 
             m_count = count;
-            memcpy(m_data, elements, sizeof(T) * count);
+            std::copy(elements, elements + count, reinterpret_cast<T*>(m_data));
         }
 
         InlineList(std::initializer_list<T> elements) : InlineList(elements.begin(), (size_t)(elements.end() - elements.begin()))

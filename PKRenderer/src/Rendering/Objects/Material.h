@@ -1,20 +1,32 @@
 #pragma once
-#include "Utilities/ForwardDeclare.h"
 #include "Core/Assets/Asset.h"
 #include "Rendering/Objects/BindSet.h"
 #include "Rendering/Objects/ShaderPropertyBlock.h"
-
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Texture)
+#include "Rendering/RHI/RHI.h"
 
 namespace PK::Rendering::Objects
 {
     class Material : public Core::Assets::AssetWithImport<>, public ShaderPropertyBlock
     {
     public:
-        Material() : ShaderPropertyBlock(1024) {}
-        Material(RHI::Objects::Shader* shader) : ShaderPropertyBlock(1024), m_shader(shader) { InitializeShaderLayout(); }
-        Material(RHI::Objects::Shader* shader, RHI::Objects::Shader* shadowShader) : ShaderPropertyBlock(1024), m_shader(shader), m_shadowShader(shadowShader) { InitializeShaderLayout(); }
+        Material() : ShaderPropertyBlock(1024ull, 16ull) 
+        {
+        }
+
+        Material(RHI::Objects::Shader* shader) : 
+            ShaderPropertyBlock(1024, 16ull), 
+            m_shader(shader) 
+        { 
+            InitializeShaderLayout(); 
+        }
+
+        Material(RHI::Objects::Shader* shader, RHI::Objects::Shader* shadowShader) : 
+            ShaderPropertyBlock(1024ull, 16ull), 
+            m_shader(shader), 
+            m_shadowShader(shadowShader) 
+        { 
+            InitializeShaderLayout(); 
+        }
 
         constexpr RHI::Objects::Shader* GetShader() const { return m_shader; }
         constexpr RHI::Objects::Shader* GetShadowShader() const { return m_shadowShader; }

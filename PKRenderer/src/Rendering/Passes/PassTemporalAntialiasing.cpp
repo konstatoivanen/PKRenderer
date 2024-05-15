@@ -33,7 +33,7 @@ namespace PK::Rendering::Passes
         descriptor.sampler.wrap[1] = WrapMode::Clamp;
         descriptor.sampler.wrap[2] = WrapMode::Clamp;
         descriptor.usage = TextureUsage::Default | TextureUsage::Storage;
-        m_renderTarget = Texture::Create(descriptor, "TAA.HistoryTexture");
+        m_renderTarget = RHICreateTexture(descriptor, "TAA.HistoryTexture");
     }
 
     void PassTemporalAntialiasing::Render(CommandBuffer* cmd, Texture* source, Texture* destination)
@@ -52,10 +52,10 @@ namespace PK::Rendering::Passes
 
         m_renderTarget->Validate(resolution);
 
-        GraphicsAPI::SetTexture(hash->pk_Texture, source, { 0, 0, 1u, 1u });
-        GraphicsAPI::SetTexture(hash->pk_Texture1, m_renderTarget.get(), { 0, historyRead, 1u, 1u });
-        GraphicsAPI::SetImage(hash->pk_Image, m_renderTarget.get(), { 0, historyWrite, 1u, 1u });
-        GraphicsAPI::SetImage(hash->pk_Image1, destination, { 0, 0, 1u, 1u });
+        RHISetTexture(hash->pk_Texture, source, { 0, 0, 1u, 1u });
+        RHISetTexture(hash->pk_Texture1, m_renderTarget.get(), { 0, historyRead, 1u, 1u });
+        RHISetImage(hash->pk_Image, m_renderTarget.get(), { 0, historyWrite, 1u, 1u });
+        RHISetImage(hash->pk_Image1, destination, { 0, 0, 1u, 1u });
         cmd->Dispatch(m_computeTAA, 0, { resolution.x, resolution.y, 1u });
         cmd->EndDebugScope();
 

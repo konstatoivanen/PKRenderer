@@ -8,7 +8,6 @@
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::ECS, class EntityDatabase)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::Assets, class AssetDatabase)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::ControlFlow, class Sequencer)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI, struct Window)
 
 namespace PK::Rendering
 {
@@ -28,7 +27,7 @@ namespace PK::Rendering
 
 			virtual void Step(Core::TimeFrameInfo* token) final { m_timeFrameInfo = *token;}
 
-			virtual void OnApplicationRender(Rendering::RHI::Window* window) final;
+			virtual void OnApplicationRender(Rendering::RHI::Objects::Window* window) final;
 
 		private:
 			Core::ControlFlow::Sequencer* m_sequencer = nullptr;

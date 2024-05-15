@@ -22,6 +22,7 @@ namespace PK::Rendering::RHI::Vulkan::Services
             const VkDevice m_device;
             PK::Utilities::FixedPool<VulkanBindHandle, 128> m_bindhandlePool;
             PK::Utilities::FixedPool<VulkanSampler, 128> m_samplerPool;
-            PK::Utilities::FastMap<SamplerDescriptor, VulkanSampler*, SampelerKeyHash> m_samplers;
+            PK::Utilities::FastMap<SamplerDescriptor, VulkanSampler*, SampelerKeyHash> m_samplers = 
+                PK::Utilities::FastMap<SamplerDescriptor, VulkanSampler*, SampelerKeyHash>(16ull);
     };
 }

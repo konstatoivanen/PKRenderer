@@ -3,7 +3,6 @@
 #include "Utilities/FenceRef.h"
 #include "Core/Assets/Asset.h"
 #include "Rendering/RHI/Objects/Buffer.h"
-#include "Rendering/RHI/Objects/AccelerationStructure.h"
 
 namespace PK::Rendering::Objects
 {
@@ -19,7 +18,7 @@ namespace PK::Rendering::Objects
             Math::BoundingBox bounds = Math::BoundingBox::GetMinBounds();
         };
 
-        typedef Utilities::FixedList<RHI::Objects::BufferRef, PK::Rendering::RHI::PK_MAX_VERTEX_ATTRIBUTES> VertexBuffers;
+        typedef Utilities::FixedList<RHI::Objects::BufferRef, RHI::PK_MAX_VERTEX_ATTRIBUTES> VertexBuffers;
 
         Mesh();
         Mesh(const RHI::Objects::BufferRef& indexBuffer,
@@ -39,7 +38,7 @@ namespace PK::Rendering::Objects
             uint32_t submeshCount);
 
         void AssetImport(const char* filepath) final;
-        bool TryGetAccelerationStructureGeometryInfo(uint32_t submesh, RHI::Objects::AccelerationStructureGeometryInfo* outInfo);
+        bool TryGetAccelerationStructureGeometryInfo(uint32_t submesh, RHI::AccelerationStructureGeometryInfo* outInfo);
 
         constexpr const VertexBuffers& GetVertexBuffers() const { return m_vertexBuffers; }
         constexpr const RHI::VertexStreamLayout& GetVertexStreamLayout() const { return m_streamLayout; }

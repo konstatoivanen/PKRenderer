@@ -20,7 +20,7 @@ namespace PK::Core::Input
     public:
         InputSystem(ControlFlow::Sequencer* sequencer) : m_sequencer(sequencer) {}
 
-        InputDevice* GetDevice(Rendering::RHI::Window* window);
+        InputDevice* GetDevice(Rendering::RHI::Objects::Window* window);
 
         template<typename T>
         T* GetDevice(void* nativeHandle)
@@ -29,8 +29,8 @@ namespace PK::Core::Input
             return iter != m_inputDevices.end() ? iter->second->GetNative<T>() : nullptr;
         }
 
-        virtual void OnApplicationUpdateInput(Rendering::RHI::Window* window) final;
-        virtual void OnApplicationCloseFrame(Rendering::RHI::Window* window) final;
+        virtual void OnApplicationUpdateInput(Rendering::RHI::Objects::Window* window) final;
+        virtual void OnApplicationCloseFrame(Rendering::RHI::Objects::Window* window) final;
 
     private:
         ControlFlow::Sequencer* m_sequencer;

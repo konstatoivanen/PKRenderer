@@ -1,4 +1,5 @@
 #pragma once
+#include "Utilities/ForwardDeclare.h"
 #include "Utilities/NoCopy.h"
 #include "Utilities/Ref.h"
 #include "Rendering/RHI/Objects/CommandBuffer.h"

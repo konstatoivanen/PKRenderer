@@ -1,19 +1,18 @@
 #pragma once
-#include "Utilities/Ref.h"
+#include "Utilities/NoCopy.h"
 #include "Utilities/FenceRef.h"
-#include "Utilities/VersionedObject.h"
 
-namespace PK::Rendering::RHI
+namespace PK::Utilities
 {
     class Disposer : public PK::Utilities::NoCopy
     {
         public:
-            typedef void (*DeletaFunction)(void*);
+            typedef void (*Destructor)(void*);
             
             struct DisposeHandle
             {
                 void* disposable = nullptr;
-                DeletaFunction destructor = nullptr;
+                Destructor destructor = nullptr;
                 Utilities::FenceRef fence{};
             };
 
@@ -30,11 +29,11 @@ namespace PK::Rendering::RHI
             }
 
             template<typename T>
-            void Dispose(T* disposable, DeletaFunction deleter, const Utilities::FenceRef& releaseFence)
+            void Dispose(T* disposable, Destructor destructor, const Utilities::FenceRef& releaseFence)
             {
                 if (disposable != nullptr)
                 {
-                    m_disposables.push_back({ disposable, deleter, releaseFence });
+                    m_disposables.push_back({ disposable, destructor, releaseFence });
                 }
             }
 

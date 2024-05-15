@@ -81,7 +81,7 @@ namespace PK::Core
         auto workingDirectory = std::filesystem::path(arguments.args[0]).remove_filename().string();
         m_graphicsDriver = RHI::CreateRHIDriver(workingDirectory, APIType::Vulkan);
 
-        m_window = Window::Create(WindowProperties(name + m_graphicsDriver->GetDriverHeader(),
+        m_window = RHICreateWindow(WindowProperties(name + m_graphicsDriver->GetDriverHeader(),
             config->FileWindowIcon,
             config->InitialWidth,
             config->InitialHeight,
@@ -106,7 +106,7 @@ namespace PK::Core
         auto engineEntityCull = m_services->Create<Engines::EngineEntityCull>(entityDb);
         auto engineDrawGeometry = m_services->Create<Engines::EngineDrawGeometry>(entityDb, sequencer);
         auto engineGatherRayTracingGeometry = m_services->Create<Engines::EngineGatherRayTracingGeometry>(entityDb);
-        auto engineDebug = m_services->Create<Engines::EngineDebug>(assetDatabase, entityDb, batcherStaticMesh->GetStaticSceneMesh(), config);
+        auto engineDebug = m_services->Create<Engines::EngineDebug>(assetDatabase, entityDb, batcherStaticMesh->GetStaticMeshCollection(), config);
         auto engineScreenshot = m_services->Create<Engines::EngineScreenshot>();
         auto engineGizmos = m_services->Create<Engines::EngineGizmos>(assetDatabase, sequencer, config);
 
@@ -234,7 +234,7 @@ namespace PK::Core
 
             sequencer->NextRoot(ApplicationStep::CloseFrame());
 
-            GraphicsAPI::GC();
+            RHIGC();
         }
     }
 

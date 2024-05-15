@@ -2,11 +2,9 @@
 #include "Utilities/ForwardDeclare.h"
 #include "Utilities/NoCopy.h"
 #include "Core/Assets/AssetImportEvent.h"
-#include "Rendering/RHI/Objects/Buffer.h"
+#include "Rendering/RHI/RHI.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core, struct ApplicationConfig)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct CommandBuffer)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Shader)
 
 namespace PK::Rendering::Passes
 {

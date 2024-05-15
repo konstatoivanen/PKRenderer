@@ -2,54 +2,20 @@
 #include <KTX/ktx.h>
 #include <filesystem>
 #include "Core/CLI/Log.h"
-#include "Rendering/RHI/Vulkan/Objects/VulkanTexture.h"
-#include "Rendering/RHI/Vulkan/Objects/VulkanQueue.h"
-#include "Rendering/RHI/Driver.h"
-#include "Texture.h"
+#include "Rendering/RHI/Objects/Texture.h"
+#include "Rendering/RHI/Objects/CommandBuffer.h"
+#include "Rendering/RHI/Vulkan/VulkanCommon.h"
+#include "TextureAsset.h"
 
-using namespace PK::Utilities;
-using namespace PK::Core;
-using namespace PK::Core::Assets;
-using namespace PK::Rendering;
-using namespace PK::Rendering::RHI;
-using namespace PK::Rendering::RHI::Objects;
-using namespace PK::Rendering::RHI::Vulkan::Objects;
-
-namespace PK::Rendering::RHI::Objects
+namespace PK::Rendering::Objects
 {
-    Texture::~Texture() = default;
+    using namespace PK::Utilities;
+    using namespace PK::Rendering::RHI;
+    using namespace PK::Rendering::RHI::Objects;
 
-    TextureRef Texture::Create(const TextureDescriptor& descriptor, const char* name)
+    void TextureAsset::AssetImport(const char* filepath)
     {
-        auto api = Driver::Get()->GetAPI();
-
-        switch (api)
-        {
-            case APIType::Vulkan: return CreateRef<VulkanTexture>(descriptor, name);
-            default: return nullptr;
-        }
-    }
-
-    bool Texture::Validate(TextureRef& inoutTexture, const TextureDescriptor& descriptor, const char* name)
-    {
-        if (!inoutTexture)
-        {
-            inoutTexture = Create(descriptor, name);
-            return true;
-        }
-        else
-        {
-            return inoutTexture->Validate(descriptor);
-        }
-    }
-
-    void Texture::AssetImport(const char* filepath)
-    {
-        m_name = std::filesystem::path(GetFileName()).stem().string();
-
         ktxTexture2* ktxTex2;
-
-        TextureDescriptor descriptor{};
 
         auto result = ktxTexture2_CreateFromNamedFile(filepath, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTex2);
 
@@ -58,10 +24,12 @@ namespace PK::Rendering::RHI::Objects
             PK_THROW_ERROR(ktxErrorString(result));
         }
 
+        TextureDescriptor descriptor{};
         descriptor.usage = TextureUsage::DefaultDisk;
         descriptor.resolution = { ktxTex2->baseWidth, ktxTex2->baseHeight, ktxTex2->baseDepth };
         descriptor.levels = ktxTex2->numLevels;
         descriptor.layers = ktxTex2->numLayers;
+        //@TODO Not a cool dependency
         descriptor.format = RHI::Vulkan::EnumConvert::GetTextureFormat((VkFormat)ktxTex2->vkFormat);
 
         if (ktxTex2->isCubemap && ktxTex2->isArray)
@@ -87,7 +55,8 @@ namespace PK::Rendering::RHI::Objects
         descriptor.sampler.wrap[0] = WrapMode::Repeat;
         descriptor.sampler.wrap[1] = WrapMode::Repeat;
         descriptor.sampler.wrap[2] = WrapMode::Repeat;
-        Validate(descriptor);
+
+        m_texture = RHICreateTexture(descriptor, std::filesystem::path(GetFileName()).stem().string().c_str());
 
         ktx_uint8_t* ktxTextureData = ktxTexture_GetData(ktxTexture(ktxTex2));
         ktx_size_t ktxTextureSize = ktxTex2->dataSize;
@@ -117,23 +86,20 @@ namespace PK::Rendering::RHI::Objects
             };
         }
 
-        Driver::Get()->GetQueues()->GetCommandBuffer(QueueType::Transfer)->UploadTexture(this, ktxTextureData, ktxTextureSize, ranges.data(), (uint32_t)ranges.size());
+        RHIGetCommandBuffer(QueueType::Transfer)->UploadTexture(m_texture.get(), ktxTextureData, ktxTextureSize, ranges.data(), (uint32_t)ranges.size());
 
         ktxTexture_Destroy(ktxTexture(ktxTex2));
     }
+    
+    Texture* TextureAsset::GetRHI() { return m_texture.get(); }
+    const Texture* TextureAsset::GetRHI() const { return m_texture.get(); }
+    TextureAsset::operator Texture* () { return m_texture.get(); }
+    TextureAsset::operator const Texture* () const { return m_texture.get(); }
 }
 
-template<>
-bool Asset::IsValidExtension<Texture>(const std::string& extension) { return extension.compare(".ktx2") == 0; }
 
 template<>
-TextureRef Asset::Create<Texture>()
-{
-    auto api = Driver::Get()->GetAPI();
+bool PK::Core::Assets::Asset::IsValidExtension<PK::Rendering::Objects::TextureAsset>(const std::string& extension) { return extension.compare(".ktx2") == 0; }
 
-    switch (api)
-    {
-        case APIType::Vulkan: return CreateRef<VulkanTexture>();
-        default: return nullptr;
-    }
-}
+template<>
+PK::Rendering::Objects::TextureAssetRef PK::Core::Assets::Asset::Create<PK::Rendering::Objects::TextureAsset>() { return PK::Utilities::CreateRef<PK::Rendering::Objects::TextureAsset>(); }

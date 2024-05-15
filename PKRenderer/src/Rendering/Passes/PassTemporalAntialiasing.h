@@ -1,6 +1,6 @@
 #pragma once
 #include "Utilities/NoCopy.h"
-#include "Rendering/RHI/GraphicsAPI.h"
+#include "Rendering/RHI/RHI.h"
 
 namespace PK::Rendering::Passes
 {

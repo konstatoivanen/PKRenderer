@@ -2,11 +2,10 @@
 #include "Utilities/FixedPool.h"
 #include "Utilities/FenceRef.h"
 #include "Rendering/RHI/Objects/Buffer.h"
-#include "Rendering/RHI/Objects/AccelerationStructure.h"
 
 namespace PK::Rendering::Objects
 {
-    class StaticSceneMesh;
+    class StaticMeshCollection;
 
     struct StaticMeshAllocationData
     {
@@ -62,7 +61,7 @@ namespace PK::Rendering::Objects
 
     struct StaticMesh
     {
-        StaticSceneMesh* baseMesh = nullptr;
+        StaticMeshCollection* baseMesh = nullptr;
         Utilities::NameID name = 0u;
         uint32_t submeshFirst = 0u;
         uint32_t submeshCount = 0u;
@@ -79,13 +78,13 @@ namespace PK::Rendering::Objects
 
         inline uint32_t GetGlobalSubmeshIndex(uint32_t localIndex) const { return submeshFirst + glm::min(localIndex, submeshCount - 1u); }
         const StaticSubMesh* GetSubmesh(uint32_t localIndex) const;
-        bool TryGetAccelerationStructureGeometryInfo(uint32_t localIndex, RHI::Objects::AccelerationStructureGeometryInfo* outInfo) const;
+        bool TryGetAccelerationStructureGeometryInfo(uint32_t localIndex, RHI::AccelerationStructureGeometryInfo* outInfo) const;
     };
 
-    class StaticSceneMesh : public PK::Utilities::NoCopy
+    class StaticMeshCollection : public PK::Utilities::NoCopy
     {
         public:
-            StaticSceneMesh();
+            StaticMeshCollection();
             inline RHI::Objects::Buffer* GetPositionBuffer() const { return m_positionsBuffer.get(); }
             inline RHI::Objects::Buffer* GetAttributeBuffer() const { return m_attributesBuffer.get(); }
             inline RHI::Objects::Buffer* GetIndexBuffer() const { return m_indexBuffer.get(); }
@@ -99,7 +98,7 @@ namespace PK::Rendering::Objects
             StaticMesh* Allocate(StaticMeshAllocationData* data);
             void Deallocate(StaticMesh* mesh);
 
-            bool TryGetAccelerationStructureGeometryInfo(uint32_t globalSubmeshIndex, RHI::Objects::AccelerationStructureGeometryInfo* outInfo) const;
+            bool TryGetAccelerationStructureGeometryInfo(uint32_t globalSubmeshIndex, RHI::AccelerationStructureGeometryInfo* outInfo) const;
 
         private:
             Utilities::FixedPool<StaticMesh, 4096> m_staticMeshes;

@@ -1,9 +1,7 @@
 #pragma once
-#include "Utilities/ForwardDeclare.h"
 #include "Rendering/Objects/ShaderPropertyBlock.h"
 #include "Rendering/RHI/Objects/Buffer.h"
-
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct CommandBuffer)
+#include "Rendering/RHI/RHI.h"
 
 namespace PK::Rendering::Objects
 {
@@ -17,8 +15,8 @@ namespace PK::Rendering::Objects
         void FlushBuffer(RHI::Objects::CommandBuffer* cmd);
 
         const RHI::BufferLayout& GetLayout() const { return m_layout; }
-        const RHI::Objects::Buffer* GetBuffer() const { return m_graphicsBuffer.get(); }
-        RHI::Objects::Buffer* GetBuffer() { return m_graphicsBuffer.get(); }
+        const RHI::Objects::Buffer* GetRHI() const { return m_graphicsBuffer.get(); }
+        RHI::Objects::Buffer* GetRHI() { return m_graphicsBuffer.get(); }
 
         operator RHI::Objects::Buffer* () { return m_graphicsBuffer.get(); }
         operator const RHI::Objects::Buffer* () { return m_graphicsBuffer.get(); }

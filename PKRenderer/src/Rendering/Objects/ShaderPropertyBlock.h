@@ -7,8 +7,7 @@ namespace PK::Rendering::Objects
     class ShaderPropertyBlock : public Utilities::PropertyBlock
     {
         public:
-            ShaderPropertyBlock(uint64_t capacity) : Utilities::PropertyBlock(capacity) {}
-            ShaderPropertyBlock(void* foreignBuffer, uint64_t capacity) : Utilities::PropertyBlock(foreignBuffer, capacity) {}
+            ShaderPropertyBlock(uint64_t capacityBytes, uint64_t capacityProperties) : Utilities::PropertyBlock(capacityBytes, capacityProperties) {}
             virtual ~ShaderPropertyBlock() = 0;
             void ReserveLayout(const RHI::BufferLayout& layout);
     };

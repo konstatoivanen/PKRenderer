@@ -14,7 +14,6 @@
 #include "Rendering/Passes/PassTemporalAntialiasing.h"
 #include "Rendering/Passes/PassAutoExposure.h"
 #include "Rendering/Passes/PassBloom.h"
-#include "Rendering/RHI/Objects/AccelerationStructure.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::Assets, class AssetDatabase)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::ECS, class EntityDatabase)

@@ -1,17 +1,9 @@
 #pragma once
-#include "Utilities/ForwardDeclare.h"
+#include <string>
 #include "Utilities/NoCopy.h"
-#include "Utilities/NameID.h"
 #include "Utilities/NativeInterface.h"
 #include "Utilities/PropertyBlock.h"
-#include "Rendering/RHI/Structs.h"
-#include "Rendering/RHI/Objects/BindArray.h"
-
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI, struct BuiltInResources)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, struct QueueSet)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Buffer)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class Texture)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::RHI::Objects, class AccelerationStructure)
+#include "Rendering/RHI/RHI.h"
 
 namespace PK::Rendering::RHI
 {
@@ -27,11 +19,18 @@ namespace PK::Rendering::RHI
         virtual DriverMemoryInfo GetMemoryInfo() const = 0;
         virtual std::string GetDriverHeader() const = 0;
         virtual size_t GetBufferOffsetAlignment(BufferUsage usage) const = 0;
+        
+        virtual RHI::Objects::AccelerationStructureRef CreateAccelerationStructure(const char* name) = 0;
+        virtual RHI::Objects::TextureBindArrayRef CreateTextureBindArray(size_t capacity) = 0;
+        virtual RHI::Objects::BufferBindArrayRef CreateBufferBindArray(size_t capacity) = 0;
+        virtual RHI::Objects::BufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name) = 0;
+        virtual RHI::Objects::TextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name) = 0;
+        virtual RHI::Objects::WindowScope CreateRHIWindow(const WindowProperties& properties) = 0;
 
         virtual void SetBuffer(Utilities::NameID name, RHI::Objects::Buffer* buffer, const IndexRange& range) = 0;
         virtual void SetTexture(Utilities::NameID name, RHI::Objects::Texture* texture, const TextureViewRange& range) = 0;
-        virtual void SetBufferArray(Utilities::NameID name, RHI::Objects::BindArray<RHI::Objects::Buffer>* bufferArray) = 0;
-        virtual void SetTextureArray(Utilities::NameID name, RHI::Objects::BindArray<RHI::Objects::Texture>* textureArray) = 0;
+        virtual void SetBufferArray(Utilities::NameID name, RHI::Objects::BufferBindArray* bufferArray) = 0;
+        virtual void SetTextureArray(Utilities::NameID name, RHI::Objects::TextureBindArray* textureArray) = 0;
         virtual void SetImage(Utilities::NameID name, RHI::Objects::Texture* texture, const TextureViewRange& range) = 0;
         virtual void SetSampler(Utilities::NameID name, const SamplerDescriptor& sampler) = 0;
         virtual void SetAccelerationStructure(Utilities::NameID name, RHI::Objects::AccelerationStructure* structure) = 0;
@@ -61,7 +60,7 @@ namespace PK::Rendering::RHI
             return static_cast<Child*>(s_instance);
         }
 
-        PK::Utilities::PropertyBlock globalResources = PK::Utilities::PropertyBlock(16384);
+        Utilities::PropertyBlock globalResources = Utilities::PropertyBlock(16384ull, 128ull);
         BuiltInResources* builtInResources;
         
         protected: inline static Driver* s_instance = nullptr;

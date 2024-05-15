@@ -53,12 +53,12 @@ namespace PK::Rendering::Passes
         descr.resolution = { 256u, 128u, 256u };
         descr.levels = 7u;
         descr.usage = TextureUsage::Sample | TextureUsage::Storage;
-        m_voxels = Texture::Create(descr, "GI.VoxelVolume");
+        m_voxels = RHICreateTexture(descr, "GI.VoxelVolume");
 
         descr.format = TextureFormat::R8UI;
         descr.sampler.borderColor = BorderColor::IntClear;
         descr.levels = 1u;
-        m_voxelMask = Texture::Create(descr, "GI.VoxelVolumeMask");
+        m_voxelMask = RHICreateTexture(descr, "GI.VoxelVolumeMask");
 
         descr.samplerType = SamplerType::Sampler2DArray;
         descr.sampler.wrap[0] = WrapMode::Clamp;
@@ -70,10 +70,10 @@ namespace PK::Rendering::Passes
         descr.format = TextureFormat::RGBA32UI;
         descr.layers = 2;
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1 };
-        m_packedGIDiff = Texture::Create(descr, "GI.PackedGI.Diff");
+        m_packedGIDiff = RHICreateTexture(descr, "GI.PackedGI.Diff");
 
         descr.format = TextureFormat::RG32UI;
-        m_packedGISpec = Texture::Create(descr, "GI.PackedGI.Spec");
+        m_packedGISpec = RHICreateTexture(descr, "GI.PackedGI.Spec");
 
         descr.samplerType = SamplerType::Sampler2D;
         descr.layers = 1u;
@@ -82,21 +82,21 @@ namespace PK::Rendering::Passes
         descr.format = TextureFormat::RG32UI;
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1u };
         descr.resolution = GetCheckerboardResolution(descr.resolution, m_useCheckerboardTrace);
-        m_rayhits = Texture::Create(descr, "GI.RayHits");
+        m_rayhits = RHICreateTexture(descr, "GI.RayHits");
 
         descr.samplerType = SamplerType::Sampler2DArray;
         descr.layers = 2;
         descr.format = TextureFormat::RGBA32UI;
-        m_reservoirs0 = Texture::Create(descr, "GI.Reservoirs0");
+        m_reservoirs0 = RHICreateTexture(descr, "GI.Reservoirs0");
         descr.format = TextureFormat::RG32UI;
-        m_reservoirs1 = Texture::Create(descr, "GI.Reservoirs1");
+        m_reservoirs1 = RHICreateTexture(descr, "GI.Reservoirs1");
 
         descr.layers = 2;
         descr.format = TextureFormat::RGB9E5;
         descr.formatAlias = TextureFormat::R32UI;
         descr.usage = TextureUsage::Storage | TextureUsage::Sample;
         descr.resolution = { config->InitialWidth, config->InitialHeight, 1u };
-        m_resolvedGI = Texture::Create(descr, "GI.Resolved");
+        m_resolvedGI = RHICreateTexture(descr, "GI.Resolved");
 
         m_voxelizeAttribs.depthStencil.depthCompareOp = Comparison::Off;
         m_voxelizeAttribs.depthStencil.depthWriteEnable = false;
@@ -125,10 +125,10 @@ namespace PK::Rendering::Passes
         m_parameters->Set<float>(hash->pk_GI_VoxelStepSize, stepSize);
         m_parameters->Set<float>(hash->pk_GI_VoxelLevelScale, levelscale);
 
-        GraphicsAPI::SetBuffer(hash->pk_GI_Parameters, m_parameters->GetBuffer());
-        GraphicsAPI::SetImage(hash->pk_GI_VolumeMaskWrite, m_voxelMask.get());
-        GraphicsAPI::SetImage(hash->pk_GI_VolumeWrite, m_voxels.get());
-        GraphicsAPI::SetTexture(hash->pk_GI_VolumeRead, m_voxels.get());
+        RHISetBuffer(hash->pk_GI_Parameters, m_parameters->GetRHI());
+        RHISetImage(hash->pk_GI_VolumeMaskWrite, m_voxelMask.get());
+        RHISetImage(hash->pk_GI_VolumeWrite, m_voxels.get());
+        RHISetTexture(hash->pk_GI_VolumeRead, m_voxels.get());
     }
 
     void PassSceneGI::PreRender(CommandBuffer* cmd, const uint3& resolution)
@@ -142,7 +142,7 @@ namespace PK::Rendering::Passes
              { 1u, 2u, 0u, 0u },
         };
 
-        auto cmdTransfer = GraphicsAPI::GetQueues()->GetCommandBuffer(QueueType::Transfer);
+        auto cmdTransfer = RHIGetQueues()->GetCommandBuffer(QueueType::Transfer);
         m_sbtRaytrace.Validate(cmdTransfer, m_rayTraceGatherGI);
         m_sbtValidate.Validate(cmdTransfer, m_rayTraceValidate);
 
@@ -153,18 +153,18 @@ namespace PK::Rendering::Passes
         m_reservoirs1->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
         m_resolvedGI->Validate(resolution);
 
-        GraphicsAPI::SetImage(hash->pk_GI_RayHits, m_rayhits.get());
-        GraphicsAPI::SetImage(hash->pk_Reservoirs0, m_reservoirs0.get());
-        GraphicsAPI::SetImage(hash->pk_Reservoirs1, m_reservoirs1.get());
-        GraphicsAPI::SetImage(hash->pk_GI_PackedDiff, m_packedGIDiff.get());
-        GraphicsAPI::SetImage(hash->pk_GI_PackedSpec, m_packedGISpec.get());
-        GraphicsAPI::SetImage(hash->pk_GI_ResolvedWrite, m_resolvedGI.get());
-        GraphicsAPI::SetTexture(hash->pk_GI_ResolvedRead, m_resolvedGI.get());
+        RHISetImage(hash->pk_GI_RayHits, m_rayhits.get());
+        RHISetImage(hash->pk_Reservoirs0, m_reservoirs0.get());
+        RHISetImage(hash->pk_Reservoirs1, m_reservoirs1.get());
+        RHISetImage(hash->pk_GI_PackedDiff, m_packedGIDiff.get());
+        RHISetImage(hash->pk_GI_PackedSpec, m_packedGISpec.get());
+        RHISetImage(hash->pk_GI_ResolvedWrite, m_resolvedGI.get());
+        RHISetTexture(hash->pk_GI_ResolvedRead, m_resolvedGI.get());
 
         m_rasterAxis = m_frameIndex % 3;
         m_parameters->Set<uint4>(hash->pk_GI_VolumeSwizzle, swizzles[m_rasterAxis]);
         m_parameters->Set<uint2>(hash->pk_GI_RayDither, Functions::MurmurHash21(m_frameIndex / 64u));
-        m_parameters->FlushBuffer(GraphicsAPI::GetCommandBuffer(QueueType::Transfer));
+        m_parameters->FlushBuffer(RHIGetCommandBuffer(QueueType::Transfer));
         m_frameIndex++;
     }
 
@@ -174,7 +174,7 @@ namespace PK::Rendering::Passes
         if (m_rasterAxis == 0)
         {
             cmd->BeginDebugScope("SceneGI.PruneVoxels", PK_COLOR_GREEN);
-            GraphicsAPI::SetImage(HashCache::Get()->pk_Image, m_voxels.get(), 0, 0);
+            RHISetImage(HashCache::Get()->pk_Image, m_voxels.get(), 0, 0);
             cmd->Dispatch(m_computeClear, m_voxels->GetResolution());
             cmd->EndDebugScope();
         }
@@ -236,14 +236,14 @@ namespace PK::Rendering::Passes
         // Voxel mips
         auto hash = HashCache::Get();
         auto volumesize = m_voxels->GetResolution();
-        GraphicsAPI::SetTexture(hash->pk_Texture, m_voxels.get());
-        GraphicsAPI::SetImage(hash->pk_Image, m_voxels.get(), 1, 0);
-        GraphicsAPI::SetImage(hash->pk_Image1, m_voxels.get(), 2, 0);
-        GraphicsAPI::SetImage(hash->pk_Image2, m_voxels.get(), 3, 0);
+        RHISetTexture(hash->pk_Texture, m_voxels.get());
+        RHISetImage(hash->pk_Image, m_voxels.get(), 1, 0);
+        RHISetImage(hash->pk_Image1, m_voxels.get(), 2, 0);
+        RHISetImage(hash->pk_Image2, m_voxels.get(), 3, 0);
         cmd->Dispatch(m_computeMipmap, 0, volumesize >> 1u);
-        GraphicsAPI::SetImage(hash->pk_Image, m_voxels.get(), 4, 0);
-        GraphicsAPI::SetImage(hash->pk_Image1, m_voxels.get(), 5, 0);
-        GraphicsAPI::SetImage(hash->pk_Image2, m_voxels.get(), 6, 0);
+        RHISetImage(hash->pk_Image, m_voxels.get(), 4, 0);
+        RHISetImage(hash->pk_Image1, m_voxels.get(), 5, 0);
+        RHISetImage(hash->pk_Image2, m_voxels.get(), 6, 0);
         cmd->Dispatch(m_computeMipmap, 0, volumesize >> 4u);
     }
 
@@ -262,9 +262,9 @@ namespace PK::Rendering::Passes
     {
         m_useCheckerboardTrace = config->GICheckerboardTrace;
         m_useReSTIR = config->GIReSTIR;
-        GraphicsAPI::SetKeyword("PK_GI_CHECKERBOARD_TRACE", m_useCheckerboardTrace);
-        GraphicsAPI::SetKeyword("PK_GI_SPEC_VIRT_REPROJECT", config->GISpecularVirtualReproject);
-        GraphicsAPI::SetKeyword("PK_GI_SSRT_PRETRACE", config->GIScreenSpacePretrace);
-        GraphicsAPI::SetKeyword("PK_GI_RESTIR", config->GIReSTIR);
+        RHISetKeyword("PK_GI_CHECKERBOARD_TRACE", m_useCheckerboardTrace);
+        RHISetKeyword("PK_GI_SPEC_VIRT_REPROJECT", config->GISpecularVirtualReproject);
+        RHISetKeyword("PK_GI_SSRT_PRETRACE", config->GIScreenSpacePretrace);
+        RHISetKeyword("PK_GI_RESTIR", config->GIReSTIR);
     }
 }

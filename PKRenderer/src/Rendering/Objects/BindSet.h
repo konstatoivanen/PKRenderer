@@ -1,20 +1,20 @@
 #pragma once
-#include "Utilities/IndexedSet.h"
+#include "Utilities/FastSet.h"
 #include "Rendering/RHI/Objects/BindArray.h"
+#include "Rendering/RHI/RHI.h"
 
 namespace PK::Rendering::Objects
 {
     template<typename T>
-    class BindSet : public Utilities::NoCopy
+    struct BindSet : public Utilities::NoCopy
     {
-    public:
-        BindSet(uint32_t capacity) : m_array(RHI::Objects::BindArray<T>::Create(capacity)), m_indices(capacity) {}
+        BindSet(uint32_t capacity) : m_array(RHI::RHICreateBindArray<T>(capacity)), m_indices(capacity) {}
 
         uint32_t Set(T* value)
         {
             uint32_t setidx = 0u;
 
-            if (!m_indices.Add(value, &setidx))
+            if (!m_indices.Add(value, setidx))
             {
                 return (uint32_t)setidx;
             }
@@ -40,6 +40,6 @@ namespace PK::Rendering::Objects
 
     private:
         RHI::Objects::BindArrayRef<T> m_array;
-        Utilities::IndexedSet<T> m_indices;
+        Utilities::PointerSet<T> m_indices;
     };
 }
