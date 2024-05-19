@@ -1,13 +1,14 @@
 #include "PrecompiledHeader.h"
 #include "Core/Application.h"
 #include "Core/Assets/AssetDatabase.h"
+#include "Graphics/TextureAsset.h"
 #include "ConvertTextureAsset.h"
 
 namespace YAML
 {
     using namespace PK::Core;
     using namespace PK::Core::Assets;
-    using namespace PK::Rendering::Objects;
+    using namespace PK::Graphics;
 
     Node convert<TextureAsset*>::encode(const TextureAsset*& rhs)
     {

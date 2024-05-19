@@ -5,16 +5,16 @@
 #include "ECS/EGID.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::ECS, class EntityDatabase)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering, struct RequestRayTracingGeometry)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Renderer, struct RequestEntityCullRayTracingGeometry)
 
 namespace PK::Engines
 {
     class EngineGatherRayTracingGeometry : public Core::IService,
-        public Core::ControlFlow::IStep<Rendering::RequestRayTracingGeometry*>
+        public Core::ControlFlow::IStep<Renderer::RequestEntityCullRayTracingGeometry*>
     {
     public:
         EngineGatherRayTracingGeometry(ECS::EntityDatabase* entityDb);
-        virtual void Step(Rendering::RequestRayTracingGeometry* token) final;
+        virtual void Step(Renderer::RequestEntityCullRayTracingGeometry* token) final;
 
     private:
         ECS::EntityDatabase* m_entityDb = nullptr;

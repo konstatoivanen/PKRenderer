@@ -1,11 +1,11 @@
 #pragma once
-#include "Rendering/Objects/Material.h"
+#include "Graphics/Material.h"
 
 namespace PK::ECS
 {
     struct ComponentMaterials
     {
-        std::vector<Rendering::Objects::MaterialTarget> materials;
+        std::vector<Graphics::MaterialTarget> materials;
         virtual ~ComponentMaterials() = default;
     };
 }

@@ -3,9 +3,9 @@
 #include "Utilities/FileIOBMP.h"
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
-#include "Rendering/RHI/Objects/Buffer.h"
-#include "Rendering/RHI/Objects/CommandBuffer.h"
-#include "Rendering/RHI/Objects/Window.h"
+#include "Graphics/RHI/RHIBuffer.h"
+#include "Graphics/RHI/RHICommandBuffer.h"
+#include "Graphics/RHI/RHIWindow.h"
 #include "EngineScreenshot.h"
 
 namespace PK::Engines
@@ -13,9 +13,8 @@ namespace PK::Engines
     using namespace PK::Math;
     using namespace PK::Core;
     using namespace PK::Core::CLI;
-    using namespace PK::Rendering;
-    using namespace PK::Rendering::RHI;
-    using namespace PK::Rendering::RHI::Objects;
+    using namespace PK::Graphics;
+    using namespace PK::Graphics::RHI;
 
     EngineScreenshot::EngineScreenshot() : m_accumulatedPixels(1)
     {

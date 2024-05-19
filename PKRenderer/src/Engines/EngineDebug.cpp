@@ -10,11 +10,12 @@
 #include "ECS/Builders.h"
 #include "ECS/EntityViewScenePrimitive.h"
 #include "ECS/EntityViewFlyCamera.h"
-#include "Rendering/Geometry/PrimitiveBuilders.h"
-#include "Rendering/Geometry/IGizmos.h"
-#include "Rendering/Objects/StaticMeshAsset.h"
-#include "Rendering/Objects/StaticMeshCollection.h"
-#include "Rendering/HashCache.h"
+#include "Graphics/RHI/RHIWindow.h"
+#include "Graphics/MeshStaticAsset.h"
+#include "Graphics/MeshStaticCollection.h"
+#include "Graphics/MeshUtilities.h"
+#include "Renderer/IGizmos.h"
+#include "Renderer/HashCache.h"
 #include "EngineDebug.h"
 
 namespace PK::Engines
@@ -24,20 +25,19 @@ namespace PK::Engines
     using namespace PK::Core;
     using namespace PK::Core::Assets;
     using namespace PK::ECS;
-    using namespace PK::Rendering;
-    using namespace PK::Rendering::Objects;
-    using namespace PK::Rendering::RHI;
-    using namespace PK::Rendering::RHI::Objects;
+    using namespace PK::Renderer;
+    using namespace PK::Graphics;
+    using namespace PK::Graphics::RHI;
 
-    EngineDebug::EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, StaticMeshCollection* baseMesh, const ApplicationConfig* config)
+    EngineDebug::EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, MeshStaticCollection* baseMesh, const ApplicationConfig* config)
     {
         m_entityDb = entityDb;
         m_assetDatabase = assetDatabase;
 
-        auto columnMesh = assetDatabase->Load<StaticMeshAsset>("res/models/MDL_Columns.pkmesh", baseMesh);
-        auto rocksMesh = assetDatabase->Load<StaticMeshAsset>("res/models/MDL_Rocks.pkmesh", baseMesh);
-        auto sphereMesh = assetDatabase->Register<StaticMeshAsset>("Primitive_Sphere", Geometry::CreateSphereVirtualMesh(baseMesh, PK_FLOAT3_ZERO, 1.0f));
-        auto planeMesh = assetDatabase->Register<StaticMeshAsset>("Primitive_Plane16x16", Geometry::CreatePlaneVirtualMesh(baseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
+        auto columnMesh = assetDatabase->Load<MeshStaticAsset>("res/models/MDL_Columns.pkmesh", baseMesh);
+        auto rocksMesh = assetDatabase->Load<MeshStaticAsset>("res/models/MDL_Rocks.pkmesh", baseMesh);
+        auto sphereMesh = assetDatabase->Register<MeshStaticAsset>("Primitive_Sphere", CreateSphereMeshStaticAsset(baseMesh, PK_FLOAT3_ZERO, 1.0f));
+        auto planeMesh = assetDatabase->Register<MeshStaticAsset>("Primitive_Plane16x16", CreatePlaneMeshStaticAsset(baseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
 
         auto materialSand = assetDatabase->Load<Material>("res/materials/M_Sand.material");
         auto materialAsphalt = assetDatabase->Load<Material>("res/materials/M_Asphalt.material");
@@ -49,8 +49,8 @@ namespace PK::Engines
 
         srand(config->RandomSeed);
 
-        Build::StaticMeshEntity(m_entityDb, planeMesh->GetStaticMesh(), { {materialSand,0} }, { 0, -5, 0 }, float3(90, 0, 0) * Math::PK_FLOAT_DEG2RAD, 80.0f);
-        Build::StaticMeshEntity(m_entityDb, columnMesh->GetStaticMesh(), { {materialAsphalt,0} }, { -20, 5, -20 }, PK_FLOAT3_ZERO, 3.0f);
+        Build::MeshStaticEntity(m_entityDb, planeMesh->GetMeshStatic(), { {materialSand,0} }, { 0, -5, 0 }, float3(90, 0, 0) * Math::PK_FLOAT_DEG2RAD, 80.0f);
+        Build::MeshStaticEntity(m_entityDb, columnMesh->GetMeshStatic(), { {materialAsphalt,0} }, { -20, 5, -20 }, PK_FLOAT3_ZERO, 3.0f);
 
         auto submeshCount = rocksMesh->GetSubmeshCount();
 
@@ -60,7 +60,7 @@ namespace PK::Engines
             auto pos = Functions::RandomRangeFloat3(minpos, maxpos);
             auto rot = Functions::RandomEuler() * Math::PK_FLOAT_DEG2RAD;
             auto size = Functions::RandomRangeFloat(1.0f, 3.0f);
-            Build::StaticMeshEntity(m_entityDb, rocksMesh->GetStaticMesh(), { {materialMarble,submesh} }, pos, rot, size);
+            Build::MeshStaticEntity(m_entityDb, rocksMesh->GetMeshStatic(), { {materialMarble,submesh} }, pos, rot, size);
         }
 
         for (auto i = 0; i < 128; ++i)
@@ -69,7 +69,7 @@ namespace PK::Engines
             auto pos = Functions::RandomRangeFloat3(minpos, maxpos);
             auto rot = Functions::RandomEuler() * Math::PK_FLOAT_DEG2RAD;
             auto size = Functions::RandomRangeFloat(1.0f, 3.0f);
-            Build::StaticMeshEntity(m_entityDb, rocksMesh->GetStaticMesh(), { {materialPlaster,submesh} }, pos, rot, size);
+            Build::MeshStaticEntity(m_entityDb, rocksMesh->GetMeshStatic(), { {materialPlaster,submesh} }, pos, rot, size);
         }
 
         for (uint32_t i = 0u; i < config->LightCount; ++i)
@@ -125,7 +125,7 @@ namespace PK::Engines
         */
     }
 
-    void EngineDebug::Step(Geometry::IGizmos* gizmos)
+    void EngineDebug::Step(IGizmos* gizmos)
     {
         auto cullables = m_entityDb->Query<EntityViewScenePrimitive>((uint32_t)ECS::ENTITY_GROUPS::ACTIVE);
 

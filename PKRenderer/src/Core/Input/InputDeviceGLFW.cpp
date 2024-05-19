@@ -1,13 +1,12 @@
 #include "PrecompiledHeader.h"
 #include "Core/Input/InputSystem.h"
-#include "Rendering/RHI/Objects/Window.h"
+#include "Graphics/RHI/RHIWindow.h"
 #include "InputDeviceGLFW.h"
 
 namespace PK::Core::Input
 {
     using namespace PK::Math;
-    using namespace PK::Rendering::RHI;
-    using namespace PK::Rendering::RHI::Objects;
+    using namespace PK::Graphics;
 
     InputDeviceGLFW::InputDeviceGLFW(Window* window) : m_window(window)
     {

@@ -1,11 +1,11 @@
 #pragma once
-#include "Rendering/EntityEnums.h"
+#include "Renderer/EntityEnums.h"
 
 namespace PK::ECS
 {
     struct ComponentScenePrimitive
     {
-        PK::Rendering::ScenePrimitiveFlags flags = PK::Rendering::ScenePrimitiveFlags::Mesh;
+        PK::Renderer::ScenePrimitiveFlags flags = PK::Renderer::ScenePrimitiveFlags::Mesh;
         bool isVisibleInScene = false;
         bool isVisibleInRayTracing = false;
         bool isVisibleLight = false;

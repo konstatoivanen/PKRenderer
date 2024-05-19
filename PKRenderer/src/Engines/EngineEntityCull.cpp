@@ -3,15 +3,15 @@
 #include "Math/FunctionsMisc.h"
 #include "Math/FunctionsMatrix.h"
 #include "ECS/EntityViewScenePrimitive.h"
-#include "Rendering/RHI/Structs.h"
+#include "Graphics/RHI/Structs.h"
 #include "EngineEntityCull.h"
 
 namespace PK::Engines
 {
     using namespace PK::Math;
     using namespace PK::ECS;
-    using namespace PK::Rendering;
-    using namespace PK::Rendering::RHI;
+    using namespace PK::Renderer;
+    using namespace PK::Graphics::RHI;
 
     EngineEntityCull::EngineEntityCull(EntityDatabase* entityDb) :
         m_entityDb(entityDb),

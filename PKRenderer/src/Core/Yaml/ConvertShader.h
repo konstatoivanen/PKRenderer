@@ -1,13 +1,13 @@
 #pragma once
 #include <yaml-cpp/yaml.h>
-#include "Rendering/RHI/Objects/Shader.h"
+#include "Graphics/GraphicsFwd.h"
 
 namespace YAML
 {
     template<>
-    struct convert<PK::Rendering::RHI::Objects::Shader*>
+    struct convert<PK::Graphics::Shader*>
     {
-        static Node encode(const PK::Rendering::RHI::Objects::Shader*& rhs);
-        static bool decode(const Node& node, PK::Rendering::RHI::Objects::Shader*& rhs);
+        static Node encode(const PK::Graphics::Shader*& rhs);
+        static bool decode(const Node& node, PK::Graphics::Shader*& rhs);
     };
 }

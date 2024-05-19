@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Math/FunctionsIntersect.h"
 #include "Core/Assets/AssetDatabase.h"
-#include "ECS/ImplementerStaticMesh.h"
+#include "ECS/ImplementerMeshStatic.h"
 #include "ECS/ImplementerFlyCamera.h"
 #include "ECS/ImplementerLight.h"
 #include "ECS/EntityViewLightSphereTransforms.h"
@@ -9,12 +9,12 @@
 #include "ECS/EntityViewFlyCamera.h"
 #include "ECS/EntityViewTransform.h"
 #include "ECS/EntityViewScenePrimitive.h"
-#include "ECS/EntityViewStaticMesh.h"
+#include "ECS/EntityViewMeshStatic.h"
 #include "ECS/EntityViewLight.h"
 #include "ECS/EntityViewFlyCamera.h"
-#include "Rendering/RHI/Objects/Shader.h"
-#include "Rendering/Objects/StaticMeshAsset.h"
-#include "Rendering/HashCache.h"
+#include "Graphics/Shader.h"
+#include "Graphics/MeshStaticAsset.h"
+#include "Renderer/HashCache.h"
 #include "Builders.h"
 
 namespace PK::ECS::Build
@@ -24,11 +24,10 @@ namespace PK::ECS::Build
     using namespace PK::Core;
     using namespace PK::Core::Assets;
     using namespace PK::ECS;
-    using namespace PK::Rendering;
-    using namespace PK::Rendering::Objects;
-    using namespace PK::Rendering::RHI::Objects;
+    using namespace PK::Renderer;
+    using namespace PK::Graphics;
 
-    static BoundingBox GetSubmeshRangeBounds(StaticMesh* mesh, const std::initializer_list<MaterialTarget>& materials)
+    static BoundingBox GetSubmeshRangeBounds(MeshStatic* mesh, const std::initializer_list<MaterialTarget>& materials)
     {
         auto bounds = BoundingBox::GetMinBounds();
 
@@ -61,20 +60,20 @@ namespace PK::ECS::Build
     static void EntityViewScenePrimitive(EntityDatabase* entityDb,
         T* implementer,
         const EGID& egid,
-        Rendering::ScenePrimitiveFlags flags)
+        Renderer::ScenePrimitiveFlags flags)
     {
         entityDb->ReserveView(implementer, egid, &EntityViewScenePrimitive::primitive, &EntityViewScenePrimitive::bounds);
         implementer->flags = flags;
     }
 
     template<typename T>
-    static void EntityViewStaticMesh(EntityDatabase* entityDb,
+    static void EntityViewMeshStatic(EntityDatabase* entityDb,
         T* implementer,
         const EGID& egid,
-        Rendering::Objects::StaticMesh* staticMesh,
-        const std::initializer_list<Rendering::Objects::MaterialTarget>& materials)
+        Graphics::MeshStatic* staticMesh,
+        const std::initializer_list<Graphics::MaterialTarget>& materials)
     {
-        entityDb->ReserveView(implementer, egid, &EntityViewStaticMesh::primitive, &EntityViewStaticMesh::materials, &EntityViewStaticMesh::staticMesh, &EntityViewStaticMesh::transform);
+        entityDb->ReserveView(implementer, egid, &EntityViewMeshStatic::primitive, &EntityViewMeshStatic::materials, &EntityViewMeshStatic::staticMesh, &EntityViewMeshStatic::transform);
         implementer->materials = materials;
         implementer->sharedMesh = staticMesh;
     }
@@ -83,8 +82,8 @@ namespace PK::ECS::Build
     static void EntityViewLight(EntityDatabase* entityDb,
         T* implementer,
         const EGID& egid,
-        Rendering::LightType type,
-        Rendering::LightCookie cookie,
+        Renderer::LightType type,
+        Renderer::LightCookie cookie,
         const Math::color& color,
         float radius,
         float angle)
@@ -101,8 +100,8 @@ namespace PK::ECS::Build
     static void EntityViewLightPrimitive(EntityDatabase* entityDb,
         T* implementer,
         const EGID& egid,
-        Rendering::LightType type,
-        Rendering::LightCookie cookie,
+        Renderer::LightType type,
+        Renderer::LightCookie cookie,
         const Math::color& color,
         float angle,
         float radius,
@@ -113,11 +112,11 @@ namespace PK::ECS::Build
         auto intensity = glm::compMax(color);
         radius = radius < 0.0f ? (intensity * intensity) / (minAtten * minAtten) : radius;
 
-        auto flags = Rendering::ScenePrimitiveFlags::Light;
+        auto flags = Renderer::ScenePrimitiveFlags::Light;
 
         if (castShadows)
         {
-            flags = flags | Rendering::ScenePrimitiveFlags::CastShadows;
+            flags = flags | Renderer::ScenePrimitiveFlags::CastShadows;
         }
 
         switch (type)
@@ -147,7 +146,7 @@ namespace PK::ECS::Build
     }
 
     template<typename T>
-    static void EntityViewRenderView(EntityDatabase* entityDb, T* implementer, const EGID& egid, Rendering::RenderViewType type, const Math::uint4& desiredRect, bool isWindowTarget)
+    static void EntityViewRenderView(EntityDatabase* entityDb, T* implementer, const EGID& egid, RenderViewType type, const Math::uint4& desiredRect, bool isWindowTarget)
     {
         entityDb->ReserveView(implementer, egid, &EntityViewRenderView::transform, &EntityViewRenderView::projection, &EntityViewRenderView::renderView);
         implementer->type = type;
@@ -182,8 +181,8 @@ namespace PK::ECS::Build
         implementer->sensitivity = sensitivity;
     }
 
-    EGID StaticMeshEntity(EntityDatabase* entityDb,
-        StaticMesh* mesh,
+    EGID MeshStaticEntity(EntityDatabase* entityDb,
+        MeshStatic* mesh,
         const std::initializer_list<MaterialTarget>& materials,
         const float3& position,
         const float3& rotation,
@@ -191,10 +190,10 @@ namespace PK::ECS::Build
         ScenePrimitiveFlags flags)
     {
         auto egid = entityDb->ReserveEntityId((uint)ENTITY_GROUPS::ACTIVE);
-        auto implementer = entityDb->ReserveImplementer<ImplementerStaticMesh>();
+        auto implementer = entityDb->ReserveImplementer<ImplementerMeshStatic>();
         EntityViewTransform(entityDb, implementer, egid, position, rotation, PK_FLOAT3_ONE * size, GetSubmeshRangeBounds(mesh, materials));
         EntityViewScenePrimitive(entityDb, implementer, egid, flags | ScenePrimitiveFlags::Mesh);
-        EntityViewStaticMesh(entityDb, implementer, egid, mesh, materials);
+        EntityViewMeshStatic(entityDb, implementer, egid, mesh, materials);
         return egid;
     }
 
@@ -234,13 +233,13 @@ namespace PK::ECS::Build
 
         implementer->sourceRadius = kLightSourceRadius;
 
-        auto mesh = assetDatabase->Find<StaticMeshAsset>("Primitive_Sphere")->GetStaticMesh();
+        auto mesh = assetDatabase->Find<MeshStaticAsset>("Primitive_Sphere")->GetMeshStatic();
         auto shader = assetDatabase->Find<Shader>("MS_Mat_Unlit_Color");
         auto material = assetDatabase->Register("M_Point_Light_" + std::to_string(egid.entityID()), CreateRef<Material>(shader, nullptr));
         material->Set<float4>(HashCache::Get()->_Color, color);
         material->Set<float4>(HashCache::Get()->_ColorVoxelize, PK_COLOR_BLACK);
 
-        auto meshEgid = StaticMeshEntity(entityDb, mesh, { { material, 0 } }, position, PK_FLOAT3_ZERO, implementer->sourceRadius, ScenePrimitiveFlags::None);
+        auto meshEgid = MeshStaticEntity(entityDb, mesh, { { material, 0 } }, position, PK_FLOAT3_ZERO, implementer->sourceRadius, ScenePrimitiveFlags::None);
         lightSphereView->transformMesh = entityDb->Query<ECS::EntityViewTransform>(meshEgid)->transform;
         lightSphereView->transformLight = implementer;
         return egid;

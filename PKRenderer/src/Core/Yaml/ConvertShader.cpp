@@ -1,13 +1,14 @@
 #include "PrecompiledHeader.h"
 #include "Core/Application.h"
 #include "Core/Assets/AssetDatabase.h"
+#include "Graphics/Shader.h"
 #include "ConvertShader.h"
 
 namespace YAML
 {
     using namespace PK::Core;
     using namespace PK::Core::Assets;
-    using namespace PK::Rendering::RHI::Objects;
+    using namespace PK::Graphics;
 
     Node convert<Shader*>::encode(const Shader*& rhs)
     {

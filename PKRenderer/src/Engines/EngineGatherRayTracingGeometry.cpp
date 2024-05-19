@@ -2,24 +2,23 @@
 #include "Math/FunctionsIntersect.h"
 #include "Core/CLI/Log.h"
 #include "ECS/EntityViewScenePrimitive.h"
-#include "ECS/EntityViewStaticMesh.h"
-#include "Rendering/RHI/Objects/AccelerationStructure.h"
-#include "Rendering/RequestRayTracingGeometry.h"
+#include "ECS/EntityViewMeshStatic.h"
+#include "Graphics/RHI/RHIAccelerationStructure.h"
+#include "Renderer/EntityCulling.h"
 #include "EngineGatherRayTracingGeometry.h"
 
 namespace PK::Engines
 {
     using namespace PK::Math;
     using namespace PK::ECS;
-    using namespace PK::Rendering;
-    using namespace PK::Rendering::RHI;
-    using namespace PK::Rendering::RHI::Objects;
+    using namespace PK::Renderer;
+    using namespace PK::Graphics::RHI;
 
     EngineGatherRayTracingGeometry::EngineGatherRayTracingGeometry(EntityDatabase* entityDb) : m_entityDb(entityDb)
     {
     }
 
-    void EngineGatherRayTracingGeometry::Step(RequestRayTracingGeometry* request)
+    void EngineGatherRayTracingGeometry::Step(RequestEntityCullRayTracingGeometry* request)
     {
         PK_THROW_ASSERT(request != nullptr && request->structure, "Invalid token supplied!");
 
@@ -49,7 +48,7 @@ namespace PK::Engines
         geometry.customIndex = 0u;
 
         // Static scene mesh instances
-        auto staticMeshViews = m_entityDb->Query<EntityViewStaticMesh>((uint32_t)ECS::ENTITY_GROUPS::ACTIVE);
+        auto staticMeshViews = m_entityDb->Query<EntityViewMeshStatic>((uint32_t)ECS::ENTITY_GROUPS::ACTIVE);
 
         for (auto i = 0u; i < staticMeshViews.count; ++i)
         {

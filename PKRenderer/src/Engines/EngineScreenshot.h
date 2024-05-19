@@ -4,7 +4,7 @@
 #include "Math/Types.h"
 #include "Core/ControlFlow/IStepApplicationWindow.h"
 #include "Core/IService.h"
-#include "Rendering/RHI/RHI.h"
+#include "Graphics/GraphicsFwd.h"
 
 namespace PK::Engines
 {
@@ -13,14 +13,14 @@ namespace PK::Engines
     {
     public:
         EngineScreenshot();
-        virtual void OnApplicationRender(Rendering::RHI::Objects::Window* window) final;
+        virtual void OnApplicationRender(Graphics::Window* window) final;
 
         void QueueCapture();
 
     private:
         Utilities::FenceRef m_copyFence;
         Utilities::MemoryBlock<uint16_t> m_accumulatedPixels;
-        Rendering::RHI::Objects::BufferRef m_copyBuffer;
+        Graphics::BufferRef m_copyBuffer;
         uint32_t m_captureCounter = 0u;
         uint32_t m_captureFrameCount = 0u;
         Math::uint2 m_captureResolution = Math::PK_UINT2_ZERO;

@@ -75,7 +75,7 @@ namespace PK::Assets
         }
         else
         {
-            buffer = reinterpret_cast<char*>(calloc(header.uncompressedSize, sizeof(char)));
+            buffer = reinterpret_cast<char*>(malloc(header.uncompressedSize * sizeof(char)));
 
             auto nodesSize = header.compressedOffset - sizeof(PKAssetHeader);
             auto nodeCount = nodesSize / sizeof(PKEncNode);

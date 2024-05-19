@@ -21,12 +21,14 @@
 #include "Engines/EngineDebug.h"
 #include "Engines/EngineScreenshot.h"
 #include "Engines/EngineGizmos.h"
-#include "Rendering/Objects/RenderView.h"
-#include "Rendering/Geometry/BatcherStaticMesh.h"
-#include "Rendering/RHI/Objects/Shader.h"
-#include "Rendering/HashCache.h"
-#include "Rendering/RenderPipelineDisptacher.h"
-#include "Rendering/RenderPipelineScene.h"
+#include "Graphics/RHI/RHIDriver.h"
+#include "Graphics/RHI/RHIWindow.h"
+#include "Graphics/Shader.h"
+#include "Renderer/BatcherMeshStatic.h"
+#include "Renderer/HashCache.h"
+#include "Renderer/RenderPipelineDisptacher.h"
+#include "Renderer/RenderPipelineScene.h"
+#include "Renderer/RenderView.h"
 #include "Application.h"
 
 namespace PK::Core
@@ -36,11 +38,9 @@ namespace PK::Core
     using namespace PK::Core::CLI;
     using namespace PK::Core::ControlFlow;
     using namespace PK::Core::Input;
-    using namespace PK::Rendering;
-    using namespace PK::Rendering::Objects;
-    using namespace PK::Rendering::Geometry;
-    using namespace PK::Rendering::RHI;
-    using namespace PK::Rendering::RHI::Objects;
+    using namespace PK::Renderer;
+    using namespace PK::Graphics;
+    using namespace PK::Graphics::RHI;
 
     Application* Application::s_instance = nullptr;
 
@@ -79,9 +79,9 @@ namespace PK::Core
         m_logger->SetShowConsole(config->EnableConsole);
 
         auto workingDirectory = std::filesystem::path(arguments.args[0]).remove_filename().string();
-        m_graphicsDriver = RHI::CreateRHIDriver(workingDirectory, APIType::Vulkan);
+        m_graphicsDriver = RHICreateDriver(workingDirectory.c_str(), APIType::Vulkan);
 
-        m_window = RHICreateWindow(WindowProperties(name + m_graphicsDriver->GetDriverHeader(),
+        m_window = RHICreateWindow(WindowDescriptor(name + m_graphicsDriver->GetDriverHeader(),
             config->FileWindowIcon,
             config->InitialWidth,
             config->InitialHeight,
@@ -94,8 +94,8 @@ namespace PK::Core
 
         auto time = m_services->Create<Time>(sequencer, config->TimeScale, config->EnableFrameRateLog);
         auto inputSystem = m_services->Create<InputSystem>(sequencer);
-        auto batcherStaticMesh = m_services->Create<BatcherStaticMesh>(assetDatabase);
-        auto renderPipelineDispatcher = m_services->Create<RenderPipelineDisptacher>(entityDb, assetDatabase, sequencer, batcherStaticMesh);
+        auto batcherMeshStatic = m_services->Create<BatcherMeshStatic>(assetDatabase);
+        auto renderPipelineDispatcher = m_services->Create<RenderPipelineDisptacher>(entityDb, assetDatabase, sequencer, batcherMeshStatic);
         auto renderPipelineScene = m_services->Create<RenderPipelineScene>(entityDb, assetDatabase, config);
 
         renderPipelineDispatcher->SetRenderPipeline(RenderViewType::Scene, renderPipelineScene);
@@ -106,7 +106,7 @@ namespace PK::Core
         auto engineEntityCull = m_services->Create<Engines::EngineEntityCull>(entityDb);
         auto engineDrawGeometry = m_services->Create<Engines::EngineDrawGeometry>(entityDb, sequencer);
         auto engineGatherRayTracingGeometry = m_services->Create<Engines::EngineGatherRayTracingGeometry>(entityDb);
-        auto engineDebug = m_services->Create<Engines::EngineDebug>(assetDatabase, entityDb, batcherStaticMesh->GetStaticMeshCollection(), config);
+        auto engineDebug = m_services->Create<Engines::EngineDebug>(assetDatabase, entityDb, batcherMeshStatic->GetMeshStaticCollection(), config);
         auto engineScreenshot = m_services->Create<Engines::EngineScreenshot>();
         auto engineGizmos = m_services->Create<Engines::EngineGizmos>(assetDatabase, sequencer, config);
 
@@ -144,7 +144,7 @@ namespace PK::Core
                 {
                     renderPipelineScene,
                     {
-                        Sequencer::Step::Create<RequestRayTracingGeometry*>(engineGatherRayTracingGeometry),
+                        Sequencer::Step::Create<RequestEntityCullRayTracingGeometry*>(engineGatherRayTracingGeometry),
                         Sequencer::Step::Create<RequestEntityCullFrustum*>(engineEntityCull),
                         Sequencer::Step::Create<RequestEntityCullCascades*>(engineEntityCull),
                         Sequencer::Step::Create<RequestEntityCullCubeFaces*>(engineEntityCull),

@@ -1,6 +1,6 @@
 #pragma once
 #include "Math/Types.h"
-#include "Rendering/EntityEnums.h"
+#include "Renderer/EntityEnums.h"
 
 namespace PK::ECS
 {
@@ -11,8 +11,8 @@ namespace PK::ECS
         float radius = 1.0f;
         float angle = 45.0f;
         float shadowBlur = 0.1f;
-        PK::Rendering::LightCookie cookie = PK::Rendering::LightCookie::Circle0;
-        PK::Rendering::LightType type = PK::Rendering::LightType::Point;
+        PK::Renderer::LightCookie cookie = PK::Renderer::LightCookie::Circle0;
+        PK::Renderer::LightType type = PK::Renderer::LightType::Point;
         virtual ~ComponentLight() = default;
     };
 }

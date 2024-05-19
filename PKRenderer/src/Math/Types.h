@@ -16,7 +16,6 @@ namespace PK::Math
     typedef std::uint8_t byte;
     typedef std::int8_t sbyte;
 
-
     typedef glm::vec2 float2;
     typedef glm::vec3 float3;
     typedef glm::vec4 float4;

@@ -2,21 +2,21 @@
 #include "Utilities/ForwardDeclare.h"
 #include "Core/IService.h"
 #include "Core/ControlFlow/IStep.h"
-#include "Rendering/RHI/Layout.h"
-#include "Rendering/RHI/RHI.h"
-#include "Rendering/Geometry/IGizmos.h"
+#include "Graphics/RHI/Layout.h"
+#include "Graphics/GraphicsFwd.h"
+#include "Renderer/IGizmos.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core, struct ApplicationConfig)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::Assets, class AssetDatabase)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::ControlFlow, class Sequencer)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering, struct RenderPipelineEvent)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Renderer, struct RenderPipelineEvent)
 
 namespace PK::Engines
 {
     class EngineGizmos : public Core::IService,
-        public Core::ControlFlow::IStep<Rendering::RenderPipelineEvent*>,
+        public Core::ControlFlow::IStep<Renderer::RenderPipelineEvent*>,
         public Core::ControlFlow::IStep<Core::Assets::AssetImportEvent<Core::ApplicationConfig>*>,
-        public PK::Rendering::Geometry::IGizmos
+        public PK::Renderer::IGizmos
     {
     public:
         struct Vertex
@@ -29,7 +29,7 @@ namespace PK::Engines
             Core::ControlFlow::Sequencer* sequencer,
             Core::ApplicationConfig* config);
 
-        virtual void Step(Rendering::RenderPipelineEvent* renderEvent) final;
+        virtual void Step(Renderer::RenderPipelineEvent* renderEvent) final;
         virtual void Step(Core::Assets::AssetImportEvent<Core::ApplicationConfig>* token) final;
 
         inline void SetEnabledGPU(bool value) { m_enabledGPU = value; }
@@ -45,13 +45,13 @@ namespace PK::Engines
 
     private:
         Core::ControlFlow::Sequencer* m_sequencer = nullptr;
-        Rendering::RHI::Objects::Shader* m_gizmosShader = nullptr;
-        Rendering::RHI::Objects::BufferRef m_vertexBuffer;
-        Rendering::RHI::Objects::BufferRef m_indirectVertexBuffer;
-        Rendering::RHI::Objects::BufferRef m_indirectArgsBuffer;
+        Graphics::Shader* m_gizmosShader = nullptr;
+        Graphics::BufferRef m_vertexBuffer;
+        Graphics::BufferRef m_indirectVertexBuffer;
+        Graphics::BufferRef m_indirectArgsBuffer;
         PK::Utilities::BufferView<Vertex> m_vertexView;
-        PK::Rendering::RHI::FixedFunctionShaderAttributes m_fixedFunctionAttribs;
-        PK::Rendering::RHI::VertexStreamElement m_vertexStreamElement;
+        PK::Graphics::RHI::FixedFunctionShaderAttributes m_fixedFunctionAttribs;
+        PK::Graphics::RHI::VertexStreamElement m_vertexStreamElement;
 
         Math::FrustumPlanes m_frustrumPlanes{};
         uint32_t m_vertexCount = 0;

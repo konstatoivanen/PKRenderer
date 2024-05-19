@@ -360,12 +360,13 @@ namespace PK::Assets
         {
             uint32_t descriptorSetCount;                                        // 4 bytes
             uint32_t constantVariableCount;                                     // 8 bytes
-            uint32_t groupSize[4]{};                                            // 24 bytes
-            RelativePtr<PKDescriptorSet> descriptorSets;                        // 28 bytes
-            RelativePtr<PKConstantVariable> constantVariables;                  // 32 bytes
-            PKVertexAttribute vertexAttributes[PK_ASSET_MAX_VERTEX_ATTRIBUTES]; // 576 bytes
-            uint32_t sprivSizes[(int)PKShaderStage::MaxCount];                  // 628 bytes
-            RelativePtr<void> sprivBuffers[(int)PKShaderStage::MaxCount];       // 680 bytes
+            uint32_t vertexAttributeCount;                                      // 12 bytes
+            uint32_t groupSize[4]{};                                            // 28 bytes
+            RelativePtr<PKDescriptorSet> descriptorSets;                        // 32 bytes
+            RelativePtr<PKConstantVariable> constantVariables;                  // 36 bytes
+            RelativePtr<PKVertexAttribute> vertexAttributes;                    // 38 bytes
+            uint32_t sprivSizes[(int)PKShaderStage::MaxCount];                  // 92 bytes
+            RelativePtr<void> sprivBuffers[(int)PKShaderStage::MaxCount];       // 144 bytes
         };
 
         struct alignas(4) PKShader

@@ -1,8 +1,8 @@
 #pragma once
 #include "Utilities/ForwardDeclare.h"
-#include "Rendering/EntityEnums.h"
+#include "Renderer/EntityEnums.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, struct RenderView)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Renderer, struct RenderView)
 
 namespace PK::ECS
 {
@@ -10,12 +10,12 @@ namespace PK::ECS
     struct ComponentRenderView
     {
         // These are forwarded to rendering side representation on execution
-        Rendering::RenderViewType type;
+        Renderer::RenderViewType type;
         Math::uint4 desiredRect = Math::PK_UINT4_MAX;
         // should the target be blit to the window
         bool isWindowTarget = true;
 
-        Rendering::Objects::RenderView* renderViewRef = nullptr;
+        Renderer::RenderView* renderViewRef = nullptr;
         virtual ~ComponentRenderView() = default;
     };
 }

@@ -2,12 +2,12 @@
 #include "Math/FunctionsIntersect.h"
 #include "Core/ControlFlow/Sequencer.h"
 #include "ECS/EntityDatabase.h"
-#include "ECS/EntityViewStaticMesh.h"
-#include "Rendering/Geometry/IBatcher.h"
-#include "Rendering/Objects/RenderView.h"
-#include "Rendering/HashCache.h"
-#include "Rendering/EntityCulling.h"
-#include "Rendering/IRenderPipeline.h"
+#include "ECS/EntityViewMeshStatic.h"
+#include "Renderer/RenderView.h"
+#include "Renderer/HashCache.h"
+#include "Renderer/EntityCulling.h"
+#include "Renderer/IBatcher.h"
+#include "Renderer/IRenderPipeline.h"
 #include "EngineDrawGeometry.h"
 
 namespace PK::Engines
@@ -16,9 +16,9 @@ namespace PK::Engines
     using namespace PK::Core;
     using namespace PK::Core::ControlFlow;
     using namespace PK::ECS;
-    using namespace PK::Rendering;
-    using namespace PK::Rendering::Objects;
-    using namespace PK::Rendering::RHI;
+    using namespace PK::Renderer;
+    using namespace PK::Graphics;
+    using namespace PK::Graphics::RHI;
 
     EngineDrawGeometry::EngineDrawGeometry(EntityDatabase* entityDb, Sequencer* sequencer) :
         m_entityDb(entityDb),
@@ -51,13 +51,13 @@ namespace PK::Engines
                     for (auto i = 0u; i < cullRequest.GetCount(); ++i)
                     {
                         auto& info = cullRequest[i];
-                        auto entity = m_entityDb->Query<EntityViewStaticMesh>(EGID(info.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
+                        auto entity = m_entityDb->Query<EntityViewMeshStatic>(EGID(info.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
 
                         for (auto& kv : entity->materials->materials)
                         {
                             auto transform = entity->transform;
                             auto shader = kv.material->GetShader();
-                            renderEvent->context->batcher->SubmitStaticMeshDraw(transform, shader, kv.material, entity->staticMesh->sharedMesh, kv.submesh, 0u, info.depth);
+                            renderEvent->context->batcher->SubmitMeshStaticDraw(transform, shader, kv.material, entity->staticMesh->sharedMesh, kv.submesh, 0u, info.depth);
                         }
                     }
                 }

@@ -1,29 +1,29 @@
 #pragma once
 #include "Utilities/ForwardDeclare.h"
 #include "Math/Types.h"
-#include "Rendering/Objects/Material.h"
-#include "Rendering/EntityEnums.h"
+#include "Graphics/Material.h"
+#include "Renderer/EntityEnums.h"
 #include "ECS/EGID.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK::ECS, class EntityDatabase)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Rendering::Objects, struct StaticMesh)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Graphics, struct MeshStatic)
 
 namespace PK::ECS::Build
 {
-    EGID StaticMeshEntity(EntityDatabase* entityDb,
-        Rendering::Objects::StaticMesh* mesh,
-        const std::initializer_list<Rendering::Objects::MaterialTarget>& materials,
+    EGID MeshStaticEntity(EntityDatabase* entityDb,
+        Graphics::MeshStatic* mesh,
+        const std::initializer_list<Graphics::MaterialTarget>& materials,
         const Math::float3& position,
         const Math::float3& rotation,
         float size = 1.0f,
-        Rendering::ScenePrimitiveFlags flags = Rendering::ScenePrimitiveFlags::DefaultMesh);
+        Renderer::ScenePrimitiveFlags flags = Renderer::ScenePrimitiveFlags::DefaultMesh);
 
     EGID LightEntity(EntityDatabase* entityDb,
         Core::Assets::AssetDatabase* assetDatabase,
         const Math::float3& position,
         const Math::float3& rotation,
-        Rendering::LightType type,
-        Rendering::LightCookie cookie,
+        Renderer::LightType type,
+        Renderer::LightCookie cookie,
         const Math::color& color,
         float angle,
         float radius,
@@ -32,13 +32,13 @@ namespace PK::ECS::Build
     EGID LightSphereEntity(EntityDatabase* entityDb,
         Core::Assets::AssetDatabase* assetDatabase,
         const Math::float3& position,
-        Rendering::LightType type,
-        Rendering::LightCookie cookie,
+        Renderer::LightType type,
+        Renderer::LightCookie cookie,
         const Math::color& color,
         bool castShadows);
 
     EGID FlyCameraEntity(EntityDatabase* entityDb,
-        Rendering::RenderViewType type,
+        Renderer::RenderViewType type,
         const Math::uint4& desiredRect,
         bool isWindowTarget,
         const Math::float3& position,

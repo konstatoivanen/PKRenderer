@@ -3,12 +3,14 @@
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/ApplicationConfig.h"
-#include "Rendering/RHI/Objects/Shader.h"
-#include "Rendering/RHI/Objects/Texture.h"
-#include "Rendering/RHI/Objects/CommandBuffer.h"
-#include "Rendering/Objects/RenderView.h"
-#include "Rendering/IRenderPipeline.h"
-#include "Rendering/HashCache.h"
+#include "Graphics/RHI/RHITexture.h"
+#include "Graphics/RHI/RHIBuffer.h"
+#include "Graphics/RHI/RHICommandBuffer.h"
+#include "Graphics/CommandBufferExt.h"
+#include "Graphics/Shader.h"
+#include "Renderer/RenderView.h"
+#include "Renderer/IRenderPipeline.h"
+#include "Renderer/HashCache.h"
 #include "EngineGizmos.h"
 
 namespace PK::Engines
@@ -18,10 +20,9 @@ namespace PK::Engines
     using namespace PK::Core::Assets;
     using namespace PK::Core::ControlFlow;
     using namespace PK::Core::CLI;
-    using namespace PK::Rendering;
-    using namespace PK::Rendering::Objects;
-    using namespace PK::Rendering::RHI;
-    using namespace PK::Rendering::RHI::Objects;
+    using namespace PK::Renderer;
+    using namespace PK::Graphics;
+    using namespace PK::Graphics::RHI;
 
     EngineGizmos::EngineGizmos(AssetDatabase* assetDatabase, Sequencer* sequencer, ApplicationConfig* config) :
         m_sequencer(sequencer)
@@ -70,7 +71,7 @@ namespace PK::Engines
                     m_worldToClip = view->worldToClip;
                     m_vertexCount = 0u;
                     m_maxVertices = (uint32_t)m_vertexBuffer->GetCount<uint4>();
-                    m_vertexView = renderEvent->cmd->BeginBufferWrite<Vertex>(m_vertexBuffer.get());
+                    m_vertexView = renderEvent->cmd.BeginBufferWrite<Vertex>(m_vertexBuffer.get());
                     m_sequencer->Next<IGizmos*>(this, this);
                     renderEvent->cmd->EndBufferWrite(m_vertexBuffer.get());
                 }
@@ -87,11 +88,11 @@ namespace PK::Engines
                     const Buffer* vb = m_indirectVertexBuffer.get();
                     renderEvent->cmd->SetVertexBuffers(&vb, 1u);
                     renderEvent->cmd->SetVertexStreams(&m_vertexStreamElement, 1u);
-                    renderEvent->cmd->SetShader(m_gizmosShader);
-                    renderEvent->cmd->SetRenderTarget(gbuffers.current.color);
-                    renderEvent->cmd->SetViewPort(rect);
-                    renderEvent->cmd->SetScissor(rect);
-                    renderEvent->cmd->SetFixedStateAttributes(&m_fixedFunctionAttribs);
+                    renderEvent->cmd.SetShader(m_gizmosShader);
+                    renderEvent->cmd.SetRenderTarget(gbuffers.current.color);
+                    renderEvent->cmd.SetViewPort(rect);
+                    renderEvent->cmd.SetScissor(rect);
+                    renderEvent->cmd.SetFixedStateAttributes(&m_fixedFunctionAttribs);
                     renderEvent->cmd->DrawIndirect(m_indirectArgsBuffer.get(), 0u, 1u, sizeof(uint4));
                 }
 
@@ -101,11 +102,11 @@ namespace PK::Engines
                     const Buffer* vb = m_vertexBuffer.get();
                     renderEvent->cmd->SetVertexBuffers(&vb, 1u);
                     renderEvent->cmd->SetVertexStreams(&m_vertexStreamElement, 1u);
-                    renderEvent->cmd->SetShader(m_gizmosShader);
-                    renderEvent->cmd->SetRenderTarget(gbuffers.current.color);
-                    renderEvent->cmd->SetViewPort(rect);
-                    renderEvent->cmd->SetScissor(rect);
-                    renderEvent->cmd->SetFixedStateAttributes(&m_fixedFunctionAttribs);
+                    renderEvent->cmd.SetShader(m_gizmosShader);
+                    renderEvent->cmd.SetRenderTarget(gbuffers.current.color);
+                    renderEvent->cmd.SetViewPort(rect);
+                    renderEvent->cmd.SetScissor(rect);
+                    renderEvent->cmd.SetFixedStateAttributes(&m_fixedFunctionAttribs);
                     renderEvent->cmd->Draw(glm::min(m_vertexCount, m_maxVertices), 1u, 0u, 0u);
                 }
             }
