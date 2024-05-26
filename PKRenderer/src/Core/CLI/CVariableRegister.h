@@ -1,19 +1,18 @@
 #pragma once
 #include <unordered_map>
 #include <vector>
-#include "Utilities/Ref.h"
-#include "Utilities/ISingleton.h"
+#include "Core/Utilities/Ref.h"
+#include "Core/Utilities/ISingleton.h"
 #include "Core/CLI/CArguments.h"
 #include "Core/CLI/CVariable.h"
 #include "Core/ControlFlow/IStep.h"
-#include "Core/IService.h"
 
-namespace PK::Core::CLI
+namespace PK
 {
-    class CVariableRegister : public Core::IService,
-        public Utilities::ISingleton<CVariableRegister>,
-        public ControlFlow::IStep<CArgumentsConst>,
-        public ControlFlow::IStep<CArgumentConst>
+    class CVariableRegister :
+        public ISingleton<CVariableRegister>,
+        public IStep<CArgumentsConst>,
+        public IStep<CArgumentConst>
     {
     public:
         static void Bind(ICVariable* variable);
@@ -28,7 +27,7 @@ namespace PK::Core::CLI
             if (Get() != nullptr)
             {
                 auto variable = new CVariable<T>(name, value, hint, minArgs, maxArgs);
-                Get()->m_scopes.push_back(PK::Utilities::Scope<ICVariable>(variable));
+                Get()->m_scopes.push_back(Scope<ICVariable>(variable));
                 Bind(variable);
             }
         }
@@ -43,7 +42,7 @@ namespace PK::Core::CLI
         void ExecuteInstance(const char** args, uint32_t count);
         void ExecuteParseInstance(const char* arg);
 
-        std::unordered_map<Utilities::NameID, ICVariable*> m_variables;
-        std::vector<Utilities::Scope<ICVariable>> m_scopes;
+        std::unordered_map<NameID, ICVariable*> m_variables;
+        std::vector<Scope<ICVariable>> m_scopes;
     };
 }

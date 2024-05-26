@@ -1,8 +1,7 @@
 #pragma once
 #include "Core/ControlFlow/IStep.h"
-#include "Core/IService.h"
 
-namespace PK::Core::ControlFlow
+namespace PK
 {
     struct RemoteProcessCommand
     {
@@ -10,7 +9,7 @@ namespace PK::Core::ControlFlow
         const char* arguments;
     };
 
-    class RemoteProcessRunner : public PK::Core::IService, public IStep<RemoteProcessCommand*>
+    class RemoteProcessRunner : public IStep<RemoteProcessCommand*>
     {
     public:
         RemoteProcessRunner() {};

@@ -6,11 +6,8 @@
 #include "Core/ControlFlow/Sequencer.h"
 #include "Time.h"
 
-namespace PK::Core
+namespace PK
 {
-    using namespace PK::Core::CLI;
-    using namespace PK::Core::ControlFlow;
-
     const clock_t Time::GetClockTicks()
     {
         return clock();

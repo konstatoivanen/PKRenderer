@@ -6,7 +6,7 @@
     { \
         TType() {}; \
     private: \
-        typedef PK::Core::Input::InputKeyConfig meta_TConfig; \
+        typedef PK::InputKeyConfig meta_TConfig; \
         typedef TType meta_ThisType; \
         struct meta_FirstId {}; \
         typedef void*(*meta_ParseFunc)(meta_FirstId, meta_ThisType*, const meta_TConfig* config); \
@@ -18,7 +18,7 @@
 
 #define PK_INPUTKEY_STRUCT_MEMBER(TNameSpace, TName, TInitialValue) \
         meta_Id##TName; \
-    public: PK::Core::Input::InputKey TName = PK::Core::Input::InputKey::TInitialValue; \
+    public: PK::InputKey TName = PK::InputKey::TInitialValue; \
     private: \
         struct meta_NextId##TName {}; \
         static void* meta_ParsePrev(meta_NextId##TName, meta_ThisType* thisPtr, const meta_TConfig* config) \

@@ -1,9 +1,9 @@
 #pragma once
-#include "Utilities/NoCopy.h"
+#include "Core/Utilities/NoCopy.h"
 
-namespace PK::Core::CLI
+namespace PK
 {
-    struct LogScopeIndent : public Utilities::NoCopy
+    struct LogScopeIndent : public NoCopy
     {
         LogScopeIndent();
         ~LogScopeIndent();

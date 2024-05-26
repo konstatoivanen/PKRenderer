@@ -1,24 +1,25 @@
 #pragma once
 #include <filesystem>
-#include "Utilities/Ref.h"
-#include "Utilities/NoCopy.h"
+#include "Core/Utilities/Ref.h"
+#include "Core/Utilities/NoCopy.h"
+#include "Core/Utilities/ISingleton.h"
 #include "Core/Assets/Asset.h"
 #include "Core/Assets/AssetImportEvent.h"
 #include "Core/CLI/Log.h"
 #include "Core/ControlFlow/Sequencer.h"
 
-namespace PK::Core::Assets
+namespace PK
 {
-    class AssetDatabase : public IService
+    class AssetDatabase : public ISingleton<AssetDatabase>
     {
     public:
-        AssetDatabase(ControlFlow::Sequencer* sequencer);
+        AssetDatabase(Sequencer* sequencer);
 
         template<typename T>
-        [[nodiscard]] T* Register(const std::string& name, Utilities::Ref<T> asset) { return RegisterInternal(name.c_str(), asset); }
+        [[nodiscard]] T* Register(const std::string& name, Ref<T> asset) { return RegisterInternal(name.c_str(), asset); }
 
         template<typename T, typename ... Args>
-        [[nodiscard]] T* Create(const std::string& name, Args&& ... args) { return RegisterInternal(name.c_str(), Utilities::CreateRef<T>(std::forward<Args>(args)...)); }
+        [[nodiscard]] T* Create(const std::string& name, Args&& ... args) { return RegisterInternal(name.c_str(), CreateRef<T>(std::forward<Args>(args)...)); }
 
         template<typename T>
         [[nodiscard]] T* TryFind(const char* name) const
@@ -155,7 +156,7 @@ namespace PK::Core::Assets
         void ReloadCachedAllInternal(const std::type_index& typeIndex);
         void ReloadCachedInternal(const std::type_index& typeIndex, AssetID assetId);
         void ReloadCachedDirectoryInternal(const std::type_index& typeIndex, const std::string& directory);
-        [[nodiscard]] Utilities::Ref<Asset> FindInternal(const std::type_index& typeIndex, const char* keyword) const;
+        [[nodiscard]] Ref<Asset> FindInternal(const std::type_index& typeIndex, const char* keyword) const;
         void RegisterMetaFunctionality(const std::type_index& typeIndex);
 
         template<typename T, typename ... Args>
@@ -176,7 +177,7 @@ namespace PK::Core::Assets
 
             auto& collection = m_assets[typeIndex];
             auto iter = collection.find(assetId);
-            Utilities::Ref<T> asset = nullptr;
+            Ref<T> asset = nullptr;
 
             if (iter != collection.end())
             {
@@ -202,7 +203,7 @@ namespace PK::Core::Assets
             // Don't capture variadic asset loads as we cant ensure paremeter lifetimes.
             if (m_assetReloadCaptures[typeIndex].count(assetId) == 0 && sizeof ... (args) == 0)
             {
-                m_assetReloadCaptures[typeIndex][assetId] = [this, assetWeakRef = Utilities::Weak<T>(asset)]()
+                m_assetReloadCaptures[typeIndex][assetId] = [this, assetWeakRef = Weak<T>(asset)]()
                 {
                     if (!assetWeakRef.expired())
                     {
@@ -222,7 +223,7 @@ namespace PK::Core::Assets
         }
 
         template<typename T>
-        [[nodiscard]] T* RegisterInternal(const char* name, Utilities::Ref<T> asset)
+        [[nodiscard]] T* RegisterInternal(const char* name, Ref<T> asset)
         {
             static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
@@ -243,8 +244,8 @@ namespace PK::Core::Assets
         template<typename T>
         bool ValidateExtension(const std::filesystem::path& path) { return path.has_extension() && Asset::IsValidExtension<T>(path.extension().string()); }
 
-        std::unordered_map<std::type_index, std::unordered_map<AssetID, Utilities::Ref<Asset>>> m_assets;
+        std::unordered_map<std::type_index, std::unordered_map<AssetID, Ref<Asset>>> m_assets;
         std::unordered_map<std::type_index, std::unordered_map<AssetID, std::function<void()>>> m_assetReloadCaptures;
-        ControlFlow::Sequencer* m_sequencer;
+        Sequencer* m_sequencer;
     };
 }

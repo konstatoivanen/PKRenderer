@@ -1,5 +1,5 @@
 #pragma once
-namespace PK::Core::Input
+namespace PK
 {
     enum class InputKey
     {
@@ -137,6 +137,6 @@ namespace PK::Core::Input
         Count
     };
 
-    const char* KeyToString(InputKey key);
-    InputKey StringToKey(const char* string);
+    const char* InputKeyToString(InputKey key);
+    InputKey StringToInputKey(const char* string);
 }

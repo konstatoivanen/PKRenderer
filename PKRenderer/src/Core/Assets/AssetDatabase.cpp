@@ -1,13 +1,11 @@
 #include "PrecompiledHeader.h"
-#include "Utilities/TypeInfo.h"
+#include "Core/Utilities/TypeInfo.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "AssetDatabase.h"
 
-namespace PK::Core::Assets
+namespace PK
 {
-    using namespace PK::Core::CLI;
-
-    AssetDatabase::AssetDatabase(ControlFlow::Sequencer* sequencer) :
+    AssetDatabase::AssetDatabase(Sequencer* sequencer) :
         m_sequencer(sequencer)
     {
         CVariableRegister::Create<CVariableFunc>("AssetDatabase.Query.Loaded", [this](const char** args, uint32_t count)
@@ -107,7 +105,7 @@ namespace PK::Core::Assets
         }
     }
 
-    Utilities::Ref<Asset> AssetDatabase::FindInternal(const std::type_index& typeIndex, const char* name) const
+    Ref<Asset> AssetDatabase::FindInternal(const std::type_index& typeIndex, const char* name) const
     {
         if (m_assets.count(typeIndex) > 0)
         {
@@ -131,7 +129,7 @@ namespace PK::Core::Assets
             return;
         }
 
-        auto name = PK::Utilities::GetTypeShortName(typeIndex);
+        auto name = GetTypeShortName(typeIndex);
         auto cvarnameMeta = std::string("AssetDatabase.Query.Meta.") + name;
         CVariableRegister::Create<CVariableFunc>(cvarnameMeta.c_str(), [this, typeIndex, name](const char** args, uint32_t count)
             {

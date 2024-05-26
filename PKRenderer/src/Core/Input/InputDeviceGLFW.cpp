@@ -1,14 +1,11 @@
 #include "PrecompiledHeader.h"
 #include "Core/Input/InputSystem.h"
-#include "Graphics/RHI/RHIWindow.h"
+#include "Core/RHI/RHInterfaces.h"
 #include "InputDeviceGLFW.h"
 
-namespace PK::Core::Input
+namespace PK
 {
-    using namespace PK::Math;
-    using namespace PK::Graphics;
-
-    InputDeviceGLFW::InputDeviceGLFW(Window* window) : m_window(window)
+    InputDeviceGLFW::InputDeviceGLFW(RHIWindow* window) : m_window(window)
     {
         m_keymap[GLFW_MOUSE_BUTTON_1] = InputKey::Mouse1;
         m_keymap[GLFW_MOUSE_BUTTON_2] = InputKey::Mouse2;

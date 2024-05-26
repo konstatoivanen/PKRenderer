@@ -6,10 +6,8 @@
 #pragma clang diagnostic ignored "-Wvarargs"
 #endif
 
-namespace PK::Core::CLI
+namespace PK
 {
-    using namespace PK::Utilities;
-
     ILogger::~ILogger() = default;
 
 #define PK_FORWAD_VARGS_FUNC(fmt, args, Func) \

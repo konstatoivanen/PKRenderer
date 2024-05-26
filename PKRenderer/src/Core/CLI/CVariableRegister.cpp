@@ -2,10 +2,8 @@
 #include "Core/CLI/Log.h"
 #include "CVariableRegister.h"
 
-namespace PK::Core::CLI
+namespace PK
 {
-    using namespace PK::Utilities;
-
     void CVariableRegister::Bind(ICVariable* variable)
     {
         if (Get() == nullptr)

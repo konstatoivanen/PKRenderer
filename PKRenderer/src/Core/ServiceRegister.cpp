@@ -2,9 +2,9 @@
 #include "Core/CLI/Log.h"
 #include "ServiceRegister.h"
 
-namespace PK::Core
+namespace PK
 {
-    IService::~IService() = default;
+    ServiceRegister::Service::~Service() = default;
 
     void ServiceRegister::AssertTypeExists(std::type_index index)
     {

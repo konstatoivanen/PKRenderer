@@ -5,16 +5,16 @@
 namespace YAML
 {
     template<>
-    struct convert<PK::Core::Input::CommandInputKeyBindingMap>
+    struct convert<PK::CommandInputKeyBindingMap>
     {
-        static Node encode(const PK::Core::Input::CommandInputKeyBindingMap& rhs);
-        static bool decode(const Node& node, PK::Core::Input::CommandInputKeyBindingMap& rhs);
+        static Node encode(const PK::CommandInputKeyBindingMap& rhs);
+        static bool decode(const Node& node, PK::CommandInputKeyBindingMap& rhs);
     };
 
     template<>
-    struct convert<PK::Core::Input::InputKeyCommandBindingMap>
+    struct convert<PK::InputKeyCommandBindingMap>
     {
-        static Node encode(const PK::Core::Input::InputKeyCommandBindingMap& rhs);
-        static bool decode(const Node& node, PK::Core::Input::InputKeyCommandBindingMap& rhs);
+        static Node encode(const PK::InputKeyCommandBindingMap& rhs);
+        static bool decode(const Node& node, PK::InputKeyCommandBindingMap& rhs);
     };
 }

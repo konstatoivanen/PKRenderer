@@ -1,5 +1,5 @@
 #pragma once
-namespace PK::Core::CLI
+namespace PK
 {
     struct CArguments
     {

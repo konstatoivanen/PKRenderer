@@ -6,7 +6,7 @@
 #include <crtdbg.h>  
 #endif 
 
-#include "Core/Application.h"
+#include "App/Application.h"
 
 int main(int argc, char** argv)
 {
@@ -17,7 +17,7 @@ int main(int argc, char** argv)
    //_crtBreakAlloc = 68461;
 #endif
 
-    auto application = new PK::Core::Application({ argc, argv }, "PK Renderer");
+    auto application = new PK::App::Application({ argc, argv }, "PK Renderer");
     application->Execute();
     delete application;
 }

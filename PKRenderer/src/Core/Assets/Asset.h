@@ -1,13 +1,13 @@
 #pragma once
-#include "Utilities/Ref.h"
-#include "Utilities/NoCopy.h"
-#include "Utilities/NameID.h"
+#include "Core/Utilities/Ref.h"
+#include "Core/Utilities/NoCopy.h"
+#include "Core/Utilities/NameID.h"
 
-namespace PK::Core::Assets
+namespace PK
 {
-    typedef Utilities::NameID AssetID;
+    typedef NameID AssetID;
 
-    class Asset : public Utilities::NoCopy
+    class Asset : public NoCopy
     {
         friend class AssetDatabase;
 
@@ -24,7 +24,7 @@ namespace PK::Core::Assets
         static bool IsValidExtension(const std::string& extension);
 
         template<typename T>
-        [[nodiscard]] static Utilities::Ref<T> Create();
+        [[nodiscard]] static Ref<T> Create();
 
     private:
         AssetID m_assetId = 0u;
@@ -32,7 +32,7 @@ namespace PK::Core::Assets
     };
 
     template<typename ... Args>
-    class IAssetImport : public Utilities::NoCopy
+    class IAssetImport : public NoCopy
     {
         friend class AssetDatabase;
         virtual void AssetImport(const char* filepath, Args ... args) = 0;

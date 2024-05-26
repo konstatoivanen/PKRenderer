@@ -3,7 +3,7 @@
 #include "Core/CLI/Log.h"
 #include "CVariable.h"
 
-namespace PK::Core::CLI
+namespace PK
 {
     ICVariable::~ICVariable() = default;
 

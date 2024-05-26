@@ -1,10 +1,10 @@
 #pragma once
 #include <yaml-cpp/yaml.h>
-#include "Math/Types.h"
+#include "Core/Math/MathFwd.h"
 
 namespace YAML
 {
-#define PK_DECLARE_YAML_CONVERT(type)               \
+    #define PK_DECLARE_YAML_CONVERT(type)               \
     template<>                                          \
     struct convert<type>                                \
     {                                                   \
@@ -12,59 +12,59 @@ namespace YAML
         static bool decode(const Node& node, type& rhs);\
     };                                                  \
 
-    PK_DECLARE_YAML_CONVERT(PK::Math::float2)
-        PK_DECLARE_YAML_CONVERT(PK::Math::float3)
-        PK_DECLARE_YAML_CONVERT(PK::Math::float4)
+    PK_DECLARE_YAML_CONVERT(PK::float2)
+    PK_DECLARE_YAML_CONVERT(PK::float3)
+    PK_DECLARE_YAML_CONVERT(PK::float4)
 
-        PK_DECLARE_YAML_CONVERT(PK::Math::double2)
-        PK_DECLARE_YAML_CONVERT(PK::Math::double3)
-        PK_DECLARE_YAML_CONVERT(PK::Math::double4)
+    PK_DECLARE_YAML_CONVERT(PK::double2)
+    PK_DECLARE_YAML_CONVERT(PK::double3)
+    PK_DECLARE_YAML_CONVERT(PK::double4)
 
-        PK_DECLARE_YAML_CONVERT(PK::Math::float2x2)
-        PK_DECLARE_YAML_CONVERT(PK::Math::float3x3)
-        PK_DECLARE_YAML_CONVERT(PK::Math::float4x4)
-        PK_DECLARE_YAML_CONVERT(PK::Math::float3x4)
+    PK_DECLARE_YAML_CONVERT(PK::float2x2)
+    PK_DECLARE_YAML_CONVERT(PK::float3x3)
+    PK_DECLARE_YAML_CONVERT(PK::float4x4)
+    PK_DECLARE_YAML_CONVERT(PK::float3x4)
 
-        PK_DECLARE_YAML_CONVERT(PK::Math::double2x2)
-        PK_DECLARE_YAML_CONVERT(PK::Math::double3x3)
-        PK_DECLARE_YAML_CONVERT(PK::Math::double4x4)
+    PK_DECLARE_YAML_CONVERT(PK::double2x2)
+    PK_DECLARE_YAML_CONVERT(PK::double3x3)
+    PK_DECLARE_YAML_CONVERT(PK::double4x4)
 
-        PK_DECLARE_YAML_CONVERT(PK::Math::short2)
-        PK_DECLARE_YAML_CONVERT(PK::Math::short3)
-        PK_DECLARE_YAML_CONVERT(PK::Math::short4)
+    PK_DECLARE_YAML_CONVERT(PK::short2)
+    PK_DECLARE_YAML_CONVERT(PK::short3)
+    PK_DECLARE_YAML_CONVERT(PK::short4)
 
-        PK_DECLARE_YAML_CONVERT(PK::Math::ushort2)
-        PK_DECLARE_YAML_CONVERT(PK::Math::ushort3)
-        PK_DECLARE_YAML_CONVERT(PK::Math::ushort4)
+    PK_DECLARE_YAML_CONVERT(PK::ushort2)
+    PK_DECLARE_YAML_CONVERT(PK::ushort3)
+    PK_DECLARE_YAML_CONVERT(PK::ushort4)
 
-        PK_DECLARE_YAML_CONVERT(PK::Math::ushort2x2)
-        PK_DECLARE_YAML_CONVERT(PK::Math::ushort3x3)
-        PK_DECLARE_YAML_CONVERT(PK::Math::ushort4x4)
+    PK_DECLARE_YAML_CONVERT(PK::ushort2x2)
+    PK_DECLARE_YAML_CONVERT(PK::ushort3x3)
+    PK_DECLARE_YAML_CONVERT(PK::ushort4x4)
 
-        PK_DECLARE_YAML_CONVERT(PK::Math::sbyte4)
-        PK_DECLARE_YAML_CONVERT(PK::Math::byte4)
+    PK_DECLARE_YAML_CONVERT(PK::sbyte4)
+    PK_DECLARE_YAML_CONVERT(PK::byte4)
 
-        PK_DECLARE_YAML_CONVERT(PK::Math::int2)
-        PK_DECLARE_YAML_CONVERT(PK::Math::int3)
-        PK_DECLARE_YAML_CONVERT(PK::Math::int4)
+    PK_DECLARE_YAML_CONVERT(PK::int2)
+    PK_DECLARE_YAML_CONVERT(PK::int3)
+    PK_DECLARE_YAML_CONVERT(PK::int4)
 
-        PK_DECLARE_YAML_CONVERT(PK::Math::uint2)
-        PK_DECLARE_YAML_CONVERT(PK::Math::uint3)
-        PK_DECLARE_YAML_CONVERT(PK::Math::uint4)
+    PK_DECLARE_YAML_CONVERT(PK::uint2)
+    PK_DECLARE_YAML_CONVERT(PK::uint3)
+    PK_DECLARE_YAML_CONVERT(PK::uint4)
 
-        PK_DECLARE_YAML_CONVERT(PK::Math::long2)
-        PK_DECLARE_YAML_CONVERT(PK::Math::long3)
-        PK_DECLARE_YAML_CONVERT(PK::Math::long4)
+    PK_DECLARE_YAML_CONVERT(PK::long2)
+    PK_DECLARE_YAML_CONVERT(PK::long3)
+    PK_DECLARE_YAML_CONVERT(PK::long4)
 
-        PK_DECLARE_YAML_CONVERT(PK::Math::ulong2)
-        PK_DECLARE_YAML_CONVERT(PK::Math::ulong3)
-        PK_DECLARE_YAML_CONVERT(PK::Math::ulong4)
+    PK_DECLARE_YAML_CONVERT(PK::ulong2)
+    PK_DECLARE_YAML_CONVERT(PK::ulong3)
+    PK_DECLARE_YAML_CONVERT(PK::ulong4)
 
-        PK_DECLARE_YAML_CONVERT(PK::Math::bool2)
-        PK_DECLARE_YAML_CONVERT(PK::Math::bool3)
-        PK_DECLARE_YAML_CONVERT(PK::Math::bool4)
+    PK_DECLARE_YAML_CONVERT(PK::bool2)
+    PK_DECLARE_YAML_CONVERT(PK::bool3)
+    PK_DECLARE_YAML_CONVERT(PK::bool4)
 
-        PK_DECLARE_YAML_CONVERT(PK::Math::quaternion)
+    PK_DECLARE_YAML_CONVERT(PK::quaternion)
 
 #undef PK_DECLARE_YAML_CONVERT
 }

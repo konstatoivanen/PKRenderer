@@ -22,7 +22,11 @@
 #include <unordered_map>
 
 #ifdef _WIN32
+#define NOMINMAX 
 #include <Windows.h>
 #undef far
 #undef near
 #endif
+
+// Precompile glm
+#include "Core/Math/Math.h"

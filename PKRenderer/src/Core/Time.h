@@ -1,21 +1,20 @@
 #pragma once
 #include <ctime>
 #include <chrono>
-#include "Utilities/ForwardDeclare.h"
-#include "Core/ControlFlow/IStepApplication.h"
+#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/TimeFrameInfo.h"
-#include "Core/IService.h"
+#include "Core/ControlFlow/IStepApplication.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::ControlFlow, class Sequencer)
-
-namespace PK::Core
+namespace PK
 {
-    class Time : public IService,
-        public ControlFlow::IStepApplicationOpenFrame,
-        public ControlFlow::IStepApplicationCloseFrame
+    class Sequencer;
+
+    class Time :
+        public IStepApplicationOpenFrame,
+        public IStepApplicationCloseFrame
     {
     public:
-        Time(ControlFlow::Sequencer* sequencer, float timeScale, bool logFramerate);
+        Time(Sequencer* sequencer, float timeScale, bool logFramerate);
 
         static const clock_t GetClockTicks();
         static const double GetClockSeconds();
@@ -43,7 +42,7 @@ namespace PK::Core
         virtual void OnApplicationCloseFrame() final;
 
     private:
-        ControlFlow::Sequencer* m_sequencer = nullptr;
+        Sequencer* m_sequencer = nullptr;
         std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double>> m_frameStart;
         TimeFrameInfo m_info{};
         uint64_t m_framerateMinRaw = 0u;

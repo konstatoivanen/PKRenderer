@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-namespace PK::Core
+namespace PK
 {
     struct TimeFrameInfo
     {

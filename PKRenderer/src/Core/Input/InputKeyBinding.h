@@ -2,7 +2,7 @@
 #include <unordered_map>
 #include "Core/Input/InputKey.h"
 
-namespace PK::Core::Input
+namespace PK
 {
     typedef std::unordered_map<InputKey, std::string> InputKeyCommandBindingMap;
 

@@ -3,7 +3,7 @@
 #include "Core/Yaml/ConfigMacros.h"
 #include "Core/Input/InputKeyBinding.h"
 
-namespace PK::Core::Input
+namespace PK
 {
     PK_YAML_ASSET_BEGIN(InputKeyConfig, ".keycfg")
         PK_YAML_MEMBER(CommandInputKeyBindingMap, CommandInputKeys, CommandInputKeyBindingMap())
@@ -11,4 +11,4 @@ namespace PK::Core::Input
     PK_YAML_ASSET_END()
 }
 
-PK_YAML_ASSET_ASSETDATABSE_INTERFACE(PK::Core::Input::InputKeyConfig)
+PK_YAML_ASSET_ASSETDATABSE_INTERFACE(PK::InputKeyConfig)

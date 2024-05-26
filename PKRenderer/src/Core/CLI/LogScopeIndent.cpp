@@ -2,7 +2,7 @@
 #include "Core/CLI/Log.h"
 #include "LogScopeIndent.h"
 
-namespace PK::Core::CLI
+namespace PK
 {
     LogScopeIndent::LogScopeIndent()
     {

@@ -1,16 +1,12 @@
 #include "PrecompiledHeader.h"
 #include "Core/Input/InputDeviceGLFW.h"
 #include "Core/ControlFlow/Sequencer.h"
-#include "Graphics/RHI/RHIWindow.h"
+#include "Core/RHI/RHInterfaces.h"
 #include "InputSystem.h"
 
-namespace PK::Core::Input
+namespace PK
 {
-    using namespace PK::Math;
-    using namespace PK::Core;
-    using namespace PK::Graphics::RHI;
-
-    InputDevice* InputSystem::GetDevice(Graphics::Window* window)
+    InputDevice* InputSystem::GetDevice(RHIWindow* window)
     {
         // @TODO add support for other input devices
         auto nativeHandle = window->GetNativeWindow();
@@ -20,20 +16,20 @@ namespace PK::Core::Input
         if (device == nullptr)
         {
             device = new InputDeviceGLFW(window);
-            m_inputDevices[nativeHandle] = Utilities::Scope<InputDevice>(device);
+            m_inputDevices[nativeHandle] = Scope<InputDevice>(device);
         }
 
         return device;
     }
 
-    void InputSystem::OnApplicationUpdateInput(Graphics::Window* window)
+    void InputSystem::OnApplicationUpdateInput(RHIWindow* window)
     {
         auto device = GetDevice(window);
         device->UpdateBegin();
         m_sequencer->Next<InputDevice*>(this, device);
     }
 
-    void InputSystem::OnApplicationCloseFrame(Graphics::Window* window)
+    void InputSystem::OnApplicationCloseFrame(RHIWindow* window)
     {
         GetDevice(window)->UpdateEnd();
     }

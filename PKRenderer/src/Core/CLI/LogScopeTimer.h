@@ -1,10 +1,10 @@
 #pragma once
-#include "Utilities/NoCopy.h"
 #include <chrono>
+#include "Core/Utilities/NoCopy.h"
 
-namespace PK::Core::CLI
+namespace PK
 {
-    struct LogScopeTimer : public Utilities::NoCopy
+    struct LogScopeTimer : public NoCopy
     {
         std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double>> start;
         const char* name;

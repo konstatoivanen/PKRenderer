@@ -1,0 +1,44 @@
+#pragma once
+#include "Core/Utilities/FastSet.h"
+#include "Core/RHI/RHI.h"
+
+namespace PK
+{
+    template<typename T>
+    struct BindSet : public NoCopy
+    {
+        BindSet(uint32_t capacity) : m_array(RHI::CreateBindArray<T>(capacity)), m_indices(capacity) {}
+
+        uint32_t Set(T* value)
+        {
+            uint32_t setidx = 0u;
+
+            if (!m_indices.Add(value, setidx))
+            {
+                return (uint32_t)setidx;
+            }
+
+            auto arrayidx = m_array->Add(value);
+
+            if (arrayidx != setidx)
+            {
+                throw std::exception("Indexing missmatch!");
+            }
+
+            return arrayidx;
+        }
+
+        void Clear()
+        {
+            m_indices.Clear();
+            m_array->Clear();
+        }
+
+        operator RHIBindArray<T>* () { return m_array.get(); }
+        operator const RHIBindArray<T>* () { return m_array.get(); }
+
+    private:
+        RHIBindArrayRef<T> m_array;
+        PointerSet<T> m_indices;
+    };
+}

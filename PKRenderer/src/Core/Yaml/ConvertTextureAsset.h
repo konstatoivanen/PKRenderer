@@ -1,13 +1,13 @@
 #pragma once
 #include <yaml-cpp/yaml.h>
-#include "Graphics/GraphicsFwd.h"
+#include "Core/Rendering/RenderingFwd.h"
 
 namespace YAML
 {
     template<>
-    struct convert<PK::Graphics::TextureAsset*>
+    struct convert<PK::TextureAsset*>
     {
-        static Node encode(const PK::Graphics::TextureAsset*& rhs);
-        static bool decode(const Node& node, PK::Graphics::TextureAsset*& rhs);
+        static Node encode(const PK::TextureAsset*& rhs);
+        static bool decode(const Node& node, PK::TextureAsset*& rhs);
     };
 }

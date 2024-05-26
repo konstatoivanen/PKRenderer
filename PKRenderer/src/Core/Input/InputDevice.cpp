@@ -1,11 +1,8 @@
 #include "PrecompiledHeader.h"
 #include "InputDevice.h"
 
-namespace PK::Core::Input
+namespace PK
 {
-    using namespace PK::Math;
-    using namespace PK::Core;
-
     float InputDevice::GetAxis(InputKey xneg, InputKey xpos) const
     {
         return GetKey(xpos) ? 1.0f : GetKey(xneg) ? -1.0f : 0.0f;

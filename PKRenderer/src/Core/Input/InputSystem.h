@@ -1,26 +1,23 @@
 #pragma once
-#include "Math/Types.h"
-#include "Utilities/ForwardDeclare.h"
-#include "Utilities/Ref.h"
-#include "Utilities/ISingleton.h"
+#include "Core/Utilities/Ref.h"
+#include "Core/Utilities/ISingleton.h"
 #include "Core/ControlFlow/IStepApplicationWindow.h"
 #include "Core/Input/InputKey.h"
 #include "Core/Input/InputDevice.h"
-#include "Core/IService.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK::Core::ControlFlow, class Sequencer)
-
-namespace PK::Core::Input
+namespace PK
 {
-    class InputSystem : public IService,
-        public ControlFlow::IStepApplicationUpdateInputWindow,
-        public ControlFlow::IStepApplicationCloseFrameWindow,
-        public Utilities::ISingleton<InputSystem>
+    class Sequencer;
+
+    class InputSystem :
+        public IStepApplicationUpdateInputWindow,
+        public IStepApplicationCloseFrameWindow,
+        public ISingleton<InputSystem>
     {
     public:
-        InputSystem(ControlFlow::Sequencer* sequencer) : m_sequencer(sequencer) {}
+        InputSystem(Sequencer* sequencer) : m_sequencer(sequencer) {}
 
-        InputDevice* GetDevice(Graphics::Window* window);
+        InputDevice* GetDevice(RHIWindow* window);
 
         template<typename T>
         T* GetDevice(void* nativeHandle)
@@ -29,11 +26,11 @@ namespace PK::Core::Input
             return iter != m_inputDevices.end() ? iter->second->GetNative<T>() : nullptr;
         }
 
-        virtual void OnApplicationUpdateInput(Graphics::Window* window) final;
-        virtual void OnApplicationCloseFrame(Graphics::Window* window) final;
+        virtual void OnApplicationUpdateInput(RHIWindow* window) final;
+        virtual void OnApplicationCloseFrame(RHIWindow* window) final;
 
     private:
-        ControlFlow::Sequencer* m_sequencer;
-        std::unordered_map<void*, Utilities::Scope<InputDevice>> m_inputDevices;
+        Sequencer* m_sequencer;
+        std::unordered_map<void*, Scope<InputDevice>> m_inputDevices;
     };
 }

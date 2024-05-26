@@ -1,12 +1,12 @@
 #pragma once
 #include <cstdint>
 #include <string>
-#include "Utilities/NoCopy.h"
-#include "Utilities/NameID.h"
+#include "Core/Utilities/NoCopy.h"
+#include "Core/Utilities/NameID.h"
 
-namespace PK::Core::CLI
+namespace PK
 {
-    struct ICVariable : public PK::Utilities::NoCopy
+    struct ICVariable : public NoCopy
     {
         friend class CVariableRegister;
 
@@ -25,7 +25,7 @@ namespace PK::Core::CLI
         virtual uint32_t CVarGetMinArgs() const = 0;
         virtual uint32_t CVarGetMaxArgs() const = 0;
 
-        Utilities::NameID name;
+        NameID name;
     };
 
     template<typename T>

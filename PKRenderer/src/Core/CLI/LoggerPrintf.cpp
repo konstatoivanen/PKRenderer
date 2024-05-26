@@ -2,7 +2,7 @@
 #include "LoggerPrintf.h"
 #include <conio.h>
 
-namespace PK::Core::CLI
+namespace PK
 {
     void LoggerPrintf::Indent()
     {

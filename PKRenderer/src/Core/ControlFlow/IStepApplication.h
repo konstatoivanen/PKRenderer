@@ -2,7 +2,7 @@
 #include "Core/ControlFlow/IStep.h"
 #include "Core/ControlFlow/ApplicationStep.h"
 
-namespace PK::Core::ControlFlow
+namespace PK
 {
     class IStepApplicationOpenFrame : public IStep<ApplicationStep::OpenFrame>
     {

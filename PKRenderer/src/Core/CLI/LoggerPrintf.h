@@ -1,10 +1,10 @@
 #pragma once
-#include "Utilities/NoCopy.h"
+#include "Core/Utilities/NoCopy.h"
 #include "Core/CLI/ILogger.h"
 
-namespace PK::Core::CLI
+namespace PK
 {
-    class LoggerPrintf : public PK::Core::CLI::ILogger, public PK::Utilities::NoCopy
+    class LoggerPrintf : public ILogger, public NoCopy
     {
     public:
         LoggerPrintf() {}

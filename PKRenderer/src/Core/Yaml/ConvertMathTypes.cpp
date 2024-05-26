@@ -3,9 +3,9 @@
 
 namespace YAML
 {
-    using namespace PK::Math;
+    using namespace PK;
 
-#define DECLARE_VECTOR_CONVERT(type, count)								\
+#define DECLARE_VECTOR_CONVERT(type, count)								    \
     Node convert<type##count>::encode(const type##count & rhs)				\
     {																		\
         Node node;															\

@@ -1,7 +1,7 @@
 #pragma once
 #include <exception>
 
-namespace PK::Core::CLI
+namespace PK
 {
     typedef enum
     {

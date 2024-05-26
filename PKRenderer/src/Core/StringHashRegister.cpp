@@ -1,9 +1,9 @@
 #include "PrecompiledHeader.h"
 #include "StringHashRegister.h"
 
-namespace PK::Core
+namespace PK
 {
-    uint32_t StringHashRegister::LocalStringToID(const std::string& str)
+    uint32_t StringHashRegister::INameIDProvider_StringToID(const std::string& str)
     {
         auto iter = m_stringIdMap.find(str);
 
@@ -17,12 +17,7 @@ namespace PK::Core
         return m_idCounter;
     }
 
-    uint32_t StringHashRegister::LocalStringToID(const char* str)
-    {
-        return StringToID(std::string(str));
-    }
-
-    const std::string& StringHashRegister::LocalIDToString(const uint32_t& id)
+    const std::string& StringHashRegister::INameIDProvider_IDToString(const uint32_t& id)
     {
         if (id > m_idCounter)
         {

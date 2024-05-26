@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "InputKey.h"
 
-namespace PK::Core::Input
+namespace PK
 {
     const static char* PK_INPUTKEY_NAMES[] =
     {
@@ -139,12 +139,12 @@ namespace PK::Core::Input
         "Count"
     };
 
-    const char* KeyToString(InputKey key)
+    const char* InputKeyToString(InputKey key)
     {
         return PK_INPUTKEY_NAMES[(int)key];
     }
 
-    InputKey StringToKey(const char* string)
+    InputKey StringToInputKey(const char* string)
     {
         for (uint32_t i = 0u; i < (uint32_t)InputKey::Count; ++i)
         {

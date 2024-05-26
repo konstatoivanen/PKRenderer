@@ -2,7 +2,7 @@
 #include "Core/CLI/Log.h"
 #include "LogScopeTimer.h"
 
-namespace PK::Core::CLI
+namespace PK
 {
     LogScopeTimer::LogScopeTimer(const char* name) :
         start(std::chrono::steady_clock::now()),

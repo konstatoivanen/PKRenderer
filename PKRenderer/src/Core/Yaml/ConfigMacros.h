@@ -27,7 +27,7 @@ namespace YAML
 
 // Needs to be declared out of namespace
 #define PK_YAML_ASSET_BEGIN(TType, TExtension) \
-    struct TType : public YAML::IYamlConfig, public PK::Core::Assets::AssetWithImport<> \
+    struct TType : public YAML::IYamlConfig, public PK::AssetWithImport<> \
     { \
         constexpr static const char* Extension = TExtension; \
         TType() {}; \
@@ -92,5 +92,5 @@ namespace YAML
     }; \
 
 #define PK_YAML_ASSET_ASSETDATABSE_INTERFACE(type)\
-template<> inline bool PK::Core::Assets::Asset::IsValidExtension<type>(const std::string& extension) { return extension.compare(type::Extension) == 0; }\
-template<> inline PK::Utilities::Ref<type> PK::Core::Assets::Asset::Create() { return PK::Utilities::CreateRef<type>(); }\
+template<> inline bool PK::Asset::IsValidExtension<type>(const std::string& extension) { return extension.compare(type::Extension) == 0; }\
+template<> inline PK::Ref<type> PK::Asset::Create() { return PK::CreateRef<type>(); }\

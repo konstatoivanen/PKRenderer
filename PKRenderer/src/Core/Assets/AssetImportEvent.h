@@ -1,5 +1,5 @@
 #pragma once
-namespace PK::Core::Assets
+namespace PK
 {
     template<typename T>
     struct AssetImportEvent

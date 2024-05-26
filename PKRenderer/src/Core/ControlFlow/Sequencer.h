@@ -3,11 +3,10 @@
 #include <unordered_map>
 #include <utility>
 #include "Core/ControlFlow/IStep.h"
-#include "Core/IService.h"
 
-namespace PK::Core::ControlFlow
+namespace PK
 {
-    class Sequencer : public PK::Core::IService
+    class Sequencer
     {
     public:
         struct Step

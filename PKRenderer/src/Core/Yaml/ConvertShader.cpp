@@ -1,16 +1,11 @@
 #include "PrecompiledHeader.h"
-#include "Core/Application.h"
 #include "Core/Assets/AssetDatabase.h"
-#include "Graphics/Shader.h"
+#include "Core/Rendering/ShaderAsset.h"
 #include "ConvertShader.h"
 
 namespace YAML
 {
-    using namespace PK::Core;
-    using namespace PK::Core::Assets;
-    using namespace PK::Graphics;
-
-    Node convert<Shader*>::encode(const Shader*& rhs)
+    Node convert<PK::ShaderAsset*>::encode(const PK::ShaderAsset*& rhs)
     {
         Node node;
         node.push_back(rhs->GetFileName());
@@ -18,9 +13,9 @@ namespace YAML
         return node;
     }
 
-    bool convert<Shader*>::decode(const Node& node, Shader*& rhs)
+    bool convert<PK::ShaderAsset*>::decode(const Node& node, PK::ShaderAsset*& rhs)
     {
-        rhs = PK::Core::Application::GetService<AssetDatabase>()->Load<Shader>(node.as<std::string>());
+        rhs = PK::AssetDatabase::Get()->Load<PK::ShaderAsset>(node.as<std::string>());
         return true;
     }
 }
