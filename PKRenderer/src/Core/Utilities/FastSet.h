@@ -174,7 +174,7 @@ namespace PK
 
             if (m_collisions > m_buckets.GetCount())
             {
-                m_buckets.Validate(Hash::ExpandPrime(m_collisions), true);
+                m_buckets.Validate(Hash::ExpandPrime(m_collisions));
                 m_buckets.Clear();
                 m_collisions = 0;
 

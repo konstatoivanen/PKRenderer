@@ -13,10 +13,13 @@ namespace PK
     template<> void CVariable<CVariableFunc>::CVarExecute(const char** args, uint32_t count) { m_value(args, count); }
     template<> void CVariable<CVariableFunc>::CVarInvalidArgCount() const { PK_LOG_INFO("% //%s", CVarGetName(), m_hint.c_str()); }
 
+    template<> void CVariable<CVariableFuncSimple>::CVarExecute([[maybe_unused]] const char** args, [[maybe_unused]] uint32_t count) { m_value(); }
+    template<> void CVariable<CVariableFuncSimple>::CVarInvalidArgCount() const { PK_LOG_INFO("% //%s", CVarGetName(), m_hint.c_str()); }
+
 #define PK_DECLARE_CVAR_SPECIALIZATION(Format, CastFormat, ParseFormat) \
-    template<> void CVariable<CastFormat>::CVarExecute(const char** args, uint32_t count) { m_value = (CastFormat)ato##ParseFormat(args[0]); PK_LOG_INFO("%s = %"#Format, name.c_str(), m_value); } \
+    template<> void CVariable<CastFormat>::CVarExecute(const char** args, [[maybe_unused]] uint32_t count) { m_value = (CastFormat)ato##ParseFormat(args[0]); PK_LOG_INFO("%s = %"#Format, name.c_str(), m_value); } \
     template<> void CVariable<CastFormat>::CVarInvalidArgCount() const { PK_LOG_INFO("%s = %"#Format" // %s", name.c_str(), m_value, m_hint.c_str()); } \
-    template<> void CVariable<CastFormat*>::CVarExecute(const char** args, uint32_t count) { *m_value = (CastFormat)ato##ParseFormat(args[0]); PK_LOG_INFO("%s = %"#Format, name.c_str(), *m_value); } \
+    template<> void CVariable<CastFormat*>::CVarExecute(const char** args, [[maybe_unused]] uint32_t count) { *m_value = (CastFormat)ato##ParseFormat(args[0]); PK_LOG_INFO("%s = %"#Format, name.c_str(), *m_value); } \
     template<> void CVariable<CastFormat*>::CVarInvalidArgCount() const { PK_LOG_INFO("%s = %"#Format" // %s", name.c_str(), *m_value, m_hint.c_str()); } \
 
     PK_DECLARE_CVAR_SPECIALIZATION(u, uint8_t, i)

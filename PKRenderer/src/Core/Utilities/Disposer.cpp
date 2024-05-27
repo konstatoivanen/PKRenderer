@@ -13,14 +13,14 @@ namespace PK
 
     void Disposer::Prune()
     {
-        for (auto i = (int)m_disposables.size() - 1; i >= 0; --i)
+        for (auto i = (int32_t)m_disposables.size() - 1; i >= 0; --i)
         {
             if (!m_disposables.at(i).fence.IsComplete())
             {
                 continue;
             }
 
-            auto n = m_disposables.size() - 1;
+            auto n = (int32_t)m_disposables.size() - 1;
             m_disposables[i].destructor(m_disposables[i].disposable);
 
             if (i != n)

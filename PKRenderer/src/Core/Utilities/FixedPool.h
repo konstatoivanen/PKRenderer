@@ -41,7 +41,7 @@ namespace PK
             template<typename ... Args>
             T* NewAt(int64_t index, Args&& ... args)
             {
-                if (index == -1 || index >= capacity)
+                if (index == -1 || (size_t)index >= capacity)
                 {
                     throw std::exception("Pool capacity exceeded!");
                 }
@@ -77,7 +77,7 @@ namespace PK
             {
                 // if a whole 64 bit segment is empty we can assume that the rest are as well.
                 // Could lead to issues in a very unlucky scenario.
-                for (auto i = 0; i < mask.Size && mask.m_mask[i] != 0ull; ++i)
+                for (auto i = 0u; i < mask.Size && mask.m_mask[i] != 0ull; ++i)
                 {
                     for (uint32_t j = i * mask.Stride, k = j + mask.Stride; j < k; ++j)
                     {

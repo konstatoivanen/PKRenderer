@@ -37,7 +37,7 @@ namespace PK
 
             auto* pVertexAttributes = variant->vertexAttributes.Get(base);
 
-            for (auto i = 0; i < variant->vertexAttributeCount; ++i)
+            for (auto i = 0u; i < variant->vertexAttributeCount; ++i)
             {
                 auto attribute = &pVertexAttributes[i];
                 m_vertexLayout.Add(BufferElement(attribute->type, attribute->name, 1, (byte)attribute->location));

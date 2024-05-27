@@ -344,9 +344,9 @@ namespace PK
 
 
     VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDriver::VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-        void* pUserData)
+        [[maybe_unused]] void* pUserData)
     {
         auto isValidationError = strstr(pCallbackData->pMessage, "Error") != nullptr;
 

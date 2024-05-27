@@ -8,12 +8,12 @@
 
 namespace PK
 {
-    const clock_t Time::GetClockTicks()
+    clock_t Time::GetClockTicks()
     {
         return clock();
     }
 
-    const double Time::GetClockSeconds()
+    double Time::GetClockSeconds()
     {
         return clock() / (double)CLOCKS_PER_SEC;
     }
@@ -23,7 +23,7 @@ namespace PK
         m_logFramerate(logFramerate)
     {
         m_info.timeScale = timeScale;
-        CVariableRegister::Create<CVariableFunc>("Time.Reset", [this](const char** args, uint32_t count) { Reset(); PK_LOG_INFO("Time.Reset"); });
+        CVariableRegister::Create<CVariableFuncSimple>("Time.Reset", [this]() { Reset(); PK_LOG_INFO("Time.Reset"); });
         CVariableRegister::Create<bool*>("Time.LogFramerate", &m_logFramerate, "0 = 0ff, 1 = On", 1u, 1u);
     }
 

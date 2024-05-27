@@ -88,7 +88,7 @@ namespace PK
             }
 
             template<typename T>
-            const bool TryGet(const uint32_t hashId, T& value) const 
+            bool TryGet(const uint32_t hashId, T& value) const 
             {
                 auto ptr = Get<T>(hashId);
                 if (ptr != nullptr) value = *ptr;
@@ -96,7 +96,7 @@ namespace PK
             }
         
             template<typename T>
-            const bool TryGet(const uint32_t hashId, const T*& value, uint64_t* size = nullptr) const
+            bool TryGet(const uint32_t hashId, const T*& value, uint64_t* size = nullptr) const
             {
                 auto info = m_propertyInfos.GetValueRef(PropertyKey::Make<T>(hashId));
 

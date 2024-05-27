@@ -10,7 +10,7 @@
         typedef TType meta_ThisType; \
         struct meta_FirstId {}; \
         typedef void*(*meta_ParseFunc)(meta_FirstId, meta_ThisType*, const meta_TConfig* config); \
-        static void* meta_ParsePrev(meta_FirstId, meta_ThisType* thisPtr, const meta_TConfig* config) \
+        static void* meta_ParsePrev(meta_FirstId, [[maybe_unused]] meta_ThisType* thisPtr, [[maybe_unused]] const meta_TConfig* config) \
         { \
         return nullptr; \
         } \

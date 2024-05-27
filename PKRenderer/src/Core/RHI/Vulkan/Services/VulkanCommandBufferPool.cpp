@@ -11,6 +11,7 @@ namespace PK
         VkCommandPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
         createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
         createInfo.queueFamilyIndex = queueFamily;
+
         VK_ASSERT_RESULT(vkCreateCommandPool(m_device, &createInfo, nullptr, &m_pool));
 
         for (auto i = 0u; i < MAX_PRIMARY_COMMANDBUFFERS; ++i)
@@ -130,11 +131,13 @@ namespace PK
             return;
         }
 
-        VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+        VkCommandBufferAllocateInfo allocateInfo { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
         allocateInfo.commandPool = m_pool;
         allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocateInfo.commandBufferCount = count;
+
         VK_ASSERT_RESULT(vkAllocateCommandBuffers(m_device, &allocateInfo, buffers));
+        
         count = 0u;
 
         for (auto i = 0u; i < MAX_PRIMARY_COMMANDBUFFERS; ++i)

@@ -1247,7 +1247,7 @@ namespace PK
             }
         }
 
-        ShaderResourceType GetShaderResourceType(VkDescriptorType type, uint32_t count)
+        ShaderResourceType GetShaderResourceType(VkDescriptorType type)
         {
             switch (type)
             {

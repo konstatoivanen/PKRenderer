@@ -26,7 +26,7 @@ namespace PK::App
         public IStep<AssetImportEvent<ApplicationConfig>*>
     {
         public:
-            RenderPipelineScene(EntityDatabase* entityDb, AssetDatabase* assetDatabase, ApplicationConfig* config);
+            RenderPipelineScene(AssetDatabase* assetDatabase, ApplicationConfig* config);
             ~RenderPipelineScene();
 
             const BufferLayout& GetViewConstantsLayout() const final { return m_constantsLayout; }

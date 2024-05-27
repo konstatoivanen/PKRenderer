@@ -13,15 +13,15 @@ namespace PK::App
     EngineFlyCamera::EngineFlyCamera(EntityDatabase* entityDb, InputKeyConfig* keyConfig) : m_entityDb(entityDb)
     {
         m_keys.SetKeysFrom(keyConfig);
-        CVariableRegister::Create<CVariableFunc>("Engine.FlyCamera.Transforms.Log", [this](const char** args, uint32_t count) { TransformsLog(); });
-        CVariableRegister::Create<CVariableFunc>("Engine.FlyCamera.Transforms.Reset", [this](const char** args, uint32_t count) { TransformsReset(); });
+        CVariableRegister::Create<CVariableFuncSimple>("Engine.FlyCamera.Transforms.Log", [this](){TransformsLog();});
+        CVariableRegister::Create<CVariableFuncSimple>("Engine.FlyCamera.Transforms.Reset", [this](){TransformsReset();});
     }
 
     void EngineFlyCamera::Step(InputDevice* input)
     {
         auto views = m_entityDb->Query<EntityViewFlyCamera>((uint32_t)ENTITY_GROUPS::ACTIVE);
 
-        for (auto i = 0; i < views.count; ++i)
+        for (auto i = 0u; i < views.count; ++i)
         {
             auto& view = views[i];
             auto camera = view.flyCamera;
@@ -95,7 +95,7 @@ namespace PK::App
     {
         auto views = m_entityDb->Query<EntityViewFlyCamera>((uint32_t)ENTITY_GROUPS::ACTIVE);
 
-        for (auto i = 0; i < views.count; ++i)
+        for (auto i = 0u; i < views.count; ++i)
         {
             auto& view = views[i];
             auto transform = view.transform;
@@ -109,7 +109,7 @@ namespace PK::App
     {
         auto views = m_entityDb->Query<EntityViewFlyCamera>((uint32_t)ENTITY_GROUPS::ACTIVE);
 
-        for (auto i = 0; i < views.count; ++i)
+        for (auto i = 0u; i < views.count; ++i)
         {
             auto& view = views[i];
             auto camera = view.flyCamera;

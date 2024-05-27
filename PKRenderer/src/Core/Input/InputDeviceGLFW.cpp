@@ -194,7 +194,7 @@ namespace PK
         m_keyStatesCurrent[(int)InputKey::MouseScrollDown] = false;
     }
 
-    void InputDeviceGLFW::OnKeyInput(int key, int scancode, int action, int mods)
+    void InputDeviceGLFW::OnKeyInput(int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods)
     {
         auto keyCode = m_keymap[key];
 
@@ -204,7 +204,7 @@ namespace PK
         }
     }
 
-    void InputDeviceGLFW::OnMouseButtonInput(int button, int action, int mods)
+    void InputDeviceGLFW::OnMouseButtonInput(int button, int action, [[maybe_unused]] int mods)
     {
         auto keyCode = m_keymap[button];
 

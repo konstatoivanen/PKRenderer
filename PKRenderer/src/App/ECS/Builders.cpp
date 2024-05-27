@@ -191,7 +191,6 @@ namespace PK::App::EntityBuilders
     }
 
     EGID CreateEntityLight(EntityDatabase* entityDb,
-        AssetDatabase* assetDatabase,
         const float3& position,
         const float3& rotation,
         LightType type,

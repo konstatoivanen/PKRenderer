@@ -36,7 +36,7 @@ namespace PK
         PK_LOG_NEWLINE();
         PK_LOG_ADD_INDENT();
 
-        CVariableRegister::Create<CVariableFunc>("RHI.Query.Memory", [](const char** args, uint32_t count)
+        CVariableRegister::Create<CVariableFuncSimple>("RHI.Query.Memory", []()
             {
                 PK_LOG_HEADER("----------GPU MEMORY INFO----------");
                 auto info = RHIDriver::Get()->GetMemoryInfo();

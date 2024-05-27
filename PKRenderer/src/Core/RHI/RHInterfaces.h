@@ -39,14 +39,14 @@ namespace PK
         virtual bool Validate(const TextureDescriptor& descriptor) = 0;
         virtual const TextureDescriptor& GetDescriptor() const = 0;
 
-        constexpr const TextureUsage GetUsage() const { return GetDescriptor().usage; }
-        constexpr const bool IsConcurrent() const { return (GetUsage() & TextureUsage::Concurrent) != 0; }
-        constexpr const bool IsTracked() const { return (GetUsage() & TextureUsage::ReadOnly) == 0; }
+        constexpr TextureUsage GetUsage() const { return GetDescriptor().usage; }
+        constexpr bool IsConcurrent() const { return (GetUsage() & TextureUsage::Concurrent) != 0; }
+        constexpr bool IsTracked() const { return (GetUsage() & TextureUsage::ReadOnly) == 0; }
         constexpr const SamplerDescriptor& GetSamplerDescriptor() const { return GetDescriptor().sampler; }
-        constexpr const uint4 GetRect() const { return { 0, 0, GetDescriptor().resolution.x, GetDescriptor().resolution.y }; }
-        constexpr const uint3 GetResolution() const { return GetDescriptor().resolution; }
-        constexpr const uint32_t GetLevels() const { return GetDescriptor().levels; }
-        constexpr const uint32_t GetLayers() const { return GetDescriptor().layers; }
+        constexpr uint4 GetRect() const { return { 0, 0, GetDescriptor().resolution.x, GetDescriptor().resolution.y }; }
+        constexpr uint3 GetResolution() const { return GetDescriptor().resolution; }
+        constexpr uint32_t GetLevels() const { return GetDescriptor().levels; }
+        constexpr uint32_t GetLayers() const { return GetDescriptor().layers; }
     };
 
     struct RHIBuffer : public NoCopy, public NativeInterface<RHIBuffer>
@@ -108,7 +108,7 @@ namespace PK
         virtual const ShaderVertexInputLayout& GetVertexLayout() const = 0;
         virtual const ShaderPushConstantLayout& GetPushConstantLayout() const = 0;
         virtual const ShaderResourceLayout& GetResourceLayout(uint32_t set) const = 0;
-        virtual const ShaderStageFlags GetStageFlags() const = 0;
+        virtual ShaderStageFlags GetStageFlags() const = 0;
         virtual const uint3& GetGroupSize() const = 0;
         virtual ShaderBindingTableInfo GetShaderBindingTableInfo() const = 0;
         inline bool IsGraphics() const { return (GetStageFlags() & ShaderStageFlags::StagesGraphics) != 0; }
@@ -138,7 +138,7 @@ namespace PK
         virtual void SetShader(const RHIShader* shader) = 0;
         virtual void SetVertexBuffers(const RHIBuffer** buffers, uint32_t count) = 0;
         virtual void SetVertexStreams(const VertexStreamElement* elements, uint32_t count) = 0;
-        virtual void SetIndexBuffer(const RHIBuffer* buffer, size_t offset, ElementType indexFormat) = 0;
+        virtual void SetIndexBuffer(const RHIBuffer* buffer, ElementType indexFormat) = 0;
         virtual void SetShaderBindingTable(RayTracingShaderGroup group, const RHIBuffer* buffer, size_t offset = 0, size_t stride = 0, size_t size = 0) = 0;
 
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;

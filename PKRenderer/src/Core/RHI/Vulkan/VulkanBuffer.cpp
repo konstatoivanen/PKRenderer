@@ -151,7 +151,7 @@ namespace PK
         auto fence = m_driver->GetQueues()->GetFenceRef(QueueType::Graphics);
         auto values = m_bindHandles.GetValues();
 
-        for (auto i = 0; i < values.count; ++i)
+        for (auto i = 0u; i < values.count; ++i)
         {
             m_driver->bindhandlePool.Delete(values[i]);
         }

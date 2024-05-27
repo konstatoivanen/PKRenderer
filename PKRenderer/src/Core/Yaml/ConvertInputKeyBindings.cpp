@@ -21,7 +21,7 @@ namespace YAML
 
     bool convert<PK::CommandInputKeyBindingMap>::decode(const Node& node, PK::CommandInputKeyBindingMap& rhs)
     {
-        for (auto i = 0; i < node.size(); ++i)
+        for (auto i = 0u; i < node.size(); ++i)
         {
             rhs[node[i][0].as<std::string>()] = PK::StringToInputKey(node[i][1].as<std::string>().c_str());
         }
@@ -47,7 +47,7 @@ namespace YAML
 
     bool convert<PK::InputKeyCommandBindingMap>::decode(const Node& node, PK::InputKeyCommandBindingMap& rhs)
     {
-        for (auto i = 0; i < node.size(); ++i)
+        for (auto i = 0u; i < node.size(); ++i)
         {
             rhs[PK::StringToInputKey(node[i][0].as<std::string>().c_str())] = node[i][1].as<std::string>();
         }

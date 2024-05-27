@@ -25,7 +25,7 @@ namespace PK
                 }
             }
 
-            void Validate(size_t count, bool discard = false)
+            void Validate(size_t count)
             {
                 if (count <= m_count)
                 {

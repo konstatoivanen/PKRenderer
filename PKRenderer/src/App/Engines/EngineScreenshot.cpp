@@ -8,9 +8,10 @@
 
 namespace PK::App
 {
-    EngineScreenshot::EngineScreenshot() : m_accumulatedPixels(1)
+    EngineScreenshot::EngineScreenshot() : 
+        m_accumulatedPixels(1)
     {
-        CVariableRegister::Create<CVariableFunc>("Engine.Screenshot.QueueCapture", [this](const char** args, uint32_t count) { QueueCapture(); });
+        CVariableRegister::Create<CVariableFuncSimple>("Engine.Screenshot.QueueCapture", [this](){QueueCapture();});
     }
 
     void EngineScreenshot::OnApplicationRender(RHIWindow* window)
@@ -96,7 +97,7 @@ namespace PK::App
         RHI::ValidateBuffer<uint32_t>(m_copyBuffer, m_currentResolution.x * m_currentResolution.y, usage, "Screenshot.CopyBuffer");
 
         m_copyFence.Invalidate();
-        m_accumulatedPixels.Validate(m_currentResolution.x * m_currentResolution.y * 4, true);
+        m_accumulatedPixels.Validate(m_currentResolution.x * m_currentResolution.y * 4);
         m_accumulatedPixels.Clear();
         m_captureCounter = 9;
         m_captureFrameCount = 8;

@@ -57,4 +57,5 @@ namespace PK
     };
 
     typedef std::function<void(const char** args, uint32_t)> CVariableFunc;
+    typedef std::function<void()> CVariableFuncSimple;
 }

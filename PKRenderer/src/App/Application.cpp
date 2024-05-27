@@ -36,12 +36,24 @@ namespace PK::App
 
     Application::Application(CArguments arguments, const std::string& name)
     {
-        PK_LOG_SCOPE_TIMER(Initialize);
+        PK_LOG_SCOPE_TIMER(ApplicationCtor);
         PK_THROW_ASSERT(!s_instance, "Application already exists!");
         s_instance = this;
 
         m_logger = CreateRef<LoggerPrintf>();
         StaticLog::SetLogger(m_logger);
+        
+        PK_LOG_HEADER("----------INITIALIZING APPLICATION----------");
+        
+        {
+            PK_LOG_VERBOSE("Running with '%u' arguments:", arguments.count);
+            PK_LOG_SCOPE_INDENT(cargs);
+
+            for (auto i = 0; i < arguments.count; ++i)
+            {
+                PK_LOG_VERBOSE("%s", arguments.args[i]);
+            }
+        }
 
         m_services = CreateScope<ServiceRegister>();
         m_services->Create<StringHashRegister>();
@@ -84,15 +96,15 @@ namespace PK::App
 
         auto time = m_services->Create<Time>(sequencer, config->TimeScale, config->EnableFrameRateLog);
         auto inputSystem = m_services->Create<InputSystem>(sequencer);
-        auto batcherMeshStatic = m_services->Create<BatcherMeshStatic>(assetDatabase);
+        auto batcherMeshStatic = m_services->Create<BatcherMeshStatic>();
         auto renderPipelineDispatcher = m_services->Create<RenderPipelineDisptacher>(entityDb, assetDatabase, sequencer, batcherMeshStatic);
-        auto renderPipelineScene = m_services->Create<RenderPipelineScene>(entityDb, assetDatabase, config);
+        auto renderPipelineScene = m_services->Create<RenderPipelineScene>(assetDatabase, config);
 
         renderPipelineDispatcher->SetRenderPipeline(RenderViewType::Scene, renderPipelineScene);
 
         auto engineFlyCamera = m_services->Create<EngineFlyCamera>(entityDb, keyConfig);
         auto engineUpdateTransforms = m_services->Create<EngineUpdateTransforms>(entityDb);
-        auto engineCommands = m_services->Create<EngineCommandInput>(sequencer, keyConfig, arguments);
+        auto engineCommands = m_services->Create<EngineCommandInput>(sequencer, keyConfig);
         auto engineEntityCull = m_services->Create<EngineEntityCull>(entityDb);
         auto engineDrawGeometry = m_services->Create<EngineDrawGeometry>(entityDb, sequencer);
         auto engineGatherRayTracingGeometry = m_services->Create<EngineGatherRayTracingGeometry>(entityDb);
@@ -166,26 +178,25 @@ namespace PK::App
                 },
             });
 
-        CVariableRegister::Create<CVariableFunc>("Application.Close", [](const char** args, uint32_t count) { Application::Get().Close(); });
-        CVariableRegister::Create<CVariableFunc>("Application.VSync", [](const char** args, uint32_t count) { Application::GetPrimaryWindow()->SetVSync((bool)atoi(args[0])); }, "0 = 0ff, 1 = On", 1u, 1u);
-        CVariableRegister::Create<CVariableFunc>("Application.VSync.Toggle", [](const char** args, uint32_t count) { Application::GetPrimaryWindow()->SetVSync(!Application::GetPrimaryWindow()->IsVSync()); });
+        CVariableRegister::Create<CVariableFuncSimple>("Application.Close", [](){Application::Get().Close();});
+        CVariableRegister::Create<CVariableFunc>("Application.VSync", [](const char** args, [[maybe_unused]] uint32_t count){Application::GetPrimaryWindow()->SetVSync((bool)atoi(args[0]));}, "0 = 0ff, 1 = On", 1u, 1u);
+        CVariableRegister::Create<CVariableFuncSimple>("Application.VSync.Toggle", [](){Application::GetPrimaryWindow()->SetVSync(!Application::GetPrimaryWindow()->IsVSync());});
 
-        // PKAssetTools execute cvar binding
-        if (arguments.count >= 4)
-        {
-            auto workingdir = std::filesystem::path(arguments.args[0]).string();
-            auto executablePath = std::filesystem::path(arguments.args[1]).string();
-            auto sourcedirectory = std::filesystem::path(arguments.args[2]).string();
-            auto targetdirectory = std::filesystem::path(arguments.args[3]).string();
-            auto executableArgs = std::string("\"" + sourcedirectory + "\" \"" + targetdirectory + "");
+        // @TODO move this somewhere
+        CVariableRegister::Create<CVariableFunc>("Application.Run.Executable", [remoteProcessRunner](const char** args, uint32_t count)
+            {
+                auto combinedArguments = std::string();
 
-            CVariableRegister::Create<CVariableFunc>("Application.Run.PKAssetTools", [remoteProcessRunner, executablePath, executableArgs](const char** args, uint32_t count)
+                for (auto i = 1u; i < count; ++i)
                 {
-                    remoteProcessRunner->ExecuteRemoteProcess({ executablePath.c_str(), executableArgs.c_str() });
-                });
-        }
+                    combinedArguments.append(args[i]);
+                    combinedArguments.append(" ");
+                }
 
-        PK_LOG_HEADER("----------INITIALIZATION COMPLETE----------");
+                remoteProcessRunner->ExecuteRemoteProcess({ args[0], combinedArguments.c_str() });
+            }, "executable, arguments", 1u, 256u);
+
+        PK_LOG_HEADER("----------APPLICATION INITIALIZED----------");
     }
 
     Application::~Application()

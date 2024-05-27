@@ -20,7 +20,7 @@ namespace PK::VectorHelpers
     {
         auto n = (int32_t)v.size() - 1;
 
-        if (i != n)
+        if ((int32_t)i != n)
         {
             v[i] = std::move(v[n]);
         }
@@ -35,7 +35,7 @@ namespace PK::VectorHelpers
         auto n = (int32_t)v.size() - 1;
         auto arr = v.data();
 
-        if (i != n)
+        if ((int32_t)i != n)
         {
             memmove(arr + i, arr + i + 1, sizeof(T) * (n - i));
         }

@@ -45,7 +45,7 @@ namespace PK
             template<> struct TInfo<VkBuffer>
             { 
                 using BarrierType = VkBufferMemoryBarrier; 
-                static void SetDefaultRange(AccessRecord* a) {};
+                static void SetDefaultRange([[maybe_unused]] AccessRecord* a) {};
                 static bool IsOverlap(uint64_t a, uint64_t b);
                 static bool IsAdjacent(uint64_t a, uint64_t b);
                 static bool IsInclusive(uint64_t  a, uint64_t b);

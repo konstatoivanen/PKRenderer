@@ -13,7 +13,7 @@ namespace PK
 {
     FenceRef VulkanCommandBuffer::GetFenceRef() const
     {
-        return FenceRef(this, [](const void* ctx, uint64_t userdata, uint64_t timeout)
+        return FenceRef(this, [](const void* ctx, uint64_t userdata, [[maybe_unused]] uint64_t timeout)
             {
                 auto cmd = reinterpret_cast<const VulkanCommandBuffer*>(ctx);
                 return cmd->m_invocationIndex >= userdata;
@@ -96,7 +96,7 @@ namespace PK
         m_renderState->SetVertexStreams(elements, count); 
     }
 
-    void VulkanCommandBuffer::SetIndexBuffer(const RHIBuffer* buffer, size_t offset, ElementType indexFormat)
+    void VulkanCommandBuffer::SetIndexBuffer(const RHIBuffer* buffer, ElementType indexFormat)
     {
         auto handle = buffer->GetNative<VulkanBuffer>()->GetBindHandle();
         m_renderState->SetIndexBuffer(handle, VulkanEnumConvert::GetIndexType(indexFormat));

@@ -11,10 +11,10 @@ CommandInputKeys:
     - ["Camera.DollyZoom", "LeftShift"]
 InputKeyCommands:
     - ["Escape", "Application.Close"]
-    - ["R", "AssetDatabase.Reload.Cached.All.Shader"]
+    - ["R", "AssetDatabase.Reload.Cached.All.ShaderAsset"]
     - ["C", "AssetDatabase.Reload.Cached.All.ApplicationConfig"]
     - ["Z", "AssetDatabase.Reload.Cached.All.InputKeyConfig"]
-    - ["X", "Application.Run.PKAssetTools"]
+    - ["X", "Application.Run.Executable PKAssetTools.exe '../../PKRenderer/res/' 'res/'"]
     - ["V", "Application.Vsync.Toggle"]
     - ["M", "RHI.Query.Memory"]
     - ["T", "Time.Reset"]

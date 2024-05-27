@@ -97,8 +97,13 @@ namespace PK
     {
         vkGetDeviceQueue(m_device, m_family, m_queueIndex, &m_queue);
 
-        VkSemaphoreTypeCreateInfo timelineCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO, nullptr, VK_SEMAPHORE_TYPE_TIMELINE, 0ull };
-        VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, &timelineCreateInfo };
+        VkSemaphoreTypeCreateInfo timelineCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
+        timelineCreateInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+        timelineCreateInfo.initialValue = 0ull;
+
+        VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,};
+        createInfo.pNext = &timelineCreateInfo;
+
         vkCreateSemaphore(m_device, &createInfo, nullptr, &m_timeline.semaphore);
 
         createInfo.pNext = nullptr;

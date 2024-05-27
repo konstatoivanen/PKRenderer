@@ -37,6 +37,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>ClangCL</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -115,11 +116,12 @@
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d  "$(ProjectDir)libs\*.dll" "$(TargetDir)"
-xcopy /y /s "$(ProjectDir)res\*.ktx2" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.bmp" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.material" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.cfg" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.keycfg" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.ktx2" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.bmp" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.material" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.cfg" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.keycfg" "$(TargetDir)res\"
+xcopy /y /d "$(SolutionDir)Build\PKAssetTools.exe" "$(TargetDir)"
 Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)res\'"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
@@ -128,7 +130,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ClangDebug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>PK_DEBUG;_CRT_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
@@ -137,6 +139,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
       <AdditionalIncludeDirectories>$(SolutionDir)PKRenderer\src;$(SolutionDir)PKRenderer\include;$(SolutionDir)PKRenderer\include\glm;$(SolutionDir)PKRenderer\include\GLFW;$(SolutionDir)PKAssetTools\include\PKAssets;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
+      <AdditionalOptions>-Wno-missing-field-initializers %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,11 +150,12 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d  "$(ProjectDir)libs\*.dll" "$(TargetDir)"
-xcopy /y /s "$(ProjectDir)res\*.ktx2" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.bmp" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.material" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.cfg" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.keycfg" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.ktx2" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.bmp" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.material" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.cfg" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.keycfg" "$(TargetDir)res\"
+xcopy /y /d "$(SolutionDir)Build\PKAssetTools.exe" "$(TargetDir)"
 Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)res\'"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
@@ -183,11 +187,12 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d  "$(ProjectDir)libs\*.dll" "$(TargetDir)"
-xcopy /y /s "$(ProjectDir)res\*.ktx2" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.bmp" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.material" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.cfg" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.keycfg" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.ktx2" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.bmp" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.material" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.cfg" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.keycfg" "$(TargetDir)res\"
+xcopy /y /d "$(SolutionDir)Build\PKAssetTools.exe" "$(TargetDir)"
 Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)res\'"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
@@ -208,6 +213,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <AdditionalOptions>-Wno-missing-field-initializers %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -220,11 +226,12 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d  "$(ProjectDir)libs\*.dll" "$(TargetDir)"
-xcopy /y /s "$(ProjectDir)res\*.ktx2" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.bmp" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.material" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.cfg" "$(TargetDir)res\"
-xcopy /y /s "$(ProjectDir)res\*.keycfg" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.ktx2" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.bmp" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.material" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.cfg" "$(TargetDir)res\"
+xcopy /y /s /d "$(ProjectDir)res\*.keycfg" "$(TargetDir)res\"
+xcopy /y /d "$(SolutionDir)Build\PKAssetTools.exe" "$(TargetDir)"
 Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)res\'" "'$(TargetDir)res\'"</Command>
     </PostBuildEvent>
     <PostBuildEvent>

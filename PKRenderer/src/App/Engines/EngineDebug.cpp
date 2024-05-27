@@ -28,7 +28,7 @@ namespace PK::App
 
         auto columnMesh = assetDatabase->Load<MeshStaticAsset>("res/models/MDL_Columns.pkmesh", baseMesh);
         auto rocksMesh = assetDatabase->Load<MeshStaticAsset>("res/models/MDL_Rocks.pkmesh", baseMesh);
-        auto sphereMesh = assetDatabase->Register<MeshStaticAsset>("Primitive_Sphere", MeshUtilities::CreateSphereMeshStaticAsset(baseMesh, PK_FLOAT3_ZERO, 1.0f));
+        [[maybe_unused]] auto sphereMesh = assetDatabase->Register<MeshStaticAsset>("Primitive_Sphere", MeshUtilities::CreateSphereMeshStaticAsset(baseMesh, PK_FLOAT3_ZERO, 1.0f));
         auto planeMesh = assetDatabase->Register<MeshStaticAsset>("Primitive_Plane16x16", MeshUtilities::CreatePlaneMeshStaticAsset(baseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
 
         auto materialSand = assetDatabase->Load<Material>("res/materials/M_Sand.material");
@@ -75,7 +75,6 @@ namespace PK::App
         auto color = Math::HexToRGB(0x6D563DFF) * 32.0f; // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF //0xFFA575FF
 
         EntityBuilders::CreateEntityLight(m_entityDb, 
-            m_assetDatabase, 
             PK_FLOAT3_ZERO, 
             float3(25, -35, 0) * PK_FLOAT_DEG2RAD, 
             LightType::Directional, 

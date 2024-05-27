@@ -16,8 +16,8 @@ namespace PK
     public:
         Time(Sequencer* sequencer, float timeScale, bool logFramerate);
 
-        static const clock_t GetClockTicks();
-        static const double GetClockSeconds();
+        static clock_t GetClockTicks();
+        static double GetClockSeconds();
 
         inline float GetTimeScale() const { return (float)m_info.timeScale; }
         inline float GetTime() const { return (float)m_info.time; }

@@ -135,7 +135,7 @@ namespace PK
 
             if (m_collisions > m_buckets.GetCount())
             {
-                m_buckets.Validate(Hash::ExpandPrime(m_collisions), true);
+                m_buckets.Validate(Hash::ExpandPrime(m_collisions));
                 m_buckets.Clear();
                 m_collisions = 0;
                 
@@ -181,7 +181,7 @@ namespace PK
 
             auto bucketIndex = GetBucketIndex(m_nodes[index].hashcode);
 
-            if (GetValueIndexFromBuckets(bucketIndex) == index)
+            if (GetValueIndexFromBuckets(bucketIndex) == (int32_t)index)
             {
                 if (m_nodes[index].next != -1)
                 {
@@ -214,7 +214,7 @@ namespace PK
             {
                 auto movingBucketIndex = GetBucketIndex(m_nodes[m_count].hashcode);
 
-                if (GetValueIndexFromBuckets(movingBucketIndex) == m_count)
+                if (GetValueIndexFromBuckets(movingBucketIndex) == (int32_t)m_count)
                 {
                     SetValueIndexInBuckets(movingBucketIndex, index);
                 }

@@ -167,7 +167,7 @@ namespace PK::App
 
         m_synchronousResults.Clear();
 
-        for (auto i = 0; i < entityViews.count; ++i)
+        for (auto i = 0u; i < entityViews.count; ++i)
         {
             auto entityView = &entityViews[i];
             auto viewFlags = entityView->primitive->flags;

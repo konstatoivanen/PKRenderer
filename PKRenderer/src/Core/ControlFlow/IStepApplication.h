@@ -10,7 +10,7 @@ namespace PK
         virtual ~IStepApplicationOpenFrame() = default;
     public:
         virtual void OnApplicationOpenFrame() = 0;
-        virtual void Step(ApplicationStep::OpenFrame token) final { OnApplicationOpenFrame(); }
+        virtual void Step([[maybe_unused]] ApplicationStep::OpenFrame token) final { OnApplicationOpenFrame(); }
     };
 
     class IStepApplicationUpdateInput : public IStep<ApplicationStep::UpdateInput>
@@ -19,7 +19,7 @@ namespace PK
         virtual ~IStepApplicationUpdateInput() = default;
     public:
         virtual void OnApplicationUpdateInput() = 0;
-        virtual void Step(ApplicationStep::UpdateInput token) final { OnApplicationUpdateInput(); }
+        virtual void Step([[maybe_unused]] ApplicationStep::UpdateInput token) final { OnApplicationUpdateInput(); }
     };
 
     class IStepApplicationUpdateEngines : public IStep<ApplicationStep::UpdateEngines>
@@ -28,7 +28,7 @@ namespace PK
         virtual ~IStepApplicationUpdateEngines() = default;
     public:
         virtual void OnApplicationUpdateEngines() = 0;
-        virtual void Step(ApplicationStep::UpdateEngines token) final { OnApplicationUpdateEngines(); }
+        virtual void Step([[maybe_unused]] ApplicationStep::UpdateEngines token) final { OnApplicationUpdateEngines(); }
     };
 
     class IStepApplicationRender : public IStep<ApplicationStep::Render>
@@ -37,7 +37,7 @@ namespace PK
         virtual ~IStepApplicationRender() = default;
     public:
         virtual void OnApplicationRender() = 0;
-        virtual void Step(ApplicationStep::Render token) final { OnApplicationRender(); }
+        virtual void Step([[maybe_unused]] ApplicationStep::Render token) final { OnApplicationRender(); }
     };
 
     class IStepApplicationCloseFrame : public IStep<ApplicationStep::CloseFrame>
@@ -46,6 +46,6 @@ namespace PK
         virtual ~IStepApplicationCloseFrame() = default;
     public:
         virtual void OnApplicationCloseFrame() = 0;
-        virtual void Step(ApplicationStep::CloseFrame token) final { OnApplicationCloseFrame(); }
+        virtual void Step([[maybe_unused]] ApplicationStep::CloseFrame token) final { OnApplicationCloseFrame(); }
     };
 }

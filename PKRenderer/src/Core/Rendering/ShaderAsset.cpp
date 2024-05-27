@@ -165,8 +165,8 @@ namespace PK
         for (auto& kv : m_map.keywords)
         {
             const auto& keyword = kv.first.to_string();
-            auto index0 = (kv.second >> 4) & 0xF;
-            auto index1 = kv.second & 0xF;
+            auto index0 = (kv.second >> 4u) & 0xFu;
+            auto index1 = kv.second & 0xFu;
 
             if (keywordlist.size() <= index0)
             {
@@ -187,7 +187,7 @@ namespace PK
             meta.append("   Variant: " + std::to_string(j) + "\n");
             meta.append("       Keywords:");
 
-            for (auto i = 0; i < keywordlist.size(); ++i)
+            for (auto i = 0u; i < keywordlist.size(); ++i)
             {
                 auto& declares = keywordlist.at(i);
                 auto& keyword = declares.at(index % declares.size());

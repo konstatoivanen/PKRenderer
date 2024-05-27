@@ -12,7 +12,7 @@
 
 namespace PK::App
 {
-    PassPostEffectsComposite::PassPostEffectsComposite(AssetDatabase* assetDatabase, const ApplicationConfig* config)
+    PassPostEffectsComposite::PassPostEffectsComposite(AssetDatabase* assetDatabase)
     {
         PK_LOG_VERBOSE("PassPostEffectsComposite.Ctor");
         PK_LOG_SCOPE_INDENT(local);

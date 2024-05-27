@@ -8,7 +8,7 @@
 
 namespace PK::App
 {
-    EngineCommandInput::EngineCommandInput(Sequencer* sequencer, InputKeyConfig* keyConfig, const CArguments& arguments) :
+    EngineCommandInput::EngineCommandInput(Sequencer* sequencer, InputKeyConfig* keyConfig) :
         m_sequencer(sequencer)
     {
         m_inputKeyCommands = keyConfig->InputKeyCommands;

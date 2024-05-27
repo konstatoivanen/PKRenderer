@@ -14,7 +14,7 @@
 
 namespace PK::App
 {
-    RenderPipelineScene::RenderPipelineScene(EntityDatabase* entityDb, AssetDatabase* assetDatabase, ApplicationConfig* config) :
+    RenderPipelineScene::RenderPipelineScene(AssetDatabase* assetDatabase, ApplicationConfig* config) :
         m_passLights(assetDatabase, config),
         m_passSceneGI(assetDatabase, config),
         m_passVolumeFog(assetDatabase, config),
@@ -25,7 +25,7 @@ namespace PK::App
         m_temporalAntialiasing(assetDatabase, config->InitialWidth, config->InitialHeight),
         m_bloom(assetDatabase, config->InitialWidth, config->InitialHeight),
         m_autoExposure(assetDatabase),
-        m_passPostEffectsComposite(assetDatabase, config)
+        m_passPostEffectsComposite(assetDatabase)
     {
         PK_LOG_VERBOSE("SceneRenderPipeline.Ctor");
         PK_LOG_SCOPE_INDENT(local);

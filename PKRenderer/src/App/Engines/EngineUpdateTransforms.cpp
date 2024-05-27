@@ -15,7 +15,7 @@ namespace PK::App
     {
         auto views = m_entityDb->Query<EntityViewTransform>((int)ENTITY_GROUPS::ACTIVE);
 
-        for (auto i = 0; i < views.count; ++i)
+        for (auto i = 0u; i < views.count; ++i)
         {
             auto view = &views[i];
             view->transform->localToWorld= view->transform->GetLocalToWorld();

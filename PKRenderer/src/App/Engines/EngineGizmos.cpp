@@ -39,8 +39,8 @@ namespace PK::App
 
         CVariableRegister::Create<bool*>("Engine.Gizmos.CPU.Enabled", &m_enabledCPU, "0 = 0ff, 1 = On", 1u, 1u);
         CVariableRegister::Create<bool*>("Engine.Gizmos.GPU.Enabled", &m_enabledGPU, "0 = 0ff, 1 = On", 1u, 1u);
-        CVariableRegister::Create<CVariableFunc>("Engine.Gizmos.CPU.Toggle", [this](const char** args, uint32_t count) { m_enabledCPU ^= true; });
-        CVariableRegister::Create<CVariableFunc>("Engine.Gizmos.GPU.Toggle", [this](const char** args, uint32_t count) { m_enabledGPU ^= true; });
+        CVariableRegister::Create<CVariableFuncSimple>("Engine.Gizmos.CPU.Toggle", [this](){m_enabledCPU ^= true;});
+        CVariableRegister::Create<CVariableFuncSimple>("Engine.Gizmos.GPU.Toggle", [this](){m_enabledGPU ^= true;});
     }
 
     void EngineGizmos::Step(RenderPipelineEvent* renderEvent)

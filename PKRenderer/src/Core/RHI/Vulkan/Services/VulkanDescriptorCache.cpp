@@ -55,14 +55,17 @@ namespace PK
         }
 
         auto arraySize = GetArraySize(key);
-        VkDescriptorSetVariableDescriptorCountAllocateInfo variableSizeInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO };
-        VkDescriptorSetAllocateInfo allocInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+
+        VkDescriptorSetVariableDescriptorCountAllocateInfo variableSizeInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO };
+        variableSizeInfo.descriptorSetCount = 1u;
+        variableSizeInfo.pDescriptorCounts = &arraySize;
+        
+        VkDescriptorSetAllocateInfo allocInfo { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
         allocInfo.pNext = arraySize > 0ull ? &variableSizeInfo : nullptr;
         allocInfo.descriptorPool = m_currentPool->pool;
-        allocInfo.descriptorSetCount = 1;
+        allocInfo.descriptorSetCount = 1u;
         allocInfo.pSetLayouts = &layout->layout;
-        variableSizeInfo.pDescriptorCounts = &arraySize;
-        variableSizeInfo.descriptorSetCount = 1;
+
         VkDescriptorSet vkdescriptorset;
         GetDescriptorSets(&allocInfo, &vkdescriptorset, fence, false);
 
@@ -211,7 +214,7 @@ namespace PK
     {
         m_currentPruneTick++;
 
-        for (auto i = (int)m_extinctPools.size() - 1; i >= 0; --i)
+        for (auto i = (int32_t)m_extinctPools.size() - 1; i >= 0; --i)
         {
             if (!m_extinctPools.at(i).fence.IsComplete())
             {
@@ -220,7 +223,7 @@ namespace PK
 
             m_setsPool.Delete(m_extinctPools[i].indexMask);
             m_poolPool.Delete(m_extinctPools[i].poolIndex);
-            auto n = m_extinctPools.size() - 1;
+            auto n = (int32_t)m_extinctPools.size() - 1;
 
             if (i != n)
             {

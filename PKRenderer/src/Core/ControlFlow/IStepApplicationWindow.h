@@ -13,7 +13,7 @@ namespace PK
         virtual ~IStepApplicationOpenFrameWindow() = default;
     public:
         virtual void OnApplicationOpenFrame(RHIWindow* window) = 0;
-        void Step(ApplicationStep::OpenFrame token, RHIWindow* window) final { OnApplicationOpenFrame(window); }
+        void Step([[maybe_unused]] ApplicationStep::OpenFrame token, RHIWindow* window) final { OnApplicationOpenFrame(window); }
     };
 
     class IStepApplicationUpdateInputWindow : 
@@ -23,7 +23,7 @@ namespace PK
         virtual ~IStepApplicationUpdateInputWindow() = default;
     public:
         virtual void OnApplicationUpdateInput(RHIWindow* window) = 0;
-        void Step(ApplicationStep::UpdateInput token, RHIWindow* window) final { OnApplicationUpdateInput(window); }
+        void Step([[maybe_unused]] ApplicationStep::UpdateInput token, RHIWindow* window) final { OnApplicationUpdateInput(window); }
     };
 
     class IStepApplicationUpdateEnginesWindow : 
@@ -33,7 +33,7 @@ namespace PK
         virtual ~IStepApplicationUpdateEnginesWindow() = default;
     public:
         virtual void OnApplicationUpdateEngines(RHIWindow* window) = 0;
-        void Step(ApplicationStep::UpdateEngines token, RHIWindow* window) final { OnApplicationUpdateEngines(window); }
+        void Step([[maybe_unused]] ApplicationStep::UpdateEngines token, RHIWindow* window) final { OnApplicationUpdateEngines(window); }
     };
 
     class IStepApplicationRenderWindow : 
@@ -43,7 +43,7 @@ namespace PK
         virtual ~IStepApplicationRenderWindow() = default;
     public:
         virtual void OnApplicationRender(RHIWindow* window) = 0;
-        void Step(ApplicationStep::Render token, RHIWindow* window) final { OnApplicationRender(window); }
+        void Step([[maybe_unused]] ApplicationStep::Render token, RHIWindow* window) final { OnApplicationRender(window); }
     };
 
     class IStepApplicationCloseFrameWindow : 
@@ -53,6 +53,6 @@ namespace PK
         virtual ~IStepApplicationCloseFrameWindow() = default;
     public:
         virtual void OnApplicationCloseFrame(RHIWindow* window) = 0;
-        void Step(ApplicationStep::CloseFrame token, RHIWindow* window) final { OnApplicationCloseFrame(window); }
+        void Step([[maybe_unused]] ApplicationStep::CloseFrame token, RHIWindow* window) final { OnApplicationCloseFrame(window); }
     };
 }

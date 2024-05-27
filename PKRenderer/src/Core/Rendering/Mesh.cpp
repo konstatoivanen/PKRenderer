@@ -184,11 +184,11 @@ namespace PK
 
     const Mesh::VertexBuffers& Mesh::GetVertexBuffers() const { return m_vertexBuffers; }
     const VertexStreamLayout& Mesh::GetVertexStreamLayout() const { return m_streamLayout; }
-    const ElementType Mesh::GetIndexType() const { return m_indexType; }
+    ElementType Mesh::GetIndexType() const { return m_indexType; }
     const RHIBuffer* Mesh::GetIndexBuffer() const { return m_indexBuffer.get(); }
-    const uint32_t Mesh::GetSubmeshCount() const { return glm::max(1u, (uint32_t)m_submeshes.size()); }
+    uint32_t Mesh::GetSubmeshCount() const { return glm::max(1u, (uint32_t)m_submeshes.size()); }
     const Mesh::SubMesh& Mesh::GetFullRange() const { return m_fullRange; }
-    const bool Mesh::HasPendingUpload() const { return !m_uploadFence.WaitInvalidate(0ull); }
+    bool Mesh::HasPendingUpload() const { return !m_uploadFence.WaitInvalidate(0ull); }
 }
 
 template<>

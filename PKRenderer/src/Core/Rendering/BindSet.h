@@ -20,7 +20,7 @@ namespace PK
 
             auto arrayidx = m_array->Add(value);
 
-            if (arrayidx != setidx)
+            if ((uint32_t)arrayidx != setidx)
             {
                 throw std::exception("Indexing missmatch!");
             }

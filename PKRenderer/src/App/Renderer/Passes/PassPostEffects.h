@@ -8,7 +8,7 @@ namespace PK::App
     class PassPostEffectsComposite : public NoCopy
     {
         public:
-            PassPostEffectsComposite(AssetDatabase* assetDatabase, const ApplicationConfig* config);
+            PassPostEffectsComposite(AssetDatabase* assetDatabase);
             void Render(CommandBufferExt cmd, RHITexture* destination);
             void OnUpdateParameters(AssetImportEvent<ApplicationConfig>* token);
 

@@ -16,7 +16,7 @@ namespace PK::App
         public IStep<AssetImportEvent<InputKeyConfig>*>
     {
     public:
-        EngineCommandInput(Sequencer* sequencer, InputKeyConfig* keyConfig, const CArguments& arguments);
+        EngineCommandInput(Sequencer* sequencer, InputKeyConfig* keyConfig);
 
         virtual void Step(InputDevice* input) final;
         virtual void Step(AssetImportEvent<InputKeyConfig>* evt) final;

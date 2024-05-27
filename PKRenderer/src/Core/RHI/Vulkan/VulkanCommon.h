@@ -400,7 +400,7 @@ namespace PK
         VkSamplerAddressMode GetSamplerAddressMode(WrapMode wrap);
         VkFilter GetFilterMode(FilterMode filter);
         VkDescriptorType GetDescriptorType(ShaderResourceType type);
-        ShaderResourceType GetShaderResourceType(VkDescriptorType type, uint32_t count);
+        ShaderResourceType GetShaderResourceType(VkDescriptorType type);
         VkShaderStageFlagBits GetShaderStage(ShaderStage stage);
         VkPipelineBindPoint GetPipelineBindPoint(ShaderStageFlags stageFlags);
         VkSampleCountFlagBits GetSampleCountFlags(uint32_t samples);

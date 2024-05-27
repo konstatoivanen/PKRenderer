@@ -31,7 +31,7 @@ namespace PK::App
         return (uint16_t)materials.Add(material);
     }
 
-    BatcherMeshStatic::BatcherMeshStatic(AssetDatabase* assetDatabase) :
+    BatcherMeshStatic::BatcherMeshStatic() :
         m_textures2D(PK_RHI_MAX_UNBOUNDED_SIZE),
         m_shaders(32),
         m_transforms(1024)

@@ -42,12 +42,12 @@ namespace PK
 
         const VertexBuffers& GetVertexBuffers() const;
         const VertexStreamLayout& GetVertexStreamLayout() const;
-        const ElementType GetIndexType() const;
+        ElementType GetIndexType() const;
         const RHIBuffer* GetIndexBuffer() const;
         const SubMesh& GetSubmesh(int32_t submesh) const;
-        const uint32_t GetSubmeshCount() const;
+        uint32_t GetSubmeshCount() const;
         const SubMesh& GetFullRange() const;
-        const bool HasPendingUpload() const;
+        bool HasPendingUpload() const;
 
     private:
         VertexBuffers m_vertexBuffers;

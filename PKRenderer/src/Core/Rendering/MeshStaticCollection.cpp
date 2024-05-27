@@ -43,7 +43,7 @@ namespace PK
     RHIBuffer* MeshStaticCollection::GetMeshletSubmeshBuffer() const { return m_submeshBuffer.get(); }
     RHIBuffer* MeshStaticCollection::GetMeshletBuffer() const { return m_meshletBuffer.get(); }
     const SubMeshStatic* MeshStaticCollection::GetSubmesh(uint32_t index) const { return m_staticSubmeshes[index]; }
-    const bool MeshStaticCollection::HasPendingUpload() const { return !m_uploadFence.WaitInvalidate(0ull); }
+    bool MeshStaticCollection::HasPendingUpload() const { return !m_uploadFence.WaitInvalidate(0ull); }
 
 
     MeshStatic* MeshStaticCollection::Allocate(MeshStaticAllocationData* data)

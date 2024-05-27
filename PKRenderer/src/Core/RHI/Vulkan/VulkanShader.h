@@ -14,7 +14,7 @@ namespace PK
             const ShaderVertexInputLayout& GetVertexLayout() const final { return m_vertexLayout; }
             const ShaderPushConstantLayout& GetPushConstantLayout() const final { return m_pushConstantLayout; }
             const ShaderResourceLayout& GetResourceLayout(uint32_t set) const final { return m_resourceLayouts[set]; }
-            const ShaderStageFlags GetStageFlags() const final { return m_stageFlags; }
+            ShaderStageFlags GetStageFlags() const final { return m_stageFlags; }
             const uint3& GetGroupSize() const final { return m_groupSize; }
             ShaderBindingTableInfo GetShaderBindingTableInfo() const final;
 
@@ -22,7 +22,7 @@ namespace PK
             const char* GetName() const { return m_name.c_str(); }
             constexpr const VulkanDescriptorSetLayout* GetDescriptorSetLayout(uint32_t index) const { return m_descriptorSetLayouts[index]; }
             constexpr const VulkanPipelineLayout* GetPipelineLayout() const { return m_pipelineLayout; }
-            constexpr const uint32_t GetDescriptorSetCount() const { return m_descriptorSetCount; }
+            constexpr uint32_t GetDescriptorSetCount() const { return m_descriptorSetCount; }
 
         private:
             const VkDevice m_device;

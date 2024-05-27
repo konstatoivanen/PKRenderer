@@ -62,7 +62,7 @@ namespace PK::App
         };
 
     public:
-        BatcherMeshStatic(AssetDatabase* assetDatabase);
+        BatcherMeshStatic();
 
         inline MeshStaticCollection* GetMeshStaticCollection() { return m_staticGeometry.get(); }
 

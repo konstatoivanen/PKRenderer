@@ -422,7 +422,7 @@ namespace PK::MeshUtilities
     {
         int GetNumFaces(const SMikkTSpaceContext* pContext) { return reinterpret_cast<GeometryContext*>(pContext->m_pUserData)->countIndex / 3; }
         
-        int GetNumVerticesOfFace(const SMikkTSpaceContext* pContext, const int iFace) { return 3; }
+        int GetNumVerticesOfFace([[maybe_unused]] const SMikkTSpaceContext* pContext, [[maybe_unused]] const int iFace) { return 3; }
         
         void GetPosition(const SMikkTSpaceContext* pContext, float fvPosOut[], const int iFace, const int iVert)
         {

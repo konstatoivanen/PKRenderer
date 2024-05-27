@@ -94,7 +94,7 @@ namespace PK
             RHIBuffer* GetMeshletSubmeshBuffer() const;
             RHIBuffer* GetMeshletBuffer() const;
             const SubMeshStatic* GetSubmesh(uint32_t index) const;
-            const bool HasPendingUpload() const;
+            bool HasPendingUpload() const;
             
             MeshStatic* Allocate(MeshStaticAllocationData* data);
             void Deallocate(MeshStatic* mesh);

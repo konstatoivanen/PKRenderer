@@ -19,7 +19,7 @@ namespace YAML
         typedef TType meta_ThisType; \
         struct meta_FirstId {}; \
         typedef void*(*meta_ParseFunc)(meta_FirstId, meta_ThisType*, const YAML::Node&); \
-        static void* meta_ParsePrev(meta_FirstId, meta_ThisType* config, const YAML::Node& node) \
+        static void* meta_ParsePrev(meta_FirstId, [[maybe_unused]] meta_ThisType* config, [[maybe_unused]] const YAML::Node& node) \
         { \
             return nullptr; \
         } \
@@ -35,7 +35,7 @@ namespace YAML
         typedef TType meta_ThisType; \
         struct meta_FirstId {}; \
         typedef void*(*meta_ParseFunc)(meta_FirstId, meta_ThisType*, const YAML::Node&); \
-        static void* meta_ParsePrev(meta_FirstId, meta_ThisType* config, const YAML::Node& node) \
+        static void* meta_ParsePrev(meta_FirstId, [[maybe_unused]] meta_ThisType* config, [[maybe_unused]] const YAML::Node& node) \
         { \
             return nullptr; \
         } \

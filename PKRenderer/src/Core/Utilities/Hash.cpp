@@ -89,7 +89,7 @@ namespace PK::Hash
         const auto p = 16777619;
         auto hash = 2166136261;
 
-        for (int i = 0; i < count; ++i)
+        for (auto i = 0u; i < count; ++i)
         {
             hash = (hash ^ bytes[i]) * p;
         }
