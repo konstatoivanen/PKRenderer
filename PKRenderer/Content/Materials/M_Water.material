@@ -1,0 +1,10 @@
+Material:
+    Shader: Content/Shaders/MS_Mat_Surf_Water.pkshader
+    Keywords:
+    Properties:
+        _Color:
+            Type: float4
+            Value: [1,1,1,1]
+        _EmissionColor:
+            Type: float4
+            Value: [25,1,1,1]

@@ -1,0 +1,34 @@
+Material:
+    Shader: Content/Shaders/MS_Mat_Surf_Default.pkshader
+    ShadowShader: Content/Shaders/MS_Mat_Shadow_Default.pkshader
+    Properties:
+        _AlbedoTexture:
+            Type: texture2D
+            Value: Content/Textures/Environment/T_Metal_Plates_D.ktx2
+        _PBSTexture:
+            Type: texture2D
+            Value: Content/Textures/Environment/T_Metal_Plates_S.ktx2
+        _NormalMap:
+            Type: texture2D
+            Value: Content/Textures/Environment/T_Metal_Plates_N.ktx2
+        _HeightMap:
+            Type: texture2D
+            Value: Content/Textures/Environment/T_Metal_Plates_H.ktx2
+        _Color:
+            Type: float4
+            Value: [1,1,1,1]
+        _Metallic:
+            Type: float
+            Value: 1
+        _Roughness:
+            Type: float
+            Value: 1
+        _Occlusion:
+            Type: float
+            Value: 1
+        _HeightAmount:
+            Type: float
+            Value: 0.005
+        _NormalAmount:
+            Type: float
+            Value: 0.4

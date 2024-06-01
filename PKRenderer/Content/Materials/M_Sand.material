@@ -1,0 +1,34 @@
+Material:
+    Shader: Content/Shaders/MS_Mat_Surf_Glitter.pkshader
+    ShadowShader: Content/Shaders/MS_Mat_Shadow_Default.pkshader
+    Properties:
+        _AlbedoTexture:
+            Type: texture2D
+            Value: Content/Textures/Environment/T_Sand_D.ktx2
+        _PBSTexture:
+            Type: texture2D
+            Value: Content/Textures/Environment/T_Sand_S.ktx2
+        _NormalMap:
+            Type: texture2D
+            Value: Content/Textures/Environment/T_Sand_N.ktx2
+        _HeightMap:
+            Type: texture2D
+            Value: Content/Textures/Environment/T_Sand_H.ktx2
+        _Color:
+            Type: float4
+            Value: [1,1,1,1]
+        _Metallic:
+            Type: float
+            Value: 1
+        _Roughness:
+            Type: float
+            Value: 1.0
+        _Occlusion:
+            Type: float
+            Value: 0.5
+        _HeightAmount:
+            Type: float
+            Value: 0.04
+        _NormalAmount:
+            Type: float
+            Value: 0.5
