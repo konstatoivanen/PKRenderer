@@ -68,12 +68,12 @@ namespace PK
 
     void Mesh::AssetImport(const char* filepath)
     {
-        PK::Assets::PKAsset asset;
+        PKAssets::PKAsset asset;
 
-        PK_THROW_ASSERT(PK::Assets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
-        PK_THROW_ASSERT(asset.header->type == PK::Assets::PKAssetType::Mesh, "Trying to read a mesh from a non mesh file!")
+        PK_THROW_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
+        PK_THROW_ASSERT(asset.header->type == PKAssets::PKAssetType::Mesh, "Trying to read a mesh from a non mesh file!")
 
-        auto mesh = PK::Assets::ReadAsMesh(&asset);
+        auto mesh = PKAssets::ReadAsMesh(&asset);
         auto base = asset.rawData;
 
         PK_THROW_ASSERT(mesh->vertexAttributeCount > 0, "Trying to read a mesh with 0 vertex attributes!");
@@ -145,7 +145,7 @@ namespace PK
 
         m_uploadFence = commandBuffer->GetFenceRef();
 
-        PK::Assets::CloseAsset(&asset);
+        PKAssets::CloseAsset(&asset);
     }
 
     bool Mesh::TryGetAccelerationStructureGeometryInfo(uint32_t submesh, AccelerationStructureGeometryInfo* outInfo)

@@ -90,7 +90,7 @@ struct PKMeshlet
     float3 extents;
 };
 
-// Based on PK::Assets::Mesh::Meshlet
+// Based on PKAssets::PKMeshletVertex
 struct PKVertex
 {
     float3 position;

@@ -8,7 +8,7 @@ namespace PK
     class VulkanShader : public RHIShader, public VersionedObject
     {
         public:
-            VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant, const char* name);
+            VulkanShader(void* base, PKAssets::PKShaderVariant* variant, const char* name);
             ~VulkanShader();
 
             const ShaderVertexInputLayout& GetVertexLayout() const final { return m_vertexLayout; }

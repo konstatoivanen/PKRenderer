@@ -36,11 +36,11 @@ namespace PK
 
         struct Meshlet
         {
-            PK::Assets::Mesh::Meshlet::PKSubmesh* pSubmeshes;
+            PKAssets::PKMeshletSubmesh* pSubmeshes;
             uint32_t submeshCount;
-            PK::Assets::Mesh::Meshlet::PKMeshlet* pMeshlets;
+            PKAssets::PKMeshlet* pMeshlets;
             uint32_t meshletCount;
-            PK::Assets::Mesh::Meshlet::PKVertex* pVertices;
+            PKAssets::PKMeshletVertex* pVertices;
             uint32_t vertexCount;
             uint8_t* pIndices;
             uint32_t triangleCount;

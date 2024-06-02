@@ -62,12 +62,12 @@ namespace PK
     {
         m_shaders.clear();
 
-        PK::Assets::PKAsset asset;
+        PKAssets::PKAsset asset;
 
-        PK_THROW_ASSERT(PK::Assets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
-        PK_THROW_ASSERT(asset.header->type == PK::Assets::PKAssetType::Shader, "Trying to read a shader from a non shader file!")
+        PK_THROW_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
+        PK_THROW_ASSERT(asset.header->type == PKAssets::PKAssetType::Shader, "Trying to read a shader from a non shader file!")
 
-        auto shader = PK::Assets::ReadAsShader(&asset);
+        auto shader = PKAssets::ReadAsShader(&asset);
         auto base = asset.rawData;
 
         if (shader->variantcount == 0)
@@ -134,7 +134,7 @@ namespace PK
             m_shaders.push_back(RHI::CreateShader(base, pVariants + i, name.c_str()));
         }
 
-        PK::Assets::CloseAsset(&asset);
+        PKAssets::CloseAsset(&asset);
     }
 
     std::string ShaderAsset::GetMetaInfo() const

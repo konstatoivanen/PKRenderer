@@ -319,7 +319,7 @@ namespace PK
     RHIAccelerationStructureRef VulkanDriver::CreateAccelerationStructure(const char* name) { return CreateRef<VulkanAccelerationStructure>(name); }
     RHITextureBindArrayRef VulkanDriver::CreateTextureBindArray(size_t capacity) { return CreateRef<VulkanBindArray>(capacity); }
     RHIBufferBindArrayRef VulkanDriver::CreateBufferBindArray(size_t capacity) { return CreateRef<VulkanBindArray>(capacity); }
-    RHIShaderScope VulkanDriver::CreateShader(void* base, PK::Assets::Shader::PKShaderVariant* pVariant, const char* name) { return CreateScope<VulkanShader>(base, pVariant, name); }
+    RHIShaderScope VulkanDriver::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return CreateScope<VulkanShader>(base, pVariant, name); }
     RHIWindowScope VulkanDriver::CreateWindowScope(const WindowDescriptor& descriptor) { return CreateScope<VulkanWindow>(this, descriptor); }
 
     void VulkanDriver::SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) { globalResources.Set(name, Handle(buffer->GetNative<VulkanBuffer>()->GetBindHandle(range))); }

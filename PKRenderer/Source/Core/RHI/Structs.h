@@ -7,34 +7,34 @@ namespace PK
 {
     struct RHIBuffer;
 
-    typedef PK::Assets::PKElementType       ElementType;
-    typedef PK::Assets::PKDescriptorType    ShaderResourceType;
-    typedef PK::Assets::PKShaderStage       ShaderStage;
-    typedef PK::Assets::PKShaderStageFlags  ShaderStageFlags;
-    typedef PK::Assets::PKBlendFactor       BlendFactor;
-    typedef PK::Assets::PKBlendOp           BlendOp;
-    typedef PK::Assets::PKComparison        Comparison;
-    typedef PK::Assets::PKCullMode          CullMode;
-    typedef PK::Assets::PKRasterMode        RasterMode;
+    typedef PKAssets::PKElementType       ElementType;
+    typedef PKAssets::PKDescriptorType    ShaderResourceType;
+    typedef PKAssets::PKShaderStage       ShaderStage;
+    typedef PKAssets::PKShaderStageFlags  ShaderStageFlags;
+    typedef PKAssets::PKBlendFactor       BlendFactor;
+    typedef PKAssets::PKBlendOp           BlendOp;
+    typedef PKAssets::PKComparison        Comparison;
+    typedef PKAssets::PKCullMode          CullMode;
+    typedef PKAssets::PKRasterMode        RasterMode;
 
     constexpr static const uint32_t PK_RHI_DESIRED_SWAP_CHAIN_IMAGE_COUNT = 4;
     constexpr static const uint32_t PK_RHI_MAX_FRAMES_IN_FLIGHT = 2;
     constexpr static const uint32_t PK_RHI_MAX_RENDER_TARGETS = 8;
-    constexpr static const uint32_t PK_RHI_MAX_DESCRIPTOR_SETS = PK::Assets::PK_ASSET_MAX_DESCRIPTOR_SETS;
-    constexpr static const uint32_t PK_RHI_MAX_DESCRIPTORS_PER_SET = PK::Assets::PK_ASSET_MAX_DESCRIPTORS_PER_SET;
-    constexpr static const uint32_t PK_RHI_MAX_PUSH_CONSTANTS = PK::Assets::PK_ASSET_MAX_PUSH_CONSTANTS;
-    constexpr static const uint32_t PK_RHI_MAX_VERTEX_ATTRIBUTES = PK::Assets::PK_ASSET_MAX_VERTEX_ATTRIBUTES;
-    constexpr static const uint32_t PK_RHI_MAX_UNBOUNDED_SIZE = PK::Assets::PK_ASSET_MAX_UNBOUNDED_SIZE;
+    constexpr static const uint32_t PK_RHI_MAX_DESCRIPTOR_SETS = PKAssets::PK_ASSET_MAX_DESCRIPTOR_SETS;
+    constexpr static const uint32_t PK_RHI_MAX_DESCRIPTORS_PER_SET = PKAssets::PK_ASSET_MAX_DESCRIPTORS_PER_SET;
+    constexpr static const uint32_t PK_RHI_MAX_PUSH_CONSTANTS = PKAssets::PK_ASSET_MAX_PUSH_CONSTANTS;
+    constexpr static const uint32_t PK_RHI_MAX_VERTEX_ATTRIBUTES = PKAssets::PK_ASSET_MAX_VERTEX_ATTRIBUTES;
+    constexpr static const uint32_t PK_RHI_MAX_UNBOUNDED_SIZE = PKAssets::PK_ASSET_MAX_UNBOUNDED_SIZE;
     constexpr static const uint32_t PK_RHI_MAX_VIEWPORTS = 16;
 
-    constexpr const static char* PK_RHI_VS_POSITION = PK::Assets::Mesh::PK_VS_POSITION;
-    constexpr const static char* PK_RHI_VS_NORMAL = PK::Assets::Mesh::PK_VS_NORMAL;
-    constexpr const static char* PK_RHI_VS_TANGENT = PK::Assets::Mesh::PK_VS_TANGENT;  
-    constexpr const static char* PK_RHI_VS_COLOR = PK::Assets::Mesh::PK_VS_COLOR; 
-    constexpr const static char* PK_RHI_VS_TEXCOORD0 = PK::Assets::Mesh::PK_VS_TEXCOORD0;
-    constexpr const static char* PK_RHI_VS_TEXCOORD1 = PK::Assets::Mesh::PK_VS_TEXCOORD1;
-    constexpr const static char* PK_RHI_VS_TEXCOORD2 = PK::Assets::Mesh::PK_VS_TEXCOORD2;
-    constexpr const static char* PK_RHI_VS_TEXCOORD3 = PK::Assets::Mesh::PK_VS_TEXCOORD3;
+    constexpr const static char* PK_RHI_VS_POSITION = PKAssets::PK_MESH_VS_POSITION;
+    constexpr const static char* PK_RHI_VS_NORMAL = PKAssets::PK_MESH_VS_NORMAL;
+    constexpr const static char* PK_RHI_VS_TANGENT = PKAssets::PK_MESH_VS_TANGENT;
+    constexpr const static char* PK_RHI_VS_COLOR = PKAssets::PK_MESH_VS_COLOR;
+    constexpr const static char* PK_RHI_VS_TEXCOORD0 = PKAssets::PK_MESH_VS_TEXCOORD0;
+    constexpr const static char* PK_RHI_VS_TEXCOORD1 = PKAssets::PK_MESH_VS_TEXCOORD1;
+    constexpr const static char* PK_RHI_VS_TEXCOORD2 = PKAssets::PK_MESH_VS_TEXCOORD2;
+    constexpr const static char* PK_RHI_VS_TEXCOORD3 = PKAssets::PK_MESH_VS_TEXCOORD3;
 
     constexpr const static char PK_RHI_CUBE_FACE_RIGHT = 0;
     constexpr const static char PK_RHI_CUBE_FACE_LEFT = 1;
@@ -371,9 +371,9 @@ namespace PK
 
     namespace ElementTypeConvert
     {
-        inline uint16_t Size(ElementType format) { return (uint16_t)PK::Assets::GetElementSize(format); }
-        inline uint16_t Alignment(ElementType format) { return (uint16_t)PK::Assets::GetElementAlignment(format); }
-        inline uint16_t Components(ElementType format) { return (uint16_t)PK::Assets::GetElementComponents(format); }
+        inline uint16_t Size(ElementType format) { return (uint16_t)PKAssets::GetElementSize(format); }
+        inline uint16_t Alignment(ElementType format) { return (uint16_t)PKAssets::GetElementAlignment(format); }
+        inline uint16_t Components(ElementType format) { return (uint16_t)PKAssets::GetElementComponents(format); }
     }
 
     struct DrawIndexedIndirectCommand

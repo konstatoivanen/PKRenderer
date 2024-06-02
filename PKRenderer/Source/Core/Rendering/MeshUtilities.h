@@ -8,9 +8,9 @@ namespace PK::MeshUtilities
 {
     struct MeshletBuildData
     {
-        PK::Assets::Mesh::Meshlet::PKSubmesh submesh;
-        std::vector<PK::Assets::Mesh::Meshlet::PKMeshlet> meshlets;
-        std::vector<PK::Assets::Mesh::Meshlet::PKVertex> vertices;
+        PKAssets::PKMeshletSubmesh submesh;
+        std::vector<PKAssets::PKMeshlet> meshlets;
+        std::vector<PKAssets::PKMeshletVertex> vertices;
         std::vector<uint8_t> indices;
     };
 

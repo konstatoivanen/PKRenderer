@@ -79,7 +79,7 @@ namespace PK
 
                 auto nameId = NameID(propertyName);
                 auto typeName = type.as<std::string>();
-                auto elementType = PK::Assets::GetElementType(typeName.c_str());
+                auto elementType = PKAssets::GetElementType(typeName.c_str());
                 auto values = property.second["Value"];
 
                 switch (elementType)

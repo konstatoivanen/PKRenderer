@@ -1,7 +1,7 @@
 #include "PKAsset.h"
 #include <string>
 
-namespace PK::Assets
+namespace PKAssets
 {
     PKElementType GetElementType(const char* string)
     {
@@ -425,11 +425,9 @@ namespace PK::Assets
             default: return 0;
         }
     }
-}
 
-namespace PK::Assets::Mesh::Meshlet
-{
-    uint16_t PackHalf(float v)
+
+    static uint16_t PackHalf(float v)
     {
         if (v < -65536.0f)
         {
@@ -447,7 +445,7 @@ namespace PK::Assets::Mesh::Meshlet
         return ((i >> 16) & (int)0xffff8000) | ((int)(ui >> 13));
     }
 
-    uint16_t PackUnorm16(float v)
+    static uint16_t PackUnorm16(float v)
     {
         auto i = (int32_t)roundf(v * 65535.0f);
         if (i < 0) { i = 0; }
@@ -455,15 +453,7 @@ namespace PK::Assets::Mesh::Meshlet
         return (uint16_t)(i & 0xFFFFu);
     }
 
-    uint32_t PackUnorm12(float v)
-    {
-        auto i = (int32_t)roundf(v * 4095.0f);
-        if (i < 0) { i = 0; }
-        if (i > 4095) { i = 4095; }
-        return (uint32_t)(i & 0xFFFu);
-    }
-
-    uint32_t PackUnorm10(float v)
+    static uint32_t PackUnorm10(float v)
     {
         auto i = (int32_t)roundf(v * 1023.0f);
         if (i < 0) { i = 0; }
@@ -471,43 +461,9 @@ namespace PK::Assets::Mesh::Meshlet
         return (uint32_t)(i & 0x3FFu);
     }
 
-    uint8_t PackUnorm8(float v)
-    {
-        auto i = (int32_t)roundf(v * 255.0f);
-        if (i < 0) { i = 0; }
-        if (i > 255) { i = 255; }
-        return (uint8_t)(i & 0xFFu);
-    }
+    static float abs(float v) { return v < 0.0f ? -v : v; }
 
-    uint32_t asuint(float v) { return *reinterpret_cast<uint32_t*>(&v); }
-    float asfloat(uint32_t u) { return *reinterpret_cast<float*>(&u); }
-
-    float abs(float v) { return v < 0.0f ? -v : v; }
-
-    void OctaEncode(const float* n, float* outuv)
-    {
-        float t[3] = { n[0], n[1], n[2] };
-        float f = abs(n[0]) + abs(n[1]) + abs(n[2]);
-        t[0] /= f;
-        t[1] /= f;
-        t[2] /= f;
-
-        if (t[1] >= 0.0f)
-        {
-            outuv[0] = t[0];
-            outuv[1] = t[2];
-        }
-        else
-        {
-            outuv[0] = (1.0f - abs(t[2])) * (t[0] >= 0.0f ? 1.0f : -1.0f);
-            outuv[1] = (1.0f - abs(t[0])) * (t[2] >= 0.0f ? 1.0f : -1.0f);
-        }
-
-        outuv[0] = outuv[0] * 0.5f + 0.5f;
-        outuv[1] = outuv[1] * 0.5f + 0.5f;
-    }
-
-    uint32_t EncodeQuaternion(const float* n, const float* t)
+    static uint32_t EncodeQuaternion(const float* n, const float* t)
     {
         float m[3][3];
         m[0][0] = t[0];
@@ -591,14 +547,15 @@ namespace PK::Assets::Mesh::Meshlet
         return quantized[0] | (quantized[1] << 10u) | (quantized[2] << 20u) | ((index & 0x3u) << 30u);
     }
 
-    PKVertex PackVertex(const float* pPosition,
+
+    PKMeshletVertex PackPKMeshletVertex(const float* pPosition,
                         const float* pTexcoord,
                         const float* pNormal,
                         const float* pTangent,
                         const float* submeshbbmin,
                         const float* submeshbbmax)
     {
-        PKVertex vertex = { 0u, 0u, 0u, 0u, 0u };
+        PKMeshletVertex vertex = { 0u, 0u, 0u, 0u, 0u };
 
         uint32_t unormPositions[3] =
         {
@@ -629,7 +586,7 @@ namespace PK::Assets::Mesh::Meshlet
         return vertex;
     }
     
-    PKMeshlet PackMeshlet(uint32_t vertexFirst, 
+    PKMeshlet PackPKMeshlet(uint32_t vertexFirst,
                           uint32_t triangleFirst, 
                           uint32_t vertexCount, 
                           uint32_t triangleCount,

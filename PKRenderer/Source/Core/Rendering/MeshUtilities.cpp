@@ -602,10 +602,10 @@ namespace PK::MeshUtilities
     {
         MeshletBuildData output{};
 
-        size_t max_meshlets = zeux::meshopt_buildMeshletsBound(ctx->countIndex, PK::Assets::Mesh::Meshlet::PK_MAX_VERTICES, PK::Assets::Mesh::Meshlet::PK_MAX_TRIANGLES);
+        size_t max_meshlets = zeux::meshopt_buildMeshletsBound(ctx->countIndex, PKAssets::PK_MESHLET_MAX_VERTICES, PKAssets::PK_MESHLET_MAX_TRIANGLES);
         std::vector<zeux::meshopt_Meshlet> meshlets(max_meshlets);
-        std::vector<unsigned int> meshlet_vertices(max_meshlets * PK::Assets::Mesh::Meshlet::PK_MAX_VERTICES);
-        std::vector<unsigned char> meshlet_triangles(max_meshlets * PK::Assets::Mesh::Meshlet::PK_MAX_TRIANGLES * 3);
+        std::vector<unsigned int> meshlet_vertices(max_meshlets * PKAssets::PK_MESHLET_MAX_VERTICES);
+        std::vector<unsigned char> meshlet_triangles(max_meshlets * PKAssets::PK_MESHLET_MAX_TRIANGLES * 3);
 
         size_t meshlet_count = zeux::meshopt_buildMeshletsScan
         (
@@ -615,8 +615,8 @@ namespace PK::MeshUtilities
             ctx->pIndices,
             ctx->countIndex,
             ctx->countVertex,
-            PK::Assets::Mesh::Meshlet::PK_MAX_VERTICES,
-            PK::Assets::Mesh::Meshlet::PK_MAX_TRIANGLES
+            PKAssets::PK_MESHLET_MAX_VERTICES,
+            PKAssets::PK_MESHLET_MAX_TRIANGLES
         );
 
         output.submesh.firstMeshlet = 0u;
@@ -650,7 +650,7 @@ namespace PK::MeshUtilities
             float extents[3];
             CalculateMeshletCenterExtents(ctx->pPositions, meshlet_vertices.data(), ctx->stridePositionsf32, meshlet.vertex_offset, meshlet.vertex_count, center, extents);
 
-            PK::Assets::Mesh::Meshlet::PKMeshlet pkmeshlet = PK::Assets::Mesh::Meshlet::PackMeshlet
+            PKAssets::PKMeshlet pkmeshlet = PKAssets::PackPKMeshlet
             (
                 (uint32_t)verticesOffset,
                 (uint32_t)triangleOffset,
@@ -670,7 +670,7 @@ namespace PK::MeshUtilities
             {
                 auto vertexIndex = meshlet_vertices[meshlet.vertex_offset + j];
 
-                PK::Assets::Mesh::Meshlet::PKVertex vertex = PK::Assets::Mesh::Meshlet::PackVertex
+                PKAssets::PKMeshletVertex vertex = PKAssets::PackPKMeshletVertex
                 (
                     ctx->pPositions + vertexIndex * ctx->stridePositionsf32,
                     ctx->pTexcoords + vertexIndex * ctx->strideTexcoordsf32,

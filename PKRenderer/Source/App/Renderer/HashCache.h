@@ -203,11 +203,11 @@ namespace PK::App
 
 #undef DEFINE_HASH_CACHE
 
-        NameID pk_Instancing_Transforms = NameID(PK::Assets::Shader::PK_SHADER_INSTANCING_TRANSFORMS);
-        NameID pk_Instancing_Indices = NameID(PK::Assets::Shader::PK_SHADER_INSTANCING_INDICES);
-        NameID pk_Instancing_Properties = NameID(PK::Assets::Shader::PK_SHADER_INSTANCING_PROPERTIES);
-        NameID pk_Instancing_Textures2D = NameID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURES2D);
-        NameID pk_Instancing_Textures3D = NameID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURES3D);
-        NameID pk_Instancing_TexturesCube = NameID(PK::Assets::Shader::PK_SHADER_INSTANCING_TEXTURESCUBE);
+        NameID pk_Instancing_Transforms = NameID(PKAssets::PK_SHADER_INSTANCING_TRANSFORMS);
+        NameID pk_Instancing_Indices = NameID(PKAssets::PK_SHADER_INSTANCING_INDICES);
+        NameID pk_Instancing_Properties = NameID(PKAssets::PK_SHADER_INSTANCING_PROPERTIES);
+        NameID pk_Instancing_Textures2D = NameID(PKAssets::PK_SHADER_INSTANCING_TEXTURES2D);
+        NameID pk_Instancing_Textures3D = NameID(PKAssets::PK_SHADER_INSTANCING_TEXTURES3D);
+        NameID pk_Instancing_TexturesCube = NameID(PKAssets::PK_SHADER_INSTANCING_TEXTURESCUBE);
     };
 }

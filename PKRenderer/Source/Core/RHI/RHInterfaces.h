@@ -200,7 +200,7 @@ namespace PK
         virtual RHIBufferBindArrayRef CreateBufferBindArray(size_t capacity) = 0;
         virtual RHIBufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name) = 0;
         virtual RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name) = 0;
-        virtual RHIShaderScope CreateShader(void* base, PK::Assets::Shader::PKShaderVariant* pVariant, const char* name) = 0;
+        virtual RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) = 0;
         virtual RHIWindowScope CreateWindowScope(const WindowDescriptor& descriptor) = 0;
 
         virtual void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) = 0;

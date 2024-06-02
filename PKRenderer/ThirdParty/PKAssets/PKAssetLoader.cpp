@@ -5,7 +5,7 @@
 #include <malloc.h>
 #include "PKAssetLoader.h"
 
-namespace PK::Assets
+namespace PKAssets
 {
     FILE* OpenFile(const char* filepath, const char* option, size_t* size)
     {
@@ -131,7 +131,7 @@ namespace PK::Assets
         free(asset->rawData);
     }
 
-    Shader::PKShader* ReadAsShader(PKAsset* asset)
+    PKShader* ReadAsShader(PKAsset* asset)
     {
         if (asset->header == nullptr || asset->header->type != PKAssetType::Shader)
         {
@@ -139,10 +139,10 @@ namespace PK::Assets
         }
 
         auto assetPtr = reinterpret_cast<char*>(asset->rawData) + sizeof(PKAssetHeader);
-        return reinterpret_cast<Shader::PKShader*>(assetPtr);
+        return reinterpret_cast<PKShader*>(assetPtr);
     }
 
-    Mesh::PKMesh* ReadAsMesh(PKAsset* asset)
+    PKMesh* ReadAsMesh(PKAsset* asset)
     {
         if (asset->header == nullptr || asset->header->type != PKAssetType::Mesh)
         {
@@ -150,7 +150,7 @@ namespace PK::Assets
         }
 
         auto assetPtr = reinterpret_cast<char*>(asset->rawData) + sizeof(PKAssetHeader);
-        return reinterpret_cast<Mesh::PKMesh*>(assetPtr);
+        return reinterpret_cast<PKMesh*>(assetPtr);
     }
 
 

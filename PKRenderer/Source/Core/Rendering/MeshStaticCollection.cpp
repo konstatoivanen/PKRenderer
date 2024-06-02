@@ -29,8 +29,8 @@ namespace PK
         m_positionsBuffer = RHI::CreateBuffer(m_streamLayout.GetStride(1u) * 2000000, BufferUsage::SparseVertex | BufferUsage::Storage, "MeshStaticCollection.VertexPositions");
         m_attributesBuffer = RHI::CreateBuffer(m_streamLayout.GetStride(0u) * 2000000, BufferUsage::SparseVertex, "MeshStaticCollection.VertexAttributes");
         m_indexBuffer = RHI::CreateBuffer(ElementTypeConvert::Size(m_indexType) * 2000000, BufferUsage::SparseIndex | BufferUsage::Storage, "MeshStaticCollection.IndexBuffer");
-        m_submeshBuffer = RHI::CreateBuffer<PK::Assets::Mesh::Meshlet::PKSubmesh>(maxSubmeshes, flags, "Meshlet.SubmeshBuffer");
-        m_meshletBuffer = RHI::CreateBuffer<PK::Assets::Mesh::Meshlet::PKMeshlet>(maxMeshlets, flags, "Meshlet.MeshletBuffer");
+        m_submeshBuffer = RHI::CreateBuffer<PKAssets::PKMeshletSubmesh>(maxSubmeshes, flags, "Meshlet.SubmeshBuffer");
+        m_meshletBuffer = RHI::CreateBuffer<PKAssets::PKMeshlet>(maxMeshlets, flags, "Meshlet.MeshletBuffer");
         m_meshletVertexBuffer = RHI::CreateBuffer<uint4>(maxVertices, flags, "Meshlet.VertexBuffer");
         m_meshletIndexBuffer = RHI::CreateBuffer<uint32_t>((maxTriangles * 3ull) / 4ull, flags, "Meshlet.IndexBuffer");
     }
@@ -69,9 +69,9 @@ namespace PK
         m_vertexCount += data->regular.vertexCount;
         m_indexCount += data->regular.indexCount;
 
-        auto submeshStride = sizeof(PK::Assets::Mesh::Meshlet::PKSubmesh);
-        auto meshletStride = sizeof(PK::Assets::Mesh::Meshlet::PKMeshlet);
-        auto meshletVertexStride = sizeof(PK::Assets::Mesh::Meshlet::PKVertex);
+        auto submeshStride = sizeof(PKAssets::PKMeshletSubmesh);
+        auto meshletStride = sizeof(PKAssets::PKMeshlet);
+        auto meshletVertexStride = sizeof(PKAssets::PKMeshletVertex);
         auto positionsStride = m_streamLayout.GetStride(1u);
         auto attributesStride = m_streamLayout.GetStride(0u);
         auto indexStride = ElementTypeConvert::Size(m_indexType);
@@ -166,9 +166,9 @@ namespace PK
 
     void MeshStaticCollection::Deallocate(MeshStatic* mesh)
     {
-        auto submeshStride = sizeof(PK::Assets::Mesh::Meshlet::PKSubmesh);
-        auto meshletStride = sizeof(PK::Assets::Mesh::Meshlet::PKMeshlet);
-        auto meshletVertexStride = sizeof(PK::Assets::Mesh::Meshlet::PKVertex);
+        auto submeshStride = sizeof(PKAssets::PKMeshletSubmesh);
+        auto meshletStride = sizeof(PKAssets::PKMeshlet);
+        auto meshletVertexStride = sizeof(PKAssets::PKMeshletVertex);
         auto positionsStride = m_streamLayout.GetStride(1u);
         auto attributesStride = m_streamLayout.GetStride(0u);
         auto indexStride = ElementTypeConvert::Size(m_indexType);

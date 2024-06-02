@@ -8,15 +8,11 @@ namespace std
     class function;
 }
 
-namespace PK::Assets
+namespace PKAssets
 {
     enum class PKShaderStageFlags : uint32_t;
     enum class PKElementType : uint16_t;
-    
-    namespace Shader
-    {
-        struct PKShaderVariant;
-    }
+    struct PKShaderVariant;
 }
 
 namespace PK
@@ -54,8 +50,8 @@ namespace PK
     struct VertexStreamLayout;
     struct ShaderBindingTableInfo;
     
-    typedef PK::Assets::PKShaderStageFlags ShaderStageFlags;
-    typedef PK::Assets::PKElementType ElementType;
+    typedef PKAssets::PKShaderStageFlags ShaderStageFlags;
+    typedef PKAssets::PKElementType ElementType;
 
     enum class RHIAPI;
     enum class QueueType;
@@ -118,7 +114,7 @@ namespace PK
         RHIBufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name);
         RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name);
         RHIAccelerationStructureRef CreateAccelerationStructure(const char* name);
-        RHIShaderScope CreateShader(void* base, PK::Assets::Shader::PKShaderVariant* pVariant, const char* name);
+        RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name);
         RHIWindowScope CreateWindowScope(const WindowDescriptor& descriptor);
 
         template<typename T>

@@ -1,13 +1,13 @@
 #pragma once
 #include "PKAsset.h"
 
-namespace PK::Assets
+namespace PKAssets
 {
     int OpenAsset(const char* filepath, PKAsset* asset);
     void CloseAsset(PKAsset* asset);
 
-    Shader::PKShader* ReadAsShader(PKAsset* asset);
-    Mesh::PKMesh* ReadAsMesh(PKAsset* asset);
+    PKShader* ReadAsShader(PKAsset* asset);
+    PKMesh* ReadAsMesh(PKAsset* asset);
 
     PKAssetMeta OpenAssetMeta(const char* filepath);
     void CloseAssetMeta(PKAssetMeta* meta);

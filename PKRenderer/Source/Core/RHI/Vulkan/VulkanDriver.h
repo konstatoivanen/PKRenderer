@@ -66,7 +66,7 @@ namespace PK
         RHIAccelerationStructureRef CreateAccelerationStructure(const char* name) final;
         RHITextureBindArrayRef CreateTextureBindArray(size_t capacity) final;
         RHIBufferBindArrayRef CreateBufferBindArray(size_t capacity) final;
-        RHIShaderScope CreateShader(void* base, PK::Assets::Shader::PKShaderVariant* pVariant, const char* name) final;
+        RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) final;
         RHIWindowScope CreateWindowScope(const WindowDescriptor& descriptor) final;
 
         void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) final;

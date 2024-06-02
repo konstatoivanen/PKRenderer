@@ -8,7 +8,7 @@
 
 namespace PK
 {
-    VulkanShader::VulkanShader(void* base, PK::Assets::Shader::PKShaderVariant* variant, const char* name) :
+    VulkanShader::VulkanShader(void* base, PKAssets::PKShaderVariant* variant, const char* name) :
         m_device(RHIDriver::Get()->GetNative<VulkanDriver>()->device),
         m_name(name)
     {

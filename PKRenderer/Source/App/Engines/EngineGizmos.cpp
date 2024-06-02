@@ -26,7 +26,7 @@ namespace PK::App
         m_fixedFunctionAttribs.rasterization.polygonMode = PolygonMode::Line;
         m_fixedFunctionAttribs.rasterization.topology = Topology::LineList;
 
-        m_vertexStreamElement.name = PK::Assets::Mesh::PK_VS_POSITION;
+        m_vertexStreamElement.name = PK_RHI_VS_POSITION;
         m_vertexStreamElement.stream = 0u;
         m_vertexStreamElement.inputRate = InputRate::PerVertex;
         m_vertexStreamElement.stride = sizeof(uint4);

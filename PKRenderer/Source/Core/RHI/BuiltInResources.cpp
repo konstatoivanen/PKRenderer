@@ -26,5 +26,5 @@ PK::BuiltInResources::BuiltInResources()
     commandBuffer->UploadTexture(TransparentTexture2D.get(), transparentData, sizeof(transparentData), 0u, 0u);
 
     AtomicCounter = RHI::CreateBuffer(sizeof(uint32_t), BufferUsage::DefaultStorage, "PKBuiltIn.AtomicCounter");
-    RHI::SetBuffer(PK::Assets::Shader::PK_SHADER_ATOMIC_COUNTER, AtomicCounter.get());
+    RHI::SetBuffer(PKAssets::PK_SHADER_ATOMIC_COUNTER, AtomicCounter.get());
 }
