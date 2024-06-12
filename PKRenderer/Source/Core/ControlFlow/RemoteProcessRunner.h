@@ -12,12 +12,14 @@ namespace PK
     class RemoteProcessRunner : public IStep<RemoteProcessCommand*>
     {
     public:
-        RemoteProcessRunner() {};
+        RemoteProcessRunner();
+
+        void ExecuteRemoteProcess(const char** args, uint32_t count);
 
         void ExecuteRemoteProcess(const RemoteProcessCommand& command);
 
         virtual void Step(RemoteProcessCommand* command) final { ExecuteRemoteProcess(*command); }
 
-        // @TODO add multithreading support
+        // @TODO add multithreading support!? Currently blocks application controlflow.
     };
 }

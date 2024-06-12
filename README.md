@@ -243,22 +243,26 @@ Physical Device Requirements:
 ## Platform & Build Support
 
 > **Warning**
-> the project has only been tested on Windows 10, support for systems or versions is untested.
+> The project has only been tested on Windows 10, support for systems or versions is untested.
 
 > **Warning**
-> the project has only been tested on an NVIDIA RTX 2080 TI, support for other vendors or devices is untested.
+> The project has only been tested on an NVIDIA RTX 2080 TI, support for other vendors or devices is untested.
 
 > **Warning**
-> building requires MSBuild, MSCV & a C++17 standard compatible system.
+> Building requires MSBuild and a C++17 standard compatible version of MSCV or clang-cl.
 
 > **Warning**
-> building only the PKRenderer project requires a build of PKAssetTools or compatible prebuilt binaries.
+> Building only the PKRenderer project requires a compatible build of PKAssetTools.
 
 Build using MSBuild CLI:
 
 `msbuild.exe PKRenderer.sln /property:Configuration=Release`  or
 
+`msbuild.exe PKRenderer.sln /property:Configuration=ClangRelease`  or
+
 `msbuild.exe PKRenderer.sln /property:Configuration=Debug` or
+
+`msbuild.exe PKRenderer.sln /property:Configuration=ClangDebug` or
 
 through Visual Studio (you know how that goes).
 

@@ -32,8 +32,8 @@ namespace PK
 
     RHIDriverScope RHI::CreateDriver(const char* workingDirectory, RHIAPI api)
     {
-        PK_LOG_HEADER("----------INITIALIZING RHI----------");
         PK_LOG_NEWLINE();
+        PK_LOG_HEADER("----------INITIALIZING RHI----------");
         PK_LOG_ADD_INDENT();
 
         CVariableRegister::Create<CVariableFuncSimple>("RHI.Query.Memory", []()
@@ -108,8 +108,8 @@ namespace PK
         }
 
         PK_LOG_SUB_INDENT();
-        PK_LOG_NEWLINE();
         PK_LOG_HEADER("----------RHI INITIALIZED----------");
+        PK_LOG_NEWLINE();
 
         return driver;
     }

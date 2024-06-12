@@ -32,5 +32,7 @@ namespace PK
         m_services = CreateScope<ServiceRegister>();
         m_services->Create<NameIDProviderDefault>();
         m_services->Create<CVariableRegister>();
+
+        CVariableRegister::Create<CVariableFuncSimple>("Application.Close", [](){IApplication::Get()->Close();});
     }
 }

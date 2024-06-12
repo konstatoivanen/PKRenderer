@@ -36,7 +36,18 @@ namespace PK::App
         IApplication(arguments, "PK Renderer", CreateRef<LoggerPrintf>())
     {
         PK_LOG_SCOPE_TIMER(ApplicationCtor);
-        PK_LOG_HEADER("----------INITIALIZING APPLICATION----------");
+        PK_LOG_HEADER("----------RendererApplication.Ctor Begin----------");
+        PK_LOG_SCOPE_INDENT();
+
+        CVariableRegister::Create<CVariableFunc>("Application.VSync", [](const char** args, [[maybe_unused]] uint32_t count)
+            {
+                IApplication::Get()->GetPrimaryWindow()->SetVSync((bool)atoi(args[0]));
+            }, "0 = 0ff, 1 = On", 1u, 1u);
+
+        CVariableRegister::Create<CVariableFuncSimple>("Application.VSync.Toggle", []()
+            {
+                IApplication::Get()->GetPrimaryWindow()->SetVSync(!IApplication::Get()->GetPrimaryWindow()->IsVSync());
+            });
 
         GetServices()->Create<HashCache>();
 
@@ -159,36 +170,7 @@ namespace PK::App
                 },
             });
 
-        CVariableRegister::Create<CVariableFuncSimple>("Application.Close", []() 
-            { 
-                IApplication::Get()->Close();
-            });
-
-        CVariableRegister::Create<CVariableFunc>("Application.VSync", [](const char** args, [[maybe_unused]] uint32_t count)
-            { 
-                IApplication::Get()->GetPrimaryWindow()->SetVSync((bool)atoi(args[0]));
-            }, "0 = 0ff, 1 = On", 1u, 1u);
-        
-        CVariableRegister::Create<CVariableFuncSimple>("Application.VSync.Toggle", []()
-            {
-                IApplication::Get()->GetPrimaryWindow()->SetVSync(!IApplication::Get()->GetPrimaryWindow()->IsVSync());
-            });
-
-        // @TODO move this somewhere
-        CVariableRegister::Create<CVariableFunc>("Application.Run.Executable", [remoteProcessRunner](const char** args, uint32_t count)
-            {
-                auto combinedArguments = std::string();
-
-                for (auto i = 1u; i < count; ++i)
-                {
-                    combinedArguments.append(args[i]);
-                    combinedArguments.append(" ");
-                }
-
-                remoteProcessRunner->ExecuteRemoteProcess({ args[0], combinedArguments.c_str() });
-            }, "executable, arguments", 1u, 256u);
-
-        PK_LOG_HEADER("----------APPLICATION INITIALIZED----------");
+        PK_LOG_HEADER("----------RendererApplication.Ctor End----------");
     }
 
     RendererApplication::~RendererApplication()
@@ -198,7 +180,7 @@ namespace PK::App
         GetServices()->Clear();
         m_window = nullptr;
         m_graphicsDriver = nullptr;
-        PK_LOG_HEADER("----------APPLICATION TERMINATED----------");
+        PK_LOG_HEADER("----------RendererApplication.Dtor----------");
     }
 
     void RendererApplication::Execute()
