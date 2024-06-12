@@ -358,7 +358,7 @@ namespace PK
         }
 
         image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        image.imageType = descriptor.samplerType == SamplerType::Sampler3D ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
+        image.imageType = descriptor.type == TextureType::Texture3D ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
         image.format = VulkanEnumConvert::GetFormat(descriptor.format);
         image.extent = { descriptor.resolution.x, descriptor.resolution.y, descriptor.resolution.z };
         image.mipLevels = descriptor.levels;
@@ -373,8 +373,8 @@ namespace PK
         allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
         formatAlias = VulkanEnumConvert::GetFormat(descriptor.formatAlias);
 
-        if (descriptor.samplerType == SamplerType::Cubemap ||
-            descriptor.samplerType == SamplerType::CubemapArray)
+        if (descriptor.type == TextureType::Cubemap ||
+            descriptor.type == TextureType::CubemapArray)
         {
             image.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         }
@@ -461,7 +461,7 @@ namespace PK
         persistentmap(createInfo.allocation.flags& VMA_ALLOCATION_CREATE_MAPPED_BIT),
         allocator(allocator),
         usage(createInfo.buffer.usage),
-        capacity(createInfo.buffer.size)
+        size(createInfo.buffer.size)
     {
         if ((createInfo.buffer.flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0)
         {
@@ -1124,15 +1124,15 @@ namespace PK
             }
         }
 
-        VkImageViewType GetViewType(SamplerType samplerType)
+        VkImageViewType GetViewType(TextureType type)
         {
-            switch (samplerType)
+            switch (type)
             {
-                case SamplerType::Sampler2D: return VK_IMAGE_VIEW_TYPE_2D;
-                case SamplerType::Sampler2DArray: return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-                case SamplerType::Sampler3D: return VK_IMAGE_VIEW_TYPE_3D;
-                case SamplerType::Cubemap: return VK_IMAGE_VIEW_TYPE_CUBE;
-                case SamplerType::CubemapArray: return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+                case TextureType::Texture2D: return VK_IMAGE_VIEW_TYPE_2D;
+                case TextureType::Texture2DArray: return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+                case TextureType::Texture3D: return VK_IMAGE_VIEW_TYPE_3D;
+                case TextureType::Cubemap: return VK_IMAGE_VIEW_TYPE_CUBE;
+                case TextureType::CubemapArray: return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
                 default: return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
             }
         }

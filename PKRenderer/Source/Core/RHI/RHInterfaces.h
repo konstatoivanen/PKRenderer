@@ -34,10 +34,8 @@ namespace PK
     {
         virtual ~RHITexture() = 0;
         virtual void SetSampler(const SamplerDescriptor& sampler) = 0;
-        virtual bool Validate(const uint3& resolution) = 0;
-        virtual bool Validate(const uint32_t levels, const uint32_t layers) = 0;
-        virtual bool Validate(const TextureDescriptor& descriptor) = 0;
         virtual const TextureDescriptor& GetDescriptor() const = 0;
+        virtual const char* GetDebugName() const = 0;
 
         constexpr TextureUsage GetUsage() const { return GetDescriptor().usage; }
         constexpr bool IsConcurrent() const { return (GetUsage() & TextureUsage::Concurrent) != 0; }
@@ -52,20 +50,26 @@ namespace PK
     struct RHIBuffer : public NoCopy, public NativeInterface<RHIBuffer>
     {
         virtual ~RHIBuffer() = 0;
+        virtual size_t GetSize() const = 0;
+        virtual BufferUsage GetUsage() const = 0;
+        virtual const char* GetDebugName() const = 0;
+        
         virtual const void* BeginRead(size_t offset, size_t size) = 0;
         virtual void EndRead() = 0;
         virtual size_t SparseAllocate(const size_t size, QueueType type) = 0;
         virtual void SparseAllocateRange(const BufferIndexRange& range, QueueType type) = 0;
         virtual void SparseDeallocate(const BufferIndexRange& range) = 0;
-        virtual bool Validate(size_t size) = 0;
-        virtual size_t GetSize() const = 0;
-        virtual size_t GetCapacity() const = 0;
-        virtual BufferUsage GetUsage() const = 0;
+
+        template<typename T>
+        constexpr size_t GetCount() const { return GetSize() / sizeof(T); }
+        constexpr bool IsSparse() const { return (GetUsage() & BufferUsage::Sparse) != 0; }
+        constexpr bool IsConcurrent() const { return (GetUsage() & BufferUsage::Concurrent) != 0u; }
+        constexpr BufferIndexRange GetFullRange() const { return { 0ull, GetSize() }; }
 
         template<typename T>
         ConstBufferView<T> BeginRead()
         {
-            return { reinterpret_cast<const T*>(BeginRead(0, GetCapacity())), GetCapacity() / sizeof(T) };
+            return { reinterpret_cast<const T*>(BeginRead(0, GetSize())), GetSize() / sizeof(T) };
         }
 
         template<typename T>
@@ -73,14 +77,6 @@ namespace PK
         {
             return { reinterpret_cast<const T*>(BeginRead(offset * sizeof(T), count * sizeof(T))), count };
         }
-
-        template<typename T> inline bool Validate(size_t count) { return Validate(sizeof(T) * count); }
-
-        template<typename T>
-        constexpr size_t GetCount() const { return GetSize() / sizeof(T); }
-        constexpr bool IsSparse() const { return (GetUsage() & BufferUsage::Sparse) != 0; }
-        constexpr bool IsConcurrent() const { return (GetUsage() & BufferUsage::Concurrent) != 0u; }
-        constexpr BufferIndexRange GetFullRange() const { return { 0ull, GetSize() }; }
     };
 
     struct RHIAccelerationStructure : public NoCopy, public NativeInterface<RHIAccelerationStructure>
@@ -111,6 +107,7 @@ namespace PK
         virtual ShaderStageFlags GetStageFlags() const = 0;
         virtual const uint3& GetGroupSize() const = 0;
         virtual ShaderBindingTableInfo GetShaderBindingTableInfo() const = 0;
+
         inline bool IsGraphics() const { return (GetStageFlags() & ShaderStageFlags::StagesGraphics) != 0; }
         inline bool HasRayTracingShaderGroup(RayTracingShaderGroup group) const { return (PK_RHI_RAYTRACING_GROUP_SHADER_STAGE[(uint32_t)group] & GetStageFlags()) != 0; }
     };
@@ -171,14 +168,16 @@ namespace PK
 
     struct RHIQueueSet : public NoCopy, public NativeInterface<RHIQueueSet>
     {
-        virtual ~RHIQueueSet() = 0;
         constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)QueueType::MaxCount;
+
+        virtual ~RHIQueueSet() = 0;
         virtual RHICommandBuffer* GetCommandBuffer(QueueType type) = 0;
         virtual FenceRef GetFenceRef(QueueType type, int32_t submitOffset = 0) = 0;
         virtual RHICommandBuffer* Submit(QueueType type) = 0;
         virtual void Sync(QueueType from, QueueType to, int32_t submitOffset = 0) = 0;
         virtual void Wait(QueueType from, QueueType to, int32_t submitOffset = 0) = 0;
         virtual void Transfer(QueueType from, QueueType to) = 0;
+        
         inline void Submit(QueueType type, RHICommandBuffer** cmd) { *cmd = Submit(type); }
     };
 

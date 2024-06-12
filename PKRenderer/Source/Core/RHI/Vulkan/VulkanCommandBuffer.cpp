@@ -653,6 +653,7 @@ namespace PK
     {
         auto flags = m_renderState->ValidatePipeline(GetFenceRef());
 
+        // @TODO use uav overlap flag instead.
         // Conservative barrier deployment. lets not break an active renderpass. Assume coherent read/writes.
         if (!m_isInActiveRenderPass || (flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
         {

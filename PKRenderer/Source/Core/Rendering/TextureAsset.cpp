@@ -8,6 +8,12 @@
 
 namespace PK
 {
+    RHITexture* TextureAsset::GetRHI() { return m_texture.get(); }
+    const RHITexture* TextureAsset::GetRHI() const { return m_texture.get(); }
+
+    TextureAsset::operator RHITexture* () { return m_texture.get(); }
+    TextureAsset::operator const RHITexture* () const { return m_texture.get(); }
+
     void TextureAsset::AssetImport(const char* filepath)
     {
         ktxTexture2* ktxTex2;
@@ -29,19 +35,19 @@ namespace PK
 
         if (ktxTex2->isCubemap && ktxTex2->isArray)
         {
-            descriptor.samplerType = SamplerType::CubemapArray;
+            descriptor.type = TextureType::CubemapArray;
         }
         else if (ktxTex2->isCubemap)
         {
-            descriptor.samplerType = SamplerType::Cubemap;
+            descriptor.type = TextureType::Cubemap;
         }
         else if (ktxTex2->isArray)
         {
-            descriptor.samplerType = SamplerType::Sampler2DArray;
+            descriptor.type = TextureType::Texture2DArray;
         }
         else if (ktxTex2->baseDepth > 1)
         {
-            descriptor.samplerType = SamplerType::Sampler3D;
+            descriptor.type = TextureType::Texture3D;
         }
 
         descriptor.sampler.anisotropy = 16.0f;
@@ -85,13 +91,7 @@ namespace PK
 
         ktxTexture_Destroy(ktxTexture(ktxTex2));
     }
-    
-    RHITexture* TextureAsset::GetRHI() { return m_texture.get(); }
-    const RHITexture* TextureAsset::GetRHI() const { return m_texture.get(); }
-    TextureAsset::operator RHITexture* () { return m_texture.get(); }
-    TextureAsset::operator const RHITexture* () const { return m_texture.get(); }
 }
-
 
 template<>
 bool PK::Asset::IsValidExtension<PK::TextureAsset>(const std::string& extension) { return extension.compare(".ktx2") == 0; }

@@ -120,9 +120,9 @@ void main()
                 visibleIndices[visibleCount++] = ushort(batch * THREAD_COUNT + index);
             }
         }
-    }
 
-    barrier();
+        barrier();
+    }
 
     uint offset = 0u;
 

@@ -15,7 +15,7 @@ namespace PK
 
     void ConstantBuffer::FlushBuffer(RHICommandBuffer* cmd)
     {
-        cmd->UpdateBuffer(m_graphicsBuffer.get(), 0ull, m_graphicsBuffer->GetCapacity(), m_buffer);
+        cmd->UpdateBuffer(m_graphicsBuffer.get(), 0ull, m_graphicsBuffer->GetSize(), m_buffer);
     }
 
     const BufferLayout& ConstantBuffer::GetLayout() const { return m_layout; }

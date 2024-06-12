@@ -33,7 +33,7 @@ namespace PK::App
         OnUpdateParameters(config);
 
         TextureDescriptor descr{};
-        descr.samplerType = SamplerType::Sampler3D;
+        descr.type = TextureType::Texture3D;
         descr.format = TextureFormat::RGBA16F;
         descr.sampler.filterMin = FilterMode::Trilinear;
         descr.sampler.filterMag = FilterMode::Trilinear;
@@ -51,7 +51,7 @@ namespace PK::App
         descr.levels = 1u;
         m_voxelMask = RHI::CreateTexture(descr, "GI.VoxelVolumeMask");
 
-        descr.samplerType = SamplerType::Sampler2DArray;
+        descr.type = TextureType::Texture2DArray;
         descr.sampler.wrap[0] = WrapMode::Clamp;
         descr.sampler.wrap[1] = WrapMode::Clamp;
         descr.sampler.wrap[2] = WrapMode::Clamp;
@@ -66,7 +66,7 @@ namespace PK::App
         descr.format = TextureFormat::RG32UI;
         m_packedGISpec = RHI::CreateTexture(descr, "GI.PackedGI.Spec");
 
-        descr.samplerType = SamplerType::Sampler2D;
+        descr.type = TextureType::Texture2D;
         descr.layers = 1u;
         descr.levels = 1u;
         descr.usage = TextureUsage::Storage;
@@ -75,7 +75,7 @@ namespace PK::App
         descr.resolution = GetCheckerboardResolution(descr.resolution, m_useCheckerboardTrace);
         m_rayhits = RHI::CreateTexture(descr, "GI.RayHits");
 
-        descr.samplerType = SamplerType::Sampler2DArray;
+        descr.type = TextureType::Texture2DArray;
         descr.layers = 2;
         descr.format = TextureFormat::RGBA32UI;
         m_reservoirs0 = RHI::CreateTexture(descr, "GI.Reservoirs0");
@@ -135,12 +135,13 @@ namespace PK::App
 
         m_sbtRaytrace.Validate(cmd, m_rayTraceGatherGI);
         m_sbtValidate.Validate(cmd, m_rayTraceValidate);
-        m_packedGIDiff->Validate(resolution);
-        m_packedGISpec->Validate(resolution);
-        m_rayhits->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
-        m_reservoirs0->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
-        m_reservoirs1->Validate(GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
-        m_resolvedGI->Validate(resolution);
+
+        RHI::ValidateTexture(m_packedGIDiff, resolution);
+        RHI::ValidateTexture(m_packedGISpec, resolution);
+        RHI::ValidateTexture(m_rayhits, GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
+        RHI::ValidateTexture(m_reservoirs0, GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
+        RHI::ValidateTexture(m_reservoirs1, GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
+        RHI::ValidateTexture(m_resolvedGI, resolution);
 
         RHI::SetImage(hash->pk_GI_RayHits, m_rayhits.get());
         RHI::SetImage(hash->pk_Reservoirs0, m_reservoirs0.get());

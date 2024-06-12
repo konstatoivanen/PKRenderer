@@ -53,7 +53,7 @@ namespace PK
         template<typename T>
         BufferView<T> BeginBufferWrite(RHIBuffer* buffer)
         {
-            size_t bufSize = buffer->GetCapacity();
+            size_t bufSize = buffer->GetSize();
             return { reinterpret_cast<T*>(commandBuffer->BeginBufferWrite(buffer, 0, bufSize)), bufSize / sizeof(T) };
         }
 

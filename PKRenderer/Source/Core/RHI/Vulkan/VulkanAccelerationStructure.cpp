@@ -159,7 +159,7 @@ namespace PK
             scratchSize += Math::GetAlignedSize(m_structure.size.buildScratchSize, 256ull);
         }
 
-        if (m_scratchBuffer == nullptr || m_scratchBuffer->capacity < scratchSize)
+        if (m_scratchBuffer == nullptr || m_scratchBuffer->size < scratchSize)
         {
             m_driver->DisposePooledBuffer(m_scratchBuffer, m_cmd->GetFenceRef());
             auto name = m_name + std::string(".ScratchBuffer");
@@ -168,7 +168,7 @@ namespace PK
         }
 
         if (m_structureBuffer != nullptr &&
-            m_structureBuffer->capacity >= bufferSize &&
+            m_structureBuffer->size >= bufferSize &&
             !m_structure.needsRealloc &&
             buildCount == 0u &&
             !hasCompactedResults)
@@ -275,7 +275,7 @@ namespace PK
         auto inputBufferSize = inputBufferStride * PK_RHI_MAX_FRAMES_IN_FLIGHT;
         m_instanceBufferOffset = (m_instanceBufferOffset + inputBufferStride) % inputBufferSize;
 
-        if (m_instanceInputBuffer == nullptr || m_instanceInputBuffer->capacity < inputBufferSize)
+        if (m_instanceInputBuffer == nullptr || m_instanceInputBuffer->size < inputBufferSize)
         {
             m_instanceBufferOffset = 0ull;
             m_driver->DisposePooledBuffer(m_instanceInputBuffer, m_cmd->GetFenceRef());

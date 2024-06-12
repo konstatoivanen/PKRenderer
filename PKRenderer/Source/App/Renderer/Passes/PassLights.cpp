@@ -94,7 +94,7 @@ namespace PK::App
 
         auto shadowCubeFaceSize = (uint)sqrt((config->ShadowmapTileSize * config->ShadowmapTileSize) / 6);
         TextureDescriptor depthDesc;
-        depthDesc.samplerType = SamplerType::CubemapArray;
+        depthDesc.type = TextureType::CubemapArray;
         depthDesc.resolution = { shadowCubeFaceSize , shadowCubeFaceSize , 1u };
         depthDesc.format = TextureFormat::Depth16;
         depthDesc.layers = 6 * ShadowCascadeCount;
@@ -110,7 +110,7 @@ namespace PK::App
         depthDesc.format = TextureFormat::R32F;
         m_shadowTargetCube = RHI::CreateTexture(depthDesc, "Lights.ShadowTarget.Cube");
 
-        depthDesc.samplerType = SamplerType::Sampler2DArray;
+        depthDesc.type = TextureType::Texture2DArray;
         depthDesc.format = TextureFormat::Depth16;
         depthDesc.resolution = { (int)config->ShadowmapTileSize, (int)config->ShadowmapTileSize, 1u };
         depthDesc.layers = ShadowCascadeCount;
@@ -118,7 +118,7 @@ namespace PK::App
         m_depthTarget2D = RHI::CreateTexture(depthDesc, "Lights.DepthTarget.2D");
 
         TextureDescriptor atlasDesc;
-        atlasDesc.samplerType = SamplerType::Sampler2DArray;
+        atlasDesc.type = TextureType::Texture2DArray;
         atlasDesc.format = TextureFormat::R32F;
         atlasDesc.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::RTColor;
         atlasDesc.layers = ShadowCascadeCount * 2; // initial size assume 1 active directional light.
@@ -131,7 +131,7 @@ namespace PK::App
         m_shadowmaps = RHI::CreateTexture(atlasDesc, "Lights.Shadowmap.Atlas");
 
         TextureDescriptor screenSpaceDesc;
-        screenSpaceDesc.samplerType = SamplerType::Sampler2D;
+        screenSpaceDesc.type = TextureType::Texture2D;
         screenSpaceDesc.format = TextureFormat::R8;
         screenSpaceDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
         screenSpaceDesc.layers = 1;
@@ -147,7 +147,7 @@ namespace PK::App
         m_screenSpaceShadowmapDownsampled = RHI::CreateTexture(screenSpaceDesc, "Lights.Shadowmap.ScreenSpaceQuareterRes");
 
         TextureDescriptor imageDescriptor;
-        imageDescriptor.samplerType = SamplerType::Sampler3D;
+        imageDescriptor.type = TextureType::Texture3D;
         imageDescriptor.format = TextureFormat::R32UI;
         imageDescriptor.usage = TextureUsage::Storage | TextureUsage::Concurrent;
         imageDescriptor.resolution = { config->InitialWidth / LightGridTileSizePx, config->InitialHeight / LightGridTileSizePx, LightGridSizeZ };
@@ -243,8 +243,8 @@ namespace PK::App
         auto resolution = renderView->GetResolution();
         auto quarterResolution = uint3(resolution.x >> 1u, resolution.y >> 1u, 1u);
 
-        m_screenSpaceShadowmap->Validate(resolution);
-        m_screenSpaceShadowmapDownsampled->Validate(quarterResolution);
+        RHI::ValidateTexture(m_screenSpaceShadowmap, resolution);
+        RHI::ValidateTexture(m_screenSpaceShadowmapDownsampled, quarterResolution);
 
         RHI::SetTexture(hash->pk_ShadowmapScreenSpace, m_screenSpaceShadowmap.get());
 
@@ -297,12 +297,12 @@ namespace PK::App
             resolution.z *
             MaxLightsPerTile;
 
-        if (m_lightsLists->Validate<ushort>(lightIndexCount))
+        if (RHI::ValidateBuffer<ushort>(m_lightsLists, lightIndexCount))
         {
             RHI::SetBuffer(hash->pk_LightLists, m_lightsLists.get());
         }
 
-        if (m_lightTiles->Validate(resolution))
+        if (RHI::ValidateTexture(m_lightTiles, resolution))
         {
             RHI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
         }
@@ -336,8 +336,8 @@ namespace PK::App
         qsort(m_lights.GetData(), lightCount, sizeof(EntityViewLight*), EntityViewLightPtrCompare);
 
         m_shadowBatches.clear();
-        m_lightsBuffer->Validate<LightPacked>(lightCount + 1);
-        m_lightMatricesBuffer->Validate<float4x4>(matrixCount);
+        RHI::ValidateBuffer<LightPacked>(m_lightsBuffer, lightCount + 1);
+        RHI::ValidateBuffer<float4x4>(m_lightMatricesBuffer, matrixCount);
 
         CommandBufferExt cmd = RHI::GetCommandBuffer(QueueType::Transfer);
         auto lightsView = cmd.BeginBufferWrite<LightPacked>(m_lightsBuffer.get(), 0u, lightCount + 1);
@@ -439,7 +439,7 @@ namespace PK::App
 
         if (m_shadowmaps->GetLayers() < shadowCount + ShadowCascadeCount)
         {
-            m_shadowmaps->Validate(1u, shadowCount + ShadowCascadeCount);
+            RHI::ValidateTexture(m_shadowmaps, 1u, shadowCount + ShadowCascadeCount);
         }
 
         auto hash = HashCache::Get();

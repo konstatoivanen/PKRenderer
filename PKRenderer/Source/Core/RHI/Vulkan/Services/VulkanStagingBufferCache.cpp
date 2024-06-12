@@ -11,12 +11,12 @@ namespace PK
     {
         int operator ()(VulkanStagingBuffer*& a, VulkanStagingBuffer*& b)
         {
-            if (a->capacity < b->capacity)
+            if (a->size < b->size)
             {
                 return -1;
             }
 
-            if (a->capacity > b->capacity)
+            if (a->size > b->size)
             {
                 return 1;
             }
@@ -40,7 +40,7 @@ namespace PK
     {
         size_t operator ()(VulkanStagingBuffer*& a)
         {
-            return a->capacity;
+            return a->size;
         }
     };
 

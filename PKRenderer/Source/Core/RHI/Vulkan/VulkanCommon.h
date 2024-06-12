@@ -219,7 +219,7 @@ namespace PK
         const bool persistentmap;
         const VmaAllocator allocator;
         const VkBufferUsageFlags usage;
-        const VkDeviceSize capacity;
+        const VkDeviceSize size;
         VkDeviceAddress deviceAddress;
         VkBuffer buffer;
         VmaAllocation memory;
@@ -390,7 +390,7 @@ namespace PK
         bool IsDepthStencilFormat(VkFormat format);
 
         VkComponentMapping GetSwizzle(VkFormat format);
-        VkImageViewType GetViewType(SamplerType samplerType);
+        VkImageViewType GetViewType(TextureType type);
         VkImageLayout GetImageLayout(TextureUsage usage);
         VkAttachmentLoadOp GetLoadOp(LoadOp loadOp);
         VkAttachmentLoadOp GetLoadOp(VkImageLayout layout, LoadOp loadOp);

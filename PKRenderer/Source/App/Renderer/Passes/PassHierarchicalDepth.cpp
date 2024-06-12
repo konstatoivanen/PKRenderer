@@ -17,7 +17,7 @@ namespace PK::App
         m_computeHierachicalDepth = assetDatabase->Find<ShaderAsset>("CS_HierachicalDepth");
 
         TextureDescriptor hizDesc{};
-        hizDesc.samplerType = SamplerType::Sampler2DArray;
+        hizDesc.type = TextureType::Texture2DArray;
         hizDesc.format = TextureFormat::R16F;
         hizDesc.sampler.filterMin = FilterMode::Bilinear;
         hizDesc.sampler.filterMag = FilterMode::Bilinear;
@@ -32,7 +32,7 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
 
-        m_hierarchicalDepth->Validate({ resolution.x, resolution.y, 1u });
+        RHI::ValidateTexture(m_hierarchicalDepth, { resolution.x, resolution.y, 1u });
         RHI::SetTexture(hash->pk_GB_Current_DepthMips, m_hierarchicalDepth.get());
 
         resolution.x >>= 1u;

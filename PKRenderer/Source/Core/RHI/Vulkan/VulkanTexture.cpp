@@ -8,12 +8,29 @@ namespace PK
         m_driver(RHIDriver::Get()->GetNative<VulkanDriver>()),
         m_name(name)
     {
-        Rebuild(descriptor);
+        auto& families = m_driver->queues->GetSelectedFamilies();
+        m_descriptor = descriptor;
+        m_rawImage = m_driver->imagePool.New(m_driver->device, m_driver->allocator, VulkanImageCreateInfo(descriptor, &families), m_name.c_str());
     }
 
     VulkanTexture::~VulkanTexture()
     {
-        Dispose();
+        auto fence = m_driver->GetQueues()->GetFenceRef(QueueType::Graphics);
+
+        for (auto i = 0u; i < m_imageViews.GetCount(); ++i)
+        {
+            auto value = &m_imageViews.GetValueAt(i);
+            m_driver->bindhandlePool.Delete(value->bindHandle);
+            m_driver->DisposePooledImageView(value->view, fence);
+        }
+
+        m_imageViews.Clear();
+
+        if (m_rawImage != nullptr)
+        {
+            m_driver->DisposePooledImage(m_rawImage, fence);
+            m_rawImage = nullptr;
+        }
     }
 
     void VulkanTexture::SetSampler(const SamplerDescriptor& sampler)
@@ -37,69 +54,15 @@ namespace PK
         }
     }
 
-    bool VulkanTexture::Validate(const TextureDescriptor& descriptor)
-    {
-        if (m_descriptor.samplerType == descriptor.samplerType &&
-            m_descriptor.format == descriptor.format &&
-            m_descriptor.usage == descriptor.usage &&
-            m_descriptor.resolution == descriptor.resolution &&
-            m_descriptor.levels == descriptor.levels &&
-            m_descriptor.samples == descriptor.samples &&
-            m_descriptor.layers == descriptor.layers)
-        {
-            return false;
-        }
-
-        Rebuild(descriptor);
-        return true;
-    }
-
-    bool VulkanTexture::Validate(const uint32_t levels, const uint32_t layers)
-    {
-        if (m_descriptor.levels == levels && m_descriptor.layers == layers)
-        {
-            return false;
-        }
-
-        auto descriptor = m_descriptor;
-        descriptor.levels = levels;
-        descriptor.layers = layers;
-        Rebuild(descriptor);
-        return true;
-    }
-
-    bool VulkanTexture::Validate(const uint3& resolution)
-    {
-        if (m_descriptor.resolution == resolution)
-        {
-            return false;
-        }
-
-        auto descriptor = m_descriptor;
-        descriptor.resolution = resolution;
-        Rebuild(descriptor);
-        return true;
-    }
-
-
-    void VulkanTexture::Rebuild(const TextureDescriptor& descriptor)
-    {
-        Dispose();
-        auto& families = m_driver->queues->GetSelectedFamilies();
-        m_descriptor = descriptor;
-        m_rawImage = m_driver->imagePool.New(m_driver->device, m_driver->allocator, VulkanImageCreateInfo(descriptor, &families), m_name.c_str());
-        m_viewType = VulkanEnumConvert::GetViewType(descriptor.samplerType);
-        m_swizzle = VulkanEnumConvert::GetSwizzle(m_rawImage->format);
-    }
-
     TextureViewRange VulkanTexture::NormalizeViewRange(const TextureViewRange& range) const
     {
         auto out = range;
         auto levels = (uint16_t)m_rawImage->levels;
         auto layers = (uint16_t)m_rawImage->layers;
+        auto viewType = VulkanEnumConvert::GetViewType(m_descriptor.type);
 
         // Remove layers from non layered image types
-        switch (m_viewType)
+        switch (viewType)
         {
             case VK_IMAGE_VIEW_TYPE_1D:
             case VK_IMAGE_VIEW_TYPE_2D:
@@ -163,14 +126,16 @@ namespace PK
         }
 
         auto useAlias = mode != TextureBindMode::SampledTexture && m_rawImage->imageAlias != VK_NULL_HANDLE;
+        auto viewType = VulkanEnumConvert::GetViewType(m_descriptor.type);
+        auto swizzle = VulkanEnumConvert::GetSwizzle(m_rawImage->format);
 
         VkImageViewCreateInfo info{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
         info.pNext = nullptr;
         info.flags = 0;
         info.image = useAlias ? m_rawImage->imageAlias : m_rawImage->image;
-        info.viewType = m_viewType;
+        info.viewType = viewType;
         info.format = useAlias ? m_rawImage->formatAlias : m_rawImage->format;
-        info.components = mode == TextureBindMode::SampledTexture ? m_swizzle : (VkComponentMapping{});
+        info.components = mode == TextureBindMode::SampledTexture ? swizzle : (VkComponentMapping{});
         info.subresourceRange =
         {
             (uint32_t)VulkanEnumConvert::GetFormatAspect(info.format),
@@ -200,25 +165,5 @@ namespace PK
         }
 
         return viewValue;
-    }
-
-    void VulkanTexture::Dispose()
-    {
-        auto fence = m_driver->GetQueues()->GetFenceRef(QueueType::Graphics);
-
-        for (auto i = 0u; i < m_imageViews.GetCount(); ++i)
-        {
-            auto value = &m_imageViews.GetValueAt(i);
-            m_driver->bindhandlePool.Delete(value->bindHandle);
-            m_driver->DisposePooledImageView(value->view, fence);
-        }
-
-        m_imageViews.Clear();
-
-        if (m_rawImage != nullptr)
-        {
-            m_driver->DisposePooledImage(m_rawImage, fence);
-            m_rawImage = nullptr;
-        }
     }
 }

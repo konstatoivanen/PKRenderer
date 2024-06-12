@@ -16,7 +16,7 @@ namespace PK::App
         PK_LOG_SCOPE_INDENT(local);
 
         TextureDescriptor descriptor{};
-        descriptor.samplerType = SamplerType::Sampler3D;
+        descriptor.type = TextureType::Texture3D;
         descriptor.format = TextureFormat::RGBA16F;
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
@@ -76,11 +76,12 @@ namespace PK::App
 
         auto hash = HashCache::Get();
         const uint3 volumeResolution = { resolution.x / 8u, resolution.y / 8u, 128u };
-        m_volumeDensity->Validate(volumeResolution);
-        m_volumeDensityPrev->Validate(volumeResolution);
-        m_volumeInject->Validate(volumeResolution);
-        m_volumeInjectPrev->Validate(volumeResolution);
-        m_volumeScatter->Validate(volumeResolution);
+
+        RHI::ValidateTexture(m_volumeDensity, volumeResolution);
+        RHI::ValidateTexture(m_volumeDensityPrev, volumeResolution);
+        RHI::ValidateTexture(m_volumeInject, volumeResolution);
+        RHI::ValidateTexture(m_volumeInjectPrev, volumeResolution);
+        RHI::ValidateTexture(m_volumeScatter, volumeResolution);
 
         RHI::SetImage(hash->pk_Fog_Inject, m_volumeInjectPrev.get());
         RHI::SetTexture(hash->pk_Fog_InjectRead, m_volumeInject.get());

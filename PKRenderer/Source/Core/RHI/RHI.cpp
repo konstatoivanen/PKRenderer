@@ -124,28 +124,89 @@ namespace PK
 
     bool RHI::ValidateTexture(RHITextureRef& inoutTexture, const TextureDescriptor& descriptor, const char* name)
     {
-        if (!inoutTexture)
+        if (inoutTexture == nullptr)
         {
             inoutTexture = RHI::CreateTexture(descriptor, name);
             return true;
         }
-        else
+
+        auto& currentDesc = inoutTexture->GetDescriptor();
+
+        if (currentDesc.type == descriptor.type &&
+            currentDesc.format == descriptor.format &&
+            currentDesc.usage == descriptor.usage &&
+            currentDesc.resolution == descriptor.resolution &&
+            currentDesc.levels == descriptor.levels &&
+            currentDesc.samples == descriptor.samples &&
+            currentDesc.layers == descriptor.layers)
         {
-            return inoutTexture->Validate(descriptor);
+            return false;
         }
+
+        inoutTexture = RHI::CreateTexture(descriptor, inoutTexture->GetDebugName());
+        return true;
+    }
+
+    bool RHI::ValidateTexture(RHITextureRef& inoutTexture, const uint3& resolution)
+    {
+        PK_THROW_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
+
+        if (inoutTexture->GetResolution() == resolution)
+        {
+            return false;
+        }
+
+        auto descriptor = inoutTexture->GetDescriptor();
+        descriptor.resolution = resolution;
+        inoutTexture = RHI::CreateTexture(descriptor, inoutTexture->GetDebugName());
+        return true;
+    }
+
+    bool RHI::ValidateTexture(RHITextureRef& inoutTexture, const uint32_t levels, const uint32_t layers)
+    {
+        PK_THROW_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
+
+        if (inoutTexture->GetLevels() == levels && 
+            inoutTexture->GetLayers() == layers)
+        {
+            return false;
+        }
+
+        auto descriptor = inoutTexture->GetDescriptor();
+        descriptor.levels = levels;
+        descriptor.layers = layers;
+        inoutTexture = RHI::CreateTexture(descriptor, inoutTexture->GetDebugName());
+        return true;
     }
 
     bool RHI::ValidateBuffer(RHIBufferRef& inoutBuffer, size_t size, BufferUsage usage, const char* name)
     {
-        if (!inoutBuffer)
+        if (inoutBuffer == nullptr)
         {
             inoutBuffer = RHI::CreateBuffer(size, usage, name);
             return true;
         }
-        else
+
+        if (inoutBuffer->GetSize() >= size)
         {
-            return inoutBuffer->Validate(size);
+            return false;
         }
+
+        inoutBuffer = RHI::CreateBuffer(size, inoutBuffer->GetUsage(), inoutBuffer->GetDebugName());
+        return true;
+    }
+
+    bool RHI::ValidateBuffer(RHIBufferRef& inoutBuffer, size_t size)
+    {
+        PK_THROW_ASSERT(inoutBuffer, "Cant partially validate a buffer that hasnt been fully initialized!");
+
+        if (inoutBuffer->GetSize() >= size)
+        {
+            return false;
+        }
+
+        inoutBuffer = RHI::CreateBuffer(size, inoutBuffer->GetUsage(), inoutBuffer->GetDebugName());
+        return true;
     }
 
     void RHI::SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) { RHIDriver::Get()->SetBuffer(name, buffer, range); }

@@ -66,7 +66,7 @@ namespace PK::App
 
     void BatcherMeshStatic::UploadTransforms(CommandBufferExt cmd)
     {
-        m_matrices->Validate<float3x4>(m_transforms.GetCapacity());
+        RHI::ValidateBuffer<float3x4>(m_matrices, m_transforms.GetCapacity());
         auto matrixView = cmd.BeginBufferWrite<float3x4>(m_matrices.get(), 0u, m_transforms.GetCount());
 
         for (auto& view : m_transforms)
@@ -95,7 +95,7 @@ namespace PK::App
 
         if (buffsize > 0)
         {
-            m_properties->Validate(buffsize);
+            RHI::ValidateBuffer(m_properties, buffsize);
             auto propertyView = cmd.BeginBufferWrite<char>(m_properties.get(), 0ull, buffsize);
 
             for (auto& group : m_materials)
@@ -117,8 +117,9 @@ namespace PK::App
 
     void BatcherMeshStatic::UploadDrawIndices(CommandBufferExt cmd)
     {
-        m_indices->Validate<PK_Draw>(m_drawInfos.capacity());
-        m_tasklets->Validate<uint2>(m_taskletCount);
+        RHI::ValidateBuffer<PK_Draw>(m_indices, m_drawInfos.capacity());
+        RHI::ValidateBuffer<uint2>(m_tasklets, m_taskletCount);
+
         auto taskletView = cmd.BeginBufferWrite<uint2>(m_tasklets.get(), 0u, m_taskletCount);
         auto indexView = cmd.BeginBufferWrite<PK_Draw>(m_indices.get(), 0u, m_drawInfos.size());
         auto current = m_drawInfos[0];

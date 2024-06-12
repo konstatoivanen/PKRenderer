@@ -54,7 +54,7 @@ namespace PK::App
             {
                 if (m_enabledCPU)
                 {
-                    m_vertexBuffer->Validate<uint4>(m_vertexCount);
+                    RHI::ValidateBuffer<uint4>(m_vertexBuffer, m_vertexCount);
                     m_color = PK_COLOR_WHITE;
                     m_matrix = PK_FLOAT4X4_IDENTITY;
                     m_worldToClip = view->worldToClip;

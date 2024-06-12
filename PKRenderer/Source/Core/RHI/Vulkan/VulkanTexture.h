@@ -14,14 +14,9 @@ namespace PK
             VulkanTexture(const TextureDescriptor& descriptor, const char* name);
             ~VulkanTexture();
             
-
             void SetSampler(const SamplerDescriptor& sampler) final;
-            bool Validate(const uint32_t levels, const uint32_t layers) final;
-            bool Validate(const uint3& resolution) final;
-            bool Validate(const TextureDescriptor& descriptor) final;
             const TextureDescriptor& GetDescriptor() const final { return m_descriptor; }
-
-            void Rebuild(const TextureDescriptor& descriptor);
+            const char* GetDebugName() const final { return m_name.c_str(); }
 
             inline VkImageLayout GetImageLayout() const { return VulkanEnumConvert::GetImageLayout(m_descriptor.usage); }
             inline VkImageAspectFlags GetAspectFlags() const { return VulkanEnumConvert::GetFormatAspect(m_rawImage->format); }
@@ -55,14 +50,10 @@ namespace PK
 
             const ViewValue* GetView(const TextureViewRange& range, TextureBindMode mode = TextureBindMode::SampledTexture);
 
-            void Dispose();
-
             const VulkanDriver* m_driver = nullptr;
             std::string m_name = "Texture";
             TextureDescriptor m_descriptor;
             VulkanRawImage* m_rawImage = nullptr;
             FastMap<size_t, ViewValue> m_imageViews;
-            VkComponentMapping m_swizzle{};
-            VkImageViewType m_viewType = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
     };
 }

@@ -23,7 +23,7 @@ namespace PK::App
         OnUpdateParameters(config);
 
         TextureDescriptor descriptor{};
-        descriptor.samplerType = SamplerType::Sampler2DArray;
+        descriptor.type = TextureType::Texture2DArray;
         descriptor.format = TextureFormat::RGB9E5;
         descriptor.formatAlias = TextureFormat::R32UI;
         descriptor.resolution.x = config->InitialWidth / 2;
@@ -58,8 +58,8 @@ namespace PK::App
         auto fullres = destination->GetResolution();
         auto quarterres = uint3(fullres.x / 2, fullres.y / 2, 1u);
 
-        m_colorTarget->Validate(quarterres);
-        m_alphaTarget->Validate(quarterres);
+        RHI::ValidateTexture(m_colorTarget, quarterres);
+        RHI::ValidateTexture(m_alphaTarget, quarterres);
 
         m_constants.pk_DoF_MaximumCoC = std::min(0.05f, 10.0f / destination->GetResolution().y);
 

@@ -124,11 +124,17 @@ namespace PK
         inline RHIBufferRef CreateBuffer(size_t count, BufferUsage usage, const char* name) { return CreateBuffer(sizeof(T) * count, usage, name); }
 
         bool ValidateTexture(RHITextureRef& inoutTexture, const TextureDescriptor& descriptor, const char* name);
+        bool ValidateTexture(RHITextureRef& inoutTexture, const uint3& resolution);
+        bool ValidateTexture(RHITextureRef& inoutTexture, const uint32_t levels, const uint32_t layers);
 
         bool ValidateBuffer(RHIBufferRef& inoutBuffer, size_t size, BufferUsage usage, const char* name);
+        bool ValidateBuffer(RHIBufferRef& inoutBuffer, size_t size);
 
         template<typename T>
         inline bool ValidateBuffer(RHIBufferRef& inoutBuffer, size_t count, BufferUsage usage, const char* name) { return ValidateBuffer(inoutBuffer, sizeof(T) * count, usage, name); }
+
+        template<typename T> 
+        inline bool ValidateBuffer(RHIBufferRef& inoutBuffer, size_t count) { return ValidateBuffer(inoutBuffer, sizeof(T) * count); }
 
         void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range);
         void SetBuffer(NameID name, RHIBuffer* buffer);

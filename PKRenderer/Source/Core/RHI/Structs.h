@@ -59,11 +59,11 @@ namespace PK
         MaxCount
     };
 
-    enum class SamplerType : uint8_t
+    enum class TextureType : uint8_t
     {
-        Sampler2D,
-        Sampler2DArray,
-        Sampler3D,
+        Texture2D,
+        Texture2DArray,
+        Texture3D,
         Cubemap,
         CubemapArray,
     };
@@ -560,7 +560,7 @@ namespace PK
         TextureFormat format = TextureFormat::RGBA8;
         TextureFormat formatAlias = TextureFormat::Invalid;
         TextureUsage usage = TextureUsage::Default;
-        SamplerType samplerType = SamplerType::Sampler2D;
+        TextureType type = TextureType::Texture2D;
         uint3 resolution = PK_UINT3_ONE;
         uint8_t levels = 1;
         uint8_t samples = 1;

@@ -14,17 +14,17 @@ namespace PK
     {
         public:
             VulkanBuffer(size_t size, BufferUsage usage, const char* name);
-            ~VulkanBuffer() { Dispose(); }
+            ~VulkanBuffer();
+            
+            size_t GetSize() const final { return m_rawBuffer->size; }
+            BufferUsage GetUsage() const final { return m_usage; }
+            const char* GetDebugName() const final { return m_name.c_str(); }
 
             const void* BeginRead(size_t offset, size_t size) final;
             void EndRead() final;
             size_t SparseAllocate(const size_t size, QueueType type) final;
             void SparseAllocateRange(const BufferIndexRange& range, QueueType type) final;
             void SparseDeallocate(const BufferIndexRange& range) final;
-            bool Validate(size_t size) final;
-            size_t GetSize() const final { return m_size; }
-            size_t GetCapacity() const final { return m_rawBuffer->capacity; }
-            BufferUsage GetUsage() const final { return m_usage; }
 
             void* BeginWrite(size_t offset, size_t size);
             void EndWrite(VkBuffer* src, VkBuffer* dst, VkBufferCopy* region, const FenceRef& fence);
@@ -42,11 +42,7 @@ namespace PK
 
             using RangeHash = Hash::TMurmurHash<BufferIndexRange>;
 
-            void Rebuild(size_t size);
-            void Dispose();
-
             const VulkanDriver* m_driver = nullptr;
-            size_t m_size = 0;
             BufferUsage m_usage = BufferUsage::None;
             std::string m_name = "Buffer";
             VulkanRawBuffer* m_rawBuffer = nullptr;

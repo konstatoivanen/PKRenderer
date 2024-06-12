@@ -4,6 +4,7 @@
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
+#include "Core/Rendering/TextureAsset.h"
 #include "App/Renderer/HashCache.h"
 #include "PassTemporalAntialiasing.h"
 
@@ -45,7 +46,7 @@ namespace PK::App
         resolution.x *= 2;
         resolution.y *= 2;
 
-        m_renderTarget->Validate(resolution);
+        RHI::ValidateTexture(m_renderTarget, resolution);
 
         RHI::SetTexture(hash->pk_Texture, source, { 0, 0, 1u, 1u });
         RHI::SetTexture(hash->pk_Texture1, m_renderTarget.get(), { 0, historyRead, 1u, 1u });

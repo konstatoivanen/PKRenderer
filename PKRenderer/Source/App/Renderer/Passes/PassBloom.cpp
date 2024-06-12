@@ -15,7 +15,7 @@ namespace PK::App
         PK_LOG_SCOPE_INDENT(local);
 
         TextureDescriptor descriptor{};
-        descriptor.samplerType = SamplerType::Sampler2D;
+        descriptor.type = TextureType::Texture2D;
         descriptor.usage = TextureUsage::DefaultStorage;
         descriptor.format = TextureFormat::RGB9E5;
         descriptor.formatAlias = TextureFormat::R32UI;
@@ -37,14 +37,13 @@ namespace PK::App
     {
         cmd->BeginDebugScope("Bloom", PK_COLOR_MAGENTA);
 
-        auto bloom = m_bloomTexture.get();
-
         auto res = source->GetResolution();
         res.x >>= 1u;
         res.y >>= 1u;
 
-        bloom->Validate(res);
-
+        RHI::ValidateTexture(m_bloomTexture, res);
+        
+        auto bloom = m_bloomTexture.get();
         auto hash = HashCache::Get();
 
         RHI::SetTexture(hash->pk_Texture, source, 0, 0);
