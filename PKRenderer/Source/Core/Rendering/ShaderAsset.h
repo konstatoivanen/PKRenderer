@@ -16,19 +16,13 @@ namespace PK
             inline bool SupportsKeyword(const NameID name) const { return keywords.count(name) > 0; }
             bool SupportsKeywords(const NameID* names, const uint32_t count) const;
             uint32_t GetIndex(const NameID* names, size_t count) const;
+            uint32_t GetIndex(const PropertyBlock* nameblock) const;
+            uint32_t GetIndex(const uint8_t* flags) const;
 
             uint32_t variantcount = 0;
             uint32_t directivecount = 0;
             uint32_t directives[MAX_DIRECTIVES];
             std::unordered_map<NameID, uint8_t> keywords;
-
-            struct Selector
-            {
-                const Map* map;
-                NameID keywords[MAX_DIRECTIVES]{};
-                void SetKeywordsFrom(const PropertyBlock& block);
-                inline uint32_t GetIndex() const { return map->GetIndex(keywords, map->directivecount); }
-            };
         };
 
         constexpr ShaderStageFlags GetStageFlags() const { return m_shaders.at(0)->GetStageFlags(); }
@@ -37,10 +31,11 @@ namespace PK
         inline uint32_t GetRHIIndex(const NameID* keywords, uint32_t count) const { return m_map.GetIndex(keywords, count); }
         inline uint32_t GetRHIIndex(NameID keyword) const { return m_map.GetIndex(&keyword, 1); }
         inline uint32_t GetRHIIndex(const std::initializer_list<NameID>& keywords) const { return GetRHIIndex(keywords.begin(), (uint32_t)(keywords.end() - keywords.begin())); }
-        inline Map::Selector GetRHISelector() const { return { &m_map }; }
+        inline uint32_t GetRHIIndex(const PropertyBlock* keywords) const { return m_map.GetIndex(keywords); }
 
-        inline const RHIShader* GetRHI(const NameID* keywords, uint32_t count) const { return m_shaders[m_map.GetIndex(keywords, count)].get(); }
+        inline const RHIShader* GetRHI(const NameID* keywords, uint32_t count) const { return m_shaders[GetRHIIndex(keywords, count)].get(); }
         inline const RHIShader* GetRHI(uint32_t index) const { return m_shaders[index].get(); }
+        inline const RHIShader* GetRHI(const PropertyBlock* keywords) const { return m_shaders[GetRHIIndex(keywords)].get(); }
 
         inline bool SupportsKeyword(const NameID keywords) const { return m_map.SupportsKeyword(keywords); }
         inline bool SupportsKeywords(const NameID* keywords, const uint32_t count) const { return m_map.SupportsKeywords(keywords, count); }

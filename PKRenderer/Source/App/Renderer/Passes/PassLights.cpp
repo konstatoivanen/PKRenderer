@@ -379,9 +379,6 @@ namespace PK::App
                     cascadeInfo.count = ShadowCascadeCount;
                     Math::GetShadowCascadeMatrices(cascadeInfo, matricesView.data + matrixIndex);
 
-                    // @TODO Something is very wrong here. position radius output stays invariant & lighting flickers when nothing is rendered.
-                    // Fix this shit.
-                    // Only shadow casting lights need matrices.
                     if (castShadows)
                     {
                         auto shadowCasters = context->cullingProxy->CullCascades(shadowCasterMask, matricesView.data + matrixIndex, renderView->forwardPlane, cascadeZSplits.data(), ShadowCascadeCount);

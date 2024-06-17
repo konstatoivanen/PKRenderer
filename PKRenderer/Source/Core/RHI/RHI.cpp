@@ -73,7 +73,8 @@ namespace PK
                 const std::vector<const char*> PK_INSTANCE_EXTENTIONS =
                 {
                     "VK_EXT_debug_utils",
-                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
+                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+                    VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME
                 };
 
                 const std::vector<const char*> PK_DEVICE_EXTENTIONS =
@@ -87,7 +88,8 @@ namespace PK
                     VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME,
                     VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME,
                     VK_EXT_MESH_SHADER_EXTENSION_NAME,
-                    VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
+                    VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
+                    VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME
                 };
 
                 driver = CreateScope<VulkanDriver>(VulkanContextProperties

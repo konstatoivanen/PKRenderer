@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include <vulkan/vk_enum_string_helper.h>
 #include "Core/Utilities/VectorHelpers.h"
 #include "VulkanBarrierHandler.h"
 

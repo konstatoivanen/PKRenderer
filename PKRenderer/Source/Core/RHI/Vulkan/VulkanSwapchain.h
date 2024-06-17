@@ -16,6 +16,8 @@ namespace PK
         VkPresentModeKHR desiredPresentMode;
         uint32_t desiredImageCount;
         uint32_t maxFramesInFlight;
+        const void* nativeMonitor;
+        bool exclusiveFullScreen;
     };
 
     class VulkanSwapchain : public NoCopy
@@ -36,10 +38,11 @@ namespace PK
             void Rebuild(const SwapchainCreateInfo& createInfo);
             void Release();
 
+            void SetDesiredExtent(const VkExtent2D& extent);
+            void RequestExclusiveFullScreen(const void* nativeMonitor, bool value);
             void SetFrameFence(const FenceRef& fence);
             bool TryAcquireNextImage(VkSemaphore* imageAvailableSignal);
             void Present(VkSemaphore waitSignal);
-            void OnWindowResize(int w, int h);
 
             const VulkanBindHandle* GetBindHandle() const { return &m_bindHandles[m_imageIndex]; }
             const VulkanImageView* GetImageView() const { return m_imageViews[m_imageIndex]; }
@@ -50,6 +53,7 @@ namespace PK
             constexpr float GetAspectRatio() const { return (float)m_extent.width / (float)m_extent.height; }
             constexpr uint4 GetRect() const { return { 0, 0, m_extent.width, m_extent.height }; }
             constexpr VkFormat GetNativeFormat() const { return m_format; }
+            constexpr bool IsExclusiveFullScreen() const { return m_isExlclusiveFullScreen; }
 
         private:
             const VkPhysicalDevice m_physicalDevice;
@@ -70,6 +74,7 @@ namespace PK
             uint32_t m_maxFramesInFlight;
             uint32_t m_frameIndex = 0u;
             uint32_t m_imageIndex = 0u;
+            bool m_isExlclusiveFullScreen = false;
             bool m_outofdate = false;
             bool m_suboptimal = false;
             bool m_hasExternalFrameFence = false;

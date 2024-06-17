@@ -1,4 +1,9 @@
 #pragma once
+#ifdef _WIN32
+// Exposes full screen ext
+#define NOMINMAX 
+#define VK_USE_PLATFORM_WIN32_KHR
+#endif
 #include "vulkan/vulkan.h"
 #include "VMA/vk_mem_alloc.h"
 #include "Core/Utilities/FenceRef.h"
@@ -92,6 +97,12 @@ extern PFN_vkCmdDrawMeshTasksIndirectEXT pkfn_vkCmdDrawMeshTasksIndirectEXT;
 extern PFN_vkCmdDrawMeshTasksIndirectCountEXT pkfn_vkCmdDrawMeshTasksIndirectCountEXT;
 #define vkCmdDrawMeshTasksIndirectCountEXT pkfn_vkCmdDrawMeshTasksIndirectCountEXT
 
+extern PFN_vkAcquireFullScreenExclusiveModeEXT pkfn_vkAcquireFullScreenExclusiveModeEXT;
+#define vkAcquireFullScreenExclusiveModeEXT pkfn_vkAcquireFullScreenExclusiveModeEXT
+
+extern PFN_vkReleaseFullScreenExclusiveModeEXT pkfn_vkReleaseFullScreenExclusiveModeEXT;
+#define vkReleaseFullScreenExclusiveModeEXT pkfn_vkReleaseFullScreenExclusiveModeEXT
+
 namespace PK
 {
     struct VulkanQueueFamilies
@@ -149,6 +160,15 @@ namespace PK
         VkPhysicalDeviceType deviceType;
         VulkanPhysicalDeviceFeatures features;
         const std::vector<const char*>* deviceExtensions;
+    };
+
+    struct VulkanExclusiveFullscreenInfo
+    {
+#ifdef _WIN32
+        VkSurfaceFullScreenExclusiveWin32InfoEXT win32Info;
+        VkSurfaceFullScreenExclusiveInfoEXT fullscreenInfo;
+#endif
+        void* swapchainPNext = nullptr;
     };
 
     struct VulkanTimelineSemaphore
@@ -386,6 +406,7 @@ namespace PK
         VkFormat GetFormat(TextureFormat format);
         VkIndexType GetIndexType(ElementType format);
         TextureFormat GetTextureFormat(VkFormat format);
+        uint32_t GetFormatBlockSize(VkFormat format);
         bool IsDepthFormat(VkFormat format);
         bool IsDepthStencilFormat(VkFormat format);
 
@@ -433,6 +454,7 @@ namespace PK
     std::vector<VkSurfaceFormatKHR> VulkanGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
     std::vector<VkPresentModeKHR> VulkanGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
     VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device);
+    VulkanExclusiveFullscreenInfo VulkanGetSwapchainFullscreenInfo(const void* nativeMonitor, bool fullScreen);
 
     bool VulkanValidateInstanceExtensions(const std::vector<const char*>* extensions);
     bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const std::vector<const char*>* extensions);
@@ -445,7 +467,11 @@ namespace PK
     VkPresentModeKHR VulkanSelectPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, VkPresentModeKHR desiredPresentMode);
 
     VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR info, uint32_t primitiveCount);
-    std::string VulkanResultToString(VkResult result);
+    
+    // Defined here to prevent multiple includes of vulkan.h with wrong defines.
+    std::string VulkanStr_VkQueueFlags(VkQueueFlags value);
+    const char* VulkanCStr_VkShaderStageFlagBits(VkShaderStageFlagBits value);
+    const char* VulkanCStr_VkFormat(VkFormat value);
 
     VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkImageAspectFlags aspect);
     TextureViewRange VulkanConvertRange(const VkImageSubresourceRange& resourceRange);

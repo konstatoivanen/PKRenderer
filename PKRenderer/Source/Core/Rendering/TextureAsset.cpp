@@ -30,7 +30,6 @@ namespace PK
         descriptor.resolution = { ktxTex2->baseWidth, ktxTex2->baseHeight, ktxTex2->baseDepth };
         descriptor.levels = ktxTex2->numLevels;
         descriptor.layers = ktxTex2->numLayers;
-        //@TODO Not a cool dependency
         descriptor.format = VulkanEnumConvert::GetTextureFormat((VkFormat)ktxTex2->vkFormat);
 
         if (ktxTex2->isCubemap && ktxTex2->isArray)

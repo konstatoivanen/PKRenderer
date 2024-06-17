@@ -1,10 +1,10 @@
 #include "PrecompiledHeader.h"
 #include <cstdio>
-#include <vulkan/vk_enum_string_helper.h>
 #include "Core/CLI/Log.h"
 #define VMA_IMPLEMENTATION
 #include "VulkanCommon.h"
 #include <gfx.h>
+#include <vulkan/vk_enum_string_helper.h>
 
 PFN_vkSetDebugUtilsObjectNameEXT pkfn_vkSetDebugUtilsObjectNameEXT = nullptr;
 PFN_vkSetDebugUtilsObjectTagEXT pkfn_vkSetDebugUtilsObjectTagEXT = nullptr;
@@ -37,6 +37,9 @@ PFN_vkCmdWriteAccelerationStructuresPropertiesKHR pkfn_vkCmdWriteAccelerationStr
 PFN_vkCmdDrawMeshTasksEXT pkfn_vkCmdDrawMeshTasksEXT = nullptr;
 PFN_vkCmdDrawMeshTasksIndirectEXT pkfn_vkCmdDrawMeshTasksIndirectEXT = nullptr;
 PFN_vkCmdDrawMeshTasksIndirectCountEXT pkfn_vkCmdDrawMeshTasksIndirectCountEXT = nullptr;
+
+PFN_vkAcquireFullScreenExclusiveModeEXT pkfn_vkAcquireFullScreenExclusiveModeEXT = nullptr;
+PFN_vkReleaseFullScreenExclusiveModeEXT pkfn_vkReleaseFullScreenExclusiveModeEXT = nullptr;
 
 namespace PK
 {
@@ -877,8 +880,9 @@ namespace PK
                 case TextureFormat::RGB9E5:             return VK_FORMAT_E5B9G9R9_UFLOAT_PACK32;
                 case TextureFormat::RGBA8:              return VK_FORMAT_R8G8B8A8_UNORM;
                 case TextureFormat::RGBA8_SRGB:         return VK_FORMAT_R8G8B8A8_SRGB;
-                case TextureFormat::BGRA8_SRGB:         return VK_FORMAT_B8G8R8A8_SRGB;
                 case TextureFormat::RGBA8_SNORM:        return VK_FORMAT_R8G8B8A8_SNORM;
+                case TextureFormat::BGRA8:              return VK_FORMAT_B8G8R8A8_UNORM;
+                case TextureFormat::BGRA8_SRGB:         return VK_FORMAT_B8G8R8A8_SRGB;
                 case TextureFormat::RGB10A2:            return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
                 case TextureFormat::RGBA8UI:            return VK_FORMAT_R8G8B8A8_UINT;
                 case TextureFormat::RGBA8I:             return VK_FORMAT_R8G8B8A8_SINT;
@@ -963,8 +967,9 @@ namespace PK
                 case VK_FORMAT_E5B9G9R9_UFLOAT_PACK32:    return TextureFormat::RGB9E5;
                 case VK_FORMAT_R8G8B8A8_UNORM:            return TextureFormat::RGBA8;
                 case VK_FORMAT_R8G8B8A8_SRGB:             return TextureFormat::RGBA8_SRGB;
-                case VK_FORMAT_B8G8R8A8_SRGB:             return TextureFormat::BGRA8_SRGB;
                 case VK_FORMAT_R8G8B8A8_SNORM:            return TextureFormat::RGBA8_SNORM;
+                case VK_FORMAT_B8G8R8A8_UNORM:            return TextureFormat::BGRA8;
+                case VK_FORMAT_B8G8R8A8_SRGB:             return TextureFormat::BGRA8_SRGB;
                 case VK_FORMAT_A2B10G10R10_UNORM_PACK32:  return TextureFormat::RGB10A2;
                 case VK_FORMAT_R8G8B8A8_UINT:             return TextureFormat::RGBA8UI;
                 case VK_FORMAT_R8G8B8A8_SINT:             return TextureFormat::RGBA8I;
@@ -1002,6 +1007,114 @@ namespace PK
                 case VK_FORMAT_BC7_UNORM_BLOCK:           return TextureFormat::BC7_UNORM;
                 default:                                  return TextureFormat::Invalid;
             }
+        }
+
+        uint32_t GetFormatBlockSize(VkFormat format)
+        {
+            switch (format)
+            {
+                case VK_FORMAT_R8_UNORM:
+                case VK_FORMAT_R8_SNORM:
+                case VK_FORMAT_R8_UINT:
+                case VK_FORMAT_R8_SINT:
+                case VK_FORMAT_S8_UINT:
+                    return 1u;
+
+                case VK_FORMAT_R16_SFLOAT:
+                case VK_FORMAT_R16_UINT:
+                case VK_FORMAT_R16_SINT:
+                case VK_FORMAT_R8G8_UNORM:
+                case VK_FORMAT_R8G8_SNORM:
+                case VK_FORMAT_R8G8_UINT:
+                case VK_FORMAT_R8G8_SINT:
+                case VK_FORMAT_R5G6B5_UNORM_PACK16:
+                case VK_FORMAT_R5G5B5A1_UNORM_PACK16:
+                case VK_FORMAT_R4G4B4A4_UNORM_PACK16:
+                case VK_FORMAT_D16_UNORM:
+                    return 2u;
+
+                case VK_FORMAT_R8G8B8_UNORM:
+                case VK_FORMAT_R8G8B8_SRGB:
+                case VK_FORMAT_R8G8B8_SNORM:
+                case VK_FORMAT_R8G8B8_UINT:
+                case VK_FORMAT_R8G8B8_SINT:
+                    return 3u;
+
+                case VK_FORMAT_R32_SFLOAT:
+                case VK_FORMAT_R32_UINT:
+                case VK_FORMAT_R32_SINT:
+                case VK_FORMAT_R16G16_SFLOAT:
+                case VK_FORMAT_R16G16_UINT:
+                case VK_FORMAT_R16G16_SINT:
+                case VK_FORMAT_B10G11R11_UFLOAT_PACK32:
+                case VK_FORMAT_E5B9G9R9_UFLOAT_PACK32:
+                case VK_FORMAT_R8G8B8A8_UNORM:
+                case VK_FORMAT_R8G8B8A8_SRGB:
+                case VK_FORMAT_R8G8B8A8_SNORM:
+                case VK_FORMAT_B8G8R8A8_UNORM:
+                case VK_FORMAT_B8G8R8A8_SRGB:
+                case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+                case VK_FORMAT_R8G8B8A8_UINT:
+                case VK_FORMAT_R8G8B8A8_SINT:
+                case VK_FORMAT_D32_SFLOAT:
+                case VK_FORMAT_D24_UNORM_S8_UINT:
+                    return 4u;
+
+                case VK_FORMAT_D32_SFLOAT_S8_UINT:
+                    return 5u;
+
+                case VK_FORMAT_R16G16B16_SFLOAT:
+                case VK_FORMAT_R16G16B16_UINT:
+                case VK_FORMAT_R16G16B16_SINT:
+                    return 6u;
+
+                case VK_FORMAT_R32G32_SFLOAT:
+                case VK_FORMAT_R32G32_UINT:
+                case VK_FORMAT_R32G32_SINT:
+                case VK_FORMAT_R16G16B16A16_UNORM:
+                case VK_FORMAT_R16G16B16A16_SFLOAT:
+                case VK_FORMAT_R16G16B16A16_UINT:
+                case VK_FORMAT_R16G16B16A16_SINT:
+                    return 8u;
+
+                case VK_FORMAT_R32G32B32_SFLOAT:
+                case VK_FORMAT_R32G32B32_UINT:
+                case VK_FORMAT_R32G32B32_SINT:
+                    return 12u;
+
+                case VK_FORMAT_R32G32B32A32_SFLOAT:
+                case VK_FORMAT_R32G32B32A32_UINT:
+                case VK_FORMAT_R32G32B32A32_SINT:
+                    return 16u;
+
+                case VK_FORMAT_R64G64B64A64_UINT:
+                    return 32u;
+
+                case VK_FORMAT_BC1_RGB_UNORM_BLOCK:
+                case VK_FORMAT_BC1_RGB_SRGB_BLOCK:
+                case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:
+                case VK_FORMAT_BC1_RGBA_SRGB_BLOCK:
+                    return 8u;
+
+                case VK_FORMAT_BC2_UNORM_BLOCK:
+                case VK_FORMAT_BC2_SRGB_BLOCK:
+                case VK_FORMAT_BC3_UNORM_BLOCK:
+                case VK_FORMAT_BC3_SRGB_BLOCK: 
+                    return 16u;
+                
+                case VK_FORMAT_BC4_UNORM_BLOCK:           
+                    return 8u;
+                
+                case VK_FORMAT_BC6H_UFLOAT_BLOCK:
+                case VK_FORMAT_BC6H_SFLOAT_BLOCK:
+                case VK_FORMAT_BC7_UNORM_BLOCK:
+                    return 16u;
+                
+                default: 
+                    return 0u;
+            }
+
+            return uint32_t();
         }
 
         VkImageAspectFlagBits GetFormatAspect(VkFormat format)
@@ -1671,6 +1784,9 @@ namespace PK
         pkfn_vkCmdDrawMeshTasksEXT = (PFN_vkCmdDrawMeshTasksEXT)vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksEXT");
         pkfn_vkCmdDrawMeshTasksIndirectEXT = (PFN_vkCmdDrawMeshTasksIndirectEXT)vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksIndirectEXT");
         pkfn_vkCmdDrawMeshTasksIndirectCountEXT = (PFN_vkCmdDrawMeshTasksIndirectCountEXT)vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksIndirectCountEXT");
+
+        pkfn_vkAcquireFullScreenExclusiveModeEXT = (PFN_vkAcquireFullScreenExclusiveModeEXT)vkGetInstanceProcAddr(instance, "vkAcquireFullScreenExclusiveModeEXT");
+        pkfn_vkReleaseFullScreenExclusiveModeEXT = (PFN_vkReleaseFullScreenExclusiveModeEXT)vkGetInstanceProcAddr(instance, "vkReleaseFullScreenExclusiveModeEXT");
     }
 
 
@@ -1793,6 +1909,28 @@ namespace PK
         returnProperties.subgroup = subgroupProperties;
         returnProperties.meshShader = meshShaderProperties;
         return returnProperties;
+    }
+
+    VulkanExclusiveFullscreenInfo VulkanGetSwapchainFullscreenInfo(const void* nativeMonitor, bool fullScreen)
+    {
+        VulkanExclusiveFullscreenInfo info;
+        info.swapchainPNext = nullptr;
+        // @TODO handle platform logic in a better way.
+
+        if (fullScreen)
+        {
+#ifdef _WIN32
+            info.win32Info = { VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT };
+            info.win32Info.hmonitor = (HMONITOR)nativeMonitor;
+
+            info.fullscreenInfo = { VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT };
+            info.fullscreenInfo.fullScreenExclusive = VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT;
+            info.fullscreenInfo.pNext = &info.win32Info;
+            info.swapchainPNext = &info.fullscreenInfo;
+#endif
+        }
+
+        return info;
     }
 
 
@@ -1984,62 +2122,9 @@ namespace PK
         return accelerationStructureBuildSizesInfo;
     }
 
-    std::string VulkanResultToString(VkResult result)
-    {
-        switch (result)
-        {
-            case VK_SUCCESS: return "VK_SUCCESS";
-            case VK_NOT_READY: return "VK_NOT_READY";
-            case VK_TIMEOUT: return "VK_TIMEOUT";
-            case VK_EVENT_SET: return "VK_EVENT_SET";
-            case VK_EVENT_RESET: return "VK_EVENT_RESET";
-            case VK_INCOMPLETE: return "VK_INCOMPLETE";
-            case VK_ERROR_OUT_OF_HOST_MEMORY: return "VK_ERROR_OUT_OF_HOST_MEMORY";
-            case VK_ERROR_OUT_OF_DEVICE_MEMORY: return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
-            case VK_ERROR_INITIALIZATION_FAILED: return "VK_ERROR_INITIALIZATION_FAILED";
-            case VK_ERROR_DEVICE_LOST: return "VK_ERROR_DEVICE_LOST";
-            case VK_ERROR_MEMORY_MAP_FAILED: return "VK_ERROR_MEMORY_MAP_FAILED";
-            case VK_ERROR_LAYER_NOT_PRESENT: return "VK_ERROR_LAYER_NOT_PRESENT";
-            case VK_ERROR_EXTENSION_NOT_PRESENT: return "VK_ERROR_EXTENSION_NOT_PRESENT";
-            case VK_ERROR_FEATURE_NOT_PRESENT: return "VK_ERROR_FEATURE_NOT_PRESENT";
-            case VK_ERROR_INCOMPATIBLE_DRIVER: return "VK_ERROR_INCOMPATIBLE_DRIVER";
-            case VK_ERROR_TOO_MANY_OBJECTS: return "VK_ERROR_TOO_MANY_OBJECTS";
-            case VK_ERROR_FORMAT_NOT_SUPPORTED: return "VK_ERROR_FORMAT_NOT_SUPPORTED";
-            case VK_ERROR_FRAGMENTED_POOL: return "VK_ERROR_FRAGMENTED_POOL";
-            case VK_ERROR_UNKNOWN: return "VK_ERROR_UNKNOWN";
-            case VK_ERROR_OUT_OF_POOL_MEMORY: return "VK_ERROR_OUT_OF_POOL_MEMORY";
-            case VK_ERROR_INVALID_EXTERNAL_HANDLE: return "VK_ERROR_INVALID_EXTERNAL_HANDLE";
-            case VK_ERROR_FRAGMENTATION: return "VK_ERROR_FRAGMENTATION";
-            case VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS: return "VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS";
-            case VK_PIPELINE_COMPILE_REQUIRED: return "VK_PIPELINE_COMPILE_REQUIRED";
-            case VK_ERROR_SURFACE_LOST_KHR: return "VK_ERROR_SURFACE_LOST_KHR";
-            case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR: return "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
-            case VK_SUBOPTIMAL_KHR: return "VK_SUBOPTIMAL_KHR";
-            case VK_ERROR_OUT_OF_DATE_KHR: return "VK_ERROR_OUT_OF_DATE_KHR";
-            case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR: return "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
-            case VK_ERROR_VALIDATION_FAILED_EXT: return "VK_ERROR_VALIDATION_FAILED_EXT";
-            case VK_ERROR_INVALID_SHADER_NV: return "VK_ERROR_INVALID_SHADER_NV";
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-            case VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR: return "VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR";
-            case VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR: return "VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR";
-            case VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR: return "VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR";
-            case VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR: return "VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR";
-            case VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR: return "VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR";
-            case VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR: return "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR";
-#endif
-            case VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT: return "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT";
-            case VK_ERROR_NOT_PERMITTED_KHR: return "VK_ERROR_NOT_PERMITTED_KHR";
-            case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT: return "VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT";
-            case VK_THREAD_IDLE_KHR: return "VK_THREAD_IDLE_KHR";
-            case VK_THREAD_DONE_KHR: return "VK_THREAD_DONE_KHR";
-            case VK_OPERATION_DEFERRED_KHR: return "VK_OPERATION_DEFERRED_KHR";
-            case VK_OPERATION_NOT_DEFERRED_KHR: return "VK_OPERATION_NOT_DEFERRED_KHR";
-            case VK_ERROR_COMPRESSION_EXHAUSTED_EXT: return "VK_ERROR_COMPRESSION_EXHAUSTED_EXT";
-            case VK_RESULT_MAX_ENUM: return "VK_RESULT_MAX_ENUM";
-            default: return "VK_RESULT_INVALID_ENUM";
-        }
-    }
-
+    std::string VulkanStr_VkQueueFlags(VkQueueFlags value) { return string_VkQueueFlags(value); }
+    const char* VulkanCStr_VkShaderStageFlagBits(VkShaderStageFlagBits value) { return string_VkShaderStageFlagBits(value); }
+    const char* VulkanCStr_VkFormat(VkFormat value) { return string_VkFormat(value); }
 
     VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkImageAspectFlags aspect)
     {
@@ -2080,11 +2165,11 @@ namespace PK
     {
         if (context != nullptr)
         {
-            PK_THROW_ERROR("%s (%s)", context, VulkanResultToString(result).c_str());
+            PK_THROW_ERROR("%s (%s)", context, string_VkResult(result));
         }
         else
         {
-            PK_THROW_ERROR("%s (%s)", context, VulkanResultToString(result).c_str());
+            PK_THROW_ERROR("%s (%s)", context, string_VkResult(result));
         }
     }
 }

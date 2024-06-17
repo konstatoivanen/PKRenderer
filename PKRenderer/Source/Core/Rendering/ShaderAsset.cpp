@@ -35,6 +35,27 @@ namespace PK
             }
         }
 
+        return GetIndex(flags);
+    }
+
+    uint32_t ShaderAsset::Map::GetIndex(const PropertyBlock* nameblock) const
+    {
+        uint8_t flags[MAX_DIRECTIVES]{};
+
+        for (auto& kv : keywords)
+        {
+            bool value;
+            if (nameblock->TryGet(kv.first, value) && value)
+            {
+                flags[kv.second >> 4] = kv.second & 0xF;
+            }
+        }
+
+        return GetIndex(flags);
+    }
+
+    uint32_t ShaderAsset::Map::GetIndex(const uint8_t* flags) const
+    {
         auto idx = 0u;
 
         for (auto i = 0u; i < directivecount; ++i)
@@ -43,19 +64,6 @@ namespace PK
         }
 
         return idx;
-    }
-
-    void ShaderAsset::Map::Selector::SetKeywordsFrom(const PropertyBlock& block)
-    {
-        bool value;
-
-        for (auto& kv : map->keywords)
-        {
-            if (block.TryGet(kv.first, value) && value)
-            {
-                keywords[kv.second >> 4] = kv.first;
-            }
-        }
     }
 
     void ShaderAsset::AssetImport(const char* filepath)

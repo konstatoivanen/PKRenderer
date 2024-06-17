@@ -1,6 +1,4 @@
 #include "PrecompiledHeader.h"
-#include <gfx.h>
-#include <vulkan/vk_enum_string_helper.h>
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanSwapchain.h"
@@ -68,7 +66,11 @@ namespace PK
         m_imageCount = glm::clamp(createInfo.desiredImageCount, minImageCount, maxImageCount);
         uint32_t queueFamilyIndices[] = { m_queueGraphics->GetFamily(), m_queuePresent->GetFamily() };
 
+        m_cachedCreateInfo.exclusiveFullScreen &= createInfo.nativeMonitor != nullptr;
+        auto fullscreenInfo = VulkanGetSwapchainFullscreenInfo(createInfo.nativeMonitor, createInfo.exclusiveFullScreen);
+
         VkSwapchainCreateInfoKHR swapchainCreateInfo{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
+        swapchainCreateInfo.pNext = fullscreenInfo.swapchainPNext;
         swapchainCreateInfo.surface = m_surface;
         swapchainCreateInfo.minImageCount = m_imageCount;
         swapchainCreateInfo.imageFormat = surfaceFormat.format;
@@ -101,7 +103,7 @@ namespace PK
         PK_LOG_INFO("Width: %i", m_extent.width);
         PK_LOG_INFO("Height: %i", m_extent.height);
         PK_LOG_INFO("Images: %i", m_imageCount);
-        PK_LOG_INFO("Format: %s", string_VkFormat(m_format));
+        PK_LOG_INFO("Format: %s", VulkanCStr_VkFormat(m_format));
 
         vkGetSwapchainImagesKHR(m_device, m_swapchain, &m_imageCount, nullptr);
         vkGetSwapchainImagesKHR(m_device, m_swapchain, &m_imageCount, m_images);
@@ -141,11 +143,24 @@ namespace PK
             fence.Invalidate();
         }
 
+        m_isExlclusiveFullScreen = m_cachedCreateInfo.exclusiveFullScreen;
+
+        if (m_cachedCreateInfo.exclusiveFullScreen && vkAcquireFullScreenExclusiveModeEXT(m_device, m_swapchain) != VK_SUCCESS)
+        {
+            m_cachedCreateInfo.exclusiveFullScreen = false;
+            m_isExlclusiveFullScreen = false;
+        }
+
         m_outofdate = false;
     }
 
     void VulkanSwapchain::Release()
     {
+        if (m_isExlclusiveFullScreen)
+        {
+            VK_ASSERT_RESULT(vkReleaseFullScreenExclusiveModeEXT(m_device, m_swapchain));
+        }
+
         for (size_t i = 0u; i < MaxImageCount; ++i)
         {
             if (m_imageViews[i] != nullptr)
@@ -161,6 +176,25 @@ namespace PK
         }
     }
 
+    void VulkanSwapchain::SetDesiredExtent(const VkExtent2D& extent)
+    {
+        if (extent.width != 0u && extent.height != 0u)
+        {
+            m_cachedCreateInfo.desiredExtent = extent;
+            m_outofdate = true;
+        }
+    }
+
+    void VulkanSwapchain::RequestExclusiveFullScreen(const void* nativeMonitor, bool value)
+    {
+        if (m_cachedCreateInfo.exclusiveFullScreen != value)
+        {
+            m_outofdate = true;
+            m_cachedCreateInfo.exclusiveFullScreen = value;
+            m_cachedCreateInfo.nativeMonitor = nativeMonitor;
+        }
+    }
+
     void VulkanSwapchain::SetFrameFence(const FenceRef& fence)
     {
         m_frameFences[m_frameIndex] = fence;
@@ -172,7 +206,6 @@ namespace PK
         if (m_outofdate)
         {
             Rebuild(m_cachedCreateInfo);
-            glfwWaitEvents();
         }
 
         // This is not strictly necesssary when not using double buffering for staging buffers.
@@ -199,12 +232,5 @@ namespace PK
         m_hasExternalFrameFence = false;
         m_frameIndex = (m_frameIndex + 1) % m_maxFramesInFlight;
         VK_ASSERT_RESULT(m_queuePresent->Present(m_swapchain, m_imageIndex, waitSignal));
-    }
-
-    void VulkanSwapchain::OnWindowResize(int w, int h)
-    {
-        m_cachedCreateInfo.desiredExtent.width = (uint32_t)w;
-        m_cachedCreateInfo.desiredExtent.height = (uint32_t)h;
-        m_outofdate = true;
     }
 }

@@ -49,6 +49,16 @@ namespace PK::App
                 IApplication::Get()->GetPrimaryWindow()->SetVSync(!IApplication::Get()->GetPrimaryWindow()->IsVSync());
             });
 
+        CVariableRegister::Create<CVariableFunc>("Application.Fullscreen", [](const char** args, [[maybe_unused]] uint32_t count)
+            {
+                IApplication::Get()->GetPrimaryWindow()->SetFullscreen((bool)atoi(args[0]));
+            }, "0 = 0ff, 1 = On", 1u, 1u);
+
+        CVariableRegister::Create<CVariableFuncSimple>("Application.Fullscreen.Toggle", []()
+            {
+                IApplication::Get()->GetPrimaryWindow()->SetFullscreen(!IApplication::Get()->GetPrimaryWindow()->IsFullscreen());
+            });
+
         GetServices()->Create<HashCache>();
 
         auto remoteProcessRunner = GetServices()->Create<RemoteProcessRunner>();

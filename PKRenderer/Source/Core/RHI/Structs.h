@@ -277,6 +277,7 @@ namespace PK
         RGBA8, 
         RGBA8_SRGB, 
         RGBA8_SNORM, 
+        BGRA8,
         BGRA8_SRGB,
         RGB10A2, 
         RGBA8UI, 

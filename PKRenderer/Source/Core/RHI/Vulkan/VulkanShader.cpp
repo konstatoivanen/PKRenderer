@@ -1,6 +1,5 @@
 #include "PrecompiledHeader.h"
 #include <PKAssets/PKAssetLoader.h>
-#include <vulkan/vk_enum_string_helper.h>
 #include "Core/Math/FunctionsMisc.h"
 #include "Core/CLI/Log.h" 
 #include "Core/RHI/Vulkan/VulkanDriver.h"
@@ -26,7 +25,7 @@ namespace PK
             auto spirvSize = variant->sprivSizes[i];
             auto* spirv = reinterpret_cast<uint32_t*>(variant->sprivBuffers[i].Get(base));
             auto stage = VulkanEnumConvert::GetShaderStage((ShaderStage)i);
-            auto moduleName = std::string(name) + std::string(".") + string_VkShaderStageFlagBits(stage);
+            auto moduleName = std::string(name) + std::string(".") + VulkanCStr_VkShaderStageFlagBits(stage);
             m_modules[i] = new VulkanShaderModule(m_device, stage, spirv, spirvSize, moduleName.c_str());
             m_stageFlags = m_stageFlags | (ShaderStageFlags)(1u << i);
         }

@@ -6,22 +6,23 @@
 
 namespace PK
 {
-    void ShaderBindingTable::Validate(CommandBufferExt cmd, ShaderAsset* shader)
+    void ShaderBindingTable::Validate(CommandBufferExt cmd, ShaderAsset* shader, int32_t variantIndex)
     {
-        // @TODO parameterize this
-        auto selector = shader->GetRHISelector();
-        selector.SetKeywordsFrom(*RHI::GetDriver()->GetResourceState());
-        auto newVariantIndex = selector.GetIndex();
+        if (variantIndex == -1)
+        {
+            variantIndex = shader->GetRHIIndex(RHI::GetDriver()->GetResourceState());
+        }
+
         auto newHash = shader->GetAssetHash();
 
-        if (pipelineHash == newHash && variantIndex == newVariantIndex)
+        if (pipelineHash == newHash && currentVariantIndex == (uint32_t)variantIndex)
         {
             return;
         }
 
         pipelineHash = newHash;
-        variantIndex = newVariantIndex;
-        tableInfo = shader->GetRHI(newVariantIndex)->GetShaderBindingTableInfo();
+        currentVariantIndex = (uint32_t)variantIndex;
+        tableInfo = shader->GetRHI(currentVariantIndex)->GetShaderBindingTableInfo();
         RHI::ValidateBuffer(buffer, tableInfo.totalTableSize, BufferUsage::DefaultShaderBindingTable, "ShaderBindingTable");
         cmd.UploadBufferData(buffer.get(), tableInfo.handleData);
     }

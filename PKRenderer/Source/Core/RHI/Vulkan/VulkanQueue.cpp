@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include <vulkan/vk_enum_string_helper.h>
 #include "Core/Math/FunctionsMisc.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
@@ -435,7 +434,7 @@ namespace PK
             createInfos.push_back(createInfo);
 
             auto& props = context.families->at(i);
-            auto flagsString = string_VkQueueFlags(props.queueFlags);
+            auto flagsString = VulkanStr_VkQueueFlags(props.queueFlags);
             PK_LOG_INFO("Family: %i, NumQueues: %i, Flags: %s", i, props.queueCount, flagsString.c_str());
         }
 

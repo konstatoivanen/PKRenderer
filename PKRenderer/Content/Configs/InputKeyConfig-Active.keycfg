@@ -11,6 +11,7 @@ CommandInputKeys:
     - ["Camera.DollyZoom", "LeftShift"]
 InputKeyCommands:
     - ["Escape", "Application.Close"]
+    - ["F11", "Application.Fullscreen.Toggle"]
     - ["R", "AssetDatabase.Reload.Cached.All.ShaderAsset"]
     - ["C", "AssetDatabase.Reload.Cached.All.RendererConfig"]
     - ["Z", "AssetDatabase.Reload.Cached.All.InputKeyConfig"]

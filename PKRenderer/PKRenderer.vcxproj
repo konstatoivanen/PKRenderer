@@ -1051,6 +1051,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Timers\ITimer.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFramerate.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFrameRunner.cpp" />
+    <ClCompile Include="ThirdParty\gfx.cpp" />
     <ClCompile Include="ThirdParty\glm\detail\glm.cpp" />
     <ClCompile Include="ThirdParty\mikktspace\mikktspace.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>

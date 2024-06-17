@@ -2460,6 +2460,9 @@
     <ClCompile Include="Source\Core\Timers\TimerFrameRunner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ThirdParty\gfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="ThirdParty\GLFW\Binaries\glfw3.lib" />

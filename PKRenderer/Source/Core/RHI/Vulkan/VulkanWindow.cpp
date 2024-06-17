@@ -45,15 +45,17 @@ namespace PK
             {
                 auto window = GetWindowPtr(nativeWindow);
                 window->m_minimized = width == 0 || height == 0;
-                window->m_swapchain->OnWindowResize(width, height);
+                window->m_swapchain->SetDesiredExtent({ (uint32_t)width, (uint32_t)height });
                 SafeInvokeFunction(window->m_onResize, width, height);
             });
+
         glfwSetWindowCloseCallback(m_window, [](GLFWwindow* nativeWindow)
             {
                 auto window = GetWindowPtr(nativeWindow);
                 window->m_alive = false;
                 SafeInvokeFunction(window->m_onClose);
             });
+
         glfwSetErrorCallback([](int error, const char* description) { PK_THROW_ERROR("GLFW Error (%i) : %s", error, description); });
         VK_ASSERT_RESULT_CTX(glfwCreateWindowSurface(m_driver->instance, m_window, nullptr, &m_surface), "Failed to create window surface!");
 
@@ -68,6 +70,9 @@ namespace PK
         swapchainCreateInfo.desiredImageCount = 4; // More images yields faster release of next image by present. But causes some instability.
         swapchainCreateInfo.desiredPresentMode = VK_PRESENT_MODE_FIFO_KHR;
         swapchainCreateInfo.maxFramesInFlight = PK_RHI_MAX_FRAMES_IN_FLIGHT;
+        swapchainCreateInfo.nativeMonitor = nullptr;
+        swapchainCreateInfo.exclusiveFullScreen = false;
+
         m_swapchain = CreateScope<VulkanSwapchain>(m_driver->physicalDevice,
             m_driver->device,
             m_surface,
@@ -95,9 +100,24 @@ namespace PK
 
     void VulkanWindow::Begin()
     {
+        if (m_fullscreen != m_swapchain->IsExclusiveFullScreen())
+        {        
+            const void* nativeWindow = nullptr;
+            PK_GLFW_SetFullScreen(m_window, m_fullscreen, glm::value_ptr(m_lastWindowedRect), &nativeWindow);
+            m_swapchain->RequestExclusiveFullScreen(nativeWindow, m_fullscreen);
+        }
+
         while (!m_swapchain->TryAcquireNextImage(&m_imageAvailableSignal))
         {
-            glfwPollEvents();
+            PollEvents();
+            WaitEvents();
+        }
+
+        // Full screen request might've been rejected. update status.
+        if (m_fullscreen && !m_swapchain->IsExclusiveFullScreen())
+        {
+            m_fullscreen = false;
+            PK_GLFW_SetFullScreen(m_window, false, glm::value_ptr(m_lastWindowedRect), nullptr);
         }
 
         m_inWindowScope = true;

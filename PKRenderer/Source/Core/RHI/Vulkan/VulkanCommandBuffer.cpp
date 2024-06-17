@@ -368,8 +368,9 @@ namespace PK
         ResolveBarriers();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-        // @TODO format is limiting. should check block size instead.
-        auto useCopy = src->image.format == dst->image.format;
+        auto srcBlockSize = VulkanEnumConvert::GetFormatBlockSize(src->image.format);
+        auto dstBlockSize = VulkanEnumConvert::GetFormatBlockSize(dst->image.format);
+        auto useCopy = srcBlockSize == dstBlockSize;
         useCopy &= blitRegion.srcOffsets[0].x == blitRegion.dstOffsets[0].x;
         useCopy &= blitRegion.srcOffsets[0].y == blitRegion.dstOffsets[0].y;
         useCopy &= blitRegion.srcOffsets[0].z == blitRegion.dstOffsets[0].z;
@@ -653,7 +654,6 @@ namespace PK
     {
         auto flags = m_renderState->ValidatePipeline(GetFenceRef());
 
-        // @TODO use uav overlap flag instead.
         // Conservative barrier deployment. lets not break an active renderpass. Assume coherent read/writes.
         if (!m_isInActiveRenderPass || (flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
         {

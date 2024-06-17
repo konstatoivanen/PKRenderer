@@ -178,8 +178,8 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
 
     // Shade Hit & Store Temporal Reservoir
 
-    // @TODO alternatively or rather we should retrace visibility here as to not accumulate invalid samples.
-    // This is expensive however, currently reservoirs are validated in async during present (which is virtually free).
+    // We should retrace visibility here as to not accumulate invalid samples.
+    // However, this is expensive. Currently reservoirs are validated in async during present (which is virtually free).
     const bool reject = ReSTIR_NearFieldReject(depth, origin, initial, ReSTIR_Hash(seed + 1));
     const float3 combinedDirection = normalize(combined.position - origin);
     const float weight = ReSTIR_GetSampleWeight(combined, normal, combinedDirection);

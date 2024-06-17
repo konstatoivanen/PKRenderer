@@ -56,9 +56,7 @@ namespace PK
     {
         if (variantIndex == -1)
         {
-            auto selector = shader->GetRHISelector();
-            selector.SetKeywordsFrom(*RHI::GetDriver()->GetResourceState());
-            variantIndex = selector.GetIndex();
+            variantIndex = shader->GetRHIIndex(RHI::GetDriver()->GetResourceState());
         }
 
         auto pVariant = shader->GetRHI(variantIndex);

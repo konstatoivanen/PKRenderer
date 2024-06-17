@@ -18,11 +18,14 @@ namespace PK
         virtual bool IsAlive() const = 0;
         virtual bool IsMinimized() const = 0;
         virtual bool IsVSync() const = 0;
+        virtual bool IsFullscreen() const = 0;
+
         virtual void Begin() = 0;
         virtual void End() = 0;
         virtual void SetFrameFence(const FenceRef& fence) = 0;
         virtual void SetCursorVisible(bool value) = 0;
-        virtual void SetVSync(bool enabled) = 0;
+        virtual void SetVSync(bool value) = 0;
+        virtual void SetFullscreen(bool value) = 0;
         virtual void SetOnResizeCallback(const std::function<void(int width, int height)>& callback) = 0;
         virtual void SetOnCloseCallback(const std::function<void()>& callback) = 0;
         virtual void PollEvents() const = 0;

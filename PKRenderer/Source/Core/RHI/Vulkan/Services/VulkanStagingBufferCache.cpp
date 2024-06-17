@@ -71,9 +71,6 @@ namespace PK
     {
         VulkanStagingBuffer* buffer = nullptr;
 
-        // @TODO refactor to be non static
-        static uint64_t s_bufferIdCounter = 0ull;
-
         if (persistent)
         {
             VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size * PK_RHI_MAX_FRAMES_IN_FLIGHT);
@@ -90,8 +87,9 @@ namespace PK
             }
             else
             {
+                auto poolIndexName = std::to_string(m_bufferPool.GetActiveMask().CountBits());
                 VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging, size);
-                buffer = m_bufferPool.New(m_device, m_allocator, createInfo, (std::string("StagingBuffer") + std::to_string(s_bufferIdCounter++)).c_str());
+                buffer = m_bufferPool.New(m_device, m_allocator, createInfo, (std::string("StagingBuffer") + poolIndexName).c_str());
             }
         }
 

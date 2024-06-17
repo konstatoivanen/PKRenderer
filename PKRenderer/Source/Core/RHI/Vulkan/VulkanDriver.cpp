@@ -31,14 +31,8 @@ namespace PK
 
     VulkanDriver::VulkanDriver(const VulkanContextProperties& properties) : properties(properties)
     {
+        // @TODO deprecate glfw
         glfwInit();
-
-        // Create a temporary hidden window so that we can query & select a physical device with surface present capabilities.
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-        auto temporaryWindow = glfwCreateWindow(32, 32, "Initialization Window", nullptr, nullptr);
-        PK_THROW_ASSERT(temporaryWindow, "Failed To Create Window");
 
         uint32_t supportedApiVersion;
         VK_ASSERT_RESULT_CTX(vkEnumerateInstanceVersion(&supportedApiVersion), "Failed to query supported api version!");
@@ -106,8 +100,6 @@ namespace PK
 
         VK_ASSERT_RESULT_CTX(vkCreateDebugUtilsMessengerEXT(instance, &debugMessengerCreateInfo, nullptr, &debugMessenger), "Failed to create debug messenger");
 
-        VkSurfaceKHR temporarySurface;
-        VK_ASSERT_RESULT_CTX(glfwCreateWindowSurface(instance, temporaryWindow, nullptr, &temporarySurface), "Failed to create window surface!");
 
         VulkanPhysicalDeviceRequirements physicalDeviceRequirements{};
         physicalDeviceRequirements.versionMajor = supportedMajor;
@@ -160,10 +152,16 @@ namespace PK
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
 
-        VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice);
+        // Create a temporary hidden window so that we can query & select a physical device with surface present capabilities.
+        PK_GLFW_VkTemporarySurface temporarySurface;
+        VK_ASSERT_RESULT_CTX((VkResult)PK_GLFW_CreateVkTemporarySurface(instance, temporarySurface), "Failed to create window surface!");
+
+        VulkanSelectPhysicalDevice(instance, temporarySurface.surface, physicalDeviceRequirements, &physicalDevice);
         physicalDeviceProperties = VulkanGetPhysicalDeviceProperties(physicalDevice);
 
-        VulkanQueueSet::Initializer queueInitializer(physicalDevice, temporarySurface);
+        VulkanQueueSet::Initializer queueInitializer(physicalDevice, temporarySurface.surface);
+
+        PK_GLFW_DestroyVkTemporarySurface(instance, temporarySurface);
 
         VkDeviceCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueInitializer.createInfos.size());
@@ -195,9 +193,6 @@ namespace PK
         allocatorInfo.instance = instance;
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
         VK_ASSERT_RESULT_CTX(vmaCreateAllocator(&allocatorInfo, &allocator), "Failed to create a VMA allocator!");
-
-        vkDestroySurfaceKHR(instance, temporarySurface, nullptr);
-        glfwDestroyWindow(temporaryWindow);
 
         frameBufferCache = CreateScope<VulkanFrameBufferCache>(device, properties.garbagePruneDelay);
         stagingBufferCache = CreateScope<VulkanStagingBufferCache>(device, allocator, properties.garbagePruneDelay);
