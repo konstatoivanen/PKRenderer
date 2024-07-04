@@ -1,7 +1,7 @@
 #pragma once
-#include GBuffers.glsl
-#include SceneGI.glsl
-#include Kernels.glsl
+#include "GBuffers.glsl"
+#include "SceneGI.glsl"
+#include "Kernels.glsl"
 
 // Source https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
 float GI_GetSpecularDominantFactor(float nv, float roughness)

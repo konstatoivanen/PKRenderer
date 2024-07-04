@@ -151,21 +151,22 @@ namespace PKAssets
     };
 
     // Shader asset types
-    constexpr const static char* PK_SHADER_ATTRIB_LOGVERBOSE = "#LogVerbose";
-    constexpr const static char* PK_SHADER_ATTRIB_GENERATEDEBUGINFO = "#GenerateDebugInfo";
-    constexpr const static char* PK_SHADER_ATTRIB_ZWRITE = "#ZWrite ";
-    constexpr const static char* PK_SHADER_ATTRIB_ZTEST = "#ZTest ";
-    constexpr const static char* PK_SHADER_ATTRIB_BLENDCOLOR = "#BlendColor ";
-    constexpr const static char* PK_SHADER_ATTRIB_BLENDALPHA = "#BlendAlpha ";
-    constexpr const static char* PK_SHADER_ATTRIB_COLORMASK = "#ColorMask ";
-    constexpr const static char* PK_SHADER_ATTRIB_CULL = "#Cull ";
-    constexpr const static char* PK_SHADER_ATTRIB_OFFSET = "#Offset ";
-    constexpr const static char* PK_SHADER_ATTRIB_RASTERMODE = "#RasterMode ";
-    constexpr const static char* PK_SHADER_ATTRIB_MULTI_COMPILE = "#multi_compile ";
-    constexpr const static char* PK_SHADER_ATTRIB_MATERIAL_PROP = "#MaterialProperty ";
-    constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_PROP = "#EnableInstancing";
-    constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_NOFRAG_PROP = "#DisableFragmentInstancing";
-    constexpr const static char* PK_SHADER_ATTRIB_ATOMICCOUNTER = "#WithAtomicCounter";
+    constexpr const static char* PK_SHADER_ATTRIB_LOGVERBOSE = "#PK_LogVerbose";
+    constexpr const static char* PK_SHADER_ATTRIB_GENERATEDEBUGINFO = "#PK_GenerateDebugInfo";
+    constexpr const static char* PK_SHADER_ATTRIB_ZWRITE = "#PK_ZWrite ";
+    constexpr const static char* PK_SHADER_ATTRIB_ZTEST = "#PK_ZTest ";
+    constexpr const static char* PK_SHADER_ATTRIB_BLENDCOLOR = "#PK_BlendColor ";
+    constexpr const static char* PK_SHADER_ATTRIB_BLENDALPHA = "#PK_BlendAlpha ";
+    constexpr const static char* PK_SHADER_ATTRIB_COLORMASK = "#PK_ColorMask ";
+    constexpr const static char* PK_SHADER_ATTRIB_CULL = "#PK_Cull ";
+    constexpr const static char* PK_SHADER_ATTRIB_OFFSET = "#PK_Offset ";
+    constexpr const static char* PK_SHADER_ATTRIB_RASTERMODE = "#PK_RasterMode ";
+    constexpr const static char* PK_SHADER_ATTRIB_MULTI_COMPILE = "#PK_MultiCompile ";
+    constexpr const static char* PK_SHADER_ATTRIB_MATERIAL_PROP = "#PK_MaterialProperty ";
+    constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_PROP = "#PK_EnableInstancing";
+    constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_NOFRAG_PROP = "#PK_DisableFragmentInstancing";
+    constexpr const static char* PK_SHADER_ATTRIB_ATOMICCOUNTER = "#PK_WithAtomicCounter";
+    constexpr const static char* PK_SHADER_ATTRIB_ENTRYPOINT = "#PK_EntryPoint ";
 
     constexpr const static char* PK_SHADER_INSTANCING_TRANSFORMS = "pk_Instancing_Transforms";
     constexpr const static char* PK_SHADER_INSTANCING_INDICES = "pk_Instancing_Indices";

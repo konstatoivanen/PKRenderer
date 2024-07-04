@@ -1,6 +1,6 @@
 #pragma once
 
-#include Utilities.glsl
+#include "Utilities.glsl"
 
 #define GIZMOS_MAX_VERTICES 16384u
 

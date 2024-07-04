@@ -1,7 +1,6 @@
 #pragma once
-
-#include SceneGI.glsl
-#include NoiseBlue.glsl
+#include "SceneGI.glsl"
+#include "NoiseBlue.glsl"
 
 layout(rg32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_RayHits;
 

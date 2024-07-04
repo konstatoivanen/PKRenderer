@@ -1,5 +1,5 @@
 #pragma PROGRAM_COMPUTE
-#include includes/Utilities.glsl
+#include "includes/Utilities.glsl"
 
 PK_DECLARE_SET_DRAW uniform sampler3D pk_Texture;
 layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D pk_Image;

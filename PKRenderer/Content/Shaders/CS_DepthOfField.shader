@@ -1,9 +1,9 @@
 #pragma PROGRAM_COMPUTE
-#include includes/PostFXDepthOfField.glsl
-#include includes/Kernels.glsl
-#include includes/Encoding.glsl
+#include "includes/PostFXDepthOfField.glsl"
+#include "includes/Kernels.glsl"
+#include "includes/Encoding.glsl"
 
-#multi_compile PASS_PREFILTER PASS_DISKBLUR PASS_UPSAMPLE
+#PK_MultiCompile PASS_PREFILTER PASS_DISKBLUR PASS_UPSAMPLE
 
 // Screen Color full res.
 PK_DECLARE_SET_PASS uniform sampler2D pk_Texture;

@@ -1,14 +1,13 @@
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 #extension GL_KHR_shader_subgroup_shuffle : enable
+#PK_MultiCompile _ PK_GI_CHECKERBOARD_TRACE
+
 #pragma PROGRAM_COMPUTE
-
-#multi_compile _ PK_GI_CHECKERBOARD_TRACE
-
 #define PK_GI_LOAD_LVL 0
 #define PK_GI_STORE_LVL 1
 
-#include includes/SceneGIFiltering.glsl
-#include includes/ComputeQuadSwap.glsl
+#include "includes/SceneGIFiltering.glsl"
+#include "includes/ComputeQuadSwap.glsl"
 
 #define SUBGROUP_ANTIFIREFLY_MAXLUMA(condition, current, history, alpha, lumaMax)               \
 {                                                                                               \

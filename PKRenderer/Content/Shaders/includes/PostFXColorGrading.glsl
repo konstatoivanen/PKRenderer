@@ -1,7 +1,7 @@
 #pragma once
-#include PostFXResources.glsl
-#include Encoding.glsl
-#include Constants.glsl
+#include "PostFXResources.glsl"
+#include "Encoding.glsl"
+#include "Constants.glsl"
 
 const float3x3 LIN_2_LMS_MAT = float3x3
 (

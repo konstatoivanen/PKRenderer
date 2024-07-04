@@ -1,6 +1,6 @@
 #pragma PROGRAM_COMPUTE
-#include includes/VolumeFog.glsl
-#include includes/Encoding.glsl
+#include "includes/VolumeFog.glsl"
+#include "includes/Encoding.glsl"
 
 layout(local_size_x = PK_W_ALIGNMENT_4, local_size_y = PK_W_ALIGNMENT_4, local_size_z = PK_W_ALIGNMENT_4) in;
 void main()

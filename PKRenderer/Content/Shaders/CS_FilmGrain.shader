@@ -1,6 +1,6 @@
 #pragma PROGRAM_COMPUTE
-#include includes/Common.glsl
-#include includes/Noise.glsl
+#include "includes/Common.glsl"
+#include "includes/Noise.glsl"
 
 layout(rgba8, set = PK_SET_DRAW) uniform image2D pk_Image;
 

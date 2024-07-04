@@ -1,13 +1,10 @@
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 #extension GL_KHR_shader_subgroup_shuffle : enable
-
-#GenerateDebugInfo
+#PK_MultiCompile _ PK_HIZ_FINAL_PASS
 
 #pragma PROGRAM_COMPUTE
-#include includes/GBuffers.glsl
-#include includes/ComputeQuadSwap.glsl
-
-#multi_compile _ PK_HIZ_FINAL_PASS
+#include "includes/GBuffers.glsl"
+#include "includes/ComputeQuadSwap.glsl"
 
 layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image;
 layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image1;

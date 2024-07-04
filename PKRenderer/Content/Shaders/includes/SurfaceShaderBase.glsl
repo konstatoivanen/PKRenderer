@@ -11,24 +11,24 @@
     #define PK_MESHLET_USE_FUNC_TRIANGLE 1
 #endif
 
-#include Common.glsl
+#include "Common.glsl"
 #if !defined(SHADER_STAGE_MESH_TASK)
-#include GBuffers.glsl
-#include Lighting.glsl
-#include SceneEnv.glsl
-#include SceneGIVX.glsl
+#include "GBuffers.glsl"
+#include "Lighting.glsl"
+#include "SceneEnv.glsl"
+#include "SceneGIVX.glsl"
 #endif
-#include Meshlets.glsl
+#include "Meshlets.glsl"
 
 // Meta pass specific parameters (gi voxelization requires some changes from reqular view projection).
 #define SRC_METALLIC x
 #define SRC_OCCLUSION y
 #define SRC_ROUGHNESS z
 
-#ZTest Equal
-#ZWrite False
-#Cull Back
-#multi_compile _ PK_META_PASS_GBUFFER PK_META_PASS_GIVOXELIZE
+#PK_ZTest Equal
+#PK_ZWrite False
+#PK_Cull Back
+#PK_MultiCompile _ PK_META_PASS_GBUFFER PK_META_PASS_GIVOXELIZE
 
 #if defined(PK_META_PASS_GIVOXELIZE) 
     #undef SURF_USE_TANGENTS

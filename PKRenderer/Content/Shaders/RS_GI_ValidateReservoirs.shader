@@ -1,10 +1,10 @@
-#include includes/GBuffers.glsl
-#include includes/SceneEnv.glsl
-#include includes/SceneGIVX.glsl
-#include includes/SceneGIRT.glsl
-#include includes/SceneGIReSTIR.glsl
+#PK_MultiCompile _ PK_GI_CHECKERBOARD_TRACE
 
-#multi_compile _ PK_GI_CHECKERBOARD_TRACE
+#include "includes/GBuffers.glsl"
+#include "includes/SceneEnv.glsl"
+#include "includes/SceneGIVX.glsl"
+#include "includes/SceneGIRT.glsl"
+#include "includes/SceneGIReSTIR.glsl"
 
 #define HIT_LOGLUMINANCE x
 #define HIT_DISTANCE y

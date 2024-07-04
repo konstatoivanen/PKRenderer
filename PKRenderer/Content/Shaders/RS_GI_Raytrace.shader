@@ -1,10 +1,10 @@
-#include includes/GBuffers.glsl
-#include includes/SceneGI.glsl
-#include includes/SceneGIRT.glsl
-#include includes/Encoding.glsl
+#PK_MultiCompile _ PK_GI_CHECKERBOARD_TRACE
+#PK_MultiCompile _ PK_GI_SSRT_PRETRACE
 
-#multi_compile _ PK_GI_CHECKERBOARD_TRACE
-#multi_compile _ PK_GI_SSRT_PRETRACE
+#include "includes/GBuffers.glsl"
+#include "includes/SceneGI.glsl"
+#include "includes/SceneGIRT.glsl"
+#include "includes/Encoding.glsl"
 
 #define HIT_NORMAL x
 #define HIT_DISTANCE y

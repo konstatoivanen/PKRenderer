@@ -1,5 +1,5 @@
 #pragma once
-#include Common.glsl
+#include "Common.glsl"
 
 #define LIGHT_TILE_SIZE_PX 64
 #define LIGHT_TILE_SHIFT_PX 6

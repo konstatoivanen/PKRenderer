@@ -1,20 +1,18 @@
 #extension GL_KHR_shader_subgroup_shuffle : require
+#PK_MultiCompile FX_APPLY_ALL FX_APPLY_MASK FX_APPLY_DEBUG
 
 #pragma PROGRAM_COMPUTE
-#include includes/PostFXColorGrading.glsl
-#include includes/PostFXFilmGrain.glsl
-#include includes/PostFXBloom.glsl
-#include includes/PostFXAutoExposure.glsl
-#include includes/Common.glsl
-
-#include includes/ComputeQuadSwap.glsl
-
-#multi_compile FX_APPLY_ALL FX_APPLY_MASK FX_APPLY_DEBUG
+#include "includes/PostFXColorGrading.glsl"
+#include "includes/PostFXFilmGrain.glsl"
+#include "includes/PostFXBloom.glsl"
+#include "includes/PostFXAutoExposure.glsl"
+#include "includes/Common.glsl"
+#include "includes/ComputeQuadSwap.glsl"
 
 #if defined(FX_APPLY_DEBUG)
-#include includes/GBuffers.glsl
-#include includes/SceneEnv.glsl
-#include includes/SceneGIVX.glsl
+#include "includes/GBuffers.glsl"
+#include "includes/SceneEnv.glsl"
+#include "includes/SceneGIVX.glsl"
 #endif
 
 layout(rgba16f, set = PK_SET_DRAW) uniform image2D pk_Image;

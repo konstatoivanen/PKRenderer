@@ -2,8 +2,8 @@
 #ifndef PK_COMMON
 #define PK_COMMON
 
-#include Utilities.glsl
-#include Constants.glsl
+#include "Utilities.glsl"
+#include "Constants.glsl"
 
 PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 {

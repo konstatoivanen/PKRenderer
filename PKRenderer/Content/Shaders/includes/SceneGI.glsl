@@ -1,7 +1,7 @@
 #pragma once
-#include BRDF.glsl
-#include Encoding.glsl
-#include SHL1.glsl
+#include "BRDF.glsl"
+#include "Encoding.glsl"
+#include "SHL1.glsl"
 
 #ifndef PK_GI_LOAD_LVL
 #define PK_GI_LOAD_LVL 0

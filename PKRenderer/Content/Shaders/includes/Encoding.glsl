@@ -1,5 +1,5 @@
 #pragma once
-#include Utilities.glsl
+#include "Utilities.glsl"
 
 float2 OctaWrap(float2 v) { return (1.0 - abs(v.yx)) * float2(v.x >= 0.0 ? 1.0 : -1.0, v.y >= 0.0 ? 1.0 : -1.0); }
 

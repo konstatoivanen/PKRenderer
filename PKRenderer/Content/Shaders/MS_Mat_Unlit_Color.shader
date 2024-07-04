@@ -1,15 +1,14 @@
-#Cull Back
-#ZTest GEqual
-#ZWrite Off
-
-#MaterialProperty float4 _Color
-#MaterialProperty float4 _ColorVoxelize
-
-#multi_compile _ PK_META_PASS_GBUFFER PK_META_PASS_GIVOXELIZE
+#PK_Cull Back
+#PK_ZTest GEqual
+#PK_ZWrite Off
+#PK_MaterialProperty float4 _Color
+#PK_MaterialProperty float4 _ColorVoxelize
+#PK_MultiCompile _ PK_META_PASS_GBUFFER PK_META_PASS_GIVOXELIZE
 
 #define PK_MESHLET_USE_FUNC_CULL 1
-#include includes/GBuffers.glsl
-#include includes/Meshlets.glsl
+
+#include "includes/GBuffers.glsl"
+#include "includes/Meshlets.glsl"
 
 #pragma PROGRAM_MESH_TASK
 

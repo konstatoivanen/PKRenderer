@@ -1,5 +1,5 @@
 #pragma once
-#include PostFXResources.glsl
+#include "PostFXResources.glsl"
 
 PK_DECLARE_SET_PASS uniform sampler2D pk_Bloom_Texture;
 PK_DECLARE_SET_PASS uniform sampler2D pk_Bloom_LensDirtTex;

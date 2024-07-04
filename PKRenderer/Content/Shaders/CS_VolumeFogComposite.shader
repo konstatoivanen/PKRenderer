@@ -1,6 +1,6 @@
 #pragma PROGRAM_COMPUTE
-#include includes/VolumeFog.glsl
-#include includes/CTASwizzling.glsl
+#include "includes/VolumeFog.glsl"
+#include "includes/CTASwizzling.glsl"
 
 layout(rgba16f, set = PK_SET_DRAW) uniform image2D pk_Image;
 

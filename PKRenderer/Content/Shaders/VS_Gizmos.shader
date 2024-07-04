@@ -1,9 +1,10 @@
-#BlendColor Add SrcAlpha OneMinusSrcAlpha
-#ZTest Off
-#ZWrite False
-#Cull Off
+#PK_BlendColor Add SrcAlpha OneMinusSrcAlpha
+#PK_ZTest Off
+#PK_ZWrite False
+#PK_Cull Off
 
-#include includes/Common.glsl
+#include "includes/Common.glsl"
+#include "includes/GBuffers.glsl"
 
 #pragma PROGRAM_VERTEX
 
@@ -17,7 +18,6 @@ void main()
 };
 
 #pragma PROGRAM_FRAGMENT
-#include includes/GBuffers.glsl
 
 in float4 vs_COLOR;
 layout(location = 0) out float4 SV_Target0;

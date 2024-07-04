@@ -2,7 +2,7 @@
 #ifndef PK_GBUFFERS
 #define PK_GBUFFERS
 
-#include Common.glsl
+#include "Common.glsl"
 
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_Normals;
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_Depth;

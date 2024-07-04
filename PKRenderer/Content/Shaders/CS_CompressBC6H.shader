@@ -1,5 +1,5 @@
 #pragma PROGRAM_COMPUTE
-#include includes/Utilities.glsl
+#include "includes/Utilities.glsl"
 
 PK_DECLARE_SET_SHADER uniform sampler2D pk_Texture;
 layout(rgba32ui, set = PK_SET_DRAW) uniform uimage2D pk_Image;

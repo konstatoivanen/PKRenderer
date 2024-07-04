@@ -1,10 +1,10 @@
 #extension GL_KHR_shader_subgroup_shuffle : enable
 
 #pragma PROGRAM_COMPUTE
-#include includes/GBuffers.glsl
-#include includes/PostFXResources.glsl
-#include includes/Encoding.glsl
-#include includes/ComputeQuadSwap.glsl
+#include "includes/GBuffers.glsl"
+#include "includes/PostFXResources.glsl"
+#include "includes/Encoding.glsl"
+#include "includes/ComputeQuadSwap.glsl"
 
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture; // Current Screen
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture1; // History Read

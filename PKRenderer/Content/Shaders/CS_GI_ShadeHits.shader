@@ -1,15 +1,15 @@
 #pragma PROGRAM_COMPUTE
 
-#multi_compile _ PK_GI_CHECKERBOARD_TRACE
+#PK_MultiCompile _ PK_GI_CHECKERBOARD_TRACE
 
 #define PK_GI_LOAD_LVL 1
 #define PK_GI_STORE_LVL 1
 
-#include includes/GBuffers.glsl
-#include includes/SceneEnv.glsl
-#include includes/SceneGIVX.glsl
-#include includes/SceneGIRT.glsl
-#include includes/SceneGIReSTIR.glsl
+#include "includes/GBuffers.glsl"
+#include "includes/SceneEnv.glsl"
+#include "includes/SceneGIVX.glsl"
+#include "includes/SceneGIRT.glsl"
+#include "includes/SceneGIReSTIR.glsl"
 
 float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHit hit)
 {

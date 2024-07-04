@@ -1,10 +1,10 @@
 #pragma once
-#include GBuffers.glsl
-#include Noise.glsl
-#include NoiseBlue.glsl
-#include SceneEnv.glsl
-#include TricubicSampler.glsl
-#include Lighting.glsl
+#include "GBuffers.glsl"
+#include "Noise.glsl"
+#include "NoiseBlue.glsl"
+#include "SceneEnv.glsl"
+#include "TricubicSampler.glsl"
+#include "Lighting.glsl"
 
 #define VOLUMEFOG_XY_ALIGNMENT 8u
 #define VOLUMEFOG_SIZE_Z 128

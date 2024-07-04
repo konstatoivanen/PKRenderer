@@ -2,8 +2,8 @@
 
 #extension GL_KHR_shader_subgroup_arithmetic : require
 
-#include Common.glsl
-#include Encoding.glsl
+#include "Common.glsl"
+#include "Encoding.glsl"
 
 #define MAX_VERTICES_PER_MESHLET 64u
 #define MAX_TRIANGLES_PER_MESHLET 124u

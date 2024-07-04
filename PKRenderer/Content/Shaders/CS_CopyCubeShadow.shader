@@ -1,7 +1,7 @@
 #pragma PROGRAM_COMPUTE
-#include includes/Utilities.glsl
-#include includes/Constants.glsl
-#include includes/Encoding.glsl
+#include "includes/Utilities.glsl"
+#include "includes/Constants.glsl"
+#include "includes/Encoding.glsl"
 
 PK_DECLARE_SET_DRAW uniform samplerCubeArray pk_Texture;
 layout(r32f, set = PK_SET_DRAW) uniform image2DArray pk_Image;

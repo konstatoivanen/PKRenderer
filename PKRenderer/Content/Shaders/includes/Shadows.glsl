@@ -1,6 +1,6 @@
 #pragma once
-#include Common.glsl
-#include Kernels.glsl
+#include "Common.glsl"
+#include "Kernels.glsl"
 
 PK_DECLARE_SET_PASS uniform sampler2DArray pk_ShadowmapAtlas;
 PK_DECLARE_SET_PASS uniform sampler2D pk_ShadowmapScreenSpace;

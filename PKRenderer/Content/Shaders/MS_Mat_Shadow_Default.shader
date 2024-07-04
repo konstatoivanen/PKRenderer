@@ -1,10 +1,9 @@
-#Cull Back
-#ZTest GEqual
-#ZWrite True
-#EnableInstancing
-#DisableFragmentInstancing
-
-#multi_compile PK_LIGHT_PASS_DIRECTIONAL PK_LIGHT_PASS_SPOT PK_LIGHT_PASS_POINT
+#PK_Cull Back
+#PK_ZTest GEqual
+#PK_ZWrite True
+#PK_EnableInstancing
+#PK_DisableFragmentInstancing
+#PK_MultiCompile PK_LIGHT_PASS_DIRECTIONAL PK_LIGHT_PASS_SPOT PK_LIGHT_PASS_POINT
 
 struct LightPayload
 {
@@ -20,8 +19,8 @@ struct LightPayload
 #define PK_MESHLET_USE_FUNC_TASKLET 1
 #define PK_MESHLET_HAS_EXTRA_PAYLOAD_DATA 1
 #define PK_MESHLET_EXTRA_PAYLOAD_DATA LightPayload
-#include includes/LightResources.glsl
-#include includes/Meshlets.glsl
+#include "includes/LightResources.glsl"
+#include "includes/Meshlets.glsl"
 
 #pragma PROGRAM_MESH_TASK
 

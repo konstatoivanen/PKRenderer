@@ -1,5 +1,5 @@
 #pragma once
-#include Constants.glsl
+#include "Constants.glsl"
 
 // Source: https://developer.download.nvidia.com/video/gputechconf/gtc/2019/presentation/s9985-exploring-ray-traced-future-in-metro-exodus.pdf
 struct SH

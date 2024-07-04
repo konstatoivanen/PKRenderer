@@ -1,6 +1,6 @@
 #pragma once
-#include PostFXResources.glsl
-#include Constants.glsl
+#include "PostFXResources.glsl"
+#include "Constants.glsl"
 
 PK_DECLARE_SET_DRAW uniform sampler2D pk_FilmGrain_Texture;
 

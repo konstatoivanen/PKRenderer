@@ -1,7 +1,7 @@
 #pragma once
 
-#include Utilities.glsl
-#include Constants.glsl
+#include "Utilities.glsl"
+#include "Constants.glsl"
 
 #define PK_SCENE_ENV_MAX_MIP 4
 #define PK_SCENE_ENV_MIN_SIZE 32

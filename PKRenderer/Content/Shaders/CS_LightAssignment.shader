@@ -1,14 +1,15 @@
 #pragma PROGRAM_COMPUTE
+
+#PK_WithAtomicCounter
+
 #define PK_WRITE_LIGHT_CLUSTERS
-#include includes/LightResources.glsl
-#include includes/Encoding.glsl
-
-#WithAtomicCounter
-
 #define GROUP_SIZE_X 2
 #define GROUP_SIZE_Y 1
 #define GROUP_SIZE_Z LIGHT_TILE_COUNT_Z
 #define THREAD_COUNT (GROUP_SIZE_X * GROUP_SIZE_Y * GROUP_SIZE_Z)
+
+#include "includes/LightResources.glsl"
+#include "includes/Encoding.glsl"
 
 PK_DECLARE_LOCAL_CBUFFER(pk_LightCount)
 {

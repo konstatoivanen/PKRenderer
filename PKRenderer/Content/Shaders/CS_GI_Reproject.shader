@@ -1,12 +1,12 @@
 #pragma PROGRAM_COMPUTE
 
-#multi_compile _ PK_GI_SPEC_VIRT_REPROJECT
-#multi_compile _ PK_GI_CHECKERBOARD_TRACE
+#PK_MultiCompile _ PK_GI_SPEC_VIRT_REPROJECT
+#PK_MultiCompile _ PK_GI_CHECKERBOARD_TRACE
 
 #define PK_GI_LOAD_LVL 1
 #define PK_GI_STORE_LVL 0
 
-#include includes/SceneGIFiltering.glsl
+#include "includes/SceneGIFiltering.glsl"
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void main()

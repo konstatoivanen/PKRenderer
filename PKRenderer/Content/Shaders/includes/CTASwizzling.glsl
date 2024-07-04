@@ -1,5 +1,5 @@
 #pragma once
-#include MortonOrder.glsl
+#include "MortonOrder.glsl"
 
 #define DXC_STATIC_DISPATCH_GRID_DIM 0
 

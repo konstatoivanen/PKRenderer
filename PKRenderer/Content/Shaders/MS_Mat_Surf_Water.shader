@@ -1,10 +1,11 @@
-#MaterialProperty float4 _Color
-#MaterialProperty float4 _EmissionColor
+#PK_MaterialProperty float4 _Color
+#PK_MaterialProperty float4 _EmissionColor
 
 #define BxDF_ENABLE_SUBSURFACE
 #define BxDF_ENABLE_CLEARCOAT
-#include includes/SurfaceShaderBase.glsl
-#include includes/Noise.glsl
+
+#include "includes/SurfaceShaderBase.glsl"
+#include "includes/Noise.glsl"
 
 #pragma PROGRAM_MESH_TASK
 // Surface shader handles this

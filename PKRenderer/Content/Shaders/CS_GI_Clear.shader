@@ -1,6 +1,6 @@
 #pragma PROGRAM_COMPUTE
-#include includes/Common.glsl
-#include includes/SceneGIVX.glsl
+#include "includes/Common.glsl"
+#include "includes/SceneGIVX.glsl"
 
 layout(rgba16, set = PK_SET_DRAW) uniform image3D pk_Image;
 

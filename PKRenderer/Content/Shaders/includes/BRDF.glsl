@@ -1,6 +1,6 @@
 #pragma once
-#include Utilities.glsl
-#include Constants.glsl
+#include "Utilities.glsl"
+#include "Constants.glsl"
 
 struct BxDFSurf
 {

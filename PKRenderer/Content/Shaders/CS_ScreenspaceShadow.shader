@@ -1,13 +1,13 @@
 #extension GL_KHR_shader_subgroup_arithmetic : require
 
-#multi_compile PASS_SHADOWMAP PASS_SHADOWMAP_UPSAMPLE PASS_SCREEN_DEPTH
+#PK_MultiCompile PASS_SHADOWMAP PASS_SHADOWMAP_UPSAMPLE PASS_SCREEN_DEPTH
 
 #pragma PROGRAM_COMPUTE
 
-#include includes/GBuffers.glsl
-#include includes/NoiseBlue.glsl
-#include includes/Lighting.glsl
-#include includes/Kernels.glsl
+#include "includes/GBuffers.glsl"
+#include "includes/NoiseBlue.glsl"
+#include "includes/Lighting.glsl"
+#include "includes/Kernels.glsl"
 
 layout(r8, set = PK_SET_DRAW) uniform image2D pk_Image;
 layout(set = PK_SET_DRAW) uniform sampler2D pk_Texture;
@@ -222,7 +222,7 @@ void main()
 
 float BEND_SAMPLE_DEPTH(float2 uv) { return SampleClipDepthBiased(int2(uv * pk_ScreenSize.xy)); }
 
-#include includes/bend_sss_gpu.glsl
+#include "includes/bend_sss_gpu.glsl"
 
 PK_DECLARE_LOCAL_CBUFFER(pk_BendShadowDispatchData)
 {

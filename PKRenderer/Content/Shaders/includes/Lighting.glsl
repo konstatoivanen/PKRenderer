@@ -1,8 +1,8 @@
 #pragma once
-#include LightResources.glsl
-#include Encoding.glsl
-#include BRDF.glsl
-#include Shadows.glsl
+#include "LightResources.glsl"
+#include "Encoding.glsl"
+#include "BRDF.glsl"
+#include "Shadows.glsl"
 
 #ifndef SHADOW_TEST 
     #define SHADOW_TEST ShadowTest_Dither16

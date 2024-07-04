@@ -1,9 +1,10 @@
 #pragma PROGRAM_COMPUTE
-#include includes/Utilities.glsl
-#include includes/Constants.glsl
-#include includes/Encoding.glsl
 
-#multi_compile PASS_DOWNSAMPLE0 PASS_DOWNSAMPLE1 PASS_UPSAMPLE
+#PK_MultiCompile PASS_DOWNSAMPLE0 PASS_DOWNSAMPLE1 PASS_UPSAMPLE
+
+#include "includes/Utilities.glsl"
+#include "includes/Constants.glsl"
+#include "includes/Encoding.glsl"
 
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture;
 layout(r32ui, set = PK_SET_DRAW) uniform uimage2D pk_Image;

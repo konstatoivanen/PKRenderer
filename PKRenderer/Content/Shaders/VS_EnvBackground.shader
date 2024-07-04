@@ -1,9 +1,10 @@
-#ZTest GEqual
-#ZWrite False
-#include includes/Common.glsl
-#include includes/Encoding.glsl
-#include includes/SceneEnv.glsl
-#include includes/VolumeFog.glsl
+#PK_ZTest GEqual
+#PK_ZWrite False
+
+#include "includes/Common.glsl"
+#include "includes/Encoding.glsl"
+#include "includes/SceneEnv.glsl"
+#include "includes/VolumeFog.glsl"
 
 #pragma PROGRAM_VERTEX
 

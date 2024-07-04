@@ -1,18 +1,18 @@
-#MaterialProperty float4 _Color
-#MaterialProperty float4 _SheenColor
-#MaterialProperty float _Roughness
-#MaterialProperty float _Occlusion
-#MaterialProperty float _NormalAmount
-#MaterialProperty float _HeightAmount
-#MaterialProperty texture2D _AlbedoTexture
-#MaterialProperty texture2D _PBSTexture
-#MaterialProperty texture2D _NormalMap
-#MaterialProperty texture2D _HeightMap
+#PK_MaterialProperty float4 _Color
+#PK_MaterialProperty float4 _SheenColor
+#PK_MaterialProperty float _Roughness
+#PK_MaterialProperty float _Occlusion
+#PK_MaterialProperty float _NormalAmount
+#PK_MaterialProperty float _HeightAmount
+#PK_MaterialProperty texture2D _AlbedoTexture
+#PK_MaterialProperty texture2D _PBSTexture
+#PK_MaterialProperty texture2D _NormalMap
+#PK_MaterialProperty texture2D _HeightMap
 
 #define BxDF_ENABLE_SUBSURFACE
 #define BxDF_ENABLE_SHEEN
 #define SURF_USE_TANGENTS
-#include includes/SurfaceShaderBase.glsl
+#include "includes/SurfaceShaderBase.glsl"
 
 #pragma PROGRAM_MESH_TASK
 // Surface shader handles this

@@ -1,5 +1,5 @@
 #pragma once
-#include GBuffers.glsl
+#include "GBuffers.glsl"
 
 PK_DECLARE_LOCAL_CBUFFER(pk_DoF_Params)
 {

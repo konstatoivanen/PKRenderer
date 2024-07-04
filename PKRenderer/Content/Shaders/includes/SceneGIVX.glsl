@@ -1,5 +1,5 @@
 #pragma once
-#include SceneGI.glsl
+#include "SceneGI.glsl"
 
 layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_GI_VolumeMaskWrite;
 layout(rgba16f, set = PK_SET_SHADER) uniform image3D pk_GI_VolumeWrite;

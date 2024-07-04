@@ -1,9 +1,9 @@
-#multi_compile PASS_HISTOGRAM PASS_AVG
-
 #pragma PROGRAM_COMPUTE
-#include includes/Common.glsl
-#include includes/PostFXResources.glsl
-#include includes/PostFXAutoExposure.glsl
+#include "includes/Common.glsl"
+#include "includes/PostFXResources.glsl"
+#include "includes/PostFXAutoExposure.glsl"
+
+#PK_MultiCompile PASS_HISTOGRAM PASS_AVG
 
 #define HISTOGRAM_THREAD_COUNT 16
 #define NUM_HISTOGRAM_BINS 256

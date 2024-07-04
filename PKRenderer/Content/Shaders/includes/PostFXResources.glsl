@@ -1,5 +1,5 @@
 #pragma once
-#include Utilities.glsl
+#include "Utilities.glsl"
 
 PK_DECLARE_CBUFFER(pk_PostEffectsParams, PK_SET_PASS)
 {
