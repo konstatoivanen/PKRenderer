@@ -1,12 +1,17 @@
-#PK_ZTest GEqual
-#PK_ZWrite False
+
+#pragma pk_ztest GEqual
+#pragma pk_zwrite False
+#pragma pk_program SHADER_STAGE_VERTEX MainVs
+#pragma pk_program SHADER_STAGE_FRAGMENT MainFs
 
 #include "includes/Common.glsl"
 #include "includes/Encoding.glsl"
 #include "includes/SceneEnv.glsl"
 #include "includes/VolumeFog.glsl"
 
-#pragma PROGRAM_VERTEX
+PK_DECLARE_VS_ATTRIB(float3 vs_TEXCOORD0);
+
+[[pk_restrict MainFs]] out float4 SV_Target0;
 
 float4 PK_BLIT_VERTEX_POSITIONS[3] =
 {
@@ -15,20 +20,13 @@ float4 PK_BLIT_VERTEX_POSITIONS[3] =
     float4(3.0,  1.0, 0.0, 1.0),
 };
 
-out float3 vs_TEXCOORD0;
-
-void main()
+void MainVs()
 {
     gl_Position = PK_BLIT_VERTEX_POSITIONS[gl_VertexIndex];
     vs_TEXCOORD0 = float4(gl_Position.xy * pk_ClipParamsInv.xy, 1.0f, 0.0f) * pk_ViewToWorld;
 }
 
-#pragma PROGRAM_FRAGMENT
-
-in float3 vs_TEXCOORD0;
-layout(location = 0) out float4 SV_Target0;
-
-void main()
+void MainFs()
 {
     const float3 viewdir = normalize(vs_TEXCOORD0);
     const float2 octaUV = OctaUV(viewdir);

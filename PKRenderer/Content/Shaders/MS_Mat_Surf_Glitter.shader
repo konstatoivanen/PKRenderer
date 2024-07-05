@@ -1,13 +1,14 @@
-#PK_MaterialProperty float4 _Color
-#PK_MaterialProperty float _Metallic
-#PK_MaterialProperty float _Roughness
-#PK_MaterialProperty float _Occlusion
-#PK_MaterialProperty float _NormalAmount
-#PK_MaterialProperty float _HeightAmount
-#PK_MaterialProperty texture2D _AlbedoTexture
-#PK_MaterialProperty texture2D _PBSTexture
-#PK_MaterialProperty texture2D _NormalMap
-#PK_MaterialProperty texture2D _HeightMap
+
+#pragma pk_material_property float4 _Color
+#pragma pk_material_property float _Metallic
+#pragma pk_material_property float _Roughness
+#pragma pk_material_property float _Occlusion
+#pragma pk_material_property float _NormalAmount
+#pragma pk_material_property float _HeightAmount
+#pragma pk_material_property texture2D _AlbedoTexture
+#pragma pk_material_property texture2D _PBSTexture
+#pragma pk_material_property texture2D _NormalMap
+#pragma pk_material_property texture2D _HeightMap
 
 #define BxDF_ENABLE_SHEEN
 #define SURF_USE_TANGENTS
@@ -15,14 +16,6 @@
 #include "includes/SurfaceShaderBase.glsl"
 #include "includes/NoiseBlue.glsl"
 
-#pragma PROGRAM_MESH_TASK
-// Surface shader handles this
-
-#pragma PROGRAM_MESH_ASSEMBLY
-
-void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf) {}
-
-#pragma PROGRAM_FRAGMENT
 void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 {
     float height = SURF_TEX(_HeightMap, uv).x;

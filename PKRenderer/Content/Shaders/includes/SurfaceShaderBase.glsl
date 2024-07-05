@@ -25,12 +25,13 @@
 #define SRC_OCCLUSION y
 #define SRC_ROUGHNESS z
 
-#PK_ZTest Equal
-#PK_ZWrite False
-#PK_Cull Back
-#PK_MultiCompile _ PK_META_PASS_GBUFFER PK_META_PASS_GIVOXELIZE
+#pragma pk_ztest Equal
+#pragma pk_zwrite False
+#pragma pk_cull Back
+#pragma pk_multi_compile _ PK_META_PASS_GBUFFER PK_META_PASS_GIVOXELIZE
+#pragma pk_program SHADER_STAGE_FRAGMENT SurfaceShaderMainFs
 
-#if defined(PK_META_PASS_GIVOXELIZE) 
+#if defined(PK_META_PASS_GIVOXELIZE)
     #undef SURF_USE_TANGENTS
     // Prefilter by using a higher mip bias in voxelization.
     #define SURF_DECLARE_RASTER_OUTPUT
@@ -86,6 +87,51 @@
     #define SURF_SAMPLE_NORMAL_TRIPLANAR(normalmap, amount, uvw) SURF_MESH_NORMAL
 #endif
 
+// Unsupported outside of fragment stage but need to be defined inorder to avoid compilation errors.
+#if !defined(SHADER_STAGE_FRAGMENT)
+    #undef SURF_MESH_NORMAL
+    #undef SURF_SAMPLE_NORMAL
+    #undef SURF_SAMPLE_NORMAL_TRIPLANAR
+    #undef SURF_MAKE_PARALLAX_OFFSET
+    #undef SURF_TEX
+    #undef SURF_TEX_TRIPLANAR
+
+    #define SURF_MESH_NORMAL float3(0,0,1)
+    #define SURF_SAMPLE_NORMAL(normalmap, amount, uv) float3(0,0,1)
+    #define SURF_SAMPLE_NORMAL_TRIPLANAR(normalmap, amount, uvw) float3(0,0,1)
+    #define SURF_MAKE_PARALLAX_OFFSET(height, amount, viewdir) 0.0f.xx 
+    #define SURF_TEX(t, uv) float4(1,1,1,1)
+    #define SURF_TEX_TRIPLANAR(t, n, uvw) float4(1,1,1,1)
+#endif
+
+struct SurfaceVaryings
+{
+    float3 worldpos;
+    float3 normal;
+    float4 tangent;
+    float2 texcoord;
+};
+
+struct SurfaceData
+{
+    float3 viewdir;
+    float3 worldpos;
+    float3 clipuvw;
+    float3 albedo;
+    float3 normal;
+    float3 emission;
+    float3 sheen;
+    float3 subsurface;
+    float3 clearCoat;
+    float sheenTint;
+    float clearCoatGloss;
+    float alpha;
+    float metallic;     
+    float roughness;
+    float occlusion;
+    float depthBias;
+};
+
 #if defined(SHADER_STAGE_MESH_TASK)
 
     void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
@@ -105,16 +151,12 @@
 //// ---------- VERTEX STAGE ---------- ////
 #elif defined(SHADER_STAGE_MESH_ASSEMBLY)
 
-    struct SurfaceVaryings
-    {
-        float3 worldpos;
-        float3 normal;
-        float4 tangent;
-        float2 texcoord;
-    };
-
     // Use these to modify surface values in vertex stage
+    #if defined(SURF_USE_VERTEX_FUNCTION)
     void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf);
+    #else
+    void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf) {}
+    #endif
     
     #if defined(PK_META_PASS_GIVOXELIZE)
     shared float3 lds_Positions[MAX_VERTICES_PER_MESHLET];
@@ -168,47 +210,22 @@
     // traditional syntax is a bit cumbersome.
     layout(set = PK_SET_PASS) uniform sampler pk_Sampler_SurfDefault;
     
-    struct SurfaceData
-    {
-        float3 viewdir;
-        float3 worldpos;
-        float3 clipuvw;
-        float3 albedo;
-        float3 normal;
-        float3 emission;
-        float3 sheen;
-        float3 subsurface;
-        float3 clearCoat;
-        float sheenTint;
-        float clearCoatGloss;
-        float alpha;
-        float metallic;     
-        float roughness;
-        float occlusion;
-        float depthBias;
-    };
-    
     #define SurfaceData_Default SurfaceData(0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f)
     
     // http://www.thetenthplanet.de/archives/1180
     float3x3 ComposeDerivativeTBN(float3 normal, const float3 position, const float2 texcoord)
     {
         normal = normalize(normal);
-    
-        #if defined(SHADER_STAGE_FRAGMENT)
-            const float3 dp1 = dFdxFine(position);
-            const float3 dp2 = dFdyFine(position);
-            const float2 duv1 = dFdxFine(texcoord);
-            const float2 duv2 = dFdyFine(texcoord);
-            const float3 dp2perp = cross(dp2, normal);
-            const float3 dp1perp = cross(normal, dp1);
-            const float3 T = dp2perp * duv1.x + dp1perp * duv2.x;
-            const float3 B = dp2perp * duv1.y + dp1perp * duv2.y;
-            const float invmax = inversesqrt(max(dot(T,T), dot(B,B)));
-            return float3x3(-T * invmax, -B * invmax, normal);
-        #else
-            return make_TBN(normal);
-        #endif
+        const float3 dp1 = dFdxFine(position);
+        const float3 dp2 = dFdyFine(position);
+        const float2 duv1 = dFdxFine(texcoord);
+        const float2 duv2 = dFdyFine(texcoord);
+        const float3 dp2perp = cross(dp2, normal);
+        const float3 dp1perp = cross(normal, dp1);
+        const float3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+        const float3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+        const float invmax = inversesqrt(max(dot(T,T), dot(B,B)));
+        return float3x3(-T * invmax, -B * invmax, normal);
     }
     
     float3x3 ComposeMikkTBN(float3 normal, float4 tangent)
@@ -242,15 +259,9 @@
     {
         float3 blend = abs(normal);
         blend /= dot(blend, 1.0.xxx);
-        #if defined(SHADER_STAGE_FRAGMENT)
         const float4 cx = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.yz, bias);
         const float4 cy = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xz, bias);
         const float4 cz = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xy, bias);
-        #else
-        const float4 cx = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.yz);
-        const float4 cy = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xz);
-        const float4 cz = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xy);
-        #endif
         return cx * blend.x + cy * blend.y + cz * blend.z;
     }
     
@@ -296,12 +307,14 @@
     void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf);
 
     float3 vs_WORLDPOSITION;
+
     SURF_VS_ATTRIB_TANGENT
     PK_DECLARE_VS_ATTRIB(float3 vs_NORMAL);
     PK_DECLARE_VS_ATTRIB(float2 vs_TEXCOORD0);
     SURF_DECLARE_RASTER_OUTPUT
+
     layout(early_fragment_tests) in;
-    void main()
+    void SurfaceShaderMainFs()
     {
         SURF_FS_ASSIGN_WORLDPOSITION
         SURF_FS_ASSIGN_TBN

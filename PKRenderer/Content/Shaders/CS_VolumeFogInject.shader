@@ -1,4 +1,5 @@
-#pragma PROGRAM_COMPUTE
+
+#pragma pk_program SHADER_STAGE_COMPUTE main
 
 #define EARLY_Z_TEST 1
 #define SHADOW_TEST ShadowTest_PCF2x2

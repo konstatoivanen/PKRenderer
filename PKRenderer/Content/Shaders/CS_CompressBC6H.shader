@@ -1,4 +1,6 @@
-#pragma PROGRAM_COMPUTE
+
+#pragma pk_program SHADER_STAGE_COMPUTE main
+
 #include "includes/Utilities.glsl"
 
 PK_DECLARE_SET_SHADER uniform sampler2D pk_Texture;

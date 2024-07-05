@@ -1,16 +1,12 @@
-#PK_MaterialProperty float4 _Color
-#PK_MaterialProperty float4 _EmissionColor
+
+#pragma pk_material_property float4 _Color
+#pragma pk_material_property float4 _EmissionColor
 
 #define BxDF_ENABLE_SUBSURFACE
 #define BxDF_ENABLE_CLEARCOAT
-
+#define SURF_USE_VERTEX_FUNCTION
 #include "includes/SurfaceShaderBase.glsl"
 #include "includes/Noise.glsl"
-
-#pragma PROGRAM_MESH_TASK
-// Surface shader handles this
-
-#pragma PROGRAM_MESH_ASSEMBLY
 
 float3 GerstnerWave(float4 wave, float3 p, inout float3 tangent, inout float3 binormal)
 {
@@ -66,14 +62,13 @@ void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf)
 #endif
 }
 
-#pragma PROGRAM_FRAGMENT
 void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 {
     float yorigin = pk_ObjectToWorld[2].w;
 
     float3 noise;
     noise.xy = NoiseCell(int2(surf.worldpos.xz * 8.0f + surf.worldpos.yy * 30.0f));
-    noise.y = 1.0f;
+    noise.z = 1.0f;
 
     surf.normal = normalize(SURF_MESH_NORMAL + noise * 0.15f);
 

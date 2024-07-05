@@ -1,5 +1,10 @@
-#PK_MultiCompile _ PK_GI_CHECKERBOARD_TRACE
-#PK_MultiCompile _ PK_GI_SSRT_PRETRACE
+
+#extension GL_EXT_ray_tracing_position_fetch : require
+#pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
+#pragma pk_multi_compile _ PK_GI_SSRT_PRETRACE
+#pragma pk_program SHADER_STAGE_RAY_GENERATION MainRgs
+#pragma pk_program SHADER_STAGE_RAY_MISS MainRms
+#pragma pk_program SHADER_STAGE_RAY_CLOSEST_HIT MainRchs
 
 #include "includes/GBuffers.glsl"
 #include "includes/SceneGI.glsl"
@@ -9,7 +14,7 @@
 #define HIT_NORMAL x
 #define HIT_DISTANCE y
 
-#pragma PROGRAM_RAY_GENERATION
+PK_DECLARE_RT_PAYLOAD(uint2, payload, 0);
 
 bool TraceRay_ScreenSpace(const int2 coord, const float3 origin, const float3 direction, inout float hitT)
 {
@@ -57,9 +62,7 @@ bool TraceRay_ScreenSpace(const int2 coord, const float3 origin, const float3 di
 #endif
 }
 
-PK_DECLARE_RT_PAYLOAD_OUT(uint2, payload, 0);
-
-void main()
+void MainRgs()
 {
     const int2 raycoord = int2(gl_LaunchIDEXT.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy);
@@ -136,25 +139,17 @@ void main()
     }
 }
 
-#pragma PROGRAM_RAY_MISS
-PK_DECLARE_RT_PAYLOAD_IN(uint2, payload, 0);
-
-void main()
+void MainRms()
 {
     payload.HIT_NORMAL = EncodeOctaUV(-gl_WorldRayDirectionEXT);
     payload.HIT_DISTANCE = 0xFFFFFFFFu;
 }
 
-#pragma PROGRAM_RAY_CLOSEST_HIT
-#extension GL_EXT_ray_tracing_position_fetch : require
-
-PK_DECLARE_RT_PAYLOAD_IN(uint2, payload, 0);
-
-void main()
+void MainRchs()
 {
-    const float3 p0 = gl_HitTriangleVertexPositionsEXT[0];
-    const float3 p1 = gl_HitTriangleVertexPositionsEXT[1];
-    const float3 p2 = gl_HitTriangleVertexPositionsEXT[2];
+    const float3 p0 = PK_GET_RT_VERTEX_POSITION(0);
+    const float3 p1 = PK_GET_RT_VERTEX_POSITION(1);
+    const float3 p2 = PK_GET_RT_VERTEX_POSITION(2);
     const float3 v0 = normalize(p1 - p0);
     const float3 v1 = normalize(p2 - p0);
 
@@ -167,5 +162,5 @@ void main()
     }
 
     payload.HIT_NORMAL = EncodeOctaUV(normal);
-    payload.HIT_DISTANCE = floatBitsToUint(PK_GET_RAY_HIT_DISTANCE);
+    payload.HIT_DISTANCE = floatBitsToUint(gl_HitTEXT);
 }

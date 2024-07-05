@@ -102,11 +102,37 @@ float3x3 make_TBN(const float3 n) { float3 t, b; branchlessONB(n,t,b); return fl
 #define PK_VARIABLE_DATA(BufferName) BufferName##_Data
 
 // Ray tracing utilities
-#define PK_GET_RAY_HIT_POINT (gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT)
-#define PK_GET_RAY_HIT_DISTANCE gl_HitTEXT
+#if defined(SHADER_STAGE_RAY_GENERATION) || defined(SHADER_STAGE_RAY_MISS) || defined(SHADER_STAGE_RAY_CLOSEST_HIT) || defined(SHADER_STAGE_RAY_ANY_HIT) || defined(SHADER_STAGE_RAY_INTERSECTION)
+    #define PK_IS_RAYTRACING_STAGE 
+#endif
+
+#if defined(SHADER_STAGE_RAY_MISS) || defined(SHADER_STAGE_RAY_CLOSEST_HIT) || defined(SHADER_STAGE_RAY_ANY_HIT) || defined(SHADER_STAGE_RAY_INTERSECTION)
+    #define PK_IS_RAYTRACING_SUB_STAGE 
+#endif
+
+#if defined(SHADER_STAGE_RAY_CLOSEST_HIT) || defined(SHADER_STAGE_RAY_ANY_HIT)
+    #define PK_IS_RAYTRACING_HIT_STAGE
+#endif
+
 #define PK_DECLARE_RT_BARYCOORDS(name) hitAttributeEXT float2 name
-#define PK_DECLARE_RT_PAYLOAD_IN(type, name, index) layout(location = index) rayPayloadInEXT type name
-#define PK_DECLARE_RT_PAYLOAD_OUT(type, name, index) layout(location = index) rayPayloadEXT type name
+
+#if defined(PK_IS_RAYTRACING_SUB_STAGE)
+    #define PK_DECLARE_RT_PAYLOAD(type, name, index) layout(location = index) rayPayloadInEXT type name
+#elif defined(SHADER_STAGE_RAY_GENERATION)
+    #define PK_DECLARE_RT_PAYLOAD(type, name, index) layout(location = index) rayPayloadEXT type name
+    #define gl_WorldRayDirectionEXT 0.0f.xxx
+    #define gl_WorldRayOriginEXT 0.0f.xxx
+#else
+    #define PK_DECLARE_RT_PAYLOAD(type, name, index)
+#endif
+
+#if defined(PK_IS_RAYTRACING_HIT_STAGE)
+    #define PK_GET_RT_VERTEX_POSITION(index) gl_HitTriangleVertexPositionsEXT[index]
+#else
+    #define gl_HitTEXT 0.0f
+    #define gl_ObjectToWorldEXT float4x3(1)
+    #define PK_GET_RT_VERTEX_POSITION(index) float3(0,0,0)
+#endif
 
 #if defined(SHADER_STAGE_FRAGMENT)
     #define PK_GET_PROG_COORD int2(gl_FragCoord.xy)
@@ -116,10 +142,6 @@ float3x3 make_TBN(const float3 n) { float3 t, b; branchlessONB(n,t,b); return fl
     #define PK_GET_PROG_COORD int2(0)
 #endif
 
-#if defined(SHADER_STAGE_RAY_GENERATION) || defined(SHADER_STAGE_RAY_MISS) || defined(SHADER_STAGE_RAY_CLOSEST_HIT) || defined(SHADER_STAGE_RAY_ANY_HIT) || defined(SHADER_STAGE_RAY_INTERSECTION)
-    #define PK_IS_RAYTRACING_STAGE 
-#endif
-
 #if defined(PK_IS_RAYTRACING_STAGE) || defined(PK_ALLOW_TLAS_DECLARATION)
     #define PK_DECLARE_ACCELERATION_STRUCTURE(Set, Name) layout(set = Set) uniform accelerationStructureEXT Name;
 #else
@@ -127,13 +149,20 @@ float3x3 make_TBN(const float3 n) { float3 t, b; branchlessONB(n,t,b); return fl
 #endif
 
 #if defined(SHADER_STAGE_MESH_ASSEMBLY)
+    #define PK_DECLARE_FS_OUT(variable) variable
     #define PK_DECLARE_VS_ATTRIB(variable) out variable[]
     #define PK_SET_VS_ATTRIB(variable, index, value) variable[index] = value
 #elif defined(SHADER_STAGE_VERTEX)
+    #define PK_DECLARE_FS_OUT(variable) variable
     #define PK_DECLARE_VS_ATTRIB(variable) out variable
     #define PK_SET_VS_ATTRIB(variable, index, value) variable = value
 #elif defined(SHADER_STAGE_FRAGMENT)
+    #define PK_DECLARE_FS_OUT(variable) out variable
     #define PK_DECLARE_VS_ATTRIB(variable) in variable
+    #define PK_SET_VS_ATTRIB(variable, index, value)
+#else
+    #define PK_DECLARE_FS_OUT(variable) variable
+    #define PK_DECLARE_VS_ATTRIB(variable)
     #define PK_SET_VS_ATTRIB(variable, index, value)
 #endif
 

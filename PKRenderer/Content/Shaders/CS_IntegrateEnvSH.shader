@@ -1,4 +1,5 @@
-#pragma PROGRAM_COMPUTE
+#pragma pk_program SHADER_STAGE_COMPUTE main
+
 #include "includes/Common.glsl"
 #include "includes/SceneEnv.glsl"
 #include "includes/Encoding.glsl"

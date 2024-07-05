@@ -1,7 +1,8 @@
-#extension GL_KHR_shader_subgroup_shuffle : require
-#PK_MultiCompile FX_APPLY_ALL FX_APPLY_MASK FX_APPLY_DEBUG
 
-#pragma PROGRAM_COMPUTE
+#extension GL_KHR_shader_subgroup_shuffle : require
+#pragma pk_multi_compile FX_APPLY_ALL FX_APPLY_MASK FX_APPLY_DEBUG
+#pragma pk_program SHADER_STAGE_COMPUTE main
+
 #include "includes/PostFXColorGrading.glsl"
 #include "includes/PostFXFilmGrain.glsl"
 #include "includes/PostFXBloom.glsl"

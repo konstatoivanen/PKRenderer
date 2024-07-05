@@ -1,9 +1,11 @@
-#pragma PROGRAM_COMPUTE
+
+#pragma pk_multi_compile PASS_HISTOGRAM PASS_AVG
+#pragma pk_program SHADER_STAGE_COMPUTE HistogramCs PASS_HISTOGRAM
+#pragma pk_program SHADER_STAGE_COMPUTE AverageCs PASS_AVG
+
 #include "includes/Common.glsl"
 #include "includes/PostFXResources.glsl"
 #include "includes/PostFXAutoExposure.glsl"
-
-#PK_MultiCompile PASS_HISTOGRAM PASS_AVG
 
 #define HISTOGRAM_THREAD_COUNT 16
 #define NUM_HISTOGRAM_BINS 256
@@ -26,40 +28,9 @@ void SetAutoExposure(float exposure)
 }
 
 // Source: https://media.contentapi.ea.com/content/dam/eacom/frostbite/files/course-notes-moving-frostbite-to-pbr-v2.pdf
-float ComputeEV100(float aperture, float shutterTime, float ISO)
-{
-    // EV number is defined as:
-    // 2^ EV_s = N^2 / t and EV_s = EV_100 + log2 (S /100)
-    // This gives
-    // EV_s = log2 (N^2 / t)
-    // EV_100 + log2 (S /100) = log2 (N^2 / t)
-    // EV_100 = log2 (N^2 / t) - log2 (S /100)
-    // EV_100 = log2 (N^2 / t . 100 / S)
-    return log2(pow2(aperture) / shutterTime * 100 / ISO);
-}
-
-float ComputeEV100FromAvgLuminance(float avgLuminance)
-{
-    // We later use the middle gray at 12.7% in order to have
-    // a middle gray at 18% with a sqrt (2) room for specular highlights
-    // But here we deal with the spot meter measuring the middle gray
-    // which is fixed at 12.5 for matching standard camera
-    // constructor settings (i.e. calibration constant K = 12.5)
-    // Reference : http://en.wikipedia.org/wiki/Film_speed
-    return log2(avgLuminance * 100.0f / 12.5f);
-}
-
-float ConvertEV100ToExposure(float EV100)
-{
-    // Compute the maximum luminance possible with H_sbs sensitivity
-    // maxLum = 78 / ( S * q ) * N^2 / t
-    // = 78 / ( S * q ) * 2^ EV_100
-    // = 78 / (100 * 0.65) * 2^ EV_100
-    // = 1.2 * 2^ EV
-    // Reference : http://en.wikipedia.org/wiki/Film_speed
-    float maxLuminance = 1.2f * pow(2.0f, EV100);
-    return 1.0f / maxLuminance;
-}
+float ComputeEV100(float aperture, float shutterTime, float ISO) { return log2(pow2(aperture) / shutterTime * 100 / ISO); }
+float ComputeEV100FromAvgLuminance(float avgLuminance) { return log2(avgLuminance * 100.0f / 12.5f); }
+float ConvertEV100ToExposure(float EV100) { return 1.0f / (1.2f * pow(2.0f, EV100)); }
 
 uint HDRToHistogramBin(float3 hdrColor)
 {
@@ -76,9 +47,9 @@ uint HDRToHistogramBin(float3 hdrColor)
 }
 
 layout(local_size_x = HISTOGRAM_THREAD_COUNT, local_size_y = HISTOGRAM_THREAD_COUNT, local_size_z = 1) in;
-void main()
+
+void HistogramCs()
 {
-#if defined(PASS_HISTOGRAM)
     HistogramShared[gl_LocalInvocationIndex] = 0;
     barrier();
 
@@ -95,7 +66,10 @@ void main()
 
     barrier();
     atomicAdd(PK_BUFFER_DATA(pk_AutoExposure_Histogram, gl_LocalInvocationIndex), HistogramShared[gl_LocalInvocationIndex]);
-#else
+}
+
+void AverageCs()
+{
     uint countForThisBin = PK_BUFFER_DATA(pk_AutoExposure_Histogram, gl_LocalInvocationIndex);
     HistogramShared[gl_LocalInvocationIndex] = countForThisBin * gl_LocalInvocationIndex;
 
@@ -128,5 +102,4 @@ void main()
 
         SetAutoExposure(exposure);
     }
-#endif
 }

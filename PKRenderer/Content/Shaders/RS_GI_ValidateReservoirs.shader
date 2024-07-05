@@ -1,4 +1,8 @@
-#PK_MultiCompile _ PK_GI_CHECKERBOARD_TRACE
+
+#pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
+#pragma pk_program SHADER_STAGE_RAY_GENERATION MainRgs
+#pragma pk_program SHADER_STAGE_RAY_MISS MainRms
+#pragma pk_program SHADER_STAGE_RAY_CLOSEST_HIT MainRchs
 
 #include "includes/GBuffers.glsl"
 #include "includes/SceneEnv.glsl"
@@ -9,11 +13,9 @@
 #define HIT_LOGLUMINANCE x
 #define HIT_DISTANCE y
 
-#pragma PROGRAM_RAY_GENERATION
+PK_DECLARE_RT_PAYLOAD(float2, payload, 0);
 
-PK_DECLARE_RT_PAYLOAD_OUT(float2, payload, 0);
-
-void main()
+void MainRgs()
 {
     const int2 raycoord = int2(gl_LaunchIDEXT.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy, 1u);
@@ -49,10 +51,7 @@ void main()
     }
 }
 
-#pragma PROGRAM_RAY_MISS
-PK_DECLARE_RT_PAYLOAD_IN(float2, payload, 0);
-
-void main()
+void MainRms()
 {
     const float3 worldpos = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * payload.HIT_DISTANCE;
     float3 radiance = 0.0f.xxx;
@@ -70,13 +69,9 @@ void main()
     payload.HIT_LOGLUMINANCE = log(1.0f + dot(PK_LUMA_BT709, radiance));
 }
 
-#pragma PROGRAM_RAY_CLOSEST_HIT
-PK_DECLARE_RT_PAYLOAD_IN(float2, payload, 0);
-
-void main()
+void MainRchs()
 {
-    const float3 worldpos = PK_GET_RAY_HIT_POINT;
-    const float hitdist = PK_GET_RAY_HIT_DISTANCE;
+    const float3 worldpos = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
     float3 radiance = 0.0f.xxx;
 
     if (GI_IsScreenHit(worldpos, false))
@@ -86,10 +81,10 @@ void main()
     }
     else
     {
-        const float4 voxel = GI_Load_Voxel(worldpos, PK_GI_GET_VX_MI_BIAS(hitdist));
+        const float4 voxel = GI_Load_Voxel(worldpos, PK_GI_GET_VX_MI_BIAS(gl_HitTEXT));
         radiance = voxel.rgb / max(voxel.a, 1e-2f);
     }
 
-    payload.HIT_DISTANCE = hitdist;
+    payload.HIT_DISTANCE = gl_HitTEXT;
     payload.HIT_LOGLUMINANCE = log(1.0f + dot(PK_LUMA_BT709, radiance));
 }

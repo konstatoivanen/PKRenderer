@@ -1,9 +1,12 @@
-#pragma PROGRAM_COMPUTE
+
+#pragma pk_multi_compile PASS_PREFILTER PASS_DISKBLUR PASS_UPSAMPLE
+#pragma pk_program SHADER_STAGE_COMPUTE PrefilterCs PASS_PREFILTER
+#pragma pk_program SHADER_STAGE_COMPUTE DiskBlurCs PASS_DISKBLUR
+#pragma pk_program SHADER_STAGE_COMPUTE UpsampleCs PASS_UPSAMPLE
+
 #include "includes/PostFXDepthOfField.glsl"
 #include "includes/Kernels.glsl"
 #include "includes/Encoding.glsl"
-
-#PK_MultiCompile PASS_PREFILTER PASS_DISKBLUR PASS_UPSAMPLE
 
 // Screen Color full res.
 PK_DECLARE_SET_PASS uniform sampler2D pk_Texture;
@@ -17,16 +20,12 @@ layout(r32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_DoF_ColorWrite;
 layout(r16f, set = PK_SET_SHADER) uniform image2DArray pk_DoF_AlphaWrite;
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
-void main()
+
+void PrefilterCs()
 {
     const float2 texelSize = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const float2 uv = (coord + 0.5f.xx) * texelSize;
-
-    half4 background = 0.0hf.xxxx;
-    half4 foreground = 0.0hf.xxxx;
-
-#if defined(PASS_PREFILTER)
 
     const int2 offsets[4] = { int2(-1,-1), int2(1,1), int2(-1,1), int2(1,-1) };
     const float4 depths = SampleViewDepthOffsets(uv, offsets);
@@ -40,8 +39,16 @@ void main()
     average /= dot(weights, 1.0f.xxxx);
     imageStore(pk_DoF_ColorWrite, int3(coord, 0), EncodeE5BGR9(average).xxxx);
     imageStore(pk_DoF_AlphaWrite, int3(coord, 0), dot(cocs, 0.25f.xxxx).xxxx);
+}
 
-#elif defined(PASS_DISKBLUR)
+void DiskBlurCs()
+{
+    const float2 texelSize = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
+    const int2 coord = int2(gl_GlobalInvocationID.xy);
+    const float2 uv = (coord + 0.5f.xx) * texelSize;
+
+    half4 background = 0.0hf.xxxx;
+    half4 foreground = 0.0hf.xxxx;
 
     const half margin = 2.0hf * half(texelSize.y);
     const float aspect = texelSize.x / texelSize.y;
@@ -51,7 +58,7 @@ void main()
     background = half4(center, 1.0hf) * clamp((max(0.0hf, centerCoC) + margin) / margin, 0.0hf, 1.0hf);
     foreground = half4(center, 1.0hf) * clamp((-centerCoC + margin) / margin, 0.0hf, 1.0hf);
 
-#define SAMPLE_COUNT 22u
+    #define SAMPLE_COUNT 22u
 
     for (uint j = 1; j <= 2; ++j)
     {
@@ -82,8 +89,16 @@ void main()
     imageStore(pk_DoF_ColorWrite, int3(coord, 1), EncodeE5BGR9(foreground.rgb).xxxx);
     imageStore(pk_DoF_ColorWrite, int3(coord, 2), EncodeE5BGR9(background.rgb).xxxx);
     imageStore(pk_DoF_AlphaWrite, int3(coord, 1), foreground.aaaa);
+}
 
-#else
+void UpsampleCs()
+{
+    const float2 texelSize = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
+    const int2 coord = int2(gl_GlobalInvocationID.xy);
+    const float2 uv = (coord + 0.5f.xx) * texelSize;
+
+    half4 background = 0.0hf.xxxx;
+    half4 foreground = 0.0hf.xxxx;
 
     const float viewDepth = SampleViewDepth(coord);
     const float coc = GetCircleOfConfusion(viewDepth);
@@ -120,7 +135,4 @@ void main()
         const half3 scene = half3(imageLoad(pk_Image, coord).rgb);
         imageStore(pk_Image, coord, half4(scene * alpha + dof, 1.0hf));
     }
-
-#endif
-};
-
+}

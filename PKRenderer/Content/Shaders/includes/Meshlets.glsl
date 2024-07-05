@@ -2,6 +2,9 @@
 
 #extension GL_KHR_shader_subgroup_arithmetic : require
 
+#pragma pk_program SHADER_STAGE_MESH_TASK MainMeshTask
+#pragma pk_program SHADER_STAGE_MESH_ASSEMBLY MainMeshAssembly
+
 #include "Common.glsl"
 #include "Encoding.glsl"
 
@@ -286,7 +289,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
     taskPayloadSharedEXT PKMeshTaskPayload payload;
 
     layout(local_size_x = MAX_MESHLETS_PER_TASK) in;
-    void main()
+    void MainMeshTask()
     {
         uint meshletCount;
         
@@ -348,7 +351,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
 
     layout(local_size_x = MESHLET_LOCAL_GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
     layout(triangles, max_vertices = MAX_VERTICES_PER_MESHLET, max_primitives = MAX_TRIANGLES_PER_MESHLET) out;
-    void main()
+    void MainMeshAssembly()
     {
         const uint meshletFirst = payload.packed0.w;
         const uint instanceId = payload.packed1.w;

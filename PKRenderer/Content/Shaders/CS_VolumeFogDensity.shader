@@ -1,4 +1,6 @@
-#pragma PROGRAM_COMPUTE
+
+#pragma pk_program SHADER_STAGE_COMPUTE main
+
 #include "includes/VolumeFog.glsl"
 #include "includes/Encoding.glsl"
 

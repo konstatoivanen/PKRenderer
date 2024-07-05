@@ -1,7 +1,7 @@
-#pragma PROGRAM_COMPUTE
 
-#PK_MultiCompile _ PK_GI_SPEC_VIRT_REPROJECT
-#PK_MultiCompile _ PK_GI_CHECKERBOARD_TRACE
+#pragma pk_multi_compile _ PK_GI_SPEC_VIRT_REPROJECT
+#pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
+#pragma pk_program SHADER_STAGE_COMPUTE main
 
 #define PK_GI_LOAD_LVL 1
 #define PK_GI_STORE_LVL 0

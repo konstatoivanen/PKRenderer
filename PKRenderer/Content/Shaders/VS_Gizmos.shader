@@ -1,28 +1,29 @@
-#PK_BlendColor Add SrcAlpha OneMinusSrcAlpha
-#PK_ZTest Off
-#PK_ZWrite False
-#PK_Cull Off
+
+#pragma pk_blend_color Add SrcAlpha OneMinusSrcAlpha
+#pragma pk_ztest Off
+#pragma pk_zwrite False
+#pragma pk_cull Off
+#pragma pk_program SHADER_STAGE_VERTEX MainVs
+#pragma pk_program SHADER_STAGE_FRAGMENT MainFs
 
 #include "includes/Common.glsl"
 #include "includes/GBuffers.glsl"
 
-#pragma PROGRAM_VERTEX
+PK_DECLARE_VS_ATTRIB(float4 vs_COLOR);
 
+[[pk_restrict MainVs]] 
 in uint4 in_POSITION;
-out float4 vs_COLOR;
 
-void main()
+void MainVs()
 {
     gl_Position = pk_WorldToClip_NoJitter * float4(uintBitsToFloat(in_POSITION.xyz), 1.0f);
     vs_COLOR = unpackUnorm4x8(in_POSITION.w);
 };
 
-#pragma PROGRAM_FRAGMENT
+[[pk_restrict MainFs]] 
+out float4 SV_Target0;
 
-in float4 vs_COLOR;
-layout(location = 0) out float4 SV_Target0;
-
-void main()
+void MainFs()
 {
     const float viewDepth = ViewDepth(gl_FragCoord.z);
     const float sceneDepth = SampleViewDepth(gl_FragCoord.xy * pk_ScreenParams.zw);

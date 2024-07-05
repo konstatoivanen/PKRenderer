@@ -1,8 +1,9 @@
+
 #extension GL_KHR_shader_subgroup_arithmetic : require
-
-#PK_MultiCompile PASS_SHADOWMAP PASS_SHADOWMAP_UPSAMPLE PASS_SCREEN_DEPTH
-
-#pragma PROGRAM_COMPUTE
+#pragma pk_multi_compile PASS_SHADOWMAP PASS_SHADOWMAP_UPSAMPLE PASS_SCREEN_DEPTH
+#pragma pk_program SHADER_STAGE_COMPUTE ShadowmapCs PASS_SHADOWMAP
+#pragma pk_program SHADER_STAGE_COMPUTE ShadowmapUpsampleCs PASS_SHADOWMAP_UPSAMPLE
+#pragma pk_program SHADER_STAGE_COMPUTE ScreenSpaceShadowsCs PASS_SCREEN_DEPTH
 
 #include "includes/GBuffers.glsl"
 #include "includes/NoiseBlue.glsl"
@@ -12,10 +13,9 @@
 layout(r8, set = PK_SET_DRAW) uniform image2D pk_Image;
 layout(set = PK_SET_DRAW) uniform sampler2D pk_Texture;
 
-#if defined(PASS_SHADOWMAP)
-
+[[pk_restrict ShadowmapCs]]
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
-void main()
+void ShadowmapCs()
 {
     // This is only run on the first light.
     // Through sorting it should be a directional shadow casting light.
@@ -121,14 +121,14 @@ void main()
     imageStore(pk_Image, int2(baseCoord), float4(shadow));
 }
 
-#elif defined(PASS_SHADOWMAP_UPSAMPLE)
-
 #define GROUP_SIZE 8
-shared half lds_shadow[GROUP_SIZE * GROUP_SIZE];
-shared float lds_depth[GROUP_SIZE * GROUP_SIZE];
 
+[[pk_restrict ShadowmapUpsampleCs]] shared half lds_shadow[GROUP_SIZE * GROUP_SIZE];
+[[pk_restrict ShadowmapUpsampleCs]] shared float lds_depth[GROUP_SIZE * GROUP_SIZE];
+
+[[pk_restrict ShadowmapUpsampleCs]]
 layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
-void main()
+void ShadowmapUpsampleCs()
 {
     const int thread = int(gl_LocalInvocationIndex);
     const int2 baseCoord = int2(gl_WorkGroupID.xy) * GROUP_SIZE - int2(4);
@@ -209,29 +209,30 @@ void main()
     imageStore(pk_Image, int2(gl_GlobalInvocationID.xy), float4(shadow));
 }
 
-#else
+#if defined(PASS_SCREEN_DEPTH)
+    // Wavefront size of the compute shader running this code. 
+    #define WAVE_SIZE 64
+    // Number of shadow samples per-pixel.
+    #define SAMPLE_COUNT 60
+    // Number of initial shadow samples that will produce a hard shadow, and not perform sample-averaging.
+    #define HARD_SHADOW_SAMPLES 4
+    // Number of samples that will fade out at the end of the shadow (for a minor cost).
+    #define FADE_OUT_SAMPLES 8
+    
+    float BEND_SAMPLE_DEPTH(float2 uv) { return SampleClipDepthBiased(int2(uv * pk_ScreenSize.xy)); }
+    
+    #include "includes/bend_sss_gpu.glsl"
+    
+    PK_DECLARE_LOCAL_CBUFFER(pk_BendShadowDispatchData)
+    {
+        float4 LightCoordinate;
+        int2 WaveOffset;
+    };
+#endif
 
-// Wavefront size of the compute shader running this code. 
-#define WAVE_SIZE 64
-// Number of shadow samples per-pixel.
-#define SAMPLE_COUNT 60
-// Number of initial shadow samples that will produce a hard shadow, and not perform sample-averaging.
-#define HARD_SHADOW_SAMPLES 4
-// Number of samples that will fade out at the end of the shadow (for a minor cost).
-#define FADE_OUT_SAMPLES 8
-
-float BEND_SAMPLE_DEPTH(float2 uv) { return SampleClipDepthBiased(int2(uv * pk_ScreenSize.xy)); }
-
-#include "includes/bend_sss_gpu.glsl"
-
-PK_DECLARE_LOCAL_CBUFFER(pk_BendShadowDispatchData)
-{
-    float4 LightCoordinate;
-    int2 WaveOffset;
-};
-
+[[pk_restrict ScreenSpaceShadowsCs]]
 layout(local_size_x = WAVE_SIZE, local_size_y = 1, local_size_z = 1) in;
-void main()
+void ScreenSpaceShadowsCs()
 {
     DispatchParameters dispatchParams;
     dispatchParams.LightCoordinate = LightCoordinate;				// Values stored in DispatchList::LightCoordinate_Shader by BuildDispatchList()
@@ -252,5 +253,3 @@ void main()
     dispatchParams.UseEarlyOut = true;
     WriteScreenSpaceShadow(dispatchParams, int3(gl_WorkGroupID), int(gl_LocalInvocationIndex));
 }
-
-#endif

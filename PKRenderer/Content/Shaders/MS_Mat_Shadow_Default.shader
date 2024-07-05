@@ -1,9 +1,13 @@
-#PK_Cull Back
-#PK_ZTest GEqual
-#PK_ZWrite True
-#PK_EnableInstancing
-#PK_DisableFragmentInstancing
-#PK_MultiCompile PK_LIGHT_PASS_DIRECTIONAL PK_LIGHT_PASS_SPOT PK_LIGHT_PASS_POINT
+
+#pragma pk_cull Back
+#pragma pk_ztest GEqual
+#pragma pk_zwrite True
+#pragma pk_enable_instancing
+#pragma pk_disable_fragment_instancing
+
+#pragma pk_multi_compile PK_LIGHT_PASS_DIRECTIONAL PK_LIGHT_PASS_SPOT PK_LIGHT_PASS_POINT
+
+#pragma pk_program SHADER_STAGE_FRAGMENT MainFs
 
 struct LightPayload
 {
@@ -22,41 +26,11 @@ struct LightPayload
 #include "includes/LightResources.glsl"
 #include "includes/Meshlets.glsl"
 
-#pragma PROGRAM_MESH_TASK
-
-void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
-{
-    const uint lightIndex = bitfieldExtract(pk_Instancing_Userdata, 0, 16);
-    const LightPacked light = Lights_LoadPacked(lightIndex);
-    const uint matrixIndex = light.LIGHT_MATRIX;
-    const uint layer = bitfieldExtract(pk_Instancing_Userdata, 16, 16);
-
-    payload.extra.lightPosition = light.LIGHT_POS;
-    payload.extra.lightRadius = light.LIGHT_RADIUS;
-    payload.extra.layer = layer;
-
-    float4x4 lightMatrix;
-
 #if defined(PK_LIGHT_PASS_DIRECTIONAL)
-    lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex + layer);
-#elif defined(PK_LIGHT_PASS_SPOT)
-    lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex);
-#endif
-
-    payload.extra.lightMatrix = lightMatrix;
-    Meshlet_Store_FrustumPlanes(lightMatrix);
-}
-
-bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
-{
-#if defined(PK_LIGHT_PASS_DIRECTIONAL)
-    return Meshlet_Cone_Cull_Directional(meshlet, payload.extra.lightPosition) && Meshlet_Frustum_Cull(meshlet);
+PK_DECLARE_VS_ATTRIB(float vs_DEPTH);
 #else
-    return Meshlet_Cone_Cull(meshlet, payload.extra.lightPosition) && Meshlet_Frustum_Cull(meshlet);
+PK_DECLARE_VS_ATTRIB(float3 vs_DEPTH);
 #endif
-}
-
-#pragma PROGRAM_MESH_ASSEMBLY
 
 // As opposed to default order y axis is flipped here to avoid having to switch winding order for cube depth rendering
 const float3x3 PK_CUBE_FACE_MATRICES[6] =
@@ -102,11 +76,41 @@ float4 GetCubeClipPos(float3 viewvec, float radius, uint faceIndex)
     return float4(vpos.xy, m22 * vpos.z + m32, vpos.z);
 }
 
+#if defined(SHADER_STAGE_MESH_TASK)
+
+void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
+{
+    const uint lightIndex = bitfieldExtract(pk_Instancing_Userdata, 0, 16);
+    const LightPacked light = Lights_LoadPacked(lightIndex);
+    const uint matrixIndex = light.LIGHT_MATRIX;
+    const uint layer = bitfieldExtract(pk_Instancing_Userdata, 16, 16);
+
+    payload.extra.lightPosition = light.LIGHT_POS;
+    payload.extra.lightRadius = light.LIGHT_RADIUS;
+    payload.extra.layer = layer;
+
+    float4x4 lightMatrix;
+
 #if defined(PK_LIGHT_PASS_DIRECTIONAL)
-out float vs_DEPTH[];
-#else
-out float3 vs_DEPTH[];
+    lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex + layer);
+#elif defined(PK_LIGHT_PASS_SPOT)
+    lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex);
 #endif
+
+    payload.extra.lightMatrix = lightMatrix;
+    Meshlet_Store_FrustumPlanes(lightMatrix);
+}
+
+bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
+{
+#if defined(PK_LIGHT_PASS_DIRECTIONAL)
+    return Meshlet_Cone_Cull_Directional(meshlet, payload.extra.lightPosition) && Meshlet_Frustum_Cull(meshlet);
+#else
+    return Meshlet_Cone_Cull(meshlet, payload.extra.lightPosition) && Meshlet_Frustum_Cull(meshlet);
+#endif
+}
+
+#elif defined(SHADER_STAGE_MESH_ASSEMBLY)
 
 void PK_MESHLET_FUNC_TRIANGLE(uint triangleIndex, inout uint3 indices)
 {
@@ -131,17 +135,12 @@ void PK_MESHLET_FUNC_VERTEX(uint vertexIndex, PKVertex vertex, inout float4 sv_P
 #endif
 }
 
-#pragma PROGRAM_FRAGMENT
+#elif defined(SHADER_STAGE_FRAGMENT)
 
-#if defined(PK_LIGHT_PASS_DIRECTIONAL)
-in float vs_DEPTH;
-#else
-in float3 vs_DEPTH;
-#endif
+out float SV_Target0;
 
 layout(early_fragment_tests) in;
-layout(location = 0) out float SV_Target0;
-void main()
+void MainFs()
 {
     // Store linear distance into shadowmaps.
     // Point lights use an octahedral layout which doesnt mesh well with clip space depth.
@@ -151,3 +150,4 @@ void main()
     SV_Target0 = length(vs_DEPTH.xyz);
 #endif
 }
+#endif

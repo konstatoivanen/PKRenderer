@@ -1,7 +1,7 @@
-#pragma PROGRAM_COMPUTE
 
-#PK_MultiCompile _ PK_GI_CHECKERBOARD_TRACE
-#PK_MultiCompile _ PK_GI_GRADIENT_FILTER
+#pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
+#pragma pk_multi_compile _ PK_GI_GRADIENT_FILTER
+#pragma pk_program SHADER_STAGE_COMPUTE main
 
 #include "includes/SceneGIGradients.glsl"
 

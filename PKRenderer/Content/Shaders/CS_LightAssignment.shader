@@ -1,6 +1,6 @@
-#pragma PROGRAM_COMPUTE
 
-#PK_WithAtomicCounter
+#pragma pk_with_atomic_counter
+#pragma pk_program SHADER_STAGE_COMPUTE main
 
 #define PK_WRITE_LIGHT_CLUSTERS
 #define GROUP_SIZE_X 2
