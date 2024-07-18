@@ -6,7 +6,6 @@
 #include "Core/ControlFlow/Sequencer.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/ConstantBuffer.h"
-#include "App/RendererConfig.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/EntityCulling.h"
 #include "App/Renderer/RenderView.h"
@@ -14,16 +13,16 @@
 
 namespace PK::App
 {
-    RenderPipelineScene::RenderPipelineScene(AssetDatabase* assetDatabase, RendererConfig* config) :
-        m_passLights(assetDatabase, config),
-        m_passSceneGI(assetDatabase, config),
-        m_passVolumeFog(assetDatabase, config),
-        m_passHierarchicalDepth(assetDatabase, config),
+    RenderPipelineScene::RenderPipelineScene(AssetDatabase* assetDatabase, const uint2& initialResolution) :
+        m_passLights(assetDatabase, initialResolution),
+        m_passSceneGI(assetDatabase, initialResolution),
+        m_passVolumeFog(assetDatabase, initialResolution),
+        m_passHierarchicalDepth(assetDatabase, initialResolution),
         m_passEnvBackground(assetDatabase),
         m_passFilmGrain(assetDatabase),
-        m_depthOfField(assetDatabase, config),
-        m_temporalAntialiasing(assetDatabase, config->InitialWidth, config->InitialHeight),
-        m_bloom(assetDatabase, config->InitialWidth, config->InitialHeight),
+        m_depthOfField(assetDatabase, initialResolution),
+        m_temporalAntialiasing(assetDatabase, initialResolution),
+        m_bloom(assetDatabase, initialResolution),
         m_autoExposure(assetDatabase),
         m_passPostEffectsComposite(assetDatabase)
     {
@@ -64,11 +63,81 @@ namespace PK::App
             { ElementType::Uint4, hash->pk_FrameRandom },
             { ElementType::Uint2, hash->pk_ScreenSize },
             { ElementType::Uint2, hash->pk_FrameIndex },
-            { ElementType::Float, hash->pk_SceneEnv_Exposure }
+            { ElementType::Float, hash->pk_SceneEnv_Exposure },
+
+            // GI Parameters
+            { ElementType::Float, hash->pk_GI_VoxelSize },
+            { ElementType::Float, hash->pk_GI_VoxelStepSize },
+            { ElementType::Float, hash->pk_GI_VoxelLevelScale },
+            { ElementType::Float4, hash->pk_GI_VolumeST },
+            { ElementType::Uint4, hash->pk_GI_VolumeSwizzle },
+            { ElementType::Uint2, hash->pk_GI_RayDither },
+
+            // Fog Parameters
+            { ElementType::Float,  hash->pk_Fog_Density_Amount },
+            { ElementType::Float,  hash->pk_Fog_Density_Constant },
+            { ElementType::Float4, hash->pk_Fog_Albedo },
+            { ElementType::Float4, hash->pk_Fog_Absorption },
+            { ElementType::Float4, hash->pk_Fog_WindDirSpeed },
+
+            { ElementType::Float,  hash->pk_Fog_Phase0 },
+            { ElementType::Float,  hash->pk_Fog_Phase1 },
+            { ElementType::Float,  hash->pk_Fog_PhaseW },
+            { ElementType::Float,  hash->pk_Fog_Density_HeightExponent },
+            
+            { ElementType::Float,  hash->pk_Fog_Density_HeightOffset },
+            { ElementType::Float,  hash->pk_Fog_Density_HeightAmount },
+            { ElementType::Float,  hash->pk_Fog_Density_NoiseAmount },
+            { ElementType::Float,  hash->pk_Fog_Density_NoiseScale },
+            
+            { ElementType::Float,  hash->pk_Fog_Density_Sky_Constant },
+            { ElementType::Float,  hash->pk_Fog_Density_Sky_HeightExponent },
+            { ElementType::Float,  hash->pk_Fog_Density_Sky_HeightOffset },
+            { ElementType::Float,  hash->pk_Fog_Density_Sky_HeightAmount },
+
+            // Color Grading
+            { ElementType::Float4, hash->pk_CC_WhiteBalance },
+            { ElementType::Float4, hash->pk_CC_Lift },
+            { ElementType::Float4, hash->pk_CC_Gamma },
+            { ElementType::Float4, hash->pk_CC_Gain },
+            { ElementType::Float4, hash->pk_CC_HSV },
+            { ElementType::Float4, hash->pk_CC_MixRed },
+            { ElementType::Float4, hash->pk_CC_MixGreen },
+            { ElementType::Float4, hash->pk_CC_MixBlue },
+
+            { ElementType::Float, hash->pk_CC_LumaContrast },
+            { ElementType::Float, hash->pk_CC_LumaGain },
+            { ElementType::Float, hash->pk_CC_LumaGamma },
+            { ElementType::Float, hash->pk_CC_Vibrance },
+            { ElementType::Float, hash->pk_CC_Contribution },
+
+            // Vignette 
+            { ElementType::Float, hash->pk_Vignette_Intensity },
+            { ElementType::Float, hash->pk_Vignette_Power },
+
+            // Film grain
+            { ElementType::Float, hash->pk_FilmGrain_Luminance },
+            { ElementType::Float, hash->pk_FilmGrain_Intensity },
+
+            // Auto exposure
+            { ElementType::Float, hash->pk_AutoExposure_MinLogLuma },
+            { ElementType::Float, hash->pk_AutoExposure_InvLogLumaRange },
+            { ElementType::Float, hash->pk_AutoExposure_LogLumaRange },
+            { ElementType::Float, hash->pk_AutoExposure_Target },
+            { ElementType::Float, hash->pk_AutoExposure_Speed },
+
+            // Bloom
+            { ElementType::Float, hash->pk_Bloom_Intensity },
+            { ElementType::Float, hash->pk_Bloom_DirtIntensity },
+
+            // Temporal anti aliasing
+            { ElementType::Float, hash->pk_TAA_Sharpness },
+            { ElementType::Float, hash->pk_TAA_BlendingStatic },
+            { ElementType::Float, hash->pk_TAA_BlendingMotion },
+            { ElementType::Float, hash->pk_TAA_MotionAmplification },
+
+            { ElementType::Uint, hash->pk_PostEffectsFeatureMask}
         });
-        
-        AssetImportEvent<RendererConfig> token{ assetDatabase, config };
-        Step(&token);
     }
 
     RenderPipelineScene::~RenderPipelineScene()
@@ -105,7 +174,7 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
 
-        auto& constants = view->constants;
+        auto constants = view->constants.get();
         auto resolution = view->GetResolution();
 
         const auto shadowCascadeZSplits = m_passLights.GetCascadeZSplitsFloat4(view->znear, view->zfar);
@@ -170,7 +239,16 @@ namespace PK::App
         constants->Set<uint2>(hash->pk_ScreenSize, { resolution.x, resolution.y });
         constants->Set<uint2>(hash->pk_FrameIndex, { frameIndex % 0xFFFFFFFFu, (frameIndex - frameIndexResize) % 0xFFFFFFFFu });
         constants->Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
-        constants->Set<float>(hash->pk_SceneEnv_Exposure, m_backgroundExposure);
+
+        m_passEnvBackground.SetViewConstants(view);
+        m_passSceneGI.SetViewConstants(view);
+        m_passVolumeFog.SetViewConstants(view);
+        m_bloom.SetViewConstants(view);
+        m_autoExposure.SetViewConstants(view);
+        m_depthOfField.SetViewConstants(view);
+        m_passFilmGrain.SetViewConstants(view);
+        m_temporalAntialiasing.SetViewConstants(view);
+        m_passPostEffectsComposite.SetViewConstants(view);
     }
 
     void RenderPipelineScene::RenderViews(RenderPipelineContext* context)
@@ -300,16 +378,5 @@ namespace PK::App
         cmdgraphics->Blit(gbuffers.current.normals, gbuffers.previous.normals, {}, {}, FilterMode::Point);
         cmdgraphics->Blit(gbuffers.current.depthBiased, gbuffers.previous.depthBiased, {}, {}, FilterMode::Point);
         cmdgraphics->Blit(gbuffers.current.depth, gbuffers.previous.depth, {}, {}, FilterMode::Point);
-    }
-
-    void RenderPipelineScene::Step(AssetImportEvent<RendererConfig>* token)
-    {
-        auto config = token->asset;
-        m_backgroundExposure = config->BackgroundExposure;
-        m_passPostEffectsComposite.OnUpdateParameters(token);
-        m_passEnvBackground.OnUpdateParameters(token);
-        m_passSceneGI.OnUpdateParameters(config);
-        m_depthOfField.OnUpdateParameters(config);
-        m_passVolumeFog.OnUpdateParameters(config);
     }
 }

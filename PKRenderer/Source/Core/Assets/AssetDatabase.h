@@ -99,6 +99,26 @@ namespace PK
         inline void ReloadCachedDirectory(const std::string& directory) { ReloadCachedInternal(std::type_index(typeid(T)), directory); }
 
         template<typename T>
+        std::vector<T*> GetAssetsOfType()
+        {
+            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+
+            std::vector<T*> result;
+
+            if (m_assets.count(std::type_index(typeid(T))) > 0)
+            {
+                auto assets = m_assets.at(std::type_index(typeid(T)));
+               
+                for (auto& kv : assets)
+                {
+                    result.push_back(std::static_pointer_cast<T>(kv.second).get());
+                }
+            }
+
+            return result;
+        }
+
+        template<typename T>
         void UnloadDirectory(const std::string& directory)
         {
             static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
@@ -165,7 +185,7 @@ namespace PK
             static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
             // Copy intentional as mapped names can be moved.
-            const auto& filepath = assetId.to_string();
+            const auto filepath = assetId.to_string();
 
             PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
             PK_LOG_VERBOSE("AssetDatabase.Load: %s, %s", typeid(T).name(), filepath.c_str());

@@ -1,15 +1,17 @@
 #include "PrecompiledHeader.h"
 #include "Core/Assets/AssetDatabase.h"
+#include "Core/CLI/CVariableRegister.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "App/Renderer/HashCache.h"
-#include "App/RendererConfig.h"
+#include "App/Renderer/RenderView.h"
+#include "App/Renderer/RenderViewSettings.h"
 #include "PassDepthOfField.h"
 
 namespace PK::App
 {
-    PassDepthOfField::PassDepthOfField(AssetDatabase* assetDatabase, const RendererConfig* config)
+    PassDepthOfField::PassDepthOfField(AssetDatabase* assetDatabase, const uint2& initialResolution)
     {
         PK_LOG_VERBOSE("PassDepthOfField.Ctor");
         PK_LOG_SCOPE_INDENT(local);
@@ -20,14 +22,11 @@ namespace PK::App
         m_passDiskblur = m_computeDepthOfField->GetRHIIndex("PASS_DISKBLUR");
         m_passUpsample = m_computeDepthOfField->GetRHIIndex("PASS_UPSAMPLE");
 
-        OnUpdateParameters(config);
-
         TextureDescriptor descriptor{};
         descriptor.type = TextureType::Texture2DArray;
         descriptor.format = TextureFormat::RGB9E5;
         descriptor.formatAlias = TextureFormat::R32UI;
-        descriptor.resolution.x = config->InitialWidth / 2;
-        descriptor.resolution.y = config->InitialHeight / 2;
+        descriptor.resolution = { initialResolution / 2u, 1u };
         descriptor.layers = 3;
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
         descriptor.sampler.filterMin = FilterMode::Bilinear;
@@ -42,6 +41,15 @@ namespace PK::App
 
         m_autoFocusParams = RHI::CreateBuffer<float2>(1ull, BufferUsage::DefaultStorage, "DepthOfField.AutoFocus.Parameters");
         RHI::SetBuffer(HashCache::Get()->pk_DoF_AutoFocusParams, m_autoFocusParams.get());
+    }
+
+    void PassDepthOfField::SetViewConstants(RenderView* view)
+    {
+        auto& settings = view->settingsRef->DepthOfFieldSettings;
+        m_constants.pk_DoF_FocalLength = settings.FocalLength;
+        m_constants.pk_DoF_FNumber = settings.FNumber;
+        m_constants.pk_DoF_FilmHeight = settings.FilmHeight;
+        m_constants.pk_DoF_FocusSpeed = settings.FocusSpeed;
     }
 
     void PassDepthOfField::ComputeAutoFocus(CommandBufferExt cmd, uint32_t screenHeight)
@@ -78,13 +86,5 @@ namespace PK::App
         cmd.Dispatch(m_computeDepthOfField, m_passUpsample, fullres);
 
         cmd->EndDebugScope();
-    }
-
-    void PassDepthOfField::OnUpdateParameters(const RendererConfig* config)
-    {
-        m_constants.pk_DoF_FocalLength = config->DoFFocalLength;
-        m_constants.pk_DoF_FNumber = config->DoFFNumber;
-        m_constants.pk_DoF_FilmHeight = config->DoFFilmHeight;
-        m_constants.pk_DoF_FocusSpeed = config->DoFFocusSpeed;
     }
 }

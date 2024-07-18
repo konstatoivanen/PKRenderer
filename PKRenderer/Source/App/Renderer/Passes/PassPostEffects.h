@@ -9,14 +9,12 @@ namespace PK::App
     {
         public:
             PassPostEffectsComposite(AssetDatabase* assetDatabase);
+            void SetViewConstants(struct RenderView* view);
             void Render(CommandBufferExt cmd, RHITexture* destination);
-            void OnUpdateParameters(AssetImportEvent<RendererConfig>* token);
 
         private:
             ShaderAsset* m_computeComposite = nullptr;
-            ConstantBufferRef m_constantsPostProcess;
-            RHITexture* m_bloomLensDirtTexture;
-            RHITexture* m_colorgradingLut;
+            RHITexture* m_colorgradingLut = nullptr;
             uint32_t m_passIndex = 0u;
     };
 }

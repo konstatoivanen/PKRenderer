@@ -48,6 +48,7 @@ namespace PK
         virtual void Indent() = 0;
         virtual void Unindent() = 0;
         virtual void SetSeverityMask(LogSeverity mask) = 0;
+        virtual LogSeverity GetSeverityMask() const = 0;
         virtual void SetColor(LogColor color) = 0;
         virtual void SetShowConsole(bool value) = 0;
 

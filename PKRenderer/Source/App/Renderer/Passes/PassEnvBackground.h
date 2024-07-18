@@ -5,19 +5,18 @@
 
 namespace PK::App
 {
-    struct RendererConfig;
-
     class PassEnvBackground : public NoCopy
     {
         public:
             PassEnvBackground(AssetDatabase* assetDatabase);
+            void SetViewConstants(struct RenderView* view);
             void ComputeSH(CommandBufferExt cmd);
             void RenderBackground(CommandBufferExt cmd);
-            void OnUpdateParameters(AssetImportEvent<RendererConfig>* token);
 
         private:
-            RHIBufferRef m_shBuffer;
+            RHITexture* m_backgroundTexture = nullptr;
             ShaderAsset* m_backgroundShader = nullptr;
             ShaderAsset* m_integrateSHShader = nullptr;
+            RHIBufferRef m_shBuffer;
     };
 }

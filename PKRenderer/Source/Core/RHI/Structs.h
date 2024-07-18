@@ -573,21 +573,18 @@ namespace PK
     {
         std::string title;
         std::string iconPath;
-        uint32_t width;
-        uint32_t height;
+        uint2 size;
         bool vsync;
         bool cursorVisible;
 
         WindowDescriptor(const std::string& title = "PK Window",
             const std::string& iconPath = std::string(),
-            uint32_t width = 1600u,
-            uint32_t height = 912u,
+            const uint2& size = { 1024u, 512u },
             bool vsync = true,
             bool cursorVisible = true) :
             title(title),
             iconPath(iconPath),
-            width(width),
-            height(height),
+            size(size),
             vsync(vsync),
             cursorVisible(cursorVisible)
         {

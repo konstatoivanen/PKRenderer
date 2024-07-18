@@ -14,7 +14,7 @@ namespace PK
     public:
         RemoteProcessRunner();
 
-        void ExecuteRemoteProcess(const char** args, uint32_t count);
+        void ExecuteRemoteProcess(const char* const* args, uint32_t count);
 
         void ExecuteRemoteProcess(const RemoteProcessCommand& command);
 

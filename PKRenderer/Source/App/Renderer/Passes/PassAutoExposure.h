@@ -11,6 +11,7 @@ namespace PK::App
     {
         public:
             PassAutoExposure(AssetDatabase* assetDatabase);
+            void SetViewConstants(struct RenderView* view);
             void Render(CommandBufferExt cmd, RHITexture* target);
 
         private:

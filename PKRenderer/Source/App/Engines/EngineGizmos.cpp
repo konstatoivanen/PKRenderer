@@ -8,16 +8,13 @@
 #include "App/Renderer/RenderView.h"
 #include "App/Renderer/IRenderPipeline.h"
 #include "App/Renderer/HashCache.h"
-#include "App/RendererConfig.h"
 #include "EngineGizmos.h"
 
 namespace PK::App
 {
-    EngineGizmos::EngineGizmos(AssetDatabase* assetDatabase, Sequencer* sequencer, RendererConfig* config) :
+    EngineGizmos::EngineGizmos(AssetDatabase* assetDatabase, Sequencer* sequencer) :
         m_sequencer(sequencer)
     {
-        m_enabledCPU = config->EnableGizmosCPU;
-        m_enabledGPU = config->EnableGizmosGPU;
         m_gizmosShader = assetDatabase->Find<ShaderAsset>("VS_Gizmos");
         m_vertexBuffer = RHI::CreateBuffer<uint4>(m_maxVertices, BufferUsage::DefaultVertex | BufferUsage::PersistentStage, "Gizmos.VertexBuffer");
         m_indirectVertexBuffer = RHI::CreateBuffer<uint4>(16384u, BufferUsage::Vertex | BufferUsage::Storage, "Gizmos.Indirect.VertexBuffer");
@@ -37,8 +34,8 @@ namespace PK::App
         RHI::SetBuffer(hash->pk_Gizmos_IndirectVertices, m_indirectVertexBuffer.get());
         RHI::SetBuffer(hash->pk_Gizmos_IndirectArguments, m_indirectArgsBuffer.get());
 
-        CVariableRegister::Create<bool*>("Engine.Gizmos.CPU.Enabled", &m_enabledCPU, "0 = 0ff, 1 = On", 1u, 1u);
-        CVariableRegister::Create<bool*>("Engine.Gizmos.GPU.Enabled", &m_enabledGPU, "0 = 0ff, 1 = On", 1u, 1u);
+        CVariableRegister::Create<bool*>("Engine.Gizmos.CPU.Enabled", &m_enabledCPU, "0 = 0ff, 1 = On", 1u);
+        CVariableRegister::Create<bool*>("Engine.Gizmos.GPU.Enabled", &m_enabledGPU, "0 = 0ff, 1 = On", 1u);
         CVariableRegister::Create<CVariableFuncSimple>("Engine.Gizmos.CPU.Toggle", [this](){m_enabledCPU ^= true;});
         CVariableRegister::Create<CVariableFuncSimple>("Engine.Gizmos.GPU.Toggle", [this](){m_enabledGPU ^= true;});
     }
@@ -103,12 +100,6 @@ namespace PK::App
 
             default: return;
         }
-    }
-
-    void EngineGizmos::Step(AssetImportEvent<RendererConfig>* token)
-    {
-        m_enabledCPU = token->asset->EnableGizmosCPU;
-        m_enabledGPU = token->asset->EnableGizmosGPU;
     }
 
     void EngineGizmos::DrawBounds(const BoundingBox& aabb)

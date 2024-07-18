@@ -4,6 +4,7 @@
 #include "Core/Utilities/MemoryBlock.h"
 #include "Core/Math/FunctionsMisc.h"
 #include "Core/Rendering/RenderingFwd.h"
+#include "Core/CLI/CVariable.h"
 #include "App/Renderer/EntityEnums.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
@@ -11,7 +12,6 @@ PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
 namespace PK::App
 {
     struct EntityViewLight;
-    struct RendererConfig;
     struct RequestEntityCullResults;
     struct RenderPipelineContext;
 
@@ -25,7 +25,7 @@ namespace PK::App
             constexpr static const uint32_t LightGridTileSizePx = 64;
             constexpr static const uint32_t ShadowCascadeCount = 4;
 
-            PassLights(AssetDatabase* assetDatabase, const RendererConfig* config);
+            PassLights(AssetDatabase* assetDatabase, const uint2& initialResolution);
             void RenderShadows(CommandBufferExt cmd, RenderPipelineContext* context);
             void RenderScreenSpaceShadows(CommandBufferExt cmd, RenderPipelineContext* context);
             void ComputeClusters(CommandBufferExt cmd, RenderPipelineContext* context);
@@ -73,7 +73,9 @@ namespace PK::App
             std::vector<ShadowbatchInfo> m_shadowBatches;
             MemoryBlock<EntityViewLight*> m_lights;
             
-            float m_cascadeLinearity;
             ShadowTypeData m_shadowTypeData[(int)LightType::TypeCount];
+            
+            CVariableField<float> m_cascadeLinearity = { "Renderer.Lights.CascadeLinearity", 0.5f };
+            CVariableField<uint32_t> m_shadowmapSize = { "Renderer.Lights.ShadowmapSize", 1024u };
     };
 }

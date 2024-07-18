@@ -3,6 +3,7 @@
 #pragma pk_zwrite False
 #pragma pk_program SHADER_STAGE_VERTEX MainVs
 #pragma pk_program SHADER_STAGE_FRAGMENT MainFs
+#define PK_USE_SINGLE_DESCRIPTOR_SET
 
 #include "includes/Common.glsl"
 #include "includes/Encoding.glsl"

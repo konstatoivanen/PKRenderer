@@ -2,6 +2,12 @@
 #pragma pk_with_atomic_counter
 #pragma pk_program SHADER_STAGE_COMPUTE main
 
+#define PK_USE_CUSTOM_DESCRIPTOR_SET_INDICES
+#define PK_SET_GLOBAL 0
+#define PK_SET_PASS 3
+#define PK_SET_SHADER 3
+#define PK_SET_DRAW 3
+
 #define PK_WRITE_LIGHT_CLUSTERS
 #define GROUP_SIZE_X 2
 #define GROUP_SIZE_Y 1

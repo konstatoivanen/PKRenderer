@@ -16,6 +16,8 @@ namespace PK
         static void Unindent();
 
         static void SetSeverityMask(LogSeverity mask);
+        static void SetSeverityMaskFlag(LogSeverity flag, bool value);
+        static LogSeverity GetSeverityMask();
         static void SetShowConsole(bool value);
         static void SetColor(LogColor color);
 

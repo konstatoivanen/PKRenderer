@@ -19,14 +19,10 @@ PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
 
 namespace PK::App
 {
-    struct RendererConfig;
-
-    class RenderPipelineScene : 
-        public IRenderPipeline,
-        public IStep<AssetImportEvent<RendererConfig>*>
+    class RenderPipelineScene : public IRenderPipeline
     {
         public:
-            RenderPipelineScene(AssetDatabase* assetDatabase, RendererConfig* config);
+            RenderPipelineScene(AssetDatabase* assetDatabase, const uint2& initialResolution);
             ~RenderPipelineScene();
 
             const BufferLayout& GetViewConstantsLayout() const final { return m_constantsLayout; }
@@ -36,8 +32,6 @@ namespace PK::App
             void SetViewConstants(RenderView* view) final;
 
             void RenderViews(struct RenderPipelineContext* context) final;
-
-            void Step(AssetImportEvent<RendererConfig>* token) final;
 
         private:
             PassLights m_passLights;
@@ -54,9 +48,5 @@ namespace PK::App
             
             RHIAccelerationStructureRef m_sceneStructure;
             BufferLayout m_constantsLayout;
-
-            // @TODO fix hack
-            float m_backgroundExposure = 1.0f;
-            
     };
 }

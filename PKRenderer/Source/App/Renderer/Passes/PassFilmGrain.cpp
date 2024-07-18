@@ -3,7 +3,10 @@
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
+#include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/HashCache.h"
+#include "App/Renderer/RenderView.h"
+#include "App/Renderer/RenderViewSettings.h"
 #include "PassFilmGrain.h"
 
 namespace PK::App
@@ -27,6 +30,14 @@ namespace PK::App
         descriptor.usage = TextureUsage::DefaultStorage | TextureUsage::Concurrent;
         m_filmGrainTexture = RHI::CreateTexture(descriptor, "FilmGrain.Texture");
         RHI::SetTexture(HashCache::Get()->pk_FilmGrain_Texture, m_filmGrainTexture.get());
+    }
+
+    void PassFilmGrain::SetViewConstants(RenderView* view)
+    {
+        auto hash = HashCache::Get();
+        auto& settings = view->settingsRef->FilmGrainSettings;
+        view->constants->Set<float>(hash->pk_FilmGrain_Luminance, settings.Luminance);
+        view->constants->Set<float>(hash->pk_FilmGrain_Intensity, settings.Intensity);
     }
 
     void PassFilmGrain::Compute(CommandBufferExt cmd)

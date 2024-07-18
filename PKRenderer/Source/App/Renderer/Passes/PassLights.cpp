@@ -15,7 +15,6 @@
 #include "App/Renderer/EntityCulling.h"
 #include "App/Renderer/IBatcher.h"
 #include "App/Renderer/IRenderPipeline.h"
-#include "App/RendererConfig.h"
 #include "PassLights.h"
 
 namespace PK::App
@@ -66,7 +65,8 @@ namespace PK::App
         return 0;
     }
 
-    PassLights::PassLights(AssetDatabase* assetDatabase, const RendererConfig* config) : m_lights(1024)
+    PassLights::PassLights(AssetDatabase* assetDatabase, const uint2& initialResolution) : 
+        m_lights(1024)
     {
         PK_LOG_VERBOSE("PassLights.Ctor");
         PK_LOG_SCOPE_INDENT(local);
@@ -74,8 +74,6 @@ namespace PK::App
         m_computeLightAssignment = assetDatabase->Find<ShaderAsset>("CS_LightAssignment");
         m_computeCopyCubeShadow = assetDatabase->Find<ShaderAsset>("CS_CopyCubeShadow");
         m_computeScreenSpaceShadow = assetDatabase->Find<ShaderAsset>("CS_ScreenspaceShadow");
-
-        m_cascadeLinearity = config->CascadeLinearity;
 
         m_shadowTypeData[(int)LightType::Point].MatrixCount = 0u;
         m_shadowTypeData[(int)LightType::Point].TileCount = 1u;
@@ -92,7 +90,7 @@ namespace PK::App
         m_shadowTypeData[(int)LightType::Directional].MaxBatchSize = 1u;
         m_shadowTypeData[(int)LightType::Directional].LayerStride = ShadowCascadeCount;
 
-        auto shadowCubeFaceSize = (uint)sqrt((config->ShadowmapTileSize * config->ShadowmapTileSize) / 6);
+        auto shadowCubeFaceSize = (uint)sqrt((m_shadowmapSize * m_shadowmapSize) / 6);
         TextureDescriptor depthDesc;
         depthDesc.type = TextureType::CubemapArray;
         depthDesc.resolution = { shadowCubeFaceSize , shadowCubeFaceSize , 1u };
@@ -112,7 +110,7 @@ namespace PK::App
 
         depthDesc.type = TextureType::Texture2DArray;
         depthDesc.format = TextureFormat::Depth16;
-        depthDesc.resolution = { (int)config->ShadowmapTileSize, (int)config->ShadowmapTileSize, 1u };
+        depthDesc.resolution = { m_shadowmapSize.Value, m_shadowmapSize.Value, 1u };
         depthDesc.layers = ShadowCascadeCount;
         depthDesc.usage = TextureUsage::RTDepth;
         m_depthTarget2D = RHI::CreateTexture(depthDesc, "Lights.DepthTarget.2D");
@@ -122,7 +120,7 @@ namespace PK::App
         atlasDesc.format = TextureFormat::R32F;
         atlasDesc.usage = TextureUsage::Sample | TextureUsage::Storage | TextureUsage::RTColor;
         atlasDesc.layers = ShadowCascadeCount * 2; // initial size assume 1 active directional light.
-        atlasDesc.resolution = { (int)config->ShadowmapTileSize, (int)config->ShadowmapTileSize, 1u };
+        atlasDesc.resolution = { m_shadowmapSize.Value, m_shadowmapSize.Value, 1u };
         atlasDesc.sampler.wrap[0] = WrapMode::Clamp;
         atlasDesc.sampler.wrap[1] = WrapMode::Clamp;
         atlasDesc.sampler.wrap[2] = WrapMode::Clamp;
@@ -135,7 +133,7 @@ namespace PK::App
         screenSpaceDesc.format = TextureFormat::R8;
         screenSpaceDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
         screenSpaceDesc.layers = 1;
-        screenSpaceDesc.resolution = { config->InitialWidth, config->InitialHeight, 1u };
+        screenSpaceDesc.resolution = { initialResolution, 1u };
         screenSpaceDesc.sampler.wrap[0] = WrapMode::Clamp;
         screenSpaceDesc.sampler.wrap[1] = WrapMode::Clamp;
         screenSpaceDesc.sampler.wrap[2] = WrapMode::Clamp;
@@ -143,14 +141,14 @@ namespace PK::App
         screenSpaceDesc.sampler.filterMag = FilterMode::Bilinear;
         m_screenSpaceShadowmap = RHI::CreateTexture(screenSpaceDesc, "Lights.Shadowmap.ScreenSpace");
 
-        screenSpaceDesc.resolution = { config->InitialWidth >> 1u, config->InitialHeight >> 1u, 1u };
+        screenSpaceDesc.resolution = { initialResolution >> 1u, 1u };
         m_screenSpaceShadowmapDownsampled = RHI::CreateTexture(screenSpaceDesc, "Lights.Shadowmap.ScreenSpaceQuareterRes");
 
         TextureDescriptor imageDescriptor;
         imageDescriptor.type = TextureType::Texture3D;
         imageDescriptor.format = TextureFormat::R32UI;
         imageDescriptor.usage = TextureUsage::Storage | TextureUsage::Concurrent;
-        imageDescriptor.resolution = { config->InitialWidth / LightGridTileSizePx, config->InitialHeight / LightGridTileSizePx, LightGridSizeZ };
+        imageDescriptor.resolution = { initialResolution / LightGridTileSizePx, LightGridSizeZ };
         imageDescriptor.sampler.filterMin = FilterMode::Point;
         imageDescriptor.sampler.filterMag = FilterMode::Point;
         imageDescriptor.sampler.wrap[0] = WrapMode::Clamp;

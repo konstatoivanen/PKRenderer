@@ -22,6 +22,11 @@ namespace PK
         m_severityMask = mask;
     }
 
+    LogSeverity LoggerPrintf::GetSeverityMask() const
+    {
+        return (LogSeverity)m_severityMask;
+    }
+
     void LoggerPrintf::SetColor(LogColor color)
     {
 #if defined(WIN32)

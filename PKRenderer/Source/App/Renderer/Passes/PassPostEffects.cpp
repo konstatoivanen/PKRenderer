@@ -1,13 +1,15 @@
 #include "PrecompiledHeader.h"
 #include "Core/Math/FunctionsColor.h"
+#include "Core/CLI/CVariableRegister.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/ConstantBuffer.h"
 #include "Core/Rendering/TextureAsset.h"
-#include "App/RendererConfig.h"
 #include "App/Renderer/HashCache.h"
+#include "App/Renderer/RenderView.h"
+#include "App/Renderer/RenderViewSettings.h"
 #include "PassPostEffects.h"
 
 namespace PK::App
@@ -16,139 +18,68 @@ namespace PK::App
     {
         PK_LOG_VERBOSE("PassPostEffectsComposite.Ctor");
         PK_LOG_SCOPE_INDENT(local);
-
         m_computeComposite = assetDatabase->Find<ShaderAsset>("CS_PostEffectsComposite");
-
-        auto hash = HashCache::Get();
-
-        m_constantsPostProcess = CreateRef<ConstantBuffer>(BufferLayout(
-            {
-                { ElementType::Float4, hash->pk_CC_WhiteBalance },
-                { ElementType::Float4, hash->pk_CC_Lift },
-                { ElementType::Float4, hash->pk_CC_Gamma },
-                { ElementType::Float4, hash->pk_CC_Gain },
-                { ElementType::Float4, hash->pk_CC_HSV },
-                { ElementType::Float4, hash->pk_CC_MixRed },
-                { ElementType::Float4, hash->pk_CC_MixGreen },
-                { ElementType::Float4, hash->pk_CC_MixBlue },
-
-                { ElementType::Float, hash->pk_CC_LumaContrast },
-                { ElementType::Float, hash->pk_CC_LumaGain },
-                { ElementType::Float, hash->pk_CC_LumaGamma },
-                { ElementType::Float, hash->pk_CC_Vibrance },
-                { ElementType::Float, hash->pk_CC_Contribution },
-
-                { ElementType::Float, hash->pk_Vignette_Intensity },
-                { ElementType::Float, hash->pk_Vignette_Power },
-
-                { ElementType::Float, hash->pk_FilmGrain_Luminance },
-                { ElementType::Float, hash->pk_FilmGrain_Intensity },
-
-                { ElementType::Float, hash->pk_AutoExposure_MinLogLuma },
-                { ElementType::Float, hash->pk_AutoExposure_InvLogLumaRange },
-                { ElementType::Float, hash->pk_AutoExposure_LogLumaRange },
-                { ElementType::Float, hash->pk_AutoExposure_Target },
-                { ElementType::Float, hash->pk_AutoExposure_Speed },
-
-                { ElementType::Float, hash->pk_Bloom_Intensity },
-                { ElementType::Float, hash->pk_Bloom_DirtIntensity },
-
-                { ElementType::Float, hash->pk_TAA_Sharpness },
-                { ElementType::Float, hash->pk_TAA_BlendingStatic },
-                { ElementType::Float, hash->pk_TAA_BlendingMotion },
-                { ElementType::Float, hash->pk_TAA_MotionAmplification },
-
-                { ElementType::Uint, hash->pk_PostEffectsFeatureMask}
-            }),
-            "Constants.PostProcess");
-
-        RHI::SetBuffer(hash->pk_PostEffectsParams, *m_constantsPostProcess.get());
     }
 
-    void PassPostEffectsComposite::Render(CommandBufferExt cmd, RHITexture* destination)
+    void PassPostEffectsComposite::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
-        auto resolution = destination->GetResolution();
+        auto& colorGrading = view->settingsRef->ColorGradingSettings;
+        auto& vignette = view->settingsRef->VignetteSettings;
+        auto& features = view->settingsRef->PostEffectSettings;
+        auto& debug = view->settingsRef->RenderingDebugSettings;
 
-        cmd->BeginDebugScope("PostEffects.Composite", PK_COLOR_YELLOW);
-        RHI::SetImage(hash->pk_Image, destination, 0, 0);
-        cmd.Dispatch(m_computeComposite, m_passIndex, { resolution.x, resolution.y, 1u });
-        cmd->EndDebugScope();
-    }
+        auto newLut = colorGrading.LutTextureAsset != nullptr ? colorGrading.LutTextureAsset->GetRHI() : nullptr;
 
-    void PassPostEffectsComposite::OnUpdateParameters(AssetImportEvent<RendererConfig>* token)
-    {
-        auto hash = HashCache::Get();
-        auto config = token->asset;
-
-        m_bloomLensDirtTexture = token->assetDatabase->Load<TextureAsset>(config->FileBloomDirt)->GetRHI();
-        m_colorgradingLut = token->assetDatabase->Load<TextureAsset>(config->CC_FileLookupTexture)->GetRHI();
-
-        auto smp = m_colorgradingLut->GetSamplerDescriptor();
-        smp.wrap[0] = WrapMode::Clamp;
-        smp.wrap[1] = WrapMode::Clamp;
-        smp.wrap[2] = WrapMode::Clamp;
-        smp.filterMin = FilterMode::Trilinear;
-        smp.filterMag = FilterMode::Trilinear;
-        m_colorgradingLut->SetSampler(smp);
-
-        RHI::SetTexture(hash->pk_Bloom_LensDirtTex, m_bloomLensDirtTexture);
-        RHI::SetTexture(hash->pk_CC_LutTex, m_colorgradingLut);
-
-        m_constantsPostProcess->Set<float>(hash->pk_Bloom_Intensity, glm::exp(config->BloomIntensity) - 1.0f);
-        m_constantsPostProcess->Set<float>(hash->pk_Bloom_DirtIntensity, glm::exp(config->BloomLensDirtIntensity) - 1.0f);
-
-        m_constantsPostProcess->Set<float>(hash->pk_AutoExposure_MinLogLuma, config->AutoExposureLuminanceMin);
-        m_constantsPostProcess->Set<float>(hash->pk_AutoExposure_InvLogLumaRange, 1.0f / config->AutoExposureLuminanceRange);
-        m_constantsPostProcess->Set<float>(hash->pk_AutoExposure_LogLumaRange, config->AutoExposureLuminanceRange);
-        m_constantsPostProcess->Set<float>(hash->pk_AutoExposure_Target, config->AutoExposureTarget);
-        m_constantsPostProcess->Set<float>(hash->pk_AutoExposure_Speed, config->AutoExposureSpeed);
-
-        m_constantsPostProcess->Set<float>(hash->pk_TAA_Sharpness, config->TAASharpness);
-        m_constantsPostProcess->Set<float>(hash->pk_TAA_BlendingStatic, config->TAABlendingStatic);
-        m_constantsPostProcess->Set<float>(hash->pk_TAA_BlendingMotion, config->TAABlendingMotion);
-        m_constantsPostProcess->Set<float>(hash->pk_TAA_MotionAmplification, config->TAAMotionAmplification);
-
-        m_constantsPostProcess->Set<float>(hash->pk_Vignette_Intensity, config->VignetteIntensity);
-        m_constantsPostProcess->Set<float>(hash->pk_Vignette_Power, config->VignettePower);
-
-        m_constantsPostProcess->Set<float>(hash->pk_FilmGrain_Luminance, config->FilmGrainLuminance);
-        m_constantsPostProcess->Set<float>(hash->pk_FilmGrain_Intensity, config->FilmGrainIntensity);
+        if (m_colorgradingLut != newLut && newLut != nullptr)
+        {
+            m_colorgradingLut = newLut;
+            auto smp = m_colorgradingLut->GetSamplerDescriptor();
+            smp.wrap[0] = WrapMode::Clamp;
+            smp.wrap[1] = WrapMode::Clamp;
+            smp.wrap[2] = WrapMode::Clamp;
+            smp.filterMin = FilterMode::Trilinear;
+            smp.filterMag = FilterMode::Trilinear;
+            m_colorgradingLut->SetSampler(smp);
+            RHI::SetTexture(HashCache::Get()->pk_CC_LutTex, m_colorgradingLut);
+        }
 
         color lift, gamma, gain;
-        Math::GenerateLiftGammaGain(Math::HexToRGB(config->CC_Shadows), Math::HexToRGB(config->CC_Midtones), Math::HexToRGB(config->CC_Highlights), &lift, &gamma, &gain);
-        m_constantsPostProcess->Set<float4>(hash->pk_CC_WhiteBalance, Math::GetWhiteBalance(config->CC_TemperatureShift, config->CC_Tint));
-        m_constantsPostProcess->Set<float4>(hash->pk_CC_Lift, lift);
-        m_constantsPostProcess->Set<float4>(hash->pk_CC_Gamma, gamma);
-        m_constantsPostProcess->Set<float4>(hash->pk_CC_Gain, gain);
-        m_constantsPostProcess->Set<float4>(hash->pk_CC_HSV, float4((float)config->CC_Hue, (float)config->CC_Saturation, (float)config->CC_Value, 1.0f));
-        m_constantsPostProcess->Set<float4>(hash->pk_CC_MixRed, Math::HexToRGB(config->CC_ChannelMixerRed));
-        m_constantsPostProcess->Set<float4>(hash->pk_CC_MixGreen, Math::HexToRGB(config->CC_ChannelMixerGreen));
-        m_constantsPostProcess->Set<float4>(hash->pk_CC_MixBlue, Math::HexToRGB(config->CC_ChannelMixerBlue));
-        m_constantsPostProcess->Set<float>(hash->pk_CC_LumaContrast, config->CC_Contrast);
-        m_constantsPostProcess->Set<float>(hash->pk_CC_LumaGain, config->CC_Gain);
-        m_constantsPostProcess->Set<float>(hash->pk_CC_LumaGamma, 1.0f / config->CC_Gamma);
-        m_constantsPostProcess->Set<float>(hash->pk_CC_Vibrance, config->CC_Vibrance);
-        m_constantsPostProcess->Set<float>(hash->pk_CC_Contribution, config->CC_Contribution);
+        Math::GenerateLiftGammaGain(Math::HexToRGB(colorGrading.Shadows), Math::HexToRGB(colorGrading.Midtones), Math::HexToRGB(colorGrading.Highlights), &lift, &gamma, &gain);
+        view->constants->Set<float4>(hash->pk_CC_WhiteBalance, Math::GetWhiteBalance(colorGrading.TemperatureShift, colorGrading.Tint));
+        view->constants->Set<float4>(hash->pk_CC_Lift, lift);
+        view->constants->Set<float4>(hash->pk_CC_Gamma, gamma);
+        view->constants->Set<float4>(hash->pk_CC_Gain, gain);
+        view->constants->Set<float4>(hash->pk_CC_HSV, float4((float)colorGrading.Hue, (float)colorGrading.Saturation, (float)colorGrading.Value, 1.0f));
+        view->constants->Set<float4>(hash->pk_CC_MixRed, Math::HexToRGB(colorGrading.ChannelMixerRed));
+        view->constants->Set<float4>(hash->pk_CC_MixGreen, Math::HexToRGB(colorGrading.ChannelMixerGreen));
+        view->constants->Set<float4>(hash->pk_CC_MixBlue, Math::HexToRGB(colorGrading.ChannelMixerBlue));
+        view->constants->Set<float>(hash->pk_CC_LumaContrast, colorGrading.Contrast);
+        view->constants->Set<float>(hash->pk_CC_LumaGain, colorGrading.Gain);
+        view->constants->Set<float>(hash->pk_CC_LumaGamma, 1.0f / colorGrading.Gamma);
+        view->constants->Set<float>(hash->pk_CC_Vibrance, colorGrading.Vibrance);
+        view->constants->Set<float>(hash->pk_CC_Contribution, colorGrading.Contribution);
+
+        view->constants->Set<float>(hash->pk_Vignette_Intensity, vignette.Intensity);
+        view->constants->Set<float>(hash->pk_Vignette_Power, vignette.Power);
 
         uint featureMask = 0u;
-        featureMask |= (uint)(config->PostFXApplyVignette) << 0;
-        featureMask |= (uint)(config->PostFXApplyBloom) << 1;
-        featureMask |= (uint)(config->PostFXApplyTonemap) << 2;
-        featureMask |= (uint)(config->PostFXApplyFilmgrain) << 3;
-        featureMask |= (uint)(config->PostFXApplyColorgrading) << 4;
-        featureMask |= (uint)(config->PostFXApplyLUTColorGrading) << 5;
+        featureMask |= (uint)(features.Vignette) << 0;
+        featureMask |= (uint)(features.Bloom) << 1;
+        featureMask |= (uint)(features.Tonemap) << 2;
+        featureMask |= (uint)(features.Filmgrain) << 3;
+        featureMask |= (uint)(features.Colorgrading) << 4;
+        featureMask |= (uint)(features.LUTColorGrading && m_colorgradingLut != nullptr) << 5;
 
-        featureMask |= (uint)(config->PostFXDebugGIDiff) << 6;
-        featureMask |= (uint)(config->PostFXDebugGISpec) << 7;
-        featureMask |= (uint)(config->PostFXDebugGIVX) << 8;
-        featureMask |= (uint)(config->PostFXDebugNormal) << 9;
-        featureMask |= (uint)(config->PostFXDebugRoughness) << 10;
-        featureMask |= (uint)(config->PostFXDebugHalfScreen) << 11;
-        featureMask |= (uint)(config->PostFXDebugZoom) << 12;
+        featureMask |= (uint)(debug.GIDiff) << 6;
+        featureMask |= (uint)(debug.GISpec) << 7;
+        featureMask |= (uint)(debug.GIVX) << 8;
+        featureMask |= (uint)(debug.Normal) << 9;
+        featureMask |= (uint)(debug.Roughness) << 10;
+        featureMask |= (uint)(debug.HalfScreen) << 11;
+        featureMask |= (uint)(debug.Zoom) << 12;
 
-        m_constantsPostProcess->Set<uint>(hash->pk_PostEffectsFeatureMask, featureMask);
-        m_constantsPostProcess->FlushBuffer(RHI::GetCommandBuffer(QueueType::Transfer));
+        view->constants->Set<uint>(hash->pk_PostEffectsFeatureMask, featureMask);
 
         // All but lut regular color grading
         const uint fullFeatureMask = 0x2Fu;
@@ -160,5 +91,14 @@ namespace PK::App
 
         m_passIndex = useFullFeaturePass ? 0u : 1u;
         m_passIndex = useDebugPass ? 2u : m_passIndex;
+    }
+
+    void PassPostEffectsComposite::Render(CommandBufferExt cmd, RHITexture* destination)
+    {
+        auto resolution = destination->GetResolution();
+        cmd->BeginDebugScope("PostEffects.Composite", PK_COLOR_YELLOW);
+        RHI::SetImage(HashCache::Get()->pk_Image, destination, 0, 0);
+        cmd.Dispatch(m_computeComposite, m_passIndex, { resolution.x, resolution.y, 1u });
+        cmd->EndDebugScope();
     }
 }

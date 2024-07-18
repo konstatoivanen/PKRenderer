@@ -36,6 +36,7 @@ namespace PK
         inline const RHIShader* GetRHI(const NameID* keywords, uint32_t count) const { return m_shaders[GetRHIIndex(keywords, count)].get(); }
         inline const RHIShader* GetRHI(uint32_t index) const { return m_shaders[index].get(); }
         inline const RHIShader* GetRHI(const PropertyBlock* keywords) const { return m_shaders[GetRHIIndex(keywords)].get(); }
+        constexpr uint32_t GetRHICount() const { return m_shaders.size(); }
 
         inline bool SupportsKeyword(const NameID keywords) const { return m_map.SupportsKeyword(keywords); }
         inline bool SupportsKeywords(const NameID* keywords, const uint32_t count) const { return m_map.SupportsKeywords(keywords, count); }

@@ -128,7 +128,7 @@ namespace PK
 
         auto name = GetTypeShortName(typeIndex);
         auto cvarnameMeta = std::string("AssetDatabase.Query.Meta.") + name;
-        CVariableRegister::Create<CVariableFunc>(cvarnameMeta.c_str(), [this, typeIndex, name](const char** args, [[maybe_unused]] uint32_t count)
+        CVariableRegister::Create<CVariableFunc>(cvarnameMeta.c_str(), [this, typeIndex, name](const char* const* args, [[maybe_unused]] uint32_t count)
             {
                 PK_LOG_NEWLINE();
                 auto asset = FindInternal(typeIndex, args[0]);
@@ -139,7 +139,7 @@ namespace PK
                 PK_LOG_INFO(asset->GetMetaInfo().c_str());
                 PK_LOG_NEWLINE();
 
-            }, "Expected a keyword argument", 1u, 1u);
+            }, "Expected a keyword argument", 1u);
 
         auto cvarnameLoaded = std::string("AssetDatabase.Query.Loaded.") + name;
         CVariableRegister::Create<CVariableFuncSimple>(cvarnameLoaded.c_str(), [this, typeIndex]()
@@ -154,15 +154,15 @@ namespace PK
             });
 
         auto cvarnameReload = std::string("AssetDatabase.Reload.Cached.") + name;
-        CVariableRegister::Create<CVariableFunc>(cvarnameReload.c_str(), [this, typeIndex](const char** args, [[maybe_unused]] uint32_t count)
+        CVariableRegister::Create<CVariableFunc>(cvarnameReload.c_str(), [this, typeIndex](const char* const* args, [[maybe_unused]] uint32_t count)
             {
                 ReloadCachedInternal(typeIndex, AssetID(args[0]));
-            }, "Expected a filepath argument", 1u, 1u);
+            }, "Expected a filepath argument", 1u);
 
         auto cvarnameReloadDirectory = std::string("AssetDatabase.Reload.Cached.Directory.") + name;
-        CVariableRegister::Create<CVariableFunc>(cvarnameReloadDirectory.c_str(), [this, typeIndex](const char** args, [[maybe_unused]] uint32_t count)
+        CVariableRegister::Create<CVariableFunc>(cvarnameReloadDirectory.c_str(), [this, typeIndex](const char* const* args, [[maybe_unused]] uint32_t count)
             {
                 ReloadCachedDirectoryInternal(typeIndex, std::string(args[0]));
-            }, "Expected a directory argument", 1u, 1u);
+            }, "Expected a directory argument", 1u);
     }
 }

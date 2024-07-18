@@ -220,7 +220,7 @@ void main()
 
         SUBGROUP_ANTIFIREFLY_FILTER(isScene, current, history, alpha, 1.0f)
 
-            history = GI_Interpolate(history, current, GI_Alpha(history));
+		history = GI_Interpolate(history, current, GI_Alpha(history));
         GI_Store_Packed_Diff(baseCoord, isScene ? GI_Pack_Diff(history) : uint4(0));
     }
 

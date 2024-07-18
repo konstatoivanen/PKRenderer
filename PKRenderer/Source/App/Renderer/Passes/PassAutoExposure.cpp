@@ -3,7 +3,10 @@
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
+#include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/HashCache.h"
+#include "App/Renderer/RenderView.h"
+#include "App/Renderer/RenderViewSettings.h"
 #include "PassAutoExposure.h"
 
 namespace PK::App
@@ -18,6 +21,17 @@ namespace PK::App
         m_passHistogramBins = m_compute->GetRHIIndex("PASS_HISTOGRAM");
         m_passHistogramAvg = m_compute->GetRHIIndex("PASS_AVG");
         RHI::SetBuffer(HashCache::Get()->pk_AutoExposure_Histogram, m_histogram.get());
+    }
+
+    void PassAutoExposure::SetViewConstants(RenderView* view)
+    {
+        auto hash = HashCache::Get();
+        auto& settings = view->settingsRef->AutoExposureSettings;
+        view->constants->Set<float>(hash->pk_AutoExposure_MinLogLuma, settings.LuminanceMin);
+        view->constants->Set<float>(hash->pk_AutoExposure_InvLogLumaRange, 1.0f / settings.LuminanceRange);
+        view->constants->Set<float>(hash->pk_AutoExposure_LogLumaRange, settings.LuminanceRange);
+        view->constants->Set<float>(hash->pk_AutoExposure_Target, settings.ExposureTarget);
+        view->constants->Set<float>(hash->pk_AutoExposure_Speed, settings.ExposureSpeed);
     }
 
     void PassAutoExposure::Render(CommandBufferExt cmd, RHITexture* target)

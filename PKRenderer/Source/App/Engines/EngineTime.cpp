@@ -24,7 +24,7 @@ namespace PK::App
     {
         m_runner.timeScale = timeScale;
         CVariableRegister::Create<CVariableFuncSimple>("Time.Reset", [this]() { Reset(); PK_LOG_INFO("Time.Reset"); });
-        CVariableRegister::Create<bool*>("Time.LogFramerate", &m_logFramerate, "0 = 0ff, 1 = On", 1u, 1u);
+        CVariableRegister::Create<bool*>("Time.LogFramerate", &m_logFramerate, "0 = 0ff, 1 = On", 1u);
     }
 
 

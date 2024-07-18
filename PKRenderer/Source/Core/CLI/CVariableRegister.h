@@ -14,19 +14,25 @@ namespace PK
         public IStep<CArgumentsConst>,
         public IStep<CArgumentConst>
     {
+        struct CVariableBinding
+        {
+            ICVariable* variable = nullptr;
+            Scope<CArgumentsInlineDefault> arguments;
+        };
+
     public:
         static void Bind(ICVariable* variable);
         static void Unbind(ICVariable* variable);
         static bool IsBound(const char* name);
-        static void Execute(const char** args, uint32_t count);
+        static void Execute(const char* const* args, uint32_t count);
         static void ExecuteParse(const char* arg);
 
         template<typename T>
-        static void Create(const char* name, const T& value, const char* hint = "hint undefined", uint32_t minArgs = 0u, uint32_t maxArgs = 0u)
+        static void Create(const char* name, const T& value, const char* hint = "hint undefined", uint32_t minArgs = 0u)
         {
             if (Get() != nullptr)
             {
-                auto variable = new CVariable<T>(name, value, hint, minArgs, maxArgs);
+                auto variable = new CVariable<T>(name, value, hint, minArgs);
                 Get()->m_scopes.push_back(Scope<ICVariable>(variable));
                 Bind(variable);
             }
@@ -39,10 +45,11 @@ namespace PK
         void BindInstance(ICVariable* variable);
         void UnbindInstance(ICVariable* variable);
         bool IsBoundInstance(const char* name) const;
-        void ExecuteInstance(const char** args, uint32_t count);
+        void ExecuteInstance(const char* const* args, uint32_t count);
+        void ExecuteInstance(const std::vector<std::string>& args);
         void ExecuteParseInstance(const char* arg);
 
-        std::unordered_map<NameID, ICVariable*> m_variables;
+        std::unordered_map<NameID, CVariableBinding> m_variables;
         std::vector<Scope<ICVariable>> m_scopes;
     };
 }

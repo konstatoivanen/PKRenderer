@@ -4,8 +4,6 @@
 
 namespace PK::App
 {
-    struct RendererConfig;
-
     class PassDepthOfField : public NoCopy
     {
         struct Constants
@@ -18,10 +16,10 @@ namespace PK::App
         };
 
         public:
-            PassDepthOfField(AssetDatabase* assetDatabase, const RendererConfig* config);
+            PassDepthOfField(AssetDatabase* assetDatabase, const uint2& initialResolution);
+            void SetViewConstants(struct RenderView* view);
             void ComputeAutoFocus(CommandBufferExt cmd, uint32_t screenHeight);
             void Render(CommandBufferExt cmd, RHITexture* destination);
-            void OnUpdateParameters(const RendererConfig* config);
 
         private:
             ShaderAsset* m_computeDepthOfField = nullptr;

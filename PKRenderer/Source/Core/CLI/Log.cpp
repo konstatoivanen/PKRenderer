@@ -45,6 +45,26 @@ namespace PK
         }
     }
 
+    void StaticLog::SetSeverityMaskFlag(LogSeverity flag, bool value)
+    {
+        if (!s_ActiveLogger.expired())
+        {
+            auto logger = s_ActiveLogger.lock();
+            uint32_t filter = logger->GetSeverityMask();
+            logger->SetSeverityMask((LogSeverity)(value ? (filter | flag) : (filter & ~flag)));
+        }
+    }
+
+    LogSeverity StaticLog::GetSeverityMask()
+    {
+        if (!s_ActiveLogger.expired())
+        {
+            return s_ActiveLogger.lock()->GetSeverityMask();
+        }
+
+        return (LogSeverity)0u;
+    }
+
     void StaticLog::SetShowConsole(bool value)
     {
         if (!s_ActiveLogger.expired())

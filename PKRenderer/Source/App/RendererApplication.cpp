@@ -22,12 +22,13 @@
 #include "App/Engines/EngineDebug.h"
 #include "App/Engines/EngineScreenshot.h"
 #include "App/Engines/EngineGizmos.h"
+//#include "App/Engines/EngineRenderingAnalyzer.h"
 #include "App/Renderer/BatcherMeshStatic.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/RenderPipelineDisptacher.h"
 #include "App/Renderer/RenderPipelineScene.h"
 #include "App/Renderer/RenderView.h"
-#include "App/RendererConfig.h"
+#include "App/BaseRendererConfig.h"
 #include "RendererApplication.h"
 
 namespace PK::App
@@ -39,56 +40,22 @@ namespace PK::App
         PK_LOG_HEADER("----------RendererApplication.Ctor Begin----------");
         PK_LOG_SCOPE_INDENT();
 
-        CVariableRegister::Create<CVariableFunc>("Application.VSync", [](const char** args, [[maybe_unused]] uint32_t count)
-            {
-                IApplication::Get()->GetPrimaryWindow()->SetVSync((bool)atoi(args[0]));
-            }, "0 = 0ff, 1 = On", 1u, 1u);
-
-        CVariableRegister::Create<CVariableFuncSimple>("Application.VSync.Toggle", []()
-            {
-                IApplication::Get()->GetPrimaryWindow()->SetVSync(!IApplication::Get()->GetPrimaryWindow()->IsVSync());
-            });
-
-        CVariableRegister::Create<CVariableFunc>("Application.Fullscreen", [](const char** args, [[maybe_unused]] uint32_t count)
-            {
-                IApplication::Get()->GetPrimaryWindow()->SetFullscreen((bool)atoi(args[0]));
-            }, "0 = 0ff, 1 = On", 1u, 1u);
-
-        CVariableRegister::Create<CVariableFuncSimple>("Application.Fullscreen.Toggle", []()
-            {
-                IApplication::Get()->GetPrimaryWindow()->SetFullscreen(!IApplication::Get()->GetPrimaryWindow()->IsFullscreen());
-            });
-
         GetServices()->Create<HashCache>();
 
         auto remoteProcessRunner = GetServices()->Create<RemoteProcessRunner>();
         auto entityDb = GetServices()->Create<EntityDatabase>();
         auto sequencer = GetServices()->Create<Sequencer>();
         auto assetDatabase = GetServices()->Create<AssetDatabase>(sequencer);
-
-        assetDatabase->LoadDirectory<RendererConfig>("Content/Configs/");
-        auto config = assetDatabase->Find<RendererConfig>("Active");
-
-        assetDatabase->LoadDirectory<InputKeyConfig>("Content/Configs/");
-        auto keyConfig = assetDatabase->Find<InputKeyConfig>("Active");
-
-        uint32_t logfilter = 0u;
-        logfilter |= config->EnableLogRHI ? PK_LOG_LVL_RHI : 0u;
-        logfilter |= config->EnableLogVerbose ? PK_LOG_LVL_VERBOSE : 0u;
-        logfilter |= config->EnableLogInfo ? PK_LOG_LVL_INFO : 0u;
-        logfilter |= config->EnableLogWarning ? PK_LOG_LVL_WARNING : 0u;
-        logfilter |= config->EnableLogError ? PK_LOG_LVL_ERROR : 0u;
-        StaticLog::SetSeverityMask((LogSeverity)logfilter);
-        StaticLog::SetShowConsole(config->EnableConsole);
+        auto config = assetDatabase->Load<BaseRendererConfig>("Content/Configs/BaseRenderer.cfg");
+        auto keyConfig = assetDatabase->Load<InputKeyConfig>("Content/Configs/Input.keycfg");
 
         m_graphicsDriver = RHI::CreateDriver(GetWorkingDirectory().c_str(), RHIAPI::Vulkan);
 
         m_window = RHI::CreateWindowScope(WindowDescriptor(GetName() + m_graphicsDriver->GetDriverHeader(),
-            config->FileWindowIcon,
-            config->InitialWidth,
-            config->InitialHeight,
-            config->EnableVsync,
-            config->EnableCursor));
+            config->WindowDesc.IconPath,
+            config->WindowDesc.Size,
+            config->WindowDesc.Vsync,
+            config->WindowDesc.ShowCursor));
 
         m_window->SetOnCloseCallback([this]() { Close(); });
 
@@ -98,7 +65,7 @@ namespace PK::App
         auto inputSystem = GetServices()->Create<InputSystem>(sequencer);
         auto batcherMeshStatic = GetServices()->Create<BatcherMeshStatic>();
         auto renderPipelineDispatcher = GetServices()->Create<RenderPipelineDisptacher>(entityDb, assetDatabase, sequencer, batcherMeshStatic);
-        auto renderPipelineScene = GetServices()->Create<RenderPipelineScene>(assetDatabase, config);
+        auto renderPipelineScene = GetServices()->Create<RenderPipelineScene>(assetDatabase, config->WindowDesc.Size);
 
         renderPipelineDispatcher->SetRenderPipeline(RenderViewType::Scene, renderPipelineScene);
 
@@ -108,11 +75,13 @@ namespace PK::App
         auto engineEntityCull = GetServices()->Create<EngineEntityCull>(entityDb);
         auto engineDrawGeometry = GetServices()->Create<EngineDrawGeometry>(entityDb, sequencer);
         auto engineGatherRayTracingGeometry = GetServices()->Create<EngineGatherRayTracingGeometry>(entityDb);
-        auto engineDebug = GetServices()->Create<EngineDebug>(assetDatabase, entityDb, batcherMeshStatic->GetMeshStaticCollection(), config);
+        auto engineDebug = GetServices()->Create<EngineDebug>(assetDatabase, entityDb, batcherMeshStatic->GetMeshStaticCollection());
         auto engineScreenshot = GetServices()->Create<EngineScreenshot>();
-        auto engineGizmos = GetServices()->Create<EngineGizmos>(assetDatabase, sequencer, config);
-
+        auto engineGizmos = GetServices()->Create<EngineGizmos>(assetDatabase, sequencer);
         auto cvariableRegister = GetService<CVariableRegister>();
+
+        //auto renderingAnalyzer = GetServices()->Create<EngineRenderingAnalyzer>(assetDatabase);
+        //renderingAnalyzer->AnalyzeShaderResourceLayouts();
 
         sequencer->SetSteps(
             {
@@ -171,13 +140,31 @@ namespace PK::App
                 {
                     assetDatabase,
                     {
-                        Sequencer::Step::Create<AssetImportEvent<RendererConfig>*>(renderPipelineScene),
-                        Sequencer::Step::Create<AssetImportEvent<RendererConfig>*>(engineGizmos),
-                        Sequencer::Step::Create<AssetImportEvent<RendererConfig>*>(engineDebug),
+                        Sequencer::Step::Create<AssetImportEvent<EngineDebugConfig>*>(engineDebug),
                         Sequencer::Step::Create<AssetImportEvent<InputKeyConfig>*>(engineFlyCamera),
                         Sequencer::Step::Create<AssetImportEvent<InputKeyConfig>*>(engineCommands)
                     }
                 },
+            });
+
+        CVariableRegister::Create<CVariableFunc>("Application.VSync", [](const char* const* args, [[maybe_unused]] uint32_t count)
+            {
+                IApplication::Get()->GetPrimaryWindow()->SetVSync((bool)atoi(args[0]));
+            }, "0 = 0ff, 1 = On", 1u);
+
+        CVariableRegister::Create<CVariableFuncSimple>("Application.VSync.Toggle", []()
+            {
+                IApplication::Get()->GetPrimaryWindow()->SetVSync(!IApplication::Get()->GetPrimaryWindow()->IsVSync());
+            });
+
+        CVariableRegister::Create<CVariableFunc>("Application.Fullscreen", [](const char* const* args, [[maybe_unused]] uint32_t count)
+            {
+                IApplication::Get()->GetPrimaryWindow()->SetFullscreen((bool)atoi(args[0]));
+            }, "0 = 0ff, 1 = On", 1u);
+
+        CVariableRegister::Create<CVariableFuncSimple>("Application.Fullscreen.Toggle", []()
+            {
+                IApplication::Get()->GetPrimaryWindow()->SetFullscreen(!IApplication::Get()->GetPrimaryWindow()->IsFullscreen());
             });
 
         PK_LOG_HEADER("----------RendererApplication.Ctor End----------");

@@ -7,9 +7,9 @@ namespace PK::App
     class PassTemporalAntialiasing : public NoCopy
     {
         public:
-            PassTemporalAntialiasing(AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight);
+            PassTemporalAntialiasing(AssetDatabase* assetDatabase, const uint2& initialResolution);
+            void SetViewConstants(struct RenderView* view);
             void Render(CommandBufferExt cmd, RHITexture* source, RHITexture* destination);
-
             constexpr float4 GetJitter() const { return m_jitter; };
 
         private:

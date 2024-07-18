@@ -81,14 +81,24 @@ float3x3 make_TBN(const float3 n) { float3 t, b; branchlessONB(n,t,b); return fl
 #define Test_EPS4(v) (v <= 1e-4f)
 #define Test_EPS6(v) (v <= 1e-6f)
 
-#define PK_SET_GLOBAL 0
-#define PK_SET_PASS 1
-#define PK_SET_SHADER 2
-#define PK_SET_DRAW 3
-#define PK_DECLARE_SET_GLOBAL layout(set = 0)
-#define PK_DECLARE_SET_PASS layout(set = 1)
-#define PK_DECLARE_SET_SHADER layout(set = 2)
-#define PK_DECLARE_SET_DRAW layout(set = 3)
+#if !defined(PK_USE_CUSTOM_DESCRIPTOR_SET_INDICES)
+    #if defined(PK_USE_SINGLE_DESCRIPTOR_SET)
+        #define PK_SET_GLOBAL 0
+        #define PK_SET_PASS 0
+        #define PK_SET_SHADER 0
+        #define PK_SET_DRAW 0
+    #else
+        #define PK_SET_GLOBAL 0
+        #define PK_SET_PASS 1
+        #define PK_SET_SHADER 2
+        #define PK_SET_DRAW 3
+    #endif
+#endif
+
+#define PK_DECLARE_SET_GLOBAL layout(set = PK_SET_GLOBAL)
+#define PK_DECLARE_SET_PASS layout(set = PK_SET_PASS)
+#define PK_DECLARE_SET_SHADER layout(set = PK_SET_SHADER)
+#define PK_DECLARE_SET_DRAW layout(set = PK_SET_DRAW)
 
 #define PK_DECLARE_LOCAL_CBUFFER(BufferName) layout(push_constant) uniform BufferName
 #define PK_DECLARE_CBUFFER(BufferName, Set) layout(std140, set = Set) uniform BufferName

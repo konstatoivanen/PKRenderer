@@ -17,7 +17,7 @@ int main(int argc, char** argv)
    //_crtBreakAlloc = 68461;
 #endif
 
-    auto application = PK::CreateProjectApplication({ argc, argv });
+    auto application = PK::CreateProjectApplication({ argv, argc });
     application->Execute();
     delete application;
 }

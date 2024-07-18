@@ -14,17 +14,18 @@
 #include "App/ECS/Builders.h"
 #include "App/ECS/EntityViewScenePrimitive.h"
 #include "App/ECS/EntityViewFlyCamera.h"
+#include "App/ECS/EntityViewRenderView.h"
 #include "App/Renderer/IGizmos.h"
 #include "App/Renderer/HashCache.h"
-#include "App/RendererConfig.h"
 #include "EngineDebug.h"
 
 namespace PK::App
 {
-    EngineDebug::EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, MeshStaticCollection* baseMesh, const RendererConfig* config)
+    EngineDebug::EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, MeshStaticCollection* baseMesh)
     {
         m_entityDb = entityDb;
         m_assetDatabase = assetDatabase;
+        auto config = assetDatabase->Load<EngineDebugConfig>("Content/Configs/DebugEngine.cfg");
 
         auto columnMesh = assetDatabase->Load<MeshStaticAsset>("Content/Models/MDL_Columns.pkmesh", baseMesh);
         auto rocksMesh = assetDatabase->Load<MeshStaticAsset>("Content/Models/MDL_Rocks.pkmesh", baseMesh);
@@ -38,8 +39,6 @@ namespace PK::App
 
         auto minpos = float3(-70, -6, -70);
         auto maxpos = float3(70, -4, 70);
-
-        srand(config->RandomSeed);
 
         EntityBuilders::CreateEntityMeshStatic(m_entityDb, planeMesh->GetMeshStatic(), { {materialSand,0} }, { 0, -5, 0 }, float3(90, 0, 0) * PK_FLOAT_DEG2RAD, 80.0f);
         EntityBuilders::CreateEntityMeshStatic(m_entityDb, columnMesh->GetMeshStatic(), { {materialAsphalt,0} }, { -20, 5, -20 }, PK_FLOAT3_ZERO, 3.0f);
@@ -97,6 +96,9 @@ namespace PK::App
             config->CameraMoveSmoothing,
             config->CameraLookSmoothing,
             config->CameraLookSensitivity);
+
+        auto cameraRenderView = m_entityDb->Query<EntityViewRenderView>(m_cameraEgid);
+        cameraRenderView->renderView->settings = config->ViewSettings;
     }
 
     void EngineDebug::OnApplicationUpdateEngines()
@@ -223,7 +225,7 @@ namespace PK::App
         */
     }
 
-    void EngineDebug::Step(AssetImportEvent<RendererConfig>* token)
+    void EngineDebug::Step(AssetImportEvent<EngineDebugConfig>* token)
     {
         auto entity = m_entityDb->Query<EntityViewFlyCamera>(m_cameraEgid);
         auto config = token->asset;
@@ -236,5 +238,8 @@ namespace PK::App
         entity->flyCamera->sensitivity = config->CameraLookSensitivity;
         entity->flyCamera->snashotPosition = config->CameraStartPosition;
         entity->flyCamera->snashotRotation = config->CameraStartPosition;
+
+        auto cameraRenderView = m_entityDb->Query<EntityViewRenderView>(m_cameraEgid);
+        cameraRenderView->renderView->settings = config->ViewSettings;
     }
 }

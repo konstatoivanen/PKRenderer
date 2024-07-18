@@ -1173,7 +1173,7 @@
     <ClInclude Include="Source\Core\CLI\CArguments.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\App\RendererConfig.h">
+    <ClInclude Include="Source\App\BaseRendererConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\ECS\Builders.h">
@@ -1582,6 +1582,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Timers\TimeHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\App\Engines\EngineRenderingAnalyzer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Utilities\Parsing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Yaml\ConvertCVariableCollection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\App\Renderer\RenderViewSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1998,8 +2010,8 @@
     <None Include="ThirdParty\KTX\Binaries\ktx_read.dll" />
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />
     <None Include="Content\Models\MDL_Cloth.mdl" />
-    <None Include="Content\Configs\RendererConfig-Active.cfg" />
-    <None Include="Content\Configs\InputKeyConfig-Active.keycfg" />
+    <None Include="Content\Configs\BaseRenderer.cfg" />
+    <None Include="Content\Configs\Input.keycfg" />
     <None Include="Content\Shaders\includes\Utilities.glsl" />
     <None Include="Content\Shaders\includes\Common.glsl" />
     <None Include="Content\Shaders\VS_EnvBackground.shader" />
@@ -2140,6 +2152,7 @@
     <None Include="Content\Shaders\includes\Meshlets.glsl" />
     <None Include="Content\Shaders\includes\Gizmos.glsl" />
     <None Include="Content\Textures\T_Bloom_LensDirt2.ktx2" />
+    <None Include="Content\Configs\DebugEngine.cfg" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glm\detail\glm.cpp">
@@ -2461,6 +2474,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ThirdParty\gfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\App\Engines\EngineRenderingAnalyzer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Utilities\Parsing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Yaml\ConvertCVariableCollection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -58,6 +58,23 @@ namespace YAML
         } \
         typedef meta_NextId##TName \
 
+#define PK_YAML_MEMBER_INLINE_STRUCT(TType, TName) \
+        meta_Id##TName; \
+    public: TType TName = {}; \
+    private: \
+        struct meta_NextId##TName {}; \
+        static void* meta_ParsePrev(meta_NextId##TName, meta_ThisType* config, const YAML::Node& node) \
+        { \
+            if (node[#TName]) \
+            { \
+                config->TName.YamlParse(node[#TName]); \
+            } \
+            void*(*PrevFunc)(meta_Id##TName, meta_ThisType*, const YAML::Node&); \
+            PrevFunc = meta_ParsePrev; \
+            return (void*)PrevFunc; \
+        } \
+        typedef meta_NextId##TName \
+
 #define PK_YAML_STRUCT_END() \
         meta_LastId; \
     public: \

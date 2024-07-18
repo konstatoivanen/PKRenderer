@@ -8,6 +8,7 @@ namespace PK::App
     {
         public:
             PassFilmGrain(AssetDatabase* assetDatabase);
+            void SetViewConstants(struct RenderView* view);
             void Compute(CommandBufferExt cmd);
 
         private:

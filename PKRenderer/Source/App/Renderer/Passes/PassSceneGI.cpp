@@ -5,8 +5,8 @@
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/ConstantBuffer.h"
-#include "App/RendererConfig.h"
 #include "App/Renderer/HashCache.h"
+#include "App/Renderer/RenderView.h"
 #include "PassSceneGI.h"
 
 namespace PK::App
@@ -16,7 +16,7 @@ namespace PK::App
         return { resolution.x / (halfRes ? 2 : 1), resolution.y, resolution.z };
     }
 
-    PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase, const RendererConfig* config)
+    PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase, const uint2& initialResolution) 
     {
         PK_LOG_VERBOSE("PassSceneGI.Ctor");
         PK_LOG_SCOPE_INDENT(local);
@@ -30,7 +30,6 @@ namespace PK::App
         m_computePostFilter = assetDatabase->Find<ShaderAsset>("CS_GI_PostFilter");
         m_rayTraceGatherGI = assetDatabase->Find<ShaderAsset>("RS_GI_Raytrace");
         m_rayTraceValidate = assetDatabase->Find<ShaderAsset>("RS_GI_ValidateReservoirs");
-        OnUpdateParameters(config);
 
         TextureDescriptor descr{};
         descr.type = TextureType::Texture3D;
@@ -60,7 +59,7 @@ namespace PK::App
         descr.usage = TextureUsage::Sample | TextureUsage::Storage;
         descr.format = TextureFormat::RGBA32UI;
         descr.layers = 2;
-        descr.resolution = { config->InitialWidth, config->InitialHeight, 1 };
+        descr.resolution = { initialResolution, 1 };
         m_packedGIDiff = RHI::CreateTexture(descr, "GI.PackedGI.Diff");
 
         descr.format = TextureFormat::RG32UI;
@@ -71,8 +70,8 @@ namespace PK::App
         descr.levels = 1u;
         descr.usage = TextureUsage::Storage;
         descr.format = TextureFormat::RG32UI;
-        descr.resolution = { config->InitialWidth, config->InitialHeight, 1u };
-        descr.resolution = GetCheckerboardResolution(descr.resolution, m_useCheckerboardTrace);
+        descr.resolution = { initialResolution, 1u };
+        descr.resolution = GetCheckerboardResolution(descr.resolution, m_settings.checkerboardTrace);
         m_rayhits = RHI::CreateTexture(descr, "GI.RayHits");
 
         descr.type = TextureType::Texture2DArray;
@@ -86,7 +85,7 @@ namespace PK::App
         descr.format = TextureFormat::RGB9E5;
         descr.formatAlias = TextureFormat::R32UI;
         descr.usage = TextureUsage::Storage | TextureUsage::Sample;
-        descr.resolution = { config->InitialWidth, config->InitialHeight, 1u };
+        descr.resolution = { initialResolution, 1u };
         m_resolvedGI = RHI::CreateTexture(descr, "GI.Resolved");
 
         m_voxelizeAttribs.depthStencil.depthCompareOp = Comparison::Off;
@@ -95,34 +94,12 @@ namespace PK::App
         //m_voxelizeAttribs.rasterization.rasterMode = RasterMode::OverEstimate;
 
         auto hash = HashCache::Get();
-        m_parameters = CreateRef<ConstantBuffer>(BufferLayout(
-            {
-                { ElementType::Float4, hash->pk_GI_VolumeST },
-                { ElementType::Uint4, hash->pk_GI_VolumeSwizzle },
-                { ElementType::Uint2, hash->pk_GI_RayDither },
-                { ElementType::Float, hash->pk_GI_VoxelSize },
-                { ElementType::Float, hash->pk_GI_VoxelStepSize },
-                { ElementType::Float, hash->pk_GI_VoxelLevelScale },
-            }), "GI.Parameters");
-
-        const auto voxelSize = 0.6f;
-        const auto angle = PK_FLOAT_PI / 3.0f;
-        const auto levelscale = 2.0f * tan(angle / 2.0f) / voxelSize;
-        const auto correctionAngle = tan(angle / 8.0f);
-        const auto stepSize = (1.0f + correctionAngle) / (1.0f - correctionAngle) * voxelSize / 2.0f;
-
-        m_parameters->Set<float4>(hash->pk_GI_VolumeST, float4(-76.8f, -6.0f, -76.8f, 1.0f / voxelSize));
-        m_parameters->Set<float>(hash->pk_GI_VoxelSize, voxelSize);
-        m_parameters->Set<float>(hash->pk_GI_VoxelStepSize, stepSize);
-        m_parameters->Set<float>(hash->pk_GI_VoxelLevelScale, levelscale);
-
-        RHI::SetBuffer(hash->pk_GI_Parameters, m_parameters->GetRHI());
         RHI::SetImage(hash->pk_GI_VolumeMaskWrite, m_voxelMask.get());
         RHI::SetImage(hash->pk_GI_VolumeWrite, m_voxels.get());
         RHI::SetTexture(hash->pk_GI_VolumeRead, m_voxels.get());
     }
 
-    void PassSceneGI::PreRender(CommandBufferExt cmd, const uint3& resolution)
+    void PassSceneGI::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
 
@@ -133,14 +110,41 @@ namespace PK::App
              { 1u, 2u, 0u, 0u },
         };
 
+        const auto voxelSize = 0.6f;
+        const auto angle = PK_FLOAT_PI / 3.0f;
+        const auto levelscale = 2.0f * tan(angle / 2.0f) / voxelSize;
+        const auto correctionAngle = tan(angle / 8.0f);
+        const auto stepSize = (1.0f + correctionAngle) / (1.0f - correctionAngle) * voxelSize / 2.0f;
+
+        view->constants->Set<float4>(hash->pk_GI_VolumeST, float4(-76.8f, -6.0f, -76.8f, 1.0f / voxelSize));
+        view->constants->Set<float>(hash->pk_GI_VoxelSize, voxelSize);
+        view->constants->Set<float>(hash->pk_GI_VoxelStepSize, stepSize);
+        view->constants->Set<float>(hash->pk_GI_VoxelLevelScale, levelscale);
+
+        m_rasterAxis = m_frameIndex % 3;
+        view->constants->Set<uint4>(hash->pk_GI_VolumeSwizzle, swizzles[m_rasterAxis]);
+        view->constants->Set<uint2>(hash->pk_GI_RayDither, Math::MurmurHash21(m_frameIndex / 64u));
+
+        m_frameIndex++;
+    }
+
+    void PassSceneGI::PreRender(CommandBufferExt cmd, const uint3& resolution)
+    {
+        auto hash = HashCache::Get();
+
+        RHI::SetKeyword("PK_GI_CHECKERBOARD_TRACE", m_settings.checkerboardTrace);
+        RHI::SetKeyword("PK_GI_SPEC_VIRT_REPROJECT", m_settings.specularVirtualReproject);
+        RHI::SetKeyword("PK_GI_SSRT_PRETRACE", m_settings.screenSpacePretrace);
+        RHI::SetKeyword("PK_GI_RESTIR", m_settings.ReSTIR);
+
         m_sbtRaytrace.Validate(cmd, m_rayTraceGatherGI);
         m_sbtValidate.Validate(cmd, m_rayTraceValidate);
 
         RHI::ValidateTexture(m_packedGIDiff, resolution);
         RHI::ValidateTexture(m_packedGISpec, resolution);
-        RHI::ValidateTexture(m_rayhits, GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
-        RHI::ValidateTexture(m_reservoirs0, GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
-        RHI::ValidateTexture(m_reservoirs1, GetCheckerboardResolution(resolution, m_useCheckerboardTrace));
+        RHI::ValidateTexture(m_rayhits, GetCheckerboardResolution(resolution, m_settings.checkerboardTrace));
+        RHI::ValidateTexture(m_reservoirs0, GetCheckerboardResolution(resolution, m_settings.checkerboardTrace));
+        RHI::ValidateTexture(m_reservoirs1, GetCheckerboardResolution(resolution, m_settings.checkerboardTrace));
         RHI::ValidateTexture(m_resolvedGI, resolution);
 
         RHI::SetImage(hash->pk_GI_RayHits, m_rayhits.get());
@@ -150,12 +154,6 @@ namespace PK::App
         RHI::SetImage(hash->pk_GI_PackedSpec, m_packedGISpec.get());
         RHI::SetImage(hash->pk_GI_ResolvedWrite, m_resolvedGI.get());
         RHI::SetTexture(hash->pk_GI_ResolvedRead, m_resolvedGI.get());
-
-        m_rasterAxis = m_frameIndex % 3;
-        m_parameters->Set<uint4>(hash->pk_GI_VolumeSwizzle, swizzles[m_rasterAxis]);
-        m_parameters->Set<uint2>(hash->pk_GI_RayDither, Math::MurmurHash21(m_frameIndex / 64u));
-        m_parameters->FlushBuffer(RHI::GetCommandBuffer(QueueType::Transfer));
-        m_frameIndex++;
     }
 
     void PassSceneGI::PruneVoxels(CommandBufferExt cmd)
@@ -213,11 +211,11 @@ namespace PK::App
     {
         auto resolution = m_packedGIDiff->GetResolution();
         uint3 dimension = { resolution.x, resolution.y, 1u };
-        uint3 chbdimension = GetCheckerboardResolution(dimension, m_useCheckerboardTrace);
+        uint3 chbdimension = GetCheckerboardResolution(dimension, m_settings.checkerboardTrace);
         cmd->BeginDebugScope("SceneGI.Filter", PK_COLOR_GREEN);
         cmd.Dispatch(m_computeShadeHits, chbdimension);
         cmd.Dispatch(m_computeAccumulate, chbdimension);
-        cmd.Dispatch(m_computePostFilter, m_useCheckerboardTrace ? 1 : 0, chbdimension);
+        cmd.Dispatch(m_computePostFilter, m_settings.checkerboardTrace ? 1 : 0, chbdimension);
         cmd->EndDebugScope();
     }
 
@@ -239,22 +237,12 @@ namespace PK::App
 
     void PassSceneGI::ValidateReservoirs(CommandBufferExt cmd)
     {
-        if (m_useReSTIR)
+        if (m_settings.ReSTIR)
         {
             cmd->BeginDebugScope("SceneGI.ValidateReservoirs", PK_COLOR_GREEN);
             cmd.SetShaderBindingTable(&m_sbtValidate);
             cmd.DispatchRays(m_rayTraceValidate, m_reservoirs0->GetResolution());
             cmd->EndDebugScope();
         }
-    }
-
-    void PassSceneGI::OnUpdateParameters(const RendererConfig* config)
-    {
-        m_useCheckerboardTrace = config->GICheckerboardTrace;
-        m_useReSTIR = config->GIReSTIR;
-        RHI::SetKeyword("PK_GI_CHECKERBOARD_TRACE", m_useCheckerboardTrace);
-        RHI::SetKeyword("PK_GI_SPEC_VIRT_REPROJECT", config->GISpecularVirtualReproject);
-        RHI::SetKeyword("PK_GI_SSRT_PRETRACE", config->GIScreenSpacePretrace);
-        RHI::SetKeyword("PK_GI_RESTIR", config->GIReSTIR);
     }
 }

@@ -1,16 +1,18 @@
 #include "PrecompiledHeader.h"
 #include "Core/Assets/AssetDatabase.h"
+#include "Core/CLI/CVariableRegister.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/ConstantBuffer.h"
-#include "App/RendererConfig.h"
 #include "App/Renderer/HashCache.h"
+#include "App/Renderer/RenderView.h"
+#include "App/Renderer/RenderViewSettings.h"
 #include "PassVolumeFog.h"
 
 namespace PK::App
 {
-    PassVolumeFog::PassVolumeFog(AssetDatabase* assetDatabase, const RendererConfig* config)
+    PassVolumeFog::PassVolumeFog(AssetDatabase* assetDatabase, const uint2& initialResolution)
     {
         PK_LOG_VERBOSE("PassVolumeFog.Ctor");
         PK_LOG_SCOPE_INDENT(local);
@@ -23,7 +25,7 @@ namespace PK::App
         descriptor.sampler.wrap[0] = WrapMode::Clamp;
         descriptor.sampler.wrap[1] = WrapMode::Clamp;
         descriptor.sampler.wrap[2] = WrapMode::Clamp;
-        descriptor.resolution = { config->InitialWidth / 8u, config->InitialHeight / 8u, 128 };
+        descriptor.resolution = { initialResolution.x / 8u, initialResolution.y / 8u, 128 };
         descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
         m_volumeScatter = RHI::CreateTexture(descriptor, "Fog.ScatterVolume");
 
@@ -42,32 +44,29 @@ namespace PK::App
         m_computeInject = assetDatabase->Find<ShaderAsset>("CS_VolumeFogInject");
         m_computeScatter = assetDatabase->Find<ShaderAsset>("CS_VolumeFogScatter");
         m_shaderComposite = assetDatabase->Find<ShaderAsset>("CS_VolumeFogComposite");
+    }
 
+    void PassVolumeFog::SetViewConstants(RenderView* view)
+    {
         auto hash = HashCache::Get();
-
-        m_volumeResources = CreateRef<ConstantBuffer>(BufferLayout(
-            {
-                { ElementType::Float4, hash->pk_Fog_Albedo },
-                { ElementType::Float4, hash->pk_Fog_Absorption },
-                { ElementType::Float4, hash->pk_Fog_WindDirSpeed },
-                { ElementType::Float,  hash->pk_Fog_Phase0 },
-                { ElementType::Float,  hash->pk_Fog_Phase1 },
-                { ElementType::Float,  hash->pk_Fog_PhaseW },
-                { ElementType::Float,  hash->pk_Fog_Density_Constant },
-                { ElementType::Float,  hash->pk_Fog_Density_HeightExponent },
-                { ElementType::Float,  hash->pk_Fog_Density_HeightOffset },
-                { ElementType::Float,  hash->pk_Fog_Density_HeightAmount },
-                { ElementType::Float,  hash->pk_Fog_Density_NoiseAmount },
-                { ElementType::Float,  hash->pk_Fog_Density_NoiseScale },
-                { ElementType::Float,  hash->pk_Fog_Density_Amount },
-                { ElementType::Float,  hash->pk_Fog_Density_Sky_Constant },
-                { ElementType::Float,  hash->pk_Fog_Density_Sky_HeightExponent },
-                { ElementType::Float,  hash->pk_Fog_Density_Sky_HeightOffset },
-                { ElementType::Float,  hash->pk_Fog_Density_Sky_HeightAmount }
-            }), "Fog.Parameters");
-
-        OnUpdateParameters(config);
-        RHI::SetBuffer(hash->pk_Fog_Parameters, m_volumeResources->GetRHI());
+        auto& settings = view->settingsRef->FogSettings;
+        view->constants->Set<float4>(hash->pk_Fog_Albedo, float4(settings.Albedo, 1.0f));
+        view->constants->Set<float4>(hash->pk_Fog_Absorption, float4(settings.Absorption, 1.0f));
+        view->constants->Set<float4>(hash->pk_Fog_WindDirSpeed, float4(settings.WindDirection, settings.WindSpeed));
+        view->constants->Set<float>(hash->pk_Fog_Phase0, settings.Phase0);
+        view->constants->Set<float>(hash->pk_Fog_Phase1, settings.Phase1);
+        view->constants->Set<float>(hash->pk_Fog_PhaseW, settings.PhaseW);
+        view->constants->Set<float>(hash->pk_Fog_Density_Constant, settings.DensityConstant);
+        view->constants->Set<float>(hash->pk_Fog_Density_HeightExponent, settings.DensityHeightExponent);
+        view->constants->Set<float>(hash->pk_Fog_Density_HeightOffset, settings.DensityHeightOffset);
+        view->constants->Set<float>(hash->pk_Fog_Density_HeightAmount, settings.DensityHeightAmount);
+        view->constants->Set<float>(hash->pk_Fog_Density_NoiseAmount, settings.DensityNoiseAmount);
+        view->constants->Set<float>(hash->pk_Fog_Density_NoiseScale, settings.DensityNoiseScale);
+        view->constants->Set<float>(hash->pk_Fog_Density_Amount, settings.Density);
+        view->constants->Set<float>(hash->pk_Fog_Density_Sky_Constant, settings.DensitySkyConstant);
+        view->constants->Set<float>(hash->pk_Fog_Density_Sky_HeightExponent, settings.DensitySkyHeightExponent);
+        view->constants->Set<float>(hash->pk_Fog_Density_Sky_HeightOffset, settings.DensitySkyHeightOffset);
+        view->constants->Set<float>(hash->pk_Fog_Density_Sky_HeightAmount, settings.DensitySkyHeightAmount);
     }
 
     void PassVolumeFog::ComputeDensity(CommandBufferExt cmd, const uint3& resolution)
@@ -122,26 +121,4 @@ namespace PK::App
         cmd->EndDebugScope();
     }
 
-    void PassVolumeFog::OnUpdateParameters(const RendererConfig* config)
-    {
-        auto hash = HashCache::Get();
-        m_volumeResources->Set<float4>(hash->pk_Fog_Albedo, float4(config->FogAlbedo, 1.0f));
-        m_volumeResources->Set<float4>(hash->pk_Fog_Absorption, float4(config->FogAbsorption, 1.0f));
-        m_volumeResources->Set<float4>(hash->pk_Fog_WindDirSpeed, float4(config->FogWindDirection, config->FogWindSpeed));
-        m_volumeResources->Set<float>(hash->pk_Fog_Phase0, config->FogPhase0);
-        m_volumeResources->Set<float>(hash->pk_Fog_Phase1, config->FogPhase1);
-        m_volumeResources->Set<float>(hash->pk_Fog_PhaseW, config->FogPhaseW);
-        m_volumeResources->Set<float>(hash->pk_Fog_Density_Constant, config->FogDensityConstant);
-        m_volumeResources->Set<float>(hash->pk_Fog_Density_HeightExponent, config->FogDensityHeightExponent);
-        m_volumeResources->Set<float>(hash->pk_Fog_Density_HeightOffset, config->FogDensityHeightOffset);
-        m_volumeResources->Set<float>(hash->pk_Fog_Density_HeightAmount, config->FogDensityHeightAmount);
-        m_volumeResources->Set<float>(hash->pk_Fog_Density_NoiseAmount, config->FogDensityNoiseAmount);
-        m_volumeResources->Set<float>(hash->pk_Fog_Density_NoiseScale, config->FogDensityNoiseScale);
-        m_volumeResources->Set<float>(hash->pk_Fog_Density_Amount, config->FogDensity);
-        m_volumeResources->Set<float>(hash->pk_Fog_Density_Sky_Constant, config->FogDensitySkyConstant);
-        m_volumeResources->Set<float>(hash->pk_Fog_Density_Sky_HeightExponent, config->FogDensitySkyHeightExponent);
-        m_volumeResources->Set<float>(hash->pk_Fog_Density_Sky_HeightOffset, config->FogDensitySkyHeightOffset);
-        m_volumeResources->Set<float>(hash->pk_Fog_Density_Sky_HeightAmount, config->FogDensitySkyHeightAmount);
-        m_volumeResources->FlushBuffer(RHI::GetCommandBuffer(QueueType::Transfer));
-    }
 }

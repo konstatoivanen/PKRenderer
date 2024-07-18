@@ -99,6 +99,7 @@ namespace PK::App
                     renderView->type = entity.renderView->type;
                     renderView->primaryPassGroup = 0u;
                     renderView->isWindowTarget = entity.renderView->isWindowTarget;
+                    renderView->settingsRef = &entity.renderView->settings;
                     entity.renderView->renderViewRef = renderView;
 
                     auto viewresolution = viewrect.zw - viewrect.xy;

@@ -1,6 +1,7 @@
 
 #extension GL_KHR_shader_subgroup_shuffle : enable
 #pragma pk_program SHADER_STAGE_COMPUTE main
+#define PK_USE_SINGLE_DESCRIPTOR_SET
 
 #include "includes/GBuffers.glsl"
 #include "includes/PostFXResources.glsl"

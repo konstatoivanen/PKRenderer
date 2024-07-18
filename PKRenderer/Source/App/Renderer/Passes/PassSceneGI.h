@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Utilities/NoCopy.h"
+#include "Core/CLI/CVariable.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "Core/Rendering/ShaderBindingTable.h"
 #include "App/Renderer/IBatcher.h"
@@ -9,12 +10,11 @@ PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
 
 namespace PK::App
 {
-    struct RendererConfig;
-
     class PassSceneGI : public NoCopy
     {
         public:
-            PassSceneGI(AssetDatabase* assetDatabase, const RendererConfig* config);
+            PassSceneGI(AssetDatabase* assetDatabase, const uint2& initialResolution);
+            void SetViewConstants(struct RenderView* view);
             void PreRender(CommandBufferExt cmd, const uint3& resolution);
             void PruneVoxels(CommandBufferExt cmd);
             void DispatchRays(CommandBufferExt cmd);
@@ -23,7 +23,6 @@ namespace PK::App
             void RenderGI(CommandBufferExt cmd);
             void VoxelMips(CommandBufferExt cmd);
             void ValidateReservoirs(CommandBufferExt cmd);
-            void OnUpdateParameters(const RendererConfig* config);
 
         private:
             FixedFunctionShaderAttributes m_voxelizeAttribs{};
@@ -38,7 +37,6 @@ namespace PK::App
             ShaderAsset* m_rayTraceValidate = nullptr;
             ShaderBindingTable m_sbtRaytrace;
             ShaderBindingTable m_sbtValidate;
-            ConstantBufferRef m_parameters;
 
             RHITextureRef m_voxels;
             RHITextureRef m_voxelMask;
@@ -51,7 +49,15 @@ namespace PK::App
 
             uint32_t m_frameIndex = 0u;
             int32_t m_rasterAxis = 0;
-            bool m_useCheckerboardTrace = false;
-            bool m_useReSTIR = false;
+
+            struct Settings
+            {
+                CVariableField<bool> ReSTIR = { "Renderer.GI.ReSTIR" , true};
+                CVariableField<bool> approximateRoughSpecular = { "Renderer.GI.ApproximateRoughSpecular" , true};
+                CVariableField<bool> screenSpacePretrace = { "Renderer.GI.ScreenSpacePretrace" , false};
+                CVariableField<bool> checkerboardTrace = { "Renderer.GI.CheckerboardTrace" , true};
+                CVariableField<bool> specularVirtualReproject = { "Renderer.GI.SpecularVirtualReproject" , true};
+            }
+            m_settings;
     };
 }

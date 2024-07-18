@@ -37,7 +37,7 @@ namespace PK
         return Get()->IsBound(name);
     }
 
-    void CVariableRegister::Execute(const char** args, uint32_t count)
+    void CVariableRegister::Execute(const char* const* args, uint32_t count)
     {
         if (Get() == nullptr)
         {
@@ -62,60 +62,75 @@ namespace PK
     void CVariableRegister::BindInstance(ICVariable* variable)
     {
         auto name = variable->name;
-        PK_THROW_ASSERT(m_variables.count(name) == 0, "CVar is already bound! (%s)", name.c_str());
+        auto iter = m_variables.find(name);
+        PK_THROW_ASSERT(iter == m_variables.end() || iter->second.variable == nullptr, "CVar is already bound! (%s)", name.c_str());
         PK_LOG_VERBOSE("CVariableRegister.Bind: %s", name.c_str());
-        m_variables[name] = variable;
+
+        // Immediately call execute if there is one pending for this variable.
+        if (iter != m_variables.end() && iter->second.arguments != nullptr)
+        {
+            iter->second.variable = variable;
+            ExecuteInstance(iter->second.arguments->arguments, iter->second.arguments->count);
+            iter->second.arguments = nullptr;
+            return;
+        }
+
+        m_variables[name].variable = variable;
     }
 
     void CVariableRegister::UnbindInstance(ICVariable* variable)
     {
-        auto name = variable->name;
-        m_variables.erase(name);
+        m_variables.erase(variable->name);
     }
 
     bool CVariableRegister::IsBoundInstance(const char* name) const
     {
-        return m_variables.count(NameID(name)) > 0;
+        auto iter = m_variables.find(name);
+        return iter != m_variables.end() && iter->second.variable != nullptr;
     }
 
-    void CVariableRegister::ExecuteInstance(const char** args, uint32_t count)
+    void CVariableRegister::ExecuteInstance(const char* const* args, uint32_t count)
     {
         if (count > 0)
         {
             auto name = NameID(args[0]);
-            --count;
-
             auto iter = m_variables.find(name);
 
-            if (iter != m_variables.end())
+            if (iter != m_variables.end() && iter->second.variable != nullptr)
             {
-                auto& variable = iter->second;
+                auto variable = iter->second.variable;
+                auto executeArgsCount = count - 1u;
 
-                if (count < variable->CVarGetMinArgs() || count > variable->CVarGetMaxArgs())
+                if (executeArgsCount < variable->CVarGetMinArgs())
                 {
                     variable->CVarInvalidArgCount();
                     return;
                 }
 
-                variable->CVarExecute(args + 1, count);
+                variable->CVarExecute(args + 1, executeArgsCount);
+                return;
             }
+
+            // CVar was not found. cache arguments so that they can be executed upon binding.
+            m_variables[name].arguments = CreateScope<CArgumentsInlineDefault>(args, count);
         }
+    }
+
+    void CVariableRegister::ExecuteInstance(const std::vector<std::string>& args)
+    {
+        std::vector<const char*> cstringArguments;
+
+        for (auto& arg : args)
+        {
+            cstringArguments.push_back(arg.data());
+        }
+
+        ExecuteInstance(cstringArguments.data(), cstringArguments.size());
     }
 
     void CVariableRegister::ExecuteParseInstance(const char* arg)
     {
-        std::istringstream stream(arg);
-        std::string element;
-
-        std::vector<std::string> stringArguments;
-        std::vector<const char*> cstringArguments;
-
-        while (getline(stream, element, ' '))
-        {
-            stringArguments.push_back(element);
-            cstringArguments.push_back(stringArguments.back().c_str());
-        }
-
-        ExecuteInstance(cstringArguments.data(), (uint32_t)cstringArguments.size());
+        CArgumentsInlineDefault args(arg, ' ');
+        ExecuteInstance(args.arguments, args.count);
     }
 }

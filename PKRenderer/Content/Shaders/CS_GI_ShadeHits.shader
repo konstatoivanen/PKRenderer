@@ -2,6 +2,7 @@
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
 #pragma pk_program SHADER_STAGE_COMPUTE main
 
+#define PK_USE_SINGLE_DESCRIPTOR_SET
 #define PK_GI_LOAD_LVL 1
 #define PK_GI_STORE_LVL 1
 

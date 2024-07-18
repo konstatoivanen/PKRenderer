@@ -13,6 +13,7 @@ namespace PK
         void Unindent() final;
 
         void SetSeverityMask(LogSeverity mask) final;
+        LogSeverity GetSeverityMask() const final;
         void SetColor(LogColor color) final;
         void SetShowConsole(bool value) final;
 

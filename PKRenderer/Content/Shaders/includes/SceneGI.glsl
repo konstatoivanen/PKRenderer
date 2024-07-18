@@ -2,6 +2,7 @@
 #include "BRDF.glsl"
 #include "Encoding.glsl"
 #include "SHL1.glsl"
+#include "Common.glsl"
 
 #ifndef PK_GI_LOAD_LVL
 #define PK_GI_LOAD_LVL 0
@@ -10,16 +11,6 @@
 #ifndef PK_GI_STORE_LVL
 #define PK_GI_STORE_LVL 0
 #endif
-
-PK_DECLARE_CBUFFER(pk_GI_Parameters, PK_SET_SHADER)
-{
-    float4 pk_GI_VolumeST;
-    uint4 pk_GI_VolumeSwizzle;
-    uint2 pk_GI_RayDither;
-    float pk_GI_VoxelSize; 
-    float pk_GI_VoxelStepSize;
-    float pk_GI_VoxelLevelScale;
-};
 
 layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedDiff;
 layout(rg32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedSpec;

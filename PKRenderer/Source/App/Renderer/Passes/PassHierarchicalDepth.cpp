@@ -3,13 +3,12 @@
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
-#include "App/RendererConfig.h"
 #include "App/Renderer/HashCache.h"
 #include "PassHierarchicalDepth.h"
 
 namespace PK::App
 {
-    PassHierarchicalDepth::PassHierarchicalDepth(AssetDatabase* assetDatabase, const RendererConfig* config)
+    PassHierarchicalDepth::PassHierarchicalDepth(AssetDatabase* assetDatabase, const uint2& initialResolution)
     {
         PK_LOG_VERBOSE("PassHierarchicalDepth.Ctor");
         PK_LOG_SCOPE_INDENT(local);
@@ -21,7 +20,7 @@ namespace PK::App
         hizDesc.format = TextureFormat::R16F;
         hizDesc.sampler.filterMin = FilterMode::Bilinear;
         hizDesc.sampler.filterMag = FilterMode::Bilinear;
-        hizDesc.resolution = { config->InitialWidth, config->InitialHeight, 1 };
+        hizDesc.resolution = { initialResolution, 1u };
         hizDesc.levels = 9u;
         hizDesc.layers = 4u;//2
         hizDesc.usage = TextureUsage::Sample | TextureUsage::Storage;

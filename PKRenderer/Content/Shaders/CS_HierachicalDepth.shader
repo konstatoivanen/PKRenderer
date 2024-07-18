@@ -3,6 +3,7 @@
 #extension GL_KHR_shader_subgroup_shuffle : enable
 #pragma pk_multi_compile _ PK_HIZ_FINAL_PASS
 #pragma pk_program SHADER_STAGE_COMPUTE main
+#define PK_USE_SINGLE_DESCRIPTOR_SET
 
 #include "includes/GBuffers.glsl"
 #include "includes/ComputeQuadSwap.glsl"

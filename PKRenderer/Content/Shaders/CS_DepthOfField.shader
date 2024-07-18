@@ -9,15 +9,15 @@
 #include "includes/Encoding.glsl"
 
 // Screen Color full res.
-PK_DECLARE_SET_PASS uniform sampler2D pk_Texture;
+uniform sampler2D pk_Texture;
 
 // Screen color full res. same as above but as image output.
-layout(rgba16f, set = PK_SET_PASS) uniform image2D pk_Image;
+layout(rgba16f) uniform image2D pk_Image;
 
-PK_DECLARE_SET_SHADER uniform sampler2DArray pk_DoF_ColorRead;
-PK_DECLARE_SET_SHADER uniform sampler2DArray pk_DoF_AlphaRead;
-layout(r32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_DoF_ColorWrite;
-layout(r16f, set = PK_SET_SHADER) uniform image2DArray pk_DoF_AlphaWrite;
+uniform sampler2DArray pk_DoF_ColorRead;
+uniform sampler2DArray pk_DoF_AlphaRead;
+layout(r32ui) uniform uimage2DArray pk_DoF_ColorWrite;
+layout(r16f) uniform image2DArray pk_DoF_AlphaWrite;
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 

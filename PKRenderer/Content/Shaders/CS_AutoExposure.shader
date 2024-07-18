@@ -17,7 +17,7 @@
 #define EXPOSURE_ADJUST_SPEED pk_AutoExposure_Speed
 
 // Source texture
-PK_DECLARE_SET_DRAW uniform texture2D pk_Texture;
+PK_DECLARE_SET_PASS uniform texture2D pk_Texture;
 
 // Source: http://www.alextardif.com/HistogramLuminance.html
 shared uint HistogramShared[NUM_HISTOGRAM_BINS];

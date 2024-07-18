@@ -18,7 +18,7 @@ void main()
         (
             coord.x / 2 + int(checkerboard(coord, pk_FrameIndex.y) * (pk_ScreenSize.x / 2)),
             coord.y
-            );
+		);
 #else
     const int2 storeCoord = coord;
 #endif

@@ -4,13 +4,16 @@
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
+#include "Core/Rendering/ConstantBuffer.h"
 #include "Core/Rendering/TextureAsset.h"
 #include "App/Renderer/HashCache.h"
+#include "App/Renderer/RenderView.h"
+#include "App/Renderer/RenderViewSettings.h"
 #include "PassTemporalAntialiasing.h"
 
 namespace PK::App
 {
-    PassTemporalAntialiasing::PassTemporalAntialiasing(AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight)
+    PassTemporalAntialiasing::PassTemporalAntialiasing(AssetDatabase* assetDatabase, const uint2& initialResolution)
     {
         PK_LOG_VERBOSE("PassTemporalAntialiasing.Ctor");
         PK_LOG_SCOPE_INDENT(local);
@@ -20,8 +23,7 @@ namespace PK::App
         TextureDescriptor descriptor{};
         descriptor.format = TextureFormat::RGB9E5;
         descriptor.formatAlias = TextureFormat::R32UI;
-        descriptor.resolution.x = initialWidth * 2;
-        descriptor.resolution.y = initialHeight * 2;
+        descriptor.resolution = { initialResolution * 2u, 1u };
         descriptor.layers = 2;
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
@@ -30,6 +32,16 @@ namespace PK::App
         descriptor.sampler.wrap[2] = WrapMode::Clamp;
         descriptor.usage = TextureUsage::Default | TextureUsage::Storage;
         m_renderTarget = RHI::CreateTexture(descriptor, "TAA.HistoryTexture");
+    }
+
+    void PassTemporalAntialiasing::SetViewConstants(RenderView* view)
+    {
+        auto hash = HashCache::Get();
+        auto& settings = view->settingsRef->TemporalAntialiasingSettings;
+        view->constants->Set<float>(hash->pk_TAA_Sharpness, settings.Sharpness);
+        view->constants->Set<float>(hash->pk_TAA_BlendingStatic, settings.BlendingStatic);
+        view->constants->Set<float>(hash->pk_TAA_BlendingMotion, settings.BlendingMotion);
+        view->constants->Set<float>(hash->pk_TAA_MotionAmplification, settings.MotionAmplification);
     }
 
     void PassTemporalAntialiasing::Render(CommandBufferExt cmd, RHITexture* source, RHITexture* destination)

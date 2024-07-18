@@ -9,14 +9,14 @@ namespace PK
     RemoteProcessRunner::RemoteProcessRunner()
     {
         // @TODO hmm not a good cvar namespace
-        CVariableRegister::Create<CVariableFunc>("Application.Run.Executable", [this](const char** args, uint32_t count)
+        CVariableRegister::Create<CVariableFunc>("Application.Run.Executable", [this](const char* const* args, uint32_t count)
             {
                 ExecuteRemoteProcess(args, count);
             }, 
-            "executable, arguments", 1u, 256u);
+            "executable, arguments", 1u);
     }
 
-    void RemoteProcessRunner::ExecuteRemoteProcess(const char** args, uint32_t count)
+    void RemoteProcessRunner::ExecuteRemoteProcess(const char* const* args, uint32_t count)
     {
         auto combinedArguments = std::string();
 

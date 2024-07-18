@@ -99,6 +99,9 @@ namespace PK::App
         TimeFrameInfo timeRender;
         TimeFrameInfo timeResize;
 
+        // Might be a bad idea to use ptr for this but this removes the need to include stuff here.
+        struct RenderViewSettings* settingsRef;
+
         inline uint3 GetResolution() const { return gbuffers.GetResolution(); }
         inline GBuffersFull::View GetGBuffersFullView() { return gbuffers.GetView(); }
     };

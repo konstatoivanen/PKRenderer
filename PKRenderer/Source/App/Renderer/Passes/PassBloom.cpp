@@ -1,15 +1,21 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
+#include "Core/CLI/CVariableRegister.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
+#include "Core/RHI/BuiltInResources.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
+#include "Core/Rendering/TextureAsset.h"
+#include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/HashCache.h"
+#include "App/Renderer/RenderView.h"
+#include "App/Renderer/RenderViewSettings.h"
 #include "PassBloom.h"
 
 namespace PK::App
 {
-    PassBloom::PassBloom(AssetDatabase* assetDatabase, uint32_t initialWidth, uint32_t initialHeight)
+    PassBloom::PassBloom(AssetDatabase* assetDatabase, const uint2& initialResolution)
     {
         PK_LOG_VERBOSE("PassBloom.Ctor");
         PK_LOG_SCOPE_INDENT(local);
@@ -21,7 +27,7 @@ namespace PK::App
         descriptor.formatAlias = TextureFormat::R32UI;
         descriptor.layers = 1;
         descriptor.levels = 8;
-        descriptor.resolution = { initialWidth / 2u, initialHeight / 2u, 1u };
+        descriptor.resolution = { initialResolution / 2u, 1u };
         descriptor.sampler.filterMin = FilterMode::Trilinear;
         descriptor.sampler.filterMag = FilterMode::Trilinear;
 
@@ -31,6 +37,16 @@ namespace PK::App
         m_passDownsample = m_computeBloom->GetRHIIndex("PASS_DOWNSAMPLE1");
         m_passUpsample = m_computeBloom->GetRHIIndex("PASS_UPSAMPLE");
         m_passSeparableBlur = m_computeBloom->GetRHIIndex("PASS_BLUR");
+    }
+
+    void PassBloom::SetViewConstants(RenderView* view)
+    {
+        auto hash = HashCache::Get();
+        auto& settings = view->settingsRef->BloomSettings;
+        m_bloomLensDirtTexture = settings.LensDirtTextureAsset ? settings.LensDirtTextureAsset->GetRHI() : RHI::GetBuiltInResources()->WhiteTexture2D.get();
+        view->constants->Set<float>(hash->pk_Bloom_Intensity, glm::exp(settings.Intensity) - 1.0f);
+        view->constants->Set<float>(hash->pk_Bloom_DirtIntensity, glm::exp(settings.LensDirtIntensity) - 1.0f);
+        RHI::SetTexture(HashCache::Get()->pk_Bloom_LensDirtTex, m_bloomLensDirtTexture);
     }
 
     void PassBloom::Render(CommandBufferExt cmd, RHITexture* source)

@@ -10,12 +10,10 @@ PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class Sequencer)
 
 namespace PK::App
 {
-    struct RendererConfig;
     struct RenderPipelineEvent;
 
     class EngineGizmos : 
         public IStep<RenderPipelineEvent*>,
-        public IStep<AssetImportEvent<RendererConfig>*>,
         public IGizmos
     {
     public:
@@ -25,10 +23,9 @@ namespace PK::App
             color32 color;
         };
 
-        EngineGizmos(AssetDatabase* assetDatabase, Sequencer* sequencer, RendererConfig* config);
+        EngineGizmos(AssetDatabase* assetDatabase, Sequencer* sequencer);
 
         virtual void Step(RenderPipelineEvent* renderEvent) final;
-        virtual void Step(AssetImportEvent<RendererConfig>* token) final;
 
         inline void SetEnabledGPU(bool value) { m_enabledGPU = value; }
         inline void SetEnabledCPU(bool value) { m_enabledCPU = value; }

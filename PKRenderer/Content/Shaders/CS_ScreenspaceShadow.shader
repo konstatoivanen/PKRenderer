@@ -210,25 +210,20 @@ void ShadowmapUpsampleCs()
 }
 
 #if defined(PASS_SCREEN_DEPTH)
-    // Wavefront size of the compute shader running this code. 
-    #define WAVE_SIZE 64
-    // Number of shadow samples per-pixel.
-    #define SAMPLE_COUNT 60
-    // Number of initial shadow samples that will produce a hard shadow, and not perform sample-averaging.
-    #define HARD_SHADOW_SAMPLES 4
-    // Number of samples that will fade out at the end of the shadow (for a minor cost).
-    #define FADE_OUT_SAMPLES 8
-    
+    #define WAVE_SIZE 64            // Wavefront size of the compute shader running this code. 
+    #define SAMPLE_COUNT 60         // Number of shadow samples per-pixel.
+    #define HARD_SHADOW_SAMPLES 4   // Number of initial shadow samples that will produce a hard shadow, and not perform sample-averaging.
+    #define FADE_OUT_SAMPLES 8      // Number of samples that will fade out at the end of the shadow (for a minor cost).
     float BEND_SAMPLE_DEPTH(float2 uv) { return SampleClipDepthBiased(int2(uv * pk_ScreenSize.xy)); }
-    
     #include "includes/bend_sss_gpu.glsl"
-    
-    PK_DECLARE_LOCAL_CBUFFER(pk_BendShadowDispatchData)
-    {
-        float4 LightCoordinate;
-        int2 WaveOffset;
-    };
 #endif
+
+[[pk_restrict ScreenSpaceShadowsCs]]
+PK_DECLARE_LOCAL_CBUFFER(pk_BendShadowDispatchData)
+{
+    float4 LightCoordinate;
+    int2 WaveOffset;
+};
 
 [[pk_restrict ScreenSpaceShadowsCs]]
 layout(local_size_x = WAVE_SIZE, local_size_y = 1, local_size_z = 1) in;

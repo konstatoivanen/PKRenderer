@@ -16,7 +16,7 @@ struct AutoFocusData
     float LensCoefficient;
 };
 
-PK_DECLARE_VARIABLE(AutoFocusData, pk_DoF_AutoFocusParams, PK_SET_PASS);
+PK_DECLARE_VARIABLE(AutoFocusData, pk_DoF_AutoFocusParams, PK_SET_GLOBAL);
 
 float GetLensCoefficient(float focusDistance) { return pk_DoF_FocalLength * pk_DoF_FocalLength / (pk_DoF_FNumber * (focusDistance - pk_DoF_FocalLength) * pk_DoF_FilmHeight * 2); }
 

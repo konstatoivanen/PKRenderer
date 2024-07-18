@@ -24,7 +24,7 @@ namespace PK
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
-        m_window = glfwCreateWindow(descriptor.width, descriptor.height, descriptor.title.c_str(), nullptr, nullptr);
+        m_window = glfwCreateWindow(descriptor.size.x, descriptor.size.y, descriptor.title.c_str(), nullptr, nullptr);
         PK_THROW_ASSERT(m_window, "Failed To Create Window");
 
         glfwSetWindowSizeLimits(m_window, MIN_SIZE, MIN_SIZE, GLFW_DONT_CARE, GLFW_DONT_CARE);
@@ -65,7 +65,7 @@ namespace PK
 
         SwapchainCreateInfo swapchainCreateInfo{};
         swapchainCreateInfo.desiredColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-        swapchainCreateInfo.desiredExtent = VkExtent2D{ descriptor.width, descriptor.height };
+        swapchainCreateInfo.desiredExtent = VkExtent2D{ descriptor.size.x, descriptor.size.y };
         swapchainCreateInfo.desiredFormat = VK_FORMAT_B8G8R8A8_UNORM;
         swapchainCreateInfo.desiredImageCount = 4; // More images yields faster release of next image by present. But causes some instability.
         swapchainCreateInfo.desiredPresentMode = VK_PRESENT_MODE_FIFO_KHR;

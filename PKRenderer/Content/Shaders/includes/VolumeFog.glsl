@@ -15,27 +15,6 @@
 #define VOLUMEFOG_ACCUMULATION 0.5f
 #define VOLUMEFOG_MARCH_DISTANCE_EXP 2.0f
 
-PK_DECLARE_CBUFFER(pk_Fog_Parameters, PK_SET_SHADER)
-{
-    float4 pk_Fog_Albedo;
-    float4 pk_Fog_Absorption;
-    float4 pk_Fog_WindDirSpeed;
-    float pk_Fog_Phase0;
-    float pk_Fog_Phase1;
-    float pk_Fog_PhaseW;
-    float pk_Fog_Density_Constant;
-    float pk_Fog_Density_HeightExponent;
-    float pk_Fog_Density_HeightOffset;
-    float pk_Fog_Density_HeightAmount;
-    float pk_Fog_Density_NoiseAmount;
-    float pk_Fog_Density_NoiseScale;
-    float pk_Fog_Density_Amount;
-    float pk_Fog_Density_Sky_Constant;
-    float pk_Fog_Density_Sky_HeightExponent;
-    float pk_Fog_Density_Sky_HeightOffset;
-    float pk_Fog_Density_Sky_HeightAmount;
-};
-
 PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_ScatterRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_InjectRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_DensityRead;

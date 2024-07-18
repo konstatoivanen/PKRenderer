@@ -20,10 +20,9 @@ namespace PK
         const char* CVarGetName() const { return name.c_str(); }
 
     protected:
-        virtual void CVarExecute(const char** args, uint32_t count) = 0;
+        virtual void CVarExecute(const char* const* args, uint32_t count) = 0;
         virtual void CVarInvalidArgCount() const = 0;
         virtual uint32_t CVarGetMinArgs() const = 0;
-        virtual uint32_t CVarGetMaxArgs() const = 0;
 
         NameID name;
     };
@@ -33,29 +32,49 @@ namespace PK
     {
         friend class CVariableRegister;
 
-        CVariable(const char* name, const T& value, const char* hint = "cvar hint undefined.", uint32_t argsMin = 1u, uint32_t argsMax = 1u) :
+        CVariable(const char* name, const T& value, const char* hint = "cvar hint undefined.", uint32_t argsMin = 1u) :
             ICVariable(name),
             m_value(value),
             m_hint(hint),
-            m_argsMin(argsMin),
-            m_argsMax(argsMax)
+            m_argsMin(argsMin)
         {
         };
 
-        inline T& CVarGetValue() { return m_value; }
+        constexpr T& CVarGetValue() { return m_value; }
+        constexpr const T& CVarGetValue() const { return m_value; }
 
     protected:
-        void CVarExecute(const char** args, uint32_t count) final;
+        void CVarExecute(const char* const* args, uint32_t count) final;
         void CVarInvalidArgCount() const final;
         inline uint32_t CVarGetMinArgs() const final { return m_argsMin; }
-        inline uint32_t CVarGetMaxArgs() const final { return m_argsMax; }
 
         T m_value;
         std::string m_hint;
         uint32_t m_argsMin;
-        uint32_t m_argsMax;
     };
 
-    typedef std::function<void(const char** args, uint32_t)> CVariableFunc;
+    template<typename T>
+    struct CVariableField : public ICVariable
+    {
+        T Value;
+
+        CVariableField(const char* name, const T& initialValue = {}) : ICVariable(name), Value(initialValue) { this->CVarBind(); }
+        ~CVariableField() { this->CVarUnbind(); }
+
+        void CVarExecute(const char* const* args, uint32_t count) final;
+        void CVarInvalidArgCount() const final;
+        uint32_t CVarGetMinArgs() const final;
+
+        constexpr operator T&() { return Value; }
+        constexpr operator const T&() const { return Value; }
+
+        CVariableField& operator=(const T& value)
+        {
+            Value = value;
+            return *this;
+        }
+    };
+
+    typedef std::function<void(const char* const* args, uint32_t)> CVariableFunc;
     typedef std::function<void()> CVariableFuncSimple;
 }

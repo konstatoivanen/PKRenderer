@@ -1,11 +1,15 @@
 #include "PrecompiledHeader.h"
 #include "Core/Assets/AssetDatabase.h"
+#include "Core/CLI/CVariableRegister.h"
 #include "Core/RHI/RHInterfaces.h"
+#include "Core/RHI/BuiltInResources.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/TextureAsset.h"
+#include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/HashCache.h"
-#include "App/RendererConfig.h"
+#include "App/Renderer/RenderView.h"
+#include "App/Renderer/RenderViewSettings.h"
 #include "PassEnvBackground.h"
 
 namespace PK::App
@@ -22,6 +26,28 @@ namespace PK::App
         RHI::SetBuffer(hash->pk_SceneEnv_SH, m_shBuffer.get());
     }
 
+    void PassEnvBackground::SetViewConstants(RenderView* view)
+    {
+        auto hash = HashCache::Get();
+        auto& settings = view->settingsRef->EnvBackgroundSettings;
+        view->constants->Set<float>(hash->pk_SceneEnv_Exposure, settings.Exposure);
+
+        auto texture = settings.EnvironmentTextureAsset != nullptr ? 
+            settings.EnvironmentTextureAsset->GetRHI() : 
+            RHI::GetBuiltInResources()->WhiteTexture2D.get();
+        
+        if (texture != m_backgroundTexture)
+        {
+            m_backgroundTexture = texture;
+            auto sampler = texture->GetSamplerDescriptor();
+            sampler.wrap[0] = WrapMode::Mirror;
+            sampler.wrap[1] = WrapMode::Mirror;
+            sampler.wrap[2] = WrapMode::Mirror;
+            texture->SetSampler(sampler);
+            RHI::SetTexture(hash->pk_SceneEnv, texture);
+        }
+    }
+
     void PassEnvBackground::ComputeSH(CommandBufferExt cmd)
     {
         cmd.Dispatch(m_integrateSHShader, 0, { 1u, 1u, 1u });
@@ -30,17 +56,5 @@ namespace PK::App
     void PassEnvBackground::RenderBackground(CommandBufferExt cmd)
     {
         cmd.Blit(m_backgroundShader);
-    }
-
-    void PassEnvBackground::OnUpdateParameters(AssetImportEvent<RendererConfig>* token)
-    {
-        auto hash = HashCache::Get();
-        auto tex = token->assetDatabase->Load<TextureAsset>(token->asset->FileBackgroundTexture)->GetRHI();
-        auto sampler = tex->GetSamplerDescriptor();
-        sampler.wrap[0] = WrapMode::Mirror;
-        sampler.wrap[1] = WrapMode::Mirror;
-        sampler.wrap[2] = WrapMode::Mirror;
-        tex->SetSampler(sampler);
-        RHI::SetTexture(hash->pk_SceneEnv, tex);
     }
 }

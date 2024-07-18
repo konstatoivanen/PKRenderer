@@ -41,6 +41,73 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     uint2 pk_FrameIndex;            // x = frame index since load, y = frame index since resize
 
     float pk_SceneEnv_Exposure; // Scene background environment exposure
+    
+    // GI Parameters
+    float pk_GI_VoxelSize;
+    float pk_GI_VoxelStepSize;
+    float pk_GI_VoxelLevelScale;
+    float4 pk_GI_VolumeST;
+    uint4 pk_GI_VolumeSwizzle;
+    uint2 pk_GI_RayDither;
+
+    // Fog Parameters
+    float pk_Fog_Density_Amount;
+    float pk_Fog_Density_Constant;
+    float4 pk_Fog_Albedo;
+    float4 pk_Fog_Absorption;
+    float4 pk_Fog_WindDirSpeed;
+
+    float pk_Fog_Phase0;
+    float pk_Fog_Phase1;
+    float pk_Fog_PhaseW;
+    float pk_Fog_Density_HeightExponent;
+    
+    float pk_Fog_Density_HeightOffset;
+    float pk_Fog_Density_HeightAmount;
+    float pk_Fog_Density_NoiseAmount;
+    float pk_Fog_Density_NoiseScale;
+    
+    float pk_Fog_Density_Sky_Constant;
+    float pk_Fog_Density_Sky_HeightExponent;
+    float pk_Fog_Density_Sky_HeightOffset;
+    float pk_Fog_Density_Sky_HeightAmount;
+
+    // Post FX Parameters
+    float4 pk_CC_WhiteBalance;
+    float4 pk_CC_Lift;
+    float4 pk_CC_Gamma;
+    float4 pk_CC_Gain;
+    float4 pk_CC_HSV;
+    float4 pk_CC_MixRed;
+    float4 pk_CC_MixGreen;
+    float4 pk_CC_MixBlue;
+    float pk_CC_LumaContrast;
+    float pk_CC_LumaGain;
+    float pk_CC_LumaGamma;
+    float pk_CC_Vibrance;
+    float pk_CC_Contribution;
+
+    float pk_Vignette_Intensity;
+    float pk_Vignette_Power;
+
+    float pk_FilmGrain_Luminance;
+    float pk_FilmGrain_Intensity;
+
+    float pk_AutoExposure_MinLogLuma;
+    float pk_AutoExposure_InvLogLumaRange;
+    float pk_AutoExposure_LogLumaRange;
+    float pk_AutoExposure_Target;
+    float pk_AutoExposure_Speed;
+
+    float pk_Bloom_Intensity;
+    float pk_Bloom_DirtIntensity;
+
+    float pk_TAA_Sharpness;
+    float pk_TAA_BlendingStatic;
+    float pk_TAA_BlendingMotion;
+    float pk_TAA_MotionAmplification;
+
+    uint pk_PostEffectsFeatureMask;
 };
 
 #define PK_SCENE_ENV_EXPOSURE pk_SceneEnv_Exposure
