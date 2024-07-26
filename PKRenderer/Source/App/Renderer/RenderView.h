@@ -1,8 +1,10 @@
 #pragma once
 #include "Core/Utilities/NoCopy.h"
+#include "Core/Utilities/FixedArray.h"
 #include "Core/Timers/TimeFrameInfo.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "App/Renderer/EntityEnums.h"
+#include "App/Renderer/RenderViewSettings.h"
 
 namespace PK::App
 {
@@ -27,11 +29,13 @@ namespace PK::App
             "Depth"
         };
 
-        struct Descriptor
+        struct TargetDescriptor
         {
-            TextureUsage usages[Count]{};
-            TextureFormat formats[Count]{};
+            TextureFormat format;
+            TextureUsage usage;
         };
+
+        typedef FixedArray<TargetDescriptor, Count> Descriptor;
 
         struct View
         {
@@ -46,6 +50,7 @@ namespace PK::App
         RHITextureRef depthBiased = nullptr;
         RHITextureRef depth = nullptr;
 
+        static uint2 AlignResolution(const uint2& resolution);
         uint3 GetResolution() const;
         float GetAspectRatio() const;
         View GetView();
@@ -79,6 +84,7 @@ namespace PK::App
     {
         ConstantBufferRef constants = nullptr;
         GBuffersFull gbuffers{};
+        RenderViewSettings settings{};
 
         RenderViewType type = RenderViewType::Scene;
         bool isWindowTarget = false;
@@ -88,6 +94,7 @@ namespace PK::App
 
         uint4 renderAreaRect;
         uint4 finalViewRect;
+        uint2 bufferResolution;
 
         float4x4 worldToView;
         float4x4 viewToClip;
@@ -99,8 +106,6 @@ namespace PK::App
         TimeFrameInfo timeRender;
         TimeFrameInfo timeResize;
 
-        // Might be a bad idea to use ptr for this but this removes the need to include stuff here.
-        struct RenderViewSettings* settingsRef;
 
         inline uint3 GetResolution() const { return gbuffers.GetResolution(); }
         inline GBuffersFull::View GetGBuffersFullView() { return gbuffers.GetView(); }

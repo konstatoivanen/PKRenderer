@@ -21,6 +21,7 @@ InputKeyCommands:
     - ["T", "Time.Reset"]
     - ["Y", "Engine.FlyCamera.Transforms.Log"]
     - ["U", "Engine.FlyCamera.Transforms.Reset"]
+    - ["I", "Engine.GUI.Toggle"]
     - ["G", "Engine.Gizmos.CPU.Toggle"]
     - ["H", "Engine.Gizmos.GPU.Toggle"]
     - ["F", "Engine.Screenshot.QueueCapture"]

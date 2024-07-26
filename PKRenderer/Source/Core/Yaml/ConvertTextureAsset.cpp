@@ -18,4 +18,16 @@ namespace YAML
         rhs = PK::AssetDatabase::Get()->Load<PK::TextureAsset>(node.as<std::string>());
         return true;
     }
+
+    Node convert<PK::RHITexture*>::encode([[maybe_unused]] const PK::RHITexture*& rhs)
+    {
+        PK_LOG_WARNING("Warning: RHITexture serialization is not supported!");
+        return {};
+    }
+
+    bool convert<PK::RHITexture*>::decode(const Node& node, PK::RHITexture*& rhs)
+    {
+        rhs = PK::AssetDatabase::Get()->Load<PK::TextureAsset>(node.as<std::string>())->GetRHI();
+        return true;
+    }
 }

@@ -24,10 +24,10 @@ namespace PK::App
     void PassPostEffectsComposite::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
-        auto& colorGrading = view->settingsRef->ColorGradingSettings;
-        auto& vignette = view->settingsRef->VignetteSettings;
-        auto& features = view->settingsRef->PostEffectSettings;
-        auto& debug = view->settingsRef->RenderingDebugSettings;
+        auto& colorGrading = view->settings.ColorGradingSettings;
+        auto& vignette = view->settings.VignetteSettings;
+        auto& features = view->settings.PostEffectSettings;
+        auto& debug = view->settings.RenderingDebugSettings;
 
         auto newLut = colorGrading.LutTextureAsset != nullptr ? colorGrading.LutTextureAsset->GetRHI() : nullptr;
 

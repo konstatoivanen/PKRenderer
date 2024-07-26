@@ -13,4 +13,13 @@ namespace PK
         double unscaledDeltaTime = 0.0;
         double smoothDeltaTime = 0.0;
     };
+
+    struct TimeFramerateInfo
+    {
+        uint64_t framerate = 0;
+        uint64_t framerateMin = 0;
+        uint64_t framerateMax = 0;
+        uint64_t framerateAvg = 0;
+        double frameMs = 0.0;
+    };
 }

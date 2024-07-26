@@ -19,7 +19,7 @@ namespace PK::App
         public IStepApplicationCloseFrame
     {
     public:
-        EngineTime(Sequencer* sequencer, float timeScale, bool logFramerate);
+        EngineTime(Sequencer* sequencer, float timeScale);
 
         static clock_t GetClockTicks();
         static double GetClockSeconds();
@@ -38,10 +38,8 @@ namespace PK::App
         inline uint64_t GetFrameRateFixed() const { return m_framerateFixed.frameCount; }
 
         inline void SetTimeScale(const float timeScale) { m_runner.timeScale = (double)timeScale; }
-        inline void SetLogFramerate(const bool value) { m_logFramerate = value; }
 
         void Reset();
-        void LogFrameRate();
 
         virtual void OnApplicationOpenFrame() final;
         virtual void OnApplicationCloseFrame() final;
@@ -51,6 +49,5 @@ namespace PK::App
         TimerFramerate m_framerate{};
         TimerFramerate m_framerateFixed{};
         TimerFrameRunner m_runner{};
-        bool m_logFramerate = true;
     };
 }

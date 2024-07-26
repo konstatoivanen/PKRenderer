@@ -18,13 +18,10 @@ namespace PK::App
         return clock() / (double)CLOCKS_PER_SEC;
     }
 
-    EngineTime::EngineTime(Sequencer* sequencer, float timeScale, bool logFramerate) :
-        m_sequencer(sequencer),
-        m_logFramerate(logFramerate)
+    EngineTime::EngineTime(Sequencer* sequencer, float timeScale) : m_sequencer(sequencer)
     {
         m_runner.timeScale = timeScale;
         CVariableRegister::Create<CVariableFuncSimple>("Time.Reset", [this]() { Reset(); PK_LOG_INFO("Time.Reset"); });
-        CVariableRegister::Create<bool*>("Time.LogFramerate", &m_logFramerate, "0 = 0ff, 1 = On", 1u);
     }
 
 
@@ -36,21 +33,9 @@ namespace PK::App
         m_runner.timeScale = timeScale;
     }
 
-    void EngineTime::LogFrameRate()
-    {
-        PK_LOG_OVERWRITE("FPS: %4.1i, FIXED: %i, MIN: %i, MAX: %i, AVG: %i MS: %4.2f",
-            m_framerate.framerate,
-            m_framerateFixed.frameCount,
-            m_framerateFixed.framerateMin,
-            m_framerateFixed.framerateMax,
-            m_framerateFixed.framerateAvg,
-            (1.0 / m_framerateFixed.framerateAvg) * 1000.0f);
-    }
-
     void EngineTime::OnApplicationOpenFrame()
     {
         m_runner.BeginTimerScope();
-
         TimeFrameInfo frameTimeInfo{};
         frameTimeInfo.frameIndex = m_runner.frameIndex;
         frameTimeInfo.timeScale = m_runner.timeScale;
@@ -60,6 +45,14 @@ namespace PK::App
         frameTimeInfo.unscaledDeltaTime = m_runner.unscaledDeltaTime;
         frameTimeInfo.smoothDeltaTime = m_runner.smoothDeltaTime;
         m_sequencer->Next(this, &frameTimeInfo);
+
+        TimeFramerateInfo framerateInfo{};
+        framerateInfo.framerate = m_framerate.framerate;
+        framerateInfo.framerateMin = m_framerateFixed.framerateMin;
+        framerateInfo.framerateMax = m_framerateFixed.framerateMax;
+        framerateInfo.framerateAvg = m_framerateFixed.framerateAvg;
+        framerateInfo.frameMs = m_runner.deltaTime * 1000.0f;
+        m_sequencer->Next(this, &framerateInfo);
     }
 
     void EngineTime::OnApplicationCloseFrame()
@@ -71,11 +64,6 @@ namespace PK::App
         {
             m_framerateFixed = m_framerate;
             m_framerate = TimerFramerate();
-        }
-
-        if (m_logFramerate)
-        {
-            LogFrameRate();
         }
     }
 }

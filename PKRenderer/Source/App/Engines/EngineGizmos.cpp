@@ -5,8 +5,7 @@
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
-#include "App/Renderer/RenderView.h"
-#include "App/Renderer/IRenderPipeline.h"
+#include "App/Renderer/RenderPipelineBase.h"
 #include "App/Renderer/HashCache.h"
 #include "EngineGizmos.h"
 

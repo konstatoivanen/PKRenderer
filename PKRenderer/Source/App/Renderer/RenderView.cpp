@@ -5,15 +5,21 @@
 
 namespace PK::App
 {
+    uint2 GBuffers::AlignResolution(const uint2& resolution)
+    {
+        auto alignedResolution = resolution;
+        alignedResolution.x = Math::GetAlignedSize(resolution.x, RESOLUTION_ALIGNMENT);
+        alignedResolution.y = Math::GetAlignedSize(resolution.y, RESOLUTION_ALIGNMENT);
+        return alignedResolution;
+    }
+
     uint3 GBuffers::GetResolution() const { return color->GetResolution(); }
     float GBuffers::GetAspectRatio() const { return float(color->GetResolution().x) / float(color->GetResolution().y); }
     GBuffers::View GBuffers::GetView() { return { color.get(), normals.get(), depthBiased.get(), depth.get() }; }
 
     bool GBuffers::Validate(const uint2& resolution, const Descriptor& descriptor, const char* namePrefix)
     {
-        auto alignedResolution = resolution;
-        alignedResolution.x = Math::GetAlignedSize(resolution.x, RESOLUTION_ALIGNMENT);
-        alignedResolution.y = Math::GetAlignedSize(resolution.y, RESOLUTION_ALIGNMENT);
+        auto alignedResolution = AlignResolution(resolution);
 
         TextureDescriptor textureDescriptor{};
         textureDescriptor.resolution = { alignedResolution.x, alignedResolution.y, 1 };
@@ -24,8 +30,8 @@ namespace PK::App
 
         for (auto i = 0; i < Count; ++i)
         {
-            textureDescriptor.format = descriptor.formats[i];
-            textureDescriptor.usage = descriptor.usages[i];
+            textureDescriptor.format = descriptor[i].format;
+            textureDescriptor.usage = descriptor[i].usage;
 
             if (textureDescriptor.format == TextureFormat::Invalid ||
                 textureDescriptor.usage == TextureUsage::None)

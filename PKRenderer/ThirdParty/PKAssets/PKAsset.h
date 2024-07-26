@@ -14,7 +14,7 @@ namespace PKAssets
 
     constexpr static const char* PK_ASSET_EXTENSION_SHADER = ".pkshader";
     constexpr static const char* PK_ASSET_EXTENSION_MESH = ".pkmesh";
-    constexpr static const char* PK_ASSET_EXTENSION_ANIM = ".pkanim";
+    constexpr static const char* PK_ASSET_EXTENSION_FONT = ".pkfont";
 
     template<typename T>
     struct RelativePtr
@@ -38,7 +38,7 @@ namespace PKAssets
         Invalid,
         Shader,
         Mesh,
-        Animation
+        Font
     };
 
     enum class PKElementType : uint16_t
@@ -498,4 +498,26 @@ namespace PKAssets
                           const float* coneApex,
                           const float* center,
                           const float* extents);
+
+    constexpr static const float PK_FONT_MSDF_UNIT = 4.0f;
+
+    struct PKFontCharacter
+    {
+        float advance;          // 4 bytes
+        float rect[4]{};        // 20 bytes
+        uint16_t texrect[4]{};  // 28 bytes
+        uint16_t unicode;       // 30 bytes
+        uint16_t isWhiteSpace;  // 32 bytes
+    };
+
+    // Font data is rgba8 raw texture data
+    // Use corresponding format when creating gpu textures
+    struct PKFont
+    {
+        uint32_t characterCount;                 // 4 bytes
+        uint16_t atlasResolution[2];             // 8 bytes
+        uint32_t atlasDataSize;                  // 12 bytes
+        RelativePtr<PKFontCharacter> characters; // 16 bytes
+        RelativePtr<void> atlasData;             // 20 bytes
+    };
 }

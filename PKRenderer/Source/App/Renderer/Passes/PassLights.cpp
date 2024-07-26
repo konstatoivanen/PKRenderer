@@ -10,11 +10,9 @@
 #include "Core/Rendering/TextureAsset.h"
 #include "App/ECS/EntityViewMeshStatic.h"
 #include "App/ECS/EntityViewLight.h"
-#include "App/Renderer/RenderView.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/EntityCulling.h"
-#include "App/Renderer/IBatcher.h"
-#include "App/Renderer/IRenderPipeline.h"
+#include "App/Renderer/RenderPipelineBase.h"
 #include "PassLights.h"
 
 namespace PK::App

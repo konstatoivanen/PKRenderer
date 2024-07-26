@@ -12,26 +12,25 @@
 #include "App/Renderer/Passes/PassTemporalAntialiasing.h"
 #include "App/Renderer/Passes/PassAutoExposure.h"
 #include "App/Renderer/Passes/PassBloom.h"
-#include "App/Renderer/IRenderPipeline.h"
+#include "App/Renderer/RenderPipelineBase.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
 
 namespace PK::App
 {
-    class RenderPipelineScene : public IRenderPipeline
+    class RenderPipelineScene : public RenderPipelineBase
     {
         public:
-            RenderPipelineScene(AssetDatabase* assetDatabase, const uint2& initialResolution);
+            RenderPipelineScene(AssetDatabase* assetDatabase,
+                EntityDatabase* entityDb,
+                Sequencer* sequencer,
+                IBatcher* batcher, 
+                const uint2& initialResolution);
+
             ~RenderPipelineScene();
 
-            const BufferLayout& GetViewConstantsLayout() const final { return m_constantsLayout; }
-
-            GBuffersFullDescriptor GetViewGBufferDescriptors() const final;
-
-            void SetViewConstants(RenderView* view) final;
-
-            void RenderViews(struct RenderPipelineContext* context) final;
+            void Render(struct RenderPipelineContext* context) final;
 
         private:
             PassLights m_passLights;

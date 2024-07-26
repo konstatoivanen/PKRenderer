@@ -13,7 +13,12 @@
 
 namespace PK::App
 {
-    RenderPipelineScene::RenderPipelineScene(AssetDatabase* assetDatabase, const uint2& initialResolution) :
+    RenderPipelineScene::RenderPipelineScene(AssetDatabase* assetDatabase,
+        EntityDatabase* entityDb,
+        Sequencer* sequencer,
+        IBatcher* batcher,
+        const uint2& initialResolution) : 
+        RenderPipelineBase(entityDb, assetDatabase, sequencer, batcher),
         m_passLights(assetDatabase, initialResolution),
         m_passSceneGI(assetDatabase, initialResolution),
         m_passVolumeFog(assetDatabase, initialResolution),
@@ -146,121 +151,110 @@ namespace PK::App
         m_sceneStructure = nullptr;
     }
 
-    GBuffersFullDescriptor RenderPipelineScene::GetViewGBufferDescriptors() const
+    void RenderPipelineScene::Render(RenderPipelineContext* context)
     {
-        GBuffersFullDescriptor desc;
-        desc.current.usages[GBuffers::Color] = TextureUsage::RTColorSample | TextureUsage::Storage;
-        desc.current.usages[GBuffers::Normals] = TextureUsage::RTColorSample;
-        desc.current.usages[GBuffers::DepthBiased] = TextureUsage::RTColorSample;
-        desc.current.usages[GBuffers::Depth] = TextureUsage::RTDepthSample;
-        desc.current.formats[GBuffers::Color] = TextureFormat::RGBA16F;
-        desc.current.formats[GBuffers::Normals] = TextureFormat::RGB10A2;
-        desc.current.formats[GBuffers::DepthBiased] = TextureFormat::R32F;
-        desc.current.formats[GBuffers::Depth] = TextureFormat::Depth32F;
-
-        desc.previous.usages[GBuffers::Color] = TextureUsage::Default | TextureUsage::Storage;
-        desc.previous.usages[GBuffers::Normals] = TextureUsage::Default;
-        desc.previous.usages[GBuffers::DepthBiased] = TextureUsage::Default;
-        desc.previous.usages[GBuffers::Depth] = TextureUsage::Default;
-        // @TODO refactor to use RGB9E5 as rgba16f redundantly big.
-        desc.previous.formats[GBuffers::Color] = TextureFormat::RGBA16F;
-        desc.previous.formats[GBuffers::Normals] = TextureFormat::RGB10A2;
-        desc.previous.formats[GBuffers::DepthBiased] = TextureFormat::R32F;
-        desc.previous.formats[GBuffers::Depth] = TextureFormat::Depth32F;
-        return desc;
-    }
-
-    void RenderPipelineScene::SetViewConstants(RenderView* view)
-    {
-        auto hash = HashCache::Get();
-
-        auto constants = view->constants.get();
-        auto resolution = view->GetResolution();
-
-        const auto shadowCascadeZSplits = m_passLights.GetCascadeZSplitsFloat4(view->znear, view->zfar);
-        const auto projectionJitter = m_temporalAntialiasing.GetJitter();
-        const auto time = view->timeRender.time;
-        const auto deltaTime = view->timeRender.deltaTime;
-        const auto smoothDeltaTime = view->timeRender.smoothDeltaTime;
-        const auto frameIndex = view->timeRender.frameIndex;
-        const auto frameIndexResize = view->timeResize.frameIndex;
-
-        float2 jitter =
-        {
-            projectionJitter.x / resolution.x,
-            projectionJitter.y / resolution.y
-        };
-
-        const auto viewToClipNoJitter = view->viewToClip;
-        const auto viewToClip = Math::GetPerspectiveJittered(viewToClipNoJitter, jitter);
-        const auto clipToView = glm::inverse(viewToClip);
-        const auto worldToView = view->worldToView;
-        const auto viewToWorld = glm::affineInverse(worldToView);
-        const auto worldToClip = viewToClip * worldToView;
-        const auto worldToClipNoJitter = viewToClipNoJitter * worldToView;
-        const auto n = view->znear;
-        const auto f = view->zfar;
-
-        auto viewToWorldPrev = Math::TransposeTo3x4(viewToWorld);
-        auto worldToClipPrev = worldToClip;
-        auto worldToClipPrevNoJitter = worldToClipNoJitter;
-
-        constants->TryGet(hash->pk_ViewToWorld, viewToWorldPrev);
-        constants->TryGet(hash->pk_WorldToClip, worldToClipPrev);
-        constants->TryGet(hash->pk_WorldToClip_NoJitter, worldToClipPrevNoJitter);
-
-        auto viewSpaceCameraDelta = worldToView * float4(viewToWorldPrev[0].w, viewToWorldPrev[1].w, viewToWorldPrev[2].w, 1.0f);
-
-        constants->Set<float3x4>(hash->pk_WorldToView, Math::TransposeTo3x4(worldToView));
-        constants->Set<float3x4>(hash->pk_ViewToWorld, Math::TransposeTo3x4(viewToWorld));
-        constants->Set<float3x4>(hash->pk_ViewToWorldPrev, viewToWorldPrev);
-
-        constants->Set<float4x4>(hash->pk_ViewToClip, viewToClip);
-        constants->Set<float4x4>(hash->pk_WorldToClip, worldToClip);
-        constants->Set<float4x4>(hash->pk_WorldToClip_NoJitter, worldToClipNoJitter);
-        constants->Set<float4x4>(hash->pk_WorldToClipPrev, worldToClipPrev);
-        constants->Set<float4x4>(hash->pk_WorldToClipPrev_NoJitter, worldToClipPrevNoJitter);
-        constants->Set<float4x4>(hash->pk_ViewToClipDelta, worldToClipPrev * viewToWorld);
-
-        constants->Set<float4>(hash->pk_Time, { (float)time / 20.0f, (float)time, (float)time * 2.0f, (float)time * 3.0f });
-        constants->Set<float4>(hash->pk_SinTime, { (float)sin(time / 8.0f), (float)sin(time / 4.0f), (float)sin(time / 2.0f), (float)sin(time) });
-        constants->Set<float4>(hash->pk_CosTime, { (float)cos(time / 8.0f), (float)cos(time / 4.0f), (float)cos(time / 2.0f), (float)cos(time) });
-        constants->Set<float4>(hash->pk_DeltaTime, { (float)deltaTime, 1.0f / (float)deltaTime, (float)smoothDeltaTime, 1.0f / (float)smoothDeltaTime });
-        constants->Set<float4>(hash->pk_CursorParams, PK_FLOAT4_ZERO); // @TODO
-        constants->Set<float4>(hash->pk_ViewWorldOrigin, viewToWorld[3]);
-        constants->Set<float4>(hash->pk_ViewWorldOriginPrev, float4(viewToWorldPrev[0].w, viewToWorldPrev[1].w, viewToWorldPrev[2].w, 1.0f));
-        constants->Set<float4>(hash->pk_ViewSpaceCameraDelta, viewSpaceCameraDelta);
-        constants->Set<float4>(hash->pk_ClipParams, { n, f, viewToClip[2][2], viewToClip[3][2] });
-        constants->Set<float4>(hash->pk_ClipParamsInv, { clipToView[0][0], clipToView[1][1], clipToView[2][3], clipToView[3][3] });
-        constants->Set<float4>(hash->pk_ClipParamsExp, { 1.0f / glm::log2(f / n), -log2(n) / log2(f / n), f / n, 1.0f / n });
-        constants->Set<float4>(hash->pk_ScreenParams, { (float)resolution.x, (float)resolution.y, 1.0f / (float)resolution.x, 1.0f / (float)resolution.y });
-        constants->Set<float4>(hash->pk_ProjectionJitter, projectionJitter);
-        constants->Set<uint4>(hash->pk_FrameRandom, Math::MurmurHash41((uint32_t)(frameIndex % ~0u)));
-        constants->Set<uint2>(hash->pk_ScreenSize, { resolution.x, resolution.y });
-        constants->Set<uint2>(hash->pk_FrameIndex, { frameIndex % 0xFFFFFFFFu, (frameIndex - frameIndexResize) % 0xFFFFFFFFu });
-        constants->Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
-
-        m_passEnvBackground.SetViewConstants(view);
-        m_passSceneGI.SetViewConstants(view);
-        m_passVolumeFog.SetViewConstants(view);
-        m_bloom.SetViewConstants(view);
-        m_autoExposure.SetViewConstants(view);
-        m_depthOfField.SetViewConstants(view);
-        m_passFilmGrain.SetViewConstants(view);
-        m_temporalAntialiasing.SetViewConstants(view);
-        m_passPostEffectsComposite.SetViewConstants(view);
-    }
-
-    void RenderPipelineScene::RenderViews(RenderPipelineContext* context)
-    {
-        // @TODO add multi view support
-        auto view = context->views[0];
-
         auto hash = HashCache::Get();
         auto queues = RHI::GetQueues();
+        auto* cmdtransfer = queues->GetCommandBuffer(QueueType::Transfer);
+        
+        for (auto i = 0u; i < context->viewCount; ++i)
+        {
+            auto view = context->views[i];
+        
+            GBuffersFullDescriptor desc;
+            desc.current[GBuffers::Color] = { TextureFormat::RGBA16F, TextureUsage::RTColorSample | TextureUsage::Storage };
+            desc.current[GBuffers::Normals] = { TextureFormat::RGB10A2, TextureUsage::RTColorSample };
+            desc.current[GBuffers::DepthBiased] = { TextureFormat::R32F, TextureUsage::RTColorSample };
+            desc.current[GBuffers::Depth] = { TextureFormat::Depth32F, TextureUsage::RTDepthSample };
 
-        auto gbuffers = view->GetGBuffersFullView();
-        auto resolution = view->GetResolution();
+            // @TODO refactor to use RGB9E5 as rgba16f redundantly big.
+            desc.previous[GBuffers::Color] = { TextureFormat::RGBA16F, TextureUsage::Default | TextureUsage::Storage };
+            desc.previous[GBuffers::Normals] = { TextureFormat::RGB10A2, TextureUsage::Default };
+            desc.previous[GBuffers::DepthBiased] = { TextureFormat::R32F, TextureUsage::Default };
+            desc.previous[GBuffers::Depth] = { TextureFormat::Depth32F, TextureUsage::Default };
+            
+            ValidateViewGBuffers(view, desc);
+            ValidateViewConstantBuffer(view, m_constantsLayout);
+
+            auto constants = view->constants.get();
+            auto resolution = view->GetResolution();
+
+            const auto shadowCascadeZSplits = m_passLights.GetCascadeZSplitsFloat4(view->znear, view->zfar);
+            const auto projectionJitter = m_temporalAntialiasing.GetJitter();
+            const auto time = view->timeRender.time;
+            const auto deltaTime = view->timeRender.deltaTime;
+            const auto smoothDeltaTime = view->timeRender.smoothDeltaTime;
+            const auto frameIndex = view->timeRender.frameIndex;
+            const auto frameIndexResize = view->timeResize.frameIndex;
+
+            float2 jitter =
+            {
+                projectionJitter.x / resolution.x,
+                projectionJitter.y / resolution.y
+            };
+
+            const auto viewToClipNoJitter = view->viewToClip;
+            const auto viewToClip = Math::GetPerspectiveJittered(viewToClipNoJitter, jitter);
+            const auto clipToView = glm::inverse(viewToClip);
+            const auto worldToView = view->worldToView;
+            const auto viewToWorld = glm::affineInverse(worldToView);
+            const auto worldToClip = viewToClip * worldToView;
+            const auto worldToClipNoJitter = viewToClipNoJitter * worldToView;
+            const auto n = view->znear;
+            const auto f = view->zfar;
+            auto viewToWorldPrev = Math::TransposeTo3x4(viewToWorld);
+            auto worldToClipPrev = worldToClip;
+            auto worldToClipPrevNoJitter = worldToClipNoJitter;
+
+            constants->TryGet(hash->pk_ViewToWorld, viewToWorldPrev);
+            constants->TryGet(hash->pk_WorldToClip, worldToClipPrev);
+            constants->TryGet(hash->pk_WorldToClip_NoJitter, worldToClipPrevNoJitter);
+
+            auto viewSpaceCameraDelta = worldToView * float4(viewToWorldPrev[0].w, viewToWorldPrev[1].w, viewToWorldPrev[2].w, 1.0f);
+
+            constants->Set<float3x4>(hash->pk_WorldToView, Math::TransposeTo3x4(worldToView));
+            constants->Set<float3x4>(hash->pk_ViewToWorld, Math::TransposeTo3x4(viewToWorld));
+            constants->Set<float3x4>(hash->pk_ViewToWorldPrev, viewToWorldPrev);
+            constants->Set<float4x4>(hash->pk_ViewToClip, viewToClip);
+            constants->Set<float4x4>(hash->pk_WorldToClip, worldToClip);
+            constants->Set<float4x4>(hash->pk_WorldToClip_NoJitter, worldToClipNoJitter);
+            constants->Set<float4x4>(hash->pk_WorldToClipPrev, worldToClipPrev);
+            constants->Set<float4x4>(hash->pk_WorldToClipPrev_NoJitter, worldToClipPrevNoJitter);
+            constants->Set<float4x4>(hash->pk_ViewToClipDelta, worldToClipPrev * viewToWorld);
+            constants->Set<float4>(hash->pk_Time, { (float)time / 20.0f, (float)time, (float)time * 2.0f, (float)time * 3.0f });
+            constants->Set<float4>(hash->pk_SinTime, { (float)sin(time / 8.0f), (float)sin(time / 4.0f), (float)sin(time / 2.0f), (float)sin(time) });
+            constants->Set<float4>(hash->pk_CosTime, { (float)cos(time / 8.0f), (float)cos(time / 4.0f), (float)cos(time / 2.0f), (float)cos(time) });
+            constants->Set<float4>(hash->pk_DeltaTime, { (float)deltaTime, 1.0f / (float)deltaTime, (float)smoothDeltaTime, 1.0f / (float)smoothDeltaTime });
+            constants->Set<float4>(hash->pk_CursorParams, PK_FLOAT4_ZERO); // @TODO
+            constants->Set<float4>(hash->pk_ViewWorldOrigin, viewToWorld[3]);
+            constants->Set<float4>(hash->pk_ViewWorldOriginPrev, float4(viewToWorldPrev[0].w, viewToWorldPrev[1].w, viewToWorldPrev[2].w, 1.0f));
+            constants->Set<float4>(hash->pk_ViewSpaceCameraDelta, viewSpaceCameraDelta);
+            constants->Set<float4>(hash->pk_ClipParams, { n, f, viewToClip[2][2], viewToClip[3][2] });
+            constants->Set<float4>(hash->pk_ClipParamsInv, { clipToView[0][0], clipToView[1][1], clipToView[2][3], clipToView[3][3] });
+            constants->Set<float4>(hash->pk_ClipParamsExp, { 1.0f / glm::log2(f / n), -log2(n) / log2(f / n), f / n, 1.0f / n });
+            constants->Set<float4>(hash->pk_ScreenParams, { (float)resolution.x, (float)resolution.y, 1.0f / (float)resolution.x, 1.0f / (float)resolution.y });
+            constants->Set<float4>(hash->pk_ProjectionJitter, projectionJitter);
+            constants->Set<uint4>(hash->pk_FrameRandom, Math::MurmurHash41((uint32_t)(frameIndex % ~0u)));
+            constants->Set<uint2>(hash->pk_ScreenSize, { resolution.x, resolution.y });
+            constants->Set<uint2>(hash->pk_FrameIndex, { frameIndex % 0xFFFFFFFFu, (frameIndex - frameIndexResize) % 0xFFFFFFFFu });
+            constants->Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
+
+            m_passEnvBackground.SetViewConstants(view);
+            m_passSceneGI.SetViewConstants(view);
+            m_passVolumeFog.SetViewConstants(view);
+            m_bloom.SetViewConstants(view);
+            m_autoExposure.SetViewConstants(view);
+            m_depthOfField.SetViewConstants(view);
+            m_passFilmGrain.SetViewConstants(view);
+            m_temporalAntialiasing.SetViewConstants(view);
+            m_passPostEffectsComposite.SetViewConstants(view);
+            constants->FlushBuffer(cmdtransfer);
+        }
+
+        // @TODO add multi view support
+        auto primaryView = context->views[0];
+        auto gbuffers = primaryView->GetGBuffersFullView();
+        auto resolution = primaryView->GetResolution();
         RHI::SetTexture(hash->pk_GB_Current_Normals, gbuffers.current.normals);
         RHI::SetTexture(hash->pk_GB_Current_Depth, gbuffers.current.depth);
         RHI::SetTexture(hash->pk_GB_Current_DepthBiased, gbuffers.current.depthBiased);
@@ -268,9 +262,8 @@ namespace PK::App
         RHI::SetTexture(hash->pk_GB_Previous_Normals, gbuffers.previous.normals);
         RHI::SetTexture(hash->pk_GB_Previous_Depth, gbuffers.previous.depth);
         RHI::SetTexture(hash->pk_GB_Previous_DepthBiased, gbuffers.previous.depthBiased);
-        RHI::SetBuffer(hash->pk_PerFrameConstants, *view->constants.get());
+        RHI::SetBuffer(hash->pk_PerFrameConstants, *primaryView->constants.get());
 
-        auto* cmdtransfer = queues->GetCommandBuffer(QueueType::Transfer);
         m_passSceneGI.PreRender(cmdtransfer, resolution);
         context->batcher->BeginCollectDrawCalls();
         {
@@ -337,7 +330,7 @@ namespace PK::App
 
         // Shadows, Voxelize scene & reproject gi
         m_passLights.RenderShadows(cmdgraphics, context);
-        m_passSceneGI.Voxelize(cmdgraphics, context->batcher, view->primaryPassGroup);
+        m_passSceneGI.Voxelize(cmdgraphics, context->batcher, primaryView->primaryPassGroup);
         m_passLights.RenderScreenSpaceShadows(cmdgraphics, context);
         m_passSceneGI.ReprojectGI(cmdgraphics);
         m_passVolumeFog.Compute(cmdgraphics, gbuffers.current.color->GetResolution());

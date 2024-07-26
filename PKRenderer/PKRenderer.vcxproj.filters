@@ -1431,9 +1431,6 @@
     <ClInclude Include="Source\App\Renderer\HashCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\App\Renderer\RenderPipelineDisptacher.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\App\Renderer\RenderPipelineScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1521,7 +1518,7 @@
     <ClInclude Include="Source\Core\Input\InputKeyStructMacros.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\App\Renderer\IRenderPipeline.h">
+    <ClInclude Include="Source\App\Renderer\RenderPipelineBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\ForwardDeclare.h">
@@ -1584,7 +1581,7 @@
     <ClInclude Include="Source\Core\Timers\TimeHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\App\Engines\EngineRenderingAnalyzer.h">
+    <ClInclude Include="Source\App\Engines\EngineProfiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\Parsing.h">
@@ -1594,6 +1591,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\Renderer\RenderViewSettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Utilities\FixedArray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\App\Renderer\IGUIRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Rendering\Font.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\App\Engines\EngineGUIRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2153,6 +2162,7 @@
     <None Include="Content\Shaders\includes\Gizmos.glsl" />
     <None Include="Content\Textures\T_Bloom_LensDirt2.ktx2" />
     <None Include="Content\Configs\DebugEngine.cfg" />
+    <None Include="Content\Shaders\VS_GUI.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glm\detail\glm.cpp">
@@ -2395,7 +2405,7 @@
     <ClCompile Include="Source\Core\RHI\Layout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\App\Renderer\RenderPipelineDispatcher.cpp">
+    <ClCompile Include="Source\App\Renderer\RenderPipelineBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\Renderer\RenderPipelineScene.cpp">
@@ -2476,13 +2486,19 @@
     <ClCompile Include="ThirdParty\gfx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\App\Engines\EngineRenderingAnalyzer.cpp">
+    <ClCompile Include="Source\App\Engines\EngineProfiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Utilities\Parsing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Yaml\ConvertCVariableCollection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Rendering\Font.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\App\Engines\EngineGUIRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -2498,5 +2514,8 @@
     <Image Include="Content\T_AppIcon.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="Content\Fonts\Helvetica.ttf" />
   </ItemGroup>
 </Project>

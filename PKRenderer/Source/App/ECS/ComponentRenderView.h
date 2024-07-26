@@ -4,8 +4,6 @@
 
 namespace PK::App
 {
-    struct RenderView;
-
     // Reference to renderpipeline side representation
     struct ComponentRenderView
     {
@@ -15,9 +13,8 @@ namespace PK::App
         // should the target be blit to the window
         bool isWindowTarget = true;
 
-        RenderViewSettings settings;
-
-        RenderView* renderViewRef = nullptr;
+        struct RenderViewSettings* settingsRef = nullptr;
+        struct RenderView* renderViewRef = nullptr;
         virtual ~ComponentRenderView() = default;
     };
 }

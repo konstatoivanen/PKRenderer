@@ -239,12 +239,16 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Source\App\Engines\EngineRenderingAnalyzer.h" />
+    <ClInclude Include="Source\App\Engines\EngineGUIRenderer.h" />
+    <ClInclude Include="Source\App\Engines\EngineProfiler.h" />
+    <ClInclude Include="Source\App\Renderer\IGUIRenderer.h" />
     <ClInclude Include="Source\App\Renderer\RenderViewSettings.h" />
+    <ClInclude Include="Source\Core\Rendering\Font.h" />
     <ClInclude Include="Source\Core\Timers\ITimer.h" />
     <ClInclude Include="Source\Core\Timers\TimeHelpers.h" />
     <ClInclude Include="Source\Core\Timers\TimerFramerate.h" />
     <ClInclude Include="Source\Core\Timers\TimerFrameRunner.h" />
+    <ClInclude Include="Source\Core\Utilities\FixedArray.h" />
     <ClInclude Include="Source\Core\Utilities\Parsing.h" />
     <ClInclude Include="Source\Core\Yaml\ConvertCVariableCollection.h" />
     <ClInclude Include="ThirdParty\bend\bend_sss_cpu.h" />
@@ -685,7 +689,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\PrecompiledHeader.h" />
     <ClInclude Include="Source\App\Renderer\HashCache.h" />
     <ClInclude Include="Source\App\Renderer\IBatcher.h" />
-    <ClInclude Include="Source\App\Renderer\IRenderPipeline.h" />
+    <ClInclude Include="Source\App\Renderer\RenderPipelineBase.h" />
     <ClInclude Include="Source\Core\Rendering\MeshUtilities.h" />
     <ClInclude Include="Source\Core\Rendering\BindSet.h" />
     <ClInclude Include="Source\Core\Rendering\ConstantBuffer.h" />
@@ -709,7 +713,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Renderer\Passes\PassSceneGI.h" />
     <ClInclude Include="Source\App\Renderer\Passes\PassTemporalAntialiasing.h" />
     <ClInclude Include="Source\App\Renderer\Passes\PassVolumeFog.h" />
-    <ClInclude Include="Source\App\Renderer\RenderPipelineDisptacher.h" />
     <ClInclude Include="Source\Core\RHI\BuiltInResources.h" />
     <ClInclude Include="Source\Core\Utilities\Disposer.h" />
     <ClInclude Include="Source\Core\Utilities\FenceRef.h" />
@@ -769,6 +772,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
   </ItemGroup>
   <ItemGroup>
     <None Include="Content\Configs\DebugEngine.cfg" />
+    <None Include="Content\Shaders\VS_GUI.shader" />
     <None Include="Content\Textures\T_Bloom_LensDirt2.ktx2" />
     <None Include="ThirdParty\glm\detail\func_common.inl" />
     <None Include="ThirdParty\glm\detail\func_common_simd.inl" />
@@ -1053,7 +1057,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Textures\T_OEM_Trail.ktx2" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\App\Engines\EngineRenderingAnalyzer.cpp" />
+    <ClCompile Include="Source\App\Engines\EngineGUIRenderer.cpp" />
+    <ClCompile Include="Source\App\Engines\EngineProfiler.cpp" />
+    <ClCompile Include="Source\Core\Rendering\Font.cpp" />
     <ClCompile Include="Source\Core\Timers\ITimer.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFramerate.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFrameRunner.cpp" />
@@ -1146,7 +1152,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Renderer\Passes\PassSceneGI.cpp" />
     <ClCompile Include="Source\App\Renderer\Passes\PassTemporalAntialiasing.cpp" />
     <ClCompile Include="Source\App\Renderer\Passes\PassVolumeFog.cpp" />
-    <ClCompile Include="Source\App\Renderer\RenderPipelineDispatcher.cpp" />
+    <ClCompile Include="Source\App\Renderer\RenderPipelineBase.cpp" />
     <ClCompile Include="Source\Core\RHI\BuiltInResources.cpp" />
     <ClCompile Include="Source\Core\Utilities\Disposer.cpp" />
     <ClCompile Include="Source\Core\RHI\RHI.cpp" />
@@ -1194,6 +1200,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
   </ItemGroup>
   <ItemGroup>
     <Image Include="Content\T_AppIcon.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="Content\Fonts\Helvetica.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

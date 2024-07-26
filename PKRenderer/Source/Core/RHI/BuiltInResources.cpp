@@ -12,6 +12,7 @@ PK::BuiltInResources::BuiltInResources()
 
     const uint32_t blackData[4] = { 0xFF000000u, 0xFF000000u, 0xFF000000u, 0xFF000000u };
     const uint32_t whiteData[4] = { 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu };
+    const uint32_t errorData[4] = { 0xFFFF00FFu, 0xFF000000u, 0xFF000000u, 0xFFFF00FFu };
     const uint32_t transparentData[4] = { 0x00FFFFFFu, 0x00FFFFFFu, 0x00FFFFFFu, 0x00FFFFFFu };
 
     TextureDescriptor textureDesc{};
@@ -20,9 +21,11 @@ PK::BuiltInResources::BuiltInResources()
 
     BlackTexture2D = RHI::CreateTexture(textureDesc, "PKBuiltIn.Texture2D.Black");
     WhiteTexture2D = RHI::CreateTexture(textureDesc, "PKBuiltIn.Texture2D.White");
+    ErrorTexture2D = RHI::CreateTexture(textureDesc, "PKBuiltIn.Texture2D.Error");
     TransparentTexture2D = RHI::CreateTexture(textureDesc, "PKBuiltIn.Texture2D.Transparent");
     commandBuffer->UploadTexture(BlackTexture2D.get(), blackData, sizeof(blackData), 0u, 0u);
     commandBuffer->UploadTexture(WhiteTexture2D.get(), whiteData, sizeof(whiteData), 0u, 0u);
+    commandBuffer->UploadTexture(ErrorTexture2D.get(), errorData, sizeof(errorData), 0u, 0u);
     commandBuffer->UploadTexture(TransparentTexture2D.get(), transparentData, sizeof(transparentData), 0u, 0u);
 
     AtomicCounter = RHI::CreateBuffer(sizeof(uint32_t), BufferUsage::DefaultStorage, "PKBuiltIn.AtomicCounter");

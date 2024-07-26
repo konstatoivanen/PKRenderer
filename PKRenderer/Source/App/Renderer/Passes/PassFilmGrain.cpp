@@ -35,7 +35,7 @@ namespace PK::App
     void PassFilmGrain::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
-        auto& settings = view->settingsRef->FilmGrainSettings;
+        auto& settings = view->settings.FilmGrainSettings;
         view->constants->Set<float>(hash->pk_FilmGrain_Luminance, settings.Luminance);
         view->constants->Set<float>(hash->pk_FilmGrain_Intensity, settings.Intensity);
     }

@@ -45,7 +45,7 @@ namespace PK::App
 
     void PassDepthOfField::SetViewConstants(RenderView* view)
     {
-        auto& settings = view->settingsRef->DepthOfFieldSettings;
+        auto& settings = view->settings.DepthOfFieldSettings;
         m_constants.pk_DoF_FocalLength = settings.FocalLength;
         m_constants.pk_DoF_FNumber = settings.FNumber;
         m_constants.pk_DoF_FilmHeight = settings.FilmHeight;

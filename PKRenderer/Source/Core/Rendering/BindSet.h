@@ -28,6 +28,11 @@ namespace PK
             return arrayidx;
         }
 
+        const T* Get(uint32_t index) const
+        {
+            return m_indices[index];
+        }
+
         void Clear()
         {
             m_indices.Clear();

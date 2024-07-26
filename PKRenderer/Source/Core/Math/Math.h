@@ -15,6 +15,15 @@ namespace PK
     constexpr float3 PK_FLOAT3_ZERO = { 0.0f, 0.0f, 0.0f };
     constexpr float4 PK_FLOAT4_ZERO = { 0.0f, 0.0f, 0.0f, 0.0f };
 
+    constexpr ushort2 PK_USHORT2_ZERO = { 0, 0 };
+    constexpr ushort3 PK_USHORT3_ZERO = { 0, 0, 0 };
+    constexpr ushort4 PK_USHORT4_ZERO = { 0, 0, 0, 0 };
+    constexpr ushort4 PK_USHORT4_MAX = { 0, 0, ~0u, ~0u };
+
+    constexpr short2 PK_SHORT2_ZERO = { 0, 0 };
+    constexpr short3 PK_SHORT3_ZERO = { 0, 0, 0 };
+    constexpr short4 PK_SHORT4_ZERO = { 0, 0, 0, 0 };
+
     constexpr int2 PK_INT2_ZERO = { 0, 0 };
     constexpr int3 PK_INT3_ZERO = { 0, 0, 0 };
     constexpr int4 PK_INT4_ZERO = { 0, 0, 0, 0 };

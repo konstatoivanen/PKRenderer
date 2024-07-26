@@ -1,6 +1,23 @@
 #pragma once
+#include <string>
+
 namespace PK::Parse
 {
+    template<typename ... Args>
+    std::string FormatToString(const char* format, Args&& ... args)
+    {
+        auto size_s = snprintf(nullptr, 0, format, std::forward<Args>(args) ...);
+
+        if (size_s < 0)
+        {
+            return std::string(format);
+        }
+
+        std::string value((size_t)size_s, '0');
+        snprintf(value.data(), (size_t)size_s + 1u, format, std::forward<Args>(args) ...);
+        return value;
+    }
+
     template<typename T>
     T FromString(const char* str);
 

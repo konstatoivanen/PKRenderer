@@ -18,6 +18,7 @@ namespace PK::App
         DefaultMeshNoShadows = Mesh | Static,
     };
 
+    // @TODO this is currently redundant. Maybe remove?
     enum class RenderViewType : uint8_t
     {
         Scene,

@@ -7,7 +7,7 @@
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/EntityCulling.h"
 #include "App/Renderer/IBatcher.h"
-#include "App/Renderer/IRenderPipeline.h"
+#include "App/Renderer/RenderPipelineBase.h"
 #include "EngineDrawGeometry.h"
 
 namespace PK::App

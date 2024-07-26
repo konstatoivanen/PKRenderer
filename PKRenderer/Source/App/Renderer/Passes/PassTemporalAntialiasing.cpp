@@ -37,7 +37,7 @@ namespace PK::App
     void PassTemporalAntialiasing::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
-        auto& settings = view->settingsRef->TemporalAntialiasingSettings;
+        auto& settings = view->settings.TemporalAntialiasingSettings;
         view->constants->Set<float>(hash->pk_TAA_Sharpness, settings.Sharpness);
         view->constants->Set<float>(hash->pk_TAA_BlendingStatic, settings.BlendingStatic);
         view->constants->Set<float>(hash->pk_TAA_BlendingMotion, settings.BlendingMotion);

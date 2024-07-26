@@ -10,4 +10,11 @@ namespace YAML
         static Node encode(const PK::TextureAsset*& rhs);
         static bool decode(const Node& node, PK::TextureAsset*& rhs);
     };
+
+    template<>
+    struct convert<PK::RHITexture*>
+    {
+        static Node encode(const PK::RHITexture*& rhs);
+        static bool decode(const Node& node, PK::RHITexture*& rhs);
+    };
 }

@@ -46,6 +46,7 @@ namespace PK
         constexpr const SamplerDescriptor& GetSamplerDescriptor() const { return GetDescriptor().sampler; }
         constexpr uint4 GetRect() const { return { 0, 0, GetDescriptor().resolution.x, GetDescriptor().resolution.y }; }
         constexpr uint3 GetResolution() const { return GetDescriptor().resolution; }
+        constexpr float3 GetTexelSize() const { return 1.0f / float3(GetDescriptor().resolution); }
         constexpr uint32_t GetLevels() const { return GetDescriptor().levels; }
         constexpr uint32_t GetLayers() const { return GetDescriptor().layers; }
     };

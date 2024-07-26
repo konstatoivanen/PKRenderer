@@ -42,7 +42,7 @@ namespace PK::App
     void PassBloom::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
-        auto& settings = view->settingsRef->BloomSettings;
+        auto& settings = view->settings.BloomSettings;
         m_bloomLensDirtTexture = settings.LensDirtTextureAsset ? settings.LensDirtTextureAsset->GetRHI() : RHI::GetBuiltInResources()->WhiteTexture2D.get();
         view->constants->Set<float>(hash->pk_Bloom_Intensity, glm::exp(settings.Intensity) - 1.0f);
         view->constants->Set<float>(hash->pk_Bloom_DirtIntensity, glm::exp(settings.LensDirtIntensity) - 1.0f);

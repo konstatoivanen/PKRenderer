@@ -17,8 +17,11 @@ namespace PK
     struct ShaderBindingTable;
     struct ShaderPropertyBlock;
     struct TextureAsset;
+    struct Font;
+    enum class TextAlign;
 
     typedef Ref<ConstantBuffer> ConstantBufferRef;
     typedef Ref<MeshStaticAsset> MeshStaticAssetRef;
     typedef Ref<TextureAsset> TextureAssetRef;
+    typedef Ref<Font> FontRef;
 }

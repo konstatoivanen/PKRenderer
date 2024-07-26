@@ -7,6 +7,7 @@ namespace PK
     {
         RHIBufferRef AtomicCounter;
         RHITextureRef WhiteTexture2D;
+        RHITextureRef ErrorTexture2D;
         RHITextureRef BlackTexture2D;
         RHITextureRef TransparentTexture2D;
         BuiltInResources();

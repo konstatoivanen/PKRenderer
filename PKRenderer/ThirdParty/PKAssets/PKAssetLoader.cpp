@@ -153,6 +153,16 @@ namespace PKAssets
         return reinterpret_cast<PKMesh*>(assetPtr);
     }
 
+    PKFont* ReadAsFont(PKAsset* asset)
+    {
+        if (asset->header == nullptr || asset->header->type != PKAssetType::Font)
+        {
+            return nullptr;
+        }
+
+        auto assetPtr = reinterpret_cast<char*>(asset->rawData) + sizeof(PKAssetHeader);
+        return reinterpret_cast<PKFont*>(assetPtr);
+    }
 
     PKAssetMeta OpenAssetMeta(const char* filepath)
     {

@@ -98,7 +98,7 @@ namespace PK::App
             config->CameraLookSensitivity);
 
         auto cameraRenderView = m_entityDb->Query<EntityViewRenderView>(m_cameraEgid);
-        cameraRenderView->renderView->settings = config->ViewSettings;
+        cameraRenderView->renderView->settingsRef = &config->ViewSettings;
     }
 
     void EngineDebug::OnApplicationUpdateEngines()
@@ -238,8 +238,5 @@ namespace PK::App
         entity->flyCamera->sensitivity = config->CameraLookSensitivity;
         entity->flyCamera->snashotPosition = config->CameraStartPosition;
         entity->flyCamera->snashotRotation = config->CameraStartPosition;
-
-        auto cameraRenderView = m_entityDb->Query<EntityViewRenderView>(m_cameraEgid);
-        cameraRenderView->renderView->settings = config->ViewSettings;
     }
 }

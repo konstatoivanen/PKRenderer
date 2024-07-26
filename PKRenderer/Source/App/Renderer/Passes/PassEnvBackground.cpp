@@ -29,7 +29,7 @@ namespace PK::App
     void PassEnvBackground::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
-        auto& settings = view->settingsRef->EnvBackgroundSettings;
+        auto& settings = view->settings.EnvBackgroundSettings;
         view->constants->Set<float>(hash->pk_SceneEnv_Exposure, settings.Exposure);
 
         auto texture = settings.EnvironmentTextureAsset != nullptr ? 

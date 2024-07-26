@@ -14,7 +14,6 @@ namespace PK::App
     PK_YAML_STRUCT_END()
 
     PK_YAML_ASSET_BEGIN(BaseRendererConfig, ".cfg")
-        PK_YAML_MEMBER(bool, EnableFrameRateLog, true)
         PK_YAML_MEMBER(float, TimeScale, 1.0f)
         PK_YAML_MEMBER_INLINE_STRUCT(WindowConfig, WindowDesc)
         PK_YAML_MEMBER(YAML::CVariableCollection, ConsoleVariables, {})

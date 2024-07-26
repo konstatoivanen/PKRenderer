@@ -26,7 +26,7 @@ namespace PK::App
     void PassAutoExposure::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
-        auto& settings = view->settingsRef->AutoExposureSettings;
+        auto& settings = view->settings.AutoExposureSettings;
         view->constants->Set<float>(hash->pk_AutoExposure_MinLogLuma, settings.LuminanceMin);
         view->constants->Set<float>(hash->pk_AutoExposure_InvLogLumaRange, 1.0f / settings.LuminanceRange);
         view->constants->Set<float>(hash->pk_AutoExposure_LogLumaRange, settings.LuminanceRange);

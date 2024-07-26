@@ -49,7 +49,7 @@ namespace PK::App
     void PassVolumeFog::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
-        auto& settings = view->settingsRef->FogSettings;
+        auto& settings = view->settings.FogSettings;
         view->constants->Set<float4>(hash->pk_Fog_Albedo, float4(settings.Albedo, 1.0f));
         view->constants->Set<float4>(hash->pk_Fog_Absorption, float4(settings.Absorption, 1.0f));
         view->constants->Set<float4>(hash->pk_Fog_WindDirSpeed, float4(settings.WindDirection, settings.WindSpeed));
