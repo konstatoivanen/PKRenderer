@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/Utilities/Bitmask.h"
 #include "Core/Utilities/Parsing.h"
+#include "Core/Math/FunctionsColor.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "App/Renderer/IGUIRenderer.h"
@@ -76,17 +77,18 @@ namespace PK::App
     {
         // @TODO this is pretty hacky & hard coded. fix later
         auto renderArea = gui->GetRenderAreaRect();
-        auto boxRect = short4(4, 76, 16 + 96 * 4, -72);
+        auto boxRect = short4(4, 78, renderArea.z - 8, -74);
 
-        auto barRect = short4(boxRect.x + 8, boxRect.y + boxRect.w + 4, 2, 1);
+        auto barRect = short4(boxRect.x + 8, boxRect.y + boxRect.w + 7, 2, 1);
         auto barSpacing = 2;
-        auto barHeightRange = 32;
+        auto barHeightRange = 38;
         auto barCount = (boxRect.z - 16) / barSpacing;
 
+        m_timeHistoryHead %= barCount;
         m_timeHistory.resize(barCount);
         m_timeHistory.at(m_timeHistoryHead) = m_framerate.frameMs;
 
-        auto minHistoryTime = glm::max(0.0, 1000.0 / m_framerate.framerateMax);
+        auto minHistoryTime = glm::max(1e-4, 1000.0 / m_framerate.framerateMax);
         auto maxHistoryTime = glm::max(1e-4, 1000.0 / m_framerate.framerateMin);
         auto avgHistoryTime = glm::max(1e-4, 1000.0 / m_framerate.framerateAvg);
 
@@ -96,30 +98,32 @@ namespace PK::App
             maxHistoryTime = glm::max(maxHistoryTime, m_timeHistory.at(i));
         }
 
-        auto textFramerate = Parse::FormatToString("FPS:   %i", m_framerate.framerate);
+        auto textFramerate = Parse::FormatToString("FPS: %i", m_framerate.framerate);
         auto textFramerateAvg = Parse::FormatToString("Avg: %4.2fms", avgHistoryTime);
         auto textFramerateMin = Parse::FormatToString("Min: %4.2fms", minHistoryTime);
         auto textFramerateMax = Parse::FormatToString("Max: %4.2fms", maxHistoryTime);
 
-        gui->DrawRect(color32(0,0,0,127), boxRect);
+        gui->DrawRect(color32(0,0,0,192), boxRect);
+        gui->DrawWireRect(color32(255, 255, 255, 64), boxRect, 1);
         gui->DrawText(color32(255,255,255,127), boxRect.xy + short2(12, -3), textFramerate.c_str(), 16.0f);
-        gui->DrawText(color32(255,255,255,127), boxRect.xy + short2(12 + 96 * 1, -3), textFramerateAvg.c_str(), 16.0f);
-        gui->DrawText(color32(  0,255,  0,127), boxRect.xy + short2(12 + 96 * 2, -3), textFramerateMin.c_str(), 16.0f);
-        gui->DrawText(color32(255,  0,  0,127), boxRect.xy + short2(12 + 96 * 3, -3), textFramerateMax.c_str(), 16.0f);
-    
-        gui->DrawRect(color32(0, 255, 0, 127), short4(boxRect.x + 8, boxRect.y + boxRect.w + 4, boxRect.z - 16, 1));
-        gui->DrawRect(color32(255, 0, 0, 127), short4(boxRect.x + 8, boxRect.y - 36, boxRect.z - 16, 1));
+        gui->DrawText(color32(255,255,255,127), boxRect.xy + short2(12 + 72, -3), textFramerateAvg.c_str(), 16.0f);
+        gui->DrawText(color32(  0,255,  0,127), boxRect.xy + short2(12 + 72 + 100  * 1, -3), textFramerateMin.c_str(), 16.0f);
+        gui->DrawText(color32(255,  0,  0,127), boxRect.xy + short2(12 + 72 + 100 * 2, -3), textFramerateMax.c_str(), 16.0f);
+
+        gui->DrawRect(color32(0, 255, 0, 127), short4(boxRect.x + 8, barRect.y, boxRect.z - 16, 1));
+        gui->DrawRect(color32(127, 127, 127, 127), short4(boxRect.x + 8, barRect.y + barHeightRange / 2, boxRect.z - 16, 1));
+        gui->DrawRect(color32(255, 0, 0, 127), short4(boxRect.x + 8, barRect.y + barHeightRange, boxRect.z - 16, 1));
 
         for (auto i = 0; i < barCount; ++i)
         {
             auto time = m_timeHistory.at((m_timeHistoryHead + i + 1) % barCount);
-            auto height = glm::round(barHeightRange * (time - minHistoryTime) / (maxHistoryTime - minHistoryTime));
-            gui->DrawRect(color32(255, 255, 255, 64), short4(barRect.x + barSpacing * i, barRect.y, barRect.z, height));
+            auto interp = (time - minHistoryTime) / (maxHistoryTime - minHistoryTime);
+            auto height = (int)glm::round(barHeightRange * interp);
+            auto color = Math::HueToRGB32((1.0f - interp) / 3.0f);
+            gui->DrawRect(color32(color.r, color.g, color.b, 127), short4(barRect.x + barSpacing * i, barRect.y, barRect.z, height));
         }
 
         m_timeHistoryHead++;
-        m_timeHistoryHead %= barCount;
-        
+        m_timeHistoryHead %= barCount;   
     }
-
 }

@@ -5,7 +5,9 @@ namespace PK::Math
 {
     color HexToRGB(uint32_t hex);
     color HueToRGB(float hue);
+    color32 HueToRGB32(float hue);
     color NormalizeColor(const color& color);
+    color32 ColorTo32(const color& color);
     // CIE xy chromaticity to CAT02 LMS.
     // http://en.wikipedia.org/wiki/LMS_color_space#CAT02
     float3 CIExyToLMS(float x, float y);

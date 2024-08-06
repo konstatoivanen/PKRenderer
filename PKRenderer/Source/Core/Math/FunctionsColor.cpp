@@ -16,10 +16,20 @@ namespace PK::Math
         return float4(glm::clamp(float3(R, G, B), PK_FLOAT3_ZERO, PK_FLOAT3_ONE), 1.0f);
     }
 
+    color32 HueToRGB32(float hue)
+    {
+        return ColorTo32(HueToRGB(hue));
+    }
+
     color NormalizeColor(const color& c)
     {
         auto sum = (c.r + c.g + c.b) / 3.0f;
         return sum < std::numeric_limits<float>().epsilon() ? PK_COLOR_WHITE : color(c.r / sum, c.g / sum, c.b / sum, 1.0f);
+    }
+
+    color32 ColorTo32(const color& color)
+    {
+        return color32(color.r * 255, color.g * 255, color.b * 255, color.a * 255);;
     }
 
     float3 CIExyToLMS(float x, float y)

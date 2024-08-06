@@ -37,6 +37,7 @@ namespace PK::App
         CVariableRegister::Create<bool*>("Engine.GUI.Enabled", &m_enabled, "0 = 0ff, 1 = On", 1u);
         CVariableRegister::Create<CVariableFuncSimple>("Engine.GUI.Toggle", [this]() { m_enabled^= true; });
     }
+
     void EngineGUIRenderer::Step(RenderPipelineEvent* renderEvent)
     {
         if (!m_enabled)
@@ -149,6 +150,46 @@ namespace PK::App
     void EngineGUIRenderer::DrawRect(const color32& color, const short4& rect)
     {
         DrawRect(color, rect, PK_SHORT4_ZERO, TEX_INDEX_WHITE);
+    }
+
+    void EngineGUIRenderer::DrawWireRect(const color32& color, const short4& rect, short inset)
+    {
+        auto idxv = m_vertexCount;
+        auto idxi = m_indexCount;
+        m_vertexCount += 8u;
+        m_indexCount += 24u;
+
+        if (m_vertexCount <= MAX_VERTICES && m_indexCount <= MAX_INDICES)
+        {
+            const short4 inner = short4(rect.x + inset, rect.y - inset, rect.x + rect.z - inset, rect.y + rect.w + inset);
+            const short4 outer = short4(rect.x, rect.y, rect.x + rect.z, rect.y + rect.w);
+
+            for (auto i = 0u; i < 4; ++i)
+            {
+                auto base0 = idxv + i * 2u;
+                auto base1 = idxv + ((i + 1u) % 4u) * 2u;
+
+                m_indexView[idxi++] = base0 + 0;
+                m_indexView[idxi++] = base0 + 1;
+                m_indexView[idxi++] = base1 + 1;
+
+                m_indexView[idxi++] = base1 + 1;
+                m_indexView[idxi++] = base1 + 0;
+                m_indexView[idxi++] = base0 + 0;
+            }
+
+            m_vertexView[idxv++] = { color, outer.xy, PK_USHORT2_ZERO, 0, 0u };
+            m_vertexView[idxv++] = { color, inner.xy, PK_USHORT2_ZERO, 0, 0u };
+
+            m_vertexView[idxv++] = { color, outer.xw, PK_USHORT2_ZERO, 0, 0u };
+            m_vertexView[idxv++] = { color, inner.xw, PK_USHORT2_ZERO, 0, 0u };
+            
+            m_vertexView[idxv++] = { color, outer.zw, PK_USHORT2_ZERO, 0, 0u };
+            m_vertexView[idxv++] = { color, inner.zw, PK_USHORT2_ZERO, 0, 0u };
+            
+            m_vertexView[idxv++] = { color, outer.zy, PK_USHORT2_ZERO, 0, 0u };
+            m_vertexView[idxv++] = { color, inner.zy, PK_USHORT2_ZERO, 0, 0u };
+        }
     }
 
     void EngineGUIRenderer::DrawText(const color32& color, const short2& coord, const char* text, TextAlign alignx, TextAlign aligny, float size, float lineSpacing)

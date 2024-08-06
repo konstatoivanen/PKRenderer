@@ -31,6 +31,7 @@ namespace PK::App
         virtual void DrawRect(const color32& color, const short4& screenRect, const ushort4& textureRect, RHITexture* texture) final;
         virtual void DrawRect(const color32& color, const short4& screenRect, const ushort4& textureRect, uint16_t textureIndex) final;
         virtual void DrawRect(const color32& color, const short4& screenRect) final;
+        virtual void DrawWireRect(const color32& color, const short4& rect, short inset) final;
         virtual void DrawText(const color32& color, const short2& coord, const char* text, TextAlign alignx, TextAlign aligny, float size = 1.0f, float lineSpacing = 1.0f) final;
         virtual void DrawText(const color32& color, const short2& coord, const char* text, float size = 1.0f, float lineSpacing = 1.0f) final;
 
