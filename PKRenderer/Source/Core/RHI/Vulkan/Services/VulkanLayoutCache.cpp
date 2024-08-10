@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Utilities/Parsing.h"
 #include "VulkanLayoutCache.h"
 
 namespace PK
@@ -37,7 +38,7 @@ namespace PK
         }
 
         bindingFlagsInfo.bindingCount = layoutCreateInfo.bindingCount = count;
-        auto layoutName = std::string("SetLayout") + std::string(index < 10u ? "0" : "") + std::to_string(index);
+        auto layoutName = Parse::FormatToString("SetLayout%02d", index);
         auto value = m_setLayoutPool.New(m_device, layoutCreateInfo, (VkShaderStageFlagBits)key.stageFlags, layoutName.c_str());
         m_setlayouts.SetValueAt(index, value);
         return value;

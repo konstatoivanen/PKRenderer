@@ -6,7 +6,7 @@
 namespace PK
 {
     // @TODO Refactor ray tracing pipelines & sbts to allow for more flexible arrangment
-    // This should be a temporary utility class for handling pipeline versioning
+    // This should be a "temporary" utility class for handling pipeline versioning
     struct ShaderBindingTable : public NoCopy
     {
         RHIBufferRef buffer = nullptr;

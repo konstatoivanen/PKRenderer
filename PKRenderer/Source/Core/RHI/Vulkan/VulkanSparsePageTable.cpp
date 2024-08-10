@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Utilities/Parsing.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanSparsePageTable.h"
@@ -23,7 +24,7 @@ namespace PK
 
     VulkanSparsePageTable::Page* VulkanSparsePageTable::CreatePage(Page* next, size_t start, size_t end, std::vector<VkSparseMemoryBind>& outBindIfos)
     {
-        auto name = m_name + std::string(".Page(") + std::to_string(start) + std::string("-") + std::to_string(end) + std::string(")");
+        auto name = Parse::FormatToString("%s.Page(%lli-%lli)", m_name.c_str(), start, end);
 
         auto page = m_pages.New(m_driver->device,
             m_driver->allocator,

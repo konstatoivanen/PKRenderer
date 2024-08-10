@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Math/FunctionsMisc.h"
+#include "Core/Utilities/Parsing.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
@@ -126,7 +127,7 @@ namespace PK
             submesh->indexFirst = data->regular.pSubmeshes[i].indexFirst + staticMesh->indexFirst;
             submesh->indexCount = data->regular.pSubmeshes[i].indexCount;
             submesh->bounds = data->regular.pSubmeshes[i].bounds;
-            submesh->name = data->name.to_string() + std::string(".Submesh") + std::to_string(i);
+            submesh->name = Parse::FormatToString("%s.Submesh%u", data->name.c_str(), i);
         }
 
         for (auto i = 0u; i < staticMesh->meshletCount; ++i)

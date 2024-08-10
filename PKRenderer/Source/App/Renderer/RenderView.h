@@ -106,7 +106,6 @@ namespace PK::App
         TimeFrameInfo timeRender;
         TimeFrameInfo timeResize;
 
-
         inline uint3 GetResolution() const { return gbuffers.GetResolution(); }
         inline GBuffersFull::View GetGBuffersFullView() { return gbuffers.GetView(); }
     };

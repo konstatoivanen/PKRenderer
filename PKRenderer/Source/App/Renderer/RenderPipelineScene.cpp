@@ -302,7 +302,7 @@ namespace PK::App
 
         // Gbuffer pass & possible depth writes from invalid z culls.
         cmdgraphics.SetRenderTarget({ gbuffers.current.depth, gbuffers.current.normals, gbuffers.current.depthBiased }, true);
-        cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
+        cmdgraphics->ClearColor(float4(0.5f, 0.5f, 0.0f, 0.0f), 0);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 1);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 2);
 
@@ -316,7 +316,7 @@ namespace PK::App
         m_autoExposure.Render(cmdcompute, m_bloom.GetTexture());
         m_depthOfField.ComputeAutoFocus(cmdcompute, resolution.y);
         m_passVolumeFog.ComputeDensity(cmdcompute, resolution);
-        m_passEnvBackground.ComputeSH(cmdcompute);
+        m_passEnvBackground.PreCompute(cmdcompute);
         m_passSceneGI.VoxelMips(cmdcompute);
         m_passSceneGI.ValidateReservoirs(cmdcompute);
         queues->Submit(QueueType::Compute, &cmdcompute);

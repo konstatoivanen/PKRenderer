@@ -34,12 +34,12 @@ void main()
         for (int i = 0; i < 2; ++i)
         {
             depths[i] = float4
-                (
-                    SampleHiZ(coord * 2 + int2(0, 0), i, 4),
-                    SampleHiZ(coord * 2 + int2(0, 1), i, 4),
-                    SampleHiZ(coord * 2 + int2(1, 1), i, 4),
-                    SampleHiZ(coord * 2 + int2(1, 0), i, 4)
-                    );
+            (
+                SampleHiZ(coord * 2 + int2(0, 0), i, 4),
+                SampleHiZ(coord * 2 + int2(0, 1), i, 4),
+                SampleHiZ(coord * 2 + int2(1, 1), i, 4),
+                SampleHiZ(coord * 2 + int2(1, 0), i, 4)
+            );
         }
 
         local_depth.x = cmin(depths[0]);

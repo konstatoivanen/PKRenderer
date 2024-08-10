@@ -93,14 +93,14 @@ float4 VFog_Apply(float2 uv, float viewDepth, float3 color)
     return float4(scatter.rgb + color * transmittance, dot(transmittance, 0.333f.xxx));
 }
 
-void VFog_ApplySky(float3 viewdir, inout float3 color)
+void VFog_GetSky(float3 viewdir, inout float3 irradiance, inout float3 transmittance)
 {
     float density = pk_Fog_Density_Sky_Constant;
     density += min(exp(pk_Fog_Density_Sky_HeightExponent * -(viewdir.y + pk_Fog_Density_Sky_HeightOffset)) * pk_Fog_Density_Sky_HeightAmount, 1e+3f);
     density = max(density * pk_Fog_Density_Amount, VOLUMEFOG_MIN_DENSITY);
 
     const float occlusion = viewdir.y * 0.5f + 0.5f;
-    float3 irradiance = pk_Fog_Albedo.rgb * occlusion * SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Phase1);
+    irradiance = pk_Fog_Albedo.rgb * occlusion * SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Phase1);
 
     // @TODO refactor to use somekind of global light cluster for this.
     // For now get the first light as it is likely a directional light
@@ -112,6 +112,12 @@ void VFog_ApplySky(float3 viewdir, inout float3 color)
     }
 
     const float virtualDistance = 1000.0f;
-    const float3 transmittance = exp(-density * pk_Fog_Absorption.rgb * virtualDistance);
-    color = irradiance * (1.0f - transmittance) + color * transmittance;
+    transmittance = exp(-density * pk_Fog_Absorption.rgb * virtualDistance);
+}
+
+float3 VFog_ApplySky(float3 viewdir, float3 color)
+{
+    float3 irrad, trans;
+    VFog_GetSky(viewdir, irrad, trans);
+    return lerp(irrad, color, trans);
 }

@@ -2023,7 +2023,7 @@
     <None Include="Content\Configs\Input.keycfg" />
     <None Include="Content\Shaders\includes\Utilities.glsl" />
     <None Include="Content\Shaders\includes\Common.glsl" />
-    <None Include="Content\Shaders\VS_EnvBackground.shader" />
+    <None Include="Content\Shaders\CS_EnvIntegrate.shader" />
     <None Include="Content\Shaders\includes\Encoding.glsl" />
     <None Include="Content\Shaders\includes\Lighting.glsl" />
     <None Include="Content\Textures\T_OEM_Quarry.ktx2" />
@@ -2139,7 +2139,7 @@
     <None Include="Content\Shaders\CS_HierachicalDepth.shader" />
     <None Include="Content\Shaders\CS_CompressBC6H.shader" />
     <None Include="Content\Shaders\includes\CTASwizzling.glsl" />
-    <None Include="Content\Shaders\CS_IntegrateEnvSH.shader" />
+    <None Include="Content\Shaders\CS_EnvSH.shader" />
     <None Include="Content\Shaders\includes\SceneEnv.glsl" />
     <None Include="Content\Shaders\includes\TricubicSampler.glsl" />
     <None Include="Content\Shaders\CS_GI_ShadeHits.shader" />
@@ -2163,6 +2163,7 @@
     <None Include="Content\Textures\T_Bloom_LensDirt2.ktx2" />
     <None Include="Content\Configs\DebugEngine.cfg" />
     <None Include="Content\Shaders\VS_GUI.shader" />
+    <None Include="Content\Shaders\VS_EnvBackground.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glm\detail\glm.cpp">
@@ -2517,5 +2518,6 @@
   </ItemGroup>
   <ItemGroup>
     <Font Include="Content\Fonts\Helvetica.ttf" />
+    <Font Include="Content\Fonts\FSEX302.ttf" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Utilities/Parsing.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanSwapchain.h"
@@ -120,7 +121,8 @@ namespace PK
             imageViewCreateInfo.subresourceRange.levelCount = 1;
             imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
             imageViewCreateInfo.subresourceRange.layerCount = 1;
-            m_imageViews[i] = RHIDriver::Get()->GetNative<VulkanDriver>()->imageViewPool.New(m_device, imageViewCreateInfo, (std::string("Swapchain.Image") + std::to_string(i)).c_str());
+            auto name = Parse::FormatToString("Swapchain.Image%lli", i);
+            m_imageViews[i] = RHIDriver::Get()->GetNative<VulkanDriver>()->imageViewPool.New(m_device, imageViewCreateInfo, name.c_str());
         }
 
         for (size_t i = 0u; i < m_imageCount; ++i)

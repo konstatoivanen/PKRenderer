@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <filesystem>
 #include <PKAssets/PKAssetLoader.h>
+#include "Core/Utilities/Parsing.h"
 #include "Core/Utilities/PropertyBlock.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
@@ -157,12 +158,13 @@ namespace PK
 
             for (const auto& prop : m_materialPropertyLayout)
             {
-                meta.append("   " + prop.name.to_string());
-                meta.append("," + std::to_string((uint32_t)prop.format));
-                meta.append("," + std::to_string(prop.count));
-                meta.append("," + std::to_string(prop.location));
-                meta.append("," + std::to_string(prop.offset));
-                meta.append("," + std::to_string(prop.alignedOffset) + "\n");
+                meta.append(Parse::FormatToString("   %s,%u,%u,%u,%u,%u\n", 
+                    prop.name.c_str(), 
+                    (uint32_t)prop.format, 
+                    prop.count, 
+                    prop.location, 
+                    prop.offset, 
+                    prop.alignedOffset));
             }
         }
 
@@ -192,7 +194,7 @@ namespace PK
         for (auto j = 0u; j < m_map.variantcount; ++j)
         {
             auto index = j;
-            meta.append("   Variant: " + std::to_string(j) + "\n");
+            meta.append(Parse::FormatToString("   Variant: %u\n", j));
             meta.append("       Keywords:");
 
             for (auto i = 0u; i < keywordlist.size(); ++i)
@@ -217,25 +219,25 @@ namespace PK
 
             for (auto& element : shader->GetVertexLayout())
             {
-                meta.append("       " + element->name.to_string() + ", " + std::to_string(element->location) + ", " + std::to_string((uint32_t)element->format) + "\n");
+                meta.append(Parse::FormatToString("       %s, %u, %u\n", + element->name.c_str(), element->location, (uint32_t)element->format));
             }
 
             meta.append("       Dynamic Constants:\n");
 
             for (auto& element : shader->GetPushConstantLayout())
             {
-                meta.append("       " + element->name.to_string() + ", " + std::to_string(element->offset) + ", " + std::to_string((uint32_t)element->size) + "\n");
+                meta.append(Parse::FormatToString("       %s, %u, %u\n", element->name.c_str(), element->offset, (uint32_t)element->size));
             }
 
             for (auto i = 0u; i < PK_RHI_MAX_DESCRIPTOR_SETS; ++i)
             {
                 auto& set = shader->GetResourceLayout(i);
 
-                meta.append("       Descriptor Set " + std::to_string(i) + ":\n");
+                meta.append(Parse::FormatToString("       Descriptor Set %u:\n", i));
 
                 for (auto& element : set)
                 {
-                    meta.append("       " + element->name.to_string() + ", " + std::to_string((uint32_t)element->type) + "\n");
+                    meta.append(Parse::FormatToString("       %s, %u\n", element->name.c_str(), (uint32_t)element->type));
                 }
             }
         }

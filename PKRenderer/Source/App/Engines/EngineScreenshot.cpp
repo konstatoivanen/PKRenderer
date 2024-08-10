@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include <filesystem>
+#include "Core/Utilities/Parsing.h"
 #include "Core/Utilities/FileIOBMP.h"
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
@@ -75,7 +76,7 @@ namespace PK::App
 
         while (std::filesystem::exists(filename))
         {
-            filename = std::string("Screenshot") + std::to_string(++index) + std::string(".bmp");
+            filename = Parse::FormatToString("Screenshot%i.bmp", ++index);
         }
 
         PK::FileIO::WriteBMP(filename.c_str(), pixels, m_captureResolution.x, m_captureResolution.y);

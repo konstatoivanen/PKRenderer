@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Utilities/Parsing.h"
 #include "VulkanSamplerCache.h"
 
 namespace PK
@@ -25,7 +26,7 @@ namespace PK
         }
 
         auto sampler = &m_samplers.GetValueAt(index);
-        auto name = std::string("Sampler") + std::to_string(index);
+        auto name = Parse::FormatToString("Sampler%u", index);
         *sampler = m_samplerPool.New(m_device, descriptor, name.c_str());
 
         auto bindHandle = m_bindhandlePool.New();

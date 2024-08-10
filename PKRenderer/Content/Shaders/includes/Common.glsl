@@ -40,6 +40,7 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     uint2 pk_ScreenSize;            // xy = current screen size
     uint2 pk_FrameIndex;            // x = frame index since load, y = frame index since resize
 
+    // @TODO redudant in here. remove
     float pk_SceneEnv_Exposure; // Scene background environment exposure
     
     // GI Parameters
@@ -109,8 +110,6 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 
     uint pk_PostEffectsFeatureMask;
 };
-
-#define PK_SCENE_ENV_EXPOSURE pk_SceneEnv_Exposure
 
 #if !defined(PK_INSTANCING_ENABLED)
 PK_DECLARE_CBUFFER(pk_ModelMatrices, PK_SET_DRAW)

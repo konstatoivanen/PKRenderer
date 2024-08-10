@@ -31,7 +31,5 @@ void MainFs()
 {
     const float3 viewdir = normalize(vs_TEXCOORD0);
     const float2 octaUV = OctaUV(viewdir);
-    float3 color = SampleEnvironment(octaUV, 0.0f);
-    VFog_ApplySky(viewdir, color);
-    SV_Target0 = float4(color, 1.0f);
+    SV_Target0 = float4(SampleEnvironment(octaUV, 0.0f), 1.0f);
 }

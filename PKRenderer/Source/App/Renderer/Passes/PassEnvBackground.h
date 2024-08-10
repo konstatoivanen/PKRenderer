@@ -10,13 +10,19 @@ namespace PK::App
         public:
             PassEnvBackground(AssetDatabase* assetDatabase);
             void SetViewConstants(struct RenderView* view);
-            void ComputeSH(CommandBufferExt cmd);
+            // @TODO use this to add dirty checks for directional light
+            void SetDirty() { m_isDirty = true; }
+            void PreCompute(CommandBufferExt cmd);
             void RenderBackground(CommandBufferExt cmd);
 
         private:
-            RHITexture* m_backgroundTexture = nullptr;
             ShaderAsset* m_backgroundShader = nullptr;
-            ShaderAsset* m_integrateSHShader = nullptr;
+            ShaderAsset* m_shShader = nullptr;
+            ShaderAsset* m_integrateShader = nullptr;
+            
+            RHITexture* m_sourceTexture = nullptr;
+            RHITextureRef m_backgroundTexture = nullptr;
             RHIBufferRef m_shBuffer;
+            bool m_isDirty = false;
     };
 }

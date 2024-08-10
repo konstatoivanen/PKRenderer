@@ -13,7 +13,7 @@ InputKeyCommands:
     - ["Escape", "Application.Close"]
     - ["F11", "Application.Fullscreen.Toggle"]
     - ["R", "AssetDatabase.Reload.Cached.All.ShaderAsset"]
-    - ["C", "AssetDatabase.Reload.Cached.All.RendererConfig"]
+    - ["C", "AssetDatabase.Reload.Cached.All.EngineDebugConfig"]
     - ["Z", "AssetDatabase.Reload.Cached.All.InputKeyConfig"]
     - ["X", "Application.Run.Executable PKAssetTools.exe '../../PKRenderer/Content/' 'Content/'"]
     - ["V", "Application.Vsync.Toggle"]

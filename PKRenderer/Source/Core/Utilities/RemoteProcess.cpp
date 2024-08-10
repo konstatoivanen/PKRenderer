@@ -1,7 +1,8 @@
 #include "PrecompiledHeader.h"
-#include "RemoteProcess.h"
 #include <codecvt>
 #include <locale>
+#include "Core/Utilities/Parsing.h"
+#include "RemoteProcess.h"
 
 namespace PK
 {
@@ -52,7 +53,7 @@ namespace PK
 
         if (result == 0)
         {
-            outError = "Execute remote processs failed with error code:" + std::to_string(GetLastError());
+            outError = Parse::FormatToString("Execute remote processs failed with error code: %lli", GetLastError());
             return false;
         }
 

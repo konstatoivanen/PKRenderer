@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <gfx.h>
 #include "Core/Utilities/Handle.h"
+#include "Core/Utilities/Parsing.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanBuffer.h"
 #include "Core/RHI/Vulkan/VulkanTexture.h"
@@ -251,10 +252,7 @@ namespace PK
     {
         auto supportedMajor = VK_VERSION_MAJOR(apiVersion);
         auto supportedMinor = VK_VERSION_MINOR(apiVersion);
-        return std::string(" - Vulkan ") +
-            std::to_string(supportedMajor) +
-            std::string(".") +
-            std::to_string(supportedMinor);
+        return Parse::FormatToString(" - Vulkan %u.%u", supportedMajor, supportedMinor);
     }
 
     RHIDriverMemoryInfo VulkanDriver::GetMemoryInfo() const
