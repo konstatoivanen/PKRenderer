@@ -38,6 +38,7 @@ namespace PK::App
         auto& settings = view->settings.FilmGrainSettings;
         view->constants->Set<float>(hash->pk_FilmGrain_Luminance, settings.Luminance);
         view->constants->Set<float>(hash->pk_FilmGrain_Intensity, settings.Intensity);
+        view->constants->Set<float>(hash->pk_FilmGrain_ExposureSensitivity, settings.ExposureSensitivity);
     }
 
     void PassFilmGrain::Compute(CommandBufferExt cmd)

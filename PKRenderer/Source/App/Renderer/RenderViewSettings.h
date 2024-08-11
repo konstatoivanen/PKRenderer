@@ -44,6 +44,7 @@ namespace PK::App
     PK_YAML_STRUCT_BEGIN(FilmGrainSettings)
         PK_YAML_MEMBER(float, Intensity, 0.25f)
         PK_YAML_MEMBER(float, Luminance, 0.25f)
+        PK_YAML_MEMBER(float, ExposureSensitivity, 1.0f)
     PK_YAML_STRUCT_END()
 
     PK_YAML_STRUCT_BEGIN(VignetteSettings)

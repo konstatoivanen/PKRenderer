@@ -123,6 +123,7 @@ namespace PK::App
             // Film grain
             { ElementType::Float, hash->pk_FilmGrain_Luminance },
             { ElementType::Float, hash->pk_FilmGrain_Intensity },
+            { ElementType::Float, hash->pk_FilmGrain_ExposureSensitivity },
 
             // Auto exposure
             { ElementType::Float, hash->pk_AutoExposure_LogLumaRange },

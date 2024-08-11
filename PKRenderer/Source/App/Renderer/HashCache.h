@@ -125,6 +125,7 @@ namespace PK::App
 
         DECLARE_HASH(pk_FilmGrain_Luminance)
         DECLARE_HASH(pk_FilmGrain_Intensity)
+        DECLARE_HASH(pk_FilmGrain_ExposureSensitivity)
         DECLARE_HASH(pk_FilmGrain_Texture)
 
         DECLARE_HASH(pk_CC_WhiteBalance)
