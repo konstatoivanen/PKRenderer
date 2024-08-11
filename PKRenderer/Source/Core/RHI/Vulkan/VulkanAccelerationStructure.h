@@ -81,6 +81,8 @@ namespace PK
             VulkanBindHandle m_bindHandle{};
             uint32_t m_instanceCount = 0u;
             uint32_t m_instanceLimit = 0u;
+            uint64_t m_instanceHashCur = 0u;
+            uint64_t m_instanceHashNew = 0u;
             VkDeviceSize m_instanceBufferOffset = 0ull;
             VkAccelerationStructureInstanceKHR* m_writeBuffer = nullptr;
             VkDeviceSize m_queryResults[MAX_SUBSTRUCTURES]{};

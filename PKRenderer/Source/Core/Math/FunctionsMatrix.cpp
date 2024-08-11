@@ -164,6 +164,23 @@ namespace PK::Math
         return m;
     }
 
+    uint64_t GetMatrixHash(const float3x4& matrix, float precision)
+    {
+        uint64_t h = 14695981039346656037ULL;
+
+        for (auto i = 0u; i < 3u; ++i)
+        {
+            h ^= (uint64_t)(matrix[i][0] / precision);
+            h *= 1099511628211ULL;
+            h ^= (uint64_t)(matrix[i][1] / precision);
+            h *= 1099511628211ULL;
+            h ^= (uint64_t)(matrix[i][2] / precision);
+            h *= 1099511628211ULL;
+        }
+
+        return h;
+    }
+
     // Produces Reverse Z
     float4x4 GetPerspective(float fov, float aspect, float zNear, float zFar)
     {

@@ -17,7 +17,7 @@ namespace PK::App
         PK_LOG_SCOPE_INDENT(local);
 
         m_compute = assetDatabase->Find<ShaderAsset>("CS_AutoExposure");
-        m_histogram = RHI::CreateBuffer<uint>(257ull, BufferUsage::DefaultStorage, "Histogram");
+        m_histogram = RHI::CreateBuffer<uint>(258ull, BufferUsage::DefaultStorage, "Histogram");
         m_passHistogramBins = m_compute->GetRHIIndex("PASS_HISTOGRAM");
         m_passHistogramAvg = m_compute->GetRHIIndex("PASS_AVG");
         RHI::SetBuffer(HashCache::Get()->pk_AutoExposure_Histogram, m_histogram.get());
@@ -27,9 +27,9 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
         auto& settings = view->settings.AutoExposureSettings;
-        view->constants->Set<float>(hash->pk_AutoExposure_MinLogLuma, settings.LuminanceMin);
-        view->constants->Set<float>(hash->pk_AutoExposure_InvLogLumaRange, 1.0f / settings.LuminanceRange);
-        view->constants->Set<float>(hash->pk_AutoExposure_LogLumaRange, settings.LuminanceRange);
+        view->constants->Set<float>(hash->pk_AutoExposure_LogLumaRange, settings.LogLuminanceRange);
+        view->constants->Set<float>(hash->pk_AutoExposure_Min, settings.ExposureMin);
+        view->constants->Set<float>(hash->pk_AutoExposure_Max, settings.ExposureMax);
         view->constants->Set<float>(hash->pk_AutoExposure_Target, settings.ExposureTarget);
         view->constants->Set<float>(hash->pk_AutoExposure_Speed, settings.ExposureSpeed);
     }
@@ -41,7 +41,7 @@ namespace PK::App
         RHI::SetTexture(HashCache::Get()->pk_Texture, target, 0, 0);
 
         auto res = target->GetResolution();
-        cmd.Dispatch(m_compute, m_passHistogramBins, { res.x, res.y, 1u });
+        cmd.Dispatch(m_compute, m_passHistogramBins, { res.x >> 1u, res.y >> 1u, 1u });
         cmd.Dispatch(m_compute, m_passHistogramAvg, { 1u, 1u, 1u });
         cmd->EndDebugScope();
     }

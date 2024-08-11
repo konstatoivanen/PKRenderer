@@ -237,6 +237,8 @@ namespace PK
 
     bool VulkanBarrierHandler::Resolve(VulkanBarrierInfo* outBarrierInfo)
     {
+        m_globalResolveCounter++;
+
         if (outBarrierInfo == nullptr || (m_bufferBarriers.GetCount() == 0u && m_imageBarriers.GetCount() == 0u))
         {
             return false;

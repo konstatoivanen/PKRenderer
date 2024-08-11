@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Math/FunctionsMisc.h"
+#include "Core/Math/FunctionsMatrix.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 #include "Core/RHI/Vulkan/VulkanBuffer.h"
@@ -261,6 +262,7 @@ namespace PK
         barrier.memoryBarrierCount = 1u;
         barrier.pMemoryBarriers = &memoryBarrier;
         m_cmd->PipelineBarrier(barrier);
+        m_instanceHashCur = 0ull;
     }
 
     void VulkanAccelerationStructure::BeginWrite(QueueType queue, uint32_t instanceLimit)
@@ -270,6 +272,7 @@ namespace PK
         m_cmd = m_driver->queues->GetQueue(queue)->commandPool->GetCurrent();
         m_instanceLimit = instanceLimit;
         m_instanceCount = 0u;
+        m_instanceHashNew = 0u;
 
         auto inputBufferStride = sizeof(VkAccelerationStructureInstanceKHR) * m_instanceLimit;
         auto inputBufferSize = inputBufferStride * PK_RHI_MAX_FRAMES_IN_FLIGHT;
@@ -300,6 +303,7 @@ namespace PK
         instance->instanceShaderBindingTableRecordOffset = 0;
         instance->flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
         instance->accelerationStructureReference = GetGeometryIndex(geometry);
+        m_instanceHashNew += Math::GetMatrixHash(matrix) * (instance->accelerationStructureReference + 1ull);
     }
 
     void VulkanAccelerationStructure::EndWrite()
@@ -320,11 +324,17 @@ namespace PK
         m_instanceInputBuffer->EndMap(m_instanceBufferOffset, sizeof(VkAccelerationStructureInstanceKHR) * m_instanceLimit);
         m_writeBuffer = nullptr;
 
-        auto buildInfo = m_structure.buildInfo;
-        buildInfo.dstAccelerationStructure = m_structure.raw->structure;
-        buildInfo.scratchData.deviceAddress = m_scratchBuffer->deviceAddress + m_structure.scratchOffset;
-        const auto* pBuildStructureRangeInfo = &m_structure.range;
-        m_cmd->BuildAccelerationStructures(1, &buildInfo, &pBuildStructureRangeInfo);
+        if (m_instanceHashNew != m_instanceHashCur)
+        {
+            m_instanceHashCur = m_instanceHashNew;
+
+            auto buildInfo = m_structure.buildInfo;
+            buildInfo.dstAccelerationStructure = m_structure.raw->structure;
+            buildInfo.scratchData.deviceAddress = m_scratchBuffer->deviceAddress + m_structure.scratchOffset;
+            const auto* pBuildStructureRangeInfo = &m_structure.range;
+            m_cmd->BuildAccelerationStructures(1, &buildInfo, &pBuildStructureRangeInfo);
+        }
+
         m_cmd = nullptr;
     }
 }

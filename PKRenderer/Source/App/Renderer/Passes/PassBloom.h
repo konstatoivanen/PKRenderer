@@ -10,7 +10,6 @@ namespace PK::App
             PassBloom(AssetDatabase* assetDatabase, const uint2& initialResolution);
             void SetViewConstants(struct RenderView* view);
             void Render(CommandBufferExt cmd, RHITexture* source);
-            RHITexture* GetTexture();
 
         private:
             ShaderAsset* m_computeBloom = nullptr;

@@ -84,6 +84,4 @@ namespace PK::App
 
         cmd->EndDebugScope();
     }
-
-    RHITexture* PassBloom::GetTexture() { return m_bloomTexture.get(); }
 }

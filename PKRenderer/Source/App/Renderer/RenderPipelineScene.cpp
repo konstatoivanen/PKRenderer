@@ -125,10 +125,10 @@ namespace PK::App
             { ElementType::Float, hash->pk_FilmGrain_Intensity },
 
             // Auto exposure
-            { ElementType::Float, hash->pk_AutoExposure_MinLogLuma },
-            { ElementType::Float, hash->pk_AutoExposure_InvLogLumaRange },
             { ElementType::Float, hash->pk_AutoExposure_LogLumaRange },
             { ElementType::Float, hash->pk_AutoExposure_Target },
+            { ElementType::Float, hash->pk_AutoExposure_Min },
+            { ElementType::Float, hash->pk_AutoExposure_Max },
             { ElementType::Float, hash->pk_AutoExposure_Speed },
 
             // Bloom
@@ -313,7 +313,7 @@ namespace PK::App
         // Async compute during last present.
         m_passFilmGrain.Compute(cmdcompute);
         m_passLights.ComputeClusters(cmdcompute, context);
-        m_autoExposure.Render(cmdcompute, m_bloom.GetTexture());
+        m_autoExposure.Render(cmdcompute, gbuffers.previous.color);
         m_depthOfField.ComputeAutoFocus(cmdcompute, resolution.y);
         m_passVolumeFog.ComputeDensity(cmdcompute, resolution);
         m_passEnvBackground.PreCompute(cmdcompute);

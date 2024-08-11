@@ -97,7 +97,7 @@ void VFog_GetSky(float3 viewdir, inout float3 irradiance, inout float3 transmitt
 {
     float density = pk_Fog_Density_Sky_Constant;
     density += min(exp(pk_Fog_Density_Sky_HeightExponent * -(viewdir.y + pk_Fog_Density_Sky_HeightOffset)) * pk_Fog_Density_Sky_HeightAmount, 1e+3f);
-    density = max(density * pk_Fog_Density_Amount, VOLUMEFOG_MIN_DENSITY);
+    density = density * pk_Fog_Density_Amount;
 
     const float occlusion = viewdir.y * 0.5f + 0.5f;
     irradiance = pk_Fog_Albedo.rgb * occlusion * SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Phase1);

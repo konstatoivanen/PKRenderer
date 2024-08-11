@@ -34,10 +34,11 @@ namespace PK::App
     PK_YAML_STRUCT_END()
 
     PK_YAML_STRUCT_BEGIN(AutoExposureSettings)
-        PK_YAML_MEMBER(float, LuminanceMin, 1.0f)
-        PK_YAML_MEMBER(float, LuminanceRange, 1.0f)
-        PK_YAML_MEMBER(float, ExposureSpeed, 1.0f)
+        PK_YAML_MEMBER(float, LogLuminanceRange, 1.0f)
+        PK_YAML_MEMBER(float, ExposureMin, 0.01f)
+        PK_YAML_MEMBER(float, ExposureMax, 1.0f)
         PK_YAML_MEMBER(float, ExposureTarget, 1.0f)
+        PK_YAML_MEMBER(float, ExposureSpeed, 1.0f)
     PK_YAML_STRUCT_END()
 
     PK_YAML_STRUCT_BEGIN(FilmGrainSettings)

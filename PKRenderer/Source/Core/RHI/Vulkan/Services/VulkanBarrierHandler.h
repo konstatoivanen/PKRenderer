@@ -85,12 +85,17 @@ namespace PK
                     auto defaultRecord = m_records.New(scope);
                     TInfo<T>::SetDefaultRange(defaultRecord);
                     m_resources.AddValue(key, defaultRecord);
+                    m_resolveTimestamps[index] = 0ull;
                     m_accessTimestamps[index] = 0ull;
                     index = m_resources.GetCount() - 1;
                 }
 
+                auto isSequentialAccess = true;
+
                 if ((options & PK_RHI_ACCESS_OPT_TRANSFER) == 0u)
                 {
+                    isSequentialAccess = (m_globalResolveCounter - m_resolveTimestamps[index]) < 2u;
+                    m_resolveTimestamps[index] = m_globalResolveCounter;
                     m_accessTimestamps[index] = m_globalAccessCounter++;
                     m_accessMask.SetAt(index, true);
                 }
@@ -101,23 +106,21 @@ namespace PK
                 {
                     if (TInfo<T>::IsInclusive((*current)->range, scope.range) &&
                         (*current)->stage == scope.stage &&
-                        (*current)->access == scope.access &&
+                        (*current)->access == scope.access && 
                         (*current)->layout == scope.layout &&
-                        (*current)->queueFamily == scope.queueFamily)
+                        (*current)->queueFamily == scope.queueFamily &&
+                        !(VulkanEnumConvert::IsWriteAccess(scope.access) && isSequentialAccess))
                     {
                         return;
                     }
 
-                    auto r0 = VulkanEnumConvert::IsReadAccess((*current)->access);
-                    auto w0 = VulkanEnumConvert::IsWriteAccess((*current)->access);
-                    auto r1 = VulkanEnumConvert::IsReadAccess(scope.access);
-                    auto w1 = VulkanEnumConvert::IsWriteAccess(scope.access);
-
+                    auto writeCur = VulkanEnumConvert::IsWriteAccess((*current)->access);
+                    auto writeNew = VulkanEnumConvert::IsWriteAccess(scope.access);
                     auto overlap = TInfo<T>::IsOverlap((*current)->range, scope.range);
                     auto adjacent = TInfo<T>::IsAdjacent((*current)->range, scope.range);
                     auto mergeFlags = (*current)->layout == scope.layout && (*current)->queueFamily == scope.queueFamily;
-                    auto mergeOverlap = overlap && (!w1 || (!r0 && !w0)) && (!w0 || (!r1 && !w1));
-                    auto mergeAdjacent = adjacent && w0 == w1 && r0 == r1;
+                    auto mergeOverlap = overlap && !writeCur && !writeNew;
+                    auto mergeAdjacent = adjacent && writeCur == writeNew;
 
                     if (mergeFlags && (mergeOverlap || mergeAdjacent))
                     {
@@ -133,7 +136,8 @@ namespace PK
                         continue;
                     }
         
-                    if (options & PK_RHI_ACCESS_OPT_BARRIER)
+                    // If accesses are padded by at least one command in the same queue we can omit a barrier.
+                    if ((options & PK_RHI_ACCESS_OPT_BARRIER) && (isSequentialAccess || !mergeFlags))
                     {
                         ProcessBarrier<T>(resource, &barrier, **current, record);
                     }
@@ -229,8 +233,10 @@ namespace PK
             FixedList<VkImageMemoryBarrier, 256> m_imageBarriers;
             Bitmask<1024> m_accessMask;
             size_t m_accessTimestamps[1024]{};
+            size_t m_resolveTimestamps[1024]{};
             VkPipelineStageFlags m_sourceStage = 0u;
             VkPipelineStageFlags m_destinationStage = 0u;
             inline static size_t m_globalAccessCounter = 0ull;
+            inline static size_t m_globalResolveCounter = 0ull;
     };
 }

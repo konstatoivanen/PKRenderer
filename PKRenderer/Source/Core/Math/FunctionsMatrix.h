@@ -14,6 +14,7 @@ namespace PK::Math
     float4x4 GetOrtho(float left, float right, float bottom, float top, float zNear, float zFar);
     float3x4 TransposeTo3x4(const float4x4& matrix);
     float4x4 TransposeTo4x4(const float3x4& matrix);
+    uint64_t GetMatrixHash(const float3x4& matrix, float precision = 0.01f);
     inline float GetZFarFromClip(const float4x4& matrix) { return -matrix[3][2] / (matrix[2][2] - PK_CLIPZ_FAR); }
     inline float GetZNearFromClip(const float4x4& matrix) { return -matrix[3][2] / (matrix[2][2] - PK_CLIPZ_NEAR); }
     inline float GetSizeOnScreen(float depth, float sizePerDepth, float radius) { return radius / (sizePerDepth * depth); }

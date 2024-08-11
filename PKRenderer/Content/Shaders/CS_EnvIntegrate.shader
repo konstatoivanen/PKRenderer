@@ -136,15 +136,12 @@ void main()
     // Mip 4
     if (thread == 0u)
     {
-        local_irrad += lds_irrad;
-        local_trans += lds_trans;
-        local_irrad /= 2;
-        local_trans /= 2;
+        local_irrad = (local_irrad + lds_irrad) / 2;
+        local_trans = (local_trans + lds_trans) / 2;
 
         float3 color = textureLod(pk_SceneEnv, baseUv, 4.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(local_irrad, color, local_trans);
 
         imageStore(pk_Image4, coord >> 3, uint4(EncodeE5BGR9(color)));
     }
-
 }

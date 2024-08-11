@@ -108,9 +108,9 @@ namespace PK::App
         DECLARE_HASH(pk_PostEffectsParams)
         DECLARE_HASH(pk_PostEffectsFeatureMask)
 
-        DECLARE_HASH(pk_AutoExposure_MinLogLuma)
-        DECLARE_HASH(pk_AutoExposure_InvLogLumaRange)
         DECLARE_HASH(pk_AutoExposure_LogLumaRange)
+        DECLARE_HASH(pk_AutoExposure_Min)
+        DECLARE_HASH(pk_AutoExposure_Max)
         DECLARE_HASH(pk_AutoExposure_Target)
         DECLARE_HASH(pk_AutoExposure_Speed)
         DECLARE_HASH(pk_AutoExposure_Histogram)

@@ -94,10 +94,10 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float pk_FilmGrain_Luminance;
     float pk_FilmGrain_Intensity;
 
-    float pk_AutoExposure_MinLogLuma;
-    float pk_AutoExposure_InvLogLumaRange;
     float pk_AutoExposure_LogLumaRange;
     float pk_AutoExposure_Target;
+    float pk_AutoExposure_Min;
+    float pk_AutoExposure_Max;
     float pk_AutoExposure_Speed;
 
     float pk_Bloom_Intensity;

@@ -257,6 +257,7 @@ namespace PK
 
     void VulkanCommandBuffer::Dispatch(const uint3& dimensions)
     {
+        BeginDebugScope(m_renderState->GetShaderName(), PK_COLOR_MAGENTA);
         MarkLastCommandStage(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
         EndRenderPass();
         ValidatePipeline();
@@ -267,7 +268,6 @@ namespace PK
         uint32_t groupCountZ = (uint32_t)ceilf(dimensions.z / (float)groupSize.z);
 
         // Add debug scopes to compute calls as they're not otherwise visible in NSight timeline
-        BeginDebugScope(m_renderState->GetShaderName(), PK_COLOR_MAGENTA);
         vkCmdDispatch(m_commandBuffer, groupCountX, groupCountY, groupCountZ);
         EndDebugScope();
     }
