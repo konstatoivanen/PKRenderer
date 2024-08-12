@@ -88,8 +88,6 @@ namespace PK::App
             auto hash = HashCache::Get();
             auto resolution = m_backgroundTexture->GetResolution();
 
-            // @TODO emulate multiple scattering by doing multiple iteration of this nonsense
-            // Figure out whether to include dir light in first iteration.
             RHI::SetTexture(hash->pk_SceneEnv, m_sourceTexture);
             cmd.Dispatch(m_shShader, 0, { 1u, 1u, 1u });
 

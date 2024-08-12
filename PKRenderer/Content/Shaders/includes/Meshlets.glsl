@@ -328,12 +328,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
         uint visibleCount = subgroupBallotBitCount(visibleMask);
     
         payload.visibleMask = visibleMask;
-        //uint deltaIndex = subgroupBallotExclusiveBitCount(visibleMask);
-        //if (isVisible)
-        //{
-        //    payload.deltaIDs[deltaIndex] = byte(meshletLocalIndex);
-        //}
-    
+
         EmitMeshTasksEXT(visibleCount, 1, 1);
     }
 

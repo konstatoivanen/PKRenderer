@@ -189,17 +189,17 @@ namespace PK
     }
 
 
-    void VulkanBarrierHandler::TransferRecords(VulkanBarrierHandler* target)
+    void VulkanBarrierHandler::TransferRecords(VulkanBarrierHandler* source)
     {
-        auto keyValues = m_resources.GetKeyValues();
+        auto keyValues = source->m_resources.GetKeyValues();
 
-        for (auto i = 0u; i < m_resources.GetCount(); ++i)
+        for (auto i = 0u; i < source->m_resources.GetCount(); ++i)
         {
             auto& key = keyValues.nodes[i].key;
-            auto index = target->m_resources.GetIndex(key);
+            auto index = m_resources.GetIndex(key);
 
             // Dont override newer data with older one
-            if (index != -1 && target->m_accessTimestamps[index] >= m_accessTimestamps[i])
+            if (index != -1 && m_accessTimestamps[index] >= source->m_accessTimestamps[i])
             {
                 continue;
             }
@@ -211,7 +211,7 @@ namespace PK
                 auto copy = **current;
 
                 //@TODO FIX THIS Hack to ignore queue families for now
-                copy.queueFamily = copy.queueFamily != 0xFFFF ? target->m_queueFamily : 0xFFFF;
+                copy.queueFamily = copy.queueFamily != 0xFFFF ? m_queueFamily : 0xFFFF;
                 copy.access = 0u;
                 copy.stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
@@ -222,12 +222,12 @@ namespace PK
                     // Also this could lead to redundant barriers between queues.
                     if (copy.layout != VK_IMAGE_LAYOUT_UNDEFINED)
                     {
-                        target->Record(reinterpret_cast<VkImage>(key), copy, PK_RHI_ACCESS_OPT_TRANSFER);
+                        Record(reinterpret_cast<VkImage>(key), copy, PK_RHI_ACCESS_OPT_TRANSFER);
                     }
                 }
                 else
                 {
-                    target->Record(reinterpret_cast<VkBuffer>(key), copy, PK_RHI_ACCESS_OPT_TRANSFER);
+                    Record(reinterpret_cast<VkBuffer>(key), copy, PK_RHI_ACCESS_OPT_TRANSFER);
                 }
 
                 current = &(*current)->next;
@@ -269,23 +269,21 @@ namespace PK
     {
         for (auto i = (int32_t)(m_resources.GetCount() - 1); i >= 0; --i)
         {
-            if (m_accessMask.GetAt(i))
+            if (m_accessTimestamps[i] <= m_pruneTimeStamp)
             {
-                continue;
-            }
+                auto record = m_resources.GetValueAt(i);
+                m_resources.RemoveAt(i);
 
-            auto record = m_resources.GetValueAt(i);
-            m_resources.RemoveAt(i);
-
-            while (record)
-            {
-                auto next = record->next;
-                m_records.Delete(record);
-                record = next;
+                while (record)
+                {
+                    auto next = record->next;
+                    m_records.Delete(record);
+                    record = next;
+                }
             }
         }
 
-        m_accessMask.Clear();
+        m_pruneTimeStamp = m_globalAccessCounter;
     }
 
 

@@ -42,10 +42,6 @@ void main()
         color = Bloom(color, uv);
     }
 
-    IF_FX_FEATURE_ENABLED(FX_FEAT_FILMGRAIN)
-    {
-        color = FilmGrain(float2(coord), color, exposure);
-    }
 
     IF_FX_FEATURE_ENABLED(FX_FEAT_TONEMAP)
     {
@@ -53,6 +49,11 @@ void main()
         color = Saturate_BT2100(color, 0.96f);
         color = Tonemap_Uchimura(color, exposure);
         color = Saturate_BT2100(color, 0.93f);
+    }
+
+    IF_FX_FEATURE_ENABLED(FX_FEAT_FILMGRAIN)
+    {
+        color = FilmGrain(float2(coord), color, exposure);
     }
 
     color = LinearToGamma(color);

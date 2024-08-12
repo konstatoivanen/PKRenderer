@@ -65,9 +65,7 @@ namespace PK
             
             VkResult SubmitCurrent(QueueType type, VkSemaphore* outSignal = nullptr);
             RHICommandBuffer* Submit(QueueType type) final;
-            void Sync(QueueType from, QueueType to, int32_t submitOffset = 0) final;
-            void Wait(QueueType from, QueueType to, int32_t submitOffset = 0) final;
-            void Transfer(QueueType from, QueueType to) final;
+            void Wait(QueueType to, QueueType from, int32_t submitOffset = 0) final;
             inline FenceRef GetFenceRef(QueueType type, int32_t submitOffset = 0) final { return GetQueue(type)->GetFenceRef(submitOffset); }
             void Prune();
 

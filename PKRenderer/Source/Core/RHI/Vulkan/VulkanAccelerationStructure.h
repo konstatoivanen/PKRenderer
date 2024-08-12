@@ -70,8 +70,6 @@ namespace PK
             const VulkanDriver* m_driver = nullptr;
             std::string m_name = "AccelerationStructure";
 
-            //@TODO This shouldnt be here. replace begin end with cmd injection
-            VulkanCommandBuffer* m_cmd = nullptr;
             VulkanRawBuffer* m_instanceInputBuffer = nullptr;
             VulkanRawBuffer* m_scratchBuffer = nullptr;
             VulkanRawBuffer* m_structureBuffer = nullptr;
@@ -79,11 +77,16 @@ namespace PK
             TLAS m_structure{};
             FastMap<BLASKey, BLAS, GeometryKeyHash> m_substructures;
             VulkanBindHandle m_bindHandle{};
+            
+            // Temporaries used during build process
             uint32_t m_instanceCount = 0u;
             uint32_t m_instanceLimit = 0u;
-            uint64_t m_instanceHashCur = 0u;
-            uint64_t m_instanceHashNew = 0u;
+            uint64_t m_structureHashPrev = 0u;
+            uint64_t m_structureHashCurr = 0u;
             VkDeviceSize m_instanceBufferOffset = 0ull;
+
+            //@TODO This shouldnt be here. replace begin end with cmd injection
+            VulkanCommandBuffer* m_cmd = nullptr;
             VkAccelerationStructureInstanceKHR* m_writeBuffer = nullptr;
             VkDeviceSize m_queryResults[MAX_SUBSTRUCTURES]{};
     };

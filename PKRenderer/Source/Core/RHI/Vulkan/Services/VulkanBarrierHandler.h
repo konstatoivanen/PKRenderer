@@ -97,7 +97,6 @@ namespace PK
                     isSequentialAccess = (m_globalResolveCounter - m_resolveTimestamps[index]) < 2u;
                     m_resolveTimestamps[index] = m_globalResolveCounter;
                     m_accessTimestamps[index] = m_globalAccessCounter++;
-                    m_accessMask.SetAt(index, true);
                 }
 
                 auto current = &m_resources.GetValueAt(index);
@@ -121,6 +120,7 @@ namespace PK
                     auto mergeFlags = (*current)->layout == scope.layout && (*current)->queueFamily == scope.queueFamily;
                     auto mergeOverlap = overlap && !writeCur && !writeNew;
                     auto mergeAdjacent = adjacent && writeCur == writeNew;
+                    auto skipBarrier = !isSequentialAccess && mergeFlags;
 
                     if (mergeFlags && (mergeOverlap || mergeAdjacent))
                     {
@@ -137,7 +137,7 @@ namespace PK
                     }
         
                     // If accesses are padded by at least one command in the same queue we can omit a barrier.
-                    if ((options & PK_RHI_ACCESS_OPT_BARRIER) && (isSequentialAccess || !mergeFlags))
+                    if ((options & PK_RHI_ACCESS_OPT_BARRIER) && !skipBarrier)
                     {
                         ProcessBarrier<T>(resource, &barrier, **current, record);
                     }
@@ -231,12 +231,12 @@ namespace PK
             FixedPool<AccessRecord, 1024> m_records;
             FixedList<VkBufferMemoryBarrier, 256> m_bufferBarriers;
             FixedList<VkImageMemoryBarrier, 256> m_imageBarriers;
-            Bitmask<1024> m_accessMask;
-            size_t m_accessTimestamps[1024]{};
-            size_t m_resolveTimestamps[1024]{};
+            uint64_t m_accessTimestamps[1024]{};
+            uint64_t m_resolveTimestamps[1024]{};
             VkPipelineStageFlags m_sourceStage = 0u;
             VkPipelineStageFlags m_destinationStage = 0u;
-            inline static size_t m_globalAccessCounter = 0ull;
-            inline static size_t m_globalResolveCounter = 0ull;
+            uint64_t m_pruneTimeStamp = 0ull;
+            inline static uint64_t m_globalAccessCounter = 0ull;
+            inline static uint64_t m_globalResolveCounter = 0ull;
     };
 }

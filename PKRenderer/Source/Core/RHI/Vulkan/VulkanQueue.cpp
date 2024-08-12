@@ -377,7 +377,19 @@ namespace PK
     VkResult VulkanQueueSet::SubmitCurrent(QueueType type, VkSemaphore* outSignal)
     {
         auto queue = GetQueue(type);
-        return queue->Submit(GetQueue(type)->commandPool->EndCurrent(), outSignal);
+        auto result = queue->Submit(GetQueue(type)->commandPool->EndCurrent(), outSignal);
+
+        // Sync resource access states to other queues.
+        // Not using a single barrier handler for all queues so that queues can be cross recorded.
+        for (auto& other : m_queues)
+        {
+            if (other.get() != queue && other != nullptr)
+            {
+                other->barrierHandler->TransferRecords(queue->barrierHandler.get());
+            }
+        }
+
+        return result;
     }
 
     RHICommandBuffer* VulkanQueueSet::Submit(QueueType type)
@@ -386,26 +398,9 @@ namespace PK
         return GetCommandBuffer(type);
     }
 
-    void VulkanQueueSet::Sync(QueueType from, QueueType to, int32_t submitOffset)
+    void VulkanQueueSet::Wait(QueueType to, QueueType from, int32_t submitOffset)
     {
-        auto queueFrom = GetQueue(from);
-        auto queueTo = GetQueue(to);
-        queueTo->QueueWait(queueFrom, submitOffset);
-        queueFrom->barrierHandler->TransferRecords(queueTo->barrierHandler.get());
-    }
-
-    void VulkanQueueSet::Wait(QueueType from, QueueType to, int32_t submitOffset)
-    {
-        auto queueFrom = GetQueue(from);
-        auto queueTo = GetQueue(to);
-        queueTo->QueueWait(queueFrom, submitOffset);
-    }
-
-    void VulkanQueueSet::Transfer(QueueType from, QueueType to)
-    {
-        auto queueFrom = GetQueue(from);
-        auto queueTo = GetQueue(to);
-        queueFrom->barrierHandler->TransferRecords(queueTo->barrierHandler.get());
+        GetQueue(to)->QueueWait(GetQueue(from), submitOffset);
     }
 
     VulkanQueueSet::Initializer::Initializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)

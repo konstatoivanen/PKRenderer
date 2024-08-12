@@ -40,11 +40,11 @@ float NoiseGrain2(const float2 n, const float x, const float range)
     );
 }
 
-float NoiseGrainBW(const float2 n, const float x, const float range) { return NoiseGrain2(n, fract(x), range) * 5.1f + 0.5f; }
+float NoiseGrainBW(const float2 n, const float x, const float range) { return NoiseGrain2(n, fract(x), range) * 10.2f; }
 
 float3 NoiseGrainColor(const float2 uv, const float x, const float range)
 {
-    return float3(NoiseGrain2(uv, 0.07 * fract(x), range), NoiseGrain2(uv + 17.0f.xx, 0.11 * fract(x), range), NoiseGrain2(uv + 29.0f.xx, 0.13 * fract(x), range)) * 5.1f + 0.5f;
+    return float3(NoiseGrain2(uv, 0.07 * fract(x), range), NoiseGrain2(uv + 17.0f.xx, 0.11 * fract(x), range), NoiseGrain2(uv + 29.0f.xx, 0.13 * fract(x), range)) * 10.2f;
 }
 
 float2 NoiseCell(const int2 p)

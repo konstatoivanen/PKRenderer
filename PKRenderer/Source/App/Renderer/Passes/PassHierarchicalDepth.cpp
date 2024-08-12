@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
+#include "Core/RHI/BuiltInResources.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "App/Renderer/HashCache.h"
@@ -25,6 +26,8 @@ namespace PK::App
         hizDesc.layers = 4u;//2
         hizDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
         m_hierarchicalDepth = RHI::CreateTexture(hizDesc, "Scene.HierarchicalDepth");
+
+        RHI::SetTexture(HashCache::Get()->pk_GB_Current_DepthMips, RHI::GetBuiltInResources()->BlackTexture2DArray.get());
     }
 
     void PassHierarchicalDepth::Compute(CommandBufferExt cmd, uint3 resolution)

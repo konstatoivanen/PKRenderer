@@ -273,6 +273,10 @@ namespace PK::App
         }
         context->batcher->EndCollectDrawCalls(cmdtransfer);
 
+
+        // End transfer operations
+        queues->Submit(QueueType::Transfer);
+
         // Prune voxels & build AS.
         // These can happen before the end of last frame. 
         auto* cmdcompute = queues->GetCommandBuffer(QueueType::Compute);
@@ -281,17 +285,22 @@ namespace PK::App
         RHI::SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         queues->Submit(QueueType::Compute, &cmdcompute);
 
-        // End transfer operations
-        queues->Sync(QueueType::Graphics, QueueType::Transfer, -1);
-        queues->Submit(QueueType::Transfer);
-        // Sync previous frames graphics accesses to compute queue (image layouts etc.)
-        queues->Transfer(QueueType::Graphics, QueueType::Compute);
-        queues->Sync(QueueType::Transfer, QueueType::Graphics);
-        queues->Sync(QueueType::Transfer, QueueType::Compute);
 
         // Only buffering needs to wait for previous results.
         // Eliminate redundant rendering waits by waiting for transfer instead.
         context->window->SetFrameFence(queues->GetFenceRef(QueueType::Transfer));
+
+        // Async compute during last present.
+        m_passFilmGrain.Compute(cmdcompute);
+        m_passLights.ComputeClusters(cmdcompute, context);
+        m_autoExposure.Render(cmdcompute, gbuffers.previous.color);
+        m_depthOfField.ComputeAutoFocus(cmdcompute, resolution.y);
+        m_passVolumeFog.ComputeDensity(cmdcompute, resolution);
+        m_passEnvBackground.PreCompute(cmdcompute);
+        m_passSceneGI.VoxelMips(cmdcompute);
+        m_passSceneGI.ValidateReservoirs(cmdcompute);
+        queues->Wait(QueueType::Compute, QueueType::Transfer);
+        queues->Submit(QueueType::Compute, &cmdcompute);
 
         // Depth pre pass. Meshlet cull based on prev frame hizb
         CommandBufferExt cmdgraphics = queues->GetCommandBuffer(QueueType::Graphics);
@@ -309,25 +318,15 @@ namespace PK::App
 
         DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::GBuffer);
         m_passHierarchicalDepth.Compute(cmdgraphics, resolution);
-        cmdgraphics = queues->Submit(QueueType::Graphics);
-
-        // Async compute during last present.
-        m_passFilmGrain.Compute(cmdcompute);
-        m_passLights.ComputeClusters(cmdcompute, context);
-        m_autoExposure.Render(cmdcompute, gbuffers.previous.color);
-        m_depthOfField.ComputeAutoFocus(cmdcompute, resolution.y);
-        m_passVolumeFog.ComputeDensity(cmdcompute, resolution);
-        m_passEnvBackground.PreCompute(cmdcompute);
-        m_passSceneGI.VoxelMips(cmdcompute);
-        m_passSceneGI.ValidateReservoirs(cmdcompute);
-        queues->Submit(QueueType::Compute, &cmdcompute);
-        queues->Sync(QueueType::Graphics, QueueType::Compute);
+        queues->Wait(QueueType::Graphics, QueueType::Transfer);
+        queues->Submit(QueueType::Graphics, &cmdgraphics.commandBuffer);
 
         // Indirect GI ray tracing
         m_passSceneGI.DispatchRays(cmdcompute);
+        queues->Wait(QueueType::Compute, QueueType::Graphics);
+        // Queue graphics wait for misc async compute
+        queues->Wait(QueueType::Graphics, QueueType::Compute);
         queues->Submit(QueueType::Compute, &cmdcompute);
-        // Wait for misc async compute instead of ray dispatch
-        queues->Sync(QueueType::Compute, QueueType::Graphics, -1);
 
         // Shadows, Voxelize scene & reproject gi
         m_passLights.RenderShadows(cmdgraphics, context);
@@ -335,9 +334,7 @@ namespace PK::App
         m_passLights.RenderScreenSpaceShadows(cmdgraphics, context);
         m_passSceneGI.ReprojectGI(cmdgraphics);
         m_passVolumeFog.Compute(cmdgraphics, gbuffers.current.color->GetResolution());
-        cmdgraphics = queues->Submit(QueueType::Graphics);
-        queues->Transfer(QueueType::Graphics, QueueType::Compute);
-        queues->Wait(QueueType::Compute, QueueType::Graphics);
+        queues->Submit(QueueType::Graphics, &cmdgraphics.commandBuffer);
 
         m_passSceneGI.RenderGI(cmdgraphics);
 
@@ -347,7 +344,6 @@ namespace PK::App
         DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::ForwardOpaque);
 
         m_passEnvBackground.RenderBackground(cmdgraphics);
-
         m_passVolumeFog.Render(cmdgraphics, gbuffers.current.color);
 
         DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::ForwardTransparent);
@@ -368,7 +364,12 @@ namespace PK::App
 
         DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::AfterPostEffects);
 
-        cmdgraphics = queues->Submit(QueueType::Graphics);
+        queues->Wait(QueueType::Graphics, QueueType::Compute);
+        queues->Submit(QueueType::Graphics, &cmdgraphics.commandBuffer);
+        
+        // Sync next frames transfer ops to end of rendering above.
+        queues->Wait(QueueType::Transfer, QueueType::Graphics);
+
         cmdgraphics->Blit(gbuffers.current.normals, gbuffers.previous.normals, {}, {}, FilterMode::Point);
         cmdgraphics->Blit(gbuffers.current.depthBiased, gbuffers.previous.depthBiased, {}, {}, FilterMode::Point);
         cmdgraphics->Blit(gbuffers.current.depth, gbuffers.previous.depth, {}, {}, FilterMode::Point);

@@ -262,7 +262,7 @@ namespace PK
         barrier.memoryBarrierCount = 1u;
         barrier.pMemoryBarriers = &memoryBarrier;
         m_cmd->PipelineBarrier(barrier);
-        m_instanceHashCur = 0ull;
+        m_structureHashPrev = 0ull;
     }
 
     void VulkanAccelerationStructure::BeginWrite(QueueType queue, uint32_t instanceLimit)
@@ -270,11 +270,11 @@ namespace PK
         PK_THROW_ASSERT(m_writeBuffer == nullptr, "Structure is already being written into!");
 
         m_cmd = m_driver->queues->GetQueue(queue)->commandPool->GetCurrent();
-        m_instanceLimit = instanceLimit;
         m_instanceCount = 0u;
-        m_instanceHashNew = 0u;
+        m_instanceLimit = instanceLimit;
+        m_structureHashCurr = 0u;
 
-        auto inputBufferStride = sizeof(VkAccelerationStructureInstanceKHR) * m_instanceLimit;
+        auto inputBufferStride = sizeof(VkAccelerationStructureInstanceKHR) * instanceLimit;
         auto inputBufferSize = inputBufferStride * PK_RHI_MAX_FRAMES_IN_FLIGHT;
         m_instanceBufferOffset = (m_instanceBufferOffset + inputBufferStride) % inputBufferSize;
 
@@ -303,7 +303,7 @@ namespace PK
         instance->instanceShaderBindingTableRecordOffset = 0;
         instance->flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
         instance->accelerationStructureReference = GetGeometryIndex(geometry);
-        m_instanceHashNew += Math::GetMatrixHash(matrix) * (instance->accelerationStructureReference + 1ull);
+        m_structureHashCurr += Math::GetMatrixHash(matrix) * (instance->accelerationStructureReference + 1ull);
     }
 
     void VulkanAccelerationStructure::EndWrite()
@@ -324,10 +324,9 @@ namespace PK
         m_instanceInputBuffer->EndMap(m_instanceBufferOffset, sizeof(VkAccelerationStructureInstanceKHR) * m_instanceLimit);
         m_writeBuffer = nullptr;
 
-        if (m_instanceHashNew != m_instanceHashCur)
+        if (m_structureHashPrev != m_structureHashCurr)
         {
-            m_instanceHashCur = m_instanceHashNew;
-
+            m_structureHashPrev = m_structureHashCurr;
             auto buildInfo = m_structure.buildInfo;
             buildInfo.dstAccelerationStructure = m_structure.raw->structure;
             buildInfo.scratchData.deviceAddress = m_scratchBuffer->deviceAddress + m_structure.scratchOffset;
