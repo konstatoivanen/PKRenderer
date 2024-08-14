@@ -70,7 +70,7 @@ namespace PK
                 {
                     key.counts[j] = pDescriptors[j].count;
                     key.types[j] = VulkanEnumConvert::GetDescriptorType(pDescriptors[j].type);
-                    elements.Add(pDescriptors[j].type, std::string(pDescriptors[j].name), pDescriptors[j].writeStageMask, pDescriptors[j].count);
+                    elements.Add(pDescriptors[j].type, pDescriptors[j].name, pDescriptors[j].writeStageMask, pDescriptors[j].count);
                 }
 
                 // Cache these so that we can optimize shaders easier based on profiling tools.

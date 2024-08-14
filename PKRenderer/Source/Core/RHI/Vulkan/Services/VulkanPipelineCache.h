@@ -43,7 +43,7 @@ namespace PK
 
         constexpr const static char* PIPELINE_CACHE_FILENAME = "shadercache.cache";
 
-        VulkanPipelineCache(VkDevice device, const std::string& workingDirectory, const VulkanPhysicalDeviceProperties& physicalDeviceProperties, uint64_t pruneDelay);
+        VulkanPipelineCache(VkDevice device, const char* workingDirectory, const VulkanPhysicalDeviceProperties& physicalDeviceProperties, uint64_t pruneDelay);
         ~VulkanPipelineCache();
 
         struct PipelineValue
@@ -65,7 +65,7 @@ namespace PK
             const bool m_allowUnderEstimation;
 
             VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
-            std::string m_workingDirectory;
+            FixedString256 m_workingDirectory;
             FixedPool<VulkanPipeline, 2048> m_pipelinePool;
             FastMap<PipelineKey, PipelineValue, PipelineKeyHash> m_vertexPipelines;
             FastMap<MeshPipelineKey, PipelineValue, MeshPipelineKeyHash> m_meshPipelines;

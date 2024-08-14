@@ -60,7 +60,7 @@ namespace PK
             PK_THROW_ASSERT(baseMesh, "Cannot create a virtual mesh without a base mesh!");
 
             MeshStaticAllocationData alloc{};
-            alloc.name = std::filesystem::path(GetFileName()).stem().string();
+            alloc.name = std::filesystem::path(GetFileName()).stem().string().c_str();
 
             alloc.regular.pVertices = pVertices;
             alloc.regular.pIndices = pIndices;

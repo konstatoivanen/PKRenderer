@@ -116,8 +116,8 @@ namespace PK
 
         streamLayout.CalculateOffsetsAndStride();
 
-        FixedString128 vertexBufferName({ GetFileName().c_str(), ".VertexBuffer" });
-        FixedString128 indexBufferName({ GetFileName().c_str(), ".IndexBuffer" });
+        FixedString128 vertexBufferName({ GetFileName(), ".VertexBuffer" });
+        FixedString128 indexBufferName({ GetFileName(), ".IndexBuffer" });
         auto commandBuffer = CommandBufferExt(RHI::GetCommandBuffer(QueueType::Transfer));
 
         auto pVerticesOffset = (char*)pVertices;
@@ -194,7 +194,7 @@ namespace PK
 }
 
 template<>
-bool PK::Asset::IsValidExtension<PK::Mesh>(const std::string& extension) { return extension.compare(".pkmesh") == 0; }
+bool PK::Asset::IsValidExtension<PK::Mesh>(const char* extension) { return strcmp(extension, ".pkmesh") == 0; }
 
 template<>
 PK::Ref<PK::Mesh> PK::Asset::Create() { return PK::CreateRef<PK::Mesh>(); }

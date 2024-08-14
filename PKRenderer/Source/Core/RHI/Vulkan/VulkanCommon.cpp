@@ -1943,6 +1943,7 @@ namespace PK
 
         auto availableExtensions = VulkanGetInstanceExtensions();
 
+        // @TODO replace with stack variables
         std::set<std::string> requiredExtensions(extensions->begin(), extensions->end());
 
         for (const auto& extension : availableExtensions)
@@ -1957,6 +1958,7 @@ namespace PK
     {
         auto availableExtensions = VulkanGetPhysicalDeviceExtensionProperties(device);
 
+        // @TODO replace with stack variables
         std::set<std::string> requiredExtensions(extensions->begin(), extensions->end());
 
         for (const auto& extension : availableExtensions)
@@ -1976,6 +1978,7 @@ namespace PK
 
         auto availableLayers = VulkanGetInstanceLayerProperties();
 
+        // @TODO replace with stack variables
         std::set<std::string> requiredLayers(validationLayers->begin(), validationLayers->end());
 
         for (const auto& layer : availableLayers)
@@ -2122,7 +2125,35 @@ namespace PK
         return accelerationStructureBuildSizesInfo;
     }
 
-    std::string VulkanStr_VkQueueFlags(VkQueueFlags value) { return string_VkQueueFlags(value); }
+    FixedString128 VulkanStr_VkQueueFlags(VkQueueFlags value) 
+    {
+        FixedString128 ret;
+        int index = 0;
+
+        while (value) 
+        {
+            if (value & 1) 
+            {
+                if (ret.Length() > 0u)
+                {
+                    ret.Append("|");
+                }
+
+                ret.Append(string_VkQueueFlagBits(static_cast<VkQueueFlagBits>(1U << index)));
+            }
+
+            ++index;
+            value >>= 1;
+        }
+        
+        if (ret.Length() == 0u)
+        {
+            ret.Append("VkQueueFlags(0)");
+        }
+
+        return ret;
+    }
+
     const char* VulkanCStr_VkShaderStageFlagBits(VkShaderStageFlagBits value) { return string_VkShaderStageFlagBits(value); }
     const char* VulkanCStr_VkFormat(VkFormat value) { return string_VkFormat(value); }
 

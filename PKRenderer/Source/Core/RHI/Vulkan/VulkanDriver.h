@@ -18,8 +18,8 @@ namespace PK
 {
     struct VulkanContextProperties
     {
-        std::string appName;
-        std::string workingDirectory;
+        FixedString64 appName;
+        FixedString256 workingDirectory;
         uint64_t garbagePruneDelay;
         uint32_t minApiVersionMajor;
         uint32_t minApiVersionMinor;
@@ -28,8 +28,8 @@ namespace PK
         const std::vector<const char*>* contextualDeviceExtensions;
 
         VulkanContextProperties(
-            const std::string& appName = "Vulkan Engine",
-            const std::string& workingDirectory = "",
+            const char* appName = "Vulkan Engine",
+            const char* workingDirectory = "",
             uint64_t garbagePruneDelay = 32ull,
             uint32_t minApiVersionMajor = 1,
             uint32_t minApiVersionMinor = 2,
@@ -55,7 +55,7 @@ namespace PK
 
         RHIAPI GetAPI() const final { return RHIAPI::Vulkan; }
         RHIQueueSet* GetQueues() const final { return queues.get(); }
-        std::string GetDriverHeader() const;
+        FixedString32 GetDriverHeader() const final;
         RHIDriverMemoryInfo GetMemoryInfo() const final;
         size_t GetBufferOffsetAlignment(BufferUsage usage) const final;
         BuiltInResources* GetBuiltInResources() final { return builtInResources; }

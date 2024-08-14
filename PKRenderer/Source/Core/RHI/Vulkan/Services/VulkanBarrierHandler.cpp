@@ -196,16 +196,18 @@ namespace PK
         for (auto i = 0u; i < source->m_resources.GetCount(); ++i)
         {
             auto& key = keyValues.nodes[i].key;
-            // @TODO multiple calls to get index. should add index here if not present and take that into account in record.
-            auto index = m_resources.GetIndex(key);
+            auto current = &keyValues.values[i];
+
+            auto index = 0u;
+            auto isNew = m_resources.AddKey(key, &index);
 
             // Dont override newer data with older one
-            if (index != -1 && m_accessTimestamps[index] >= source->m_accessTimestamps[i])
+            if (!isNew && m_accessTimestamps[index] >= source->m_accessTimestamps[i])
             {
                 continue;
             }
 
-            auto current = &keyValues.values[i];
+            auto options = PK_RHI_ACCESS_OPT_TRANSFER | (isNew ? PK_RHI_ACCESS_OPT_DEFAULT : 0u);
 
             while (current && *current)
             {
@@ -223,12 +225,14 @@ namespace PK
                     // Also this could lead to redundant barriers between queues.
                     if (copy.layout != VK_IMAGE_LAYOUT_UNDEFINED)
                     {
-                        Record(reinterpret_cast<VkImage>(key), copy, PK_RHI_ACCESS_OPT_TRANSFER);
+                        Record(reinterpret_cast<VkImage>(key), index, copy, options);
+                        options = PK_RHI_ACCESS_OPT_TRANSFER;
                     }
                 }
                 else
                 {
-                    Record(reinterpret_cast<VkBuffer>(key), copy, PK_RHI_ACCESS_OPT_TRANSFER);
+                    Record(reinterpret_cast<VkBuffer>(key), index, copy, options);
+                    options = PK_RHI_ACCESS_OPT_TRANSFER;
                 }
 
                 current = &(*current)->next;

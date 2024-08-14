@@ -49,6 +49,6 @@ namespace PK
             Page* m_firstPage = nullptr;
             FixedPool<Page, 1024> m_pages;
             RangeTable<1024> m_residency;
-            std::string m_name;
+            FixedString128 m_name;
     };
 }

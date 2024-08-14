@@ -3,6 +3,7 @@
 #include "Core/Utilities/Ref.h"
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/ISingleton.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/Assets/Asset.h"
 #include "Core/Assets/AssetImportEvent.h"
 #include "Core/CLI/Log.h"
@@ -38,10 +39,10 @@ namespace PK
         }
 
         template<typename T, typename ... Args>
-        T* Load(const std::string& filepath, Args&& ... args) { return LoadInternal<T>(AssetID(filepath), false, std::forward<Args>(args)...); }
+        T* Load(const std::string& filepath, Args&& ... args) { return LoadInternal<T>(AssetID(filepath.c_str()), false, std::forward<Args>(args)...); }
 
         template<typename T, typename ... Args>
-        T* Reload(const std::string& filepath, Args&& ... args) { return LoadInternal<T>(AssetID(filepath), true, std::forward<Args>(args)...); }
+        T* Reload(const std::string& filepath, Args&& ... args) { return LoadInternal<T>(AssetID(filepath.c_str()), true, std::forward<Args>(args)...); }
 
         template<typename T, typename ... Args>
         [[nodiscard]] T* Reload(AssetID assetId, Args&& ... args) { return LoadInternal<T>(assetId, true, std::forward<Args>(args)...); }
@@ -184,8 +185,8 @@ namespace PK
         {
             static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
-            // Copy intentional as mapped names can be moved.
-            const auto filepath = assetId.to_string();
+            // Copy intentional as mapped names can be moved. 
+            std::string filepath = std::string(assetId.c_str());
 
             PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
             PK_LOG_VERBOSE("AssetDatabase.Load: %s, %s", typeid(T).name(), filepath.c_str());
@@ -228,7 +229,7 @@ namespace PK
                     if (!assetWeakRef.expired())
                     {
                         auto asset = assetWeakRef.lock();
-                        auto& fileName = std::static_pointer_cast<Asset>(asset)->GetFileName();
+                        FixedString128 fileName = std::static_pointer_cast<Asset>(asset)->GetFileName();
                         std::static_pointer_cast<Asset>(asset)->m_version++;
                         PK_LOG_VERBOSE("AssetDatabase.Reload.Cached: %s, %s", typeid(T).name(), fileName.c_str());
                         PK_LOG_SCOPE_INDENT(asset);
@@ -262,7 +263,7 @@ namespace PK
         }
 
         template<typename T>
-        bool ValidateExtension(const std::filesystem::path& path) { return path.has_extension() && Asset::IsValidExtension<T>(path.extension().string()); }
+        bool ValidateExtension(const std::filesystem::path& path) { return path.has_extension() && Asset::IsValidExtension<T>(path.extension().string().c_str()); }
 
         std::unordered_map<std::type_index, std::unordered_map<AssetID, Ref<Asset>>> m_assets;
         std::unordered_map<std::type_index, std::unordered_map<AssetID, std::function<void()>>> m_assetReloadCaptures;

@@ -17,11 +17,11 @@ namespace PK
         constexpr AssetID GetAssetID() const { return m_assetId; }
         constexpr uint32_t GetAssetVersion() const { return m_version; }
         constexpr uint64_t GetAssetHash() const { return ((uint64_t)m_version << 32) | ((uint64_t)m_assetId & 0xFFFFFFFF); }
-        inline const std::string& GetFileName() const { return m_assetId.to_string(); }
+        inline const char* GetFileName() const { return m_assetId.c_str(); }
         bool operator==(const Asset& other) const { return m_assetId == ((Asset&)other).m_assetId; }
 
         template<typename T>
-        static bool IsValidExtension(const std::string& extension);
+        static bool IsValidExtension(const char* extension);
 
         template<typename T>
         [[nodiscard]] static Ref<T> Create();

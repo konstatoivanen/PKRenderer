@@ -103,7 +103,7 @@ namespace PK
 
         for (auto& wrapper : m_commandBuffers)
         {
-            if (wrapper.IsActive() && vkWaitForFences(m_device, 1, &wrapper.GetFence(), VK_TRUE, 0) == VK_SUCCESS)
+            if (wrapper.IsActive() && vkGetFenceStatus(m_device, wrapper.GetFence()) == VK_SUCCESS)
             {
                 m_nativeBuffers[(int64_t)(&wrapper - &m_commandBuffers[0])] = VK_NULL_HANDLE;
                 vkFreeCommandBuffers(m_device, m_pool, 1, &wrapper.GetNative());

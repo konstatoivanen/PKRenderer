@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <filesystem>
 #include <PKAssets/PKAssetLoader.h>
-#include "Core/Utilities/Parsing.h"
+#include "Core/Utilities/Parse.h"
 #include "Core/Utilities/PropertyBlock.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
@@ -150,7 +150,7 @@ namespace PK
     {
         std::string meta = "Asset Metadata: \n";
         meta.append("   Type: Shader\n");
-        meta.append("   Name: " + GetFileName() + "\n");
+        meta.append("   Name: " + std::string(GetFileName()) + "\n");
 
         if (m_materialPropertyLayout.size() > 0)
         {
@@ -174,7 +174,7 @@ namespace PK
 
         for (auto& kv : m_map.keywords)
         {
-            const auto& keyword = kv.first.to_string();
+            const auto& keyword = kv.first.c_str();
             auto index0 = (kv.second >> 4u) & 0xFu;
             auto index1 = kv.second & 0xFu;
 
@@ -247,7 +247,7 @@ namespace PK
 }
 
 template<>
-bool PK::Asset::IsValidExtension<PK::ShaderAsset>(const std::string& extension) { return extension.compare(".pkshader") == 0; }
+bool PK::Asset::IsValidExtension<PK::ShaderAsset>(const char* extension) { return strcmp(extension, ".pkshader") == 0; }
 
 template<>
 PK::Ref<PK::ShaderAsset> PK::Asset::Create() { return CreateRef<PK::ShaderAsset>(); }

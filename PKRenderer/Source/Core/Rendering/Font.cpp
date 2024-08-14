@@ -159,7 +159,7 @@ namespace PK
 
 
 template<>
-bool PK::Asset::IsValidExtension<PK::Font>(const std::string& extension) { return extension.compare(".pkfont") == 0; }
+bool PK::Asset::IsValidExtension<PK::Font>(const char* extension) { return strcmp(extension, ".pkfont") == 0; }
 
 template<>
 PK::Ref<PK::Font> PK::Asset::Create() { return PK::CreateRef<Font>(); }

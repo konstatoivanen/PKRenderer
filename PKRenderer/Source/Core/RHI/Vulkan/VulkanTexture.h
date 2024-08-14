@@ -51,7 +51,7 @@ namespace PK
             const ViewValue* GetView(const TextureViewRange& range, TextureBindMode mode = TextureBindMode::SampledTexture);
 
             const VulkanDriver* m_driver = nullptr;
-            std::string m_name = "Texture";
+            FixedString128 m_name;
             TextureDescriptor m_descriptor;
             VulkanRawImage* m_rawImage = nullptr;
             FastMap<size_t, ViewValue> m_imageViews;

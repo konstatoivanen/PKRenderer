@@ -1,13 +1,13 @@
 #pragma once
 #include <cstdint>
-#include <string>
+#include "FixedString.h"
 
 namespace PK
 {
     struct INameIDProvider
     {
-        virtual uint32_t INameIDProvider_StringToID(const std::string& name) = 0;
-        virtual const std::string& INameIDProvider_IDToString(const uint32_t& name) = 0;
+        virtual uint32_t INameIDProvider_StringToID(const char* name) = 0;
+        virtual const char* INameIDProvider_IDToString(const uint32_t& name) = 0;
     };
 
     struct NameID
@@ -16,12 +16,10 @@ namespace PK
 
         NameID() {}
         NameID(const char* name) : identifier(s_Provider->INameIDProvider_StringToID(name)) {}
-        NameID(const std::string& name) : identifier(s_Provider->INameIDProvider_StringToID(name)) {}
         constexpr NameID(const NameID& name) : identifier(name.identifier) {}
         constexpr NameID(uint32_t identifier) : identifier(identifier) {}
 
-        const std::string& to_string() const { return s_Provider->INameIDProvider_IDToString(identifier); }
-        const char* c_str() const { return to_string().c_str(); }
+        const char* c_str() const { return s_Provider->INameIDProvider_IDToString(identifier); }
         constexpr operator const uint32_t() const { return identifier; }
 
         static void SetProvider(INameIDProvider* provider) { s_Provider = provider; }

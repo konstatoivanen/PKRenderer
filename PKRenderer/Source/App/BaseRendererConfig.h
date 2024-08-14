@@ -3,6 +3,7 @@
 #include "Core/Yaml/ConvertMathTypes.h"
 #include "Core/Yaml/ConfigMacros.h"
 #include "Core/Yaml/ConvertCVariableCollection.h"
+#include "Core/Yaml/ConvertFixedString.h"
 
 namespace PK::App
 {
@@ -10,7 +11,7 @@ namespace PK::App
         PK_YAML_MEMBER(bool, Vsync, true)
         PK_YAML_MEMBER(bool, ShowCursor, true)
         PK_YAML_MEMBER(uint2, Size, uint2(1024u, 512u))
-        PK_YAML_MEMBER(std::string, IconPath, "Content/T_AppIcon.bmp")
+        PK_YAML_MEMBER(FixedString64, IconPath, "Content/T_AppIcon.bmp")
     PK_YAML_STRUCT_END()
 
     PK_YAML_ASSET_BEGIN(BaseRendererConfig, ".cfg")

@@ -429,8 +429,7 @@ namespace PK
             createInfos.push_back(createInfo);
 
             auto& props = context.families->at(i);
-            auto flagsString = VulkanStr_VkQueueFlags(props.queueFlags);
-            PK_LOG_INFO("Family: %i, NumQueues: %i, Flags: %s", i, props.queueCount, flagsString.c_str());
+            PK_LOG_INFO("Family: %i, NumQueues: %i, Flags: %s", i, props.queueCount, VulkanStr_VkQueueFlags(props.queueFlags));
         }
 
         PK_LOG_SUB_INDENT();

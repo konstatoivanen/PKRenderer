@@ -93,7 +93,7 @@ namespace PK
 }
 
 template<>
-bool PK::Asset::IsValidExtension<PK::TextureAsset>(const std::string& extension) { return extension.compare(".ktx2") == 0; }
+bool PK::Asset::IsValidExtension<PK::TextureAsset>(const char* extension) { return strcmp(extension, ".ktx2") == 0; }
 
 template<>
 PK::TextureAssetRef PK::Asset::Create<PK::TextureAsset>() { return CreateRef<PK::TextureAsset>(); }

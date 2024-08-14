@@ -5,7 +5,7 @@
 
 namespace PK
 {
-    VulkanPipelineCache::VulkanPipelineCache(VkDevice device, const std::string& workingDirectory, const VulkanPhysicalDeviceProperties& physicalDeviceProperties, uint64_t pruneDelay) :
+    VulkanPipelineCache::VulkanPipelineCache(VkDevice device, const char* workingDirectory, const VulkanPhysicalDeviceProperties& physicalDeviceProperties, uint64_t pruneDelay) :
         m_device(device),
         m_maxOverEstimation(physicalDeviceProperties.conservativeRasterization.maxExtraPrimitiveOverestimationSize),
         m_allowUnderEstimation(physicalDeviceProperties.conservativeRasterization.primitiveUnderestimation),
@@ -16,11 +16,11 @@ namespace PK
         m_otherPipelines(1024),
         m_pruneDelay(pruneDelay)
     {
-        if (!workingDirectory.empty())
+        if (m_workingDirectory.Length() == 0)
         {
             void* cacheData = nullptr;
             size_t cacheSize = 0ull;
-            FileIO::ReadBinary((workingDirectory + PIPELINE_CACHE_FILENAME).c_str(), &cacheData, &cacheSize);
+            FileIO::ReadBinary(FixedString256({ workingDirectory, PIPELINE_CACHE_FILENAME }), &cacheData, &cacheSize);
             VkPipelineCacheCreateInfo cacheCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO };
             cacheCreateInfo.initialDataSize = cacheSize;
             cacheCreateInfo.pInitialData = cacheData;
@@ -31,13 +31,13 @@ namespace PK
 
     VulkanPipelineCache::~VulkanPipelineCache()
     {
-        if (m_pipelineCache != VK_NULL_HANDLE && !m_workingDirectory.empty())
+        if (m_pipelineCache != VK_NULL_HANDLE && m_workingDirectory.Length() != 0)
         {
             size_t size = 0ull;
             vkGetPipelineCacheData(m_device, m_pipelineCache, &size, nullptr);
             void* cacheData = malloc(size);
             vkGetPipelineCacheData(m_device, m_pipelineCache, &size, cacheData);
-            FileIO::WriteBinary((m_workingDirectory + PIPELINE_CACHE_FILENAME).c_str(), cacheData, size);
+            FileIO::WriteBinary(FixedString256({ m_workingDirectory, PIPELINE_CACHE_FILENAME }), cacheData, size);
             vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
             free(cacheData);
         }

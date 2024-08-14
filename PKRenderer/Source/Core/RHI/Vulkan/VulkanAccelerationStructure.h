@@ -68,7 +68,7 @@ namespace PK
             void ValidateResources();
 
             const VulkanDriver* m_driver = nullptr;
-            std::string m_name = "AccelerationStructure";
+            FixedString128 m_name;
 
             VulkanRawBuffer* m_instanceInputBuffer = nullptr;
             VulkanRawBuffer* m_scratchBuffer = nullptr;

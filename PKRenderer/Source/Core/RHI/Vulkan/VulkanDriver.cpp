@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <gfx.h>
 #include "Core/Utilities/Handle.h"
-#include "Core/Utilities/Parsing.h"
+#include "Core/Utilities/Parse.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanBuffer.h"
 #include "Core/RHI/Vulkan/VulkanTexture.h"
@@ -248,11 +248,11 @@ namespace PK
         glfwTerminate();
     }
 
-    std::string VulkanDriver::GetDriverHeader() const
+    FixedString32 VulkanDriver::GetDriverHeader() const
     {
         auto supportedMajor = VK_VERSION_MAJOR(apiVersion);
         auto supportedMinor = VK_VERSION_MINOR(apiVersion);
-        return Parse::FormatToString(" - Vulkan %u.%u", supportedMajor, supportedMinor);
+        return FixedString32(" - Vulkan %u.%u", supportedMajor, supportedMinor);
     }
 
     RHIDriverMemoryInfo VulkanDriver::GetMemoryInfo() const

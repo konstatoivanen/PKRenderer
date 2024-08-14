@@ -2,6 +2,7 @@
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/NativeInterface.h"
 #include "Core/Utilities/BufferView.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/Utilities/Ref.h"
 #include "Core/RHI/RHI.h"
 #include "Core/RHI/Structs.h"
@@ -191,7 +192,7 @@ namespace PK
         virtual RHIAPI GetAPI() const = 0;
         virtual RHIQueueSet* GetQueues() const = 0;
         virtual RHIDriverMemoryInfo GetMemoryInfo() const = 0;
-        virtual std::string GetDriverHeader() const = 0;
+        virtual FixedString32 GetDriverHeader() const = 0;
         virtual size_t GetBufferOffsetAlignment(BufferUsage usage) const = 0;
         virtual BuiltInResources* GetBuiltInResources() = 0;
         virtual PropertyBlock* GetResourceState() = 0;

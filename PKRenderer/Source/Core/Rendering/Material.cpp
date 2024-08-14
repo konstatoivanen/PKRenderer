@@ -61,7 +61,7 @@ namespace PK
         {
             for (auto keyword : keywords)
             {
-                Set<bool>(NameID(keyword.as<std::string>()), true);
+                Set<bool>(NameID(keyword.as<std::string>().c_str()), true);
             }
         }
 
@@ -77,7 +77,7 @@ namespace PK
                     continue;
                 }
 
-                auto nameId = NameID(propertyName);
+                auto nameId = NameID(propertyName.c_str());
                 auto typeName = type.as<std::string>();
                 auto elementType = PKAssets::GetElementType(typeName.c_str());
                 auto values = property.second["Value"];
@@ -126,7 +126,7 @@ namespace PK
 }
 
 template<>
-bool PK::Asset::IsValidExtension<PK::Material>(const std::string& extension) { return extension.compare(".material") == 0; }
+bool PK::Asset::IsValidExtension<PK::Material>(const char* extension) { return strcmp(extension, ".material") == 0; }
 
 template<>
 PK::Ref<PK::Material> PK::Asset::Create() { return PK::CreateRef<Material>(); }

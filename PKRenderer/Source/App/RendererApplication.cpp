@@ -49,10 +49,10 @@ namespace PK::App
         auto config = assetDatabase->Load<BaseRendererConfig>("Content/Configs/BaseRenderer.cfg");
         auto keyConfig = assetDatabase->Load<InputKeyConfig>("Content/Configs/Input.keycfg");
 
-        m_graphicsDriver = RHI::CreateDriver(GetWorkingDirectory().c_str(), RHIAPI::Vulkan);
+        m_graphicsDriver = RHI::CreateDriver(GetWorkingDirectory(), RHIAPI::Vulkan);
 
-        m_window = RHI::CreateWindowScope(WindowDescriptor(GetName() + m_graphicsDriver->GetDriverHeader(),
-            config->WindowDesc.IconPath,
+        m_window = RHI::CreateWindowScope(WindowDescriptor({ GetName(), m_graphicsDriver->GetDriverHeader() },
+            config->WindowDesc.IconPath.c_str(),
             config->WindowDesc.Size,
             config->WindowDesc.Vsync,
             config->WindowDesc.ShowCursor));

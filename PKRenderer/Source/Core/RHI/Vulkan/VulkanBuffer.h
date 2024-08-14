@@ -44,7 +44,7 @@ namespace PK
 
             const VulkanDriver* m_driver = nullptr;
             BufferUsage m_usage = BufferUsage::None;
-            std::string m_name = "Buffer";
+            FixedString128 m_name;
             VulkanRawBuffer* m_rawBuffer = nullptr;
             VulkanSparsePageTable* m_pageTable = nullptr;
             PointerMap<BufferIndexRange, VulkanBindHandle, RangeHash> m_bindHandles;

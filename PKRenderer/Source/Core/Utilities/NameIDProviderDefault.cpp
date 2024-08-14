@@ -3,27 +3,19 @@
 
 namespace PK
 {
-    uint32_t NameIDProviderDefault::INameIDProvider_StringToID(const std::string& str)
+    uint32_t NameIDProviderDefault::INameIDProvider_StringToID(const char* str)
     {
-        auto iter = m_stringIdMap.find(str);
-
-        if (iter != m_stringIdMap.end())
-        {
-            return iter->second;
-        }
-
-        m_stringIdMap[str] = ++m_idCounter;
-        m_idStringMap.push_back(str);
-        return m_idCounter;
+        FixedString128 fixed(str);
+        return m_names.Add(fixed);
     }
 
-    const std::string& NameIDProviderDefault::INameIDProvider_IDToString(const uint32_t& id)
+    const char* NameIDProviderDefault::INameIDProvider_IDToString(const uint32_t& id)
     {
-        if (id > m_idCounter)
+        if (id >= m_names.GetCount())
         {
             throw std::invalid_argument("Trying to get a string using an invalid id: " + std::to_string(id));
         }
 
-        return m_idStringMap.at(id);
+        return m_names.GetValue(id).c_str();
     }
 }

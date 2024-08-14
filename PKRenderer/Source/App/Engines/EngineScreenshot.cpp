@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include <filesystem>
-#include "Core/Utilities/Parsing.h"
+#include "Core/Utilities/Parse.h"
 #include "Core/Utilities/FileIOBMP.h"
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
@@ -71,12 +71,12 @@ namespace PK::App
             pixels[i] = value;
         }
 
-        auto filename = std::string("Screenshot0.bmp");
+        FixedString32 filename("Screenshot0.bmp");
         auto index = 0;
 
-        while (std::filesystem::exists(filename))
+        while (std::filesystem::exists(filename.c_str()))
         {
-            filename = Parse::FormatToString("Screenshot%i.bmp", ++index);
+            filename = FixedString32("Screenshot%i.bmp", ++index);
         }
 
         PK::FileIO::WriteBMP(filename.c_str(), pixels, m_captureResolution.x, m_captureResolution.y);

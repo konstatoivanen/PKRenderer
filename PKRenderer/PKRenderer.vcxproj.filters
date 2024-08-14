@@ -1503,9 +1503,6 @@
     <ClInclude Include="Source\Core\Utilities\RemoteProcess.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\TypeInfo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\ControlFlow\RemoteProcessRunner.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1584,7 +1581,7 @@
     <ClInclude Include="Source\App\Engines\EngineProfiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\Parsing.h">
+    <ClInclude Include="Source\Core\Utilities\Parse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Yaml\ConvertCVariableCollection.h">
@@ -1606,6 +1603,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\FixedString.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Yaml\ConvertFixedString.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2439,9 +2439,6 @@
     <ClCompile Include="Source\Core\Utilities\RemoteProcess.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Utilities\TypeInfo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Core\ControlFlow\RemoteProcessRunner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -2493,7 +2490,7 @@
     <ClCompile Include="Source\App\Engines\EngineProfiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Utilities\Parsing.cpp">
+    <ClCompile Include="Source\Core\Utilities\Parse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Yaml\ConvertCVariableCollection.cpp">

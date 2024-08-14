@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/TypeInfo.h"
+#include "Core/Utilities/Parse.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "AssetDatabase.h"
@@ -93,7 +93,7 @@ namespace PK
         for (const auto& entry : std::filesystem::directory_iterator(directory))
         {
             auto name = entry.path().string();
-            auto assetId = AssetID(entry.path().string());
+            auto assetId = AssetID(entry.path().string().c_str());
             auto assetIter = collection.find(assetId);
 
             if (assetIter != collection.end())
@@ -109,7 +109,7 @@ namespace PK
         {
             for (const auto& kv : m_assets.at(typeIndex))
             {
-                if (kv.first.to_string().find(name) != std::string::npos)
+                if (strstr(kv.first.c_str(), name) != nullptr)
                 {
                     return kv.second;
                 }
@@ -127,12 +127,12 @@ namespace PK
             return;
         }
 
-        auto name = GetTypeShortName(typeIndex);
-        FixedString128 cvarnameMeta({ "AssetDatabase.Query.Meta.", name.c_str() });
-        FixedString128 cvarnameLoaded({ "AssetDatabase.Query.Loaded.", name.c_str() });
-        FixedString128 cvarnameReloadAll({ "AssetDatabase.Reload.Cached.All.", name.c_str() });
-        FixedString128 cvarnameReload({ "AssetDatabase.Reload.Cached.", name.c_str() });
-        FixedString128 cvarnameReloadDirectory({ "AssetDatabase.Reload.Cached.Directory.", name.c_str() });
+        auto name = Parse::GetTypeShortName(typeIndex);
+        FixedString128 cvarnameMeta({ "AssetDatabase.Query.Meta.", name });
+        FixedString128 cvarnameLoaded({ "AssetDatabase.Query.Loaded.", name });
+        FixedString128 cvarnameReloadAll({ "AssetDatabase.Reload.Cached.All.", name });
+        FixedString128 cvarnameReload({ "AssetDatabase.Reload.Cached.", name });
+        FixedString128 cvarnameReloadDirectory({ "AssetDatabase.Reload.Cached.Directory.", name });
 
         CVariableRegister::Create<CVariableFunc>(cvarnameMeta.c_str(), [this, typeIndex, name](const char* const* args, [[maybe_unused]] uint32_t count)
             {
@@ -140,7 +140,7 @@ namespace PK
                 auto asset = FindInternal(typeIndex, args[0]);
                 if (asset == nullptr)
                 {
-                    PK_LOG_WARNING("AssetDatabase.Query.Meta.%s Not Found With '%s'", name.c_str(), args[0]);
+                    PK_LOG_WARNING("AssetDatabase.Query.Meta.%s Not Found With '%s'", name, args[0]);
                 }
                 PK_LOG_INFO(asset->GetMetaInfo().c_str());
                 PK_LOG_NEWLINE();

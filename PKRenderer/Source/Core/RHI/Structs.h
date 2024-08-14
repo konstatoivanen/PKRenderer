@@ -1,6 +1,7 @@
 #pragma once
 #include <PKAssets/PKAsset.h>
 #include "Core/Utilities/NameID.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/Math/Math.h"
 
 namespace PK
@@ -571,14 +572,14 @@ namespace PK
 
     struct WindowDescriptor
     {
-        std::string title;
-        std::string iconPath;
+        FixedString64 title;
+        FixedString256 iconPath;
         uint2 size;
         bool vsync;
         bool cursorVisible;
 
-        WindowDescriptor(const std::string& title = "PK Window",
-            const std::string& iconPath = std::string(),
+        WindowDescriptor(const FixedString64& title = "PK Window",
+            const FixedString256& iconPath = "",
             const uint2& size = { 1024u, 512u },
             bool vsync = true,
             bool cursorVisible = true) :

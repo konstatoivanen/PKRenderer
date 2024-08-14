@@ -109,5 +109,5 @@ namespace YAML
     }; \
 
 #define PK_YAML_ASSET_ASSETDATABSE_INTERFACE(type)\
-template<> inline bool PK::Asset::IsValidExtension<type>(const std::string& extension) { return extension.compare(type::Extension) == 0; }\
+template<> inline bool PK::Asset::IsValidExtension<type>(const char* extension) { return strcmp(extension, type::Extension) == 0; }\
 template<> inline PK::Ref<type> PK::Asset::Create() { return PK::CreateRef<type>(); }\

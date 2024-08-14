@@ -29,7 +29,7 @@ namespace PK
 
         glfwSetWindowSizeLimits(m_window, MIN_SIZE, MIN_SIZE, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
-        if (descriptor.iconPath.length() > 0)
+        if (descriptor.iconPath.Length() > 0)
         {
             GLFWimage image;
             int32_t iconBytesPerPixel = 0;

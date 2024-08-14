@@ -3,6 +3,7 @@
 #include <string>
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/NameID.h"
+#include "Core/Utilities/FixedString.h"
 
 namespace PK
 {
@@ -35,8 +36,8 @@ namespace PK
         CVariable(const char* name, const T& value, const char* hint = "cvar hint undefined.", uint32_t argsMin = 1u) :
             ICVariable(name),
             m_value(value),
-            m_hint(hint),
-            m_argsMin(argsMin)
+            m_argsMin(argsMin),
+            m_hint(hint)
         {
         };
 
@@ -49,8 +50,8 @@ namespace PK
         inline uint32_t CVarGetMinArgs() const final { return m_argsMin; }
 
         T m_value;
-        std::string m_hint;
         uint32_t m_argsMin;
+        FixedString64 m_hint;
     };
 
     template<typename T>

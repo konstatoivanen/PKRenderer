@@ -7,6 +7,7 @@
 #include "vulkan/vulkan.h"
 #include "VMA/vk_mem_alloc.h"
 #include "Core/Utilities/FenceRef.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/Utilities/VersionedObject.h"
 #include "Core/RHI/Structs.h"
 
@@ -314,7 +315,7 @@ namespace PK
         const VkDevice device;
         VkDescriptorSetLayout layout;
         VkShaderStageFlagBits stageFlags;
-        std::string name;
+        FixedString128 name;
     };
 
     struct VulkanDescriptorPool : public NoCopy
@@ -469,7 +470,7 @@ namespace PK
     VkAccelerationStructureBuildSizesInfoKHR VulkanGetAccelerationBuildSizesInfo(VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR info, uint32_t primitiveCount);
     
     // Defined here to prevent multiple includes of vulkan.h with wrong defines.
-    std::string VulkanStr_VkQueueFlags(VkQueueFlags value);
+    FixedString128 VulkanStr_VkQueueFlags(VkQueueFlags value);
     const char* VulkanCStr_VkShaderStageFlagBits(VkShaderStageFlagBits value);
     const char* VulkanCStr_VkFormat(VkFormat value);
 

@@ -1,5 +1,8 @@
 #pragma once
 #include <string>
+#include <typeinfo>
+#include <typeindex>
+#include "FixedString.h"
 
 namespace PK::Parse
 {
@@ -9,7 +12,7 @@ namespace PK::Parse
     T FromString(const char* str);
 
     template<typename T>
-    std::string ToString(const T& value);
+    FixedString32 ToString(const T& value);
 
     template<typename T>
     void StringsToArray(const char* const* strs, T* outArray, const uint32_t count)
@@ -19,7 +22,6 @@ namespace PK::Parse
             outArray[i] = FromString<T>(strs[i]);
         }
     }
-
 
     template<typename T>
     void StringToArray(const char* str, T* outArray, const uint32_t count)
@@ -71,4 +73,19 @@ namespace PK::Parse
 
         return result;
     }
+
+    const char* GetTypeShortName(const std::type_index& typeIndex);
+    const char* GetTypeShortName(const std::type_info& typeInfo);
+
+    FixedString64 GetTypeNameSpace(const std::type_index& typeIndex);
+    FixedString64 GetTypeNameSpace(const std::type_info& typeInfo);
+
+    template<typename T>
+    const char* GetTypeShortName() { return GetTypeShortName(typeid(T)); }
+
+    template<typename T>
+    FixedString64 GetTypeNameSpace() { return GetTypeNameSpace(typeid(T)); }
+
+    template<typename T>
+    std::type_index GetTypeIndex() { return std::type_index(typeid(T)); }
 }

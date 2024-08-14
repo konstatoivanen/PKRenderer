@@ -316,7 +316,9 @@ namespace PK
 
         ValidateResources();
 
-        for (auto i = 0u; i < m_instanceCount; ++i)
+        auto hasChanged = m_structureHashPrev != m_structureHashCurr;
+
+        for (auto i = 0u; i < m_instanceCount && hasChanged; ++i)
         {
             auto index = m_writeBuffer[i].accelerationStructureReference;
             m_writeBuffer[i].accelerationStructureReference = m_substructures.GetValueAt((uint32_t)index).raw->deviceAddress;
@@ -325,7 +327,7 @@ namespace PK
         m_instanceInputBuffer->EndMap(m_instanceBufferOffset, sizeof(VkAccelerationStructureInstanceKHR) * m_instanceLimit);
         m_writeBuffer = nullptr;
 
-        if (m_structureHashPrev != m_structureHashCurr)
+        if (hasChanged)
         {
             m_structureHashPrev = m_structureHashCurr;
             auto buildInfo = m_structure.buildInfo;

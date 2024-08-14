@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/ISingleton.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/CLI/CArguments.h"
 #include "Core/CLI/ILogger.h"
 #include "Core/ServiceRegister.h"
@@ -14,7 +15,7 @@ namespace PK
 
     struct IApplication : public ISingleton<IApplication>
     {
-        IApplication(const CArguments& arguments, const std::string& name, Ref<ILogger> logger);
+        IApplication(const CArguments& arguments, const char* name, Ref<ILogger> logger);
 
         virtual ~IApplication() = 0;
         
@@ -32,8 +33,8 @@ namespace PK
         inline const Weak<ILogger> GetLogger() const { return m_logger; }
 
         constexpr const CArguments& GetArguments() const { return m_arguments; }
-        constexpr const std::string& GetName() const { return m_name; }
-        constexpr const std::string& GetWorkingDirectory() const { return m_workingDirectory; }
+        constexpr const char* GetName() const { return m_name.c_str(); }
+        constexpr const char* GetWorkingDirectory() const { return m_name.c_str(); }
 
     protected:
         inline ServiceRegister* GetServices() { return m_services.get(); }
@@ -42,8 +43,8 @@ namespace PK
         
     private:
         const CArguments m_arguments;
-        const std::string m_name;
-        const std::string m_workingDirectory;
+        const FixedString256 m_name;
+        const FixedString256 m_workingDirectory;
 
         Ref<ILogger> m_logger;
         Scope<ServiceRegister> m_services;

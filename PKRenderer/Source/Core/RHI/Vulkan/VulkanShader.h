@@ -36,6 +36,6 @@ namespace PK
             VulkanShaderModule* m_modules[(size_t)ShaderStage::MaxCount];
             const VulkanDescriptorSetLayout* m_descriptorSetLayouts[PK_RHI_MAX_DESCRIPTOR_SETS]{};
             const VulkanPipelineLayout* m_pipelineLayout;
-            const std::string m_name;
+            const FixedString128 m_name;
     };
 }

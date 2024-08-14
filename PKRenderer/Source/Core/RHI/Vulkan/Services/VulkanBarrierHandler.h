@@ -9,6 +9,7 @@ namespace PK
 {
     constexpr static const uint8_t PK_RHI_ACCESS_OPT_BARRIER = 1 << 0;
     constexpr static const uint8_t PK_RHI_ACCESS_OPT_TRANSFER = 1 << 1;
+    constexpr static const uint8_t PK_RHI_ACCESS_OPT_DEFAULT = 1 << 2;
 
     class VulkanBarrierHandler : public NoCopy
     {
@@ -68,106 +69,18 @@ namespace PK
 
             constexpr uint32_t GetQueueFamily() const { return m_queueFamily; }
 
-            template<typename T>
+                        template<typename T>
             void Record(const T resource, const AccessRecord& record, uint8_t options)
             {
-                typedef typename TInfo<T>::BarrierType TBarrier;
-                TBarrier* barrier = nullptr;
-
-                auto scope = record;
-                scope.next = nullptr;
-                
+                uint32_t index = 0u;
                 auto key = reinterpret_cast<uint64_t>(resource);
-                // @TODO should add key here if not present as it will lead to double lookup.
-                auto index = m_resources.GetIndex(key);
 
-                if (index == -1)
+                if (m_resources.AddKey(key, &index))
                 {
-                    auto defaultRecord = m_records.New(scope);
-                    TInfo<T>::SetDefaultRange(defaultRecord);
-                    m_resources.AddValue(key, defaultRecord);
-                    m_resolveTimestamps[index] = 0ull;
-                    m_accessTimestamps[index] = 0ull;
-                    index = m_resources.GetCount() - 1;
+                    options |= PK_RHI_ACCESS_OPT_DEFAULT;
                 }
 
-                auto isSequentialAccess = true;
-
-                if ((options & PK_RHI_ACCESS_OPT_TRANSFER) == 0u)
-                {
-                    isSequentialAccess = (m_globalResolveCounter - m_resolveTimestamps[index]) < 2u;
-                    m_resolveTimestamps[index] = m_globalResolveCounter;
-                    m_accessTimestamps[index] = m_globalAccessCounter++;
-                }
-
-                auto current = &m_resources.GetValueAt(index);
-
-                for (auto next = &(*current)->next; *current; current = next, next = &(*current)->next)
-                {
-                    if (TInfo<T>::IsInclusive((*current)->range, scope.range) &&
-                        (*current)->stage == scope.stage &&
-                        (*current)->access == scope.access && 
-                        (*current)->layout == scope.layout &&
-                        (*current)->queueFamily == scope.queueFamily &&
-                        !(VulkanEnumConvert::IsWriteAccess(scope.access) && isSequentialAccess))
-                    {
-                        return;
-                    }
-
-                    auto writeCur = VulkanEnumConvert::IsWriteAccess((*current)->access);
-                    auto writeNew = VulkanEnumConvert::IsWriteAccess(scope.access);
-                    auto overlap = TInfo<T>::IsOverlap((*current)->range, scope.range);
-                    auto adjacent = TInfo<T>::IsAdjacent((*current)->range, scope.range);
-                    auto mergeFlags = (*current)->layout == scope.layout && (*current)->queueFamily == scope.queueFamily;
-                    auto mergeOverlap = overlap && !writeCur && !writeNew;
-                    auto mergeAdjacent = adjacent && writeCur == writeNew;
-                    auto skipBarrier = !isSequentialAccess && mergeFlags;
-
-                    if (mergeFlags && (mergeOverlap || mergeAdjacent))
-                    {
-                        scope.stage |= (*current)->stage;
-                        scope.access |= (*current)->access;
-                        scope.range = TInfo<T>::Merge((*current)->range, scope.range);
-                        Delete(current, &next);
-                        continue;
-                    }
-
-                    if (!overlap)
-                    {
-                        continue;
-                    }
-        
-                    // If accesses are padded by at least one command in the same queue we can omit a barrier.
-                    if ((options & PK_RHI_ACCESS_OPT_BARRIER) && !skipBarrier)
-                    {
-                        ProcessBarrier<T>(resource, &barrier, **current, record);
-                    }
-
-                    // Same or inclusive current range
-                    if (TInfo<T>::IsInclusive(scope.range, (*current)->range))
-                    {
-                        Delete(current, &next);
-                        continue;
-                    }
-
-                    uint64_t ranges[4];
-                    auto count = TInfo<T>::Splice((*current)->range, scope.range, ranges);
-
-                    (*current)->range = ranges[0];
-
-                    for (auto i = 1u; i < count; ++i)
-                    {
-                        auto slice = m_records.New(**current);
-                        slice->range= ranges[i];
-                        slice->next = (*current)->next;
-                        next = &slice->next;
-
-                        (*current)->next = slice;
-                        current = &(*current)->next;
-                    }
-                }
-
-                *current = m_records.New(scope);
+                Record(resource, index, record, options);
             }
 
             template<typename T>
@@ -216,6 +129,104 @@ namespace PK
             void Prune();
 
         private:
+            template<typename T>
+            void Record(const T resource, uint32_t index, const AccessRecord& record, uint8_t options)
+            {
+                typedef typename TInfo<T>::BarrierType TBarrier;
+                TBarrier* barrier = nullptr;
+
+                auto scope = record;
+                scope.next = nullptr;
+
+                if (options & PK_RHI_ACCESS_OPT_DEFAULT)
+                {
+                    auto defaultRecord = m_records.New(scope);
+                    TInfo<T>::SetDefaultRange(defaultRecord);
+                    m_resources.SetValueAt(index, defaultRecord);
+                    m_resolveTimestamps[index] = 0ull;
+                    m_accessTimestamps[index] = 0ull;
+                    index = m_resources.GetCount() - 1;
+                }
+
+                auto isSequentialAccess = true;
+
+                if ((options & PK_RHI_ACCESS_OPT_TRANSFER) == 0u)
+                {
+                    isSequentialAccess = (m_globalResolveCounter - m_resolveTimestamps[index]) < 2u;
+                    m_resolveTimestamps[index] = m_globalResolveCounter;
+                    m_accessTimestamps[index] = m_globalAccessCounter++;
+                }
+
+                auto current = &m_resources.GetValueAt(index);
+
+                for (auto next = &(*current)->next; *current; current = next, next = &(*current)->next)
+                {
+                    if (TInfo<T>::IsInclusive((*current)->range, scope.range) &&
+                        (*current)->stage == scope.stage &&
+                        (*current)->access == scope.access &&
+                        (*current)->layout == scope.layout &&
+                        (*current)->queueFamily == scope.queueFamily &&
+                        !(VulkanEnumConvert::IsWriteAccess(scope.access) && isSequentialAccess))
+                    {
+                        return;
+                    }
+
+                    auto writeCur = VulkanEnumConvert::IsWriteAccess((*current)->access);
+                    auto writeNew = VulkanEnumConvert::IsWriteAccess(scope.access);
+                    auto overlap = TInfo<T>::IsOverlap((*current)->range, scope.range);
+                    auto adjacent = TInfo<T>::IsAdjacent((*current)->range, scope.range);
+                    auto mergeFlags = (*current)->layout == scope.layout && (*current)->queueFamily == scope.queueFamily;
+                    auto mergeOverlap = overlap && !writeCur && !writeNew;
+                    auto mergeAdjacent = adjacent && writeCur == writeNew;
+                    auto skipBarrier = !isSequentialAccess && mergeFlags;
+
+                    if (mergeFlags && (mergeOverlap || mergeAdjacent))
+                    {
+                        scope.stage |= (*current)->stage;
+                        scope.access |= (*current)->access;
+                        scope.range = TInfo<T>::Merge((*current)->range, scope.range);
+                        Delete(current, &next);
+                        continue;
+                    }
+
+                    if (!overlap)
+                    {
+                        continue;
+                    }
+
+                    // If accesses are padded by at least one command in the same queue we can omit a barrier.
+                    if ((options & PK_RHI_ACCESS_OPT_BARRIER) && !skipBarrier)
+                    {
+                        ProcessBarrier<T>(resource, &barrier, **current, record);
+                    }
+
+                    // Same or inclusive current range
+                    if (TInfo<T>::IsInclusive(scope.range, (*current)->range))
+                    {
+                        Delete(current, &next);
+                        continue;
+                    }
+
+                    uint64_t ranges[4];
+                    auto count = TInfo<T>::Splice((*current)->range, scope.range, ranges);
+
+                    (*current)->range = ranges[0];
+
+                    for (auto i = 1u; i < count; ++i)
+                    {
+                        auto slice = m_records.New(**current);
+                        slice->range = ranges[i];
+                        slice->next = (*current)->next;
+                        next = &slice->next;
+
+                        (*current)->next = slice;
+                        current = &(*current)->next;
+                    }
+                }
+
+                *current = m_records.New(scope);
+            }
+
             template<typename T, typename TBarrier>
             void ProcessBarrier(const T resource, TBarrier** barrier, const AccessRecord& recordOld, const AccessRecord& recordNew);
 
