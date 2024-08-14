@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/RHI/Vulkan/VulkanDriver.h"
 #include "Core/RHI/Vulkan/VulkanSparsePageTable.h"
 #include "VulkanBuffer.h"
@@ -28,8 +29,8 @@ namespace PK
 
         if ((m_usage & BufferUsage::Sparse) != 0)
         {
-            auto name = m_name + std::string(".PageTable");
-            m_pageTable = new VulkanSparsePageTable(m_driver, m_rawBuffer->buffer, bufferCreateInfo.allocation.usage, name.c_str());
+            FixedString128 pageTableName({ name, ".PageTable" });
+            m_pageTable = new VulkanSparsePageTable(m_driver, m_rawBuffer->buffer, bufferCreateInfo.allocation.usage, pageTableName.c_str());
         }
 
         GetBindHandle({ 0, GetSize() });

@@ -78,6 +78,7 @@ namespace PK
                 scope.next = nullptr;
                 
                 auto key = reinterpret_cast<uint64_t>(resource);
+                // @TODO should add key here if not present as it will lead to double lookup.
                 auto index = m_resources.GetIndex(key);
 
                 if (index == -1)

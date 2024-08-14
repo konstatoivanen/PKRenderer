@@ -28,14 +28,14 @@ void PrefilterCs()
     const float2 uv = (coord + 0.5f.xx) * texelSize;
 
     const int2 offsets[4] = { int2(-1,-1), int2(1,1), int2(-1,1), int2(1,-1) };
-    const float4 depths = SampleViewDepthOffsets(uv, offsets);
+    const float4 depths = GatherViewDepths(uv);
     const float4 cocs = GetCirclesOfConfusion(depths);
     const float4 weights = saturate(abs(cocs) / pk_DoF_MaximumCoC);
 
     float3 average;
-    average.r = dot(textureGatherOffsets(pk_Texture, uv, offsets, 0), weights);
-    average.g = dot(textureGatherOffsets(pk_Texture, uv, offsets, 1), weights);
-    average.b = dot(textureGatherOffsets(pk_Texture, uv, offsets, 2), weights);
+    average.r = dot(textureGather(pk_Texture, uv, 0), weights);
+    average.g = dot(textureGather(pk_Texture, uv, 1), weights);
+    average.b = dot(textureGather(pk_Texture, uv, 2), weights);
     average /= dot(weights, 1.0f.xxxx);
     imageStore(pk_DoF_ColorWrite, int3(coord, 0), EncodeE5BGR9(average).xxxx);
     imageStore(pk_DoF_AlphaWrite, int3(coord, 0), dot(cocs, 0.25f.xxxx).xxxx);

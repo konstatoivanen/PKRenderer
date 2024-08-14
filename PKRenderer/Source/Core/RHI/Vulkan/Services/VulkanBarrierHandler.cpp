@@ -196,6 +196,7 @@ namespace PK
         for (auto i = 0u; i < source->m_resources.GetCount(); ++i)
         {
             auto& key = keyValues.nodes[i].key;
+            // @TODO multiple calls to get index. should add index here if not present and take that into account in record.
             auto index = m_resources.GetIndex(key);
 
             // Dont override newer data with older one

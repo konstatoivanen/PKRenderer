@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
+#include "Core/Utilities/FixedString.h"
 #include "VulkanDescriptorCache.h"
 
 namespace PK
@@ -69,7 +70,7 @@ namespace PK
         VkDescriptorSet vkdescriptorset;
         GetDescriptorSets(&allocInfo, &vkdescriptorset, fence, false);
 
-        auto setName = layout->name + std::string(".") + std::string(name);
+        FixedString128 setName({ layout->name.c_str(), ".", name });
         VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)vkdescriptorset, setName.c_str());
 
         auto value = m_setsPool.New();

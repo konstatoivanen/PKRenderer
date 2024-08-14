@@ -3,6 +3,28 @@
 
 namespace PK::Parse
 {
+    std::string FormatToString(const char* format, ...)
+    {
+        va_list v0, v1;
+
+        va_start(v0, format);
+        auto size = _vsnprintf(nullptr, 0, format, v0);
+        va_end(v0);
+
+        if (size < 0)
+        {
+            return std::string();
+        }
+
+        std::string value = std::string(size, '0');
+        
+        va_start(v1, format);
+        _vsnprintf(value.data(), (size_t)size + 1u, format, v1);
+        va_end(v1);
+
+        return value;
+    }
+
     template<> uint8_t FromString(const char* str) { return (uint8_t)atoi(str); }
     template<> int8_t FromString(const char* str) { return (int8_t)atoi(str); }
     template<> uint16_t FromString(const char* str) { return (uint16_t)atoi(str); }
@@ -23,5 +45,5 @@ namespace PK::Parse
     template<> std::string ToString(const uint64_t& value) { char str[32]; sprintf(str, "%llu", value); return std::string(str); }
     template<> std::string ToString(const int64_t& value) { char str[32]; sprintf(str, "%lli", value); return std::string(str); }
     template<> std::string ToString(const float& value) { char str[32]; sprintf(str, "%fg", value); return std::string(str); }
-    template<> std::string ToString(const bool& value) { char str[32]; sprintf(str, "%u", (uint8_t)value); return std::string(str); }
+    template<> std::string ToString(const bool& value) { char str[32]; sprintf(str, "%u", (uint8_t)value); return std::string(str); }    
 }

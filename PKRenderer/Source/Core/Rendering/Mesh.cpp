@@ -2,6 +2,7 @@
 #include <PKAssets/PKAssetLoader.h>
 #include "Core/Math/FunctionsIntersect.h"
 #include "Core/Math/FunctionsMisc.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
@@ -97,7 +98,7 @@ namespace PK
         }
 
         VertexStreamLayout streamLayout;
-        std::string bufferNames[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
+        FixedString128 bufferNames[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
         RHIBufferRef vertexBuffers[PK_RHI_MAX_VERTEX_ATTRIBUTES];
 
         for (auto i = 0u; i < mesh->vertexAttributeCount; ++i)
@@ -109,13 +110,14 @@ namespace PK
             attribute->offset = pAttributes[i].offset;
             attribute->size = pAttributes[i].size;
             attribute->name = pAttributes[i].name;
-            bufferNames[attribute->stream] += std::string(".") + std::string(pAttributes[i].name);
+            bufferNames[attribute->stream].Append(".");
+            bufferNames[attribute->stream].Append(pAttributes[i].name);
         }
 
         streamLayout.CalculateOffsetsAndStride();
 
-        auto vertexBufferName = GetFileName() + std::string(".VertexBuffer");
-        auto indexBufferName = GetFileName() + std::string(".IndexBuffer");
+        FixedString128 vertexBufferName({ GetFileName().c_str(), ".VertexBuffer" });
+        FixedString128 indexBufferName({ GetFileName().c_str(), ".IndexBuffer" });
         auto commandBuffer = CommandBufferExt(RHI::GetCommandBuffer(QueueType::Transfer));
 
         auto pVerticesOffset = (char*)pVertices;
@@ -124,7 +126,7 @@ namespace PK
         for (auto i = 0u; i < PK_RHI_MAX_VERTEX_ATTRIBUTES && streamLayout.GetStride(i) != 0u; ++i)
         {
             auto stride = streamLayout.GetStride(i);
-            auto bufferName = vertexBufferName + bufferNames[i];
+            FixedString128 bufferName({ vertexBufferName.c_str(), bufferNames[i].c_str() });
             vertexBuffers[bufferCount] = RHI::CreateBuffer(stride * mesh->vertexCount, BufferUsage::DefaultVertex, bufferName.c_str());
             commandBuffer.UploadBufferData(vertexBuffers[bufferCount].get(), pVerticesOffset);
             pVerticesOffset += stride * mesh->vertexCount;

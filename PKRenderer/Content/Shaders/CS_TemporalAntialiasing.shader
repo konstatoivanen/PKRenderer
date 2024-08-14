@@ -96,6 +96,7 @@ void main()
 
     const float3 history = SolveTemporalAntiAliasing(desc);
 
+    // @TODO should antialias depth as well or depth of field will have an incorrect coc mask.
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(history)));
 
     uint shuffleH = QuadSwapIdHorizontal(gl_SubgroupInvocationID);

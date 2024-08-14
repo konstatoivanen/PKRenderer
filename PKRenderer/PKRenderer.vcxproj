@@ -249,6 +249,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Timers\TimerFramerate.h" />
     <ClInclude Include="Source\Core\Timers\TimerFrameRunner.h" />
     <ClInclude Include="Source\Core\Utilities\FixedArray.h" />
+    <ClInclude Include="Source\Core\Utilities\FixedString.h" />
     <ClInclude Include="Source\Core\Utilities\Parsing.h" />
     <ClInclude Include="Source\Core\Yaml\ConvertCVariableCollection.h" />
     <ClInclude Include="ThirdParty\bend\bend_sss_cpu.h" />

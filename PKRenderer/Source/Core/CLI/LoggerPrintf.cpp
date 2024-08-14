@@ -6,7 +6,10 @@ namespace PK
 {
     void LoggerPrintf::Indent()
     {
-        ++m_indentation;
+        if (m_indentation < (int32_t)MAX_INDENT)
+        {
+            ++m_indentation;
+        }
     }
 
     void LoggerPrintf::Unindent()
@@ -94,7 +97,10 @@ namespace PK
     {
         if (m_indentation > 0)
         {
-            printf("%s", std::string(m_indentation * 4ull, ' ').c_str());
+            char spaces[MAX_INDENT * 4u + 1u];
+            memset(spaces, ' ', sizeof(spaces));
+            spaces[m_indentation * 4u] = 0;
+            printf("%s", spaces);
         }
     }
 

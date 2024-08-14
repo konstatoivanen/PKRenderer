@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/Math/FunctionsMisc.h"
 #include "Core/Math/FunctionsIntersect.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/ControlFlow/Sequencer.h"
 #include "Core/Assets/AssetDatabase.h"
@@ -131,6 +132,7 @@ namespace PK::App
         context.window = window;
         context.views = views;
         context.viewCount = m_renderViewCount;
+
         Render(&context);
 
         auto* cmdgraphics = RHI::GetCommandBuffer(QueueType::Graphics);
@@ -172,7 +174,7 @@ namespace PK::App
 
         if (type != RenderPipelineEvent::CollectDraws)
         {
-            cmd->BeginDebugScope((std::string(RenderViewTypeName[(int)view->type]) + RenderPipelineEvent::TypeNames[type]).c_str(), PK_COLOR_GREEN);
+            cmd->BeginDebugScope(FixedString64({RenderViewTypeName[(int)view->type], RenderPipelineEvent::TypeNames[type]}).c_str(), PK_COLOR_GREEN);
         }
 
         RenderPipelineEvent event;

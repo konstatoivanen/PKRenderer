@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Utilities/VectorHelpers.h"
-#include "Core/Utilities/Parsing.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanStagingBufferCache.h"
@@ -75,7 +75,7 @@ namespace PK
         if (persistent)
         {
             VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size * PK_RHI_MAX_FRAMES_IN_FLIGHT);
-            auto bufferName = Parse::FormatToString("%s.StagingBuffer", name);
+            FixedString128 bufferName("%s.StagingBuffer", name);
             buffer = m_bufferPool.New(m_device, m_allocator, createInfo, bufferName.c_str());
         }
         else
@@ -89,7 +89,7 @@ namespace PK
             }
             else
             {
-                auto bufferName = Parse::FormatToString("StagingBuffer%u", m_bufferPool.GetActiveMask().CountBits());
+                FixedString64 bufferName("StagingBuffer%u", m_bufferPool.GetActiveMask().CountBits());
                 VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging, size);
                 buffer = m_bufferPool.New(m_device, m_allocator, createInfo, bufferName.c_str());
             }

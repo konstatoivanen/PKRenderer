@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Math/FunctionsMisc.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "RenderView.h"
 
@@ -41,7 +42,7 @@ namespace PK::App
             }
             else
             {
-                isOutOfDate |= RHI::ValidateTexture((&color)[i], textureDescriptor, (std::string(namePrefix) + Names[i]).c_str());
+                isOutOfDate |= RHI::ValidateTexture((&color)[i], textureDescriptor, FixedString64({namePrefix, Names[i]}).c_str());
             }
         }
 
@@ -51,8 +52,8 @@ namespace PK::App
     bool GBuffersFull::Validate(const uint2& resolution, const GBuffersFullDescriptor& descriptor, const char* namePrefix)
     {
         bool isOutOfDate = false;
-        isOutOfDate |= current.Validate(resolution, descriptor.current, (std::string(namePrefix) + ".Current.").c_str());
-        isOutOfDate |= previous.Validate(resolution, descriptor.previous, (std::string(namePrefix) + ".Previous.").c_str());
+        isOutOfDate |= current.Validate(resolution, descriptor.current, FixedString64({namePrefix,".Current."}).c_str());
+        isOutOfDate |= previous.Validate(resolution, descriptor.previous, FixedString64({namePrefix,".Previous."}).c_str());
         return isOutOfDate;
     }
 }

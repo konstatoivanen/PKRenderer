@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Utilities/Bitmask.h"
-#include "Core/Utilities/Parsing.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/Math/FunctionsColor.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/Rendering/ShaderAsset.h"
@@ -98,10 +98,10 @@ namespace PK::App
             maxHistoryTime = glm::max(maxHistoryTime, m_timeHistory.at(i));
         }
 
-        auto textFramerate = Parse::FormatToString("FPS: %i", m_framerate.framerate);
-        auto textFramerateAvg = Parse::FormatToString("Avg: %4.2fms", avgHistoryTime);
-        auto textFramerateMin = Parse::FormatToString("Min: %4.2fms", minHistoryTime);
-        auto textFramerateMax = Parse::FormatToString("Max: %4.2fms", maxHistoryTime);
+        FixedString64 textFramerate("FPS: %i", m_framerate.framerate);
+        FixedString64 textFramerateAvg("Avg: %4.2fms", avgHistoryTime);
+        FixedString64 textFramerateMin("Min: %4.2fms", minHistoryTime);
+        FixedString64 textFramerateMax("Max: %4.2fms", maxHistoryTime);
 
         gui->DrawRect(color32(0,0,0,192), boxRect);
         gui->DrawWireRect(color32(255, 255, 255, 64), boxRect, 1);

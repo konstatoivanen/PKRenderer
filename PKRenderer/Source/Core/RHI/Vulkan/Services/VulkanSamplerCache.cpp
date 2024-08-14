@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/Parsing.h"
+#include "Core/Utilities/FixedString.h"
 #include "VulkanSamplerCache.h"
 
 namespace PK
@@ -26,8 +26,7 @@ namespace PK
         }
 
         auto sampler = &m_samplers.GetValueAt(index);
-        auto name = Parse::FormatToString("Sampler%u", index);
-        *sampler = m_samplerPool.New(m_device, descriptor, name.c_str());
+        *sampler = m_samplerPool.New(m_device, descriptor, FixedString64("Sampler%u", index).c_str());
 
         auto bindHandle = m_bindhandlePool.New();
         bindHandle->isConcurrent = false;

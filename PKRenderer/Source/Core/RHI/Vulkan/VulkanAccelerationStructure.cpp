@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include "Core/Math/FunctionsMisc.h"
 #include "Core/Math/FunctionsMatrix.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 #include "Core/RHI/Vulkan/VulkanBuffer.h"
@@ -163,7 +164,7 @@ namespace PK
         if (m_scratchBuffer == nullptr || m_scratchBuffer->size < scratchSize)
         {
             m_driver->DisposePooledBuffer(m_scratchBuffer, m_cmd->GetFenceRef());
-            auto name = m_name + std::string(".ScratchBuffer");
+            FixedString128 name({ m_name.c_str(),".ScratchBuffer" });
             auto usage = BufferUsage::DefaultStorage | BufferUsage::AccelerationStructure;
             m_scratchBuffer = m_driver->bufferPool.New(m_driver->device, m_driver->allocator, VulkanBufferCreateInfo(usage, scratchSize), name.c_str());
         }
@@ -182,7 +183,7 @@ namespace PK
 
         {
             m_driver->DisposePooledBuffer(m_structureBuffer, m_cmd->GetFenceRef());
-            auto name = m_name + std::string(".StructureBuffer");
+            FixedString128 name({ m_name.c_str(),".StructureBuffer" });
             auto createInfo = VulkanBufferCreateInfo(BufferUsage::DefaultAccelerationStructure, bufferSize);
             m_structureBuffer = m_driver->bufferPool.New(m_driver->device, m_driver->allocator, createInfo, name.c_str());
         }
@@ -201,7 +202,7 @@ namespace PK
             info.offset = structure->bufferOffset;
             info.size = structure->size.accelerationStructureSize;
             info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-            auto name = structure->name.to_string() + std::string(".BLAS");
+            FixedString128 name({ structure->name.c_str(), ".BLAS" });
             auto newstructure = new VulkanRawAccelerationStructure(m_driver->device, info, name.c_str());
 
             if (structure->raw == nullptr)
@@ -244,7 +245,7 @@ namespace PK
         createInfo.offset = m_structure.bufferOffset;
         createInfo.size = m_structure.size.accelerationStructureSize;
         createInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-        m_structure.raw = new VulkanRawAccelerationStructure(m_driver->device, createInfo, (m_name + std::string(".TLAS")).c_str());
+        m_structure.raw = new VulkanRawAccelerationStructure(m_driver->device, createInfo, FixedString128({ m_name.c_str(), ".TLAS" }).c_str());
         m_bindHandle.acceleration.structure = m_structure.raw->structure;
         m_bindHandle.IncrementVersion();
 
@@ -285,7 +286,7 @@ namespace PK
             m_instanceInputBuffer = m_driver->bufferPool.New(m_driver->device,
                 m_driver->allocator,
                 VulkanBufferCreateInfo(BufferUsage::InstanceInput | BufferUsage::DefaultStaging | BufferUsage::PersistentStage, inputBufferSize),
-                (m_name + std::string(".InstanceInputBuffer")).c_str());
+                FixedString128({ m_name.c_str(), ".InstanceInputBuffer" }).c_str());
         }
 
         m_writeBuffer = reinterpret_cast<VkAccelerationStructureInstanceKHR*>(m_instanceInputBuffer->BeginMap(m_instanceBufferOffset));

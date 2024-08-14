@@ -54,7 +54,7 @@ namespace PK
 
                 if (stepsIter != engineSteps.end())
                 {
-                    auto steps = stepsIter->second;
+                    auto& steps = stepsIter->second;
 
                     for (auto& i : steps)
                     {

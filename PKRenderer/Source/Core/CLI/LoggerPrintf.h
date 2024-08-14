@@ -26,6 +26,8 @@ namespace PK
         void LogIndent();
         void LogLineRemainder(int32_t linelength);
 
+        constexpr static uint32_t MAX_INDENT = 256u;
+
         uint32_t m_severityMask = ~0;
         int32_t m_indentation = 0;
         int32_t m_lineClearLength = 0;

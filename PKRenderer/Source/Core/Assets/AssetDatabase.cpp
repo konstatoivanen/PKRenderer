@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Utilities/TypeInfo.h"
+#include "Core/Utilities/FixedString.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "AssetDatabase.h"
 
@@ -127,7 +128,12 @@ namespace PK
         }
 
         auto name = GetTypeShortName(typeIndex);
-        auto cvarnameMeta = std::string("AssetDatabase.Query.Meta.") + name;
+        FixedString128 cvarnameMeta({ "AssetDatabase.Query.Meta.", name.c_str() });
+        FixedString128 cvarnameLoaded({ "AssetDatabase.Query.Loaded.", name.c_str() });
+        FixedString128 cvarnameReloadAll({ "AssetDatabase.Reload.Cached.All.", name.c_str() });
+        FixedString128 cvarnameReload({ "AssetDatabase.Reload.Cached.", name.c_str() });
+        FixedString128 cvarnameReloadDirectory({ "AssetDatabase.Reload.Cached.Directory.", name.c_str() });
+
         CVariableRegister::Create<CVariableFunc>(cvarnameMeta.c_str(), [this, typeIndex, name](const char* const* args, [[maybe_unused]] uint32_t count)
             {
                 PK_LOG_NEWLINE();
@@ -141,25 +147,21 @@ namespace PK
 
             }, "Expected a keyword argument", 1u);
 
-        auto cvarnameLoaded = std::string("AssetDatabase.Query.Loaded.") + name;
         CVariableRegister::Create<CVariableFuncSimple>(cvarnameLoaded.c_str(), [this, typeIndex]()
             {
                 LogAssetsOfTypeInternal(typeIndex);
             });
 
-        auto cvarnameReloadAll = std::string("AssetDatabase.Reload.Cached.All.") + name;
         CVariableRegister::Create<CVariableFuncSimple>(cvarnameReloadAll.c_str(), [this, typeIndex]()
             {
                 ReloadCachedAllInternal(typeIndex);
             });
 
-        auto cvarnameReload = std::string("AssetDatabase.Reload.Cached.") + name;
         CVariableRegister::Create<CVariableFunc>(cvarnameReload.c_str(), [this, typeIndex](const char* const* args, [[maybe_unused]] uint32_t count)
             {
                 ReloadCachedInternal(typeIndex, AssetID(args[0]));
             }, "Expected a filepath argument", 1u);
 
-        auto cvarnameReloadDirectory = std::string("AssetDatabase.Reload.Cached.Directory.") + name;
         CVariableRegister::Create<CVariableFunc>(cvarnameReloadDirectory.c_str(), [this, typeIndex](const char* const* args, [[maybe_unused]] uint32_t count)
             {
                 ReloadCachedDirectoryInternal(typeIndex, std::string(args[0]));
