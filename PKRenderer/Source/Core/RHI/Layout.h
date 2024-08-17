@@ -97,10 +97,10 @@ namespace PK
         }
     };
 
-    struct ShaderPushConstantLayout : public InlineList<ShaderPushConstant, PK_RHI_MAX_PUSH_CONSTANTS>
+    struct ShaderPushConstantLayout : public FixedList<ShaderPushConstant, PK_RHI_MAX_PUSH_CONSTANTS>
     {
         ShaderPushConstantLayout() {}
-        ShaderPushConstantLayout(const ShaderPushConstant* variables, size_t count) : InlineList(variables, count) {}
+        ShaderPushConstantLayout(const ShaderPushConstant* variables, size_t count) : FixedList(variables, count) {}
     };
 
 
@@ -122,11 +122,11 @@ namespace PK
         }
     };
 
-    struct ShaderResourceLayout : public InlineList<ShaderResourceElement, PK_RHI_MAX_DESCRIPTORS_PER_SET>
+    struct ShaderResourceLayout : public FixedList<ShaderResourceElement, PK_RHI_MAX_DESCRIPTORS_PER_SET>
     {
         ShaderResourceLayout() {}
-        ShaderResourceLayout(std::initializer_list<ShaderResourceElement> elements) : InlineList(elements) {}
-        ShaderResourceLayout(std::vector<ShaderResourceElement> elements) : InlineList(elements.data(), elements.size()) {}
+        ShaderResourceLayout(std::initializer_list<ShaderResourceElement> elements) : FixedList(elements) {}
+        ShaderResourceLayout(std::vector<ShaderResourceElement> elements) : FixedList(elements.data(), elements.size()) {}
         const ShaderResourceElement* TryGetElement(NameID name, uint32_t* index) const;
     };
 
@@ -169,23 +169,23 @@ namespace PK
         }
     };
 
-    struct VertexStreamLayout : public InlineList<VertexStreamElement, PK_RHI_MAX_VERTEX_ATTRIBUTES>
+    struct VertexStreamLayout : public FixedList<VertexStreamElement, PK_RHI_MAX_VERTEX_ATTRIBUTES>
     {
-        using InlineList<VertexStreamElement, PK_RHI_MAX_VERTEX_ATTRIBUTES>::Add;
+        using FixedList<VertexStreamElement, PK_RHI_MAX_VERTEX_ATTRIBUTES>::Add;
 
         VertexStreamLayout() {}
 
-        VertexStreamLayout(const VertexStreamElement* elements, size_t count) : InlineList(elements, count)
+        VertexStreamLayout(const VertexStreamElement* elements, size_t count) : FixedList(elements, count)
         {
             CalculateOffsetsAndStride();
         }
 
-        VertexStreamLayout(std::initializer_list<VertexStreamElement> elements) : InlineList(elements)
+        VertexStreamLayout(std::initializer_list<VertexStreamElement> elements) : FixedList(elements)
         {
             CalculateOffsetsAndStride();
         }
 
-        VertexStreamLayout(std::vector<VertexStreamElement> elements) : InlineList(elements.data(), elements.size())
+        VertexStreamLayout(std::vector<VertexStreamElement> elements) : FixedList(elements.data(), elements.size())
         {
             CalculateOffsetsAndStride();
         }

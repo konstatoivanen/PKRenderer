@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/Utilities/FastMap.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
@@ -31,26 +30,25 @@ namespace PK
 
             const VulkanRawBuffer* GetRaw() const { return m_rawBuffer; }
             const VulkanBindHandle* GetBindHandle(const BufferIndexRange& range);
-            inline const VulkanBindHandle* GetBindHandle() const { return m_bindHandles.GetValueAt(0); } // Default range is always the first one
+            inline const VulkanBindHandle* GetBindHandle() const { return m_defaultView; }
             
         private:
-            struct MapRange
-            {
-                size_t ringOffset = 0ull;
-                VkBufferCopy region = { 0ull, 0ull, 0ull };
-            };
-
-            using RangeHash = Hash::TMurmurHash<BufferIndexRange>;
-
             const VulkanDriver* m_driver = nullptr;
             BufferUsage m_usage = BufferUsage::None;
             FixedString128 m_name;
             VulkanRawBuffer* m_rawBuffer = nullptr;
             VulkanSparsePageTable* m_pageTable = nullptr;
-            PointerMap<BufferIndexRange, VulkanBindHandle, RangeHash> m_bindHandles;
-            
+            VulkanBufferView* m_defaultView = nullptr;
+            FastLinkedListRoot<VulkanBufferView, BufferIndexRange> m_firstView = nullptr;
+  
             //@TODO Should not reside in buffer
             VulkanStagingBuffer* m_mappedBuffer = nullptr;
-            MapRange m_mapRange{};
+
+            struct MapRange
+            {
+                size_t ringOffset = 0ull;
+                VkBufferCopy region = { 0ull, 0ull, 0ull };
+            }
+            m_mapRange{};
     };
 }

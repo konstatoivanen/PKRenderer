@@ -44,7 +44,7 @@ namespace PK
             bool TryAcquireNextImage(VkSemaphore* imageAvailableSignal);
             void Present(VkSemaphore waitSignal);
 
-            const VulkanBindHandle* GetBindHandle() const { return &m_bindHandles[m_imageIndex]; }
+            const VulkanBindHandle* GetBindHandle() const { return &m_imageViews[m_imageIndex]->bindHandle; }
             const VulkanImageView* GetImageView() const { return m_imageViews[m_imageIndex]; }
             constexpr VkExtent2D GetExtent() const { return m_extent; }
             constexpr uint3 GetResolution() const { return { m_extent.width, m_extent.height, 1 }; }
@@ -67,7 +67,6 @@ namespace PK
             VkImage m_images[MaxImageCount]{};
             VulkanImageView* m_imageViews[MaxImageCount]{};
             FenceRef m_frameFences[MaxImageCount]{};
-            VulkanBindHandle m_bindHandles[MaxImageCount]{};
             uint32_t m_imageCount;
             VkFormat m_format;
             VkExtent2D m_extent;

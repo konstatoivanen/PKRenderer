@@ -17,7 +17,6 @@ namespace PK::App
             RHITexture* m_bloomLensDirtTexture;
             uint32_t m_passDownsample0 = 0;
             uint32_t m_passDownsample = 0;
-            uint32_t m_passSeparableBlur = 0;
             uint32_t m_passUpsample = 0;
     };
 }

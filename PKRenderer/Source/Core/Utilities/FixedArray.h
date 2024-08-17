@@ -22,9 +22,12 @@ namespace PK
         {
         }
 
+
         T& operator [](size_t i) { return m_array[i]; }
         const T& operator [](size_t i) const { return m_array[i]; }
     
+        void Clear() { memset(m_array, 0, sizeof(T) * capacity); }
+
         private:
             T m_array[capacity]{};
     };

@@ -108,7 +108,7 @@ namespace PK
         Scope<VulkanSamplerCache> samplerCache;
         Scope<VulkanLayoutCache> layoutCache;
         Scope<Disposer> disposer;
-        mutable FixedPool<VulkanBindHandle, 4096> bindhandlePool;
+        mutable FixedPool<VulkanBufferView, 2048> bufferViewPool;
         mutable FixedPool<VulkanImageView, 2048> imageViewPool;
         mutable FixedPool<VulkanRawImage, 2048> imagePool;
         mutable FixedPool<VulkanRawBuffer, 2048> bufferPool;

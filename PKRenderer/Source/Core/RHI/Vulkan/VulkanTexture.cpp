@@ -17,20 +17,18 @@ namespace PK
     {
         auto fence = m_driver->GetQueues()->GetFenceRef(QueueType::Graphics);
 
-        for (auto i = 0u; i < m_imageViews.GetCount(); ++i)
+        for (auto view : m_firstView)
         {
-            auto value = &m_imageViews.GetValueAt(i);
-            m_driver->bindhandlePool.Delete(value->bindHandle);
-            m_driver->DisposePooledImageView(value->view, fence);
+            m_driver->DisposePooledImageView(view, fence);
         }
-
-        m_imageViews.Clear();
 
         if (m_rawImage != nullptr)
         {
             m_driver->DisposePooledImage(m_rawImage, fence);
             m_rawImage = nullptr;
         }
+
+        m_firstView = nullptr;
     }
 
     void VulkanTexture::SetSampler(const SamplerDescriptor& sampler)
@@ -42,14 +40,12 @@ namespace PK
 
         m_descriptor.sampler = sampler;
 
-        for (auto i = 0u; i < m_imageViews.GetCount(); ++i)
+        for (auto& view : m_firstView)
         {
-            auto value = &m_imageViews.GetValueAt(i);
-
-            if (value->bindHandle->image.sampler != VK_NULL_HANDLE)
+            if (view->bindHandle.image.sampler != VK_NULL_HANDLE)
             {
-                value->bindHandle->IncrementVersion();
-                value->bindHandle->image.sampler = RHIDriver::Get()->GetNative<VulkanDriver>()->samplerCache->GetSampler(m_descriptor.sampler);
+                view->bindHandle.IncrementVersion();
+                view->bindHandle.image.sampler = RHIDriver::Get()->GetNative<VulkanDriver>()->samplerCache->GetSampler(m_descriptor.sampler);
             }
         }
     }
@@ -114,28 +110,33 @@ namespace PK
         }
     }
 
-    const VulkanTexture::ViewValue* VulkanTexture::GetView(const TextureViewRange& range, TextureBindMode mode)
+    const VulkanImageView* VulkanTexture::GetView(const TextureViewRange& range, TextureBindMode mode)
     {
         auto normalizedRange = NormalizeViewRange(range);
-        size_t key = GetViewKey(normalizedRange, mode);
-        auto index = 0u;
+        auto key = GetViewKey(normalizedRange, mode);
 
-        if (!m_imageViews.AddKey(key, &index))
+        if (m_firstView.FindAndSwapFirst(key))
         {
-            return &m_imageViews.GetValueAt(index);
+            return m_firstView;
         }
 
         auto useAlias = mode != TextureBindMode::SampledTexture && m_rawImage->imageAlias != VK_NULL_HANDLE;
         auto viewType = VulkanEnumConvert::GetViewType(m_descriptor.type);
         auto swizzle = VulkanEnumConvert::GetSwizzle(m_rawImage->format);
 
-        VkImageViewCreateInfo info{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-        info.pNext = nullptr;
-        info.flags = 0;
-        info.image = useAlias ? m_rawImage->imageAlias : m_rawImage->image;
+        VulkanImageViewCreateInfo info;
+        info.image = m_rawImage->image;
+        info.imageAlias = m_rawImage->imageAlias;
         info.viewType = viewType;
-        info.format = useAlias ? m_rawImage->formatAlias : m_rawImage->format;
+        info.format = m_rawImage->format;
+        info.formatAlias = m_rawImage->formatAlias;
+        info.layout = GetImageLayout();
+        info.samples = m_rawImage->samples;
         info.components = mode == TextureBindMode::SampledTexture ? swizzle : (VkComponentMapping{});
+        info.extent = m_rawImage->extent;
+        info.isConcurrent = IsConcurrent();
+        info.isTracked = IsTracked();
+        info.isAlias = useAlias;
         info.subresourceRange =
         {
             (uint32_t)VulkanEnumConvert::GetFormatAspect(info.format),
@@ -145,25 +146,14 @@ namespace PK
             VulkanEnumConvert::ExpandVkRange16(normalizedRange.layers)
         };
 
-        auto viewValue = &m_imageViews.GetValueAt(index);
-        viewValue->view = m_driver->imageViewPool.New(m_driver->device, info, m_name.c_str());
-        viewValue->bindHandle = m_driver->bindhandlePool.New();
-        viewValue->bindHandle->image.view = viewValue->view->view;
-        viewValue->bindHandle->image.image = m_rawImage->image;
-        viewValue->bindHandle->image.alias = m_rawImage->imageAlias;
-        viewValue->bindHandle->image.layout = GetImageLayout();
-        viewValue->bindHandle->image.format = info.format;
-        viewValue->bindHandle->image.extent = m_rawImage->extent;
-        viewValue->bindHandle->image.range = info.subresourceRange;
-        viewValue->bindHandle->image.samples = m_rawImage->samples;
-        viewValue->bindHandle->isConcurrent = IsConcurrent();
-        viewValue->bindHandle->isTracked = IsTracked();
+        auto newView = m_driver->imageViewPool.New(m_driver->device, info, m_name.c_str());
 
         if (mode == TextureBindMode::SampledTexture)
         {
-            viewValue->bindHandle->image.sampler = RHIDriver::Get()->GetNative<VulkanDriver>()->samplerCache->GetSampler(m_descriptor.sampler);
+            newView->bindHandle.image.sampler = RHIDriver::Get()->GetNative<VulkanDriver>()->samplerCache->GetSampler(m_descriptor.sampler);
         }
 
-        return viewValue;
+        m_firstView.Insert(newView, key);
+        return m_firstView;
     }
 }

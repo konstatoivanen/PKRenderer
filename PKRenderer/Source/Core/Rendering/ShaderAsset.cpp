@@ -9,6 +9,48 @@
 
 namespace PK
 {
+    void ShaderAsset::Map::AddKeyword(const NameID name, uint8_t value)
+    {
+        if (keywordCount == 0u)
+        {
+            memset(buckets, 255, sizeof(buckets));
+        }
+
+        static_assert(MAX_KEYWORDS == 256u, "8 bit buckets dont work with more than 256 elements.");
+
+        // Assumes unique keywords. Doesnt handle duplicates
+        auto bucketIndex = name.identifier % MAX_KEYWORDS;
+        auto valueIndex = buckets[bucketIndex];
+
+        if (valueIndex < 255u)
+        {
+            offsets[keywordCount] = valueIndex;
+        }
+
+        keywordValues[keywordCount] = value;
+        keywords[keywordCount] = name;
+        offsets[keywordCount] = keywordCount;
+        buckets[bucketIndex] = keywordCount;
+        keywordCount++;
+    }
+
+    int32_t ShaderAsset::Map::GetKeywordIndex(NameID name) const
+    {
+        if (keywordCount == 0)
+        {
+            return -1;
+        }
+
+        auto index = buckets[name.identifier % MAX_KEYWORDS];
+
+        while (keywords[index] != name && offsets[index] != index)
+        {
+            index = offsets[index];
+        }
+
+        return keywords[index] == name ? index : -1;
+    }
+
     bool ShaderAsset::Map::SupportsKeywords(const NameID* names, const uint32_t count) const
     {
         for (auto i = 0u; i < count; ++i)
@@ -28,11 +70,12 @@ namespace PK
 
         for (auto i = 0u; i < count; ++i)
         {
-            auto kv = keywords.find(names[i]);
+            auto index = GetKeywordIndex(names[i]);
 
-            if (kv != keywords.end())
+            if (index != -1)
             {
-                flags[kv->second >> 4] = kv->second & 0xF;
+                auto value = keywordValues[index];
+                flags[value >> 4] = value & 0xF;
             }
         }
 
@@ -43,12 +86,13 @@ namespace PK
     {
         uint8_t flags[MAX_DIRECTIVES]{};
 
-        for (auto& kv : keywords)
+        for (auto i = 0u; i < keywordCount; ++i)
         {
-            bool value;
-            if (nameblock->TryGet(kv.first, value) && value)
+            bool enabled;
+            if (nameblock->TryGet(keywords[i], enabled) && enabled)
             {
-                flags[kv.second >> 4] = kv.second & 0xF;
+                auto value = keywordValues[i];
+                flags[value >> 4] = value & 0xF;
             }
         }
 
@@ -114,7 +158,7 @@ namespace PK
             auto o = pKeyword->offsets;
             auto d = (o >> 28) & 0xF;
             m_map.directives[d++] = o & 0xFFFFFF;
-            m_map.keywords[pKeyword->name] = (o >> 24) & 0xFF;
+            m_map.AddKeyword(pKeyword->name, (o >> 24) & 0xFF);
             m_map.directivecount = d > m_map.directivecount ? d : m_map.directivecount;
         }
 
@@ -136,6 +180,8 @@ namespace PK
 
         auto pVariants = shader->variants.Get(base);
         auto fileName = std::filesystem::path(GetFileName()).stem().string();
+
+        m_shaders.reserve(shader->variantcount);
 
         for (auto i = 0u; i < shader->variantcount; ++i)
         {
@@ -172,11 +218,12 @@ namespace PK
 
         std::vector<std::vector<std::string>> keywordlist;
 
-        for (auto& kv : m_map.keywords)
+        for (auto i = 0u; i < m_map.keywordCount; ++i)
         {
-            const auto& keyword = kv.first.c_str();
-            auto index0 = (kv.second >> 4u) & 0xFu;
-            auto index1 = kv.second & 0xFu;
+            const auto& keyword = m_map.keywords[i].c_str();
+            auto value = m_map.keywordValues[i];
+            auto index0 = (value >> 4u) & 0xFu;
+            auto index1 = value & 0xFu;
 
             if (keywordlist.size() <= index0)
             {

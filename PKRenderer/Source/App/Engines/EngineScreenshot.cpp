@@ -10,7 +10,7 @@
 namespace PK::App
 {
     EngineScreenshot::EngineScreenshot() : 
-        m_accumulatedPixels(1)
+        m_accumulatedPixels(0)
     {
         CVariableRegister::Create<CVariableFuncSimple>("Engine.Screenshot.QueueCapture", [this](){QueueCapture();});
     }

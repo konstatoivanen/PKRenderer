@@ -111,33 +111,27 @@ namespace PK
 
         for (size_t i = 0u; i < m_imageCount; ++i)
         {
-            VkImageViewCreateInfo imageViewCreateInfo{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-            imageViewCreateInfo.image = m_images[i];
-            imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            imageViewCreateInfo.format = m_format;
-            imageViewCreateInfo.components = VkComponentMapping{};
-            imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-            imageViewCreateInfo.subresourceRange.levelCount = 1;
-            imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-            imageViewCreateInfo.subresourceRange.layerCount = 1;
-            FixedString64 name("Swapchain.Image%lli", i);
-            m_imageViews[i] = RHIDriver::Get()->GetNative<VulkanDriver>()->imageViewPool.New(m_device, imageViewCreateInfo, name.c_str());
-        }
+            VulkanImageViewCreateInfo info;
+            info.image = m_images[i];
+            info.imageAlias = VK_NULL_HANDLE;
+            info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            info.format = m_format;
+            info.formatAlias = m_format;
+            info.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            info.samples = VK_SAMPLE_COUNT_1_BIT;
+            info.components = VkComponentMapping{};
+            info.extent = { m_extent.width, m_extent.height, 1 };
+            info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            info.subresourceRange.baseMipLevel = 0;
+            info.subresourceRange.levelCount = 1;
+            info.subresourceRange.baseArrayLayer = 0;
+            info.subresourceRange.layerCount = 1;
+            info.isConcurrent = false;
+            info.isTracked = true;
+            info.isAlias = false;
 
-        for (size_t i = 0u; i < m_imageCount; ++i)
-        {
-            auto handle = &m_bindHandles[i];
-            handle->image.image = m_images[i];
-            handle->image.alias = VK_NULL_HANDLE;
-            handle->image.view = m_imageViews[i]->view;
-            handle->image.sampler = VK_NULL_HANDLE;
-            handle->image.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            handle->image.format = m_format;
-            handle->image.extent = { m_extent.width, m_extent.height, 1 };
-            handle->image.range = { VK_IMAGE_ASPECT_COLOR_BIT, 0u, VK_REMAINING_MIP_LEVELS, 0u, VK_REMAINING_ARRAY_LAYERS };
-            handle->image.samples = VK_SAMPLE_COUNT_1_BIT;
-            handle->IncrementVersion();
+            FixedString64 name("Swapchain.Image%lli", i);
+            m_imageViews[i] = RHIDriver::Get()->GetNative<VulkanDriver>()->imageViewPool.New(m_device, info, name.c_str());
         }
 
         for (auto& fence : m_frameFences)

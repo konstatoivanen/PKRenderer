@@ -1,6 +1,5 @@
 #pragma once
 #include "Core/Utilities/ForwardDeclare.h"
-#include "Core/Utilities/FastMap.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
@@ -22,38 +21,32 @@ namespace PK
             inline VkImageAspectFlags GetAspectFlags() const { return VulkanEnumConvert::GetFormatAspect(m_rawImage->format); }
             inline VkFormat GetNativeFormat() const { return m_rawImage->format; }
             inline const VulkanRawImage* GetRaw() const { return m_rawImage; }
-            inline const VulkanBindHandle* GetBindHandle() { return GetView({})->bindHandle; }
-            inline const VulkanBindHandle* GetBindHandle(TextureBindMode bindMode) { return GetView({}, bindMode)->bindHandle; }
-            inline const VulkanBindHandle* GetBindHandle(const TextureViewRange& range, TextureBindMode bindMode) { return GetView(range, bindMode)->bindHandle; }
+            inline const VulkanBindHandle* GetBindHandle() { return &GetView({})->bindHandle; }
+            inline const VulkanBindHandle* GetBindHandle(TextureBindMode bindMode) { return &GetView({}, bindMode)->bindHandle; }
+            inline const VulkanBindHandle* GetBindHandle(const TextureViewRange& range, TextureBindMode bindMode) { return &GetView(range, bindMode)->bindHandle; }
             void FillBindHandle(VulkanBindHandle* handle, const TextureViewRange& range, TextureBindMode bindMode) const;
             inline void FillBindHandle(VulkanBindHandle* handle, TextureBindMode bindMode) const { FillBindHandle(handle, {}, bindMode); }
         
         private:
             TextureViewRange NormalizeViewRange(const TextureViewRange& range) const;
             
-            inline static size_t GetViewKey(const TextureViewRange& range, TextureBindMode mode)
+            inline static uint64_t GetViewKey(const TextureViewRange& range, TextureBindMode mode)
             {
-                size_t h = 0ull;
+                uint64_t h = 0ull;
                 h |= range.level & 0xFFull;
                 h |= (range.levels & 0xFFull) << 8ull;
-                h |= (size_t)range.layer << 16ull;
-                h |= (size_t)range.layers << 32ull;
-                h |= (size_t)mode << 48ull;
+                h |= (uint64_t)range.layer << 16ull;
+                h |= (uint64_t)range.layers << 32ull;
+                h |= (uint64_t)mode << 48ull;
                 return h;
             }
 
-            struct ViewValue
-            {
-                VulkanBindHandle* bindHandle = nullptr;
-                VulkanImageView* view = nullptr;
-            };
-
-            const ViewValue* GetView(const TextureViewRange& range, TextureBindMode mode = TextureBindMode::SampledTexture);
+            const VulkanImageView* GetView(const TextureViewRange& range, TextureBindMode mode = TextureBindMode::SampledTexture);
 
             const VulkanDriver* m_driver = nullptr;
             FixedString128 m_name;
             TextureDescriptor m_descriptor;
             VulkanRawImage* m_rawImage = nullptr;
-            FastMap<size_t, ViewValue> m_imageViews;
+            FastLinkedListRoot<VulkanImageView, uint64_t> m_firstView = nullptr;
     };
 }

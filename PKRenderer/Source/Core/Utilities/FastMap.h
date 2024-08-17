@@ -30,6 +30,7 @@ namespace PK
 
     private:
         inline static THash Hash;
+        //@TODO use one block for values & nodes
         MemoryBlock<TValue> m_values;
         MemoryBlock<Node> m_nodes;
         MemoryBlock<int32_t> m_buckets;
@@ -43,8 +44,9 @@ namespace PK
         {
             if (m_values.GetCount() < newSize)
             {
-                m_values.Validate(Hash::ExpandPrime(newSize));
-                m_nodes.Validate(Hash::ExpandPrime(newSize));
+                auto size = Hash::ExpandPrime(newSize);
+                m_values.Validate(size);
+                m_nodes.Validate(size);
             }
 
             if (m_buckets.GetCount() == 0 && newSize > 0)
@@ -62,6 +64,7 @@ namespace PK
             if (m_count > 0)
             {
                 m_count = 0u;
+                m_collisions = 0u;
                 m_values.Clear();
                 m_nodes.Clear();
                 m_buckets.Clear();
@@ -183,16 +186,7 @@ namespace PK
 
             if (GetValueIndexFromBuckets(bucketIndex) == (int32_t)index)
             {
-                if (m_nodes[index].next != -1)
-                {
-                    throw std::exception("if the bucket points to the cell, next MUST NOT exists");
-                }
-
                 SetValueIndexInBuckets(bucketIndex, m_nodes[index].previous);
-            }
-            else if (m_nodes[index].next == -1)
-            {
-                throw std::exception("if the bucket points to another cell, next MUST exists");
             }
 
             auto updateNext = m_nodes[index].next;
@@ -205,6 +199,7 @@ namespace PK
 
             if (updatePrevious != -1)
             {
+                m_collisions--;
                 m_nodes[updatePrevious].next = updateNext;
             }
 
@@ -265,11 +260,9 @@ namespace PK
 
         TValue* GetValueRef(const TKey& key) { auto index = GetIndex(key); return index != -1 ? &m_values[index] : nullptr; }
         TValue& GetValueAt(uint32_t index) { return m_values[index]; }
-        TKey& GetKeyAt(uint32_t index) { return m_nodes[index].key; }
         
         void SetValue(const TKey& key, const TValue& value) { auto index = GetIndex(key); if (index != -1) m_values[index] = value; }
         void SetValueAt(uint32_t index, const TValue& value) { m_values[index] = value; }
-        void SetKeyAt(uint32_t index, const TKey& key) { m_nodes[index].key = key; }
     };
 
     template<typename TKey, typename TValue, typename THash = std::hash<TKey>>

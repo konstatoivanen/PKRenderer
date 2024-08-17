@@ -427,10 +427,31 @@ namespace PK
     }
 
 
-    VulkanImageView::VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo, const char* name) : device(device)
+    VulkanImageView::VulkanImageView(VkDevice device, const VulkanImageViewCreateInfo& createInfo, const char* name) : device(device)
     {
-        VK_ASSERT_RESULT_CTX(vkCreateImageView(device, &createInfo, nullptr, &view), "Failed to create an image view!");
+        VkImageViewCreateInfo info{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+        info.pNext = nullptr;
+        info.flags = 0;
+        info.image = createInfo.isAlias ? createInfo.imageAlias : createInfo.image;
+        info.viewType = createInfo.viewType;
+        info.format = createInfo.isAlias ? createInfo.formatAlias : createInfo.format;
+        info.components = createInfo.components;
+        info.subresourceRange = createInfo.subresourceRange;
+
+        VK_ASSERT_RESULT_CTX(vkCreateImageView(device, &info, nullptr, &view), "Failed to create an image view!");
         VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)view, name);
+
+        bindHandle.image.view = view;
+        bindHandle.image.image = createInfo.image;
+        bindHandle.image.alias = createInfo.imageAlias;
+        bindHandle.image.layout = createInfo.layout;
+        bindHandle.image.format = info.format;
+        bindHandle.image.extent = createInfo.extent;
+        bindHandle.image.range = createInfo.subresourceRange;
+        bindHandle.image.samples = createInfo.samples;
+        bindHandle.image.sampler = VK_NULL_HANDLE;
+        bindHandle.isConcurrent = createInfo.isConcurrent;
+        bindHandle.isTracked = createInfo.isTracked;
     }
 
     VulkanImageView::~VulkanImageView()
@@ -1789,29 +1810,6 @@ namespace PK
         pkfn_vkReleaseFullScreenExclusiveModeEXT = (PFN_vkReleaseFullScreenExclusiveModeEXT)vkGetInstanceProcAddr(instance, "vkReleaseFullScreenExclusiveModeEXT");
     }
 
-
-    std::vector<VkLayerProperties> VulkanGetInstanceLayerProperties()
-    {
-        uint32_t layerCount;
-        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-        std::vector<VkLayerProperties> layerProperties(layerCount);
-        vkEnumerateInstanceLayerProperties(&layerCount, layerProperties.data());
-
-        return layerProperties;
-    }
-
-    std::vector<VkExtensionProperties> VulkanGetInstanceExtensions()
-    {
-        uint32_t extensionCount = 0;
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-
-        std::vector<VkExtensionProperties> extensions(extensionCount);
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
-
-        return extensions;
-    }
-
     std::vector<VkPhysicalDevice> VulkanGetPhysicalDevices(VkInstance instance)
     {
         uint32_t deviceCount = 0;
@@ -1821,17 +1819,6 @@ namespace PK
         vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
         return devices;
-    }
-
-    std::vector<VkExtensionProperties> VulkanGetPhysicalDeviceExtensionProperties(VkPhysicalDevice device)
-    {
-        uint32_t extensionCount;
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-
-        std::vector<VkExtensionProperties> extensions(extensionCount);
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, extensions.data());
-
-        return extensions;
     }
 
     std::vector<VkQueueFamilyProperties> VulkanGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice device)
@@ -1941,32 +1928,63 @@ namespace PK
             return true;
         }
 
-        auto availableExtensions = VulkanGetInstanceExtensions();
+        auto availableCount = 0u;
+        vkEnumerateInstanceExtensionProperties(nullptr, &availableCount, nullptr);
+        auto availableExtensions = PK_STACK_ALLOC(VkExtensionProperties, availableCount);
+        vkEnumerateInstanceExtensionProperties(nullptr, &availableCount, availableExtensions);
 
-        // @TODO replace with stack variables
-        std::set<std::string> requiredExtensions(extensions->begin(), extensions->end());
+        auto foundCount = 0u;
+        auto foundMask = PK_STACK_ALLOC(bool, extensions->size());
+        memset(foundMask, 0, sizeof(bool) * extensions->size());
 
-        for (const auto& extension : availableExtensions)
+        for (auto i = 0u; i < availableCount; ++i)
         {
-            requiredExtensions.erase(extension.extensionName);
+            auto name = availableExtensions[i].extensionName;
+
+            for (auto j = 0u; j < extensions->size(); ++j)
+            {
+                if (!foundMask[j] && strcmp(extensions->at(j), name) == 0)
+                {
+                    foundMask[j] = true;
+                    foundCount++;
+                }
+            }
         }
 
-        return requiredExtensions.empty();
+        return foundCount == extensions->size();
     }
 
     bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const std::vector<const char*>* extensions)
     {
-        auto availableExtensions = VulkanGetPhysicalDeviceExtensionProperties(device);
-
-        // @TODO replace with stack variables
-        std::set<std::string> requiredExtensions(extensions->begin(), extensions->end());
-
-        for (const auto& extension : availableExtensions)
+        if (extensions == nullptr || extensions->size() == 0)
         {
-            requiredExtensions.erase(extension.extensionName);
+            return true;
         }
 
-        return requiredExtensions.empty();
+        auto availableCount = 0u;
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &availableCount, nullptr);
+        auto availableExtensions = PK_STACK_ALLOC(VkExtensionProperties, availableCount);
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &availableCount, availableExtensions);
+
+        auto foundCount = 0u;
+        auto foundMask = PK_STACK_ALLOC(bool, extensions->size());
+        memset(foundMask, 0, sizeof(bool) * extensions->size());
+
+        for (auto i = 0u; i < availableCount; ++i)
+        {
+            auto name = availableExtensions[i].extensionName;
+
+            for (auto j = 0u; j < extensions->size(); ++j)
+            {
+                if (!foundMask[j] && strcmp(extensions->at(j), name) == 0)
+                {
+                    foundMask[j] = true;
+                    foundCount++;
+                }
+            }
+        }
+
+        return foundCount == extensions->size();
     }
 
     bool VulkanValidateValidationLayers(const std::vector<const char*>* validationLayers)
@@ -1976,17 +1994,30 @@ namespace PK
             return true;
         }
 
-        auto availableLayers = VulkanGetInstanceLayerProperties();
+        uint32_t availableCount = 0u;
+        vkEnumerateInstanceLayerProperties(&availableCount, nullptr);
+        auto availableLayers = PK_STACK_ALLOC(VkLayerProperties, availableCount);
+        vkEnumerateInstanceLayerProperties(&availableCount, availableLayers);
 
-        // @TODO replace with stack variables
-        std::set<std::string> requiredLayers(validationLayers->begin(), validationLayers->end());
+        auto foundCount = 0u;
+        auto foundMask = PK_STACK_ALLOC(bool, validationLayers->size());
+        memset(foundMask, 0, sizeof(bool) * validationLayers->size());
 
-        for (const auto& layer : availableLayers)
+        for (auto i = 0u; i < availableCount; ++i)
         {
-            requiredLayers.erase(layer.layerName);
+            auto name = availableLayers[i].layerName;
+
+            for (auto j = 0u; j < validationLayers->size(); ++j)
+            {
+                if (!foundMask[j] && strcmp(validationLayers->at(j), name) == 0)
+                {
+                    foundMask[j] = true;
+                    foundCount++;
+                }
+            }
         }
 
-        return requiredLayers.empty();
+        return foundCount == validationLayers->size();
     }
 
     bool VulkanIsPresentSupported(VkPhysicalDevice physicalDevice, uint32_t familyIndex, VkSurfaceKHR surface)

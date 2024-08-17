@@ -4,13 +4,14 @@
 namespace PKAssets
 {
     constexpr static const uint64_t PK_ASSET_MAGIC_NUMBER = 16056123332373007180ull;
-    constexpr static const uint32_t PK_ASSET_NAME_MAX_LENGTH = 64;
-    constexpr static const uint32_t PK_ASSET_MAX_VERTEX_ATTRIBUTES = 8;
-    constexpr static const uint32_t PK_ASSET_MAX_DESCRIPTOR_SETS = 4;
-    constexpr static const uint32_t PK_ASSET_MAX_DESCRIPTORS_PER_SET = 16;
-    constexpr static const uint32_t PK_ASSET_MAX_PUSH_CONSTANTS = 16;
-    constexpr static const uint32_t PK_ASSET_MAX_SHADER_KEYWORDS = 256;
-    constexpr static const uint32_t PK_ASSET_MAX_UNBOUNDED_SIZE = 2048;
+    constexpr static const uint32_t PK_ASSET_NAME_MAX_LENGTH = 64u;
+    constexpr static const uint32_t PK_ASSET_MAX_VERTEX_ATTRIBUTES = 8u;
+    constexpr static const uint32_t PK_ASSET_MAX_DESCRIPTOR_SETS = 4u;
+    constexpr static const uint32_t PK_ASSET_MAX_DESCRIPTORS_PER_SET = 16u;
+    constexpr static const uint32_t PK_ASSET_MAX_PUSH_CONSTANTS = 16u;
+    constexpr static const uint32_t PK_ASSET_MAX_SHADER_KEYWORDS = 256u;
+    constexpr static const uint32_t PK_ASSET_MAX_SHADER_DIRECTIVES = 16u;
+    constexpr static const uint32_t PK_ASSET_MAX_UNBOUNDED_SIZE = 2048u;
 
     constexpr static const char* PK_ASSET_EXTENSION_SHADER = ".pkshader";
     constexpr static const char* PK_ASSET_EXTENSION_MESH = ".pkmesh";

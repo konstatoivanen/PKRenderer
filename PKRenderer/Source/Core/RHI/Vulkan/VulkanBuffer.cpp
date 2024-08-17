@@ -34,16 +34,16 @@ namespace PK
         }
 
         GetBindHandle({ 0, GetSize() });
+        m_defaultView = m_firstView;
     }
 
     VulkanBuffer::~VulkanBuffer()
     {
         auto fence = m_driver->GetQueues()->GetFenceRef(QueueType::Graphics);
-        auto values = m_bindHandles.GetValues();
 
-        for (auto i = 0u; i < values.count; ++i)
+        for (auto view : m_firstView)
         {
-            m_driver->bindhandlePool.Delete(values[i]);
+            m_driver->bufferViewPool.Delete(view);
         }
 
         if (m_mappedBuffer != nullptr && !m_mappedBuffer->persistentmap)
@@ -51,13 +51,14 @@ namespace PK
             m_mappedBuffer->EndMap(0, m_mapRange.region.size);
         }
 
-        m_bindHandles.Clear();
         m_driver->disposer->Dispose(m_pageTable, fence);
         m_driver->DisposePooledBuffer(m_rawBuffer, fence);
         m_driver->stagingBufferCache->Release(m_mappedBuffer, fence);
         m_pageTable = nullptr;
         m_rawBuffer = nullptr;
         m_mappedBuffer = nullptr;
+        m_firstView = nullptr;
+        m_defaultView = nullptr;
     }
 
     void* VulkanBuffer::BeginWrite(size_t offset, size_t size)
@@ -115,20 +116,18 @@ namespace PK
     {
         PK_THROW_ASSERT(range.offset + range.count <= GetSize(), "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
 
-        auto index = 0u;
-
-        if (!m_bindHandles.AddKey(range, &index))
+        if (m_firstView.FindAndSwapFirst(range))
         {
-            return m_bindHandles.GetValueAt(index);
+            return m_firstView;
         }
 
-        auto& handle = m_bindHandles.GetValueAt(index);
-        handle = m_driver->bindhandlePool.New();
-        handle->buffer.buffer = m_rawBuffer->buffer;
-        handle->buffer.range = range.count;
-        handle->buffer.offset = range.offset;
-        handle->isConcurrent = IsConcurrent();
-        return handle;
+        auto view = m_driver->bufferViewPool.New();
+        view->buffer.buffer = m_rawBuffer->buffer;
+        view->buffer.range = range.count;
+        view->buffer.offset = range.offset;
+        view->isConcurrent = IsConcurrent();
+        m_firstView.Insert(view, range);
+        return m_firstView;
     }
 
 

@@ -36,7 +36,6 @@ namespace PK::App
         m_passDownsample0 = m_computeBloom->GetRHIIndex("PASS_DOWNSAMPLE0");
         m_passDownsample = m_computeBloom->GetRHIIndex("PASS_DOWNSAMPLE1");
         m_passUpsample = m_computeBloom->GetRHIIndex("PASS_UPSAMPLE");
-        m_passSeparableBlur = m_computeBloom->GetRHIIndex("PASS_BLUR");
     }
 
     void PassBloom::SetViewConstants(RenderView* view)

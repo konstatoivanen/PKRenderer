@@ -20,6 +20,7 @@ namespace PK
 
     private:
         inline static THash Hash;
+        // @TODO use a single block for both values and nodes for better cache locality.
         MemoryBlock<TValue> m_values;
         MemoryBlock<Node> m_nodes;
         MemoryBlock<int32_t> m_buckets;
@@ -29,6 +30,7 @@ namespace PK
         uint32_t GetBucketIndex(uint64_t hash) const { return (uint32_t)(hash % m_buckets.GetCount()); }
         void SetValueIndexInBuckets(uint32_t i, int32_t value) { m_buckets[i] = value + 1; }
         int32_t GetValueIndexFromBuckets(uint32_t i) const  { return m_buckets[i] - 1; }
+
         void ReserveMemory(uint32_t newSize)
         {
             if (m_values.GetCount() < newSize)
@@ -54,34 +56,6 @@ namespace PK
             m_buckets.CopyFrom(other.m_buckets);
             m_collisions = other.m_collisions;
             m_count = other.m_count;
-        }
-
-        void Clear()
-        {
-            if (m_count > 0)
-            {
-                m_count = 0u;
-                m_values.Clear();
-                m_nodes.Clear();
-                m_buckets.Clear();
-            }
-        }
-
-        void ClearFast()
-        {
-            if (m_count > 0)
-            {
-                m_count = 0u;
-                m_buckets.Clear();
-            }
-        }
-
-        void Reserve(uint32_t size)
-        {
-            m_values.Validate(size);
-            m_nodes.Validate(size);
-            m_nodes.Validate(size);
-            m_buckets.Validate(Hash::GetPrime(size));
         }
 
         int32_t GetHashIndex(size_t hash) const
@@ -222,16 +196,7 @@ namespace PK
             
             if (GetValueIndexFromBuckets(bucketIndex) == index)
             {
-                if (m_nodes[index].next != -1)
-                {
-                    throw std::exception("if the bucket points to the cell, next must not be assigned!");
-                }
-
                 SetValueIndexInBuckets(bucketIndex, m_nodes[index].previous);
-            }
-            else if (m_nodes[index].next == -1)
-            {
-                throw std::exception("if the bucket points to another cell, next must be assigned!");
             }
 
             auto updateNext = m_nodes[index].next;
@@ -244,6 +209,7 @@ namespace PK
 
             if (updatePrevious != -1)
             {
+                m_collisions--;
                 m_nodes[updatePrevious].next = updateNext;
             }
 
@@ -290,13 +256,43 @@ namespace PK
             return index != -1;
         }
 
+        void Clear()
+        {
+            if (m_count > 0)
+            {
+                m_count = 0u;
+                m_collisions = 0u;
+                m_values.Clear();
+                m_nodes.Clear();
+                m_buckets.Clear();
+            }
+        }
+
+        void ClearFast()
+        {
+            if (m_count > 0)
+            {
+                m_count = 0u;
+                m_collisions = 0u;
+                m_buckets.Clear();
+            }
+        }
+
+        void Reserve(uint32_t size)
+        {
+            m_values.Validate(size);
+            m_nodes.Validate(size);
+            m_nodes.Validate(size);
+            m_buckets.Validate(Hash::GetPrime(size));
+        }
+
+        constexpr uint32_t GetCount() const { return m_count; }
+        constexpr size_t GetCapacity() const { return m_values.GetCount(); }
+
         ConstBufferIterator<TValue> begin() const { return ConstBufferIterator<TValue>(m_values.GetData(), 0ull); }
         ConstBufferIterator<TValue> end() const { return ConstBufferIterator<TValue>(m_values.GetData() + m_count, m_count); }
         ConstBufferView<TValue> GetValues() const { return { m_values.GetData(), (size_t)m_count }; }
         BufferView<TValue> GetValues() { return { m_values.GetData(), (size_t)m_count }; }
-
-        constexpr uint32_t GetCount() const { return m_count; }
-        constexpr size_t GetCapacity() const { return m_values.GetCount(); }
 
         const TValue& GetValue(uint32_t index) const { return m_values[index]; }
         const TValue& operator[](uint32_t index) const { return m_values[index]; }

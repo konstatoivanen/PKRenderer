@@ -9,6 +9,7 @@
 #include "Core/Utilities/FenceRef.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/Utilities/VersionedObject.h"
+#include "Core/Utilities/FastLinkedList.h"
 #include "Core/RHI/Structs.h"
 
 extern PFN_vkSetDebugUtilsObjectNameEXT pkfn_vkSetDebugUtilsObjectNameEXT;
@@ -200,13 +201,74 @@ namespace PK
         VulkanQueueFamilies queueFamilies{};
     };
 
-    struct VulkanImageView : public VersionedObject
+    struct VulkanImageViewCreateInfo
     {
-        VulkanImageView(VkDevice device, const VkImageViewCreateInfo& createInfo, const char* name);
+        VkImage image;
+        VkImage imageAlias;
+        VkImageViewType  viewType;
+        VkFormat format;
+        VkFormat formatAlias;
+        VkImageLayout layout;
+        VkSampleCountFlagBits samples;
+        VkComponentMapping components;
+        VkExtent3D extent;
+        VkImageSubresourceRange subresourceRange;
+        bool isConcurrent;
+        bool isTracked;
+        bool isAlias;
+    };
+
+    struct VulkanBindHandle : VersionedObject
+    {
+        union
+        {
+            struct Image
+            {
+                VkImage image = VK_NULL_HANDLE;
+                VkImage alias = VK_NULL_HANDLE;
+                VkImageView view = VK_NULL_HANDLE;
+                VkSampler sampler = VK_NULL_HANDLE;
+                VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+                VkFormat format = VK_FORMAT_UNDEFINED;
+                VkExtent3D extent = { 0u, 0u, 0u };
+                VkImageSubresourceRange range = { VK_IMAGE_ASPECT_NONE, 0u, VK_REMAINING_MIP_LEVELS, 0u, VK_REMAINING_ARRAY_LAYERS };
+                uint16_t samples = (uint16_t)VK_SAMPLE_COUNT_1_BIT; // VkSampleCountFlagBits
+            } 
+            image;
+
+            struct Buffer
+            {
+                VkBuffer buffer;
+                VkDeviceSize offset;
+                VkDeviceSize range;
+            } 
+            buffer;
+
+            struct Acceleration
+            {
+                VkAccelerationStructureKHR structure;
+            } 
+            acceleration;
+        };
+
+        bool isConcurrent = false;
+        bool isTracked = true;
+
+        VulkanBindHandle() : image{}{};
+    };
+
+    struct VulkanBufferView : public FastLinkedListElement<VulkanBufferView, BufferIndexRange>, public VulkanBindHandle
+    {
+    };
+
+    struct VulkanImageView : public VersionedObject, public FastLinkedListElement<VulkanImageView, uint64_t>
+    {
+        VulkanImageView(VkDevice device, const VulkanImageViewCreateInfo& createInfo, const char* name);
         ~VulkanImageView();
 
         const VkDevice device;
         VkImageView view;
+        VulkanBindHandle bindHandle;
     };
 
     struct VulkanFrameBuffer : public NoCopy
@@ -361,45 +423,6 @@ namespace PK
         VkQueryPool pool;
     };
 
-    struct VulkanBindHandle : VersionedObject
-    {
-        union
-        {
-            struct Image
-            {
-                VkImage image = VK_NULL_HANDLE;
-                VkImage alias = VK_NULL_HANDLE;
-                VkImageView view = VK_NULL_HANDLE;
-                VkSampler sampler = VK_NULL_HANDLE;
-                VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
-                VkFormat format = VK_FORMAT_UNDEFINED;
-                VkExtent3D extent = { 0u, 0u, 0u };
-                VkImageSubresourceRange range = { VK_IMAGE_ASPECT_NONE, 0u, VK_REMAINING_MIP_LEVELS, 0u, VK_REMAINING_ARRAY_LAYERS };
-                uint16_t samples = (uint16_t)VK_SAMPLE_COUNT_1_BIT; // VkSampleCountFlagBits
-            } 
-            image;
-
-            struct Buffer
-            {
-                VkBuffer buffer;
-                VkDeviceSize offset;
-                VkDeviceSize range;
-            } 
-            buffer;
-
-            struct Acceleration
-            {
-                VkAccelerationStructureKHR structure;
-            } 
-            acceleration;
-        };
-
-        bool isConcurrent = false;
-        bool isTracked = true;
-
-        VulkanBindHandle() : image{}{};
-    };
-
     namespace VulkanEnumConvert
     {
         VkFormat GetFormat(ElementType format);
@@ -446,10 +469,7 @@ namespace PK
 
     void VulkanBindExtensionMethods(VkInstance instance);
 
-    std::vector<VkLayerProperties> VulkanGetInstanceLayerProperties();
-    std::vector<VkExtensionProperties> VulkanGetInstanceExtensions();
     std::vector<VkPhysicalDevice> VulkanGetPhysicalDevices(VkInstance instance);
-    std::vector<VkExtensionProperties> VulkanGetPhysicalDeviceExtensionProperties(VkPhysicalDevice device);
     std::vector<VkQueueFamilyProperties> VulkanGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice device);
     std::vector<const char*> VulkanGetRequiredInstanceExtensions(const std::vector<const char*>* contextualExtensions);
     std::vector<VkSurfaceFormatKHR> VulkanGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);

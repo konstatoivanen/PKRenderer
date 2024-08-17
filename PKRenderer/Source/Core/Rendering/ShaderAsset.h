@@ -1,5 +1,4 @@
 #pragma once
-#include <unordered_map>
 #include "Core/Utilities/NativeInterface.h"
 #include "Core/Assets/Asset.h"
 #include "Core/RHI/Layout.h"
@@ -11,18 +10,26 @@ namespace PK
     {
         struct Map : public NoCopy
         {
-            constexpr static const uint32_t MAX_DIRECTIVES = 16;
+            constexpr static const uint32_t MAX_DIRECTIVES = PKAssets::PK_ASSET_MAX_SHADER_DIRECTIVES;
+            constexpr static const uint32_t MAX_KEYWORDS = PKAssets::PK_ASSET_MAX_SHADER_KEYWORDS;
 
-            inline bool SupportsKeyword(const NameID name) const { return keywords.count(name) > 0; }
+            int32_t GetKeywordIndex(NameID name) const;
+            void AddKeyword(const NameID name, uint8_t value);
+            inline bool SupportsKeyword(NameID name) const { return GetKeywordIndex(name) != -1; }
             bool SupportsKeywords(const NameID* names, const uint32_t count) const;
             uint32_t GetIndex(const NameID* names, size_t count) const;
             uint32_t GetIndex(const PropertyBlock* nameblock) const;
             uint32_t GetIndex(const uint8_t* flags) const;
 
-            uint32_t variantcount = 0;
-            uint32_t directivecount = 0;
+            uint32_t variantcount = 0u;
+            uint32_t directivecount = 0u;
             uint32_t directives[MAX_DIRECTIVES];
-            std::unordered_map<NameID, uint8_t> keywords;
+            
+            NameID keywords[MAX_KEYWORDS]{};
+            uint8_t keywordValues[MAX_KEYWORDS]{};
+            uint8_t offsets[MAX_KEYWORDS]{};
+            uint8_t buckets[MAX_KEYWORDS]{};
+            uint32_t keywordCount = 0u;
         };
 
         constexpr ShaderStageFlags GetStageFlags() const { return m_shaders.at(0)->GetStageFlags(); }
