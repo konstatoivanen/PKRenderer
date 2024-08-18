@@ -80,7 +80,7 @@ namespace PK
             FixedPool<VulkanRenderPass, 512> m_renderPassPool;
             FastMap<FrameBufferKey, FrameBufferValue, FrameBufferKeyHash> m_frameBuffers;
             FastMap<RenderPassKey, RenderPassValue, RenderPassKeyHash> m_renderPasses;
-            std::unordered_map<VkRenderPass, uint32_t> m_renderPassReferenceCounts;
+            FastMap<VkRenderPass, uint32_t, Hash::TCastHash<VkRenderPass>> m_renderPassReferenceCounts;
             uint64_t m_currentPruneTick = 0;
             uint64_t m_pruneDelay = 0;
     };

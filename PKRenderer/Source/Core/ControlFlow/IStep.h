@@ -16,7 +16,7 @@ namespace PK
     template <typename ... Args>
     class IStep : public IBaseStep
     {
-        friend class Sequencer;
+        friend struct Sequencer;
         friend struct Step;
         friend struct To;
 

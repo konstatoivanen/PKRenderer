@@ -5,7 +5,7 @@
 #include "Core/Rendering/RenderingFwd.h"
 #include "App/Renderer/EntityEnums.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class Sequencer)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct Sequencer)
 
 namespace PK::App
 {

@@ -7,6 +7,7 @@ namespace PK
         m_device(device),
         m_frameBuffers(512),
         m_renderPasses(512),
+        m_renderPassReferenceCounts(512),
         m_pruneDelay(pruneDelay)
     {
     }
@@ -56,6 +57,7 @@ namespace PK
             attachments[attachmentCount++] = key.depth;
         }
 
+
         VkFramebufferCreateInfo info{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
         info.renderPass = key.renderPass;
         info.attachmentCount = attachmentCount;
@@ -67,7 +69,9 @@ namespace PK
         value = &m_frameBuffers.GetValueAt(index);
         value->frameBuffer = m_frameBufferPool.New(m_device, info);
         value->pruneTick = nextPruneTick;
-        m_renderPassReferenceCounts[key.renderPass]++;
+        
+        (*m_renderPassReferenceCounts.GetValueRef(key.renderPass))++;
+
         return value->frameBuffer;
     }
 
@@ -199,6 +203,9 @@ namespace PK
         value = &m_renderPasses.GetValueAt(index);
         value->renderPass = m_renderPassPool.New(m_device, renderPassInfo);
         value->pruneTick = nextPruneTick;
+
+        m_renderPassReferenceCounts.AddValue(value->renderPass->renderPass, 0u);
+
         return value->renderPass;
     }
 
@@ -212,7 +219,8 @@ namespace PK
 
             if (value->pruneTick < m_currentPruneTick)
             {
-                m_renderPassReferenceCounts[m_frameBuffers.GetKeyAt(i).renderPass]--;
+                auto& renderPass = m_frameBuffers.GetKeyAt(i).renderPass;
+                (*m_renderPassReferenceCounts.GetValueRef(renderPass))--;
                 m_frameBufferPool.Delete(value->frameBuffer);
                 m_frameBuffers.RemoveAt(i);
             }
@@ -222,9 +230,9 @@ namespace PK
         {
             auto value = &m_renderPasses.GetValueAt(i);
 
-            if (value->pruneTick < m_currentPruneTick && m_renderPassReferenceCounts[value->renderPass->renderPass] == 0u)
+            if (value->pruneTick < m_currentPruneTick && m_renderPassReferenceCounts.GetValueAt(i) == 0u)
             {
-                m_renderPassReferenceCounts.erase(value->renderPass->renderPass);
+                m_renderPassReferenceCounts.RemoveAt(i);
                 m_renderPassPool.Delete(value->renderPass);
                 m_renderPasses.RemoveAt(i);
             }

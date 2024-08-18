@@ -6,7 +6,7 @@
 #include "App/Renderer/IGizmos.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class Sequencer)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct Sequencer)
 
 namespace PK::App
 {

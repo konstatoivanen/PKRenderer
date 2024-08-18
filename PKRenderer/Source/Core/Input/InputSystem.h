@@ -7,7 +7,7 @@
 
 namespace PK
 {
-    class Sequencer;
+    struct Sequencer;
 
     class InputSystem :
         public IStepApplicationUpdateInputWindow,

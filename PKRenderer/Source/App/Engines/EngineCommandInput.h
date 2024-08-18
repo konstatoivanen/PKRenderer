@@ -5,7 +5,7 @@
 #include "Core/CLI/CArguments.h"
 #include "Core/Input/InputKeyBinding.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class Sequencer)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct Sequencer)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct InputDevice)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct InputKeyConfig)
 

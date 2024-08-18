@@ -2,13 +2,14 @@
 #include <vector>
 #include <unordered_map>
 #include <utility>
+#include "Core/Utilities/MemoryBlock.h"
+#include "Core/Utilities/FastMap.h"
 #include "Core/ControlFlow/IStep.h"
 
 namespace PK
 {
-    class Sequencer
+    struct Sequencer
     {
-    public:
         struct Step
         {
             std::type_index type = std::type_index(typeid(IBaseStep));
@@ -18,24 +19,62 @@ namespace PK
             static Step Create(IStep<Args...>* s) { return { IStep<Args...>::GetStepTypeId(), static_cast<IStep<Args...>*>(s) }; }
         };
 
-        struct To
+        struct StepsKey
         {
-            To(std::initializer_list<Step> steps)
-            {
-                for (auto& step : steps)
-                {
-                    this->steps[step.type].push_back(step);
-                }
-            }
+            const void* caller;
+            std::type_index type;
 
-            std::unordered_map<std::type_index, std::vector<Step>> steps;
+            inline bool operator == (const StepsKey& r) const noexcept
+            {
+                return caller == r.caller && type == r.type;
+            }
         };
 
-        using Steps = std::unordered_map<const void*, To>;
-
-        void SetSteps(std::initializer_list<Steps::value_type> steps)
+        struct StepsView
         {
-            m_steps = Steps(steps);
+            Step* steps = nullptr;
+            size_t count = 0ull;
+        };
+
+        void SetSteps(std::initializer_list<std::tuple<const void*, std::initializer_list<Step>>> initializer)
+        {
+            auto count = 0u;
+
+            for (auto& pair : initializer)
+            {
+                count += std::get<1>(pair).size();
+            }
+
+            m_steps.Validate(count);
+            m_map.Reserve(initializer.size());
+            auto head = m_steps.GetData();
+
+            for (auto& pair : initializer)
+            {
+                auto caller = std::get<0>(pair);
+                auto& steps = std::get<1>(pair);
+                auto index = 0u; 
+
+                for (auto& current : steps)
+                {
+                    if (m_map.AddKey({ caller, current.type }, &index))
+                    {
+                        auto& view = m_map.GetValueAt(index);
+                        view.steps = head;
+                        view.count = 0u;
+
+                        for (auto other = &current; other != steps.end(); other++)
+                        {
+                            if (current.type == other->type)
+                            {
+                                view.steps[view.count++] = *other;
+                            }
+                        }
+
+                        head += view.count;
+                    }
+                }
+            }
         }
 
         inline const void* GetRoot() { return this; }
@@ -43,24 +82,13 @@ namespace PK
         template<typename ... Args>
         void Next(const void* engine, Args ... args)
         {
-            auto engineStepsIter = m_steps.find(engine);
+            using TStep = IStep<Args...>;
+            auto viewRef = m_map.GetValueRef({ engine, TStep::GetStepTypeId() });
+            auto view = viewRef ? *viewRef : StepsView();
 
-            if (engineStepsIter != m_steps.end())
+            for (auto i = 0u; i < view.count; ++i)
             {
-                using TStep = IStep<Args...>;
-                auto typeId = TStep::GetStepTypeId();
-                auto& engineSteps = engineStepsIter->second.steps;
-                auto stepsIter = engineSteps.find(typeId);
-
-                if (stepsIter != engineSteps.end())
-                {
-                    auto& steps = stepsIter->second;
-
-                    for (auto& i : steps)
-                    {
-                        reinterpret_cast<TStep*>(i.step)->Step(std::forward<Args>(args)...);
-                    }
-                }
+                reinterpret_cast<TStep*>(view.steps[i].step)->Step(std::forward<Args>(args)...);
             }
         }
 
@@ -74,9 +102,14 @@ namespace PK
             Next<T*>(engine, &token);
         }
 
-        inline void Release() { m_steps.clear(); }
+        inline void Release() 
+        {
+            m_steps.Clear(); 
+            m_map.Clear();
+        }
 
     private:
-        Steps m_steps;
+        MemoryBlock<Step> m_steps;
+        FastMap<StepsKey, StepsView, Hash::TFNV1AHash<StepsKey>> m_map;
     };
 }

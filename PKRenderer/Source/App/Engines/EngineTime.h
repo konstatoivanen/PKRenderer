@@ -9,7 +9,7 @@
 
 namespace PK
 {
-    class Sequencer;
+    struct Sequencer;
 }
 
 namespace PK::App
