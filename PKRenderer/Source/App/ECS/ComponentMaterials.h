@@ -1,11 +1,12 @@
 #pragma once
+#include "Core/Utilities/MemoryBlock.h"
 #include "Core/Rendering/Material.h"
 
 namespace PK::App
 {
     struct ComponentMaterials
     {
-        std::vector<MaterialTarget> materials;
+        MemoryBlock<MaterialTarget> materials;
         virtual ~ComponentMaterials() = default;
     };
 }

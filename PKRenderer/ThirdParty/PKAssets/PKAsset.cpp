@@ -424,6 +424,17 @@ namespace PKAssets
         }
     }
 
+    bool GetElementIsResourceHandle(PKElementType type)
+    {
+        switch (type)
+        {
+            case PKElementType::Texture2DHandle: return true;
+            case PKElementType::Texture3DHandle: return true;
+            case PKElementType::TextureCubeHandle: return true;
+            default: return false;
+        }
+    }
+
 
     static uint16_t PackHalf(float v)
     {

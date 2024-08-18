@@ -21,7 +21,7 @@ namespace PK::App
         MemoryBlock<CulledEntityInfo> data;
         size_t count;
         CulledEntityInfoList(size_t reserve, size_t count) : data(reserve), count(count) {}
-        inline void Add(uint32_t entityId, uint16_t depth, uint16_t clipId) { data.SetValidate(count++, { entityId, depth, clipId }); }
+        void Add(uint32_t entityId, uint16_t depth, uint16_t clipId);
         inline void Clear() { count = 0ull; }
         inline const CulledEntityInfo& operator [] (size_t index) const { return data[index]; }
         inline CulledEntityInfo& GetAt(size_t index) { return data[index]; }

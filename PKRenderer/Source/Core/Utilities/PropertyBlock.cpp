@@ -39,6 +39,13 @@ namespace PK
         memset(m_buffer, 0, m_capacity);
     }
 
+    void PropertyBlock::ClearAndReserve(uint64_t capacityBytes, uint64_t capacityProperties)
+    {
+        Clear();
+        ValidateBufferSize(capacityBytes);
+        m_propertyInfos.Reserve(capacityProperties);
+    }
+
     bool PropertyBlock::TryWriteValue(const void* src, uint32_t index, uint64_t writeSize)
     {
         if (index >= m_propertyInfos.GetCount())

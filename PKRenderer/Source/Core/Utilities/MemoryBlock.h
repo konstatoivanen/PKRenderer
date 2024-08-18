@@ -1,27 +1,39 @@
 #pragma once
 #include "NoCopy.h"
 #include "BufferView.h"
+#include "BufferIterator.h"
 #include <cstdint>
 #include <exception>
 
 namespace PK
 {
-    template<typename T>
+    /// <summary>
+    /// A non owning container. dont use for types that need implicit destructors.
+    /// </summary>
+    template<typename T, size_t inlineCapacity = 1u>
     class MemoryBlock : NoCopy
     {
-        public:
-            MemoryBlock(size_t count) 
+        struct Data
+        {
+            union
             {
-                Validate(count); 
-            }
+                void* memory;
+                char inlineMemory[sizeof(T) * inlineCapacity];
+            };
+        };
 
+        constexpr static size_t MaxSmallBufferCount() { return sizeof(Data) / sizeof(T); }
+        constexpr static bool IsSmallBuffer(size_t count) { return count <= MaxSmallBufferCount(); }
+
+        public:
+            MemoryBlock(size_t count) { Validate(count); }
             MemoryBlock() {}
             
             ~MemoryBlock()
             {
-                if (m_data != nullptr)
+                if (m_data.memory != nullptr && !IsSmallBuffer(m_count))
                 {
-                    free(m_data);
+                    free(m_data.memory);
                 }
             }
 
@@ -31,73 +43,73 @@ namespace PK
                 {
                     return;
                 }
-
-                auto newCount = m_count == 0 ? count : m_count;
-
-                while (newCount < count)
+                
+                if (IsSmallBuffer(count))
                 {
-                    newCount <<= 1;
+                    m_count = count;
+                    return;
                 }
 
                 auto oldSize = sizeof(T) * m_count;
-                auto newSize = sizeof(T) * newCount;
-                auto newbuffer = m_data != nullptr ? realloc(m_data, newSize) : calloc(newCount, sizeof(T));
-                
+                auto newSize = sizeof(T) * count;
+                auto newbuffer = !IsSmallBuffer(m_count) ? realloc(m_data.memory, newSize) : calloc(count, sizeof(T));
+
                 if (newbuffer == nullptr)
                 {
                     throw std::exception("Failed to allocate new buffer!");
                 }
-
-                // Usages expect cleared buffers & realloc doesnt clear the new reguion.
-                if (m_data != nullptr)
+                
+                if (m_count > 0 && IsSmallBuffer(m_count))
                 {
+                    memcpy(newbuffer, &m_data, oldSize);
+                }
+                else if (m_count > 0)
+                {
+                    // Realloc doesnt zero memory
                     memset(reinterpret_cast<char*>(newbuffer) + oldSize, 0, newSize - oldSize);
                 }
 
-                m_data = newbuffer;
-                m_count = newCount;
-            }
-
-            void SetValidate(size_t i, const T& value)
-            {
-                Validate(i + 1ull);
-                GetData()[i] = value;
+                m_data.memory = newbuffer;
+                m_count = count;
             }
 
             void CopyFrom(const MemoryBlock& other)
             {
-                Validate(other.m_count, true);
+                Validate(other.m_count);
                 std::copy(other.GetData(), other.GetData() + other.m_count, GetData());
-                //memcpy(m_data, other.m_data, other.m_count * sizeof(T));
             }
 
-            void Clear() { memset(m_data, 0, sizeof(T) * m_count); }
+            void CopyFrom(const std::initializer_list<T>& initializer)
+            {
+                Validate(initializer.size());
+                std::copy(initializer.begin(), initializer.end(), GetData());
+            }
 
-            BufferView<T> GetView() { return { reinterpret_cast<T*>(m_data), m_count }; }
+            void Clear() 
+            {
+                memset(IsSmallBuffer(m_count) ? &m_data : m_data.memory, 0, sizeof(T) * m_count);
+            }
 
-            ConstBufferView<T> GetView() const { return { reinterpret_cast<const T*>(m_data), m_count }; }
+            T* GetData() { return reinterpret_cast<T*>(IsSmallBuffer(m_count) ? &m_data : m_data.memory); }
+            T const* GetData() const { return reinterpret_cast<const T*>(IsSmallBuffer(m_count) ? &m_data : m_data.memory); }
 
-            T* GetOffset(size_t offset) { return reinterpret_cast<T*>(m_data) + offset; }
+            BufferView<T> GetView() { return { GetData(), m_count }; }
+            ConstBufferView<T> GetView() const { return { GetData(), m_count }; }
+            
+            ConstBufferIterator<T> begin() const { return ConstBufferIterator<T>(GetData(), 0ull); }
+            ConstBufferIterator<T> end() const { return ConstBufferIterator<T>(GetData() + m_count, m_count); }
 
-            T const* GetOffset(size_t offset) const { return reinterpret_cast<const T*>(m_data) + offset; }
-
-            T* GetData() { return reinterpret_cast<T*>(m_data); }
-
-            T const* GetData() const { return reinterpret_cast<const T*>(m_data); }
-
-            T& operator [](size_t i) { return reinterpret_cast<T*>(m_data)[i]; }
-
-            T const& operator [](size_t i) const { return reinterpret_cast<const T*>(m_data)[i]; }
+            T& operator [](size_t i) { return GetData()[i]; }
+            T const& operator [](size_t i) const { return GetData()[i]; }
 
             operator T* () { return GetData(); }
-
             operator T const* () const { return GetData(); }
 
             constexpr size_t GetCount() const { return m_count; }
             constexpr size_t GetSize() const { return m_count * sizeof(T); }
 
         private:
-            void* m_data = nullptr;
+            Data m_data = { nullptr };
             size_t m_count = 0ull;
     };
 }

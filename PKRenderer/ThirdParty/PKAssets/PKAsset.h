@@ -113,6 +113,7 @@ namespace PKAssets
     uint32_t GetElementSize(PKElementType type);
     uint32_t GetElementAlignment(PKElementType type);
     uint32_t GetElementComponents(PKElementType type);
+    bool GetElementIsResourceHandle(PKElementType type);
 
 
     struct PKAssetMeta

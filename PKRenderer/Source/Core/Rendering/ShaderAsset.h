@@ -32,7 +32,9 @@ namespace PK
             uint32_t keywordCount = 0u;
         };
 
-        constexpr ShaderStageFlags GetStageFlags() const { return m_shaders.at(0)->GetStageFlags(); }
+        ~ShaderAsset() { ReleaseVariants(); }
+
+        constexpr ShaderStageFlags GetStageFlags() const { return m_shaders[0]->GetStageFlags(); }
         constexpr const FixedFunctionShaderAttributes& GetFixedFunctionAttributes() const { return m_attributes; }
 
         inline uint32_t GetRHIIndex(const NameID* keywords, uint32_t count) const { return m_map.GetIndex(keywords, count); }
@@ -43,20 +45,22 @@ namespace PK
         inline const RHIShader* GetRHI(const NameID* keywords, uint32_t count) const { return m_shaders[GetRHIIndex(keywords, count)].get(); }
         inline const RHIShader* GetRHI(uint32_t index) const { return m_shaders[index].get(); }
         inline const RHIShader* GetRHI(const PropertyBlock* keywords) const { return m_shaders[GetRHIIndex(keywords)].get(); }
-        constexpr uint32_t GetRHICount() const { return m_shaders.size(); }
+        constexpr uint32_t GetRHICount() const { return m_shaders.GetCount(); }
 
         inline bool SupportsKeyword(const NameID keywords) const { return m_map.SupportsKeyword(keywords); }
         inline bool SupportsKeywords(const NameID* keywords, const uint32_t count) const { return m_map.SupportsKeywords(keywords, count); }
         inline bool SupportsMaterials() const { return m_materialPropertyLayout.size() > 0; }
 
-        constexpr const uint3 GetGroupSize() const { return m_shaders.at(0)->GetGroupSize(); }
+        constexpr const uint3 GetGroupSize() const { return m_shaders[0]->GetGroupSize(); }
         constexpr const BufferLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
 
         void AssetImport(const char* filepath) final;
         std::string GetMetaInfo() const final;
 
     protected:
-        std::vector<RHIShaderScope> m_shaders;
+        void ReleaseVariants();
+
+        MemoryBlock<RHIShaderScope, 4ull> m_shaders;
         Map m_map;
         FixedFunctionShaderAttributes m_attributes;
         BufferLayout m_materialPropertyLayout;

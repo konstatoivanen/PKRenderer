@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/Ref.h"
+#include "Core/Utilities/FastMap.h"
 #include "Core/CLI/LogScopeIndent.h"
 
 namespace PK
@@ -26,37 +27,49 @@ namespace PK
         
 
     public:
+        ServiceRegister() : m_services(64u) {}
+        ~ServiceRegister() { Clear(); }
+
         template <typename T>
-        T* Get() { return &static_cast<ServiceContainer<T>*>(m_services.at(std::type_index(typeid(T))).get())->Instance; }
+        T* Get() 
+        {
+            auto container = m_services.GetValueRef(std::type_index(typeid(T)))[0].get();
+            return &static_cast<ServiceContainer<T>*>(container)->Instance;
+        }
 
         template<typename T, typename ... Args>
         T* Create(Args&& ... args)
         {
-            auto idx = std::type_index(typeid(T));
-            AssertTypeExists(idx);
+            auto typeIndex = std::type_index(typeid(T));
+            auto index = 0u;
+
+            if (!m_services.AddKey(typeIndex, &index))
+            {
+                AssertTypeExists(typeIndex);
+            }
+
             auto logIndent = PK::LogScopeIndent();
             auto service = new ServiceContainer<T>(std::forward<Args>(args)...);
-            m_services[idx] = Scope<Service>(service);
-            m_releaseOrder.push_back(idx);
+            auto values = m_services.GetValues();
+            values[index] = Scope<Service>(service);
             return &service->Instance;
         }
 
-        inline void Clear()
+        void Clear()
         {
-            // Release services in reverse insertion order to ensure correct order of memory release
-            for (auto i = (int32_t)m_releaseOrder.size() - 1; i >= 0; --i)
+            auto values = m_services.GetValues();
+
+            for (auto i = (int32_t)m_services.GetCount() - 1; i >= 0; --i)
             {
-                m_services[m_releaseOrder.at(i)] = nullptr;
+                values[i] = nullptr;
             }
 
-            m_releaseOrder.clear();
-            m_services.clear();
+            m_services.Clear();
         }
 
     private:
         void AssertTypeExists(std::type_index index);
 
-        std::vector<std::type_index> m_releaseOrder;
-        std::unordered_map<std::type_index, Scope<Service>> m_services;
+        FastMap<std::type_index, Scope<Service>> m_services;
     };
 }

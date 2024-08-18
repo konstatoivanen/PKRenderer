@@ -4,6 +4,7 @@
 #include <typeindex>
 #include "Core/Utilities/BufferView.h"
 #include "Core/Utilities/Ref.h"
+#include "Core/Utilities/FastMap.h"
 #include "Core/ECS/EGID.h"
 #include "Core/ECS/IEntityView.h"
 #include "Core/ECS/IEntityImplementer.h"
@@ -20,24 +21,28 @@ namespace PK
 
     constexpr static const uint32_t PK_ECS_BUCKET_SIZE = 32000;
 
+    // @TODO convert into a pool. for deletions.
     struct ImplementerBucket
     {
-        void (*destructor)(void* value);
-        void* data;
+        Scope<ImplementerBucket> previous;
+        size_t count;
+        void (*destructor)(void* value, size_t count);
+        uint8_t data[PK_ECS_BUCKET_SIZE];
 
-        ~ImplementerBucket() { destructor(data); }
+        ~ImplementerBucket() { destructor(data, count); }
     };
 
     struct ImplementerContainer
     {
         size_t count = 0;
-        std::vector<Scope<ImplementerBucket>> buckets;
+        Scope<ImplementerBucket> bucketHead;
     };
 
     struct EntityViewsCollection
     {
-        std::unordered_map<uint32_t, size_t> indices;
-        std::vector<uint8_t> buffer;
+        FastMap<uint32_t, uint64_t, Hash::TCastHash<uint32_t>> indices;
+        MemoryBlock<uint64_t> buffer;
+        uint64_t head = 0ull;
     };
 
     struct ViewCollectionKey
@@ -55,10 +60,11 @@ namespace PK
     {
         std::size_t operator()(const ViewCollectionKey& k) const
         {
-            return k.type.hash_code() ^ k.group;
+            return k.type.hash_code() ^ (k.group * 1099511628211ULL);
         }
     };
 
+    //@TODO support removals
     struct EntityDatabase
     {
         constexpr uint32_t ReserveEntityId() { return ++m_idCounter; }
@@ -70,22 +76,30 @@ namespace PK
             static_assert(std::is_base_of<IEntityImplementer, T>::value, "Template argument type does not derive from IImplementer!");
 
             auto type = std::type_index(typeid(T));
+            auto elementsPerBucket = PK_ECS_BUCKET_SIZE / sizeof(T);
             auto& container = m_implementerBuckets[type];
 
-            uint64_t elementsPerBucket = PK_ECS_BUCKET_SIZE / sizeof(T);
-            uint64_t bucketIndex = container.count / elementsPerBucket;
-            uint64_t subIndex = container.count - bucketIndex * elementsPerBucket;
-            ++container.count;
-
-            if (container.buckets.size() <= bucketIndex)
+            if (!container.bucketHead || container.bucketHead->count >= elementsPerBucket)
             {
-                auto newBucket = new ImplementerBucket();
-                newBucket->data = new T[elementsPerBucket];
-                newBucket->destructor = [](void* v) { delete[] reinterpret_cast<T*>(v); };
-                container.buckets.push_back(Scope<ImplementerBucket>(newBucket));
+                auto bucket = CreateScope<ImplementerBucket>();
+                bucket->previous = std::move(container.bucketHead);
+                bucket->count = 0u;
+                bucket->destructor = [](void* data, size_t count)
+                {
+                    for (auto i = 0u; i < count; ++i)
+                    {
+                        (reinterpret_cast<T*>(data) + i)->~T();
+                    }
+                };
+                
+                container.bucketHead = std::move(bucket);
             }
 
-            return reinterpret_cast<T*>(container.buckets.at(bucketIndex).get()->data) + subIndex;
+            auto ptr = reinterpret_cast<T*>(container.bucketHead->data) + container.bucketHead->count;
+            new(ptr) T();
+            ++container.bucketHead->count;
+            ++container.count;
+            return ptr;
         }
 
         template<typename TView>
@@ -99,12 +113,23 @@ namespace PK
             }
 
             auto& views = m_entityViews[{ std::type_index(typeid(TView)), egid.groupID() }];
-            auto offset = views.buffer.size();
-            views.buffer.resize(offset + sizeof(TView));
-            views.indices[egid.entityID()] = offset;
-            auto* element = reinterpret_cast<TView*>(views.buffer.data() + offset);
-            element->GID = egid;
-            return element;
+            auto viewSize = sizeof(TView) / sizeof(uint64_t);
+            auto index = 0u;
+
+            if (views.indices.AddKey(egid.entityID(), &index))
+            {
+                auto head = views.head;
+                auto count = 1u + head / viewSize;
+                auto capacity = views.buffer.GetCount() / viewSize;
+                views.buffer.Validate((size_t)Hash::ExpandSize(capacity, count) * viewSize);
+                views.indices.SetValueAt(index, head);
+                views.head += viewSize;
+                auto* element = reinterpret_cast<TView*>(views.buffer.GetData() + head);
+                element->GID = egid;
+                return element;
+            }
+
+            return reinterpret_cast<TView*>(views.buffer.GetData() + views.indices.GetValueAt(index));
         }
 
         template<typename TImpl, typename TView, typename ...M>
@@ -127,8 +152,8 @@ namespace PK
             }
 
             auto& views = m_entityViews[{ std::type_index(typeid(TView)), group }];
-            auto count = views.buffer.size() / sizeof(TView);
-            return { reinterpret_cast<TView*>(views.buffer.data()), count };
+            auto count = views.head / (sizeof(TView) / sizeof(uint64_t));
+            return { reinterpret_cast<TView*>(views.buffer.GetData()), count };
         }
 
         template<typename TView>
@@ -142,8 +167,8 @@ namespace PK
             }
 
             auto& views = m_entityViews.at({ std::type_index(typeid(TView)), egid.groupID() });
-            auto offset = views.indices.at(egid.entityID());
-            return reinterpret_cast<TView*>(views.buffer.data() + offset);
+            auto offset = views.indices.GetValueRef(egid.entityID());
+            return offset ? reinterpret_cast<TView*>(views.buffer.GetData() + *offset) : nullptr;
         }
 
     private:

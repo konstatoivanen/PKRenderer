@@ -76,7 +76,8 @@ namespace PK
             ~PropertyBlock();
 
             void CopyFrom(PropertyBlock& from);
-            virtual void Clear();
+            void Clear();
+            void ClearAndReserve(uint64_t capacityBytes, uint64_t capacityProperties);
         
             inline void FreezeLayout() { m_fixedLayout = true; }
 

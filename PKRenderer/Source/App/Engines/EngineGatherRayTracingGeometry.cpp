@@ -48,13 +48,13 @@ namespace PK::App
 
         for (auto i = 0u; i < staticMeshViews.count; ++i)
         {
-            auto view = staticMeshViews[i];
+            auto& view = staticMeshViews[i];
 
             if (view.primitive->isVisibleInRayTracing)
             {
                 for (const auto& material : view.materials->materials)
                 {
-                    if (view.staticMesh->sharedMesh->TryGetAccelerationStructureGeometryInfo(material.submesh, &geometry))
+                    if (view.staticMesh->sharedMesh->TryGetAccelerationStructureGeometryInfo(material->submesh, &geometry))
                     {
                         structure->AddInstance(geometry, view.transform->localToWorld);
                     }

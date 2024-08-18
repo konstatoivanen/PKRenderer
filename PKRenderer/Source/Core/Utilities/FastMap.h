@@ -30,66 +30,96 @@ namespace PK
 
     private:
         inline static THash Hash;
-        //@TODO use one block for values & nodes
-        MemoryBlock<TValue> m_values;
-        MemoryBlock<Node> m_nodes;
+        void* m_buffer;
+        TValue* m_values;
+        Node* m_nodes;
         MemoryBlock<int32_t> m_buckets;
         uint32_t m_collisions;
+        uint32_t m_capacity;
         uint32_t m_count;
 
         uint32_t GetBucketIndex(uint64_t hash) const { return (uint32_t)(hash % m_buckets.GetCount()); }
         void SetValueIndexInBuckets(uint32_t i, int32_t value) { m_buckets[i] = value + 1; }
         int32_t GetValueIndexFromBuckets(uint32_t i) const { return m_buckets[i] - 1; }
-        void ReserveMemory(uint32_t newSize)
-        {
-            if (m_values.GetCount() < newSize)
-            {
-                auto size = Hash::ExpandPrime(newSize);
-                m_values.Validate(size);
-                m_nodes.Validate(size);
-            }
 
-            if (m_buckets.GetCount() == 0 && newSize > 0)
+    public:
+        FastMap(uint32_t size) : 
+            m_buffer(nullptr), 
+            m_collisions(0u), 
+            m_capacity(0), 
+            m_count(0u) 
+        { 
+            Reserve(size); 
+        }
+
+        FastMap() : FastMap(0u) {}
+        
+        ~FastMap()
+        {
+            if (m_buffer)
             {
-                m_buckets.Validate(Hash::GetPrime(newSize));
+                free(m_buffer);
             }
         }
 
-    public:
-        FastMap(uint32_t size) : m_collisions(0u), m_count(0u) { ReserveMemory(size); }
-        FastMap() : FastMap(0u) {}
+        void Reserve(uint32_t count)
+        {
+            if (m_capacity < count)
+            {
+                auto newCapacity = m_capacity == 0 ? count : Hash::ExpandPrime(count);
+                auto offsetNode = (sizeof(TValue) * newCapacity + sizeof(Node) - 1u) & ~(sizeof(Node) - 1u);
+                auto newBuffer = calloc(offsetNode + sizeof(Node) * newCapacity, 1u);
+                auto newValues = reinterpret_cast<TValue*>(newBuffer);
+                auto newNodes = reinterpret_cast<Node*>(reinterpret_cast<char*>(newBuffer) + offsetNode);
+
+                if (m_buffer)
+                {
+                    memcpy(newValues, m_values, sizeof(TValue) * m_count);
+                    memcpy(newNodes, m_nodes, sizeof(Node) * m_count);
+                    free(m_buffer);
+                }
+
+                m_buffer = newBuffer;
+                m_values = newValues;
+                m_nodes = newNodes;
+                m_capacity = newCapacity;
+            }
+
+            if (m_buckets.GetCount() == 0 && count > 0)
+            {
+                m_buckets.Validate(count);
+            }
+        }
 
         void Clear()
         {
             if (m_count > 0)
             {
+                memset(m_values, 0, sizeof(TValue) * m_count);
+                memset(m_nodes, 0, sizeof(Node) * m_count);
+                m_buckets.Clear();
                 m_count = 0u;
                 m_collisions = 0u;
-                m_values.Clear();
-                m_nodes.Clear();
-                m_buckets.Clear();
             }
         }
 
         int32_t GetIndex(const TKey& key) const
         {
-            if (m_count == 0)
+            if (m_count > 0)
             {
-                return -1;
-            }
+                size_t hash = Hash(key);
+                auto bucketIndex = GetBucketIndex(hash);
+                auto valueIndex = GetValueIndexFromBuckets(bucketIndex);
 
-            size_t hash = Hash(key);
-            auto bucketIndex = GetBucketIndex(hash);
-            auto valueIndex = GetValueIndexFromBuckets(bucketIndex);
-
-            while (valueIndex != -1)
-            {
-                if (m_nodes[valueIndex].hashcode == hash && m_nodes[valueIndex].key == key)
+                while (valueIndex != -1)
                 {
-                    return valueIndex;
-                }
+                    if (m_nodes[valueIndex].hashcode == hash && m_nodes[valueIndex].key == key)
+                    {
+                        return valueIndex;
+                    }
 
-                valueIndex = m_nodes[valueIndex].previous;
+                    valueIndex = m_nodes[valueIndex].previous;
+                }
             }
 
             return -1;
@@ -99,7 +129,7 @@ namespace PK
         {
             if (m_count == 0)
             {
-                ReserveMemory(1u);
+                Reserve(1u);
             }
 
             auto hash = Hash(key);
@@ -108,7 +138,7 @@ namespace PK
 
             if (valueIndex == -1)
             {
-                ReserveMemory(m_count + 1u);
+                Reserve(m_count + 1u);
                 m_nodes[m_count] = Node(key, hash);
             }
             else 
@@ -129,7 +159,7 @@ namespace PK
                 while (currentValueIndex != -1);
 
                 m_collisions++;
-                ReserveMemory(m_count + 1u);
+                Reserve(m_count + 1u);
                 m_nodes[m_count] = Node(key, hash, valueIndex);
                 m_nodes[valueIndex].next = m_count;
             }
@@ -247,12 +277,12 @@ namespace PK
         }
 
         constexpr uint32_t GetCount() const { return m_count; }
-        constexpr size_t GetCapacity() const { return m_values.GetCount(); }
+        constexpr size_t GetCapacity() const { return m_capacity; }
         bool Contains(const TKey& key) const { return GetIndex(key) != -1; }
         
-        BufferView<TValue> GetValues() { return { m_values.GetData(), (size_t)m_count }; }
-        ConstBufferView<TValue> GetValues() const { return { m_values.GetData(), (size_t)m_count }; }
-        KeyValues GetKeyValues() { return { m_nodes.GetData(), m_values.GetData(), (size_t)m_count }; }
+        BufferView<TValue> GetValues() { return { m_values, (size_t)m_count }; }
+        ConstBufferView<TValue> GetValues() const { return { m_values, (size_t)m_count }; }
+        KeyValues GetKeyValues() { return { m_nodes, m_values, (size_t)m_count }; }
         
         const TValue* GetValueRef(const TKey& key) const { auto index = GetIndex(key); return index != -1 ? &m_values[index] : nullptr; }
         const TValue& GetValueAt(uint32_t index) const { return m_values[index]; }

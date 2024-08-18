@@ -113,7 +113,7 @@ namespace PK
 
     void ShaderAsset::AssetImport(const char* filepath)
     {
-        m_shaders.clear();
+        ReleaseVariants();
 
         PKAssets::PKAsset asset;
 
@@ -181,12 +181,11 @@ namespace PK
         auto pVariants = shader->variants.Get(base);
         auto fileName = std::filesystem::path(GetFileName()).stem().string();
 
-        m_shaders.reserve(shader->variantcount);
+        m_shaders.Validate(shader->variantcount);
 
         for (auto i = 0u; i < shader->variantcount; ++i)
         {
-            auto name = fileName + std::to_string(i);
-            m_shaders.push_back(RHI::CreateShader(base, pVariants + i, name.c_str()));
+            m_shaders[i] = RHI::CreateShader(base, pVariants + i, FixedString128("%s%u", fileName.c_str(), i));
         }
 
         PKAssets::CloseAsset(&asset);
@@ -260,7 +259,7 @@ namespace PK
 
             meta.append("\n");
 
-            const auto& shader = m_shaders.at(j);
+            const auto& shader = m_shaders[j].get();
 
             meta.append("       Vertex Attributes:\n");
 
@@ -290,6 +289,16 @@ namespace PK
         }
 
         return meta;
+    }
+
+    void ShaderAsset::ReleaseVariants()
+    {
+        for (auto i = 0u; i < m_shaders.GetCount(); ++i)
+        {
+            m_shaders[i] = nullptr;
+        }
+
+        m_shaders.Clear();
     }
 }
 

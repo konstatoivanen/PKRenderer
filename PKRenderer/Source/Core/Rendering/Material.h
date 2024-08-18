@@ -8,19 +8,20 @@ namespace PK
 {
     struct Material : public AssetWithImport<>, public ShaderPropertyBlock
     {
-        Material() : ShaderPropertyBlock(1024ull, 16ull) 
+        Material() : 
+            ShaderPropertyBlock(0u, 0u) 
         {
         }
 
         Material(ShaderAsset* shader) :
-            ShaderPropertyBlock(1024, 16ull), 
+            ShaderPropertyBlock(0u, 0u), 
             m_shader(shader) 
         { 
             InitializeShaderLayout(); 
         }
 
         Material(ShaderAsset* shader, ShaderAsset* shadowShader) :
-            ShaderPropertyBlock(1024ull, 16ull), 
+            ShaderPropertyBlock(0u, 0u), 
             m_shader(shader), 
             m_shadowShader(shadowShader) 
         { 
@@ -37,9 +38,10 @@ namespace PK
 
         void AssetImport(const char* filepath) final;
 
-        void InitializeShaderLayout();
 
     private:
+        void InitializeShaderLayout(uint32_t minSize = 0u, uint32_t minPropertyCount = 0u);
+
         ShaderAsset* m_shader = nullptr;
         ShaderAsset* m_shadowShader = nullptr;
     };

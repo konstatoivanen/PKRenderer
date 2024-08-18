@@ -61,7 +61,7 @@ namespace PK::Hash
         return min;
     }
 
-    int32_t ExpandPrime(uint32_t oldSize)
+    uint32_t ExpandPrime(uint32_t oldSize)
     {
         int32_t newSize = 2 * oldSize;
 
@@ -72,13 +72,23 @@ namespace PK::Hash
             if (MaxPrimeArrayLength != GetPrime(MaxPrimeArrayLength))
             {
                 // Invalid MaxPrimeArrayLength;
-                return -1;
+                return oldSize * 2;
             }
 
             return MaxPrimeArrayLength;
         }
 
-        return GetPrime(newSize);
+        return (uint32_t)GetPrime(newSize);
+    }
+
+    uint32_t ExpandSize(uint32_t capacity, uint32_t size)
+    {
+        if (size <= capacity)
+        {
+            return capacity;
+        }
+
+        return ExpandPrime(size);
     }
 
     uint32_t ByteArrayHash(const void* data, size_t count)

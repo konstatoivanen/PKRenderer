@@ -1,9 +1,20 @@
 #include "PrecompiledHeader.h"
+#include "Core/Utilities/Hash.h"
 #include "Core/ControlFlow/Sequencer.h"
 #include "EntityCulling.h"
 
 namespace PK::App
 {
+    void CulledEntityInfoList::Add(uint32_t entityId, uint16_t depth, uint16_t clipId)
+    {
+        if (count + 1u >= data.GetCount())
+        {
+            data.Validate(Hash::ExpandPrime(count + 1u));
+        }
+
+        data[count++] = { entityId, depth, clipId };
+    }
+
     RequestEntityCullResults EntityCullSequencerProxy::CullFrustum(ScenePrimitiveFlags mask, const float4x4& matrix)
     {
         RequestEntityCullFrustum request;

@@ -321,6 +321,8 @@ namespace PK::App
         uint matrixIndex = 0u;
         uint shadowCount = 0u;
 
+        m_lights.Validate(culledLights.GetCount());
+
         for (auto i = 0U; i < culledLights.GetCount(); ++i)
         {
             auto view = context->entityDb->Query<EntityViewLight>(EGID(culledLights[i].entityId, (uint)ENTITY_GROUPS::ACTIVE));
@@ -481,12 +483,12 @@ namespace PK::App
             for (auto& kv : entity->materials->materials)
             {
                 auto transform = entity->transform;
-                auto shader = kv.material->GetShadowShader();
+                auto shader = kv->material->GetShadowShader();
 
                 if (shader != nullptr)
                 {
                     auto layerOffset = batch.count * shadow.LayerStride + info.clipId;
-                    context->batcher->SubmitMeshStaticDraw(transform, shader, nullptr, entity->staticMesh->sharedMesh, kv.submesh, (index & 0xFFFF) | (layerOffset << 16), info.depth);
+                    context->batcher->SubmitMeshStaticDraw(transform, shader, nullptr, entity->staticMesh->sharedMesh, kv->submesh, (index & 0xFFFF) | (layerOffset << 16), info.depth);
                 }
             }
         }
