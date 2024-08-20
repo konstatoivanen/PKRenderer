@@ -1,34 +1,34 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
-#include "Core/Yaml/ConvertMathTypes.h"
-#include "Core/Yaml/ConvertTextureAsset.h"
-#include "Core/Yaml/ConvertShader.h"
+#include "Core/Utilities/FileIOBinary.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/BuiltInResources.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/TextureAsset.h"
+#include <rapidyaml/ryaml.h>
+#include "Core/Yaml/RapidyamlFwd.h"
 #include "Material.h"
 
 namespace PK
 {
-    static void CalculateMaterialSize(const YAML::Node& properties, const YAML::Node& keywords, uint32_t* outSize, uint32_t* outCount)
+    static void CalculateMaterialSize(const ryml::ConstNodeRef& properties, const ryml::ConstNodeRef& keywords, uint32_t* outSize, uint32_t* outCount)
     {
         *outSize = 0u;
         *outCount = 0u;
 
-        if (keywords)
+        if (keywords.readable())
         {
-            *outSize += sizeof(bool) * keywords.size();
-            *outCount += (uint32_t)keywords.size();
+            *outSize += sizeof(bool) * keywords.num_children();
+            *outCount += (uint32_t)keywords.num_children();
         }
 
-        for (auto property : properties)
+        for (const auto property : properties.children())
         {
-            auto type = property.second["Type"];
+            auto type = property.find_child("Type");
 
-            if (type)
+            if (type.readable())
             {
-                auto elementType = PKAssets::GetElementType(type.as<std::string>().c_str());
+                auto elementType = PKAssets::GetElementType(YAML::Read<FixedString16>(type));
 
                 *outSize += PKAssets::GetElementSize(elementType);
                 (*outCount)++;
@@ -86,68 +86,83 @@ namespace PK
 
     void Material::AssetImport(const char* filepath)
     {
-        YAML::Node root = YAML::LoadFile(filepath);
+        void* fileData = nullptr;
+        size_t fileSize = 0ull;
 
-        auto data = root["Material"];
-        auto shaderPathProp = data["Shader"];
-        auto shadowShaderPathProp = data["ShadowShader"];
-        auto keywords = data["Keywords"];
-        auto properties = data["Properties"];
+        if (FileIO::ReadBinary(filepath, &fileData, &fileSize) != 0)
+        {
+            PK_LOG_WARNING("Failed to read IYamlStruct at path '%'", filepath);
+            return;
+        }
 
-        PK_THROW_ASSERT(data, "Could not locate material (%s) header in file.", filepath);
-        PK_THROW_ASSERT(shaderPathProp, "Material (%s) doesn't define a shader.", filepath);
+        auto tree = ryml::parse_in_place(c4::substr(reinterpret_cast<char*>(fileData), fileSize));
+        c4::yml::ConstNodeRef root = tree.rootref();
 
-        m_shader = shaderPathProp.as<ShaderAsset*>();
+        auto material = root.find_child("Material");
+        PK_THROW_ASSERT(material.readable(), "Could not locate material (%s) header in file.", filepath);
+
+        auto shaderPathProp = material.find_child("Shader");
+        auto shadowShaderPathProp = material.find_child("ShadowShader");
+        auto keywords = material.find_child("Keywords");
+        auto properties = material.find_child("Properties");
+
+        PK_THROW_ASSERT(shaderPathProp.readable(), "Material (%s) doesn't define a shader.", filepath);
+
+        m_shader = YAML::Read<ShaderAsset*>(shaderPathProp);
+
+        if (shadowShaderPathProp.readable())
+        {
+            m_shadowShader = YAML::Read<ShaderAsset*>(shadowShaderPathProp);
+        }
 
         uint32_t serializedSize, serializedPropertyCount;
         CalculateMaterialSize(properties, keywords, &serializedSize, &serializedPropertyCount);
         InitializeShaderLayout(serializedSize, serializedPropertyCount);
 
-        if (shadowShaderPathProp)
+        if (keywords.readable())
         {
-            m_shadowShader = shadowShaderPathProp.as<ShaderAsset*>();
-        }
-
-        for (auto keyword : keywords)
-        {
-            Set<bool>(NameID(keyword.as<std::string>().c_str()), true);
-        }
-
-        for (auto property : properties)
-        {
-            auto propertyName = property.first.as<std::string>();
-            auto type = property.second["Type"];
-
-            if (!type)
+            for (auto keyword : keywords.children())
             {
-                continue;
-            }
-
-            auto nameId = NameID(propertyName.c_str());
-            auto typeName = type.as<std::string>();
-            auto elementType = PKAssets::GetElementType(typeName.c_str());
-            auto values = property.second["Value"];
-
-            switch (elementType)
-            {
-                case ElementType::Float: Set(nameId, values.as<float>()); break;
-                case ElementType::Float2: Set(nameId, values.as<float2>()); break;
-                case ElementType::Float3: Set(nameId, values.as<float3>()); break;
-                case ElementType::Float4: Set(nameId, values.as<float4>()); break;
-                case ElementType::Float2x2: Set(nameId, values.as<float2x2>()); break;
-                case ElementType::Float3x3: Set(nameId, values.as<float3x3>()); break;
-                case ElementType::Float4x4: Set(nameId, values.as<float4x4>()); break;
-                case ElementType::Float3x4: Set(nameId, values.as<float3x4>()); break;
-                case ElementType::Int: Set(nameId, values.as<int>()); break;
-                case ElementType::Int2: Set(nameId, values.as<int2>()); break;
-                case ElementType::Int3: Set(nameId, values.as<int3>()); break;
-                case ElementType::Int4: Set(nameId, values.as<int4>()); break;
-                case ElementType::Texture2DHandle: Set(nameId, values.as<TextureAsset*>()->GetRHI()); break;
-                case ElementType::Texture3DHandle: Set(nameId, values.as<TextureAsset*>()->GetRHI()); break;
-                case ElementType::TextureCubeHandle: Set(nameId, values.as<TextureAsset*>()->GetRHI()); break;
-                default: PK_LOG_WARNING("Unsupported material parameter type"); break;
+                Set<bool>(NameID(YAML::Read<FixedString32>(keyword)), true);
             }
         }
+
+        if (properties.readable())
+        {
+            for (auto property : properties.children())
+            {
+                auto type = property.find_child("Type");
+                auto value = property.find_child("Value");
+
+                if (type.readable() && value.readable())
+                {
+                    auto nameId = NameID(YAML::ReadKey<FixedString32>(property));
+                    auto elementType = PKAssets::GetElementType(YAML::Read<FixedString32>(type));
+
+                    switch (elementType)
+                    {
+                        case ElementType::Float: Set(nameId, YAML::Read<float>(value)); break;
+                        case ElementType::Float2: Set(nameId, YAML::Read<float2>(value)); break;
+                        case ElementType::Float3: Set(nameId, YAML::Read<float3>(value)); break;
+                        case ElementType::Float4: Set(nameId, YAML::Read<float4>(value)); break;
+                        case ElementType::Float2x2: Set(nameId, YAML::Read<float2x2>(value)); break;
+                        case ElementType::Float3x3: Set(nameId, YAML::Read<float3x3>(value)); break;
+                        case ElementType::Float4x4: Set(nameId, YAML::Read<float3x4>(value)); break;
+                        case ElementType::Float3x4: Set(nameId, YAML::Read<float4x4>(value)); break;
+                        case ElementType::Int: Set(nameId, YAML::Read<int>(value)); break;
+                        case ElementType::Int2: Set(nameId, YAML::Read<int2>(value)); break;
+                        case ElementType::Int3: Set(nameId, YAML::Read<int3>(value)); break;
+                        case ElementType::Int4: Set(nameId, YAML::Read<int4>(value)); break;
+                        case ElementType::Texture2DHandle: Set(nameId, YAML::Read<TextureAsset*>(value)->GetRHI()); break;
+                        case ElementType::Texture3DHandle: Set(nameId, YAML::Read<TextureAsset*>(value)->GetRHI()); break;
+                        case ElementType::TextureCubeHandle: Set(nameId, YAML::Read<TextureAsset*>(value)); break;
+                        default: PK_LOG_WARNING("Unsupported material parameter type"); break;
+                    }
+                }
+            }
+        }
+
+        free(fileData);
     }
 
     void Material::InitializeShaderLayout(uint32_t minSize, uint32_t minPropertyCount)

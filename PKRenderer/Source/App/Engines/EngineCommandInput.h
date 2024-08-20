@@ -23,7 +23,7 @@ namespace PK::App
 
     private:
         Sequencer* m_sequencer = nullptr;
-        InputKeyCommandBindingMap m_inputKeyCommands;
+        InputKeyCommandBindings m_inputKeyCommands;
         InputKey m_keyBeginInput = InputKey::GraveAccent;
     };
 }

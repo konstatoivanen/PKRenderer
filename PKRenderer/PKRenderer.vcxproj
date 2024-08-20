@@ -111,7 +111,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\PKRenderer\ThirdParty;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;ThirdParty/KTX/Binaries/ktx.lib;ThirdParty/KTX/Binaries/ktx_read.lib;ThirdParty/GLFW/Binaries/glfw3.lib;ThirdParty/yaml-cpp/Binaries/yaml-cppd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;ThirdParty/KTX/Binaries/ktx.lib;ThirdParty/KTX/Binaries/ktx_read.lib;ThirdParty/GLFW/Binaries/glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
@@ -145,7 +145,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\PKRenderer\ThirdParty;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;ThirdParty/KTX/Binaries/ktx.lib;ThirdParty/KTX/Binaries/ktx_read.lib;ThirdParty/GLFW/Binaries/glfw3.lib;ThirdParty/yaml-cpp/Binaries/yaml-cppd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;ThirdParty/KTX/Binaries/ktx.lib;ThirdParty/KTX/Binaries/ktx_read.lib;ThirdParty/GLFW/Binaries/glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
@@ -182,7 +182,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\PKRenderer\ThirdParty;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;ThirdParty/KTX/Binaries/ktx.lib;ThirdParty/KTX/Binaries/ktx_read.lib;ThirdParty/GLFW/Binaries/glfw3.lib;ThirdParty/yaml-cpp/Binaries/yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;ThirdParty/KTX/Binaries/ktx.lib;ThirdParty/KTX/Binaries/ktx_read.lib;ThirdParty/GLFW/Binaries/glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
@@ -221,7 +221,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\PKRenderer\ThirdParty;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;ThirdParty/KTX/Binaries/ktx.lib;ThirdParty/KTX/Binaries/ktx_read.lib;ThirdParty/GLFW/Binaries/glfw3.lib;ThirdParty/yaml-cpp/Binaries/yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;ThirdParty/KTX/Binaries/ktx.lib;ThirdParty/KTX/Binaries/ktx_read.lib;ThirdParty/GLFW/Binaries/glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
@@ -243,6 +243,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Engines\EngineProfiler.h" />
     <ClInclude Include="Source\App\Renderer\IGUIRenderer.h" />
     <ClInclude Include="Source\App\Renderer\RenderViewSettings.h" />
+    <ClInclude Include="Source\Core\CLI\CVariablesYaml.h" />
     <ClInclude Include="Source\Core\Rendering\Font.h" />
     <ClInclude Include="Source\Core\Timers\ITimer.h" />
     <ClInclude Include="Source\Core\Timers\TimeHelpers.h" />
@@ -252,8 +253,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\FixedString.h" />
     <ClInclude Include="Source\Core\Utilities\FastLinkedList.h" />
     <ClInclude Include="Source\Core\Utilities\Parse.h" />
-    <ClInclude Include="Source\Core\Yaml\ConvertCVariableCollection.h" />
-    <ClInclude Include="Source\Core\Yaml\ConvertFixedString.h" />
+    <ClInclude Include="Source\Core\Yaml\RapidyamlFwd.h" />
     <ClInclude Include="ThirdParty\bend\bend_sss_cpu.h" />
     <ClInclude Include="ThirdParty\gfx.h" />
     <ClInclude Include="ThirdParty\GLFW\glfw3.h" />
@@ -544,6 +544,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="ThirdParty\mikktspace\mikktspace.h" />
     <ClInclude Include="ThirdParty\PKAssets\PKAsset.h" />
     <ClInclude Include="ThirdParty\PKAssets\PKAssetLoader.h" />
+    <ClInclude Include="ThirdParty\rapidyaml\rapidyaml-0.7.1.hpp" />
+    <ClInclude Include="ThirdParty\rapidyaml\ryaml.h" />
     <ClInclude Include="ThirdParty\VMA\vk_mem_alloc.h" />
     <ClInclude Include="ThirdParty\vulkan\vk_enum_string_helper.h" />
     <ClInclude Include="ThirdParty\vulkan\vk_icd.h" />
@@ -573,43 +575,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="ThirdParty\vulkan\vulkan_xcb.h" />
     <ClInclude Include="ThirdParty\vulkan\vulkan_xlib.h" />
     <ClInclude Include="ThirdParty\vulkan\vulkan_xlib_xrandr.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\anchor.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\binary.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\contrib\anchordict.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\contrib\graphbuilder.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\depthguard.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\dll.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\emitfromevents.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\emitter.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\emitterdef.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\emittermanip.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\emitterstyle.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\eventhandler.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\exceptions.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\mark.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\convert.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\impl.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\iterator.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\iterator_fwd.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\memory.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\node.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\node_data.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\node_iterator.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\node_ref.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\emit.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\impl.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\iterator.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\node.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\parse.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\ptr.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\node\type.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\noexcept.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\null.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\ostream_wrapper.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\parser.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\stlemitter.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\traits.h" />
-    <ClInclude Include="ThirdParty\yaml-cpp\yaml.h" />
     <ClInclude Include="Source\App\RendererApplication.h" />
     <ClInclude Include="Source\Core\CLI\CArguments.h" />
     <ClInclude Include="Source\App\BaseRendererConfig.h" />
@@ -642,11 +607,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Engines\EngineTime.h" />
     <ClInclude Include="Source\Core\Timers\TimeFrameInfo.h" />
     <ClInclude Include="Source\Core\Utilities\NameIDProviderDefault.h" />
-    <ClInclude Include="Source\Core\Yaml\ConfigMacros.h" />
-    <ClInclude Include="Source\Core\Yaml\ConvertInputKeyBindings.h" />
-    <ClInclude Include="Source\Core\Yaml\ConvertMathTypes.h" />
-    <ClInclude Include="Source\Core\Yaml\ConvertShader.h" />
-    <ClInclude Include="Source\Core\Yaml\ConvertTextureAsset.h" />
+    <ClInclude Include="Source\Core\Yaml\StructMacros.h" />
     <ClInclude Include="Source\App\ECS\Builders.h" />
     <ClInclude Include="Source\App\ECS\ComponentBounds.h" />
     <ClInclude Include="Source\App\ECS\ComponentFlyCamera.h" />
@@ -1067,7 +1028,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Timers\TimerFramerate.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFrameRunner.cpp" />
     <ClCompile Include="Source\Core\Utilities\Parse.cpp" />
-    <ClCompile Include="Source\Core\Yaml\ConvertCVariableCollection.cpp" />
+    <ClCompile Include="Source\Core\Yaml\SerializeCVariablesYaml.cpp" />
+    <ClCompile Include="Source\Core\Yaml\SerializeFixedString.cpp" />
     <ClCompile Include="ThirdParty\gfx.cpp" />
     <ClCompile Include="ThirdParty\glm\detail\glm.cpp" />
     <ClCompile Include="ThirdParty\mikktspace\mikktspace.c">
@@ -1106,11 +1068,11 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\ServiceRegister.cpp" />
     <ClCompile Include="Source\App\Engines\EngineTime.cpp" />
     <ClCompile Include="Source\Core\Utilities\NameIDProviderDefault.cpp" />
-    <ClCompile Include="Source\Core\Yaml\ConfigMacros.cpp" />
-    <ClCompile Include="Source\Core\Yaml\ConvertInputKeyBindings.cpp" />
-    <ClCompile Include="Source\Core\Yaml\ConvertMathTypes.cpp" />
-    <ClCompile Include="Source\Core\Yaml\ConvertShader.cpp" />
-    <ClCompile Include="Source\Core\Yaml\ConvertTextureAsset.cpp" />
+    <ClCompile Include="Source\Core\Yaml\StructMacros.cpp" />
+    <ClCompile Include="Source\Core\Yaml\SerializeInputKeyBindings.cpp" />
+    <ClCompile Include="Source\Core\Yaml\SerializeMathTypes.cpp" />
+    <ClCompile Include="Source\Core\Yaml\SerializeShader.cpp" />
+    <ClCompile Include="Source\Core\Yaml\SerializeTextureAsset.cpp" />
     <ClCompile Include="Source\App\ECS\Builders.cpp" />
     <ClCompile Include="Source\App\ECS\ComponentProjection.cpp" />
     <ClCompile Include="Source\App\Engines\EngineCommandInput.cpp" />
@@ -1191,14 +1153,15 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Utilities\PropertyBlock.cpp" />
     <ClCompile Include="Source\Core\Utilities\RemoteProcess.cpp" />
     <ClCompile Include="Source\Core\Utilities\VersionedObject.cpp" />
+    <ClCompile Include="ThirdParty\rapidyaml\ryamlImpl.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="ThirdParty\GLFW\Binaries\glfw3.lib" />
     <Library Include="ThirdParty\KTX\Binaries\ktx.lib" />
     <Library Include="ThirdParty\KTX\Binaries\ktx_read.lib" />
     <Library Include="ThirdParty\vulkan\Binaries\vulkan-1.lib" />
-    <Library Include="ThirdParty\yaml-cpp\Binaries\yaml-cpp.lib" />
-    <Library Include="ThirdParty\yaml-cpp\Binaries\yaml-cppd.lib" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Content\T_AppIcon.bmp" />

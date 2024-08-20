@@ -4,7 +4,7 @@
 #include "Core/ECS/EGID.h"
 #include "Core/ControlFlow/IStepApplication.h"
 #include "Core/Rendering/RenderingFwd.h"
-#include "Core/Yaml/ConfigMacros.h"
+#include "Core/Yaml/StructMacros.h"
 #include "App/Renderer/RenderViewSettings.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
@@ -25,7 +25,7 @@ namespace PK::App
         PK_YAML_MEMBER(float, CameraZNear, 0.1f)
         PK_YAML_MEMBER(float, CameraZFar, 200.0f)
         PK_YAML_MEMBER(uint, LightCount, 0u)
-        PK_YAML_MEMBER_INLINE_STRUCT(RenderViewSettings, ViewSettings)
+        PK_YAML_MEMBER_STRUCT(RenderViewSettings, ViewSettings)
     PK_YAML_ASSET_END()
 
     // Dumping ground for all loose hooks that have not been implemented yet.

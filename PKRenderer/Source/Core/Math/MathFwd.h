@@ -27,6 +27,7 @@ namespace PK
 
     typedef glm::dmat2x2 double2x2;
     typedef glm::dmat3x3 double3x3;
+    typedef glm::dmat3x4 double3x4;
     typedef glm::dmat4x4 double4x4;
 
     typedef glm::i16vec2 short2;
@@ -39,6 +40,7 @@ namespace PK
 
     typedef glm::u16mat2x2 ushort2x2;
     typedef glm::u16mat3x3 ushort3x3;
+    typedef glm::u16mat3x4 ushort3x4;
     typedef glm::u16mat4x4 ushort4x4;
 
     typedef glm::lowp_i8vec4 sbyte4;

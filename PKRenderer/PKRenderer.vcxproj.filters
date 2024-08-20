@@ -948,117 +948,6 @@
     <ClInclude Include="ThirdParty\mikktspace\mikktspace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\contrib\anchordict.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\contrib\graphbuilder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\impl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\iterator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\iterator_fwd.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\memory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\node_data.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\node_iterator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\detail\node_ref.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\convert.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\emit.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\impl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\iterator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\parse.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\ptr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\node\type.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\anchor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\binary.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\depthguard.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\dll.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\emitfromevents.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\emitter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\emitterdef.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\emittermanip.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\emitterstyle.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\eventhandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\exceptions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\mark.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\noexcept.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\null.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\ostream_wrapper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\parser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\stlemitter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\traits.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\yaml-cpp\yaml.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Rendering\Objects\RayTracingAccelerationStructure.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1152,19 +1041,7 @@
     <ClInclude Include="Source\Core\Timers\TimeFrameInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Yaml\ConfigMacros.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Yaml\ConvertInputKeyBindings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Yaml\ConvertMathTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Yaml\ConvertShader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Yaml\ConvertTextureAsset.h">
+    <ClInclude Include="Source\Core\Yaml\StructMacros.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\RendererApplication.h">
@@ -1584,9 +1461,6 @@
     <ClInclude Include="Source\Core\Utilities\Parse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Yaml\ConvertCVariableCollection.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\App\Renderer\RenderViewSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1605,10 +1479,19 @@
     <ClInclude Include="Source\Core\Utilities\FixedString.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Yaml\ConvertFixedString.h">
+    <ClInclude Include="Source\Core\Utilities\FastLinkedList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FastLinkedList.h">
+    <ClInclude Include="ThirdParty\rapidyaml\rapidyaml-0.7.1.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Yaml\RapidyamlFwd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\rapidyaml\ryaml.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\CLI\CVariablesYaml.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2220,19 +2103,19 @@
     <ClCompile Include="Source\App\Engines\EngineTime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\ConfigMacros.cpp">
+    <ClCompile Include="Source\Core\Yaml\StructMacros.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\ConvertInputKeyBindings.cpp">
+    <ClCompile Include="Source\Core\Yaml\SerializeInputKeyBindings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\ConvertMathTypes.cpp">
+    <ClCompile Include="Source\Core\Yaml\SerializeMathTypes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\ConvertShader.cpp">
+    <ClCompile Include="Source\Core\Yaml\SerializeShader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\ConvertTextureAsset.cpp">
+    <ClCompile Include="Source\Core\Yaml\SerializeTextureAsset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\RendererApplication.cpp">
@@ -2496,7 +2379,7 @@
     <ClCompile Include="Source\Core\Utilities\Parse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Yaml\ConvertCVariableCollection.cpp">
+    <ClCompile Include="Source\Core\Yaml\SerializeCVariablesYaml.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Rendering\Font.cpp">
@@ -2505,14 +2388,18 @@
     <ClCompile Include="Source\App\Engines\EngineGUIRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Core\Yaml\SerializeFixedString.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\rapidyaml\ryamlImpl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="ThirdParty\GLFW\Binaries\glfw3.lib" />
     <Library Include="ThirdParty\KTX\Binaries\ktx.lib" />
     <Library Include="ThirdParty\KTX\Binaries\ktx_read.lib" />
     <Library Include="ThirdParty\vulkan\Binaries\vulkan-1.lib" />
-    <Library Include="ThirdParty\yaml-cpp\Binaries\yaml-cpp.lib" />
-    <Library Include="ThirdParty\yaml-cpp\Binaries\yaml-cppd.lib" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Content\T_AppIcon.bmp">

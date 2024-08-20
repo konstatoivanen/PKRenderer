@@ -66,6 +66,60 @@ namespace PK::FileIO
         return 0;
     }
 
+    int ReadBinaryInPlace(const char* filepath, size_t maxSize, void* data, size_t* size)
+    {
+        if (strlen(filepath) == 0)
+        {
+            return -1;
+        }
+
+        auto cachepath = std::filesystem::path(std::string(filepath));
+
+        if (!std::filesystem::exists(cachepath))
+        {
+            return -1;
+        }
+
+        FILE* file = nullptr;
+
+#if _WIN32
+        auto error = fopen_s(&file, cachepath.string().c_str(), "rb");
+
+        if (error != 0)
+        {
+            return -1;
+        }
+#else
+        file = fopen(filepath, "rb");
+#endif
+
+        if (file == nullptr)
+        {
+            return -1;
+        }
+
+        struct stat filestat;
+        int fileNumber = _fileno(file);
+
+        if (fstat(fileNumber, &filestat) != 0)
+        {
+            fclose(file);
+            return -1;
+        }
+
+        *size = filestat.st_size;
+
+        if (*size == 0 || *size >= maxSize)
+        {
+            fclose(file);
+            return -1;
+        }
+
+        fread(data, sizeof(char), *size, file);
+        fclose(file);
+        return 0;
+    }
+
     int WriteBinary(const char* filepath, void* data, size_t size)
     {
         FILE* file = nullptr;

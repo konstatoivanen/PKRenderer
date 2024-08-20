@@ -93,6 +93,7 @@ namespace PK
         size_t m_length = 0ull;
     };
 
+    typedef FixedString<16> FixedString16;
     typedef FixedString<32> FixedString32;
     typedef FixedString<64> FixedString64;
     typedef FixedString<128> FixedString128;

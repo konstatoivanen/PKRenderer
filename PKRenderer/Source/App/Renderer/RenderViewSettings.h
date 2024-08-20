@@ -1,9 +1,6 @@
 #pragma once
 #include "Core/Math/Math.h"
-#include "Core/Yaml/ConvertMathTypes.h"
-#include "Core/Yaml/ConfigMacros.h"
-#include "Core/Yaml/ConvertCVariableCollection.h"
-#include "Core/Yaml/ConvertTextureAsset.h"
+#include "Core/Yaml/StructMacros.h"
 
 namespace PK::App
 {
@@ -112,16 +109,16 @@ namespace PK::App
     PK_YAML_STRUCT_END()
 
     PK_YAML_STRUCT_BEGIN(RenderViewSettings)
-        PK_YAML_MEMBER_INLINE_STRUCT(PostEffectsSettings, PostEffectSettings)
-        PK_YAML_MEMBER_INLINE_STRUCT(RenderingDebugSettings, RenderingDebugSettings)
-        PK_YAML_MEMBER_INLINE_STRUCT(DepthOfFieldSettings, DepthOfFieldSettings)
-        PK_YAML_MEMBER_INLINE_STRUCT(AutoExposureSettings, AutoExposureSettings)
-        PK_YAML_MEMBER_INLINE_STRUCT(FilmGrainSettings, FilmGrainSettings)
-        PK_YAML_MEMBER_INLINE_STRUCT(VignetteSettings, VignetteSettings)
-        PK_YAML_MEMBER_INLINE_STRUCT(ColorGradingSettings, ColorGradingSettings)
-        PK_YAML_MEMBER_INLINE_STRUCT(BloomSettings, BloomSettings)
-        PK_YAML_MEMBER_INLINE_STRUCT(TemporalAntialiasingSettings, TemporalAntialiasingSettings)
-        PK_YAML_MEMBER_INLINE_STRUCT(FogSettings, FogSettings)
-        PK_YAML_MEMBER_INLINE_STRUCT(EnvBackgroundSettings, EnvBackgroundSettings)
+        PK_YAML_MEMBER_STRUCT(PostEffectsSettings, PostEffectSettings)
+        PK_YAML_MEMBER_STRUCT(RenderingDebugSettings, RenderingDebugSettings)
+        PK_YAML_MEMBER_STRUCT(DepthOfFieldSettings, DepthOfFieldSettings)
+        PK_YAML_MEMBER_STRUCT(AutoExposureSettings, AutoExposureSettings)
+        PK_YAML_MEMBER_STRUCT(FilmGrainSettings, FilmGrainSettings)
+        PK_YAML_MEMBER_STRUCT(VignetteSettings, VignetteSettings)
+        PK_YAML_MEMBER_STRUCT(ColorGradingSettings, ColorGradingSettings)
+        PK_YAML_MEMBER_STRUCT(BloomSettings, BloomSettings)
+        PK_YAML_MEMBER_STRUCT(TemporalAntialiasingSettings, TemporalAntialiasingSettings)
+        PK_YAML_MEMBER_STRUCT(FogSettings, FogSettings)
+        PK_YAML_MEMBER_STRUCT(EnvBackgroundSettings, EnvBackgroundSettings)
     PK_YAML_STRUCT_END()
 }

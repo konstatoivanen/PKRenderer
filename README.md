@@ -232,7 +232,7 @@ Physical Device Requirements:
 
 - [PKAssetTools](https://github.com/konstatoivanen/PKAssetTools)
 - [KTX](https://github.com/KhronosGroup/KTX-Software)
-- [yaml-cpp](https://github.com/jbeder/yaml-cpp)
+- [rapidyaml](https://github.com/biojppm/rapidyaml/tree/master)
 - [GLFW](https://www.glfw.org/)
 - [GLM](https://github.com/g-truc/glm)
 - [mikktspace](http://www.mikktspace.com/)

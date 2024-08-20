@@ -1,9 +1,7 @@
 #pragma once
 #include "Core/Math/Math.h"
-#include "Core/Yaml/ConvertMathTypes.h"
-#include "Core/Yaml/ConfigMacros.h"
-#include "Core/Yaml/ConvertCVariableCollection.h"
-#include "Core/Yaml/ConvertFixedString.h"
+#include "Core/CLI/CVariablesYaml.h"
+#include "Core/Yaml/StructMacros.h"
 
 namespace PK::App
 {
@@ -16,8 +14,8 @@ namespace PK::App
 
     PK_YAML_ASSET_BEGIN(BaseRendererConfig, ".cfg")
         PK_YAML_MEMBER(float, TimeScale, 1.0f)
-        PK_YAML_MEMBER_INLINE_STRUCT(WindowConfig, WindowDesc)
-        PK_YAML_MEMBER(YAML::CVariableCollection, ConsoleVariables, {})
+        PK_YAML_MEMBER_STRUCT(WindowConfig, WindowDesc)
+        PK_YAML_MEMBER(CVariablesYaml, ConsoleVariables, {})
     PK_YAML_ASSET_END()
 }
 

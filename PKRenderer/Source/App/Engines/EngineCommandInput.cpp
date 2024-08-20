@@ -11,17 +11,18 @@ namespace PK::App
     EngineCommandInput::EngineCommandInput(Sequencer* sequencer, InputKeyConfig* keyConfig) :
         m_sequencer(sequencer)
     {
-        m_inputKeyCommands = keyConfig->InputKeyCommands;
+        m_inputKeyCommands.bindings.CopyFrom(keyConfig->InputKeyCommands.bindings);
+        m_inputKeyCommands.count = keyConfig->InputKeyCommands.count;
         keyConfig->CommandInputKeys.TryGetKey("Console.BeginInput", &m_keyBeginInput);
     }
 
     void EngineCommandInput::Step(InputDevice* input)
     {
-        for (auto& binding : m_inputKeyCommands)
+        for (auto i = 0u; i < m_inputKeyCommands.count; ++i)
         {
-            if (input->GetKeyDown(binding.first))
+            if (input->GetKeyDown(m_inputKeyCommands.bindings[i].key))
             {
-                m_sequencer->NextRoot<CArgumentConst>({ binding.second.c_str() });
+                m_sequencer->NextRoot<CArgumentConst>({ m_inputKeyCommands.bindings[i].command.c_str() });
             }
         }
 
@@ -38,7 +39,8 @@ namespace PK::App
 
     void EngineCommandInput::Step(AssetImportEvent<InputKeyConfig>* evt)
     {
-        m_inputKeyCommands = evt->asset->InputKeyCommands;
+        m_inputKeyCommands.bindings.CopyFrom(evt->asset->InputKeyCommands.bindings);
+        m_inputKeyCommands.count = evt->asset->InputKeyCommands.count;
         evt->asset->CommandInputKeys.TryGetKey("Console.BeginInput", &m_keyBeginInput);
     }
 }
