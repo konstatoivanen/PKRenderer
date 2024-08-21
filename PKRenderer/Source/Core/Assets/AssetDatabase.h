@@ -4,6 +4,7 @@
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/ISingleton.h"
 #include "Core/Utilities/FixedString.h"
+#include "Core/Utilities/Hash.h"
 #include "Core/Assets/Asset.h"
 #include "Core/Assets/AssetImportEvent.h"
 #include "Core/CLI/Log.h"
@@ -13,6 +14,12 @@ namespace PK
 {
     class AssetDatabase : public ISingleton<AssetDatabase>
     {
+        struct AssetReference
+        {
+            Ref<Asset> asset = nullptr;
+            std::function<void()> reload = nullptr;
+        };
+
     public:
         AssetDatabase(Sequencer* sequencer);
 
@@ -109,13 +116,15 @@ namespace PK
 
             std::vector<T*> result;
 
-            if (m_assets.count(std::type_index(typeid(T))) > 0)
+            auto collectionIter = m_assets.find(std::type_index(typeid(T)));
+
+            if (collectionIter != m_assets.end())
             {
-                auto assets = m_assets.at(std::type_index(typeid(T)));
-               
-                for (auto& kv : assets)
+                auto& collection = collectionIter->second;
+
+                for (auto& kv : collection)
                 {
-                    result.push_back(std::static_pointer_cast<T>(kv.second).get());
+                    result.push_back(std::static_pointer_cast<T>(kv.second.asset).get());
                 }
             }
 
@@ -144,9 +153,12 @@ namespace PK
         {
             static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
-            if (m_assets.count(std::type_index(typeid(T))) > 0)
+            auto collectionIter = m_assets.find(std::type_index(typeid(T)));
+
+            if (collectionIter != m_assets.end())
             {
-                m_assets.at(std::type_index(typeid(T))).erase(assetId);
+                auto& collection = collectionIter->second;
+                collection.erase(assetId);
             }
         }
 
@@ -189,9 +201,9 @@ namespace PK
             static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
             // Copy intentional as mapped names can be moved. 
-            std::string filepath = std::string(assetId.c_str());
+            FixedString256 filepath(assetId.c_str());
 
-            PK_THROW_ASSERT(std::filesystem::exists(filepath), "Asset not found at path: %s", filepath.c_str());
+            PK_THROW_ASSERT(std::filesystem::exists(filepath.c_str()), "Asset not found at path: %s", filepath.c_str());
             PK_LOG_VERBOSE("AssetDatabase.Load: %s, %s", typeid(T).name(), filepath.c_str());
             PK_LOG_SCOPE_INDENT(asset);
 
@@ -200,12 +212,15 @@ namespace PK
             RegisterMetaFunctionality(typeIndex);
 
             auto& collection = m_assets[typeIndex];
-            auto iter = collection.find(assetId);
+            AssetReference* reference = nullptr;
             Ref<T> asset = nullptr;
+
+            auto iter = collection.find(assetId);
 
             if (iter != collection.end())
             {
-                asset = std::static_pointer_cast<T>(iter->second);
+                reference = &iter->second;
+                asset = std::static_pointer_cast<T>(reference->asset);
 
                 if (isReload == false)
                 {
@@ -215,7 +230,8 @@ namespace PK
             else
             {
                 asset = Asset::Create<T>();
-                collection[assetId] = asset;
+                reference = &collection[assetId];
+                reference->asset = asset;
                 std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
             }
 
@@ -225,9 +241,9 @@ namespace PK
             m_sequencer->Next(this, &importToken);
 
             // Don't capture variadic asset loads as we cant ensure paremeter lifetimes.
-            if (m_assetReloadCaptures[typeIndex].count(assetId) == 0 && sizeof ... (args) == 0)
+            if (reference->reload == nullptr && sizeof ... (args) == 0)
             {
-                m_assetReloadCaptures[typeIndex][assetId] = [this, assetWeakRef = Weak<T>(asset)]()
+                reference->reload = [this, assetWeakRef = Weak<T>(asset)]()
                 {
                     if (!assetWeakRef.expired())
                     {
@@ -259,7 +275,7 @@ namespace PK
             PK_THROW_ASSERT(collection.count(assetId) < 1, "AssetDatabase.Register: (%s) already exists!", name);
             PK_LOG_VERBOSE("AssetDatabase.Register: %s, %s", typeid(T).name(), name);
 
-            collection[assetId] = asset;
+            collection[assetId].asset = asset;
             std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
 
             return asset.get();
@@ -268,8 +284,8 @@ namespace PK
         template<typename T>
         bool ValidateExtension(const std::filesystem::path& path) { return path.has_extension() && Asset::IsValidExtension<T>(path.extension().string().c_str()); }
 
-        std::unordered_map<std::type_index, std::unordered_map<AssetID, Ref<Asset>>> m_assets;
-        std::unordered_map<std::type_index, std::unordered_map<AssetID, std::function<void()>>> m_assetReloadCaptures;
+        using AssetCollection = std::unordered_map<AssetID, AssetReference, Hash::TCastHash<AssetID>>;
+        std::unordered_map<std::type_index, AssetCollection> m_assets;
         Sequencer* m_sequencer;
     };
 }

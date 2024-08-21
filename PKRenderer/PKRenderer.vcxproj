@@ -254,6 +254,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\FastLinkedList.h" />
     <ClInclude Include="Source\Core\Utilities\Parse.h" />
     <ClInclude Include="Source\Core\Yaml\RapidyamlFwd.h" />
+    <ClInclude Include="Source\Core\Yaml\RapidyamlPrivate.h" />
     <ClInclude Include="ThirdParty\bend\bend_sss_cpu.h" />
     <ClInclude Include="ThirdParty\gfx.h" />
     <ClInclude Include="ThirdParty\GLFW\glfw3.h" />

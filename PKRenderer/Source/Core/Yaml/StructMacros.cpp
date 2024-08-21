@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
-#include <rapidyaml/ryaml.h>
 #include "Core/CLI/Log.h"
 #include "Core/Utilities/FileIOBinary.h"
+#include "Core/Yaml/RapidyamlPrivate.h"
 #include "StructMacros.h"
 
 namespace PK

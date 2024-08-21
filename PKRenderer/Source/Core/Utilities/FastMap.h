@@ -258,7 +258,7 @@ namespace PK
                 }
 
                 m_nodes[index] = m_nodes[m_count];
-                m_values[index] = m_values[m_count];
+                m_values[index] = std::move(m_values[m_count]);
             }
 
             return true;

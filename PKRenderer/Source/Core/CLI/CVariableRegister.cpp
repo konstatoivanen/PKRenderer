@@ -4,6 +4,14 @@
 
 namespace PK
 {
+    CVariableRegister::~CVariableRegister()
+    {
+        for (auto i = 0u; i < m_variables.GetCount(); ++i)
+        {
+            m_variables.GetValueAt(i).arguments = nullptr;
+        }
+    }
+
     void CVariableRegister::Bind(ICVariable* variable)
     {
         if (Get() == nullptr)
@@ -62,31 +70,33 @@ namespace PK
     void CVariableRegister::BindInstance(ICVariable* variable)
     {
         auto name = variable->name;
-        auto iter = m_variables.find(name);
-        PK_THROW_ASSERT(iter == m_variables.end() || iter->second.variable == nullptr, "CVar is already bound! (%s)", name.c_str());
+        auto index = 0u;
+        auto isNew = m_variables.AddKey(name, &index);
+        auto reference = &m_variables.GetValueAt(index);
+        PK_THROW_ASSERT(!isNew || reference->variable == nullptr, "CVar is already bound! (%s)", name.c_str());
         PK_LOG_VERBOSE("CVariableRegister.Bind: %s", name.c_str());
 
         // Immediately call execute if there is one pending for this variable.
-        if (iter != m_variables.end() && iter->second.arguments != nullptr)
+        if (!isNew && reference->arguments != nullptr)
         {
-            iter->second.variable = variable;
-            ExecuteInstance(iter->second.arguments->arguments, iter->second.arguments->count);
-            iter->second.arguments = nullptr;
+            reference->variable = variable;
+            ExecuteInstance(reference->arguments->arguments, reference->arguments->count);
+            reference->arguments = nullptr;
             return;
         }
 
-        m_variables[name].variable = variable;
+        reference->variable = variable;
     }
 
     void CVariableRegister::UnbindInstance(ICVariable* variable)
     {
-        m_variables.erase(variable->name);
+        m_variables.Remove(variable->name);
     }
 
     bool CVariableRegister::IsBoundInstance(const char* name) const
     {
-        auto iter = m_variables.find(name);
-        return iter != m_variables.end() && iter->second.variable != nullptr;
+        auto reference = m_variables.GetValueRef(name);
+        return reference && reference->variable != nullptr;
     }
 
     void CVariableRegister::ExecuteInstance(const char* const* args, uint32_t count)
@@ -94,11 +104,13 @@ namespace PK
         if (count > 0)
         {
             auto name = NameID(args[0]);
-            auto iter = m_variables.find(name);
+            auto index = 0u;
+            auto isNew = m_variables.AddKey(name, &index);
+            auto reference = &m_variables.GetValueAt(index);
 
-            if (iter != m_variables.end() && iter->second.variable != nullptr)
+            if (!isNew)
             {
-                auto variable = iter->second.variable;
+                auto variable = reference->variable;
                 auto executeArgsCount = count - 1u;
 
                 if (executeArgsCount < variable->CVarGetMinArgs())
@@ -112,7 +124,8 @@ namespace PK
             }
 
             // CVar was not found. cache arguments so that they can be executed upon binding.
-            m_variables[name].arguments = CreateScope<CArgumentsInlineDefault>(args, count);
+            reference->variable = nullptr;
+            reference->arguments = CreateScope<CArgumentsInlineDefault>(args, count);
         }
     }
 

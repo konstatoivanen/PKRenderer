@@ -2,8 +2,7 @@
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/CLI/CVariablesYaml.h"
-#include <rapidyaml/ryaml.h>
-#include "Core/Yaml/RapidyamlFwd.h"
+#include "Core/Yaml/RapidyamlPrivate.h"
 
 namespace PK::YAML
 {
@@ -30,7 +29,6 @@ namespace PK::YAML
         {
             auto head = 0ull;
             auto count = 0u;
-            auto key = child.key();
             AddArg(buffer, arguments, child.key(), head, count);
 
             if (child.is_seq())

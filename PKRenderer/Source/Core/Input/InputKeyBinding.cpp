@@ -5,11 +5,11 @@ namespace PK
 {
     void CommandInputKeyBindingMap::TryGetKey(const char* command, InputKey* outKey) const
     {
-        auto iter = find(std::string(command));
+        auto valueRef = GetValueRef(command);
 
-        if (iter != end())
+        if (valueRef != nullptr)
         {
-            *outKey = iter->second;
+            *outKey = *valueRef;
         }
     }
 }

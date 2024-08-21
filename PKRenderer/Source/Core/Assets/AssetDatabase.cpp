@@ -28,9 +28,13 @@ namespace PK
         PK_LOG_HEADER("AssetDatabase.Log.Type: %s", typeIndex.name());
         PK_LOG_SCOPE_INDENT(logassetsoftype);
 
-        if (m_assets.count(typeIndex) > 0)
+        auto collectionIter = m_assets.find(typeIndex);
+
+        if (collectionIter != m_assets.end())
         {
-            for (auto& kv : m_assets.at(typeIndex))
+            auto& collection = collectionIter->second;
+
+            for (auto& kv : collection)
             {
                 PK_LOG_INFO(kv.first.c_str());
             }
@@ -39,79 +43,82 @@ namespace PK
 
     void AssetDatabase::ReloadCachedAllInternal(const std::type_index& typeIndex)
     {
-        auto collectionIter = m_assetReloadCaptures.find(typeIndex);
+        auto collectionIter = m_assets.find(typeIndex);
 
-        if (collectionIter != m_assetReloadCaptures.end())
+        if (collectionIter != m_assets.end())
         {
             auto& collection = collectionIter->second;
 
             PK_LOG_VERBOSE("AssetDatabase.Reload.Cached: %s", typeIndex.name());
             PK_LOG_SCOPE_INDENT(reload);
 
-            for (auto& capture : collection)
+            for (auto& kv : collection)
             {
-                capture.second();
+                if (kv.second.reload)
+                {
+                    kv.second.reload();
+                }
             }
         }
     }
 
     void AssetDatabase::ReloadCachedInternal(const std::type_index& typeIndex, AssetID assetId)
     {
-        auto collectionIter = m_assetReloadCaptures.find(typeIndex);
+        auto collectionIter = m_assets.find(typeIndex);
 
-        if (collectionIter != m_assetReloadCaptures.end())
+        if (collectionIter != m_assets.end())
         {
             auto& collection = collectionIter->second;
             auto assetIter = collection.find(assetId);
 
-            if (assetIter != collection.end())
+            if (assetIter != collection.end() && assetIter->second.reload)
             {
-                assetIter->second();
+                assetIter->second.reload();
             }
         }
     }
 
     void AssetDatabase::ReloadCachedDirectoryInternal(const std::type_index& typeIndex, const std::string& directory)
     {
-        if (!std::filesystem::exists(directory))
+        if (std::filesystem::exists(directory))
         {
-            return;
-        }
+            auto collectionIter = m_assets.find(typeIndex);
 
-        auto collectionIter = m_assetReloadCaptures.find(typeIndex);
-
-        if (collectionIter == m_assetReloadCaptures.end())
-        {
-            return;
-        }
-
-        auto& collection = collectionIter->second;
-
-        PK_LOG_VERBOSE("AssetDatabase.Reload.Cached.Directory: %s, %s", typeIndex.name(), directory.c_str());
-        PK_LOG_SCOPE_INDENT(reload);
-
-        for (const auto& entry : std::filesystem::directory_iterator(directory))
-        {
-            auto name = entry.path().string();
-            auto assetId = AssetID(entry.path().string().c_str());
-            auto assetIter = collection.find(assetId);
-
-            if (assetIter != collection.end())
+            if (collectionIter != m_assets.end())
             {
-                assetIter->second();
+                auto& collection = collectionIter->second;
+
+                PK_LOG_VERBOSE("AssetDatabase.Reload.Cached.Directory: %s, %s", typeIndex.name(), directory.c_str());
+                PK_LOG_SCOPE_INDENT(reload);
+
+                for (const auto& entry : std::filesystem::directory_iterator(directory))
+                {
+                    auto name = entry.path().string();
+                    auto assetId = AssetID(entry.path().string().c_str());
+                    auto assetIter = collection.find(assetId);
+
+                    if (assetIter != collection.end() && assetIter->second.reload)
+                    {
+                        assetIter->second.reload();
+                    }
+                }
             }
         }
     }
 
     Ref<Asset> AssetDatabase::FindInternal(const std::type_index& typeIndex, const char* name) const
     {
-        if (m_assets.count(typeIndex) > 0)
+        auto collectionIter = m_assets.find(typeIndex);
+
+        if (collectionIter != m_assets.end())
         {
-            for (const auto& kv : m_assets.at(typeIndex))
+            auto& collection = collectionIter->second;
+
+            for (const auto& kv : collection)
             {
                 if (strstr(kv.first.c_str(), name) != nullptr)
                 {
-                    return kv.second;
+                    return kv.second.asset;
                 }
             }
         }

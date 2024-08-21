@@ -5,8 +5,7 @@
 #include "Core/RHI/BuiltInResources.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/TextureAsset.h"
-#include <rapidyaml/ryaml.h>
-#include "Core/Yaml/RapidyamlFwd.h"
+#include "Core/Yaml/RapidyamlPrivate.h"
 #include "Material.h"
 
 namespace PK

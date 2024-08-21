@@ -1,7 +1,6 @@
 #include "PrecompiledHeader.h"
-#include <rapidyaml/ryaml.h>
-#include "Core/Yaml/RapidyamlFwd.h"
 #include "Core/Math/Math.h"
+#include "Core/Yaml/RapidyamlPrivate.h"
 
 namespace PK::YAML
 {

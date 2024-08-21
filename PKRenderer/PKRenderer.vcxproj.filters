@@ -1494,6 +1494,9 @@
     <ClInclude Include="Source\Core\CLI\CVariablesYaml.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\Yaml\RapidyamlPrivate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\glm\detail\func_common.inl">

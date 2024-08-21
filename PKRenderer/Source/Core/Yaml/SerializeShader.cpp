@@ -1,8 +1,7 @@
 #include "PrecompiledHeader.h"
-#include <rapidyaml/ryaml.h>
-#include "Core/Yaml/RapidyamlFwd.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/Rendering/ShaderAsset.h"
+#include "Core/Yaml/RapidyamlPrivate.h"
 
 namespace PK::YAML
 {

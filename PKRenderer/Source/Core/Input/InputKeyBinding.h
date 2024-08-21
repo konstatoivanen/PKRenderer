@@ -9,17 +9,19 @@ namespace PK
 {
     struct InputKeyCommand
     {
+        char* command;
         InputKey key;
-        FixedString128 command;
     };
 
     struct InputKeyCommandBindings
     {
-        MemoryBlock<InputKeyCommand> bindings;
+        MemoryBlock<char> memory;
         size_t count;
+
+        InputKeyCommand* GetBindings() { return reinterpret_cast<InputKeyCommand*>(memory.GetData()); }
     };
 
-    struct CommandInputKeyBindingMap : public std::unordered_map<std::string, InputKey>
+    struct CommandInputKeyBindingMap : public FastMap<FixedString32, InputKey>
     {
         void TryGetKey(const char* command, InputKey* outKey) const;
     };

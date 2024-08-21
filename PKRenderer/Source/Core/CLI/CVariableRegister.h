@@ -3,6 +3,7 @@
 #include <vector>
 #include "Core/Utilities/Ref.h"
 #include "Core/Utilities/ISingleton.h"
+#include "Core/Utilities/FastMap.h"
 #include "Core/CLI/CArguments.h"
 #include "Core/CLI/CVariable.h"
 #include "Core/ControlFlow/IStep.h"
@@ -21,6 +22,8 @@ namespace PK
         };
 
     public:
+        ~CVariableRegister();
+
         static void Bind(ICVariable* variable);
         static void Unbind(ICVariable* variable);
         static bool IsBound(const char* name);
@@ -49,7 +52,7 @@ namespace PK
         void ExecuteInstance(const std::vector<std::string>& args);
         void ExecuteParseInstance(const char* arg);
 
-        std::unordered_map<NameID, CVariableBinding> m_variables;
+        FastMap<NameID, CVariableBinding, Hash::TCastHash<NameID>> m_variables;
         std::vector<Scope<ICVariable>> m_scopes;
     };
 }
