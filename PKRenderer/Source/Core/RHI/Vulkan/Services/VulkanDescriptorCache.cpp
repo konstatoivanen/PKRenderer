@@ -29,12 +29,30 @@ namespace PK
         uint64_t pruneDelay,
         size_t maxSets,
         std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes) :
-        m_poolSizes(poolSizes),
         m_device(device),
-        m_maxSets(maxSets),
         m_pruneDelay(pruneDelay),
         m_sets(1024)
     {
+        // Initial reserve. resource arrays might allocate more
+        m_writeImages.resize(PK_RHI_MAX_DESCRIPTORS_PER_SET);
+        m_writeBuffers.resize(PK_RHI_MAX_DESCRIPTORS_PER_SET);
+        m_writeAccerationStructures.resize(PK_RHI_MAX_DESCRIPTORS_PER_SET);
+
+        m_poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        m_poolCreateInfo.pNext = nullptr;
+        m_poolCreateInfo.maxSets = maxSets;
+        m_poolCreateInfo.pPoolSizes = m_poolSizes;
+        m_poolCreateInfo.poolSizeCount = poolSizes.size();
+        m_poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+        auto index = 0u;
+
+        for (auto& size : poolSizes)
+        {
+            m_poolSizes[index].type = size.first;
+            m_poolSizes[index++].descriptorCount = size.second;
+        }
+
         GrowPool({});
     }
 
@@ -262,24 +280,16 @@ namespace PK
             m_sets.Clear();
         }
 
+        auto divisor = m_sizeMultiplier > 0 ? m_sizeMultiplier : 1u;
         m_sizeMultiplier++;
 
-        std::vector<VkDescriptorPoolSize> pPoolSizes{};
-        pPoolSizes.resize(m_poolSizes.size());
-        auto i = 0u;
-
-        for (auto& kv : m_poolSizes)
+        for (auto i = 0u; i < VK_DESCRIPTOR_TYPE_COUNT; ++i)
         {
-            pPoolSizes[i].type = kv.first;
-            pPoolSizes[i++].descriptorCount = (uint32_t)(kv.second * m_sizeMultiplier);
+            m_poolSizes[i].descriptorCount = (m_poolSizes[i].descriptorCount / divisor) * m_sizeMultiplier;
         }
 
-        VkDescriptorPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
-        createInfo.maxSets = (uint32_t)(m_maxSets * m_sizeMultiplier);
-        createInfo.pPoolSizes = pPoolSizes.data();
-        createInfo.poolSizeCount = (uint32_t)pPoolSizes.size();
-        createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        m_currentPool = m_poolPool.New(m_device, createInfo);
+        m_poolCreateInfo.maxSets = (m_poolCreateInfo.maxSets / divisor) * m_sizeMultiplier;
+        m_currentPool = m_poolPool.New(m_device, m_poolCreateInfo);
     }
 
     void VulkanDescriptorCache::GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const FenceRef& fence, bool throwOnFail)

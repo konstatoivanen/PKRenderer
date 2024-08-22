@@ -245,7 +245,7 @@ namespace PKAssets
         DynamicConstantBuffer,
         DynamicStorageBuffer,
         InputAttachment,
-        AccelerationStructure,
+        AccelerationStructure
     };
 
     enum class PKComparison : uint8_t

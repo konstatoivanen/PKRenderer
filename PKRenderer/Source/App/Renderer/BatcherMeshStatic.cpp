@@ -44,6 +44,7 @@ namespace PK::App
         m_indices = RHI::CreateBuffer<PK_Draw>(1024ull, BufferUsage::PersistentStorage, "Batching.DrawInfos");
         m_properties = RHI::CreateBuffer(16384ull, BufferUsage::PersistentStorage, "Batching.MaterialProperties");
         m_tasklets = RHI::CreateBuffer<uint2>(4096u, BufferUsage::PersistentStorage, "Batching.Meshlet.Tasklets");
+        m_drawInfos.reserve(1024);
         m_drawCalls.reserve(512);
         m_passGroups.reserve(512);
     }

@@ -8,6 +8,9 @@ namespace PK
 {
     struct VulkanDescriptorCache : public NoCopy
     {
+        // Match at least minimum count of VkDescriptorType enum values.
+        constexpr static uint32_t VK_DESCRIPTOR_TYPE_COUNT = 32u;
+
         struct alignas(8) DescriptorBinding
         {
             union
@@ -55,11 +58,11 @@ namespace PK
             void GrowPool(const FenceRef& fence);
             void GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const FenceRef& fence, bool throwOnFail);
 
-            const std::map<VkDescriptorType, size_t> m_poolSizes;
+            VkDescriptorPoolSize m_poolSizes[VK_DESCRIPTOR_TYPE_COUNT]{};
+            VkDescriptorPoolCreateInfo m_poolCreateInfo;
             const VkDevice m_device;
-            const size_t m_maxSets;
             const uint64_t m_pruneDelay;
-            size_t m_sizeMultiplier = 1ull;
+            uint64_t m_sizeMultiplier = 0ull;
             uint64_t m_currentPruneTick = 0ull;
             
             VulkanDescriptorPool* m_currentPool = nullptr;
