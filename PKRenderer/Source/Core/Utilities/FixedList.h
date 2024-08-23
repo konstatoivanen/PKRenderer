@@ -2,6 +2,7 @@
 #include "NoCopy.h"
 #include "BufferIterator.h"
 #include "BufferView.h"
+#include "ContainerHelpers.h"
 #include <exception>
 
 namespace PK
@@ -13,11 +14,7 @@ namespace PK
 
         FixedList(const T* elements, size_t count)
         {
-            if (count >= capacity)
-            {
-                throw std::exception("FixedList capacity exceeded!");
-            }
-
+            PK_CONTAINER_RANGE_CHECK(count, 0u, capacity);
             m_count = count;
             std::copy(elements, elements + count, reinterpret_cast<T*>(m_data));
         }
@@ -52,11 +49,7 @@ namespace PK
 
         T* Add()
         {
-            if (m_count >= capacity)
-            {
-                throw std::exception("FixedList capacity exceeded!");
-            }
-
+            PK_CONTAINER_RANGE_CHECK(m_count, 0u, capacity);
             auto ptr = GetData() + m_count++;
             new(ptr) T();
             return ptr;
@@ -65,11 +58,7 @@ namespace PK
         template<typename ... Args>
         T* Add(Args&& ... args)
         {
-            if (m_count >= capacity)
-            {
-                throw std::exception("FixedList capacity exceeded!");
-            }
-
+            PK_CONTAINER_RANGE_CHECK(m_count, 0u, capacity);
             auto ptr = GetData() + m_count++;
             new(ptr) T(std::forward<Args>(args)...);
             return ptr;

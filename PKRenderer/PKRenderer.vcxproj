@@ -249,6 +249,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Timers\TimeHelpers.h" />
     <ClInclude Include="Source\Core\Timers\TimerFramerate.h" />
     <ClInclude Include="Source\Core\Timers\TimerFrameRunner.h" />
+    <ClInclude Include="Source\Core\Utilities\ContainerHelpers.h" />
     <ClInclude Include="Source\Core\Utilities\FixedArray.h" />
     <ClInclude Include="Source\Core\Utilities\FixedString.h" />
     <ClInclude Include="Source\Core\Utilities\FastLinkedList.h" />
@@ -731,7 +732,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\RangeTable.h" />
     <ClInclude Include="Source\Core\Utilities\Ref.h" />
     <ClInclude Include="Source\Core\Utilities\RemoteProcess.h" />
-    <ClInclude Include="Source\Core\Utilities\VectorHelpers.h" />
     <ClInclude Include="Source\Core\Utilities\VersionedObject.h" />
   </ItemGroup>
   <ItemGroup>

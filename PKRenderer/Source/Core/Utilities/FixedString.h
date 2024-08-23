@@ -1,7 +1,7 @@
 #pragma once
 #include "NoCopy.h"
 #include "Hash.h"
-#include <exception>
+#include "ContainerHelpers.h"
 
 namespace PK
 {
@@ -12,38 +12,25 @@ namespace PK
 
         FixedString(size_t length, const char* str)
         {
-            if (str == nullptr)
+            if (str != nullptr)
             {
-                return;
+                PK_CONTAINER_RANGE_CHECK(length + 1u, 0u, capacity);
+                m_length = length;
+                strncpy(m_string, str, m_length);
+                m_string[m_length] = 0;
             }
-
-            m_length = length;
-
-            if (m_length + 1u >= capacity)
-            {
-                throw std::exception("FixedString capacity exceeded!");
-            }
-
-            strncpy(m_string, str, m_length);
-            m_string[m_length] = 0;
         }
 
         FixedString(const char* format, ...)
         {
-            if (format == nullptr)
+            if (format != nullptr)
             {
-                return;
-            }
-
-            va_list v0;
-            va_start(v0, format);
-            m_length = _vsnprintf(m_string, capacity, format, v0);
-            m_string[capacity - 1] = 0;
-            va_end(v0);
-
-            if (m_length + 1u >= capacity)
-            { 
-                throw std::exception("FixedString capacity exceeded!");
+                va_list v0;
+                va_start(v0, format);
+                m_length = _vsnprintf(m_string, capacity, format, v0);
+                m_string[capacity - 1] = 0;
+                va_end(v0);
+                PK_CONTAINER_RANGE_CHECK(m_length + 1u, 0u, capacity);
             }
         }
 
@@ -53,12 +40,7 @@ namespace PK
             {
                 auto offset = m_length;
                 m_length += strlen(str);
-
-                if (m_length + 1u >= capacity)
-                {
-                    throw std::exception("FixedString capacity exceeded!");
-                }
-
+                PK_CONTAINER_RANGE_CHECK(m_length + 1u, 0u, capacity);
                 strcpy(m_string + offset, str);
             }
         }
@@ -67,12 +49,7 @@ namespace PK
         {
             auto offset = m_length;
             m_length += strlen(str);
-
-            if (m_length + 1u >= capacity)
-            {
-                throw std::exception("FixedString capacity exceeded!");
-            }
-
+            PK_CONTAINER_RANGE_CHECK(m_length + 1u, 0u, capacity);
             strcpy(m_string + offset, str);
         }
 

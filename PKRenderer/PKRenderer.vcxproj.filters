@@ -1368,9 +1368,6 @@
     <ClInclude Include="Source\Core\Utilities\Ref.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\VectorHelpers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Utilities\VersionedObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1495,6 +1492,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Yaml\RapidyamlPrivate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Utilities\ContainerHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -14,14 +14,20 @@ namespace PK
 {
     class AssetDatabase : public ISingleton<AssetDatabase>
     {
+        constexpr static uint32_t INVALID_LINK = ~0u;
+
         struct AssetReference
         {
             Ref<Asset> asset = nullptr;
             std::function<void()> reload = nullptr;
+            std::type_index type = typeid(AssetReference);
+            uint32_t nextIdx = INVALID_LINK;
+            uint32_t prevIdx = INVALID_LINK;
         };
 
     public:
         AssetDatabase(Sequencer* sequencer);
+        ~AssetDatabase() { Unload(); }
 
         template<typename T>
         [[nodiscard]] T* Register(const std::string& name, Ref<T> asset) { return RegisterInternal(name.c_str(), asset); }
@@ -101,36 +107,11 @@ namespace PK
         }
 
         template<typename T>
-        inline void ReloadCached(AssetID assetId) { ReloadCachedInternal(std::type_index(typeid(T)), assetId); }
-
-        template<typename T>
         inline void ReloadCachedAll() { ReloadCachedAllInternal(std::type_index(typeid(T))); }
 
         template<typename T>
         inline void ReloadCachedDirectory(const std::string& directory) { ReloadCachedInternal(std::type_index(typeid(T)), directory); }
-
-        template<typename T>
-        std::vector<T*> GetAssetsOfType()
-        {
-            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-
-            std::vector<T*> result;
-
-            auto collectionIter = m_assets.find(std::type_index(typeid(T)));
-
-            if (collectionIter != m_assets.end())
-            {
-                auto& collection = collectionIter->second;
-
-                for (auto& kv : collection)
-                {
-                    result.push_back(std::static_pointer_cast<T>(kv.second.asset).get());
-                }
-            }
-
-            return result;
-        }
-
+        
         template<typename T>
         void UnloadDirectory(const std::string& directory)
         {
@@ -142,41 +123,39 @@ namespace PK
                 {
                     if (ValidateExtension<T>(entry.path()))
                     {
-                        Unload<T>(entry.path().string());
+                        Unload(entry.path().string().c_str());
                     }
                 }
             }
         }
 
         template<typename T>
-        void Unload(AssetID assetId)
-        {
-            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-
-            auto collectionIter = m_assets.find(std::type_index(typeid(T)));
-
-            if (collectionIter != m_assets.end())
-            {
-                auto& collection = collectionIter->second;
-                collection.erase(assetId);
-            }
-        }
-
-        template<typename T>
-        inline void Unload(const std::string& filepath)
-        {
-            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-            Unload<T>(AssetID(filepath));
-        }
-
-        template<typename T>
         inline void Unload()
         {
             static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
-            m_assets.erase(std::type_index(typeid(T)));
+            Unload(std::type_index(typeid(T)));
         }
 
-        inline void Unload() { m_assets.clear(); };
+        template<typename T>
+        std::vector<T*> GetAssetsOfType()
+        {
+            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+
+            std::vector<T*> result;
+
+            auto typeIndex = std::type_index(typeid(T));
+            auto values = m_assets.GetValues();
+
+            for (auto i = 0u; i < values.count; ++i)
+            {
+                if (values[i].type == typeIndex)
+                {
+                    result.push_back(std::static_pointer_cast<T>(values[i]->asset).get());
+                }
+            }
+
+            return result;
+        }
 
         template<typename T>
         void LogAssetsOfType()
@@ -185,15 +164,23 @@ namespace PK
             LogAssetsOfTypeInternal(std::type_index(typeid(T)));
         }
 
-        void LogAssetsAll();
+        void ReloadCached(AssetID assetId);
+
+        void Unload(const std::type_index& typeIndex);
+        void Unload(AssetID assetId);
+        void Unload();
+
+        void LogAssetsAll() const;
 
     private:
+        void UnloadInternal(uint32_t index);
         void LogAssetsOfTypeInternal(const std::type_index& type) const;
         void ReloadCachedAllInternal(const std::type_index& typeIndex);
-        void ReloadCachedInternal(const std::type_index& typeIndex, AssetID assetId);
         void ReloadCachedDirectoryInternal(const std::type_index& typeIndex, const std::string& directory);
         [[nodiscard]] Ref<Asset> FindInternal(const std::type_index& typeIndex, const char* keyword) const;
         void RegisterMetaFunctionality(const std::type_index& typeIndex);
+        bool GetOrCreateAssetReference(const std::type_index& typeIndex, AssetID assetId, AssetReference** outReference);
+        uint32_t GetTypeHead(const std::type_index& typeIndex) const;
 
         template<typename T, typename ... Args>
         [[nodiscard]] T* LoadInternal(AssetID assetId, bool isReload, Args&& ... args)
@@ -211,15 +198,11 @@ namespace PK
 
             RegisterMetaFunctionality(typeIndex);
 
-            auto& collection = m_assets[typeIndex];
             AssetReference* reference = nullptr;
             Ref<T> asset = nullptr;
 
-            auto iter = collection.find(assetId);
-
-            if (iter != collection.end())
+            if (!GetOrCreateAssetReference(typeIndex, assetId, &reference))
             {
-                reference = &iter->second;
                 asset = std::static_pointer_cast<T>(reference->asset);
 
                 if (isReload == false)
@@ -230,8 +213,8 @@ namespace PK
             else
             {
                 asset = Asset::Create<T>();
-                reference = &collection[assetId];
                 reference->asset = asset;
+                reference->type = typeIndex;
                 std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
             }
 
@@ -267,15 +250,19 @@ namespace PK
         {
             static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
-            RegisterMetaFunctionality(typeid(T));
+            auto typeIndex = std::type_index(typeid(T));
 
-            auto& collection = m_assets[std::type_index(typeid(T))];
-            auto assetId = AssetID(name);
+            RegisterMetaFunctionality(typeIndex);
 
-            PK_THROW_ASSERT(collection.count(assetId) < 1, "AssetDatabase.Register: (%s) already exists!", name);
+            AssetID assetId = name;
+            AssetReference* reference = nullptr;
+            auto isNew = GetOrCreateAssetReference(typeIndex, assetId, &reference);
+
+            PK_THROW_ASSERT(isNew, "AssetDatabase.Register: (%s) already exists!", name);
             PK_LOG_VERBOSE("AssetDatabase.Register: %s, %s", typeid(T).name(), name);
 
-            collection[assetId].asset = asset;
+            reference->asset = asset;
+            reference->type = typeIndex;
             std::static_pointer_cast<Asset>(asset)->m_assetId = assetId;
 
             return asset.get();
@@ -284,8 +271,8 @@ namespace PK
         template<typename T>
         bool ValidateExtension(const std::filesystem::path& path) { return path.has_extension() && Asset::IsValidExtension<T>(path.extension().string().c_str()); }
 
-        using AssetCollection = std::unordered_map<AssetID, AssetReference, Hash::TCastHash<AssetID>>;
-        std::unordered_map<std::type_index, AssetCollection> m_assets;
+        FastMap<AssetID, AssetReference, Hash::TCastHash<AssetID>> m_assets;
+        FastMap<std::type_index, uint32_t> m_typeHeads;
         Sequencer* m_sequencer;
     };
 }

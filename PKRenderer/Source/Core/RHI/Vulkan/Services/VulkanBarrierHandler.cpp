@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/VectorHelpers.h"
 #include "VulkanBarrierHandler.h"
 
 namespace PK

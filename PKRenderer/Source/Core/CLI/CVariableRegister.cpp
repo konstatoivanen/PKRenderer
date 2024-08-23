@@ -42,7 +42,7 @@ namespace PK
             return false;
         }
 
-        return Get()->IsBound(name);
+        return Get()->IsBoundInstance(name);
     }
 
     void CVariableRegister::Execute(const char* const* args, uint32_t count)

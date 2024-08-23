@@ -4,6 +4,7 @@
 #include "BufferView.h"
 #include "MemoryBlock.h"
 #include "BufferIterator.h"
+#include "ContainerHelpers.h"
 
 namespace PK
 {
@@ -52,36 +53,12 @@ namespace PK
             }
         }
 
-        FastSet(const FastSet& other) : FastSet(other.GetCount()) 
-        {
-            memcpy(m_values, other.m_values, sizeof(Node) * m_capacity);
-            memcpy(m_nodes, other.m_nodes, sizeof(Node) * m_capacity);
-            m_buckets.CopyFrom(other.m_buckets);
-            m_collisions = other.m_collisions;
-            m_count = other.m_count;
-        }
-
         void Reserve(uint32_t count)
         {
             if (m_capacity < count)
             {
-                auto newCapacity = m_capacity == 0 ? count : Hash::ExpandPrime(count);
-                auto offsetNode = (sizeof(TValue) * newCapacity + sizeof(Node) - 1u) & ~(sizeof(Node) - 1u);
-                auto newBuffer = calloc(offsetNode + sizeof(Node) * newCapacity, 1u);
-                auto newValues = reinterpret_cast<TValue*>(newBuffer);
-                auto newNodes = reinterpret_cast<Node*>(reinterpret_cast<char*>(newBuffer) + offsetNode);
-
-                if (m_buffer)
-                {
-                    memcpy(newValues, m_values, sizeof(TValue) * m_count);
-                    memcpy(newNodes, m_nodes, sizeof(Node) * m_count);
-                    free(m_buffer);
-                }
-
-                m_buffer = newBuffer;
-                m_values = newValues;
-                m_nodes = newNodes;
-                m_capacity = newCapacity;
+                m_capacity = m_capacity == 0 ? count : Hash::ExpandPrime(count);
+                ContainerHelpers::ReallocNodeValues(&m_buffer, &m_values, &m_nodes, m_count, m_capacity);
             }
 
             if (m_buckets.GetCount() == 0 && count > 0)

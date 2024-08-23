@@ -1,7 +1,7 @@
 #pragma once
 #include "NoCopy.h"
 #include "Bitmask.h"
-#include <exception>
+#include "ContainerHelpers.h"
 
 namespace PK
 {
@@ -23,22 +23,14 @@ namespace PK
 
         uint32_t GetIndex(const T* ptr) const 
         {
-            if (ptr < GetData() || ptr >= (GetData() + capacity))
-            {
-                throw std::exception("Trying to delete an element that doesn't belong to the pool");
-            }
-
+            PK_CONTAINER_RANGE_CHECK(ptr, GetData(), (GetData() + capacity));
             return (uint32_t)(ptr - GetData());
         }
 
         template<typename ... Args>
         T* NewAt(int64_t index, Args&& ... args)
         {
-            if (index == -1 || (size_t)index >= capacity)
-            {
-                throw std::exception("Pool capacity exceeded!");
-            }
-
+            PK_CONTAINER_RANGE_CHECK(index, 0, (int64_t)capacity);
             auto ptr = GetData() + index;
             m_mask.ToggleAt(index);
             new(ptr) T(std::forward<Args>(args)...);

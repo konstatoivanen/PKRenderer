@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/VectorHelpers.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanDriver.h"
@@ -8,7 +7,7 @@
 namespace PK
 {
     template<>
-    struct VectorHelpers::Comparer<VulkanStagingBuffer*>
+    struct ContainerHelpers::Comparer<VulkanStagingBuffer*>
     {
         int operator ()(VulkanStagingBuffer*& a, VulkanStagingBuffer*& b)
         {
@@ -37,7 +36,7 @@ namespace PK
     };
 
     template<>
-    struct VectorHelpers::Bound<VulkanStagingBuffer*>
+    struct ContainerHelpers::Bound<VulkanStagingBuffer*>
     {
         size_t operator ()(VulkanStagingBuffer*& a)
         {
@@ -53,7 +52,6 @@ namespace PK
         m_activeBuffers.reserve(32);
         m_freeBuffers.reserve(32);
     }
-
 
     VulkanStagingBufferCache::~VulkanStagingBufferCache()
     {
@@ -80,12 +78,13 @@ namespace PK
         }
         else
         {
-            auto index = VectorHelpers::LowerBound(m_freeBuffers, (uint32_t)size);
+            auto index = ContainerHelpers::LowerBound(m_freeBuffers.data(), (int32_t)m_freeBuffers.size(), (uint32_t)size);
 
             if (index != -1)
             {
                 buffer = m_freeBuffers.at(index);
-                VectorHelpers::OrderedRemoveAt(m_freeBuffers, index);
+                ContainerHelpers::OrderedRemoveAt(m_freeBuffers.data(), index, (int32_t)m_freeBuffers.size());
+                m_freeBuffers.pop_back();
             }
             else
             {
@@ -139,7 +138,8 @@ namespace PK
                 stagingBuffer->fence.Invalidate();
                 stagingBuffer->pruneTick = m_currentPruneTick + m_pruneDelay;
                 m_freeBuffers.push_back(stagingBuffer);
-                VectorHelpers::UnorderedRemoveAt(m_activeBuffers, i);
+                ContainerHelpers::UnorderedRemoveAt(m_activeBuffers.data(), i, (int32_t)m_activeBuffers.size());
+                m_activeBuffers.pop_back();
             }
         }
 
@@ -150,10 +150,11 @@ namespace PK
             if (stagingBuffer->pruneTick < m_currentPruneTick)
             {
                 m_bufferPool.Delete(stagingBuffer);
-                VectorHelpers::UnorderedRemoveAt(m_freeBuffers, i);
+                ContainerHelpers::UnorderedRemoveAt(m_freeBuffers.data(), i, (int32_t)m_freeBuffers.size());
+                m_freeBuffers.pop_back();
             }
         }
 
-        VectorHelpers::QuickSort(m_freeBuffers);
+        ContainerHelpers::QuickSort(m_freeBuffers.data(), m_freeBuffers.size());
     }
 }
