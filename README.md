@@ -98,6 +98,7 @@ However, this is ultimately a hobby project & thus likely to remain perpetually 
     - tangent sign 1 bit
     - half2 texcoord
     - 10r10b10g2a quaternion.
+  - directed acyclic graph lod levels.
   - task shader cone culling.
   - task shader frustum culling.
   - global virtual buffers for all geometry resources.

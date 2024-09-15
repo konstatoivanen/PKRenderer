@@ -14,6 +14,11 @@
 #define MESHLET_LOCAL_GROUP_SIZE 32u
 #define TRIANGLES_PER_MESHLET_THREAD 4u
 #define VERTICES_PER_MESHLET_THREAD 2u
+#define MESHLET_UINT4_STRIDE 3u
+
+#ifndef PK_MESHLET_LOD_ERROR_THRESHOLD
+    #define PK_MESHLET_LOD_ERROR_THRESHOLD 0.1f
+#endif
 
 #ifndef PK_MESHLET_HAS_EXTRA_PAYLOAD_DATA
     #define PK_MESHLET_HAS_EXTRA_PAYLOAD_DATA 0
@@ -91,6 +96,9 @@ struct PKMeshlet
     float3 coneApex;
     float3 center;
     float3 extents;
+
+    float4 lodCenterErrorCurrent;
+    float4 lodCenterErrorParent;
 };
 
 // Based on PKAssets::PKMeshletVertex
@@ -138,7 +146,7 @@ PKMeshletLite Meshlet_Unpack_MeshletLite(const uint4 packed)
     return m;
 }
 
-PKMeshlet Meshlet_Unpack_Meshlet(const uint4 packed0, const uint4 packed1)
+PKMeshlet Meshlet_Unpack_Meshlet(const uint4 packed0, const uint4 packed1, const uint4 packed2)
 {
     PKMeshlet m;
     m.vertexFirst = packed0.x;
@@ -153,6 +161,12 @@ PKMeshlet Meshlet_Unpack_Meshlet(const uint4 packed0, const uint4 packed1)
     m.center.z = unpackHalf2x16(packed1.z).x;
     m.extents.x = unpackHalf2x16(packed1.z).y;
     m.extents.yz = unpackHalf2x16(packed1.w);
+
+    m.lodCenterErrorCurrent.xy = unpackHalf2x16(packed2.x);
+    m.lodCenterErrorCurrent.zw = unpackHalf2x16(packed2.y);
+    m.lodCenterErrorParent.xy = unpackHalf2x16(packed2.z);
+    m.lodCenterErrorParent.zw = unpackHalf2x16(packed2.w);
+
     return m;
 }
 
@@ -191,12 +205,44 @@ PKVertex Meshlet_Unpack_Vertex(const uint4 packed, const float3 smbbmin, const f
 
 // Loading functions
 PKTasklet Meshlet_Load_Tasklet(const uint taskIndex) { return Meshlet_Unpack_Tasklet(PK_BUFFER_DATA(pk_Meshlet_Tasklets, taskIndex)); }
-PKSubmesh Meshlet_Load_Submesh(const uint index) { return Meshlet_Unpack_Submesh(PK_BUFFER_DATA(pk_Meshlet_Submeshes, index * 2u + 0u), PK_BUFFER_DATA(pk_Meshlet_Submeshes, index * 2u + 1u)); }
-PKMeshletLite Meshlet_Load_MeshletLite(const uint index) { return Meshlet_Unpack_MeshletLite(PK_BUFFER_DATA(pk_Meshlets, index * 2u + 0u)); }
-PKMeshlet Meshlet_Load_Meshlet(const uint index) { return Meshlet_Unpack_Meshlet(PK_BUFFER_DATA(pk_Meshlets, index * 2u + 0u), PK_BUFFER_DATA(pk_Meshlets, index * 2u + 1u)); }
+
+PKSubmesh Meshlet_Load_Submesh(const uint index) 
+{ 
+    return Meshlet_Unpack_Submesh(
+        PK_BUFFER_DATA(pk_Meshlet_Submeshes, index * 2u + 0u), 
+        PK_BUFFER_DATA(pk_Meshlet_Submeshes, index * 2u + 1u)); 
+}
+
+PKMeshletLite Meshlet_Load_MeshletLite(const uint index) { return Meshlet_Unpack_MeshletLite(PK_BUFFER_DATA(pk_Meshlets, index * MESHLET_UINT4_STRIDE + 0u)); }
+
+PKMeshlet Meshlet_Load_Meshlet(const uint index) 
+{ 
+    return Meshlet_Unpack_Meshlet(
+        PK_BUFFER_DATA(pk_Meshlets, index * MESHLET_UINT4_STRIDE + 0u), 
+        PK_BUFFER_DATA(pk_Meshlets, index * MESHLET_UINT4_STRIDE + 1u),
+        PK_BUFFER_DATA(pk_Meshlets, index * MESHLET_UINT4_STRIDE + 2u)); 
+}
+
 PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float3 smbbmax) { return Meshlet_Unpack_Vertex(PK_BUFFER_DATA(pk_Meshlet_Vertices, index), smbbmin, smbbmax); }
 
 #if defined(SHADER_STAGE_MESH_TASK)
+
+    float Meshlet_ProjectError(const float4 centerError, const float scaleFactor)
+    {
+        const float4 center = ObjectToClipPos(centerError.xyz);
+        const float error = centerError.w * pk_ViewToClip[1][1] * inversesqrt(dot(center, center) - centerError.w * centerError.w);
+        return lerp(error * scalingFactor * pk_ScreenParams.y * 0.5f, 1e+38f, centerError.w > (PK_HALF_MAX_MINUS1 - 1.0f));
+    }
+
+    bool Meshlet_Cull_Lod(const PKMeshlet meshlet)
+    {
+        // @TODO hack to get somekind of scaling factor. potentially expensive.
+        const float3 scale = abs(float4(1.0f.xxx, 0.0f) * pk_ObjectToWorld).xyz;
+        const float scaleFactor = max(max(scale.x, scale.y), scale.z);
+        const float errorC = Meshlet_ProjectError(meshlet.lodCenterErrorCurrent, scaleFactor);
+        const float errorP = Meshlet_ProjectError(meshlet.lodCenterErrorParent, scaleFactor);
+        return errorP > PK_MESHLET_LOD_ERROR_THRESHOLD && errorC <= PK_MESHLET_LOD_ERROR_THRESHOLD;
+    }
 
     #if PK_MESHLET_USE_FRUSTUM_CULL == 1
     shared float4 lds_ClipPlanes[4];
@@ -322,6 +368,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
         
         bool isVisible = true;
         isVisible = isVisible && meshletLocalIndex < meshletCount;
+        isVisible = isVisible && Meshlet_Cull_Lod(meshlet);
         isVisible = isVisible && PK_MESHLET_FUNC_CULL(meshlet);
 
         uint4 visibleMask = subgroupBallot(isVisible);

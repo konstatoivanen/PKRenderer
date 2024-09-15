@@ -1,1 +1,4 @@
 mesh_splitPositionStream:1
+mesh_simplificationError:2
+mesh_simplificationNormalsWeight:100
+mesh_simplificationUvsWeight:100

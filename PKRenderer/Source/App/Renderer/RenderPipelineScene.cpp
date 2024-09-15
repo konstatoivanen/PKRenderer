@@ -35,7 +35,7 @@ namespace PK::App
         PK_LOG_SCOPE_INDENT(local);
 
         m_sceneStructure = RHI::CreateAccelerationStructure("Scene");
-        
+
         auto hash = HashCache::Get();
 
         m_constantsLayout = BufferLayout(

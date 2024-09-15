@@ -15,6 +15,8 @@ struct LightPayload
     uint layer;
 };
 
+// Higher error threshold for shadows as accuracy is not that important.
+#define PK_MESHLET_LOD_ERROR_THRESHOLD 0.5f
 #define PK_MESHLET_USE_FRUSTUM_CULL 1
 #define PK_MESHLET_USE_FUNC_CULL 1
 #define PK_MESHLET_USE_FUNC_TRIANGLE 1

@@ -603,9 +603,14 @@ namespace PKAssets
                           int8_t coneCutoff,
                           const float* coneApex,
                           const float* center,
-                          const float* extents)
+                          const float* extents,
+        
+                          const float* lodCenterCurrent,
+                          float lodErrorCurrent,
+                          const float* lodCenterParent,
+                          float lodErrorParent)
     {
-        PKMeshlet meshlet;
+        PKMeshlet meshlet{};
         meshlet.vertexFirst = vertexFirst;
         meshlet.triangleFirst = triangleFirst;
         meshlet.coneAxis[0] = coneAxis[0];
@@ -623,6 +628,16 @@ namespace PKAssets
         meshlet.extents[0] = PackHalf(extents[0]);
         meshlet.extents[1] = PackHalf(extents[1]);
         meshlet.extents[2] = PackHalf(extents[2]);
+
+        meshlet.lodCenterErrorCurrent[0] = PackHalf(lodCenterCurrent[0]);
+        meshlet.lodCenterErrorCurrent[1] = PackHalf(lodCenterCurrent[1]);
+        meshlet.lodCenterErrorCurrent[2] = PackHalf(lodCenterCurrent[2]);
+        meshlet.lodCenterErrorCurrent[3] = PackHalf(lodErrorCurrent);
+        meshlet.lodCenterErrorParent[0] = PackHalf(lodCenterParent[0]);
+        meshlet.lodCenterErrorParent[1] = PackHalf(lodCenterParent[1]);
+        meshlet.lodCenterErrorParent[2] = PackHalf(lodCenterParent[2]);
+        meshlet.lodCenterErrorParent[3] = PackHalf(lodErrorParent);
+
         return meshlet;
     }
 }

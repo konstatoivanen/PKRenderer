@@ -9,6 +9,8 @@
     #define SHADOW_TEST ShadowTest_PCF2x2
     #define SHADOW_SAMPLE_SCREENSPACE 0
     #define PK_MESHLET_USE_FUNC_TRIANGLE 1
+    // Very high error threshold for voxelize.
+    #define PK_MESHLET_LOD_ERROR_THRESHOLD 10.0f
 #endif
 
 #include "Common.glsl"

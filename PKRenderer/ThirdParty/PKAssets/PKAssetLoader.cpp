@@ -225,6 +225,12 @@ namespace PKAssets
 
         while (head != nullptr && (size_t)head < (size_t)(buffer + size))
         {
+            if (*head == '\n')
+            {
+                head++;
+                continue;
+            }
+
             auto comma = strchr(head, ':');
 
             if (comma == nullptr || (size_t)(comma - head) <= 1)

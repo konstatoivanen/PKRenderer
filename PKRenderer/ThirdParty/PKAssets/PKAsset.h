@@ -404,6 +404,7 @@ namespace PKAssets
     constexpr static const uint32_t PK_MESHLET_MAX_VERTICES = 64u;
     constexpr static const uint32_t PK_MESHLET_MAX_TRIANGLES = 124u;
     constexpr static const float PK_MESHLET_CONE_WEIGHT = 0.9f;
+    constexpr static const float PK_MESHLET_LOD_MAX_ERROR = 65472.0f;
 
     // packed as uint4
     struct PKMeshletVertex
@@ -415,7 +416,7 @@ namespace PKAssets
         uint32_t rotation;   // r10g10b10a2 quaternion
     };
 
-    // packed as 2x uint4
+    // packed as 3x uint4
     struct PKMeshlet
     {
         uint32_t vertexFirst;   // 4  bytes
@@ -427,6 +428,11 @@ namespace PKAssets
         uint16_t coneApex[3];   // 20 bytes half3
         uint16_t center[3];     // 26 bytes half3
         uint16_t extents[3];    // 32 bytes half3
+
+        // @TODO Bad packing. figure out how to fit this into 2x uint4
+        // Cone data could be made redundant by better culling.
+        uint16_t lodCenterErrorCurrent[4];   // 40 bytes half
+        uint16_t lodCenterErrorParent[4];    // 48 bytes half
     };
 
     // packed as 2x uint4
@@ -499,7 +505,12 @@ namespace PKAssets
                           int8_t coneCutoff,
                           const float* coneApex,
                           const float* center,
-                          const float* extents);
+                          const float* extents,
+
+                          const float* lodCenterCurrent,
+                          float lodErrorCurrent,
+                          const float* lodCenterParent,
+                          float lodErrorParent);
 
     constexpr static const float PK_FONT_MSDF_UNIT = 4.0f;
 

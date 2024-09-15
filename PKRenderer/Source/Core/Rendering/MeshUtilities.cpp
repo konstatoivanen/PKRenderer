@@ -660,7 +660,11 @@ namespace PK::MeshUtilities
                 bounds.cone_cutoff_s8,
                 bounds.cone_apex,
                 center,
-                extents
+                extents,
+                center,
+                -1.0f,
+                center,
+                PK_HALF_MAX_MINUS1
             );
 
             output.indices.resize(output.indices.size() + meshlet.triangle_count * 3);
