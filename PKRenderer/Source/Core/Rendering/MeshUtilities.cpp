@@ -664,7 +664,7 @@ namespace PK::MeshUtilities
                 center,
                 -1.0f,
                 center,
-                PK_HALF_MAX_MINUS1
+                PKAssets::PK_MESHLET_LOD_MAX_ERROR
             );
 
             output.indices.resize(output.indices.size() + meshlet.triangle_count * 3);

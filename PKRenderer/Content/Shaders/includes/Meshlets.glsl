@@ -15,9 +15,14 @@
 #define TRIANGLES_PER_MESHLET_THREAD 4u
 #define VERTICES_PER_MESHLET_THREAD 2u
 #define MESHLET_UINT4_STRIDE 3u
+#define MESHLET_MAX_ERROR PK_HALF_MAX_MINUS1
+
+#ifndef PK_MESHLET_MAX_LOD_ONLY
+    #define PK_MESHLET_MAX_LOD_ONLY 0
+#endif
 
 #ifndef PK_MESHLET_LOD_ERROR_THRESHOLD
-    #define PK_MESHLET_LOD_ERROR_THRESHOLD 0.1f
+    #define PK_MESHLET_LOD_ERROR_THRESHOLD 0.15f
 #endif
 
 #ifndef PK_MESHLET_HAS_EXTRA_PAYLOAD_DATA
@@ -51,7 +56,6 @@ struct PKMeshTaskPayload
     uint4 packed0;
     uint4 packed1;
     uint4 visibleMask; 
-    //byte deltaIDs[MAX_MESHLETS_PER_TASK];
 
 #if PK_MESHLET_HAS_EXTRA_PAYLOAD_DATA == 1
     PK_MESHLET_EXTRA_PAYLOAD_DATA extra;
@@ -199,7 +203,7 @@ PKVertex Meshlet_Unpack_Vertex(const uint4 packed, const float3 smbbmin, const f
 
     v.normal = Meshlet_QuaternionMulVector(quat, float3(0,0,1));
     v.tangent.xyz = Meshlet_QuaternionMulVector(quat, float3(1,0,0));
-    v.tangent.w = bitfieldExtract(packed.y, 28, 1) == 0u ? -1.0f : 1.0f;
+    v.tangent.w = bitfieldExtract(packed.y, 28, 1) * 2.0f - 1.0f;
     return v;
 }
 
@@ -227,21 +231,24 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
 
 #if defined(SHADER_STAGE_MESH_TASK)
 
-    float Meshlet_ProjectError(const float4 centerError, const float scaleFactor)
-    {
-        const float4 center = ObjectToClipPos(centerError.xyz);
-        const float error = centerError.w * pk_ViewToClip[1][1] * inversesqrt(dot(center, center) - centerError.w * centerError.w);
-        return lerp(error * scalingFactor * pk_ScreenParams.y * 0.5f, 1e+38f, centerError.w > (PK_HALF_MAX_MINUS1 - 1.0f));
-    }
-
     bool Meshlet_Cull_Lod(const PKMeshlet meshlet)
     {
-        // @TODO hack to get somekind of scaling factor. potentially expensive.
-        const float3 scale = abs(float4(1.0f.xxx, 0.0f) * pk_ObjectToWorld).xyz;
-        const float scaleFactor = max(max(scale.x, scale.y), scale.z);
-        const float errorC = Meshlet_ProjectError(meshlet.lodCenterErrorCurrent, scaleFactor);
-        const float errorP = Meshlet_ProjectError(meshlet.lodCenterErrorParent, scaleFactor);
-        return errorP > PK_MESHLET_LOD_ERROR_THRESHOLD && errorC <= PK_MESHLET_LOD_ERROR_THRESHOLD;
+        #if PK_MESHLET_MAX_LOD_ONLY == 1
+            return meshlet.lodCenterErrorParent.w > MESHLET_MAX_ERROR;
+        #else
+            // @TODO hack. embed min scale to PK_Draw. rotation affects this in a bad way.
+            const float uniformScale = length(ObjectToWorldVec(1.0f.xxx).xyz);
+            const float threshold = PK_MESHLET_LOD_ERROR_THRESHOLD / (pk_ViewToClip[1][1] * pk_ScreenParams.y * 0.5f);
+            const float4 centerC = ObjectToClipPos(meshlet.lodCenterErrorCurrent.xyz);
+            const float4 centerP = ObjectToClipPos(meshlet.lodCenterErrorParent.xyz);
+
+            float errorC = uniformScale * meshlet.lodCenterErrorCurrent.w;
+            float errorP = uniformScale * meshlet.lodCenterErrorParent.w;
+            errorC *= inversesqrt(max(1e-6f, dot(centerC, centerC) - pow2(errorC)));
+            errorP *= inversesqrt(max(1e-6f, dot(centerP, centerP) - pow2(errorP)));
+
+            return errorP > threshold && errorC <= threshold;
+        #endif 
     }
 
     #if PK_MESHLET_USE_FRUSTUM_CULL == 1
@@ -262,11 +269,6 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
         lds_ClipPlanes[2] = planeT / length(planeT.xyz);
         float4 planeB = float4(c0.w + c0.y, c1.w + c1.y, c2.w + c2.y, c3.w + c3.y);
         lds_ClipPlanes[3] = planeB / length(planeB.xyz);
-        
-        //float4 planeN = float4(c0.z, c1.z, c2.z, c3.z);
-        //lds_ClipPlanes[4] = planeN / length(planeN.xyz);
-        //float4 planeF = float4(c0.w - c0.z, c1.w - c1.z, c2.w - c2.z, c3.w - c3.z);
-        //lds_ClipPlanes[5] = planeF / length(planeF.xyz);
     }
     
     bool Meshlet_Frustum_Cull(const PKMeshlet meshlet)
