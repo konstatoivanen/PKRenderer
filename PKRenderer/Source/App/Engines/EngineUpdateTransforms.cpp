@@ -20,6 +20,7 @@ namespace PK::App
             auto view = &views[i];
             view->transform->localToWorld = view->transform->GetLocalToWorld();
             view->transform->worldToLocal = Math::GetMatrixTransposeAffineInverse(view->transform->localToWorld);
+            view->transform->minUniformScale = glm::compMin(glm::abs(view->transform->scale));
             view->bounds->worldAABB = Math::BoundsTransform(view->transform->localToWorld, view->bounds->localAABB);
         }
     }

@@ -38,8 +38,9 @@ namespace PK::Math
     float4 GetCascadeDepthsFloat4(float znear, float zfar, float linearity, uint32_t gridSizeZ)
     {
         float cascades[5]{};
-        Math::GetCascadeDepths(znear, zfar, linearity, cascades, gridSizeZ, 5);
-        return *reinterpret_cast<float4*>(cascades);
+        GetCascadeDepths(znear, zfar, linearity, cascades, gridSizeZ, 5);
+        // Ignore first plane as it is just the near plane and we are more interested in the final clipping plane.
+        return *reinterpret_cast<float4*>(cascades + 1u);
     }
 
     float CascadeDepth(float znear, float zfar, float linearity, float interpolant)

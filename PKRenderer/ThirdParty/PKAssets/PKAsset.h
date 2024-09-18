@@ -391,6 +391,19 @@ namespace PKAssets
         RelativePtr<PKShaderVariant> variants;              // 60 bytes
     };
 
+    // This is not an asset class. use this class to provide draw infos to instancing shaders
+    // Packed as uint4
+    struct PKDrawInfo
+    {
+        uint16_t material;
+        uint16_t uniformScale;
+        uint32_t transform;
+        uint32_t submesh;
+        uint32_t userdata;
+    };
+
+    PKDrawInfo PackPKDrawInfo(uint16_t material, float uniformScale, uint32_t transform, uint32_t submesh, uint32_t userdata);
+
     // Mesh asset types
     constexpr const static char* PK_MESH_VS_POSITION = "in_POSITION";
     constexpr const static char* PK_MESH_VS_NORMAL = "in_NORMAL";

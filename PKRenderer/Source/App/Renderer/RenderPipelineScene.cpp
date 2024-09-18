@@ -63,11 +63,14 @@ namespace PK::App
             { ElementType::Float4, hash->pk_ClipParamsInv },
             { ElementType::Float4, hash->pk_ClipParamsExp },
             { ElementType::Float4, hash->pk_ScreenParams },
-            { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
             { ElementType::Float4, hash->pk_ProjectionJitter },
             { ElementType::Uint4, hash->pk_FrameRandom },
             { ElementType::Uint2, hash->pk_ScreenSize },
             { ElementType::Uint2, hash->pk_FrameIndex },
+            
+            { ElementType::Float4, hash->pk_MeshletCullParams },
+            { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
+
             { ElementType::Float, hash->pk_SceneEnv_Exposure },
 
             // GI Parameters
@@ -203,6 +206,7 @@ namespace PK::App
             const auto worldToClipNoJitter = viewToClipNoJitter * worldToView;
             const auto n = view->znear;
             const auto f = view->zfar;
+            const auto aspect = (resolution.x / (float)resolution.y);
             auto viewToWorldPrev = Math::TransposeTo3x4(viewToWorld);
             auto worldToClipPrev = worldToClip;
             auto worldToClipPrevNoJitter = worldToClipNoJitter;
@@ -226,7 +230,7 @@ namespace PK::App
             constants->Set<float4>(hash->pk_SinTime, { (float)sin(time / 8.0f), (float)sin(time / 4.0f), (float)sin(time / 2.0f), (float)sin(time) });
             constants->Set<float4>(hash->pk_CosTime, { (float)cos(time / 8.0f), (float)cos(time / 4.0f), (float)cos(time / 2.0f), (float)cos(time) });
             constants->Set<float4>(hash->pk_DeltaTime, { (float)deltaTime, 1.0f / (float)deltaTime, (float)smoothDeltaTime, 1.0f / (float)smoothDeltaTime });
-            constants->Set<float4>(hash->pk_CursorParams, PK_FLOAT4_ZERO); // @TODO
+            constants->Set<float4>(hash->pk_CursorParams, PK_FLOAT4_ZERO); // @TODO add someking of input focus component that has active focus id, cursor pos & consumable click events.
             constants->Set<float4>(hash->pk_ViewWorldOrigin, viewToWorld[3]);
             constants->Set<float4>(hash->pk_ViewWorldOriginPrev, float4(viewToWorldPrev[0].w, viewToWorldPrev[1].w, viewToWorldPrev[2].w, 1.0f));
             constants->Set<float4>(hash->pk_ViewSpaceCameraDelta, viewSpaceCameraDelta);
@@ -238,7 +242,9 @@ namespace PK::App
             constants->Set<uint4>(hash->pk_FrameRandom, Math::MurmurHash41((uint32_t)(frameIndex % ~0u)));
             constants->Set<uint2>(hash->pk_ScreenSize, { resolution.x, resolution.y });
             constants->Set<uint2>(hash->pk_FrameIndex, { frameIndex % 0xFFFFFFFFu, (frameIndex - frameIndexResize) % 0xFFFFFFFFu });
+
             constants->Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
+            constants->Set<float4>(hash->pk_MeshletCullParams, { 1.0f / (viewToClip[1][1] * resolution.y * 0.5f), view->fieldOfView * aspect, view->fieldOfView, 1.0f });
 
             m_passEnvBackground.SetViewConstants(view);
             m_passSceneGI.SetViewConstants(view);

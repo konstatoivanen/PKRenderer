@@ -104,6 +104,7 @@ namespace PK::App
                 renderView->finalViewRect = viewrect;
                 renderView->timeRender = m_timeFrameInfo;
                 renderView->viewToClip = entity.projection->ResolveProjectionMatrix(bufferAspectRatio);
+                renderView->fieldOfView = entity.projection->fieldOfView * PK_FLOAT_DEG2RAD;
                 renderView->worldToView = entity.transform->worldToLocal;
                 renderView->worldToClip = renderView->viewToClip * renderView->worldToView;
                 renderView->forwardPlane = Math::TransformPlane(entity.transform->localToWorld, float4(0, 0, 1, 0));

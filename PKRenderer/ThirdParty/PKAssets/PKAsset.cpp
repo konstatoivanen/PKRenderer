@@ -557,6 +557,17 @@ namespace PKAssets
     }
 
 
+    PKDrawInfo PackPKDrawInfo(uint16_t material, float uniformScale, uint32_t transform, uint32_t submesh, uint32_t userdata)
+    {
+        PKDrawInfo info;
+        info.material = material;
+        info.uniformScale = PackHalf(uniformScale);
+        info.transform = transform;
+        info.submesh = submesh;
+        info.userdata = userdata;
+        return info;
+    }
+
     PKMeshletVertex PackPKMeshletVertex(const float* pPosition,
                         const float* pTexcoord,
                         const float* pNormal,

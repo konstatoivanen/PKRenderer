@@ -17,7 +17,6 @@ struct LightPayload
 
 // Higher error threshold for shadows as accuracy is not that important.
 #define PK_MESHLET_LOD_ERROR_THRESHOLD 0.5f
-#define PK_MESHLET_USE_FRUSTUM_CULL 1
 #define PK_MESHLET_USE_FUNC_CULL 1
 #define PK_MESHLET_USE_FUNC_TRIANGLE 1
 #define PK_MESHLET_USE_FUNC_TASKLET 1
@@ -97,16 +96,17 @@ void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
     #endif
 
     payload.extra.lightMatrix = lightMatrix;
-    Meshlet_Store_FrustumPlanes(lightMatrix);
 }
 
 [[pk_restrict STAGE_MESH_TASK]] 
 bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
 {
     #if defined(PK_LIGHT_PASS_DIRECTIONAL)
-        return Meshlet_Cone_Cull_Directional(meshlet, payload.extra.lightPosition) && Meshlet_Frustum_Cull(meshlet);
+        return Meshlet_Cone_Cull_Directional(meshlet, payload.extra.lightPosition) && Meshlet_Frustum_Ortho_Cull(meshlet, payload.extra.lightMatrix);
+    #elif defined(PK_LIGHT_PASS_SPOT)
+        return Meshlet_Cone_Cull(meshlet, payload.extra.lightPosition) && Meshlet_Frustum_Perspective_Cull(meshlet, payload.extra.lightMatrix);
     #else
-        return Meshlet_Cone_Cull(meshlet, payload.extra.lightPosition) && Meshlet_Frustum_Cull(meshlet);
+        return Meshlet_Cone_Cull(meshlet, payload.extra.lightPosition) && Meshlet_Sphere_Cull(meshlet, payload.extra.lightPosition, payload.extra.lightRadius);
     #endif
 }
 

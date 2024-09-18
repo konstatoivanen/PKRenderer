@@ -466,7 +466,6 @@ namespace PK::MeshUtilities
         auto needsAlignment = false;
         uint32_t* remap = PK_STACK_ALLOC(uint32_t, dst.GetCount());
 
-        // @TODO nasty double loop due to simple arrays
         for (auto i = 0u; i < dst.GetCount(); ++i)
         {
             const auto& vdst = dst[i];

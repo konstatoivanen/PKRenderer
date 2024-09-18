@@ -34,11 +34,13 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float4 pk_ClipParamsInv;        // i_p 00, 11, 23, 33
     float4 pk_ClipParamsExp;        // x = 1.0f / log2(f / n), y = -log2(n) / log2(f / n), z = f / n, w = 1.0f / n.
     float4 pk_ScreenParams;         // xy = current screen (width, height), z = 1 / width, w = 1 / height.
-    float4 pk_ShadowCascadeZSplits; // view space z axis splits for directional light shadow cascades
     float4 pk_ProjectionJitter;     // xy = sub pixel jitter, zw = previous frame jitter
     uint4 pk_FrameRandom;           // Random uint4 values for current frame.
     uint2 pk_ScreenSize;            // xy = current screen size
     uint2 pk_FrameIndex;            // x = frame index since load, y = frame index since resize
+    
+    float4 pk_MeshletCullParams;    // Meshlet Error Scale Factor, Horizontal Fov, Vertical Fov, Unused.
+    float4 pk_ShadowCascadeZSplits; // view space z axis splits for directional light shadow cascades
 
     // @TODO redudant in here. remove
     float pk_SceneEnv_Exposure; // Scene background environment exposure
@@ -123,7 +125,7 @@ PK_DECLARE_ACCELERATION_STRUCTURE(PK_SET_SHADER, pk_SceneStructure)
 
 uint GetShadowCascadeIndex(float viewDepth)
 {
-    uint3 mask = uint3(greaterThan(viewDepth.xxx, pk_ShadowCascadeZSplits.yzw));
+    uint3 mask = uint3(greaterThan(viewDepth.xxx, pk_ShadowCascadeZSplits.xyz));
     return mask.x + mask.y + mask.z;
 }
 

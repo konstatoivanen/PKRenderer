@@ -34,11 +34,13 @@ namespace PK::App
         DECLARE_HASH(pk_ClipParamsInv)
         DECLARE_HASH(pk_ClipParamsExp)
         DECLARE_HASH(pk_ScreenParams)
-        DECLARE_HASH(pk_ShadowCascadeZSplits)
         DECLARE_HASH(pk_ProjectionJitter)
         DECLARE_HASH(pk_FrameRandom)
         DECLARE_HASH(pk_ScreenSize)
         DECLARE_HASH(pk_FrameIndex)
+        
+        DECLARE_HASH(pk_MeshletCullParams)
+        DECLARE_HASH(pk_ShadowCascadeZSplits)
 
         DECLARE_HASH(pk_ObjectToWorld)
         DECLARE_HASH(pk_WorldToView)

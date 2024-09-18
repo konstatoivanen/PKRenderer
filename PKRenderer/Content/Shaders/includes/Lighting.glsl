@@ -122,7 +122,6 @@ Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias,
     }
 
     // First Directional light has a screen space shadows.
-    // @TODO Maybe parameterize this better.
 #if defined(SHADER_STAGE_FRAGMENT) && SHADOW_SAMPLE_SCREENSPACE == 1
     [[branch]]
     if ((light.LIGHT_TYPE) == LIGHT_TYPE_DIRECTIONAL && (light.LIGHT_SHADOW) == 0u)

@@ -11,14 +11,6 @@
 
 namespace PK::App
 {
-    struct PK_Draw
-    {
-        uint material;
-        uint transfrom;
-        uint mesh;
-        uint userdata;
-    };
-
     constexpr const static uint32_t PK_MAX_MESHLETS_PER_TASK = 32u;
 
     uint16_t BatcherMeshStatic::MaterialGroup::Add(Material* material)
@@ -41,7 +33,7 @@ namespace PK::App
 
         m_staticGeometry = CreateScope<MeshStaticCollection>();
         m_matrices = RHI::CreateBuffer<float3x4>(1024ull, BufferUsage::PersistentStorage, "Batching.Matrices");
-        m_indices = RHI::CreateBuffer<PK_Draw>(1024ull, BufferUsage::PersistentStorage, "Batching.DrawInfos");
+        m_indices = RHI::CreateBuffer<PKAssets::PKDrawInfo>(1024ull, BufferUsage::PersistentStorage, "Batching.DrawInfos");
         m_properties = RHI::CreateBuffer(16384ull, BufferUsage::PersistentStorage, "Batching.MaterialProperties");
         m_tasklets = RHI::CreateBuffer<uint2>(4096u, BufferUsage::PersistentStorage, "Batching.Meshlet.Tasklets");
         m_drawInfos.reserve(1024);
@@ -118,11 +110,11 @@ namespace PK::App
 
     void BatcherMeshStatic::UploadDrawIndices(CommandBufferExt cmd)
     {
-        RHI::ValidateBuffer<PK_Draw>(m_indices, m_drawInfos.capacity());
+        RHI::ValidateBuffer<PKAssets::PKDrawInfo>(m_indices, m_drawInfos.capacity());
         RHI::ValidateBuffer<uint2>(m_tasklets, m_taskletCount);
 
         auto taskletView = cmd.BeginBufferWrite<uint2>(m_tasklets.get(), 0u, m_taskletCount);
-        auto indexView = cmd.BeginBufferWrite<PK_Draw>(m_indices.get(), 0u, m_drawInfos.size());
+        auto indexView = cmd.BeginBufferWrite<PKAssets::PKDrawInfo>(m_indices.get(), 0u, m_drawInfos.size());
         auto current = m_drawInfos[0];
 
         // Meshlet Debug
@@ -133,10 +125,15 @@ namespace PK::App
         for (auto i = 0u; i < m_drawInfos.size(); ++i)
         {
             const auto info = m_drawInfos.data() + i;
-            indexView[i].material = (uint32_t)info->material + (uint32_t)m_materials[info->shader].firstIndex;
-            indexView[i].transfrom = info->transform;
-            indexView[i].mesh = info->submesh;
-            indexView[i].userdata = info->userdata;
+            
+            indexView[i] = PKAssets::PackPKDrawInfo
+            (
+                (uint32_t)info->material + (uint32_t)m_materials[info->shader].firstIndex, 
+                m_transforms[info->transform]->minUniformScale,
+                info->transform, 
+                info->submesh, 
+                info->userdata
+            );
 
             // Meshlet Debug
             {

@@ -29,10 +29,6 @@
     #define PK_MESHLET_HAS_EXTRA_PAYLOAD_DATA 0
 #endif
 
-#ifndef PK_MESHLET_USE_FRUSTUM_CULL
-    #define PK_MESHLET_USE_FRUSTUM_CULL 0
-#endif
-
 #ifndef PK_MESHLET_USE_FUNC_CULL
     #define PK_MESHLET_USE_FUNC_CULL 0
 #endif
@@ -236,43 +232,54 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
         #if PK_MESHLET_MAX_LOD_ONLY == 1
             return meshlet.lodCenterErrorParent.w > MESHLET_MAX_ERROR;
         #else
-            // @TODO hack. embed min scale to PK_Draw. rotation affects this in a bad way.
-            const float uniformScale = length(ObjectToWorldVec(1.0f.xxx).xyz);
-            const float threshold = PK_MESHLET_LOD_ERROR_THRESHOLD / (pk_ViewToClip[1][1] * pk_ScreenParams.y * 0.5f);
+            const float threshold = PK_MESHLET_LOD_ERROR_THRESHOLD * pk_MeshletCullParams.x;
             const float4 centerC = ObjectToClipPos(meshlet.lodCenterErrorCurrent.xyz);
             const float4 centerP = ObjectToClipPos(meshlet.lodCenterErrorParent.xyz);
-
-            float errorC = uniformScale * meshlet.lodCenterErrorCurrent.w;
-            float errorP = uniformScale * meshlet.lodCenterErrorParent.w;
+            float errorC = pk_Instancing_UniformScale * meshlet.lodCenterErrorCurrent.w;
+            float errorP = pk_Instancing_UniformScale * meshlet.lodCenterErrorParent.w;
             errorC *= inversesqrt(max(1e-6f, dot(centerC, centerC) - pow2(errorC)));
             errorP *= inversesqrt(max(1e-6f, dot(centerP, centerP) - pow2(errorP)));
-
             return errorP > threshold && errorC <= threshold;
         #endif 
     }
 
-    #if PK_MESHLET_USE_FRUSTUM_CULL == 1
-    shared float4 lds_ClipPlanes[4];
-    
-    void Meshlet_Store_FrustumPlanes(const float4x4 m)
+    bool Meshlet_Frustum_Perspective_Cull(const PKMeshlet meshlet, float4x4 worldToClip)
     {
-        const float4 c0 = m[0];
-        const float4 c1 = m[1];
-        const float4 c2 = m[2];
-        const float4 c3 = m[3];
+        const float4 deltaX = (2.0f * meshlet.extents.x) * (worldToClip * float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f));
+        const float4 deltaY = (2.0f * meshlet.extents.y) * (worldToClip * float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f));
+    	const float4 deltaZ = (2.0f * meshlet.extents.z) * (worldToClip * float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f));
+    	const float4 clipZ0 = worldToClip * float4(ObjectToWorldPos(meshlet.center - meshlet.extents), 1.0f);
+    	const float4 clipZ1 = clipZ0 + deltaZ;
 
-        float4 planeL = float4(c0.w + c0.x, c1.w + c1.x, c2.w + c2.x, c3.w + c3.x);
-        lds_ClipPlanes[0] = planeL / length(planeL.xyz);
-        float4 planeR = float4(c0.w - c0.x, c1.w - c1.x, c2.w - c2.x, c3.w - c3.x);
-        lds_ClipPlanes[1] = planeR / length(planeR.xyz);
-        float4 planeT = float4(c0.w - c0.y, c1.w - c1.y, c2.w - c2.y, c3.w - c3.y);
-        lds_ClipPlanes[2] = planeT / length(planeT.xyz);
-        float4 planeB = float4(c0.w + c0.y, c1.w + c1.y, c2.w + c2.y, c3.w + c3.y);
-        lds_ClipPlanes[3] = planeB / length(planeB.xyz);
-    }
+        float4 pmin = 1.0f.xxxx;
     
-    bool Meshlet_Frustum_Cull(const PKMeshlet meshlet)
+    	for (uint i = 0; i < 4; ++i)
+        {
+            const float4 clipMin = clipZ0 + deltaX * (i & 0x1) + deltaY * (i / 2);
+            const float4 clipMax = clipZ1 + deltaX * (i & 0x1) + deltaY * (i / 2);
+            pmin = min(pmin, float4(clipMin.xy, -clipMin.xy) - clipMin.w);
+            pmin = min(pmin, float4(clipMax.xy, -clipMax.xy) - clipMax.w);
+        }
+    
+    	return All_Less(pmin, 0.0f.xxxx);
+    }
+
+    bool Meshlet_Frustum_Ortho_Cull(const PKMeshlet meshlet, float4x4 worldToClip)
     {
+    	const float3 clipCenter = (worldToClip * float4(ObjectToWorldPos(meshlet.center), 1.0f)).xyz;
+    	const float3 clipDelta = abs(meshlet.extents.x * (worldToClip * float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f)).xyz) + 
+    							 abs(meshlet.extents.y * (worldToClip * float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f)).xyz) + 
+    							 abs(meshlet.extents.z * (worldToClip * float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f)).xyz);
+    								
+    	const float3 rectMin = clipCenter - clipDelta;
+    	const float3 rectMax = clipCenter + clipDelta;
+    	return rectMax.z > 0.0f && rectMin.z < 1.0f && All_Greater(rectMax.xy, -1.0f.xx) && All_Less(rectMin.xy, 1.0f.xx);
+    }
+
+    bool Meshlet_Sphere_Cull(const PKMeshlet meshlet, float3 center, float radius)
+    {
+        /*
+        @TODO 
         const float3 bbmin = meshlet.center - meshlet.extents;
         const float3 bbmax = meshlet.center + meshlet.extents;
         float3 wbbmin = +1e+32f.xxx;
@@ -288,20 +295,16 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
             wbbmax = max(wbbmax, pos);
         }
 
-        bool isClipped = false;
-    
-        [[loop]]
-        for (uint i = 0u; i < 4u; ++i)
-        {
-            const float4 plane = lds_ClipPlanes[i];
-            const float3 proj = lerp(wbbmin, wbbmax, greaterThan(plane.xyz, 0.0f.xxx));
-            isClipped = isClipped || (dot(plane.xyz, proj) < -plane.w);
-        }
-    
-        return !isClipped;
+        const float3 meshlet
+
+        float3 d = abs(light.position.xyz - currentCell.center) - currentCell.extents;
+        float r = light.radius - cmax(min(d, float3(0.0f)));
+        d = max(d, float3(0.0f));
+        return light.radius > 0.0f && dot(d, d) <= r * r;
+        */
+        return true;
     }
-    #endif
-    
+
     bool Meshlet_Cone_Cull(const PKMeshlet meshlet, float3 cullOrigin)
     {
         const float3 coneAxis = safeNormalize(ObjectToWorldVec(meshlet.coneAxis));

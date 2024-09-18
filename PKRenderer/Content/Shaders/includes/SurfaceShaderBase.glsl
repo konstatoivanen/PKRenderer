@@ -1,9 +1,7 @@
 #pragma once
 
 // needs to be declared before lighting & meshlets include.
-#define PK_MESHLET_USE_FRUSTUM_CULL 1
 #define PK_MESHLET_USE_FUNC_CULL 1
-#define PK_MESHLET_USE_FUNC_TASKLET 1
 
 #if defined(PK_META_PASS_GIVOXELIZE) 
     #define SHADOW_TEST ShadowTest_PCF2x2
@@ -136,17 +134,12 @@ struct SurfaceData
 
 #if defined(SHADER_STAGE_MESH_TASK)
 
-    void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
-    {
-        Meshlet_Store_FrustumPlanes(pk_WorldToClip);
-    }
-
     bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
     {
         #if defined(PK_META_PASS_GIVOXELIZE)
         return true;
         #else
-        return Meshlet_Cone_Cull(meshlet, pk_ViewWorldOrigin.xyz) && Meshlet_Frustum_Cull(meshlet);
+        return Meshlet_Cone_Cull(meshlet, pk_ViewWorldOrigin.xyz) && Meshlet_Frustum_Perspective_Cull(meshlet, pk_WorldToClip);
         #endif
     }
 
@@ -284,7 +277,6 @@ struct SurfaceData
         return color;
     }
     
-    // Multi bounce gi. Causes some very lingering light artifacts & bleeding. @TODO Consider adding a setting for this.
     float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const float3 clipuvw)
     {
         // Get unquantized clip uvw.
