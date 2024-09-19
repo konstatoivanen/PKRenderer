@@ -76,7 +76,7 @@ namespace PK::App
     void EngineProfiler::Step(IGUIRenderer* gui)
     {
         // @TODO this is pretty hacky & hard coded. fix later
-        auto renderArea = gui->GetRenderAreaRect();
+        auto renderArea = gui->GUIGetRenderAreaRect();
         auto boxRect = short4(4, 78, renderArea.z - 8, -74);
 
         auto barRect = short4(boxRect.x + 8, boxRect.y + boxRect.w + 7, 2, 1);
@@ -103,16 +103,16 @@ namespace PK::App
         FixedString64 textFramerateMin("Min: %4.2fms", minHistoryTime);
         FixedString64 textFramerateMax("Max: %4.2fms", maxHistoryTime);
 
-        gui->DrawRect(color32(0,0,0,192), boxRect);
-        gui->DrawWireRect(color32(255, 255, 255, 64), boxRect, 1);
-        gui->DrawText(color32(255,255,255,127), boxRect.xy + short2(12, -3), textFramerate.c_str(), 16.0f);
-        gui->DrawText(color32(255,255,255,127), boxRect.xy + short2(12 + 72, -3), textFramerateAvg.c_str(), 16.0f);
-        gui->DrawText(color32(  0,255,  0,127), boxRect.xy + short2(12 + 72 + 100  * 1, -3), textFramerateMin.c_str(), 16.0f);
-        gui->DrawText(color32(255,  0,  0,127), boxRect.xy + short2(12 + 72 + 100 * 2, -3), textFramerateMax.c_str(), 16.0f);
+        gui->GUIDrawRect(color32(0,0,0,192), boxRect);
+        gui->GUIDrawWireRect(color32(255, 255, 255, 64), boxRect, 1);
+        gui->GUIDrawText(color32(255,255,255,127), boxRect.xy + short2(12, -3), textFramerate.c_str(), 16.0f);
+        gui->GUIDrawText(color32(255,255,255,127), boxRect.xy + short2(12 + 72, -3), textFramerateAvg.c_str(), 16.0f);
+        gui->GUIDrawText(color32(  0,255,  0,127), boxRect.xy + short2(12 + 72 + 100  * 1, -3), textFramerateMin.c_str(), 16.0f);
+        gui->GUIDrawText(color32(255,  0,  0,127), boxRect.xy + short2(12 + 72 + 100 * 2, -3), textFramerateMax.c_str(), 16.0f);
 
-        gui->DrawRect(color32(0, 255, 0, 127), short4(boxRect.x + 8, barRect.y, boxRect.z - 16, 1));
-        gui->DrawRect(color32(127, 127, 127, 127), short4(boxRect.x + 8, barRect.y + barHeightRange / 2, boxRect.z - 16, 1));
-        gui->DrawRect(color32(255, 0, 0, 127), short4(boxRect.x + 8, barRect.y + barHeightRange, boxRect.z - 16, 1));
+        gui->GUIDrawRect(color32(0, 255, 0, 127), short4(boxRect.x + 8, barRect.y, boxRect.z - 16, 1));
+        gui->GUIDrawRect(color32(127, 127, 127, 127), short4(boxRect.x + 8, barRect.y + barHeightRange / 2, boxRect.z - 16, 1));
+        gui->GUIDrawRect(color32(255, 0, 0, 127), short4(boxRect.x + 8, barRect.y + barHeightRange, boxRect.z - 16, 1));
 
         for (auto i = 0; i < barCount; ++i)
         {
@@ -120,7 +120,7 @@ namespace PK::App
             auto interp = (time - minHistoryTime) / (maxHistoryTime - minHistoryTime);
             auto height = (int)glm::round(barHeightRange * interp);
             auto color = Math::HueToRGB32((1.0f - interp) / 3.0f);
-            gui->DrawRect(color32(color.r, color.g, color.b, 127), short4(barRect.x + barSpacing * i, barRect.y, barRect.z, height));
+            gui->GUIDrawRect(color32(color.r, color.g, color.b, 127), short4(barRect.x + barSpacing * i, barRect.y, barRect.z, height));
         }
 
         m_timeHistoryHead++;

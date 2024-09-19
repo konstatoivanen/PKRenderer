@@ -259,7 +259,7 @@ namespace PK
         RG8UI, 
         RG8I,
         RGB565,
-        RGB9E5, // 9995 is actually 32 bpp but it's here for historical reasons.
+        RGB9E5, 
         RGB5A1,
         RGBA4,
         Depth16,

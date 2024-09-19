@@ -2,7 +2,6 @@
 #include "Core/Utilities/ForwardDeclare.h"
 #include "Core/ControlFlow/IStep.h"
 #include "Core/ControlFlow/IStepApplicationWindow.h"
-#include "Core/Timers/TimeFrameInfo.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "App/Renderer/EntityEnums.h"
@@ -59,9 +58,7 @@ namespace PK::App
         RenderPipelineContext* context;
     };
 
-    struct RenderPipelineBase : 
-        public IStepApplicationRenderWindow,
-        public IStep<TimeFrameInfo*>
+    struct RenderPipelineBase : public IStepApplicationRenderWindow
     {
         constexpr static size_t MAX_RENDER_VIEWS = 32ull;
 
@@ -70,7 +67,6 @@ namespace PK::App
             Sequencer* sequencer,
             IBatcher* batcher);
 
-        void Step(TimeFrameInfo* token) final { m_timeFrameInfo = *token; }
         void OnApplicationRender(RHIWindow* window) final;
 
         protected: 
@@ -86,7 +82,5 @@ namespace PK::App
             IBatcher* m_batcher;
             RenderView m_renderViews[MAX_RENDER_VIEWS]{};
             uint32_t m_renderViewCount;
-
-            TimeFrameInfo m_timeFrameInfo{};
     };
 }

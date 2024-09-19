@@ -141,7 +141,12 @@ namespace PK::App::EntityBuilders
     template<typename T>
     static void CreateEntityViewRenderView(EntityDatabase* entityDb, T* implementer, const EGID& egid, RenderViewType type, const uint4& desiredRect, bool isWindowTarget)
     {
-        entityDb->ReserveView(implementer, egid, &EntityViewRenderView::transform, &EntityViewRenderView::projection, &EntityViewRenderView::renderView);
+        entityDb->ReserveView(implementer, egid, 
+            &EntityViewRenderView::transform, 
+            &EntityViewRenderView::projection, 
+            &EntityViewRenderView::renderView, 
+            &EntityViewRenderView::input,
+            &EntityViewRenderView::time);
         implementer->type = type;
         implementer->desiredRect = desiredRect;
         implementer->isWindowTarget = isWindowTarget;
@@ -159,7 +164,12 @@ namespace PK::App::EntityBuilders
         float rotationSmoothing,
         float sensitivity)
     {
-        entityDb->ReserveView(implementer, egid, &EntityViewFlyCamera::transform, &EntityViewFlyCamera::projection, &EntityViewFlyCamera::flyCamera);
+        entityDb->ReserveView(implementer, egid, 
+            &EntityViewFlyCamera::transform, 
+            &EntityViewFlyCamera::projection, 
+            &EntityViewFlyCamera::input, 
+            &EntityViewFlyCamera::time, 
+            &EntityViewFlyCamera::flyCamera);
         implementer->mode = ComponentProjection::Perspective;
         implementer->snashotPosition = implementer->position;
         implementer->snashotRotation = glm::eulerAngles(implementer->rotation);

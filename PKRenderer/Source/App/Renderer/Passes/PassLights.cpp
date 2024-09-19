@@ -209,7 +209,7 @@ namespace PK::App
                 context->batcher->RenderGroup(cmd, batch.batchGroup, nullptr, keyword);
                 RHI::SetTexture(hash->pk_Texture, m_shadowTargetCube.get());
                 RHI::SetImage(hash->pk_Image, m_shadowmaps.get(), range1);
-                cmd.DispatchWithCounter(m_computeCopyCubeShadow, 0, { m_shadowmaps->GetResolution().xy, tileCount });
+                cmd.Dispatch(m_computeCopyCubeShadow, 0, { m_shadowmaps->GetResolution().xy, tileCount });
             }
             else
             {

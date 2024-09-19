@@ -239,11 +239,15 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Source\App\ECS\ComponentTime.h" />
+    <ClInclude Include="Source\App\ECS\ComponentViewInput.h" />
     <ClInclude Include="Source\App\Engines\EngineGUIRenderer.h" />
     <ClInclude Include="Source\App\Engines\EngineProfiler.h" />
+    <ClInclude Include="Source\App\Engines\EngineViewUpdate.h" />
     <ClInclude Include="Source\App\Renderer\IGUIRenderer.h" />
     <ClInclude Include="Source\App\Renderer\RenderViewSettings.h" />
     <ClInclude Include="Source\Core\CLI\CVariablesYaml.h" />
+    <ClInclude Include="Source\Core\Input\InputState.h" />
     <ClInclude Include="Source\Core\Rendering\Font.h" />
     <ClInclude Include="Source\Core\Timers\ITimer.h" />
     <ClInclude Include="Source\Core\Timers\TimeHelpers.h" />
@@ -636,7 +640,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Engines\EngineEntityCull.h" />
     <ClInclude Include="Source\App\Engines\EngineFlyCamera.h" />
     <ClInclude Include="Source\App\Engines\EngineGatherRayTracingGeometry.h" />
-    <ClInclude Include="Source\App\Engines\EngineGizmos.h" />
     <ClInclude Include="Source\App\Engines\EngineScreenshot.h" />
     <ClInclude Include="Source\App\Engines\EngineUpdateTransforms.h" />
     <ClInclude Include="Source\Core\Rendering\CommandBufferExt.h" />
@@ -709,7 +712,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Renderer\RenderPipelineScene.h" />
     <ClInclude Include="Source\App\Renderer\BatcherMeshStatic.h" />
     <ClInclude Include="Source\App\Renderer\EntityEnums.h" />
-    <ClInclude Include="Source\App\Renderer\IGizmos.h" />
     <ClInclude Include="Source\App\Renderer\EntityCulling.h" />
     <ClInclude Include="Source\Core\Utilities\Bitmask.h" />
     <ClInclude Include="Source\Core\Utilities\BufferIterator.h" />
@@ -1024,6 +1026,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
   <ItemGroup>
     <ClCompile Include="Source\App\Engines\EngineGUIRenderer.cpp" />
     <ClCompile Include="Source\App\Engines\EngineProfiler.cpp" />
+    <ClCompile Include="Source\App\Engines\EngineViewUpdate.cpp" />
+    <ClCompile Include="Source\Core\Input\InputState.cpp" />
     <ClCompile Include="Source\Core\Rendering\Font.cpp" />
     <ClCompile Include="Source\Core\Timers\ITimer.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFramerate.cpp" />
@@ -1061,7 +1065,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\CLI\LogScopeTimer.cpp" />
     <ClCompile Include="Source\Core\ControlFlow\RemoteProcessRunner.cpp" />
     <ClCompile Include="Source\Core\IApplication.cpp" />
-    <ClCompile Include="Source\Core\Input\InputDevice.cpp" />
     <ClCompile Include="Source\Core\Input\InputDeviceGLFW.cpp" />
     <ClCompile Include="Source\Core\Input\InputKey.cpp" />
     <ClCompile Include="Source\Core\Input\InputKeyBinding.cpp" />
@@ -1082,7 +1085,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Engines\EngineEntityCull.cpp" />
     <ClCompile Include="Source\App\Engines\EngineFlyCamera.cpp" />
     <ClCompile Include="Source\App\Engines\EngineGatherRayTracingGeometry.cpp" />
-    <ClCompile Include="Source\App\Engines\EngineGizmos.cpp" />
     <ClCompile Include="Source\App\Engines\EngineScreenshot.cpp" />
     <ClCompile Include="Source\App\Engines\EngineUpdateTransforms.cpp" />
     <ClCompile Include="Source\main.cpp" />

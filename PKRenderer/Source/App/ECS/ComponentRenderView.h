@@ -1,6 +1,6 @@
 #pragma once
+#include "Core/Math/Math.h"
 #include "App/Renderer/EntityEnums.h"
-#include "App/Renderer/RenderViewSettings.h"
 
 namespace PK::App
 {

@@ -15,7 +15,7 @@
 #include "App/ECS/EntityViewScenePrimitive.h"
 #include "App/ECS/EntityViewFlyCamera.h"
 #include "App/ECS/EntityViewRenderView.h"
-#include "App/Renderer/IGizmos.h"
+#include "App/Renderer/IGUIRenderer.h"
 #include "App/Renderer/HashCache.h"
 #include "EngineDebug.h"
 
@@ -65,7 +65,7 @@ namespace PK::App
 
         for (uint32_t i = 0u; i < config->LightCount; ++i)
         {
-            auto pos = Math::RandomRangeFloat3(minpos, maxpos) + PK_FLOAT3_UP;
+            auto pos = Math::RandomRangeFloat3(minpos, maxpos) + PK_FLOAT3_UP * 4.0f;
             auto type = i % 2 == 0 ? LightType::Spot : LightType::Point;
             auto color = Math::HueToRGB(Math::RandomRangeFloat(0.0f, 1.0f)) * Math::RandomRangeFloat(8.0f, 128.0f);
             EntityBuilders::CreateEntityLightSphere(m_entityDb, m_assetDatabase, pos, type, LightCookie::Circle0, color, true);
@@ -128,11 +128,11 @@ namespace PK::App
         */
     }
 
-    void EngineDebug::Step(IGizmos* gizmos)
+    void EngineDebug::Step(IGizmosRenderer* gizmos)
     {
         auto cullables = m_entityDb->Query<EntityViewScenePrimitive>((uint32_t)ENTITY_GROUPS::ACTIVE);
 
-        gizmos->SetColor(PK_COLOR_GREEN);
+        gizmos->GizmosSetColor(PK_COLOR_GREEN);
 
         for (auto i = 0u; i < cullables.count; ++i)
         {
@@ -144,7 +144,7 @@ namespace PK::App
                 continue;
             }
 
-            gizmos->DrawBounds(cullables[i].bounds->worldAABB);
+            gizmos->GizmosDrawBounds(cullables[i].bounds->worldAABB);
         }
 
         auto offset = float3(-100, 50, 0);
@@ -154,8 +154,8 @@ namespace PK::App
         auto worldToView = Math::GetMatrixInvTRS(offset, { 0, time, 0 }, PK_FLOAT3_ONE);
         auto worldToClip = viewToClip * worldToView;
 
-        gizmos->SetColor(PK_COLOR_GREEN);
-        gizmos->DrawFrustrum(worldToClip);
+        gizmos->GizmosSetColor(PK_COLOR_GREEN);
+        gizmos->GizmosDrawFrustrum(worldToClip);
 
         /*
         float n = 0.2f;
@@ -202,8 +202,8 @@ namespace PK::App
 
         for (auto i = 0; i < 4; ++i)
         {
-            gizmos->SetColor(PK_COLOR_GREEN);
-            gizmos->DrawFrustrum(cascades[i]);
+            gizmos->GizmosSetColor(PK_COLOR_GREEN);
+            gizmos->GizmosDrawFrustrum(cascades[i]);
         }
 
         /*

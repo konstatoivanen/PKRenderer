@@ -3,6 +3,8 @@
 #include "App/ECS/ComponentTransform.h"
 #include "App/ECS/ComponentRenderView.h"
 #include "App/ECS/ComponentProjection.h"
+#include "App/ECS/ComponentViewInput.h"
+#include "App/ECS/ComponentTime.h"
 
 namespace PK::App
 {
@@ -11,5 +13,7 @@ namespace PK::App
         ComponentTransform* transform;
         ComponentProjection* projection;
         ComponentRenderView* renderView;
+        ComponentViewInput* input;
+        ComponentTime* time;
     };
 }

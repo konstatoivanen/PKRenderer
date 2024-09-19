@@ -102,7 +102,7 @@ namespace PK::App
                 renderView->renderAreaRect.y += (bufferResolution.y - viewresolution.y) / 2;
                 renderView->bufferResolution = bufferResolution;
                 renderView->finalViewRect = viewrect;
-                renderView->timeRender = m_timeFrameInfo;
+                renderView->timeRender = entity.time->info;
                 renderView->viewToClip = entity.projection->ResolveProjectionMatrix(bufferAspectRatio);
                 renderView->fieldOfView = entity.projection->fieldOfView * PK_FLOAT_DEG2RAD;
                 renderView->worldToView = entity.transform->worldToLocal;
@@ -111,9 +111,12 @@ namespace PK::App
                 renderView->znear = Math::GetZNearFromClip(renderView->viewToClip);
                 renderView->zfar = Math::GetZFarFromClip(renderView->viewToClip);
 
+                renderView->cursorPosition = entity.input->state.cursorPosition;
+                renderView->cursorPositionDelta = entity.input->state.cursorPositionDelta;
+
                 if (isOutOfDate || isViewChanged)
                 {
-                    renderView->timeResize = m_timeFrameInfo;
+                    renderView->timeResize = entity.time->info;
                 }
             }
         }
@@ -155,7 +158,7 @@ namespace PK::App
     {
         if (view->gbuffers.Validate(view->bufferResolution, descriptors, "RenderView"))
         {
-            view->timeResize = m_timeFrameInfo;
+            view->timeResize = view->timeRender;
         }
     }
     
@@ -164,7 +167,7 @@ namespace PK::App
         if (view->constants == nullptr || !view->constants->GetLayout().CompareFast(layout))
         {
             view->constants = CreateRef<ConstantBuffer>(layout, "RenderView.Constants.Frame");
-            view->timeResize = m_timeFrameInfo;
+            view->timeResize = view->timeRender;
         }
     }
 

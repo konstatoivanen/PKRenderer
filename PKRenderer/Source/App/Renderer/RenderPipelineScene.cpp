@@ -172,6 +172,8 @@ namespace PK::App
             desc.current[GBuffers::Depth] = { TextureFormat::Depth32F, TextureUsage::RTDepthSample };
 
             // @TODO refactor to use RGB9E5 as rgba16f redundantly big.
+            // Alpha needed for current color to determine translucency in taa
+            // Refactor taa to output to previous color and flip back in composite. allows for barrel distor as well.
             desc.previous[GBuffers::Color] = { TextureFormat::RGBA16F, TextureUsage::Default | TextureUsage::Storage };
             desc.previous[GBuffers::Normals] = { TextureFormat::RGB10A2, TextureUsage::Default };
             desc.previous[GBuffers::DepthBiased] = { TextureFormat::R32F, TextureUsage::Default };
@@ -230,7 +232,7 @@ namespace PK::App
             constants->Set<float4>(hash->pk_SinTime, { (float)sin(time / 8.0f), (float)sin(time / 4.0f), (float)sin(time / 2.0f), (float)sin(time) });
             constants->Set<float4>(hash->pk_CosTime, { (float)cos(time / 8.0f), (float)cos(time / 4.0f), (float)cos(time / 2.0f), (float)cos(time) });
             constants->Set<float4>(hash->pk_DeltaTime, { (float)deltaTime, 1.0f / (float)deltaTime, (float)smoothDeltaTime, 1.0f / (float)smoothDeltaTime });
-            constants->Set<float4>(hash->pk_CursorParams, PK_FLOAT4_ZERO); // @TODO add someking of input focus component that has active focus id, cursor pos & consumable click events.
+            constants->Set<float4>(hash->pk_CursorParams, { view->cursorPosition.x, view->cursorPosition.y, view->cursorPositionDelta.x, view->cursorPositionDelta.y });
             constants->Set<float4>(hash->pk_ViewWorldOrigin, viewToWorld[3]);
             constants->Set<float4>(hash->pk_ViewWorldOriginPrev, float4(viewToWorldPrev[0].w, viewToWorldPrev[1].w, viewToWorldPrev[2].w, 1.0f));
             constants->Set<float4>(hash->pk_ViewSpaceCameraDelta, viewSpaceCameraDelta);

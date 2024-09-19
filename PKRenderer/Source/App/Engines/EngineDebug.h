@@ -12,7 +12,7 @@ PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
 
 namespace PK::App
 {
-    struct IGizmos;
+    struct IGizmosRenderer;
 
     PK_YAML_ASSET_BEGIN(EngineDebugConfig, ".cfg")
         PK_YAML_MEMBER(float3, CameraStartPosition, PK_FLOAT3_ZERO)
@@ -31,13 +31,13 @@ namespace PK::App
     // Dumping ground for all loose hooks that have not been implemented yet.
     class EngineDebug : 
         public IStepApplicationUpdateEngines,
-        public IStep<IGizmos*>,
+        public IStep<IGizmosRenderer*>,
         public IStep<AssetImportEvent<EngineDebugConfig>*>
     {
     public:
         EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, MeshStaticCollection* baseMesh);
         virtual void OnApplicationUpdateEngines() final;
-        virtual void Step(IGizmos* gizmos) final;
+        virtual void Step(IGizmosRenderer* gui) final;
         virtual void Step(AssetImportEvent<EngineDebugConfig>* token) final;
 
     private:

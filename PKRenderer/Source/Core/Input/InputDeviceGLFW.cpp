@@ -144,29 +144,6 @@ namespace PK
         // glfwSetCursorPosCallback(glfwWIndow, [](GLFWwindow* nativeWindow, double xPos, double yPos) { Input::Get()->GetDevice<InputDeviceGLFW>(nativeWindow)->OnCursorInput(xPos, yPos); });
     }
 
-    bool InputDeviceGLFW::GetKeyDown(InputKey key) const
-    {
-        return m_keyStatesCurrent[(int)key] && !m_keyStatesPrevious[(int)key];
-    }
-
-    bool InputDeviceGLFW::GetKeyUp(InputKey key) const
-    {
-        return !m_keyStatesCurrent[(int)key] && m_keyStatesCurrent[(int)key];
-    }
-
-    bool InputDeviceGLFW::GetKey(InputKey key) const
-    {
-        return m_keyStatesCurrent[(int)key];
-    }
-
-    float2 InputDeviceGLFW::GetCursorPositionNormalized() const
-    {
-        int w, h;
-        auto glfwWindow = static_cast<GLFWwindow*>(m_window->GetNativeWindow());
-        glfwGetWindowSize(glfwWindow, &w, &h);
-        return { (float)m_cursorPosition.x / w, ((float)h - (float)m_cursorPosition.x) / h };
-    }
-
     void InputDeviceGLFW::UpdateBegin()
     {
         double xpos, ypos;
@@ -175,23 +152,21 @@ namespace PK
         glfwGetCursorPos(glfwWindow, &xpos, &ypos);
         glfwGetWindowSize(glfwWindow, &w, &h);
 
-        m_cursorPosition.x = (float)xpos;
-        m_cursorPosition.y = (float)h - (float)ypos;
-        m_cursorPositionNormalized.x = m_cursorPosition.x / w;
-        m_cursorPositionNormalized.y = m_cursorPosition.y / h;
-        m_cursorDelta = m_cursorPosition - m_cursorPositionPrev;
-        m_cursorPositionPrev = m_cursorPosition;
-
-        m_scrollInput = m_scrollInputRaw;
+        m_state.cursorPosition.x = (float)xpos;
+        m_state.cursorPosition.y = (float)h - (float)ypos;
+        m_state.cursorPositionNormalized.x = m_state.cursorPosition.x / w;
+        m_state.cursorPositionNormalized.y = m_state.cursorPosition.y / h;
+        m_state.cursorPositionDelta = m_state.cursorPosition - m_cursorPositionPrev;
+        m_cursorPositionPrev = m_state.cursorPosition;
+        m_state.cursorScroll = m_scrollInputRaw;
         m_scrollInputRaw = { 0, 0 };
     }
 
     void InputDeviceGLFW::UpdateEnd()
     {
-        // Copy previous state to correctly detect releases
-        m_keyStatesPrevious = m_keyStatesCurrent;
-        m_keyStatesCurrent[(int)InputKey::MouseScrollUp] = false;
-        m_keyStatesCurrent[(int)InputKey::MouseScrollDown] = false;
+        m_state.keysPrevious = m_state.keysCurrent;
+        m_state.keysCurrent[(int)InputKey::MouseScrollUp] = false;
+        m_state.keysCurrent[(int)InputKey::MouseScrollDown] = false;
     }
 
     void InputDeviceGLFW::OnKeyInput(int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods)
@@ -200,7 +175,7 @@ namespace PK
 
         if (keyCode != InputKey::None)
         {
-            m_keyStatesCurrent[(int)keyCode] = action == GLFW_PRESS || action == GLFW_REPEAT;
+            m_state.keysCurrent[(int)keyCode] = action == GLFW_PRESS || action == GLFW_REPEAT;
         }
     }
 
@@ -210,14 +185,14 @@ namespace PK
 
         if (keyCode != InputKey::None)
         {
-            m_keyStatesCurrent[(int)keyCode] = action == GLFW_PRESS || action == GLFW_REPEAT;
+            m_state.keysCurrent[(int)keyCode] = action == GLFW_PRESS || action == GLFW_REPEAT;
         }
     }
 
     void InputDeviceGLFW::OnScrollInput(double scrollX, double scrollY)
     {
-        m_keyStatesCurrent[(int)InputKey::MouseScrollUp] = scrollY > 0.5f;
-        m_keyStatesCurrent[(int)InputKey::MouseScrollDown] = scrollY < -0.5f;
+        m_state.keysCurrent[(int)InputKey::MouseScrollUp] = scrollY > 0.5f;
+        m_state.keysPrevious[(int)InputKey::MouseScrollDown] = scrollY < -0.5f;
         m_scrollInputRaw.x = (float)scrollX;
         m_scrollInputRaw.y = (float)scrollY;
     }

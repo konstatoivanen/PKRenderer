@@ -17,29 +17,31 @@ namespace PK::App
         CVariableRegister::Create<CVariableFuncSimple>("Engine.FlyCamera.Transforms.Reset", [this](){TransformsReset();});
     }
 
-    void EngineFlyCamera::Step(InputDevice* input)
+    void EngineFlyCamera::OnApplicationUpdateEngines()
     {
         auto views = m_entityDb->Query<EntityViewFlyCamera>((uint32_t)ENTITY_GROUPS::ACTIVE);
 
         for (auto i = 0u; i < views.count; ++i)
         {
             auto& view = views[i];
+            auto& input = view.input;
+            auto& time = view.time->info;
             auto camera = view.flyCamera;
             auto projection = view.projection;
             auto transform = view.transform;
 
             auto sensitivity = camera->sensitivity / 1000.0f;
-            auto deltaTime = glm::clamp((float)m_timeFrameInfo.deltaTime, 0.001f, 0.99f);
+            auto deltaTime = glm::clamp((float)time.deltaTime, 0.001f, 0.99f);
             auto interpolantPos = glm::clamp(deltaTime / camera->moveSmoothing, 0.0f, 1.0f);
             auto interpolantRot = glm::clamp(deltaTime / camera->rotationSmoothing, 0.0f, 1.0f);
 
-            if (input->GetKey(m_keys.LookDrag))
+            if (input->state.GetKey(m_keys.LookDrag))
             {
-                camera->eulerAngles.x += input->GetCursorDeltaY() * sensitivity;
-                camera->eulerAngles.y -= input->GetCursorDeltaX() * sensitivity;
+                camera->eulerAngles.x += input->state.cursorPositionDelta.y * sensitivity;
+                camera->eulerAngles.y -= input->state.cursorPositionDelta.x * sensitivity;
             }
 
-            auto offset = input->GetAxis(m_keys.Left, m_keys.Right, m_keys.Down, m_keys.Up, m_keys.Backward, m_keys.Forward);
+            auto offset = input->state.GetAxis(m_keys.Left, m_keys.Right, m_keys.Down, m_keys.Up, m_keys.Backward, m_keys.Forward);
             auto length = glm::length(offset);
 
             if (length > 0)
@@ -52,11 +54,11 @@ namespace PK::App
             camera->targetPosition += targetRotation * offset;
 
 
-            if (input->GetKey(m_keys.FovControl))
+            if (input->state.GetKey(m_keys.FovControl))
             {
-                auto fovDelta = input->GetAxis(m_keys.FovSub, m_keys.FovAdd);
+                auto fovDelta = input->state.GetAxis(m_keys.FovSub, m_keys.FovAdd);
 
-                if (input->GetKey(m_keys.DollyZoom))
+                if (input->state.GetKey(m_keys.DollyZoom))
                 {
                     auto fov0 = projection->fieldOfView;
                     auto fov1 = projection->fieldOfView + fovDelta;
@@ -72,11 +74,11 @@ namespace PK::App
             }
             else
             {
-                auto speedDelta = input->GetAxis(m_keys.SpeedDown, m_keys.SpeedUp);
+                auto speedDelta = input->state.GetAxis(m_keys.SpeedDown, m_keys.SpeedUp);
                 camera->moveSpeed += camera->moveSpeed * 0.25f * speedDelta;
                 camera->moveSpeed = glm::max(0.01f, camera->moveSpeed);
 
-                if (input->GetKey(m_keys.ResetSmoothing))
+                if (input->state.GetKey(m_keys.ResetSmoothing))
                 {
                     interpolantPos = 1.0f;
                     interpolantRot = 1.0f;

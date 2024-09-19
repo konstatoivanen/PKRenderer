@@ -1,8 +1,8 @@
 #pragma once
 #include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Assets/AssetImportEvent.h"
+#include "Core/ControlFlow/IStepApplication.h"
 #include "Core/Input/InputKeyStructMacros.h"
-#include "Core/Timers/TimeFrameInfo.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct InputDevice)
@@ -27,14 +27,12 @@ namespace PK::App
     PK_INPUTKEY_STRUCT_END()
 
     class EngineFlyCamera : 
-        public IStep<InputDevice*>,
-        public IStep<TimeFrameInfo*>,
+        public IStepApplicationUpdateEngines,
         public IStep<AssetImportEvent<InputKeyConfig>*>
     {
     public:
         EngineFlyCamera(EntityDatabase* entityDb, InputKeyConfig* keyConfig);
-        virtual void Step(InputDevice* input) final;
-        virtual void Step(TimeFrameInfo* time) final { m_timeFrameInfo = *time; }
+        virtual void OnApplicationUpdateEngines() final;
         virtual void Step(AssetImportEvent<InputKeyConfig>* evt) final { m_keys.SetKeysFrom(evt->asset); }
 
         void TransformsLog() const;
@@ -42,7 +40,6 @@ namespace PK::App
 
     private:
         EntityDatabase* m_entityDb;
-        TimeFrameInfo m_timeFrameInfo{};
         EngineFlyCameraInputKeys m_keys{};
     };
 }

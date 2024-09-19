@@ -4,6 +4,8 @@
 #include "App/ECS/ComponentBounds.h"
 #include "App/ECS/ComponentProjection.h"
 #include "App/ECS/ComponentRenderView.h"
+#include "App/ECS/ComponentViewInput.h"
+#include "App/ECS/ComponentTime.h"
 #include "App/ECS/ComponentFlyCamera.h"
 
 namespace PK::App
@@ -13,6 +15,8 @@ namespace PK::App
         public ComponentBounds,
         public ComponentProjection,
         public ComponentRenderView,
+        public ComponentViewInput,
+        public ComponentTime,
         public ComponentFlyCamera
     {
     };

@@ -252,7 +252,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
     	const float4 clipZ1 = clipZ0 + deltaZ;
 
         float4 pmin = 1.0f.xxxx;
-    
+
     	for (uint i = 0; i < 4; ++i)
         {
             const float4 clipMin = clipZ0 + deltaX * (i & 0x1) + deltaY * (i / 2);
@@ -278,31 +278,24 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 smbbmin, const float
 
     bool Meshlet_Sphere_Cull(const PKMeshlet meshlet, float3 center, float radius)
     {
-        /*
-        @TODO 
-        const float3 bbmin = meshlet.center - meshlet.extents;
-        const float3 bbmax = meshlet.center + meshlet.extents;
-        float3 wbbmin = +1e+32f.xxx;
-        float3 wbbmax = -1e+32f.xxx;
-    
-        [[loop]]
-        for (uint i = 0u; i < 8u; i++)
+        center -= ObjectToWorldPos(meshlet.center);
+        const float3 vx = 2.0f * meshlet.extents.x * float3(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0]);
+        const float3 vy = 2.0f * meshlet.extents.y * float3(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1]);
+        const float3 vz = 2.0f * meshlet.extents.z * float3(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2]);
+        const float3 base = -0.5f * (vx + vy + vz);
+        float3 extents = 0.0f.xxx;
+
+        for (uint i = 0; i < 4; ++i)
         {
-            const bool3 useMax = bool3((i & 1) != 0, (i & 2) != 0, (i & 4) != 0);
-            const float3 corner = lerp(bbmin, bbmax, useMax);
-            const float3 pos = ObjectToWorldPos(corner);
-            wbbmin = min(wbbmin, pos);
-            wbbmax = max(wbbmax, pos);
+            const float3 pmin = base + vz * 0 + vx * (i & 0x1) + vy * (i / 2);
+            const float3 pmax = base + vz * 1 + vx * (i & 0x1) + vy * (i / 2);
+            extents = max(max(extents, pmin), pmax);
         }
 
-        const float3 meshlet
-
-        float3 d = abs(light.position.xyz - currentCell.center) - currentCell.extents;
-        float r = light.radius - cmax(min(d, float3(0.0f)));
+        float3 d = abs(center) - extents;
+        float r = radius - cmax(min(d, float3(0.0f)));
         d = max(d, float3(0.0f));
-        return light.radius > 0.0f && dot(d, d) <= r * r;
-        */
-        return true;
+        return dot(d, d) <= r * r;
     }
 
     bool Meshlet_Cone_Cull(const PKMeshlet meshlet, float3 cullOrigin)

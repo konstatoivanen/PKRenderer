@@ -104,6 +104,9 @@ namespace PK::App
         float znear;
         float zfar;
 
+        float2 cursorPosition;
+        float2 cursorPositionDelta;
+
         TimeFrameInfo timeRender;
         TimeFrameInfo timeResize;
 
