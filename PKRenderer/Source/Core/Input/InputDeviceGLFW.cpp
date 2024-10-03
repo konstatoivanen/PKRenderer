@@ -192,7 +192,7 @@ namespace PK
     void InputDeviceGLFW::OnScrollInput(double scrollX, double scrollY)
     {
         m_state.keysCurrent[(int)InputKey::MouseScrollUp] = scrollY > 0.5f;
-        m_state.keysPrevious[(int)InputKey::MouseScrollDown] = scrollY < -0.5f;
+        m_state.keysCurrent[(int)InputKey::MouseScrollDown] = scrollY < -0.5f;
         m_scrollInputRaw.x = (float)scrollX;
         m_scrollInputRaw.y = (float)scrollY;
     }
