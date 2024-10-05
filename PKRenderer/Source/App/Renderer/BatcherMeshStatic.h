@@ -90,7 +90,7 @@ namespace PK::App
         void UploadMaterials(CommandBufferExt cmd);
         void UploadDrawIndices(CommandBufferExt cmd);
 
-        Scope<MeshStaticCollection> m_staticGeometry;
+        Unique<MeshStaticCollection> m_staticGeometry;
 
         RHIBufferRef m_matrices;
         RHIBufferRef m_indices;

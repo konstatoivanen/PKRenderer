@@ -26,8 +26,8 @@ namespace PK
             constexpr VkPipelineStageFlags GetCapabilityFlags() const { return m_capabilityFlags; }
             FenceRef GetFenceRef(int32_t timelineOffset = 0) const;
 
-            Scope<VulkanCommandBufferPool> commandPool = nullptr;
-            Scope<VulkanBarrierHandler> barrierHandler = nullptr;
+            Unique<VulkanCommandBufferPool> commandPool = nullptr;
+            Unique<VulkanBarrierHandler> barrierHandler = nullptr;
 
         private:
             const VkDevice m_device;
@@ -70,7 +70,7 @@ namespace PK
             void Prune();
 
         private:
-            Scope<VulkanQueue> m_queues[MAX_DEPENDENCIES]{};
+            Unique<VulkanQueue> m_queues[MAX_DEPENDENCIES]{};
             uint32_t m_queueIndices[MAX_DEPENDENCIES]{};
             VulkanQueueFamilies m_selectedFamilies{};
     };

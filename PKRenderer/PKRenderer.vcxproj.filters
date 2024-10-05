@@ -1356,7 +1356,7 @@
     <ClInclude Include="Source\Core\Utilities\PropertyBlock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\RangeTable.h">
+    <ClInclude Include="Source\Core\Utilities\FixedRangeTable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\Ref.h">

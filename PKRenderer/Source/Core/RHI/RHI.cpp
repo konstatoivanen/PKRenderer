@@ -92,7 +92,7 @@ namespace PK
                     VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME
                 };
 
-                driver = CreateScope<VulkanDriver>(VulkanContextProperties
+                driver = CreateUnique<VulkanDriver>(VulkanContextProperties
                 (
                     "PK Vulkan Engine",
                     workingDirectory,

@@ -731,7 +731,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\NativeInterface.h" />
     <ClInclude Include="Source\Core\Utilities\NoCopy.h" />
     <ClInclude Include="Source\Core\Utilities\PropertyBlock.h" />
-    <ClInclude Include="Source\Core\Utilities\RangeTable.h" />
+    <ClInclude Include="Source\Core\Utilities\FixedRangeTable.h" />
     <ClInclude Include="Source\Core\Utilities\Ref.h" />
     <ClInclude Include="Source\Core\Utilities\RemoteProcess.h" />
     <ClInclude Include="Source\Core\Utilities\VersionedObject.h" />

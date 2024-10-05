@@ -270,11 +270,11 @@ namespace PK
         ConstBufferView<TValue> GetValues() const { return { m_values, (size_t)m_count }; }
         KeyValues GetKeyValues() { return { m_nodes, m_values, (size_t)m_count }; }
         
-        const TValue* GetValueRef(const TKey& key) const { auto index = GetIndex(key); return index != -1 ? &m_values[index] : nullptr; }
+        const TValue* GetValuePtr(const TKey& key) const { auto index = GetIndex(key); return index != -1 ? &m_values[index] : nullptr; }
         const TValue& GetValueAt(uint32_t index) const { return m_values[index]; }
         const TKey& GetKeyAt(uint32_t index) const { return m_nodes[index].key; }
 
-        TValue* GetValueRef(const TKey& key) { auto index = GetIndex(key); return index != -1 ? &m_values[index] : nullptr; }
+        TValue* GetValuePtr(const TKey& key) { auto index = GetIndex(key); return index != -1 ? &m_values[index] : nullptr; }
         TValue& GetValueAt(uint32_t index) { return m_values[index]; }
         
         void SetValue(const TKey& key, const TValue& value) { auto index = GetIndex(key); if (index != -1) m_values[index] = value; }

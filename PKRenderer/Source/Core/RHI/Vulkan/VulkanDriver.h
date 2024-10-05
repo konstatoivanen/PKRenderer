@@ -100,14 +100,14 @@ namespace PK
         VulkanPhysicalDeviceProperties physicalDeviceProperties;
         uint32_t apiVersion;
 
-        Scope<VulkanQueueSet> queues;
-        Scope<VulkanFrameBufferCache> frameBufferCache;
-        Scope<VulkanStagingBufferCache> stagingBufferCache;
-        Scope<VulkanDescriptorCache> descriptorCache;
-        Scope<VulkanPipelineCache> pipelineCache;
-        Scope<VulkanSamplerCache> samplerCache;
-        Scope<VulkanLayoutCache> layoutCache;
-        Scope<Disposer> disposer;
+        Unique<VulkanQueueSet> queues;
+        Unique<VulkanFrameBufferCache> frameBufferCache;
+        Unique<VulkanStagingBufferCache> stagingBufferCache;
+        Unique<VulkanDescriptorCache> descriptorCache;
+        Unique<VulkanPipelineCache> pipelineCache;
+        Unique<VulkanSamplerCache> samplerCache;
+        Unique<VulkanLayoutCache> layoutCache;
+        Unique<Disposer> disposer;
         mutable FixedPool<VulkanBufferView, 2048> bufferViewPool;
         mutable FixedPool<VulkanImageView, 2048> imageViewPool;
         mutable FixedPool<VulkanRawImage, 2048> imagePool;

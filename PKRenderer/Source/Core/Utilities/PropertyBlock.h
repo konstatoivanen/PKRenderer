@@ -84,7 +84,7 @@ namespace PK
             template<typename T>
             const T* Get(const uint32_t hashId) const 
             {
-                auto info = m_propertyInfos.GetValueRef(PropertyKey::Make<T>(hashId));
+                auto info = m_propertyInfos.GetValuePtr(PropertyKey::Make<T>(hashId));
                 return info != nullptr ? GetInternal<T>(*info) : nullptr;
             }
 
@@ -99,7 +99,7 @@ namespace PK
             template<typename T>
             bool TryGet(const uint32_t hashId, const T*& value, uint64_t* size = nullptr) const
             {
-                auto info = m_propertyInfos.GetValueRef(PropertyKey::Make<T>(hashId));
+                auto info = m_propertyInfos.GetValuePtr(PropertyKey::Make<T>(hashId));
 
                 if (info != nullptr)
                 {

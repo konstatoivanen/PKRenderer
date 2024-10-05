@@ -24,7 +24,7 @@ namespace PK
     // @TODO convert into a pool. for deletions.
     struct ImplementerBucket
     {
-        Scope<ImplementerBucket> previous;
+        Unique<ImplementerBucket> previous;
         size_t count;
         void (*destructor)(void* value, size_t count);
         uint8_t data[PK_ECS_BUCKET_SIZE];
@@ -35,7 +35,7 @@ namespace PK
     struct ImplementerContainer
     {
         size_t count = 0;
-        Scope<ImplementerBucket> bucketHead;
+        Unique<ImplementerBucket> bucketHead;
     };
 
     struct EntityViewsCollection
@@ -81,7 +81,7 @@ namespace PK
 
             if (!container.bucketHead || container.bucketHead->count >= elementsPerBucket)
             {
-                auto bucket = CreateScope<ImplementerBucket>();
+                auto bucket = CreateUnique<ImplementerBucket>();
                 bucket->previous = std::move(container.bucketHead);
                 bucket->count = 0u;
                 bucket->destructor = [](void* data, size_t count)
@@ -167,7 +167,7 @@ namespace PK
             }
 
             auto& views = m_entityViews.at({ std::type_index(typeid(TView)), egid.groupID() });
-            auto offset = views.indices.GetValueRef(egid.entityID());
+            auto offset = views.indices.GetValuePtr(egid.entityID());
             return offset ? reinterpret_cast<TView*>(views.buffer.GetData() + *offset) : nullptr;
         }
 

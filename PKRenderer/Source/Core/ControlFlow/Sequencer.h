@@ -83,8 +83,8 @@ namespace PK
         void Next(const void* engine, Args ... args)
         {
             using TStep = IStep<Args...>;
-            auto viewRef = m_map.GetValueRef({ engine, TStep::GetStepTypeId() });
-            auto view = viewRef ? *viewRef : StepsView();
+            auto viewPtr = m_map.GetValuePtr({ engine, TStep::GetStepTypeId() });
+            auto view = viewPtr ? *viewPtr : StepsView();
 
             for (auto i = 0u; i < view.count; ++i)
             {

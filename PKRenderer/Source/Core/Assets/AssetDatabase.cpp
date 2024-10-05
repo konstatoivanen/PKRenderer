@@ -110,7 +110,7 @@ namespace PK
 
     void AssetDatabase::ReloadCached(AssetID assetId)
     {
-        auto reference = m_assets.GetValueRef(assetId);
+        auto reference = m_assets.GetValuePtr(assetId);
 
         if (reference != nullptr && reference->reload)
         {
@@ -234,7 +234,7 @@ namespace PK
 
     uint32_t AssetDatabase::GetTypeHead(const std::type_index& typeIndex) const
     {
-        auto headPtr = m_typeHeads.GetValueRef(typeIndex);
+        auto headPtr = m_typeHeads.GetValuePtr(typeIndex);
         return headPtr != nullptr ? *headPtr : INVALID_LINK;
     }
 }

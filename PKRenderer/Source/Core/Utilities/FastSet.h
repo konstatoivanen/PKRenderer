@@ -285,16 +285,14 @@ namespace PK
 
         constexpr uint32_t GetCount() const { return m_count; }
         constexpr size_t GetCapacity() const { return m_capacity; }
+        bool Contains(const TValue& value) const { return GetIndex(value) != -1; }
 
-        ConstBufferIterator<TValue> begin() const { return ConstBufferIterator<TValue>(m_values, 0ull); }
-        ConstBufferIterator<TValue> end() const { return ConstBufferIterator<TValue>(m_values + m_count, m_count); }
         ConstBufferView<TValue> GetValues() const { return { m_values, (size_t)m_count }; }
         BufferView<TValue> GetValues() { return { m_values, (size_t)m_count }; }
 
-        const TValue& GetValue(uint32_t index) const { return m_values[index]; }
+        ConstBufferIterator<TValue> begin() const { return ConstBufferIterator<TValue>(m_values, 0ull); }
+        ConstBufferIterator<TValue> end() const { return ConstBufferIterator<TValue>(m_values + m_count, m_count); }
         const TValue& operator[](uint32_t index) const { return m_values[index]; }
-
-        TValue& GetValue(uint32_t index) { return m_values[index]; }
         TValue& operator[](uint32_t index) { return m_values[index]; }
     };
 

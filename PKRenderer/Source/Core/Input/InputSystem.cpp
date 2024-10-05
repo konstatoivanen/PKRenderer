@@ -16,7 +16,7 @@ namespace PK
         if (device == nullptr)
         {
             device = new InputDeviceGLFW(window);
-            m_inputDevices[nativeHandle] = Scope<InputDevice>(device);
+            m_inputDevices[nativeHandle] = Unique<InputDevice>(device);
         }
 
         return device;

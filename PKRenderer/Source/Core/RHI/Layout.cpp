@@ -70,7 +70,7 @@ namespace PK
         if (valueIndex != -1)
         {
             *index = (uint32_t)valueIndex;
-            return &GetValue(valueIndex);
+            return &(*this)[valueIndex];
         }
 
         return nullptr;

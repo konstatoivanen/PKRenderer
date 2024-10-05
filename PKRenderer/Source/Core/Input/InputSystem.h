@@ -31,6 +31,6 @@ namespace PK
 
     private:
         Sequencer* m_sequencer;
-        std::unordered_map<void*, Scope<InputDevice>> m_inputDevices;
+        std::unordered_map<void*, Unique<InputDevice>> m_inputDevices;
     };
 }

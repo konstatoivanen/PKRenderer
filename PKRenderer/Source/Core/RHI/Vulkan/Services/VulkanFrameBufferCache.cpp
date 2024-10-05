@@ -70,7 +70,7 @@ namespace PK
         value->frameBuffer = m_frameBufferPool.New(m_device, info);
         value->pruneTick = nextPruneTick;
         
-        (*m_renderPassReferenceCounts.GetValueRef(key.renderPass))++;
+        (*m_renderPassReferenceCounts.GetValuePtr(key.renderPass))++;
 
         return value->frameBuffer;
     }
@@ -220,7 +220,7 @@ namespace PK
             if (value->pruneTick < m_currentPruneTick)
             {
                 auto& renderPass = m_frameBuffers.GetKeyAt(i).renderPass;
-                (*m_renderPassReferenceCounts.GetValueRef(renderPass))--;
+                (*m_renderPassReferenceCounts.GetValuePtr(renderPass))--;
                 m_frameBufferPool.Delete(value->frameBuffer);
                 m_frameBuffers.RemoveAt(i);
             }

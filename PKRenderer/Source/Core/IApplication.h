@@ -12,6 +12,7 @@ int main(int argc, char** argv);
 namespace PK
 {
     extern struct IApplication* CreateProjectApplication(const CArguments& arguments);
+    extern void FreeProjectApplication(IApplication* application);
 
     struct IApplication : public ISingleton<IApplication>
     {
@@ -47,7 +48,7 @@ namespace PK
         const FixedString256 m_workingDirectory;
 
         Ref<ILogger> m_logger;
-        Scope<ServiceRegister> m_services;
+        Unique<ServiceRegister> m_services;
 
         friend int ::main(int argc, char** argv);
     };

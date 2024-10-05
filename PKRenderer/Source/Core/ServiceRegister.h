@@ -33,7 +33,7 @@ namespace PK
         template <typename T>
         T* Get() 
         {
-            auto container = m_services.GetValueRef(std::type_index(typeid(T)))[0].get();
+            auto container = m_services.GetValuePtr(std::type_index(typeid(T)))[0].get();
             return &static_cast<ServiceContainer<T>*>(container)->Instance;
         }
 
@@ -51,7 +51,7 @@ namespace PK
             auto logIndent = PK::LogScopeIndent();
             auto service = new ServiceContainer<T>(std::forward<Args>(args)...);
             auto values = m_services.GetValues();
-            values[index] = Scope<Service>(service);
+            values[index] = Unique<Service>(service);
             return &service->Instance;
         }
 
@@ -70,6 +70,6 @@ namespace PK
     private:
         void AssertTypeExists(std::type_index index);
 
-        FastMap<std::type_index, Scope<Service>> m_services;
+        FastMap<std::type_index, Unique<Service>> m_services;
     };
 }

@@ -95,7 +95,7 @@ namespace PK
 
     bool CVariableRegister::IsBoundInstance(const char* name) const
     {
-        auto reference = m_variables.GetValueRef(name);
+        auto reference = m_variables.GetValuePtr(name);
         return reference && reference->variable != nullptr;
     }
 
@@ -125,7 +125,7 @@ namespace PK
 
             // CVar was not found. cache arguments so that they can be executed upon binding.
             reference->variable = nullptr;
-            reference->arguments = CreateScope<CArgumentsInlineDefault>(args, count);
+            reference->arguments = CreateUnique<CArgumentsInlineDefault>(args, count);
         }
     }
 

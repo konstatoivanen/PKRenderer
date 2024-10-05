@@ -31,7 +31,7 @@ namespace PK::App
         PK_LOG_VERBOSE("StaticDrawBatcher.Ctor");
         PK_LOG_SCOPE_INDENT(local);
 
-        m_staticGeometry = CreateScope<MeshStaticCollection>();
+        m_staticGeometry = CreateUnique<MeshStaticCollection>();
         m_matrices = RHI::CreateBuffer<float3x4>(1024ull, BufferUsage::PersistentStorage, "Batching.Matrices");
         m_indices = RHI::CreateBuffer<PKAssets::PKDrawInfo>(1024ull, BufferUsage::PersistentStorage, "Batching.DrawInfos");
         m_properties = RHI::CreateBuffer(16384ull, BufferUsage::PersistentStorage, "Batching.MaterialProperties");

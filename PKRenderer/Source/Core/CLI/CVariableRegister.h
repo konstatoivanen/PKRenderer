@@ -18,7 +18,7 @@ namespace PK
         struct CVariableBinding
         {
             ICVariable* variable = nullptr;
-            Scope<CArgumentsInlineDefault> arguments;
+            Unique<CArgumentsInlineDefault> arguments;
         };
 
     public:
@@ -36,7 +36,7 @@ namespace PK
             if (Get() != nullptr)
             {
                 auto variable = new CVariable<T>(name, value, hint, minArgs);
-                Get()->m_scopes.push_back(Scope<ICVariable>(variable));
+                Get()->m_scopes.push_back(Unique<ICVariable>(variable));
                 Bind(variable);
             }
         }
@@ -53,6 +53,6 @@ namespace PK
         void ExecuteParseInstance(const char* arg);
 
         FastMap<NameID, CVariableBinding, Hash::TCastHash<NameID>> m_variables;
-        std::vector<Scope<ICVariable>> m_scopes;
+        std::vector<Unique<ICVariable>> m_scopes;
     };
 }

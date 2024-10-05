@@ -221,3 +221,8 @@ PK::IApplication* PK::CreateProjectApplication(const PK::CArguments& arguments)
 {
     return new App::RendererApplication(arguments);
 }
+
+void PK::FreeProjectApplication(IApplication* application)
+{
+    delete application;
+}

@@ -150,9 +150,9 @@ namespace PK
         }
 
         auto servicesCopy = services;
-        barrierHandler = CreateScope<VulkanBarrierHandler>(m_family);
+        barrierHandler = CreateUnique<VulkanBarrierHandler>(m_family);
         servicesCopy.barrierHandler = barrierHandler.get();
-        commandPool = CreateScope<VulkanCommandBufferPool>(device, servicesCopy, queueFamily, m_capabilityFlags);
+        commandPool = CreateUnique<VulkanCommandBufferPool>(device, servicesCopy, queueFamily, m_capabilityFlags);
     }
 
     VulkanQueue::~VulkanQueue()
@@ -355,7 +355,7 @@ namespace PK
         for (auto i = 0u; i < initializer.queueCount; ++i)
         {
             auto& familyProps = initializer.familyProperties.at(initializer.queueFamilies[i]);
-            m_queues[i] = CreateScope<VulkanQueue>(device, familyProps.queueFlags, initializer.queueFamilies[i], servicesCopy);
+            m_queues[i] = CreateUnique<VulkanQueue>(device, familyProps.queueFlags, initializer.queueFamilies[i], servicesCopy);
             m_selectedFamilies.indices[i] = initializer.queueFamilies[i];
         }
 

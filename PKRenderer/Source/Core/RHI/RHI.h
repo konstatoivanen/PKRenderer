@@ -94,9 +94,9 @@ namespace PK
     typedef Ref<RHIBufferBindArray> RHIBufferBindArrayRef;
     typedef Ref<RHIBuffer> RHIBufferRef;
     typedef Ref<RHITexture> RHITextureRef;
-    typedef Scope<RHIShader> RHIShaderScope;
-    typedef Scope<RHIWindow> RHIWindowScope;
-    typedef Scope<RHIDriver> RHIDriverScope;
+    typedef Unique<RHIShader> RHIShaderScope;
+    typedef Unique<RHIWindow> RHIWindowScope;
+    typedef Unique<RHIDriver> RHIDriverScope;
 
     // Interface
     namespace RHI

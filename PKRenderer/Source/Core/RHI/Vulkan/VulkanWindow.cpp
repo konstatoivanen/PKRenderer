@@ -73,7 +73,7 @@ namespace PK
         swapchainCreateInfo.nativeMonitor = nullptr;
         swapchainCreateInfo.exclusiveFullScreen = false;
 
-        m_swapchain = CreateScope<VulkanSwapchain>(m_driver->physicalDevice,
+        m_swapchain = CreateUnique<VulkanSwapchain>(m_driver->physicalDevice,
             m_driver->device,
             m_surface,
             m_driver->queues->GetQueue(QueueType::Graphics),

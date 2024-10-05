@@ -195,13 +195,13 @@ namespace PK
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
         VK_ASSERT_RESULT_CTX(vmaCreateAllocator(&allocatorInfo, &allocator), "Failed to create a VMA allocator!");
 
-        frameBufferCache = CreateScope<VulkanFrameBufferCache>(device, properties.garbagePruneDelay);
-        stagingBufferCache = CreateScope<VulkanStagingBufferCache>(device, allocator, properties.garbagePruneDelay);
-        pipelineCache = CreateScope<VulkanPipelineCache>(device, properties.workingDirectory, physicalDeviceProperties, properties.garbagePruneDelay);
-        samplerCache = CreateScope<VulkanSamplerCache>(device);
-        layoutCache = CreateScope<VulkanLayoutCache>(device);
-        disposer = CreateScope<Disposer>();
-        descriptorCache = CreateScope<VulkanDescriptorCache>(device, 4, 100ull,
+        frameBufferCache = CreateUnique<VulkanFrameBufferCache>(device, properties.garbagePruneDelay);
+        stagingBufferCache = CreateUnique<VulkanStagingBufferCache>(device, allocator, properties.garbagePruneDelay);
+        pipelineCache = CreateUnique<VulkanPipelineCache>(device, properties.workingDirectory, physicalDeviceProperties, properties.garbagePruneDelay);
+        samplerCache = CreateUnique<VulkanSamplerCache>(device);
+        layoutCache = CreateUnique<VulkanLayoutCache>(device);
+        disposer = CreateUnique<Disposer>();
+        descriptorCache = CreateUnique<VulkanDescriptorCache>(device, 4, 100ull,
             std::initializer_list<std::pair<const VkDescriptorType, size_t>>({
                 { VK_DESCRIPTOR_TYPE_SAMPLER, 100ull },
                 { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100ull },
@@ -209,7 +209,7 @@ namespace PK
                 { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 10ull }
                 }));
 
-        queues = CreateScope<VulkanQueueSet>(device,
+        queues = CreateUnique<VulkanQueueSet>(device,
             queueInitializer,
             VulkanServiceContext
             {
@@ -312,8 +312,8 @@ namespace PK
     RHIAccelerationStructureRef VulkanDriver::CreateAccelerationStructure(const char* name) { return CreateRef<VulkanAccelerationStructure>(name); }
     RHITextureBindArrayRef VulkanDriver::CreateTextureBindArray(size_t capacity) { return CreateRef<VulkanBindArray>(capacity); }
     RHIBufferBindArrayRef VulkanDriver::CreateBufferBindArray(size_t capacity) { return CreateRef<VulkanBindArray>(capacity); }
-    RHIShaderScope VulkanDriver::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return CreateScope<VulkanShader>(base, pVariant, name); }
-    RHIWindowScope VulkanDriver::CreateWindowScope(const WindowDescriptor& descriptor) { return CreateScope<VulkanWindow>(this, descriptor); }
+    RHIShaderScope VulkanDriver::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return CreateUnique<VulkanShader>(base, pVariant, name); }
+    RHIWindowScope VulkanDriver::CreateWindowScope(const WindowDescriptor& descriptor) { return CreateUnique<VulkanWindow>(this, descriptor); }
 
     void VulkanDriver::SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) { globalResources.Set(name, Handle(buffer->GetNative<VulkanBuffer>()->GetBindHandle(range))); }
     void VulkanDriver::SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) { globalResources.Set(name, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::SampledTexture))); }

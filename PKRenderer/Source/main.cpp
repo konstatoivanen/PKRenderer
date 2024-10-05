@@ -18,6 +18,8 @@ int main(int argc, char** argv)
 #endif
 
     auto application = PK::CreateProjectApplication({ argv, argc });
+
     application->Execute();
-    delete application;
+
+    PK::FreeProjectApplication(application);
 }

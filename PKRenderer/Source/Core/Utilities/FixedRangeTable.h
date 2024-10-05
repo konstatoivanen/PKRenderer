@@ -4,7 +4,7 @@
 namespace PK
 {
 	template<size_t capacity>
-	struct RangeTable : NoCopy
+	struct FixedRangeTable : NoCopy
 	{
 		struct Range
 		{

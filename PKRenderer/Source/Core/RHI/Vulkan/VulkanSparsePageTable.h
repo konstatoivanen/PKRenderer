@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Utilities/FixedPool.h"
-#include "Core/Utilities/RangeTable.h"
+#include "Core/Utilities/FixedRangeTable.h"
 #include "Core/RHI/Structs.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
@@ -48,7 +48,7 @@ namespace PK
             const VkBuffer m_targetBuffer = VK_NULL_HANDLE;
             Page* m_firstPage = nullptr;
             FixedPool<Page, 1024> m_pages;
-            RangeTable<1024> m_residency;
+            FixedRangeTable<1024> m_residency;
             FixedString128 m_name;
     };
 }

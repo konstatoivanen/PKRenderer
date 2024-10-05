@@ -41,7 +41,7 @@ namespace PK
             VkSemaphore m_imageAvailableSignal = VK_NULL_HANDLE;
             VkSurfaceKHR m_surface;
             GLFWwindow* m_window;
-            Scope<VulkanSwapchain> m_swapchain;
+            Unique<VulkanSwapchain> m_swapchain;
 
             std::function<void(int width, int height)> m_onResize;
             std::function<void()> m_onClose;
