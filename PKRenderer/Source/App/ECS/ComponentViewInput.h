@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Utilities/Bitmask.h"
+#include "Core/Utilities/FixedMask.h"
 #include "Core/Input/InputState.h"
 
 namespace PK::App
@@ -9,7 +9,7 @@ namespace PK::App
         InputState state{};
 
         // For systems that can have conflicting inputs
-        Bitmask<(size_t)InputKey::Count> keysConsumed;
+        FixedMask<(size_t)InputKey::Count> keysConsumed;
         
         // Current index holding input focus.
         uint32_t hotControlId = 0u;

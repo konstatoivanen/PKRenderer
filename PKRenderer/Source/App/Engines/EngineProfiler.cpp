@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/Bitmask.h"
+#include "Core/Utilities/FixedMask.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/Math/FunctionsColor.h"
 #include "Core/Assets/AssetDatabase.h"
@@ -20,7 +20,7 @@ namespace PK::App
         auto shaders = m_assetDatabase->GetAssetsOfType<ShaderAsset>();
 
         std::unordered_set<uint32_t> uniqueNames;
-        std::unordered_map<uint32_t, Bitmask<1024>> usagemasks;
+        std::unordered_map<uint32_t, FixedMask<1024>> usagemasks;
 
         for (const auto& shader : shaders)
         {

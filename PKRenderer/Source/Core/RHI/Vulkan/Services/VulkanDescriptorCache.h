@@ -41,7 +41,7 @@ namespace PK
             {
                 uint32_t poolIndex;
                 mutable FenceRef fence;
-                Bitmask<2048> indexMask;
+                FixedMask<2048> indexMask;
             };
 
             using SetKeyHash = Hash::TMurmurHash<SetKey>;

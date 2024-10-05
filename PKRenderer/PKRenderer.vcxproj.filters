@@ -1308,7 +1308,7 @@
     <ClInclude Include="Source\App\Renderer\BatcherMeshStatic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\Bitmask.h">
+    <ClInclude Include="Source\Core\Utilities\FixedMask.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\BufferIterator.h">

@@ -713,7 +713,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Renderer\BatcherMeshStatic.h" />
     <ClInclude Include="Source\App\Renderer\EntityEnums.h" />
     <ClInclude Include="Source\App\Renderer\EntityCulling.h" />
-    <ClInclude Include="Source\Core\Utilities\Bitmask.h" />
+    <ClInclude Include="Source\Core\Utilities\FixedMask.h" />
     <ClInclude Include="Source\Core\Utilities\BufferIterator.h" />
     <ClInclude Include="Source\Core\Utilities\BufferView.h" />
     <ClInclude Include="Source\Core\Utilities\FastMap.h" />

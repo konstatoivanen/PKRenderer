@@ -4,7 +4,7 @@
 namespace PK
 {
     template<size_t capacity>
-    struct Bitmask
+    struct FixedMask
     {
         constexpr static size_t Capacity = capacity;
         constexpr static size_t Stride = sizeof(uint64_t) * 8ull;

@@ -1,6 +1,6 @@
 #pragma once
 #include "NoCopy.h"
-#include "Bitmask.h"
+#include "FixedMask.h"
 #include "ContainerHelpers.h"
 
 namespace PK
@@ -14,7 +14,7 @@ namespace PK
         constexpr const T* GetData() const { return reinterpret_cast<const T*>(m_data); }
         T* GetData() { return reinterpret_cast<T*>(m_data); }
 
-        const Bitmask<capacity>& GetActiveMask() { return m_mask; }
+        const FixedMask<capacity>& GetActiveMask() { return m_mask; }
         size_t GetCount() { return m_mask.CountBits(); }
 
         T* operator [](uint32_t index) { return GetData() + index; }
@@ -58,7 +58,7 @@ namespace PK
             Delete(GetData() + index);
         }
 
-        void Delete(const Bitmask<capacity>& mask)
+        void Delete(const FixedMask<capacity>& mask)
         {
             // if a whole 64 bit segment is empty we can assume that the rest are as well.
             // Could lead to issues in a very unlucky scenario.
@@ -88,6 +88,6 @@ namespace PK
 
         private:
             alignas(T) std::byte m_data[sizeof(T) * capacity];
-            Bitmask<capacity> m_mask;
+            FixedMask<capacity> m_mask;
     };
 }
