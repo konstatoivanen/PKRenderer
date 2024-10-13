@@ -71,6 +71,7 @@ namespace PK::App
 
     PK_YAML_STRUCT_BEGIN(BloomSettings)
         PK_YAML_MEMBER(float, Intensity, 0.0f)
+        PK_YAML_MEMBER(float, Diffusion, 0.0f)
         PK_YAML_MEMBER(float, LensDirtIntensity, 0.0f)
         PK_YAML_MEMBER(TextureAsset*, LensDirtTextureAsset, nullptr)
     PK_YAML_STRUCT_END()

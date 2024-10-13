@@ -118,6 +118,8 @@ namespace PK::App
         DECLARE_HASH(pk_AutoExposure_Histogram)
 
         DECLARE_HASH(pk_Bloom_Intensity)
+        DECLARE_HASH(pk_Bloom_Diffusion)
+        DECLARE_HASH(pk_Bloom_Layer)
         DECLARE_HASH(pk_Bloom_DirtIntensity)
         DECLARE_HASH(pk_Bloom_Texture)
         DECLARE_HASH(pk_Bloom_LensDirtTex)

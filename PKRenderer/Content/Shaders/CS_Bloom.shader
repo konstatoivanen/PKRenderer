@@ -7,6 +7,12 @@
 #include "includes/Utilities.glsl"
 #include "includes/Constants.glsl"
 #include "includes/Encoding.glsl"
+#include "includes/Common.glsl"
+
+PK_DECLARE_LOCAL_CBUFFER(pk_Bloom_Layer)
+{
+    float BloomLayer;
+};
 
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture;
 layout(r32ui, set = PK_SET_DRAW) uniform uimage2D pk_Image;
@@ -87,6 +93,12 @@ void UpsampleCs()
     color.rgb += texture(pk_Texture, uvs.xy).rgb;
     color.rgb += texture(pk_Texture, uvs.xw).rgb;
     color.rgb *= 0.25f;
+    // @TODO Calculate better parameterization for this (currently changes output weight unintentionally).
+    // Layer weights are currently accumulative to avoid quantization bias.
+    // Options: 
+    // - expose separate layer weights for each layer (more data & more configuration overhead).
+    // - Use a single "diffusion" value to control somekind of weighting curve (need to figure out a good weighting curve. currently linear but that might be inoptimal).  
+    color.rgb *= 1.0f + pk_Bloom_Diffusion * BloomLayer;
     color.rgb += DecodeE5BGR9(imageLoad(pk_Image, coord).r);
 
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color.rgb)));
