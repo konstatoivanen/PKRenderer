@@ -43,9 +43,9 @@ namespace PK::App
         auto hash = HashCache::Get();
         auto& settings = view->settings.BloomSettings;
         m_bloomLensDirtTexture = settings.LensDirtTextureAsset ? settings.LensDirtTextureAsset->GetRHI() : RHI::GetBuiltInResources()->WhiteTexture2D.get();
+        view->constants->Set<float>(hash->pk_Bloom_Diffusion, settings.Diffusion);
         view->constants->Set<float>(hash->pk_Bloom_Intensity, glm::exp(settings.Intensity) - 1.0f);
         view->constants->Set<float>(hash->pk_Bloom_DirtIntensity, glm::exp(settings.LensDirtIntensity) - 1.0f);
-        view->constants->Set<float>(hash->pk_Bloom_Diffusion, settings.Diffusion);
         RHI::SetTexture(HashCache::Get()->pk_Bloom_LensDirtTex, m_bloomLensDirtTexture);
     }
 
@@ -77,9 +77,9 @@ namespace PK::App
 
         for (auto i = 6; i >= 0; --i)
         {
+            RHI::SetConstant(hash->pk_Bloom_UpsampleLayerCount, 8.0f - (i + 1.0f));
             RHI::SetTexture(hash->pk_Texture, bloom, i + 1u, 0u);
             RHI::SetImage(hash->pk_Image, bloom, i, 0u);
-            RHI::SetConstant(hash->pk_Bloom_Layer, 1.0f + i);
             cmd.Dispatch(m_computeBloom, m_passUpsample, { res.x >> i, res.y >> i, 1u });
         }
 

@@ -221,8 +221,8 @@ void ShadowmapUpsampleCs()
 [[pk_restrict ScreenSpaceShadowsCs]]
 PK_DECLARE_LOCAL_CBUFFER(pk_BendShadowDispatchData)
 {
-    float4 LightCoordinate;
-    int2 WaveOffset;
+    float4 pk_LightCoordinate;
+    int2 pk_WaveOffset;
 };
 
 [[pk_restrict ScreenSpaceShadowsCs]]
@@ -230,11 +230,11 @@ layout(local_size_x = WAVE_SIZE, local_size_y = 1, local_size_z = 1) in;
 void ScreenSpaceShadowsCs()
 {
     DispatchParameters dispatchParams;
-    dispatchParams.LightCoordinate = LightCoordinate;				// Values stored in DispatchList::LightCoordinate_Shader by BuildDispatchList()
-    dispatchParams.WaveOffset = WaveOffset;					// Values stored in DispatchData::WaveOffset_Shader by BuildDispatchList()
-    dispatchParams.FarDepthValue = 0.0f;				// Set to the Depth Buffer Value for the far clip plane, as determined by renderer projection matrix setup (typically 0).
-    dispatchParams.NearDepthValue = 1.0f;				// Set to the Depth Buffer Value for the near clip plane, as determined by renderer projection matrix setup (typically 1).
-    dispatchParams.InvDepthTextureSize = pk_ScreenParams.zw;			// Inverse of the texture dimensions for 'DepthTexture' (used to convert from pixel coordinates to UVs)
+    dispatchParams.LightCoordinate = pk_LightCoordinate;	    // Values stored in DispatchList::LightCoordinate_Shader by BuildDispatchList()
+    dispatchParams.WaveOffset = pk_WaveOffset;					// Values stored in DispatchData::WaveOffset_Shader by BuildDispatchList()
+    dispatchParams.FarDepthValue = 0.0f;				        // Set to the Depth Buffer Value for the far clip plane, as determined by renderer projection matrix setup (typically 0).
+    dispatchParams.NearDepthValue = 1.0f;				        // Set to the Depth Buffer Value for the near clip plane, as determined by renderer projection matrix setup (typically 1).
+    dispatchParams.InvDepthTextureSize = pk_ScreenParams.zw;	// Inverse of the texture dimensions for 'DepthTexture' (used to convert from pixel coordinates to UVs)
     dispatchParams.SurfaceThickness = 0.01;
     dispatchParams.BilinearThreshold = 0.04;
     dispatchParams.ShadowContrast = 4;

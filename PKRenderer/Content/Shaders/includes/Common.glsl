@@ -103,8 +103,8 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float pk_AutoExposure_Max;
     float pk_AutoExposure_Speed;
 
-    float pk_Bloom_Intensity;
     float pk_Bloom_Diffusion;
+    float pk_Bloom_Intensity;
     float pk_Bloom_DirtIntensity;
 
     float pk_TAA_Sharpness;

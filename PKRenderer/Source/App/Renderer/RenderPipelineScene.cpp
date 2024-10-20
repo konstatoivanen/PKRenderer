@@ -136,8 +136,8 @@ namespace PK::App
             { ElementType::Float, hash->pk_AutoExposure_Speed },
 
             // Bloom
-            { ElementType::Float, hash->pk_Bloom_Intensity },
             { ElementType::Float, hash->pk_Bloom_Diffusion },
+            { ElementType::Float, hash->pk_Bloom_Intensity },
             { ElementType::Float, hash->pk_Bloom_DirtIntensity },
 
             // Temporal anti aliasing
