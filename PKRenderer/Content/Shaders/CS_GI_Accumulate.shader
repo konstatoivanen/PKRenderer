@@ -95,7 +95,7 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
             const Reservoir s_reservoir = ReSTIR_Load_HitAsReservoir(xy, s_position);
 
             [[branch]]
-            if (Any_NotEqual(xy, baseCoord) && Test_DepthReproject(depth, s_depth, depthBias) && dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
+            if (Any_NotEqual(xy, baseCoord) && Test_DepthSurface(depth, s_depth, depthBias) && dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
             {
                 const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_position, s_reservoir);
                 ReSTIR_CombineReservoir(combined, s_reservoir, s_targetPdf, hash);
@@ -126,7 +126,7 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
         const float3 s_normal = subgroupShuffle(normal, shuffleId);
 
         [[branch]]
-        if (combined.M < RESTIR_MAX_M + 3 && Test_DepthReproject(depth, s_depth, depthBias) && dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
+        if (combined.M < RESTIR_MAX_M + 3 && Test_DepthSurface(depth, s_depth, depthBias) && dot(normal, s_normal) > RESTIR_NORMAL_THRESHOLD)
         {
             const float s_targetPdf = ReSTIR_GetTargetPdfNewSurf(origin, normal, s_origin, suffled);
             ReSTIR_CombineReservoir(combined, suffled, s_targetPdf, hash);
@@ -220,7 +220,7 @@ void main()
 
         SUBGROUP_ANTIFIREFLY_FILTER(isScene, current, history, alpha, 1.0f)
 
-		history = GI_Interpolate(history, current, GI_Alpha(history));
+        history = GI_Interpolate(history, current, GI_Alpha(history));
         GI_Store_Packed_Diff(baseCoord, isScene ? GI_Pack_Diff(history) : uint4(0));
     }
 
