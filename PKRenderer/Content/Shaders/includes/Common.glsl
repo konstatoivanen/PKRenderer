@@ -42,7 +42,7 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float4 pk_MeshletCullParams;    // Meshlet Error Scale Factor, Horizontal Fov, Vertical Fov, Unused.
     float4 pk_ShadowCascadeZSplits; // view space z axis splits for directional light shadow cascades
 
-    // @TODO redudant in here. remove
+    // @TODO redudant in here. remove. Currenty here as it provides padding :)
     float pk_SceneEnv_Exposure; // Scene background environment exposure
     
     // GI Parameters

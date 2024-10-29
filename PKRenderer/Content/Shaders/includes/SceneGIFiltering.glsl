@@ -6,11 +6,8 @@
 // Source https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
 float GI_GetSpecularDominantFactor(float nv, float roughness)
 {
-    // @TODO investinage
-   float linearRoughness = sqrt(roughness);
-   return (1.0f - linearRoughness) * (sqrt(1.0f - linearRoughness) + linearRoughness);
-   // const float a = 0.298475f * log(39.4115f - 39.0029f * linearRoughness);
-   // return saturate(pow( 1.0 - nv, 10.8649f)) * (1.0f - a ) + a;
+   float alpha = pow2(roughness);
+   return (1.0f - alpha) * (sqrt(1.0f - alpha) + alpha);
 }
 
 float3 GI_GetSpecularDominantDirection(const float3 N, const float3 V, float roughness)
@@ -19,18 +16,18 @@ float3 GI_GetSpecularDominantDirection(const float3 N, const float3 V, float rou
     return normalize(lerp(N, reflect(-V, N), factor));
 }
 
-float2x3 GI_GetSpecularDominantBasis(const float3 N, const float3 V, const float R, const float radius, inout float3 P)
+float2x3 GI_GetSpecularDominantBasis(const float3 normal, const float3 viewdir, const float roughness, const float radius, inout float3 dominantDir)
 {
-    P = GI_GetSpecularDominantDirection(N, V, R);
-    const float3 l = reflect(-P, N);
-    const float3 t = normalize(cross(N,l));
+    dominantDir = GI_GetSpecularDominantDirection(normal, viewdir, roughness);
+    const float3 l = reflect(-dominantDir, normal);
+    const float3 t = normalize(cross(normal,l));
     const float3 b = cross(l,t);
     return float2x3(t * radius, b * radius);
 }
 
 //Source: https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf 
 //return PK_HALF_PI * R / (1.0f + R);
-float GI_GetSpecularLobeHalfAngle(const float R, const float volumeFactor) { return atan(R * volumeFactor / ( 1.0 - volumeFactor)); }
+float GI_GetSpecularLobeHalfAngle(const float roughness, const float volumeFactor) { return atan(roughness * volumeFactor / ( 1.0 - volumeFactor)); }
 
 float GI_GetParallax(float3 viewdir_cur, float3 viewdir_pre)
 {

@@ -90,6 +90,25 @@ float Fsal_GGXFactor(float LoH, float alpha, float sina)
     return a2 / (a2 + a2s);
 }
 
+float Pdf_GGXVNDF(const float3 Ve, const float3 Ne, const float alpha)
+{
+    const float NoV = Ve.z;
+    const float NoH = Ne.z;
+    const float VoH = dot(Ve, Ne);
+    const float a2 = pow2(alpha);
+    const float3 Hs = float3(alpha * Ne.xy, a2 * NoH);
+    const float S = dot(Hs, Hs);
+    const float D = PK_INV_PI * a2 * pow2(a2 / S);
+    const float LenV = length(float3(alpha * Ve.xy, NoV));
+
+    //Source: "Sampling Visible GGX Normals with Spherical Caps", Jonathan Dupuy & Anis Benyoub - High Performance Graphics 2023
+    const float s = 1.0f + length(Ve.xy);
+    const float s2 = s * s;
+    const float k = (s2 - a2 * s2) / (s2 + a2 * pow2(Ve.z)); 
+
+    return (2.0f * D * VoH) / (k * NoV + LenV);
+}
+
 //Source: Ray Tracing Gems, Chapter 16 "Sampling Transformations Zoo"
 float3 Fd_Inverse_Lambert(const float2 Xi, const float3 normal)
 {
@@ -103,31 +122,33 @@ float3 Fd_Inverse_Lambert(const float2 Xi, const float3 normal)
 }
 
 //Source: "Sampling the GGX Distribution of Visible Normals", Heitz
-float3 Fr_Inverse_GGXVNDF(float2 Xi, const float3 normal, const float3 viewdir, const float roughness)
+float3 Fr_Inverse_GGXVNDF(const float2 Xi, const float3 Ve, const float alpha)
+{
+    const float3 Vh = normalize(float3(alpha * Ve.xy, Ve.z));
+
+    //Source: "Sampling Visible GGX Normals with Spherical Caps", Jonathan Dupuy & Anis Benyoub - High Performance Graphics 2023
+    const float Phi = PK_TWO_PI * Xi.x;
+    const float s = 1.0f + length(Ve.xy);
+    const float a2 = pow2(alpha);
+    const float s2 = pow2(s);
+    const float k = (s2 - a2 * s2) / (s2 + a2 * pow2(Ve.z));
+
+    const float t2 = lerp(1.0f, -k * Vh.z, Xi.y);
+    const float r = sqrt(saturate(1.0f - pow2(t2)));
+    const float t0 = r * cos(Phi);
+    const float t1 = r * sin(Phi);
+    const float3 H = float3(t0, t1, t2) + Vh;
+    return normalize(float3(alpha * H.xy, max(0.0f, H.z)));
+}
+
+float3 Fr_Inverse_GGXVNDF_Full(float2 Xi, const float3 normal, const float3 viewdir, const float roughness)
 {
     // prevent grazing angles 
     Xi *= 0.98f;
-    
     const float alpha = pow2(roughness);
     const float3x3 basis = make_TBN(normal);
-
-    const float3 Ve = transpose(basis) * -viewdir;
-    const float3 Vh = normalize(float3(alpha * Ve.x, alpha * Ve.y, Ve.z));
-
-    const float lensq = pow2(Vh.x) + pow2(Vh.y);
-    const float3 T1 = lensq > 0.0f ? float3(-Vh.y, Vh.x, 0) * inversesqrt(lensq) : float3(1,0,0);
-    const float3 T2 = cross(Vh, T1);
-
-    float r = sqrt(Xi.x);    
-    float phi = PK_TWO_PI * Xi.y;    
-    float t1 = r * cos(phi);
-    float t2 = r * sin(phi);
-    float s = 0.5f * (1.0f + Vh.z);
-    t2 = (1.0f - s) * sqrt(1.0f - pow2(t1)) + s * t2;
-
-    const float3 Nh = t1 * T1 + t2 * T2 + sqrt(max(0.0f, 1.0f - pow2(t1) - pow2(t2))) * Vh;
-    const float3 Ne = normalize(float3(alpha * Nh.x, alpha * Nh.y, max(0.0f, Nh.z)));
-
+    const float3 Ve = -viewdir * basis;
+    const float3 Ne = Fr_Inverse_GGXVNDF(Xi, Ve, alpha);
     return basis * reflect(-Ve, Ne);
 }
 

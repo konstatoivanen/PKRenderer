@@ -80,7 +80,7 @@ float3 viewdir = normalize(origin - pk_ViewWorldOrigin.xyz);                    
 origin = GI_ApplyNormalOffset(origin, NORMAL, viewdir);                         \
 const float2 Xi = GI_GetRayXi(RAYCOORD);                                        \
 float3 directionDiff = Fd_Inverse_Lambert(Xi, NORMAL);                          \
-float3 directionSpec = Fr_Inverse_GGXVNDF(Xi.yx, NORMAL, viewdir, ROUGHNESS);   \
+float3 directionSpec = Fr_Inverse_GGXVNDF_Full(Xi.yx, NORMAL, viewdir, ROUGHNESS);   \
 
 
 GIRayHits GI_Load_RayHits(const int2 coord)
