@@ -97,7 +97,7 @@ bool ReSTIR_NearFieldReject(const float depth, const float3 origin, const Reserv
 float ReSTIR_GetTargetPdf(const Reservoir r) { return dot(PK_LUMA_BT709, r.radiance); }
 float ReSTIR_GetSampleWeight(const Reservoir r, const float3 n, const float3 d) 
 { 
-    return safePositiveRcp(r.targetPdf) * (r.weightSum / max(1, r.M)) * dot(n, d) * PK_INV_PI; 
+    return safePositiveRcp(r.targetPdf) * (r.weightSum / max(1, r.M)); 
 }
 
 float ReSTIR_GetJacobian(const float3 posCenter, const float3 posSample, const Reservoir r)
@@ -106,7 +106,7 @@ float ReSTIR_GetJacobian(const float3 posCenter, const float3 posSample, const R
     const float4 samplevec = normalizeLength(posSample - r.position);
     const float cosCenter = saturate(dot(r.normal, centervec.xyz));
     const float cosSample = saturate(dot(r.normal, samplevec.xyz));
-    const float jacobian = (cosCenter * pow2(centervec.w)) / (cosSample * pow2(samplevec.w));
+    const float jacobian = (cosCenter * pow2(samplevec.w)) / (cosSample * pow2(centervec.w));
     return lerp(jacobian, 0.0f, isinf(jacobian) || isnan(jacobian));
 }
 
@@ -115,6 +115,8 @@ float ReSTIR_GetTargetPdfNewSurf(const float3 posCenter, const float3 normalCent
     const float3 directionSample = normalize(r.position - posCenter);
     return ReSTIR_GetTargetPdf(r) *
            ReSTIR_GetJacobian(posCenter, posSample, r) *
+           // @TODO Why was this here again. seems diffuse specific. 
+           // Significantly reduces noise but introduces some bias. hmm.
            PK_PI * max(0.0f, dot(normalCenter, directionSample));
 }
 
@@ -198,12 +200,10 @@ Reservoir ReSTIR_Load_Previous(const int2 coord)
     return r;
 }
 
-uint4 ReSTIR_Pack_Hit(const float3 direction, const float hitDist, const float3 normal, const uint hitNormal, const float3 radiance)
+uint4 ReSTIR_Pack_Hit(const float3 direction, const float hitDist, const float inversePdf, const uint hitNormal, const float3 radiance)
 {
-    // assuming lambertian distribution
-    const float invPdf = PK_PI * safePositiveRcp(dot(normal, direction));
     uint4 packed;
-    packed.xy = packHalf4x16(float4(direction.xyz * hitDist, invPdf));
+    packed.xy = packHalf4x16(float4(direction.xyz * hitDist, inversePdf));
     packed.z = hitNormal;
     packed.w = EncodeE5BGR9(radiance);
     return packed;

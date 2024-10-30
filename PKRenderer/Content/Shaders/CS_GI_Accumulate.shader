@@ -181,7 +181,8 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
     // However, this is expensive. Currently reservoirs are validated in async during present (which is virtually free).
     const bool reject = ReSTIR_NearFieldReject(depth, origin, initial, ReSTIR_Hash(seed + 1));
     const float3 combinedDirection = normalize(combined.position - origin);
-    const float weight = ReSTIR_GetSampleWeight(combined, normal, combinedDirection);
+    const float diffuseWeight = dot(normal, combinedDirection) * PK_INV_PI;
+    const float weight = ReSTIR_GetSampleWeight(combined, normal, combinedDirection) * diffuseWeight;
     const bool isValid = !isnan(weight) && !isinf(weight) && weight > 0.0f && !reject;
 
     ReSTIR_Store_Current(baseCoord, isValid && !isBoiling ? combined : initial);

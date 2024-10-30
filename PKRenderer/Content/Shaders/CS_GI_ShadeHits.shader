@@ -53,6 +53,8 @@ void main()
         const float3 hitpos = origin + directionDiff * lerp(hits.diff.dist, PK_GI_RAY_TMAX, hits.diff.isMiss);
         const float3 unbiasedOrigin = CoordToWorldPos(coord, depth);
         const float4 unbiasedHitVec = normalizeLength(hitpos - unbiasedOrigin);
+        // assuming lambertian distribution
+        const float inversePdf = PK_PI * safePositiveRcp(dot(normalRoughness.xyz, unbiasedHitVec.xyz));
 
         // Always use reservoir packing for diff hits.
         // They can be used for neighbour reconstruction outside of ReSTIR
@@ -60,7 +62,7 @@ void main()
         (
             unbiasedHitVec.xyz,
             unbiasedHitVec.w,
-            normalRoughness.xyz,
+            inversePdf,
             hits.diffNormal,
             SampleRadiance(origin, directionDiff, hits.diff)
         );
