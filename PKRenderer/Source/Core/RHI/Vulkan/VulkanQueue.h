@@ -67,6 +67,10 @@ namespace PK
             RHICommandBuffer* Submit(QueueType type) final;
             void Wait(QueueType to, QueueType from, int32_t submitOffset = 0) final;
             inline FenceRef GetFenceRef(QueueType type, int32_t submitOffset = 0) final { return GetQueue(type)->GetFenceRef(submitOffset); }
+            // @TODO THIS IS A DIRTY HACKY FIX THAT NEEDS IMMEDIATE ATTENTION!
+            // Currently resources have been releasing based on last graphics submits.
+            // This is very random and unsafe. This hacky thing mitigates things for now."
+            inline FenceRef GetResourceReleaseFenceRef() final { return GetFenceRef(QueueType::Graphics, 8); }
             void Prune();
 
         private:

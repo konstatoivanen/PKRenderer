@@ -178,6 +178,7 @@ namespace PK
         virtual ~RHIQueueSet() = 0;
         virtual RHICommandBuffer* GetCommandBuffer(QueueType type) = 0;
         virtual FenceRef GetFenceRef(QueueType type, int32_t submitOffset = 0) = 0;
+        virtual FenceRef GetResourceReleaseFenceRef() = 0;
         virtual RHICommandBuffer* Submit(QueueType type) = 0;
         virtual void Wait(QueueType to, QueueType from, int32_t submitOffset = 0) = 0;
         

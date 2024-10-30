@@ -15,7 +15,7 @@ namespace PK
 
     VulkanTexture::~VulkanTexture()
     {
-        auto fence = m_driver->GetQueues()->GetFenceRef(QueueType::Graphics);
+        auto fence = m_driver->GetQueues()->GetResourceReleaseFenceRef();
 
         for (auto view : m_firstView)
         {
