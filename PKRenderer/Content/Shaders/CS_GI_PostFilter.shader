@@ -10,18 +10,6 @@
 #include "includes/SceneGIFiltering.glsl"
 #include "includes/ComputeQuadSwap.glsl"
 
-#define SUBGROUP_ANTIFIREFLY_MAXLUMA(condition, current, history, alpha, lumaMax)               \
-{                                                                                               \
-    const uint4 threadMask = subgroupBallot(condition);                                         \
-    const uint threadCount = max(1u, subgroupBallotBitCount(threadMask)) - 1u;                  \
-                                                                                                \
-    const float2 moments = make_moments(GI_Luminance(current));                                 \
-    const float2 momentsWave = (subgroupAdd(moments) - moments) / threadCount;                  \
-                                                                                                \
-    const float variance = pow(abs(momentsWave.y - pow2(momentsWave.x)), 0.25f);                \
-    lumaMax = lerp(GI_Luminance(history), momentsWave.x, alpha) + variance;                     \
-}                                                                                               \
-
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
@@ -62,7 +50,7 @@ void main()
         const float alpha = GI_Alpha(diff);
 
         float lumaMax;
-        SUBGROUP_ANTIFIREFLY_MAXLUMA(isScene, diff, history, alpha, lumaMax)
+        GI_SUBGROUP_ANTIFIREFLY_MAXLUMA(isScene, diff, history, alpha, 1.0f, lumaMax)
 
         history = GI_ClampLuma(history, lumaMax);
         history.history += 1.0f;

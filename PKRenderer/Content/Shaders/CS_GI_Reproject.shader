@@ -81,6 +81,7 @@ void main()
                     w_diff = lerp(0.0f, w_diff, !Test_NaN_EPS6(w_diff));
                     w_spec = lerp(0.0f, w_spec, !Test_NaN_EPS6(w_spec));
 
+                    // Using spec weight to save registers.
                     diff = GI_Sum(diff, GI_Load_Diff(xy), w_spec);
                     wSumDiff += w_spec;
 

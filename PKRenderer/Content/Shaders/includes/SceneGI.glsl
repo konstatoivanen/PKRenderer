@@ -90,6 +90,22 @@ GIDiff GI_ClampLuma(GIDiff a, float maxLuma) { return GIDiff(SH_Scale(a.sh, GI_L
 GISpec GI_ClampLuma(GISpec a, float maxLuma) { return GISpec(a.radiance * GI_LumaScale(GI_Luminance(a), maxLuma), a.ao, a.history); }
 float GI_RoughSpecWeight(float roughness) { return smoothstep(PK_GI_MIN_ROUGH_SPEC, PK_GI_MAX_ROUGH_SPEC, roughness); }
 
+// A novel anti-firefly filter using subgroup intrisics.
+// This is a lot cheaper than the classic 3x3 filter but a bit less effective due to larger sample area.
+// @TODO this is not the best placement for this but its common across usages.
+#define GI_SUBGROUP_ANTIFIREFLY_MAXLUMA(condition, current, history, alpha, scale, outLumaMax)  \
+{                                                                                               \
+    const uint4 threadMask = subgroupBallot(condition);                                         \
+    const uint threadCount = max(1u, subgroupBallotBitCount(threadMask)) - 1u;                  \
+                                                                                                \
+    const float2 moments = make_moments(GI_Luminance(current));                                 \
+    const float2 momentsWave = (subgroupAdd(moments) - moments) / threadCount;                  \
+                                                                                                \
+    const float variance = pow(abs(momentsWave.y - pow2(momentsWave.x)), 0.25f);                \
+    outLumaMax = lerp(GI_Luminance(history), momentsWave.x, alpha) + variance * scale;          \
+}                                                                                               \
+                                                                                                \
+
 int2 GI_ExpandCheckerboardCoord(uint2 coord, uint offset)
 {
 #if defined(PK_GI_CHECKERBOARD_TRACE)

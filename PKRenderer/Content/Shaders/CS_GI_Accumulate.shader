@@ -17,22 +17,6 @@
 shared float s_weights[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
 shared uint s_count[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
 
-// A novel anti-firefly filter using subgroup intrisics.
-// This is a lot cheaper than the classics 3x3 filter but a bit less effective due to larger sample area.
-#define SUBGROUP_ANTIFIREFLY_FILTER(condition, current, history, alpha, scale)                  \
-{                                                                                               \
-    const uint4 threadMask = subgroupBallot(condition);                                         \
-    const uint threadCount = max(1u, subgroupBallotBitCount(threadMask)) - 1u;                  \
-                                                                                                \
-    const float2 moments = make_moments(GI_Luminance(current));                                 \
-    const float2 momentsWave = (subgroupAdd(moments) - moments) / threadCount;                  \
-                                                                                                \
-    const float variance = pow(abs(momentsWave.y - pow2(momentsWave.x)), 0.25f);                \
-    const float lumaMax = lerp(GI_Luminance(history), momentsWave.x, alpha) + variance * scale; \
-                                                                                                \
-    current = GI_ClampLuma(current, lumaMax);                                                   \
-}                                                                                               \
-
 #define ReSTIR_Load_HitAsReservoir(coord, origin) ReSTIR_Unpack_Hit(GI_Load_Packed_Diff(coord), origin)
 
 SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const float depth, const float3 viewnormal, const float3 origin, const Reservoir initial)
@@ -219,7 +203,9 @@ void main()
         GIDiff history = GI_Load_Diff(baseCoord, PK_GI_STORE_LVL);
         const float alpha = GI_Alpha(history);
 
-        SUBGROUP_ANTIFIREFLY_FILTER(isScene, current, history, alpha, 1.0f)
+        float lumaMax;
+        GI_SUBGROUP_ANTIFIREFLY_MAXLUMA(isScene, current, history, alpha, 1.0f, lumaMax)
+        current = GI_ClampLuma(current, lumaMax);
 
         history = GI_Interpolate(history, current, GI_Alpha(history));
         GI_Store_Packed_Diff(baseCoord, isScene ? GI_Pack_Diff(history) : uint4(0));
@@ -238,7 +224,9 @@ void main()
             GISpec current = GI_Load_Spec(baseCoord);
             const float alpha = GI_Alpha(history);
 
-            SUBGROUP_ANTIFIREFLY_FILTER(isScene, current, history, alpha, (1.0f / (1e-4f + normalroughness.w)))
+            float lumaMax;
+            GI_SUBGROUP_ANTIFIREFLY_MAXLUMA(isScene, current, history, alpha, (1.0f / (1e-4f + normalroughness.w)), lumaMax)
+            current = GI_ClampLuma(current, lumaMax);
 
             history = GI_Interpolate(history, current, alpha);
             GI_Store_Packed_Spec(baseCoord, isScene ? GI_Pack_Spec(history) : uint2(0));
