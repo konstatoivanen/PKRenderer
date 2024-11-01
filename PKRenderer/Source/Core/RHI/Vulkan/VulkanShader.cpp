@@ -106,7 +106,7 @@ namespace PK
     VulkanShader::~VulkanShader()
     {
         auto driver = RHIDriver::Get()->GetNative<VulkanDriver>();
-        auto fence = driver->GetQueues()->GetResourceReleaseFenceRef();
+        auto fence = driver->GetQueues()->GetLastSubmitFenceRef();
 
         for (auto& module : m_modules)
         {

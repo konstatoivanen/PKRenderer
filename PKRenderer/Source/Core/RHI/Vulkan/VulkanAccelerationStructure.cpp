@@ -20,7 +20,7 @@ namespace PK
 
     VulkanAccelerationStructure::~VulkanAccelerationStructure()
     {
-        auto fence = m_driver->GetQueues()->GetResourceReleaseFenceRef();
+        auto fence = m_driver->GetQueues()->GetLastSubmitFenceRef();
 
         if (m_queryPool != nullptr)
         {

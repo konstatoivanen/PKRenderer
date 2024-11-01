@@ -378,6 +378,7 @@ namespace PK
     {
         auto queue = GetQueue(type);
         auto result = queue->Submit(GetQueue(type)->commandPool->EndCurrent(), outSignal);
+        m_lastSubmitFence = queue->GetFenceRef();
 
         // Sync resource access states to other queues.
         // Not using a single barrier handler for all queues so that queues can be cross recorded.

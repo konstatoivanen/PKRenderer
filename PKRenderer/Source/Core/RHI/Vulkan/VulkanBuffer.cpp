@@ -39,7 +39,7 @@ namespace PK
 
     VulkanBuffer::~VulkanBuffer()
     {
-        auto fence = m_driver->GetQueues()->GetResourceReleaseFenceRef();
+        auto fence = m_driver->GetQueues()->GetLastSubmitFenceRef();
 
         for (auto view : m_firstView)
         {
