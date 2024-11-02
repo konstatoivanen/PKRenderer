@@ -130,34 +130,6 @@ int2 GI_CollapseCheckerboardCoord(const float2 screenUV, const uint offset)
 
 int2 GI_ExpandCheckerboardCoord(uint2 coord) { return GI_ExpandCheckerboardCoord(coord, 0u); }
 
-GISpec GI_ShadeRoughSpecular(const float3 normal, const float3 viewdir, const float roughness, const GIDiff diff)
-{
-    float directionality;
-    float3 direction = SH_ToPrimeDir(diff.sh, directionality);
-    
-    direction = WorldToViewVec(direction);
-    directionality = saturate(directionality * 0.666f);
-
-    // Remap roughness if lighting is uniform over hemisphere
-    const float newRoughness = lerp(1.0f, roughness, directionality);
-    const float3 specular = SH_ToColor(diff.sh) * EvaluateBxDF_Specular(normal, -viewdir, newRoughness, direction);
-
-    return GISpec(specular, diff.ao, diff.history);
-}
-
-float3 GI_ShadeRoughSpecularDetails(BxDFSurf surf, const GIDiff diff)
-{
-    float directionality;
-    float3 direction = SH_ToPrimeDir(diff.sh, directionality);
-    
-    directionality = saturate(directionality * 0.666f);
-
-    // Remap clearcoat if lighting is uniform over hemisphere
-    surf.clearCoatGloss *= directionality;
-
-    return EvaluateBxDF_SpecularExtra(surf, direction, SH_ToColor(diff.sh));
-}
-
 //----------PACK / UNPACK FUNCTIONS----------//
 uint4 GI_Pack_Diff(const GIDiff u) { return uint4(packHalf4x16(u.sh.Y), packHalf4x16(float4(u.sh.CoCg, u.ao, u.history))); }
 uint2 GI_Pack_Spec(const GISpec u) { return uint2(EncodeE5BGR9(u.radiance), packHalf2x16(float2(u.ao, u.history))); }
@@ -208,11 +180,40 @@ void GI_Store_Resolved_Spec(const int2 coord, const GISpec spec)
     imageStore(pk_GI_ResolvedWrite, int3(coord, 1), EncodeE5BGR9(radiance).xxxx);
 }
 
-float3 GI_ShadeRoughSpecularDetails(const BxDFSurf surf, const float2 uv)
+//----------SHADING FUNCTIONS----------//
+GISpec GI_ShadeApproximateSHSpecular(const float3 normal, const float3 viewdir, const float roughness, const GIDiff diff)
+{
+    float directionality;
+    float3 direction = SH_ToPrimeDir(diff.sh, directionality);
+    
+    direction = WorldToViewVec(direction);
+    directionality = saturate(directionality * 0.666f);
+
+    // Remap roughness if lighting is uniform over hemisphere
+    const float newRoughness = lerp(1.0f, roughness, directionality);
+    const float3 specular = SH_ToColor(diff.sh) * EvaluateBxDF_IndirectSpecularDV(normal, -viewdir, newRoughness, direction);
+
+    return GISpec(specular, diff.ao, diff.history);
+}
+
+float3 GI_ShadeApproximateSHTopLayerSpecular(BxDFSurf surf, const GIDiff diff)
+{
+    float directionality;
+    float3 direction = SH_ToPrimeDir(diff.sh, directionality);
+    
+    directionality = saturate(directionality * 0.666f);
+
+    // Remap clearcoat if lighting is uniform over hemisphere
+    surf.clearCoatGloss *= directionality;
+
+    return EvaluateBxDF_IndirectTopLayer(surf, direction, SH_ToColor(diff.sh));
+}
+
+float3 GI_ShadeApproximateSHTopLayerSpecular(const BxDFSurf surf, const float2 uv)
 {
     #if PK_GI_APPROX_ROUGH_SPEC_EXTRA == 1
     const GIDiff diff = GI_Load_Diff(int2(uv * pk_ScreenSize.xy), 1);
-    return GI_ShadeRoughSpecularDetails(surf, diff);
+    return GI_ShadeApproximateSHTopLayerSpecular(surf, diff);
     #else
     return 0.0f.xxx;
     #endif

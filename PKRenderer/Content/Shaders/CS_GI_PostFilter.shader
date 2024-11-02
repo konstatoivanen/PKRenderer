@@ -61,7 +61,7 @@ void main()
         GI_Store_Resolved_Diff(coord, ViewToWorldVec(normal), diff);
 
 #if PK_GI_APPROX_ROUGH_SPEC == 1
-        ra_spec = GI_ShadeRoughSpecular(normal, viewdir, roughness, diff);
+        ra_spec = GI_ShadeApproximateSHSpecular(normal, viewdir, roughness, diff);
 #endif
     }
 
@@ -176,7 +176,7 @@ void main()
 #if PK_GI_APPROX_ROUGH_SPEC == 1
             {
                 const float3 viewdir = normalize(CoordToViewPos(ncoord, n_depth));
-                ra_spec = GI_ShadeRoughSpecular(n_normal, viewdir, n_roughness, n_diff);
+                ra_spec = GI_ShadeApproximateSHSpecular(n_normal, viewdir, n_roughness, n_diff);
                 n_spec = GI_Interpolate(n_spec, ra_spec, GI_RoughSpecWeight(n_roughness));
             }
 #endif

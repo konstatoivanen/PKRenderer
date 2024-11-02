@@ -272,7 +272,7 @@ struct SurfaceData
         color += EvaluateBxDF_Indirect(surf, diffuse, specular);
     
         // Optional approximate specular details from diffuse sh
-        color += GI_ShadeRoughSpecularDetails(surf, clipuvw.xy);
+        color += GI_ShadeApproximateSHTopLayerSpecular(surf, clipuvw.xy);
     
         return color;
     }

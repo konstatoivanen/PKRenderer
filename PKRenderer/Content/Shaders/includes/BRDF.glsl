@@ -207,7 +207,7 @@ float D_GGX(float NoH, float alpha)
 // - Not multiplied by NdotL as gi data is already calculated with NdotL distribution.
 // - Fresnel not present as that is applied by sampling.
 // - multiplied by pi inorder to compensate for lacking energy due to NdotL distribution
-float EvaluateBxDF_Specular(const float3 normal, const float3 viewdir, const float roughness, const float3 direction)
+float EvaluateBxDF_IndirectSpecularDV(const float3 normal, const float3 viewdir, const float roughness, const float3 direction)
 {
     const float nv = max(0.0f, dot(viewdir, normal));
     const float nl = max(0.0f, dot(normal, direction));
@@ -218,7 +218,6 @@ float EvaluateBxDF_Specular(const float3 normal, const float3 viewdir, const flo
     const float alpha = pow2(roughness);
     const float V = V_SmithGGXCorrelated(nl, nv, alpha);
     const float D = D_GGX(nh, alpha);
-    // Initial diff gi samples might have zero vectors. clip them
     return max(0.0f, D * V) * step(1e-4f, nl) * PK_PI;
 }
 
@@ -227,7 +226,7 @@ float EvaluateBxDF_Specular(const float3 normal, const float3 viewdir, const flo
 // - Not multiplied by NdotL as gi data is already calculated with NdotL distribution.
 // - Fresnel not present as that is applied by sampling.
 // - multiplied by pi inorder to compensate for lacking energy due to NdotL distribution
-float3 EvaluateBxDF_SpecularExtra(const BxDFSurf surf, const float3 direction, const float3 radiance)
+float3 EvaluateBxDF_IndirectTopLayer(const BxDFSurf surf, const float3 direction, const float3 radiance)
 {
     const float nl = max(0.0f, dot(surf.normal, direction));
     const float vl = dot(surf.viewdir, direction);
