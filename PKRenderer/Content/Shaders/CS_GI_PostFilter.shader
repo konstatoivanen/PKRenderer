@@ -29,7 +29,6 @@ void main()
 
     GIDiff diff = GI_Load_Diff(baseCoord);
     GISpec spec = GI_Load_Spec(baseCoord);
-    GISpec ra_spec = PK_GI_SPEC_ZERO;
 
     // Filter Diff
     {
@@ -54,51 +53,36 @@ void main()
 
         history = GI_ClampLuma(history, lumaMax);
         history.history += 1.0f;
-
         diff.ao = lerp(history.ao, 0.5f + diff.ao * 0.5f, alpha);
-
         GI_Store_Diff(coord, history);
-        GI_Store_Resolved_Diff(coord, ViewToWorldVec(normal), diff);
-
-#if PK_GI_APPROX_ROUGH_SPEC == 1
-        ra_spec = GI_ShadeApproximateSHSpecular(normal, viewdir, roughness, diff);
-#endif
     }
 
-    // Filter Spec
+        // Filter Spec
+#if PK_GI_APPROX_ROUGH_SPEC == 1
+    [[branch]]
+    if (roughness < PK_GI_MAX_ROUGH_SPEC)
+#endif
     {
-#if PK_GI_APPROX_ROUGH_SPEC == 1
-        [[branch]]
-        if (roughness < PK_GI_MAX_ROUGH_SPEC)
-#endif
-        {
-            GISpec history = spec;
+        GISpec history = spec;
 
-            /*
-            // @TODO Calculate different radius for this as diffuse variance is hardly usable & roughness is more of a relevant factor.
-            const float2 radiusAndScale = GI_GetDiskFilterRadiusAndScale(depth, 0.0f, spec.ao, spec.history);
-            const float scale = radiusAndScale.y * sqrt(roughness);
-            const float radius = radiusAndScale.x * (scale + 1e-4f);
-            const bool skip = scale < 0.05f;
-            const uint step = lerp(uint(max(8.0f - sqrt(scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip);
-            GI_SF_DISK_SPEC(normal, depth, roughness, viewdir, viewpos, spec.history, step, skip, radius, spec)
-            */
+        /*
+        // @TODO Calculate different radius for this as diffuse variance is hardly usable & roughness is more of a relevant factor.
+        const float2 radiusAndScale = GI_GetDiskFilterRadiusAndScale(depth, 0.0f, spec.ao, spec.history);
+        const float scale = radiusAndScale.y * sqrt(roughness);
+        const float radius = radiusAndScale.x * (scale + 1e-4f);
+        const bool skip = scale < 0.05f;
+        const uint step = lerp(uint(max(8.0f - sqrt(scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip);
+        GI_SF_DISK_SPEC(normal, depth, roughness, viewdir, viewpos, spec.history, step, skip, radius, spec)
+        */
 
-            const float alpha = pow2(GI_Alpha(history));
-            history = GI_ClampLuma(history, GI_MaxLuma(spec, alpha));
-            history.history += 1.0f;
-
-            spec.ao = lerp(history.ao, 0.5f + spec.ao * 0.5f, alpha);
-
-            GI_Store_Spec(coord, history);
-        }
-
-#if PK_GI_APPROX_ROUGH_SPEC == 1
-        spec = GI_Interpolate(spec, ra_spec, GI_RoughSpecWeight(roughness));
-#endif
-
-        GI_Store_Resolved_Spec(coord, spec);
+        const float alpha = pow2(GI_Alpha(history));
+        history = GI_ClampLuma(history, GI_MaxLuma(spec, alpha));
+        history.history += 1.0f;
+        spec.ao = lerp(history.ao, 0.5f + spec.ao * 0.5f, alpha);
+        GI_Store_Spec(coord, history);
     }
+
+    GI_Store_Resolved(coord, diff, spec);
 
 #if defined(PK_GI_CHECKERBOARD_TRACE)
     {
@@ -130,7 +114,7 @@ void main()
             normal = subgroupShuffle(normal, swapId);
             roughness = subgroupShuffle(roughness, swapId);
             diff.sh.Y = subgroupShuffle(diff.sh.Y, swapId);
-            diff.sh.CoCg = subgroupShuffle(diff.sh.CoCg, swapId);
+            diff.sh.A = subgroupShuffle(diff.sh.A, swapId);
             diff.ao = subgroupShuffle(diff.ao, swapId);
             spec.radiance = subgroupShuffle(spec.radiance, swapId);
             spec.ao = subgroupShuffle(spec.ao, swapId);
@@ -155,34 +139,23 @@ void main()
             n_diff = GI_Mul_NoHistory(n_diff, Test_NaN_EPS6(wSumDiff) ? 0.0f : 1.0f / wSumDiff);
             n_diff = GI_Interpolate(nh_diff, n_diff, alpha);
             GI_Store_Diff(ncoord, GI_Interpolate(nh_diff, n_diff, alpha));
-            GI_Store_Resolved_Diff(ncoord, ViewToWorldVec(n_normal), n_diff);
         }
 
         // Store spec
+#if PK_GI_APPROX_ROUGH_SPEC == 1
+        [[branch]]
+        if (n_roughness < PK_GI_MAX_ROUGH_SPEC)
+#endif
         {
-#if PK_GI_APPROX_ROUGH_SPEC == 1
-            [[branch]]
-            if (n_roughness < PK_GI_MAX_ROUGH_SPEC)
-#endif
-            {
-                GISpec nh_spec = GI_Load_Spec(hcoord);
+            GISpec nh_spec = GI_Load_Spec(hcoord);
 
-                const float alpha = GI_Alpha(nh_spec) * saturate(10.0f * wSumSpec);
-                n_spec = GI_Mul_NoHistory(n_spec, Test_NaN_EPS6(wSumSpec) ? 0.0f : 1.0f / wSumSpec);
-                n_spec = GI_Interpolate(nh_spec, n_spec, alpha);
-                GI_Store_Spec(ncoord, GI_Interpolate(nh_spec, n_spec, alpha));
-            }
-
-#if PK_GI_APPROX_ROUGH_SPEC == 1
-            {
-                const float3 viewdir = normalize(CoordToViewPos(ncoord, n_depth));
-                ra_spec = GI_ShadeApproximateSHSpecular(n_normal, viewdir, n_roughness, n_diff);
-                n_spec = GI_Interpolate(n_spec, ra_spec, GI_RoughSpecWeight(n_roughness));
-            }
-#endif
-
-            GI_Store_Resolved_Spec(ncoord, n_spec);
+            const float alpha = GI_Alpha(nh_spec) * saturate(10.0f * wSumSpec);
+            n_spec = GI_Mul_NoHistory(n_spec, Test_NaN_EPS6(wSumSpec) ? 0.0f : 1.0f / wSumSpec);
+            n_spec = GI_Interpolate(nh_spec, n_spec, alpha);
+            GI_Store_Spec(ncoord, GI_Interpolate(nh_spec, n_spec, alpha));
         }
+
+        GI_Store_Resolved(ncoord, n_diff, n_spec);
     }
 #endif
 }

@@ -51,7 +51,8 @@ namespace PK::App
         DECLARE_HASH(pk_WorldToClip_NoJitter)
         DECLARE_HASH(pk_WorldToClipPrev)
         DECLARE_HASH(pk_WorldToClipPrev_NoJitter)
-        DECLARE_HASH(pk_ViewToClipDelta)
+        DECLARE_HASH(pk_ViewToPrevClip)
+        DECLARE_HASH(pk_ClipToPrevClip_NoJitter)
 
         DECLARE_HASH(pk_Sampler_SurfDefault)
         DECLARE_HASH(pk_Sampler_GBuffer)
@@ -59,6 +60,7 @@ namespace PK::App
 
         DECLARE_HASH(pk_SceneStructure)
 
+        DECLARE_HASH(pk_PreIntegratedDFG)
         DECLARE_HASH(pk_SceneEnv)
         DECLARE_HASH(pk_SceneEnv_SH)
         DECLARE_HASH(pk_SceneEnv_Exposure)

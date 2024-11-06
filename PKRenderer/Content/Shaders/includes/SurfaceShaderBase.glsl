@@ -39,7 +39,7 @@
     #define SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv, 4.0f)
     #define SURF_TEX_TRIPLANAR(t, n, uvw) SampleTexTriplanar(t,n,uvw,4.0f)
     #define SURF_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNDCSpace(position)
-    #define SURF_EVALUATE_BxDF EvaluateBxDF_DirectMinimal
+    #define SURF_EVALUATE_BxDF BxDF_DirectMinimal
     #define SURF_EVALUATE_BxDF_INDIRECT GetIndirectLight_VXGI
     #define SURF_FS_ASSIGN_WORLDPOSITION vs_WORLDPOSITION = GI_FragVoxelToWorldSpace(gl_FragCoord.xyz);
 #else
@@ -53,7 +53,7 @@
     #define SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv)
     #define SURF_TEX_TRIPLANAR(t, n, uvw) SampleTexTriplanar(t,n,uvw,0.0f)
     #define SURF_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
-    #define SURF_EVALUATE_BxDF EvaluateBxDF_Direct
+    #define SURF_EVALUATE_BxDF BxDF_Direct
     #define SURF_EVALUATE_BxDF_INDIRECT GetIndirectLight_Main
     #define SURF_FS_ASSIGN_WORLDPOSITION vs_WORLDPOSITION = UVToWorldPos(gl_FragCoord.xy * pk_ScreenParams.zw, ViewDepth(gl_FragCoord.z));
 #endif
@@ -264,17 +264,7 @@ struct SurfaceData
     {
         //float3 diffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
         //float3 specular = SampleEnvironment(OctaUV(reflect(-surf.viewdir, surf.normal)), surf.alpha);
-    
-        float3 diffuse = GI_Load_Resolved_Diff(clipuvw.xy);
-        float3 specular = GI_Load_Resolved_Spec(clipuvw.xy);
-    
-        float3 color = 0.0f.xxx;
-        color += EvaluateBxDF_Indirect(surf, diffuse, specular);
-    
-        // Optional approximate specular details from diffuse sh
-        color += GI_ShadeApproximateSHTopLayerSpecular(surf, clipuvw.xy);
-    
-        return color;
+        return GI_LoadAndShadeSurface(surf, clipuvw.xy);
     }
     
     float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const float3 clipuvw)
@@ -287,13 +277,13 @@ struct SurfaceData
         if (deltaDepth > -0.01f && deltaDepth < 0.1f)
         {
             // Sample screen space SH values for more accurate results.
-            return surf.albedo * GI_Load_Resolved_Diff(clipuvw.xy);
+            return surf.diffuse * SH_ToDiffuse(GI_Load_Resolved(clipuvw.xy).diffSH, surf.normal);
         }
         else
         {
             const float3 environmentDiffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
             const float4 tracedDiffuse = GI_ConeTrace_Diffuse(worldpos, surf.normal);
-            return surf.albedo * (environmentDiffuse * tracedDiffuse.a + tracedDiffuse.rgb);
+            return surf.diffuse * (environmentDiffuse * tracedDiffuse.a + tracedDiffuse.rgb);
         }
     }
 
@@ -325,7 +315,6 @@ struct SurfaceData
             float3 voxelPos = GI_QuantizeWorldToVoxelSpace(surf.worldpos);
             voxelPos = WorldToClipUVW(voxelPos);
 
-            // @TODO performance test. see if vx value test has better perf at output stage, as this introduces a read dependency.
             [[branch]]
             if (!Test_InUVW(voxelPos) || GI_Test_VX_HasValue(surf.worldpos))                 
             {
@@ -355,6 +344,8 @@ struct SurfaceData
             sv_output0 = EncodeGBufferWorldNR(surf.normal, surf.roughness, surf.metallic);
             sv_output1 = EncodeBiasedDepth(surf.clipuvw.z, dot(surf.viewdir, surf.normal), surf.depthBias);
         #else
+
+            // @TODO move these to utils in brdf.glsl
             const float3 F0 = lerp(PK_DIELECTRIC_SPEC.rgb, surf.albedo, surf.metallic);
             const float reflectivity = PK_DIELECTRIC_SPEC.r + surf.metallic * PK_DIELECTRIC_SPEC.a;
             surf.albedo *= 1.0f - reflectivity;

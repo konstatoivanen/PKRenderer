@@ -14,8 +14,9 @@
 
 layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedDiff;
 layout(rg32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedSpec;
-layout(r32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_ResolvedWrite;
-PK_DECLARE_SET_SHADER uniform texture2DArray pk_GI_ResolvedRead;
+layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_ResolvedWrite;
+layout(rg8, set = PK_SET_SHADER) uniform image2D pk_GI_ResolvedAOWrite;
+PK_DECLARE_SET_SHADER uniform utexture2D pk_GI_ResolvedRead;
 
 #define PK_GI_APPROX_ROUGH_SPEC 1
 // Should surface shading approximate sheen & clear coat from diffuse sh
@@ -63,9 +64,10 @@ PK_DECLARE_SET_SHADER uniform texture2DArray pk_GI_ResolvedRead;
 #endif
 
 //----------STRUCTS----------//
-struct GIDiff { SH sh; float ao; float history; };
+struct GIDiff { SHLuma sh; float ao; float history; };
 struct GISpec { float3 radiance; float ao; float history; };
-#define PK_GI_DIFF_ZERO GIDiff(pk_ZeroSH, 0.0f, 0.0f)
+struct GIResolved { SHLuma diffSH; float3 spec; float diffAO; float specAO; };
+#define PK_GI_DIFF_ZERO GIDiff(pk_ZeroSHLuma, 0.0f, 0.0f)
 #define PK_GI_SPEC_ZERO GISpec(0.0f.xxx, 0.0f, 0.0f)
 
 //----------UTILITIES----------//
@@ -131,14 +133,14 @@ int2 GI_CollapseCheckerboardCoord(const float2 screenUV, const uint offset)
 int2 GI_ExpandCheckerboardCoord(uint2 coord) { return GI_ExpandCheckerboardCoord(coord, 0u); }
 
 //----------PACK / UNPACK FUNCTIONS----------//
-uint4 GI_Pack_Diff(const GIDiff u) { return uint4(packHalf4x16(u.sh.Y), packHalf4x16(float4(u.sh.CoCg, u.ao, u.history))); }
+uint4 GI_Pack_Diff(const GIDiff u) { return uint4(packHalf4x16(float4(u.sh.Y, u.sh.A.x)), packHalf4x16(float4(u.sh.A.yz, u.ao, u.history))); }
 uint2 GI_Pack_Spec(const GISpec u) { return uint2(EncodeE5BGR9(u.radiance), packHalf2x16(float2(u.ao, u.history))); }
 
 GIDiff GI_Unpack_Diff(const uint4 p) 
 {
     const float4 v0 = unpackHalf4x16(p.xy);
     const float4 v1 = unpackHalf4x16(p.zw);
-    return GIDiff(SH(v0, v1.xy), v1.z, v1.w);
+    return GIDiff(SHLuma(v0.xyz, float3(v0.w, v1.xy)), v1.z, v1.w);
 }
 
 GISpec GI_Unpack_Spec(const uint2 p) 
@@ -165,56 +167,49 @@ void GI_Store_Spec(const int2 coord, const int l, const GISpec u) { GI_Store_Pac
 void GI_Store_Diff(const int2 coord, const GIDiff u) { GI_Store_Packed_Diff(coord, GI_Pack_Diff(u)); }
 void GI_Store_Spec(const int2 coord, const GISpec u) { GI_Store_Packed_Spec(coord, GI_Pack_Spec(u)); }
 
-float3 GI_Load_Resolved_Diff(const float2 uv) { return texelFetch(pk_GI_ResolvedRead, int3(uv * pk_ScreenSize.xy, 0), 0).xyz; }
-float3 GI_Load_Resolved_Spec(const float2 uv) { return texelFetch(pk_GI_ResolvedRead, int3(uv * pk_ScreenSize.xy, 1), 0).xyz; }
+GIResolved GI_Load_Resolved(const float2 uv) 
+{ 
+    const uint4 packed = texelFetch(pk_GI_ResolvedRead, int2(uv * pk_ScreenSize.xy), 0);
 
-void GI_Store_Resolved_Diff(const int2 coord, const float3 N, const GIDiff diff)
-{
-    const float3 radiance = SH_ToIrradiance(diff.sh, N) * pow(diff.ao, PK_GI_AO_DIFF_POWER);
-    imageStore(pk_GI_ResolvedWrite, int3(coord, 0), EncodeE5BGR9(radiance).xxxx);
+    GIResolved resolved;
+    resolved.diffSH.Y = unpackHalf4x16(packed.xy).xyz;
+    resolved.diffSH.A = DecodeE5BGR9(packed.z);
+    resolved.spec = DecodeE5BGR9(packed.w);
+    resolved.diffAO = uint(bitfieldExtract(packed.y, 16, 8)) / 255.0f;
+    resolved.specAO = uint(bitfieldExtract(packed.y, 24, 8)) / 255.0f;
+    return resolved;
 }
 
-void GI_Store_Resolved_Spec(const int2 coord, const GISpec spec)
+void GI_Store_Resolved(const int2 coord, const GIDiff diff, const GISpec spec)
 {
-    const float3 radiance = spec.radiance * pow(spec.ao, PK_GI_AO_SPEC_POWER);
-    imageStore(pk_GI_ResolvedWrite, int3(coord, 1), EncodeE5BGR9(radiance).xxxx);
+    const float finalDiffAO = pow(diff.ao, PK_GI_AO_DIFF_POWER);
+    const float finalSpecAO = pow(spec.ao, PK_GI_AO_SPEC_POWER);
+
+    uint4 packed;
+    packed.xy = packHalf4x16(diff.sh.Y.xyzz);
+    packed.y = bitfieldInsert(packed.y, uint(saturate(finalDiffAO) * 255.0f + 0.5f), 16, 8);
+    packed.y = bitfieldInsert(packed.y, uint(saturate(finalSpecAO) * 255.0f + 0.5f), 24, 8);
+    packed.z = EncodeE5BGR9(diff.sh.A);
+    packed.w = EncodeE5BGR9(spec.radiance);
+    imageStore(pk_GI_ResolvedWrite, coord, packed);
 }
 
 //----------SHADING FUNCTIONS----------//
-GISpec GI_ShadeApproximateSHSpecular(const float3 normal, const float3 viewdir, const float roughness, const GIDiff diff)
+float3 GI_LoadAndShadeSurface(BxDFSurf surf, const float2 uv)
 {
-    float directionality;
-    float3 direction = SH_ToPrimeDir(diff.sh, directionality);
+    GIResolved resolved = GI_Load_Resolved(uv); 
     
-    direction = WorldToViewVec(direction);
-    directionality = saturate(directionality * 0.666f);
+    const float3 peakDirection = SH_ToPeakDirection(resolved.diffSH);
+    const float3 peakColor = SH_ToColor(resolved.diffSH);
 
-    // Remap roughness if lighting is uniform over hemisphere
-    const float newRoughness = lerp(1.0f, roughness, directionality);
-    const float3 specular = SH_ToColor(diff.sh) * EvaluateBxDF_IndirectSpecularDV(normal, -viewdir, newRoughness, direction);
+    const float3 ld = SH_ToDiffuse(resolved.diffSH, surf.normal) * resolved.diffAO;
+    const float3 ls = resolved.spec * resolved.specAO;
 
-    return GISpec(specular, diff.ao, diff.history);
-}
-
-float3 GI_ShadeApproximateSHTopLayerSpecular(BxDFSurf surf, const GIDiff diff)
-{
-    float directionality;
-    float3 direction = SH_ToPrimeDir(diff.sh, directionality);
-    
-    directionality = saturate(directionality * 0.666f);
-
-    // Remap clearcoat if lighting is uniform over hemisphere
-    surf.clearCoatGloss *= directionality;
-
-    return EvaluateBxDF_IndirectTopLayer(surf, direction, SH_ToColor(diff.sh));
-}
-
-float3 GI_ShadeApproximateSHTopLayerSpecular(const BxDFSurf surf, const float2 uv)
-{
-    #if PK_GI_APPROX_ROUGH_SPEC_EXTRA == 1
-    const GIDiff diff = GI_Load_Diff(int2(uv * pk_ScreenSize.xy), 1);
-    return GI_ShadeApproximateSHTopLayerSpecular(surf, diff);
+    #if PK_GI_APPROX_ROUGH_SPEC == 1
+    const float roughnessFade = 1.0f - GI_RoughSpecWeight(sqrt(surf.alpha));
     #else
-    return 0.0f.xxx;
+    const float roughnessFade = 1.0f;
     #endif
+
+    return BxDF_SceneGI(surf, peakDirection, peakColor, ld, ls, roughnessFade);
 }

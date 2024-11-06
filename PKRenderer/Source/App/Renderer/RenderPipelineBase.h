@@ -82,5 +82,6 @@ namespace PK::App
             IBatcher* m_batcher;
             RenderView m_renderViews[MAX_RENDER_VIEWS]{};
             uint32_t m_renderViewCount;
+            RHITextureRef m_integratedDFG;
     };
 }

@@ -22,10 +22,10 @@ float3 SampleEnvironmentSH(float4 basis)
     return float3(R, G, B);
 }
 
-float3 SampleEnvironmentSH(float3 direction)  { return SampleEnvironmentSH(float4(1.0f, direction.yzx) * PK_L1BASIS_COSINE * 2.0f);  }
+float3 SampleEnvironmentSH(float3 direction)  { return SampleEnvironmentSH(float4(1.0f, direction) * PK_L1BASIS_COSINE * 2.0f);  }
 
 float3 SampleEnvironmentSHVolumetric(float3 viewdir, float phase) 
 { 
-    float4 zh = float4(1.0f, viewdir.yzx) * float4(1.0f, phase.xxx);
+    float4 zh = float4(1.0f, viewdir) * float4(1.0f, phase.xxx);
     return SampleEnvironmentSH(zh); 
 }

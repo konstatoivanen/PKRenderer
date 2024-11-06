@@ -49,7 +49,8 @@ namespace PK::App
             { ElementType::Float4x4, hash->pk_WorldToClip_NoJitter },
             { ElementType::Float4x4, hash->pk_WorldToClipPrev },
             { ElementType::Float4x4, hash->pk_WorldToClipPrev_NoJitter },
-            { ElementType::Float4x4, hash->pk_ViewToClipDelta },
+            { ElementType::Float4x4, hash->pk_ViewToPrevClip },
+            { ElementType::Float4x4, hash->pk_ClipToPrevClip_NoJitter },
 
             { ElementType::Float4, hash->pk_Time },
             { ElementType::Float4, hash->pk_SinTime },
@@ -228,7 +229,8 @@ namespace PK::App
             constants->Set<float4x4>(hash->pk_WorldToClip_NoJitter, worldToClipNoJitter);
             constants->Set<float4x4>(hash->pk_WorldToClipPrev, worldToClipPrev);
             constants->Set<float4x4>(hash->pk_WorldToClipPrev_NoJitter, worldToClipPrevNoJitter);
-            constants->Set<float4x4>(hash->pk_ViewToClipDelta, worldToClipPrev * viewToWorld);
+            constants->Set<float4x4>(hash->pk_ViewToPrevClip, worldToClipPrev * viewToWorld);
+            constants->Set<float4x4>(hash->pk_ClipToPrevClip_NoJitter, worldToClipPrevNoJitter * glm::inverse(worldToClipNoJitter));
             constants->Set<float4>(hash->pk_Time, { (float)time / 20.0f, (float)time, (float)time * 2.0f, (float)time * 3.0f });
             constants->Set<float4>(hash->pk_SinTime, { (float)sin(time / 8.0f), (float)sin(time / 4.0f), (float)sin(time / 2.0f), (float)sin(time) });
             constants->Set<float4>(hash->pk_CosTime, { (float)cos(time / 8.0f), (float)cos(time / 4.0f), (float)cos(time / 2.0f), (float)cos(time) });

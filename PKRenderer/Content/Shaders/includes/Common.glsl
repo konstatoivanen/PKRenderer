@@ -19,7 +19,8 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
 
     float4x4 pk_WorldToClipPrev;           // Last view * projection matrix.
     float4x4 pk_WorldToClipPrev_NoJitter;  // Last view * unjittered projection matrix.
-    float4x4 pk_ViewToClipDelta;           // Last view * projection * current inverse view matrix.
+    float4x4 pk_ViewToPrevClip;            // Last view * projection * current inverse view matrix.
+    float4x4 pk_ClipToPrevClip_NoJitter;   // Last view * projection * current inverse view * projection matrix.
 
     float4 pk_Time;      // Time since load (t/20, t, t*2, t*3), use to animate things inside the shaders.
     float4 pk_SinTime;   // Sine of time: (t/8, t/4, t/2, t).
@@ -145,7 +146,7 @@ float3 ClipToUVW(const float4 clip) { return (clip.xyz / clip.w) * float3(0.5f.x
 float2 ClipToUV(const float3 clipxyw) { return (clipxyw.xy / clipxyw.z) * 0.5f + 0.5f; }
 
 float4 ViewToClipPos(const float3 pos) { return pk_ViewToClip * float4(pos, 1.0f); }
-float4 ViewToClipPosPrev(const float3 pos) { return pk_ViewToClipDelta * float4(pos, 1.0f); }
+float4 ViewToClipPosPrev(const float3 pos) { return pk_ViewToPrevClip * float4(pos, 1.0f); }
 float4 ViewToClipVec(const float3 vec) { return pk_ViewToClip * float4(vec, 0.0f); }
 float3 ViewToWorldPos(const float3 pos) { return float4(pos, 1.0f) * pk_ViewToWorld; }
 float3 ViewToWorldPosPrev(const float3 pos) { return float4(pos, 1.0f) * pk_ViewToWorldPrev; }

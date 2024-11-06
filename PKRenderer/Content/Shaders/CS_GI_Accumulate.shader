@@ -19,7 +19,7 @@ shared uint s_count[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LA
 
 #define ReSTIR_Load_HitAsReservoir(coord, origin) ReSTIR_Unpack_Hit(GI_Load_Packed_Diff(coord), origin)
 
-SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const float depth, const float3 viewnormal, const float3 origin, const Reservoir initial)
+SHLuma ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const float depth, const float3 viewnormal, const float3 origin, const Reservoir initial)
 {
     const float depthBias = lerp(0.1f, 0.01f, -viewnormal.z);
     const float3 normal = ViewToWorldVec(viewnormal);
@@ -173,7 +173,7 @@ SH ReSTIR_ResampleSpatioTemporal(const int2 baseCoord, const int2 coord, const f
 
     const float3 radiance = lerp(initial.radiance, combined.radiance * weight, isValid.xxx);
     const float3 direction = lerp(safeNormalize(initial.position - origin), combinedDirection, isValid.xxx);
-    return SH_FromRadiance(radiance, direction);
+    return SH_Luma_FromRadiance(radiance, direction);
 }
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
@@ -197,7 +197,7 @@ void main()
 #if defined(PK_GI_RESTIR)
         current.sh = ReSTIR_ResampleSpatioTemporal(baseCoord, coord, depth, normalroughness.xyz, origin, reservoir);
 #else
-        current.sh = SH_FromRadiance(reservoir.radiance, samplevec.xyz);
+        current.sh = SH_Luma_FromRadiance(reservoir.radiance, samplevec.xyz);
 #endif
 
         GIDiff history = GI_Load_Diff(baseCoord, PK_GI_STORE_LVL);

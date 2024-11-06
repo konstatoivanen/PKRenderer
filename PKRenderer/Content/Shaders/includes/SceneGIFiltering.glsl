@@ -3,32 +3,6 @@
 #include "SceneGI.glsl"
 #include "Kernels.glsl"
 
-// Source https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
-float GI_GetSpecularDominantFactor(float nv, float roughness)
-{
-   float alpha = pow2(roughness);
-   return (1.0f - alpha) * (sqrt(1.0f - alpha) + alpha);
-}
-
-float3 GI_GetSpecularDominantDirection(const float3 N, const float3 V, float roughness)
-{
-    const float factor = GI_GetSpecularDominantFactor(abs(dot(N, V)), roughness);
-    return normalize(lerp(N, reflect(-V, N), factor));
-}
-
-float2x3 GI_GetSpecularDominantBasis(const float3 normal, const float3 viewdir, const float roughness, const float radius, inout float3 dominantDir)
-{
-    dominantDir = GI_GetSpecularDominantDirection(normal, viewdir, roughness);
-    const float3 l = reflect(-dominantDir, normal);
-    const float3 t = normalize(cross(normal,l));
-    const float3 b = cross(l,t);
-    return float2x3(t * radius, b * radius);
-}
-
-//Source: https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf 
-//return PK_HALF_PI * R / (1.0f + R);
-float GI_GetSpecularLobeHalfAngle(const float roughness, const float volumeFactor) { return atan(roughness * volumeFactor / ( 1.0 - volumeFactor)); }
-
 float GI_GetParallax(float3 viewdir_cur, float3 viewdir_pre)
 {
     float cosa = saturate(dot(viewdir_cur, viewdir_pre));
@@ -66,7 +40,7 @@ float2 GI_GetRoughnessWeightParams(const float roughness)
 
 float GI_GetNormalWeightParams(const float3 normal, const float roughness, const float history)
 {
-    const float halfAngle = GI_GetSpecularLobeHalfAngle(roughness, 0.985f);
+    const float halfAngle = Futil_SpecularLobeHalfAngle(roughness, 0.985f);
     return 1.0f / max(halfAngle * lerp(0.5f, 1.0f, 1.0f / (history + 1.0f)), 1e-4f);
 }
 
@@ -161,7 +135,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
 #define GI_SF_DISK_SPEC(SF_NORMAL, SF_DEPTH, SF_ROUGHNESS, SF_VIEW, SF_VPOS, SF_HISTORY, SF_STEP, SF_SKIP, SF_RADIUS, SF_OUT)   \
 {                                                                                                                               \
     float3 disk_normal;                                                                                                         \
-    const float2x3 basis = GI_GetSpecularDominantBasis(SF_NORMAL, SF_VIEW, SF_ROUGHNESS, SF_RADIUS, disk_normal);               \
+    const float2x3 basis = Futil_SpecularDominantBasis(SF_NORMAL, SF_VIEW, SF_ROUGHNESS, SF_RADIUS, disk_normal);               \
     const float2 rotation = GI_GetRandomRotation();                                                                             \
     const float k_N = GI_GetNormalWeightParams(SF_NORMAL, SF_ROUGHNESS, SF_HISTORY);                                            \
     const float2 k_D = GI_GetDiskWeightParams(SF_RADIUS, SF_DEPTH);                                                             \

@@ -8,6 +8,7 @@
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/ConstantBuffer.h"
 #include "Core/Rendering/TextureAsset.h"
+#include "Core/Rendering/ShaderAsset.h"
 #include "App/ECS/EntityViewRenderView.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/EntityCulling.h"
@@ -58,6 +59,28 @@ namespace PK::App
         samplerDesc.wrap[1] = WrapMode::Clamp;
         samplerDesc.wrap[2] = WrapMode::Clamp;
         RHI::SetSampler(hash->pk_Sampler_GBuffer, samplerDesc);
+
+        // Pre integrate DFG texture for ibl shading.
+        {
+            TextureDescriptor descr{};
+            descr.type = TextureType::Texture2D;
+            descr.format = TextureFormat::RGBA16F;
+            descr.sampler.filterMin = FilterMode::Bilinear;
+            descr.sampler.filterMag = FilterMode::Bilinear;
+            descr.sampler.wrap[0] = WrapMode::Clamp;
+            descr.sampler.wrap[1] = WrapMode::Clamp;
+            descr.sampler.wrap[2] = WrapMode::Clamp;
+            descr.sampler.borderColor = BorderColor::FloatClear;
+            descr.resolution = { 128u, 128u, 1u };
+            descr.usage = TextureUsage::Sample | TextureUsage::Storage;
+            m_integratedDFG = RHI::CreateTexture(descr, "PKBuiltIn.Texture2D.PreintegratedDFG");
+            auto integrateDFGShader = assetDatabase->Find<ShaderAsset>("CS_EnvIntegrateDFG");
+
+            RHI::SetImage(hash->pk_Image, m_integratedDFG.get());
+            RHI::SetTexture(hash->pk_PreIntegratedDFG, m_integratedDFG.get());
+            CommandBufferExt(RHI::GetCommandBuffer(QueueType::Graphics)).Dispatch(integrateDFGShader, { 128, 128, 1 });
+            RHI::GetQueues()->Submit(QueueType::Graphics);
+        }
     }
 
     void RenderPipelineBase::OnApplicationRender(RHIWindow* window)

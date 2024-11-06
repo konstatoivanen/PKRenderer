@@ -75,7 +75,7 @@ void main()
         light.color *= VFog_MarchTransmittance(worldpos, light.direction, dither.y, marchDistance, farFade);
         light.shadow = lerp(1.0f, light.shadow, farFade);
 
-        value_cur += EvaluateBxDF_Volumetric
+        value_cur += BxDF_Volumetric
         (
             viewdir,
             pk_Fog_Phase0,

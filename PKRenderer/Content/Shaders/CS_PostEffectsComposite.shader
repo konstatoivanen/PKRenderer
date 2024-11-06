@@ -82,12 +82,12 @@ void main()
 
         IF_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_GI_DIFF)
         {
-            color = GI_Load_Resolved_Diff(uv) * exposure;
+            color = SH_ToDiffuse(GI_Load_Resolved(uv).diffSH, SampleWorldNormal(uv)) * exposure;
         }
 
         IF_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_GI_SPEC)
         {
-            color = GI_Load_Resolved_Spec(uv) * exposure;
+            color = GI_Load_Resolved(uv).spec * exposure;
         }
 
         IF_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_GI_VX)

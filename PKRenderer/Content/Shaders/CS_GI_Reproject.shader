@@ -103,7 +103,7 @@ void main()
             [[branch]]
             if (!Test_EPS6(wSumSpec) && !discardSpec)
             {
-                const float  s_vdist = (spec.ao / wSumSpec) * PK_GI_RAY_TMAX * GI_GetSpecularDominantFactor(nv, roughness);
+                const float  s_vdist = (spec.ao / wSumSpec) * PK_GI_RAY_TMAX * Futil_SpecularDominantFactor(nv, roughness);
                 const float2 k_R = GI_GetRoughnessWeightParams(roughness);
                 const float2 s_screenuv = GI_ViewToPrevScreenUV(viewpos + viewdir * s_vdist);
                 const int2   s_coord = int2(s_screenuv);

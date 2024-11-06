@@ -108,7 +108,7 @@ void VFog_GetSky(float3 viewdir, inout float3 irradiance, inout float3 transmitt
 
     if ((light.LIGHT_TYPE) == LIGHT_TYPE_DIRECTIONAL)
     {
-        irradiance += EvaluateBxDF_Volumetric(viewdir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, -light.LIGHT_POS, light.LIGHT_COLOR, 1.0f);
+        irradiance += BxDF_Volumetric(viewdir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, -light.LIGHT_POS, light.LIGHT_COLOR, 1.0f);
     }
 
     const float virtualDistance = 1000.0f;

@@ -16,7 +16,7 @@ namespace PK
         m_otherPipelines(1024),
         m_pruneDelay(pruneDelay)
     {
-        if (m_workingDirectory.Length() == 0)
+        if (m_workingDirectory.Length() != 0)
         {
             void* cacheData = nullptr;
             size_t cacheSize = 0ull;

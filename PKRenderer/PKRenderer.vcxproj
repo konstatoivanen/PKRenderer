@@ -738,6 +738,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
   </ItemGroup>
   <ItemGroup>
     <None Include="Content\Configs\DebugEngine.cfg" />
+    <None Include="Content\Shaders\CS_EnvIntegrateDFG.shader" />
     <None Include="Content\Shaders\VS_EnvBackground.shader" />
     <None Include="Content\Shaders\VS_GUI.shader" />
     <None Include="Content\Textures\T_Bloom_LensDirt2.ktx2" />
@@ -963,7 +964,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Shaders\CS_LightAssignment.shader" />
     <None Include="Content\Shaders\CS_PostEffectsComposite.shader" />
     <None Include="Content\Shaders\CS_DepthOfField.shader" />
-    <None Include="Content\Shaders\CS_EnvIntegrate.shader" />
+    <None Include="Content\Shaders\CS_EnvIntegrateSH.shader" />
     <None Include="Content\Shaders\CS_CopyCubeShadow.shader" />
     <None Include="Content\Shaders\MS_Mat_Surf_Default.shader" />
     <None Include="Content\Shaders\MS_Mat_Surf_Glitter.shader" />

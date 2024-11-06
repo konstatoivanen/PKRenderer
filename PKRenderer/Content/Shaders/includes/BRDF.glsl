@@ -2,9 +2,11 @@
 #include "Utilities.glsl"
 #include "Constants.glsl"
 
+PK_DECLARE_SET_GLOBAL uniform sampler2D pk_PreIntegratedDFG;
+
 struct BxDFSurf
 {
-    float3 albedo;
+    float3 diffuse; // Diffuse reflectance of the surface. F0 pre attenuated.
     float3 F0;
     float3 normal;
     float3 viewdir;
@@ -18,11 +20,36 @@ struct BxDFSurf
     float nv;
 };
 
-// Source: https://de45xmedrsdbp.cloudfront.net/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
-float Fatten_Default(float dist, float radius) 
-{ 
-    return pow2(saturate(1.0f - pow4(dist/radius))) / (pow2(dist) + 1.0f); 
+// Source https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s22699-fast-denoising-with-self-stabilizing-recurrent-blurs.pdf
+float Futil_SpecularDominantFactor(float nv, float roughness)
+{
+   float alpha = pow2(roughness);
+   return (1.0f - alpha) * (sqrt(1.0f - alpha) + alpha);
 }
+
+float3 Futil_SpecularDominantDirection(const float3 N, const float3 V, float roughness)
+{
+    const float factor = Futil_SpecularDominantFactor(abs(dot(N, V)), roughness);
+    return normalize(lerp(N, reflect(-V, N), factor));
+}
+
+float2x3 Futil_SpecularDominantBasis(const float3 normal, const float3 viewdir, const float roughness, const float radius, inout float3 outDirection)
+{
+    outDirection = Futil_SpecularDominantDirection(normal, viewdir, roughness);
+    const float3 l = reflect(-outDirection, normal);
+    const float3 t = normalize(cross(normal,l));
+    const float3 b = cross(l,t);
+    return float2x3(t * radius, b * radius);
+}
+
+//Source: https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf 
+//return PK_HALF_PI * R / (1.0f + R);
+float Futil_SpecularLobeHalfAngle(const float roughness, const float volumeFactor) { return atan(roughness * volumeFactor / ( 1.0 - volumeFactor)); }
+
+float3 Futil_SamplePreintegratedDFG_LUT(const float NoV, const float alpha) { return texture(pk_PreIntegratedDFG, float2(NoV, sqrt(alpha))).rgb; }
+
+// Source: https://de45xmedrsdbp.cloudfront.net/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
+float Fatten_Default(float dist, float radius) { return pow2(saturate(1.0f - pow4(dist/radius))) / (pow2(dist) + 1.0f); }
 
 // Source: https://www.gdcvault.com/play/1014538/Approximating-Translucency-for-a-Fast
 float Fatten_Translucent_Dice(float3 viewdir, float3 lightdir, float3 normal, float distortion, float power)
@@ -121,6 +148,21 @@ float3 Fd_Inverse_Lambert(const float2 Xi, const float3 normal)
     return normalize(normal + float3(b * cos(phi), b * sin(phi), a));
 }
 
+//Source: https://agraphicsguy.wordpress.com/2015/11/01/sampling-microfacet-brdf/
+float3 Fr_Inverse_GGX(float2 Xi, float alpha)
+{
+    const float a2 = alpha * alpha;
+    const float Phi = PK_TWO_PI * Xi.x;
+    const float cosTheta = sqrt((1 - Xi.y) / (1 + (a2 - 1) * Xi.y));
+    const float sinTheta = sqrt( 1 - pow2(cosTheta));
+
+    float3 H;
+    H.x = sinTheta * cos(Phi);
+    H.y = sinTheta * sin(Phi);
+    H.z = cosTheta;
+    return H;
+}
+
 //Source: "Sampling the GGX Distribution of Visible Normals", Heitz
 float3 Fr_Inverse_GGXVNDF(const float2 Xi, const float3 Ve, const float alpha)
 {
@@ -167,6 +209,16 @@ float F_Schlick(float F0, float F90, float cosA) { return F0 + (F90 - F0) * pow5
 
 float3 F_Schlick(float3 F0, float F90, float cosA) { return F0 + (F90 - F0) * pow5(1.0f - cosA); }
 
+float3 F_Schlick(float3 F0, float3 F90, float cosA) { return F0 + (F90 - F0) * pow5(1.0f - cosA); }
+
+float3 F_EnvFresnel(float3 F0, float F90, float3 DFG) { return (DFG.x * F0 + F90 * DFG.y); }
+
+float3 F_EnvFresnelApprox(float3 F0, float cosA, float alpha)
+{
+    const float3 F90 = saturate(1.0f - sqrt(alpha) + F0);
+    return F_Schlick(F0, F90, cosA) / (pow2(alpha) + 1.0f);
+}
+
 //Source: https://www.activision.com/cdn/research/MaterialAdvancesInWWII.pdf
 float Fd_Chan(float NoV, float NoL, float NoH, float LoH, float FbW, float alpha)
 {
@@ -202,52 +254,57 @@ float D_GGX(float NoH, float alpha)
     return PK_INV_PI * a2 / (pow2(d) + 1e-7f);
 }
 
-// For specular approximation in ray traced gi
-// Reminders:
-// - Not multiplied by NdotL as gi data is already calculated with NdotL distribution.
-// - Fresnel not present as that is applied by sampling.
-// - multiplied by pi inorder to compensate for lacking energy due to NdotL distribution
-float EvaluateBxDF_IndirectSpecularDV(const float3 normal, const float3 viewdir, const float roughness, const float3 direction)
-{
-    const float nv = max(0.0f, dot(viewdir, normal));
-    const float nl = max(0.0f, dot(normal, direction));
-    const float vl = dot(viewdir, direction);
-    const float ih = inversesqrt(2.0f + 2.0f * vl);
-    const float nh = saturate((nl + nv) * ih);
-
-    const float alpha = pow2(roughness);
-    const float V = V_SmithGGXCorrelated(nl, nv, alpha);
-    const float D = D_GGX(nh, alpha);
-    return max(0.0f, D * V) * step(1e-4f, nl) * PK_PI;
-}
-
-// For additional sh approximations
-// Reminders:
-// - Not multiplied by NdotL as gi data is already calculated with NdotL distribution.
-// - Fresnel not present as that is applied by sampling.
-// - multiplied by pi inorder to compensate for lacking energy due to NdotL distribution
-float3 EvaluateBxDF_IndirectTopLayer(const BxDFSurf surf, const float3 direction, const float3 radiance)
+// For ray traced gi 
+float3 BxDF_SceneGI(const BxDFSurf surf, 
+                    const float3 direction, 
+                    const float3 radiance, 
+                    const float3 gi_Ld, 
+                    const float3 gi_Ls, 
+                    const float  gi_LsWeight)
 {
     const float nl = max(0.0f, dot(surf.normal, direction));
     const float vl = dot(surf.viewdir, direction);
     const float ih = inversesqrt(2.0f + 2.0f * vl);
-    float nh = saturate((nl + surf.nv) * ih);
-    float lh = saturate(ih + ih * vl);
+    const float nh = saturate((nl + surf.nv) * ih);
+    const float lh = saturate(ih + ih * vl);
+    const float3 integrated_dfg = Futil_SamplePreintegratedDFG_LUT(surf.nv, surf.alpha); 
 
     float3 brdf = 0.0f.xxx;
+
+    // Subsurface 
+    #if defined(BxDF_ENABLE_SUBSURFACE)
+    {
+        //@TODO This shouldn't be local to the brdf evaluation...
+        const float transmittance = Fatten_Translucent_Dice(surf.viewdir, direction, surf.normal, 0.2f, 16.0f);
+        const float3 ss = surf.subsurface * transmittance;
+        const float Fd = Fss_HanrahanKrueger(surf.nv, nl, lh, surf.alpha);
+        brdf *= 1.0f.xxx - ss;
+        brdf += Fd * ss;
+    }
+    #endif
 
     // Sheen
     #if defined(BxDF_ENABLE_SHEEN)
     {
-        const float3 Csheen = surf.albedo / (dot(float3(0.3f, 0.6f, 0.1f), surf.albedo) + 1e-2f);
+        const float3 Csheen = surf.diffuse / (dot(float3(0.3f, 0.6f, 0.1f), surf.diffuse) + 1e-2f);
         const float3 Fsheen = surf.sheen * lerp(1.0f.xxx, Csheen, surf.sheenTint);
-        brdf += Fsheen * F_Schlick(0.0f, 1.0f, lh);
+        brdf += Fsheen * F_Schlick(0.0f, 1.0f, lh) * nl;
     }
     #endif
 
     // End of diffuse eval. Normalize.
     brdf *= PK_INV_PI;
 
+    // Direct Specular
+    {
+        const float V = V_SmithGGXCorrelated(nl, surf.nv, surf.alpha);
+        const float D = D_GGX(nh, surf.alpha);
+        const float Fr = max(0.0f, V * D * nl);
+        const float F90 = saturate(50.0f * surf.F0.g);
+        // Completely nonsense approx fallback for gi spec.
+        brdf += F_EnvFresnel(surf.F0, F90, integrated_dfg) * Fr * (1.0f - gi_LsWeight);
+    }
+    
     // Clear coat specular
     #if defined(BxDF_ENABLE_CLEARCOAT)
     {
@@ -257,22 +314,31 @@ float3 EvaluateBxDF_IndirectTopLayer(const BxDFSurf surf, const float3 direction
         const float Rc = lerp(0.15f, 0.001f, surf.clearCoatGloss);
         const float V = V_SmithGGXCorrelated(nl, surf.nv, 0.25f);
         const float D = D_GGX(nh, Rc);
-        const float Fr = max(0.0f, 0.25f * V * D);
+        const float Fr = max(0.0f, 0.25f * V * D * nl);
         brdf += surf.clearCoat * F_Schlick(0.04f, 1.0f, lh) * Fr;
     }
     #endif
 
-    return brdf * radiance * PK_PI;
+    // End specular approximations.
+    // Energy loss due to cosine distribution of samples.
+    // Regain energy over hemispehere by multiplying by PI
+    brdf *= radiance * PK_PI;
+
+    // Diffuse
+    {
+        brdf += surf.diffuse * gi_Ld * integrated_dfg.z;
+    }
+
+    // True rt specular.
+    {
+        const float F90 = saturate(50.0f * surf.F0.g);
+        brdf += F_EnvFresnel(surf.F0, F90, integrated_dfg) * gi_Ls * gi_LsWeight;
+    }
+
+    return brdf;
 }
 
-float3 EvaluateBxDF_Indirect(const BxDFSurf surf, const float3 diffuse, const float3 specular)
-{
-    const float surfaceReduction = 1.0f / (pow2(surf.alpha) + 1.0f);
-    const float F90 = saturate((1.0f - sqrt(surf.alpha)) + surf.reflectivity);
-    return surf.albedo * diffuse + surfaceReduction * specular * F_Schlick(surf.F0, F90, surf.nv);
-}
-
-float3 EvaluateBxDF_Direct(const BxDFSurf surf, const float3 direction, const float3 radiance, float shadow, float sourceRadius)
+float3 BxDF_Direct(const BxDFSurf surf, const float3 direction, const float3 radiance, float shadow, float sourceRadius)
 {
     const float nl = max(0.0f, dot(surf.normal, direction));
     const float vl = dot(surf.viewdir, direction);
@@ -293,7 +359,7 @@ float3 EvaluateBxDF_Direct(const BxDFSurf surf, const float3 direction, const fl
         // Retroreflectivity fade out for spherical area lights
         const float FbW = 1.0f; //saturate(1.0f - sourceRadius / 0.2f);
         const float Fd = Fd_Chan(surf.nv, nl, nh, lh, FbW, surf.alpha);
-        brdf += surf.albedo * Fd * nl * shadow; 
+        brdf += surf.diffuse * Fd * nl * shadow; 
     }
 
     // Subsurface 
@@ -311,7 +377,7 @@ float3 EvaluateBxDF_Direct(const BxDFSurf surf, const float3 direction, const fl
     // Sheen
     #if defined(BxDF_ENABLE_SHEEN)
     {
-        const float3 Csheen = surf.albedo / (dot(float3(0.3f, 0.6f, 0.1f), surf.albedo) + 1e-2f);
+        const float3 Csheen = surf.diffuse / (dot(float3(0.3f, 0.6f, 0.1f), surf.diffuse) + 1e-2f);
         const float3 Fsheen = surf.sheen * lerp(1.0f.xxx, Csheen, surf.sheenTint);
         brdf += Fsheen * F_Schlick(0.0f, 1.0f, lh) * nl * shadow;
     }
@@ -345,26 +411,26 @@ float3 EvaluateBxDF_Direct(const BxDFSurf surf, const float3 direction, const fl
     return brdf * radiance;
 }
 
-float3 EvaluateBxDF_DirectMinimal(const BxDFSurf surf, const float3 direction, const float3 radiance, float shadow, float angle)
+float3 BxDF_DirectMinimal(const BxDFSurf surf, const float3 direction, const float3 radiance, float shadow, float angle)
 {
+    // @TODO approximate specular energy to diffuse component for metallics.
     float Fd = max(0.0f, dot(direction, surf.normal)) * shadow;
 
     #if defined(BxDF_ENABLE_SUBSURFACE)
         // Silly approximation. useful with cloth
-        // @TODO parameterize
         Fd = Fd * 0.5f + 0.5f;
     #endif
     
-    return surf.albedo * radiance * Fd * PK_INV_PI;
+    return surf.diffuse * radiance * Fd * PK_INV_PI;
 }
 
-float3 EvaluateBxDF_Volumetric(const float3 viewdir, 
-                               const float phase0, 
-                               const float phase1, 
-                               const float phaseW, 
-                               const float3 lightdir, 
-                               const float3 lightcolor, 
-                               float shadow)
+float3 BxDF_Volumetric(const float3 viewdir, 
+                       const float phase0, 
+                       const float phase1, 
+                       const float phaseW, 
+                       const float3 lightdir, 
+                       const float3 lightcolor, 
+                       float shadow)
 {
     const float cosA = dot(viewdir, lightdir);
     return lightcolor * PF_HenyeyGreensteinDual(cosA, phase0, phase1, phaseW) * shadow;

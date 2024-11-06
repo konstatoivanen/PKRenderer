@@ -18,7 +18,7 @@ namespace PK::App
         private:
             ShaderAsset* m_backgroundShader = nullptr;
             ShaderAsset* m_shShader = nullptr;
-            ShaderAsset* m_integrateShader = nullptr;
+            ShaderAsset* m_integrateSHShader = nullptr;
             
             RHITexture* m_sourceTexture = nullptr;
             RHITextureRef m_backgroundTexture = nullptr;

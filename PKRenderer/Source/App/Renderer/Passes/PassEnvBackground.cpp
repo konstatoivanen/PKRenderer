@@ -22,7 +22,7 @@ namespace PK::App
         auto hash = HashCache::Get();
         m_backgroundShader = assetDatabase->Find<ShaderAsset>("VS_EnvBackground");
         m_shShader = assetDatabase->Find<ShaderAsset>("CS_EnvSH");
-        m_integrateShader = assetDatabase->Find<ShaderAsset>("CS_EnvIntegrate");
+        m_integrateSHShader = assetDatabase->Find<ShaderAsset>("CS_EnvIntegrateSH");
         m_shBuffer = RHI::CreateBuffer<float4>(4ull, BufferUsage::DefaultStorage, "Scene.Env.SHBuffer");
         RHI::SetBuffer(hash->pk_SceneEnv_SH, m_shBuffer.get());
         RHI::SetTexture(hash->pk_SceneEnv, RHI::GetBuiltInResources()->BlackTexture2D.get());
@@ -96,7 +96,7 @@ namespace PK::App
             RHI::SetImage(hash->pk_Image2, m_backgroundTexture.get(), 2, 0);
             RHI::SetImage(hash->pk_Image3, m_backgroundTexture.get(), 3, 0);
             RHI::SetImage(hash->pk_Image4, m_backgroundTexture.get(), 4, 0);
-            cmd.Dispatch(m_integrateShader, { resolution.x >> 1u, resolution.y >> 1u, 1u });
+            cmd.Dispatch(m_integrateSHShader, { resolution.x >> 1u, resolution.y >> 1u, 1u });
             RHI::SetTexture(hash->pk_SceneEnv, m_backgroundTexture.get());
 
             m_isDirty = false;

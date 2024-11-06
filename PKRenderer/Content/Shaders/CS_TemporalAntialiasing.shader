@@ -83,11 +83,10 @@ void main()
     desc.jitter = pk_ProjectionJitter.xy * desc.texelSize;
     desc.texcoord = (coord + 0.5f.xx) / size;
 
-    const float depth = SampleViewDepth(desc.texcoord);
-    const float3 viewpos = UVToViewPos(desc.texcoord, depth);
-    const float2 uv = ViewToClipUVPrev(viewpos);
+    const float depth = SampleClipDepth(desc.texcoord);
+    const float2 previousTexcoord = ClipToUVW(pk_ClipToPrevClip_NoJitter * float4(desc.texcoord * 2 - 1, depth, 1)).xy;
 
-    desc.motion = (desc.texcoord - uv) + pk_ProjectionJitter.zw * desc.texelSize * 0.5f;
+    desc.motion = desc.texcoord - previousTexcoord;
     desc.sharpness = pk_TAA_Sharpness;
     desc.blendStatic = pk_TAA_BlendingStatic;
     desc.blendMotion = pk_TAA_BlendingMotion;

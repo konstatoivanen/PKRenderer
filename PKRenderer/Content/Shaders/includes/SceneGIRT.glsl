@@ -74,12 +74,12 @@ float2 GI_GetRayXi(int2 raycoord)
     return saturate(v.xy + ((v.z - 0.5f) / 256.0f));
 }
 
-#define GI_LOAD_RAY_PARAMS(COORD, RAYCOORD, DEPTH, NORMAL, ROUGHNESS)           \
-float3 origin = ViewToWorldPos(GI_GetRayViewOrigin(COORD, DEPTH));              \
-float3 viewdir = normalize(origin - pk_ViewWorldOrigin.xyz);                    \
-origin = GI_ApplyNormalOffset(origin, NORMAL, viewdir);                         \
-const float2 Xi = GI_GetRayXi(RAYCOORD);                                        \
-float3 directionDiff = Fd_Inverse_Lambert(Xi, NORMAL);                          \
+#define GI_LOAD_RAY_PARAMS(COORD, RAYCOORD, DEPTH, NORMAL, ROUGHNESS)                \
+float3 origin = ViewToWorldPos(GI_GetRayViewOrigin(COORD, DEPTH));                   \
+float3 viewdir = normalize(origin - pk_ViewWorldOrigin.xyz);                         \
+origin = GI_ApplyNormalOffset(origin, NORMAL, viewdir);                              \
+const float2 Xi = GI_GetRayXi(RAYCOORD);                                             \
+float3 directionDiff = Fd_Inverse_Lambert(Xi, NORMAL);                               \
 float3 directionSpec = Fr_Inverse_GGXVNDF_Full(Xi.yx, NORMAL, viewdir, ROUGHNESS);   \
 
 

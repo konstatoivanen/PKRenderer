@@ -35,7 +35,7 @@ namespace PK
 
         constexpr const CArguments& GetArguments() const { return m_arguments; }
         constexpr const char* GetName() const { return m_name.c_str(); }
-        constexpr const char* GetWorkingDirectory() const { return m_name.c_str(); }
+        constexpr const char* GetWorkingDirectory() const { return m_workingDirectory.c_str(); }
 
     protected:
         inline ServiceRegister* GetServices() { return m_services.get(); }

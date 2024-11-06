@@ -81,12 +81,12 @@ namespace PK::App
         descr.format = TextureFormat::RG32UI;
         m_reservoirs1 = RHI::CreateTexture(descr, "GI.Reservoirs1");
 
-        descr.layers = 2;
-        descr.format = TextureFormat::RGB9E5;
-        descr.formatAlias = TextureFormat::R32UI;
+        descr.type = TextureType::Texture2D;
+        descr.layers = 1;
+        descr.format = TextureFormat::RGBA32UI;
         descr.usage = TextureUsage::Storage | TextureUsage::Sample;
         descr.resolution = { initialResolution, 1u };
-        m_resolvedGI = RHI::CreateTexture(descr, "GI.Resolved");
+        m_resolvedGI = RHI::CreateTexture(descr, "GI.Resolved.DiffSpec");
 
         m_voxelizeAttribs.depthStencil.depthCompareOp = Comparison::Off;
         m_voxelizeAttribs.depthStencil.depthWriteEnable = false;
@@ -152,6 +152,7 @@ namespace PK::App
         RHI::SetImage(hash->pk_Reservoirs1, m_reservoirs1.get());
         RHI::SetImage(hash->pk_GI_PackedDiff, m_packedGIDiff.get());
         RHI::SetImage(hash->pk_GI_PackedSpec, m_packedGISpec.get());
+
         RHI::SetImage(hash->pk_GI_ResolvedWrite, m_resolvedGI.get());
         RHI::SetTexture(hash->pk_GI_ResolvedRead, m_resolvedGI.get());
     }
