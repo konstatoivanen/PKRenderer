@@ -6,7 +6,8 @@ PK_DECLARE_SET_GLOBAL uniform sampler2D pk_PreIntegratedDFG;
 
 struct BxDFSurf
 {
-    float3 diffuse; // Diffuse reflectance of the surface. F0 pre attenuated.
+    // Diffuse reflectance of the surface. Unlike albedo this contains metallic attenuation.
+    float3 diffuse; 
     float3 F0;
     float3 normal;
     float3 viewdir;
@@ -15,8 +16,8 @@ struct BxDFSurf
     float3 clearCoat;
     float sheenTint;
     float clearCoatGloss;
-    float reflectivity;
-    float alpha; // actual roughness. roughness elsewhere is linear roughness
+    // actual roughness. roughness elsewhere is linear roughness
+    float alpha; 
     float nv;
 };
 
@@ -46,12 +47,28 @@ float2x3 Futil_SpecularDominantBasis(const float3 normal, const float3 viewdir, 
 //return PK_HALF_PI * R / (1.0f + R);
 float Futil_SpecularLobeHalfAngle(const float roughness, const float volumeFactor) { return atan(roughness * volumeFactor / ( 1.0 - volumeFactor)); }
 
+
 float3 Futil_SamplePreintegratedDFG_LUT(const float NoV, const float alpha) { return texture(pk_PreIntegratedDFG, float2(NoV, sqrt(alpha))).rgb; }
+
+
+float3 Futil_ComputeF0(const float3 albedo, const float metallic) { return lerp(PK_DIELECTRIC_SPEC.rgb, albedo, metallic); }
+
+float3 Futil_ComputeDiffuseColor(const float3 albedo, const float metallic) { return albedo * PK_DIELECTRIC_SPEC.a * (1.0f - metallic); }
+
+float3 Futil_PremultiplyTransparency(float3 diffuse, const float metallic, inout float alpha)
+{
+    const float reflectivity = PK_DIELECTRIC_SPEC.r + metallic * PK_DIELECTRIC_SPEC.a;
+    diffuse *= alpha;
+    alpha = reflectivity + alpha * (1.0f - reflectivity);
+    return diffuse;
+}
+
 
 // Source: https://de45xmedrsdbp.cloudfront.net/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
 float Fatten_Default(float dist, float radius) { return pow2(saturate(1.0f - pow4(dist/radius))) / (pow2(dist) + 1.0f); }
 
 // Source: https://www.gdcvault.com/play/1014538/Approximating-Translucency-for-a-Fast
+// Purely fictional. A better solution would be to calculate transmittance from shadow distance.
 float Fatten_Translucent_Dice(float3 viewdir, float3 lightdir, float3 normal, float distortion, float power)
 {
     const float3 halfdir = normalize(lightdir + normal * distortion);
@@ -271,18 +288,6 @@ float3 BxDF_SceneGI(const BxDFSurf surf,
 
     float3 brdf = 0.0f.xxx;
 
-    // Subsurface 
-    #if defined(BxDF_ENABLE_SUBSURFACE)
-    {
-        //@TODO This shouldn't be local to the brdf evaluation...
-        const float transmittance = Fatten_Translucent_Dice(surf.viewdir, direction, surf.normal, 0.2f, 16.0f);
-        const float3 ss = surf.subsurface * transmittance;
-        const float Fd = Fss_HanrahanKrueger(surf.nv, nl, lh, surf.alpha);
-        brdf *= 1.0f.xxx - ss;
-        brdf += Fd * ss;
-    }
-    #endif
-
     // Sheen
     #if defined(BxDF_ENABLE_SHEEN)
     {
@@ -301,7 +306,7 @@ float3 BxDF_SceneGI(const BxDFSurf surf,
         const float D = D_GGX(nh, surf.alpha);
         const float Fr = max(0.0f, V * D * nl);
         const float F90 = saturate(50.0f * surf.F0.g);
-        // Completely nonsense approx fallback for gi spec.
+        // Completely nonsense approx fallback for gi spec. Should just be schlick fresnel...
         brdf += F_EnvFresnel(surf.F0, F90, integrated_dfg) * Fr * (1.0f - gi_LsWeight);
     }
     
@@ -365,7 +370,7 @@ float3 BxDF_Direct(const BxDFSurf surf, const float3 direction, const float3 rad
     // Subsurface 
     #if defined(BxDF_ENABLE_SUBSURFACE)
     {
-        //@TODO This shouldn't be local to the brdf evaluation...
+        //@TODO This should base transmittance on shadow distance but that isnt possible with screen space shadows... yet.
         const float transmittance = Fatten_Translucent_Dice(surf.viewdir, direction, surf.normal, 0.2f, 16.0f);
         const float3 ss = surf.subsurface * transmittance;
         const float Fd = Fss_HanrahanKrueger(surf.nv, nl, lh, surf.alpha);
@@ -418,7 +423,7 @@ float3 BxDF_DirectMinimal(const BxDFSurf surf, const float3 direction, const flo
 
     #if defined(BxDF_ENABLE_SUBSURFACE)
         // Silly approximation. useful with cloth
-        Fd = Fd * 0.5f + 0.5f;
+      //  Fd = Fd * 0.5f + 0.5f;
     #endif
     
     return surf.diffuse * radiance * Fd * PK_INV_PI;

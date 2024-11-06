@@ -345,19 +345,17 @@ struct SurfaceData
             sv_output1 = EncodeBiasedDepth(surf.clipuvw.z, dot(surf.viewdir, surf.normal), surf.depthBias);
         #else
 
-            // @TODO move these to utils in brdf.glsl
-            const float3 F0 = lerp(PK_DIELECTRIC_SPEC.rgb, surf.albedo, surf.metallic);
-            const float reflectivity = PK_DIELECTRIC_SPEC.r + surf.metallic * PK_DIELECTRIC_SPEC.a;
-            surf.albedo *= 1.0f - reflectivity;
+            // Metallic workflow
+            float3 F0 = Futil_ComputeF0(surf.albedo, surf.metallic);
+            float3 diffuseColor = Futil_ComputeDiffuseColor(surf.albedo, surf.metallic);
 
             #if defined(SURF_TRANSPARENT)
-                surf.albedo *= surf.alpha;
-                surf.alpha = reflectivity + surf.alpha * (1.0f - reflectivity);
+            diffuseColor = Futil_PremultiplyTransparency(diffuseColor, surf.metallic, /*inout*/ surf.alpha);
             #endif
 
             BxDFSurf bxdf_surf = BxDFSurf
             (
-                surf.albedo,
+                diffuseColor,
                 F0,
                 surf.normal,
                 surf.viewdir,
@@ -366,7 +364,6 @@ struct SurfaceData
                 surf.clearCoat,
                 surf.sheenTint,
                 surf.clearCoatGloss,
-                reflectivity,
                 pow2(surf.roughness), // Convert linear roughness to roughness
                 max(0.0f, dot(surf.normal, surf.viewdir))
             );
