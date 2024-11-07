@@ -46,9 +46,15 @@ void main()
                 // NoL * Vis / pdf
                 float NoL_Vis_PDF = NoL * Vis * (4 * VoH / NoH);
 
-                float Fc = pow(1 - VoH, 5);
-                A += (1 - Fc) * NoL_Vis_PDF;
-                B += Fc * NoL_Vis_PDF;
+                #if PK_DFG_USE_MULTIPLE_SCATTER
+                    float Fc = pow(1 - VoH, 5);
+                    A += NoL_Vis_PDF * Fc;
+                    B += NoL_Vis_PDF;
+                #else
+                    float Fc = pow(1 - VoH, 5);
+                    A += NoL_Vis_PDF * (1 - Fc);
+                    B += NoL_Vis_PDF * Fc;
+                #endif
             }
         }
 

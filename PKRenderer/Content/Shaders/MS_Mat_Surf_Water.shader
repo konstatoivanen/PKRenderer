@@ -88,5 +88,5 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
     surf.roughness = max(0.0f, noise.x * 0.2f);
     surf.occlusion = 1.0f;
     surf.clearCoatGloss = 0.5f;
-    surf.clearCoat = 1.0f.xxx;
+    surf.clearCoat = 1.0f;
 }

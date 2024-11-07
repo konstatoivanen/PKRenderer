@@ -39,6 +39,6 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
     t = max(0.0f, t);
     surf.roughness -= t;
 
-    surf.sheenTint = 0.5f;
-    surf.sheen = 1.0f.xxx;
+    surf.sheenRoughness = 0.9f;
+    surf.sheen = surf.albedo * 0.2f;
 };

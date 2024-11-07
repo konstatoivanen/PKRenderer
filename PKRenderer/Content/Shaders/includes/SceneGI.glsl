@@ -200,7 +200,7 @@ float3 GI_LoadAndShadeSurface(BxDFSurf surf, const float2 uv)
     GIResolved resolved = GI_Load_Resolved(uv); 
     
     const float3 peakDirection = SH_ToPeakDirection(resolved.diffSH);
-    const float3 peakColor = SH_ToColor(resolved.diffSH);
+    const float3 peakColor = SH_ToColor(resolved.diffSH) * resolved.diffAO;
 
     const float3 ld = SH_ToDiffuse(resolved.diffSH, surf.normal) * resolved.diffAO;
     const float3 ls = resolved.spec * resolved.specAO;

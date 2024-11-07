@@ -53,7 +53,7 @@
     #define SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv)
     #define SURF_TEX_TRIPLANAR(t, n, uvw) SampleTexTriplanar(t,n,uvw,0.0f)
     #define SURF_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
-    #define SURF_EVALUATE_BxDF BxDF_Direct
+    #define SURF_EVALUATE_BxDF BxDF_Principled
     #define SURF_EVALUATE_BxDF_INDIRECT GetIndirectLight_Main
     #define SURF_FS_ASSIGN_WORLDPOSITION vs_WORLDPOSITION = UVToWorldPos(gl_FragCoord.xy * pk_ScreenParams.zw, ViewDepth(gl_FragCoord.z));
 #endif
@@ -122,8 +122,8 @@ struct SurfaceData
     float3 emission;
     float3 sheen;
     float3 subsurface;
-    float3 clearCoat;
-    float sheenTint;
+    float sheenRoughness;
+    float clearCoat;
     float clearCoatGloss;
     float alpha;
     float metallic;     
@@ -205,8 +205,8 @@ struct SurfaceData
     // traditional syntax is a bit cumbersome.
     layout(set = PK_SET_PASS) uniform sampler pk_Sampler_SurfDefault;
     
-    #define SurfaceData_Default SurfaceData(0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f)
-    
+    #define SurfaceData_Default SurfaceData(0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f)
+
     // http://www.thetenthplanet.de/archives/1180
     float3x3 ComposeDerivativeTBN(float3 normal, const float3 position, const float2 texcoord)
     {
@@ -359,10 +359,10 @@ struct SurfaceData
                 F0,
                 surf.normal,
                 surf.viewdir,
-                surf.sheen,
                 surf.subsurface,
+                surf.sheen,
+                pow2(surf.sheenRoughness),
                 surf.clearCoat,
-                surf.sheenTint,
                 surf.clearCoatGloss,
                 pow2(surf.roughness), // Convert linear roughness to roughness
                 max(0.0f, dot(surf.normal, surf.viewdir))
