@@ -909,7 +909,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Shaders\CS_GI_Reproject.shader" />
     <None Include="Content\Shaders\CS_GI_ShadeHits.shader" />
     <None Include="Content\Shaders\CS_HierachicalDepth.shader" />
-    <None Include="Content\Shaders\CS_EnvSH.shader" />
+    <None Include="Content\Shaders\CS_EnvIntegrateSH.shader" />
     <None Include="Content\Shaders\CS_ScreenspaceShadow.shader" />
     <None Include="Content\Shaders\CS_TemporalAntialiasing.shader" />
     <None Include="Content\Shaders\CS_VolumeFogDensity.shader" />
@@ -964,7 +964,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Shaders\CS_LightAssignment.shader" />
     <None Include="Content\Shaders\CS_PostEffectsComposite.shader" />
     <None Include="Content\Shaders\CS_DepthOfField.shader" />
-    <None Include="Content\Shaders\CS_EnvIntegrateSH.shader" />
+    <None Include="Content\Shaders\CS_EnvIntegrateIBL.shader" />
     <None Include="Content\Shaders\CS_CopyCubeShadow.shader" />
     <None Include="Content\Shaders\MS_Mat_Surf_Default.shader" />
     <None Include="Content\Shaders\MS_Mat_Surf_Glitter.shader" />

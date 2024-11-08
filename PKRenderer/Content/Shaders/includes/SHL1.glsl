@@ -31,6 +31,7 @@ SHLuma SH_Add(const SHLuma sha, const SHLuma shb, float sb) { return SHLuma(sha.
 
 float SH_ToLuminanceL0(const SHCoCg sh) { return sh.Y.x / PK_L1BASIS.x; }
 float3 SH_ToPeakDirection(const SHCoCg sh) { return sh.Y.yzw / (length(sh.Y.yzw) + 1e-6f); }
+
 float SH_ToLuminanceL0(const SHLuma sh) { return dot(sh.A, PK_LUMA_BT709) / PK_L1BASIS.x; }
 float3 SH_ToPeakDirection(const SHLuma sh) { return sh.Y / (length(sh.Y) + 1e-6f); }
 

@@ -21,14 +21,13 @@ void main()
     V.y = 0;
     V.z = NoV;						// cos
 
-    float A = 0;
-    float B = 0;
-    float C = 0;
+    float4 accum = 0.0f.xxxx;
 
     for (uint i = 0; i < sample_count; ++i)
     {
         float2 Xi = Hammersley(i, sample_count);
 
+        // GGX Specular term
         {
             float3 H = Fr_Inverse_GGX(Xi, pow2(roughness));
             float3 L = 2 * dot(V, H) * H - V;
@@ -48,26 +47,26 @@ void main()
 
                 #if PK_DFG_USE_MULTIPLE_SCATTER
                     float Fc = pow(1 - VoH, 5);
-                    A += NoL_Vis_PDF * Fc;
-                    B += NoL_Vis_PDF;
+                    accum.x += NoL_Vis_PDF * Fc;
+                    accum.y += NoL_Vis_PDF;
                 #else
                     float Fc = pow(1 - VoH, 5);
-                    A += NoL_Vis_PDF * (1 - Fc);
-                    B += NoL_Vis_PDF * Fc;
+                    accum.x += NoL_Vis_PDF * (1 - Fc);
+                    accum.y += NoL_Vis_PDF * Fc;
                 #endif
             }
         }
 
         // Diffuse term
         {
-            float Phi = PK_TWO_PI * Xi.x;
-            float CosTheta = sqrt(Xi.y);
-            float SinTheta = sqrt(1 - CosTheta * CosTheta);
+            float phi = PK_TWO_PI * Xi.x;
+            float cosTheta = sqrt(Xi.y);
+            float sinTheta = sqrt(1 - cosTheta * cosTheta);
 
             float3 L;
-            L.x = SinTheta * cos(Phi);
-            L.y = SinTheta * sin(Phi);
-            L.z = CosTheta;
+            L.x = sinTheta * cos(phi);
+            L.y = sinTheta * sin(phi);
+            L.z = cosTheta;
             float3 H = normalize(V + L);
 
             float LoH = saturate(dot(L, H));
@@ -77,10 +76,34 @@ void main()
             
             if (NoL > 0)
             {
-                C += Fd_Chan(NoV, NoL, NoH, LoH, 1.0f, pow2(roughness));
+                accum.z += Fd_Chan(NoV, NoL, NoH, LoH, 1.0f, pow2(roughness));
+            }
+        }
+
+        // Cloth term
+        {
+            float phi = PK_TWO_PI * Xi.x;
+            float cosTheta = 1.0f - Xi.y;
+            float sinTheta = sqrt(1 - cosTheta * cosTheta);
+
+            float3 H;
+            H.x = sinTheta * cos(phi);
+            H.y = sinTheta * sin(phi);
+            H.z = cosTheta;
+            float3 L = 2 * dot(V, H) * H - V;
+
+            float VoH = saturate(dot(V, H));
+            float NoL = saturate(L.z);
+            float NoH = saturate(H.z);
+
+            if (NoL > 0)
+            {
+                const float V = V_Neubelt(NoV, NoL);
+                const float D = D_Charlie(NoH, pow2(roughness));
+                accum.w += V * D * NoL * VoH * (4.0f * PK_TWO_PI);
             }
         }
     }
 
-    imageStore(pk_Image, coord, float4(float3(A, B, C) / sample_count, 0.0f));
+    imageStore(pk_Image, coord, accum / sample_count);
 }

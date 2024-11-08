@@ -1921,7 +1921,7 @@
     <None Include="Content\Configs\Input.keycfg" />
     <None Include="Content\Shaders\includes\Utilities.glsl" />
     <None Include="Content\Shaders\includes\Common.glsl" />
-    <None Include="Content\Shaders\CS_EnvIntegrateSH.shader" />
+    <None Include="Content\Shaders\CS_EnvIntegrateIBL.shader" />
     <None Include="Content\Shaders\includes\Encoding.glsl" />
     <None Include="Content\Shaders\includes\Lighting.glsl" />
     <None Include="Content\Textures\T_OEM_Quarry.ktx2" />
@@ -2037,7 +2037,7 @@
     <None Include="Content\Shaders\CS_HierachicalDepth.shader" />
     <None Include="Content\Shaders\CS_CompressBC6H.shader" />
     <None Include="Content\Shaders\includes\CTASwizzling.glsl" />
-    <None Include="Content\Shaders\CS_EnvSH.shader" />
+    <None Include="Content\Shaders\CS_EnvIntegrateSH.shader" />
     <None Include="Content\Shaders\includes\SceneEnv.glsl" />
     <None Include="Content\Shaders\includes\TricubicSampler.glsl" />
     <None Include="Content\Shaders\CS_GI_ShadeHits.shader" />

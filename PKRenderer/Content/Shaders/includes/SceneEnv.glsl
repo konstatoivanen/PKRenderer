@@ -22,10 +22,27 @@ float3 SampleEnvironmentSH(float4 basis)
     return float3(R, G, B);
 }
 
-float3 SampleEnvironmentSH(float3 direction)  { return SampleEnvironmentSH(float4(1.0f, direction) * PK_L1BASIS_COSINE * 2.0f);  }
+float3 SampleEnvironmentSHPeakDirection()
+{
+    float3 direction = 0.0f.xxx;
+    direction += PK_BUFFER_DATA(pk_SceneEnv_SH, 0).yzw * PK_LUMA_BT709.r;
+    direction += PK_BUFFER_DATA(pk_SceneEnv_SH, 1).yzw * PK_LUMA_BT709.g;
+    direction += PK_BUFFER_DATA(pk_SceneEnv_SH, 2).yzw * PK_LUMA_BT709.b;
+    return direction / (length(direction) + 1e-6f); 
+}
+
+float3 SampleEnvironmentSHColor()
+{
+    const float R = PK_BUFFER_DATA(pk_SceneEnv_SH, 0).x;
+    const float G = PK_BUFFER_DATA(pk_SceneEnv_SH, 1).x;
+    const float B = PK_BUFFER_DATA(pk_SceneEnv_SH, 2).x;
+    return float3(R, G, B) / PK_L1BASIS.xxx;
+}
+
+float3 SampleEnvironmentSHDiffuse(float3 direction)  { return SampleEnvironmentSH(float4(1.0f, direction) * PK_L1BASIS_COSINE * 2.0f);  }
 
 float3 SampleEnvironmentSHVolumetric(float3 viewdir, float phase) 
 { 
-    float4 zh = float4(1.0f, viewdir) * float4(1.0f, phase.xxx);
+    const float4 zh = float4(1.0f, viewdir) * float4(1.0f, phase.xxx);
     return SampleEnvironmentSH(zh); 
 }

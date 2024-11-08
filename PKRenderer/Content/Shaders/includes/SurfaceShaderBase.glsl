@@ -262,9 +262,30 @@ struct SurfaceData
     
     float3 GetIndirectLight_Main(const BxDFSurf surf, const float3 worldpos, const float3 clipuvw)
     {
-        //float3 diffuse = SampleEnvironment(OctaUV(surf.normal), 1.0f);
-        //float3 specular = SampleEnvironment(OctaUV(reflect(-surf.viewdir, surf.normal)), surf.alpha);
-        return GI_LoadAndShadeSurface(surf, clipuvw.xy);
+        #define PK_SURF_DEBUG_SCENE_IBL 0
+        #if PK_SURF_DEBUG_SCENE_IBL
+            const float3 peakDirection = SampleEnvironmentSHPeakDirection();
+            const float3 peakColor = SampleEnvironmentSHColor() * PK_TWO_PI;
+            const float3 ld = SampleEnvironmentSHDiffuse(surf.normal);
+            const float2 lsUv = OctaUV(Futil_SpecularDominantDirection(surf.normal, surf.viewdir, sqrt(surf.alpha)));
+            const float3 ls = SampleEnvironment(lsUv, surf.alpha);
+            const float specularFade = 1.0f;
+        #else
+            const GIResolved resolved = GI_Load_Resolved(clipuvw.xy); 
+            const float3 peakDirection = SH_ToPeakDirection(resolved.diffSH);
+            // Recover energy from cosine distribution.
+            const float3 peakColor = SH_ToColor(resolved.diffSH) * PK_TWO_PI * resolved.diffAO;
+            const float3 ld = SH_ToDiffuse(resolved.diffSH, surf.normal) * resolved.diffAO;
+            const float3 ls = resolved.spec * resolved.specAO;
+
+            #if PK_GI_APPROX_ROUGH_SPEC == 1
+            const float specularFade = 1.0f - GI_RoughSpecWeight(sqrt(surf.alpha));
+            #else
+            const float specularFade = 1.0f;
+            #endif
+        #endif
+
+        return BxDF_SceneGI(surf, peakDirection, peakColor, ld, ls, specularFade);
     }
     
     float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 worldpos, const float3 clipuvw)
@@ -346,7 +367,7 @@ struct SurfaceData
         #else
 
             // Metallic workflow
-            float3 F0 = Futil_ComputeF0(surf.albedo, surf.metallic);
+            float3 F0 = Futil_ComputeF0(surf.albedo, surf.metallic, surf.clearCoat);
             float3 diffuseColor = Futil_ComputeDiffuseColor(surf.albedo, surf.metallic);
 
             #if defined(SURF_TRANSPARENT)

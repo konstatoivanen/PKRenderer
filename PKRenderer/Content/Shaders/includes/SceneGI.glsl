@@ -193,23 +193,3 @@ void GI_Store_Resolved(const int2 coord, const GIDiff diff, const GISpec spec)
     packed.w = EncodeE5BGR9(spec.radiance);
     imageStore(pk_GI_ResolvedWrite, coord, packed);
 }
-
-//----------SHADING FUNCTIONS----------//
-float3 GI_LoadAndShadeSurface(BxDFSurf surf, const float2 uv)
-{
-    GIResolved resolved = GI_Load_Resolved(uv); 
-    
-    const float3 peakDirection = SH_ToPeakDirection(resolved.diffSH);
-    const float3 peakColor = SH_ToColor(resolved.diffSH) * resolved.diffAO;
-
-    const float3 ld = SH_ToDiffuse(resolved.diffSH, surf.normal) * resolved.diffAO;
-    const float3 ls = resolved.spec * resolved.specAO;
-
-    #if PK_GI_APPROX_ROUGH_SPEC == 1
-    const float roughnessFade = 1.0f - GI_RoughSpecWeight(sqrt(surf.alpha));
-    #else
-    const float roughnessFade = 1.0f;
-    #endif
-
-    return BxDF_SceneGI(surf, peakDirection, peakColor, ld, ls, roughnessFade);
-}

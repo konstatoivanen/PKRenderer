@@ -21,8 +21,8 @@ namespace PK::App
 
         auto hash = HashCache::Get();
         m_backgroundShader = assetDatabase->Find<ShaderAsset>("VS_EnvBackground");
-        m_shShader = assetDatabase->Find<ShaderAsset>("CS_EnvSH");
-        m_integrateSHShader = assetDatabase->Find<ShaderAsset>("CS_EnvIntegrateSH");
+        m_shShader = assetDatabase->Find<ShaderAsset>("CS_EnvIntegrateSH");
+        m_integrateSHShader = assetDatabase->Find<ShaderAsset>("CS_EnvIntegrateIBL");
         m_shBuffer = RHI::CreateBuffer<float4>(4ull, BufferUsage::DefaultStorage, "Scene.Env.SHBuffer");
         RHI::SetBuffer(hash->pk_SceneEnv_SH, m_shBuffer.get());
         RHI::SetTexture(hash->pk_SceneEnv, RHI::GetBuiltInResources()->BlackTexture2D.get());
