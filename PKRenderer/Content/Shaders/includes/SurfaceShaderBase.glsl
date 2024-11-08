@@ -265,7 +265,7 @@ struct SurfaceData
         #define PK_SURF_DEBUG_SCENE_IBL 0
         #if PK_SURF_DEBUG_SCENE_IBL
             const float3 peakDirection = SampleEnvironmentSHPeakDirection();
-            const float3 peakColor = SampleEnvironmentSHColor() * PK_TWO_PI;
+            const float3 peakColor = SampleEnvironmentSHColor() * PK_PI;
             const float3 ld = SampleEnvironmentSHDiffuse(surf.normal);
             const float2 lsUv = OctaUV(Futil_SpecularDominantDirection(surf.normal, surf.viewdir, sqrt(surf.alpha)));
             const float3 ls = SampleEnvironment(lsUv, surf.alpha);
@@ -273,8 +273,10 @@ struct SurfaceData
         #else
             const GIResolved resolved = GI_Load_Resolved(clipuvw.xy); 
             const float3 peakDirection = SH_ToPeakDirection(resolved.diffSH);
-            // Recover energy from cosine distribution.
-            const float3 peakColor = SH_ToColor(resolved.diffSH) * PK_TWO_PI * resolved.diffAO;
+            // Recover energy from cosine distribution of accumulated samples.
+            // @TODO figure out a "correct" factor for this as using just the color seems to produce very dim results.
+            // 2 * PI seems a bit too strong? pi seems ok but maybe too weak? Keep 1 * pi as it more on the safe side.
+            const float3 peakColor = SH_ToColor(resolved.diffSH) * PK_PI * resolved.diffAO;
             const float3 ld = SH_ToDiffuse(resolved.diffSH, surf.normal) * resolved.diffAO;
             const float3 ls = resolved.spec * resolved.specAO;
 
