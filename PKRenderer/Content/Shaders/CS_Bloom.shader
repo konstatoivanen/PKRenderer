@@ -53,29 +53,30 @@ void Downsample1Cs()
     const float2 tx_src = 1.0f.xx / textureSize(pk_Texture, 0).xy;
     const float2 uv = float2(coord + 0.5f.xx) * tx_dst;
 
-    float4 color = 0.0f.xxxx;
+    // Source: https://www.shadertoy.com/view/cslczj
+    // A 6x6 downsampling filter using 9 taps. Designed to be used in a bloom downsampling chain.
+    const float w0 = 0.302001f;
+    const float a = 0.127963f;
+    const float b = 0.0465365f;
+    const float oa = 1.5f + 0.25f;
+    const float ob = 1.5f + (0.125f + 1.0f / 16.0f);
 
-    color.rgb += texture(pk_Texture, uv + float2(2, -2) * tx_src).rgb * 0.125f;
-    color.rgb += texture(pk_Texture, uv + float2(-2, -2) * tx_src).rgb * 0.125f;
-    color.rgb += texture(pk_Texture, uv + float2(0, -2) * tx_src).rgb * 0.25f;
+    const float2 oa2 = oa * tx_src;
+    const float2 ob2 = ob * tx_src;
 
-    color.rgb += texture(pk_Texture, uv + float2(-1, -1) * tx_src).rgb * 0.5f;
-    color.rgb += texture(pk_Texture, uv + float2(1, -1) * tx_src).rgb * 0.5f;
+    float3 color = 0.0f.xxx;
 
-    color.rgb += texture(pk_Texture, uv + float2(-2, 0) * tx_src).rgb * 0.25f;
-    color.rgb += texture(pk_Texture, uv + float2(0, 0) * tx_src).rgb * 0.5f;
-    color.rgb += texture(pk_Texture, uv + float2(2, 0) * tx_src).rgb * 0.25f;
+    color += texture(pk_Texture, uv).rgb * w0;
+    color += texture(pk_Texture, uv + float2(-1.0, +0.0) * oa2).rgb * a;
+    color += texture(pk_Texture, uv + float2(+1.0, +0.0) * oa2).rgb * a;
+    color += texture(pk_Texture, uv + float2(+0.0, -1.0) * oa2).rgb * a;
+    color += texture(pk_Texture, uv + float2(+0.0, +1.0) * oa2).rgb * a;
+    color += texture(pk_Texture, uv + float2(-1.0, -1.0) * ob2).rgb * b;
+    color += texture(pk_Texture, uv + float2(+1.0, -1.0) * ob2).rgb * b;
+    color += texture(pk_Texture, uv + float2(-1.0, +1.0) * ob2).rgb * b;
+    color += texture(pk_Texture, uv + float2(+1.0, +1.0) * ob2).rgb * b;
 
-    color.rgb += texture(pk_Texture, uv + float2(-1, 1) * tx_src).rgb * 0.5f;
-    color.rgb += texture(pk_Texture, uv + float2(1, 1) * tx_src).rgb * 0.5f;
-
-    color.rgb += texture(pk_Texture, uv + float2(-1, 2) * tx_src).rgb * 0.125f;
-    color.rgb += texture(pk_Texture, uv + float2(0, 2) * tx_src).rgb * 0.25f;
-    color.rgb += texture(pk_Texture, uv + float2(2, 2) * tx_src).rgb * 0.125f;
-
-    color.rgb *= 0.25f;
-
-    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color.rgb)));
+    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color)));
 }
 
 void UpsampleCs()

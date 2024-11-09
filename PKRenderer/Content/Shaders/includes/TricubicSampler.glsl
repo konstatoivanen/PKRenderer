@@ -4,12 +4,12 @@
 
 #define DEFINE_TRICUBIC_SAMPLER(TVolume, TVolumeSize)                                   \
                                                                                         \
-    half4 TVolume##SAMPLER_TRICUBIC(float3 coord)                                       \
+    half4 TVolume##SAMPLER_TRICUBIC(float3 uvw)                                         \
     {                                                                                   \
         half3 texSize = half3(TVolumeSize);                                             \
-        half3 coord_grid = half3(coord) * texSize - 0.5hf;                              \
-        half3 index = floor(coord_grid);                                                \
-        half3 fraction = coord_grid - index;                                            \
+        half3 coord = half3(uvw) * texSize - 0.5hf;                                     \
+        half3 index = floor(coord);                                                     \
+        half3 fraction = coord - index;                                                 \
         half3 one_frac = 1.0hf - fraction;                                              \
         half3 w0 = 1.0hf / 6.0hf * one_frac * one_frac * one_frac;                      \
         half3 w1 = 2.0hf / 3.0hf - 0.5hf * fraction * fraction * (2.0hf - fraction);    \
