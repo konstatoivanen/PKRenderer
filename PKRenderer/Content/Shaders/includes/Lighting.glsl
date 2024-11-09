@@ -21,24 +21,18 @@
 #endif
 
 // Karis 2013: https://de45xmedrsdbp.cloudfront.net/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
-float GetLightFalloffAttenuation(float dist, float radius) 
+float Lights_FalloffAttenuation(float dist, float radius) 
 { 
     return pow2(saturate(1.0f - pow4(dist/radius))) / (pow2(dist) + 1.0f); 
 }
 
-// Light depth test uses reverse z. Reverse range for actual distance.
-float2 LightClipToUV(const float4 clip) 
-{
-    return fma((clip.xy / clip.w), 0.5f.xx, 0.5f.xx); 
-}
-
-float3 GetLightClipUVW(const float3 worldpos, const uint matrixIndex)
+float3 Lights_GetClipUVW(const float3 worldpos, const uint matrixIndex)
 {
     float4 coord = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex) * float4(worldpos, 1.0f);
-    return float3(LightClipToUV(coord), coord.w);
+    return float3(ClipToUV(coord.xyw), coord.w);
 }
 
-float4 GetLightClipUVMinMax(const float3 worldpos, const float3 shadowBias, const uint matrixIndex)
+float4 Lights_GetClipUVMinMax(const float3 worldpos, const float3 shadowBias, const uint matrixIndex)
 {
     const float4x4 lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex);
     float3 coord0 = (lightMatrix * float4(worldpos + shadowBias.xyz, 1.0f)).xyw;
@@ -48,7 +42,7 @@ float4 GetLightClipUVMinMax(const float3 worldpos, const float3 shadowBias, cons
     return float4(coord0.xy, coord1.xy);
 }
 
-Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias, const uint cascade)
+Light Lights_LoadAt(const uint index, float3 worldpos, const float3 shadowBias, const uint cascade)
 {
     const LightPacked light = Lights_LoadPacked(index);
 
@@ -82,29 +76,29 @@ Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias,
             worldpos += biasFactors.y * posToLight * SHADOW_NEAR_BIAS * (1.0f + cascade);
             #endif
 
-            coord = GetLightClipUVW(worldpos, indexMatrix);
+            coord = Lights_GetClipUVW(worldpos, indexMatrix);
             shadowDistance = dot(light.LIGHT_POS, worldpos) + light.LIGHT_RADIUS;
                 
             #if SHADOW_SAMPLE_VOLUMETRICS == 1
             linearDistance = 1e+4f;
-            shadowUVMinMax = GetLightClipUVMinMax(worldpos, shadowBias, indexMatrix);
+            shadowUVMinMax = Lights_GetClipUVMinMax(worldpos, shadowBias, indexMatrix);
             #endif
         }
         break;
         case LIGHT_TYPE_SPOT:
         {
             const float4 L = normalizeLength(light.LIGHT_POS - worldpos);
-            color *= GetLightFalloffAttenuation(L.w, light.LIGHT_RADIUS);
+            color *= Lights_FalloffAttenuation(L.w, light.LIGHT_RADIUS);
             sourceRadius /= L.w;
             posToLight = L.xyz;
             shadowDistance = L.w - SHADOW_NEAR_BIAS;
-            coord = GetLightClipUVW(worldpos, indexMatrix);
+            coord = Lights_GetClipUVW(worldpos, indexMatrix);
             color *= step(0.0f, coord.z);
             color *= texture(pk_LightCookies, float3(coord.xy, light.LIGHT_COOKIE)).r;
 
             #if SHADOW_SAMPLE_VOLUMETRICS == 1
             linearDistance = L.w;
-            shadowUVMinMax = GetLightClipUVMinMax(worldpos, shadowBias, indexMatrix);
+            shadowUVMinMax = Lights_GetClipUVMinMax(worldpos, shadowBias, indexMatrix);
             #endif
 
         }
@@ -112,7 +106,7 @@ Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias,
         case LIGHT_TYPE_POINT:
         {
             const float4 L = normalizeLength(light.LIGHT_POS - worldpos);
-            color *= GetLightFalloffAttenuation(L.w, light.LIGHT_RADIUS);
+            color *= Lights_FalloffAttenuation(L.w, light.LIGHT_RADIUS);
             coord.xy = OctaEncode(-L.xyz);
             sourceRadius /= L.w;
             shadowDistance = L.w - SHADOW_NEAR_BIAS;
@@ -149,7 +143,7 @@ Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias,
     return Light(color, shadow, posToLight, linearDistance, sourceRadius);
 }
 
-Light GetLight(const uint index, const float3 worldpos, const float3 shadowBias, const uint cascade) 
+Light Lights_LoadTiled(const uint index, const float3 worldpos, const float3 shadowBias, const uint cascade) 
 { 
-    return GetLightDirect(PK_BUFFER_DATA(pk_LightLists, index), worldpos, shadowBias, cascade); 
+    return Lights_LoadAt(PK_BUFFER_DATA(pk_LightLists, index), worldpos, shadowBias, cascade); 
 }

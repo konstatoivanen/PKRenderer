@@ -142,8 +142,8 @@ float2 ViewDepthExp(const float2 clip_z)  { return pk_ClipParams.x * pow(pk_Clip
 float  ClipDepthExp(const float view_z)   { return log2(view_z) * pk_ClipParamsExp.x + pk_ClipParamsExp.y; }
 float2 ClipDepthExp(const float2 view_z)  { return log2(view_z) * pk_ClipParamsExp.x + pk_ClipParamsExp.y; }
 
-float3 ClipToUVW(const float4 clip) { return (clip.xyz / clip.w) * float3(0.5f.xx, 1.0f) + float3(0.5f.xx, 0.0f); }
-float2 ClipToUV(const float3 clipxyw) { return (clipxyw.xy / clipxyw.z) * 0.5f + 0.5f; }
+float3 ClipToUVW(const float4 clip) { return fma(clip.xyz / clip.w, float3(0.5f.xx, 1.0f), float3(0.5f.xx, 0.0f)); }
+float2 ClipToUV(const float3 clipxyw) { return fma(clipxyw.xy / clipxyw.z, 0.5f.xx, 0.5f.xx); }
 
 float4 ViewToClipPos(const float3 pos) { return pk_ViewToClip * float4(pos, 1.0f); }
 float4 ViewToClipPosPrev(const float3 pos) { return pk_ViewToPrevClip * float4(pos, 1.0f); }

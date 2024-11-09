@@ -79,7 +79,7 @@ void ShadowmapCs()
     worldpos += biasFactors.x * normal * SHADOW_NEAR_BIAS * float(normalclip) * (1.0f + cascade * cascade);
     worldpos += biasFactors.y * posToLight * SHADOW_NEAR_BIAS * (1.0f + cascade) * (1.0f + 0.1f / sqrt(depth));
 
-    const float2 uv = LightClipToUV(lightMatrix * float4(worldpos, 1.0f)).xy;
+    const float2 uv = ClipToUV((lightMatrix * float4(worldpos, 1.0f)).xyw);
     const float z = dot(light.LIGHT_POS, worldpos) + light.LIGHT_RADIUS;
 
     // PCSS 

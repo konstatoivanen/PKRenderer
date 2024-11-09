@@ -400,7 +400,7 @@ struct SurfaceData
             LightTile tile = Lights_GetTile_PX(screencoord, ViewDepth(surf.clipuvw.z));
             for (uint i = tile.start; i < tile.end; ++i)
             {
-                Light light = GetLight(i, surf.worldpos, surf.normal, tile.cascade);
+                Light light = Lights_LoadTiled(i, surf.worldpos, surf.normal, tile.cascade);
                 sv_output0.rgb += SURF_EVALUATE_BxDF(bxdf_surf, light.direction, light.color, light.shadow, light.sourceRadius);
             }
 

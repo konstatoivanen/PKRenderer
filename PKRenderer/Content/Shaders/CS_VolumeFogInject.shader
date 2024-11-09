@@ -69,7 +69,7 @@ void main()
     for (uint i = tile.start; i < tile.end; ++i)
     {
         // @TODO current 1spp shadow test for fog is prone to banding. implement better filter.
-        Light light = GetLight(i, worldpos, shadowBias, tile.cascade);
+        Light light = Lights_LoadTiled(i, worldpos, shadowBias, tile.cascade);
 
         const float marchDistance = min(light.linearDistance, maxMarchDistance);
         light.color *= VFog_MarchTransmittance(worldpos, light.direction, dither.y, marchDistance, farFade);
