@@ -39,7 +39,7 @@
     #define SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv, 4.0f)
     #define SURF_TEX_TRIPLANAR(t, n, uvw) SampleTexTriplanar(t,n,uvw,4.0f)
     #define SURF_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNDCSpace(position)
-    #define SURF_EVALUATE_BxDF BxDF_DirectMinimal
+    #define SURF_EVALUATE_BxDF BxDF_FullyRoughMinimal
     #define SURF_EVALUATE_BxDF_INDIRECT GetIndirectLight_VXGI
     #define SURF_FS_ASSIGN_WORLDPOSITION vs_WORLDPOSITION = GI_FragVoxelToWorldSpace(gl_FragCoord.xyz);
 #else

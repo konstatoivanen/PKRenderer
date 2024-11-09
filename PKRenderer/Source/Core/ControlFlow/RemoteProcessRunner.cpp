@@ -8,7 +8,6 @@ namespace PK
 {
     RemoteProcessRunner::RemoteProcessRunner()
     {
-        // @TODO hmm not a good cvar namespace
         CVariableRegister::Create<CVariableFunc>("Application.Run.Executable", [this](const char* const* args, uint32_t count)
             {
                 ExecuteRemoteProcess(args, count);

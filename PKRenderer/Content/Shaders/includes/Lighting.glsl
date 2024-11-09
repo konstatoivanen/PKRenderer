@@ -20,6 +20,12 @@
     #define SHADOW_SAMPLE_VOLUMETRICS_COUNT 4
 #endif
 
+// Karis 2013: https://de45xmedrsdbp.cloudfront.net/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
+float GetLightFalloffAttenuation(float dist, float radius) 
+{ 
+    return pow2(saturate(1.0f - pow4(dist/radius))) / (pow2(dist) + 1.0f); 
+}
+
 // Light depth test uses reverse z. Reverse range for actual distance.
 float2 LightClipToUV(const float4 clip) 
 {
@@ -88,7 +94,7 @@ Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias,
         case LIGHT_TYPE_SPOT:
         {
             const float4 L = normalizeLength(light.LIGHT_POS - worldpos);
-            color *= Fatten_Default(L.w, light.LIGHT_RADIUS);
+            color *= GetLightFalloffAttenuation(L.w, light.LIGHT_RADIUS);
             sourceRadius /= L.w;
             posToLight = L.xyz;
             shadowDistance = L.w - SHADOW_NEAR_BIAS;
@@ -106,7 +112,7 @@ Light GetLightDirect(const uint index, float3 worldpos, const float3 shadowBias,
         case LIGHT_TYPE_POINT:
         {
             const float4 L = normalizeLength(light.LIGHT_POS - worldpos);
-            color *= Fatten_Default(L.w, light.LIGHT_RADIUS);
+            color *= GetLightFalloffAttenuation(L.w, light.LIGHT_RADIUS);
             coord.xy = OctaEncode(-L.xyz);
             sourceRadius /= L.w;
             shadowDistance = L.w - SHADOW_NEAR_BIAS;

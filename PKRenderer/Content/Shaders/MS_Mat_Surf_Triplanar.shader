@@ -23,6 +23,6 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
     surf.albedo = SURF_TEX_TRIPLANAR(_AlbedoTexture, SURF_MESH_NORMAL, surf.worldpos * 0.25f).rgb * _Color.xyz;
     surf.sheen = float3(0.68f, 0.56f, 0.51f) * 0.5f;
     surf.sheenRoughness = 0.9f;
-    surf.clearCoat = 0.5f;
+    surf.clearCoat = 0.2f;
     surf.clearCoatGloss = 0.0f;
 }
