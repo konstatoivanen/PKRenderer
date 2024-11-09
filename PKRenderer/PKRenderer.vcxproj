@@ -912,9 +912,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Shaders\CS_EnvIntegrateSH.shader" />
     <None Include="Content\Shaders\CS_ScreenspaceShadow.shader" />
     <None Include="Content\Shaders\CS_TemporalAntialiasing.shader" />
-    <None Include="Content\Shaders\CS_VolumeFogDensity.shader" />
-    <None Include="Content\Shaders\CS_VolumeFogInject.shader" />
-    <None Include="Content\Shaders\CS_VolumeFogScatter.shader" />
+    <None Include="Content\Shaders\CS_VolumeFog_Density.shader" />
+    <None Include="Content\Shaders\CS_VolumeFog_Inject.shader" />
+    <None Include="Content\Shaders\CS_VolumeFog_Scatter.shader" />
     <None Include="Content\Shaders\includes\ComputeQuadSwap.glsl" />
     <None Include="Content\Shaders\includes\Gizmos.glsl" />
     <None Include="Content\Shaders\includes\Meshlets.glsl" />
@@ -944,12 +944,12 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Shaders\includes\SHL1.glsl" />
     <None Include="Content\Shaders\includes\TricubicSampler.glsl" />
     <None Include="Content\Shaders\RS_GI_Raytrace.shader" />
-    <None Include="Content\Shaders\CS_VolumeFogComposite.shader" />
+    <None Include="Content\Shaders\CS_VolumeFog_Composite.shader" />
     <None Include="Content\Shaders\RS_GI_ValidateReservoirs.shader" />
     <None Include="Content\Shaders\VS_Gizmos.shader" />
     <None Include="Content\Shaders\MS_Mat_Surf_Cloth.shader" />
     <None Include="Content\Shaders\includes\Utilities.glsl" />
-    <None Include="Content\Shaders\includes\Lighting.glsl" />
+    <None Include="Content\Shaders\includes\LightSampling.glsl" />
     <None Include="Content\Shaders\includes\PostFXColorGrading.glsl" />
     <None Include="Content\Shaders\includes\Noise.glsl" />
     <None Include="Content\Shaders\includes\PostFXDepthOfField.glsl" />

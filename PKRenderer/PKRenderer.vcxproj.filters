@@ -1923,7 +1923,7 @@
     <None Include="Content\Shaders\includes\Common.glsl" />
     <None Include="Content\Shaders\CS_EnvIntegrateIBL.shader" />
     <None Include="Content\Shaders\includes\Encoding.glsl" />
-    <None Include="Content\Shaders\includes\Lighting.glsl" />
+    <None Include="Content\Shaders\includes\LightSampling.glsl" />
     <None Include="Content\Textures\T_OEM_Quarry.ktx2" />
     <None Include="Content\Shaders\CS_PostEffectsComposite.shader" />
     <None Include="Content\Shaders\includes\PostFXColorGrading.glsl" />
@@ -2006,8 +2006,8 @@
     <None Include="Content\Shaders\includes\SceneGI.glsl" />
     <None Include="Content\Shaders\CS_GI_Accumulate.shader" />
     <None Include="Content\Shaders\includes\VolumeFog.glsl" />
-    <None Include="Content\Shaders\CS_VolumeFogScatter.shader" />
-    <None Include="Content\Shaders\CS_VolumeFogComposite.shader" />
+    <None Include="Content\Shaders\CS_VolumeFog_Scatter.shader" />
+    <None Include="Content\Shaders\CS_VolumeFog_Composite.shader" />
     <None Include="Content\Models\MDL_Rocks.mdl" />
     <None Include="Content\Textures\Environment\T_Marble_D.ktx2" />
     <None Include="Content\Textures\Environment\T_Marble_H.ktx2" />
@@ -2041,8 +2041,8 @@
     <None Include="Content\Shaders\includes\SceneEnv.glsl" />
     <None Include="Content\Shaders\includes\TricubicSampler.glsl" />
     <None Include="Content\Shaders\CS_GI_ShadeHits.shader" />
-    <None Include="Content\Shaders\CS_VolumeFogInject.shader" />
-    <None Include="Content\Shaders\CS_VolumeFogDensity.shader" />
+    <None Include="Content\Shaders\CS_VolumeFog_Inject.shader" />
+    <None Include="Content\Shaders\CS_VolumeFog_Density.shader" />
     <None Include="Content\Shaders\VS_Gizmos.shader" />
     <None Include="Content\Shaders\includes\SceneGIFiltering.glsl" />
     <None Include="Content\Shaders\includes\SceneGIReSTIR.glsl" />

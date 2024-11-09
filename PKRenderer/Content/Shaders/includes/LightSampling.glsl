@@ -1,7 +1,6 @@
 #pragma once
 #include "LightResources.glsl"
 #include "Encoding.glsl"
-#include "BRDF.glsl"
 #include "Shadows.glsl"
 
 #ifndef SHADOW_TEST 
@@ -42,7 +41,7 @@ float4 Lights_GetClipUVMinMax(const float3 worldpos, const float3 shadowBias, co
     return float4(coord0.xy, coord1.xy);
 }
 
-Light Lights_LoadAt(const uint index, float3 worldpos, const float3 shadowBias, const uint cascade)
+LightSample Lights_SampleAt(const uint index, float3 worldpos, const float3 shadowBias, const uint cascade)
 {
     const LightPacked light = Lights_LoadPacked(index);
 
@@ -140,10 +139,10 @@ Light Lights_LoadAt(const uint index, float3 worldpos, const float3 shadowBias, 
         #endif
     }
 
-    return Light(color, shadow, posToLight, linearDistance, sourceRadius);
+    return LightSample(color, shadow, posToLight, linearDistance, sourceRadius);
 }
 
-Light Lights_LoadTiled(const uint index, const float3 worldpos, const float3 shadowBias, const uint cascade) 
+LightSample Lights_SampleTiled(const uint index, const float3 worldpos, const float3 shadowBias, const uint cascade) 
 { 
-    return Lights_LoadAt(PK_BUFFER_DATA(pk_LightLists, index), worldpos, shadowBias, cascade); 
+    return Lights_SampleAt(PK_BUFFER_DATA(pk_LightLists, index), worldpos, shadowBias, cascade); 
 }

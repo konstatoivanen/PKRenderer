@@ -7,7 +7,7 @@
 
 #include "includes/GBuffers.glsl"
 #include "includes/NoiseBlue.glsl"
-#include "includes/Lighting.glsl"
+#include "includes/LightSampling.glsl"
 #include "includes/Kernels.glsl"
 
 layout(r8, set = PK_SET_DRAW) uniform image2D pk_Image;

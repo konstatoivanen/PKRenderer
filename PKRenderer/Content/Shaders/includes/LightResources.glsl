@@ -23,7 +23,7 @@
 #define LIGHT_COLOR c.xyz
 #define LIGHT_ANGLE c.w
 
-struct Light
+struct LightSample
 {
     float3 color;
     float shadow;

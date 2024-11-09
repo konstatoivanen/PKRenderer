@@ -40,10 +40,10 @@ namespace PK::App
         m_volumeDensity = RHI::CreateTexture(descriptor, "Fog.DensityVolume");
         m_volumeDensityPrev = RHI::CreateTexture(descriptor, "Fog.DensityVolume.Previous");
 
-        m_computeDensity = assetDatabase->Find<ShaderAsset>("CS_VolumeFogDensity");
-        m_computeInject = assetDatabase->Find<ShaderAsset>("CS_VolumeFogInject");
-        m_computeScatter = assetDatabase->Find<ShaderAsset>("CS_VolumeFogScatter");
-        m_shaderComposite = assetDatabase->Find<ShaderAsset>("CS_VolumeFogComposite");
+        m_computeDensity = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Density");
+        m_computeInject = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Inject");
+        m_computeScatter = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Scatter");
+        m_shaderComposite = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Composite");
     }
 
     void PassVolumeFog::SetViewConstants(RenderView* view)
