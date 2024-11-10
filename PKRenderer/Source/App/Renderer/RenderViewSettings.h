@@ -67,6 +67,7 @@ namespace PK::App
         PK_YAML_MEMBER(uint, ChannelMixerGreen, 0x00FF00FF)
         PK_YAML_MEMBER(uint, ChannelMixerBlue, 0x0000FFFF)
         PK_YAML_MEMBER(TextureAsset*, LutTextureAsset, nullptr)
+        PK_YAML_MEMBER(TextureAsset*, TonemapLutTextureAsset, nullptr)
     PK_YAML_STRUCT_END()
 
     PK_YAML_STRUCT_BEGIN(BloomSettings)

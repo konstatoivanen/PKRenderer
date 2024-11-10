@@ -148,6 +148,7 @@ namespace PK::App
         DECLARE_HASH(pk_CC_Vibrance)
         DECLARE_HASH(pk_CC_Contribution)
         DECLARE_HASH(pk_CC_LutTex)
+        DECLARE_HASH(pk_Tonemap_LutTex)
 
         DECLARE_HASH(pk_TAA_Sharpness)
         DECLARE_HASH(pk_TAA_BlendingStatic)

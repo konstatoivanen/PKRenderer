@@ -45,10 +45,14 @@ void main()
 
     IF_FX_FEATURE_ENABLED(FX_FEAT_TONEMAP)
     {
+#if 1
+        color = Tonemap_LUT(color, exposure);
+#else
         // Applying a bit of desaturation to reduce high intensity value color blowout
         color = Saturate_BT2100(color, 0.96f);
         color = Tonemap_Uchimura(color, exposure);
         color = Saturate_BT2100(color, 0.93f);
+#endif
     }
 
     IF_FX_FEATURE_ENABLED(FX_FEAT_FILMGRAIN)

@@ -102,6 +102,14 @@ float3 Tonemap_Lottes(float3 color, float exposure)
     return pow(color, a.xxx) / (pow(color, a.xxx * d) * b + c);
 }
 
+float3 Tonemap_LUT(float3 color, float exposure) 
+{
+    const float3 stimulus = color * exposure;
+    const float3 encoded = stimulus / (stimulus + 1.0);
+    const float3 size = textureSize(pk_Tonemap_LutTex, 0).xyz;
+    return texture(pk_Tonemap_LutTex, encoded * ((size - 1.0) / size) + 0.5f / size).rgb;
+}
+
 float3 Saturate_BT2100(float3 color, float amount) { return lerp_true(dot(color, PK_LUMA_BT2100).xxx, color, amount); }
 
 float3 Saturate_BT709(float3 color, float amount) { return lerp_true(dot(color, PK_LUMA_BT709).xxx, color, amount); }

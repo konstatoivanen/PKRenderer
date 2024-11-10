@@ -15,6 +15,7 @@ namespace PK::App
         private:
             ShaderAsset* m_computeComposite = nullptr;
             RHITexture* m_colorgradingLut = nullptr;
+            RHITexture* m_tonemappingLut = nullptr;
             uint32_t m_passIndex = 0u;
     };
 }
