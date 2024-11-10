@@ -21,6 +21,6 @@ namespace PK::App
             uint32_t m_historyLayerIndex = 0u;
             float4 m_jitter = PK_FLOAT4_ZERO;
             uint32_t m_jitterSampleIndex = 0u;
-            float m_jitterSpread = 1.0f;
+            float m_jitterSpread = 2.0f;
     };
 }

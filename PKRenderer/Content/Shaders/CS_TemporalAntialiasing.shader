@@ -13,104 +13,90 @@ PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture1; // History Read
 layout(r32ui, set = PK_SET_DRAW) uniform uimage2D pk_Image; // History Write
 layout(rgba16f, set = PK_SET_DRAW) uniform image2D pk_Image1; // Color Write
 
-#define SAMPLE_TAA_SOURCE(uv) texture(pk_Texture, uv)
-#define SAMPLE_TAA_HISTORY(uv) texture(pk_Texture1, uv)
-
-struct TAADescriptor
-{
-    float2 texelSize;
-    float2 jitter;
-    float2 texcoord;
-    float2 motion;
-    float alphaMult;
-    float sharpness;
-    float blendStatic;
-    float blendMotion;
-    float motionMult;
-};
-
-float3 SolveTemporalAntiAliasing(TAADescriptor desc)
-{
-    float2 uv = desc.texcoord - desc.jitter;
-
-    float4 colorAlpha = SAMPLE_TAA_SOURCE(uv);
-    float3 color = colorAlpha.rgb;
-    float3 history = SAMPLE_TAA_HISTORY(desc.texcoord - desc.motion).rgb;
-    float3 color11 = SAMPLE_TAA_SOURCE(uv - desc.texelSize * 0.5f).rgb;
-    float3 color00 = SAMPLE_TAA_SOURCE(uv + desc.texelSize * 0.5f).rgb;
-    float3 corners = 4.0f * (color11 + color00) - 2.0f * color;
-
-    color += (color - (corners * 0.166667f)) * 2.718282f * desc.sharpness;
-    color = clamp(color, 0.0, PK_HALF_MAX_MINUS1);
-
-    float3 average = (corners + color) * 0.142857f;
-    float2 luminance = float2(dot(average, PK_LUMA_BT709), dot(color, PK_LUMA_BT709));
-
-    float motionLength = length(desc.motion);
-    float colorOffset = lerp(4.0f, 0.25f, saturate(motionLength * 100.0f)) * abs(luminance.x - luminance.y);
-
-    float3 minimum = min(color00, color11) - colorOffset;
-    float3 maximum = max(color00, color11) + colorOffset;
-
-    // Clip history color
-    {
-        float3 center = 0.5f * (maximum + minimum);
-        float3 extents = 0.5f * (maximum - minimum);
-        float3 offset = history - center;
-        float3 ts = abs(extents / (offset + 0.0001f));
-        float t = saturate(min(min(ts.x, ts.y), ts.z));
-        history = center + offset * t;
-    }
-
-    float weight = lerp(desc.blendStatic, desc.blendMotion, motionLength * desc.motionMult);
-    weight *= lerp(1.0f, colorAlpha.a, desc.alphaMult);
-    weight = clamp(weight, desc.blendMotion, desc.blendStatic);
-
-    color = lerp(color, history, weight);
-    color = clamp(color, 0.0f, PK_HALF_MAX_MINUS1);
-
-    return color;
-}
+float3 TonemapColor(const float3 c) { return c / (1.0 + cmax(c)); }
+float3 UntonemapColor(const float3 c) { return c / max(1.0f / 65504.0f, 1.0 - cmax(c)); }
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void main()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const int2 size = int2(pk_ScreenSize.xy * 2u);
+    const float2 texelSize = 2.0f.xx / size;
+    const float2 jitter = pk_ProjectionJitter.xy * texelSize;
+    const float2 texcoord = (coord + 0.5f.xx) / size;
 
-    TAADescriptor desc;
-    desc.texelSize = 2.0f.xx / size;
-    desc.jitter = pk_ProjectionJitter.xy * desc.texelSize;
-    desc.texcoord = (coord + 0.5f.xx) / size;
+    const float depth = SampleClipDepth(texcoord);
+    const float2 previousTexcoord = ClipToUVW(pk_ClipToPrevClip_NoJitter * float4(texcoord * 2 - 1, depth, 1)).xy;
+    const float2 motion = texcoord - previousTexcoord;
 
-    const float depth = SampleClipDepth(desc.texcoord);
-    const float2 previousTexcoord = ClipToUVW(pk_ClipToPrevClip_NoJitter * float4(desc.texcoord * 2 - 1, depth, 1)).xy;
+    const float sharpness = pk_TAA_Sharpness;
+    const float blendStatic = pk_TAA_BlendingStatic;
+    const float blendMotion = pk_TAA_BlendingMotion;
+    const float motionMult = pk_TAA_MotionAmplification;
+    const float alphaMult = 0.0f;
 
-    desc.motion = desc.texcoord - previousTexcoord;
-    desc.sharpness = pk_TAA_Sharpness;
-    desc.blendStatic = pk_TAA_BlendingStatic;
-    desc.blendMotion = pk_TAA_BlendingMotion;
-    desc.motionMult = pk_TAA_MotionAmplification;
-    desc.alphaMult = 0.0f;
+    float3 resolved = 0.0f.xxx;
+    {
+        float4 colorAlpha = texture(pk_Texture, texcoord);
+        float3 color = colorAlpha.rgb;
+        float3 history = texture(pk_Texture1, texcoord - motion).rgb;
+        const float3 color11 = texture(pk_Texture, texcoord - texelSize * 0.5f).rgb;
+        const float3 color00 = texture(pk_Texture, texcoord + texelSize * 0.5f).rgb;
+        const float3 corners = 4.0f * (color11 + color00) - 2.0f * color;
 
-    const float3 history = SolveTemporalAntiAliasing(desc);
+        color += (color - (corners * 0.166667f)) * 2.718282f * sharpness;
+        color = clamp(color, 0.0, PK_HALF_MAX_MINUS1);
+
+        const float3 average = (corners + color) * 0.142857f;
+        const float2 luminance = float2(dot(average, PK_LUMA_BT709), dot(color, PK_LUMA_BT709));
+
+        const float motionLength = length(motion);
+        // Lower values yield more aliasing and higher values more ghosting.
+        const float colorOffset = lerp(8.0f, 0.25f, saturate(motionLength * 100.0f)) * abs(luminance.x - luminance.y);
+
+        const float3 minimum = min(color00, color11) - colorOffset;
+        const float3 maximum = max(color00, color11) + colorOffset;
+
+        // Clip history color
+        {
+            const float3 center = 0.5f * (maximum + minimum);
+            const float3 extents = 0.5f * (maximum - minimum);
+            const float3 offset = history - center;
+            const float3 ts = abs(extents / (offset + 0.0001f));
+            const float t = saturate(min(min(ts.x, ts.y), ts.z));
+            history = center + offset * t;
+        }
+
+        float weight = lerp(blendStatic, blendMotion, motionLength * motionMult);
+        weight *= lerp(1.0f, colorAlpha.a, alphaMult);
+        weight = clamp(weight, blendMotion, blendStatic);
+
+        // Interpolate in tonemapped space to respond faster to luminance changes.
+        color = TonemapColor(color);
+        history = TonemapColor(history);
+
+        resolved = lerp(color, history, weight);
+        resolved = UntonemapColor(resolved);
+
+        resolved = clamp(resolved, 0.0f, PK_HALF_MAX_MINUS1);
+    }
 
     // @TODO should antialias depth as well or depth of field will have an incorrect coc mask.
-    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(history)));
+    imageStore(pk_Image, coord, uint4(EncodeE5BGR9(resolved)));
 
     uint shuffleH = QuadSwapIdHorizontal(gl_SubgroupInvocationID);
     uint shulffeV = QuadSwapIdVertical16x2(gl_SubgroupInvocationID);
     uint shulffeD = QuadSwapIdDiagonal16x2(gl_SubgroupInvocationID);
 
-    float3 color = history;
-    color += subgroupShuffle(history, shuffleH);
-    color += subgroupShuffle(history, shuffleH);
-    color += subgroupShuffle(history, shulffeD);
-    color *= 0.25f;
+    float3 downSampled = resolved;
+    downSampled += subgroupShuffle(resolved, shuffleH);
+    downSampled += subgroupShuffle(resolved, shuffleH);
+    downSampled += subgroupShuffle(resolved, shulffeD);
+    downSampled *= 0.25f;
 
     [[branch]]
     if ((gl_LocalInvocationID.x & 0x1u) == 0 && (gl_LocalInvocationID.y & 0x1u) == 0)
     {
-        imageStore(pk_Image1, coord / 2, float4(color, 1.0f));
+        imageStore(pk_Image1, coord / 2, float4(downSampled, 1.0f));
     }
 }
