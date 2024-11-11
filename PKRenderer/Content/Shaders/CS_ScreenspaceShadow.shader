@@ -55,8 +55,8 @@ void ShadowmapCs()
     const LightPacked light = Lights_LoadPacked(LightIndex);
     const float3 posToLight = -light.LIGHT_POS;
 
-    const half ditherAngle = half(Shadow_GradientNoise(float2(baseCoord), pk_FrameIndex.y) * PK_TWO_PI);
-    const half ditherScale = half(Shadow_GradientNoise(float2(baseCoord), pk_FrameIndex.y + 1u));
+    const half ditherAngle = half(InterleavedGradientNoise(float2(baseCoord), pk_FrameIndex.y) * PK_TWO_PI);
+    const half ditherScale = half(InterleavedGradientNoise(float2(baseCoord), pk_FrameIndex.y + 1u));
 
     const float sourceAngle = uintBitsToFloat(light.LIGHT_PACKED_SOURCERADIUS);
     const half maxRadius = half(sourceAngle * 2.0f);

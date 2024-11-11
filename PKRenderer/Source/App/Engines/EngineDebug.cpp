@@ -237,6 +237,6 @@ namespace PK::App
         entity->flyCamera->rotationSmoothing = config->CameraLookSmoothing;
         entity->flyCamera->sensitivity = config->CameraLookSensitivity;
         entity->flyCamera->snashotPosition = config->CameraStartPosition;
-        entity->flyCamera->snashotRotation = config->CameraStartPosition;
+        entity->flyCamera->snashotRotation = config->CameraStartRotation;
     }
 }

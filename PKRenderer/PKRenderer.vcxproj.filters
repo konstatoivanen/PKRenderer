@@ -2063,7 +2063,7 @@
     <None Include="Content\Shaders\VS_GUI.shader" />
     <None Include="Content\Shaders\VS_EnvBackground.shader" />
     <None Include="Content\Shaders\CS_EnvIntegrateDFG.shader" />
-    <None Include="Content\Textures\T_TonyMcMapFace.ktx2" />
+    <None Include="Content\Textures\T_TonemapLut_Agx.ktx2" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glm\detail\glm.cpp">

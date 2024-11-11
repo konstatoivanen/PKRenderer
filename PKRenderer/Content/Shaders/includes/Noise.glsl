@@ -114,4 +114,14 @@ float2 Hammersley(uint i, uint N)
     return float2(float(i % N) / float(N), RadicalInverse_VdC(i));
 }
 
+float InterleavedGradientNoise(float2 coord, uint frame)
+{
+    // "Interleaved gradient noise", by Jorge Jimenez,
+    // http://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare
+    frame = frame & 63u; // need to periodically reset frame to avoid numerical issues
+    float x = coord.x + 5.588238f * float(frame);
+    float y = coord.y + 5.588238f * float(frame);
+    return fract(52.9829189f * fract(0.06711056f * x + 0.00583715f * y));
+}
+
 #endif

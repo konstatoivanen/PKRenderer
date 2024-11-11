@@ -5,8 +5,8 @@
 #define BxDF_ENABLE_SUBSURFACE
 #define BxDF_ENABLE_CLEARCOAT
 #define SURF_USE_VERTEX_FUNCTION
-#include "includes/SurfaceShaderBase.glsl"
 #include "includes/Noise.glsl"
+#include "includes/SurfaceShaderBase.glsl"
 
 float3 GerstnerWave(float4 wave, float3 p, inout float3 tangent, inout float3 binormal)
 {

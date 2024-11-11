@@ -9,6 +9,7 @@
 #include "includes/PostFXAutoExposure.glsl"
 #include "includes/Common.glsl"
 #include "includes/ComputeQuadSwap.glsl"
+#include "includes/Noise.glsl"
 
 #if defined(FX_APPLY_DEBUG)
 #include "includes/GBuffers.glsl"
@@ -45,7 +46,7 @@ void main()
 
     IF_FX_FEATURE_ENABLED(FX_FEAT_TONEMAP)
     {
-#if 1
+#if 0
         color = Tonemap_LUT(color, exposure);
 #else
         // Applying a bit of desaturation to reduce high intensity value color blowout
@@ -73,6 +74,16 @@ void main()
     IF_FX_FEATURE_ENABLED(FX_FEAT_LUTCOLORGRADING)
     {
         color = ApplyLutColorGrading(color);
+    }
+
+    // Dither
+    {
+        float noise = 0.0f;
+        noise = InterleavedGradientNoise(coord, pk_FrameIndex.x);
+        noise = noise * 2.0f - 1.0f;
+        noise = sign(noise) - sign(noise) * sqrt(saturate(1.0f - abs(noise)));
+        noise = noise / 255.0f;
+        color += noise.xxx;
     }
 
     // Debug previews

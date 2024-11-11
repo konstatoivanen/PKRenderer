@@ -1,6 +1,7 @@
 #pragma once
 #include "Common.glsl"
 #include "Kernels.glsl"
+#include "Noise.glsl"
 
 PK_DECLARE_SET_PASS uniform sampler2DArray pk_ShadowmapAtlas;
 PK_DECLARE_SET_PASS uniform sampler2D pk_ShadowmapScreenSpace;
@@ -9,16 +10,6 @@ PK_DECLARE_SET_PASS uniform sampler2D pk_ShadowmapScreenSpace;
 #define SHADOW_HARD_EDGE_FADE_FACTOR 20.0hf
 #define SHADOW_PCSS_SUBGROUP 1
 #define SHADOW_SIZE textureSize(pk_ShadowmapAtlas, 0)
-
-float Shadow_GradientNoise(float2 coord, uint frame)
-{
-    // "Interleaved gradient noise", by Jorge Jimenez,
-    // http://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare
-    frame = frame & 63u; // need to periodically reset frame to avoid numerical issues
-    float x = coord.x + 5.588238f * float(frame);
-    float y = coord.y + 5.588238f * float(frame);
-    return fract(52.9829189f * fract(0.06711056f * x + 0.00583715f * y));
-}
 
 //Source: http://the-witness.net/news/2013/09/shadow-mapping-summary-part-1/
 float2 Shadow_GetBiasFactors(const float3 N, const float3 L)
@@ -70,7 +61,7 @@ half ShadowTest_PCF3x3Gaussian(const uint index, const float2 uv, const float z)
 
 half ShadowTest_Dither16(const uint index, const float2 uv, const float z)
 {
-    const half ditherAngle = half(Shadow_GradientNoise(PK_GET_PROG_COORD, pk_FrameRandom.y) * PK_TWO_PI);
+    const half ditherAngle = half(InterleavedGradientNoise(PK_GET_PROG_COORD, pk_FrameRandom.y) * PK_TWO_PI);
     const half scale = 2.5hf / half(SHADOW_SIZE.x);
     const half sina = sin(ditherAngle) * scale;
     const half cosa = cos(ditherAngle) * scale;
@@ -94,7 +85,7 @@ half ShadowTest_Volumetrics4(const uint index, const float4 uvrange, const float
     // Volumetrics pcf by dithering along view axis. More stable than random offsets on the shadow plane.
     for (uint i = 0u; i < 4u; ++i)
     {
-        const float dither = Shadow_GradientNoise(PK_GET_PROG_COORD, pk_FrameIndex.y + i);
+        const float dither = InterleavedGradientNoise(PK_GET_PROG_COORD, pk_FrameIndex.y + i);
         const float2 uv = lerp(uvrange.xy, uvrange.zw, dither);
         shadow += ShadowTest_PCF2x2(index, uv, z);
     }
