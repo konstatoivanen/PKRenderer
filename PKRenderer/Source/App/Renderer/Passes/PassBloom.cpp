@@ -31,6 +31,10 @@ namespace PK::App
         descriptor.resolution = { initialResolution / 2u, 1u };
         descriptor.sampler.filterMin = FilterMode::Trilinear;
         descriptor.sampler.filterMag = FilterMode::Trilinear;
+        descriptor.sampler.wrap[0] = WrapMode::Border;
+        descriptor.sampler.wrap[1] = WrapMode::Border;
+        descriptor.sampler.wrap[2] = WrapMode::Border;
+        descriptor.sampler.borderColor = BorderColor::FloatBlack;
 
         m_bloomTexture = RHI::CreateTexture(descriptor, "Bloom.Texture");
         m_computeBloom = assetDatabase->Find<ShaderAsset>("CS_Bloom");
@@ -48,6 +52,17 @@ namespace PK::App
         view->constants->Set<float>(hash->pk_Bloom_Intensity, glm::clamp(glm::exp(settings.Intensity) - 1.0f, 0.0f, 1.0f));
         view->constants->Set<float>(hash->pk_Bloom_DirtIntensity, glm::clamp(glm::exp(settings.LensDirtIntensity) - 1.0f, 0.0f, 1.0f));
         RHI::SetTexture(HashCache::Get()->pk_Bloom_LensDirtTex, m_bloomLensDirtTexture);
+
+        auto sampler = m_bloomTexture->GetSamplerDescriptor();
+        auto wrapMode = settings.BorderClip ? WrapMode::Border : WrapMode::Clamp;
+
+        if (sampler.wrap[0] != wrapMode) 
+        {
+            sampler.wrap[0] = wrapMode;
+            sampler.wrap[1] = wrapMode;
+            sampler.wrap[2] = wrapMode;
+            m_bloomTexture->SetSampler(sampler);
+        }
     }
 
     void PassBloom::Render(CommandBufferExt cmd, RHITexture* source)
