@@ -46,8 +46,8 @@ void main()
 
     IF_FX_FEATURE_ENABLED(FX_FEAT_TONEMAP)
     {
-#if 0
-        color = Tonemap_LUT(color, exposure);
+#if 1
+        color = Tonemap_AgX(color, exposure);
 #else
         // Applying a bit of desaturation to reduce high intensity value color blowout
         color = Saturate_BT2100(color, 0.96f);

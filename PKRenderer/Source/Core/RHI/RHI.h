@@ -125,6 +125,7 @@ namespace PK
 
         bool ValidateTexture(RHITextureRef& inoutTexture, const TextureDescriptor& descriptor, const char* name);
         bool ValidateTexture(RHITextureRef& inoutTexture, const uint3& resolution);
+        bool ValidateTexture(RHITextureRef& inoutTexture, const uint3& resolution, const uint32_t levels);
         bool ValidateTexture(RHITextureRef& inoutTexture, const uint32_t levels, const uint32_t layers);
 
         bool ValidateBuffer(RHIBufferRef& inoutBuffer, size_t size, BufferUsage usage, const char* name);

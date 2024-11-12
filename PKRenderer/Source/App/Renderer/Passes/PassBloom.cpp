@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Math/FunctionsMisc.h"
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/Assets/AssetDatabase.h"
@@ -26,7 +27,7 @@ namespace PK::App
         descriptor.format = TextureFormat::RGB9E5;
         descriptor.formatAlias = TextureFormat::R32UI;
         descriptor.layers = 1;
-        descriptor.levels = 8;
+        descriptor.levels = Math::GetMaxMipLevel(initialResolution / 2u);
         descriptor.resolution = { initialResolution / 2u, 1u };
         descriptor.sampler.filterMin = FilterMode::Trilinear;
         descriptor.sampler.filterMag = FilterMode::Trilinear;
@@ -57,7 +58,9 @@ namespace PK::App
         res.x >>= 1u;
         res.y >>= 1u;
 
-        RHI::ValidateTexture(m_bloomTexture, res);
+        auto leveCount = Math::GetMaxMipLevel(uint2(res.x, res.y));
+
+        RHI::ValidateTexture(m_bloomTexture, res, leveCount);
         
         auto bloom = m_bloomTexture.get();
         auto hash = HashCache::Get();
@@ -68,16 +71,16 @@ namespace PK::App
 
         cmd.Dispatch(m_computeBloom, m_passDownsample0, { res.x, res.y, 1u });
 
-        for (auto i = 1u; i < 8u; ++i)
+        for (auto i = 1u; i < leveCount; ++i)
         {
             RHI::SetTexture(hash->pk_Texture, bloom, i - 1u, 0);
             RHI::SetImage(hash->pk_Image, bloom, i, 0);
             cmd.Dispatch(m_computeBloom, m_passDownsample, { res.x >> i, res.y >> i, 1u });
         }
 
-        for (auto i = 6; i >= 0; --i)
+        for (auto i = int(leveCount) - 2; i >= 0; --i)
         {
-            RHI::SetConstant(hash->pk_Bloom_UpsampleLayerCount, 8.0f - (i + 1.0f));
+            RHI::SetConstant(hash->pk_Bloom_UpsampleLayerCount, float(leveCount) - (i + 1.0f));
             RHI::SetTexture(hash->pk_Texture, bloom, i + 1u, 0u);
             RHI::SetImage(hash->pk_Image, bloom, i, 0u);
             cmd.Dispatch(m_computeBloom, m_passUpsample, { res.x >> i, res.y >> i, 1u });

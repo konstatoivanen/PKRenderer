@@ -164,6 +164,22 @@ namespace PK
         return true;
     }
 
+    bool RHI::ValidateTexture(RHITextureRef& inoutTexture, const uint3& resolution, const uint32_t levels)
+    {
+        PK_THROW_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
+
+        if (inoutTexture->GetResolution() == resolution && inoutTexture->GetLevels() == levels)
+        {
+            return false;
+        }
+
+        auto descriptor = inoutTexture->GetDescriptor();
+        descriptor.resolution = resolution;
+        descriptor.levels = levels;
+        inoutTexture = RHI::CreateTexture(descriptor, inoutTexture->GetDebugName());
+        return true;
+    }
+
     bool RHI::ValidateTexture(RHITextureRef& inoutTexture, const uint32_t levels, const uint32_t layers)
     {
         PK_THROW_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
