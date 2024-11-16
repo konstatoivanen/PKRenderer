@@ -129,6 +129,12 @@ namespace PK::Math
         return plane.x * point.x + plane.y * point.y + plane.z * point.z + plane.w;
     }
 
+    float ExtentsSignedDistance(const float3& point, const float3 extents)
+    {
+        auto q = glm::abs(point) - extents;
+        return glm::length(glm::max(q, 0.0f)) + glm::min(glm::max(q.x, glm::max(q.y, q.z)), 0.0f);
+    }
+
     float3 IntesectPlanes3(const float4& p1, const float4& p2, const float4& p3)
     {
         float3 n1 = p1.xyz, n2 = p2.xyz, n3 = p3.xyz;

@@ -116,7 +116,7 @@ namespace PK::App
 
                 entity.renderView->renderViewRef = renderView;
                 renderView->viewEntityId = entity.GID.entityID();
-                renderView->type = entity.renderView->type;
+                renderView->name = entity.renderView->name;
                 renderView->primaryPassGroup = 0u;
                 renderView->isWindowTarget = entity.renderView->isWindowTarget;
                 renderView->settings = *entity.renderView->settingsRef;
@@ -179,7 +179,9 @@ namespace PK::App
 
     void RenderPipelineBase::ValidateViewGBuffers(RenderView* view, const GBuffersFullDescriptor& descriptors)
     {
-        if (view->gbuffers.Validate(view->bufferResolution, descriptors, "RenderView"))
+        FixedString32 name({ "RenderView.", view->name });
+
+        if (view->gbuffers.Validate(view->bufferResolution, descriptors, name))
         {
             view->timeResize = view->timeRender;
         }
@@ -189,7 +191,8 @@ namespace PK::App
     {
         if (view->constants == nullptr || !view->constants->GetLayout().CompareFast(layout))
         {
-            view->constants = CreateRef<ConstantBuffer>(layout, "RenderView.Constants.Frame");
+            FixedString64 name({ "RenderView.", view->name, ".Constants.Frame"});
+            view->constants = CreateRef<ConstantBuffer>(layout, name);
             view->timeResize = view->timeRender;
         }
     }
@@ -201,7 +204,8 @@ namespace PK::App
 
         if (type != RenderPipelineEvent::CollectDraws)
         {
-            cmd->BeginDebugScope(FixedString64({RenderViewTypeName[(int)view->type], RenderPipelineEvent::TypeNames[type]}).c_str(), PK_COLOR_GREEN);
+            FixedString64 name({ "RenderViewEvt.", view->name, ".", RenderPipelineEvent::TypeNames[type]});
+            cmd->BeginDebugScope(name, PK_COLOR_GREEN);
         }
 
         RenderPipelineEvent event;

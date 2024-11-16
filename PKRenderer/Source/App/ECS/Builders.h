@@ -37,7 +37,7 @@ namespace PK::App::EntityBuilders
         bool castShadows);
 
     EGID CreateEntityFlyCamera(EntityDatabase* entityDb,
-        RenderViewType type,
+        const FixedString16& name,
         const uint4& desiredRect,
         bool isWindowTarget,
         const float3& position,

@@ -20,6 +20,17 @@ layout(r32ui, set = PK_SET_DRAW) uniform uimage2D pk_Image;
 //Source: http://advances.realtimerendering.com/s2014/sledgehammer/Next-Generation-Post-Processing-in-Call-of-Duty-Advanced-Warfare-v17.pptx (page 139)
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 
+float GetLumaWeight(float3 s)
+{
+// Luma filtering not needed when using good enough antialiasing.
+// Removes highlights & energy unnecesarily.
+#if 0
+    return 1.0f / (1.0f + cmax(s));
+#else
+    return 1.0f;
+#endif
+}
+
 void Downsample0Cs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -38,13 +49,13 @@ void Downsample0Cs()
     float4 color = 0.0f.xxxx;
     float3 bisample = 0.0f.xxx;
     bisample = texture(pk_Texture, uvs.xy).rgb;
-    color += float4(bisample, 1.0f) * (uwvw.x * uwvw.y * (1.0 / 16.0) / (1.0 + cmax(bisample)));
+    color += float4(bisample, 1.0f) * uwvw.x * uwvw.y * (1.0 / 16.0) * GetLumaWeight(bisample);
     bisample = texture(pk_Texture, uvs.zy).rgb;
-    color += float4(bisample, 1.0f) * (uwvw.z * uwvw.y * (1.0 / 16.0) / (1.0 + cmax(bisample)));
+    color += float4(bisample, 1.0f) * uwvw.z * uwvw.y * (1.0 / 16.0) * GetLumaWeight(bisample);
     bisample = texture(pk_Texture, uvs.xw).rgb;
-    color += float4(bisample, 1.0f) * (uwvw.x * uwvw.w * (1.0 / 16.0) / (1.0 + cmax(bisample)));
+    color += float4(bisample, 1.0f) * uwvw.x * uwvw.w * (1.0 / 16.0) * GetLumaWeight(bisample);
     bisample = texture(pk_Texture, uvs.zw).rgb;
-    color += float4(bisample, 1.0f) * (uwvw.z * uwvw.w * (1.0 / 16.0) / (1.0 + cmax(bisample)));
+    color += float4(bisample, 1.0f) * uwvw.z * uwvw.w * (1.0 / 16.0) * GetLumaWeight(bisample);
     color.rgb /= color.w;
     color.rgb = -min(-color.rgb, 0.0f.xxx);
     

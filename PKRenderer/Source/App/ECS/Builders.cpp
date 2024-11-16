@@ -139,7 +139,7 @@ namespace PK::App::EntityBuilders
     }
 
     template<typename T>
-    static void CreateEntityViewRenderView(EntityDatabase* entityDb, T* implementer, const EGID& egid, RenderViewType type, const uint4& desiredRect, bool isWindowTarget)
+    static void CreateEntityViewRenderView(EntityDatabase* entityDb, T* implementer, const EGID& egid, const FixedString16& name, const uint4& desiredRect, bool isWindowTarget)
     {
         entityDb->ReserveView(implementer, egid, 
             &EntityViewRenderView::transform, 
@@ -147,7 +147,7 @@ namespace PK::App::EntityBuilders
             &EntityViewRenderView::renderView, 
             &EntityViewRenderView::input,
             &EntityViewRenderView::time);
-        implementer->type = type;
+        implementer->name = name;
         implementer->desiredRect = desiredRect;
         implementer->isWindowTarget = isWindowTarget;
     }
@@ -248,7 +248,7 @@ namespace PK::App::EntityBuilders
     }
 
     EGID CreateEntityFlyCamera(EntityDatabase* entityDb,
-        RenderViewType type,
+        const FixedString16& name,
         const uint4& desiredRect,
         bool isWindowTarget,
         const float3& position,
@@ -264,7 +264,7 @@ namespace PK::App::EntityBuilders
         auto egid = entityDb->ReserveEntityId((uint)ENTITY_GROUPS::ACTIVE);
         auto implementer = entityDb->ReserveImplementer<ImplementerFlyCamera>();
         CreateEntityViewTransform(entityDb, implementer, egid, position, rotation, PK_FLOAT3_ONE, {});
-        CreateEntityViewRenderView(entityDb, implementer, egid, type, desiredRect, isWindowTarget);
+        CreateEntityViewRenderView(entityDb, implementer, egid, name, desiredRect, isWindowTarget);
         CreateEntityViewFlyCamera(entityDb, implementer, egid, moveSpeed, fieldOfView, zNear, zFar, moveSmoothing, rotationSmoothing, sensitivity);
         return egid;
     }

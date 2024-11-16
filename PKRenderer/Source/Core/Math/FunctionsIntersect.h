@@ -11,6 +11,7 @@ namespace PK::Math
     float PlaneMaxDistanceToAABB(const float4& plane, const BoundingBox& aabb);
     float PlaneMinDistanceToAABB(const float4& plane, const BoundingBox& aabb);
     float PlaneDistanceToPoint(const float4& plane, const float3& point);
+    float ExtentsSignedDistance(const float3& point, const float3 extents);
     float3 IntesectPlanes3(const float4& p1, const float4& p2, const float4& p3);
     bool IntersectPlanesAABB(const float4* planes, uint32_t planeCount, const BoundingBox& aabb);
     bool IntersectAABB(const BoundingBox& a, const BoundingBox& b);

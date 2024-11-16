@@ -84,7 +84,7 @@ namespace PK::App
             true);
 
         m_cameraEgid = EntityBuilders::CreateEntityFlyCamera(m_entityDb,
-            RenderViewType::Scene,
+            "Scene",
             PK_UINT4_MAX,
             /*isWindowTarget*/ true,
             config->CameraStartPosition,

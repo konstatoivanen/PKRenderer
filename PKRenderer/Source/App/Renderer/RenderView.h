@@ -86,7 +86,7 @@ namespace PK::App
         GBuffersFull gbuffers{};
         RenderViewSettings settings{};
 
-        RenderViewType type = RenderViewType::Scene;
+        FixedString16 name;
         bool isWindowTarget = false;
 
         uint32_t viewEntityId = 0u;

@@ -107,8 +107,7 @@ namespace PK::App
 
                     if (isVisible != 0u)
                     {
-                        //@TODO This is inaccurate. replace with min bounds distance instead
-                        auto depth = glm::length(entityOffset);
+                        auto depth = Math::ExtentsSignedDistance(entityOffset, entityExtents);
                         auto fixedDepth = glm::min(0xFFFFu, (uint32_t)glm::max(0.0f, depth * cullingInvRange));
                         auto entityId = entityView->GID.entityID();
 
