@@ -2,9 +2,9 @@
 #include "includes/Utilities.glsl"
 
 PK_DECLARE_SET_DRAW uniform sampler3D pk_Texture;
-layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D pk_Image;
-layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D pk_Image1;
-layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image3D pk_Image2;
+PK_DECLARE_SET_DRAW uniform writeonly restrict image3D pk_Image;
+PK_DECLARE_SET_DRAW uniform writeonly restrict image3D pk_Image1;
+PK_DECLARE_SET_DRAW uniform writeonly restrict image3D pk_Image2;
 
 #define GROUP_SIZE 4u
 shared float4 lds_Data[GROUP_SIZE * GROUP_SIZE * GROUP_SIZE];

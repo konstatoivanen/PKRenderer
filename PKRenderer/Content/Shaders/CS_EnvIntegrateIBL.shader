@@ -9,11 +9,11 @@
 #include "includes/VolumeFog.glsl"
 #include "includes/Encoding.glsl"
 
-layout(r32ui, set = PK_SET_DRAW) uniform writeonly restrict uimage2D pk_Image;
-layout(r32ui, set = PK_SET_DRAW) uniform writeonly restrict uimage2D pk_Image1;
-layout(r32ui, set = PK_SET_DRAW) uniform writeonly restrict uimage2D pk_Image2;
-layout(r32ui, set = PK_SET_DRAW) uniform writeonly restrict uimage2D pk_Image3;
-layout(r32ui, set = PK_SET_DRAW) uniform writeonly restrict uimage2D pk_Image4;
+PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image;
+PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image1;
+PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image2;
+PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image3;
+PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image4;
 
 shared float3 lds_irrad;
 shared float3 lds_trans;

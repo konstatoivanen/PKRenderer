@@ -17,7 +17,7 @@
 #include "includes/SceneGIVX.glsl"
 #endif
 
-layout(rgba16f, set = PK_SET_DRAW) uniform image2D pk_Image;
+PK_DECLARE_SET_DRAW uniform image2D pk_Image;
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void main()

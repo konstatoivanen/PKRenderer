@@ -4,7 +4,7 @@
 #include "includes/Utilities.glsl"
 
 PK_DECLARE_SET_SHADER uniform sampler2D pk_Texture;
-layout(rgba32ui, set = PK_SET_DRAW) uniform uimage2D pk_Image;
+PK_DECLARE_SET_SHADER uniform uimage2D pk_Image;
 
 // Whether to use P2 modes (4 endpoints) for compression. Slow, but improves quality.
 #define ENCODE_P2 (QUALITY == 1)

@@ -10,8 +10,8 @@
 
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture; // Current Screen
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture1; // History Read
-layout(r32ui, set = PK_SET_DRAW) uniform uimage2D pk_Image; // History Write
-layout(rgba16f, set = PK_SET_DRAW) uniform image2D pk_Image1; // Color Write
+PK_DECLARE_SET_DRAW uniform uimage2D pk_Image; // History Write
+PK_DECLARE_SET_DRAW uniform image2D pk_Image1; // Color Write
 
 float3 TonemapColor(const float3 c) { return c / (1.0 + cmax(c)); }
 float3 UntonemapColor(const float3 c) { return c / max(1.0f / 65504.0f, 1.0 - cmax(c)); }

@@ -8,11 +8,11 @@
 #include "includes/GBuffers.glsl"
 #include "includes/ComputeQuadSwap.glsl"
 
-layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image;
-layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image1;
-layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image2;
-layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image3;
-layout(r16f, set = PK_SET_DRAW) uniform writeonly restrict image2DArray pk_Image4;
+PK_DECLARE_SET_DRAW uniform writeonly restrict image2DArray pk_Image;
+PK_DECLARE_SET_DRAW uniform writeonly restrict image2DArray pk_Image1;
+PK_DECLARE_SET_DRAW uniform writeonly restrict image2DArray pk_Image2;
+PK_DECLARE_SET_DRAW uniform writeonly restrict image2DArray pk_Image3;
+PK_DECLARE_SET_DRAW uniform writeonly restrict image2DArray pk_Image4;
 
 #define GROUP_SIZE 8u
 shared float2 lds_Depth;

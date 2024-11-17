@@ -12,12 +12,12 @@
 uniform sampler2D pk_Texture;
 
 // Screen color full res. same as above but as image output.
-layout(rgba16f) uniform image2D pk_Image;
+uniform image2D pk_Image;
 
 uniform sampler2DArray pk_DoF_ColorRead;
 uniform sampler2DArray pk_DoF_AlphaRead;
-layout(r32ui) uniform uimage2DArray pk_DoF_ColorWrite;
-layout(r16f) uniform image2DArray pk_DoF_AlphaWrite;
+uniform uimage2DArray pk_DoF_ColorWrite;
+uniform image2DArray pk_DoF_AlphaWrite;
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 

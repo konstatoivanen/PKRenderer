@@ -1,4 +1,6 @@
 
+//Source: http://advances.realtimerendering.com/s2014/sledgehammer/Next-Generation-Post-Processing-in-Call-of-Duty-Advanced-Warfare-v17.pptx (page 139)
+
 #pragma pk_multi_compile PASS_DOWNSAMPLE0 PASS_DOWNSAMPLE1 PASS_UPSAMPLE
 #pragma pk_program SHADER_STAGE_COMPUTE Downsample0Cs PASS_DOWNSAMPLE0
 #pragma pk_program SHADER_STAGE_COMPUTE Downsample1Cs PASS_DOWNSAMPLE1
@@ -15,9 +17,7 @@ PK_DECLARE_LOCAL_CBUFFER(pk_Bloom_UpsampleLayerCount)
 };
 
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture;
-layout(r32ui, set = PK_SET_DRAW) uniform uimage2D pk_Image;
-
-//Source: http://advances.realtimerendering.com/s2014/sledgehammer/Next-Generation-Post-Processing-in-Call-of-Duty-Advanced-Warfare-v17.pptx (page 139)
+PK_DECLARE_SET_DRAW uniform uimage2D pk_Image;
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 
 float GetLumaWeight(float3 s)

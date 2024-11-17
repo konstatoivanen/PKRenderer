@@ -202,10 +202,6 @@ struct SurfaceData
 //// ---------- FRAGMENT STAGE ---------- ////
 #elif defined(SHADER_STAGE_FRAGMENT)
    
-    //@TODO move common samplers somewhere else & have some utility logic for using these
-    // traditional syntax is a bit cumbersome.
-    layout(set = PK_SET_PASS) uniform sampler pk_Sampler_SurfDefault;
-    
     #define SurfaceData_Default SurfaceData(0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f)
 
     // http://www.thetenthplanet.de/archives/1180

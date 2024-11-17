@@ -5,7 +5,7 @@
 #include "includes/Encoding.glsl"
 
 PK_DECLARE_SET_DRAW uniform samplerCubeArray pk_Texture;
-layout(r32f, set = PK_SET_DRAW) uniform image2DArray pk_Image;
+PK_DECLARE_SET_DRAW uniform image2DArray pk_Image;
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()

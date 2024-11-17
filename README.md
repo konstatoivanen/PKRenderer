@@ -161,6 +161,7 @@ GLSL Extensions:
 - GL_KHR_shader_subgroup_vote
 - GL_EXT_ray_tracing_position_fetch
 - GL_EXT_mesh_shader
+- GL_EXT_shader_image_load_formatted
 
 Validation layers:
 - VK_LAYER_KHRONOS_validation
@@ -197,6 +198,8 @@ Physical Device Requirements:
 - imageCubeArray
 - fragmentStoresAndAtomics
 - multiDrawIndirect
+- shaderStorageImageReadWithoutFormat
+- shaderStorageImageWriteWithoutFormat
 - storageBuffer16BitAccess
 - uniformAndStorageBuffer16BitAccess
 - storagePushConstant16

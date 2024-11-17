@@ -5,7 +5,7 @@
 #include "includes/BRDF.glsl"
 #include "includes/Noise.glsl"
 
-layout(rgba16f, set = PK_SET_DRAW) uniform writeonly restrict image2D pk_Image;
+PK_DECLARE_SET_DRAW uniform writeonly restrict image2D pk_Image;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 void main()

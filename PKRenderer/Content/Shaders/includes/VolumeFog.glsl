@@ -20,9 +20,9 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_ScatterRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_InjectRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_DensityRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_ExtinctionRead;
-layout(r32ui, set = PK_SET_SHADER) uniform uimage3D pk_Fog_Inject;
-layout(r16f, set = PK_SET_SHADER) uniform image3D pk_Fog_Density;
-layout(rgba16f, set = PK_SET_SHADER) uniform image3D pk_Fog_Scatter;
+PK_DECLARE_SET_SHADER uniform uimage3D pk_Fog_Inject;
+PK_DECLARE_SET_SHADER uniform image3D pk_Fog_Density;
+PK_DECLARE_SET_SHADER uniform image3D pk_Fog_Scatter;
 
 DEFINE_TRICUBIC_SAMPLER(pk_Fog_ScatterRead, VOLUMEFOG_SIZE)
 

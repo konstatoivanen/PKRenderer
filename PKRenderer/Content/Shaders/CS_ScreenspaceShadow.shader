@@ -10,8 +10,8 @@
 #include "includes/LightSampling.glsl"
 #include "includes/Kernels.glsl"
 
-layout(r8, set = PK_SET_DRAW) uniform image2D pk_Image;
-layout(set = PK_SET_DRAW) uniform sampler2D pk_Texture;
+PK_DECLARE_SET_DRAW uniform image2D pk_Image;
+PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture;
 
 [[pk_restrict ShadowmapCs]]
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;

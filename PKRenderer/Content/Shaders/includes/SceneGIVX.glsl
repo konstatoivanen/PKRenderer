@@ -1,8 +1,8 @@
 #pragma once
 #include "SceneGI.glsl"
 
-layout(r8ui, set = PK_SET_SHADER) uniform uimage3D pk_GI_VolumeMaskWrite;
-layout(rgba16f, set = PK_SET_SHADER) uniform image3D pk_GI_VolumeWrite;
+PK_DECLARE_SET_SHADER uniform uimage3D pk_GI_VolumeMaskWrite;
+PK_DECLARE_SET_SHADER uniform image3D pk_GI_VolumeWrite;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 
 #define PK_GI_VX_MIP_COUNT 7

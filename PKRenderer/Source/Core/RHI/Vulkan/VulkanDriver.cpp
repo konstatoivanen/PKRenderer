@@ -120,6 +120,8 @@ namespace PK
         physicalDeviceRequirements.features.vk10.features.imageCubeArray = VK_TRUE;
         physicalDeviceRequirements.features.vk10.features.fragmentStoresAndAtomics = VK_TRUE;
         physicalDeviceRequirements.features.vk10.features.multiDrawIndirect = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.shaderStorageImageReadWithoutFormat = VK_TRUE;
+        physicalDeviceRequirements.features.vk10.features.shaderStorageImageWriteWithoutFormat = VK_TRUE;
         physicalDeviceRequirements.features.vk11.storageBuffer16BitAccess = VK_TRUE;
         physicalDeviceRequirements.features.vk11.uniformAndStorageBuffer16BitAccess = VK_TRUE;
         physicalDeviceRequirements.features.vk11.storagePushConstant16 = VK_TRUE;

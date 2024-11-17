@@ -2,7 +2,7 @@
 #include "includes/Common.glsl"
 #include "includes/Noise.glsl"
 
-layout(rgba8, set = PK_SET_DRAW) uniform image2D pk_Image;
+PK_DECLARE_SET_DRAW uniform image2D pk_Image;
 
 layout(local_size_x = 16, local_size_y = 4, local_size_z = 1) in;
 void main()

@@ -1,4 +1,5 @@
 #pragma once
+
 #include "BRDF.glsl"
 #include "Encoding.glsl"
 #include "SHL1.glsl"
@@ -12,10 +13,10 @@
 #define PK_GI_STORE_LVL 0
 #endif
 
-layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedDiff;
-layout(rg32ui, set = PK_SET_SHADER) uniform uimage2DArray pk_GI_PackedSpec;
-layout(rgba32ui, set = PK_SET_SHADER) uniform uimage2D pk_GI_ResolvedWrite;
-layout(rg8, set = PK_SET_SHADER) uniform image2D pk_GI_ResolvedAOWrite;
+PK_DECLARE_SET_SHADER uniform uimage2DArray pk_GI_PackedDiff;
+PK_DECLARE_SET_SHADER uniform uimage2DArray pk_GI_PackedSpec;
+PK_DECLARE_SET_SHADER uniform uimage2D pk_GI_ResolvedWrite;
+PK_DECLARE_SET_SHADER uniform image2D pk_GI_ResolvedAOWrite;
 PK_DECLARE_SET_SHADER uniform utexture2D pk_GI_ResolvedRead;
 
 #define PK_GI_APPROX_ROUGH_SPEC 1

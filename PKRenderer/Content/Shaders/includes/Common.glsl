@@ -125,6 +125,10 @@ PK_DECLARE_CBUFFER(pk_ModelMatrices, PK_SET_DRAW)
 
 PK_DECLARE_ACCELERATION_STRUCTURE(PK_SET_SHADER, pk_SceneStructure)
 
+PK_DECLARE_SET_GLOBAL uniform sampler pk_Sampler_GBuffer;
+PK_DECLARE_SET_GLOBAL uniform sampler pk_Sampler_GUI;
+PK_DECLARE_SET_PASS uniform sampler pk_Sampler_SurfDefault;
+
 uint GetShadowCascadeIndex(float viewDepth)
 {
     uint3 mask = uint3(greaterThan(viewDepth.xxx, pk_ShadowCascadeZSplits.xyz));

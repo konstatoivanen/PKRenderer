@@ -12,7 +12,6 @@ PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_Color;
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_Normals;
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_Depth;
 PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_DepthBiased;
-PK_DECLARE_SET_GLOBAL uniform sampler pk_Sampler_GBuffer;
 
 #define GBUFFER_SAMPLE(t, uv) texture(sampler2D(t, pk_Sampler_GBuffer), uv)
 #define GBUFFER_SAMPLE_OFFSET(t, uv, offs) textureOffset(sampler2D(t, pk_Sampler_GBuffer), uv, offs)
