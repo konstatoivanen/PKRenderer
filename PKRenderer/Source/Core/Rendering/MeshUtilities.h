@@ -16,6 +16,7 @@ namespace PK::MeshUtilities
 
     struct GeometryContext
     {
+        void* pVertices = nullptr;
         float* pPositions = nullptr;
         uint32_t stridePositionsf32 = 0u;
         float* pNormals = nullptr;

@@ -715,8 +715,7 @@ namespace PK::MeshUtilities
 
         MeshStaticAllocationData alloc{};
         alloc.name = name;
-        // @TODO Implicit first element. not good.
-        alloc.regular.pVertices = ctx->pNormals;
+        alloc.regular.pVertices = ctx->pVertices;
         alloc.regular.pIndices = ctx->pIndices;
         alloc.regular.pSubmeshes = &submesh;
         alloc.regular.indexType = ElementType::Uint;
@@ -835,6 +834,7 @@ namespace PK::MeshUtilities
         };
 
         GeometryContext geometryContext;
+        geometryContext.pVertices = vertexData.attributes;
         geometryContext.pPositions = reinterpret_cast<float*>(vertexData.positions);
         geometryContext.stridePositionsf32 = sizeof(float3) / sizeof(float);
         geometryContext.pNormals = reinterpret_cast<float*>(vertexData.attributes) + 0u;
@@ -872,6 +872,7 @@ namespace PK::MeshUtilities
         uint32_t indices[] = { 0u,1u,2u, 2u,3u,0u };
 
         GeometryContext geometryContext;
+        geometryContext.pVertices = vertexData.attributes;
         geometryContext.pPositions = reinterpret_cast<float*>(vertexData.positions);
         geometryContext.stridePositionsf32 = sizeof(float3) / sizeof(float);
         geometryContext.pNormals = reinterpret_cast<float*>(vertexData.attributes) + 0u;
@@ -926,6 +927,7 @@ namespace PK::MeshUtilities
         }
 
         GeometryContext geometryContext;
+        geometryContext.pVertices = vertices;
         geometryContext.pPositions = reinterpret_cast<float*>(positions);
         geometryContext.stridePositionsf32 = sizeof(float3) / sizeof(float);
         geometryContext.pNormals = reinterpret_cast<float*>(attributes) + 0u;
@@ -1035,6 +1037,7 @@ namespace PK::MeshUtilities
 
 
         GeometryContext geometryContext;
+        geometryContext.pVertices = vertices;
         geometryContext.pPositions = reinterpret_cast<float*>(positions);
         geometryContext.stridePositionsf32 = sizeof(float3) / sizeof(float);
         geometryContext.pNormals = reinterpret_cast<float*>(attributes) + 0u;
