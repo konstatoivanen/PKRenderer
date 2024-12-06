@@ -25,6 +25,7 @@ namespace PK::Math
     float2 UnPackHalf(ushort2 v);
     float3 UnPackHalf(ushort3 v);
     float4 UnPackHalf(ushort4 v);
+    float3 SafeNormalize(const float3& v);
     size_t GetNextExponentialSize(size_t start, size_t min);
     uint32_t GetMaxMipLevelPow2(uint32_t resolution);
     uint32_t GetMaxMipLevelPow2(uint2 resolution);
@@ -48,4 +49,8 @@ namespace PK::Math
     float2 OctaWrap(const float2& v);
     float2 OctaEncode(float3 n);
     uint OctaEncodeUint(const float3& direction);
+    int32_t QuantizeSNorm(float v, int32_t n);
+    sbyte3 QuantizeSNorm(const float3& v, int32_t n);
+    float3 GetTriangleNormal(const float* p0, const float* p1, const float* p2, bool& outIsValid);
+    float3 GetTriangleNormal(const float3& a, const float3& b, const float3& c);
 }

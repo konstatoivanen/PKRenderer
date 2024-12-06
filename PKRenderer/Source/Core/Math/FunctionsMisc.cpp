@@ -167,6 +167,12 @@ namespace PK::Math
         return { UnPackHalf(v.x), UnPackHalf(v.y), UnPackHalf(v.z), UnPackHalf(v.w) };
     }
 
+    float3 SafeNormalize(const float3& v)
+    {
+        float length = glm::length(v);
+        return v * (length == 0.0f ? 0.0f : (1.0f / length));
+    }
+
     size_t GetNextExponentialSize(size_t start, size_t min)
     {
         if (start < 1)
@@ -374,5 +380,42 @@ namespace PK::Math
         auto x = (uint)glm::round(glm::clamp(uv.x, 0.0f, 1.0f) * 65535.0f);
         auto y = (uint)glm::round(glm::clamp(uv.y, 0.0f, 1.0f) * 65535.0f);
         return (x & 0xFFFFu) | ((y & 0xFFFFu) << 16u);
+    }
+
+    int32_t QuantizeSNorm(float v, int32_t n)
+    {
+        const float scale = float((1 << (n - 1)) - 1);
+        float round = (v >= 0 ? 0.5f : -0.5f);
+        v = (v >= -1) ? v : -1;
+        v = (v <= +1) ? v : +1;
+        return int32_t(v * scale + round);
+    }
+
+    sbyte3 QuantizeSNorm(const float3& v, int32_t n)
+    {
+        return
+        {
+            (sbyte)(QuantizeSNorm(v.x, n)),
+            (sbyte)(QuantizeSNorm(v.y, n)),
+            (sbyte)(QuantizeSNorm(v.z, n))
+        };
+    }
+
+    float3 GetTriangleNormal(const float* p0, const float* p1, const float* p2, bool& outIsValid)
+    {
+        const float p10[3] = { p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2] };
+        const float p20[3] = { p2[0] - p0[0], p2[1] - p0[1], p2[2] - p0[2] };
+        const float normalx = p10[1] * p20[2] - p10[2] * p20[1];
+        const float normaly = p10[2] * p20[0] - p10[0] * p20[2];
+        const float normalz = p10[0] * p20[1] - p10[1] * p20[0];
+        const float area = sqrtf(normalx * normalx + normaly * normaly + normalz * normalz);
+        outIsValid = area != 0.0f;
+        return float3(normalx, normaly, normalz) / area;
+    }
+
+    float3 GetTriangleNormal(const float3& a, const float3& b, const float3& c)
+    {
+        bool isValid = false;
+        return GetTriangleNormal(glm::value_ptr(a), glm::value_ptr(b), glm::value_ptr(c), isValid);
     }
 }

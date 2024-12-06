@@ -109,14 +109,13 @@ float3 Tonemap_AgX(float3 color, float exposure)
         0.842479062253094, 0.0423282422610123, 0.0423756549057051,
         0.0784335999999992,  0.878468636469772,  0.0784336,
         0.0792237451477643, 0.0791661274605434, 0.879142973793104);
-      
-    const float min_ev = -12.47393f;
-    const float max_ev = 4.026069f;
 
     // Input transform (inset)
     color = agx_mat * (color * exposure);
     
     // Log2 space encoding
+    const float min_ev = -12.47393f;
+    const float max_ev = 4.026069f;
     color = clamp(log2(color), min_ev, max_ev);
     color = (color - min_ev) / (max_ev - min_ev);
     
@@ -168,7 +167,7 @@ float Vignette(float2 uv)
     return min(1.0f, pow(uv.x * uv.y * pk_Vignette_Intensity, pk_Vignette_Power)); 
 }
 
-float3 LinearToGamma(float3 color)
+float3 Linear709ToSRGB(float3 color)
 {
     //Source: http://chilliant.blogspot.com.au/2012/08/srgb-approximations-for-hlsl.html?m=1
     float3 S1 = sqrt(color);

@@ -43,6 +43,7 @@ namespace PK
     typedef glm::u16mat3x4 ushort3x4;
     typedef glm::u16mat4x4 ushort4x4;
 
+    typedef glm::lowp_i8vec3 sbyte3;
     typedef glm::lowp_i8vec4 sbyte4;
     typedef glm::lowp_u8vec4 byte4;
 

@@ -27,4 +27,6 @@ namespace PK::Math
     BoundingBox GetInverseFrustumBounds(const float4x4& inverseMatrix);
     BoundingBox GetInverseFrustumBounds(const float4x4& inverseMatrix, float lznear, float lzfar);
     BoundingBox GetInverseFrustumBounds(const float4x4& worldToLocal, const float4x4& inverseMatrix);
+    BoundingBox ComputeBoundingBox(const float3* points, uint32_t count);
+    float4 ComputeBoundingSphere(const float3* points, uint32_t count);
 }

@@ -299,9 +299,9 @@ namespace PK
         VkAccelerationStructureInstanceKHR* instance = m_writeBuffer + m_instanceCount++;
 
         *reinterpret_cast<float4x4*>(instance->transform.matrix) = matrix;
-        instance->instanceCustomIndex = 0;
+        instance->instanceCustomIndex = geometry.customIndex;
         instance->mask = 0xFF;
-        instance->instanceShaderBindingTableRecordOffset = 0;
+        instance->instanceShaderBindingTableRecordOffset = geometry.recordOffset;
         instance->flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
         instance->accelerationStructureReference = GetGeometryIndex(geometry);
         m_structureHashCurr += Math::GetMatrixHash(matrix) * (instance->accelerationStructureReference + 1ull);

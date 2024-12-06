@@ -319,7 +319,6 @@ namespace PK
         BC7_UNORM,
     };
 
-    //@TODO Should not need these enums
     enum class RayTracingShaderGroup
     {
         RayGeneration,
@@ -535,6 +534,7 @@ namespace PK
         uint32_t indexFirst;
         uint32_t indexCount;
         uint32_t customIndex;
+        uint32_t recordOffset;
     };
 
     // Descriptors

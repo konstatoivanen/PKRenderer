@@ -401,4 +401,94 @@ namespace PK::Math
 
         return BoundingBox::MinMax(min, max);
     }
+
+    BoundingBox ComputeBoundingBox(const float3* points, uint32_t count)
+    {
+        size_t pmin[3] = { 0, 0, 0 };
+        size_t pmax[3] = { 0, 0, 0 };
+
+        for (size_t i = 0; i < count; ++i)
+        {
+            const float3& p = points[i];
+
+            for (int axis = 0; axis < 3; ++axis)
+            {
+                pmin[axis] = (p[axis] < points[pmin[axis]][axis]) ? i : pmin[axis];
+                pmax[axis] = (p[axis] > points[pmax[axis]][axis]) ? i : pmax[axis];
+            }
+        }
+
+        BoundingBox bounds;
+        bounds.min.x = points[pmin[0]][0];
+        bounds.min.y = points[pmin[1]][1];
+        bounds.min.z = points[pmin[2]][2];
+        bounds.max.x = points[pmax[0]][0];
+        bounds.max.y = points[pmax[1]][1];
+        bounds.max.z = points[pmax[2]][2];
+        return bounds;
+    }
+
+    float4 ComputeBoundingSphere(const float3* points, uint32_t count)
+    {
+        size_t pmin[3] = { 0, 0, 0 };
+        size_t pmax[3] = { 0, 0, 0 };
+
+        for (size_t i = 0; i < count; ++i)
+        {
+            const float3& p = points[i];
+
+            for (int axis = 0; axis < 3; ++axis)
+            {
+                pmin[axis] = (p[axis] < points[pmin[axis]][axis]) ? i : pmin[axis];
+                pmax[axis] = (p[axis] > points[pmax[axis]][axis]) ? i : pmax[axis];
+            }
+        }
+
+        // find the pair of points with largest distance
+        float paxisd2 = 0;
+        int paxis = 0;
+
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            const float3& p1 = points[pmin[axis]];
+            const float3& p2 = points[pmax[axis]];
+
+            float d2 = (p2[0] - p1[0]) * (p2[0] - p1[0]) + (p2[1] - p1[1]) * (p2[1] - p1[1]) + (p2[2] - p1[2]) * (p2[2] - p1[2]);
+
+            if (d2 > paxisd2)
+            {
+                paxisd2 = d2;
+                paxis = axis;
+            }
+        }
+
+        // use the longest segment as the initial sphere diameter
+        const float3& p1 = points[pmin[paxis]];
+        const float3& p2 = points[pmax[paxis]];
+
+        float center[3] = { (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, (p1[2] + p2[2]) / 2 };
+        float radius = sqrtf(paxisd2) / 2;
+
+        // iteratively adjust the sphere up until all points fit
+        for (size_t i = 0; i < count; ++i)
+        {
+            const float3& p = points[i];
+            float d2 = (p[0] - center[0]) * (p[0] - center[0]) + (p[1] - center[1]) * (p[1] - center[1]) + (p[2] - center[2]) * (p[2] - center[2]);
+
+            if (d2 > radius * radius)
+            {
+                float d = sqrtf(d2);
+                assert(d > 0);
+
+                float k = 0.5f + (radius / d) / 2;
+
+                center[0] = center[0] * k + p[0] * (1 - k);
+                center[1] = center[1] * k + p[1] * (1 - k);
+                center[2] = center[2] * k + p[2] * (1 - k);
+                radius = (radius + d) / 2;
+            }
+        }
+
+        return float4(center[0], center[1], center[2], radius);
+    }
 }

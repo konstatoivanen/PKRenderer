@@ -61,7 +61,7 @@ void main()
         color = FilmGrain(float2(coord), color, exposure);
     }
 
-    color = LinearToGamma(color);
+    color = Linear709ToSRGB(color);
 
     // Prefer lut color grading in apply all mode.
 #if !defined(FX_APPLY_ALL)

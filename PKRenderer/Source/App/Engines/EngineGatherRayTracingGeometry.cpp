@@ -42,6 +42,7 @@ namespace PK::App
 
         AccelerationStructureGeometryInfo geometry{};
         geometry.customIndex = 0u;
+        geometry.recordOffset = 0u;
 
         // Static scene mesh instances
         auto staticMeshViews = m_entityDb->Query<EntityViewMeshStatic>((uint32_t)ENTITY_GROUPS::ACTIVE);
