@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Utilities.glsl"
+#include "Common.glsl"
 
 #define GIZMOS_MAX_VERTICES 16384u
 
@@ -15,12 +16,24 @@ void Gizmos_DrawPacked(uint4 v0, uint4 v1)
     PK_BUFFER_DATA(pk_Gizmos_IndirectVertices, vertexIndex + 1u) = v1;
 }
 
-void Gizmos_DrawLine(float3 start, float3 end, float4 color)
+void Gizmos_DrawWorldLine(float3 start, float3 end, float4 color)
 {
     Gizmos_DrawPacked(uint4(floatBitsToUint(start), packUnorm4x8(color)), uint4(floatBitsToUint(end), packUnorm4x8(color)));
 }
 
-void Gizmos_DrawRay(float3 origin, float3 vector, float4 color)
+void Gizmos_DrawWorldRay(float3 origin, float3 vector, float4 color)
 {
-    Gizmos_DrawLine(origin, origin + vector, color);
+    Gizmos_DrawWorldLine(origin, origin + vector, color);
+}
+
+void Gizmos_DrawClipUVWLine(float3 start, float3 end, float4 color)
+{
+    const float3 p0 = UVToWorldPos(start.xy, start.z);
+    const float3 p1 = UVToWorldPos(end.xy, end.z);
+    Gizmos_DrawWorldLine(p0, p1, color);
+}
+
+void Gizmos_DrawClipUVWRay(float3 origin, float3 vector, float4 color)
+{
+    Gizmos_DrawClipUVWLine(origin, origin + vector, color);
 }
