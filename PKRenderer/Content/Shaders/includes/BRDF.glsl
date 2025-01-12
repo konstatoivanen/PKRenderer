@@ -231,7 +231,7 @@ float3 Fr_Inverse_GGXVNDF(const float2 Xi, const float3 Ve, const float alpha)
 float3 Fr_Inverse_GGXVNDF_Full(float2 Xi, const float3 normal, const float3 viewdir, const float roughness)
 {
     // prevent grazing angles 
-    Xi *= 0.98f;
+    Xi.x *= 0.98f;
     const float alpha = pow2(roughness);
     const float3x3 basis = make_TBN(normal);
     const float3 Ve = -viewdir * basis;
