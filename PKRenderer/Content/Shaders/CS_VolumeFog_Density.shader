@@ -1,5 +1,6 @@
 
 #pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_multi_compile _ VOLUME_FOG_CLEAR
 
 #include "includes/VolumeFog.glsl"
 #include "includes/Encoding.glsl"
@@ -14,11 +15,18 @@ void main()
     const float3 worldpos = UVToWorldPos(uvw_cur.xy, VFog_ZToView(uvw_cur.z));
     const float3 uvw_prev = VFog_WorldToPrevUVW(worldpos);
 
-    const float accumulation = VFog_GetAccumulation(uvw_prev);
-    const float value_pre = ReplaceIfResized(SAMPLE_TRICUBIC(pk_Fog_DensityRead, uvw_prev).x, 0.0f);
     const float value_cur = VFog_CalculateDensity(worldpos);
-    const float value_out = lerp(value_pre, value_cur, accumulation);
 
-    imageStore(pk_Fog_Density, pos, isnan(value_out) ? 0.0f.xxxx : value_out.xxxx);
-    imageStore(pk_Fog_Inject, pos, EncodeE5BGR9(texelFetch(pk_Fog_InjectRead, pos, 0).rgb).xxxx);
+#if defined(VOLUME_FOG_CLEAR)
+    const float value_pre = value_cur;
+    const float3 inject_pre = 0.0f.xxx;
+#else
+    const float value_pre = SAMPLE_TRICUBIC(pk_Fog_DensityRead, uvw_prev).x;
+    const float3 inject_pre = texelFetch(pk_Fog_InjectRead, pos, 0).rgb;
+#endif
+
+    const float value_out = lerp(value_pre, value_cur, VFog_GetAccumulation(uvw_prev));
+
+    imageStore(pk_Fog_Density, pos, -min(0.0f, -value_out).xxxx);
+    imageStore(pk_Fog_Inject, pos, EncodeE5BGR9(inject_pre).xxxx);
 }

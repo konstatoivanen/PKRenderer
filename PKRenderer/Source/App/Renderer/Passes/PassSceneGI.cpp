@@ -121,11 +121,10 @@ namespace PK::App
         view->constants->Set<float>(hash->pk_GI_VoxelStepSize, stepSize);
         view->constants->Set<float>(hash->pk_GI_VoxelLevelScale, levelscale);
 
-        m_rasterAxis = m_frameIndex % 3;
+        auto frameIndexSinceResize = view->timeRender.frameIndex - view->timeResize.frameIndex;
+        m_rasterAxis = frameIndexSinceResize % 3;
         view->constants->Set<uint4>(hash->pk_GI_VolumeSwizzle, swizzles[m_rasterAxis]);
-        view->constants->Set<uint2>(hash->pk_GI_RayDither, Math::MurmurHash21(m_frameIndex / 64u));
-
-        m_frameIndex++;
+        view->constants->Set<uint2>(hash->pk_GI_RayDither, Math::MurmurHash21(frameIndexSinceResize / 64u));
     }
 
     void PassSceneGI::PreRender(CommandBufferExt cmd, const uint3& resolution)
@@ -140,12 +139,13 @@ namespace PK::App
         m_sbtRaytrace.Validate(cmd, m_rayTraceGatherGI);
         m_sbtValidate.Validate(cmd, m_rayTraceValidate);
 
-        RHI::ValidateTexture(m_packedGIDiff, resolution);
-        RHI::ValidateTexture(m_packedGISpec, resolution);
-        RHI::ValidateTexture(m_rayhits, GetCheckerboardResolution(resolution, m_settings.checkerboardTrace));
-        RHI::ValidateTexture(m_reservoirs0, GetCheckerboardResolution(resolution, m_settings.checkerboardTrace));
-        RHI::ValidateTexture(m_reservoirs1, GetCheckerboardResolution(resolution, m_settings.checkerboardTrace));
-        RHI::ValidateTexture(m_resolvedGI, resolution);
+        m_hasResizedTargets = false;
+        m_hasResizedTargets |= RHI::ValidateTexture(m_packedGIDiff, resolution);
+        m_hasResizedTargets |= RHI::ValidateTexture(m_packedGISpec, resolution);
+        m_hasResizedTargets |= RHI::ValidateTexture(m_rayhits, GetCheckerboardResolution(resolution, m_settings.checkerboardTrace));
+        m_hasResizedTargets |= RHI::ValidateTexture(m_reservoirs0, GetCheckerboardResolution(resolution, m_settings.checkerboardTrace));
+        m_hasResizedTargets |= RHI::ValidateTexture(m_reservoirs1, GetCheckerboardResolution(resolution, m_settings.checkerboardTrace));
+        m_hasResizedTargets |= RHI::ValidateTexture(m_resolvedGI, resolution);
 
         RHI::SetImage(hash->pk_GI_RayHits, m_rayhits.get());
         RHI::SetImage(hash->pk_Reservoirs0, m_reservoirs0.get());
@@ -187,6 +187,13 @@ namespace PK::App
 
     void PassSceneGI::Voxelize(CommandBufferExt cmd, IBatcher* batcher, uint32_t batchGroup)
     {
+        // Targets contain garbage data. skip this frame.
+        // @TODO Bad pattern. should be per view. as should everything here really.
+        if (m_hasResizedTargets)
+        {
+            return;
+        }
+
         cmd->BeginDebugScope("SceneGI.Voxelize", PK_COLOR_GREEN);
 
         auto hash = HashCache::Get();

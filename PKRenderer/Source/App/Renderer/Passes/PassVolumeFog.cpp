@@ -76,17 +76,19 @@ namespace PK::App
         auto hash = HashCache::Get();
         const uint3 volumeResolution = { resolution.x / 8u, resolution.y / 8u, 128u };
 
-        RHI::ValidateTexture(m_volumeDensity, volumeResolution);
-        RHI::ValidateTexture(m_volumeDensityPrev, volumeResolution);
-        RHI::ValidateTexture(m_volumeInject, volumeResolution);
-        RHI::ValidateTexture(m_volumeInjectPrev, volumeResolution);
-        RHI::ValidateTexture(m_volumeScatter, volumeResolution);
+        auto hasResized = false;
+        hasResized |= RHI::ValidateTexture(m_volumeDensity, volumeResolution);
+        hasResized |= RHI::ValidateTexture(m_volumeDensityPrev, volumeResolution);
+        hasResized |= RHI::ValidateTexture(m_volumeInject, volumeResolution);
+        hasResized |= RHI::ValidateTexture(m_volumeInjectPrev, volumeResolution);
+        hasResized |= RHI::ValidateTexture(m_volumeScatter, volumeResolution);
 
         RHI::SetImage(hash->pk_Fog_Inject, m_volumeInjectPrev.get());
         RHI::SetTexture(hash->pk_Fog_InjectRead, m_volumeInject.get());
         RHI::SetImage(hash->pk_Fog_Density, m_volumeDensity.get());
         RHI::SetTexture(hash->pk_Fog_DensityRead, m_volumeDensityPrev.get());
-        cmd.Dispatch(m_computeDensity, 0, volumeResolution);
+        cmd.Dispatch(m_computeDensity, hasResized ? 1 : 0, volumeResolution);
+
         RHI::SetImage(hash->pk_Fog_Density, m_volumeDensityPrev.get());
         RHI::SetTexture(hash->pk_Fog_DensityRead, m_volumeDensity.get());
 

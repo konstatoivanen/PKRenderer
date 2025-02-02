@@ -47,8 +47,8 @@ namespace PK::App
             RHITextureRef m_reservoirs1;
             RHITextureRef m_rayhits;
 
-            uint32_t m_frameIndex = 0u;
             int32_t m_rasterAxis = 0;
+            bool m_hasResizedTargets = false;
 
             struct Settings
             {

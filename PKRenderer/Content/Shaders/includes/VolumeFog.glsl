@@ -71,7 +71,7 @@ float3 VFog_EstimateTransmittance(const float3 uvw, float farFade)
 
 float VFog_GetAccumulation(float3 uvw)
 {
-    return pk_FrameIndex.y == 0u || uvw.z < 0.0f || Any_NotEqual(saturate(uvw.xy), uvw.xy) ? 1.0f : VOLUMEFOG_ACCUMULATION;
+    return VOLUMEFOG_ACCUMULATION + float(Any_NotEqual(clamp(uvw, 0.0f.xxx, float3(1.0f.xx, 2.0f)), uvw)) * (1.0f - VOLUMEFOG_ACCUMULATION);
 }
 
 float3 VFog_WorldToPrevUVW(float3 worldpos)

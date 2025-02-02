@@ -87,12 +87,15 @@ void main()
         );
     }
 
-    const float3 value_pre = ReplaceIfResized(SAMPLE_TRICUBIC(pk_Fog_InjectRead, uvw_prev).rgb, 0.0f.xxx);
+    // Note it is faster to solve tricubic here rather than in density reproject.
+    const float3 value_pre = SAMPLE_TRICUBIC(pk_Fog_InjectRead, uvw_prev).rgb;
 
     const float accumulation = VFog_GetAccumulation(uvw_prev);
 
     float3 value_out = lerp(value_pre, value_cur, accumulation);
-    value_out = Any_IsNaN(value_out) ? 0.0f.xxx : value_out;
+
+    // Remove potential NaNs.
+    value_out = -min(-0.0f.xxx, -value_out);
 
     imageStore(pk_Fog_Inject, int3(id), EncodeE5BGR9(value_out).xxxx);
 }
