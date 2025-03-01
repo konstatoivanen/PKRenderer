@@ -134,19 +134,24 @@ namespace PK
 
         auto& currentDesc = inoutTexture->GetDescriptor();
 
-        if (currentDesc.type == descriptor.type &&
-            currentDesc.format == descriptor.format &&
-            currentDesc.usage == descriptor.usage &&
-            currentDesc.resolution == descriptor.resolution &&
-            currentDesc.levels == descriptor.levels &&
-            currentDesc.samples == descriptor.samples &&
-            currentDesc.layers == descriptor.layers)
+        if (currentDesc.type != descriptor.type ||
+            currentDesc.format != descriptor.format ||
+            currentDesc.usage != descriptor.usage ||
+            currentDesc.resolution != descriptor.resolution ||
+            currentDesc.levels != descriptor.levels ||
+            currentDesc.samples != descriptor.samples ||
+            currentDesc.layers != descriptor.layers)
         {
-            return false;
+            inoutTexture = RHI::CreateTexture(descriptor, inoutTexture->GetDebugName());
+            return true;
         }
 
-        inoutTexture = RHI::CreateTexture(descriptor, inoutTexture->GetDebugName());
-        return true;
+        if (currentDesc.sampler != descriptor.sampler)
+        {
+            inoutTexture->SetSampler(descriptor.sampler);
+        }
+
+        return false;
     }
 
     bool RHI::ValidateTexture(RHITextureRef& inoutTexture, const uint3& resolution)
@@ -205,7 +210,7 @@ namespace PK
             return true;
         }
 
-        if (inoutBuffer->GetSize() >= size)
+        if (inoutBuffer->GetSize() >= size && inoutBuffer->GetUsage() == usage)
         {
             return false;
         }

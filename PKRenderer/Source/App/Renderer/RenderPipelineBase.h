@@ -70,6 +70,7 @@ namespace PK::App
         void OnApplicationRender(RHIWindow* window) final;
 
         protected: 
+            virtual IRenderViewResources* GetViewResources(uint32_t index) = 0;
             virtual void Render(RenderPipelineContext* context) = 0;
 
             void ValidateViewGBuffers(RenderView* view, const GBuffersFullDescriptor& descriptors);
@@ -83,5 +84,21 @@ namespace PK::App
             RenderView m_renderViews[MAX_RENDER_VIEWS]{};
             uint32_t m_renderViewCount;
             RHITextureRef m_integratedDFG;
+    };
+
+    template<typename TResources>
+    struct IRenderPipeline : RenderPipelineBase
+    {
+        IRenderPipeline(EntityDatabase* entityDb, 
+            AssetDatabase* assetDatabase,
+            Sequencer* sequencer,
+            IBatcher* batcher) : 
+            RenderPipelineBase(entityDb, assetDatabase, sequencer, batcher) 
+        {
+        }
+
+        protected:
+            IRenderViewResources* GetViewResources(uint32_t index) final { return &m_resources[index]; }
+            TResources m_resources[MAX_RENDER_VIEWS]{};
     };
 }

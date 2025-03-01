@@ -10,11 +10,15 @@ namespace PK::App
     class PassHierarchicalDepth : public NoCopy
     {
         public:
-            PassHierarchicalDepth(AssetDatabase* assetDatabase, const uint2& initialResolution);
-            void Compute(CommandBufferExt cmd, uint3 resolution);
+            struct ViewResources
+            {
+                RHITextureRef hierarchicalDepth;
+            };
+
+            PassHierarchicalDepth(AssetDatabase* assetDatabase);
+            void Compute(CommandBufferExt cmd, struct RenderPipelineContext* context);
 
         private:
             ShaderAsset* m_computeHierachicalDepth = nullptr;
-            RHITextureRef m_hierarchicalDepth;
     };
 }

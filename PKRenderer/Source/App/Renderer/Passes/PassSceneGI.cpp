@@ -7,6 +7,7 @@
 #include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/RenderView.h"
+#include "App/Renderer/RenderPipelineBase.h"
 #include "PassSceneGI.h"
 
 namespace PK::App
@@ -16,7 +17,7 @@ namespace PK::App
         return { resolution.x / (halfRes ? 2 : 1), resolution.y, resolution.z };
     }
 
-    PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase, const uint2& initialResolution) 
+    PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase) 
     {
         PK_LOG_VERBOSE("PassSceneGI.Ctor");
         PK_LOG_SCOPE_INDENT(local);
@@ -50,44 +51,6 @@ namespace PK::App
         descr.levels = 1u;
         m_voxelMask = RHI::CreateTexture(descr, "GI.VoxelVolumeMask");
 
-        descr.type = TextureType::Texture2DArray;
-        descr.sampler.wrap[0] = WrapMode::Clamp;
-        descr.sampler.wrap[1] = WrapMode::Clamp;
-        descr.sampler.wrap[2] = WrapMode::Clamp;
-        descr.sampler.filterMin = FilterMode::Point;
-        descr.sampler.filterMag = FilterMode::Point;
-        descr.usage = TextureUsage::Sample | TextureUsage::Storage;
-        descr.format = TextureFormat::RGBA32UI;
-        descr.layers = 2;
-        descr.resolution = { initialResolution, 1 };
-        m_packedGIDiff = RHI::CreateTexture(descr, "GI.PackedGI.Diff");
-
-        descr.format = TextureFormat::RG32UI;
-        m_packedGISpec = RHI::CreateTexture(descr, "GI.PackedGI.Spec");
-
-        descr.type = TextureType::Texture2D;
-        descr.layers = 1u;
-        descr.levels = 1u;
-        descr.usage = TextureUsage::Storage;
-        descr.format = TextureFormat::RG32UI;
-        descr.resolution = { initialResolution, 1u };
-        descr.resolution = GetCheckerboardResolution(descr.resolution, m_settings.checkerboardTrace);
-        m_rayhits = RHI::CreateTexture(descr, "GI.RayHits");
-
-        descr.type = TextureType::Texture2DArray;
-        descr.layers = 2;
-        descr.format = TextureFormat::RGBA32UI;
-        m_reservoirs0 = RHI::CreateTexture(descr, "GI.Reservoirs0");
-        descr.format = TextureFormat::RG32UI;
-        m_reservoirs1 = RHI::CreateTexture(descr, "GI.Reservoirs1");
-
-        descr.type = TextureType::Texture2D;
-        descr.layers = 1;
-        descr.format = TextureFormat::RGBA32UI;
-        descr.usage = TextureUsage::Storage | TextureUsage::Sample;
-        descr.resolution = { initialResolution, 1u };
-        m_resolvedGI = RHI::CreateTexture(descr, "GI.Resolved.DiffSpec");
-
         m_voxelizeAttribs.depthStencil.depthCompareOp = Comparison::Off;
         m_voxelizeAttribs.depthStencil.depthWriteEnable = false;
         m_voxelizeAttribs.rasterization.cullMode = CullMode::Off;
@@ -102,6 +65,8 @@ namespace PK::App
     void PassSceneGI::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
+        auto resources = view->GetResources<ViewResources>();
+        auto resolution = view->GetResolution();
 
         uint4 swizzles[3] =
         {
@@ -125,36 +90,64 @@ namespace PK::App
         m_rasterAxis = frameIndexSinceResize % 3;
         view->constants->Set<uint4>(hash->pk_GI_VolumeSwizzle, swizzles[m_rasterAxis]);
         view->constants->Set<uint2>(hash->pk_GI_RayDither, Math::MurmurHash21(frameIndexSinceResize / 64u));
-    }
-
-    void PassSceneGI::PreRender(CommandBufferExt cmd, const uint3& resolution)
-    {
-        auto hash = HashCache::Get();
 
         RHI::SetKeyword("PK_GI_CHECKERBOARD_TRACE", m_settings.checkerboardTrace);
         RHI::SetKeyword("PK_GI_SPEC_VIRT_REPROJECT", m_settings.specularVirtualReproject);
         RHI::SetKeyword("PK_GI_SSRT_PRETRACE", m_settings.screenSpacePretrace);
         RHI::SetKeyword("PK_GI_RESTIR", m_settings.ReSTIR);
 
+        auto* cmd = RHI::GetCommandBuffer(QueueType::Transfer);
         m_sbtRaytrace.Validate(cmd, m_rayTraceGatherGI);
         m_sbtValidate.Validate(cmd, m_rayTraceValidate);
 
-        m_hasResizedTargets = false;
-        m_hasResizedTargets |= RHI::ValidateTexture(m_packedGIDiff, resolution);
-        m_hasResizedTargets |= RHI::ValidateTexture(m_packedGISpec, resolution);
-        m_hasResizedTargets |= RHI::ValidateTexture(m_rayhits, GetCheckerboardResolution(resolution, m_settings.checkerboardTrace));
-        m_hasResizedTargets |= RHI::ValidateTexture(m_reservoirs0, GetCheckerboardResolution(resolution, m_settings.checkerboardTrace));
-        m_hasResizedTargets |= RHI::ValidateTexture(m_reservoirs1, GetCheckerboardResolution(resolution, m_settings.checkerboardTrace));
-        m_hasResizedTargets |= RHI::ValidateTexture(m_resolvedGI, resolution);
+        resources->hasResisedTargets = false;
+        {
+            TextureDescriptor descr{};
+            descr.format = TextureFormat::RGBA32UI;
+            descr.usage = TextureUsage::Sample | TextureUsage::Storage;
+            descr.type = TextureType::Texture2DArray;
+            descr.resolution = resolution;
+            descr.layers = 2;
+            descr.sampler.filterMin = FilterMode::Point;
+            descr.sampler.filterMag = FilterMode::Point;
+            descr.sampler.wrap[0] = WrapMode::Clamp;
+            descr.sampler.wrap[1] = WrapMode::Clamp;
+            descr.sampler.wrap[2] = WrapMode::Clamp;
+            resources->hasResisedTargets |= RHI::ValidateTexture(resources->packedGIDiff, descr, "GI.PackedGI.Diff");
 
-        RHI::SetImage(hash->pk_GI_RayHits, m_rayhits.get());
-        RHI::SetImage(hash->pk_Reservoirs0, m_reservoirs0.get());
-        RHI::SetImage(hash->pk_Reservoirs1, m_reservoirs1.get());
-        RHI::SetImage(hash->pk_GI_PackedDiff, m_packedGIDiff.get());
-        RHI::SetImage(hash->pk_GI_PackedSpec, m_packedGISpec.get());
+            descr.format = TextureFormat::RG32UI;
+            resources->hasResisedTargets |= RHI::ValidateTexture(resources->packedGISpec, descr, "GI.PackedGI.Spec");
 
-        RHI::SetImage(hash->pk_GI_ResolvedWrite, m_resolvedGI.get());
-        RHI::SetTexture(hash->pk_GI_ResolvedRead, m_resolvedGI.get());
+            descr.type = TextureType::Texture2D;
+            descr.layers = 1u;
+            descr.levels = 1u;
+            descr.usage = TextureUsage::Storage;
+            descr.format = TextureFormat::RG32UI;
+            descr.resolution = GetCheckerboardResolution(descr.resolution, m_settings.checkerboardTrace);
+            resources->hasResisedTargets |= RHI::ValidateTexture(resources->rayhits, descr, "GI.RayHits");
+
+            descr.type = TextureType::Texture2DArray;
+            descr.layers = 2;
+            descr.format = TextureFormat::RGBA32UI;
+            resources->hasResisedTargets |= RHI::ValidateTexture(resources->reservoirs0, descr, "GI.Reservoirs0");
+            descr.format = TextureFormat::RG32UI;
+            resources->hasResisedTargets |= RHI::ValidateTexture(resources->reservoirs1, descr, "GI.Reservoirs1");
+
+            descr.type = TextureType::Texture2D;
+            descr.layers = 1;
+            descr.format = TextureFormat::RGBA32UI;
+            descr.usage = TextureUsage::Storage | TextureUsage::Sample;
+            descr.resolution = resolution;
+            resources->hasResisedTargets |= RHI::ValidateTexture(resources->resolvedGI, descr, "GI.Resolved.DiffSpec");
+        }
+
+        RHI::SetImage(hash->pk_GI_RayHits, resources->rayhits.get());
+        RHI::SetImage(hash->pk_Reservoirs0, resources->reservoirs0.get());
+        RHI::SetImage(hash->pk_Reservoirs1, resources->reservoirs1.get());
+        RHI::SetImage(hash->pk_GI_PackedDiff, resources->packedGIDiff.get());
+        RHI::SetImage(hash->pk_GI_PackedSpec, resources->packedGISpec.get());
+        RHI::SetImage(hash->pk_GI_ResolvedWrite, resources->resolvedGI.get());
+        RHI::SetTexture(hash->pk_GI_ResolvedRead, resources->resolvedGI.get());
     }
 
     void PassSceneGI::PruneVoxels(CommandBufferExt cmd)
@@ -169,55 +162,63 @@ namespace PK::App
         }
     }
 
-    void PassSceneGI::DispatchRays(CommandBufferExt cmd)
+    void PassSceneGI::DispatchRays(CommandBufferExt cmd, RenderPipelineContext* context)
     {
+        auto view = context->views[0];
+        auto resources = view->GetResources<ViewResources>();
         cmd->BeginDebugScope("SceneGI.DispatchRays", PK_COLOR_GREEN);
         cmd.SetShaderBindingTable(&m_sbtRaytrace);
-        cmd.DispatchRays(m_rayTraceGatherGI, m_rayhits->GetResolution());
+        cmd.DispatchRays(m_rayTraceGatherGI, resources->rayhits->GetResolution());
         cmd->EndDebugScope();
     }
 
-    void PassSceneGI::ReprojectGI(CommandBufferExt cmd)
+    void PassSceneGI::ReprojectGI(CommandBufferExt cmd, RenderPipelineContext* context)
     {
         cmd->BeginDebugScope("SceneGI.Reproject", PK_COLOR_GREEN);
-        auto resolution = m_packedGIDiff->GetResolution();
+        auto view = context->views[0];
+        auto resources = view->GetResources<ViewResources>();
+        auto resolution = resources->packedGIDiff->GetResolution();
         cmd.Dispatch(m_computeReproject, { resolution.x, resolution.y, 1u });
         cmd->EndDebugScope();
     }
 
-    void PassSceneGI::Voxelize(CommandBufferExt cmd, IBatcher* batcher, uint32_t batchGroup)
+    void PassSceneGI::Voxelize(CommandBufferExt cmd, RenderPipelineContext* context)
     {
+        auto batcher = context->batcher;
+        auto view = context->views[0];
+        auto batchGroup = view->primaryPassGroup;
+        auto resources = view->GetResources<ViewResources>();
+
         // Targets contain garbage data. skip this frame.
-        // @TODO Bad pattern. should be per view. as should everything here really.
-        if (m_hasResizedTargets)
+        if (!resources->hasResisedTargets)
         {
-            return;
+            cmd->BeginDebugScope("SceneGI.Voxelize", PK_COLOR_GREEN);
+
+            auto hash = HashCache::Get();
+            auto volumesize = m_voxels->GetResolution();
+
+            uint4 viewports[3] =
+            {
+                {0u, 0u, volumesize.x, volumesize.z },
+                {0u, 0u, volumesize.x, volumesize.y },
+                {0u, 0u, volumesize.y, volumesize.z },
+            };
+
+            // Voxelize raster
+            cmd->SetRenderTarget({ viewports[m_rasterAxis].z, viewports[m_rasterAxis].w, 1 });
+            cmd.SetViewPort(viewports[m_rasterAxis]);
+            cmd.SetScissor(viewports[m_rasterAxis]);
+            batcher->RenderGroup(cmd, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);
+
+            cmd->EndDebugScope();
         }
-
-        cmd->BeginDebugScope("SceneGI.Voxelize", PK_COLOR_GREEN);
-
-        auto hash = HashCache::Get();
-        auto volumesize = m_voxels->GetResolution();
-
-        uint4 viewports[3] =
-        {
-            {0u, 0u, volumesize.x, volumesize.z },
-            {0u, 0u, volumesize.x, volumesize.y },
-            {0u, 0u, volumesize.y, volumesize.z },
-        };
-
-        // Voxelize raster
-        cmd->SetRenderTarget({ viewports[m_rasterAxis].z, viewports[m_rasterAxis].w, 1 });
-        cmd.SetViewPort(viewports[m_rasterAxis]);
-        cmd.SetScissor(viewports[m_rasterAxis]);
-        batcher->RenderGroup(cmd, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);
-
-        cmd->EndDebugScope();
     }
 
-    void PassSceneGI::RenderGI(CommandBufferExt cmd)
+    void PassSceneGI::RenderGI(CommandBufferExt cmd, RenderPipelineContext* context)
     {
-        auto resolution = m_packedGIDiff->GetResolution();
+        auto view = context->views[0];
+        auto resources = view->GetResources<ViewResources>();
+        auto resolution = resources->packedGIDiff->GetResolution();
         uint3 dimension = { resolution.x, resolution.y, 1u };
         uint3 chbdimension = GetCheckerboardResolution(dimension, m_settings.checkerboardTrace);
         cmd->BeginDebugScope("SceneGI.Filter", PK_COLOR_GREEN);
@@ -243,13 +244,15 @@ namespace PK::App
         cmd.Dispatch(m_computeMipmap, 0, volumesize >> 4u);
     }
 
-    void PassSceneGI::ValidateReservoirs(CommandBufferExt cmd)
+    void PassSceneGI::ValidateReservoirs(CommandBufferExt cmd, RenderPipelineContext* context)
     {
         if (m_settings.ReSTIR)
         {
+            auto view = context->views[0];
+            auto resources = view->GetResources<ViewResources>();
             cmd->BeginDebugScope("SceneGI.ValidateReservoirs", PK_COLOR_GREEN);
             cmd.SetShaderBindingTable(&m_sbtValidate);
-            cmd.DispatchRays(m_rayTraceValidate, m_reservoirs0->GetResolution());
+            cmd.DispatchRays(m_rayTraceValidate, resources->reservoirs0->GetResolution());
             cmd->EndDebugScope();
         }
     }

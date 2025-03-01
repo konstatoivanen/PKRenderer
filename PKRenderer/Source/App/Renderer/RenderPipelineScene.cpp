@@ -16,18 +16,17 @@ namespace PK::App
     RenderPipelineScene::RenderPipelineScene(AssetDatabase* assetDatabase,
         EntityDatabase* entityDb,
         Sequencer* sequencer,
-        IBatcher* batcher,
-        const uint2& initialResolution) : 
-        RenderPipelineBase(entityDb, assetDatabase, sequencer, batcher),
-        m_passLights(assetDatabase, initialResolution),
-        m_passSceneGI(assetDatabase, initialResolution),
-        m_passVolumeFog(assetDatabase, initialResolution),
-        m_passHierarchicalDepth(assetDatabase, initialResolution),
+        IBatcher* batcher) : 
+        IRenderPipeline(entityDb, assetDatabase, sequencer, batcher),
+        m_passLights(assetDatabase),
+        m_passSceneGI(assetDatabase),
+        m_passVolumeFog(assetDatabase),
+        m_passHierarchicalDepth(assetDatabase),
         m_passEnvBackground(assetDatabase),
         m_passFilmGrain(assetDatabase),
-        m_depthOfField(assetDatabase, initialResolution),
-        m_temporalAntialiasing(assetDatabase, initialResolution),
-        m_bloom(assetDatabase, initialResolution),
+        m_depthOfField(assetDatabase),
+        m_temporalAntialiasing(assetDatabase),
+        m_bloom(assetDatabase),
         m_autoExposure(assetDatabase),
         m_passPostEffectsComposite(assetDatabase)
     {
@@ -276,14 +275,12 @@ namespace PK::App
         RHI::SetTexture(hash->pk_GB_Previous_DepthBiased, gbuffers.previous.depthBiased);
         RHI::SetBuffer(hash->pk_PerFrameConstants, *primaryView->constants.get());
 
-        m_passSceneGI.PreRender(cmdtransfer, resolution);
         context->batcher->BeginCollectDrawCalls();
         {
             DispatchRenderPipelineEvent(cmdtransfer, context, RenderPipelineEvent::CollectDraws);
             m_passLights.BuildLights(context);
         }
         context->batcher->EndCollectDrawCalls(cmdtransfer);
-
 
         // End transfer operations
         queues->Submit(QueueType::Transfer);
@@ -296,7 +293,6 @@ namespace PK::App
         RHI::SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         queues->Submit(QueueType::Compute, &cmdcompute);
 
-
         // Only buffering needs to wait for previous results.
         // Eliminate redundant rendering waits by waiting for transfer instead.
         context->window->SetFrameFence(queues->GetFenceRef(QueueType::Transfer));
@@ -304,12 +300,12 @@ namespace PK::App
         // Async compute during last present.
         m_passFilmGrain.Compute(cmdcompute);
         m_passLights.ComputeClusters(cmdcompute, context);
-        m_autoExposure.Render(cmdcompute, gbuffers.previous.color);
-        m_depthOfField.ComputeAutoFocus(cmdcompute, resolution.y);
-        m_passVolumeFog.ComputeDensity(cmdcompute, resolution);
-        m_passEnvBackground.PreCompute(cmdcompute);
+        m_autoExposure.Render(cmdcompute, context);
+        m_depthOfField.ComputeAutoFocus(cmdcompute, context);
+        m_passVolumeFog.ComputeDensity(cmdcompute, context);
+        m_passEnvBackground.PreCompute(cmdcompute, context);
         m_passSceneGI.VoxelMips(cmdcompute);
-        m_passSceneGI.ValidateReservoirs(cmdcompute);
+        m_passSceneGI.ValidateReservoirs(cmdcompute, context);
         queues->Wait(QueueType::Compute, QueueType::Transfer);
         queues->Submit(QueueType::Compute, &cmdcompute);
 
@@ -328,12 +324,12 @@ namespace PK::App
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 2);
 
         DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::GBuffer);
-        m_passHierarchicalDepth.Compute(cmdgraphics, resolution);
+        m_passHierarchicalDepth.Compute(cmdgraphics, context);
         queues->Wait(QueueType::Graphics, QueueType::Transfer);
         queues->Submit(QueueType::Graphics, &cmdgraphics.commandBuffer);
 
         // Indirect GI ray tracing
-        m_passSceneGI.DispatchRays(cmdcompute);
+        m_passSceneGI.DispatchRays(cmdcompute, context);
         queues->Wait(QueueType::Compute, QueueType::Graphics);
         // Queue graphics wait for misc async compute
         queues->Wait(QueueType::Graphics, QueueType::Compute);
@@ -341,20 +337,20 @@ namespace PK::App
 
         // Shadows, Voxelize scene & reproject gi
         m_passLights.RenderShadows(cmdgraphics, context);
-        m_passSceneGI.Voxelize(cmdgraphics, context->batcher, primaryView->primaryPassGroup);
+        m_passSceneGI.Voxelize(cmdgraphics, context);
         m_passLights.RenderScreenSpaceShadows(cmdgraphics, context);
-        m_passSceneGI.ReprojectGI(cmdgraphics);
-        m_passVolumeFog.Compute(cmdgraphics, gbuffers.current.color->GetResolution());
+        m_passSceneGI.ReprojectGI(cmdgraphics, context);
+        m_passVolumeFog.Compute(cmdgraphics, context);
         queues->Submit(QueueType::Graphics, &cmdgraphics.commandBuffer);
 
-        m_passSceneGI.RenderGI(cmdgraphics);
+        m_passSceneGI.RenderGI(cmdgraphics, context);
 
         // Forward Opaque on graphics queue
         cmdgraphics.SetRenderTarget({ gbuffers.current.depth, gbuffers.current.color }, true);
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::ForwardOpaque);
 
-        m_passEnvBackground.RenderBackground(cmdgraphics);
+        m_passEnvBackground.RenderBackground(cmdgraphics, context);
         m_passVolumeFog.Render(cmdgraphics, gbuffers.current.color);
 
         DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::ForwardTransparent);
@@ -366,9 +362,9 @@ namespace PK::App
         cmdgraphics->BeginDebugScope("PostEffects", PK_COLOR_YELLOW);
         {
             // Previous color has been updated. leverage that and do taa without extra blit.
-            m_temporalAntialiasing.Render(cmdgraphics, gbuffers.previous.color, gbuffers.current.color);
-            m_depthOfField.Render(cmdgraphics, gbuffers.current.color);
-            m_bloom.Render(cmdgraphics, gbuffers.current.color);
+            m_temporalAntialiasing.Render(cmdgraphics, context->views[0], gbuffers.previous.color, gbuffers.current.color);
+            m_depthOfField.Render(cmdgraphics, context, gbuffers.current.color);
+            m_bloom.Render(cmdgraphics, context);
             m_passPostEffectsComposite.Render(cmdgraphics, gbuffers.current.color);
         }
         cmdgraphics->EndDebugScope();

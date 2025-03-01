@@ -63,8 +63,7 @@ namespace PK::App
         return 0;
     }
 
-    PassLights::PassLights(AssetDatabase* assetDatabase, const uint2& initialResolution) : 
-        m_lights(1024)
+    PassLights::PassLights(AssetDatabase* assetDatabase) 
     {
         PK_LOG_VERBOSE("PassLights.Ctor");
         PK_LOG_SCOPE_INDENT(local);
@@ -126,48 +125,10 @@ namespace PK::App
         atlasDesc.sampler.filterMag = FilterMode::Bilinear;
         m_shadowmaps = RHI::CreateTexture(atlasDesc, "Lights.Shadowmap.Atlas");
 
-        TextureDescriptor screenSpaceDesc;
-        screenSpaceDesc.type = TextureType::Texture2D;
-        screenSpaceDesc.format = TextureFormat::R8;
-        screenSpaceDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
-        screenSpaceDesc.layers = 1;
-        screenSpaceDesc.resolution = { initialResolution, 1u };
-        screenSpaceDesc.sampler.wrap[0] = WrapMode::Clamp;
-        screenSpaceDesc.sampler.wrap[1] = WrapMode::Clamp;
-        screenSpaceDesc.sampler.wrap[2] = WrapMode::Clamp;
-        screenSpaceDesc.sampler.filterMin = FilterMode::Bilinear;
-        screenSpaceDesc.sampler.filterMag = FilterMode::Bilinear;
-        m_screenSpaceShadowmap = RHI::CreateTexture(screenSpaceDesc, "Lights.Shadowmap.ScreenSpace");
-
-        screenSpaceDesc.resolution = { initialResolution >> 1u, 1u };
-        m_screenSpaceShadowmapDownsampled = RHI::CreateTexture(screenSpaceDesc, "Lights.Shadowmap.ScreenSpaceQuareterRes");
-
-        TextureDescriptor imageDescriptor;
-        imageDescriptor.type = TextureType::Texture3D;
-        imageDescriptor.format = TextureFormat::R32UI;
-        imageDescriptor.usage = TextureUsage::Storage | TextureUsage::Concurrent;
-        imageDescriptor.resolution = { initialResolution / LightGridTileSizePx, LightGridSizeZ };
-        imageDescriptor.sampler.filterMin = FilterMode::Point;
-        imageDescriptor.sampler.filterMag = FilterMode::Point;
-        imageDescriptor.sampler.wrap[0] = WrapMode::Clamp;
-        imageDescriptor.sampler.wrap[1] = WrapMode::Clamp;
-        imageDescriptor.sampler.wrap[2] = WrapMode::Clamp;
-        m_lightTiles = RHI::CreateTexture(imageDescriptor, "Lights.Tiles");
-
-        auto lightIndexCount = imageDescriptor.resolution.x *
-            imageDescriptor.resolution.y *
-            imageDescriptor.resolution.z *
-            MaxLightsPerTile;
-
         m_lightsBuffer = RHI::CreateBuffer<LightPacked>(1024ull, BufferUsage::PersistentStorage, "Lights");
         m_lightMatricesBuffer = RHI::CreateBuffer<float4x4>(32ull, BufferUsage::PersistentStorage, "Lights.Matrices");
-        m_lightsLists = RHI::CreateBuffer<ushort>(lightIndexCount, BufferUsage::DefaultStorage, "Lights.List");
 
         auto hash = HashCache::Get();
-
-        RHI::SetBuffer(hash->pk_LightLists, m_lightsLists.get());
-        RHI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
-
         auto lightCookies = assetDatabase->Load<TextureAsset>("Content/Textures/Default/T_LightCookies.ktx2")->GetRHI();
 
         auto sampler = lightCookies->GetSamplerDescriptor();
@@ -181,6 +142,10 @@ namespace PK::App
     void PassLights::RenderShadows(CommandBufferExt cmd, RenderPipelineContext* context)
     {
         auto hash = HashCache::Get();
+        auto renderView = context->views[0];
+        auto resources = renderView->GetResources<ViewResources>();
+        auto& batches = resources->shadowBatches;
+
         auto atlasIndex = 0u;
 
         uint32_t passKeywords[(uint32_t)LightType::TypeCount]
@@ -190,7 +155,7 @@ namespace PK::App
             hash->PK_LIGHT_PASS_POINT,
         };
 
-        for (const auto& batch : m_shadowBatches)
+        for (const auto& batch : batches)
         {
             auto& shadow = m_shadowTypeData[(int)batch.type];
             auto tileCount = shadow.TileCount * batch.count;
@@ -227,33 +192,50 @@ namespace PK::App
 
     void PassLights::RenderScreenSpaceShadows(CommandBufferExt cmd, RenderPipelineContext* context)
     {
-        if (m_shadowBatches.size() == 0u || m_shadowBatches.at(0).type != LightType::Directional)
+        auto renderView = context->views[0];
+        auto resources = renderView->GetResources<ViewResources>();
+        auto& batches = resources->shadowBatches;
+
+        if (batches.size() == 0u || batches.at(0).type != LightType::Directional)
         {
             return;
         }
-
-        cmd->BeginDebugScope("ScreenSpaceShadows", PK_COLOR_RED);
-
-        auto renderView = context->views[0];
         auto hash = HashCache::Get();
         auto resolution = renderView->GetResolution();
         auto quarterResolution = uint3(resolution.x >> 1u, resolution.y >> 1u, 1u);
 
-        RHI::ValidateTexture(m_screenSpaceShadowmap, resolution);
-        RHI::ValidateTexture(m_screenSpaceShadowmapDownsampled, quarterResolution);
+        cmd->BeginDebugScope("ScreenSpaceShadows", PK_COLOR_RED);
 
-        RHI::SetTexture(hash->pk_ShadowmapScreenSpace, m_screenSpaceShadowmap.get());
+        {
+            TextureDescriptor screenSpaceDesc;
+            screenSpaceDesc.type = TextureType::Texture2D;
+            screenSpaceDesc.format = TextureFormat::R8;
+            screenSpaceDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
+            screenSpaceDesc.layers = 1;
+            screenSpaceDesc.resolution = resolution;
+            screenSpaceDesc.sampler.wrap[0] = WrapMode::Clamp;
+            screenSpaceDesc.sampler.wrap[1] = WrapMode::Clamp;
+            screenSpaceDesc.sampler.wrap[2] = WrapMode::Clamp;
+            screenSpaceDesc.sampler.filterMin = FilterMode::Bilinear;
+            screenSpaceDesc.sampler.filterMag = FilterMode::Bilinear;
+            RHI::ValidateTexture(resources->screenSpaceShadowmap, screenSpaceDesc, "Lights.Shadowmap.ScreenSpace");
 
-        RHI::SetImage(hash->pk_Image, m_screenSpaceShadowmapDownsampled.get());
+            screenSpaceDesc.resolution = quarterResolution;
+            RHI::ValidateTexture(resources->screenSpaceShadowmapDownsampled, screenSpaceDesc, "Lights.Shadowmap.ScreenSpaceQuareterRes");
+        }
+
+        RHI::SetTexture(hash->pk_ShadowmapScreenSpace, resources->screenSpaceShadowmap.get());
+
+        RHI::SetImage(hash->pk_Image, resources->screenSpaceShadowmapDownsampled.get());
         cmd.Dispatch(m_computeScreenSpaceShadow, 0, quarterResolution);
 
-        RHI::SetTexture(hash->pk_Texture, m_screenSpaceShadowmapDownsampled.get());
-        RHI::SetImage(hash->pk_Image, m_screenSpaceShadowmap.get());
+        RHI::SetTexture(hash->pk_Texture, resources->screenSpaceShadowmapDownsampled.get());
+        RHI::SetImage(hash->pk_Image, resources->screenSpaceShadowmap.get());
         cmd.Dispatch(m_computeScreenSpaceShadow, 1, resolution);
 
         // Bend screen space shadows.
         // https://www.bendstudio.com/blog/inside-bend-screen-space-shadows/
-        auto lightView = m_lights[m_shadowBatches.at(0).baseLightIndex];
+        auto lightView = resources->lightViews[batches.at(0).baseLightIndex];
         auto lightDirection = lightView->transform->rotation * PK_FLOAT3_FORWARD;
         auto lightProjection = renderView->worldToClip * float4(-lightDirection, 0.0f);
         int viewMin[2] = { 0, 0 };
@@ -283,6 +265,7 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
         auto renderView = context->views[0];
+        auto resources = renderView->GetResources<ViewResources>();
         auto resolution = renderView->GetResolution();
         resolution.x /= LightGridTileSizePx;
         resolution.y /= LightGridTileSizePx;
@@ -293,14 +276,25 @@ namespace PK::App
             resolution.z *
             MaxLightsPerTile;
 
-        if (RHI::ValidateBuffer<ushort>(m_lightsLists, lightIndexCount))
+        TextureDescriptor imageDescriptor;
+        imageDescriptor.type = TextureType::Texture3D;
+        imageDescriptor.format = TextureFormat::R32UI;
+        imageDescriptor.usage = TextureUsage::Storage | TextureUsage::Concurrent;
+        imageDescriptor.resolution = resolution;
+        imageDescriptor.sampler.filterMin = FilterMode::Point;
+        imageDescriptor.sampler.filterMag = FilterMode::Point;
+        imageDescriptor.sampler.wrap[0] = WrapMode::Clamp;
+        imageDescriptor.sampler.wrap[1] = WrapMode::Clamp;
+        imageDescriptor.sampler.wrap[2] = WrapMode::Clamp;
+
+        if (RHI::ValidateTexture(resources->lightTiles, imageDescriptor, "Lights.Tiles"))
         {
-            RHI::SetBuffer(hash->pk_LightLists, m_lightsLists.get());
+            RHI::SetImage(hash->pk_LightTiles, resources->lightTiles.get());
         }
 
-        if (RHI::ValidateTexture(m_lightTiles, resolution))
+        if (RHI::ValidateBuffer<ushort>(resources->lightsLists, lightIndexCount, BufferUsage::DefaultStorage, "Lights.List"))
         {
-            RHI::SetImage(hash->pk_LightTiles, m_lightTiles.get());
+            RHI::SetBuffer(hash->pk_LightLists, resources->lightsLists.get());
         }
 
         cmd.DispatchWithCounter(m_computeLightAssignment, resolution);
@@ -309,6 +303,7 @@ namespace PK::App
     void PassLights::BuildLights(RenderPipelineContext* context)
     {
         auto renderView = context->views[0];
+        auto resources = renderView->GetResources<ViewResources>();
         auto culledLights = context->cullingProxy->CullFrustum(ScenePrimitiveFlags::Light, renderView->worldToClip);
 
         if (culledLights.GetCount() == 0)
@@ -321,19 +316,19 @@ namespace PK::App
         uint matrixIndex = 0u;
         uint shadowCount = 0u;
 
-        m_lights.Validate(culledLights.GetCount());
+        resources->lightViews.Validate(glm::max(1024ull, culledLights.GetCount()));
 
         for (auto i = 0U; i < culledLights.GetCount(); ++i)
         {
             auto view = context->entityDb->Query<EntityViewLight>(EGID(culledLights[i].entityId, (uint)ENTITY_GROUPS::ACTIVE));
             matrixCount += m_shadowTypeData[(int)view->light->type].MatrixCount;
-            m_lights[i] = view;
+            resources->lightViews[i] = view;
         }
 
         // Sort could be faster but whatever.
-        qsort(m_lights.GetData(), lightCount, sizeof(EntityViewLight*), EntityViewLightPtrCompare);
+        qsort(resources->lightViews.GetData(), lightCount, sizeof(EntityViewLight*), EntityViewLightPtrCompare);
 
-        m_shadowBatches.clear();
+        resources->shadowBatches.clear();
         RHI::ValidateBuffer<LightPacked>(m_lightsBuffer, lightCount + 1);
         RHI::ValidateBuffer<float4x4>(m_lightMatricesBuffer, matrixCount);
 
@@ -347,7 +342,7 @@ namespace PK::App
 
         for (auto i = 0u; i < lightCount; ++i)
         {
-            auto& view = m_lights[i];
+            auto& view = resources->lightViews[i];
             auto& light = lightsView[i];
             auto& transform = view->transform;
             auto& worldToLocal = transform->worldToLocal;
@@ -458,19 +453,20 @@ namespace PK::App
             return 0xFFFFu;
         }
 
+        auto& batches = context->views[0]->GetResources<ViewResources>()->shadowBatches;
         auto& shadow = m_shadowTypeData[(int)lightView->light->type];
 
-        if (m_shadowBatches.size() == 0 ||
-            m_shadowBatches.back().count >= shadow.MaxBatchSize ||
-            m_shadowBatches.back().type != lightView->light->type)
+        if (batches.size() == 0 ||
+            batches.back().count >= shadow.MaxBatchSize ||
+            batches.back().type != lightView->light->type)
         {
-            auto& newBatch = m_shadowBatches.emplace_back();
+            auto& newBatch = batches.emplace_back();
             newBatch.batchGroup = context->batcher->BeginNewGroup();
             newBatch.type = lightView->light->type;
             newBatch.baseLightIndex = index;
         }
 
-        auto& batch = m_shadowBatches.back();
+        auto& batch = batches.back();
 
         uint32_t shadowmapIndex = *outShadowCount;
         *outShadowCount += m_shadowTypeData[(int)lightView->light->type].TileCount;

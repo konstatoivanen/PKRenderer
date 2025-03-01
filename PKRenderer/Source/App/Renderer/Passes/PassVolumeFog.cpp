@@ -8,38 +8,15 @@
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/RenderView.h"
 #include "App/Renderer/RenderViewSettings.h"
+#include "App/Renderer/RenderPipelineBase.h"
 #include "PassVolumeFog.h"
 
 namespace PK::App
 {
-    PassVolumeFog::PassVolumeFog(AssetDatabase* assetDatabase, const uint2& initialResolution)
+    PassVolumeFog::PassVolumeFog(AssetDatabase* assetDatabase)
     {
         PK_LOG_VERBOSE("PassVolumeFog.Ctor");
         PK_LOG_SCOPE_INDENT(local);
-
-        TextureDescriptor descriptor{};
-        descriptor.type = TextureType::Texture3D;
-        descriptor.format = TextureFormat::RGBA16F;
-        descriptor.sampler.filterMin = FilterMode::Bilinear;
-        descriptor.sampler.filterMag = FilterMode::Bilinear;
-        descriptor.sampler.wrap[0] = WrapMode::Clamp;
-        descriptor.sampler.wrap[1] = WrapMode::Clamp;
-        descriptor.sampler.wrap[2] = WrapMode::Clamp;
-        descriptor.resolution = { initialResolution.x / 8u, initialResolution.y / 8u, 128 };
-        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
-        m_volumeScatter = RHI::CreateTexture(descriptor, "Fog.ScatterVolume");
-
-        descriptor.format = TextureFormat::RGB9E5;
-        descriptor.formatAlias = TextureFormat::R32UI;
-        m_volumeInject = RHI::CreateTexture(descriptor, "Fog.InjectVolume");
-        m_volumeInjectPrev = RHI::CreateTexture(descriptor, "Fog.InjectVolume.Previous");
-
-        descriptor.format = TextureFormat::R16F;
-        descriptor.formatAlias = TextureFormat::Invalid;
-        descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
-        m_volumeDensity = RHI::CreateTexture(descriptor, "Fog.DensityVolume");
-        m_volumeDensityPrev = RHI::CreateTexture(descriptor, "Fog.DensityVolume.Previous");
-
         m_computeDensity = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Density");
         m_computeInject = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Inject");
         m_computeScatter = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Scatter");
@@ -69,47 +46,72 @@ namespace PK::App
         view->constants->Set<float>(hash->pk_Fog_Density_Sky_HeightAmount, settings.DensitySkyHeightAmount);
     }
 
-    void PassVolumeFog::ComputeDensity(CommandBufferExt cmd, const uint3& resolution)
+    void PassVolumeFog::ComputeDensity(CommandBufferExt cmd, RenderPipelineContext* context)
     {
-        cmd->BeginDebugScope("Fog.InjectionScattering", PK_COLOR_MAGENTA);
-
         auto hash = HashCache::Get();
+        auto view = context->views[0];
+        auto resources = view->GetResources<ViewResources>();
+        auto resolution = view->GetResolution();
         const uint3 volumeResolution = { resolution.x / 8u, resolution.y / 8u, 128u };
 
-        auto hasResized = false;
-        hasResized |= RHI::ValidateTexture(m_volumeDensity, volumeResolution);
-        hasResized |= RHI::ValidateTexture(m_volumeDensityPrev, volumeResolution);
-        hasResized |= RHI::ValidateTexture(m_volumeInject, volumeResolution);
-        hasResized |= RHI::ValidateTexture(m_volumeInjectPrev, volumeResolution);
-        hasResized |= RHI::ValidateTexture(m_volumeScatter, volumeResolution);
+        cmd->BeginDebugScope("Fog.InjectionScattering", PK_COLOR_MAGENTA);
 
-        RHI::SetImage(hash->pk_Fog_Inject, m_volumeInjectPrev.get());
-        RHI::SetTexture(hash->pk_Fog_InjectRead, m_volumeInject.get());
-        RHI::SetImage(hash->pk_Fog_Density, m_volumeDensity.get());
-        RHI::SetTexture(hash->pk_Fog_DensityRead, m_volumeDensityPrev.get());
+        auto hasResized = false;
+        {
+            TextureDescriptor descriptor{};
+            descriptor.type = TextureType::Texture3D;
+            descriptor.format = TextureFormat::RGBA16F;
+            descriptor.sampler.filterMin = FilterMode::Bilinear;
+            descriptor.sampler.filterMag = FilterMode::Bilinear;
+            descriptor.sampler.wrap[0] = WrapMode::Clamp;
+            descriptor.sampler.wrap[1] = WrapMode::Clamp;
+            descriptor.sampler.wrap[2] = WrapMode::Clamp;
+            descriptor.resolution = volumeResolution;
+            descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
+            hasResized |= RHI::ValidateTexture(resources->volumeScatter, descriptor, "Fog.ScatterVolume");
+
+            descriptor.format = TextureFormat::RGB9E5;
+            descriptor.formatAlias = TextureFormat::R32UI;
+            hasResized |= RHI::ValidateTexture(resources->volumeInject, descriptor, "Fog.InjectVolume");
+            hasResized |= RHI::ValidateTexture(resources->volumeInjectPrev, descriptor, "Fog.InjectVolume.Previous");
+
+            descriptor.format = TextureFormat::R16F;
+            descriptor.formatAlias = TextureFormat::Invalid;
+            descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
+            hasResized |= RHI::ValidateTexture(resources->volumeDensity, descriptor, "Fog.DensityVolume");
+            hasResized |= RHI::ValidateTexture(resources->volumeDensityPrev, descriptor, "Fog.DensityVolume.Previous");
+        }
+
+        RHI::SetImage(hash->pk_Fog_Inject, resources->volumeInjectPrev.get());
+        RHI::SetTexture(hash->pk_Fog_InjectRead, resources->volumeInject.get());
+        RHI::SetImage(hash->pk_Fog_Density, resources->volumeDensity.get());
+        RHI::SetTexture(hash->pk_Fog_DensityRead, resources->volumeDensityPrev.get());
         cmd.Dispatch(m_computeDensity, hasResized ? 1 : 0, volumeResolution);
 
-        RHI::SetImage(hash->pk_Fog_Density, m_volumeDensityPrev.get());
-        RHI::SetTexture(hash->pk_Fog_DensityRead, m_volumeDensity.get());
+        RHI::SetImage(hash->pk_Fog_Density, resources->volumeDensityPrev.get());
+        RHI::SetTexture(hash->pk_Fog_DensityRead, resources->volumeDensity.get());
 
         cmd->EndDebugScope();
     }
 
-    void PassVolumeFog::Compute(CommandBufferExt cmd, const uint3& resolution)
+    void PassVolumeFog::Compute(CommandBufferExt cmd, RenderPipelineContext* context)
     {
-        cmd->BeginDebugScope("Fog.InjectionScattering", PK_COLOR_MAGENTA);
-
         auto hash = HashCache::Get();
+        auto view = context->views[0];
+        auto resources = view->GetResources<ViewResources>();
+        auto resolution = view->GetResolution();
         const uint3 volumeResolution = { resolution.x / 8u, resolution.y / 8u, 128u };
 
-        RHI::SetImage(hash->pk_Fog_Inject, m_volumeInject.get());
-        RHI::SetTexture(hash->pk_Fog_InjectRead, m_volumeInjectPrev.get());
+        cmd->BeginDebugScope("Fog.InjectionScattering", PK_COLOR_MAGENTA);
+       
+        RHI::SetImage(hash->pk_Fog_Inject, resources->volumeInject.get());
+        RHI::SetTexture(hash->pk_Fog_InjectRead, resources->volumeInjectPrev.get());
         cmd.Dispatch(m_computeInject, 0, volumeResolution);
-        RHI::SetImage(hash->pk_Fog_Inject, m_volumeInjectPrev.get());
-        RHI::SetTexture(hash->pk_Fog_InjectRead, m_volumeInject.get());
+        RHI::SetImage(hash->pk_Fog_Inject, resources->volumeInjectPrev.get());
+        RHI::SetTexture(hash->pk_Fog_InjectRead, resources->volumeInject.get());
 
-        RHI::SetImage(hash->pk_Fog_Scatter, m_volumeScatter.get());
-        RHI::SetTexture(hash->pk_Fog_ScatterRead, m_volumeScatter.get());
+        RHI::SetImage(hash->pk_Fog_Scatter, resources->volumeScatter.get());
+        RHI::SetTexture(hash->pk_Fog_ScatterRead, resources->volumeScatter.get());
         cmd.Dispatch(m_computeScatter, 0, { volumeResolution.x, volumeResolution.y, 1u });
 
         cmd->EndDebugScope();

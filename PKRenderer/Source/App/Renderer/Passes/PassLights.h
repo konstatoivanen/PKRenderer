@@ -24,8 +24,26 @@ namespace PK::App
             constexpr static const uint32_t LightGridSizeZ = 32;
             constexpr static const uint32_t LightGridTileSizePx = 64;
             constexpr static const uint32_t ShadowCascadeCount = 4;
+ 
+           struct ShadowbatchInfo
+            {
+                uint32_t baseLightIndex = 0u;
+                uint32_t count = 0u;
+                uint32_t batchGroup = 0u;
+                LightType type = LightType::TypeCount;
+            };
 
-            PassLights(AssetDatabase* assetDatabase, const uint2& initialResolution);
+            struct ViewResources
+            {
+                MemoryBlock<EntityViewLight*> lightViews;
+                std::vector<ShadowbatchInfo> shadowBatches;
+                RHIBufferRef  lightsLists;
+                RHITextureRef lightTiles;
+                RHITextureRef screenSpaceShadowmapDownsampled;
+                RHITextureRef screenSpaceShadowmap;
+            };
+
+            PassLights(AssetDatabase* assetDatabase);
             void RenderShadows(CommandBufferExt cmd, RenderPipelineContext* context);
             void RenderScreenSpaceShadows(CommandBufferExt cmd, RenderPipelineContext* context);
             void ComputeClusters(CommandBufferExt cmd, RenderPipelineContext* context);
@@ -42,14 +60,6 @@ namespace PK::App
                 uint32_t LayerStride = 0u;
             };
 
-            struct ShadowbatchInfo
-            {
-                uint32_t baseLightIndex = 0u;
-                uint32_t count = 0u;
-                uint32_t batchGroup = 0u;
-                LightType type = LightType::TypeCount;
-            };
-
             uint32_t BuildShadowBatch(RenderPipelineContext* context,
                                       const RequestEntityCullResults& shadowCasters,
                                       EntityViewLight* lightView, 
@@ -61,18 +71,11 @@ namespace PK::App
             ShaderAsset* m_computeScreenSpaceShadow = nullptr;
             RHIBufferRef m_lightsBuffer;
             RHIBufferRef m_lightMatricesBuffer;
-            RHIBufferRef m_lightsLists;
-            RHITextureRef m_lightTiles;
             RHITextureRef m_shadowmaps;
-            RHITextureRef m_screenSpaceShadowmapDownsampled;
-            RHITextureRef m_screenSpaceShadowmap;
             RHITextureRef m_depthTarget2D;
             RHITextureRef m_depthTargetCube;
             RHITextureRef m_shadowTargetCube;
-            
-            std::vector<ShadowbatchInfo> m_shadowBatches;
-            MemoryBlock<EntityViewLight*> m_lights;
-            
+
             ShadowTypeData m_shadowTypeData[(int)LightType::TypeCount];
             
             CVariableField<float> m_cascadeLinearity = { "Renderer.Lights.CascadeLinearity", 0.5f };

@@ -7,16 +7,20 @@ namespace PK::App
     class PassTemporalAntialiasing : public NoCopy
     {
         public:
-            PassTemporalAntialiasing(AssetDatabase* assetDatabase, const uint2& initialResolution);
+            struct ViewResources
+            {
+                RHITextureRef historyTexture;
+            };
+
+            PassTemporalAntialiasing(AssetDatabase* assetDatabase);
             void SetViewConstants(struct RenderView* view);
-            void Render(CommandBufferExt cmd, RHITexture* source, RHITexture* destination);
+            void Render(CommandBufferExt cmd, RenderView* view, RHITexture* source, RHITexture* destination);
             constexpr float4 GetJitter() const { return m_jitter; };
 
         private:
             const uint32_t JITTER_SAMPLE_COUNT = 16u;
 
             ShaderAsset* m_computeTAA = nullptr;
-            RHITextureRef m_renderTarget;
 
             uint32_t m_historyLayerIndex = 0u;
             float4 m_jitter = PK_FLOAT4_ZERO;

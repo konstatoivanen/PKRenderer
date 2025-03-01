@@ -80,8 +80,15 @@ namespace PK::App
         bool Validate(const uint2& resolution, const GBuffersFullDescriptor& descriptor, const char* namePrefix);
     };
 
+    struct IRenderViewResources : NoCopy
+    {
+        virtual ~IRenderViewResources() = 0;
+    };
+
     struct RenderView : public NoCopy
     {
+        IRenderViewResources* resources = nullptr;
+
         ConstantBufferRef constants = nullptr;
         GBuffersFull gbuffers{};
         RenderViewSettings settings{};
@@ -112,5 +119,10 @@ namespace PK::App
 
         inline uint3 GetResolution() const { return gbuffers.GetResolution(); }
         inline GBuffersFull::View GetGBuffersFullView() { return gbuffers.GetView(); }
+        inline uint64_t GetFrameCountSinceResize() { return timeRender.frameIndex - timeResize.frameIndex; }
+        inline bool IsResizeFrame() { return timeRender.frameIndex == timeResize.frameIndex; }
+
+        template<typename TViewResources>
+        TViewResources* GetResources() { return dynamic_cast<TViewResources*>(resources); }
     };
 }

@@ -64,7 +64,7 @@ namespace PK::App
         auto time = GetServices()->Create<EngineTime>(sequencer, config->TimeScale);
         auto inputSystem = GetServices()->Create<InputSystem>(sequencer);
         auto batcherMeshStatic = GetServices()->Create<BatcherMeshStatic>();
-        auto renderPipelineScene = GetServices()->Create<RenderPipelineScene>(assetDatabase, entityDb, sequencer, batcherMeshStatic, config->WindowDesc.Size);
+        auto renderPipelineScene = GetServices()->Create<RenderPipelineScene>(assetDatabase, entityDb, sequencer, batcherMeshStatic);
 
         auto engineViewUpdate = GetServices()->Create<EngineViewUpdate>(sequencer, entityDb);
         auto engineCommands = GetServices()->Create<EngineCommandInput>(sequencer, keyConfig);

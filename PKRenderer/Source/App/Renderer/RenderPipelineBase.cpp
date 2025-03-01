@@ -107,6 +107,7 @@ namespace PK::App
             if (viewrect.z > 0 && viewrect.w > 0 && m_renderViewCount < MAX_RENDER_VIEWS)
             {
                 views[m_renderViewCount] = &m_renderViews[m_renderViewCount];
+                auto resources = GetViewResources(m_renderViewCount);
                 auto renderView = &m_renderViews[m_renderViewCount++];
                 auto isViewChanged = renderView->viewEntityId != entity.GID.entityID();
                 auto viewresolution = viewrect.zw - viewrect.xy;
@@ -115,6 +116,7 @@ namespace PK::App
                 auto isOutOfDate = bufferResolution != renderView->bufferResolution;
 
                 entity.renderView->renderViewRef = renderView;
+                renderView->resources = resources;
                 renderView->viewEntityId = entity.GID.entityID();
                 renderView->name = entity.renderView->name;
                 renderView->primaryPassGroup = 0u;

@@ -8,21 +8,22 @@ namespace PK::App
     class PassEnvBackground : public NoCopy
     {
         public:
+            struct ViewResources
+            {
+                RHITexture* sourceTexture = nullptr;
+                RHITextureRef sceneEnvTexture = nullptr;
+                RHIBufferRef sceneEnvSHBuffer = nullptr;
+                bool runtimeIsDirty = false;
+            };
+
             PassEnvBackground(AssetDatabase* assetDatabase);
             void SetViewConstants(struct RenderView* view);
-            // @TODO use this to add dirty checks for directional light
-            void SetDirty() { m_isDirty = true; }
-            void PreCompute(CommandBufferExt cmd);
-            void RenderBackground(CommandBufferExt cmd);
+            void PreCompute(CommandBufferExt cmd, struct RenderPipelineContext* context);
+            void RenderBackground(CommandBufferExt cmd, RenderPipelineContext* context);
 
         private:
             ShaderAsset* m_backgroundShader = nullptr;
             ShaderAsset* m_shShader = nullptr;
             ShaderAsset* m_integrateSHShader = nullptr;
-            
-            RHITexture* m_sourceTexture = nullptr;
-            RHITextureRef m_backgroundTexture = nullptr;
-            RHIBufferRef m_shBuffer;
-            bool m_isDirty = false;
     };
 }

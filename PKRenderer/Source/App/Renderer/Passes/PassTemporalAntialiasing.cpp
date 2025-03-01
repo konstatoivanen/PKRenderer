@@ -13,25 +13,11 @@
 
 namespace PK::App
 {
-    PassTemporalAntialiasing::PassTemporalAntialiasing(AssetDatabase* assetDatabase, const uint2& initialResolution)
+    PassTemporalAntialiasing::PassTemporalAntialiasing(AssetDatabase* assetDatabase)
     {
         PK_LOG_VERBOSE("PassTemporalAntialiasing.Ctor");
         PK_LOG_SCOPE_INDENT(local);
-
         m_computeTAA = assetDatabase->Find<ShaderAsset>("CS_TemporalAntialiasing");
-
-        TextureDescriptor descriptor{};
-        descriptor.format = TextureFormat::RGB9E5;
-        descriptor.formatAlias = TextureFormat::R32UI;
-        descriptor.resolution = { initialResolution * 2u, 1u };
-        descriptor.layers = 2;
-        descriptor.sampler.filterMin = FilterMode::Bilinear;
-        descriptor.sampler.filterMag = FilterMode::Bilinear;
-        descriptor.sampler.wrap[0] = WrapMode::Clamp;
-        descriptor.sampler.wrap[1] = WrapMode::Clamp;
-        descriptor.sampler.wrap[2] = WrapMode::Clamp;
-        descriptor.usage = TextureUsage::Default | TextureUsage::Storage;
-        m_renderTarget = RHI::CreateTexture(descriptor, "TAA.HistoryTexture");
     }
 
     void PassTemporalAntialiasing::SetViewConstants(RenderView* view)
@@ -44,11 +30,12 @@ namespace PK::App
         view->constants->Set<float>(hash->pk_TAA_MotionAmplification, settings.MotionAmplification);
     }
 
-    void PassTemporalAntialiasing::Render(CommandBufferExt cmd, RHITexture* source, RHITexture* destination)
+    void PassTemporalAntialiasing::Render(CommandBufferExt cmd, RenderView* view, RHITexture* source, RHITexture* destination)
     {
         cmd->BeginDebugScope("TemporalAntialiasing", PK_COLOR_MAGENTA);
 
         auto hash = HashCache::Get();
+        auto resources = view->GetResources<ViewResources>();
 
         uint16_t historyRead = m_historyLayerIndex++;
         m_historyLayerIndex %= 2;
@@ -58,11 +45,22 @@ namespace PK::App
         resolution.x *= 2;
         resolution.y *= 2;
 
-        RHI::ValidateTexture(m_renderTarget, resolution);
+        TextureDescriptor descriptor{};
+        descriptor.format = TextureFormat::RGB9E5;
+        descriptor.formatAlias = TextureFormat::R32UI;
+        descriptor.resolution = resolution;
+        descriptor.layers = 2;
+        descriptor.sampler.filterMin = FilterMode::Bilinear;
+        descriptor.sampler.filterMag = FilterMode::Bilinear;
+        descriptor.sampler.wrap[0] = WrapMode::Clamp;
+        descriptor.sampler.wrap[1] = WrapMode::Clamp;
+        descriptor.sampler.wrap[2] = WrapMode::Clamp;
+        descriptor.usage = TextureUsage::Default | TextureUsage::Storage;
+        RHI::ValidateTexture(resources->historyTexture, descriptor, "TAA.HistoryTexture");
 
         RHI::SetTexture(hash->pk_Texture, source, { 0, 0, 1u, 1u });
-        RHI::SetTexture(hash->pk_Texture1, m_renderTarget.get(), { 0, historyRead, 1u, 1u });
-        RHI::SetImage(hash->pk_Image, m_renderTarget.get(), { 0, historyWrite, 1u, 1u });
+        RHI::SetTexture(hash->pk_Texture1, resources->historyTexture.get(), { 0, historyRead, 1u, 1u });
+        RHI::SetImage(hash->pk_Image, resources->historyTexture.get(), { 0, historyWrite, 1u, 1u });
         RHI::SetImage(hash->pk_Image1, destination, { 0, 0, 1u, 1u });
         cmd.Dispatch(m_computeTAA, 0, { resolution.x, resolution.y, 1u });
         cmd->EndDebugScope();

@@ -10,13 +10,17 @@ namespace PK::App
     class PassAutoExposure : public NoCopy
     {
         public:
+            struct ViewResources
+            {
+                RHIBufferRef histogram;
+            };
+
             PassAutoExposure(AssetDatabase* assetDatabase);
             void SetViewConstants(struct RenderView* view);
-            void Render(CommandBufferExt cmd, RHITexture* target);
+            void Render(CommandBufferExt cmd, struct RenderPipelineContext* context);
 
         private:
             ShaderAsset* m_compute = nullptr;
-            RHIBufferRef m_histogram;
             uint32_t m_passHistogramBins = 0u;
             uint32_t m_passHistogramAvg = 0u;
     };

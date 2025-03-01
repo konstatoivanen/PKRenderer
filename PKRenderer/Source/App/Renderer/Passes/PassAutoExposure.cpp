@@ -7,6 +7,7 @@
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/RenderView.h"
 #include "App/Renderer/RenderViewSettings.h"
+#include "App/Renderer/RenderPipelineBase.h"
 #include "PassAutoExposure.h"
 
 namespace PK::App
@@ -15,12 +16,9 @@ namespace PK::App
     {
         PK_LOG_VERBOSE("PassAutoExposure.Ctor");
         PK_LOG_SCOPE_INDENT(local);
-
         m_compute = assetDatabase->Find<ShaderAsset>("CS_AutoExposure");
-        m_histogram = RHI::CreateBuffer<uint>(258ull, BufferUsage::DefaultStorage, "Histogram");
         m_passHistogramBins = m_compute->GetRHIIndex("PASS_HISTOGRAM");
         m_passHistogramAvg = m_compute->GetRHIIndex("PASS_AVG");
-        RHI::SetBuffer(HashCache::Get()->pk_AutoExposure_Histogram, m_histogram.get());
     }
 
     void PassAutoExposure::SetViewConstants(RenderView* view)
@@ -34,14 +32,23 @@ namespace PK::App
         view->constants->Set<float>(hash->pk_AutoExposure_Speed, settings.ExposureSpeed);
     }
 
-    void PassAutoExposure::Render(CommandBufferExt cmd, RHITexture* target)
+    void PassAutoExposure::Render(CommandBufferExt cmd, RenderPipelineContext* context)
     {
+        auto view = context->views[0];
+        auto resources = view->GetResources<ViewResources>();
+        auto target = view->GetGBuffersFullView().previous.color;
+        auto resolution = target->GetResolution();
+
+        if (RHI::ValidateBuffer<uint>(resources->histogram, 258ull, BufferUsage::DefaultStorage, "Histogram"))
+        {
+            RHI::SetBuffer(HashCache::Get()->pk_AutoExposure_Histogram, resources->histogram.get());
+        }
+
         cmd->BeginDebugScope("AutoExposure", PK_COLOR_MAGENTA);
 
         RHI::SetTexture(HashCache::Get()->pk_Texture, target, 0, 0);
 
-        auto res = target->GetResolution();
-        cmd.Dispatch(m_compute, m_passHistogramBins, { res.x >> 1u, res.y >> 1u, 1u });
+        cmd.Dispatch(m_compute, m_passHistogramBins, { resolution.x >> 1u, resolution.y >> 1u, 1u });
         cmd.Dispatch(m_compute, m_passHistogramAvg, { 1u, 1u, 1u });
         cmd->EndDebugScope();
     }

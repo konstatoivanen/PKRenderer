@@ -18,15 +18,29 @@ PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
 
 namespace PK::App
-{
-    class RenderPipelineScene : public RenderPipelineBase
+{    
+    // New format for per pass resources
+    struct SceneRenderViewResources : 
+        public IRenderViewResources,
+        public PassLights::ViewResources,
+        public PassSceneGI::ViewResources,
+        public PassVolumeFog::ViewResources,
+        public PassHierarchicalDepth::ViewResources,
+        public PassEnvBackground::ViewResources,
+        public PassDepthOfField::ViewResources,
+        public PassTemporalAntialiasing::ViewResources,
+        public PassBloom::ViewResources,
+        public PassAutoExposure::ViewResources
+    {
+    };
+
+    class RenderPipelineScene : public IRenderPipeline<SceneRenderViewResources>
     {
         public:
             RenderPipelineScene(AssetDatabase* assetDatabase,
                 EntityDatabase* entityDb,
                 Sequencer* sequencer,
-                IBatcher* batcher, 
-                const uint2& initialResolution);
+                IBatcher* batcher);
 
             ~RenderPipelineScene();
 

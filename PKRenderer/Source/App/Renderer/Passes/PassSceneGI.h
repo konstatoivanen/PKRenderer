@@ -13,16 +13,26 @@ namespace PK::App
     class PassSceneGI : public NoCopy
     {
         public:
-            PassSceneGI(AssetDatabase* assetDatabase, const uint2& initialResolution);
+            struct ViewResources
+            {
+                RHITextureRef packedGIDiff;
+                RHITextureRef packedGISpec;
+                RHITextureRef resolvedGI;
+                RHITextureRef reservoirs0;
+                RHITextureRef reservoirs1;
+                RHITextureRef rayhits;
+                bool hasResisedTargets;
+            };
+
+            PassSceneGI(AssetDatabase* assetDatabase);
             void SetViewConstants(struct RenderView* view);
-            void PreRender(CommandBufferExt cmd, const uint3& resolution);
             void PruneVoxels(CommandBufferExt cmd);
-            void DispatchRays(CommandBufferExt cmd);
-            void ReprojectGI(CommandBufferExt cmd);
-            void Voxelize(CommandBufferExt cmd, IBatcher* batcher, uint32_t batchGroup);
-            void RenderGI(CommandBufferExt cmd);
+            void DispatchRays(CommandBufferExt cmd, RenderPipelineContext* context);
+            void ReprojectGI(CommandBufferExt cmd, RenderPipelineContext* context);
+            void Voxelize(CommandBufferExt cmd, RenderPipelineContext* context);
+            void RenderGI(CommandBufferExt cmd, RenderPipelineContext* context);
             void VoxelMips(CommandBufferExt cmd);
-            void ValidateReservoirs(CommandBufferExt cmd);
+            void ValidateReservoirs(CommandBufferExt cmd, RenderPipelineContext* context);
 
         private:
             FixedFunctionShaderAttributes m_voxelizeAttribs{};
@@ -40,15 +50,8 @@ namespace PK::App
 
             RHITextureRef m_voxels;
             RHITextureRef m_voxelMask;
-            RHITextureRef m_packedGIDiff;
-            RHITextureRef m_packedGISpec;
-            RHITextureRef m_resolvedGI;
-            RHITextureRef m_reservoirs0;
-            RHITextureRef m_reservoirs1;
-            RHITextureRef m_rayhits;
 
             int32_t m_rasterAxis = 0;
-            bool m_hasResizedTargets = false;
 
             struct Settings
             {

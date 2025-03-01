@@ -555,6 +555,11 @@ namespace PK
         {
             return memcmp(this, &other, sizeof(SamplerDescriptor)) == 0;
         }
+
+        inline bool operator != (const SamplerDescriptor& other) const noexcept
+        {
+            return memcmp(this, &other, sizeof(SamplerDescriptor)) != 0;
+        }
     };
 
     struct TextureDescriptor

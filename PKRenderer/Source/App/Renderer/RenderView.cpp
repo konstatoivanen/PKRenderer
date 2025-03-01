@@ -6,6 +6,8 @@
 
 namespace PK::App
 {
+    IRenderViewResources::~IRenderViewResources() = default;
+
     uint2 GBuffers::AlignResolution(const uint2& resolution)
     {
         auto alignedResolution = resolution;
