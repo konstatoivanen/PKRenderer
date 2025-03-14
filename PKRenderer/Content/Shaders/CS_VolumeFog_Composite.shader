@@ -12,7 +12,7 @@ void main()
     const int2 coord = int2(GetXTiledThreadID(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 8u));
     const int2 size = imageSize(pk_Image).xy;
     const float2 uv = float2(coord + 0.5f.xx) / float2(size);
-
+    
     const float3 color = imageLoad(pk_Image, coord).rgb;
     const float4 colorTransmittance = VFog_Apply(uv, SampleViewDepth(uv), color);
 

@@ -125,6 +125,7 @@ namespace PK
         physicalDeviceRequirements.features.vk11.storageBuffer16BitAccess = VK_TRUE;
         physicalDeviceRequirements.features.vk11.uniformAndStorageBuffer16BitAccess = VK_TRUE;
         physicalDeviceRequirements.features.vk11.storagePushConstant16 = VK_TRUE;
+        physicalDeviceRequirements.features.vk11.multiview = VK_TRUE;
         physicalDeviceRequirements.features.vk12.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
         physicalDeviceRequirements.features.vk12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
         physicalDeviceRequirements.features.vk12.runtimeDescriptorArray = VK_TRUE;
@@ -150,6 +151,7 @@ namespace PK
         physicalDeviceRequirements.features.meshshader.meshShader = VK_TRUE;
         physicalDeviceRequirements.features.meshshader.multiviewMeshShader = VK_TRUE;
         physicalDeviceRequirements.features.meshshader.primitiveFragmentShadingRateMeshShader = VK_TRUE;
+        physicalDeviceRequirements.features.shadingRate.primitiveFragmentShadingRate = VK_TRUE;
         physicalDeviceRequirements.features.shadingRate.pipelineFragmentShadingRate = VK_TRUE;
         //physicalDeviceRequirements.features.meshshader.meshShaderQueries;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;

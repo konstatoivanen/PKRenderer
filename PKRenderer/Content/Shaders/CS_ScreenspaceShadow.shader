@@ -74,7 +74,7 @@ void ShadowmapCs()
     const half sina = sin(ditherAngle);
     const half2x2 basis = half2x2(sina * scale.x, cosa * scale.x, -cosa * scale.y, sina * scale.y);
 
-    float3 worldpos = CoordToWorldPos(coord, depth);
+    float3 worldpos = UVToWorldPos(gatheruv, depth);
     const float2 biasFactors = Shadow_GetBiasFactors(normal, posToLight);
     worldpos += biasFactors.x * normal * SHADOW_NEAR_BIAS * float(normalclip) * (1.0f + cascade * cascade);
     worldpos += biasFactors.y * posToLight * SHADOW_NEAR_BIAS * (1.0f + cascade) * (1.0f + 0.1f / sqrt(depth));

@@ -67,7 +67,7 @@ namespace PK::App
             { ElementType::Uint4, hash->pk_FrameRandom },
             { ElementType::Uint2, hash->pk_ScreenSize },
             { ElementType::Uint2, hash->pk_FrameIndex },
-            
+
             { ElementType::Float4, hash->pk_MeshletCullParams },
             { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
 
@@ -265,7 +265,6 @@ namespace PK::App
         // @TODO add multi view support
         auto primaryView = context->views[0];
         auto gbuffers = primaryView->GetGBuffersFullView();
-        auto resolution = primaryView->GetResolution();
         RHI::SetTexture(hash->pk_GB_Current_Normals, gbuffers.current.normals);
         RHI::SetTexture(hash->pk_GB_Current_Depth, gbuffers.current.depth);
         RHI::SetTexture(hash->pk_GB_Current_DepthBiased, gbuffers.current.depthBiased);

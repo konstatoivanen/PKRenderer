@@ -89,7 +89,8 @@ namespace PK
                     VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME,
                     VK_EXT_MESH_SHADER_EXTENSION_NAME,
                     VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
-                    VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME
+                    VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME,
+                    VK_KHR_MULTIVIEW_EXTENSION_NAME
                 };
 
                 driver = CreateUnique<VulkanDriver>(VulkanContextProperties
