@@ -467,7 +467,7 @@ namespace PK
         bool IsWriteAccess(VkAccessFlags flags);
     }
 
-    void VulkanBindExtensionMethods(VkInstance instance);
+    void VulkanBindExtensionMethods(VkInstance instance, bool enableDebugNames);
 
     std::vector<VkPhysicalDevice> VulkanGetPhysicalDevices(VkInstance instance);
     std::vector<VkQueueFamilyProperties> VulkanGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice device);
@@ -479,7 +479,7 @@ namespace PK
 
     bool VulkanValidateInstanceExtensions(const std::vector<const char*>* extensions);
     bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const std::vector<const char*>* extensions);
-    bool VulkanValidateValidationLayers(const std::vector<const char*>* validationLayers);
+    bool VulkanValidateValidationLayers(const char* const* validationLayers, const uint32_t count);
     bool VulkanIsPresentSupported(VkPhysicalDevice physicalDevice, uint32_t familyIndex, VkSurfaceKHR surface);
 
     void VulkanSelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, const VulkanPhysicalDeviceRequirements& requirements, VkPhysicalDevice* device);
@@ -498,6 +498,8 @@ namespace PK
     TextureViewRange VulkanConvertRange(const VkImageSubresourceRange& resourceRange);
 
     void VulkanSetObjectDebugName(VkDevice device, VkObjectType objectType, uint64_t objectHandle, const char* name);
+
+    void VulkanAssertAPIVersion(const uint32_t major, const uint32_t minor);
 
     void VulkanThrowError(VkResult result, const char* context);
 

@@ -46,7 +46,7 @@ namespace PK
 
     enum class RHIAPI
     {
-        Off,
+        None,
         Vulkan,
         DX12
     };
@@ -519,6 +519,17 @@ namespace PK
         size_t unusedRangeSizeMin;
         size_t unusedRangeSizeAvg;
         size_t unusedRangeSizeMax;
+    };
+
+    struct RHIDriverSettings
+    {
+        RHIAPI api;
+        uint32_t apiVersionMajor;
+        uint32_t apiVersionMinor;
+        uint32_t gcPruneDelay;
+        bool enableValidation;
+        bool enableDebugNames;
+        bool discardPipelineCache;
     };
 
     struct AccelerationStructureGeometryInfo

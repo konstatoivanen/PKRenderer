@@ -16,32 +16,27 @@
 
 namespace PK
 {
-    struct VulkanContextProperties
+    struct VulkanContextProperties : public RHIDriverSettings
     {
         FixedString64 appName;
+        FixedString64 engineName;
         FixedString256 workingDirectory;
-        uint64_t garbagePruneDelay;
-        uint32_t minApiVersionMajor;
-        uint32_t minApiVersionMinor;
-        const std::vector<const char*>* validationLayers;
+        VulkanPhysicalDeviceFeatures features;
         const std::vector<const char*>* contextualInstanceExtensions;
         const std::vector<const char*>* contextualDeviceExtensions;
 
         VulkanContextProperties(
-            const char* appName = "Vulkan Engine",
+            const char* appName = "Vulkan App",
+            const char* engineName = "Vulkan Engine",
             const char* workingDirectory = "",
-            uint64_t garbagePruneDelay = 32ull,
-            uint32_t minApiVersionMajor = 1,
-            uint32_t minApiVersionMinor = 2,
-            const std::vector<const char*>* validationLayers = nullptr,
+            RHIDriverSettings driverSettings = {},
+            VulkanPhysicalDeviceFeatures features = {},
             const std::vector<const char*>* contextualInstanceExtensions = nullptr,
-            const std::vector<const char*>* contextualDeviceExtensions = nullptr) :
+            const std::vector<const char*>* contextualDeviceExtensions = nullptr) : RHIDriverSettings(driverSettings),
             appName(appName),
+            engineName(engineName),
             workingDirectory(workingDirectory),
-            garbagePruneDelay(garbagePruneDelay),
-            minApiVersionMajor(minApiVersionMajor),
-            minApiVersionMinor(minApiVersionMinor),
-            validationLayers(validationLayers),
+            features(features),
             contextualInstanceExtensions(contextualInstanceExtensions),
             contextualDeviceExtensions(contextualDeviceExtensions)
         {

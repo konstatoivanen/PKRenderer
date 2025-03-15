@@ -17,9 +17,10 @@ namespace PK
         void BeginWrite(QueueType queue, uint32_t instanceLimit) final;
         void AddInstance(AccelerationStructureGeometryInfo& geometry, const float3x4& matrix) final;
         void EndWrite() final;
-
+        
         uint32_t GetInstanceCount() const final { return m_instanceCount; }
         uint32_t GetSubStructureCount() const final { return m_substructures.GetCount(); };
+        FenceRef GetLastBuildFenceRef() const final { return m_lastBuildFenceRef; }
 
         inline const VulkanBindHandle* GetBindHandle() const { return &m_bindHandle; };
 
@@ -87,6 +88,7 @@ namespace PK
 
             //@TODO This shouldnt be here. replace begin end with cmd injection
             VulkanCommandBuffer* m_cmd = nullptr;
+            FenceRef m_lastBuildFenceRef = {};
             VkAccelerationStructureInstanceKHR* m_writeBuffer = nullptr;
             VkDeviceSize m_queryResults[MAX_SUBSTRUCTURES]{};
     };

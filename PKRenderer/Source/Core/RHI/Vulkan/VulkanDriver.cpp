@@ -13,73 +13,51 @@
 
 namespace PK
 {
-    static bool IsNVIDIADriverBug(const char* message)
-    {
-        // nv validation dll tries to load deprecated json files.
-        if (strstr(message, "loader_get_json") != nullptr)
-        {
-            return true;
-        }
-
-        // This shouldn't be used but NSight does something with it & doesn't zero the flags :/
-        if (strstr(message, "VkPrivateDataSlotCreateInfo") != nullptr)
-        {
-            return true;
-        }
-
-        return false;
-    }
-
     VulkanDriver::VulkanDriver(const VulkanContextProperties& properties) : properties(properties)
     {
         // @TODO deprecate glfw
         glfwInit();
 
-        uint32_t supportedApiVersion;
-        VK_ASSERT_RESULT_CTX(vkEnumerateInstanceVersion(&supportedApiVersion), "Failed to query supported api version!");
-
-        auto supportedMajor = VK_VERSION_MAJOR(supportedApiVersion);
-        auto supportedMinor = VK_VERSION_MINOR(supportedApiVersion);
-
-        if (properties.minApiVersionMajor > supportedMajor || properties.minApiVersionMinor > supportedMinor)
-        {
-            PK_THROW_ERROR("Vulkan version %i.%i required. Your driver only supports version %i.%i", properties.minApiVersionMajor, properties.minApiVersionMinor, supportedMajor, supportedMinor);
-        }
+        VulkanAssertAPIVersion(properties.apiVersionMajor, properties.apiVersionMinor);
 
         VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
-        debugMessengerCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        debugMessengerCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        debugMessengerCreateInfo.messageSeverity = 
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | 
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | 
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | 
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        debugMessengerCreateInfo.messageType = 
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | 
+            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | 
+            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         debugMessengerCreateInfo.pfnUserCallback = VulkanDebugCallback;
         debugMessengerCreateInfo.pUserData = nullptr;
 
         VkApplicationInfo appInfo{ VK_STRUCTURE_TYPE_APPLICATION_INFO };
         appInfo.pApplicationName = properties.appName.c_str();
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName = "PK Engine";
+        appInfo.pEngineName = properties.engineName.c_str();
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = supportedApiVersion;
-        apiVersion = supportedApiVersion;
+        appInfo.apiVersion = VK_MAKE_API_VERSION(0, properties.apiVersionMajor, properties.apiVersionMinor, 0);
+        apiVersion = appInfo.apiVersion;
+
+        const char* VK_LAYER_KHRONOS_validation = "VK_LAYER_KHRONOS_validation";
 
         VkInstanceCreateInfo instanceCreateInfo{ VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
         instanceCreateInfo.pApplicationInfo = &appInfo;
         instanceCreateInfo.pNext = &debugMessengerCreateInfo;
+        instanceCreateInfo.enabledLayerCount = properties.enableValidation ? 1u : 0u;
+        instanceCreateInfo.ppEnabledLayerNames = &VK_LAYER_KHRONOS_validation;
 
         auto instanceExtensions = VulkanGetRequiredInstanceExtensions(properties.contextualInstanceExtensions);
         PK_THROW_ASSERT(VulkanValidateInstanceExtensions(&instanceExtensions), "Trying to enable unavailable extentions!");
-        PK_THROW_ASSERT(VulkanValidateValidationLayers(properties.validationLayers), "Trying to enable unavailable validation layers!");
+        PK_THROW_ASSERT(VulkanValidateValidationLayers(instanceCreateInfo.ppEnabledLayerNames, instanceCreateInfo.enabledLayerCount), "Trying to enable unavailable validation layers!");
 
         instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
         instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
-        instanceCreateInfo.enabledLayerCount = 0;
-
-        if (properties.validationLayers != nullptr && properties.validationLayers->size() > 0)
-        {
-            instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(properties.validationLayers->size());
-            instanceCreateInfo.ppEnabledLayerNames = properties.validationLayers->data();
-        }
 
         VK_ASSERT_RESULT_CTX(vkCreateInstance(&instanceCreateInfo, nullptr, &instance), "Failed to create vulkan instance!");
-        VulkanBindExtensionMethods(instance);
+        VulkanBindExtensionMethods(instance, properties.enableDebugNames);
 
         {
             PK_LOG_NEWLINE();
@@ -101,59 +79,10 @@ namespace PK
 
         VK_ASSERT_RESULT_CTX(vkCreateDebugUtilsMessengerEXT(instance, &debugMessengerCreateInfo, nullptr, &debugMessenger), "Failed to create debug messenger");
 
-
         VulkanPhysicalDeviceRequirements physicalDeviceRequirements{};
-        physicalDeviceRequirements.versionMajor = supportedMajor;
-        physicalDeviceRequirements.versionMinor = supportedMinor;
-        physicalDeviceRequirements.features.vk10.features.alphaToOne = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.fillModeNonSolid = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.shaderImageGatherExtended = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.sparseBinding = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.sparseResidencyBuffer = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.samplerAnisotropy = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.multiViewport = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.shaderSampledImageArrayDynamicIndexing = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.shaderUniformBufferArrayDynamicIndexing = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.shaderFloat64 = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.shaderInt16 = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.shaderInt64 = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.imageCubeArray = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.fragmentStoresAndAtomics = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.multiDrawIndirect = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.shaderStorageImageReadWithoutFormat = VK_TRUE;
-        physicalDeviceRequirements.features.vk10.features.shaderStorageImageWriteWithoutFormat = VK_TRUE;
-        physicalDeviceRequirements.features.vk11.storageBuffer16BitAccess = VK_TRUE;
-        physicalDeviceRequirements.features.vk11.uniformAndStorageBuffer16BitAccess = VK_TRUE;
-        physicalDeviceRequirements.features.vk11.storagePushConstant16 = VK_TRUE;
-        physicalDeviceRequirements.features.vk11.multiview = VK_TRUE;
-        physicalDeviceRequirements.features.vk12.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
-        physicalDeviceRequirements.features.vk12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-        physicalDeviceRequirements.features.vk12.runtimeDescriptorArray = VK_TRUE;
-        physicalDeviceRequirements.features.vk12.descriptorBindingVariableDescriptorCount = VK_TRUE;
-        physicalDeviceRequirements.features.vk12.descriptorBindingPartiallyBound = VK_TRUE;
-        physicalDeviceRequirements.features.vk12.scalarBlockLayout = VK_TRUE;
-        physicalDeviceRequirements.features.vk12.shaderFloat16 = VK_TRUE;
-        physicalDeviceRequirements.features.vk12.shaderInt8 = VK_TRUE;
-        physicalDeviceRequirements.features.vk12.shaderOutputViewportIndex = VK_TRUE;
-        physicalDeviceRequirements.features.vk12.shaderOutputLayer = VK_TRUE;
-        physicalDeviceRequirements.features.vk12.bufferDeviceAddress = VK_TRUE;
-        physicalDeviceRequirements.features.vk12.timelineSemaphore = VK_TRUE;
-        physicalDeviceRequirements.features.vk12.storageBuffer8BitAccess = VK_TRUE;
-        physicalDeviceRequirements.features.vk12.hostQueryReset = VK_TRUE;
-        physicalDeviceRequirements.features.vk13.privateData = VK_FALSE;
-        physicalDeviceRequirements.features.vk13.maintenance4 = VK_TRUE;
-        physicalDeviceRequirements.features.accelerationStructure.accelerationStructure = VK_TRUE;
-        physicalDeviceRequirements.features.rayTracingPipeline.rayTracingPipeline = VK_TRUE;
-        physicalDeviceRequirements.features.rayQuery.rayQuery = VK_TRUE;
-        physicalDeviceRequirements.features.atomicFloat.shaderSharedFloat32AtomicAdd = VK_TRUE;
-        physicalDeviceRequirements.features.positionFetch.rayTracingPositionFetch = VK_TRUE;
-        physicalDeviceRequirements.features.meshshader.taskShader = VK_TRUE;
-        physicalDeviceRequirements.features.meshshader.meshShader = VK_TRUE;
-        physicalDeviceRequirements.features.meshshader.multiviewMeshShader = VK_TRUE;
-        physicalDeviceRequirements.features.meshshader.primitiveFragmentShadingRateMeshShader = VK_TRUE;
-        physicalDeviceRequirements.features.shadingRate.primitiveFragmentShadingRate = VK_TRUE;
-        physicalDeviceRequirements.features.shadingRate.pipelineFragmentShadingRate = VK_TRUE;
-        //physicalDeviceRequirements.features.meshshader.meshShaderQueries;
+        physicalDeviceRequirements.versionMajor = properties.apiVersionMajor;
+        physicalDeviceRequirements.versionMinor = properties.apiVersionMinor;
+        physicalDeviceRequirements.features = properties.features;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
 
@@ -199,9 +128,9 @@ namespace PK
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
         VK_ASSERT_RESULT_CTX(vmaCreateAllocator(&allocatorInfo, &allocator), "Failed to create a VMA allocator!");
 
-        frameBufferCache = CreateUnique<VulkanFrameBufferCache>(device, properties.garbagePruneDelay);
-        stagingBufferCache = CreateUnique<VulkanStagingBufferCache>(device, allocator, properties.garbagePruneDelay);
-        pipelineCache = CreateUnique<VulkanPipelineCache>(device, properties.workingDirectory, physicalDeviceProperties, properties.garbagePruneDelay);
+        frameBufferCache = CreateUnique<VulkanFrameBufferCache>(device, properties.gcPruneDelay);
+        stagingBufferCache = CreateUnique<VulkanStagingBufferCache>(device, allocator, properties.gcPruneDelay);
+        pipelineCache = CreateUnique<VulkanPipelineCache>(device, physicalDeviceProperties, properties.workingDirectory, properties.apiVersionMajor, properties.gcPruneDelay);
         samplerCache = CreateUnique<VulkanSamplerCache>(device);
         layoutCache = CreateUnique<VulkanLayoutCache>(device);
         disposer = CreateUnique<Disposer>();
@@ -346,15 +275,13 @@ namespace PK
         [[maybe_unused]] void* pUserData)
     {
         auto isValidationError = strstr(pCallbackData->pMessage, "Error") != nullptr;
+        auto isLoaderMessage = strstr(pCallbackData->pMessageIdName, "Loader Message") != nullptr;
+        auto isNsightBug = strstr(pCallbackData->pMessage, "VkPrivateDataSlotCreateInfo") != nullptr;
+        messageSeverity = isValidationError ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT : messageSeverity;
+        messageSeverity = isLoaderMessage ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
+        messageSeverity = isNsightBug ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT : messageSeverity;
 
-        // @TODO Some stupid nvidia layer stuff that I can't be bothered to fix right now.
-        if (IsNVIDIADriverBug(pCallbackData->pMessage))
-        {
-            PK_LOG_WARNING(pCallbackData->pMessage);
-            return VK_FALSE;
-        }
-
-        if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT || isValidationError)
+        if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {
             PK_THROW_ERROR(pCallbackData->pMessage);
             return VK_FALSE;
@@ -406,5 +333,3 @@ namespace PK
         disposer->Dispose(buffer, deleter, fence);
     }
 }
-
-

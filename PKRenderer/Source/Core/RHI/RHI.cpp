@@ -6,9 +6,6 @@
 #include "Core/RHI/Vulkan/VulkanDriver.h"
 #include "RHI.h"
 
-// #define PK_NO_VK_VALIDATION
-// #define PK_FORCE_VK_VALIDATION
-
 namespace PK
 {
     RHIAccelerationStructure::~RHIAccelerationStructure() = default;
@@ -30,7 +27,27 @@ namespace PK
     const BuiltInResources* RHI::GetBuiltInResources() { return RHIDriver::Get()->GetBuiltInResources(); }
     void RHI::GC() { RHIDriver::Get()->GC(); }
 
-    RHIDriverScope RHI::CreateDriver(const char* workingDirectory, RHIAPI api)
+    RHIAPI RHI::GetAPIFromString(const char* str)
+    {
+        if (str == nullptr)
+        {
+            return RHIAPI::None;
+        }
+
+        if (strcmp(str, "Vulkan") == 0)
+        {
+            return RHIAPI::Vulkan;
+        }
+
+        if (strcmp(str, "DX12") == 0)
+        {
+            return RHIAPI::DX12;
+        }
+
+        return RHIAPI::None;
+    }
+
+    RHIDriverScope RHI::CreateDriver(const char* workingDirectory, const RHIDriverSettings& settings)
     {
         PK_LOG_NEWLINE();
         PK_LOG_HEADER("----------INITIALIZING RHI----------");
@@ -57,18 +74,60 @@ namespace PK
 
         RHIDriverScope driver = nullptr;
 
-        switch (api)
+        switch (settings.api)
         {
             case RHIAPI::Vulkan:
             {
-#if defined(PK_DEBUG) && !defined(PK_NO_VK_VALIDATION) || defined(PK_FORCE_VK_VALIDATION)
-                const std::vector<const char*> PK_VALIDATION_LAYERS =
-                {
-                    "VK_LAYER_KHRONOS_validation"
-                };
-#else
-                const std::vector<const char*> PK_VALIDATION_LAYERS = {};
-#endif
+                VulkanPhysicalDeviceFeatures features{};
+                features.vk10.features.alphaToOne = VK_TRUE;
+                features.vk10.features.fillModeNonSolid = VK_TRUE;
+                features.vk10.features.shaderImageGatherExtended = VK_TRUE;
+                features.vk10.features.sparseBinding = VK_TRUE;
+                features.vk10.features.sparseResidencyBuffer = VK_TRUE;
+                features.vk10.features.samplerAnisotropy = VK_TRUE;
+                features.vk10.features.multiViewport = VK_TRUE;
+                features.vk10.features.shaderSampledImageArrayDynamicIndexing = VK_TRUE;
+                features.vk10.features.shaderUniformBufferArrayDynamicIndexing = VK_TRUE;
+                features.vk10.features.shaderFloat64 = VK_TRUE;
+                features.vk10.features.shaderInt16 = VK_TRUE;
+                features.vk10.features.shaderInt64 = VK_TRUE;
+                features.vk10.features.imageCubeArray = VK_TRUE;
+                features.vk10.features.fragmentStoresAndAtomics = VK_TRUE;
+                features.vk10.features.multiDrawIndirect = VK_TRUE;
+                features.vk10.features.shaderStorageImageReadWithoutFormat = VK_TRUE;
+                features.vk10.features.shaderStorageImageWriteWithoutFormat = VK_TRUE;
+                features.vk11.storageBuffer16BitAccess = VK_TRUE;
+                features.vk11.uniformAndStorageBuffer16BitAccess = VK_TRUE;
+                features.vk11.storagePushConstant16 = VK_TRUE;
+                features.vk11.multiview = VK_TRUE;
+                features.vk12.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
+                features.vk12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+                features.vk12.runtimeDescriptorArray = VK_TRUE;
+                features.vk12.descriptorBindingVariableDescriptorCount = VK_TRUE;
+                features.vk12.descriptorBindingPartiallyBound = VK_TRUE;
+                features.vk12.scalarBlockLayout = VK_TRUE;
+                features.vk12.shaderFloat16 = VK_TRUE;
+                features.vk12.shaderInt8 = VK_TRUE;
+                features.vk12.shaderOutputViewportIndex = VK_TRUE;
+                features.vk12.shaderOutputLayer = VK_TRUE;
+                features.vk12.bufferDeviceAddress = VK_TRUE;
+                features.vk12.timelineSemaphore = VK_TRUE;
+                features.vk12.storageBuffer8BitAccess = VK_TRUE;
+                features.vk12.hostQueryReset = VK_TRUE;
+                features.vk13.privateData = VK_FALSE;
+                features.vk13.maintenance4 = VK_TRUE;
+                features.accelerationStructure.accelerationStructure = VK_TRUE;
+                features.rayTracingPipeline.rayTracingPipeline = VK_TRUE;
+                features.rayQuery.rayQuery = VK_TRUE;
+                features.atomicFloat.shaderSharedFloat32AtomicAdd = VK_TRUE;
+                features.positionFetch.rayTracingPositionFetch = VK_TRUE;
+                features.meshshader.taskShader = VK_TRUE;
+                features.meshshader.meshShader = VK_TRUE;
+                features.meshshader.multiviewMeshShader = VK_TRUE;
+                features.meshshader.primitiveFragmentShadingRateMeshShader = VK_TRUE;
+                features.shadingRate.primitiveFragmentShadingRate = VK_TRUE;
+                features.shadingRate.pipelineFragmentShadingRate = VK_TRUE;
+                //features.meshshader.meshShaderQueries;
 
                 const std::vector<const char*> PK_INSTANCE_EXTENTIONS =
                 {
@@ -95,12 +154,11 @@ namespace PK
 
                 driver = CreateUnique<VulkanDriver>(VulkanContextProperties
                 (
+                    "PK Renderer",
                     "PK Vulkan Engine",
                     workingDirectory,
-                    32ull,
-                    1u,
-                    3u,
-                    &PK_VALIDATION_LAYERS,
+                    settings,
+                    features,
                     &PK_INSTANCE_EXTENTIONS,
                     &PK_DEVICE_EXTENTIONS
                 ));

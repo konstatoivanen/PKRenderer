@@ -335,6 +335,7 @@ namespace PK
             buildInfo.scratchData.deviceAddress = m_scratchBuffer->deviceAddress + m_structure.scratchOffset;
             const auto* pBuildStructureRangeInfo = &m_structure.range;
             m_cmd->BuildAccelerationStructures(1, &buildInfo, &pBuildStructureRangeInfo);
+            m_lastBuildFenceRef = m_cmd->GetFenceRef();
         }
 
         m_cmd = nullptr;

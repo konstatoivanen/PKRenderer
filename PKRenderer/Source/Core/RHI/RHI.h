@@ -34,6 +34,7 @@ namespace PK
     struct FixedFunctionShaderAttributes;
     struct FixedFunctionState;
     struct RHIDriverMemoryInfo;
+    struct RHIDriverSettings;
     struct AccelerationStructureGeometryInfo;
     struct SamplerDescriptor;
     struct TextureDescriptor;
@@ -103,6 +104,7 @@ namespace PK
     {
         RHIDriver* GetDriver();
         RHIAPI GetActiveAPI();
+        RHIAPI GetAPIFromString(const char* str);
         RHIQueueSet* GetQueues();
         RHICommandBuffer* GetCommandBuffer(QueueType queue);
         RHIDriverMemoryInfo GetMemoryInfo();
@@ -110,7 +112,7 @@ namespace PK
         const BuiltInResources* GetBuiltInResources();
         void GC();
 
-        RHIDriverScope CreateDriver(const char* workingDirectory, RHIAPI api);
+        RHIDriverScope CreateDriver(const char* workingDirectory, const RHIDriverSettings& settings);
         RHIBufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name);
         RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name);
         RHIAccelerationStructureRef CreateAccelerationStructure(const char* name);

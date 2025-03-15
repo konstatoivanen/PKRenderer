@@ -43,7 +43,11 @@ namespace PK
 
         constexpr const static char* PIPELINE_CACHE_FILENAME = "shadercache.cache";
 
-        VulkanPipelineCache(VkDevice device, const char* workingDirectory, const VulkanPhysicalDeviceProperties& physicalDeviceProperties, uint64_t pruneDelay);
+        VulkanPipelineCache(VkDevice device, 
+            const VulkanPhysicalDeviceProperties& physicalDeviceProperties, 
+            const char* workingDirectory, 
+            bool discardPipelineCache, 
+            uint64_t pruneDelay);
         ~VulkanPipelineCache();
 
         struct PipelineValue

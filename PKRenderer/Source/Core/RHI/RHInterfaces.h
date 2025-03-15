@@ -92,6 +92,7 @@ namespace PK
         virtual void EndWrite() = 0;
         virtual uint32_t GetInstanceCount() const = 0;
         virtual uint32_t GetSubStructureCount() const = 0;
+        virtual FenceRef GetLastBuildFenceRef() const = 0;
     };
 
     template<typename T>

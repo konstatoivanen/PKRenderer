@@ -1771,9 +1771,13 @@ namespace PK
         }
     }
 
-    void VulkanBindExtensionMethods(VkInstance instance)
+    void VulkanBindExtensionMethods(VkInstance instance, bool enableDebugNames)
     {
-        pkfn_vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT");
+        if (enableDebugNames)
+        {
+            pkfn_vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT");
+        }
+        
         pkfn_vkSetDebugUtilsObjectTagEXT = (PFN_vkSetDebugUtilsObjectTagEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectTagEXT");
         pkfn_vkQueueBeginDebugUtilsLabelEXT = (PFN_vkQueueBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueBeginDebugUtilsLabelEXT");
         pkfn_vkQueueEndDebugUtilsLabelEXT = (PFN_vkQueueEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkQueueEndDebugUtilsLabelEXT");
@@ -1987,9 +1991,9 @@ namespace PK
         return foundCount == extensions->size();
     }
 
-    bool VulkanValidateValidationLayers(const std::vector<const char*>* validationLayers)
+    bool VulkanValidateValidationLayers(const char* const* validationLayers, const uint32_t count)
     {
-        if (validationLayers == nullptr || validationLayers->size() == 0)
+        if (validationLayers == nullptr || count == 0)
         {
             return true;
         }
@@ -2000,16 +2004,16 @@ namespace PK
         vkEnumerateInstanceLayerProperties(&availableCount, availableLayers);
 
         auto foundCount = 0u;
-        auto foundMask = PK_STACK_ALLOC(bool, validationLayers->size());
-        memset(foundMask, 0, sizeof(bool) * validationLayers->size());
+        auto foundMask = PK_STACK_ALLOC(bool, count);
+        memset(foundMask, 0, sizeof(bool) * count);
 
         for (auto i = 0u; i < availableCount; ++i)
         {
             auto name = availableLayers[i].layerName;
 
-            for (auto j = 0u; j < validationLayers->size(); ++j)
+            for (auto j = 0u; j < count; ++j)
             {
-                if (!foundMask[j] && strcmp(validationLayers->at(j), name) == 0)
+                if (!foundMask[j] && strcmp(validationLayers[j], name) == 0)
                 {
                     foundMask[j] = true;
                     foundCount++;
@@ -2017,7 +2021,7 @@ namespace PK
             }
         }
 
-        return foundCount == validationLayers->size();
+        return foundCount == count;
     }
 
     bool VulkanIsPresentSupported(VkPhysicalDevice physicalDevice, uint32_t familyIndex, VkSurfaceKHR surface)
@@ -2211,16 +2215,32 @@ namespace PK
         };
     }
 
-
     void VulkanSetObjectDebugName(VkDevice device, VkObjectType objectType, uint64_t objectHandle, const char* name)
     {
-        VkDebugUtilsObjectNameInfoEXT nameInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
-        nameInfo.pNext = nullptr;
-        nameInfo.objectType = objectType;
-        nameInfo.objectHandle = objectHandle;
-        nameInfo.pObjectName = name;
-        vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
-        PK_LOG_RHI("%s, %s", string_VkObjectType(nameInfo.objectType), name);
+        if (pkfn_vkSetDebugUtilsObjectNameEXT != nullptr)
+        {
+            VkDebugUtilsObjectNameInfoEXT nameInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
+            nameInfo.pNext = nullptr;
+            nameInfo.objectType = objectType;
+            nameInfo.objectHandle = objectHandle;
+            nameInfo.pObjectName = name;
+            vkSetDebugUtilsObjectNameEXT(device, &nameInfo);
+            PK_LOG_RHI("%s, %s", string_VkObjectType(nameInfo.objectType), name);
+        }
+    }
+
+    void VulkanAssertAPIVersion(const uint32_t major, const uint32_t minor)
+    {
+        uint32_t supportedApiVersion;
+        VK_ASSERT_RESULT_CTX(vkEnumerateInstanceVersion(&supportedApiVersion), "Failed to query supported api version!");
+
+        auto supportedMajor = VK_VERSION_MAJOR(supportedApiVersion);
+        auto supportedMinor = VK_VERSION_MINOR(supportedApiVersion);
+
+        if (major > supportedMajor || minor > supportedMinor)
+        {
+            PK_THROW_ERROR("Vulkan version %i.%i required. Your driver only supports version %i.%i", major, minor, supportedMajor, supportedMinor);
+        }
     }
 
     void VulkanThrowError(VkResult result, const char* context)

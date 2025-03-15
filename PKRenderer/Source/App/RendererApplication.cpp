@@ -49,7 +49,15 @@ namespace PK::App
         auto config = assetDatabase->Load<BaseRendererConfig>("Content/Configs/BaseRenderer.cfg");
         auto keyConfig = assetDatabase->Load<InputKeyConfig>("Content/Configs/Input.keycfg");
 
-        m_graphicsDriver = RHI::CreateDriver(GetWorkingDirectory(), RHIAPI::Vulkan);
+        RHIDriverSettings graphicsDriverSettings;
+        graphicsDriverSettings.api = RHI::GetAPIFromString(config->RHIDesc.API);
+        graphicsDriverSettings.apiVersionMajor = config->RHIDesc.APIVersionMajor;
+        graphicsDriverSettings.apiVersionMinor = config->RHIDesc.APIVersionMinor;
+        graphicsDriverSettings.gcPruneDelay = config->RHIDesc.GCPruneDelay;
+        graphicsDriverSettings.enableValidation = config->RHIDesc.EnableValidation;
+        graphicsDriverSettings.enableDebugNames = config->RHIDesc.EnableDebugNames;
+        graphicsDriverSettings.discardPipelineCache = config->RHIDesc.DiscardPipelineCache;
+        m_graphicsDriver = RHI::CreateDriver(GetWorkingDirectory(), graphicsDriverSettings);
 
         m_window = RHI::CreateWindowScope(WindowDescriptor({ GetName(), m_graphicsDriver->GetDriverHeader() },
             config->WindowDesc.IconPath.c_str(),

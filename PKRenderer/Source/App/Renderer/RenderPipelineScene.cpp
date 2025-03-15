@@ -294,7 +294,12 @@ namespace PK::App
 
         // Only buffering needs to wait for previous results.
         // Eliminate redundant rendering waits by waiting for transfer instead.
-        context->window->SetFrameFence(queues->GetFenceRef(QueueType::Transfer));
+        // If we have pending acceleration structure builds. 
+        // Wait for those as they appear prone to race conditions in the new driver version.
+        if (m_sceneStructure->GetLastBuildFenceRef().IsComplete())
+        {
+            context->window->SetFrameFence(queues->GetFenceRef(QueueType::Transfer));
+        }
 
         // Async compute during last present.
         m_passFilmGrain.Compute(cmdcompute);
