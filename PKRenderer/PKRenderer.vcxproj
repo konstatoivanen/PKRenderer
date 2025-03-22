@@ -597,7 +597,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\ControlFlow\ApplicationStep.h" />
     <ClInclude Include="Source\Core\ControlFlow\IStep.h" />
     <ClInclude Include="Source\Core\ControlFlow\IStepApplication.h" />
-    <ClInclude Include="Source\Core\ControlFlow\IStepApplicationWindow.h" />
     <ClInclude Include="Source\Core\ControlFlow\RemoteProcessRunner.h" />
     <ClInclude Include="Source\Core\ControlFlow\Sequencer.h" />
     <ClInclude Include="Source\Core\IApplication.h" />

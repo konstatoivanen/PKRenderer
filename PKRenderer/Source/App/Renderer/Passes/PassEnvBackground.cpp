@@ -110,7 +110,7 @@ namespace PK::App
         }
     }
 
-    void PassEnvBackground::RenderBackground(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassEnvBackground::RenderBackground(CommandBufferExt cmd, [[maybe_unused]] RenderPipelineContext* context)
     {
         cmd.Blit(m_backgroundShader);
     }

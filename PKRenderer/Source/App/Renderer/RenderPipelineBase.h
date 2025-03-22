@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/ForwardDeclare.h"
 #include "Core/ControlFlow/IStep.h"
-#include "Core/ControlFlow/IStepApplicationWindow.h"
+#include "Core/ControlFlow/IStepApplication.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "App/Renderer/EntityEnums.h"
@@ -58,7 +58,7 @@ namespace PK::App
         RenderPipelineContext* context;
     };
 
-    struct RenderPipelineBase : public IStepApplicationRenderWindow
+    struct RenderPipelineBase : public IStepApplicationRender<RHIWindow*>
     {
         constexpr static size_t MAX_RENDER_VIEWS = 32ull;
 

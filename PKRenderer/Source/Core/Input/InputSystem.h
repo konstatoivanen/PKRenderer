@@ -1,17 +1,18 @@
 #pragma once
 #include "Core/Utilities/Ref.h"
 #include "Core/Utilities/ISingleton.h"
-#include "Core/ControlFlow/IStepApplicationWindow.h"
+#include "Core/ControlFlow/IStepApplication.h"
 #include "Core/Input/InputKey.h"
 #include "Core/Input/InputDevice.h"
+#include "Core/RHI/RHI.h"
 
 namespace PK
 {
     struct Sequencer;
 
     class InputSystem :
-        public IStepApplicationUpdateInputWindow,
-        public IStepApplicationCloseFrameWindow,
+        public IStepApplicationUpdateInput<RHIWindow*>,
+        public IStepApplicationCloseFrame<RHIWindow*>,
         public ISingleton<InputSystem>
     {
     public:

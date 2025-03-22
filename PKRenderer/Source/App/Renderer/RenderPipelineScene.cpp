@@ -282,7 +282,12 @@ namespace PK::App
         context->batcher->EndCollectDrawCalls(cmdtransfer);
 
         // End transfer operations
+        // Transfer needs to wait for last frames async rt geometry builds which is submitted next funnily enough.
+        queues->Wait(QueueType::Transfer, QueueType::Compute, 1);
         queues->Submit(QueueType::Transfer);
+        // Only buffering needs to wait for previous results.
+        // Eliminate redundant rendering waits by waiting for transfer instead.
+        context->window->SetFrameFence(queues->GetFenceRef(QueueType::Transfer));
 
         // Prune voxels & build AS.
         // These can happen before the end of last frame. 
@@ -291,15 +296,6 @@ namespace PK::App
         context->cullingProxy->CullRayTracingGeometry(ScenePrimitiveFlags::DefaultMesh, BoundingBox(), false, QueueType::Compute, m_sceneStructure.get());
         RHI::SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
         queues->Submit(QueueType::Compute, &cmdcompute);
-
-        // Only buffering needs to wait for previous results.
-        // Eliminate redundant rendering waits by waiting for transfer instead.
-        // If we have pending acceleration structure builds. 
-        // Wait for those as they appear prone to race conditions in the new driver version.
-        if (m_sceneStructure->GetLastBuildFenceRef().IsComplete())
-        {
-            context->window->SetFrameFence(queues->GetFenceRef(QueueType::Transfer));
-        }
 
         // Async compute during last present.
         m_passFilmGrain.Compute(cmdcompute);

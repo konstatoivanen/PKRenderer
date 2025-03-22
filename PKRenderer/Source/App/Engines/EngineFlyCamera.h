@@ -27,7 +27,7 @@ namespace PK::App
     PK_INPUTKEY_STRUCT_END()
 
     class EngineFlyCamera : 
-        public IStepApplicationUpdateEngines,
+        public IStepApplicationUpdateEngines<>,
         public IStep<AssetImportEvent<InputKeyConfig>*>
     {
     public:

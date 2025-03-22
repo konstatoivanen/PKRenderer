@@ -30,7 +30,7 @@ namespace PK::App
 
     // Dumping ground for all loose hooks that have not been implemented yet.
     class EngineDebug : 
-        public IStepApplicationUpdateEngines,
+        public IStepApplicationUpdateEngines<>,
         public IStep<IGizmosRenderer*>,
         public IStep<AssetImportEvent<EngineDebugConfig>*>
     {

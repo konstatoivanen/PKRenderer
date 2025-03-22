@@ -1,12 +1,12 @@
 #pragma once
 #include "Core/Utilities/MemoryBlock.h"
 #include "Core/Utilities/FenceRef.h"
-#include "Core/ControlFlow/IStepApplicationWindow.h"
+#include "Core/ControlFlow/IStepApplication.h"
 #include "Core/Rendering/RenderingFwd.h"
 
 namespace PK::App
 {
-    class EngineScreenshot : public IStepApplicationRenderWindow
+    class EngineScreenshot : public IStepApplicationRender<RHIWindow*>
     {
     public:
         EngineScreenshot();

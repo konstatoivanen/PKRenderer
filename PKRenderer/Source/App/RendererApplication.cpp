@@ -10,7 +10,6 @@
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/ControlFlow/IStepApplication.h"
-#include "Core/ControlFlow/IStepApplicationWindow.h"
 #include "Core/IApplication.h"
 #include "App/Engines/EngineTime.h"
 #include "App/Engines/EngineCommandInput.h"

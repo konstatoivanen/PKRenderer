@@ -15,8 +15,8 @@ namespace PK
 namespace PK::App
 {
     class EngineTime :
-        public IStepApplicationOpenFrame,
-        public IStepApplicationCloseFrame
+        public IStepApplicationOpenFrame<>,
+        public IStepApplicationCloseFrame<>
     {
     public:
         EngineTime(Sequencer* sequencer, float timeScale);

@@ -1014,9 +1014,6 @@
     <ClInclude Include="Source\Core\ControlFlow\IStepApplication.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\ControlFlow\IStepApplicationWindow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\ControlFlow\Sequencer.h">
       <Filter>Header Files</Filter>
     </ClInclude>

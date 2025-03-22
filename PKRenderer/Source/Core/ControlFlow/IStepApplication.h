@@ -4,48 +4,54 @@
 
 namespace PK
 {
-    class IStepApplicationOpenFrame : public IStep<ApplicationStep::OpenFrame>
+    // Note: no perfect forwarding as we assume user knows which types to declare as forwarded, etc.
+    template<typename... Args>
+    class IStepApplicationOpenFrame : public IStep<ApplicationStep::OpenFrame, Args...>
     {
     protected:
         virtual ~IStepApplicationOpenFrame() = default;
     public:
-        virtual void OnApplicationOpenFrame() = 0;
-        virtual void Step([[maybe_unused]] ApplicationStep::OpenFrame token) final { OnApplicationOpenFrame(); }
+        virtual void OnApplicationOpenFrame(Args ... args) = 0;
+        virtual void Step([[maybe_unused]] ApplicationStep::OpenFrame token, Args ... args) final { OnApplicationOpenFrame(args...); }
     };
 
-    class IStepApplicationUpdateInput : public IStep<ApplicationStep::UpdateInput>
+    template<typename... Args>
+    class IStepApplicationUpdateInput : public IStep<ApplicationStep::UpdateInput, Args...>
     {
     protected:
         virtual ~IStepApplicationUpdateInput() = default;
     public:
-        virtual void OnApplicationUpdateInput() = 0;
-        virtual void Step([[maybe_unused]] ApplicationStep::UpdateInput token) final { OnApplicationUpdateInput(); }
+        virtual void OnApplicationUpdateInput(Args ... args) = 0;
+        virtual void Step([[maybe_unused]] ApplicationStep::UpdateInput token, Args ... args) final { OnApplicationUpdateInput(args...); }
     };
 
-    class IStepApplicationUpdateEngines : public IStep<ApplicationStep::UpdateEngines>
+    template<typename... Args>
+    class IStepApplicationUpdateEngines : public IStep<ApplicationStep::UpdateEngines, Args...>
     {
     protected:
         virtual ~IStepApplicationUpdateEngines() = default;
     public:
-        virtual void OnApplicationUpdateEngines() = 0;
-        virtual void Step([[maybe_unused]] ApplicationStep::UpdateEngines token) final { OnApplicationUpdateEngines(); }
+        virtual void OnApplicationUpdateEngines(Args ... args) = 0;
+        virtual void Step([[maybe_unused]] ApplicationStep::UpdateEngines token, Args ... args) final { OnApplicationUpdateEngines(args...); }
     };
 
-    class IStepApplicationRender : public IStep<ApplicationStep::Render>
+    template<typename... Args>
+    class IStepApplicationRender : public IStep<ApplicationStep::Render, Args...>
     {
     protected:
         virtual ~IStepApplicationRender() = default;
     public:
-        virtual void OnApplicationRender() = 0;
-        virtual void Step([[maybe_unused]] ApplicationStep::Render token) final { OnApplicationRender(); }
+        virtual void OnApplicationRender(Args ... args) = 0;
+        virtual void Step([[maybe_unused]] ApplicationStep::Render token, Args ... args) final { OnApplicationRender(args...); }
     };
 
-    class IStepApplicationCloseFrame : public IStep<ApplicationStep::CloseFrame>
+    template<typename... Args>
+    class IStepApplicationCloseFrame : public IStep<ApplicationStep::CloseFrame, Args...>
     {
     protected:
         virtual ~IStepApplicationCloseFrame() = default;
     public:
-        virtual void OnApplicationCloseFrame() = 0;
-        virtual void Step([[maybe_unused]] ApplicationStep::CloseFrame token) final { OnApplicationCloseFrame(); }
+        virtual void OnApplicationCloseFrame(Args ... args) = 0;
+        virtual void Step([[maybe_unused]] ApplicationStep::CloseFrame token, Args ... args) final { OnApplicationCloseFrame(args...); }
     };
 }
