@@ -2,7 +2,7 @@
 #include "Core/Utilities/ForwardDeclare.h"
 #include "Core/ControlFlow/IStep.h"
 #include "App/Renderer/Passes/PassHierarchicalDepth.h"
-#include "App/Renderer/Passes/PassEnvBackground.h"
+#include "App/Renderer/Passes/PassSceneEnv.h"
 #include "App/Renderer/Passes/PassPostEffects.h"
 #include "App/Renderer/Passes/PassLights.h"
 #include "App/Renderer/Passes/PassSceneGI.h"
@@ -26,7 +26,7 @@ namespace PK::App
         public PassSceneGI::ViewResources,
         public PassVolumeFog::ViewResources,
         public PassHierarchicalDepth::ViewResources,
-        public PassEnvBackground::ViewResources,
+        public PassSceneEnv::ViewResources,
         public PassDepthOfField::ViewResources,
         public PassTemporalAntialiasing::ViewResources,
         public PassBloom::ViewResources,
@@ -51,7 +51,7 @@ namespace PK::App
             PassSceneGI m_passSceneGI;
             PassVolumeFog m_passVolumeFog;
             PassHierarchicalDepth m_passHierarchicalDepth;
-            PassEnvBackground m_passEnvBackground;
+            PassSceneEnv m_passSceneEnv;
             PassFilmGrain m_passFilmGrain;
             PassDepthOfField m_depthOfField;
             PassTemporalAntialiasing m_temporalAntialiasing;

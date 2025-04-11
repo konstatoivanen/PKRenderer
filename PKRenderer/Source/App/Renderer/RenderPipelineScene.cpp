@@ -22,7 +22,7 @@ namespace PK::App
         m_passSceneGI(assetDatabase),
         m_passVolumeFog(assetDatabase),
         m_passHierarchicalDepth(assetDatabase),
-        m_passEnvBackground(assetDatabase),
+        m_passSceneEnv(assetDatabase),
         m_passFilmGrain(assetDatabase),
         m_depthOfField(assetDatabase),
         m_temporalAntialiasing(assetDatabase),
@@ -84,7 +84,8 @@ namespace PK::App
             // Fog Parameters
             { ElementType::Float,  hash->pk_Fog_Density_Amount },
             { ElementType::Float,  hash->pk_Fog_Density_Constant },
-            { ElementType::Float4, hash->pk_Fog_Albedo },
+            { ElementType::Float3, hash->pk_Fog_Albedo },
+            { ElementType::Float,  hash->pk_Fog_ZFarMultiplier },
             { ElementType::Float4, hash->pk_Fog_Absorption },
             { ElementType::Float4, hash->pk_Fog_WindDirSpeed },
 
@@ -250,7 +251,7 @@ namespace PK::App
             constants->Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
             constants->Set<float4>(hash->pk_MeshletCullParams, { 1.0f / (viewToClip[1][1] * resolution.y * 0.5f), view->fieldOfView * aspect, view->fieldOfView, 1.0f });
 
-            m_passEnvBackground.SetViewConstants(view);
+            m_passSceneEnv.SetViewConstants(view);
             m_passSceneGI.SetViewConstants(view);
             m_passVolumeFog.SetViewConstants(view);
             m_bloom.SetViewConstants(view);
@@ -303,7 +304,7 @@ namespace PK::App
         m_autoExposure.Render(cmdcompute, context);
         m_depthOfField.ComputeAutoFocus(cmdcompute, context);
         m_passVolumeFog.ComputeDensity(cmdcompute, context);
-        m_passEnvBackground.PreCompute(cmdcompute, context);
+        m_passSceneEnv.PreCompute(cmdcompute, context);
         m_passSceneGI.VoxelMips(cmdcompute);
         m_passSceneGI.ValidateReservoirs(cmdcompute, context);
         queues->Wait(QueueType::Compute, QueueType::Transfer);
@@ -350,7 +351,7 @@ namespace PK::App
         cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
         DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::ForwardOpaque);
 
-        m_passEnvBackground.RenderBackground(cmdgraphics, context);
+        m_passSceneEnv.RenderBackground(cmdgraphics, context);
         m_passVolumeFog.Render(cmdgraphics, gbuffers.current.color);
 
         DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::ForwardTransparent);

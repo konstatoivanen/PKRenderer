@@ -31,27 +31,41 @@ DEFINE_TRICUBIC_SAMPLER(pk_Fog_DensityRead, VOLUMEFOG_SIZE)
 DEFINE_TRICUBIC_SAMPLER(pk_Fog_InjectRead, VOLUMEFOG_SIZE)
 
 // Direct exp transform packs too much resolution to near clip. linearize a bit with sqrt
-float VFog_ZToView(float z) { return ViewDepthExp(sqrt(z)); }
-float VFog_ViewToZ(float viewdepth) { return pow2(ClipDepthExp(viewdepth)); }
+// @TODO optimize by moving all this calc to separate viewdpeth exp params.
+float Fog_ZToView(float z) { return ViewDepthExp(sqrt(z)) * pk_Fog_ZFarMultiplier; }
+float Fog_ViewToZ(float viewdepth) { return pow2(ClipDepthExp(viewdepth / pk_Fog_ZFarMultiplier)); }
 
-float VFog_CalculateDensity(float3 pos)
+float Fog_VolumetricToStaticFade(float uvz) { return pow2(saturate(uvz * 4.0f - 3.0f)); }
+
+float Fog_CalculateDensity(float3 pos)
 {
-    float density = pk_Fog_Density_Constant;
-    density += min(exp(pk_Fog_Density_HeightExponent * (-pos.y + pk_Fog_Density_HeightOffset)) * pk_Fog_Density_HeightAmount, 1e+3f);
-    density *= NoiseScroll(pos, pk_Time.y * pk_Fog_WindDirSpeed.w, pk_Fog_Density_NoiseScale, pk_Fog_WindDirSpeed.xyz, pk_Fog_Density_NoiseAmount, -0.3, 8.0);
-    return max(density * pk_Fog_Density_Amount, 0.0f);
+    float d = pk_Fog_Density_Constant;
+    d += min(exp(pk_Fog_Density_HeightExponent * (-pos.y + pk_Fog_Density_HeightOffset)) * pk_Fog_Density_HeightAmount, 1e+3f);
+    d *= NoiseScroll(pos, pk_Time.y * pk_Fog_WindDirSpeed.w, pk_Fog_Density_NoiseScale, pk_Fog_WindDirSpeed.xyz, pk_Fog_Density_NoiseAmount, -0.3, 8.0);
+    return max(d * pk_Fog_Density_Amount, 0.0f);
 }
 
-float3 VFog_MarchTransmittance(const float3 origin, const float3 direction, const float dither, const float tMax, const float farFade)
+// Source: https://advances.realtimerendering.com/s2017/DecimaSiggraph2017.pdf
+float Fog_CalculateStaticDensity(const float originY, const float surfY, const float exponent, const float offset, const float heightAmount, const float constant)
+{
+    float d;
+    d = max(1e-2f, (originY - surfY) * exponent);
+    d = (1.0f - exp(-d)) / d * exp((-surfY + offset) * exponent);
+    d *= heightAmount;
+    d += constant;
+    return d;
+}
+
+float3 Fog_MarchTransmittance(const float3 origin, const float3 direction, const float dither, const float tMax, const float farFade)
 {
     const float invT = tMax / 4.0f;
-    float prev_density = VFog_CalculateDensity(origin);
+    float prev_density = Fog_CalculateDensity(origin);
     float extinction = 0.0f;
 
     for (uint j = 0u; j < 4u; ++j)
     {
         const float3 pos = origin + direction * invT * (j + dither);
-        const float density = VFog_CalculateDensity(pos);
+        const float density = Fog_CalculateDensity(pos);
         extinction += lerp(prev_density, density, 0.5f) * invT;
         prev_density = density;
     }
@@ -60,48 +74,51 @@ float3 VFog_MarchTransmittance(const float3 origin, const float3 direction, cons
 }
 
 // transmittance estimator for indirect lighting.
-float3 VFog_EstimateTransmittance(const float3 uvw, float farFade)
+float3 Fog_EstimateTransmittance(const float3 uvw, float farFade)
 {
-    const float depthMin = VFog_ZToView(uvw.z);
-    const float depthMax = VFog_ZToView(min(1.0f, uvw.z + VOLUMEFOG_SIZE_Z_INV));
+    const float depthMin = Fog_ZToView(uvw.z);
+    const float depthMax = Fog_ZToView(min(1.0f, uvw.z + VOLUMEFOG_SIZE_Z_INV));
     const float density = texture(pk_Fog_DensityRead, uvw).x;
     const float extinction = density * (depthMax - depthMin) * farFade;
     return exp(-extinction * pk_Fog_Absorption.rgb);
 }
 
-float VFog_GetAccumulation(float3 uvw)
+float Fog_GetAccumulation(float3 uvw)
 {
     return VOLUMEFOG_ACCUMULATION + float(Any_NotEqual(clamp(uvw, 0.0f.xxx, float3(1.0f.xx, 2.0f)), uvw)) * (1.0f - VOLUMEFOG_ACCUMULATION);
 }
 
-float3 VFog_WorldToPrevUVW(float3 worldpos)
+float3 Fog_WorldToPrevUVW(float3 worldpos)
 {
     float3 uvw = ClipToUVW(pk_WorldToClipPrev_NoJitter * float4(worldpos, 1.0f));
-    uvw.z = VFog_ViewToZ(ViewDepth(uvw.z));
+    uvw.z = Fog_ViewToZ(ViewDepth(uvw.z));
     return uvw;
 }
 
-float4 VFog_Apply(float2 uv, float viewDepth, float3 color)
+void Fog_SampleStatic(float3 origin, float3 viewdir, float viewDepth, inout float3 scatter, inout float3 transmittance)
 {
-    float3 uvw = float3(uv, VFog_ViewToZ(viewDepth));
-    float2 dither = GlobalNoiseBlue(uint2(uv * pk_ScreenSize.xy), pk_FrameIndex.x).xy;
-    uvw.xy += (dither - 0.5f) * 2.0f.xx / VOLUMEFOG_SIZE_XY;
+    float o_y = origin.y;
+    float v_y = origin.y + viewdir.y * viewDepth;
 
-    const float4 scatter = SAMPLE_TRICUBIC(pk_Fog_ScatterRead, uvw);
-    // Reconstruct extinction & apply absorption (this leads to some bias due to floating point precision).
-    const float3 transmittance = exp(log(scatter.a) * pk_Fog_Absorption.rgb);
+    const float s0_density = Fog_CalculateStaticDensity(
+        o_y, v_y, 
+        pk_Fog_Density_Sky_HeightExponent, 
+        pk_Fog_Density_Sky_HeightOffset, 
+        pk_Fog_Density_Sky_HeightAmount, 
+        pk_Fog_Density_Sky_Constant);
 
-    return float4(scatter.rgb + color * transmittance, dot(transmittance, 0.333f.xxx));
-}
+    const float s1_density = Fog_CalculateStaticDensity(
+        o_y, v_y, 
+        pk_Fog_Density_HeightExponent, 
+        pk_Fog_Density_HeightOffset, 
+        pk_Fog_Density_HeightAmount, 
+        pk_Fog_Density_Constant);
 
-void VFog_GetSky(float3 viewdir, inout float3 irradiance, inout float3 transmittance)
-{
-    float density = pk_Fog_Density_Sky_Constant;
-    density += min(exp(pk_Fog_Density_Sky_HeightExponent * -(viewdir.y + pk_Fog_Density_Sky_HeightOffset)) * pk_Fog_Density_Sky_HeightAmount, 1e+3f);
-    density = density * pk_Fog_Density_Amount;
+    const float density = (s0_density + s1_density) * pk_Fog_Density_Amount;
+    transmittance = exp(-density * pk_Fog_Absorption.rgb * viewDepth);
 
     const float occlusion = viewdir.y * 0.5f + 0.5f;
-    irradiance = pk_Fog_Albedo.rgb * occlusion * SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Phase1);
+    scatter = pk_Fog_Albedo.rgb * occlusion * SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Phase1);
 
     // @TODO refactor to use somekind of global light cluster for this.
     // For now get the first light as it is likely a directional light
@@ -109,16 +126,35 @@ void VFog_GetSky(float3 viewdir, inout float3 irradiance, inout float3 transmitt
 
     if ((light.LIGHT_TYPE) == LIGHT_TYPE_DIRECTIONAL)
     {
-        irradiance += BxDF_Volumetric(viewdir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, -light.LIGHT_POS, light.LIGHT_COLOR, 1.0f);
+        scatter += BxDF_Volumetric(viewdir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, -light.LIGHT_POS, light.LIGHT_COLOR, 1.0f);
+    }
+}
+
+float4 Fog_SampleFroxel(float2 uv, float viewDepth, float3 color)
+{
+    float3 uvw = float3(uv, Fog_ViewToZ(viewDepth));
+    float2 dither = GlobalNoiseBlue(uint2(uv * pk_ScreenSize.xy), pk_FrameIndex.x).xy;
+    uvw.xy += (dither - 0.5f) * 2.0f.xx / VOLUMEFOG_SIZE_XY;
+
+    float4 scatter = SAMPLE_TRICUBIC(pk_Fog_ScatterRead, uvw);
+    // Reconstruct extinction & apply absorption (this leads to some bias due to floating point precision).
+    float3 transmittance = exp(log(scatter.a) * pk_Fog_Absorption.rgb);
+
+    // Sample static fog as a fallback for far away surfaces.
+    // Skip sky pixels as they have baked fogging from sky capture.
+    if (Test_DepthFar(viewDepth))
+    {
+        float3 s_scatter; 
+        float3 s_transmittance;
+        float3 worldViewDir = ViewToWorldVec(UVToViewDir(uv));
+
+        Fog_SampleStatic(pk_ViewWorldOrigin.xyz, worldViewDir, viewDepth, s_scatter, s_transmittance);
+
+        const float fade = Fog_VolumetricToStaticFade(uvw.z);
+        scatter.rgb += transmittance * s_scatter * fade;
+        transmittance *= lerp(1.0f.xxx, s_transmittance, fade);
     }
 
-    const float virtualDistance = 1000.0f;
-    transmittance = exp(-density * pk_Fog_Absorption.rgb * virtualDistance);
+    return float4(scatter.rgb + color * transmittance, dot(transmittance, 0.333f.xxx));
 }
 
-float3 VFog_ApplySky(float3 viewdir, float3 color)
-{
-    float3 irrad, trans;
-    VFog_GetSky(viewdir, irrad, trans);
-    return lerp(irrad, color, trans);
-}

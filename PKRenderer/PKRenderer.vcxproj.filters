@@ -1185,7 +1185,7 @@
     <ClInclude Include="Source\App\Renderer\Passes\PassDepthOfField.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\App\Renderer\Passes\PassEnvBackground.h">
+    <ClInclude Include="Source\App\Renderer\Passes\PassSceneEnv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\Renderer\Passes\PassFilmGrain.h">
@@ -1918,7 +1918,7 @@
     <None Include="Content\Configs\Input.keycfg" />
     <None Include="Content\Shaders\includes\Utilities.glsl" />
     <None Include="Content\Shaders\includes\Common.glsl" />
-    <None Include="Content\Shaders\CS_EnvIntegrateIBL.shader" />
+    <None Include="Content\Shaders\CS_SceneEnv_IntegrateIBL.shader" />
     <None Include="Content\Shaders\includes\Encoding.glsl" />
     <None Include="Content\Shaders\includes\LightSampling.glsl" />
     <None Include="Content\Textures\T_OEM_Quarry.ktx2" />
@@ -2034,7 +2034,7 @@
     <None Include="Content\Shaders\CS_HierachicalDepth.shader" />
     <None Include="Content\Shaders\CS_CompressBC6H.shader" />
     <None Include="Content\Shaders\includes\CTASwizzling.glsl" />
-    <None Include="Content\Shaders\CS_EnvIntegrateSH.shader" />
+    <None Include="Content\Shaders\CS_SceneEnv_IntegrateSH.shader" />
     <None Include="Content\Shaders\includes\SceneEnv.glsl" />
     <None Include="Content\Shaders\includes\TricubicSampler.glsl" />
     <None Include="Content\Shaders\CS_GI_ShadeHits.shader" />
@@ -2058,8 +2058,8 @@
     <None Include="Content\Textures\T_Bloom_LensDirt2.ktx2" />
     <None Include="Content\Configs\DebugEngine.cfg" />
     <None Include="Content\Shaders\VS_GUI.shader" />
-    <None Include="Content\Shaders\VS_EnvBackground.shader" />
-    <None Include="Content\Shaders\CS_EnvIntegrateDFG.shader" />
+    <None Include="Content\Shaders\VS_SceneEnv_Background.shader" />
+    <None Include="Content\Shaders\CS_IntegrateDFG.shader" />
     <None Include="Content\Textures\T_TonemapLut_Agx.ktx2" />
   </ItemGroup>
   <ItemGroup>
@@ -2195,7 +2195,7 @@
     <ClCompile Include="Source\App\Renderer\Passes\PassDepthOfField.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\App\Renderer\Passes\PassEnvBackground.cpp">
+    <ClCompile Include="Source\App\Renderer\Passes\PassSceneEnv.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\Renderer\Passes\PassFilmGrain.cpp">

@@ -17,10 +17,10 @@ void main()
     const float3 uvw_cur = (id + float3(0.5f.xx, dither.z)) / VOLUMEFOG_SIZE;
 
     // Light leak threshold
-    const float zmin = VFog_ZToView((id.z - 1.5f) * VOLUMEFOG_SIZE_Z_INV);
+    const float zmin = Fog_ZToView((id.z - 1.5f) * VOLUMEFOG_SIZE_Z_INV);
     const float zmax = SampleMaxZ(int2(id.xy), 3);
     // Clamp cell to surface to prevent light leaks
-    const float depth = min(VFog_ZToView(uvw_cur.z), lerp(1e+38f, zmax, zmin < zmax));
+    const float depth = min(Fog_ZToView(uvw_cur.z), lerp(1e+38f, zmax, zmin < zmax));
 
 #if EARLY_Z_TEST == 1
     float4 maxdepths = float4
@@ -42,17 +42,17 @@ void main()
 #endif
 
     const float3 worldpos = UVToWorldPos(uvw_cur.xy, depth);
-    const float3 uvw_prev = VFog_WorldToPrevUVW(worldpos);
+    const float3 uvw_prev = Fog_WorldToPrevUVW(worldpos);
     const float3 viewdir = normalize(worldpos - pk_ViewWorldOrigin.xyz);
 
     const float3 gi_static = SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Phase1);
     const float4 gi_dynamic = GI_SphereTrace_Diffuse(worldpos);
 
     // Fade value for properties not present in backgroung fog
-    const float farFade = smoothstep(1.0f, 0.7f, uvw_cur.z);
+    const float staticFade = 1.0f - Fog_VolumetricToStaticFade(uvw_cur.z);
     // Distant texels are less dense, trace a longer distance to retain some depth.
     const float maxMarchDistance = exp(uvw_cur.z * VOLUMEFOG_MARCH_DISTANCE_EXP);
-    const float shadowBiasRange = VFog_ZToView((id.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV) - VFog_ZToView(id.z * VOLUMEFOG_SIZE_Z_INV);
+    const float shadowBiasRange = Fog_ZToView((id.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV) - Fog_ZToView(id.z * VOLUMEFOG_SIZE_Z_INV);
     const float3 shadowBias = viewdir * shadowBiasRange * 0.5f;
 
     // Occlude ground as it should be lit mostly by dynamic gi.
@@ -62,7 +62,7 @@ void main()
     float3 value_cur = gi_static.rgb * gi_static_occlusion + gi_dynamic.rgb;
 
     // This is incorrect for the dynamic component. However, it introduces good depth to the colors so whatever.
-    value_cur *= VFog_EstimateTransmittance(uvw_cur, farFade);
+    value_cur *= Fog_EstimateTransmittance(uvw_cur, staticFade);
 
     LightTile tile = Lights_GetTile_COORD(int2(gl_WorkGroupID.xy >> 1), depth);
 
@@ -72,8 +72,8 @@ void main()
         LightSample light = Lights_SampleTiled(i, worldpos, shadowBias, tile.cascade);
 
         const float marchDistance = min(light.linearDistance, maxMarchDistance);
-        light.color *= VFog_MarchTransmittance(worldpos, light.direction, dither.y, marchDistance, farFade);
-        light.shadow = lerp(1.0f, light.shadow, farFade);
+        light.color *= Fog_MarchTransmittance(worldpos, light.direction, dither.y, marchDistance, staticFade);
+        light.shadow = lerp(1.0f, light.shadow, staticFade);
 
         value_cur += BxDF_Volumetric
         (
@@ -90,7 +90,7 @@ void main()
     // Note it is faster to solve tricubic here rather than in density reproject.
     const float3 value_pre = SAMPLE_TRICUBIC(pk_Fog_InjectRead, uvw_prev).rgb;
 
-    const float accumulation = VFog_GetAccumulation(uvw_prev);
+    const float accumulation = Fog_GetAccumulation(uvw_prev);
 
     float3 value_out = lerp(value_pre, value_cur, accumulation);
 

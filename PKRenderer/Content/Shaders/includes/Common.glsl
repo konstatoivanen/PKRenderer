@@ -57,7 +57,8 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     // Fog Parameters
     float pk_Fog_Density_Amount;
     float pk_Fog_Density_Constant;
-    float4 pk_Fog_Albedo;
+    float3 pk_Fog_Albedo;
+    float pk_Fog_ZFarMultiplier;
     float4 pk_Fog_Absorption;
     float4 pk_Fog_WindDirSpeed;
 
@@ -140,7 +141,7 @@ float  ViewDepth(const float clip_z)      { return 1.0f / (pk_ClipParamsInv.z * 
 float4 ViewDepth(const float4 clip_z)     { return 1.0f / (pk_ClipParamsInv.z * clip_z + pk_ClipParamsInv.w); } 
 float  ClipDepth(const float view_z)      { return fma(1.0f / view_z, pk_ClipParams.w, pk_ClipParams.z); }
 float4 ClipDepth(const float4 view_z)     { return fma(1.0f / view_z, pk_ClipParams.wwww, pk_ClipParams.zzzz); }
-// Note that these dont produce reverse Z as theyre used for exponential mapping of volumes where 
+// Note that these dont produce reverse Z as theyre used for exponential mapping of volumes where 0-1 range is preferred.
 float  ViewDepthExp(const float clip_z)   { return pk_ClipParams.x * pow(pk_ClipParamsExp.z, clip_z); }
 float2 ViewDepthExp(const float2 clip_z)  { return pk_ClipParams.x * pow(pk_ClipParamsExp.zz, clip_z); }
 float  ClipDepthExp(const float view_z)   { return log2(view_z) * pk_ClipParamsExp.x + pk_ClipParamsExp.y; }
@@ -176,6 +177,7 @@ float3 ObjectToViewVec(const float3 vec) { return WorldToViewVec(ObjectToWorldVe
 float4 ObjectToClipPos(const float3 pos) { return pk_WorldToClip * float4(ObjectToWorldPos(pos), 1.0f); }
 
 float3 UVToViewPos(const float2 uv, float viewDepth) { return float3((uv * 2.0f - 1.0f) * pk_ClipParamsInv.xy, 1.0f) * viewDepth; }
+float3 UVToViewDir(const float2 uv) { return normalize(UVToViewPos(uv, 1.0f)); }
 float3 UVToWorldPos(const float2 uv, float viewDepth) { return ViewToWorldPos(UVToViewPos(uv, viewDepth)); }
 
 float3 CoordToViewPos(const int2 coord, const float viewDepth) { return UVToViewPos((coord + 0.5f.xx) * pk_ScreenParams.zw, viewDepth); }

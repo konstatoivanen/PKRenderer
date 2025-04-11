@@ -12,10 +12,10 @@ void main()
     const float3 dither = GlobalNoiseBlue(pos.xy, pk_FrameIndex.x);
     const float3 uvw_cur = (pos + dither) / VOLUMEFOG_SIZE;
 
-    const float3 worldpos = UVToWorldPos(uvw_cur.xy, VFog_ZToView(uvw_cur.z));
-    const float3 uvw_prev = VFog_WorldToPrevUVW(worldpos);
+    const float3 worldpos = UVToWorldPos(uvw_cur.xy, Fog_ZToView(uvw_cur.z));
+    const float3 uvw_prev = Fog_WorldToPrevUVW(worldpos);
 
-    const float value_cur = VFog_CalculateDensity(worldpos);
+    const float value_cur = Fog_CalculateDensity(worldpos);
 
 #if defined(VOLUME_FOG_CLEAR)
     const float value_pre = value_cur;
@@ -25,7 +25,7 @@ void main()
     const float3 inject_pre = texelFetch(pk_Fog_InjectRead, pos, 0).rgb;
 #endif
 
-    const float value_out = lerp(value_pre, value_cur, VFog_GetAccumulation(uvw_prev));
+    const float value_out = lerp(value_pre, value_cur, Fog_GetAccumulation(uvw_prev));
 
     imageStore(pk_Fog_Density, pos, -min(0.0f, -value_out).xxxx);
     imageStore(pk_Fog_Inject, pos, EncodeE5BGR9(inject_pre).xxxx);

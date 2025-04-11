@@ -62,6 +62,7 @@ namespace PK::App
 
         DECLARE_HASH(pk_PreIntegratedDFG)
         DECLARE_HASH(pk_SceneEnv)
+        DECLARE_HASH(pk_SceneEnv_Origin)
         DECLARE_HASH(pk_SceneEnv_SH)
         DECLARE_HASH(pk_SceneEnv_Exposure)
 
@@ -109,7 +110,6 @@ namespace PK::App
         DECLARE_HASH(pk_LightTiles)
         DECLARE_HASH(pk_BendShadowDispatchData)
 
-        DECLARE_HASH(pk_PostEffectsParams)
         DECLARE_HASH(pk_PostEffectsFeatureMask)
 
         DECLARE_HASH(pk_AutoExposure_LogLumaRange)
@@ -167,6 +167,7 @@ namespace PK::App
         DECLARE_HASH(pk_DoF_AlphaRead)
         DECLARE_HASH(pk_DoF_AlphaWrite)
 
+        DECLARE_HASH(pk_Fog_ZFarMultiplier)
         DECLARE_HASH(pk_Fog_Albedo)
         DECLARE_HASH(pk_Fog_Absorption)
         DECLARE_HASH(pk_Fog_WindDirSpeed)
@@ -190,7 +191,6 @@ namespace PK::App
         DECLARE_HASH(pk_Fog_Inject)
         DECLARE_HASH(pk_Fog_Density)
         DECLARE_HASH(pk_Fog_Scatter)
-        DECLARE_HASH(pk_Fog_Parameters)
 
         DECLARE_HASH(pk_Meshlet_Tasklets)
         DECLARE_HASH(pk_Meshlet_DispatchOffset)

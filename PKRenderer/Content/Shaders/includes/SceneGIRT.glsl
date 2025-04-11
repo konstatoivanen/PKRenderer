@@ -15,7 +15,7 @@ bool GI_IsScreenHit(const float3 worldpos, bool isMiss)
     {
         const float rdepth = ViewDepth(clipuvw.z);
         const float sdepth = SamplePreviousViewDepth(clipuvw.xy);
-        const float3 viewdir = normalize(UVToViewPos(clipuvw.xy, 1.0f));
+        const float3 viewdir = UVToViewDir(clipuvw.xy);
         const float3 viewnor = SamplePreviousViewNormal(clipuvw.xy);
         const float sviewz = max(0.0f, dot(viewdir, -viewnor)) + 0.15;
         const bool isValidSurf = abs(sdepth - rdepth) < (rdepth * 0.01f / sviewz);
@@ -35,7 +35,7 @@ bool GI_IsScreenHit(const int2 coord, const float3 worldpos, bool isMiss)
         const float2 deltacoord = abs(coord - clipuvw.xy * pk_ScreenParams.xy);
         const float rdepth = ViewDepth(clipuvw.z);
         const float sdepth = SamplePreviousViewDepth(clipuvw.xy);
-        const float3 viewdir = normalize(UVToViewPos(clipuvw.xy, 1.0f));
+        const float3 viewdir = UVToViewDir(clipuvw.xy);
         const float3 viewnor = SamplePreviousViewNormal(clipuvw.xy);
         const float sviewz = max(0.0f, dot(viewdir, -viewnor)) + 0.15;
         const bool isTexelOOB = dot(deltacoord, deltacoord) > 2.0f;

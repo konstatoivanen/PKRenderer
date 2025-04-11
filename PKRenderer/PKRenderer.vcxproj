@@ -673,7 +673,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Renderer\Passes\PassAutoExposure.h" />
     <ClInclude Include="Source\App\Renderer\Passes\PassBloom.h" />
     <ClInclude Include="Source\App\Renderer\Passes\PassDepthOfField.h" />
-    <ClInclude Include="Source\App\Renderer\Passes\PassEnvBackground.h" />
+    <ClInclude Include="Source\App\Renderer\Passes\PassSceneEnv.h" />
     <ClInclude Include="Source\App\Renderer\Passes\PassFilmGrain.h" />
     <ClInclude Include="Source\App\Renderer\Passes\PassHierarchicalDepth.h" />
     <ClInclude Include="Source\App\Renderer\Passes\PassLights.h" />
@@ -737,8 +737,8 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
   </ItemGroup>
   <ItemGroup>
     <None Include="Content\Configs\DebugEngine.cfg" />
-    <None Include="Content\Shaders\CS_EnvIntegrateDFG.shader" />
-    <None Include="Content\Shaders\VS_EnvBackground.shader" />
+    <None Include="Content\Shaders\CS_IntegrateDFG.shader" />
+    <None Include="Content\Shaders\VS_SceneEnv_Background.shader" />
     <None Include="Content\Shaders\VS_GUI.shader" />
     <None Include="Content\Textures\T_TonemapLut_Agx.ktx2" />
     <None Include="Content\Textures\T_Bloom_LensDirt2.ktx2" />
@@ -909,7 +909,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Shaders\CS_GI_Reproject.shader" />
     <None Include="Content\Shaders\CS_GI_ShadeHits.shader" />
     <None Include="Content\Shaders\CS_HierachicalDepth.shader" />
-    <None Include="Content\Shaders\CS_EnvIntegrateSH.shader" />
+    <None Include="Content\Shaders\CS_SceneEnv_IntegrateSH.shader" />
     <None Include="Content\Shaders\CS_ScreenspaceShadow.shader" />
     <None Include="Content\Shaders\CS_TemporalAntialiasing.shader" />
     <None Include="Content\Shaders\CS_VolumeFog_Density.shader" />
@@ -964,7 +964,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Shaders\CS_LightAssignment.shader" />
     <None Include="Content\Shaders\CS_PostEffectsComposite.shader" />
     <None Include="Content\Shaders\CS_DepthOfField.shader" />
-    <None Include="Content\Shaders\CS_EnvIntegrateIBL.shader" />
+    <None Include="Content\Shaders\CS_SceneEnv_IntegrateIBL.shader" />
     <None Include="Content\Shaders\CS_CopyCubeShadow.shader" />
     <None Include="Content\Shaders\MS_Mat_Surf_Default.shader" />
     <None Include="Content\Shaders\MS_Mat_Surf_Glitter.shader" />
@@ -1113,7 +1113,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Renderer\Passes\PassAutoExposure.cpp" />
     <ClCompile Include="Source\App\Renderer\Passes\PassBloom.cpp" />
     <ClCompile Include="Source\App\Renderer\Passes\PassDepthOfField.cpp" />
-    <ClCompile Include="Source\App\Renderer\Passes\PassEnvBackground.cpp" />
+    <ClCompile Include="Source\App\Renderer\Passes\PassSceneEnv.cpp" />
     <ClCompile Include="Source\App\Renderer\Passes\PassFilmGrain.cpp" />
     <ClCompile Include="Source\App\Renderer\Passes\PassHierarchicalDepth.cpp" />
     <ClCompile Include="Source\App\Renderer\Passes\PassLights.cpp" />

@@ -88,6 +88,7 @@ namespace PK::App
     PK_YAML_STRUCT_BEGIN(FogSettings)
         PK_YAML_MEMBER(float3, Albedo, PK_FLOAT3_ONE)
         PK_YAML_MEMBER(float3, Absorption, PK_FLOAT3_ONE)
+        PK_YAML_MEMBER(float, ZFar, 200.0f)
         PK_YAML_MEMBER(float, Phase0, 0.25f)
         PK_YAML_MEMBER(float, Phase1, 0.95f)
         PK_YAML_MEMBER(float, PhaseW, 0.5f)
@@ -108,6 +109,9 @@ namespace PK::App
 
     PK_YAML_STRUCT_BEGIN(EnvBackgroundSettings)
         PK_YAML_MEMBER(float, Exposure, 1.0f)
+        PK_YAML_MEMBER(bool, CaptureUsesViewOrigin, false)
+        PK_YAML_MEMBER(int32_t, CaptureInterval, -1)
+        PK_YAML_MEMBER(float3, CaptureOffset, PK_FLOAT3_ZERO)
         PK_YAML_MEMBER(TextureAsset*, EnvironmentTextureAsset, nullptr)
     PK_YAML_STRUCT_END()
 

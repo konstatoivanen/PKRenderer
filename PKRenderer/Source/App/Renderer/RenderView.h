@@ -107,6 +107,7 @@ namespace PK::App
         float4x4 viewToClip;
         float4x4 worldToClip;
         float4 forwardPlane;
+        float3 position;
         float fieldOfView;
         float znear;
         float zfar;

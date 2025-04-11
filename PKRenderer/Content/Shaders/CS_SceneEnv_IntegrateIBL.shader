@@ -9,11 +9,18 @@
 #include "includes/VolumeFog.glsl"
 #include "includes/Encoding.glsl"
 
+#define PK_STATIC_FOG_VIRTUAL_DISTANCE 14000.0f
+
 PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image;
 PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image1;
 PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image2;
 PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image3;
 PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image4;
+
+PK_DECLARE_LOCAL_CBUFFER(pk_SceneEnv_Origin)
+{
+    float4 pk_Origin;
+};
 
 shared float3 lds_irrad;
 shared float3 lds_trans;
@@ -35,8 +42,9 @@ void main()
         const float2 uv = (coord * 2 + int2(xx, yy) + 0.5f.xx) * texelSize;
         const float3 viewdir = OctaDecode(uv);
 
+
         float3 irrad, trans;
-        VFog_GetSky(viewdir, irrad, trans);
+        Fog_SampleStatic(pk_Origin.xyz, viewdir, PK_STATIC_FOG_VIRTUAL_DISTANCE, irrad, trans);
 
         local_irrad += irrad;
         local_trans += trans;

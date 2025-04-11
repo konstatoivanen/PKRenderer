@@ -11,23 +11,28 @@
 #include "App/Renderer/RenderView.h"
 #include "App/Renderer/RenderViewSettings.h"
 #include "App/Renderer/RenderPipelineBase.h"
-#include "PassEnvBackground.h"
+#include "PassSceneEnv.h"
 
 namespace PK::App
 {
-    PassEnvBackground::PassEnvBackground(AssetDatabase* assetDatabase)
+    PassSceneEnv::PassSceneEnv(AssetDatabase* assetDatabase)
     {
-        PK_LOG_VERBOSE("PassEnvBackground.Ctor");
+        PK_LOG_VERBOSE("PassSceneEnv.Ctor");
         PK_LOG_SCOPE_INDENT(local);
 
         auto hash = HashCache::Get();
-        m_backgroundShader = assetDatabase->Find<ShaderAsset>("VS_EnvBackground");
-        m_shShader = assetDatabase->Find<ShaderAsset>("CS_EnvIntegrateSH");
-        m_integrateSHShader = assetDatabase->Find<ShaderAsset>("CS_EnvIntegrateIBL");
+        m_backgroundShader = assetDatabase->Find<ShaderAsset>("VS_SceneEnv_Background");
+        m_shShader = assetDatabase->Find<ShaderAsset>("CS_SceneEnv_IntegrateSH");
+        m_integrateSHShader = assetDatabase->Find<ShaderAsset>("CS_SceneEnv_IntegrateIBL");
         RHI::SetTexture(hash->pk_SceneEnv, RHI::GetBuiltInResources()->BlackTexture2D.get());
+    
+        CVariableRegister::Create<CVariableFuncSimple>("Renderer.SceneEnv.ForceCapture", [this]() 
+        {
+            m_forceCapture = true;
+        });
     }
 
-    void PassEnvBackground::SetViewConstants(RenderView* view)
+    void PassSceneEnv::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
         auto& settings = view->settings.EnvBackgroundSettings;
@@ -49,12 +54,18 @@ namespace PK::App
         view->constants->TryGet<float>(hash->pk_Fog_Density_Sky_HeightExponent, prevDensityHeightExponent);
         view->constants->TryGet<float>(hash->pk_Fog_Density_Sky_HeightOffset, prevDensityHeightOffset);
 
-        resources->runtimeIsDirty |= prevExposure != settings.Exposure;
-        resources->runtimeIsDirty |= prevDensity != fogSettings.Density;
-        resources->runtimeIsDirty |= prevDensityConstant != fogSettings.DensitySkyConstant;
-        resources->runtimeIsDirty |= prevDensityHeightAmount != fogSettings.DensitySkyHeightAmount;
-        resources->runtimeIsDirty |= prevDensityHeightExponent != fogSettings.DensitySkyHeightExponent;
-        resources->runtimeIsDirty |= prevDensityHeightOffset != fogSettings.DensitySkyHeightOffset;
+        resources->captureIsDirty |= m_forceCapture;
+        resources->captureIsDirty |= settings.CaptureInterval >= 0 && resources->captureCounter >= settings.CaptureInterval;
+        resources->captureIsDirty |= prevExposure != settings.Exposure;
+        resources->captureIsDirty |= prevDensity != fogSettings.Density;
+        resources->captureIsDirty |= prevDensityConstant != fogSettings.DensitySkyConstant;
+        resources->captureIsDirty |= prevDensityHeightAmount != fogSettings.DensitySkyHeightAmount;
+        resources->captureIsDirty |= prevDensityHeightExponent != fogSettings.DensitySkyHeightExponent;
+        resources->captureIsDirty |= prevDensityHeightOffset != fogSettings.DensitySkyHeightOffset;
+
+        resources->captureOrigin = settings.CaptureUsesViewOrigin ? view->position : PK_FLOAT3_ZERO;
+        resources->captureOrigin += settings.CaptureOffset;
+        resources->captureCounter = glm::min(resources->captureCounter + 1, glm::max(0, settings.CaptureInterval));
 
         view->constants->Set<float>(hash->pk_SceneEnv_Exposure, settings.Exposure);
 
@@ -69,7 +80,7 @@ namespace PK::App
         
         if (texture != resources->sourceTexture)
         {
-            resources->runtimeIsDirty = true;
+            resources->captureIsDirty = true;
             resources->sourceTexture = texture;
             auto sampler = texture->GetSamplerDescriptor();
             sampler.wrap[0] = WrapMode::Mirror;
@@ -86,12 +97,12 @@ namespace PK::App
         }
     }
 
-    void PassEnvBackground::PreCompute(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassSceneEnv::PreCompute(CommandBufferExt cmd, RenderPipelineContext* context)
     {
         auto view = context->views[0];
         auto resources = view->GetResources<ViewResources>();
 
-        if (resources->runtimeIsDirty)
+        if (resources->captureIsDirty)
         {
             auto hash = HashCache::Get();
             auto resolution = resources->sceneEnvTexture->GetResolution();
@@ -104,13 +115,16 @@ namespace PK::App
             RHI::SetImage(hash->pk_Image2, resources->sceneEnvTexture.get(), 2, 0);
             RHI::SetImage(hash->pk_Image3, resources->sceneEnvTexture.get(), 3, 0);
             RHI::SetImage(hash->pk_Image4, resources->sceneEnvTexture.get(), 4, 0);
+            RHI::SetConstant(hash->pk_SceneEnv_Origin, float4(resources->captureOrigin, 0.0f));
             cmd.Dispatch(m_integrateSHShader, { resolution.x >> 1u, resolution.y >> 1u, 1u });
             RHI::SetTexture(hash->pk_SceneEnv, resources->sceneEnvTexture.get());
-            resources->runtimeIsDirty = false;
+            resources->captureIsDirty = false;
+            resources->captureCounter = 0;
+            m_forceCapture = false;
         }
     }
 
-    void PassEnvBackground::RenderBackground(CommandBufferExt cmd, [[maybe_unused]] RenderPipelineContext* context)
+    void PassSceneEnv::RenderBackground(CommandBufferExt cmd, [[maybe_unused]] RenderPipelineContext* context)
     {
         cmd.Blit(m_backgroundShader);
     }
