@@ -28,7 +28,7 @@ bool TraceRay_ScreenSpace(const int2 coord, const float3 origin, const float3 di
     float samples;
     {
         const float3 end = view_pos + view_dir * max_t;
-        const float2 px = ViewToClipUV(end) * resolution + 0.5f.xx;
+        const float2 px = ViewToClipUv(end) * resolution + 0.5f.xx;
         samples = length(px - float2(coord));
         samples = clamp(samples, 1.0f, 32.0f);
     }
@@ -41,11 +41,11 @@ bool TraceRay_ScreenSpace(const int2 coord, const float3 origin, const float3 di
     for (; hit_t < max_t; hit_t += delta)
     {
         const float3 s_pos = view_pos + view_dir * hit_t;
-        const float2 s_uv = ViewToClipUV(s_pos);
+        const float2 s_uv = ViewToClipUv(s_pos);
         const int2 s_coord = int2(s_uv * resolution + 0.5f.xx);
         const float s_depth = SampleViewDepth(s_coord);
         const float s_depth_delta = s_pos.z - s_depth;
-        const bool s_in_screen = Test_InUV(s_uv);
+        const bool s_in_screen = Test_InUv(s_uv);
 
         delta *= 1.04f;
 
@@ -71,7 +71,7 @@ void MainRgs()
 
     GIRayHits hits;
 
-    if (Test_DepthFar(depth))
+    if (Test_DepthIsScene(depth))
     {
         const float4 normal_roughness = SampleWorldNormalRoughness(coord);
 
@@ -81,33 +81,33 @@ void MainRgs()
             if (normal_roughness.w >= PK_GI_MAX_ROUGH_SPEC)
             {
                 hits.spec.dist = 1e+38f;
-                hits.spec.isMiss = true;
-                hits.spec.isScreen = false;
+                hits.spec.is_miss = true;
+                hits.spec.is_screen = false;
             }
             else
 #endif
             {
-                hits.spec.isScreen = TraceRay_ScreenSpace(coord, origin, directionSpec, hits.spec.dist);
-                hits.spec.isMiss = !hits.spec.isScreen;
+                hits.spec.is_screen = TraceRay_ScreenSpace(coord, origin, direction_spec, hits.spec.dist);
+                hits.spec.is_miss = !hits.spec.is_screen;
 
                 [[branch]]
-                if (hits.spec.isMiss)
+                if (hits.spec.is_miss)
                 {
-                    traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, directionSpec, PK_GI_RAY_TMAX, 0);
-                    hits.spec.isMiss = payload.HIT_DISTANCE == 0xFFFFFFFFu;
+                    traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction_spec, PK_GI_RAY_TMAX, 0);
+                    hits.spec.is_miss = payload.HIT_DISTANCE == 0xFFFFFFFFu;
                     hits.spec.dist = uintBitsToFloat(payload.HIT_DISTANCE);
                 }
             }
 
         {
-            hits.diff.isScreen = TraceRay_ScreenSpace(coord, origin, directionDiff, hits.diff.dist);
-            hits.diff.isMiss = !hits.diff.isScreen;
+            hits.diff.is_screen = TraceRay_ScreenSpace(coord, origin, direction_diff, hits.diff.dist);
+            hits.diff.is_miss = !hits.diff.is_screen;
 
             [[branch]]
-            if (hits.diff.isMiss)
+            if (hits.diff.is_miss)
             {
-                traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, directionDiff, PK_GI_RAY_TMAX, 0);
-                hits.diff.isMiss = payload.HIT_DISTANCE == 0xFFFFFFFFu;
+                traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction_diff, PK_GI_RAY_TMAX, 0);
+                hits.diff.is_miss = payload.HIT_DISTANCE == 0xFFFFFFFFu;
                 hits.diff.dist = uintBitsToFloat(payload.HIT_DISTANCE);
             }
         }
@@ -117,32 +117,32 @@ void MainRgs()
             if (normal_roughness.w < PK_GI_MAX_ROUGH_SPEC)
 #endif
             {
-                hits.spec.dist = hits.spec.isMiss ? uint16BitsToHalf(0x7C00us) : hits.spec.dist;
+                hits.spec.dist = hits.spec.is_miss ? uint16BitsToHalf(0x7C00us) : hits.spec.dist;
 
                 [[branch]]
-                if (!hits.spec.isScreen)
+                if (!hits.spec.is_screen)
                 {
-                    hits.spec.isScreen = GI_IsScreenHit(coord, origin + directionSpec * hits.spec.dist, hits.spec.isMiss);
+                    hits.spec.is_screen = GI_IsScreenHit(coord, origin + direction_spec * hits.spec.dist, hits.spec.is_miss);
                 }
             }
 
-            hits.diff.dist = hits.diff.isMiss ? uint16BitsToHalf(0x7C00us) : hits.diff.dist;
+            hits.diff.dist = hits.diff.is_miss ? uint16BitsToHalf(0x7C00us) : hits.diff.dist;
 
             [[branch]]
-            if (!hits.diff.isScreen)
+            if (!hits.diff.is_screen)
             {
-                hits.diff.isScreen = GI_IsScreenHit(coord, origin + directionDiff * hits.diff.dist, hits.diff.isMiss);
+                hits.diff.is_screen = GI_IsScreenHit(coord, origin + direction_diff * hits.diff.dist, hits.diff.is_miss);
             }
         }
 
-        hits.diffNormal = payload.HIT_NORMAL;
+        hits.diff_normal = payload.HIT_NORMAL;
         GI_Store_RayHits(coord_ray, hits);
     }
 }
 
 void MainRms()
 {
-    payload.HIT_NORMAL = EncodeOctaUV(-gl_WorldRayDirectionEXT);
+    payload.HIT_NORMAL = EncodeOctaUv2x16(-gl_WorldRayDirectionEXT);
     payload.HIT_DISTANCE = 0xFFFFFFFFu;
 }
 
@@ -162,6 +162,6 @@ void MainRchs()
         normal *= -1;
     }
 
-    payload.HIT_NORMAL = EncodeOctaUV(normal);
+    payload.HIT_NORMAL = EncodeOctaUv2x16(normal);
     payload.HIT_DISTANCE = floatBitsToUint(gl_HitTEXT);
 }

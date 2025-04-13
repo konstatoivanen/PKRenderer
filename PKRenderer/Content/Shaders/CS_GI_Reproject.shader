@@ -29,7 +29,7 @@ void main()
 
     // Far clip or new backbuffer
     [[branch]]
-    if (pk_FrameIndex.y != 0u && Test_DepthFar(depth))
+    if (pk_FrameIndex.y != 0u && Test_DepthIsScene(depth))
     {
         GIDiff diff = PK_GI_DIFF_ZERO;
         GISpec spec = PK_GI_SPEC_ZERO;
@@ -59,7 +59,7 @@ void main()
             // Reconstruct diff & naive spec
             {
                 const float2 k_R = GI_GetRoughnessWeightParams(roughness);
-                const float2 s_fcoord = GI_ViewToPrevScreenUV(view_pos);
+                const float2 s_fcoord = GI_ViewToPrevScreenUv(view_pos);
                 const int2   s_coord = int2(s_fcoord);
                 const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
 
@@ -67,8 +67,8 @@ void main()
                 weights *= exp(-abs(depth.xxxx - s_depths));
                 weights *= safePositiveRcp(dot(weights, 1.0f.xxxx));
                 weights *= float4(Test_DepthReproject(depth.xxxx, s_depths, depth_bias.xxxx));
-                weights *= float4(Test_DepthFar(s_depths));
-                weights *= float(Test_InUV(s_fcoord * pk_ScreenParams.zw));
+                weights *= float4(Test_DepthIsScene(s_depths));
+                weights *= float(Test_InUv(s_fcoord * pk_ScreenParams.zw));
 
                 [[loop]]
                 for (uint i = 0u; i < 4; ++i)
@@ -105,14 +105,14 @@ void main()
             {
                 const float  s_vdist = (spec.ao / wsum_spec) * PK_GI_RAY_TMAX * Futil_SpecularDominantFactor(nv, roughness);
                 const float2 k_R = GI_GetRoughnessWeightParams(roughness);
-                const float2 s_fcoord = GI_ViewToPrevScreenUV(view_pos + view_dir * s_vdist);
+                const float2 s_fcoord = GI_ViewToPrevScreenUv(view_pos + view_dir * s_vdist);
                 const int2   s_coord = int2(s_fcoord);
                 const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
 
                 float4 weights = GI_GetBilinearWeights(s_fcoord - s_coord);
                 weights *= 1.0f.xxxx / (1e-4f + abs(depth.xxxx - s_depths));
-                weights *= float4(Test_DepthFar(s_depths));
-                weights *= float(Test_InUV(s_fcoord * pk_ScreenParams.zw));
+                weights *= float4(Test_DepthIsScene(s_depths));
+                weights *= float(Test_InUv(s_fcoord * pk_ScreenParams.zw));
 
                 [[loop]]
                 for (uint i = 0u; i < 4; ++i)

@@ -30,6 +30,6 @@ void MainVs()
 void MainFs()
 {
     const float3 view_dir = normalize(vs_TEXCOORD0);
-    const float2 octa_uv = OctaUV(view_dir);
-    SV_Target0 = float4(SampleEnvironment(octa_uv, 0.0f), 1.0f);
+    const float2 octa_uv = EncodeOctaUv(view_dir);
+    SV_Target0 = float4(SceneEnv_Sample(octa_uv, 0.0f), 1.0f);
 }

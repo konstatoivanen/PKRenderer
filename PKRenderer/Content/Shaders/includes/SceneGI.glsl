@@ -67,7 +67,7 @@ PK_DECLARE_SET_SHADER uniform utexture2D pk_GI_ResolvedRead;
 //----------STRUCTS----------//
 struct GIDiff { SHLuma sh; float ao; float history; };
 struct GISpec { float3 radiance; float ao; float history; };
-struct GIResolved { SHLuma diffSH; float3 spec; float diffAO; float specAO; };
+struct GIResolved { SHLuma diffSH; float3 spec; float diff_ao; float spec_ao; };
 #define PK_GI_DIFF_ZERO GIDiff(pk_ZeroSHLuma, 0.0f, 0.0f)
 #define PK_GI_SPEC_ZERO GISpec(0.0f.xxx, 0.0f, 0.0f)
 
@@ -88,26 +88,26 @@ float GI_LogLuminance(const GIDiff a) { return log(1.0f + GI_Luminance(a)); }
 float GI_LogLuminance(const GISpec a) { return log(1.0f + GI_Luminance(a)); }
 float GI_MaxLuma(const GIDiff a, float alpha) { return GI_Luminance(a) + (PK_GI_MAX_LUMA_GAIN / (1.0f - alpha)); }
 float GI_MaxLuma(const GISpec a, float alpha) { return GI_Luminance(a) + (PK_GI_MAX_LUMA_GAIN / (1.0f - alpha)); }
-float GI_LumaScale(float luma, float maxLuma) { return (min(luma, maxLuma) + 1e-6f) / (luma + 1e-6f); }
-GIDiff GI_ClampLuma(GIDiff a, float maxLuma) { return GIDiff(SH_Scale(a.sh, GI_LumaScale(GI_Luminance(a), maxLuma)), a.ao, a.history); }
-GISpec GI_ClampLuma(GISpec a, float maxLuma) { return GISpec(a.radiance * GI_LumaScale(GI_Luminance(a), maxLuma), a.ao, a.history); }
+float GI_LumaScale(float luma, float max_luma) { return (min(luma, max_luma) + 1e-6f) / (luma + 1e-6f); }
+GIDiff GI_ClampLuma(GIDiff a, float max_luma) { return GIDiff(SH_Scale(a.sh, GI_LumaScale(GI_Luminance(a), max_luma)), a.ao, a.history); }
+GISpec GI_ClampLuma(GISpec a, float max_luma) { return GISpec(a.radiance * GI_LumaScale(GI_Luminance(a), max_luma), a.ao, a.history); }
 float GI_RoughSpecWeight(float roughness) { return smoothstep(PK_GI_MIN_ROUGH_SPEC, PK_GI_MAX_ROUGH_SPEC, roughness); }
 
 // A novel anti-firefly filter using subgroup intrisics.
 // This is a lot cheaper than the classic 3x3 filter but a bit less effective due to larger sample area.
 // @TODO this is not the best placement for this but its common across usages.
-#define GI_SUBGROUP_ANTIFIREFLY_MAXLUMA(condition, current, history, alpha, scale, outLumaMax)  \
-{                                                                                               \
-    const uint4 threadMask = subgroupBallot(condition);                                         \
-    const uint threadCount = max(1u, subgroupBallotBitCount(threadMask)) - 1u;                  \
-                                                                                                \
-    const float2 moments = make_moments(GI_Luminance(current));                                 \
-    const float2 momentsWave = (subgroupAdd(moments) - moments) / threadCount;                  \
-                                                                                                \
-    const float variance = pow(abs(momentsWave.y - pow2(momentsWave.x)), 0.25f);                \
-    outLumaMax = lerp(GI_Luminance(history), momentsWave.x, alpha) + variance * scale;          \
-}                                                                                               \
-                                                                                                \
+#define GI_SUBGROUP_ANTIFIREFLY_MAXLUMA(condition, current, history, alpha, scale, out_luma_max)  \
+{                                                                                                 \
+    const uint4 thread_mask = subgroupBallot(condition);                                          \
+    const uint thread_count = max(1u, subgroupBallotBitCount(thread_mask)) - 1u;                  \
+                                                                                                  \
+    const float2 moments = make_moments(GI_Luminance(current));                                   \
+    const float2 moments_wave = (subgroupAdd(moments) - moments) / thread_count;                  \
+                                                                                                  \
+    const float variance = pow(abs(moments_wave.y - pow2(moments_wave.x)), 0.25f);                \
+    out_luma_max = lerp(GI_Luminance(history), moments_wave.x, alpha) + variance * scale;         \
+}                                                                                                 \
+                                                                                                  \
 
 int2 GI_ExpandCheckerboardCoord(uint2 coord, uint offset)
 {
@@ -118,11 +118,11 @@ int2 GI_ExpandCheckerboardCoord(uint2 coord, uint offset)
     return int2(coord);
 }
 
-int2 GI_CollapseCheckerboardCoord(const float2 screenUV, const uint offset)
+int2 GI_CollapseCheckerboardCoord(const float2 fcoord, const uint offset)
 {
-    int2 coord = int2(screenUV);
+    int2 coord = int2(fcoord);
 #if defined(PK_GI_CHECKERBOARD_TRACE)
-    float2 ddxy = (screenUV - coord) - 0.5f.xx;
+    float2 ddxy = (fcoord - coord) - 0.5f.xx;
     int am = int(step(ddxy.x, ddxy.y));
     int2 xy = int2(am, 1 - am) * int2(sign(ddxy));
     coord += xy * int(checkerboard(uint2(coord), pk_FrameIndex.y + offset));
@@ -176,20 +176,20 @@ GIResolved GI_Load_Resolved(const float2 uv)
     resolved.diffSH.Y = unpackHalf4x16(packed.xy).xyz;
     resolved.diffSH.A = DecodeE5BGR9(packed.z);
     resolved.spec = DecodeE5BGR9(packed.w);
-    resolved.diffAO = uint(bitfieldExtract(packed.y, 16, 8)) / 255.0f;
-    resolved.specAO = uint(bitfieldExtract(packed.y, 24, 8)) / 255.0f;
+    resolved.diff_ao = uint(bitfieldExtract(packed.y, 16, 8)) / 255.0f;
+    resolved.spec_ao = uint(bitfieldExtract(packed.y, 24, 8)) / 255.0f;
     return resolved;
 }
 
 void GI_Store_Resolved(const int2 coord, const GIDiff diff, const GISpec spec)
 {
-    const float finalDiffAO = pow(diff.ao, PK_GI_AO_DIFF_POWER);
-    const float finalSpecAO = pow(spec.ao, PK_GI_AO_SPEC_POWER);
+    const float final_diff_ao = pow(diff.ao, PK_GI_AO_DIFF_POWER);
+    const float final_spec_ao = pow(spec.ao, PK_GI_AO_SPEC_POWER);
 
     uint4 packed;
     packed.xy = packHalf4x16(diff.sh.Y.xyzz);
-    packed.y = bitfieldInsert(packed.y, uint(saturate(finalDiffAO) * 255.0f + 0.5f), 16, 8);
-    packed.y = bitfieldInsert(packed.y, uint(saturate(finalSpecAO) * 255.0f + 0.5f), 24, 8);
+    packed.y = bitfieldInsert(packed.y, uint(saturate(final_diff_ao) * 255.0f + 0.5f), 16, 8);
+    packed.y = bitfieldInsert(packed.y, uint(saturate(final_spec_ao) * 255.0f + 0.5f), 24, 8);
     packed.z = EncodeE5BGR9(diff.sh.A);
     packed.w = EncodeE5BGR9(spec.radiance);
     imageStore(pk_GI_ResolvedWrite, coord, packed);

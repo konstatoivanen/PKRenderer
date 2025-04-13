@@ -16,15 +16,15 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHi
 {
     const float3 world_pos = origin + direction * hit.dist;
 
-    if (hit.isScreen)
+    if (hit.is_screen)
     {
-        float2 uv = WorldToClipUVPrev(world_pos);
+        float2 uv = WorldToClipUvPrev(world_pos);
         return SamplePreviousColor(uv);
     }
 
-    if (hit.isMiss)
+    if (hit.is_miss)
     {
-        return SampleEnvironment(OctaUV(direction), 0.0f);
+        return SceneEnv_Sample(EncodeOctaUv(direction), 0.0f);
     }
 
     const float4 voxel = GI_Load_Voxel(world_pos, PK_GI_GET_VX_MI_BIAS(hit.dist));
@@ -42,7 +42,7 @@ void main()
     uint2 packed_spec = uint2(0u);
 
     [[branch]]
-    if (Test_DepthFar(depth))
+    if (Test_DepthIsScene(depth))
     {
         const float4 normal_roughness = SampleWorldNormalRoughness(coord);
         const GIRayHits hits = GI_Load_RayHits(coord_ray);
@@ -50,7 +50,7 @@ void main()
         GI_LOAD_RAY_PARAMS(coord, coord_ray, depth, normal_roughness.xyz, normal_roughness.w)
 
         // Convert ray to unbiased space
-        const float3 hitpos = origin + directionDiff * lerp(hits.diff.dist, PK_GI_RAY_TMAX, hits.diff.isMiss);
+        const float3 hitpos = origin + direction_diff * lerp(hits.diff.dist, PK_GI_RAY_TMAX, hits.diff.is_miss);
         const float3 origin_unbiased = CoordToWorldPos(coord, depth);
         const float4 hitvec_unbiased = normalizeLength(hitpos - origin_unbiased);
         // assuming lambertian distribution
@@ -63,8 +63,8 @@ void main()
             hitvec_unbiased.xyz,
             hitvec_unbiased.w,
             inverse_pdf,
-            hits.diffNormal,
-            SampleRadiance(origin, directionDiff, hits.diff)
+            hits.diff_normal,
+            SampleRadiance(origin, direction_diff, hits.diff)
         );
 
 #if PK_GI_APPROX_ROUGH_SPEC == 1
@@ -73,8 +73,8 @@ void main()
 #endif
         {
             GISpec spec = PK_GI_SPEC_ZERO;
-            spec.radiance = SampleRadiance(origin, directionSpec, hits.spec);
-            spec.ao = hits.spec.isMiss ? 1.0f : saturate(hits.spec.dist / PK_GI_RAY_TMAX);
+            spec.radiance = SampleRadiance(origin, direction_spec, hits.spec);
+            spec.ao = hits.spec.is_miss ? 1.0f : saturate(hits.spec.dist / PK_GI_RAY_TMAX);
             spec.history = PK_GI_SPEC_MAX_HISTORY;
             packed_spec = GI_Pack_Spec(spec);
         }

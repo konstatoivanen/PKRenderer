@@ -49,19 +49,19 @@ float4 DecodeGBufferViewNR(const float4 encoded)
     return float4(fenc * sqrt(1 - f / 4), -(1 - f / 2), encoded.y);
 }
 
-float EncodeBiasedDepth(float clipDepth, float factor, float bias)
+float EncodeBiasedDepth(float clip_depth, float factor, float bias)
 {
-    const float viewDepth = ViewDepth(clipDepth);
+    const float view_depth = ViewDepth(clip_depth);
 
     bias *= 0.32f;
     bias *= exp(-factor * 0.5f);
-    bias /= clipDepth + 0.01f;
+    bias /= clip_depth + 0.01f;
 
-    const float viewDepthBiased = max(pk_ClipParams.x, viewDepth - bias);
-    float clipDepthBiased = ClipDepth(viewDepthBiased);
+    const float view_depth_biased = max(pk_ClipParams.x, view_depth - bias);
+    float clip_depth_biased = ClipDepth(view_depth_biased);
     // Only allow bias towards camera as forward bias will cause clipping issues.
     //return clipDepth;
-    return max(clipDepth, clipDepthBiased);
+    return max(clip_depth, clip_depth_biased);
 }
 
 float3 SamplePreviousColor(const float2 uv) { return GBUFFER_SAMPLE(pk_GB_Previous_Color, uv).rgb; }

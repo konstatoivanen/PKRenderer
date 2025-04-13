@@ -68,7 +68,7 @@ void main()
 
             const int2 s_coordFull = GI_ExpandCheckerboardCoord(s_coordCur, 1u);
             const float s_depth = SamplePreviousViewDepth(s_coordFull);
-            const float2 s_screenuv = ViewToClipUVPrev(CoordToViewPos(s_coordFull, s_depth)) * int2(pk_ScreenSize.xy);
+            const float2 s_screenuv = ViewToClipUvPrev(CoordToViewPos(s_coordFull, s_depth)) * int2(pk_ScreenSize.xy);
 
             const int2 s_coordPre = GI_CollapseCheckerboardCoord(s_screenuv, 1u);
             const float2 s_inputs = Gradient_Load_Input(s_coordPre);
@@ -85,7 +85,7 @@ void main()
     const float c_depth = SampleViewDepth(GI_ExpandCheckerboardCoord(coordCur));
     const float p_depth = SamplePreviousViewDepth(GI_ExpandCheckerboardCoord(coordPre, 1u));
 
-    if (Test_DepthReproject(c_depth, p_depth, 0.5f) || Test_DepthFar(c_depth) || inputs.y <= 0.0)
+    if (Test_DepthReproject(c_depth, p_depth, 0.5f) || Test_DepthIsScene(c_depth) || inputs.y <= 0.0)
     {
         Gradient_Store(coord, 1, Gradient(0.0f, 0xFFFFu));
         return;

@@ -25,7 +25,7 @@ void main()
     float3 view_pos = CoordToViewPos(coord, depth);
     float3 view_dir = normalize(view_pos);
 
-    const bool is_scene = Test_DepthFar(depth);
+    const bool is_scene = Test_DepthIsScene(depth);
 
     GIDiff diff = GI_Load_Diff(coord_base);
     GISpec spec = GI_Load_Spec(coord_base);

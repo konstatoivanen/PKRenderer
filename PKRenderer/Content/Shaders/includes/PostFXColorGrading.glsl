@@ -190,10 +190,10 @@ float3 ApplyColorGrading(float3 color)
     final = pk_CC_Gain.xyz * (pk_CC_Lift.xyz * (1.0 - final) + pow(final, pk_CC_Gamma.xyz));
 
     // Hue/saturation/value
-    float3 hsv = RGBToHSV(final);
+    float3 hsv = RgbToHsv(final);
     hsv.x = mod(hsv.x + pk_CC_HSV.x, 1.0);
     hsv.yz *= pk_CC_HSV.yz;
-    final = saturate(HSVToRGB(hsv));
+    final = saturate(HsvToRgb(hsv));
     
     // Vibrance
     const float sat = max(final.r, max(final.g, final.b)) - min(final.r, min(final.g, final.b));

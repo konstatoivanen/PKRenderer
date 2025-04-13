@@ -44,7 +44,7 @@ void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf)
     float4 waveb = float4(1, 1, 0.1f, 3);
     float4 wavec = float4(-1, 1, 0.2f, 5);
 
-    float3 grid_point = surf.worldpos.xyz;
+    float3 grid_point = surf.world_pos.xyz;
     float3 tangent = float3(1, 0, 0);
     float3 binormal = float3(0, 0, 1);
     float3 p = grid_point;
@@ -55,10 +55,10 @@ void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf)
 
     surf.normal = normalize(cross(binormal, tangent));
 
-    surf.worldpos.xyz = p;
+    surf.world_pos.xyz = p;
 
 #if defined(PK_META_PASS_GIVOXELIZE)
-    surf.worldpos.y -= 1.0f;
+    surf.world_pos.y -= 1.0f;
 #endif
 }
 
@@ -67,16 +67,16 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
     float origin_y = pk_ObjectToWorld[2].w;
 
     float3 noise;
-    noise.xy = NoiseCell(int2(surf.worldpos.xz * 8.0f + surf.worldpos.yy * 30.0f));
+    noise.xy = NoiseCell(int2(surf.world_pos.xz * 8.0f + surf.world_pos.yy * 30.0f));
     noise.z = 1.0f;
 
     surf.normal = normalize(SURF_MESH_NORMAL + noise * 0.15f);
 
-    float nv = saturate(1.0f - dot(surf.normal, surf.viewdir));
+    float nv = saturate(1.0f - dot(surf.normal, surf.view_dir));
 
     nv = pow4(nv);
 
-    float depth = unlerp_sat(origin_y - 1.0f, origin_y + 5.0f, surf.worldpos.y);
+    float depth = unlerp_sat(origin_y - 1.0f, origin_y + 5.0f, surf.world_pos.y);
 
     surf.albedo = lerp(float3(0, 0.01f, 0.02f), float3(0.3, 0.6, 1.0f), depth * depth);
     surf.albedo = lerp(surf.albedo, float3(0.25f, 0.5f, 0.8f), nv); //PK_ACCESS_INSTANCED_PROP(_Color).xyz;
@@ -87,6 +87,6 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
     surf.metallic = max(0.0f, noise.y * 0.5f);
     surf.roughness = max(0.0f, noise.x * 0.2f);
     surf.occlusion = 1.0f;
-    surf.clearCoatGloss = 0.5f;
-    surf.clearCoat = 1.0f;
+    surf.clear_coat_gloss = 0.5f;
+    surf.clear_coat = 1.0f;
 }

@@ -26,7 +26,7 @@ void main()
     const float2 uv = (coord + 0.5f.xx) / size;
 
     const float depth = SampleClipDepth(uv);
-    const float2 uv_previous = ClipToUVW(pk_ClipToPrevClip_NoJitter * float4(uv * 2 - 1, depth, 1)).xy;
+    const float2 uv_previous = ClipToUvw(pk_ClipToPrevClip_NoJitter * float4(uv * 2 - 1, depth, 1)).xy;
     const float2 motion = uv - uv_previous;
 
     const float k_sharpness = pk_TAA_Sharpness;

@@ -11,40 +11,41 @@ PK_DECLARE_SET_SHADER uniform sampler3D pk_GI_VolumeRead;
 
 //----------UTILITIES----------//
 float3 GI_VoxelToWorldSpace(int3 coord) { return coord * pk_GI_VoxelSize + pk_GI_VolumeST.xyz + pk_GI_VoxelSize * 0.5f; }
-int3   GI_WorldToVoxelSpace(float3 worldpos) { return int3((worldpos - pk_GI_VolumeST.xyz) * pk_GI_VolumeST.www); }
-float3 GI_QuantizeWorldToVoxelSpace(float3 worldpos) { return GI_VoxelToWorldSpace(GI_WorldToVoxelSpace(worldpos)); }
+int3   GI_WorldToVoxelSpace(float3 world_pos) { return int3((world_pos - pk_GI_VolumeST.xyz) * pk_GI_VolumeST.www); }
+float3 GI_QuantizeWorldToVoxelSpace(float3 world_pos) { return GI_VoxelToWorldSpace(GI_WorldToVoxelSpace(world_pos)); }
 float3 GI_GetVoxelTexelScale() { return pk_GI_VolumeST.www / textureSize(pk_GI_VolumeRead, 0).xyz; }
-float3 GI_WorldToVoxelUVW(float3 worldpos) { return ((worldpos - pk_GI_VolumeST.xyz) * pk_GI_VolumeST.www) / textureSize(pk_GI_VolumeRead, 0).xyz;  }
-float3 GI_WorldToVoxelUVWDiscrete(float3 worldpos) { return (GI_WorldToVoxelSpace(worldpos) + 0.5f.xxx) / textureSize(pk_GI_VolumeRead, 0).xyz;  }
-float3 GI_WorldToVoxelClipSpace(float3 worldpos) { return GI_WorldToVoxelUVW(worldpos) * 2.0f - 1.0f; }
-float4 GI_WorldToVoxelNDCSpace(float3 worldpos) 
+float3 GI_WorldToVoxelUvw(float3 world_pos) { return ((world_pos - pk_GI_VolumeST.xyz) * pk_GI_VolumeST.www) / textureSize(pk_GI_VolumeRead, 0).xyz;  }
+float3 GI_WorldToVoxelUvwDiscrete(float3 world_pos) { return (GI_WorldToVoxelSpace(world_pos) + 0.5f.xxx) / textureSize(pk_GI_VolumeRead, 0).xyz;  }
+float3 GI_WorldToVoxelClipSpace(float3 world_pos) { return GI_WorldToVoxelUvw(world_pos) * 2.0f - 1.0f; }
+float4 GI_WorldToVoxelNdcSpace(float3 world_pos) 
 { 
-    float3 clippos = GI_WorldToVoxelClipSpace(worldpos);
+    float3 clippos = GI_WorldToVoxelClipSpace(world_pos);
     return float4(clippos[pk_GI_VolumeSwizzle.x], clippos[pk_GI_VolumeSwizzle.y], clippos[pk_GI_VolumeSwizzle.z] * 0.5f + 0.5f, 1);
 }
-float3 GI_FragVoxelToWorldSpace(float3 fragCoord)
+float3 GI_FragVoxelToWorldSpace(float3 fcoord)
 {
-    fragCoord.z *= textureSize(pk_GI_VolumeRead, 0)[pk_GI_VolumeSwizzle.z];
-    float3 coord = fragCoord;
-    coord[pk_GI_VolumeSwizzle.x] = fragCoord.x;
-    coord[pk_GI_VolumeSwizzle.y] = fragCoord.y;
-    coord[pk_GI_VolumeSwizzle.z] = fragCoord.z;
+    fcoord.z *= textureSize(pk_GI_VolumeRead, 0)[pk_GI_VolumeSwizzle.z];
+    float3 coord = fcoord;
+    coord[pk_GI_VolumeSwizzle.x] = fcoord.x;
+    coord[pk_GI_VolumeSwizzle.y] = fcoord.y;
+    coord[pk_GI_VolumeSwizzle.z] = fcoord.z;
     return coord * pk_GI_VoxelSize + pk_GI_VolumeST.xyz;
 }
 
 //----------LOAD/STORE FUNCTIONS----------//
-float4 GI_Load_Voxel_UVW(const half3 uvw, float lvl) { return textureLod(pk_GI_VolumeRead, float3(uvw), lvl); }
-float4 GI_Load_Voxel(const float3 worldpos, float lvl) { return textureLod(pk_GI_VolumeRead, GI_WorldToVoxelUVW(worldpos), lvl); }
-float4 GI_Load_Voxel_Discrete(const float3 worldpos, float lvl) { return textureLod(pk_GI_VolumeRead, GI_WorldToVoxelUVWDiscrete(worldpos), lvl); }
-void GI_Store_Voxel(float3 worldpos, float4 color) 
+float4 GI_Load_Voxel_Uvw(const half3 uvw, float lvl) { return textureLod(pk_GI_VolumeRead, float3(uvw), lvl); }
+float4 GI_Load_Voxel(const float3 world_pos, float lvl) { return textureLod(pk_GI_VolumeRead, GI_WorldToVoxelUvw(world_pos), lvl); }
+float4 GI_Load_Voxel_Discrete(const float3 world_pos, float lvl) { return textureLod(pk_GI_VolumeRead, GI_WorldToVoxelUvwDiscrete(world_pos), lvl); }
+
+void GI_Store_Voxel(float3 world_pos, float4 color) 
 { 
-    int3 coord = GI_WorldToVoxelSpace(worldpos);
+    int3 coord = GI_WorldToVoxelSpace(world_pos);
     imageStore(pk_GI_VolumeMaskWrite, coord, uint4(1u));
     imageStore(pk_GI_VolumeWrite, coord, color); 
 }
 
 //----------PREDICATES----------//
-bool GI_Test_VX_HasValue(float3 worldposition) { return imageLoad(pk_GI_VolumeMaskWrite, GI_WorldToVoxelSpace(worldposition)).x != 0; }
+bool GI_Test_VX_HasValue(float3 world_pos) { return imageLoad(pk_GI_VolumeMaskWrite, GI_WorldToVoxelSpace(world_pos)).x != 0; }
 bool GI_Test_VX_Normal(float3 normal)
 {
     normal = abs(normal);
@@ -55,13 +56,13 @@ bool GI_Test_VX_Normal(float3 normal)
 half4 GI_SphereTrace_Diffuse(float3 position)
 {
     half4 C = 0.0hf.xxxx;
-    half3 uvw = half3(GI_WorldToVoxelUVW(position));
+    half3 uvw = half3(GI_WorldToVoxelUvw(position));
     half AO = 1.0hf;
 
     for (uint i = 0; i < PK_GI_VX_MIP_COUNT; ++i)
     {
         float level = i * 0.75f + 0.5f;
-        half4 V = half4(GI_Load_Voxel_UVW(uvw, level));
+        half4 V = half4(GI_Load_Voxel_Uvw(uvw, level));
         C += (1.0hf - C.a) * V;
         AO *= max(0.0hf, 1.0hf - V.a * (1.0hf + half(level) * 0.5hf));
     }

@@ -88,10 +88,10 @@ void main()
 
     const float4 uvminmax = saturate(float4(coord.xy, coord.xy + 1.0f) * LIGHT_TILE_SIZE_PX * pk_ScreenParams.zwzw);
 
-    const float3 min00 = UVToViewPos(uvminmax.xy, near);
-    const float3 max00 = UVToViewPos(uvminmax.xy, far);
-    const float3 min11 = UVToViewPos(uvminmax.zw, near);
-    const float3 max11 = UVToViewPos(uvminmax.zw, far);
+    const float3 min00 = UvToViewPos(uvminmax.xy, near);
+    const float3 max00 = UvToViewPos(uvminmax.xy, far);
+    const float3 min11 = UvToViewPos(uvminmax.zw, near);
+    const float3 max11 = UvToViewPos(uvminmax.zw, far);
 
     const float3 aabb_min = min(min(min00, max00), min(min11, max11));
     const float3 aabb_max = max(max(min00, max00), max(min11, max11));
@@ -112,7 +112,7 @@ void main()
 
         SharedLight light;
         light.position = WorldToViewPos(packed.LIGHT_POS);
-        light.direction = WorldToViewVec(DecodeOctaUV(packed.LIGHT_PACKED_DIRECTION));
+        light.direction = WorldToViewVec(DecodeOctaUv2x16(packed.LIGHT_PACKED_DIRECTION));
         light.radius = packed.LIGHT_RADIUS;
         light.angle = packed.LIGHT_ANGLE;
         light.type = packed.LIGHT_TYPE;

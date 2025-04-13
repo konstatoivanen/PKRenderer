@@ -15,17 +15,17 @@ float3 Bloom(float3 color, float2 uv)
     bloom += texture(pk_Bloom_Texture, uv + (float2(1, 0) - 0.5f.xx) * tx).rgb;
     bloom *= 0.25f;
 
-    float3 bloomLens = 0.0f.xxx;
-    bloomLens += textureLod(pk_Bloom_Texture, uv + (float2(0, 0) - 0.5f.xx) * tx * 8.0f, 3).rgb;
-    bloomLens += textureLod(pk_Bloom_Texture, uv + (float2(0, 1) - 0.5f.xx) * tx * 8.0f, 3).rgb;
-    bloomLens += textureLod(pk_Bloom_Texture, uv + (float2(1, 1) - 0.5f.xx) * tx * 8.0f, 3).rgb;
-    bloomLens += textureLod(pk_Bloom_Texture, uv + (float2(1, 0) - 0.5f.xx) * tx * 8.0f, 3).rgb;
-    bloomLens *= 0.25f;
+    float3 bloom_lens = 0.0f.xxx;
+    bloom_lens += textureLod(pk_Bloom_Texture, uv + (float2(0, 0) - 0.5f.xx) * tx * 8.0f, 3).rgb;
+    bloom_lens += textureLod(pk_Bloom_Texture, uv + (float2(0, 1) - 0.5f.xx) * tx * 8.0f, 3).rgb;
+    bloom_lens += textureLod(pk_Bloom_Texture, uv + (float2(1, 1) - 0.5f.xx) * tx * 8.0f, 3).rgb;
+    bloom_lens += textureLod(pk_Bloom_Texture, uv + (float2(1, 0) - 0.5f.xx) * tx * 8.0f, 3).rgb;
+    bloom_lens *= 0.25f;
 
-    const float lensdirt = texture(pk_Bloom_LensDirtTex, uv).r;
+    const float lens_dirt = texture(pk_Bloom_LensDirtTex, uv).r;
 
     color = lerp(color, bloom, pk_Bloom_Intensity.xxx);
-    color = lerp(color, bloomLens, lensdirt * pk_Bloom_DirtIntensity.xxx);
+    color = lerp(color, bloom_lens, lens_dirt * pk_Bloom_DirtIntensity.xxx);
 
     return color;
 }

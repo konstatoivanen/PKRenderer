@@ -18,22 +18,22 @@
 void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 {
     float height = SURF_TEX(_HeightMap, uv).x;
-    uv += SURF_MAKE_PARALLAX_OFFSET(height, _HeightAmount, surf.viewdir);
+    uv += SURF_MAKE_PARALLAX_OFFSET(height, _HeightAmount, surf.view_dir);
 
     //// GI color test code
-    //float lval = surf.worldpos.x * 0.025f + pk_Time.y * 0.25f;
+    //float lval = surf.world_pos.x * 0.025f + pk_Time.y * 0.25f;
     //lval -= floor(lval);
     //lval = 1.0f - lval;
     //lval -= 0.75f;
     //lval *= 4.0f;
     //lval = saturate(lval);
     //lval *= pow5(lval);
-    //float3 c = HSVToRGB(0.025f, 0.8f, lval * 20.0f);
+    //float3 c = HsvToRgb(0.025f, 0.8f, lval * 20.0f);
     //
     //surf.emission = texture(sampler2D(_EmissionTexture, pk_Sampler_SurfDefault), uv * 4.0f).xxx * c * _EmissionColor.rgb;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;
 
     /*
-        float lval = surf.worldpos.y * 2.0f - 0.01f;
+        float lval = surf.world_pos.y * 2.0f - 0.01f;
         lval -= floor(lval);
         lval = 1.0f - lval;
         lval -= 0.7f;
@@ -41,15 +41,15 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
         lval = saturate(lval);
         lval *= pow5(lval);
 
-        lval *= step(0.1f, surf.worldpos.z + 0.01f - floor(surf.worldpos.z + 0.01f));
+        lval *= step(0.1f, surf.world_pos.z + 0.01f - floor(surf.world_pos.z + 0.01f));
 
-        int2 offs = int2(GlobalNoiseBlue(int2(surf.worldpos.yx * 2 + 0.5f)).yz * 256.0f);
+        int2 offs = int2(GlobalNoiseBlue(int2(surf.world_pos.yx * 2 + 0.5f)).yz * 256.0f);
 
-        float3 noise0 = GlobalNoiseBlue(int2(surf.worldpos.xz * 0.5f + 0.75f) + int2(pk_Time.xy * 0.1f) + offs);
+        float3 noise0 = GlobalNoiseBlue(int2(surf.world_pos.xz * 0.5f + 0.75f) + int2(pk_Time.xy * 0.1f) + offs);
 
         lval *= step(0.6f, noise0.y);
 
-        float3 e = int3(GlobalNoiseBlue(int2(surf.worldpos.xz * 0.1f)) * 256.0f) / 256.0f;
+        float3 e = int3(GlobalNoiseBlue(int2(surf.world_pos.xz * 0.1f)) * 256.0f) / 256.0f;
 
         float3 c = float3(e.x * 0.1f + 0.5f, 1.0f - e.z * 0.5f, lval * noise0.x * 12.0f);
 
@@ -66,5 +66,5 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
     surf.occlusion = lerp(1.0f, pbs_texture_val.SRC_OCCLUSION, _Occlusion);
     surf.normal = SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
     surf.albedo = SURF_TEX(_AlbedoTexture, uv).rgb * _Color.xyz;
-    surf.depthBias = SURF_TEX(_HeightMap, uv).x * _HeightAmount;
+    surf.depth_bias = SURF_TEX(_HeightMap, uv).x * _HeightAmount;
 }

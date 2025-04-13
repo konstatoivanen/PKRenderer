@@ -6,8 +6,8 @@
                                                                                         \
     half4 TVolume##SAMPLER_TRICUBIC(float3 uvw)                                         \
     {                                                                                   \
-        half3 texSize = half3(TVolumeSize);                                             \
-        half3 coord = half3(uvw) * texSize - 0.5hf;                                     \
+        half3 tex_size = half3(TVolumeSize);                                            \
+        half3 coord = half3(uvw) * tex_size - 0.5hf;                                    \
         half3 index = floor(coord);                                                     \
         half3 fraction = coord - index;                                                 \
         half3 one_frac = 1.0hf - fraction;                                              \
@@ -17,7 +17,7 @@
         half3 w3 = 1.0hf / 6.0hf * fraction * fraction * fraction;                      \
         half3 g0 = w0 + w1;                                                             \
         half3 g1 = w2 + w3;                                                             \
-        half3 mult = 1.0hf / texSize;                                                   \
+        half3 mult = 1.0hf / tex_size;                                                  \
         half3 h0 = mult * ((w1 / g0) - 0.5hf + index);                                  \
         half3 h1 = mult * ((w3 / g1) + 1.5hf + index);                                  \
         half4 tex000 = half4(textureLod(TVolume, h0, 0.0));                             \

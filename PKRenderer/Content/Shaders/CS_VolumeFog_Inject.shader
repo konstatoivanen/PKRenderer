@@ -41,8 +41,8 @@ void main()
     }
 #endif
 
-    const float3 world_pos = UVToWorldPos(uvw_cur.xy, depth);
-    const float3 uvw_prev = Fog_WorldToPrevUVW(world_pos);
+    const float3 world_pos = UvToWorldPos(uvw_cur.xy, depth);
+    const float3 uvw_prev = Fog_WorldToPrevUvw(world_pos);
     const float3 view_dir = normalize(world_pos - pk_ViewWorldOrigin.xyz);
 
     const float3 gi_static = SampleEnvironmentSHVolumetric(view_dir, pk_Fog_Phase1);
@@ -64,14 +64,14 @@ void main()
     // This is incorrect for the dynamic component. However, it introduces good depth to the colors so whatever.
     value_cur *= Fog_EstimateTransmittance(uvw_cur, fade_static);
 
-    LightTile tile = Lights_GetTile_COORD(int2(gl_WorkGroupID.xy >> 1), depth);
+    LightTile tile = Lights_GetTile_Coord(int2(gl_WorkGroupID.xy >> 1), depth);
 
     for (uint i = tile.start; i < tile.end; ++i)
     {
         // @TODO current 1spp shadow test for fog is prone to banding. implement better filter.
         LightSample light = Lights_SampleTiled(i, world_pos, shadow_bias, tile.cascade);
 
-        const float march_distance = min(light.linearDistance, march_distance_max);
+        const float march_distance = min(light.linear_distance, march_distance_max);
         light.color *= Fog_MarchTransmittance(world_pos, light.direction, dither.y, march_distance, fade_static);
         light.shadow = lerp(1.0f, light.shadow, fade_static);
 

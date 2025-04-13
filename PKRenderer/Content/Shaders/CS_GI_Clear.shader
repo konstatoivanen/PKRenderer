@@ -8,9 +8,9 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 void main()
 {
     const float3 world_position = GI_VoxelToWorldSpace(int3(gl_GlobalInvocationID));
-    const float3 clip_uvw = WorldToClipUVW(world_position);
+    const float3 clip_uvw = WorldToClipUvw(world_position);
 
-    if (!Test_InUVW(clip_uvw))
+    if (!Test_InUvw(clip_uvw))
     {
         return;
     }

@@ -28,26 +28,26 @@ float DoF_GetFocusDepth()
     return PK_VARIABLE_DATA(pk_DoF_AutoFocusState).focus_depth;  
 }
 
-float DoF_GetCircleOfConfusion01(float viewDepth)
+float DoF_GetCircleOfConfusion01(float view_depth)
 {
     DoFAutoFocusState state = PK_VARIABLE_DATA(pk_DoF_AutoFocusState);
-    return min(1.0f, abs(viewDepth - state.focus_depth) * state.lens_coefficient / viewDepth / pk_DoF_MaximumCoC);
+    return min(1.0f, abs(view_depth - state.focus_depth) * state.lens_coefficient / view_depth / pk_DoF_MaximumCoC);
 }
 
-float4 DoF_GetCirclesOfConfusion01(float4 viewDepths)
+float4 DoF_GetCirclesOfConfusion01(float4 view_depths)
 {
     DoFAutoFocusState state = PK_VARIABLE_DATA(pk_DoF_AutoFocusState);
-    return min(float4(1.0f), abs(viewDepths - state.focus_depth) * state.lens_coefficient / viewDepths / pk_DoF_MaximumCoC);
+    return min(float4(1.0f), abs(view_depths - state.focus_depth) * state.lens_coefficient / view_depths / pk_DoF_MaximumCoC);
 }
 
-float DoF_GetCircleOfConfusion(float viewDepth)
+float DoF_GetCircleOfConfusion(float view_depth)
 {
     DoFAutoFocusState state = PK_VARIABLE_DATA(pk_DoF_AutoFocusState);
-    return clamp((viewDepth - state.focus_depth) * state.lens_coefficient / viewDepth, -pk_DoF_MaximumCoC, pk_DoF_MaximumCoC);
+    return clamp((view_depth - state.focus_depth) * state.lens_coefficient / view_depth, -pk_DoF_MaximumCoC, pk_DoF_MaximumCoC);
 }
 
-float4 DoF_GetCirclesOfConfusion(float4 viewDepths)
+float4 DoF_GetCirclesOfConfusion(float4 view_depths)
 {
     DoFAutoFocusState state = PK_VARIABLE_DATA(pk_DoF_AutoFocusState);
-    return clamp((viewDepths - state.focus_depth) * state.lens_coefficient / viewDepths, -pk_DoF_MaximumCoC, pk_DoF_MaximumCoC);
+    return clamp((view_depths - state.focus_depth) * state.lens_coefficient / view_depths, -pk_DoF_MaximumCoC, pk_DoF_MaximumCoC);
 }

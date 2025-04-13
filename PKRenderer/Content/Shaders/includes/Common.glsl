@@ -130,9 +130,9 @@ PK_DECLARE_SET_GLOBAL uniform sampler pk_Sampler_GBuffer;
 PK_DECLARE_SET_GLOBAL uniform sampler pk_Sampler_GUI;
 PK_DECLARE_SET_PASS uniform sampler pk_Sampler_SurfDefault;
 
-uint GetShadowCascadeIndex(float viewDepth)
+uint GetShadowCascadeIndex(float view_depth)
 {
-    uint3 mask = uint3(greaterThan(viewDepth.xxx, pk_ShadowCascadeZSplits.xyz));
+    uint3 mask = uint3(greaterThan(view_depth.xxx, pk_ShadowCascadeZSplits.xyz));
     return mask.x + mask.y + mask.z;
 }
 
@@ -147,8 +147,8 @@ float2 ViewDepthExp(const float2 clip_z)  { return pk_ClipParams.x * pow(pk_Clip
 float  ClipDepthExp(const float view_z)   { return log2(view_z) * pk_ClipParamsExp.x + pk_ClipParamsExp.y; }
 float2 ClipDepthExp(const float2 view_z)  { return log2(view_z) * pk_ClipParamsExp.x + pk_ClipParamsExp.y; }
 
-float3 ClipToUVW(const float4 clip) { return fma(clip.xyz / clip.w, float3(0.5f.xx, 1.0f), float3(0.5f.xx, 0.0f)); }
-float2 ClipToUV(const float3 clipxyw) { return fma(clipxyw.xy / clipxyw.z, 0.5f.xx, 0.5f.xx); }
+float3 ClipToUvw(const float4 clip) { return fma(clip.xyz / clip.w, float3(0.5f.xx, 1.0f), float3(0.5f.xx, 0.0f)); }
+float2 ClipToUv(const float3 clip_xyw) { return fma(clip_xyw.xy / clip_xyw.z, 0.5f.xx, 0.5f.xx); }
 
 float4 ViewToClipPos(const float3 pos) { return pk_ViewToClip * float4(pos, 1.0f); }
 float4 ViewToClipPosPrev(const float3 pos) { return pk_ViewToPrevClip * float4(pos, 1.0f); }
@@ -156,19 +156,19 @@ float4 ViewToClipVec(const float3 vec) { return pk_ViewToClip * float4(vec, 0.0f
 float3 ViewToWorldPos(const float3 pos) { return float4(pos, 1.0f) * pk_ViewToWorld; }
 float3 ViewToWorldPosPrev(const float3 pos) { return float4(pos, 1.0f) * pk_ViewToWorldPrev; }
 float3 ViewToWorldVec(const float3 vec) { return vec * float3x3(pk_ViewToWorld); }
-float2 ViewToClipUV(const float3 viewpos) { return ClipToUV(ViewToClipPos(viewpos).xyw); }
-float2 ViewToClipUVPrev(const float3 viewpos) { return ClipToUV(ViewToClipPosPrev(viewpos).xyw); }
-float3 ViewToClipUVW(const float3 viewpos) { return ClipToUVW(ViewToClipPos(viewpos)); }
-float3 ViewToClipUVWPrev(const float3 viewpos) { return ClipToUVW(ViewToClipPosPrev(viewpos)); }
+float2 ViewToClipUv(const float3 pos) { return ClipToUv(ViewToClipPos(pos).xyw); }
+float2 ViewToClipUvPrev(const float3 pos) { return ClipToUv(ViewToClipPosPrev(pos).xyw); }
+float3 ViewToClipUvw(const float3 pos) { return ClipToUvw(ViewToClipPos(pos)); }
+float3 ViewToClipUvwPrev(const float3 pos) { return ClipToUvw(ViewToClipPosPrev(pos)); }
 
 float3 WorldToViewPos(const float3 pos) { return float4(pos, 1.0f) * pk_WorldToView; }
 float3 WorldToViewVec(const float3 vec) { return vec * float3x3(pk_WorldToView); }
 float4 WorldToClipPos(const float3 pos) { return pk_WorldToClip * float4(pos, 1.0f); }
 float4 WorldToClipPosPrev(const float3 pos) { return pk_WorldToClipPrev * float4(pos, 1.0f); }
 float4 WorldToClipVec(const float3 vec) { return pk_WorldToClip * float4(vec, 0.0f); }
-float3 WorldToClipUVW(const float3 worldpos) { return ClipToUVW(WorldToClipPos(worldpos)); }
-float2 WorldToClipUVPrev(const float3 viewpos) { return ClipToUV(WorldToClipPosPrev(viewpos).xyw); }
-float3 WorldToClipUVWPrev(const float3 viewpos) { return ClipToUVW(WorldToClipPosPrev(viewpos)); }
+float3 WorldToClipUvw(const float3 pos) { return ClipToUvw(WorldToClipPos(pos)); }
+float2 WorldToClipUvPrev(const float3 pos) { return ClipToUv(WorldToClipPosPrev(pos).xyw); }
+float3 WorldToClipUvwPrev(const float3 pos) { return ClipToUvw(WorldToClipPosPrev(pos)); }
 
 float3 ObjectToWorldPos(const float3 pos) { return float4(pos, 1.0f) * pk_ObjectToWorld; }
 float3 ObjectToWorldVec(const float3 vec) { return vec * float3x3(pk_ObjectToWorld); }
@@ -176,24 +176,24 @@ float3 ObjectToViewPos(const float3 pos) { return WorldToViewPos(ObjectToWorldPo
 float3 ObjectToViewVec(const float3 vec) { return WorldToViewVec(ObjectToWorldVec(vec)); }
 float4 ObjectToClipPos(const float3 pos) { return pk_WorldToClip * float4(ObjectToWorldPos(pos), 1.0f); }
 
-float3 UVToViewPos(const float2 uv, float viewDepth) { return float3((uv * 2.0f - 1.0f) * pk_ClipParamsInv.xy, 1.0f) * viewDepth; }
-float3 UVToViewDir(const float2 uv) { return normalize(UVToViewPos(uv, 1.0f)); }
-float3 UVToWorldPos(const float2 uv, float viewDepth) { return ViewToWorldPos(UVToViewPos(uv, viewDepth)); }
+float3 UvToViewPos(const float2 uv, float view_depth) { return float3((uv * 2.0f - 1.0f) * pk_ClipParamsInv.xy, 1.0f) * view_depth; }
+float3 UvToViewDir(const float2 uv) { return normalize(UvToViewPos(uv, 1.0f)); }
+float3 UvToWorldPos(const float2 uv, float view_depth) { return ViewToWorldPos(UvToViewPos(uv, view_depth)); }
 
-float3 CoordToViewPos(const int2 coord, const float viewDepth) { return UVToViewPos((coord + 0.5f.xx) * pk_ScreenParams.zw, viewDepth); }
-float3 CoordToWorldPos(const int2 coord, const float viewDepth) { return ViewToWorldPos(CoordToViewPos(coord, viewDepth)); }
-float3 CoordToWorldPosPrev(const int2 coord, const float viewDepth) { return ViewToWorldPosPrev(CoordToViewPos(coord, viewDepth)); }
+float3 CoordToViewPos(const int2 coord, const float view_depth) { return UvToViewPos((coord + 0.5f.xx) * pk_ScreenParams.zw, view_depth); }
+float3 CoordToWorldPos(const int2 coord, const float view_depth) { return ViewToWorldPos(CoordToViewPos(coord, view_depth)); }
+float3 CoordToWorldPosPrev(const int2 coord, const float view_depth) { return ViewToWorldPosPrev(CoordToViewPos(coord, view_depth)); }
 
-float2 ClampUVScreenBorder(const float2 uv) { return clamp(uv, 0.5f * pk_ScreenParams.zw, 1.0f.xx - pk_ScreenParams.zw * 0.5f); }
+float2 ClampBilinearViewUv(const float2 uv) { return clamp(uv, 0.5f * pk_ScreenParams.zw, 1.0f.xx - pk_ScreenParams.zw * 0.5f); }
 
 //----------TESTS----------//
-bool4 Test_DepthFar(const float4 depth) { return lessThan(depth, pk_ClipParams.yyyy - 1e-2f); }
+bool4 Test_DepthIsScene(const float4 depth) { return lessThan(depth, pk_ClipParams.yyyy - 1e-2f); }
 bool4 Test_DepthReproject(const float4 z, const float4 zprev, const float4 bias) { return lessThan(abs(z - zprev - pk_ViewSpaceCameraDelta.zzzz) / z, bias); }
-bool Test_DepthFar(const float depth) { return depth < (pk_ClipParams.y - 1e-2f); }
-bool Test_DepthReproject(const float z, const float zprev, const float bias) { return Test_DepthFar(zprev) && (abs(z - zprev - pk_ViewSpaceCameraDelta.z) / z) < bias; }
-bool Test_DepthSurface(const float z0, const float z1, const float bias) { return Test_DepthFar(z1) && (abs(z0 - z1 ) / z0) < bias; }
-bool Test_InUV(float2 uv) { return All_Equal(saturate( uv ), uv); }
-bool Test_InUVW(float3 uv) { return All_Equal(saturate( uv ), uv); }
+bool Test_DepthIsScene(const float depth) { return depth < (pk_ClipParams.y - 1e-2f); }
+bool Test_DepthReproject(const float z, const float zprev, const float bias) { return Test_DepthIsScene(zprev) && (abs(z - zprev - pk_ViewSpaceCameraDelta.z) / z) < bias; }
+bool Test_DepthSurface(const float z0, const float z1, const float bias) { return Test_DepthIsScene(z1) && (abs(z0 - z1 ) / z0) < bias; }
+bool Test_InUv(float2 uv) { return All_Equal(saturate( uv ), uv); }
+bool Test_InUvw(float3 uv) { return All_Equal(saturate( uv ), uv); }
 bool Test_InScreen(int2 coord) { return All_InArea(coord, int2(0), int2(pk_ScreenSize.xy)); }
 #define ReplaceIfResized(v, r) (pk_FrameIndex.y == 0u? r : v)
 

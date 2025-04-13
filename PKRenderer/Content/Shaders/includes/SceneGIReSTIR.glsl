@@ -11,8 +11,8 @@ struct Reservoir
     float3 position; 
     float3 normal; 
     float3 radiance; 
-    float targetPdf; 
-    float weightSum; 
+    float target_pdf; 
+    float weight_sum; 
     uint M;
 };
 
@@ -60,7 +60,7 @@ uint ReSTIR_Hash(uint seed)
 // Stride seed by max number of contiguous offsets in restir pass
 // Wellons hash works well for low entropy input. 
 // By striding the seed we get different values for pixels while keeping low entropy input.
-uint ReSTIR_GetSeed(int2 baseCoord) { return ZCurveToIndex2D(baseCoord) * RESTIR_SEED_STRIDE + pk_FrameRandom.x; }
+uint ReSTIR_GetSeed(int2 coord_base) { return ZCurveToIndex2D(coord_base) * RESTIR_SEED_STRIDE + pk_FrameRandom.x; }
 
 int2 ReSTIR_PermutationSampling(int2 coord, bool mask)
 {
@@ -94,69 +94,73 @@ bool ReSTIR_NearFieldReject(const float depth, const float3 origin, const Reserv
     return (dot(vec, vec) / pow2(range)) < random;
 }
 
-float ReSTIR_GetTargetPdf(const Reservoir r) { return dot(PK_LUMA_BT709, r.radiance); }
-float ReSTIR_GetSampleWeight(const Reservoir r, const float3 n, const float3 d) 
+float ReSTIR_GetTargetPdf(const Reservoir r) 
 { 
-    return safePositiveRcp(r.targetPdf) * (r.weightSum / max(1, r.M)); 
+    return dot(PK_LUMA_BT709, r.radiance); 
 }
 
-float ReSTIR_GetJacobian(const float3 posCenter, const float3 posSample, const Reservoir r)
+float ReSTIR_GetSampleWeight(const Reservoir r, const float3 n, const float3 d) 
+{ 
+    return safePositiveRcp(r.target_pdf) * (r.weight_sum / max(1, r.M)); 
+}
+
+float ReSTIR_GetJacobian(const float3 pos_center, const float3 pos_sample, const Reservoir r)
 {
-    const float4 centervec = normalizeLength(posCenter - r.position);
-    const float4 samplevec = normalizeLength(posSample - r.position);
-    const float cosCenter = saturate(dot(r.normal, centervec.xyz));
-    const float cosSample = saturate(dot(r.normal, samplevec.xyz));
-    const float jacobian = (cosCenter * pow2(samplevec.w)) / (cosSample * pow2(centervec.w));
+    const float4 vec_center = normalizeLength(pos_center - r.position);
+    const float4 vec_sample = normalizeLength(pos_sample - r.position);
+    const float cos_senter = saturate(dot(r.normal, vec_center.xyz));
+    const float cos_sample = saturate(dot(r.normal, vec_sample.xyz));
+    const float jacobian = (cos_senter * pow2(vec_sample.w)) / (cos_sample * pow2(vec_center.w));
     return lerp(jacobian, 0.0f, isinf(jacobian) || isnan(jacobian));
 }
 
-float ReSTIR_GetTargetPdfNewSurf(const float3 posCenter, const float3 normalCenter, const float3 posSample, const Reservoir r)
+float ReSTIR_GetTargetPdfNewSurf(const float3 pos_center, const float3 nor_center, const float3 pos_sample, const Reservoir r)
 {
-    const float3 directionSample = normalize(r.position - posCenter);
+    const float3 direction_sample = normalize(r.position - pos_center);
     return ReSTIR_GetTargetPdf(r) *
-           ReSTIR_GetJacobian(posCenter, posSample, r) *
+           ReSTIR_GetJacobian(pos_center, pos_sample, r) *
            // @TODO Why was this here again. seems diffuse specific. 
            // Significantly reduces noise but introduces some bias. hmm.
-           PK_PI * max(0.0f, dot(normalCenter, directionSample));
+           PK_PI * max(0.0f, dot(nor_center, direction_sample));
 }
 
 
-void ReSTIR_Normalize(inout Reservoir r, uint maxM)
+void ReSTIR_Normalize(inout Reservoir r, uint max_m)
 {
-    r.weightSum /= max(r.M, 1);
-    r.M = min(r.M, maxM);
-    r.weightSum *= r.M;
+    r.weight_sum /= max(r.M, 1);
+    r.M = min(r.M, max_m);
+    r.weight_sum *= r.M;
 }
 
-void ReSTIR_CombineReservoir(inout Reservoir combined, const Reservoir b, float targetPdf, uint hash)
+void ReSTIR_CombineReservoir(inout Reservoir combined, const Reservoir b, float target_pdf, uint hash)
 {
     const float random = make_unorm(hash);
-    const float weight = targetPdf * safePositiveRcp(b.targetPdf) * b.weightSum;
+    const float weight = target_pdf * safePositiveRcp(b.target_pdf) * b.weight_sum;
     
-    combined.weightSum += weight;
-    combined.M += lerp(0u, b.M, targetPdf > 0.0f);
+    combined.weight_sum += weight;
+    combined.M += lerp(0u, b.M, target_pdf > 0.0f);
 
-    if (random * combined.weightSum < weight)
+    if (random * combined.weight_sum < weight)
     {
         combined.position = b.position;
         combined.normal = b.normal;
         combined.radiance = b.radiance;
-        combined.targetPdf = targetPdf;
+        combined.target_pdf = target_pdf;
     }
 }
 
 void ReSTIR_CombineReservoirSimple(inout Reservoir combined, const Reservoir b, uint hash)
 {
     const float random = make_unorm(hash);
-    combined.weightSum += b.weightSum;
+    combined.weight_sum += b.weight_sum;
     combined.M += b.M; 
 
-    if (random * combined.weightSum < b.weightSum)
+    if (random * combined.weight_sum < b.weight_sum)
     {
         combined.position = b.position;
         combined.normal = b.normal;
         combined.radiance = b.radiance;
-        combined.targetPdf = b.targetPdf;
+        combined.target_pdf = b.target_pdf;
     }
 }
 
@@ -169,16 +173,16 @@ void ReSTIR_StoreZero(const int2 coord)
 void ReSTIR_Store_Current(const int2 coord, const Reservoir r)
 {
     uint4 packed0;
-    const float3 viewpos = WorldToViewPos(r.position);
-    packed0.x = packHalf2x16(viewpos.xy);
-    packed0.y = floatBitsToUint(viewpos.z);
-    packed0.z = EncodeOctaUV(r.normal);
+    const float3 view_pos = WorldToViewPos(r.position);
+    packed0.x = packHalf2x16(view_pos.xy);
+    packed0.y = floatBitsToUint(view_pos.z);
+    packed0.z = EncodeOctaUv2x16(r.normal);
     packed0.w = EncodeE5BGR9(r.radiance);
     imageStore(pk_Reservoirs0, int3(coord, RESTIR_LAYER_CUR), packed0);
 
     uint2 packed1;
-    packed1.x = floatBitsToUint(r.weightSum);
-    packed1.y = packHalf2x16(r.targetPdf.xx) & 0xFFFFu;
+    packed1.x = floatBitsToUint(r.weight_sum);
+    packed1.y = packHalf2x16(r.target_pdf.xx) & 0xFFFFu;
     packed1.y |= r.M << 16u; 
     imageStore(pk_Reservoirs1, int3(coord, RESTIR_LAYER_CUR), packed1.xyxy);
 }
@@ -188,23 +192,23 @@ Reservoir ReSTIR_Load_Previous(const int2 coord)
     Reservoir r;
 
     const uint4 packed0 = imageLoad(pk_Reservoirs0, int3(coord, RESTIR_LAYER_PRE));
-    const float3 viewpos = float3(unpackHalf2x16(packed0.x), uintBitsToFloat(packed0.y));
-    r.position = ViewToWorldPosPrev(viewpos);
-    r.normal = DecodeOctaUV(packed0.z);
+    const float3 view_pos = float3(unpackHalf2x16(packed0.x), uintBitsToFloat(packed0.y));
+    r.position = ViewToWorldPosPrev(view_pos);
+    r.normal = DecodeOctaUv2x16(packed0.z);
     r.radiance = DecodeE5BGR9(packed0.w);
 
     const uint2 packed1 = imageLoad(pk_Reservoirs1, int3(coord, RESTIR_LAYER_PRE)).xy;
-    r.weightSum = uintBitsToFloat(packed1.x);
-    r.targetPdf = unpackHalf2x16(packed1.y).x;
+    r.weight_sum = uintBitsToFloat(packed1.x);
+    r.target_pdf = unpackHalf2x16(packed1.y).x;
     r.M = packed1.y >> 16u;
     return r;
 }
 
-uint4 ReSTIR_Pack_Hit(const float3 direction, const float hitDist, const float inversePdf, const uint hitNormal, const float3 radiance)
+uint4 ReSTIR_Pack_Hit(const float3 direction, const float hit_t, const float inverse_pdf, const uint hit_normal, const float3 radiance)
 {
     uint4 packed;
-    packed.xy = packHalf4x16(float4(direction.xyz * hitDist, inversePdf));
-    packed.z = hitNormal;
+    packed.xy = packHalf4x16(float4(direction.xyz * hit_t, inverse_pdf));
+    packed.z = hit_normal;
     packed.w = EncodeE5BGR9(radiance);
     return packed;
 }
@@ -214,10 +218,10 @@ Reservoir ReSTIR_Unpack_Hit(const uint4 packed, const float3 origin)
     const float4 offset_invPdf = unpackHalf4x16(packed.xy);
     Reservoir r = RESTIR_RESERVOIR_ZERO;
     r.position = origin + offset_invPdf.xyz;
-    r.normal = DecodeOctaUV(packed.z);
+    r.normal = DecodeOctaUv2x16(packed.z);
     r.radiance = DecodeE5BGR9(packed.w);
-    r.targetPdf = ReSTIR_GetTargetPdf(r);
-    r.weightSum = r.targetPdf * offset_invPdf.w; 
+    r.target_pdf = ReSTIR_GetTargetPdf(r);
+    r.weight_sum = r.target_pdf * offset_invPdf.w; 
     r.M = 1u;
     return r;
 }

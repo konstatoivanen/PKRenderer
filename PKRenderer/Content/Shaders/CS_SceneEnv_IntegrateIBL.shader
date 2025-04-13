@@ -40,7 +40,7 @@ void main()
     for (uint xx = 0u; xx < 2u; ++xx)
     {
         const float2 uv = (coord * 2 + int2(xx, yy) + 0.5f.xx) * texel_size;
-        const float3 view_dir = OctaDecode(uv);
+        const float3 view_dir = DecodeOctaUv(uv);
 
         float3 irrad, trans;
         Fog_SampleStatic(pk_Origin.xyz, view_dir, PK_STATIC_FOG_VIRTUAL_DISTANCE, irrad, trans);

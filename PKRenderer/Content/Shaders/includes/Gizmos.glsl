@@ -26,14 +26,14 @@ void Gizmos_DrawWorldRay(float3 origin, float3 vector, float4 color)
     Gizmos_DrawWorldLine(origin, origin + vector, color);
 }
 
-void Gizmos_DrawClipUVWLine(float3 start, float3 end, float4 color)
+void Gizmos_DrawClipUvwLine(float3 start, float3 end, float4 color)
 {
-    const float3 p0 = UVToWorldPos(start.xy, start.z);
-    const float3 p1 = UVToWorldPos(end.xy, end.z);
+    const float3 p0 = UvToWorldPos(start.xy, start.z);
+    const float3 p1 = UvToWorldPos(end.xy, end.z);
     Gizmos_DrawWorldLine(p0, p1, color);
 }
 
-void Gizmos_DrawClipUVWRay(float3 origin, float3 vector, float4 color)
+void Gizmos_DrawClipUvwRay(float3 origin, float3 vector, float4 color)
 {
-    Gizmos_DrawClipUVWLine(origin, origin + vector, color);
+    Gizmos_DrawClipUvwLine(origin, origin + vector, color);
 }

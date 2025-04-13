@@ -31,7 +31,7 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
 
     // Temporal Resampling
     {
-        const float2 fcoord_prev = WorldToClipUVPrev(origin) * int2(pk_ScreenSize.xy) + RESTIR_TEXEL_BIAS;
+        const float2 fcoord_prev = WorldToClipUvPrev(origin) * int2(pk_ScreenSize.xy) + RESTIR_TEXEL_BIAS;
         const int2 coord_prev = GI_CollapseCheckerboardCoord(fcoord_prev, 1u);
 
         const uint hash = ReSTIR_Hash(seed++);
@@ -105,8 +105,8 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
         suffled.radiance = subgroupShuffle(combined.radiance, shuffle_id);
         suffled.position = subgroupShuffle(combined.position, shuffle_id);
         suffled.normal = subgroupShuffle(combined.normal, shuffle_id);
-        suffled.targetPdf = subgroupShuffle(combined.targetPdf, shuffle_id);
-        suffled.weightSum = subgroupShuffle(combined.weightSum, shuffle_id);
+        suffled.target_pdf = subgroupShuffle(combined.target_pdf, shuffle_id);
+        suffled.weight_sum = subgroupShuffle(combined.weight_sum, shuffle_id);
         suffled.M = subgroupShuffle(combined.M, shuffle_id);
 
         const float s_depth = subgroupShuffle(depth, shuffle_id);
@@ -125,7 +125,7 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
     bool is_boiling;
     {
         const float filter_strength = 0.2f;
-        const float reservoir_weight = combined.targetPdf * combined.weightSum;
+        const float reservoir_weight = combined.target_pdf * combined.weight_sum;
         const float filter_multiplier = 10.f / clamp(filter_strength, 1e-6, 1.0) - 9.0f;
 
         const uint thread = gl_LocalInvocationID.x + gl_LocalInvocationID.y * BOIL_FLT_GROUP_SIZE;
@@ -187,7 +187,7 @@ void main()
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(coord_base));
     const float4 normal_roughness = SampleViewNormalRoughness(coord);
     const float depth = PK_GI_SAMPLE_DEPTH(coord);
-    const bool is_scene = Test_DepthFar(depth);
+    const bool is_scene = Test_DepthIsScene(depth);
 
     // Diffuse 
     {

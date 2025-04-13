@@ -17,7 +17,7 @@
 
 void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 {
-    //uv += PK_SURF_SAMPLE_PARALLAX_OFFSET(_HeightMap, _HeightAmount, uv, surf.viewdir);
+    //uv += PK_SURF_SAMPLE_PARALLAX_OFFSET(_HeightMap, _HeightAmount, uv, surf.view_dir);
     float3 pbs_texture_val = SURF_TEX(_PBSTexture, uv).xyz;
     surf.roughness = pbs_texture_val.SRC_ROUGHNESS * _Roughness;
     surf.occlusion = lerp(1.0f, pbs_texture_val.SRC_OCCLUSION, _Occlusion);

@@ -12,20 +12,20 @@ PK_DECLARE_SET_PASS uniform sampler2D pk_ShadowmapScreenSpace;
 #define SHADOW_SIZE textureSize(pk_ShadowmapAtlas, 0)
 
 //Source: http://the-witness.net/news/2013/09/shadow-mapping-summary-part-1/
-float2 Shadow_GetBiasFactors(const float3 N, const float3 L)
+float2 Shadow_GetBiasFactors(const float3 normal, const float3 light_direction)
 {
-    const float cosa = saturate(dot(N, L));
-    const float scaleN = sqrt(1.0f - pow2(cosa));
-    const float scaleL = scaleN / (1e-4f + cosa);
-    return float2(scaleN, min(2.0f, scaleL));
+    const float cosa = saturate(dot(normal, light_direction));
+    const float scale_n = sqrt(1.0f - pow2(cosa));
+    const float scale_l = scale_n / (1e-4f + cosa);
+    return float2(scale_n, min(2.0f, scale_l));
 }
 
 half2 Shadow_GatherMax(const uint index, const float2 uv, const float z)
 {
     const float4 depths = textureGather(pk_ShadowmapAtlas, float3(uv, index), 0);
-    const half deltaDepth = half(z - max(max(max(depths.x, depths.y), depths.z), depths.w));
-    const half shadowFade = -deltaDepth * SHADOW_HARD_EDGE_FADE_FACTOR + 1.0hf;
-    return half2(deltaDepth, 1.0f) * step(shadowFade, 0.0hf);
+    const half delta_depth = half(z - max(max(max(depths.x, depths.y), depths.z), depths.w));
+    const half shadow_fade = -delta_depth * SHADOW_HARD_EDGE_FADE_FACTOR + 1.0hf;
+    return half2(delta_depth, 1.0f) * step(shadow_fade, 0.0hf);
 }
 
 half ShadowTest_PCF2x2(const uint index, const float2 uv, const float z) 
@@ -61,10 +61,10 @@ half ShadowTest_PCF3x3Gaussian(const uint index, const float2 uv, const float z)
 
 half ShadowTest_Dither16(const uint index, const float2 uv, const float z)
 {
-    const half ditherAngle = half(InterleavedGradientNoise(PK_GET_PROG_COORD, pk_FrameRandom.y) * PK_TWO_PI);
+    const half dither_angle = half(InterleavedGradientNoise(PK_GET_PROG_COORD, pk_FrameRandom.y) * PK_TWO_PI);
     const half scale = 2.5hf / half(SHADOW_SIZE.x);
-    const half sina = sin(ditherAngle) * scale;
-    const half cosa = cos(ditherAngle) * scale;
+    const half sina = sin(dither_angle) * scale;
+    const half cosa = cos(dither_angle) * scale;
     const half2x2 basis = half2x2(sina, cosa, -cosa, sina);
 
     half shadow = 0.0hf;

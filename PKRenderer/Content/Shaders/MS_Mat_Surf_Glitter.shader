@@ -19,7 +19,7 @@
 void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 {
     float height = SURF_TEX(_HeightMap, uv).x;
-    uv += SURF_MAKE_PARALLAX_OFFSET(height, _HeightAmount, surf.viewdir);
+    uv += SURF_MAKE_PARALLAX_OFFSET(height, _HeightAmount, surf.view_dir);
 
     float3 pbs_texture_val = SURF_TEX(_PBSTexture, uv).xyz;
     surf.metallic = pbs_texture_val.SRC_METALLIC * _Metallic;
@@ -28,17 +28,17 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
     surf.occlusion = lerp(1.0f, pbs_texture_val.SRC_OCCLUSION, _Occlusion);
     surf.normal = SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
     surf.albedo = SURF_TEX(_AlbedoTexture, uv).rgb * _Color.rgb;
-    surf.depthBias = SURF_TEX(_HeightMap, uv).x * _HeightAmount;
-    surf.depthBias = pow3(surf.depthBias);
+    surf.depth_bias = SURF_TEX(_HeightMap, uv).x * _HeightAmount;
+    surf.depth_bias = pow3(surf.depth_bias);
 
     // Add glitter
-    float t = GlobalNoiseBlueUV(uv).r;
+    float t = GlobalNoiseBlueUv(uv).r;
     t = pow5(t);
     t -= 0.875f;
     t *= 50.0f;
     t = max(0.0f, t);
     surf.roughness -= t;
 
-    surf.sheenRoughness = 0.9f;
+    surf.sheen_roughness = 0.9f;
     surf.sheen = surf.albedo * 0.2f;
 };

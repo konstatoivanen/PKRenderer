@@ -74,12 +74,12 @@ void ShadowmapCs()
     const half sina = sin(dither_angle);
     const half2x2 basis = half2x2(sina * scale.x, cosa * scale.x, -cosa * scale.y, sina * scale.y);
 
-    float3 world_pos = UVToWorldPos(uv_gather, depth);
+    float3 world_pos = UvToWorldPos(uv_gather, depth);
     const float2 bias_factors = Shadow_GetBiasFactors(normal, light_direction);
     world_pos += bias_factors.x * normal * SHADOW_NEAR_BIAS * float(normal_clip) * (1.0f + cascade * cascade);
     world_pos += bias_factors.y * light_direction * SHADOW_NEAR_BIAS * (1.0f + cascade) * (1.0f + 0.1f / sqrt(depth));
 
-    const float2 uv = ClipToUV((light_matrix * float4(world_pos, 1.0f)).xyw);
+    const float2 uv = ClipToUv((light_matrix * float4(world_pos, 1.0f)).xyw);
     const float z = dot(light.LIGHT_POS, world_pos) + light.LIGHT_RADIUS;
 
     // PCSS 

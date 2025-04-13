@@ -65,40 +65,40 @@ uint2 ThreadGroupTilingX(
 #define GetXTiledThreadID(x, y, width) ThreadGroupTilingX(gl_NumWorkGroups.xy, uint2(x,y), width, gl_LocalInvocationID.xy, gl_WorkGroupID.xy)
 
 // Dispatch 2d dimension must be divisible by 32
-uint3 GetZCurveSwizzle32(uint threadIndex, uint2 size)
+uint3 GetZCurveSwizzle32(uint thread_index, uint2 size)
 {
-    uint z = threadIndex / (size.x * size.y);
-    threadIndex -= z * (size.x * size.y);
+    uint z = thread_index / (size.x * size.y);
+    thread_index -= z * (size.x * size.y);
 
-    uint2 coord = IndexToZCurve2D(threadIndex & 0x3FFu);
-    uint groupIndex = threadIndex >> 10u;
-    coord.x += (groupIndex % (size.x >> 5u)) << 5u;
-    coord.y += (groupIndex / (size.x >> 5u)) << 5u;
+    uint2 coord = IndexToZCurve2D(thread_index & 0x3FFu);
+    uint group_index = thread_index >> 10u;
+    coord.x += (group_index % (size.x >> 5u)) << 5u;
+    coord.y += (group_index / (size.x >> 5u)) << 5u;
     return uint3(coord, z);
 }
 
 // Dispatch 2d dimension must be divisible by 16
-uint3 GetZCurveSwizzle16(uint threadIndex, uint2 size)
+uint3 GetZCurveSwizzle16(uint thread_index, uint2 size)
 {
-    uint z = threadIndex / (size.x * size.y);
-    threadIndex -= z * (size.x * size.y);
+    uint z = thread_index / (size.x * size.y);
+    thread_index -= z * (size.x * size.y);
 
-    uint2 coord = IndexToZCurve2D(threadIndex & 0xFFu);
-    uint groupIndex = threadIndex >> 8u;
-    coord.x += (groupIndex % (size.x >> 4u)) << 4u;
-    coord.y += (groupIndex / (size.x >> 4u)) << 4u;
+    uint2 coord = IndexToZCurve2D(thread_index & 0xFFu);
+    uint group_index = thread_index >> 8u;
+    coord.x += (group_index % (size.x >> 4u)) << 4u;
+    coord.y += (group_index / (size.x >> 4u)) << 4u;
     return uint3(coord, z);
 }
 
 // Dispatch 2d dimension must be divisible by 8
-uint3 GetZCurveSwizzle8(uint threadIndex, uint2 size)
+uint3 GetZCurveSwizzle8(uint thread_index, uint2 size)
 {
-    uint z = threadIndex / (size.x * size.y);
-    threadIndex -= z * (size.x * size.y);
+    uint z = thread_index / (size.x * size.y);
+    thread_index -= z * (size.x * size.y);
 
-    uint2 coord = IndexToZCurve2D(threadIndex & 0x3Fu);
-    uint groupIndex = threadIndex >> 6u;
-    coord.x += (groupIndex % (size.x >> 3u)) << 3u;
-    coord.y += (groupIndex / (size.x >> 3u)) << 3u;
+    uint2 coord = IndexToZCurve2D(thread_index & 0x3Fu);
+    uint group_index = thread_index >> 6u;
+    coord.x += (group_index % (size.x >> 3u)) << 3u;
+    coord.y += (group_index / (size.x >> 3u)) << 3u;
     return uint3(coord, z);
 }

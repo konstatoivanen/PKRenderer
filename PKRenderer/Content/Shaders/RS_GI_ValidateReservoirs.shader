@@ -22,7 +22,7 @@ void MainRgs()
     const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy, 1u);
     const float depth = PK_GI_SAMPLE_PREV_DEPTH(coord);
 
-    if (Test_DepthFar(depth))
+    if (Test_DepthIsScene(depth))
     {
         const float3 normal = SamplePreviousWorldNormal(coord);
         const float3 view_pos = GI_GetRayViewOrigin(coord, depth);
@@ -59,12 +59,12 @@ void MainRms()
 
     if (GI_IsScreenHit(world_pos, true))
     {
-        const float2 uv = WorldToClipUVPrev(world_pos);
+        const float2 uv = WorldToClipUvPrev(world_pos);
         radiance = SamplePreviousColor(uv);
     }
     else
     {
-        radiance = SampleEnvironment(OctaUV(gl_WorldRayDirectionEXT), 0.0f);
+        radiance = SceneEnv_Sample(EncodeOctaUv(gl_WorldRayDirectionEXT), 0.0f);
     }
 
     payload.HIT_LOGLUMINANCE = log(1.0f + dot(PK_LUMA_BT709, radiance));
@@ -77,7 +77,7 @@ void MainRchs()
 
     if (GI_IsScreenHit(world_pos, false))
     {
-        const float2 uv = WorldToClipUVPrev(world_pos);
+        const float2 uv = WorldToClipUvPrev(world_pos);
         radiance = SamplePreviousColor(uv);
     }
     else
