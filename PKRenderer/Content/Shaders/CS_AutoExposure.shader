@@ -28,19 +28,20 @@ void HistogramCs()
     lds_Histogram[gl_LocalInvocationIndex] = 0;
     barrier();
 
-    const float2 size = textureSize(pk_Texture, 0).xy >> 1;
-    const float2 uv = (gl_GlobalInvocationID.xy + 0.5f) / size;
+    const float2 resolution = textureSize(pk_Texture, 0).xy >> 1;
+    const float2 uv = (gl_GlobalInvocationID.xy + 0.5f) / resolution;
     
     const float3 color = texture(pk_Texture, uv).rgb;
     
-    const float logMin = GetLogLuminanceMin();
-    const float logRangeInv = 1.0f / pk_AutoExposure_LogLumaRange;
-    const float luma = dot(PK_LUMA_BT709, color);
-    const float lumaLog = saturate((log2(luma) - logMin) * logRangeInv);
-    
-    const uint binIndex = luma < 1e-4f ? 0u : uint(lumaLog * 254.0f + 1.0f);
+    const float luma_log_min = GetLogLuminanceMin();
+    const float luma_log_range = pk_AutoExposure_LogLumaRange;
 
-    atomicAdd(lds_Histogram[binIndex], 1);
+    const float luma = dot(PK_LUMA_BT709, color);
+    const float luma_log = saturate((log2(luma) - luma_log_min) / luma_log_range);
+    
+    const uint bin_index = luma < 1e-4f ? 0u : uint(luma_log * 254.0f + 1.0f);
+
+    atomicAdd(lds_Histogram[bin_index], 1);
 
     barrier();
     atomicAdd(PK_BUFFER_DATA(pk_AutoExposure_Histogram, gl_LocalInvocationIndex), lds_Histogram[gl_LocalInvocationIndex]);
@@ -48,45 +49,48 @@ void HistogramCs()
 
 void AverageCs()
 {
-    uint countForThisBin = PK_BUFFER_DATA(pk_AutoExposure_Histogram, gl_LocalInvocationIndex);
-    lds_Histogram[gl_LocalInvocationIndex] = countForThisBin * gl_LocalInvocationIndex;
+    const uint thread = gl_LocalInvocationIndex;
+    const uint local_bin_val = PK_BUFFER_DATA(pk_AutoExposure_Histogram, thread);
 
-    PK_BUFFER_DATA(pk_AutoExposure_Histogram, gl_LocalInvocationIndex) = 0;
+    lds_Histogram[thread] = local_bin_val * thread;
+
+    PK_BUFFER_DATA(pk_AutoExposure_Histogram, thread) = 0;
 
     barrier();
 
-    for (uint histogramSampleIndex = (NUM_HISTOGRAM_BINS >> 1); histogramSampleIndex > 0; histogramSampleIndex >>= 1)
+    for (uint bin_index = (NUM_HISTOGRAM_BINS >> 1); bin_index > 0; bin_index >>= 1)
     {
-        if (gl_LocalInvocationIndex < histogramSampleIndex)
+        if (thread < bin_index)
         {
-            lds_Histogram[gl_LocalInvocationIndex] += lds_Histogram[gl_LocalInvocationIndex + histogramSampleIndex];
+            lds_Histogram[thread] += lds_Histogram[thread + bin_index];
         }
 
         barrier();
     }
 
-    if (gl_LocalInvocationIndex == 0)
+    if (thread == 0)
     {
-        float logMin = GetLogLuminanceMin();
-        float logRange = pk_AutoExposure_LogLumaRange;
+        const float luma_log_min = GetLogLuminanceMin();
+        const float luma_log_range = pk_AutoExposure_LogLumaRange;
 
-        const float2 size = textureSize(pk_Texture, 0).xy >> 1;
-        const float numpx = size.x * size.y;
-        const float weightedLumaLogAverage = (lds_Histogram[0] / max(numpx - countForThisBin, 1.0f)) - 1.0f;
-        const float weightedLumaAverage = exp2((weightedLumaLogAverage / 254.0) * logRange + logMin);
+        const float2 resolution = textureSize(pk_Texture, 0).xy >> 1;
+        const float pixel_count = resolution.x * resolution.y;
+
+        const float luma_log_avg = (lds_Histogram[0] / max(pixel_count - local_bin_val, 1.0f)) - 1.0f;
+        const float luma_avg = exp2((luma_log_avg / 254.0) * luma_log_range + luma_log_min);
 
         const float interpolant = ReplaceIfResized(pk_DeltaTime.x * pk_AutoExposure_Speed, 0.0f);
 
         // Source: https://media.contentapi.ea.com/content/dam/eacom/frostbite/files/course-notes-moving-frostbite-to-pbr-v2.pdf
         // Simplified factor for luminance to exposure.
-        const float exposureCurrent = GetAutoExposure();
-        const float exposureTarget = clamp(pk_AutoExposure_Target * (0.104167f / weightedLumaAverage), pk_AutoExposure_Min, pk_AutoExposure_Max);
-        const float exposure = lerp_sat(exposureCurrent, exposureTarget, interpolant);
+        const float exposure_current = GetAutoExposure();
+        const float exposure_target = clamp(pk_AutoExposure_Target * (0.104167f / luma_avg), pk_AutoExposure_Min, pk_AutoExposure_Max);
+        const float exposure_final = lerp_sat(exposure_current, exposure_target, interpolant);
 
-        const float biasToCenter = (floor(weightedLumaLogAverage) - 128.0f) / 255.0f;
-        logMin += (biasToCenter / logRange) * float(abs(biasToCenter) > 0.1f);
+        const float white_point_bias = (floor(luma_log_avg) - 128.0f) / 255.0f;
+        const float luma_log_min_biased = luma_log_min + (white_point_bias / luma_log_range) * float(abs(white_point_bias) > 0.1f);
 
-        SetLogLuminanceMin(logMin);
-        SetAutoExposure(exposure);
+        SetLogLuminanceMin(luma_log_min_biased);
+        SetAutoExposure(exposure_final);
     }
 }

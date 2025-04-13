@@ -14,14 +14,14 @@ void main()
 
     for (; pos.z < VOLUMEFOG_SIZE_Z; ++pos.z)
     {
-        const float depthMin = Fog_ZToView(pos.z * VOLUMEFOG_SIZE_Z_INV);
-        const float depthMax = Fog_ZToView((pos.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV);
-        const float slicewidth = depthMax - depthMin;
+        const float depth_min = Fog_ZToView(pos.z * VOLUMEFOG_SIZE_Z_INV);
+        const float depth_max = Fog_ZToView((pos.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV);
+        const float slice_width = depth_max - depth_min;
 
         const float  density = texelFetch(pk_Fog_DensityRead, pos, 0).x;
         const float3 irradiance = texelFetch(pk_Fog_InjectRead, pos, 0).rgb * pk_Fog_Albedo.rgb;
 
-        const float  extinction = density * slicewidth;
+        const float  extinction = density * slice_width;
         const float3 transmittance = exp(-extinction * pk_Fog_Absorption.rgb);
         const float3 integral = irradiance * (1.0f - transmittance) * accum_transmittance;
 

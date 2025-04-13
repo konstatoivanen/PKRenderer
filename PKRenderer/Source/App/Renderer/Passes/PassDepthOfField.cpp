@@ -38,9 +38,9 @@ namespace PK::App
         auto resources = view->GetResources<ViewResources>();
         auto screenHeight = view->GetResolution().y;
 
-        if (RHI::ValidateBuffer<float2>(resources->autoFocusParams, 1ull, BufferUsage::DefaultStorage, "DepthOfField.AutoFocus.Parameters"))
+        if (RHI::ValidateBuffer<float2>(resources->autoFocusBuffer, 1ull, BufferUsage::DefaultStorage, "DepthOfField.AutoFocus.Parameters"))
         {
-            RHI::SetBuffer(HashCache::Get()->pk_DoF_AutoFocusParams, resources->autoFocusParams.get());
+            RHI::SetBuffer(HashCache::Get()->pk_DoF_AutoFocusState, resources->autoFocusBuffer.get());
         }
 
         m_constants.pk_DoF_MaximumCoC = std::min(0.05f, 10.0f / screenHeight);

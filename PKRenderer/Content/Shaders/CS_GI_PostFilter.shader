@@ -13,22 +13,22 @@
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
-    const int2 baseCoord = int2(gl_GlobalInvocationID.xy);
-    const int2 coord = GI_ExpandCheckerboardCoord(uint2(baseCoord));
-    const int2 ncoord = GI_ExpandCheckerboardCoord(uint2(baseCoord), 1u);
-    const int2 hcoord = int2(baseCoord.x + pk_ScreenSize.x / 2, baseCoord.y);
+    const int2 coord_base = int2(gl_GlobalInvocationID.xy);
+    const int2 coord = GI_ExpandCheckerboardCoord(uint2(coord_base));
+    const int2 coord_n = GI_ExpandCheckerboardCoord(uint2(coord_base), 1u);
+    const int2 coord_h = int2(coord_base.x + pk_ScreenSize.x / 2, coord_base.y);
 
     float depth = SampleMinZ(coord, 0);
-    float4 normalRoughness = SampleViewNormalRoughness(coord);
-    float3 normal = normalRoughness.xyz;
-    float roughness = normalRoughness.w;
-    float3 viewpos = CoordToViewPos(coord, depth);
-    float3 viewdir = normalize(viewpos);
+    float4 normal_roughness = SampleViewNormalRoughness(coord);
+    float3 normal = normal_roughness.xyz;
+    float roughness = normal_roughness.w;
+    float3 view_pos = CoordToViewPos(coord, depth);
+    float3 view_dir = normalize(view_pos);
 
-    const bool isScene = Test_DepthFar(depth);
+    const bool is_scene = Test_DepthFar(depth);
 
-    GIDiff diff = GI_Load_Diff(baseCoord);
-    GISpec spec = GI_Load_Spec(baseCoord);
+    GIDiff diff = GI_Load_Diff(coord_base);
+    GISpec spec = GI_Load_Spec(coord_base);
 
     // Filter Diff
     {
@@ -38,20 +38,20 @@ void main()
             float variance = 0.0f;
             GI_SF_DIFF_VARIANCE(coord, depth, diff, variance)
 
-            const float2 radiusAndScale = GI_GetDiskFilterRadiusAndScale(depth, variance, diff.ao, diff.history);
-            const float scale = radiusAndScale.y;
-            const float radius = radiusAndScale.x * (scale + 1e-4f);
+            const float2 radius_scale = GI_GetDiskFilterRadiusAndScale(depth, variance, diff.ao, diff.history);
+            const float scale = radius_scale.y;
+            const float radius = radius_scale.x * (scale + 1e-4f);
             const bool skip = diff.history > 30.0f || scale < 0.05f;
             const uint step = lerp(uint(max(8.0f - sqrt(scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip);
-            GI_SF_DISK_DIFF(normal, depth, viewdir, viewpos, diff.history, step, skip, radius, diff)
+            GI_SF_DISK_DIFF(normal, depth, view_dir, view_pos, diff.history, step, skip, radius, diff)
         }
 
         const float alpha = GI_Alpha(diff);
 
-        float lumaMax;
-        GI_SUBGROUP_ANTIFIREFLY_MAXLUMA(isScene, diff, history, alpha, 1.0f, lumaMax)
+        float luma_max;
+        GI_SUBGROUP_ANTIFIREFLY_MAXLUMA(is_scene, diff, history, alpha, 1.0f, luma_max)
 
-        history = GI_ClampLuma(history, lumaMax);
+        history = GI_ClampLuma(history, luma_max);
         history.history += 1.0f;
         diff.ao = lerp(history.ao, 0.5f + diff.ao * 0.5f, alpha);
         GI_Store_Diff(coord, history);
@@ -72,7 +72,7 @@ void main()
         const float radius = radiusAndScale.x * (scale + 1e-4f);
         const bool skip = scale < 0.05f;
         const uint step = lerp(uint(max(8.0f - sqrt(scale) * 7.0f, 1.0f) + 0.01f), 0xFFFFu, skip);
-        GI_SF_DISK_SPEC(normal, depth, roughness, viewdir, viewpos, spec.history, step, skip, radius, spec)
+        GI_SF_DISK_SPEC(normal, depth, roughness, view_dir, view_pos, spec.history, step, skip, radius, spec)
         */
 
         const float alpha = pow2(GI_Alpha(history));
@@ -85,17 +85,18 @@ void main()
     GI_Store_Resolved(coord, diff, spec);
 
 #if defined(PK_GI_CHECKERBOARD_TRACE)
+    // Checkerboard resolve.
     {
-        const float n_depth = SampleMinZ(ncoord, 0);
-        const float4 n_normalRoughness = SampleViewNormalRoughness(ncoord);
-        const float3 n_normal = n_normalRoughness.xyz;
-        const float n_roughness = n_normalRoughness.w;
+        const float n_depth = SampleMinZ(coord_n, 0);
+        const float4 n_normal_roughness = SampleViewNormalRoughness(coord_n);
+        const float3 n_normal = n_normal_roughness.xyz;
+        const float n_roughness = n_normal_roughness.w;
         const float2 k_R = GI_GetRoughnessWeightParams(n_roughness);
 
         GIDiff n_diff = PK_GI_DIFF_ZERO;
         GISpec n_spec = PK_GI_SPEC_ZERO;
-        float wSumDiff = 0.0f;
-        float wSumSpec = 0.0f;
+        float weight_sum_diff = 0.0f;
+        float weight_sum_spec = 0.0f;
 
         // Weight current sample
         {
@@ -103,13 +104,13 @@ void main()
             const float w_spec = w_diff * exp(-abs(roughness * k_R.x + k_R.y));
             n_diff = GI_Sum_NoHistory(n_diff, diff, w_diff);
             n_spec = GI_Sum_NoHistory(n_spec, spec, w_spec);
-            wSumDiff += w_diff;
-            wSumSpec += w_spec;
+            weight_sum_diff += w_diff;
+            weight_sum_spec += w_spec;
         }
 
         // Shuffle with chb neighbour.
         {
-            uint swapId = QuadSwapIdVertical8x8(gl_SubgroupInvocationID);
+            const uint swapId = QuadSwapIdVertical8x8(gl_SubgroupInvocationID);
             depth = subgroupShuffle(depth, swapId);
             normal = subgroupShuffle(normal, swapId);
             roughness = subgroupShuffle(roughness, swapId);
@@ -127,18 +128,18 @@ void main()
             const float w_spec = w_diff * exp(-abs(roughness * k_R.x + k_R.y));
             n_diff = GI_Sum_NoHistory(n_diff, diff, w_diff);
             n_spec = GI_Sum_NoHistory(n_spec, spec, w_spec);
-            wSumDiff += w_diff;
-            wSumSpec += w_spec;
+            weight_sum_diff += w_diff;
+            weight_sum_spec += w_spec;
         }
 
         // Store diff
         {
-            GIDiff nh_diff = GI_Load_Diff(hcoord);
+            GIDiff nh_diff = GI_Load_Diff(coord_h);
 
-            const float alpha = GI_Alpha(nh_diff) * saturate(10.0f * wSumDiff);
-            n_diff = GI_Mul_NoHistory(n_diff, Test_NaN_EPS6(wSumDiff) ? 0.0f : 1.0f / wSumDiff);
+            const float alpha = GI_Alpha(nh_diff) * saturate(10.0f * weight_sum_diff);
+            n_diff = GI_Mul_NoHistory(n_diff, Test_NaN_EPS6(weight_sum_diff) ? 0.0f : 1.0f / weight_sum_diff);
             n_diff = GI_Interpolate(nh_diff, n_diff, alpha);
-            GI_Store_Diff(ncoord, GI_Interpolate(nh_diff, n_diff, alpha));
+            GI_Store_Diff(coord_n, GI_Interpolate(nh_diff, n_diff, alpha));
         }
 
         // Store spec
@@ -147,15 +148,15 @@ void main()
         if (n_roughness < PK_GI_MAX_ROUGH_SPEC)
 #endif
         {
-            GISpec nh_spec = GI_Load_Spec(hcoord);
+            GISpec nh_spec = GI_Load_Spec(coord_h);
 
-            const float alpha = GI_Alpha(nh_spec) * saturate(10.0f * wSumSpec);
-            n_spec = GI_Mul_NoHistory(n_spec, Test_NaN_EPS6(wSumSpec) ? 0.0f : 1.0f / wSumSpec);
+            const float alpha = GI_Alpha(nh_spec) * saturate(10.0f * weight_sum_spec);
+            n_spec = GI_Mul_NoHistory(n_spec, Test_NaN_EPS6(weight_sum_spec) ? 0.0f : 1.0f / weight_sum_spec);
             n_spec = GI_Interpolate(nh_spec, n_spec, alpha);
-            GI_Store_Spec(ncoord, GI_Interpolate(nh_spec, n_spec, alpha));
+            GI_Store_Spec(coord_n, GI_Interpolate(nh_spec, n_spec, alpha));
         }
 
-        GI_Store_Resolved(ncoord, n_diff, n_spec);
+        GI_Store_Resolved(coord_n, n_diff, n_spec);
     }
 #endif
 }

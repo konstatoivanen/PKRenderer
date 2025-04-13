@@ -14,7 +14,7 @@ void main()
     const float2 uv = float2(coord + 0.5f.xx) / float2(size);
     
     const float3 color = imageLoad(pk_Image, coord).rgb;
-    const float4 colorTransmittance = Fog_SampleFroxel(uv, SampleViewDepth(uv), color);
+    const float4 color_transmittance = Fog_SampleFroxel(uv, SampleViewDepth(uv), color);
 
-    imageStore(pk_Image, coord, colorTransmittance);
+    imageStore(pk_Image, coord, color_transmittance);
 }

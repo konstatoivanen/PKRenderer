@@ -18,48 +18,48 @@ PK_DECLARE_RT_PAYLOAD(float2, payload, 0);
 
 void MainRgs()
 {
-    const int2 raycoord = int2(gl_LaunchIDEXT.xy);
+    const int2 coord_ray = int2(gl_LaunchIDEXT.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy, 1u);
     const float depth = PK_GI_SAMPLE_PREV_DEPTH(coord);
 
     if (Test_DepthFar(depth))
     {
         const float3 normal = SamplePreviousWorldNormal(coord);
-        const float3 viewpos = GI_GetRayViewOrigin(coord, depth);
-        const float3 viewdir = normalize(viewpos) * float3x3(pk_ViewToWorldPrev);
-        const float3 normalOffset = GI_GetRayOriginNormalOffset(normal, viewdir);
-        const float3 origin = ViewToWorldPosPrev(viewpos) + normalOffset;
+        const float3 view_pos = GI_GetRayViewOrigin(coord, depth);
+        const float3 view_dir = normalize(view_pos) * float3x3(pk_ViewToWorldPrev);
+        const float3 normal_offset = GI_GetRayOriginNormalOffset(normal, view_dir);
+        const float3 origin = ViewToWorldPosPrev(view_pos) + normal_offset;
 
-        const Reservoir reservoir = ReSTIR_Load_Previous(raycoord);
+        const Reservoir reservoir = ReSTIR_Load_Previous(coord_ray);
         const float4 direction = normalizeLength(reservoir.position - origin);
 
-        const float maxErrorDist = RESTIR_VALIDATION_ERROR_DIST * direction.w;
-        const float maxErrorLuma = RESTIR_VALIDATION_ERROR_LUMA;
-        const float tmax = direction.w + maxErrorDist;
+        const float max_error_dist = RESTIR_VALIDATION_ERROR_DIST * direction.w;
+        const float max_error_luma = RESTIR_VALIDATION_ERROR_LUMA;
+        const float t_max = direction.w + max_error_dist;
 
         payload.HIT_LOGLUMINANCE = 0.0f;
         payload.HIT_DISTANCE = direction.w;
-        traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction.xyz, tmax, 0);
+        traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction.xyz, t_max, 0);
 
-        const float logLuminance = log(1.0f + dot(PK_LUMA_BT709, reservoir.radiance));
-        const bool invalidDist = abs(direction.w - payload.HIT_DISTANCE) > maxErrorDist;
-        const bool invalidLuma = abs(logLuminance - payload.HIT_LOGLUMINANCE) > maxErrorLuma;
+        const float log_luma = log(1.0f + dot(PK_LUMA_BT709, reservoir.radiance));
+        const bool invalid_dist = abs(direction.w - payload.HIT_DISTANCE) > max_error_dist;
+        const bool invalid_luma = abs(log_luma - payload.HIT_LOGLUMINANCE) > max_error_luma;
 
-        if (invalidDist || invalidLuma)
+        if (invalid_dist || invalid_luma)
         {
-            ReSTIR_StoreZero(raycoord);
+            ReSTIR_StoreZero(coord_ray);
         }
     }
 }
 
 void MainRms()
 {
-    const float3 worldpos = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * payload.HIT_DISTANCE;
+    const float3 world_pos = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * payload.HIT_DISTANCE;
     float3 radiance = 0.0f.xxx;
 
-    if (GI_IsScreenHit(worldpos, true))
+    if (GI_IsScreenHit(world_pos, true))
     {
-        const float2 uv = WorldToClipUVPrev(worldpos);
+        const float2 uv = WorldToClipUVPrev(world_pos);
         radiance = SamplePreviousColor(uv);
     }
     else
@@ -72,17 +72,17 @@ void MainRms()
 
 void MainRchs()
 {
-    const float3 worldpos = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
+    const float3 world_pos = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
     float3 radiance = 0.0f.xxx;
 
-    if (GI_IsScreenHit(worldpos, false))
+    if (GI_IsScreenHit(world_pos, false))
     {
-        const float2 uv = WorldToClipUVPrev(worldpos);
+        const float2 uv = WorldToClipUVPrev(world_pos);
         radiance = SamplePreviousColor(uv);
     }
     else
     {
-        const float4 voxel = GI_Load_Voxel(worldpos, PK_GI_GET_VX_MI_BIAS(gl_HitTEXT));
+        const float4 voxel = GI_Load_Voxel(world_pos, PK_GI_GET_VX_MI_BIAS(gl_HitTEXT));
         radiance = voxel.rgb / max(voxel.a, 1e-2f);
     }
 

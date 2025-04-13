@@ -38,13 +38,13 @@ struct AABB
     float  radius;
 };
 
-AABB currentCell;
-shared SharedLight sharedLights[THREAD_COUNT];
+AABB current_cell;
+shared SharedLight lds_Lights[THREAD_COUNT];
 
 bool IntersectPointLight(uint lightIndex)
 {
-    SharedLight light = sharedLights[lightIndex];
-    float3 d = abs(light.position.xyz - currentCell.center) - currentCell.extents;
+    SharedLight light = lds_Lights[lightIndex];
+    float3 d = abs(light.position.xyz - current_cell.center) - current_cell.extents;
     float r = light.radius - cmax(min(d, float3(0.0f)));
     d = max(d, float3(0.0f));
     return light.radius > 0.0f && dot(d, d) <= r * r;
@@ -53,22 +53,22 @@ bool IntersectPointLight(uint lightIndex)
 // Source: https://bartwronski.com/2017/04/13/cull-that-cone/
 bool IntersectSpotLight(uint lightIndex)
 {
-    SharedLight light = sharedLights[lightIndex];
+    SharedLight light = lds_Lights[lightIndex];
 
-    float3 V = currentCell.center - light.position;
+    float3 V = current_cell.center - light.position;
     float  VlenSq = dot(V, V);
     float  V1len = dot(V, light.direction);
-    float  distanceClosestPoint = cos(light.angle * 0.5f) * sqrt(VlenSq - V1len * V1len) - V1len * sin(light.angle * 0.5f);
+    float  closest_dist = cos(light.angle * 0.5f) * sqrt(VlenSq - V1len * V1len) - V1len * sin(light.angle * 0.5f);
 
-    const bool angleCull = distanceClosestPoint > currentCell.radius;
-    const bool frontCull = V1len > currentCell.radius + light.radius;
-    const bool backCull = V1len < -currentCell.radius;
-    return !(angleCull || frontCull || backCull);
+    const bool cull_angle = closest_dist > current_cell.radius;
+    const bool cull_front = V1len > current_cell.radius + light.radius;
+    const bool cull_back = V1len < -current_cell.radius;
+    return !(cull_angle || cull_front || cull_back);
 }
 
 bool IntersectionTest(uint lightIndex)
 {
-    switch (sharedLights[lightIndex].type)
+    switch (lds_Lights[lightIndex].type)
     {
         case LIGHT_TYPE_POINT: return IntersectPointLight(lightIndex);
         case LIGHT_TYPE_SPOT: return IntersectPointLight(lightIndex) && IntersectSpotLight(lightIndex);
@@ -93,22 +93,22 @@ void main()
     const float3 min11 = UVToViewPos(uvminmax.zw, near);
     const float3 max11 = UVToViewPos(uvminmax.zw, far);
 
-    const float3 aabbmin = min(min(min00, max00), min(min11, max11));
-    const float3 aabbmax = max(max(min00, max00), max(min11, max11));
+    const float3 aabb_min = min(min(min00, max00), min(min11, max11));
+    const float3 aabb_max = max(max(min00, max00), max(min11, max11));
 
-    currentCell.extents = (aabbmax - aabbmin) * 0.5f;
-    currentCell.center = aabbmin + currentCell.extents;
-    currentCell.radius = length(currentCell.extents);
+    current_cell.extents = (aabb_max - aabb_min) * 0.5f;
+    current_cell.center = aabb_min + current_cell.extents;
+    current_cell.radius = length(current_cell.extents);
 
-    uint visibleCount = 0;
-    ushort visibleIndices[LIGHT_TILE_MAX_LIGHTS];
+    uint visible_count = 0;
+    ushort visible_indices[LIGHT_TILE_MAX_LIGHTS];
 
-    const uint numBatches = (LightCount + THREAD_COUNT - 1) / THREAD_COUNT;
+    const uint batch_count = (LightCount + THREAD_COUNT - 1) / THREAD_COUNT;
 
-    for (uint batch = 0; batch < numBatches; ++batch)
+    for (uint batch = 0; batch < batch_count; ++batch)
     {
-        const uint lightIndex = min(batch * THREAD_COUNT + thread, LightCount);
-        const LightPacked packed = Lights_LoadPacked(lightIndex);
+        const uint light_index = min(batch * THREAD_COUNT + thread, LightCount);
+        const LightPacked packed = Lights_LoadPacked(light_index);
 
         SharedLight light;
         light.position = WorldToViewPos(packed.LIGHT_POS);
@@ -116,15 +116,15 @@ void main()
         light.radius = packed.LIGHT_RADIUS;
         light.angle = packed.LIGHT_ANGLE;
         light.type = packed.LIGHT_TYPE;
-        sharedLights[thread] = light;
+        lds_Lights[thread] = light;
 
         barrier();
 
-        for (uint index = 0; index < THREAD_COUNT && visibleCount < LIGHT_TILE_MAX_LIGHTS; ++index)
+        for (uint index = 0; index < THREAD_COUNT && visible_count < LIGHT_TILE_MAX_LIGHTS; ++index)
         {
             if (IntersectionTest(index))
             {
-                visibleIndices[visibleCount++] = ushort(batch * THREAD_COUNT + index);
+                visible_indices[visible_count++] = ushort(batch * THREAD_COUNT + index);
             }
         }
 
@@ -136,17 +136,17 @@ void main()
     [[branch]]
     if (All_Less(coord.xy, LIGHT_TILE_COUNT_XY))
     {
-        offset = PK_AtomicCounterAdd(visibleCount);
+        offset = PK_AtomicCounterAdd(visible_count);
 
-        for (uint i = 0; i < visibleCount; ++i)
+        for (uint i = 0; i < visible_count; ++i)
         {
-            PK_BUFFER_DATA(pk_LightLists, offset + i) = visibleIndices[i];
+            PK_BUFFER_DATA(pk_LightLists, offset + i) = visible_indices[i];
         }
     }
 
     uint base = 0;
     base = bitfieldInsert(base, offset, 0, 22);
-    base = bitfieldInsert(base, visibleCount, 22, 8);
+    base = bitfieldInsert(base, visible_count, 22, 8);
     base = bitfieldInsert(base, GetShadowCascadeIndex(lerp(near, far, 0.5f)), 30, 2);
     imageStore(pk_LightTiles, int3(coord), uint4(base));
 }

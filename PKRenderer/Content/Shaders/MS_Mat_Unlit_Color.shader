@@ -30,11 +30,11 @@ bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
 
 #elif defined(SHADER_STAGE_MESH_ASSEMBLY)
 
-void PK_MESHLET_FUNC_VERTEX(uint vertexIndex, PKVertex vertex, inout float4 sv_Position)
+void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_Position)
 {
     sv_Position = ObjectToClipPos(vertex.position);
 #if defined(PK_META_PASS_GBUFFER)
-    vs_Normal[vertexIndex] = ObjectToWorldVec(vertex.normal);
+    vs_Normal[vertex_index] = ObjectToWorldVec(vertex.normal);
 #endif
 }
 

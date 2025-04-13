@@ -14,11 +14,11 @@
 
 float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHit hit)
 {
-    const float3 worldpos = origin + direction * hit.dist;
+    const float3 world_pos = origin + direction * hit.dist;
 
     if (hit.isScreen)
     {
-        float2 uv = WorldToClipUVPrev(worldpos);
+        float2 uv = WorldToClipUVPrev(world_pos);
         return SamplePreviousColor(uv);
     }
 
@@ -27,59 +27,59 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHi
         return SampleEnvironment(OctaUV(direction), 0.0f);
     }
 
-    const float4 voxel = GI_Load_Voxel(worldpos, PK_GI_GET_VX_MI_BIAS(hit.dist));
+    const float4 voxel = GI_Load_Voxel(world_pos, PK_GI_GET_VX_MI_BIAS(hit.dist));
     return voxel.rgb / max(voxel.a, 1e-2f);
 }
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void main()
 {
-    const int2 raycoord = int2(gl_GlobalInvocationID.xy);
-    const int2 coord = GI_ExpandCheckerboardCoord(uint2(raycoord));
+    const int2 coord_ray = int2(gl_GlobalInvocationID.xy);
+    const int2 coord = GI_ExpandCheckerboardCoord(uint2(coord_ray));
     const float depth = PK_GI_SAMPLE_DEPTH(coord);
 
-    uint4 packedDiff = uint4(0u);
-    uint2 packedSpec = uint2(0u);
+    uint4 packed_diff = uint4(0u);
+    uint2 packed_spec = uint2(0u);
 
     [[branch]]
     if (Test_DepthFar(depth))
     {
-        const float4 normalRoughness = SampleWorldNormalRoughness(coord);
-        const GIRayHits hits = GI_Load_RayHits(raycoord);
+        const float4 normal_roughness = SampleWorldNormalRoughness(coord);
+        const GIRayHits hits = GI_Load_RayHits(coord_ray);
 
-        GI_LOAD_RAY_PARAMS(coord, raycoord, depth, normalRoughness.xyz, normalRoughness.w)
+        GI_LOAD_RAY_PARAMS(coord, coord_ray, depth, normal_roughness.xyz, normal_roughness.w)
 
         // Convert ray to unbiased space
         const float3 hitpos = origin + directionDiff * lerp(hits.diff.dist, PK_GI_RAY_TMAX, hits.diff.isMiss);
-        const float3 unbiasedOrigin = CoordToWorldPos(coord, depth);
-        const float4 unbiasedHitVec = normalizeLength(hitpos - unbiasedOrigin);
+        const float3 origin_unbiased = CoordToWorldPos(coord, depth);
+        const float4 hitvec_unbiased = normalizeLength(hitpos - origin_unbiased);
         // assuming lambertian distribution
-        const float inversePdf = PK_PI * safePositiveRcp(dot(normalRoughness.xyz, unbiasedHitVec.xyz));
+        const float inverse_pdf = PK_PI * safePositiveRcp(dot(normal_roughness.xyz, hitvec_unbiased.xyz));
 
         // Always use reservoir packing for diff hits.
         // They can be used for neighbour reconstruction outside of ReSTIR
-        packedDiff = ReSTIR_Pack_Hit
+        packed_diff = ReSTIR_Pack_Hit
         (
-            unbiasedHitVec.xyz,
-            unbiasedHitVec.w,
-            inversePdf,
+            hitvec_unbiased.xyz,
+            hitvec_unbiased.w,
+            inverse_pdf,
             hits.diffNormal,
             SampleRadiance(origin, directionDiff, hits.diff)
         );
 
 #if PK_GI_APPROX_ROUGH_SPEC == 1
         [[branch]]
-        if (normalRoughness.w < PK_GI_MAX_ROUGH_SPEC)
+        if (normal_roughness.w < PK_GI_MAX_ROUGH_SPEC)
 #endif
         {
             GISpec spec = PK_GI_SPEC_ZERO;
             spec.radiance = SampleRadiance(origin, directionSpec, hits.spec);
             spec.ao = hits.spec.isMiss ? 1.0f : saturate(hits.spec.dist / PK_GI_RAY_TMAX);
             spec.history = PK_GI_SPEC_MAX_HISTORY;
-            packedSpec = GI_Pack_Spec(spec);
+            packed_spec = GI_Pack_Spec(spec);
         }
     }
 
-    GI_Store_Packed_Diff(raycoord, packedDiff);
-    GI_Store_Packed_Spec(raycoord, packedSpec);
+    GI_Store_Packed_Diff(coord_ray, packed_diff);
+    GI_Store_Packed_Spec(coord_ray, packed_spec);
 }

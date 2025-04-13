@@ -11,31 +11,31 @@
 float3 GerstnerWave(float4 wave, float3 p, inout float3 tangent, inout float3 binormal)
 {
     float steepness = wave.z;
-    float wavelength = wave.w;
-    float k = 2 * PK_PI / wavelength;
+    float wave_length = wave.w;
+    float k = 2 * PK_PI / wave_length;
     float c = sqrt(9.8 / k);
     float2 d = normalize(wave.xy);
     float f = k * (dot(d, p.xz) - c * pk_Time.y);
     float a = steepness / k;
 
     tangent += float3
-        (
-            -d.x * d.x * (steepness * sin(f)),
-            d.x * (steepness * cos(f)),
-            -d.x * d.y * (steepness * sin(f))
-            );
+    (
+        -d.x * d.x * (steepness * sin(f)),
+        d.x * (steepness * cos(f)),
+        -d.x * d.y * (steepness * sin(f))
+    );
     binormal += float3
-        (
-            -d.x * d.y * (steepness * sin(f)),
-            d.y * (steepness * cos(f)),
-            -d.y * d.y * (steepness * sin(f))
-            );
+    (
+        -d.x * d.y * (steepness * sin(f)),
+        d.y * (steepness * cos(f)),
+        -d.y * d.y * (steepness * sin(f))
+    );
     return float3
-        (
-            d.x * (a * cos(f)),
-            a * sin(f),
-            d.y * (a * cos(f))
-            );
+    (
+        d.x * (a * cos(f)),
+        a * sin(f),
+        d.y * (a * cos(f))
+    );
 }
 
 void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf)
@@ -44,14 +44,14 @@ void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf)
     float4 waveb = float4(1, 1, 0.1f, 3);
     float4 wavec = float4(-1, 1, 0.2f, 5);
 
-    float3 gridPoint = surf.worldpos.xyz;
+    float3 grid_point = surf.worldpos.xyz;
     float3 tangent = float3(1, 0, 0);
     float3 binormal = float3(0, 0, 1);
-    float3 p = gridPoint;
+    float3 p = grid_point;
 
-    p += GerstnerWave(wavea, gridPoint, tangent, binormal) * 0.8f;
-    p += GerstnerWave(waveb, gridPoint, tangent, binormal) * 0.8f;
-    p += GerstnerWave(wavec, gridPoint, tangent, binormal) * 0.8f;
+    p += GerstnerWave(wavea, grid_point, tangent, binormal) * 0.8f;
+    p += GerstnerWave(waveb, grid_point, tangent, binormal) * 0.8f;
+    p += GerstnerWave(wavec, grid_point, tangent, binormal) * 0.8f;
 
     surf.normal = normalize(cross(binormal, tangent));
 
@@ -64,7 +64,7 @@ void SURF_FUNCTION_VERTEX(inout SurfaceVaryings surf)
 
 void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 {
-    float yorigin = pk_ObjectToWorld[2].w;
+    float origin_y = pk_ObjectToWorld[2].w;
 
     float3 noise;
     noise.xy = NoiseCell(int2(surf.worldpos.xz * 8.0f + surf.worldpos.yy * 30.0f));
@@ -76,7 +76,7 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 
     nv = pow4(nv);
 
-    float depth = unlerp_sat(yorigin - 1.0f, yorigin + 5.0f, surf.worldpos.y);
+    float depth = unlerp_sat(origin_y - 1.0f, origin_y + 5.0f, surf.worldpos.y);
 
     surf.albedo = lerp(float3(0, 0.01f, 0.02f), float3(0.3, 0.6, 1.0f), depth * depth);
     surf.albedo = lerp(surf.albedo, float3(0.25f, 0.5f, 0.8f), nv); //PK_ACCESS_INSTANCED_PROP(_Color).xyz;

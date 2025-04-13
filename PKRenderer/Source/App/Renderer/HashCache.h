@@ -161,7 +161,7 @@ namespace PK::App
         DECLARE_HASH(pk_DoF_FocusSpeed)
         DECLARE_HASH(pk_DoF_MaximumCoC)
         DECLARE_HASH(pk_DoF_Params)
-        DECLARE_HASH(pk_DoF_AutoFocusParams)
+        DECLARE_HASH(pk_DoF_AutoFocusState)
         DECLARE_HASH(pk_DoF_ColorRead)
         DECLARE_HASH(pk_DoF_ColorWrite)
         DECLARE_HASH(pk_DoF_AlphaRead)

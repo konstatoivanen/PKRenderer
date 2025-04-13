@@ -66,15 +66,16 @@ void main()
 
     // Mip 2
     {
-        const uint swapIdVertical = QuadSwapIdVertical8x8(gl_SubgroupInvocationID);
-        const float2 vertical_depth = subgroupShuffle(local_depth, swapIdVertical);
-        local_depth.x = min(local_depth.x, vertical_depth.x);
-        local_depth.y = max(local_depth.y, vertical_depth.y);
+        const uint swap_id_v = QuadSwapIdVertical8x8(gl_SubgroupInvocationID);
+        const uint swap_id_h = QuadSwapIdHorizontal(gl_SubgroupInvocationID);
+        
+        const float2 depth_v = subgroupShuffle(local_depth, swap_id_v);
+        local_depth.x = min(local_depth.x, depth_v.x);
+        local_depth.y = max(local_depth.y, depth_v.y);
 
-        const uint swapIdHorizontal = QuadSwapIdHorizontal(gl_SubgroupInvocationID);
-        const float2 horizontal_depth = subgroupShuffle(local_depth, swapIdHorizontal);
-        local_depth.x = min(local_depth.x, horizontal_depth.x);
-        local_depth.y = max(local_depth.y, horizontal_depth.y);
+        const float2 depth_h = subgroupShuffle(local_depth, swap_id_h);
+        local_depth.x = min(local_depth.x, depth_h.x);
+        local_depth.y = max(local_depth.y, depth_h.y);
 
         if ((thread & 0x9u) == 0u)
         {
@@ -87,20 +88,20 @@ void main()
 
     // Mip 3
     {
-        const uint2 subgroupCoord = uint2(gl_SubgroupInvocationID % 8u, gl_SubgroupInvocationID / 8u);
-        const uint2 subgroupBase = subgroupCoord / 2;
-        const uint2 subgroupSwapped = (subgroupBase / 2) * 4 + ((subgroupBase + 1) % 2) * 2;
+        const uint2 coord_wave = uint2(gl_SubgroupInvocationID % 8u, gl_SubgroupInvocationID / 8u);
+        const uint2 coord_wave_base = coord_wave / 2;
+        const uint2 coord_wave_swap = (coord_wave_base / 2) * 4 + ((coord_wave_base + 1) % 2) * 2;
 
-        const uint swapIdVertical = subgroupSwapped.y * 8 + subgroupCoord.x;
-        const uint swapIdHorizontal = subgroupCoord.y * 8 + subgroupSwapped.x;
+        const uint swap_id_v = coord_wave_swap.y * 8 + coord_wave.x;
+        const uint swap_id_h = coord_wave.y * 8 + coord_wave_swap.x;
 
-        const float2 vertical_depth = subgroupShuffle(local_depth, swapIdVertical);
-        local_depth.x = min(local_depth.x, vertical_depth.x);
-        local_depth.y = max(local_depth.y, vertical_depth.y);
+        const float2 depth_v = subgroupShuffle(local_depth, swap_id_v);
+        local_depth.x = min(local_depth.x, depth_v.x);
+        local_depth.y = max(local_depth.y, depth_v.y);
 
-        const float2 horizontal_depth = subgroupShuffle(local_depth, swapIdHorizontal);
-        local_depth.x = min(local_depth.x, horizontal_depth.x);
-        local_depth.y = max(local_depth.y, horizontal_depth.y);
+        const float2 depth_h = subgroupShuffle(local_depth, swap_id_h);
+        local_depth.x = min(local_depth.x, depth_h.x);
+        local_depth.y = max(local_depth.y, depth_h.y);
 
         if ((thread & 0x1Bu) == 0u)
         {

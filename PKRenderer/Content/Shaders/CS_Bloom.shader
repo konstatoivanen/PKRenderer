@@ -111,11 +111,11 @@ void UpsampleCs()
     color.rgb += texture(pk_Texture, uvs.xw).rgb;
     color.rgb *= 0.25f;
 
-    const float upsampleWeight = pk_Bloom_UpsampleLayerCount_Value * pk_Bloom_Diffusion;
+    const float upsample_weight = pk_Bloom_UpsampleLayerCount_Value * pk_Bloom_Diffusion;
 
-    color.rgb *= upsampleWeight;
+    color.rgb *= upsample_weight;
     color.rgb += DecodeE5BGR9(imageLoad(pk_Image, coord).r);
-    color.rgb /= upsampleWeight + 1.0f;
+    color.rgb /= upsample_weight + 1.0f;
 
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color.rgb)));
 }

@@ -60,10 +60,10 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
         surf.emission = ecolor;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;
     */
 
-    float3 textureval = SURF_TEX(_PBSTexture, uv).xyz;
-    surf.metallic = textureval.SRC_METALLIC * _Metallic;
-    surf.roughness = textureval.SRC_ROUGHNESS * _Roughness;
-    surf.occlusion = lerp(1.0f, textureval.SRC_OCCLUSION, _Occlusion);
+    float3 pbs_texture_val = SURF_TEX(_PBSTexture, uv).xyz;
+    surf.metallic = pbs_texture_val.SRC_METALLIC * _Metallic;
+    surf.roughness = pbs_texture_val.SRC_ROUGHNESS * _Roughness;
+    surf.occlusion = lerp(1.0f, pbs_texture_val.SRC_OCCLUSION, _Occlusion);
     surf.normal = SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);
     surf.albedo = SURF_TEX(_AlbedoTexture, uv).rgb * _Color.xyz;
     surf.depthBias = SURF_TEX(_HeightMap, uv).x * _HeightAmount;

@@ -14,18 +14,18 @@ void main()
     const int2 coord = int2(gl_GlobalInvocationID.xy);
 
 #if defined(PK_GI_CHECKERBOARD_TRACE)
-    const int2 storeCoord = int2
-        (
-            coord.x / 2 + int(checkerboard(coord, pk_FrameIndex.y) * (pk_ScreenSize.x / 2)),
-            coord.y
-        );
+    const int2 coord_store = int2
+    (
+        coord.x / 2 + int(checkerboard(coord, pk_FrameIndex.y) * (pk_ScreenSize.x / 2)),
+        coord.y
+    );
 #else
-    const int2 storeCoord = coord;
+    const int2 coord_store = coord;
 #endif
 
     const float depth = PK_GI_SAMPLE_DEPTH(coord);
-    uint4 packedDiff = uint4(0u);
-    uint2 packedSpec = uint2(0u);
+    uint4 packed_diff = uint4(0u);
+    uint2 packed_spec = uint2(0u);
 
     // Far clip or new backbuffer
     [[branch]]
@@ -33,42 +33,42 @@ void main()
     {
         GIDiff diff = PK_GI_DIFF_ZERO;
         GISpec spec = PK_GI_SPEC_ZERO;
-        GISpec specVirtual = PK_GI_SPEC_ZERO;
-        float wSumDiff = 0.0f;
-        float wSumSpec = 0.0f;
-        float wSumVSpec = 0.0f;
-        float antilagSpec = 1.0f;
-        float antilagDiff = 1.0f;
-        bool discardSpec = false;
+        GISpec spec_virt = PK_GI_SPEC_ZERO;
+        float wsum_diff = 0.0f;
+        float wsum_spec = 0.0f;
+        float wsum_spec_virt = 0.0f;
+        float antilag_spec = 1.0f;
+        float antilag_diff = 1.0f;
+        bool discard_spec = false;
 
         // Filters
         {
-            const float4 normalroughness = SampleViewNormalRoughness(coord);
-            const float3 normal = normalroughness.xyz;
-            const float roughness = normalroughness.w;
-            const float depthBias = lerp(0.1f, 0.01f, -normal.z);
-            const float3 viewpos = CoordToViewPos(coord, depth);
-            const float3 viewdir = normalize(viewpos);
-            const float nv = dot(normal, -viewdir);
-            const float parallax = GI_GetParallax(viewdir, normalize(viewpos - pk_ViewSpaceCameraDelta.xyz));
+            const float4 normal_roughness = SampleViewNormalRoughness(coord);
+            const float3 normal = normal_roughness.xyz;
+            const float roughness = normal_roughness.w;
+            const float depth_bias = lerp(0.1f, 0.01f, -normal.z);
+            const float3 view_pos = CoordToViewPos(coord, depth);
+            const float3 view_dir = normalize(view_pos);
+            const float nv = dot(normal, -view_dir);
+            const float parallax = GI_GetParallax(view_dir, normalize(view_pos - pk_ViewSpaceCameraDelta.xyz));
 
 #if PK_GI_APPROX_ROUGH_SPEC == 1
-            discardSpec = roughness >= PK_GI_MAX_ROUGH_SPEC;
+            discard_spec = roughness >= PK_GI_MAX_ROUGH_SPEC;
 #endif
 
             // Reconstruct diff & naive spec
             {
                 const float2 k_R = GI_GetRoughnessWeightParams(roughness);
-                const float2 s_screenuv = GI_ViewToPrevScreenUV(viewpos);
-                const int2   s_coord = int2(s_screenuv);
+                const float2 s_fcoord = GI_ViewToPrevScreenUV(view_pos);
+                const int2   s_coord = int2(s_fcoord);
                 const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
 
-                float4 weights = GI_GetBilinearWeights(s_screenuv - s_coord);
+                float4 weights = GI_GetBilinearWeights(s_fcoord - s_coord);
                 weights *= exp(-abs(depth.xxxx - s_depths));
                 weights *= safePositiveRcp(dot(weights, 1.0f.xxxx));
-                weights *= float4(Test_DepthReproject(depth.xxxx, s_depths, depthBias.xxxx));
+                weights *= float4(Test_DepthReproject(depth.xxxx, s_depths, depth_bias.xxxx));
                 weights *= float4(Test_DepthFar(s_depths));
-                weights *= float(Test_InUV(s_screenuv * pk_ScreenParams.zw));
+                weights *= float(Test_InUV(s_fcoord * pk_ScreenParams.zw));
 
                 [[loop]]
                 for (uint i = 0u; i < 4; ++i)
@@ -83,36 +83,36 @@ void main()
 
                     // Using spec weight to save registers.
                     diff = GI_Sum(diff, GI_Load_Diff(xy), w_spec);
-                    wSumDiff += w_spec;
+                    wsum_diff += w_spec;
 
                     // Spec
                     [[branch]]
-                    if (!discardSpec && (PK_GI_APPROX_ROUGH_SPEC == 0 || s_nr.w < PK_GI_MAX_ROUGH_SPEC))
+                    if (!discard_spec && (PK_GI_APPROX_ROUGH_SPEC == 0 || s_nr.w < PK_GI_MAX_ROUGH_SPEC))
                     {
                         spec = GI_Sum(spec, GI_Load_Spec(xy), w_spec);
-                        wSumSpec += w_spec;
+                        wsum_spec += w_spec;
                     }
                 }
             }
 
             // Reduce diff antilag on poor reproject.
-            antilagDiff = lerp(0.1f, 1.0f, saturate(wSumDiff));
-            antilagSpec = GI_GetAntilagSpecular(roughness, nv, parallax);
+            antilag_diff = lerp(0.1f, 1.0f, saturate(wsum_diff));
+            antilag_spec = GI_GetAntilagSpecular(roughness, nv, parallax);
 
 #if defined(PK_GI_SPEC_VIRT_REPROJECT)
             [[branch]]
-            if (!Test_EPS6(wSumSpec) && !discardSpec)
+            if (!Test_EPS6(wsum_spec) && !discard_spec)
             {
-                const float  s_vdist = (spec.ao / wSumSpec) * PK_GI_RAY_TMAX * Futil_SpecularDominantFactor(nv, roughness);
+                const float  s_vdist = (spec.ao / wsum_spec) * PK_GI_RAY_TMAX * Futil_SpecularDominantFactor(nv, roughness);
                 const float2 k_R = GI_GetRoughnessWeightParams(roughness);
-                const float2 s_screenuv = GI_ViewToPrevScreenUV(viewpos + viewdir * s_vdist);
-                const int2   s_coord = int2(s_screenuv);
+                const float2 s_fcoord = GI_ViewToPrevScreenUV(view_pos + view_dir * s_vdist);
+                const int2   s_coord = int2(s_fcoord);
                 const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
 
-                float4 weights = GI_GetBilinearWeights(s_screenuv - s_coord);
+                float4 weights = GI_GetBilinearWeights(s_fcoord - s_coord);
                 weights *= 1.0f.xxxx / (1e-4f + abs(depth.xxxx - s_depths));
                 weights *= float4(Test_DepthFar(s_depths));
-                weights *= float(Test_InUV(s_screenuv * pk_ScreenParams.zw));
+                weights *= float(Test_InUV(s_fcoord * pk_ScreenParams.zw));
 
                 [[loop]]
                 for (uint i = 0u; i < 4; ++i)
@@ -126,8 +126,8 @@ void main()
 #if PK_GI_APPROX_ROUGH_SPEC == 1
                     w = lerp(0.0f, w, s_nr.w < PK_GI_MAX_ROUGH_SPEC);
 #endif
-                    specVirtual = GI_Sum(specVirtual, GI_Load_Spec(xy), w);
-                    wSumVSpec += w;
+                    spec_virt = GI_Sum(spec_virt, GI_Load_Spec(xy), w);
+                    wsum_spec_virt += w;
                 }
             }
 #endif
@@ -135,28 +135,28 @@ void main()
 
         // Normalization
         {
-            diff.history = min(diff.history / wSumDiff, PK_GI_DIFF_MAX_HISTORY * antilagDiff);
-            spec.history = min(spec.history / wSumSpec, PK_GI_SPEC_MAX_HISTORY * antilagSpec);
-            diff = GI_Mul_NoHistory(diff, 1.0f / wSumDiff);
-            spec = GI_Mul_NoHistory(spec, 1.0f / wSumSpec);
+            diff.history = min(diff.history / wsum_diff, PK_GI_DIFF_MAX_HISTORY * antilag_diff);
+            spec.history = min(spec.history / wsum_spec, PK_GI_SPEC_MAX_HISTORY * antilag_spec);
+            diff = GI_Mul_NoHistory(diff, 1.0f / wsum_diff);
+            spec = GI_Mul_NoHistory(spec, 1.0f / wsum_spec);
 
             // Get min of virtual reprojected spec & naive spec to eliminate ghosting.
-            if (!Test_NaN_EPS6(wSumVSpec))
+            if (!Test_NaN_EPS6(wsum_spec_virt))
             {
-                specVirtual.history = clamp(specVirtual.history / wSumVSpec, 0.0f, PK_GI_SPEC_MAX_HISTORY * antilagSpec);
-                specVirtual = GI_Mul_NoHistory(specVirtual, 1.0f / wSumVSpec);
-                spec.history = min(specVirtual.history, spec.history);
-                spec.radiance = min(spec.radiance, specVirtual.radiance);
-                spec.ao = min(spec.ao, specVirtual.ao);
+                spec_virt.history = clamp(spec_virt.history / wsum_spec_virt, 0.0f, PK_GI_SPEC_MAX_HISTORY * antilag_spec);
+                spec_virt = GI_Mul_NoHistory(spec_virt, 1.0f / wsum_spec_virt);
+                spec.history = min(spec_virt.history, spec.history);
+                spec.radiance = min(spec.radiance, spec_virt.radiance);
+                spec.ao = min(spec.ao, spec_virt.ao);
             }
         }
 
-        const bool invalidDiff = Test_NaN_EPS6(wSumDiff);
-        const bool invalidSpec = Test_NaN_EPS6(wSumSpec);
-        packedDiff = invalidDiff ? uint4(0) : GI_Pack_Diff(diff);
-        packedSpec = invalidSpec ? uint2(0) : GI_Pack_Spec(spec);
+        const bool invalid_diff = Test_NaN_EPS6(wsum_diff);
+        const bool invalid_spec = Test_NaN_EPS6(wsum_spec);
+        packed_diff = invalid_diff ? uint4(0) : GI_Pack_Diff(diff);
+        packed_spec = invalid_spec ? uint2(0) : GI_Pack_Spec(spec);
     }
 
-    GI_Store_Packed_Diff(storeCoord, packedDiff);
-    GI_Store_Packed_Spec(storeCoord, packedSpec);
+    GI_Store_Packed_Diff(coord_store, packed_diff);
+    GI_Store_Packed_Spec(coord_store, packed_spec);
 }

@@ -20,7 +20,7 @@ namespace PK::App
             {
                 RHITextureRef colorTarget;
                 RHITextureRef alphaTarget;
-                RHIBufferRef autoFocusParams;
+                RHIBufferRef autoFocusBuffer;
             };
 
             PassDepthOfField(AssetDatabase* assetDatabase);

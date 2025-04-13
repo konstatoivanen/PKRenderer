@@ -13,11 +13,10 @@ layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = GROU
 void main()
 {
     const uint thread = gl_LocalInvocationIndex;
-    const uint3 localCoord = gl_LocalInvocationID;
-    const uint3 baseSize = uint3(textureSize(pk_Texture, 0).xyz);
-    const uint3 levelSize = gl_NumWorkGroups.xyz * gl_WorkGroupSize.xyz;
-    const int level = int(log2(float(baseSize.x)) - log2(float(levelSize.x))) - 1;
-    const float3 uvw = (gl_GlobalInvocationID + 0.5f.xxx) / levelSize;
+    const uint3 size_base = uint3(textureSize(pk_Texture, 0).xyz);
+    const uint3 size_level = gl_NumWorkGroups.xyz * gl_WorkGroupSize.xyz;
+    const int level = int(log2(float(size_base.x)) - log2(float(size_level.x))) - 1;
+    const float3 uvw = (gl_GlobalInvocationID + 0.5f.xxx) / size_level;
 
     float4 local = lds_Data[thread] = textureLod(pk_Texture, uvw, level);
     imageStore(pk_Image, int3(gl_GlobalInvocationID), local);

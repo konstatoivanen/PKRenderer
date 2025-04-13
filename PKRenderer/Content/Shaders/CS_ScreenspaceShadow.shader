@@ -21,9 +21,9 @@ void ShadowmapCs()
     // Through sorting it should be a directional shadow casting light.
     // Appropriate checks are done on cpp side.
     // Note: Only directional lights are supported here!
-    const uint LightIndex = 0u;
+    const uint light_index = 0u;
 
-    const uint2 baseCoord = gl_GlobalInvocationID.xy;
+    const int2 coord_base = int2(gl_GlobalInvocationID.xy);
     const int2 coord = int2(gl_GlobalInvocationID.xy * 2);
 
     // Quarter res needs a higher mip. biased depth is not build to hierarchical depth.
@@ -31,67 +31,67 @@ void ShadowmapCs()
 
     //@TODO this causes bad bias vectors in corners as they average towards view which can offset out of shadow unintentionally.
     // Perhaps solve this in the upsampling by eliminating outliers
-    const float2 gatheruv = (coord + 1.0f) * pk_ScreenParams.zw;
-    const float4 gatherGZ = GBUFFER_GATHER(pk_GB_Current_Normals, gatheruv, 2) - 0.5f;
-    const float4 gatherGW = GBUFFER_GATHER(pk_GB_Current_Normals, gatheruv, 3) - 0.5f;
+    const float2 uv_gather = (coord + 1.0f) * pk_ScreenParams.zw;
+    const float4 gz_gather = GBUFFER_GATHER(pk_GB_Current_Normals, uv_gather, 2) - 0.5f;
+    const float4 gw_gather = GBUFFER_GATHER(pk_GB_Current_Normals, uv_gather, 3) - 0.5f;
 
     // Normal downsampling causes viewdirection aligned vectors.
     // This yields bad bias offsets that pull corners out of shadow.
     // Fix this by clipping normal bias if the high res normals point to each other.
-    const float2 n0 = float2(gatherGZ.x, gatherGW.x);
-    const float2 n1 = float2(gatherGZ.y, gatherGW.y);
-    const float2 n2 = float2(gatherGZ.z, gatherGW.z);
-    const float2 n3 = float2(gatherGZ.w, gatherGW.w);
-    const float4 normalDots = float4(dot(n0, n1), dot(n0, n2), dot(n3, n1), dot(n3, n2));
-    const bool normalclip = Any_LEqual(normalDots, -1.0f.xxxx);
+    const float2 n0 = float2(gz_gather.x, gw_gather.x);
+    const float2 n1 = float2(gz_gather.y, gw_gather.y);
+    const float2 n2 = float2(gz_gather.z, gw_gather.z);
+    const float2 n3 = float2(gz_gather.w, gw_gather.w);
+    const float4 normal_dots = float4(dot(n0, n1), dot(n0, n2), dot(n3, n1), dot(n3, n2));
+    const bool normal_clip = Any_LEqual(normal_dots, -1.0f.xxxx);
 
-    const float4 gbuffernr = float4(0.0f.xx, dot(gatherGZ, 0.25f.xxxx) + 0.5f, dot(gatherGW, 0.25f.xxxx) + 0.5f);
-    const float3 vnormal = DecodeGBufferViewNR(gbuffernr).xyz;
-    const float3 normal = ViewToWorldVec(normalize(vnormal));
+    const float4 gbuffer_normal_roughness = float4(0.0f.xx, dot(gz_gather, 0.25f.xxxx) + 0.5f, dot(gw_gather, 0.25f.xxxx) + 0.5f);
+    const float3 view_normal = DecodeGBufferViewNR(gbuffer_normal_roughness).xyz;
+    const float3 normal = ViewToWorldVec(normalize(view_normal));
 
-    const float4 depths = GatherViewDepthsBiased(gatheruv);
+    const float4 depths = GatherViewDepthsBiased(uv_gather);
     const float  depth = cmin(depths);
 
-    const LightPacked light = Lights_LoadPacked(LightIndex);
-    const float3 posToLight = -light.LIGHT_POS;
+    const LightPacked light = Lights_LoadPacked(light_index);
+    const float3 light_direction = -light.LIGHT_POS;
 
-    const half ditherAngle = half(InterleavedGradientNoise(float2(baseCoord), pk_FrameIndex.y) * PK_TWO_PI);
-    const half ditherScale = half(InterleavedGradientNoise(float2(baseCoord), pk_FrameIndex.y + 1u));
+    const half dither_angle = half(InterleavedGradientNoise(float2(coord_base), pk_FrameIndex.y) * PK_TWO_PI);
+    const half dither_scale = half(InterleavedGradientNoise(float2(coord_base), pk_FrameIndex.y + 1u));
 
-    const float sourceAngle = uintBitsToFloat(light.LIGHT_PACKED_SOURCERADIUS);
-    const half maxRadius = half(sourceAngle * 2.0f);
-    const half sinAlpha = half(sourceAngle * 0.5f);
+    const float source_angle = uintBitsToFloat(light.LIGHT_PACKED_SOURCERADIUS);
+    const half max_radius = half(source_angle * 2.0f);
+    const half sin_alpha = half(source_angle * 0.5f);
 
     // Correct offsets by taking projection size into account
     const uint cascade = GetShadowCascadeIndex(depth);
-    const float4x4 lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, cascade);
-    const half scalex = half(length(lightMatrix[0].xyz)) * maxRadius;
-    const half scaley = half(length(lightMatrix[1].xyz)) * maxRadius;
-    const half2 scale = half2(scalex, scaley) * fma(ditherScale, 0.3hf, 0.7hf);
+    const float4x4 light_matrix = PK_BUFFER_DATA(pk_LightMatrices, cascade);
+    const half scale_x = half(length(light_matrix[0].xyz)) * max_radius;
+    const half scale_y = half(length(light_matrix[1].xyz)) * max_radius;
+    const half2 scale = half2(scale_x, scale_y) * fma(dither_scale, 0.3hf, 0.7hf);
 
-    const half2 minOffset = half(1.0f / SHADOW_SIZE.x) / scale;
-    const half cosa = cos(ditherAngle);
-    const half sina = sin(ditherAngle);
+    const half2 offset_min = half(1.0f / SHADOW_SIZE.x) / scale;
+    const half cosa = cos(dither_angle);
+    const half sina = sin(dither_angle);
     const half2x2 basis = half2x2(sina * scale.x, cosa * scale.x, -cosa * scale.y, sina * scale.y);
 
-    float3 worldpos = UVToWorldPos(gatheruv, depth);
-    const float2 biasFactors = Shadow_GetBiasFactors(normal, posToLight);
-    worldpos += biasFactors.x * normal * SHADOW_NEAR_BIAS * float(normalclip) * (1.0f + cascade * cascade);
-    worldpos += biasFactors.y * posToLight * SHADOW_NEAR_BIAS * (1.0f + cascade) * (1.0f + 0.1f / sqrt(depth));
+    float3 world_pos = UVToWorldPos(uv_gather, depth);
+    const float2 bias_factors = Shadow_GetBiasFactors(normal, light_direction);
+    world_pos += bias_factors.x * normal * SHADOW_NEAR_BIAS * float(normal_clip) * (1.0f + cascade * cascade);
+    world_pos += bias_factors.y * light_direction * SHADOW_NEAR_BIAS * (1.0f + cascade) * (1.0f + 0.1f / sqrt(depth));
 
-    const float2 uv = ClipToUV((lightMatrix * float4(worldpos, 1.0f)).xyw);
-    const float z = dot(light.LIGHT_POS, worldpos) + light.LIGHT_RADIUS;
+    const float2 uv = ClipToUV((light_matrix * float4(world_pos, 1.0f)).xyw);
+    const float z = dot(light.LIGHT_POS, world_pos) + light.LIGHT_RADIUS;
 
     // PCSS 
-    half2 avgZ = 0.0hf.xx;
+    half2 average_z = 0.0hf.xx;
 
     for (uint i = 0u; i < 16u; ++i)
     {
         const half2 offset = basis * half2(PK_POISSON_DISK_16_POW[i].xy);
-        avgZ += Shadow_GatherMax(cascade, uv + offset, z);
+        average_z += Shadow_GatherMax(cascade, uv + offset, z);
     }
 
-    const uint validSamples = uint(avgZ.y);
+    const uint validSamples = uint(average_z.y);
 
     half shadow = 0.0hf;
 
@@ -106,8 +106,8 @@ void ShadowmapCs()
     }
     else
     {
-        avgZ.x /= avgZ.y;
-        half2 penumbra = clamp(sinAlpha * avgZ.xx, minOffset, 1.0hf.xx);
+        average_z.x /= average_z.y;
+        half2 penumbra = clamp(sin_alpha * average_z.xx, offset_min, 1.0hf.xx);
 
         for (uint i = 0u; i < 16u; ++i)
         {
@@ -118,7 +118,7 @@ void ShadowmapCs()
         shadow /= 16.0hf;
     }
 
-    imageStore(pk_Image, int2(baseCoord), float4(shadow));
+    imageStore(pk_Image, coord_base, float4(shadow));
 }
 
 #define GROUP_SIZE 8
@@ -131,16 +131,16 @@ layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) i
 void ShadowmapUpsampleCs()
 {
     const int thread = int(gl_LocalInvocationIndex);
-    const int2 baseCoord = int2(gl_WorkGroupID.xy) * GROUP_SIZE - int2(4);
-    const int2 loadCoord = baseCoord + int2(thread % GROUP_SIZE, thread / GROUP_SIZE) * 2;
+    const int2 coord_base = int2(gl_WorkGroupID.xy) * GROUP_SIZE - int2(4);
+    const int2 coord_load = coord_base + int2(thread % GROUP_SIZE, thread / GROUP_SIZE) * 2;
 
-    const float4 baseDepths = GatherViewDepths((loadCoord + 1.0f.xx) * pk_ScreenParams.zw);
-    const bool farclip = Any_GEqual(baseDepths, pk_ClipParams.yyyy - 1e-2f);
-    const float baseDepth = lerp(cmin(baseDepths), -pk_ClipParams.y * 2.0f, farclip);
-    lds_depth[thread] = baseDepth;
+    const float4 base_depths = GatherViewDepths((coord_load + 1.0f.xx) * pk_ScreenParams.zw);
+    const bool far_clip = Any_GEqual(base_depths, pk_ClipParams.yyyy - 1e-2f);
+    const float base_depth = lerp(cmin(base_depths), -pk_ClipParams.y * 2.0f, far_clip);
+    lds_depth[thread] = base_depth;
 
     const half2 offset = half2(GlobalNoiseBlue(gl_GlobalInvocationID.xy, pk_FrameIndex.y).xy) * 2.0hf - 1.0hf;
-    const half2 baseuv = half2(gl_LocalInvocationID.xy + 0.5f) * 0.5hf + 1.5hf.xx + offset;
+    const half2 uv_base = half2(gl_LocalInvocationID.xy + 0.5f) * 0.5hf + 1.5hf.xx + offset;
 
     half2 offsets[4] =
     {
@@ -153,23 +153,23 @@ void ShadowmapUpsampleCs()
     byte4 indices[4];
     half4 weights[4];
 
-    lds_shadow[thread] = half(texelFetch(pk_Texture, loadCoord / 2, 0).x);
+    lds_shadow[thread] = half(texelFetch(pk_Texture, coord_load / 2, 0).x);
 
     [[unroll]]
     for (uint i = 0u; i < 4; ++i)
     {
         // Filter radius can clip into lds bounds. Smaller filter is less effective.
         // Clamp offset instead.
-        const half2 sampleUV = clamp(baseuv + offsets[i], 0.0hf, 6.999hf);
-        const byte2 sampleCoord = byte2(sampleUV);
+        const half2 s_uv = clamp(uv_base + offsets[i], 0.0hf, 6.999hf);
+        const byte2 s_coord = byte2(s_uv);
 
-        byte4 s_indices = sampleCoord.yyyy;
+        byte4 s_indices = s_coord.yyyy;
         s_indices += byte4(0u, 0u, 1u, 1u);
         s_indices *= byte(8u);
-        s_indices += sampleCoord.xxxx;
+        s_indices += s_coord.xxxx;
         s_indices += byte4(0, 1, 0, 1);
 
-        half2 f = fract(sampleUV);
+        half2 f = fract(s_uv);
         half4 fw = half4(f.xy, 1.0hf - f.xy);
         weights[i] = fw.zxzx * fw.wwyy;
         indices[i] = s_indices;
@@ -229,22 +229,22 @@ PK_DECLARE_LOCAL_CBUFFER(pk_BendShadowDispatchData)
 layout(local_size_x = WAVE_SIZE, local_size_y = 1, local_size_z = 1) in;
 void ScreenSpaceShadowsCs()
 {
-    DispatchParameters dispatchParams;
-    dispatchParams.LightCoordinate = pk_LightCoordinate;	    // Values stored in DispatchList::LightCoordinate_Shader by BuildDispatchList()
-    dispatchParams.WaveOffset = pk_WaveOffset;					// Values stored in DispatchData::WaveOffset_Shader by BuildDispatchList()
-    dispatchParams.FarDepthValue = 0.0f;				        // Set to the Depth Buffer Value for the far clip plane, as determined by renderer projection matrix setup (typically 0).
-    dispatchParams.NearDepthValue = 1.0f;				        // Set to the Depth Buffer Value for the near clip plane, as determined by renderer projection matrix setup (typically 1).
-    dispatchParams.InvDepthTextureSize = pk_ScreenParams.zw;	// Inverse of the texture dimensions for 'DepthTexture' (used to convert from pixel coordinates to UVs)
-    dispatchParams.SurfaceThickness = 0.01;
-    dispatchParams.BilinearThreshold = 0.04;
-    dispatchParams.ShadowContrast = 4;
-    dispatchParams.IgnoreEdgePixels = false;
-    dispatchParams.UsePrecisionOffset = false;
-    dispatchParams.BilinearSamplingOffsetMode = false;
-    dispatchParams.DebugOutputEdgeMask = false;
-    dispatchParams.DebugOutputThreadIndex = false;
-    dispatchParams.DebugOutputWaveIndex = false;
-    dispatchParams.DepthBounds = float2(0, 1);
-    dispatchParams.UseEarlyOut = true;
-    WriteScreenSpaceShadow(dispatchParams, int3(gl_WorkGroupID), int(gl_LocalInvocationIndex));
+    DispatchParameters dispatch_params;
+    dispatch_params.LightCoordinate = pk_LightCoordinate;	    // Values stored in DispatchList::LightCoordinate_Shader by BuildDispatchList()
+    dispatch_params.WaveOffset = pk_WaveOffset;					// Values stored in DispatchData::WaveOffset_Shader by BuildDispatchList()
+    dispatch_params.FarDepthValue = 0.0f;				        // Set to the Depth Buffer Value for the far clip plane, as determined by renderer projection matrix setup (typically 0).
+    dispatch_params.NearDepthValue = 1.0f;				        // Set to the Depth Buffer Value for the near clip plane, as determined by renderer projection matrix setup (typically 1).
+    dispatch_params.InvDepthTextureSize = pk_ScreenParams.zw;	// Inverse of the texture dimensions for 'DepthTexture' (used to convert from pixel coordinates to UVs)
+    dispatch_params.SurfaceThickness = 0.01;
+    dispatch_params.BilinearThreshold = 0.04;
+    dispatch_params.ShadowContrast = 4;
+    dispatch_params.IgnoreEdgePixels = false;
+    dispatch_params.UsePrecisionOffset = false;
+    dispatch_params.BilinearSamplingOffsetMode = false;
+    dispatch_params.DebugOutputEdgeMask = false;
+    dispatch_params.DebugOutputThreadIndex = false;
+    dispatch_params.DebugOutputWaveIndex = false;
+    dispatch_params.DepthBounds = float2(0, 1);
+    dispatch_params.UseEarlyOut = true;
+    WriteScreenSpaceShadow(dispatch_params, int3(gl_WorkGroupID), int(gl_LocalInvocationIndex));
 }

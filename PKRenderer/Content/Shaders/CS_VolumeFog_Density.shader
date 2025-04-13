@@ -12,10 +12,10 @@ void main()
     const float3 dither = GlobalNoiseBlue(pos.xy, pk_FrameIndex.x);
     const float3 uvw_cur = (pos + dither) / VOLUMEFOG_SIZE;
 
-    const float3 worldpos = UVToWorldPos(uvw_cur.xy, Fog_ZToView(uvw_cur.z));
-    const float3 uvw_prev = Fog_WorldToPrevUVW(worldpos);
+    const float3 world_pos = UVToWorldPos(uvw_cur.xy, Fog_ZToView(uvw_cur.z));
+    const float3 uvw_prev = Fog_WorldToPrevUVW(world_pos);
 
-    const float value_cur = Fog_CalculateDensity(worldpos);
+    const float value_cur = Fog_CalculateDensity(world_pos);
 
 #if defined(VOLUME_FOG_CLEAR)
     const float value_pre = value_cur;

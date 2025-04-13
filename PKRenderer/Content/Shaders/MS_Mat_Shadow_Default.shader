@@ -9,9 +9,9 @@
 
 struct LightPayload
 {
-    float4x4 lightMatrix;
-    float3 lightPosition;
-    float lightRadius;
+    float4x4 light_matrix;
+    float3 light_position;
+    float light_radius;
     uint layer;
 };
 
@@ -65,73 +65,79 @@ const float3x3 PK_CUBE_FACE_MATRICES[6] =
              +0,+0,-1),
 };
 
-float4 GetCubeClipPos(float3 viewvec, float radius, uint faceIndex)
+float4 GetCubeClipPos(float3 viewvec, float radius, uint face_index)
 {
-    const float3 vpos = viewvec * PK_CUBE_FACE_MATRICES[faceIndex];
+    const float3 view_pos = viewvec * PK_CUBE_FACE_MATRICES[face_index];
     const float near = 0.1f;
     const float far = radius;
     const float m22 = -near / (far - near);
     const float m32 = (near * far) / (far - near);
-    return float4(vpos.xy, m22 * vpos.z + m32, vpos.z);
+    return float4(view_pos.xy, m22 * view_pos.z + m32, view_pos.z);
 }
 
 [[pk_restrict STAGE_MESH_TASK]] 
 void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
 {
-    const uint lightIndex = bitfieldExtract(pk_Instancing_Userdata, 0, 16);
-    const LightPacked light = Lights_LoadPacked(lightIndex);
-    const uint matrixIndex = light.LIGHT_MATRIX;
+    const uint light_index = bitfieldExtract(pk_Instancing_Userdata, 0, 16);
+    const LightPacked light = Lights_LoadPacked(light_index);
+    const uint matrix_index = light.LIGHT_MATRIX;
     const uint layer = bitfieldExtract(pk_Instancing_Userdata, 16, 16);
 
-    payload.extra.lightPosition = light.LIGHT_POS;
-    payload.extra.lightRadius = light.LIGHT_RADIUS;
+    payload.extra.light_position = light.LIGHT_POS;
+    payload.extra.light_radius = light.LIGHT_RADIUS;
     payload.extra.layer = layer;
 
-    float4x4 lightMatrix;
+    float4x4 light_matrix;
 
     #if defined(PK_LIGHT_PASS_DIRECTIONAL)
-        lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex + layer);
+        light_matrix = PK_BUFFER_DATA(pk_LightMatrices, matrix_index + layer);
     #elif defined(PK_LIGHT_PASS_SPOT)
-        lightMatrix = PK_BUFFER_DATA(pk_LightMatrices, matrixIndex);
+        light_matrix = PK_BUFFER_DATA(pk_LightMatrices, matrix_index);
     #endif
 
-    payload.extra.lightMatrix = lightMatrix;
+    payload.extra.light_matrix = light_matrix;
 }
 
 [[pk_restrict STAGE_MESH_TASK]] 
 bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
 {
     #if defined(PK_LIGHT_PASS_DIRECTIONAL)
-        return Meshlet_Cone_Cull_Directional(meshlet, payload.extra.lightPosition) && Meshlet_Frustum_Ortho_Cull(meshlet, payload.extra.lightMatrix);
+        return Meshlet_Cone_Cull_Directional(meshlet, payload.extra.light_position) && Meshlet_Frustum_Ortho_Cull(meshlet, payload.extra.light_matrix);
     #elif defined(PK_LIGHT_PASS_SPOT)
-        return Meshlet_Cone_Cull(meshlet, payload.extra.lightPosition) && Meshlet_Frustum_Perspective_Cull(meshlet, payload.extra.lightMatrix);
+        return Meshlet_Cone_Cull(meshlet, payload.extra.light_position) && Meshlet_Frustum_Perspective_Cull(meshlet, payload.extra.light_matrix);
     #else
-        return Meshlet_Cone_Cull(meshlet, payload.extra.lightPosition) && Meshlet_Sphere_Cull(meshlet, payload.extra.lightPosition, payload.extra.lightRadius);
+        return Meshlet_Cone_Cull(meshlet, payload.extra.light_position) && Meshlet_Sphere_Cull(meshlet, payload.extra.light_position, payload.extra.light_radius);
     #endif
 }
 
 [[pk_restrict STAGE_MESH_ASSEMBLY]] 
-void PK_MESHLET_FUNC_TRIANGLE(uint triangleIndex, inout uint3 indices)
+void PK_MESHLET_FUNC_TRIANGLE(uint triangle_index, inout uint3 indices)
 {
-    gl_MeshPrimitivesEXT[triangleIndex].gl_Layer = int(payload.extra.layer);
+    gl_MeshPrimitivesEXT[triangle_index].gl_Layer = int(payload.extra.layer);
 }
 
 [[pk_restrict STAGE_MESH_ASSEMBLY]] 
-void PK_MESHLET_FUNC_VERTEX(uint vertexIndex, PKVertex vertex, inout float4 sv_Position)
+void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_Position)
 {
-    const float3 wpos = ObjectToWorldPos(vertex.position);
+    const float3 world_pos = ObjectToWorldPos(vertex.position);
 
     #if defined(PK_LIGHT_PASS_DIRECTIONAL)
-        sv_Position = payload.extra.lightMatrix * float4(wpos, 1.0f);
+
+        sv_Position = payload.extra.light_matrix * float4(world_pos, 1.0f);
         // Depth test uses reverse z for precision reasons. revert range for actual distance.
-        vs_DEPTH[vertexIndex] = dot(payload.extra.lightPosition, wpos) + payload.extra.lightRadius;
+        vs_DEPTH[vertex_index] = dot(payload.extra.light_position, world_pos) + payload.extra.light_radius;
+
     #elif defined(PK_LIGHT_PASS_SPOT)
-        sv_Position = payload.extra.lightMatrix * float4(wpos, 1.0f);
-        vs_DEPTH[vertexIndex] = wpos - payload.extra.lightPosition;
+
+        sv_Position = payload.extra.light_matrix * float4(world_pos, 1.0f);
+        vs_DEPTH[vertex_index] = world_pos - payload.extra.light_position;
+
     #elif defined(PK_LIGHT_PASS_POINT)
-        const float3 vs_depth = wpos - payload.extra.lightPosition;
-        sv_Position = GetCubeClipPos(vs_depth, payload.extra.lightRadius, payload.extra.layer % 6);
-        vs_DEPTH[vertexIndex] = vs_depth;
+
+        const float3 vs_depth = world_pos - payload.extra.light_position;
+        sv_Position = GetCubeClipPos(vs_depth, payload.extra.light_radius, payload.extra.layer % 6);
+        vs_DEPTH[vertex_index] = vs_depth;
+
     #endif
 }
 

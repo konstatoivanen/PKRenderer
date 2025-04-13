@@ -30,8 +30,8 @@ void main()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const uint thread = gl_LocalInvocationIndex;
-    const float2 texelSize = 1.0f.xx / textureSize(pk_SceneEnv, 0).xy;
-    const float2 baseUv = (coord + 1.0f.xx) * texelSize;
+    const float2 texel_size = 1.0f.xx / textureSize(pk_SceneEnv, 0).xy;
+    const float2 uv_base = (coord + 1.0f.xx) * texel_size;
 
     float3 local_irrad = 0.0f.xxx;
     float3 local_trans = 0.0f.xxx;
@@ -39,12 +39,11 @@ void main()
     for (uint yy = 0u; yy < 2u; ++yy)
     for (uint xx = 0u; xx < 2u; ++xx)
     {
-        const float2 uv = (coord * 2 + int2(xx, yy) + 0.5f.xx) * texelSize;
-        const float3 viewdir = OctaDecode(uv);
-
+        const float2 uv = (coord * 2 + int2(xx, yy) + 0.5f.xx) * texel_size;
+        const float3 view_dir = OctaDecode(uv);
 
         float3 irrad, trans;
-        Fog_SampleStatic(pk_Origin.xyz, viewdir, PK_STATIC_FOG_VIRTUAL_DISTANCE, irrad, trans);
+        Fog_SampleStatic(pk_Origin.xyz, view_dir, PK_STATIC_FOG_VIRTUAL_DISTANCE, irrad, trans);
 
         local_irrad += irrad;
         local_trans += trans;
@@ -59,29 +58,30 @@ void main()
         local_irrad /= 4;
         local_trans /= 4;
 
-        float3 color = textureLod(pk_SceneEnv, baseUv, 1.0f).rgb * pk_SceneEnv_Exposure;
+        float3 color = textureLod(pk_SceneEnv, uv_base, 1.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(local_irrad, color, local_trans);
         imageStore(pk_Image1, coord, uint4(EncodeE5BGR9(color)));
     }
 
     // Mip 2
     {
-        const uint swapIdVertical = QuadSwapIdVertical8x8(gl_SubgroupInvocationID);
-        const float3 vertical_irrad = subgroupShuffle(local_irrad, swapIdVertical);
-        const float3 vertical_trans = subgroupShuffle(local_trans, swapIdVertical);
-        local_irrad += vertical_irrad;
-        local_trans += vertical_trans;
+        const uint swap_id_v = QuadSwapIdVertical8x8(gl_SubgroupInvocationID);
+        const uint swap_id_h = QuadSwapIdHorizontal(gl_SubgroupInvocationID);
+        
+        const float3 irrad_v = subgroupShuffle(local_irrad, swap_id_v);
+        const float3 trans_v = subgroupShuffle(local_trans, swap_id_v);
+        local_irrad += irrad_v;
+        local_trans += trans_v;
 
-        const uint swapIdHorizontal = QuadSwapIdHorizontal(gl_SubgroupInvocationID);
-        const float3 horizontal_irrad = subgroupShuffle(local_irrad, swapIdHorizontal);
-        const float3 horizontal_trans = subgroupShuffle(local_trans, swapIdHorizontal);
-        local_irrad += horizontal_irrad;
-        local_trans += horizontal_trans;
+        const float3 irrad_h = subgroupShuffle(local_irrad, swap_id_h);
+        const float3 trans_h = subgroupShuffle(local_trans, swap_id_h);
+        local_irrad += irrad_h;
+        local_trans += trans_h;
 
         local_irrad /= 4;
         local_trans /= 4;
 
-        float3 color = textureLod(pk_SceneEnv, baseUv, 2.0f).rgb * pk_SceneEnv_Exposure;
+        float3 color = textureLod(pk_SceneEnv, uv_base, 2.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(local_irrad, color, local_trans);
 
         if ((thread & 0x9u) == 0u)
@@ -94,27 +94,27 @@ void main()
 
     // Mip 3
     {
-        const uint2 subgroupCoord = uint2(gl_SubgroupInvocationID % 8u, gl_SubgroupInvocationID / 8u);
-        const uint2 subgroupBase = subgroupCoord / 2;
-        const uint2 subgroupSwapped = (subgroupBase / 2) * 4 + ((subgroupBase + 1) % 2) * 2;
+        const uint2 wave_coord = uint2(gl_SubgroupInvocationID % 8u, gl_SubgroupInvocationID / 8u);
+        const uint2 wave_coord_base = wave_coord / 2;
+        const uint2 wave_coord_swap = (wave_coord_base / 2) * 4 + ((wave_coord_base + 1) % 2) * 2;
 
-        const uint swapIdVertical = subgroupSwapped.y * 8 + subgroupCoord.x;
-        const uint swapIdHorizontal = subgroupCoord.y * 8 + subgroupSwapped.x;
+        const uint swap_id_v = wave_coord_swap.y * 8 + wave_coord.x;
+        const uint swap_id_h = wave_coord.y * 8 + wave_coord_swap.x;
 
-        const float3 vertical_irrad = subgroupShuffle(local_irrad, swapIdVertical);
-        const float3 vertical_trans = subgroupShuffle(local_trans, swapIdVertical);
-        local_irrad += vertical_irrad;
-        local_trans += vertical_trans;
+        const float3 irrad_v = subgroupShuffle(local_irrad, swap_id_v);
+        const float3 trans_v = subgroupShuffle(local_trans, swap_id_v);
+        local_irrad += irrad_v;
+        local_trans += trans_v;
 
-        const float3 horizontal_irrad = subgroupShuffle(local_irrad, swapIdHorizontal);
-        const float3 horizontal_trans = subgroupShuffle(local_trans, swapIdHorizontal);
-        local_irrad += horizontal_irrad;
-        local_trans += horizontal_trans;
+        const float3 irrad_h = subgroupShuffle(local_irrad, swap_id_h);
+        const float3 trans_h = subgroupShuffle(local_trans, swap_id_h);
+        local_irrad += irrad_h;
+        local_trans += trans_h;
         
         local_irrad /= 4;
         local_trans /= 4;
 
-        float3 color = textureLod(pk_SceneEnv, baseUv, 3.0f).rgb * pk_SceneEnv_Exposure;
+        float3 color = textureLod(pk_SceneEnv, uv_base, 3.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(local_irrad, color, local_trans);
 
         if ((thread & 0x1Bu) == 0u)
@@ -147,7 +147,7 @@ void main()
         local_irrad = (local_irrad + lds_irrad) / 2;
         local_trans = (local_trans + lds_trans) / 2;
 
-        float3 color = textureLod(pk_SceneEnv, baseUv, 4.0f).rgb * pk_SceneEnv_Exposure;
+        float3 color = textureLod(pk_SceneEnv, uv_base, 4.0f).rgb * pk_SceneEnv_Exposure;
         color = lerp(local_irrad, color, local_trans);
 
         imageStore(pk_Image4, coord >> 3, uint4(EncodeE5BGR9(color)));

@@ -18,10 +18,9 @@
 void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 {
     //uv += PK_SURF_SAMPLE_PARALLAX_OFFSET(_HeightMap, _HeightAmount, uv, surf.viewdir);
-
-    float3 textureval = SURF_TEX(_PBSTexture, uv).xyz;
-    surf.roughness = textureval.SRC_ROUGHNESS * _Roughness;
-    surf.occlusion = lerp(1.0f, textureval.SRC_OCCLUSION, _Occlusion);
+    float3 pbs_texture_val = SURF_TEX(_PBSTexture, uv).xyz;
+    surf.roughness = pbs_texture_val.SRC_ROUGHNESS * _Roughness;
+    surf.occlusion = lerp(1.0f, pbs_texture_val.SRC_OCCLUSION, _Occlusion);
     surf.subsurface = 0.1f.xxx;
     surf.sheen = _SheenColor.rgb;
     surf.normal = SURF_SAMPLE_NORMAL(_NormalMap, _NormalAmount, uv);

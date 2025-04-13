@@ -25,12 +25,12 @@ out float4 SV_Target0;
 
 void MainFs()
 {
-    const float viewDepth = ViewDepth(gl_FragCoord.z);
-    const float sceneDepth = SampleViewDepth(gl_FragCoord.xy * pk_ScreenParams.zw);
-    const float alphaFade = 0.3f * exp((-viewDepth + sceneDepth) * 0.125f);
+    const float view_depth = ViewDepth(gl_FragCoord.z);
+    const float scene_depth = SampleViewDepth(gl_FragCoord.xy * pk_ScreenParams.zw);
+    const float fade_alpha = 0.3f * exp((-view_depth + scene_depth) * 0.125f);
 
     float4 color = vs_COLOR;
-    color.a *= sceneDepth < viewDepth ? alphaFade : 1.0f;
+    color.a *= scene_depth < view_depth ? fade_alpha : 1.0f;
 
     SV_Target0 = color;
 };

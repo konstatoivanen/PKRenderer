@@ -23,13 +23,13 @@ layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_8, local_
 
 void PrefilterCs()
 {
-    const float2 texelSize = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
+    const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const float2 uv = (coord + 0.5f.xx) * texelSize;
+    const float2 uv = (coord + 0.5f.xx) * texel_size;
 
     const int2 offsets[4] = { int2(-1,-1), int2(1,1), int2(-1,1), int2(1,-1) };
     const float4 depths = GatherViewDepths(uv);
-    const float4 cocs = GetCirclesOfConfusion(depths);
+    const float4 cocs = DoF_GetCirclesOfConfusion(depths);
     const float4 weights = saturate(abs(cocs) / pk_DoF_MaximumCoC);
 
     float3 average;
@@ -37,26 +37,27 @@ void PrefilterCs()
     average.g = dot(textureGather(pk_Texture, uv, 1), weights);
     average.b = dot(textureGather(pk_Texture, uv, 2), weights);
     average /= dot(weights, 1.0f.xxxx);
+
     imageStore(pk_DoF_ColorWrite, int3(coord, 0), EncodeE5BGR9(average).xxxx);
     imageStore(pk_DoF_AlphaWrite, int3(coord, 0), dot(cocs, 0.25f.xxxx).xxxx);
 }
 
 void DiskBlurCs()
 {
-    const float2 texelSize = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
+    const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const float2 uv = (coord + 0.5f.xx) * texelSize;
+    const float2 uv = (coord + 0.5f.xx) * texel_size;
 
     half4 background = 0.0hf.xxxx;
     half4 foreground = 0.0hf.xxxx;
 
-    const half margin = 2.0hf * half(texelSize.y);
-    const float aspect = texelSize.x / texelSize.y;
-    const half centerCoC = half(texture(pk_DoF_AlphaRead, float3(uv, 0)).r);
+    const half margin = 2.0hf * half(texel_size.y);
+    const float aspect = texel_size.x / texel_size.y;
+    const half center_coc = half(texture(pk_DoF_AlphaRead, float3(uv, 0)).r);
 
     const half3 center = half3(texture(pk_DoF_ColorRead, float3(uv, 0)).rgb);
-    background = half4(center, 1.0hf) * clamp((max(0.0hf, centerCoC) + margin) / margin, 0.0hf, 1.0hf);
-    foreground = half4(center, 1.0hf) * clamp((-centerCoC + margin) / margin, 0.0hf, 1.0hf);
+    background = half4(center, 1.0hf) * clamp((max(0.0hf, center_coc) + margin) / margin, 0.0hf, 1.0hf);
+    foreground = half4(center, 1.0hf) * clamp((-center_coc + margin) / margin, 0.0hf, 1.0hf);
 
     #define SAMPLE_COUNT 22u
 
@@ -75,7 +76,7 @@ void DiskBlurCs()
 
             const half3 color = half3(texture(pk_DoF_ColorRead, uvw).rgb);
             const half coc = half(texture(pk_DoF_AlphaRead, uvw).r);
-            const half bgcoc = max(min(centerCoC, coc), 0.0hf);
+            const half bgcoc = max(min(center_coc, coc), 0.0hf);
 
             background += half4(color, 1.0hf) * clamp((bgcoc - dist) / margin, 0.0hf, 1.0hf);
             foreground += half4(color, 1.0hf) * clamp((-coc - dist) / margin, 0.0hf, 1.0hf);
@@ -93,46 +94,47 @@ void DiskBlurCs()
 
 void UpsampleCs()
 {
-    const float2 texelSize = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
+    const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const float2 uv = (coord + 0.5f.xx) * texelSize;
+    const float2 uv = (coord + 0.5f.xx) * texel_size;
 
     half4 background = 0.0hf.xxxx;
     half4 foreground = 0.0hf.xxxx;
 
-    const float viewDepth = SampleViewDepth(coord);
-    const float coc = GetCircleOfConfusion(viewDepth);
-    const float4 o = uv.xyxy + texelSize.xyxy * float2(-1.0f, 1.0f).xxyy;
+    const float view_depth = SampleViewDepth(coord);
+    const float coc = DoF_GetCircleOfConfusion(view_depth);
+    const float4 uvs = uv.xyxy + texel_size.xyxy * float2(-1.0f, 1.0f).xxyy;
 
-    foreground.a += half(texture(pk_DoF_AlphaRead, float3(o.xy, 1)).r);
-    foreground.a += half(texture(pk_DoF_AlphaRead, float3(o.zy, 1)).r);
-    foreground.a += half(texture(pk_DoF_AlphaRead, float3(o.xw, 1)).r);
-    foreground.a += half(texture(pk_DoF_AlphaRead, float3(o.zw, 1)).r);
+    foreground.a += half(texture(pk_DoF_AlphaRead, float3(uvs.xy, 1)).r);
+    foreground.a += half(texture(pk_DoF_AlphaRead, float3(uvs.zy, 1)).r);
+    foreground.a += half(texture(pk_DoF_AlphaRead, float3(uvs.xw, 1)).r);
+    foreground.a += half(texture(pk_DoF_AlphaRead, float3(uvs.zw, 1)).r);
     foreground.a *= 0.25hf;
-    background.a = half(smoothstep(texelSize.y * 2.0f, texelSize.y * 4.0f, coc));
+    background.a = half(smoothstep(texel_size.y * 2.0f, texel_size.y * 4.0f, coc));
 
     const half alpha = (1.0hf - foreground.a) * (1.0hf - background.a);
 
-    const uint4 threadMask = subgroupBallot(alpha < 0.85f);
-    const uint threadCount = subgroupBallotBitCount(threadMask);
+    const uint4 thread_mask = subgroupBallot(alpha < 0.85f);
+    const uint thread_count = subgroupBallotBitCount(thread_mask);
 
     [[branch]]
-    if (threadCount > 0u)
+    if (thread_count > 0u)
     {
-        foreground.rgb += half3(texture(pk_DoF_ColorRead, float3(o.xy, 1)).rgb);
-        foreground.rgb += half3(texture(pk_DoF_ColorRead, float3(o.zy, 1)).rgb);
-        foreground.rgb += half3(texture(pk_DoF_ColorRead, float3(o.xw, 1)).rgb);
-        foreground.rgb += half3(texture(pk_DoF_ColorRead, float3(o.zw, 1)).rgb);
+        foreground.rgb += half3(texture(pk_DoF_ColorRead, float3(uvs.xy, 1)).rgb);
+        foreground.rgb += half3(texture(pk_DoF_ColorRead, float3(uvs.zy, 1)).rgb);
+        foreground.rgb += half3(texture(pk_DoF_ColorRead, float3(uvs.xw, 1)).rgb);
+        foreground.rgb += half3(texture(pk_DoF_ColorRead, float3(uvs.zw, 1)).rgb);
         foreground.rgb *= 0.25hf;
 
-        background.rgb += half3(texture(pk_DoF_ColorRead, float3(o.xy, 2)).rgb);
-        background.rgb += half3(texture(pk_DoF_ColorRead, float3(o.zy, 2)).rgb);
-        background.rgb += half3(texture(pk_DoF_ColorRead, float3(o.xw, 2)).rgb);
-        background.rgb += half3(texture(pk_DoF_ColorRead, float3(o.zw, 2)).rgb);
+        background.rgb += half3(texture(pk_DoF_ColorRead, float3(uvs.xy, 2)).rgb);
+        background.rgb += half3(texture(pk_DoF_ColorRead, float3(uvs.zy, 2)).rgb);
+        background.rgb += half3(texture(pk_DoF_ColorRead, float3(uvs.xw, 2)).rgb);
+        background.rgb += half3(texture(pk_DoF_ColorRead, float3(uvs.zw, 2)).rgb);
         background.rgb *= 0.25hf;
 
         const half3 dof = lerp(background.rgb * background.a, foreground.rgb, foreground.a);
         const half3 scene = half3(imageLoad(pk_Image, coord).rgb);
+
         imageStore(pk_Image, coord, half4(scene * alpha + dof, 1.0hf));
     }
 }

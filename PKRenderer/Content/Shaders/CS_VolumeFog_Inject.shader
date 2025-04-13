@@ -23,61 +23,61 @@ void main()
     const float depth = min(Fog_ZToView(uvw_cur.z), lerp(1e+38f, zmax, zmin < zmax));
 
 #if EARLY_Z_TEST == 1
-    float4 maxdepths = float4
-        (
-            SampleMaxZ(float2(id.xy + float2(-0.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4),
-            SampleMaxZ(float2(id.xy + float2(-0.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
-            SampleMaxZ(float2(id.xy + float2(+1.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
-            SampleMaxZ(float2(id.xy + float2(+1.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4)
-            );
+    const float4 max_depths = float4
+    (
+        SampleMaxZ(float2(id.xy + float2(-0.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4),
+        SampleMaxZ(float2(id.xy + float2(-0.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
+        SampleMaxZ(float2(id.xy + float2(+1.5f, +1.5f)) / VOLUMEFOG_SIZE_XY, 4),
+        SampleMaxZ(float2(id.xy + float2(+1.5f, -0.5f)) / VOLUMEFOG_SIZE_XY, 4)
+    );
 
-    float maxTile = cmax(maxdepths);
+    float max_tile = cmax(max_depths);
 
     [[branch]]
-    if (maxTile < depth)
+    if (max_tile < depth)
     {
         imageStore(pk_Fog_Inject, int3(id), uint4(0));
         return;
     }
 #endif
 
-    const float3 worldpos = UVToWorldPos(uvw_cur.xy, depth);
-    const float3 uvw_prev = Fog_WorldToPrevUVW(worldpos);
-    const float3 viewdir = normalize(worldpos - pk_ViewWorldOrigin.xyz);
+    const float3 world_pos = UVToWorldPos(uvw_cur.xy, depth);
+    const float3 uvw_prev = Fog_WorldToPrevUVW(world_pos);
+    const float3 view_dir = normalize(world_pos - pk_ViewWorldOrigin.xyz);
 
-    const float3 gi_static = SampleEnvironmentSHVolumetric(viewdir, pk_Fog_Phase1);
-    const float4 gi_dynamic = GI_SphereTrace_Diffuse(worldpos);
+    const float3 gi_static = SampleEnvironmentSHVolumetric(view_dir, pk_Fog_Phase1);
+    const float4 gi_dynamic = GI_SphereTrace_Diffuse(world_pos);
 
     // Fade value for properties not present in backgroung fog
-    const float staticFade = 1.0f - Fog_VolumetricToStaticFade(uvw_cur.z);
+    const float fade_static = 1.0f - Fog_VolumetricToStaticFade(uvw_cur.z);
     // Distant texels are less dense, trace a longer distance to retain some depth.
-    const float maxMarchDistance = exp(uvw_cur.z * VOLUMEFOG_MARCH_DISTANCE_EXP);
-    const float shadowBiasRange = Fog_ZToView((id.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV) - Fog_ZToView(id.z * VOLUMEFOG_SIZE_Z_INV);
-    const float3 shadowBias = viewdir * shadowBiasRange * 0.5f;
+    const float march_distance_max = exp(uvw_cur.z * VOLUMEFOG_MARCH_DISTANCE_EXP);
+    const float shadow_bias_range = Fog_ZToView((id.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV) - Fog_ZToView(id.z * VOLUMEFOG_SIZE_Z_INV);
+    const float3 shadow_bias = view_dir * shadow_bias_range * 0.5f;
 
     // Occlude ground as it should be lit mostly by dynamic gi.
     // Apply visibility mask from cone trace.
-    const float gi_static_occlusion = (viewdir.y * 0.5f + 0.5f) * gi_dynamic.a;
+    const float gi_static_occlusion = (view_dir.y * 0.5f + 0.5f) * gi_dynamic.a;
 
     float3 value_cur = gi_static.rgb * gi_static_occlusion + gi_dynamic.rgb;
 
     // This is incorrect for the dynamic component. However, it introduces good depth to the colors so whatever.
-    value_cur *= Fog_EstimateTransmittance(uvw_cur, staticFade);
+    value_cur *= Fog_EstimateTransmittance(uvw_cur, fade_static);
 
     LightTile tile = Lights_GetTile_COORD(int2(gl_WorkGroupID.xy >> 1), depth);
 
     for (uint i = tile.start; i < tile.end; ++i)
     {
         // @TODO current 1spp shadow test for fog is prone to banding. implement better filter.
-        LightSample light = Lights_SampleTiled(i, worldpos, shadowBias, tile.cascade);
+        LightSample light = Lights_SampleTiled(i, world_pos, shadow_bias, tile.cascade);
 
-        const float marchDistance = min(light.linearDistance, maxMarchDistance);
-        light.color *= Fog_MarchTransmittance(worldpos, light.direction, dither.y, marchDistance, staticFade);
-        light.shadow = lerp(1.0f, light.shadow, staticFade);
+        const float march_distance = min(light.linearDistance, march_distance_max);
+        light.color *= Fog_MarchTransmittance(world_pos, light.direction, dither.y, march_distance, fade_static);
+        light.shadow = lerp(1.0f, light.shadow, fade_static);
 
         value_cur += BxDF_Volumetric
         (
-            viewdir,
+            view_dir,
             pk_Fog_Phase0,
             pk_Fog_Phase1,
             pk_Fog_PhaseW,

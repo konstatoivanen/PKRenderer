@@ -17,55 +17,55 @@
 
 PK_DECLARE_RT_PAYLOAD(uint2, payload, 0);
 
-bool TraceRay_ScreenSpace(const int2 coord, const float3 origin, const float3 direction, inout float hitT)
+bool TraceRay_ScreenSpace(const int2 coord, const float3 origin, const float3 direction, inout float hit_t)
 {
 #if defined(PK_GI_SSRT_PRETRACE)
-    const float3 viewpos = WorldToViewPos(origin);
-    const float3 viewdir = WorldToViewVec(direction);
-    const float maxt = 0.05f * viewpos.z;
-    const float2 dims = pk_ScreenParams.xy;
+    const float3 view_pos = WorldToViewPos(origin);
+    const float3 view_dir = WorldToViewVec(direction);
+    const float max_t = 0.05f * view_pos.z;
+    const float2 resolution = pk_ScreenParams.xy;
 
     float samples;
     {
-        const float3 end = viewpos + viewdir * maxt;
-        const float2 px = ViewToClipUV(end) * dims + 0.5f.xx;
+        const float3 end = view_pos + view_dir * max_t;
+        const float2 px = ViewToClipUV(end) * resolution + 0.5f.xx;
         samples = length(px - float2(coord));
         samples = clamp(samples, 1.0f, 32.0f);
     }
 
-    const float threshold = 0.005f * sqrt(viewpos.z);
-    float delta = maxt / samples;
-    hitT = delta;
+    const float threshold = 0.005f * sqrt(view_pos.z);
+    float delta = max_t / samples;
+    hit_t = delta;
 
     [[loop]]
-    for (; hitT < maxt; hitT += delta)
+    for (; hit_t < max_t; hit_t += delta)
     {
-        const float3 samplepos = viewpos + viewdir * hitT;
-        const float2 uv = ViewToClipUV(samplepos);
-        const int2 scoord = int2(uv * dims + 0.5f.xx);
-        const float depth = SampleViewDepth(scoord);
-        const float depthDelta = samplepos.z - depth;
-        const bool inScreen = Test_InUV(uv);
+        const float3 s_pos = view_pos + view_dir * hit_t;
+        const float2 s_uv = ViewToClipUV(s_pos);
+        const int2 s_coord = int2(s_uv * resolution + 0.5f.xx);
+        const float s_depth = SampleViewDepth(s_coord);
+        const float s_depth_delta = s_pos.z - s_depth;
+        const bool s_in_screen = Test_InUV(s_uv);
 
         delta *= 1.04f;
 
-        if (depthDelta > threshold || !inScreen)
+        if (s_depth_delta > threshold || !s_in_screen)
         {
-            return depthDelta < 5.0 * threshold && inScreen;
+            return s_depth_delta < 5.0 * threshold && s_in_screen;
         }
     }
 
     return false;
 
 #else
-    hitT = 0.0f;
+    hit_t = 0.0f;
     return false;
 #endif
 }
 
 void MainRgs()
 {
-    const int2 raycoord = int2(gl_LaunchIDEXT.xy);
+    const int2 coord_ray = int2(gl_LaunchIDEXT.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy);
     const float depth = PK_GI_SAMPLE_DEPTH(coord);
 
@@ -73,12 +73,12 @@ void MainRgs()
 
     if (Test_DepthFar(depth))
     {
-        const float4 normalRoughness = SampleWorldNormalRoughness(coord);
+        const float4 normal_roughness = SampleWorldNormalRoughness(coord);
 
-        GI_LOAD_RAY_PARAMS(coord, raycoord, depth, normalRoughness.xyz, normalRoughness.w)
+        GI_LOAD_RAY_PARAMS(coord, coord_ray, depth, normal_roughness.xyz, normal_roughness.w)
 
 #if PK_GI_APPROX_ROUGH_SPEC == 1
-            if (normalRoughness.w >= PK_GI_MAX_ROUGH_SPEC)
+            if (normal_roughness.w >= PK_GI_MAX_ROUGH_SPEC)
             {
                 hits.spec.dist = 1e+38f;
                 hits.spec.isMiss = true;
@@ -114,7 +114,7 @@ void MainRgs()
 
         {
 #if PK_GI_APPROX_ROUGH_SPEC == 1
-            if (normalRoughness.w < PK_GI_MAX_ROUGH_SPEC)
+            if (normal_roughness.w < PK_GI_MAX_ROUGH_SPEC)
 #endif
             {
                 hits.spec.dist = hits.spec.isMiss ? uint16BitsToHalf(0x7C00us) : hits.spec.dist;
@@ -136,7 +136,7 @@ void MainRgs()
         }
 
         hits.diffNormal = payload.HIT_NORMAL;
-        GI_Store_RayHits(raycoord, hits);
+        GI_Store_RayHits(coord_ray, hits);
     }
 }
 
