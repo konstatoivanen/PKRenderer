@@ -33,7 +33,6 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float4 pk_ViewSpaceCameraDelta; // View space delta position of the camera.
     float4 pk_ClipParams;           // x = n, y = f, z = -1 / f, w = -(n - f) / (f * n).
     float4 pk_ClipParamsInv;        // i_p 00, 11, 23, 33
-    float4 pk_ClipParamsExp;        // x = 1.0f / log2(f / n), y = -log2(n) / log2(f / n), z = f / n, w = 1.0f / n.
     float4 pk_ScreenParams;         // xy = current screen (width, height), z = 1 / width, w = 1 / height.
     float4 pk_ProjectionJitter;     // xy = sub pixel jitter, zw = previous frame jitter
     uint4 pk_FrameRandom;           // Random uint4 values for current frame.
@@ -42,6 +41,7 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     
     float4 pk_MeshletCullParams;    // Meshlet Error Scale Factor, Horizontal Fov, Vertical Fov, Unused.
     float4 pk_ShadowCascadeZSplits; // view space z axis splits for directional light shadow cascades
+    float4 pk_LightTileZParams;     // exponential depth conversion params for light grid z coordinates
 
     // @TODO redudant in here. remove. Currenty here as it provides padding :)
     float pk_SceneEnv_Exposure; // Scene background environment exposure
@@ -57,8 +57,8 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     // Fog Parameters
     float pk_Fog_Density_Amount;
     float pk_Fog_Density_Constant;
-    float3 pk_Fog_Albedo;
-    float pk_Fog_ZFarMultiplier;
+    float4 pk_Fog_Albedo;
+    float4 pk_Fog_ZParams;
     float4 pk_Fog_Absorption;
     float4 pk_Fog_WindDirSpeed;
 
@@ -141,11 +141,12 @@ float  ViewDepth(const float clip_z)      { return 1.0f / (pk_ClipParamsInv.z * 
 float4 ViewDepth(const float4 clip_z)     { return 1.0f / (pk_ClipParamsInv.z * clip_z + pk_ClipParamsInv.w); } 
 float  ClipDepth(const float view_z)      { return fma(1.0f / view_z, pk_ClipParams.w, pk_ClipParams.z); }
 float4 ClipDepth(const float4 view_z)     { return fma(1.0f / view_z, pk_ClipParams.wwww, pk_ClipParams.zzzz); }
-// Note that these dont produce reverse Z as theyre used for exponential mapping of volumes where 0-1 range is preferred.
-float  ViewDepthExp(const float clip_z)   { return pk_ClipParams.x * pow(pk_ClipParamsExp.z, clip_z); }
-float2 ViewDepthExp(const float2 clip_z)  { return pk_ClipParams.x * pow(pk_ClipParamsExp.zz, clip_z); }
-float  ClipDepthExp(const float view_z)   { return log2(view_z) * pk_ClipParamsExp.x + pk_ClipParamsExp.y; }
-float2 ClipDepthExp(const float2 view_z)  { return log2(view_z) * pk_ClipParamsExp.x + pk_ClipParamsExp.y; }
+
+// Note that these dont produce reverse Z as theyre used for exponential mapping of volumes where 0-N range is preferred.
+float  ViewDepthExp(const float clip_z, const float3 params) { return (exp2(clip_z / params.z) - params.y) / params.x; }
+float2 ViewDepthExp(const float2 clip_z, const float3 params) { return (exp2(clip_z / params.zz) - params.yy) / params.xx; }
+float  ClipDepthExp(const float view_z, const float3 params) { return log2(view_z * params.x + params.y) * params.z; }
+float2 ClipDepthExp(const float2 view_z, const float3 params) { return log2(view_z * params.xx + params.yy) * params.zz; }
 
 float3 ClipToUvw(const float4 clip) { return fma(clip.xyz / clip.w, float3(0.5f.xx, 1.0f), float3(0.5f.xx, 0.0f)); }
 float2 ClipToUv(const float3 clip_xyw) { return fma(clip_xyw.xy / clip_xyw.z, 0.5f.xx, 0.5f.xx); }

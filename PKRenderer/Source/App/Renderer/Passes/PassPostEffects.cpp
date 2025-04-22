@@ -91,8 +91,9 @@ namespace PK::App
         featureMask |= (uint)(debug.GIVX) << 8;
         featureMask |= (uint)(debug.Normal) << 9;
         featureMask |= (uint)(debug.Roughness) << 10;
-        featureMask |= (uint)(debug.HalfScreen) << 11;
-        featureMask |= (uint)(debug.Zoom) << 12;
+        featureMask |= (uint)(debug.LightTiles) << 11;
+        featureMask |= (uint)(debug.HalfScreen) << 12;
+        featureMask |= (uint)(debug.Zoom) << 13;
 
         view->constants->Set<uint>(hash->pk_PostEffectsFeatureMask, featureMask);
 
@@ -101,7 +102,7 @@ namespace PK::App
         const bool useFullFeaturePass = (featureMask & fullFeatureMask) == fullFeatureMask;
 
         // Half screen & debug zoom are additive features;
-        const uint debugFeatureMask = 0x7C0u;
+        const uint debugFeatureMask = 0xFC0u;
         const bool useDebugPass = (featureMask & debugFeatureMask) != 0u;
 
         m_passIndex = useFullFeaturePass ? 0u : 1u;

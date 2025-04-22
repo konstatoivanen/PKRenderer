@@ -32,8 +32,8 @@ DEFINE_TRICUBIC_SAMPLER(pk_Fog_InjectRead, VOLUMEFOG_SIZE)
 
 // Direct exp transform packs too much resolution to near clip. linearize a bit with sqrt
 // @TODO optimize by moving all this calc to separate viewdpeth exp params.
-float Fog_ZToView(float z) { return ViewDepthExp(sqrt(z)) * pk_Fog_ZFarMultiplier; }
-float Fog_ViewToZ(float view_depth) { return pow2(ClipDepthExp(view_depth / pk_Fog_ZFarMultiplier)); }
+float Fog_ZToView(float z) { return ViewDepthExp(z, pk_Fog_ZParams.xyz); }
+float Fog_ViewToZ(float z) { return ClipDepthExp(z, pk_Fog_ZParams.xyz); }
 
 float Fog_VolumetricToStaticFade(float uvz) { return pow2(saturate(uvz * 4.0f - 3.0f)); }
 

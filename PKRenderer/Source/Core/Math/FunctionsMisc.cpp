@@ -4,7 +4,7 @@
 
 namespace PK::Math
 {
-    void GetCascadeDepths(float znear, float zfar, float linearity, float* cascades, uint32_t count)
+    void GetCascadeDepths(float znear, float zfar, float distribution, float* cascades, uint32_t count)
     {
         assert(count > 2);
 
@@ -12,40 +12,58 @@ namespace PK::Math
         cascades[0] = znear;
         cascades[count] = zfar;
 
+        const auto zparams = GetExponentialZParams01(znear, zfar, distribution);
+
         for (auto i = 1u; i < count; ++i)
         {
-            cascades[i] = CascadeDepth(znear, zfar, linearity, i / (float)count);
+            cascades[i] = ClipToViewDepthExp(i / (float)count, zparams);
         }
     }
 
-    void GetCascadeDepths(float znear, float zfar, float linearity, float* cascades, uint32_t gridSizeZ, uint32_t count)
+    void GetCascadeDepths(float znear, float zfar, float distribution, float* cascades, const float3& zAlignParams, uint32_t count)
     {
         assert(count > 2);
 
-        GetCascadeDepths(znear, zfar, linearity, cascades, count);
+        GetCascadeDepths(znear, zfar, distribution, cascades, count);
 
         // Snap z ranges to tile indices to make shader branching more coherent
-        auto scale = gridSizeZ / glm::log2(zfar / znear);
-        auto bias = gridSizeZ * -log2(znear) / log2(zfar / znear);
-
         for (auto i = 1; i < (int32_t)(count - 1u); ++i)
         {
-            float zTile = round(log2(cascades[i]) * scale + bias);
-            cascades[i] = znear * pow(zfar / znear, zTile / gridSizeZ);
+            float zcoord = round(ViewToClipDepthExp(cascades[i], zAlignParams));
+            cascades[i] = ClipToViewDepthExp(zcoord, zAlignParams);
         }
     }
 
-    float4 GetCascadeDepthsFloat4(float znear, float zfar, float linearity, uint32_t gridSizeZ)
+    float4 GetCascadeDepthsFloat4(float znear, float zfar, float distribution, const float3& zAlignParams)
     {
         float cascades[5]{};
-        GetCascadeDepths(znear, zfar, linearity, cascades, gridSizeZ, 5);
+        GetCascadeDepths(znear, zfar, distribution, cascades, zAlignParams, 5);
         // Ignore first plane as it is just the near plane and we are more interested in the final clipping plane.
         return *reinterpret_cast<float4*>(cascades + 1u);
     }
 
-    float CascadeDepth(float znear, float zfar, float linearity, float interpolant)
+    float3 GetExponentialZParams01(float znear, float zfar, float distribution)
     {
-        return linearity * (znear * powf(zfar / znear, interpolant)) + (1.0f - linearity) * (znear + (zfar - znear) * interpolant);
+        const auto o = (zfar - znear * glm::exp2(1.0f / distribution)) / (zfar - znear);
+        const auto b = (1.0f - o) / znear;
+        return float3(b,o, distribution);
+    }
+
+    float3 GetExponentialZParams(float znear, float zfar, float distribution, uint32_t size)
+    {
+        const auto o = (zfar - znear * glm::exp2((size - 1.0f) / distribution)) / (zfar - znear);
+        const auto b = (1.0f - o) / znear;
+        return float3(b, o, distribution);
+    }
+
+    float ViewToClipDepthExp(float viewz, const float3& params)
+    {
+        return log2(viewz * params.x + params.y) * params.z;
+    }
+
+    float ClipToViewDepthExp(float clipz, const float3& params)
+    {
+        return (exp2(clipz / params.z) - params.y) / params.x;
     }
 
     float Cot(float value)

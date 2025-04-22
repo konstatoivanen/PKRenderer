@@ -15,6 +15,7 @@
 #include "includes/GBuffers.glsl"
 #include "includes/SceneEnv.glsl"
 #include "includes/SceneGIVX.glsl"
+#include "includes/LightResources.glsl"
 #endif
 
 PK_DECLARE_SET_DRAW uniform image2D pk_Image;
@@ -121,6 +122,15 @@ void main()
         IF_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_ROUGHNESS)
         {
             color = SampleRoughness(uv).xxx;
+        }
+
+        IF_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_LIGHT_TILES)
+        {
+            const float view_depth = SampleViewDepth(uv);
+            LightTile tile = Lights_GetTile_Uv(uv, view_depth);
+            const float gradient = (tile.end - tile.start) / 8.0f;
+            const float3 hsv = HsvToRgb(gradient, 1.0f, 0.25f + tile.cascade * 0.25f);
+            color = lerp(color, hsv, 0.5f);
         }
     }
 #endif

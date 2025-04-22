@@ -79,6 +79,6 @@ LightTile Lights_GetTile(const int3 coord)
     #endif
 }
 
-LightTile Lights_GetTile_Coord(const int2 coord, const float view_depth) { return Lights_GetTile(int3(coord, max(0, int(LIGHT_TILE_COUNT_Z * ClipDepthExp(view_depth))))); }
+LightTile Lights_GetTile_Coord(const int2 coord, const float view_depth) { return Lights_GetTile(int3(coord, max(0, int(ClipDepthExp(view_depth, pk_LightTileZParams.xyz))))); }
 LightTile Lights_GetTile_Px(const int2 px, const float view_depth) { return Lights_GetTile_Coord(px >> LIGHT_TILE_SHIFT_PX, view_depth); }
 LightTile Lights_GetTile_Uv(const float2 uv, const float view_depth) { return Lights_GetTile_Px(int2(uv * pk_ScreenSize.xy), view_depth); }

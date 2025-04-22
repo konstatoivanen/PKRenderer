@@ -14,6 +14,7 @@ namespace PK::App
     struct EntityViewLight;
     struct RequestEntityCullResults;
     struct RenderPipelineContext;
+    struct RenderView;
 
     typedef std::array<float, 5> ShadowCascades;
 
@@ -44,13 +45,12 @@ namespace PK::App
             };
 
             PassLights(AssetDatabase* assetDatabase);
+            void SetViewConstants(RenderView* view);
             void RenderShadows(CommandBufferExt cmd, RenderPipelineContext* context);
             void RenderScreenSpaceShadows(CommandBufferExt cmd, RenderPipelineContext* context);
             void ComputeClusters(CommandBufferExt cmd, RenderPipelineContext* context);
             void BuildLights(RenderPipelineContext* context);
-            ShadowCascades GetCascadeZSplits(float znear, float zfar) const;
-            inline float4 GetCascadeZSplitsFloat4(float znear, float zfar) const { return Math::GetCascadeDepthsFloat4(znear, zfar, m_cascadeLinearity, LightGridSizeZ); }
-        
+
         private:
             struct ShadowTypeData
             {
@@ -78,7 +78,8 @@ namespace PK::App
 
             ShadowTypeData m_shadowTypeData[(int)LightType::TypeCount];
             
-            CVariableField<float> m_cascadeLinearity = { "Renderer.Lights.CascadeLinearity", 0.5f };
+            CVariableField<float> m_cascadeDistribution = { "Renderer.Lights.CascadeDistribution", 0.5f };
+            CVariableField<float> m_tileZDistribution = { "Renderer.Lights.TileZDistribution", 10.0f };
             CVariableField<uint32_t> m_shadowmapSize = { "Renderer.Lights.ShadowmapSize", 1024u };
     };
 }

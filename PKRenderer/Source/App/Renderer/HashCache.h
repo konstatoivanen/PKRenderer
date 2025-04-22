@@ -32,7 +32,6 @@ namespace PK::App
         DECLARE_HASH(pk_ViewSpaceCameraDelta)
         DECLARE_HASH(pk_ClipParams)
         DECLARE_HASH(pk_ClipParamsInv)
-        DECLARE_HASH(pk_ClipParamsExp)
         DECLARE_HASH(pk_ScreenParams)
         DECLARE_HASH(pk_ProjectionJitter)
         DECLARE_HASH(pk_FrameRandom)
@@ -41,6 +40,7 @@ namespace PK::App
         
         DECLARE_HASH(pk_MeshletCullParams)
         DECLARE_HASH(pk_ShadowCascadeZSplits)
+        DECLARE_HASH(pk_LightTileZParams)
 
         DECLARE_HASH(pk_ObjectToWorld)
         DECLARE_HASH(pk_WorldToView)
@@ -167,7 +167,7 @@ namespace PK::App
         DECLARE_HASH(pk_DoF_AlphaRead)
         DECLARE_HASH(pk_DoF_AlphaWrite)
 
-        DECLARE_HASH(pk_Fog_ZFarMultiplier)
+        DECLARE_HASH(pk_Fog_ZParams)
         DECLARE_HASH(pk_Fog_Albedo)
         DECLARE_HASH(pk_Fog_Absorption)
         DECLARE_HASH(pk_Fog_WindDirSpeed)

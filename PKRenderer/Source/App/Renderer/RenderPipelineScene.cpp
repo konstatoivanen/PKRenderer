@@ -61,7 +61,6 @@ namespace PK::App
             { ElementType::Float4, hash->pk_ViewSpaceCameraDelta },
             { ElementType::Float4, hash->pk_ClipParams },
             { ElementType::Float4, hash->pk_ClipParamsInv },
-            { ElementType::Float4, hash->pk_ClipParamsExp },
             { ElementType::Float4, hash->pk_ScreenParams },
             { ElementType::Float4, hash->pk_ProjectionJitter },
             { ElementType::Uint4, hash->pk_FrameRandom },
@@ -70,6 +69,7 @@ namespace PK::App
 
             { ElementType::Float4, hash->pk_MeshletCullParams },
             { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
+            { ElementType::Float4, hash->pk_LightTileZParams },
 
             { ElementType::Float, hash->pk_SceneEnv_Exposure },
 
@@ -84,8 +84,8 @@ namespace PK::App
             // Fog Parameters
             { ElementType::Float,  hash->pk_Fog_Density_Amount },
             { ElementType::Float,  hash->pk_Fog_Density_Constant },
-            { ElementType::Float3, hash->pk_Fog_Albedo },
-            { ElementType::Float,  hash->pk_Fog_ZFarMultiplier },
+            { ElementType::Float4, hash->pk_Fog_Albedo },
+            { ElementType::Float4, hash->pk_Fog_ZParams },
             { ElementType::Float4, hash->pk_Fog_Absorption },
             { ElementType::Float4, hash->pk_Fog_WindDirSpeed },
 
@@ -187,7 +187,6 @@ namespace PK::App
             auto constants = view->constants.get();
             auto resolution = view->GetResolution();
 
-            const auto shadowCascadeZSplits = m_passLights.GetCascadeZSplitsFloat4(view->znear, view->zfar);
             const auto projectionJitter = m_temporalAntialiasing.GetJitter();
             const auto time = view->timeRender.time;
             const auto deltaTime = view->timeRender.deltaTime;
@@ -241,16 +240,15 @@ namespace PK::App
             constants->Set<float4>(hash->pk_ViewSpaceCameraDelta, viewSpaceCameraDelta);
             constants->Set<float4>(hash->pk_ClipParams, { n, f, viewToClip[2][2], viewToClip[3][2] });
             constants->Set<float4>(hash->pk_ClipParamsInv, { clipToView[0][0], clipToView[1][1], clipToView[2][3], clipToView[3][3] });
-            constants->Set<float4>(hash->pk_ClipParamsExp, { 1.0f / glm::log2(f / n), -log2(n) / log2(f / n), f / n, 1.0f / n });
             constants->Set<float4>(hash->pk_ScreenParams, { (float)resolution.x, (float)resolution.y, 1.0f / (float)resolution.x, 1.0f / (float)resolution.y });
             constants->Set<float4>(hash->pk_ProjectionJitter, projectionJitter);
             constants->Set<uint4>(hash->pk_FrameRandom, Math::MurmurHash41((uint32_t)(frameIndex % ~0u)));
             constants->Set<uint2>(hash->pk_ScreenSize, { resolution.x, resolution.y });
             constants->Set<uint2>(hash->pk_FrameIndex, { frameIndex % 0xFFFFFFFFu, (frameIndex - frameIndexResize) % 0xFFFFFFFFu });
-
-            constants->Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
+            
             constants->Set<float4>(hash->pk_MeshletCullParams, { 1.0f / (viewToClip[1][1] * resolution.y * 0.5f), view->fieldOfView * aspect, view->fieldOfView, 1.0f });
 
+            m_passLights.SetViewConstants(view);
             m_passSceneEnv.SetViewConstants(view);
             m_passSceneGI.SetViewConstants(view);
             m_passVolumeFog.SetViewConstants(view);

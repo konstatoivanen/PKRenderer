@@ -3,10 +3,13 @@
 
 namespace PK::Math
 {
-    void GetCascadeDepths(float znear, float zfar, float linearity, float* cascades, uint32_t count);
-    void GetCascadeDepths(float znear, float zfar, float linearity, float* cascades, uint32_t gridSizeZ, uint32_t count);
-    float4 GetCascadeDepthsFloat4(float znear, float zfar, float linearity, uint32_t gridSizeZ);
-    float CascadeDepth(float znear, float zfar, float linearity, float interpolant);
+    void GetCascadeDepths(float znear, float zfar, float distribution, float* cascades, uint32_t count);
+    void GetCascadeDepths(float znear, float zfar, float distribution, float* cascades, const float3& zAlignParams, uint32_t count);
+    float4 GetCascadeDepthsFloat4(float znear, float zfar, float distribution, const float3& zAlignParams);
+    float3 GetExponentialZParams01(float znear, float zfar, float distribution);
+    float3 GetExponentialZParams(float znear, float zfar, float distribution, uint32_t size);
+    float ViewToClipDepthExp(float viewz, const float3& params);
+    float ClipToViewDepthExp(float viewz, const float3& params);
     float Cot(float value);
     float RandomFloat();
     float GetHaltonSequence(uint32_t index, uint32_t radix);

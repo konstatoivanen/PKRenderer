@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Math/FunctionsMisc.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/RHI/RHInterfaces.h"
@@ -27,10 +28,10 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
         auto& settings = view->settings.FogSettings;
-        view->constants->Set<float3>(hash->pk_Fog_Albedo, settings.Albedo);
+        view->constants->Set<float4>(hash->pk_Fog_Albedo, float4(settings.Albedo, 0.0f));
         view->constants->Set<float4>(hash->pk_Fog_Absorption, float4(settings.Absorption, 1.0f));
         view->constants->Set<float4>(hash->pk_Fog_WindDirSpeed, float4(settings.WindDirection, settings.WindSpeed));
-        view->constants->Set<float>(hash->pk_Fog_ZFarMultiplier, glm::clamp(settings.ZFar / view->zfar, 0.0f, 1.0f));
+        view->constants->Set<float4>(hash->pk_Fog_ZParams, float4(Math::GetExponentialZParams01(settings.ZNear, settings.ZFar, settings.ZDistribution), 0.0f));
         view->constants->Set<float>(hash->pk_Fog_Phase0, settings.Phase0);
         view->constants->Set<float>(hash->pk_Fog_Phase1, settings.Phase1);
         view->constants->Set<float>(hash->pk_Fog_PhaseW, settings.PhaseW);

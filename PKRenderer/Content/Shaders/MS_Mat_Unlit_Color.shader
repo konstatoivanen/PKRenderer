@@ -40,10 +40,12 @@ void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_
 
 #elif defined(SHADER_STAGE_FRAGMENT)
 
-out float4 SV_Target0;
+#include "includes/SceneGIVX.glsl"
+
+[[pk_restrict ForwardFs GBufferFs]] out float4 SV_Target0;
 
 void ForwardFs() { SV_Target0 = _Color; }
 void GBufferFs() { SV_Target0 = EncodeGBufferWorldNR(vs_Normal, 0.0f, 0.0f); }
-void GIVoxelizeFs() { SV_Target0 = _ColorVoxelize; }
+void GIVoxelizeFs() { GI_Store_Voxel(GI_FragVoxelToWorldSpace(gl_FragCoord.xyz), _ColorVoxelize); }
 
 #endif

@@ -157,33 +157,6 @@ namespace PK::App
         gizmos->GizmosSetColor(PK_COLOR_GREEN);
         gizmos->GizmosDrawFrustrum(worldToClip);
 
-        /*
-        float n = 0.2f;
-        float f = 200.0f;
-        float4 exp = { 1.0f / glm::log2(f / n), -log2(n) / log2(f / n), f / n, 1.0f / n };
-
-        gizmos->DrawLine({ -100, 25, n }, { -100, 75, n });
-        gizmos->DrawLine({ -100, 25, f }, { -100, 75, f });
-        gizmos->SetColor(PK_COLOR_RED);
-
-        for (auto i = 0; i < 128; ++i)
-        {
-            float z = (i + 0.5f) / 128.0f;
-            z = glm::sqrt(z);
-            float e = n * pow(exp.z, z);
-            gizmos->DrawLine({ -100, 25, e }, { -100, 50, e });
-
-            z = log2(e) * exp.x + exp.y;
-            z = z * z;
-
-            e = n * pow(exp.z, glm::sqrt(z));
-            gizmos->DrawLine({ -100, 50, e }, { -100, 75, e });
-        }
-        //log2(view_z) * pk_ClipParamsExp.x + pk_ClipParamsExp.y;
-
-        //(m[2][2] * v[2] + m[3][2]) / v[2]
-        */
-
         float4x4 localToWorld = Math::GetMatrixTRS(offset, float3(35, -35, 0) * PK_FLOAT_DEG2RAD, PK_FLOAT3_ONE);
         float4x4 worldToLocal = glm::inverse(localToWorld);
         float4x4 invvp = glm::inverse(worldToClip);
@@ -205,24 +178,6 @@ namespace PK::App
             gizmos->GizmosSetColor(PK_COLOR_GREEN);
             gizmos->GizmosDrawFrustrum(cascades[i]);
         }
-
-        /*
-        gizmos->SetColor(PK_COLOR_RED);
-        gizmos->DrawFrustrum(worldToClip);
-
-        auto znear = 0.2f;
-        auto zfar = 25.0f;
-
-        for (int i = 0; i < 4; ++i)
-        {
-            float n = Math::CascadeDepth(znear, zfar, 0.5f, (float)i / 4);
-            float f = Math::CascadeDepth(znear, zfar, 0.5f, (float)(i + 1) / 4);
-
-            auto viewToClipSub = Math::GetOffsetPerspective(-1, 1, -1, 1, 50.0f, aspect, n, f);
-            auto worldToClipSub = viewToClipSub * worldToView;
-            gizmos->DrawFrustrum(worldToClipSub);
-        }
-        */
     }
 
     void EngineDebug::Step(AssetImportEvent<EngineDebugConfig>* token)

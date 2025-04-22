@@ -8,11 +8,13 @@
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/TextureAsset.h"
+#include "Core/Rendering/ConstantBuffer.h"
 #include "App/ECS/EntityViewMeshStatic.h"
 #include "App/ECS/EntityViewLight.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/EntityCulling.h"
 #include "App/Renderer/RenderPipelineBase.h"
+#include "App/Renderer/RenderView.h"
 #include "PassLights.h"
 
 namespace PK::App
@@ -137,6 +139,15 @@ namespace PK::App
         sampler.wrap[2] = WrapMode::Clamp;
         lightCookies->SetSampler(sampler);
         RHI::SetTexture(hash->pk_LightCookies, lightCookies);
+    }
+
+    void PassLights::SetViewConstants(RenderView* view)
+    {
+        auto hash = HashCache::Get();
+        const auto tileZParams = Math::GetExponentialZParams(view->znear, view->zfar, m_tileZDistribution, LightGridSizeZ);
+        const auto shadowCascadeZSplits = Math::GetCascadeDepthsFloat4(view->znear, view->zfar, m_cascadeDistribution, tileZParams);
+        view->constants->Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
+        view->constants->Set<float4>(hash->pk_LightTileZParams, float4(tileZParams, 0.0f));
     }
 
     void PassLights::RenderShadows(CommandBufferExt cmd, RenderPipelineContext* context)
@@ -337,7 +348,11 @@ namespace PK::App
         auto matricesView = matrixCount > 0 ? cmd.BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : BufferView<float4x4>();
 
         auto clipToWorld = glm::inverse(renderView->worldToClip);
-        auto cascadeZSplits = GetCascadeZSplits(renderView->znear, renderView->zfar);
+        auto tileZParams = Math::GetExponentialZParams(renderView->znear, renderView->zfar, m_tileZDistribution, LightGridSizeZ);
+        
+        ShadowCascades cascadeZSplits;
+        Math::GetCascadeDepths(renderView->znear, renderView->zfar, m_cascadeDistribution, cascadeZSplits.data(), tileZParams, 5);
+
         auto shadowCasterMask = ScenePrimitiveFlags::Mesh | ScenePrimitiveFlags::CastShadows;
 
         for (auto i = 0u; i < lightCount; ++i)
@@ -437,13 +452,6 @@ namespace PK::App
         RHI::SetBuffer(hash->pk_Lights, m_lightsBuffer.get());
         RHI::SetBuffer(hash->pk_LightMatrices, m_lightMatricesBuffer.get());
         RHI::SetTexture(hash->pk_ShadowmapAtlas, m_shadowmaps.get());
-    }
-
-    ShadowCascades PassLights::GetCascadeZSplits(float znear, float zfar) const
-    {
-        ShadowCascades cascadeSplits;
-        Math::GetCascadeDepths(znear, zfar, m_cascadeLinearity, cascadeSplits.data(), LightGridSizeZ, 5);
-        return cascadeSplits;
     }
 
     uint32_t PassLights::BuildShadowBatch(RenderPipelineContext* context, const RequestEntityCullResults& shadowCasters, EntityViewLight* lightView, uint32_t index, uint32_t* outShadowCount)
