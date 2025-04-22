@@ -45,7 +45,7 @@ void main()
     const float3 uvw_prev = Fog_WorldToPrevUvw(world_pos);
     const float3 view_dir = normalize(world_pos - pk_ViewWorldOrigin.xyz);
 
-    const float3 gi_static = SampleEnvironmentSHVolumetric(view_dir, pk_Fog_Phase1);
+    const float3 gi_static = SceneEnv_SampleSH_Volumetric(view_dir, pk_Fog_Phase1);
     const float4 gi_dynamic = GI_SphereTrace_Diffuse(world_pos);
 
     // Fade value for properties not present in backgroung fog

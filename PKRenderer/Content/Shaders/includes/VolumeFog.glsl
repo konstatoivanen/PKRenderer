@@ -116,7 +116,7 @@ void Fog_SampleStatic(float3 origin, float3 view_dir, float view_depth, inout fl
     transmittance = exp(-density * pk_Fog_Absorption.rgb * view_depth);
 
     const float occlusion = view_dir.y * 0.5f + 0.5f;
-    scatter = pk_Fog_Albedo.rgb * occlusion * SampleEnvironmentSHVolumetric(view_dir, pk_Fog_Phase1);
+    scatter = pk_Fog_Albedo.rgb * occlusion * SceneEnv_SampleSH_Volumetric(view_dir, pk_Fog_Phase1);
 
     // @TODO refactor to use somekind of global light cluster for this.
     // For now get the first light as it is likely a directional light

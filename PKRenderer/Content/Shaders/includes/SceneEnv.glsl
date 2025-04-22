@@ -44,7 +44,7 @@ float3 SceneEnv_SampleSH_Diffuse(float3 direction)
     return SceneEnv_SampleSH(float4(1.0f, direction) * PK_L1BASIS_COSINE * 2.0f);  
 }
 
-float3 SampleEnvironmentSHVolumetric(float3 view_dir, float phase) 
+float3 SceneEnv_SampleSH_Volumetric(float3 view_dir, float phase) 
 { 
     const float4 zh = float4(1.0f, view_dir) * float4(1.0f, phase.xxx);
     return SceneEnv_SampleSH(zh); 
