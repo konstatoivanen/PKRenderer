@@ -28,24 +28,24 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
         auto& settings = view->settings.FogSettings;
-        view->constants->Set<float4>(hash->pk_Fog_Albedo, float4(settings.Albedo, 0.0f));
-        view->constants->Set<float4>(hash->pk_Fog_Absorption, float4(settings.Absorption, 1.0f));
-        view->constants->Set<float4>(hash->pk_Fog_WindDirSpeed, float4(settings.WindDirection, settings.WindSpeed));
-        view->constants->Set<float4>(hash->pk_Fog_ZParams, float4(Math::GetExponentialZParams01(settings.ZNear, settings.ZFar, settings.ZDistribution), 0.0f));
-        view->constants->Set<float>(hash->pk_Fog_Phase0, settings.Phase0);
-        view->constants->Set<float>(hash->pk_Fog_Phase1, settings.Phase1);
-        view->constants->Set<float>(hash->pk_Fog_PhaseW, settings.PhaseW);
-        view->constants->Set<float>(hash->pk_Fog_Density_Constant, settings.DensityConstant);
-        view->constants->Set<float>(hash->pk_Fog_Density_HeightExponent, settings.DensityHeightExponent);
-        view->constants->Set<float>(hash->pk_Fog_Density_HeightOffset, settings.DensityHeightOffset);
-        view->constants->Set<float>(hash->pk_Fog_Density_HeightAmount, settings.DensityHeightAmount);
+
+        auto fadeShadowsDirect = 1.0f / (settings.ZFar - glm::mix(settings.ZFar, settings.ZNear, settings.FadeShadowsDirect));
+        auto fadeShadowsVolumetric = 1.0f / (settings.ZFar - glm::mix(settings.ZFar, settings.ZNear, settings.FadeShadowsVolumetric));
+        auto fadeStatic = 1.0f / (settings.ZFar - glm::mix(settings.ZFar, settings.ZNear, settings.FadeStatic));
+
         view->constants->Set<float>(hash->pk_Fog_Density_NoiseAmount, settings.DensityNoiseAmount);
         view->constants->Set<float>(hash->pk_Fog_Density_NoiseScale, settings.DensityNoiseScale);
         view->constants->Set<float>(hash->pk_Fog_Density_Amount, settings.Density);
-        view->constants->Set<float>(hash->pk_Fog_Density_Sky_Constant, settings.DensitySkyConstant);
-        view->constants->Set<float>(hash->pk_Fog_Density_Sky_HeightExponent, settings.DensitySkyHeightExponent);
-        view->constants->Set<float>(hash->pk_Fog_Density_Sky_HeightOffset, settings.DensitySkyHeightOffset);
-        view->constants->Set<float>(hash->pk_Fog_Density_Sky_HeightAmount, settings.DensitySkyHeightAmount);
+        view->constants->Set<float>(hash->pk_Fog_Phase0, settings.Phase0);
+        view->constants->Set<float>(hash->pk_Fog_Phase1, settings.Phase1);
+        view->constants->Set<float>(hash->pk_Fog_PhaseW, settings.PhaseW);
+        view->constants->Set<float4>(hash->pk_Fog_Albedo, float4(settings.Albedo, 0.0f));
+        view->constants->Set<float4>(hash->pk_Fog_Absorption, float4(settings.Absorption, 0.0f));
+        view->constants->Set<float4>(hash->pk_Fog_WindDirSpeed, float4(settings.WindDirection, settings.WindSpeed));
+        view->constants->Set<float4>(hash->pk_Fog_ZParams, float4(Math::GetExponentialZParams01(settings.ZNear, settings.ZFar, settings.ZDistribution), settings.ZFar));
+        view->constants->Set<float4>(hash->pk_Fog_FadeParams, float4(fadeShadowsDirect, fadeShadowsVolumetric, fadeStatic, settings.FadeGroundOcclusion));
+        view->constants->Set<float4>(hash->pk_Fog_Density_ExpParams0, *reinterpret_cast<float4*>(&settings.Exponential0.Constant));
+        view->constants->Set<float4>(hash->pk_Fog_Density_ExpParams1, *reinterpret_cast<float4*>(&settings.Exponential1.Constant));
     }
 
     void PassVolumeFog::ComputeDensity(CommandBufferExt cmd, RenderPipelineContext* context)

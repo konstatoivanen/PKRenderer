@@ -738,6 +738,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
   <ItemGroup>
     <None Include="Content\Configs\DebugEngine.cfg" />
     <None Include="Content\Shaders\CS_IntegrateDFG.shader" />
+    <None Include="Content\Shaders\CS_SceneEnv_IntegrateISL.shader" />
     <None Include="Content\Shaders\VS_SceneEnv_Background.shader" />
     <None Include="Content\Shaders\VS_GUI.shader" />
     <None Include="Content\Textures\T_TonemapLut_Agx.ktx2" />

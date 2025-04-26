@@ -261,12 +261,12 @@ struct SurfaceData
     {
         #define PK_SURF_DEBUG_SCENE_IBL 0
         #if PK_SURF_DEBUG_SCENE_IBL
-            const float3 peak_direction = SceneEnv_SampleSH_PeakDirection();
-            const float3 peak_color = SceneEnv_SampleSH_Color() * PK_PI;
-            const float3 ld = SceneEnv_SampleSH_Diffuse(surf.normal);
+            const float3 peak_direction = SceneEnv_Sample_SH_PeakDirection();
+            const float3 peak_color = SceneEnv_Sample_SH_Color() * PK_PI;
+            const float3 ld = SceneEnv_Sample_SH_Diffuse(surf.normal);
             const float3 ls_dir = Futil_SpecularDominantDirection(surf.normal, surf.view_dir, sqrt(surf.alpha));
             const float2 ls_uv = EncodeOctaUv(ls_dir);
-            const float3 ls = SceneEnv_Sample(ls_uv, surf.alpha);
+            const float3 ls = SceneEnv_Sample_IBL(ls_uv, surf.alpha);
             const float ls_fade = 1.0f;
         #else
             const GIResolved resolved = GI_Load_Resolved(clip_uvw.xy); 
@@ -302,7 +302,7 @@ struct SurfaceData
         }
         else
         {
-            const float3 diff_scene_env = SceneEnv_SampleSH_Diffuse(surf.normal);
+            const float3 diff_scene_env = SceneEnv_Sample_SH_Diffuse(surf.normal);
             const float4 diff_voxel_traced = GI_ConeTrace_Diffuse(world_pos, surf.normal);
             return surf.diffuse * (diff_scene_env * diff_voxel_traced.a + diff_voxel_traced.rgb);
         }

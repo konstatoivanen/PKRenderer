@@ -24,7 +24,7 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHi
 
     if (hit.is_miss)
     {
-        return SceneEnv_Sample(EncodeOctaUv(direction), 0.0f);
+        return SceneEnv_Sample_IBL(EncodeOctaUv(direction), 0.0f);
     }
 
     const float4 voxel = GI_Load_Voxel(world_pos, PK_GI_GET_VX_MI_BIAS(hit.dist));

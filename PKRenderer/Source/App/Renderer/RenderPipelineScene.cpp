@@ -82,27 +82,19 @@ namespace PK::App
             { ElementType::Uint2, hash->pk_GI_RayDither },
 
             // Fog Parameters
+            { ElementType::Float,  hash->pk_Fog_Density_NoiseAmount },
+            { ElementType::Float,  hash->pk_Fog_Density_NoiseScale },
             { ElementType::Float,  hash->pk_Fog_Density_Amount },
-            { ElementType::Float,  hash->pk_Fog_Density_Constant },
-            { ElementType::Float4, hash->pk_Fog_Albedo },
-            { ElementType::Float4, hash->pk_Fog_ZParams },
-            { ElementType::Float4, hash->pk_Fog_Absorption },
-            { ElementType::Float4, hash->pk_Fog_WindDirSpeed },
-
             { ElementType::Float,  hash->pk_Fog_Phase0 },
             { ElementType::Float,  hash->pk_Fog_Phase1 },
             { ElementType::Float,  hash->pk_Fog_PhaseW },
-            { ElementType::Float,  hash->pk_Fog_Density_HeightExponent },
-            
-            { ElementType::Float,  hash->pk_Fog_Density_HeightOffset },
-            { ElementType::Float,  hash->pk_Fog_Density_HeightAmount },
-            { ElementType::Float,  hash->pk_Fog_Density_NoiseAmount },
-            { ElementType::Float,  hash->pk_Fog_Density_NoiseScale },
-            
-            { ElementType::Float,  hash->pk_Fog_Density_Sky_Constant },
-            { ElementType::Float,  hash->pk_Fog_Density_Sky_HeightExponent },
-            { ElementType::Float,  hash->pk_Fog_Density_Sky_HeightOffset },
-            { ElementType::Float,  hash->pk_Fog_Density_Sky_HeightAmount },
+            { ElementType::Float4, hash->pk_Fog_Albedo },
+            { ElementType::Float4, hash->pk_Fog_ZParams },
+            { ElementType::Float4, hash->pk_Fog_FadeParams },
+            { ElementType::Float4, hash->pk_Fog_Absorption },
+            { ElementType::Float4, hash->pk_Fog_WindDirSpeed },
+            { ElementType::Float4, hash->pk_Fog_Density_ExpParams0 },
+            { ElementType::Float4, hash->pk_Fog_Density_ExpParams1 },
 
             // Color Grading
             { ElementType::Float4, hash->pk_CC_WhiteBalance },

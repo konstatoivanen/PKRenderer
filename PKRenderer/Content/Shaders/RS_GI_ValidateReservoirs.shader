@@ -64,7 +64,7 @@ void MainRms()
     }
     else
     {
-        radiance = SceneEnv_Sample(EncodeOctaUv(gl_WorldRayDirectionEXT), 0.0f);
+        radiance = SceneEnv_Sample_IBL(EncodeOctaUv(gl_WorldRayDirectionEXT), 0.0f);
     }
 
     payload.HIT_LOGLUMINANCE = log(1.0f + dot(PK_LUMA_BT709, radiance));

@@ -3,18 +3,32 @@
 #include "Utilities.glsl"
 #include "Constants.glsl"
 
-#define PK_SCENE_ENV_MAX_MIP 4
+#define PK_SCENE_ENV_IBL_MAX_MIP 4
+#define PK_SCENE_ENV_ISL_MAX_MIP 7
 #define PK_SCENE_ENV_MIN_SIZE 32
 
 PK_DECLARE_SET_GLOBAL uniform sampler2D pk_SceneEnv;
+PK_DECLARE_SET_GLOBAL uniform sampler2D pk_SceneEnv_ISL;
 PK_DECLARE_BUFFER(float4, pk_SceneEnv_SH, PK_SET_GLOBAL);
 
-float3 SceneEnv_Sample(float2 uv, float roughness) 
+float3 SceneEnv_Sample_IBL(float2 uv, float roughness) 
 { 
-    return textureLod(pk_SceneEnv, uv, roughness * PK_SCENE_ENV_MAX_MIP).rgb; 
+    return textureLod(pk_SceneEnv, uv, roughness * PK_SCENE_ENV_IBL_MAX_MIP).rgb; 
 }
 
-float3 SceneEnv_SampleSH(float4 basis)
+float3 SceneEnv_Sample_ISL(float2 uv, float level)
+{
+    return textureLod(pk_SceneEnv_ISL, uv, level).rgb; 
+}
+
+float3 SceneEnv_Sample_ISL_Dual(float2 uv, float directionality)
+{
+    const float3 directional = textureLod(pk_SceneEnv_ISL, uv, 0.0f).rgb;
+    const float3 ambient = textureLod(pk_SceneEnv_ISL, uv, PK_SCENE_ENV_ISL_MAX_MIP).rgb;
+    return lerp(ambient, directional, directionality);
+}
+
+float3 SceneEnv_Sample_SH(float4 basis)
 {
     const float R = max(0.0f, dot(PK_BUFFER_DATA(pk_SceneEnv_SH, 0), basis));
     const float G = max(0.0f, dot(PK_BUFFER_DATA(pk_SceneEnv_SH, 1), basis));
@@ -22,7 +36,7 @@ float3 SceneEnv_SampleSH(float4 basis)
     return float3(R, G, B);
 }
 
-float3 SceneEnv_SampleSH_PeakDirection()
+float3 SceneEnv_Sample_SH_PeakDirection()
 {
     float3 direction = 0.0f.xxx;
     direction += PK_BUFFER_DATA(pk_SceneEnv_SH, 0).yzw * PK_LUMA_BT709.r;
@@ -31,7 +45,7 @@ float3 SceneEnv_SampleSH_PeakDirection()
     return direction / (length(direction) + 1e-6f); 
 }
 
-float3 SceneEnv_SampleSH_Color()
+float3 SceneEnv_Sample_SH_Color()
 {
     const float R = PK_BUFFER_DATA(pk_SceneEnv_SH, 0).x;
     const float G = PK_BUFFER_DATA(pk_SceneEnv_SH, 1).x;
@@ -39,13 +53,13 @@ float3 SceneEnv_SampleSH_Color()
     return float3(R, G, B) / PK_L1BASIS.xxx;
 }
 
-float3 SceneEnv_SampleSH_Diffuse(float3 direction)  
+float3 SceneEnv_Sample_SH_Diffuse(float3 direction)  
 { 
-    return SceneEnv_SampleSH(float4(1.0f, direction) * PK_L1BASIS_COSINE * 2.0f);  
+    return SceneEnv_Sample_SH(float4(1.0f, direction) * PK_L1BASIS_COSINE * 2.0f);  
 }
 
-float3 SceneEnv_SampleSH_Volumetric(float3 view_dir, float phase) 
+float3 SceneEnv_Sample_SH_Volumetric(float3 view_dir, float phase) 
 { 
     const float4 zh = float4(1.0f, view_dir) * float4(1.0f, phase.xxx);
-    return SceneEnv_SampleSH(zh); 
+    return SceneEnv_Sample_SH(zh); 
 }

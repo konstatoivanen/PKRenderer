@@ -15,6 +15,8 @@
 #define VOLUMEFOG_MIN_DENSITY 1e-5f
 #define VOLUMEFOG_ACCUMULATION 0.5f
 #define VOLUMEFOG_MARCH_DISTANCE_EXP 2.0f
+#define VOLUMEFOG_FADE_START_SHADOW_DIRECT 0.95f
+#define VOLUMEFOG_FADE_START_SHADOW_SELF 0.75f
 
 PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_ScatterRead;
 PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_InjectRead;
@@ -33,24 +35,39 @@ DEFINE_TRICUBIC_SAMPLER(pk_Fog_InjectRead, VOLUMEFOG_SIZE)
 float Fog_ZToView(float z) { return ViewDepthExp(z, pk_Fog_ZParams.xyz); }
 float Fog_ViewToZ(float z) { return ClipDepthExp(z, pk_Fog_ZParams.xyz); }
 
-float Fog_VolumetricToStaticFade(float uvz) { return pow2(saturate(uvz * 4.0f - 3.0f)); }
+float Fog_Fade_FroxelShadows_Direct(float view_dist) 
+{ 
+    return saturate((pk_Fog_ZParams.w - view_dist) * pk_Fog_FadeParams.x); 
+}
+
+float Fog_Fade_FroxelShadows_Volumetric(float view_dist) 
+{ 
+    return saturate((pk_Fog_ZParams.w - view_dist) * pk_Fog_FadeParams.y); 
+}
+
+float Fog_Fade_Static(float view_dist) 
+{ 
+    return 1.0f - saturate((pk_Fog_ZParams.w - view_dist) * pk_Fog_FadeParams.z); 
+}
+
+float Fog_StaticOcclusion(float3 view_dir) { return exp(min(0.0f, view_dir.y) * pk_Fog_FadeParams.w); }
 
 float Fog_CalculateDensity(float3 pos)
 {
-    float d = pk_Fog_Density_Constant;
-    d += min(exp(pk_Fog_Density_HeightExponent * (-pos.y + pk_Fog_Density_HeightOffset)) * pk_Fog_Density_HeightAmount, 1e+3f);
+    float d = pk_Fog_Density_ExpParams0.x;
+    d += min(exp(pk_Fog_Density_ExpParams0.y * (-pos.y + pk_Fog_Density_ExpParams0.z)) * pk_Fog_Density_ExpParams0.w, 1e+3f);
     d *= NoiseScroll(pos, pk_Time.y * pk_Fog_WindDirSpeed.w, pk_Fog_Density_NoiseScale, pk_Fog_WindDirSpeed.xyz, pk_Fog_Density_NoiseAmount, -0.3, 8.0);
     return max(d * pk_Fog_Density_Amount, 0.0f);
 }
 
 // Source: https://advances.realtimerendering.com/s2017/DecimaSiggraph2017.pdf
-float Fog_CalculateStaticDensity(const float origin_y, const float surf_y, const float exponent, const float offset, const float heightAmount, const float constant)
+float Fog_CalculateStaticDensity(const float origin_y, const float surf_y, const float4 params)
 {
     float d;
-    d = max(1e-2f, (origin_y - surf_y) * exponent);
-    d = (1.0f - exp(-d)) / d * exp((-surf_y + offset) * exponent);
-    d *= heightAmount;
-    d += constant;
+    d = max(1e-2f, (origin_y - surf_y) * params.y);
+    d = (1.0f - exp(-d)) / d * exp((-surf_y + params.z) * params.y);
+    d *= params.w;
+    d += params.x;
     return d;
 }
 
@@ -98,25 +115,13 @@ void Fog_SampleStatic(float3 origin, float3 view_dir, float view_depth, inout fl
     float o_y = origin.y;
     float v_y = origin.y + view_dir.y * view_depth;
 
-    const float s0_density = Fog_CalculateStaticDensity(
-        o_y, v_y, 
-        pk_Fog_Density_Sky_HeightExponent, 
-        pk_Fog_Density_Sky_HeightOffset, 
-        pk_Fog_Density_Sky_HeightAmount, 
-        pk_Fog_Density_Sky_Constant);
-
-    const float s1_density = Fog_CalculateStaticDensity(
-        o_y, v_y, 
-        pk_Fog_Density_HeightExponent, 
-        pk_Fog_Density_HeightOffset, 
-        pk_Fog_Density_HeightAmount, 
-        pk_Fog_Density_Constant);
-
+    const float s0_density = Fog_CalculateStaticDensity(o_y, v_y, pk_Fog_Density_ExpParams0);
+    const float s1_density = Fog_CalculateStaticDensity(o_y, v_y, pk_Fog_Density_ExpParams1);
     const float density = (s0_density + s1_density) * pk_Fog_Density_Amount;
     transmittance = exp(-density * pk_Fog_Absorption.rgb * view_depth);
 
-    const float occlusion = view_dir.y * 0.5f + 0.5f;
-    scatter = pk_Fog_Albedo.rgb * occlusion * SceneEnv_SampleSH_Volumetric(view_dir, pk_Fog_Phase1);
+    const float occlusion = Fog_StaticOcclusion(view_dir);
+    scatter = occlusion * SceneEnv_Sample_ISL(EncodeOctaUv(view_dir), 0.0f);
 
     // @TODO refactor to use somekind of global light cluster for this.
     // For now get the first light as it is likely a directional light
@@ -126,6 +131,8 @@ void Fog_SampleStatic(float3 origin, float3 view_dir, float view_depth, inout fl
     {
         scatter += BxDF_Volumetric(view_dir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, -light.LIGHT_POS, light.LIGHT_COLOR, 1.0f);
     }
+
+    scatter *= pk_Fog_Albedo.rgb;
 }
 
 float4 Fog_SampleFroxel(float2 uv, float view_depth, float3 color)
@@ -144,11 +151,13 @@ float4 Fog_SampleFroxel(float2 uv, float view_depth, float3 color)
     {
         float3 s_scatter; 
         float3 s_transmittance;
-        float3 world_view_dir = ViewToWorldVec(UvToViewDir(uv));
+        float3 view_vector = UvToViewPos(uv, view_depth);
+        float view_dist = length(view_vector);
+        float3 world_view_dir = ViewToWorldVec(view_vector / view_dist);
 
-        Fog_SampleStatic(pk_ViewWorldOrigin.xyz, world_view_dir, view_depth, s_scatter, s_transmittance);
+        Fog_SampleStatic(pk_ViewWorldOrigin.xyz, world_view_dir, view_dist, s_scatter, s_transmittance);
 
-        const float fade = Fog_VolumetricToStaticFade(uvw.z);
+        const float fade = Fog_Fade_Static(view_dist);
         scatter.rgb += transmittance * s_scatter * fade;
         transmittance *= lerp(1.0f.xxx, s_transmittance, fade);
     }

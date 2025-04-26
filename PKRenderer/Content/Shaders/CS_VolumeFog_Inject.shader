@@ -43,13 +43,15 @@ void main()
 
     const float3 world_pos = UvToWorldPos(uvw_cur.xy, depth);
     const float3 uvw_prev = Fog_WorldToPrevUvw(world_pos);
-    const float3 view_dir = normalize(world_pos - pk_ViewWorldOrigin.xyz);
+    const float  view_dist = length(world_pos - pk_ViewWorldOrigin.xyz);
+    const float3 view_dir = (world_pos - pk_ViewWorldOrigin.xyz) / view_dist;
 
-    const float3 gi_static = SceneEnv_SampleSH_Volumetric(view_dir, pk_Fog_Phase1);
+    const float3 gi_static = SceneEnv_Sample_ISL_Dual(EncodeOctaUv(view_dir), pow2(uvw_cur.z));
     const float4 gi_dynamic = GI_SphereTrace_Diffuse(world_pos);
 
-    // Fade value for properties not present in backgroung fog
-    const float fade_static = 1.0f - Fog_VolumetricToStaticFade(uvw_cur.z);
+    // Fade values for properties not present in backgroung fog
+    const float fade_shadow_direct = Fog_Fade_FroxelShadows_Direct(view_dist);
+    const float fade_shadow_volumetric = Fog_Fade_FroxelShadows_Volumetric(view_dist);
     // Distant texels are less dense, trace a longer distance to retain some depth.
     const float march_distance_max = exp(uvw_cur.z * VOLUMEFOG_MARCH_DISTANCE_EXP);
     const float shadow_bias_range = Fog_ZToView((id.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV) - Fog_ZToView(id.z * VOLUMEFOG_SIZE_Z_INV);
@@ -57,12 +59,12 @@ void main()
 
     // Occlude ground as it should be lit mostly by dynamic gi.
     // Apply visibility mask from cone trace.
-    const float gi_static_occlusion = (view_dir.y * 0.5f + 0.5f) * gi_dynamic.a;
+    const float gi_static_occlusion = Fog_StaticOcclusion(view_dir) * gi_dynamic.a;
 
     float3 value_cur = gi_static.rgb * gi_static_occlusion + gi_dynamic.rgb;
 
     // This is incorrect for the dynamic component. However, it introduces good depth to the colors so whatever.
-    value_cur *= Fog_EstimateTransmittance(uvw_cur, fade_static);
+    value_cur *= Fog_EstimateTransmittance(uvw_cur, fade_shadow_volumetric);
 
     LightTile tile = Lights_GetTile_Coord(int2(gl_WorkGroupID.xy >> 1), depth);
 
@@ -72,8 +74,8 @@ void main()
         LightSample light = Lights_SampleTiled(i, world_pos, shadow_bias, tile.cascade);
 
         const float march_distance = min(light.linear_distance, march_distance_max);
-        light.color *= Fog_MarchTransmittance(world_pos, light.direction, dither.y, march_distance, fade_static);
-        light.shadow = lerp(1.0f, light.shadow, fade_static);
+        light.color *= Fog_MarchTransmittance(world_pos, light.direction, dither.y, march_distance, fade_shadow_volumetric);
+        light.shadow = lerp(1.0f, light.shadow, fade_shadow_direct);
 
         value_cur += BxDF_Volumetric
         (

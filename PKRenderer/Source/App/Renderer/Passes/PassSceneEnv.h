@@ -12,7 +12,8 @@ namespace PK::App
             struct ViewResources
             {
                 RHITexture* sourceTexture = nullptr;
-                RHITextureRef sceneEnvTexture = nullptr;
+                RHITextureRef sceneEnvIBL = nullptr;
+                RHITextureRef sceneEnvISL = nullptr;
                 RHIBufferRef sceneEnvSHBuffer = nullptr;
                 int32_t captureCounter = 0;
                 float3 captureOrigin = PK_FLOAT3_ZERO;
@@ -26,8 +27,9 @@ namespace PK::App
 
         private:
             ShaderAsset* m_backgroundShader = nullptr;
-            ShaderAsset* m_shShader = nullptr;
             ShaderAsset* m_integrateSHShader = nullptr;
+            ShaderAsset* m_integrateIBLShader = nullptr;
+            ShaderAsset* m_integrateISLShader = nullptr;
             bool m_forceCapture = false;
     };
 }
