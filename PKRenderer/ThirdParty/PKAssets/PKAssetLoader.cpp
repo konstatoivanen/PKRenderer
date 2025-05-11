@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS 1
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,18 +10,12 @@ namespace PKAssets
 {
     FILE* OpenFile(const char* filepath, const char* option, size_t* size)
     {
-        FILE* file = nullptr;
-
-#if _WIN32
-        auto error = fopen_s(&file, filepath, option);
-
-        if (error != 0)
+        if (filepath == nullptr || option == nullptr)
         {
             return nullptr;
         }
-#else
-        file = fopen(filepath, option);
-#endif
+
+        FILE* file = fopen(filepath, option);
 
         if (file == nullptr)
         {
@@ -238,16 +233,7 @@ namespace PKAssets
                 break;
             }
 
-#if _WIN32
-            auto error = strncpy_s(meta.optionNames + PK_ASSET_NAME_MAX_LENGTH * lineIndex, PK_ASSET_NAME_MAX_LENGTH, head, (size_t)(comma - head));
-
-            if (error != 0)
-            {
-                break;
-            }
-#else
-            strncpy(meta->optionNames + PK_ASSET_NAME_MAX_LENGTH * lineIndex, head, (size_t)(comma - head));
-#endif
+            strncpy(meta.optionNames + PK_ASSET_NAME_MAX_LENGTH * lineIndex, head, (size_t)(comma - head));
 
             meta.optionValues[lineIndex++] = (uint32_t)strtoull(comma + 1, &head, 10);
         }

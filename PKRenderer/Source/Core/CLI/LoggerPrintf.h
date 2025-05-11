@@ -9,8 +9,8 @@ namespace PK
     public:
         LoggerPrintf() {}
 
-        void Indent() final;
-        void Unindent() final;
+        void Indent(LogSeverity severity) final;
+        void Unindent(LogSeverity severity) final;
 
         void SetSeverityMask(LogSeverity mask) final;
         LogSeverity GetSeverityMask() const final;
@@ -29,7 +29,7 @@ namespace PK
         constexpr static uint32_t MAX_INDENT = 256u;
 
         uint32_t m_severityMask = ~0;
-        int32_t m_indentation = 0;
+        int32_t m_indentation[PK_LOG_LVL_COUNT]{};
         int32_t m_lineClearLength = 0;
     };
 }

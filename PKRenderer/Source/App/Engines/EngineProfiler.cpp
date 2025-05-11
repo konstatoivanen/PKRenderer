@@ -62,8 +62,7 @@ namespace PK::App
             }
         }
 
-        PK_LOG_INFO("Listing shader resource usage counters:");
-        PK_LOG_SCOPE_INDENT();
+        PK_LOG_INFO_SCOPE("Listing shader resource usage counters:");
 
         for (auto& kv : namedCounters)
         {

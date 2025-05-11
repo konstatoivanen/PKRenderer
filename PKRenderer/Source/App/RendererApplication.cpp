@@ -35,9 +35,8 @@ namespace PK::App
     RendererApplication::RendererApplication(const CArguments& arguments) :
         IApplication(arguments, "PK Renderer", CreateRef<LoggerPrintf>())
     {
-        PK_LOG_SCOPE_TIMER(ApplicationCtor);
-        PK_LOG_HEADER("----------RendererApplication.Ctor Begin----------");
-        PK_LOG_SCOPE_INDENT();
+        PK_LOG_TIMER_FUNC();
+        PK_LOG_HEADER_SCOPE("----------RendererApplication.Ctor Begin----------");
 
         GetServices()->Create<HashCache>();
 

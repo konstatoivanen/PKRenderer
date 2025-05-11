@@ -1,9 +1,5 @@
 #pragma once
-#ifdef _WIN32
-// Exposes full screen ext
-#define NOMINMAX 
-#define VK_USE_PLATFORM_WIN32_KHR
-#endif
+#include "Core/Platform/Platform.h"
 #include "vulkan/vulkan.h"
 #include "VMA/vk_mem_alloc.h"
 #include "Core/Utilities/FenceRef.h"
@@ -11,6 +7,44 @@
 #include "Core/Utilities/VersionedObject.h"
 #include "Core/Utilities/FastLinkedList.h"
 #include "Core/RHI/Structs.h"
+
+#if PK_PLATFORM_WINDOWS
+    #define PK_VK_LIBRARY_NAME "vulkan-1.dll"
+#elif PK_PLATFORM_LINUX
+    #define PK_VK_LIBRARY_NAME "libvulkan.so"
+#elif
+    #error "Unsupported platform!"
+#endif
+
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+#define PK_VK_SURFACE_EXTENSION_NAME VK_KHR_ANDROID_SURFACE_EXTENSION_NAME
+#elif defined(VK_USE_PLATFORM_FUCHSIA)
+#define PK_VK_SURFACE_EXTENSION_NAME VK_FUCHSIA_IMAGEPIPE_SURFACE_EXTENSION_NAME
+#elif defined(VK_USE_PLATFORM_IOS_MVK)
+#define PK_VK_SURFACE_EXTENSION_NAME VK_MVK_IOS_SURFACE_EXTENSION_NAME
+#elif defined(VK_USE_PLATFORM_MACOS_MVK)
+#define PK_VK_SURFACE_EXTENSION_NAME VK_MVK_MACOS_SURFACE_EXTENSION_NAME
+#elif defined(VK_USE_PLATFORM_METAL_EXT)
+#define PK_VK_SURFACE_EXTENSION_NAME VK_EXT_METAL_SURFACE_EXTENSION_NAME
+#elif defined(VK_USE_PLATFORM_VI_NN)
+#define PK_VK_SURFACE_EXTENSION_NAME VK_NN_VI_SURFACE_EXTENSION_NAME
+#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
+#define PK_VK_SURFACE_EXTENSION_NAME VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME
+#elif defined(VK_USE_PLATFORM_WIN32_KHR)
+#define PK_VK_SURFACE_EXTENSION_NAME VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+#elif defined(VK_USE_PLATFORM_XCB_KHR)
+#define PK_VK_SURFACE_EXTENSION_NAME VK_KHR_XCB_SURFACE_EXTENSION_NAME
+#elif defined(VK_USE_PLATFORM_XLIB_KHR)
+#define PK_VK_SURFACE_EXTENSION_NAME VK_KHR_XLIB_SURFACE_EXTENSION_NAME
+#elif defined(VK_USE_PLATFORM_DIRECTFB_EXT)
+#define PK_VK_SURFACE_EXTENSION_NAME VK_EXT_DIRECTFB_SURFACE_EXTENSION_NAME
+#elif defined(VK_USE_PLATFORM_XLIB_XRANDR_EXT)
+#define PK_VK_SURFACE_EXTENSION_NAME VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME
+#elif defined(VK_USE_PLATFORM_GGP)
+#define PK_VK_SURFACE_EXTENSION_NAME VK_GGP_STREAM_DESCRIPTOR_SURFACE_EXTENSION_NAME
+#elif defined(VK_USE_PLATFORM_SCREEN_QNX)
+#define PK_VK_SURFACE_EXTENSION_NAME VK_QNX_SCREEN_SURFACE_EXTENSION_NAME
+#endif
 
 extern PFN_vkSetDebugUtilsObjectNameEXT pkfn_vkSetDebugUtilsObjectNameEXT;
 #define vkSetDebugUtilsObjectNameEXT pkfn_vkSetDebugUtilsObjectNameEXT
@@ -166,7 +200,7 @@ namespace PK
 
     struct VulkanExclusiveFullscreenInfo
     {
-#ifdef _WIN32
+#if PK_PLATFORM_WINDOWS
         VkSurfaceFullScreenExclusiveWin32InfoEXT win32Info;
         VkSurfaceFullScreenExclusiveInfoEXT fullscreenInfo;
 #endif
@@ -467,11 +501,12 @@ namespace PK
         bool IsWriteAccess(VkAccessFlags flags);
     }
 
+    VkResult VulkanCreateSurfaceKHR(VkInstance instance, void* nativeWindow, VkSurfaceKHR* surface);
+
     void VulkanBindExtensionMethods(VkInstance instance, bool enableDebugNames);
 
     std::vector<VkPhysicalDevice> VulkanGetPhysicalDevices(VkInstance instance);
     std::vector<VkQueueFamilyProperties> VulkanGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice device);
-    std::vector<const char*> VulkanGetRequiredInstanceExtensions(const std::vector<const char*>* contextualExtensions);
     std::vector<VkSurfaceFormatKHR> VulkanGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
     std::vector<VkPresentModeKHR> VulkanGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
     VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device);

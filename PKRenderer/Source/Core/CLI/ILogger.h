@@ -41,12 +41,14 @@ namespace PK
         PK_LOG_LVL_ALL_FLAGS = 0xFF,
     } LogSeverity;
 
+    constexpr static const unsigned int PK_LOG_LVL_COUNT = 5u;
+
     struct ILogger
     {
         virtual ~ILogger() = 0;
 
-        virtual void Indent() = 0;
-        virtual void Unindent() = 0;
+        virtual void Indent(LogSeverity severity) = 0;
+        virtual void Unindent(LogSeverity severity) = 0;
         virtual void SetSeverityMask(LogSeverity mask) = 0;
         virtual LogSeverity GetSeverityMask() const = 0;
         virtual void SetColor(LogColor color) = 0;

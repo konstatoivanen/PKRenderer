@@ -5,8 +5,7 @@
 
 PK::BuiltInResources::BuiltInResources()
 {
-    PK_LOG_RHI("PK::BuiltInResources.Ctor");
-    PK_LOG_SCOPE_INDENT(local);
+    PK_LOG_RHI_FUNC("");
 
     auto commandBuffer = RHI::GetCommandBuffer(QueueType::Transfer);
 

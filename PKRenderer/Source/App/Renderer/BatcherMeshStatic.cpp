@@ -28,8 +28,7 @@ namespace PK::App
         m_shaders(32),
         m_transforms(1024)
     {
-        PK_LOG_VERBOSE("StaticDrawBatcher.Ctor");
-        PK_LOG_SCOPE_INDENT(local);
+        PK_LOG_VERBOSE_FUNC("");
 
         m_staticGeometry = CreateUnique<MeshStaticCollection>();
         m_matrices = RHI::CreateBuffer<float3x4>(1024ull, BufferUsage::PersistentStorage, "Batching.Matrices");

@@ -14,8 +14,7 @@ namespace PK::App
 {
     PassAutoExposure::PassAutoExposure(AssetDatabase* assetDatabase)
     {
-        PK_LOG_VERBOSE("PassAutoExposure.Ctor");
-        PK_LOG_SCOPE_INDENT(local);
+        PK_LOG_VERBOSE_FUNC("");
         m_compute = assetDatabase->Find<ShaderAsset>("CS_AutoExposure");
         m_passHistogramBins = m_compute->GetRHIIndex("PASS_HISTOGRAM");
         m_passHistogramAvg = m_compute->GetRHIIndex("PASS_AVG");

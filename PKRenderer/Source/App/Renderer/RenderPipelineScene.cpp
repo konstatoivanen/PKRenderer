@@ -30,8 +30,7 @@ namespace PK::App
         m_autoExposure(assetDatabase),
         m_passPostEffectsComposite(assetDatabase)
     {
-        PK_LOG_VERBOSE("SceneRenderPipeline.Ctor");
-        PK_LOG_SCOPE_INDENT(local);
+        PK_LOG_VERBOSE_FUNC("");
 
         m_sceneStructure = RHI::CreateAccelerationStructure("Scene");
 

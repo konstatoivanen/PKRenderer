@@ -31,6 +31,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ClangDebug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -45,6 +46,7 @@
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ClangRelease|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -52,6 +54,7 @@
     <PlatformToolset>ClangCL</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -248,6 +251,13 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Renderer\RenderViewSettings.h" />
     <ClInclude Include="Source\Core\CLI\CVariablesYaml.h" />
     <ClInclude Include="Source\Core\Input\InputState.h" />
+    <ClInclude Include="Source\Core\Platform\Platform.h" />
+    <ClInclude Include="Source\Core\Platform\PlatformInterfaces.h" />
+    <ClInclude Include="Source\Core\Platform\Linux\LinuxPlatform.h" />
+    <ClInclude Include="Source\Core\Platform\Windows\Win32Platform.h" />
+    <ClInclude Include="Source\Core\Platform\Windows\Win32Driver.h" />
+    <ClInclude Include="Source\Core\Platform\Windows\Win32WindowManager.h" />
+    <ClInclude Include="Source\Core\Platform\Windows\Win32Window.h" />
     <ClInclude Include="Source\Core\Rendering\Font.h" />
     <ClInclude Include="Source\Core\Timers\ITimer.h" />
     <ClInclude Include="Source\Core\Timers\TimeHelpers.h" />
@@ -732,7 +742,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\PropertyBlock.h" />
     <ClInclude Include="Source\Core\Utilities\FixedRangeTable.h" />
     <ClInclude Include="Source\Core\Utilities\Ref.h" />
-    <ClInclude Include="Source\Core\Utilities\RemoteProcess.h" />
     <ClInclude Include="Source\Core\Utilities\VersionedObject.h" />
   </ItemGroup>
   <ItemGroup>
@@ -1030,6 +1039,10 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Engines\EngineProfiler.cpp" />
     <ClCompile Include="Source\App\Engines\EngineViewUpdate.cpp" />
     <ClCompile Include="Source\Core\Input\InputState.cpp" />
+    <ClCompile Include="Source\Core\Platform\Platform.cpp" />
+    <ClCompile Include="Source\Core\Platform\Windows\Win32Driver.cpp" />
+    <ClCompile Include="Source\Core\Platform\Windows\Win32Window.cpp" />
+    <ClCompile Include="Source\Core\Platform\Windows\Win32WindowManager.cpp" />
     <ClCompile Include="Source\Core\Rendering\Font.cpp" />
     <ClCompile Include="Source\Core\Timers\ITimer.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFramerate.cpp" />
@@ -1156,7 +1169,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Utilities\FileIOBMP.cpp" />
     <ClCompile Include="Source\Core\Utilities\Hash.cpp" />
     <ClCompile Include="Source\Core\Utilities\PropertyBlock.cpp" />
-    <ClCompile Include="Source\Core\Utilities\RemoteProcess.cpp" />
     <ClCompile Include="Source\Core\Utilities\VersionedObject.cpp" />
     <ClCompile Include="ThirdParty\rapidyaml\ryamlImpl.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>

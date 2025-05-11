@@ -5,7 +5,8 @@ namespace PK
 {
     struct LogScopeIndent : public NoCopy
     {
-        LogScopeIndent();
+        unsigned int severity;
+        LogScopeIndent(unsigned int severity = 0xFFFFFFFFu);
         ~LogScopeIndent();
     };
 }

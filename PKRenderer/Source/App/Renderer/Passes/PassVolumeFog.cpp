@@ -16,8 +16,7 @@ namespace PK::App
 {
     PassVolumeFog::PassVolumeFog(AssetDatabase* assetDatabase)
     {
-        PK_LOG_VERBOSE("PassVolumeFog.Ctor");
-        PK_LOG_SCOPE_INDENT(local);
+        PK_LOG_VERBOSE_FUNC("");
         m_computeDensity = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Density");
         m_computeInject = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Inject");
         m_computeScatter = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Scatter");

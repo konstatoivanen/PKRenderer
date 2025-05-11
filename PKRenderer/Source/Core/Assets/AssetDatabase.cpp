@@ -74,8 +74,7 @@ namespace PK
 
     void AssetDatabase::LogAssetsAll() const
     {
-        PK_LOG_HEADER("AssetDatabase.Log.All:");
-        PK_LOG_SCOPE_INDENT(logassets);
+        PK_LOG_HEADER_SCOPE("AssetDatabase.Log.All:");
 
         for (auto i = 0u; i < m_assets.GetCount(); ++i)
         {
@@ -85,8 +84,7 @@ namespace PK
 
     void AssetDatabase::LogAssetsOfTypeInternal(const std::type_index& typeIndex) const
     {
-        PK_LOG_HEADER("AssetDatabase.Log.Type: %s", typeIndex.name());
-        PK_LOG_SCOPE_INDENT(logassetsoftype);
+        PK_LOG_HEADER_SCOPE("AssetDatabase.Log.Type: %s", typeIndex.name());
 
         for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets.GetValueAt(index).nextIdx)
         {
@@ -96,8 +94,7 @@ namespace PK
 
     void AssetDatabase::ReloadCachedAllInternal(const std::type_index& typeIndex)
     {
-        PK_LOG_VERBOSE("AssetDatabase.Reload.Cached: %s", typeIndex.name());
-        PK_LOG_SCOPE_INDENT(reload);
+        PK_LOG_VERBOSE_FUNC("%s", typeIndex.name());
         
         for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets.GetValueAt(index).nextIdx)
         {
@@ -122,8 +119,7 @@ namespace PK
     {
         if (std::filesystem::exists(directory))
         {
-            PK_LOG_VERBOSE("AssetDatabase.Reload.Cached.Directory: %s, %s", typeIndex.name(), directory.c_str());
-            PK_LOG_SCOPE_INDENT(reload);
+            PK_LOG_VERBOSE_FUNC("%s, %s", typeIndex.name(), directory.c_str());
             
             for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets.GetValueAt(index).nextIdx)
             {

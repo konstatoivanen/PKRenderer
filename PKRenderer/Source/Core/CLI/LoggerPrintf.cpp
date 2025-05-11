@@ -4,19 +4,25 @@
 
 namespace PK
 {
-    void LoggerPrintf::Indent()
+    void LoggerPrintf::Indent(LogSeverity severity)
     {
-        if (m_indentation < (int32_t)MAX_INDENT)
+        for (auto i = 0u; i < PK_LOG_LVL_COUNT; ++i)
         {
-            ++m_indentation;
+            if ((severity & (1u << i)) != 0 && m_indentation[i] < (int32_t)MAX_INDENT)
+            {
+                ++m_indentation[i];
+            }
         }
     }
 
-    void LoggerPrintf::Unindent()
+    void LoggerPrintf::Unindent(LogSeverity severity)
     {
-        if (m_indentation > 0)
+        for (auto i = 0u; i < PK_LOG_LVL_COUNT; ++i)
         {
-            --m_indentation;
+            if ((severity & (1u << i)) != 0 && m_indentation[i] > 0)
+            {
+                --m_indentation[i];
+            }
         }
     }
 
@@ -32,16 +38,12 @@ namespace PK
 
     void LoggerPrintf::SetColor(LogColor color)
     {
-#if defined(WIN32)
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
-#endif
+        Platform::SetConsoleColor(color);
     }
 
     void LoggerPrintf::SetShowConsole(bool value)
     {
-#if defined(WIN32)
-        ::ShowWindow(::GetConsoleWindow(), value ? SW_SHOW : SW_HIDE);
-#endif
+        Platform::SetConsoleVisible(value);
     }
 
     void LoggerPrintf::LogNewLine()
@@ -85,21 +87,31 @@ namespace PK
             LogNewLine();
         }
 
-#if defined(WIN32) && defined(PK_DEBUG)
-        DebugBreak();
-#endif
-
+        PK_PLATFORM_DEBUG_BREAK;
+        
+        // Forces flush
         _getch();
+        
         return std::runtime_error(format);
     }
 
     void LoggerPrintf::LogIndent()
     {
-        if (m_indentation > 0)
+        auto indendation = 0;
+
+        for (auto i = 0u; i < PK_LOG_LVL_COUNT; ++i)
+        {
+            if ((m_severityMask & (1 << i)) != 0)
+            {
+                indendation += m_indentation[i];
+            }
+        }
+
+        if (indendation > 0)
         {
             char spaces[MAX_INDENT * 4u + 1u];
             memset(spaces, ' ', sizeof(spaces));
-            spaces[m_indentation * 4u] = 0;
+            spaces[indendation * 4u] = 0;
             printf("%s", spaces);
         }
     }

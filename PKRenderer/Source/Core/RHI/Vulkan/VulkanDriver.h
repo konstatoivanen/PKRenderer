@@ -86,6 +86,7 @@ namespace PK
         void DisposePooledImage(VulkanRawImage* image, const FenceRef& fence) const;
         void DisposePooledBuffer(VulkanRawBuffer* buffer, const FenceRef& fence) const;
 
+        void* vkHandle;
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;
         VkPhysicalDevice physicalDevice;

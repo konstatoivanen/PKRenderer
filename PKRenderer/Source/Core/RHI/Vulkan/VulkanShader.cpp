@@ -55,7 +55,7 @@ namespace PK
 
             for (auto i = 0u; i < variant->descriptorSetCount; ++i)
             {
-                PK_LOG_SCOPE_INDENT(sets);
+                PK_LOG_INDENT(PK_LOG_LVL_RHI);
 
                 DescriptorSetLayoutKey key{};
 

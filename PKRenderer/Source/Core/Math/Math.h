@@ -45,6 +45,10 @@ namespace PK
     constexpr int3 PK_INT3_ONE = { 1, 1, 1 };
     constexpr int4 PK_INT4_ONE = { 1, 1, 1, 1 };
 
+    constexpr int2 PK_INT2_MINUS_ONE = { -1, -1 };
+    constexpr int3 PK_INT3_MINUS_ONE = { -1, -1, -1 };
+    constexpr int4 PK_INT4_MINUS_ONE = { -1, -1, -1, -1 };
+
     constexpr uint2 PK_UINT2_ONE = { 1, 1 };
     constexpr uint3 PK_UINT3_ONE = { 1, 1, 1 };
     constexpr uint4 PK_UINT4_ONE = { 1, 1, 1, 1 };

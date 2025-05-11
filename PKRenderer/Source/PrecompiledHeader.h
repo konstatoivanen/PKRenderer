@@ -2,6 +2,10 @@
 // PrecompiledHeader.h
 // Header for standard system include files.
 #pragma once
+// Precompile glm
+#include "Core/Math/Math.h"
+
+#include "Core/Platform/Platform.h"
 
 #include <iostream>
 #include <memory>
@@ -20,13 +24,3 @@
 #include <map>
 #include <unordered_set>
 #include <unordered_map>
-
-#ifdef _WIN32
-#define NOMINMAX 
-#include <Windows.h>
-#undef far
-#undef near
-#endif
-
-// Precompile glm
-#include "Core/Math/Math.h"

@@ -42,13 +42,8 @@ namespace PK
         {
             auto typeIndex = std::type_index(typeid(T));
             auto index = 0u;
-
-            if (!m_services.AddKey(typeIndex, &index))
-            {
-                AssertTypeExists(typeIndex);
-            }
-
-            auto logIndent = PK::LogScopeIndent();
+            AssertTypeExists(m_services.AddKey(typeIndex, &index), typeIndex);
+            auto logIndent = PK::LogScopeIndent(2);
             auto service = new ServiceContainer<T>(std::forward<Args>(args)...);
             auto values = m_services.GetValues();
             values[index] = Unique<Service>(service);
@@ -68,7 +63,7 @@ namespace PK
         }
 
     private:
-        void AssertTypeExists(std::type_index index);
+        void AssertTypeExists(bool exists, std::type_index index);
 
         FastMap<std::type_index, Unique<Service>> m_services;
     };

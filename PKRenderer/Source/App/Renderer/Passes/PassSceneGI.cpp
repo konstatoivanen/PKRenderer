@@ -19,8 +19,7 @@ namespace PK::App
 
     PassSceneGI::PassSceneGI(AssetDatabase* assetDatabase) 
     {
-        PK_LOG_VERBOSE("PassSceneGI.Ctor");
-        PK_LOG_SCOPE_INDENT(local);
+        PK_LOG_VERBOSE_FUNC("");
 
         m_computeClear = assetDatabase->Find<ShaderAsset>("CS_GI_Clear");
         m_computeMipmap = assetDatabase->Find<ShaderAsset>("CS_GI_VolumeMipmap");

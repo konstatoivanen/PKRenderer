@@ -15,6 +15,8 @@ namespace PK
 {
     VulkanDriver::VulkanDriver(const VulkanContextProperties& properties) : properties(properties)
     {
+        vkHandle = Platform::LoadLibrary(PK_VK_LIBRARY_NAME);
+
         // @TODO deprecate glfw
         glfwInit();
 
@@ -49,7 +51,10 @@ namespace PK
         instanceCreateInfo.enabledLayerCount = properties.enableValidation ? 1u : 0u;
         instanceCreateInfo.ppEnabledLayerNames = &VK_LAYER_KHRONOS_validation;
 
-        auto instanceExtensions = VulkanGetRequiredInstanceExtensions(properties.contextualInstanceExtensions);
+        auto instanceExtensions = *properties.contextualInstanceExtensions;
+        instanceExtensions.push_back("VK_KHR_surface");
+        instanceExtensions.push_back(PK_VK_SURFACE_EXTENSION_NAME);
+
         PK_THROW_ASSERT(VulkanValidateInstanceExtensions(&instanceExtensions), "Trying to enable unavailable extentions!");
         PK_THROW_ASSERT(VulkanValidateValidationLayers(instanceCreateInfo.ppEnabledLayerNames, instanceCreateInfo.enabledLayerCount), "Trying to enable unavailable validation layers!");
 
@@ -61,8 +66,7 @@ namespace PK
 
         {
             PK_LOG_NEWLINE();
-            PK_LOG_INFO("VulkanDriver.vkCreateInstance: with '%i' layers and '%i' extensions:", instanceCreateInfo.enabledLayerCount, instanceCreateInfo.enabledExtensionCount);
-            PK_LOG_SCOPE_INDENT(instance);
+            PK_LOG_INFO_SCOPE("VulkanDriver.vkCreateInstance: with '%i' layers and '%i' extensions:", instanceCreateInfo.enabledLayerCount, instanceCreateInfo.enabledExtensionCount);
 
             for (auto i = 0u; i < instanceCreateInfo.enabledExtensionCount; ++i)
             {
@@ -87,15 +91,15 @@ namespace PK
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
 
         // Create a temporary hidden window so that we can query & select a physical device with surface present capabilities.
-        PK_GLFW_VkTemporarySurface temporarySurface;
-        VK_ASSERT_RESULT_CTX((VkResult)PK_GLFW_CreateVkTemporarySurface(instance, temporarySurface), "Failed to create window surface!");
+        VkSurfaceKHR temporarySurface;
+        VK_ASSERT_RESULT_CTX(VulkanCreateSurfaceKHR(instance, Platform::GetHelperWindow(), &temporarySurface), "Failed to create window surface!");
 
-        VulkanSelectPhysicalDevice(instance, temporarySurface.surface, physicalDeviceRequirements, &physicalDevice);
+        VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice);
         physicalDeviceProperties = VulkanGetPhysicalDeviceProperties(physicalDevice);
 
-        VulkanQueueSet::Initializer queueInitializer(physicalDevice, temporarySurface.surface);
+        VulkanQueueSet::Initializer queueInitializer(physicalDevice, temporarySurface);
 
-        PK_GLFW_DestroyVkTemporarySurface(instance, temporarySurface);
+        vkDestroySurfaceKHR(instance, temporarySurface, nullptr);
 
         VkDeviceCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueInitializer.createInfos.size());
@@ -109,8 +113,7 @@ namespace PK
         VK_ASSERT_RESULT_CTX(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device), "Failed to create logical device!");
 
         {
-            PK_LOG_INFO("VulkanDriver.vkCreateDevice: with '%i' extensions", createInfo.enabledExtensionCount);
-            PK_LOG_SCOPE_INDENT(device);
+            PK_LOG_INFO_SCOPE("VulkanDriver.vkCreateDevice: with '%i' extensions", createInfo.enabledExtensionCount);
 
             for (auto i = 0u; i < createInfo.enabledExtensionCount; ++i)
             {
@@ -179,6 +182,8 @@ namespace PK
         vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         vkDestroyInstance(instance, nullptr);
         glfwTerminate();
+
+        Platform::FreeLibrary(vkHandle);
     }
 
     FixedString32 VulkanDriver::GetDriverHeader() const

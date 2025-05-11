@@ -199,7 +199,7 @@ namespace PK
             auto hash = Hash(m_values[index]);
             auto bucketIndex = GetBucketIndex(hash);
             
-            if (GetValueIndexFromBuckets(bucketIndex) == index)
+            if (GetValueIndexFromBuckets(bucketIndex) == (int32_t)index)
             {
                 SetValueIndexInBuckets(bucketIndex, m_nodes[index].previous);
             }
@@ -224,7 +224,7 @@ namespace PK
             {   
                 auto movingBucketIndex = GetBucketIndex(Hash(m_values[m_count]));
                 
-                if (GetValueIndexFromBuckets(movingBucketIndex) == m_count)
+                if (GetValueIndexFromBuckets(movingBucketIndex) == (int32_t)m_count)
                 {
                     SetValueIndexInBuckets(movingBucketIndex, index);
                 }

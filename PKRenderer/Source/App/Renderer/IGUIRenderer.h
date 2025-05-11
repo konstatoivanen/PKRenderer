@@ -13,11 +13,6 @@ namespace PK::App
         uint16_t renderMode;
     };
 
-    // Windows.h defines DrawText macro. lets undef that.
-    #ifdef DrawText
-    #undef DrawText
-    #endif
-
     struct IGUIRenderer
     {
         virtual ~IGUIRenderer() = default;

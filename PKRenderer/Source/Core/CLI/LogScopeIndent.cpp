@@ -4,13 +4,13 @@
 
 namespace PK
 {
-    LogScopeIndent::LogScopeIndent()
+    LogScopeIndent::LogScopeIndent(unsigned int severity) : severity(severity)
     {
-        StaticLog::Indent();
+        StaticLog::Indent((LogSeverity)severity);
     }
 
     LogScopeIndent::~LogScopeIndent()
     {
-        StaticLog::Unindent();
+        StaticLog::Unindent((LogSeverity)severity);
     }
 }

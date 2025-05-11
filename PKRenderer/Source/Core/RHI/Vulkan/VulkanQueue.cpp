@@ -417,24 +417,24 @@ namespace PK
         context.queueFamilies = queueFamilies;
         context.createInfos = &createInfos;
 
-        PK_LOG_INFO("VulkanQueueSet.Initializer: Found '%i' Physical Device Queue Families:", context.families->size());
-        PK_LOG_ADD_INDENT();
-
-        for (auto i = 0u; i < context.families->size(); ++i)
         {
-            VkDeviceQueueCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
-            createInfo.flags = 0u;
-            createInfo.queueFamilyIndex = i;
-            createInfo.queueCount = 0u;
-            createInfo.pQueuePriorities = priorities;
-            createInfos.push_back(createInfo);
+            PK_LOG_INFO_SCOPE("VulkanQueueSet.Initializer: Found '%i' Physical Device Queue Families:", context.families->size());
 
-            auto& props = context.families->at(i);
-            PK_LOG_INFO("Family: %i, NumQueues: %i, Flags: %s", i, props.queueCount, VulkanStr_VkQueueFlags(props.queueFlags));
+            for (auto i = 0u; i < context.families->size(); ++i)
+            {
+                VkDeviceQueueCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
+                createInfo.flags = 0u;
+                createInfo.queueFamilyIndex = i;
+                createInfo.queueCount = 0u;
+                createInfo.pQueuePriorities = priorities;
+                createInfos.push_back(createInfo);
+
+                auto& props = context.families->at(i);
+                PK_LOG_INFO("Family: %i, NumQueues: %i, Flags: %s", i, props.queueCount, VulkanStr_VkQueueFlags(props.queueFlags));
+            }
+
+            PK_LOG_NEWLINE();
         }
-
-        PK_LOG_SUB_INDENT();
-        PK_LOG_NEWLINE();
 
         auto maskTransfer = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
         auto maskGraphics = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
@@ -454,15 +454,15 @@ namespace PK
             }
         }
 
-        PK_LOG_INFO("VulkanQueueSet.Initializer: Selected '%i' Queues From '%i' Physical Device Queue Families:", queueCount, createInfos.size());
-        PK_LOG_ADD_INDENT();
-
-        for (auto i = 0u; i < queueCount; ++i)
         {
-            PK_LOG_INFO("Family: %i", queueFamilies[i]);
-        }
+            PK_LOG_INFO_SCOPE("VulkanQueueSet.Initializer: Selected '%i' Queues From '%i' Physical Device Queue Families:", queueCount, createInfos.size());
 
-        PK_LOG_SUB_INDENT();
-        PK_LOG_NEWLINE();
+            for (auto i = 0u; i < queueCount; ++i)
+            {
+                PK_LOG_INFO("Family: %i", queueFamilies[i]);
+            }
+
+            PK_LOG_NEWLINE();
+        }
     }
 }

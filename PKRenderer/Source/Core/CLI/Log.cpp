@@ -21,19 +21,19 @@ namespace PK
         s_ActiveLogger = logger;
     }
 
-    void StaticLog::Indent()
+    void StaticLog::Indent(LogSeverity severity)
     {
         if (!s_ActiveLogger.expired())
         {
-            s_ActiveLogger.lock()->Indent();
+            s_ActiveLogger.lock()->Indent(severity);
         }
     }
 
-    void StaticLog::Unindent()
+    void StaticLog::Unindent(LogSeverity severity)
     {
         if (!s_ActiveLogger.expired())
         {
-            s_ActiveLogger.lock()->Unindent();
+            s_ActiveLogger.lock()->Unindent(severity);
         }
     }
 

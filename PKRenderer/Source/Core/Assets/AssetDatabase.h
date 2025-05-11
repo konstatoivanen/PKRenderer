@@ -73,8 +73,7 @@ namespace PK
 
             if (std::filesystem::exists(directory))
             {
-                PK_LOG_VERBOSE("AssetDatabase.Load.Directory: %s, %s", typeid(T).name(), directory.c_str());
-                PK_LOG_SCOPE_INDENT(load);
+                PK_LOG_VERBOSE_FUNC("%s, %s", typeid(T).name(), directory.c_str());
 
                 for (const auto& entry : std::filesystem::directory_iterator(directory))
                 {
@@ -93,8 +92,7 @@ namespace PK
 
             if (std::filesystem::exists(directory))
             {
-                PK_LOG_VERBOSE("AssetDatabase.Reload.Directory: %s, %s", typeid(T).name(), directory.c_str());
-                PK_LOG_SCOPE_INDENT(reload);
+                PK_LOG_VERBOSE_FUNC("%s, %s", typeid(T).name(), directory.c_str());
 
                 for (const auto& entry : std::filesystem::directory_iterator(directory))
                 {
@@ -191,8 +189,7 @@ namespace PK
             FixedString256 filepath(assetId.c_str());
 
             PK_THROW_ASSERT(std::filesystem::exists(filepath.c_str()), "Asset not found at path: %s", filepath.c_str());
-            PK_LOG_VERBOSE("AssetDatabase.Load: %s, %s", typeid(T).name(), filepath.c_str());
-            PK_LOG_SCOPE_INDENT(asset);
+            PK_LOG_VERBOSE_FUNC("%s, %s", typeid(T).name(), filepath.c_str());
 
             auto typeIndex = std::type_index(typeid(T));
 
@@ -234,7 +231,7 @@ namespace PK
                         FixedString128 fileName = std::static_pointer_cast<Asset>(asset)->GetFileName();
                         std::static_pointer_cast<Asset>(asset)->m_version++;
                         PK_LOG_VERBOSE("AssetDatabase.Reload.Cached: %s, %s", typeid(T).name(), fileName.c_str());
-                        PK_LOG_SCOPE_INDENT(asset);
+                        PK_LOG_INDENT(PK_LOG_LVL_VERBOSE);
                         std::dynamic_pointer_cast<IAssetImport<>>(asset)->AssetImport(fileName.c_str());
                         AssetImportEvent<T> importToken = { this, asset.get() };
                         m_sequencer->Next(this, &importToken);
@@ -259,7 +256,7 @@ namespace PK
             auto isNew = GetOrCreateAssetReference(typeIndex, assetId, &reference);
 
             PK_THROW_ASSERT(isNew, "AssetDatabase.Register: (%s) already exists!", name);
-            PK_LOG_VERBOSE("AssetDatabase.Register: %s, %s", typeid(T).name(), name);
+            PK_LOG_VERBOSE_FUNC("%s, %s", typeid(T).name(), name);
 
             reference->asset = asset;
             reference->type = typeIndex;

@@ -19,8 +19,7 @@ namespace PK
         StaticLog::SetLogger(m_logger);
 
         {
-            PK_LOG_VERBOSE("Creating '%s' application with '%u' arguments:", name, arguments.count);
-            PK_LOG_SCOPE_INDENT(arguments);
+            PK_LOG_VERBOSE_SCOPE("Creating '%s' application with '%u' arguments:", name, arguments.count);
 
             for (auto i = 0; i < arguments.count; ++i)
             {

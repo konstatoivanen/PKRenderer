@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/RemoteProcess.h"
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "RemoteProcessRunner.h"
@@ -36,7 +35,7 @@ namespace PK
         PK_LOG_INFO("----------REMOTE EXECUTE SCOPE----------");
 
         std::string error;
-        if (!RemoteProcess::Execute(command.executablePath, command.arguments, error))
+        if (!Platform::RemoteProcess(command.executablePath, command.arguments, error))
         {
             PK_LOG_INFO("----------REMOTE EXECUTE SCOPE----------");
             PK_LOG_INFO("ExecuteRemoteProcess: Failed to run %s %s", command.executablePath, command.arguments);

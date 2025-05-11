@@ -50,8 +50,7 @@ namespace PK
     RHIDriverScope RHI::CreateDriver(const char* workingDirectory, const RHIDriverSettings& settings)
     {
         PK_LOG_NEWLINE();
-        PK_LOG_HEADER("----------INITIALIZING RHI----------");
-        PK_LOG_ADD_INDENT();
+        PK_LOG_HEADER_SCOPE("----------INITIALIZING RHI----------");
 
         CVariableRegister::Create<CVariableFuncSimple>("RHI.Query.Memory", []()
             {
@@ -168,7 +167,6 @@ namespace PK
             default: PK_THROW_ERROR("Unsupproted graphics API"); break;
         }
 
-        PK_LOG_SUB_INDENT();
         PK_LOG_HEADER("----------RHI INITIALIZED----------");
         PK_LOG_NEWLINE();
 

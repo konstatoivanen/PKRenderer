@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include "Core/Utilities/Ref.h"
+#include "Core/Math/MathFwd.h"
 
 namespace std
 {

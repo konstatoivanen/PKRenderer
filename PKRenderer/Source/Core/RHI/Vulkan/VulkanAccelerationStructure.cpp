@@ -114,7 +114,7 @@ namespace PK
                 PK_LOG_RHI("Bottom Level Compaction Update: %s", m_name.c_str());
             }
 
-            PK_LOG_SCOPE_INDENT(compaction);
+            PK_LOG_INDENT(PK_LOG_LVL_RHI);
 
             for (auto i = 0u; i < m_substructures.GetCount(); ++i)
             {
@@ -178,8 +178,7 @@ namespace PK
             return;
         }
 
-        PK_LOG_RHI("Acceleration Structure Update: %s", m_name.c_str());
-        PK_LOG_SCOPE_INDENT(local);
+        PK_LOG_RHI_SCOPE("Acceleration Structure Update: %s", m_name.c_str());
 
         {
             m_driver->DisposePooledBuffer(m_structureBuffer, m_cmd->GetFenceRef());

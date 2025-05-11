@@ -58,7 +58,7 @@ GLFWmonitor* PK_GLFW_GetCurrentMonitor(GLFWwindow* window)
     return bestmonitor;
 }
 
-void PK_GLFW_SetFullScreen(GLFWwindow* window, bool value, int32_t* inoutWindowedRect, const void** outNativeWindow)
+void PK_GLFW_SetFullScreen(GLFWwindow* window, bool value, int32_t* inoutWindowedRect, const void** outNativeMonitor)
 {
     if (value)
     {
@@ -68,35 +68,12 @@ void PK_GLFW_SetFullScreen(GLFWwindow* window, bool value, int32_t* inoutWindowe
         glfwGetWindowSize(window, inoutWindowedRect + 2, inoutWindowedRect + 3);
         glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, GLFW_DONT_CARE);
 #ifdef _WIN32
-        // @TODO may not match the above fetcher and crash. :( 
         // @TODO deprecate GLFW
-        * outNativeWindow = MonitorFromPoint({ inoutWindowedRect[0], inoutWindowedRect[1] }, MONITOR_DEFAULTTONEAREST);
+        * outNativeMonitor = MonitorFromWindow(glfwGetWin32Window(window), MONITOR_DEFAULTTONEAREST);
 #endif
     }
     else
     {
         glfwSetWindowMonitor(window, nullptr, inoutWindowedRect[0], inoutWindowedRect[1], inoutWindowedRect[2], inoutWindowedRect[3], GLFW_DONT_CARE);
     }
-}
-
-int PK_GLFW_CreateVkTemporarySurface(VkInstance instance, PK_GLFW_VkTemporarySurface& outSurface)
-{
-    // Create a temporary hidden window so that we can query & select a physical device with surface present capabilities.
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    outSurface.window = glfwCreateWindow(1, 1, "Initialization Window", nullptr, nullptr);
-    
-    if (!outSurface.window)
-    {
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
-
-    return glfwCreateWindowSurface(instance, outSurface.window, nullptr, &outSurface.surface);
-}
-
-void PK_GLFW_DestroyVkTemporarySurface(VkInstance instance, PK_GLFW_VkTemporarySurface& outSurface)
-{
-    vkDestroySurfaceKHR(instance, outSurface.surface, nullptr);
-    glfwDestroyWindow(outSurface.window);
 }

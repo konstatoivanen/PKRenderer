@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "FixedString.h"
 #include "Parse.h"
 
 namespace PK::Parse
@@ -46,6 +47,13 @@ namespace PK::Parse
     template<> FixedString32 ToString(const int64_t& value) { return FixedString32("%lli", value); }
     template<> FixedString32 ToString(const float& value) { return FixedString32("%fg", value); }
     template<> FixedString32 ToString(const bool& value) { return FixedString32("%u", (uint8_t)value); }
+
+    std::wstring ToWideString(const char* str, size_t length)
+    {
+        std::wstring wide(length, L'#');
+        mbstowcs(wide.data(), str, length);
+        return wide;
+    }
 
     const char* GetTypeShortName(const std::type_index& typeIndex)
     {

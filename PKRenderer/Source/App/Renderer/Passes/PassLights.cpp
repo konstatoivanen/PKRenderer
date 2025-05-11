@@ -67,8 +67,7 @@ namespace PK::App
 
     PassLights::PassLights(AssetDatabase* assetDatabase) 
     {
-        PK_LOG_VERBOSE("PassLights.Ctor");
-        PK_LOG_SCOPE_INDENT(local);
+        PK_LOG_VERBOSE_FUNC("");
 
         m_computeLightAssignment = assetDatabase->Find<ShaderAsset>("CS_LightAssignment");
         m_computeCopyCubeShadow = assetDatabase->Find<ShaderAsset>("CS_CopyCubeShadow");

@@ -3,6 +3,13 @@
 #include "Core/Utilities/FileIOBMP.h"
 #include "VulkanWindow.h"
 
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#define GLFW_EXPOSE_NATIVE_WGL
+#define GLFW_NATIVE_INCLUDE_NONE
+#include <GLFW/glfw3native.h>
+#endif
+
 namespace PK
 {
     static VulkanWindow* GetWindowPtr(GLFWwindow* window)
@@ -57,7 +64,11 @@ namespace PK
             });
 
         glfwSetErrorCallback([](int error, const char* description) { PK_THROW_ERROR("GLFW Error (%i) : %s", error, description); });
-        VK_ASSERT_RESULT_CTX(glfwCreateWindowSurface(m_driver->instance, m_window, nullptr, &m_surface), "Failed to create window surface!");
+
+        // @TODO deprecate glfw
+        #if PK_PLATFORM_WINDOWS
+        VK_ASSERT_RESULT_CTX(VulkanCreateSurfaceKHR(m_driver->instance, glfwGetWin32Window(m_window), &m_surface), "Failed to create window surface!");
+        #endif
 
         VkBool32 presentSupported;
         VK_ASSERT_RESULT_CTX(vkGetPhysicalDeviceSurfaceSupportKHR(m_driver->physicalDevice, m_driver->queues->GetQueue(QueueType::Present)->GetFamily(), m_surface, &presentSupported), "Surface support query failure!");
@@ -102,9 +113,9 @@ namespace PK
     {
         if (m_fullscreen != m_swapchain->IsExclusiveFullScreen())
         {        
-            const void* nativeWindow = nullptr;
-            PK_GLFW_SetFullScreen(m_window, m_fullscreen, glm::value_ptr(m_lastWindowedRect), &nativeWindow);
-            m_swapchain->RequestExclusiveFullScreen(nativeWindow, m_fullscreen);
+            const void* nativeMonitor = nullptr;
+            PK_GLFW_SetFullScreen(m_window, m_fullscreen, glm::value_ptr(m_lastWindowedRect), &nativeMonitor);
+            m_swapchain->RequestExclusiveFullScreen(nativeMonitor, m_fullscreen);
         }
 
         while (!m_swapchain->TryAcquireNextImage(&m_imageAvailableSignal))

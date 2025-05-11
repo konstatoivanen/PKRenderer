@@ -74,7 +74,7 @@ namespace PK
         auto isNew = m_variables.AddKey(name, &index);
         auto reference = &m_variables.GetValueAt(index);
         PK_THROW_ASSERT(!isNew || reference->variable == nullptr, "CVar is already bound! (%s)", name.c_str());
-        PK_LOG_VERBOSE("CVariableRegister.Bind: %s", name.c_str());
+        PK_LOG_VERBOSE_FUNC("%s", name.c_str());
 
         // Immediately call execute if there is one pending for this variable.
         if (!isNew && reference->arguments != nullptr)

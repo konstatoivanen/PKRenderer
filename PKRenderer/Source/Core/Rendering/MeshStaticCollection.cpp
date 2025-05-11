@@ -49,14 +49,13 @@ namespace PK
 
     MeshStatic* MeshStaticCollection::Allocate(MeshStaticAllocationData* data)
     {
-        PK_LOG_VERBOSE("MeshStaticCollection.Allocate: sm:%u, ml:%u, mlvc:%u, mltc:%u, vc:%u, tc:%u",
+        PK_LOG_VERBOSE_FUNC("sm:%u, ml:%u, mlvc:%u, mltc:%u, vc:%u, tc:%u",
             data->meshlet.submeshCount,
             data->meshlet.meshletCount,
             data->meshlet.vertexCount,
             data->meshlet.triangleCount,
             data->regular.vertexCount,
             data->regular.indexCount);
-        PK_LOG_SCOPE_INDENT(meshlet);
 
         PK_THROW_ASSERT(data->meshlet.submeshCount == data->regular.submeshCount, "Submesh count missmatch");
 

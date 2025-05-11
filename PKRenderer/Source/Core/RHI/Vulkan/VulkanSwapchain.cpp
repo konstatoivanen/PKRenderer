@@ -41,8 +41,7 @@ namespace PK
 
     void VulkanSwapchain::Rebuild(const SwapchainCreateInfo& createInfo)
     {
-        PK_LOG_INFO("VulkanSwapChain.Rebuild:");
-        PK_LOG_SCOPE_INDENT(local);
+        PK_LOG_INFO_FUNC("");
 
         m_cachedCreateInfo = createInfo;
 
