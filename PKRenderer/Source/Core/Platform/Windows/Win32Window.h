@@ -4,14 +4,11 @@
 #if PK_PLATFORM_WINDOWS
 
 #include <bitset>
-#include "Core/Utilities/FastSet.h"
 
 namespace PK
 {
     struct Win32Window : public PlatformWindow
     {
-        friend struct Win32WindowManager;
-
         constexpr static const LPCWSTR CLASS_MAIN = L"PK_PLATFORM_WIN32_WINDOW_CLASS_MAIN";
         constexpr static const LPCWSTR CLASS_HELPER = L"PK_PLATFORM_WIN32_WINDOW_CLASS_HELPER";
         constexpr static const LPCWSTR WINDOW_PROP = L"PK_PLATFORM_WIN32_WINDOW_PROP";
@@ -21,100 +18,90 @@ namespace PK
 
         int4 GetRect() const final;
         int2 GetMonitorResolution() const final;
-        int2 GetCursorPosition() const final;
-        inline bool GetIsClosing() const final { return state.isClosing; }
-        inline bool GetIsFocused() const final { return state.isFocused; }
-        inline void* GetNativeMonitorHandle() const { return ::MonitorFromWindow(handle, MONITOR_DEFAULTTONEAREST); }
+        float2 GetCursorPosition() const final;
+        inline bool IsMinimized() const { return m_isMinimized; }
+        inline bool IsMaximized() const { return m_isMaximized; }
+        inline bool IsClosing() const final { return m_isClosing; }
+        inline bool IsFocused() const final { return m_isFocused; }
+        inline void* GetNativeWindowHandle() const { return m_handle; }
+        inline void* GetNativeMonitorHandle() const { return ::MonitorFromWindow(m_handle, MONITOR_DEFAULTTONEAREST); }
+
+        float2 GetInputCursorPosition() final { return m_cursorposVirtual; }
+        const InputKeyState& GetInputKeyState() final { return m_keyState; }
+        float GetInputAnalogAxis(InputKey neg, InputKey pos) final;
+        void SetUseRawInput(bool value) final;
 
         void SetRect(const int4& rect) final;
-        void SetCursorPosition(const int2& position) final;
-        void SetCursorLock(bool lock, bool hide) final;
-        void SetRawMouseInput(bool value) final;
+        void SetCursorPosition(const float2& position) final;
+        void SetCursorLock(bool lock, bool visible) final;
         void SetIcon(unsigned char* pixels, const int2& resolution) final;
 
         void SetVisible(bool value) final;
+        void SetFullScreen(bool value) final;
         void Minimize() final;
         void Maximize() final;
-        void SetBorderless(bool value, bool maximize = false) final;
-        void SetFullScreen(bool value) final;
         void Restore() final;
+        void Focus() final;
 
-        inline void RegisterWindowListener(IPlatformWindowListener* listener) final { m_windowListeners.Add(listener); }
-        inline void UnregisterWindowListener(IPlatformWindowListener* listener) final { m_windowListeners.Remove(listener); }
-        inline void RegisterInputListener(IPlatformWindowInputListener* listener) final { m_inputListeners.Add(listener); }
-        inline void UnregisterInputListener(IPlatformWindowInputListener* listener) final { m_inputListeners.Remove(listener); }
+        inline Win32Window*& GetNext() { return m_nextWindow; }
 
-        protected:
-            void OnPollEvents();
-            void OnWaitEvents();
+        inline void SetListener(IPlatformWindowListener* listener) final { m_windowListener = listener; }
 
+        void OnPollEvents();
+        void OnClose();
+
+        LRESULT WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+        private:
             void ValidateResolution();
-            void BeginLockingCursor();
-            void EndLockingCursor();
             void UpdateCursor();
-            void CursorMovedEvent(const int2& position);
-            void UpdateRawMouseInput(LPARAM lParam);
+            void UpdateRawInput(LPARAM lParam);
 
-            void DispatchWindowEvent(PlatformWindowEvent evt);
-            void DispatchKeyEvent(InputKey key, bool isDown);
-            void DispatchMouseMoveEvent(const int2& position);
-            void DispatchScrollEvent(const float2& offset);
-            void DispatchCharacterEvent(uint32_t character);
-            void DispatchDrop(const char* const* paths, uint32_t count);
+            bool DispatchWindowOnEvent(PlatformWindowEvent evt);
+            void DispatchInputOnKey(InputKey key, bool isDown);
+            void DispatchInputOnMouseMoved(const float2& position);
+            void DispatchInputOnScroll(uint32_t axis, float offset);
+            void DispatchInputOnCharacter(uint32_t character);
+            void DispatchInputOnDrop(WPARAM wParam);
             void OnFocusChanged(bool value);
-            void OnClose();
             bool IsAnyMouseKeyDown() const;
 
-            LRESULT WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
+            HWND m_handle = NULL;
+            HICON m_icon = NULL;
 
-            HWND handle = NULL;
-            HICON icon = NULL;
+            bool m_isVisible = false;
+            bool m_isMinimized = false;
+            bool m_isMaximized = false;
+            bool m_isFocused = false;
+            bool m_isClosing = false;
+            bool m_isUsingRawInput = false;
+            bool m_isPendingActivate = false;
+            bool m_isFullScreen = false;
 
-            struct
-            {
-                bool isVisible = false;
-                bool isMinimized = false;
-                bool isMaximized = false;
-                bool isFullScreen = false;
-                bool isFocused = false;
-                bool isClosing = false;
-                bool isUsingRawMotion = false;
-                bool isCursorTracked = false;
-                bool isPendingActivate = false;
-            } 
-            state;
+            bool m_isInFrameAction = false;
+            bool m_isResizing = false;
+            bool m_isAcquiringFullScreen = false;
+            bool m_isMaximizing = false;
 
-            struct
-            {
-                bool inMaximize = false;
-                bool inFullScreen = false;
-                bool inResize = false;
-                bool inFrameAction = false;
-            }
-            scope;
+            bool m_cursorHide = false;
+            bool m_cursorLock = false;
+            bool m_useRawInput = false;
+            bool m_useDpiScaling = false;
+            bool m_isResizable = false;
+            int2 m_sizeMin = PK_INT2_ZERO;
+            int2 m_sizeMax = PK_INT2_ZERO;
 
-            struct
-            {
-                bool cursorHide = false;
-                bool cursorLock = false;
-                bool useRawMouseInput = false;
-                bool isBorderless = false;
-                bool isFullScreen = false;
-                bool useDpiScaling = false;
-            }
-            options;
+            int2 m_clientsize = PK_INT2_ZERO;
+            int4 m_restoreRect = PK_INT4_ZERO;
+            float2 m_cursorpos = PK_FLOAT2_ZERO;
+            float2 m_cursorposVirtual = PK_FLOAT2_ZERO;
+            float2 m_scroll[2]{};
 
-            int2 size_min = PK_INT2_ZERO;
-            int2 size_max = PK_INT2_ZERO;
-            int2 cached_clientsize = PK_INT2_ZERO;
-            int2 cached_cursorpos = PK_INT2_ZERO;
-            int2 virt_cursorpos = PK_INT2_ZERO;
+            InputKeyState m_keyState;
+            WCHAR m_lastHighSurrogate = 0;
 
-            std::bitset<(int)InputKey::Count> cached_keystates;
-            WCHAR cached_lastHighSurrogate = 0;
-
-            PointerSet<IPlatformWindowListener> m_windowListeners;
-            PointerSet<IPlatformWindowInputListener> m_inputListeners;
+            IPlatformWindowListener* m_windowListener = nullptr;
+            Win32Window* m_nextWindow = nullptr;
     };
 }
 

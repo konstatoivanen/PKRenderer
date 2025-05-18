@@ -1,5 +1,5 @@
 #include "PrecompiledHeader.h"
-#include "Core/Input/InputDevice.h"
+#include "Core/Input/InputState.h"
 #include "Core/Input/InputKeyConfig.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/ControlFlow/Sequencer.h"
@@ -16,19 +16,19 @@ namespace PK::App
         keyConfig->CommandInputKeys.TryGetKey("Console.BeginInput", &m_keyBeginInput);
     }
 
-    void EngineCommandInput::Step(InputDevice* input)
+    void EngineCommandInput::Step(InputState* inputState)
     {
         auto bindings = m_inputKeyCommands.GetBindings();
 
         for (auto i = 0u; i < m_inputKeyCommands.count; ++i)
         {
-            if (input->GetKeyDown(bindings[i].key))
+            if (inputState->GetKeyDown(bindings[i].key))
             {
                 m_sequencer->NextRoot<CArgumentConst>({ bindings[i].command });
             }
         }
 
-        if (input->GetKeyDown(m_keyBeginInput))
+        if (inputState->GetKeyDown(m_keyBeginInput))
         {
             StaticLog::LogNewLine();
             StaticLog::Log(PK_LOG_LVL_INFO, PK_LOG_COLOR_INPUT, "Awaiting command input...");

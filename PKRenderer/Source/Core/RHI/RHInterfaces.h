@@ -16,7 +16,7 @@ namespace PK
         virtual uint3 GetResolution() const = 0;
         virtual uint4 GetRect() const = 0;
         virtual float GetAspectRatio() const = 0;
-        virtual bool IsAlive() const = 0;
+        virtual bool IsClosing() const = 0;
         virtual bool IsMinimized() const = 0;
         virtual bool IsVSync() const = 0;
         virtual bool IsFullscreen() const = 0;
@@ -29,9 +29,7 @@ namespace PK
         virtual void SetFullscreen(bool value) = 0;
         virtual void SetOnResizeCallback(const std::function<void(int width, int height)>& callback) = 0;
         virtual void SetOnCloseCallback(const std::function<void()>& callback) = 0;
-        virtual void PollEvents() const = 0;
-        virtual void WaitEvents() const = 0;
-        virtual void* GetNativeWindow() const = 0;
+        virtual struct PlatformWindow* GetNativeWindow() const = 0;
     };
 
     struct RHITexture : public NoCopy, public NativeInterface<RHITexture>
@@ -159,7 +157,7 @@ namespace PK
         virtual void Blit(RHITexture* src, RHITexture* dst, const TextureViewRange& srcRange, const TextureViewRange& dstRange, FilterMode filter) = 0;
 
         virtual void Clear(RHIBuffer* dst, size_t offset, size_t size, uint32_t value) = 0;
-        virtual void Clear(RHITexture* dst, const TextureViewRange& range, const uint4& value) = 0;
+        virtual void Clear(RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value) = 0;
 
         virtual void UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, void* data) = 0;
         virtual void* BeginBufferWrite(RHIBuffer* buffer, size_t offset, size_t size) = 0;

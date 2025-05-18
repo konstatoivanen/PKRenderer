@@ -5,7 +5,6 @@
 #include "Core/Input/InputKeyStructMacros.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct InputDevice)
 
 namespace PK::App
 {

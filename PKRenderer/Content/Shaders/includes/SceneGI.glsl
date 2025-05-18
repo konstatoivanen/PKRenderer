@@ -93,6 +93,12 @@ GIDiff GI_ClampLuma(GIDiff a, float max_luma) { return GIDiff(SH_Scale(a.sh, GI_
 GISpec GI_ClampLuma(GISpec a, float max_luma) { return GISpec(a.radiance * GI_LumaScale(GI_Luminance(a), max_luma), a.ao, a.history); }
 float GI_RoughSpecWeight(float roughness) { return smoothstep(PK_GI_MIN_ROUGH_SPEC, PK_GI_MAX_ROUGH_SPEC, roughness); }
 
+// Multiply diff output by 2.0f (4.0 = sphere, 2.0 = hemi)
+// PI for peak color is pretty fake (should be 2.0). Matches more closely to rt reference specular.
+float3 GI_Evaluate_Diffuse(const GIResolved r, const float3 n) { return SH_ToDiffuse(r.diffSH, n) * 2.0f * r.diff_ao; }
+float3 GI_Evaluate_Peak_Color(const GIResolved r) { return SH_ToColor(r.diffSH) * PK_PI * r.diff_ao; }
+float3 GI_Evaluate_Peak_Direction(const GIResolved r) { return SH_ToPeakDirection(r.diffSH); }
+
 // A novel anti-firefly filter using subgroup intrisics.
 // This is a lot cheaper than the classic 3x3 filter but a bit less effective due to larger sample area.
 // @TODO this is not the best placement for this but its common across usages.
@@ -100,10 +106,8 @@ float GI_RoughSpecWeight(float roughness) { return smoothstep(PK_GI_MIN_ROUGH_SP
 {                                                                                                 \
     const uint4 thread_mask = subgroupBallot(condition);                                          \
     const uint thread_count = max(1u, subgroupBallotBitCount(thread_mask)) - 1u;                  \
-                                                                                                  \
     const float2 moments = make_moments(GI_Luminance(current));                                   \
     const float2 moments_wave = (subgroupAdd(moments) - moments) / thread_count;                  \
-                                                                                                  \
     const float variance = pow(abs(moments_wave.y - pow2(moments_wave.x)), 0.25f);                \
     out_luma_max = lerp(GI_Luminance(history), moments_wave.x, alpha) + variance * scale;         \
 }                                                                                                 \
@@ -171,7 +175,6 @@ void GI_Store_Spec(const int2 coord, const GISpec u) { GI_Store_Packed_Spec(coor
 GIResolved GI_Load_Resolved(const float2 uv) 
 { 
     const uint4 packed = texelFetch(pk_GI_ResolvedRead, int2(uv * pk_ScreenSize.xy), 0);
-
     GIResolved resolved;
     resolved.diffSH.Y = unpackHalf4x16(packed.xy).xyz;
     resolved.diffSH.A = DecodeE5BGR9(packed.z);
@@ -185,7 +188,6 @@ void GI_Store_Resolved(const int2 coord, const GIDiff diff, const GISpec spec)
 {
     const float final_diff_ao = pow(diff.ao, PK_GI_AO_DIFF_POWER);
     const float final_spec_ao = pow(spec.ao, PK_GI_AO_SPEC_POWER);
-
     uint4 packed;
     packed.xy = packHalf4x16(diff.sh.Y.xyzz);
     packed.y = bitfieldInsert(packed.y, uint(saturate(final_diff_ao) * 255.0f + 0.5f), 16, 8);

@@ -55,6 +55,13 @@ namespace PK::Parse
         return wide;
     }
 
+    std::string FromWideString(const wchar_t* str, size_t length)
+    {
+        std::string narrow(length, '#');
+        wcstombs(narrow.data(), str, length);
+        return narrow;
+    }
+
     const char* GetTypeShortName(const std::type_index& typeIndex)
     {
         return strrchr(typeIndex.name(), ':') + 1u;

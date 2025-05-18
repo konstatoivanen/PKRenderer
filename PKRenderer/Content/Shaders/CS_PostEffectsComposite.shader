@@ -98,7 +98,7 @@ void main()
 
         IF_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_GI_DIFF)
         {
-            color = SH_ToDiffuse(GI_Load_Resolved(uv).diffSH, SampleWorldNormal(uv)) * exposure;
+            color = GI_Evaluate_Diffuse(GI_Load_Resolved(uv), SampleWorldNormal(uv)) * exposure;
         }
 
         IF_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_GI_SPEC)

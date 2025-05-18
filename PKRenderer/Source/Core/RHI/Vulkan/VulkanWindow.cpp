@@ -3,20 +3,8 @@
 #include "Core/Utilities/FileIOBMP.h"
 #include "VulkanWindow.h"
 
-#ifdef _WIN32
-#define GLFW_EXPOSE_NATIVE_WIN32
-#define GLFW_EXPOSE_NATIVE_WGL
-#define GLFW_NATIVE_INCLUDE_NONE
-#include <GLFW/glfw3native.h>
-#endif
-
 namespace PK
 {
-    static VulkanWindow* GetWindowPtr(GLFWwindow* window)
-    {
-        return (VulkanWindow*)glfwGetWindowUserPointer(window);
-    }
-
     template<typename T, typename ... Args>
     static void SafeInvokeFunction(const T& function, const Args& ... args)
     {
@@ -28,47 +16,35 @@ namespace PK
 
     VulkanWindow::VulkanWindow(VulkanDriver* driver, const WindowDescriptor& descriptor) : m_driver(driver)
     {
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-        glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
-        m_window = glfwCreateWindow(descriptor.size.x, descriptor.size.y, descriptor.title.c_str(), nullptr, nullptr);
+        PlatformWindowDescriptor platformDescriptor;
+        platformDescriptor.title = descriptor.title.c_str();
+        platformDescriptor.position = PK_INT2_MINUS_ONE;
+        platformDescriptor.size = descriptor.size;
+        platformDescriptor.sizemin = { MIN_SIZE, MIN_SIZE };
+        platformDescriptor.sizemax = PK_INT2_MINUS_ONE;
+        platformDescriptor.isVisible = true;
+        platformDescriptor.isResizable = true;
+        platformDescriptor.isFloating = false;
+        platformDescriptor.useDpiScaling = false;
+        platformDescriptor.activateOnFirstShow = true;
+        m_window = Platform::CreateWindow(platformDescriptor);
         PK_THROW_ASSERT(m_window, "Failed To Create Window");
 
-        glfwSetWindowSizeLimits(m_window, MIN_SIZE, MIN_SIZE, GLFW_DONT_CARE, GLFW_DONT_CARE);
+        m_window->SetListener(this);
 
         if (descriptor.iconPath.Length() > 0)
         {
-            GLFWimage image;
+            auto iconWidth = 0;
+            auto iconHeight = 0;
+            uint8_t* pixels = nullptr;
             int32_t iconBytesPerPixel = 0;
-            FileIO::ReadBMP(descriptor.iconPath.c_str(), &image.pixels, &image.width, &image.height, &iconBytesPerPixel);
+            FileIO::ReadBMP(descriptor.iconPath.c_str(), &pixels, &iconWidth, &iconHeight, &iconBytesPerPixel);
             PK_THROW_ASSERT(iconBytesPerPixel == 4, "Trying to load an icon with invalid bytes per pixel value, %i", iconBytesPerPixel);
-            glfwSetWindowIcon(m_window, 1, &image);
-            free(image.pixels);
+            m_window->SetIcon(pixels, { iconWidth, iconHeight });
+            free(pixels);
         }
 
-        glfwSetWindowUserPointer(m_window, this);
-
-        glfwSetWindowSizeCallback(m_window, [](GLFWwindow* nativeWindow, int width, int height)
-            {
-                auto window = GetWindowPtr(nativeWindow);
-                window->m_minimized = width == 0 || height == 0;
-                window->m_swapchain->SetDesiredExtent({ (uint32_t)width, (uint32_t)height });
-                SafeInvokeFunction(window->m_onResize, width, height);
-            });
-
-        glfwSetWindowCloseCallback(m_window, [](GLFWwindow* nativeWindow)
-            {
-                auto window = GetWindowPtr(nativeWindow);
-                window->m_alive = false;
-                SafeInvokeFunction(window->m_onClose);
-            });
-
-        glfwSetErrorCallback([](int error, const char* description) { PK_THROW_ERROR("GLFW Error (%i) : %s", error, description); });
-
-        // @TODO deprecate glfw
-        #if PK_PLATFORM_WINDOWS
-        VK_ASSERT_RESULT_CTX(VulkanCreateSurfaceKHR(m_driver->instance, glfwGetWin32Window(m_window), &m_surface), "Failed to create window surface!");
-        #endif
+        VK_ASSERT_RESULT_CTX(VulkanCreateSurfaceKHR(m_driver->instance, m_window->GetNativeWindowHandle(), &m_surface), "Failed to create window surface!");
 
         VkBool32 presentSupported;
         VK_ASSERT_RESULT_CTX(vkGetPhysicalDeviceSurfaceSupportKHR(m_driver->physicalDevice, m_driver->queues->GetQueue(QueueType::Present)->GetFamily(), m_surface, &presentSupported), "Surface support query failure!");
@@ -82,7 +58,6 @@ namespace PK
         swapchainCreateInfo.desiredPresentMode = VK_PRESENT_MODE_FIFO_KHR;
         swapchainCreateInfo.maxFramesInFlight = PK_RHI_MAX_FRAMES_IN_FLIGHT;
         swapchainCreateInfo.nativeMonitor = nullptr;
-        swapchainCreateInfo.exclusiveFullScreen = false;
 
         m_swapchain = CreateUnique<VulkanSwapchain>(m_driver->physicalDevice,
             m_driver->device,
@@ -104,31 +79,21 @@ namespace PK
 
         if (m_window)
         {
-            glfwDestroyWindow(m_window);
+            Platform::DestroyWindow(m_window);
             m_window = nullptr;
         }
     }
 
     void VulkanWindow::Begin()
     {
-        if (m_fullscreen != m_swapchain->IsExclusiveFullScreen())
+        if (m_isFullScreen != m_swapchain->IsExclusiveFullScreen())
         {        
-            const void* nativeMonitor = nullptr;
-            PK_GLFW_SetFullScreen(m_window, m_fullscreen, glm::value_ptr(m_lastWindowedRect), &nativeMonitor);
-            m_swapchain->RequestExclusiveFullScreen(nativeMonitor, m_fullscreen);
+            m_window->SetFullScreen(m_isFullScreen);
         }
 
         while (!m_swapchain->TryAcquireNextImage(&m_imageAvailableSignal))
         {
-            PollEvents();
-            WaitEvents();
-        }
-
-        // Full screen request might've been rejected. update status.
-        if (m_fullscreen && !m_swapchain->IsExclusiveFullScreen())
-        {
-            m_fullscreen = false;
-            PK_GLFW_SetFullScreen(m_window, false, glm::value_ptr(m_lastWindowedRect), nullptr);
+            Platform::WaitEvents();
         }
 
         m_inWindowScope = true;
@@ -155,7 +120,49 @@ namespace PK
 
     void VulkanWindow::SetCursorVisible(bool value)
     {
-        glfwSetInputMode(m_window, GLFW_CURSOR, value ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN);
-        m_cursorVisible = value;
+        m_window->SetCursorLock(false, value);
+    }
+
+    bool VulkanWindow::IPlatformWindow_OnEvent([[maybe_unused]] PlatformWindow* window, PlatformWindowEvent evt)
+    {
+        switch (evt)
+        {
+            case PlatformWindowEvent::FullScreenRequest:
+            {
+                const auto nativeMonitor = m_window->GetNativeMonitorHandle();
+                const auto acquiredFullSCreen = m_swapchain->TrySetFullScreen(nativeMonitor);
+
+                if (!acquiredFullSCreen)
+                {
+                    m_isFullScreen = false;
+                }
+
+                return acquiredFullSCreen;
+            }
+            case PlatformWindowEvent::FullScreenExit:
+            {
+                m_swapchain->TrySetFullScreen(nullptr);
+                m_isFullScreen = false;
+                break;
+            }
+
+            case PlatformWindowEvent::Close:
+            {
+                SafeInvokeFunction(m_onClose);
+                break;
+            }
+            case PlatformWindowEvent::Resize:
+            {
+                auto size = m_window->GetSize();
+                m_swapchain->SetDesiredExtent({ (uint32_t)size.x, (uint32_t)size.y });
+                SafeInvokeFunction(m_onResize, size.x, size.y);
+                break;
+            }
+
+            default:
+                break;
+        }
+
+        return false;
     }
 }

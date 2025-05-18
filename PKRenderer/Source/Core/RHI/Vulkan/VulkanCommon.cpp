@@ -4,7 +4,6 @@
 #include "Core/Utilities/FixedString.h"
 #define VMA_IMPLEMENTATION
 #include "VulkanCommon.h"
-#include <gfx.h>
 #include <vulkan/vk_enum_string_helper.h>
 
 PFN_vkSetDebugUtilsObjectNameEXT pkfn_vkSetDebugUtilsObjectNameEXT = nullptr;
@@ -1294,7 +1293,10 @@ namespace PK
 
         VkAttachmentLoadOp GetLoadOp(VkImageLayout layout, LoadOp loadOp)
         {
-            return layout == VK_IMAGE_LAYOUT_UNDEFINED ? VK_ATTACHMENT_LOAD_OP_DONT_CARE : GetLoadOp(loadOp);
+            VkAttachmentLoadOp vkop;
+            vkop = GetLoadOp(loadOp);
+            vkop = vkop == VK_ATTACHMENT_LOAD_OP_LOAD && layout == VK_IMAGE_LAYOUT_UNDEFINED ? VK_ATTACHMENT_LOAD_OP_DONT_CARE : vkop;
+            return vkop;
         }
 
         VkAttachmentStoreOp GetStoreOp(StoreOp storeOp)

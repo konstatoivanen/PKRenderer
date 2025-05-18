@@ -65,8 +65,8 @@ namespace PK
     struct PlatformDriver;
     struct PlatformWindow;
     struct PlatformWindowDescriptor;
-    struct PlatformWindowListener;
-    struct PlatformWindowInputListener;
+    struct IPlatformWindowListener;
+    struct InputHandler;
 
     namespace Platform
     {
@@ -85,11 +85,16 @@ namespace PK
 
         bool GetHasFocus();
         int2 GetDesktopSize();
-        void* GetMonitorHandle(const int2& point, bool preferPrimary);
         int4 GetMonitorRect(const int2& point, bool preferPrimary);
+        void* GetNativeMonitorHandle(const int2& point, bool preferPrimary);
 
         PlatformWindow* CreateWindow(const PlatformWindowDescriptor& descriptor);
         void DestroyWindow(PlatformWindow* window);
+
+        void SetInputHandler(InputHandler* handler);
+
+        std::string GetClipboardString();
+        void SetClipboardString(const char* str);
 
         void SetConsoleColor(uint32_t color);
         void SetConsoleVisible(bool value);

@@ -151,8 +151,8 @@ namespace PK::App
 
     void PassSceneGI::PruneVoxels(CommandBufferExt cmd)
     {
-        // Clear transparencies every axis cycle
-        if (m_rasterAxis == 0)
+        // Clear transparencies at the end of every axis cycle
+        if (m_rasterAxis == 2)
         {
             cmd->BeginDebugScope("SceneGI.PruneVoxels", PK_COLOR_GREEN);
             RHI::SetImage(HashCache::Get()->pk_Image, m_voxels.get(), 0, 0);

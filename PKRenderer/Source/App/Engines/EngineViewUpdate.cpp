@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/ECS/EntityDatabase.h"
-#include "Core/Input/InputDevice.h"
+#include "Core/Input/InputState.h"
 #include "Core/Timers/TimeFrameInfo.h"
 #include "Core/ControlFlow/Sequencer.h"
 #include "Core/ControlFlow/ApplicationStep.h"
@@ -15,14 +15,14 @@ namespace PK::App
     {
     }
     
-    void EngineViewUpdate::Step(InputDevice* inputDevice)
+    void EngineViewUpdate::Step(InputState* inputState)
     {
         auto views = m_entityDb->Query<EntityViewRenderView>((uint32_t)ENTITY_GROUPS::ACTIVE);
 
         for (auto i = 0u; i < views.count; ++i)
         {
             auto& input = views[i].input;
-            input->state = *inputDevice->GetStatePtr();
+            input->state = *inputState;
             input->keysConsumed.Clear();
             input->hotControlId = 0u;
             input->controlIdCounter = 1u;

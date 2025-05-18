@@ -153,6 +153,8 @@ namespace PK::App
         auto hash = HashCache::Get();
         auto queues = RHI::GetQueues();
         auto* cmdtransfer = queues->GetCommandBuffer(QueueType::Transfer);
+        auto* cmdcompute = queues->GetCommandBuffer(QueueType::Compute);
+        CommandBufferExt cmdgraphics = queues->GetCommandBuffer(QueueType::Graphics);
         
         for (auto i = 0u; i < context->viewCount; ++i)
         {
@@ -264,6 +266,18 @@ namespace PK::App
         RHI::SetTexture(hash->pk_GB_Previous_DepthBiased, gbuffers.previous.depthBiased);
         RHI::SetBuffer(hash->pk_PerFrameConstants, *primaryView->constants.get());
 
+        // Clear 'previous' targets if they've been reallocated 
+        if (primaryView->IsResizeFrame())
+        {
+            cmdgraphics->Clear(gbuffers.previous.color, {}, PK_FLOAT4_ZERO);
+            cmdgraphics->Clear(gbuffers.previous.normals, {}, float4(0.5f, 0.5f, 0.0f, 0.0f));
+            cmdgraphics->Clear(gbuffers.previous.depth, {}, TextureClearValue(PK_CLIPZ_FAR, 0u));
+            cmdgraphics->Clear(gbuffers.previous.depthBiased, {}, float4(PK_CLIPZ_FAR));
+            queues->Submit(QueueType::Graphics, &cmdgraphics.commandBuffer);
+            queues->Wait(QueueType::Transfer, QueueType::Graphics);
+            queues->Wait(QueueType::Compute, QueueType::Graphics);
+        }
+
         context->batcher->BeginCollectDrawCalls();
         {
             DispatchRenderPipelineEvent(cmdtransfer, context, RenderPipelineEvent::CollectDraws);
@@ -275,13 +289,13 @@ namespace PK::App
         // Transfer needs to wait for last frames async rt geometry builds which is submitted next funnily enough.
         queues->Wait(QueueType::Transfer, QueueType::Compute, 1);
         queues->Submit(QueueType::Transfer);
+        
         // Only buffering needs to wait for previous results.
         // Eliminate redundant rendering waits by waiting for transfer instead.
         context->window->SetFrameFence(queues->GetFenceRef(QueueType::Transfer));
 
         // Prune voxels & build AS.
         // These can happen before the end of last frame. 
-        auto* cmdcompute = queues->GetCommandBuffer(QueueType::Compute);
         m_passSceneGI.PruneVoxels(cmdcompute);
         context->cullingProxy->CullRayTracingGeometry(ScenePrimitiveFlags::DefaultMesh, BoundingBox(), false, QueueType::Compute, m_sceneStructure.get());
         RHI::SetAccelerationStructure(hash->pk_SceneStructure, m_sceneStructure.get());
@@ -300,7 +314,6 @@ namespace PK::App
         queues->Submit(QueueType::Compute, &cmdcompute);
 
         // Depth pre pass. Meshlet cull based on prev frame hizb
-        CommandBufferExt cmdgraphics = queues->GetCommandBuffer(QueueType::Graphics);
         cmdgraphics.SetRenderTarget({ gbuffers.current.depth }, true);
         cmdgraphics->ClearDepth(PK_CLIPZ_FAR, 0u);
         cmdgraphics->SetStageExcludeMask(ShaderStageFlags::Fragment);

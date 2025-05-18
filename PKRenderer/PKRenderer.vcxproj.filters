@@ -15,15 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ThirdParty\gfx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\GLFW\glfw3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\GLFW\glfw3native.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ThirdParty\glm\common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1017,12 +1008,6 @@
     <ClInclude Include="Source\Core\ControlFlow\Sequencer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Input\InputDevice.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Input\InputDeviceGLFW.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Input\InputKey.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1515,7 +1500,7 @@
     <ClInclude Include="Source\Core\Platform\Windows\Win32Driver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Platform\Windows\Win32WindowManager.h">
+    <ClInclude Include="Source\Core\Input\InputDevice.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2115,9 +2100,6 @@
     <ClCompile Include="Source\Core\CLI\LogScopeTimer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Input\InputDeviceGLFW.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Core\Input\InputKey.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -2388,9 +2370,6 @@
     <ClCompile Include="Source\Core\Timers\TimerFrameRunner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ThirdParty\gfx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\App\Engines\EngineProfiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -2427,12 +2406,8 @@
     <ClCompile Include="Source\Core\Platform\Platform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Platform\Windows\Win32WindowManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="ThirdParty\GLFW\Binaries\glfw3.lib" />
     <Library Include="ThirdParty\KTX\Binaries\ktx.lib" />
     <Library Include="ThirdParty\KTX\Binaries\ktx_read.lib" />
     <Library Include="ThirdParty\vulkan\Binaries\vulkan-1.lib" />

@@ -22,6 +22,9 @@ void MainRgs()
     const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy, 1u);
     const float depth = PK_GI_SAMPLE_PREV_DEPTH(coord);
 
+    bool invalid_dist = false;
+    bool invalid_luma = false;
+
     if (Test_DepthIsScene(depth))
     {
         const float3 normal = SamplePreviousWorldNormal(coord);
@@ -42,13 +45,14 @@ void MainRgs()
         traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction.xyz, t_max, 0);
 
         const float log_luma = log(1.0f + dot(PK_LUMA_BT709, reservoir.radiance));
-        const bool invalid_dist = abs(direction.w - payload.HIT_DISTANCE) > max_error_dist;
-        const bool invalid_luma = abs(log_luma - payload.HIT_LOGLUMINANCE) > max_error_luma;
+        invalid_dist = abs(direction.w - payload.HIT_DISTANCE) > max_error_dist;
+        invalid_luma = abs(log_luma - payload.HIT_LOGLUMINANCE) > max_error_luma;
+    
+    }
 
-        if (invalid_dist || invalid_luma)
-        {
-            ReSTIR_StoreZero(coord_ray);
-        }
+    if (invalid_dist || invalid_luma || pk_FrameIndex.y < 1u)
+    {
+        ReSTIR_StoreZero(coord_ray);
     }
 }
 

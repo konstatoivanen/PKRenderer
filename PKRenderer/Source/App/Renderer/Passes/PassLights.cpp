@@ -210,6 +210,7 @@ namespace PK::App
         {
             return;
         }
+
         auto hash = HashCache::Get();
         auto resolution = renderView->GetResolution();
         auto quarterResolution = uint3(resolution.x >> 1u, resolution.y >> 1u, 1u);
@@ -277,8 +278,8 @@ namespace PK::App
         auto renderView = context->views[0];
         auto resources = renderView->GetResources<ViewResources>();
         auto resolution = renderView->GetResolution();
-        resolution.x /= LightGridTileSizePx;
-        resolution.y /= LightGridTileSizePx;
+        resolution.x /= (resolution.x + LightGridTileSizePx - 1) / LightGridTileSizePx;
+        resolution.y /= (resolution.y + LightGridTileSizePx - 1) / LightGridTileSizePx;
         resolution.z = LightGridSizeZ;
 
         auto lightIndexCount = resolution.x *

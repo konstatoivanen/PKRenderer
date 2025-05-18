@@ -261,21 +261,18 @@ struct SurfaceData
     {
         #define PK_SURF_DEBUG_SCENE_IBL 0
         #if PK_SURF_DEBUG_SCENE_IBL
-            const float3 peak_direction = SceneEnv_Sample_SH_PeakDirection();
-            const float3 peak_color = SceneEnv_Sample_SH_Color() * PK_PI;
-            const float3 ld = SceneEnv_Sample_SH_Diffuse(surf.normal);
             const float3 ls_dir = Futil_SpecularDominantDirection(surf.normal, surf.view_dir, sqrt(surf.alpha));
             const float2 ls_uv = EncodeOctaUv(ls_dir);
+            const float3 peak_direction = SceneEnv_Sample_SH_PeakDirection();
+            const float3 peak_color = SceneEnv_Sample_SH_Color();
+            const float3 ld = SceneEnv_Sample_SH_Diffuse(surf.normal);
             const float3 ls = SceneEnv_Sample_IBL(ls_uv, surf.alpha);
             const float ls_fade = 1.0f;
         #else
             const GIResolved resolved = GI_Load_Resolved(clip_uvw.xy); 
-            const float3 peak_direction = SH_ToPeakDirection(resolved.diffSH);
-            // Recover energy from cosine distribution of accumulated samples.
-            // @TODO figure out a "correct" factor for this as using just the color seems to produce very dim results.
-            // 2 * PI seems a bit too strong? pi seems ok but maybe too weak? Keep 1 * pi as it more on the safe side.
-            const float3 peak_color = SH_ToColor(resolved.diffSH) * PK_PI * resolved.diff_ao;
-            const float3 ld = SH_ToDiffuse(resolved.diffSH, surf.normal) * resolved.diff_ao;
+            const float3 peak_direction = GI_Evaluate_Peak_Direction(resolved);
+            const float3 peak_color = GI_Evaluate_Peak_Color(resolved);
+            const float3 ld = GI_Evaluate_Diffuse(resolved, surf.normal);
             const float3 ls = resolved.spec * resolved.spec_ao;
 
             #if PK_GI_APPROX_ROUGH_SPEC == 1
@@ -298,7 +295,7 @@ struct SurfaceData
         if (delta_depth > -0.01f && delta_depth < 0.1f)
         {
             // Sample screen space SH values for more accurate results.
-            return surf.diffuse * SH_ToDiffuse(GI_Load_Resolved(clip_uvw.xy).diffSH, surf.normal);
+            return surf.diffuse * GI_Evaluate_Diffuse(GI_Load_Resolved(clip_uvw.xy), surf.normal);
         }
         else
         {

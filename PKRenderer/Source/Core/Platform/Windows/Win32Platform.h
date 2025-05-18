@@ -37,7 +37,7 @@
 #define NORASTEROPS
 #define OEMRESOURCE
 #define NOATOM
-#define NOCLIPBOARD
+//#define NOCLIPBOARD
 #define NOCOLOR
 #define NOKERNEL
 #define NONLS

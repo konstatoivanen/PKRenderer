@@ -43,10 +43,7 @@ namespace PK
     {
         PK_LOG_INFO_FUNC("");
 
-        m_cachedCreateInfo = createInfo;
-
         vkDeviceWaitIdle(m_device);
-
         Release();
 
         m_maxFramesInFlight = createInfo.maxFramesInFlight;
@@ -66,8 +63,7 @@ namespace PK
         m_imageCount = glm::clamp(createInfo.desiredImageCount, minImageCount, maxImageCount);
         uint32_t queueFamilyIndices[] = { m_queueGraphics->GetFamily(), m_queuePresent->GetFamily() };
 
-        m_cachedCreateInfo.exclusiveFullScreen &= createInfo.nativeMonitor != nullptr;
-        auto fullscreenInfo = VulkanGetSwapchainFullscreenInfo(createInfo.nativeMonitor, createInfo.exclusiveFullScreen);
+        auto fullscreenInfo = VulkanGetSwapchainFullscreenInfo(createInfo.nativeMonitor, createInfo.nativeMonitor != nullptr);
 
         VkSwapchainCreateInfoKHR swapchainCreateInfo{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
         swapchainCreateInfo.pNext = fullscreenInfo.swapchainPNext;
@@ -138,12 +134,12 @@ namespace PK
             fence.Invalidate();
         }
 
-        m_isExlclusiveFullScreen = m_cachedCreateInfo.exclusiveFullScreen;
+        m_cachedCreateInfo = createInfo;
 
-        if (m_cachedCreateInfo.exclusiveFullScreen && vkAcquireFullScreenExclusiveModeEXT(m_device, m_swapchain) != VK_SUCCESS)
+        // Failed to acquire full screen set monitor to null.
+        if (createInfo.nativeMonitor && vkAcquireFullScreenExclusiveModeEXT(m_device, m_swapchain) != VK_SUCCESS)
         {
-            m_cachedCreateInfo.exclusiveFullScreen = false;
-            m_isExlclusiveFullScreen = false;
+            m_cachedCreateInfo.nativeMonitor = nullptr;
         }
 
         m_outofdate = false;
@@ -151,9 +147,10 @@ namespace PK
 
     void VulkanSwapchain::Release()
     {
-        if (m_isExlclusiveFullScreen)
+        if (m_cachedCreateInfo.nativeMonitor != nullptr)
         {
             VK_ASSERT_RESULT(vkReleaseFullScreenExclusiveModeEXT(m_device, m_swapchain));
+            m_cachedCreateInfo.nativeMonitor = nullptr;
         }
 
         for (size_t i = 0u; i < MaxImageCount; ++i)
@@ -173,20 +170,10 @@ namespace PK
 
     void VulkanSwapchain::SetDesiredExtent(const VkExtent2D& extent)
     {
-        if (extent.width != 0u && extent.height != 0u)
+        if (extent.width != 0u && extent.height != 0u && (extent.width != m_extent.width || extent.height != m_extent.height))
         {
             m_cachedCreateInfo.desiredExtent = extent;
             m_outofdate = true;
-        }
-    }
-
-    void VulkanSwapchain::RequestExclusiveFullScreen(const void* nativeMonitor, bool value)
-    {
-        if (m_cachedCreateInfo.exclusiveFullScreen != value)
-        {
-            m_outofdate = true;
-            m_cachedCreateInfo.exclusiveFullScreen = value;
-            m_cachedCreateInfo.nativeMonitor = nativeMonitor;
         }
     }
 
@@ -194,6 +181,34 @@ namespace PK
     {
         m_frameFences[m_frameIndex] = fence;
         m_hasExternalFrameFence = true;
+    }
+
+    bool VulkanSwapchain::TrySetFullScreen(const void* nativeMonitor)
+    {
+        // Has exclusive full screen for the monitor
+        if (m_cachedCreateInfo.nativeMonitor == nativeMonitor)
+        {
+            return m_cachedCreateInfo.nativeMonitor != nullptr;
+        }
+
+        // Releasing full screen defer update to next acquire image.
+        if (m_cachedCreateInfo.nativeMonitor && !nativeMonitor)
+        {
+            m_outofdate = true;
+            return false;
+        }
+
+        // Try to rebuild and acquire full screen.
+        if (!m_cachedCreateInfo.nativeMonitor && nativeMonitor)
+        {
+            auto newCreateInfo = m_cachedCreateInfo;
+            newCreateInfo.nativeMonitor = nativeMonitor;
+            m_outofdate = true;
+            Rebuild(newCreateInfo);
+        }
+
+        // Return current state
+        return m_cachedCreateInfo.nativeMonitor;
     }
 
     bool VulkanSwapchain::TryAcquireNextImage(VkSemaphore* imageAvailableSignal)

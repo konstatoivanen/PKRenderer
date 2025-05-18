@@ -377,6 +377,24 @@ namespace PK
         inline uint16_t Components(ElementType format) { return (uint16_t)PKAssets::GetElementComponents(format); }
     }
 
+    struct TextureClearValue
+    {
+        TextureClearValue(const float4& v) : float32(v), depth(0.0f), stencil(0) {}
+        TextureClearValue(const uint4& v) : uint32(v), depth(0.0f), stencil(0) {}
+        TextureClearValue(const int4& v) : int32(v), depth(0.0f), stencil(0) {}
+        TextureClearValue(const float depth, uint32_t stencil) : uint32(PK_UINT4_ZERO), depth(depth), stencil(stencil) {}
+
+        union
+        {
+            float4 float32;
+            uint4 uint32;
+            int4 int32;
+        };
+
+        float depth;
+        uint32_t stencil;
+    };
+
     struct DrawIndexedIndirectCommand
     {
         uint32_t indexCount;

@@ -12,8 +12,11 @@ namespace PK
         Mouse6,
         Mouse7,
         Mouse8,
-        MouseScrollUp,
         MouseScrollDown,
+        MouseScrollUp,
+        MouseScrollLeft,
+        MouseScrollRight,
+        MouseHover,
         Space,
         Apostrophe,
         Comma,
@@ -135,6 +138,13 @@ namespace PK
         RightSuper,
         Menu,
         Count
+    };
+
+    enum class InputType : uint8_t
+    {
+        KeyboardAndMouse,
+        XBOX,
+        DS5
     };
 
     const char* InputKeyToString(InputKey key);

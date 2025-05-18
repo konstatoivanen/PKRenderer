@@ -83,6 +83,7 @@ namespace PK::Parse
     }
 
     std::wstring ToWideString(const char* str, size_t length);
+    std::string FromWideString(const wchar_t* str, size_t length);
 
     const char* GetTypeShortName(const std::type_index& typeIndex);
     const char* GetTypeShortName(const std::type_info& typeInfo);

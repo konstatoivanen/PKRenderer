@@ -4,7 +4,6 @@
 namespace PK
 {
     IPlatformWindowListener::~IPlatformWindowListener() = default;
-    IPlatformWindowInputListener::~IPlatformWindowInputListener() = default;
     PlatformWindow::~PlatformWindow() = default;
     PlatformDriver::~PlatformDriver() = default;
 
@@ -65,14 +64,14 @@ namespace PK
         return PlatformDriver::Get()->GetDesktopSize(); 
     }
 
-    void* Platform::GetMonitorHandle(const int2& point, bool preferPrimary) 
-    { 
-        return PlatformDriver::Get()->GetMonitorHandle(point, preferPrimary); 
-    }
-
     int4 Platform::GetMonitorRect(const int2& point, bool preferPrimary) 
     { 
         return PlatformDriver::Get()->GetMonitorRect(point, preferPrimary); 
+    }
+
+    void* Platform::GetNativeMonitorHandle(const int2& point, bool preferPrimary)
+    { 
+        return PlatformDriver::Get()->GetNativeMonitorHandle(point, preferPrimary);
     }
 
     PlatformWindow* Platform::CreateWindow(const PlatformWindowDescriptor& descriptor) 
@@ -83,6 +82,21 @@ namespace PK
     void Platform::DestroyWindow(PlatformWindow* window) 
     { 
         PlatformDriver::Get()->DestroyWindow(window);
+    }
+
+    void Platform::SetInputHandler(InputHandler* handler)
+    {
+        PlatformDriver::Get()->SetInputHandler(handler);
+    }
+
+    std::string Platform::GetClipboardString()
+    {
+        return PlatformDriver::Get()->GetClipboardString();
+    }
+
+    void Platform::SetClipboardString(const char* str)
+    {
+        PlatformDriver::Get()->SetClipboardString(str);
     }
 
     void Platform::SetConsoleColor(uint32_t color) 

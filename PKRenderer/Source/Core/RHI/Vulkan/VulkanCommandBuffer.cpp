@@ -413,18 +413,30 @@ namespace PK
     }
 
 
-    void VulkanCommandBuffer::Clear(RHITexture* dst, const TextureViewRange& range, const uint4& value)
+    void VulkanCommandBuffer::Clear(RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value)
     {
         auto vktex = dst->GetNative<VulkanTexture>();
         auto handle = vktex->GetBindHandle(range, TextureBindMode::Image);
+            
+        VkClearDepthStencilValue clearDepthStencilValue{};
+        clearDepthStencilValue.depth = value.depth;
+        clearDepthStencilValue.stencil = value.stencil;
 
-        VkClearColorValue clearValue{};
-        memcpy(clearValue.uint32, glm::value_ptr(value), sizeof(clearValue.uint32));
+        VkClearColorValue clearColorValue{};
+        memcpy(clearColorValue.uint32, glm::value_ptr(value.uint32), sizeof(clearColorValue.uint32));
 
-        m_renderState->RecordImage(handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_MEMORY_WRITE_BIT);
+        m_renderState->RecordImage(handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_MEMORY_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL);
         ResolveBarriers();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdClearColorImage(m_commandBuffer, vktex->GetRaw()->image, handle->image.layout, &clearValue, 1, &handle->image.range);
+
+        if (VulkanEnumConvert::IsDepthFormat(handle->image.format) || VulkanEnumConvert::IsDepthStencilFormat(handle->image.format))
+        {
+            vkCmdClearDepthStencilImage(m_commandBuffer, vktex->GetRaw()->image, VK_IMAGE_LAYOUT_GENERAL, &clearDepthStencilValue, 1, &handle->image.range);
+        }
+        else
+        {
+            vkCmdClearColorImage(m_commandBuffer, vktex->GetRaw()->image, VK_IMAGE_LAYOUT_GENERAL, &clearColorValue, 1, &handle->image.range);
+        }
     }
 
     void VulkanCommandBuffer::UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, void* data)

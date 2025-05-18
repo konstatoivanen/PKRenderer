@@ -11,11 +11,11 @@
 #include <dinput.h>
 #include <xinput.h>
 #include <dbt.h>
-#include "shellapi.h"
+#include <shellapi.h>
+#include <dwmapi.h>
 #include "Core/Utilities/Parse.h"
-#include "Core/Utilities/FastMap.h"
-#include "Core/Utilities/Ref.h"
-#include "Core/Platform/Windows/Win32WindowManager.h"
+#include "Core/Platform/Windows/Win32Window.h"
+
 
 // Define macros that some windows.h variants don't
 #ifndef WM_MOUSEHWHEEL
@@ -64,6 +64,10 @@
 #define OCR_HAND 32649
 #endif
 
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+
 #ifndef DPI_ENUMS_DECLARED
 typedef enum
 {
@@ -103,24 +107,44 @@ typedef HRESULT(WINAPI* PFN_GetDpiForMonitor)(HMONITOR, MONITOR_DPI_TYPE, UINT*,
 // ntdll.dll function pointer typedefs
 typedef LONG(WINAPI* PFN_RtlVerifyVersionInfo)(OSVERSIONINFOEXW*, ULONG, ULONGLONG);
 
+// dwmapi.dll function pointer typedefs
+typedef HRESULT(WINAPI* PFN_DwmIsCompositionEnabled)(BOOL*);
+typedef HRESULT(WINAPI* PFN_DwmFlush)(VOID);
+typedef HRESULT(WINAPI* PFN_DwmEnableBlurBehindWindow)(HWND, const DWM_BLURBEHIND*);
+typedef HRESULT(WINAPI* PFN_DwmGetColorizationColor)(DWORD*, BOOL*);
+typedef HRESULT(WINAPI* PFN_DwmSetWindowAttribute)(HWND, DWORD, LPCVOID, DWORD);
+
 #define PK_PLATFORM_WINDOWS_IS_8_OR_GREATER() PK::Win32Driver::IsGreaterOSVersion(HIBYTE(_WIN32_WINNT_WIN8), LOBYTE(_WIN32_WINNT_WIN8), 0)
 #define PK_PLATFORM_WINDOWS_IS_8_1_OR_GREATER() PK::Win32Driver::IsGreaterOSVersion(HIBYTE(_WIN32_WINNT_WINBLUE), LOBYTE(_WIN32_WINNT_WINBLUE), 0)
 #define PK_PLATFORM_WINDOWS_IS_10_1607_OR_GREATER() PK::Win32Driver::IsGreaterWin10Build(14393)
 #define PK_PLATFORM_WINDOWS_IS_10_1703_OR_GREATER() PK::Win32Driver::IsGreaterWin10Build(15063)
 
-#define PK_DirectInput8Create PK::PlatformDriver::GetNative<Win32Driver>()->pkfn_DirectInput8Create
-#define PK_XInputGetCapabilities PK::PlatformDriver::GetNative<Win32Driver>()->pkfn_XInputGetCapabilities
-#define PK_XInputGetState PK::PlatformDriver::GetNative<Win32Driver>()->pkfn_XInputGetState
-#define PK_SetProcessDPIAware PK::PlatformDriver::GetNative<Win32Driver>()->pkfn_SetProcessDPIAware
-#define PK_ChangeWindowMessageFilterEx PK::PlatformDriver::GetNative<Win32Driver>()->pkfn_ChangeWindowMessageFilterEx
-#define PK_EnableNonClientDpiScaling PK::PlatformDriver::GetNative<Win32Driver>()->pkfn_EnableNonClientDpiScaling
-#define PK_SetProcessDpiAwarenessContext PK::PlatformDriver::GetNative<Win32Driver>()->pkfn_SetProcessDpiAwarenessContext
-#define PK_GetDpiForWindow PK::PlatformDriver::GetNative<Win32Driver>()->pkfn_GetDpiForWindow
-#define PK_AdjustWindowRectExForDpi PK::PlatformDriver::GetNative<Win32Driver>()->pkfn_AdjustWindowRectExForDpi
-#define PK_GetSystemMetricsForDpi PK::PlatformDriver::GetNative<Win32Driver>()->pkfn_GetSystemMetricsForDpi
-#define PK_SetProcessDpiAwareness PK::PlatformDriver::GetNative<Win32Driver>()->pkfn_SetProcessDpiAwareness
-#define PK_GetDpiForMonitor PK::PlatformDriver::GetNative<Win32Driver>()->pkfn_GetDpiForMonitor
-#define PK_RtlVerifyVersionInfo PK::PlatformDriver::GetNative<Win32Driver>()->pkfn_RtlVerifyVersionInfo
+extern PFN_DirectInput8Create pkfn_DirectInput8Create;
+#define PK_DirectInput8Create pkfn_DirectInput8Create
+extern PFN_XInputGetCapabilities pkfn_XInputGetCapabilities;
+#define PK_XInputGetCapabilities pkfn_XInputGetCapabilities
+extern PFN_XInputGetState pkfn_XInputGetState;
+#define PK_XInputGetState pkfn_XInputGetState
+extern PFN_SetProcessDPIAware pkfn_SetProcessDPIAware;
+#define PK_SetProcessDPIAware pkfn_SetProcessDPIAware
+extern PFN_EnableNonClientDpiScaling pkfn_EnableNonClientDpiScaling;
+#define PK_EnableNonClientDpiScaling pkfn_EnableNonClientDpiScaling
+extern PFN_SetProcessDpiAwarenessContext pkfn_SetProcessDpiAwarenessContext;
+#define PK_SetProcessDpiAwarenessContext pkfn_SetProcessDpiAwarenessContext
+extern PFN_SetProcessDpiAwareness pkfn_SetProcessDpiAwareness;
+#define PK_SetProcessDpiAwareness pkfn_SetProcessDpiAwareness
+extern PFN_GetDpiForWindow pkfn_GetDpiForWindow;
+#define PK_GetDpiForWindow pkfn_GetDpiForWindow
+extern PFN_GetDpiForMonitor pkfn_GetDpiForMonitor;
+#define PK_GetDpiForMonitor pkfn_GetDpiForMonitor 
+extern PFN_ChangeWindowMessageFilterEx pkfn_ChangeWindowMessageFilterEx;
+#define PK_ChangeWindowMessageFilterEx pkfn_ChangeWindowMessageFilterEx
+extern PFN_AdjustWindowRectExForDpi pkfn_AdjustWindowRectExForDpi;
+#define PK_AdjustWindowRectExForDpi pkfn_AdjustWindowRectExForDpi
+extern PFN_DwmSetWindowAttribute pkfn_DwmSetWindowAttribute;
+#define PK_DwmSetWindowAttribute pkfn_DwmSetWindowAttribute
+extern PFN_RtlVerifyVersionInfo pkfn_RtlVerifyVersionInfo;
+#define PK_RtlVerifyVersionInfo pkfn_RtlVerifyVersionInfo
 
 namespace PK
 {
@@ -134,8 +158,9 @@ namespace PK
         void PollEvents() final;
         void WaitEvents() final;
 
+        static inline Win32Driver* GetInstance() { return PlatformDriver::Get()->GetNative<Win32Driver>(); }
         inline void* GetProcess() const final { return instance; }
-        inline void* GetHelperWindow() const final { return windowManager->GetHelperWindow(); }
+        inline void* GetHelperWindow() const final { return m_windowInstanceHelper; }
         inline void* GetProcAddress(void* handle, const char* name) const final { return (void*)::GetProcAddress((HMODULE)handle, name); }
 
         void* LoadLibrary(const char* path) const final;
@@ -143,46 +168,66 @@ namespace PK
 
         bool GetHasFocus() const final;
         int2 GetDesktopSize() const final;
-        void* GetMonitorHandle(const int2& point, bool preferPrimary) const final;
         int4 GetMonitorRect(const int2& point, bool preferPrimary) const final;
+        void* GetNativeMonitorHandle(const int2& point, bool preferPrimary) const final;
 
         PlatformWindow* CreateWindow(const PlatformWindowDescriptor& descriptor) final;
         void DestroyWindow(PlatformWindow* window) final;
 
+        void SetInputHandler(InputHandler* handler) final;
+        std::string GetClipboardString() final;
+        void SetClipboardString(const char* str) final;
         void SetConsoleColor(uint32_t color) const final;
         void SetConsoleVisible(bool value) const final;
         bool RemoteProcess(const char* executable, const char* arguments, std::string& outError) const final;
 
         static bool IsGreaterOSVersion(WORD major, WORD minor, WORD sp);
         static bool IsGreaterWin10Build(WORD build);
+        static bool IsInputEvent(UINT uMsg);
+        static bool IsWindowEvent(UINT uMsg);
+
+        static InputKey NativeToInputKey(int32_t native);
+        static int32_t InputKeyToNative(InputKey inputKey);
+
+        static bool IsDisabledCursorWindow(Win32Window* window);
+        static RAWINPUT* GetRawInput(Win32Window* window, LPARAM lParam);
+        static void SetDisabledCursorWindow(Win32Window* window, bool value, const float2& restoreCursorPos);
+        static void SetLockedCursorWindow(Win32Window* window, bool value);
+        static void DispatchInputOnKey(InputDevice* device, InputKey key, bool isDown);
+        static void DispatchInputOnMouseMoved(InputDevice* device, const float2& position, const float2& size);
+        static void DispatchInputOnScroll(InputDevice* device, uint32_t axis, float offset);
+        static void DispatchInputOnCharacter(InputDevice* device, uint32_t character);
+        static void DispatchInputOnDrop(InputDevice* device, const char* const* paths, uint32_t count);
+
+        static LRESULT CALLBACK WindowProc_Helper(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+        static LRESULT CALLBACK WindowProc_Main(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
         HINSTANCE instance = NULL;
 
-        Unique<Win32WindowManager> windowManager = nullptr;
-
         void* dinput8_handle = nullptr;
-        IDirectInput8W* dinput8_api = nullptr;
-        PFN_DirectInput8Create pkfn_DirectInput8Create = nullptr;
-
         void* xinput_handle = nullptr;
-        PFN_XInputGetCapabilities pkfn_XInputGetCapabilities = nullptr;
-        PFN_XInputGetState pkfn_XInputGetState = nullptr;
-
         void* user32_handle = nullptr;
-        PFN_SetProcessDPIAware pkfn_SetProcessDPIAware = nullptr;
-        PFN_ChangeWindowMessageFilterEx pkfn_ChangeWindowMessageFilterEx = nullptr;
-        PFN_EnableNonClientDpiScaling pkfn_EnableNonClientDpiScaling = nullptr;
-        PFN_SetProcessDpiAwarenessContext pkfn_SetProcessDpiAwarenessContext = nullptr;
-        PFN_GetDpiForWindow pkfn_GetDpiForWindow = nullptr;
-        PFN_AdjustWindowRectExForDpi pkfn_AdjustWindowRectExForDpi = nullptr;
-        PFN_GetSystemMetricsForDpi pkfn_GetSystemMetricsForDpi = nullptr;
-
+        void* dwmapi_handle = nullptr;
         void* shcore_handle = nullptr;
-        PFN_SetProcessDpiAwareness pkfn_SetProcessDpiAwareness = nullptr;
-        PFN_GetDpiForMonitor pkfn_GetDpiForMonitor = nullptr;
-
         void* ntdll_handle = nullptr;
-        PFN_RtlVerifyVersionInfo pkfn_RtlVerifyVersionInfo = nullptr;
+        IDirectInput8W* dinput8_api = nullptr;
+
+        ATOM m_windowClassMain = NULL;
+        ATOM m_windowClassHelper = NULL;
+        HWND m_windowInstanceHelper = NULL;
+
+        InputKey native_to_keycode[512]{};
+        int16_t keycode_to_native[(int32_t)InputKey::Count]{};
+
+        HDEVNOTIFY m_deviceNotificationHandle = NULL;
+        float2 m_restoreCursorPos = PK_FLOAT2_ZERO;
+        Win32Window* m_disabledCursorWindow = nullptr;
+        Win32Window* m_lockedCursorWindow = nullptr;
+        RAWINPUT* m_rawInput = nullptr;
+        uint32_t m_rawInputSize = 0u;
+
+        InputHandler* m_inputHandler = nullptr;
+        Win32Window* m_windowHead = nullptr;
     };
 }
 

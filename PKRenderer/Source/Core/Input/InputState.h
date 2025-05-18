@@ -10,8 +10,8 @@ namespace PK
         std::bitset<(int)InputKey::Count> keysCurrent;
         std::bitset<(int)InputKey::Count> keysPrevious;
         float2 cursorPosition = PK_FLOAT2_ZERO;
-        float2 cursorPositionNormalized = PK_FLOAT2_ZERO;
         float2 cursorPositionDelta = PK_FLOAT2_ZERO;
+        float2 cursorPositionNormalized = PK_FLOAT2_ZERO;
         float2 cursorScroll = PK_FLOAT2_ZERO;
 
         float GetAxis(InputKey xneg, InputKey xpos)  const;

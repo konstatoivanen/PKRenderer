@@ -44,6 +44,9 @@ namespace PK::App
         auto entityDb = GetServices()->Create<EntityDatabase>();
         auto sequencer = GetServices()->Create<Sequencer>();
         auto assetDatabase = GetServices()->Create<AssetDatabase>(sequencer);
+        auto inputSystem = GetServices()->Create<InputSystem>(sequencer);
+        Platform::SetInputHandler(inputSystem);
+
         auto config = assetDatabase->Load<BaseRendererConfig>("Content/Configs/BaseRenderer.cfg");
         auto keyConfig = assetDatabase->Load<InputKeyConfig>("Content/Configs/Input.keycfg");
 
@@ -68,7 +71,6 @@ namespace PK::App
         assetDatabase->LoadDirectory<ShaderAsset>("Content/Shaders/");
 
         auto time = GetServices()->Create<EngineTime>(sequencer, config->TimeScale);
-        auto inputSystem = GetServices()->Create<InputSystem>(sequencer);
         auto batcherMeshStatic = GetServices()->Create<BatcherMeshStatic>();
         auto renderPipelineScene = GetServices()->Create<RenderPipelineScene>(assetDatabase, entityDb, sequencer, batcherMeshStatic);
 
@@ -115,8 +117,8 @@ namespace PK::App
                 {
                     inputSystem,
                     {
-                        Sequencer::Step::Create<InputDevice*>(engineCommands),
-                        Sequencer::Step::Create<InputDevice*>(engineViewUpdate),
+                        Sequencer::Step::Create<InputState*>(engineCommands),
+                        Sequencer::Step::Create<InputState*>(engineViewUpdate),
                     }
                 },
                 {
@@ -178,6 +180,7 @@ namespace PK::App
 
     RendererApplication::~RendererApplication()
     {
+        Platform::SetInputHandler(nullptr);
         GetService<Sequencer>()->Release();
         GetService<AssetDatabase>()->Unload();
         GetServices()->Clear();
@@ -190,13 +193,13 @@ namespace PK::App
     {
         auto sequencer = GetService<Sequencer>();
 
-        while (m_window->IsAlive() && m_isRunning)
+        while (!m_window->IsClosing() && m_isRunning)
         {
-            m_window->PollEvents();
+            Platform::PollEvents();
 
             if (m_window->IsMinimized())
             {
-                m_window->WaitEvents();
+                Platform::WaitEvents();
                 continue;
             }
 

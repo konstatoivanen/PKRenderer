@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Utilities.glsl"
-#include "Constants.glsl"
+#include "SHL1.glsl"
 
 #define PK_SCENE_ENV_IBL_MAX_MIP 4
 #define PK_SCENE_ENV_ISL_MAX_MIP 7
@@ -55,7 +55,10 @@ float3 SceneEnv_Sample_SH_Color()
 
 float3 SceneEnv_Sample_SH_Diffuse(float3 direction)  
 { 
-    return SceneEnv_Sample_SH(float4(1.0f, direction) * PK_L1BASIS_COSINE * 2.0f);  
+    const float R = SH_EvaluateDiffuse(PK_BUFFER_DATA(pk_SceneEnv_SH, 0), direction);
+    const float G = SH_EvaluateDiffuse(PK_BUFFER_DATA(pk_SceneEnv_SH, 1), direction);
+    const float B = SH_EvaluateDiffuse(PK_BUFFER_DATA(pk_SceneEnv_SH, 2), direction);
+    return float3(R,G,B);
 }
 
 float3 SceneEnv_Sample_SH_Volumetric(float3 view_dir, float phase) 

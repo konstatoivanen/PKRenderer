@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include <gfx.h>
 #include "Core/Utilities/Handle.h"
 #include "Core/Utilities/Parse.h"
 #include "Core/CLI/Log.h"
@@ -16,9 +15,6 @@ namespace PK
     VulkanDriver::VulkanDriver(const VulkanContextProperties& properties) : properties(properties)
     {
         vkHandle = Platform::LoadLibrary(PK_VK_LIBRARY_NAME);
-
-        // @TODO deprecate glfw
-        glfwInit();
 
         VulkanAssertAPIVersion(properties.apiVersionMajor, properties.apiVersionMinor);
 
@@ -181,7 +177,6 @@ namespace PK
         vkDestroyDevice(device, nullptr);
         vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         vkDestroyInstance(instance, nullptr);
-        glfwTerminate();
 
         Platform::FreeLibrary(vkHandle);
     }

@@ -63,7 +63,7 @@ namespace PK
         void Blit(const VulkanBindHandle* src, const VulkanBindHandle* dst, const VkImageBlit& blitRegion, FilterMode filter);
 
         void Clear(RHIBuffer* dst, size_t offset, size_t size, uint32_t value) final;
-        void Clear(RHITexture* dst, const TextureViewRange& range, const uint4& value) final;
+        void Clear(RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value) final;
 
         void UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, void* data) final;
         void* BeginBufferWrite(RHIBuffer* buffer, size_t offset, size_t size) final;

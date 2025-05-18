@@ -8,13 +8,14 @@ namespace PK
 {
     static void GetHMONITORContentScale(HMONITOR handle, float* xscale, float* yscale)
     {
-        UINT xdpi, ydpi;
-        *xscale = 0.f;
-        *yscale = 0.f;
+        uint32_t dpix = 0u;
+        uint32_t dpiy = 0u;
+        *xscale = 0.0f;
+        *yscale = 0.0f;
 
         if (PK_PLATFORM_WINDOWS_IS_8_1_OR_GREATER())
         {
-            if (PK_GetDpiForMonitor(handle, MDT_EFFECTIVE_DPI, &xdpi, &ydpi) != S_OK)
+            if (PK_GetDpiForMonitor(handle, MDT_EFFECTIVE_DPI, &dpix, &dpix) != S_OK)
             {
                 return;
             }
@@ -22,14 +23,27 @@ namespace PK
         else
         {
             const HDC dc = ::GetDC(NULL);
-            xdpi = ::GetDeviceCaps(dc, LOGPIXELSX);
-            ydpi = ::GetDeviceCaps(dc, LOGPIXELSY);
+            dpix = ::GetDeviceCaps(dc, LOGPIXELSX);
+            dpiy = ::GetDeviceCaps(dc, LOGPIXELSY);
             ::ReleaseDC(NULL, dc);
         }
 
-        *xscale = xdpi / (float)USER_DEFAULT_SCREEN_DPI;
-        *yscale = ydpi / (float)USER_DEFAULT_SCREEN_DPI;
+        *xscale = dpix / (float)USER_DEFAULT_SCREEN_DPI;
+        *yscale = dpiy / (float)USER_DEFAULT_SCREEN_DPI;
     }
+
+    static void AdjustWindowRectExDpiAware(HWND handle, _Inout_ LPRECT lpRect, _In_ DWORD dwStyle, _In_ BOOL bMenu, _In_ DWORD dwExStyle)
+    {
+        if (PK_PLATFORM_WINDOWS_IS_10_1607_OR_GREATER())
+        {
+            PK_AdjustWindowRectExForDpi(lpRect, dwStyle, bMenu, dwExStyle, PK_GetDpiForWindow(handle));
+        }
+        else
+        {
+            ::AdjustWindowRectEx(lpRect, dwStyle, bMenu, dwExStyle);
+        }
+    }
+
 
     static int32_t GetRemappedScanCode(WPARAM wParam, LPARAM lParam)
     {
@@ -37,61 +51,56 @@ namespace PK
 
         if (!scancode)
         {
-            // NOTE: Some synthetic key messages have a scancode of zero
-            // HACK: Map the virtual key back to a usable scancode
-            scancode = MapVirtualKeyW((UINT)wParam, MAPVK_VK_TO_VSC);
+            scancode = ::MapVirtualKeyW((UINT)wParam, MAPVK_VK_TO_VSC);
         }
 
         // HACK: Alt+PrtSc has a different scancode than just PrtSc
         if (scancode == 0x54)
+        {
             scancode = 0x137;
+        }
 
         // HACK: Ctrl+Pause has a different scancode than just Pause
         if (scancode == 0x146)
+        {
             scancode = 0x45;
+        }
 
         // HACK: CJK IME sets the extended bit for right Shift
         if (scancode == 0x136)
+        {
             scancode = 0x36;
+        }
 
         return scancode;
     }
 
     static bool HandleModifierKeys(WPARAM wParam, LPARAM lParam, InputKey* key)
     {
-        if (wParam == VK_CONTROL)
+        if (wParam != VK_CONTROL)
         {
-            if (HIWORD(lParam) & KF_EXTENDED)
-            {
-                // Right side keys have the extended key bit set
-                *key = InputKey::RightControl;
-            }
-            else
-            {
-                // NOTE: Alt Gr sends Left Ctrl followed by Right Alt
-                // HACK: We only want one event for Alt Gr, so if we detect
-                //       this sequence we discard this Left Ctrl message now
-                //       and later report Right Alt normally
-                MSG next;
-                const DWORD time = GetMessageTime();
-
-                if (PeekMessageW(&next, NULL, 0, 0, PM_NOREMOVE) &&
-                    (next.message == WM_KEYDOWN || next.message == WM_SYSKEYDOWN || next.message == WM_KEYUP || next.message == WM_SYSKEYUP) &&
-                    (next.wParam == VK_MENU && (HIWORD(next.lParam) & KF_EXTENDED) && next.time == time))
-                {
-                    // Next message is Right Alt down so discard this
-                    return false;
-                }
-
-                // This is a regular Left Ctrl message
-                *key = InputKey::LeftControl;
-            }
+            return wParam != VK_PROCESSKEY;
         }
 
-        if (wParam == VK_PROCESSKEY)
+        if (HIWORD(lParam) & KF_EXTENDED)
+        {
+            *key = InputKey::RightControl;
+            return true;
+        }
+
+        const auto time = (DWORD)::GetMessageTime();
+        
+        MSG next;
+        auto discard = ::PeekMessageW(&next, NULL, 0, 0, PM_NOREMOVE);
+        discard &= (next.message == WM_KEYDOWN || next.message == WM_SYSKEYDOWN || next.message == WM_KEYUP || next.message == WM_SYSKEYUP);
+        discard &= (next.wParam == VK_MENU && (HIWORD(next.lParam) & KF_EXTENDED) && next.time == time);
+
+        if (discard)
         {
             return false;
         }
+
+        *key = InputKey::LeftControl;
 
         return true;
     }
@@ -139,17 +148,13 @@ namespace PK
 
     Win32Window::Win32Window(const PlatformWindowDescriptor& descriptor)
     {
-        state.isPendingActivate = descriptor.activateOnFirstShow;
-        options.useDpiScaling = descriptor.useDpiScaling;
-        size_min[0] = descriptor.resolutionMin[0];
-        size_min[1] = descriptor.resolutionMin[1];
-        size_max[0] = descriptor.resolutionMax[0];
-        size_max[1] = descriptor.resolutionMax[1];
+        m_isPendingActivate = descriptor.activateOnFirstShow;
+        m_useDpiScaling = descriptor.useDpiScaling;
+        m_isResizable = descriptor.isResizable;
+        m_sizeMin = descriptor.sizemin;
+        m_sizeMax = descriptor.sizemax;
 
-        int32_t framePos[2]{};
-        int32_t frameSize[2]{};
-
-        DWORD style = WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+        DWORD style = WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_CAPTION;
         DWORD styleEx = WS_EX_APPWINDOW;
 
         if (descriptor.isFloating)
@@ -162,47 +167,59 @@ namespace PK
             style |= WS_MAXIMIZEBOX | WS_THICKFRAME;
         }
 
+        auto frameRect = PK_INT4_ZERO;
         {
-            RECT rect = { 0, 0, descriptor.resolution[0], descriptor.resolution[1] };
-            ::AdjustWindowRectEx(&rect, style, FALSE, styleEx);
-            framePos[0] = descriptor.position[0] == -1 ? CW_USEDEFAULT : descriptor.position[0] + rect.left;
-            framePos[1] = descriptor.position[1] == -1 ? CW_USEDEFAULT : descriptor.position[1] + rect.top;
-            frameSize[0] = rect.right - rect.left;
-            frameSize[1] = rect.bottom - rect.top;
+            RECT rect = { 0, 0, descriptor.size.x, descriptor.size.y };
+            AdjustWindowRectExDpiAware(m_handle, &rect, style, FALSE, styleEx);
+            frameRect.x = descriptor.position.x == -1 ? CW_USEDEFAULT : (descriptor.position.x + rect.left);
+            frameRect.y = descriptor.position.y == -1 ? CW_USEDEFAULT : (descriptor.position.y + rect.top);
+            frameRect.z = rect.right - rect.left;
+            frameRect.w = rect.bottom - rect.top;
         }
 
-        auto wideTitle = Parse::ToWideString(descriptor.title.c_str(), descriptor.title.length());
+        auto wideTitle = Parse::ToWideString(descriptor.title, strnlen(descriptor.title, 0xFFu));
 
-        handle = ::CreateWindowExW
+        m_handle = ::CreateWindowExW
         (
             styleEx,
             Win32Window::CLASS_MAIN,
             wideTitle.c_str(),
             style,
-            framePos[0], framePos[1],
-            frameSize[0], frameSize[1],
-            NULL,
-            NULL,
-            PlatformDriver::GetNative<Win32Driver>()->instance,
-            (LPVOID)&descriptor
+            frameRect.x,
+            frameRect.y,
+            frameRect.z,
+            frameRect.w,
+            nullptr,
+            nullptr,
+            (HINSTANCE)Platform::GetProcess(), 
+            &m_useDpiScaling
         );
 
-        if (!handle)
+        if (!m_handle)
         {
             throw std::runtime_error("Failed to create a window through: CreateWindowExW.");
         }
 
-        ::SetPropW(handle, Win32Window::WINDOW_PROP, this);
+        // Set dark title bar
+        {
+            if (PK_DwmSetWindowAttribute)
+            {
+                BOOL value = true;
+                PK_DwmSetWindowAttribute(m_handle, DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
+            }
+        }
 
-        PK_ChangeWindowMessageFilterEx(handle, WM_DROPFILES, MSGFLT_ALLOW, NULL);
-        PK_ChangeWindowMessageFilterEx(handle, WM_COPYDATA, MSGFLT_ALLOW, NULL);
-        PK_ChangeWindowMessageFilterEx(handle, WM_COPYGLOBALDATA, MSGFLT_ALLOW, NULL);
+        ::SetPropW(m_handle, Win32Window::WINDOW_PROP, this);
+
+        PK_ChangeWindowMessageFilterEx(m_handle, WM_DROPFILES, MSGFLT_ALLOW, NULL);
+        PK_ChangeWindowMessageFilterEx(m_handle, WM_COPYDATA, MSGFLT_ALLOW, NULL);
+        PK_ChangeWindowMessageFilterEx(m_handle, WM_COPYGLOBALDATA, MSGFLT_ALLOW, NULL);
 
         {
-            RECT rect = { 0, 0, descriptor.resolution[0], descriptor.resolution[1] };
+            RECT rect = { 0, 0, descriptor.size.x, descriptor.size.y };
             WINDOWPLACEMENT wp = { sizeof(wp) };
 
-            const HMONITOR mh = ::MonitorFromWindow(handle, MONITOR_DEFAULTTONEAREST);
+            const HMONITOR mh = ::MonitorFromWindow(m_handle, MONITOR_DEFAULTTONEAREST);
 
             if (descriptor.useDpiScaling)
             {
@@ -212,46 +229,47 @@ namespace PK
                 rect.bottom = yscale > 0.0f ? (int)(rect.bottom * yscale) : rect.bottom;
             }
 
-            ::AdjustWindowRectEx(&rect, style, FALSE, styleEx);
-            ::GetWindowPlacement(handle, &wp);
+            AdjustWindowRectExDpiAware(m_handle, &rect, style, FALSE, styleEx);
+            ::GetWindowPlacement(m_handle, &wp);
             ::OffsetRect(&rect, wp.rcNormalPosition.left - rect.left, wp.rcNormalPosition.top - rect.top);
 
             wp.rcNormalPosition = rect;
             wp.showCmd = SW_HIDE;
-            ::SetWindowPlacement(handle, &wp);
+            ::SetWindowPlacement(m_handle, &wp);
         }
 
-        ::DragAcceptFiles(handle, TRUE);
+        ::DragAcceptFiles(m_handle, TRUE);
 
         {
             RECT rect;
-            ::GetClientRect(handle, &rect);
-            cached_clientsize[0] = rect.right;
-            cached_clientsize[1] = rect.bottom;
+            ::GetClientRect(m_handle, &rect);
+            m_clientsize[0] = rect.right;
+            m_clientsize[1] = rect.bottom;
         }
 
         if (descriptor.isVisible)
         {
             SetVisible(true);
+            Focus();
         }
     }
 
     Win32Window::~Win32Window()
     {
-        state.isVisible = false;
+        m_isVisible = false;
         OnFocusChanged(false);
         UpdateCursor();
 
-        if (handle)
+        if (m_handle)
         {
-            ::RemovePropW(handle, Win32Window::WINDOW_PROP);
-            ::DestroyWindow(handle);
-            handle = nullptr;
+            ::RemovePropW(m_handle, Win32Window::WINDOW_PROP);
+            ::DestroyWindow(m_handle);
+            m_handle = nullptr;
         }
 
-        if (icon)
+        if (m_icon)
         {
-            ::DestroyIcon(icon);
+            ::DestroyIcon(m_icon);
         }
     }
 
@@ -259,113 +277,100 @@ namespace PK
     int4 Win32Window::GetRect() const
     {
         POINT pos = { 0, 0 };
-        ::ClientToScreen(handle, &pos);
-        return { pos.x, pos.y, cached_clientsize[0], cached_clientsize[1] };
+        ::ClientToScreen(m_handle, &pos);
+        return { pos.x, pos.y, m_clientsize };
     }
 
     int2 Win32Window::GetMonitorResolution() const
     {
-        auto monitor = ::MonitorFromWindow(handle, MONITOR_DEFAULTTONEAREST);
+        auto monitor = ::MonitorFromWindow(m_handle, MONITOR_DEFAULTTONEAREST);
         MONITORINFO mi = { sizeof(mi) };
         ::GetMonitorInfoW(monitor, &mi);
         return { mi.rcWork.right - mi.rcWork.left, mi.rcWork.bottom - mi.rcWork.top };
     }
 
-    int2 Win32Window::GetCursorPosition() const
+    float2 Win32Window::GetCursorPosition() const
     {
         POINT pos{ 0, 0 };
         ::GetCursorPos(&pos);
-        ::ScreenToClient(handle, &pos);
-        return { pos.x, pos.y };
+        ::ScreenToClient(m_handle, &pos);
+        return { (float)pos.x, (float)pos.y };
+    }
+
+    
+    float Win32Window::GetInputAnalogAxis(InputKey neg, InputKey pos) 
+    {
+        if (neg == InputKey::MouseScrollDown && pos == InputKey::MouseScrollUp)
+        {
+            return m_scroll[0].y;
+        }
+
+        if (neg == InputKey::MouseScrollLeft && pos == InputKey::MouseScrollRight)
+        {
+            return m_scroll[0].x;
+        }
+
+        return 0.0f;
+    }
+
+    void Win32Window::SetUseRawInput(bool value)
+    {
+        m_useRawInput = value;
+        UpdateCursor();
     }
 
 
     void Win32Window::SetRect(const int4& newRect)
     {
+        SetFullScreen(false);
+
         const auto currentRect = GetRect();
         const bool changePosition = currentRect.x != newRect.x || currentRect.y != newRect.y;
         const bool changeSize = currentRect.z != newRect.z || currentRect.w != newRect.w;
 
-        if (!changePosition && !changeSize)
+        if (changePosition || changeSize)
         {
-            return;
-        }
-        
-        auto x = newRect.x;
-        auto y = newRect.y;
-        auto width = newRect.z;
-        auto height = newRect.w;
+            auto x = newRect.x;
+            auto y = newRect.y;
+            auto width = newRect.z;
+            auto height = newRect.w;
 
-        if (changeSize)
-        {
-            cached_clientsize[0] = newRect.x;
-            cached_clientsize[1] = newRect.y;
-            DispatchWindowEvent(PlatformWindowEvent::Resize);
-        }
+            ::SetWindowPos(m_handle, nullptr, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE);
 
-        if (!options.isBorderless)
-        {
-            // Get window info
-            WINDOWINFO winInfo;
-            ZeroMemory(&winInfo, sizeof(WINDOWINFO));
-            winInfo.cbSize = sizeof(winInfo);
-            ::GetWindowInfo(handle, &winInfo);
-
-            RECT rect = { 0, 0, width, height };
-            // Adjust rectangle from client size to window size
-            ::AdjustWindowRectEx(&rect, winInfo.dwStyle, FALSE, winInfo.dwExStyle);
-            width = rect.right - rect.left;
-            height = rect.bottom - rect.top;
-
-            // Little hack but works great
-            rect = { x, y, width, height };
-            AdjustWindowRectEx(&rect, winInfo.dwStyle, FALSE, winInfo.dwExStyle);
-            x = rect.left;
-            y = rect.top;
-        }
-
-        ::SetWindowPos(handle, nullptr, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE);
-
-        {
-            RECT rect;
-            ::GetClientRect(handle, &rect);
-            cached_clientsize[0] = rect.right;
-            cached_clientsize[1] = rect.bottom;
+            if (changeSize)
+            {
+                RECT rect;
+                ::GetClientRect(m_handle, &rect);
+                m_clientsize[0] = rect.right;
+                m_clientsize[1] = rect.bottom;
+                DispatchWindowOnEvent(PlatformWindowEvent::Resize);
+            }
         }
     }
 
-    void Win32Window::SetCursorPosition(const int2& position)
+    void Win32Window::SetCursorPosition(const float2& position)
     {
-        auto isLocked = options.cursorLock && GetIsFocused();
-        auto isVisible = !(options.cursorHide && GetIsFocused());
-        auto isDisabled = isLocked && !isVisible;
-
-        if (isDisabled)
+        if (m_cursorLock && m_cursorHide && IsFocused())
         {
-            virt_cursorpos[0] = position.x;
-            virt_cursorpos[1] = position.y;
+            m_cursorposVirtual = position;
         }
-        else
+        else if (glm::any(glm::epsilonNotEqual(m_cursorpos, position, 1e-2f)))
         {
-            cached_cursorpos[0] = position.x;
-            cached_cursorpos[1] = position.y;
-            POINT pos = { position.x, position.y };
-            ::ClientToScreen(handle, &pos);
+            m_cursorpos = position;
+            POINT pos = { (int32_t)position.x, (int32_t)position.y };
+            ::ClientToScreen(m_handle, &pos);
             ::SetCursorPos(pos.x, pos.y);
         }
     }
 
-    void Win32Window::SetCursorLock(bool lock, bool hide)
+    void Win32Window::SetCursorLock(bool lock, bool visible)
     {
-        options.cursorLock = lock;
-        options.cursorHide = hide;
-        UpdateCursor();
-    }
-
-    void Win32Window::SetRawMouseInput(bool value)
-    {
-        options.useRawMouseInput = value;
-        UpdateCursor();
+        if (m_cursorLock != lock || m_cursorHide != visible)
+        {
+            m_cursorLock = lock;
+            m_cursorHide = !visible;
+            UpdateCursor();
+        }
     }
 
     void Win32Window::SetIcon(unsigned char* pixels, const int2& resolution)
@@ -436,165 +441,187 @@ namespace PK
         }
         else
         {
-            iconBig = (HICON)::GetClassLongPtrW(handle, GCLP_HICON);
-            iconSmall = (HICON)::GetClassLongPtrW(handle, GCLP_HICONSM);
+            iconBig = (HICON)::GetClassLongPtrW(m_handle, GCLP_HICON);
+            iconSmall = (HICON)::GetClassLongPtrW(m_handle, GCLP_HICONSM);
         }
 
-        ::SendMessageW(handle, WM_SETICON, ICON_BIG, (LPARAM)iconBig);
-        ::SendMessageW(handle, WM_SETICON, ICON_SMALL, (LPARAM)iconSmall);
+        ::SendMessageW(m_handle, WM_SETICON, ICON_BIG, (LPARAM)iconBig);
+        ::SendMessageW(m_handle, WM_SETICON, ICON_SMALL, (LPARAM)iconSmall);
 
-        if (icon)
+        if (m_icon)
         {
-            ::DestroyIcon(icon);
+            ::DestroyIcon(m_icon);
         }
 
         if (pixels)
         {
-            icon = iconSmall;
+            m_icon = iconSmall;
         }
     }
 
 
     void Win32Window::SetVisible(bool value)
     {
-        if (value == state.isVisible)
+        if (value != m_isVisible)
         {
-            return;
-        }
-
-        if (value)
-        {
-            auto showCommand = SW_SHOWNA;
-
-            if (state.isPendingActivate)
+            if (value)
             {
-                STARTUPINFOW si = { sizeof(si) };
-                GetStartupInfoW(&si);
-                if (si.dwFlags & STARTF_USESHOWWINDOW)
+                auto showCommand = SW_SHOWNA;
+
+                if (m_isPendingActivate)
                 {
-                    showCommand = si.wShowWindow;
+                    STARTUPINFOW si = { sizeof(si) };
+                    GetStartupInfoW(&si);
+                    if (si.dwFlags & STARTF_USESHOWWINDOW)
+                    {
+                        showCommand = si.wShowWindow;
+                    }
                 }
-            }
 
-            ::ShowWindow(handle, showCommand);
-            state.isVisible = true;
-            state.isPendingActivate = false;
-            DispatchWindowEvent(PlatformWindowEvent::Visible);
-        }
-        else
-        {
-            ::ShowWindow(handle, SW_HIDE);
-            state.isVisible = false;
-            OnFocusChanged(false);
-            UpdateCursor();
-            DispatchWindowEvent(PlatformWindowEvent::Invisible);
-        }
-    }
-
-    void Win32Window::Minimize()
-    {
-        ::ShowWindow(handle, SW_MINIMIZE);
-    }
-
-    void Win32Window::Maximize()
-    {
-        scope.inMaximize = true;
-        ::ShowWindow(handle, SW_MAXIMIZE);
-        scope.inMaximize = false;
-    }
-
-    void Win32Window::SetBorderless(bool isBorderless, bool maximize)
-    {
-        SetFullScreen(false);
-
-        if (state.isMaximized)
-        {
-            Restore();
-        }
-
-        options.isBorderless = isBorderless;
-
-        if (::IsIconic(handle))
-        {
-            ::ShowWindow(handle, SW_RESTORE);
-        }
-        else
-        {
-            ::SetActiveWindow(handle);
-        }
-
-        if (isBorderless)
-        {
-            LONG lStyle = GetWindowLong(handle, GWL_STYLE);
-            lStyle &= ~(WS_THICKFRAME | WS_SYSMENU | WS_OVERLAPPED | WS_BORDER | WS_CAPTION);
-            lStyle |= WS_POPUP;
-            lStyle |= WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
-
-            SetWindowLong(handle, GWL_STYLE, lStyle);
-            SetWindowPos(handle, HWND_TOP, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-
-            if (maximize)
-            {
-                ::ShowWindow(handle, SW_SHOWMAXIMIZED);
+                ::ShowWindow(m_handle, showCommand);
+                m_isVisible = true;
+                m_isPendingActivate = false;
+                DispatchWindowOnEvent(PlatformWindowEvent::Visible);
             }
             else
             {
-                ::ShowWindow(handle, SW_SHOW);
-            }
-        }
-        else
-        {
-            LONG lStyle = GetWindowLong(handle, GWL_STYLE);
-            lStyle &= ~(WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS);
-            lStyle |= WS_OVERLAPPED | WS_SYSMENU | WS_BORDER | WS_CAPTION;
-
-            SetWindowLong(handle, GWL_STYLE, lStyle);
-            const auto clientSize = GetResolution();
-            const auto desktopSize = Platform::GetDesktopSize();
-            // Move window and half size if it is larger than desktop size
-            if (clientSize.x >= desktopSize.x && clientSize.y >= desktopSize.y)
-            {
-                const auto halfSize = desktopSize / 2;
-                const auto middlePos = halfSize / 2;
-                ::SetWindowPos(handle, nullptr, middlePos.x, middlePos.y, halfSize.x, halfSize.y, SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE);
-            }
-            else
-            {
-                ::SetWindowPos(handle, nullptr, 0, 0, clientSize.x, clientSize.y, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-            }
-
-            if (maximize)
-            {
-                Maximize();
-            }
-            else
-            {
-                ::ShowWindow(handle, SW_SHOW);
+                ::ShowWindow(m_handle, SW_HIDE);
+                m_isVisible = false;
+                OnFocusChanged(false);
+                UpdateCursor();
+                DispatchWindowOnEvent(PlatformWindowEvent::Invisible);
             }
         }
     }
 
     void Win32Window::SetFullScreen(bool value)
     {
-        scope.inFullScreen = true;
-
-        if (state.isFullScreen != value)
+        if (m_isFullScreen == value)
         {
-            state.isFullScreen = value;
-            DispatchWindowEvent(value ? PlatformWindowEvent::FullScreenRequest : PlatformWindowEvent::FullScreenExit);
+            return;
         }
 
-        if (!state.isFullScreen)
+        if (m_isFullScreen && !value)
         {
-            ShowWindow(handle, SW_NORMAL);
+            DispatchWindowOnEvent(PlatformWindowEvent::FullScreenExit);
         }
 
-        scope.inFullScreen = false;
+        if (m_isMaximized && !value)
+        {
+            Restore();
+        }
+
+        m_isFullScreen = value;
+
+        if (::IsIconic(m_handle))
+        {
+            ::ShowWindow(m_handle, SW_RESTORE);
+        }
+        else
+        {
+            ::SetActiveWindow(m_handle);
+        }
+
+        if (!value)
+        {
+            auto style = ::GetWindowLongW(m_handle, GWL_STYLE);
+            auto styleEx = ::GetWindowLongW(m_handle, GWL_EXSTYLE);
+            style &= ~(WS_OVERLAPPEDWINDOW | WS_POPUP);
+            style |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+
+            if (m_isResizable)
+            {
+                style |= WS_MAXIMIZEBOX | WS_THICKFRAME;
+            }
+
+            ::SetWindowLongW(m_handle, GWL_STYLE, style);
+
+            auto restoreRect = m_restoreRect;
+            auto desktopSize = Platform::GetDesktopSize();
+            
+            RECT borderRect = { 0 };
+            AdjustWindowRectExDpiAware(m_handle, &borderRect, style, FALSE, styleEx);
+
+            // Sanity check restore rect
+            restoreRect.x = glm::min(restoreRect.x, desktopSize.x - restoreRect.z);
+            restoreRect.y = glm::min(restoreRect.y, desktopSize.y - restoreRect.y);
+            restoreRect.x = glm::max(restoreRect.x, 0);
+            restoreRect.y = glm::max(restoreRect.y, 0);
+            restoreRect.z = glm::min(restoreRect.z, desktopSize.x - restoreRect.x);
+            restoreRect.w = glm::min(restoreRect.w, desktopSize.y - restoreRect.y);
+            if (m_sizeMin.x >= 0) restoreRect.z = glm::max(restoreRect.z, m_sizeMin.x + (int32_t)(borderRect.right - borderRect.left));
+            if (m_sizeMin.y >= 0) restoreRect.w = glm::max(restoreRect.w, m_sizeMin.y + (int32_t)(borderRect.bottom - borderRect.top));
+
+            ::SetWindowPos(m_handle, nullptr, restoreRect.x, restoreRect.y, restoreRect.z, restoreRect.w, SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE);
+            ::ShowWindow(m_handle, SW_SHOW);
+        }
+        else
+        {
+            m_isAcquiringFullScreen = true;
+
+            RECT rect;
+            ::GetWindowRect(m_handle, &rect);
+            m_restoreRect.x = rect.left;
+            m_restoreRect.y = rect.top;
+            m_restoreRect.z = rect.right - rect.left;
+            m_restoreRect.w = rect.bottom - rect.top;
+
+            auto style = ::GetWindowLongW(m_handle, GWL_STYLE);
+            style &= ~(WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS);
+            style |= WS_POPUP;
+            ::SetWindowLongW(m_handle, GWL_STYLE, style);
+
+            const HMONITOR monitor = ::MonitorFromWindow(m_handle, MONITOR_DEFAULTTONEAREST);
+            MONITORINFO mi = { sizeof(mi) };
+            ::GetMonitorInfoW(monitor, &mi);
+
+            ::SetWindowPos
+            (
+                m_handle, 
+                HWND_NOTOPMOST,
+                mi.rcMonitor.left,
+                mi.rcMonitor.top,
+                mi.rcMonitor.right - mi.rcMonitor.left,
+                mi.rcMonitor.bottom - mi.rcMonitor.top,
+                SWP_FRAMECHANGED | SWP_NOACTIVATE
+            );
+
+            ::ShowWindow(m_handle, SW_MAXIMIZE);
+
+            auto acquired = DispatchWindowOnEvent(PlatformWindowEvent::FullScreenRequest);
+
+            if (!acquired)
+            {
+                ::ShowWindow(m_handle, SW_NORMAL);
+                m_isFullScreen = false;
+            }
+
+            m_isAcquiringFullScreen = false;
+        }
     }
-    
+
+    void Win32Window::Minimize()
+    {
+        ::ShowWindow(m_handle, SW_MINIMIZE);
+    }
+
+    void Win32Window::Maximize()
+    {
+        m_isMaximizing = true;
+        ::ShowWindow(m_handle, SW_MAXIMIZE);
+        m_isMaximizing = false;
+    }
+
     void Win32Window::Restore()
     { 
-        ::ShowWindow(handle, SW_RESTORE);
+        ::ShowWindow(m_handle, SW_RESTORE);
+    }
+
+    void Win32Window::Focus()
+    {
+        ::BringWindowToTop(m_handle);
+        ::SetForegroundWindow(m_handle);
+        ::SetFocus(m_handle);
     }
 
 
@@ -608,36 +635,40 @@ namespace PK
             const auto vk = vks[i];
             const auto inputKey = inputKeys[i];
 
-            if (!(GetKeyState(vk) & 0x8000) && cached_keystates[(uint32_t)inputKey])
+            if (!(::GetKeyState(vk) & 0x8000) && m_keyState[(uint32_t)inputKey])
             {
-                DispatchKeyEvent(inputKey, false);
+                DispatchInputOnKey(inputKey, false);
             }
         }
-    }
 
-    void Win32Window::OnWaitEvents()
-    {
+        for (auto axis = 0u; axis < 2u; ++axis)
+        {
+            auto hasValue0 = glm::abs(m_scroll[0][axis]) > 1e-4f;
+            auto hasValue1 = glm::abs(m_scroll[1][axis]) > 1e-4f;
 
+            if (hasValue1 && !hasValue0)
+            {
+                DispatchInputOnScroll(axis, 0.0f);
+            }
+        }
+
+        m_scroll[1] = m_scroll[0];
+        m_scroll[0] = PK_FLOAT2_ZERO;
     }
 
 
     void Win32Window::ValidateResolution()
     {
-        if (state.isMinimized)
-        {
-            return;
-        }
-
         RECT rect;
-        ::GetClientRect(handle, &rect);
+        ::GetClientRect(m_handle, &rect);
         auto width = glm::max(rect.right - rect.left, 0L);
         auto height = glm::max(rect.bottom - rect.top, 0L);
 
         // Check for windows maximized size and see if it needs to adjust position if needed
-        if (state.isMaximized)
+        if (m_isMaximized)
         {
             // Pick the current monitor data for sizing
-            const HMONITOR monitor = MonitorFromWindow(handle, MONITOR_DEFAULTTONEAREST);
+            const HMONITOR monitor = ::MonitorFromWindow(m_handle, MONITOR_DEFAULTTONEAREST);
             MONITORINFO monitorInfo;
             monitorInfo.cbSize = sizeof(MONITORINFO);
             ::GetMonitorInfoW(monitor, &monitorInfo);
@@ -648,239 +679,191 @@ namespace PK
             {
                 width = cwidth;
                 height = cheight;
-                ::SetWindowPos(handle, HWND_TOP, monitorInfo.rcWork.left, monitorInfo.rcWork.top, width, height, SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+                ::SetWindowPos
+                (
+                    m_handle, 
+                    HWND_TOP, 
+                    monitorInfo.rcWork.left, 
+                    monitorInfo.rcWork.top, 
+                    width, 
+                    height, 
+                    SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER
+                );
             }
         }
 
-        auto hasChanged = cached_clientsize[0] != width || cached_clientsize[1] != height;
-        cached_clientsize[0] = width;
-        cached_clientsize[1] = height;
+        auto hasChanged = m_clientsize.x != width || m_clientsize.y != height;
+        m_clientsize.x = width;
+        m_clientsize.y = height;
 
-        if (width > 0 && height > 0 && hasChanged)
+        if (hasChanged)
         {
-            DispatchWindowEvent(PlatformWindowEvent::Resize);
+            DispatchWindowOnEvent(PlatformWindowEvent::Resize);
         }
-    }
-
-    void Win32Window::BeginLockingCursor()
-    {
-        RECT clipRect;
-        ::GetClientRect(handle, &clipRect);
-        ::ClientToScreen(handle, (POINT*)&clipRect.left);
-        ::ClientToScreen(handle, (POINT*)&clipRect.right);
-        ::ClipCursor(&clipRect);
-        Win32WindowManager::Get()->lockedCursorWindow = this;
-    }
-
-    void Win32Window::EndLockingCursor()
-    {
-        ::ClipCursor(NULL);
-        Win32WindowManager::Get()->lockedCursorWindow = nullptr;
     }
 
     void Win32Window::UpdateCursor()
     {
-        auto manager = Win32WindowManager::Get();
-
-        auto isLocked = options.cursorLock & GetIsFocused();
-        auto isVisible = !(options.cursorHide && GetIsFocused());
+        auto isLocked = m_cursorLock & IsFocused();
+        auto isVisible = !(m_cursorHide && IsFocused());
         auto isDisabled = isLocked && !isVisible;
-        auto isRawMotion = isDisabled && GetIsFocused() && options.useRawMouseInput;
+        auto isRawInput = isDisabled && IsFocused() && m_useRawInput;
 
-        if (isRawMotion != state.isUsingRawMotion)
+        if (isRawInput != m_isUsingRawInput)
         {
-            const RAWINPUTDEVICE rid_enable = { 0x01, 0x02, 0, handle };
+            const RAWINPUTDEVICE rid_enable = { 0x01, 0x02, 0, m_handle };
             const RAWINPUTDEVICE rid_disable = { 0x01, 0x02, RIDEV_REMOVE, NULL };
-            const auto rid = isRawMotion ? rid_enable : rid_disable;
+            const auto rid = isRawInput ? rid_enable : rid_disable;
             ::RegisterRawInputDevices(&rid, 1, sizeof(rid));
-            state.isUsingRawMotion = isRawMotion;
+            m_isUsingRawInput = isRawInput;
         }
 
-        ::SetCursor(isVisible ? LoadCursorW(NULL, IDC_ARROW) : NULL);
-
-        if (isDisabled && manager->disabledCursorWindow != this)
-        {
-            manager->restore_cursorpos = GetCursorPosition();
-            manager->disabledCursorWindow = this;
-        }
-
-        if (!isDisabled && manager->disabledCursorWindow == this)
-        {
-            SetCursorPosition(manager->restore_cursorpos);
-            manager->disabledCursorWindow = nullptr;
-        }
-
-        if (isLocked && manager->lockedCursorWindow != this)
-        {
-            SetCursorPosToCenter();
-            BeginLockingCursor();
-        }
-
-        if (!isLocked && manager->lockedCursorWindow == this)
-        {
-            EndLockingCursor();
-        }
+        ::SetCursor(isVisible ? ::LoadCursorW(NULL, IDC_ARROW) : NULL);
+        Win32Driver::SetDisabledCursorWindow(this, isDisabled, GetCursorPosition());
+        Win32Driver::SetLockedCursorWindow(this, isLocked);
     }
 
-    void Win32Window::CursorMovedEvent(const int2& position)
+    void Win32Window::UpdateRawInput(LPARAM lParam)
     {
-        if (virt_cursorpos[0] != position.x || virt_cursorpos[1] != position.y)
+        if (m_isUsingRawInput)
         {
-            virt_cursorpos[0] = position.x;
-            virt_cursorpos[1] = position.y;
-            DispatchMouseMoveEvent(position);
-        }
-    }
+            auto rawInput = Win32Driver::GetRawInput(this, lParam);
 
-    void Win32Window::UpdateRawMouseInput(LPARAM lParam)
-    {
-        auto manager = Win32WindowManager::Get();
-
-        if (manager->disabledCursorWindow != this || !state.isUsingRawMotion)
-        {
-            return;
-        }
-
-        auto& pRawInput = manager->rawInput;
-        auto& pRawInputSize = manager->rawInputSize;
-
-        UINT size = 0u;
-        ::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &size, sizeof(RAWINPUTHEADER));
-
-        if (size > pRawInputSize)
-        {
-            if (pRawInput)
+            if (rawInput != nullptr)
             {
-                free(pRawInput);
-            }
-            
-            pRawInput = (RAWINPUT*)calloc(size, 1);
-            pRawInputSize = size;
-        }
+                int32_t dx = 0;
+                int32_t dy = 0;
 
-        size = pRawInputSize;
+                if (rawInput->data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE)
+                {
+                    POINT pos = { 0 };
+                    int width, height;
 
-        if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, pRawInput, &size, sizeof(RAWINPUTHEADER)) == (UINT)-1)
-        {
-            return;
-        }
+                    if (rawInput->data.mouse.usFlags & MOUSE_VIRTUAL_DESKTOP)
+                    {
+                        pos.x += ::GetSystemMetrics(SM_XVIRTUALSCREEN);
+                        pos.y += ::GetSystemMetrics(SM_YVIRTUALSCREEN);
+                        width = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
+                        height = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
+                    }
+                    else
+                    {
+                        width = ::GetSystemMetrics(SM_CXSCREEN);
+                        height = ::GetSystemMetrics(SM_CYSCREEN);
+                    }
 
-        int32_t dx = 0;
-        int32_t dy = 0;
+                    pos.x += (int32_t)((rawInput->data.mouse.lLastX / 65535.f) * width);
+                    pos.y += (int32_t)((rawInput->data.mouse.lLastY / 65535.f) * height);
+                    ::ScreenToClient(m_handle, &pos);
+                    dx = pos.x - m_cursorpos.x;
+                    dy = pos.y - m_cursorpos.y;
+                }
+                else
+                {
+                    dx = rawInput->data.mouse.lLastX;
+                    dy = rawInput->data.mouse.lLastY;
+                }
 
-        if (pRawInput->data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE)
-        {
-            POINT pos = { 0 };
-            int width, height;
-
-            if (pRawInput->data.mouse.usFlags & MOUSE_VIRTUAL_DESKTOP)
-            {
-                pos.x += ::GetSystemMetrics(SM_XVIRTUALSCREEN);
-                pos.y += ::GetSystemMetrics(SM_YVIRTUALSCREEN);
-                width = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
-                height = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
-            }
-            else
-            {
-                width = ::GetSystemMetrics(SM_CXSCREEN);
-                height = ::GetSystemMetrics(SM_CYSCREEN);
-            }
-
-            pos.x += (int32_t)((pRawInput->data.mouse.lLastX / 65535.f) * width);
-            pos.y += (int32_t)((pRawInput->data.mouse.lLastY / 65535.f) * height);
-            ::ScreenToClient(handle, &pos);
-            dx = pos.x - cached_cursorpos[0];
-            dy = pos.y - cached_cursorpos[1];
-        }
-        else
-        {
-            dx = pRawInput->data.mouse.lLastX;
-            dy = pRawInput->data.mouse.lLastY;
-        }
-
-        CursorMovedEvent({ virt_cursorpos[0] + dx, virt_cursorpos[1] + dy });
-        cached_cursorpos[0] += dx;
-        cached_cursorpos[1] += dy;
-    }
-
-
-    void Win32Window::DispatchWindowEvent(PlatformWindowEvent evt)
-    {
-        for (auto i = 0u; i < m_windowListeners.GetCount(); ++i)
-        {
-            m_windowListeners[i]->IPlatformWindow_OnEvent(this, evt);
-        }
-    }
-
-    void Win32Window::DispatchKeyEvent(InputKey key, bool isDown)
-    {
-        if (isDown != cached_keystates[(uint32_t)key])
-        {
-            cached_keystates[(uint32_t)key] = isDown;
-            
-            for (auto i = 0u; i < m_windowListeners.GetCount(); ++i)
-            {
-                m_inputListeners[i]->IPlatformWindowInput_OnKey(this, key, isDown);
+                DispatchInputOnMouseMoved({ m_cursorposVirtual.x + dx, m_cursorposVirtual.y + dy });
+                m_cursorpos.x += dx;
+                m_cursorpos.y += dy;
             }
         }
     }
 
-    void Win32Window::DispatchMouseMoveEvent(const int2& position)
+
+    bool Win32Window::DispatchWindowOnEvent(PlatformWindowEvent evt)
     {
-        for (auto i = 0u; i < m_windowListeners.GetCount(); ++i)
+        return m_windowListener ? m_windowListener->IPlatformWindow_OnEvent(this, evt) : false;
+    }
+
+    void Win32Window::DispatchInputOnKey(InputKey key, bool isDown)
+    {
+        if (isDown != m_keyState[(uint32_t)key])
         {
-            m_inputListeners[i]->IPlatformWindowInput_OnMouseMove(this, position);
+            m_keyState[(uint32_t)key] = isDown;
+            Win32Driver::DispatchInputOnKey(this, key, isDown);
         }
     }
 
-    void Win32Window::DispatchScrollEvent(const float2& offset)
+    void Win32Window::DispatchInputOnMouseMoved(const float2& position)
     {
-        for (auto i = 0u; i < m_windowListeners.GetCount(); ++i)
+        if (glm::any(glm::epsilonNotEqual(m_cursorposVirtual, position, 1e-6f)))
         {
-            m_inputListeners[i]->IPlatformWindowInput_OnScroll(this, offset);
+            m_cursorposVirtual = position;
+            Win32Driver::DispatchInputOnMouseMoved(this, position, m_clientsize);
         }
     }
 
-    void Win32Window::DispatchCharacterEvent(uint32_t character)
+    void Win32Window::DispatchInputOnScroll(uint32_t axis, float offset)
     {
-        // @TODO what is this
-        if (character < 32 || (character > 126 && character < 160))
+        InputKey axiskeys[2][2]
         {
-            return;
-        }
+            { InputKey::MouseScrollLeft, InputKey::MouseScrollRight },
+            { InputKey::MouseScrollDown, InputKey::MouseScrollUp },
+        };
 
-        for (auto i = 0u; i < m_windowListeners.GetCount(); ++i)
-        {
-            m_inputListeners[i]->IPlatformWindowInput_OnCharacter(this, character);
-        }
+        m_scroll[0][axis] = offset;
+        DispatchInputOnKey(axiskeys[axis][0], offset < -0.5f);
+        DispatchInputOnKey(axiskeys[axis][1], offset > +0.5f);
+        Win32Driver::DispatchInputOnScroll(this, axis, offset);
     }
 
-    void Win32Window::DispatchDrop(const char* const* paths, uint32_t count)
+    void Win32Window::DispatchInputOnCharacter(uint32_t character)
     {
-        for (auto i = 0u; i < m_windowListeners.GetCount(); ++i)
-        {
-            m_inputListeners[i]->IPlatformWindowInput_OnDrop(this, paths, count);
-        }
+        Win32Driver::DispatchInputOnCharacter(this, character);
     }
+
+    void Win32Window::DispatchInputOnDrop(WPARAM wParam)
+    {
+        const auto count = ::DragQueryFileW((HDROP)wParam, 0xffffffff, NULL, 0);
+        auto paths = (char**)calloc(count, sizeof(char*));
+
+        // Move the mouse to the position of the drop
+        POINT point;
+        ::DragQueryPoint((HDROP)wParam, &point);
+        DispatchInputOnMouseMoved({ point.x, point.y });
+
+        for (auto i = 0u; i < count; ++i)
+        {
+            const auto length = ::DragQueryFileW((HDROP)wParam, i, NULL, 0);
+            auto src = (WCHAR*)calloc(length + 1u, sizeof(WCHAR));
+            auto dst = (char*)calloc(length + 1u, sizeof(char));
+
+            ::DragQueryFileW((HDROP)wParam, i, src, length + 1);
+            wcstombs(dst, src, length);
+            free(src);
+        }
+
+        Win32Driver::DispatchInputOnDrop(this, paths, count);
+
+        for (auto i = 0u; i < count; ++i)
+        {
+            free(paths[i]);
+        }
+
+        free(paths);
+
+        ::DragFinish((HDROP)wParam);
+    }
+
 
     void Win32Window::OnFocusChanged(bool value)
     {
-        if (state.isFocused == value)
+        if (m_isFocused != value)
         {
-            return;
-        }
+            m_isFocused = value;
 
-        state.isFocused = value;
-
-        DispatchWindowEvent(value ? PlatformWindowEvent::Focus : PlatformWindowEvent::Unfocus);
-        
-        if (!value)
-        {
-            for (auto i = 0u; i < (uint32_t)InputKey::Count; ++i)
+            DispatchWindowOnEvent(value ? PlatformWindowEvent::Focus : PlatformWindowEvent::Unfocus);
+            
+            if (!value)
             {
-                if (cached_keystates[i])
+                for (auto i = 0u; i < (uint32_t)InputKey::Count; ++i)
                 {
-                    DispatchKeyEvent((InputKey)i, false);
+                    if (m_keyState[i])
+                    {
+                        DispatchInputOnKey((InputKey)i, false);
+                    }
                 }
             }
         }
@@ -888,15 +871,15 @@ namespace PK
 
     void Win32Window::OnClose()
     {
-        state.isClosing = true;
-        DispatchWindowEvent(PlatformWindowEvent::Close);
+        m_isClosing = true;
+        DispatchWindowOnEvent(PlatformWindowEvent::Close);
     }
 
     bool Win32Window::IsAnyMouseKeyDown() const
     {
         for (auto i = (uint32_t)InputKey::Mouse1; i <= (uint32_t)InputKey::Mouse8; ++i)
         {
-            if (cached_keystates[i])
+            if (m_keyState[i])
             {
                 return true;
             }
@@ -908,24 +891,22 @@ namespace PK
 
     LRESULT Win32Window::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
-        auto manager = Win32WindowManager::Get();
-
         switch (uMsg)
         {
             case WM_MOUSEACTIVATE:
             {
                 if (HIWORD(lParam) == WM_LBUTTONDOWN && LOWORD(lParam) != HTCLIENT)
                 {
-                    scope.inFrameAction = true;
+                    m_isInFrameAction = true;
                 }
                 break;
             }
             case WM_CAPTURECHANGED:
             {
-                if (lParam == 0 && scope.inFrameAction)
+                if (lParam == 0 && m_isInFrameAction)
                 {
                     UpdateCursor();
-                    scope.inFrameAction = false;
+                    m_isInFrameAction = false;
                 }
                 break;
             }
@@ -938,85 +919,44 @@ namespace PK
                 }
                 break;
             }
-            case WM_MOUSEMOVE:
-            {
-                const auto x = GET_X_LPARAM(lParam);
-                const auto y = GET_Y_LPARAM(lParam);
-
-                if (!state.isCursorTracked)
-                {
-                    TRACKMOUSEEVENT tme;
-                    ZeroMemory(&tme, sizeof(tme));
-                    tme.cbSize = sizeof(tme);
-                    tme.dwFlags = TME_LEAVE;
-                    tme.hwndTrack = handle;
-                    TrackMouseEvent(&tme);
-                    state.isCursorTracked = true;
-                    DispatchWindowEvent(PlatformWindowEvent::CursorEnter);
-                }
-
-                if (options.cursorLock && options.cursorHide)
-                {
-                    if (manager->disabledCursorWindow != this || state.isUsingRawMotion)
-                    {
-                        break;
-                    }
-
-                    const auto dx = x - cached_cursorpos[0];
-                    const auto dy = y - cached_cursorpos[1];
-                    CursorMovedEvent({ virt_cursorpos[0] + dx, virt_cursorpos[1] + dy });
-                }
-                else
-                {
-                    CursorMovedEvent({ x, y });
-                }
-
-                cached_cursorpos[0] = x;
-                cached_cursorpos[1] = x;
-                return 0;
-            }
-            case WM_MOUSELEAVE:
-            {
-                state.isCursorTracked = false;
-                DispatchWindowEvent(PlatformWindowEvent::CursorExit);
-                return 0;
-            }
 
             case WM_GETMINMAXINFO:
             {
                 RECT borderRect = { 0 };
-                const DWORD style = GetWindowLongW(handle, GWL_STYLE);
-                const DWORD styleEx = GetWindowLongW(handle, GWL_EXSTYLE);
-                ::AdjustWindowRectEx(&borderRect, style, FALSE, styleEx);
+                const auto style = GetWindowLongW(m_handle, GWL_STYLE);
+                const auto styleEx = GetWindowLongW(m_handle, GWL_EXSTYLE);
+                AdjustWindowRectExDpiAware(m_handle, &borderRect, style, FALSE, styleEx);
 
-                auto borderWidth = options.isBorderless ? 0 : borderRect.right - borderRect.left;
-                auto borderHeight = options.isBorderless ? 0 : borderRect.bottom - borderRect.top;
+                auto borderWidth = borderRect.right - borderRect.left;
+                auto borderHeight = borderRect.bottom - borderRect.top;
 
                 const auto minmax = reinterpret_cast<MINMAXINFO*>(lParam);
-                if (size_min[0] != -1) minmax->ptMinTrackSize.x = size_min[0] + borderWidth;
-                if (size_min[1] != -1) minmax->ptMinTrackSize.x = size_min[1] + borderHeight;
-                if (size_min[0] != -1) minmax->ptMaxTrackSize.x = size_max[0] + borderWidth;
-                if (size_min[1] != -1) minmax->ptMaxTrackSize.x = size_max[1] + borderHeight;
+                if (m_sizeMin.x != -1) minmax->ptMinTrackSize.x = m_sizeMin.x + borderWidth;
+                if (m_sizeMin.y != -1) minmax->ptMinTrackSize.y = m_sizeMin.y + borderHeight;
+                if (m_sizeMax.x != -1) minmax->ptMaxTrackSize.x = m_sizeMax.x + borderWidth;
+                if (m_sizeMax.y != -1) minmax->ptMaxTrackSize.y = m_sizeMax.y + borderHeight;
 
                 // Include Windows task bar size into maximized tool window
+                const HMONITOR monitor = ::MonitorFromWindow(m_handle, MONITOR_DEFAULTTONEAREST);
+
                 WINDOWPLACEMENT wmp;
+                auto adjustMaximize = false;
+                adjustMaximize |= ::GetWindowPlacement(m_handle, &wmp) && (wmp.showCmd == SW_SHOWMAXIMIZED || wmp.showCmd == SW_SHOWMINIMIZED);
+                adjustMaximize |= m_isMaximizing;
+                adjustMaximize &= !m_isFullScreen;
+                adjustMaximize &= monitor != nullptr;
 
-                if (!state.isFullScreen && ((::GetWindowPlacement(handle, &wmp) && (wmp.showCmd == SW_SHOWMAXIMIZED || wmp.showCmd == SW_SHOWMINIMIZED)) || scope.inMaximize))
+                // Adjust the maximized size and position to fit the work area of the correct monitor
+                if (adjustMaximize)
                 {
-                    // Adjust the maximized size and position to fit the work area of the correct monitor
-                    const HMONITOR monitor = ::MonitorFromWindow(handle, MONITOR_DEFAULTTONEAREST);
-
-                    if (monitor != nullptr)
+                    MONITORINFO monitorInfo;
+                    monitorInfo.cbSize = sizeof(MONITORINFO);
+                    if (::GetMonitorInfoW(monitor, &monitorInfo))
                     {
-                        MONITORINFO monitorInfo;
-                        monitorInfo.cbSize = sizeof(MONITORINFO);
-                        if (::GetMonitorInfoW(monitor, &monitorInfo))
-                        {
-                            minmax->ptMaxPosition.x = glm::abs(monitorInfo.rcWork.left - monitorInfo.rcMonitor.left);
-                            minmax->ptMaxPosition.y = glm::abs(monitorInfo.rcWork.top - monitorInfo.rcMonitor.top);
-                            minmax->ptMaxSize.x = glm::abs(monitorInfo.rcWork.right - monitorInfo.rcWork.left);
-                            minmax->ptMaxSize.y = glm::abs(monitorInfo.rcWork.bottom - monitorInfo.rcWork.top);
-                        }
+                        minmax->ptMaxPosition.x = glm::abs(monitorInfo.rcWork.left - monitorInfo.rcMonitor.left);
+                        minmax->ptMaxPosition.y = glm::abs(monitorInfo.rcWork.top - monitorInfo.rcMonitor.top);
+                        minmax->ptMaxSize.x = glm::abs(monitorInfo.rcWork.right - monitorInfo.rcWork.left);
+                        minmax->ptMaxSize.y = glm::abs(monitorInfo.rcWork.bottom - monitorInfo.rcWork.top);
                     }
                 }
 
@@ -1025,15 +965,15 @@ namespace PK
             case WM_ENTERMENULOOP:
             case WM_ENTERSIZEMOVE:
             {
-                scope.inResize = true;
+                m_isResizing = true;
                 break;
             }
             case WM_EXITMENULOOP:
             case WM_EXITSIZEMOVE:
             {
-                scope.inResize = false;
+                m_isResizing = false;
                 ValidateResolution();
-                if (!scope.inFrameAction)
+                if (!m_isInFrameAction)
                 {
                     UpdateCursor();
                 }
@@ -1042,39 +982,57 @@ namespace PK
             case WM_SIZE:
             {
                 RECT rcCurrentClient;
-                GetClientRect(handle, &rcCurrentClient);
+                GetClientRect(m_handle, &rcCurrentClient);
                 const auto isMinimize = SIZE_MINIMIZED == wParam;
-                const auto isValid = rcCurrentClient.top != 0 && rcCurrentClient.bottom != 0 && !isMinimize;
+                const auto isValid = (rcCurrentClient.top != 0 || rcCurrentClient.bottom != 0) && !isMinimize;
                 const auto isMaximize = SIZE_MAXIMIZED == wParam && isValid;
-                const auto isRestore = SIZE_RESTORED == wParam && isValid && (state.isMaximized || state.isMinimized || (!scope.inResize && !scope.inFullScreen));
+                const auto isRestore = SIZE_RESTORED == wParam && isValid && (m_isMaximized || m_isMinimized || (!m_isMaximizing && !m_isAcquiringFullScreen));
 
                 if (isMinimize)
                 {
-                    state.isMinimized = true;
-                    state.isMaximized = false;
+                    m_isMinimized = true;
+                    m_isMaximized = false;
+                    ValidateResolution();
                 }
 
                 if (isMaximize)
                 {
-                    state.isMinimized = false;
-                    state.isMaximized = true;
+                    m_isMinimized = false;
+                    m_isMaximized = true;
                     ValidateResolution();
                 }
 
                 if (isRestore)
                 {
-                    state.isMaximized = false;
-                    state.isMinimized = false;
+                    m_isMaximized = false;
+                    m_isMinimized = false;
                     ValidateResolution();
                 }
                 return 0;
             }
+            case WM_GETDPISCALEDSIZE:
+            {
+                if (!m_useDpiScaling && PK_PLATFORM_WINDOWS_IS_10_1703_OR_GREATER())
+                {
+                    RECT src{};
+                    RECT dst{};
+                    SIZE* size = (SIZE*)lParam;
+                    const auto style = GetWindowLongW(m_handle, GWL_STYLE);
+                    const auto styleEx = GetWindowLongW(m_handle, GWL_EXSTYLE);
+                    PK_AdjustWindowRectExForDpi(&src, style, FALSE, styleEx, PK_GetDpiForWindow(m_handle));
+                    PK_AdjustWindowRectExForDpi(&dst, style, FALSE, styleEx, LOWORD(wParam));
+                    size->cx += (dst.right - dst.left) - (src.right - src.left);
+                    size->cy += (dst.bottom - dst.top) - (src.bottom - src.top);
+                    return TRUE;
+                }
+                break;
+            }
             case WM_DPICHANGED:
             {
-                if (!state.isFullScreen && (options.useDpiScaling || PK_PLATFORM_WINDOWS_IS_10_1703_OR_GREATER()))
+                if (!m_isFullScreen && !m_isAcquiringFullScreen && (m_useDpiScaling || PK_PLATFORM_WINDOWS_IS_10_1703_OR_GREATER()))
                 {
                     RECT* rect = (RECT*)lParam;
-                    SetWindowPos(handle, HWND_TOP, rect->left, rect->top, rect->right - rect->left, rect->bottom - rect->top, SWP_NOZORDER | SWP_NOACTIVATE);
+                    SetWindowPos(m_handle, HWND_TOP, rect->left, rect->top, rect->right - rect->left, rect->bottom - rect->top, SWP_NOZORDER | SWP_NOACTIVATE);
                 }
                 break;
             }
@@ -1083,11 +1041,10 @@ namespace PK
                 UpdateCursor();
                 return 0;
             }
-
             case WM_SETFOCUS:
             {
                 OnFocusChanged(true);
-                if (!scope.inFrameAction)
+                if (!m_isInFrameAction)
                 {
                     UpdateCursor();
                 }
@@ -1101,17 +1058,9 @@ namespace PK
             }
             case WM_ACTIVATEAPP:
             {
-                if (wParam == TRUE && !GetIsFocused())
+                if ((wParam == TRUE || wParam == FALSE) && wParam != IsFocused())
                 {
-                    OnFocusChanged(true);
-                }
-                else if (wParam == FALSE && GetIsFocused())
-                {
-                    OnFocusChanged(false);
-                    if (state.isFullScreen && !scope.inFullScreen)
-                    {
-                        SetFullScreen(false);
-                    }
+                    OnFocusChanged(wParam);
                 }
                 UpdateCursor();
                 break;
@@ -1119,7 +1068,7 @@ namespace PK
 
             case WM_SYSCOMMAND:
             {
-                if (state.isFullScreen)
+                if (m_isFullScreen)
                 {
                     switch ((wParam & 0xFFF0))
                     {
@@ -1164,8 +1113,9 @@ namespace PK
 
             case WM_NCACTIVATE:
             case WM_NCPAINT:
+            case WM_PAINT:
             {
-                if (!options.isBorderless)
+                if (m_isFullScreen)
                 {
                     return TRUE;
                 }
@@ -1181,7 +1131,7 @@ namespace PK
             {
                 if (wParam >= 0xd800 && wParam <= 0xdbff)
                 {
-                    cached_lastHighSurrogate = (WCHAR)wParam;
+                    m_lastHighSurrogate = (WCHAR)wParam;
                 }
                 else
                 {
@@ -1189,9 +1139,9 @@ namespace PK
 
                     if (wParam >= 0xdc00 && wParam <= 0xdfff)
                     {
-                        if (cached_lastHighSurrogate)
+                        if (m_lastHighSurrogate)
                         {
-                            codepoint += (cached_lastHighSurrogate - 0xd800) << 10;
+                            codepoint += (m_lastHighSurrogate - 0xd800) << 10;
                             codepoint += (WCHAR)wParam - 0xdc00;
                             codepoint += 0x10000;
                         }
@@ -1201,8 +1151,8 @@ namespace PK
                         codepoint = (WCHAR)wParam;
                     }
 
-                    cached_lastHighSurrogate = 0;
-                    DispatchCharacterEvent(uMsg != WM_SYSCHAR ? codepoint : 0);
+                    m_lastHighSurrogate = 0;
+                    DispatchInputOnCharacter(uMsg != WM_SYSCHAR ? codepoint : 0);
                 }
                 return 0;
             }
@@ -1213,7 +1163,7 @@ namespace PK
                     return TRUE;
                 }
 
-                DispatchCharacterEvent((uint32_t)wParam);
+                DispatchInputOnCharacter((uint32_t)wParam);
                 return 0;
             }
 
@@ -1224,7 +1174,7 @@ namespace PK
             {
                 const bool isDown = !(HIWORD(lParam) & KF_UP);
                 const auto scancode = GetRemappedScanCode(wParam, lParam);
-                auto key = manager->native_to_keycode[scancode];
+                auto key = Win32Driver::NativeToInputKey(scancode);
 
                 if (!HandleModifierKeys(wParam, lParam, &key))
                 {
@@ -1233,24 +1183,58 @@ namespace PK
 
                 if (!isDown && wParam == VK_SHIFT)
                 {
-                    // HACK: Release both Shift keys on Shift up event, as when both
-                    //       are pressed the first release does not emit any event
-                    // NOTE: The other half of this is in _glfwPollEventsWin32
-                    DispatchKeyEvent(InputKey::LeftShift, false);
-                    DispatchKeyEvent(InputKey::RightShift, false);
+                    DispatchInputOnKey(InputKey::LeftShift, false);
+                    DispatchInputOnKey(InputKey::RightShift, false);
                     break;
                 }
 
                 else if (wParam == VK_SNAPSHOT)
                 {
-                    // HACK: Key down is not reported for the Print Screen key
-                    DispatchKeyEvent(key, true);
-                    DispatchKeyEvent(key, false);
+                    DispatchInputOnKey(key, true);
+                    DispatchInputOnKey(key, false);
                     break;
                 }
                 
-                DispatchKeyEvent(key, isDown);
+                DispatchInputOnKey(key, isDown);
                 break;
+            }
+
+            case WM_MOUSEMOVE:
+            {
+                const auto pos = float2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+
+                if (!m_keyState[(uint32_t)InputKey::MouseHover])
+                {
+                    TRACKMOUSEEVENT tme;
+                    ZeroMemory(&tme, sizeof(tme));
+                    tme.cbSize = sizeof(tme);
+                    tme.dwFlags = TME_LEAVE;
+                    tme.hwndTrack = m_handle;
+                    TrackMouseEvent(&tme);
+                    DispatchInputOnKey(InputKey::MouseHover, true);
+                }
+
+                if (m_cursorLock && m_cursorHide)
+                {
+                    if (!Win32Driver::IsDisabledCursorWindow(this) || m_isUsingRawInput)
+                    {
+                        break;
+                    }
+
+                    DispatchInputOnMouseMoved(m_cursorposVirtual + (pos - m_cursorpos));
+                }
+                else
+                {
+                    DispatchInputOnMouseMoved(pos);
+                }
+
+                m_cursorpos = pos;
+                return 0;
+            }
+            case WM_MOUSELEAVE:
+            {
+                DispatchInputOnKey(InputKey::MouseHover, false);
+                return 0;
             }
 
             case WM_LBUTTONDOWN:
@@ -1267,10 +1251,10 @@ namespace PK
 
                 if (!IsAnyMouseKeyDown())
                 {
-                    ::SetCapture(handle);
+                    ::SetCapture(m_handle);
                 }
 
-                DispatchKeyEvent(key, isDown);
+                DispatchInputOnKey(key, isDown);
 
                 if (!IsAnyMouseKeyDown())
                 {
@@ -1282,56 +1266,24 @@ namespace PK
 
             case WM_INPUT:
             {
-                UpdateRawMouseInput(lParam);
+                UpdateRawInput(lParam);
                 break;
             }
             case WM_MOUSEWHEEL:
-            {
-                DispatchScrollEvent({ 0.0f, (SHORT)HIWORD(wParam) / (float)WHEEL_DELTA });
-                return 0;
-            }
             case WM_MOUSEHWHEEL:
             {
-                DispatchScrollEvent({ -(SHORT)HIWORD(wParam) / (float)WHEEL_DELTA, 0.0f });
+                DispatchInputOnScroll(uMsg == WM_MOUSEWHEEL ? 1 : 0, GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA);
                 return 0;
             }
-
+            
             case WM_DROPFILES:
             {
-                const auto count = ::DragQueryFileW((HDROP)wParam, 0xffffffff, NULL, 0);
-                auto paths = (char**)calloc(count, sizeof(char*));
-
-                // Move the mouse to the position of the drop
-                POINT point;
-                ::DragQueryPoint((HDROP)wParam, &point);
-                CursorMovedEvent({ point.x, point.y });
-
-                for (auto i = 0u; i < count; ++i)
-                {
-                    const auto length = ::DragQueryFileW((HDROP)wParam, i, NULL, 0);
-                    auto src = (WCHAR*)calloc(length + 1u, sizeof(WCHAR));
-                    auto dst = (char*)calloc(length + 1u, sizeof(char));
-
-                    DragQueryFileW((HDROP)wParam, i, src, length + 1);
-                    wcstombs(dst, src, length);
-                    free(src);
-                }
-
-                DispatchDrop(paths, count);
-
-                for (auto i = 0u; i < count; ++i)
-                {
-                    free(paths[i]);
-                }
-
-                free(paths);
-
-                ::DragFinish((HDROP)wParam);
+                DispatchInputOnDrop(wParam);
                 return 0;
             }
         }
 
-        return DefWindowProc(handle, uMsg, wParam, lParam);
+        return DefWindowProc(m_handle, uMsg, wParam, lParam);
     }
 }
 
