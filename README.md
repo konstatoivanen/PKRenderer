@@ -237,7 +237,6 @@ Physical Device Requirements:
 - [PKAssetTools](https://github.com/konstatoivanen/PKAssetTools)
 - [KTX](https://github.com/KhronosGroup/KTX-Software)
 - [rapidyaml](https://github.com/biojppm/rapidyaml/tree/master)
-- [GLFW](https://www.glfw.org/)
 - [GLM](https://github.com/g-truc/glm)
 - [mikktspace](http://www.mikktspace.com/)
 - [VMA](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator)
