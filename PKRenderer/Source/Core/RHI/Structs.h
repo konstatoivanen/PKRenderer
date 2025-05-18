@@ -1,7 +1,6 @@
 #pragma once
 #include <PKAssets/PKAsset.h>
 #include "Core/Utilities/NameID.h"
-#include "Core/Utilities/FixedString.h"
 #include "Core/Math/Math.h"
 
 namespace PK
@@ -319,6 +318,39 @@ namespace PK
         BC7_UNORM,
     };
 
+    enum class ColorSpace : uint8_t
+    {
+        Invalid = 0,
+        sRGB_NonLinear,
+        sRGB_Linear,
+        scRGB,
+        P3_NonLinear,
+        P3_Linear,
+        P3_DCI_NonLinear,
+        BT709_Linear,
+        BT709_NonLinear,
+        BT2020_Linear,
+        HDR10_ST2084,
+        HDR10_HLG,
+        DolbyVision,
+        AdobeRGB_Linear,
+        AdobeRGB_NonLinear,
+        PassThrough,
+        AmdFreeSync2
+    };
+
+    enum class VSyncMode : uint8_t
+    {
+        Invalid = 0,
+        Immediate,
+        Mailbox,
+        Fifo,
+        FifoRelaxed,
+        FifoLatest,
+        SharedDemandRefresh,
+        SharedContinuous
+    };
+
     enum class RayTracingShaderGroup
     {
         RayGeneration,
@@ -567,6 +599,26 @@ namespace PK
     };
 
     // Descriptors
+    struct SwapchainDescriptor
+    {
+        uint2 desiredResolution = PK_UINT2_ZERO;
+        TextureFormat desiredFormat = TextureFormat::BGRA8;
+        ColorSpace desiredColorSpace = ColorSpace::sRGB_NonLinear;
+        VSyncMode desiredVSyncMode = VSyncMode::Fifo;
+        const void* nativeMonitorHandle = nullptr;
+        void* nativeWindowHandle = nullptr;
+
+        inline bool operator == (const SwapchainDescriptor& other) const noexcept
+        {
+            return memcmp(this, &other, sizeof(SwapchainDescriptor)) == 0;
+        }
+
+        inline bool operator != (const SwapchainDescriptor& other) const noexcept
+        {
+            return memcmp(this, &other, sizeof(SwapchainDescriptor)) != 0;
+        }
+    };
+
     struct SamplerDescriptor
     {
         FilterMode filterMin = FilterMode::Point;
@@ -602,27 +654,5 @@ namespace PK
         uint8_t samples = 1;
         uint16_t layers = 1;
         SamplerDescriptor sampler = {};
-    };
-
-    struct WindowDescriptor
-    {
-        FixedString64 title;
-        FixedString256 iconPath;
-        uint2 size;
-        bool vsync;
-        bool cursorVisible;
-
-        WindowDescriptor(const FixedString64& title = "PK Window",
-            const FixedString256& iconPath = "",
-            const uint2& size = { 1024u, 512u },
-            bool vsync = true,
-            bool cursorVisible = true) :
-            title(title),
-            iconPath(iconPath),
-            size(size),
-            vsync(vsync),
-            cursorVisible(cursorVisible)
-        {
-        }
     };
 }

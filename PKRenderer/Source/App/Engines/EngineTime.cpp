@@ -51,7 +51,7 @@ namespace PK::App
         framerateInfo.framerateMin = m_framerateFixed.framerateMin;
         framerateInfo.framerateMax = m_framerateFixed.framerateMax;
         framerateInfo.framerateAvg = m_framerateFixed.framerateAvg;
-        framerateInfo.frameMs = m_runner.deltaTime * 1000.0f;
+        framerateInfo.frameMs = m_framerate.deltaTime * 1000.0f;
         m_sequencer->Next(this, &framerateInfo);
     }
 

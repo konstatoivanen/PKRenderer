@@ -9,6 +9,7 @@
 #include "Core/Rendering/MeshStaticAsset.h"
 #include "Core/Rendering/MeshStaticCollection.h"
 #include "Core/Rendering/MeshUtilities.h"
+#include "Core/Rendering/Window.h"
 #include "Core/IApplication.h"
 #include "App/Engines/EngineTime.h"
 #include "App/ECS/Builders.h"

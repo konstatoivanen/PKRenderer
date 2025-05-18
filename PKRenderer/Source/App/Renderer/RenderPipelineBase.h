@@ -24,7 +24,7 @@ namespace PK::App
         EntityDatabase* entityDb;
         struct EntityCullSequencerProxy* cullingProxy;
         IBatcher* batcher;
-        RHIWindow* window;
+        Window* window;
         RenderView** views;
         uint32_t viewCount;
     };
@@ -58,7 +58,7 @@ namespace PK::App
         RenderPipelineContext* context;
     };
 
-    struct RenderPipelineBase : public IStepApplicationRender<RHIWindow*>
+    struct RenderPipelineBase : public IStepApplicationRender<Window*>
     {
         constexpr static size_t MAX_RENDER_VIEWS = 32ull;
 
@@ -67,7 +67,7 @@ namespace PK::App
             Sequencer* sequencer,
             IBatcher* batcher);
 
-        void OnApplicationRender(RHIWindow* window) final;
+        void OnApplicationRender(Window* window) final;
 
         protected: 
             virtual IRenderViewResources* GetViewResources(uint32_t index) = 0;

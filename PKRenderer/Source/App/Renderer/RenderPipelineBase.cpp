@@ -9,6 +9,7 @@
 #include "Core/Rendering/ConstantBuffer.h"
 #include "Core/Rendering/TextureAsset.h"
 #include "Core/Rendering/ShaderAsset.h"
+#include "Core/Rendering/Window.h"
 #include "App/ECS/EntityViewRenderView.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/EntityCulling.h"
@@ -83,7 +84,7 @@ namespace PK::App
         }
     }
 
-    void RenderPipelineBase::OnApplicationRender(RHIWindow* window)
+    void RenderPipelineBase::OnApplicationRender(Window* window)
     {
         auto entityViews = m_entityDb->Query<EntityViewRenderView>((uint32_t)ENTITY_GROUPS::ACTIVE);
 
@@ -175,7 +176,7 @@ namespace PK::App
 
             if (view->isWindowTarget && view->gbuffers.current.color)
             {
-                cmdgraphics->Blit(view->gbuffers.current.color.get(), window, FilterMode::Bilinear);
+                cmdgraphics->Blit(view->gbuffers.current.color.get(), window->GetSwapchain(), FilterMode::Bilinear);
             }
         }
     }

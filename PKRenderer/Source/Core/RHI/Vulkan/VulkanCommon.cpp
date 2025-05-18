@@ -55,6 +55,7 @@ namespace PK
         atomicFloat.pNext = &positionFetch;
         positionFetch.pNext = &meshshader;
         meshshader.pNext = &shadingRate;
+        shadingRate.pNext = &fifoLatestReady;
     }
 
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
@@ -247,6 +248,8 @@ namespace PK
             PK_TEST_FEATURE(shadingRate.pipelineFragmentShadingRate)
             PK_TEST_FEATURE(shadingRate.primitiveFragmentShadingRate)
             PK_TEST_FEATURE(shadingRate.attachmentFragmentShadingRate)
+
+            PK_TEST_FEATURE(fifoLatestReady.presentModeFifoLatestReady)
         }
         
         #undef PK_TEST_FEATURE
@@ -862,6 +865,84 @@ namespace PK
                 case VK_FORMAT_R64G64B64A64_UINT: return ElementType::Ulong4;
                 default: return ElementType::Invalid;
             }
+        }
+
+        VkColorSpaceKHR GetColorSpace(ColorSpace colorSpace)
+        {
+            switch (colorSpace)
+            {
+                case ColorSpace::sRGB_NonLinear: return VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+                case ColorSpace::sRGB_Linear: return VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT;
+                case ColorSpace::scRGB: return VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT;
+                case ColorSpace::P3_NonLinear: return VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT;
+                case ColorSpace::P3_Linear: return VK_COLOR_SPACE_DISPLAY_P3_LINEAR_EXT;
+                case ColorSpace::P3_DCI_NonLinear: return VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT;
+                case ColorSpace::BT709_Linear: return VK_COLOR_SPACE_BT709_LINEAR_EXT;
+                case ColorSpace::BT709_NonLinear: return VK_COLOR_SPACE_BT709_NONLINEAR_EXT;
+                case ColorSpace::BT2020_Linear: return VK_COLOR_SPACE_BT2020_LINEAR_EXT;
+                case ColorSpace::HDR10_ST2084: return VK_COLOR_SPACE_HDR10_ST2084_EXT;
+                case ColorSpace::HDR10_HLG: return VK_COLOR_SPACE_HDR10_HLG_EXT;
+                case ColorSpace::DolbyVision: return VK_COLOR_SPACE_DOLBYVISION_EXT;
+                case ColorSpace::AdobeRGB_Linear: return VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT;
+                case ColorSpace::AdobeRGB_NonLinear: return VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT;
+                case ColorSpace::PassThrough: return VK_COLOR_SPACE_PASS_THROUGH_EXT;
+                case ColorSpace::AmdFreeSync2: return VK_COLOR_SPACE_DISPLAY_NATIVE_AMD;
+                default: return VK_COLOR_SPACE_MAX_ENUM_KHR;
+            }
+        }
+
+        VkPresentModeKHR GetPresentMode(VSyncMode vsyncMode)
+        {
+            switch (vsyncMode)
+            {
+                case VSyncMode::Immediate: return VK_PRESENT_MODE_IMMEDIATE_KHR;
+                case VSyncMode::Mailbox: return VK_PRESENT_MODE_MAILBOX_KHR;
+                case VSyncMode::Fifo: return VK_PRESENT_MODE_FIFO_KHR;
+                case VSyncMode::FifoRelaxed: return VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+                case VSyncMode::FifoLatest: return VK_PRESENT_MODE_FIFO_LATEST_READY_EXT;
+                case VSyncMode::SharedDemandRefresh: return VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR;
+                case VSyncMode::SharedContinuous: return VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR;
+                default: return VK_PRESENT_MODE_MAX_ENUM_KHR;
+            };
+        }
+
+        ColorSpace GetColorSpace(VkColorSpaceKHR colorSpace)
+        {
+            switch (colorSpace)
+            {
+                case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR: return ColorSpace::sRGB_NonLinear;
+                case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT: return ColorSpace::sRGB_Linear;
+                case VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT: return ColorSpace::scRGB;
+                case VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT: return ColorSpace::P3_NonLinear;
+                case VK_COLOR_SPACE_DISPLAY_P3_LINEAR_EXT: return ColorSpace::P3_Linear;
+                case VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT: return ColorSpace::P3_DCI_NonLinear;
+                case VK_COLOR_SPACE_BT709_LINEAR_EXT: return ColorSpace::BT709_Linear;
+                case VK_COLOR_SPACE_BT709_NONLINEAR_EXT: return ColorSpace::BT709_NonLinear;
+                case VK_COLOR_SPACE_BT2020_LINEAR_EXT: return ColorSpace::BT2020_Linear;
+                case VK_COLOR_SPACE_HDR10_ST2084_EXT: return ColorSpace::HDR10_ST2084;
+                case VK_COLOR_SPACE_HDR10_HLG_EXT: return ColorSpace::HDR10_HLG;
+                case VK_COLOR_SPACE_DOLBYVISION_EXT: return ColorSpace::DolbyVision;
+                case VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT: return ColorSpace::AdobeRGB_Linear;
+                case VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT: return ColorSpace::AdobeRGB_NonLinear;
+                case VK_COLOR_SPACE_PASS_THROUGH_EXT: return ColorSpace::PassThrough;
+                case VK_COLOR_SPACE_DISPLAY_NATIVE_AMD: return ColorSpace::AmdFreeSync2;
+                default: return ColorSpace::Invalid;
+            }
+        }
+
+        VSyncMode GetVSyncMode(VkPresentModeKHR presentMode)
+        {
+            switch (presentMode)
+            {
+                case VK_PRESENT_MODE_IMMEDIATE_KHR: return VSyncMode::Immediate;
+                case VK_PRESENT_MODE_MAILBOX_KHR: return VSyncMode::Mailbox;
+                case VK_PRESENT_MODE_FIFO_KHR: return VSyncMode::Fifo;
+                case VK_PRESENT_MODE_FIFO_RELAXED_KHR: return VSyncMode::FifoRelaxed;
+                case VK_PRESENT_MODE_FIFO_LATEST_READY_EXT: return VSyncMode::FifoLatest;
+                case VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR: return VSyncMode::SharedDemandRefresh;
+                case VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR: return VSyncMode::SharedContinuous;
+                default: return VSyncMode::Invalid;
+            };
         }
 
         VkFormat GetFormat(TextureFormat format)
@@ -2197,6 +2278,8 @@ namespace PK
 
     const char* VulkanCStr_VkShaderStageFlagBits(VkShaderStageFlagBits value) { return string_VkShaderStageFlagBits(value); }
     const char* VulkanCStr_VkFormat(VkFormat value) { return string_VkFormat(value); }
+    const char* VulkanCStr_VkColorSpaceKHR(VkColorSpaceKHR value) { return string_VkColorSpaceKHR(value); }
+    const char* VulkanCStr_VkPresentModeKHR(VkPresentModeKHR value) { return string_VkPresentModeKHR(value); }
 
     VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkImageAspectFlags aspect)
     {

@@ -37,9 +37,9 @@ namespace PK
     struct RHIDriverMemoryInfo;
     struct RHIDriverSettings;
     struct AccelerationStructureGeometryInfo;
+    struct SwapchainDescriptor;
     struct SamplerDescriptor;
     struct TextureDescriptor;
-    struct WindowDescriptor;
 
     struct BufferElement;
     struct BufferLayout;
@@ -76,6 +76,7 @@ namespace PK
     enum class RayTracingShaderGroup;
 
     struct RHIDriver;
+    struct RHISwapchain;
     struct RHIAccelerationStructure;
     template <typename>
     struct RHIBindArray;
@@ -84,7 +85,6 @@ namespace PK
     struct RHIQueueSet;
     struct RHIShader;
     struct RHITexture;
-    struct RHIWindow;
     template<typename T>
     using RHIBindArrayRef = Ref<RHIBindArray<T>>;
 
@@ -96,8 +96,8 @@ namespace PK
     typedef Ref<RHIBufferBindArray> RHIBufferBindArrayRef;
     typedef Ref<RHIBuffer> RHIBufferRef;
     typedef Ref<RHITexture> RHITextureRef;
+    typedef Unique<RHISwapchain> RHISwapchainScope;
     typedef Unique<RHIShader> RHIShaderScope;
-    typedef Unique<RHIWindow> RHIWindowScope;
     typedef Unique<RHIDriver> RHIDriverScope;
 
     // Interface
@@ -118,7 +118,7 @@ namespace PK
         RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name);
         RHIAccelerationStructureRef CreateAccelerationStructure(const char* name);
         RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name);
-        RHIWindowScope CreateWindowScope(const WindowDescriptor& descriptor);
+        RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor);
 
         template<typename T>
         RHIBindArrayRef<T> CreateBindArray(size_t capacity);

@@ -31,7 +31,7 @@ namespace PK
         bool isResizable = false;
         bool isFloating = false;
         bool useDpiScaling = false;
-        bool activateOnFirstShow = false;
+        bool autoActivate = false;
     };
 
     struct IPlatformWindowListener

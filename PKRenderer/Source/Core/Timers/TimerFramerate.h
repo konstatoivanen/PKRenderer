@@ -11,6 +11,7 @@ namespace PK
         uint64_t framerateMax = 0;
         uint64_t framerateAvg = 0;
         double elapsed = 0.0;
+        double deltaTime = 0.0;
 
         void EndTimerScope() final;
     };

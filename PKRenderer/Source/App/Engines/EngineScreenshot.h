@@ -6,11 +6,11 @@
 
 namespace PK::App
 {
-    class EngineScreenshot : public IStepApplicationRender<RHIWindow*>
+    class EngineScreenshot : public IStepApplicationRender<Window*>
     {
     public:
         EngineScreenshot();
-        virtual void OnApplicationRender(RHIWindow* window) final;
+        virtual void OnApplicationRender(Window* window) final;
 
         void QueueCapture();
 

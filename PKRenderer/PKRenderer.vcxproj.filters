@@ -1254,9 +1254,6 @@
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanDriver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanWindow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\RHI\BuiltInResources.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1501,6 +1498,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Input\InputDevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Rendering\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2286,9 +2286,6 @@
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanDriver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Core\RHI\BuiltInResources.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -2404,6 +2401,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Platform\Platform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Rendering\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

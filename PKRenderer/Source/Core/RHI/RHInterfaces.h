@@ -9,27 +9,26 @@
 
 namespace PK
 {
-    struct RHIWindow : public NoCopy, public NativeInterface<RHIWindow>
+    struct RHISwapchain : public NoCopy, public NativeInterface<RHISwapchain>
     {
-        constexpr static uint32_t MIN_SIZE = 256u;
-        virtual ~RHIWindow() = 0;
-        virtual uint3 GetResolution() const = 0;
-        virtual uint4 GetRect() const = 0;
-        virtual float GetAspectRatio() const = 0;
-        virtual bool IsClosing() const = 0;
-        virtual bool IsMinimized() const = 0;
-        virtual bool IsVSync() const = 0;
-        virtual bool IsFullscreen() const = 0;
-
-        virtual void Begin() = 0;
-        virtual void End() = 0;
+        virtual ~RHISwapchain() = 0;
+        virtual void SetDesiredResolution(const uint2& resolution) = 0;
+        virtual void SetDesiredFormat(TextureFormat format) = 0;
+        virtual void SetDesiredColorSpace(ColorSpace colorSpace) = 0;
+        virtual void SetDesiredVSyncMode(VSyncMode vsyncMode) = 0;
         virtual void SetFrameFence(const FenceRef& fence) = 0;
-        virtual void SetCursorVisible(bool value) = 0;
-        virtual void SetVSync(bool value) = 0;
-        virtual void SetFullscreen(bool value) = 0;
-        virtual void SetOnResizeCallback(const std::function<void(int width, int height)>& callback) = 0;
-        virtual void SetOnCloseCallback(const std::function<void()>& callback) = 0;
-        virtual struct PlatformWindow* GetNativeWindow() const = 0;
+        virtual bool AcquireFullScreen(const void* nativeMonitor) = 0;
+        virtual bool AcquireNextImage() = 0;
+        virtual void Present() = 0;
+        virtual bool IsFullScreen() const = 0;
+        virtual uint3 GetResolution() const = 0;
+        virtual TextureFormat GetFormat() const = 0;
+        virtual ColorSpace GetColorSpace() const = 0;
+        virtual VSyncMode GetVSyncMode() const = 0;
+
+        inline uint32_t GetWidth() const { return GetResolution().x; }
+        inline uint32_t GetHeight() const { return GetResolution().y; }
+        inline float GetAspectRatio() const { return (float)GetWidth() / (float)GetHeight(); }
     };
 
     struct RHITexture : public NoCopy, public NativeInterface<RHITexture>
@@ -152,8 +151,8 @@ namespace PK
         virtual void Dispatch(const uint3& dimensions) = 0;
         virtual void DispatchRays(const uint3& dimensions) = 0;
 
-        virtual void Blit(RHITexture* src, RHIWindow* dst, FilterMode filter) = 0;
-        virtual void Blit(RHIWindow* src, RHIBuffer* dst) = 0;
+        virtual void Blit(RHITexture* src, RHISwapchain* dst, FilterMode filter) = 0;
+        virtual void Blit(RHISwapchain* src, RHIBuffer* dst) = 0;
         virtual void Blit(RHITexture* src, RHITexture* dst, const TextureViewRange& srcRange, const TextureViewRange& dstRange, FilterMode filter) = 0;
 
         virtual void Clear(RHIBuffer* dst, size_t offset, size_t size, uint32_t value) = 0;
@@ -203,7 +202,7 @@ namespace PK
         virtual RHIBufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name) = 0;
         virtual RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name) = 0;
         virtual RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) = 0;
-        virtual RHIWindowScope CreateWindowScope(const WindowDescriptor& descriptor) = 0;
+        virtual RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor) = 0;
 
         virtual void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) = 0;
         virtual void SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) = 0;

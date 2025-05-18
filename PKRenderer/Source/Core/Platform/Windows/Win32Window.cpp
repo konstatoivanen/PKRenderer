@@ -148,7 +148,7 @@ namespace PK
 
     Win32Window::Win32Window(const PlatformWindowDescriptor& descriptor)
     {
-        m_isPendingActivate = descriptor.activateOnFirstShow;
+        m_isPendingActivate = descriptor.autoActivate;
         m_useDpiScaling = descriptor.useDpiScaling;
         m_isResizable = descriptor.isResizable;
         m_sizeMin = descriptor.sizemin;

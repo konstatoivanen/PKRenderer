@@ -13,7 +13,7 @@ namespace PK
     template<> RHIBindArray<RHIBuffer>::~RHIBindArray() = default;
     RHIBuffer::~RHIBuffer() = default;
     RHIQueueSet::~RHIQueueSet() = default;
-    RHIWindow::~RHIWindow() = default;
+    RHISwapchain::~RHISwapchain() = default;
     RHITexture::~RHITexture() = default;
     RHIShader::~RHIShader() = default;
     RHIDriver::~RHIDriver() = default;
@@ -126,6 +126,7 @@ namespace PK
                 features.meshshader.primitiveFragmentShadingRateMeshShader = VK_TRUE;
                 features.shadingRate.primitiveFragmentShadingRate = VK_TRUE;
                 features.shadingRate.pipelineFragmentShadingRate = VK_TRUE;
+                features.fifoLatestReady.presentModeFifoLatestReady = VK_TRUE;
                 //features.meshshader.meshShaderQueries;
 
                 const std::vector<const char*> PK_INSTANCE_EXTENTIONS =
@@ -148,7 +149,8 @@ namespace PK
                     VK_EXT_MESH_SHADER_EXTENSION_NAME,
                     VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
                     VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME,
-                    VK_KHR_MULTIVIEW_EXTENSION_NAME
+                    VK_KHR_MULTIVIEW_EXTENSION_NAME,
+                    VK_EXT_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME
                 };
 
                 driver = CreateUnique<VulkanDriver>(VulkanContextProperties
@@ -177,7 +179,7 @@ namespace PK
     RHITextureRef RHI::CreateTexture(const TextureDescriptor& descriptor, const char* name) { return RHIDriver::Get()->CreateTexture(descriptor, name); }
     RHIAccelerationStructureRef RHI::CreateAccelerationStructure(const char* name) { return RHIDriver::Get()->CreateAccelerationStructure(name); }
     RHIShaderScope RHI::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return RHIDriver::Get()->CreateShader(base, pVariant, name); }
-    RHIWindowScope RHI::CreateWindowScope(const WindowDescriptor& descriptor) { return RHIDriver::Get()->CreateWindowScope(descriptor); }
+    RHISwapchainScope RHI::CreateSwapchain(const SwapchainDescriptor& descriptor) { return RHIDriver::Get()->CreateSwapchain(descriptor); }
     template<> RHITextureBindArrayRef RHI::CreateBindArray(size_t capacity) { return RHIDriver::Get()->CreateTextureBindArray(capacity); }
     template<> RHIBufferBindArrayRef RHI::CreateBindArray(size_t capacity) { return RHIDriver::Get()->CreateBufferBindArray(capacity); }
 

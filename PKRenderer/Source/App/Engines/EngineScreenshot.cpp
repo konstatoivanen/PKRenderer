@@ -5,6 +5,7 @@
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/RHI/RHInterfaces.h"
+#include "Core/Rendering/Window.h"
 #include "EngineScreenshot.h"
 
 namespace PK::App
@@ -15,7 +16,7 @@ namespace PK::App
         CVariableRegister::Create<CVariableFuncSimple>("Engine.Screenshot.QueueCapture", [this](){QueueCapture();});
     }
 
-    void EngineScreenshot::OnApplicationRender(RHIWindow* window)
+    void EngineScreenshot::OnApplicationRender(Window* window)
     {
         m_currentResolution = uint2(window->GetResolution().xy);
 
@@ -52,7 +53,7 @@ namespace PK::App
 
         if (m_captureCounter > 0)
         {
-            cmd->Blit(window, m_copyBuffer.get());
+            cmd->Blit(window->GetSwapchain(), m_copyBuffer.get());
             m_copyFence = cmd->GetFenceRef();
             return;
         }

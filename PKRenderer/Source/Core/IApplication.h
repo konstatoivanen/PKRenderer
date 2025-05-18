@@ -5,12 +5,14 @@
 #include "Core/CLI/CArguments.h"
 #include "Core/CLI/ILogger.h"
 #include "Core/ServiceRegister.h"
-#include "Core/RHI/RHI.h"
+#include "Core/Rendering/RenderingFwd.h"
 
 int main(int argc, char** argv);
 
 namespace PK
 {
+    struct Window;
+
     extern struct IApplication* CreateProjectApplication(const CArguments& arguments);
     extern void FreeProjectApplication(IApplication* application);
 
@@ -23,9 +25,9 @@ namespace PK
         virtual void Close() = 0;
         
         virtual RHIDriver* GetRHIDriver() = 0;
-        virtual RHIWindow* GetPrimaryWindow() = 0;
+        virtual Window* GetPrimaryWindow() = 0;
         virtual const RHIDriver* GetRHIDriver() const = 0;
-        virtual const RHIWindow* GetPrimaryWindow() const = 0;
+        virtual const Window* GetPrimaryWindow() const = 0;
 
         template<typename T>
         T* GetService() { return m_services->Get<T>(); }

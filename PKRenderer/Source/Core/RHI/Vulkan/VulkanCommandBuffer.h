@@ -57,8 +57,8 @@ namespace PK
         void Dispatch(const uint3& dimensions) final;
         void DispatchRays(const uint3& dimensions) final;
         
-        void Blit(RHITexture* src, RHIWindow* dst, FilterMode filter) final;
-        void Blit(RHIWindow* src, RHIBuffer* dst) final;
+        void Blit(RHITexture* src, RHISwapchain* dst, FilterMode filter) final;
+        void Blit(RHISwapchain* src, RHIBuffer* dst) final;
         void Blit(RHITexture* src, RHITexture* dst, const TextureViewRange& srcRange, const TextureViewRange& dstRange, FilterMode filter) final;
         void Blit(const VulkanBindHandle* src, const VulkanBindHandle* dst, const VkImageBlit& blitRegion, FilterMode filter);
 
@@ -82,9 +82,9 @@ namespace PK
         void TransitionImageLayout(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageSubresourceRange& range);
         void PipelineBarrier(const VulkanBarrierInfo& barrier);
         
-        // Blits might leave window images in non presentable layouts.
-        // This validates window image layout & should be called for the last cmd before present.
-        void ValidateWindowPresent(RHIWindow* window);
+        // Blits might leave swapchain images in non presentable layouts.
+        // This validates swapchain image layout & should be called for the last cmd before present.
+        void ValidateSwapchainPresent(RHISwapchain* swapchain);
         bool ResolveBarriers();
         void ValidatePipeline();
         void EndRenderPass();

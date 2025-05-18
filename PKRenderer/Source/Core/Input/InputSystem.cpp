@@ -1,14 +1,14 @@
 #include "PrecompiledHeader.h"
 #include "Core/ControlFlow/Sequencer.h"
-#include "Core/RHI/RHInterfaces.h"
+#include "Core/Rendering/Window.h"
 #include "Core/CLI/Log.h"
 #include "InputSystem.h"
 
 namespace PK
 {
-    void InputSystem::OnApplicationUpdateInput(RHIWindow* window)
+    void InputSystem::OnApplicationUpdateInput(Window* window)
     {
-        auto state = m_deviceStates.GetValuePtr(window->GetNativeWindow());
+        auto state = m_deviceStates.GetValuePtr(window->GetNative());
         auto outState = InputState();
 
         if (state)
@@ -19,9 +19,9 @@ namespace PK
         m_sequencer->Next<InputState*>(this, &outState);
     }
 
-    void InputSystem::OnApplicationCloseFrame(RHIWindow* window)
+    void InputSystem::OnApplicationCloseFrame(Window* window)
     {
-        auto state = m_deviceStates.GetValuePtr(window->GetNativeWindow());
+        auto state = m_deviceStates.GetValuePtr(window->GetNative());
 
         if (state)
         {

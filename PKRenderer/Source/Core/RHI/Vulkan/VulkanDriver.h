@@ -62,7 +62,7 @@ namespace PK
         RHITextureBindArrayRef CreateTextureBindArray(size_t capacity) final;
         RHIBufferBindArrayRef CreateBufferBindArray(size_t capacity) final;
         RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) final;
-        RHIWindowScope CreateWindowScope(const WindowDescriptor& descriptor) final;
+        RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor) final;
 
         void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) final;
         void SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) final;

@@ -185,6 +185,7 @@ namespace PK
         VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR positionFetch{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR };
         VkPhysicalDeviceMeshShaderFeaturesEXT meshshader{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT };
         VkPhysicalDeviceFragmentShadingRateFeaturesKHR shadingRate{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR };
+        VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT fifoLatestReady{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_EXT };
         VulkanPhysicalDeviceFeatures();
         static bool CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available);
     };
@@ -461,6 +462,10 @@ namespace PK
     {
         VkFormat GetFormat(ElementType format);
         ElementType GetUniformFormat(VkFormat format);
+        VkColorSpaceKHR GetColorSpace(ColorSpace colorSpace);
+        VkPresentModeKHR GetPresentMode(VSyncMode vsyncMode);
+        ColorSpace GetColorSpace(VkColorSpaceKHR colorSpace);
+        VSyncMode GetVSyncMode(VkPresentModeKHR presentMode);
         VkFormat GetFormat(TextureFormat format);
         VkIndexType GetIndexType(ElementType format);
         TextureFormat GetTextureFormat(VkFormat format);
@@ -528,6 +533,8 @@ namespace PK
     FixedString128 VulkanStr_VkQueueFlags(VkQueueFlags value);
     const char* VulkanCStr_VkShaderStageFlagBits(VkShaderStageFlagBits value);
     const char* VulkanCStr_VkFormat(VkFormat value);
+    const char* VulkanCStr_VkColorSpaceKHR(VkColorSpaceKHR value);
+    const char* VulkanCStr_VkPresentModeKHR(VkPresentModeKHR value);
 
     VkImageSubresourceRange VulkanConvertRange(const TextureViewRange& viewRange, VkImageAspectFlags aspect);
     TextureViewRange VulkanConvertRange(const VkImageSubresourceRange& resourceRange);
@@ -549,5 +556,6 @@ namespace PK
 
     #define VK_ASSERT_RESULT(cmd) VK_ASSERT_RESULT_CTX(cmd, "VK COMMAND FAILED! ")
     #define VK_THROW_RESULT(result) VulkanThrowError(result, "VK Error Result: ")
+    #define VK_THROW_RESULT_CTX(result, ctx) VulkanThrowError(result, ctx)
 
 }

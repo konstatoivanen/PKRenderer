@@ -6,7 +6,7 @@
 #include "Core/RHI/Vulkan/VulkanAccelerationStructure.h"
 #include "Core/RHI/Vulkan/VulkanBindArray.h"
 #include "Core/RHI/Vulkan/VulkanRenderState.h"
-#include "Core/RHI/Vulkan/VulkanWindow.h"
+#include "Core/RHI/Vulkan/VulkanSwapchain.h"
 #include "VulkanCommandBuffer.h"
 
 namespace PK
@@ -289,12 +289,12 @@ namespace PK
     }
 
 
-    void VulkanCommandBuffer::Blit(RHITexture* src, RHIWindow* dst, FilterMode filter)
+    void VulkanCommandBuffer::Blit(RHITexture* src, RHISwapchain* dst, FilterMode filter)
     {
         auto vksrc = src->GetNative<VulkanTexture>();
-        auto vkwindow = dst->GetNative<VulkanWindow>();
+        auto vkdst = dst->GetNative<VulkanSwapchain>();
         const auto& srcHandle = vksrc->GetBindHandle(TextureBindMode::RenderTarget);
-        const auto& dstHandle = vkwindow->GetBindHandle();
+        const auto& dstHandle = vkdst->GetBindHandle();
 
         auto srcRes = src->GetResolution();
         auto dstRes = dst->GetResolution();
@@ -317,9 +317,9 @@ namespace PK
         m_renderState->RecordImage(dstHandle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT);
     }
 
-    void VulkanCommandBuffer::Blit(RHIWindow* src, RHIBuffer* dst)
+    void VulkanCommandBuffer::Blit(RHISwapchain* src, RHIBuffer* dst)
     {
-        auto vksrc = src->GetNative<VulkanWindow>()->GetBindHandle();
+        auto vksrc = src->GetNative<VulkanSwapchain>()->GetBindHandle();
         auto vkbuff = dst->GetNative<VulkanBuffer>();
 
         VkBufferImageCopy region{};
@@ -642,10 +642,11 @@ namespace PK
             barrier.pImageMemoryBarriers);
     }
 
-    void VulkanCommandBuffer::ValidateWindowPresent(RHIWindow* window)
+    void VulkanCommandBuffer::ValidateSwapchainPresent(RHISwapchain* swapchain)
     {
-        const auto& windowHandle = window->GetNative<VulkanWindow>()->GetBindHandle();
-        m_renderState->RecordImage(windowHandle, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_NONE);
+        auto vkdst = swapchain->GetNative<VulkanSwapchain>();
+        const auto& bindHandle = vkdst->GetBindHandle();
+        m_renderState->RecordImage(bindHandle, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_NONE);
         ResolveBarriers();
     }
 

@@ -259,6 +259,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Platform\Windows\Win32Driver.h" />
     <ClInclude Include="Source\Core\Platform\Windows\Win32Window.h" />
     <ClInclude Include="Source\Core\Rendering\Font.h" />
+    <ClInclude Include="Source\Core\Rendering\Window.h" />
     <ClInclude Include="Source\Core\Timers\ITimer.h" />
     <ClInclude Include="Source\Core\Timers\TimeHelpers.h" />
     <ClInclude Include="Source\Core\Timers\TimerFramerate.h" />
@@ -712,7 +713,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanStagingBufferCache.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanCommon.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanDriver.h" />
-    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanWindow.h" />
     <ClInclude Include="Source\App\Renderer\RenderPipelineScene.h" />
     <ClInclude Include="Source\App\Renderer\BatcherMeshStatic.h" />
     <ClInclude Include="Source\App\Renderer\EntityEnums.h" />
@@ -1038,6 +1038,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Platform\Windows\Win32Driver.cpp" />
     <ClCompile Include="Source\Core\Platform\Windows\Win32Window.cpp" />
     <ClCompile Include="Source\Core\Rendering\Font.cpp" />
+    <ClCompile Include="Source\Core\Rendering\Window.cpp" />
     <ClCompile Include="Source\Core\Timers\ITimer.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFramerate.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFrameRunner.cpp" />
@@ -1154,7 +1155,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanStagingBufferCache.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanCommon.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanDriver.cpp" />
-    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanWindow.cpp" />
     <ClCompile Include="Source\App\Renderer\RenderPipelineScene.cpp" />
     <ClCompile Include="Source\App\Renderer\BatcherMeshStatic.cpp" />
     <ClCompile Include="Source\Core\Utilities\FileIOBinary.cpp" />

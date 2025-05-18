@@ -6,7 +6,7 @@
 #include "Core/RHI/Vulkan/VulkanTexture.h"
 #include "Core/RHI/Vulkan/VulkanAccelerationStructure.h"
 #include "Core/RHI/Vulkan/VulkanBindArray.h"
-#include "Core/RHI/Vulkan/VulkanWindow.h"
+#include "Core/RHI/Vulkan/VulkanSwapchain.h"
 #include "Core/RHI/BuiltInResources.h"
 #include "VulkanDriver.h"
 
@@ -86,7 +86,7 @@ namespace PK
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
 
-        // Create a temporary hidden window so that we can query & select a physical device with surface present capabilities.
+        // Create a temporary surface so that we can query & select a physical device with surface present capabilities.
         VkSurfaceKHR temporarySurface;
         VK_ASSERT_RESULT_CTX(VulkanCreateSurfaceKHR(instance, Platform::GetHelperWindow(), &temporarySurface), "Failed to create window surface!");
 
@@ -246,7 +246,7 @@ namespace PK
     RHITextureBindArrayRef VulkanDriver::CreateTextureBindArray(size_t capacity) { return CreateRef<VulkanBindArray>(capacity); }
     RHIBufferBindArrayRef VulkanDriver::CreateBufferBindArray(size_t capacity) { return CreateRef<VulkanBindArray>(capacity); }
     RHIShaderScope VulkanDriver::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return CreateUnique<VulkanShader>(base, pVariant, name); }
-    RHIWindowScope VulkanDriver::CreateWindowScope(const WindowDescriptor& descriptor) { return CreateUnique<VulkanWindow>(this, descriptor); }
+    RHISwapchainScope VulkanDriver::CreateSwapchain(const SwapchainDescriptor& descriptor) { return CreateUnique<VulkanSwapchain>(this, descriptor); }
 
     void VulkanDriver::SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) { globalResources.Set(name, Handle(buffer->GetNative<VulkanBuffer>()->GetBindHandle(range))); }
     void VulkanDriver::SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) { globalResources.Set(name, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::SampledTexture))); }

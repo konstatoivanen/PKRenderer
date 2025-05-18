@@ -18,10 +18,12 @@ namespace PK
     struct ShaderPropertyBlock;
     struct TextureAsset;
     struct Font;
+    struct Window;
     enum class TextAlign;
 
     typedef Ref<ConstantBuffer> ConstantBufferRef;
     typedef Ref<MeshStaticAsset> MeshStaticAssetRef;
     typedef Ref<TextureAsset> TextureAssetRef;
     typedef Ref<Font> FontRef;
+    typedef Unique<Window> WindowScope;
 }

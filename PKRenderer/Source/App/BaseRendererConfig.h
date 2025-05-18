@@ -25,6 +25,7 @@ namespace PK::App
 
     PK_YAML_ASSET_BEGIN(BaseRendererConfig, ".cfg")
         PK_YAML_MEMBER(float, TimeScale, 1.0f)
+        PK_YAML_MEMBER(uint32_t, InactiveFrameInterval, 0u)
         PK_YAML_MEMBER_STRUCT(RHISettings, RHIDesc)
         PK_YAML_MEMBER_STRUCT(WindowConfig, WindowDesc)
         PK_YAML_MEMBER(CVariablesYaml, ConsoleVariables, {})

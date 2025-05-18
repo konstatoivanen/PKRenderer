@@ -6,23 +6,23 @@
 #include "Core/Platform/PlatformInterfaces.h"
 #include "Core/ControlFlow/IStepApplication.h"
 #include "Core/Input/InputState.h"
-#include "Core/RHI/RHI.h"
+#include "Core/Rendering/RenderingFwd.h"
 
 namespace PK
 {
     struct Sequencer;
 
     class InputSystem :
-        public IStepApplicationUpdateInput<RHIWindow*>,
-        public IStepApplicationCloseFrame<RHIWindow*>,
+        public IStepApplicationUpdateInput<Window*>,
+        public IStepApplicationCloseFrame<Window*>,
         public ISingleton<InputSystem>,
         public InputHandler
     {
     public:
         InputSystem(Sequencer* sequencer) : m_sequencer(sequencer) {}
 
-        virtual void OnApplicationUpdateInput(RHIWindow* window) final;
-        virtual void OnApplicationCloseFrame(RHIWindow* window) final;
+        virtual void OnApplicationUpdateInput(Window* window) final;
+        virtual void OnApplicationCloseFrame(Window* window) final;
 
         void InputHandler_OnKey(InputDevice* device, InputKey key, bool isDown) final;
         void InputHandler_OnMouseMoved(InputDevice* device, const float2& position, const float2& areaSize) final;

@@ -6,6 +6,7 @@
 #include "Core/ControlFlow/Sequencer.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/ConstantBuffer.h"
+#include "Core/Rendering/Window.h"
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/EntityCulling.h"
 #include "App/Renderer/RenderView.h"

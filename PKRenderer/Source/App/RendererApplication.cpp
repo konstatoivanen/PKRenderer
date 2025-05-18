@@ -6,10 +6,11 @@
 #include "Core/CLI/LoggerPrintf.h"
 #include "Core/ControlFlow/Sequencer.h"
 #include "Core/ControlFlow/RemoteProcessRunner.h"
+#include "Core/ControlFlow/IStepApplication.h"
 #include "Core/Input/InputSystem.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/ShaderAsset.h"
-#include "Core/ControlFlow/IStepApplication.h"
+#include "Core/Rendering/Window.h"
 #include "Core/IApplication.h"
 #include "App/Engines/EngineTime.h"
 #include "App/Engines/EngineCommandInput.h"
@@ -60,13 +61,24 @@ namespace PK::App
         graphicsDriverSettings.discardPipelineCache = config->RHIDesc.DiscardPipelineCache;
         m_graphicsDriver = RHI::CreateDriver(GetWorkingDirectory(), graphicsDriverSettings);
 
-        m_window = RHI::CreateWindowScope(WindowDescriptor({ GetName(), m_graphicsDriver->GetDriverHeader() },
-            config->WindowDesc.IconPath.c_str(),
-            config->WindowDesc.Size,
-            config->WindowDesc.Vsync,
-            config->WindowDesc.ShowCursor));
-
+        WindowDescriptor windowDescriptor;
+        windowDescriptor.title = { GetName(), m_graphicsDriver->GetDriverHeader() };
+        windowDescriptor.iconPath = config->WindowDesc.IconPath.c_str();
+        windowDescriptor.position = PK_INT2_MINUS_ONE;
+        windowDescriptor.size = config->WindowDesc.Size;
+        windowDescriptor.sizemax = PK_INT2_MINUS_ONE;
+        windowDescriptor.vsync = config->WindowDesc.Vsync;
+        windowDescriptor.visible = true;
+        windowDescriptor.resizable = true;
+        windowDescriptor.floating = false;
+        windowDescriptor.dpiScaling = false;
+        windowDescriptor.autoActivate = true;
+        windowDescriptor.cursorVisible = config->WindowDesc.ShowCursor;
+        windowDescriptor.cursorLocked = false;
+        m_window = CreateUnique<Window>(windowDescriptor);
         m_window->SetOnCloseCallback([this]() { Close(); });
+
+        m_inactiveFrameInterval = config->InactiveFrameInterval;
 
         assetDatabase->LoadDirectory<ShaderAsset>("Content/Shaders/");
 
@@ -95,13 +107,13 @@ namespace PK::App
                     sequencer->GetRoot(),
                     {
                         Sequencer::Step::Create<ApplicationStep::OpenFrame>(time),
-                        Sequencer::Step::Create<ApplicationStep::UpdateInput, RHIWindow*>(inputSystem),
+                        Sequencer::Step::Create<ApplicationStep::UpdateInput, Window*>(inputSystem),
                         Sequencer::Step::Create<ApplicationStep::UpdateEngines>(engineFlyCamera),
                         Sequencer::Step::Create<ApplicationStep::UpdateEngines>(engineUpdateTransforms),
-                        Sequencer::Step::Create<ApplicationStep::Render, RHIWindow*>(renderPipelineScene),
-                        Sequencer::Step::Create<ApplicationStep::Render, RHIWindow*>(engineScreenshot),
+                        Sequencer::Step::Create<ApplicationStep::Render, Window*>(renderPipelineScene),
+                        Sequencer::Step::Create<ApplicationStep::Render, Window*>(engineScreenshot),
                         Sequencer::Step::Create<ApplicationStep::CloseFrame>(time),
-                        Sequencer::Step::Create<ApplicationStep::CloseFrame, RHIWindow*>(inputSystem),
+                        Sequencer::Step::Create<ApplicationStep::CloseFrame, Window*>(inputSystem),
                         Sequencer::Step::Create<CArgumentsConst>(cvariableRegister),
                         Sequencer::Step::Create<CArgumentConst>(cvariableRegister),
                         Sequencer::Step::Create<RemoteProcessCommand*>(remoteProcessRunner)
@@ -201,6 +213,11 @@ namespace PK::App
             {
                 Platform::WaitEvents();
                 continue;
+            }
+
+            if (m_inactiveFrameInterval > 0 && !Platform::GetHasFocus())
+            {
+                Sleep(m_inactiveFrameInterval);
             }
 
             sequencer->NextRoot(ApplicationStep::OpenFrame());
