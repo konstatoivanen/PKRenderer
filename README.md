@@ -126,7 +126,6 @@ However, this is ultimately a hobby project & thus likely to remain perpetually 
 <details>
   <summary>Planned</summary>
 
-- geometry lods.
 - skinned geometry.
 - GPU culling.
 - SH probe based world space radiance cache.
@@ -235,11 +234,13 @@ Physical Device Requirements:
 <summary>Libraries & Dependencies</summary>
 
 - [PKAssetTools](https://github.com/konstatoivanen/PKAssetTools)
+- [Vulkan](https://github.com/KhronosGroup/Vulkan-Headers)
 - [KTX](https://github.com/KhronosGroup/KTX-Software)
 - [rapidyaml](https://github.com/biojppm/rapidyaml/tree/master)
 - [GLM](https://github.com/g-truc/glm)
 - [mikktspace](http://www.mikktspace.com/)
 - [VMA](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator)
+- [Bend screen space shadows](https://www.bendstudio.com/blog/inside-bend-screen-space-shadows/)
 
 </details>
 
