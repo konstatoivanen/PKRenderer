@@ -27,27 +27,7 @@ namespace PK
     const BuiltInResources* RHI::GetBuiltInResources() { return RHIDriver::Get()->GetBuiltInResources(); }
     void RHI::GC() { RHIDriver::Get()->GC(); }
 
-    RHIAPI RHI::GetAPIFromString(const char* str)
-    {
-        if (str == nullptr)
-        {
-            return RHIAPI::None;
-        }
-
-        if (strcmp(str, "Vulkan") == 0)
-        {
-            return RHIAPI::Vulkan;
-        }
-
-        if (strcmp(str, "DX12") == 0)
-        {
-            return RHIAPI::DX12;
-        }
-
-        return RHIAPI::None;
-    }
-
-    RHIDriverScope RHI::CreateDriver(const char* workingDirectory, const RHIDriverSettings& settings)
+    RHIDriverScope RHI::CreateDriver(const char* workingDirectory, const RHIDriverDescriptor& descriptor)
     {
         PK_LOG_NEWLINE();
         PK_LOG_HEADER_SCOPE("----------INITIALIZING RHI----------");
@@ -73,7 +53,7 @@ namespace PK
 
         RHIDriverScope driver = nullptr;
 
-        switch (settings.api)
+        switch (descriptor.api)
         {
             case RHIAPI::Vulkan:
             {
@@ -153,12 +133,12 @@ namespace PK
                     VK_EXT_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME
                 };
 
-                driver = CreateUnique<VulkanDriver>(VulkanContextProperties
+                driver = CreateUnique<VulkanDriver>(VulkanDriverDescriptor
                 (
                     "PK Renderer",
                     "PK Vulkan Engine",
                     workingDirectory,
-                    settings,
+                    descriptor,
                     features,
                     &PK_INSTANCE_EXTENTIONS,
                     &PK_DEVICE_EXTENTIONS

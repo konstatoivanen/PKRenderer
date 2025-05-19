@@ -50,12 +50,10 @@ namespace PK
         swapchainDescriptor.desiredResolution = descriptor.size;
         swapchainDescriptor.desiredFormat = TextureFormat::BGRA8;
         swapchainDescriptor.desiredColorSpace = ColorSpace::sRGB_NonLinear;
-        swapchainDescriptor.desiredVSyncMode = descriptor.vsync ? VSyncMode::Fifo : VSyncMode::FifoLatest;
+        swapchainDescriptor.desiredVSyncMode = descriptor.vsync;
         swapchainDescriptor.nativeWindowHandle = m_native->GetNativeWindowHandle();
         swapchainDescriptor.nativeMonitorHandle = nullptr;
         m_swapchain = RHI::CreateSwapchain(swapchainDescriptor);
-
-        SetCursorLock(descriptor.cursorLocked, descriptor.cursorVisible);
     }
 
     Window::~Window()
@@ -85,10 +83,10 @@ namespace PK
         m_swapchain->SetFrameFence(fence); 
     }
 
-    void Window::SetVSync(bool value) 
+    void Window::SetVSync(VSyncMode value) 
     {
         m_vsync = value; 
-        m_swapchain->SetDesiredVSyncMode(value ? VSyncMode::Fifo : VSyncMode::FifoRelaxed); 
+        m_swapchain->SetDesiredVSyncMode(value);
     };
 
 

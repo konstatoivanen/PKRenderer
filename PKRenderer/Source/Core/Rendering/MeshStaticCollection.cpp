@@ -29,7 +29,7 @@ namespace PK
 
         m_positionsBuffer = RHI::CreateBuffer(m_streamLayout.GetStride(1u) * 2000000, BufferUsage::SparseVertex | BufferUsage::Storage, "MeshStaticCollection.VertexPositions");
         m_attributesBuffer = RHI::CreateBuffer(m_streamLayout.GetStride(0u) * 2000000, BufferUsage::SparseVertex, "MeshStaticCollection.VertexAttributes");
-        m_indexBuffer = RHI::CreateBuffer(ElementTypeConvert::Size(m_indexType) * 2000000, BufferUsage::SparseIndex | BufferUsage::Storage, "MeshStaticCollection.IndexBuffer");
+        m_indexBuffer = RHI::CreateBuffer(RHIEnumConvert::Size(m_indexType) * 2000000, BufferUsage::SparseIndex | BufferUsage::Storage, "MeshStaticCollection.IndexBuffer");
         m_submeshBuffer = RHI::CreateBuffer<PKAssets::PKMeshletSubmesh>(maxSubmeshes, flags, "Meshlet.SubmeshBuffer");
         m_meshletBuffer = RHI::CreateBuffer<PKAssets::PKMeshlet>(maxMeshlets, flags, "Meshlet.MeshletBuffer");
         m_meshletVertexBuffer = RHI::CreateBuffer<uint4>(maxVertices, flags, "Meshlet.VertexBuffer");
@@ -74,7 +74,7 @@ namespace PK
         auto meshletVertexStride = sizeof(PKAssets::PKMeshletVertex);
         auto positionsStride = m_streamLayout.GetStride(1u);
         auto attributesStride = m_streamLayout.GetStride(0u);
-        auto indexStride = ElementTypeConvert::Size(m_indexType);
+        auto indexStride = RHIEnumConvert::Size(m_indexType);
 
         auto submeshesSize = data->meshlet.submeshCount * submeshStride;
         auto meshletsSize = data->meshlet.meshletCount * meshletStride;
@@ -142,7 +142,7 @@ namespace PK
         commandBuffer.UploadBufferSubData(m_meshletIndexBuffer.get(), data->meshlet.pIndices, meshletIndexOffset, meshletIndicesSize);
 
         // Rewrite indices if using a different index format
-        if (ElementTypeConvert::Size(data->regular.indexType) == 2 && indexStride == 4u)
+        if (RHIEnumConvert::Size(data->regular.indexType) == 2 && indexStride == 4u)
         {
             auto view = commandBuffer.BeginBufferWrite<uint32_t>(m_indexBuffer.get(), staticMesh->indexFirst, data->regular.indexCount);
             Math::ReinterpretIndex16ToIndex32(view.data, reinterpret_cast<uint16_t*>(data->regular.pIndices), data->regular.indexCount);
@@ -171,7 +171,7 @@ namespace PK
         auto meshletVertexStride = sizeof(PKAssets::PKMeshletVertex);
         auto positionsStride = m_streamLayout.GetStride(1u);
         auto attributesStride = m_streamLayout.GetStride(0u);
-        auto indexStride = ElementTypeConvert::Size(m_indexType);
+        auto indexStride = RHIEnumConvert::Size(m_indexType);
 
         auto submeshOffset = mesh->submeshFirst * submeshStride;
         auto meshletOffset = mesh->meshletFirst * meshletStride;
@@ -225,7 +225,7 @@ namespace PK
             outInfo->vertexStride = m_streamLayout.GetStride(1u);
             outInfo->vertexFirst = sm->vertexFirst;
             outInfo->vertexCount = sm->vertexCount;
-            outInfo->indexStride = ElementTypeConvert::Size(m_indexType);
+            outInfo->indexStride = RHIEnumConvert::Size(m_indexType);
             outInfo->indexFirst = sm->indexFirst;
             outInfo->indexCount = sm->indexCount;
             outInfo->customIndex = 0u;

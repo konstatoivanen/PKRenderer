@@ -3,251 +3,68 @@
 
 namespace PKAssets
 {
+    const static char* PK_ELEMENTTYPE_NAMES[] =
+    {
+        "Invalid",
+        "float",
+        "float2",
+        "float3",
+        "float4",
+        "double",
+        "double2",
+        "double3",
+        "double4",
+        "half",
+        "half2",
+        "half3",
+        "half4",
+        "int",
+        "int2",
+        "int3",
+        "int4",
+        "uint",
+        "uint2",
+        "uint3",
+        "uint4",
+        "short",
+        "short2",
+        "short3",
+        "short4",
+        "ushort",
+        "ushort2",
+        "ushort3",
+        "ushort4",
+        "long",
+        "long2",
+        "long3",
+        "long4",
+        "ulong",
+        "ulong2",
+        "ulong3",
+        "ulong4",
+        "float2x2",
+        "float3x3",
+        "float4x4",
+        "float3x4",
+        "double2x2",
+        "double3x3",
+        "double4x4",
+        "half2x2",
+        "half3x3",
+        "half4x4",
+        "texture2D",
+        "texture3D",
+        "textureCube",
+    };
+
     PKElementType GetElementType(const char* string)
     {
-        if (strcmp(string,"half") == 0)
+        for (uint32_t i = 0u; i < (uint32_t)PKElementType::TextureCubeHandle + 1u; ++i)
         {
-            return PKElementType::Half;
-        }
-
-        if (strcmp(string, "half2") == 0)
-        {
-            return PKElementType::Half2;
-        }
-
-        if (strcmp(string, "half3") == 0)
-        {
-            return PKElementType::Half3;
-        }
-
-        if (strcmp(string, "half4") == 0)
-        {
-            return PKElementType::Half4;
-        }
-
-        if (strcmp(string, "float") == 0)
-        {
-            return PKElementType::Float;
-        }
-
-        if (strcmp(string, "float2") == 0)
-        {
-            return PKElementType::Float2;
-        }
-
-        if (strcmp(string, "float3") == 0)
-        {
-            return PKElementType::Float3;
-        }
-
-        if (strcmp(string, "float4") == 0)
-        {
-            return PKElementType::Float4;
-        }
-
-        if (strcmp(string, "double") == 0)
-        {
-            return PKElementType::Double;
-        }
-
-        if (strcmp(string, "double2") == 0)
-        {
-            return PKElementType::Double2;
-        }
-
-        if (strcmp(string, "double3") == 0)
-        {
-            return PKElementType::Double3;
-        }
-
-        if (strcmp(string, "double4") == 0)
-        {
-            return PKElementType::Double4;
-        }
-
-        if (strcmp(string, "short") == 0)
-        {
-            return PKElementType::Short;
-        }
-
-        if (strcmp(string, "short2") == 0)
-        {
-            return PKElementType::Short2;
-        }
-
-        if (strcmp(string, "short3") == 0)
-        {
-            return PKElementType::Short3;
-        }
-
-        if (strcmp(string, "short4") == 0)
-        {
-            return PKElementType::Short4;
-        }
-
-        if (strcmp(string, "ushort") == 0)
-        {
-            return PKElementType::Ushort;
-        }
-
-        if (strcmp(string, "ushort2") == 0)
-        {
-            return PKElementType::Ushort2;
-        }
-
-        if (strcmp(string, "ushort3") == 0)
-        {
-            return PKElementType::Ushort3;
-        }
-
-        if (strcmp(string, "ushort4") == 0)
-        {
-            return PKElementType::Ushort4;
-        }
-
-        if (strcmp(string, "int") == 0)
-        {
-            return PKElementType::Int;
-        }
-
-        if (strcmp(string, "int2") == 0)
-        {
-            return PKElementType::Int2;
-        }
-
-        if (strcmp(string, "int3") == 0)
-        {
-            return PKElementType::Int3;
-        }
-
-        if (strcmp(string, "int4") == 0)
-        {
-            return PKElementType::Int4;
-        }
-
-        if (strcmp(string, "uint") == 0)
-        {
-            return PKElementType::Uint;
-        }
-
-        if (strcmp(string, "uint2") == 0)
-        {
-            return PKElementType::Uint2;
-        }
-
-        if (strcmp(string, "uint3") == 0)
-        {
-            return PKElementType::Uint3;
-        }
-
-        if (strcmp(string, "uint4") == 0)
-        {
-            return PKElementType::Uint4;
-        }
-
-        if (strcmp(string, "long") == 0)
-        {
-            return PKElementType::Long;
-        }
-
-        if (strcmp(string, "long2") == 0)
-        {
-            return PKElementType::Long2;
-        }
-
-        if (strcmp(string, "long3") == 0)
-        {
-            return PKElementType::Long3;
-        }
-
-        if (strcmp(string, "long4") == 0)
-        {
-            return PKElementType::Long4;
-        }
-
-        if (strcmp(string, "ulong") == 0)
-        {
-            return PKElementType::Ulong;
-        }
-
-        if (strcmp(string, "ulong2") == 0)
-        {
-            return PKElementType::Ulong2;
-        }
-
-        if (strcmp(string, "ulong3") == 0)
-        {
-            return PKElementType::Ulong3;
-        }
-
-        if (strcmp(string, "ulong4") == 0)
-        {
-            return PKElementType::Ulong4;
-        }
-
-        if (strcmp(string, "half2x2") == 0)
-        {
-            return PKElementType::Half2x2;
-        }
-
-        if (strcmp(string, "half3x3") == 0)
-        {
-            return PKElementType::Half3x3;
-        }
-
-        if (strcmp(string, "half4x4") == 0)
-        {
-            return PKElementType::Half4x4;
-        }
-
-        if (strcmp(string, "float2x2") == 0)
-        {
-            return PKElementType::Float2x2;
-        }
-
-        if (strcmp(string, "float3x3") == 0)
-        {
-            return PKElementType::Float3x3;
-        }
-
-        if (strcmp(string, "float4x4") == 0)
-        {
-            return PKElementType::Float4x4;
-        }
-
-        if (strcmp(string, "float3x4") == 0)
-        {
-            return PKElementType::Float3x4;
-        }
-
-        if (strcmp(string, "double2x2") == 0)
-        {
-            return PKElementType::Double2x2;
-        }
-
-        if (strcmp(string, "double3x3") == 0)
-        {
-            return PKElementType::Double3x3;
-        }
-
-        if (strcmp(string, "double4x4") == 0)
-        {
-            return PKElementType::Double4x4;
-        }
-
-        if (strcmp(string, "texture2D") == 0)
-        {
-            return PKElementType::Texture2DHandle;
-        }
-
-        if (strcmp(string, "texture3D") == 0)
-        {
-            return PKElementType::Texture3DHandle;
-        }
-
-        if (strcmp(string, "textureCube") == 0)
-        {
-            return PKElementType::TextureCubeHandle;
+            if (strncmp(PK_ELEMENTTYPE_NAMES[i], string, 20) == 0)
+            {
+                return (PKElementType)i;
+            }
         }
 
         return PKElementType::Invalid;

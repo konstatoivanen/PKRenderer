@@ -33,7 +33,7 @@ namespace PK
         for (auto i = 0u; i < count; ++i)
         {
             auto& element = elements[i];
-            auto alignment = ElementTypeConvert::Alignment(element.format);
+            auto alignment = RHIEnumConvert::Alignment(element.format);
 
             if (applyOffsets)
             {

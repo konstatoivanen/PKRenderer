@@ -51,32 +51,13 @@ namespace PK::App
         auto config = assetDatabase->Load<BaseRendererConfig>("Content/Configs/BaseRenderer.cfg");
         auto keyConfig = assetDatabase->Load<InputKeyConfig>("Content/Configs/Input.keycfg");
 
-        RHIDriverSettings graphicsDriverSettings;
-        graphicsDriverSettings.api = RHI::GetAPIFromString(config->RHIDesc.API);
-        graphicsDriverSettings.apiVersionMajor = config->RHIDesc.APIVersionMajor;
-        graphicsDriverSettings.apiVersionMinor = config->RHIDesc.APIVersionMinor;
-        graphicsDriverSettings.gcPruneDelay = config->RHIDesc.GCPruneDelay;
-        graphicsDriverSettings.enableValidation = config->RHIDesc.EnableValidation;
-        graphicsDriverSettings.enableDebugNames = config->RHIDesc.EnableDebugNames;
-        graphicsDriverSettings.discardPipelineCache = config->RHIDesc.DiscardPipelineCache;
-        m_graphicsDriver = RHI::CreateDriver(GetWorkingDirectory(), graphicsDriverSettings);
+        m_RHIDriver = RHI::CreateDriver(GetWorkingDirectory(), config->RHIDesc);
 
-        WindowDescriptor windowDescriptor;
-        windowDescriptor.title = { GetName(), m_graphicsDriver->GetDriverHeader() };
-        windowDescriptor.iconPath = config->WindowDesc.IconPath.c_str();
-        windowDescriptor.position = PK_INT2_MINUS_ONE;
-        windowDescriptor.size = config->WindowDesc.Size;
-        windowDescriptor.sizemax = PK_INT2_MINUS_ONE;
-        windowDescriptor.vsync = config->WindowDesc.Vsync;
-        windowDescriptor.visible = true;
-        windowDescriptor.resizable = true;
-        windowDescriptor.floating = false;
-        windowDescriptor.dpiScaling = false;
-        windowDescriptor.autoActivate = true;
-        windowDescriptor.cursorVisible = config->WindowDesc.ShowCursor;
-        windowDescriptor.cursorLocked = false;
+        auto windowDescriptor = config->WindowDesc;
+        windowDescriptor.title = { GetName(), m_RHIDriver->GetDriverHeader() };
         m_window = CreateUnique<Window>(windowDescriptor);
         m_window->SetOnCloseCallback([this]() { Close(); });
+        m_window->SetCursorLock(false, true);
 
         m_inactiveFrameInterval = config->InactiveFrameInterval;
 
@@ -169,12 +150,16 @@ namespace PK::App
 
         CVariableRegister::Create<CVariableFunc>("Application.VSync", [](const char* const* args, [[maybe_unused]] uint32_t count)
             {
-                IApplication::Get()->GetPrimaryWindow()->SetVSync((bool)atoi(args[0]));
-            }, "0 = 0ff, 1 = On", 1u);
+                auto mode = RHIEnumConvert::StringToVSyncMode(args[0]);
+                IApplication::Get()->GetPrimaryWindow()->SetVSync(mode);
+            }, "See VSyncMode enum for value names", 1u);
 
-        CVariableRegister::Create<CVariableFuncSimple>("Application.VSync.Toggle", []()
+        CVariableRegister::Create<CVariableFuncSimple>("Application.VSync.Cycle", []()
             {
-                IApplication::Get()->GetPrimaryWindow()->SetVSync(!IApplication::Get()->GetPrimaryWindow()->IsVSync());
+                // Only cycle multi backing frame modes.
+                auto current = (uint32_t)IApplication::Get()->GetPrimaryWindow()->GetVSyncMode();
+                current = (current + 1u) % (uint32_t)VSyncMode::SharedDemandRefresh;
+                IApplication::Get()->GetPrimaryWindow()->SetVSync((VSyncMode)current);
             });
 
         CVariableRegister::Create<CVariableFunc>("Application.Fullscreen", [](const char* const* args, [[maybe_unused]] uint32_t count)
@@ -197,7 +182,7 @@ namespace PK::App
         GetService<AssetDatabase>()->Unload();
         GetServices()->Clear();
         m_window = nullptr;
-        m_graphicsDriver = nullptr;
+        m_RHIDriver = nullptr;
         PK_LOG_HEADER("----------RendererApplication.Dtor----------");
     }
 
@@ -205,7 +190,7 @@ namespace PK::App
     {
         auto sequencer = GetService<Sequencer>();
 
-        while (!m_window->IsClosing() && m_isRunning)
+        while (!m_window->IsClosing())
         {
             Platform::PollEvents();
 
@@ -239,7 +224,6 @@ namespace PK::App
     void RendererApplication::Close()
     {
         PK_LOG_INFO("Application.Close Requested.");
-        m_isRunning = false;
     }
 }
 

@@ -166,7 +166,7 @@ namespace PK
         outInfo->vertexStride = positionStream->stride;
         outInfo->vertexFirst = sm.vertexFirst;
         outInfo->vertexCount = sm.vertexCount;
-        outInfo->indexStride = ElementTypeConvert::Size(m_indexType);
+        outInfo->indexStride = RHIEnumConvert::Size(m_indexType);
         outInfo->indexFirst = sm.indexFirst;
         outInfo->indexCount = sm.indexCount;
         outInfo->customIndex = 0u;

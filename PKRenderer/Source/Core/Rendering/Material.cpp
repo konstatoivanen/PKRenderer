@@ -27,12 +27,12 @@ namespace PK
 
             if (type.readable())
             {
-                auto elementType = PKAssets::GetElementType(YAML::Read<FixedString16>(type));
+                auto elementType = YAML::Read<ElementType>(type);
 
                 *outSize += PKAssets::GetElementSize(elementType);
                 (*outCount)++;
 
-                if (PKAssets::GetElementIsResourceHandle(elementType))
+                if (RHIEnumConvert::IsResourceHandle(elementType))
                 {
                     *outSize += (uint32_t)sizeof(RHITexture*);
                     (*outCount)++;
@@ -48,7 +48,7 @@ namespace PK
 
         for (auto& element : layout)
         {
-            if (PKAssets::GetElementIsResourceHandle(element.format))
+            if (RHIEnumConvert::IsResourceHandle(element.format))
             {
                 // Reserve extra memory for actual texture references at the end of the block.
                 *outSize += (uint32_t)sizeof(RHITexture*);
@@ -136,7 +136,7 @@ namespace PK
                 if (type.readable() && value.readable())
                 {
                     auto nameId = NameID(YAML::ReadKey<FixedString32>(property));
-                    auto elementType = PKAssets::GetElementType(YAML::Read<FixedString32>(type));
+                    auto elementType = YAML::Read<ElementType>(type);
 
                     switch (elementType)
                     {

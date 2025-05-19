@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Platform/PlatformInterfaces.h"
-#include "Core/Utilities/FixedString.h"
+#include "Core/RHI/Structs.h"
 #include "Core/RHI/RHI.h"
 
 namespace PK
@@ -12,14 +12,12 @@ namespace PK
         int2 position = PK_INT2_MINUS_ONE;
         int2 size = PK_INT2_ZERO;
         int2 sizemax = PK_INT2_MINUS_ONE;
-        bool vsync = false;
+        VSyncMode vsync = VSyncMode::Fifo;
         bool visible = false;
         bool resizable = false;
         bool floating = false;
         bool dpiScaling = false;
         bool autoActivate = false;
-        bool cursorVisible = false;
-        bool cursorLocked = false;
     };
 
     struct Window : public NoCopy, public IPlatformWindowListener
@@ -32,9 +30,9 @@ namespace PK
         int4 GetRect() const { return m_native->GetRect(); }
         PlatformWindow* GetNative() const { return m_native; }
         RHISwapchain* GetSwapchain() const { return m_swapchain.get(); }
+        VSyncMode GetVSyncMode() const { return m_vsync; }
         bool IsClosing() const { return m_native->IsClosing(); }
         bool IsMinimized() const { return m_native->IsMinimized(); }
-        bool IsVSync() const { return m_vsync; }
         bool IsFullscreen() const { return m_isFullScreen; }
         void SetFullscreen(bool value) { m_isFullScreen = value; }
         void SetCursorLock(bool locked, bool visible) { m_native->SetCursorLock(locked, visible); }
@@ -44,7 +42,7 @@ namespace PK
         uint3 GetResolution() const;
         float GetAspectRatio() const;
         void SetFrameFence(const FenceRef& fence);
-        void SetVSync(bool value);
+        void SetVSync(VSyncMode value);
 
         void Begin();
         void End();
@@ -58,7 +56,7 @@ namespace PK
         std::function<void()> m_onClose;
 
         bool m_inWindowScope = false;
-        bool m_vsync = true;
         bool m_isFullScreen = false;
+        VSyncMode m_vsync = VSyncMode::Fifo;
     };
 }

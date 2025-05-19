@@ -926,7 +926,7 @@ namespace PK
                 case VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT: return ColorSpace::AdobeRGB_NonLinear;
                 case VK_COLOR_SPACE_PASS_THROUGH_EXT: return ColorSpace::PassThrough;
                 case VK_COLOR_SPACE_DISPLAY_NATIVE_AMD: return ColorSpace::AmdFreeSync2;
-                default: return ColorSpace::Invalid;
+                default: return ColorSpace::sRGB_NonLinear;
             }
         }
 
@@ -941,7 +941,7 @@ namespace PK
                 case VK_PRESENT_MODE_FIFO_LATEST_READY_EXT: return VSyncMode::FifoLatest;
                 case VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR: return VSyncMode::SharedDemandRefresh;
                 case VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR: return VSyncMode::SharedContinuous;
-                default: return VSyncMode::Invalid;
+                default: return VSyncMode::Immediate;
             };
         }
 

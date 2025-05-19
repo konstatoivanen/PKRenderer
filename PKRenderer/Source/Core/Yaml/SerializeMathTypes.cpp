@@ -13,31 +13,33 @@ namespace PK::YAML
     }                                                   \
     PK_YAML_DECLARE_READ_MEMBER(type)                   \
 
-    #define DECLARE_VECTOR_READ(type, count)                        \
-    template<>                                                      \
-    bool Read<type##count>(const ConstNode& node, type##count* rhs) \
-    {                                                               \
-        if (node.is_flow_sl())                                      \
-        {                                                           \
-            for (auto i = 0u; i < count; ++i)                       \
-            {                                                       \
-                node[i] >> (*rhs)[i];                               \
-            }                                                       \
-        }                                                           \
-        return true;                                                \
-    }                                                               \
-    PK_YAML_DECLARE_READ_MEMBER(type##count)                        \
+    #define DECLARE_VECTOR_READ(type, count)                                \
+    template<>                                                              \
+    bool Read<type##count>(const ConstNode& node, type##count* rhs)         \
+    {                                                                       \
+        if (node.is_flow_sl() && node.num_children() > 0u)                  \
+        {                                                                   \
+            auto maxidx = (uint32_t)node.num_children() - 1u;               \
+            for (auto i = 0u; i < count; ++i)                               \
+            {                                                               \
+                node[glm::min(maxidx, i)] >> (*rhs)[i];                     \
+            }                                                               \
+        }                                                                   \
+        return true;                                                        \
+    }                                                                       \
+    PK_YAML_DECLARE_READ_MEMBER(type##count)                                \
 
     #define DECLARE_MATRIX_READ(type, countx, county)										\
     template<>                                                                              \
     bool Read<type##countx##x##county>(const ConstNode& node, type##countx##x##county* rhs) \
     {                                                                                       \
-        if (node.is_flow_sl())                                                              \
+        if (node.is_flow_sl() && node.num_children() == (countx * county))                  \
         {                                                                                   \
+            auto maxidx = (uint32_t)node.num_children() - 1u;                               \
             for (auto i = 0u; i < countx; ++i)                                              \
             for (auto j = 0u; j < county; ++j)                                              \
             {                                                                               \
-                node[i * county + j] >> (*rhs)[i][j];                                       \
+                node[glm::min(maxidx, i * county + j)] >> (*rhs)[i][j];                     \
             }                                                                               \
         }                                                                                   \
         return true;                                                                        \

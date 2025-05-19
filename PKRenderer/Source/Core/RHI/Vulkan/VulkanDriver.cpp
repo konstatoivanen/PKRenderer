@@ -12,7 +12,7 @@
 
 namespace PK
 {
-    VulkanDriver::VulkanDriver(const VulkanContextProperties& properties) : properties(properties)
+    VulkanDriver::VulkanDriver(const VulkanDriverDescriptor& properties) : properties(properties)
     {
         vkHandle = Platform::LoadLibrary(PK_VK_LIBRARY_NAME);
 

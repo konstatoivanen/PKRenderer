@@ -320,7 +320,6 @@ namespace PK
 
     enum class ColorSpace : uint8_t
     {
-        Invalid = 0,
         sRGB_NonLinear,
         sRGB_Linear,
         scRGB,
@@ -341,7 +340,6 @@ namespace PK
 
     enum class VSyncMode : uint8_t
     {
-        Invalid = 0,
         Immediate,
         Mailbox,
         Fifo,
@@ -401,13 +399,6 @@ namespace PK
     PK_DECLARE_ENUM_OPERATORS(ShaderStageFlags)
 
     #undef PK_DECLARE_ENUM_OPERATORS
-
-    namespace ElementTypeConvert
-    {
-        inline uint16_t Size(ElementType format) { return (uint16_t)PKAssets::GetElementSize(format); }
-        inline uint16_t Alignment(ElementType format) { return (uint16_t)PKAssets::GetElementAlignment(format); }
-        inline uint16_t Components(ElementType format) { return (uint16_t)PKAssets::GetElementComponents(format); }
-    }
 
     struct TextureClearValue
     {
@@ -556,32 +547,6 @@ namespace PK
         uint16_t excludeStageMask = 0u;
     };
 
-    struct RHIDriverMemoryInfo
-    {
-        uint32_t blockCount;
-        uint32_t allocationCount;
-        uint32_t unusedRangeCount;
-        size_t usedBytes;
-        size_t unusedBytes;
-        size_t allocationSizeMin;
-        size_t allocationSizeAvg;
-        size_t allocationSizeMax;
-        size_t unusedRangeSizeMin;
-        size_t unusedRangeSizeAvg;
-        size_t unusedRangeSizeMax;
-    };
-
-    struct RHIDriverSettings
-    {
-        RHIAPI api;
-        uint32_t apiVersionMajor;
-        uint32_t apiVersionMinor;
-        uint32_t gcPruneDelay;
-        bool enableValidation;
-        bool enableDebugNames;
-        bool discardPipelineCache;
-    };
-
     struct AccelerationStructureGeometryInfo
     {
         NameID name;
@@ -598,7 +563,32 @@ namespace PK
         uint32_t recordOffset;
     };
 
-    // Descriptors
+    struct RHIDriverMemoryInfo
+    {
+        uint32_t blockCount;
+        uint32_t allocationCount;
+        uint32_t unusedRangeCount;
+        size_t usedBytes;
+        size_t unusedBytes;
+        size_t allocationSizeMin;
+        size_t allocationSizeAvg;
+        size_t allocationSizeMax;
+        size_t unusedRangeSizeMin;
+        size_t unusedRangeSizeAvg;
+        size_t unusedRangeSizeMax;
+    };
+
+    struct RHIDriverDescriptor
+    {
+        RHIAPI api;
+        uint32_t apiVersionMajor;
+        uint32_t apiVersionMinor;
+        uint32_t gcPruneDelay;
+        bool enableValidation;
+        bool enableDebugNames;
+        bool discardPipelineCache;
+    };
+
     struct SwapchainDescriptor
     {
         uint2 desiredResolution = PK_UINT2_ZERO;
@@ -655,4 +645,35 @@ namespace PK
         uint16_t layers = 1;
         SamplerDescriptor sampler = {};
     };
+
+    namespace RHIEnumConvert
+    {
+        inline ElementType StringToElementType(const char* str) { return PKAssets::GetElementType(str); }
+        inline uint16_t Size(ElementType format) { return (uint16_t)PKAssets::GetElementSize(format); }
+        inline uint16_t Alignment(ElementType format) { return (uint16_t)PKAssets::GetElementAlignment(format); }
+        inline uint16_t Components(ElementType format) { return (uint16_t)PKAssets::GetElementComponents(format); }
+        inline bool IsResourceHandle(ElementType format) { return PKAssets::GetElementIsResourceHandle(format); }
+
+        RHIAPI StringToRHIAPI(const char* str);
+        QueueType StringToQueueType(const char* str);
+        TextureType StringToTextureType(const char* str);
+        TextureBindMode StringToTextureBindMode(const char* str);
+        Comparison StringToComparison(const char* str);
+        FilterMode StringToFilterMode(const char* str);
+        PolygonMode StringToPolygonMode(const char* str);
+        Topology StringToTopology(const char* str);
+        WrapMode StringToWrapMode(const char* str);
+        ColorMask StringToColorMask(const char* str);
+        LogicOp StringToLogicOp(const char* str);
+        FrontFace StringToFrontFace(const char* str);
+        LoadOp StringToLoadOp(const char* str);
+        StoreOp StringToStoreOp(const char* str);
+        BorderColor StringToBorderColor(const char* str);
+        InputRate StringToInputRate(const char* str);
+        TextureUsage StringToTextureUsage(const char* str);
+        TextureFormat StringToTextureFormat(const char* str);
+        ColorSpace StringToColorSpace(const char* str);
+        VSyncMode StringToVSyncMode(const char* str);
+        RayTracingShaderGroup StringToRayTracingShaderGroup(const char* str);
+    }
 }

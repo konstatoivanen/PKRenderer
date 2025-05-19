@@ -108,7 +108,7 @@ namespace PK
             auto isNew = m_variables.AddKey(name, &index);
             auto reference = &m_variables.GetValueAt(index);
 
-            if (!isNew)
+            if (!isNew && reference->variable)
             {
                 auto variable = reference->variable;
                 auto executeArgsCount = count - 1u;

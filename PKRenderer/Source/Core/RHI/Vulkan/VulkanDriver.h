@@ -16,7 +16,7 @@
 
 namespace PK
 {
-    struct VulkanContextProperties : public RHIDriverSettings
+    struct VulkanDriverDescriptor : public RHIDriverDescriptor
     {
         FixedString64 appName;
         FixedString64 engineName;
@@ -25,14 +25,14 @@ namespace PK
         const std::vector<const char*>* contextualInstanceExtensions;
         const std::vector<const char*>* contextualDeviceExtensions;
 
-        VulkanContextProperties(
+        VulkanDriverDescriptor(
             const char* appName = "Vulkan App",
             const char* engineName = "Vulkan Engine",
             const char* workingDirectory = "",
-            RHIDriverSettings driverSettings = {},
+            RHIDriverDescriptor descriptor = {},
             VulkanPhysicalDeviceFeatures features = {},
             const std::vector<const char*>* contextualInstanceExtensions = nullptr,
-            const std::vector<const char*>* contextualDeviceExtensions = nullptr) : RHIDriverSettings(driverSettings),
+            const std::vector<const char*>* contextualDeviceExtensions = nullptr) : RHIDriverDescriptor(descriptor),
             appName(appName),
             engineName(engineName),
             workingDirectory(workingDirectory),
@@ -45,7 +45,7 @@ namespace PK
 
     struct VulkanDriver : public RHIDriver
     {
-        VulkanDriver(const VulkanContextProperties& properties);
+        VulkanDriver(const VulkanDriverDescriptor& descriptor);
         ~VulkanDriver();
 
         RHIAPI GetAPI() const final { return RHIAPI::Vulkan; }
@@ -92,7 +92,7 @@ namespace PK
         VkPhysicalDevice physicalDevice;
         VkDevice device;
         VmaAllocator allocator;
-        VulkanContextProperties properties;
+        VulkanDriverDescriptor properties;
         VulkanPhysicalDeviceProperties physicalDeviceProperties;
         uint32_t apiVersion;
 
