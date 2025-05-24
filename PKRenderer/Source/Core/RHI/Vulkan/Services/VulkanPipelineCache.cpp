@@ -58,7 +58,7 @@ namespace PK
 
         if ((ShaderStageFlags::StagesMesh & stageFlags) != 0u)
         {
-            MeshPipelineKey meshKey = { key.shader, key.fixedFunctionState, key.renderPass };
+            MeshPipelineKey meshKey = { key.shader, key.fixedFunctionState };
             // this doesn't matter for mesh shaders. set it to a default to prevent duplicate pipelines.
             meshKey.fixedFunctionState.rasterization.topology = Topology::TriangleList;
             return GetMeshPipeline(meshKey);
@@ -138,6 +138,21 @@ namespace PK
         inputAssembly.topology = VulkanEnumConvert::GetTopology(key.fixedFunctionState.rasterization.topology);
         inputAssembly.primitiveRestartEnable = key.primitiveRestart;
 
+        VkPipelineRenderingCreateInfo renderingInfo{ VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR };
+        renderingInfo.viewMask = 0u; // @TODO NEEDED?!?
+        renderingInfo.colorAttachmentCount = 0u;
+        renderingInfo.pColorAttachmentFormats = key.fixedFunctionState.colorFormats;
+        renderingInfo.depthAttachmentFormat = key.fixedFunctionState.depthFormat;
+        renderingInfo.stencilAttachmentFormat = VulkanEnumConvert::IsDepthStencilFormat(key.fixedFunctionState.depthFormat) ? 
+            key.fixedFunctionState.depthFormat : 
+            VK_FORMAT_UNDEFINED;
+
+        {
+            auto& count = renderingInfo.colorAttachmentCount;
+            auto& formats = key.fixedFunctionState.colorFormats;
+            for (; count < PK_RHI_MAX_RENDER_TARGETS && formats[count] != VK_FORMAT_UNDEFINED; ++count) {}
+        }
+
         VkPipelineViewportStateCreateInfo viewportState{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
         viewportState.viewportCount = key.fixedFunctionState.viewportCount;
         viewportState.pViewports = nullptr;
@@ -180,7 +195,7 @@ namespace PK
 
         VkPipelineColorBlendAttachmentState blendAttachments[PK_RHI_MAX_RENDER_TARGETS];
 
-        for (auto i = 0u; i < key.fixedFunctionState.colorTargetCount; ++i)
+        for (auto i = 0u; i < renderingInfo.colorAttachmentCount; ++i)
         {
             blendAttachments[i].blendEnable = key.fixedFunctionState.blending.isBlendEnabled();
             blendAttachments[i].srcColorBlendFactor = VulkanEnumConvert::GetBlendFactor(key.fixedFunctionState.blending.srcColorFactor, VK_BLEND_FACTOR_ONE);
@@ -195,7 +210,7 @@ namespace PK
         VkPipelineColorBlendStateCreateInfo colorBlending{ VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
         colorBlending.logicOpEnable = key.fixedFunctionState.blending.isLogicOpEnabled();
         colorBlending.logicOp = VulkanEnumConvert::GetLogicOp(key.fixedFunctionState.blending.logicOp);
-        colorBlending.attachmentCount = key.fixedFunctionState.colorTargetCount;
+        colorBlending.attachmentCount = renderingInfo.colorAttachmentCount;
         colorBlending.pAttachments = blendAttachments;
         colorBlending.blendConstants[0] = 0.0f;
         colorBlending.blendConstants[1] = 0.0f;
@@ -213,6 +228,7 @@ namespace PK
         dynamicState.pDynamicStates = dynamicStates;
 
         VkGraphicsPipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
+        pipelineInfo.pNext = &renderingInfo;
         pipelineInfo.stageCount = stageCount;
         pipelineInfo.pStages = shaderStages;
         pipelineInfo.pVertexInputState = &vertexInputInfo;
@@ -224,7 +240,7 @@ namespace PK
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.layout = key.shader->GetPipelineLayout()->layout;
-        pipelineInfo.renderPass = key.renderPass;
+        pipelineInfo.renderPass = VK_NULL_HANDLE;
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
@@ -265,6 +281,21 @@ namespace PK
             }
         }
 
+        VkPipelineRenderingCreateInfo renderingInfo{ VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR };
+        renderingInfo.viewMask = 0u; // @TODO NEEDED?!?
+        renderingInfo.colorAttachmentCount = 0u;
+        renderingInfo.pColorAttachmentFormats = key.fixedFunctionState.colorFormats;
+        renderingInfo.depthAttachmentFormat = key.fixedFunctionState.depthFormat;
+        renderingInfo.stencilAttachmentFormat = VulkanEnumConvert::IsDepthStencilFormat(key.fixedFunctionState.depthFormat) ? 
+            key.fixedFunctionState.depthFormat : 
+            VK_FORMAT_UNDEFINED;
+
+        {
+            auto& count = renderingInfo.colorAttachmentCount;
+            auto& formats = key.fixedFunctionState.colorFormats;
+            for (; count < PK_RHI_MAX_RENDER_TARGETS && formats[count] != VK_FORMAT_UNDEFINED; ++count) {}
+        }
+
         VkPipelineViewportStateCreateInfo viewportState{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
         viewportState.viewportCount = key.fixedFunctionState.viewportCount;
         viewportState.pViewports = nullptr;
@@ -307,7 +338,7 @@ namespace PK
 
         VkPipelineColorBlendAttachmentState blendAttachments[PK_RHI_MAX_RENDER_TARGETS];
 
-        for (auto i = 0u; i < key.fixedFunctionState.colorTargetCount; ++i)
+        for (auto i = 0u; i < renderingInfo.colorAttachmentCount; ++i)
         {
             blendAttachments[i].blendEnable = key.fixedFunctionState.blending.isBlendEnabled();
             blendAttachments[i].srcColorBlendFactor = VulkanEnumConvert::GetBlendFactor(key.fixedFunctionState.blending.srcColorFactor, VK_BLEND_FACTOR_ONE);
@@ -322,7 +353,7 @@ namespace PK
         VkPipelineColorBlendStateCreateInfo colorBlending{ VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
         colorBlending.logicOpEnable = key.fixedFunctionState.blending.isLogicOpEnabled();
         colorBlending.logicOp = VulkanEnumConvert::GetLogicOp(key.fixedFunctionState.blending.logicOp);
-        colorBlending.attachmentCount = key.fixedFunctionState.colorTargetCount;
+        colorBlending.attachmentCount = renderingInfo.colorAttachmentCount;
         colorBlending.pAttachments = blendAttachments;
         colorBlending.blendConstants[0] = 0.0f;
         colorBlending.blendConstants[1] = 0.0f;
@@ -340,6 +371,7 @@ namespace PK
         dynamicState.pDynamicStates = dynamicStates;
 
         VkGraphicsPipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
+        pipelineInfo.pNext = &renderingInfo;
         pipelineInfo.stageCount = stageCount;
         pipelineInfo.pStages = shaderStages;
         pipelineInfo.pVertexInputState = nullptr;
@@ -351,7 +383,7 @@ namespace PK
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.layout = key.shader->GetPipelineLayout()->layout;
-        pipelineInfo.renderPass = key.renderPass;
+        pipelineInfo.renderPass = nullptr;
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;

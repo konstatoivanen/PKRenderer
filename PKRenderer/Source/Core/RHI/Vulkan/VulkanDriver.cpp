@@ -127,7 +127,6 @@ namespace PK
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
         VK_ASSERT_RESULT_CTX(vmaCreateAllocator(&allocatorInfo, &allocator), "Failed to create a VMA allocator!");
 
-        frameBufferCache = CreateUnique<VulkanFrameBufferCache>(device, properties.gcPruneDelay);
         stagingBufferCache = CreateUnique<VulkanStagingBufferCache>(device, allocator, properties.gcPruneDelay);
         pipelineCache = CreateUnique<VulkanPipelineCache>(device, physicalDeviceProperties, properties.workingDirectory, properties.apiVersionMajor, properties.gcPruneDelay);
         samplerCache = CreateUnique<VulkanSamplerCache>(device);
@@ -149,7 +148,6 @@ namespace PK
                 descriptorCache.get(),
                 pipelineCache.get(),
                 samplerCache.get(),
-                frameBufferCache.get(),
                 stagingBufferCache.get(),
                 nullptr, // Assigned by queues
                 disposer.get()
@@ -169,7 +167,6 @@ namespace PK
         samplerCache = nullptr;
         pipelineCache = nullptr;
         stagingBufferCache = nullptr;
-        frameBufferCache = nullptr;
         layoutCache = nullptr;
         queues = nullptr;
 
@@ -264,7 +261,6 @@ namespace PK
         pipelineCache->Prune();
         descriptorCache->Prune();
         disposer->Prune();
-        frameBufferCache->Prune();
         queues->Prune();
     }
 

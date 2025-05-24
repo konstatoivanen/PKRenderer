@@ -9,7 +9,6 @@
 #include "Core/RHI/Vulkan/Services/VulkanPipelineCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanStagingBufferCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanCommandBufferPool.h"
-#include "Core/RHI/Vulkan/Services/VulkanFrameBufferCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanLayoutCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanBarrierHandler.h"
 #include "Core/RHI/Vulkan/VulkanQueue.h"
@@ -97,7 +96,6 @@ namespace PK
         uint32_t apiVersion;
 
         Unique<VulkanQueueSet> queues;
-        Unique<VulkanFrameBufferCache> frameBufferCache;
         Unique<VulkanStagingBufferCache> stagingBufferCache;
         Unique<VulkanDescriptorCache> descriptorCache;
         Unique<VulkanPipelineCache> pipelineCache;

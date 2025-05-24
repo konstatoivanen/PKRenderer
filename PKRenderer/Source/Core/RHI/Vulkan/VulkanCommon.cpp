@@ -48,7 +48,8 @@ namespace PK
         vk10.pNext = &vk11;
         vk11.pNext = &vk12;
         vk12.pNext = &vk13;
-        vk13.pNext = &accelerationStructure;
+        vk13.pNext = &vk14;
+        vk14.pNext = &accelerationStructure;
         accelerationStructure.pNext = &rayTracingPipeline;
         rayTracingPipeline.pNext = &rayQuery;
         rayQuery.pNext = &atomicFloat;
@@ -209,6 +210,28 @@ namespace PK
             PK_TEST_FEATURE(vk13.dynamicRendering)
             PK_TEST_FEATURE(vk13.shaderIntegerDotProduct)
             PK_TEST_FEATURE(vk13.maintenance4)
+
+            PK_TEST_FEATURE(vk14.globalPriorityQuery)
+            PK_TEST_FEATURE(vk14.shaderSubgroupRotate)
+            PK_TEST_FEATURE(vk14.shaderSubgroupRotateClustered)
+            PK_TEST_FEATURE(vk14.shaderFloatControls2)
+            PK_TEST_FEATURE(vk14.shaderExpectAssume)
+            PK_TEST_FEATURE(vk14.rectangularLines)
+            PK_TEST_FEATURE(vk14.bresenhamLines)
+            PK_TEST_FEATURE(vk14.smoothLines)
+            PK_TEST_FEATURE(vk14.stippledRectangularLines)
+            PK_TEST_FEATURE(vk14.stippledBresenhamLines)
+            PK_TEST_FEATURE(vk14.stippledSmoothLines)
+            PK_TEST_FEATURE(vk14.vertexAttributeInstanceRateDivisor)
+            PK_TEST_FEATURE(vk14.vertexAttributeInstanceRateZeroDivisor)
+            PK_TEST_FEATURE(vk14.indexTypeUint8)
+            PK_TEST_FEATURE(vk14.dynamicRenderingLocalRead)
+            PK_TEST_FEATURE(vk14.maintenance5)
+            PK_TEST_FEATURE(vk14.maintenance6)
+            PK_TEST_FEATURE(vk14.pipelineProtectedAccess)
+            PK_TEST_FEATURE(vk14.pipelineRobustness)
+            PK_TEST_FEATURE(vk14.hostImageCopy)
+            PK_TEST_FEATURE(vk14.pushDescriptor)
 
             PK_TEST_FEATURE(accelerationStructure.accelerationStructure)
             PK_TEST_FEATURE(accelerationStructure.accelerationStructureCaptureReplay)
@@ -460,29 +483,6 @@ namespace PK
     {
         vkDestroyImageView(device, view, nullptr);
     }
-
-
-    VulkanFrameBuffer::VulkanFrameBuffer(VkDevice device, const VkFramebufferCreateInfo& createInfo) : device(device)
-    {
-        VK_ASSERT_RESULT_CTX(vkCreateFramebuffer(device, &createInfo, nullptr, &frameBuffer), "Failed to create framebuffer!");
-    }
-
-    VulkanFrameBuffer::~VulkanFrameBuffer()
-    {
-        vkDestroyFramebuffer(device, frameBuffer, nullptr);
-    }
-
-
-    VulkanRenderPass::VulkanRenderPass(VkDevice device, const VkRenderPassCreateInfo& createInfo) : device(device)
-    {
-        VK_ASSERT_RESULT_CTX(vkCreateRenderPass(device, &createInfo, nullptr, &renderPass), "Failed to create a render pass!");
-    }
-
-    VulkanRenderPass::~VulkanRenderPass()
-    {
-        vkDestroyRenderPass(device, renderPass, nullptr);
-    }
-
 
     VulkanRawBuffer::VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo, const char* name) :
         persistentmap(createInfo.allocation.flags& VMA_ALLOCATION_CREATE_MAPPED_BIT),
@@ -1253,6 +1253,25 @@ namespace PK
             return  format == VK_FORMAT_D16_UNORM_S8_UINT ||
                 format == VK_FORMAT_D24_UNORM_S8_UINT ||
                 format == VK_FORMAT_D32_SFLOAT_S8_UINT;
+        }
+
+        bool IsDepthStencilWrite(VkImageLayout layout)
+        {
+            return layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
+               layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+               layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+        }
+
+        VkClearValue GetClearValue(const TextureClearValue& clearValue)
+        {
+            VkClearValue outValue;
+            outValue.color.uint32[0] = clearValue.uint32[0];
+            outValue.color.uint32[1] = clearValue.uint32[1];
+            outValue.color.uint32[2] = clearValue.uint32[2];
+            outValue.color.uint32[3] = clearValue.uint32[3];
+            outValue.depthStencil.depth = clearValue.depth;
+            outValue.depthStencil.stencil = clearValue.stencil;
+            return outValue;
         }
 
         VkComponentMapping GetSwizzle(VkFormat format)

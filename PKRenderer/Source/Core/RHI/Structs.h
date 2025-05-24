@@ -402,6 +402,7 @@ namespace PK
 
     struct TextureClearValue
     {
+        TextureClearValue() : float32(PK_FLOAT4_ZERO), depth(0.0f), stencil(0) {}
         TextureClearValue(const float4& v) : float32(v), depth(0.0f), stencil(0) {}
         TextureClearValue(const uint4& v) : uint32(v), depth(0.0f), stencil(0) {}
         TextureClearValue(const int4& v) : int32(v), depth(0.0f), stencil(0) {}
@@ -534,17 +535,6 @@ namespace PK
         BlendParameters blending{};
         DepthStencilParameters depthStencil{};
         RasterizationParameters rasterization{};
-    };
-
-    struct FixedFunctionState
-    {
-        RasterizationParameters rasterization{};
-        BlendParameters blending{};
-        DepthStencilParameters depthStencil{};
-        MultisamplingParameters multisampling{};
-        uint8_t colorTargetCount = 0u;
-        uint8_t viewportCount = 1u;
-        uint16_t excludeStageMask = 0u;
     };
 
     struct AccelerationStructureGeometryInfo

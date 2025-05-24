@@ -178,6 +178,7 @@ namespace PK
         VkPhysicalDeviceVulkan11Features vk11{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
         VkPhysicalDeviceVulkan12Features vk12{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
         VkPhysicalDeviceVulkan13Features vk13{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };
+        VkPhysicalDeviceVulkan14Features vk14{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES };
         VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructure{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR };
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipeline{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR };
         VkPhysicalDeviceRayQueryFeaturesKHR rayQuery{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR };
@@ -304,24 +305,6 @@ namespace PK
         const VkDevice device;
         VkImageView view;
         VulkanBindHandle bindHandle;
-    };
-
-    struct VulkanFrameBuffer : public NoCopy
-    {
-        VulkanFrameBuffer(VkDevice device, const VkFramebufferCreateInfo& createInfo);
-        ~VulkanFrameBuffer();
-
-        const VkDevice device;
-        VkFramebuffer frameBuffer;
-    };
-
-    struct VulkanRenderPass : public NoCopy
-    {
-        VulkanRenderPass(VkDevice device, const VkRenderPassCreateInfo& createInfo);
-        ~VulkanRenderPass();
-
-        const VkDevice device;
-        VkRenderPass renderPass;
     };
 
     struct VulkanRawBuffer : public VersionedObject
@@ -472,7 +455,9 @@ namespace PK
         uint32_t GetFormatBlockSize(VkFormat format);
         bool IsDepthFormat(VkFormat format);
         bool IsDepthStencilFormat(VkFormat format);
+        bool IsDepthStencilWrite(VkImageLayout layout);
 
+        VkClearValue GetClearValue(const TextureClearValue& clearValue);
         VkComponentMapping GetSwizzle(VkFormat format);
         VkImageViewType GetViewType(TextureType type);
         VkImageLayout GetImageLayout(TextureUsage usage);

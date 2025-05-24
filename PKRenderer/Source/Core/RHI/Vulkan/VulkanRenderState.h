@@ -5,7 +5,6 @@
 #include "Core/RHI/Vulkan/Services/VulkanDescriptorCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanPipelineCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanSamplerCache.h"
-#include "Core/RHI/Vulkan/Services/VulkanFrameBufferCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanStagingBufferCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanBarrierHandler.h"
 
@@ -35,7 +34,6 @@ namespace PK
         VulkanDescriptorCache* descriptorCache = nullptr;
         VulkanPipelineCache* pipelineCache = nullptr;
         VulkanSamplerCache* samplerCache = nullptr;
-        VulkanFrameBufferCache* frameBufferCache = nullptr;
         VulkanStagingBufferCache* stagingBufferCache = nullptr;
         VulkanBarrierHandler* barrierHandler = nullptr;
         Disposer* disposer = nullptr;
@@ -57,6 +55,31 @@ namespace PK
         uint32_t count = 0u;
     };
 
+
+    struct VulkanRenderPassState
+    {
+        struct Attachment
+        {
+            VersionHandle<VulkanBindHandle> target;
+            VersionHandle<VulkanBindHandle> resolve;
+            VkImageLayout initialLayout;
+            VkImageLayout finalLayout;
+            VkResolveModeFlagBits resolveMode;
+            LoadOp loadOp = LoadOp::Keep;
+            StoreOp storeOp = StoreOp::Store;
+            TextureClearValue clearValue{};
+        };
+
+        VkRenderingFlags flags = 0u;
+        VkRect2D area{};
+        uint32_t layers = 0u;
+        uint32_t viewMask = 0u;
+        uint32_t colorCount = 0u;
+        bool dynamicTargets = false;
+        Attachment colors[PK_RHI_MAX_RENDER_TARGETS]{};
+        Attachment depth{};
+    };
+
     class VulkanRenderState : NoCopy
     {
         public:
@@ -68,10 +91,10 @@ namespace PK
             constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
             constexpr uint3 GetComputeGroupSize() const { return m_pipelineKey.shader->GetGroupSize(); }
             constexpr bool HasPipeline() const { return m_pipeline != nullptr; }
-            constexpr bool HasDynamicTargets() const { return m_renderPassKey->dynamicTargets; }
+            constexpr bool HasDynamicTargets() const { return m_renderPass->dynamicTargets; }
             const char* GetShaderName() const { return m_pipelineKey.shader->GetName(); }
             inline VkPipelineBindPoint GetPipelineBindPoint() const { return VulkanEnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags()); }
-            VkRenderPassBeginInfo GetRenderPassInfo() const;
+            VkRenderingInfo GetRenderPassInfo() const;
             VulkanVertexBufferBundle GetVertexBufferBundle() const;
             VulkanDescriptorSetBundle GetDescriptorSetBundle(const FenceRef& fence, uint32_t dirtyFlags);
             VkStridedDeviceAddressRegionKHR* GetShaderBindingTableAddresses();
@@ -107,7 +130,11 @@ namespace PK
                 VkImageLayout overrideLayout = VK_IMAGE_LAYOUT_MAX_ENUM, 
                 uint8_t options = PK_RHI_ACCESS_OPT_BARRIER);
             
-            VulkanBarrierHandler::AccessRecord ExchangeImage(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access);
+            VulkanBarrierHandler::AccessRecord RecordRenderTarget(const VulkanBindHandle* handle, 
+                VkPipelineStageFlags stage, 
+                VkAccessFlags access,
+                VkImageLayout layout,
+                uint8_t options);
 
             PKRenderStateDirtyFlags ValidatePipeline(const FenceRef& fence);
 
@@ -117,15 +144,12 @@ namespace PK
             void ValidateDescriptorSets(const FenceRef& fence);
 
             void RecordResourceAccess();
-            void RecordRenderTargetAccess();
 
             VulkanServiceContext m_services;
         
             VulkanDescriptorCache::SetKey m_descriptorSetKeys[PK_RHI_MAX_DESCRIPTOR_SETS]{};
             VulkanPipelineCache::PipelineKey m_pipelineKey{};
-            VulkanFrameBufferCache::FrameBufferKey m_frameBufferKey[2]{};
-            VulkanFrameBufferCache::RenderPassKey m_renderPassKey[2]{};
-            const VulkanBindHandle* m_frameBufferImages[PK_RHI_MAX_RENDER_TARGETS * 2 + 1]{};
+            VulkanRenderPassState m_renderPass[2]{};
             VkStridedDeviceAddressRegionKHR m_sbtAddresses[(uint32_t)RayTracingShaderGroup::MaxCount]{};
         
             VertexStreamElement m_vertexStreamLayout[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
@@ -135,13 +159,9 @@ namespace PK
             
             VkViewport m_viewports[PK_RHI_MAX_VIEWPORTS]{};
             VkRect2D m_scissors[PK_RHI_MAX_VIEWPORTS]{};
-            VkClearValue m_clearValues[PK_RHI_MAX_RENDER_TARGETS + 1]{};
-            uint32_t m_clearValueCount = 0u;
             uint32_t m_dirtyFlags;
 
-            const VulkanRenderPass* m_renderPass = nullptr;
             const VulkanPipeline* m_pipeline = nullptr;
             const VulkanDescriptorSet* m_descriptorSets[PK_RHI_MAX_DESCRIPTOR_SETS];
-            const VulkanFrameBuffer* m_frameBuffer = nullptr;
     };
 }

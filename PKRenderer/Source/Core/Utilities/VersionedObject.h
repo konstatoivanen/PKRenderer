@@ -34,7 +34,7 @@ namespace PK
         };
 
         constexpr VersionHandle() : value(nullptr), version(0ull) {}
-        constexpr VersionHandle(const T* value) : value(value), version(value->Version()) {}
+        constexpr VersionHandle(const T* value) : value(value), version(value ? value->Version() : 0ull) {}
 
         constexpr bool operator == (const VersionHandle& r) const noexcept
         {
@@ -42,6 +42,8 @@ namespace PK
         }
 
         constexpr operator const T* () { return value; }
+
+        constexpr operator bool () const { return value != nullptr; }
 
         const T* operator->() const { return value; }
     };

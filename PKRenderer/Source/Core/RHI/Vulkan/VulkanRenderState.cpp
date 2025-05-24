@@ -7,14 +7,58 @@
 
 namespace PK
 {
-    VkRenderPassBeginInfo VulkanRenderState::GetRenderPassInfo() const
+    VkRenderingInfo VulkanRenderState::GetRenderPassInfo() const
     {
-        VkRenderPassBeginInfo renderPassInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-        renderPassInfo.renderPass = m_renderPass->renderPass;
-        renderPassInfo.framebuffer = m_frameBuffer->frameBuffer;
-        renderPassInfo.renderArea = { {}, m_frameBufferKey->extent };
-        renderPassInfo.clearValueCount = m_clearValueCount;
-        renderPassInfo.pClearValues = m_clearValues;
+        static VkRenderingAttachmentInfo s_colors[PK_RHI_MAX_RENDER_TARGETS]{};
+        static VkRenderingAttachmentInfo s_depthStencil;
+        s_depthStencil = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+
+        const auto& state = m_renderPass[0];
+
+        VkRenderingInfo renderPassInfo{ VK_STRUCTURE_TYPE_RENDERING_INFO_KHR };
+        renderPassInfo.flags = state.flags;
+        renderPassInfo.renderArea = state.area;
+        renderPassInfo.layerCount = state.layers;
+        renderPassInfo.viewMask = state.viewMask;
+        renderPassInfo.colorAttachmentCount = state.colorCount;
+        renderPassInfo.pColorAttachments = s_colors;
+        renderPassInfo.pDepthAttachment = &s_depthStencil;
+        renderPassInfo.pStencilAttachment = nullptr;
+
+        for (auto i = 0u; i < state.colorCount; ++i)
+        {
+            auto& dst = s_colors[i];
+            auto& src = state.colors[i];
+            dst.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+            dst.pNext = nullptr;
+            dst.imageView = src.target->image.view;
+            dst.imageLayout = src.finalLayout;
+            dst.resolveMode = src.resolveMode;
+            dst.resolveImageView = src.resolve ? src.resolve->image.view : nullptr;
+            dst.resolveImageLayout = src.resolve ? src.finalLayout : VK_IMAGE_LAYOUT_UNDEFINED;
+            dst.loadOp = VulkanEnumConvert::GetLoadOp(src.initialLayout, src.loadOp);
+            dst.storeOp = VulkanEnumConvert::GetStoreOp(src.storeOp);
+            dst.clearValue = VulkanEnumConvert::GetClearValue(src.clearValue);
+        }
+
+        if (state.depth.target)
+        {
+            auto& src = state.depth;
+            s_depthStencil.imageView = src.target->image.view;
+            s_depthStencil.imageLayout = src.finalLayout;
+            s_depthStencil.resolveMode = src.resolveMode;
+            s_depthStencil.resolveImageView = src.resolve ? src.resolve->image.view : nullptr;
+            s_depthStencil.resolveImageLayout = src.resolve ? src.finalLayout : VK_IMAGE_LAYOUT_UNDEFINED;
+            s_depthStencil.loadOp = VulkanEnumConvert::GetLoadOp(src.initialLayout, src.loadOp);
+            s_depthStencil.storeOp = VulkanEnumConvert::IsDepthStencilWrite(src.finalLayout) ? VulkanEnumConvert::GetStoreOp(src.storeOp) : VK_ATTACHMENT_STORE_OP_NONE;
+            s_depthStencil.clearValue = VulkanEnumConvert::GetClearValue(src.clearValue);
+
+            if (VulkanEnumConvert::IsDepthStencilFormat(src.target->image.format))
+            {
+                renderPassInfo.pStencilAttachment = &s_depthStencil;
+            }
+        }
+
         return renderPassInfo;
     }
 
@@ -101,31 +145,28 @@ namespace PK
     {
         memset(m_descriptorSetKeys, 0, sizeof(m_descriptorSetKeys));
         memset(&m_pipelineKey, 0, sizeof(m_pipelineKey));
-        memset(m_frameBufferKey, 0, sizeof(m_frameBufferKey));
-        memset(m_renderPassKey, 0, sizeof(m_renderPassKey));
-        memset(m_frameBufferImages, 0, sizeof(m_frameBufferImages));
+        memset(m_renderPass, 0, sizeof(m_renderPass));
         memset(m_viewports, 0, sizeof(m_viewports));
         memset(m_scissors, 0, sizeof(m_scissors));
-        memset(m_clearValues, 0, sizeof(m_clearValues));
         memset(m_vertexBuffers, 0, sizeof(m_vertexBuffers));
         memset(m_descriptorSets, 0, sizeof(m_descriptorSets));
         memset(m_vertexStreamLayout, 0, sizeof(m_vertexStreamLayout));
 
-        m_clearValueCount = 0u;
         m_indexType = VK_INDEX_TYPE_UINT16;
-        m_pipelineKey.fixedFunctionState = FixedFunctionState();
-        m_renderPass = nullptr;
+        m_pipelineKey.fixedFunctionState = VulkanPipelineCache::FixedFunctionState();
         m_pipeline = nullptr;
-        m_frameBuffer = nullptr;
         m_indexBuffer = nullptr;
         m_dirtyFlags = PK_RENDER_STATE_DIRTY_RENDERTARGET |
             PK_RENDER_STATE_DIRTY_PIPELINE |
             PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
 
-        m_frameBufferKey[0].layers = 1;
-        m_frameBufferKey[1].layers = 1;
-        m_renderPassKey[0].samples = VK_SAMPLE_COUNT_1_BIT;
-        m_renderPassKey[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        m_renderPass[0].layers = 1;
+        m_renderPass[1].layers = 1;
+        
+        // @TODO where are these defined in dynamic rendering?!?
+        //m_renderPassKey[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        //m_renderPassKey[1].samples = VK_SAMPLE_COUNT_1_BIT;
+
         m_pipelineKey.primitiveRestart = VK_FALSE;
     }
 
@@ -133,83 +174,62 @@ namespace PK
     {
         m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
 
-        auto passKey = m_renderPassKey;
-        auto fboKey = m_frameBufferKey;
+        auto state = &m_renderPass[0];
+        *state = {};
 
-        memset(m_frameBufferImages, 0, sizeof(m_frameBufferImages));
-        memset(passKey, 0, sizeof(VulkanFrameBufferCache::RenderPassKey));
-        memset(fboKey, 0, sizeof(VulkanFrameBufferCache::FrameBufferKey));
+        // Assuming same ranges for all render targets.
+        state->flags = 0u;
+        state->viewMask = 0u;
+        state->colorCount = 0u;
+        state->dynamicTargets = false;
+        state->layers = renderTargets[0]->image.range.layerCount;
+        state->area = {{0, 0}, {renderTargets[0]->image.extent.width, renderTargets[0]->image.extent.height}};
 
-        auto imagesColor = m_frameBufferImages;
-        auto imagesResolve = imagesColor + PK_RHI_MAX_RENDER_TARGETS;
-        auto imageDepth = imagesResolve + PK_RHI_MAX_RENDER_TARGETS;
-
-        // These should be the same for all targets. Validation will assert if not.
-        passKey->samples = (VkSampleCountFlagBits)renderTargets[0]->image.samples;
-        fboKey->layers = renderTargets[0]->image.range.layerCount;
-        fboKey->extent = { renderTargets[0]->image.extent.width, renderTargets[0]->image.extent.height };
-
-        for (auto i = 0u, j = 0u; i < count; ++i)
+        for (auto i = 0u; i < count; ++i)
         {
             auto target = renderTargets[i];
             auto resolve = resolves != nullptr ? resolves[i] : nullptr;
-
             auto isDepth = VulkanEnumConvert::IsDepthFormat(target->image.format);
-            auto attachment = isDepth ? &passKey->depth : (passKey->colors + j);
-            attachment->format = target->image.format;
-            attachment->loadop = LoadOp::Keep;
-            attachment->storeop = StoreOp::Store;
-            attachment->resolve = false;
+            auto attachment = isDepth ? &state->depth : (state->colors + state->colorCount++);
 
-            if (isDepth)
-            {
-                // @TODO Handle depth resolves
-                fboKey->depth = target->image.view;
-                *imageDepth = target;
-            }
-            else
-            {
-                attachment->resolve = resolve != nullptr && resolve->image.view != VK_NULL_HANDLE;
-
-                if (attachment->resolve)
-                {
-                    imagesResolve[j] = resolve;
-                    fboKey->resolve[j] = resolve->image.view;
-                }
-
-                imagesColor[j] = target;
-                fboKey->color[j++] = target->image.view;
-            }
+            attachment->target = target;
+            attachment->resolve = resolve;
+            attachment->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            attachment->finalLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            attachment->loadOp = LoadOp::Keep;
+            attachment->storeOp = StoreOp::Store;
+            attachment->clearValue = {};
+            // @TODO support
+            attachment->resolveMode = VK_RESOLVE_MODE_NONE;
         }
     }
 
     void VulkanRenderState::ClearColor(const color& color, uint32_t index)
     {
-        m_renderPassKey[0].colors[index].loadop = LoadOp::Clear;
-        m_clearValues[index].color.float32[0] = color.r;
-        m_clearValues[index].color.float32[1] = color.g;
-        m_clearValues[index].color.float32[2] = color.b;
-        m_clearValues[index].color.float32[3] = color.a;
+        auto& attachment = m_renderPass[0].colors[index];
+        attachment.loadOp = LoadOp::Clear;
+        attachment.clearValue.float32 = color;
         m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
     }
 
     void VulkanRenderState::ClearDepth(float depth, uint32_t stencil)
     {
-        m_renderPassKey[0].depth.loadop = LoadOp::Clear;
-        m_clearValues[PK_RHI_MAX_RENDER_TARGETS].depthStencil.depth = depth;
-        m_clearValues[PK_RHI_MAX_RENDER_TARGETS].depthStencil.stencil = stencil;
+        auto& attachment = m_renderPass[0].depth;
+        attachment.loadOp = LoadOp::Clear;
+        attachment.clearValue.depth = depth;
+        attachment.clearValue.stencil = stencil;
         m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
     }
 
     void VulkanRenderState::DiscardColor(uint32_t index)
     {
-        m_renderPassKey[0].colors[index].loadop = LoadOp::Discard;
+        m_renderPass[0].colors[index].loadOp = LoadOp::Discard;
         m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
     }
 
     void VulkanRenderState::DiscardDepth()
     {
-        m_renderPassKey[0].depth.loadop = LoadOp::Discard;
+        m_renderPass[0].depth.loadOp = LoadOp::Discard;
         m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
     }
 
@@ -409,7 +429,11 @@ namespace PK
         }
     }
 
-    VulkanBarrierHandler::AccessRecord VulkanRenderState::ExchangeImage(const VulkanBindHandle* handle, VkPipelineStageFlags stage, VkAccessFlags access)
+    VulkanBarrierHandler::AccessRecord VulkanRenderState::RecordRenderTarget(const VulkanBindHandle* handle, 
+        VkPipelineStageFlags stage,
+        VkAccessFlags access,
+        VkImageLayout layout,
+        uint8_t options)
     {
         auto handler = m_services.barrierHandler;
 
@@ -418,13 +442,13 @@ namespace PK
         record.access = access;
         record.imageRange = VulkanConvertRange(handle->image.range);
         record.aspect = handle->image.range.aspectMask;
-        record.layout = handle->image.layout;
+        record.layout = layout;
         record.queueFamily = handle->isConcurrent ? (uint16_t)VK_QUEUE_FAMILY_IGNORED : handler->GetQueueFamily();
 
         if (handle->isTracked)
         {
             auto previous = handler->Retrieve(handle->image.image, record);
-            handler->Record(handle->image.image, record, 0u);
+            handler->Record(handle->image.image, record, options);
             return previous;
         }
 
@@ -442,40 +466,87 @@ namespace PK
             return;
         }
 
-        if (memcmp(m_frameBufferKey, m_frameBufferKey + 1, sizeof(VulkanFrameBufferCache::FrameBufferKey)) == 0 &&
-            memcmp(m_renderPassKey, m_renderPassKey + 1, sizeof(VulkanFrameBufferCache::RenderPassKey)) == 0)
+        if (memcmp(m_renderPass, m_renderPass + 1, sizeof(VulkanRenderPassState)) == 0)
         {
             m_dirtyFlags &= ~PK_RENDER_STATE_DIRTY_RENDERTARGET;
             return;
         }
 
-        RecordRenderTargetAccess();
+        memcpy(m_renderPass + 1, m_renderPass, sizeof(VulkanRenderPassState));
 
-        memcpy(m_frameBufferKey + 1, m_frameBufferKey, sizeof(VulkanFrameBufferCache::FrameBufferKey));
-        memcpy(m_renderPassKey + 1, m_renderPassKey, sizeof(VulkanFrameBufferCache::RenderPassKey));
-
-        m_renderPass = m_services.frameBufferCache->GetRenderPass(m_renderPassKey[0]);
-        m_frameBufferKey[0].renderPass = m_renderPass->renderPass;
-        m_frameBuffer = m_services.frameBufferCache->GetFrameBuffer(m_frameBufferKey[0]);
-
-        m_pipelineKey.renderPass = m_renderPass->renderPass;
-        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-
-        for (auto i = 0u; i < PK_RHI_MAX_RENDER_TARGETS; ++i)
         {
-            if (m_renderPassKey[0].colors[i].format == VK_FORMAT_UNDEFINED)
+            auto& formats = m_pipelineKey.fixedFunctionState.colorFormats;
+            auto& colors = m_renderPass[0].colors;
+            auto& depth = m_renderPass[0].depth;
+
+            for (auto i = 0u; i < PK_RHI_MAX_RENDER_TARGETS; ++i)
             {
-                m_pipelineKey.fixedFunctionState.colorTargetCount = i;
-                m_clearValueCount = i;
-                // Last attachment is depth. this sets depth clear.
-                m_clearValues[i] = m_clearValues[PK_RHI_MAX_RENDER_TARGETS];
-                break;
+                formats[i] = i < m_renderPass->colorCount ? colors[i].target->image.format : VK_FORMAT_UNDEFINED;
             }
+
+            m_pipelineKey.fixedFunctionState.depthFormat = depth.target ? depth.target->image.format : VK_FORMAT_UNDEFINED;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
         }
 
-        if (m_renderPassKey[0].depth.format != VK_FORMAT_UNDEFINED)
         {
-            m_clearValueCount++;
+            auto& colors = m_renderPass[0].colors;
+            auto& depth = m_renderPass[0].depth;
+
+            for (auto i = 0u; i < m_renderPass[0].colorCount; ++i)
+            {
+                auto& color = colors[i];
+
+                if (color.target && color.target->image.image)
+                {
+                    // Invalidate image
+                    if (color.loadOp != LoadOp::Keep)
+                    {
+                        RecordImage(color.target, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0u, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
+                    }
+
+                    auto previous = RecordRenderTarget(color.target,
+                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                        PK_RHI_ACCESS_OPT_BARRIER);
+
+                    color.initialLayout = previous.layout;
+                    color.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                    
+                    if (color.resolve && color.resolve->image.image)
+                    {
+                        previous = RecordRenderTarget(color.target,
+                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                            VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                            PK_RHI_ACCESS_OPT_BARRIER);
+                    }
+                }
+            }
+
+            if (depth.target && depth.target->image.image)
+            {
+                const auto isStencil = VulkanEnumConvert::IsDepthStencilFormat(depth.target->image.format);
+                const auto isReadOnly = !m_pipelineKey.fixedFunctionState.depthStencil.depthWriteEnable &&
+                                        (!isStencil || m_pipelineKey.fixedFunctionState.depthStencil.stencilTestEnable);
+
+                const VkImageLayout layouts[2][2] =
+                {
+                    { VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL },
+                    { VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL }
+                };
+
+                const auto layout = layouts[isStencil][isReadOnly];
+
+                auto previous = RecordRenderTarget(depth.target,
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                    layout,
+                    PK_RHI_ACCESS_OPT_BARRIER);
+
+                depth.initialLayout = previous.layout;
+                depth.finalLayout = layout;
+            }
         }
     }
 
@@ -782,54 +853,4 @@ namespace PK
         }
     }
 
-    void VulkanRenderState::RecordRenderTargetAccess()
-    {
-        m_renderPassKey->accessMask = 0u;
-        m_renderPassKey->stageMask = 0u;
-
-        for (auto i = 0u; i < PK_RHI_MAX_RENDER_TARGETS; ++i)
-        {
-            auto color = m_frameBufferImages[i];
-            auto resolve = m_frameBufferImages[i + PK_RHI_MAX_RENDER_TARGETS];
-
-            if (!color || !color->image.image)
-            {
-                continue;
-            }
-
-            auto previous = ExchangeImage(color, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-            m_renderPassKey->accessMask |= previous.access;
-            m_renderPassKey->stageMask |= previous.stage;
-            m_renderPassKey->colors[i].initialLayout = previous.layout;
-            m_renderPassKey->colors[i].finalLayout = color->image.layout;
-
-            if (!resolve || !resolve->image.image)
-            {
-                continue;
-            }
-
-            previous = ExchangeImage(resolve, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-            m_renderPassKey->accessMask |= previous.access;
-            m_renderPassKey->stageMask |= previous.stage;
-        }
-
-        auto depth = m_frameBufferImages[PK_RHI_MAX_RENDER_TARGETS * 2];
-
-        if (depth && depth->image.image)
-        {
-            auto previous = ExchangeImage(depth,
-                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
-
-            m_renderPassKey->accessMask |= previous.access;
-            m_renderPassKey->stageMask |= previous.stage;
-            m_renderPassKey->depth.initialLayout = previous.layout;
-            m_renderPassKey->depth.finalLayout = depth->image.layout;
-        }
-
-        if (m_renderPassKey->stageMask == 0u)
-        {
-            m_renderPassKey->stageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        }
-    }
 }

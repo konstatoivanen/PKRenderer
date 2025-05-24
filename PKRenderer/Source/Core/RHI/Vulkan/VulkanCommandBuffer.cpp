@@ -677,7 +677,10 @@ namespace PK
         {
             EndRenderPass();
             auto info = m_renderState->GetRenderPassInfo();
-            vkCmdBeginRenderPass(m_commandBuffer, &info, m_level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_SUBPASS_CONTENTS_INLINE : VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+            // @TODO FIGURE OUT IF NEEDED?!?
+          //  info.flags = m_level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_RENDERING_CONTENTS_INLINE_BIT_KHR : VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+           // vkCmdBeginRenderPass(m_commandBuffer, &info, m_level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_SUBPASS_CONTENTS_INLINE : VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+            vkCmdBeginRendering(m_commandBuffer, &info);
             m_isInActiveRenderPass = true;
         }
 
@@ -732,7 +735,7 @@ namespace PK
     {
         if (m_isInActiveRenderPass)
         {
-            vkCmdEndRenderPass(m_commandBuffer);
+            vkCmdEndRendering(m_commandBuffer);
             m_isInActiveRenderPass = false;
         }
     }

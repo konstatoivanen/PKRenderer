@@ -10,12 +10,23 @@ namespace PK
 {
     struct VulkanPipelineCache : public NoCopy
     {
+        struct FixedFunctionState
+        {
+            RasterizationParameters rasterization{};
+            BlendParameters blending{};
+            DepthStencilParameters depthStencil{};
+            MultisamplingParameters multisampling{};
+            VkFormat colorFormats[PK_RHI_MAX_RENDER_TARGETS]{};
+            VkFormat depthFormat = VK_FORMAT_UNDEFINED;
+            uint8_t viewportCount = 1u;
+            uint16_t excludeStageMask = 0u;
+        };
+
         struct PipelineKey
         {
             VersionHandle<VulkanShader> shader;
             FixedFunctionState fixedFunctionState{};
             VkBool32 primitiveRestart = VK_FALSE;
-            VkRenderPass renderPass = VK_NULL_HANDLE;
             VkVertexInputAttributeDescription vertexAttributes[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
             VkVertexInputBindingDescription vertexBuffers[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
 
@@ -30,7 +41,6 @@ namespace PK
         {
             VersionHandle<VulkanShader> shader;
             FixedFunctionState fixedFunctionState{};
-            VkRenderPass renderPass = VK_NULL_HANDLE;
 
             inline bool operator == (const MeshPipelineKey& r) const noexcept
             {
