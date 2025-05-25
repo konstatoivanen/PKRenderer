@@ -13,44 +13,42 @@ namespace PK
         static VkRenderingAttachmentInfo s_depthStencil;
         s_depthStencil = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
 
-        const auto& state = m_renderPass[0];
-
         VkRenderingInfo renderPassInfo{ VK_STRUCTURE_TYPE_RENDERING_INFO_KHR };
-        renderPassInfo.flags = state.flags;
-        renderPassInfo.renderArea = state.area;
-        renderPassInfo.layerCount = state.layers;
-        renderPassInfo.viewMask = state.viewMask;
-        renderPassInfo.colorAttachmentCount = state.colorCount;
+        renderPassInfo.flags = 0u;
+        renderPassInfo.renderArea = m_renderTarget.area;
+        renderPassInfo.layerCount = m_renderTarget.layers;
+        renderPassInfo.viewMask = 0u;
+        renderPassInfo.colorAttachmentCount = m_renderTarget.colorCount;
         renderPassInfo.pColorAttachments = s_colors;
         renderPassInfo.pDepthAttachment = &s_depthStencil;
         renderPassInfo.pStencilAttachment = nullptr;
 
-        for (auto i = 0u; i < state.colorCount; ++i)
+        for (auto i = 0u; i < m_renderTarget.colorCount; ++i)
         {
             auto& dst = s_colors[i];
-            auto& src = state.colors[i];
+            auto& src = m_renderTarget.colors[i];
             dst.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
             dst.pNext = nullptr;
             dst.imageView = src.target->image.view;
-            dst.imageLayout = src.finalLayout;
+            dst.imageLayout = m_renderTargetLayouts[i];
             dst.resolveMode = src.resolveMode;
             dst.resolveImageView = src.resolve ? src.resolve->image.view : nullptr;
-            dst.resolveImageLayout = src.resolve ? src.finalLayout : VK_IMAGE_LAYOUT_UNDEFINED;
-            dst.loadOp = VulkanEnumConvert::GetLoadOp(src.initialLayout, src.loadOp);
+            dst.resolveImageLayout = src.resolve ? dst.imageLayout : VK_IMAGE_LAYOUT_UNDEFINED;
+            dst.loadOp = VulkanEnumConvert::GetLoadOp(src.loadOp);
             dst.storeOp = VulkanEnumConvert::GetStoreOp(src.storeOp);
             dst.clearValue = VulkanEnumConvert::GetClearValue(src.clearValue);
         }
 
-        if (state.depth.target)
+        if (m_renderTarget.depth.target)
         {
-            auto& src = state.depth;
+            auto& src = m_renderTarget.depth;
             s_depthStencil.imageView = src.target->image.view;
-            s_depthStencil.imageLayout = src.finalLayout;
+            s_depthStencil.imageLayout = m_renderTargetLayouts[PK_RHI_MAX_RENDER_TARGETS];
             s_depthStencil.resolveMode = src.resolveMode;
             s_depthStencil.resolveImageView = src.resolve ? src.resolve->image.view : nullptr;
-            s_depthStencil.resolveImageLayout = src.resolve ? src.finalLayout : VK_IMAGE_LAYOUT_UNDEFINED;
-            s_depthStencil.loadOp = VulkanEnumConvert::GetLoadOp(src.initialLayout, src.loadOp);
-            s_depthStencil.storeOp = VulkanEnumConvert::IsDepthStencilWrite(src.finalLayout) ? VulkanEnumConvert::GetStoreOp(src.storeOp) : VK_ATTACHMENT_STORE_OP_NONE;
+            s_depthStencil.resolveImageLayout = src.resolve ? s_depthStencil.imageLayout : VK_IMAGE_LAYOUT_UNDEFINED;
+            s_depthStencil.loadOp = VulkanEnumConvert::GetLoadOp(src.loadOp);
+            s_depthStencil.storeOp = VulkanEnumConvert::GetStoreOp(src.storeOp);
             s_depthStencil.clearValue = VulkanEnumConvert::GetClearValue(src.clearValue);
 
             if (VulkanEnumConvert::IsDepthStencilFormat(src.target->image.format))
@@ -145,7 +143,7 @@ namespace PK
     {
         memset(m_descriptorSetKeys, 0, sizeof(m_descriptorSetKeys));
         memset(&m_pipelineKey, 0, sizeof(m_pipelineKey));
-        memset(m_renderPass, 0, sizeof(m_renderPass));
+        memset(&m_renderTarget, 0, sizeof(m_renderTarget));
         memset(m_viewports, 0, sizeof(m_viewports));
         memset(m_scissors, 0, sizeof(m_scissors));
         memset(m_vertexBuffers, 0, sizeof(m_vertexBuffers));
@@ -160,78 +158,18 @@ namespace PK
             PK_RENDER_STATE_DIRTY_PIPELINE |
             PK_RENDER_STATE_DIRTY_VERTEXBUFFERS;
 
-        m_renderPass[0].layers = 1;
-        m_renderPass[1].layers = 1;
-        
-        // @TODO where are these defined in dynamic rendering?!?
-        //m_renderPassKey[0].samples = VK_SAMPLE_COUNT_1_BIT;
-        //m_renderPassKey[1].samples = VK_SAMPLE_COUNT_1_BIT;
-
-        m_pipelineKey.primitiveRestart = VK_FALSE;
+        m_renderTarget.layers = 1;
     }
 
-    void VulkanRenderState::SetRenderTarget(const VulkanBindHandle* const* renderTargets, const VulkanBindHandle* const* resolves, uint32_t count)
+    void VulkanRenderState::SetRenderTarget(const VulkanRenderTargetBindings& target)
     {
-        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
-
-        auto state = &m_renderPass[0];
-        *state = {};
-
-        // Assuming same ranges for all render targets.
-        state->flags = 0u;
-        state->viewMask = 0u;
-        state->colorCount = 0u;
-        state->dynamicTargets = false;
-        state->layers = renderTargets[0]->image.range.layerCount;
-        state->area = {{0, 0}, {renderTargets[0]->image.extent.width, renderTargets[0]->image.extent.height}};
-
-        for (auto i = 0u; i < count; ++i)
+        if (memcmp(&m_renderTarget, &target, sizeof(VulkanRenderTargetBindings)) != 0)
         {
-            auto target = renderTargets[i];
-            auto resolve = resolves != nullptr ? resolves[i] : nullptr;
-            auto isDepth = VulkanEnumConvert::IsDepthFormat(target->image.format);
-            auto attachment = isDepth ? &state->depth : (state->colors + state->colorCount++);
-
-            attachment->target = target;
-            attachment->resolve = resolve;
-            attachment->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            attachment->finalLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            attachment->loadOp = LoadOp::Keep;
-            attachment->storeOp = StoreOp::Store;
-            attachment->clearValue = {};
-            // @TODO support
-            attachment->resolveMode = VK_RESOLVE_MODE_NONE;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
+            m_renderTarget = target;
         }
     }
 
-    void VulkanRenderState::ClearColor(const color& color, uint32_t index)
-    {
-        auto& attachment = m_renderPass[0].colors[index];
-        attachment.loadOp = LoadOp::Clear;
-        attachment.clearValue.float32 = color;
-        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
-    }
-
-    void VulkanRenderState::ClearDepth(float depth, uint32_t stencil)
-    {
-        auto& attachment = m_renderPass[0].depth;
-        attachment.loadOp = LoadOp::Clear;
-        attachment.clearValue.depth = depth;
-        attachment.clearValue.stencil = stencil;
-        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
-    }
-
-    void VulkanRenderState::DiscardColor(uint32_t index)
-    {
-        m_renderPass[0].colors[index].loadOp = LoadOp::Discard;
-        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
-    }
-
-    void VulkanRenderState::DiscardDepth()
-    {
-        m_renderPass[0].depth.loadOp = LoadOp::Discard;
-        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_RENDERTARGET;
-    }
 
     bool VulkanRenderState::SetViewports(const uint4* rects, uint32_t& count, VkViewport** outViewports)
     {
@@ -429,7 +367,7 @@ namespace PK
         }
     }
 
-    VulkanBarrierHandler::AccessRecord VulkanRenderState::RecordRenderTarget(const VulkanBindHandle* handle, 
+    VkImageLayout VulkanRenderState::RecordRenderTarget(const VulkanBindHandle* handle,
         VkPipelineStageFlags stage,
         VkAccessFlags access,
         VkImageLayout layout,
@@ -449,105 +387,10 @@ namespace PK
         {
             auto previous = handler->Retrieve(handle->image.image, record);
             handler->Record(handle->image.image, record, options);
-            return previous;
+            return previous.layout;
         }
 
-        return record;
-    }
-
-
-    void VulkanRenderState::ValidateRenderTarget()
-    {
-        auto shader = m_pipelineKey.shader;
-        auto stageFlags = shader->GetStageFlags();
-
-        if ((stageFlags & ShaderStageFlags::StagesGraphics) == 0u || (m_dirtyFlags & PK_RENDER_STATE_DIRTY_RENDERTARGET) == 0)
-        {
-            return;
-        }
-
-        if (memcmp(m_renderPass, m_renderPass + 1, sizeof(VulkanRenderPassState)) == 0)
-        {
-            m_dirtyFlags &= ~PK_RENDER_STATE_DIRTY_RENDERTARGET;
-            return;
-        }
-
-        memcpy(m_renderPass + 1, m_renderPass, sizeof(VulkanRenderPassState));
-
-        {
-            auto& formats = m_pipelineKey.fixedFunctionState.colorFormats;
-            auto& colors = m_renderPass[0].colors;
-            auto& depth = m_renderPass[0].depth;
-
-            for (auto i = 0u; i < PK_RHI_MAX_RENDER_TARGETS; ++i)
-            {
-                formats[i] = i < m_renderPass->colorCount ? colors[i].target->image.format : VK_FORMAT_UNDEFINED;
-            }
-
-            m_pipelineKey.fixedFunctionState.depthFormat = depth.target ? depth.target->image.format : VK_FORMAT_UNDEFINED;
-            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
-        }
-
-        {
-            auto& colors = m_renderPass[0].colors;
-            auto& depth = m_renderPass[0].depth;
-
-            for (auto i = 0u; i < m_renderPass[0].colorCount; ++i)
-            {
-                auto& color = colors[i];
-
-                if (color.target && color.target->image.image)
-                {
-                    // Invalidate image
-                    if (color.loadOp != LoadOp::Keep)
-                    {
-                        RecordImage(color.target, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0u, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
-                    }
-
-                    auto previous = RecordRenderTarget(color.target,
-                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                        PK_RHI_ACCESS_OPT_BARRIER);
-
-                    color.initialLayout = previous.layout;
-                    color.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                    
-                    if (color.resolve && color.resolve->image.image)
-                    {
-                        previous = RecordRenderTarget(color.target,
-                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                            VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                            PK_RHI_ACCESS_OPT_BARRIER);
-                    }
-                }
-            }
-
-            if (depth.target && depth.target->image.image)
-            {
-                const auto isStencil = VulkanEnumConvert::IsDepthStencilFormat(depth.target->image.format);
-                const auto isReadOnly = !m_pipelineKey.fixedFunctionState.depthStencil.depthWriteEnable &&
-                                        (!isStencil || m_pipelineKey.fixedFunctionState.depthStencil.stencilTestEnable);
-
-                const VkImageLayout layouts[2][2] =
-                {
-                    { VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL },
-                    { VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL }
-                };
-
-                const auto layout = layouts[isStencil][isReadOnly];
-
-                auto previous = RecordRenderTarget(depth.target,
-                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                    layout,
-                    PK_RHI_ACCESS_OPT_BARRIER);
-
-                depth.initialLayout = previous.layout;
-                depth.finalLayout = layout;
-            }
-        }
+        return record.layout;
     }
 
     void VulkanRenderState::ValidateVertexBuffers()
@@ -730,15 +573,6 @@ namespace PK
         }
 
         // If a lower number set has changed all sets above it need to be rebound.
-        //for (auto i = 0; i < (int32_t)(setCount - 1); ++i)
-        //{
-        //    if ((m_dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i)) != 0)
-        //    {
-        //        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << (i + 1);
-        //    }
-        //}
-
-        // @TODO investigate why this happens.
         // Unfortunately for some reason a set is being unbound despite using the same layout & resources (in the same pipeline bind point).
         // I'll just have to dirty all of them :/
         if ((m_dirtyFlags & PK_RENDER_STATE_DIRTY_DESCRIPTOR_SETS) != 0)
@@ -756,46 +590,7 @@ namespace PK
         }
     }
 
-    PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const FenceRef& fence)
-    {
-        PK_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
-
-        ValidateRenderTarget();
-        ValidateVertexBuffers();
-        ValidateDescriptorSets(fence);
-        RecordResourceAccess();
-
-        if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_PIPELINE)
-        {
-            m_pipeline = m_services.pipelineCache->GetPipeline(m_pipelineKey);
-        }
-
-        auto stageFlags = m_pipelineKey.shader->GetStageFlags();
-        auto vertexFlags = m_dirtyFlags & (PK_RENDER_STATE_DIRTY_VERTEXBUFFERS | PK_RENDER_STATE_DIRTY_INDEXBUFFER);
-        auto graphicsFlags = m_dirtyFlags & PK_RENDER_STATE_DIRTY_RENDERTARGET;
-        auto flags = m_dirtyFlags;
-        m_dirtyFlags = 0u;
-
-        // Dont dirty pipeline type specific flags when not required.
-        // Restore dirty state for future resolve.
-        if ((ShaderStageFlags::StagesVertex & stageFlags) == 0u)
-        {
-            flags &= ~vertexFlags;
-            m_dirtyFlags |= vertexFlags;
-
-        }
-
-        if ((ShaderStageFlags::StagesGraphics & stageFlags) == 0)
-        {
-            flags &= ~graphicsFlags;
-            m_dirtyFlags |= graphicsFlags;
-        }
-
-        return (PKRenderStateDirtyFlags)flags;
-    }
-
-
-    void VulkanRenderState::RecordResourceAccess()
+    void VulkanRenderState::ValidateResourceAccess()
     {
         auto shader = m_pipelineKey.shader;
         auto stageFlags = shader->GetStageFlags();
@@ -851,6 +646,167 @@ namespace PK
                 RecordBuffer(m_indexBuffer, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_INDEX_READ_BIT);
             }
         }
+
+        // Note this might be invalid if the target was accessed between draws within the same render pass.
+        // Currently nothing does, Until we get that assert, lets do nothing and save some time.
+        if ((ShaderStageFlags::StagesGraphics & stageFlags) != 0u && (m_dirtyFlags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
+        {
+            auto& colors = m_renderTarget.colors;
+            auto& depth = m_renderTarget.depth;
+
+            for (auto i = 0u; i < m_renderTarget.colorCount; ++i)
+            {
+                auto& color = colors[i];
+
+                if (color.target && color.target->image.image)
+                {
+                    // Invalidate image
+                    if (color.loadOp != LoadOp::Load)
+                    {
+                        RecordImage(color.target, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
+                    }
+                    
+                    m_renderTargetLayouts[i] = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+                    auto previousLayout = RecordRenderTarget
+                    (
+                        color.target,
+                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                        m_renderTargetLayouts[i],
+                        PK_RHI_ACCESS_OPT_BARRIER
+                    );
+
+                    if (color.loadOp == LoadOp::Load && previousLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+                    {
+                        color.loadOp = LoadOp::Discard;
+                    }
+
+                    if (color.resolve && color.resolve->image.image)
+                    {
+                        RecordImage
+                        (
+                            color.target, 
+                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 
+                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 
+                            m_renderTargetLayouts[i], 
+                            PK_RHI_ACCESS_OPT_BARRIER
+                        );
+                    }
+                }
+            }
+
+            if (depth.target && depth.target->image.image)
+            {
+                const auto isStencil = VulkanEnumConvert::IsDepthStencilFormat(depth.target->image.format);
+                const auto isReadOnly = !m_pipelineKey.fixedFunctionState.depthStencil.depthWriteEnable &&
+                        (!isStencil || m_pipelineKey.fixedFunctionState.depthStencil.stencilTestEnable);
+
+                const VkImageLayout layouts[2][2] =
+                {
+                    { VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL },
+                    { VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL }
+                };
+
+                m_renderTargetLayouts[PK_RHI_MAX_RENDER_TARGETS] = layouts[isStencil][isReadOnly];
+
+                auto accessFlags = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | (!isReadOnly ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT : 0u);
+                
+                // Invalidate image
+                if (depth.loadOp != LoadOp::Load)
+                {
+                    RecordImage(depth.target, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0u, VK_IMAGE_LAYOUT_UNDEFINED, 0u);
+                }
+
+                auto previousLayout = RecordRenderTarget
+                (
+                    depth.target,
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                    accessFlags,
+                    m_renderTargetLayouts[PK_RHI_MAX_RENDER_TARGETS],
+                    PK_RHI_ACCESS_OPT_BARRIER
+                );
+
+                if (depth.loadOp == LoadOp::Load && previousLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+                {
+                    depth.loadOp = LoadOp::Discard;
+                }
+
+                if (isReadOnly)
+                {
+                    depth.storeOp = StoreOp::None;
+                }
+            }
+        }
     }
 
+    void VulkanRenderState::ValidatePipelineFormats()
+    {
+        auto shader = m_pipelineKey.shader;
+        auto stageFlags = shader->GetStageFlags();
+
+        // Validate pipeline target formats
+        if ((stageFlags & ShaderStageFlags::StagesGraphics) != 0u && (m_dirtyFlags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
+        {
+            auto& fixed = m_pipelineKey.fixedFunctionState;
+            auto& colors = m_renderTarget.colors;
+            auto& depth = m_renderTarget.depth;
+
+            for (auto i = 0u; i < PK_RHI_MAX_RENDER_TARGETS; ++i)
+            {
+                auto format = i < m_renderTarget.colorCount ? colors[i].target->image.format : VK_FORMAT_UNDEFINED;
+
+                if (format != fixed.colorFormats[i])
+                {
+                    fixed.colorFormats[i] = format;
+                    m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+                }
+            }
+
+            auto depthFormat = depth.target ? depth.target->image.format : VK_FORMAT_UNDEFINED;
+
+            if (depthFormat != fixed.depthFormat)
+            {
+                fixed.depthFormat = depthFormat;
+                m_dirtyFlags |= PK_RENDER_STATE_DIRTY_PIPELINE;
+            }
+        }
+    }
+
+    PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const FenceRef& fence)
+    {
+        PK_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
+
+        ValidateVertexBuffers();
+        ValidateDescriptorSets(fence);
+        ValidateResourceAccess();
+        ValidatePipelineFormats();
+
+        if ((m_dirtyFlags & PK_RENDER_STATE_DIRTY_PIPELINE) != 0u)
+        {
+            m_pipeline = m_services.pipelineCache->GetPipeline(m_pipelineKey);
+        }
+
+        auto stageFlags = m_pipelineKey.shader->GetStageFlags();
+        auto vertexFlags = m_dirtyFlags & (PK_RENDER_STATE_DIRTY_VERTEXBUFFERS | PK_RENDER_STATE_DIRTY_INDEXBUFFER);
+        auto graphicsFlags = m_dirtyFlags & PK_RENDER_STATE_DIRTY_RENDERTARGET;
+        auto flags = m_dirtyFlags;
+        m_dirtyFlags = 0u;
+
+        // Dont dirty pipeline type specific flags when not required.
+        // Restore dirty state for future resolve.
+        if ((ShaderStageFlags::StagesVertex & stageFlags) == 0u)
+        {
+            flags &= ~vertexFlags;
+            m_dirtyFlags |= vertexFlags;
+        }
+
+        if ((ShaderStageFlags::StagesGraphics & stageFlags) == 0)
+        {
+            flags &= ~graphicsFlags;
+            m_dirtyFlags |= graphicsFlags;
+        }
+
+        return (PKRenderStateDirtyFlags)flags;
+    }
 }

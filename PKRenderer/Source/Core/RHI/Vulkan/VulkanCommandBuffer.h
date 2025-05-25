@@ -24,22 +24,16 @@ namespace PK
         }
         inline void Release() { m_commandBuffer = VK_NULL_HANDLE; ++m_invocationIndex; }
 
-        void SetRenderTarget(const uint3& resolution) final;
-        void SetRenderTarget(RHITexture* const* renderTargets, RHITexture* const* resolveTargets, const TextureViewRange* ranges, uint32_t count) final;
+
+        void SetRenderTarget(const RenderTargetBinding* bindings, uint32_t count, const uint4& renderArea, uint32_t layers) final;
         void SetViewPorts(const uint4* rects, uint32_t count) final;
         void SetScissors(const uint4* rects, uint32_t count) final;
-        void SetUnorderedOverlap(bool value) final { m_isInUnorderedOverlap = value; }
 
         void SetShader(const RHIShader* shader) final;
         void SetVertexBuffers(const RHIBuffer** buffers, uint32_t count) final;
         void SetVertexStreams(const VertexStreamElement* elements, uint32_t count) final;
         void SetIndexBuffer(const RHIBuffer* buffer, ElementType indexFormat) final;
         void SetShaderBindingTable(RayTracingShaderGroup group, const RHIBuffer* buffer, size_t offset, size_t stride, size_t size) final;
-
-        void ClearColor(const color& color, uint32_t index) final;
-        void ClearDepth(float depth, uint32_t stencil) final;
-        void DiscardColor(uint32_t index) final;
-        void DiscardDepth() final;
 
         void SetStageExcludeMask(const ShaderStageFlags mask) final;
         void SetBlending(const BlendParameters& blend) final;
@@ -103,6 +97,5 @@ namespace PK
             VkCommandBufferLevel m_level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
             uint64_t m_invocationIndex = 0ull;
             bool m_isInActiveRenderPass = false;
-            bool m_isInUnorderedOverlap = false;
     };
 }

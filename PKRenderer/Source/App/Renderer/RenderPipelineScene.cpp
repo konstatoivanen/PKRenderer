@@ -315,19 +315,20 @@ namespace PK::App
         queues->Submit(QueueType::Compute, &cmdcompute);
 
         // Depth pre pass. Meshlet cull based on prev frame hizb
-        cmdgraphics.SetRenderTarget({ gbuffers.current.depth }, true);
-        cmdgraphics->ClearDepth(PK_CLIPZ_FAR, 0u);
+        cmdgraphics.SetRenderTarget({ gbuffers.current.depth, LoadOp::Clear, StoreOp::Store, { PK_CLIPZ_FAR, 0 } }, true);
         cmdgraphics->SetStageExcludeMask(ShaderStageFlags::Fragment);
         DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::Depth);
         cmdgraphics->SetStageExcludeMask(ShaderStageFlags::None);
 
         // Gbuffer pass & possible depth writes from invalid z culls.
-        cmdgraphics.SetRenderTarget({ gbuffers.current.depth, gbuffers.current.normals, gbuffers.current.depthBiased }, true);
-        cmdgraphics->ClearColor(float4(0.5f, 0.5f, 0.0f, 0.0f), 0);
-        cmdgraphics->ClearColor(PK_COLOR_CLEAR, 1);
-        cmdgraphics->ClearColor(PK_COLOR_CLEAR, 2);
+        {
+            auto targetDepth = RenderTargetBinding(gbuffers.current.depth, LoadOp::Load, StoreOp::None);
+            auto targetNormals = RenderTargetBinding(gbuffers.current.normals, LoadOp::Clear, StoreOp::Store, float4(0.5f, 0.5f, 0.0f, 0.0f));
+            auto targetDepthBiased = RenderTargetBinding(gbuffers.current.depthBiased, LoadOp::Clear, StoreOp::Store, PK_COLOR_CLEAR);
+            cmdgraphics.SetRenderTarget({ targetDepth, targetNormals, targetDepthBiased }, true);
+            DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::GBuffer);
+        }
 
-        DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::GBuffer);
         m_passHierarchicalDepth.Compute(cmdgraphics, context);
         queues->Wait(QueueType::Graphics, QueueType::Transfer);
         queues->Submit(QueueType::Graphics, &cmdgraphics.commandBuffer);
@@ -350,14 +351,17 @@ namespace PK::App
         m_passSceneGI.RenderGI(cmdgraphics, context);
 
         // Forward Opaque on graphics queue
-        cmdgraphics.SetRenderTarget({ gbuffers.current.depth, gbuffers.current.color }, true);
-        cmdgraphics->ClearColor(PK_COLOR_CLEAR, 0);
-        DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::ForwardOpaque);
+        {
+            auto targetDepth = RenderTargetBinding(gbuffers.current.depth, LoadOp::Load, StoreOp::None);
+            auto targetColor = RenderTargetBinding(gbuffers.current.color, LoadOp::Clear, StoreOp::Store, PK_COLOR_CLEAR);
+            cmdgraphics.SetRenderTarget({ targetDepth, targetColor }, true);
+            DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::ForwardOpaque);
 
-        m_passSceneEnv.RenderBackground(cmdgraphics, context);
-        m_passVolumeFog.Render(cmdgraphics, gbuffers.current.color);
+            m_passSceneEnv.RenderBackground(cmdgraphics, context);
+            m_passVolumeFog.Render(cmdgraphics, gbuffers.current.color);
 
-        DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::ForwardTransparent);
+            DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::ForwardTransparent);
+        }
 
         // Cache forward output of current frame
         cmdgraphics->Blit(gbuffers.current.color, gbuffers.previous.color, {}, {}, FilterMode::Point);

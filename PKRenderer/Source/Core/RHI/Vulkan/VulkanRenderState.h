@@ -56,26 +56,21 @@ namespace PK
     };
 
 
-    struct VulkanRenderPassState
+    struct VulkanRenderTargetBindings
     {
         struct Attachment
         {
             VersionHandle<VulkanBindHandle> target;
             VersionHandle<VulkanBindHandle> resolve;
-            VkImageLayout initialLayout;
-            VkImageLayout finalLayout;
             VkResolveModeFlagBits resolveMode;
-            LoadOp loadOp = LoadOp::Keep;
+            LoadOp loadOp = LoadOp::Load;
             StoreOp storeOp = StoreOp::Store;
             TextureClearValue clearValue{};
         };
 
-        VkRenderingFlags flags = 0u;
         VkRect2D area{};
         uint32_t layers = 0u;
-        uint32_t viewMask = 0u;
         uint32_t colorCount = 0u;
-        bool dynamicTargets = false;
         Attachment colors[PK_RHI_MAX_RENDER_TARGETS]{};
         Attachment depth{};
     };
@@ -91,7 +86,6 @@ namespace PK
             constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
             constexpr uint3 GetComputeGroupSize() const { return m_pipelineKey.shader->GetGroupSize(); }
             constexpr bool HasPipeline() const { return m_pipeline != nullptr; }
-            constexpr bool HasDynamicTargets() const { return m_renderPass->dynamicTargets; }
             const char* GetShaderName() const { return m_pipelineKey.shader->GetName(); }
             inline VkPipelineBindPoint GetPipelineBindPoint() const { return VulkanEnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags()); }
             VkRenderingInfo GetRenderPassInfo() const;
@@ -101,11 +95,7 @@ namespace PK
             const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
 
             void Reset();
-            void SetRenderTarget(const VulkanBindHandle* const* renderTargets, const VulkanBindHandle* const* resolves, uint32_t count);
-            void ClearColor(const color& color, uint32_t index);
-            void ClearDepth(float depth, uint32_t stencil);
-            void DiscardColor(uint32_t index);
-            void DiscardDepth();
+            void SetRenderTarget(const VulkanRenderTargetBindings& target);
 
             bool SetViewports(const uint4* rects, uint32_t& count, VkViewport** outViewports);
             bool SetScissors(const uint4* rects, uint32_t& count, VkRect2D** outScissors);
@@ -130,7 +120,7 @@ namespace PK
                 VkImageLayout overrideLayout = VK_IMAGE_LAYOUT_MAX_ENUM, 
                 uint8_t options = PK_RHI_ACCESS_OPT_BARRIER);
             
-            VulkanBarrierHandler::AccessRecord RecordRenderTarget(const VulkanBindHandle* handle, 
+            VkImageLayout RecordRenderTarget(const VulkanBindHandle* handle, 
                 VkPipelineStageFlags stage, 
                 VkAccessFlags access,
                 VkImageLayout layout,
@@ -139,17 +129,17 @@ namespace PK
             PKRenderStateDirtyFlags ValidatePipeline(const FenceRef& fence);
 
         private:
-            void ValidateRenderTarget();
             void ValidateVertexBuffers();
+            void ValidateResourceAccess();
             void ValidateDescriptorSets(const FenceRef& fence);
-
-            void RecordResourceAccess();
+            void ValidatePipelineFormats();
 
             VulkanServiceContext m_services;
         
             VulkanDescriptorCache::SetKey m_descriptorSetKeys[PK_RHI_MAX_DESCRIPTOR_SETS]{};
             VulkanPipelineCache::PipelineKey m_pipelineKey{};
-            VulkanRenderPassState m_renderPass[2]{};
+            VulkanRenderTargetBindings m_renderTarget{};
+            VkImageLayout m_renderTargetLayouts[PK_RHI_MAX_RENDER_TARGETS + 1u]{};
             VkStridedDeviceAddressRegionKHR m_sbtAddresses[(uint32_t)RayTracingShaderGroup::MaxCount]{};
         
             VertexStreamElement m_vertexStreamLayout[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
@@ -159,9 +149,9 @@ namespace PK
             
             VkViewport m_viewports[PK_RHI_MAX_VIEWPORTS]{};
             VkRect2D m_scissors[PK_RHI_MAX_VIEWPORTS]{};
-            uint32_t m_dirtyFlags;
+            uint32_t m_dirtyFlags = 0u;
 
             const VulkanPipeline* m_pipeline = nullptr;
-            const VulkanDescriptorSet* m_descriptorSets[PK_RHI_MAX_DESCRIPTOR_SETS];
+            const VulkanDescriptorSet* m_descriptorSets[PK_RHI_MAX_DESCRIPTOR_SETS]{};
     };
 }

@@ -114,6 +114,7 @@ namespace PK
         float4x4 clipToWorld;
         float* splitPlanes;
         float nearPlaneOffset;
+        float padding;
         uint32_t resolution;
         uint32_t count;
     };

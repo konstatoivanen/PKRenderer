@@ -178,9 +178,9 @@ namespace PK::App
 
             if (batch.type == LightType::Point)
             {
-                cmd.SetRenderTarget({ m_depthTargetCube.get(), m_shadowTargetCube.get() }, { range0, range0 }, true);
-                cmd->ClearDepth(0.0f, 0u);
-                cmd->ClearColor(color(PK_HALF_MAX), 0u);
+                auto targetDepth = RenderTargetBinding(m_depthTargetCube.get(), range0, LoadOp::Clear, StoreOp::Store, { PK_CLIPZ_FAR, 0u });
+                auto targetDist = RenderTargetBinding(m_shadowTargetCube.get(), range1, LoadOp::Clear, StoreOp::Store, float4(PK_HALF_MAX) );
+                cmd.SetRenderTarget({ targetDepth, targetDist }, true);
                 context->batcher->RenderGroup(cmd, batch.batchGroup, nullptr, keyword);
                 RHI::SetTexture(hash->pk_Texture, m_shadowTargetCube.get());
                 RHI::SetImage(hash->pk_Image, m_shadowmaps.get(), range1);
@@ -188,9 +188,9 @@ namespace PK::App
             }
             else
             {
-                cmd.SetRenderTarget({ m_depthTarget2D.get(), m_shadowmaps.get() }, { range0, range1 }, true);
-                cmd->ClearColor(color(PK_HALF_MAX), 0u);
-                cmd->ClearDepth(0.0f, 0u);
+                auto targetDepth = RenderTargetBinding(m_depthTarget2D.get(), range0, LoadOp::Clear, StoreOp::Store, { PK_CLIPZ_FAR, 0u });
+                auto targetDist = RenderTargetBinding(m_shadowmaps.get(), range1, LoadOp::Clear, StoreOp::Store, float4(PK_HALF_MAX));
+                cmd.SetRenderTarget({ targetDepth, targetDist }, true);
                 context->batcher->RenderGroup(cmd, batch.batchGroup, nullptr, keyword);
             }
 
@@ -382,6 +382,7 @@ namespace PK::App
                     cascadeInfo.worldToLocal = worldToLocal;
                     cascadeInfo.clipToWorld = clipToWorld;
                     cascadeInfo.nearPlaneOffset = 1.0f;
+                    cascadeInfo.padding = renderView->znear;
                     cascadeInfo.splitPlanes = cascadeZSplits.data();
                     cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
                     cascadeInfo.count = ShadowCascadeCount;

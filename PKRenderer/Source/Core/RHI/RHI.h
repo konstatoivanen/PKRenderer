@@ -34,6 +34,7 @@ namespace PK
     struct BlendParameters;
     struct FixedFunctionShaderAttributes;
     struct FixedFunctionState;
+    struct RenderTargetBinding;
     struct AccelerationStructureGeometryInfo;
     struct RHIDriverMemoryInfo;
     struct RHIDriverDescriptor;

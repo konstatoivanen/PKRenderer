@@ -118,16 +118,10 @@ namespace PK
     struct RHICommandBuffer : public NoCopy, public NativeInterface<RHICommandBuffer>
     {
         virtual FenceRef GetFenceRef() const = 0;
-        virtual void SetRenderTarget(const uint3& resolution) = 0;
-        virtual void SetRenderTarget(RHITexture* const* renderTarget, RHITexture* const* resolveTargets, const TextureViewRange* ranges, uint32_t count) = 0;
-        virtual void ClearColor(const color& color, uint32_t index) = 0;
-        virtual void ClearDepth(float depth, uint32_t stencil) = 0;
-        virtual void DiscardColor(uint32_t index) = 0;
-        virtual void DiscardDepth() = 0;
+        virtual void SetRenderTarget(const RenderTargetBinding* bindings, uint32_t count, const uint4& renderArea, uint32_t layers) = 0;
 
         virtual void SetViewPorts(const uint4* rects, uint32_t count) = 0;
         virtual void SetScissors(const uint4* rects, uint32_t count) = 0;
-        virtual void SetUnorderedOverlap(bool value) = 0;
 
         virtual void SetStageExcludeMask(const ShaderStageFlags mask) = 0;
         virtual void SetBlending(const BlendParameters& blend) = 0;

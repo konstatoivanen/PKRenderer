@@ -139,7 +139,7 @@ namespace PK
         inputAssembly.primitiveRestartEnable = key.primitiveRestart;
 
         VkPipelineRenderingCreateInfo renderingInfo{ VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR };
-        renderingInfo.viewMask = 0u; // @TODO NEEDED?!?
+        renderingInfo.viewMask = 0u; 
         renderingInfo.colorAttachmentCount = 0u;
         renderingInfo.pColorAttachmentFormats = key.fixedFunctionState.colorFormats;
         renderingInfo.depthAttachmentFormat = key.fixedFunctionState.depthFormat;
@@ -152,12 +152,6 @@ namespace PK
             auto& formats = key.fixedFunctionState.colorFormats;
             for (; count < PK_RHI_MAX_RENDER_TARGETS && formats[count] != VK_FORMAT_UNDEFINED; ++count) {}
         }
-
-        VkPipelineViewportStateCreateInfo viewportState{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
-        viewportState.viewportCount = key.fixedFunctionState.viewportCount;
-        viewportState.pViewports = nullptr;
-        viewportState.scissorCount = key.fixedFunctionState.viewportCount;
-        viewportState.pScissors = nullptr;
 
         VkPipelineRasterizationStateCreateInfo rasterizer{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
         rasterizer.depthClampEnable = key.fixedFunctionState.rasterization.depthClampEnable;
@@ -219,13 +213,15 @@ namespace PK
 
         VkDynamicState dynamicStates[] =
         {
-            VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR,
+            VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
+            VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,
         };
 
         VkPipelineDynamicStateCreateInfo dynamicState{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
         dynamicState.dynamicStateCount = 2;
         dynamicState.pDynamicStates = dynamicStates;
+
+        VkPipelineViewportStateCreateInfo viewportState{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
 
         VkGraphicsPipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
         pipelineInfo.pNext = &renderingInfo;
@@ -282,7 +278,7 @@ namespace PK
         }
 
         VkPipelineRenderingCreateInfo renderingInfo{ VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR };
-        renderingInfo.viewMask = 0u; // @TODO NEEDED?!?
+        renderingInfo.viewMask = 0u; 
         renderingInfo.colorAttachmentCount = 0u;
         renderingInfo.pColorAttachmentFormats = key.fixedFunctionState.colorFormats;
         renderingInfo.depthAttachmentFormat = key.fixedFunctionState.depthFormat;
@@ -295,12 +291,6 @@ namespace PK
             auto& formats = key.fixedFunctionState.colorFormats;
             for (; count < PK_RHI_MAX_RENDER_TARGETS && formats[count] != VK_FORMAT_UNDEFINED; ++count) {}
         }
-
-        VkPipelineViewportStateCreateInfo viewportState{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
-        viewportState.viewportCount = key.fixedFunctionState.viewportCount;
-        viewportState.pViewports = nullptr;
-        viewportState.scissorCount = key.fixedFunctionState.viewportCount;
-        viewportState.pScissors = nullptr;
 
         VkPipelineRasterizationStateCreateInfo rasterizer{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
         rasterizer.depthClampEnable = key.fixedFunctionState.rasterization.depthClampEnable;
@@ -362,13 +352,15 @@ namespace PK
 
         VkDynamicState dynamicStates[] =
         {
-            VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR,
+            VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
+            VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,
         };
 
         VkPipelineDynamicStateCreateInfo dynamicState{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
         dynamicState.dynamicStateCount = 2;
         dynamicState.pDynamicStates = dynamicStates;
+
+        VkPipelineViewportStateCreateInfo viewportState{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
 
         VkGraphicsPipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
         pipelineInfo.pNext = &renderingInfo;

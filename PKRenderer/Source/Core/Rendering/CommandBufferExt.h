@@ -26,12 +26,9 @@ namespace PK
 
         void SetShader(const ShaderAsset* shader, int32_t variantIndex = -1);
 
-        void SetRenderTarget(const std::initializer_list<RHITexture*>& targets, const RenderTargetRanges& ranges, bool updateViewPort);
-        void SetRenderTarget(const std::initializer_list<RHITexture*>& targets, bool updateViewPort);
-        void SetRenderTarget(RHITexture* target);
-        void SetRenderTarget(RHITexture* target, const TextureViewRange& range);
-        void SetRenderTarget(RHITexture* target, uint16_t level, uint16_t layer);
-        void SetRenderTarget(RHITexture* target, const RenderTargetRanges& ranges);
+        void SetRenderTarget(const std::initializer_list<RenderTargetBinding>& targets, bool updateViewPort);
+        void SetRenderTarget(const RenderTargetBinding& binding, bool updateViewPort = false);
+        void SetRenderTarget(const uint2& resolution, uint32_t layerCount);
 
         void SetVertexStreams(const VertexStreamLayout& layout);
 

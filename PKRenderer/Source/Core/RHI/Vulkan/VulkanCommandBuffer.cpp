@@ -21,38 +21,29 @@ namespace PK
             m_invocationIndex + 1);
     }
 
-    void VulkanCommandBuffer::SetRenderTarget(const uint3& resolution)
+    void VulkanCommandBuffer::SetRenderTarget(const RenderTargetBinding* bindings, uint32_t count, const uint4& renderArea, uint32_t layers)
     {
-        static VulkanBindHandle dummy{};
-        dummy.image.image = VK_NULL_HANDLE;
-        dummy.image.alias = VK_NULL_HANDLE;
-        dummy.image.view = VK_NULL_HANDLE;
-        dummy.image.sampler = VK_NULL_HANDLE;
-        dummy.image.layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
-        dummy.image.format = VK_FORMAT_UNDEFINED;
-        dummy.image.extent = { resolution.x, resolution.y, resolution.z };
-        dummy.image.range = { VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM, 0u, 1u, 0u, 1u };
-        dummy.image.samples = VK_SAMPLE_COUNT_1_BIT;
-        const VulkanBindHandle* handles = &dummy;
-        m_renderState->SetRenderTarget(&handles, nullptr, 0u);
-    }
-
-    void VulkanCommandBuffer::SetRenderTarget(RHITexture* const* renderTargets, RHITexture* const* resolveTargets, const TextureViewRange* ranges, uint32_t count)
-    {
-        auto colors = PK_STACK_ALLOC(const VulkanBindHandle*, count);
-        auto resolves = resolveTargets != nullptr ? PK_STACK_ALLOC(const VulkanBindHandle*, count) : nullptr;
+        VulkanRenderTargetBindings state{};
+        state.area = { { (int32_t)renderArea.x, (int32_t)renderArea.y}, { renderArea.z, renderArea.w } };
+        state.layers = layers;
+        state.colorCount = 0u;
 
         for (auto i = 0u; i < count; ++i)
         {
-            colors[i] = renderTargets[i]->GetNative<VulkanTexture>()->GetBindHandle(ranges[i], TextureBindMode::RenderTarget);
-
-            if (resolves != nullptr && resolveTargets[i] != nullptr)
-            {
-                resolves[i] = resolveTargets[i]->GetNative<VulkanTexture>()->GetBindHandle(ranges[i], TextureBindMode::RenderTarget);
-            }
+            auto binding = &bindings[i];
+            auto target = binding->target->GetNative<VulkanTexture>()->GetBindHandle(binding->targetRange, TextureBindMode::RenderTarget);
+            auto resolve = binding->resolve ? binding->resolve->GetNative<VulkanTexture>()->GetBindHandle(binding->resolveRange, TextureBindMode::RenderTarget) : nullptr;
+            auto isDepth = VulkanEnumConvert::IsDepthFormat(target->image.format);
+            auto attachment = isDepth ? &state.depth : (state.colors + state.colorCount++);
+            attachment->target = target;
+            attachment->resolve = resolve;
+            attachment->loadOp = binding->loadOp;
+            attachment->storeOp = binding->storeOp;
+            attachment->clearValue = binding->clearValue;
+            attachment->resolveMode = resolve ? VK_RESOLVE_MODE_AVERAGE_BIT : VK_RESOLVE_MODE_NONE;
         }
 
-        m_renderState->SetRenderTarget(colors, resolves, count);
+        m_renderState->SetRenderTarget(state);
     }
 
     void VulkanCommandBuffer::SetViewPorts(const uint4* rects, uint32_t count)
@@ -60,7 +51,7 @@ namespace PK
         VkViewport* viewports = nullptr;
         if (m_renderState->SetViewports(rects, count, &viewports))
         {
-            vkCmdSetViewport(m_commandBuffer, 0, count, viewports);
+            vkCmdSetViewportWithCount(m_commandBuffer, count, viewports);
         }
     }
 
@@ -69,7 +60,7 @@ namespace PK
         VkRect2D* scissors = nullptr;
         if (m_renderState->SetScissors(rects, count, &scissors))
         {
-            vkCmdSetScissor(m_commandBuffer, 0, count, scissors);
+            vkCmdSetScissorWithCount(m_commandBuffer, count, scissors);
         }
     }
 
@@ -106,26 +97,6 @@ namespace PK
     {
         auto address = buffer->GetNative<VulkanBuffer>()->GetRaw()->deviceAddress;
         m_renderState->SetShaderBindingTableAddress(group, address + offset, stride, size);
-    }
-
-    void VulkanCommandBuffer::ClearColor(const color& color, uint32_t index)
-    {
-        m_renderState->ClearColor(color, index);
-    }
-
-    void VulkanCommandBuffer::ClearDepth(float depth, uint32_t stencil)
-    {
-        m_renderState->ClearDepth(depth, stencil);
-    }
-
-    void VulkanCommandBuffer::DiscardColor(uint32_t index)
-    {
-        m_renderState->DiscardColor(index);
-    }
-
-    void VulkanCommandBuffer::DiscardDepth()
-    {
-        m_renderState->DiscardDepth();
     }
 
     void VulkanCommandBuffer::SetStageExcludeMask(const ShaderStageFlags mask)
@@ -417,10 +388,7 @@ namespace PK
     {
         auto vktex = dst->GetNative<VulkanTexture>();
         auto handle = vktex->GetBindHandle(range, TextureBindMode::Image);
-            
-        VkClearDepthStencilValue clearDepthStencilValue{};
-        clearDepthStencilValue.depth = value.depth;
-        clearDepthStencilValue.stencil = value.stencil;
+        auto clearValue = VulkanEnumConvert::GetClearValue(value);
 
         VkClearColorValue clearColorValue{};
         memcpy(clearColorValue.uint32, glm::value_ptr(value.uint32), sizeof(clearColorValue.uint32));
@@ -431,11 +399,11 @@ namespace PK
 
         if (VulkanEnumConvert::IsDepthFormat(handle->image.format) || VulkanEnumConvert::IsDepthStencilFormat(handle->image.format))
         {
-            vkCmdClearDepthStencilImage(m_commandBuffer, vktex->GetRaw()->image, VK_IMAGE_LAYOUT_GENERAL, &clearDepthStencilValue, 1, &handle->image.range);
+            vkCmdClearDepthStencilImage(m_commandBuffer, vktex->GetRaw()->image, VK_IMAGE_LAYOUT_GENERAL, &clearValue.depthStencil, 1, &handle->image.range);
         }
         else
         {
-            vkCmdClearColorImage(m_commandBuffer, vktex->GetRaw()->image, VK_IMAGE_LAYOUT_GENERAL, &clearColorValue, 1, &handle->image.range);
+            vkCmdClearColorImage(m_commandBuffer, vktex->GetRaw()->image, VK_IMAGE_LAYOUT_GENERAL, &clearValue.color, 1, &handle->image.range);
         }
     }
 
@@ -624,16 +592,28 @@ namespace PK
 
     void VulkanCommandBuffer::PipelineBarrier(const VulkanBarrierInfo& barrier)
     {
+        auto excludeMask = ~(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
         // Memory & buffer memory barriers not allowed inside renderpasses. Barriers are not allowed inside renderpasses unless using self-dependencies.
-        if (barrier.memoryBarrierCount > 0 || barrier.bufferMemoryBarrierCount > 0 || !m_renderState->HasDynamicTargets())
+        if (barrier.memoryBarrierCount > 0 || 
+            barrier.bufferMemoryBarrierCount > 0 || 
+            (barrier.srcStageMask & excludeMask) != 0 ||
+            (barrier.dstStageMask & excludeMask) != 0)
         {
             EndRenderPass();
+        }
+
+        auto depedencyFlags = barrier.dependencyFlags;
+
+        if (m_isInActiveRenderPass)
+        {
+            depedencyFlags |= VK_DEPENDENCY_BY_REGION_BIT;
         }
 
         vkCmdPipelineBarrier(m_commandBuffer,
             barrier.srcStageMask,
             barrier.dstStageMask,
-            barrier.dependencyFlags,
+            depedencyFlags,
             barrier.memoryBarrierCount,
             barrier.pMemoryBarriers,
             barrier.bufferMemoryBarrierCount,
@@ -654,7 +634,7 @@ namespace PK
     {
         static VulkanBarrierInfo barrierInfo{};
 
-        if (!m_isInUnorderedOverlap && m_renderState->GetServices()->barrierHandler->Resolve(&barrierInfo))
+        if (m_renderState->GetServices()->barrierHandler->Resolve(&barrierInfo))
         {
             PipelineBarrier(barrierInfo);
             return true;
@@ -677,9 +657,8 @@ namespace PK
         {
             EndRenderPass();
             auto info = m_renderState->GetRenderPassInfo();
-            // @TODO FIGURE OUT IF NEEDED?!?
-          //  info.flags = m_level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_RENDERING_CONTENTS_INLINE_BIT_KHR : VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
-           // vkCmdBeginRenderPass(m_commandBuffer, &info, m_level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_SUBPASS_CONTENTS_INLINE : VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+            // @TODO support multi level command buffers?
+            //info.flags = m_level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_RENDERING_CONTENTS_INLINE_BIT_KHR : VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
             vkCmdBeginRendering(m_commandBuffer, &info);
             m_isInActiveRenderPass = true;
         }
@@ -742,7 +721,6 @@ namespace PK
 
     void VulkanCommandBuffer::BeginCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferLevel level, VulkanRenderState* renderState)
     {
-        m_isInUnorderedOverlap = false;
         m_level = level;
         m_commandBuffer = commandBuffer;
         m_renderState = renderState;

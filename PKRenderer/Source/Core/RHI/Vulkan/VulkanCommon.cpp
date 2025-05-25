@@ -1255,13 +1255,6 @@ namespace PK
                 format == VK_FORMAT_D32_SFLOAT_S8_UINT;
         }
 
-        bool IsDepthStencilWrite(VkImageLayout layout)
-        {
-            return layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
-               layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-               layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
-        }
-
         VkClearValue GetClearValue(const TextureClearValue& clearValue)
         {
             VkClearValue outValue;
@@ -1269,8 +1262,6 @@ namespace PK
             outValue.color.uint32[1] = clearValue.uint32[1];
             outValue.color.uint32[2] = clearValue.uint32[2];
             outValue.color.uint32[3] = clearValue.uint32[3];
-            outValue.depthStencil.depth = clearValue.depth;
-            outValue.depthStencil.stencil = clearValue.stencil;
             return outValue;
         }
 
@@ -1384,26 +1375,20 @@ namespace PK
         {
             switch (loadOp)
             {
-                case LoadOp::Keep: return  VK_ATTACHMENT_LOAD_OP_LOAD;
+                case LoadOp::None: return VK_ATTACHMENT_LOAD_OP_NONE;
+                case LoadOp::Load: return VK_ATTACHMENT_LOAD_OP_LOAD;
                 case LoadOp::Clear: return VK_ATTACHMENT_LOAD_OP_CLEAR;
                 case LoadOp::Discard: return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
                 default: return VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
             }
         }
 
-        VkAttachmentLoadOp GetLoadOp(VkImageLayout layout, LoadOp loadOp)
-        {
-            VkAttachmentLoadOp vkop;
-            vkop = GetLoadOp(loadOp);
-            vkop = vkop == VK_ATTACHMENT_LOAD_OP_LOAD && layout == VK_IMAGE_LAYOUT_UNDEFINED ? VK_ATTACHMENT_LOAD_OP_DONT_CARE : vkop;
-            return vkop;
-        }
-
         VkAttachmentStoreOp GetStoreOp(StoreOp storeOp)
         {
             switch (storeOp)
             {
-                case StoreOp::Store: return  VK_ATTACHMENT_STORE_OP_STORE;
+                case StoreOp::None: return VK_ATTACHMENT_STORE_OP_NONE;
+                case StoreOp::Store: return VK_ATTACHMENT_STORE_OP_STORE;
                 case StoreOp::Discard: return VK_ATTACHMENT_STORE_OP_DONT_CARE;
                 default: return VK_ATTACHMENT_STORE_OP_MAX_ENUM;
             }
@@ -2013,14 +1998,12 @@ namespace PK
     {
         VulkanExclusiveFullscreenInfo info;
         info.swapchainPNext = nullptr;
-        // @TODO handle platform logic in a better way.
 
         if (fullScreen)
         {
 #if PK_PLATFORM_WINDOWS
             info.win32Info = { VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT };
             info.win32Info.hmonitor = (HMONITOR)nativeMonitor;
-
             info.fullscreenInfo = { VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT };
             info.fullscreenInfo.fullScreenExclusive = VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT;
             info.fullscreenInfo.pNext = &info.win32Info;

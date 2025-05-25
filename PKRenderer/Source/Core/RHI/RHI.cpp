@@ -96,7 +96,7 @@ namespace PK
                 features.vk13.privateData = VK_FALSE;
                 features.vk13.maintenance4 = VK_TRUE;
                 features.vk13.dynamicRendering = VK_TRUE;
-               // features.vk14.dynamicRenderingLocalRead = VK_TRUE;
+                features.vk14.dynamicRenderingLocalRead = VK_TRUE;
                 features.accelerationStructure.accelerationStructure = VK_TRUE;
                 features.rayTracingPipeline.rayTracingPipeline = VK_TRUE;
                 features.rayQuery.rayQuery = VK_TRUE;

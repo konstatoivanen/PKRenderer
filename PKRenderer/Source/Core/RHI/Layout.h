@@ -130,6 +130,7 @@ namespace PK
         const ShaderResourceElement* TryGetElement(NameID name, uint32_t* index) const;
     };
 
+
     struct ShaderVertexInputLayout : public FastSet<BufferElement, BufferElementNameHash>
     {
         ShaderVertexInputLayout() : FastSet() {}
@@ -202,7 +203,6 @@ namespace PK
         uint16_t m_streamStrides[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
         uint16_t m_totalStride = 0u;
     };
-
 
     struct ShaderBindingTableInfo
     {

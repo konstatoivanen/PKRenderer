@@ -134,41 +134,32 @@ namespace PK::App
             {
                 if (m_gizmos_enabledGPU)
                 {
-                    auto rect = gbuffers.current.color->GetRect();
                     const RHIBuffer* vb = m_gizmos_indirectVertexBuffer.get();
                     renderEvent->cmd->SetVertexBuffers(&vb, 1u);
                     renderEvent->cmd->SetVertexStreams(&m_gizmos_vertexStreamElement, 1u);
                     renderEvent->cmd.SetShader(m_gizmos_shader);
-                    renderEvent->cmd.SetRenderTarget(gbuffers.current.color);
-                    renderEvent->cmd.SetViewPort(rect);
-                    renderEvent->cmd.SetScissor(rect);
+                    renderEvent->cmd.SetRenderTarget({ gbuffers.current.color, LoadOp::Load, StoreOp::Store }, true);
                     renderEvent->cmd.SetFixedStateAttributes(&m_gizmos_fixedFunctionAttribs);
                     renderEvent->cmd->DrawIndirect(m_gizmos_indirectArgsBuffer.get(), 0u, 1u, sizeof(uint4));
                 }
 
                 if (m_gizmos_enabledCPU && m_gizmos_vertexCount >= 2)
                 {
-                    auto rect = gbuffers.current.color->GetRect();
                     const RHIBuffer* vb = m_gizmos_vertexBuffer.get();
                     renderEvent->cmd->SetVertexBuffers(&vb, 1u);
                     renderEvent->cmd->SetVertexStreams(&m_gizmos_vertexStreamElement, 1u);
                     renderEvent->cmd.SetShader(m_gizmos_shader);
-                    renderEvent->cmd.SetRenderTarget(gbuffers.current.color);
-                    renderEvent->cmd.SetViewPort(rect);
-                    renderEvent->cmd.SetScissor(rect);
+                    renderEvent->cmd.SetRenderTarget({ gbuffers.current.color, LoadOp::Load, StoreOp::Store }, true);
                     renderEvent->cmd.SetFixedStateAttributes(&m_gizmos_fixedFunctionAttribs);
                     renderEvent->cmd->Draw(glm::min(m_gizmos_vertexCount, m_gizmos_maxVertices), 1u, 0u, 0u);
                 }
 
                 if (m_gui_enabled && m_gui_vertexCount >= 2)
                 {
-                    auto rect = gbuffers.current.color->GetRect();
                     RHI::SetTextureArray(hash->pk_GUI_Textures, m_gui_textures);
                     renderEvent->cmd->SetIndexBuffer(m_gui_indexBuffer.get(), ElementType::Ushort);
                     renderEvent->cmd.SetShader(m_gui_shader);
-                    renderEvent->cmd.SetRenderTarget(gbuffers.current.color);
-                    renderEvent->cmd.SetViewPort(rect);
-                    renderEvent->cmd.SetScissor(rect);
+                    renderEvent->cmd.SetRenderTarget({ gbuffers.current.color, LoadOp::Load, StoreOp::Store }, true);
                     renderEvent->cmd->DrawIndexed(glm::min(GUI_MAX_INDICES, m_gui_indexCount), 1u, 0u, 0u, 0u);
                 }
             }

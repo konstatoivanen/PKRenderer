@@ -116,13 +116,15 @@ namespace PK
 
     const static char* LoadOp_NAMES[] =
     {
-        "Keep",
+        "None",
+        "Load",
         "Clear",
         "Discard",
     };
 
     const static char* StoreOp_NAMES[] =
     {
+        "None",
         "Store",
         "Discard",
     };
@@ -286,7 +288,7 @@ namespace PK
     DECLARE_RHI_STRING_TO_ENUM(WrapMode, WrapMode::Clamp)
     DECLARE_RHI_STRING_TO_ENUM(LogicOp, LogicOp::Clear)
     DECLARE_RHI_STRING_TO_ENUM(FrontFace, FrontFace::CounterClockwise)
-    DECLARE_RHI_STRING_TO_ENUM(LoadOp, LoadOp::Keep)
+    DECLARE_RHI_STRING_TO_ENUM(LoadOp, LoadOp::None)
     DECLARE_RHI_STRING_TO_ENUM(StoreOp, StoreOp::Store)
     DECLARE_RHI_STRING_TO_ENUM(BorderColor, BorderColor::FloatClear)
     DECLARE_RHI_STRING_TO_ENUM(InputRate, InputRate::PerVertex)

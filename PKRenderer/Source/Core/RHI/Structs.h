@@ -154,13 +154,15 @@ namespace PK
 
     enum class LoadOp : uint8_t
     {
-        Keep,
+        None,
+        Load,
         Clear,
         Discard,
     };
 
     enum class StoreOp : uint8_t
     {
+        None,
         Store,
         Discard,
     };
@@ -402,21 +404,36 @@ namespace PK
 
     struct TextureClearValue
     {
-        TextureClearValue() : float32(PK_FLOAT4_ZERO), depth(0.0f), stencil(0) {}
-        TextureClearValue(const float4& v) : float32(v), depth(0.0f), stencil(0) {}
-        TextureClearValue(const uint4& v) : uint32(v), depth(0.0f), stencil(0) {}
-        TextureClearValue(const int4& v) : int32(v), depth(0.0f), stencil(0) {}
-        TextureClearValue(const float depth, uint32_t stencil) : uint32(PK_UINT4_ZERO), depth(depth), stencil(stencil) {}
+        private: 
+            struct Depth { float depth; uint32_t stencil; };
+        public:
+
+        TextureClearValue() : float32(PK_FLOAT4_ZERO) {}
+        TextureClearValue(const float4& v) : float32(v) {}
+        TextureClearValue(const uint4& v) : uint32(v) {}
+        TextureClearValue(const int4& v) : int32(v) {}
+        TextureClearValue(const float depth, uint32_t stencil) : depth({ depth, stencil }) {}
 
         union
         {
             float4 float32;
             uint4 uint32;
             int4 int32;
+            Depth depth;
         };
 
-        float depth;
-        uint32_t stencil;
+        constexpr bool operator == (const TextureClearValue& r) const noexcept
+        {
+            return uint32[0] == r.uint32[0] && 
+                   uint32[1] == r.uint32[1] && 
+                   uint32[2] == r.uint32[2] && 
+                   uint32[3] == r.uint32[3];
+        }
+
+        constexpr bool operator != (const TextureClearValue& r) const noexcept
+        {
+            return !(*this == r);
+        }
     };
 
     struct DrawIndexedIndirectCommand
@@ -535,6 +552,40 @@ namespace PK
         BlendParameters blending{};
         DepthStencilParameters depthStencil{};
         RasterizationParameters rasterization{};
+    };
+
+    struct RenderTargetBinding
+    {
+        struct RHITexture* target = nullptr;
+        TextureViewRange targetRange{};
+        struct RHITexture* resolve = nullptr;
+        TextureViewRange resolveRange{};
+        LoadOp loadOp = LoadOp::None;
+        StoreOp storeOp = StoreOp::None;
+        TextureClearValue clearValue{};
+
+        RenderTargetBinding(RHITexture* target,
+            const TextureViewRange& targetRange,
+            RHITexture* resolve,
+            const TextureViewRange& resolveRange,
+            LoadOp loadOp,
+            StoreOp storeOp,
+            const TextureClearValue& clearValue) :
+            target(target),
+            targetRange(targetRange),
+            resolve(resolve),
+            resolveRange(resolveRange),
+            loadOp(loadOp),
+            storeOp(storeOp),
+            clearValue(clearValue)
+        {}
+
+        RenderTargetBinding(RHITexture* target, RHITexture* resolve, LoadOp loadOp, StoreOp storeOp, const TextureClearValue& clearValue) : RenderTargetBinding(target, {}, resolve, {}, loadOp, storeOp, clearValue) {}
+        RenderTargetBinding(RHITexture* target, RHITexture* resolve, LoadOp loadOp, StoreOp storeOp) : RenderTargetBinding(target, resolve, loadOp, storeOp, {}) {}
+        RenderTargetBinding(RHITexture* target, const TextureViewRange& targetRange, LoadOp loadOp, StoreOp storeOp, const TextureClearValue& clearValue) : RenderTargetBinding(target, targetRange, nullptr, {}, loadOp, storeOp, clearValue) {}
+        RenderTargetBinding(RHITexture* target, LoadOp loadOp, StoreOp storeOp, const TextureClearValue& clearValue) : RenderTargetBinding(target, nullptr, loadOp, storeOp, clearValue) {}
+        RenderTargetBinding(RHITexture* target, LoadOp loadOp, StoreOp storeOp) : RenderTargetBinding(target, nullptr, loadOp, storeOp) {}
+        RenderTargetBinding() {}
     };
 
     struct AccelerationStructureGeometryInfo

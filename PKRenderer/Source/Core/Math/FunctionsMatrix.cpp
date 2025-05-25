@@ -286,6 +286,11 @@ namespace PK::Math
 
             aabbs[i] = GetInverseFrustumBounds(matrix, lnear, lfar);
 
+            aabbs[i].min.x -= info.padding;
+            aabbs[i].min.y -= info.padding;
+            aabbs[i].max.x += info.padding;
+            aabbs[i].max.y += info.padding;
+
             // Quantize to resolution steps.
             // Avoids crawling effect, doesn't solve it rotationally though.
             // For that we would need to use spherical bounds, but that wastes a lot of texel density.

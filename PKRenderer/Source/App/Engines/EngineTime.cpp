@@ -52,6 +52,7 @@ namespace PK::App
         framerateInfo.framerateMax = m_framerateFixed.framerateMax;
         framerateInfo.framerateAvg = m_framerateFixed.framerateAvg;
         framerateInfo.frameMs = m_framerate.deltaTime * 1000.0f;
+
         m_sequencer->Next(this, &framerateInfo);
     }
 
@@ -64,6 +65,8 @@ namespace PK::App
         {
             m_framerateFixed = m_framerate;
             m_framerate = TimerFramerate();
+            m_framerate.deltaTime = m_framerateFixed.deltaTime;
+            m_framerate.framerate = m_framerateFixed.framerate;
         }
     }
 }

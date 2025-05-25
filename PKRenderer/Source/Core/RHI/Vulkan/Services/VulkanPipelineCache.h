@@ -18,7 +18,6 @@ namespace PK
             MultisamplingParameters multisampling{};
             VkFormat colorFormats[PK_RHI_MAX_RENDER_TARGETS]{};
             VkFormat depthFormat = VK_FORMAT_UNDEFINED;
-            uint8_t viewportCount = 1u;
             uint16_t excludeStageMask = 0u;
         };
 

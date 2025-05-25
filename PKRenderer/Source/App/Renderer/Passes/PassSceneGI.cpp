@@ -204,7 +204,7 @@ namespace PK::App
             };
 
             // Voxelize raster
-            cmd->SetRenderTarget({ viewports[m_rasterAxis].z, viewports[m_rasterAxis].w, 1 });
+            cmd.SetRenderTarget({ viewports[m_rasterAxis].z, viewports[m_rasterAxis].w }, 1 );
             cmd.SetViewPort(viewports[m_rasterAxis]);
             cmd.SetScissor(viewports[m_rasterAxis]);
             batcher->RenderGroup(cmd, batchGroup, &m_voxelizeAttribs, hash->PK_META_PASS_GIVOXELIZE);

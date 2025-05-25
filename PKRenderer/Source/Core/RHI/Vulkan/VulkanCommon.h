@@ -455,14 +455,12 @@ namespace PK
         uint32_t GetFormatBlockSize(VkFormat format);
         bool IsDepthFormat(VkFormat format);
         bool IsDepthStencilFormat(VkFormat format);
-        bool IsDepthStencilWrite(VkImageLayout layout);
 
         VkClearValue GetClearValue(const TextureClearValue& clearValue);
         VkComponentMapping GetSwizzle(VkFormat format);
         VkImageViewType GetViewType(TextureType type);
         VkImageLayout GetImageLayout(TextureUsage usage);
         VkAttachmentLoadOp GetLoadOp(LoadOp loadOp);
-        VkAttachmentLoadOp GetLoadOp(VkImageLayout layout, LoadOp loadOp);
         VkAttachmentStoreOp GetStoreOp(StoreOp storeOp);
         VkCompareOp GetCompareOp(Comparison comparison);
         VkBorderColor GetBorderColor(BorderColor color);

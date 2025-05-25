@@ -71,67 +71,39 @@ namespace PK
         commandBuffer->SetShader(pVariant);
     }
 
-    void CommandBufferExt::SetRenderTarget(const std::initializer_list<RHITexture*>& targets, const RenderTargetRanges& ranges, bool updateViewPort)
+    void CommandBufferExt::SetRenderTarget(const std::initializer_list<RenderTargetBinding>& targets, bool updateViewPort)
     {
         const uint32_t targetCount = (uint32_t)(targets.end() - targets.begin());
-        const uint32_t rangeCount = (uint32_t)(ranges.end() - ranges.begin());
-        PK_THROW_ASSERT(targetCount == rangeCount, "target & view range count missmatch!");
-
-        commandBuffer->SetRenderTarget(targets.begin(), nullptr, ranges.begin(), targetCount);
+        auto& primary = targets.begin()[0];
+        auto renderArea = primary.target->GetRect();
+        auto layerCount = primary.target->GetLayers();
+        commandBuffer->SetRenderTarget(targets.begin(), targetCount, renderArea, layerCount);
 
         if (updateViewPort)
         {
-            auto rect = targets.begin()[0]->GetRect();
+            auto rect = primary.target->GetRect();
             SetViewPort(rect);
             SetScissor(rect);
         }
     }
 
-    void CommandBufferExt::SetRenderTarget(const std::initializer_list<RHITexture*>& targets, bool updateViewPort)
+    void CommandBufferExt::SetRenderTarget(const RenderTargetBinding& renderTarget, bool updateViewPort)
     {
-        const uint32_t targetCount = (uint32_t)(targets.end() - targets.begin());
-
-        // Zero ranges as they will be reset to default anyhow.
-        TextureViewRange ranges[PK_RHI_MAX_RENDER_TARGETS + 1]{};
-
-        commandBuffer->SetRenderTarget(targets.begin(), nullptr, ranges, targetCount);
+        auto renderArea = renderTarget.target->GetRect();
+        auto layerCount = renderTarget.target->GetLayers();
+        commandBuffer->SetRenderTarget(&renderTarget, 1u, renderArea, layerCount);
 
         if (updateViewPort)
         {
-            auto rect = targets.begin()[0]->GetRect();
+            auto rect = renderTarget.target->GetRect();
             SetViewPort(rect);
             SetScissor(rect);
         }
     }
 
-    void CommandBufferExt::SetRenderTarget(RHITexture* renderTarget)
+    void CommandBufferExt::SetRenderTarget(const uint2& resolution, uint32_t layerCount)
     {
-        TextureViewRange range{};
-        commandBuffer->SetRenderTarget(&renderTarget, nullptr, &range, 1u);
-    }
-
-    void CommandBufferExt::SetRenderTarget(RHITexture* target, const TextureViewRange& range)
-    {
-        commandBuffer->SetRenderTarget(&target, nullptr, &range, 1u);
-    }
-
-    void CommandBufferExt::SetRenderTarget(RHITexture* target, uint16_t level, uint16_t layer)
-    {
-        TextureViewRange range = { level, layer, 1u, 1u };
-        commandBuffer->SetRenderTarget(&target, nullptr, &range, 1u);
-    }
-
-    void CommandBufferExt::SetRenderTarget(RHITexture* target, const RenderTargetRanges& ranges)
-    {
-        auto count = (uint32_t)(ranges.end() - ranges.begin());
-        auto targets = PK_STACK_ALLOC(RHITexture*, count);
-
-        for (auto i = 0u; i < count; ++i)
-        {
-            targets[i] = target;
-        }
-
-        commandBuffer->SetRenderTarget(targets, nullptr, ranges.begin(), count);
+        commandBuffer->SetRenderTarget(nullptr, 0u, { 0,0, resolution }, layerCount);
     }
 
     void CommandBufferExt::SetVertexStreams(const VertexStreamLayout& layout)
