@@ -371,6 +371,11 @@ namespace PK
             usage = usage | TextureUsage::ReadOnly;
         }
 
+        if (strstr(str, "Transient"))
+        {
+            usage = usage | TextureUsage::Transient;
+        }
+
         if (strstr(str, "DefaultDisk"))
         {
             usage = usage | TextureUsage::DefaultDisk;

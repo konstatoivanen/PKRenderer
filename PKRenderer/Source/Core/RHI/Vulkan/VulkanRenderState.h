@@ -55,7 +55,6 @@ namespace PK
         uint32_t count = 0u;
     };
 
-
     struct VulkanRenderTargetBindings
     {
         struct Attachment

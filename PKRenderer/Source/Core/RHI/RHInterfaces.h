@@ -38,6 +38,7 @@ namespace PK
         virtual const TextureDescriptor& GetDescriptor() const = 0;
         virtual const char* GetDebugName() const = 0;
 
+        constexpr TextureFormat GetFormat() const { return GetDescriptor().format; }
         constexpr TextureUsage GetUsage() const { return GetDescriptor().usage; }
         constexpr bool IsConcurrent() const { return (GetUsage() & TextureUsage::Concurrent) != 0; }
         constexpr bool IsTracked() const { return (GetUsage() & TextureUsage::ReadOnly) == 0; }

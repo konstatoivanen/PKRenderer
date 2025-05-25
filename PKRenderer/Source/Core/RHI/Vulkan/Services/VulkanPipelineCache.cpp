@@ -169,6 +169,11 @@ namespace PK
         conservativeRaster.conservativeRasterizationMode = VulkanEnumConvert::GetRasterMode(key.fixedFunctionState.rasterization.rasterMode);
         conservativeRaster.extraPrimitiveOverestimationSize = std::fminf(m_maxOverEstimation, key.fixedFunctionState.rasterization.overEstimation);
         rasterizer.pNext = key.fixedFunctionState.rasterization.rasterMode != RasterMode::Default ? &conservativeRaster : nullptr;
+        auto rasterPnext = rasterizer.pNext ? &conservativeRaster.pNext : &rasterizer.pNext;
+
+        VkPipelineRasterizationLineStateCreateInfo lineRaster{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO };
+        lineRaster.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH;
+        *rasterPnext = rasterizer.polygonMode == VK_POLYGON_MODE_LINE ? &lineRaster : nullptr;
 
         VkPipelineMultisampleStateCreateInfo multisampling{ VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
         multisampling.sampleShadingEnable = key.fixedFunctionState.multisampling.sampleShadingEnable;
@@ -308,6 +313,11 @@ namespace PK
         conservativeRaster.conservativeRasterizationMode = VulkanEnumConvert::GetRasterMode(key.fixedFunctionState.rasterization.rasterMode);
         conservativeRaster.extraPrimitiveOverestimationSize = std::fminf(m_maxOverEstimation, key.fixedFunctionState.rasterization.overEstimation);
         rasterizer.pNext = key.fixedFunctionState.rasterization.rasterMode != RasterMode::Default ? &conservativeRaster : nullptr;
+        auto rasterPnext = rasterizer.pNext ? &conservativeRaster.pNext : &rasterizer.pNext;
+
+        VkPipelineRasterizationLineStateCreateInfo lineRaster{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO };
+        lineRaster.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH;
+        *rasterPnext = rasterizer.polygonMode == VK_POLYGON_MODE_LINE ? &lineRaster : nullptr;
 
         VkPipelineMultisampleStateCreateInfo multisampling{ VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
         multisampling.sampleShadingEnable = key.fixedFunctionState.multisampling.sampleShadingEnable;

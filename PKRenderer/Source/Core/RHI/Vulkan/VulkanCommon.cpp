@@ -387,6 +387,7 @@ namespace PK
         }
 
         image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        image.flags = 0u;
         image.imageType = descriptor.type == TextureType::Texture3D ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
         image.format = VulkanEnumConvert::GetFormat(descriptor.format);
         image.extent = { descriptor.resolution.x, descriptor.resolution.y, descriptor.resolution.z };
@@ -402,37 +403,28 @@ namespace PK
         allocation.usage = VMA_MEMORY_USAGE_GPU_ONLY;
         formatAlias = VulkanEnumConvert::GetFormat(descriptor.formatAlias);
 
+
         if (descriptor.type == TextureType::Cubemap ||
             descriptor.type == TextureType::CubemapArray)
         {
-            image.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+            image.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         }
 
         if (descriptor.formatAlias != TextureFormat::Invalid && descriptor.formatAlias != descriptor.format)
         {
+            // Set VK_IMAGE_CREATE_ALIAS_BIT  for block compressed formats
             image.flags |= VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_ALIAS_BIT;
             allocation.flags |= VMA_ALLOCATION_CREATE_CAN_ALIAS_BIT;
-            // Set VK_IMAGE_CREATE_ALIAS_BIT  for block compressed formats
-        }
-
-        if ((descriptor.usage & TextureUsage::Sample) != 0)
-        {
-            image.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-        }
-
-        if ((descriptor.usage & TextureUsage::Storage) != 0)
-        {
-            image.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
         }
 
         if ((descriptor.usage & TextureUsage::RTColor) != 0)
         {
             image.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        }
 
-            if ((descriptor.usage & TextureUsage::Sample) != 0)
-            {
-                image.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-            }
+        if ((descriptor.usage & TextureUsage::RTDepth) != 0)
+        {
+            image.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         }
 
         if ((descriptor.usage & TextureUsage::RTStencil) != 0)
@@ -445,9 +437,27 @@ namespace PK
             image.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         }
 
-        if ((descriptor.usage & TextureUsage::RTDepth) != 0)
+        if ((descriptor.usage & TextureUsage::Sample) != 0)
         {
-            image.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+            image.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        }
+
+        if ((descriptor.usage & TextureUsage::Input) != 0)
+        {
+            image.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+        }
+
+        if ((descriptor.usage & TextureUsage::Storage) != 0)
+        {
+            image.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+        }
+
+        if ((descriptor.usage & TextureUsage::Transient) != 0)
+        {
+            image.usage &= ~(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+            image.usage |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+            // Not supported on desktop
+            //allocation.usage = VMA_MEMORY_USAGE_GPU_LAZILY_ALLOCATED;
         }
     }
 

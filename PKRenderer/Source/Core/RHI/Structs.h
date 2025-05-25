@@ -233,6 +233,7 @@ namespace PK
         Storage = 0x40,
         Concurrent = 0x80,
         ReadOnly = 0x100,
+        Transient = 0x200,
         DefaultDisk = Upload | Sample | ReadOnly,
         Default = Upload | Sample,
         DefaultStorage = Upload | Sample | Storage,
@@ -240,8 +241,6 @@ namespace PK
         RTDepthSample = RTDepth | Sample,
 
         ValidRTTypes = RTColor | RTDepth | RTStencil,
-        ValidRTColorUsages = Sample | Storage | Input | Concurrent,
-        ValidRTDepthUsages = Sample | Input | Concurrent,
     };
 
     enum class TextureFormat : uint16_t
