@@ -95,6 +95,7 @@ namespace PK::App
             // @TODO hack, this should be propagated in some way!?
             const bool lockAndHideCursor = input->state.GetKey(m_keys.LookDrag);
             IApplication::Get()->GetPrimaryWindow()->SetCursorLock(lockAndHideCursor, !lockAndHideCursor);
+            IApplication::Get()->GetPrimaryWindow()->GetNative()->SetUseRawInput(true);
         }
     }
 
