@@ -1,4 +1,6 @@
 #pragma once
+#include <bitset>
+
 namespace PK
 {
     enum class InputKey
@@ -146,6 +148,8 @@ namespace PK
         XBOX,
         DS5
     };
+
+    typedef std::bitset<(uint32_t)InputKey::Count> InputKeyState;
 
     const char* InputKeyToString(InputKey key);
     InputKey StringToInputKey(const char* string);

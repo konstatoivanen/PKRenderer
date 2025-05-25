@@ -1,5 +1,4 @@
 #pragma once
-#include <bitset>
 #include "Core/Math/Math.h"
 #include "Core/Input/InputKey.h"
 
@@ -7,8 +6,8 @@ namespace PK
 {
     struct InputState
     {
-        std::bitset<(int)InputKey::Count> keysCurrent;
-        std::bitset<(int)InputKey::Count> keysPrevious;
+        InputKeyState keysCurrent;
+        InputKeyState keysPrevious;
         float2 cursorPosition = PK_FLOAT2_ZERO;
         float2 cursorPositionDelta = PK_FLOAT2_ZERO;
         float2 cursorPositionNormalized = PK_FLOAT2_ZERO;

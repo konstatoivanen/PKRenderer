@@ -22,5 +22,6 @@ namespace PK::App
         RHIDriverScope m_RHIDriver;
         WindowScope m_window;
         uint32_t m_inactiveFrameInterval = 0u;
+        bool m_isRunning = true;
     };
 }

@@ -1,16 +1,16 @@
 #pragma once
-#include <bitset> 
 #include "Core/Input/InputKey.h"
 #include "Core/Math/MathFwd.h"
 
 namespace PK
 {
     struct InputDevice;
-    typedef std::bitset<(uint32_t)InputKey::Count> InputKeyState;
 
     struct InputHandler
     {
         virtual ~InputHandler() = default;
+        virtual void InputHandler_OnPoll() = 0;
+        virtual void InputHandler_OnPoll(InputDevice* device) = 0;
         virtual void InputHandler_OnKey(InputDevice* device, InputKey key, bool isDown) = 0;
         virtual void InputHandler_OnMouseMoved(InputDevice* device, const float2& position, const float2& size) = 0;
         virtual void InputHandler_OnScroll(InputDevice* device, uint32_t axis, float offset) = 0;

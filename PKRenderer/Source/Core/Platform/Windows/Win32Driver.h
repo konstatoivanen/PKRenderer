@@ -155,8 +155,7 @@ namespace PK
         Win32Driver();
         ~Win32Driver();
 
-        void PollEvents() final;
-        void WaitEvents() final;
+        void PollEvents(bool wait) final;
 
         static inline Win32Driver* GetInstance() { return PlatformDriver::Get()->GetNative<Win32Driver>(); }
         inline void* GetProcess() const final { return instance; }

@@ -93,7 +93,6 @@ namespace PK::App
                         Sequencer::Step::Create<ApplicationStep::Render, Window*>(renderPipelineScene),
                         Sequencer::Step::Create<ApplicationStep::Render, Window*>(engineScreenshot),
                         Sequencer::Step::Create<ApplicationStep::CloseFrame>(time),
-                        Sequencer::Step::Create<ApplicationStep::CloseFrame, Window*>(inputSystem),
                         Sequencer::Step::Create<CArgumentsConst>(cvariableRegister),
                         Sequencer::Step::Create<CArgumentConst>(cvariableRegister),
                         Sequencer::Step::Create<RemoteProcessCommand*>(remoteProcessRunner)
@@ -189,7 +188,7 @@ namespace PK::App
     {
         auto sequencer = GetService<Sequencer>();
 
-        while (!m_window->IsClosing())
+        while (m_isRunning)
         {
             Platform::PollEvents();
 
@@ -206,13 +205,13 @@ namespace PK::App
 
             sequencer->NextRoot(ApplicationStep::OpenFrame());
 
-            m_window->Begin();
+            m_window->AcquireImage();
             sequencer->NextRoot(ApplicationStep::OpenFrame(), m_window.get());
             sequencer->NextRoot(ApplicationStep::UpdateInput(), m_window.get());
             sequencer->NextRoot(ApplicationStep::UpdateEngines());
             sequencer->NextRoot(ApplicationStep::Render(), m_window.get());
             sequencer->NextRoot(ApplicationStep::CloseFrame(), m_window.get());
-            m_window->End();
+            m_window->PresentImage();
 
             sequencer->NextRoot(ApplicationStep::CloseFrame());
 
@@ -222,6 +221,7 @@ namespace PK::App
 
     void RendererApplication::Close()
     {
+        m_isRunning = false;
         PK_LOG_INFO("Application.Close Requested.");
     }
 }

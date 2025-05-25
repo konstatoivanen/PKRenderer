@@ -90,7 +90,7 @@ namespace PK
     };
 
 
-    void Window::Begin()
+    void Window::AcquireImage()
     {
         if (m_isFullScreen != m_swapchain->IsFullScreen())
         {
@@ -105,7 +105,7 @@ namespace PK
         m_inWindowScope = true;
     }
 
-    void Window::End()
+    void Window::PresentImage()
     {
         PK_THROW_ASSERT(m_inWindowScope, "Trying to end a frame that outside of a frame scope!")
         m_swapchain->Present();

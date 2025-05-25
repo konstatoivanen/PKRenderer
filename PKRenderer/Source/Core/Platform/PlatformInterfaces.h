@@ -66,6 +66,7 @@ namespace PK
         virtual void Maximize() = 0;
         virtual void Restore() = 0;
         virtual void Focus() = 0;
+        virtual void Close() = 0;
 
         virtual void SetListener(IPlatformWindowListener* listener) = 0;
 
@@ -83,8 +84,7 @@ namespace PK
         PlatformDriver() { if (s_instance != nullptr) throw std::exception("Trying initialize multiple native interfaces!"); s_instance = this; }
         virtual ~PlatformDriver() = 0;
 
-        virtual void PollEvents() = 0;
-        virtual void WaitEvents() = 0;
+        virtual void PollEvents(bool wait) = 0;
 
         virtual void* GetProcess() const = 0;
         virtual void* GetHelperWindow() const = 0;

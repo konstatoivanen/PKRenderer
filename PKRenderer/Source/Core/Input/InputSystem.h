@@ -14,16 +14,19 @@ namespace PK
 
     class InputSystem :
         public IStepApplicationUpdateInput<Window*>,
-        public IStepApplicationCloseFrame<Window*>,
         public ISingleton<InputSystem>,
         public InputHandler
     {
     public:
         InputSystem(Sequencer* sequencer) : m_sequencer(sequencer) {}
 
+        // @TODO this dependency is a bit bad. assumes usage within application step context.
         virtual void OnApplicationUpdateInput(Window* window) final;
-        virtual void OnApplicationCloseFrame(Window* window) final;
 
+        InputState GetInputState(InputDevice* preferredDevice, bool preferLatest, bool preferGlobal);
+
+        void InputHandler_OnPoll() final;
+        void InputHandler_OnPoll(InputDevice* device) final;
         void InputHandler_OnKey(InputDevice* device, InputKey key, bool isDown) final;
         void InputHandler_OnMouseMoved(InputDevice* device, const float2& position, const float2& areaSize) final;
         void InputHandler_OnScroll(InputDevice* device, uint32_t axis, float offset) final;
@@ -34,6 +37,7 @@ namespace PK
 
     private:
         Sequencer* m_sequencer;
+        InputDevice* m_activeInputDevice = nullptr;
         InputState m_globalInputState;
         FastMap<InputDevice*, InputState> m_deviceStates;
     };

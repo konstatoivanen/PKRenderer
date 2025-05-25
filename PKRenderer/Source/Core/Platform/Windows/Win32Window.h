@@ -42,13 +42,13 @@ namespace PK
         void Maximize() final;
         void Restore() final;
         void Focus() final;
+        void Close() final;
 
         inline Win32Window*& GetNext() { return m_nextWindow; }
 
         inline void SetListener(IPlatformWindowListener* listener) final { m_windowListener = listener; }
 
         void OnPollEvents();
-        void OnClose();
 
         LRESULT WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
 

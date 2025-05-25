@@ -44,8 +44,8 @@ namespace PK
         void SetFrameFence(const FenceRef& fence);
         void SetVSync(VSyncMode value);
 
-        void Begin();
-        void End();
+        void AcquireImage();
+        void PresentImage();
         bool IPlatformWindow_OnEvent(PlatformWindow* window, PlatformWindowEvent evt) final;
 
     private:

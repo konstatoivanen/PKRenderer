@@ -620,6 +620,15 @@ namespace PK
         ::SetFocus(m_handle);
     }
 
+    void Win32Window::Close()
+    {
+        if (!m_isClosing)
+        {
+            m_isClosing = true;
+            DispatchWindowOnEvent(PlatformWindowEvent::Close);
+        }
+    }
+
 
     void Win32Window::OnPollEvents()
     {
@@ -865,12 +874,6 @@ namespace PK
         }
     }
 
-    void Win32Window::OnClose()
-    {
-        m_isClosing = true;
-        DispatchWindowOnEvent(PlatformWindowEvent::Close);
-    }
-
     bool Win32Window::IsAnyMouseKeyDown() const
     {
         for (auto i = (uint32_t)InputKey::Mouse1; i <= (uint32_t)InputKey::Mouse8; ++i)
@@ -1083,19 +1086,19 @@ namespace PK
             {
                 if (wParam == VK_F4)
                 {
-                    OnClose();
+                    Close();
                     return 0;
                 }
                 break;
             }
             case WM_CLOSE:
             {
-                OnClose();
+                Close();
                 return 0;
             }
             case WM_DESTROY:
             {
-                PostQuitMessage(0);
+                ::PostQuitMessage(0);
                 return 0;
             }
             case WM_ERASEBKGND:

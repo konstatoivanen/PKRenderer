@@ -21,12 +21,12 @@ namespace PK
 
     void Platform::PollEvents()
     {
-        PlatformDriver::Get()->PollEvents();
+        PlatformDriver::Get()->PollEvents(false);
     }
 
     void Platform::WaitEvents()
     {
-        PlatformDriver::Get()->WaitEvents();
+        PlatformDriver::Get()->PollEvents(true);
     }
     
     void* Platform::GetProcess()

@@ -371,8 +371,28 @@ namespace PK
     }
 
     
-    void Win32Driver::PollEvents()
+    void Win32Driver::PollEvents(bool wait)
     {
+        if (wait)
+        {
+            ::WaitMessage();
+        }
+
+        auto activeHandle = ::GetActiveWindow();
+        auto activeWindow = activeHandle ? (Win32Window*)GetPropW(activeHandle, Win32Window::WINDOW_PROP) : nullptr;
+        auto inputHandler = Win32Driver::GetInstance()->m_inputHandler;
+
+        // Dont dispatch poll events when we're waiting for an activation window event.
+        if (!wait && inputHandler)
+        {
+            inputHandler->InputHandler_OnPoll();
+        }
+
+        if (!wait && inputHandler && activeWindow)
+        {
+            inputHandler->InputHandler_OnPoll(activeWindow);
+        }
+
         MSG msg;
         while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
         {
@@ -382,7 +402,7 @@ namespace PK
 
                 while (head)
                 {
-                    head->OnClose();
+                    head->Close();
                     head = head->GetNext();
                 }
             }
@@ -393,28 +413,15 @@ namespace PK
             }
         }
 
-        HWND activeHandle = ::GetActiveWindow();
-
-        if (activeHandle)
+        if (activeWindow)
         {
-            auto activeWindow = (Win32Window*)GetPropW(activeHandle, Win32Window::WINDOW_PROP);
-
-            if (activeWindow)
-            {
-                activeWindow->OnPollEvents();
-            }
+            activeWindow->OnPollEvents();
         }
 
         if (m_disabledCursorWindow)
         {
             m_disabledCursorWindow->SetCursorPosToCenter();
         }
-    }
-
-    void Win32Driver::WaitEvents()
-    {
-        ::WaitMessage();
-        PollEvents();
     }
 
 
