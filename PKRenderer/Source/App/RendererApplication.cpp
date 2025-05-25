@@ -57,7 +57,6 @@ namespace PK::App
         windowDescriptor.title = { GetName(), m_RHIDriver->GetDriverHeader() };
         m_window = CreateUnique<Window>(windowDescriptor);
         m_window->SetOnCloseCallback([this]() { Close(); });
-        m_window->SetCursorLock(false, true);
 
         m_inactiveFrameInterval = config->InactiveFrameInterval;
 

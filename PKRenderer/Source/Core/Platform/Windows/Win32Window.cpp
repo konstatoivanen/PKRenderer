@@ -350,11 +350,7 @@ namespace PK
 
     void Win32Window::SetCursorPosition(const float2& position)
     {
-        if (m_cursorLock && m_cursorHide && IsFocused())
-        {
-            m_cursorposVirtual = position;
-        }
-        else if (glm::any(glm::epsilonNotEqual(m_cursorpos, position, 1e-2f)))
+        if (glm::any(glm::epsilonNotEqual(m_cursorpos, position, 1e-2f)))
         {
             m_cursorpos = position;
             POINT pos = { (int32_t)position.x, (int32_t)position.y };

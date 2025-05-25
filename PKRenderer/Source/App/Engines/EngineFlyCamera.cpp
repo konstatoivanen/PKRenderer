@@ -5,6 +5,8 @@
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "App/ECS/EntityViewFlyCamera.h"
+#include "Core/IApplication.h"
+#include "Core/Rendering/Window.h"
 #include "EngineFlyCamera.h"
 
 namespace PK::App
@@ -89,6 +91,10 @@ namespace PK::App
 
             // Force automatic perspective projection for this view.
             view.projection->mode = ComponentProjection::Perspective;
+
+            // @TODO hack, this should be propagated in some way!?
+            const bool lockAndHideCursor = input->state.GetKey(m_keys.LookDrag);
+            IApplication::Get()->GetPrimaryWindow()->SetCursorLock(lockAndHideCursor, !lockAndHideCursor);
         }
     }
 
