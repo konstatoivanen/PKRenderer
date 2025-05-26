@@ -1,16 +1,16 @@
 #pragma once
 #include "Core/Utilities/MemoryBlock.h"
 #include "Core/Utilities/FenceRef.h"
-#include "Core/ControlFlow/IStepApplication.h"
 #include "Core/Rendering/RenderingFwd.h"
+#include "App/FrameStep.h"
 
 namespace PK::App
 {
-    class EngineScreenshot : public IStepApplicationRender<Window*>
+    class EngineScreenshot : public IStepFrameRender<>
     {
     public:
         EngineScreenshot();
-        virtual void OnApplicationRender(Window* window) final;
+        virtual void OnStepFrameRender(FrameContext* ctx) final;
 
         void QueueCapture();
 

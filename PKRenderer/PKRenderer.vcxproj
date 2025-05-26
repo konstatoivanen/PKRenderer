@@ -247,9 +247,12 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Engines\EngineGUIRenderer.h" />
     <ClInclude Include="Source\App\Engines\EngineProfiler.h" />
     <ClInclude Include="Source\App\Engines\EngineViewUpdate.h" />
+    <ClInclude Include="Source\App\FrameContext.h" />
+    <ClInclude Include="Source\App\FrameStep.h" />
     <ClInclude Include="Source\App\Renderer\IGUIRenderer.h" />
     <ClInclude Include="Source\App\Renderer\RenderViewSettings.h" />
     <ClInclude Include="Source\Core\CLI\CVariablesYaml.h" />
+    <ClInclude Include="Source\Core\Input\InputStateCollection.h" />
     <ClInclude Include="Source\Core\Input\InputDevice.h" />
     <ClInclude Include="Source\Core\Input\InputState.h" />
     <ClInclude Include="Source\Core\Platform\Platform.h" />
@@ -602,9 +605,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\CLI\LoggerPrintf.h" />
     <ClInclude Include="Source\Core\CLI\LogScopeIndent.h" />
     <ClInclude Include="Source\Core\CLI\LogScopeTimer.h" />
-    <ClInclude Include="Source\Core\ControlFlow\ApplicationStep.h" />
     <ClInclude Include="Source\Core\ControlFlow\IStep.h" />
-    <ClInclude Include="Source\Core\ControlFlow\IStepApplication.h" />
     <ClInclude Include="Source\Core\ControlFlow\RemoteProcessRunner.h" />
     <ClInclude Include="Source\Core\ControlFlow\Sequencer.h" />
     <ClInclude Include="Source\Core\IApplication.h" />
@@ -612,7 +613,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Input\InputKey.h" />
     <ClInclude Include="Source\Core\Input\InputKeyBinding.h" />
     <ClInclude Include="Source\Core\Input\InputKeyStructMacros.h" />
-    <ClInclude Include="Source\Core\Input\InputSystem.h" />
+    <ClInclude Include="Source\App\Engines\EngineInput.h" />
     <ClInclude Include="Source\Core\RHI\RHI.h" />
     <ClInclude Include="Source\Core\ServiceRegister.h" />
     <ClInclude Include="Source\App\Engines\EngineTime.h" />
@@ -1078,7 +1079,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\IApplication.cpp" />
     <ClCompile Include="Source\Core\Input\InputKey.cpp" />
     <ClCompile Include="Source\Core\Input\InputKeyBinding.cpp" />
-    <ClCompile Include="Source\Core\Input\InputSystem.cpp" />
+    <ClCompile Include="Source\App\Engines\EngineInput.cpp" />
     <ClCompile Include="Source\Core\ServiceRegister.cpp" />
     <ClCompile Include="Source\App\Engines\EngineTime.cpp" />
     <ClCompile Include="Source\Core\Utilities\NameIDProviderDefault.cpp" />

@@ -4,6 +4,7 @@
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/CLI/Log.h"
 #include "Core/ControlFlow/Sequencer.h"
+#include "App/FrameContext.h"
 #include "EngineTime.h"
 
 namespace PK::App
@@ -33,7 +34,7 @@ namespace PK::App
         m_runner.timeScale = timeScale;
     }
 
-    void EngineTime::OnApplicationOpenFrame()
+    void EngineTime::OnStepFrameInitialize(FrameContext* ctx)
     {
         m_runner.BeginTimerScope();
         TimeFrameInfo frameTimeInfo{};
@@ -44,6 +45,7 @@ namespace PK::App
         frameTimeInfo.deltaTime = m_runner.deltaTime;
         frameTimeInfo.unscaledDeltaTime = m_runner.unscaledDeltaTime;
         frameTimeInfo.smoothDeltaTime = m_runner.smoothDeltaTime;
+        ctx->time = frameTimeInfo;
         m_sequencer->Next(this, &frameTimeInfo);
 
         TimeFramerateInfo framerateInfo{};
@@ -52,11 +54,11 @@ namespace PK::App
         framerateInfo.framerateMax = m_framerateFixed.framerateMax;
         framerateInfo.framerateAvg = m_framerateFixed.framerateAvg;
         framerateInfo.frameMs = m_framerate.deltaTime * 1000.0f;
-
+        ctx->framerate = framerateInfo;
         m_sequencer->Next(this, &framerateInfo);
     }
 
-    void EngineTime::OnApplicationCloseFrame()
+    void EngineTime::OnStepFrameFinalize(FrameContext* ctx)
     {
         m_runner.EndTimerScope();
         m_framerate.CaptureUnscoped();
@@ -68,5 +70,8 @@ namespace PK::App
             m_framerate.deltaTime = m_framerateFixed.deltaTime;
             m_framerate.framerate = m_framerateFixed.framerate;
         }
+
+        // apply potential changes in time scale.
+        m_runner.timeScale = ctx->time.timeScale;
     }
 }

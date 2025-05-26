@@ -11,7 +11,7 @@ namespace PK::App
         m_entityDb = entityDb;
     }
 
-    void EngineUpdateTransforms::OnApplicationUpdateEngines()
+    void EngineUpdateTransforms::OnStepFrameUpdate([[maybe_unused]] FrameContext* ctx)
     {
         auto views = m_entityDb->Query<EntityViewTransform>((int)ENTITY_GROUPS::ACTIVE);
 

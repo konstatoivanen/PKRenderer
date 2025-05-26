@@ -102,7 +102,7 @@ namespace PK::App
         cameraRenderView->renderView->settingsRef = &config->ViewSettings;
     }
 
-    void EngineDebug::OnApplicationUpdateEngines()
+    void EngineDebug::OnStepFrameUpdate([[maybe_unused]] FrameContext* ctx)
     {
         /*
         auto lights = m_entityDb->Query<EntityViews::LightSphere>((int)ENTITY_GROUPS::ACTIVE);

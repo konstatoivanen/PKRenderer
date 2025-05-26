@@ -1,29 +1,25 @@
 #pragma once
 #include "Core/Utilities/Ref.h"
+#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Utilities/ISingleton.h"
 #include "Core/Utilities/FixedPool.h"
 #include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/FixedList.h"
 #include "Core/Platform/PlatformInterfaces.h"
-#include "Core/ControlFlow/IStepApplication.h"
 #include "Core/Input/InputState.h"
 #include "Core/Rendering/RenderingFwd.h"
+#include "App/FrameStep.h"
 
-namespace PK
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct Sequencer)
+
+namespace PK::App
 {
-    struct Sequencer;
-
-    class InputSystem :
-        public IStepApplicationUpdateInput<Window*>,
-        public ISingleton<InputSystem>,
-        public InputHandler
+    class EngineInput : public InputHandler, public IStepFrameUpdate<>
     {
     public:
-        InputSystem(Sequencer* sequencer) : m_sequencer(sequencer) {}
+        EngineInput(Sequencer* sequencer) : m_sequencer(sequencer) {}
 
-        // @TODO this dependency is a bit bad. assumes usage within application step context.
-        virtual void OnApplicationUpdateInput(Window* window) final;
-
-        InputState GetInputState(InputDevice* preferredDevice, bool preferLatest, bool preferGlobal);
+        void OnStepFrameUpdate(FrameContext* ctx) final;
 
         void InputHandler_OnPoll() final;
         void InputHandler_OnPoll(InputDevice* device) final;
@@ -37,8 +33,8 @@ namespace PK
 
     private:
         Sequencer* m_sequencer;
-        InputDevice* m_activeInputDevice = nullptr;
-        InputState m_globalInputState;
         FastMap<InputDevice*, InputState> m_deviceStates;
+        InputState m_globalState{};
+        InputDevice* m_lastDevice;
     };
 }

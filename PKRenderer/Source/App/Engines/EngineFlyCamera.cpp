@@ -18,7 +18,7 @@ namespace PK::App
         CVariableRegister::Create<CVariableFuncSimple>("Engine.FlyCamera.Transforms.Reset", [this](){TransformsReset();});
     }
 
-    void EngineFlyCamera::OnApplicationUpdateEngines()
+    void EngineFlyCamera::OnStepFrameUpdate([[maybe_unused]] FrameContext* ctx)
     {
         auto views = m_entityDb->Query<EntityViewFlyCamera>((uint32_t)ENTITY_GROUPS::ACTIVE);
 

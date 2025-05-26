@@ -5,7 +5,7 @@
 #include "Core/Timers/TimeFrameInfo.h"
 #include "Core/Timers/TimerFramerate.h"
 #include "Core/Timers/TimerFrameRunner.h"
-#include "Core/ControlFlow/IStepApplication.h"
+#include "App/FrameStep.h"
 
 namespace PK
 {
@@ -15,8 +15,8 @@ namespace PK
 namespace PK::App
 {
     class EngineTime :
-        public IStepApplicationOpenFrame<>,
-        public IStepApplicationCloseFrame<>
+        public IStepFrameInitialize<>,
+        public IStepFrameFinalize<>
     {
     public:
         EngineTime(Sequencer* sequencer, float timeScale);
@@ -41,8 +41,8 @@ namespace PK::App
 
         void Reset();
 
-        virtual void OnApplicationOpenFrame() final;
-        virtual void OnApplicationCloseFrame() final;
+        virtual void OnStepFrameInitialize(FrameContext* ctx) final;
+        virtual void OnStepFrameFinalize(FrameContext* ctx) final;
 
     private:
         Sequencer* m_sequencer = nullptr;

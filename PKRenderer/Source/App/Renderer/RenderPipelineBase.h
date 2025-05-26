@@ -1,12 +1,12 @@
 #pragma once
 #include "Core/Utilities/ForwardDeclare.h"
 #include "Core/ControlFlow/IStep.h"
-#include "Core/ControlFlow/IStepApplication.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "App/Renderer/EntityEnums.h"
 #include "App/Renderer/IBatcher.h"
 #include "App/Renderer/RenderView.h"
+#include "App/FrameStep.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct Sequencer)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
@@ -58,7 +58,7 @@ namespace PK::App
         RenderPipelineContext* context;
     };
 
-    struct RenderPipelineBase : public IStepApplicationRender<Window*>
+    struct RenderPipelineBase : public IStepFrameRender<>
     {
         constexpr static size_t MAX_RENDER_VIEWS = 32ull;
 
@@ -67,7 +67,7 @@ namespace PK::App
             Sequencer* sequencer,
             IBatcher* batcher);
 
-        void OnApplicationRender(Window* window) final;
+        void OnStepFrameRender(FrameContext* ctx) final;
 
         protected: 
             virtual IRenderViewResources* GetViewResources(uint32_t index) = 0;

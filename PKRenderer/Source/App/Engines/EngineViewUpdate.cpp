@@ -3,8 +3,8 @@
 #include "Core/Input/InputState.h"
 #include "Core/Timers/TimeFrameInfo.h"
 #include "Core/ControlFlow/Sequencer.h"
-#include "Core/ControlFlow/ApplicationStep.h"
 #include "App/ECS/EntityViewRenderView.h"
+#include "App/FrameContext.h"
 #include "EngineViewUpdate.h"
 
 namespace PK::App
@@ -15,29 +15,22 @@ namespace PK::App
     {
     }
     
-    void EngineViewUpdate::Step(InputState* inputState)
+    void EngineViewUpdate::OnStepFrameUpdate(FrameContext* ctx)
     {
         auto views = m_entityDb->Query<EntityViewRenderView>((uint32_t)ENTITY_GROUPS::ACTIVE);
 
         for (auto i = 0u; i < views.count; ++i)
         {
+            auto& time = views[i].time;
+            time->info = ctx->time;
+
+            // @TODO select input state on some view preference.
             auto& input = views[i].input;
-            input->state = *inputState;
+            input->state = ctx->input.globalState;
             input->keysConsumed.Clear();
             input->hotControlId = 0u;
             input->controlIdCounter = 1u;
         }
-
-        m_sequencer->Next(this, ApplicationStep::UpdateInput());
-    }
-
-    void EngineViewUpdate::Step(TimeFrameInfo* time)
-    {
-        auto views = m_entityDb->Query<EntityViewRenderView>((uint32_t)ENTITY_GROUPS::ACTIVE);
-
-        for (auto i = 0u; i < views.count; ++i)
-        {
-            views[i].time->info = *time;
-        }
     }
 }
+

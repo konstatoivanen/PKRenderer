@@ -14,6 +14,7 @@
 #include "App/Renderer/HashCache.h"
 #include "App/Renderer/EntityCulling.h"
 #include "App/Renderer/RenderView.h"
+#include "App/FrameContext.h"
 #include "RenderPipelineBase.h"
 
 namespace PK::App
@@ -84,11 +85,13 @@ namespace PK::App
         }
     }
 
-    void RenderPipelineBase::OnApplicationRender(Window* window)
+    void RenderPipelineBase::OnStepFrameRender(FrameContext* ctx)
     {
+        auto window = ctx->window;
         auto entityViews = m_entityDb->Query<EntityViewRenderView>((uint32_t)ENTITY_GROUPS::ACTIVE);
 
         PK_WARNING_ASSERT(entityViews.count < MAX_RENDER_VIEWS, "Active scene view count exceeds predefined maximum (%i)", MAX_RENDER_VIEWS);
+
 
         m_renderViewCount = 0u;
         RenderView* views[MAX_RENDER_VIEWS]{};

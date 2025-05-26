@@ -2,9 +2,9 @@
 #include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Math/Math.h"
 #include "Core/ECS/EGID.h"
-#include "Core/ControlFlow/IStepApplication.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "Core/Yaml/StructMacros.h"
+#include "App/FrameStep.h"
 #include "App/Renderer/RenderViewSettings.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
@@ -30,13 +30,13 @@ namespace PK::App
 
     // Dumping ground for all loose hooks that have not been implemented yet.
     class EngineDebug : 
-        public IStepApplicationUpdateEngines<>,
+        public IStepFrameUpdate<>,
         public IStep<IGizmosRenderer*>,
         public IStep<AssetImportEvent<EngineDebugConfig>*>
     {
     public:
         EngineDebug(AssetDatabase* assetDatabase, EntityDatabase* entityDb, MeshStaticCollection* baseMesh);
-        virtual void OnApplicationUpdateEngines() final;
+        virtual void OnStepFrameUpdate(FrameContext* ctx) final;
         virtual void Step(IGizmosRenderer* gui) final;
         virtual void Step(AssetImportEvent<EngineDebugConfig>* token) final;
 

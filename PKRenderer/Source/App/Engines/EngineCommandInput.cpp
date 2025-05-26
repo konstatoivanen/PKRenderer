@@ -4,6 +4,7 @@
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/ControlFlow/Sequencer.h"
 #include "Core/CLI/Log.h"
+#include "App/FrameContext.h"
 #include "EngineCommandInput.h"
 
 namespace PK::App
@@ -16,19 +17,25 @@ namespace PK::App
         keyConfig->CommandInputKeys.TryGetKey("Console.BeginInput", &m_keyBeginInput);
     }
 
-    void EngineCommandInput::Step(InputState* inputState)
+    void EngineCommandInput::OnStepFrameUpdate(FrameContext* ctx)
     {
+        if (ctx->input.lastDeviceState.device != ctx->window->GetNative())
+        {
+            return;
+        }
+
+        auto& input = ctx->input.lastDeviceState.state;
         auto bindings = m_inputKeyCommands.GetBindings();
 
         for (auto i = 0u; i < m_inputKeyCommands.count; ++i)
         {
-            if (inputState->GetKeyDown(bindings[i].key))
+            if (input.GetKeyDown(bindings[i].key))
             {
                 m_sequencer->NextRoot<CArgumentConst>({ bindings[i].command });
             }
         }
 
-        if (inputState->GetKeyDown(m_keyBeginInput))
+        if (input.GetKeyDown(m_keyBeginInput))
         {
             StaticLog::LogNewLine();
             StaticLog::Log(PK_LOG_LVL_INFO, PK_LOG_COLOR_INPUT, "Awaiting command input...");

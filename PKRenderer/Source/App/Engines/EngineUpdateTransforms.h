@@ -1,16 +1,16 @@
 #pragma once
 #include "Core/Utilities/ForwardDeclare.h"
-#include "Core/ControlFlow/IStepApplication.h"
+#include "App/FrameStep.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
 
 namespace PK::App
 {
-    class EngineUpdateTransforms : public IStepApplicationUpdateEngines<>
+    class EngineUpdateTransforms : public IStepFrameUpdate<>
     {
     public:
         EngineUpdateTransforms(EntityDatabase* entityDb);
-        virtual void OnApplicationUpdateEngines() final;
+        virtual void OnStepFrameUpdate(FrameContext* ctx) final;
 
     private:
         EntityDatabase* m_entityDb = nullptr;

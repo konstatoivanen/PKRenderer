@@ -6,12 +6,13 @@
 #include "Core/CLI/LoggerPrintf.h"
 #include "Core/ControlFlow/Sequencer.h"
 #include "Core/ControlFlow/RemoteProcessRunner.h"
-#include "Core/ControlFlow/IStepApplication.h"
-#include "Core/Input/InputSystem.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/Window.h"
 #include "Core/IApplication.h"
+#include "App/FrameStep.h"
+#include "App/FrameContext.h"
+#include "App/Engines/EngineInput.h"
 #include "App/Engines/EngineTime.h"
 #include "App/Engines/EngineCommandInput.h"
 #include "App/Engines/EngineViewUpdate.h"
@@ -45,8 +46,8 @@ namespace PK::App
         auto entityDb = GetServices()->Create<EntityDatabase>();
         auto sequencer = GetServices()->Create<Sequencer>();
         auto assetDatabase = GetServices()->Create<AssetDatabase>(sequencer);
-        auto inputSystem = GetServices()->Create<InputSystem>(sequencer);
-        Platform::SetInputHandler(inputSystem);
+        auto input = GetServices()->Create<EngineInput>(sequencer);
+        Platform::SetInputHandler(input);
 
         auto config = assetDatabase->Load<BaseRendererConfig>("Content/Configs/BaseRenderer.cfg");
         auto keyConfig = assetDatabase->Load<InputKeyConfig>("Content/Configs/Input.keycfg");
@@ -86,13 +87,17 @@ namespace PK::App
                 {
                     sequencer->GetRoot(),
                     {
-                        Sequencer::Step::Create<ApplicationStep::OpenFrame>(time),
-                        Sequencer::Step::Create<ApplicationStep::UpdateInput, Window*>(inputSystem),
-                        Sequencer::Step::Create<ApplicationStep::UpdateEngines>(engineFlyCamera),
-                        Sequencer::Step::Create<ApplicationStep::UpdateEngines>(engineUpdateTransforms),
-                        Sequencer::Step::Create<ApplicationStep::Render, Window*>(renderPipelineScene),
-                        Sequencer::Step::Create<ApplicationStep::Render, Window*>(engineScreenshot),
-                        Sequencer::Step::Create<ApplicationStep::CloseFrame>(time),
+                        Sequencer::Step::Create<FrameStep::Initialize, FrameContext*>(time),
+                        Sequencer::Step::Create<FrameStep::Update, FrameContext*>(input),
+                        Sequencer::Step::Create<FrameStep::Update, FrameContext*>(engineCommands),
+                        Sequencer::Step::Create<FrameStep::Update, FrameContext*>(engineDebug),
+                        Sequencer::Step::Create<FrameStep::Update, FrameContext*>(engineViewUpdate),
+                        Sequencer::Step::Create<FrameStep::Update, FrameContext*>(engineFlyCamera),
+                        Sequencer::Step::Create<FrameStep::Update, FrameContext*>(engineUpdateTransforms),
+                        Sequencer::Step::Create<FrameStep::Render, FrameContext*>(renderPipelineScene),
+                        Sequencer::Step::Create<FrameStep::Render, FrameContext*>(engineScreenshot),
+                        Sequencer::Step::Create<FrameStep::Finalize, FrameContext*>(time),
+
                         Sequencer::Step::Create<CArgumentsConst>(cvariableRegister),
                         Sequencer::Step::Create<CArgumentConst>(cvariableRegister),
                         Sequencer::Step::Create<RemoteProcessCommand*>(remoteProcessRunner)
@@ -101,15 +106,7 @@ namespace PK::App
                 {
                     time,
                     {
-                        Sequencer::Step::Create<TimeFrameInfo*>(engineViewUpdate),
-                        Sequencer::Step::Create<TimeFramerateInfo*>(engineProfiler),
-                    }
-                },
-                {
-                    inputSystem,
-                    {
-                        Sequencer::Step::Create<InputState*>(engineCommands),
-                        Sequencer::Step::Create<InputState*>(engineViewUpdate),
+                        Sequencer::Step::Create<TimeFramerateInfo*>(engineProfiler)
                     }
                 },
                 {
@@ -203,17 +200,19 @@ namespace PK::App
                 Sleep(m_inactiveFrameInterval);
             }
 
-            sequencer->NextRoot(ApplicationStep::OpenFrame());
+            FrameContext ctx{};
+            ctx.window = m_window.get();
+
+            sequencer->NextRoot(FrameStep::Initialize(), &ctx);
 
             m_window->AcquireImage();
-            sequencer->NextRoot(ApplicationStep::OpenFrame(), m_window.get());
-            sequencer->NextRoot(ApplicationStep::UpdateInput(), m_window.get());
-            sequencer->NextRoot(ApplicationStep::UpdateEngines());
-            sequencer->NextRoot(ApplicationStep::Render(), m_window.get());
-            sequencer->NextRoot(ApplicationStep::CloseFrame(), m_window.get());
+
+            sequencer->NextRoot(FrameStep::Update(), &ctx);
+            sequencer->NextRoot(FrameStep::Render(), &ctx);
+
             m_window->PresentImage();
 
-            sequencer->NextRoot(ApplicationStep::CloseFrame());
+            sequencer->NextRoot(FrameStep::Finalize(), &ctx);
 
             RHI::GC();
         }

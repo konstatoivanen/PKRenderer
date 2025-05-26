@@ -6,6 +6,7 @@
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/Window.h"
+#include "App/FrameContext.h"
 #include "EngineScreenshot.h"
 
 namespace PK::App
@@ -16,8 +17,10 @@ namespace PK::App
         CVariableRegister::Create<CVariableFuncSimple>("Engine.Screenshot.QueueCapture", [this](){QueueCapture();});
     }
 
-    void EngineScreenshot::OnApplicationRender(Window* window)
+    void EngineScreenshot::OnStepFrameRender(FrameContext* ctx)
     {
+        auto window = ctx->window;
+
         m_currentResolution = uint2(window->GetResolution().xy);
 
         if (m_currentResolution != m_captureResolution)
