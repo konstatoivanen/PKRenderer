@@ -179,7 +179,7 @@ namespace PK::App
             if (batch.type == LightType::Point)
             {
                 auto targetDepth = RenderTargetBinding(m_depthTargetCube.get(), range0, LoadOp::Clear, StoreOp::Store, { PK_CLIPZ_FAR, 0u });
-                auto targetDist = RenderTargetBinding(m_shadowTargetCube.get(), range1, LoadOp::Clear, StoreOp::Store, float4(PK_HALF_MAX) );
+                auto targetDist = RenderTargetBinding(m_shadowTargetCube.get(), range0, LoadOp::Clear, StoreOp::Store, float4(PK_HALF_MAX) );
                 cmd.SetRenderTarget({ targetDepth, targetDist }, true);
                 context->batcher->RenderGroup(cmd, batch.batchGroup, nullptr, keyword);
                 RHI::SetTexture(hash->pk_Texture, m_shadowTargetCube.get());
