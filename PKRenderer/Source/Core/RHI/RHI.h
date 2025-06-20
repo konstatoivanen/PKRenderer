@@ -111,6 +111,7 @@ namespace PK
         RHIDriverMemoryInfo GetMemoryInfo();
         size_t GetBufferOffsetAlignment(BufferUsage usage);
         const BuiltInResources* GetBuiltInResources();
+        void WaitForIdle();
         void GC();
 
         RHIDriverScope CreateDriver(const char* workingDirectory, const RHIDriverDescriptor& descriptor);

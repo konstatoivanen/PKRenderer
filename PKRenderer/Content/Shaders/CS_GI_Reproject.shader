@@ -1,4 +1,6 @@
 
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_shuffle : enable
 #pragma pk_multi_compile _ PK_GI_SPEC_VIRT_REPROJECT
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
 #pragma pk_program SHADER_STAGE_COMPUTE main
@@ -7,6 +9,16 @@
 #define PK_GI_STORE_LVL 0
 
 #include "includes/SceneGIFiltering.glsl"
+#include "includes/ComputeQuadSwap.glsl"
+
+float GI_GetAntilag_SubgroupStretch(float2 reproject_coord)
+{
+    const uint swapId = QuadSwapIdDiagonal16x2(gl_SubgroupInvocationID);
+    const float2 reproject_coord_n = subgroupShuffle(reproject_coord, swapId);
+    const float2 coord_diff = abs(reproject_coord_n - reproject_coord);
+    const float  min_diff = min(coord_diff.x, coord_diff.y);
+    return saturate(pow4(min_diff) / 1.0f);
+}
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void main()
@@ -24,12 +36,13 @@ void main()
 #endif
 
     const float depth = PK_GI_SAMPLE_DEPTH(coord);
+    const bool is_scene = Test_DepthIsScene(depth);
     uint4 packed_diff = uint4(0u);
     uint2 packed_spec = uint2(0u);
 
     // Far clip or new backbuffer
     [[branch]]
-    if (pk_FrameIndex.y != 0u && Test_DepthIsScene(depth))
+    if (pk_FrameIndex.y != 0u && subgroupAny(is_scene))
     {
         GIDiff diff = PK_GI_DIFF_ZERO;
         GISpec spec = PK_GI_SPEC_ZERO;
@@ -62,6 +75,9 @@ void main()
                 const float2 s_fcoord = GI_ViewToPrevScreenUv(view_pos);
                 const int2   s_coord = int2(s_fcoord);
                 const float4 s_depths = PK_GI_GATHER_PREV_DEPTH((s_coord + 0.5f.xx) * pk_ScreenParams.zw).wzxy;
+
+                // Drop samples that elongate single pixels (Mitigates strech marks).
+                antilag_diff *= GI_GetAntilag_SubgroupStretch(s_fcoord);
 
                 float4 weights = GI_GetBilinearWeights(s_fcoord - s_coord);
                 weights *= exp(-abs(depth.xxxx - s_depths));
@@ -96,7 +112,7 @@ void main()
             }
 
             // Reduce diff antilag on poor reproject.
-            antilag_diff = lerp(0.1f, 1.0f, saturate(wsum_diff));
+            antilag_diff *= lerp(0.1f, 1.0f, saturate(wsum_diff));
             antilag_spec = GI_GetAntilagSpecular(roughness, nv, parallax);
 
 #if defined(PK_GI_SPEC_VIRT_REPROJECT)
@@ -151,8 +167,8 @@ void main()
             }
         }
 
-        const bool invalid_diff = Test_NaN_EPS6(wsum_diff);
-        const bool invalid_spec = Test_NaN_EPS6(wsum_spec);
+        const bool invalid_diff = !is_scene || Test_NaN_EPS6(wsum_diff);
+        const bool invalid_spec = !is_scene || Test_NaN_EPS6(wsum_spec);
         packed_diff = invalid_diff ? uint4(0) : GI_Pack_Diff(diff);
         packed_spec = invalid_spec ? uint2(0) : GI_Pack_Spec(spec);
     }

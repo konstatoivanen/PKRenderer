@@ -144,6 +144,9 @@ float3 Tonemap_AgX(float3 color, float exposure)
     // *not* using a sRGB render target
     color = pow(color, 2.2f.xxx);
 
+    // Low values produce negatives.
+    color = -min(-color, 0.0f.xxx);
+
     return color;
 }
 

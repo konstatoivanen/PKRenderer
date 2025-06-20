@@ -195,11 +195,6 @@ namespace PK::App
                 continue;
             }
 
-            if (m_inactiveFrameInterval > 0 && !Platform::GetHasFocus())
-            {
-                Sleep(m_inactiveFrameInterval);
-            }
-
             FrameContext ctx{};
             ctx.window = m_window.get();
 
@@ -215,6 +210,11 @@ namespace PK::App
             sequencer->NextRoot(FrameStep::Finalize(), &ctx);
 
             RHI::GC();
+
+            if (m_inactiveFrameInterval > 0 && !Platform::GetHasFocus())
+            {
+                Sleep(m_inactiveFrameInterval);
+            }
         }
     }
 

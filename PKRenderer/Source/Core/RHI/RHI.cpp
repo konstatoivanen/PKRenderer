@@ -25,6 +25,7 @@ namespace PK
     RHIDriverMemoryInfo RHI::GetMemoryInfo() { return RHIDriver::Get()->GetMemoryInfo(); }
     size_t RHI::GetBufferOffsetAlignment(BufferUsage usage) { return RHIDriver::Get()->GetBufferOffsetAlignment(usage); }
     const BuiltInResources* RHI::GetBuiltInResources() { return RHIDriver::Get()->GetBuiltInResources(); }
+    void RHI::WaitForIdle() { RHIDriver::Get()->WaitForIdle(); }
     void RHI::GC() { RHIDriver::Get()->GC(); }
 
     RHIDriverScope RHI::CreateDriver(const char* workingDirectory, const RHIDriverDescriptor& descriptor)
