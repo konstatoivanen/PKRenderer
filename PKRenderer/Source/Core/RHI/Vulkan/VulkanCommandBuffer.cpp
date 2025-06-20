@@ -447,34 +447,36 @@ namespace PK
         auto layout = vkTexture->GetImageLayout();
         auto range = VkImageSubresourceRange{ (uint32_t)vkTexture->GetAspectFlags(), 0, texture->GetLevels(), 0, texture->GetLayers() };
         auto stage = m_renderState->GetServices()->stagingBufferCache->Acquire(size, false, nullptr);
-        std::vector<VkBufferImageCopy> bufferCopyRegions;
-        bufferCopyRegions.reserve(rangeCount);
+
+        // Assume a common case of max 5 mips. avoids redundant mallocs.
+        MemoryBlock<VkBufferImageCopy, 5ull> regions;
+        regions.Validate(rangeCount);
 
         for (auto i = 0u; i < rangeCount; ++i)
         {
             auto& range = ranges[i];
-            VkBufferImageCopy bufferCopyRegion = {};
-            bufferCopyRegion.imageSubresource.aspectMask = vkTexture->GetAspectFlags();
-            bufferCopyRegion.imageSubresource.mipLevel = range.level;
-            bufferCopyRegion.imageSubresource.baseArrayLayer = range.layer;
-            bufferCopyRegion.imageSubresource.layerCount = range.layers;
-            bufferCopyRegion.imageExtent.width = range.extent.x;
-            bufferCopyRegion.imageExtent.height = range.extent.y;
-            bufferCopyRegion.imageExtent.depth = range.extent.z;
-            bufferCopyRegion.imageOffset.x = range.offset.x;
-            bufferCopyRegion.imageOffset.y = range.offset.y;
-            bufferCopyRegion.imageOffset.z = range.offset.z;
-            bufferCopyRegion.bufferOffset = range.bufferOffset;
+            auto& region = regions[i];
+
+            region.bufferOffset = range.bufferOffset;
             // Tightly packed.
-            bufferCopyRegion.bufferImageHeight = 0u;
-            bufferCopyRegion.bufferRowLength = 0u;
-            bufferCopyRegions.push_back(bufferCopyRegion);
+            region.bufferRowLength = 0u;
+            region.bufferImageHeight = 0u;
+            region.imageSubresource.aspectMask = vkTexture->GetAspectFlags();
+            region.imageSubresource.mipLevel = range.level;
+            region.imageSubresource.baseArrayLayer = range.layer;
+            region.imageSubresource.layerCount = range.layers;
+            region.imageOffset.x = range.offset.x;
+            region.imageOffset.y = range.offset.y;
+            region.imageOffset.z = range.offset.z;
+            region.imageExtent.width = range.extent.x;
+            region.imageExtent.height = range.extent.y;
+            region.imageExtent.depth = range.extent.z;
         }
 
         stage->SetData(data, size);
         TransitionImageLayout(vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range);
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdCopyBufferToImage(m_commandBuffer, stage->buffer, vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, (uint32_t)bufferCopyRegions.size(), bufferCopyRegions.data());
+        vkCmdCopyBufferToImage(m_commandBuffer, stage->buffer, vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, rangeCount, regions.GetData());
         TransitionImageLayout(vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout, range);
         m_renderState->GetServices()->stagingBufferCache->Release(stage, GetFenceRef());
     }
