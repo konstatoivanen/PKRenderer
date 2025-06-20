@@ -456,7 +456,6 @@ namespace PK
             VkBufferImageCopy bufferCopyRegion = {};
             bufferCopyRegion.imageSubresource.aspectMask = vkTexture->GetAspectFlags();
             bufferCopyRegion.imageSubresource.mipLevel = range.level;
-            bufferCopyRegion.imageSubresource.mipLevel = range.level;
             bufferCopyRegion.imageSubresource.baseArrayLayer = range.layer;
             bufferCopyRegion.imageSubresource.layerCount = range.layers;
             bufferCopyRegion.imageExtent.width = range.extent.x;
@@ -466,6 +465,9 @@ namespace PK
             bufferCopyRegion.imageOffset.y = range.offset.y;
             bufferCopyRegion.imageOffset.z = range.offset.z;
             bufferCopyRegion.bufferOffset = range.bufferOffset;
+            // Tightly packed.
+            bufferCopyRegion.bufferImageHeight = 0u;
+            bufferCopyRegion.bufferRowLength = 0u;
             bufferCopyRegions.push_back(bufferCopyRegion);
         }
 

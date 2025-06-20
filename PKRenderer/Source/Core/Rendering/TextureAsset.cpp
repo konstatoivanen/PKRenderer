@@ -60,23 +60,21 @@ namespace PK
 
         ktx_uint8_t* ktxTextureData = ktxTexture_GetData(ktxTexture(ktxTex2));
         ktx_size_t ktxTextureSize = ktxTex2->dataSize;
-        std::vector<TextureUploadRange> ranges;
+        TextureUploadRange* ranges = PK_STACK_ALLOC(TextureUploadRange, descriptor.levels);
 
         auto faces = ktxTex2->isCubemap ? ktxTex2->numFaces : 1u;
 
-        for (auto layer = 0u; layer < descriptor.layers; ++layer)
+        // KTX 2 stores all levels in tightly packed form. no need to iterate on other data.
         for (auto level = 0u; level < descriptor.levels; ++level)
-        for (auto face = 0u; face < faces; ++face)
         {
             ktx_size_t offset;
-            PK_THROW_ASSERT(ktxTexture_GetImageOffset(ktxTexture(ktxTex2), level, layer, face, &offset) == KTX_SUCCESS, "Failed to get image buffer offset");
+            PK_THROW_ASSERT(ktxTexture_GetImageOffset(ktxTexture(ktxTex2), level, 0, 0, &offset) == KTX_SUCCESS, "Failed to get image buffer offset");
 
-            ranges.push_back({});
-            auto& range = ranges.back();
+            auto& range = ranges[level];
             range.bufferOffset = (uint32_t)offset;
             range.level = level;
-            range.layer = ktxTex2->isCubemap ? ((layer * faces) + face) : layer;
-            range.layers = 1;
+            range.layer = 0;
+            range.layers = ktxTex2->isCubemap ? descriptor.layers * faces : descriptor.layers;
             range.offset = PK_UINT3_ZERO;
             range.extent =
             {
@@ -86,7 +84,7 @@ namespace PK
             };
         }
 
-        RHI::GetCommandBuffer(QueueType::Transfer)->UploadTexture(m_texture.get(), ktxTextureData, ktxTextureSize, ranges.data(), (uint32_t)ranges.size());
+        RHI::GetCommandBuffer(QueueType::Transfer)->UploadTexture(m_texture.get(), ktxTextureData, ktxTextureSize, ranges, descriptor.levels);
 
         ktxTexture_Destroy(ktxTexture(ktxTex2));
     }
