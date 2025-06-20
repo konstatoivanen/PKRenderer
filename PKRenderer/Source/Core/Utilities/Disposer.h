@@ -16,7 +16,7 @@ namespace PK
                 FenceRef fence{};
             };
 
-            Disposer() {}
+            Disposer() { m_disposables.reserve(256u); }
             ~Disposer();
 
             template<typename T>

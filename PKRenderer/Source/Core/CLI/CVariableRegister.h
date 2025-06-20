@@ -22,6 +22,7 @@ namespace PK
         };
 
     public:
+        CVariableRegister() : m_variables(128) {};
         ~CVariableRegister();
 
         static void Bind(ICVariable* variable);

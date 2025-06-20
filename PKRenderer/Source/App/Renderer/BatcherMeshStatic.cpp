@@ -124,10 +124,11 @@ namespace PK::App
         for (auto i = 0u; i < m_drawInfos.size(); ++i)
         {
             const auto info = m_drawInfos.data() + i;
-            
+
             indexView[i] = PKAssets::PackPKDrawInfo
             (
-                (uint32_t)info->material + (uint32_t)m_materials[info->shader].firstIndex, 
+                // Detect null material with max uint16_t, avoids allocs for shadow map shaders.
+                info->material != 0xFFFFu ? (uint32_t)info->material + (uint32_t)m_materials[info->shader].firstIndex : 0u,
                 m_transforms[info->transform]->minUniformScale,
                 info->transform, 
                 info->submesh, 
@@ -210,12 +211,7 @@ namespace PK::App
         DrawInfo info{};
 
         info.shader = m_shaders.Add(shader);
-
-        if (material != nullptr)
-        {
-            info.material = m_materials[info.shader].Add(material);
-        }
-
+        info.material = material ? m_materials[info.shader].Add(material) : 0xFFFFu;
         info.transform = m_transforms.Add(transform);
         info.submesh = mesh->GetGlobalSubmeshIndex(submesh);
         info.userdata = userdata;
