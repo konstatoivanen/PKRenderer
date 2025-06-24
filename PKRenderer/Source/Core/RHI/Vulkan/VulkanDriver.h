@@ -2,6 +2,7 @@
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/Ref.h"
 #include "Core/Utilities/Disposer.h"
+#include "Core/Utilities/FixedTypeSet.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 #include "Core/RHI/Vulkan/Services/VulkanDescriptorCache.h"
@@ -81,9 +82,31 @@ namespace PK
                                                                   const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                                                   void* pUserData);
 
-        void DisposePooledImageView(VulkanImageView* view, const FenceRef& fence) const;
-        void DisposePooledImage(VulkanRawImage* image, const FenceRef& fence) const;
-        void DisposePooledBuffer(VulkanRawBuffer* buffer, const FenceRef& fence) const;
+        template<typename T, typename ... Args>
+        T* CreatePooled(Args&& ... args) const
+        {
+            auto pool = objectPools.GetInstance<IPool<T>>();
+            return pool->New(std::forward<Args>(args)...);
+        }
+
+        template<typename T>
+        void DisposePooled(T* object, const FenceRef& fence) const
+        {
+            auto deleter = [](void* v)
+            {
+                auto driver = RHIDriver::Get()->GetNative<VulkanDriver>();
+                auto pool = driver->objectPools.GetInstance<IPool<T>>();
+                pool->Delete(reinterpret_cast<T*>(v));
+            };
+
+            disposer->Dispose(object, deleter, fence);
+        }
+
+        template<typename T>
+        void DeletePooled(T* object) const
+        {
+            objectPools.GetInstance<IPool<T>>()->Delete(object);
+        }
 
         void* vkHandle;
         VkInstance instance;
@@ -102,12 +125,15 @@ namespace PK
         Unique<VulkanSamplerCache> samplerCache;
         Unique<VulkanLayoutCache> layoutCache;
         Unique<Disposer> disposer;
-        mutable FixedPool<VulkanBufferView, 2048> bufferViewPool;
-        mutable FixedPool<VulkanImageView, 2048> imageViewPool;
-        mutable FixedPool<VulkanRawImage, 2048> imagePool;
-        mutable FixedPool<VulkanRawBuffer, 2048> bufferPool;
 
         BuiltInResources* builtInResources;
         PropertyBlock globalResources = PropertyBlock(16384ull, 128ull);
+
+        mutable FixedTypeSet<
+            FixedPool<VulkanBufferView, 2048>,
+            FixedPool<VulkanImageView, 2048>,
+            FixedPool<VulkanRawImage, 2048>,
+            FixedPool<VulkanRawBuffer, 2048>,
+            FixedPool<VulkanRawAccelerationStructure, 1024>> objectPools;
     };
 }

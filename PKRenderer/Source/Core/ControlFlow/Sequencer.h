@@ -45,8 +45,9 @@ namespace PK
                 count += std::get<1>(pair).size();
             }
 
+            // Allocate for worst case where all are unique.
             m_steps.Validate(count);
-            m_map.Reserve(initializer.size());
+            m_map.Reserve(count); 
             auto head = m_steps.GetData();
 
             for (auto& pair : initializer)

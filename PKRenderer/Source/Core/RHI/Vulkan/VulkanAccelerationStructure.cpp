@@ -29,19 +29,19 @@ namespace PK
 
         if (m_structure.raw != nullptr)
         {
-            m_driver->disposer->Dispose(m_structure.raw, fence);
+            m_driver->DisposePooled(m_structure.raw, fence);
         }
 
         auto substructures = m_substructures.GetValues();
 
         for (auto i = 0u; i < substructures.count; ++i)
         {
-            m_driver->disposer->Dispose(substructures[i].raw, fence);
+            m_driver->DisposePooled(substructures[i].raw, fence);
         }
 
-        m_driver->DisposePooledBuffer(m_instanceInputBuffer, fence);
-        m_driver->DisposePooledBuffer(m_scratchBuffer, fence);
-        m_driver->DisposePooledBuffer(m_structureBuffer, fence);
+        m_driver->DisposePooled(m_instanceInputBuffer, fence);
+        m_driver->DisposePooled(m_scratchBuffer, fence);
+        m_driver->DisposePooled(m_structureBuffer, fence);
     }
 
     uint64_t VulkanAccelerationStructure::GetGeometryIndex(const AccelerationStructureGeometryInfo& geometry)
@@ -163,10 +163,10 @@ namespace PK
 
         if (m_scratchBuffer == nullptr || m_scratchBuffer->size < scratchSize)
         {
-            m_driver->DisposePooledBuffer(m_scratchBuffer, m_cmd->GetFenceRef());
+            m_driver->DisposePooled(m_scratchBuffer, m_cmd->GetFenceRef());
             FixedString128 name({ m_name.c_str(),".ScratchBuffer" });
-            auto usage = BufferUsage::DefaultStorage | BufferUsage::AccelerationStructure;
-            m_scratchBuffer = m_driver->bufferPool.New(m_driver->device, m_driver->allocator, VulkanBufferCreateInfo(usage, scratchSize), name.c_str());
+            auto createInfo = VulkanBufferCreateInfo(BufferUsage::DefaultStorage | BufferUsage::AccelerationStructure, scratchSize);
+            m_scratchBuffer = m_driver->CreatePooled<VulkanRawBuffer>(m_driver->device, m_driver->allocator, createInfo, name.c_str());
         }
 
         if (m_structureBuffer != nullptr &&
@@ -181,10 +181,10 @@ namespace PK
         PK_LOG_RHI_SCOPE("Acceleration Structure Update: %s", m_name.c_str());
 
         {
-            m_driver->DisposePooledBuffer(m_structureBuffer, m_cmd->GetFenceRef());
+            m_driver->DisposePooled(m_structureBuffer, m_cmd->GetFenceRef());
             FixedString128 name({ m_name.c_str(),".StructureBuffer" });
             auto createInfo = VulkanBufferCreateInfo(BufferUsage::DefaultAccelerationStructure, bufferSize);
-            m_structureBuffer = m_driver->bufferPool.New(m_driver->device, m_driver->allocator, createInfo, name.c_str());
+            m_structureBuffer = m_driver->CreatePooled<VulkanRawBuffer>(m_driver->device, m_driver->allocator, createInfo, name.c_str());
         }
 
         std::vector<VkAccelerationStructureBuildGeometryInfoKHR> buildGeometryInfos;
@@ -202,7 +202,7 @@ namespace PK
             info.size = structure->size.accelerationStructureSize;
             info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
             FixedString128 name({ structure->name.c_str(), ".BLAS" });
-            auto newstructure = new VulkanRawAccelerationStructure(m_driver->device, info, name.c_str());
+            auto newstructure = m_driver->CreatePooled<VulkanRawAccelerationStructure>(m_driver->device, info, name.c_str());
 
             if (structure->raw == nullptr)
             {
@@ -228,7 +228,7 @@ namespace PK
                 }
 
                 m_cmd->CopyAccelerationStructure(&copyInfo);
-                m_driver->disposer->Dispose(structure->raw, m_cmd->GetFenceRef());
+                m_driver->DisposePooled(structure->raw, m_cmd->GetFenceRef());
             }
 
             structure->raw = newstructure;
@@ -236,17 +236,20 @@ namespace PK
 
         if (m_structure.raw != nullptr)
         {
-            m_driver->disposer->Dispose(m_structure.raw, m_cmd->GetFenceRef());
+            m_driver->DisposePooled(m_structure.raw, m_cmd->GetFenceRef());
         }
 
-        VkAccelerationStructureCreateInfoKHR createInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
-        createInfo.buffer = m_structureBuffer->buffer;
-        createInfo.offset = m_structure.bufferOffset;
-        createInfo.size = m_structure.size.accelerationStructureSize;
-        createInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-        m_structure.raw = new VulkanRawAccelerationStructure(m_driver->device, createInfo, FixedString128({ m_name.c_str(), ".TLAS" }).c_str());
-        m_bindHandle.acceleration.structure = m_structure.raw->structure;
-        m_bindHandle.IncrementVersion();
+        {
+            VkAccelerationStructureCreateInfoKHR createInfo{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
+            createInfo.buffer = m_structureBuffer->buffer;
+            createInfo.offset = m_structure.bufferOffset;
+            createInfo.size = m_structure.size.accelerationStructureSize;
+            createInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+            FixedString128 name({ m_name.c_str(), ".TLAS" });
+            m_structure.raw = m_driver->CreatePooled<VulkanRawAccelerationStructure>(m_driver->device, createInfo, name.c_str());
+            m_bindHandle.acceleration.structure = m_structure.raw->structure;
+            m_bindHandle.IncrementVersion();
+        }
 
         if (deployBuild)
         {
@@ -281,8 +284,8 @@ namespace PK
         if (m_instanceInputBuffer == nullptr || m_instanceInputBuffer->size < inputBufferSize)
         {
             m_instanceBufferOffset = 0ull;
-            m_driver->DisposePooledBuffer(m_instanceInputBuffer, m_cmd->GetFenceRef());
-            m_instanceInputBuffer = m_driver->bufferPool.New(m_driver->device,
+            m_driver->DisposePooled(m_instanceInputBuffer, m_cmd->GetFenceRef());
+            m_instanceInputBuffer = m_driver->CreatePooled<VulkanRawBuffer>(m_driver->device,
                 m_driver->allocator,
                 VulkanBufferCreateInfo(BufferUsage::InstanceInput | BufferUsage::DefaultStaging | BufferUsage::PersistentStage, inputBufferSize),
                 FixedString128({ m_name.c_str(), ".InstanceInputBuffer" }).c_str());

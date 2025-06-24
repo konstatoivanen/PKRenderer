@@ -185,7 +185,6 @@ namespace PK
         {
             static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
-            // Copy intentional as mapped names can be moved. 
             FixedString256 filepath(assetId.c_str());
 
             PK_THROW_ASSERT(std::filesystem::exists(filepath.c_str()), "Asset not found at path: %s", filepath.c_str());

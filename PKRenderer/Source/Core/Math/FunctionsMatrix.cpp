@@ -176,8 +176,22 @@ namespace PK::Math
             h *= 1099511628211ULL;
             h ^= (uint64_t)(matrix[i][2] / precision);
             h *= 1099511628211ULL;
+            h ^= (uint64_t)(matrix[i][3] / precision);
+            h *= 1099511628211ULL;
         }
 
+        return h;
+    }
+
+    uint64_t GetMatrixPositionHash(const float3x4& matrix, float precision)
+    {
+        uint64_t h = 14695981039346656037ULL;
+        h ^= (uint64_t)(matrix[0][3] / precision);
+        h *= 1099511628211ULL;
+        h ^= (uint64_t)(matrix[1][3] / precision);
+        h *= 1099511628211ULL;
+        h ^= (uint64_t)(matrix[2][3] / precision);
+        h *= 1099511628211ULL;
         return h;
     }
 

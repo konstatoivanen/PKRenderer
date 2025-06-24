@@ -174,7 +174,7 @@ namespace PK
         {
             if (m_imageViews[i] != nullptr)
             {
-                RHIDriver::Get()->GetNative<VulkanDriver>()->imageViewPool.Delete(m_imageViews[i]);
+                m_driver->DeletePooled(m_imageViews[i]);
                 m_imageViews[i] = nullptr;
             }
         }
@@ -277,7 +277,7 @@ namespace PK
             info.isAlias = false;
 
             FixedString64 name("Swapchain.Image%lli", i);
-            m_imageViews[i] = m_driver->imageViewPool.New(m_driver->device, info, name.c_str());
+            m_imageViews[i] = m_driver->CreatePooled<VulkanImageView>(m_driver->device, info, name.c_str());
         }
 
         for (auto& fence : m_frameFences)

@@ -298,34 +298,4 @@ namespace PK
         PK_LOG_RHI(pCallbackData->pMessage);
         return VK_FALSE;
     }
-
-    void VulkanDriver::DisposePooledImageView(VulkanImageView* view, const FenceRef& fence) const
-    {
-        auto deleter = [](void* v)
-        {
-            RHIDriver::Get()->GetNative<VulkanDriver>()->imageViewPool.Delete(reinterpret_cast<VulkanImageView*>(v));
-        };
-
-        disposer->Dispose(view, deleter, fence);
-    }
-
-    void VulkanDriver::DisposePooledImage(VulkanRawImage* image, const FenceRef& fence) const
-    {
-        auto deleter = [](void* v)
-        {
-            RHIDriver::Get()->GetNative<VulkanDriver>()->imagePool.Delete(reinterpret_cast<VulkanRawImage*>(v));
-        };
-
-        disposer->Dispose(image, deleter, fence);
-    }
-
-    void VulkanDriver::DisposePooledBuffer(VulkanRawBuffer* buffer, const FenceRef& fence) const
-    {
-        auto deleter = [](void* v)
-        {
-            RHIDriver::Get()->GetNative<VulkanDriver>()->bufferPool.Delete(reinterpret_cast<VulkanRawBuffer*>(v));
-        };
-
-        disposer->Dispose(buffer, deleter, fence);
-    }
 }

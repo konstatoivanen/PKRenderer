@@ -170,7 +170,7 @@ namespace PK
         auto frameRect = PK_INT4_ZERO;
         {
             RECT rect = { 0, 0, descriptor.size.x, descriptor.size.y };
-            AdjustWindowRectExDpiAware(m_handle, &rect, style, FALSE, styleEx);
+            ::AdjustWindowRectEx(&rect, style, FALSE, styleEx);
             frameRect.x = descriptor.position.x == -1 ? CW_USEDEFAULT : (descriptor.position.x + rect.left);
             frameRect.y = descriptor.position.y == -1 ? CW_USEDEFAULT : (descriptor.position.y + rect.top);
             frameRect.z = rect.right - rect.left;
@@ -467,7 +467,7 @@ namespace PK
                 if (m_isPendingActivate)
                 {
                     STARTUPINFOW si = { sizeof(si) };
-                    GetStartupInfoW(&si);
+                    ::GetStartupInfoW(&si);
                     if (si.dwFlags & STARTF_USESHOWWINDOW)
                     {
                         showCommand = si.wShowWindow;

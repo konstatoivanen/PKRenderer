@@ -10,7 +10,7 @@ namespace PK
     {
         auto& families = m_driver->queues->GetSelectedFamilies();
         m_descriptor = descriptor;
-        m_rawImage = m_driver->imagePool.New(m_driver->device, m_driver->allocator, VulkanImageCreateInfo(descriptor, &families), m_name.c_str());
+        m_rawImage = m_driver->CreatePooled<VulkanRawImage>(m_driver->device, m_driver->allocator, VulkanImageCreateInfo(descriptor, &families), m_name.c_str());
     }
 
     VulkanTexture::~VulkanTexture()
@@ -19,12 +19,12 @@ namespace PK
 
         for (auto view : m_firstView)
         {
-            m_driver->DisposePooledImageView(view, fence);
+            m_driver->DisposePooled(view, fence);
         }
 
         if (m_rawImage != nullptr)
         {
-            m_driver->DisposePooledImage(m_rawImage, fence);
+            m_driver->DisposePooled(m_rawImage, fence);
             m_rawImage = nullptr;
         }
 
@@ -146,7 +146,7 @@ namespace PK
             VulkanEnumConvert::ExpandVkRange16(normalizedRange.layers)
         };
 
-        auto newView = m_driver->imageViewPool.New(m_driver->device, info, m_name.c_str());
+        auto newView = m_driver->CreatePooled<VulkanImageView>(m_driver->device, info, m_name.c_str());
 
         if (mode == TextureBindMode::SampledTexture)
         {

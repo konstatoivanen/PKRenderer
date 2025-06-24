@@ -19,7 +19,7 @@ namespace PK
         }
 
         auto bufferCreateInfo = VulkanBufferCreateInfo(m_usage, size, &m_driver->queues->GetSelectedFamilies());
-        m_rawBuffer = m_driver->bufferPool.New(m_driver->device, m_driver->allocator, bufferCreateInfo, m_name.c_str());
+        m_rawBuffer = m_driver->CreatePooled<VulkanRawBuffer>(m_driver->device, m_driver->allocator, bufferCreateInfo, m_name.c_str());
 
         if ((m_usage & BufferUsage::PersistentStage) != 0)
         {
@@ -43,7 +43,7 @@ namespace PK
 
         for (auto view : m_firstView)
         {
-            m_driver->bufferViewPool.Delete(view);
+            m_driver->DisposePooled(view, fence);
         }
 
         if (m_mappedBuffer != nullptr && !m_mappedBuffer->persistentmap)
@@ -52,7 +52,7 @@ namespace PK
         }
 
         m_driver->disposer->Dispose(m_pageTable, fence);
-        m_driver->DisposePooledBuffer(m_rawBuffer, fence);
+        m_driver->DisposePooled(m_rawBuffer, fence);
         m_driver->stagingBufferCache->Release(m_mappedBuffer, fence);
         m_pageTable = nullptr;
         m_rawBuffer = nullptr;
@@ -121,7 +121,7 @@ namespace PK
             return m_firstView;
         }
 
-        auto view = m_driver->bufferViewPool.New();
+        auto view = m_driver->CreatePooled<VulkanBufferView>();
         view->buffer.buffer = m_rawBuffer->buffer;
         view->buffer.range = range.count;
         view->buffer.offset = range.offset;
