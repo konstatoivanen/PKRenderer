@@ -202,10 +202,8 @@ namespace PK
 
         VkSurfaceCapabilitiesKHR capabilities;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_driver->physicalDevice, m_surface, &capabilities);
-        auto availableFormats = VulkanGetPhysicalDeviceSurfaceFormatsKHR(m_driver->physicalDevice, m_surface);
-        auto availablePresentModes = VulkanGetPhysicalDeviceSurfacePresentModesKHR(m_driver->physicalDevice, m_surface);
-        m_format = VulkanSelectSurfaceFormat(availableFormats, desiredFormat, desiredColorSpace);
-        m_presentMode = VulkanSelectPresentMode(availablePresentModes, desiredPresentMode);
+        m_format = VulkanSelectSurfaceFormat(m_driver->physicalDevice, m_surface, desiredFormat, desiredColorSpace);
+        m_presentMode = VulkanSelectPresentMode(m_driver->physicalDevice, m_surface, desiredPresentMode);
         m_extent = VulkanSelectSurfaceExtent(capabilities, desiredExtent);
 
         auto maxImageCount = capabilities.maxImageCount > 0 ? capabilities.maxImageCount : UINT32_MAX;

@@ -1954,29 +1954,6 @@ namespace PK
         return queueFamilies;
     }
 
-    std::vector<VkSurfaceFormatKHR> VulkanGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
-    {
-        std::vector<VkSurfaceFormatKHR> formats;
-        uint32_t formatCount;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
-
-        formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats.data());
-
-        return formats;
-    }
-
-    std::vector<VkPresentModeKHR> VulkanGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
-    {
-        std::vector<VkPresentModeKHR> presentModes;
-        uint32_t presentModeCount;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
-
-        presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data());
-
-        return presentModes;
-    }
 
     VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device)
     {
@@ -2225,26 +2202,42 @@ namespace PK
         return actualExtent;
     }
 
-    VkSurfaceFormatKHR VulkanSelectSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats, VkFormat desiredFormat, VkColorSpaceKHR desiredColorSpace)
+    VkSurfaceFormatKHR VulkanSelectSurfaceFormat(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkFormat desiredFormat, VkColorSpaceKHR desiredColorSpace)
     {
-        for (const auto& availableFormat : availableFormats)
+        uint32_t formatCount = 0u;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
+
+        VkSurfaceFormatKHR* formats = PK_STACK_ALLOC(VkSurfaceFormatKHR, formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats);
+
+        for (auto i = 0u; i < formatCount; ++i)
         {
-            if (availableFormat.format == desiredFormat && availableFormat.colorSpace == desiredColorSpace)
+            auto& format = formats[i];
+
+            if (format.format == desiredFormat && format.colorSpace == desiredColorSpace)
             {
-                return availableFormat;
+                return format;
             }
         }
 
-        return availableFormats.at(0);
+        return formats[0];
     }
 
-    VkPresentModeKHR VulkanSelectPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, VkPresentModeKHR desiredPresentMode)
+    VkPresentModeKHR VulkanSelectPresentMode(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkPresentModeKHR desiredPresentMode)
     {
-        for (const auto& availablePresentMode : availablePresentModes)
+        uint32_t presentModeCount = 0u;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+
+        VkPresentModeKHR* presentModes = PK_STACK_ALLOC(VkPresentModeKHR, presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes);
+
+        for (auto i = 0u; i < presentModeCount; ++i)
         {
-            if (availablePresentMode == desiredPresentMode)
+            auto& presentMode = presentModes[i];
+
+            if (presentMode == desiredPresentMode)
             {
-                return availablePresentMode;
+                return presentMode;
             }
         }
 
