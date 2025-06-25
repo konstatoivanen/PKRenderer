@@ -33,7 +33,7 @@ namespace PK
 
         if (variant->vertexAttributeCount > 0)
         {
-            m_vertexLayout.Reserve(variant->vertexAttributeCount);
+            m_vertexLayout.Clear();
 
             auto* pVertexAttributes = variant->vertexAttributes.Get(base);
 

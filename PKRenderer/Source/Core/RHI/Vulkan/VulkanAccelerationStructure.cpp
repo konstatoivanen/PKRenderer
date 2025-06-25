@@ -32,7 +32,7 @@ namespace PK
             m_driver->DisposePooled(m_structure.raw, fence);
         }
 
-        auto substructures = m_substructures.GetValues();
+        auto substructures = m_substructures.GetValuesView();
 
         for (auto i = 0u; i < substructures.count; ++i)
         {

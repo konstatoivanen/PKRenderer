@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Utilities/ForwardDeclare.h"
-#include "Core/Utilities/FastSet.h"
+#include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FixedList.h"
 #include "Core/Rendering/MeshStaticCollection.h"
 #include "Core/Rendering/BindSet.h"

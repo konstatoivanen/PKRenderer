@@ -1287,9 +1287,6 @@
     <ClInclude Include="Source\Core\Utilities\BufferView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FastMap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Utilities\FileIOBinary.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1308,7 +1305,7 @@
     <ClInclude Include="Source\Core\Utilities\Hash.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FastSet.h">
+    <ClInclude Include="Source\Core\Utilities\FastMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\ISingleton.h">

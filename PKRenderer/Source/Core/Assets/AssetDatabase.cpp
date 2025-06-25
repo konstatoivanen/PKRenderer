@@ -16,7 +16,7 @@ namespace PK
 
     void AssetDatabase::Unload(const std::type_index& typeIndex)
     {
-        auto assets = m_assets.GetValues();
+        auto assets = m_assets.GetValuesView();
 
         for (auto i = assets.count - 1; i >= 0; --i)
         {
@@ -39,7 +39,7 @@ namespace PK
 
     void AssetDatabase::Unload()
     {
-        auto assets = m_assets.GetValues();
+        auto assets = m_assets.GetValuesView();
 
         for (auto i = 0u; i < assets.count; ++i)
         {

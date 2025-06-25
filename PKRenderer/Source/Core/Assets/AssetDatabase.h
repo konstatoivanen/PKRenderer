@@ -142,7 +142,7 @@ namespace PK
             std::vector<T*> result;
 
             auto typeIndex = std::type_index(typeid(T));
-            auto values = m_assets.GetValues();
+            auto values = m_assets.GetValuesView();
 
             for (auto i = 0u; i < values.count; ++i)
             {

@@ -10,6 +10,7 @@ namespace PK
     class VulkanSamplerCache : NoCopy
     {
         using SampelerKeyHash = Hash::TMurmurHash<SamplerDescriptor>;
+        static constexpr uint32_t MAX_SAMPLERS = 32u;
 
         public:
             VulkanSamplerCache(VkDevice device) : m_device(device) {}
@@ -20,9 +21,8 @@ namespace PK
             VulkanSampler* GetPooledSampler(const SamplerDescriptor& descriptor);
 
             const VkDevice m_device;
-            FixedPool<VulkanBindHandle, 128> m_bindhandlePool;
-            FixedPool<VulkanSampler, 128> m_samplerPool;
-            FastMap<SamplerDescriptor, VulkanSampler*, SampelerKeyHash> m_samplers = 
-                FastMap<SamplerDescriptor, VulkanSampler*, SampelerKeyHash>(16ull);
+            FixedPool<VulkanBindHandle, MAX_SAMPLERS> m_bindhandlePool;
+            FixedPool<VulkanSampler, MAX_SAMPLERS> m_samplerPool;
+            FixedMap<SamplerDescriptor, VulkanSampler*, MAX_SAMPLERS, SampelerKeyHash> m_samplers;
     };
 }

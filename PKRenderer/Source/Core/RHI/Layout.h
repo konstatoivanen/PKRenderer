@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include "Core/Utilities/FixedList.h"
-#include "Core/Utilities/FastSet.h"
+#include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/NameID.h"
 #include "Core/RHI/Structs.h"
 
@@ -131,9 +131,9 @@ namespace PK
     };
 
 
-    struct ShaderVertexInputLayout : public FastSet<BufferElement, BufferElementNameHash>
+    struct ShaderVertexInputLayout : public FixedSet<BufferElement, PK_RHI_MAX_VERTEX_ATTRIBUTES, BufferElementNameHash>
     {
-        ShaderVertexInputLayout() : FastSet() {}
+        ShaderVertexInputLayout() : IFastSet() {}
         const BufferElement* TryGetElement(NameID name, uint32_t* index) const;
     };
 

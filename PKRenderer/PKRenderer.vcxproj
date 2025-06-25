@@ -721,7 +721,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\FixedMask.h" />
     <ClInclude Include="Source\Core\Utilities\BufferIterator.h" />
     <ClInclude Include="Source\Core\Utilities\BufferView.h" />
-    <ClInclude Include="Source\Core\Utilities\FastMap.h" />
     <ClInclude Include="Source\Core\Utilities\FileIOBinary.h" />
     <ClInclude Include="Source\Core\Utilities\FileIOBMP.h" />
     <ClInclude Include="Source\Core\Utilities\FixedList.h" />
@@ -729,7 +728,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\ForwardDeclare.h" />
     <ClInclude Include="Source\Core\Utilities\Handle.h" />
     <ClInclude Include="Source\Core\Utilities\Hash.h" />
-    <ClInclude Include="Source\Core\Utilities\FastSet.h" />
+    <ClInclude Include="Source\Core\Utilities\FastMap.h" />
     <ClInclude Include="Source\Core\Utilities\ISingleton.h" />
     <ClInclude Include="Source\Core\Utilities\MemoryBlock.h" />
     <ClInclude Include="Source\Core\Utilities\NameID.h" />
