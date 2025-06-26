@@ -95,7 +95,7 @@ namespace PK
                 
                 if (index != -1)
                 {
-                    for (auto cur = m_resources.GetValueAt(index); cur; cur = cur->next)
+                    for (auto cur = m_resources[index].value; cur; cur = cur->next)
                     {
                         if (TInfo<T>::IsOverlap(cur->range, record.range))
                         {
@@ -142,7 +142,7 @@ namespace PK
                 {
                     auto defaultRecord = m_records.New(scope);
                     TInfo<T>::SetDefaultRange(defaultRecord);
-                    m_resources.SetValueAt(index, defaultRecord);
+                    m_resources[index].value = defaultRecord;
                     m_resolveTimestamps[index] = 0ull;
                     m_accessTimestamps[index] = 0ull;
                     index = m_resources.GetCount() - 1;
@@ -157,7 +157,7 @@ namespace PK
                     m_accessTimestamps[index] = m_globalAccessCounter++;
                 }
 
-                auto current = &m_resources.GetValueAt(index);
+                auto current = &m_resources[index].value;
 
                 for (auto next = &(*current)->next; *current; current = next, next = &(*current)->next)
                 {

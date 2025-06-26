@@ -12,8 +12,7 @@ namespace PK
         uint32_t Set(T* value)
         {
             uint32_t setidx = 0u;
-
-            if (!m_indices.Add(value, setidx))
+            if (!m_indices.Add(value, &setidx))
             {
                 return (uint32_t)setidx;
             }

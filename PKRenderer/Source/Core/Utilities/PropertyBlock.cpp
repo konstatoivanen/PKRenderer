@@ -18,15 +18,14 @@ namespace PK
 
     void PropertyBlock::CopyFrom(PropertyBlock& from)
     {
-        auto keyvalues = from.m_propertyInfos.GetKeyValues();
-
-        for (auto i = 0u; i < keyvalues.count; ++i)
+        for (auto i = 0u; i < from.m_propertyInfos.GetCount(); ++i)
         {
-            auto index = m_propertyInfos.GetIndex(keyvalues.nodes[i].key);
+            const auto& key = from.m_propertyInfos[i].key;
+            const auto& info = from.m_propertyInfos[i].value;
+            auto index = m_propertyInfos.GetIndex(key);
 
             if (index != -1)
             {
-                const auto& info = keyvalues.values[i];
                 TryWriteValue(reinterpret_cast<char*>(from.m_buffer) + info.offset, (uint32_t)index, info.size);
             }
         }
@@ -53,7 +52,7 @@ namespace PK
             return false;
         }
 
-        const auto& info = m_propertyInfos.GetValueAt(index);
+        const auto& info = m_propertyInfos[index].value;
 
         if (info.size < writeSize)
         {

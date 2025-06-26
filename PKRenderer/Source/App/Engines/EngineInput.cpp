@@ -27,8 +27,8 @@ namespace PK::App
         for (auto i = 0u; i < m_deviceStates.GetCount() && i < InputStateCollection::MAX_DEVICES; ++i)
         {
             auto pair = ctx->input.deviceStates.Add();
-            pair->device = m_deviceStates.GetKeyAt(i);
-            pair->state = m_deviceStates.GetValueAt(i);
+            pair->device = m_deviceStates[i].key;
+            pair->state = m_deviceStates[i].value;
         }
 
         m_sequencer->Next(this, &ctx->input);
@@ -111,7 +111,7 @@ namespace PK::App
         auto index = 0u;
         if (m_deviceStates.AddKey(device, &index))
         {
-            m_deviceStates.SetValueAt(index, {});
+            m_deviceStates[index].value = {};
         }
     }
 
@@ -126,7 +126,7 @@ namespace PK::App
 
         if (m_lastDevice == device)
         {
-            m_lastDevice = m_deviceStates.GetCount() > 0u ? m_deviceStates.GetKeyAt(0) : nullptr;
+            m_lastDevice = m_deviceStates.GetCount() > 0u ? m_deviceStates[0].key : nullptr;
         }
     }
 }

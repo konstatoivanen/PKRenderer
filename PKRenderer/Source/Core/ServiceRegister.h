@@ -45,18 +45,15 @@ namespace PK
             AssertTypeExists(m_services.AddKey(typeIndex, &index), typeIndex);
             auto logIndent = PK::LogScopeIndent(2);
             auto service = new ServiceContainer<T>(std::forward<Args>(args)...);
-            auto values = m_services.GetValuesView();
-            values[index] = Unique<Service>(service);
+            m_services[index].value = Unique<Service>(service);
             return &service->Instance;
         }
 
         void Clear()
         {
-            auto values = m_services.GetValuesView();
-
             for (auto i = (int32_t)m_services.GetCount() - 1; i >= 0; --i)
             {
-                values[i] = nullptr;
+                m_services[i].value = nullptr;
             }
 
             m_services.Clear();

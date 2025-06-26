@@ -756,24 +756,51 @@ namespace PK
         vkDestroyQueryPool(device, pool, nullptr);
     }
 
-    bool VulkanQueryPool::TryGetResults(void* outBuffer, size_t stride, VkQueryResultFlagBits flags)
+    bool VulkanQueryPool::WaitResults(uint64_t timeout)
     {
-        if (count == 0 || !lastQueryFence.WaitInvalidate(0ull))
-        {
-            return false;
-        }
-
-        VK_ASSERT_RESULT_CTX(vkGetQueryPoolResults(device, pool, 0, count, count * stride, outBuffer, stride, flags), "Failed to get query results!");
-        vkResetQueryPool(device, pool, 0, count);
-        count = 0u;
-        return true;
+        return count > 0 && lastQueryFence.WaitInvalidate(timeout);
     }
 
-    uint32_t VulkanQueryPool::AddQuery(const FenceRef& fence)
+    void VulkanQueryPool::ResetQuery()
     {
-        assert(count < size);
+        if (count > 0)
+        {
+            vkResetQueryPool(device, pool, 0, count);
+            count = 0u;
+        }
+    }
+
+    int32_t VulkanQueryPool::AddQuery(const FenceRef& fence)
+    {
+        if (count >= size)
+        {
+            return -1;
+        }
+
         lastQueryFence = fence;
         return count++;
+    }
+
+    bool VulkanQueryPool::GetResults(void* outBuffer, size_t first, size_t count, size_t stride, uint64_t timeout, VkQueryResultFlagBits flags)
+    {
+        if (WaitResults(timeout))
+        {
+            VK_ASSERT_RESULT_CTX(vkGetQueryPoolResults(device, pool, first, count, count * stride, outBuffer, stride, flags), "Failed to get query results!");
+            return true;
+        }
+
+        return false;
+    }
+
+    bool VulkanQueryPool::GetResultsAll(void* outBuffer, size_t stride, uint64_t timeout, VkQueryResultFlagBits flags)
+    {
+        if (GetResults(outBuffer, 0, count, stride, timeout, flags))
+        {
+            ResetQuery();
+            return true;
+        }
+        
+        return false;
     }
 
 

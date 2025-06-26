@@ -33,6 +33,22 @@ namespace PK::ContainerHelpers
         }
     }
 
+    template<typename T>
+    void ClearArray(T* values, size_t count)
+    {
+        // Call Destructor & zero memory. Dont call constructor to avoid allocs.
+        // A bit hazardous but whatever.
+        if constexpr (!std::is_trivially_copyable_v<T>)
+        {
+            for (auto i = 0u; i < count; ++i)
+            {
+                (values + i)->~T();
+            }
+        }
+
+        memset(values, 0, sizeof(T) * count);
+    }
+
     template<typename TValue, typename TNode> 
     void ReallocNodeValues(void** buffer, TValue** values, TNode** nodes, size_t size, size_t newSize)
     {

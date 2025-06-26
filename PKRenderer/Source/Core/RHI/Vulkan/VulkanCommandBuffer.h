@@ -12,18 +12,6 @@ namespace PK
         VulkanCommandBuffer() {}
 
         FenceRef GetFenceRef() const final;
-        inline bool IsActive() const { return m_commandBuffer != VK_NULL_HANDLE; }
-        inline VkCommandBuffer& GetNative() { return m_commandBuffer; }
-        inline VkPipelineStageFlags GetLastCommandStage() { return m_lastCommandStage; }
-        inline const VkFence& GetFence() { return m_fence; }
-        inline void Initialize(VkFence fence, uint16_t queueFamily, VkPipelineStageFlags capabilities) 
-        {
-            m_fence = fence;
-            m_queueFamily = queueFamily;
-            m_capabilityFlags = capabilities;
-        }
-        inline void Release() { m_commandBuffer = VK_NULL_HANDLE; ++m_invocationIndex; }
-
 
         void SetRenderTarget(const RenderTargetBinding* bindings, uint32_t count, const uint4& renderArea, uint32_t layers) final;
         void SetViewPorts(const uint4* rects, uint32_t count) final;
@@ -72,7 +60,7 @@ namespace PK
         // Vulkan specific interface
         void BuildAccelerationStructures(uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
         void CopyAccelerationStructure(const VkCopyAccelerationStructureInfoKHR* pInfo);
-        uint32_t QueryAccelerationStructureCompactSize(const VulkanRawAccelerationStructure* structure, VulkanQueryPool* pool);
+        int32_t QueryAccelerationStructureCompactSize(const VulkanRawAccelerationStructure* structure, VulkanQueryPool* pool);
         void TransitionImageLayout(VkImage image, VkImageLayout srcLayout, VkImageLayout dstLayout, const VkImageSubresourceRange& range);
         void PipelineBarrier(const VulkanBarrierInfo& barrier);
         
@@ -82,20 +70,27 @@ namespace PK
         bool ResolveBarriers();
         void ValidatePipeline();
         void EndRenderPass();
-        void BeginCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferLevel level, VulkanRenderState* renderState);
-        void EndCommandBuffer();
+
+        void BeginRecord(VkCommandBuffer commandBuffer, VkFence fence, uint16_t queueFamily, VkCommandBufferLevel level, VulkanRenderState* renderState);
+        void EndRecord();
+        // Called when the command buffer is finished execution.
+        void FinishExecution();
+
         inline void MarkLastCommandStage(VkPipelineStageFlags stage) { m_lastCommandStage = stage; }
+        inline bool IsActive() const { return m_commandBuffer != VK_NULL_HANDLE; }
+        inline VkCommandBuffer& GetCommandBuffer() { return m_commandBuffer; }
+        inline VkFence& GetFence() { return m_fence; }
+        inline VkPipelineStageFlags GetLastCommandStage() { return m_lastCommandStage; }
         
         private:
-            VkFence m_fence = VK_NULL_HANDLE;
-            VkPipelineStageFlags m_capabilityFlags = 0u;
-            VkPipelineStageFlags m_lastCommandStage = 0u;
-            uint16_t m_queueFamily = 0u;
-
-            VulkanRenderState* m_renderState = nullptr;
             VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
+            VkFence m_fence = VK_NULL_HANDLE;
+            uint16_t m_queueFamily = 0u;
             VkCommandBufferLevel m_level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+            VulkanRenderState* m_renderState = nullptr;
+            
             uint64_t m_invocationIndex = 0ull;
+            VkPipelineStageFlags m_lastCommandStage = 0u;
             bool m_isInActiveRenderPass = false;
     };
 }

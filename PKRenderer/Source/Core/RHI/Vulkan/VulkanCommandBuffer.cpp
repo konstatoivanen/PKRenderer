@@ -536,11 +536,16 @@ namespace PK
         vkCmdCopyAccelerationStructureKHR(m_commandBuffer, pInfo);
     }
 
-    uint32_t VulkanCommandBuffer::QueryAccelerationStructureCompactSize(const VulkanRawAccelerationStructure* structure, VulkanQueryPool* pool)
+    int32_t VulkanCommandBuffer::QueryAccelerationStructureCompactSize(const VulkanRawAccelerationStructure* structure, VulkanQueryPool* pool)
     {
         PK_THROW_ASSERT(pool->type == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, "Invalid query pool type");
         auto queryIndex = pool->AddQuery(GetFenceRef());
-        vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer, 1u, &structure->structure, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, pool->pool, queryIndex);
+
+        if (queryIndex != -1)
+        {
+            vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer, 1u, &structure->structure, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, pool->pool, (uint32_t)queryIndex);
+        }
+
         return queryIndex;
     }
 
@@ -723,10 +728,12 @@ namespace PK
         }
     }
 
-    void VulkanCommandBuffer::BeginCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferLevel level, VulkanRenderState* renderState)
+    void VulkanCommandBuffer::BeginRecord(VkCommandBuffer commandBuffer, VkFence fence, uint16_t queueFamily, VkCommandBufferLevel level, VulkanRenderState* renderState)
     {
-        m_level = level;
         m_commandBuffer = commandBuffer;
+        m_fence = fence;
+        m_queueFamily = queueFamily;
+        m_level = level;
         m_renderState = renderState;
         m_renderState->Reset();
 
@@ -735,12 +742,19 @@ namespace PK
         VK_ASSERT_RESULT(vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
     }
 
-    void VulkanCommandBuffer::EndCommandBuffer()
+    void VulkanCommandBuffer::EndRecord()
     {
         // End possibly active render pass
         EndRenderPass();
         m_renderState->GetServices()->barrierHandler->ClearBarriers();
         VK_ASSERT_RESULT(vkEndCommandBuffer(m_commandBuffer));
         m_renderState = nullptr;
+    }
+
+    void VulkanCommandBuffer::FinishExecution()
+    {
+        m_commandBuffer = VK_NULL_HANDLE; 
+        m_fence = VK_NULL_HANDLE;
+        ++m_invocationIndex;
     }
 }

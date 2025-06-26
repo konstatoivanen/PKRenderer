@@ -22,10 +22,10 @@ namespace PK
 
         if (!m_samplers.AddKey(descriptor, &index))
         {
-            return m_samplers.GetValueAt(index);
+            return m_samplers[index].value;
         }
 
-        auto sampler = &m_samplers.GetValueAt(index);
+        auto sampler = &m_samplers[index].value;
         *sampler = m_samplerPool.New(m_device, descriptor, FixedString64("Sampler%u", index).c_str());
 
         auto bindHandle = m_bindhandlePool.New();
@@ -40,7 +40,6 @@ namespace PK
         bindHandle->image.extent = { 0u, 0u, 0u };
         bindHandle->image.range = { VK_IMAGE_ASPECT_NONE, 0u, VK_REMAINING_MIP_LEVELS, 0u, VK_REMAINING_ARRAY_LAYERS };
         bindHandle->image.samples = VK_SAMPLE_COUNT_1_BIT;
-
         return *sampler;
     }
 }

@@ -37,6 +37,13 @@ namespace PK
         VulkanStagingBufferCache* stagingBufferCache = nullptr;
         VulkanBarrierHandler* barrierHandler = nullptr;
         Disposer* disposer = nullptr;
+        VulkanServiceContext& SetGlobalResources(PropertyBlock* value) { globalResources = value; return *this; }
+        VulkanServiceContext& SetDescriptorCache(VulkanDescriptorCache* value) { descriptorCache = value; return *this; }
+        VulkanServiceContext& SetPipelineCache(VulkanPipelineCache* value) { pipelineCache = value; return *this; }
+        VulkanServiceContext& SetSamplerCache(VulkanSamplerCache* value) { samplerCache = value; return *this; }
+        VulkanServiceContext& SetStagingBufferCache(VulkanStagingBufferCache* value) { stagingBufferCache = value; return *this; }
+        VulkanServiceContext& SetBarrierHandler(VulkanBarrierHandler* value) { barrierHandler = value; return *this; }
+        VulkanServiceContext& SetDisposer(Disposer* value) { disposer = value; return *this; }
     };
 
     struct VulkanVertexBufferBundle

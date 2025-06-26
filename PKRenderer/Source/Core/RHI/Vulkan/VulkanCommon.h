@@ -430,8 +430,32 @@ namespace PK
         VulkanQueryPool(VkDevice device, VkQueryType type, uint32_t size);
         ~VulkanQueryPool();
 
-        bool TryGetResults(void* outBuffer, size_t stride, VkQueryResultFlagBits flags);
-        uint32_t AddQuery(const FenceRef& fence);
+        bool WaitResults(uint64_t timeout);
+        void ResetQuery();
+        int32_t AddQuery(const FenceRef& fence);
+
+        bool GetResults(void* outBuffer, size_t first, size_t count, size_t stride, uint64_t timeout, VkQueryResultFlagBits flags);
+        bool GetResultsAll(void* outBuffer, size_t stride, uint64_t timeout, VkQueryResultFlagBits flags);
+
+        template<typename T>
+        bool GetResults(T* outBuffer, size_t first, size_t count, uint64_t timeout, VkQueryResultFlagBits flags)
+        {
+            return GetResults(outBuffer, first, count, sizeof(T), timeout, flags);
+        }
+
+        template<typename T>
+        T GetResult(size_t index, uint64_t timeout, VkQueryResultFlagBits flags)
+        {
+            T outValue = T();
+            GetResults(&outValue, index, 1u, sizeof(T), timeout, flags);
+            return outValue;
+        }
+
+        template<typename T>
+        bool GetResultsAll(T* outBuffer, uint64_t timeout, VkQueryResultFlagBits flags)
+        {
+            return GetResultsAll(outBuffer, sizeof(T), timeout, flags);
+        }
 
         const VkDevice device;
         const uint32_t size;

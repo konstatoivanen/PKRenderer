@@ -13,9 +13,9 @@ namespace PK
     VulkanAccelerationStructure::VulkanAccelerationStructure(const char* name) :
         m_driver(RHIDriver::Get()->GetNative<VulkanDriver>()),
         m_name(name),
-        m_substructures(MAX_SUBSTRUCTURES)
+        m_substructures(32u)
     {
-        m_queryPool = new VulkanQueryPool(m_driver->device, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, MAX_SUBSTRUCTURES);
+        m_queryPool = new VulkanQueryPool(m_driver->device, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, 256u);
     }
 
     VulkanAccelerationStructure::~VulkanAccelerationStructure()
@@ -32,11 +32,9 @@ namespace PK
             m_driver->DisposePooled(m_structure.raw, fence);
         }
 
-        auto substructures = m_substructures.GetValuesView();
-
-        for (auto i = 0u; i < substructures.count; ++i)
+        for (auto i = 0u; i < m_substructures.GetCount(); ++i)
         {
-            m_driver->DisposePooled(substructures[i].raw, fence);
+            m_driver->DisposePooled(m_substructures[i].value.raw, fence);
         }
 
         m_driver->DisposePooled(m_instanceInputBuffer, fence);
@@ -54,7 +52,7 @@ namespace PK
             return (uint64_t)index;
         }
 
-        auto structure = &m_substructures.GetValueAt(index);
+        auto structure = &m_substructures[index].value;
 
         *structure = BLAS();
         structure->name = geometry.name;
@@ -97,16 +95,16 @@ namespace PK
         {
             for (auto i = 0u; i < m_substructures.GetCount(); ++i)
             {
-                auto structure = &m_substructures.GetValueAt(i);
+                auto structure = &m_substructures[i].value;
 
                 if (structure->raw && !structure->isCompacted && structure->queryIndex == -1)
                 {
-                    structure->queryIndex = (uint32_t)m_cmd->QueryAccelerationStructureCompactSize(structure->raw, m_queryPool);
+                    structure->queryIndex = m_cmd->QueryAccelerationStructureCompactSize(structure->raw, m_queryPool);
                 }
             }
         }
 
-        auto hasCompactedResults = m_queryPool->TryGetResults(m_queryResults, sizeof(VkDeviceSize), VK_QUERY_RESULT_WAIT_BIT);
+        auto hasCompactedResults = m_queryPool->WaitResults(0ull);
 
         {
             if (hasCompactedResults)
@@ -118,12 +116,12 @@ namespace PK
 
             for (auto i = 0u; i < m_substructures.GetCount(); ++i)
             {
-                auto structure = &m_substructures.GetValueAt(i);
+                auto structure = &m_substructures[i].value;
 
                 if (hasCompactedResults && structure->raw && !structure->isCompacted && structure->queryIndex != -1)
                 {
                     auto size0 = structure->size.accelerationStructureSize;
-                    auto size1 = m_queryResults[structure->queryIndex];
+                    auto size1 = m_queryPool->GetResult<VkDeviceSize>(structure->queryIndex, 0, VK_QUERY_RESULT_WAIT_BIT);
                     structure->size.accelerationStructureSize = size1;
                     PK_LOG_RHI("BLAS Compacted from %i to %i bytes", size0, size1);
                 }
@@ -180,6 +178,10 @@ namespace PK
 
         PK_LOG_RHI_SCOPE("Acceleration Structure Update: %s", m_name.c_str());
 
+        // Reset compaction queries.
+        m_queryPool->ResetQuery();
+
+        // Needs new buffer in case of compaction copies.
         {
             m_driver->DisposePooled(m_structureBuffer, m_cmd->GetFenceRef());
             FixedString128 name({ m_name.c_str(),".StructureBuffer" });
@@ -193,9 +195,10 @@ namespace PK
         buildStructureRangeInfoPtrs.reserve(buildCount);
         auto deployBuild = false;
 
+        // Full rebuild needed even if only one element compacted as buffer offsets have been recalculated.
         for (auto i = 0u; i < m_substructures.GetCount(); ++i)
         {
-            auto structure = &m_substructures.GetValueAt(i);
+            auto structure = &m_substructures[i].value;
             VkAccelerationStructureCreateInfoKHR info{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR };
             info.buffer = m_structureBuffer->buffer;
             info.offset = structure->bufferOffset;
@@ -272,7 +275,7 @@ namespace PK
     {
         PK_THROW_ASSERT(m_writeBuffer == nullptr, "Structure is already being written into!");
 
-        m_cmd = m_driver->queues->GetQueue(queue)->commandPool->GetCurrent();
+        m_cmd = m_driver->queues->GetQueue(queue)->GetCommandBuffer();
         m_instanceCount = 0u;
         m_instanceLimit = instanceLimit;
         m_structureHashCurr = 0u;
@@ -322,8 +325,8 @@ namespace PK
 
         for (auto i = 0u; i < m_instanceCount && hasChanged; ++i)
         {
-            auto index = m_writeBuffer[i].accelerationStructureReference;
-            m_writeBuffer[i].accelerationStructureReference = m_substructures.GetValueAt((uint32_t)index).raw->deviceAddress;
+            auto index = (uint32_t)m_writeBuffer[i].accelerationStructureReference;
+            m_writeBuffer[i].accelerationStructureReference = m_substructures[index].value.raw->deviceAddress;
         }
 
         m_instanceInputBuffer->EndMap(m_instanceBufferOffset, sizeof(VkAccelerationStructureInstanceKHR) * m_instanceLimit);

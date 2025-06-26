@@ -141,14 +141,13 @@ namespace PK
 
             std::vector<T*> result;
 
-            auto typeIndex = std::type_index(typeid(T));
-            auto values = m_assets.GetValuesView();
+            const auto typeIndex = std::type_index(typeid(T));
 
-            for (auto i = 0u; i < values.count; ++i)
+            for (auto i = 0u; i < m_assets.GetCount(); ++i)
             {
-                if (values[i].type == typeIndex)
+                if (m_assets[i].value.type == typeIndex)
                 {
-                    result.push_back(std::static_pointer_cast<T>(values[i]->asset).get());
+                    result.push_back(std::static_pointer_cast<T>(m_assets[i].value->asset).get());
                 }
             }
 

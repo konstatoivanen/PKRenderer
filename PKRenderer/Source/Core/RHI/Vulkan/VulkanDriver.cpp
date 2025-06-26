@@ -93,7 +93,7 @@ namespace PK
         VulkanSelectPhysicalDevice(instance, temporarySurface, physicalDeviceRequirements, &physicalDevice);
         physicalDeviceProperties = VulkanGetPhysicalDeviceProperties(physicalDevice);
 
-        VulkanQueueSet::Initializer queueInitializer(physicalDevice, temporarySurface);
+        VulkanQueueSetInitializer queueInitializer(physicalDevice, temporarySurface);
 
         vkDestroySurfaceKHR(instance, temporarySurface, nullptr);
 

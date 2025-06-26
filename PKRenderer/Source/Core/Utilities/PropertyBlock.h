@@ -52,7 +52,7 @@ namespace PK
                     {
                         const auto wsize = (uint32_t)(sizeof(T) * count);
                         ValidateBufferSize(m_head + wsize);
-                        m_propertyInfos.SetValueAt(index, { (uint32_t)m_head, wsize });
+                        m_propertyInfos[index].value = { (uint32_t)m_head, wsize };
                         m_head += wsize;
                     }
 

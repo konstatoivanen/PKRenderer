@@ -16,11 +16,11 @@ namespace PK
 
     void AssetDatabase::Unload(const std::type_index& typeIndex)
     {
-        auto assets = m_assets.GetValuesView();
+        auto count = (int32_t)m_assets.GetCount();
 
-        for (auto i = assets.count - 1; i >= 0; --i)
+        for (auto i = count - 1; i >= 0; --i)
         {
-            if (assets[i].type == typeIndex)
+            if (m_assets[i].value.type == typeIndex)
             {
                 UnloadInternal(i);
             }
@@ -39,12 +39,10 @@ namespace PK
 
     void AssetDatabase::Unload()
     {
-        auto assets = m_assets.GetValuesView();
-
-        for (auto i = 0u; i < assets.count; ++i)
+        for (auto i = 0u; i < m_assets.GetCount(); ++i)
         {
-            assets[i].asset = nullptr;
-            assets[i].reload = nullptr;
+            m_assets[i].value.asset = nullptr;
+            m_assets[i].value.reload = nullptr;
         }
 
         m_assets.Clear();
@@ -52,19 +50,19 @@ namespace PK
 
     void AssetDatabase::UnloadInternal(uint32_t index)
     {
-        auto reference = &m_assets.GetValueAt(index);
+        auto reference = &m_assets[index].value;
         if (reference->prevIdx == INVALID_LINK) m_typeHeads.SetValue(reference->type, reference->nextIdx);
-        if (reference->nextIdx != INVALID_LINK) m_assets.GetValueAt(reference->nextIdx).prevIdx = reference->prevIdx;
-        if (reference->prevIdx != INVALID_LINK) m_assets.GetValueAt(reference->prevIdx).nextIdx = reference->nextIdx;
+        if (reference->nextIdx != INVALID_LINK) m_assets[reference->nextIdx].value.prevIdx = reference->prevIdx;
+        if (reference->prevIdx != INVALID_LINK) m_assets[reference->prevIdx].value.nextIdx = reference->nextIdx;
 
         auto removed = m_assets.GetCount() - 1u;
 
         if (index != removed)
         {
-            auto other = &m_assets.GetValueAt(removed);
+            auto other = &m_assets[removed].value;
             if (other->prevIdx == INVALID_LINK) m_typeHeads.SetValue(other->type, index);
-            if (other->nextIdx != INVALID_LINK) m_assets.GetValueAt(other->nextIdx).prevIdx = index;
-            if (other->prevIdx != INVALID_LINK) m_assets.GetValueAt(other->prevIdx).nextIdx = index;
+            if (other->nextIdx != INVALID_LINK) m_assets[other->nextIdx].value.prevIdx = index;
+            if (other->prevIdx != INVALID_LINK) m_assets[other->prevIdx].value.nextIdx = index;
         }
 
         reference->asset = nullptr;
@@ -78,7 +76,7 @@ namespace PK
 
         for (auto i = 0u; i < m_assets.GetCount(); ++i)
         {
-            PK_LOG_INFO(m_assets.GetKeyAt(i).c_str());
+            PK_LOG_INFO(m_assets[i].key.c_str());
         }
     }
 
@@ -86,9 +84,9 @@ namespace PK
     {
         PK_LOG_HEADER_SCOPE("AssetDatabase.Log.Type: %s", typeIndex.name());
 
-        for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets.GetValueAt(index).nextIdx)
+        for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index].value.nextIdx)
         {
-            PK_LOG_INFO(m_assets.GetKeyAt(index).c_str());
+            PK_LOG_INFO(m_assets[index].key.c_str());
         }
     }
 
@@ -96,11 +94,11 @@ namespace PK
     {
         PK_LOG_VERBOSE_FUNC("%s", typeIndex.name());
         
-        for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets.GetValueAt(index).nextIdx)
+        for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index].value.nextIdx)
         {
-            if (m_assets.GetValueAt(index).reload)
+            if (m_assets[index].value.reload)
             {
-                m_assets.GetValueAt(index).reload();
+                m_assets[index].value.reload();
             }
         }
     }
@@ -121,10 +119,10 @@ namespace PK
         {
             PK_LOG_VERBOSE_FUNC("%s, %s", typeIndex.name(), directory.c_str());
             
-            for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets.GetValueAt(index).nextIdx)
+            for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index].value.nextIdx)
             {
-                auto key = &m_assets.GetKeyAt(index);
-                auto reference = &m_assets.GetValueAt(index);
+                auto key = &m_assets[index].key;
+                auto reference = &m_assets[index].value;
 
                 if (reference->reload && strncmp(directory.c_str(), key->c_str(), directory.length()) == 0)
                 {
@@ -137,11 +135,11 @@ namespace PK
     Ref<Asset> AssetDatabase::FindInternal(const std::type_index& typeIndex, const char* name) const
     {
         // @TODO potentially super slow. fix it.
-        for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets.GetValueAt(index).nextIdx)
+        for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index].value.nextIdx)
         {
-            if (strstr(m_assets.GetKeyAt(index).c_str(), name) != nullptr)
+            if (strstr(m_assets[index].key.c_str(), name) != nullptr)
             {
-                return m_assets.GetValueAt(index).asset;
+                return m_assets[index].value.asset;
             }
         }
 
@@ -203,12 +201,12 @@ namespace PK
         
         if (m_assets.AddKey(assetId, &index))
         {
-            *outReference = &m_assets.GetValueAt(index);
+            *outReference = &m_assets[index].value;
             **outReference = AssetReference();
             
             auto headIndex = 0u;
             auto isNew = m_typeHeads.AddKey(typeIndex, &headIndex);
-            auto& head = m_typeHeads.GetValueAt(headIndex);
+            auto& head = m_typeHeads[headIndex].value;
 
             if (isNew || head == INVALID_LINK)
             {
@@ -216,7 +214,7 @@ namespace PK
             }
             else
             {
-                m_assets.GetValueAt(head).prevIdx = index;
+                m_assets[head].value.prevIdx = index;
                 (*outReference)->nextIdx = head;
                 head = index;
             }
@@ -224,7 +222,7 @@ namespace PK
             return true;
         }
 
-        *outReference = &m_assets.GetValueAt(index);
+        *outReference = &m_assets[index].value;
         return false;
     }
 

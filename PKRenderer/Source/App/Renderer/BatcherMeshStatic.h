@@ -14,6 +14,8 @@ namespace PK::App
 
     class BatcherMeshStatic : public IBatcher
     {
+        constexpr static uint32_t MAX_SHADERS = 64u;
+
         struct DrawCall
         {
             const ShaderAsset* shader = nullptr;
@@ -26,7 +28,7 @@ namespace PK::App
             size_t firstIndex = 0ull;
             size_t stride = 0ull;
 
-            MaterialGroup() : materials(32) {}
+            MaterialGroup() : materials(0) {}
             uint16_t Add(Material* material);
             inline void Clear() { firstIndex = 0ull; materials.Clear(); }
             constexpr size_t GetSize() const { return materials.GetCount() * stride; }
@@ -53,11 +55,6 @@ namespace PK::App
                 if (transform != b.transform) return transform < b.transform;
                 if (sortDepth != b.sortDepth) return sortDepth < b.sortDepth;
                 return false;
-            }
-
-            inline static bool IsBatchable(const DrawInfo& a, const DrawInfo& b)
-            {
-                return a.group == b.group && a.shader == b.shader && a.submesh == b.submesh;
             }
         };
 
@@ -102,8 +99,7 @@ namespace PK::App
         std::vector<DrawCall> m_drawCalls;
         std::vector<BufferIndexRange> m_passGroups;
 
-        FixedList<MaterialGroup, 32> m_materials;
-        PointerSet<ShaderAsset> m_shaders;
+        FixedMap<ShaderAsset*, MaterialGroup, MAX_SHADERS, Hash::TPointerHash<ShaderAsset>> m_materials;
         PointerSet<ComponentTransform> m_transforms;
         uint16_t m_groupIndex = 0u;
         uint32_t m_taskletCount = 0u;

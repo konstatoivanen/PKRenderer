@@ -67,7 +67,7 @@ namespace PK
 
         if (!m_sets.AddKey(key, &index))
         {
-            auto set = m_sets.GetValueAt(index);
+            auto set = m_sets[index].value;
             set->pruneTick = nextPruneTick;
             set->fence = fence;
             return set;
@@ -225,7 +225,7 @@ namespace PK
         }
 
         vkUpdateDescriptorSets(m_device, count, writes, 0, nullptr);
-        m_sets.SetValueAt(index, value);
+        m_sets[index].value = value;
         return value;
     }
 
@@ -252,11 +252,11 @@ namespace PK
             m_extinctPools.pop_back();
         }
 
-        auto keyvalues = m_sets.GetKeyValues();
+        const auto count = (int32_t)m_sets.GetCount();
 
-        for (int32_t i = (int32_t)keyvalues.count - 1; i >= 0; --i)
+        for (int32_t i = count - 1; i >= 0; --i)
         {
-            auto& value = keyvalues.values[i];
+            auto& value = m_sets[i].value;
 
             if (!value->fence.IsComplete() || value->pruneTick >= m_currentPruneTick)
             {

@@ -190,12 +190,10 @@ namespace PK
 
     void VulkanBarrierHandler::TransferRecords(VulkanBarrierHandler* source)
     {
-        auto keyValues = source->m_resources.GetKeyValues();
-
         for (auto i = 0u; i < source->m_resources.GetCount(); ++i)
         {
-            auto& key = keyValues.nodes[i].key;
-            auto current = &keyValues.values[i];
+            const auto& key = source->m_resources[i].key;
+            auto current = &source->m_resources[i].value;
 
             auto index = 0u;
             auto isNew = m_resources.AddKey(key, &index);
@@ -275,7 +273,7 @@ namespace PK
         {
             if (m_accessTimestamps[i] <= m_pruneTimeStamp)
             {
-                auto record = m_resources.GetValueAt(i);
+                auto record = m_resources[i].value;
                 m_resources.RemoveAt(i);
 
                 while (record)

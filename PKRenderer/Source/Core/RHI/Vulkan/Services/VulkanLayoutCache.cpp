@@ -9,7 +9,7 @@ namespace PK
         auto index = 0u;
         if (!m_setlayouts.AddKey(key, &index))
         {
-            return m_setlayouts.GetValueAt(index);
+            return m_setlayouts[index].value;
         }
 
         VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO };
@@ -40,7 +40,7 @@ namespace PK
         bindingFlagsInfo.bindingCount = layoutCreateInfo.bindingCount = count;
         FixedString64 layoutName("SetLayout%02d", index);
         auto value = m_setLayoutPool.New(m_device, layoutCreateInfo, (VkShaderStageFlagBits)key.stageFlags, layoutName.c_str());
-        m_setlayouts.SetValueAt(index, value);
+        m_setlayouts[index].value = value;
         return value;
     }
 
@@ -49,7 +49,7 @@ namespace PK
         auto index = 0u;
         if (!m_pipelineLayouts.AddKey(key, &index))
         {
-            return m_pipelineLayouts.GetValueAt(index);
+            return m_pipelineLayouts[index].value;
         }
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
@@ -77,7 +77,7 @@ namespace PK
         }
 
         auto value = m_pipelineLayoutPool.New(m_device, pipelineLayoutInfo);
-        m_pipelineLayouts.SetValueAt(index, value);
+        m_pipelineLayouts[index].value = value;
         return value;
     }
 }

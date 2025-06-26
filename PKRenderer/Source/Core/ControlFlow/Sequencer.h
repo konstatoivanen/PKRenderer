@@ -60,7 +60,7 @@ namespace PK
                 {
                     if (m_map.AddKey({ caller, current.type }, &index))
                     {
-                        auto& view = m_map.GetValueAt(index);
+                        auto& view = m_map[index].value;
                         view.steps = head;
                         view.count = 0u;
 

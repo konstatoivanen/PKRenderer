@@ -17,6 +17,7 @@ namespace PK::App
     {
         if (stride == 0ull)
         {
+            materials.Reserve(8u);
             stride = material->GetShader()->GetMaterialPropertyLayout().GetPaddedStride();
         }
 
@@ -25,7 +26,6 @@ namespace PK::App
 
     BatcherMeshStatic::BatcherMeshStatic() :
         m_textures2D(PK_RHI_MAX_UNBOUNDED_SIZE),
-        m_shaders(32),
         m_transforms(1024)
     {
         PK_LOG_VERBOSE_FUNC("");
@@ -44,7 +44,7 @@ namespace PK::App
     {
         for (auto i = 0u; i < m_materials.GetCount(); ++i)
         {
-            m_materials[i].Clear();
+            m_materials[i].value.Clear();
         }
 
         m_taskletCount = 0u;
@@ -73,15 +73,15 @@ namespace PK::App
     {
         auto buffsize = 0ull;
 
-        for (auto& group : m_materials)
+        for (auto i = 0u; i < m_materials.GetCount(); ++i)
         {
-            auto size = group->GetSize();
+            const auto group = &m_materials[i].value;
 
-            if (size > 0)
+            if (group->GetSize() > 0)
             {
                 group->firstIndex = (size_t)ceil((double)buffsize / group->stride);
                 buffsize = group->firstIndex * group->stride;
-                buffsize += size;
+                buffsize += group->GetSize();
             }
         }
 
@@ -90,8 +90,10 @@ namespace PK::App
             RHI::ValidateBuffer(m_properties, buffsize);
             auto propertyView = cmd.BeginBufferWrite<char>(m_properties.get(), 0ull, buffsize);
 
-            for (auto& group : m_materials)
+            for (auto i = 0u; i < m_materials.GetCount(); ++i)
             {
+                const auto group = &m_materials[i].value;
+
                 if (group->GetSize() > 0)
                 {
                     auto destination = propertyView.data + group->GetOffset();
@@ -114,9 +116,8 @@ namespace PK::App
 
         auto taskletView = cmd.BeginBufferWrite<uint2>(m_tasklets.get(), 0u, m_taskletCount);
         auto indexView = cmd.BeginBufferWrite<PKAssets::PKDrawInfo>(m_indices.get(), 0u, m_drawInfos.size());
-        auto current = m_drawInfos[0];
+        auto lastInfo = &m_drawInfos[0];
 
-        // Meshlet Debug
         auto taskletCount = 0u;
         auto taskletPassStart = 0u;
         auto taskletDrawStart = 0u;
@@ -125,52 +126,51 @@ namespace PK::App
         {
             const auto info = m_drawInfos.data() + i;
 
-            indexView[i] = PKAssets::PackPKDrawInfo
-            (
-                // Detect null material with max uint16_t, avoids allocs for shadow map shaders.
-                info->material != 0xFFFFu ? (uint32_t)info->material + (uint32_t)m_materials[info->shader].firstIndex : 0u,
-                m_transforms[info->transform]->minUniformScale,
-                info->transform, 
-                info->submesh, 
-                info->userdata
-            );
-
-            // Meshlet Debug
+            // Begin new groups and/or draw calls if unbatchable
             {
-                if (info->group != current.group || info->shader != current.shader)
+                if (info->group != lastInfo->group || info->shader != lastInfo->shader)
                 {
-                    m_drawCalls.push_back({ m_shaders[current.shader], { taskletDrawStart, taskletCount - taskletDrawStart } });
+                    m_drawCalls.push_back({ m_materials[lastInfo->shader].key, { taskletDrawStart, taskletCount - taskletDrawStart } });
                     taskletDrawStart = taskletCount;
                 }
 
-                if (info->group != current.group)
+                if (info->group != lastInfo->group)
                 {
                     auto drawCount = m_drawCalls.size();
                     m_passGroups.push_back({ taskletPassStart, drawCount - taskletPassStart });
                     taskletPassStart = (uint32_t)drawCount;
                 }
 
-                auto sm = m_staticGeometry->GetSubmesh(info->submesh);
-                auto taskCount = (sm->meshletCount + PK_MAX_MESHLETS_PER_TASK - 1u) / PK_MAX_MESHLETS_PER_TASK;
+                lastInfo = info;
+            }
+
+            // Write draw info & tasklet buffers.
+            {
+                auto submesh = m_staticGeometry->GetSubmesh(info->submesh);
+                auto taskCount = (submesh->meshletCount + PK_MAX_MESHLETS_PER_TASK - 1u) / PK_MAX_MESHLETS_PER_TASK;
+
+                indexView[i] = PKAssets::PackPKDrawInfo
+                (
+                    (uint32_t)info->material + (uint32_t)m_materials[info->shader].value.firstIndex,
+                    m_transforms[info->transform]->minUniformScale,
+                    info->transform, 
+                    info->submesh, 
+                    info->userdata
+                );
 
                 for (auto j = 0u; j < taskCount; ++j)
                 {
-                    auto taskletMeshletCount = glm::min(PK_MAX_MESHLETS_PER_TASK, sm->meshletCount - j * PK_MAX_MESHLETS_PER_TASK);
+                    auto taskletMeshletCount = glm::min(PK_MAX_MESHLETS_PER_TASK, submesh->meshletCount - j * PK_MAX_MESHLETS_PER_TASK);
                     taskletView[taskletCount++] =
                     {
-                        sm->meshletFirst + j * PK_MAX_MESHLETS_PER_TASK,
+                        submesh->meshletFirst + j * PK_MAX_MESHLETS_PER_TASK,
                         (i & 0xFFFFFFu) | ((taskletMeshletCount & 0xFF) << 24u)
                     };
                 }
             }
-
-            if (!DrawInfo::IsBatchable(*info, current))
-            {
-                current = *info;
-            }
         }
 
-        m_drawCalls.push_back({ m_shaders[current.shader], { taskletDrawStart, taskletCount - taskletDrawStart} });
+        m_drawCalls.push_back({ m_materials[lastInfo->shader].key, { taskletDrawStart, taskletCount - taskletDrawStart} });
         m_passGroups.push_back({ taskletPassStart, m_drawCalls.size() - taskletPassStart });
 
         cmd->EndBufferWrite(m_indices.get());
@@ -209,9 +209,8 @@ namespace PK::App
         PK_THROW_ASSERT(mesh->baseMesh == m_staticGeometry.get(), "Cannot submit draws for meshes not registered in the scene mesh of this geometry batcher!");
 
         DrawInfo info{};
-
-        info.shader = m_shaders.Add(shader);
-        info.material = material ? m_materials[info.shader].Add(material) : 0xFFFFu;
+        info.shader = m_materials.AddKey(shader);
+        info.material = material ? m_materials[info.shader].value.Add(material) : 0u;
         info.transform = m_transforms.Add(transform);
         info.submesh = mesh->GetGlobalSubmeshIndex(submesh);
         info.userdata = userdata;

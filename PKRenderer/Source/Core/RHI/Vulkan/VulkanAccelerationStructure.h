@@ -37,7 +37,6 @@ namespace PK
             };
 
             using GeometryKeyHash = Hash::TFNV1AHash<BLASKey>;
-            constexpr static uint32_t MAX_SUBSTRUCTURES = 1024u;
 
             struct BLAS
             {
@@ -90,6 +89,5 @@ namespace PK
             VulkanCommandBuffer* m_cmd = nullptr;
             FenceRef m_lastBuildFenceRef = {};
             VkAccelerationStructureInstanceKHR* m_writeBuffer = nullptr;
-            VkDeviceSize m_queryResults[MAX_SUBSTRUCTURES]{};
     };
 }

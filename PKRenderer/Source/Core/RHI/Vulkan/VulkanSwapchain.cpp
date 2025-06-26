@@ -146,7 +146,7 @@ namespace PK
         // @TODO implicit submit sounds bad?!?
         VkSemaphore waitSignal = VK_NULL_HANDLE;
         queueGraphics->QueueWait(m_imageAvailableSignal, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
-        queueGraphics->commandPool->GetCurrent()->ValidateSwapchainPresent(this);
+        queueGraphics->GetCommandBuffer()->ValidateSwapchainPresent(this);
         m_driver->queues->SubmitCurrent(QueueType::Graphics, &waitSignal);
 
         // Frame synchronization for this frame is handled externally.

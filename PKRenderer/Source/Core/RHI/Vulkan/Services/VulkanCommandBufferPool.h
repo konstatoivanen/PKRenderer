@@ -9,24 +9,22 @@ namespace PK
     class VulkanCommandBufferPool : public NoCopy
     {
         public:
-            VulkanCommandBufferPool(VkDevice device, 
-                const VulkanServiceContext& services, 
-                uint32_t queueFamily, 
-                VkPipelineStageFlags capabilities);
+            VulkanCommandBufferPool(VkDevice device, const VulkanServiceContext& services, uint32_t queueFamily);
             ~VulkanCommandBufferPool();
     
             VulkanCommandBuffer* GetCurrent();
             VulkanCommandBuffer* EndCurrent();
             void Prune(bool all);
-            void AllocateBuffers();
 
         private:
-            constexpr static const uint32_t MAX_PRIMARY_COMMANDBUFFERS = 24u;
+            constexpr static const uint32_t MAX_COMMANDBUFFERS = 24u;
+            uint32_t m_queueFamily;
             VkDevice m_device;
             VkCommandPool m_pool;
-            VkCommandBuffer m_nativeBuffers[MAX_PRIMARY_COMMANDBUFFERS]{};
+            VkFence m_fences[MAX_COMMANDBUFFERS]{};
+            VkCommandBuffer m_commandBuffers[MAX_COMMANDBUFFERS]{};
+            VulkanCommandBuffer m_wrappers[MAX_COMMANDBUFFERS]{};
             VulkanRenderState m_primaryRenderState;
-            VulkanCommandBuffer m_commandBuffers[MAX_PRIMARY_COMMANDBUFFERS]{};
             VulkanCommandBuffer* m_current = nullptr;
     };
 }

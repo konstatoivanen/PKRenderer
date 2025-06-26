@@ -8,7 +8,7 @@ namespace PK
     {
         for (auto i = 0u; i < m_variables.GetCount(); ++i)
         {
-            m_variables.GetValueAt(i).arguments = nullptr;
+            m_variables[i].value.arguments = nullptr;
         }
     }
 
@@ -72,7 +72,7 @@ namespace PK
         auto name = variable->name;
         auto index = 0u;
         auto isNew = m_variables.AddKey(name, &index);
-        auto reference = &m_variables.GetValueAt(index);
+        auto reference = &m_variables[index].value;
         PK_THROW_ASSERT(!isNew || reference->variable == nullptr, "CVar is already bound! (%s)", name.c_str());
         PK_LOG_VERBOSE_FUNC("%s", name.c_str());
 
@@ -106,7 +106,7 @@ namespace PK
             auto name = NameID(args[0]);
             auto index = 0u;
             auto isNew = m_variables.AddKey(name, &index);
-            auto reference = &m_variables.GetValueAt(index);
+            auto reference = &m_variables[index].value;
 
             if (!isNew && reference->variable)
             {

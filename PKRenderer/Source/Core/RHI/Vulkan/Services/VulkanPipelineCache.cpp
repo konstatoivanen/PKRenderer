@@ -90,7 +90,7 @@ namespace PK
 
         if (!m_vertexPipelines.AddKey(key, &index))
         {
-            value = &m_vertexPipelines.GetValueAt(index);
+            value = &m_vertexPipelines[index].value;
             value->pruneTick = nextPruneTick;
             return value->pipeline;
         }
@@ -246,7 +246,7 @@ namespace PK
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
 
-        value = &m_vertexPipelines.GetValueAt(index);
+        value = &m_vertexPipelines[index].value;
         value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, key.shader->GetName());
         value->pruneTick = nextPruneTick;
         return value->pipeline;
@@ -260,7 +260,7 @@ namespace PK
 
         if (!m_meshPipelines.AddKey(key, &index))
         {
-            value = &m_meshPipelines.GetValueAt(index);
+            value = &m_meshPipelines[index].value;
             value->pruneTick = nextPruneTick;
             return value->pipeline;
         }
@@ -390,7 +390,7 @@ namespace PK
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
 
-        value = &m_meshPipelines.GetValueAt(index);
+        value = &m_meshPipelines[index].value;
         value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, key.shader->GetName());
         value->pruneTick = nextPruneTick;
         return value->pipeline;
@@ -404,7 +404,7 @@ namespace PK
 
         if (!m_otherPipelines.AddKey(shader, &index))
         {
-            value = &m_otherPipelines.GetValueAt(index);
+            value = &m_otherPipelines[index].value;
             value->pruneTick = nextPruneTick;
             return value->pipeline;
         }
@@ -412,7 +412,7 @@ namespace PK
         VkComputePipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
         pipelineInfo.stage = shader->GetModule((int)ShaderStage::Compute)->stageInfo;
         pipelineInfo.layout = shader->GetPipelineLayout()->layout;
-        value = &m_otherPipelines.GetValueAt(index);
+        value = &m_otherPipelines[index].value;
         value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
         value->pruneTick = nextPruneTick;
         return value->pipeline;
@@ -427,7 +427,7 @@ namespace PK
 
         if (!m_otherPipelines.AddKey(shader, &index))
         {
-            value = &m_otherPipelines.GetValueAt(index);
+            value = &m_otherPipelines[index].value;
             value->pruneTick = nextPruneTick;
             return value->pipeline;
         }
@@ -478,7 +478,7 @@ namespace PK
         pipelineInfo.flags |= VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
         pipelineInfo.layout = shader->GetPipelineLayout()->layout;
 
-        value = &m_otherPipelines.GetValueAt(index);
+        value = &m_otherPipelines[index].value;
         value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
         value->pruneTick = nextPruneTick;
         return value->pipeline;
@@ -490,7 +490,7 @@ namespace PK
 
         for (int32_t i = m_vertexPipelines.GetCount() - 1; i >= 0; --i)
         {
-            auto value = &m_vertexPipelines.GetValueAt(i);
+            auto value = &m_vertexPipelines[i].value;
 
             if (value->pruneTick < m_currentPruneTick)
             {
@@ -501,7 +501,7 @@ namespace PK
 
         for (int32_t i = m_meshPipelines.GetCount() - 1; i >= 0; --i)
         {
-            auto value = &m_meshPipelines.GetValueAt(i);
+            auto value = &m_meshPipelines[i].value;
 
             if (value->pruneTick < m_currentPruneTick)
             {
@@ -512,7 +512,7 @@ namespace PK
 
         for (int32_t i = m_otherPipelines.GetCount() - 1; i >= 0; --i)
         {
-            auto value = &m_otherPipelines.GetValueAt(i);
+            auto value = &m_otherPipelines[i].value;
 
             if (value->pruneTick < m_currentPruneTick)
             {

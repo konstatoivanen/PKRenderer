@@ -122,14 +122,14 @@ namespace PK
                 auto count = 1u + head / viewSize;
                 auto capacity = views.buffer.GetCount() / viewSize;
                 views.buffer.Validate((size_t)Hash::ExpandSize(capacity, count) * viewSize);
-                views.indices.SetValueAt(index, head);
+                views.indices[index].value = head;
                 views.head += viewSize;
                 auto* element = reinterpret_cast<TView*>(views.buffer.GetData() + head);
                 element->GID = egid;
                 return element;
             }
 
-            return reinterpret_cast<TView*>(views.buffer.GetData() + views.indices.GetValueAt(index));
+            return reinterpret_cast<TView*>(views.buffer.GetData() + views.indices[index].value);
         }
 
         template<typename TImpl, typename TView, typename ...M>
