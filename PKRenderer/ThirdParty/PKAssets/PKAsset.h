@@ -16,6 +16,7 @@ namespace PKAssets
     constexpr static const char* PK_ASSET_EXTENSION_SHADER = ".pkshader";
     constexpr static const char* PK_ASSET_EXTENSION_MESH = ".pkmesh";
     constexpr static const char* PK_ASSET_EXTENSION_FONT = ".pkfont";
+    constexpr static const char* PK_ASSET_EXTENSION_TEXTURE = ".pktexture";
 
     template<typename T>
     struct RelativePtr
@@ -39,7 +40,8 @@ namespace PKAssets
         Invalid,
         Shader,
         Mesh,
-        Font
+        Font,
+        Texture
     };
 
     enum class PKElementType : uint16_t
@@ -186,6 +188,118 @@ namespace PKAssets
         "DRAW"
     };
 
+    enum class PKTextureType : uint8_t
+    {
+        Texture2D,
+        Texture2DArray,
+        Texture3D,
+        Cubemap,
+        CubemapArray,
+    };
+
+    enum class PKTextureFormat : uint8_t
+    {
+        Invalid = 0,
+        R8,
+        R8_SNORM,
+        R8UI,
+        R8I,
+        Stencil8,
+        R16F,
+        R16UI,
+        R16I,
+        RG8,
+        RG8_SNORM,
+        RG8UI,
+        RG8I,
+        RGB565,
+        RGB9E5,
+        RGB5A1,
+        RGBA4,
+        Depth16,
+        RGB8,
+        RGB8_SRGB,
+        RGB8_SNORM,
+        RGB8UI,
+        RGB8I,
+        R32F,
+        R32UI,
+        R32I,
+        RG16F,
+        RG16UI,
+        RG16I,
+        B10G11R11UF,
+        RGBA8,
+        RGBA8_SRGB,
+        RGBA8_SNORM,
+        BGRA8,
+        BGRA8_SRGB,
+        RGB10A2,
+        RGBA8UI,
+        RGBA8I,
+        Depth32F,
+        Depth24_Stencil8,
+        Depth32F_Stencil8,
+        RGB16F,
+        RGB16UI,
+        RGB16I,
+        RG32F,
+        RG32UI,
+        RG32I,
+        RGBA16,
+        RGBA16F,
+        RGBA16UI,
+        RGBA16I,
+        RGB32F,
+        RGB32UI,
+        RGB32I,
+        RGBA32F,
+        RGBA32UI,
+        RGBA32I,
+        RGBA64UI,
+
+        // compressed formats
+        BC1_RGB,
+        BC1_RGBA,
+        BC1_SRGB,
+        BC1_SRGBA,
+        BC4,
+        BC2_RGBA,
+        BC2_SRGBA,
+        BC3_RGBA,
+        BC3_SRGBA,
+        BC6H_RGBUF,
+        BC6H_RGBF,
+        BC7_UNORM,
+    };
+
+    enum class PKFilterMode : uint8_t
+    {
+        Point,
+        Bilinear,
+        Trilinear,
+        Bicubic
+    };
+
+    enum class PKWrapMode : uint8_t
+    {
+        Clamp,
+        Repeat,
+        Mirror,
+        MirrorOnce,
+        Border
+    };
+
+    enum class PKBorderColor : uint8_t
+    {
+        FloatClear,
+        IntClear,
+        FloatBlack,
+        IntBlack,
+        FloatWhite,
+        IntWhite
+    };
+
     enum class PKShaderStage : uint8_t
     {
         Vertex,
@@ -302,6 +416,22 @@ namespace PKAssets
         Default,
         OverEstimate,
         UnderEstimate,
+    };
+
+    struct alignas(4) PKTexture
+    {
+        RelativePtr<void> data;             // 4 bytes
+        RelativePtr<uint32_t> levelOffsets; // 8 bytes
+        uint32_t dataSize;                  // 12 bytes
+        float anisotropy;                   // 16 bytes
+        uint16_t resolution[3];             // 22 bytes
+        uint16_t levels;                    // 24 bytes
+        PKTextureFormat format;             // 25 bytes
+        PKTextureType type;                 // 26 bytes
+        PKFilterMode filterMin;             // 27 bytes
+        PKFilterMode filterMag;             // 28 bytes
+        PKWrapMode wrap[3];                 // 31 bytes
+        PKBorderColor borderColor;          // 32 bytes
     };
 
     struct alignas(4) PKVertexInputAttribute

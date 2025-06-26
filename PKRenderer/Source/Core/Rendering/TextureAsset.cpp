@@ -1,9 +1,9 @@
 #include "PrecompiledHeader.h"
-#include <KTX/ktx.h>
 #include <filesystem>
+#include <PKAssets/PKAsset.h>
+#include <PKAssets/PKAssetLoader.h>
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
-#include "Core/RHI/Vulkan/VulkanCommon.h"
 #include "TextureAsset.h"
 
 namespace PK
@@ -16,65 +16,53 @@ namespace PK
 
     void TextureAsset::AssetImport(const char* filepath)
     {
-        ktxTexture2* ktxTex2;
+        PKAssets::PKAsset asset;
 
-        auto result = ktxTexture2_CreateFromNamedFile(filepath, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTex2);
+        PK_THROW_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
+        PK_THROW_ASSERT(asset.header->type == PKAssets::PKAssetType::Texture, "Trying to read a texture from a non texture file!")
 
-        if (result != KTX_SUCCESS)
-        {
-            PK_THROW_ERROR(ktxErrorString(result));
-        }
+        auto texture = PKAssets::ReadAsTexture(&asset);
+        auto base = asset.rawData;
+        auto levelOffsets = texture->levelOffsets.Get(base);
+        auto textureData = texture->data.Get(base);
+        auto textureDataSize = texture->dataSize;
 
         TextureDescriptor descriptor{};
         descriptor.usage = TextureUsage::DefaultDisk;
-        descriptor.resolution = { ktxTex2->baseWidth, ktxTex2->baseHeight, ktxTex2->baseDepth };
-        descriptor.levels = ktxTex2->numLevels;
-        descriptor.layers = ktxTex2->numLayers;
-        descriptor.format = VulkanEnumConvert::GetTextureFormat((VkFormat)ktxTex2->vkFormat);
+        descriptor.resolution[0] = texture->resolution[0];
+        descriptor.resolution[1] = texture->resolution[1];
+        descriptor.resolution[2] = texture->resolution[2];
+        descriptor.levels = texture->levels;
+        descriptor.layers = 1u;
+        descriptor.format = texture->format; 
+        descriptor.type = texture->type;
 
-        if (ktxTex2->isCubemap && ktxTex2->isArray)
+        if (descriptor.type == TextureType::CubemapArray || descriptor.type == TextureType::Texture2DArray)
         {
-            descriptor.type = TextureType::CubemapArray;
-        }
-        else if (ktxTex2->isCubemap)
-        {
-            descriptor.type = TextureType::Cubemap;
-        }
-        else if (ktxTex2->isArray)
-        {
-            descriptor.type = TextureType::Texture2DArray;
-        }
-        else if (ktxTex2->baseDepth > 1)
-        {
-            descriptor.type = TextureType::Texture3D;
+            descriptor.layers = texture->resolution[2];
+            descriptor.resolution[2] = 1;
         }
 
-        descriptor.sampler.anisotropy = 16.0f;
-        descriptor.sampler.filterMin = ktxTex2->numLevels > 1 ? FilterMode::Trilinear : FilterMode::Bilinear;
-        descriptor.sampler.filterMag = ktxTex2->numLevels > 1 ? FilterMode::Trilinear : FilterMode::Bilinear;
-        descriptor.sampler.wrap[0] = WrapMode::Repeat;
-        descriptor.sampler.wrap[1] = WrapMode::Repeat;
-        descriptor.sampler.wrap[2] = WrapMode::Repeat;
+        descriptor.sampler.anisotropy = texture->anisotropy;
+        descriptor.sampler.filterMin = texture->filterMin;
+        descriptor.sampler.filterMag = texture->filterMag;
+        descriptor.sampler.wrap[0] = texture->wrap[0];
+        descriptor.sampler.wrap[1] = texture->wrap[1];
+        descriptor.sampler.wrap[2] = texture->wrap[2];
 
         m_texture = RHI::CreateTexture(descriptor, std::filesystem::path(GetFileName()).stem().string().c_str());
 
-        ktx_uint8_t* ktxTextureData = ktxTexture_GetData(ktxTexture(ktxTex2));
-        ktx_size_t ktxTextureSize = ktxTex2->dataSize;
-        TextureUploadRange* ranges = PK_STACK_ALLOC(TextureUploadRange, descriptor.levels);
+        auto ranges = PK_STACK_ALLOC(TextureUploadRange, descriptor.levels);
+        auto isCubeMap = descriptor.type == TextureType::CubemapArray || descriptor.type == TextureType::Cubemap;
 
-        auto faces = ktxTex2->isCubemap ? ktxTex2->numFaces : 1u;
-
-        // KTX 2 stores all levels in tightly packed form. no need to iterate on other data.
+        // Data stored packed per level. only need to define level ranges.
         for (auto level = 0u; level < descriptor.levels; ++level)
         {
-            ktx_size_t offset;
-            PK_THROW_ASSERT(ktxTexture_GetImageOffset(ktxTexture(ktxTex2), level, 0, 0, &offset) == KTX_SUCCESS, "Failed to get image buffer offset");
-
             auto& range = ranges[level];
-            range.bufferOffset = (uint32_t)offset;
+            range.bufferOffset = levelOffsets[level];
             range.level = level;
             range.layer = 0;
-            range.layers = ktxTex2->isCubemap ? descriptor.layers * faces : descriptor.layers;
+            range.layers = isCubeMap ? descriptor.layers * 6u : descriptor.layers;
             range.offset = PK_UINT3_ZERO;
             range.extent =
             {
@@ -84,14 +72,14 @@ namespace PK
             };
         }
 
-        RHI::GetCommandBuffer(QueueType::Transfer)->UploadTexture(m_texture.get(), ktxTextureData, ktxTextureSize, ranges, descriptor.levels);
+        RHI::GetCommandBuffer(QueueType::Transfer)->UploadTexture(m_texture.get(), textureData, textureDataSize, ranges, descriptor.levels);
 
-        ktxTexture_Destroy(ktxTexture(ktxTex2));
+        PKAssets::CloseAsset(&asset);
     }
 }
 
 template<>
-bool PK::Asset::IsValidExtension<PK::TextureAsset>(const char* extension) { return strcmp(extension, ".ktx2") == 0; }
+bool PK::Asset::IsValidExtension<PK::TextureAsset>(const char* extension) { return strcmp(extension, ".pktexture") == 0; }
 
 template<>
 PK::TextureAssetRef PK::Asset::Create<PK::TextureAsset>() { return CreateRef<PK::TextureAsset>(); }

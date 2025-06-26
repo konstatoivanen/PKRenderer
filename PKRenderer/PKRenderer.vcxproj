@@ -114,12 +114,11 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\PKRenderer\ThirdParty;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;ThirdParty/KTX/Binaries/ktx.lib;ThirdParty/KTX/Binaries/ktx_read.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
       <Command>for /r  "$(ProjectDir)ThirdParty\" %%f in (*.dll) do xcopy "%%f" "$(TargetDir)" /y /d
-xcopy /y /s /d "$(ProjectDir)Content\*.ktx2" "$(TargetDir)Content\"
 xcopy /y /s /d "$(ProjectDir)Content\*.bmp" "$(TargetDir)Content\"
 xcopy /y /s /d "$(ProjectDir)Content\*.material" "$(TargetDir)Content\"
 xcopy /y /s /d "$(ProjectDir)Content\*.cfg" "$(TargetDir)Content\"
@@ -148,12 +147,11 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\PKRenderer\ThirdParty;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;ThirdParty/KTX/Binaries/ktx.lib;ThirdParty/KTX/Binaries/ktx_read.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
       <Command>for /r  "$(ProjectDir)ThirdParty\" %%f in (*.dll) do xcopy "%%f" "$(TargetDir)" /y /d
-xcopy /y /s /d "$(ProjectDir)Content\*.ktx2" "$(TargetDir)Content\"
 xcopy /y /s /d "$(ProjectDir)Content\*.bmp" "$(TargetDir)Content\"
 xcopy /y /s /d "$(ProjectDir)Content\*.material" "$(TargetDir)Content\"
 xcopy /y /s /d "$(ProjectDir)Content\*.cfg" "$(TargetDir)Content\"
@@ -185,12 +183,11 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\PKRenderer\ThirdParty;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;ThirdParty/KTX/Binaries/ktx.lib;ThirdParty/KTX/Binaries/ktx_read.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
       <Command>for /r  "$(ProjectDir)ThirdParty\" %%f in (*.dll) do xcopy "%%f" "$(TargetDir)" /y /d
-xcopy /y /s /d "$(ProjectDir)Content\*.ktx2" "$(TargetDir)Content\"
 xcopy /y /s /d "$(ProjectDir)Content\*.bmp" "$(TargetDir)Content\"
 xcopy /y /s /d "$(ProjectDir)Content\*.material" "$(TargetDir)Content\"
 xcopy /y /s /d "$(ProjectDir)Content\*.cfg" "$(TargetDir)Content\"
@@ -224,12 +221,11 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\PKRenderer\ThirdParty;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;ThirdParty/KTX/Binaries/ktx.lib;ThirdParty/KTX/Binaries/ktx_read.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ThirdParty/vulkan/Binaries/vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
       <Command>for /r  "$(ProjectDir)ThirdParty\" %%f in (*.dll) do xcopy "%%f" "$(TargetDir)" /y /d
-xcopy /y /s /d "$(ProjectDir)Content\*.ktx2" "$(TargetDir)Content\"
 xcopy /y /s /d "$(ProjectDir)Content\*.bmp" "$(TargetDir)Content\"
 xcopy /y /s /d "$(ProjectDir)Content\*.material" "$(TargetDir)Content\"
 xcopy /y /s /d "$(ProjectDir)Content\*.cfg" "$(TargetDir)Content\"
@@ -558,7 +554,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="ThirdParty\glm\vec3.hpp" />
     <ClInclude Include="ThirdParty\glm\vec4.hpp" />
     <ClInclude Include="ThirdParty\glm\vector_relational.hpp" />
-    <ClInclude Include="ThirdParty\KTX\ktx.h" />
     <ClInclude Include="ThirdParty\mikktspace\mikktspace.h" />
     <ClInclude Include="ThirdParty\PKAssets\PKAsset.h" />
     <ClInclude Include="ThirdParty\PKAssets\PKAssetLoader.h" />
@@ -883,8 +878,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="ThirdParty\glm\gtx\vector_angle.inl" />
     <None Include="ThirdParty\glm\gtx\vector_query.inl" />
     <None Include="ThirdParty\glm\gtx\wrap.inl" />
-    <None Include="ThirdParty\KTX\Binaries\ktx.dll" />
-    <None Include="ThirdParty\KTX\Binaries\ktx_read.dll" />
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />
     <None Include="Content\Configs\BaseRenderer.cfg" />
     <None Include="Content\Configs\Input.keycfg" />
@@ -1169,8 +1162,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="ThirdParty\KTX\Binaries\ktx.lib" />
-    <Library Include="ThirdParty\KTX\Binaries\ktx_read.lib" />
     <Library Include="ThirdParty\vulkan\Binaries\vulkan-1.lib" />
   </ItemGroup>
   <ItemGroup>

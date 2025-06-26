@@ -13,6 +13,11 @@ namespace PKAssets
 {
     enum class PKShaderStageFlags : uint32_t;
     enum class PKElementType : uint16_t;
+    enum class PKTextureType : uint8_t;
+    enum class PKTextureFormat : uint8_t;
+    enum class PKFilterMode : uint8_t;
+    enum class PKWrapMode : uint8_t;
+    enum class PKBorderColor : uint8_t;
     struct PKShaderVariant;
 }
 
@@ -55,25 +60,26 @@ namespace PK
     
     typedef PKAssets::PKShaderStageFlags ShaderStageFlags;
     typedef PKAssets::PKElementType ElementType;
+    typedef PKAssets::PKTextureType TextureType;
+    typedef PKAssets::PKTextureFormat TextureFormat;
+    typedef PKAssets::PKFilterMode FilterMode;
+    typedef PKAssets::PKWrapMode WrapMode;
+    typedef PKAssets::PKBorderColor BorderColor;
 
     enum class RHIAPI;
     enum class QueueType;
     enum class SamplerType : uint8_t;
     enum class TextureBindMode : uint8_t;
-    enum class FilterMode : uint8_t;
     enum class PolygonMode : uint8_t;
     enum class Topology : uint8_t;
-    enum class WrapMode : uint8_t;
     enum class ColorMask : uint8_t;
     enum class LogicOp : uint8_t;
     enum class FrontFace : uint8_t;
     enum class LoadOp : uint8_t;
     enum class StoreOp : uint8_t;
-    enum class BorderColor : uint8_t;
     enum class InputRate : uint8_t;
     enum class BufferUsage : uint32_t;
     enum class TextureUsage : uint16_t;
-    enum class TextureFormat : uint16_t;
     enum class RayTracingShaderGroup;
 
     struct RHIDriver;

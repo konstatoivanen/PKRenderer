@@ -112,7 +112,7 @@ However, this is ultimately a hobby project & thus likely to remain perpetually 
 <details>
   <summary>Architecture</summary>
 
-  - Vulkan 1.3 rendering backend.
+  - Vulkan 1.4 rendering backend.
   - Async compute & transfer queues.
   - Multiple buffering.
   - Automatic resource barrier management.
@@ -144,7 +144,7 @@ However, this is ultimately a hobby project & thus likely to remain perpetually 
 <br/>
 
 ```
-Vulkan Version 1.3
+Vulkan Version 1.4
 SPRIV Version 1.6
 
 GLSL Extensions:
@@ -168,6 +168,7 @@ Validation layers:
 Instance Extensions:
 - VK_EXT_debug_utils
 - VK_KHR_get_physical_device_properties2
+- VK_KHR_get_surface_capabilities2
 
 Device Extensions:
 - VK_KHR_surface
@@ -178,12 +179,17 @@ Device Extensions:
 - VK_KHR_ray_tracing_pipeline
 - VK_KHR_ray_query
 - VK_EXT_conservative_rasterization
+- VK_EXT_shader_atomic_float
 - VK_KHR_ray_tracing_position_fetch
 - VK_EXT_mesh_shader
 - VK_KHR_fragment_shading_rate
+- VK_EXT_full_screen_exclusive
+- VK_KHR_multiview
+- VK_EXT_present_mode_fifo_latest_ready
 
 Physical Device Requirements:
 - alphaToOne
+- fillModeNonSolid
 - shaderImageGatherExtended
 - sparseBinding
 - sparseResidencyBuffer
@@ -202,6 +208,7 @@ Physical Device Requirements:
 - storageBuffer16BitAccess
 - uniformAndStorageBuffer16BitAccess
 - storagePushConstant16
+- multiview
 - shaderUniformBufferArrayNonUniformIndexing
 - shaderSampledImageArrayNonUniformIndexing
 - runtimeDescriptorArray
@@ -214,17 +221,25 @@ Physical Device Requirements:
 - shaderOutputLayer
 - bufferDeviceAddress
 - timelineSemaphore
+- storageBuffer8BitAccess
 - hostQueryReset
-- accelerationStructure
-- rayTracingPipeline
-- rayQuery
+- privateData
 - maintenance4
+- dynamicRendering
+- dynamicRenderingLocalRead
+- smoothLines
+- accelerationStructure.accelerationStructure
+- rayTracingPipeline.rayTracingPipeline
+- rayQuery
+- shaderSharedFloat32AtomicAdd
 - rayTracingPositionFetch
 - taskShader
 - meshShader
 - multiviewMeshShader
 - primitiveFragmentShadingRateMeshShader
+- primitiveFragmentShadingRate
 - pipelineFragmentShadingRate
+- presentModeFifoLatestReady
 ```
 
 </details>
@@ -235,7 +250,6 @@ Physical Device Requirements:
 
 - [PKAssetTools](https://github.com/konstatoivanen/PKAssetTools)
 - [Vulkan](https://github.com/KhronosGroup/Vulkan-Headers)
-- [KTX](https://github.com/KhronosGroup/KTX-Software)
 - [rapidyaml](https://github.com/biojppm/rapidyaml/tree/master)
 - [GLM](https://github.com/g-truc/glm)
 - [mikktspace](http://www.mikktspace.com/)

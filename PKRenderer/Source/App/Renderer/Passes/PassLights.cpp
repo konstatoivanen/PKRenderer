@@ -130,7 +130,7 @@ namespace PK::App
         m_lightMatricesBuffer = RHI::CreateBuffer<float4x4>(32ull, BufferUsage::PersistentStorage, "Lights.Matrices");
 
         auto hash = HashCache::Get();
-        auto lightCookies = assetDatabase->Load<TextureAsset>("Content/Textures/Default/T_LightCookies.ktx2")->GetRHI();
+        auto lightCookies = assetDatabase->Load<TextureAsset>("Content/Textures/Default/T_LightCookies.pktexture")->GetRHI();
 
         auto sampler = lightCookies->GetSamplerDescriptor();
         sampler.wrap[0] = WrapMode::Clamp;

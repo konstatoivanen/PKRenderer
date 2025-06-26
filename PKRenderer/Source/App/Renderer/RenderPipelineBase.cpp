@@ -27,8 +27,8 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
 
-        auto bluenoise256 = assetDatabase->Load<TextureAsset>("Content/Textures/Default/T_Bluenoise256.ktx2")->GetRHI();
-        auto bluenoise128x64 = assetDatabase->Load<TextureAsset>("Content/Textures/Default/T_Bluenoise128x64.ktx2")->GetRHI();
+        auto bluenoise256 = assetDatabase->Load<TextureAsset>("Content/Textures/Default/T_Bluenoise256.pktexture")->GetRHI();
+        auto bluenoise128x64 = assetDatabase->Load<TextureAsset>("Content/Textures/Default/T_Bluenoise128x64.pktexture")->GetRHI();
 
         auto sampler = bluenoise256->GetSamplerDescriptor();
         sampler.anisotropy = 0.0f;

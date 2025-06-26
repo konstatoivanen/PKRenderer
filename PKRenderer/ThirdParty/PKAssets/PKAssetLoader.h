@@ -9,6 +9,7 @@ namespace PKAssets
     PKShader* ReadAsShader(PKAsset* asset);
     PKMesh* ReadAsMesh(PKAsset* asset);
     PKFont* ReadAsFont(PKAsset* asset);
+    PKTexture* ReadAsTexture(PKAsset* asset);
 
     PKAssetMeta OpenAssetMeta(const char* filepath);
     void CloseAssetMeta(PKAssetMeta* meta);

@@ -159,6 +159,17 @@ namespace PKAssets
         return reinterpret_cast<PKFont*>(assetPtr);
     }
 
+    PKTexture* ReadAsTexture(PKAsset* asset)
+    {
+        if (asset->header == nullptr || asset->header->type != PKAssetType::Texture)
+        {
+            return nullptr;
+        }
+
+        auto assetPtr = reinterpret_cast<char*>(asset->rawData) + sizeof(PKAssetHeader);
+        return reinterpret_cast<PKTexture*>(assetPtr);
+    }
+
     PKAssetMeta OpenAssetMeta(const char* filepath)
     {
         size_t size = 0ull;

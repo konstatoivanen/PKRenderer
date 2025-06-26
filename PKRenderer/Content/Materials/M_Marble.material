@@ -4,16 +4,16 @@ Material:
     Properties:
         _AlbedoTexture:
             Type: texture2D
-            Value: Content/Textures/Environment/T_Marble_D.ktx2
+            Value: Content/Textures/Environment/T_Marble_D.pktexture
         _PBSTexture:
             Type: texture2D
-            Value: Content/Textures/Environment/T_Marble_S.ktx2
+            Value: Content/Textures/Environment/T_Marble_S.pktexture
         _NormalMap:
             Type: texture2D
-            Value: Content/Textures/Environment/T_Marble_N.ktx2
+            Value: Content/Textures/Environment/T_Marble_N.pktexture
         _HeightMap:
             Type: texture2D
-            Value: Content/Textures/Environment/T_Marble_H.ktx2
+            Value: Content/Textures/Environment/T_Marble_H.pktexture
         _Color:
             Type: float4
             Value: [1,1,1,1]
