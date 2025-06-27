@@ -13,6 +13,7 @@ namespace PK
     typedef PKAssets::PKShaderStageFlags  ShaderStageFlags;
     typedef PKAssets::PKBlendFactor       BlendFactor;
     typedef PKAssets::PKBlendOp           BlendOp;
+    typedef PKAssets::PKColorMask         ColorMask;
     typedef PKAssets::PKComparison        Comparison;
     typedef PKAssets::PKCullMode          CullMode;
     typedef PKAssets::PKRasterMode        RasterMode;
@@ -91,18 +92,6 @@ namespace PK
         TriangleListWithAdjacency,
         TriangleStripWithAdjacency,
         PatchList
-    };
-
-    enum class ColorMask : uint8_t
-    {
-        NONE = 0u,
-        R = 0x1u,
-        G = 0x2u,
-        B = 0x4u,
-        A = 0x8u,
-        RG = R | G,
-        RGB = RG | B,
-        RGBA = RGB | A,
     };
 
     enum class LogicOp : uint8_t
@@ -581,30 +570,35 @@ namespace PK
 
     namespace RHIEnumConvert
     {
-        inline ElementType StringToElementType(const char* str) { return PKAssets::GetElementType(str); }
-        inline uint16_t Size(ElementType format) { return (uint16_t)PKAssets::GetElementSize(format); }
-        inline uint16_t Alignment(ElementType format) { return (uint16_t)PKAssets::GetElementAlignment(format); }
-        inline uint16_t Components(ElementType format) { return (uint16_t)PKAssets::GetElementComponents(format); }
-        inline bool IsResourceHandle(ElementType format) { return PKAssets::GetElementIsResourceHandle(format); }
+        constexpr auto Size = PKAssets::PKElementTypeToSize;
+        constexpr auto Alignment = PKAssets::PKElementTypeToAlignment;
+        constexpr auto IsResourceHandle = PKAssets::PKElementTypeIsResourceHandle;
+        constexpr auto StringToElementType = PKAssets::StringToPKElementType;
+        constexpr auto StringToShaderResourceType = PKAssets::StringToPKDescriptorType;
+        constexpr auto StringToTextureType = PKAssets::StringToPKTextureType;
+        constexpr auto StringToTextureFormat = PKAssets::StringToPKTextureFormat;
+        constexpr auto StringToFilterMode = PKAssets::StringToPKFilterMode;
+        constexpr auto StringToWrapMode = PKAssets::StringToPKWrapMode;
+        constexpr auto StringToBorderColor = PKAssets::StringToPKBorderColor;
+        constexpr auto StringToShaderStage = PKAssets::StringToPKShaderStage;
+        constexpr auto StringToComparison = PKAssets::StringToPKComparison;
+        constexpr auto StringToCullMode = PKAssets::StringToPKCullMode;
+        constexpr auto StringToBlendFactor = PKAssets::StringToPKBlendFactor;
+        constexpr auto StringToBlendOp = PKAssets::StringToPKBlendOp;
+        constexpr auto StringToColorMask = PKAssets::StringToPKColorMask;
+        constexpr auto StringToRasterMode = PKAssets::StringToPKRasterMode;
 
         RHIAPI StringToRHIAPI(const char* str);
         QueueType StringToQueueType(const char* str);
-        TextureType StringToTextureType(const char* str);
         TextureBindMode StringToTextureBindMode(const char* str);
-        Comparison StringToComparison(const char* str);
-        FilterMode StringToFilterMode(const char* str);
         PolygonMode StringToPolygonMode(const char* str);
         Topology StringToTopology(const char* str);
-        WrapMode StringToWrapMode(const char* str);
-        ColorMask StringToColorMask(const char* str);
         LogicOp StringToLogicOp(const char* str);
         FrontFace StringToFrontFace(const char* str);
         LoadOp StringToLoadOp(const char* str);
         StoreOp StringToStoreOp(const char* str);
-        BorderColor StringToBorderColor(const char* str);
         InputRate StringToInputRate(const char* str);
         TextureUsage StringToTextureUsage(const char* str);
-        TextureFormat StringToTextureFormat(const char* str);
         ColorSpace StringToColorSpace(const char* str);
         VSyncMode StringToVSyncMode(const char* str);
         RayTracingShaderGroup StringToRayTracingShaderGroup(const char* str);

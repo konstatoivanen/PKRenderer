@@ -33,16 +33,9 @@ namespace PK
         descriptor.resolution[1] = texture->resolution[1];
         descriptor.resolution[2] = texture->resolution[2];
         descriptor.levels = texture->levels;
-        descriptor.layers = 1u;
+        descriptor.layers = texture->layers;
         descriptor.format = texture->format; 
         descriptor.type = texture->type;
-
-        if (descriptor.type == TextureType::CubemapArray || descriptor.type == TextureType::Texture2DArray)
-        {
-            descriptor.layers = texture->resolution[2];
-            descriptor.resolution[2] = 1;
-        }
-
         descriptor.sampler.anisotropy = texture->anisotropy;
         descriptor.sampler.filterMin = texture->filterMin;
         descriptor.sampler.filterMag = texture->filterMag;

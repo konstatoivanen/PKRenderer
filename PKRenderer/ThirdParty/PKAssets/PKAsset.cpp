@@ -3,7 +3,17 @@
 
 namespace PKAssets
 {
-    const static char* PK_ELEMENTTYPE_NAMES[] =
+    const static char* PKAssetType_NAMES[] =
+    {
+        "Invalid",
+        "Shader",
+        "Mesh",
+        "Font",
+        "Texture"
+    };
+
+
+    const static char* PKElementType_NAMES[] =
     {
         "Invalid",
         "float",
@@ -57,196 +67,388 @@ namespace PKAssets
         "textureCube",
     };
 
-    PKElementType GetElementType(const char* string)
+    const static uint32_t PKElementType_SIZES[] =
     {
-        for (uint32_t i = 0u; i < (uint32_t)PKElementType::TextureCubeHandle + 1u; ++i)
+        0u,         /*Invalid*/
+        4u,         /*Float*/
+        4u * 2u,    /*Float2*/
+        4u * 3u,    /*Float3*/
+        4u * 4u,    /*Float4*/
+        8u,         /*Double*/
+        8u * 2u,    /*Double2*/
+        8u * 3u,    /*Double3*/
+        8u * 4u,    /*Double4*/
+        2u,         /*Half*/
+        2u * 2u,    /*Half2*/
+        2u * 3u,    /*Half3*/
+        2u * 4u,    /*Half4*/
+        4u,         /*Int*/
+        4u * 2u,    /*Int2*/
+        4u * 3u,    /*Int3*/
+        4u * 4u,    /*Int4*/
+        4u,         /*Uint*/
+        4u * 2u,    /*Uint2*/
+        4u * 3u,    /*Uint3*/
+        4u * 4u,    /*Uint4*/
+        2u,         /*Short*/
+        2u * 2u,    /*Short2*/
+        2u * 3u,    /*Short3*/
+        2u * 4u,    /*Short4*/
+        2u,         /*Ushort*/
+        2u * 2u,    /*Ushort2*/
+        2u * 3u,    /*Ushort3*/
+        2u * 4u,    /*Ushort4*/
+        8u,         /*Long*/
+        8u * 2u,    /*Long2*/
+        8u * 3u,    /*Long3*/
+        8u * 4u,    /*Long4*/
+        8u,         /*Ulong*/
+        8u * 2u,    /*Ulong2*/
+        8u * 3u,    /*Ulong3*/
+        8u * 4u,    /*Ulong4*/
+        4 * 2 * 2,  /*Float2x2*/
+        4 * 3 * 3,  /*Float3x3*/
+        4 * 4 * 4,  /*Float4x4*/
+        3 * 4 * 4,  /*Float3x4*/
+        8 * 2 * 2,  /*Double2x2*/
+        8 * 3 * 3,  /*Double3x3*/
+        8 * 4 * 4,  /*Double4x4*/
+        2 * 2 * 2,  /*Half2x2*/
+        2 * 3 * 3,  /*Half3x3*/
+        2 * 4 * 4,  /*Half4x4*/
+        4u, /*Texture2DHandle*/
+        4u, /*Texture3DHandle*/
+        4u /*TextureCubeHandle*/
+    };
+
+    const static uint32_t PKElementType_ALIGNMENTS[] =
+    {
+        0u,         /*Invalid*/
+        4u,         /*Float*/
+        4u * 2u,    /*Float2*/
+        4u * 4u,    /*Float3*/
+        4u * 4u,    /*Float4*/
+        8u,         /*Double*/
+        8u * 2u,    /*Double2*/
+        8u * 4u,    /*Double3*/
+        8u * 4u,    /*Double4*/
+        2u,         /*Half*/
+        2u * 2u,    /*Half2*/
+        2u * 4u,    /*Half3*/
+        2u * 4u,    /*Half4*/
+        4u,         /*Int*/
+        4u * 2u,    /*Int2*/
+        4u * 4u,    /*Int3*/
+        4u * 4u,    /*Int4*/
+        4u,         /*Uint*/
+        4u * 2u,    /*Uint2*/
+        4u * 4u,    /*Uint3*/
+        4u * 4u,    /*Uint4*/
+        2u,         /*Short*/
+        2u * 2u,    /*Short2*/
+        2u * 4u,    /*Short3*/
+        2u * 4u,    /*Short4*/
+        2u,         /*Ushort*/
+        2u * 2u,    /*Ushort2*/
+        2u * 4u,    /*Ushort3*/
+        2u * 4u,    /*Ushort4*/
+        8u,         /*Long*/
+        8u * 2u,    /*Long2*/
+        8u * 4u,    /*Long3*/
+        8u * 4u,    /*Long4*/
+        8u,         /*Ulong*/
+        8u * 2u,    /*Ulong2*/
+        8u * 4u,    /*Ulong3*/
+        8u * 4u,    /*Ulong4*/
+        4u * 2u,    /*Float2x2*/
+        4u * 4u,    /*Float3x3*/
+        4u * 4u,    /*Float4x4*/
+        3u * 4u,    /*Float3x4*/
+        8u * 2u,    /*Double2x2*/
+        8u * 4u,    /*Double3x3*/
+        8u * 4u,    /*Double4x4*/
+        2u * 2u,    /*Half2x2*/
+        2u * 4u,    /*Half3x3*/
+        2u * 4u,    /*Half4x4*/
+        4u,         /*Texture2DHandle*/
+        4u,         /*Texture3DHandle*/
+        4u          /*TextureCubeHandle*/
+    };
+
+    const static char* PKTextureType_NAMES[] =
+    {
+        "Texture2D",
+        "Texture2DArray",
+        "Texture3D",
+        "Cubemap",
+        "CubemapArray",
+    };
+
+    const static char* PKTextureFormat_NAMES[] =
+    {
+        "Invalid",
+        "R8",
+        "R8_SNORM",
+        "R8UI",
+        "R8I",
+        "Stencil8",
+        "R16F",
+        "R16UI",
+        "R16I",
+        "RG8",
+        "RG8_SNORM",
+        "RG8UI",
+        "RG8I",
+        "RGB565",
+        "RGB9E5",
+        "RGB5A1",
+        "RGBA4",
+        "Depth16",
+        "RGB8",
+        "RGB8_SRGB",
+        "RGB8_SNORM",
+        "RGB8UI",
+        "RGB8I",
+        "R32F",
+        "R32UI",
+        "R32I",
+        "RG16F",
+        "RG16UI",
+        "RG16I",
+        "B10G11R11UF",
+        "RGBA8",
+        "RGBA8_SRGB",
+        "RGBA8_SNORM",
+        "BGRA8",
+        "BGRA8_SRGB",
+        "RGB10A2",
+        "RGBA8UI",
+        "RGBA8I",
+        "Depth32F",
+        "Depth24_Stencil8",
+        "Depth32F_Stencil8",
+        "RGB16F",
+        "RGB16UI",
+        "RGB16I",
+        "RG32F",
+        "RG32UI",
+        "RG32I",
+        "RGBA16",
+        "RGBA16F",
+        "RGBA16UI",
+        "RGBA16I",
+        "RGB32F",
+        "RGB32UI",
+        "RGB32I",
+        "RGBA32F",
+        "RGBA32UI",
+        "RGBA32I",
+        "RGBA64UI",
+        "BC1_RGB",
+        "BC1_RGBA",
+        "BC1_SRGB",
+        "BC1_SRGBA",
+        "BC4",
+        "BC2_RGBA",
+        "BC2_SRGBA",
+        "BC3_RGBA",
+        "BC3_SRGBA",
+        "BC6H_RGBUF",
+        "BC6H_RGBF",
+        "BC7_UNORM",
+    };
+
+    const static char* PKFilterMode_NAMES[] =
+    {
+        "Point",
+        "Bilinear",
+        "Trilinear",
+        "Bicubic"
+    };
+
+    const static char* PKWrapMode_NAMES[] =
+    {
+        "Clamp",
+        "Repeat",
+        "Mirror",
+        "MirrorOnce",
+        "Border"
+    };
+
+    const static char* PKBorderColor_NAMES[] =
+    {
+        "FloatClear",
+        "IntClear",
+        "FloatBlack",
+        "IntBlack",
+        "FloatWhite",
+        "IntWhite"
+    };
+
+    // Special names for these. Follow defines
+    const static char* PKShaderStage_NAMES[] =
+    {
+        "SHADER_STAGE_VERTEX",
+        "SHADER_STAGE_TESSELATION_CONTROL",
+        "SHADER_STAGE_TESSELATION_EVALUATE",
+        "SHADER_STAGE_GEOMETRY",
+        "SHADER_STAGE_FRAGMENT",
+        "SHADER_STAGE_COMPUTE",
+        "SHADER_STAGE_MESH_TASK",
+        "SHADER_STAGE_MESH_ASSEMBLY",
+        "SHADER_STAGE_RAY_GENERATION",
+        "SHADER_STAGE_RAY_MISS",
+        "SHADER_STAGE_RAY_CLOSEST_HIT",
+        "SHADER_STAGE_RAY_ANY_HIT",
+        "SHADER_STAGE_RAY_INTERSECTION",
+        "SHADER_STAGE_INVALID"
+    };
+
+    const static char* PKDescriptorType_NAMES[] =
+    {
+        "Invalid",
+        "Sampler",
+        "SamplerTexture",
+        "Texture",
+        "Image",
+        "ConstantBuffer",
+        "StorageBuffer",
+        "DynamicConstantBuffer",
+        "DynamicStorageBuffer",
+        "InputAttachment",
+        "AccelerationStructure"
+    };
+
+    const static char* PKComparison_NAMES[] =
+    {
+        "Off",
+        "Never",
+        "Less",
+        "Equal",
+        "LessEqual",
+        "Greater",
+        "NotEqual",
+        "GreaterEqual",
+        "Always",
+    };
+
+    const static char* PKCullMode_NAMES[] =
+    {
+        "Off",
+        "Front",
+        "Back"
+    };
+
+    const static char* PKBlendFactor_NAMES[] =
+    {
+        "None",
+        "One",
+        "Zero",
+        "SrcColor",
+        "SrcAlpha",
+        "DstColor",
+        "DstAlpha",
+        "OneMinusSrcColor",
+        "OneMinusSrcAlpha",
+        "OneMinusDstColor",
+        "OneMinusDstAlpha",
+        "ConstColor",
+        "OneMinusConstColor",
+        "ConstAlpha",
+        "OneMinusConstAlpha",
+    };
+
+    const static char* PKBlendOp_NAMES[] =
+    {
+        "None",
+        "Add",
+        "Subtract",
+        "ReverseSubtract",
+        "Min",
+        "Max",
+    };
+
+    const static char* PKRasterMode_NAMES[] =
+    {
+        "Default",
+        "OverEstimate",
+        "UnderEstimate",
+    };
+
+    template<size_t size>
+    uint32_t FindEnumIndexFromString(const char* (&arr)[size], const char* str, uint32_t fallback)
+    {
+        auto length = str ? strnlen(str, 64) : 0u;
+
+        for (auto i = 0u; length && i < size; ++i)
         {
-            if (strncmp(PK_ELEMENTTYPE_NAMES[i], string, 20) == 0)
+            if (strncmp(arr[i], str, length) == 0)
             {
-                return (PKElementType)i;
+                return i;
             }
         }
 
-        return PKElementType::Invalid;
+        return fallback;
     }
 
-    uint32_t GetElementSize(PKElementType type)
+    #define DECLARE_STRING_TO_ENUM(TType, TFallback) TType StringTo##TType(const char* str) { return (TType)FindEnumIndexFromString(TType##_NAMES, str, (uint32_t)TFallback); }
+
+    DECLARE_STRING_TO_ENUM(PKAssetType, PKAssetType::Invalid)
+    DECLARE_STRING_TO_ENUM(PKElementType, PKElementType::Invalid)
+    DECLARE_STRING_TO_ENUM(PKTextureType, PKTextureType::Texture2D)
+    DECLARE_STRING_TO_ENUM(PKTextureFormat, PKTextureFormat::Invalid)
+    DECLARE_STRING_TO_ENUM(PKFilterMode, PKFilterMode::Point)
+    DECLARE_STRING_TO_ENUM(PKWrapMode, PKWrapMode::Clamp)
+    DECLARE_STRING_TO_ENUM(PKBorderColor, PKBorderColor::FloatClear)
+    DECLARE_STRING_TO_ENUM(PKShaderStage, PKShaderStage::MaxCount)
+    DECLARE_STRING_TO_ENUM(PKDescriptorType, PKDescriptorType::Invalid)
+    DECLARE_STRING_TO_ENUM(PKComparison, PKComparison::Off)
+    DECLARE_STRING_TO_ENUM(PKCullMode, PKCullMode::Off)
+    DECLARE_STRING_TO_ENUM(PKBlendFactor, PKBlendFactor::None)
+    DECLARE_STRING_TO_ENUM(PKBlendOp, PKBlendOp::None)
+    DECLARE_STRING_TO_ENUM(PKRasterMode, PKRasterMode::Default)
+
+    #undef DECLARE_STRING_TO_ENUM
+
+    PKColorMask StringToPKColorMask(const char* str)
     {
-        switch (type)
+        auto length = str ? strnlen(str, 4) : 0;
+
+        if (length == 0)
         {
-            case PKElementType::Float: return 4;
-            case PKElementType::Float2: return 4 * 2;
-            case PKElementType::Float3: return 4 * 3;
-            case PKElementType::Float4: return 4 * 4;
-            case PKElementType::Double: return 8;
-            case PKElementType::Double2: return 8 * 2;
-            case PKElementType::Double3: return 8 * 3;
-            case PKElementType::Double4: return 8 * 4;
-            case PKElementType::Half: return 2;
-            case PKElementType::Half2: return 2 * 2;
-            case PKElementType::Half3: return 2 * 3;
-            case PKElementType::Half4: return 2 * 4;
-            case PKElementType::Int: return 4;
-            case PKElementType::Int2: return 4 * 2;
-            case PKElementType::Int3: return 4 * 3;
-            case PKElementType::Int4: return 4 * 4;
-            case PKElementType::Uint: return 4;
-            case PKElementType::Uint2: return 4 * 2;
-            case PKElementType::Uint3: return 4 * 3;
-            case PKElementType::Uint4: return 4 * 4;
-            case PKElementType::Short: return 2;
-            case PKElementType::Short2: return 2 * 2;
-            case PKElementType::Short3: return 2 * 3;
-            case PKElementType::Short4: return 2 * 4;
-            case PKElementType::Ushort: return 2;
-            case PKElementType::Ushort2: return 2 * 2;
-            case PKElementType::Ushort3: return 2 * 3;
-            case PKElementType::Ushort4: return 2 * 4;
-            case PKElementType::Long: return 8;
-            case PKElementType::Long2: return 8 * 2;
-            case PKElementType::Long3: return 8 * 3;
-            case PKElementType::Long4: return 8 * 4;
-            case PKElementType::Ulong: return 8;
-            case PKElementType::Ulong2: return 8 * 2;
-            case PKElementType::Ulong3: return 8 * 3;
-            case PKElementType::Ulong4: return 8 * 4;
-            case PKElementType::Float2x2: return 4 * 2 * 2;
-            case PKElementType::Float3x3: return 4 * 3 * 3;
-            case PKElementType::Float4x4: return 4 * 4 * 4;
-            case PKElementType::Float3x4: return 3 * 4 * 4;
-            case PKElementType::Double2x2: return 8 * 2 * 2;
-            case PKElementType::Double3x3: return 8 * 3 * 3;
-            case PKElementType::Double4x4: return 8 * 4 * 4;
-            case PKElementType::Half2x2: return 2 * 2 * 2;
-            case PKElementType::Half3x3: return 2 * 3 * 3;
-            case PKElementType::Half4x4: return 2 * 4 * 4;
-            case PKElementType::Texture2DHandle: return 4;
-            case PKElementType::Texture3DHandle: return 4;
-            case PKElementType::TextureCubeHandle: return 4;
-            default: return 0;
+            return PKColorMask::RGBA;
         }
-    }
 
-    uint32_t GetElementAlignment(PKElementType type)
-    {
-        switch (type)
+        uint8_t mask = (uint8_t)PKColorMask::NONE;
+
+        for (auto i = 0u; i < length; ++i)
         {
-            case PKElementType::Float: return 4;
-            case PKElementType::Float2: return 4 * 2;
-            case PKElementType::Float3: return 4 * 4;
-            case PKElementType::Float4: return 4 * 4;
-            case PKElementType::Double: return 8;
-            case PKElementType::Double2: return 8 * 2;
-            case PKElementType::Double3: return 8 * 4;
-            case PKElementType::Double4: return 8 * 4;
-            case PKElementType::Half: return 2;
-            case PKElementType::Half2: return 2 * 2;
-            case PKElementType::Half3: return 2 * 4;
-            case PKElementType::Half4: return 2 * 4;
-            case PKElementType::Int: return 4;
-            case PKElementType::Int2: return 4 * 2;
-            case PKElementType::Int3: return 4 * 4;
-            case PKElementType::Int4: return 4 * 4;
-            case PKElementType::Uint: return 4;
-            case PKElementType::Uint2: return 4 * 2;
-            case PKElementType::Uint3: return 4 * 4;
-            case PKElementType::Uint4: return 4 * 4;
-            case PKElementType::Short: return 2;
-            case PKElementType::Short2: return 2 * 2;
-            case PKElementType::Short3: return 2 * 4;
-            case PKElementType::Short4: return 2 * 4;
-            case PKElementType::Ushort: return 2;
-            case PKElementType::Ushort2: return 2 * 2;
-            case PKElementType::Ushort3: return 2 * 4;
-            case PKElementType::Ushort4: return 2 * 4;
-            case PKElementType::Long: return 8;
-            case PKElementType::Long2: return 8 * 2;
-            case PKElementType::Long3: return 8 * 4;
-            case PKElementType::Long4: return 8 * 4;
-            case PKElementType::Ulong: return 8;
-            case PKElementType::Ulong2: return 8 * 2;
-            case PKElementType::Ulong3: return 8 * 4;
-            case PKElementType::Ulong4: return 8 * 4;
-            case PKElementType::Float2x2: return 4 * 2;
-            case PKElementType::Float3x3: return 4 * 4;
-            case PKElementType::Float4x4: return 4 * 4;
-            case PKElementType::Float3x4: return 3 * 4;
-            case PKElementType::Double2x2: return 8 * 2;
-            case PKElementType::Double3x3: return 8 * 4;
-            case PKElementType::Double4x4: return 8 * 4;
-            case PKElementType::Half2x2: return 2 * 2;
-            case PKElementType::Half3x3: return 2 * 4;
-            case PKElementType::Half4x4: return 2 * 4;
-            case PKElementType::Texture2DHandle: return 4;
-            case PKElementType::Texture3DHandle: return 4;
-            case PKElementType::TextureCubeHandle: return 4;
-            default: return 0;
+            switch (str[i])
+            {
+                case 'X':
+                case 'R': mask = mask | (uint8_t)PKColorMask::R; break;
+                case 'Y':
+                case 'G': mask = mask | (uint8_t)PKColorMask::G; break;
+                case 'Z':
+                case 'B': mask = mask | (uint8_t)PKColorMask::B; break;
+                case 'W':
+                case 'A': mask = mask | (uint8_t)PKColorMask::A; break;
+                default: break;
+            }
         }
+
+        return (PKColorMask)mask;
     }
 
-    uint32_t GetElementComponents(PKElementType type)
+    uint32_t PKElementTypeToSize(PKElementType type) { return PKElementType_SIZES[(uint32_t)type]; }
+    uint32_t PKElementTypeToAlignment(PKElementType type) { return PKElementType_ALIGNMENTS[(uint32_t)type]; }
+
+    bool PKElementTypeIsResourceHandle(PKElementType type)
     {
         switch (type)
         {
-            case PKElementType::Float: return 1;
-            case PKElementType::Float2: return 2;
-            case PKElementType::Float3: return 3;
-            case PKElementType::Float4: return 4;
-            case PKElementType::Double: return 1;
-            case PKElementType::Double2: return 2;
-            case PKElementType::Double3: return 3;
-            case PKElementType::Double4: return 4;
-            case PKElementType::Half: return 1;
-            case PKElementType::Half2: return 2;
-            case PKElementType::Half3: return 3;
-            case PKElementType::Half4: return 4;
-            case PKElementType::Int: return 1;
-            case PKElementType::Int2: return 2;
-            case PKElementType::Int3: return 3;
-            case PKElementType::Int4: return 4;
-            case PKElementType::Uint: return 1;
-            case PKElementType::Uint2: return 2;
-            case PKElementType::Uint3: return 3;
-            case PKElementType::Uint4: return 4;
-            case PKElementType::Short: return 1;
-            case PKElementType::Short2: return 2;
-            case PKElementType::Short3: return 3;
-            case PKElementType::Short4: return 4;
-            case PKElementType::Ushort: return 1;
-            case PKElementType::Ushort2: return 2;
-            case PKElementType::Ushort3: return 3;
-            case PKElementType::Ushort4: return 4;
-            case PKElementType::Long: return 1;
-            case PKElementType::Long2: return 2;
-            case PKElementType::Long3: return 3;
-            case PKElementType::Long4: return 4;
-            case PKElementType::Ulong: return 1;
-            case PKElementType::Ulong2: return 2;
-            case PKElementType::Ulong3: return 3;
-            case PKElementType::Ulong4: return 4;
-            case PKElementType::Float2x2: return 2;
-            case PKElementType::Float3x3: return 3;
-            case PKElementType::Float4x4: return 4;
-            case PKElementType::Float3x4: return 3;
-            case PKElementType::Double2x2: return 2;
-            case PKElementType::Double3x3: return 3;
-            case PKElementType::Double4x4: return 4;
-            case PKElementType::Half2x2: return 2;
-            case PKElementType::Half3x3: return 3;
-            case PKElementType::Half4x4: return 4;
-            case PKElementType::Texture2DHandle: return 1;
-            case PKElementType::Texture3DHandle: return 1;
-            case PKElementType::TextureCubeHandle: return 1;
-            default: return 0;
-        }
-    }
-
-    bool GetElementIsResourceHandle(PKElementType type)
-    {
-        switch (type)
-        {
-            case PKElementType::Texture2DHandle: return true;
-            case PKElementType::Texture3DHandle: return true;
+            case PKElementType::Texture2DHandle:
+            case PKElementType::Texture3DHandle:
             case PKElementType::TextureCubeHandle: return true;
             default: return false;
         }

@@ -133,7 +133,7 @@ namespace PK
             bufferCount++;
         }
 
-        auto indexStride = GetElementSize(mesh->indexType);
+        auto indexStride = PKAssets::PKElementTypeToSize(mesh->indexType);
         auto indexBuffer = RHI::CreateBuffer(indexStride * mesh->indexCount, BufferUsage::DefaultIndex, indexBufferName.c_str());
         commandBuffer.UploadBufferData(m_indexBuffer.get(), pIndexBuffer);
 

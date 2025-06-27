@@ -1,6 +1,6 @@
 
 #pragma pk_cull Back
-#pragma pk_ztest GEqual
+#pragma pk_ztest GreaterEqual
 #pragma pk_zwrite Off
 
 #pragma pk_material_property float4 _Color

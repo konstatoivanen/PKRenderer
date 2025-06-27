@@ -29,7 +29,7 @@ namespace PK
             {
                 auto elementType = YAML::Read<ElementType>(type);
 
-                *outSize += PKAssets::GetElementSize(elementType);
+                *outSize += PKAssets::PKElementTypeToSize(elementType);
                 (*outCount)++;
 
                 if (RHIEnumConvert::IsResourceHandle(elementType))

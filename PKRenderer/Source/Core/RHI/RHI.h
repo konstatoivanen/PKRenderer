@@ -11,12 +11,20 @@ namespace std
 
 namespace PKAssets
 {
-    enum class PKShaderStageFlags : uint32_t;
     enum class PKElementType : uint16_t;
+    enum class PKDescriptorType : uint8_t;
+    enum class PKShaderStage : uint8_t;  
+    enum class PKShaderStageFlags : uint32_t; 
+    enum class PKBlendFactor : uint8_t;  
+    enum class PKBlendOp : uint8_t;  
+    enum class PKColorMask  : uint8_t;  
+    enum class PKComparison : uint8_t;  
+    enum class PKCullMode : uint8_t;  
+    enum class PKRasterMode : uint8_t; 
     enum class PKTextureType : uint8_t;
     enum class PKTextureFormat : uint8_t;
     enum class PKFilterMode : uint8_t;
-    enum class PKWrapMode : uint8_t;
+    enum class PKWrapMode : uint8_t;  
     enum class PKBorderColor : uint8_t;
     struct PKShaderVariant;
 }
@@ -58,8 +66,16 @@ namespace PK
     struct VertexStreamLayout;
     struct ShaderBindingTableInfo;
     
-    typedef PKAssets::PKShaderStageFlags ShaderStageFlags;
     typedef PKAssets::PKElementType ElementType;
+    typedef PKAssets::PKDescriptorType ShaderResourceType;
+    typedef PKAssets::PKShaderStage ShaderStage;
+    typedef PKAssets::PKShaderStageFlags ShaderStageFlags;
+    typedef PKAssets::PKBlendFactor BlendFactor;
+    typedef PKAssets::PKBlendOp BlendOp;
+    typedef PKAssets::PKColorMask ColorMask;
+    typedef PKAssets::PKComparison Comparison;
+    typedef PKAssets::PKCullMode CullMode;
+    typedef PKAssets::PKRasterMode RasterMode;
     typedef PKAssets::PKTextureType TextureType;
     typedef PKAssets::PKTextureFormat TextureFormat;
     typedef PKAssets::PKFilterMode FilterMode;
@@ -72,7 +88,6 @@ namespace PK
     enum class TextureBindMode : uint8_t;
     enum class PolygonMode : uint8_t;
     enum class Topology : uint8_t;
-    enum class ColorMask : uint8_t;
     enum class LogicOp : uint8_t;
     enum class FrontFace : uint8_t;
     enum class LoadOp : uint8_t;

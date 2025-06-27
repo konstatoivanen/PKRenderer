@@ -27,9 +27,9 @@ namespace PK
                 { ElementType::Float3, PK_RHI_VS_POSITION, 1 },
             });
 
-        m_positionsBuffer = RHI::CreateBuffer(m_streamLayout.GetStride(1u) * 2000000, BufferUsage::SparseVertex | BufferUsage::Storage, "MeshStaticCollection.VertexPositions");
-        m_attributesBuffer = RHI::CreateBuffer(m_streamLayout.GetStride(0u) * 2000000, BufferUsage::SparseVertex, "MeshStaticCollection.VertexAttributes");
-        m_indexBuffer = RHI::CreateBuffer(RHIEnumConvert::Size(m_indexType) * 2000000, BufferUsage::SparseIndex | BufferUsage::Storage, "MeshStaticCollection.IndexBuffer");
+        m_positionsBuffer = RHI::CreateBuffer(m_streamLayout.GetStride(1u) * 2000000u, BufferUsage::SparseVertex | BufferUsage::Storage, "MeshStaticCollection.VertexPositions");
+        m_attributesBuffer = RHI::CreateBuffer(m_streamLayout.GetStride(0u) * 2000000u, BufferUsage::SparseVertex, "MeshStaticCollection.VertexAttributes");
+        m_indexBuffer = RHI::CreateBuffer(RHIEnumConvert::Size(m_indexType) * 2000000u, BufferUsage::SparseIndex | BufferUsage::Storage, "MeshStaticCollection.IndexBuffer");
         m_submeshBuffer = RHI::CreateBuffer<PKAssets::PKMeshletSubmesh>(maxSubmeshes, flags, "Meshlet.SubmeshBuffer");
         m_meshletBuffer = RHI::CreateBuffer<PKAssets::PKMeshlet>(maxMeshlets, flags, "Meshlet.MeshletBuffer");
         m_meshletVertexBuffer = RHI::CreateBuffer<uint4>(maxVertices, flags, "Meshlet.VertexBuffer");
@@ -142,7 +142,7 @@ namespace PK
         commandBuffer.UploadBufferSubData(m_meshletIndexBuffer.get(), data->meshlet.pIndices, meshletIndexOffset, meshletIndicesSize);
 
         // Rewrite indices if using a different index format
-        if (RHIEnumConvert::Size(data->regular.indexType) == 2 && indexStride == 4u)
+        if (RHIEnumConvert::Size(data->regular.indexType) == 2u && indexStride == 4u)
         {
             auto view = commandBuffer.BeginBufferWrite<uint32_t>(m_indexBuffer.get(), staticMesh->indexFirst, data->regular.indexCount);
             Math::ReinterpretIndex16ToIndex32(view.data, reinterpret_cast<uint16_t*>(data->regular.pIndices), data->regular.indexCount);

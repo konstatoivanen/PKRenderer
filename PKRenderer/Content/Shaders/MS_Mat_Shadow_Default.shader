@@ -1,6 +1,6 @@
 
 #pragma pk_cull Back
-#pragma pk_ztest GEqual
+#pragma pk_ztest GreaterEqual
 #pragma pk_zwrite True
 #pragma pk_enable_instancing
 #pragma pk_disable_fragment_instancing

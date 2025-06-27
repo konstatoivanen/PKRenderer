@@ -1,5 +1,5 @@
 
-#pragma pk_ztest GEqual
+#pragma pk_ztest GreaterEqual
 #pragma pk_zwrite False
 #pragma pk_program SHADER_STAGE_VERTEX MainVs
 #pragma pk_program SHADER_STAGE_FRAGMENT MainFs

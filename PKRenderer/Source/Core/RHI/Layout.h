@@ -16,7 +16,7 @@ namespace PK
         uint16_t offset = 0;
         uint16_t alignedOffset = 0;
 
-        uint16_t GetSize() const { return RHIEnumConvert::Size(format) * count; }
+        uint16_t GetSize() const { return (uint16_t)RHIEnumConvert::Size(format) * count; }
 
         BufferElement() = default;
 
@@ -165,7 +165,7 @@ namespace PK
             inputRate(inputRate),
             stride(0u),
             offset(0u),
-            size(RHIEnumConvert::Size(format))
+            size((uint16_t)RHIEnumConvert::Size(format))
         {
         }
     };
