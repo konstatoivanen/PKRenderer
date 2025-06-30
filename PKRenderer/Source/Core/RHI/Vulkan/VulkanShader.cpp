@@ -15,20 +15,24 @@ namespace PK
         m_groupSize = { variant->groupSize[0], variant->groupSize[1], variant->groupSize[2] };
         m_stageFlags = (ShaderStageFlags)0u;
 
-        for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
+        for (auto i = 0u; i < (uint32_t)ShaderStage::MaxCount; ++i)
         {
-            if (variant->sprivSizes[i] == 0)
-            {
-                m_modules[i] = nullptr;
-                continue;
-            }
+            m_modules[i] = VK_NULL_HANDLE;
 
-            auto spirvSize = variant->sprivSizes[i];
-            auto* spirv = reinterpret_cast<uint32_t*>(variant->sprivBuffers[i].Get(base));
-            auto stage = VulkanEnumConvert::GetShaderStage((ShaderStage)i);
-            FixedString128 moduleName({ name, ".", VulkanCStr_VkShaderStageFlagBits(stage) });
-            m_modules[i] = new VulkanShaderModule(m_device, stage, spirv, spirvSize, moduleName.c_str());
-            m_stageFlags = m_stageFlags | (ShaderStageFlags)(1u << i);
+            if (variant->sprivSizes[i] > 0)
+            {
+                // Manually create these. No point in a wrapper that wastes allocs.
+                VkShaderModuleCreateInfo createInfo{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
+                createInfo.codeSize = variant->sprivSizes[i];
+                createInfo.pCode = reinterpret_cast<uint32_t*>(variant->sprivBuffers[i].Get(base));
+                VK_ASSERT_RESULT_CTX(vkCreateShaderModule(m_device, &createInfo, nullptr, &m_modules[i]), "Failed to create shader module!");
+
+                auto vkStage = VulkanEnumConvert::GetShaderStage((ShaderStage)i);
+                FixedString128 moduleName({ name, ".", VulkanCStr_VkShaderStageFlagBits(vkStage) });
+                VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)m_modules[i], moduleName.c_str());
+
+                m_stageFlags = m_stageFlags | (ShaderStageFlags)(1u << i);
+            }
         }
 
         if (variant->vertexAttributeCount > 0)
@@ -110,10 +114,16 @@ namespace PK
 
         for (auto& module : m_modules)
         {
-            if (module != nullptr)
+            if (module != VK_NULL_HANDLE)
             {
-                driver->disposer->Dispose(module, fence);
-                module = nullptr;
+                auto deleter = [](void* v)
+                {
+                    auto driver = RHIDriver::Get()->GetNative<VulkanDriver>();
+                    vkDestroyShaderModule(driver->device, reinterpret_cast<VkShaderModule>(v), nullptr);
+                };
+
+                driver->disposer->Dispose(module, deleter, fence);
+                module = VK_NULL_HANDLE;
             }
         }
     }
@@ -138,24 +148,22 @@ namespace PK
 
         for (auto i = (uint32_t)ShaderStage::RayGeneration; i < (uint32_t)ShaderStage::MaxCount; ++i)
         {
-            if (m_modules[i] == nullptr)
+            if (m_modules[i] != VK_NULL_HANDLE)
             {
-                continue;
-            }
+                if (PK_RHI_SHADER_STAGE_RAYTRACING_GROUP[i] != currentGroup)
+                {
+                    currentGroup = PK_RHI_SHADER_STAGE_RAYTRACING_GROUP[i];
+                    info.totalTableSize = Math::GetAlignedSize(info.totalTableSize, tableAlignment);
+                    info.byteOffsets[(uint32_t)currentGroup] = info.totalTableSize;
+                    info.byteStrides[(uint32_t)currentGroup] = info.handleSizeAligned;
+                    info.offsets[(uint32_t)currentGroup] = (uint8_t)info.totalHandleCount;
+                    info.layouts[(uint32_t)currentGroup] = nullptr;
+                }
 
-            if (PK_RHI_SHADER_STAGE_RAYTRACING_GROUP[i] != currentGroup)
-            {
-                currentGroup = PK_RHI_SHADER_STAGE_RAYTRACING_GROUP[i];
-                info.totalTableSize = Math::GetAlignedSize(info.totalTableSize, tableAlignment);
-                info.byteOffsets[(uint32_t)currentGroup] = info.totalTableSize;
-                info.byteStrides[(uint32_t)currentGroup] = info.handleSizeAligned;
-                info.offsets[(uint32_t)currentGroup] = (uint8_t)info.totalHandleCount;
-                info.layouts[(uint32_t)currentGroup] = nullptr;
+                info.counts[(uint32_t)currentGroup]++;
+                info.totalHandleCount++;
+                info.totalTableSize += info.handleSizeAligned;
             }
-
-            info.counts[(uint32_t)currentGroup]++;
-            info.totalHandleCount++;
-            info.totalTableSize += info.handleSizeAligned;
         }
 
         const uint32_t sbtSize = info.totalTableSize;
@@ -168,17 +176,15 @@ namespace PK
 
         for (auto i = 0u; i < (uint32_t)RayTracingShaderGroup::MaxCount; ++i)
         {
-            if (info.counts[i] == 0)
+            if (info.counts[i] > 0)
             {
-                continue;
+                VK_ASSERT_RESULT_CTX(vkGetRayTracingShaderGroupHandlesKHR(driver->device,
+                    pipeline->pipeline,
+                    info.offsets[i],
+                    info.counts[i],
+                    info.counts[i] * info.handleSizeAligned,
+                    info.handleData + info.byteOffsets[i]), "Failed to get ray tracing shader group handles");
             }
-
-            VK_ASSERT_RESULT_CTX(vkGetRayTracingShaderGroupHandlesKHR(driver->device,
-                pipeline->pipeline,
-                info.offsets[i],
-                info.counts[i],
-                info.counts[i] * info.handleSizeAligned,
-                info.handleData + info.byteOffsets[i]), "Failed to get ray tracing shader group handles");
         }
 
         return info;

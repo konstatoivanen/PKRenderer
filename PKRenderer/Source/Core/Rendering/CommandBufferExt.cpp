@@ -188,6 +188,18 @@ namespace PK
         commandBuffer->EndBufferWrite(buffer);
     }
 
+    void CommandBufferExt::UploadTexture(RHITexture* texture, const void* data, size_t size, uint32_t level, uint32_t layer, uint32_t layers)
+    {
+        TextureUploadRange range;
+        range.bufferOffset = 0ull;
+        range.level = level;
+        range.layer = layer;
+        range.layers = layers;
+        range.offset = PK_UINT3_ZERO;
+        range.extent = texture->GetResolution();
+        commandBuffer->UploadTexture(texture, data, size, &range, 1u);
+    }
+
     void CommandBufferExt::SetMesh(const Mesh* mesh)
     {
         auto& vbuffers = mesh->GetVertexBuffers();

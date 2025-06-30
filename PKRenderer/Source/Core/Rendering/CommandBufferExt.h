@@ -66,6 +66,8 @@ namespace PK
             return { reinterpret_cast<uint8_t*>(commandBuffer->BeginBufferWrite(buffer, bufferOffset * stride, count * stride)), count, stride, elementOffset };
         }
 
+        void UploadTexture(RHITexture* texture, const void* data, size_t size, uint32_t level, uint32_t layer, uint32_t layers);
+
         void SetMesh(const Mesh* mesh);
         void DrawMesh(const Mesh* mesh, int32_t submesh, uint32_t instanceCount, uint32_t firstInstance);
         void DrawMesh(const Mesh* mesh, int32_t submesh);

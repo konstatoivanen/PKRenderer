@@ -23,6 +23,7 @@ namespace PK
     typedef PKAssets::PKWrapMode          WrapMode;
     typedef PKAssets::PKBorderColor       BorderColor;
 
+    constexpr static const uint32_t PK_RHI_MAX_MESHLETS_PER_TASK = 32;
     constexpr static const uint32_t PK_RHI_DESIRED_SWAP_CHAIN_IMAGE_COUNT = 4;
     constexpr static const uint32_t PK_RHI_MAX_FRAMES_IN_FLIGHT = 2;
     constexpr static const uint32_t PK_RHI_MAX_RENDER_TARGETS = 8;
@@ -33,6 +34,7 @@ namespace PK
     constexpr static const uint32_t PK_RHI_MAX_UNBOUNDED_SIZE = PKAssets::PK_ASSET_MAX_UNBOUNDED_SIZE;
     constexpr static const uint32_t PK_RHI_MAX_VIEWPORTS = 16;
 
+    constexpr const static char* PK_RHI_SHADER_ENTRY_POINT_NAME = PKAssets::PK_SHADER_ENTRY_POINT_NAME;
     constexpr const static char* PK_RHI_VS_POSITION = PKAssets::PK_MESH_VS_POSITION;
     constexpr const static char* PK_RHI_VS_NORMAL = PKAssets::PK_MESH_VS_NORMAL;
     constexpr const static char* PK_RHI_VS_TANGENT = PKAssets::PK_MESH_VS_TANGENT;
@@ -358,6 +360,12 @@ namespace PK
         uint32_t layers;
         uint3 offset;
         uint3 extent;
+    };
+
+    struct IDeferredBufferData
+    {
+        virtual size_t* ReadSize() = 0;
+        virtual void* ReadData() = 0;
     };
 
     struct TextureViewRange

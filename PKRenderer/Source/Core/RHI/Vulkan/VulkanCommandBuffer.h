@@ -52,7 +52,6 @@ namespace PK
         void EndBufferWrite(RHIBuffer* buffer) final;
 
         void UploadTexture(RHITexture* texture, const void* data, size_t size, TextureUploadRange* ranges, uint32_t rangeCount) final;
-        void UploadTexture(RHITexture* texture, const void* data, size_t size, uint32_t level, uint32_t layer) final;
 
         void BeginDebugScope(const char* name, const color& color) final;
         void EndDebugScope() final;

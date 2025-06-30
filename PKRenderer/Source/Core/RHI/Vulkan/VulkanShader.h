@@ -18,7 +18,7 @@ namespace PK
             const uint3& GetGroupSize() const final { return m_groupSize; }
             ShaderBindingTableInfo GetShaderBindingTableInfo() const final;
 
-            const VulkanShaderModule* GetModule(uint32_t index) const { return m_modules[index]; }
+            VkShaderModule GetModule(uint32_t index) const { return m_modules[index]; }
             const char* GetName() const { return m_name.c_str(); }
             constexpr const VulkanDescriptorSetLayout* GetDescriptorSetLayout(uint32_t index) const { return m_descriptorSetLayouts[index]; }
             constexpr const VulkanPipelineLayout* GetPipelineLayout() const { return m_pipelineLayout; }
@@ -33,7 +33,7 @@ namespace PK
             uint32_t m_descriptorSetCount;
             uint3 m_groupSize{};
 
-            VulkanShaderModule* m_modules[(size_t)ShaderStage::MaxCount];
+            VkShaderModule m_modules[(size_t)ShaderStage::MaxCount];
             const VulkanDescriptorSetLayout* m_descriptorSetLayouts[PK_RHI_MAX_DESCRIPTOR_SETS]{};
             const VulkanPipelineLayout* m_pipelineLayout;
             const FixedString128 m_name;

@@ -82,6 +82,8 @@ namespace PKAssets
     };
 
 
+    constexpr const static char* PK_SHADER_ENTRY_POINT_NAME = "main";
+
     constexpr const static char* PK_SHADER_ATTRIB_LOGVERBOSE = "#pragma pk_log_verbose";
     constexpr const static char* PK_SHADER_ATTRIB_GENERATEDEBUGINFO = "#pragma pk_generate_debug_info";
     constexpr const static char* PK_SHADER_ATTRIB_ZWRITE = "#pragma pk_zwrite ";

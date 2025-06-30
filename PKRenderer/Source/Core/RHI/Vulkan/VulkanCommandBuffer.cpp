@@ -445,68 +445,42 @@ namespace PK
 
         auto vkTexture = texture->GetNative<VulkanTexture>();
         auto layout = vkTexture->GetImageLayout();
-        auto range = VkImageSubresourceRange{ (uint32_t)vkTexture->GetAspectFlags(), 0, texture->GetLevels(), 0, texture->GetLayers() };
-        auto stage = m_renderState->GetServices()->stagingBufferCache->Acquire(size, false, nullptr);
 
-        // Assume a common case of max 5 mips. avoids redundant mallocs.
-        MemoryBlock<VkBufferImageCopy, 5ull> regions;
-        regions.Validate(rangeCount);
+        auto resourceRange = VkImageSubresourceRange{ (uint32_t)vkTexture->GetAspectFlags(), VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS, 0};
+        auto regions = PK_STACK_ALLOC(VkBufferImageCopy, rangeCount);
 
         for (auto i = 0u; i < rangeCount; ++i)
         {
             auto& range = ranges[i];
-            auto& region = regions[i];
-
-            region.bufferOffset = range.bufferOffset;
-            // Tightly packed.
-            region.bufferRowLength = 0u;
-            region.bufferImageHeight = 0u;
-            region.imageSubresource.aspectMask = vkTexture->GetAspectFlags();
-            region.imageSubresource.mipLevel = range.level;
-            region.imageSubresource.baseArrayLayer = range.layer;
-            region.imageSubresource.layerCount = range.layers;
-            region.imageOffset.x = range.offset.x;
-            region.imageOffset.y = range.offset.y;
-            region.imageOffset.z = range.offset.z;
-            region.imageExtent.width = range.extent.x;
-            region.imageExtent.height = range.extent.y;
-            region.imageExtent.depth = range.extent.z;
+            regions[i].bufferOffset = range.bufferOffset;
+            regions[i].bufferRowLength = 0u;
+            regions[i].bufferImageHeight = 0u;
+            regions[i].imageSubresource.aspectMask = resourceRange.aspectMask;
+            regions[i].imageSubresource.mipLevel = range.level;
+            regions[i].imageSubresource.baseArrayLayer = range.layer;
+            regions[i].imageSubresource.layerCount = range.layers;
+            regions[i].imageOffset.x = range.offset.x;
+            regions[i].imageOffset.y = range.offset.y;
+            regions[i].imageOffset.z = range.offset.z;
+            regions[i].imageExtent.width = range.extent.x;
+            regions[i].imageExtent.height = range.extent.y;
+            regions[i].imageExtent.depth = range.extent.z;
+            resourceRange.baseMipLevel = glm::min(resourceRange.baseMipLevel, range.level);
+            resourceRange.baseArrayLayer = glm::min(resourceRange.baseArrayLayer, range.layer);
+            resourceRange.levelCount = glm::max(resourceRange.levelCount, range.level + 1u);
+            resourceRange.layerCount = glm::max(resourceRange.layerCount, range.layer + range.layers);
         }
 
-        stage->SetData(data, size);
-        TransitionImageLayout(vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range);
-        MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdCopyBufferToImage(m_commandBuffer, stage->buffer, vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, rangeCount, regions.GetData());
-        TransitionImageLayout(vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout, range);
-        m_renderState->GetServices()->stagingBufferCache->Release(stage, GetFenceRef());
-    }
+        resourceRange.levelCount = resourceRange.levelCount - resourceRange.baseMipLevel;
+        resourceRange.layerCount = resourceRange.layerCount - resourceRange.baseArrayLayer;
 
-    void VulkanCommandBuffer::UploadTexture(RHITexture* texture, const void* data, size_t size, uint32_t level, uint32_t layer)
-    {
-        PK_THROW_ASSERT(texture->GetUsage() == TextureUsage::DefaultDisk, "Texture upload is only supported for sampled | upload | readonly textures!");
-
-        auto vkTexture = texture->GetNative<VulkanTexture>();
-        auto extent = vkTexture->GetRaw()->extent;
-        auto image = vkTexture->GetRaw()->image;
-        auto layout = vkTexture->GetImageLayout();
-        auto range = VkImageSubresourceRange{ (uint32_t)vkTexture->GetAspectFlags(), level, 1, layer, 1 };
         auto stage = m_renderState->GetServices()->stagingBufferCache->Acquire(size, false, nullptr);
-
-        VkBufferImageCopy copyRegion{};
-        copyRegion.imageSubresource.aspectMask = vkTexture->GetAspectFlags();
-        copyRegion.imageSubresource.mipLevel = level;
-        copyRegion.imageSubresource.baseArrayLayer = layer;
-        copyRegion.imageSubresource.layerCount = 1;
-        copyRegion.imageExtent = extent;
-        copyRegion.imageExtent.width >>= level;
-        copyRegion.imageExtent.height >>= level;
-        copyRegion.imageExtent.depth >>= level;
-
         stage->SetData(data, size);
-        TransitionImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range);
+
+        TransitionImageLayout(vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, resourceRange);
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
-        vkCmdCopyBufferToImage(m_commandBuffer, stage->buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &copyRegion);
-        TransitionImageLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout, range);
+        vkCmdCopyBufferToImage(m_commandBuffer, stage->buffer, vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, rangeCount, regions);
+        TransitionImageLayout(vkTexture->GetRaw()->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout, resourceRange);
         m_renderState->GetServices()->stagingBufferCache->Release(stage, GetFenceRef());
     }
 

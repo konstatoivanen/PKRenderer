@@ -617,28 +617,6 @@ namespace PK
     }
 
 
-    VulkanShaderModule::VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t sprivSize, const char* name) : device(device)
-    {
-        VkShaderModuleCreateInfo createInfo{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
-        createInfo.codeSize = sprivSize;
-        createInfo.pCode = spirv;
-
-        VK_ASSERT_RESULT_CTX(vkCreateShaderModule(device, &createInfo, nullptr, &module), "Failed to create shader module!");
-
-        stageInfo = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
-        stageInfo.stage = stage;
-        stageInfo.module = module;
-        stageInfo.pName = "main";
-
-        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)module, name);
-    }
-
-    VulkanShaderModule::~VulkanShaderModule()
-    {
-        vkDestroyShaderModule(device, module, nullptr);
-    }
-
-
     VulkanPipeline::VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo, const char* name) : device(device)
     {
         VK_ASSERT_RESULT_CTX(vkCreateGraphicsPipelines(device, pipelineCache, 1, &createInfo, nullptr, &pipeline), "failed to create a graphics pipeline!");

@@ -6,63 +6,27 @@
 
 namespace PK
 {
-    template<>
-    struct ContainerHelpers::Comparer<VulkanStagingBuffer*>
-    {
-        int operator ()(VulkanStagingBuffer*& a, VulkanStagingBuffer*& b)
-        {
-            if (a->size < b->size)
-            {
-                return -1;
-            }
-
-            if (a->size > b->size)
-            {
-                return 1;
-            }
-
-            if (a->pruneTick < b->pruneTick)
-            {
-                return -1;
-            }
-
-            if (a->pruneTick > b->pruneTick)
-            {
-                return 1;
-            }
-
-            return 0;
-        }
-    };
-
-    template<>
-    struct ContainerHelpers::Bound<VulkanStagingBuffer*>
-    {
-        size_t operator ()(VulkanStagingBuffer*& a)
-        {
-            return a->size;
-        }
-    };
-
     VulkanStagingBufferCache::VulkanStagingBufferCache(VkDevice device, VmaAllocator allocator, uint64_t pruneDelay) :
         m_allocator(allocator),
         m_device(device),
         m_pruneDelay(pruneDelay)
     {
-        m_activeBuffers.reserve(32);
-        m_freeBuffers.reserve(32);
     }
 
     VulkanStagingBufferCache::~VulkanStagingBufferCache()
     {
-        for (auto& buff : m_freeBuffers)
+        while (m_freeBufferHead)
         {
-            m_bufferPool.Delete(buff);
+            auto next = m_freeBufferHead->next;
+            m_bufferPool.Delete(m_freeBufferHead);
+            m_freeBufferHead = next;
         }
 
-        for (auto& buff : m_activeBuffers)
+        while (m_liveBufferHead)
         {
-            m_bufferPool.Delete(buff);
+            auto next = m_liveBufferHead->next;
+            m_bufferPool.Delete(m_liveBufferHead);
+            m_liveBufferHead = next;
         }
     }
 
@@ -78,15 +42,21 @@ namespace PK
         }
         else
         {
-            auto index = ContainerHelpers::LowerBound(m_freeBuffers.data(), (int32_t)m_freeBuffers.size(), (uint32_t)size);
-
-            if (index != -1)
+            // Find minimum size free buffer
+            for (auto headFree = &m_freeBufferHead; *headFree;)
             {
-                buffer = m_freeBuffers.at(index);
-                ContainerHelpers::OrderedRemoveAt(m_freeBuffers.data(), index, (int32_t)m_freeBuffers.size());
-                m_freeBuffers.pop_back();
+                if ((*headFree)->size >= size)
+                {
+                    buffer = *headFree;
+                    *headFree = (*headFree)->next;
+                    break;
+                }
+
+                headFree = &(*headFree)->next;
             }
-            else
+
+            // No buffer found. create new.
+            if (buffer == nullptr)
             {
                 FixedString64 bufferName("StagingBuffer%u", m_bufferPool.GetActiveMask().CountBits());
                 VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging, size);
@@ -120,7 +90,8 @@ namespace PK
         }
         else
         {
-            m_activeBuffers.push_back(buffer);
+            buffer->next = m_liveBufferHead;
+            m_liveBufferHead = buffer;
         }
     }
 
@@ -128,33 +99,51 @@ namespace PK
     {
         ++m_currentPruneTick;
 
-        for (auto i = (int)m_activeBuffers.size() - 1; i >= 0; --i)
+        for (auto headLive = &m_liveBufferHead; *headLive;)
         {
-            auto stagingBuffer = m_activeBuffers.at(i);
+            auto buffer = *headLive;
 
             // If staging buffer has been assigned an execution observer let's wait for that instead of prune tick.
-            if (stagingBuffer->fence.IsValid() ? stagingBuffer->fence.IsComplete() : stagingBuffer->pruneTick < m_currentPruneTick)
+            if (buffer->fence.IsValid() ? buffer->fence.IsComplete() : buffer->pruneTick < m_currentPruneTick)
             {
-                stagingBuffer->fence.Invalidate();
-                stagingBuffer->pruneTick = m_currentPruneTick + m_pruneDelay;
-                m_freeBuffers.push_back(stagingBuffer);
-                ContainerHelpers::UnorderedRemoveAt(m_activeBuffers.data(), i, (int32_t)m_activeBuffers.size());
-                m_activeBuffers.pop_back();
+                *headLive = buffer->next;
+                buffer->fence.Invalidate();
+                buffer->pruneTick = m_currentPruneTick + m_pruneDelay;
+                buffer->next = nullptr;
+
+                // Insertion order sort
+                // A lot slower than doing an array sort, but this is used so sparsely. saving the allocations is more beneficial.
+                for (auto lowerHead = &m_liveBufferHead; true;)
+                {
+                    auto other = *lowerHead;
+
+                    if (other == nullptr || other->size < buffer->size || (other->size == buffer->size && other->pruneTick >= buffer->pruneTick))
+                    {
+                        buffer->next = other;
+                        *lowerHead = buffer;
+                        break;
+                    }
+
+                    lowerHead = &other->next;
+                }
+
+                continue;
             }
+            
+            headLive = &buffer->next;
         }
 
-        for (auto i = (int)m_freeBuffers.size() - 1; i >= 0; --i)
+        for (auto headFree = &m_freeBufferHead; *headFree;)
         {
-            auto stagingBuffer = m_freeBuffers.at(i);
-
-            if (stagingBuffer->pruneTick < m_currentPruneTick)
+            if ((*headFree)->pruneTick < m_currentPruneTick)
             {
-                m_bufferPool.Delete(stagingBuffer);
-                ContainerHelpers::UnorderedRemoveAt(m_freeBuffers.data(), i, (int32_t)m_freeBuffers.size());
-                m_freeBuffers.pop_back();
+                auto next = (*headFree)->next;
+                m_bufferPool.Delete(*headFree);
+                *headFree = next;
+                continue;
             }
-        }
 
-        ContainerHelpers::QuickSort(m_freeBuffers.data(), m_freeBuffers.size());
+            headFree = &(*headFree)->next;
+        }
     }
 }

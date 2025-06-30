@@ -9,8 +9,9 @@ namespace PK
     struct VulkanStagingBuffer : public VulkanRawBuffer
     {
         VulkanStagingBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo, const char* name) : VulkanRawBuffer(device, allocator, createInfo, name) {}
-        mutable FenceRef fence;
+        FenceRef fence;
         uint64_t pruneTick = 0ull;
+        VulkanStagingBuffer* next = nullptr;
     };
 
     class VulkanStagingBufferCache : public NoCopy
@@ -23,10 +24,11 @@ namespace PK
             void Prune();
 
         private:
+
             const VmaAllocator m_allocator;
             const VkDevice m_device;
-            std::vector<VulkanStagingBuffer*> m_freeBuffers;
-            std::vector<VulkanStagingBuffer*> m_activeBuffers;
+            VulkanStagingBuffer* m_freeBufferHead = nullptr;
+            VulkanStagingBuffer* m_liveBufferHead = nullptr;
             FixedPool<VulkanStagingBuffer, 1024> m_bufferPool;
             uint64_t m_currentPruneTick = 0ull;
             uint64_t m_pruneDelay = 0ull;

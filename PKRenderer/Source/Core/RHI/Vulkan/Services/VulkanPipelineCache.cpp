@@ -5,6 +5,24 @@
 
 namespace PK
 {
+    static void GetVkPipelineShaderStageCreateInfos(const VulkanShader* shader, ShaderStageFlags stageMask, uint16_t excludeStageMask, VkPipelineShaderStageCreateInfo* outInfos, uint32_t* outCount)
+    {
+        for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
+        {
+            const auto module = shader->GetModule(i);
+            auto stageFlag = (ShaderStageFlags)(1u << i);
+
+            if (module != VK_NULL_HANDLE && (stageFlag & stageMask) != 0u && (stageFlag & excludeStageMask) == 0u)
+            {
+                VkPipelineShaderStageCreateInfo stageInfo { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+                stageInfo.stage = VulkanEnumConvert::GetShaderStage((ShaderStage)i);
+                stageInfo.module = module;
+                stageInfo.pName = PK_RHI_SHADER_ENTRY_POINT_NAME;
+                outInfos[(*outCount)++] = stageInfo;
+            }
+        }
+    }
+
     VulkanPipelineCache::VulkanPipelineCache(VkDevice device, 
         const VulkanPhysicalDeviceProperties& physicalDeviceProperties, 
         const char* workingDirectory, 
@@ -98,19 +116,7 @@ namespace PK
         auto stageCount = 0u;
         auto stageMask = ShaderStageFlags::StagesVertex | ShaderStageFlags::Fragment;
         VkPipelineShaderStageCreateInfo shaderStages[(int)ShaderStage::MaxCount];
-
-        for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
-        {
-            auto stageFlag = (ShaderStageFlags)(1u << i);
-
-            // Skip null modules & modules not viable for this pipeline type
-            if (key.shader->GetModule(i) != nullptr &&
-                (stageFlag & stageMask) != 0u &&
-                (stageFlag & key.fixedFunctionState.excludeStageMask) == 0u)
-            {
-                shaderStages[stageCount++] = key.shader->GetModule(i)->stageInfo;
-            }
-        }
+        GetVkPipelineShaderStageCreateInfos(key.shader.value, stageMask, key.fixedFunctionState.excludeStageMask, shaderStages, &stageCount);
 
         auto bufferCount = 0u;
         auto attributeCount = 0u;
@@ -268,19 +274,7 @@ namespace PK
         auto stageCount = 0u;
         auto stageMask = ShaderStageFlags::StagesMesh | ShaderStageFlags::Fragment;
         VkPipelineShaderStageCreateInfo shaderStages[(int)ShaderStage::MaxCount];
-
-        for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
-        {
-            auto stageFlag = (ShaderStageFlags)(1u << i);
-
-            // Skip null modules & modules not viable for this pipeline type
-            if (key.shader->GetModule(i) != nullptr &&
-                (stageFlag & stageMask) != 0u &&
-                (stageFlag & key.fixedFunctionState.excludeStageMask) == 0u)
-            {
-                shaderStages[stageCount++] = key.shader->GetModule(i)->stageInfo;
-            }
-        }
+        GetVkPipelineShaderStageCreateInfos(key.shader.value, stageMask, key.fixedFunctionState.excludeStageMask, shaderStages, &stageCount);
 
         VkPipelineRenderingCreateInfo renderingInfo{ VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR };
         renderingInfo.viewMask = 0u; 
@@ -410,7 +404,10 @@ namespace PK
         }
 
         VkComputePipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
-        pipelineInfo.stage = shader->GetModule((int)ShaderStage::Compute)->stageInfo;
+        pipelineInfo.stage = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+        pipelineInfo.stage.stage = VulkanEnumConvert::GetShaderStage(ShaderStage::Compute);
+        pipelineInfo.stage.module = shader->GetModule((uint32_t)ShaderStage::Compute);
+        pipelineInfo.stage.pName = PK_RHI_SHADER_ENTRY_POINT_NAME;
         pipelineInfo.layout = shader->GetPipelineLayout()->layout;
         value = &m_otherPipelines[index].value;
         value->pipeline = m_pipelinePool.New(m_device, m_pipelineCache, pipelineInfo, shader->GetName());
@@ -442,7 +439,7 @@ namespace PK
             auto stageFlag = (ShaderStageFlags)(1u << i);
 
             // Skip null modules & modules not viable for this pipeline type
-            if (shader->GetModule(i) == nullptr || (stageFlag & stageMask) == 0u)
+            if (shader->GetModule(i) == VK_NULL_HANDLE || (stageFlag & stageMask) == 0u)
             {
                 continue;
             }
@@ -465,7 +462,11 @@ namespace PK
                 default: break;
             }
 
-            shaderStages[stageCount++] = shader->GetModule(i)->stageInfo;
+            VkPipelineShaderStageCreateInfo stageInfo{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+            stageInfo.stage = VulkanEnumConvert::GetShaderStage(stage);
+            stageInfo.module = shader->GetModule(i);
+            stageInfo.pName = PK_RHI_SHADER_ENTRY_POINT_NAME;
+            shaderStages[stageCount++] = stageInfo;
         }
 
         VkRayTracingPipelineCreateInfoKHR pipelineInfo{ VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR };

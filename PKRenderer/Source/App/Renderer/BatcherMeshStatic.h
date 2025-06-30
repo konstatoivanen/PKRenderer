@@ -15,25 +15,7 @@ namespace PK::App
     class BatcherMeshStatic : public IBatcher
     {
         constexpr static uint32_t MAX_SHADERS = 64u;
-
-        struct DrawCall
-        {
-            const ShaderAsset* shader = nullptr;
-            BufferIndexRange indices{};
-        };
-
-        struct MaterialGroup
-        {
-            PointerSet<Material> materials;
-            size_t firstIndex = 0ull;
-            size_t stride = 0ull;
-
-            MaterialGroup() : materials(0) {}
-            uint16_t Add(Material* material);
-            inline void Clear() { firstIndex = 0ull; materials.Clear(); }
-            constexpr size_t GetSize() const { return materials.GetCount() * stride; }
-            constexpr size_t GetOffset() const { return firstIndex * stride; }
-        };
+        constexpr static uint32_t MAX_MATERIALS = 2048u;
 
         struct DrawInfo
         {
@@ -55,6 +37,55 @@ namespace PK::App
                 if (transform != b.transform) return transform < b.transform;
                 if (sortDepth != b.sortDepth) return sortDepth < b.sortDepth;
                 return false;
+            }
+        };
+
+        struct DrawCall
+        {
+            const ShaderAsset* shader = nullptr;
+            BufferIndexRange indices{};
+        };
+
+        struct ShaderReference
+        {
+            ShaderAsset* reference = nullptr;
+            size_t materialStride = 0ull;
+            uint32_t materialFirstIndex = 0u;
+            uint32_t materialCount = 0u;
+            constexpr size_t GetSize() const { return materialCount * materialStride; }
+            constexpr size_t GetOffset() const { return materialFirstIndex * materialStride; }
+
+            inline bool operator == (const ShaderReference& other) const noexcept
+            {
+                return reference == other.reference;
+            }
+        };
+
+        struct ShaderReferenceHash
+        {
+            size_t operator()(const ShaderReference& k) const noexcept
+            {
+                return reinterpret_cast<size_t>(k.reference);
+            }
+        };
+
+        struct MaterialReference
+        {
+            Material* reference = nullptr;
+            uint32_t batchIndex = 0u;
+            uint32_t shaderIndex = 0u;
+
+            inline bool operator == (const MaterialReference& other) const noexcept
+            {
+                return reference == other.reference;
+            }
+        };
+
+        struct MaterialReferenceHash
+        {
+            size_t operator()(const MaterialReference& k) const noexcept
+            {
+                return reinterpret_cast<size_t>(k.reference);
             }
         };
 
@@ -99,7 +130,8 @@ namespace PK::App
         std::vector<DrawCall> m_drawCalls;
         std::vector<BufferIndexRange> m_passGroups;
 
-        FixedMap<ShaderAsset*, MaterialGroup, MAX_SHADERS, Hash::TPointerHash<ShaderAsset>> m_materials;
+        FixedSet<ShaderReference, MAX_SHADERS, ShaderReferenceHash> m_shaders;
+        FixedSet<MaterialReference, MAX_MATERIALS, MaterialReferenceHash> m_materials;
         PointerSet<ComponentTransform> m_transforms;
         uint16_t m_groupIndex = 0u;
         uint32_t m_taskletCount = 0u;

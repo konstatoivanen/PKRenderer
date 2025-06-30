@@ -354,16 +354,6 @@ namespace PK
         VkDeviceAddress deviceAddress;
     };
 
-    struct VulkanShaderModule : public VersionedObject
-    {
-        VulkanShaderModule(VkDevice device, VkShaderStageFlagBits stage, const uint32_t* spirv, size_t spirvSize, const char* name);
-        ~VulkanShaderModule();
-
-        const VkDevice device;
-        VkShaderModule module;
-        VkPipelineShaderStageCreateInfo stageInfo;
-    };
-
     struct VulkanPipeline : public NoCopy
     {
         VulkanPipeline(VkDevice device, VkPipelineCache pipelineCache, const VkGraphicsPipelineCreateInfo& createInfo, const char* name);
