@@ -13,7 +13,7 @@ namespace PK
     VulkanAccelerationStructure::VulkanAccelerationStructure(const char* name) :
         m_driver(RHIDriver::Get()->GetNative<VulkanDriver>()),
         m_name(name),
-        m_substructures(32u)
+        m_substructures(32u, 1ull)
     {
         m_queryPool = new VulkanQueryPool(m_driver->device, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, 256u);
     }

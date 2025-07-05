@@ -3,7 +3,7 @@
 
 namespace PK
 {
-    PropertyBlock::PropertyBlock(uint64_t capacityBytes, uint64_t capacityProperties) : m_propertyInfos(capacityProperties)
+    PropertyBlock::PropertyBlock(uint64_t capacityBytes, uint64_t capacityProperties) : m_propertyInfos(capacityProperties, 4ull)
     {
         ValidateBufferSize(capacityBytes);
     }

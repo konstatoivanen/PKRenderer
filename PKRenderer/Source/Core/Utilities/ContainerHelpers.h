@@ -17,6 +17,24 @@ namespace PK::ContainerHelpers
 
     #define PK_CONTAINER_RANGE_CHECK(index, min, max) if (index >= max || index < min) throw std::exception("Index/Count outside of container bounds!")
 
+    template<typename TAlignment>
+    size_t AlignSize(size_t* size)
+    {
+        if (*size == 0ull)
+        {
+            return *size;
+        }
+
+        *size = (*size + sizeof(TAlignment) - 1ull) & ~(sizeof(TAlignment) - 1ull);
+        return *size;
+    }
+
+    template<typename T>
+    T* CastOffsetPtr(void* data, size_t offset)
+    {
+        return reinterpret_cast<T*>(reinterpret_cast<char*>(data) + offset);
+    }
+
     template<typename T>
     void MoveArray(T* dst, T* src, size_t count)
     {
@@ -47,26 +65,6 @@ namespace PK::ContainerHelpers
         }
 
         memset(values, 0, sizeof(T) * count);
-    }
-
-    template<typename TValue, typename TNode> 
-    void ReallocNodeValues(void** buffer, TValue** values, TNode** nodes, size_t size, size_t newSize)
-    {
-        auto offsetNode = (sizeof(TValue) * newSize + sizeof(TNode) - 1u) & ~(sizeof(TNode) - 1u);
-        auto newBuffer = calloc(offsetNode + sizeof(TNode) * newSize, 1u);
-        auto newValues = reinterpret_cast<TValue*>(newBuffer);
-        auto newNodes = reinterpret_cast<TNode*>(reinterpret_cast<char*>(newBuffer) + offsetNode);
-
-        if (*buffer)
-        {
-            ContainerHelpers::MoveArray(newValues, *values, size);
-            ContainerHelpers::MoveArray(newNodes, *nodes, size);
-            free(*buffer);
-        }
-
-        *buffer = newBuffer;
-        *values = newValues;
-        *nodes = newNodes;
     }
 
     template<typename T>

@@ -7,8 +7,8 @@
 namespace PK
 {
     AssetDatabase::AssetDatabase(Sequencer* sequencer) :
-        m_assets(512u),
-        m_typeHeads(32u),
+        m_assets(512u, 1u),
+        m_typeHeads(32u, 1u),
         m_sequencer(sequencer)
     {
         CVariableRegister::Create<CVariableFuncSimple>("AssetDatabase.Query.Loaded", [this](){LogAssetsAll();});

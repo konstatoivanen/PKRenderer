@@ -7,7 +7,7 @@ namespace PK
     template<typename T>
     struct BindSet : public NoCopy
     {
-        BindSet(uint32_t capacity) : m_array(RHI::CreateBindArray<T>(capacity)), m_indices(capacity) {}
+        BindSet(uint32_t capacity) : m_array(RHI::CreateBindArray<T>(capacity)), m_indices(capacity, 1ull) {}
 
         uint32_t Set(T* value)
         {

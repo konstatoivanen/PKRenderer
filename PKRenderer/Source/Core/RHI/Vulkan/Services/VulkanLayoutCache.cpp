@@ -33,7 +33,7 @@ namespace PK
             bindingFlags[count] = key.counts[count] >= PK_RHI_MAX_UNBOUNDED_SIZE ? VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT : 0u;
             bindings[count].binding = count;
             bindings[count].descriptorCount = key.counts[count];
-            bindings[count].descriptorType = key.types[count];
+            bindings[count].descriptorType = VulkanEnumConvert::GetDescriptorType(key.types[count]);
             bindings[count].stageFlags = key.stageFlags;
         }
 

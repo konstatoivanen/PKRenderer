@@ -30,8 +30,7 @@ namespace PK
         size_t maxSets,
         std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes) :
         m_device(device),
-        m_pruneDelay(pruneDelay),
-        m_sets(1024)
+        m_pruneDelay(pruneDelay)
     {
         // Initial reserve. resource arrays might allocate more
         m_writeImages.resize(PK_RHI_MAX_DESCRIPTORS_PER_SET);

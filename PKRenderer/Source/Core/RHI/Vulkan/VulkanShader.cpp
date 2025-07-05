@@ -62,7 +62,6 @@ namespace PK
                 PK_LOG_INDENT(PK_LOG_LVL_RHI);
 
                 DescriptorSetLayoutKey key{};
-
                 auto pDescriptorSet = pDescriptorSets + i;
                 auto pDescriptors = pDescriptorSet->descriptors.Get(base);
                 auto& elements = m_resourceLayouts[i];
@@ -73,7 +72,7 @@ namespace PK
                 for (auto j = 0u; j < pDescriptorSet->descriptorCount; ++j)
                 {
                     key.counts[j] = pDescriptors[j].count;
-                    key.types[j] = VulkanEnumConvert::GetDescriptorType(pDescriptors[j].type);
+                    key.types[j] = pDescriptors[j].type;
                     elements.Add(pDescriptors[j].type, pDescriptors[j].name, pDescriptors[j].writeStageMask, pDescriptors[j].count);
                 }
 

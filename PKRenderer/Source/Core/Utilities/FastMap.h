@@ -24,25 +24,33 @@ namespace PK
         int32_t previous;
         int32_t next;
         IFastMapNode() : previous(-1), next(-1) {}
-        IFastMapNode(const TKey& key, uint64_t hash, int32_t previousNode) : key(key), hashcode(hash), previous(previousNode), next(-1) {}
         IFastMapNode(const TKey& key, uint64_t hash) : key(key), hashcode(hash), previous(-1), next(-1) {}
     };
 
 
-    template<typename TValue, typename TNode, typename THash, bool is_fixed, size_t capacity>
+    template<typename TValue, typename TNode, bool is_fixed, size_t capacity, size_t bucket_count_factor>
     struct IFastCollectionBase;
 
-    template<typename TValue, typename TNode, typename THash>
-    struct IFastCollectionBase<TValue, TNode, THash, false, 0> : public NoCopy
+    // Dynamic allocation base
+    template<typename TValue, typename TNode>
+    struct IFastCollectionBase<TValue, TNode, false, 0, 1ull> : public NoCopy
     {
     protected:
-        MemoryBlock<int32_t> m_buckets;
         void* m_buffer = nullptr;
+
+        union
+        {
+            int32_t* m_buckets = nullptr;
+            int32_t m_bucketsInline;
+        };
+
         TValue* m_values = nullptr;
         TNode* m_nodes = nullptr;
+        uint32_t m_bucketCountFactor = 1u;
+        uint32_t m_bucketCount = 1u;
+        uint32_t m_collisions = 0u;
         uint32_t m_capacity = 0u;
         uint32_t m_count = 0u;
-        uint32_t m_collisions = 0u;
         
         ~IFastCollectionBase() 
         {
@@ -54,55 +62,92 @@ namespace PK
             }
         }
 
-        uint32_t GetBucketCount() const { return m_buckets.GetCount(); }
-        const int32_t* GetBuckets() const { return m_buckets.GetData(); }
-        int32_t* GetBuckets() { return m_buckets.GetData(); }
-        void ReserveBuckets(size_t count) { m_buckets.Validate(count); }
+        uint32_t GetBucketCount() const { return m_bucketCount; }
+        const int32_t* GetBuckets() const { return m_buffer ? m_buckets : &m_bucketsInline; }
+        int32_t* GetBuckets() { return m_buffer ? m_buckets : &m_bucketsInline; }
+
     public:
-        void Reserve(uint32_t count)
+
+        bool Reserve(uint32_t count)
         {
             if (m_capacity < count)
             {
                 m_capacity = m_capacity == 0 ? count : Hash::ExpandPrime(count);
-                ContainerHelpers::ReallocNodeValues(&m_buffer, &m_values, &m_nodes, m_count, m_capacity);
+                m_bucketCount = m_bucketCountFactor * m_capacity;
+                
+                size_t size = 0ull;
+                const auto offsetBuckets = ContainerHelpers::AlignSize<int32_t>(&size);
+                size += sizeof(int32_t) * m_bucketCount;
+                const auto offsetNode = ContainerHelpers::AlignSize<TNode>(&size);
+                size += sizeof(TNode) * m_capacity;
+                const auto offsetValue = ContainerHelpers::AlignSize<TValue>(&size);
+                size += sizeof(TValue) * m_capacity;
+                
+                auto newBuffer = calloc(size, 1u);
+                auto newBuckets = ContainerHelpers::CastOffsetPtr<int32_t>(newBuffer, offsetBuckets);
+                auto newNodes = ContainerHelpers::CastOffsetPtr<TNode>(newBuffer, offsetNode);
+                auto newValues = ContainerHelpers::CastOffsetPtr<TValue>(newBuffer, + offsetValue);
+
+                if (m_buffer)
+                {
+                    ContainerHelpers::MoveArray(newValues, m_values, m_count);
+                    ContainerHelpers::MoveArray(newNodes, m_nodes, m_count);
+                    free(m_buffer);
+                }
+
+                m_buffer = newBuffer;
+                m_values = newValues;
+                m_nodes = newNodes;
+                m_buckets = newBuckets;
+                return true;
             }
 
-            if (m_buckets.GetCount() == 0 && count > 0)
-            {
-                m_buckets.Validate(count);
-            }
+            return false;
+        }
+
+        bool Reserve(uint32_t count, uint32_t bucketCountFactor)
+        {
+            m_bucketCountFactor = bucketCountFactor > 0 ? bucketCountFactor : 1ull;
+            return Reserve(count);
         }
     };
 
-    template<typename TValue, typename TNode, typename THash, size_t capacity>
-    struct IFastCollectionBase<TValue, TNode, THash, true, capacity> : public NoCopy
+    // Static allocation base
+    template<typename TValue, typename TNode, size_t capacity, size_t bucket_count_factor>
+    struct IFastCollectionBase<TValue, TNode, true, capacity, bucket_count_factor> : public NoCopy
     {
     protected:
         static constexpr uint32_t m_capacity = capacity;
-        int32_t m_buckets[capacity]{};
-        TValue m_values[capacity]{};
+        int32_t m_buckets[capacity * bucket_count_factor]{};
         TNode m_nodes[capacity]{};
-        uint32_t m_count = 0u;
+        TValue m_values[capacity]{};
         uint32_t m_collisions = 0u;
-        uint32_t GetBucketCount() const { return m_capacity; }
+        uint32_t m_count = 0u;
+        uint32_t GetBucketCount() const { return m_capacity * bucket_count_factor; }
         const int32_t* GetBuckets() const { return m_buckets; }
         int32_t* GetBuckets() { return m_buckets; }
-        void ReserveBuckets(size_t count) { }
     public: 
-        void Reserve(uint32_t newCount)
+        bool Reserve(uint32_t newCount)
         {
             if (m_capacity < newCount)
             {
                 throw std::exception("Fixed set capacity exceeded!");
             }
+
+            return false;
+        }
+
+        bool Reserve(uint32_t count, uint32_t bucketCountFactor)
+        {
+            return Reserve(count);
         }
     };
 
 
-    template<typename TValue, bool is_fixed, size_t capacity, typename THash>
-    struct IFastSet : public IFastCollectionBase<TValue, IFastSetNode, THash, is_fixed, capacity>
+    template<typename TValue, typename THash, bool is_fixed, size_t capacity, size_t bucket_count_factor>
+    struct IFastSet : public IFastCollectionBase<TValue, IFastSetNode, is_fixed, capacity, bucket_count_factor>
     {
-        using TBase = IFastCollectionBase<TValue, IFastSetNode, THash, is_fixed, capacity>;
+        using TBase = IFastCollectionBase<TValue, IFastSetNode, is_fixed, capacity, bucket_count_factor>;
         using TBase::m_values;
         using TBase::m_nodes;
         using TBase::m_count;
@@ -111,8 +156,8 @@ namespace PK
         using Node = IFastSetNode;
         inline static THash Hash;
 
-        IFastSet(uint32_t size) { TBase::Reserve(size); }
-        IFastSet() : IFastSet(0u) {}
+        IFastSet(uint32_t size, uint32_t bucketCountFactor) { TBase::Reserve(size, bucketCountFactor); }
+        IFastSet() : IFastSet(0u, 1u) {}
 
         constexpr uint32_t GetCount() const { return m_count; }
         constexpr uint32_t GetCapacity() const { return m_capacity; }
@@ -150,7 +195,7 @@ namespace PK
             {
                 const auto hash = Hash(value);
                 const auto bucketIndex = GetBucketIndex(hash);
-                const auto valueIndex = GetValueIndexFromBuckets(bucketIndex);
+                auto valueIndex = GetValueIndexFromBuckets(bucketIndex);
 
                 while (valueIndex != -1)
                 {
@@ -170,50 +215,40 @@ namespace PK
 
         bool Add(const TValue& value, uint32_t* outIndex)
         {
-            if (m_count == 0)
-            {
-                TBase::Reserve(1u);
-            }
-
             const auto hash = Hash(value);
             const auto bucketIndex = GetBucketIndex(hash);
             const auto valueIndex = GetValueIndexFromBuckets(bucketIndex);
+            auto movingValueIndex = valueIndex;
 
-            if (valueIndex == -1)
+            while (movingValueIndex != -1)
             {
-                TBase::Reserve(m_count + 1u);
-                m_nodes[m_count] = Node();
-            }
-            else
-            {
-                auto currentValueIndex = valueIndex;
-
-                do
+                if (m_values[movingValueIndex] == value)
                 {
-                    if (m_values[currentValueIndex] == value)
-                    {
-                        *outIndex = currentValueIndex;
-                        return false;
-                    }
+                    *outIndex = movingValueIndex;
+                    return false;
+                }
 
-                    currentValueIndex = m_nodes[currentValueIndex].previous;
-                } 
-                while (currentValueIndex != -1);
-
-                ++m_collisions;
-                TBase::Reserve(m_count + 1u);
-                m_nodes[m_count] = Node(valueIndex);
-                m_nodes[valueIndex].next = m_count;
+                movingValueIndex = m_nodes[movingValueIndex].previous;
             }
+                
+            const auto resized = TBase::Reserve(m_count + 1u);
+            const auto index = m_count++;
+            m_values[index] = value;
 
-            SetValueIndexInBuckets(bucketIndex, (int32_t)m_count);
-            m_values[m_count++] = value;
-
-            // Dead code elimination should remove this for fixed versions.
-            if (!is_fixed && m_collisions > TBase::GetBucketCount())
+            if (!resized)
             {
-                TBase::ReserveBuckets(Hash::ExpandPrime(m_collisions));
-                ClearBuckets();
+                m_nodes[index] = Node(valueIndex);
+
+                if (valueIndex != -1)
+                {
+                    m_collisions++;
+                    m_nodes[valueIndex].next = index;
+                }
+
+                SetValueIndexInBuckets(bucketIndex, index);
+            }
+            else // Dead code elimination should remove this for fixed versions.
+            {
                 m_collisions = 0u;
 
                 for (auto newValueIndex = 0u; newValueIndex < m_count; newValueIndex++)
@@ -237,15 +272,15 @@ namespace PK
                 }
             }
 
-            *outIndex = m_count - 1;
+            *outIndex = index;
             return true;
         }
 
         uint32_t Add(const TValue& value)
         {
-            uint32_t newIndex = 0u;
-            Add(value, &newIndex);
-            return newIndex;
+            uint32_t outIndex = 0u;
+            Add(value, &outIndex);
+            return outIndex;
         }
 
         bool RemoveAt(uint32_t index)
@@ -349,16 +384,16 @@ namespace PK
         void ClearBuckets() { memset(TBase::GetBuckets(), 0, sizeof(int32_t) * TBase::GetBucketCount()); }
     };
 
-    template<typename TKey, typename TValue, bool is_fixed, size_t capacity, typename THash>
-    struct IFastMap : public IFastCollectionBase<TValue, IFastMapNode<TKey>, THash, is_fixed, capacity>
+    template<typename TKey, typename TValue, typename THash, bool is_fixed, size_t capacity, size_t bucket_count_factor>
+    struct IFastMap : public IFastCollectionBase<TValue, IFastMapNode<TKey>, is_fixed, capacity, bucket_count_factor>
     {
-        using TBase = IFastCollectionBase<TValue, IFastMapNode<TKey>, THash, is_fixed, capacity>;
+        using TBase = IFastCollectionBase<TValue, IFastMapNode<TKey>, is_fixed, capacity, bucket_count_factor>;
+        using Node = IFastMapNode<TKey>;
         using TBase::m_values;
         using TBase::m_nodes;
         using TBase::m_count;
         using TBase::m_collisions;
         using TBase::m_capacity;
-        using Node = IFastMapNode<TKey>;
         inline static THash Hash;
 
         struct KeyValueConst
@@ -375,8 +410,8 @@ namespace PK
             KeyValue(TKey& key, TValue& value) : key(key), value(value){}
         };
 
-        IFastMap(uint32_t size) { TBase::Reserve(size); }
-        IFastMap() : IFastMap(0u) {}
+        IFastMap(uint32_t size, uint32_t bucketCountFactor) { TBase::Reserve(size, bucketCountFactor); }
+        IFastMap() : IFastMap(0u, 1u) {}
 
         constexpr uint32_t GetCount() const { return m_count; }
         constexpr size_t GetCapacity() const { return m_capacity; }
@@ -417,49 +452,40 @@ namespace PK
 
         bool AddKey(const TKey& key, uint32_t* outIndex)
         {
-            if (m_count == 0)
-            {
-                TBase::Reserve(1u);
-            }
-
             const auto hash = Hash(key);
             const auto bucketIndex = GetBucketIndex(hash);
             const auto valueIndex = GetValueIndexFromBuckets(bucketIndex);
+            auto movingValueIndex = valueIndex;
 
-            if (valueIndex == -1)
+            while (movingValueIndex != -1)
             {
-                TBase::Reserve(m_count + 1u);
-                m_nodes[m_count] = Node(key, hash);
-            }
-            else
-            {
-                auto currentValueIndex = valueIndex;
-
-                do
+                if (m_nodes[movingValueIndex].hashcode == hash && m_nodes[movingValueIndex].key == key)
                 {
-                    if (m_nodes[currentValueIndex].hashcode == hash &&
-                        m_nodes[currentValueIndex].key == key)
-                    {
-                        *outIndex = currentValueIndex;
-                        return false;
-                    }
+                    *outIndex = movingValueIndex;
+                    return false;
+                }
 
-                    currentValueIndex = m_nodes[currentValueIndex].previous;
-                } 
-                while (currentValueIndex != -1);
-
-                m_collisions++;
-                TBase::Reserve(m_count + 1u);
-                m_nodes[m_count] = Node(key, hash, valueIndex);
-                m_nodes[valueIndex].next = m_count;
+                movingValueIndex = m_nodes[movingValueIndex].previous;
             }
 
-            SetValueIndexInBuckets(bucketIndex, m_count++);
+            const auto resized = TBase::Reserve(m_count + 1u);
+            const auto index = m_count++;
+            m_nodes[index] = Node(key, hash);
 
-            if (!is_fixed && m_collisions > TBase::GetBucketCount())
+            if (!resized)
             {
-                TBase::ReserveBuckets(Hash::ExpandPrime(m_collisions));
-                ClearBuckets();
+                m_nodes[index].previous = valueIndex;
+
+                if (valueIndex != -1)
+                {
+                    m_collisions++;
+                    m_nodes[valueIndex].next = index;
+                }
+
+                SetValueIndexInBuckets(bucketIndex, index);
+            }
+            else // Dead code elimination should remove this for fixed versions.
+            {
                 m_collisions = 0;
 
                 for (auto newValueIndex = 0u; newValueIndex < m_count; newValueIndex++)
@@ -483,7 +509,7 @@ namespace PK
                 }
             }
 
-            *outIndex = m_count - 1u;
+            *outIndex = index;
             return true;
         }
 
@@ -604,27 +630,27 @@ namespace PK
 
 
     template<typename TValue, typename THash = std::hash<TValue>>
-    using FastSet = IFastSet<TValue, false, 0, THash>;
-
-    template<typename TValue, size_t capacity, typename THash = std::hash<TValue>>
-    using FixedSet = IFastSet<TValue, true, capacity, THash>;
+    using FastSet = IFastSet<TValue, THash, false, 0, 1ull>;
 
     template<typename TValue>
-    using PointerSet = IFastSet<TValue*, false, 0, Hash::TPointerHash<TValue>>;
-
-    template<typename TValue, size_t capacity>
-    using FixedPointerSet = IFastSet<TValue*, true, capacity, Hash::TPointerHash<TValue>>;
-
+    using PointerSet = IFastSet<TValue*, Hash::TPointerHash<TValue>, false, 0, 1ull>;
 
     template<typename TKey, typename TValue, typename THash = std::hash<TKey>>
-    using FastMap = IFastMap<TKey, TValue, false, 0, THash>;
-
-    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>>
-    using FixedMap = IFastMap<TKey, TValue, true, capacity, THash>;
+    using FastMap = IFastMap<TKey, TValue, THash, false, 0, 1ull>;
 
     template<typename TKey, typename TValue, typename THash = std::hash<TKey>>
-    using PointerMap = IFastMap<TKey, TValue*, false, 0, THash>;
+    using PointerMap = IFastMap<TKey, TValue*, THash, false, 0, 1ull>;
 
-    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>>
-    using FixedPointerMap = IFastMap<TKey, TValue*, true, capacity, THash>;
+
+    template<typename TValue, size_t capacity, typename THash = std::hash<TValue>, size_t bucket_count_factor = 1ull>
+    using FixedSet = IFastSet<TValue, THash, true, capacity, bucket_count_factor>;
+
+    template<typename TValue, size_t capacity, size_t bucket_count_factor = 1ull>
+    using FixedPointerSet = IFastSet<TValue*, Hash::TPointerHash<TValue>, true, capacity, bucket_count_factor>;
+
+    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>, size_t bucket_count_factor = 1ull>
+    using FixedMap = IFastMap<TKey, TValue, THash, true, capacity, bucket_count_factor>;
+
+    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>, size_t bucket_count_factor = 1ull>
+    using FixedPointerMap = IFastMap<TKey, TValue*, THash, true, capacity, bucket_count_factor>;
 }

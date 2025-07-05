@@ -23,6 +23,6 @@ namespace PK
             const VkDevice m_device;
             FixedPool<VulkanBindHandle, MAX_SAMPLERS> m_bindhandlePool;
             FixedPool<VulkanSampler, MAX_SAMPLERS> m_samplerPool;
-            FixedMap<SamplerDescriptor, VulkanSampler*, MAX_SAMPLERS, SampelerKeyHash> m_samplers;
+            FixedMap<SamplerDescriptor, VulkanSampler*, MAX_SAMPLERS, SampelerKeyHash, 2ull> m_samplers;
     };
 }

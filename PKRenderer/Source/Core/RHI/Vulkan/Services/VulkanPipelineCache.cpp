@@ -33,9 +33,6 @@ namespace PK
         m_allowUnderEstimation(physicalDeviceProperties.conservativeRasterization.primitiveUnderestimation),
         m_workingDirectory(workingDirectory),
         m_pipelinePool(),
-        m_vertexPipelines(1024),
-        m_meshPipelines(1024),
-        m_otherPipelines(1024),
         m_pruneDelay(pruneDelay)
     {
         if (m_workingDirectory.Length() != 0 && !discardPipelineCache)

@@ -4,6 +4,8 @@
 #include "Core/Utilities/FixedList.h"
 #include "Core/Rendering/MeshStaticCollection.h"
 #include "Core/Rendering/BindSet.h"
+#include "Core/Rendering/ShaderAsset.h"
+#include "Core/Rendering/Material.h"
 #include "App/Renderer/IBatcher.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
@@ -65,7 +67,7 @@ namespace PK::App
         {
             size_t operator()(const ShaderReference& k) const noexcept
             {
-                return reinterpret_cast<size_t>(k.reference);
+                return reinterpret_cast<size_t>(k.reference) / sizeof(ShaderAsset);
             }
         };
 
@@ -85,7 +87,7 @@ namespace PK::App
         {
             size_t operator()(const MaterialReference& k) const noexcept
             {
-                return reinterpret_cast<size_t>(k.reference);
+                return reinterpret_cast<size_t>(k.reference) / sizeof(Material);
             }
         };
 

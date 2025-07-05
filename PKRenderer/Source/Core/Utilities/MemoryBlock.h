@@ -37,17 +37,17 @@ namespace PK
                 }
             }
 
-            void Validate(size_t count)
+            bool Validate(size_t count)
             {
                 if (count <= m_count)
                 {
-                    return;
+                    return false;
                 }
                 
                 if (IsSmallBuffer(count))
                 {
                     m_count = count;
-                    return;
+                    return false;
                 }
 
                 auto oldSize = sizeof(T) * m_count;
@@ -71,6 +71,7 @@ namespace PK
 
                 m_data.memory = newbuffer;
                 m_count = count;
+                return true;
             }
 
             void CopyFrom(const MemoryBlock& other)

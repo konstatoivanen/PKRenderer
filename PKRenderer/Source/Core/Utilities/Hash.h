@@ -46,7 +46,8 @@ namespace PK::Hash
     {
         size_t operator()(const T* k) const noexcept
         {
-            return reinterpret_cast<size_t>(k);
+            // Reduce collisions by reducing type ptr offsets to a minimum.
+            return reinterpret_cast<size_t>(k) / sizeof(T);
         }
     };
 

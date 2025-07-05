@@ -10,9 +10,9 @@ namespace PK
 {
     struct DescriptorSetLayoutKey
     {
-        uint16_t counts[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
-        VkDescriptorType types[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
         VkShaderStageFlags stageFlags = 0u;
+        ShaderResourceType types[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
+        uint16_t counts[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
 
         inline bool operator == (const DescriptorSetLayoutKey& r) const noexcept
         {
@@ -37,7 +37,7 @@ namespace PK
         using TPipelineHash = Hash::TMurmurHash<PipelineLayoutKey>;
 
         public:
-            VulkanLayoutCache(VkDevice device) : m_device(device) {}
+            VulkanLayoutCache(VkDevice device) : m_device(device), m_setlayouts(128ull, 3ull), m_pipelineLayouts(128ull, 3ull) {}
 
             const VulkanDescriptorSetLayout* GetSetLayout(const DescriptorSetLayoutKey& key);
             const VulkanPipelineLayout* GetPipelineLayout(const PipelineLayoutKey& key);
@@ -46,9 +46,7 @@ namespace PK
             VkDevice m_device;
             FixedPool<VulkanDescriptorSetLayout, 1024> m_setLayoutPool;
             FixedPool<VulkanPipelineLayout, 1024> m_pipelineLayoutPool;
-            PointerMap<DescriptorSetLayoutKey, VulkanDescriptorSetLayout, TDescriptorHash> m_setlayouts = 
-                PointerMap<DescriptorSetLayoutKey, VulkanDescriptorSetLayout, TDescriptorHash>(128ull);
-            PointerMap<PipelineLayoutKey, VulkanPipelineLayout, TPipelineHash> m_pipelineLayouts = 
-                PointerMap<PipelineLayoutKey, VulkanPipelineLayout, TPipelineHash>(128ull);
+            PointerMap<DescriptorSetLayoutKey, VulkanDescriptorSetLayout, TDescriptorHash> m_setlayouts;
+            PointerMap<PipelineLayoutKey, VulkanPipelineLayout, TPipelineHash> m_pipelineLayouts;
     };
 }

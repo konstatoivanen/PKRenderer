@@ -13,7 +13,7 @@ namespace PK::App
 {
     BatcherMeshStatic::BatcherMeshStatic() :
         m_textures2D(PK_RHI_MAX_UNBOUNDED_SIZE),
-        m_transforms(1024)
+        m_transforms(1024u, 3u)
     {
         PK_LOG_VERBOSE_FUNC("");
 

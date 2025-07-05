@@ -27,7 +27,7 @@ namespace PK
         
 
     public:
-        ServiceRegister() : m_services(64u) {}
+        ServiceRegister() : m_services(64u, 2u) {}
         ~ServiceRegister() { Clear(); }
 
         template <typename T>

@@ -239,7 +239,7 @@ namespace PK
             }
 
             const uint32_t m_queueFamily = 0u;
-            PointerMap<uint64_t, AccessRecord> m_resources = PointerMap<uint64_t, AccessRecord>(1024ull);
+            FixedPointerMap<uint64_t, AccessRecord, 1024u> m_resources;
             FixedPool<AccessRecord, 1024> m_records;
             FixedList<VkBufferMemoryBarrier, 256> m_bufferBarriers;
             FixedList<VkImageMemoryBarrier, 256> m_imageBarriers;

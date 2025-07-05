@@ -115,8 +115,9 @@ namespace PK
             auto& views = m_entityViews[{ std::type_index(typeid(TView)), egid.groupID() }];
             auto viewSize = sizeof(TView) / sizeof(uint64_t);
             auto index = 0u;
+            auto entityId = egid.entityID();
 
-            if (views.indices.AddKey(egid.entityID(), &index))
+            if (views.indices.AddKey(entityId, &index))
             {
                 auto head = views.head;
                 auto count = 1u + head / viewSize;

@@ -10,7 +10,7 @@ namespace PK
     class NameIDProviderDefault : public INameIDProvider
     {
     public:
-        NameIDProviderDefault() : m_names(1024)
+        NameIDProviderDefault() : m_names(1024u, 3u)
         {
             NameID::SetProvider(this);
             m_names.Add("NULL_ID");
@@ -20,6 +20,6 @@ namespace PK
         const char* INameIDProvider_IDToString(const uint32_t& name) final;
 
     private:
-        FastSet<FixedString128> m_names;
+        FastSet<FixedString128, std::hash<FixedString128>> m_names;
     };
 }
