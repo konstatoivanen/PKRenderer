@@ -33,7 +33,7 @@ namespace PK::App
 
     private:
         Sequencer* m_sequencer;
-        FixedMap<InputDevice*, InputState, InputStateCollection::MAX_DEVICES> m_deviceStates;
+        FixedMap8<InputDevice*, InputState, InputStateCollection::MAX_DEVICES> m_deviceStates;
         InputState m_globalState{};
         InputDevice* m_lastDevice;
     };

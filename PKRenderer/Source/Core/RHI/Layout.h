@@ -131,7 +131,7 @@ namespace PK
     };
 
 
-    struct ShaderVertexInputLayout : public FixedSet<BufferElement, PK_RHI_MAX_VERTEX_ATTRIBUTES, BufferElementNameHash>
+    struct ShaderVertexInputLayout : public FixedSet8<BufferElement, PK_RHI_MAX_VERTEX_ATTRIBUTES, BufferElementNameHash>
     {
         ShaderVertexInputLayout() : IFastSet() {}
         const BufferElement* TryGetElement(NameID name, uint32_t* index) const;

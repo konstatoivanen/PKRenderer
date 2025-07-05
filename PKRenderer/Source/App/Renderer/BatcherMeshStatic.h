@@ -132,8 +132,8 @@ namespace PK::App
         std::vector<DrawCall> m_drawCalls;
         std::vector<BufferIndexRange> m_passGroups;
 
-        FixedSet<ShaderReference, MAX_SHADERS, ShaderReferenceHash> m_shaders;
-        FixedSet<MaterialReference, MAX_MATERIALS, MaterialReferenceHash> m_materials;
+        FixedSet16<ShaderReference, MAX_SHADERS, ShaderReferenceHash> m_shaders;
+        FixedSet16<MaterialReference, MAX_MATERIALS, MaterialReferenceHash> m_materials;
         PointerSet<ComponentTransform> m_transforms;
         uint16_t m_groupIndex = 0u;
         uint32_t m_taskletCount = 0u;

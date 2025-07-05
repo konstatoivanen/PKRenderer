@@ -68,7 +68,7 @@ namespace PK
             VulkanDescriptorPool* m_currentPool = nullptr;
             FixedPool<VulkanDescriptorSet, 2048> m_setsPool;
             FixedPool<VulkanDescriptorPool, 8> m_poolPool; // A great name for a great variable.
-            FixedPointerMap<SetKey, VulkanDescriptorSet, 2048u, SetKeyHash> m_sets;
+            FixedPointerMap16<SetKey, VulkanDescriptorSet, 2048u, SetKeyHash> m_sets;
             std::vector<ExtinctPool> m_extinctPools;
             std::vector<VkDescriptorImageInfo> m_writeImages;
             std::vector<VkDescriptorBufferInfo> m_writeBuffers;

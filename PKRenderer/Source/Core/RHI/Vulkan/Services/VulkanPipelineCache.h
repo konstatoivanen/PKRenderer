@@ -80,9 +80,9 @@ namespace PK
             VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
             FixedString256 m_workingDirectory;
             FixedPool<VulkanPipeline, 2048> m_pipelinePool;
-            FixedMap<PipelineKey, PipelineValue, 1024u, PipelineKeyHash> m_vertexPipelines;
-            FixedMap<MeshPipelineKey, PipelineValue, 1024u, MeshPipelineKeyHash> m_meshPipelines;
-            FixedMap<VersionHandle<VulkanShader>, PipelineValue, 1024u, VersionHandle<VulkanShader>::Hash> m_otherPipelines;
+            FixedMap16<PipelineKey, PipelineValue, 1024u, PipelineKeyHash> m_vertexPipelines;
+            FixedMap16<MeshPipelineKey, PipelineValue, 1024u, MeshPipelineKeyHash> m_meshPipelines;
+            FixedMap16<VersionHandle<VulkanShader>, PipelineValue, 1024u, VersionHandle<VulkanShader>::Hash> m_otherPipelines;
             uint64_t m_currentPruneTick = 0;
             uint64_t m_pruneDelay = 0;
     };
