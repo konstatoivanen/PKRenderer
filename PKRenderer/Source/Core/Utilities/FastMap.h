@@ -3,7 +3,6 @@
 #include "Hash.h"
 #include "NoCopy.h"
 #include "BufferView.h"
-#include "MemoryBlock.h"
 #include "BufferIterator.h"
 #include "ContainerHelpers.h"
 
@@ -172,6 +171,10 @@ namespace PK
         ConstBufferIterator<TValue> end() const { return ConstBufferIterator<TValue>(TBase::m_values + TBase::m_count, TBase::m_count); }
         const TValue& operator[](uint32_t index) const { return TBase::m_values[index]; }
         TValue& operator[](uint32_t index) { return TBase::m_values[index]; }
+
+        // Special case access where key is inlined into value.
+        const TValue* GetValuePtr(const TValue& value) const { auto index = GetIndex(value); return index != -1 ? &TBase::m_values[index] : nullptr; }
+        TValue* GetValuePtr(const TValue& value) { auto index = GetIndex(value); return index != -1 ? &TBase::m_values[index] : nullptr; }
 
         int32_t GetHashIndex(size_t hash) const
         {

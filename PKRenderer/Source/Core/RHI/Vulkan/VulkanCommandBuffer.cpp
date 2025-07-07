@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/Handle.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanBuffer.h"
 #include "Core/RHI/Vulkan/VulkanTexture.h"

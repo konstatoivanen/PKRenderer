@@ -3,7 +3,7 @@
 
 namespace PK
 {
-    PropertyBlock::PropertyBlock(uint64_t capacityBytes, uint64_t capacityProperties) : m_propertyInfos(capacityProperties, 4ull)
+    PropertyBlock::PropertyBlock(uint64_t capacityBytes, uint64_t capacityProperties) : m_properties(capacityProperties, 4ull)
     {
         ValidateBufferSize(capacityBytes);
     }
@@ -16,17 +16,17 @@ namespace PK
         }
     }
 
+
     void PropertyBlock::CopyFrom(PropertyBlock& from)
     {
-        for (auto i = 0u; i < from.m_propertyInfos.GetCount(); ++i)
+        for (auto i = 0u; i < from.m_properties.GetCount(); ++i)
         {
-            const auto& key = from.m_propertyInfos[i].key;
-            const auto& info = from.m_propertyInfos[i].value;
-            auto index = m_propertyInfos.GetIndex(key);
+            const auto& prop = from.m_properties[i];
+            auto index = m_properties.GetIndex(prop);
 
             if (index != -1)
             {
-                TryWriteValue(reinterpret_cast<char*>(from.m_buffer) + info.offset, (uint32_t)index, info.size);
+                WriteValueInternal(reinterpret_cast<char*>(from.m_buffer) + prop.offset, (uint32_t)index, prop.size);
             }
         }
     }
@@ -34,7 +34,7 @@ namespace PK
     void PropertyBlock::Clear()
     {
         m_head = 0;
-        m_propertyInfos.Clear();
+        m_properties.Clear();
         memset(m_buffer, 0, m_capacity);
     }
 
@@ -42,27 +42,76 @@ namespace PK
     {
         Clear();
         ValidateBufferSize(capacityBytes);
-        m_propertyInfos.Reserve(capacityProperties);
+        m_properties.Reserve(capacityProperties);
     }
 
-    bool PropertyBlock::TryWriteValue(const void* src, uint32_t index, uint64_t writeSize)
+
+    void* PropertyBlock::GetValueInternal(uint64_t key, size_t* size)  const
     {
-        if (index >= m_propertyInfos.GetCount())
+        auto prop = m_properties.GetValuePtr({ key, 0u, 0u });
+
+        if (prop != nullptr)
+        {
+            if (size != nullptr)
+            {
+                *size = (uint64_t)prop->size;
+            }
+
+            if ((prop->offset + (uint64_t)prop->size) > m_capacity)
+            {
+                throw std::invalid_argument("Out of bounds array index!");
+            }
+
+            return reinterpret_cast<char*>(m_buffer) + prop->offset;
+        }
+
+        return nullptr;
+    }
+
+    uint32_t PropertyBlock::AddKeyInternal(uint64_t key, size_t size)
+    {
+        if (m_fixedLayout)
+        {
+            return (uint32_t)m_properties.GetIndex({ key, 0u, 0u });
+        }
+
+        if (size > 0)
+        {
+            uint32_t index = 0u;
+            if (m_properties.Add({ key, 0u, 0u }, &index))
+            {
+                const auto wsize = (uint32_t)size;
+                ValidateBufferSize(m_head + wsize);
+                m_properties[index].offset = (uint32_t)m_head;
+                m_properties[index].size = wsize;
+                m_head += wsize;
+            }
+
+            return index;
+        }
+
+        return ~0u;
+    }
+
+    bool PropertyBlock::WriteValueInternal(const void* src, uint32_t index, size_t writeSize)
+    {
+        if (index >= m_properties.GetCount())
         {
             return false;
         }
 
-        const auto& info = m_propertyInfos[index].value;
+        const auto& prop = m_properties[index];
 
-        if (info.size < writeSize)
+        if (prop.size < writeSize)
         {
             return false;
         }
 
-        auto dst = reinterpret_cast<char*>(m_buffer) + info.offset;
+        auto dst = reinterpret_cast<char*>(m_buffer) + prop.offset;
         memcpy(dst, src, writeSize);
         return true;
     }
+
 
     void PropertyBlock::ValidateBufferSize(uint64_t size)
     {

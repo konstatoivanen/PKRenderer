@@ -10,7 +10,7 @@ namespace PK
     struct FixedTypeSet<>
     {
         template<typename TBase>
-        TBase* GetInstance()
+        constexpr TBase* GetInstance()
         {
             return nullptr;
         }
@@ -20,7 +20,7 @@ namespace PK
     struct FixedTypeSet<T, TRest...> : private FixedTypeSet<TRest...>
     {
         template<typename TBase>
-        TBase* GetInstance()
+        constexpr TBase* GetInstance()
         {
             if constexpr (std::is_base_of<TBase, T>())
             {

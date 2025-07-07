@@ -861,9 +861,6 @@
     <ClInclude Include="ThirdParty\glm\vector_relational.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ThirdParty\KTX\ktx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ThirdParty\VMA\vk_mem_alloc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1299,9 +1296,6 @@
     <ClInclude Include="Source\Core\Utilities\FixedPool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\Handle.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Utilities\Hash.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1501,6 +1495,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\FixedTypeSet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Utilities\FastTypeIndex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1913,8 +1910,6 @@
     <None Include="ThirdParty\glm\gtx\wrap.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="ThirdParty\KTX\Binaries\ktx.dll" />
-    <None Include="ThirdParty\KTX\Binaries\ktx_read.dll" />
     <None Include="ThirdParty\vulkan\Binaries\vulkan-1.pdb" />
     <None Include="Content\Models\MDL_Cloth.mdl" />
     <None Include="Content\Configs\BaseRenderer.cfg" />
@@ -2414,8 +2409,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="ThirdParty\KTX\Binaries\ktx.lib" />
-    <Library Include="ThirdParty\KTX\Binaries\ktx_read.lib" />
     <Library Include="ThirdParty\vulkan\Binaries\vulkan-1.lib" />
   </ItemGroup>
   <ItemGroup>

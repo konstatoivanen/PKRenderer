@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/Utilities/NativeInterface.h"
+#include "Core/Utilities/MemoryBlock.h"
 #include "Core/Assets/Asset.h"
 #include "Core/RHI/Layout.h"
 #include "Core/RHI/RHInterfaces.h"

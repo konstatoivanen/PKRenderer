@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/Handle.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanBindArray.h"
 #include "Core/RHI/Vulkan/VulkanDriver.h"
@@ -514,8 +513,8 @@ namespace PK
             }
 
             auto* bindings = m_descriptorSetKeys[i].bindings;
-            Handle<VulkanBindHandle> wrappedHandle = nullptr;
-            Handle<VulkanBindArray> wrappedHandleArray = nullptr;
+            const VulkanBindHandle* handle = nullptr;
+            const VulkanBindArray* handleArray = nullptr;
             index = 0u;
 
             for (const auto& element : shader->GetResourceLayout(i))
@@ -524,11 +523,11 @@ namespace PK
 
                 if (element->count > 1)
                 {
-                    PK_THROW_ASSERT(resources->TryGet(element->name, wrappedHandleArray), "Descriptors (%s) not bound!", element->name.c_str());
+                    PK_THROW_ASSERT(resources->TryGet<const VulkanBindArray*>(element->name, handleArray), "Descriptors (%s) not bound!", element->name.c_str());
 
                     uint32_t version = 0u;
                     uint32_t count = 0u;
-                    auto handles = wrappedHandleArray.handle->GetHandles(&version, &count);
+                    auto handles = handleArray->GetHandles(&version, &count);
                     count = count < element->count ? (uint16_t)count : element->count;
 
                     if (binding->count != count || binding->type != element->type || binding->handles != handles || binding->version != version || !binding->isArray)
@@ -544,8 +543,7 @@ namespace PK
                     continue;
                 }
 
-                PK_THROW_ASSERT(resources->TryGet(element->name, wrappedHandle), "Descriptor (%s) not bound!", element->name.c_str());
-                auto handle = wrappedHandle.handle;
+                PK_THROW_ASSERT(resources->TryGet<const VulkanBindHandle*>(element->name, handle), "Descriptor (%s) not bound!", element->name.c_str());
 
                 if (binding->count != element->count || binding->type != element->type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)
                 {

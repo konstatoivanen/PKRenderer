@@ -9,7 +9,7 @@ namespace PK
         return GetPooledSampler(descriptor)->sampler;
     }
 
-    VulkanBindHandle* VulkanSamplerCache::GetBindHandle(const SamplerDescriptor& descriptor)
+    const VulkanBindHandle* VulkanSamplerCache::GetBindHandle(const SamplerDescriptor& descriptor)
     {
         auto sampler = GetPooledSampler(descriptor);
         auto index = m_samplerPool.GetIndex(sampler);

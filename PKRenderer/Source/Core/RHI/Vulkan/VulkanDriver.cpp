@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/Handle.h"
 #include "Core/Utilities/Parse.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/Vulkan/VulkanBuffer.h"
@@ -10,11 +9,23 @@
 #include "Core/RHI/BuiltInResources.h"
 #include "VulkanDriver.h"
 
+#include "Core/Utilities/FastTypeIndex.h"
+
 namespace PK
 {
     VulkanDriver::VulkanDriver(const VulkanDriverDescriptor& properties) : properties(properties)
     {
         vkHandle = Platform::LoadLibrary(PK_VK_LIBRARY_NAME);
+
+        PK_LOG_INFO("ID float: %u", pk_base_type_index<float>());
+        PK_LOG_INFO("ID float: %u", pk_base_type_index<float&>());
+        PK_LOG_INFO("ID float: %u", pk_base_type_index<float*>());
+        PK_LOG_INFO("ID float: %u", pk_base_type_index<const float>());
+        PK_LOG_INFO("ID float: %u", pk_base_type_index<const float&>());
+        PK_LOG_INFO("ID float: %u", pk_base_type_index<const float*>());
+
+        PK_LOG_INFO("ID float: %u", pk_base_type_index<float4>());
+        PK_LOG_INFO("ID float: %u", pk_base_type_index<color>());
 
         VulkanAssertAPIVersion(properties.apiVersionMajor, properties.apiVersionMinor);
 
@@ -245,13 +256,13 @@ namespace PK
     RHIShaderScope VulkanDriver::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return CreateUnique<VulkanShader>(base, pVariant, name); }
     RHISwapchainScope VulkanDriver::CreateSwapchain(const SwapchainDescriptor& descriptor) { return CreateUnique<VulkanSwapchain>(this, descriptor); }
 
-    void VulkanDriver::SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) { globalResources.Set(name, Handle(buffer->GetNative<VulkanBuffer>()->GetBindHandle(range))); }
-    void VulkanDriver::SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) { globalResources.Set(name, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::SampledTexture))); }
-    void VulkanDriver::SetBufferArray(NameID name, RHIBindArray<RHIBuffer>* bufferArray) { globalResources.Set(name, Handle(bufferArray->GetNative<VulkanBindArray>())); }
-    void VulkanDriver::SetTextureArray(NameID name, RHIBindArray<RHITexture>* textureArray) { globalResources.Set(name, Handle(textureArray->GetNative<VulkanBindArray>())); }
-    void VulkanDriver::SetImage(NameID name, RHITexture* texture, const TextureViewRange& range) { globalResources.Set(name, Handle(texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::Image))); }
-    void VulkanDriver::SetSampler(NameID name, const SamplerDescriptor& sampler) { globalResources.Set(name, Handle(samplerCache->GetBindHandle(sampler))); }
-    void VulkanDriver::SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure) { globalResources.Set(name, Handle(structure->GetNative<VulkanAccelerationStructure>()->GetBindHandle())); }
+    void VulkanDriver::SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) { globalResources.Set(name, buffer->GetNative<VulkanBuffer>()->GetBindHandle(range)); }
+    void VulkanDriver::SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) { globalResources.Set(name, texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::SampledTexture)); }
+    void VulkanDriver::SetBufferArray(NameID name, RHIBindArray<RHIBuffer>* bufferArray) { globalResources.Set(name, bufferArray->GetNative<VulkanBindArray>()); }
+    void VulkanDriver::SetTextureArray(NameID name, RHIBindArray<RHITexture>* textureArray) { globalResources.Set<const VulkanBindArray*>(name, textureArray->GetNative<VulkanBindArray>()); }
+    void VulkanDriver::SetImage(NameID name, RHITexture* texture, const TextureViewRange& range) { globalResources.Set(name, texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::Image)); }
+    void VulkanDriver::SetSampler(NameID name, const SamplerDescriptor& sampler) { globalResources.Set(name, samplerCache->GetBindHandle(sampler)); }
+    void VulkanDriver::SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure) { globalResources.Set(name, structure->GetNative<VulkanAccelerationStructure>()->GetBindHandle()); }
     void VulkanDriver::SetConstant(NameID name, const void* data, uint32_t size) { globalResources.Set<char>(name, reinterpret_cast<const char*>(data), size); }
     void VulkanDriver::SetKeyword(NameID name, bool value) { globalResources.Set<bool>(name, value); }
 

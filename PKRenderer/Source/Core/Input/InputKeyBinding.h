@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FixedString.h"
+#include "Core/Utilities/MemoryBlock.h"
 #include "Core/Utilities/Hash.h"
 #include "Core/Input/InputKey.h"
 

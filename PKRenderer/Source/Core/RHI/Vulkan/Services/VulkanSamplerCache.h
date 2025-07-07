@@ -15,7 +15,7 @@ namespace PK
         public:
             VulkanSamplerCache(VkDevice device) : m_device(device) {}
             VkSampler GetSampler(const SamplerDescriptor& descriptor);
-            VulkanBindHandle* GetBindHandle(const SamplerDescriptor& descriptor);
+            const VulkanBindHandle* GetBindHandle(const SamplerDescriptor& descriptor);
         
         private:
             VulkanSampler* GetPooledSampler(const SamplerDescriptor& descriptor);

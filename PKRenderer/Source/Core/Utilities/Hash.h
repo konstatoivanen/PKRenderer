@@ -22,6 +22,22 @@ namespace PK::Hash
     uint64_t MurmurHash(const void* data, size_t count, uint64_t seed);
     uint64_t FNV1AHash(const void* data, size_t count);
 
+    // Note morton order performed poorly in comparison due to too regular offsets.
+    // This works ok in cases where both a & b are linear low order values.
+    inline uint64_t InterlaceHash32x2(uint32_t a, uint32_t b)
+    {
+        uint64_t o = 0ull;
+        o |= ((uint64_t)a & 0x000000FFull) << 0ull;
+        o |= ((uint64_t)b & 0x000000FFull) << 8ull;
+        o |= ((uint64_t)a & 0x0000FF00ull) << 8ull;
+        o |= ((uint64_t)b & 0x0000FF00ull) << 16ull;
+        o |= ((uint64_t)a & 0x00FF0000ull) << 16ull;
+        o |= ((uint64_t)b & 0x00FF0000ull) << 24ull;
+        o |= ((uint64_t)a & 0xFF000000ull) << 24ull;
+        o |= ((uint64_t)b & 0xFF000000ull) << 32ull;
+        return o;
+    }
+
     template<typename T>
     struct TMurmurHash
     {

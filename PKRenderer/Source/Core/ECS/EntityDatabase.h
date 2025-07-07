@@ -5,6 +5,7 @@
 #include "Core/Utilities/BufferView.h"
 #include "Core/Utilities/Ref.h"
 #include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/MemoryBlock.h"
 #include "Core/ECS/EGID.h"
 #include "Core/ECS/IEntityView.h"
 #include "Core/ECS/IEntityImplementer.h"
