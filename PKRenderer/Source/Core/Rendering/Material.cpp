@@ -66,7 +66,7 @@ namespace PK
     {
         auto& layout = m_shader->GetMaterialPropertyLayout();
 
-        memcpy(dst, m_buffer, layout.GetAlignedStride());
+        memcpy(dst, GetByteBuffer(), layout.GetAlignedStride());
 
         for (auto& element : layout)
         {

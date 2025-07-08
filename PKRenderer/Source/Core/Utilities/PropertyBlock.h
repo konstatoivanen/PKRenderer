@@ -1,38 +1,30 @@
 #pragma once
+#include <type_traits>
 #include "NoCopy.h"
-#include "FastMap.h"
 #include "FastTypeIndex.h"
 
 namespace PK
 {
     // Non owning container for simple types.
     // Do not store non trivially destructible types.
+    // Doesnt support removes. arena style allocation.
     class PropertyBlock : public NoCopy
     {
         protected:
+            constexpr static const uint32_t BUCKET_COUNT_FACTOR = 4u;
+
             struct Property
             {
                 uint64_t key = 0ull;
                 uint32_t offset = 0u;
-                uint32_t size = 0u;
-
-                inline bool operator == (const Property& r) const noexcept
-                { 
-                    return key == r.key; 
-                }
-            };
-
-            struct PropertyHash
-            {
-                std::size_t operator()(const Property& k) const noexcept
-                {
-                    return k.key;
-                }
+                uint16_t size = 0u;
+                int16_t previous = -1;
             };
 
             template<typename T>
             inline static uint64_t MakeKey(const uint32_t hashId)
             {
+                static_assert(std::is_trivially_copyable_v<T>, "This container only supports trivially copyable types.");
                 return Hash::InterlaceHash32x2(hashId, pk_base_type_index<T>());
             };
 
@@ -52,7 +44,7 @@ namespace PK
             template<typename T>
             const T* Get(const uint32_t hashId, size_t* size) const
             {
-                return reinterpret_cast<const T*>(GetValueInternal(MakeKey<T>(hashId), size));
+                return reinterpret_cast<const T*>(GetValuePtr(MakeKey<T>(hashId), size));
             }
 
             template<typename T>
@@ -81,8 +73,8 @@ namespace PK
             bool TrySet(uint32_t hashId, const T* src, uint32_t count)
             {
                 const auto wsize = sizeof(T) * count;
-                const auto index = AddKeyInternal(MakeKey<T>(hashId), wsize);
-                return WriteValueInternal(src, index, wsize);
+                const auto index = AddKey(MakeKey<T>(hashId), wsize);
+                return WriteValue(src, index, wsize);
             }
 
             template<typename T>
@@ -110,19 +102,38 @@ namespace PK
             template<typename T>
             void Reserve(uint32_t hashId, uint32_t count = 1u) 
             { 
-                AddKeyInternal(MakeKey<T>(hashId), sizeof(T) * count);
+                AddKey(MakeKey<T>(hashId), sizeof(T) * count);
             }
     
-        protected:
-            void* GetValueInternal(uint64_t key, size_t* size) const;
-            uint32_t AddKeyInternal(uint64_t key, size_t size);
-            bool WriteValueInternal(const void* src, uint32_t index, size_t writeSize);
-            void ValidateBufferSize(uint64_t size);
+            constexpr const void* GetByteBuffer() const { return m_buffer; }
+            constexpr void* GetByteBuffer() { return m_buffer; }
 
-            FastSet16<Property, PropertyHash> m_properties;
+        private:
+            const void* GetValuePtr(uint64_t key, size_t* size) const;
+            uint32_t AddKey(uint64_t key, size_t size);
+            bool WriteValue(const void* src, uint32_t index, size_t writeSize);
+            bool ReserveMemory(uint64_t byteCapacity, uint32_t propertyCapacity);
+
+            const uint16_t* GetBuckets() const { return m_buffer ? m_buckets : &m_bucketsInline; }
+            uint16_t* GetBuckets() { return m_buffer ? m_buckets : &m_bucketsInline; }
+            uint32_t GetBucketIndex(uint64_t hash) const { return (uint32_t)(hash % m_bucketCount); }
+            void SetValueIndexInBuckets(uint32_t i, int32_t value) { GetBuckets()[i] = (uint16_t)(value + 1); }
+            int32_t GetValueIndexFromBuckets(uint32_t i) const { return (int32_t)(GetBuckets()[i]) - 1; }
+
             void* m_buffer = nullptr;
-            uint64_t m_capacity = 0ull;
-            uint64_t m_head = 0ll;
+            Property* m_properties = nullptr;
+            
+            union
+            {
+                uint16_t* m_buckets = nullptr;
+                uint16_t m_bucketsInline;
+            };
+
+            uint64_t m_bufferSize = 0ull;
+            uint64_t m_bufferHead = 0ll;
+            uint32_t m_propertyCapacity = 0u;
+            uint32_t m_propertyCount = 0u;
+            uint32_t m_bucketCount = 1u;
             bool m_fixedLayout = false;
     };
 }

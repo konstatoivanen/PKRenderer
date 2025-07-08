@@ -88,7 +88,7 @@ namespace PK
                 auto newBuffer = calloc(size, 1u);
                 auto newBuckets = ContainerHelpers::CastOffsetPtr<_TIndex>(newBuffer, offsetBuckets);
                 auto newNodes = ContainerHelpers::CastOffsetPtr<_TNode>(newBuffer, offsetNode);
-                auto newValues = ContainerHelpers::CastOffsetPtr<_TValue>(newBuffer, + offsetValue);
+                auto newValues = ContainerHelpers::CastOffsetPtr<_TValue>(newBuffer, offsetValue);
 
                 if (m_buffer)
                 {
