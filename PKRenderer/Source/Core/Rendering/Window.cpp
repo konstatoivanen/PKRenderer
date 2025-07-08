@@ -35,6 +35,7 @@ namespace PK
 
         if (descriptor.iconPath.Length() > 0)
         {
+            // @TODO load the same .ico file as the application .rc
             auto iconWidth = 0;
             auto iconHeight = 0;
             uint8_t* pixels = nullptr;

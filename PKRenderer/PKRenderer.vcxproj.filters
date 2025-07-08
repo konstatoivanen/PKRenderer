@@ -2420,4 +2420,9 @@
     <Font Include="Content\Fonts\Helvetica.ttf" />
     <Font Include="Content\Fonts\FSEX302.ttf" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="PKRenderer.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
 </Project>

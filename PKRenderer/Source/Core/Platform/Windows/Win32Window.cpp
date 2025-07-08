@@ -441,8 +441,8 @@ namespace PK
             iconSmall = (HICON)::GetClassLongPtrW(m_handle, GCLP_HICONSM);
         }
 
-        ::SendMessageW(m_handle, WM_SETICON, ICON_BIG, (LPARAM)iconBig);
         ::SendMessageW(m_handle, WM_SETICON, ICON_SMALL, (LPARAM)iconSmall);
+        ::SendMessageW(m_handle, WM_SETICON, ICON_BIG, (LPARAM)iconBig);
 
         if (m_icon)
         {

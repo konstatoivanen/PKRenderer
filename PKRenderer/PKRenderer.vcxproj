@@ -1171,6 +1171,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <Font Include="Content\Fonts\FSEX302.ttf" />
     <Font Include="Content\Fonts\Helvetica.ttf" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="PKRenderer.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
