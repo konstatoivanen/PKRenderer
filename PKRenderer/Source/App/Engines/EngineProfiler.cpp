@@ -76,7 +76,7 @@ namespace PK::App
     {
         // @TODO this is pretty hacky & hard coded. fix later
         auto renderArea = gui->GUIGetRenderAreaRect();
-        auto boxRect = short4(4, 78, renderArea.z - 8, -74);
+        auto boxRect = short4(renderArea.x + 4, renderArea.y + 78, renderArea.z - 8, -74);
 
         auto barRect = short4(boxRect.x + 8, boxRect.y + boxRect.w + 7, 2, 1);
         auto barSpacing = 2;
