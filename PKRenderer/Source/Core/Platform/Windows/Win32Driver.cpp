@@ -35,6 +35,8 @@ namespace PK
             throw std::runtime_error("Failed to get program HINSTANCE");
         }
 
+        ::SetPriorityClass(::GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+
         user32_handle = LoadLibrary("user32.dll");
         dinput8_handle = LoadLibrary("dinput8.dll");
         shcore_handle = LoadLibrary("shcore.dll");

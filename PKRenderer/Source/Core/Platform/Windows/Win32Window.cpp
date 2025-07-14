@@ -200,6 +200,16 @@ namespace PK
             throw std::runtime_error("Failed to create a window through: CreateWindowExW.");
         }
 
+        // Set default icon from rc.
+        if (descriptor.useEmbeddedIcon)
+        {
+            HINSTANCE hInstance = (HINSTANCE)Win32Driver::Get()->GetProcess();
+            HICON hIcon = ::LoadIconW(hInstance, PK_WIN32_EMBEDDED_ICON_NAME);
+            ::SendMessageW(m_handle, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+            ::SendMessageW(m_handle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+            m_icon = hIcon;
+        }
+
         // Set dark title bar
         {
             if (PK_DwmSetWindowAttribute)

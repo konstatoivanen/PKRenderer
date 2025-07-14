@@ -28,6 +28,7 @@ namespace PK
         platformDescriptor.isFloating = descriptor.floating;
         platformDescriptor.useDpiScaling = descriptor.dpiScaling;
         platformDescriptor.autoActivate = descriptor.autoActivate;
+        platformDescriptor.useEmbeddedIcon = descriptor.iconPath.Length() == 0;
         m_native = Platform::CreateWindow(platformDescriptor);
         PK_THROW_ASSERT(m_native, "Failed To Create Window");
 
@@ -35,11 +36,12 @@ namespace PK
 
         if (descriptor.iconPath.Length() > 0)
         {
-            // @TODO load the same .ico file as the application .rc
+            // @TODO support ico loads to remove the need for duplicated icon files
+            // and support window icons on platforms without embedding support.
             auto iconWidth = 0;
             auto iconHeight = 0;
+            auto iconBytesPerPixel = 0;
             uint8_t* pixels = nullptr;
-            int32_t iconBytesPerPixel = 0;
             FileIO::ReadBMP(descriptor.iconPath.c_str(), &pixels, &iconWidth, &iconHeight, &iconBytesPerPixel);
             PK_THROW_ASSERT(iconBytesPerPixel == 4, "Trying to load an icon with invalid bytes per pixel value, %i", iconBytesPerPixel);
             m_native->SetIcon(pixels, { iconWidth, iconHeight });

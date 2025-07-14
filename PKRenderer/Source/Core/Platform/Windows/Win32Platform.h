@@ -11,6 +11,9 @@
 #define PK_PLAFTORM_DRIVER_TYPE Win32Driver
 #define VK_USE_PLATFORM_WIN32_KHR
 
+// Defined in PKRenderer.rc
+#define PK_WIN32_EMBEDDED_ICON_NAME L"MAINICON"
+
 // Min Windows 7
 #ifndef WINVER
 #define WINVER 0x0601

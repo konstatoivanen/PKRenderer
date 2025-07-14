@@ -1165,7 +1165,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <Library Include="ThirdParty\vulkan\Binaries\vulkan-1.lib" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Content\T_AppIcon.bmp" />
+    <Image Include="Content\AppIcon.ico" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="Content\Fonts\FSEX302.ttf" />

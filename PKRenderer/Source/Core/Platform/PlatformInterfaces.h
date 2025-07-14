@@ -32,6 +32,7 @@ namespace PK
         bool isFloating = false;
         bool useDpiScaling = false;
         bool autoActivate = false;
+        bool useEmbeddedIcon = false;
     };
 
     struct IPlatformWindowListener
