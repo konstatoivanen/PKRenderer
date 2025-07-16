@@ -1,9 +1,11 @@
 #pragma once
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/Ref.h"
+#include "Core/Utilities/FixedUnique.h"
 #include "Core/Utilities/Disposer.h"
 #include "Core/Utilities/FixedTypeSet.h"
 #include "Core/RHI/RHInterfaces.h"
+#include "Core/RHI/BuiltInResources.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 #include "Core/RHI/Vulkan/Services/VulkanDescriptorCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanSamplerCache.h"
@@ -121,15 +123,16 @@ namespace PK
         VulkanPhysicalDeviceProperties physicalDeviceProperties;
         uint32_t apiVersion;
 
-        Unique<VulkanQueueSet> queues;
-        Unique<VulkanStagingBufferCache> stagingBufferCache;
-        Unique<VulkanDescriptorCache> descriptorCache;
-        Unique<VulkanPipelineCache> pipelineCache;
-        Unique<VulkanSamplerCache> samplerCache;
-        Unique<VulkanLayoutCache> layoutCache;
-        Unique<Disposer> disposer;
+        // @TODO implement "optional" or something the like to inline this memory.
+        mutable FixedUnique<VulkanQueueSet> queues;
+        mutable FixedUnique<VulkanStagingBufferCache> stagingBufferCache;
+        mutable FixedUnique<VulkanDescriptorCache> descriptorCache;
+        mutable FixedUnique<VulkanPipelineCache> pipelineCache;
+        mutable FixedUnique<VulkanSamplerCache> samplerCache;
+        mutable FixedUnique<VulkanLayoutCache> layoutCache;
+        mutable FixedUnique<Disposer> disposer;
 
-        BuiltInResources* builtInResources;
+        FixedUnique<BuiltInResources> builtInResources;
         PropertyBlock globalResources = PropertyBlock(16384ull, 128ull);
 
         mutable FixedTypeSet<

@@ -17,16 +17,6 @@ namespace PK
     {
         vkHandle = Platform::LoadLibrary(PK_VK_LIBRARY_NAME);
 
-        PK_LOG_INFO("ID float: %u", pk_base_type_index<float>());
-        PK_LOG_INFO("ID float: %u", pk_base_type_index<float&>());
-        PK_LOG_INFO("ID float: %u", pk_base_type_index<float*>());
-        PK_LOG_INFO("ID float: %u", pk_base_type_index<const float>());
-        PK_LOG_INFO("ID float: %u", pk_base_type_index<const float&>());
-        PK_LOG_INFO("ID float: %u", pk_base_type_index<const float*>());
-
-        PK_LOG_INFO("ID float: %u", pk_base_type_index<float4>());
-        PK_LOG_INFO("ID float: %u", pk_base_type_index<color>());
-
         VulkanAssertAPIVersion(properties.apiVersionMajor, properties.apiVersionMinor);
 
         VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
@@ -138,20 +128,29 @@ namespace PK
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
         VK_ASSERT_RESULT_CTX(vmaCreateAllocator(&allocatorInfo, &allocator), "Failed to create a VMA allocator!");
 
-        stagingBufferCache = CreateUnique<VulkanStagingBufferCache>(device, allocator, properties.gcPruneDelay);
-        pipelineCache = CreateUnique<VulkanPipelineCache>(device, physicalDeviceProperties, properties.workingDirectory, properties.apiVersionMajor, properties.gcPruneDelay);
-        samplerCache = CreateUnique<VulkanSamplerCache>(device);
-        layoutCache = CreateUnique<VulkanLayoutCache>(device);
-        disposer = CreateUnique<Disposer>();
-        descriptorCache = CreateUnique<VulkanDescriptorCache>(device, 4, 100ull,
-            std::initializer_list<std::pair<const VkDescriptorType, size_t>>({
+        stagingBufferCache.New(device, allocator, properties.gcPruneDelay);
+        pipelineCache.New(device, physicalDeviceProperties, properties.workingDirectory, properties.apiVersionMajor, properties.gcPruneDelay);
+        samplerCache.New(device);
+        layoutCache.New(device);
+        disposer.New();
+
+        descriptorCache.New
+        (
+            device, 
+            4, 
+            100ull,
+            std::initializer_list<std::pair<const VkDescriptorType, size_t>>(
+            {
                 { VK_DESCRIPTOR_TYPE_SAMPLER, 100ull },
                 { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100ull },
                 { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100ull },
                 { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 10ull }
-                }));
+            })
+        );
 
-        queues = CreateUnique<VulkanQueueSet>(device,
+        queues.New
+        (
+            device,
             queueInitializer,
             VulkanServiceContext
             {
@@ -162,24 +161,25 @@ namespace PK
                 stagingBufferCache.get(),
                 nullptr, // Assigned by queues
                 disposer.get()
-            });
+            }
+        );
 
-        builtInResources = new BuiltInResources();
+        builtInResources.New();
     }
 
     VulkanDriver::~VulkanDriver()
     {
-        delete builtInResources;
+        builtInResources.Delete();
 
         vkDeviceWaitIdle(device);
 
-        descriptorCache = nullptr;
-        disposer = nullptr;
-        samplerCache = nullptr;
-        pipelineCache = nullptr;
-        stagingBufferCache = nullptr;
-        layoutCache = nullptr;
-        queues = nullptr;
+        descriptorCache.Delete();
+        disposer.Delete();
+        samplerCache.Delete();
+        pipelineCache.Delete();
+        stagingBufferCache.Delete();
+        layoutCache.Delete();
+        queues.Delete();
 
         vmaDestroyAllocator(allocator);
         vkDestroyDevice(device, nullptr);
