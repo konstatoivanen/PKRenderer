@@ -213,8 +213,8 @@ namespace PK
         virtual RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) = 0;
         virtual RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor) = 0;
 
-        virtual RHIBuffer* AcquireStagingBuffer(size_t size) = 0;
-        virtual void ReleaseStagingBuffer(RHIBuffer* buffer, const FenceRef& fence) = 0;
+        virtual RHIBuffer* AcquireStage(size_t size) = 0;
+        virtual void ReleaseStage(RHIBuffer* buffer, const FenceRef& fence) = 0;
 
         virtual void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) = 0;
         virtual void SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) = 0;

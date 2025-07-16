@@ -41,6 +41,7 @@ namespace PKAssets
         return file;
     }
 
+
     int OpenAsset(const char* filepath, PKAsset* asset)
     {
         size_t size = 0ull;
@@ -118,13 +119,51 @@ namespace PKAssets
 
     void CloseAsset(PKAsset* asset)
     {
-        if (asset->rawData == nullptr)
+        if (asset->rawData != nullptr)
         {
-            return;
+            free(asset->rawData);
+        }
+    }
+
+
+    int OpenAssetStream(const char* filepath, PKAssetStream* stream)
+    {
+        size_t size = 0ull;
+        FILE* file = OpenFile(filepath, "rb", &size);
+        constexpr auto headerSize = sizeof(PKAssetHeader);
+
+        if (file == nullptr || size < headerSize)
+        {
+            return -1;
         }
 
-        free(asset->rawData);
+        fread(&stream->header, headerSize, 1, file);
+
+        if (stream->header.magicNumber != PK_ASSET_MAGIC_NUMBER)
+        {
+            fclose(file);
+            return -1;
+        }
+
+        // Cant stream compressed files. yet.
+        if (stream->header.isCompressed)
+        {
+            fclose(file);
+            return -1;
+        }
+
+        stream->stream = file;
+        return 0;
     }
+
+    void CloseAssetStream(PKAssetStream* stream)
+    {
+        if (stream && stream->stream)
+        {
+            fclose(reinterpret_cast<FILE*>(stream->stream));
+        }
+    }
+
 
     PKShader* ReadAsShader(PKAsset* asset)
     {
@@ -169,6 +208,55 @@ namespace PKAssets
         auto assetPtr = reinterpret_cast<char*>(asset->rawData) + sizeof(PKAssetHeader);
         return reinterpret_cast<PKTexture*>(assetPtr);
     }
+
+
+    int StreamData(PKAssetStream* stream, void* dst, size_t offset, size_t size)
+    {
+        auto seekret = fseek(reinterpret_cast<FILE*>(stream->stream), offset, SEEK_SET);
+        auto readret = fread(dst, size, 1u, reinterpret_cast<FILE*>(stream->stream));
+        return seekret == 0 && readret != 0 ? 0 : -1;
+    }
+
+    int StreamAsShader(PKAssetStream* stream, PKShader* outvalue)
+    {
+        if (stream->stream == nullptr || stream->header.type != PKAssetType::Shader)
+        {
+            return -1;
+        }
+
+        return StreamData(stream, outvalue, sizeof(PKAssetHeader), sizeof(PKShader));
+    }
+
+    int StreamAsMesh(PKAssetStream* stream, PKMesh* outvalue)
+    {
+        if (stream->stream == nullptr || stream->header.type != PKAssetType::Mesh)
+        {
+            return -1;
+        }
+
+        return StreamData(stream, outvalue, sizeof(PKAssetHeader), sizeof(PKMesh));
+    }
+
+    int StreamAsFont(PKAssetStream* stream, PKFont* outvalue)
+    {
+        if (stream->stream == nullptr || stream->header.type != PKAssetType::Font)
+        {
+            return -1;
+        }
+
+        return StreamData(stream, outvalue, sizeof(PKAssetHeader), sizeof(PKFont));
+    }
+
+    int StreamAsTexture(PKAssetStream* stream, PKTexture* outvalue)
+    {
+        if (stream->stream == nullptr || stream->header.type != PKAssetType::Texture)
+        {
+            return -1;
+        }
+
+        return StreamData(stream, outvalue, sizeof(PKAssetHeader), sizeof(PKTexture));
+    }
+
 
     PKAssetMeta OpenAssetMeta(const char* filepath)
     {

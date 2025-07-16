@@ -142,8 +142,8 @@ namespace PK
         RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name);
         RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor);
 
-        RHIBuffer* AcquireStagingBuffer(size_t size);
-        void ReleaseStagingBuffer(RHIBuffer* buffer, const FenceRef& fence);
+        RHIBuffer* AcquireStage(size_t size);
+        void ReleaseStage(RHIBuffer* buffer, const FenceRef& fence);
 
         template<typename T>
         RHIBindArrayRef<T> CreateBindArray(size_t capacity);

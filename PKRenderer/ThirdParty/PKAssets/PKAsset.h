@@ -81,6 +81,11 @@ namespace PKAssets
         };
     };
 
+    struct PKAssetStream
+    {
+        void* stream = nullptr;
+        PKAssetHeader header;
+    };
 
     constexpr const static char* PK_SHADER_ENTRY_POINT_NAME = "main";
 

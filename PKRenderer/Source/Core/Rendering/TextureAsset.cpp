@@ -17,66 +17,68 @@ namespace PK
 
     void TextureAsset::AssetImport(const char* filepath)
     {
-        PKAssets::PKAsset asset;
+        PKAssets::PKAssetStream asset;
 
-        PK_THROW_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
-        PK_THROW_ASSERT(asset.header->type == PKAssets::PKAssetType::Texture, "Trying to read a texture from a non texture file!")
+        PK_THROW_ASSERT(PKAssets::OpenAssetStream(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
+        PK_THROW_ASSERT(asset.header.type == PKAssets::PKAssetType::Texture, "Trying to read a texture from a non texture file!")
 
-        auto texture = PKAssets::ReadAsTexture(&asset);
-        auto base = asset.rawData;
-        auto levelOffsets = texture->levelOffsets.Get(base);
-        auto textureData = texture->data.Get(base);
-        auto textureDataSize = texture->dataSize;
+        PKAssets::PKTexture texture;
+        PKAssets::StreamAsTexture(&asset, &texture);
 
-        auto stage = RHI::AcquireStagingBuffer(textureDataSize);
+        auto stage = RHI::AcquireStage(texture.dataSize);
         {
             auto pMapped = stage->BeginMap(0, 0);
-            memcpy(pMapped, textureData, textureDataSize);
-            stage->EndMap(0, textureDataSize);
+            PKAssets::StreamData(&asset, pMapped, texture.data.offset, texture.dataSize);
+            stage->EndMap(0, texture.dataSize);
         }
 
         TextureDescriptor descriptor{};
         descriptor.usage = TextureUsage::DefaultDisk;
-        descriptor.resolution[0] = texture->resolution[0];
-        descriptor.resolution[1] = texture->resolution[1];
-        descriptor.resolution[2] = texture->resolution[2];
-        descriptor.levels = texture->levels;
-        descriptor.layers = texture->layers;
-        descriptor.format = texture->format; 
-        descriptor.type = texture->type;
-        descriptor.sampler.anisotropy = texture->anisotropy;
-        descriptor.sampler.filterMin = texture->filterMin;
-        descriptor.sampler.filterMag = texture->filterMag;
-        descriptor.sampler.wrap[0] = texture->wrap[0];
-        descriptor.sampler.wrap[1] = texture->wrap[1];
-        descriptor.sampler.wrap[2] = texture->wrap[2];
+        descriptor.resolution[0] = texture.resolution[0];
+        descriptor.resolution[1] = texture.resolution[1];
+        descriptor.resolution[2] = texture.resolution[2];
+        descriptor.levels = texture.levels;
+        descriptor.layers = texture.layers;
+        descriptor.format = texture.format; 
+        descriptor.type = texture.type;
+        descriptor.sampler.anisotropy = texture.anisotropy;
+        descriptor.sampler.filterMin = texture.filterMin;
+        descriptor.sampler.filterMag = texture.filterMag;
+        descriptor.sampler.wrap[0] = texture.wrap[0];
+        descriptor.sampler.wrap[1] = texture.wrap[1];
+        descriptor.sampler.wrap[2] = texture.wrap[2];
 
         m_texture = RHI::CreateTexture(descriptor, std::filesystem::path(GetFileName()).stem().string().c_str());
 
         auto regions = PK_STACK_ALLOC(TextureDataRegion, descriptor.levels);
         auto isCubeMap = descriptor.type == TextureType::CubemapArray || descriptor.type == TextureType::Cubemap;
 
-        // Data stored packed per level. only need to define level ranges.
-        for (auto level = 0u; level < descriptor.levels; ++level)
         {
-            auto& region = regions[level];
-            region.bufferOffset = levelOffsets[level];
-            region.level = level;
-            region.layer = 0;
-            region.layers = isCubeMap ? descriptor.layers * 6u : descriptor.layers;
-            region.offset = PK_UINT3_ZERO;
-            region.extent =
+            uint32_t* levelOffsets = PK_STACK_ALLOC(uint32_t, descriptor.levels);
+            PKAssets::StreamRelativePtr(&asset, levelOffsets, texture.levelOffsets, descriptor.levels);
+
+            // Data stored packed per level. only need to define level ranges.
+            for (auto level = 0u; level < descriptor.levels; ++level)
             {
-                descriptor.resolution.x > 1 ? descriptor.resolution.x >> level : 1,
-                descriptor.resolution.y > 1 ? descriptor.resolution.y >> level : 1,
-                descriptor.resolution.z > 1 ? descriptor.resolution.z >> level : 1
-            };
+                auto& region = regions[level];
+                region.bufferOffset = levelOffsets[level];
+                region.level = level;
+                region.layer = 0;
+                region.layers = isCubeMap ? descriptor.layers * 6u : descriptor.layers;
+                region.offset = PK_UINT3_ZERO;
+                region.extent =
+                {
+                    descriptor.resolution.x > 1 ? descriptor.resolution.x >> level : 1,
+                    descriptor.resolution.y > 1 ? descriptor.resolution.y >> level : 1,
+                    descriptor.resolution.z > 1 ? descriptor.resolution.z >> level : 1
+                };
+            }
         }
 
         RHI::GetCommandBuffer(QueueType::Transfer)->CopyToTexture(m_texture.get(), stage, regions, descriptor.levels);
-        RHI::ReleaseStagingBuffer(stage, RHI::GetCommandBuffer(QueueType::Transfer)->GetFenceRef());
+        RHI::ReleaseStage(stage, RHI::GetCommandBuffer(QueueType::Transfer)->GetFenceRef());
 
-        PKAssets::CloseAsset(&asset);
+        PKAssets::CloseAssetStream(&asset);
     }
 }
 
