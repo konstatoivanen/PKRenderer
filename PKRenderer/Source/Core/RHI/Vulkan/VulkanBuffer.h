@@ -15,11 +15,11 @@ namespace PK
             VulkanBuffer(size_t size, BufferUsage usage, const char* name);
             ~VulkanBuffer();
             
-            size_t GetSize() const final { return m_rawBuffer->size; }
+            size_t GetSize() const final { return m_buffer->size; }
             BufferUsage GetUsage() const final { return m_usage; }
             const char* GetDebugName() const final { return m_name.c_str(); }
-            void* GetNativeHandle() const final { return m_rawBuffer->buffer; }
-            uint64_t GetDeviceAddress() const final { return m_rawBuffer->deviceAddress; }
+            void* GetNativeHandle() const final { return m_buffer->buffer; }
+            uint64_t GetDeviceAddress() const final { return m_buffer->deviceAddress; }
 
             void* BeginMap(size_t offset, size_t readsize) const final;
             void EndMap(size_t offset, size_t size) const final;
@@ -39,7 +39,7 @@ namespace PK
             const VulkanDriver* m_driver = nullptr;
             BufferUsage m_usage = BufferUsage::None;
             FixedString128 m_name;
-            VulkanRawBuffer* m_rawBuffer = nullptr;
+            VulkanRawBuffer* m_buffer = nullptr;
             VulkanStagingBuffer* m_stage = nullptr;
             VulkanSparsePageTable* m_pageTable = nullptr;
             VulkanBufferView* m_defaultView = nullptr;

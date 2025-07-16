@@ -20,12 +20,6 @@ namespace PKAssets
     int StreamAsFont(PKAssetStream* stream, PKFont* outvalue);
     int StreamAsTexture(PKAssetStream* stream, PKTexture* outvalue);
 
-    template<typename T>
-    int StreamRelativePtr(PKAssetStream* stream, T* dst, RelativePtr<T> src, size_t count) 
-    { 
-        return StreamData(stream, dst, src.offset, sizeof(T) * count); 
-    }
-
     PKAssetMeta OpenAssetMeta(const char* filepath);
     void CloseAssetMeta(PKAssetMeta* meta);
 

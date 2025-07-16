@@ -55,7 +55,7 @@ namespace PK
 
         {
             uint32_t* levelOffsets = PK_STACK_ALLOC(uint32_t, descriptor.levels);
-            PKAssets::StreamRelativePtr(&asset, levelOffsets, texture.levelOffsets, descriptor.levels);
+            PKAssets::StreamData(&asset, levelOffsets, texture.levelOffsets.offset, sizeof(uint32_t) * descriptor.levels);
 
             // Data stored packed per level. only need to define level ranges.
             for (auto level = 0u; level < descriptor.levels; ++level)

@@ -315,13 +315,12 @@ namespace PK
         void* BeginMap(size_t offset, size_t readsize) const;
         void EndMap(size_t offset, size_t size) const;
 
-        const bool isPersistentMap;
         const VmaAllocator allocator;
-        const VkBufferUsageFlags usage;
         const VkDeviceSize size;
-        VkDeviceAddress deviceAddress;
-        VkBuffer buffer;
+        const bool isPersistentMap;
         VmaAllocation memory;
+        VkBuffer buffer;
+        VkDeviceAddress deviceAddress;
     };
 
     struct VulkanRawImage : public VersionedObject
@@ -330,9 +329,9 @@ namespace PK
         ~VulkanRawImage();
 
         const VmaAllocator allocator;
+        VmaAllocation memory;
         VkImage image;
         VkImage imageAlias;
-        VmaAllocation memory;
         VkSampleCountFlagBits samples;
         VkFormat format;
         VkFormat formatAlias;

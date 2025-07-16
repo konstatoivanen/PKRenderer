@@ -10,6 +10,7 @@ namespace PK
     {
         // Match at least minimum count of VkDescriptorType enum values.
         constexpr static uint32_t VK_DESCRIPTOR_TYPE_COUNT = 32u;
+        constexpr static uint32_t VK_MAX_DESCRIPTOR_SET_COUNT = 1024u;
 
         struct alignas(8) DescriptorBinding
         {
@@ -41,7 +42,7 @@ namespace PK
             {
                 uint32_t poolIndex;
                 mutable FenceRef fence;
-                FixedMask<2048> indexMask;
+                FixedMask<VK_MAX_DESCRIPTOR_SET_COUNT> indexMask;
             };
 
             using SetKeyHash = Hash::TMurmurHash<SetKey>;
@@ -66,9 +67,9 @@ namespace PK
             uint64_t m_currentPruneTick = 0ull;
             
             VulkanDescriptorPool* m_currentPool = nullptr;
-            FixedPool<VulkanDescriptorSet, 2048> m_setsPool;
+            FixedPool<VulkanDescriptorSet, VK_MAX_DESCRIPTOR_SET_COUNT> m_setsPool;
             FixedPool<VulkanDescriptorPool, 8> m_poolPool; // A great name for a great variable.
-            FixedPointerMap16<SetKey, VulkanDescriptorSet, 2048u, SetKeyHash> m_sets;
+            FixedPointerMap16<SetKey, VulkanDescriptorSet, VK_MAX_DESCRIPTOR_SET_COUNT, SetKeyHash> m_sets;
             std::vector<ExtinctPool> m_extinctPools;
             std::vector<VkDescriptorImageInfo> m_writeImages;
             std::vector<VkDescriptorBufferInfo> m_writeBuffers;

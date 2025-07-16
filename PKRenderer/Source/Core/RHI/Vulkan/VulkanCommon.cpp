@@ -494,11 +494,12 @@ namespace PK
         vkDestroyImageView(device, view, nullptr);
     }
 
+
     VulkanRawBuffer::VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo, const char* name) :
-        isPersistentMap(createInfo.allocation.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT),
         allocator(allocator),
-        usage(createInfo.buffer.usage),
-        size(createInfo.buffer.size)
+        size(createInfo.buffer.size),
+        isPersistentMap(createInfo.allocation.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT),
+        deviceAddress(0ull)
     {
         if ((createInfo.buffer.flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0)
         {
@@ -513,7 +514,7 @@ namespace PK
             VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer, name);
         }
 
-        if ((usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0)
+        if ((createInfo.buffer.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0)
         {
             VkBufferDeviceAddressInfo addressInfo{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
             addressInfo.buffer = buffer;
@@ -565,6 +566,7 @@ namespace PK
             vmaFlushAllocation(allocator, memory, offset, size);
         }
     }
+
 
     VulkanRawImage::VulkanRawImage(VkDevice device, VmaAllocator allocator, const VulkanImageCreateInfo& createInfo, const char* name) :
         allocator(allocator),

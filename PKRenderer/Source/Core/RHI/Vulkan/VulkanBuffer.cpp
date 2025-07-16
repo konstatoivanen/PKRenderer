@@ -21,7 +21,7 @@ namespace PK
         // Dont persistent map the backing buffer.
         auto bufferUsage = m_usage & ~((uint32_t)BufferUsage::PersistentStage);
         auto bufferCreateInfo = VulkanBufferCreateInfo(bufferUsage, size, &m_driver->queues->GetSelectedFamilies());
-        m_rawBuffer = m_driver->CreatePooled<VulkanRawBuffer>(m_driver->device, m_driver->allocator, bufferCreateInfo, m_name.c_str());
+        m_buffer = m_driver->CreatePooled<VulkanRawBuffer>(m_driver->device, m_driver->allocator, bufferCreateInfo, m_name.c_str());
 
         // Acquire persistent staging buffer
         if ((m_usage & BufferUsage::PersistentStage) != 0)
@@ -32,7 +32,7 @@ namespace PK
         if ((m_usage & BufferUsage::Sparse) != 0)
         {
             FixedString128 pageTableName({ name, ".PageTable" });
-            m_pageTable = new VulkanSparsePageTable(m_driver, m_rawBuffer->buffer, bufferCreateInfo.allocation.usage, pageTableName.c_str());
+            m_pageTable = new VulkanSparsePageTable(m_driver, m_buffer->buffer, bufferCreateInfo.allocation.usage, pageTableName.c_str());
         }
 
         // host local buffers cannot be bound and dont need tracking.
@@ -61,9 +61,9 @@ namespace PK
         m_stage = nullptr;
 
         m_driver->disposer->Dispose(m_pageTable, fence);
-        m_driver->DisposePooled(m_rawBuffer, fence);
+        m_driver->DisposePooled(m_buffer, fence);
         m_pageTable = nullptr;
-        m_rawBuffer = nullptr;
+        m_buffer = nullptr;
         m_firstView = nullptr;
         m_defaultView = nullptr;
     }
@@ -74,12 +74,12 @@ namespace PK
     {
         PK_DEBUG_THROW_ASSERT((offset + readsize) <= GetSize(), "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", offset + readsize, GetSize());
         PK_DEBUG_THROW_ASSERT((m_usage & BufferUsage::TypeBits) != BufferUsage::GPUOnly, "Cant map a gpu only buffer");
-        return m_rawBuffer->BeginMap(offset, readsize);
+        return m_buffer->BeginMap(offset, readsize);
     }
 
     void VulkanBuffer::EndMap(size_t offset, size_t size) const
     {
-        m_rawBuffer->EndMap(offset, size);
+        m_buffer->EndMap(offset, size);
     }
 
     size_t VulkanBuffer::SparseAllocate(const size_t size, QueueType type)
@@ -128,7 +128,7 @@ namespace PK
         region->size = m_stageRegion.size;
 
         m_stage->EndMap(m_stageRegion.srcOffset, m_stageRegion.size);
-        m_stageRegion.ringOffset = (m_stageRegion.ringOffset + m_rawBuffer->size) % m_stage->size;
+        m_stageRegion.ringOffset = (m_stageRegion.ringOffset + m_buffer->size) % m_stage->size;
 
         if (!m_stage->isPersistentMap)
         {
@@ -147,7 +147,7 @@ namespace PK
         }
 
         auto view = m_driver->CreatePooled<VulkanBufferView>();
-        view->buffer.buffer = m_rawBuffer->buffer;
+        view->buffer.buffer = m_buffer->buffer;
         view->buffer.range = range.count;
         view->buffer.offset = range.offset;
         view->isConcurrent = IsConcurrent();
