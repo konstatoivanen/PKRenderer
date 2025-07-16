@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <PKAssets/PKAsset.h>
 #include <PKAssets/PKAssetLoader.h>
+#include "Core/Utilities/FenceRef.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "TextureAsset.h"
@@ -26,6 +27,13 @@ namespace PK
         auto levelOffsets = texture->levelOffsets.Get(base);
         auto textureData = texture->data.Get(base);
         auto textureDataSize = texture->dataSize;
+
+        auto stage = RHI::AcquireStagingBuffer(textureDataSize);
+        {
+            auto pMapped = stage->BeginMap(0, 0);
+            memcpy(pMapped, textureData, textureDataSize);
+            stage->EndMap(0, textureDataSize);
+        }
 
         TextureDescriptor descriptor{};
         descriptor.usage = TextureUsage::DefaultDisk;
@@ -65,7 +73,8 @@ namespace PK
             };
         }
 
-        RHI::GetCommandBuffer(QueueType::Transfer)->CopyToTexture(m_texture.get(), textureData, textureDataSize, regions, descriptor.levels);
+        RHI::GetCommandBuffer(QueueType::Transfer)->CopyToTexture(m_texture.get(), stage, regions, descriptor.levels);
+        RHI::ReleaseStagingBuffer(stage, RHI::GetCommandBuffer(QueueType::Transfer)->GetFenceRef());
 
         PKAssets::CloseAsset(&asset);
     }

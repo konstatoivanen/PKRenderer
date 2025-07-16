@@ -24,16 +24,6 @@ namespace PK
         void SparseAllocateRange([[maybe_unused]] const BufferIndexRange& range, [[maybe_unused]] QueueType type) final {}
         void SparseDeallocate([[maybe_unused]] const BufferIndexRange& range) final {}
 
-        struct
-        {
-            uint32_t ringOffset = 0u;
-            uint32_t ringStride = 0u;
-            uint32_t srcOffset = 0u;
-            uint32_t dstOffset = 0u;
-            uint32_t size = 0u;
-        }
-        map{};
-
         FenceRef fence;
         uint64_t pruneTick = 0ull;
         VulkanStagingBuffer* next = nullptr;
@@ -44,9 +34,6 @@ namespace PK
         public:
             VulkanStagingBufferCache(VkDevice device, VmaAllocator allocator, uint64_t pruneDelay);
             ~VulkanStagingBufferCache();
-
-            void* BeginWrite(VulkanStagingBuffer** stage, size_t offset, size_t size);
-            void EndWrite(VulkanStagingBuffer** stage, VkBufferCopy* outRegion, const FenceRef& fence);
 
             VulkanStagingBuffer* Acquire(size_t size, bool persistent, const char* name);
             void Release(VulkanStagingBuffer* buffer, const FenceRef& fence);

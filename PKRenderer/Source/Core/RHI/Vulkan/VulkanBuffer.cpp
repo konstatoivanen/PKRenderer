@@ -104,14 +104,37 @@ namespace PK
     void* VulkanBuffer::BeginStagedWrite(size_t offset, size_t size)
     {
         PK_DEBUG_THROW_ASSERT((offset + size) <= GetSize(), "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", offset + size, GetSize());
-        return m_driver->stagingBufferCache->BeginWrite(&m_stage, offset, size);
+
+        if (m_stage == nullptr || !m_stage->isPersistentMap)
+        {
+            PK_DEBUG_THROW_ASSERT(m_stage == nullptr, "Trying to begin a new mapping for a buffer that is already being mapped!");
+            m_stage = m_driver->stagingBufferCache->Acquire(size, false, nullptr);
+        }
+
+        m_stageRegion.srcOffset = m_stage->isPersistentMap ? m_stageRegion.ringOffset + offset : 0ull;
+        m_stageRegion.dstOffset = offset;
+        m_stageRegion.size = size;
+        return m_stage->BeginMap(m_stageRegion.srcOffset, 0ull);
     }
 
     void VulkanBuffer::EndStagedWrite(RHIBuffer** dst, RHIBuffer** src, VkBufferCopy* region, const FenceRef& fence)
     {
+        PK_DEBUG_THROW_ASSERT(m_stage != nullptr, "Trying to end buffer map for an unmapped buffer!");
+        
         *src = m_stage;
         *dst = this;
-        return m_driver->stagingBufferCache->EndWrite(&m_stage, region, fence);
+        region->srcOffset = m_stageRegion.srcOffset;
+        region->dstOffset = m_stageRegion.dstOffset;
+        region->size = m_stageRegion.size;
+
+        m_stage->EndMap(m_stageRegion.srcOffset, m_stageRegion.size);
+        m_stageRegion.ringOffset = (m_stageRegion.ringOffset + m_rawBuffer->size) % m_stage->size;
+
+        if (!m_stage->isPersistentMap)
+        {
+            m_driver->stagingBufferCache->Release(m_stage, fence);
+            m_stage = nullptr;
+        }
     }
 
     const VulkanBindHandle* VulkanBuffer::GetBindHandle(const BufferIndexRange& range)

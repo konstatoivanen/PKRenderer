@@ -44,5 +44,14 @@ namespace PK
             VulkanSparsePageTable* m_pageTable = nullptr;
             VulkanBufferView* m_defaultView = nullptr;
             FastLinkedListRoot<VulkanBufferView, BufferIndexRange> m_firstView = nullptr;
+
+            struct
+            {
+                VkDeviceSize ringOffset = 0u;
+                VkDeviceSize srcOffset = 0u;
+                VkDeviceSize dstOffset = 0u;
+                VkDeviceSize size = 0u;
+            }
+            m_stageRegion{};
     };
 }
