@@ -495,7 +495,7 @@ namespace PK
     }
 
     VulkanRawBuffer::VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo, const char* name) :
-        persistentmap(createInfo.allocation.flags& VMA_ALLOCATION_CREATE_MAPPED_BIT),
+        isPersistentMap(createInfo.allocation.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT),
         allocator(allocator),
         usage(createInfo.buffer.usage),
         size(createInfo.buffer.size)
@@ -509,7 +509,7 @@ namespace PK
         }
         else
         {
-            VK_ASSERT_RESULT_CTX(vmaCreateBuffer(allocator, &createInfo.buffer, &createInfo.allocation, &buffer, &memory, &allocationInfo), "Failed to create a buffer!");
+            VK_ASSERT_RESULT_CTX(vmaCreateBuffer(allocator, &createInfo.buffer, &createInfo.allocation, &buffer, &memory, nullptr), "Failed to create a buffer!");
             VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer, name);
         }
 
@@ -526,19 +526,21 @@ namespace PK
         vmaDestroyBuffer(allocator, buffer, memory);
     }
 
-    void VulkanRawBuffer::Invalidate(size_t offset, size_t size) const
+    void* VulkanRawBuffer::BeginMap(size_t offset, size_t readsize) const
     {
-        vmaInvalidateAllocation(allocator, memory, offset, size);
-    }
+        PK_DEBUG_THROW_ASSERT(memory, "Trying to map a buffer without dedicated memory!");
 
-    void* VulkanRawBuffer::BeginMap(size_t offset) const
-    {
-        PK_THROW_ASSERT(memory, "Trying to map a buffer without dedicated memory!");
+        if (readsize > 0ull)
+        {
+            vmaInvalidateAllocation(allocator, memory, offset, readsize);
+        }
 
         void* mappedRange;
 
-        if (persistentmap)
+        if (isPersistentMap)
         {
+            VmaAllocationInfo allocationInfo{};
+            vmaGetAllocationInfo(allocator, memory, &allocationInfo);
             mappedRange = allocationInfo.pMappedData;
         }
         else
@@ -551,9 +553,9 @@ namespace PK
 
     void VulkanRawBuffer::EndMap(size_t offset, size_t size) const
     {
-        PK_THROW_ASSERT(memory, "Trying to umap a buffer without dedicated memory!");
+        PK_DEBUG_THROW_ASSERT(memory, "Trying to umap a buffer without dedicated memory!");
 
-        if (!persistentmap)
+        if (!isPersistentMap)
         {
             vmaUnmapMemory(allocator, memory);
         }

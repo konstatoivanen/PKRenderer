@@ -45,19 +45,19 @@ namespace PK
 
         m_texture = RHI::CreateTexture(descriptor, std::filesystem::path(GetFileName()).stem().string().c_str());
 
-        auto ranges = PK_STACK_ALLOC(TextureUploadRange, descriptor.levels);
+        auto regions = PK_STACK_ALLOC(TextureDataRegion, descriptor.levels);
         auto isCubeMap = descriptor.type == TextureType::CubemapArray || descriptor.type == TextureType::Cubemap;
 
         // Data stored packed per level. only need to define level ranges.
         for (auto level = 0u; level < descriptor.levels; ++level)
         {
-            auto& range = ranges[level];
-            range.bufferOffset = levelOffsets[level];
-            range.level = level;
-            range.layer = 0;
-            range.layers = isCubeMap ? descriptor.layers * 6u : descriptor.layers;
-            range.offset = PK_UINT3_ZERO;
-            range.extent =
+            auto& region = regions[level];
+            region.bufferOffset = levelOffsets[level];
+            region.level = level;
+            region.layer = 0;
+            region.layers = isCubeMap ? descriptor.layers * 6u : descriptor.layers;
+            region.offset = PK_UINT3_ZERO;
+            region.extent =
             {
                 descriptor.resolution.x > 1 ? descriptor.resolution.x >> level : 1,
                 descriptor.resolution.y > 1 ? descriptor.resolution.y >> level : 1,
@@ -65,7 +65,7 @@ namespace PK
             };
         }
 
-        RHI::GetCommandBuffer(QueueType::Transfer)->UploadTexture(m_texture.get(), textureData, textureDataSize, ranges, descriptor.levels);
+        RHI::GetCommandBuffer(QueueType::Transfer)->CopyToTexture(m_texture.get(), textureData, textureDataSize, regions, descriptor.levels);
 
         PKAssets::CloseAsset(&asset);
     }

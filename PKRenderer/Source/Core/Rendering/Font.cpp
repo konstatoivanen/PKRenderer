@@ -51,18 +51,18 @@ namespace PK
 
         m_texture = RHI::CreateTexture(descriptor, std::filesystem::path(GetFileName()).stem().string().c_str());
 
-        TextureUploadRange uploadRange;
-        uploadRange.bufferOffset = 0u;
-        uploadRange.level = 0u;
-        uploadRange.layer = 0u;
-        uploadRange.layers = 1u;
-        uploadRange.offset = PK_UINT3_ZERO;
-        uploadRange.extent = descriptor.resolution;;
+        TextureDataRegion dataRegion;
+        dataRegion.bufferOffset = 0u;
+        dataRegion.level = 0u;
+        dataRegion.layer = 0u;
+        dataRegion.layers = 1u;
+        dataRegion.offset = PK_UINT3_ZERO;
+        dataRegion.extent = descriptor.resolution;;
 
-        RHI::GetCommandBuffer(QueueType::Transfer)->UploadTexture(m_texture.get(), 
+        RHI::GetCommandBuffer(QueueType::Transfer)->CopyToTexture(m_texture.get(), 
             font->atlasData.Get(base), 
             font->atlasDataSize, 
-            &uploadRange, 
+            &dataRegion,
             1u);
 
         PKAssets::CloseAsset(&asset);

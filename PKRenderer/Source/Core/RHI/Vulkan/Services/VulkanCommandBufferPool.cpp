@@ -77,7 +77,7 @@ namespace PK
             }
         }
 
-        PK_THROW_ASSERT(m_current, "No available command buffers!");
+        PK_DEBUG_THROW_ASSERT(m_current, "No available command buffers!");
 
         auto commandBuffer = m_commandBuffers[(int64_t)(m_current - &m_wrappers[0])];
         auto fence = m_fences[(int64_t)(m_current - &m_wrappers[0])];

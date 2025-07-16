@@ -57,8 +57,8 @@ namespace PK
         *structure = BLAS();
         structure->name = geometry.name;
 
-        auto adressVertex = geometry.vertexBuffer->GetNative<VulkanBuffer>()->GetRaw()->deviceAddress;
-        auto adressIndex = geometry.indexBuffer->GetNative<VulkanBuffer>()->GetRaw()->deviceAddress;
+        auto adressVertex = geometry.vertexBuffer->GetDeviceAddress();
+        auto adressIndex = geometry.indexBuffer->GetDeviceAddress();
 
         structure->geometry = VkAccelerationStructureGeometryKHR{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR };
         structure->geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
@@ -273,7 +273,7 @@ namespace PK
 
     void VulkanAccelerationStructure::BeginWrite(QueueType queue, uint32_t instanceLimit)
     {
-        PK_THROW_ASSERT(m_writeBuffer == nullptr, "Structure is already being written into!");
+        PK_DEBUG_THROW_ASSERT(m_writeBuffer == nullptr, "Structure is already being written into!");
 
         m_cmd = m_driver->queues->GetQueue(queue)->GetCommandBuffer();
         m_instanceCount = 0u;
@@ -294,12 +294,12 @@ namespace PK
                 FixedString128({ m_name.c_str(), ".InstanceInputBuffer" }).c_str());
         }
 
-        m_writeBuffer = reinterpret_cast<VkAccelerationStructureInstanceKHR*>(m_instanceInputBuffer->BeginMap(m_instanceBufferOffset));
+        m_writeBuffer = reinterpret_cast<VkAccelerationStructureInstanceKHR*>(m_instanceInputBuffer->BeginMap(m_instanceBufferOffset, 0ull));
     }
 
     void VulkanAccelerationStructure::AddInstance(AccelerationStructureGeometryInfo& geometry, const float3x4& matrix)
     {
-        PK_THROW_ASSERT(m_instanceCount < m_instanceLimit, "Instance limit exceeded!");
+        PK_DEBUG_THROW_ASSERT(m_instanceCount < m_instanceLimit, "Instance limit exceeded!");
 
         VkAccelerationStructureInstanceKHR* instance = m_writeBuffer + m_instanceCount++;
 

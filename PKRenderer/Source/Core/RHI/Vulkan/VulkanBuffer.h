@@ -18,37 +18,31 @@ namespace PK
             size_t GetSize() const final { return m_rawBuffer->size; }
             BufferUsage GetUsage() const final { return m_usage; }
             const char* GetDebugName() const final { return m_name.c_str(); }
+            void* GetNativeHandle() const final { return m_rawBuffer->buffer; }
+            uint64_t GetDeviceAddress() const final { return m_rawBuffer->deviceAddress; }
 
-            const void* BeginRead(size_t offset, size_t size) final;
-            void EndRead() final;
+            void* BeginMap(size_t offset, size_t readsize) const final;
+            void EndMap(size_t offset, size_t size) const final;
+
             size_t SparseAllocate(const size_t size, QueueType type) final;
             void SparseAllocateRange(const BufferIndexRange& range, QueueType type) final;
             void SparseDeallocate(const BufferIndexRange& range) final;
 
-            void* BeginWrite(size_t offset, size_t size);
-            void EndWrite(VkBuffer* src, VkBuffer* dst, VkBufferCopy* region, const FenceRef& fence);
+            // @TODO bad pattern. Difficult to inline into begin/end map as user wont know the necessary flush context.
+            void* BeginStagedWrite(size_t offset, size_t size);
+            void EndStagedWrite(RHIBuffer** dst, RHIBuffer** src, VkBufferCopy* region, const FenceRef& fence);
 
-            const VulkanRawBuffer* GetRaw() const { return m_rawBuffer; }
+            constexpr const VulkanBindHandle* GetBindHandle() const { return m_defaultView; }
             const VulkanBindHandle* GetBindHandle(const BufferIndexRange& range);
-            inline const VulkanBindHandle* GetBindHandle() const { return m_defaultView; }
             
         private:
             const VulkanDriver* m_driver = nullptr;
             BufferUsage m_usage = BufferUsage::None;
             FixedString128 m_name;
             VulkanRawBuffer* m_rawBuffer = nullptr;
+            VulkanStagingBuffer* m_stage = nullptr;
             VulkanSparsePageTable* m_pageTable = nullptr;
             VulkanBufferView* m_defaultView = nullptr;
             FastLinkedListRoot<VulkanBufferView, BufferIndexRange> m_firstView = nullptr;
-  
-            //@TODO Should not reside in buffer
-            VulkanStagingBuffer* m_mappedBuffer = nullptr;
-
-            struct MapRange
-            {
-                size_t ringOffset = 0ull;
-                VkBufferCopy region = { 0ull, 0ull, 0ull };
-            }
-            m_mapRange{};
     };
 }

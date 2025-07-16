@@ -30,6 +30,39 @@ namespace PK
         }
     }
 
+
+    void* VulkanStagingBufferCache::BeginWrite(VulkanStagingBuffer** stage, size_t offset, size_t size)
+    {
+        if (*stage == nullptr || !(*stage)->isPersistentMap)
+        {
+            PK_DEBUG_THROW_ASSERT(*stage == nullptr, "Trying to begin a new mapping for a buffer that is already being mapped!");
+            *stage = Acquire(size, false, nullptr);
+        }
+
+        (*stage)->map.srcOffset = (*stage)->isPersistentMap ? (*stage)->map.ringOffset + offset : 0ull;
+        (*stage)->map.dstOffset = offset;
+        (*stage)->map.size = size;
+        return (*stage)->BeginMap((*stage)->map.srcOffset, 0ull);
+    }
+
+    void VulkanStagingBufferCache::EndWrite(VulkanStagingBuffer** stage, VkBufferCopy* outRegion, const FenceRef& fence)
+    {
+        PK_DEBUG_THROW_ASSERT(*stage != nullptr, "Trying to end buffer map for an unmapped buffer!");
+
+        outRegion->srcOffset = (*stage)->map.srcOffset;
+        outRegion->dstOffset = (*stage)->map.dstOffset;
+        outRegion->size = (*stage)->map.size;
+
+        (*stage)->EndMap((*stage)->map.srcOffset, (*stage)->map.size);
+        (*stage)->map.ringOffset = ((*stage)->map.ringOffset + (*stage)->map.ringStride) % (uint32_t)(*stage)->size;
+
+        if (!(*stage)->isPersistentMap)
+        {
+            Release(*stage, fence);
+            *stage = nullptr;
+        }
+    }
+
     VulkanStagingBuffer* VulkanStagingBufferCache::Acquire(size_t size, bool persistent, const char* name)
     {
         VulkanStagingBuffer* buffer = nullptr;
@@ -39,6 +72,7 @@ namespace PK
             VulkanBufferCreateInfo createInfo(BufferUsage::DefaultStaging | BufferUsage::PersistentStage, size * PK_RHI_MAX_FRAMES_IN_FLIGHT);
             FixedString128 bufferName("%s.StagingBuffer", name);
             buffer = m_bufferPool.New(m_device, m_allocator, createInfo, bufferName.c_str());
+            buffer->map.ringStride = size;
         }
         else
         {
@@ -79,7 +113,7 @@ namespace PK
         buffer->pruneTick = nextPruneTick;
         buffer->fence = fence;
 
-        if (buffer->persistentmap)
+        if (buffer->isPersistentMap)
         {
             auto deleter = [](void* v)
             {

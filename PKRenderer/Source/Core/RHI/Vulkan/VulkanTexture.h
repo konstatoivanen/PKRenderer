@@ -16,11 +16,10 @@ namespace PK
             void SetSampler(const SamplerDescriptor& sampler) final;
             const TextureDescriptor& GetDescriptor() const final { return m_descriptor; }
             const char* GetDebugName() const final { return m_name.c_str(); }
+            void* GetNativeHandle() const final { return m_rawImage->image; }
 
             inline VkImageLayout GetImageLayout() const { return VulkanEnumConvert::GetImageLayout(m_descriptor.usage); }
             inline VkImageAspectFlags GetAspectFlags() const { return VulkanEnumConvert::GetFormatAspect(m_rawImage->format); }
-            inline VkFormat GetNativeFormat() const { return m_rawImage->format; }
-            inline const VulkanRawImage* GetRaw() const { return m_rawImage; }
             inline const VulkanBindHandle* GetBindHandle() { return &GetView({})->bindHandle; }
             inline const VulkanBindHandle* GetBindHandle(TextureBindMode bindMode) { return &GetView({}, bindMode)->bindHandle; }
             inline const VulkanBindHandle* GetBindHandle(const TextureViewRange& range, TextureBindMode bindMode) { return &GetView(range, bindMode)->bindHandle; }

@@ -164,6 +164,9 @@ namespace PK
     RHIAccelerationStructureRef RHI::CreateAccelerationStructure(const char* name) { return RHIDriver::Get()->CreateAccelerationStructure(name); }
     RHIShaderScope RHI::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return RHIDriver::Get()->CreateShader(base, pVariant, name); }
     RHISwapchainScope RHI::CreateSwapchain(const SwapchainDescriptor& descriptor) { return RHIDriver::Get()->CreateSwapchain(descriptor); }
+    RHIBuffer* RHI::AcquireStagingBuffer(size_t size) { return RHIDriver::Get()->AcquireStagingBuffer(size); }
+    void RHI::ReleaseStagingBuffer(RHIBuffer* buffer, const FenceRef& fence) { RHIDriver::Get()->ReleaseStagingBuffer(buffer, fence); }
+
     template<> RHITextureBindArrayRef RHI::CreateBindArray(size_t capacity) { return RHIDriver::Get()->CreateTextureBindArray(capacity); }
     template<> RHIBufferBindArrayRef RHI::CreateBindArray(size_t capacity) { return RHIDriver::Get()->CreateBufferBindArray(capacity); }
 
@@ -199,7 +202,7 @@ namespace PK
 
     bool RHI::ValidateTexture(RHITextureRef& inoutTexture, const uint3& resolution)
     {
-        PK_THROW_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
+        PK_DEBUG_THROW_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
 
         if (inoutTexture->GetResolution() == resolution)
         {
@@ -214,7 +217,7 @@ namespace PK
 
     bool RHI::ValidateTexture(RHITextureRef& inoutTexture, const uint3& resolution, const uint32_t levels)
     {
-        PK_THROW_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
+        PK_DEBUG_THROW_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
 
         if (inoutTexture->GetResolution() == resolution && inoutTexture->GetLevels() == levels)
         {
@@ -230,7 +233,7 @@ namespace PK
 
     bool RHI::ValidateTexture(RHITextureRef& inoutTexture, const uint32_t levels, const uint32_t layers)
     {
-        PK_THROW_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
+        PK_DEBUG_THROW_ASSERT(inoutTexture, "Cant partially validate a texture that hasnt been fully initialized with a descriptor!");
 
         if (inoutTexture->GetLevels() == levels && 
             inoutTexture->GetLayers() == layers)
@@ -264,7 +267,7 @@ namespace PK
 
     bool RHI::ValidateBuffer(RHIBufferRef& inoutBuffer, size_t size)
     {
-        PK_THROW_ASSERT(inoutBuffer, "Cant partially validate a buffer that hasnt been fully initialized!");
+        PK_DEBUG_THROW_ASSERT(inoutBuffer, "Cant partially validate a buffer that hasnt been fully initialized!");
 
         if (inoutBuffer->GetSize() >= size)
         {

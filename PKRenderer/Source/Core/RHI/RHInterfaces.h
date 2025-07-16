@@ -37,6 +37,7 @@ namespace PK
         virtual void SetSampler(const SamplerDescriptor& sampler) = 0;
         virtual const TextureDescriptor& GetDescriptor() const = 0;
         virtual const char* GetDebugName() const = 0;
+        virtual void* GetNativeHandle() const = 0;
 
         constexpr TextureFormat GetFormat() const { return GetDescriptor().format; }
         constexpr TextureUsage GetUsage() const { return GetDescriptor().usage; }
@@ -48,6 +49,9 @@ namespace PK
         constexpr float3 GetTexelSize() const { return 1.0f / float3(GetDescriptor().resolution); }
         constexpr uint32_t GetLevels() const { return GetDescriptor().levels; }
         constexpr uint32_t GetLayers() const { return GetDescriptor().layers; }
+
+        template<typename T>
+        constexpr T GetNativeHandle() const { return reinterpret_cast<T>(GetNativeHandle()); }
     };
 
     struct RHIBuffer : public NoCopy, public NativeInterface<RHIBuffer>
@@ -56,9 +60,12 @@ namespace PK
         virtual size_t GetSize() const = 0;
         virtual BufferUsage GetUsage() const = 0;
         virtual const char* GetDebugName() const = 0;
+        virtual void* GetNativeHandle() const = 0;
+        virtual uint64_t GetDeviceAddress() const = 0;
         
-        virtual const void* BeginRead(size_t offset, size_t size) = 0;
-        virtual void EndRead() = 0;
+        virtual void* BeginMap(size_t offset, size_t readsize) const = 0;
+        virtual void EndMap(size_t offset, size_t size) const = 0;
+
         virtual size_t SparseAllocate(const size_t size, QueueType type) = 0;
         virtual void SparseAllocateRange(const BufferIndexRange& range, QueueType type) = 0;
         virtual void SparseDeallocate(const BufferIndexRange& range) = 0;
@@ -70,15 +77,18 @@ namespace PK
         constexpr BufferIndexRange GetFullRange() const { return { 0ull, GetSize() }; }
 
         template<typename T>
-        ConstBufferView<T> BeginRead()
+        constexpr T GetNativeHandle() const { return reinterpret_cast<T>(GetNativeHandle()); }
+
+        template<typename T>
+        ConstBufferView<T> BeginRead() const
         {
-            return { reinterpret_cast<const T*>(BeginRead(0, GetSize())), GetSize() / sizeof(T) };
+            return { reinterpret_cast<const T*>(BeginMap(0, GetSize())), GetSize() / sizeof(T) };
         }
 
         template<typename T>
-        ConstBufferView<T> BeginRead(size_t offset, size_t count)
+        ConstBufferView<T> BeginRead(size_t offset, size_t count) const
         {
-            return { reinterpret_cast<const T*>(BeginRead(offset * sizeof(T), count * sizeof(T))), count };
+            return { reinterpret_cast<const T*>(BeginMap(offset * sizeof(T), count * sizeof(T))), count };
         }
     };
 
@@ -113,7 +123,10 @@ namespace PK
         virtual ShaderBindingTableInfo GetShaderBindingTableInfo() const = 0;
 
         inline bool IsGraphics() const { return (GetStageFlags() & ShaderStageFlags::StagesGraphics) != 0; }
-        inline bool HasRayTracingShaderGroup(RayTracingShaderGroup group) const { return (PK_RHI_RAYTRACING_GROUP_SHADER_STAGE[(uint32_t)group] & GetStageFlags()) != 0; }
+        inline bool HasRayTracingShaderGroup(RayTracingShaderGroup group) const 
+        {
+            return (PK_RHI_RAYTRACING_GROUP_SHADER_STAGE[(uint32_t)group] & GetStageFlags()) != 0; 
+        }
     };
 
     struct RHICommandBuffer : public NoCopy, public NativeInterface<RHICommandBuffer>
@@ -154,10 +167,12 @@ namespace PK
         virtual void Clear(RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value) = 0;
 
         virtual void UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, void* data) = 0;
+        virtual void CopyBuffer(RHIBuffer* dst, RHIBuffer* src, size_t srcOffset, size_t dstOffset, size_t size) = 0;
         virtual void* BeginBufferWrite(RHIBuffer* buffer, size_t offset, size_t size) = 0;
         virtual void EndBufferWrite(RHIBuffer* buffer) = 0;
 
-        virtual void UploadTexture(RHITexture* texture, const void* data, size_t size, TextureUploadRange* ranges, uint32_t rangeCount) = 0;
+        virtual void CopyToTexture(RHITexture* texture, RHIBuffer* buffer, TextureDataRegion* regions, uint32_t regionCount) = 0;
+        virtual void CopyToTexture(RHITexture* texture, const void* data, size_t size, TextureDataRegion* regions, uint32_t regionCount) = 0;
 
         virtual void BeginDebugScope(const char* name, const color& color) = 0;
         virtual void EndDebugScope() = 0;
@@ -197,6 +212,9 @@ namespace PK
         virtual RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name) = 0;
         virtual RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) = 0;
         virtual RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor) = 0;
+
+        virtual RHIBuffer* AcquireStagingBuffer(size_t size) = 0;
+        virtual void ReleaseStagingBuffer(RHIBuffer* buffer, const FenceRef& fence) = 0;
 
         virtual void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) = 0;
         virtual void SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) = 0;

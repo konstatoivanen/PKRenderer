@@ -312,19 +312,16 @@ namespace PK
         VulkanRawBuffer(VkDevice device, VmaAllocator allocator, const VulkanBufferCreateInfo& createInfo, const char* name);
         ~VulkanRawBuffer();
 
-        void Invalidate(size_t offset, size_t size) const;
-        void* BeginMap(size_t offset) const;
+        void* BeginMap(size_t offset, size_t readsize) const;
         void EndMap(size_t offset, size_t size) const;
-        inline void SetData(const void* data, size_t size) const { memcpy(BeginMap(0ull), data, size); EndMap(0ull, size); }
 
-        const bool persistentmap;
+        const bool isPersistentMap;
         const VmaAllocator allocator;
         const VkBufferUsageFlags usage;
         const VkDeviceSize size;
         VkDeviceAddress deviceAddress;
         VkBuffer buffer;
         VmaAllocation memory;
-        VmaAllocationInfo allocationInfo{};
     };
 
     struct VulkanRawImage : public VersionedObject

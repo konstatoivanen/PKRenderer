@@ -64,6 +64,9 @@ namespace PK
         RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) final;
         RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor) final;
 
+        virtual RHIBuffer* AcquireStagingBuffer(size_t size) final;
+        virtual void ReleaseStagingBuffer(RHIBuffer* buffer, const FenceRef& fence) final;
+
         void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) final;
         void SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) final;
         void SetBufferArray(NameID name, RHIBindArray<RHIBuffer>* bufferArray) final;

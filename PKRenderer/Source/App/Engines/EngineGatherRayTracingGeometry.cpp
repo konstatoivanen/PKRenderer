@@ -16,7 +16,7 @@ namespace PK::App
 
     void EngineGatherRayTracingGeometry::Step(RequestEntityCullRayTracingGeometry* request)
     {
-        PK_THROW_ASSERT(request != nullptr && request->structure, "Invalid token supplied!");
+        PK_DEBUG_THROW_ASSERT(request != nullptr && request->structure, "Invalid token supplied!");
 
         size_t instanceCount = 0u;
 

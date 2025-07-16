@@ -48,10 +48,12 @@ namespace PK
         void Clear(RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value) final;
 
         void UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, void* data) final;
+        void CopyBuffer(RHIBuffer* dst, RHIBuffer* src, size_t srcOffset, size_t dstOffset, size_t size) final;
         void* BeginBufferWrite(RHIBuffer* buffer, size_t offset, size_t size) final;
         void EndBufferWrite(RHIBuffer* buffer) final;
 
-        void UploadTexture(RHITexture* texture, const void* data, size_t size, TextureUploadRange* ranges, uint32_t rangeCount) final;
+        void CopyToTexture(RHITexture* texture, RHIBuffer* buffer, TextureDataRegion* regions, uint32_t regionCount) final;
+        void CopyToTexture(RHITexture* texture, const void* data, size_t size, TextureDataRegion* regions, uint32_t regionCount) final;
 
         void BeginDebugScope(const char* name, const color& color) final;
         void EndDebugScope() final;

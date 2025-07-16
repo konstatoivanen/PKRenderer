@@ -48,7 +48,7 @@ namespace PK::App
                 m_accumulatedPixels[i] += pxView[i];
             }
 
-            m_copyBuffer->EndRead();
+            m_copyBuffer->EndMap(0ull, 0ull);
         }
 
         m_captureCounter--;

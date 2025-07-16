@@ -291,11 +291,11 @@ namespace PK
             struct Depth { float depth; uint32_t stencil; };
         public:
 
-        TextureClearValue() : float32(PK_FLOAT4_ZERO) {}
-        TextureClearValue(const float4& v) : float32(v) {}
-        TextureClearValue(const uint4& v) : uint32(v) {}
-        TextureClearValue(const int4& v) : int32(v) {}
-        TextureClearValue(const float depth, uint32_t stencil) : depth({ depth, stencil }) {}
+        constexpr TextureClearValue() : float32(PK_FLOAT4_ZERO) {}
+        constexpr TextureClearValue(const float4& v) : float32(v) {}
+        constexpr TextureClearValue(const uint4& v) : uint32(v) {}
+        constexpr TextureClearValue(const int4& v) : int32(v) {}
+        constexpr TextureClearValue(const float depth, uint32_t stencil) : depth({ depth, stencil }) {}
 
         union
         {
@@ -352,20 +352,14 @@ namespace PK
         }
     };
 
-    struct TextureUploadRange
+    struct TextureDataRegion
     {
-        size_t bufferOffset;
-        uint32_t level;
-        uint32_t layer;
-        uint32_t layers;
-        uint3 offset;
-        uint3 extent;
-    };
-
-    struct IDeferredBufferData
-    {
-        virtual size_t* ReadSize() = 0;
-        virtual void* ReadData() = 0;
+        size_t bufferOffset = 0ull;
+        uint32_t level = 0ull;
+        uint32_t layer = 0ull;
+        uint32_t layers = 0ull;
+        uint3 offset = PK_UINT3_ZERO;
+        uint3 extent = PK_UINT3_ZERO;
     };
 
     struct TextureViewRange
@@ -453,7 +447,7 @@ namespace PK
         StoreOp storeOp = StoreOp::None;
         TextureClearValue clearValue{};
 
-        RenderTargetBinding(RHITexture* target,
+        constexpr RenderTargetBinding(RHITexture* target,
             const TextureViewRange& targetRange,
             RHITexture* resolve,
             const TextureViewRange& resolveRange,
@@ -469,12 +463,12 @@ namespace PK
             clearValue(clearValue)
         {}
 
-        RenderTargetBinding(RHITexture* target, RHITexture* resolve, LoadOp loadOp, StoreOp storeOp, const TextureClearValue& clearValue) : RenderTargetBinding(target, {}, resolve, {}, loadOp, storeOp, clearValue) {}
-        RenderTargetBinding(RHITexture* target, RHITexture* resolve, LoadOp loadOp, StoreOp storeOp) : RenderTargetBinding(target, resolve, loadOp, storeOp, {}) {}
-        RenderTargetBinding(RHITexture* target, const TextureViewRange& targetRange, LoadOp loadOp, StoreOp storeOp, const TextureClearValue& clearValue) : RenderTargetBinding(target, targetRange, nullptr, {}, loadOp, storeOp, clearValue) {}
-        RenderTargetBinding(RHITexture* target, LoadOp loadOp, StoreOp storeOp, const TextureClearValue& clearValue) : RenderTargetBinding(target, nullptr, loadOp, storeOp, clearValue) {}
-        RenderTargetBinding(RHITexture* target, LoadOp loadOp, StoreOp storeOp) : RenderTargetBinding(target, nullptr, loadOp, storeOp) {}
-        RenderTargetBinding() {}
+        constexpr RenderTargetBinding(RHITexture* target, RHITexture* resolve, LoadOp loadOp, StoreOp storeOp, const TextureClearValue& clearValue) : RenderTargetBinding(target, {}, resolve, {}, loadOp, storeOp, clearValue) {}
+        constexpr RenderTargetBinding(RHITexture* target, RHITexture* resolve, LoadOp loadOp, StoreOp storeOp) : RenderTargetBinding(target, resolve, loadOp, storeOp, {}) {}
+        constexpr RenderTargetBinding(RHITexture* target, const TextureViewRange& targetRange, LoadOp loadOp, StoreOp storeOp, const TextureClearValue& clearValue) : RenderTargetBinding(target, targetRange, nullptr, {}, loadOp, storeOp, clearValue) {}
+        constexpr RenderTargetBinding(RHITexture* target, LoadOp loadOp, StoreOp storeOp, const TextureClearValue& clearValue) : RenderTargetBinding(target, nullptr, loadOp, storeOp, clearValue) {}
+        constexpr RenderTargetBinding(RHITexture* target, LoadOp loadOp, StoreOp storeOp) : RenderTargetBinding(target, nullptr, loadOp, storeOp) {}
+        constexpr RenderTargetBinding() {}
     };
 
     struct AccelerationStructureGeometryInfo

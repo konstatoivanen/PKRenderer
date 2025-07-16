@@ -18,13 +18,15 @@ namespace PK
             m_usage = m_usage & ~((uint32_t)BufferUsage::PersistentStage);
         }
 
-        auto bufferCreateInfo = VulkanBufferCreateInfo(m_usage, size, &m_driver->queues->GetSelectedFamilies());
+        // Dont persistent map the backing buffer.
+        auto bufferUsage = m_usage & ~((uint32_t)BufferUsage::PersistentStage);
+        auto bufferCreateInfo = VulkanBufferCreateInfo(bufferUsage, size, &m_driver->queues->GetSelectedFamilies());
         m_rawBuffer = m_driver->CreatePooled<VulkanRawBuffer>(m_driver->device, m_driver->allocator, bufferCreateInfo, m_name.c_str());
 
+        // Acquire persistent staging buffer
         if ((m_usage & BufferUsage::PersistentStage) != 0)
         {
-            m_mapRange.ringOffset = 0ull;
-            m_mappedBuffer = m_driver->stagingBufferCache->Acquire(size, true, m_name.c_str());
+            m_stage = m_driver->stagingBufferCache->Acquire(size, true, m_name.c_str());
         }
 
         if ((m_usage & BufferUsage::Sparse) != 0)
@@ -33,8 +35,12 @@ namespace PK
             m_pageTable = new VulkanSparsePageTable(m_driver, m_rawBuffer->buffer, bufferCreateInfo.allocation.usage, pageTableName.c_str());
         }
 
-        GetBindHandle({ 0, GetSize() });
-        m_defaultView = m_firstView;
+        // host local buffers cannot be bound and dont need tracking.
+        if ((m_usage & BufferUsage::TypeBits) != BufferUsage::CPUOnly)
+        {
+            GetBindHandle({ 0, GetSize() });
+            m_defaultView = m_firstView;
+        }
     }
 
     VulkanBuffer::~VulkanBuffer()
@@ -46,75 +52,71 @@ namespace PK
             m_driver->DisposePooled(view, fence);
         }
 
-        if (m_mappedBuffer != nullptr && !m_mappedBuffer->persistentmap)
+        if (m_stage != nullptr && !m_stage->isPersistentMap)
         {
-            m_mappedBuffer->EndMap(0, m_mapRange.region.size);
+            m_stage->EndMap(0ull, 0ull);
         }
+
+        m_driver->stagingBufferCache->Release(m_stage, fence);
+        m_stage = nullptr;
 
         m_driver->disposer->Dispose(m_pageTable, fence);
         m_driver->DisposePooled(m_rawBuffer, fence);
-        m_driver->stagingBufferCache->Release(m_mappedBuffer, fence);
         m_pageTable = nullptr;
         m_rawBuffer = nullptr;
-        m_mappedBuffer = nullptr;
         m_firstView = nullptr;
         m_defaultView = nullptr;
     }
 
-    void* VulkanBuffer::BeginWrite(size_t offset, size_t size)
+
+
+    void* VulkanBuffer::BeginMap(size_t offset, size_t readsize) const
     {
-        PK_THROW_ASSERT((offset + size) <= GetSize(), "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", offset + size, GetSize());
-
-        m_mapRange.region.dstOffset = offset;
-        m_mapRange.region.size = size;
-
-        if ((m_usage & BufferUsage::PersistentStage) == 0)
-        {
-            PK_THROW_ASSERT(m_mappedBuffer == nullptr, "Trying to begin a new mapping for a buffer that is already being mapped!");
-            m_mappedBuffer = m_driver->stagingBufferCache->Acquire(size, false, nullptr);
-            m_mapRange.region.srcOffset = 0ull;
-            return m_mappedBuffer->BeginMap(0ull);
-        }
-
-        // Local persistent stage
-        m_mapRange.region.srcOffset = m_mapRange.ringOffset + offset;
-        return m_mappedBuffer->BeginMap(m_mapRange.region.srcOffset);
+        PK_DEBUG_THROW_ASSERT((offset + readsize) <= GetSize(), "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", offset + readsize, GetSize());
+        PK_DEBUG_THROW_ASSERT((m_usage & BufferUsage::TypeBits) != BufferUsage::GPUOnly, "Cant map a gpu only buffer");
+        return m_rawBuffer->BeginMap(offset, readsize);
     }
 
-    void VulkanBuffer::EndWrite(VkBuffer* src, VkBuffer* dst, VkBufferCopy* region, const FenceRef& fence)
+    void VulkanBuffer::EndMap(size_t offset, size_t size) const
     {
-        PK_THROW_ASSERT(m_mappedBuffer != nullptr, "Trying to end buffer map for an unmapped buffer!");
-
-        m_mappedBuffer->EndMap(m_mapRange.region.srcOffset, m_mapRange.region.size);
-        m_mapRange.ringOffset = (m_mapRange.ringOffset + m_rawBuffer->size) % m_mappedBuffer->size;
-
-        *src = m_mappedBuffer->buffer;
-        *dst = m_rawBuffer->buffer;
-        *region = m_mapRange.region;
-
-        if ((m_usage & BufferUsage::PersistentStage) == 0)
-        {
-            m_driver->stagingBufferCache->Release(m_mappedBuffer, fence);
-            m_mappedBuffer = nullptr;
-        }
+        m_rawBuffer->EndMap(offset, size);
     }
 
-    const void* VulkanBuffer::BeginRead(size_t offset, size_t size)
+    size_t VulkanBuffer::SparseAllocate(const size_t size, QueueType type)
     {
-        PK_THROW_ASSERT((offset + size) <= GetSize(), "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", offset + size, GetSize());
-        m_rawBuffer->Invalidate(offset, size);
-        return m_rawBuffer->BeginMap(offset);
+        PK_DEBUG_THROW_ASSERT(m_pageTable, "Non sparse buffer cannot be allocated from!");
+        return m_pageTable->Allocate(size, type);
     }
 
-    void VulkanBuffer::EndRead()
+    void VulkanBuffer::SparseAllocateRange(const BufferIndexRange& range, QueueType type)
     {
-        m_rawBuffer->EndMap(0ull, 0ull);
+        PK_DEBUG_THROW_ASSERT(m_pageTable, "Non sparse buffer cannot be allocated from!");
+        m_pageTable->AllocateRange(range, type);
     }
 
+    void VulkanBuffer::SparseDeallocate(const BufferIndexRange& range)
+    {
+        PK_DEBUG_THROW_ASSERT(m_pageTable, "Non sparse buffer cannot be deallocated from!");
+        m_pageTable->DeallocateRange(range);
+    }
+
+
+    void* VulkanBuffer::BeginStagedWrite(size_t offset, size_t size)
+    {
+        PK_DEBUG_THROW_ASSERT((offset + size) <= GetSize(), "Map buffer range exceeds buffer bounds, map size: %i, buffer size: %i", offset + size, GetSize());
+        return m_driver->stagingBufferCache->BeginWrite(&m_stage, offset, size);
+    }
+
+    void VulkanBuffer::EndStagedWrite(RHIBuffer** dst, RHIBuffer** src, VkBufferCopy* region, const FenceRef& fence)
+    {
+        *src = m_stage;
+        *dst = this;
+        return m_driver->stagingBufferCache->EndWrite(&m_stage, region, fence);
+    }
 
     const VulkanBindHandle* VulkanBuffer::GetBindHandle(const BufferIndexRange& range)
     {
-        PK_THROW_ASSERT(range.offset + range.count <= GetSize(), "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
+        PK_DEBUG_THROW_ASSERT(range.offset + range.count <= GetSize(), "Trying to get a buffer bind handle for a range that it outside of buffer bounds");
 
         if (m_firstView.FindAndSwapFirst(range))
         {
@@ -128,24 +130,5 @@ namespace PK
         view->isConcurrent = IsConcurrent();
         m_firstView.Insert(view, range);
         return m_firstView;
-    }
-
-
-    size_t VulkanBuffer::SparseAllocate(const size_t size, QueueType type)
-    {
-        PK_THROW_ASSERT(m_pageTable, "Non sparse buffer cannot be allocated from!");
-        return m_pageTable->Allocate(size, type);
-    }
-
-    void VulkanBuffer::SparseAllocateRange(const BufferIndexRange& range, QueueType type)
-    {
-        PK_THROW_ASSERT(m_pageTable, "Non sparse buffer cannot be allocated from!");
-        m_pageTable->AllocateRange(range, type);
-    }
-
-    void VulkanBuffer::SparseDeallocate(const BufferIndexRange& range)
-    {
-        PK_THROW_ASSERT(m_pageTable, "Non sparse buffer cannot be deallocated from!");
-        m_pageTable->DeallocateRange(range);
     }
 }

@@ -6,6 +6,7 @@ namespace PK
     // Wrapper types & utilities
     struct ShaderAsset;
     struct ConstantBuffer;
+    struct StorageBuffer;
     struct CommandBufferExt;
     struct Material;
     struct Mesh;
@@ -22,6 +23,7 @@ namespace PK
     enum class TextAlign;
 
     typedef Ref<ConstantBuffer> ConstantBufferRef;
+    typedef Ref<StorageBuffer> StorageBufferRef;
     typedef Ref<MeshStaticAsset> MeshStaticAssetRef;
     typedef Ref<TextureAsset> TextureAssetRef;
     typedef Ref<Font> FontRef;

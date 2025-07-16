@@ -39,7 +39,7 @@ namespace PK
     struct DrawIndirectCommand;
     struct BuiltInResources;
     struct BufferIndexRange;
-    struct TextureUploadRange;
+    struct TextureDataRegion;
     struct TextureViewRange;
     struct MultisamplingParameters;
     struct DepthStencilParameters;
@@ -141,6 +141,9 @@ namespace PK
         RHIAccelerationStructureRef CreateAccelerationStructure(const char* name);
         RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name);
         RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor);
+
+        RHIBuffer* AcquireStagingBuffer(size_t size);
+        void ReleaseStagingBuffer(RHIBuffer* buffer, const FenceRef& fence);
 
         template<typename T>
         RHIBindArrayRef<T> CreateBindArray(size_t capacity);

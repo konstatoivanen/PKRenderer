@@ -282,7 +282,7 @@ namespace PK
         {
             auto handle = handles[i];
 
-            PK_THROW_ASSERT(handle != nullptr, "Passing null vertex buffer is not allowed!");
+            PK_DEBUG_THROW_ASSERT(handle != nullptr, "Passing null vertex buffer is not allowed!");
 
             if (handle != m_vertexBuffers[i])
             {
@@ -299,7 +299,7 @@ namespace PK
 
     void VulkanRenderState::SetVertexStreams(const VertexStreamElement* elements, uint32_t count)
     {
-        PK_THROW_ASSERT(count <= PK_RHI_MAX_VERTEX_ATTRIBUTES, "Tried to bind more vertex attributes than currently supported!");
+        PK_DEBUG_THROW_ASSERT(count <= PK_RHI_MAX_VERTEX_ATTRIBUTES, "Tried to bind more vertex attributes than currently supported!");
 
         if (memcmp(m_vertexStreamLayout, elements, sizeof(VertexStreamElement) * count) != 0)
         {
@@ -773,7 +773,7 @@ namespace PK
 
     PKRenderStateDirtyFlags VulkanRenderState::ValidatePipeline(const FenceRef& fence)
     {
-        PK_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
+        PK_DEBUG_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
         ValidateVertexBuffers();
         ValidateDescriptorSets(fence);

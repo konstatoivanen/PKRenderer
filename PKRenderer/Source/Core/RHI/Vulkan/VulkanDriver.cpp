@@ -256,6 +256,9 @@ namespace PK
     RHIShaderScope VulkanDriver::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return CreateUnique<VulkanShader>(base, pVariant, name); }
     RHISwapchainScope VulkanDriver::CreateSwapchain(const SwapchainDescriptor& descriptor) { return CreateUnique<VulkanSwapchain>(this, descriptor); }
 
+    RHIBuffer* VulkanDriver::AcquireStagingBuffer(size_t size) { return stagingBufferCache->Acquire(size, false, nullptr); }
+    void VulkanDriver::ReleaseStagingBuffer(RHIBuffer* buffer, const FenceRef& fence) { stagingBufferCache->Release(buffer->GetNative<VulkanStagingBuffer>(), fence); }
+
     void VulkanDriver::SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) { globalResources.Set(name, buffer->GetNative<VulkanBuffer>()->GetBindHandle(range)); }
     void VulkanDriver::SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) { globalResources.Set(name, texture->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::SampledTexture)); }
     void VulkanDriver::SetBufferArray(NameID name, RHIBindArray<RHIBuffer>* bufferArray) { globalResources.Set(name, bufferArray->GetNative<VulkanBindArray>()); }

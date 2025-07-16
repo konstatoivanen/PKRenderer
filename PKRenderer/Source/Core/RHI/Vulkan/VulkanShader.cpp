@@ -165,11 +165,11 @@ namespace PK
             }
         }
 
-        const uint32_t sbtSize = info.totalTableSize;
-        const uint32_t maxSize = sizeof(info.handleData);
+        [[maybe_unused]] const uint32_t sbtSize = info.totalTableSize;
+        [[maybe_unused]] const uint32_t maxSize = sizeof(info.handleData);
 
-        PK_THROW_ASSERT(sbtSize, "SBT has no data!");
-        PK_THROW_ASSERT(sbtSize <= maxSize, "SBT is too big to fit to static memory");
+        PK_DEBUG_THROW_ASSERT(sbtSize, "SBT has no data!");
+        PK_DEBUG_THROW_ASSERT(sbtSize <= maxSize, "SBT is too big to fit to static memory");
 
         auto pipeline = driver->pipelineCache->GetRayTracingPipeline(this);
 
