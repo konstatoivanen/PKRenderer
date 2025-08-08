@@ -5,6 +5,7 @@
 #include "Core/Utilities/BufferView.h"
 #include "Core/Utilities/Ref.h"
 #include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/FastTypeIndex.h"
 #include "Core/Utilities/MemoryBlock.h"
 #include "Core/ECS/EGID.h"
 #include "Core/ECS/IEntityView.h"
@@ -44,30 +45,19 @@ namespace PK
         FastMap<uint32_t, uint64_t, Hash::TCastHash<uint32_t>> indices;
         MemoryBlock<uint64_t> buffer;
         uint64_t head = 0ull;
-    };
 
-    struct ViewCollectionKey
-    {
-        std::type_index type;
-        uint32_t group;
-
-        inline bool operator == (const ViewCollectionKey& r) const noexcept
+        template<typename TView>
+        static uint64_t MakeKey(uint32_t group)
         {
-            return type == r.type && group == r.group;
-        }
-    };
-
-    struct ViewCollectionKeyHash 
-    {
-        std::size_t operator()(const ViewCollectionKey& k) const
-        {
-            return k.type.hash_code() ^ (k.group * 1099511628211ULL);
+            return Hash::InterlaceHash32x2(group, pk_base_type_index<TView>());
         }
     };
 
     //@TODO support removals
     struct EntityDatabase
     {
+        EntityDatabase() : m_implementerBuckets(32u, 4u) {}
+
         constexpr uint32_t ReserveEntityId() { return ++m_idCounter; }
         inline EGID ReserveEntityId(uint32_t groupId) { return EGID(ReserveEntityId(), groupId); }
 
@@ -76,9 +66,9 @@ namespace PK
         {
             static_assert(std::is_base_of<IEntityImplementer, T>::value, "Template argument type does not derive from IImplementer!");
 
-            auto type = std::type_index(typeid(T));
-            auto elementsPerBucket = PK_ECS_BUCKET_SIZE / sizeof(T);
-            auto& container = m_implementerBuckets[type];
+            const auto elementsPerBucket = PK_ECS_BUCKET_SIZE / sizeof(T);
+            const auto containerIdx = m_implementerBuckets.AddKey(pk_base_type_index<T>());
+            auto& container = m_implementerBuckets[containerIdx].value;
 
             if (!container.bucketHead || container.bucketHead->count >= elementsPerBucket)
             {
@@ -113,7 +103,7 @@ namespace PK
                 throw std::runtime_error("Trying to acquire resources for an invalid egid!");
             }
 
-            auto& views = m_entityViews[{ std::type_index(typeid(TView)), egid.groupID() }];
+            auto& views = m_entityViews[EntityViewsCollection::MakeKey<TView>(egid.groupID())];
             auto viewSize = sizeof(TView) / sizeof(uint64_t);
             auto index = 0u;
             auto entityId = egid.entityID();
@@ -153,7 +143,7 @@ namespace PK
                 throw std::runtime_error("Trying to acquire resources for an invalid egid!");
             }
 
-            auto& views = m_entityViews[{ std::type_index(typeid(TView)), group }];
+            auto& views = m_entityViews[EntityViewsCollection::MakeKey<TView>(group)];
             auto count = views.head / (sizeof(TView) / sizeof(uint64_t));
             return { reinterpret_cast<TView*>(views.buffer.GetData()), count };
         }
@@ -168,14 +158,14 @@ namespace PK
                 throw std::runtime_error("Trying to acquire resources for an invalid egid!");
             }
 
-            auto& views = m_entityViews.at({ std::type_index(typeid(TView)), egid.groupID() });
+            auto& views = m_entityViews.at(EntityViewsCollection::MakeKey<TView>(egid.groupID()));
             auto offset = views.indices.GetValuePtr(egid.entityID());
             return offset ? reinterpret_cast<TView*>(views.buffer.GetData() + *offset) : nullptr;
         }
 
     private:
-        std::unordered_map<ViewCollectionKey, EntityViewsCollection, ViewCollectionKeyHash> m_entityViews;
-        std::unordered_map<std::type_index, ImplementerContainer> m_implementerBuckets;
+        std::unordered_map<uint64_t, EntityViewsCollection, Hash::TCastHash<uint64_t>> m_entityViews;
+        FastMap<uint32_t, ImplementerContainer, Hash::TCastHash<uint32_t>> m_implementerBuckets;
         uint32_t m_idCounter = 0;
     };
 }

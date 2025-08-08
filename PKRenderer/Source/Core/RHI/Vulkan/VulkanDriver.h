@@ -123,7 +123,6 @@ namespace PK
         VulkanPhysicalDeviceProperties physicalDeviceProperties;
         uint32_t apiVersion;
 
-        // @TODO implement "optional" or something the like to inline this memory.
         mutable FixedUnique<VulkanQueueSet> queues;
         mutable FixedUnique<VulkanStagingBufferCache> stagingBufferCache;
         mutable FixedUnique<VulkanDescriptorCache> descriptorCache;
