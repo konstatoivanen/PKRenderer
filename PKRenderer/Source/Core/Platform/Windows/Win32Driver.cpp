@@ -396,7 +396,7 @@ namespace PK
         }
 
         MSG msg;
-        while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
+        while (::PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
         {
             if (msg.message == WM_QUIT)
             {
@@ -410,8 +410,8 @@ namespace PK
             }
             else
             {
-                TranslateMessage(&msg);
-                DispatchMessageW(&msg);
+                ::TranslateMessage(&msg);
+                ::DispatchMessageW(&msg);
             }
         }
 

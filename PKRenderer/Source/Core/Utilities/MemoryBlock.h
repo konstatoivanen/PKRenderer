@@ -28,7 +28,8 @@ namespace PK
         public:
             MemoryBlock(size_t count) { Validate(count); }
             MemoryBlock() {}
-            
+            MemoryBlock(MemoryBlock&& other) noexcept { Move(std::forward<MemoryBlock>(other)); }
+
             ~MemoryBlock()
             {
                 if (m_data.memory != nullptr && !IsSmallBuffer(m_count))
@@ -106,10 +107,26 @@ namespace PK
             operator T* () { return GetData(); }
             operator T const* () const { return GetData(); }
 
+            MemoryBlock& operator=(MemoryBlock&& other) noexcept { Move(std::forward<MemoryBlock>(other)); return *this; }
+
             constexpr size_t GetCount() const { return m_count; }
             constexpr size_t GetSize() const { return m_count * sizeof(T); }
 
         private:
+            void Move(MemoryBlock&& other)
+            {
+                if (this != &other)
+                {
+                    if (m_data.memory != nullptr && !IsSmallBuffer(m_count))
+                    {
+                        free(m_data.memory);
+                    }
+
+                    m_data = std::exchange(other.m_data, { nullptr });
+                    m_count = std::exchange(other.m_count, 0ull);
+                }
+            }
+
             Data m_data = { nullptr };
             size_t m_count = 0ull;
     };

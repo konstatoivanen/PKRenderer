@@ -1,7 +1,4 @@
 #pragma once
-#include <vector>
-#include <unordered_map>
-#include <typeindex>
 #include "Core/Utilities/BufferView.h"
 #include "Core/Utilities/Ref.h"
 #include "Core/Utilities/FastMap.h"
@@ -15,10 +12,9 @@ namespace PK
 {
     enum class ENTITY_GROUPS
     {
-        INVALID = 0,
-        INACTIVE = 1,
-        ACTIVE = 2,
-        FREE = 3
+        INACTIVE = 0,
+        ACTIVE = 1,
+        FREE = 2
     };
 
     constexpr static const uint32_t PK_ECS_BUCKET_SIZE = 32000;
@@ -46,17 +42,26 @@ namespace PK
         MemoryBlock<uint64_t> buffer;
         uint64_t head = 0ull;
 
-        template<typename TView>
-        static uint64_t MakeKey(uint32_t group)
+        EntityViewsCollection(EntityViewsCollection&& other) noexcept : 
+            indices(std::move(other.indices)), 
+            buffer(std::move(other.buffer)), 
+            head(std::exchange(other.head, 0ull))
         {
-            return Hash::InterlaceHash32x2(group, pk_base_type_index<TView>());
+        }
+
+        EntityViewsCollection& operator=(EntityViewsCollection&& other) noexcept
+        {
+            indices = std::move(other.indices);
+            buffer = std::move(other.buffer);
+            head = std::exchange(other.head, 0ull);
+            return *this;
         }
     };
 
     //@TODO support removals
     struct EntityDatabase
     {
-        EntityDatabase() : m_implementerBuckets(32u, 4u) {}
+        EntityDatabase() : m_entityViews(32u, 4u), m_implementerBuckets(32u, 4u) {}
 
         constexpr uint32_t ReserveEntityId() { return ++m_idCounter; }
         inline EGID ReserveEntityId(uint32_t groupId) { return EGID(ReserveEntityId(), groupId); }
@@ -103,7 +108,8 @@ namespace PK
                 throw std::runtime_error("Trying to acquire resources for an invalid egid!");
             }
 
-            auto& views = m_entityViews[EntityViewsCollection::MakeKey<TView>(egid.groupID())];
+            const auto viewIdx = m_entityViews.AddKey(MakeViewKey<TView>(egid.groupID()));
+            auto& views = m_entityViews[viewIdx].value;
             auto viewSize = sizeof(TView) / sizeof(uint64_t);
             auto index = 0u;
             auto entityId = egid.entityID();
@@ -137,15 +143,10 @@ namespace PK
         const BufferView<TView> Query(const uint32_t group)
         {
             static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
-
-            if (!group)
-            {
-                throw std::runtime_error("Trying to acquire resources for an invalid egid!");
-            }
-
-            auto& views = m_entityViews[EntityViewsCollection::MakeKey<TView>(group)];
-            auto count = views.head / (sizeof(TView) / sizeof(uint64_t));
-            return { reinterpret_cast<TView*>(views.buffer.GetData()), count };
+            auto views = m_entityViews.GetValuePtr(MakeViewKey<TView>(group));
+            auto data = views ? reinterpret_cast<TView*>(views->buffer.GetData()) : nullptr;
+            auto count = views ? views->head / (sizeof(TView) / sizeof(uint64_t)) : 0ull;
+            return { data, count };
         }
 
         template<typename TView>
@@ -158,15 +159,28 @@ namespace PK
                 throw std::runtime_error("Trying to acquire resources for an invalid egid!");
             }
 
-            auto& views = m_entityViews.at(EntityViewsCollection::MakeKey<TView>(egid.groupID()));
-            auto offset = views.indices.GetValuePtr(egid.entityID());
-            return offset ? reinterpret_cast<TView*>(views.buffer.GetData() + *offset) : nullptr;
+            auto views = m_entityViews.GetValuePtr(MakeViewKey<TView>(egid.groupID()));
+
+            if (!views)
+            {
+                return nullptr;
+            }
+
+            auto offset = views->indices.GetValuePtr(egid.entityID());
+            return offset ? reinterpret_cast<TView*>(views->buffer.GetData() + *offset) : nullptr;
         }
 
     private:
-        std::unordered_map<uint64_t, EntityViewsCollection, Hash::TCastHash<uint64_t>> m_entityViews;
+        template<typename TView>
+        inline static uint64_t MakeViewKey(uint32_t group)
+        {
+            static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
+            return Hash::InterlaceHash32x2(group, pk_base_type_index<TView>());
+        }
+
+        FastMap<uint64_t, EntityViewsCollection, Hash::TCastHash<uint64_t>> m_entityViews;
         FastMap<uint32_t, ImplementerContainer, Hash::TCastHash<uint32_t>> m_implementerBuckets;
-        uint32_t m_idCounter = 0;
+        uint32_t m_idCounter = 0u;
     };
 }
 

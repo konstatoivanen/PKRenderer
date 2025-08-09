@@ -49,12 +49,12 @@ namespace PK
 
         _TValue* m_values = nullptr;
         _TNode* m_nodes = nullptr;
-        uint32_t m_bucketCountFactor = 1u;
-        uint32_t m_bucketCount = 1u;
+        uint32_t m_bucketStride = 0u;
+        uint32_t m_bucketCount = 0u;
         uint32_t m_collisions = 0u;
         uint32_t m_capacity = 0u;
         uint32_t m_count = 0u;
-        
+
         ~IFastCollectionAllocatorDynamic()
         {
             if (m_buffer)
@@ -65,9 +65,32 @@ namespace PK
             }
         }
 
-        uint32_t GetBucketCount() const { return m_bucketCount; }
+        uint32_t GetBucketCount() const { return m_bucketCount + 1u; }
         const _TIndex* GetBuckets() const { return m_buffer ? m_buckets : &m_bucketsInline; }
         _TIndex* GetBuckets() { return m_buffer ? m_buckets : &m_bucketsInline; }
+
+        void Move(IFastCollectionAllocatorDynamic&& other)
+        {
+            if (this != &other)
+            {
+                if (m_buffer)
+                {
+                    ContainerHelpers::ClearArray(m_values, m_count);
+                    ContainerHelpers::ClearArray(m_nodes, m_count);
+                    free(m_buffer);
+                }
+
+                m_buffer = std::exchange(other.m_buffer, nullptr);
+                m_buckets = std::exchange(other.m_buckets, nullptr);
+                m_values = std::exchange(other.m_values, nullptr);
+                m_nodes = std::exchange(other.m_nodes, nullptr);
+                m_bucketStride = std::exchange(other.m_bucketStride, 0u);
+                m_bucketCount = std::exchange(other.m_bucketCount, 0u);
+                m_collisions = std::exchange(other.m_collisions, 0u);
+                m_capacity = std::exchange(other.m_capacity, 0u);
+                m_count = std::exchange(other.m_count, 0u);
+            }
+        }
 
     public:
         bool Reserve(uint32_t count)
@@ -75,11 +98,12 @@ namespace PK
             if (m_capacity < count)
             {
                 m_capacity = m_capacity == 0 ? count : Hash::ExpandPrime(count);
-                m_bucketCount = m_bucketCountFactor * m_capacity;
+                // Use offset 1 for bucket count & stride to have valid zeroed memory state without construction.
+                m_bucketCount = (m_bucketStride + 1u) * m_capacity - 1u;
                 
                 size_t size = 0ull;
                 const auto offsetBuckets = ContainerHelpers::AlignSize<_TIndex>(&size);
-                size += sizeof(_TIndex) * m_bucketCount;
+                size += sizeof(_TIndex) * GetBucketCount();
                 const auto offsetNode = ContainerHelpers::AlignSize<_TNode>(&size);
                 size += sizeof(_TNode) * m_capacity;
                 const auto offsetValue = ContainerHelpers::AlignSize<_TValue>(&size);
@@ -107,14 +131,14 @@ namespace PK
             return false;
         }
 
-        bool Reserve(uint32_t count, uint32_t bucketCountFactor)
+        bool Reserve(uint32_t count, uint32_t bucketStride)
         {
-            m_bucketCountFactor = bucketCountFactor > 0 ? bucketCountFactor : 1ull;
+            m_bucketStride = bucketStride > 0ull ? (bucketStride - 1ull) : 0ull;
             return Reserve(count);
         }
     };
 
-    template<typename TValue, typename TNode, size_t capacity, size_t bucket_count_factor>
+    template<typename TValue, typename TNode, size_t capacity, size_t bucket_stride>
     struct IFastCollectionAllocatorFixed : public NoCopy
     {
     protected:
@@ -123,15 +147,24 @@ namespace PK
         using _TValue = TValue;
 
         static constexpr uint32_t m_capacity = capacity;
-        _TIndex m_buckets[capacity * bucket_count_factor]{};
+        _TIndex m_buckets[capacity * bucket_stride]{};
         _TNode m_nodes[capacity]{};
         _TValue m_values[capacity]{};
         uint32_t m_collisions = 0u;
         uint32_t m_count = 0u;
 
-        uint32_t GetBucketCount() const { return m_capacity * bucket_count_factor; }
+        uint32_t GetBucketCount() const { return m_capacity * bucket_stride; }
         const _TIndex* GetBuckets() const { return m_buckets; }
         _TIndex* GetBuckets() { return m_buckets; }
+
+        void Move(IFastCollectionAllocatorFixed&& other)
+        {
+            ContainerHelpers::MoveArray(m_buckets, other.m_buckets, capacity * bucket_stride);
+            ContainerHelpers::MoveArray(m_nodes, other.m_nodes, capacity);
+            ContainerHelpers::MoveArray(m_values, other.m_values, capacity);
+            m_collisions = std::exchange(other.m_collisions, 0u);
+            m_count = std::exchange(other.m_count, 0u);
+        }
 
     public: 
         bool Reserve(uint32_t newCount)
@@ -162,6 +195,7 @@ namespace PK
 
         IFastSet(uint32_t size, uint32_t bucketCountFactor) { TBase::Reserve(size, bucketCountFactor); }
         IFastSet() : IFastSet(0u, 1u) {}
+        IFastSet(IFastSet&& other) noexcept { TBase::Move(std::forward<TAllocator>(other)); }
 
         constexpr uint32_t GetCount() const { return TBase::m_count; }
         constexpr uint32_t GetCapacity() const { return TBase::m_capacity; }
@@ -171,6 +205,7 @@ namespace PK
         ConstBufferIterator<TValue> end() const { return ConstBufferIterator<TValue>(TBase::m_values + TBase::m_count, TBase::m_count); }
         const TValue& operator[](uint32_t index) const { return TBase::m_values[index]; }
         TValue& operator[](uint32_t index) { return TBase::m_values[index]; }
+        IFastSet& operator=(IFastSet&& other) noexcept { TBase::Move(std::forward<TAllocator>(other)); return *this; }
 
         // Special case access where key is inlined into value.
         const TValue* GetValuePtr(const TValue& value) const { auto index = GetIndex(value); return index != -1 ? &TBase::m_values[index] : nullptr; }
@@ -417,6 +452,7 @@ namespace PK
 
         IFastMap(uint32_t size, uint32_t bucketCountFactor) { TBase::Reserve(size, bucketCountFactor); }
         IFastMap() : IFastMap(0u, 1u) {}
+        IFastMap(IFastMap&& other) noexcept { TBase::Move(std::forward<TAllocator>(other)); }
 
         constexpr uint32_t GetCount() const { return TBase::m_count; }
         constexpr size_t GetCapacity() const { return TBase::m_capacity; }
@@ -426,6 +462,7 @@ namespace PK
         ConstBufferIterator<TValue> end() const { return ConstBufferIterator<TValue>(TBase::m_values + TBase::m_count, TBase::m_count); }
         const KeyValueConst operator[](uint32_t index) const { return { TBase::m_nodes[index].key, TBase::m_values[index] }; }
         KeyValue operator[](uint32_t index) { return { TBase::m_nodes[index].key, TBase::m_values[index] }; }
+        IFastMap& operator=(IFastMap&& other) noexcept { TBase::Move(std::forward<TAllocator>(other)); return *this; }
 
         const TValue* GetValuePtr(const TKey& key) const { auto index = GetIndex(key); return index != -1 ? &TBase::m_values[index] : nullptr; }
         TValue* GetValuePtr(const TKey& key) { auto index = GetIndex(key); return index != -1 ? &TBase::m_values[index] : nullptr; }
@@ -660,41 +697,41 @@ namespace PK
     using PointerMap16 = IFastMap<IFastCollectionAllocatorDynamic<TValue*, IFastMapNode<int16_t, TKey>>, THash>;
 
 
-    template<typename TValue, size_t capacity, typename THash = std::hash<TValue>, size_t bucket_count_factor = 1ull>
-    using FixedSet = IFastSet<IFastCollectionAllocatorFixed<TValue, IFastSetNode<int32_t>, capacity, bucket_count_factor>, THash>;
+    template<typename TValue, size_t capacity, typename THash = std::hash<TValue>, size_t bucket_stride = 1ull>
+    using FixedSet = IFastSet<IFastCollectionAllocatorFixed<TValue, IFastSetNode<int32_t>, capacity, bucket_stride>, THash>;
 
-    template<typename TValue, size_t capacity, size_t bucket_count_factor = 1ull>
-    using FixedPointerSet = IFastSet<IFastCollectionAllocatorFixed<TValue*, IFastSetNode<int32_t>, capacity, bucket_count_factor>, Hash::TPointerHash<TValue>>;
+    template<typename TValue, size_t capacity, size_t bucket_stride = 1ull>
+    using FixedPointerSet = IFastSet<IFastCollectionAllocatorFixed<TValue*, IFastSetNode<int32_t>, capacity, bucket_stride>, Hash::TPointerHash<TValue>>;
 
-    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>, size_t bucket_count_factor = 1ull>
-    using FixedMap = IFastMap<IFastCollectionAllocatorFixed<TValue, IFastMapNode<int32_t, TKey>, capacity, bucket_count_factor>, THash>;
+    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>, size_t bucket_stride = 1ull>
+    using FixedMap = IFastMap<IFastCollectionAllocatorFixed<TValue, IFastMapNode<int32_t, TKey>, capacity, bucket_stride>, THash>;
 
-    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>, size_t bucket_count_factor = 1ull>
-    using FixedPointerMap = IFastMap<IFastCollectionAllocatorFixed<TValue*, IFastMapNode<int32_t, TKey>, capacity, bucket_count_factor>, THash>;
-
-
-    template<typename TValue, size_t capacity, typename THash = std::hash<TValue>, size_t bucket_count_factor = 1ull>
-    using FixedSet16 = IFastSet<IFastCollectionAllocatorFixed<TValue, IFastSetNode<int16_t>, capacity, bucket_count_factor>, THash>;
-
-    template<typename TValue, size_t capacity, size_t bucket_count_factor = 1ull>
-    using FixedPointerSet16 = IFastSet<IFastCollectionAllocatorFixed<TValue*, IFastSetNode<int16_t>, capacity, bucket_count_factor>, Hash::TPointerHash<TValue>>;
-
-    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>, size_t bucket_count_factor = 1ull>
-    using FixedMap16 = IFastMap<IFastCollectionAllocatorFixed<TValue, IFastMapNode<int16_t, TKey>, capacity, bucket_count_factor>, THash>;
-
-    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>, size_t bucket_count_factor = 1ull>
-    using FixedPointerMap16 = IFastMap<IFastCollectionAllocatorFixed<TValue*, IFastMapNode<int16_t, TKey>, capacity, bucket_count_factor>, THash>;
+    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>, size_t bucket_stride = 1ull>
+    using FixedPointerMap = IFastMap<IFastCollectionAllocatorFixed<TValue*, IFastMapNode<int32_t, TKey>, capacity, bucket_stride>, THash>;
 
 
-    template<typename TValue, size_t capacity, typename THash = std::hash<TValue>, size_t bucket_count_factor = 1ull>
-    using FixedSet8 = IFastSet<IFastCollectionAllocatorFixed<TValue, IFastSetNode<int8_t>, capacity, bucket_count_factor>, THash>;
+    template<typename TValue, size_t capacity, typename THash = std::hash<TValue>, size_t bucket_stride = 1ull>
+    using FixedSet16 = IFastSet<IFastCollectionAllocatorFixed<TValue, IFastSetNode<int16_t>, capacity, bucket_stride>, THash>;
 
-    template<typename TValue, size_t capacity, size_t bucket_count_factor = 1ull>
-    using FixedPointerSet8 = IFastSet<IFastCollectionAllocatorFixed<TValue*, IFastSetNode<int8_t>, capacity, bucket_count_factor>, Hash::TPointerHash<TValue>>;
+    template<typename TValue, size_t capacity, size_t bucket_stride = 1ull>
+    using FixedPointerSet16 = IFastSet<IFastCollectionAllocatorFixed<TValue*, IFastSetNode<int16_t>, capacity, bucket_stride>, Hash::TPointerHash<TValue>>;
 
-    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>, size_t bucket_count_factor = 1ull>
-    using FixedMap8 = IFastMap<IFastCollectionAllocatorFixed<TValue, IFastMapNode<int8_t, TKey>, capacity, bucket_count_factor>, THash>;
+    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>, size_t bucket_stride = 1ull>
+    using FixedMap16 = IFastMap<IFastCollectionAllocatorFixed<TValue, IFastMapNode<int16_t, TKey>, capacity, bucket_stride>, THash>;
 
-    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>, size_t bucket_count_factor = 1ull>
-    using FixedPointerMap8 = IFastMap<IFastCollectionAllocatorFixed<TValue*, IFastMapNode<int8_t, TKey>, capacity, bucket_count_factor>, THash>;
+    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>, size_t bucket_stride = 1ull>
+    using FixedPointerMap16 = IFastMap<IFastCollectionAllocatorFixed<TValue*, IFastMapNode<int16_t, TKey>, capacity, bucket_stride>, THash>;
+
+
+    template<typename TValue, size_t capacity, typename THash = std::hash<TValue>, size_t bucket_stride = 1ull>
+    using FixedSet8 = IFastSet<IFastCollectionAllocatorFixed<TValue, IFastSetNode<int8_t>, capacity, bucket_stride>, THash>;
+
+    template<typename TValue, size_t capacity, size_t bucket_stride = 1ull>
+    using FixedPointerSet8 = IFastSet<IFastCollectionAllocatorFixed<TValue*, IFastSetNode<int8_t>, capacity, bucket_stride>, Hash::TPointerHash<TValue>>;
+
+    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>, size_t bucket_stride = 1ull>
+    using FixedMap8 = IFastMap<IFastCollectionAllocatorFixed<TValue, IFastMapNode<int8_t, TKey>, capacity, bucket_stride>, THash>;
+
+    template<typename TKey, typename TValue, size_t capacity, typename THash = std::hash<TKey>, size_t bucket_stride = 1ull>
+    using FixedPointerMap8 = IFastMap<IFastCollectionAllocatorFixed<TValue*, IFastMapNode<int8_t, TKey>, capacity, bucket_stride>, THash>;
 }
