@@ -5,24 +5,56 @@
 
 namespace PK
 {
-    static uint32_t GetArraySize(const VulkanDescriptorCache::SetKey& key)
+    static void GetArraySizes(const VulkanDescriptorCache::SetKey& key, 
+        uint32_t* outVariableSize, 
+        uint32_t* outBufferCount, 
+        uint32_t* outImageCount, 
+        uint32_t* outAccelerationStructureCount)
     {
-        uint32_t variableSize = 0u;
+        *outVariableSize = 0u;
+        *outBufferCount = 0u;
+        *outImageCount = 0u;
+        *outAccelerationStructureCount = 0u;
 
         for (auto i = 0u; i < PK_RHI_MAX_DESCRIPTORS_PER_SET; ++i)
         {
             if (key.bindings[i].count == 0)
             {
-                break;
+                return;
             }
 
             if (key.bindings[i].isArray)
             {
-                variableSize += key.bindings[i].count;
+                *outVariableSize += key.bindings[i].count;
+            }
+
+            switch (key.bindings[i].type)
+            {
+                case ShaderResourceType::ConstantBuffer:
+                case ShaderResourceType::StorageBuffer:
+                case ShaderResourceType::DynamicConstantBuffer:
+                case ShaderResourceType::DynamicStorageBuffer:
+                {
+                    *outBufferCount += key.bindings[i].count;
+                }
+                break;
+                case ShaderResourceType::Sampler:
+                case ShaderResourceType::SamplerTexture:
+                case ShaderResourceType::Texture:
+                case ShaderResourceType::Image:
+                {
+                    *outImageCount += key.bindings[i].count;
+                }
+                break;
+                case ShaderResourceType::AccelerationStructure:
+                {
+                    *outAccelerationStructureCount += key.bindings[i].count;
+                }
+                break;
+
+                default: break;
             }
         }
-
-        return variableSize;
     }
 
     VulkanDescriptorCache::VulkanDescriptorCache(VkDevice device,
@@ -32,11 +64,6 @@ namespace PK
         m_device(device),
         m_pruneDelay(pruneDelay)
     {
-        // Initial reserve. resource arrays might allocate more
-        m_writeImages.resize(PK_RHI_MAX_DESCRIPTORS_PER_SET);
-        m_writeBuffers.resize(PK_RHI_MAX_DESCRIPTORS_PER_SET);
-        m_writeAccerationStructures.resize(PK_RHI_MAX_DESCRIPTORS_PER_SET);
-
         m_poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         m_poolCreateInfo.pNext = nullptr;
         m_poolCreateInfo.maxSets = maxSets;
@@ -72,14 +99,15 @@ namespace PK
             return set;
         }
 
-        auto arraySize = GetArraySize(key);
+        uint32_t variableSize, bufferCount, imageCount, accelerationStructureCount;
+        GetArraySizes(key, &variableSize, &bufferCount, &imageCount, &accelerationStructureCount);
 
         VkDescriptorSetVariableDescriptorCountAllocateInfo variableSizeInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO };
         variableSizeInfo.descriptorSetCount = 1u;
-        variableSizeInfo.pDescriptorCounts = &arraySize;
+        variableSizeInfo.pDescriptorCounts = &variableSize;
         
         VkDescriptorSetAllocateInfo allocInfo { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-        allocInfo.pNext = arraySize > 0ull ? &variableSizeInfo : nullptr;
+        allocInfo.pNext = variableSize > 0ull ? &variableSizeInfo : nullptr;
         allocInfo.descriptorPool = m_currentPool->pool;
         allocInfo.descriptorSetCount = 1u;
         allocInfo.pSetLayouts = &layout->layout;
@@ -98,9 +126,10 @@ namespace PK
         VkWriteDescriptorSet writes[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
         auto count = 0u;
 
-        auto imageCount = 0ull;
-        auto bufferCount = 0ull;
-        auto accelerationStructureCount = 0ull;
+        m_writeArena.Clear();
+        auto writeBuffers = m_writeArena.Allocate<VkDescriptorBufferInfo>(bufferCount);
+        auto writeImages = m_writeArena.Allocate<VkDescriptorImageInfo>(imageCount);
+        auto writeAccerationStructures = m_writeArena.Allocate<VkWriteDescriptorSetAccelerationStructureKHR>(accelerationStructureCount);
 
         for (; count < PK_RHI_MAX_DESCRIPTORS_PER_SET; ++count)
         {
@@ -128,22 +157,14 @@ namespace PK
                 case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
                 case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
                 {
-                    write->pBufferInfo = reinterpret_cast<decltype(write->pBufferInfo)>(bufferCount + 1);
-                    auto newSize = bufferCount + bind->count;
-
-                    if (m_writeBuffers.size() < newSize)
-                    {
-                        m_writeBuffers.resize(newSize);
-                    }
-
-                    auto buffers = m_writeBuffers.data() + bufferCount;
-                    bufferCount = newSize;
+                    write->pBufferInfo = writeBuffers;
 
                     for (auto i = 0; i < bind->count; ++i)
                     {
-                        buffers[i].buffer = bind->handle->buffer.buffer;
-                        buffers[i].offset = bind->handle->buffer.offset;
-                        buffers[i].range = bind->handle->buffer.range;
+                        writeBuffers->buffer = bind->handle->buffer.buffer;
+                        writeBuffers->offset = bind->handle->buffer.offset;
+                        writeBuffers->range = bind->handle->buffer.range;
+                        writeBuffers++;
                     }
                 }
                 break;
@@ -153,46 +174,30 @@ namespace PK
                 case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
                 case VK_DESCRIPTOR_TYPE_SAMPLER:
                 {
-                    write->pImageInfo = reinterpret_cast<decltype(write->pImageInfo)>(imageCount + 1);
-                    auto newSize = imageCount + bind->count;
+                    write->pImageInfo = writeImages;
                     auto bindSampler = type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || type == VK_DESCRIPTOR_TYPE_SAMPLER;
                     auto bindImage = type != VK_DESCRIPTOR_TYPE_SAMPLER;
 
-                    if (m_writeImages.size() < newSize)
-                    {
-                        m_writeImages.resize(newSize);
-                    }
-
-                    auto images = m_writeImages.data() + imageCount;
-                    imageCount = newSize;
-
                     for (auto i = 0; i < bind->count; ++i)
                     {
-                        images[i].sampler = bindSampler ? handles[i]->image.sampler : VK_NULL_HANDLE;
-                        images[i].imageView = bindImage ? handles[i]->image.view : VK_NULL_HANDLE;
-                        images[i].imageLayout = bindImage ? handles[i]->image.layout : VK_IMAGE_LAYOUT_UNDEFINED;
+                        writeImages->sampler = bindSampler ? handles[i]->image.sampler : VK_NULL_HANDLE;
+                        writeImages->imageView = bindImage ? handles[i]->image.view : VK_NULL_HANDLE;
+                        writeImages->imageLayout = bindImage ? handles[i]->image.layout : VK_IMAGE_LAYOUT_UNDEFINED;
+                        writeImages++;
                     }
                 }
                 break;
 
                 case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
                 {
-                    write->pNext = reinterpret_cast<decltype(write->pNext)>(accelerationStructureCount + 1);
-                    auto newSize = accelerationStructureCount + bind->count;
-
-                    if (m_writeAccerationStructures.size() < newSize)
-                    {
-                        m_writeAccerationStructures.resize(newSize);
-                    }
-
-                    auto accelerationStructures = m_writeAccerationStructures.data() + accelerationStructureCount;
-                    accelerationStructureCount = newSize;
+                    write->pNext = writeAccerationStructures;
 
                     for (auto i = 0; i < bind->count; ++i)
                     {
-                        accelerationStructures[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-                        accelerationStructures[i].accelerationStructureCount = 1;
-                        accelerationStructures[i].pAccelerationStructures = &handles[i]->acceleration.structure;
+                        writeAccerationStructures->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+                        writeAccerationStructures->accelerationStructureCount = 1;
+                        writeAccerationStructures->pAccelerationStructures = &handles[i]->acceleration.structure;
+                        writeAccerationStructures++;
                     }
 
                     break;
@@ -200,26 +205,6 @@ namespace PK
 
                 default:
                     PK_THROW_ERROR("Unsuppored binding type!");
-            }
-        }
-
-        for (auto i = 0u; i < count; ++i)
-        {
-            auto w = writes + i;
-
-            if (w->pBufferInfo != nullptr)
-            {
-                w->pBufferInfo = m_writeBuffers.data() + ((reinterpret_cast<size_t>(w->pBufferInfo) & 0xFFFF) - 1);
-            }
-
-            if (w->pImageInfo != nullptr)
-            {
-                w->pImageInfo = m_writeImages.data() + ((reinterpret_cast<size_t>(w->pImageInfo) & 0xFFFF) - 1);
-            }
-
-            if (w->pNext != nullptr)
-            {
-                w->pNext = m_writeAccerationStructures.data() + ((reinterpret_cast<size_t>(w->pNext) & 0xFFFF) - 1);
             }
         }
 
@@ -234,21 +219,19 @@ namespace PK
 
         for (auto i = (int32_t)m_extinctPools.size() - 1; i >= 0; --i)
         {
-            if (!m_extinctPools.at(i).fence.IsComplete())
+            if (m_extinctPools.at(i).fence.IsComplete())
             {
-                continue;
+                m_setsPool.Delete(m_extinctPools[i].indexMask);
+                m_poolPool.Delete(m_extinctPools[i].poolIndex);
+                auto n = (int32_t)m_extinctPools.size() - 1;
+
+                if (i != n)
+                {
+                    m_extinctPools[i] = m_extinctPools[n];
+                }
+
+                m_extinctPools.pop_back();
             }
-
-            m_setsPool.Delete(m_extinctPools[i].indexMask);
-            m_poolPool.Delete(m_extinctPools[i].poolIndex);
-            auto n = (int32_t)m_extinctPools.size() - 1;
-
-            if (i != n)
-            {
-                m_extinctPools[i] = m_extinctPools[n];
-            }
-
-            m_extinctPools.pop_back();
         }
 
         const auto count = (int32_t)m_sets.GetCount();
@@ -257,16 +240,14 @@ namespace PK
         {
             auto& value = m_sets[i].value;
 
-            if (!value->fence.IsComplete() || value->pruneTick >= m_currentPruneTick)
+            if (value->fence.IsComplete() && value->pruneTick < m_currentPruneTick)
             {
-                continue;
+                VK_ASSERT_RESULT_CTX(vkFreeDescriptorSets(m_device, m_currentPool->pool, 1, &value->set), "Failed to free descriptor sets!");
+                value->set = VK_NULL_HANDLE;
+                value->fence.Invalidate();
+                m_setsPool.Delete(value);
+                m_sets.RemoveAt((uint32_t)i);
             }
-
-            VK_ASSERT_RESULT_CTX(vkFreeDescriptorSets(m_device, m_currentPool->pool, 1, &value->set), "Failed to free descriptor sets!");
-            value->set = VK_NULL_HANDLE;
-            value->fence.Invalidate();
-            m_setsPool.Delete(value);
-            m_sets.RemoveAt((uint32_t)i);
         }
     }
 

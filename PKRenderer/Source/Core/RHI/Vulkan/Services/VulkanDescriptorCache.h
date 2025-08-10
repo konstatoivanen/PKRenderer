@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Utilities/FixedPool.h"
 #include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/FixedArena.h"
 #include "Core/Utilities/Ref.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
@@ -71,8 +72,6 @@ namespace PK
             FixedPool<VulkanDescriptorPool, 8> m_poolPool; // A great name for a great variable.
             FixedPointerMap16<SetKey, VulkanDescriptorSet, VK_MAX_DESCRIPTOR_SET_COUNT, SetKeyHash> m_sets;
             std::vector<ExtinctPool> m_extinctPools;
-            std::vector<VkDescriptorImageInfo> m_writeImages;
-            std::vector<VkDescriptorBufferInfo> m_writeBuffers;
-            std::vector<VkWriteDescriptorSetAccelerationStructureKHR> m_writeAccerationStructures;
+            FixedArena<8192ull> m_writeArena;
     };
 }
