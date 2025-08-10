@@ -108,7 +108,8 @@ namespace PK
                 throw std::runtime_error("Trying to acquire resources for an invalid egid!");
             }
 
-            const auto viewIdx = m_entityViews.AddKey(MakeViewKey<TView>(egid.groupID()));
+            const auto viewKey = Hash::InterlaceHash32x2(egid.groupID(), pk_base_type_index<TView>());
+            const auto viewIdx = m_entityViews.AddKey(viewKey);
             auto& views = m_entityViews[viewIdx].value;
             auto viewSize = sizeof(TView) / sizeof(uint64_t);
             auto index = 0u;
@@ -143,7 +144,8 @@ namespace PK
         const BufferView<TView> Query(const uint32_t group)
         {
             static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
-            auto views = m_entityViews.GetValuePtr(MakeViewKey<TView>(group));
+            auto viewKey = Hash::InterlaceHash32x2(group, pk_base_type_index<TView>());
+            auto views = m_entityViews.GetValuePtr(viewKey);
             auto data = views ? reinterpret_cast<TView*>(views->buffer.GetData()) : nullptr;
             auto count = views ? views->head / (sizeof(TView) / sizeof(uint64_t)) : 0ull;
             return { data, count };
@@ -153,34 +155,15 @@ namespace PK
         TView* Query(const EGID& egid)
         {
             static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
-
-            if (!egid.IsValid())
-            {
-                throw std::runtime_error("Trying to acquire resources for an invalid egid!");
-            }
-
-            auto views = m_entityViews.GetValuePtr(MakeViewKey<TView>(egid.groupID()));
-
-            if (!views)
-            {
-                return nullptr;
-            }
-
-            auto offset = views->indices.GetValuePtr(egid.entityID());
+            auto viewKey = Hash::InterlaceHash32x2(egid.groupID(), pk_base_type_index<TView>());
+            auto views = m_entityViews.GetValuePtr(viewKey);
+            auto offset = views ? views->indices.GetValuePtr(egid.entityID()) : nullptr;
             return offset ? reinterpret_cast<TView*>(views->buffer.GetData() + *offset) : nullptr;
         }
 
     private:
-        template<typename TView>
-        inline static uint64_t MakeViewKey(uint32_t group)
-        {
-            static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
-            return Hash::InterlaceHash32x2(group, pk_base_type_index<TView>());
-        }
-
         FastMap<uint64_t, EntityViewsCollection, Hash::TCastHash<uint64_t>> m_entityViews;
         FastMap<uint32_t, ImplementerContainer, Hash::TCastHash<uint32_t>> m_implementerBuckets;
         uint32_t m_idCounter = 0u;
     };
 }
-
