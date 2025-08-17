@@ -50,6 +50,7 @@ namespace PK
 
         public:
             VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, size_t maxSets, std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes);
+
             const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
                                                         const SetKey& key,
                                                         const FenceRef& fence,

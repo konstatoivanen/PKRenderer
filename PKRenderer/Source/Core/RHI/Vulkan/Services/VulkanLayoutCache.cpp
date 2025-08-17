@@ -7,10 +7,13 @@ namespace PK
     const VulkanDescriptorSetLayout* VulkanLayoutCache::GetSetLayout(const DescriptorSetLayoutKey& key)
     {
         auto index = 0u;
-        if (!m_setlayouts.AddKey(key, &index))
+        if (!m_setLayoutMap.AddKey(key, &index))
         {
-            return m_setlayouts[index].value;
+            m_setLayoutMap[index].value++;
+            return m_setLayoutPool[index];
         }
+
+        m_setLayoutMap[index].value = 1u;
 
         VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO };
         VkDescriptorSetLayoutCreateInfo layoutCreateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
@@ -39,18 +42,19 @@ namespace PK
 
         bindingFlagsInfo.bindingCount = layoutCreateInfo.bindingCount = count;
         FixedString64 layoutName("SetLayout%02d", index);
-        auto value = m_setLayoutPool.New(m_device, layoutCreateInfo, (VkShaderStageFlagBits)key.stageFlags, layoutName.c_str());
-        m_setlayouts[index].value = value;
-        return value;
+        return m_setLayoutPool.NewAt(index, m_device, layoutCreateInfo, (VkShaderStageFlagBits)key.stageFlags, layoutName.c_str());
     }
 
     const VulkanPipelineLayout* VulkanLayoutCache::GetPipelineLayout(const PipelineLayoutKey& key)
     {
         auto index = 0u;
-        if (!m_pipelineLayouts.AddKey(key, &index))
+        if (!m_pipelineLayoutMap.AddKey(key, &index))
         {
-            return m_pipelineLayouts[index].value;
+            m_pipelineLayoutMap[index].value++;
+            return m_pipelineLayoutPool[index];
         }
+
+        m_pipelineLayoutMap[index].value = 0u;
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         pipelineLayoutInfo.pSetLayouts = key.setlayouts;
@@ -76,8 +80,30 @@ namespace PK
             }
         }
 
-        auto value = m_pipelineLayoutPool.New(m_device, pipelineLayoutInfo);
-        m_pipelineLayouts[index].value = value;
-        return value;
+        return m_pipelineLayoutPool.NewAt(index, m_device, pipelineLayoutInfo);
+    }
+
+    void VulkanLayoutCache::ReleaseSetLayout(const VulkanDescriptorSetLayout* layout)
+    {
+        auto index = m_setLayoutPool.GetIndex(layout);
+        m_setLayoutMap[index].value--;
+
+        if (m_setLayoutMap[index].value <= 0u)
+        {
+            m_setLayoutMap.RemoveAt(index);
+            m_setLayoutPool.Delete(index);
+        }
+    }
+
+    void VulkanLayoutCache::ReleasePipelineLayout(const VulkanPipelineLayout* layout)
+    {
+        auto index = m_pipelineLayoutPool.GetIndex(layout);
+        m_pipelineLayoutMap[index].value--;
+
+        if (m_pipelineLayoutMap[index].value <= 0u)
+        {
+            m_pipelineLayoutMap.RemoveAt(index);
+            m_pipelineLayoutPool.Delete(index);
+        }
     }
 }

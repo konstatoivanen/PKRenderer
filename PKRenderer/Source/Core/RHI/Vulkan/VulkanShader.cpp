@@ -111,6 +111,16 @@ namespace PK
         auto driver = RHIDriver::Get()->GetNative<VulkanDriver>();
         auto fence = driver->GetQueues()->GetLastSubmitFenceRef();
 
+        driver->layoutCache->ReleasePipelineLayout(m_pipelineLayout);
+        
+        for (auto setlayout : m_descriptorSetLayouts)
+        {
+            if (setlayout != nullptr)
+            {
+                driver->layoutCache->ReleaseSetLayout(setlayout);
+            }
+        }
+
         for (auto& module : m_modules)
         {
             if (module != VK_NULL_HANDLE)

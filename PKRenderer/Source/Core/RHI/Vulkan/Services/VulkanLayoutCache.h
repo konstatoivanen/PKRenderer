@@ -37,16 +37,18 @@ namespace PK
         using TPipelineHash = Hash::TMurmurHash<PipelineLayoutKey>;
 
         public:
-            VulkanLayoutCache(VkDevice device) : m_device(device), m_setlayouts(128ull, 3ull), m_pipelineLayouts(128ull, 3ull) {}
+            VulkanLayoutCache(VkDevice device) : m_device(device), m_setLayoutMap(128ull, 3ull), m_pipelineLayoutMap(128ull, 3ull) {}
 
             const VulkanDescriptorSetLayout* GetSetLayout(const DescriptorSetLayoutKey& key);
             const VulkanPipelineLayout* GetPipelineLayout(const PipelineLayoutKey& key);
+            void ReleaseSetLayout(const VulkanDescriptorSetLayout* layout);
+            void ReleasePipelineLayout(const VulkanPipelineLayout* layout);
 
         private:
             VkDevice m_device;
             FixedPool<VulkanDescriptorSetLayout, 1024> m_setLayoutPool;
             FixedPool<VulkanPipelineLayout, 1024> m_pipelineLayoutPool;
-            PointerMap<DescriptorSetLayoutKey, VulkanDescriptorSetLayout, TDescriptorHash> m_setlayouts;
-            PointerMap<PipelineLayoutKey, VulkanPipelineLayout, TPipelineHash> m_pipelineLayouts;
+            FixedMap16<DescriptorSetLayoutKey, uint16_t, 1024u, TDescriptorHash> m_setLayoutMap;
+            FixedMap16<PipelineLayoutKey, uint16_t, 1024u, TPipelineHash> m_pipelineLayoutMap;
     };
 }
