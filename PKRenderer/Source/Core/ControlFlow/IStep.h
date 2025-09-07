@@ -1,5 +1,5 @@
 #pragma once
-#include <typeindex>
+#include "Core/Utilities/FastTypeIndex.h"
 
 // Note clang complains about hidden virtuals. we dont care about that. lets ignore it.
 #ifdef __clang__
@@ -18,11 +18,10 @@ namespace PK
     {
         friend struct Sequencer;
         friend struct Step;
-        friend struct To;
 
     protected:
         virtual ~IStep() = default;
-        static std::type_index GetStepTypeId() { return std::type_index(typeid(IStep<Args...>*)); }
+        static uint64_t GetStepTypeId() { return (uint64_t)pk_base_type_index<IStep<Args...>>(); }
     public:
         virtual void Step(Args ... args) = 0;
     };

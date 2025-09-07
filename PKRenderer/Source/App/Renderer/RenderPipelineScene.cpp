@@ -169,7 +169,7 @@ namespace PK::App
 
             // @TODO refactor to use RGB9E5 as rgba16f redundantly big.
             // Alpha needed for current color to determine translucency in taa
-            // Refactor taa to output to previous color and flip back in composite. allows for barrel distor as well.
+            // Refactor taa to output to previous color and flip back in composite. allows for barrel distort as well.
             desc.previous[GBuffers::Color] = { TextureFormat::RGBA16F, TextureUsage::Default | TextureUsage::Storage };
             desc.previous[GBuffers::Normals] = { TextureFormat::RGB10A2, TextureUsage::Default };
             desc.previous[GBuffers::DepthBiased] = { TextureFormat::R32F, TextureUsage::Default };

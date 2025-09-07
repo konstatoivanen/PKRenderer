@@ -97,9 +97,6 @@ namespace PK::Parse
     template<typename T>
     FixedString64 GetTypeNameSpace() { return GetTypeNameSpace(typeid(T)); }
 
-    template<typename T>
-    std::type_index GetTypeIndex() { return std::type_index(typeid(T)); }
-
     constexpr void GetShortFunctionName(const char* str, const char** outData, size_t* outLength) noexcept
     {
         auto name_begin = 0ull;

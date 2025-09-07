@@ -29,9 +29,8 @@ namespace PK
             PK_LOG_NEWLINE();
         }
 
-        m_services = CreateUnique<ServiceRegister>();
-        m_services->Create<NameIDProviderDefault>();
-        m_services->Create<CVariableRegister>();
+        m_services.Create<NameIDProviderDefault>();
+        m_services.Create<CVariableRegister>();
 
         CVariableRegister::Create<CVariableFuncSimple>("Application.Close", [](){IApplication::Get()->Close();});
 

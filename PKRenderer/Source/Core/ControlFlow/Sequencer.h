@@ -11,7 +11,7 @@ namespace PK
     {
         struct Step
         {
-            std::type_index type = std::type_index(typeid(IBaseStep));
+            uint64_t type = 0u;
             void* step = nullptr;
 
             template<typename ... Args>
@@ -21,7 +21,7 @@ namespace PK
         struct StepsKey
         {
             const void* caller;
-            std::type_index type;
+            uint64_t type;
 
             inline bool operator == (const StepsKey& r) const noexcept
             {

@@ -30,7 +30,7 @@ namespace PK
         virtual const Window* GetPrimaryWindow() const = 0;
 
         template<typename T>
-        T* GetService() { return m_services->Get<T>(); }
+        T* GetService() { return m_services.Get<T>(); }
 
         inline Weak<ILogger> GetLogger() { return m_logger; }
         inline const Weak<ILogger> GetLogger() const { return m_logger; }
@@ -40,7 +40,7 @@ namespace PK
         constexpr const char* GetWorkingDirectory() const { return m_workingDirectory.c_str(); }
 
     protected:
-        inline ServiceRegister* GetServices() { return m_services.get(); }
+        inline ServiceRegister* GetServices() { return &m_services; }
 
         virtual void Execute() = 0;
         
@@ -50,7 +50,7 @@ namespace PK
         const FixedString256 m_workingDirectory;
 
         Ref<ILogger> m_logger;
-        Unique<ServiceRegister> m_services;
+        ServiceRegister m_services;
 
         friend int ::main(int argc, char** argv);
     };
