@@ -140,7 +140,7 @@ namespace PK
     void VulkanSwapchain::Present()
     {
         auto queueGraphics = m_driver->queues->GetQueue(QueueType::Graphics);
-        auto queuePresent= m_driver->queues->GetQueue(QueueType::Present);
+        auto queuePresent = m_driver->queues->GetQueue(QueueType::Present);
 
         // Swapchain write is expected to be in the last (and implicit) graphics submit.
         // @TODO implicit submit sounds bad?!?
@@ -293,5 +293,4 @@ namespace PK
 
         m_outofdate = false;
     }
-
 }

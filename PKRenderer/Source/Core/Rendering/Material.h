@@ -15,22 +15,23 @@ namespace PK
 
         Material(ShaderAsset* shader) :
             ShaderPropertyBlock(0u, 0u), 
-            m_shader(shader) 
+            m_shader(shader)
         { 
             InitializeShaderLayout(); 
         }
 
         Material(ShaderAsset* shader, ShaderAsset* shadowShader) :
             ShaderPropertyBlock(0u, 0u), 
-            m_shader(shader), 
-            m_shadowShader(shadowShader) 
+            m_shader(shader),
+            m_shaderShadow(shadowShader)
         { 
             InitializeShaderLayout(); 
         }
 
         constexpr ShaderAsset* GetShader() const { return m_shader; }
-        constexpr ShaderAsset* GetShadowShader() const { return m_shadowShader; }
+        constexpr ShaderAsset* GetShaderShadow() const { return m_shaderShadow; }
 
+        size_t GetPropertyStride() const;
         bool SupportsKeyword(const NameID keyword) const;
         bool SupportsKeywords(const NameID* keywords, const uint32_t count) const;
 
@@ -43,7 +44,7 @@ namespace PK
         void InitializeShaderLayout(uint32_t minSize = 0u, uint32_t minPropertyCount = 0u);
 
         ShaderAsset* m_shader = nullptr;
-        ShaderAsset* m_shadowShader = nullptr;
+        ShaderAsset* m_shaderShadow = nullptr;
     };
 
     struct MaterialTarget

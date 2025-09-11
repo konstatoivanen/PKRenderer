@@ -53,6 +53,7 @@ namespace PK
         {
             for (auto i = 0ull; i < Size; ++i)
             {
+// @TODO this check is nonsense.
 #if defined(_MSC_VER) && defined(_WIN64)
                 unsigned long idx = 0ul;
                 if (_BitScanForward64(&idx, ~m_mask[i]))

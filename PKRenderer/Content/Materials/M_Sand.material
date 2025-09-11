@@ -1,6 +1,6 @@
 Material:
     Shader: Content/Shaders/MS_Mat_Surf_Glitter.pkshader
-    ShadowShader: Content/Shaders/MS_Mat_Shadow_Default.pkshader
+    ShaderShadow: Content/Shaders/MS_Mat_Shadow_Default.pkshader
     Properties:
         _AlbedoTexture:
             Type: texture2D

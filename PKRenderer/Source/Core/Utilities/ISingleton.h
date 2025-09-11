@@ -4,21 +4,22 @@
 namespace PK
 {
     template<typename T>
-    class ISingleton : public NoCopy
+    struct ISingleton : public NoCopy
     {
-        public: 
-            ISingleton() 
+        ISingleton() 
+        {
+            if (s_Instance != nullptr)
             {
-                if (s_Instance != nullptr)
-                {
-                    throw std::exception("Singleton instance already exists!");
-                }
-
-                s_Instance = static_cast<T*>(this); 
+                throw std::exception("Singleton instance already exists!");
             }
-            virtual ~ISingleton() = default;
-            inline static T* Get() { return s_Instance; }
+
+            s_Instance = static_cast<T*>(this); 
+        }
+
+        virtual ~ISingleton() = default;
+        inline static T* Get() { return s_Instance; }
     
-        private: inline static T* s_Instance = nullptr;
+        private: 
+            inline static T* s_Instance = nullptr;
     };
 }

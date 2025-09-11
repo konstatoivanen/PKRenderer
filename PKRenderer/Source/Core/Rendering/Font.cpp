@@ -157,7 +157,6 @@ namespace PK
     }
 }
 
-
 template<>
 bool PK::Asset::IsValidExtension<PK::Font>(const char* extension) { return strcmp(extension, ".pkfont") == 0; }
 

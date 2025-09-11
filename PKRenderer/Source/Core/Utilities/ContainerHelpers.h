@@ -3,6 +3,8 @@
 
 namespace PK::ContainerHelpers
 {
+    #define PK_CONTAINER_RANGE_CHECK(index, min, max) if (index >= max || index < min) throw std::exception("Index/Count outside of container bounds!")
+
     template<typename  T>
     struct Comparer
     {
@@ -14,8 +16,6 @@ namespace PK::ContainerHelpers
     {
         size_t operator()(T& a);
     };
-
-    #define PK_CONTAINER_RANGE_CHECK(index, min, max) if (index >= max || index < min) throw std::exception("Index/Count outside of container bounds!")
 
     template<typename TAlignment>
     size_t AlignSize(size_t* size)

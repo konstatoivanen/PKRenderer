@@ -41,6 +41,7 @@ namespace PK::App
         void GUIDrawRect(const color32& color, const short4& screenRect, const ushort4& textureRect, uint16_t textureIndex) final;
         void GUIDrawRect(const color32& color, const short4& screenRect) final;
         void GUIDrawWireRect(const color32& color, const short4& rect, short inset) final;
+        void GUIDrawLine(const color32& color0, const color32& color1, const short2& p0, const short2& p1, const float width) final;
         void GUIDrawText(const color32& color, const short2& coord, const char* text, TextAlign alignx, TextAlign aligny, float size = 1.0f, float lineSpacing = 1.0f) final;
         void GUIDrawText(const color32& color, const short2& coord, const char* text, float size = 1.0f, float lineSpacing = 1.0f) final;
 

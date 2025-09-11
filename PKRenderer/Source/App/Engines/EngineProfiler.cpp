@@ -14,84 +14,32 @@ namespace PK::App
     {
     }
     
-    void EngineProfiler::AnalyzeShaderResourceLayouts()
-    {
-        /*
-        auto shaders = m_assetDatabase->GetAssetsOfType<ShaderAsset>();
-
-        std::unordered_set<uint32_t> uniqueNames;
-        std::unordered_map<uint32_t, FixedMask<1024>> usagemasks;
-
-        for (const auto& shader : shaders)
-        {
-            for (auto i = 0u; i < shader->GetRHICount(); ++i)
-            {
-                auto rhi = shader->GetRHI(i);
-
-                for (auto j = 0u; j < PK_RHI_MAX_DESCRIPTOR_SETS; ++j)
-                {
-                    auto set = rhi->GetResourceLayout(j);
-
-                    for (auto k = 0u; k < set.GetCount(); ++k)
-                    {
-                        uniqueNames.insert(set[k].name);
-                    }
-                }
-            }
-        }
-
-        usagemasks.reserve(shaders.size());
-
-        for (const auto& shader : shaders)
-        {
-
-
-            for (auto i = 0u; i < shader->GetRHICount(); ++i)
-            {
-                auto rhi = shader->GetRHI(i);
-
-                for (auto j = 0u; j < PK_RHI_MAX_DESCRIPTOR_SETS; ++j)
-                {
-                    auto set = rhi->GetResourceLayout(j);
-
-                    for (auto k = 0u; k < set.GetCount(); ++k)
-                    {
-                        uniqueNames.insert(set[k].name);
-                    }
-                }
-            }
-        }
-
-        PK_LOG_INFO_SCOPE("Listing shader resource usage counters:");
-
-        for (auto& kv : namedCounters)
-        {
-            NameID name = kv.first;
-            PK_LOG_INFO("%s : %u", name.c_str(), kv.second);
-        }
-        */
-    }
-
     void EngineProfiler::Step(IGUIRenderer* gui)
     {
+        constexpr auto COLOR_BG = color32(0, 0, 0, 192);
+        constexpr auto COLOR_FG = color32(255, 255, 255, 64);
+        constexpr auto COLOR_FPS_AVG = color32(255, 255, 255, 127);
+        constexpr auto COLOR_FPS_MIN = color32(0, 255, 0, 127);
+        constexpr auto COLOR_FPS_MAX = color32(255, 0, 0, 127);
+
         // @TODO this is pretty hacky & hard coded. fix later
-        auto renderArea = gui->GUIGetRenderAreaRect();
-        auto boxRect = short4(renderArea.x + 4, renderArea.y + 78, renderArea.z - 8, -74);
+        const auto renderArea = gui->GUIGetRenderAreaRect();
+        const auto rectWindow = short4(renderArea.x + 4, renderArea.y + 78, renderArea.z - 8, -74);
+        const auto rectSample = short4(rectWindow.x + 8, rectWindow.y + rectWindow.w + 7, 2, 1);
+        const auto rectBar = short4(rectWindow.x + 8, rectSample.y, rectWindow.z - 16, 1);
+        const auto sampleWidth = 2;
+        const auto sampleHeight = 38;
+        const auto sampleCountMax = (uint64_t)(rectBar.z / sampleWidth);
+        const auto sampleCountMin = glm::min(sampleCountMax, m_timeHistoryHead + 1ull);
 
-        auto barRect = short4(boxRect.x + 8, boxRect.y + boxRect.w + 7, 2, 1);
-        auto barSpacing = 2;
-        auto barHeightRange = 38;
-        auto barCount = (boxRect.z - 16) / barSpacing;
-
-        m_timeHistoryHead %= barCount;
-        m_timeHistory.resize(barCount);
-        m_timeHistory.at(m_timeHistoryHead) = m_framerate.frameMs;
+        m_timeHistory.resize(sampleCountMax);
+        m_timeHistory.at(m_timeHistoryHead % sampleCountMax) = m_framerate.frameMs;
 
         auto minHistoryTime = glm::max(1e-4, 1000.0 / m_framerate.framerateMax);
         auto maxHistoryTime = glm::max(1e-4, 1000.0 / m_framerate.framerateMin);
         auto avgHistoryTime = glm::max(1e-4, 1000.0 / m_framerate.framerateAvg);
 
-        for (auto i = 0; i < barCount; ++i)
+        for (auto i = 0ull; i < sampleCountMin; ++i)
         {
             minHistoryTime = glm::min(minHistoryTime, m_timeHistory.at(i));
             maxHistoryTime = glm::max(maxHistoryTime, m_timeHistory.at(i));
@@ -102,27 +50,27 @@ namespace PK::App
         FixedString64 textFramerateMin("Min: %4.2fms", minHistoryTime);
         FixedString64 textFramerateMax("Max: %4.2fms", maxHistoryTime);
 
-        gui->GUIDrawRect(color32(0,0,0,192), boxRect);
-        gui->GUIDrawWireRect(color32(255, 255, 255, 64), boxRect, 1);
-        gui->GUIDrawText(color32(255,255,255,127), boxRect.xy + short2(12, -3), textFramerate.c_str(), 16.0f);
-        gui->GUIDrawText(color32(255,255,255,127), boxRect.xy + short2(12 + 72, -3), textFramerateAvg.c_str(), 16.0f);
-        gui->GUIDrawText(color32(  0,255,  0,127), boxRect.xy + short2(12 + 72 + 100  * 1, -3), textFramerateMin.c_str(), 16.0f);
-        gui->GUIDrawText(color32(255,  0,  0,127), boxRect.xy + short2(12 + 72 + 100 * 2, -3), textFramerateMax.c_str(), 16.0f);
+        gui->GUIDrawRect(COLOR_BG, rectWindow);
+        gui->GUIDrawWireRect(COLOR_FG, rectWindow, 1);
+        gui->GUIDrawText(COLOR_FPS_AVG, rectWindow.xy + short2(12 + 100 * 0, -3), textFramerate.c_str(), 16.0f);
+        gui->GUIDrawText(COLOR_FPS_AVG, rectWindow.xy + short2(12 + 100 * 1, -3), textFramerateAvg.c_str(), 16.0f);
+        gui->GUIDrawText(COLOR_FPS_MIN, rectWindow.xy + short2(12 + 100 * 2, -3), textFramerateMin.c_str(), 16.0f);
+        gui->GUIDrawText(COLOR_FPS_MAX, rectWindow.xy + short2(12 + 100 * 3, -3), textFramerateMax.c_str(), 16.0f);
 
-        gui->GUIDrawRect(color32(0, 255, 0, 127), short4(boxRect.x + 8, barRect.y, boxRect.z - 16, 1));
-        gui->GUIDrawRect(color32(127, 127, 127, 127), short4(boxRect.x + 8, barRect.y + barHeightRange / 2, boxRect.z - 16, 1));
-        gui->GUIDrawRect(color32(255, 0, 0, 127), short4(boxRect.x + 8, barRect.y + barHeightRange, boxRect.z - 16, 1));
-
-        for (auto i = 0; i < barCount; ++i)
+        for (auto i = 0ull; i < sampleCountMin; ++i)
         {
-            auto time = m_timeHistory.at((m_timeHistoryHead + i + 1) % barCount);
-            auto interp = (time - minHistoryTime) / (maxHistoryTime - minHistoryTime);
-            auto height = (int)glm::round(barHeightRange * interp);
-            auto color = Math::HueToRGB32((1.0f - interp) / 3.0f);
-            gui->GUIDrawRect(color32(color.r, color.g, color.b, 127), short4(barRect.x + barSpacing * i, barRect.y, barRect.z, height));
+            const auto offset = (i + sampleCountMax - sampleCountMin) * sampleWidth;
+            const auto sample = m_timeHistory.at((m_timeHistoryHead + i + 1ull) % sampleCountMin);
+            const auto normalized = (sample - minHistoryTime) / (maxHistoryTime - minHistoryTime);
+            const auto height = (int)glm::round(sampleHeight * normalized);
+            const auto color = Math::HueToRGB32((1.0f - normalized) / 3.0f);
+            gui->GUIDrawRect(color32(color.r, color.g, color.b, 127), rectSample + short4(offset, 0, 0, height));
         }
 
+        gui->GUIDrawRect(COLOR_FPS_MIN, rectBar + short4(0, sampleHeight * 0, 0, 0));
+        gui->GUIDrawRect(COLOR_FPS_AVG, rectBar + short4(0, sampleHeight / 2, 0, 0));
+        gui->GUIDrawRect(COLOR_FPS_MAX, rectBar + short4(0, sampleHeight * 1, 0, 0));
+
         m_timeHistoryHead++;
-        m_timeHistoryHead %= barCount;   
     }
 }

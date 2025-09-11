@@ -38,7 +38,6 @@ namespace PK::App
         CVariableRegister::Create<bool*>("Engine.GUI.Enabled", &m_gui_enabled, "0 = 0ff, 1 = On", 1u);
         CVariableRegister::Create<CVariableFuncSimple>("Engine.GUI.Toggle", [this]() { m_gui_enabled^= true; });
     
-
         m_gizmos_shader = assetDatabase->Find<ShaderAsset>("VS_Gizmos");
         m_gizmos_vertexBuffer = RHI::CreateBuffer<uint4>(m_gizmos_maxVertices, BufferUsage::DefaultVertex | BufferUsage::PersistentStage, "Gizmos.VertexBuffer");
         m_gizmos_indirectVertexBuffer = RHI::CreateBuffer<uint4>(16384u, BufferUsage::Vertex | BufferUsage::Storage, "Gizmos.Indirect.VertexBuffer");
@@ -261,18 +260,18 @@ namespace PK::App
                 const short4 outer = short4(rect.x, rect.y, rect.x + rect.z, rect.y + rect.w);
 
                 for (auto i = 0u; i < 4; ++i)
-            {
-                auto base0 = idxv + i * 2u;
-                auto base1 = idxv + ((i + 1u) % 4u) * 2u;
+                {
+                    auto base0 = idxv + i * 2u;
+                    auto base1 = idxv + ((i + 1u) % 4u) * 2u;
 
-                m_gui_indexView[idxi++] = base0 + 0;
-                m_gui_indexView[idxi++] = base0 + 1;
-                m_gui_indexView[idxi++] = base1 + 1;
+                    m_gui_indexView[idxi++] = base0 + 0;
+                    m_gui_indexView[idxi++] = base0 + 1;
+                    m_gui_indexView[idxi++] = base1 + 1;
 
-                m_gui_indexView[idxi++] = base1 + 1;
-                m_gui_indexView[idxi++] = base1 + 0;
-                m_gui_indexView[idxi++] = base0 + 0;
-            }
+                    m_gui_indexView[idxi++] = base1 + 1;
+                    m_gui_indexView[idxi++] = base1 + 0;
+                    m_gui_indexView[idxi++] = base0 + 0;
+                }
 
                 m_gui_vertexView[idxv++] = { color, outer.xy, PK_USHORT2_ZERO, 0, 0u };
                 m_gui_vertexView[idxv++] = { color, inner.xy, PK_USHORT2_ZERO, 0, 0u };
@@ -285,6 +284,37 @@ namespace PK::App
                 
                 m_gui_vertexView[idxv++] = { color, outer.zy, PK_USHORT2_ZERO, 0, 0u };
                 m_gui_vertexView[idxv++] = { color, inner.zy, PK_USHORT2_ZERO, 0, 0u };
+            }
+        }
+    }
+
+    void EngineGUIRenderer::GUIDrawLine(const color32& color0, const color32& color1, const short2& p0, const short2& p1, const float width)
+    {
+        if (m_gui_enabled)
+        {
+            auto idxv = m_gui_vertexCount;
+            auto idxi = m_gui_indexCount;
+            m_gui_vertexCount += 4u;
+            m_gui_indexCount += 6u;
+
+            if (m_gui_vertexCount <= GUI_MAX_VERTICES && m_gui_indexCount <= GUI_MAX_INDICES)
+            {
+                const auto p0f = float2(p0.x + 0.5f, p0.y + 0.5f);
+                const auto p1f = float2(p1.x + 0.5f, p1.y + 0.5f);
+                const auto direction = glm::normalize(p1f - p0f);
+                const auto tangent = float2(-direction.y, direction.x);
+                const auto offset = glm::normalize(tangent + direction) * 0.5f * width;
+ 
+                m_gui_indexView[idxi++] = idxv + 0;
+                m_gui_indexView[idxi++] = idxv + 1;
+                m_gui_indexView[idxi++] = idxv + 2;
+                m_gui_indexView[idxi++] = idxv + 2;
+                m_gui_indexView[idxi++] = idxv + 3;
+                m_gui_indexView[idxi++] = idxv + 0;
+                m_gui_vertexView[idxv++] = { color0, glm::round(p0f + float2(-offset.y, +offset.x)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
+                m_gui_vertexView[idxv++] = { color1, glm::round(p1f + float2(+offset.x, +offset.y)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
+                m_gui_vertexView[idxv++] = { color1, glm::round(p1f + float2(+offset.y, -offset.x)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
+                m_gui_vertexView[idxv++] = { color0, glm::round(p0f + float2(-offset.x, -offset.y)), PK_USHORT2_ZERO, GUI_TEX_INDEX_WHITE, 0u };
             }
         }
     }

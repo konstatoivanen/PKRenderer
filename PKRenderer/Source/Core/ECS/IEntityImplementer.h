@@ -7,4 +7,3 @@ namespace PK
         virtual ~IEntityImplementer() = default;
     };
 }
-

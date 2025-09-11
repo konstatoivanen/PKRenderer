@@ -69,7 +69,7 @@ namespace PK
 
             constexpr uint32_t GetQueueFamily() const { return m_queueFamily; }
 
-                        template<typename T>
+            template<typename T>
             void Record(const T resource, const AccessRecord& record, uint8_t options)
             {
                 uint32_t index = 0u;

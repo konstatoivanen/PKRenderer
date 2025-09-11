@@ -1,4 +1,6 @@
 #include "PrecompiledHeader.h"
+#include <chrono>
+#include <thread>
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"

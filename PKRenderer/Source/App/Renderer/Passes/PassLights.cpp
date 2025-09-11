@@ -488,7 +488,7 @@ namespace PK::App
             for (auto& kv : entity->materials->materials)
             {
                 auto transform = entity->transform;
-                auto shader = kv->material->GetShadowShader();
+                auto shader = kv->material->GetShaderShadow();
 
                 if (shader != nullptr)
                 {

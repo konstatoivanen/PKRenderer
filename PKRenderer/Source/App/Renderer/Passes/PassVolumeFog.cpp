@@ -125,5 +125,4 @@ namespace PK::App
         cmd.Dispatch(m_shaderComposite, 0, destination->GetResolution());
         cmd->EndDebugScope();
     }
-
 }

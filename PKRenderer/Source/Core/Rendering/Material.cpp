@@ -58,6 +58,8 @@ namespace PK
     }
 
 
+    size_t Material::GetPropertyStride() const { return m_shader->GetMaterialPropertyLayout().GetPaddedStride(); }
+
     bool Material::SupportsKeyword(const NameID keyword) const { return m_shader->SupportsKeyword(keyword); }
 
     bool Material::SupportsKeywords(const NameID* keywords, const uint32_t count) const { return m_shader->SupportsKeywords(keywords, count); }
@@ -101,7 +103,7 @@ namespace PK
         PK_THROW_ASSERT(material.readable(), "Could not locate material (%s) header in file.", filepath);
 
         auto shaderPathProp = material.find_child("Shader");
-        auto shadowShaderPathProp = material.find_child("ShadowShader");
+        auto shaderShadowPathProp = material.find_child("ShaderShadow");
         auto keywords = material.find_child("Keywords");
         auto properties = material.find_child("Properties");
 
@@ -109,9 +111,9 @@ namespace PK
 
         m_shader = YAML::Read<ShaderAsset*>(shaderPathProp);
 
-        if (shadowShaderPathProp.readable())
+        if (shaderShadowPathProp.readable())
         {
-            m_shadowShader = YAML::Read<ShaderAsset*>(shadowShaderPathProp);
+            m_shaderShadow = YAML::Read<ShaderAsset*>(shaderShadowPathProp);
         }
 
         uint32_t serializedSize, serializedPropertyCount;

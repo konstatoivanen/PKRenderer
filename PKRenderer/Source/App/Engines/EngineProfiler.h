@@ -16,8 +16,6 @@ namespace PK::App
     public:
         EngineProfiler(AssetDatabase* assetDatabase);
 
-        void AnalyzeShaderResourceLayouts();
-
         virtual void Step(IGUIRenderer* gui) final;
         virtual void Step(TimeFramerateInfo* framerate) final { m_framerate = *framerate; }
 
@@ -25,6 +23,6 @@ namespace PK::App
         AssetDatabase* m_assetDatabase = nullptr;
         TimeFramerateInfo m_framerate{};
         std::vector<double> m_timeHistory;
-        uint32_t m_timeHistoryHead = 0u;
+        uint64_t m_timeHistoryHead = 0ull;
     };
 }

@@ -209,7 +209,7 @@ namespace PK::App
 
             if (shaderBatch.materialStride == 0ull)
             {
-                shaderBatch.materialStride = material->GetShader()->GetMaterialPropertyLayout().GetPaddedStride();
+                shaderBatch.materialStride = material->GetPropertyStride();
             }
 
             auto materialIndex = 0u;

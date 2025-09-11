@@ -92,15 +92,13 @@ namespace PK
         uint32_t buildCount = 0u;
 
         // Compaction queries
+        for (auto i = 0u; i < m_substructures.GetCount(); ++i)
         {
-            for (auto i = 0u; i < m_substructures.GetCount(); ++i)
-            {
-                auto structure = &m_substructures[i].value;
+            auto structure = &m_substructures[i].value;
 
-                if (structure->raw && !structure->isCompacted && structure->queryIndex == -1)
-                {
-                    structure->queryIndex = m_cmd->QueryAccelerationStructureCompactSize(structure->raw, m_queryPool);
-                }
+            if (structure->raw && !structure->isCompacted && structure->queryIndex == -1)
+            {
+                structure->queryIndex = m_cmd->QueryAccelerationStructureCompactSize(structure->raw, m_queryPool);
             }
         }
 
@@ -167,11 +165,11 @@ namespace PK
             m_scratchBuffer = m_driver->CreatePooled<VulkanRawBuffer>(m_driver->device, m_driver->allocator, createInfo, name.c_str());
         }
 
-        if (m_structureBuffer != nullptr &&
-            m_structureBuffer->size >= bufferSize &&
-            !m_structure.needsRealloc &&
-            buildCount == 0u &&
-            !hasCompactedResults)
+        if (buildCount == 0u &&
+            hasCompactedResults == false &&
+            m_structure.needsRealloc == false &&
+            m_structureBuffer != nullptr &&
+            m_structureBuffer->size >= bufferSize)
         {
             return;
         }
