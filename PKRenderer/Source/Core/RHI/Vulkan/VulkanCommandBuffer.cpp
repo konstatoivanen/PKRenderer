@@ -285,7 +285,7 @@ namespace PK
         blitRegion.dstOffsets[1] = { (int)dstRes.x, (int)dstRes.y, (int)dstRes.z };
 
         Blit(srcHandle, dstHandle, blitRegion, filter);
-        m_renderState->RecordImage(dstHandle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT);
+        ResolveSwapchainAccess(dst, false);
     }
 
     void VulkanCommandBuffer::Blit(RHISwapchain* src, RHIBuffer* dst)
@@ -307,6 +307,7 @@ namespace PK
         ResolveBarriers();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);
         vkCmdCopyImageToBuffer(m_commandBuffer, vksrc->image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vkdst, 1, &region);
+        ResolveSwapchainAccess(src, false);
     }
 
     void VulkanCommandBuffer::Blit(RHITexture* src, RHITexture* dst, const TextureViewRange& srcRange, const TextureViewRange& dstRange, FilterMode filter)
@@ -626,12 +627,22 @@ namespace PK
             barrier.pImageMemoryBarriers);
     }
 
-    void VulkanCommandBuffer::ValidateSwapchainPresent(RHISwapchain* swapchain)
+    void VulkanCommandBuffer::ResolveSwapchainAccess(RHISwapchain* swapchain, bool forceTransition)
     {
         auto vkdst = swapchain->GetNative<VulkanSwapchain>();
-        const auto& bindHandle = vkdst->GetBindHandle();
-        m_renderState->RecordImage(bindHandle, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_NONE);
-        ResolveBarriers();
+        auto signal = vkdst->ConsumeImageSignal();
+
+        if (signal != VK_NULL_HANDLE)
+        {
+            m_imageSignal = signal;
+        }
+
+        if (forceTransition)
+        {
+            const auto& bindHandle = vkdst->GetBindHandle();
+            m_renderState->RecordImage(bindHandle, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_NONE);
+            ResolveBarriers();
+        }
     }
 
     bool VulkanCommandBuffer::ResolveBarriers()
@@ -748,6 +759,7 @@ namespace PK
 
     void VulkanCommandBuffer::FinishExecution()
     {
+        m_imageSignal = VK_NULL_HANDLE;
         m_commandBuffer = VK_NULL_HANDLE; 
         m_fence = VK_NULL_HANDLE;
         ++m_invocationIndex;

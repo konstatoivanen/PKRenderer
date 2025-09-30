@@ -67,7 +67,7 @@ namespace PK
         
         // Blits might leave swapchain images in non presentable layouts.
         // This validates swapchain image layout & should be called for the last cmd before present.
-        void ValidateSwapchainPresent(RHISwapchain* swapchain);
+        void ResolveSwapchainAccess(RHISwapchain* swapchain, bool forceTransition);
         bool ResolveBarriers();
         void ValidatePipeline();
         void EndRenderPass();
@@ -82,9 +82,11 @@ namespace PK
         inline VkCommandBuffer& GetCommandBuffer() { return m_commandBuffer; }
         inline VkFence& GetFence() { return m_fence; }
         inline VkPipelineStageFlags GetLastCommandStage() { return m_lastCommandStage; }
+        inline VkSemaphore GetImageSignal() { return m_imageSignal; }
         
         private:
             VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
+            VkSemaphore m_imageSignal = VK_NULL_HANDLE;
             VkFence m_fence = VK_NULL_HANDLE;
             uint16_t m_queueFamily = 0u;
             VkCommandBufferLevel m_level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;

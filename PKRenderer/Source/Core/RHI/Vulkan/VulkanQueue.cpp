@@ -266,6 +266,17 @@ namespace PK
         uint64_t signalValues[2]{ ++m_timeline.counter, 0ull };
         uint32_t signalCount = outSignal ? 2 : 1;
 
+        // Sync swap chain image access if accessed in cmd.
+        VkSemaphore imageSignal = commandBuffer->GetImageSignal();
+
+        if (imageSignal != VK_NULL_HANDLE)
+        {
+            waits[0] = imageSignal;
+            waitValues[0] = 0;
+            waitFlags[0] = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            waitCount++;
+        }
+
         for (auto& timeline : m_waitTimelines)
         {
             if (timeline.semaphore == VK_NULL_HANDLE)
@@ -377,15 +388,13 @@ namespace PK
     {
         for (auto& timeline : m_waitTimelines)
         {
-            if (timeline.semaphore != VK_NULL_HANDLE)
+            if (timeline.semaphore == VK_NULL_HANDLE)
             {
-                continue;
+                timeline.counter = 0u;
+                timeline.semaphore = semaphore;
+                timeline.waitFlags = flags;
+                break;
             }
-
-            timeline.counter = 0u;
-            timeline.semaphore = semaphore;
-            timeline.waitFlags = flags;
-            break;
         }
     }
 
@@ -393,16 +402,14 @@ namespace PK
     {
         for (auto& timeline : m_waitTimelines)
         {
-            if (timeline.semaphore != VK_NULL_HANDLE)
+            if (timeline.semaphore == VK_NULL_HANDLE)
             {
-                continue;
+                timeline = other->m_timeline;
+                timeline.counter = Math::ULongAdd(timeline.counter, timelineOffset);
+                // Wait at top of pipe as we dont know what the first op will be.
+                timeline.waitFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                break;
             }
-
-            timeline = other->m_timeline;
-            timeline.counter = Math::ULongAdd(timeline.counter, timelineOffset);
-            // Wait at top of pipe as we dont know what the first op will be.
-            timeline.waitFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            break;
         }
     }
 

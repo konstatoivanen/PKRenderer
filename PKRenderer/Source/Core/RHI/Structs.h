@@ -24,8 +24,8 @@ namespace PK
     typedef PKAssets::PKBorderColor       BorderColor;
 
     constexpr static const uint32_t PK_RHI_MAX_MESHLETS_PER_TASK = 32;
-    constexpr static const uint32_t PK_RHI_DESIRED_SWAP_CHAIN_IMAGE_COUNT = 4;
     constexpr static const uint32_t PK_RHI_MAX_FRAMES_IN_FLIGHT = 2;
+    constexpr static const uint32_t PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT = 16;
     constexpr static const uint32_t PK_RHI_MAX_RENDER_TARGETS = 8;
     constexpr static const uint32_t PK_RHI_MAX_DESCRIPTOR_SETS = PKAssets::PK_ASSET_MAX_DESCRIPTOR_SETS;
     constexpr static const uint32_t PK_RHI_MAX_DESCRIPTORS_PER_SET = PKAssets::PK_ASSET_MAX_DESCRIPTORS_PER_SET;
@@ -516,6 +516,7 @@ namespace PK
     struct SwapchainDescriptor
     {
         uint2 desiredResolution = PK_UINT2_ZERO;
+        uint desiredImageCount = 4u;
         TextureFormat desiredFormat = TextureFormat::BGRA8;
         ColorSpace desiredColorSpace = ColorSpace::sRGB_NonLinear;
         VSyncMode desiredVSyncMode = VSyncMode::Fifo;

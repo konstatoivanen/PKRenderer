@@ -105,17 +105,19 @@ namespace PK
 
         // This is not strictly necesssary when not using double buffering for staging buffers.
         // However, for them to have coherent memory operations we cannot push more than 2 frames at a time.
+        // @TODO when using more than double buffered swap chain this will occasionally hang for a long time.
+        // Maybe move this wait till later in the frame??
         PK_THROW_ASSERT(m_frameFences[m_frameIndex].WaitInvalidate(UINT64_MAX), "Frame fence timeout!");
 
-        auto queueGraphics = m_driver->queues->GetQueue(QueueType::Graphics);
+        auto queuePresent = m_driver->queues->GetQueue(QueueType::Present);
 
         // Dont spam sepmaphore acquires if we're stuck in an invalidation loop.
-        if (m_imageAvailableSignal == VK_NULL_HANDLE)
+        if (m_imageSignal == VK_NULL_HANDLE)
         {
-            m_imageAvailableSignal = queueGraphics->GetNextSemaphore();
+            m_imageSignal = queuePresent->GetNextSemaphore();
         }
 
-        auto result = vkAcquireNextImageKHR(m_driver->device, m_swapchain, UINT64_MAX, m_imageAvailableSignal, VK_NULL_HANDLE, &m_imageIndex);
+        auto result = vkAcquireNextImageKHR(m_driver->device, m_swapchain, UINT64_MAX, m_imageSignal, VK_NULL_HANDLE, &m_imageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR && !m_outofdate)
         {
@@ -142,21 +144,17 @@ namespace PK
         auto queueGraphics = m_driver->queues->GetQueue(QueueType::Graphics);
         auto queuePresent = m_driver->queues->GetQueue(QueueType::Present);
 
-        // Swapchain write is expected to be in the last (and implicit) graphics submit.
-        // @TODO implicit submit sounds bad?!?
         VkSemaphore waitSignal = VK_NULL_HANDLE;
-        queueGraphics->QueueWait(m_imageAvailableSignal, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
-        queueGraphics->GetCommandBuffer()->ValidateSwapchainPresent(this);
+        queueGraphics->GetCommandBuffer()->ResolveSwapchainAccess(this, true);
         m_driver->queues->SubmitCurrent(QueueType::Graphics, &waitSignal);
 
         // Frame synchronization for this frame is handled externally.
         if (!m_hasExternalFrameFence)
         {
-            // Assumes previous submit was for rendering work.
             m_frameFences[m_frameIndex] = queueGraphics->GetFenceRef();
         }
 
-        m_imageAvailableSignal = VK_NULL_HANDLE;
+        m_imageSignal = VK_NULL_HANDLE;
         m_hasExternalFrameFence = false;
         m_frameIndex = (m_frameIndex + 1) % PK_RHI_MAX_FRAMES_IN_FLIGHT;
         VK_ASSERT_RESULT(queuePresent->Present(m_swapchain, m_imageIndex, waitSignal));
@@ -170,7 +168,7 @@ namespace PK
             m_descriptor.nativeMonitorHandle = nullptr;
         }
 
-        for (size_t i = 0u; i < MaxImageCount; ++i)
+        for (size_t i = 0u; i < PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT; ++i)
         {
             if (m_imageViews[i] != nullptr)
             {
@@ -208,9 +206,9 @@ namespace PK
 
         auto maxImageCount = capabilities.maxImageCount > 0 ? capabilities.maxImageCount : UINT32_MAX;
         auto minImageCount = capabilities.minImageCount;
-        maxImageCount = maxImageCount > MaxImageCount ? MaxImageCount : maxImageCount;
+        maxImageCount = glm::min(PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT, maxImageCount);
 
-        m_imageCount = glm::clamp(PK_RHI_DESIRED_SWAP_CHAIN_IMAGE_COUNT, minImageCount, maxImageCount);
+        m_imageCount = glm::clamp(descriptor.desiredImageCount, minImageCount, maxImageCount);
         uint32_t queueFamilyIndices[] = { queueGraphics->GetFamily(), queuePresent->GetFamily() };
 
         auto fullscreenInfo = VulkanGetSwapchainFullscreenInfo(descriptor.nativeMonitorHandle, descriptor.nativeMonitorHandle != nullptr);
@@ -292,5 +290,12 @@ namespace PK
         }
 
         m_outofdate = false;
+    }
+    
+    VkSemaphore VulkanSwapchain::ConsumeImageSignal()
+    {
+        auto signal = m_imageSignal;
+        m_imageSignal = VK_NULL_HANDLE;
+        return signal;
     }
 }

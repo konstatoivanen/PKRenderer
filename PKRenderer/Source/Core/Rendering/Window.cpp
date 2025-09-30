@@ -51,6 +51,7 @@ namespace PK
         // @TODO HDR Support?!?
         SwapchainDescriptor swapchainDescriptor{};
         swapchainDescriptor.desiredResolution = descriptor.size;
+        swapchainDescriptor.desiredImageCount = descriptor.swapchainImageCount;
         swapchainDescriptor.desiredFormat = TextureFormat::BGRA8;
         swapchainDescriptor.desiredColorSpace = ColorSpace::sRGB_NonLinear;
         swapchainDescriptor.desiredVSyncMode = descriptor.vsync;

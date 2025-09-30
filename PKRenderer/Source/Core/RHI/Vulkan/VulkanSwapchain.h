@@ -9,9 +9,6 @@ namespace PK
     class VulkanSwapchain : public RHISwapchain
     {
         public:
-            // Max count so that resources can use static arrays.
-            constexpr static uint32_t MaxImageCount = 16u;
-
             VulkanSwapchain(VulkanDriver* driver, const SwapchainDescriptor& descriptor);
 
             ~VulkanSwapchain();
@@ -35,17 +32,18 @@ namespace PK
 
             const VulkanBindHandle* GetBindHandle() const { return &m_imageViews[m_imageIndex]->bindHandle; }
             const VulkanImageView* GetImageView() const { return m_imageViews[m_imageIndex]; }
+            VkSemaphore ConsumeImageSignal();
 
         private:
             const VulkanDriver* m_driver = nullptr;
 
             SwapchainDescriptor m_descriptor{};
-            VkSemaphore m_imageAvailableSignal = VK_NULL_HANDLE;
+            VkSemaphore m_imageSignal = VK_NULL_HANDLE;
             VkSurfaceKHR m_surface = VK_NULL_HANDLE;
             VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
-            VkImage m_images[MaxImageCount]{};
-            VulkanImageView* m_imageViews[MaxImageCount]{};
-            FenceRef m_frameFences[MaxImageCount]{};
+            VkImage m_images[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
+            VulkanImageView* m_imageViews[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
+            FenceRef m_frameFences[PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT]{};
             uint32_t m_imageCount;
             VkSurfaceFormatKHR m_format;
             VkPresentModeKHR m_presentMode;

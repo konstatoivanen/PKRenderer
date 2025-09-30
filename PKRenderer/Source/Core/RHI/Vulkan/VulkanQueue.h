@@ -20,7 +20,7 @@ namespace PK
     class VulkanQueue : public NoCopy
     {
         constexpr static const uint32_t MAX_SEMAPHORES = 16u;
-        constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)QueueType::MaxCount;
+        constexpr static const uint32_t MAX_DEPENDENCIES = ((uint32_t)QueueType::MaxCount + 1u);
 
         public:
             VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, VulkanServiceContext& services, uint32_t queueIndex = 0u);

@@ -287,9 +287,11 @@ namespace PK
         auto isValidationError = strstr(pCallbackData->pMessage, "Error") != nullptr;
         auto isLoaderMessage = strstr(pCallbackData->pMessageIdName, "Loader Message") != nullptr;
         auto isNsightBug = strstr(pCallbackData->pMessage, "VkPrivateDataSlotCreateInfo") != nullptr;
+        auto isNsightInjectBug = strstr(pCallbackData->pMessage, "1000556003") != nullptr;
         messageSeverity = isValidationError ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT : messageSeverity;
         messageSeverity = isLoaderMessage ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
         messageSeverity = isNsightBug ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT : messageSeverity;
+        messageSeverity = isNsightInjectBug ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT : messageSeverity;
 
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {

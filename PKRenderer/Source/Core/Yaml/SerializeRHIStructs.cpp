@@ -61,6 +61,7 @@ namespace PK::YAML
         rhs->nativeWindowHandle = nullptr;
         bool isValid = true;
         isValid &= YAML::Read<uint2>(node, "SwapchainDescriptor.desiredResolution", &rhs->desiredResolution);
+        isValid &= YAML::Read<uint32_t>(node, "SwapchainDescriptor.desiredImageCount", &rhs->desiredImageCount);
         isValid &= YAML::Read<TextureFormat>(node, "SwapchainDescriptor.desiredFormat", &rhs->desiredFormat);
         isValid &= YAML::Read<ColorSpace>(node, "SwapchainDescriptor.desiredColorSpace", &rhs->desiredColorSpace);
         isValid &= YAML::Read<VSyncMode>(node, "SwapchainDescriptor.desiredVSyncMode", &rhs->desiredVSyncMode);

@@ -12,6 +12,7 @@ namespace PK
         int2 position = PK_INT2_MINUS_ONE;
         int2 size = PK_INT2_ZERO;
         int2 sizemax = PK_INT2_MINUS_ONE;
+        uint32_t swapchainImageCount = 4u;
         VSyncMode vsync = VSyncMode::Fifo;
         bool visible = false;
         bool resizable = false;

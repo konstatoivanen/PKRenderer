@@ -13,6 +13,7 @@ namespace PK::YAML
         isValid &= YAML::Read<int2>(node, "WindowDescriptor.position", &rhs->position);
         isValid &= YAML::Read<int2>(node, "WindowDescriptor.size", &rhs->size);
         isValid &= YAML::Read<int2>(node, "WindowDescriptor.sizemax", &rhs->sizemax);
+        isValid &= YAML::Read<uint32_t>(node, "WindowDescriptor.swapchainImageCount", &rhs->swapchainImageCount);
         isValid &= YAML::Read<VSyncMode>(node, "WindowDescriptor.vsync", &rhs->vsync);
         isValid &= YAML::Read<bool>(node, "WindowDescriptor.visible", &rhs->visible);
         isValid &= YAML::Read<bool>(node, "WindowDescriptor.resizable", &rhs->resizable);

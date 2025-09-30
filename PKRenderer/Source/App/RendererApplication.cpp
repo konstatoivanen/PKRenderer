@@ -36,6 +36,12 @@
 
 namespace PK::App
 {
+    // @TODO Idea
+    // Separate a windowed application into a different base class that will handle
+    // - Windowing
+    // - RHI
+    // - Input
+    // - Time
     RendererApplication::RendererApplication(const CArguments& arguments) :
         IApplication(arguments, "PK Renderer", CreateRef<LoggerPrintf>())
     {
