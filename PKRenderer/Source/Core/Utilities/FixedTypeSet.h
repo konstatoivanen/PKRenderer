@@ -1,5 +1,6 @@
 #pragma once
 #include <type_traits>
+#include <Core/Utilities/FixedUnique.h>
 
 namespace PK
 {
@@ -31,5 +32,35 @@ namespace PK
         }
     
         T m_instance;
+    };
+
+    template<typename... Args>
+    struct FixedUniqueSet;
+
+    template<>
+    struct FixedUniqueSet<>
+    {
+        template<typename TType>
+        constexpr FixedUnique<TType>* GetInstance()
+        {
+            return nullptr;
+        }
+    };
+
+    template <typename T, typename ... TRest>
+    struct FixedUniqueSet<T, TRest...> : private FixedUniqueSet<TRest...>
+    {
+        template<typename TType>
+        constexpr FixedUnique<TType>* GetInstance()
+        {
+            if constexpr (std::is_same<TType, T>())
+            {
+                return &m_instance;
+            }
+
+            return FixedUniqueSet<TRest...>::template GetInstance<TType>();
+        }
+
+        FixedUnique<T> m_instance;
     };
 }

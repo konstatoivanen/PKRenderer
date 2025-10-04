@@ -6,6 +6,7 @@ namespace PK
 {
     struct INameIDProvider
     {
+        virtual ~INameIDProvider() = 0;
         virtual uint32_t INameIDProvider_StringToID(const char* name) = 0;
         virtual const char* INameIDProvider_IDToString(const uint32_t& name) = 0;
     };

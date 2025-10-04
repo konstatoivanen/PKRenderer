@@ -48,35 +48,32 @@ namespace PK::App
         PK_LOG_TIMER_FUNC();
         PK_LOG_HEADER_SCOPE("----------RendererApplication.Ctor Begin----------");
 
-        GetServices()->Create<HashCache>();
+        BaseRendererConfig config("Content/Configs/BaseRenderer.cfg");
+        m_inactiveFrameInterval = config.InactiveFrameInterval;
+        m_RHIDriver = RHI::CreateDriver(GetWorkingDirectory(), config.RHIDesc);
 
-        auto remoteProcessRunner = GetServices()->Create<RemoteProcessRunner>();
-        auto entityDb = GetServices()->Create<EntityDatabase>();
-        auto sequencer = GetServices()->Create<Sequencer>();
-        auto assetDatabase = GetServices()->Create<AssetDatabase>(sequencer);
-        auto input = GetServices()->Create<EngineInput>(sequencer);
-        Platform::SetInputHandler(input);
-
-        auto config = assetDatabase->Load<BaseRendererConfig>("Content/Configs/BaseRenderer.cfg");
-        auto keyConfig = assetDatabase->Load<InputKeyConfig>("Content/Configs/Input.keycfg");
-
-        m_RHIDriver = RHI::CreateDriver(GetWorkingDirectory(), config->RHIDesc);
-
-        auto windowDescriptor = config->WindowDesc;
-        windowDescriptor.title = { GetName(), m_RHIDriver->GetDriverHeader() };
-        m_window = CreateUnique<Window>(windowDescriptor);
+        config.WindowDesc.title = { GetName(), m_RHIDriver->GetDriverHeader() };
+        m_window = CreateUnique<Window>(config.WindowDesc);
         m_window->SetOnCloseCallback([this]() { Close(); });
 
-        m_inactiveFrameInterval = config->InactiveFrameInterval;
+        GetServices()->Create<HashCache>();
+
+        auto sequencer = GetServices()->Create<Sequencer>();
+        auto entityDb = GetServices()->Create<EntityDatabase>();
+        auto assetDatabase = GetServices()->Create<AssetDatabase>(sequencer);
+        auto input = GetServices()->Create<EngineInput>(sequencer);
+        auto time = GetServices()->Create<EngineTime>(sequencer, config.TimeScale);
+        Platform::SetInputHandler(input);
 
         assetDatabase->LoadDirectory<ShaderAsset>("Content/Shaders/");
 
-        auto time = GetServices()->Create<EngineTime>(sequencer, config->TimeScale);
         auto batcherMeshStatic = GetServices()->Create<BatcherMeshStatic>();
         auto renderPipelineScene = GetServices()->Create<RenderPipelineScene>(assetDatabase, entityDb, sequencer, batcherMeshStatic);
 
+        auto inputConfig = assetDatabase->Load<InputKeyConfig>("Content/Configs/Input.keycfg");
+        auto remoteProcessRunner = GetServices()->Create<RemoteProcessRunner>();
         auto engineViewUpdate = GetServices()->Create<EngineViewUpdate>(sequencer, entityDb);
-        auto engineCommands = GetServices()->Create<EngineCommandInput>(sequencer, keyConfig);
+        auto engineCommands = GetServices()->Create<EngineCommandInput>(sequencer, inputConfig);
         auto engineUpdateTransforms = GetServices()->Create<EngineUpdateTransforms>(entityDb);
         auto engineEntityCull = GetServices()->Create<EngineEntityCull>(entityDb);
         auto engineDrawGeometry = GetServices()->Create<EngineDrawGeometry>(entityDb, sequencer);
@@ -85,7 +82,7 @@ namespace PK::App
         auto engineGUIRenderer = GetServices()->Create<EngineGUIRenderer>(assetDatabase, sequencer);
         auto engineProfiler = GetServices()->Create<EngineProfiler>(assetDatabase);
 
-        auto engineFlyCamera = GetServices()->Create<EngineFlyCamera>(entityDb, keyConfig);
+        auto engineFlyCamera = GetServices()->Create<EngineFlyCamera>(entityDb, inputConfig);
         auto engineDebug = GetServices()->Create<EngineDebug>(assetDatabase, entityDb, batcherMeshStatic->GetMeshStaticCollection());
         
         auto cvariableRegister = GetService<CVariableRegister>();

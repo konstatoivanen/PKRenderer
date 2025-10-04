@@ -92,7 +92,6 @@ namespace PK::App
 
         PK_WARNING_ASSERT(entityViews.count < MAX_RENDER_VIEWS, "Active scene view count exceeds predefined maximum (%i)", MAX_RENDER_VIEWS);
 
-
         m_renderViewCount = 0u;
         RenderView* views[MAX_RENDER_VIEWS]{};
 

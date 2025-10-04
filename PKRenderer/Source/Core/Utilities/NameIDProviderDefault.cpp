@@ -3,6 +3,9 @@
 
 namespace PK
 {
+    // Should not be here but I dont want to make another cpp file.
+    INameIDProvider::~INameIDProvider() = default;
+
     uint32_t NameIDProviderDefault::INameIDProvider_StringToID(const char* str)
     {
         FixedString128 fixed(str);

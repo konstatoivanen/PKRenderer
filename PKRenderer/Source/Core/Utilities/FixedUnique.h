@@ -1,6 +1,5 @@
 #pragma once
 #include "NoCopy.h"
-#include <exception>
 
 namespace PK
 {
@@ -19,7 +18,7 @@ namespace PK
         {
             if (!m_isCreated)
             {
-                new(reinterpret_cast<T*>(m_data)) T(std::forward<Args>(args)...);
+                new(&value) T(std::forward<Args>(args)...);
                 m_isCreated = true;
             }
         }
@@ -28,13 +27,13 @@ namespace PK
         {
             if (m_isCreated)
             {
-                reinterpret_cast<T*>(m_data)->~T();
+                reinterpret_cast<T*>(&value)->~T();
                 m_isCreated = false;
             }
         }
 
-        const T* get() const { return m_isCreated ? reinterpret_cast<const T*>(m_data) : nullptr; }
-        T* get() { return m_isCreated ? reinterpret_cast<T*>(m_data) : nullptr; }
+        const T* get() const { return m_isCreated ? &value : nullptr; }
+        T* get() { return m_isCreated ? &value : nullptr; }
 
         operator const T* () const { return get(); }
         operator T* () { return get(); }
@@ -44,6 +43,7 @@ namespace PK
 
     private:
         bool m_isCreated;
-        alignas(T) std::byte m_data[sizeof(T)]{};
+        struct U { constexpr U() noexcept {} };
+        union { U other; T value; };
     };
 }

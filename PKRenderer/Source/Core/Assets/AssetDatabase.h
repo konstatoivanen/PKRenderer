@@ -57,6 +57,7 @@ namespace PK
         template<typename T, typename ... Args>
         T* Load(const char* filepath, Args&& ... args) { return LoadInternal<T>(AssetID(filepath), false, std::forward<Args>(args)...); }
 
+
         template<typename T, typename ... Args>
         T* Reload(const std::string& filepath, Args&& ... args) { return LoadInternal<T>(AssetID(filepath.c_str()), true, std::forward<Args>(args)...); }
 

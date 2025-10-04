@@ -36,6 +36,7 @@ namespace PK
     { \
         constexpr static const char* Extension = TExtension; \
         TType() {}; \
+        TType(const char* filepath) { AssetImport(filepath); }; \
     private: \
         typedef TType meta_ThisType; \
         struct meta_FirstId {}; \
@@ -110,3 +111,4 @@ namespace PK
 #define PK_YAML_ASSET_ASSETDATABSE_INTERFACE(type)\
 template<> inline bool PK::Asset::IsValidExtension<type>(const char* extension) { return strcmp(extension, type::Extension) == 0; }\
 template<> inline PK::Ref<type> PK::Asset::Create() { return PK::CreateRef<type>(); }\
+
