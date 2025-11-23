@@ -29,6 +29,10 @@
     #define PK_MESHLET_HAS_EXTRA_PAYLOAD_DATA 0
 #endif
 
+#ifndef PK_MESHLET_USE_VERTEX_COLORS
+    #define PK_MESHLET_USE_VERTEX_COLORS 0
+#endif
+
 #ifndef PK_MESHLET_USE_FUNC_CULL
     #define PK_MESHLET_USE_FUNC_CULL 0
 #endif
@@ -106,6 +110,9 @@ struct PKVertex
 {
     float3 position;
     float3 normal;
+    #if PK_MESHLET_USE_VERTEX_COLORS
+    float3 color;
+    #endif
     float4 tangent;
     float2 texcoord;
 };
@@ -199,7 +206,14 @@ PKVertex Meshlet_Unpack_Vertex(const uint4 packed, const float3 sm_bbmin, const 
 
     v.normal = Meshlet_QuaternionMulVector(quat, float3(0,0,1));
     v.tangent.xyz = Meshlet_QuaternionMulVector(quat, float3(1,0,0));
-    v.tangent.w = bitfieldExtract(packed.y, 28, 1) * 2.0f - 1.0f;
+    v.tangent.w = bitfieldExtract(packed.y, 16, 1) * 2.0f - 1.0f;
+
+    #if PK_MESHLET_USE_VERTEX_COLORS
+    v.color.r = bitfieldExtract(packed.y, 17, 5) / 31.0f;
+    v.color.g = bitfieldExtract(packed.y, 22, 5) / 31.0f;
+    v.color.b = bitfieldExtract(packed.y, 27, 5) / 31.0f;
+    #endif
+
     return v;
 }
 

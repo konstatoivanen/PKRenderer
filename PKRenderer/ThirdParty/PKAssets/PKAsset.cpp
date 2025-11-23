@@ -489,6 +489,14 @@ namespace PKAssets
         return (uint32_t)(i & 0x3FFu);
     }
 
+    static uint32_t PackUnorm5(float v)
+    {
+        auto i = (int32_t)roundf(v * 31.0f);
+        if (i < 0) { i = 0; }
+        if (i > 31) { i = 31; }
+        return (uint32_t)(i & 0x1Fu);
+    }
+
     static float abs(float v) { return v < 0.0f ? -v : v; }
 
     static uint32_t EncodeQuaternion(const float* n, const float* t)
@@ -591,6 +599,7 @@ namespace PKAssets
                         const float* pTexcoord,
                         const float* pNormal,
                         const float* pTangent,
+                        const float* pColor,
                         const float* submeshbbmin,
                         const float* submeshbbmax)
     {
@@ -605,9 +614,7 @@ namespace PKAssets
 
         vertex.posxy = unormPositions[0] | (unormPositions[1] << 16u);
         vertex.posz = unormPositions[2];
-
-        // @TODO encode color 12 bit rgb
-        vertex.colorSigns = 0u;
+        vertex.tsign_color = 0u;
 
         if (pTexcoord)
         {
@@ -619,7 +626,14 @@ namespace PKAssets
         if (pNormal && pTangent)
         {
             vertex.rotation = EncodeQuaternion(pNormal, pTangent);
-            vertex.colorSigns |= (pTangent[3] < 0.0f ? 0u : 1u) << 12u;
+            vertex.tsign_color |= (pTangent[3] < 0.0f ? 0u : 1u);
+        }
+
+        if (pColor)
+        {
+            vertex.tsign_color |= (uint16_t)(PackUnorm5(pColor[0]) << 1u);
+            vertex.tsign_color |= (uint16_t)(PackUnorm5(pColor[1]) << 6u);
+            vertex.tsign_color |= (uint16_t)(PackUnorm5(pColor[2]) << 11u);
         }
 
         return vertex;

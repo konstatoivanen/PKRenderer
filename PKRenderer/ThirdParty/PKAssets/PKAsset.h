@@ -555,7 +555,7 @@ namespace PKAssets
     {
         uint32_t posxy;      // unorm16     position.xy
         uint16_t posz;       // unorm16     position.z
-        uint16_t colorSigns; // 4r4g4b color, 4a tangent sign
+        uint16_t tsign_color; // 1b tangent sign, rbg5 unorm color
         uint32_t texcoord;   // half2       texcoord
         uint32_t rotation;   // r10g10b10a2 quaternion
     };
@@ -702,6 +702,7 @@ namespace PKAssets
                         const float* pTexcoord, 
                         const float* pNormal, 
                         const float* pTangent, 
+                        const float* pColor,
                         const float* submeshbbmin, 
                         const float* submeshbbmax);
 

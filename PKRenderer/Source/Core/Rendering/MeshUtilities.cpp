@@ -365,6 +365,7 @@ namespace PK::MeshUtilities
                     ctx->pTexcoords + vertexIndex * ctx->strideTexcoordsf32,
                     ctx->pNormals + vertexIndex * ctx->strideNormalsf32,
                     ctx->pTangents + vertexIndex * ctx->strideTangentsf32,
+                    nullptr,
                     output.submesh.bbmin,
                     output.submesh.bbmax
                 );
