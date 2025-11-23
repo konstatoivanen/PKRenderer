@@ -54,7 +54,7 @@ namespace PK
             return m_pipelineLayoutPool[index];
         }
 
-        m_pipelineLayoutMap[index].value = 0u;
+        m_pipelineLayoutMap[index].value = 1u;
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         pipelineLayoutInfo.pSetLayouts = key.setlayouts;
