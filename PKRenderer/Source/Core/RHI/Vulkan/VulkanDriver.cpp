@@ -276,6 +276,7 @@ namespace PK
         descriptorCache->Prune();
         disposer->Prune();
         queues->Prune();
+        layoutCache->Prune();
     }
 
 

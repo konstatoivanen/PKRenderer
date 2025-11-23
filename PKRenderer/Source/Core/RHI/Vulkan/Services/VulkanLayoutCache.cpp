@@ -9,11 +9,12 @@ namespace PK
         auto index = 0u;
         if (!m_setLayoutMap.AddKey(key, &index))
         {
-            m_setLayoutMap[index].value++;
+            m_setLayoutMap[index].value.referenceCount++;
             return m_setLayoutPool[index];
         }
 
-        m_setLayoutMap[index].value = 1u;
+        m_setLayoutMap[index].value.referenceCount = 1u;
+        m_setLayoutMap[index].value.releaseFence.Invalidate();
 
         VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO };
         VkDescriptorSetLayoutCreateInfo layoutCreateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
@@ -50,11 +51,12 @@ namespace PK
         auto index = 0u;
         if (!m_pipelineLayoutMap.AddKey(key, &index))
         {
-            m_pipelineLayoutMap[index].value++;
+            m_pipelineLayoutMap[index].value.referenceCount++;
             return m_pipelineLayoutPool[index];
         }
 
-        m_pipelineLayoutMap[index].value = 1u;
+        m_pipelineLayoutMap[index].value.referenceCount = 1u;
+        m_pipelineLayoutMap[index].value.releaseFence.Invalidate();
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         pipelineLayoutInfo.pSetLayouts = key.setlayouts;
@@ -83,27 +85,50 @@ namespace PK
         return m_pipelineLayoutPool.NewAt(index, m_device, pipelineLayoutInfo);
     }
 
-    void VulkanLayoutCache::ReleaseSetLayout(const VulkanDescriptorSetLayout* layout)
+    void VulkanLayoutCache::ReleaseSetLayout(const VulkanDescriptorSetLayout* layout, const FenceRef& releaseFence)
     {
         auto index = m_setLayoutPool.GetIndex(layout);
-        m_setLayoutMap[index].value--;
+        m_setLayoutMap[index].value.referenceCount--;
 
-        if (m_setLayoutMap[index].value <= 0u)
+        if (m_setLayoutMap[index].value.referenceCount <= 0u)
         {
-            m_setLayoutMap.RemoveAt(index);
-            m_setLayoutPool.Delete(index);
+            m_setLayoutMap[index].value.releaseFence = releaseFence;
         }
     }
 
-    void VulkanLayoutCache::ReleasePipelineLayout(const VulkanPipelineLayout* layout)
+    void VulkanLayoutCache::ReleasePipelineLayout(const VulkanPipelineLayout* layout, const FenceRef& releaseFence)
     {
         auto index = m_pipelineLayoutPool.GetIndex(layout);
-        m_pipelineLayoutMap[index].value--;
+        m_pipelineLayoutMap[index].value.referenceCount--;
 
-        if (m_pipelineLayoutMap[index].value <= 0u)
+        if (m_pipelineLayoutMap[index].value.referenceCount <= 0u)
         {
-            m_pipelineLayoutMap.RemoveAt(index);
-            m_pipelineLayoutPool.Delete(index);
+            m_pipelineLayoutMap[index].value.releaseFence = releaseFence;
+        }
+    }
+
+    void VulkanLayoutCache::Prune()
+    {
+        for (int32_t i = m_setLayoutMap.GetCount() - 1; i >= 0; --i)
+        {
+            auto& value = m_setLayoutMap[i].value;
+
+            if (value.referenceCount <= 0u && value.releaseFence.WaitInvalidate(0u))
+            {
+                m_setLayoutMap.RemoveAt(i);
+                m_setLayoutPool.Delete(i);
+            }
+        }
+
+        for (int32_t i = m_pipelineLayoutMap.GetCount() - 1; i >= 0; --i)
+        {
+            auto& value = m_pipelineLayoutMap[i].value;
+
+            if (value.referenceCount <= 0u && value.releaseFence.WaitInvalidate(0u))
+            {
+                m_pipelineLayoutMap.RemoveAt(i);
+                m_pipelineLayoutPool.Delete(i);
+            }
         }
     }
 }

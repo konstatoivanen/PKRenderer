@@ -31,6 +31,12 @@ namespace PK
         }
     };
 
+    struct LayoutValue
+    {
+        FenceRef releaseFence;
+        uint32_t referenceCount;
+    };
+
     class VulkanLayoutCache : public NoCopy
     {
         using TDescriptorHash = Hash::TMurmurHash<DescriptorSetLayoutKey>;
@@ -41,14 +47,15 @@ namespace PK
 
             const VulkanDescriptorSetLayout* GetSetLayout(const DescriptorSetLayoutKey& key);
             const VulkanPipelineLayout* GetPipelineLayout(const PipelineLayoutKey& key);
-            void ReleaseSetLayout(const VulkanDescriptorSetLayout* layout);
-            void ReleasePipelineLayout(const VulkanPipelineLayout* layout);
+            void ReleaseSetLayout(const VulkanDescriptorSetLayout* layout, const FenceRef& releaseFence);
+            void ReleasePipelineLayout(const VulkanPipelineLayout* layout, const FenceRef& releaseFence);
+            void Prune();
 
         private:
             VkDevice m_device;
             FixedPool<VulkanDescriptorSetLayout, 1024> m_setLayoutPool;
             FixedPool<VulkanPipelineLayout, 1024> m_pipelineLayoutPool;
-            FixedMap16<DescriptorSetLayoutKey, uint16_t, 1024u, TDescriptorHash> m_setLayoutMap;
-            FixedMap16<PipelineLayoutKey, uint16_t, 1024u, TPipelineHash> m_pipelineLayoutMap;
+            FixedMap16<DescriptorSetLayoutKey, LayoutValue, 1024u, TDescriptorHash> m_setLayoutMap;
+            FixedMap16<PipelineLayoutKey, LayoutValue, 1024u, TPipelineHash> m_pipelineLayoutMap;
     };
 }

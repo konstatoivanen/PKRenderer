@@ -21,16 +21,18 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
     uv += SURF_MAKE_PARALLAX_OFFSET(height, _HeightAmount, surf.view_dir);
 
     //// GI color test code
-    //float lval = surf.world_pos.x * 0.025f + pk_Time.y * 0.25f;
-    //lval -= floor(lval);
-    //lval = 1.0f - lval;
-    //lval -= 0.75f;
-    //lval *= 4.0f;
-    //lval = saturate(lval);
-    //lval *= pow5(lval);
-    //float3 c = HsvToRgb(0.025f, 0.8f, lval * 20.0f);
-    //
-    //surf.emission = texture(sampler2D(_EmissionTexture, pk_Sampler_SurfDefault), uv * 4.0f).xxx * c * _EmissionColor.rgb;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;
+//#if !defined(SHADER_STAGE_MESH_TASK)
+//    float lval = surf.world_pos.x * 0.025f + pk_Time.y * 0.25f;
+//    lval -= floor(lval);
+//    lval = 1.0f - lval;
+//    lval -= 0.75f;
+//    lval *= 4.0f;
+//    lval = saturate(lval);
+//    lval *= pow5(lval);
+//    float3 c = HsvToRgb(0.025f, 0.8f, lval * 20.0f);
+//    
+//    surf.emission = texture(sampler2D(_EmissionTexture, pk_Sampler_SurfDefault), uv * 4.0f).xxx * c * _EmissionColor.rgb;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;
+//#endif
 
     /*
         float lval = surf.world_pos.y * 2.0f - 0.01f;
