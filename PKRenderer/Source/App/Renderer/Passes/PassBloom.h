@@ -1,6 +1,9 @@
 #pragma once
 #include "Core/Utilities/NoCopy.h"
+#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Rendering/RenderingFwd.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase);
 
 namespace PK::App
 {

@@ -53,7 +53,6 @@ namespace PK
         {
             for (auto i = 0ull; i < Size; ++i)
             {
-// @TODO this check is nonsense.
 #if defined(_MSC_VER) && defined(_WIN64)
                 unsigned long idx = 0ul;
                 if (_BitScanForward64(&idx, ~m_mask[i]))
@@ -61,7 +60,7 @@ namespace PK
                     return i * Stride + idx;
                 }
 
-#elif defined __GNUC__ || defined __clang__
+#elif defined __GNUC__
                 auto idx = __builtin_ffsll(~m_mask[i])) - 1ull;
      
                 if (idx >= 0)

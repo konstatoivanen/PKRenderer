@@ -50,6 +50,13 @@ namespace PK::App
         PK_YAML_MEMBER(float, Power, 0.25f)
     PK_YAML_STRUCT_END()
 
+    PK_YAML_STRUCT_BEGIN(DistortSettings)
+        PK_YAML_MEMBER(float, PaniniProjectionAmount, 0.0f)
+        PK_YAML_MEMBER(float, PaniniProjectionScreenFit, 1.0f)
+        PK_YAML_MEMBER(float, ChromaticAberrationAmount, 0.0f)
+        PK_YAML_MEMBER(float, ChromaticAberrationPower, 1.0f)
+    PK_YAML_STRUCT_END()
+
     PK_YAML_STRUCT_BEGIN(ColorGradingSettings)
         PK_YAML_MEMBER(float, Contribution, 1.0f)
         PK_YAML_MEMBER(float, TemperatureShift, 0.0f)
@@ -78,6 +85,7 @@ namespace PK::App
         PK_YAML_MEMBER(float, LensDirtIntensity, 0.0f)
         PK_YAML_MEMBER(TextureAsset*, LensDirtTextureAsset, nullptr)
     PK_YAML_STRUCT_END()
+
 
     PK_YAML_STRUCT_BEGIN(TemporalAntialiasingSettings)
         PK_YAML_MEMBER(float, Sharpness, 0.5f)
@@ -130,6 +138,7 @@ namespace PK::App
         PK_YAML_MEMBER_STRUCT(AutoExposureSettings, AutoExposureSettings)
         PK_YAML_MEMBER_STRUCT(FilmGrainSettings, FilmGrainSettings)
         PK_YAML_MEMBER_STRUCT(VignetteSettings, VignetteSettings)
+        PK_YAML_MEMBER_STRUCT(DistortSettings, DistortSettings)
         PK_YAML_MEMBER_STRUCT(ColorGradingSettings, ColorGradingSettings)
         PK_YAML_MEMBER_STRUCT(BloomSettings, BloomSettings)
         PK_YAML_MEMBER_STRUCT(TemporalAntialiasingSettings, TemporalAntialiasingSettings)

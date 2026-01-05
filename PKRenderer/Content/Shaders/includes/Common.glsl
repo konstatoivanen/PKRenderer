@@ -69,6 +69,8 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float4 pk_Fog_Density_ExpParams0;
     float4 pk_Fog_Density_ExpParams1;
 
+    float4 pk_Panini_Projection_Parameters;
+
     // Post FX Parameters
     float4 pk_CC_WhiteBalance;
     float4 pk_CC_Lift;
@@ -100,6 +102,9 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants, PK_SET_GLOBAL)
     float pk_Bloom_Diffusion;
     float pk_Bloom_Intensity;
     float pk_Bloom_DirtIntensity;
+
+    float pk_Chromatic_Aberration_Amount;
+    float pk_Chromatic_Aberration_Power;
 
     float pk_TAA_Sharpness;
     float pk_TAA_BlendingStatic;

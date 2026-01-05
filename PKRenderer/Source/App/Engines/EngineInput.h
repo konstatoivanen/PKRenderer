@@ -5,9 +5,9 @@
 #include "Core/Utilities/FixedPool.h"
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FixedList.h"
+#include "Core/CLI/CArguments.h"
 #include "Core/Platform/PlatformInterfaces.h"
 #include "Core/Input/InputState.h"
-#include "Core/Rendering/RenderingFwd.h"
 #include "App/FrameStep.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct Sequencer)
@@ -36,5 +36,6 @@ namespace PK::App
         FixedMap8<InputDevice*, InputState, InputStateCollection::MAX_DEVICES> m_deviceStates;
         InputState m_globalState{};
         InputDevice* m_lastDevice;
+        InputDeviceFilePaths m_droppedFilePaths;
     };
 }

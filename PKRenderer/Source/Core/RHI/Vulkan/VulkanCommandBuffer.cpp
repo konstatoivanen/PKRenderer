@@ -672,8 +672,6 @@ namespace PK
         {
             EndRenderPass();
             auto info = m_renderState->GetRenderPassInfo();
-            // @TODO support multi level command buffers?
-            //info.flags = m_level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ? VK_RENDERING_CONTENTS_INLINE_BIT_KHR : VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
             vkCmdBeginRendering(m_commandBuffer, &info);
             m_isInActiveRenderPass = true;
         }
@@ -734,12 +732,11 @@ namespace PK
         }
     }
 
-    void VulkanCommandBuffer::BeginRecord(VkCommandBuffer commandBuffer, VkFence fence, uint16_t queueFamily, VkCommandBufferLevel level, VulkanRenderState* renderState)
+    void VulkanCommandBuffer::BeginRecord(VkCommandBuffer commandBuffer, VkFence fence, uint16_t queueFamily, VulkanRenderState* renderState)
     {
         m_commandBuffer = commandBuffer;
         m_fence = fence;
         m_queueFamily = queueFamily;
-        m_level = level;
         m_renderState = renderState;
         m_renderState->Reset();
 

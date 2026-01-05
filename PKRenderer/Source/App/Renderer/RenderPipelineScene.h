@@ -8,6 +8,7 @@
 #include "App/Renderer/Passes/PassSceneGI.h"
 #include "App/Renderer/Passes/PassVolumeFog.h"
 #include "App/Renderer/Passes/PassFilmGrain.h"
+#include "App/Renderer/Passes/PassDistort.h"
 #include "App/Renderer/Passes/PassDepthOfField.h"
 #include "App/Renderer/Passes/PassTemporalAntialiasing.h"
 #include "App/Renderer/Passes/PassAutoExposure.h"
@@ -29,6 +30,7 @@ namespace PK::App
         public PassSceneEnv::ViewResources,
         public PassDepthOfField::ViewResources,
         public PassTemporalAntialiasing::ViewResources,
+        public PassDistort::ViewResources,
         public PassBloom::ViewResources,
         public PassAutoExposure::ViewResources
     {
@@ -55,6 +57,7 @@ namespace PK::App
             PassFilmGrain m_passFilmGrain;
             PassDepthOfField m_depthOfField;
             PassTemporalAntialiasing m_temporalAntialiasing;
+            PassDistort m_distort;
             PassBloom m_bloom;
             PassAutoExposure m_autoExposure;
             PassPostEffectsComposite m_passPostEffectsComposite;

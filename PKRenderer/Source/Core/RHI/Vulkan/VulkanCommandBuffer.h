@@ -72,7 +72,7 @@ namespace PK
         void ValidatePipeline();
         void EndRenderPass();
 
-        void BeginRecord(VkCommandBuffer commandBuffer, VkFence fence, uint16_t queueFamily, VkCommandBufferLevel level, VulkanRenderState* renderState);
+        void BeginRecord(VkCommandBuffer commandBuffer, VkFence fence, uint16_t queueFamily, VulkanRenderState* renderState);
         void EndRecord();
         // Called when the command buffer is finished execution.
         void FinishExecution();
@@ -89,7 +89,6 @@ namespace PK
             VkSemaphore m_imageSignal = VK_NULL_HANDLE;
             VkFence m_fence = VK_NULL_HANDLE;
             uint16_t m_queueFamily = 0u;
-            VkCommandBufferLevel m_level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
             VulkanRenderState* m_renderState = nullptr;
             
             uint64_t m_invocationIndex = 0ull;

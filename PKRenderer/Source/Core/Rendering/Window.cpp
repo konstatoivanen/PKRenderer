@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
-#include "Core/Utilities/FileIOBMP.h"
+#include "Core/Utilities/FileIOImage.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Window.h"
 
@@ -36,16 +36,15 @@ namespace PK
 
         if (descriptor.iconPath.Length() > 0)
         {
-            // @TODO support ico loads to remove the need for duplicated icon files
-            // and support window icons on platforms without embedding support.
-            auto iconWidth = 0;
-            auto iconHeight = 0;
-            auto iconBytesPerPixel = 0;
-            uint8_t* pixels = nullptr;
-            FileIO::ReadBMP(descriptor.iconPath.c_str(), &pixels, &iconWidth, &iconHeight, &iconBytesPerPixel);
-            PK_THROW_ASSERT(iconBytesPerPixel == 4, "Trying to load an icon with invalid bytes per pixel value, %i", iconBytesPerPixel);
-            m_native->SetIcon(pixels, { iconWidth, iconHeight });
-            free(pixels);
+            auto icon = FileIO::ReadImage(descriptor.iconPath.c_str());
+            PK_WARNING_ASSERT(icon, "Failed to load window icon at path, %s", descriptor.iconPath.c_str());
+            PK_THROW_ASSERT(!icon || icon->bytesPerPixel == 4, "Trying to load an icon with invalid bytes per pixel value, %i", icon->bytesPerPixel);
+            
+            if (icon)
+            {
+                m_native->SetIcon(icon->pixels, { icon->width, icon->height });
+                free(icon);
+            }
         }
 
         // @TODO HDR Support?!?

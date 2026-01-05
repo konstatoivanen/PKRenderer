@@ -35,16 +35,14 @@ float4 SH_GetCosineBasis(const float3 d) { return float4(1.0f, d) * PK_L1BASIS_C
 float SH_EvaluateDiffuseGeometrics(float4 sh, float3 d)
 {
     float R0 = sh.x;
-    float3 R1 = 0.5f * sh.yzw;
+    float3 R1 = sh.yzw * (1.0f / 3.0f);
     float lenR1 = length(R1);
     float q = 0.5f * (1.0f + dot(R1 / lenR1, d));
     float p = 1.0f + 2.0f * lenR1 / R0;
     float a = (1.0f - lenR1 / R0) / (1.0f + lenR1 / R0);
     float R2 = R0 * (a + (1.0f - a) * (p + 1.0f) * pow(q, p));
     R2 = lerp(R2, R0, bool(lenR1 == 0));
-    // HACK: The geometric eval 'fixes' the loss of peak signal energy in the cosine version.
-    // To retain similar energy output for posterity, well reduce the geomtric ouput to a similar range.
-    return R2 * 0.81649658092f;
+    return R2;
 }
 
 float SH_EvaluateDiffuseBasis(float4 sh, float3 d)

@@ -42,10 +42,11 @@ namespace PK
 
         // Allocate all command buffers that have been completed.
         // Doesnt assign references to wrappers (cache warmup essentially).
+        // Only primary command buffers are supported.
         {
             VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
             allocateInfo.commandPool = m_pool;
-            allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+            allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; 
             allocateInfo.commandBufferCount = 0u;
 
             for (auto& commandBuffer : m_commandBuffers)
@@ -81,7 +82,7 @@ namespace PK
 
         auto commandBuffer = m_commandBuffers[(int64_t)(m_current - &m_wrappers[0])];
         auto fence = m_fences[(int64_t)(m_current - &m_wrappers[0])];
-        m_current->BeginRecord(commandBuffer, fence, m_queueFamily, VK_COMMAND_BUFFER_LEVEL_PRIMARY, &m_primaryRenderState);
+        m_current->BeginRecord(commandBuffer, fence, m_queueFamily, &m_primaryRenderState);
 
         return m_current;
     }

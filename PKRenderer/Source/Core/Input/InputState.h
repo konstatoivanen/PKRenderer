@@ -8,6 +8,7 @@ namespace PK
     {
         InputKeyState keysCurrent;
         InputKeyState keysPrevious;
+        uint32_t lastCharacter = 0u;
         float2 cursorPosition = PK_FLOAT2_ZERO;
         float2 cursorPositionDelta = PK_FLOAT2_ZERO;
         float2 cursorPositionNormalized = PK_FLOAT2_ZERO;

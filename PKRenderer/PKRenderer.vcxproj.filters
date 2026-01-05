@@ -1287,7 +1287,7 @@
     <ClInclude Include="Source\Core\Utilities\FileIOBinary.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FileIOBMP.h">
+    <ClInclude Include="Source\Core\Utilities\FileIOImage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\FixedList.h">
@@ -1504,6 +1504,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\FixedArena.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\App\Renderer\Passes\PassDistort.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2066,6 +2069,7 @@
     <None Include="Content\Shaders\CS_IntegrateDFG.shader" />
     <None Include="Content\Textures\T_TonemapLut_Agx.ktx2" />
     <None Include="Content\Shaders\CS_SceneEnv_IntegrateISL.shader" />
+    <None Include="Content\Shaders\CS_Distort.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glm\detail\glm.cpp">
@@ -2305,7 +2309,7 @@
     <ClCompile Include="Source\Core\Utilities\FileIOBinary.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Utilities\FileIOBMP.cpp">
+    <ClCompile Include="Source\Core\Utilities\FileIOImage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Utilities\Hash.cpp">
@@ -2411,6 +2415,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Yaml\SerializeWindowDescriptor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\App\Renderer\Passes\PassDistort.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

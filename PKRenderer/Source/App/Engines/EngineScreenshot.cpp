@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <filesystem>
 #include "Core/Utilities/Parse.h"
-#include "Core/Utilities/FileIOBMP.h"
+#include "Core/Utilities/FileIOImage.h"
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/RHI/RHInterfaces.h"
@@ -83,7 +83,7 @@ namespace PK::App
             filename = FixedString32("Screenshot%i.bmp", ++index);
         }
 
-        PK::FileIO::WriteBMP(filename.c_str(), pixels, m_captureResolution.x, m_captureResolution.y);
+        FileIO::WriteBMP(filename.c_str(), { pixels, (int32_t)m_captureResolution.x, (int32_t)m_captureResolution.y, 4 });
         free(pixels);
 
         PK_LOG_INFO("Screenshot captured: %s", filename.c_str());

@@ -38,6 +38,7 @@ namespace PK::App
     {
         m_globalState.cursorPositionDelta = PK_FLOAT2_ZERO;
         m_globalState.keysPrevious = m_globalState.keysCurrent;
+        m_droppedFilePaths.device = nullptr;
     }
 
     void EngineInput::InputHandler_OnPoll(InputDevice* device)
@@ -94,16 +95,28 @@ namespace PK::App
         }
     }
 
-    void EngineInput::InputHandler_OnCharacter([[maybe_unused]] InputDevice* device, [[maybe_unused]] uint32_t character)
+    void EngineInput::InputHandler_OnCharacter(InputDevice* device, uint32_t character)
     {
-        //@TODO Do something?!?
-        m_lastDevice = device;
+        auto state = m_deviceStates.GetValuePtr(device);
+
+        if (state)
+        {
+            state->lastCharacter = character;
+            m_globalState.lastCharacter = character;
+            m_lastDevice = device;
+        }
     }
 
-    void EngineInput::InputHandler_OnDrop([[maybe_unused]] InputDevice* device, [[maybe_unused]] const char* const* paths, [[maybe_unused]] uint32_t count)
+    void EngineInput::InputHandler_OnDrop(InputDevice* device, const char* const* paths, uint32_t count)
     {
-        //@TODO Do something?!?
-        m_lastDevice = device;
+        auto state = m_deviceStates.GetValuePtr(device);
+
+        if (state)
+        {
+            m_droppedFilePaths.device = device;
+            m_droppedFilePaths.paths = CArgumentsInlineDefault(paths, count);
+            m_lastDevice = device;
+        }
     }
 
     void EngineInput::InputHandler_OnConnect(InputDevice* device)

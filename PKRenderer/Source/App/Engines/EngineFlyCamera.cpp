@@ -4,9 +4,10 @@
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
-#include "App/ECS/EntityViewFlyCamera.h"
 #include "Core/IApplication.h"
 #include "Core/Rendering/Window.h"
+#include "App/ECS/EntityViewFlyCamera.h"
+#include "App/FrameContext.h"
 #include "EngineFlyCamera.h"
 
 namespace PK::App
@@ -18,7 +19,7 @@ namespace PK::App
         CVariableRegister::Create<CVariableFuncSimple>("Engine.FlyCamera.Transforms.Reset", [this](){TransformsReset();});
     }
 
-    void EngineFlyCamera::OnStepFrameUpdate([[maybe_unused]] FrameContext* ctx)
+    void EngineFlyCamera::OnStepFrameUpdate(FrameContext* ctx)
     {
         auto views = m_entityDb->Query<EntityViewFlyCamera>((uint32_t)ENTITY_GROUPS::ACTIVE);
 
@@ -92,10 +93,9 @@ namespace PK::App
             // Force automatic perspective projection for this view.
             view.projection->mode = ComponentProjection::Perspective;
 
-            // @TODO hack, this should be propagated in some way!?
             const bool lockAndHideCursor = input->state.GetKey(m_keys.LookDrag);
-            IApplication::Get()->GetPrimaryWindow()->SetCursorLock(lockAndHideCursor, !lockAndHideCursor);
-            IApplication::Get()->GetPrimaryWindow()->GetNative()->SetUseRawInput(true);
+            ctx->window->SetCursorLock(lockAndHideCursor, !lockAndHideCursor);
+            ctx->window->GetNative()->SetUseRawInput(true);
         }
     }
 

@@ -27,6 +27,7 @@ namespace PK::App
         m_passFilmGrain(assetDatabase),
         m_depthOfField(assetDatabase),
         m_temporalAntialiasing(assetDatabase),
+        m_distort(assetDatabase),
         m_bloom(assetDatabase),
         m_autoExposure(assetDatabase),
         m_passPostEffectsComposite(assetDatabase)
@@ -96,6 +97,8 @@ namespace PK::App
             { ElementType::Float4, hash->pk_Fog_Density_ExpParams0 },
             { ElementType::Float4, hash->pk_Fog_Density_ExpParams1 },
 
+            { ElementType::Float4, hash->pk_Panini_Projection_Parameters },
+
             // Color Grading
             { ElementType::Float4, hash->pk_CC_WhiteBalance },
             { ElementType::Float4, hash->pk_CC_Lift },
@@ -133,6 +136,10 @@ namespace PK::App
             { ElementType::Float, hash->pk_Bloom_Intensity },
             { ElementType::Float, hash->pk_Bloom_DirtIntensity },
 
+            // Chromatic aberration
+            { ElementType::Float, hash->pk_Chromatic_Aberration_Amount },
+            { ElementType::Float, hash->pk_Chromatic_Aberration_Power },
+
             // Temporal anti aliasing
             { ElementType::Float, hash->pk_TAA_Sharpness },
             { ElementType::Float, hash->pk_TAA_BlendingStatic },
@@ -167,9 +174,8 @@ namespace PK::App
             desc.current[GBuffers::DepthBiased] = { TextureFormat::R32F, TextureUsage::RTColorSample };
             desc.current[GBuffers::Depth] = { TextureFormat::Depth32F, TextureUsage::RTDepthSample };
 
-            // @TODO refactor to use RGB9E5 as rgba16f redundantly big.
             // Alpha needed for current color to determine translucency in taa
-            // Refactor taa to output to previous color and flip back in composite. allows for barrel distort as well.
+            // @TODO Refactor taa to output to previous color and flip back in composite. allows for barrel distort as well.
             desc.previous[GBuffers::Color] = { TextureFormat::RGBA16F, TextureUsage::Default | TextureUsage::Storage };
             desc.previous[GBuffers::Normals] = { TextureFormat::RGB10A2, TextureUsage::Default };
             desc.previous[GBuffers::DepthBiased] = { TextureFormat::R32F, TextureUsage::Default };
@@ -246,6 +252,7 @@ namespace PK::App
             m_passSceneEnv.SetViewConstants(view);
             m_passSceneGI.SetViewConstants(view);
             m_passVolumeFog.SetViewConstants(view);
+            m_distort.SetViewConstants(view);
             m_bloom.SetViewConstants(view);
             m_autoExposure.SetViewConstants(view);
             m_depthOfField.SetViewConstants(view);
@@ -372,6 +379,7 @@ namespace PK::App
             // Previous color has been updated. leverage that and do taa without extra blit.
             m_temporalAntialiasing.Render(cmdgraphics, context->views[0], gbuffers.previous.color, gbuffers.current.color);
             m_depthOfField.Render(cmdgraphics, context, gbuffers.current.color);
+            m_distort.Render(cmdgraphics, context);
             m_bloom.Render(cmdgraphics, context);
             m_passPostEffectsComposite.Render(cmdgraphics, gbuffers.current.color);
         }

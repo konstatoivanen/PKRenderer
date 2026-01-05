@@ -83,9 +83,12 @@ However, this is ultimately a hobby project & thus likely to remain perpetually 
   - Luminance histogram based auto exposure.
   - Bokeh depth of field & auto focus.
   - GT Uchimura tone mapping.
+  - Agx tone mapping.
   - Color grading.
   - Film grain.
   - Vignette.
+  - Panini Projection
+  - Chromatic aberration
   
 </details>
 

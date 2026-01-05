@@ -45,14 +45,14 @@ namespace PK::App
             maxHistoryTime = glm::max(maxHistoryTime, m_timeHistory.at(i));
         }
 
-        FixedString64 textFramerate("FPS: %i", m_framerate.framerate);
+        FixedString64 textFramerateCur("FPS: %i", m_framerate.framerate);
         FixedString64 textFramerateAvg("Avg: %4.2fms", avgHistoryTime);
         FixedString64 textFramerateMin("Min: %4.2fms", minHistoryTime);
         FixedString64 textFramerateMax("Max: %4.2fms", maxHistoryTime);
 
         gui->GUIDrawRect(COLOR_BG, rectWindow);
         gui->GUIDrawWireRect(COLOR_FG, rectWindow, 1);
-        gui->GUIDrawText(COLOR_FPS_AVG, rectWindow.xy + short2(12 + 100 * 0, -3), textFramerate.c_str(), 16.0f);
+        gui->GUIDrawText(COLOR_FPS_AVG, rectWindow.xy + short2(12 + 100 * 0, -3), textFramerateCur.c_str(), 16.0f);
         gui->GUIDrawText(COLOR_FPS_AVG, rectWindow.xy + short2(12 + 100 * 1, -3), textFramerateAvg.c_str(), 16.0f);
         gui->GUIDrawText(COLOR_FPS_MIN, rectWindow.xy + short2(12 + 100 * 2, -3), textFramerateMin.c_str(), 16.0f);
         gui->GUIDrawText(COLOR_FPS_MAX, rectWindow.xy + short2(12 + 100 * 3, -3), textFramerateMax.c_str(), 16.0f);

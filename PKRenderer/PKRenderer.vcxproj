@@ -246,6 +246,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\FrameContext.h" />
     <ClInclude Include="Source\App\FrameStep.h" />
     <ClInclude Include="Source\App\Renderer\IGUIRenderer.h" />
+    <ClInclude Include="Source\App\Renderer\Passes\PassDistort.h" />
     <ClInclude Include="Source\App\Renderer\RenderViewSettings.h" />
     <ClInclude Include="Source\Core\CLI\CVariablesYaml.h" />
     <ClInclude Include="Source\Core\Input\InputStateCollection.h" />
@@ -720,7 +721,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\BufferIterator.h" />
     <ClInclude Include="Source\Core\Utilities\BufferView.h" />
     <ClInclude Include="Source\Core\Utilities\FileIOBinary.h" />
-    <ClInclude Include="Source\Core\Utilities\FileIOBMP.h" />
+    <ClInclude Include="Source\Core\Utilities\FileIOImage.h" />
     <ClInclude Include="Source\Core\Utilities\FixedList.h" />
     <ClInclude Include="Source\Core\Utilities\FixedPool.h" />
     <ClInclude Include="Source\Core\Utilities\ForwardDeclare.h" />
@@ -738,6 +739,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
   </ItemGroup>
   <ItemGroup>
     <None Include="Content\Configs\DebugEngine.cfg" />
+    <None Include="Content\Shaders\CS_Distort.shader" />
     <None Include="Content\Shaders\CS_IntegrateDFG.shader" />
     <None Include="Content\Shaders\CS_SceneEnv_IntegrateISL.shader" />
     <None Include="Content\Shaders\VS_SceneEnv_Background.shader" />
@@ -1028,6 +1030,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Engines\EngineGUIRenderer.cpp" />
     <ClCompile Include="Source\App\Engines\EngineProfiler.cpp" />
     <ClCompile Include="Source\App\Engines\EngineViewUpdate.cpp" />
+    <ClCompile Include="Source\App\Renderer\Passes\PassDistort.cpp" />
     <ClCompile Include="Source\Core\Input\InputState.cpp" />
     <ClCompile Include="Source\Core\Platform\Platform.cpp" />
     <ClCompile Include="Source\Core\Platform\Windows\Win32Driver.cpp" />
@@ -1155,7 +1158,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Renderer\RenderPipelineScene.cpp" />
     <ClCompile Include="Source\App\Renderer\BatcherMeshStatic.cpp" />
     <ClCompile Include="Source\Core\Utilities\FileIOBinary.cpp" />
-    <ClCompile Include="Source\Core\Utilities\FileIOBMP.cpp" />
+    <ClCompile Include="Source\Core\Utilities\FileIOImage.cpp" />
     <ClCompile Include="Source\Core\Utilities\Hash.cpp" />
     <ClCompile Include="Source\Core\Utilities\PropertyBlock.cpp" />
     <ClCompile Include="Source\Core\Utilities\VersionedObject.cpp" />

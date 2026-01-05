@@ -130,6 +130,11 @@ namespace PK::App
         DECLARE_HASH(pk_Vignette_Intensity)
         DECLARE_HASH(pk_Vignette_Power)
 
+        DECLARE_HASH(pk_Panini_Projection_Parameters)
+
+        DECLARE_HASH(pk_Chromatic_Aberration_Amount)
+        DECLARE_HASH(pk_Chromatic_Aberration_Power)
+
         DECLARE_HASH(pk_FilmGrain_Luminance)
         DECLARE_HASH(pk_FilmGrain_Intensity)
         DECLARE_HASH(pk_FilmGrain_ExposureSensitivity)
