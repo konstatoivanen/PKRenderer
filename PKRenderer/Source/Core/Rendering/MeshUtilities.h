@@ -1,8 +1,11 @@
 #pragma once
 #include <vector>
 #include <PKAssets/PKAsset.h>
+#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Math/Math.h"
 #include "Core/Rendering/RenderingFwd.h"
+
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase);
 
 namespace PK::MeshUtilities
 {
@@ -12,6 +15,9 @@ namespace PK::MeshUtilities
         std::vector<PKAssets::PKMeshlet> meshlets;
         std::vector<PKAssets::PKMeshletVertex> vertices;
         std::vector<uint8_t> indices;
+        uint32_t meshlet_count = 0u;
+        uint32_t vertex_count = 0u;
+        uint32_t index_count = 0u;
     };
 
     struct GeometryContext
@@ -64,10 +70,9 @@ namespace PK::MeshUtilities
     void CalculateTangents(GeometryContext* ctx);
 
     MeshletBuildData BuildMeshletsMonotone(GeometryContext* ctx);
-
-    MeshStaticAssetRef CreateMeshStaticAsset(MeshStaticCollection* baseMesh, GeometryContext* ctx, const char* name);
-    MeshStaticAssetRef CreateBoxMeshStaticAsset(MeshStaticCollection* baseMesh, const float3& offset, const float3& extents);
-    MeshStaticAssetRef CreateQuadMeshStaticAsset(MeshStaticCollection* baseMesh, const float2& min, const float2& max);
-    MeshStaticAssetRef CreatePlaneMeshStaticAsset(MeshStaticCollection* baseMesh, const float2& center, const float2& extents, uint2 resolution);
-    MeshStaticAssetRef CreateSphereMeshStaticAsset(MeshStaticCollection* baseMesh, const float3& offset, const float radius);
+    MeshStatic* CreateMeshStatic(MeshStaticCollection* baseMesh, GeometryContext* ctx, const char* name);
+    MeshStatic* CreateBoxMeshStatic(MeshStaticCollection* baseMesh, const float3& offset, const float3& extents);
+    MeshStatic* CreateQuadMeshStatic(MeshStaticCollection* baseMesh, const float2& min, const float2& max);
+    MeshStatic* CreatePlaneMeshStatic(MeshStaticCollection* baseMesh, const float2& center, const float2& extents, uint2 resolution);
+    MeshStatic* CreateSphereMeshStatic(MeshStaticCollection* baseMesh, const float3& offset, const float radius);
 }

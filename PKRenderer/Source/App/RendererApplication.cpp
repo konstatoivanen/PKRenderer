@@ -10,6 +10,7 @@
 #include "Core/ControlFlow/RemoteProcessRunner.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/ShaderAsset.h"
+#include "Core/Rendering/MeshStaticAsset.h"
 #include "Core/Rendering/Window.h"
 #include "Core/IApplication.h"
 #include "App/FrameStep.h"
@@ -68,6 +69,8 @@ namespace PK::App
         assetDatabase->LoadDirectory<ShaderAsset>("Content/Shaders/");
 
         auto batcherMeshStatic = GetServices()->Create<BatcherMeshStatic>();
+        assetDatabase->RegisterFactory<MeshStaticAsset>(batcherMeshStatic);
+
         auto renderPipelineScene = GetServices()->Create<RenderPipelineScene>(assetDatabase, entityDb, sequencer, batcherMeshStatic);
 
         auto inputConfig = assetDatabase->Load<InputKeyConfig>("Content/Configs/Input.keycfg");
@@ -179,7 +182,7 @@ namespace PK::App
     {
         Platform::SetInputHandler(nullptr);
         GetService<Sequencer>()->Release();
-        GetService<AssetDatabase>()->Unload();
+        GetService<AssetDatabase>()->UnloadAll();
         GetServices()->Clear();
         m_window = nullptr;
         m_RHIDriver = nullptr;

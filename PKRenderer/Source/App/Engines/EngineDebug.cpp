@@ -28,10 +28,11 @@ namespace PK::App
         m_assetDatabase = assetDatabase;
         auto config = assetDatabase->Load<EngineDebugConfig>("Content/Configs/DebugEngine.cfg");
 
-        auto columnMesh = assetDatabase->Load<MeshStaticAsset>("Content/Models/MDL_Columns.pkmesh", baseMesh);
-        auto rocksMesh = assetDatabase->Load<MeshStaticAsset>("Content/Models/MDL_Rocks.pkmesh", baseMesh);
-        [[maybe_unused]] auto sphereMesh = assetDatabase->Register<MeshStaticAsset>("Primitive_Sphere", MeshUtilities::CreateSphereMeshStaticAsset(baseMesh, PK_FLOAT3_ZERO, 1.0f));
-        auto planeMesh = assetDatabase->Register<MeshStaticAsset>("Primitive_Plane16x16", MeshUtilities::CreatePlaneMeshStaticAsset(baseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
+        auto columnMesh = assetDatabase->Load<MeshStaticAsset>("Content/Models/MDL_Columns.pkmesh");
+        auto rocksMesh = assetDatabase->Load<MeshStaticAsset>("Content/Models/MDL_Rocks.pkmesh");
+        // @TODO move these to some global resources initializer.
+        auto sphereMesh = assetDatabase->CreateVirtual<MeshStaticAsset>("Primitive_Sphere", MeshUtilities::CreateSphereMeshStatic(baseMesh, PK_FLOAT3_ZERO, 1.0f));
+        auto planeMesh = assetDatabase->CreateVirtual<MeshStaticAsset>("Primitive_Plane", MeshUtilities::CreatePlaneMeshStatic(baseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
 
         auto materialSand = assetDatabase->Load<Material>("Content/Materials/M_Sand.material");
         auto materialAsphalt = assetDatabase->Load<Material>("Content/Materials/M_Asphalt.material");
@@ -39,7 +40,7 @@ namespace PK::App
         auto materialPlaster = assetDatabase->Load<Material>("Content/Materials/M_Plaster.material");
 
         auto minpos = float3(-70, -6, -70);
-        auto maxpos = float3(70, -4, 70);
+        auto maxpos = float3(+70, -4, +70);
 
         EntityBuilders::CreateEntityMeshStatic(m_entityDb, planeMesh->GetMeshStatic(), { {materialSand,0} }, { 0, -5, 0 }, float3(90, 0, 0) * PK_FLOAT_DEG2RAD, 80.0f);
         EntityBuilders::CreateEntityMeshStatic(m_entityDb, columnMesh->GetMeshStatic(), { {materialAsphalt,0} }, { -20, 5, -20 }, PK_FLOAT3_ZERO, 3.0f);
@@ -72,11 +73,11 @@ namespace PK::App
             EntityBuilders::CreateEntityLightSphere(m_entityDb, m_assetDatabase, pos, type, LightCookie::Circle0, color, true);
         }
 
-        auto color = Math::HexToRGB(0x6D563DFF) * 32.0f; // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF //0xFFA575FF
+        auto color = Math::HexToRGB(0xFF5E19FF) * 24.0f; // 0x6D563DFF //0x66D1FFFF //0xF78B3DFF //0xFFA575FF
 
         EntityBuilders::CreateEntityLight(m_entityDb, 
             PK_FLOAT3_ZERO, 
-            float3(25, -35, 0) * PK_FLOAT_DEG2RAD, 
+            float3(10, -35, 0) * PK_FLOAT_DEG2RAD, 
             LightType::Directional, 
             LightCookie::Circle0, 
             color, 

@@ -9,12 +9,13 @@
 #include "App/Renderer/IBatcher.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct MeshStaticAsset)
 
 namespace PK::App
 {
     struct ComponentTransform;
 
-    class BatcherMeshStatic : public IBatcher
+    class BatcherMeshStatic : public IBatcher, public AssetFactory<MeshStaticAsset>
     {
         constexpr static uint32_t MAX_SHADERS = 64u;
         constexpr static uint32_t MAX_MATERIALS = 2048u;
@@ -95,6 +96,8 @@ namespace PK::App
         BatcherMeshStatic();
 
         inline MeshStaticCollection* GetMeshStaticCollection() { return m_staticGeometry.get(); }
+
+        void AssetConstruct(MeshStaticAsset* memory, const char* filepath) final;
 
         void BeginCollectDrawCalls() final;
 

@@ -7,7 +7,7 @@
 
 namespace PK
 {
-    struct Mesh : public AssetWithImport<>
+    struct Mesh : public Asset
     {
         struct SubMesh
         {
@@ -20,7 +20,8 @@ namespace PK
 
         typedef FixedList<RHIBufferRef, PK_RHI_MAX_VERTEX_ATTRIBUTES> VertexBuffers;
 
-        Mesh();
+        Mesh() {};
+        Mesh(const char* filepath);
         Mesh(const RHIBufferRef& indexBuffer,
             ElementType indexType,
             RHIBufferRef* vertexBuffers,
@@ -37,7 +38,6 @@ namespace PK
             SubMesh* submeshes,
             uint32_t submeshCount);
 
-        void AssetImport(const char* filepath) final;
         bool TryGetAccelerationStructureGeometryInfo(uint32_t submesh, AccelerationStructureGeometryInfo* outInfo);
 
         const VertexBuffers& GetVertexBuffers() const;

@@ -5,14 +5,12 @@
 
 namespace PK
 {
-    struct MeshStaticAsset : public AssetWithImport<MeshStaticCollection*&>
+    struct MeshStaticAsset : public Asset
     {
-        MeshStaticAsset();
-        MeshStaticAsset(MeshStaticCollection* baseMesh, MeshStaticAllocationData* allocData);
+        MeshStaticAsset(MeshStaticCollection* baseMesh, const char* filepath);
+        MeshStaticAsset(MeshStatic* staticMesh);
         ~MeshStaticAsset();
 
-        virtual void AssetImport(const char* filepath, MeshStaticCollection*& baseMesh) final;
-        
         inline MeshStatic* GetMeshStatic() const { return m_staticMesh; }
         const SubMeshStatic* GetStaticSubmesh(uint32_t localIndex) const;
         uint32_t GetSubmeshCount() const;

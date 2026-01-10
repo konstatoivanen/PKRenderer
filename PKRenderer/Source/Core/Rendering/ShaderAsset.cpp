@@ -111,7 +111,8 @@ namespace PK
         return idx;
     }
 
-    void ShaderAsset::AssetImport(const char* filepath)
+
+    ShaderAsset::ShaderAsset(const char* filepath)
     {
         ReleaseVariants();
 
@@ -304,6 +305,3 @@ namespace PK
 
 template<>
 bool PK::Asset::IsValidExtension<PK::ShaderAsset>(const char* extension) { return strcmp(extension, ".pkshader") == 0; }
-
-template<>
-PK::Ref<PK::ShaderAsset> PK::Asset::Create() { return CreateRef<PK::ShaderAsset>(); }

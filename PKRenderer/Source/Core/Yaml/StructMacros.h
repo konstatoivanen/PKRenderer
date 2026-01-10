@@ -32,11 +32,11 @@ namespace PK
 
 // Needs to be declared out of namespace
 #define PK_YAML_ASSET_BEGIN(TType, TExtension) \
-    struct TType : public PK::IYamlStruct, public PK::AssetWithImport<> \
+    struct TType : public PK::IYamlStruct, public PK::Asset \
     { \
         constexpr static const char* Extension = TExtension; \
         TType() {}; \
-        TType(const char* filepath) { AssetImport(filepath); }; \
+        TType(const char* filepath) { YamlLoadFromFile(filepath); }; \
     private: \
         typedef TType meta_ThisType; \
         struct meta_FirstId {}; \
@@ -105,10 +105,8 @@ namespace PK
             } \
             while (parseFunc); \
         } \
-        inline void AssetImport(const char* filepath) final { YamlLoadFromFile(filepath); } \
     }; \
 
 #define PK_YAML_ASSET_ASSETDATABSE_INTERFACE(type)\
 template<> inline bool PK::Asset::IsValidExtension<type>(const char* extension) { return strcmp(extension, type::Extension) == 0; }\
-template<> inline PK::Ref<type> PK::Asset::Create() { return PK::CreateRef<type>(); }\
 

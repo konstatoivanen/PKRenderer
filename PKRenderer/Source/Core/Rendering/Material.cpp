@@ -58,34 +58,7 @@ namespace PK
     }
 
 
-    size_t Material::GetPropertyStride() const { return m_shader->GetMaterialPropertyLayout().GetPaddedStride(); }
-
-    bool Material::SupportsKeyword(const NameID keyword) const { return m_shader->SupportsKeyword(keyword); }
-
-    bool Material::SupportsKeywords(const NameID* keywords, const uint32_t count) const { return m_shader->SupportsKeywords(keywords, count); }
-
-    void Material::CopyTo(char* dst, BindSet<RHITexture>* textureSet) const
-    {
-        auto& layout = m_shader->GetMaterialPropertyLayout();
-
-        memcpy(dst, GetByteBuffer(), layout.GetAlignedStride());
-
-        for (auto& element : layout)
-        {
-            switch (element.format)
-            {
-                case ElementType::Texture2DHandle:
-                {
-                    auto texIndex = textureSet->Set(*Get<RHITexture*>(element.name));
-                    memcpy(dst + element.alignedOffset, &texIndex, sizeof(int32_t));
-                }
-                break;
-                default: break;
-            }
-        }
-    }
-
-    void Material::AssetImport(const char* filepath)
+    Material::Material(const char* filepath) : ShaderPropertyBlock(0u, 0u)
     {
         void* fileData = nullptr;
         size_t fileSize = 0ull;
@@ -142,28 +115,55 @@ namespace PK
 
                     switch (elementType)
                     {
-                        case ElementType::Float: Set(nameId, YAML::Read<float>(value)); break;
-                        case ElementType::Float2: Set(nameId, YAML::Read<float2>(value)); break;
-                        case ElementType::Float3: Set(nameId, YAML::Read<float3>(value)); break;
-                        case ElementType::Float4: Set(nameId, YAML::Read<float4>(value)); break;
-                        case ElementType::Float2x2: Set(nameId, YAML::Read<float2x2>(value)); break;
-                        case ElementType::Float3x3: Set(nameId, YAML::Read<float3x3>(value)); break;
-                        case ElementType::Float4x4: Set(nameId, YAML::Read<float3x4>(value)); break;
-                        case ElementType::Float3x4: Set(nameId, YAML::Read<float4x4>(value)); break;
-                        case ElementType::Int: Set(nameId, YAML::Read<int>(value)); break;
-                        case ElementType::Int2: Set(nameId, YAML::Read<int2>(value)); break;
-                        case ElementType::Int3: Set(nameId, YAML::Read<int3>(value)); break;
-                        case ElementType::Int4: Set(nameId, YAML::Read<int4>(value)); break;
-                        case ElementType::Texture2DHandle: Set(nameId, YAML::Read<TextureAsset*>(value)->GetRHI()); break;
-                        case ElementType::Texture3DHandle: Set(nameId, YAML::Read<TextureAsset*>(value)->GetRHI()); break;
-                        case ElementType::TextureCubeHandle: Set(nameId, YAML::Read<TextureAsset*>(value)); break;
-                        default: PK_LOG_WARNING("Unsupported material parameter type"); break;
+                    case ElementType::Float: Set(nameId, YAML::Read<float>(value)); break;
+                    case ElementType::Float2: Set(nameId, YAML::Read<float2>(value)); break;
+                    case ElementType::Float3: Set(nameId, YAML::Read<float3>(value)); break;
+                    case ElementType::Float4: Set(nameId, YAML::Read<float4>(value)); break;
+                    case ElementType::Float2x2: Set(nameId, YAML::Read<float2x2>(value)); break;
+                    case ElementType::Float3x3: Set(nameId, YAML::Read<float3x3>(value)); break;
+                    case ElementType::Float4x4: Set(nameId, YAML::Read<float3x4>(value)); break;
+                    case ElementType::Float3x4: Set(nameId, YAML::Read<float4x4>(value)); break;
+                    case ElementType::Int: Set(nameId, YAML::Read<int>(value)); break;
+                    case ElementType::Int2: Set(nameId, YAML::Read<int2>(value)); break;
+                    case ElementType::Int3: Set(nameId, YAML::Read<int3>(value)); break;
+                    case ElementType::Int4: Set(nameId, YAML::Read<int4>(value)); break;
+                    case ElementType::Texture2DHandle: Set(nameId, YAML::Read<TextureAsset*>(value)->GetRHI()); break;
+                    case ElementType::Texture3DHandle: Set(nameId, YAML::Read<TextureAsset*>(value)->GetRHI()); break;
+                    case ElementType::TextureCubeHandle: Set(nameId, YAML::Read<TextureAsset*>(value)); break;
+                    default: PK_LOG_WARNING("Unsupported material parameter type"); break;
                     }
                 }
             }
         }
 
         free(fileData);
+    }
+
+    size_t Material::GetPropertyStride() const { return m_shader->GetMaterialPropertyLayout().GetPaddedStride(); }
+
+    bool Material::SupportsKeyword(const NameID keyword) const { return m_shader->SupportsKeyword(keyword); }
+
+    bool Material::SupportsKeywords(const NameID* keywords, const uint32_t count) const { return m_shader->SupportsKeywords(keywords, count); }
+
+    void Material::CopyTo(char* dst, BindSet<RHITexture>* textureSet) const
+    {
+        auto& layout = m_shader->GetMaterialPropertyLayout();
+
+        memcpy(dst, GetByteBuffer(), layout.GetAlignedStride());
+
+        for (auto& element : layout)
+        {
+            switch (element.format)
+            {
+                case ElementType::Texture2DHandle:
+                {
+                    auto texIndex = textureSet->Set(*Get<RHITexture*>(element.name));
+                    memcpy(dst + element.alignedOffset, &texIndex, sizeof(int32_t));
+                }
+                break;
+                default: break;
+            }
+        }
     }
 
     void Material::InitializeShaderLayout(uint32_t minSize, uint32_t minPropertyCount)
@@ -194,6 +194,3 @@ namespace PK
 
 template<>
 bool PK::Asset::IsValidExtension<PK::Material>(const char* extension) { return strcmp(extension, ".material") == 0; }
-
-template<>
-PK::Ref<PK::Material> PK::Asset::Create() { return PK::CreateRef<Material>(); }

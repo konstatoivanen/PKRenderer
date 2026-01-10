@@ -12,11 +12,11 @@ namespace PK::MeshUtilities
 {
     namespace MikktsInterface
     {
-        int GetNumFaces(const SMikkTSpaceContext* pContext) { return reinterpret_cast<GeometryContext*>(pContext->m_pUserData)->countIndex / 3; }
+        static int GetNumFaces(const SMikkTSpaceContext* pContext) { return reinterpret_cast<GeometryContext*>(pContext->m_pUserData)->countIndex / 3; }
         
-        int GetNumVerticesOfFace([[maybe_unused]] const SMikkTSpaceContext* pContext, [[maybe_unused]] const int iFace) { return 3; }
+        static int GetNumVerticesOfFace([[maybe_unused]] const SMikkTSpaceContext* pContext, [[maybe_unused]] const int iFace) { return 3; }
         
-        void GetPosition(const SMikkTSpaceContext* pContext, float fvPosOut[], const int iFace, const int iVert)
+        static void GetPosition(const SMikkTSpaceContext* pContext, float fvPosOut[], const int iFace, const int iVert)
         {
             auto meshData = reinterpret_cast<GeometryContext*>(pContext->m_pUserData);
             auto pPosition =  meshData->pPositions + meshData->pIndices[iFace * 3 + iVert] * meshData->stridePositionsf32;
@@ -25,7 +25,7 @@ namespace PK::MeshUtilities
             fvPosOut[2] = pPosition[2];
         }
 
-        void GetNormal(const SMikkTSpaceContext* pContext, float fvNormOut[], const int iFace, const int iVert)
+        static void GetNormal(const SMikkTSpaceContext* pContext, float fvNormOut[], const int iFace, const int iVert)
         {
             auto meshData = reinterpret_cast<GeometryContext*>(pContext->m_pUserData);
             auto pNormal = meshData->pNormals + meshData->pIndices[iFace * 3 + iVert] * meshData->strideNormalsf32;
@@ -34,7 +34,7 @@ namespace PK::MeshUtilities
             fvNormOut[2] = pNormal[2];
         }
 
-        void GetTexCoord(const SMikkTSpaceContext* pContext, float fvTexcOut[], const int iFace, const int iVert)
+        static void GetTexCoord(const SMikkTSpaceContext* pContext, float fvTexcOut[], const int iFace, const int iVert)
         {
             auto meshData = reinterpret_cast<GeometryContext*>(pContext->m_pUserData);
             auto pTexcoord = meshData->pTexcoords + meshData->pIndices[iFace * 3 + iVert] * meshData->strideTexcoordsf32;
@@ -42,7 +42,7 @@ namespace PK::MeshUtilities
             fvTexcOut[1] = pTexcoord[1];
         }
 
-        void SetTSpaceBasic(const SMikkTSpaceContext* pContext, const float fvTangent[], const float fSign, const int iFace, const int iVert)
+        static void SetTSpaceBasic(const SMikkTSpaceContext* pContext, const float fvTangent[], const float fSign, const int iFace, const int iVert)
         {
             auto meshData = reinterpret_cast<GeometryContext*>(pContext->m_pUserData);
             auto pTangent = meshData->pTangents + meshData->pIndices[iFace * 3 + iVert] * meshData->strideTangentsf32;
@@ -146,6 +146,7 @@ namespace PK::MeshUtilities
         PK_THROW_ASSERT(genTangSpaceDefault(&context), "Failed to calculate tangents");
     }
 
+
     MeshletBuildData BuildMeshletsMonotone(GeometryContext* ctx)
     {
         struct MeshletIndexInfo
@@ -159,121 +160,41 @@ namespace PK::MeshUtilities
         MeshletBuildData output{};
 
         assert(ctx->countIndex % 3 == 0);
-        auto max_vertices_conservative = PKAssets::PK_MESHLET_MAX_VERTICES - 2;
+
+        const auto max_vertices = PKAssets::PK_MESHLET_MAX_VERTICES;
+        const auto max_triangles = PKAssets::PK_MESHLET_MAX_TRIANGLES;
+        const auto max_vertices_conservative = PKAssets::PK_MESHLET_MAX_VERTICES - 2;
+
         auto meshlet_limit_vertices = (ctx->countIndex + max_vertices_conservative - 1) / max_vertices_conservative;
         auto meshlet_limit_triangles = (ctx->countIndex / 3 + PKAssets::PK_MESHLET_MAX_TRIANGLES - 1) / PKAssets::PK_MESHLET_MAX_TRIANGLES;
         auto max_meshlets = meshlet_limit_vertices > meshlet_limit_triangles ? meshlet_limit_vertices : meshlet_limit_triangles;
 
-        std::vector<MeshletIndexInfo> meshlets(max_meshlets);
-        std::vector<unsigned int> meshlet_vertices(max_meshlets * PKAssets::PK_MESHLET_MAX_VERTICES);
-        std::vector<unsigned char> meshlet_triangles(max_meshlets * PKAssets::PK_MESHLET_MAX_TRIANGLES * 3);
-        size_t meshlet_count = 0;
+        output.meshlets.resize(max_meshlets);
+        output.vertices.resize(max_meshlets * PKAssets::PK_MESHLET_MAX_VERTICES);
+        output.indices.resize(max_meshlets * PKAssets::PK_MESHLET_MAX_TRIANGLES * 3);
 
-        // Build meshlet indices
-        {
-            const auto max_vertices = PKAssets::PK_MESHLET_MAX_VERTICES;
-            const auto max_triangles = PKAssets::PK_MESHLET_MAX_TRIANGLES;
+        auto* meshlet_vertices = reinterpret_cast<uint32_t*>(calloc(sizeof(uint32_t), max_meshlets * PKAssets::PK_MESHLET_MAX_VERTICES));
+        auto* meshlet_indices = output.indices.data();
+        auto* used = reinterpret_cast<uint8_t*>(malloc(ctx->countVertex));
+        memset(used, -1, ctx->countVertex);
 
-            const uint32_t* indices = ctx->pIndices;
-            const auto index_count = ctx->countIndex;
-            const auto vertex_count = ctx->countVertex;
-
-            // index of the vertex in the meshlet, 0xff if the vertex isn't used
-            unsigned char* used = reinterpret_cast<unsigned char*>(malloc(vertex_count));
-            memset(used, -1, vertex_count);
-
-            MeshletIndexInfo meshlet = {};
-
-            for (size_t i = 0; i < index_count; i += 3)
-            {
-                unsigned int a = indices[i + 0], b = indices[i + 1], c = indices[i + 2];
-                assert(a < vertex_count&& b < vertex_count&& c < vertex_count);
-
-                // appends triangle to the meshlet and writes previous meshlet to the output if full
-                unsigned char& av = used[a];
-                unsigned char& bv = used[b];
-                unsigned char& cv = used[c];
-                bool result = false;
-
-                unsigned int used_extra = (av == 0xff) + (bv == 0xff) + (cv == 0xff);
-
-                if (meshlet.vertex_count + used_extra > max_vertices || meshlet.triangle_count >= max_triangles)
-                {
-                    meshlets[meshlet_count] = meshlet;
-
-                    for (size_t j = 0; j < meshlet.vertex_count; ++j)
-                    {
-                        used[meshlet_vertices[meshlet.vertex_offset + j]] = 0xff;
-                    }
-
-                    size_t offset = meshlet.triangle_offset + meshlet.triangle_count * 3;
-
-                    // fill 4b padding with 0
-                    while (offset & 3)
-                    {
-                        meshlet_triangles[offset++] = 0;
-                    }
-
-                    meshlet.vertex_offset += meshlet.vertex_count;
-                    meshlet.triangle_offset += (meshlet.triangle_count * 3 + 3) & ~3; // 4b padding
-                    meshlet.vertex_count = 0;
-                    meshlet.triangle_count = 0;
-                    result = true;
-                }
-
-                if (av == 0xff)
-                {
-                    av = (unsigned char)meshlet.vertex_count;
-                    meshlet_vertices[meshlet.vertex_offset + meshlet.vertex_count++] = a;
-                }
-
-                if (bv == 0xff)
-                {
-                    bv = (unsigned char)meshlet.vertex_count;
-                    meshlet_vertices[meshlet.vertex_offset + meshlet.vertex_count++] = b;
-                }
-
-                if (cv == 0xff)
-                {
-                    cv = (unsigned char)meshlet.vertex_count;
-                    meshlet_vertices[meshlet.vertex_offset + meshlet.vertex_count++] = c;
-                }
-
-                meshlet_triangles[meshlet.triangle_offset + meshlet.triangle_count * 3 + 0] = av;
-                meshlet_triangles[meshlet.triangle_offset + meshlet.triangle_count * 3 + 1] = bv;
-                meshlet_triangles[meshlet.triangle_offset + meshlet.triangle_count * 3 + 2] = cv;
-                meshlet.triangle_count++;
-                meshlet_count += result;
-            }
-
-            if (meshlet.triangle_count)
-            {
-                size_t offset = meshlet.triangle_offset + meshlet.triangle_count * 3;
-
-                // fill 4b padding with 0
-                while (offset & 3)
-                {
-                    meshlet_triangles[offset++] = 0;
-                }
-
-                meshlets[meshlet_count++] = meshlet;
-            }
-
-            free(used);
-        }
-
-        output.submesh.firstMeshlet = 0u;
-        output.submesh.meshletCount = (uint32_t)meshlet_count;
         memcpy(output.submesh.bbmin, glm::value_ptr(ctx->aabb.min), sizeof(float3));
         memcpy(output.submesh.bbmax, glm::value_ptr(ctx->aabb.max), sizeof(float3));
 
-        for (auto i = 0u; i < meshlet_count; ++i)
+        auto pack_meshlet_vertex = [](GeometryContext* ctx, PKAssets::PKMeshletVertex* out_vertex, uint32_t index)
         {
-            const auto& meshlet = meshlets.at(i);
-            const auto indicesOffset = output.indices.size();
-            const auto triangleOffset = indicesOffset / 3ull;
-            const auto verticesOffset = output.vertices.size();
+            *out_vertex = PKAssets::PackPKMeshletVertex(
+                ctx->pPositions + index * ctx->stridePositionsf32,
+                ctx->pTexcoords + index * ctx->strideTexcoordsf32,
+                ctx->pNormals + index * ctx->strideNormalsf32,
+                ctx->pTangents + index * ctx->strideTangentsf32,
+                nullptr,
+                glm::value_ptr(ctx->aabb.min),
+                glm::value_ptr(ctx->aabb.max));
+        };
 
+        auto pack_meshlet = [](GeometryContext* ctx, PKAssets::PKMeshlet* out_meshlet, MeshletIndexInfo meshlet, const uint32_t* meshlet_vertices, const uint8_t* meshlet_indices)
+        {
             float3 center = PK_FLOAT3_ZERO, extents = PK_FLOAT3_ZERO, cone_apex = PK_FLOAT3_ZERO;
             sbyte3 cone_axis_s8{};
             sbyte cone_cutoff_s8 = 0;
@@ -284,35 +205,35 @@ namespace PK::MeshUtilities
                 const auto vertex_stride_float = ctx->stridePositionsf32;
                 float3 normals[PKAssets::PK_MESHLET_MAX_TRIANGLES * 3];
                 float3 corners[PKAssets::PK_MESHLET_MAX_TRIANGLES * 3][3];
-                size_t triangles = 0;
+                size_t valid_tri_count = 0;
 
                 for (size_t i = 0; i < index_count; i += 3)
                 {
                     bool isValid = false;
-                    const auto a = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_triangles[meshlet.triangle_offset + i + 0]];
-                    const auto b = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_triangles[meshlet.triangle_offset + i + 1]];
-                    const auto c = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_triangles[meshlet.triangle_offset + i + 2]];
-                    normals[triangles] = Math::GetTriangleNormal(a, b, c, isValid);
-                    corners[triangles][0] = glm::make_vec3(a);
-                    corners[triangles][1] = glm::make_vec3(b);
-                    corners[triangles][2] = glm::make_vec3(c);
-                    triangles += (size_t)isValid;
+                    const auto a = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 0]];
+                    const auto b = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 1]];
+                    const auto c = ctx->pPositions + vertex_stride_float * meshlet_vertices[meshlet.vertex_offset + meshlet_indices[meshlet.triangle_offset + i + 2]];
+                    normals[valid_tri_count] = Math::GetTriangleNormal(a, b, c, isValid);
+                    corners[valid_tri_count][0] = glm::make_vec3(a);
+                    corners[valid_tri_count][1] = glm::make_vec3(b);
+                    corners[valid_tri_count][2] = glm::make_vec3(c);
+                    valid_tri_count += (size_t)isValid;
                 }
 
                 // degenerate cluster, no valid triangles => trivial reject (cone data is 0)
-                if (triangles > 0)
+                if (valid_tri_count > 0)
                 {
-                    const auto psphere = Math::ComputeBoundingSphere(corners[0], triangles * 3);
-                    const auto nsphere = Math::ComputeBoundingSphere(normals, triangles);
+                    const auto psphere = Math::ComputeBoundingSphere(corners[0], valid_tri_count * 3);
+                    const auto nsphere = Math::ComputeBoundingSphere(normals, valid_tri_count);
                     const auto axis = Math::SafeNormalize(nsphere.xyz);
-                    auto aabb = Math::ComputeBoundingBox(corners[0], triangles * 3);
+                    auto aabb = Math::ComputeBoundingBox(corners[0], valid_tri_count * 3);
                     center = aabb.GetCenter();
                     extents = aabb.GetExtents();
                     cone_cutoff_s8 = 127;
 
                     auto minCosA = 1.0f;
 
-                    for (auto i = 0u; i < triangles; ++i)
+                    for (auto i = 0u; i < valid_tri_count; ++i)
                     {
                         minCosA = glm::min(minCosA, glm::dot(normals[i], axis));
                     }
@@ -321,7 +242,7 @@ namespace PK::MeshUtilities
                     {
                         auto maxt = 0.0f;
 
-                        for (auto i = 0u; i < triangles; ++i)
+                        for (auto i = 0u; i < valid_tri_count; ++i)
                         {
                             maxt = glm::max(maxt, glm::dot(psphere.xyz - corners[i][0], normals[i]) / glm::dot(axis, normals[i]));
                         }
@@ -335,10 +256,9 @@ namespace PK::MeshUtilities
                 }
             }
 
-            PKAssets::PKMeshlet pkmeshlet = PKAssets::PackPKMeshlet
-            (
-                (uint32_t)verticesOffset,
-                (uint32_t)triangleOffset,
+            *out_meshlet = PKAssets::PackPKMeshlet(
+                meshlet.vertex_offset,
+                meshlet.triangle_offset / 3u,
                 meshlet.vertex_count,
                 meshlet.triangle_count,
                 glm::value_ptr(cone_axis_s8),
@@ -349,86 +269,110 @@ namespace PK::MeshUtilities
                 glm::value_ptr(center),
                 -1.0f,
                 glm::value_ptr(center),
-                PKAssets::PK_MESHLET_LOD_MAX_ERROR
-            );
+                PKAssets::PK_MESHLET_LOD_MAX_ERROR);
+        };
 
-            output.indices.resize(output.indices.size() + meshlet.triangle_count * 3);
-            memcpy(output.indices.data() + indicesOffset, meshlet_triangles.data() + meshlet.triangle_offset, meshlet.triangle_count * 3u);
+        MeshletIndexInfo meshlet = {};
 
-            for (auto j = 0u; j < meshlet.vertex_count; ++j)
+        for (size_t i = 0; i < ctx->countIndex; i += 3)
+        {
+            uint32_t a = ctx->pIndices[i + 0], b = ctx->pIndices[i + 1], c = ctx->pIndices[i + 2];
+            assert(a < ctx->countVertex && b < ctx->countVertex && c < ctx->countVertex);
+
+            // appends triangle to the meshlet and writes previous meshlet to the output if full
+            uint32_t used_extra = (used[a] == 0xff) + (used[b] == 0xff) + (used[c] == 0xff);
+
+            if (meshlet.vertex_count + used_extra > max_vertices || meshlet.triangle_count >= max_triangles)
             {
-                auto vertexIndex = meshlet_vertices[meshlet.vertex_offset + j];
-
-                PKAssets::PKMeshletVertex vertex = PKAssets::PackPKMeshletVertex
-                (
-                    ctx->pPositions + vertexIndex * ctx->stridePositionsf32,
-                    ctx->pTexcoords + vertexIndex * ctx->strideTexcoordsf32,
-                    ctx->pNormals + vertexIndex * ctx->strideNormalsf32,
-                    ctx->pTangents + vertexIndex * ctx->strideTangentsf32,
-                    nullptr,
-                    output.submesh.bbmin,
-                    output.submesh.bbmax
-                );
-
-                output.vertices.push_back(vertex);
+                pack_meshlet(ctx, &output.meshlets[output.meshlet_count++], meshlet, meshlet_vertices, meshlet_indices);
+                meshlet.vertex_offset += meshlet.vertex_count;
+                meshlet.triangle_offset += meshlet.triangle_count * 3;
+                meshlet.vertex_count = 0;
+                meshlet.triangle_count = 0;
+                memset(used, -1, ctx->countVertex);
             }
 
-            output.meshlets.push_back(pkmeshlet);
+            if (used[a] == 0xff)
+            {
+                used[a] = (uint8_t)meshlet.vertex_count;
+                pack_meshlet_vertex(ctx, &output.vertices[meshlet.vertex_offset + meshlet.vertex_count], a);
+                meshlet_vertices[meshlet.vertex_offset + meshlet.vertex_count++] = a;
+            }
+
+            if (used[b] == 0xff)
+            {
+                used[b] = (uint8_t)meshlet.vertex_count;
+                pack_meshlet_vertex(ctx, &output.vertices[meshlet.vertex_offset + meshlet.vertex_count], b);
+                meshlet_vertices[meshlet.vertex_offset + meshlet.vertex_count++] = b;
+            }
+
+            if (used[c] == 0xff)
+            {
+                used[c] = (uint8_t)meshlet.vertex_count;
+                pack_meshlet_vertex(ctx, &output.vertices[meshlet.vertex_offset + meshlet.vertex_count], c);
+                meshlet_vertices[meshlet.vertex_offset + meshlet.vertex_count++] = c;
+            }
+
+            meshlet_indices[meshlet.triangle_offset + meshlet.triangle_count * 3 + 0] = used[a];
+            meshlet_indices[meshlet.triangle_offset + meshlet.triangle_count * 3 + 1] = used[b];
+            meshlet_indices[meshlet.triangle_offset + meshlet.triangle_count * 3 + 2] = used[c];
+            meshlet.triangle_count++;
+        }
+
+        if (meshlet.triangle_count)
+        {
+            pack_meshlet(ctx, &output.meshlets[output.meshlet_count++], meshlet, meshlet_vertices, meshlet_indices);
         }
 
         // Align triangles array size to 4bytes
-        {
-            auto alignedIndicesSize = 12u * ((output.indices.size() + 11ull) / 12u);
+        output.index_count = 12u * ((meshlet.triangle_offset + meshlet.triangle_count * 3 + 11ull) / 12u);
+        output.vertex_count = meshlet.vertex_offset + meshlet.vertex_count;
+        output.submesh.firstMeshlet = 0u;
+        output.submesh.meshletCount = output.meshlet_count;
 
-            if (output.indices.size() < alignedIndicesSize)
-            {
-                output.indices.resize(alignedIndicesSize);
-                auto padding = alignedIndicesSize - output.indices.size();
-                memset(output.indices.data() + output.indices.size(), 0u, padding);
-            }
-        }
+        free(meshlet_vertices);
+        free(used);
 
         return output;
     }
 
-
-    MeshStaticAssetRef CreateMeshStaticAsset(MeshStaticCollection* baseMesh, GeometryContext* ctx, const char* name)
+    MeshStatic* CreateMeshStatic(MeshStaticCollection* baseMesh, GeometryContext* ctx, const char* name)
     {
         CalculateTangents(ctx);
 
         auto meshlets = BuildMeshletsMonotone(ctx);
 
-        MeshStaticAllocationData::SubMesh submesh = { 0u, ctx->countVertex, 0u, ctx->countIndex, ctx->aabb };
+        MeshStaticDescriptor::SubMesh submesh = { 0u, ctx->countVertex, 0u, ctx->countIndex, ctx->aabb };
 
-        MeshStaticAllocationData alloc{};
-        alloc.name = name;
-        alloc.regular.pVertices = ctx->pVertices;
-        alloc.regular.pIndices = ctx->pIndices;
-        alloc.regular.pSubmeshes = &submesh;
-        alloc.regular.indexType = ElementType::Uint;
-        alloc.regular.vertexCount = ctx->countVertex;
-        alloc.regular.indexCount = ctx->countIndex;
-        alloc.regular.submeshCount = 1u;
-        alloc.regular.streamLayout =
+        MeshStaticDescriptor desc{};
+        desc.name = name;
+        desc.regular.pVertices = ctx->pVertices;
+        desc.regular.pIndices = ctx->pIndices;
+        desc.regular.pSubmeshes = &submesh;
+        desc.regular.indexType = ElementType::Uint;
+        desc.regular.vertexCount = ctx->countVertex;
+        desc.regular.indexCount = ctx->countIndex;
+        desc.regular.submeshCount = 1u;
+        desc.regular.streamLayout =
         {
             { ElementType::Float3, PK_RHI_VS_NORMAL, 0 },
             { ElementType::Float4, PK_RHI_VS_TANGENT, 0 },
             { ElementType::Float2, PK_RHI_VS_TEXCOORD0, 0 },
             { ElementType::Float3, PK_RHI_VS_POSITION, 1 },
         };
-        alloc.meshlet.pSubmeshes = &meshlets.submesh;
-        alloc.meshlet.submeshCount = 1u;
-        alloc.meshlet.pMeshlets = meshlets.meshlets.data();
-        alloc.meshlet.meshletCount = (uint32_t)meshlets.meshlets.size();
-        alloc.meshlet.pVertices = meshlets.vertices.data();
-        alloc.meshlet.vertexCount = (uint32_t)meshlets.vertices.size();
-        alloc.meshlet.pIndices = meshlets.indices.data();
-        alloc.meshlet.triangleCount = (uint32_t)(meshlets.indices.size() / 3ull);
+        desc.meshlet.pSubmeshes = &meshlets.submesh;
+        desc.meshlet.submeshCount = 1u;
+        desc.meshlet.pMeshlets = meshlets.meshlets.data();
+        desc.meshlet.meshletCount = meshlets.meshlet_count;
+        desc.meshlet.pVertices = meshlets.vertices.data();
+        desc.meshlet.vertexCount = meshlets.vertex_count;
+        desc.meshlet.pIndices = meshlets.indices.data();
+        desc.meshlet.triangleCount = meshlets.index_count / 3u;
 
-        return CreateRef<MeshStaticAsset>(baseMesh, &alloc);
+        return baseMesh->Allocate(&desc);
     }
 
-    MeshStaticAssetRef CreateBoxMeshStaticAsset(MeshStaticCollection* baseMesh, const float3& offset, const float3& extents)
+    MeshStatic* CreateBoxMeshStatic(MeshStaticCollection* baseMesh, const float3& offset, const float3& extents)
     {
         constexpr auto vcount = 24u;
         constexpr auto icount = 36u;
@@ -458,7 +402,8 @@ namespace PK::MeshUtilities
         {
             Vertex_NormalTangentTexCoord attributes[vcount];
             float3 positions[vcount];
-        } vertexData;
+        } 
+        vertexData;
 
         vertexData.attributes[0] = { down, float4(front, 1), uv11 };
         vertexData.attributes[1] = { down, float4(front, 1), uv01 };
@@ -534,10 +479,10 @@ namespace PK::MeshUtilities
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
         geometryContext.aabb = BoundingBox::CenterExtents(offset, extents);
-        return CreateMeshStaticAsset(baseMesh, &geometryContext, "Primitive_Box");
+        return CreateMeshStatic(baseMesh, &geometryContext, "Primitive_Box");
     }
 
-    MeshStaticAssetRef CreateQuadMeshStaticAsset(MeshStaticCollection* baseMesh, const float2& min, const float2& max)
+    MeshStatic* CreateQuadMeshStatic(MeshStaticCollection* baseMesh, const float2& min, const float2& max)
     {
         constexpr auto vcount = 4u;
         constexpr auto icount = 2u;
@@ -572,18 +517,19 @@ namespace PK::MeshUtilities
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
         geometryContext.aabb = BoundingBox({ min.x, min.y, 0.0f }, { max.x, max.y, 0.0f });
-        return CreateMeshStaticAsset(baseMesh, &geometryContext, "Primitive_Box");
+        return CreateMeshStatic(baseMesh, &geometryContext, "Primitive_Box");
     }
 
-    MeshStaticAssetRef CreatePlaneMeshStaticAsset(MeshStaticCollection* baseMesh, const float2& center, const float2& extents, uint2 resolution)
+    MeshStatic* CreatePlaneMeshStatic(MeshStaticCollection * baseMesh, const float2 & center, const float2 & extents, uint2 resolution)
     {
         auto vcount = resolution.x * resolution.y * 4;
         auto icount = resolution.x * resolution.y * 6;
-        auto* vertices = PK_CONTIGUOUS_ALLOC(Vertex_Full, vcount);
-        auto* attributes = reinterpret_cast<Vertex_NormalTangentTexCoord*>(vertices);
+        auto bufferSize = sizeof(Vertex_Full) * vcount + sizeof(uint) * icount;
+        auto* buffer = malloc(bufferSize);
+        auto* attributes = reinterpret_cast<Vertex_NormalTangentTexCoord*>(buffer);
         auto* positions = reinterpret_cast<float3*>(attributes + vcount);
+        auto* indices = reinterpret_cast<uint*>(positions + vcount);
 
-        auto* indices = PK_CONTIGUOUS_ALLOC(uint, icount);
         auto isize = float3(extents.x / resolution.x, extents.y / resolution.y, 0.0f) * 2.0f;
         auto min = float3(center - extents, 0);
 
@@ -614,7 +560,7 @@ namespace PK::MeshUtilities
         }
 
         GeometryContext geometryContext;
-        geometryContext.pVertices = vertices;
+        geometryContext.pVertices = buffer;
         geometryContext.pPositions = reinterpret_cast<float*>(positions);
         geometryContext.stridePositionsf32 = sizeof(float3) / sizeof(float);
         geometryContext.pNormals = reinterpret_cast<float*>(attributes) + 0u;
@@ -627,24 +573,25 @@ namespace PK::MeshUtilities
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
         geometryContext.aabb = BoundingBox::CenterExtents({ center.x, center.y, 0.0f }, { extents.x, extents.y, 0.0f });
-        auto virtualMesh = CreateMeshStaticAsset(baseMesh, &geometryContext, "Primitive_Plane"); 
+        auto virtualMesh = CreateMeshStatic(baseMesh, &geometryContext, "Primitive_Plane"); 
 
-        free(vertices);
-        free(indices);
+        free(buffer);
 
         return virtualMesh;
     }
 
-    MeshStaticAssetRef CreateSphereMeshStaticAsset(MeshStaticCollection* baseMesh, const float3& offset, const float radius)
+    MeshStatic* CreateSphereMeshStatic(MeshStaticCollection* baseMesh, const float3& offset, const float radius)
     {
-        const int32_t longc = 24;
-        const int32_t lattc = 16;
-        const int32_t vcount = (longc + 1) * lattc + 2;
+        const auto longc = 24;
+        const auto lattc = 16;
+        const auto vcount = (longc + 1) * lattc + 2;
+        const auto icount = ((lattc - 1) * longc * 2 + longc * 2) * 3;
 
         //Vertex_Full
-        auto vertices = PK_CONTIGUOUS_ALLOC(Vertex_Full, vcount);
-        auto* attributes = reinterpret_cast<Vertex_NormalTangentTexCoord*>(vertices);
+        auto* buffer = malloc(sizeof(Vertex_Full) * vcount + sizeof(uint) * icount);
+        auto* attributes = reinterpret_cast<Vertex_NormalTangentTexCoord*>(buffer);
         auto* positions = reinterpret_cast<float3*>(attributes + vcount);
+        auto* indices = reinterpret_cast<uint*>(positions + vcount);
 
         positions[0] = PK_FLOAT3_UP * radius;
 
@@ -681,10 +628,6 @@ namespace PK::MeshUtilities
             }
         }
 
-        const int facec = vcount;
-        const int triscount = facec * 2;
-        const int icount = triscount * 3;
-        auto indices = PK_CONTIGUOUS_ALLOC(uint, icount);
 
         //Top Cap
         auto i = 0u;
@@ -724,7 +667,7 @@ namespace PK::MeshUtilities
 
 
         GeometryContext geometryContext;
-        geometryContext.pVertices = vertices;
+        geometryContext.pVertices = attributes;
         geometryContext.pPositions = reinterpret_cast<float*>(positions);
         geometryContext.stridePositionsf32 = sizeof(float3) / sizeof(float);
         geometryContext.pNormals = reinterpret_cast<float*>(attributes) + 0u;
@@ -737,10 +680,9 @@ namespace PK::MeshUtilities
         geometryContext.countVertex = vcount;
         geometryContext.countIndex = icount;
         geometryContext.aabb = BoundingBox::CenterExtents(offset, PK_FLOAT3_ONE * radius);
-        auto virtualMesh = CreateMeshStaticAsset(baseMesh, &geometryContext, "Primitive_Sphere");
+        auto virtualMesh = CreateMeshStatic(baseMesh, &geometryContext, "Primitive_Sphere");
 
-        free(vertices);
-        free(indices);
+        free(buffer);
 
         return virtualMesh;
     }

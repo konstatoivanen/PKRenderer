@@ -6,7 +6,7 @@
 
 namespace PK
 {
-    struct Font : public AssetWithImport<>
+    struct Font : public Asset
     {
         struct Character
         {
@@ -16,14 +16,12 @@ namespace PK
             bool isWhiteSpace = true;
         };
 
-        Font() {};
+        Font(const char* filepath);
 
         constexpr const Character& GetCharacter(const char character) const { return m_characters[(uint8_t)character]; }
 
         RHITexture* GetRHI();
         const RHITexture* GetRHI() const;
-
-        void AssetImport(const char* filepath) final;
 
     private:
         RHITextureRef m_texture = nullptr;

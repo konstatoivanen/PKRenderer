@@ -8,7 +8,7 @@ namespace PK
 {
     class MeshStaticCollection;
 
-    struct MeshStaticAllocationData
+    struct MeshStaticDescriptor
     {
         struct SubMesh
         {
@@ -96,7 +96,7 @@ namespace PK
             const SubMeshStatic* GetSubmesh(uint32_t index) const;
             bool HasPendingUpload() const;
             
-            MeshStatic* Allocate(MeshStaticAllocationData* data);
+            MeshStatic* Allocate(MeshStaticDescriptor* desc);
             void Deallocate(MeshStatic* mesh);
 
             bool TryGetAccelerationStructureGeometryInfo(uint32_t globalSubmeshIndex, AccelerationStructureGeometryInfo* outInfo) const;
@@ -111,6 +111,7 @@ namespace PK
             uint32_t m_meshletTriangleCount = 0u;
             uint32_t m_vertexCount = 0u;
             uint32_t m_indexCount = 0u;
+            int64_t m_preferredIndex = -1;
 
             ElementType m_indexType = ElementType::Uint;
             VertexStreamLayout m_streamLayout;

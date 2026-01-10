@@ -7,7 +7,7 @@
 
 namespace PK
 {
-    struct ShaderAsset : public AssetWithImport<>
+    struct ShaderAsset : public Asset
     {
         struct Map : public NoCopy
         {
@@ -33,6 +33,7 @@ namespace PK
             uint32_t keywordCount = 0u;
         };
 
+        ShaderAsset(const char* filepath);
         ~ShaderAsset() { ReleaseVariants(); }
 
         constexpr ShaderStageFlags GetStageFlags() const { return m_shaders[0]->GetStageFlags(); }
@@ -55,7 +56,6 @@ namespace PK
         constexpr const uint3 GetGroupSize() const { return m_shaders[0]->GetGroupSize(); }
         constexpr const BufferLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
 
-        void AssetImport(const char* filepath) final;
         std::string GetMetaInfo() const final;
 
     protected:

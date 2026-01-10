@@ -9,13 +9,7 @@
 
 namespace PK
 {
-    RHITexture* TextureAsset::GetRHI() { return m_texture.get(); }
-    const RHITexture* TextureAsset::GetRHI() const { return m_texture.get(); }
-
-    TextureAsset::operator RHITexture* () { return m_texture.get(); }
-    TextureAsset::operator const RHITexture* () const { return m_texture.get(); }
-
-    void TextureAsset::AssetImport(const char* filepath)
+    TextureAsset::TextureAsset(const char* filepath)
     {
         PKAssets::PKAssetStream asset;
 
@@ -39,7 +33,7 @@ namespace PK
         descriptor.resolution[2] = texture.resolution[2];
         descriptor.levels = texture.levels;
         descriptor.layers = texture.layers;
-        descriptor.format = texture.format; 
+        descriptor.format = texture.format;
         descriptor.type = texture.type;
         descriptor.sampler.anisotropy = texture.anisotropy;
         descriptor.sampler.filterMin = texture.filterMin;
@@ -80,10 +74,13 @@ namespace PK
 
         PKAssets::CloseAssetStream(&asset);
     }
+
+    RHITexture* TextureAsset::GetRHI() { return m_texture.get(); }
+    const RHITexture* TextureAsset::GetRHI() const { return m_texture.get(); }
+
+    TextureAsset::operator RHITexture* () { return m_texture.get(); }
+    TextureAsset::operator const RHITexture* () const { return m_texture.get(); }
 }
 
 template<>
 bool PK::Asset::IsValidExtension<PK::TextureAsset>(const char* extension) { return strcmp(extension, ".pktexture") == 0; }
-
-template<>
-PK::TextureAssetRef PK::Asset::Create<PK::TextureAsset>() { return CreateRef<PK::TextureAsset>(); }

@@ -23,33 +23,33 @@ namespace PK
 
     void StaticLog::Indent(LogSeverity severity)
     {
-        if (!s_ActiveLogger.expired())
+        if (s_ActiveLogger.IsAlive())
         {
-            s_ActiveLogger.lock()->Indent(severity);
+            s_ActiveLogger.Lock()->Indent(severity);
         }
     }
 
     void StaticLog::Unindent(LogSeverity severity)
     {
-        if (!s_ActiveLogger.expired())
+        if (s_ActiveLogger.IsAlive())
         {
-            s_ActiveLogger.lock()->Unindent(severity);
+            s_ActiveLogger.Lock()->Unindent(severity);
         }
     }
 
     void StaticLog::SetSeverityMask(LogSeverity mask)
     {
-        if (!s_ActiveLogger.expired())
+        if (s_ActiveLogger.IsAlive())
         {
-            s_ActiveLogger.lock()->SetSeverityMask(mask);
+            s_ActiveLogger.Lock()->SetSeverityMask(mask);
         }
     }
 
     void StaticLog::SetSeverityMaskFlag(LogSeverity flag, bool value)
     {
-        if (!s_ActiveLogger.expired())
+        if (s_ActiveLogger.IsAlive())
         {
-            auto logger = s_ActiveLogger.lock();
+            auto logger = s_ActiveLogger.Lock();
             uint32_t filter = logger->GetSeverityMask();
             logger->SetSeverityMask((LogSeverity)(value ? (filter | flag) : (filter & ~flag)));
         }
@@ -57,9 +57,9 @@ namespace PK
 
     LogSeverity StaticLog::GetSeverityMask()
     {
-        if (!s_ActiveLogger.expired())
+        if (s_ActiveLogger.IsAlive())
         {
-            return s_ActiveLogger.lock()->GetSeverityMask();
+            return s_ActiveLogger.Lock()->GetSeverityMask();
         }
 
         return (LogSeverity)0u;
@@ -67,25 +67,25 @@ namespace PK
 
     void StaticLog::SetShowConsole(bool value)
     {
-        if (!s_ActiveLogger.expired())
+        if (s_ActiveLogger.IsAlive())
         {
-            s_ActiveLogger.lock()->SetShowConsole(value);
+            s_ActiveLogger.Lock()->SetShowConsole(value);
         }
     }
 
     void StaticLog::SetColor(LogColor color)
     {
-        if (!s_ActiveLogger.expired())
+        if (s_ActiveLogger.IsAlive())
         {
-            s_ActiveLogger.lock()->SetColor(color);
+            s_ActiveLogger.Lock()->SetColor(color);
         }
     }
 
     void StaticLog::LogNewLine()
     {
-        if (!s_ActiveLogger.expired())
+        if (s_ActiveLogger.IsAlive())
         {
-            s_ActiveLogger.lock()->LogNewLine();
+            s_ActiveLogger.Lock()->LogNewLine();
         }
     }
 
@@ -102,9 +102,9 @@ namespace PK
 
     void StaticLog::LogV(LogSeverity severity, LogColor color, const char* format, va_list args)
     {
-        if (!s_ActiveLogger.expired())
+        if (s_ActiveLogger.IsAlive())
         {
-            s_ActiveLogger.lock()->LogV(severity, color, format, args);
+            s_ActiveLogger.Lock()->LogV(severity, color, format, args);
         }
     }
 
@@ -121,9 +121,9 @@ namespace PK
 
     void StaticLog::LogRewriteV(LogColor color, const char* format, va_list args)
     {
-        if (!s_ActiveLogger.expired())
+        if (s_ActiveLogger.IsAlive())
         {
-            s_ActiveLogger.lock()->LogRewriteV(color, format, args);
+            s_ActiveLogger.Lock()->LogRewriteV(color, format, args);
         }
     }
 
@@ -142,9 +142,9 @@ namespace PK
 
     std::exception StaticLog::ExceptionV(LogSeverity severity, LogColor color, const char* format, va_list args)
     {
-        if (!s_ActiveLogger.expired())
+        if (s_ActiveLogger.IsAlive())
         {
-            return s_ActiveLogger.lock()->ExceptionV(severity, color, format, args);
+            return s_ActiveLogger.Lock()->ExceptionV(severity, color, format, args);
         }
 
         return std::runtime_error(format);

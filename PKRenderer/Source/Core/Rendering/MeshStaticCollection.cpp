@@ -47,27 +47,32 @@ namespace PK
     bool MeshStaticCollection::HasPendingUpload() const { return !m_uploadFence.WaitInvalidate(0ull); }
 
 
-    MeshStatic* MeshStaticCollection::Allocate(MeshStaticAllocationData* data)
+    MeshStatic* MeshStaticCollection::Allocate(MeshStaticDescriptor* desc)
     {
         PK_LOG_VERBOSE_FUNC("sm:%u, ml:%u, mlvc:%u, mltc:%u, vc:%u, tc:%u",
-            data->meshlet.submeshCount,
-            data->meshlet.meshletCount,
-            data->meshlet.vertexCount,
-            data->meshlet.triangleCount,
-            data->regular.vertexCount,
-            data->regular.indexCount);
+            desc->meshlet.submeshCount,
+            desc->meshlet.meshletCount,
+            desc->meshlet.vertexCount,
+            desc->meshlet.triangleCount,
+            desc->regular.vertexCount,
+            desc->regular.indexCount);
 
-        PK_THROW_ASSERT(data->meshlet.submeshCount == data->regular.submeshCount, "Submesh count missmatch");
+        PK_THROW_ASSERT(desc->meshlet.submeshCount == desc->regular.submeshCount, "Submesh count missmatch");
 
-        auto staticMesh = m_staticMeshes.New();
+        MeshStatic* staticMesh = nullptr;
+
+        // Prefer to allocate at last deallocation index.
+        // This is a bit of a hack for assets to trivially reuse the same index on reimport.
+        staticMesh = m_staticMeshes.NewAt(m_preferredIndex);
         staticMesh->baseMesh = this;
+        m_preferredIndex = -1;
 
-        m_submeshCount += data->meshlet.submeshCount;
-        m_meshletCount += data->meshlet.meshletCount;
-        m_meshletVertexCount += data->meshlet.vertexCount;
-        m_meshletVertexCount += data->meshlet.triangleCount;
-        m_vertexCount += data->regular.vertexCount;
-        m_indexCount += data->regular.indexCount;
+        m_submeshCount += desc->meshlet.submeshCount;
+        m_meshletCount += desc->meshlet.meshletCount;
+        m_meshletVertexCount += desc->meshlet.vertexCount;
+        m_meshletVertexCount += desc->meshlet.triangleCount;
+        m_vertexCount += desc->regular.vertexCount;
+        m_indexCount += desc->regular.indexCount;
 
         auto submeshStride = sizeof(PKAssets::PKMeshletSubmesh);
         auto meshletStride = sizeof(PKAssets::PKMeshlet);
@@ -76,13 +81,13 @@ namespace PK
         auto attributesStride = m_streamLayout.GetStride(0u);
         auto indexStride = RHIEnumConvert::Size(m_indexType);
 
-        auto submeshesSize = data->meshlet.submeshCount * submeshStride;
-        auto meshletsSize = data->meshlet.meshletCount * meshletStride;
-        auto meshletVerticesSize = data->meshlet.vertexCount * meshletVertexStride;
-        auto meshletIndicesSize = ((size_t)data->meshlet.triangleCount * 3ull);
-        auto positionsSize = data->regular.vertexCount * positionsStride;
-        auto attributesSize = data->regular.vertexCount * attributesStride;
-        auto indicesSize = data->regular.indexCount * indexStride;
+        auto submeshesSize = desc->meshlet.submeshCount * submeshStride;
+        auto meshletsSize = desc->meshlet.meshletCount * meshletStride;
+        auto meshletVerticesSize = desc->meshlet.vertexCount * meshletVertexStride;
+        auto meshletIndicesSize = ((size_t)desc->meshlet.triangleCount * 3ull);
+        auto positionsSize = desc->regular.vertexCount * positionsStride;
+        auto attributesSize = desc->regular.vertexCount * attributesStride;
+        auto indicesSize = desc->regular.indexCount * indexStride;
 
         PK_THROW_ASSERT((meshletIndicesSize % 4ull) == 0ull, "Index counts must be aligned to 4!");
 
@@ -99,65 +104,65 @@ namespace PK
         // Used accross mesh types
         // Leverage submesh buffer offset by using it on cpu side submesh index as well.
         staticMesh->submeshFirst = (uint32_t)(submeshOffset / submeshStride);
-        staticMesh->submeshCount = data->meshlet.submeshCount;
+        staticMesh->submeshCount = desc->meshlet.submeshCount;
 
         staticMesh->meshletFirst = (uint32_t)(meshletOffset / meshletStride);
-        staticMesh->meshletCount = data->meshlet.meshletCount;
+        staticMesh->meshletCount = desc->meshlet.meshletCount;
         staticMesh->meshletVertexFirst = (uint32_t)(meshletVertexOffset / meshletVertexStride);
-        staticMesh->meshletVertexCount = data->meshlet.vertexCount;
+        staticMesh->meshletVertexCount = desc->meshlet.vertexCount;
         staticMesh->meshletTriangleFirst = (uint32_t)(meshletIndexOffset / 3ull);
-        staticMesh->meshletTriangleCount = data->meshlet.triangleCount;
+        staticMesh->meshletTriangleCount = desc->meshlet.triangleCount;
 
         staticMesh->vertexFirst = (uint32_t)(positionsOffset / positionsStride);
         staticMesh->vertexCount = (uint32_t)(positionsSize / positionsStride);
         staticMesh->indexFirst = (uint32_t)(indexOffset / indexStride);
         staticMesh->indexCount = (uint32_t)(indicesSize / indexStride);
-        staticMesh->name = data->name;
+        staticMesh->name = desc->name;
 
         for (auto i = 0u; i < staticMesh->submeshCount; ++i)
         {
-            data->meshlet.pSubmeshes[i].firstMeshlet += staticMesh->meshletFirst;
+            desc->meshlet.pSubmeshes[i].firstMeshlet += staticMesh->meshletFirst;
 
             auto submesh = m_staticSubmeshes.NewAt(staticMesh->submeshFirst + i);
-            submesh->meshletFirst = data->meshlet.pSubmeshes[i].firstMeshlet;
-            submesh->meshletCount = data->meshlet.pSubmeshes[i].meshletCount;
-            submesh->vertexFirst = data->regular.pSubmeshes[i].vertexFirst + staticMesh->vertexFirst;
-            submesh->vertexCount = data->regular.pSubmeshes[i].vertexCount;
-            submesh->indexFirst = data->regular.pSubmeshes[i].indexFirst + staticMesh->indexFirst;
-            submesh->indexCount = data->regular.pSubmeshes[i].indexCount;
-            submesh->bounds = data->regular.pSubmeshes[i].bounds;
-            submesh->name = FixedString128("%s.Submesh%u", data->name.c_str(), i).c_str();
+            submesh->meshletFirst = desc->meshlet.pSubmeshes[i].firstMeshlet;
+            submesh->meshletCount = desc->meshlet.pSubmeshes[i].meshletCount;
+            submesh->vertexFirst = desc->regular.pSubmeshes[i].vertexFirst + staticMesh->vertexFirst;
+            submesh->vertexCount = desc->regular.pSubmeshes[i].vertexCount;
+            submesh->indexFirst = desc->regular.pSubmeshes[i].indexFirst + staticMesh->indexFirst;
+            submesh->indexCount = desc->regular.pSubmeshes[i].indexCount;
+            submesh->bounds = desc->regular.pSubmeshes[i].bounds;
+            submesh->name = FixedString128("%s.Submesh%u", desc->name.c_str(), i).c_str();
         }
 
         for (auto i = 0u; i < staticMesh->meshletCount; ++i)
         {
-            data->meshlet.pMeshlets[i].vertexFirst += staticMesh->meshletVertexFirst;
-            data->meshlet.pMeshlets[i].triangleFirst += staticMesh->meshletTriangleFirst;
+            desc->meshlet.pMeshlets[i].vertexFirst += staticMesh->meshletVertexFirst;
+            desc->meshlet.pMeshlets[i].triangleFirst += staticMesh->meshletTriangleFirst;
         }
 
         auto commandBuffer = CommandBufferExt(RHI::GetCommandBuffer(QueueType::Transfer));
-        commandBuffer.UploadBufferSubData(m_submeshBuffer.get(), data->meshlet.pSubmeshes, submeshOffset, submeshesSize);
-        commandBuffer.UploadBufferSubData(m_meshletBuffer.get(), data->meshlet.pMeshlets, meshletOffset, meshletsSize);
-        commandBuffer.UploadBufferSubData(m_meshletVertexBuffer.get(), data->meshlet.pVertices, meshletVertexOffset, meshletVerticesSize);
-        commandBuffer.UploadBufferSubData(m_meshletIndexBuffer.get(), data->meshlet.pIndices, meshletIndexOffset, meshletIndicesSize);
+        commandBuffer.UploadBufferSubData(m_submeshBuffer.get(), desc->meshlet.pSubmeshes, submeshOffset, submeshesSize);
+        commandBuffer.UploadBufferSubData(m_meshletBuffer.get(), desc->meshlet.pMeshlets, meshletOffset, meshletsSize);
+        commandBuffer.UploadBufferSubData(m_meshletVertexBuffer.get(), desc->meshlet.pVertices, meshletVertexOffset, meshletVerticesSize);
+        commandBuffer.UploadBufferSubData(m_meshletIndexBuffer.get(), desc->meshlet.pIndices, meshletIndexOffset, meshletIndicesSize);
 
         // Rewrite indices if using a different index format
-        if (RHIEnumConvert::Size(data->regular.indexType) == 2u && indexStride == 4u)
+        if (RHIEnumConvert::Size(desc->regular.indexType) == 2u && indexStride == 4u)
         {
-            auto view = commandBuffer.BeginBufferWrite<uint32_t>(m_indexBuffer.get(), staticMesh->indexFirst, data->regular.indexCount);
-            Math::ReinterpretIndex16ToIndex32(view.data, reinterpret_cast<uint16_t*>(data->regular.pIndices), data->regular.indexCount);
+            auto view = commandBuffer.BeginBufferWrite<uint32_t>(m_indexBuffer.get(), staticMesh->indexFirst, desc->regular.indexCount);
+            Math::ReinterpretIndex16ToIndex32(view.data, reinterpret_cast<uint16_t*>(desc->regular.pIndices), desc->regular.indexCount);
             commandBuffer->EndBufferWrite(m_indexBuffer.get());
         }
         else
         {
-            commandBuffer.UploadBufferSubData(m_indexBuffer.get(), data->regular.pIndices, indexOffset, indicesSize);
+            commandBuffer.UploadBufferSubData(m_indexBuffer.get(), desc->regular.pIndices, indexOffset, indicesSize);
         }
 
         // Align vertices into split layout if necessary
-        MeshUtilities::AlignVertexStreams((char*)data->regular.pVertices, data->regular.vertexCount, data->regular.streamLayout, m_streamLayout);
+        MeshUtilities::AlignVertexStreams((char*)desc->regular.pVertices, desc->regular.vertexCount, desc->regular.streamLayout, m_streamLayout);
 
-        commandBuffer.UploadBufferSubData(m_attributesBuffer.get(), (char*)data->regular.pVertices, attributesOffset, attributesSize);
-        commandBuffer.UploadBufferSubData(m_positionsBuffer.get(), (char*)data->regular.pVertices + attributesSize, positionsOffset, positionsSize);
+        commandBuffer.UploadBufferSubData(m_attributesBuffer.get(), (char*)desc->regular.pVertices, attributesOffset, attributesSize);
+        commandBuffer.UploadBufferSubData(m_positionsBuffer.get(), (char*)desc->regular.pVertices + attributesSize, positionsOffset, positionsSize);
 
         m_uploadFence = commandBuffer->GetFenceRef();
 
@@ -203,6 +208,7 @@ namespace PK
         m_meshletTriangleCount -= mesh->meshletTriangleCount;
         m_vertexCount -= mesh->vertexCount;
         m_indexCount -= mesh->indexCount;
+        m_preferredIndex = m_staticMeshes.GetIndex(mesh);
 
         for (auto i = 0u; i < mesh->submeshCount; ++i)
         {

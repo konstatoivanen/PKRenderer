@@ -8,18 +8,14 @@
 
 namespace PK
 {
-    RHITexture* Font::GetRHI() { return m_texture.get(); }
-    
-    const RHITexture* Font::GetRHI() const { return m_texture.get(); }
-    
-    void Font::AssetImport(const char* filepath)
+    Font::Font(const char* filepath)
     {
         PKAssets::PKAsset asset;
 
         PK_THROW_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
         PK_THROW_ASSERT(asset.header->type == PKAssets::PKAssetType::Font, "Trying to read a font from a non font file!")
 
-        auto font = PKAssets::ReadAsFont(&asset);
+         auto font = PKAssets::ReadAsFont(&asset);
         auto base = asset.rawData;
         auto pCharacters = font->characters.Get(base);
 
@@ -59,14 +55,19 @@ namespace PK
         dataRegion.offset = PK_UINT3_ZERO;
         dataRegion.extent = descriptor.resolution;;
 
-        RHI::GetCommandBuffer(QueueType::Transfer)->CopyToTexture(m_texture.get(), 
-            font->atlasData.Get(base), 
-            font->atlasDataSize, 
+        RHI::GetCommandBuffer(QueueType::Transfer)->CopyToTexture(m_texture.get(),
+            font->atlasData.Get(base),
+            font->atlasDataSize,
             &dataRegion,
             1u);
 
         PKAssets::CloseAsset(&asset);
     }
+
+    RHITexture* Font::GetRHI() { return m_texture.get(); }
+    
+    const RHITexture* Font::GetRHI() const { return m_texture.get(); }
+    
     
     void TextGeometryBuilder::Initialize(const char* text, Font* font, TextAlign alignx, TextAlign aligny, float size, float lineSpacing)
     {
@@ -159,6 +160,3 @@ namespace PK
 
 template<>
 bool PK::Asset::IsValidExtension<PK::Font>(const char* extension) { return strcmp(extension, ".pkfont") == 0; }
-
-template<>
-PK::Ref<PK::Font> PK::Asset::Create() { return PK::CreateRef<Font>(); }

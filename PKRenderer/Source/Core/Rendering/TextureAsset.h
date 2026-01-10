@@ -5,17 +5,15 @@
 
 namespace PK
 {
-    struct TextureAsset : public AssetWithImport<>
+    struct TextureAsset : public Asset
     {
-        TextureAsset() {};
+        TextureAsset(const char* filepath);
 
         RHITexture* GetRHI();
         const RHITexture* GetRHI() const;
     
         operator RHITexture* ();
         operator const RHITexture* () const;
-
-        void AssetImport(const char* filepath) final;
         
     private: 
         RHITextureRef m_texture = nullptr;

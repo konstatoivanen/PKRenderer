@@ -76,9 +76,9 @@ namespace PK::App
             descriptor.resolution = resolution;
             descriptor.sampler.filterMin = FilterMode::Trilinear;
             descriptor.sampler.filterMag = FilterMode::Trilinear;
-            descriptor.sampler.wrap[0] = view->settings.BloomSettings.BorderClip ? WrapMode::Border : WrapMode::Clamp;
-            descriptor.sampler.wrap[1] = view->settings.BloomSettings.BorderClip ? WrapMode::Border : WrapMode::Clamp;
-            descriptor.sampler.wrap[2] = view->settings.BloomSettings.BorderClip ? WrapMode::Border : WrapMode::Clamp;
+            descriptor.sampler.wrap[0] = WrapMode::Clamp;
+            descriptor.sampler.wrap[1] = WrapMode::Clamp;
+            descriptor.sampler.wrap[2] = WrapMode::Clamp;
             descriptor.sampler.borderColor = BorderColor::FloatBlack;
             RHI::ValidateTexture(resources->distortTexture, descriptor, "Distort.Texture");
         }

@@ -6,7 +6,7 @@
 
 namespace PK
 {
-    struct Material : public AssetWithImport<>, public ShaderPropertyBlock
+    struct Material : public Asset, public ShaderPropertyBlock
     {
         Material() : 
             ShaderPropertyBlock(0u, 0u) 
@@ -28,6 +28,8 @@ namespace PK
             InitializeShaderLayout(); 
         }
 
+        Material(const char* filepath);
+
         constexpr ShaderAsset* GetShader() const { return m_shader; }
         constexpr ShaderAsset* GetShaderShadow() const { return m_shaderShadow; }
 
@@ -36,9 +38,6 @@ namespace PK
         bool SupportsKeywords(const NameID* keywords, const uint32_t count) const;
 
         void CopyTo(char* dst, BindSet<RHITexture>* textureSet) const;
-
-        void AssetImport(const char* filepath) final;
-
 
     private:
         void InitializeShaderLayout(uint32_t minSize = 0u, uint32_t minPropertyCount = 0u);

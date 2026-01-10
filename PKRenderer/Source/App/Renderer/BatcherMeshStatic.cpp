@@ -4,6 +4,7 @@
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/ShaderAsset.h"
+#include "Core/Rendering/MeshStaticAsset.h"
 #include "Core/Rendering/Material.h"
 #include "App/ECS/ComponentTransform.h"
 #include "App/Renderer/HashCache.h"
@@ -25,6 +26,11 @@ namespace PK::App
         m_drawInfos.reserve(1024);
         m_drawCalls.reserve(256);
         m_passGroups.reserve(256);
+    }
+
+    void BatcherMeshStatic::AssetConstruct(MeshStaticAsset* memory, const char* filepath)
+    {
+        new(memory) MeshStaticAsset(m_staticGeometry.get(), filepath);
     }
 
     void BatcherMeshStatic::BeginCollectDrawCalls()

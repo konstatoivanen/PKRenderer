@@ -10,71 +10,14 @@
 
 namespace PK
 {
-    Mesh::Mesh() {}
-
-    Mesh::Mesh(const RHIBufferRef& indexBuffer,
-        ElementType indexType,
-        RHIBufferRef* vertexBuffers,
-        uint32_t vertexBufferCount,
-        const VertexStreamLayout& streamLayout,
-        SubMesh* submeshes,
-        uint32_t submeshCount)
-    {
-        SetResources(indexBuffer, indexType, vertexBuffers, vertexBufferCount, streamLayout, submeshes, submeshCount);
-    }
-
-    void Mesh::SetResources(const RHIBufferRef& indexBuffer,
-        ElementType indexType,
-        RHIBufferRef* vertexBuffers,
-        uint32_t vertexBufferCount,
-        const VertexStreamLayout& streamLayout,
-        SubMesh* submeshes,
-        uint32_t submeshCount)
-    {
-        m_indexBuffer = indexBuffer;
-        m_indexType = indexType;
-        m_vertexBuffers.ClearFull();
-        m_streamLayout = streamLayout;
-
-        for (auto i = 0u; i < vertexBufferCount; ++i)
-        {
-            m_vertexBuffers.Add(vertexBuffers[i]);
-        }
-
-        auto vertexPositionName = NameID(PK_RHI_VS_POSITION);
-
-        for (auto i = 0u; i < m_streamLayout.GetCount(); ++i)
-        {
-            const auto& attribute = m_streamLayout[i];
-
-            if (attribute.name == vertexPositionName &&
-                attribute.stream < vertexBufferCount &&
-                attribute.size == (uint16_t)sizeof(float3))
-            {
-                m_positionAttributeIndex = i;
-            }
-        }
-
-        m_fullRange = SubMesh();
-        m_submeshes.resize(submeshCount);
-
-        for (auto i = 0u; i < submeshCount; ++i)
-        {
-            m_submeshes[i] = submeshes[i];
-            Math::BoundsEncapsulate(&m_fullRange.bounds, submeshes[i].bounds);
-            m_fullRange.vertexCount = glm::max(m_fullRange.vertexCount, submeshes[i].vertexFirst + submeshes[i].vertexCount);
-            m_fullRange.indexCount = glm::max(m_fullRange.indexCount, submeshes[i].indexFirst + submeshes[i].indexCount);
-        }
-    }
-
-    void Mesh::AssetImport(const char* filepath)
+    Mesh::Mesh(const char* filepath)
     {
         PKAssets::PKAsset asset;
 
         PK_THROW_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
         PK_THROW_ASSERT(asset.header->type == PKAssets::PKAssetType::Mesh, "Trying to read a mesh from a non mesh file!")
 
-        auto mesh = PKAssets::ReadAsMesh(&asset);
+            auto mesh = PKAssets::ReadAsMesh(&asset);
         auto base = asset.rawData;
 
         PK_THROW_ASSERT(mesh->vertexAttributeCount > 0, "Trying to read a mesh with 0 vertex attributes!");
@@ -150,6 +93,61 @@ namespace PK
         PKAssets::CloseAsset(&asset);
     }
 
+    Mesh::Mesh(const RHIBufferRef& indexBuffer,
+        ElementType indexType,
+        RHIBufferRef* vertexBuffers,
+        uint32_t vertexBufferCount,
+        const VertexStreamLayout& streamLayout,
+        SubMesh* submeshes,
+        uint32_t submeshCount)
+    {
+        SetResources(indexBuffer, indexType, vertexBuffers, vertexBufferCount, streamLayout, submeshes, submeshCount);
+    }
+
+    void Mesh::SetResources(const RHIBufferRef& indexBuffer,
+        ElementType indexType,
+        RHIBufferRef* vertexBuffers,
+        uint32_t vertexBufferCount,
+        const VertexStreamLayout& streamLayout,
+        SubMesh* submeshes,
+        uint32_t submeshCount)
+    {
+        m_indexBuffer = indexBuffer;
+        m_indexType = indexType;
+        m_vertexBuffers.ClearFull();
+        m_streamLayout = streamLayout;
+
+        for (auto i = 0u; i < vertexBufferCount; ++i)
+        {
+            m_vertexBuffers.Add(vertexBuffers[i]);
+        }
+
+        auto vertexPositionName = NameID(PK_RHI_VS_POSITION);
+
+        for (auto i = 0u; i < m_streamLayout.GetCount(); ++i)
+        {
+            const auto& attribute = m_streamLayout[i];
+
+            if (attribute.name == vertexPositionName &&
+                attribute.stream < vertexBufferCount &&
+                attribute.size == (uint16_t)sizeof(float3))
+            {
+                m_positionAttributeIndex = i;
+            }
+        }
+
+        m_fullRange = SubMesh();
+        m_submeshes.resize(submeshCount);
+
+        for (auto i = 0u; i < submeshCount; ++i)
+        {
+            m_submeshes[i] = submeshes[i];
+            Math::BoundsEncapsulate(&m_fullRange.bounds, submeshes[i].bounds);
+            m_fullRange.vertexCount = glm::max(m_fullRange.vertexCount, submeshes[i].vertexFirst + submeshes[i].vertexCount);
+            m_fullRange.indexCount = glm::max(m_fullRange.indexCount, submeshes[i].indexFirst + submeshes[i].indexCount);
+        }
+    }
+
     bool Mesh::TryGetAccelerationStructureGeometryInfo(uint32_t submesh, AccelerationStructureGeometryInfo* outInfo)
     {
         if (HasPendingUpload() || m_positionAttributeIndex == ~0u)
@@ -195,6 +193,3 @@ namespace PK
 
 template<>
 bool PK::Asset::IsValidExtension<PK::Mesh>(const char* extension) { return strcmp(extension, ".pkmesh") == 0; }
-
-template<>
-PK::Ref<PK::Mesh> PK::Asset::Create() { return PK::CreateRef<PK::Mesh>(); }

@@ -13,7 +13,7 @@ namespace PK
     struct MeshStatic;
     struct SubMeshStatic;
     struct MeshStaticAsset;
-    struct MeshStaticAllocationData;
+    struct MeshStaticDescriptor;
     class MeshStaticCollection;
     struct ShaderBindingTable;
     struct ShaderPropertyBlock;
