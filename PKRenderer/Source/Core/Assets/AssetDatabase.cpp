@@ -21,20 +21,19 @@ namespace PK
     {
         for (int32_t i = m_assets.GetCount() - 1; i >= 0; --i)
         {
-            m_assets[i].value->Destroy();
-            m_assets[i].value->Delete();
+            m_assets[i]->Destroy();
+            m_assets[i]->Delete();
         }
     }
 
 
     Asset* AssetDatabase::Find(const std::type_index& typeIndex, const char* keyword) const
     {
-        for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index].value->indexNext)
+        for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index]->indexNext)
         {
-            if (strstr(m_assets[index].key.c_str(), keyword) != nullptr)
+            if (strstr(m_assets[index]->assetId.c_str(), keyword) != nullptr)
             {
-                auto object = m_assets[index].value;
-                return object->isLoaded ? object->GetAsset() : nullptr;
+                return m_assets[index]->isLoaded ? m_assets[index]->GetAsset() : nullptr;
             }
         }
 
@@ -44,11 +43,13 @@ namespace PK
 
     void AssetDatabase::Reload(AssetID assetId)
     {
-        auto handle = m_assets.GetValuePtr(assetId);
+        PK_LOG_VERBOSE_FUNC();
 
-        if (handle != nullptr)
+        auto index = m_assets.GetHashIndex((size_t)assetId);
+
+        if (index != -1)
         {
-            LoadAsset(*handle, true);
+            LoadAsset(m_assets[index], true);
         }
     }
 
@@ -62,9 +63,9 @@ namespace PK
 
             for (auto i = 0u; i < m_assets.GetCount(); ++i)
             {
-                if (m_assets[i].value->isLoaded && strncmp(directory, m_assets[i].key.c_str(), directoryLen) == 0)
+                if (m_assets[i]->isLoaded && strncmp(directory, m_assets[i]->assetId.c_str(), directoryLen) == 0)
                 {
-                    LoadAsset(m_assets[i].value, true);
+                    LoadAsset(m_assets[i], true);
                 }
             }
         }
@@ -78,11 +79,11 @@ namespace PK
         {
             auto directoryLen = strlen(directory);
 
-            for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index].value->indexNext)
+            for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index]->indexNext)
             {
-                if (m_assets[index].value->isLoaded && strncmp(directory, m_assets[index].key.c_str(), directoryLen) == 0)
+                if (m_assets[index]->isLoaded && strncmp(directory, m_assets[index]->assetId.c_str(), directoryLen) == 0)
                 {
-                    LoadAsset(m_assets[index].value, true);
+                    LoadAsset(m_assets[index], true);
                 }
             }
         }
@@ -92,9 +93,9 @@ namespace PK
     {
         PK_LOG_VERBOSE_FUNC();
 
-        for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index].value->indexNext)
+        for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index]->indexNext)
         {
-            LoadAsset(m_assets[index].value, true);
+            LoadAsset(m_assets[index], true);
         }
     }
     
@@ -104,7 +105,7 @@ namespace PK
 
         for (int32_t i = m_assets.GetCount() - 1; i >= 0; --i)
         {
-            LoadAsset(m_assets[i].value, true);
+            LoadAsset(m_assets[i], true);
         }
     }
 
@@ -113,11 +114,11 @@ namespace PK
     {
         PK_LOG_VERBOSE_FUNC();
 
-        auto handle = m_assets.GetValuePtr(assetId);
+        auto index = m_assets.GetHashIndex((size_t)assetId);
 
-        if (handle != nullptr)
+        if (index != -1)
         {
-            (*handle)->Destroy();
+            m_assets[index]->Destroy();
         }
     }
     
@@ -131,9 +132,9 @@ namespace PK
 
             for (auto i = 0u; i < m_assets.GetCount(); ++i)
             {
-                if (m_assets[i].value->isLoaded && strncmp(directory, m_assets[i].key.c_str(), directoryLen) == 0)
+                if (m_assets[i]->isLoaded && strncmp(directory, m_assets[i]->assetId.c_str(), directoryLen) == 0)
                 {
-                    m_assets[i].value->Destroy();
+                    m_assets[i]->Destroy();
                 }
             }
         }
@@ -147,11 +148,11 @@ namespace PK
         {
             auto directoryLen = strlen(directory);
 
-            for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index].value->indexNext)
+            for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index]->indexNext)
             {
-                if (m_assets[index].value->isLoaded && strncmp(directory, m_assets[index].key.c_str(), directoryLen) == 0)
+                if (m_assets[index]->isLoaded && strncmp(directory, m_assets[index]->assetId.c_str(), directoryLen) == 0)
                 {
-                    m_assets[index].value->Destroy();
+                    m_assets[index]->Destroy();
                 }
             }
         }
@@ -161,9 +162,9 @@ namespace PK
     {
         PK_LOG_VERBOSE_FUNC();
 
-        for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index].value->indexNext)
+        for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index]->indexNext)
         {
-            m_assets[index].value->Destroy();
+            m_assets[index]->Destroy();
         }
     }
 
@@ -173,7 +174,7 @@ namespace PK
 
         for (int32_t i = m_assets.GetCount() - 1; i >= 0; --i)
         {
-            m_assets[i].value->Destroy();
+            m_assets[i]->Destroy();
         }
     }
 
@@ -188,9 +189,9 @@ namespace PK
 
             for (auto i = 0u; i < m_assets.GetCount(); ++i)
             {
-                if (m_assets[i].value->isLoaded && strncmp(directory, m_assets[i].key.c_str(), directoryLen) == 0)
+                if (m_assets[i]->isLoaded && strncmp(directory, m_assets[i]->assetId.c_str(), directoryLen) == 0)
                 {
-                    PK_LOG_INFO(m_assets[i].key.c_str());
+                    PK_LOG_INFO(m_assets[i]->assetId.c_str());
                 }
             }
         }
@@ -204,11 +205,11 @@ namespace PK
         {
             auto directoryLen = strlen(directory);
 
-            for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index].value->indexNext)
+            for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index]->indexNext)
             {
-                if (m_assets[index].value->isLoaded && strncmp(directory, m_assets[index].key.c_str(), directoryLen) == 0)
+                if (m_assets[index]->isLoaded && strncmp(directory, m_assets[index]->assetId.c_str(), directoryLen) == 0)
                 {
-                    PK_LOG_INFO(m_assets[index].key.c_str());
+                    PK_LOG_INFO(m_assets[index]->assetId.c_str());
                 }
             }
         }
@@ -218,11 +219,11 @@ namespace PK
     {
         PK_LOG_HEADER_FUNC();
         
-        for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index].value->indexNext)
+        for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index]->indexNext)
         {
-            if (m_assets[index].value->isLoaded)
+            if (m_assets[index]->isLoaded)
             {
-                PK_LOG_INFO(m_assets[index].key.c_str());
+                PK_LOG_INFO(m_assets[index]->assetId.c_str());
             }
         }
     }
@@ -233,9 +234,9 @@ namespace PK
 
         for (auto i = 0u; i < m_assets.GetCount(); ++i)
         {
-            if (m_assets[i].value->isLoaded)
+            if (m_assets[i]->isLoaded)
             {
-                PK_LOG_INFO(m_assets[i].key.c_str());
+                PK_LOG_INFO(m_assets[i]->assetId.c_str());
             }
         }
     }

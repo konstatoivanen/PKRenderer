@@ -86,6 +86,14 @@ namespace PK
             IAssetFactory* factory;
         };
 
+        struct AssetObjectHash
+        {
+            size_t operator()(const AssetObjectBase* k) const noexcept
+            {
+                return (size_t)(k->assetId);
+            }
+        };
+
     public:
         AssetDatabase(Sequencer* sequencer);
         ~AssetDatabase();
@@ -205,11 +213,13 @@ namespace PK
         {
             static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
-            auto assetIndex = 0u;
-            if (m_assets.AddKey(assetId, &assetIndex))
+            auto assetIndex = m_assets.GetHashIndex((size_t)assetId);
+
+            if (assetIndex == -1)
             {
                 auto typeInfo = CreateTypeInfo<T>();
                 auto newAsset = new AssetObject<T>();
+                assetIndex = m_assets.Add(newAsset);
                 newAsset->assetId = assetId;
                 newAsset->version = 0u;
                 newAsset->indexNext = typeInfo->headIndex;
@@ -218,18 +228,17 @@ namespace PK
                 newAsset->isLoaded = false;
                 newAsset->isVirtual = false;
                 typeInfo->headIndex = assetIndex;
-                m_assets[assetIndex].value = newAsset;
                 return newAsset;
             }
 
-            return static_cast<AssetObject<T>*>(m_assets[assetIndex].value);
+            return static_cast<AssetObject<T>*>(m_assets[assetIndex]);
         }
 
         uint32_t GetTypeHead(const std::type_index& typeIndex) const;
         void LoadAsset(AssetObjectBase* object, bool isReload);
         void RegisterConsoleVariables(const std::type_index& typeIndex);
 
-        FastMap<AssetID, AssetObjectBase*, Hash::TCastHash<AssetID>> m_assets;
+        FastSet<AssetObjectBase*, AssetObjectHash> m_assets;
         FastMap<std::type_index, TypeInfo> m_types;
         Sequencer* m_sequencer;
     };
