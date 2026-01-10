@@ -27,7 +27,7 @@ namespace PK
     }
 
 
-    Asset* AssetDatabase::Find(const std::type_index& typeIndex, const char* keyword) const
+    Asset* AssetDatabase::Find(uint32_t typeIndex, const char* keyword) const
     {
         for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index]->indexNext)
         {
@@ -71,7 +71,7 @@ namespace PK
         }
     }
 
-    void AssetDatabase::ReloadDirectoryByType(const std::type_index& typeIndex, const char* directory)
+    void AssetDatabase::ReloadDirectoryByType(uint32_t typeIndex, const char* directory)
     {
         PK_LOG_VERBOSE_FUNC();
 
@@ -89,7 +89,7 @@ namespace PK
         }
     }
 
-    void AssetDatabase::ReloadByType(const std::type_index& typeIndex)
+    void AssetDatabase::ReloadByType(uint32_t typeIndex)
     {
         PK_LOG_VERBOSE_FUNC();
 
@@ -140,7 +140,7 @@ namespace PK
         }
     }
 
-    void AssetDatabase::UnloadDirectoryByType(const std::type_index& typeIndex, const char* directory)
+    void AssetDatabase::UnloadDirectoryByType(uint32_t typeIndex, const char* directory)
     {
         PK_LOG_VERBOSE_FUNC();
 
@@ -158,7 +158,7 @@ namespace PK
         }
     }
     
-    void AssetDatabase::UnloadByType(const std::type_index& typeIndex)
+    void AssetDatabase::UnloadByType(uint32_t typeIndex)
     {
         PK_LOG_VERBOSE_FUNC();
 
@@ -197,7 +197,7 @@ namespace PK
         }
     }
 
-    void AssetDatabase::LogDirectoryByType(const std::type_index& typeIndex, const char* directory)
+    void AssetDatabase::LogDirectoryByType(uint32_t typeIndex, const char* directory)
     {
         PK_LOG_HEADER_FUNC();
 
@@ -215,7 +215,7 @@ namespace PK
         }
     }
     
-    void AssetDatabase::LogByType(const std::type_index& typeIndex)
+    void AssetDatabase::LogByType(uint32_t typeIndex)
     {
         PK_LOG_HEADER_FUNC();
         
@@ -242,57 +242,71 @@ namespace PK
     }
 
 
-    uint32_t AssetDatabase::GetTypeHead(const std::type_index& typeIndex) const
-    {
-        auto typeInfo = m_types.GetValuePtr(typeIndex);
-        return typeInfo != nullptr ? typeInfo->headIndex : INVALID_LINK;
-    }
-
     void AssetDatabase::LoadAsset(AssetObjectBase* object, bool isReload)
     {
         if (!object->isVirtual && (!object->isLoaded || isReload))
         {
             FixedString128 filepath = object->assetId.c_str();
-            PK_LOG_VERBOSE_FUNC(": %s, %s", object->GetTypeName(), filepath.c_str());
+            PK_LOG_VERBOSE_FUNC(": %s, %s", object->typeInfo->shortName, filepath.c_str());
             object->Destroy();
             object->Construct(this, filepath);
         }
     }
 
-    void AssetDatabase::RegisterConsoleVariables(const std::type_index& typeIndex)
+    uint32_t AssetDatabase::GetTypeHead(uint32_t typeIndex) const
     {
-        auto name = Parse::GetTypeShortName(typeIndex);
-        FixedString128 cvarnameMeta({ "AssetDatabase.Query.Meta.", name });
-        FixedString128 cvarnameLoaded({ "AssetDatabase.Query.Loaded.", name });
-        FixedString128 cvarnameReloadAll({ "AssetDatabase.Reload.Cached.All.", name });
-        FixedString128 cvarnameReload({ "AssetDatabase.Reload.Cached.", name });
+        auto infoIndex = m_types.GetHashIndex(typeIndex);
+        return infoIndex != -1 ? m_types[infoIndex].headIndex : INVALID_LINK;
+    }
 
-        CVariableRegister::Create<CVariableFunc>(cvarnameMeta.c_str(), [this, typeIndex, name](const char* const* args, [[maybe_unused]] uint32_t count)
-            {
-                PK_LOG_NEWLINE();
-                auto asset = Find(typeIndex, args[0]);
-                if (asset == nullptr)
+    AssetDatabase::TypeInfo* AssetDatabase::CreateTypeInfo(uint32_t typeIndex, const std::type_index& rttiIndex)
+    {
+        auto infoIndex = m_types.GetHashIndex(typeIndex);
+
+        if (infoIndex == -1)
+        {
+            TypeInfo info;
+            info.typeIndex = typeIndex;
+            info.headIndex = INVALID_LINK;
+            info.name = rttiIndex.name();
+            info.shortName = Parse::GetTypeShortName(rttiIndex);
+            info.factory = nullptr;
+            infoIndex = m_types.Add(info);
+
+            FixedString128 cvarnameMeta({ "AssetDatabase.Query.Meta.", info.shortName });
+            FixedString128 cvarnameLoaded({ "AssetDatabase.Query.Loaded.", info.shortName });
+            FixedString128 cvarnameReloadAll({ "AssetDatabase.Reload.Cached.All.", info.shortName });
+            FixedString128 cvarnameReload({ "AssetDatabase.Reload.Cached.", info.shortName });
+
+            CVariableRegister::Create<CVariableFunc>(cvarnameMeta.c_str(), [this, typeIndex, name = info.shortName](const char* const* args, [[maybe_unused]] uint32_t count)
                 {
-                    PK_LOG_WARNING("AssetDatabase.Query.Meta.%s Not Found With '%s'", name, args[0]);
-                }
-                PK_LOG_INFO(asset->GetMetaInfo().c_str());
-                PK_LOG_NEWLINE();
+                    PK_LOG_NEWLINE();
+                    auto asset = Find(typeIndex, args[0]);
+                    if (asset == nullptr)
+                    {
+                        PK_LOG_WARNING("AssetDatabase.Query.Meta.%s Not Found With '%s'", name, args[0]);
+                    }
+                    PK_LOG_INFO(asset->GetMetaInfo().c_str());
+                    PK_LOG_NEWLINE();
 
-            }, "Expected a keyword argument", 1u);
+                }, "Expected a keyword argument", 1u);
 
-        CVariableRegister::Create<CVariableFuncSimple>(cvarnameLoaded.c_str(), [this, typeIndex]()
-            {
-                LogByType(typeIndex);
-            });
+            CVariableRegister::Create<CVariableFuncSimple>(cvarnameLoaded.c_str(), [this, typeIndex]()
+                {
+                    LogByType(typeIndex);
+                });
 
-        CVariableRegister::Create<CVariableFuncSimple>(cvarnameReloadAll.c_str(), [this, typeIndex]()
-            {
-                ReloadByType(typeIndex);
-            });
+            CVariableRegister::Create<CVariableFuncSimple>(cvarnameReloadAll.c_str(), [this, typeIndex]()
+                {
+                    ReloadByType(typeIndex);
+                });
 
-        CVariableRegister::Create<CVariableFunc>(cvarnameReload.c_str(), [this](const char* const* args, [[maybe_unused]] uint32_t count)
-            {
-                Reload(AssetID(args[0]));
-            }, "Expected a filepath argument", 1u);
+            CVariableRegister::Create<CVariableFunc>(cvarnameReload.c_str(), [this](const char* const* args, [[maybe_unused]] uint32_t count)
+                {
+                    Reload(AssetID(args[0]));
+                }, "Expected a filepath argument", 1u);
+        }
+
+        return &m_types[infoIndex];
     }
 }

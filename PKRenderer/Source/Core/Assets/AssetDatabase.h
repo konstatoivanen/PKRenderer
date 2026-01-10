@@ -6,6 +6,7 @@
 #include "Core/Utilities/FixedString.h"
 #include "Core/Utilities/FixedArena.h"
 #include "Core/Utilities/Hash.h"
+#include "Core/Utilities/FastTypeIndex.h"
 #include "Core/Assets/Asset.h"
 #include "Core/Assets/AssetImportEvent.h"
 #include "Core/CLI/Log.h"
@@ -17,21 +18,34 @@ namespace PK
     {
         constexpr static uint32_t INVALID_LINK = ~0u;
 
+        struct TypeInfo
+        {
+            uint32_t typeIndex;
+            uint32_t headIndex;
+            const char* name;
+            const char* shortName;
+            IAssetFactory* factory;
+            
+            bool operator == (const TypeInfo& other) { return typeIndex == other.typeIndex; }
+            bool operator != (const TypeInfo& other) { return typeIndex != other.typeIndex; }
+        };
+
         struct AssetObjectBase : public Asset::SharedObject 
         {
+            TypeInfo* typeInfo;
             uint32_t indexNext;
             bool isVirtual;
             bool isLoaded;
 
             virtual void Construct(AssetDatabase* caller, const char* filepath) noexcept = 0;
             virtual Asset* GetAsset() noexcept = 0;
-            virtual const char* GetTypeName() const noexcept = 0;
         };
 
         template<typename T>
         struct AssetObject : public AssetObjectBase
         {
             explicit AssetObject() {}
+
             virtual ~AssetObject() noexcept override {}
 
             template <typename ... Args>
@@ -49,9 +63,9 @@ namespace PK
                 {
                     new(&value) T(filepath);
                 }
-                else if (factory)
+                else if (typeInfo->factory)
                 {
-                    factory->AssetConstruct(&value, filepath);
+                    static_cast<AssetFactory<T>*>(typeInfo->factory)->AssetConstruct(&value, filepath);
                 }
 
                 value.m_sharedObject = this;
@@ -73,30 +87,22 @@ namespace PK
             }
 
             void Delete() noexcept final { delete this; }
+
             Asset* GetAsset() noexcept final { return &value; };
-            const char* GetTypeName() const noexcept final { return typeid(T).name(); }
+
             struct U { constexpr U() noexcept {} };
             union { U unionDefault; T value; };
-            AssetFactory<T>* factory;
         };
 
-        struct TypeInfo
-        {
-            uint32_t headIndex;
-            IAssetFactory* factory;
-        };
-
-        struct AssetObjectHash
-        {
-            size_t operator()(const AssetObjectBase* k) const noexcept
-            {
-                return (size_t)(k->assetId);
-            }
-        };
+        struct TypeInfoHash { size_t operator()(const TypeInfo& k) const noexcept { return (size_t)(k.typeIndex);}};
+        struct AssetObjectHash { size_t operator()(const AssetObjectBase* k) const noexcept { return (size_t)(k->assetId);}};
 
     public:
         AssetDatabase(Sequencer* sequencer);
         ~AssetDatabase();
+
+        template<typename T>
+        void RegisterFactory(IAssetFactory* factory) { CreateTypeInfo<T>()->factory = factory; }
 
         template<typename T, typename ... Args>
         T* CreateVirtual(AssetID assetId, Args&& ... args)
@@ -113,9 +119,6 @@ namespace PK
         {
             return CreateVirtual<T>(AssetID(name), std::forward<Args>(args)...);
         }
-
-        template<typename T>
-        void RegisterFactory(IAssetFactory* factory) { CreateTypeInfo<T>()->factory = factory; }
 
         template<typename T>
         T* Load(AssetID assetId, bool forceReload = false) 
@@ -148,65 +151,53 @@ namespace PK
         }
 
         template<typename T>
-        void ReloadDirectoryByType(const char* directory) { ReloadDirectoryByType(std::type_index(typeid(T)), directory); }
+        void ReloadDirectoryByType(const char* directory) { ReloadDirectoryByType(pk_base_type_index<T>()), directory); }
        
         template<typename T>
-        void ReloadByType(const std::type_index& typeIndex) { ReloadByType(std::type_index(typeid(T))); }
+        void ReloadByType() { ReloadByType(pk_base_type_index<T>()); }
 
         template<typename T>
-        void UnloadDirectoryByType(const std::type_index& typeIndex, const char* directory) { UnloadDirectoryByType(std::type_index(typeid(T)), directory); }
+        void UnloadDirectoryByType(const char* directory) { UnloadDirectoryByType(pk_base_type_index<T>()), directory); }
        
         template<typename T>
-        void UnloadByType(const std::type_index& typeIndex) { UnloadByType(std::type_index(typeid(T))); }
+        void UnloadByType() { UnloadByType(pk_base_type_index<T>()); }
 
         template<typename T>
-        void LogAssetDirectoryByType(const std::type_index& typeIndex, const char* directory) { LogAssetDirectoryByType(std::type_index(typeid(T)), directory); }
+        void LogAssetDirectoryByType(const char* directory) { LogAssetDirectoryByType(pk_base_type_index<T>()), directory); }
        
         template<typename T>
-        void LogAssetByType(const std::type_index& typeIndex) { LogAssetByType(std::type_index(typeid(T))); }
+        void LogAssetByType() { LogAssetByType(pk_base_type_index<T>()); }
 
         template<typename T>
         T* Find(const char* name, bool doAssert = true) const
         {
-            auto asset = Find(std::type_index(typeid(T)), name);
+            auto asset = Find(pk_base_type_index<T>(), name);
             PK_THROW_ASSERT(!doAssert || asset != nullptr, "Could not find asset with name %s", name);
             return asset ? static_cast<T*>(asset) : nullptr;
         }
         
-        Asset* Find(const std::type_index& typeIndex, const char* keyword) const;
+        Asset* Find(uint32_t typeIndex, const char* keyword) const;
 
         void Reload(AssetID assetId);
         void ReloadDirectory(const char* directory);
-        void ReloadDirectoryByType(const std::type_index& typeIndex, const char* directory);
-        void ReloadByType(const std::type_index& typeIndex);
+        void ReloadDirectoryByType(uint32_t typeIndex, const char* directory);
+        void ReloadByType(uint32_t typeIndex);
         void ReloadAll();
 
         void Unload(AssetID assetId);
         void UnloadDirectory(const char* directory);
-        void UnloadDirectoryByType(const std::type_index& typeIndex, const char* directory);
-        void UnloadByType(const std::type_index& typeIndex);
+        void UnloadDirectoryByType(uint32_t typeIndex, const char* directory);
+        void UnloadByType(uint32_t typeIndex);
         void UnloadAll();
 
         void LogDirectory(const char* directory);
-        void LogDirectoryByType(const std::type_index& typeIndex, const char* directory);
-        void LogByType(const std::type_index& typeIndex);
+        void LogDirectoryByType(uint32_t typeIndex, const char* directory);
+        void LogByType(uint32_t typeIndex);
         void LogAll();
 
     private:
         template<typename T>
-        TypeInfo* CreateTypeInfo()
-        {
-            auto typeIndex = 0u;
-            
-            if (m_types.AddKey(std::type_index(typeid(T)), &typeIndex))
-            {
-                m_types[typeIndex].value.headIndex = INVALID_LINK;
-                m_types[typeIndex].value.factory = nullptr;
-                RegisterConsoleVariables(std::type_index(typeid(T)));
-            }
-            
-            return &m_types[typeIndex].value;
-        }
+        TypeInfo* CreateTypeInfo() { return CreateTypeInfo(pk_base_type_index<T>(), std::type_index(typeid(T))); }
 
         template<typename T>
         AssetObject<T>* CreateAssetObject(AssetID assetId)
@@ -220,11 +211,11 @@ namespace PK
                 auto typeInfo = CreateTypeInfo<T>();
                 auto newAsset = new AssetObject<T>();
                 assetIndex = m_assets.Add(newAsset);
+                newAsset->typeInfo = typeInfo;
                 newAsset->assetId = assetId;
                 newAsset->version = 0u;
                 newAsset->indexNext = typeInfo->headIndex;
                 newAsset->cachingMode = AssetCachingMode::Persistent;
-                newAsset->factory = static_cast<AssetFactory<T>*>(typeInfo->factory);
                 newAsset->isLoaded = false;
                 newAsset->isVirtual = false;
                 typeInfo->headIndex = assetIndex;
@@ -234,12 +225,12 @@ namespace PK
             return static_cast<AssetObject<T>*>(m_assets[assetIndex]);
         }
 
-        uint32_t GetTypeHead(const std::type_index& typeIndex) const;
         void LoadAsset(AssetObjectBase* object, bool isReload);
-        void RegisterConsoleVariables(const std::type_index& typeIndex);
+        uint32_t GetTypeHead(uint32_t typeIndex) const;
+        TypeInfo* CreateTypeInfo(uint32_t typeIndex, const std::type_index& rttiIndex);
 
         FastSet<AssetObjectBase*, AssetObjectHash> m_assets;
-        FastMap<std::type_index, TypeInfo> m_types;
+        FastSet<TypeInfo, TypeInfoHash> m_types;
         Sequencer* m_sequencer;
     };
 }
