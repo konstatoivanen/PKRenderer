@@ -20,7 +20,7 @@ namespace PK::App
     PassBloom::PassBloom(AssetDatabase* assetDatabase)
     {
         PK_LOG_VERBOSE_FUNC("");
-        m_computeBloom = assetDatabase->Find<ShaderAsset>("CS_Bloom");
+        m_computeBloom = assetDatabase->Find<ShaderAsset>("CS_Bloom").get();
         m_passDownsample0 = m_computeBloom->GetRHIIndex("PASS_DOWNSAMPLE0");
         m_passDownsample = m_computeBloom->GetRHIIndex("PASS_DOWNSAMPLE1");
         m_passUpsample = m_computeBloom->GetRHIIndex("PASS_UPSAMPLE");

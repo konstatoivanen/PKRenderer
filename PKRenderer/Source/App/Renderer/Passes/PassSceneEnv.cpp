@@ -21,10 +21,10 @@ namespace PK::App
         PK_LOG_VERBOSE_FUNC("");
 
         auto hash = HashCache::Get();
-        m_backgroundShader = assetDatabase->Find<ShaderAsset>("VS_SceneEnv_Background");
-        m_integrateSHShader = assetDatabase->Find<ShaderAsset>("CS_SceneEnv_IntegrateSH");
-        m_integrateIBLShader = assetDatabase->Find<ShaderAsset>("CS_SceneEnv_IntegrateIBL");
-        m_integrateISLShader = assetDatabase->Find<ShaderAsset>("CS_SceneEnv_IntegrateISL");
+        m_backgroundShader = assetDatabase->Find<ShaderAsset>("VS_SceneEnv_Background").get();
+        m_integrateSHShader = assetDatabase->Find<ShaderAsset>("CS_SceneEnv_IntegrateSH").get();
+        m_integrateIBLShader = assetDatabase->Find<ShaderAsset>("CS_SceneEnv_IntegrateIBL").get();
+        m_integrateISLShader = assetDatabase->Find<ShaderAsset>("CS_SceneEnv_IntegrateISL").get();
         RHI::SetTexture(hash->pk_SceneEnv, RHI::GetBuiltInResources()->BlackTexture2D.get());
         RHI::SetTexture(hash->pk_SceneEnv_ISL, RHI::GetBuiltInResources()->BlackTexture2D.get());
     

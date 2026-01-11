@@ -4,28 +4,29 @@
 namespace PK
 {
     // Wrapper types & utilities
+    struct TextureAsset;
     struct ShaderAsset;
-    struct ConstantBuffer;
-    struct StorageBuffer;
-    struct CommandBufferExt;
     struct Material;
+    struct Font;
     struct Mesh;
     struct MeshStatic;
     struct SubMeshStatic;
     struct MeshStaticAsset;
     struct MeshStaticDescriptor;
     class MeshStaticCollection;
+    struct ConstantBuffer;
+    struct CommandBufferExt;
     struct ShaderBindingTable;
     struct ShaderPropertyBlock;
-    struct TextureAsset;
-    struct Font;
     struct Window;
     enum class TextAlign;
 
-    typedef Ref<ConstantBuffer> ConstantBufferRef;
-    typedef Ref<StorageBuffer> StorageBufferRef;
-    typedef Ref<MeshStaticAsset> MeshStaticAssetRef;
     typedef Ref<TextureAsset> TextureAssetRef;
+    typedef Ref<ShaderAsset> ShaderAssetRef;
+    typedef Ref<Material> MaterialRef;
     typedef Ref<Font> FontRef;
+    typedef Ref<Mesh> MeshRef;
+    typedef Ref<MeshStaticAsset> MeshStaticAssetRef;
+    typedef Ref<ConstantBuffer> ConstantBufferRef;
     typedef Unique<Window> WindowScope;
 }

@@ -20,7 +20,7 @@ namespace PK::App
     PassDistort::PassDistort(AssetDatabase* assetDatabase)
     {
         PK_LOG_VERBOSE_FUNC("");
-        m_computeDistort = assetDatabase->Find<ShaderAsset>("CS_Distort");
+        m_computeDistort = assetDatabase->Find<ShaderAsset>("CS_Distort").get();
     }
 
     void PassDistort::SetViewConstants(RenderView* view)

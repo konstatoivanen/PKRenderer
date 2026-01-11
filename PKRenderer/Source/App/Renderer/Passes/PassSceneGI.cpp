@@ -21,15 +21,15 @@ namespace PK::App
     {
         PK_LOG_VERBOSE_FUNC("");
 
-        m_computeClear = assetDatabase->Find<ShaderAsset>("CS_GI_Clear");
-        m_computeMipmap = assetDatabase->Find<ShaderAsset>("CS_GI_VolumeMipmap");
-        m_computeAccumulate = assetDatabase->Find<ShaderAsset>("CS_GI_Accumulate");
-        m_computeShadeHits = assetDatabase->Find<ShaderAsset>("CS_GI_ShadeHits");
-        m_computeReproject = assetDatabase->Find<ShaderAsset>("CS_GI_Reproject");
-        m_computeGradients = assetDatabase->Find<ShaderAsset>("CS_GI_GradientEstimation");
-        m_computePostFilter = assetDatabase->Find<ShaderAsset>("CS_GI_PostFilter");
-        m_rayTraceGatherGI = assetDatabase->Find<ShaderAsset>("RS_GI_Raytrace");
-        m_rayTraceValidate = assetDatabase->Find<ShaderAsset>("RS_GI_ValidateReservoirs");
+        m_computeClear = assetDatabase->Find<ShaderAsset>("CS_GI_Clear").get();
+        m_computeMipmap = assetDatabase->Find<ShaderAsset>("CS_GI_VolumeMipmap").get();
+        m_computeAccumulate = assetDatabase->Find<ShaderAsset>("CS_GI_Accumulate").get();
+        m_computeShadeHits = assetDatabase->Find<ShaderAsset>("CS_GI_ShadeHits").get();
+        m_computeReproject = assetDatabase->Find<ShaderAsset>("CS_GI_Reproject").get();
+        m_computeGradients = assetDatabase->Find<ShaderAsset>("CS_GI_GradientEstimation").get();
+        m_computePostFilter = assetDatabase->Find<ShaderAsset>("CS_GI_PostFilter").get();
+        m_rayTraceGatherGI = assetDatabase->Find<ShaderAsset>("RS_GI_Raytrace").get();
+        m_rayTraceValidate = assetDatabase->Find<ShaderAsset>("RS_GI_ValidateReservoirs").get();
 
         TextureDescriptor descr{};
         descr.type = TextureType::Texture3D;

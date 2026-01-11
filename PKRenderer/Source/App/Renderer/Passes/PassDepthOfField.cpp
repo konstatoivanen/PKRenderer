@@ -15,8 +15,8 @@ namespace PK::App
     PassDepthOfField::PassDepthOfField(AssetDatabase* assetDatabase)
     {
         PK_LOG_VERBOSE_FUNC("");
-        m_computeDepthOfField = assetDatabase->Find<ShaderAsset>("CS_DepthOfField");
-        m_computeAutoFocus = assetDatabase->Find<ShaderAsset>("CS_AutoFocus");
+        m_computeDepthOfField = assetDatabase->Find<ShaderAsset>("CS_DepthOfField").get();
+        m_computeAutoFocus = assetDatabase->Find<ShaderAsset>("CS_AutoFocus").get();
         m_passPrefilter = m_computeDepthOfField->GetRHIIndex("PASS_PREFILTER");
         m_passDiskblur = m_computeDepthOfField->GetRHIIndex("PASS_DISKBLUR");
         m_passUpsample = m_computeDepthOfField->GetRHIIndex("PASS_UPSAMPLE");

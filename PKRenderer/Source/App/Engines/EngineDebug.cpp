@@ -34,10 +34,10 @@ namespace PK::App
         auto sphereMesh = assetDatabase->CreateVirtual<MeshStaticAsset>("Primitive_Sphere", MeshUtilities::CreateSphereMeshStatic(baseMesh, PK_FLOAT3_ZERO, 1.0f));
         auto planeMesh = assetDatabase->CreateVirtual<MeshStaticAsset>("Primitive_Plane", MeshUtilities::CreatePlaneMeshStatic(baseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
 
-        auto materialSand = assetDatabase->Load<Material>("Content/Materials/M_Sand.material");
-        auto materialAsphalt = assetDatabase->Load<Material>("Content/Materials/M_Asphalt.material");
-        auto materialMarble = assetDatabase->Load<Material>("Content/Materials/M_Marble.material");
-        auto materialPlaster = assetDatabase->Load<Material>("Content/Materials/M_Plaster.material");
+        auto materialSand = assetDatabase->Load<Material>("Content/Materials/M_Sand.material").get();
+        auto materialAsphalt = assetDatabase->Load<Material>("Content/Materials/M_Asphalt.material").get();
+        auto materialMarble = assetDatabase->Load<Material>("Content/Materials/M_Marble.material").get();
+        auto materialPlaster = assetDatabase->Load<Material>("Content/Materials/M_Plaster.material").get();
 
         auto minpos = float3(-70, -6, -70);
         auto maxpos = float3(+70, -4, +70);

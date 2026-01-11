@@ -17,10 +17,10 @@ namespace PK::App
     PassVolumeFog::PassVolumeFog(AssetDatabase* assetDatabase)
     {
         PK_LOG_VERBOSE_FUNC("");
-        m_computeDensity = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Density");
-        m_computeInject = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Inject");
-        m_computeScatter = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Scatter");
-        m_shaderComposite = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Composite");
+        m_computeDensity = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Density").get();
+        m_computeInject = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Inject").get();
+        m_computeScatter = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Scatter").get();
+        m_shaderComposite = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Composite").get();
     }
 
     void PassVolumeFog::SetViewConstants(RenderView* view)

@@ -19,8 +19,8 @@ namespace PK::App
     {
         auto hash = HashCache::Get();
 
-        m_gui_shader = assetDatabase->Find<ShaderAsset>("VS_GUI");
-        m_gui_font = assetDatabase->Load<Font>("Content/Fonts/FSEX302.pkfont");
+        m_gui_shader = assetDatabase->Find<ShaderAsset>("VS_GUI").get();
+        m_gui_font = assetDatabase->Load<Font>("Content/Fonts/FSEX302.pkfont").get();
         m_gui_vertexBuffer = RHI::CreateBuffer<GUIVertex>(GUI_MAX_VERTICES, BufferUsage::PersistentStorage, "GUI.VertexBuffer");
         m_gui_indexBuffer = RHI::CreateBuffer<uint16_t>(GUI_MAX_INDICES, BufferUsage::DefaultIndex | BufferUsage::PersistentStage, "GUI.IndexBuffer");
 
@@ -38,7 +38,7 @@ namespace PK::App
         CVariableRegister::Create<bool*>("Engine.GUI.Enabled", &m_gui_enabled, "0 = 0ff, 1 = On", 1u);
         CVariableRegister::Create<CVariableFuncSimple>("Engine.GUI.Toggle", [this]() { m_gui_enabled^= true; });
     
-        m_gizmos_shader = assetDatabase->Find<ShaderAsset>("VS_Gizmos");
+        m_gizmos_shader = assetDatabase->Find<ShaderAsset>("VS_Gizmos").get();
         m_gizmos_vertexBuffer = RHI::CreateBuffer<uint4>(m_gizmos_maxVertices, BufferUsage::DefaultVertex | BufferUsage::PersistentStage, "Gizmos.VertexBuffer");
         m_gizmos_indirectVertexBuffer = RHI::CreateBuffer<uint4>(16384u, BufferUsage::Vertex | BufferUsage::Storage, "Gizmos.Indirect.VertexBuffer");
         m_gizmos_indirectArgsBuffer = RHI::CreateBuffer<uint4>(1u, BufferUsage::Storage | BufferUsage::Indirect | BufferUsage::TransferDst, "Gizmos.Indirect.Arguments");

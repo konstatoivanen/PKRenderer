@@ -17,7 +17,7 @@ namespace PK::App
     PassPostEffectsComposite::PassPostEffectsComposite(AssetDatabase* assetDatabase)
     {
         PK_LOG_VERBOSE_FUNC("");
-        m_computeComposite = assetDatabase->Find<ShaderAsset>("CS_PostEffectsComposite");
+        m_computeComposite = assetDatabase->Find<ShaderAsset>("CS_PostEffectsComposite").get();
     }
 
     void PassPostEffectsComposite::SetViewConstants(RenderView* view)

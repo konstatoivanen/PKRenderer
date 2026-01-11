@@ -73,7 +73,7 @@ namespace PK::App
 
         auto renderPipelineScene = GetServices()->Create<RenderPipelineScene>(assetDatabase, entityDb, sequencer, batcherMeshStatic);
 
-        auto inputConfig = assetDatabase->Load<InputKeyConfig>("Content/Configs/Input.keycfg");
+        auto inputConfig = assetDatabase->Load<InputKeyConfig>("Content/Configs/Input.keycfg").get();
         auto remoteProcessRunner = GetServices()->Create<RemoteProcessRunner>();
         auto engineViewUpdate = GetServices()->Create<EngineViewUpdate>(sequencer, entityDb);
         auto engineCommands = GetServices()->Create<EngineCommandInput>(sequencer, inputConfig);

@@ -15,7 +15,7 @@ namespace PK::App
     {
         PK_LOG_VERBOSE_FUNC("");
 
-        m_computeFilmGrain = assetDatabase->Find<ShaderAsset>("CS_FilmGrain");
+        m_computeFilmGrain = assetDatabase->Find<ShaderAsset>("CS_FilmGrain").get();
 
         TextureDescriptor descriptor{};
         descriptor.format = TextureFormat::RGBA8;

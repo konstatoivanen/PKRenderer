@@ -7,13 +7,6 @@ namespace PK
 {
     typedef NameID AssetID;
         
-    enum class AssetCachingMode
-    {
-        Auto = 0u,
-        GC = 1u,
-        Persistent = 2u
-    };
-
     class Asset : public NoCopy
     {
         friend class AssetDatabase;
@@ -23,7 +16,6 @@ namespace PK
         {
             AssetID assetId;
             uint32_t version;
-            AssetCachingMode cachingMode;
         };
 
         virtual ~Asset() = default;

@@ -69,9 +69,9 @@ namespace PK::App
     {
         PK_LOG_VERBOSE_FUNC("");
 
-        m_computeLightAssignment = assetDatabase->Find<ShaderAsset>("CS_LightAssignment");
-        m_computeCopyCubeShadow = assetDatabase->Find<ShaderAsset>("CS_CopyCubeShadow");
-        m_computeScreenSpaceShadow = assetDatabase->Find<ShaderAsset>("CS_ScreenspaceShadow");
+        m_computeLightAssignment = assetDatabase->Find<ShaderAsset>("CS_LightAssignment").get();
+        m_computeCopyCubeShadow = assetDatabase->Find<ShaderAsset>("CS_CopyCubeShadow").get();
+        m_computeScreenSpaceShadow = assetDatabase->Find<ShaderAsset>("CS_ScreenspaceShadow").get();
 
         m_shadowTypeData[(int)LightType::Point].MatrixCount = 0u;
         m_shadowTypeData[(int)LightType::Point].TileCount = 1u;

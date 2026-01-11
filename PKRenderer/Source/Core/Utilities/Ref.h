@@ -26,8 +26,8 @@ namespace PK
         virtual ~SharedObjectBase() noexcept {}
         virtual void Destroy() noexcept = 0;
         virtual void Delete() noexcept = 0;
-        long GetStrongRefCount() const noexcept { return static_cast<long>(referenceCount); }
-        long GetWeakRefCount() const noexcept { return static_cast<long>(weakCount); }
+        constexpr long GetStrongRefCount() const noexcept { return static_cast<long>(referenceCount); }
+        constexpr long GetWeakRefCount() const noexcept { return static_cast<long>(weakCount); }
         void IncrementWeakRef() noexcept { _MT_INCR(weakCount); }
         void IncrementStrongRef() noexcept { _MT_INCR(referenceCount); }
         void DecrementWeakRef() noexcept { if (_MT_DECR(weakCount) == 0) Delete(); }
@@ -319,7 +319,7 @@ namespace PK
     template <typename T> bool operator<=(nullptr_t, const Ref<T>& b) noexcept { return static_cast<typename T*>(nullptr) <= b.get(); }
 
     template<typename T, typename ... Args>
-    constexpr Ref<T> CreateRef(Args&& ... args)
+    constexpr Ref<T> CreateRef(Args&& ... args) noexcept
     {
         const auto shared = new SharedObject<T>(std::forward<Args>(args)...);
         Ref<T> ret;
@@ -329,11 +329,18 @@ namespace PK
     }
 
     template<typename T, typename TRef, typename ... Args>
-    static Ref<T> CreateRefAliased(const TRef* shared, Args&& ... args)
+    static Ref<T> CreateRefAliased(const TRef* shared, Args&& ... args) noexcept
     {
         Ref<T> ret;
         ret.pointer = &shared->value;
         ret.shared = shared;
         return ret;
+    }
+
+    template<typename T0, typename T1>
+    static Ref<T0> StaticCastRef(const Ref<T1>& other) noexcept
+    {
+        const auto ptr = static_cast<T0*>(other.get());
+        return Ref<T0>(other, ptr);
     }
 }

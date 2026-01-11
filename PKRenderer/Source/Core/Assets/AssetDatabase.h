@@ -14,6 +14,13 @@
 
 namespace PK
 {
+    enum class AssetCachingMode
+    {
+        ReferenceCounted,
+        GC,
+        Persistent
+    };
+
     class AssetDatabase : public ISingleton<AssetDatabase>
     {
         constexpr static uint32_t INVALID_LINK = ~0u;
@@ -34,17 +41,27 @@ namespace PK
         {
             TypeInfo* typeInfo;
             uint32_t indexNext;
+            uint16_t cachingMode;
             bool isVirtual;
             bool isLoaded;
 
-            virtual void Construct(AssetDatabase* caller, const char* filepath) noexcept = 0;
+            constexpr bool IsReferenceReleasable() const { return isLoaded && !GetStrongRefCount() && cachingMode == (uint16_t)AssetCachingMode::ReferenceCounted; }
+            constexpr bool IsGarbageCollectable() const { return isLoaded && !GetStrongRefCount() && cachingMode == (uint16_t)AssetCachingMode::GC; }
+            constexpr bool IsPersistent() const { return isLoaded && cachingMode == (uint16_t)AssetCachingMode::Persistent; }
+            Ref<Asset> GetBaseReference() { return Ref<Asset>(this, isLoaded ? GetAsset() : nullptr); }
+            virtual void ConstructAsset(AssetDatabase* caller, const char* filepath) noexcept = 0;
+            virtual void DestructAsset() noexcept = 0;
             virtual Asset* GetAsset() noexcept = 0;
         };
 
         template<typename T>
         struct AssetObject : public AssetObjectBase
         {
-            explicit AssetObject() {}
+            explicit AssetObject() 
+            {
+                referenceCount = 0u;
+                weakCount = 1u; 
+            }
 
             virtual ~AssetObject() noexcept override {}
 
@@ -57,7 +74,7 @@ namespace PK
                 isVirtual = true;
             }
 
-            void Construct(AssetDatabase* caller, const char* filepath) noexcept final
+            void ConstructAsset(AssetDatabase* caller, const char* filepath) noexcept final
             {
                 if constexpr (std::is_constructible<T, const char*>::value)
                 {
@@ -77,18 +94,30 @@ namespace PK
                 caller->m_sequencer->Next(caller, &importToken);
             }
 
-            void Destroy() noexcept final 
-            { 
+            void DestructAsset() noexcept final
+            {
                 if (isLoaded)
                 {
-                    value.~T(); 
-                    isLoaded = false; 
+                    value.~T();
+                    isLoaded = false;
                 }
+            }
+
+            void Destroy() noexcept final 
+            { 
+                if (IsReferenceReleasable())
+                {
+                    DestructAsset();
+                }
+
+                IncrementWeakRef();
             }
 
             void Delete() noexcept final { delete this; }
 
             Asset* GetAsset() noexcept final { return &value; };
+
+            Ref<T> GetReference() { return Ref<T>(this, &value); }
 
             struct U { constexpr U() noexcept {} };
             union { U unionDefault; T value; };
@@ -105,33 +134,33 @@ namespace PK
         void RegisterFactory(IAssetFactory* factory) { CreateTypeInfo<T>()->factory = factory; }
 
         template<typename T, typename ... Args>
-        T* CreateVirtual(AssetID assetId, Args&& ... args)
+        Ref<T> CreateVirtual(AssetID assetId, Args&& ... args)
         {
             auto object = CreateAssetObject<T>(assetId);
             PK_THROW_ASSERT(!object->isLoaded, "AssetDatabase.Register: (%s) already exists!", assetId.c_str());
             PK_LOG_VERBOSE_FUNC("%s, %s", typeid(T).name(), assetId.c_str());
             object->ConstructVirtual(std::forward<Args>(args)...);
-            return &object->value;
+            return object->GetReference();
         }
 
         template<typename T, typename ... Args>
-        T* CreateVirtual(const char* name, Args&& ... args)
+        Ref<T> CreateVirtual(const char* name, Args&& ... args)
         {
             return CreateVirtual<T>(AssetID(name), std::forward<Args>(args)...);
         }
 
         template<typename T>
-        T* Load(AssetID assetId, bool forceReload = false) 
+        Ref<T> Load(AssetID assetId, bool forceReload = false) 
         {
             FixedString256 filepath(assetId.c_str());
             PK_THROW_ASSERT(std::filesystem::exists(filepath.c_str()), "Asset not found at path: %s", filepath.c_str());
             AssetObject<T>* object = CreateAssetObject<T>(assetId);
             LoadAsset(object, forceReload);
-            return &object->value;
+            return object->GetReference();
         }
 
         template<typename T>
-        T* Load(const char* filepath, bool forceReload = false) { return Load<T>(AssetID(filepath), forceReload); }
+        Ref<T> Load(const char* filepath, bool forceReload = false) { return Load<T>(AssetID(filepath), forceReload); }
 
         template<typename T>
         void LoadDirectory(const std::string& directory, bool forceReload = false)
@@ -169,14 +198,14 @@ namespace PK
         void LogAssetByType() { LogAssetByType(pk_base_type_index<T>()); }
 
         template<typename T>
-        T* Find(const char* name, bool doAssert = true) const
+        Ref<T> Find(const char* name, bool doAssert = true) const
         {
             auto asset = Find(pk_base_type_index<T>(), name);
             PK_THROW_ASSERT(!doAssert || asset != nullptr, "Could not find asset with name %s", name);
-            return asset ? static_cast<T*>(asset) : nullptr;
+            return asset ? StaticCastRef<T>(asset) : nullptr;
         }
         
-        Asset* Find(uint32_t typeIndex, const char* keyword) const;
+        Ref<Asset> Find(uint32_t typeIndex, const char* keyword) const;
 
         void Reload(AssetID assetId);
         void ReloadDirectory(const char* directory);
@@ -189,6 +218,7 @@ namespace PK
         void UnloadDirectoryByType(uint32_t typeIndex, const char* directory);
         void UnloadByType(uint32_t typeIndex);
         void UnloadAll();
+        void GC();
 
         void LogDirectory(const char* directory);
         void LogDirectoryByType(uint32_t typeIndex, const char* directory);
@@ -210,14 +240,14 @@ namespace PK
             {
                 auto typeInfo = CreateTypeInfo<T>();
                 auto newAsset = new AssetObject<T>();
-                assetIndex = m_assets.Add(newAsset);
                 newAsset->typeInfo = typeInfo;
                 newAsset->assetId = assetId;
                 newAsset->version = 0u;
                 newAsset->indexNext = typeInfo->headIndex;
-                newAsset->cachingMode = AssetCachingMode::Persistent;
+                newAsset->cachingMode = (uint16_t)AssetCachingMode::Persistent;
                 newAsset->isLoaded = false;
                 newAsset->isVirtual = false;
+                assetIndex = m_assets.Add(newAsset);
                 typeInfo->headIndex = assetIndex;
                 return newAsset;
             }

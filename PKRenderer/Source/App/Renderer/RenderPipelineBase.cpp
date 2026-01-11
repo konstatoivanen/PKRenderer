@@ -76,7 +76,7 @@ namespace PK::App
             descr.resolution = { 128u, 128u, 1u };
             descr.usage = TextureUsage::Sample | TextureUsage::Storage;
             m_integratedDFG = RHI::CreateTexture(descr, "PKBuiltIn.Texture2D.PreintegratedDFG");
-            auto integrateDFGShader = assetDatabase->Find<ShaderAsset>("CS_IntegrateDFG");
+            auto integrateDFGShader = assetDatabase->Find<ShaderAsset>("CS_IntegrateDFG").get();
 
             RHI::SetImage(hash->pk_Image, m_integratedDFG.get());
             RHI::SetTexture(hash->pk_PreIntegratedDFG, m_integratedDFG.get());

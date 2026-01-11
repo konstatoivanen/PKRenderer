@@ -237,11 +237,11 @@ namespace PK::App::EntityBuilders
 
         auto mesh = assetDatabase->Find<MeshStaticAsset>("Primitive_Sphere")->GetMeshStatic();
         auto shader = assetDatabase->Find<ShaderAsset>("MS_Mat_Unlit_Color");
-        auto material = assetDatabase->CreateVirtual<Material>(("M_Point_Light_" + std::to_string(egid.entityID())).c_str(), shader, nullptr);
+        auto material = assetDatabase->CreateVirtual<Material>(("M_Point_Light_" + std::to_string(egid.entityID())).c_str(), shader.get(), nullptr);
         material->Set<float4>(HashCache::Get()->_Color, color);
         material->Set<float4>(HashCache::Get()->_ColorVoxelize, PK_COLOR_BLACK);
 
-        auto meshEgid = EntityBuilders::CreateEntityMeshStatic(entityDb, mesh, { { material, 0 } }, position, PK_FLOAT3_ZERO, implementer->sourceRadius, ScenePrimitiveFlags::None);
+        auto meshEgid = EntityBuilders::CreateEntityMeshStatic(entityDb, mesh, { { material.get(), 0 } }, position, PK_FLOAT3_ZERO, implementer->sourceRadius, ScenePrimitiveFlags::None);
         lightSphereView->transformMesh = entityDb->Query<EntityViewTransform>(meshEgid)->transform;
         lightSphereView->transformLight = implementer;
         return egid;

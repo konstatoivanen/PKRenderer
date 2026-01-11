@@ -16,7 +16,7 @@ namespace PK::App
     PassTemporalAntialiasing::PassTemporalAntialiasing(AssetDatabase* assetDatabase)
     {
         PK_LOG_VERBOSE_FUNC("");
-        m_computeTAA = assetDatabase->Find<ShaderAsset>("CS_TemporalAntialiasing");
+        m_computeTAA = assetDatabase->Find<ShaderAsset>("CS_TemporalAntialiasing").get();
     }
 
     void PassTemporalAntialiasing::SetViewConstants(RenderView* view)

@@ -21,19 +21,21 @@ namespace PK
     {
         for (int32_t i = m_assets.GetCount() - 1; i >= 0; --i)
         {
-            m_assets[i]->Destroy();
+            m_assets[i]->DestructAsset();
             m_assets[i]->Delete();
         }
     }
 
 
-    Asset* AssetDatabase::Find(uint32_t typeIndex, const char* keyword) const
+    Ref<Asset> AssetDatabase::Find(uint32_t typeIndex, const char* keyword) const
     {
         for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index]->indexNext)
         {
-            if (strstr(m_assets[index]->assetId.c_str(), keyword) != nullptr)
+            auto object = m_assets[index];
+
+            if (strstr(object->assetId.c_str(), keyword) != nullptr)
             {
-                return m_assets[index]->isLoaded ? m_assets[index]->GetAsset() : nullptr;
+                return object->GetBaseReference();
             }
         }
 
@@ -43,7 +45,7 @@ namespace PK
 
     void AssetDatabase::Reload(AssetID assetId)
     {
-        PK_LOG_VERBOSE_FUNC();
+        PK_LOG_VERBOSE_FUNC("%s", assetId.c_str());
 
         auto index = m_assets.GetHashIndex((size_t)assetId);
 
@@ -55,7 +57,7 @@ namespace PK
 
     void AssetDatabase::ReloadDirectory(const char* directory)
     {
-        PK_LOG_VERBOSE_FUNC();
+        PK_LOG_VERBOSE_FUNC("%s", directory);
 
         if (std::filesystem::exists(directory))
         {
@@ -73,7 +75,7 @@ namespace PK
 
     void AssetDatabase::ReloadDirectoryByType(uint32_t typeIndex, const char* directory)
     {
-        PK_LOG_VERBOSE_FUNC();
+        PK_LOG_VERBOSE_FUNC("%s", directory);
 
         if (std::filesystem::exists(directory))
         {
@@ -112,19 +114,19 @@ namespace PK
 
     void AssetDatabase::Unload(AssetID assetId)
     {
-        PK_LOG_VERBOSE_FUNC();
+        PK_LOG_VERBOSE_FUNC("%s", assetId.c_str());
 
         auto index = m_assets.GetHashIndex((size_t)assetId);
 
         if (index != -1)
         {
-            m_assets[index]->Destroy();
+            m_assets[index]->DestructAsset();
         }
     }
     
     void AssetDatabase::UnloadDirectory(const char* directory)
     {
-        PK_LOG_VERBOSE_FUNC();
+        PK_LOG_VERBOSE_FUNC("%s", directory);
 
         if (std::filesystem::exists(directory))
         {
@@ -134,7 +136,7 @@ namespace PK
             {
                 if (m_assets[i]->isLoaded && strncmp(directory, m_assets[i]->assetId.c_str(), directoryLen) == 0)
                 {
-                    m_assets[i]->Destroy();
+                    m_assets[i]->DestructAsset();
                 }
             }
         }
@@ -142,7 +144,7 @@ namespace PK
 
     void AssetDatabase::UnloadDirectoryByType(uint32_t typeIndex, const char* directory)
     {
-        PK_LOG_VERBOSE_FUNC();
+        PK_LOG_VERBOSE_FUNC("%s", directory);
 
         if (std::filesystem::exists(directory))
         {
@@ -152,7 +154,7 @@ namespace PK
             {
                 if (m_assets[index]->isLoaded && strncmp(directory, m_assets[index]->assetId.c_str(), directoryLen) == 0)
                 {
-                    m_assets[index]->Destroy();
+                    m_assets[index]->DestructAsset();
                 }
             }
         }
@@ -164,7 +166,7 @@ namespace PK
 
         for (auto index = GetTypeHead(typeIndex); index != INVALID_LINK; index = m_assets[index]->indexNext)
         {
-            m_assets[index]->Destroy();
+            m_assets[index]->DestructAsset();
         }
     }
 
@@ -174,14 +176,29 @@ namespace PK
 
         for (int32_t i = m_assets.GetCount() - 1; i >= 0; --i)
         {
-            m_assets[i]->Destroy();
+            m_assets[i]->DestructAsset();
+        }
+    }
+
+    void AssetDatabase::GC()
+    {
+        PK_LOG_HEADER_FUNC();
+
+        for (auto i = 0u; i < m_assets.GetCount(); ++i)
+        {
+            auto object = m_assets[i];
+
+            if (object->IsGarbageCollectable())
+            {
+                m_assets[i]->DestructAsset();
+            }
         }
     }
 
 
     void AssetDatabase::LogDirectory(const char* directory)
     {
-        PK_LOG_HEADER_FUNC();
+        PK_LOG_HEADER_FUNC("%s", directory);
 
         if (std::filesystem::exists(directory))
         {
@@ -199,7 +216,7 @@ namespace PK
 
     void AssetDatabase::LogDirectoryByType(uint32_t typeIndex, const char* directory)
     {
-        PK_LOG_HEADER_FUNC();
+        PK_LOG_HEADER_FUNC("%s", directory);
 
         if (std::filesystem::exists(directory))
         {
@@ -248,8 +265,8 @@ namespace PK
         {
             FixedString128 filepath = object->assetId.c_str();
             PK_LOG_VERBOSE_FUNC(": %s, %s", object->typeInfo->shortName, filepath.c_str());
-            object->Destroy();
-            object->Construct(this, filepath);
+            object->DestructAsset();
+            object->ConstructAsset(this, filepath);
         }
     }
 

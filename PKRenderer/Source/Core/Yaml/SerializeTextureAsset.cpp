@@ -10,7 +10,7 @@ namespace PK::YAML
     {
         auto pathsubstr = node.val();
         FixedString128 path(pathsubstr.len, pathsubstr.data());
-        *rhs = AssetDatabase::Get()->Load<TextureAsset>(path);
+        *rhs = AssetDatabase::Get()->Load<TextureAsset>(path).get();
         return *rhs != nullptr;
     }
 

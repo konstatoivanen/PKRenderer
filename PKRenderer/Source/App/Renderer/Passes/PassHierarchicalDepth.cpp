@@ -13,7 +13,7 @@ namespace PK::App
     PassHierarchicalDepth::PassHierarchicalDepth(AssetDatabase* assetDatabase)
     {
         PK_LOG_VERBOSE_FUNC("");
-        m_computeHierachicalDepth = assetDatabase->Find<ShaderAsset>("CS_HierachicalDepth");
+        m_computeHierachicalDepth = assetDatabase->Find<ShaderAsset>("CS_HierachicalDepth").get();
         RHI::SetTexture(HashCache::Get()->pk_GB_Current_DepthMips, RHI::GetBuiltInResources()->BlackTexture2DArray.get());
     }
 
