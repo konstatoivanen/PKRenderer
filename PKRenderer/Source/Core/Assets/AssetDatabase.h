@@ -192,10 +192,10 @@ namespace PK
         void UnloadByType() { UnloadByType(pk_base_type_index<T>()); }
 
         template<typename T>
-        void LogAssetDirectoryByType(const char* directory) { LogAssetDirectoryByType(pk_base_type_index<T>()), directory); }
+        void LogDirectoryByType(const char* directory) { LogDirectoryByType(pk_base_type_index<T>()), directory); }
        
         template<typename T>
-        void LogAssetByType() { LogAssetByType(pk_base_type_index<T>()); }
+        void LogByType() { LogByType(pk_base_type_index<T>()); }
 
         template<typename T>
         Ref<T> Find(const char* name, bool doAssert = true) const
