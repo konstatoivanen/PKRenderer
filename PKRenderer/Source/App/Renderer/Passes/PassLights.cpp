@@ -327,7 +327,7 @@ namespace PK::App
         uint matrixIndex = 0u;
         uint shadowCount = 0u;
 
-        resources->lightViews.Validate(glm::max(1024ull, culledLights.GetCount()));
+        resources->lightViews.Reserve(glm::max(1024ull, culledLights.GetCount()));
 
         for (auto i = 0U; i < culledLights.GetCount(); ++i)
         {

@@ -20,10 +20,7 @@ namespace PK
     template<typename T>
     struct VersionHandle
     {
-        const T* value;
-        uint64_t version;
-
-        static_assert(std::is_base_of<VersionedObject, T>::value, "Template argument type does not derive from IDObject!");
+        static_assert(std::is_base_of<VersionedObject, T>::value, "Template argument type does not derive from VersionedObject!");
 
         struct Hash
         {
@@ -36,15 +33,12 @@ namespace PK
         constexpr VersionHandle() : value(nullptr), version(0ull) {}
         constexpr VersionHandle(const T* value) : value(value), version(value ? value->Version() : 0ull) {}
 
-        constexpr bool operator == (const VersionHandle& r) const noexcept
-        {
-            return value == r.value && version == r.version;
-        }
-
+        constexpr bool operator == (const VersionHandle& r) const noexcept { return value == r.value && version == r.version; }
         constexpr operator const T* () { return value; }
-
         constexpr operator bool () const { return value != nullptr; }
-
         const T* operator->() const { return value; }
+
+        const T* value;
+        uint64_t version;
     };
 }

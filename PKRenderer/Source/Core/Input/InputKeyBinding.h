@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FixedString.h"
-#include "Core/Utilities/MemoryBlock.h"
+#include "Core/Utilities/FastBuffer.h"
 #include "Core/Utilities/Hash.h"
 #include "Core/Input/InputKey.h"
 
@@ -15,7 +15,7 @@ namespace PK
 
     struct InputKeyCommandBindings
     {
-        MemoryBlock<char> memory;
+        FastBuffer<char> memory;
         size_t count;
 
         InputKeyCommand* GetBindings() { return reinterpret_cast<InputKeyCommand*>(memory.GetData()); }

@@ -115,22 +115,66 @@ namespace PK
 
                     switch (elementType)
                     {
-                    case ElementType::Float: Set(nameId, YAML::Read<float>(value)); break;
-                    case ElementType::Float2: Set(nameId, YAML::Read<float2>(value)); break;
-                    case ElementType::Float3: Set(nameId, YAML::Read<float3>(value)); break;
-                    case ElementType::Float4: Set(nameId, YAML::Read<float4>(value)); break;
-                    case ElementType::Float2x2: Set(nameId, YAML::Read<float2x2>(value)); break;
-                    case ElementType::Float3x3: Set(nameId, YAML::Read<float3x3>(value)); break;
-                    case ElementType::Float4x4: Set(nameId, YAML::Read<float3x4>(value)); break;
-                    case ElementType::Float3x4: Set(nameId, YAML::Read<float4x4>(value)); break;
-                    case ElementType::Int: Set(nameId, YAML::Read<int>(value)); break;
-                    case ElementType::Int2: Set(nameId, YAML::Read<int2>(value)); break;
-                    case ElementType::Int3: Set(nameId, YAML::Read<int3>(value)); break;
-                    case ElementType::Int4: Set(nameId, YAML::Read<int4>(value)); break;
-                    case ElementType::Texture2DHandle: Set(nameId, YAML::Read<TextureAsset*>(value)->GetRHI()); break;
-                    case ElementType::Texture3DHandle: Set(nameId, YAML::Read<TextureAsset*>(value)->GetRHI()); break;
-                    case ElementType::TextureCubeHandle: Set(nameId, YAML::Read<TextureAsset*>(value)); break;
-                    default: PK_LOG_WARNING("Unsupported material parameter type"); break;
+                        case ElementType::Half:      Set(nameId, YAML::Read<ushort>(value)); break;
+                        case ElementType::Half2:     Set(nameId, YAML::Read<ushort2>(value)); break;
+                        case ElementType::Half3:     Set(nameId, YAML::Read<ushort3>(value)); break;
+                        case ElementType::Half4:     Set(nameId, YAML::Read<ushort4>(value)); break;
+                        case ElementType::Half2x2:   Set(nameId, YAML::Read<ushort2x2>(value)); break;
+                        case ElementType::Half3x3:   Set(nameId, YAML::Read<ushort3x3>(value)); break;
+                        case ElementType::Half4x4:   Set(nameId, YAML::Read<ushort4x4>(value)); break;
+
+                        case ElementType::Float:     Set(nameId, YAML::Read<float>(value)); break;
+                        case ElementType::Float2:    Set(nameId, YAML::Read<float2>(value)); break;
+                        case ElementType::Float3:    Set(nameId, YAML::Read<float3>(value)); break;
+                        case ElementType::Float4:    Set(nameId, YAML::Read<float4>(value)); break;
+                        case ElementType::Float2x2:  Set(nameId, YAML::Read<float2x2>(value)); break;
+                        case ElementType::Float3x3:  Set(nameId, YAML::Read<float3x3>(value)); break;
+                        case ElementType::Float4x4:  Set(nameId, YAML::Read<float4x4>(value)); break;
+                        case ElementType::Float3x4:  Set(nameId, YAML::Read<float3x4>(value)); break;
+
+                        case ElementType::Double:    Set(nameId, YAML::Read<double>(value)); break;
+                        case ElementType::Double2:   Set(nameId, YAML::Read<double2>(value)); break;
+                        case ElementType::Double3:   Set(nameId, YAML::Read<double3>(value)); break;
+                        case ElementType::Double4:   Set(nameId, YAML::Read<double4>(value)); break;
+                        case ElementType::Double2x2: Set(nameId, YAML::Read<double2x2>(value)); break;
+                        case ElementType::Double3x3: Set(nameId, YAML::Read<double3x3>(value)); break;
+                        case ElementType::Double4x4: Set(nameId, YAML::Read<double4x4>(value)); break;
+
+                        case ElementType::Int:       Set(nameId, YAML::Read<int>(value)); break;
+                        case ElementType::Int2:      Set(nameId, YAML::Read<int2>(value)); break;
+                        case ElementType::Int3:      Set(nameId, YAML::Read<int3>(value)); break;
+                        case ElementType::Int4:      Set(nameId, YAML::Read<int4>(value)); break;
+
+                        case ElementType::Uint:      Set(nameId, YAML::Read<uint>(value)); break;
+                        case ElementType::Uint2:     Set(nameId, YAML::Read<uint2>(value)); break;
+                        case ElementType::Uint3:     Set(nameId, YAML::Read<uint3>(value)); break;
+                        case ElementType::Uint4:     Set(nameId, YAML::Read<uint4>(value)); break;
+
+                        case ElementType::Short:     Set(nameId, YAML::Read<short>(value)); break;
+                        case ElementType::Short2:    Set(nameId, YAML::Read<short2>(value)); break;
+                        case ElementType::Short3:    Set(nameId, YAML::Read<short3>(value)); break;
+                        case ElementType::Short4:    Set(nameId, YAML::Read<short4>(value)); break;
+
+                        case ElementType::Ushort:    Set(nameId, YAML::Read<ushort>(value)); break;
+                        case ElementType::Ushort2:   Set(nameId, YAML::Read<ushort2>(value)); break;
+                        case ElementType::Ushort3:   Set(nameId, YAML::Read<ushort3>(value)); break;
+                        case ElementType::Ushort4:   Set(nameId, YAML::Read<ushort4>(value)); break;
+
+                        case ElementType::Long:      Set(nameId, YAML::Read<int64_t>(value)); break;
+                        case ElementType::Long2:     Set(nameId, YAML::Read<long2>(value)); break;
+                        case ElementType::Long3:     Set(nameId, YAML::Read<long3>(value)); break;
+                        case ElementType::Long4:     Set(nameId, YAML::Read<long4>(value)); break;
+
+                        case ElementType::Ulong:     Set(nameId, YAML::Read<ulong>(value)); break;
+                        case ElementType::Ulong2:    Set(nameId, YAML::Read<ulong2>(value)); break;
+                        case ElementType::Ulong3:    Set(nameId, YAML::Read<ulong3>(value)); break;
+                        case ElementType::Ulong4:    Set(nameId, YAML::Read<ulong4>(value)); break;
+
+                        case ElementType::Texture2DHandle: 
+                        case ElementType::Texture3DHandle:
+                        case ElementType::TextureCubeHandle: Set(nameId, YAML::Read<TextureAsset*>(value)->GetRHI()); break;
+
+                        default: PK_LOG_WARNING("Unsupported material parameter type"); break;
                     }
                 }
             }

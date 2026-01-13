@@ -265,6 +265,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Timers\TimerFramerate.h" />
     <ClInclude Include="Source\Core\Timers\TimerFrameRunner.h" />
     <ClInclude Include="Source\Core\Utilities\ContainerHelpers.h" />
+    <ClInclude Include="Source\Core\Utilities\FastList.h" />
     <ClInclude Include="Source\Core\Utilities\FixedArena.h" />
     <ClInclude Include="Source\Core\Utilities\FixedArray.h" />
     <ClInclude Include="Source\Core\Utilities\FixedString.h" />
@@ -728,7 +729,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\Hash.h" />
     <ClInclude Include="Source\Core\Utilities\FastMap.h" />
     <ClInclude Include="Source\Core\Utilities\ISingleton.h" />
-    <ClInclude Include="Source\Core\Utilities\MemoryBlock.h" />
+    <ClInclude Include="Source\Core\Utilities\FastBuffer.h" />
     <ClInclude Include="Source\Core\Utilities\NameID.h" />
     <ClInclude Include="Source\Core\Utilities\NativeInterface.h" />
     <ClInclude Include="Source\Core\Utilities\NoCopy.h" />

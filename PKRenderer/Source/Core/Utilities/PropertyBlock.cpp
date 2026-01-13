@@ -19,7 +19,7 @@ namespace PK
     }
 
 
-    void PropertyBlock::CopyFrom(PropertyBlock& from)
+    void PropertyBlock::Copy(PropertyBlock& from)
     {
         for (auto i = 0u; i < from.m_propertyCount; ++i)
         {

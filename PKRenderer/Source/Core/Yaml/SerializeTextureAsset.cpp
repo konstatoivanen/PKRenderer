@@ -15,6 +15,15 @@ namespace PK::YAML
     }
 
     template<>
+    bool Read<TextureAssetRef>(const ConstNode& node, TextureAssetRef* rhs)
+    {
+        auto pathsubstr = node.val();
+        FixedString128 path(pathsubstr.len, pathsubstr.data());
+        *rhs = AssetDatabase::Get()->Load<TextureAsset>(path);
+        return *rhs != nullptr;
+    }
+
+    template<>
     bool Read<RHITexture*>(const ConstNode& node, RHITexture** rhs)
     {
         auto pathsubstr = node.val();
@@ -25,5 +34,6 @@ namespace PK::YAML
     }
 
     PK_YAML_DECLARE_READ_MEMBER(TextureAsset*)
+    PK_YAML_DECLARE_READ_MEMBER(TextureAssetRef)
     PK_YAML_DECLARE_READ_MEMBER(RHITexture*)
 }

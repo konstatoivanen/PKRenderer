@@ -48,7 +48,7 @@ namespace PK
 
     struct MaterialTarget
     {
-        Material* material;
+        Ref<Material> material;
         uint32_t submesh;
     };
 }

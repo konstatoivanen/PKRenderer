@@ -65,7 +65,7 @@ namespace PK
                 auto pDescriptorSet = pDescriptorSets + i;
                 auto pDescriptors = pDescriptorSet->descriptors.Get(base);
                 auto& elements = m_resourceLayouts[i];
-                elements.Clear();
+                elements.ClearFast();
 
                 PK_WARNING_ASSERT(pDescriptorSet->descriptorCount <= PK_RHI_MAX_DESCRIPTORS_PER_SET, "Warning: Shader descriptor count exceeds the maximum count per set!");
 
@@ -87,7 +87,7 @@ namespace PK
         {
             auto pVariables = variant->constantVariables.Get(base);
 
-            m_pushConstantLayout.Clear();
+            m_pushConstantLayout.ClearFast();
 
             for (auto i = 0u; i < variant->constantVariableCount; ++i)
             {

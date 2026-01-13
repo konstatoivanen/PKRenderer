@@ -209,20 +209,20 @@ namespace PK
 
         Ref& operator=(const Ref& other) noexcept { Ref(other).Swap(*this); return *this; }
 
+        Ref& operator=(Ref&& other) noexcept { Ref(std::move(other)).Swap(*this); return *this; }
+
         template <typename TOther>
         Ref& operator=(const Ref<TOther>& other) noexcept { Ref(other).Swap(*this); return *this; }
-
-        Ref& operator=(Ref&& other) noexcept { Ref(std::move(other)).Swap(*this); return *this; }
 
         template <typename TOther>
         Ref& operator=(Ref<TOther>&& other) noexcept { Ref(std::move(other)).Swap(*this); return *this; }
 
-        void Swap(Ref& other) noexcept { TBase::Swap(other); }
-        void Reset() noexcept { Ref().Swap(*this); }
-
         T& operator*() const noexcept { return *get(); }
         T* operator->() const noexcept { return get(); }
         explicit operator bool() const noexcept { return get() != nullptr; }
+
+        void Swap(Ref& other) noexcept { TBase::Swap(other); }
+        void Reset() noexcept { Ref().Swap(*this); }
     };
 
     template <typename T>
@@ -274,10 +274,10 @@ namespace PK
 
         Weak& operator=(const Weak& other) noexcept { Weak(other).Swap(*this); return *this; }
 
+        Weak& operator=(Weak&& other) noexcept { Weak(std::move(other)).Swap(*this); return *this; }
+
         template <typename TOther>
         Weak& operator=(const Weak<TOther>& other) noexcept { Weak(other).Swap(*this); return *this; }
-
-        Weak& operator=(Weak&& other) noexcept { Weak(std::move(other)).Swap(*this); return *this; }
 
         template <typename TOther>
         Weak& operator=(Weak<TOther>&& other) noexcept { Weak(std::move(other)).Swap(*this); return *this; }

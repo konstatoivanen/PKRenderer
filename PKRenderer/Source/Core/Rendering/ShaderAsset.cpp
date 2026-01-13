@@ -182,7 +182,7 @@ namespace PK
         auto pVariants = shader->variants.Get(base);
         auto fileName = std::filesystem::path(GetFileName()).stem().string();
 
-        m_shaders.Validate(shader->variantcount);
+        m_shaders.Reserve(shader->variantcount);
 
         for (auto i = 0u; i < shader->variantcount; ++i)
         {

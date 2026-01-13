@@ -57,7 +57,7 @@ namespace PK
                 case ElementType::Ushort3:   Reserve<ushort3>(element.name, element.count); break;
                 case ElementType::Ushort4:   Reserve<ushort4>(element.name, element.count); break;
 
-                case ElementType::Long:      Reserve<long>(element.name, element.count); break;
+                case ElementType::Long:      Reserve<int64_t>(element.name, element.count); break;
                 case ElementType::Long2:     Reserve<long2>(element.name, element.count); break;
                 case ElementType::Long3:     Reserve<long3>(element.name, element.count); break;
                 case ElementType::Long4:     Reserve<long4>(element.name, element.count); break;

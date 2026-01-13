@@ -1,12 +1,12 @@
 #pragma once
-#include "Core/Utilities/MemoryBlock.h"
+#include "Core/Utilities/FastList.h"
 #include "Core/Rendering/Material.h"
 
 namespace PK::App
 {
     struct ComponentMaterials
     {
-        MemoryBlock<MaterialTarget> materials;
+        FastList<MaterialTarget> materials;
         virtual ~ComponentMaterials() = default;
     };
 }

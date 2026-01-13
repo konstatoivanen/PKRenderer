@@ -47,7 +47,7 @@ namespace PK
         {
             Delete(GetData() + index);
         }
-
+        
         protected:
             virtual T* Allocate(int64_t index = -1) = 0;
     };
@@ -63,11 +63,10 @@ namespace PK
         FixedPool() : m_mask() {}
         ~FixedPool() { Clear(); }
 
-       const T* GetData() const final { return reinterpret_cast<const T*>(m_data); }
+        const T* GetData() const final { return reinterpret_cast<const T*>(m_data); }
         T* GetData() final { return reinterpret_cast<T*>(m_data); }
         size_t GetCount() const final { return m_mask.CountBits(); }
         size_t GetCapacity() const final { return capacity; }
-
         const FixedMask<capacity>& GetActiveMask() { return m_mask; }
 
         void Delete(const T* ptr) final

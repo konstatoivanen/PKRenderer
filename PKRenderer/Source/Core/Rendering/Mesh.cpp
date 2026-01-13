@@ -114,7 +114,7 @@ namespace PK
     {
         m_indexBuffer = indexBuffer;
         m_indexType = indexType;
-        m_vertexBuffers.ClearFull();
+        m_vertexBuffers.Clear();
         m_streamLayout = streamLayout;
 
         for (auto i = 0u; i < vertexBufferCount; ++i)

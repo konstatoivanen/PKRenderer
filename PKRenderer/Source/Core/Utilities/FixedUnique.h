@@ -7,11 +7,16 @@ namespace PK
     struct FixedUnique : public NoCopy
     {
         FixedUnique() : m_isCreated(false) {}
+        ~FixedUnique() { Delete(); }
 
-        ~FixedUnique()
-        {
-            Delete();
-        }
+        const T* get() const { return m_isCreated ? &value : nullptr; }
+        T* get() { return m_isCreated ? &value : nullptr; }
+
+        operator const T* () const { return get(); }
+        operator T* () { return get(); }
+
+        const T* operator -> () const { return get(); }
+        T* operator -> () { return get(); }
 
         template<typename ... Args>
         void New(Args&& ... args)
@@ -31,15 +36,6 @@ namespace PK
                 m_isCreated = false;
             }
         }
-
-        const T* get() const { return m_isCreated ? &value : nullptr; }
-        T* get() { return m_isCreated ? &value : nullptr; }
-
-        operator const T* () const { return get(); }
-        operator T* () { return get(); }
-
-        const T* operator -> () const { return get(); }
-        T* operator -> () { return get(); }
 
     private:
         bool m_isCreated;

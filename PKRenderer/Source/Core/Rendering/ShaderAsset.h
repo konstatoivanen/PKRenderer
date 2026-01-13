@@ -1,9 +1,9 @@
 #pragma once
-#include "Core/Utilities/NativeInterface.h"
-#include "Core/Utilities/MemoryBlock.h"
+#include "Core/Utilities/FastBuffer.h"
 #include "Core/Assets/Asset.h"
 #include "Core/RHI/Layout.h"
 #include "Core/RHI/RHInterfaces.h"
+#include "Core/Rendering/RenderingFwd.h"
 
 namespace PK
 {
@@ -61,7 +61,7 @@ namespace PK
     protected:
         void ReleaseVariants();
 
-        MemoryBlock<RHIShaderScope, 4ull> m_shaders;
+        FastBuffer<RHIShaderScope, 4ull> m_shaders;
         Map m_map;
         FixedFunctionShaderAttributes m_attributes;
         BufferLayout m_materialPropertyLayout;

@@ -39,7 +39,7 @@ namespace PK::YAML
             size += ch[1].val().len + 1u;
         }
 
-        keyCommands.memory.Validate(size);
+        keyCommands.memory.Reserve(size);
         keyCommands.count = 0u;
         auto bindings = keyCommands.GetBindings();
         auto head = keyCommands.memory.GetData() + sizeof(InputKeyCommand) * node.num_children();;

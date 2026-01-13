@@ -32,6 +32,7 @@ namespace PK
         }
 
         constexpr size_t GetCount() const { return m_count; }
+        constexpr size_t GetSize() const { return m_count * sizeof(T); }
 
         constexpr const T* GetData() const { return reinterpret_cast<const T*>(m_data); }
         T* GetData() { return reinterpret_cast<T*>(m_data); }
@@ -46,6 +47,15 @@ namespace PK
         
         const T& operator [](size_t i) const { return GetData()[i]; }
         
+        T& operator [](size_t i) 
+        {
+            for (; m_count <= i;)
+            {
+                Add();
+            }
+
+            return GetData()[i];
+        }
 
         T* Add()
         {
@@ -64,20 +74,11 @@ namespace PK
             return ptr;
         }
 
-        void Pop()
-        {
-            if (m_count > 0)
-            {
-                m_count--;
-                (GetData() + m_count)->~T();
-            }
-        }
-
         void SetCount(size_t count) { m_count = count; }
 
-        void Clear() { SetCount(0u); }
+        void ClearFast() { SetCount(0u); }
 
-        void ClearFull() 
+        void Clear() 
         {
             for (auto i = 0u; i < m_count; ++i)
             {
@@ -85,19 +86,6 @@ namespace PK
             }
 
             SetCount(0u);
-        }
-
-        T& operator [](size_t i) 
-        {
-            if (i >= m_count)
-            {
-                for (size_t j = 0u, k = i - m_count; j <= k; ++j)
-                {
-                    Add();
-                }
-            }
-
-            return GetData()[i];
         }
 
     private:

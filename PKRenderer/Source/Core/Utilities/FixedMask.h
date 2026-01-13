@@ -11,28 +11,6 @@ namespace PK
         constexpr static size_t Size = (capacity / Stride) + 1ull;
         uint64_t m_mask[Size]{};
 
-        bool GetAt(size_t index) const
-        {
-            auto base = index / Stride;
-            auto bit = 1ull << (index - base * Stride);
-            return (m_mask[base] & bit) != 0u;
-        }
-
-        void SetAt(size_t index, bool value)
-        {
-            auto base = index / Stride;
-            auto bit = 1ull << (index - base * Stride);
-            m_mask[base] = value ? (m_mask[base] | bit) : (m_mask[base] & ~bit);
-        }
-
-        void ToggleAt(size_t index)
-        {
-            auto base = index / Stride;
-            m_mask[base] ^= 1ull << (index - base * Stride);
-        }
-
-        void Clear() { memset(m_mask, 0, sizeof(m_mask)); }
-
         size_t CountBits() const
         {
             auto count = 0ull;
@@ -71,6 +49,31 @@ namespace PK
             }
 
             return -1;
+        }
+
+        bool GetAt(size_t index) const
+        {
+            auto base = index / Stride;
+            auto bit = 1ull << (index - base * Stride);
+            return (m_mask[base] & bit) != 0u;
+        }
+
+        void SetAt(size_t index, bool value)
+        {
+            auto base = index / Stride;
+            auto bit = 1ull << (index - base * Stride);
+            m_mask[base] = value ? (m_mask[base] | bit) : (m_mask[base] & ~bit);
+        }
+
+        void ToggleAt(size_t index)
+        {
+            auto base = index / Stride;
+            m_mask[base] ^= 1ull << (index - base * Stride);
+        }
+
+        void Clear() 
+        { 
+            memset(m_mask, 0, sizeof(m_mask)); 
         }
     };
 }

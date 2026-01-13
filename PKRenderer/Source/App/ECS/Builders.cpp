@@ -67,7 +67,7 @@ namespace PK::App::EntityBuilders
         const std::initializer_list<MaterialTarget>& materials)
     {
         entityDb->ReserveView(implementer, egid, &EntityViewMeshStatic::primitive, &EntityViewMeshStatic::materials, &EntityViewMeshStatic::staticMesh, &EntityViewMeshStatic::transform);
-        implementer->materials.CopyFrom(materials);
+        implementer->materials.Copy(materials);
         implementer->sharedMesh = staticMesh;
     }
 
@@ -241,7 +241,7 @@ namespace PK::App::EntityBuilders
         material->Set<float4>(HashCache::Get()->_Color, color);
         material->Set<float4>(HashCache::Get()->_ColorVoxelize, PK_COLOR_BLACK);
 
-        auto meshEgid = EntityBuilders::CreateEntityMeshStatic(entityDb, mesh, { { material.get(), 0 } }, position, PK_FLOAT3_ZERO, implementer->sourceRadius, ScenePrimitiveFlags::None);
+        auto meshEgid = EntityBuilders::CreateEntityMeshStatic(entityDb, mesh, { { material, 0 } }, position, PK_FLOAT3_ZERO, implementer->sourceRadius, ScenePrimitiveFlags::None);
         lightSphereView->transformMesh = entityDb->Query<EntityViewTransform>(meshEgid)->transform;
         lightSphereView->transformLight = implementer;
         return egid;

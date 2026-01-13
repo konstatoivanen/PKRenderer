@@ -9,7 +9,7 @@ namespace PK::App
     {
         if (count + 1u >= data.GetCount())
         {
-            data.Validate(Hash::ExpandPrime(count + 1u));
+            data.Reserve(Hash::ExpandPrime(count + 1u));
         }
 
         data[count++] = { entityId, depth, clipId };

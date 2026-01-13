@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/MemoryBlock.h"
+#include "Core/Utilities/FastBuffer.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "App/Renderer/EntityEnums.h"
 
@@ -18,7 +18,7 @@ namespace PK::App
 
     struct CulledEntityInfoList : public NoCopy
     {
-        MemoryBlock<CulledEntityInfo> data;
+        FastBuffer<CulledEntityInfo> data;
         size_t count;
         CulledEntityInfoList(size_t reserve, size_t count) : data(reserve), count(count) {}
         void Add(uint32_t entityId, uint16_t depth, uint16_t clipId);

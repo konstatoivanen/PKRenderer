@@ -12,7 +12,7 @@ namespace PK::App
     EngineCommandInput::EngineCommandInput(Sequencer* sequencer, InputKeyConfig* keyConfig) :
         m_sequencer(sequencer)
     {
-        m_inputKeyCommands.memory.CopyFrom(keyConfig->InputKeyCommands.memory);
+        m_inputKeyCommands.memory.Copy(keyConfig->InputKeyCommands.memory);
         m_inputKeyCommands.count = keyConfig->InputKeyCommands.count;
         keyConfig->CommandInputKeys.TryGetKey("Console.BeginInput", &m_keyBeginInput);
     }
@@ -48,7 +48,7 @@ namespace PK::App
 
     void EngineCommandInput::Step(AssetImportEvent<InputKeyConfig>* evt)
     {
-        m_inputKeyCommands.memory.CopyFrom(evt->asset->InputKeyCommands.memory);
+        m_inputKeyCommands.memory.Copy(evt->asset->InputKeyCommands.memory);
         m_inputKeyCommands.count = evt->asset->InputKeyCommands.count;
         evt->asset->CommandInputKeys.TryGetKey("Console.BeginInput", &m_keyBeginInput);
     }

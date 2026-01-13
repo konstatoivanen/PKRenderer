@@ -1305,7 +1305,7 @@
     <ClInclude Include="Source\Core\Utilities\ISingleton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\MemoryBlock.h">
+    <ClInclude Include="Source\Core\Utilities\FastBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\NativeInterface.h">
@@ -1507,6 +1507,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\Renderer\Passes\PassDistort.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Utilities\FastList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

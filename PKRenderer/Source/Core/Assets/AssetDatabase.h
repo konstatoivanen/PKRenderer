@@ -1,12 +1,8 @@
 #pragma once
 #include <filesystem>
-#include "Core/Utilities/Ref.h"
-#include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/ISingleton.h"
-#include "Core/Utilities/FixedString.h"
-#include "Core/Utilities/FixedArena.h"
-#include "Core/Utilities/Hash.h"
 #include "Core/Utilities/FastTypeIndex.h"
+#include "Core/Utilities/Hash.h"
 #include "Core/Assets/Asset.h"
 #include "Core/Assets/AssetImportEvent.h"
 #include "Core/CLI/Log.h"
@@ -14,11 +10,11 @@
 
 namespace PK
 {
-    enum class AssetCachingMode
+    enum class CacheMode
     {
-        ReferenceCounted,
-        GC,
-        Persistent
+        Shared,     // Asset is released when reference count is zero
+        GC,         // Asset is released when reference count is zero and AssetDatabase:GC is called.
+        Persistent  // Asset is released when AssetDatabase::Unload is called for it.
     };
 
     class AssetDatabase : public ISingleton<AssetDatabase>
@@ -30,7 +26,6 @@ namespace PK
             uint32_t typeIndex;
             uint32_t headIndex;
             const char* name;
-            const char* shortName;
             IAssetFactory* factory;
             
             bool operator == (const TypeInfo& other) { return typeIndex == other.typeIndex; }
@@ -41,14 +36,15 @@ namespace PK
         {
             TypeInfo* typeInfo;
             uint32_t indexNext;
-            uint16_t cachingMode;
+            uint16_t cacheMode;
             bool isVirtual;
             bool isLoaded;
 
-            constexpr bool IsReferenceReleasable() const { return isLoaded && !GetStrongRefCount() && cachingMode == (uint16_t)AssetCachingMode::ReferenceCounted; }
-            constexpr bool IsGarbageCollectable() const { return isLoaded && !GetStrongRefCount() && cachingMode == (uint16_t)AssetCachingMode::GC; }
-            constexpr bool IsPersistent() const { return isLoaded && cachingMode == (uint16_t)AssetCachingMode::Persistent; }
+            constexpr bool IsSharedReleasable() const { return isLoaded && !GetStrongRefCount() && cacheMode == (uint16_t)CacheMode::Shared; }
+            constexpr bool IsGCReleasable() const { return isLoaded && !GetStrongRefCount() && cacheMode == (uint16_t)CacheMode::GC; }
+            constexpr bool IsPersistent() const { return isLoaded && cacheMode == (uint16_t)CacheMode::Persistent; }
             Ref<Asset> GetBaseReference() { return Ref<Asset>(this, isLoaded ? GetAsset() : nullptr); }
+            
             virtual void ConstructAsset(AssetDatabase* caller, const char* filepath) noexcept = 0;
             virtual void DestructAsset() noexcept = 0;
             virtual Asset* GetAsset() noexcept = 0;
@@ -105,7 +101,7 @@ namespace PK
 
             void Destroy() noexcept final 
             { 
-                if (IsReferenceReleasable())
+                if (IsSharedReleasable())
                 {
                     DestructAsset();
                 }
@@ -136,7 +132,7 @@ namespace PK
         template<typename T, typename ... Args>
         Ref<T> CreateVirtual(AssetID assetId, Args&& ... args)
         {
-            auto object = CreateAssetObject<T>(assetId);
+            auto object = CreateAssetObject<T>(assetId, CacheMode::Persistent);
             PK_THROW_ASSERT(!object->isLoaded, "AssetDatabase.Register: (%s) already exists!", assetId.c_str());
             PK_LOG_VERBOSE_FUNC("%s, %s", typeid(T).name(), assetId.c_str());
             object->ConstructVirtual(std::forward<Args>(args)...);
@@ -150,17 +146,20 @@ namespace PK
         }
 
         template<typename T>
-        Ref<T> Load(AssetID assetId, bool forceReload = false) 
+        Ref<T> Load(AssetID assetId, CacheMode cacheMode = CacheMode::Persistent, bool forceReload = false)
         {
             FixedString256 filepath(assetId.c_str());
             PK_THROW_ASSERT(std::filesystem::exists(filepath.c_str()), "Asset not found at path: %s", filepath.c_str());
-            AssetObject<T>* object = CreateAssetObject<T>(assetId);
+            auto object = CreateAssetObject<T>(assetId, cacheMode);
             LoadAsset(object, forceReload);
             return object->GetReference();
         }
 
         template<typename T>
-        Ref<T> Load(const char* filepath, bool forceReload = false) { return Load<T>(AssetID(filepath), forceReload); }
+        Ref<T> Load(const char* filepath, CacheMode cachingMode = CacheMode::Persistent, bool forceReload = false)
+        { 
+            return Load<T>(AssetID(filepath), cachingMode, forceReload); 
+        }
 
         template<typename T>
         void LoadDirectory(const std::string& directory, bool forceReload = false)
@@ -173,7 +172,7 @@ namespace PK
                 {
                     if (Asset::IsValidExtension<T>(entry.path().extension().string().c_str()))
                     {
-                        Load<T>(AssetID(entry.path().string().c_str()), forceReload);
+                        Load<T>(AssetID(entry.path().string().c_str()), CacheMode::Persistent, forceReload);
                     }
                 }
             }
@@ -198,10 +197,10 @@ namespace PK
         void LogByType() { LogByType(pk_base_type_index<T>()); }
 
         template<typename T>
-        Ref<T> Find(const char* name, bool doAssert = true) const
+        Ref<T> Find(const char* keyword, bool doAssert = true) const
         {
-            auto asset = Find(pk_base_type_index<T>(), name);
-            PK_THROW_ASSERT(!doAssert || asset != nullptr, "Could not find asset with name %s", name);
+            auto asset = Find(pk_base_type_index<T>(), keyword);
+            PK_THROW_ASSERT(!doAssert || asset != nullptr, "Could not find asset with keyword %s", keyword);
             return asset ? StaticCastRef<T>(asset) : nullptr;
         }
         
@@ -230,7 +229,7 @@ namespace PK
         TypeInfo* CreateTypeInfo() { return CreateTypeInfo(pk_base_type_index<T>(), std::type_index(typeid(T))); }
 
         template<typename T>
-        AssetObject<T>* CreateAssetObject(AssetID assetId)
+        AssetObject<T>* CreateAssetObject(AssetID assetId, CacheMode cacheMode)
         {
             static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
 
@@ -244,7 +243,7 @@ namespace PK
                 newAsset->assetId = assetId;
                 newAsset->version = 0u;
                 newAsset->indexNext = typeInfo->headIndex;
-                newAsset->cachingMode = (uint16_t)AssetCachingMode::Persistent;
+                newAsset->cacheMode = (uint16_t)cacheMode;
                 newAsset->isLoaded = false;
                 newAsset->isVirtual = false;
                 assetIndex = m_assets.Add(newAsset);
@@ -260,7 +259,7 @@ namespace PK
         TypeInfo* CreateTypeInfo(uint32_t typeIndex, const std::type_index& rttiIndex);
 
         FastSet<AssetObjectBase*, AssetObjectHash> m_assets;
-        FastSet<TypeInfo, TypeInfoHash> m_types;
+        FastSet<TypeInfo, TypeInfoHash> m_assetTypes;
         Sequencer* m_sequencer;
     };
 }

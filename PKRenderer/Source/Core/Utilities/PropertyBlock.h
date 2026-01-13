@@ -32,7 +32,7 @@ namespace PK
             PropertyBlock(uint64_t capacityBytes, uint64_t capacityProperties);
             ~PropertyBlock();
 
-            void CopyFrom(PropertyBlock& from);
+            void Copy(PropertyBlock& from);
             void Clear();
             void ClearAndReserve(uint64_t capacityBytes, uint64_t capacityProperties);
         
@@ -105,6 +105,20 @@ namespace PK
                 AddKey(MakeKey<T>(hashId), sizeof(T) * count);
             }
     
+            // The container doesn't handle ownership. use this for types that need destruction.
+            template<typename T>
+            void Destroy(uint32_t hashId)
+            {
+                size_t size = 0ull;
+                auto ptr = Get<T>(hashId, &size);
+                auto count = size / sizeof(T);
+
+                for (auto i = 0u; i < count; ++i)
+                {
+                    (ptr + i)~T();
+                }
+            }
+
             constexpr const void* GetByteBuffer() const { return m_buffer; }
             constexpr void* GetByteBuffer() { return m_buffer; }
 

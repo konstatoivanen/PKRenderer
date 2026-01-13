@@ -11,7 +11,7 @@ namespace PK
 
     AssetDatabase::AssetDatabase(Sequencer* sequencer) :
         m_assets(512u, 1u),
-        m_types(32u, 1u),
+        m_assetTypes(32u, 1u),
         m_sequencer(sequencer)
     {
         CVariableRegister::Create<CVariableFuncSimple>("AssetDatabase.Query.Loaded", [this](){LogAll();});
@@ -188,7 +188,7 @@ namespace PK
         {
             auto object = m_assets[i];
 
-            if (object->IsGarbageCollectable())
+            if (object->IsGCReleasable())
             {
                 m_assets[i]->DestructAsset();
             }
@@ -264,7 +264,7 @@ namespace PK
         if (!object->isVirtual && (!object->isLoaded || isReload))
         {
             FixedString128 filepath = object->assetId.c_str();
-            PK_LOG_VERBOSE_FUNC(": %s, %s", object->typeInfo->shortName, filepath.c_str());
+            PK_LOG_VERBOSE_FUNC(": %s, %s", object->typeInfo->name, filepath.c_str());
             object->DestructAsset();
             object->ConstructAsset(this, filepath);
         }
@@ -272,30 +272,29 @@ namespace PK
 
     uint32_t AssetDatabase::GetTypeHead(uint32_t typeIndex) const
     {
-        auto infoIndex = m_types.GetHashIndex(typeIndex);
-        return infoIndex != -1 ? m_types[infoIndex].headIndex : INVALID_LINK;
+        auto infoIndex = m_assetTypes.GetHashIndex(typeIndex);
+        return infoIndex != -1 ? m_assetTypes[infoIndex].headIndex : INVALID_LINK;
     }
 
     AssetDatabase::TypeInfo* AssetDatabase::CreateTypeInfo(uint32_t typeIndex, const std::type_index& rttiIndex)
     {
-        auto infoIndex = m_types.GetHashIndex(typeIndex);
+        auto infoIndex = m_assetTypes.GetHashIndex(typeIndex);
 
         if (infoIndex == -1)
         {
             TypeInfo info;
             info.typeIndex = typeIndex;
             info.headIndex = INVALID_LINK;
-            info.name = rttiIndex.name();
-            info.shortName = Parse::GetTypeShortName(rttiIndex);
+            info.name = Parse::GetTypeShortName(rttiIndex);
             info.factory = nullptr;
-            infoIndex = m_types.Add(info);
+            infoIndex = m_assetTypes.Add(info);
 
-            FixedString128 cvarnameMeta({ "AssetDatabase.Query.Meta.", info.shortName });
-            FixedString128 cvarnameLoaded({ "AssetDatabase.Query.Loaded.", info.shortName });
-            FixedString128 cvarnameReloadAll({ "AssetDatabase.Reload.Cached.All.", info.shortName });
-            FixedString128 cvarnameReload({ "AssetDatabase.Reload.Cached.", info.shortName });
+            FixedString128 cvarnameMeta({ "AssetDatabase.Query.Meta.", info.name });
+            FixedString128 cvarnameLoaded({ "AssetDatabase.Query.Loaded.", info.name });
+            FixedString128 cvarnameReloadAll({ "AssetDatabase.Reload.Cached.All.", info.name });
+            FixedString128 cvarnameReload({ "AssetDatabase.Reload.Cached.", info.name });
 
-            CVariableRegister::Create<CVariableFunc>(cvarnameMeta.c_str(), [this, typeIndex, name = info.shortName](const char* const* args, [[maybe_unused]] uint32_t count)
+            CVariableRegister::Create<CVariableFunc>(cvarnameMeta.c_str(), [this, typeIndex, name = info.name](const char* const* args, [[maybe_unused]] uint32_t count)
                 {
                     PK_LOG_NEWLINE();
                     auto asset = Find(typeIndex, args[0]);
@@ -324,6 +323,6 @@ namespace PK
                 }, "Expected a filepath argument", 1u);
         }
 
-        return &m_types[infoIndex];
+        return &m_assetTypes[infoIndex];
     }
 }

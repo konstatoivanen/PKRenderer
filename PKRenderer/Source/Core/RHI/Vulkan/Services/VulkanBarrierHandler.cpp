@@ -265,8 +265,8 @@ namespace PK
 
     void VulkanBarrierHandler::ClearBarriers()
     {
-        m_bufferBarriers.SetCount(0u);
-        m_imageBarriers.SetCount(0u);
+        m_bufferBarriers.ClearFast();
+        m_imageBarriers.ClearFast();
         m_sourceStage = 0u;
         m_destinationStage = 0u;
     }

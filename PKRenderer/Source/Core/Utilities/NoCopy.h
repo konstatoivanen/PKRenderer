@@ -1,11 +1,10 @@
 #pragma once
 namespace PK
 {
-    class NoCopy
+    struct NoCopy
     {
-        public:
-            NoCopy(NoCopy const&) = delete;
-            NoCopy& operator=(NoCopy const&) = delete;
-            NoCopy() = default;
+        NoCopy(NoCopy const&) = delete;
+        NoCopy& operator=(NoCopy const&) = delete;
+        NoCopy() = default;
     };
 }

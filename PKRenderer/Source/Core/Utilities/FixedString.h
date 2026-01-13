@@ -45,6 +45,19 @@ namespace PK
             }
         }
 
+        constexpr size_t Length() const { return m_length; }
+        constexpr const char* c_str() const { return m_string; }
+        char* c_str() { return m_string; }
+
+        char& operator [](size_t i) { return m_string[i]; }
+        const char& operator [](size_t i) const { return m_string[i]; }
+
+        operator char* () { return c_str(); }
+        operator const char* () const { return c_str(); }
+
+        bool operator == (const char* str) { return strcmp(str, m_string) == 0; }
+        bool operator != (const char* str) { return strcmp(str, m_string) != 0; }
+
         void Append(const char* str)
         {
             auto offset = m_length;
@@ -52,18 +65,6 @@ namespace PK
             PK_CONTAINER_RANGE_CHECK(m_length + 1u, 0u, capacity);
             strcpy(m_string + offset, str);
         }
-
-        char& operator [](size_t i) { return m_string[i]; }
-        const char& operator [](size_t i) const { return m_string[i]; }
-        constexpr size_t Length() const { return m_length; }
-        constexpr const char* c_str() const { return m_string; }
-        char* c_str() { return m_string; }
-
-        operator char* () { return c_str(); }
-        operator const char* () const { return c_str(); }
-
-        bool operator == (const char* str) { return strcmp(str, m_string) == 0; }
-        bool operator != (const char* str) { return strcmp(str, m_string) != 0; }
 
     private:
         char m_string[capacity];

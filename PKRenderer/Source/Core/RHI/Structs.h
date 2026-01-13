@@ -1,28 +1,11 @@
 #pragma once
 #include <PKAssets/PKAsset.h>
 #include "Core/Utilities/NameID.h"
+#include "Core/RHI/RHI.h"
 #include "Core/Math/Math.h"
 
 namespace PK
 {
-    struct RHIBuffer;
-
-    typedef PKAssets::PKElementType       ElementType;
-    typedef PKAssets::PKDescriptorType    ShaderResourceType;
-    typedef PKAssets::PKShaderStage       ShaderStage;
-    typedef PKAssets::PKShaderStageFlags  ShaderStageFlags;
-    typedef PKAssets::PKBlendFactor       BlendFactor;
-    typedef PKAssets::PKBlendOp           BlendOp;
-    typedef PKAssets::PKColorMask         ColorMask;
-    typedef PKAssets::PKComparison        Comparison;
-    typedef PKAssets::PKCullMode          CullMode;
-    typedef PKAssets::PKRasterMode        RasterMode;
-    typedef PKAssets::PKTextureType       TextureType;
-    typedef PKAssets::PKTextureFormat     TextureFormat;
-    typedef PKAssets::PKFilterMode        FilterMode;
-    typedef PKAssets::PKWrapMode          WrapMode;
-    typedef PKAssets::PKBorderColor       BorderColor;
-
     constexpr static const uint32_t PK_RHI_MAX_MESHLETS_PER_TASK = 32;
     constexpr static const uint32_t PK_RHI_MAX_FRAMES_IN_FLIGHT = 2;
     constexpr static const uint32_t PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT = 16;

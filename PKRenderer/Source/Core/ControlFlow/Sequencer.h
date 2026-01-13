@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <utility>
-#include "Core/Utilities/MemoryBlock.h"
+#include "Core/Utilities/FastBuffer.h"
 #include "Core/Utilities/FastMap.h"
 #include "Core/ControlFlow/IStep.h"
 
@@ -45,7 +45,7 @@ namespace PK
             }
 
             // Allocate for worst case where all are unique.
-            m_steps.Validate(count);
+            m_steps.Reserve(count);
             m_map.Reserve(count, 2ull); 
             auto head = m_steps.GetData();
 
@@ -109,7 +109,7 @@ namespace PK
         }
 
     private:
-        MemoryBlock<Step> m_steps;
+        FastBuffer<Step> m_steps;
         FastMap<StepsKey, StepsView, Hash::TFNV1AHash<StepsKey>> m_map;
     };
 }

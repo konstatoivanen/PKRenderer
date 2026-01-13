@@ -3,7 +3,7 @@
 #include "Core/Utilities/Ref.h"
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FastTypeIndex.h"
-#include "Core/Utilities/MemoryBlock.h"
+#include "Core/Utilities/FastBuffer.h"
 #include "Core/ECS/EGID.h"
 #include "Core/ECS/IEntityView.h"
 #include "Core/ECS/IEntityImplementer.h"
@@ -38,7 +38,7 @@ namespace PK
 
     struct EntityViewContainer
     {
-        MemoryBlock<uint64_t> buffer;
+        FastBuffer<uint64_t> buffer;
         uint64_t head = 0ull;
 
         EntityViewContainer(EntityViewContainer&& other) noexcept :
@@ -156,7 +156,7 @@ namespace PK
 
             if (group.container == 0u)
             {
-                m_entityViews.Validate(++m_viewCounter);
+                m_entityViews.Reserve(++m_viewCounter);
                 group.container = m_viewCounter;
             }
 
@@ -170,7 +170,7 @@ namespace PK
                 auto head = views.head;
                 auto count = 1u + head / viewSize;
                 auto capacity = views.buffer.GetCount() / viewSize;
-                views.buffer.Validate((size_t)Hash::ExpandSize(capacity, count) * viewSize);
+                views.buffer.Reserve((size_t)Hash::ExpandSize(capacity, count) * viewSize);
                 view.container = group.container;
                 view.offset = head;
                 views.head += viewSize;
@@ -209,7 +209,7 @@ namespace PK
 
     private:
         FastSet<EntityViewHeader, EntityViewHeaderHash> m_viewHeaders;
-        MemoryBlock<EntityViewContainer> m_entityViews;
+        FastBuffer<EntityViewContainer> m_entityViews;
         FastMap<uint32_t, ImplementerContainer, Hash::TCastHash<uint32_t>> m_implementers;
         uint32_t m_idCounter = 0u;
         uint32_t m_viewCounter = 0u;

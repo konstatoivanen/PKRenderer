@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/MemoryBlock.h"
+#include "Core/Utilities/FastBuffer.h"
 #include "Core/Math/FunctionsMisc.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "Core/CLI/CVariable.h"
@@ -36,7 +36,7 @@ namespace PK::App
 
             struct ViewResources
             {
-                MemoryBlock<EntityViewLight*> lightViews;
+                FastBuffer<EntityViewLight*> lightViews;
                 std::vector<ShadowbatchInfo> shadowBatches;
                 RHIBufferRef  lightsLists;
                 RHITextureRef lightTiles;
