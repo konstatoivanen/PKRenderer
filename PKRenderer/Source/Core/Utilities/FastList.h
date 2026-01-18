@@ -7,7 +7,7 @@
 
 namespace PK
 {
-    template<typename T>
+    template<typename T, size_t inlineCapacity = 1u>
     struct FastList : NoCopy
     {
         FastList() {}
@@ -20,28 +20,33 @@ namespace PK
         ~FastList()
         {
             Clear();
-            free(m_buffer);
-            m_buffer = nullptr;
+
+            if (!IsSmallBuffer(m_capacity))
+            {
+                free(m_data.buffer);
+            }
+
             m_capacity = 0u;
+            m_data.buffer = nullptr;
         }
 
-        T* GetData() { return m_buffer; }
-        T const* GetData() const { return m_buffer; }
+        T* GetData() { return reinterpret_cast<T*>(IsSmallBuffer(m_count) ? &m_data : m_data.buffer); }
+        T const* GetData() const { return reinterpret_cast<const T*>(IsSmallBuffer(m_count) ? &m_data : m_data.buffer); }
 
         constexpr size_t GetCount() const { return m_count; }
         constexpr size_t GetSize() const { return m_count * sizeof(T); }
 
-        BufferView<T> GetView() { return { m_buffer, m_count }; }
-        ConstBufferView<T> GetView() const { return { m_buffer, m_count }; }
+        BufferView<T> GetView() { return { GetData(), m_count }; }
+        ConstBufferView<T> GetView() const { return { GetData(), m_count }; }
 
-        ConstBufferIterator<T> begin() const { return ConstBufferIterator<T>(m_buffer, 0ull); }
-        ConstBufferIterator<T> end() const { return ConstBufferIterator<T>(m_buffer + m_count, m_count); }
+        ConstBufferIterator<T> begin() const { return ConstBufferIterator<T>(GetData(), 0ull); }
+        ConstBufferIterator<T> end() const { return ConstBufferIterator<T>(GetData() + m_count, m_count); }
 
-        T& operator [](size_t i) { return m_buffer[i]; }
-        T const& operator [](size_t i) const { return m_buffer[i]; }
+        T& operator [](size_t i) { return GetData()[i]; }
+        T const& operator [](size_t i) const { return GetData()[i]; }
 
-        operator T* () { return m_buffer; }
-        operator T const* () const { return m_buffer; }
+        operator T* () { return GetData(); }
+        operator T const* () const { return GetData(); }
 
         FastList& operator=(FastList&& other) noexcept { Move(std::forward<FastBuffer>(other)); return *this; }
 
@@ -49,28 +54,25 @@ namespace PK
         {
             Clear();
             Reserve(other.m_count);
-
-
-
-            std::copy(other.m_buffer, other.m_buffer + other.m_count, m_buffer);
+            std::copy(other.GetData(), other.GetData() + other.m_count, GetData());
         }
 
         void Copy(const std::initializer_list<T>& initializer)
         {
             Resize(initializer.size());
-            std::copy(initializer.begin(), initializer.end(), m_buffer);
+            std::copy(initializer.begin(), initializer.end(), GetData());
         }
 
         void Move(FastList&& other)
         {
             if (this != &other)
             {
-                if (m_buffer)
+                if (!IsSmallBuffer(m_count))
                 {
-                    free(m_buffer);
+                    free(m_data.buffer);
                 }
 
-                m_buffer = std::exchange(other.m_buffer, nullptr);
+                m_data = std::exchange(other.m_data, { nullptr });
                 m_count = std::exchange(other.m_count, 0ull);
                 m_capacity = std::exchange(other.m_capacity, 0ull);
             }
@@ -79,7 +81,7 @@ namespace PK
         void Move(std::initializer_list<T>&& initializer)
         {
             Reserve(initializer.size());
-            std::move(initializer.begin(), initializer.end(), m_buffer);
+            std::move(initializer.begin(), initializer.end(), GetData());
             m_count = initializer.size();
         }
 
@@ -97,13 +99,17 @@ namespace PK
                 throw std::exception("Failed to allocate new buffer!");
             }
             
-            if (m_buffer && m_count > 0u)
+            if (m_count > 0u)
             {
-                std::move(m_buffer, m_buffer + m_count, buffer);
+                std::move(GetData(), GetData() + m_count, buffer);
             }
 
-            free(m_buffer);
-            m_buffer = buffer;
+            if (!IsSmallBuffer(m_capacity))
+            {
+                free(m_data.buffer);
+            }
+
+            m_data.buffer = buffer;
             m_capacity = capacity;
             return true;
         }
@@ -114,7 +120,7 @@ namespace PK
 
             while (m_count < count)
             {
-                new(m_buffer + m_count++) T();
+                new(GetData() + m_count++) T();
             }
         }
 
@@ -122,7 +128,7 @@ namespace PK
         {
             for (auto i = 0u; i < m_count; ++i)
             {
-                (m_buffer + i)->~T();
+                (GetData() + i)->~T();
             }
 
             m_count = 0u;
@@ -131,17 +137,13 @@ namespace PK
         template<typename ... Args>
         T* Add(Args&& ... args)
         {
-            if (m_count >= m_capacity)
-            {
-                Reserve(m_count + 1u);
-            }
-
-            return new(m_buffer + m_count++) T(std::forward<Args>(args)...);
+            Reserve(m_count + 1u);
+            return new(GetData() + m_count++) T(std::forward<Args>(args)...);
         }
 
         bool Remove(T* ptr)
         {
-            return RemoveAt((uint32_t)(ptr - m_buffer));
+            return RemoveAt((uint32_t)(ptr - GetData()));
         }
 
         bool RemoveAt(uint32_t i)
@@ -153,21 +155,23 @@ namespace PK
 
             if (i == --m_count)
             {
-                (m_buffer + i)->~T();
+                (GetData() + i)->~T();
                 return true;
             }
 
             for (; i < m_count; ++i)
             {
-                m_buffer[i] = std::move(m_buffer[i + 1]);
+                GetData()[i] = std::move(GetData()[i + 1]);
             }
 
             return true;
         }
 
     private:
-        T* m_buffer = nullptr;
+        constexpr static bool IsSmallBuffer(size_t count) { return count <= (sizeof(U) / sizeof(T)); }
+        struct U { union { void* buffer; alignas(T) unsigned char inl[sizeof(T) * inlineCapacity]; }; };
+        U m_data{};
         uint32_t m_count = 0u;
-        uint32_t m_capacity = 0u;
+        uint32_t m_capacity = inlineCapacity;
     };
 }

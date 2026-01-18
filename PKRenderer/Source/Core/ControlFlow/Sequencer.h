@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #include <utility>
 #include "Core/Utilities/FastBuffer.h"
 #include "Core/Utilities/FastMap.h"

@@ -135,10 +135,10 @@ namespace PK
         PropertyBlock globalResources = PropertyBlock(16384ull, 128ull);
 
         mutable FixedTypeSet<
-            FixedPool<VulkanBufferView, 2048>,
-            FixedPool<VulkanImageView, 2048>,
-            FixedPool<VulkanRawImage, 2048>,
-            FixedPool<VulkanRawBuffer, 2048>,
-            FixedPool<VulkanRawAccelerationStructure, 1024>> objectPools;
+            FixedPool<VulkanBufferView, 1024ull>,
+            FixedPool<VulkanImageView, 1024ull>,
+            FixedPool<VulkanRawImage, 1024ull>,
+            FixedPool<VulkanRawBuffer, 1024ull>,
+            FixedPool<VulkanRawAccelerationStructure, 1024ull>> objectPools;
     };
 }

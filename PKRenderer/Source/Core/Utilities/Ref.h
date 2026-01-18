@@ -64,7 +64,7 @@ namespace PK
         unsigned long weakCount = 1u;
     };
 
-    template <typename T>
+    template<typename T>
     struct SharedObject : public SharedObjectBase
     {
         template <typename ... Args>
@@ -76,7 +76,7 @@ namespace PK
         union { U unionDefault; T value; };
     };
 
-    template <typename T>
+    template<typename T>
     struct RefBase
     {
         RefBase(const RefBase&) = delete;
@@ -161,7 +161,7 @@ namespace PK
         SharedObjectBase* shared{ nullptr };
     };
 
-    template <typename T>
+    template<typename T>
     struct Ref : public RefBase<T> 
     {
         static_assert(std::is_array<T>::value == false, "Ref doesn't support array types.");
@@ -225,7 +225,7 @@ namespace PK
         void Reset() noexcept { Ref().Swap(*this); }
     };
 
-    template <typename T>
+    template<typename T>
     struct Weak : public RefBase<T> 
     {
         using TBase = RefBase<T>;
@@ -328,8 +328,8 @@ namespace PK
         return ret;
     }
 
-    template<typename T, typename TRef, typename ... Args>
-    static Ref<T> CreateRefAliased(const TRef* shared, Args&& ... args) noexcept
+    template<typename T, typename TRef>
+    static Ref<T> CreateRefAliased(TRef* shared) noexcept
     {
         Ref<T> ret;
         ret.pointer = &shared->value;

@@ -1512,6 +1512,12 @@
     <ClInclude Include="Source\Core\Utilities\FastList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\Utilities\FixedRefPool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PKAssets\PKAssetEncoding.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\glm\detail\func_common.inl">
@@ -2421,6 +2427,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\App\Renderer\Passes\PassDistort.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\PKAssets\PKAssetEncoding.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

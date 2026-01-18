@@ -8,9 +8,10 @@ namespace PK
     {
         for (auto i = 0u; i < m_variables.GetCount(); ++i)
         {
-            m_variables[i].value.arguments = nullptr;
+            DestroyBinding(&m_variables[i].value);
         }
     }
+
 
     void CVariableRegister::Bind(ICVariable* variable)
     {
@@ -20,7 +21,7 @@ namespace PK
             return;
         }
 
-        Get()->BindInstance(variable);
+        Get()->BindInstance(variable, 0u);
     }
 
     void CVariableRegister::Unbind(ICVariable* variable)
@@ -45,6 +46,7 @@ namespace PK
         return Get()->IsBoundInstance(name);
     }
 
+
     void CVariableRegister::Execute(const char* const* args, uint32_t count)
     {
         if (Get() == nullptr)
@@ -67,65 +69,85 @@ namespace PK
         Get()->ExecuteParseInstance(arg);
     }
 
-    void CVariableRegister::BindInstance(ICVariable* variable)
+
+
+    void CVariableRegister::DestroyBinding(CVariableBinding* binding)
+    {
+        if (binding->variable)
+        {
+            binding->variable->flags &= ~FLAG_IS_BOUND;
+        }
+
+        if (binding->variable && (binding->variable->flags & FLAG_IS_REGISTER_OWNED) != 0u)
+        {
+            delete binding->variable;
+            binding->variable = nullptr;
+        }
+
+        if (binding->arguments)
+        {
+            delete binding->arguments;
+            binding->arguments = nullptr;
+        }
+    }
+
+    void CVariableRegister::BindInstance(ICVariable* variable, uint32_t flags)
     {
         auto name = variable->name;
         auto index = 0u;
         auto isNew = m_variables.AddKey(name, &index);
-        auto reference = &m_variables[index].value;
-        PK_THROW_ASSERT(!isNew || reference->variable == nullptr, "CVar is already bound! (%s)", name.c_str());
+        auto binding = &m_variables[index].value;
+        PK_THROW_ASSERT(!isNew || !binding->variable, "CVar is already bound! (%s)", name.c_str());
         PK_LOG_VERBOSE_FUNC("%s", name.c_str());
+        
+        binding->variable = variable;
+        binding->variable->flags = flags | FLAG_IS_BOUND;
 
         // Immediately call execute if there is one pending for this variable.
-        if (!isNew && reference->arguments != nullptr)
+        if (!isNew && binding->arguments != nullptr)
         {
-            reference->variable = variable;
-            ExecuteInstance(reference->arguments->arguments, reference->arguments->count);
-            reference->arguments = nullptr;
-            return;
+            ExecuteInstance(binding->arguments->arguments, binding->arguments->count);
+            delete binding->arguments;
+            binding->arguments = nullptr;
         }
-
-        reference->variable = variable;
     }
 
     void CVariableRegister::UnbindInstance(ICVariable* variable)
     {
-        m_variables.Remove(variable->name);
+        auto index = m_variables.GetIndex(variable->name);
+
+        if (index != -1)
+        {
+            DestroyBinding(&m_variables[index].value);
+            m_variables.RemoveAt(index);
+        }
     }
 
     bool CVariableRegister::IsBoundInstance(const char* name) const
     {
-        auto reference = m_variables.GetValuePtr(name);
-        return reference && reference->variable != nullptr;
+        auto binding = m_variables.GetValuePtr(name);
+        return binding && binding->variable != nullptr;
     }
+
 
     void CVariableRegister::ExecuteInstance(const char* const* args, uint32_t count)
     {
         if (count > 0)
         {
-            auto name = NameID(args[0]);
             auto index = 0u;
-            auto isNew = m_variables.AddKey(name, &index);
-            auto reference = &m_variables[index].value;
+            auto isNew = m_variables.AddKey(NameID(args[0]), &index);
+            auto binding = &m_variables[index].value;
 
-            if (!isNew && reference->variable)
+            if (!isNew && binding->variable)
             {
-                auto variable = reference->variable;
-                auto executeArgsCount = count - 1u;
-
-                if (executeArgsCount < variable->CVarGetMinArgs())
-                {
-                    variable->CVarInvalidArgCount();
-                    return;
-                }
-
-                variable->CVarExecute(args + 1, executeArgsCount);
-                return;
+                binding->variable->CVarExecute(args + 1, count - 1u);
             }
-
-            // CVar was not found. cache arguments so that they can be executed upon binding.
-            reference->variable = nullptr;
-            reference->arguments = CreateUnique<CArgumentsInlineDefault>(args, count);
+            else
+            {
+                // CVar was not found. cache arguments so that they can be executed upon binding.
+                binding->variable = nullptr;
+                binding->arguments = new CArgumentsInlineDefault(args, count);
+            }
         }
     }
 

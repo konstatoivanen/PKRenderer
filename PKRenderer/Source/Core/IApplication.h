@@ -2,6 +2,7 @@
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/ISingleton.h"
 #include "Core/Utilities/FixedString.h"
+#include "Core/Utilities/Ref.h"
 #include "Core/CLI/CArguments.h"
 #include "Core/CLI/ILogger.h"
 #include "Core/ServiceRegister.h"

@@ -43,6 +43,20 @@ namespace PK::App
     // - RHI
     // - Input
     // - Time
+    // @TODO IDEA
+    /*
+        Refactor rhi interfaces to act as handles to internal arrays.
+        Implement virtual functions as regular functions that access rhi specifc static functions.
+        Benefits:
+        - Less memory to store a handle.
+        - More coherent api if member specific methods become static.
+
+        Another idea:
+            Replace refs with handles
+            Per object type pool where static size is from a constexpr member like HANDLE_POOL_SIZE
+            How to handle aliasing?
+    */
+
     RendererApplication::RendererApplication(const CArguments& arguments) :
         IApplication(arguments, "PK Renderer", CreateRef<LoggerPrintf>())
     {

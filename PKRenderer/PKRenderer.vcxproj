@@ -268,6 +268,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\FastList.h" />
     <ClInclude Include="Source\Core\Utilities\FixedArena.h" />
     <ClInclude Include="Source\Core\Utilities\FixedArray.h" />
+    <ClInclude Include="Source\Core\Utilities\FixedRefPool.h" />
     <ClInclude Include="Source\Core\Utilities\FixedString.h" />
     <ClInclude Include="Source\Core\Utilities\FastLinkedList.h" />
     <ClInclude Include="Source\Core\Utilities\FixedTypeSet.h" />
@@ -561,6 +562,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="ThirdParty\glm\vector_relational.hpp" />
     <ClInclude Include="ThirdParty\mikktspace\mikktspace.h" />
     <ClInclude Include="ThirdParty\PKAssets\PKAsset.h" />
+    <ClInclude Include="ThirdParty\PKAssets\PKAssetEncoding.h" />
     <ClInclude Include="ThirdParty\PKAssets\PKAssetLoader.h" />
     <ClInclude Include="ThirdParty\rapidyaml\rapidyaml-0.7.1.hpp" />
     <ClInclude Include="ThirdParty\rapidyaml\ryaml.h" />
@@ -1059,6 +1061,12 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ClangDebug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ClangRelease|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\PKAssets\PKAssetEncoding.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ClangRelease|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ClangDebug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ThirdParty\PKAssets\PKAssetLoader.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>

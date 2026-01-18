@@ -1,8 +1,5 @@
 #pragma once
-#include <vector>
-#include <typeindex>
 #include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/Ref.h"
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FastTypeIndex.h"
 #include "Core/CLI/LogScopeIndent.h"
@@ -33,7 +30,7 @@ namespace PK
         template <typename T>
         T* Get() 
         {
-            auto container = m_services.GetValuePtr(pk_base_type_index<T>())[0].get();
+            auto container = m_services.GetValuePtr(pk_base_type_index<T>())[0];
             return &static_cast<ServiceContainer<T>*>(container)->Instance;
         }
 
@@ -42,10 +39,10 @@ namespace PK
         {
             auto typeIndex = pk_base_type_index<T>();
             auto index = 0u;
-            AssertTypeExists(m_services.AddKey(typeIndex, &index), std::type_index(typeid(T)).name());
+            AssertTypeExists(m_services.AddKey(typeIndex, &index), typeid(T).name());
             auto logIndent = PK::LogScopeIndent(2);
             auto service = new ServiceContainer<T>(std::forward<Args>(args)...);
-            m_services[index].value = Unique<Service>(service);
+            m_services[index].value = service;
             return &service->Instance;
         }
 
@@ -53,7 +50,7 @@ namespace PK
         {
             for (auto i = (int32_t)m_services.GetCount() - 1; i >= 0; --i)
             {
-                m_services[i].value = nullptr;
+                delete m_services[i].value;
             }
 
             m_services.Clear();
@@ -62,6 +59,6 @@ namespace PK
     private:
         void AssertTypeExists(bool exists, const char* name);
 
-        FastMap<uint32_t, Unique<Service>> m_services;
+        FastMap<uint32_t, Service*> m_services;
     };
 }

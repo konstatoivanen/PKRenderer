@@ -52,14 +52,6 @@ namespace PKAssets
         uint32_t optionCount = 0u;
     };
 
-    struct PKEncNode
-    {
-        uint32_t left : 11;
-        uint32_t right : 11;
-        uint32_t isLeaf : 2;
-        int32_t value : 8;
-    };
-
     struct alignas(8) PKAssetHeader
     {
         uint64_t magicNumber = PK_ASSET_MAGIC_NUMBER;   // 8 bytes
@@ -67,9 +59,8 @@ namespace PKAssets
         PKAssetType type = PKAssetType::Invalid;        // 73 bytes
         bool isCompressed = false;                      // 74 bytes
 
-        uint16_t compressedOffset = 0u;                 // 76 bytes
+        uint16_t __padding = 0u;                        // 76 bytes
         uint32_t uncompressedSize = 0u;                 // 80 bytes
-        uint64_t compressedBitCount = 0u;               // 88 bytes
     };
 
     struct PKAsset

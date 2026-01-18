@@ -89,7 +89,7 @@ namespace PK
         }
 
     private:
-        alignas(T) std::byte m_data[sizeof(T) * capacity];
+        alignas(T) unsigned char m_data[sizeof(T) * capacity];
         size_t m_count;
     };
 }

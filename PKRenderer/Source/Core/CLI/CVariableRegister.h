@@ -14,10 +14,13 @@ namespace PK
         public IStep<CArgumentsConst>,
         public IStep<CArgumentConst>
     {
+        constexpr static uint32_t FLAG_IS_REGISTER_OWNED = 1u << 0u;
+        constexpr static uint32_t FLAG_IS_BOUND = 1u << 1u;
+
         struct CVariableBinding
         {
             ICVariable* variable = nullptr;
-            Unique<CArgumentsInlineDefault> arguments;
+            CArgumentsInlineDefault* arguments = nullptr;
         };
 
     public:
@@ -27,17 +30,18 @@ namespace PK
         static void Bind(ICVariable* variable);
         static void Unbind(ICVariable* variable);
         static bool IsBound(const char* name);
+
         static void Execute(const char* const* args, uint32_t count);
         static void ExecuteParse(const char* arg);
 
         template<typename T>
         static void Create(const char* name, const T& value, const char* hint = "hint undefined", uint32_t minArgs = 0u)
         {
-            if (Get() != nullptr)
+            auto instance = Get();
+
+            if (instance)
             {
-                auto variable = new CVariable<T>(name, value, hint, minArgs);
-                Get()->m_scopes.push_back(Unique<ICVariable>(variable));
-                Bind(variable);
+                instance->BindInstance(new CVariable<T>(name, value, hint, minArgs), FLAG_IS_REGISTER_OWNED);
             }
         }
 
@@ -45,14 +49,15 @@ namespace PK
         inline virtual void Step(CArgumentConst argument) final { ExecuteParseInstance(argument.arg); }
 
     private:
-        void BindInstance(ICVariable* variable);
+        static void DestroyBinding(CVariableBinding* binding);
+        void BindInstance(ICVariable* variable, uint32_t flags);
         void UnbindInstance(ICVariable* variable);
         bool IsBoundInstance(const char* name) const;
+
         void ExecuteInstance(const char* const* args, uint32_t count);
         void ExecuteInstance(const std::vector<std::string>& args);
         void ExecuteParseInstance(const char* arg);
 
         FastMap<NameID, CVariableBinding, Hash::TCastHash<NameID>> m_variables;
-        std::vector<Unique<ICVariable>> m_scopes;
     };
 }

@@ -13,12 +13,11 @@
 namespace PK::App
 {
     BatcherMeshStatic::BatcherMeshStatic() :
-        m_textures2D(PK_RHI_MAX_UNBOUNDED_SIZE),
-        m_transforms(1024u, 3u)
+        m_transforms(1024u, 3u),
+        m_textures2D(PK_RHI_MAX_UNBOUNDED_SIZE)
     {
         PK_LOG_VERBOSE_FUNC("");
 
-        m_staticGeometry = CreateUnique<MeshStaticCollection>();
         m_matrices = RHI::CreateBuffer<float3x4>(1024ull, BufferUsage::PersistentStorage, "Batching.Matrices");
         m_indices = RHI::CreateBuffer<PKAssets::PKDrawInfo>(1024ull, BufferUsage::PersistentStorage, "Batching.DrawInfos");
         m_properties = RHI::CreateBuffer(16384ull, BufferUsage::PersistentStorage, "Batching.MaterialProperties");
@@ -30,7 +29,7 @@ namespace PK::App
 
     void BatcherMeshStatic::AssetConstruct(MeshStaticAsset* memory, const char* filepath)
     {
-        new(memory) MeshStaticAsset(m_staticGeometry.get(), filepath);
+        new(memory) MeshStaticAsset(&m_staticGeometry, filepath);
     }
 
     void BatcherMeshStatic::BeginCollectDrawCalls()
@@ -138,7 +137,7 @@ namespace PK::App
 
             // Write draw info & tasklet buffers.
             {
-                auto submesh = m_staticGeometry->GetSubmesh(info->submesh);
+                auto submesh = m_staticGeometry.GetSubmesh(info->submesh);
                 auto taskCount = (submesh->meshletCount + PK_RHI_MAX_MESHLETS_PER_TASK - 1u) / PK_RHI_MAX_MESHLETS_PER_TASK;
 
                 indexView[i] = PKAssets::PackPKDrawInfo
@@ -198,7 +197,7 @@ namespace PK::App
         uint32_t userdata,
         uint16_t sortDepth)
     {
-        PK_THROW_ASSERT(mesh->baseMesh == m_staticGeometry.get(), "Cannot submit draws for meshes not registered in the scene mesh of this geometry batcher!");
+        PK_THROW_ASSERT(mesh->baseMesh == &m_staticGeometry, "Cannot submit draws for meshes not registered in the scene mesh of this geometry batcher!");
 
         DrawInfo info{};
         info.shader = m_shaders.Add({ shader, 0ull, 0ull });
@@ -247,10 +246,10 @@ namespace PK::App
         }
 
         auto hash = HashCache::Get();
-        RHI::SetBuffer(hash->pk_Meshlet_Submeshes, m_staticGeometry->GetMeshletSubmeshBuffer());
-        RHI::SetBuffer(hash->pk_Meshlets, m_staticGeometry->GetMeshletBuffer());
-        RHI::SetBuffer(hash->pk_Meshlet_Vertices, m_staticGeometry->GetMeshletVertexBuffer());
-        RHI::SetBuffer(hash->pk_Meshlet_Indices, m_staticGeometry->GetMeshletIndexBuffer());
+        RHI::SetBuffer(hash->pk_Meshlet_Submeshes, m_staticGeometry.GetMeshletSubmeshBuffer());
+        RHI::SetBuffer(hash->pk_Meshlets, m_staticGeometry.GetMeshletBuffer());
+        RHI::SetBuffer(hash->pk_Meshlet_Vertices, m_staticGeometry.GetMeshletVertexBuffer());
+        RHI::SetBuffer(hash->pk_Meshlet_Indices, m_staticGeometry.GetMeshletIndexBuffer());
 
         auto& passGroup = m_passGroups.at(group);
         auto start = passGroup.offset;

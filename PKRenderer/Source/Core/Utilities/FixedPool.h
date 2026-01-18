@@ -97,7 +97,9 @@ namespace PK
 
         void Clear() final
         {
-            for (auto i = 0u; i < capacity; ++i)
+            const auto hasAny = m_mask.CountBits();
+
+            for (auto i = 0u; i < capacity && hasAny; ++i)
             {
                 if (m_mask.GetAt(i))
                 {
@@ -118,7 +120,7 @@ namespace PK
             }
 
         private:
-            alignas(T) std::byte m_data[sizeof(T) * capacity];
+            alignas(T) unsigned char m_data[sizeof(T) * capacity];
             FixedMask<capacity> m_mask;
     };
 }

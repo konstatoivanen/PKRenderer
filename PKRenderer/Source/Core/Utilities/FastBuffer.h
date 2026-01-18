@@ -19,9 +19,11 @@ namespace PK
 
         ~FastBuffer()
         {
-            if (!IsSmallBuffer(m_count) && m_data.buffer != nullptr)
+            if (!IsSmallBuffer(m_count))
             {
                 free(m_data.buffer);
+                m_data.buffer = nullptr;
+                m_count = 0u;
             }
         }
 
@@ -61,7 +63,7 @@ namespace PK
         {
             if (this != &other)
             {
-                if (!IsSmallBuffer(m_count) && m_data.buffer != nullptr)
+                if (!IsSmallBuffer(m_count))
                 {
                     free(m_data.buffer);
                 }
@@ -113,7 +115,7 @@ namespace PK
     private:
         constexpr static bool IsSmallBuffer(size_t count) { return count <= (sizeof(U) / sizeof(T)); }
         
-        struct U { union { void* buffer; char iarray[sizeof(T) * inlineCapacity]; }; };
+        struct U { union { void* buffer; alignas(T) unsigned char inl[sizeof(T) * inlineCapacity]; }; };
         U m_data{};
         size_t m_count = 0ull;
     };

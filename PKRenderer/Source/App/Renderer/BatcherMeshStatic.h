@@ -95,7 +95,7 @@ namespace PK::App
     public:
         BatcherMeshStatic();
 
-        inline MeshStaticCollection* GetMeshStaticCollection() { return m_staticGeometry.get(); }
+        inline MeshStaticCollection* GetMeshStaticCollection() { return &m_staticGeometry; }
 
         void AssetConstruct(MeshStaticAsset* memory, const char* filepath) final;
 
@@ -123,22 +123,21 @@ namespace PK::App
         void UploadMaterials(CommandBufferExt cmd);
         void UploadDrawIndices(CommandBufferExt cmd);
 
-        Unique<MeshStaticCollection> m_staticGeometry;
+        MeshStaticCollection m_staticGeometry;
+        FixedSet16<ShaderReference, MAX_SHADERS, ShaderReferenceHash> m_shaders;
+        FixedSet16<MaterialReference, MAX_MATERIALS, MaterialReferenceHash> m_materials;
+        PointerSet<ComponentTransform> m_transforms;
+        uint16_t m_groupIndex = 0u;
+        uint32_t m_taskletCount = 0u;
+
+        std::vector<DrawInfo> m_drawInfos;
+        std::vector<DrawCall> m_drawCalls;
+        std::vector<BufferIndexRange> m_passGroups;
 
         RHIBufferRef m_matrices;
         RHIBufferRef m_indices;
         RHIBufferRef m_properties;
         RHIBufferRef m_tasklets;
         BindSet<RHITexture> m_textures2D;
-
-        std::vector<DrawInfo> m_drawInfos;
-        std::vector<DrawCall> m_drawCalls;
-        std::vector<BufferIndexRange> m_passGroups;
-
-        FixedSet16<ShaderReference, MAX_SHADERS, ShaderReferenceHash> m_shaders;
-        FixedSet16<MaterialReference, MAX_MATERIALS, MaterialReferenceHash> m_materials;
-        PointerSet<ComponentTransform> m_transforms;
-        uint16_t m_groupIndex = 0u;
-        uint32_t m_taskletCount = 0u;
     };
 }

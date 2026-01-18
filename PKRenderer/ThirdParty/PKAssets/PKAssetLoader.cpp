@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <malloc.h>
 #include "PKAssetLoader.h"
+#include "PKAssetEncoding.h"
 
 namespace PKAssets
 {
@@ -62,51 +63,19 @@ namespace PKAssets
             return -1;
         }
 
-        char* buffer = nullptr;
+        uint8_t* buffer = reinterpret_cast<uint8_t*>(malloc(header.uncompressedSize));
 
-        if (!header.isCompressed)
+        if (header.isCompressed)
         {
-            buffer = reinterpret_cast<char*>(malloc(size));
-            fread(buffer + headerSize, sizeof(char), size - headerSize, file);
+            // Write uncompressed data to the end of the asset buffer & decode in place.
+            uint8_t* compressed = buffer + (header.uncompressedSize - (size - headerSize));
+            fread(compressed, sizeof(uint8_t), size - headerSize, file);
+            DecodeBuffer(compressed, buffer + headerSize, header.uncompressedSize - headerSize);
+            header.isCompressed = false;
         }
         else
         {
-            buffer = reinterpret_cast<char*>(malloc(header.uncompressedSize * sizeof(char)));
-
-            auto nodesSize = header.compressedOffset - sizeof(PKAssetHeader);
-            auto nodeCount = nodesSize / sizeof(PKEncNode);
-            auto nodes = reinterpret_cast<PKEncNode*>(alloca(nodesSize));
-
-            fread(nodes, sizeof(PKEncNode), nodeCount, file);
-
-            auto root = nodes;
-            auto curr = nodes;
-            auto head = buffer + sizeof(PKAssetHeader);
-
-            uint8_t block[64];
-            constexpr auto blockSize = sizeof(block) * 8ull;
-            auto blockCount = (header.compressedBitCount + blockSize - 1ull) / blockSize;
-
-            for (auto blockIdx = 0ull; blockIdx < blockCount; ++blockIdx)
-            {
-                auto blockBitCount = header.compressedBitCount - blockIdx * blockSize;
-                blockBitCount = blockBitCount > blockSize ? blockSize : blockBitCount;
-                fread(block, sizeof(uint8_t), (blockBitCount + 7ull) >> 3ull, file);
-
-                for (auto i = 0ull; i < blockBitCount; ++i)
-                {
-                    if (curr->isLeaf)
-                    {
-                        *head = curr->value;
-                        ++head;
-                        curr = root;
-                    }
-
-                    curr = root + ((block[i >> 3ull] & (1ull << (i & 0x7ull))) ? curr->right : curr->left);
-                }
-            }
-
-            header.isCompressed = false;
+            fread(buffer + headerSize, sizeof(uint8_t), header.uncompressedSize - headerSize, file);
         }
 
         fclose(file);

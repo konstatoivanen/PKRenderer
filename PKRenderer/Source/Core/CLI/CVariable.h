@@ -11,21 +11,18 @@ namespace PK
     {
         friend class CVariableRegister;
 
-        ICVariable(const char* name) : name(name) {}
+        ICVariable(const char* name) : name(name), flags(0u) {}
 
         virtual ~ICVariable() = 0;
 
         void CVarBind();
         void CVarUnbind();
 
-        const char* CVarGetName() const { return name.c_str(); }
-
     protected:
         virtual void CVarExecute(const char* const* args, uint32_t count) = 0;
-        virtual void CVarInvalidArgCount() const = 0;
-        virtual uint32_t CVarGetMinArgs() const = 0;
 
         NameID name;
+        uint32_t flags;
     };
 
     template<typename T>
@@ -33,10 +30,10 @@ namespace PK
     {
         friend class CVariableRegister;
 
-        CVariable(const char* name, const T& value, const char* hint = "cvar hint undefined.", uint32_t argsMin = 1u) :
+        CVariable(const char* name, const T& value, const char* hint = "cvar hint undefined.", uint32_t minArgs = 1u) :
             ICVariable(name),
             m_value(value),
-            m_argsMin(argsMin),
+            m_minArgs(minArgs),
             m_hint(hint)
         {
         };
@@ -46,11 +43,9 @@ namespace PK
 
     protected:
         void CVarExecute(const char* const* args, uint32_t count) final;
-        void CVarInvalidArgCount() const final;
-        inline uint32_t CVarGetMinArgs() const final { return m_argsMin; }
 
         T m_value;
-        uint32_t m_argsMin;
+        uint32_t m_minArgs;
         FixedString64 m_hint;
     };
 
@@ -63,8 +58,6 @@ namespace PK
         ~CVariableField() { this->CVarUnbind(); }
 
         void CVarExecute(const char* const* args, uint32_t count) final;
-        void CVarInvalidArgCount() const final;
-        uint32_t CVarGetMinArgs() const final;
 
         constexpr operator T&() { return Value; }
         constexpr operator const T&() const { return Value; }
