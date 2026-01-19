@@ -3,6 +3,7 @@
 #include "Core/Utilities/Ref.h"
 #include "Core/Utilities/ISingleton.h"
 #include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/FixedArena.h"
 #include "Core/CLI/CArguments.h"
 #include "Core/CLI/CVariable.h"
 #include "Core/ControlFlow/IStep.h"
@@ -41,7 +42,7 @@ namespace PK
 
             if (instance)
             {
-                instance->BindInstance(new CVariable<T>(name, value, hint, minArgs), FLAG_IS_REGISTER_OWNED);
+                instance->BindInstance(instance->m_arena.New<CVariable<T>>(name, value, hint, minArgs), FLAG_IS_REGISTER_OWNED);
             }
         }
 
@@ -59,5 +60,6 @@ namespace PK
         void ExecuteParseInstance(const char* arg);
 
         FastMap<NameID, CVariableBinding, Hash::TCastHash<NameID>> m_variables;
+        FixedArena<32768ull> m_arena;
     };
 }

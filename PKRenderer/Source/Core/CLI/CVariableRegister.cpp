@@ -80,7 +80,7 @@ namespace PK
 
         if (binding->variable && (binding->variable->flags & FLAG_IS_REGISTER_OWNED) != 0u)
         {
-            delete binding->variable;
+            binding->variable->~ICVariable();
             binding->variable = nullptr;
         }
 

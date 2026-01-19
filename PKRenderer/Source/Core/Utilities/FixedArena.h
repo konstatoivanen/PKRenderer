@@ -22,13 +22,22 @@ namespace PK
                 return nullptr;
             }
 
-            const auto alignment = alignof(T);
-            const auto headAddress = reinterpret_cast<uint64_t>(m_data + m_head);
-            const auto headAligned = ((headAddress + alignment - 1ull) & ~(alignment - 1ull)) - reinterpret_cast<uint64_t>(m_data);
-            
+            const auto headAligned = GetAlignedHead(alignof(T));
             m_head = headAligned + sizeof(T) * count;
             PK_CONTAINER_RANGE_CHECK(m_head, 0ull, capacity);
             return reinterpret_cast<T*>(m_data + headAligned);
+        }
+
+        // Warning destructor must be manually called for retrieved pointer.
+        template<typename T, typename ... Args>
+        T* New(Args&& ... args)
+        {
+            const auto headAligned = GetAlignedHead(alignof(T));
+            m_head = headAligned + sizeof(T);
+            PK_CONTAINER_RANGE_CHECK(m_head, 0ull, capacity);
+            auto ptr = reinterpret_cast<T*>(m_data + headAligned);
+            new(ptr) T(std::forward<Args>(args)...);
+            return ptr;
         }
 
         void Clear() 
@@ -38,6 +47,13 @@ namespace PK
         }
 
     private:
+        size_t GetAlignedHead(size_t alignment) 
+        {
+            const auto headAddress = reinterpret_cast<uint64_t>(m_data + m_head);
+            const auto headAligned = ((headAddress + alignment - 1ull) & ~(alignment - 1ull)) - reinterpret_cast<uint64_t>(m_data);
+            return headAligned;
+        }
+
         char m_data[capacity]{};
         size_t m_head = 0ull;
     };
