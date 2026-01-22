@@ -3,6 +3,7 @@
 #include "Win32Driver.h"
 #include "Win32Window.h"
 #include "Windowsx.h"
+#include "Core/Utilities/Parse.h"
 
 namespace PK
 {

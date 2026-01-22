@@ -7,10 +7,11 @@ namespace PK
     class Disposer : public NoCopy
     {
         public:
-            typedef void (*Destructor)(void*);
+            typedef void (*Destructor)(void*, void*);
             
             struct DisposeHandle
             {
+                void* context = nullptr;
                 void* disposable = nullptr;
                 Destructor destructor = nullptr;
                 FenceRef fence{};
@@ -24,19 +25,11 @@ namespace PK
             {
                 if (disposable != nullptr)
                 {
-                    m_disposables.push_back({ disposable, [](void* v) { delete reinterpret_cast<T*>(v); }, releaseFence });
+                    m_disposables.push_back({ nullptr, disposable, []([[maybe_unused]] void* c, void* v) { delete reinterpret_cast<T*>(v); }, releaseFence });
                 }
             }
 
-            template<typename T>
-            void Dispose(T* disposable, Destructor destructor, const FenceRef& releaseFence)
-            {
-                if (disposable != nullptr)
-                {
-                    m_disposables.push_back({ disposable, destructor, releaseFence });
-                }
-            }
-
+            void Dispose(void* context, void* disposable, Destructor destructor, const FenceRef& releaseFence);
             void Prune();
 
         private:

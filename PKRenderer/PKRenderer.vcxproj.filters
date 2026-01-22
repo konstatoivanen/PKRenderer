@@ -1308,9 +1308,6 @@
     <ClInclude Include="Source\Core\Utilities\FastBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\NativeInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Utilities\NoCopy.h">
       <Filter>Header Files</Filter>
     </ClInclude>

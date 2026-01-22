@@ -2,6 +2,7 @@
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/Ref.h"
 #include "Core/Utilities/FixedPool.h"
+#include "Core/Utilities/Disposer.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
@@ -32,7 +33,7 @@ namespace PK
     class VulkanStagingBufferCache : public NoCopy
     {
         public:
-            VulkanStagingBufferCache(VkDevice device, VmaAllocator allocator, uint64_t pruneDelay);
+            VulkanStagingBufferCache(Disposer* disposer, VkDevice device, VmaAllocator allocator, uint64_t pruneDelay);
             ~VulkanStagingBufferCache();
 
             VulkanStagingBuffer* Acquire(size_t size, bool persistent, const char* name);
@@ -43,6 +44,7 @@ namespace PK
 
             const VmaAllocator m_allocator;
             const VkDevice m_device;
+            Disposer* m_disposer;
             VulkanStagingBuffer* m_freeBufferHead = nullptr;
             VulkanStagingBuffer* m_liveBufferHead = nullptr;
             FixedPool<VulkanStagingBuffer, 512> m_bufferPool;

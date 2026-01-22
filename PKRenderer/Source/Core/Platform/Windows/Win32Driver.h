@@ -13,7 +13,6 @@
 #include <dbt.h>
 #include <shellapi.h>
 #include <dwmapi.h>
-#include "Core/Utilities/Parse.h"
 #include "Core/Platform/Windows/Win32Window.h"
 
 
@@ -157,7 +156,7 @@ namespace PK
 
         void PollEvents(bool wait) final;
 
-        static inline Win32Driver* GetInstance() { return PlatformDriver::Get()->GetNative<Win32Driver>(); }
+        static inline Win32Driver* GetInstance() { return static_cast<Win32Driver*>(Get()); }
         inline void* GetProcess() const final { return instance; }
         inline void* GetHelperWindow() const final { return m_windowInstanceHelper; }
         inline void* GetProcAddress(void* handle, const char* name) const final { return (void*)::GetProcAddress((HMODULE)handle, name); }

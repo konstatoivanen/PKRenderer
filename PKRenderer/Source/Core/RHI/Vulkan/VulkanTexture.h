@@ -10,7 +10,7 @@ namespace PK
     class VulkanTexture : public RHITexture
     {
         public:
-            VulkanTexture(const TextureDescriptor& descriptor, const char* name);
+            VulkanTexture(struct VulkanDriver* driver, const TextureDescriptor& descriptor, const char* name);
             ~VulkanTexture();
             
             void SetSampler(const SamplerDescriptor& sampler) final;

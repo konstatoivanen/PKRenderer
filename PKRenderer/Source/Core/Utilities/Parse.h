@@ -1,7 +1,5 @@
 #pragma once
 #include <string>
-#include <typeinfo>
-#include <typeindex>
 
 // Forward declared to avoid dependency bloat.
 namespace PK
@@ -84,18 +82,6 @@ namespace PK::Parse
 
     std::wstring ToWideString(const char* str, size_t length);
     std::string FromWideString(const wchar_t* str, size_t length);
-
-    const char* GetTypeShortName(const std::type_index& typeIndex);
-    const char* GetTypeShortName(const std::type_info& typeInfo);
-
-    FixedString64 GetTypeNameSpace(const std::type_index& typeIndex);
-    FixedString64 GetTypeNameSpace(const std::type_info& typeInfo);
-
-    template<typename T>
-    const char* GetTypeShortName() { return GetTypeShortName(typeid(T)); }
-
-    template<typename T>
-    FixedString64 GetTypeNameSpace() { return GetTypeNameSpace(typeid(T)); }
 
     constexpr void GetShortFunctionName(const char* str, const char** outData, size_t* outLength) noexcept
     {

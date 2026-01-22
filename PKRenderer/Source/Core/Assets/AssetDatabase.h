@@ -2,11 +2,11 @@
 #include <filesystem>
 #include "Core/Utilities/ISingleton.h"
 #include "Core/Utilities/FastTypeIndex.h"
-#include "Core/Utilities/Hash.h"
+#include "Core/Utilities/FastMap.h"
 #include "Core/Assets/Asset.h"
 #include "Core/Assets/AssetImportEvent.h"
-#include "Core/CLI/Log.h"
 #include "Core/ControlFlow/Sequencer.h"
+#include "Core/CLI/Log.h"
 
 namespace PK
 {
@@ -26,6 +26,7 @@ namespace PK
             uint32_t typeIndex;
             uint32_t headIndex;
             const char* name;
+            size_t nameLength;
             IAssetFactory* factory;
             
             bool operator == (const TypeInfo& other) { return typeIndex == other.typeIndex; }
@@ -133,8 +134,9 @@ namespace PK
         Ref<T> CreateVirtual(AssetID assetId, Args&& ... args)
         {
             auto object = CreateAssetObject<T>(assetId, CacheMode::Persistent);
+            constexpr auto name = pk_base_type_name<T>();
             PK_THROW_ASSERT(!object->isLoaded, "AssetDatabase.Register: (%s) already exists!", assetId.c_str());
-            PK_LOG_VERBOSE_FUNC("%s, %s", typeid(T).name(), assetId.c_str());
+            PK_LOG_VERBOSE_FUNC("%.*s, %s", name.count, name.data, assetId.c_str());
             object->ConstructVirtual(std::forward<Args>(args)...);
             return object->GetReference();
         }
@@ -164,7 +166,8 @@ namespace PK
         template<typename T>
         void LoadDirectory(const std::string& directory, bool forceReload = false)
         {
-            PK_LOG_VERBOSE_FUNC("%s, %s", typeid(T).name(), directory.c_str());
+            constexpr auto name = pk_base_type_name<T>();
+            PK_LOG_VERBOSE_FUNC("%.*s, %s", name.count, name.data, directory.c_str());
 
             if (std::filesystem::exists(directory))
             {
@@ -226,7 +229,11 @@ namespace PK
 
     private:
         template<typename T>
-        TypeInfo* CreateTypeInfo() { return CreateTypeInfo(pk_base_type_index<T>(), std::type_index(typeid(T))); }
+        TypeInfo* CreateTypeInfo() 
+        {
+            constexpr auto typeName = pk_base_type_name<T>();
+            return CreateTypeInfo(pk_base_type_index<T>(), typeName);
+        }
 
         template<typename T>
         AssetObject<T>* CreateAssetObject(AssetID assetId, CacheMode cacheMode)
@@ -256,7 +263,7 @@ namespace PK
 
         void LoadAsset(AssetObjectBase* object, bool isReload);
         uint32_t GetTypeHead(uint32_t typeIndex) const;
-        TypeInfo* CreateTypeInfo(uint32_t typeIndex, const std::type_index& rttiIndex);
+        TypeInfo* CreateTypeInfo(uint32_t typeIndex, const ConstBufferView<char>& name);
 
         FastSet<AssetObjectBase*, AssetObjectHash> m_assets;
         FastSet<TypeInfo, TypeInfoHash> m_assetTypes;

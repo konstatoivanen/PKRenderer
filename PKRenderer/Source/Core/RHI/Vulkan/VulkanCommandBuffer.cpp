@@ -30,8 +30,8 @@ namespace PK
         for (auto i = 0u; i < count; ++i)
         {
             auto binding = &bindings[i];
-            auto target = binding->target->GetNative<VulkanTexture>()->GetBindHandle(binding->targetRange, TextureBindMode::RenderTarget);
-            auto resolve = binding->resolve ? binding->resolve->GetNative<VulkanTexture>()->GetBindHandle(binding->resolveRange, TextureBindMode::RenderTarget) : nullptr;
+            auto target = static_cast<VulkanTexture*>(binding->target)->GetBindHandle(binding->targetRange, TextureBindMode::RenderTarget);
+            auto resolve = binding->resolve ? static_cast<VulkanTexture*>(binding->resolve)->GetBindHandle(binding->resolveRange, TextureBindMode::RenderTarget) : nullptr;
             auto isDepth = VulkanEnumConvert::IsDepthFormat(target->image.format);
             auto attachment = isDepth ? &state.depth : (state.colors + state.colorCount++);
             attachment->target = target;
@@ -66,7 +66,7 @@ namespace PK
 
     void VulkanCommandBuffer::SetShader(const RHIShader* shader)
     {
-        m_renderState->SetShader(shader->GetNative<VulkanShader>());
+        m_renderState->SetShader(static_cast<const VulkanShader*>(shader));
     }
 
     void VulkanCommandBuffer::SetVertexBuffers(const RHIBuffer** buffers, uint32_t count)
@@ -75,7 +75,7 @@ namespace PK
 
         for (auto i = 0u; i < count; ++i)
         {
-            pHandles[i] = buffers[i]->GetNative<VulkanBuffer>()->GetBindHandle();
+            pHandles[i] = static_cast<const VulkanBuffer*>(buffers[i])->GetBindHandle();
         }
 
         m_renderState->SetVertexBuffers(pHandles, count);
@@ -88,7 +88,7 @@ namespace PK
 
     void VulkanCommandBuffer::SetIndexBuffer(const RHIBuffer* buffer, ElementType indexFormat)
     {
-        auto handle = buffer->GetNative<VulkanBuffer>()->GetBindHandle();
+        auto handle = static_cast<const VulkanBuffer*>(buffer)->GetBindHandle();
         m_renderState->SetIndexBuffer(handle, VulkanEnumConvert::GetIndexType(indexFormat));
     }
 
@@ -262,8 +262,8 @@ namespace PK
 
     void VulkanCommandBuffer::Blit(RHITexture* src, RHISwapchain* dst, FilterMode filter)
     {
-        auto vksrc = src->GetNative<VulkanTexture>();
-        auto vkdst = dst->GetNative<VulkanSwapchain>();
+        auto vksrc = static_cast<VulkanTexture*>(src);
+        auto vkdst = static_cast<VulkanSwapchain*>(dst);
         const auto& srcHandle = vksrc->GetBindHandle(TextureBindMode::RenderTarget);
         const auto& dstHandle = vkdst->GetBindHandle();
 
@@ -290,7 +290,7 @@ namespace PK
 
     void VulkanCommandBuffer::Blit(RHISwapchain* src, RHIBuffer* dst)
     {
-        auto vksrc = src->GetNative<VulkanSwapchain>()->GetBindHandle();
+        auto vksrc = static_cast<VulkanSwapchain*>(src)->GetBindHandle();
         auto vkdst = dst->GetNativeHandle<VkBuffer>();
 
         VkBufferImageCopy region{};
@@ -314,8 +314,8 @@ namespace PK
     {
         VulkanBindHandle srcHandle;
         VulkanBindHandle dstHandle;
-        src->GetNative<VulkanTexture>()->FillBindHandle(&srcHandle, srcRange, TextureBindMode::RenderTarget);
-        dst->GetNative<VulkanTexture>()->FillBindHandle(&dstHandle, dstRange, TextureBindMode::RenderTarget);
+        static_cast<VulkanTexture*>(src)->FillBindHandle(&srcHandle, srcRange, TextureBindMode::RenderTarget);
+        static_cast<VulkanTexture*>(dst)->FillBindHandle(&dstHandle, dstRange, TextureBindMode::RenderTarget);
         auto srcLayers = glm::min(srcHandle.image.range.layerCount, src->GetLayers());
         auto dstLayers = glm::min(dstHandle.image.range.layerCount, dst->GetLayers());
 
@@ -387,7 +387,7 @@ namespace PK
 
     void VulkanCommandBuffer::Clear(RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value)
     {
-        auto handle = dst->GetNative<VulkanTexture>()->GetBindHandle(range, TextureBindMode::Image);
+        auto handle = static_cast<VulkanTexture*>(dst)->GetBindHandle(range, TextureBindMode::Image);
         auto clearValue = VulkanEnumConvert::GetClearValue(value);
 
         VkClearColorValue clearColorValue{};
@@ -435,7 +435,7 @@ namespace PK
 
     void* VulkanCommandBuffer::BeginBufferWrite(RHIBuffer* buffer, size_t offset, size_t size)
     {
-        return buffer->GetNative<VulkanBuffer>()->BeginStagedWrite(offset, size);
+        return static_cast<VulkanBuffer*>(buffer)->BeginStagedWrite(offset, size);
     }
 
     void VulkanCommandBuffer::EndBufferWrite(RHIBuffer* buffer)
@@ -443,7 +443,7 @@ namespace PK
         VkBufferCopy copyRegion;
         RHIBuffer* src;
         RHIBuffer* dst;
-        buffer->GetNative<VulkanBuffer>()->EndStagedWrite(&dst, &src, &copyRegion, GetFenceRef());
+        static_cast<VulkanBuffer*>(buffer)->EndStagedWrite(&dst, &src, &copyRegion, GetFenceRef());
         CopyBuffer(dst, src, copyRegion.srcOffset, copyRegion.dstOffset, copyRegion.size);
     }
 
@@ -452,10 +452,10 @@ namespace PK
     {
         PK_DEBUG_THROW_ASSERT(texture->GetUsage() == TextureUsage::DefaultDisk, "Texture upload is only supported for sampled | upload | readonly textures!");
 
-        auto vkBuffer = buffer->GetNativeHandle<VkBuffer>();
-        auto vkTexture = texture->GetNative<VulkanTexture>();
-        auto vkImage = texture->GetNativeHandle<VkImage>();
+        auto vkTexture = static_cast<VulkanTexture*>(texture);
         auto layout = vkTexture->GetImageLayout();
+        auto vkBuffer = buffer->GetNativeHandle<VkBuffer>();
+        auto vkImage = texture->GetNativeHandle<VkImage>();
 
         auto resourceRange = VkImageSubresourceRange{ (uint32_t)vkTexture->GetAspectFlags(), VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS, 0 };
         auto copyRegions = PK_STACK_ALLOC(VkBufferImageCopy, regionCount);
@@ -629,7 +629,7 @@ namespace PK
 
     void VulkanCommandBuffer::ResolveSwapchainAccess(RHISwapchain* swapchain, bool forceTransition)
     {
-        auto vkdst = swapchain->GetNative<VulkanSwapchain>();
+        auto vkdst = static_cast<VulkanSwapchain*>(swapchain); 
         auto signal = vkdst->ConsumeImageSignal();
 
         if (signal != VK_NULL_HANDLE)

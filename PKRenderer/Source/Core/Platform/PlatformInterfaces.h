@@ -2,7 +2,6 @@
 #include <exception>
 #include "Core/Platform/Platform.h"
 #include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/NativeInterface.h"
 #include "Core/Input/InputDevice.h"
 #include "Core/Math/Math.h"
 
@@ -42,7 +41,7 @@ namespace PK
     };
 
     // OS Window interface for the native environment.
-    struct PlatformWindow : public NoCopy, public NativeInterface<PlatformWindow>, public InputDevice
+    struct PlatformWindow : public NoCopy, public InputDevice
     {
         virtual ~PlatformWindow() = 0;
 
@@ -80,7 +79,7 @@ namespace PK
         inline void SetCursorPosToCenter() { SetCursorPosition(GetSize() / 2); }
     };
 
-    struct PlatformDriver : public NoCopy, public NativeInterface<PlatformDriver>
+    struct PlatformDriver : public NoCopy
     {
         PlatformDriver() { if (s_instance != nullptr) throw std::exception("Trying initialize multiple native interfaces!"); s_instance = this; }
         virtual ~PlatformDriver() = 0;

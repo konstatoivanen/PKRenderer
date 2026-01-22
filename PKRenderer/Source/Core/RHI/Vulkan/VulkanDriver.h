@@ -97,14 +97,11 @@ namespace PK
         template<typename T>
         void DisposePooled(T* object, const FenceRef& fence) const
         {
-            auto deleter = [](void* v)
+            disposer->Dispose(objectPools.GetInstance<IPool<T>>(), object, [](void* c, void* v)
             {
-                auto driver = RHIDriver::Get()->GetNative<VulkanDriver>();
-                auto pool = driver->objectPools.GetInstance<IPool<T>>();
-                pool->Delete(reinterpret_cast<T*>(v));
-            };
-
-            disposer->Dispose(object, deleter, fence);
+                reinterpret_cast<IPool<T>*>(c)->Delete(reinterpret_cast<T*>(v));
+            }, 
+            fence);
         }
 
         template<typename T>

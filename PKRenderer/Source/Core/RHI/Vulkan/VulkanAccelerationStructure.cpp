@@ -10,8 +10,8 @@
 
 namespace PK
 {
-    VulkanAccelerationStructure::VulkanAccelerationStructure(const char* name) :
-        m_driver(RHIDriver::Get()->GetNative<VulkanDriver>()),
+    VulkanAccelerationStructure::VulkanAccelerationStructure(VulkanDriver* driver, const char* name) :
+        m_driver(driver),
         m_name(name),
         m_substructures(32u, 1ull)
     {

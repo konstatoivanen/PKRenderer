@@ -1,5 +1,4 @@
 #pragma once
-#include "NoCopy.h"
 #include "Hash.h"
 #include "ContainerHelpers.h"
 

@@ -39,7 +39,7 @@ namespace PK
     {
         if (bindInfo)
         {
-            return Add(value->GetNative<VulkanTexture>()->GetBindHandle(*reinterpret_cast<TextureViewRange*>(bindInfo), TextureBindMode::SampledTexture));
+            return Add(static_cast<VulkanTexture*>(value)->GetBindHandle(*reinterpret_cast<TextureViewRange*>(bindInfo), TextureBindMode::SampledTexture));
         }
 
         return Add(value);
@@ -47,14 +47,14 @@ namespace PK
 
     int32_t VulkanBindArray::Add(RHITexture* value)
     {
-        return Add(value->GetNative<VulkanTexture>()->GetBindHandle());
+        return Add(static_cast<VulkanTexture*>(value)->GetBindHandle());
     }
 
     int32_t VulkanBindArray::Add(RHIBuffer* value, void* bindInfo)
     {
         if (bindInfo)
         {
-            return Add(value->GetNative<VulkanBuffer>()->GetBindHandle(*reinterpret_cast<BufferIndexRange*>(bindInfo)));
+            return Add(static_cast<VulkanBuffer*>(value)->GetBindHandle(*reinterpret_cast<BufferIndexRange*>(bindInfo)));
         }
 
         return Add(value);
@@ -62,7 +62,7 @@ namespace PK
 
     int32_t VulkanBindArray::Add(RHIBuffer* value)
     {
-        return Add(value->GetNative<VulkanBuffer>()->GetBindHandle());
+        return Add(static_cast<VulkanBuffer*>(value)->GetBindHandle());
     }
 
     int32_t VulkanBindArray::Add(const VulkanBindHandle* handle)

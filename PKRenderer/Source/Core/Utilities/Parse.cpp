@@ -61,28 +61,4 @@ namespace PK::Parse
         wcstombs(narrow.data(), str, length);
         return narrow;
     }
-
-    const char* GetTypeShortName(const std::type_index& typeIndex)
-    {
-        return strrchr(typeIndex.name(), ':') + 1u;
-    }
-
-    const char* GetTypeShortName(const std::type_info& typeInfo)
-    {
-        return strrchr(typeInfo.name(), ':') + 1u;
-    }
-
-    FixedString64 GetTypeNameSpace(const std::type_index& typeIndex)
-    {
-        auto name = typeIndex.name();
-        auto keywordEnd = strrchr(name, ' ') + 1u;
-        return FixedString64((size_t)(strrchr(name, ':') - keywordEnd), keywordEnd);
-    }
-
-    FixedString64 GetTypeNameSpace(const std::type_info& typeInfo)
-    {
-        auto name = typeInfo.name();
-        auto keywordEnd = strrchr(name, ' ') + 1u;
-        return FixedString64((size_t)(strrchr(name, ':') - keywordEnd), keywordEnd);
-    }
 }

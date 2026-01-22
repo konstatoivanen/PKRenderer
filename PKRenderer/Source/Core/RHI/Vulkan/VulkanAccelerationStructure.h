@@ -6,12 +6,9 @@
 
 namespace PK
 {
-    struct VulkanDriver;
-    struct VulkanCommandBuffer;
-
     struct VulkanAccelerationStructure : public RHIAccelerationStructure
     {
-        VulkanAccelerationStructure(const char* name);
+        VulkanAccelerationStructure(struct VulkanDriver* driver, const char* name);
         ~VulkanAccelerationStructure();
         
         void BeginWrite(QueueType queue, uint32_t instanceLimit) final;
@@ -86,7 +83,7 @@ namespace PK
             VkDeviceSize m_instanceBufferOffset = 0ull;
 
             //@TODO This shouldnt be here. replace begin end with cmd injection
-            VulkanCommandBuffer* m_cmd = nullptr;
+            struct VulkanCommandBuffer* m_cmd = nullptr;
             FenceRef m_lastBuildFenceRef = {};
             VkAccelerationStructureInstanceKHR* m_writeBuffer = nullptr;
     };

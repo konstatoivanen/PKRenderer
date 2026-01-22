@@ -4,15 +4,10 @@
 
 namespace PK
 {
-    class VulkanSparsePageTable;
-    struct VulkanStagingBuffer;
-    class VulkanSparsePageTable;
-    struct VulkanDriver;
-
     class VulkanBuffer : public RHIBuffer
     {
         public:
-            VulkanBuffer(size_t size, BufferUsage usage, const char* name);
+            VulkanBuffer(struct VulkanDriver* driver, size_t size, BufferUsage usage, const char* name);
             ~VulkanBuffer();
             
             size_t GetSize() const final { return m_buffer->size; }
@@ -40,8 +35,8 @@ namespace PK
             BufferUsage m_usage = BufferUsage::None;
             FixedString128 m_name;
             VulkanRawBuffer* m_buffer = nullptr;
-            VulkanStagingBuffer* m_stage = nullptr;
-            VulkanSparsePageTable* m_pageTable = nullptr;
+            struct VulkanStagingBuffer* m_stage = nullptr;
+            class VulkanSparsePageTable* m_pageTable = nullptr;
             VulkanBufferView* m_defaultView = nullptr;
             FastLinkedListRoot<VulkanBufferView, BufferIndexRange> m_firstView = nullptr;
 

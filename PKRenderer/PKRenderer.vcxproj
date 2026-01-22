@@ -733,7 +733,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\ISingleton.h" />
     <ClInclude Include="Source\Core\Utilities\FastBuffer.h" />
     <ClInclude Include="Source\Core\Utilities\NameID.h" />
-    <ClInclude Include="Source\Core\Utilities\NativeInterface.h" />
     <ClInclude Include="Source\Core\Utilities\NoCopy.h" />
     <ClInclude Include="Source\Core\Utilities\PropertyBlock.h" />
     <ClInclude Include="Source\Core\Utilities\FixedRangeTable.h" />

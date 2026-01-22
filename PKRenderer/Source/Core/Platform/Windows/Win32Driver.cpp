@@ -2,6 +2,7 @@
 
 #if PK_PLATFORM_WINDOWS
 #include "Win32Driver.h"
+#include "Core/Utilities/Parse.h"
 
 PFN_DirectInput8Create pkfn_DirectInput8Create = nullptr;
 PFN_XInputGetCapabilities pkfn_XInputGetCapabilities = nullptr;

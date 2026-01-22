@@ -37,9 +37,10 @@ namespace PK
         template<typename T, typename ... Args>
         T* Create(Args&& ... args)
         {
-            auto typeIndex = pk_base_type_index<T>();
+            constexpr auto typeName = pk_base_type_name<T>();
+            const auto typeIndex = pk_base_type_index<T>();
             auto index = 0u;
-            AssertTypeExists(m_services.AddKey(typeIndex, &index), typeid(T).name());
+            AssertTypeExists(m_services.AddKey(typeIndex, &index), typeName);
             auto logIndent = PK::LogScopeIndent(2);
             auto service = new ServiceContainer<T>(std::forward<Args>(args)...);
             m_services[index].value = service;
@@ -57,7 +58,7 @@ namespace PK
         }
 
     private:
-        void AssertTypeExists(bool exists, const char* name);
+        void AssertTypeExists(bool exists, const ConstBufferView<char>& name);
 
         FastMap<uint32_t, Service*> m_services;
     };

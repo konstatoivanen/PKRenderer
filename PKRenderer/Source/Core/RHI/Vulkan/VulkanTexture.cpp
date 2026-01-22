@@ -4,8 +4,8 @@
 
 namespace PK
 {
-    VulkanTexture::VulkanTexture(const TextureDescriptor& descriptor, const char* name) :  
-        m_driver(RHIDriver::Get()->GetNative<VulkanDriver>()),
+    VulkanTexture::VulkanTexture(struct VulkanDriver* driver, const TextureDescriptor& descriptor, const char* name) :
+        m_driver(driver),
         m_name(name)
     {
         auto& families = m_driver->queues->GetSelectedFamilies();
@@ -45,7 +45,7 @@ namespace PK
             if (view->bindHandle.image.sampler != VK_NULL_HANDLE)
             {
                 view->bindHandle.IncrementVersion();
-                view->bindHandle.image.sampler = RHIDriver::Get()->GetNative<VulkanDriver>()->samplerCache->GetSampler(m_descriptor.sampler);
+                view->bindHandle.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
             }
         }
     }
@@ -106,7 +106,7 @@ namespace PK
 
         if (bindMode == TextureBindMode::SampledTexture)
         {
-            handle->image.sampler = RHIDriver::Get()->GetNative<VulkanDriver>()->samplerCache->GetSampler(m_descriptor.sampler);
+            handle->image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
         }
     }
 
@@ -150,7 +150,7 @@ namespace PK
 
         if (mode == TextureBindMode::SampledTexture)
         {
-            newView->bindHandle.image.sampler = RHIDriver::Get()->GetNative<VulkanDriver>()->samplerCache->GetSampler(m_descriptor.sampler);
+            newView->bindHandle.image.sampler = m_driver->samplerCache->GetSampler(m_descriptor.sampler);
         }
 
         m_firstView.Insert(newView, key);

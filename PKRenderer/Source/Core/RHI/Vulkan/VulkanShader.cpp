@@ -8,8 +8,8 @@
 
 namespace PK
 {
-    VulkanShader::VulkanShader(void* base, PKAssets::PKShaderVariant* variant, const char* name) :
-        m_device(RHIDriver::Get()->GetNative<VulkanDriver>()->device),
+    VulkanShader::VulkanShader(VulkanDriver* driver, void* base, PKAssets::PKShaderVariant* variant, const char* name) :
+        m_driver(driver),
         m_name(name)
     {
         m_groupSize = { variant->groupSize[0], variant->groupSize[1], variant->groupSize[2] };
@@ -25,11 +25,11 @@ namespace PK
                 VkShaderModuleCreateInfo createInfo{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
                 createInfo.codeSize = variant->sprivSizes[i];
                 createInfo.pCode = reinterpret_cast<uint32_t*>(variant->sprivBuffers[i].Get(base));
-                VK_ASSERT_RESULT_CTX(vkCreateShaderModule(m_device, &createInfo, nullptr, &m_modules[i]), "Failed to create shader module!");
+                VK_ASSERT_RESULT_CTX(vkCreateShaderModule(m_driver->device, &createInfo, nullptr, &m_modules[i]), "Failed to create shader module!");
 
                 auto vkStage = VulkanEnumConvert::GetShaderStage((ShaderStage)i);
                 FixedString128 moduleName({ name, ".", VulkanCStr_VkShaderStageFlagBits(vkStage) });
-                VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)m_modules[i], moduleName.c_str());
+                VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)m_modules[i], moduleName.c_str());
 
                 m_stageFlags = m_stageFlags | (ShaderStageFlags)(1u << i);
             }
@@ -47,8 +47,6 @@ namespace PK
                 m_vertexLayout.Add(BufferElement(attribute->type, attribute->name, 1, (byte)attribute->location));
             }
         }
-
-        auto layoutCache = RHIDriver::Get()->GetNative<VulkanDriver>()->layoutCache.get();
 
         PipelineLayoutKey pipelineKey{};
         m_descriptorSetCount = variant->descriptorSetCount;
@@ -78,7 +76,7 @@ namespace PK
 
                 // Cache these so that we can optimize shaders easier based on profiling tools.
                 key.stageFlags = VulkanEnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags);
-                m_descriptorSetLayouts[i] = layoutCache->GetSetLayout(key);
+                m_descriptorSetLayouts[i] = m_driver->layoutCache->GetSetLayout(key);
                 pipelineKey.setlayouts[i] = m_descriptorSetLayouts[i]->layout;
             }
         }
@@ -103,21 +101,20 @@ namespace PK
             }
         }
 
-        m_pipelineLayout = layoutCache->GetPipelineLayout(pipelineKey);
+        m_pipelineLayout = m_driver->layoutCache->GetPipelineLayout(pipelineKey);
     }
 
     VulkanShader::~VulkanShader()
     {
-        auto driver = RHIDriver::Get()->GetNative<VulkanDriver>();
-        auto fence = driver->GetQueues()->GetLastSubmitFenceRef();
+        auto fence = m_driver->GetQueues()->GetLastSubmitFenceRef();
 
-        driver->layoutCache->ReleasePipelineLayout(m_pipelineLayout, fence);
+        m_driver->layoutCache->ReleasePipelineLayout(m_pipelineLayout, fence);
         
         for (auto setlayout : m_descriptorSetLayouts)
         {
             if (setlayout != nullptr)
             {
-                driver->layoutCache->ReleaseSetLayout(setlayout, fence);
+                m_driver->layoutCache->ReleaseSetLayout(setlayout, fence);
             }
         }
 
@@ -125,13 +122,12 @@ namespace PK
         {
             if (module != VK_NULL_HANDLE)
             {
-                auto deleter = [](void* v)
+                auto deleter = [](void* c, void* v)
                 {
-                    auto driver = RHIDriver::Get()->GetNative<VulkanDriver>();
-                    vkDestroyShaderModule(driver->device, reinterpret_cast<VkShaderModule>(v), nullptr);
+                    vkDestroyShaderModule(reinterpret_cast<VkDevice>(c), reinterpret_cast<VkShaderModule>(v), nullptr);
                 };
 
-                driver->disposer->Dispose(module, deleter, fence);
+                m_driver->disposer->Dispose(m_driver->device, module, deleter, fence);
                 module = VK_NULL_HANDLE;
             }
         }
@@ -141,9 +137,7 @@ namespace PK
     {
         ShaderBindingTableInfo info{};
 
-        auto driver = RHIDriver::Get()->GetNative<VulkanDriver>();
-
-        const auto& deviceProperties = driver->physicalDeviceProperties;
+        const auto& deviceProperties = m_driver->physicalDeviceProperties;
         const auto handleSize = deviceProperties.rayTracing.shaderGroupHandleSize;
         const auto handleAlignment = deviceProperties.rayTracing.shaderGroupHandleAlignment;
         const auto tableAlignment = deviceProperties.rayTracing.shaderGroupBaseAlignment;
@@ -181,13 +175,13 @@ namespace PK
         PK_DEBUG_THROW_ASSERT(sbtSize, "SBT has no data!");
         PK_DEBUG_THROW_ASSERT(sbtSize <= maxSize, "SBT is too big to fit to static memory");
 
-        auto pipeline = driver->pipelineCache->GetRayTracingPipeline(this);
+        auto pipeline = m_driver->pipelineCache->GetRayTracingPipeline(this);
 
         for (auto i = 0u; i < (uint32_t)RayTracingShaderGroup::MaxCount; ++i)
         {
             if (info.counts[i] > 0)
             {
-                VK_ASSERT_RESULT_CTX(vkGetRayTracingShaderGroupHandlesKHR(driver->device,
+                VK_ASSERT_RESULT_CTX(vkGetRayTracingShaderGroupHandlesKHR(m_driver->device,
                     pipeline->pipeline,
                     info.offsets[i],
                     info.counts[i],

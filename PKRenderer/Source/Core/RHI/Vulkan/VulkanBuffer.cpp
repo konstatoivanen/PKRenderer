@@ -7,8 +7,8 @@
 
 namespace PK
 {
-    VulkanBuffer::VulkanBuffer(size_t size, BufferUsage usage, const char* name) :
-        m_driver(RHIDriver::Get()->GetNative<VulkanDriver>()),
+    VulkanBuffer::VulkanBuffer(VulkanDriver* driver, size_t size, BufferUsage usage, const char* name) :
+        m_driver(driver),
         m_usage(usage),
         m_name(name)
     {

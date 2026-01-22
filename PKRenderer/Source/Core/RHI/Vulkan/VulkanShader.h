@@ -8,7 +8,7 @@ namespace PK
     class VulkanShader : public RHIShader, public VersionedObject
     {
         public:
-            VulkanShader(void* base, PKAssets::PKShaderVariant* variant, const char* name);
+            VulkanShader(struct VulkanDriver* driver, void* base, PKAssets::PKShaderVariant* variant, const char* name);
             ~VulkanShader();
 
             const ShaderVertexInputLayout& GetVertexLayout() const final { return m_vertexLayout; }
@@ -25,7 +25,7 @@ namespace PK
             constexpr uint32_t GetDescriptorSetCount() const { return m_descriptorSetCount; }
 
         private:
-            const VkDevice m_device;
+            const VulkanDriver* m_driver;
             ShaderVertexInputLayout m_vertexLayout;
             ShaderPushConstantLayout m_pushConstantLayout;
             ShaderResourceLayout m_resourceLayouts[PK_RHI_MAX_DESCRIPTOR_SETS];

@@ -6,9 +6,10 @@
 
 namespace PK
 {
-    VulkanStagingBufferCache::VulkanStagingBufferCache(VkDevice device, VmaAllocator allocator, uint64_t pruneDelay) :
+    VulkanStagingBufferCache::VulkanStagingBufferCache(Disposer* disposer, VkDevice device, VmaAllocator allocator, uint64_t pruneDelay) :
         m_allocator(allocator),
         m_device(device),
+        m_disposer(disposer),
         m_pruneDelay(pruneDelay)
     {
     }
@@ -81,12 +82,12 @@ namespace PK
 
         if (buffer->isPersistentMap)
         {
-            auto deleter = [](void* v)
+            auto deleter = [](void* c, void* v)
             {
-                RHIDriver::Get()->GetNative<VulkanDriver>()->stagingBufferCache->m_bufferPool.Delete(reinterpret_cast<VulkanStagingBuffer*>(v));
+                reinterpret_cast<VulkanStagingBufferCache*>(c)->m_bufferPool.Delete(reinterpret_cast<VulkanStagingBuffer*>(v));
             };
 
-            RHIDriver::Get()->GetNative<VulkanDriver>()->disposer->Dispose(buffer, deleter, fence);
+            m_disposer->Dispose(this, buffer, deleter, fence);
         }
         else
         {
@@ -113,7 +114,7 @@ namespace PK
 
                 // Insertion order sort
                 // A lot slower than doing an array sort, but this is used so sparsely. saving the allocations is more beneficial.
-                for (auto lowerHead = &m_liveBufferHead; true;)
+                for (auto lowerHead = &m_freeBufferHead; true;)
                 {
                     auto other = *lowerHead;
 

@@ -1,6 +1,5 @@
 #pragma once
 #include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/NativeInterface.h"
 #include "Core/Utilities/BufferView.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/Utilities/Ref.h"
@@ -9,7 +8,7 @@
 
 namespace PK
 {
-    struct RHISwapchain : public NoCopy, public NativeInterface<RHISwapchain>
+    struct RHISwapchain : public NoCopy
     {
         virtual ~RHISwapchain() = 0;
         virtual void SetDesiredResolution(const uint2& resolution) = 0;
@@ -31,7 +30,7 @@ namespace PK
         inline float GetAspectRatio() const { return (float)GetWidth() / (float)GetHeight(); }
     };
 
-    struct RHITexture : public NoCopy, public NativeInterface<RHITexture>
+    struct RHITexture : public NoCopy
     {
         virtual ~RHITexture() = 0;
         virtual void SetSampler(const SamplerDescriptor& sampler) = 0;
@@ -54,7 +53,7 @@ namespace PK
         constexpr T GetNativeHandle() const { return reinterpret_cast<T>(GetNativeHandle()); }
     };
 
-    struct RHIBuffer : public NoCopy, public NativeInterface<RHIBuffer>
+    struct RHIBuffer : public NoCopy
     {
         virtual ~RHIBuffer() = 0;
         virtual size_t GetSize() const = 0;
@@ -92,7 +91,7 @@ namespace PK
         }
     };
 
-    struct RHIAccelerationStructure : public NoCopy, public NativeInterface<RHIAccelerationStructure>
+    struct RHIAccelerationStructure : public NoCopy
     {
         virtual ~RHIAccelerationStructure() = 0;
         virtual void BeginWrite(QueueType queue, uint32_t instanceLimit) = 0;
@@ -104,7 +103,7 @@ namespace PK
     };
 
     template<typename T>
-    struct RHIBindArray : public NoCopy, public NativeInterface<RHIBindArray<T>>
+    struct RHIBindArray : public NoCopy
     {
         virtual ~RHIBindArray() = 0;
         virtual int32_t Add(T* value, void* bindInfo) = 0;
@@ -112,7 +111,7 @@ namespace PK
         virtual void Clear() = 0;
     };
 
-    struct RHIShader : public NoCopy, public NativeInterface<RHIShader>
+    struct RHIShader : public NoCopy
     {
         virtual ~RHIShader() = 0;
         virtual const ShaderVertexInputLayout& GetVertexLayout() const = 0;
@@ -129,7 +128,7 @@ namespace PK
         }
     };
 
-    struct RHICommandBuffer : public NoCopy, public NativeInterface<RHICommandBuffer>
+    struct RHICommandBuffer : public NoCopy
     {
         virtual FenceRef GetFenceRef() const = 0;
         virtual void SetRenderTarget(const RenderTargetBinding* bindings, uint32_t count, const uint4& renderArea, uint32_t layers) = 0;
@@ -178,7 +177,7 @@ namespace PK
         virtual void EndDebugScope() = 0;
     };
 
-    struct RHIQueueSet : public NoCopy, public NativeInterface<RHIQueueSet>
+    struct RHIQueueSet : public NoCopy
     {
         constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)QueueType::MaxCount;
 
@@ -192,7 +191,7 @@ namespace PK
         inline void Submit(QueueType type, RHICommandBuffer** cmd) { *cmd = Submit(type); }
     };
 
-    struct RHIDriver : public NoCopy, public NativeInterface<RHIDriver>
+    struct RHIDriver : public NoCopy
     {
         RHIDriver() { if (s_instance != nullptr) throw std::exception("Trying initialize multiple RHI drivers!"); s_instance = this; }
 

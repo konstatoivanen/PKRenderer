@@ -1,6 +1,5 @@
 #include "PrecompiledHeader.h"
 #include <filesystem>
-#include "Core/Utilities/Parse.h"
 #include "Core/Utilities/FileIOImage.h"
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
