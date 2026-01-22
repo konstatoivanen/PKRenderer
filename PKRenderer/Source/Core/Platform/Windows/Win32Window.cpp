@@ -849,6 +849,7 @@ namespace PK
             ::DragQueryFileW((HDROP)wParam, i, src, length + 1);
             wcstombs(dst, src, length);
             free(src);
+            paths[i] = dst;
         }
 
         Win32Driver::DispatchInputOnDrop(this, paths, count);

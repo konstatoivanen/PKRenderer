@@ -272,17 +272,12 @@ namespace PKAssets
         meta.optionNames = (char*)calloc(PK_ASSET_NAME_MAX_LENGTH * lineCount, sizeof(char));
         meta.optionValues = (uint32_t*)calloc(lineCount, sizeof(uint32_t));
 
-        if (meta.optionNames == nullptr)
+        if (meta.optionNames == nullptr || meta.optionValues == nullptr)
         {
             fclose(file);
             free(buffer);
-            return {};
-        }
-
-        if (meta.optionValues == nullptr)
-        {
-            fclose(file);
-            free(buffer);
+            free(meta.optionNames);
+            free(meta.optionValues);
             return {};
         }
 

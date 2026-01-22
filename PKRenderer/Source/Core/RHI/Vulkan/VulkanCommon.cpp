@@ -536,7 +536,7 @@ namespace PK
             vmaInvalidateAllocation(allocator, memory, offset, readsize);
         }
 
-        void* mappedRange;
+        void* mappedRange = nullptr;
 
         if (isPersistentMap)
         {

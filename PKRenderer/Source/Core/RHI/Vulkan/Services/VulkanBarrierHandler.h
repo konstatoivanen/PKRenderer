@@ -207,7 +207,7 @@ namespace PK
                         continue;
                     }
 
-                    uint64_t ranges[4];
+                    uint64_t ranges[4]{};
                     auto count = TInfo<T>::Splice((*current)->range, scope.range, ranges);
 
                     (*current)->range = ranges[0];

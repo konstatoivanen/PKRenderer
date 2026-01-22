@@ -236,7 +236,7 @@ namespace PKAssets
         }
     
         GenerateCodes(codes, lengths);
-
+    
         for (auto i = 0u; i < PK_ASSET_ENCODE_CODE_COUNT; ++i)
         {
             if (lengths[i] > 0)
