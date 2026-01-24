@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Utilities/FixedArena.h"
 #include "Core/Math/FunctionsIntersect.h"
 #include "Core/Math/FunctionsMisc.h"
 #include "Core/Math/FunctionsMatrix.h"
@@ -9,13 +10,7 @@
 
 namespace PK::App
 {
-    EngineEntityCull::EngineEntityCull(EntityDatabase* entityDb) :
-        m_entityDb(entityDb),
-        m_synchronousResults(1024, 0)
-    {
-    }
-
-    void EngineEntityCull::Step(RequestEntityCullFrustum* request)
+    void EngineEntityCull::Step(IArena* frameArena, RequestEntityCullFrustum* request)
     {
         auto cullingMask = request->mask;
         auto cullingPlanes = Math::ExtractFrustrumPlanes(request->matrix, true);
@@ -26,8 +21,7 @@ namespace PK::App
         auto cullingMaxDepth = 0.0f;
 
         auto entityViews = m_entityDb->Query<EntityViewScenePrimitive>((uint32_t)ENTITY_GROUPS::ACTIVE);
-
-        m_synchronousResults.Clear();
+        auto entityInfos = frameArena->GetHead<CulledEntityInfo>();
 
         for (auto i = 0u; i < entityViews.count; ++i)
         {
@@ -42,18 +36,18 @@ namespace PK::App
                     auto fixedDepth = glm::min(0xFFFFu, (uint32_t)glm::max(0.0f, depth * cullingInvRange));
                     cullingMinDepth = glm::min(cullingMinDepth, depth);
                     cullingMaxDepth = glm::max(cullingMaxDepth, depth);
-                    m_synchronousResults.Add(entityView->GID.entityID(), (uint16_t)fixedDepth, 0u);
+                    frameArena->Emplace<CulledEntityInfo>({ entityView->GID.entityID(), (uint16_t)fixedDepth, 0u });
                 }
             }
         }
 
-        request->outResults = { m_synchronousResults.data.GetData(), m_synchronousResults.count };
+        request->outResults = { entityInfos, frameArena->GetHeadDelta(entityInfos) };
         request->outMinDepth = cullingMinDepth;
         request->outMaxDepth = cullingMaxDepth;
         request->outDepthRange = cullingMaxDepth - cullingMinDepth;
     }
 
-    void EngineEntityCull::Step(RequestEntityCullCubeFaces* request)
+    void EngineEntityCull::Step(IArena* frameArena, RequestEntityCullCubeFaces* request)
     {
         const float3 cubePlaneNormals[] = { {-1,1,0}, {1,1,0}, {1,0,1}, {1,0,-1}, {0,1,1}, {0,-1,1} };
         const float3 cubePlaneNormalsAbs[] = { {1,1,0}, {1,1,0}, {1,0,1}, {1,0,1}, {0,1,1}, {0,1,1} };
@@ -68,8 +62,7 @@ namespace PK::App
         auto cullingMaxDepth = 0.0f;
 
         auto entityViews = m_entityDb->Query<EntityViewScenePrimitive>((uint32_t)ENTITY_GROUPS::ACTIVE);
-
-        m_synchronousResults.Clear();
+        auto entityInfos = frameArena->GetHead<CulledEntityInfo>();
 
         for (auto i = 0u; i < entityViews.count; ++i)
         {
@@ -117,7 +110,7 @@ namespace PK::App
                             {
                                 cullingMinDepth = glm::min(cullingMinDepth, depth);
                                 cullingMaxDepth = glm::max(cullingMaxDepth, depth);
-                                m_synchronousResults.Add(entityId, (uint16_t)fixedDepth, j);
+                                frameArena->Emplace<CulledEntityInfo>({ entityId, (uint16_t)fixedDepth, (uint16_t)j });
                             }
                         }
                     }
@@ -125,7 +118,7 @@ namespace PK::App
             }
         }
 
-        request->outResults = { m_synchronousResults.data.GetData(), m_synchronousResults.count };
+        request->outResults = { entityInfos, frameArena->GetHeadDelta(entityInfos) };
         request->outMinDepth = cullingMinDepth;
         request->outMaxDepth = cullingMaxDepth;
         request->outDepthRange = cullingMaxDepth - cullingMinDepth;
@@ -133,7 +126,7 @@ namespace PK::App
 
     // Near plane is unkwown & based on this cull step.
     // Far plane can be shifted forwards based on the results of this cull step.
-    void EngineEntityCull::Step(RequestEntityCullCascades* request)
+    void EngineEntityCull::Step(IArena* frameArena, RequestEntityCullCascades* request)
     {
         // Skip near plane eval
         const auto cullingCascadeTestPlaneCount = 5u;
@@ -163,8 +156,7 @@ namespace PK::App
         auto cullingMinDepth = cullingMaxDepth;
 
         auto entityViews = m_entityDb->Query<EntityViewScenePrimitive>((uint32_t)ENTITY_GROUPS::ACTIVE);
-
-        m_synchronousResults.Clear();
+        auto entityInfos = frameArena->GetHead<CulledEntityInfo>();
 
         for (auto i = 0u; i < entityViews.count; ++i)
         {
@@ -196,8 +188,7 @@ namespace PK::App
                         {
                             auto minDistLocal = Math::PlaneMinDistanceToAABB(cullingCascadePlanes[j].near, entityBounds);
                             cullingMinDepth = glm::min(cullingMinDepth, minDistLocal);
-                            // Need to do another loop to calculate this based on min-max.
-                            m_synchronousResults.Add(entityId, Math::PackHalf(minDistLocal), j);
+                            frameArena->Emplace<CulledEntityInfo>({ entityId, Math::PackHalf(minDistLocal), (uint16_t)j });
                         }
                     }
                 }
@@ -205,18 +196,19 @@ namespace PK::App
         }
 
         // In case of 0 results this will also output 0 which should be taken into account by users.
-        auto cullingRange = cullingMaxDepth - cullingMinDepth;
-        auto cullingInvRange = (float)(0xFFFF) / cullingRange;
+        const auto culledCount = frameArena->GetHeadDelta(entityInfos);
+        const auto cullingRange = cullingMaxDepth - cullingMinDepth;
+        const auto cullingInvRange = (float)(0xFFFF) / cullingRange;
 
-        for (auto i = 0u; i < m_synchronousResults.count; ++i)
+        for (auto i = 0u; i < culledCount; ++i)
         {
-            auto& info = m_synchronousResults.GetAt(i);
+            auto& info = entityInfos[i];
             auto nearOffset = Math::UnPackHalf(info.depth);
             auto fixedDepth = glm::min(0xFFFFu, (uint32_t)((nearOffset - cullingMinDepth) * cullingInvRange));
             info.depth = fixedDepth;
         }
 
-        request->outResults = { m_synchronousResults.data.GetData(), m_synchronousResults.count };
+        request->outResults = { entityInfos, culledCount };
         request->outMinDepth = cullingMinDepth;
         request->outMaxDepth = cullingMaxDepth;
         request->outDepthRange = cullingRange;

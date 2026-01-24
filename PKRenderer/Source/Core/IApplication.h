@@ -6,13 +6,13 @@
 #include "Core/CLI/CArguments.h"
 #include "Core/CLI/ILogger.h"
 #include "Core/ServiceRegister.h"
-#include "Core/Rendering/RenderingFwd.h"
 
 int main(int argc, char** argv);
 
 namespace PK
 {
     struct Window;
+    struct RHIDriver;
 
     extern struct IApplication* CreateProjectApplication(const CArguments& arguments);
     extern void FreeProjectApplication(IApplication* application);

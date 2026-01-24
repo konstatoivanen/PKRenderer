@@ -6,6 +6,7 @@
 #include "App/Renderer/EntityEnums.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct Sequencer)
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct IArena)
 
 namespace PK::App
 {
@@ -14,17 +15,6 @@ namespace PK::App
         uint32_t entityId;
         uint16_t depth;
         uint16_t clipId;
-    };
-
-    struct CulledEntityInfoList : public NoCopy
-    {
-        FastBuffer<CulledEntityInfo> data;
-        size_t count;
-        CulledEntityInfoList(size_t reserve, size_t count) : data(reserve), count(count) {}
-        void Add(uint32_t entityId, uint16_t depth, uint16_t clipId);
-        inline void Clear() { count = 0ull; }
-        inline const CulledEntityInfo& operator [] (size_t index) const { return data[index]; }
-        inline CulledEntityInfo& GetAt(size_t index) { return data[index]; }
     };
 
     struct RequestEntityCullResults
@@ -75,10 +65,12 @@ namespace PK::App
 
     struct EntityCullSequencerProxy
     {
+        IArena* frameArena;
         Sequencer* sequencer;
         void* sequencerRoot;
 
-        EntityCullSequencerProxy(Sequencer* sequencer, void* sequencerRoot) :
+        EntityCullSequencerProxy(IArena* frameArena, Sequencer* sequencer, void* sequencerRoot) :
+            frameArena(frameArena),
             sequencer(sequencer),
             sequencerRoot(sequencerRoot)
         {

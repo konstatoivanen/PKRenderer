@@ -155,9 +155,10 @@ namespace PK::App
             return;
         }
 
-        auto cullingProxy = EntityCullSequencerProxy(m_sequencer, this);
+        auto cullingProxy = EntityCullSequencerProxy(ctx->frameArena, m_sequencer, this);
 
         RenderPipelineContext context;
+        context.frameArena = ctx->frameArena;
         context.sequencer = m_sequencer;
         context.entityDb = m_entityDb;
         context.cullingProxy = &cullingProxy;

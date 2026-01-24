@@ -261,7 +261,7 @@ namespace PK
     void VulkanDriver::SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) { globalResources.Set(name, static_cast<VulkanBuffer*>(buffer)->GetBindHandle(range)); }
     void VulkanDriver::SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) { globalResources.Set(name, static_cast<VulkanTexture*>(texture)->GetBindHandle(range, TextureBindMode::SampledTexture)); }
     void VulkanDriver::SetBufferArray(NameID name, RHIBindArray<RHIBuffer>* bufferArray) { globalResources.Set(name, static_cast<const VulkanBindArray*>(bufferArray)); }
-    void VulkanDriver::SetTextureArray(NameID name, RHIBindArray<RHITexture>* textureArray) { globalResources.Set<const VulkanBindArray*>(name, static_cast<const VulkanBindArray*>(textureArray)); }
+    void VulkanDriver::SetTextureArray(NameID name, RHIBindArray<RHITexture>* textureArray) { globalResources.Set(name, static_cast<const VulkanBindArray*>(textureArray)); }
     void VulkanDriver::SetImage(NameID name, RHITexture* texture, const TextureViewRange& range) { globalResources.Set(name, static_cast<VulkanTexture*>(texture)->GetBindHandle(range, TextureBindMode::Image)); }
     void VulkanDriver::SetSampler(NameID name, const SamplerDescriptor& sampler) { globalResources.Set(name, samplerCache->GetBindHandle(sampler)); }
     void VulkanDriver::SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure) { globalResources.Set(name, static_cast<VulkanAccelerationStructure*>(structure)->GetBindHandle()); }

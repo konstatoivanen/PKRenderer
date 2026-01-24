@@ -135,9 +135,9 @@ namespace PK::App
                     renderPipelineScene,
                     {
                         Sequencer::Step::Create<RequestEntityCullRayTracingGeometry*>(engineGatherRayTracingGeometry),
-                        Sequencer::Step::Create<RequestEntityCullFrustum*>(engineEntityCull),
-                        Sequencer::Step::Create<RequestEntityCullCascades*>(engineEntityCull),
-                        Sequencer::Step::Create<RequestEntityCullCubeFaces*>(engineEntityCull),
+                        Sequencer::Step::Create<IArena*, RequestEntityCullFrustum*>(engineEntityCull),
+                        Sequencer::Step::Create<IArena*, RequestEntityCullCascades*>(engineEntityCull),
+                        Sequencer::Step::Create<IArena*, RequestEntityCullCubeFaces*>(engineEntityCull),
                         Sequencer::Step::Create<RenderPipelineEvent*>(engineGUIRenderer),
                         Sequencer::Step::Create<RenderPipelineEvent*>(engineDrawGeometry),
                     }
@@ -145,7 +145,7 @@ namespace PK::App
                 {
                     engineDrawGeometry,
                     {
-                        Sequencer::Step::Create<RequestEntityCullFrustum*>(engineEntityCull)
+                        Sequencer::Step::Create<IArena*, RequestEntityCullFrustum*>(engineEntityCull)
                     }
                 },
                 {
@@ -205,6 +205,9 @@ namespace PK::App
 
     void RendererApplication::Execute()
     {
+        // Move me out if running out of stack space
+        FixedArena<32768> frameArena;
+
         auto sequencer = GetService<Sequencer>();
 
         while (m_isRunning)
@@ -217,8 +220,11 @@ namespace PK::App
                 continue;
             }
 
+            frameArena.Clear();
+
             FrameContext ctx{};
             ctx.window = m_window.get();
+            ctx.frameArena = &frameArena;
 
             sequencer->NextRoot(FrameStep::Initialize(), &ctx);
 

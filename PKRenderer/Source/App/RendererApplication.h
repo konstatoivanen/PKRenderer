@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/IApplication.h"
+#include "Core/Rendering/RenderingFwd.h"
 
 namespace PK::App
 {

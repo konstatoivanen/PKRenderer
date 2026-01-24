@@ -33,7 +33,7 @@ namespace PK::App
                 RequestEntityCullFrustum cullRequest;
                 cullRequest.mask = ScenePrimitiveFlags::Mesh;
                 cullRequest.matrix = view->worldToClip;
-                m_sequencer->Next(this, &cullRequest);
+                m_sequencer->Next(this, renderEvent->context->frameArena, &cullRequest);
                 view->primaryPassGroup = 0xFFFFFFFF;
 
                 if (cullRequest.GetCount() > 0)

@@ -5,22 +5,12 @@
 
 namespace PK::App
 {
-    void CulledEntityInfoList::Add(uint32_t entityId, uint16_t depth, uint16_t clipId)
-    {
-        if (count + 1u >= data.GetCount())
-        {
-            data.Reserve(Hash::ExpandPrime(count + 1u));
-        }
-
-        data[count++] = { entityId, depth, clipId };
-    }
-
     RequestEntityCullResults EntityCullSequencerProxy::CullFrustum(ScenePrimitiveFlags mask, const float4x4& matrix)
     {
         RequestEntityCullFrustum request;
         request.mask = mask;
         request.matrix = matrix;
-        sequencer->Next(sequencerRoot, &request);
+        sequencer->Next(sequencerRoot, frameArena, &request);
         return request;
     }
 
@@ -29,7 +19,7 @@ namespace PK::App
         RequestEntityCullCubeFaces request;
         request.mask = mask;
         request.aabb = aabb;
-        sequencer->Next(sequencerRoot, &request);
+        sequencer->Next(sequencerRoot, frameArena, &request);
         return request;
     }
 
@@ -41,7 +31,7 @@ namespace PK::App
         request.viewForwardPlane = viewForwardPlane;
         request.viewZOffsets = viewZOffsets;
         request.count = count;
-        sequencer->Next(sequencerRoot, &request);
+        sequencer->Next(sequencerRoot, frameArena, &request);
         return request;
     }
 

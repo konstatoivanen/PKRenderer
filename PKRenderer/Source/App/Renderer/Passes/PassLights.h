@@ -36,8 +36,8 @@ namespace PK::App
 
             struct ViewResources
             {
-                FastBuffer<EntityViewLight*> lightViews;
-                std::vector<ShadowbatchInfo> shadowBatches;
+                BufferView<EntityViewLight*> lightViews;
+                BufferView<ShadowbatchInfo> shadowBatches;
                 RHIBufferRef  lightsLists;
                 RHITextureRef lightTiles;
                 RHITextureRef screenSpaceShadowmapDownsampled;

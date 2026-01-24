@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include <bend/bend_sss_cpu.h>
+#include "Core/Utilities/FixedArena.h"
 #include "Core/Math/FunctionsIntersect.h"
 #include "Core/Math/FunctionsMisc.h"
 #include "Core/ECS/EntityDatabase.h"
@@ -165,8 +166,9 @@ namespace PK::App
             hash->PK_LIGHT_PASS_POINT,
         };
 
-        for (const auto& batch : batches)
+        for (auto i = 0u; i < batches.count; ++i)
         {
+            const auto& batch = batches[i];
             auto& shadow = m_shadowTypeData[(int)batch.type];
             auto tileCount = shadow.TileCount * batch.count;
             auto keyword = passKeywords[(uint32_t)batch.type];
@@ -206,7 +208,7 @@ namespace PK::App
         auto resources = renderView->GetResources<ViewResources>();
         auto& batches = resources->shadowBatches;
 
-        if (batches.size() == 0u || batches.at(0).type != LightType::Directional)
+        if (batches.count == 0u || batches[0].type != LightType::Directional)
         {
             return;
         }
@@ -246,7 +248,7 @@ namespace PK::App
 
         // Bend screen space shadows.
         // https://www.bendstudio.com/blog/inside-bend-screen-space-shadows/
-        auto lightView = resources->lightViews[batches.at(0).baseLightIndex];
+        auto lightView = resources->lightViews[batches[0].baseLightIndex];
         auto lightDirection = lightView->transform->rotation * PK_FLOAT3_FORWARD;
         auto lightProjection = renderView->worldToClip * float4(-lightDirection, 0.0f);
         int viewMin[2] = { 0, 0 };
@@ -327,24 +329,25 @@ namespace PK::App
         uint matrixIndex = 0u;
         uint shadowCount = 0u;
 
-        resources->lightViews.Reserve(glm::max(1024ull, culledLights.GetCount()));
+        resources->lightViews = { context->frameArena->Allocate<EntityViewLight*>(lightCount), lightCount };
+        resources->shadowBatches = { context->frameArena->GetHead<ShadowbatchInfo>(), 0ull };
 
-        for (auto i = 0U; i < culledLights.GetCount(); ++i)
+        for (auto i = 0U; i < lightCount; ++i)
         {
             auto view = context->entityDb->Query<EntityViewLight>(EGID(culledLights[i].entityId, (uint)ENTITY_GROUPS::ACTIVE));
+            context->frameArena->Allocate<ShadowbatchInfo>((view->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0 ? 1u : 0u);
             matrixCount += m_shadowTypeData[(int)view->light->type].MatrixCount;
             resources->lightViews[i] = view;
         }
-
+    
         // Sort could be faster but whatever.
-        qsort(resources->lightViews.GetData(), lightCount, sizeof(EntityViewLight*), EntityViewLightPtrCompare);
+        qsort(resources->lightViews.data, lightCount, sizeof(EntityViewLight*), EntityViewLightPtrCompare);
 
-        resources->shadowBatches.clear();
         RHI::ValidateBuffer<LightPacked>(m_lightsBuffer, lightCount + 1);
         RHI::ValidateBuffer<float4x4>(m_lightMatricesBuffer, matrixCount);
 
         CommandBufferExt cmd = RHI::GetCommandBuffer(QueueType::Transfer);
-        auto lightsView = cmd.BeginBufferWrite<LightPacked>(m_lightsBuffer.get(), 0u, lightCount + 1);
+        auto lightsView = cmd.BeginBufferWrite<LightPacked>(m_lightsBuffer.get(), 0u, lightCount + 1u);
         auto matricesView = matrixCount > 0 ? cmd.BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : BufferView<float4x4>();
 
         auto clipToWorld = glm::inverse(renderView->worldToClip);
@@ -465,17 +468,17 @@ namespace PK::App
         auto& batches = context->views[0]->GetResources<ViewResources>()->shadowBatches;
         auto& shadow = m_shadowTypeData[(int)lightView->light->type];
 
-        if (batches.size() == 0 ||
-            batches.back().count >= shadow.MaxBatchSize ||
-            batches.back().type != lightView->light->type)
+        if (batches.count == 0 ||
+            batches[batches.count - 1u].count >= shadow.MaxBatchSize ||
+            batches[batches.count - 1u].type != lightView->light->type)
         {
-            auto& newBatch = batches.emplace_back();
+            auto& newBatch = batches[batches.count++];
             newBatch.batchGroup = context->batcher->BeginNewGroup();
             newBatch.type = lightView->light->type;
             newBatch.baseLightIndex = index;
         }
 
-        auto& batch = batches.back();
+        auto& batch = batches[batches.count - 1u];
 
         uint32_t shadowmapIndex = *outShadowCount;
         *outShadowCount += m_shadowTypeData[(int)lightView->light->type].TileCount;

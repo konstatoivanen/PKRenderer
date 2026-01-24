@@ -8,6 +8,7 @@
 #include "App/Renderer/RenderView.h"
 #include "App/FrameStep.h"
 
+PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct IArena)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct Sequencer)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
@@ -20,6 +21,7 @@ namespace PK::App
 
     struct RenderPipelineContext
     {
+        IArena* frameArena;
         Sequencer* sequencer;
         EntityDatabase* entityDb;
         struct EntityCullSequencerProxy* cullingProxy;

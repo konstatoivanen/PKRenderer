@@ -5,53 +5,70 @@
 
 namespace PK
 {
-    template<size_t capacity>
-    struct FixedArena : public NoCopy
+    struct IArena : public NoCopy
     {
-        FixedArena()
-        {
-        }
+        template<typename T>
+        T* GetHead() { return reinterpret_cast<T*>(GetAlignedHead(alignof(T))); }
+
+        template<typename T>
+        size_t GetHeadDelta(const T* element) const { return (size_t)(reinterpret_cast<const T*>(GetAlignedHead(alignof(T))) - element); }
 
         template<typename T>
         T* Allocate(size_t count)
         {
             static_assert(std::is_trivially_copyable_v<T>, "This container only supports trivially copyable types.");
-            
-            if (count == 0u)
-            {
-                return nullptr;
-            }
-
-            const auto headAligned = GetAlignedHead(alignof(T));
-            m_head = headAligned + sizeof(T) * count;
-            PK_CONTAINER_RANGE_CHECK(m_head, 0ull, capacity);
-            return reinterpret_cast<T*>(m_data + headAligned);
+            return count > 0ull ? reinterpret_cast<T*>(AllocateBlock(sizeof(T) * count, alignof(T))) : nullptr;
         }
 
         // Warning destructor must be manually called for retrieved pointer.
         template<typename T, typename ... Args>
         T* New(Args&& ... args)
         {
-            const auto headAligned = GetAlignedHead(alignof(T));
-            m_head = headAligned + sizeof(T);
-            PK_CONTAINER_RANGE_CHECK(m_head, 0ull, capacity);
-            auto ptr = reinterpret_cast<T*>(m_data + headAligned);
+            auto ptr = reinterpret_cast<T*>(AllocateBlock(sizeof(T), alignof(T)));
             new(ptr) T(std::forward<Args>(args)...);
             return ptr;
         }
 
-        void Clear() 
+        template<typename T>
+        T* Emplace(T&& element)
+        {
+            return New<T>(std::forward<T>(element));
+        }
+
+        virtual uint64_t GetAlignedHead(size_t alignment) const = 0;
+        virtual uint64_t GetRelativeHead(size_t alignment) const = 0;
+        virtual void* AllocateBlock(size_t size, size_t alignment) = 0;
+        virtual void Clear() = 0;
+        virtual void ClearFast() = 0;
+     };
+
+    template<size_t capacity>
+    struct FixedArena : public IArena
+    {
+        FixedArena()
+        {
+        }
+
+        uint64_t GetAlignedHead(size_t alignment) const final { return ((reinterpret_cast<uint64_t>(m_data + m_head) + alignment - 1ull) & ~(alignment - 1ull)); }
+        uint64_t GetRelativeHead(size_t alignment) const final { return GetAlignedHead(alignment) - reinterpret_cast<uint64_t>(m_data); }
+
+        void* AllocateBlock(size_t size, size_t alignment) final
+        {
+            auto relativeHead = GetRelativeHead(alignment);
+            m_head = relativeHead + size;
+            PK_CONTAINER_RANGE_CHECK(m_head, 0ull, capacity);
+            return m_data + relativeHead;
+        }
+
+        void Clear() final
         { 
             m_head = 0ull;
             memset(m_data, 0, sizeof(char) * capacity); 
         }
 
-    private:
-        size_t GetAlignedHead(size_t alignment) 
+        void ClearFast() final
         {
-            const auto headAddress = reinterpret_cast<uint64_t>(m_data + m_head);
-            const auto headAligned = ((headAddress + alignment - 1ull) & ~(alignment - 1ull)) - reinterpret_cast<uint64_t>(m_data);
-            return headAligned;
+            m_head = 0ull;
         }
 
         char m_data[capacity]{};
