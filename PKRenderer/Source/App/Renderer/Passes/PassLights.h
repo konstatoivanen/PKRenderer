@@ -46,10 +46,10 @@ namespace PK::App
 
             PassLights(AssetDatabase* assetDatabase);
             void SetViewConstants(RenderView* view);
+            void BuildLights(RenderPipelineContext* context);
             void RenderShadows(CommandBufferExt cmd, RenderPipelineContext* context);
             void RenderScreenSpaceShadows(CommandBufferExt cmd, RenderPipelineContext* context);
             void ComputeClusters(CommandBufferExt cmd, RenderPipelineContext* context);
-            void BuildLights(RenderPipelineContext* context);
 
         private:
             struct ShadowTypeData
@@ -59,12 +59,6 @@ namespace PK::App
                 uint32_t MaxBatchSize = 0u;
                 uint32_t LayerStride = 0u;
             };
-
-            uint32_t BuildShadowBatch(RenderPipelineContext* context,
-                                      const RequestEntityCullResults& shadowCasters,
-                                      EntityViewLight* lightView, 
-                                      uint32_t index, 
-                                      uint32_t* outShadowCount);
 
             ShaderAsset* m_computeLightAssignment = nullptr;
             ShaderAsset* m_computeCopyCubeShadow = nullptr;

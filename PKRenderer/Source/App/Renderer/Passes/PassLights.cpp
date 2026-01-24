@@ -39,31 +39,9 @@ namespace PK::App
     {
         auto lightA = *reinterpret_cast<EntityViewLight* const*>(a);
         auto lightB = *reinterpret_cast<EntityViewLight* const*>(b);
-
-        auto shadowsA = (lightA->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0;
-        auto shadowsB = (lightB->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0;
-
-        if (shadowsA < shadowsB)
-        {
-            return 1;
-        }
-
-        if (shadowsA > shadowsB)
-        {
-            return -1;
-        }
-
-        if (lightA->light->type < lightB->light->type)
-        {
-            return -1;
-        }
-
-        if (lightA->light->type > lightB->light->type)
-        {
-            return 1;
-        }
-
-        return 0;
+        auto keyA = (int32_t)lightA->light->type | ((int32_t)((lightA->primitive->flags & ScenePrimitiveFlags::CastShadows) == 0) << 4);
+        auto keyB = (int32_t)lightB->light->type | ((int32_t)((lightB->primitive->flags & ScenePrimitiveFlags::CastShadows) == 0) << 4);
+        return keyA - keyB;
     }
 
     PassLights::PassLights(AssetDatabase* assetDatabase) 
@@ -148,6 +126,173 @@ namespace PK::App
         const auto shadowCascadeZSplits = Math::GetCascadeDepthsFloat4(view->znear, view->zfar, m_cascadeDistribution, tileZParams);
         view->constants->Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
         view->constants->Set<float4>(hash->pk_LightTileZParams, float4(tileZParams, 0.0f));
+    }
+
+    void PassLights::BuildLights(RenderPipelineContext* context)
+    {
+        auto renderView = context->views[0];
+        auto resources = renderView->GetResources<ViewResources>();
+        auto culledLights = context->cullingProxy->CullFrustum(ScenePrimitiveFlags::Light, renderView->worldToClip);
+
+        if (culledLights.GetCount() == 0)
+        {
+            return;
+        }
+
+        const auto clipToWorld = glm::inverse(renderView->worldToClip);
+        const auto tileZParams = Math::GetExponentialZParams(renderView->znear, renderView->zfar, m_tileZDistribution, LightGridSizeZ);
+        const auto shadowCasterMask = ScenePrimitiveFlags::Mesh | ScenePrimitiveFlags::CastShadows;
+        const auto lightCount = (uint)culledLights.GetCount();
+        auto matrixCount = 0u;
+        auto matrixIndex = 0u;
+        auto shadowCount = 0u;
+
+        ShadowCascades cascadeZSplits;
+        Math::GetCascadeDepths(renderView->znear, renderView->zfar, m_cascadeDistribution, cascadeZSplits.data(), tileZParams, 5);
+
+        resources->lightViews = { context->frameArena->Allocate<EntityViewLight*>(lightCount), lightCount };
+        resources->shadowBatches = { context->frameArena->GetHead<ShadowbatchInfo>(), 0ull };
+
+        for (auto i = 0U; i < lightCount; ++i)
+        {
+            auto view = context->entityDb->Query<EntityViewLight>(EGID(culledLights[i].entityId, (uint)ENTITY_GROUPS::ACTIVE));
+            context->frameArena->Allocate<ShadowbatchInfo>((view->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0 ? 1u : 0u);
+            matrixCount += m_shadowTypeData[(int)view->light->type].MatrixCount;
+            resources->lightViews[i] = view;
+        }
+    
+        // Sort could be faster but whatever.
+        qsort(resources->lightViews.data, lightCount, sizeof(EntityViewLight*), EntityViewLightPtrCompare);
+
+        RHI::ValidateBuffer<LightPacked>(m_lightsBuffer, lightCount + 1u);
+        RHI::ValidateBuffer<float4x4>(m_lightMatricesBuffer, matrixCount);
+
+        CommandBufferExt cmd = RHI::GetCommandBuffer(QueueType::Transfer);
+        auto lightsView = cmd.BeginBufferWrite<LightPacked>(m_lightsBuffer.get(), 0u, lightCount + 1u);
+        auto matricesView = matrixCount > 0u ? cmd.BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : BufferView<float4x4>();
+
+        for (auto lightIndex = 0u; lightIndex < lightCount; ++lightIndex)
+        {
+            auto view = resources->lightViews[lightIndex];
+            const auto& transform = view->transform;
+            const auto& worldToLocal = transform->worldToLocal;
+            const auto& shadowTypeInfo = m_shadowTypeData[(uint32_t)view->light->type];
+            const auto castShadows = (view->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0;
+            auto& light = lightsView[lightIndex];
+            auto* matrices = matricesView.data + matrixIndex;
+            light.indexShadow = 0xFFFFu;
+            light.indexMatrix = matrixIndex;
+            light.color = view->light->color;
+            light.cookie = (ushort)view->light->cookie;
+            light.type = (ushort)view->light->type;
+            light.position = transform->position;
+            light.radius = view->light->radius;
+            light.angle = view->light->angle * PK_FLOAT_DEG2RAD;
+            light.sourceRadius = view->light->sourceRadius;
+            light.direction = Math::OctaEncodeUint(transform->rotation * PK_FLOAT3_FORWARD);
+            matrixIndex += shadowTypeInfo.MatrixCount;
+
+            RequestEntityCullResults shadowCasters{};
+            ShadowCascadeCreateInfo cascadeInfo{};
+
+            if (view->light->type == LightType::Directional)
+            {
+                cascadeInfo.worldToLocal = worldToLocal;
+                cascadeInfo.clipToWorld = clipToWorld;
+                cascadeInfo.nearPlaneOffset = 1.0f;
+                cascadeInfo.padding = renderView->znear;
+                cascadeInfo.splitPlanes = cascadeZSplits.data();
+                cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
+                cascadeInfo.count = ShadowCascadeCount;
+                Math::GetShadowCascadeMatrices(cascadeInfo, matrices);
+            }
+
+            if (view->light->type == LightType::Spot)
+            {
+                *matrices = Math::GetPerspective(view->light->angle, 1.0f, 0.1f, view->light->radius) * worldToLocal;
+            }
+
+            if (castShadows && view->light->type == LightType::Directional)
+            {
+                // Regenerate cascades as the depth range might change based on culling. 
+                shadowCasters = context->cullingProxy->CullCascades(shadowCasterMask, matrices, renderView->forwardPlane, cascadeZSplits.data(), ShadowCascadeCount);
+                cascadeInfo.nearPlaneOffset = shadowCasters.outMinDepth;
+                Math::GetShadowCascadeMatrices(cascadeInfo, matrices);
+            }
+
+            if (castShadows && view->light->type == LightType::Spot)
+            {
+                shadowCasters = context->cullingProxy->CullFrustum(shadowCasterMask, *matrices);
+            }
+
+            if (castShadows && view->light->type == LightType::Point)
+            {
+                shadowCasters = context->cullingProxy->CullCubeFaces(shadowCasterMask, view->bounds->worldAABB);
+            }
+
+            if (view->light->type == LightType::Directional)
+            {
+                const auto nearPlane = Math::GetNearPlane(*matrices);
+                light.position = float3(nearPlane.xyz);
+                light.radius = nearPlane.w;
+            }
+
+            if (shadowCasters.GetCount() > 0u)
+            {
+                light.indexShadow = shadowCount;
+                shadowCount += shadowTypeInfo.TileCount;
+                auto& batches = resources->shadowBatches;
+
+                if (!batches.count || batches[batches.count - 1u].count >= shadowTypeInfo.MaxBatchSize || batches[batches.count - 1u].type != view->light->type)
+                {
+                    auto& newBatch = batches[batches.count++];
+                    newBatch.batchGroup = context->batcher->BeginNewGroup();
+                    newBatch.type = view->light->type;
+                    newBatch.baseLightIndex = lightIndex;
+                }
+
+                const auto layerOffset = batches[batches.count - 1u].count * shadowTypeInfo.LayerStride;
+                batches[batches.count - 1u].count++;
+
+                for (auto casterIndex = 0u; casterIndex < shadowCasters.GetCount(); ++casterIndex)
+                {
+                    const auto& info = shadowCasters[casterIndex];
+                    auto entity = context->entityDb->Query<EntityViewMeshStatic>(EGID(info.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
+                    auto transform = entity->transform;
+                    auto mesh = entity->staticMesh->sharedMesh;
+                    auto userdata = (lightIndex & 0xFFFFu) | ((layerOffset + info.clipId) << 16u);
+
+                    for (auto& kv : entity->materials->materials)
+                    {
+                        if (kv->material->GetShaderShadow())
+                        {
+                            context->batcher->SubmitMeshStaticDraw(transform, kv->material->GetShaderShadow(), nullptr, mesh, kv->submesh, userdata, info.depth);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Empty last one for clustering
+        lightsView[lightCount] = LightPacked();
+
+        cmd->EndBufferWrite(m_lightsBuffer.get());
+
+        if (matrixCount > 0)
+        {
+            cmd->EndBufferWrite(m_lightMatricesBuffer.get());
+        }
+
+        if (m_shadowmaps->GetLayers() < shadowCount + ShadowCascadeCount)
+        {
+            RHI::ValidateTexture(m_shadowmaps, 1u, shadowCount + ShadowCascadeCount);
+        }
+
+        auto hash = HashCache::Get();
+        RHI::SetConstant<uint32_t>(hash->pk_LightCount, lightCount);
+        RHI::SetBuffer(hash->pk_Lights, m_lightsBuffer.get());
+        RHI::SetBuffer(hash->pk_LightMatrices, m_lightMatricesBuffer.get());
+        RHI::SetTexture(hash->pk_ShadowmapAtlas, m_shadowmaps.get());
     }
 
     void PassLights::RenderShadows(CommandBufferExt cmd, RenderPipelineContext* context)
@@ -311,197 +456,5 @@ namespace PK::App
         }
 
         cmd.DispatchWithCounter(m_computeLightAssignment, resolution);
-    }
-
-    void PassLights::BuildLights(RenderPipelineContext* context)
-    {
-        auto renderView = context->views[0];
-        auto resources = renderView->GetResources<ViewResources>();
-        auto culledLights = context->cullingProxy->CullFrustum(ScenePrimitiveFlags::Light, renderView->worldToClip);
-
-        if (culledLights.GetCount() == 0)
-        {
-            return;
-        }
-
-        uint lightCount = (uint)culledLights.GetCount();
-        uint matrixCount = 0u;
-        uint matrixIndex = 0u;
-        uint shadowCount = 0u;
-
-        resources->lightViews = { context->frameArena->Allocate<EntityViewLight*>(lightCount), lightCount };
-        resources->shadowBatches = { context->frameArena->GetHead<ShadowbatchInfo>(), 0ull };
-
-        for (auto i = 0U; i < lightCount; ++i)
-        {
-            auto view = context->entityDb->Query<EntityViewLight>(EGID(culledLights[i].entityId, (uint)ENTITY_GROUPS::ACTIVE));
-            context->frameArena->Allocate<ShadowbatchInfo>((view->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0 ? 1u : 0u);
-            matrixCount += m_shadowTypeData[(int)view->light->type].MatrixCount;
-            resources->lightViews[i] = view;
-        }
-    
-        // Sort could be faster but whatever.
-        qsort(resources->lightViews.data, lightCount, sizeof(EntityViewLight*), EntityViewLightPtrCompare);
-
-        RHI::ValidateBuffer<LightPacked>(m_lightsBuffer, lightCount + 1);
-        RHI::ValidateBuffer<float4x4>(m_lightMatricesBuffer, matrixCount);
-
-        CommandBufferExt cmd = RHI::GetCommandBuffer(QueueType::Transfer);
-        auto lightsView = cmd.BeginBufferWrite<LightPacked>(m_lightsBuffer.get(), 0u, lightCount + 1u);
-        auto matricesView = matrixCount > 0 ? cmd.BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : BufferView<float4x4>();
-
-        auto clipToWorld = glm::inverse(renderView->worldToClip);
-        auto tileZParams = Math::GetExponentialZParams(renderView->znear, renderView->zfar, m_tileZDistribution, LightGridSizeZ);
-        
-        ShadowCascades cascadeZSplits;
-        Math::GetCascadeDepths(renderView->znear, renderView->zfar, m_cascadeDistribution, cascadeZSplits.data(), tileZParams, 5);
-
-        auto shadowCasterMask = ScenePrimitiveFlags::Mesh | ScenePrimitiveFlags::CastShadows;
-
-        for (auto i = 0u; i < lightCount; ++i)
-        {
-            auto& view = resources->lightViews[i];
-            auto& light = lightsView[i];
-            auto& transform = view->transform;
-            auto& worldToLocal = transform->worldToLocal;
-            light.indexShadow = 0xFFFFu;
-            light.indexMatrix = matrixIndex;
-            light.color = view->light->color;
-            light.cookie = (ushort)view->light->cookie;
-            light.type = (ushort)view->light->type;
-            light.position = transform->position;
-            light.radius = view->light->radius;
-            light.angle = view->light->angle * PK_FLOAT_DEG2RAD;
-            light.sourceRadius = view->light->sourceRadius;
-            light.direction = 0u;
-
-            auto castShadows = (view->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0;
-
-            switch (view->light->type)
-            {
-                case LightType::Directional:
-                {
-                    ShadowCascadeCreateInfo cascadeInfo{};
-                    cascadeInfo.worldToLocal = worldToLocal;
-                    cascadeInfo.clipToWorld = clipToWorld;
-                    cascadeInfo.nearPlaneOffset = 1.0f;
-                    cascadeInfo.padding = renderView->znear;
-                    cascadeInfo.splitPlanes = cascadeZSplits.data();
-                    cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
-                    cascadeInfo.count = ShadowCascadeCount;
-                    Math::GetShadowCascadeMatrices(cascadeInfo, matricesView.data + matrixIndex);
-
-                    if (castShadows)
-                    {
-                        auto shadowCasters = context->cullingProxy->CullCascades(shadowCasterMask, matricesView.data + matrixIndex, renderView->forwardPlane, cascadeZSplits.data(), ShadowCascadeCount);
-                        light.indexShadow = BuildShadowBatch(context, shadowCasters, view, i, &shadowCount);
-
-                        // Regenerate cascades as the depth range might change based on culling. 
-                        cascadeInfo.nearPlaneOffset = shadowCasters.outMinDepth;
-                        Math::GetShadowCascadeMatrices(cascadeInfo, matricesView.data + matrixIndex);
-                    }
-
-                    const auto nearPlane = Math::GetNearPlane(matricesView.data[matrixIndex]);
-                    light.position = float3(nearPlane.xyz);
-                    light.radius = nearPlane.w;
-                }
-                break;
-
-                case LightType::Spot:
-                {
-                    matricesView[matrixIndex] = Math::GetPerspective(view->light->angle, 1.0f, 0.1f, view->light->radius) * worldToLocal;
-                    light.direction = Math::OctaEncodeUint(transform->rotation * PK_FLOAT3_FORWARD);
-
-                    if (castShadows)
-                    {
-                        auto shadowCasters = context->cullingProxy->CullFrustum(shadowCasterMask, matricesView[matrixIndex]);
-                        light.indexShadow = BuildShadowBatch(context, shadowCasters, view, i, &shadowCount);
-                    }
-                }
-                break;
-
-                case LightType::Point:
-                {
-                    if (castShadows)
-                    {
-                        auto shadowCasters = context->cullingProxy->CullCubeFaces(shadowCasterMask, view->bounds->worldAABB);
-                        light.indexShadow = BuildShadowBatch(context, shadowCasters, view, i, &shadowCount);
-                    }
-                }
-                break;
-
-                default: PK_THROW_ERROR("Invalid light type");
-            }
-
-            matrixIndex += m_shadowTypeData[(uint32_t)view->light->type].MatrixCount;
-        }
-
-        // Empty last one for clustering
-        lightsView[lightCount] = LightPacked();
-
-        cmd->EndBufferWrite(m_lightsBuffer.get());
-
-        if (matrixCount > 0)
-        {
-            cmd->EndBufferWrite(m_lightMatricesBuffer.get());
-        }
-
-        if (m_shadowmaps->GetLayers() < shadowCount + ShadowCascadeCount)
-        {
-            RHI::ValidateTexture(m_shadowmaps, 1u, shadowCount + ShadowCascadeCount);
-        }
-
-        auto hash = HashCache::Get();
-        RHI::SetConstant<uint32_t>(hash->pk_LightCount, lightCount);
-        RHI::SetBuffer(hash->pk_Lights, m_lightsBuffer.get());
-        RHI::SetBuffer(hash->pk_LightMatrices, m_lightMatricesBuffer.get());
-        RHI::SetTexture(hash->pk_ShadowmapAtlas, m_shadowmaps.get());
-    }
-
-    uint32_t PassLights::BuildShadowBatch(RenderPipelineContext* context, const RequestEntityCullResults& shadowCasters, EntityViewLight* lightView, uint32_t index, uint32_t* outShadowCount)
-    {
-        if (shadowCasters.GetCount() == 0)
-        {
-            return 0xFFFFu;
-        }
-
-        auto& batches = context->views[0]->GetResources<ViewResources>()->shadowBatches;
-        auto& shadow = m_shadowTypeData[(int)lightView->light->type];
-
-        if (batches.count == 0 ||
-            batches[batches.count - 1u].count >= shadow.MaxBatchSize ||
-            batches[batches.count - 1u].type != lightView->light->type)
-        {
-            auto& newBatch = batches[batches.count++];
-            newBatch.batchGroup = context->batcher->BeginNewGroup();
-            newBatch.type = lightView->light->type;
-            newBatch.baseLightIndex = index;
-        }
-
-        auto& batch = batches[batches.count - 1u];
-
-        uint32_t shadowmapIndex = *outShadowCount;
-        *outShadowCount += m_shadowTypeData[(int)lightView->light->type].TileCount;
-
-        for (auto i = 0u; i < shadowCasters.GetCount(); ++i)
-        {
-            auto& info = shadowCasters[i];
-            auto entity = context->entityDb->Query<EntityViewMeshStatic>(EGID(info.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
-
-            for (auto& kv : entity->materials->materials)
-            {
-                auto transform = entity->transform;
-                auto shader = kv->material->GetShaderShadow();
-
-                if (shader != nullptr)
-                {
-                    auto layerOffset = batch.count * shadow.LayerStride + info.clipId;
-                    context->batcher->SubmitMeshStaticDraw(transform, shader, nullptr, entity->staticMesh->sharedMesh, kv->submesh, (index & 0xFFFF) | (layerOffset << 16), info.depth);
-                }
-            }
-        }
-
-        batch.count++;
-        return shadowmapIndex;
     }
 }

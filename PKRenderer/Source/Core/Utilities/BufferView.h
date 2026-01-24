@@ -6,7 +6,6 @@ namespace PK
     {
         T* data = nullptr;
         size_t count = 0;
-    
         T& operator[](size_t);
     };
     
@@ -26,10 +25,8 @@ namespace PK
     {
         const T* data = nullptr;
         size_t count = 0;
-
         constexpr ConstBufferView() = default;
         constexpr ConstBufferView(const T* data, size_t count) : data(data), count(count) {}
-
         const T& operator[](size_t);
     };
 
@@ -44,7 +41,6 @@ namespace PK
         return data[index];
     }
 
-
     template<typename T>
     struct InterleavedBufferView
     {
@@ -52,7 +48,6 @@ namespace PK
         size_t count = 0;
         size_t stride = 0;
         size_t offset = 0;
-
         const T& operator[](size_t);
     };
 
