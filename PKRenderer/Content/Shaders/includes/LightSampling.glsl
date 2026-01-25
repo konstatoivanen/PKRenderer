@@ -25,6 +25,11 @@ float Lights_FalloffAttenuation(float dist, float radius)
     return pow2(saturate(1.0f - pow4(dist/radius))) / (pow2(dist) + 1.0f); 
 }
 
+float Lights_ConeAttenuation(float3 L, float3 D, float2 A)
+{
+    return pow2(saturate((dot(L, -D) - A.x) * A.y));
+}
+
 float3 Lights_GetClipUvw(const float3 world_pos, const uint matrix_index)
 {
     const float4 coord = PK_BUFFER_DATA(pk_LightMatrices, matrix_index) * float4(world_pos, 1.0f);
@@ -44,101 +49,84 @@ float4 Lights_GetClipUvMinMax(const float3 world_pos, const float3 shadow_bias, 
 SceneLightSample Lights_SampleAt(const uint index, float3 world_pos, const float3 shadow_bias, const uint cascade)
 {
     const SceneLight light = Lights_LoadLight(index);
-
+    
+    const float3 light_forward = Quat_MultiplyVector(light.rotation, float3(0,0,1));
+    const float4 L = NormalizeLength(light.position - world_pos);
+    
     uint index_shadow = light.index_shadow;
     uint index_matrix = light.index_matrix; 
     float source_radius = light.source_radius;
-    float3 color = light.color;
-    float shadow = 1.0f;
+    float3 radiance = light.color;
 
-    float3 coord;
-    float3 pos_to_light; 
-    float shadow_distance;
+    // Default assumption directional light.
+    float3 pos_to_light = 0.0f.xxx; 
+    float4 shadow_uv_min_max = 0.0f.xxxx;
+    float shadow_distance = 0.0f;
     float linear_distance = 0.0f; 
 
-    #if SHADOW_SAMPLE_VOLUMETRICS == 1
-    float4 shadow_uv_min_max;
-    #endif
-
     [[branch]]
-    switch (light.light_type)
+    if (light.light_type == LIGHT_TYPE_DIRECTIONAL)
     {
-        case LIGHT_TYPE_DIRECTIONAL:
-        {
-            index_matrix += cascade;
-            index_shadow += cascade;
-            pos_to_light = -light.position;
-            
-            #if SHADOW_SAMPLE_VOLUMETRICS == 0
-            const float2 biasFactors = Shadow_GetBiasFactors(shadow_bias, pos_to_light);
-            world_pos += biasFactors.x * shadow_bias * SHADOW_NEAR_BIAS * (1.0f + cascade);
-            world_pos += biasFactors.y * pos_to_light * SHADOW_NEAR_BIAS * (1.0f + cascade);
-            #endif
+        pos_to_light = -light.position;
+        index_matrix += cascade;
+        index_shadow += cascade;
 
-            coord = Lights_GetClipUvw(world_pos, index_matrix);
-            shadow_distance = dot(light.position, world_pos) + light.radius;
-                
-            #if SHADOW_SAMPLE_VOLUMETRICS == 1
-            linear_distance = 1e+4f;
-            shadow_uv_min_max = Lights_GetClipUvMinMax(world_pos, shadow_bias, index_matrix);
-            #endif
-        }
-        break;
-        case LIGHT_TYPE_SPOT:
-        {
-            const float4 L = normalizeLength(light.position - world_pos);
-            color *= Lights_FalloffAttenuation(L.w, light.radius);
-            source_radius /= L.w;
-            pos_to_light = L.xyz;
-            shadow_distance = L.w - SHADOW_NEAR_BIAS;
-            coord = Lights_GetClipUvw(world_pos, index_matrix);
-            color *= step(0.0f, coord.z);
-            color *= texture(pk_LightCookies, float3(coord.xy, light.index_mask)).r;
+        #if SHADOW_SAMPLE_VOLUMETRICS == 0
+        const float2 biasFactors = Shadow_GetBiasFactors(shadow_bias, pos_to_light);
+        world_pos += biasFactors.x * shadow_bias * SHADOW_NEAR_BIAS * (1.0f + cascade);
+        world_pos += biasFactors.y * pos_to_light * SHADOW_NEAR_BIAS * (1.0f + cascade);
+        #endif
 
-            #if SHADOW_SAMPLE_VOLUMETRICS == 1
-            linear_distance = L.w;
-            shadow_uv_min_max = Lights_GetClipUvMinMax(world_pos, shadow_bias, index_matrix);
-            #endif
-        }
-        break;
-        case LIGHT_TYPE_POINT:
-        {
-            const float4 L = normalizeLength(light.position - world_pos);
-            color *= Lights_FalloffAttenuation(L.w, light.radius);
-            coord.xy = EncodeOctaUv(-L.xyz);
-            source_radius /= L.w;
-            shadow_distance = L.w - SHADOW_NEAR_BIAS;
-            pos_to_light = L.xyz;
-            
-            #if SHADOW_SAMPLE_VOLUMETRICS == 1
-            linear_distance = L.w;
-            //@TODO add support for uv range
-            shadow_uv_min_max = coord.xyxy;
-            #endif
-        }
-        break;
-    }
-
-    // First Directional light has a screen space shadows.
-#if defined(SHADER_STAGE_FRAGMENT) && SHADOW_SAMPLE_SCREENSPACE == 1
-    [[branch]]
-    if ((light.light_type) == LIGHT_TYPE_DIRECTIONAL && index_shadow == 0u)
-    {
-        shadow *= texelFetch(pk_ShadowmapScreenSpace, int2(gl_FragCoord.xy), 0).r;
+        shadow_distance = dot(light.position, world_pos) + light.radius;
+        linear_distance = 1e+4f;
     }
     else
-#endif
-    [[branch]]
-    if (index_shadow < LIGHT_PARAM_INVALID)
     {
+        radiance *= Lights_FalloffAttenuation(L.w, light.radius);
+        radiance *= Lights_ConeAttenuation(L.xyz, light_forward, light.spot_angles);
+        source_radius /= L.w;
+        shadow_distance = L.w - SHADOW_NEAR_BIAS;
+        pos_to_light = L.xyz;
+        linear_distance = L.w;
+    }
+
+    [[branch]]
+    if (light.light_type == LIGHT_TYPE_POINT)
+    {
+        //@TODO add support for uv range
+        shadow_uv_min_max = EncodeOctaUv(-L.xyz).xyxy;
+    }
+    else
+    {
+        shadow_uv_min_max = Lights_GetClipUvw(world_pos, index_matrix).xyxy;
         #if SHADOW_SAMPLE_VOLUMETRICS == 1
-            shadow = ShadowTest_Volumetrics4(index_shadow, shadow_uv_min_max, shadow_distance);
-        #else
-            shadow *= SHADOW_TEST(index_shadow, coord.xy, shadow_distance);
+        shadow_uv_min_max = Lights_GetClipUvMinMax(world_pos, shadow_bias, index_matrix);
         #endif
     }
 
-    return SceneLightSample(color, shadow, pos_to_light, linear_distance, source_radius);
+    float shadow = 1.0f;
+    {
+        // First Directional light has a screen space shadows.
+        #if defined(SHADER_STAGE_FRAGMENT) && SHADOW_SAMPLE_SCREENSPACE == 1
+        [[branch]]
+        if ((light.light_type) == LIGHT_TYPE_DIRECTIONAL && light.index_shadow == 0u)
+        {
+            shadow *= texelFetch(pk_ShadowmapScreenSpace, int2(gl_FragCoord.xy), 0).r;
+        }
+        else
+        #endif
+        [[branch]]
+        if (index_shadow < LIGHT_PARAM_INVALID)
+        {
+            #if SHADOW_SAMPLE_VOLUMETRICS == 1
+                shadow = ShadowTest_Volumetrics4(index_shadow, shadow_uv_min_max, shadow_distance);
+            #else
+                shadow *= SHADOW_TEST(index_shadow, shadow_uv_min_max.xy, shadow_distance);
+            #endif
+        }
+    }
+    
+    return SceneLightSample(radiance, pos_to_light, shadow, linear_distance, source_radius);
 }
 
 SceneLightSample Lights_SampleTiled(const uint index, const float3 world_pos, const float3 shadow_bias, const uint cascade) 

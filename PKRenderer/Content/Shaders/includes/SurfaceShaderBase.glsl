@@ -12,6 +12,8 @@
 #endif
 
 #include "Common.glsl"
+#include "Meshlets.glsl"
+
 #if !defined(SHADER_STAGE_MESH_TASK)
 #include "GBuffers.glsl"
 #include "BRDF.glsl"
@@ -19,7 +21,6 @@
 #include "SceneEnv.glsl"
 #include "SceneGIVX.glsl"
 #endif
-#include "Meshlets.glsl"
 
 // Meta pass specific parameters (gi voxelization requires some changes from reqular view projection).
 #define SRC_METALLIC x
@@ -396,7 +397,7 @@ struct SurfaceData
             for (uint i = tile.start; i < tile.end; ++i)
             {
                 SceneLightSample light = Lights_SampleTiled(i, surf.world_pos, surf.normal, tile.cascade);
-                sv_output0.rgb += SURF_EVALUATE_BxDF(bxdf_surf, light.direction, light.color, light.shadow, light.source_radius);
+                sv_output0.rgb += SURF_EVALUATE_BxDF(bxdf_surf, light.Lv, light.Rv, light.shadow, light.source_radius);
             }
 
             sv_output0.rgb += surf.emission;

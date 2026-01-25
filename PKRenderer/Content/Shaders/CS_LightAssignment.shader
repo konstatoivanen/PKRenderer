@@ -17,17 +17,17 @@
 #include "includes/LightResources.glsl"
 #include "includes/Encoding.glsl"
 
-PK_DECLARE_LOCAL_CBUFFER(pk_LightCount)
+PK_DECLARE_LOCAL_CBUFFER(pk_LastLightIndex)
 {
-    uint LightCount;
+    uint LastLightIndex;
 };
 
 struct SharedLight
 {
     float3 position;
-    float3 direction;
     float radius;
-    float angle;
+    float3 direction;
+    float cosAngle;
     uint type;
 };
 
@@ -55,14 +55,14 @@ bool IntersectSpotLight(uint lightIndex)
 {
     SharedLight light = lds_Lights[lightIndex];
 
-    float3 V = current_cell.center - light.position;
-    float  VlenSq = dot(V, V);
-    float  V1len = dot(V, light.direction);
-    float  closest_dist = cos(light.angle * 0.5f) * sqrt(VlenSq - V1len * V1len) - V1len * sin(light.angle * 0.5f);
+    const float3 to_cell = current_cell.center - light.position;
+    const float dist_sqr = dot(to_cell, to_cell);
+    const float dist_proj = dot(to_cell, light.direction);
+    const float dist_cone = light.cosAngle * sqrt(dist_sqr - pow2(dist_proj)) - dist_proj * sqrt(1.0f - pow2(light.cosAngle));
 
-    const bool cull_angle = closest_dist > current_cell.radius;
-    const bool cull_front = V1len > current_cell.radius + light.radius;
-    const bool cull_back = V1len < -current_cell.radius;
+    const bool cull_angle = dist_cone > current_cell.radius;
+    const bool cull_front = dist_proj > current_cell.radius + light.radius;
+    const bool cull_back = dist_proj < -current_cell.radius;
     return !(cull_angle || cull_front || cull_back);
 }
 
@@ -103,18 +103,19 @@ void main()
     uint visible_count = 0;
     ushort visible_indices[LIGHT_TILE_MAX_LIGHTS];
 
-    const uint batch_count = (LightCount + THREAD_COUNT - 1) / THREAD_COUNT;
+    const uint light_count = LastLightIndex + 1u;
+    const uint batch_count = (light_count + THREAD_COUNT - 1) / THREAD_COUNT;
 
     for (uint batch = 0; batch < batch_count; ++batch)
     {
-        const uint light_index = min(batch * THREAD_COUNT + thread, LightCount);
+        const uint light_index = min(batch * THREAD_COUNT + thread, LastLightIndex);
         const SceneLight scene_light = Lights_LoadLight(light_index);
 
         SharedLight light;
         light.position = WorldToViewPos(scene_light.position);
-        light.direction = WorldToViewVec(scene_light.direction);
+        light.direction = WorldToViewVec(Quat_MultiplyVector(scene_light.rotation, float3(0,0,1)));
         light.radius = scene_light.radius;
-        light.angle = scene_light.spot_angles.x;
+        light.cosAngle = scene_light.spot_angles.x;
         light.type = scene_light.light_type;
         lds_Lights[thread] = light;
 
@@ -125,7 +126,7 @@ void main()
             const ushort buffer_index = ushort(batch * THREAD_COUNT + index);
             const bool is_visible = IntersectionTest(index);
 
-            if (is_visible && buffer_index <= LightCount && visible_count < LIGHT_TILE_MAX_LIGHTS)
+            if (is_visible && buffer_index <= LastLightIndex && visible_count < LIGHT_TILE_MAX_LIGHTS)
             {
                 visible_indices[visible_count++] = buffer_index;
             }

@@ -52,14 +52,6 @@ namespace PK::App
             void ComputeClusters(CommandBufferExt cmd, RenderPipelineContext* context);
 
         private:
-            struct ShadowTypeData
-            {
-                uint32_t TileCount = 0u;
-                uint32_t MatrixCount = 0u;
-                uint32_t MaxBatchSize = 0u;
-                uint32_t LayerStride = 0u;
-            };
-
             ShaderAsset* m_computeLightAssignment = nullptr;
             ShaderAsset* m_computeCopyCubeShadow = nullptr;
             ShaderAsset* m_computeScreenSpaceShadow = nullptr;
@@ -69,8 +61,6 @@ namespace PK::App
             RHITextureRef m_depthTarget2D;
             RHITextureRef m_depthTargetCube;
             RHITextureRef m_shadowTargetCube;
-
-            ShadowTypeData m_shadowTypeData[(int)LightType::TypeCount];
             
             CVariableField<float> m_cascadeDistribution = { "Renderer.Lights.CascadeDistribution", 0.5f };
             CVariableField<float> m_tileZDistribution = { "Renderer.Lights.TileZDistribution", 10.0f };

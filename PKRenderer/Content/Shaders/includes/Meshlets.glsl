@@ -7,6 +7,7 @@
 
 #include "Common.glsl"
 #include "Encoding.glsl"
+#include "Quaternion.glsl"
 
 #define MAX_VERTICES_PER_MESHLET 64u
 #define MAX_TRIANGLES_PER_MESHLET 124u
@@ -117,12 +118,6 @@ struct PKVertex
     float2 texcoord;
 };
 
-float3 Meshlet_QuaternionMulVector(float4 q, float3 v)
-{
-    const float3 t = 2 * cross(q.xyz, v);
-    return v + q.w * t + cross(q.xyz, t);
-}
-
 // Unpacking functions 
 PKTasklet Meshlet_Unpack_Tasklet(uint2 packed)
 {
@@ -204,8 +199,8 @@ PKVertex Meshlet_Unpack_Vertex(const uint4 packed, const float3 sm_bbmin, const 
         quat = normalize(quat);
     }
 
-    v.normal = Meshlet_QuaternionMulVector(quat, float3(0,0,1));
-    v.tangent.xyz = Meshlet_QuaternionMulVector(quat, float3(1,0,0));
+    v.normal = Quat_MultiplyVector(quat, float3(0,0,1));
+    v.tangent.xyz = Quat_MultiplyVector(quat, float3(1,0,0));
     v.tangent.w = bitfieldExtract(packed.y, 16, 1) * 2.0f - 1.0f;
 
     #if PK_MESHLET_USE_VERTEX_COLORS
@@ -314,7 +309,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
 
     bool Meshlet_Cone_Cull(const PKMeshlet meshlet, float3 cull_origin)
     {
-        const float3 cone_axis = safeNormalize(ObjectToWorldVec(meshlet.cone_axis));
+        const float3 cone_axis = SafeNormalize(ObjectToWorldVec(meshlet.cone_axis));
         const float3 cone_apex = ObjectToWorldPos(meshlet.cone_apex);
         const float3 cone_view = normalize(cone_apex - cull_origin);
         return dot(cone_view, cone_axis) < meshlet.cone_cutoff;
@@ -322,7 +317,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
 
     bool Meshlet_Cone_Cull_Directional(const PKMeshlet meshlet, float3 cull_direction)
     {
-        const float3 cone_axis = safeNormalize(ObjectToWorldVec(meshlet.cone_axis));
+        const float3 cone_axis = SafeNormalize(ObjectToWorldVec(meshlet.cone_axis));
         return dot(cull_direction, cone_axis) < meshlet.cone_cutoff;
     }
 

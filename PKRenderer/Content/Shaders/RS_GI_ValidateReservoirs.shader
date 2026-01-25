@@ -34,7 +34,7 @@ void MainRgs()
         const float3 origin = ViewToWorldPosPrev(view_pos) + normal_offset;
 
         const Reservoir reservoir = ReSTIR_Load_Previous(coord_ray);
-        const float4 direction = normalizeLength(reservoir.position - origin);
+        const float4 direction = NormalizeLength(reservoir.position - origin);
 
         const float max_error_dist = RESTIR_VALIDATION_ERROR_DIST * direction.w;
         const float max_error_luma = RESTIR_VALIDATION_ERROR_LUMA;

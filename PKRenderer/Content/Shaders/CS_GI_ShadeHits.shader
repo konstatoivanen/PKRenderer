@@ -52,9 +52,9 @@ void main()
         // Convert ray to unbiased space
         const float3 hitpos = origin + direction_diff * lerp(hits.diff.dist, PK_GI_RAY_TMAX, hits.diff.is_miss);
         const float3 origin_unbiased = CoordToWorldPos(coord, depth);
-        const float4 hitvec_unbiased = normalizeLength(hitpos - origin_unbiased);
+        const float4 hitvec_unbiased = NormalizeLength(hitpos - origin_unbiased);
         // assuming lambertian distribution
-        const float inverse_pdf = PK_PI * safePositiveRcp(dot(normal_roughness.xyz, hitvec_unbiased.xyz));
+        const float inverse_pdf = PK_PI * SafePositiveRcp(dot(normal_roughness.xyz, hitvec_unbiased.xyz));
 
         // Always use reservoir packing for diff hits.
         // They can be used for neighbour reconstruction outside of ReSTIR

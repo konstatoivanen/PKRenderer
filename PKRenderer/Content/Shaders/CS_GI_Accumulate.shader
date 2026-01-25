@@ -176,7 +176,7 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
     ReSTIR_Store_Current(coord_base, is_valid && !is_boiling ? combined : initial);
 
     const float3 radiance = lerp(initial.radiance, combined.radiance * weight, is_valid.xxx);
-    const float3 direction = lerp(safeNormalize(initial.position - origin), combined_direction, is_valid.xxx);
+    const float3 direction = lerp(SafeNormalize(initial.position - origin), combined_direction, is_valid.xxx);
     return SH_Luma_FromRadiance(radiance, direction);
 }
 
@@ -193,7 +193,7 @@ void main()
     {
         const float3 origin = CoordToWorldPos(coord, depth);
         const Reservoir reservoir = ReSTIR_Load_HitAsReservoir(coord_base, origin);
-        const float4 sample_vector = normalizeLength(reservoir.position - origin);
+        const float4 sample_vector = NormalizeLength(reservoir.position - origin);
 
         GIDiff current;
         current.ao = min(1.0f, sample_vector.w / PK_GI_RAY_TMAX);

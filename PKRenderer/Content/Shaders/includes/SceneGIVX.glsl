@@ -72,7 +72,7 @@ half4 GI_SphereTrace_Diffuse(float3 position)
 
 half4 GI_ConeTrace_Diffuse(const float3 origin, const float3 normal) 
 {
-    const float3x3 basis = make_TBN(normal);
+    const float3x3 basis = CreateTBN(normal);
 
     half4 accumulation = 0.0hf.xxxx;
 

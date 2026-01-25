@@ -106,7 +106,7 @@ namespace PK::App
 
         DECLARE_HASH(pk_Lights)
         DECLARE_HASH(pk_LightMatrices)
-        DECLARE_HASH(pk_LightCount)
+        DECLARE_HASH(pk_LastLightIndex)
         DECLARE_HASH(pk_LightLists)
         DECLARE_HASH(pk_LightTiles)
         DECLARE_HASH(pk_BendShadowDispatchData)

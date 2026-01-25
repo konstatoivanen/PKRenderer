@@ -6,35 +6,46 @@ float pow2(float x) { return x * x; }
 float pow3(float x) { return x * x * x; }
 float pow4(float x) { return x * x * x * x; }
 float pow5(float x) { return x * x * x * x * x; }
+
+half pow2(half x) { return x * x; }
+half pow3(half x) { return x * x * x; }
+half pow4(half x) { return x * x * x * x; }
+half pow5(half x) { return x * x * x * x * x; }
+
 float cmin(float2 x) { return min(x.x, x.y); }
 float cmin(float3 x) { return min(min(x.x, x.y), x.z); }
 float cmin(float4 x) { return min(min(min(x.x, x.y), x.z), x.w); }
 float cmax(float2 x) { return max(x.x, x.y); }
 float cmax(float3 x) { return max(max(x.x, x.y), x.z); }
 float cmax(float4 x) { return max(max(max(x.x, x.y), x.z), x.w); }
+
 half cmin(half2 x) { return min(x.x, x.y); }
 half cmin(half3 x) { return min(min(x.x, x.y), x.z); }
 half cmin(half4 x) { return min(min(min(x.x, x.y), x.z), x.w); }
 half cmax(half2 x) { return max(x.x, x.y); }
 half cmax(half3 x) { return max(max(x.x, x.y), x.z); }
 half cmax(half4 x) { return max(max(max(x.x, x.y), x.z), x.w); }
-float make_unorm(uint x) { return uintBitsToFloat(x & 0x007fffffu | 0x3f800000u) - 1.0f; }
-float2 make_moments(float v) { return float2(v, v * v); }
-float2 make_rotation(float radian) { return float2(cos(radian), sin(radian)); }
-float2 rotate2D(float2 v, float2 r) { return float2(v.x * r.x - v.y * r.y, v.x * r.y + v.y * r.x); }
-half2 make_rotation(half radian) { return half2(cos(radian), sin(radian)); }
-half2 rotate2D(half2 v, half2 r) { return half2(v.x * r.x - v.y * r.y, v.x * r.y + v.y * r.x); }
-float4 mul3x3(const float3x3 matrix, const float4 v) { return float4(matrix * v.xyz, v.w); }
-float4 mul3x3(const float4 v, const float3x3 matrix) { return float4(v.xyz * matrix, v.w); }
-float4 unpackHalf4x16(uint2 v) { return float4(unpackHalf2x16(v.x), unpackHalf2x16(v.y)); }
+
 uint2 packHalf4x16(float4 v) { return uint2(packHalf2x16(v.xy), packHalf2x16(v.zw)); }
-float safePositiveRcp(float f) { return mix(1.0f / f, 0.0f, f <= 1e-12f); }
-float4 normalizeLength(float3 v) { float l = length(v); return float4(v.xyz * safePositiveRcp(l), l); }
-float3 safeNormalize(float3 v) { return v * safePositiveRcp(length(v)); }
-uint checkerboard(uint2 coord, uint frame) { return ((coord.x ^ coord.y) ^ frame) & 0x1u; }
+float4 unpackHalf4x16(uint2 v) { return float4(unpackHalf2x16(v.x), unpackHalf2x16(v.y)); }
+
+float AsUnorm(uint x) { return uintBitsToFloat(x & 0x007fffffu | 0x3f800000u) - 1.0f; }
+uint Checkerboard(uint2 coord, uint offset) { return ((coord.x ^ coord.y) ^ offset) & 0x1u; }
+
+float SafePositiveRcp(float f) { return mix(1.0f / f, 0.0f, f <= 1e-12f); }
+float3 SafeNormalize(float3 v) { return v * SafePositiveRcp(length(v)); }
+float4 NormalizeLength(float3 v) { float l = length(v); return float4(v.xyz * SafePositiveRcp(l), l); }
+
+float4 Mul3x3(const float3x3 matrix, const float4 v) { return float4(matrix * v.xyz, v.w); }
+float4 Mul3x3(const float4 v, const float3x3 matrix) { return float4(v.xyz * matrix, v.w); }
+
+half2 RadianRotation(half radian) { return half2(cos(radian), sin(radian)); }
+float2 RadianRotation(float radian) { return float2(cos(radian), sin(radian)); }
+half2 MulRotation(half2 v, half2 r) { return half2(v.x * r.x - v.y * r.y, v.x * r.y + v.y * r.x); }
+float2 MulRotation(float2 v, float2 r) { return float2(v.x * r.x - v.y * r.y, v.x * r.y + v.y * r.x); }
 
 // Source: https://graphics.pixar.com/library/OrthonormalB/paper.pdf
-void branchlessONB(const float3 n, out float3 b1, out float3 b2)
+void CreateTBN(const float3 n, out float3 b1, out float3 b2)
 {
     const float s = n.z >= 0.0f ? 1.0f : -1.0f;
     const float a = -1.0f / (s + n.z);
@@ -43,20 +54,15 @@ void branchlessONB(const float3 n, out float3 b1, out float3 b2)
     b2 = float3(b, s + n.y * n.y * a, -n.y);
 }
 
-float2x3 make_TB(const float3 n, float scale) { float3 t, b; branchlessONB(n, t, b); return float2x3(t * scale, b * scale); }
-float3x3 make_TBN(const float3 n) { float3 t, b; branchlessONB(n,t,b); return float3x3(t, b, n); }
+float2x3 CreateTB(const float3 n, float scale) { float3 t, b; CreateTBN(n, t, b); return float2x3(t * scale, b * scale); }
+float3x3 CreateTBN(const float3 n) { float3 t, b; CreateTBN(n,t,b); return float3x3(t, b, n); }
 
-#define lerp_true(x,y,s) ((x) + (s) * ((y) - (x)))
 #define lerp_sat(a,b,c) mix(a,b,clamp(c,0,1))
 #define lerp_outquad(a,b,c) (-((b) - (a)) * (c) * ((c) - 2) + (a))
 #define lerp_inquad(a,b,c) (((b) - (a)) * (c) * (c) + (a))
 #define unlerp(a,b,value) (((value) - (a)) / ((b) - (a)))
 #define unlerp_sat(a,b,value) saturate(((value) - (a)) / ((b) - (a)))
 #define saturate(v) clamp(v, 0.0, 1.0)
-#define POW2(x) ((x) * (x))
-#define POW3(x) ((x) * (x) * (x))
-#define POW4(x) ((x) * (x) * (x) * (x))
-#define POW5(x) ((x) * (x) * (x) * (x) * (x))
 
 #define Any_IsNaN(v) any(isnan(v))
 #define Any_GEqual(a, b) any(greaterThanEqual(a,b))

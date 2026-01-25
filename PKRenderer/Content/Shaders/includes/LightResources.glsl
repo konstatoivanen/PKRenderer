@@ -1,5 +1,6 @@
 #pragma once
 #include "Common.glsl"
+#include "Quaternion.glsl"
 
 #define LIGHT_TILE_SIZE_PX 64
 #define LIGHT_TILE_SHIFT_PX 6
@@ -16,10 +17,12 @@ struct SceneLight
 {
     float3 position;
     float3 color;
-    float3 direction;
+    float4 rotation;
     float2 spot_angles;
     float radius;
     float source_radius;
+    float near_clip;
+    float exponent;
     uint light_type; 
     uint index_mask;
     uint index_matrix; 
@@ -28,9 +31,9 @@ struct SceneLight
 
 struct SceneLightSample
 {
-    float3 color;
+    float3 Rv;
+    float3 Lv;
     float shadow;
-    float3 direction;
     float linear_distance;
     float source_radius;
 };
@@ -54,22 +57,23 @@ PK_DECLARE_READONLY_BUFFER(float4x4, pk_LightMatrices, PK_SET_PASS);
     PK_DECLARE_SET_PASS uniform readonly uimage3D pk_LightTiles;
 #endif
 
-SceneLight Lights_UnpackLight(uint4 packed0, uint4 packed1)
+SceneLight Lights_UnpackLight(uint4 packed0, uint4 packed1, uint4 packed2)
 {
     SceneLight l;
-    l.position.xy = unpackHalf2x16(packed0.x);
-    l.position.z = unpackHalf2x16(packed0.y).x;
-    l.radius = unpackHalf2x16(packed0.y).y;
-    l.color.xy = unpackHalf2x16(packed0.z);
-    l.color.z = unpackHalf2x16(packed0.w).x;
+    l.position = uintBitsToFloat(packed0.xyz);
+    l.radius = unpackHalf2x16(packed0.w).x;
     l.light_type = bitfieldExtract(packed0.w, 16, 4);
     l.index_mask = bitfieldExtract(packed0.w, 20, 12);
-    l.direction.xy = unpackHalf2x16(packed1.x);
-    l.direction.z = unpackHalf2x16(packed1.y).x;
+    l.color.xy = unpackHalf2x16(packed1.x);
+    l.color.z = unpackHalf2x16(packed1.y).x;
     l.source_radius = unpackHalf2x16(packed1.y).y;
     l.spot_angles = unpackHalf2x16(packed1.z);
     l.index_shadow = bitfieldExtract(packed1.w, 0, 16);
     l.index_matrix = bitfieldExtract(packed1.w, 16, 16);
+    l.rotation.xy = unpackHalf2x16(packed2.x);
+    l.rotation.zw = unpackHalf2x16(packed2.y);
+    l.near_clip = unpackHalf2x16(packed2.z).x;
+    l.exponent = unpackHalf2x16(packed2.z).y;
     return l;
 }
 
@@ -83,7 +87,10 @@ LightTile Lights_UnpackTile(uint data)
 
 SceneLight Lights_LoadLight(uint index)
 {
-    return Lights_UnpackLight(PK_BUFFER_DATA(pk_Lights, index * 2u + 0u), PK_BUFFER_DATA(pk_Lights, index * 2u + 1u));
+    return Lights_UnpackLight(
+        PK_BUFFER_DATA(pk_Lights, index * 3u + 0u), 
+        PK_BUFFER_DATA(pk_Lights, index * 3u + 1u),
+        PK_BUFFER_DATA(pk_Lights, index * 3u + 2u));
 }
 
 LightTile Lights_LoadTile(const int3 coord)

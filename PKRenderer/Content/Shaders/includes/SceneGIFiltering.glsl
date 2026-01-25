@@ -26,7 +26,7 @@ float GI_GetAntilagSpecular(float roughness, float nv, float parallax)
 // Add small bias (0.01) to prevent sampling from past root texel.
 float2 GI_ViewToPrevScreenUv(const float3 view_pos) { return ViewToClipUvPrev(view_pos) * int2(pk_ScreenSize.xy) - 0.49f.xx; }
 
-float2 GI_GetRandomRotation() { return make_rotation(make_unorm(pk_FrameRandom.x) * PK_TWO_PI); }
+float2 GI_GetRandomRotation() { return RadianRotation(AsUnorm(pk_FrameRandom.x) * PK_TWO_PI); }
 
 float2 GI_GetDiskWeightParams(float radius, float depth) { return float2(1.0f / (0.05f * depth), 1.0f / (2.0f * pow2(radius))); }
 
@@ -88,7 +88,8 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
             const int2 xy = SF_COORD + int2(xx, yy);                                            \
             const float s_depth = SampleMinZ(xy, 0);                                            \
             const float s_w = lerp(0.0f, 1.0f, (abs(SF_DEPTH - s_depth) / SF_DEPTH) < 0.02f);   \
-            mom += make_moments(GI_LogLuminance(GI_Load_Diff(xy)) * s_w);                       \
+            const float s_l = GI_LogLuminance(GI_Load_Diff(xy)) * s_w;                          \
+            mom += float2(s_l, s_l * s_l);                                                      \
             w_mom += s_w;                                                                       \
         }                                                                                       \
     }                                                                                           \
@@ -99,7 +100,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
 
 #define GI_SF_DISK_DIFF(SF_NORMAL, SF_DEPTH, SF_VIEW, SF_VPOS, SF_HISTORY, SF_STEP, SF_SKIP, SF_RADIUS, SF_OUT) \
 {                                                                                                               \
-    const float2x3 basis = make_TB(SF_NORMAL, SF_RADIUS);                                                       \
+    const float2x3 basis = CreateTB(SF_NORMAL, SF_RADIUS);                                                      \
     const float2 rotation = GI_GetRandomRotation();                                                             \
     const float k_N = GI_GetNormalWeightParams(SF_NORMAL, 1.0f, SF_HISTORY);                                    \
     const float2 k_D = GI_GetDiskWeightParams(SF_RADIUS, SF_DEPTH);                                             \
@@ -111,7 +112,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
     for (; i < 32u; i += SF_STEP)                                                                               \
     {                                                                                                           \
         const float3 s_offs = PK_POISSON_DISK_32_POW[i];                                                        \
-        float2 s_uv = ViewToClipUv(SF_VPOS + basis * rotate2D(s_offs.xy, rotation));                            \
+        float2 s_uv = ViewToClipUv(SF_VPOS + basis * MulRotation(s_offs.xy, rotation));                         \
         s_uv = 1.0f - abs(1.0f - abs(s_uv));                                                                    \
         const int2   s_gpx = GI_CollapseCheckerboardCoord(s_uv * pk_ScreenSize.xy, 0);                          \
         const int2   s_px = GI_ExpandCheckerboardCoord(s_gpx);                                                  \
@@ -148,7 +149,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
     for (; i < 32u; i += SF_STEP)                                                                                               \
     {                                                                                                                           \
         const float3 s_offs = PK_POISSON_DISK_32_POW[i];                                                                        \
-        const float2 s_uv = ViewToClipUv(SF_VPOS + basis * rotate2D(s_offs.xy, rotation));                                      \
+        const float2 s_uv = ViewToClipUv(SF_VPOS + basis * MulRotation(s_offs.xy, rotation));                                   \
         const int2   s_px = int2(s_uv * pk_ScreenSize.xy);                                                                      \
         const float4 s_nr = SampleViewNormalRoughness(s_px);                                                                    \
         const float3 s_ray = SF_VPOS - UvToViewPos(s_uv, SampleMinZ(s_px, 0));                                                  \

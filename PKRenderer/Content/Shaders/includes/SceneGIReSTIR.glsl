@@ -88,7 +88,7 @@ int2 ReSTIR_GetSpatialResamplingCoord(const int2 coord, int scale, uint hash)
 
 bool ReSTIR_NearFieldReject(const float depth, const float3 origin, const Reservoir r, uint hash)
 {
-    const float random = make_unorm(hash);
+    const float random = AsUnorm(hash);
     const float range = RESITR_NEARFIELD * depth;
     const float3 vec = origin - r.position;
     return (dot(vec, vec) / pow2(range)) < random;
@@ -101,13 +101,13 @@ float ReSTIR_GetTargetPdf(const Reservoir r)
 
 float ReSTIR_GetSampleWeight(const Reservoir r, const float3 n, const float3 d) 
 { 
-    return safePositiveRcp(r.target_pdf) * (r.weight_sum / max(1, r.M)); 
+    return SafePositiveRcp(r.target_pdf) * (r.weight_sum / max(1, r.M)); 
 }
 
 float ReSTIR_GetJacobian(const float3 pos_center, const float3 pos_sample, const Reservoir r)
 {
-    const float4 vec_center = normalizeLength(pos_center - r.position);
-    const float4 vec_sample = normalizeLength(pos_sample - r.position);
+    const float4 vec_center = NormalizeLength(pos_center - r.position);
+    const float4 vec_sample = NormalizeLength(pos_sample - r.position);
     const float cos_senter = saturate(dot(r.normal, vec_center.xyz));
     const float cos_sample = saturate(dot(r.normal, vec_sample.xyz));
     const float jacobian = (cos_senter * pow2(vec_sample.w)) / (cos_sample * pow2(vec_center.w));
@@ -134,8 +134,8 @@ void ReSTIR_Normalize(inout Reservoir r, uint max_m)
 
 void ReSTIR_CombineReservoir(inout Reservoir combined, const Reservoir b, float target_pdf, uint hash)
 {
-    const float random = make_unorm(hash);
-    const float weight = target_pdf * safePositiveRcp(b.target_pdf) * b.weight_sum;
+    const float random = AsUnorm(hash);
+    const float weight = target_pdf * SafePositiveRcp(b.target_pdf) * b.weight_sum;
     
     combined.weight_sum += weight;
     combined.M += lerp(0u, b.M, target_pdf > 0.0f);
@@ -151,7 +151,7 @@ void ReSTIR_CombineReservoir(inout Reservoir combined, const Reservoir b, float 
 
 void ReSTIR_CombineReservoirSimple(inout Reservoir combined, const Reservoir b, uint hash)
 {
-    const float random = make_unorm(hash);
+    const float random = AsUnorm(hash);
     combined.weight_sum += b.weight_sum;
     combined.M += b.M; 
 

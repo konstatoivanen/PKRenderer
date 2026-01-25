@@ -191,6 +191,26 @@ namespace PK::Math
         return { UnPackHalf(v.x), UnPackHalf(v.y), UnPackHalf(v.z), UnPackHalf(v.w) };
     }
 
+    uint FloatAsUint(float v)
+    {
+        return *reinterpret_cast<uint*>(&v);
+    }
+
+    uint2 FloatAsUint(float2 v)
+    {
+        return *reinterpret_cast<uint2*>(&v);
+    }
+
+    uint3 FloatAsUint(float3 v)
+    {
+        return *reinterpret_cast<uint3*>(&v);
+    }
+
+    uint4 FloatAsUint(float4 v)
+    {
+        return *reinterpret_cast<uint4*>(&v);
+    }
+
     float3 SafeNormalize(const float3& v)
     {
         float length = glm::length(v);

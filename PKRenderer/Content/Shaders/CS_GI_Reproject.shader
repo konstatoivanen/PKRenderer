@@ -28,7 +28,7 @@ void main()
 #if defined(PK_GI_CHECKERBOARD_TRACE)
     const int2 coord_store = int2
     (
-        coord.x / 2 + int(checkerboard(coord, pk_FrameIndex.y) * (pk_ScreenSize.x / 2)),
+        coord.x / 2 + int(Checkerboard(coord, pk_FrameIndex.y) * (pk_ScreenSize.x / 2)),
         coord.y
     );
 #else
@@ -81,7 +81,7 @@ void main()
 
                 float4 weights = GI_GetBilinearWeights(s_fcoord - s_coord);
                 weights *= exp(-abs(depth.xxxx - s_depths));
-                weights *= safePositiveRcp(dot(weights, 1.0f.xxxx));
+                weights *= SafePositiveRcp(dot(weights, 1.0f.xxxx));
                 weights *= float4(Test_DepthReproject(depth.xxxx, s_depths, depth_bias.xxxx));
                 weights *= float4(Test_DepthIsScene(s_depths));
                 weights *= float(Test_InUv(s_fcoord * pk_ScreenParams.zw));

@@ -11,6 +11,7 @@ struct LightPayload
 {
     float4x4 light_matrix;
     float3 light_position;
+    float light_znear;
     float light_radius;
     uint layer;
 };
@@ -22,6 +23,7 @@ struct LightPayload
 #define PK_MESHLET_USE_FUNC_TASKLET 1
 #define PK_MESHLET_HAS_EXTRA_PAYLOAD_DATA 1
 #define PK_MESHLET_EXTRA_PAYLOAD_DATA LightPayload
+
 #include "includes/LightResources.glsl"
 #include "includes/Meshlets.glsl"
 
@@ -34,42 +36,17 @@ struct LightPayload
 // As opposed to default order y axis is flipped here to avoid having to switch winding order for cube depth rendering
 const float3x3 PK_CUBE_FACE_MATRICES[6] =
 {
-    // Right
-    float3x3(+0,+0,-1,
-             +0,+1,+0,
-             +1,+0,+0),
-
-    // Left
-    float3x3(+0,+0,+1,
-             +0,+1,+0,
-             -1,+0,+0),
-
-    // Down
-    float3x3(+1,+0,+0,
-             +0,+0,+1,
-             +0,-1,+0),
-
-    // Up
-    float3x3(+1,+0,+0,
-             +0,+0,-1,
-             +0,+1,+0),
-
-    // Front
-    float3x3(+1,+0,+0,
-             +0,+1,+0,
-             +0,+0,+1),
-
-    // Back
-    float3x3(-1,+0,+0,
-             +0,+1,+0,
-             +0,+0,-1),
+    float3x3(+0,+0,-1, +0,+1,+0, +1,+0,+0), // Right
+    float3x3(+0,+0,+1, +0,+1,+0, -1,+0,+0), // Left
+    float3x3(+1,+0,+0, +0,+0,+1, +0,-1,+0), // Down
+    float3x3(+1,+0,+0, +0,+0,-1, +0,+1,+0), // Up
+    float3x3(+1,+0,+0, +0,+1,+0, +0,+0,+1), // Front
+    float3x3(-1,+0,+0, +0,+1,+0, +0,+0,-1), // Back
 };
 
-float4 GetCubeClipPos(float3 viewvec, float radius, uint face_index)
+float4 GetCubeClipPos(float3 viewvec, float near, float far, uint face_index)
 {
     const float3 view_pos = viewvec * PK_CUBE_FACE_MATRICES[face_index];
-    const float near = 0.1f;
-    const float far = radius;
     const float m22 = -near / (far - near);
     const float m32 = (near * far) / (far - near);
     return float4(view_pos.xy, m22 * view_pos.z + m32, view_pos.z);
@@ -83,6 +60,7 @@ void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
     const SceneLight light = Lights_LoadLight(light_index);
 
     payload.extra.light_position = light.position;
+    payload.extra.light_znear = light.near_clip;
     payload.extra.light_radius = light.radius;
     payload.extra.layer = layer;
 
@@ -134,7 +112,7 @@ void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_
     #elif defined(PK_LIGHT_PASS_POINT)
 
         const float3 vs_depth = world_pos - payload.extra.light_position;
-        sv_Position = GetCubeClipPos(vs_depth, payload.extra.light_radius, payload.extra.layer % 6);
+        sv_Position = GetCubeClipPos(vs_depth, payload.extra.light_znear, payload.extra.light_radius, payload.extra.layer % 6);
         vs_DEPTH[vertex_index] = vs_depth;
 
     #endif

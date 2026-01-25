@@ -106,7 +106,8 @@ float3 GI_Evaluate_Peak_Direction(const GIResolved r) { return SH_ToPeakDirectio
 {                                                                                                 \
     const uint4 thread_mask = subgroupBallot(condition);                                          \
     const uint thread_count = max(1u, subgroupBallotBitCount(thread_mask)) - 1u;                  \
-    const float2 moments = make_moments(GI_Luminance(current));                                   \
+    const float luminance = GI_Luminance(current);                                                \
+    const float2 moments = float2(luminance, luminance * luminance);                              \
     const float2 moments_wave = (subgroupAdd(moments) - moments) / thread_count;                  \
     const float variance = pow(abs(moments_wave.y - pow2(moments_wave.x)), 0.25f);                \
     out_luma_max = lerp(GI_Luminance(history), moments_wave.x, alpha) + variance * scale;         \
@@ -117,7 +118,7 @@ int2 GI_ExpandCheckerboardCoord(uint2 coord, uint offset)
 {
 #if defined(PK_GI_CHECKERBOARD_TRACE)
     coord.x *= 2;
-    coord.x += checkerboard(coord, pk_FrameIndex.y + offset);
+    coord.x += Checkerboard(coord, pk_FrameIndex.y + offset);
 #endif
     return int2(coord);
 }
@@ -129,7 +130,7 @@ int2 GI_CollapseCheckerboardCoord(const float2 fcoord, const uint offset)
     float2 ddxy = (fcoord - coord) - 0.5f.xx;
     int am = int(step(ddxy.x, ddxy.y));
     int2 xy = int2(am, 1 - am) * int2(sign(ddxy));
-    coord += xy * int(checkerboard(uint2(coord), pk_FrameIndex.y + offset));
+    coord += xy * int(Checkerboard(uint2(coord), pk_FrameIndex.y + offset));
     coord.x /= 2;
 #endif
     return coord;

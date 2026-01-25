@@ -53,9 +53,9 @@ void main()
     const float fade_shadow_direct = Fog_Fade_FroxelShadows_Direct(view_dist);
     const float fade_shadow_volumetric = Fog_Fade_FroxelShadows_Volumetric(view_dist);
     // Distant texels are less dense, trace a longer distance to retain some depth.
+    const float depth_slice = Fog_ZToView((id.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV) - Fog_ZToView(id.z * VOLUMEFOG_SIZE_Z_INV);
     const float march_distance_max = exp(uvw_cur.z * VOLUMEFOG_MARCH_DISTANCE_EXP);
-    const float shadow_bias_range = Fog_ZToView((id.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV) - Fog_ZToView(id.z * VOLUMEFOG_SIZE_Z_INV);
-    const float3 shadow_bias = view_dir * shadow_bias_range * 0.5f;
+    const float3 shadow_bias = view_dir * depth_slice * 0.5f;
 
     // Occlude ground as it should be lit mostly by dynamic gi.
     // Apply visibility mask from cone trace.
@@ -74,7 +74,7 @@ void main()
         SceneLightSample light = Lights_SampleTiled(i, world_pos, shadow_bias, tile.cascade);
 
         const float march_distance = min(light.linear_distance, march_distance_max);
-        light.color *= Fog_MarchTransmittance(world_pos, light.direction, dither.y, march_distance, fade_shadow_volumetric);
+        light.Rv *= Fog_MarchTransmittance(world_pos, light.Lv, dither.y, march_distance, fade_shadow_volumetric);
         light.shadow = lerp(1.0f, light.shadow, fade_shadow_direct);
 
         value_cur += BxDF_Volumetric
@@ -83,8 +83,8 @@ void main()
             pk_Fog_Phase0,
             pk_Fog_Phase1,
             pk_Fog_PhaseW,
-            light.direction,
-            light.color,
+            light.Lv,
+            light.Rv,
             light.shadow
         );
     }

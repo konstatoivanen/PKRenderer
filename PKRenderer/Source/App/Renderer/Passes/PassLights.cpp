@@ -20,14 +20,31 @@
 
 namespace PK::App
 {
+    struct ShadowTypeInfo
+    {
+        uint32_t TileCount = 0u;
+        uint32_t MatrixCount = 0u;
+        uint32_t MaxBatchSize = 0u;
+        uint32_t LayerStride = 0u;
+    };
+
+    static ShadowTypeInfo SHADOW_TYPE_INFOS[(uint32_t)LightType::TypeCount] =
+    {
+        { PassLights::ShadowCascadeCount, PassLights::ShadowCascadeCount, 1u, PassLights::ShadowCascadeCount }, // Directional light
+        { 1u, 1u, 4u, 1u }, // Spot light
+        { 1u, 0u, 4u, 6u } // Point light
+    };
+
     struct SceneLight
     {
         float3 position;
         float3 color;
-        float3 direction;
+        float4 rotation;
         float2 spot_angles;
         float radius;
         float source_radius;
+        float near_clip;
+        float exponent;
         uint light_type;
         uint index_mask;
         uint index_matrix;
@@ -38,22 +55,36 @@ namespace PK::App
     {
         uint4 packed0 = PK_UINT4_ZERO;
         uint4 packed1 = PK_UINT4_ZERO;
+        uint4 packed2 = PK_UINT4_ZERO;
     };
 
     static PackedLight PackLight(const SceneLight& light)
     {
-        PackedLight packed{};
-        packed.packed0.x = Math::PackHalfToUint(light.position.xy);
-        packed.packed0.y = Math::PackHalfToUint({ light.position.z, light.radius });
-        packed.packed0.z = Math::PackHalfToUint(light.color.xy);
+        float2 spotAngles = float2(-2, 1);
 
-        auto colorzfp16 = (uint32_t)Math::PackHalf(light.color.z);
-        auto typeAndMaskIndex = (uint32_t)light.light_type | (uint32_t)(light.index_mask << 4u);
-        packed.packed0.w = (colorzfp16 & 0xFFFFu) | (typeAndMaskIndex << 16u);
-        packed.packed1.x = Math::PackHalfToUint(light.direction.xy);
-        packed.packed1.y = Math::PackHalfToUint({ light.direction.z, light.source_radius });
-        packed.packed1.z = Math::PackHalfToUint(light.spot_angles);
+        if (light.light_type == (uint32_t)LightType::Spot)
+        {
+            const auto outerAngle = glm::clamp(light.spot_angles.x * 0.5f * PK_FLOAT_DEG2RAD, PK_FLOAT_DEG2RAD, 180.0f * PK_FLOAT_DEG2RAD);
+            const auto innerAngle = glm::clamp(outerAngle * (1.0f - light.spot_angles.y), 0.0f, outerAngle - PK_FLOAT_DEG2RAD);
+            const auto outerCos = glm::cos(outerAngle);
+            const auto innerCos = glm::cos(innerAngle);
+            const auto invCosDiff = 1.0f / (innerCos - outerCos);
+            spotAngles = float2(outerCos, invCosDiff);
+        }
+
+        PackedLight packed{};
+        const auto radiusfp16 = (uint32_t)Math::PackHalf(light.radius);
+        const auto typeAndMaskIndex = (uint32_t)light.light_type | (uint32_t)(light.index_mask << 4u);
+        packed.packed0.xyz = Math::FloatAsUint(light.position);
+        packed.packed0.w = (radiusfp16 & 0xFFFFu) | (typeAndMaskIndex << 16u);
+        packed.packed1.x = Math::PackHalfToUint(light.color.xy);
+        packed.packed1.y = Math::PackHalfToUint({ light.color.z, light.source_radius });
+        packed.packed1.z = Math::PackHalfToUint(spotAngles);
         packed.packed1.w = light.index_shadow | (light.index_matrix << 16u);
+        packed.packed2.x = Math::PackHalfToUint(light.rotation.xy);
+        packed.packed2.y = Math::PackHalfToUint(light.rotation.zw);
+        packed.packed2.z = Math::PackHalfToUint({ light.near_clip, light.exponent});
+        packed.packed2.w = 0u; // unused atm.
         return packed;
     }
 
@@ -73,21 +104,6 @@ namespace PK::App
         m_computeLightAssignment = assetDatabase->Find<ShaderAsset>("CS_LightAssignment").get();
         m_computeCopyCubeShadow = assetDatabase->Find<ShaderAsset>("CS_CopyCubeShadow").get();
         m_computeScreenSpaceShadow = assetDatabase->Find<ShaderAsset>("CS_ScreenspaceShadow").get();
-
-        m_shadowTypeData[(int)LightType::Point].MatrixCount = 0u;
-        m_shadowTypeData[(int)LightType::Point].TileCount = 1u;
-        m_shadowTypeData[(int)LightType::Point].MaxBatchSize = ShadowCascadeCount;
-        m_shadowTypeData[(int)LightType::Point].LayerStride = 6u;
-
-        m_shadowTypeData[(int)LightType::Spot].MatrixCount = 1u;
-        m_shadowTypeData[(int)LightType::Spot].TileCount = 1u;
-        m_shadowTypeData[(int)LightType::Spot].MaxBatchSize = ShadowCascadeCount;
-        m_shadowTypeData[(int)LightType::Spot].LayerStride = 1u;
-
-        m_shadowTypeData[(int)LightType::Directional].MatrixCount = ShadowCascadeCount;
-        m_shadowTypeData[(int)LightType::Directional].TileCount = ShadowCascadeCount;
-        m_shadowTypeData[(int)LightType::Directional].MaxBatchSize = 1u;
-        m_shadowTypeData[(int)LightType::Directional].LayerStride = ShadowCascadeCount;
 
         auto shadowCubeFaceSize = (uint)sqrt((m_shadowmapSize * m_shadowmapSize) / 6);
         TextureDescriptor depthDesc;
@@ -179,7 +195,7 @@ namespace PK::App
         {
             auto view = context->entityDb->Query<EntityViewLight>(EGID(culledLights[i].entityId, (uint)ENTITY_GROUPS::ACTIVE));
             context->frameArena->Allocate<ShadowbatchInfo>((view->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0 ? 1u : 0u);
-            matrixCount += m_shadowTypeData[(int)view->light->type].MatrixCount;
+            matrixCount += SHADOW_TYPE_INFOS[(int)view->light->type].MatrixCount;
             resources->lightViews[i] = view;
         }
     
@@ -197,17 +213,19 @@ namespace PK::App
             auto view = resources->lightViews[lightIndex];
             const auto& transform = view->transform;
             const auto& worldToLocal = transform->worldToLocal;
-            const auto& shadowTypeInfo = m_shadowTypeData[(uint32_t)view->light->type];
+            const auto& shadowTypeInfo = SHADOW_TYPE_INFOS[(uint32_t)view->light->type];
             const auto castShadows = (view->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0;
             auto* matrices = matricesView.data + matrixIndex;
 
             SceneLight light{};
             light.position = transform->position;
             light.color = view->light->color;
-            light.direction = transform->rotation * PK_FLOAT3_FORWARD;
-            light.spot_angles = float2(view->light->angle * PK_FLOAT_DEG2RAD, 0.0f); // @TODO
+            light.rotation = float4(transform->rotation.y, transform->rotation.z, transform->rotation.w, transform->rotation.x);
+            light.spot_angles = float2(view->light->angle, view->light->angleFade);
             light.radius = view->light->radius;
             light.source_radius = view->light->sourceRadius;
+            light.near_clip = view->light->nearClip;
+            light.exponent = view->light->exponent;
             light.light_type = (uint)view->light->type;
             light.index_mask = (uint)view->light->cookie;
             light.index_matrix = matrixIndex;
@@ -231,7 +249,7 @@ namespace PK::App
 
             if (view->light->type == LightType::Spot)
             {
-                *matrices = Math::GetPerspective(view->light->angle, 1.0f, 0.1f, view->light->radius) * worldToLocal;
+                *matrices = Math::GetPerspective(view->light->angle, 1.0f, view->light->nearClip, view->light->radius) * worldToLocal;
             }
 
             if (castShadows && view->light->type == LightType::Directional)
@@ -313,7 +331,7 @@ namespace PK::App
         }
 
         auto hash = HashCache::Get();
-        RHI::SetConstant<uint32_t>(hash->pk_LightCount, lightCount);
+        RHI::SetConstant<uint32_t>(hash->pk_LastLightIndex, lightCount - 1u);
         RHI::SetBuffer(hash->pk_Lights, m_lightsBuffer.get());
         RHI::SetBuffer(hash->pk_LightMatrices, m_lightMatricesBuffer.get());
         RHI::SetTexture(hash->pk_ShadowmapAtlas, m_shadowmaps.get());
@@ -338,7 +356,7 @@ namespace PK::App
         for (auto i = 0u; i < batches.count; ++i)
         {
             const auto& batch = batches[i];
-            auto& shadow = m_shadowTypeData[(int)batch.type];
+            auto& shadow = SHADOW_TYPE_INFOS[(int)batch.type];
             auto tileCount = shadow.TileCount * batch.count;
             auto keyword = passKeywords[(uint32_t)batch.type];
 

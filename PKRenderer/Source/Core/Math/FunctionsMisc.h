@@ -29,6 +29,10 @@ namespace PK::Math
     float2 UnPackHalf(ushort2 v);
     float3 UnPackHalf(ushort3 v);
     float4 UnPackHalf(ushort4 v);
+    uint FloatAsUint(float v);
+    uint2 FloatAsUint(float2 v);
+    uint3 FloatAsUint(float3 v);
+    uint4 FloatAsUint(float4 v);
     float3 SafeNormalize(const float3& v);
     size_t GetNextExponentialSize(size_t start, size_t min);
     uint32_t GetMaxMipLevelPow2(uint32_t resolution);

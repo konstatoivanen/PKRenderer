@@ -158,11 +158,11 @@ float3 Tonemap_LUT(float3 color, float exposure)
     return texture(pk_Tonemap_LutTex, encoded * ((size - 1.0) / size) + 0.5f / size).rgb;
 }
 
-float3 Saturate_BT2100(float3 color, float amount) { return lerp_true(dot(color, PK_LUMA_BT2100).xxx, color, amount); }
+float3 Saturate_BT2100(float3 color, float amount) { return lerp(dot(color, PK_LUMA_BT2100).xxx, color, amount); }
 
-float3 Saturate_BT709(float3 color, float amount) { return lerp_true(dot(color, PK_LUMA_BT709).xxx, color, amount); }
+float3 Saturate_BT709(float3 color, float amount) { return lerp(dot(color, PK_LUMA_BT709).xxx, color, amount); }
 
-float3 Saturate_Rec601(float3 color, float amount) { return lerp_true(dot(color, PK_LUMA_REC601).xxx, color, amount); }
+float3 Saturate_Rec601(float3 color, float amount) { return lerp(dot(color, PK_LUMA_REC601).xxx, color, amount); }
 
 float Vignette(float2 uv)
 {
