@@ -163,6 +163,12 @@ namespace PK::Math
         return { PackHalf(v.x), PackHalf(v.y), PackHalf(v.z), PackHalf(v.w) };
     }
 
+    uint PackHalfToUint(float2 v)
+    {
+        auto p = PackHalf(v);
+        return (p.x & 0xFFFFu) | (p.y << 16u);
+    }
+
     float UnPackHalf(ushort v)
     {
         int32_t iv = v;

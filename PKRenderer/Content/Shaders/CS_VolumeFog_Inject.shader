@@ -66,12 +66,12 @@ void main()
     // This is incorrect for the dynamic component. However, it introduces good depth to the colors so whatever.
     value_cur *= Fog_EstimateTransmittance(uvw_cur, fade_shadow_volumetric);
 
-    LightTile tile = Lights_GetTile_Coord(int2(gl_WorkGroupID.xy >> 1), depth);
+    LightTile tile = Lights_LoadTile_Coord(int2(gl_WorkGroupID.xy >> 1), depth);
 
     for (uint i = tile.start; i < tile.end; ++i)
     {
         // @TODO current 1spp shadow test for fog is prone to banding. implement better filter.
-        LightSample light = Lights_SampleTiled(i, world_pos, shadow_bias, tile.cascade);
+        SceneLightSample light = Lights_SampleTiled(i, world_pos, shadow_bias, tile.cascade);
 
         const float march_distance = min(light.linear_distance, march_distance_max);
         light.color *= Fog_MarchTransmittance(world_pos, light.direction, dither.y, march_distance, fade_shadow_volumetric);

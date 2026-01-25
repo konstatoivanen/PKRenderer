@@ -392,10 +392,10 @@ struct SurfaceData
                 sv_output0.rgb *= surf.occlusion;
             #endif
 
-            LightTile tile = Lights_GetTile_Px(coord_screen, ViewDepth(surf.clip_uvw.z));
+            LightTile tile = Lights_LoadTile_Px(coord_screen, ViewDepth(surf.clip_uvw.z));
             for (uint i = tile.start; i < tile.end; ++i)
             {
-                LightSample light = Lights_SampleTiled(i, surf.world_pos, surf.normal, tile.cascade);
+                SceneLightSample light = Lights_SampleTiled(i, surf.world_pos, surf.normal, tile.cascade);
                 sv_output0.rgb += SURF_EVALUATE_BxDF(bxdf_surf, light.direction, light.color, light.shadow, light.source_radius);
             }
 

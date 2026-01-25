@@ -24,6 +24,7 @@ namespace PK::Math
     ushort2 PackHalf(float2 v);
     ushort3 PackHalf(float3 v);
     ushort4 PackHalf(float4 v);
+    uint PackHalfToUint(float2 v);
     float UnPackHalf(ushort v);
     float2 UnPackHalf(ushort2 v);
     float3 UnPackHalf(ushort3 v);

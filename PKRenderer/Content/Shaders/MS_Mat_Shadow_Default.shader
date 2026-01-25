@@ -79,20 +79,19 @@ float4 GetCubeClipPos(float3 viewvec, float radius, uint face_index)
 void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
 {
     const uint light_index = bitfieldExtract(pk_Instancing_Userdata, 0, 16);
-    const LightPacked light = Lights_LoadPacked(light_index);
-    const uint matrix_index = light.LIGHT_MATRIX;
     const uint layer = bitfieldExtract(pk_Instancing_Userdata, 16, 16);
+    const SceneLight light = Lights_LoadLight(light_index);
 
-    payload.extra.light_position = light.LIGHT_POS;
-    payload.extra.light_radius = light.LIGHT_RADIUS;
+    payload.extra.light_position = light.position;
+    payload.extra.light_radius = light.radius;
     payload.extra.layer = layer;
 
     float4x4 light_matrix;
 
     #if defined(PK_LIGHT_PASS_DIRECTIONAL)
-        light_matrix = PK_BUFFER_DATA(pk_LightMatrices, matrix_index + layer);
+        light_matrix = PK_BUFFER_DATA(pk_LightMatrices, light.index_matrix + layer);
     #elif defined(PK_LIGHT_PASS_SPOT)
-        light_matrix = PK_BUFFER_DATA(pk_LightMatrices, matrix_index);
+        light_matrix = PK_BUFFER_DATA(pk_LightMatrices, light.index_matrix);
     #endif
 
     payload.extra.light_matrix = light_matrix;

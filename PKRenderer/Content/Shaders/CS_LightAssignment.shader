@@ -108,23 +108,26 @@ void main()
     for (uint batch = 0; batch < batch_count; ++batch)
     {
         const uint light_index = min(batch * THREAD_COUNT + thread, LightCount);
-        const LightPacked packed = Lights_LoadPacked(light_index);
+        const SceneLight scene_light = Lights_LoadLight(light_index);
 
         SharedLight light;
-        light.position = WorldToViewPos(packed.LIGHT_POS);
-        light.direction = WorldToViewVec(DecodeOctaUv2x16(packed.LIGHT_PACKED_DIRECTION));
-        light.radius = packed.LIGHT_RADIUS;
-        light.angle = packed.LIGHT_ANGLE;
-        light.type = packed.LIGHT_TYPE;
+        light.position = WorldToViewPos(scene_light.position);
+        light.direction = WorldToViewVec(scene_light.direction);
+        light.radius = scene_light.radius;
+        light.angle = scene_light.spot_angles.x;
+        light.type = scene_light.light_type;
         lds_Lights[thread] = light;
 
         barrier();
 
-        for (uint index = 0; index < THREAD_COUNT && visible_count < LIGHT_TILE_MAX_LIGHTS; ++index)
+        for (uint index = 0; index < THREAD_COUNT; ++index)
         {
-            if (IntersectionTest(index))
+            const ushort buffer_index = ushort(batch * THREAD_COUNT + index);
+            const bool is_visible = IntersectionTest(index);
+
+            if (is_visible && buffer_index <= LightCount && visible_count < LIGHT_TILE_MAX_LIGHTS)
             {
-                visible_indices[visible_count++] = ushort(batch * THREAD_COUNT + index);
+                visible_indices[visible_count++] = buffer_index;
             }
         }
 

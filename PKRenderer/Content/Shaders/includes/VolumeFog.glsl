@@ -125,11 +125,11 @@ void Fog_SampleStatic(float3 origin, float3 view_dir, float view_depth, inout fl
 
     // @TODO refactor to use somekind of global light cluster for this.
     // For now get the first light as it is likely a directional light
-    const LightPacked light = Lights_LoadPacked(0u);
+    const SceneLight light = Lights_LoadLight(0u);
 
-    if ((light.LIGHT_TYPE) == LIGHT_TYPE_DIRECTIONAL)
+    if ((light.light_type) == LIGHT_TYPE_DIRECTIONAL)
     {
-        scatter += BxDF_Volumetric(view_dir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, -light.LIGHT_POS, light.LIGHT_COLOR, 1.0f);
+        scatter += BxDF_Volumetric(view_dir, pk_Fog_Phase0, pk_Fog_Phase1, pk_Fog_PhaseW, -light.position, light.color, 1.0f);
     }
 
     scatter *= pk_Fog_Albedo.rgb;

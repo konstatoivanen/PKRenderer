@@ -20,20 +20,42 @@
 
 namespace PK::App
 {
-    // Packed into float4, float4, uint4
-    struct alignas(16) LightPacked
+    struct SceneLight
     {
-        float3 position = PK_FLOAT3_ZERO;
-        float radius = 0.0f;
-        float3 color = PK_FLOAT3_ZERO;
-        float angle = 0.0f;
-        ushort indexShadow = 0xFFFFu;
-        ushort indexMatrix = 0u;
-        ushort type = 0xFFFFu;
-        ushort cookie = 0xFFFFu;
-        uint direction = 0u;
-        float sourceRadius = 0.0f;
+        float3 position;
+        float3 color;
+        float3 direction;
+        float2 spot_angles;
+        float radius;
+        float source_radius;
+        uint light_type;
+        uint index_mask;
+        uint index_matrix;
+        uint index_shadow;
     };
+
+    struct PackedLight
+    {
+        uint4 packed0 = PK_UINT4_ZERO;
+        uint4 packed1 = PK_UINT4_ZERO;
+    };
+
+    static PackedLight PackLight(const SceneLight& light)
+    {
+        PackedLight packed{};
+        packed.packed0.x = Math::PackHalfToUint(light.position.xy);
+        packed.packed0.y = Math::PackHalfToUint({ light.position.z, light.radius });
+        packed.packed0.z = Math::PackHalfToUint(light.color.xy);
+
+        auto colorzfp16 = (uint32_t)Math::PackHalf(light.color.z);
+        auto typeAndMaskIndex = (uint32_t)light.light_type | (uint32_t)(light.index_mask << 4u);
+        packed.packed0.w = (colorzfp16 & 0xFFFFu) | (typeAndMaskIndex << 16u);
+        packed.packed1.x = Math::PackHalfToUint(light.direction.xy);
+        packed.packed1.y = Math::PackHalfToUint({ light.direction.z, light.source_radius });
+        packed.packed1.z = Math::PackHalfToUint(light.spot_angles);
+        packed.packed1.w = light.index_shadow | (light.index_matrix << 16u);
+        return packed;
+    }
 
     static int EntityViewLightPtrCompare(const void* a, const void* b)
     {
@@ -105,7 +127,7 @@ namespace PK::App
         atlasDesc.sampler.filterMag = FilterMode::Bilinear;
         m_shadowmaps = RHI::CreateTexture(atlasDesc, "Lights.Shadowmap.Atlas");
 
-        m_lightsBuffer = RHI::CreateBuffer<LightPacked>(1024ull, BufferUsage::PersistentStorage, "Lights");
+        m_lightsBuffer = RHI::CreateBuffer<PackedLight>(1024ull, BufferUsage::PersistentStorage, "Lights");
         m_lightMatricesBuffer = RHI::CreateBuffer<float4x4>(32ull, BufferUsage::PersistentStorage, "Lights.Matrices");
 
         auto hash = HashCache::Get();
@@ -161,14 +183,13 @@ namespace PK::App
             resources->lightViews[i] = view;
         }
     
-        // Sort could be faster but whatever.
         qsort(resources->lightViews.data, lightCount, sizeof(EntityViewLight*), EntityViewLightPtrCompare);
 
-        RHI::ValidateBuffer<LightPacked>(m_lightsBuffer, lightCount + 1u);
+        RHI::ValidateBuffer<PackedLight>(m_lightsBuffer, lightCount + 1u);
         RHI::ValidateBuffer<float4x4>(m_lightMatricesBuffer, matrixCount);
 
         CommandBufferExt cmd = RHI::GetCommandBuffer(QueueType::Transfer);
-        auto lightsView = cmd.BeginBufferWrite<LightPacked>(m_lightsBuffer.get(), 0u, lightCount + 1u);
+        auto packedLights = cmd.BeginBufferWrite<PackedLight>(m_lightsBuffer.get(), 0u, lightCount + 1u);
         auto matricesView = matrixCount > 0u ? cmd.BeginBufferWrite<float4x4>(m_lightMatricesBuffer.get(), 0u, matrixCount) : BufferView<float4x4>();
 
         for (auto lightIndex = 0u; lightIndex < lightCount; ++lightIndex)
@@ -178,18 +199,19 @@ namespace PK::App
             const auto& worldToLocal = transform->worldToLocal;
             const auto& shadowTypeInfo = m_shadowTypeData[(uint32_t)view->light->type];
             const auto castShadows = (view->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0;
-            auto& light = lightsView[lightIndex];
             auto* matrices = matricesView.data + matrixIndex;
-            light.indexShadow = 0xFFFFu;
-            light.indexMatrix = matrixIndex;
-            light.color = view->light->color;
-            light.cookie = (ushort)view->light->cookie;
-            light.type = (ushort)view->light->type;
+
+            SceneLight light{};
             light.position = transform->position;
+            light.color = view->light->color;
+            light.direction = transform->rotation * PK_FLOAT3_FORWARD;
+            light.spot_angles = float2(view->light->angle * PK_FLOAT_DEG2RAD, 0.0f); // @TODO
             light.radius = view->light->radius;
-            light.angle = view->light->angle * PK_FLOAT_DEG2RAD;
-            light.sourceRadius = view->light->sourceRadius;
-            light.direction = Math::OctaEncodeUint(transform->rotation * PK_FLOAT3_FORWARD);
+            light.source_radius = view->light->sourceRadius;
+            light.light_type = (uint)view->light->type;
+            light.index_mask = (uint)view->light->cookie;
+            light.index_matrix = matrixIndex;
+            light.index_shadow = 0xFFFFu;
             matrixIndex += shadowTypeInfo.MatrixCount;
 
             RequestEntityCullResults shadowCasters{};
@@ -239,7 +261,7 @@ namespace PK::App
 
             if (shadowCasters.GetCount() > 0u)
             {
-                light.indexShadow = shadowCount;
+                light.index_shadow = shadowCount;
                 shadowCount += shadowTypeInfo.TileCount;
                 auto& batches = resources->shadowBatches;
 
@@ -271,10 +293,12 @@ namespace PK::App
                     }
                 }
             }
+
+            packedLights[lightIndex] = PackLight(light);
         }
 
         // Empty last one for clustering
-        lightsView[lightCount] = LightPacked();
+        packedLights[lightCount] = PackedLight();
 
         cmd->EndBufferWrite(m_lightsBuffer.get());
 

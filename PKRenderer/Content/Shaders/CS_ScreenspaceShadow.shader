@@ -51,13 +51,12 @@ void ShadowmapCs()
     const float4 depths = GatherViewDepthsBiased(uv_gather);
     const float  depth = cmin(depths);
 
-    const LightPacked light = Lights_LoadPacked(light_index);
-    const float3 light_direction = -light.LIGHT_POS;
+    const SceneLight light = Lights_LoadLight(light_index);
 
     const half dither_angle = half(InterleavedGradientNoise(float2(coord_base), pk_FrameIndex.y) * PK_TWO_PI);
     const half dither_scale = half(InterleavedGradientNoise(float2(coord_base), pk_FrameIndex.y + 1u));
 
-    const float source_angle = uintBitsToFloat(light.LIGHT_PACKED_SOURCERADIUS);
+    const float source_angle = light.source_radius;
     const half max_radius = half(source_angle * 2.0f);
     const half sin_alpha = half(source_angle * 0.5f);
 
@@ -74,12 +73,12 @@ void ShadowmapCs()
     const half2x2 basis = half2x2(sina * scale.x, cosa * scale.x, -cosa * scale.y, sina * scale.y);
 
     float3 world_pos = UvToWorldPos(uv_gather, depth);
-    const float2 bias_factors = Shadow_GetBiasFactors(normal, light_direction);
+    const float2 bias_factors = Shadow_GetBiasFactors(normal, -light.position);
     world_pos += bias_factors.x * normal * SHADOW_NEAR_BIAS * float(normal_clip) * (1.0f + cascade * cascade);
-    world_pos += bias_factors.y * light_direction * SHADOW_NEAR_BIAS * (1.0f + cascade) * (1.0f + 0.1f / sqrt(depth));
+    world_pos += bias_factors.y * -light.position * SHADOW_NEAR_BIAS * (1.0f + cascade) * (1.0f + 0.1f / sqrt(depth));
 
     const float2 uv = ClipToUv((light_matrix * float4(world_pos, 1.0f)).xyw);
-    const float z = dot(light.LIGHT_POS, world_pos) + light.LIGHT_RADIUS;
+    const float z = dot(light.position, world_pos) + light.radius;
 
     // PCSS 
     half2 average_z = 0.0hf.xx;

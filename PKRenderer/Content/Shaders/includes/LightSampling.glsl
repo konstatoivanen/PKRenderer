@@ -41,14 +41,14 @@ float4 Lights_GetClipUvMinMax(const float3 world_pos, const float3 shadow_bias, 
     return float4(coord0.xy, coord1.xy);
 }
 
-LightSample Lights_SampleAt(const uint index, float3 world_pos, const float3 shadow_bias, const uint cascade)
+SceneLightSample Lights_SampleAt(const uint index, float3 world_pos, const float3 shadow_bias, const uint cascade)
 {
-    const LightPacked light = Lights_LoadPacked(index);
+    const SceneLight light = Lights_LoadLight(index);
 
-    uint index_shadow = light.LIGHT_SHADOW;
-    uint index_matrix = light.LIGHT_MATRIX; 
-    float source_radius = uintBitsToFloat(light.LIGHT_PACKED_SOURCERADIUS);
-    float3 color = light.LIGHT_COLOR;
+    uint index_shadow = light.index_shadow;
+    uint index_matrix = light.index_matrix; 
+    float source_radius = light.source_radius;
+    float3 color = light.color;
     float shadow = 1.0f;
 
     float3 coord;
@@ -61,13 +61,13 @@ LightSample Lights_SampleAt(const uint index, float3 world_pos, const float3 sha
     #endif
 
     [[branch]]
-    switch (light.LIGHT_TYPE)
+    switch (light.light_type)
     {
         case LIGHT_TYPE_DIRECTIONAL:
         {
             index_matrix += cascade;
             index_shadow += cascade;
-            pos_to_light = -light.LIGHT_POS;
+            pos_to_light = -light.position;
             
             #if SHADOW_SAMPLE_VOLUMETRICS == 0
             const float2 biasFactors = Shadow_GetBiasFactors(shadow_bias, pos_to_light);
@@ -76,7 +76,7 @@ LightSample Lights_SampleAt(const uint index, float3 world_pos, const float3 sha
             #endif
 
             coord = Lights_GetClipUvw(world_pos, index_matrix);
-            shadow_distance = dot(light.LIGHT_POS, world_pos) + light.LIGHT_RADIUS;
+            shadow_distance = dot(light.position, world_pos) + light.radius;
                 
             #if SHADOW_SAMPLE_VOLUMETRICS == 1
             linear_distance = 1e+4f;
@@ -86,26 +86,25 @@ LightSample Lights_SampleAt(const uint index, float3 world_pos, const float3 sha
         break;
         case LIGHT_TYPE_SPOT:
         {
-            const float4 L = normalizeLength(light.LIGHT_POS - world_pos);
-            color *= Lights_FalloffAttenuation(L.w, light.LIGHT_RADIUS);
+            const float4 L = normalizeLength(light.position - world_pos);
+            color *= Lights_FalloffAttenuation(L.w, light.radius);
             source_radius /= L.w;
             pos_to_light = L.xyz;
             shadow_distance = L.w - SHADOW_NEAR_BIAS;
             coord = Lights_GetClipUvw(world_pos, index_matrix);
             color *= step(0.0f, coord.z);
-            color *= texture(pk_LightCookies, float3(coord.xy, light.LIGHT_COOKIE)).r;
+            color *= texture(pk_LightCookies, float3(coord.xy, light.index_mask)).r;
 
             #if SHADOW_SAMPLE_VOLUMETRICS == 1
             linear_distance = L.w;
             shadow_uv_min_max = Lights_GetClipUvMinMax(world_pos, shadow_bias, index_matrix);
             #endif
-
         }
         break;
         case LIGHT_TYPE_POINT:
         {
-            const float4 L = normalizeLength(light.LIGHT_POS - world_pos);
-            color *= Lights_FalloffAttenuation(L.w, light.LIGHT_RADIUS);
+            const float4 L = normalizeLength(light.position - world_pos);
+            color *= Lights_FalloffAttenuation(L.w, light.radius);
             coord.xy = EncodeOctaUv(-L.xyz);
             source_radius /= L.w;
             shadow_distance = L.w - SHADOW_NEAR_BIAS;
@@ -123,7 +122,7 @@ LightSample Lights_SampleAt(const uint index, float3 world_pos, const float3 sha
     // First Directional light has a screen space shadows.
 #if defined(SHADER_STAGE_FRAGMENT) && SHADOW_SAMPLE_SCREENSPACE == 1
     [[branch]]
-    if ((light.LIGHT_TYPE) == LIGHT_TYPE_DIRECTIONAL && (light.LIGHT_SHADOW) == 0u)
+    if ((light.light_type) == LIGHT_TYPE_DIRECTIONAL && index_shadow == 0u)
     {
         shadow *= texelFetch(pk_ShadowmapScreenSpace, int2(gl_FragCoord.xy), 0).r;
     }
@@ -139,10 +138,10 @@ LightSample Lights_SampleAt(const uint index, float3 world_pos, const float3 sha
         #endif
     }
 
-    return LightSample(color, shadow, pos_to_light, linear_distance, source_radius);
+    return SceneLightSample(color, shadow, pos_to_light, linear_distance, source_radius);
 }
 
-LightSample Lights_SampleTiled(const uint index, const float3 world_pos, const float3 shadow_bias, const uint cascade) 
+SceneLightSample Lights_SampleTiled(const uint index, const float3 world_pos, const float3 shadow_bias, const uint cascade) 
 { 
     return Lights_SampleAt(PK_BUFFER_DATA(pk_LightLists, index), world_pos, shadow_bias, cascade); 
 }
