@@ -62,7 +62,7 @@ void ShadowmapCs()
 
     // Correct offsets by taking projection size into account
     const uint cascade = GetShadowCascadeIndex(depth);
-    const float4x4 light_matrix = PK_BUFFER_DATA(pk_LightMatrices, cascade);
+    const float4x4 light_matrix = PK_BUFFER_DATA(pk_LightMatrices, cascade + 1u);
     const half scale_x = half(length(light_matrix[0].xyz)) * max_radius;
     const half scale_y = half(length(light_matrix[1].xyz)) * max_radius;
     const half2 scale = half2(scale_x, scale_y) * fma(dither_scale, 0.3hf, 0.7hf);

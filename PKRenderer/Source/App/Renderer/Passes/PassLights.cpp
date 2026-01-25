@@ -47,7 +47,6 @@ namespace PK::App
         float exponent;
         uint light_type;
         uint index_mask;
-        uint index_matrix;
         uint index_shadow;
     };
 
@@ -80,7 +79,7 @@ namespace PK::App
         packed.packed1.x = Math::PackHalfToUint(light.color.xy);
         packed.packed1.y = Math::PackHalfToUint({ light.color.z, light.source_radius });
         packed.packed1.z = Math::PackHalfToUint(spotAngles);
-        packed.packed1.w = light.index_shadow | (light.index_matrix << 16u);
+        packed.packed1.w = light.index_shadow;// | (light.index_matrix << 16u);
         packed.packed2.x = Math::PackHalfToUint(light.rotation.xy);
         packed.packed2.y = Math::PackHalfToUint(light.rotation.zw);
         packed.packed2.z = Math::PackHalfToUint({ light.near_clip, light.exponent});
@@ -181,8 +180,7 @@ namespace PK::App
         const auto tileZParams = Math::GetExponentialZParams(renderView->znear, renderView->zfar, m_tileZDistribution, LightGridSizeZ);
         const auto shadowCasterMask = ScenePrimitiveFlags::Mesh | ScenePrimitiveFlags::CastShadows;
         const auto lightCount = (uint)culledLights.GetCount();
-        auto matrixCount = 0u;
-        auto matrixIndex = 0u;
+        auto matrixCount = 1u;
         auto shadowCount = 0u;
 
         ShadowCascades cascadeZSplits;
@@ -194,8 +192,9 @@ namespace PK::App
         for (auto i = 0U; i < lightCount; ++i)
         {
             auto view = context->entityDb->Query<EntityViewLight>(EGID(culledLights[i].entityId, (uint)ENTITY_GROUPS::ACTIVE));
-            context->frameArena->Allocate<ShadowbatchInfo>((view->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0 ? 1u : 0u);
-            matrixCount += SHADOW_TYPE_INFOS[(int)view->light->type].MatrixCount;
+            auto castsSHadows = (view->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0 ? 1u : 0u;
+            context->frameArena->Allocate<ShadowbatchInfo>(castsSHadows);
+            matrixCount += SHADOW_TYPE_INFOS[(int)view->light->type].MatrixCount * castsSHadows;
             resources->lightViews[i] = view;
         }
     
@@ -215,7 +214,7 @@ namespace PK::App
             const auto& worldToLocal = transform->worldToLocal;
             const auto& shadowTypeInfo = SHADOW_TYPE_INFOS[(uint32_t)view->light->type];
             const auto castShadows = (view->primitive->flags & ScenePrimitiveFlags::CastShadows) != 0;
-            auto* matrices = matricesView.data + matrixIndex;
+            float4x4 matrices[ShadowCascadeCount];
 
             SceneLight light{};
             light.position = transform->position;
@@ -228,9 +227,7 @@ namespace PK::App
             light.exponent = view->light->exponent;
             light.light_type = (uint)view->light->type;
             light.index_mask = (uint)view->light->cookie;
-            light.index_matrix = matrixIndex;
-            light.index_shadow = 0xFFFFu;
-            matrixIndex += shadowTypeInfo.MatrixCount;
+            light.index_shadow = 0u;
 
             RequestEntityCullResults shadowCasters{};
             ShadowCascadeCreateInfo cascadeInfo{};
@@ -279,9 +276,15 @@ namespace PK::App
 
             if (shadowCasters.GetCount() > 0u)
             {
-                light.index_shadow = shadowCount;
+                // First element is a dummy matrix for mem access reasons.
+                light.index_shadow = shadowCount + 1u;
                 shadowCount += shadowTypeInfo.TileCount;
                 auto& batches = resources->shadowBatches;
+
+                for (auto i = 0u; i < shadowTypeInfo.MatrixCount; ++i)
+                {
+                    matricesView[light.index_shadow + i] = matrices[i];
+                }
 
                 if (!batches.count || batches[batches.count - 1u].count >= shadowTypeInfo.MaxBatchSize || batches[batches.count - 1u].type != view->light->type)
                 {

@@ -25,7 +25,6 @@ struct SceneLight
     float exponent;
     uint light_type; 
     uint index_mask;
-    uint index_matrix; 
     uint index_shadow; 
 };
 
@@ -68,8 +67,7 @@ SceneLight Lights_UnpackLight(uint4 packed0, uint4 packed1, uint4 packed2)
     l.color.z = unpackHalf2x16(packed1.y).x;
     l.source_radius = unpackHalf2x16(packed1.y).y;
     l.spot_angles = unpackHalf2x16(packed1.z);
-    l.index_shadow = bitfieldExtract(packed1.w, 0, 16);
-    l.index_matrix = bitfieldExtract(packed1.w, 16, 16);
+    l.index_shadow = packed1.w;
     l.rotation.xy = unpackHalf2x16(packed2.x);
     l.rotation.zw = unpackHalf2x16(packed2.y);
     l.near_clip = unpackHalf2x16(packed2.z).x;

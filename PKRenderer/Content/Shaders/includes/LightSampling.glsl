@@ -54,7 +54,6 @@ SceneLightSample Lights_SampleAt(const uint index, float3 world_pos, const float
     const float4 L = NormalizeLength(light.position - world_pos);
     
     uint index_shadow = light.index_shadow;
-    uint index_matrix = light.index_matrix; 
     float source_radius = light.source_radius;
     float3 radiance = light.color;
 
@@ -68,7 +67,6 @@ SceneLightSample Lights_SampleAt(const uint index, float3 world_pos, const float
     if (light.light_type == LIGHT_TYPE_DIRECTIONAL)
     {
         pos_to_light = -light.position;
-        index_matrix += cascade;
         index_shadow += cascade;
 
         #if SHADOW_SAMPLE_VOLUMETRICS == 0
@@ -98,9 +96,9 @@ SceneLightSample Lights_SampleAt(const uint index, float3 world_pos, const float
     }
     else
     {
-        shadow_uv_min_max = Lights_GetClipUvw(world_pos, index_matrix).xyxy;
+        shadow_uv_min_max = Lights_GetClipUvw(world_pos, index_shadow).xyxy;
         #if SHADOW_SAMPLE_VOLUMETRICS == 1
-        shadow_uv_min_max = Lights_GetClipUvMinMax(world_pos, shadow_bias, index_matrix);
+        shadow_uv_min_max = Lights_GetClipUvMinMax(world_pos, shadow_bias, index_shadow);
         #endif
     }
 
@@ -109,19 +107,21 @@ SceneLightSample Lights_SampleAt(const uint index, float3 world_pos, const float
         // First Directional light has a screen space shadows.
         #if defined(SHADER_STAGE_FRAGMENT) && SHADOW_SAMPLE_SCREENSPACE == 1
         [[branch]]
-        if ((light.light_type) == LIGHT_TYPE_DIRECTIONAL && light.index_shadow == 0u)
+        if ((light.light_type) == LIGHT_TYPE_DIRECTIONAL && light.index_shadow == 1u)
         {
             shadow *= texelFetch(pk_ShadowmapScreenSpace, int2(gl_FragCoord.xy), 0).r;
         }
         else
         #endif
         [[branch]]
-        if (index_shadow < LIGHT_PARAM_INVALID)
+        if (light.index_shadow > 0u)
         {
+            const uint shadow_array_index = index_shadow - 1u;
+
             #if SHADOW_SAMPLE_VOLUMETRICS == 1
-                shadow = ShadowTest_Volumetrics4(index_shadow, shadow_uv_min_max, shadow_distance);
+                shadow = ShadowTest_Volumetrics4(shadow_array_index, shadow_uv_min_max, shadow_distance);
             #else
-                shadow *= SHADOW_TEST(index_shadow, shadow_uv_min_max.xy, shadow_distance);
+                shadow *= SHADOW_TEST(shadow_array_index, shadow_uv_min_max.xy, shadow_distance);
             #endif
         }
     }
