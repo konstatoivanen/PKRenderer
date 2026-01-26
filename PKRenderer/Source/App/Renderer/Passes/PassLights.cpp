@@ -242,11 +242,9 @@ namespace PK::App
                 cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
                 cascadeInfo.count = ShadowCascadeCount;
                 Math::GetShadowCascadeMatrices(cascadeInfo, matrices);
-            }
-
-            if (view->light->type == LightType::Spot)
-            {
-                *matrices = Math::GetPerspective(view->light->angle, 1.0f, view->light->nearClip, view->light->radius) * worldToLocal;
+                const auto nearPlane = Math::GetNearPlane(*matrices);
+                light.position = float3(nearPlane.xyz);
+                light.radius = nearPlane.w;
             }
 
             if (castShadows && view->light->type == LightType::Directional)
@@ -259,6 +257,7 @@ namespace PK::App
 
             if (castShadows && view->light->type == LightType::Spot)
             {
+                *matrices = Math::GetPerspective(view->light->angle, 1.0f, view->light->nearClip, view->light->radius) * worldToLocal;
                 shadowCasters = context->cullingProxy->CullFrustum(shadowCasterMask, *matrices);
             }
 
@@ -267,24 +266,14 @@ namespace PK::App
                 shadowCasters = context->cullingProxy->CullCubeFaces(shadowCasterMask, view->bounds->worldAABB);
             }
 
-            if (view->light->type == LightType::Directional)
-            {
-                const auto nearPlane = Math::GetNearPlane(*matrices);
-                light.position = float3(nearPlane.xyz);
-                light.radius = nearPlane.w;
-            }
-
             if (shadowCasters.GetCount() > 0u)
             {
                 // First element is a dummy matrix for mem access reasons.
                 light.index_shadow = shadowCount + 1u;
                 shadowCount += shadowTypeInfo.TileCount;
                 auto& batches = resources->shadowBatches;
-
-                for (auto i = 0u; i < shadowTypeInfo.MatrixCount; ++i)
-                {
-                    matricesView[light.index_shadow + i] = matrices[i];
-                }
+                
+                memcpy(matricesView.data + light.index_shadow, matrices, sizeof(float4x4) * shadowTypeInfo.MatrixCount);
 
                 if (!batches.count || batches[batches.count - 1u].count >= shadowTypeInfo.MaxBatchSize || batches[batches.count - 1u].type != view->light->type)
                 {

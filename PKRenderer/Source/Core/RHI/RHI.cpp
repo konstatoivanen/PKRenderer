@@ -76,6 +76,7 @@ namespace PK
                 features.vk10.features.multiDrawIndirect = VK_TRUE;
                 features.vk10.features.shaderStorageImageReadWithoutFormat = VK_TRUE;
                 features.vk10.features.shaderStorageImageWriteWithoutFormat = VK_TRUE;
+                features.vk10.features.depthClamp = VK_TRUE;
                 features.vk11.storageBuffer16BitAccess = VK_TRUE;
                 features.vk11.uniformAndStorageBuffer16BitAccess = VK_TRUE;
                 features.vk11.storagePushConstant16 = VK_TRUE;

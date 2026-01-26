@@ -6,7 +6,7 @@
 PK_DECLARE_SET_PASS uniform sampler2DArray pk_ShadowmapAtlas;
 PK_DECLARE_SET_PASS uniform sampler2D pk_ShadowmapScreenSpace;
 
-#define SHADOW_NEAR_BIAS 0.06f
+#define SHADOW_NEAR_BIAS 0.05f
 #define SHADOW_HARD_EDGE_FADE_FACTOR 20.0hf
 #define SHADOW_PCSS_SUBGROUP 1
 #define SHADOW_SIZE textureSize(pk_ShadowmapAtlas, 0)
