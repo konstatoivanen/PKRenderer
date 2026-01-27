@@ -33,6 +33,7 @@ namespace PK::App
         {
             TextureFormat format;
             TextureUsage usage;
+            bool isSwappable;
         };
 
         typedef FixedArray<TargetDescriptor, Count> Descriptor;
@@ -49,6 +50,7 @@ namespace PK::App
         RHITextureRef normals = nullptr;
         RHITextureRef depthBiased = nullptr;
         RHITextureRef depth = nullptr;
+        uint32_t swapMask = 0u;
 
         static uint2 AlignResolution(const uint2& resolution);
         uint3 GetResolution() const;
@@ -78,6 +80,7 @@ namespace PK::App
         inline float GetAspectRatio() const { return current.GetAspectRatio(); }
         inline View GetView() { return { current.GetView(), previous.GetView() }; }
         bool Validate(const uint2& resolution, const GBuffersFullDescriptor& descriptor, const char* namePrefix);
+        void SwapBuffers();
     };
 
     struct IRenderViewResources : NoCopy

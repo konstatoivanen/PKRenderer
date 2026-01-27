@@ -169,17 +169,17 @@ namespace PK::App
             auto view = context->views[i];
         
             GBuffersFullDescriptor desc;
-            desc.current[GBuffers::Color] = { TextureFormat::RGBA16F, TextureUsage::RTColorSample | TextureUsage::Storage };
-            desc.current[GBuffers::Normals] = { TextureFormat::RGB10A2, TextureUsage::RTColorSample };
-            desc.current[GBuffers::DepthBiased] = { TextureFormat::R32F, TextureUsage::RTColorSample };
-            desc.current[GBuffers::Depth] = { TextureFormat::Depth32F, TextureUsage::RTDepthSample };
+            desc.current[GBuffers::Color] = { TextureFormat::RGBA16F, TextureUsage::RTColorSample | TextureUsage::Storage, false };
+            desc.current[GBuffers::Normals] = { TextureFormat::RGB10A2, TextureUsage::RTColorSample, true };
+            desc.current[GBuffers::DepthBiased] = { TextureFormat::R32F, TextureUsage::RTColorSample, true };
+            desc.current[GBuffers::Depth] = { TextureFormat::Depth32F, TextureUsage::RTDepthSample, true };
 
             // Alpha needed for current color to determine translucency in taa
             // @TODO Refactor taa to output to previous color and flip back in composite. allows for barrel distort as well.
-            desc.previous[GBuffers::Color] = { TextureFormat::RGBA16F, TextureUsage::Default | TextureUsage::Storage };
-            desc.previous[GBuffers::Normals] = { TextureFormat::RGB10A2, TextureUsage::Default };
-            desc.previous[GBuffers::DepthBiased] = { TextureFormat::R32F, TextureUsage::Default };
-            desc.previous[GBuffers::Depth] = { TextureFormat::Depth32F, TextureUsage::Default };
+            desc.previous[GBuffers::Color] = { TextureFormat::RGBA16F, TextureUsage::Default | TextureUsage::Storage, false };
+            desc.previous[GBuffers::Normals] = { TextureFormat::RGB10A2, TextureUsage::RTColorSample, true };
+            desc.previous[GBuffers::DepthBiased] = { TextureFormat::R32F, TextureUsage::RTColorSample, true };
+            desc.previous[GBuffers::Depth] = { TextureFormat::Depth32F, TextureUsage::RTDepthSample, true };
             
             ValidateViewGBuffers(view, desc);
             ValidateViewConstantBuffer(view, m_constantsLayout);
@@ -387,14 +387,13 @@ namespace PK::App
 
         DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::AfterPostEffects);
 
+        primaryView->gbuffers.SwapBuffers();
+
         queues->Wait(QueueType::Graphics, QueueType::Compute);
         queues->Submit(QueueType::Graphics, &cmdgraphics.commandBuffer);
         
         // Sync next frames transfer ops to end of rendering above.
         queues->Wait(QueueType::Transfer, QueueType::Graphics);
 
-        cmdgraphics->Blit(gbuffers.current.normals, gbuffers.previous.normals, {}, {}, FilterMode::Point);
-        cmdgraphics->Blit(gbuffers.current.depthBiased, gbuffers.previous.depthBiased, {}, {}, FilterMode::Point);
-        cmdgraphics->Blit(gbuffers.current.depth, gbuffers.previous.depth, {}, {}, FilterMode::Point);
     }
 }

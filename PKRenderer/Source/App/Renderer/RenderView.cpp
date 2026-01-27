@@ -31,13 +31,15 @@ namespace PK::App
 
         auto isOutOfDate = false;
 
+        swapMask = 0u;
+
         for (auto i = 0; i < Count; ++i)
         {
+            swapMask |= (descriptor[i].isSwappable) << i;
             textureDescriptor.format = descriptor[i].format;
             textureDescriptor.usage = descriptor[i].usage;
 
-            if (textureDescriptor.format == TextureFormat::Invalid ||
-                textureDescriptor.usage == TextureUsage::None)
+            if (textureDescriptor.format == TextureFormat::Invalid || textureDescriptor.usage == TextureUsage::None)
             {
                 isOutOfDate |= (&color)[i] != nullptr;
                 (&color)[i] = nullptr;
@@ -57,5 +59,20 @@ namespace PK::App
         isOutOfDate |= current.Validate(resolution, descriptor.current, FixedString64({namePrefix,".Current."}).c_str());
         isOutOfDate |= previous.Validate(resolution, descriptor.previous, FixedString64({namePrefix,".Previous."}).c_str());
         return isOutOfDate;
+    }
+
+    void GBuffersFull::SwapBuffers()
+    {
+        auto mask = current.swapMask & previous.swapMask;
+        auto buffsCur = &current.color;
+        auto buffsPre = &previous.color;
+
+        for (auto i = 0u; i < GBuffers::Count; ++i)
+        {
+            if (mask & (1 << i))
+            {
+                std::swap(buffsCur[i], buffsPre[i]);
+            }
+        }
     }
 }
