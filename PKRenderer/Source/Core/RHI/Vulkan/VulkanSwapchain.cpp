@@ -105,8 +105,9 @@ namespace PK
 
         // This is not strictly necesssary when not using double buffering for staging buffers.
         // However, for them to have coherent memory operations we cannot push more than 2 frames at a time.
-        // @TODO when using more than double buffered swap chain this will occasionally hang for a long time.
-        // Maybe move this wait till later in the frame??
+        // @TODO NV by default uses DXGI layered swapchain. the present of which is not visible to the application
+        // In this mode the imaqe acquire fence only waits for the vk submit usage and not the full present.
+        // This causes the frame time to accumulate unevenly and an eventual long wait when the dxgi swapchain has to actually wait for images.
         PK_THROW_ASSERT(m_frameFences[m_frameIndex].WaitInvalidate(UINT64_MAX), "Frame fence timeout!");
 
         auto queuePresent = m_driver->queues->GetQueue(QueueType::Present);

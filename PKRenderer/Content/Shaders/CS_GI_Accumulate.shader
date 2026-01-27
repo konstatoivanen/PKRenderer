@@ -60,9 +60,10 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
                     break;
                 }
 
-                // Sample vas invalidaded. reduce radius as this area is likely to have high frequency details.
-                scale_bias--;
             }
+            
+            // Sample vas invalidaded. reduce radius as this area is likely to have high frequency details.
+            scale_bias--;
         }
 
         scale = clamp(scale + scale_bias, 2, 5);
