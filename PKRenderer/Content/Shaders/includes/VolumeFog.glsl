@@ -18,19 +18,18 @@
 #define VOLUMEFOG_FADE_START_SHADOW_DIRECT 0.95f
 #define VOLUMEFOG_FADE_START_SHADOW_SELF 0.75f
 
-PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_ScatterRead;
-PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_InjectRead;
-PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_DensityRead;
-PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_ExtinctionRead;
-PK_DECLARE_SET_SHADER uniform uimage3D pk_Fog_Inject;
-PK_DECLARE_SET_SHADER uniform image3D pk_Fog_Density;
-PK_DECLARE_SET_SHADER uniform image3D pk_Fog_Scatter;
+PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_Scatter_Read;
+PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_Inject_Read;
+PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_Density_Read;
+PK_DECLARE_SET_SHADER uniform uimage3D pk_Fog_Inject_Write;
+PK_DECLARE_SET_SHADER uniform image3D pk_Fog_Density_Write;
+PK_DECLARE_SET_SHADER uniform image3D pk_Fog_Scatter_Write;
 
-DEFINE_TRICUBIC_SAMPLER(pk_Fog_ScatterRead, VOLUMEFOG_SIZE)
+DEFINE_TRICUBIC_SAMPLER(pk_Fog_Scatter_Read, VOLUMEFOG_SIZE)
 
-DEFINE_TRICUBIC_SAMPLER(pk_Fog_DensityRead, VOLUMEFOG_SIZE)
+DEFINE_TRICUBIC_SAMPLER(pk_Fog_Density_Read, VOLUMEFOG_SIZE)
 
-DEFINE_TRICUBIC_SAMPLER(pk_Fog_InjectRead, VOLUMEFOG_SIZE)
+DEFINE_TRICUBIC_SAMPLER(pk_Fog_Inject_Read, VOLUMEFOG_SIZE)
 
 float Fog_ZToView(float z) { return ViewDepthExp(z, pk_Fog_ZParams.xyz); }
 float Fog_ViewToZ(float z) { return ClipDepthExp(z, pk_Fog_ZParams.xyz); }
@@ -93,7 +92,7 @@ float3 Fog_EstimateTransmittance(const float3 uvw, float fade_static)
 {
     const float depth_min = Fog_ZToView(uvw.z);
     const float depth_max = Fog_ZToView(min(1.0f, uvw.z + VOLUMEFOG_SIZE_Z_INV));
-    const float density = texture(pk_Fog_DensityRead, uvw).x;
+    const float density = texture(pk_Fog_Density_Read, uvw).x;
     const float extinction = density * (depth_max - depth_min) * fade_static;
     return exp(-extinction * pk_Fog_Absorption.rgb);
 }
@@ -141,7 +140,7 @@ float4 Fog_SampleFroxel(float2 uv, float view_depth, float3 color)
     float2 dither = GlobalNoiseBlue(uint2(uv * pk_ScreenSize.xy), pk_FrameIndex.x).xy;
     uvw.xy += (dither - 0.5f) * 2.0f.xx / VOLUMEFOG_SIZE_XY;
 
-    float4 scatter = SAMPLE_TRICUBIC(pk_Fog_ScatterRead, uvw);
+    float4 scatter = SAMPLE_TRICUBIC(pk_Fog_Scatter_Read, uvw);
     // Reconstruct extinction & apply absorption (this leads to some bias due to floating point precision).
     float3 transmittance = exp(log(scatter.a) * pk_Fog_Absorption.rgb);
 

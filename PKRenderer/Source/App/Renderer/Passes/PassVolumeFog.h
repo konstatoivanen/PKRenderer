@@ -10,12 +10,9 @@ namespace PK::App
         public:
             struct ViewResources
             {
-                RHITextureRef volumeInject;
-                RHITextureRef volumeInjectPrev;
-                RHITextureRef volumeDensity;
-                RHITextureRef volumeDensityPrev;
+                RHITextureRef volumeInject[2];
+                RHITextureRef volumeDensity[2];
                 RHITextureRef volumeScatter;
-                RHITextureRef volumeExtinction;
             };
 
             PassVolumeFog(AssetDatabase* assetDatabase);

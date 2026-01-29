@@ -46,11 +46,13 @@ namespace PK::App
 
     void PassVolumeFog::ComputeDensity(CommandBufferExt cmd, RenderPipelineContext* context)
     {
-        auto hash = HashCache::Get();
         auto view = context->views[0];
         auto resources = view->GetResources<ViewResources>();
-        auto resolution = view->GetResolution();
+        const auto hash = HashCache::Get();
+        const auto resolution = view->GetResolution();
         const uint3 volumeResolution = { resolution.x / 8u, resolution.y / 8u, 128u };
+        const auto index_cur = (view->timeRender.frameIndex + 0ull) & 0x1ull;
+        const auto index_pre = (view->timeRender.frameIndex + 1ull) & 0x1ull;
 
         cmd->BeginDebugScope("Fog.InjectionScattering", PK_COLOR_MAGENTA);
 
@@ -70,53 +72,51 @@ namespace PK::App
 
             descriptor.format = TextureFormat::RGB9E5;
             descriptor.formatAlias = TextureFormat::R32UI;
-            hasResized |= RHI::ValidateTexture(resources->volumeInject, descriptor, "Fog.InjectVolume");
-            hasResized |= RHI::ValidateTexture(resources->volumeInjectPrev, descriptor, "Fog.InjectVolume.Previous");
+            hasResized |= RHI::ValidateTexture(resources->volumeInject[0], descriptor, "Fog.InjectVolume0");
+            hasResized |= RHI::ValidateTexture(resources->volumeInject[1], descriptor, "Fog.InjectVolume1");
 
             descriptor.format = TextureFormat::R16F;
             descriptor.formatAlias = TextureFormat::Invalid;
             descriptor.usage = TextureUsage::Sample | TextureUsage::Storage;
-            hasResized |= RHI::ValidateTexture(resources->volumeDensity, descriptor, "Fog.DensityVolume");
-            hasResized |= RHI::ValidateTexture(resources->volumeDensityPrev, descriptor, "Fog.DensityVolume.Previous");
+            hasResized |= RHI::ValidateTexture(resources->volumeDensity[0], descriptor, "Fog.DensityVolume0");
+            hasResized |= RHI::ValidateTexture(resources->volumeDensity[1], descriptor, "Fog.DensityVolume1");
         }
-
-        RHI::SetImage(hash->pk_Fog_Inject, resources->volumeInjectPrev.get());
-        RHI::SetTexture(hash->pk_Fog_InjectRead, resources->volumeInject.get());
-        RHI::SetImage(hash->pk_Fog_Density, resources->volumeDensity.get());
-        RHI::SetTexture(hash->pk_Fog_DensityRead, resources->volumeDensityPrev.get());
 
         if (hasResized)
         {
+            RHI::SetImage(hash->pk_Fog_Inject_Write, resources->volumeInject[index_pre].get());
+            RHI::SetImage(hash->pk_Fog_Density_Write, resources->volumeDensity[index_pre].get());
             cmd.Dispatch(m_compute, PASS_CLEAR, volumeResolution);
         }
 
+        RHI::SetImage(hash->pk_Fog_Density_Write, resources->volumeDensity[index_cur].get());
+        RHI::SetTexture(hash->pk_Fog_Density_Read, resources->volumeDensity[index_pre].get());
         cmd.Dispatch(m_compute, PASS_DENSITY, volumeResolution);
-
-        RHI::SetImage(hash->pk_Fog_Density, resources->volumeDensityPrev.get());
-        RHI::SetTexture(hash->pk_Fog_DensityRead, resources->volumeDensity.get());
 
         cmd->EndDebugScope();
     }
 
     void PassVolumeFog::Compute(CommandBufferExt cmd, RenderPipelineContext* context)
     {
-        auto hash = HashCache::Get();
         auto view = context->views[0];
         auto resources = view->GetResources<ViewResources>();
-        auto resolution = view->GetResolution();
+        const auto hash = HashCache::Get();
+        const auto resolution = view->GetResolution();
         const uint3 volumeResolution = { resolution.x / 8u, resolution.y / 8u, 128u };
+        const auto index_cur = (view->timeRender.frameIndex + 0ull) & 0x1ull;
+        const auto index_pre = (view->timeRender.frameIndex + 1ull) & 0x1ull;
 
         cmd->BeginDebugScope("Fog.InjectionScattering", PK_COLOR_MAGENTA);
        
-        RHI::SetImage(hash->pk_Fog_Inject, resources->volumeInject.get());
-        RHI::SetTexture(hash->pk_Fog_InjectRead, resources->volumeInjectPrev.get());
+        RHI::SetImage(hash->pk_Fog_Inject_Write, resources->volumeInject[index_cur].get());
+        RHI::SetTexture(hash->pk_Fog_Inject_Read, resources->volumeInject[index_pre].get());
         cmd.Dispatch(m_compute, PASS_INJECT, volumeResolution);
-        RHI::SetImage(hash->pk_Fog_Inject, resources->volumeInjectPrev.get());
-        RHI::SetTexture(hash->pk_Fog_InjectRead, resources->volumeInject.get());
 
-        RHI::SetImage(hash->pk_Fog_Scatter, resources->volumeScatter.get());
-        RHI::SetTexture(hash->pk_Fog_ScatterRead, resources->volumeScatter.get());
+        RHI::SetTexture(hash->pk_Fog_Inject_Read, resources->volumeInject[index_cur].get());
+        RHI::SetImage(hash->pk_Fog_Scatter_Write, resources->volumeScatter.get());
         cmd.Dispatch(m_compute, PASS_INTEGRATE, { volumeResolution.x, volumeResolution.y, 1u });
+        
+        RHI::SetTexture(hash->pk_Fog_Scatter_Read, resources->volumeScatter.get());
 
         cmd->EndDebugScope();
     }

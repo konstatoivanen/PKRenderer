@@ -26,8 +26,8 @@ layout(local_size_x = PK_W_ALIGNMENT_4, local_size_y = PK_W_ALIGNMENT_4, local_s
 void ClearCs()
 {
     const int3 coord = int3(gl_GlobalInvocationID);
-    imageStore(pk_Fog_Density, coord, 0.0f.xxxx);
-    imageStore(pk_Fog_Inject, coord, uint4(0));
+    imageStore(pk_Fog_Density_Write, coord, 0.0f.xxxx);
+    imageStore(pk_Fog_Inject_Write, coord, uint4(0));
 }
 
 layout(local_size_x = PK_W_ALIGNMENT_4, local_size_y = PK_W_ALIGNMENT_4, local_size_z = PK_W_ALIGNMENT_4) in;
@@ -41,12 +41,9 @@ void DensityCs()
     const float3 uvw_prev = Fog_WorldToPrevUvw(world_pos);
 
     const float value_cur = Fog_CalculateDensity(world_pos);
-    const float value_pre = SAMPLE_TRICUBIC(pk_Fog_DensityRead, uvw_prev).x;
-    const float3 inject_pre = texelFetch(pk_Fog_InjectRead, pos, 0).rgb;
+    const float value_pre = SAMPLE_TRICUBIC(pk_Fog_Density_Read, uvw_prev).x;
     const float value_out = lerp(value_pre, value_cur, Fog_GetAccumulation(uvw_prev));
-
-    imageStore(pk_Fog_Density, pos, -min(0.0f, -value_out).xxxx);
-    imageStore(pk_Fog_Inject, pos, EncodeE5BGR9(inject_pre).xxxx);
+    imageStore(pk_Fog_Density_Write, pos, -min(0.0f, -value_out).xxxx);
 }
 
 layout(local_size_x = PK_W_ALIGNMENT_4, local_size_y = PK_W_ALIGNMENT_4, local_size_z = PK_W_ALIGNMENT_4) in;
@@ -71,7 +68,7 @@ void InjectCs()
         [[branch]]
         if (subgroupAll(wave_zmax < tile_zmax))
         {
-            imageStore(pk_Fog_Inject, int3(coord), uint4(0));
+            imageStore(pk_Fog_Inject_Write, int3(coord), uint4(0));
             return;
         }
     }
@@ -135,16 +132,11 @@ void InjectCs()
     }
 
     // Note it is faster to solve tricubic here rather than in density reproject.
-    const float3 value_pre = SAMPLE_TRICUBIC(pk_Fog_InjectRead, uvw_prev).rgb;
-
     const float accumulation = Fog_GetAccumulation(uvw_prev);
+    const float3 value_pre = SAMPLE_TRICUBIC(pk_Fog_Inject_Read, uvw_prev).rgb;
+    const float3 value_out = -min(0.0f.xxx, -lerp(value_pre, value_cur, accumulation));
 
-    float3 value_out = lerp(value_pre, value_cur, accumulation);
-
-    // Remove potential NaNs.
-    value_out = -min(-0.0f.xxx, -value_out);
-
-    imageStore(pk_Fog_Inject, int3(coord), EncodeE5BGR9(value_out).xxxx);
+    imageStore(pk_Fog_Inject_Write, int3(coord), EncodeE5BGR9(value_out).xxxx);
 }
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
@@ -161,8 +153,8 @@ void IntegrateCs()
         const float depth_max = Fog_ZToView((pos.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV);
         const float slice_width = depth_max - depth_min;
 
-        const float  density = texelFetch(pk_Fog_DensityRead, pos, 0).x;
-        const float3 irradiance = texelFetch(pk_Fog_InjectRead, pos, 0).rgb * pk_Fog_Albedo.rgb;
+        const float  density = texelFetch(pk_Fog_Density_Read, pos, 0).x;
+        const float3 irradiance = texelFetch(pk_Fog_Inject_Read, pos, 0).rgb * pk_Fog_Albedo.rgb;
 
         const float  extinction = density * slice_width;
         const float3 transmittance = exp(-extinction * pk_Fog_Absorption.rgb);
@@ -173,11 +165,7 @@ void IntegrateCs()
         accum_scatter.a *= exp(-extinction);
         accum_transmittance *= transmittance;
 
-        imageStore(pk_Fog_Scatter, pos, accum_scatter);
-
-        // Copy previous values for reprojection
-        // Iraddiance is copied in density pass to alleviate memory load of this pass
-        imageStore(pk_Fog_Density, pos, density.xxxx);
+        imageStore(pk_Fog_Scatter_Write, pos, accum_scatter);
     }
 }
 
