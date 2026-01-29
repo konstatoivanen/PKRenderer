@@ -1,7 +1,7 @@
 
 #extension GL_KHR_shader_subgroup_shuffle : require
 #pragma pk_multi_compile FX_APPLY_ALL FX_APPLY_MASK FX_APPLY_DEBUG
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE PostEffectsCompositeCs
 
 #include "includes/PostFXColorGrading.glsl"
 #include "includes/PostFXFilmGrain.glsl"
@@ -21,7 +21,7 @@
 PK_DECLARE_SET_DRAW uniform image2D pk_Image;
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
-void main()
+void PostEffectsCompositeCs()
 {
     const int2 size = imageSize(pk_Image).xy;
     const int2 coord = int2(gl_GlobalInvocationID.xy);

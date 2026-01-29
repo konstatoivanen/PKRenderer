@@ -1,6 +1,6 @@
 
 #extension GL_KHR_shader_subgroup_shuffle : enable
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE TemporalAntialiasCs
 #define PK_USE_SINGLE_DESCRIPTOR_SET
 
 #include "includes/GBuffers.glsl"
@@ -17,7 +17,7 @@ float3 TonemapColor(const float3 c) { return c / (1.0 + cmax(c)); }
 float3 UntonemapColor(const float3 c) { return c / max(1.0f / 65504.0f, 1.0 - cmax(c)); }
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
-void main()
+void TemporalAntialiasCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const int2 size = int2(pk_ScreenSize.xy * 2u);

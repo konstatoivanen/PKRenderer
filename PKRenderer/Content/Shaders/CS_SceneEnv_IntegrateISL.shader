@@ -1,7 +1,7 @@
 
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 #extension GL_KHR_shader_subgroup_shuffle : enable
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE IntegrateCs
 #pragma pk_multi_compile PASS_INTEGRATE PASS_REDUCE_MIP
 #define PK_USE_SINGLE_DESCRIPTOR_SET
 #include "includes/Common.glsl"
@@ -42,7 +42,7 @@ float3 GetDirectionHemisphere(float2 xi)
 }
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
-void main()
+void IntegrateCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
     const uint thread = gl_LocalInvocationIndex;

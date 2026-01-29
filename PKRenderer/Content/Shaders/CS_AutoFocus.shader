@@ -1,10 +1,10 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE AutoFocusCs
 
 #include "includes/PostFXDepthOfField.glsl"
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-void main()
+void AutoFocusCs()
 {
     float center_depth = min(SampleMinZ(float2(0.5f, 0.5f), 4), pk_ClipParams.y - 1e-4f);
 

@@ -3,7 +3,7 @@
 #extension GL_KHR_shader_subgroup_shuffle : require
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
 #pragma pk_multi_compile _ PK_GI_RESTIR
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE AccumulateCs
 
 #define PK_GI_LOAD_LVL 1
 #define PK_GI_STORE_LVL 0
@@ -182,7 +182,7 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
 }
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
-void main()
+void AccumulateCs()
 {
     const int2 coord_base = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(coord_base));

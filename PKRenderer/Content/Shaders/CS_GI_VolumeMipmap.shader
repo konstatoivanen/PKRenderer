@@ -1,4 +1,4 @@
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE VolumeMipmapCs
 #include "includes/Utilities.glsl"
 
 PK_DECLARE_SET_DRAW uniform sampler3D pk_Texture;
@@ -10,7 +10,7 @@ PK_DECLARE_SET_DRAW uniform writeonly restrict image3D pk_Image2;
 shared float4 lds_Data[GROUP_SIZE * GROUP_SIZE * GROUP_SIZE];
 
 layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = GROUP_SIZE) in;
-void main()
+void VolumeMipmapCs()
 {
     const uint thread = gl_LocalInvocationIndex;
     const uint3 size_base = uint3(textureSize(pk_Texture, 0).xyz);
@@ -20,6 +20,7 @@ void main()
 
     float4 local = lds_Data[thread] = textureLod(pk_Texture, uvw, level);
     imageStore(pk_Image, int3(gl_GlobalInvocationID), local);
+
     barrier();
 
     // Cant use binary mask due to 3d coordinates
@@ -37,6 +38,7 @@ void main()
         lds_Data[thread] = local;
         imageStore(pk_Image1, int3(gl_GlobalInvocationID) >> 1, local);
     }
+
     barrier();
 
     if (thread == 0u)

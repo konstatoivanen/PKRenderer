@@ -1,5 +1,5 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE CompressBC6HCs
 
 #include "includes/Utilities.glsl"
 
@@ -778,7 +778,7 @@ void EncodeP2Pattern(inout uint4 block, inout float blockMSLE, int pattern, floa
 }
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
-void main()
+void CompressBC6HCs()
 {
     uint2 blockCoord = gl_GlobalInvocationID.xy;
     uint2 levelSize = gl_NumWorkGroups.xy * gl_WorkGroupSize.xy;

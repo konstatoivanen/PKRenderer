@@ -1,5 +1,5 @@
 
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE IntegrateCs
 #define PK_USE_SINGLE_DESCRIPTOR_SET
 #include "includes/Common.glsl"
 #include "includes/BRDF.glsl"
@@ -8,7 +8,7 @@
 PK_DECLARE_SET_DRAW uniform writeonly restrict image2D pk_Image;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
-void main()
+void IntegrateCs()
 {
     const int size = imageSize(pk_Image).x;
     const int2 coord = int2(gl_GlobalInvocationID.xy);

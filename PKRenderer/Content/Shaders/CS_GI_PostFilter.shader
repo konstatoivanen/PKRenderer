@@ -2,7 +2,7 @@
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 #extension GL_KHR_shader_subgroup_shuffle : enable
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE PostFilterCs
 
 #define PK_GI_LOAD_LVL 0
 #define PK_GI_STORE_LVL 1
@@ -11,7 +11,7 @@
 #include "includes/ComputeQuadSwap.glsl"
 
 layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
-void main()
+void PostFilterCs()
 {
     const int2 coord_base = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(coord_base));

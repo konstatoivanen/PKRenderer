@@ -3,7 +3,7 @@
 #extension GL_KHR_shader_subgroup_shuffle : enable
 #pragma pk_multi_compile _ PK_GI_SPEC_VIRT_REPROJECT
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE ReprojectCs
 
 #define PK_GI_LOAD_LVL 1
 #define PK_GI_STORE_LVL 0
@@ -21,7 +21,7 @@ float GI_GetAntilag_SubgroupStretch(float2 reproject_coord)
 }
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
-void main()
+void ReprojectCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
 

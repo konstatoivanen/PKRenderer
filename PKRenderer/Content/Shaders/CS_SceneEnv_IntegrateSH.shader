@@ -1,4 +1,4 @@
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE IntegrateCs
 
 #include "includes/Common.glsl"
 #include "includes/SceneEnv.glsl"
@@ -14,7 +14,7 @@ shared float4 lds_SH_G[GROUP_SIZE * GROUP_SIZE];
 shared float4 lds_SH_B[GROUP_SIZE * GROUP_SIZE];
 
 layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
-void main()
+void IntegrateCs()
 {
     const uint2 coord = gl_LocalInvocationID.xy * uint2(4u);
     const uint thread = gl_LocalInvocationIndex;

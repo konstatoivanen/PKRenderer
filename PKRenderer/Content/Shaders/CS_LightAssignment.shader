@@ -1,6 +1,6 @@
 
 #pragma pk_with_atomic_counter
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE LightAssignmentCs
 
 #define PK_USE_CUSTOM_DESCRIPTOR_SET_INDICES
 #define PK_SET_GLOBAL 0
@@ -79,7 +79,7 @@ bool IntersectionTest(uint lightIndex)
 }
 
 layout(local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y, local_size_z = GROUP_SIZE_Z) in;
-void main()
+void LightAssignmentCs()
 {
     const uint3 coord = gl_GlobalInvocationID;
     const uint thread = gl_LocalInvocationIndex;

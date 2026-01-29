@@ -2,7 +2,7 @@
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 #extension GL_KHR_shader_subgroup_shuffle : enable
 #pragma pk_multi_compile _ PK_HIZ_FINAL_PASS
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE HierarchicalDepthCs
 #define PK_USE_SINGLE_DESCRIPTOR_SET
 
 #include "includes/GBuffers.glsl"
@@ -18,7 +18,7 @@ PK_DECLARE_SET_DRAW uniform writeonly restrict image2DArray pk_Image4;
 shared float2 lds_Depth;
 
 layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
-void main()
+void HierarchicalDepthCs()
 {
     const uint2 size = uint2(pk_ScreenSize.xy);
     const int2 coord = int2(gl_GlobalInvocationID.xy);

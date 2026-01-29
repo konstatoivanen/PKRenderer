@@ -1,6 +1,6 @@
 
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE ShadeHitsCs
 
 #define PK_USE_SINGLE_DESCRIPTOR_SET
 #define PK_GI_LOAD_LVL 1
@@ -32,7 +32,7 @@ float3 SampleRadiance(const float3 origin, const float3 direction, const GIRayHi
 }
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
-void main()
+void ShadeHitsCs()
 {
     const int2 coord_ray = int2(gl_GlobalInvocationID.xy);
     const int2 coord = GI_ExpandCheckerboardCoord(uint2(coord_ray));

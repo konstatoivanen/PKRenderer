@@ -1,4 +1,4 @@
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_program SHADER_STAGE_COMPUTE FilmGrainCs
 #include "includes/Common.glsl"
 
 PK_DECLARE_SET_DRAW uniform image2D pk_Image;
@@ -60,7 +60,7 @@ float3 NoiseGrainColor(const float2 uv, const float x, const float range)
 }
 
 layout(local_size_x = 16, local_size_y = 4, local_size_z = 1) in;
-void main()
+void FilmGrainCs()
 {
     const float phase = AsUnorm(pk_FrameRandom.x);
     const int2 coord = int2(gl_GlobalInvocationID.xy);
