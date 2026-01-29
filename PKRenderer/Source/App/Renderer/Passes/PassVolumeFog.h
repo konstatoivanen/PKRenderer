@@ -25,9 +25,11 @@ namespace PK::App
             void Render(CommandBufferExt cmd, RHITexture* destination);
 
         private:
-            ShaderAsset* m_computeDensity = nullptr;
-            ShaderAsset* m_computeInject = nullptr;
-            ShaderAsset* m_computeScatter = nullptr;
-            ShaderAsset* m_shaderComposite = nullptr;
+            ShaderAsset* m_compute = nullptr;
+            constexpr static const uint32_t PASS_CLEAR = 0u;
+            constexpr static const uint32_t PASS_DENSITY = 1u;
+            constexpr static const uint32_t PASS_INJECT = 2u;
+            constexpr static const uint32_t PASS_INTEGRATE = 3u;
+            constexpr static const uint32_t PASS_COMPOSITE = 4u;
     };
 }

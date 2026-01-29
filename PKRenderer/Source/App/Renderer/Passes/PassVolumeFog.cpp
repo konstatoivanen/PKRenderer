@@ -17,10 +17,7 @@ namespace PK::App
     PassVolumeFog::PassVolumeFog(AssetDatabase* assetDatabase)
     {
         PK_LOG_VERBOSE_FUNC("");
-        m_computeDensity = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Density").get();
-        m_computeInject = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Inject").get();
-        m_computeScatter = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Scatter").get();
-        m_shaderComposite = assetDatabase->Find<ShaderAsset>("CS_VolumeFog_Composite").get();
+        m_compute = assetDatabase->Find<ShaderAsset>("CS_VolumetricFog").get();
     }
 
     void PassVolumeFog::SetViewConstants(RenderView* view)
@@ -87,7 +84,13 @@ namespace PK::App
         RHI::SetTexture(hash->pk_Fog_InjectRead, resources->volumeInject.get());
         RHI::SetImage(hash->pk_Fog_Density, resources->volumeDensity.get());
         RHI::SetTexture(hash->pk_Fog_DensityRead, resources->volumeDensityPrev.get());
-        cmd.Dispatch(m_computeDensity, hasResized ? 1 : 0, volumeResolution);
+
+        if (hasResized)
+        {
+            cmd.Dispatch(m_compute, PASS_CLEAR, volumeResolution);
+        }
+
+        cmd.Dispatch(m_compute, PASS_DENSITY, volumeResolution);
 
         RHI::SetImage(hash->pk_Fog_Density, resources->volumeDensityPrev.get());
         RHI::SetTexture(hash->pk_Fog_DensityRead, resources->volumeDensity.get());
@@ -107,13 +110,13 @@ namespace PK::App
        
         RHI::SetImage(hash->pk_Fog_Inject, resources->volumeInject.get());
         RHI::SetTexture(hash->pk_Fog_InjectRead, resources->volumeInjectPrev.get());
-        cmd.Dispatch(m_computeInject, 0, volumeResolution);
+        cmd.Dispatch(m_compute, PASS_INJECT, volumeResolution);
         RHI::SetImage(hash->pk_Fog_Inject, resources->volumeInjectPrev.get());
         RHI::SetTexture(hash->pk_Fog_InjectRead, resources->volumeInject.get());
 
         RHI::SetImage(hash->pk_Fog_Scatter, resources->volumeScatter.get());
         RHI::SetTexture(hash->pk_Fog_ScatterRead, resources->volumeScatter.get());
-        cmd.Dispatch(m_computeScatter, 0, { volumeResolution.x, volumeResolution.y, 1u });
+        cmd.Dispatch(m_compute, PASS_INTEGRATE, { volumeResolution.x, volumeResolution.y, 1u });
 
         cmd->EndDebugScope();
     }
@@ -122,7 +125,7 @@ namespace PK::App
     {
         cmd->BeginDebugScope("Fog.Composite", PK_COLOR_MAGENTA);
         RHI::SetImage(HashCache::Get()->pk_Image, destination);
-        cmd.Dispatch(m_shaderComposite, 0, destination->GetResolution());
+        cmd.Dispatch(m_compute, PASS_COMPOSITE, destination->GetResolution());
         cmd->EndDebugScope();
     }
 }

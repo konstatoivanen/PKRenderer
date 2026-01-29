@@ -1,7 +1,12 @@
 
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 #extension GL_KHR_shader_subgroup_shuffle : require
-#pragma pk_program SHADER_STAGE_COMPUTE main
+#pragma pk_multi_compile PASS_CLEAR PASS_DENSITY PASS_INJECT PASS_INTEGRATE PASS_COMPOSITE
+#pragma pk_program SHADER_STAGE_COMPUTE ClearCs PASS_CLEAR
+#pragma pk_program SHADER_STAGE_COMPUTE DensityCs PASS_DENSITY
+#pragma pk_program SHADER_STAGE_COMPUTE InjectCs PASS_INJECT
+#pragma pk_program SHADER_STAGE_COMPUTE IntegrateCs PASS_INTEGRATE
+#pragma pk_program SHADER_STAGE_COMPUTE CompositeCs PASS_COMPOSITE
 
 #define EARLY_Z_TEST 1
 #define SHADOW_TEST ShadowTest_PCF2x2
@@ -14,9 +19,38 @@ uint2 g_shadow_prog_coord;
 
 #include "includes/VolumeFog.glsl"
 #include "includes/SceneGIVX.glsl"
+#include "includes/CTASwizzling.glsl"
+#include "includes/Encoding.glsl"
 
 layout(local_size_x = PK_W_ALIGNMENT_4, local_size_y = PK_W_ALIGNMENT_4, local_size_z = PK_W_ALIGNMENT_4) in;
-void main()
+void ClearCs()
+{
+    const int3 coord = int3(gl_GlobalInvocationID);
+    imageStore(pk_Fog_Density, coord, 0.0f.xxxx);
+    imageStore(pk_Fog_Inject, coord, uint4(0));
+}
+
+layout(local_size_x = PK_W_ALIGNMENT_4, local_size_y = PK_W_ALIGNMENT_4, local_size_z = PK_W_ALIGNMENT_4) in;
+void DensityCs()
+{
+    const int3 pos = int3(gl_GlobalInvocationID);
+    const float3 dither = GlobalNoiseBlue(pos.xy, pk_FrameIndex.x);
+    const float3 uvw_cur = (pos + dither) / VOLUMEFOG_SIZE;
+
+    const float3 world_pos = UvToWorldPos(uvw_cur.xy, Fog_ZToView(uvw_cur.z));
+    const float3 uvw_prev = Fog_WorldToPrevUvw(world_pos);
+
+    const float value_cur = Fog_CalculateDensity(world_pos);
+    const float value_pre = SAMPLE_TRICUBIC(pk_Fog_DensityRead, uvw_prev).x;
+    const float3 inject_pre = texelFetch(pk_Fog_InjectRead, pos, 0).rgb;
+    const float value_out = lerp(value_pre, value_cur, Fog_GetAccumulation(uvw_prev));
+
+    imageStore(pk_Fog_Density, pos, -min(0.0f, -value_out).xxxx);
+    imageStore(pk_Fog_Inject, pos, EncodeE5BGR9(inject_pre).xxxx);
+}
+
+layout(local_size_x = PK_W_ALIGNMENT_4, local_size_y = PK_W_ALIGNMENT_4, local_size_z = PK_W_ALIGNMENT_4) in;
+void InjectCs()
 {
     // Subgroups are swizzled into a 2x4x4 pattern
     const uint thread = gl_SubgroupInvocationID;
@@ -27,7 +61,7 @@ void main()
 
 #if EARLY_Z_TEST == 1
     {
-        // load a 5x6 kernel of 16x16px depth values. the final filtering has a maximum voxel offset of 2.5.
+        // load a 5x6 kernel of 16x16px depth values. This needs to cover the composite voxel radius of 2.5
         const uint thread_30 = thread % 30u;
         const int2 wave_z_coord = int2(wave_id.xy) * int2(1, 2) + int2(thread_30 % 5u, thread_30 / 5u) - 2;
         const float lane_zmax = SampleMaxZ(wave_z_coord, 4);
@@ -111,4 +145,53 @@ void main()
     value_out = -min(-0.0f.xxx, -value_out);
 
     imageStore(pk_Fog_Inject, int3(coord), EncodeE5BGR9(value_out).xxxx);
+}
+
+layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
+void IntegrateCs()
+{
+    float4 accum_scatter = float4(0.0f.xxx, 1.0f);
+    float3 accum_transmittance = 1.0f.xxx;
+
+    int3 pos = int3(gl_GlobalInvocationID.xy, 0);
+
+    for (; pos.z < VOLUMEFOG_SIZE_Z; ++pos.z)
+    {
+        const float depth_min = Fog_ZToView(pos.z * VOLUMEFOG_SIZE_Z_INV);
+        const float depth_max = Fog_ZToView((pos.z + 1.0f) * VOLUMEFOG_SIZE_Z_INV);
+        const float slice_width = depth_max - depth_min;
+
+        const float  density = texelFetch(pk_Fog_DensityRead, pos, 0).x;
+        const float3 irradiance = texelFetch(pk_Fog_InjectRead, pos, 0).rgb * pk_Fog_Albedo.rgb;
+
+        const float  extinction = density * slice_width;
+        const float3 transmittance = exp(-extinction * pk_Fog_Absorption.rgb);
+        const float3 integral = irradiance * (1.0f - transmittance) * accum_transmittance;
+
+        accum_scatter.rgb += integral;
+        // Store transmittance as it suffers less from fp16 reduction than extinction.
+        accum_scatter.a *= exp(-extinction);
+        accum_transmittance *= transmittance;
+
+        imageStore(pk_Fog_Scatter, pos, accum_scatter);
+
+        // Copy previous values for reprojection
+        // Iraddiance is copied in density pass to alleviate memory load of this pass
+        imageStore(pk_Fog_Density, pos, density.xxxx);
+    }
+}
+
+PK_DECLARE_SET_DRAW uniform image2D pk_Image;
+
+layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
+void CompositeCs()
+{
+    const int2 coord = int2(GetXTiledThreadID(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 8u));
+    const int2 size = imageSize(pk_Image).xy;
+    const float2 uv = float2(coord + 0.5f.xx) / float2(size);
+
+    const float3 color = imageLoad(pk_Image, coord).rgb;
+    const float4 color_transmittance = Fog_SampleFroxel(uv, SampleViewDepth(uv), color);
+
+    imageStore(pk_Image, coord, color_transmittance);
 }

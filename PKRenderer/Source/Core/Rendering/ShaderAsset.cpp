@@ -266,14 +266,14 @@ namespace PK
 
             for (auto& element : shader->GetVertexLayout())
             {
-                meta.append(Parse::FormatToString("       %s, %u, %u\n", + element->name.c_str(), element->location, (uint32_t)element->format));
+                meta.append(Parse::FormatToString("         %s, %u, %u\n", + element->name.c_str(), element->location, (uint32_t)element->format));
             }
 
             meta.append("       Dynamic Constants:\n");
 
             for (auto& element : shader->GetPushConstantLayout())
             {
-                meta.append(Parse::FormatToString("       %s, %u, %u\n", element->name.c_str(), element->offset, (uint32_t)element->size));
+                meta.append(Parse::FormatToString("         %s, %u, %u\n", element->name.c_str(), element->offset, (uint32_t)element->size));
             }
 
             for (auto i = 0u; i < PK_RHI_MAX_DESCRIPTOR_SETS; ++i)
@@ -284,7 +284,7 @@ namespace PK
 
                 for (auto& element : set)
                 {
-                    meta.append(Parse::FormatToString("       %s, %u\n", element->name.c_str(), (uint32_t)element->type));
+                    meta.append(Parse::FormatToString("         %s, %u\n", element->name.c_str(), (uint32_t)element->type));
                 }
             }
         }
