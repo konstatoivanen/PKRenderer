@@ -20,7 +20,6 @@ uniform uimage2DArray pk_DoF_ColorWrite;
 uniform image2DArray pk_DoF_AlphaWrite;
 
 layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
-
 void PrefilterCs()
 {
     const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
@@ -42,6 +41,7 @@ void PrefilterCs()
     imageStore(pk_DoF_AlphaWrite, int3(coord, 0), dot(cocs, 0.25f.xxxx).xxxx);
 }
 
+layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void DiskBlurCs()
 {
     const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
@@ -92,6 +92,7 @@ void DiskBlurCs()
     imageStore(pk_DoF_AlphaWrite, int3(coord, 1), foreground.aaaa);
 }
 
+layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
 void UpsampleCs()
 {
     const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);

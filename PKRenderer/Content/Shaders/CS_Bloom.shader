@@ -18,7 +18,6 @@ PK_DECLARE_LOCAL_CBUFFER(pk_Bloom_UpsampleLayerCount)
 
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture;
 PK_DECLARE_SET_DRAW uniform uimage2D pk_Image;
-layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 
 float GetLumaWeight(float3 s)
 {
@@ -31,6 +30,7 @@ float GetLumaWeight(float3 s)
 #endif
 }
 
+layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void Downsample0Cs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -62,6 +62,7 @@ void Downsample0Cs()
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color.rgb)));
 }
 
+layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void Downsample1Cs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -95,6 +96,7 @@ void Downsample1Cs()
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color)));
 }
 
+layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
 void UpsampleCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
