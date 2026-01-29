@@ -501,7 +501,7 @@ namespace PK
 
     VkResult VulkanCreateSurfaceKHR(VkInstance instance, void* nativeWindow, VkSurfaceKHR* surface);
 
-    void VulkanBindExtensionMethods(VkInstance instance, bool enableDebugNames);
+    void VulkanBindExtensionMethods(VkInstance instance, bool enableDebugNames, bool enableDebugLabels);
 
     std::vector<VkPhysicalDevice> VulkanGetPhysicalDevices(VkInstance instance);
     std::vector<VkQueueFamilyProperties> VulkanGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice device);

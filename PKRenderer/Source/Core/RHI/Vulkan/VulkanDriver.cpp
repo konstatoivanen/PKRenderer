@@ -58,7 +58,7 @@ namespace PK
         instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
 
         VK_ASSERT_RESULT_CTX(vkCreateInstance(&instanceCreateInfo, nullptr, &instance), "Failed to create vulkan instance!");
-        VulkanBindExtensionMethods(instance, properties.enableDebugNames);
+        VulkanBindExtensionMethods(instance, properties.enableDebugNames, properties.enableDebugLabels);
 
         {
             PK_LOG_NEWLINE();

@@ -493,6 +493,7 @@ namespace PK
         uint32_t gcPruneDelay;
         bool enableValidation;
         bool enableDebugNames;
+        bool enableDebugLabels;
         bool discardPipelineCache;
     };
 
