@@ -6,6 +6,10 @@
 PK_DECLARE_SET_PASS uniform sampler2DArray pk_ShadowmapAtlas;
 PK_DECLARE_SET_PASS uniform sampler2D pk_ShadowmapScreenSpace;
 
+#ifndef SHADOW_PROG_COORD
+#define SHADOW_PROG_COORD PK_GET_PROG_COORD
+#endif
+
 #define SHADOW_NEAR_BIAS 0.05f
 #define SHADOW_HARD_EDGE_FADE_FACTOR 20.0hf
 #define SHADOW_PCSS_SUBGROUP 1
@@ -82,11 +86,12 @@ half ShadowTest_Volumetrics4(const uint index, const float4 uvrange, const float
 {
     half shadow = 0.0hf;
 
-    // Volumetrics pcf by dithering along view axis. More stable than random offsets on the shadow plane.
+    const float dither = InterleavedGradientNoise(SHADOW_PROG_COORD, pk_FrameIndex.y);
+
+    // Volumetrics pcf by super sampling along view axis. More stable than single random offset on the shadow plane.
     for (uint i = 0u; i < 4u; ++i)
     {
-        const float dither = InterleavedGradientNoise(PK_GET_PROG_COORD, pk_FrameIndex.y + i);
-        const float2 uv = lerp(uvrange.xy, uvrange.zw, dither);
+        const float2 uv = lerp(uvrange.xy, uvrange.zw, (i + dither) / 4.0f);
         shadow += ShadowTest_PCF2x2(index, uv, z);
     }
 
