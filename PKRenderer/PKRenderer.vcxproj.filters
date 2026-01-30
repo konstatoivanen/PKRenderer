@@ -2044,7 +2044,7 @@
     <None Include="Content\Textures\Default\T_Bluenoise128x64.ktx2" />
     <None Include="Content\Shaders\CS_GI_GradientEstimation.shader" />
     <None Include="Content\Shaders\CS_GI_PostFilter.shader" />
-    <None Include="Content\Shaders\CS_HierachicalDepth.shader" />
+    <None Include="Content\Shaders\CS_HierarchicalDepth.shader" />
     <None Include="Content\Shaders\CS_CompressBC6H.shader" />
     <None Include="Content\Shaders\includes\CTASwizzling.glsl" />
     <None Include="Content\Shaders\CS_SceneEnv_IntegrateSH.shader" />
