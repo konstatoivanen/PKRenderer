@@ -394,6 +394,5 @@ namespace PK::App
         
         // Sync next frames transfer ops to end of rendering above.
         queues->Wait(QueueType::Transfer, QueueType::Graphics);
-
     }
 }

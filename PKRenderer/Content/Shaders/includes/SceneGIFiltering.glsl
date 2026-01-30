@@ -160,9 +160,7 @@ float4 GI_GetBilinearWeights(float2 f) { return float4((1.0 - f.x) * (1.0 - f.y)
         w *= exp(-acos(dot(SF_NORMAL, s_nr.xyz) - 1e-6f) * k_N);                                                                \
         w *= exp(-abs(s_nr.w * k_R.x + k_R.y));                                                                                 \
         w *= exp( -0.66 * s_offs.z *  s_offs.z);                                                                                \
-        #if PK_GI_APPROX_ROUGH_SPEC == 1                                                                                        \
-        w *= float(s_nr.w < PK_GI_MAX_ROUGH_SPEC);                                                                              \
-        #endif                                                                                                                  \
+        if (PK_GI_APPROX_ROUGH_SPEC) w *= float(s_nr.w < PK_GI_MAX_ROUGH_SPEC);                                                 \
         w = lerp(0.0f, w, Test_InScreen(s_uv) && !Test_NaN_EPS4(w));                                                            \
                                                                                                                                 \
         SF_OUT = GI_Sum_NoHistory(SF_OUT, GI_Load_Spec(s_px), w);                                                               \

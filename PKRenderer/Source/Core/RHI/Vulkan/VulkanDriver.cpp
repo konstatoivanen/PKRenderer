@@ -141,6 +141,9 @@ namespace PK
             std::initializer_list<std::pair<const VkDescriptorType, size_t>>(
             {
                 { VK_DESCRIPTOR_TYPE_SAMPLER, 100ull },
+                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER , 100ull },
+                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE , 100ull },
+                { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE , 100ull },
                 { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100ull },
                 { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100ull },
                 { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 10ull }
@@ -284,11 +287,20 @@ namespace PK
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         [[maybe_unused]] void* pUserData)
     {
+        // Image layouts are validated at queue submit and at wait fences. this causes some invalid state in the validation layers.
+        auto isValidationLayoutError = strstr(pCallbackData->pMessage, "current layout is") != nullptr;
+        // If were experiencing a long cpu frame the swapchain might return the same image index for long periods of time.
+        // Causes a validation error where the semaphores used by other image indices are not used again in acquire image.
+        // There is no user control over which image index is used so this is pretty stupid.
+        auto isValidationSwapchainBug = strstr(pCallbackData->pMessage, "may still be in use and cannot be safely reused with image index") != nullptr;
         auto isValidationError = strstr(pCallbackData->pMessage, "Error") != nullptr;
+
         auto isLoaderMessage = strstr(pCallbackData->pMessageIdName, "Loader Message") != nullptr;
         auto isNsightBug = strstr(pCallbackData->pMessage, "VkPrivateDataSlotCreateInfo") != nullptr;
         auto isNsightInjectBug = strstr(pCallbackData->pMessage, "1000556003") != nullptr;
         messageSeverity = isValidationError ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT : messageSeverity;
+        messageSeverity = isValidationLayoutError ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
+        messageSeverity = isValidationSwapchainBug ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
         messageSeverity = isLoaderMessage ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
         messageSeverity = isNsightBug ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT : messageSeverity;
         messageSeverity = isNsightInjectBug ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT : messageSeverity;

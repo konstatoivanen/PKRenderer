@@ -664,7 +664,13 @@ namespace PK
     {
         auto flags = m_renderState->ValidatePipeline(GetFenceRef());
 
+        if ((flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
+        {
+            EndRenderPass();
+        }
+
         // Conservative barrier deployment. lets not break an active renderpass. Assume coherent read/writes.
+        // Except if render target changed in which case we need to transition it.
         if (!m_isInActiveRenderPass || (flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
         {
             ResolveBarriers();
@@ -672,7 +678,6 @@ namespace PK
 
         if ((flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
         {
-            EndRenderPass();
             auto info = m_renderState->GetRenderPassInfo();
             vkCmdBeginRendering(m_commandBuffer, &info);
             m_isInActiveRenderPass = true;
