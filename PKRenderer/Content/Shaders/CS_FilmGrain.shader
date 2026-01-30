@@ -59,7 +59,7 @@ float3 NoiseGrainColor(const float2 uv, const float x, const float range)
     return grain;
 }
 
-layout(local_size_x = 16, local_size_y = 4, local_size_z = 1) in;
+[numthreads(8u, 8u, 1u)]
 void FilmGrainCs()
 {
     const float phase = AsUnorm(pk_FrameRandom.x);

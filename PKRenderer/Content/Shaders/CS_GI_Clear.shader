@@ -4,7 +4,7 @@
 
 PK_DECLARE_SET_DRAW uniform image3D pk_Image;
 
-layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+[numthreads(4u, 4u, 4u)]
 void ClearCs()
 {
     const float3 world_position = GI_VoxelToWorldSpace(int3(gl_GlobalInvocationID));

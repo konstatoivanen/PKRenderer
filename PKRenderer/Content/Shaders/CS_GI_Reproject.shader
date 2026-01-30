@@ -20,7 +20,7 @@ float GI_GetAntilag_SubgroupStretch(float2 reproject_coord)
     return saturate(pow4(min_diff) / 1.0f);
 }
 
-layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void ReprojectCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);

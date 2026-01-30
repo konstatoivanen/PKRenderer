@@ -7,7 +7,7 @@
 PK_DECLARE_SET_DRAW uniform samplerCubeArray pk_Texture;
 PK_DECLARE_SET_DRAW uniform image2DArray pk_Image;
 
-layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
+[numthreads(8u, 8u, 1u)]
 void CopyCubeShadowCs()
 {
     const int2 size = imageSize(pk_Image).xy;

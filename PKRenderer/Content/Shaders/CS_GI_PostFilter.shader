@@ -10,7 +10,7 @@
 #include "includes/SceneGIFiltering.glsl"
 #include "includes/ComputeQuadSwap.glsl"
 
-layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
+[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void PostFilterCs()
 {
     const int2 coord_base = int2(gl_GlobalInvocationID.xy);

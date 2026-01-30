@@ -13,7 +13,7 @@
 PK_DECLARE_SET_DRAW uniform image2D pk_Image;
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture;
 
-layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
+[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void ShadowmapCs()
 {
     // This is only run on the first light.
@@ -124,7 +124,7 @@ void ShadowmapCs()
 [[pk_restrict ShadowmapUpsampleCs]] shared half lds_shadow[GROUP_SIZE * GROUP_SIZE];
 [[pk_restrict ShadowmapUpsampleCs]] shared float lds_depth[GROUP_SIZE * GROUP_SIZE];
 
-layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
+[numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
 void ShadowmapUpsampleCs()
 {
     const int thread = int(gl_LocalInvocationIndex);
@@ -222,7 +222,7 @@ PK_DECLARE_LOCAL_CBUFFER(pk_BendShadowDispatchData)
     int2 pk_WaveOffset;
 };
 
-layout(local_size_x = WAVE_SIZE, local_size_y = 1, local_size_z = 1) in;
+[numthreads(WAVE_SIZE, 1u, 1u)]
 void ScreenSpaceShadowsCs()
 {
     DispatchParameters dispatch_params;

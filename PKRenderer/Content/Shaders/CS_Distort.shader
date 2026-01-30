@@ -13,7 +13,7 @@ PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture;
 [[pk_restrict DistortPaniniCs]] PK_DECLARE_SET_DRAW uniform uimage2D pk_Image;
 [[pk_restrict DistortChromaCs]] PK_DECLARE_SET_DRAW uniform image2D pk_Image;
 
-layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void DistortPaniniCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -35,7 +35,7 @@ void DistortPaniniCs()
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color)));
 }
 
-layout(local_size_x = PK_W_ALIGNMENT_16, local_size_y = PK_W_ALIGNMENT_4, local_size_z = 1) in;
+[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void DistortChromaCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);

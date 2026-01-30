@@ -5,7 +5,7 @@
 
 #include "includes/SceneGIGradients.glsl"
 
-layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
+[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void GradientEstimateCs()
 {
 #if defined(PK_GI_GRADIENT_FILTER)

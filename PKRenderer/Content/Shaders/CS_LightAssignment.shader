@@ -78,7 +78,7 @@ bool IntersectionTest(uint lightIndex)
     return false;
 }
 
-layout(local_size_x = GROUP_SIZE_X, local_size_y = GROUP_SIZE_Y, local_size_z = GROUP_SIZE_Z) in;
+[numthreads(GROUP_SIZE_X, GROUP_SIZE_Y, GROUP_SIZE_Z)]
 void LightAssignmentCs()
 {
     const uint3 coord = gl_GlobalInvocationID;

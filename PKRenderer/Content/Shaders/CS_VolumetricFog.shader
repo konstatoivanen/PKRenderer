@@ -22,7 +22,7 @@ uint2 g_shadow_prog_coord;
 #include "includes/CTASwizzling.glsl"
 #include "includes/Encoding.glsl"
 
-layout(local_size_x = PK_W_ALIGNMENT_4, local_size_y = PK_W_ALIGNMENT_4, local_size_z = PK_W_ALIGNMENT_4) in;
+[numthreads(4u, 4u, 4u)]
 void ClearCs()
 {
     const int3 coord = int3(gl_GlobalInvocationID);
@@ -30,7 +30,7 @@ void ClearCs()
     imageStore(pk_Fog_Inject_Write, coord, uint4(0));
 }
 
-layout(local_size_x = PK_W_ALIGNMENT_4, local_size_y = PK_W_ALIGNMENT_4, local_size_z = PK_W_ALIGNMENT_4) in;
+[numthreads(4u, 4u, 4u)]
 void DensityCs()
 {
     const int3 pos = int3(gl_GlobalInvocationID);
@@ -46,7 +46,7 @@ void DensityCs()
     imageStore(pk_Fog_Density_Write, pos, -min(0.0f, -value_out).xxxx);
 }
 
-layout(local_size_x = PK_W_ALIGNMENT_4, local_size_y = PK_W_ALIGNMENT_4, local_size_z = PK_W_ALIGNMENT_4) in;
+[numthreads(4u, 4u, 4u)]
 void InjectCs()
 {
     // Subgroups are swizzled into a 2x4x4 pattern
@@ -139,7 +139,7 @@ void InjectCs()
     imageStore(pk_Fog_Inject_Write, int3(coord), EncodeE5BGR9(value_out).xxxx);
 }
 
-layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
+[numthreads(8u, 8u, 1u)]
 void IntegrateCs()
 {
     float4 accum_scatter = float4(0.0f.xxx, 1.0f);
@@ -171,7 +171,7 @@ void IntegrateCs()
 
 PK_DECLARE_SET_DRAW uniform image2D pk_Image;
 
-layout(local_size_x = PK_W_ALIGNMENT_8, local_size_y = PK_W_ALIGNMENT_8, local_size_z = 1) in;
+[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void CompositeCs()
 {
     const int2 coord = int2(GetXTiledThreadID(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 8u));

@@ -13,7 +13,7 @@ shared float4 lds_SH_R[GROUP_SIZE * GROUP_SIZE];
 shared float4 lds_SH_G[GROUP_SIZE * GROUP_SIZE];
 shared float4 lds_SH_B[GROUP_SIZE * GROUP_SIZE];
 
-layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
+[numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
 void IntegrateCs()
 {
     const uint2 coord = gl_LocalInvocationID.xy * uint2(4u);
@@ -39,6 +39,7 @@ void IntegrateCs()
     lds_SH_R[thread] = local_SH_R;
     lds_SH_G[thread] = local_SH_G;
     lds_SH_B[thread] = local_SH_B;
+
     barrier();
 
     if ((thread & 0x9u) == 0u)
@@ -59,6 +60,7 @@ void IntegrateCs()
         lds_SH_G[thread] = local_SH_G;
         lds_SH_B[thread] = local_SH_B;
     }
+
     barrier();
 
     if ((thread & 0x1Bu) == 0u)
@@ -79,6 +81,7 @@ void IntegrateCs()
         lds_SH_G[thread] = local_SH_G;
         lds_SH_B[thread] = local_SH_B;
     }
+
     barrier();
 
     if (thread == 0u)

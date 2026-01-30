@@ -9,7 +9,7 @@ PK_DECLARE_SET_DRAW uniform writeonly restrict image3D pk_Image2;
 #define GROUP_SIZE 4u
 shared float4 lds_Data[GROUP_SIZE * GROUP_SIZE * GROUP_SIZE];
 
-layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = GROUP_SIZE) in;
+[numthreads(GROUP_SIZE, GROUP_SIZE, GROUP_SIZE)]
 void VolumeMipmapCs()
 {
     const uint thread = gl_LocalInvocationIndex;

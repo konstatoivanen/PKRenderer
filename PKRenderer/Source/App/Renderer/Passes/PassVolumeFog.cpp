@@ -113,7 +113,7 @@ namespace PK::App
         RHI::SetTexture(hash->pk_Fog_Inject_Read, resources->volumeInject[index_cur].get());
         RHI::SetImage(hash->pk_Fog_Scatter_Write, resources->volumeScatter.get());
         cmd.Dispatch(m_compute, PASS_INTEGRATE, { resolution.x, resolution.y, 1u });
-        
+
         RHI::SetTexture(hash->pk_Fog_Scatter_Read, resources->volumeScatter.get());
 
         cmd->EndDebugScope();

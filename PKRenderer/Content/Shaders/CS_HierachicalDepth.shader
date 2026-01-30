@@ -14,10 +14,9 @@ PK_DECLARE_SET_DRAW uniform writeonly restrict image2DArray pk_Image2;
 PK_DECLARE_SET_DRAW uniform writeonly restrict image2DArray pk_Image3;
 PK_DECLARE_SET_DRAW uniform writeonly restrict image2DArray pk_Image4;
 
-#define GROUP_SIZE 8u
 shared float2 lds_Depth;
 
-layout(local_size_x = GROUP_SIZE, local_size_y = GROUP_SIZE, local_size_z = 1) in;
+[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void HierarchicalDepthCs()
 {
     const uint2 size = uint2(pk_ScreenSize.xy);
