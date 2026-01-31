@@ -5,58 +5,6 @@
 
 namespace PK
 {
-    static void GetArraySizes(const VulkanDescriptorCache::SetKey& key, 
-        uint32_t* outVariableSize, 
-        uint32_t* outBufferCount, 
-        uint32_t* outImageCount, 
-        uint32_t* outAccelerationStructureCount)
-    {
-        *outVariableSize = 0u;
-        *outBufferCount = 0u;
-        *outImageCount = 0u;
-        *outAccelerationStructureCount = 0u;
-
-        for (auto i = 0u; i < PK_RHI_MAX_DESCRIPTORS_PER_SET; ++i)
-        {
-            if (key.bindings[i].count == 0)
-            {
-                return;
-            }
-
-            if (key.bindings[i].isArray)
-            {
-                *outVariableSize += key.bindings[i].count;
-            }
-
-            switch (key.bindings[i].type)
-            {
-                case ShaderResourceType::ConstantBuffer:
-                case ShaderResourceType::StorageBuffer:
-                case ShaderResourceType::DynamicConstantBuffer:
-                case ShaderResourceType::DynamicStorageBuffer:
-                {
-                    *outBufferCount += key.bindings[i].count;
-                }
-                break;
-                case ShaderResourceType::Sampler:
-                case ShaderResourceType::SamplerTexture:
-                case ShaderResourceType::Texture:
-                case ShaderResourceType::Image:
-                {
-                    *outImageCount += key.bindings[i].count;
-                }
-                break;
-                case ShaderResourceType::AccelerationStructure:
-                {
-                    *outAccelerationStructureCount += key.bindings[i].count;
-                }
-                break;
-
-                default: break;
-            }
-        }
-    }
-
     VulkanDescriptorCache::VulkanDescriptorCache(VkDevice device,
         uint64_t pruneDelay,
         size_t maxSets,
@@ -99,8 +47,15 @@ namespace PK
             return set;
         }
 
-        uint32_t variableSize, bufferCount, imageCount, accelerationStructureCount;
-        GetArraySizes(key, &variableSize, &bufferCount, &imageCount, &accelerationStructureCount);
+        auto variableSize = 0u;
+
+        for (auto i = 0u; i < PK_RHI_MAX_DESCRIPTORS_PER_SET; ++i)
+        {
+            if (key.bindings[i].isArray)
+            {
+                variableSize += key.bindings[i].count;
+            }
+        }
 
         VkDescriptorSetVariableDescriptorCountAllocateInfo variableSizeInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO };
         variableSizeInfo.descriptorSetCount = 1u;
@@ -127,9 +82,6 @@ namespace PK
         auto count = 0u;
 
         m_writeArena.Clear();
-        auto writeBuffers = m_writeArena.Allocate<VkDescriptorBufferInfo>(bufferCount);
-        auto writeImages = m_writeArena.Allocate<VkDescriptorImageInfo>(imageCount);
-        auto writeAccerationStructures = m_writeArena.Allocate<VkWriteDescriptorSetAccelerationStructureKHR>(accelerationStructureCount);
 
         for (; count < PK_RHI_MAX_DESCRIPTORS_PER_SET; ++count)
         {
@@ -157,14 +109,14 @@ namespace PK
                 case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
                 case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
                 {
-                    write->pBufferInfo = writeBuffers;
+                    auto buffers = m_writeArena.Allocate<VkDescriptorBufferInfo>(bind->count);
+                    write->pBufferInfo = buffers;
 
                     for (auto i = 0; i < bind->count; ++i)
                     {
-                        writeBuffers->buffer = bind->handle->buffer.buffer;
-                        writeBuffers->offset = bind->handle->buffer.offset;
-                        writeBuffers->range = bind->handle->buffer.range;
-                        writeBuffers++;
+                        buffers[i].buffer = bind->handle->buffer.buffer;
+                        buffers[i].offset = bind->handle->buffer.offset;
+                        buffers[i].range = bind->handle->buffer.range;
                     }
                 }
                 break;
@@ -174,30 +126,28 @@ namespace PK
                 case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
                 case VK_DESCRIPTOR_TYPE_SAMPLER:
                 {
-                    write->pImageInfo = writeImages;
-                    auto bindSampler = type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || type == VK_DESCRIPTOR_TYPE_SAMPLER;
-                    auto bindImage = type != VK_DESCRIPTOR_TYPE_SAMPLER;
+                    auto images = m_writeArena.Allocate<VkDescriptorImageInfo>(bind->count);
+                    write->pImageInfo = images;
 
                     for (auto i = 0; i < bind->count; ++i)
                     {
-                        writeImages->sampler = bindSampler ? handles[i]->image.sampler : VK_NULL_HANDLE;
-                        writeImages->imageView = bindImage ? handles[i]->image.view : VK_NULL_HANDLE;
-                        writeImages->imageLayout = bindImage ? handles[i]->image.layout : VK_IMAGE_LAYOUT_UNDEFINED;
-                        writeImages++;
+                        images[i].sampler = type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || type == VK_DESCRIPTOR_TYPE_SAMPLER ? handles[i]->image.sampler : VK_NULL_HANDLE;
+                        images[i].imageView = type != VK_DESCRIPTOR_TYPE_SAMPLER ? handles[i]->image.view : VK_NULL_HANDLE;
+                        images[i].imageLayout = type != VK_DESCRIPTOR_TYPE_SAMPLER ? handles[i]->image.layout : VK_IMAGE_LAYOUT_UNDEFINED;
                     }
                 }
                 break;
 
                 case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
                 {
-                    write->pNext = writeAccerationStructures;
+                    auto acclerationStructures = m_writeArena.Allocate<VkWriteDescriptorSetAccelerationStructureKHR>(bind->count);
+                    write->pNext = acclerationStructures;
 
                     for (auto i = 0; i < bind->count; ++i)
                     {
-                        writeAccerationStructures->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-                        writeAccerationStructures->accelerationStructureCount = 1;
-                        writeAccerationStructures->pAccelerationStructures = &handles[i]->acceleration.structure;
-                        writeAccerationStructures++;
+                        acclerationStructures[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+                        acclerationStructures[i].accelerationStructureCount = 1;
+                        acclerationStructures[i].pAccelerationStructures = &handles[i]->acceleration.structure;
                     }
 
                     break;
