@@ -94,7 +94,6 @@ namespace PKAssets
     constexpr const static char* PK_SHADER_ATTRIB_MATERIAL_PROP = "#pragma pk_material_property ";
     constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_PROP = "#pragma pk_enable_instancing";
     constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_NOFRAG_PROP = "#pragma pk_disable_fragment_instancing";
-    constexpr const static char* PK_SHADER_ATTRIB_ATOMICCOUNTER = "#pragma pk_with_atomic_counter";
     constexpr const static char* PK_SHADER_ATTRIB_PROGRAM = "#pragma pk_program ";
     constexpr const static char* PK_SHADER_ATTRIB_LOCAL_OPEN = "[pk_local(";
     constexpr const static char* PK_SHADER_ATTRIB_LOCAL_CLOSE = ")]";
@@ -107,7 +106,6 @@ namespace PKAssets
     constexpr const static char* PK_SHADER_INSTANCING_TEXTURES2D = "pk_Instancing_Textures2D";
     constexpr const static char* PK_SHADER_INSTANCING_TEXTURES3D = "pk_Instancing_Textures3D";
     constexpr const static char* PK_SHADER_INSTANCING_TEXTURESCUBE = "pk_Instancing_TexturesCube";
-    constexpr const static char* PK_SHADER_ATOMIC_COUNTER = "pk_BuiltInAtomicCounter";
     constexpr const static char* PK_SHADER_SET_NAMES[4] =
     {
         "GLOBAL",

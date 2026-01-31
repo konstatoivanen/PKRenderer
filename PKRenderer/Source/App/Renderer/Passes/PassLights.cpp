@@ -143,6 +143,7 @@ namespace PK::App
         m_shadowmaps = RHI::CreateTexture(atlasDesc, "Lights.Shadowmap.Atlas");
 
         m_lightsBuffer = RHI::CreateBuffer<PackedLight>(1024ull, BufferUsage::PersistentStorage, "Lights");
+        m_lightsCounter = RHI::CreateBuffer(sizeof(uint32_t), BufferUsage::DefaultStorage, "Lights.AtomicCounter");
         m_lightMatricesBuffer = RHI::CreateBuffer<float4x4>(32ull, BufferUsage::PersistentStorage, "Lights.Matrices");
 
         auto hash = HashCache::Get();
@@ -154,6 +155,7 @@ namespace PK::App
         sampler.wrap[2] = WrapMode::Clamp;
         lightCookies->SetSampler(sampler);
         RHI::SetTexture(hash->pk_LightCookies, lightCookies);
+        RHI::SetBuffer(hash->pk_LightCounter, m_lightsCounter.get());
     }
 
     void PassLights::SetViewConstants(RenderView* view)
@@ -489,6 +491,7 @@ namespace PK::App
             RHI::SetBuffer(hash->pk_LightLists, resources->lightsLists.get());
         }
 
-        cmd.DispatchWithCounter(m_computeLightAssignment, resolution);
+        cmd->Clear(m_lightsCounter.get(), 0, sizeof(uint32_t), 0u);
+        cmd.Dispatch(m_computeLightAssignment, resolution);
     }
 }

@@ -5,7 +5,6 @@ namespace PK
 {
     struct BuiltInResources
     {
-        RHIBufferRef AtomicCounter;
         RHITextureRef WhiteTexture2D;
         RHITextureRef ErrorTexture2D;
         RHITextureRef BlackTexture2D;

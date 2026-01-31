@@ -105,6 +105,7 @@ namespace PK::App
         DECLARE_HASH(pk_Reservoirs1)
 
         DECLARE_HASH(pk_Lights)
+        DECLARE_HASH(pk_LightCounter)
         DECLARE_HASH(pk_LightMatrices)
         DECLARE_HASH(pk_LastLightIndex)
         DECLARE_HASH(pk_LightLists)

@@ -56,6 +56,7 @@ namespace PK::App
             ShaderAsset* m_computeCopyCubeShadow = nullptr;
             ShaderAsset* m_computeScreenSpaceShadow = nullptr;
             RHIBufferRef m_lightsBuffer;
+            RHIBufferRef m_lightsCounter;
             RHIBufferRef m_lightMatricesBuffer;
             RHITextureRef m_shadowmaps;
             RHITextureRef m_depthTarget2D;

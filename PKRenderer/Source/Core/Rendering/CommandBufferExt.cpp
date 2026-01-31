@@ -76,7 +76,7 @@ namespace PK
         const uint32_t targetCount = (uint32_t)(targets.end() - targets.begin());
         auto& primary = targets.begin()[0];
         auto renderArea = primary.target->GetRect();
-        auto layerCount = primary.target->GetLayers();
+        auto layerCount = glm::min(glm::max(1u, (uint32_t)primary.targetRange.layers), primary.target->GetLayers());
         commandBuffer->SetRenderTarget(targets.begin(), targetCount, renderArea, layerCount);
 
         if (updateViewPort)
@@ -90,7 +90,7 @@ namespace PK
     void CommandBufferExt::SetRenderTarget(const RenderTargetBinding& renderTarget, bool updateViewPort)
     {
         auto renderArea = renderTarget.target->GetRect();
-        auto layerCount = renderTarget.target->GetLayers();
+        auto layerCount = glm::min(glm::max(1u, (uint32_t)renderTarget.targetRange.layers), renderTarget.target->GetLayers());
         commandBuffer->SetRenderTarget(&renderTarget, 1u, renderArea, layerCount);
 
         if (updateViewPort)
@@ -109,12 +109,6 @@ namespace PK
     void CommandBufferExt::SetVertexStreams(const VertexStreamLayout& layout)
     {
         commandBuffer->SetVertexStreams(layout.GetData(), (uint32_t)layout.GetCount());
-    }
-
-    void CommandBufferExt::ResetBuiltInAtomicCounter()
-    {
-        auto counter = RHIDriver::Get()->GetBuiltInResources()->AtomicCounter.get();
-        commandBuffer->Clear(counter, 0, sizeof(uint32_t), 0u);
     }
 
     void CommandBufferExt::Blit(const ShaderAsset* shader, int32_t variantIndex)
@@ -138,20 +132,6 @@ namespace PK
     void CommandBufferExt::Dispatch(const ShaderAsset* shader, uint32_t variantIndex, uint3 dimensions)
     {
         SetShader(shader, variantIndex);
-        commandBuffer->Dispatch(dimensions);
-    }
-
-    void CommandBufferExt::DispatchWithCounter(const ShaderAsset* shader, uint32_t variantIndex, uint3 dimensions)
-    {
-        ResetBuiltInAtomicCounter();
-        SetShader(shader, variantIndex);
-        commandBuffer->Dispatch(dimensions);
-    }
-
-    void CommandBufferExt::DispatchWithCounter(const ShaderAsset* shader, uint3 dimensions)
-    {
-        ResetBuiltInAtomicCounter();
-        SetShader(shader);
         commandBuffer->Dispatch(dimensions);
     }
 

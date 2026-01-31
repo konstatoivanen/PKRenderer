@@ -32,14 +32,10 @@ namespace PK
 
         void SetVertexStreams(const VertexStreamLayout& layout);
 
-        void ResetBuiltInAtomicCounter();
-
         void Blit(const ShaderAsset* shader, int32_t variantIndex = -1);
         void Blit(const ShaderAsset* shader, uint32_t instanceCount, uint32_t firstInstance, int32_t variantIndex = -1);
         void Dispatch(const ShaderAsset* shader, uint3 dimensions);
         void Dispatch(const ShaderAsset* shader, uint32_t variantIndex, uint3 dimensions);
-        void DispatchWithCounter(const ShaderAsset* shader, uint32_t variantIndex, uint3 dimensions);
-        void DispatchWithCounter(const ShaderAsset* shader, uint3 dimensions);
         void DispatchRays(const ShaderAsset* shader, uint3 dimensions);
         void DispatchRays(const ShaderAsset* shader, uint32_t variantIndex, uint3 dimensions);
 

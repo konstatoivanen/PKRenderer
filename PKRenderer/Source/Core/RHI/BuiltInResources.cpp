@@ -43,7 +43,4 @@ PK::BuiltInResources::BuiltInResources()
 
     region.layers = 2u;
     commandBuffer->CopyToTexture(BlackTexture2DArray.get(), blackDataArray, sizeof(blackDataArray), &region, 1u);
-
-    AtomicCounter = RHI::CreateBuffer(sizeof(uint32_t), BufferUsage::DefaultStorage, "PKBuiltIn.AtomicCounter");
-    RHI::SetBuffer(PKAssets::PK_SHADER_ATOMIC_COUNTER, AtomicCounter.get());
 }

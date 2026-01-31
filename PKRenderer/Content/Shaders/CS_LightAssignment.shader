@@ -1,5 +1,4 @@
 
-#pragma pk_with_atomic_counter
 #pragma pk_program SHADER_STAGE_COMPUTE LightAssignmentCs
 
 #define PK_USE_CUSTOM_DESCRIPTOR_SET_INDICES
@@ -21,6 +20,8 @@ PK_DECLARE_LOCAL_CBUFFER(pk_LastLightIndex)
 {
     uint LastLightIndex;
 };
+
+PK_DECLARE_VARIABLE(uint, pk_LightCounter, PK_SET_DRAW);
 
 struct SharedLight
 {
@@ -140,7 +141,7 @@ void LightAssignmentCs()
     [[branch]]
     if (All_Less(coord.xy, LIGHT_TILE_COUNT_XY))
     {
-        offset = PK_AtomicCounterAdd(visible_count);
+        offset = atomicAdd(PK_VARIABLE_DATA(pk_LightCounter), visible_count);
 
         for (uint i = 0; i < visible_count; ++i)
         {
