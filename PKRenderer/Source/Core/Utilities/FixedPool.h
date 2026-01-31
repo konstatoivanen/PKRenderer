@@ -74,7 +74,7 @@ namespace PK
             auto index = GetIndex(ptr);
             if (m_mask.GetAt(index))
             {
-                m_mask.ToggleAt(index);
+                m_mask.FlipAt(index);
                 ptr->~T();
             }
         }
@@ -104,7 +104,7 @@ namespace PK
                 if (m_mask.GetAt(i))
                 {
                     (GetData() + i)->~T();
-                    m_mask.ToggleAt(i);
+                    m_mask.FlipAt(i);
                 }
             }
         }
@@ -112,10 +112,10 @@ namespace PK
         protected:
             T* Allocate(int64_t index) final
             {
-                index = index != -1 ? index : m_mask.FirstFalse();
+                index = index != -1 ? index : m_mask.FindFirstZero();
                 PK_CONTAINER_RANGE_CHECK(index, 0, (int64_t)capacity);
                 auto ptr = GetData() + index;
-                m_mask.ToggleAt(index);
+                m_mask.FlipAt(index);
                 return ptr;
             }
 

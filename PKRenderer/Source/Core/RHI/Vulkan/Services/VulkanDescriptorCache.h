@@ -70,8 +70,8 @@ namespace PK
             
             VulkanDescriptorPool* m_currentPool = nullptr;
             FixedPool<VulkanDescriptorSet, VK_MAX_DESCRIPTOR_SET_COUNT> m_setsPool;
-            FixedPool<VulkanDescriptorPool, 8> m_poolPool; // A great name for a great variable.
             FixedPointerMap16<SetKey, VulkanDescriptorSet, VK_MAX_DESCRIPTOR_SET_COUNT, SetKeyHash> m_sets;
+            FixedPool<VulkanDescriptorPool, 8> m_poolPool; // A great name for a great variable.
             std::vector<ExtinctPool> m_extinctPools;
             FixedArena<8192ull> m_writeArena;
     };
