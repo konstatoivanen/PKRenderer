@@ -4,7 +4,7 @@
 
 PK_DECLARE_SET_DRAW uniform image3D pk_Image;
 
-[numthreads(4u, 4u, 4u)]
+[pk_numthreads(4u, 4u, 4u)]
 void ClearCs()
 {
     const float3 world_position = GI_VoxelToWorldSpace(int3(gl_GlobalInvocationID));

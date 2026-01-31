@@ -3,7 +3,7 @@
 
 #include "includes/PostFXDepthOfField.glsl"
 
-[numthreads(1u, 1u, 1u)]
+[pk_numthreads(1u, 1u, 1u)]
 void AutoFocusCs()
 {
     float center_depth = min(SampleMinZ(float2(0.5f, 0.5f), 4), pk_ClipParams.y - 1e-4f);

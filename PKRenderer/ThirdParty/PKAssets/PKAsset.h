@@ -96,7 +96,10 @@ namespace PKAssets
     constexpr const static char* PK_SHADER_ATTRIB_INSTANCING_NOFRAG_PROP = "#pragma pk_disable_fragment_instancing";
     constexpr const static char* PK_SHADER_ATTRIB_ATOMICCOUNTER = "#pragma pk_with_atomic_counter";
     constexpr const static char* PK_SHADER_ATTRIB_PROGRAM = "#pragma pk_program ";
-    constexpr const static char* PK_SHADER_ATTRIB_RESTRICT = "pk_restrict";
+    constexpr const static char* PK_SHADER_ATTRIB_LOCAL_OPEN = "[pk_local(";
+    constexpr const static char* PK_SHADER_ATTRIB_LOCAL_CLOSE = ")]";
+    constexpr const static char* PK_SHADER_ATTRIB_NUMTHREADS_OPEN = "[pk_numthreads(";
+    constexpr const static char* PK_SHADER_ATTRIB_NUMTHREADS_CLOSE = ")]";
 
     constexpr const static char* PK_SHADER_INSTANCING_TRANSFORMS = "pk_Instancing_Transforms";
     constexpr const static char* PK_SHADER_INSTANCING_INDICES = "pk_Instancing_Indices";

@@ -5,7 +5,7 @@
 
 #include "includes/SceneGIGradients.glsl"
 
-[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
+[pk_numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void GradientEstimateCs()
 {
 #if defined(PK_GI_GRADIENT_FILTER)

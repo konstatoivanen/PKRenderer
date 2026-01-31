@@ -19,7 +19,7 @@ uniform sampler2DArray pk_DoF_AlphaRead;
 uniform uimage2DArray pk_DoF_ColorWrite;
 uniform image2DArray pk_DoF_AlphaWrite;
 
-[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
+[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
 void PrefilterCs()
 {
     const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
@@ -41,7 +41,7 @@ void PrefilterCs()
     imageStore(pk_DoF_AlphaWrite, int3(coord, 0), dot(cocs, 0.25f.xxxx).xxxx);
 }
 
-[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
+[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
 void DiskBlurCs()
 {
     const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);
@@ -92,7 +92,7 @@ void DiskBlurCs()
     imageStore(pk_DoF_AlphaWrite, int3(coord, 1), foreground.aaaa);
 }
 
-[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
+[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_8, 1u)]
 void UpsampleCs()
 {
     const float2 texel_size = 1.0f.xx / (gl_WorkGroupSize.xy * gl_NumWorkGroups.xy);

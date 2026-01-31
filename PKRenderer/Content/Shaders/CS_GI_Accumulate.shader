@@ -181,7 +181,7 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
     return SH_Luma_FromRadiance(radiance, direction);
 }
 
-[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
+[pk_numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void AccumulateCs()
 {
     const int2 coord_base = int2(gl_GlobalInvocationID.xy);

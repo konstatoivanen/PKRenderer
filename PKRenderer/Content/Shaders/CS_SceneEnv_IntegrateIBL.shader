@@ -25,7 +25,7 @@ PK_DECLARE_LOCAL_CBUFFER(pk_SceneEnv_Origin)
 shared float3 lds_irrad;
 shared float3 lds_trans;
 
-[numthreads(8u, 8u, 1u)]
+[pk_numthreads(8u, 8u, 1u)]
 void IntegrateCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);

@@ -10,10 +10,10 @@
 #include "includes/NoiseBlue.glsl"
 
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture;
-[[pk_restrict DistortPaniniCs]] PK_DECLARE_SET_DRAW uniform uimage2D pk_Image;
-[[pk_restrict DistortChromaCs]] PK_DECLARE_SET_DRAW uniform image2D pk_Image;
+[pk_local(DistortPaniniCs)] PK_DECLARE_SET_DRAW uniform uimage2D pk_Image;
+[pk_local(DistortChromaCs)] PK_DECLARE_SET_DRAW uniform image2D pk_Image;
 
-[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void DistortPaniniCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -35,7 +35,7 @@ void DistortPaniniCs()
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color)));
 }
 
-[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void DistortChromaCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);

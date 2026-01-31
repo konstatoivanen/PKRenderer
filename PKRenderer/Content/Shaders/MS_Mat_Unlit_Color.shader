@@ -42,7 +42,7 @@ void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_
 
 #include "includes/SceneGIVX.glsl"
 
-[[pk_restrict ForwardFs GBufferFs]] out float4 SV_Target0;
+[pk_local(ForwardFs, GBufferFs)] out float4 SV_Target0;
 
 void ForwardFs() { SV_Target0 = _Color; }
 void GBufferFs() { SV_Target0 = EncodeGBufferWorldNR(vs_Normal, 0.0f, 0.0f); }

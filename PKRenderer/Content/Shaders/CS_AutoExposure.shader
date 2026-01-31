@@ -21,7 +21,7 @@ void SetAutoExposure(float exposure) { PK_BUFFER_DATA(pk_AutoExposure_Histogram,
 void SetLogLuminanceMin(float value) { PK_BUFFER_DATA(pk_AutoExposure_Histogram, 257) = floatBitsToUint(value); }
 float GetLogLuminanceMin() { return ReplaceIfResized(uintBitsToFloat(PK_BUFFER_DATA(pk_AutoExposure_Histogram, 257)), DEFAULT_LOG_LUMINANCE_MIN); }
 
-[numthreads(HISTOGRAM_THREAD_COUNT, HISTOGRAM_THREAD_COUNT, 1u)]
+[pk_numthreads(HISTOGRAM_THREAD_COUNT, HISTOGRAM_THREAD_COUNT, 1u)]
 void HistogramCs()
 {
     lds_Histogram[gl_LocalInvocationIndex] = 0;
@@ -46,7 +46,7 @@ void HistogramCs()
     atomicAdd(PK_BUFFER_DATA(pk_AutoExposure_Histogram, gl_LocalInvocationIndex), lds_Histogram[gl_LocalInvocationIndex]);
 }
 
-[numthreads(HISTOGRAM_THREAD_COUNT, HISTOGRAM_THREAD_COUNT, 1u)]
+[pk_numthreads(HISTOGRAM_THREAD_COUNT, HISTOGRAM_THREAD_COUNT, 1u)]
 void AverageCs()
 {
     const uint thread = gl_LocalInvocationIndex;

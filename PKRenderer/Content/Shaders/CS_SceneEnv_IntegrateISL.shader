@@ -41,7 +41,7 @@ float3 GetDirectionHemisphere(float2 xi)
     return float3(x, y, z);
 }
 
-[numthreads(8u, 8u, 1u)]
+[pk_numthreads(8u, 8u, 1u)]
 void IntegrateCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);

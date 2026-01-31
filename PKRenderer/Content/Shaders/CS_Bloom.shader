@@ -30,7 +30,7 @@ float GetLumaWeight(float3 s)
 #endif
 }
 
-[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void Downsample0Cs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -62,7 +62,7 @@ void Downsample0Cs()
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color.rgb)));
 }
 
-[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void Downsample1Cs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
@@ -96,7 +96,7 @@ void Downsample1Cs()
     imageStore(pk_Image, coord, uint4(EncodeE5BGR9(color)));
 }
 
-[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void UpsampleCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);

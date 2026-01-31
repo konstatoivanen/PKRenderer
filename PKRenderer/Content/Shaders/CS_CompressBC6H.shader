@@ -777,7 +777,7 @@ void EncodeP2Pattern(inout uint4 block, inout float blockMSLE, int pattern, floa
     }
 }
 
-[numthreads(8u, 8u, 1u)]
+[pk_numthreads(8u, 8u, 1u)]
 void CompressBC6HCs()
 {
     uint2 blockCoord = gl_GlobalInvocationID.xy;

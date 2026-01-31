@@ -78,7 +78,7 @@ bool IntersectionTest(uint lightIndex)
     return false;
 }
 
-[numthreads(GROUP_SIZE_X, GROUP_SIZE_Y, GROUP_SIZE_Z)]
+[pk_numthreads(GROUP_SIZE_X, GROUP_SIZE_Y, GROUP_SIZE_Z)]
 void LightAssignmentCs()
 {
     const uint3 coord = gl_GlobalInvocationID;

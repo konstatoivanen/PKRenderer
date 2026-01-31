@@ -16,7 +16,7 @@ PK_DECLARE_SET_DRAW uniform image2D pk_Image1; // Color Write
 float3 TonemapColor(const float3 c) { return c / (1.0 + cmax(c)); }
 float3 UntonemapColor(const float3 c) { return c / max(1.0f / 65504.0f, 1.0 - cmax(c)); }
 
-[numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
+[pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void TemporalAntialiasCs()
 {
     const int2 coord = int2(gl_GlobalInvocationID.xy);

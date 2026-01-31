@@ -12,7 +12,7 @@
 
 PK_DECLARE_VS_ATTRIB(float3 vs_TEXCOORD0);
 
-[[pk_restrict MainFs]] out float4 SV_Target0;
+[pk_local(MainFs)] out float4 SV_Target0;
 
 float4 PK_BLIT_VERTEX_POSITIONS[3] =
 {

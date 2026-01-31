@@ -35,8 +35,7 @@ void MainVs()
     vs_SHADING_MODE = bitfieldExtract(vertex_packed.w, 16, 16);
 };
 
-[[pk_restrict MainFs]] 
-out float4 SV_Target0;
+[pk_local(MainFs)] out float4 SV_Target0;
 
 void MainFs()
 {

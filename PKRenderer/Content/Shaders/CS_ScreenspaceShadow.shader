@@ -13,7 +13,7 @@
 PK_DECLARE_SET_DRAW uniform image2D pk_Image;
 PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture;
 
-[numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
+[pk_numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void ShadowmapCs()
 {
     // This is only run on the first light.
@@ -121,10 +121,10 @@ void ShadowmapCs()
 
 #define GROUP_SIZE 8
 
-[[pk_restrict ShadowmapUpsampleCs]] shared half lds_shadow[GROUP_SIZE * GROUP_SIZE];
-[[pk_restrict ShadowmapUpsampleCs]] shared float lds_depth[GROUP_SIZE * GROUP_SIZE];
+[pk_local(ShadowmapUpsampleCs)] shared half lds_shadow[GROUP_SIZE * GROUP_SIZE];
+[pk_local(ShadowmapUpsampleCs)] shared float lds_depth[GROUP_SIZE * GROUP_SIZE];
 
-[numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
+[pk_numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
 void ShadowmapUpsampleCs()
 {
     const int thread = int(gl_LocalInvocationIndex);
@@ -215,14 +215,14 @@ void ShadowmapUpsampleCs()
     #include "includes/bend_sss_gpu.glsl"
 #endif
 
-[[pk_restrict ScreenSpaceShadowsCs]]
+[pk_local(ScreenSpaceShadowsCs)]
 PK_DECLARE_LOCAL_CBUFFER(pk_BendShadowDispatchData)
 {
     float4 pk_LightCoordinate;
     int2 pk_WaveOffset;
 };
 
-[numthreads(WAVE_SIZE, 1u, 1u)]
+[pk_numthreads(WAVE_SIZE, 1u, 1u)]
 void ScreenSpaceShadowsCs()
 {
     DispatchParameters dispatch_params;

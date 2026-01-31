@@ -7,7 +7,7 @@
 
 PK_DECLARE_SET_DRAW uniform writeonly restrict image2D pk_Image;
 
-[numthreads(8u, 8u, 1u)]
+[pk_numthreads(8u, 8u, 1u)]
 void IntegrateCs()
 {
     const int size = imageSize(pk_Image).x;

@@ -13,7 +13,7 @@ shared float4 lds_SH_R[GROUP_SIZE * GROUP_SIZE];
 shared float4 lds_SH_G[GROUP_SIZE * GROUP_SIZE];
 shared float4 lds_SH_B[GROUP_SIZE * GROUP_SIZE];
 
-[numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
+[pk_numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
 void IntegrateCs()
 {
     const uint2 coord = gl_LocalInvocationID.xy * uint2(4u);

@@ -11,8 +11,7 @@
 
 PK_DECLARE_VS_ATTRIB(float4 vs_COLOR);
 
-[[pk_restrict MainVs]] 
-in uint4 in_POSITION;
+[pk_local(MainVs)] in uint4 in_POSITION;
 
 void MainVs()
 {
@@ -20,8 +19,7 @@ void MainVs()
     vs_COLOR = unpackUnorm4x8(in_POSITION.w);
 };
 
-[[pk_restrict MainFs]] 
-out float4 SV_Target0;
+[pk_local(MainFs)] out float4 SV_Target0;
 
 void MainFs()
 {
