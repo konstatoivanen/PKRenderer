@@ -393,10 +393,10 @@ namespace PK
         VulkanDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo& createInfo);
         ~VulkanDescriptorPool();
 
-        void Reset(VkDescriptorPoolResetFlags flags) { vkResetDescriptorPool(device, pool, flags); }
-
         const VkDevice device;
         VkDescriptorPool pool;
+        uint64_t pruneTick;
+        mutable FenceRef fence;
     };
 
     struct VulkanDescriptorSet

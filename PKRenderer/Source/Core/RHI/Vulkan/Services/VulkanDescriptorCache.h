@@ -29,6 +29,7 @@ namespace PK
 
         struct SetKey
         {
+            uint32_t poolIndex;
             VkShaderStageFlagBits stageFlags;
             DescriptorBinding bindings[PK_RHI_MAX_DESCRIPTORS_PER_SET];
 
@@ -38,28 +39,14 @@ namespace PK
             }
         };
 
-        private:
-            struct ExtinctPool
-            {
-                uint32_t poolIndex;
-                mutable FenceRef fence;
-                FixedMask<VK_MAX_DESCRIPTOR_SET_COUNT> indexMask;
-            };
-
-            using SetKeyHash = Hash::TMurmurHash<SetKey>;
-
         public:
             VulkanDescriptorCache(VkDevice device, uint64_t pruneDelay, size_t maxSets, std::initializer_list<std::pair<const VkDescriptorType, size_t>> poolSizes);
 
-            const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, 
-                                                        const SetKey& key,
-                                                        const FenceRef& fence,
-                                                        const char* name);
+            const VulkanDescriptorSet* GetDescriptorSet(const VulkanDescriptorSetLayout* layout, SetKey& key, const FenceRef& fence, const char* name);
             void Prune();
 
         private:
-            void GrowPool(const FenceRef& fence);
-            void GetDescriptorSets(VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, const FenceRef& fence, bool throwOnFail);
+            using SetKeyHash = Hash::TMurmurHash<SetKey>;
 
             VkDescriptorPoolSize m_poolSizes[VK_DESCRIPTOR_TYPE_COUNT]{};
             VkDescriptorPoolCreateInfo m_poolCreateInfo;
@@ -72,7 +59,6 @@ namespace PK
             FixedPool<VulkanDescriptorSet, VK_MAX_DESCRIPTOR_SET_COUNT> m_setsPool;
             FixedPointerMap16<SetKey, VulkanDescriptorSet, VK_MAX_DESCRIPTOR_SET_COUNT, SetKeyHash> m_sets;
             FixedPool<VulkanDescriptorPool, 8> m_poolPool; // A great name for a great variable.
-            std::vector<ExtinctPool> m_extinctPools;
             FixedArena<8192ull> m_writeArena;
     };
 }
