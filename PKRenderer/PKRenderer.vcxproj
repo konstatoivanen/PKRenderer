@@ -1045,6 +1045,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Timers\ITimer.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFramerate.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFrameRunner.cpp" />
+    <ClCompile Include="Source\Core\Utilities\FixedMask.cpp" />
     <ClCompile Include="Source\Core\Utilities\Parse.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeCVariablesYaml.cpp" />
     <ClCompile Include="Source\Core\Yaml\SerializeFixedString.cpp" />

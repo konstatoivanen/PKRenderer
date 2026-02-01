@@ -137,16 +137,16 @@ namespace PK
         (
             device, 
             4, 
-            100ull,
+            256ull,
             std::initializer_list<std::pair<const VkDescriptorType, size_t>>(
             {
-                { VK_DESCRIPTOR_TYPE_SAMPLER, 100ull },
-                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER , 100ull },
-                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE , 100ull },
-                { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE , 100ull },
-                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100ull },
-                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100ull },
-                { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 10ull }
+                { VK_DESCRIPTOR_TYPE_SAMPLER, 32ull },
+                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER , 128ull },
+                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE , 128ull },
+                { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE , 128ull },
+                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 128ull },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 128ull },
+                { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 16ull }
             })
         );
 

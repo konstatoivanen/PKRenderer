@@ -368,6 +368,8 @@ namespace PK
 
         const VkDevice device;
         VkPipelineLayout layout;
+        FenceRef releaseFence;
+        uint32_t referenceCount;
     };
 
     struct VulkanDescriptorSetLayout : public NoCopy
@@ -382,6 +384,8 @@ namespace PK
         VkDescriptorSetLayout layout;
         VkShaderStageFlagBits stageFlags;
         FixedString128 name;
+        FenceRef releaseFence;
+        uint32_t referenceCount;
     };
 
     struct VulkanDescriptorPool : public NoCopy
