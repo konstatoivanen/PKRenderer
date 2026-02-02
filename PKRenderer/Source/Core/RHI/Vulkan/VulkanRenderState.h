@@ -17,15 +17,7 @@ namespace PK
         PK_RENDER_STATE_DIRTY_SHADER = 1 << 2,
         PK_RENDER_STATE_DIRTY_VERTEXBUFFERS = 1 << 3,
         PK_RENDER_STATE_DIRTY_INDEXBUFFER = 1 << 4,
-        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 = 1 << 5,
-        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_1 = 1 << 6,
-        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_2 = 1 << 7,
-        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_3 = 1 << 8,
-        PK_RENDER_STATE_DIRTY_DESCRIPTOR_SETS = 
-            PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 | 
-            PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_1 | 
-            PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_2 | 
-            PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_3,
+        PK_RENDER_STATE_DIRTY_DESCRIPTORS = 1 << 5
     };
 
     struct VulkanServiceContext
@@ -53,13 +45,16 @@ namespace PK
         uint32_t count = 0u;
     };
 
-    struct VulkanDescriptorSetBundle
+    struct VulkanDescriptorState
     {
-        VkDescriptorSet sets[PK_RHI_MAX_DESCRIPTOR_SETS]{};
-        VkPipelineLayout layout;
-        VkPipelineBindPoint bindPoint;
-        uint32_t firstSet = 0u;
-        uint32_t count = 0u;
+        VulkanDescriptorCache::DescriptorBinding bindings[PK_RHI_MAX_DESCRIPTOR_SETS][PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
+        const VulkanDescriptorSet* descriptorSets[PK_RHI_MAX_DESCRIPTOR_SETS]{};
+        VkShaderStageFlagBits stageFlags[PK_RHI_MAX_DESCRIPTOR_SETS]{};
+        uint32_t setSizes[PK_RHI_MAX_DESCRIPTOR_SETS]{};
+        VkDescriptorSet vksets[PK_RHI_MAX_DESCRIPTOR_SETS]{};
+        VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+        VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        uint32_t setCount = 0u;
     };
 
     struct VulkanRenderTargetBindings
@@ -96,7 +91,7 @@ namespace PK
             inline VkPipelineBindPoint GetPipelineBindPoint() const { return VulkanEnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags()); }
             VkRenderingInfo GetRenderPassInfo() const;
             VulkanVertexBufferBundle GetVertexBufferBundle() const;
-            VulkanDescriptorSetBundle GetDescriptorSetBundle(const FenceRef& fence, uint32_t dirtyFlags);
+            const VulkanDescriptorState* GetDescriptorState() const { return &m_descritorState; }
             VkStridedDeviceAddressRegionKHR* GetShaderBindingTableAddresses();
             const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
 
@@ -142,7 +137,7 @@ namespace PK
 
             VulkanServiceContext m_services;
         
-            VulkanDescriptorCache::SetKey m_descriptorSetKeys[PK_RHI_MAX_DESCRIPTOR_SETS]{};
+            VulkanDescriptorState m_descritorState{};
             VulkanPipelineCache::PipelineKey m_pipelineKey{};
             VulkanRenderTargetBindings m_renderTarget{};
             VkImageLayout m_renderTargetLayouts[PK_RHI_MAX_RENDER_TARGETS + 1u]{};
@@ -158,6 +153,5 @@ namespace PK
             uint32_t m_dirtyFlags = 0u;
 
             const VulkanPipeline* m_pipeline = nullptr;
-            const VulkanDescriptorSet* m_descriptorSets[PK_RHI_MAX_DESCRIPTOR_SETS]{};
     };
 }

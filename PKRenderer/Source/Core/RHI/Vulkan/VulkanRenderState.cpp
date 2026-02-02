@@ -83,36 +83,6 @@ namespace PK
         return bundle;
     }
 
-    VulkanDescriptorSetBundle VulkanRenderState::GetDescriptorSetBundle(const FenceRef& fence, uint32_t dirtyFlags)
-    {
-        VulkanDescriptorSetBundle bundle{};
-
-        if (m_pipelineKey.shader != nullptr)
-        {
-            bundle.bindPoint = VulkanEnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags());
-            bundle.layout = m_pipelineKey.shader->GetPipelineLayout()->layout;
-            bundle.firstSet = 0xFFFFu;
-            bundle.count = 0u;
-
-            for (auto i = 0u; i < PK_RHI_MAX_DESCRIPTOR_SETS; ++i)
-            {
-                if ((dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i)) != 0)
-                {
-                    if (i < bundle.firstSet)
-                    {
-                        bundle.firstSet = i;
-                    }
-
-                    auto set = m_descriptorSets[i];
-                    set->fence = fence;
-                    bundle.sets[bundle.count++] = set->set;
-                }
-            }
-        }
-
-        return bundle;
-    }
-
     VkStridedDeviceAddressRegionKHR* VulkanRenderState::GetShaderBindingTableAddresses()
     {
         static VkStridedDeviceAddressRegionKHR addresses[(uint32_t)RayTracingShaderGroup::MaxCount];
@@ -140,13 +110,12 @@ namespace PK
 
     void VulkanRenderState::Reset()
     {
-        memset(m_descriptorSetKeys, 0, sizeof(m_descriptorSetKeys));
         memset(&m_pipelineKey, 0, sizeof(m_pipelineKey));
         memset(&m_renderTarget, 0, sizeof(m_renderTarget));
+        memset(&m_descritorState, 0, sizeof(m_descritorState));
         memset(m_viewports, 0, sizeof(m_viewports));
         memset(m_scissors, 0, sizeof(m_scissors));
         memset(m_vertexBuffers, 0, sizeof(m_vertexBuffers));
-        memset(m_descriptorSets, 0, sizeof(m_descriptorSets));
         memset(m_vertexStreamLayout, 0, sizeof(m_vertexStreamLayout));
 
         m_indexType = VK_INDEX_TYPE_UINT16;
@@ -495,34 +464,49 @@ namespace PK
         auto resources = m_services.globalResources;
         auto shader = m_pipelineKey.shader;
         auto setCount = shader->GetDescriptorSetCount();
-        auto index = 0u;
+        auto bindPoint = VulkanEnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags());
+        m_descritorState.pipelineLayout = m_pipelineKey.shader->GetPipelineLayout()->layout;
 
-        for (auto i = 0u; i < setCount; ++i)
+        if (m_descritorState.bindPoint != bindPoint)
         {
-            auto layout = shader->GetDescriptorSetLayout(i);
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
+            m_descritorState.bindPoint = bindPoint;
+        }
 
-            if (layout == nullptr)
+        if (m_descritorState.setCount != setCount)
+        {
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
+            m_descritorState.setCount = setCount;
+        }
+
+        for (auto setIndex = 0u; setIndex < setCount; ++setIndex)
+        {
+            auto* layout = shader->GetDescriptorSetLayout(setIndex);
+            auto& resourceLayout = shader->GetResourceLayout(setIndex);
+            auto isDirty = false;
+
+            if (m_descritorState.stageFlags[setIndex] != layout->stageFlags)
             {
-                continue;
+                isDirty = true;
+                m_descritorState.stageFlags[setIndex] = layout->stageFlags;
             }
 
-            if (m_descriptorSetKeys[i].stageFlags != layout->stageFlags)
+            if (m_descritorState.setSizes[setIndex] != resourceLayout.GetCount())
             {
-                m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
-                m_descriptorSetKeys[i].stageFlags = layout->stageFlags;
+                isDirty = true;
+                m_descritorState.setSizes[setIndex] = resourceLayout.GetCount();
             }
 
-            auto* bindings = m_descriptorSetKeys[i].bindings;
-            const VulkanBindHandle* handle = nullptr;
-            const VulkanBindArray* handleArray = nullptr;
-            index = 0u;
+            auto* bindings = m_descritorState.bindings[setIndex];
+            auto bindingIndex = 0u;
 
-            for (const auto& element : shader->GetResourceLayout(i))
+            for (const auto& element : resourceLayout)
             {
-                auto* binding = bindings + index++;
+                auto* binding = bindings + bindingIndex++;
 
                 if (element->count > 1)
                 {
+                    const VulkanBindArray* handleArray = nullptr;
                     PK_THROW_ASSERT(resources->TryGet<const VulkanBindArray*>(element->name, handleArray), "Descriptors (%s) not bound!", element->name.c_str());
 
                     uint32_t version = 0u;
@@ -532,7 +516,7 @@ namespace PK
 
                     if (binding->count != count || binding->type != element->type || binding->handles != handles || binding->version != version || !binding->isArray)
                     {
-                        m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
+                        isDirty = true;
                         binding->count = count;
                         binding->type = element->type;
                         binding->handles = handles;
@@ -543,11 +527,12 @@ namespace PK
                     continue;
                 }
 
+                const VulkanBindHandle* handle = nullptr;
                 PK_THROW_ASSERT(resources->TryGet<const VulkanBindHandle*>(element->name, handle), "Descriptor (%s) not bound!", element->name.c_str());
 
                 if (binding->count != element->count || binding->type != element->type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)
                 {
-                    m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
+                    isDirty = true;
                     binding->count = element->count;
                     binding->type = element->type;
                     binding->handle = handle;
@@ -556,35 +541,26 @@ namespace PK
                 }
             }
 
-            // Binding count changed
-            if (index < PK_RHI_MAX_DESCRIPTORS_PER_SET && bindings[index].count != 0)
-            {
-                memset(bindings + index, 0, sizeof(bindings[0]) * (PK_RHI_MAX_DESCRIPTORS_PER_SET - index));
-                m_dirtyFlags |= (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i);
-            }
-
-            if (m_dirtyFlags & (PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i))
+            if (isDirty)
             {
                 auto name = shader->GetName();
-                m_descriptorSets[i] = m_services.descriptorCache->GetDescriptorSet(shader->GetDescriptorSetLayout(i), m_descriptorSetKeys[i], fence, name);
+                m_descritorState.descriptorSets[setIndex] = m_services.descriptorCache->GetDescriptorSet(layout, bindings, bindingIndex, fence, name);
+                m_descritorState.vksets[setIndex] = m_descritorState.descriptorSets[setIndex]->set;
+                m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
             }
-        }
-
-        // If a lower number set has changed all sets above it need to be rebound.
-        // Unfortunately for some reason a set is being unbound despite using the same layout & resources (in the same pipeline bind point).
-        // I'll just have to dirty all of them :/
-        if ((m_dirtyFlags & PK_RENDER_STATE_DIRTY_DESCRIPTOR_SETS) != 0)
-        {
-            for (auto i = 0u; i < setCount; ++i)
-            {
-                m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTOR_SET_0 << i;
-            }
+                
+            // @TODO should not be done here. Move to descriptor cache.
+            m_descritorState.descriptorSets[setIndex]->fence = fence;
         }
 
         // Clear remaining keys as they will go unbound when this pipe is used
         if (setCount < PK_RHI_MAX_DESCRIPTOR_SETS)
         {
-            memset(m_descriptorSetKeys + setCount, 0, sizeof(m_descriptorSetKeys[0]) * (PK_RHI_MAX_DESCRIPTOR_SETS - setCount));
+            memset(m_descritorState.bindings[setCount], 0, sizeof(m_descritorState.bindings[0]) * (PK_RHI_MAX_DESCRIPTOR_SETS - setCount));
+            memset(m_descritorState.descriptorSets + setCount, 0, sizeof(m_descritorState.descriptorSets[0]) * (PK_RHI_MAX_DESCRIPTOR_SETS - setCount));
+            memset(m_descritorState.stageFlags + setCount, 0, sizeof(m_descritorState.stageFlags[0]) - (PK_RHI_MAX_DESCRIPTOR_SETS - setCount));
+            memset(m_descritorState.setSizes + setCount, 0, sizeof(m_descritorState.setSizes[0]) - (PK_RHI_MAX_DESCRIPTOR_SETS - setCount));
+            memset(m_descritorState.vksets + setCount, 0, sizeof(m_descritorState.vksets[0]) - (PK_RHI_MAX_DESCRIPTOR_SETS - setCount));
         }
     }
 
@@ -594,25 +570,21 @@ namespace PK
         auto stageFlags = shader->GetStageFlags();
         auto setCount = m_pipelineKey.shader->GetDescriptorSetCount();
 
-        for (auto i = 0u; i < setCount; ++i)
+        for (auto setIndex = 0u; setIndex < setCount; ++setIndex)
         {
-            const auto& setkey = m_descriptorSetKeys[i];
-
-            for (auto j = 0u; j < PK_RHI_MAX_DESCRIPTORS_PER_SET && setkey.bindings[j].count > 0; ++j)
+            for (auto bindingIndex = 0u; bindingIndex < m_descritorState.setSizes[setIndex]; ++bindingIndex)
             {
-                auto binding = setkey.bindings[j];
-
                 // No Array support as they're locally reserved for readonly resources
-                if (binding.isArray)
+                if (m_descritorState.bindings[setIndex][bindingIndex].isArray)
                 {
                     continue;
                 }
 
-                auto handle = binding.handle;
-                auto stage = VulkanEnumConvert::GetPipelineStageFlags(setkey.stageFlags);
-                auto access = shader->GetResourceLayout(i)[j].writeStageMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
+                auto handle = m_descritorState.bindings[setIndex][bindingIndex].handle;
+                auto stage = VulkanEnumConvert::GetPipelineStageFlags(m_descritorState.stageFlags[setIndex]);
+                auto access = shader->GetResourceLayout(setIndex)[bindingIndex].writeStageMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
 
-                switch (binding.type)
+                switch (m_descritorState.bindings[setIndex][bindingIndex].type)
                 {
                     case ShaderResourceType::SamplerTexture:
                     case ShaderResourceType::Texture:

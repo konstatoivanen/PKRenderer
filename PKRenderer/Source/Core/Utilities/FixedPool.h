@@ -15,7 +15,7 @@ namespace PK
         virtual size_t GetCount() const = 0;
         virtual size_t GetCapacity() const = 0;
 
-        virtual void Delete(const T* ptr) = 0;
+        virtual void Delete(const T* ptr, size_t count = 1ull) = 0;
         virtual void Clear() = 0;
 
         T* operator [](uint32_t index) { return GetData() + index; }
@@ -30,7 +30,7 @@ namespace PK
         template<typename ... Args>
         T* New(Args&& ... args)
         {
-            auto ptr = Allocate();
+            auto ptr = Allocate(1u);
             new(ptr) T(std::forward<Args>(args)...);
             return ptr;
         }
@@ -38,8 +38,21 @@ namespace PK
         template<typename ... Args>
         T* NewAt(int64_t index, Args&& ... args)
         {
-            auto ptr = Allocate(index);
+            auto ptr = Allocate(1u, index);
             new(ptr) T(std::forward<Args>(args)...);
+            return ptr;
+        }
+
+        template<typename ... Args>
+        T* NewArray(size_t count, Args&& ... args)
+        {
+            auto ptr = Allocate(count);
+
+            for (auto i = 0u; i < count; ++i)
+            {
+                new(ptr + i) T(std::forward<Args>(args)...);
+            }
+
             return ptr;
         }
 
@@ -49,7 +62,7 @@ namespace PK
         }
         
         protected:
-            virtual T* Allocate(int64_t index = -1) = 0;
+            virtual T* Allocate(size_t count, int64_t index = -1) = 0;
     };
 
     template<typename T, size_t capacity>
@@ -69,13 +82,17 @@ namespace PK
         size_t GetCapacity() const final { return capacity; }
         const FixedMask<capacity>& GetActiveMask() { return m_mask; }
 
-        void Delete(const T* ptr) final
+        void Delete(const T* ptr, size_t count = 1ull) final
         {
             auto index = GetIndex(ptr);
-            if (m_mask.GetAt(index))
+
+            for (auto i = 0u; i < count; ++i)
             {
-                m_mask.FlipAt(index);
-                ptr->~T();
+                if (m_mask.GetAt(index + i))
+                {
+                    m_mask.FlipAt(index + i);
+                    ptr->~T();
+                }
             }
         }
 
@@ -108,12 +125,19 @@ namespace PK
         }
 
         protected:
-            T* Allocate(int64_t index) final
+            T* Allocate(size_t count, int64_t index) final
             {
-                index = index != -1 ? index : m_mask.FindFirstZero();
+                index = index != -1 ? index : m_mask.FindFirstZeroRange(count);
                 PK_CONTAINER_RANGE_CHECK(index, 0, (int64_t)capacity);
+                PK_CONTAINER_RANGE_CHECK(index + count - 1ll, 0, (int64_t)capacity);
                 auto ptr = GetData() + index;
-                m_mask.FlipAt(index);
+                
+                // @TODO suboptimal. implement a bulk flip function.
+                for (auto i = 0u; i < count; ++i)
+                {
+                    m_mask.FlipAt(index + i);
+                }
+                
                 return ptr;
             }
 

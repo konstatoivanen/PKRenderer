@@ -31,94 +31,48 @@ namespace PK
         m_sizeMultiplier = 1u;
     }
 
-    const VulkanDescriptorSet* VulkanDescriptorCache::GetDescriptorSet(const VulkanDescriptorSetLayout* layout, SetKey& key, const FenceRef& fence, const char* name)
+    const VulkanDescriptorSet* VulkanDescriptorCache::GetDescriptorSet(const VulkanDescriptorSetLayout* layout,
+        const DescriptorBinding* bindings,
+        const uint32_t bindingCount,
+        const FenceRef& fence,
+        const char* name)
     {
-        auto nextPruneTick = m_currentPruneTick + m_pruneDelay;
+        SetKey key;
+        key.bindings = bindings;
+        key.count = bindingCount;
         key.poolIndex = m_poolPool.GetIndex(m_currentPool);
+        key.stageFlags = layout->stageFlags;
 
         uint32_t index = 0u;
 
         if (!m_sets.AddKey(key, &index))
         {
             auto set = m_sets[index].value;
-            set->pruneTick = nextPruneTick;
+            set->pruneTick = m_currentPruneTick + m_pruneDelay;
             set->fence = fence;
             return set;
         }
 
         auto variableSize = 0u;
-        auto writeCount = 0u;
 
-        for (auto i = 0u; i < PK_RHI_MAX_DESCRIPTORS_PER_SET; ++i)
+        for (auto i = 0u; i < bindingCount; ++i)
         {
-            writeCount += key.bindings[i].count > 0 ? 1u : 0u;
-
-            if (key.bindings[i].isArray)
+            if (bindings[i].isArray)
             {
-                variableSize += key.bindings[i].count;
+                variableSize += bindings[i].count;
             }
-        }
-
-        VkDescriptorSetVariableDescriptorCountAllocateInfo variableSizeInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO };
-        variableSizeInfo.descriptorSetCount = 1u;
-        variableSizeInfo.pDescriptorCounts = &variableSize;
-        
-        VkDescriptorSetAllocateInfo allocInfo { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-        allocInfo.pNext = variableSize > 0ull ? &variableSizeInfo : nullptr;
-        allocInfo.descriptorSetCount = 1u;
-        allocInfo.pSetLayouts = &layout->layout;
-
-        VkDescriptorSet vkdescriptorset = VK_NULL_HANDLE;
-
-        for (auto iteration = 0u; iteration <= 1u; ++iteration)
-        {
-            allocInfo.descriptorPool = m_currentPool->pool;
-            auto result = vkAllocateDescriptorSets(m_device, &allocInfo, &vkdescriptorset);
-
-            if (result != VK_SUCCESS)
-            {
-                vkdescriptorset = VK_NULL_HANDLE;
-            }
-
-            if (result == VK_ERROR_FRAGMENTED_POOL || result == VK_ERROR_OUT_OF_POOL_MEMORY)
-            {
-                auto divisor = m_sizeMultiplier++;
-
-                for (auto i = 0u; i < VK_DESCRIPTOR_TYPE_COUNT; ++i)
-                {
-                    m_poolSizes[i].descriptorCount = (m_poolSizes[i].descriptorCount / divisor) * m_sizeMultiplier;
-                }
-
-                m_poolCreateInfo.maxSets = (m_poolCreateInfo.maxSets / divisor) * m_sizeMultiplier;
-                m_currentPool->fence = fence;
-                m_currentPool->pruneTick = nextPruneTick;
-                m_currentPool = m_poolPool.New(m_device, m_poolCreateInfo);
-                continue;
-            }
-
-            break;
-        }
-
-        if (vkdescriptorset == VK_NULL_HANDLE)
-        {
-            PK_THROW_ERROR("Failed to allocate a descriptor set!");
         }
 
         FixedString128 setName({ layout->name.c_str(), ".", name });
-        VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)vkdescriptorset, setName.c_str());
-
-        auto value = m_setsPool.New();
-        value->set = vkdescriptorset;
-        value->pruneTick = nextPruneTick;
-        value->fence = fence;
-        m_sets[index].value = value;
+        m_sets[index].value = AllocateDescriptorSet(layout->layout, variableSize, fence, setName.c_str());
         m_sets[index].key.poolIndex = m_poolPool.GetIndex(m_currentPool);
+        m_sets[index].key.bindings = static_cast<DescriptorBinding*>(memcpy(m_bindingPool.NewArray(bindingCount), bindings, sizeof(DescriptorBinding) * bindingCount));
 
         m_writeArena.Clear();
 
-        auto writes = m_writeArena.Allocate<VkWriteDescriptorSet>(writeCount);
+        auto writes = m_writeArena.Allocate<VkWriteDescriptorSet>(bindingCount);
 
-        for (auto i = 0u; i < writeCount; ++i)
+        for (auto i = 0u; i < bindingCount; ++i)
         {
             auto* bind = key.bindings + i;
             auto* write = writes + i;
@@ -130,7 +84,7 @@ namespace PK
             write->descriptorCount = bind->count;
             write->descriptorType = type;
             write->dstBinding = i;
-            write->dstSet = value->set;
+            write->dstSet = m_sets[index].value->set;
 
             if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER || type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER || type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC || type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
             {
@@ -177,8 +131,8 @@ namespace PK
             PK_THROW_ERROR("Unsuppored binding type!");
         }
 
-        vkUpdateDescriptorSets(m_device, writeCount, writes, 0, nullptr);
-        return value;
+        vkUpdateDescriptorSets(m_device, bindingCount, writes, 0, nullptr);
+        return m_sets[index].value;
     }
 
     void VulkanDescriptorCache::Prune()
@@ -194,6 +148,7 @@ namespace PK
             {
                 auto pool = m_poolPool[m_sets[i].key.poolIndex];
                 VK_ASSERT_RESULT_CTX(vkFreeDescriptorSets(m_device, pool->pool, 1, &value->set), "Failed to free descriptor sets!");
+                m_bindingPool.Delete(m_sets[i].key.bindings, m_sets[i].key.count);
                 m_setsPool.Delete(value);
                 m_sets.RemoveAt((uint32_t)i);
             }
@@ -209,5 +164,82 @@ namespace PK
                 m_poolPool.Delete(i);
             }
         }
+    }
+
+    VulkanDescriptorSet* VulkanDescriptorCache::AllocateDescriptorSet(VkDescriptorSetLayout layout, const uint32_t variableSize, const FenceRef& fence, const char* name)
+    {
+        VkDescriptorSetVariableDescriptorCountAllocateInfo variableSizeInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO };
+        variableSizeInfo.descriptorSetCount = 1u;
+        variableSizeInfo.pDescriptorCounts = &variableSize;
+
+        VkDescriptorSetAllocateInfo allocInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+        allocInfo.pNext = variableSize > 0ull ? &variableSizeInfo : nullptr;
+        allocInfo.descriptorSetCount = 1u;
+        allocInfo.pSetLayouts = &layout;
+
+        VkDescriptorSet vkdescriptorset = VK_NULL_HANDLE;
+
+        for (auto iteration = 0u; iteration <= 1u; ++iteration)
+        {
+            allocInfo.descriptorPool = m_currentPool->pool;
+            auto result = vkAllocateDescriptorSets(m_device, &allocInfo, &vkdescriptorset);
+
+            if (result != VK_SUCCESS)
+            {
+                vkdescriptorset = VK_NULL_HANDLE;
+            }
+
+            if (result == VK_ERROR_FRAGMENTED_POOL || result == VK_ERROR_OUT_OF_POOL_MEMORY)
+            {
+                auto divisor = m_sizeMultiplier++;
+
+                for (auto i = 0u; i < VK_DESCRIPTOR_TYPE_COUNT; ++i)
+                {
+                    m_poolSizes[i].descriptorCount = (m_poolSizes[i].descriptorCount / divisor) * m_sizeMultiplier;
+                }
+
+                m_poolCreateInfo.maxSets = (m_poolCreateInfo.maxSets / divisor) * m_sizeMultiplier;
+                m_currentPool->fence = fence;
+                m_currentPool->pruneTick = m_currentPruneTick + m_pruneDelay;
+                m_currentPool = m_poolPool.New(m_device, m_poolCreateInfo);
+                continue;
+            }
+
+            break;
+        }
+
+        if (vkdescriptorset == VK_NULL_HANDLE)
+        {
+            PK_THROW_ERROR("Failed to allocate a descriptor set!");
+        }
+
+        VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)vkdescriptorset, name);
+
+        auto value = m_setsPool.New();
+        value->set = vkdescriptorset;
+        value->pruneTick = m_currentPruneTick + m_pruneDelay;
+        value->fence = fence;
+        return value;
+    }
+
+    bool VulkanDescriptorCache::SetKey::operator==(const SetKey& other) const noexcept
+    {
+        return count == other.count &&
+            poolIndex == other.poolIndex &&
+            stageFlags == other.stageFlags &&
+            memcmp(bindings, other.bindings, sizeof(DescriptorBinding) * count) == 0;
+    }
+
+    std::size_t VulkanDescriptorCache::SetKeyHash::operator()(const SetKey& k) const noexcept
+    {
+        constexpr uint64_t seed = 18446744073709551557ull;
+        const auto hash0 = Hash::MurmurHash(&k.count, sizeof(k.count) + sizeof(k.poolIndex) + sizeof(k.stageFlags), seed);
+        const auto hash1 = Hash::MurmurHash(k.bindings, sizeof(DescriptorBinding) * k.count, seed);
+        const auto kMul = 0x9ddfea08eb382d69ULL;
+        std::size_t a = (hash0 ^ hash1) * kMul;
+        a ^= (a >> 47);
+        std::size_t b = (hash1 ^ a) * kMul;
+        b ^= (b >> 47);
+        return b * kMul;
     }
 }

@@ -30,9 +30,10 @@ namespace PK
         return count;
     }
     
-    int64_t BinaryUtilities::FindFirstZero(const uint64_t* buffer, size_t size, size_t capacity)
+    int64_t BinaryUtilities::FindFirstZero(const uint64_t* buffer, size_t capacity)
     {
         int64_t index = -1ll;
+        auto size = (capacity + 63ull) / 63ull;
 
         for (auto i = 0ull; i < size; ++i)
         {
@@ -50,6 +51,11 @@ namespace PK
     
     int64_t BinaryUtilities::FindFirstZeroRange(const uint64_t* buffer, size_t capacity, uint32_t count)
     {
+        if (count == 1u)
+        {
+            return FindFirstZero(buffer, capacity);
+        }
+
         auto base = 0ull;
         auto head = 0ull;
         auto in_scope = false;

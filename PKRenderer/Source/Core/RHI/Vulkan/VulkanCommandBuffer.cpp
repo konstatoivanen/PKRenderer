@@ -671,7 +671,7 @@ namespace PK
 
         // Conservative barrier deployment. lets not break an active renderpass. Assume coherent read/writes.
         // Except if render target changed in which case we need to transition it.
-        if (!m_isInActiveRenderPass || (flags & PK_RENDER_STATE_DIRTY_RENDERTARGET) != 0)
+        if (!m_isInActiveRenderPass)
         {
             ResolveBarriers();
         }
@@ -705,10 +705,10 @@ namespace PK
             vkCmdBindIndexBuffer(m_commandBuffer, indexBufferHandle->buffer.buffer, indexBufferHandle->buffer.offset, indexType);
         }
 
-        if ((flags & PK_RENDER_STATE_DIRTY_DESCRIPTOR_SETS) != 0)
+        if ((flags & PK_RENDER_STATE_DIRTY_DESCRIPTORS) != 0)
         {
-            auto bindBundle = m_renderState->GetDescriptorSetBundle(GetFenceRef(), flags);
-            vkCmdBindDescriptorSets(m_commandBuffer, bindBundle.bindPoint, bindBundle.layout, bindBundle.firstSet, bindBundle.count, bindBundle.sets, 0, nullptr);
+            auto descriptorState = m_renderState->GetDescriptorState();
+            vkCmdBindDescriptorSets(m_commandBuffer, descriptorState->bindPoint, descriptorState->pipelineLayout, 0u, descriptorState->setCount, descriptorState->vksets, 0, nullptr);
         }
 
         if (m_renderState->HasPipeline())
