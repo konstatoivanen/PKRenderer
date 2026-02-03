@@ -459,12 +459,12 @@ namespace PK
         }
     }
 
-    void VulkanRenderState::ValidateDescriptorSets(const FenceRef& fence)
+    void VulkanRenderState::ValidateDescriptors(const FenceRef& fence)
     {
         auto resources = m_services.globalResources;
         auto shader = m_pipelineKey.shader;
-        auto setCount = shader->GetDescriptorSetCount();
         auto bindPoint = VulkanEnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags());
+       
         m_descritorState.pipelineLayout = m_pipelineKey.shader->GetPipelineLayout()->layout;
 
         if (m_descritorState.bindPoint != bindPoint)
@@ -473,118 +473,90 @@ namespace PK
             m_descritorState.bindPoint = bindPoint;
         }
 
-        if (m_descritorState.setCount != setCount)
+        auto* layout = shader->GetDescriptorSetLayout();
+        auto& resourceLayout = shader->GetResourceLayout();
+
+        if (m_descritorState.stageFlags != layout->stageFlags)
         {
             m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
-            m_descritorState.setCount = setCount;
+            m_descritorState.stageFlags = layout->stageFlags;
         }
 
-        for (auto setIndex = 0u; setIndex < setCount; ++setIndex)
+        if (m_descritorState.setSize != resourceLayout.GetCount())
         {
-            auto* layout = shader->GetDescriptorSetLayout(setIndex);
-            auto& resourceLayout = shader->GetResourceLayout(setIndex);
-            auto isDirty = false;
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
+            m_descritorState.setSize = resourceLayout.GetCount();
+        }
 
-            if (m_descritorState.stageFlags[setIndex] != layout->stageFlags)
+        auto* bindings = m_descritorState.bindings;
+        auto bindingIndex = 0u;
+
+        for (const auto& element : resourceLayout)
+        {
+            auto* binding = bindings + bindingIndex++;
+
+            if (element->count > 1)
             {
-                isDirty = true;
-                m_descritorState.stageFlags[setIndex] = layout->stageFlags;
-            }
+                const VulkanBindArray* handleArray = nullptr;
+                PK_THROW_ASSERT(resources->TryGet<const VulkanBindArray*>(element->name, handleArray), "Descriptors (%s) not bound!", element->name.c_str());
 
-            if (m_descritorState.setSizes[setIndex] != resourceLayout.GetCount())
-            {
-                isDirty = true;
-                m_descritorState.setSizes[setIndex] = resourceLayout.GetCount();
-            }
+                uint32_t version = 0u;
+                uint32_t count = 0u;
+                auto handles = handleArray->GetHandles(&version, &count);
+                count = count < element->count ? (uint16_t)count : element->count;
 
-            auto* bindings = m_descritorState.bindings[setIndex];
-            auto bindingIndex = 0u;
-
-            for (const auto& element : resourceLayout)
-            {
-                auto* binding = bindings + bindingIndex++;
-
-                if (element->count > 1)
+                if (binding->count != count || binding->type != element->type || binding->handles != handles || binding->version != version || !binding->isArray)
                 {
-                    const VulkanBindArray* handleArray = nullptr;
-                    PK_THROW_ASSERT(resources->TryGet<const VulkanBindArray*>(element->name, handleArray), "Descriptors (%s) not bound!", element->name.c_str());
-
-                    uint32_t version = 0u;
-                    uint32_t count = 0u;
-                    auto handles = handleArray->GetHandles(&version, &count);
-                    count = count < element->count ? (uint16_t)count : element->count;
-
-                    if (binding->count != count || binding->type != element->type || binding->handles != handles || binding->version != version || !binding->isArray)
-                    {
-                        isDirty = true;
-                        binding->count = count;
-                        binding->type = element->type;
-                        binding->handles = handles;
-                        binding->version = version;
-                        binding->isArray = true;
-                    }
-
-                    continue;
-                }
-
-                const VulkanBindHandle* handle = nullptr;
-                PK_THROW_ASSERT(resources->TryGet<const VulkanBindHandle*>(element->name, handle), "Descriptor (%s) not bound!", element->name.c_str());
-
-                if (binding->count != element->count || binding->type != element->type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)
-                {
-                    isDirty = true;
-                    binding->count = element->count;
+                    m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
+                    binding->count = count;
                     binding->type = element->type;
-                    binding->handle = handle;
-                    binding->version = handle->Version();
-                    binding->isArray = false;
+                    binding->handles = handles;
+                    binding->version = version;
+                    binding->isArray = true;
                 }
+
+                continue;
             }
 
-            if (isDirty)
+            const VulkanBindHandle* handle = nullptr;
+            PK_THROW_ASSERT(resources->TryGet<const VulkanBindHandle*>(element->name, handle), "Descriptor (%s) not bound!", element->name.c_str());
+
+            if (binding->count != element->count || binding->type != element->type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)
             {
-                auto name = shader->GetName();
-                m_descritorState.descriptorSets[setIndex] = m_services.descriptorCache->GetDescriptorSet(layout, bindings, bindingIndex, fence, name);
-                m_descritorState.vksets[setIndex] = m_descritorState.descriptorSets[setIndex]->set;
                 m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
+                binding->count = element->count;
+                binding->type = element->type;
+                binding->handle = handle;
+                binding->version = handle->Version();
+                binding->isArray = false;
             }
-                
-            // @TODO should not be done here. Move to descriptor cache.
-            m_descritorState.descriptorSets[setIndex]->fence = fence;
         }
 
-        // Clear remaining keys as they will go unbound when this pipe is used
-        if (setCount < PK_RHI_MAX_DESCRIPTOR_SETS)
+        if (m_dirtyFlags & PK_RENDER_STATE_DIRTY_DESCRIPTORS)
         {
-            memset(m_descritorState.bindings[setCount], 0, sizeof(m_descritorState.bindings[0]) * (PK_RHI_MAX_DESCRIPTOR_SETS - setCount));
-            memset(m_descritorState.descriptorSets + setCount, 0, sizeof(m_descritorState.descriptorSets[0]) * (PK_RHI_MAX_DESCRIPTOR_SETS - setCount));
-            memset(m_descritorState.stageFlags + setCount, 0, sizeof(m_descritorState.stageFlags[0]) - (PK_RHI_MAX_DESCRIPTOR_SETS - setCount));
-            memset(m_descritorState.setSizes + setCount, 0, sizeof(m_descritorState.setSizes[0]) - (PK_RHI_MAX_DESCRIPTOR_SETS - setCount));
-            memset(m_descritorState.vksets + setCount, 0, sizeof(m_descritorState.vksets[0]) - (PK_RHI_MAX_DESCRIPTOR_SETS - setCount));
+            auto name = shader->GetName();
+            m_descritorState.descriptorSet = m_services.descriptorCache->GetDescriptorSet(layout, bindings, bindingIndex, fence, name);
         }
+            
+        // @TODO should not be done here. Move to descriptor cache.
+        m_descritorState.descriptorSet->fence = fence;
     }
 
     void VulkanRenderState::ValidateResourceAccess()
     {
         auto shader = m_pipelineKey.shader;
         auto stageFlags = shader->GetStageFlags();
-        auto setCount = m_pipelineKey.shader->GetDescriptorSetCount();
 
-        for (auto setIndex = 0u; setIndex < setCount; ++setIndex)
+        for (auto bindingIndex = 0u; bindingIndex < m_descritorState.setSize; ++bindingIndex)
         {
-            for (auto bindingIndex = 0u; bindingIndex < m_descritorState.setSizes[setIndex]; ++bindingIndex)
+            // No Array support as they're locally reserved for readonly resources
+            if (!m_descritorState.bindings[bindingIndex].isArray)
             {
-                // No Array support as they're locally reserved for readonly resources
-                if (m_descritorState.bindings[setIndex][bindingIndex].isArray)
-                {
-                    continue;
-                }
+                auto handle = m_descritorState.bindings[bindingIndex].handle;
+                auto stage = VulkanEnumConvert::GetPipelineStageFlags(m_descritorState.stageFlags);
+                auto access = shader->GetResourceLayout()[bindingIndex].writeStageMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
 
-                auto handle = m_descritorState.bindings[setIndex][bindingIndex].handle;
-                auto stage = VulkanEnumConvert::GetPipelineStageFlags(m_descritorState.stageFlags[setIndex]);
-                auto access = shader->GetResourceLayout(setIndex)[bindingIndex].writeStageMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
-
-                switch (m_descritorState.bindings[setIndex][bindingIndex].type)
+                switch (m_descritorState.bindings[bindingIndex].type)
                 {
                     case ShaderResourceType::SamplerTexture:
                     case ShaderResourceType::Texture:
@@ -748,7 +720,7 @@ namespace PK
         PK_DEBUG_THROW_ASSERT(m_pipelineKey.shader != nullptr, "Pipeline validation failed! Shader is unassigned!");
 
         ValidateVertexBuffers();
-        ValidateDescriptorSets(fence);
+        ValidateDescriptors(fence);
         ValidateResourceAccess();
         ValidatePipelineFormats();
 

@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Utilities/FixedString.h"
+#include "Core/CLI/Log.h"
 #include "VulkanLayoutCache.h"
 
 namespace PK
@@ -60,19 +61,10 @@ namespace PK
         }
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-        pipelineLayoutInfo.pSetLayouts = key.setlayouts;
+        pipelineLayoutInfo.pSetLayouts = &key.setlayout;
         pipelineLayoutInfo.pPushConstantRanges = key.pushConstants;
-        pipelineLayoutInfo.setLayoutCount = PK_RHI_MAX_DESCRIPTOR_SETS;
+        pipelineLayoutInfo.setLayoutCount = 1u;
         pipelineLayoutInfo.pushConstantRangeCount = PK_RHI_MAX_PUSH_CONSTANTS;
-
-        for (auto i = 0u; i < PK_RHI_MAX_DESCRIPTOR_SETS; ++i)
-        {
-            if (key.setlayouts[i] == nullptr)
-            {
-                pipelineLayoutInfo.setLayoutCount = i;
-                break;
-            }
-        }
 
         for (auto i = 0u; i < PK_RHI_MAX_PUSH_CONSTANTS; ++i)
         {

@@ -10,7 +10,6 @@ namespace PK
     constexpr static const uint32_t PK_RHI_MAX_FRAMES_IN_FLIGHT = 2;
     constexpr static const uint32_t PK_RHI_MAX_SWAP_CHAIN_IMAGE_COUNT = 16;
     constexpr static const uint32_t PK_RHI_MAX_RENDER_TARGETS = 8;
-    constexpr static const uint32_t PK_RHI_MAX_DESCRIPTOR_SETS = PKAssets::PK_ASSET_MAX_DESCRIPTOR_SETS;
     constexpr static const uint32_t PK_RHI_MAX_DESCRIPTORS_PER_SET = PKAssets::PK_ASSET_MAX_DESCRIPTORS_PER_SET;
     constexpr static const uint32_t PK_RHI_MAX_PUSH_CONSTANTS = PKAssets::PK_ASSET_MAX_PUSH_CONSTANTS;
     constexpr static const uint32_t PK_RHI_MAX_VERTEX_ATTRIBUTES = PKAssets::PK_ASSET_MAX_VERTEX_ATTRIBUTES;

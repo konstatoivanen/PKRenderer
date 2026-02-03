@@ -276,11 +276,10 @@ namespace PK
                 meta.append(Parse::FormatToString("         %s, %u, %u\n", element->name.c_str(), element->offset, (uint32_t)element->size));
             }
 
-            for (auto i = 0u; i < PK_RHI_MAX_DESCRIPTOR_SETS; ++i)
             {
-                auto& set = shader->GetResourceLayout(i);
+                auto& set = shader->GetResourceLayout();
 
-                meta.append(Parse::FormatToString("       Descriptor Set %u:\n", i));
+                meta.append(Parse::FormatToString("       Descriptor Set:\n"));
 
                 for (auto& element : set)
                 {

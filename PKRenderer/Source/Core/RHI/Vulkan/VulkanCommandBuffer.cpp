@@ -708,7 +708,7 @@ namespace PK
         if ((flags & PK_RENDER_STATE_DIRTY_DESCRIPTORS) != 0)
         {
             auto descriptorState = m_renderState->GetDescriptorState();
-            vkCmdBindDescriptorSets(m_commandBuffer, descriptorState->bindPoint, descriptorState->pipelineLayout, 0u, descriptorState->setCount, descriptorState->vksets, 0, nullptr);
+            vkCmdBindDescriptorSets(m_commandBuffer, descriptorState->bindPoint, descriptorState->pipelineLayout, 0u, 1u, &descriptorState->descriptorSet->set, 0, nullptr);
         }
 
         if (m_renderState->HasPipeline())

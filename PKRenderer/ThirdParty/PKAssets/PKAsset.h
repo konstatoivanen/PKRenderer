@@ -6,8 +6,7 @@ namespace PKAssets
     constexpr static const uint64_t PK_ASSET_MAGIC_NUMBER = 16056123332373007180ull;
     constexpr static const uint32_t PK_ASSET_NAME_MAX_LENGTH = 64u;
     constexpr static const uint32_t PK_ASSET_MAX_VERTEX_ATTRIBUTES = 8u;
-    constexpr static const uint32_t PK_ASSET_MAX_DESCRIPTOR_SETS = 4u;
-    constexpr static const uint32_t PK_ASSET_MAX_DESCRIPTORS_PER_SET = 16u;
+    constexpr static const uint32_t PK_ASSET_MAX_DESCRIPTORS_PER_SET = 64u;
     constexpr static const uint32_t PK_ASSET_MAX_PUSH_CONSTANTS = 16u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_KEYWORDS = 256u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_DIRECTIVES = 16u;
@@ -509,20 +508,13 @@ namespace PKAssets
         float zoffsets[3] = { 0, 0, 0 };                            // 36 bytes
     };
 
-    struct alignas(4) PKDescriptorSet
-    {
-        RelativePtr<PKDescriptor> descriptors; // 4 bytes
-        uint32_t descriptorCount;              // 8 bytes
-        PKShaderStageFlags stageflags;         // 12 bytes
-    };
-
     struct alignas(4) PKShaderVariant
     {
-        uint32_t descriptorSetCount;                                        // 4 bytes
+        uint32_t descriptorCount;                                           // 4 bytes
         uint32_t constantVariableCount;                                     // 8 bytes
         uint32_t vertexAttributeCount;                                      // 12 bytes
         uint32_t groupSize[4]{};                                            // 28 bytes
-        RelativePtr<PKDescriptorSet> descriptorSets;                        // 32 bytes
+        RelativePtr<PKDescriptor> descriptors;                              // 32 bytes
         RelativePtr<PKConstantVariable> constantVariables;                  // 36 bytes
         RelativePtr<PKVertexInputAttribute> vertexAttributes;               // 38 bytes
         uint32_t sprivSizes[(int)PKShaderStage::MaxCount];                  // 92 bytes

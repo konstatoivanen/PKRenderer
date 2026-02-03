@@ -48,37 +48,27 @@ namespace PK
             }
         }
 
+        DescriptorSetLayoutKey key{};
         PipelineLayoutKey pipelineKey{};
-        m_descriptorSetCount = variant->descriptorSetCount;
 
-        if (variant->descriptorSetCount > 0)
+        if (variant->descriptorCount > 0)
         {
-            auto* pDescriptorSets = variant->descriptorSets.Get(base);
+            PK_WARNING_ASSERT(variant->descriptorCount <= PK_RHI_MAX_DESCRIPTORS_PER_SET, "Warning: Shader descriptor count exceeds the maximum count per set!");
+            
+            auto pDescriptors = variant->descriptors.Get(base);
+            m_resourceLayout.ClearFast();
 
-            for (auto i = 0u; i < variant->descriptorSetCount; ++i)
+            for (auto j = 0u; j < variant->descriptorCount; ++j)
             {
-                PK_LOG_INDENT(PK_LOG_LVL_RHI);
-
-                DescriptorSetLayoutKey key{};
-                auto pDescriptorSet = pDescriptorSets + i;
-                auto pDescriptors = pDescriptorSet->descriptors.Get(base);
-                auto& elements = m_resourceLayouts[i];
-                elements.ClearFast();
-
-                PK_WARNING_ASSERT(pDescriptorSet->descriptorCount <= PK_RHI_MAX_DESCRIPTORS_PER_SET, "Warning: Shader descriptor count exceeds the maximum count per set!");
-
-                for (auto j = 0u; j < pDescriptorSet->descriptorCount; ++j)
-                {
-                    key.counts[j] = pDescriptors[j].count;
-                    key.types[j] = pDescriptors[j].type;
-                    elements.Add(pDescriptors[j].type, pDescriptors[j].name, pDescriptors[j].writeStageMask, pDescriptors[j].count);
-                }
-
-                // Cache these so that we can optimize shaders easier based on profiling tools.
-                key.stageFlags = VulkanEnumConvert::GetShaderStageFlags(pDescriptorSet->stageflags);
-                m_descriptorSetLayouts[i] = m_driver->layoutCache->GetSetLayout(key);
-                pipelineKey.setlayouts[i] = m_descriptorSetLayouts[i]->layout;
+                key.counts[j] = pDescriptors[j].count;
+                key.types[j] = pDescriptors[j].type;
+                m_resourceLayout.Add(pDescriptors[j].type, pDescriptors[j].name, pDescriptors[j].writeStageMask, pDescriptors[j].count);
             }
+
+            // Cache these so that we can optimize shaders easier based on profiling tools.
+            key.stageFlags = VulkanEnumConvert::GetShaderStageFlags(m_stageFlags);
+            m_descriptorSetLayout = m_driver->layoutCache->GetSetLayout(key);
+            pipelineKey.setlayout = m_descriptorSetLayout->layout;
         }
 
         if (variant->constantVariableCount > 0)
@@ -109,14 +99,7 @@ namespace PK
         auto fence = m_driver->GetQueues()->GetLastSubmitFenceRef();
 
         m_driver->layoutCache->ReleasePipelineLayout(m_pipelineLayout, fence);
-        
-        for (auto setlayout : m_descriptorSetLayouts)
-        {
-            if (setlayout != nullptr)
-            {
-                m_driver->layoutCache->ReleaseSetLayout(setlayout, fence);
-            }
-        }
+        m_driver->layoutCache->ReleaseSetLayout(m_descriptorSetLayout, fence);
 
         for (auto& module : m_modules)
         {

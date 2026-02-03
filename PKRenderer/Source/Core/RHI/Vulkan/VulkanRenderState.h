@@ -47,14 +47,12 @@ namespace PK
 
     struct VulkanDescriptorState
     {
-        VulkanDescriptorCache::DescriptorBinding bindings[PK_RHI_MAX_DESCRIPTOR_SETS][PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
-        const VulkanDescriptorSet* descriptorSets[PK_RHI_MAX_DESCRIPTOR_SETS]{};
-        VkShaderStageFlagBits stageFlags[PK_RHI_MAX_DESCRIPTOR_SETS]{};
-        uint32_t setSizes[PK_RHI_MAX_DESCRIPTOR_SETS]{};
-        VkDescriptorSet vksets[PK_RHI_MAX_DESCRIPTOR_SETS]{};
+        VulkanDescriptorCache::DescriptorBinding bindings[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
+        const VulkanDescriptorSet* descriptorSet = nullptr;
         VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
         VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        uint32_t setCount = 0u;
+        VkShaderStageFlagBits stageFlags = (VkShaderStageFlagBits)0;
+        uint32_t setSize = 0u;
     };
 
     struct VulkanRenderTargetBindings
@@ -132,7 +130,7 @@ namespace PK
         private:
             void ValidateVertexBuffers();
             void ValidateResourceAccess();
-            void ValidateDescriptorSets(const FenceRef& fence);
+            void ValidateDescriptors(const FenceRef& fence);
             void ValidatePipelineFormats();
 
             VulkanServiceContext m_services;
