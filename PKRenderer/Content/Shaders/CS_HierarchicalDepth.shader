@@ -3,16 +3,15 @@
 #extension GL_KHR_shader_subgroup_shuffle : enable
 #pragma pk_multi_compile _ PK_HIZ_FINAL_PASS
 #pragma pk_program SHADER_STAGE_COMPUTE HierarchicalDepthCs
-#define PK_USE_SINGLE_DESCRIPTOR_SET
 
 #include "includes/GBuffers.glsl"
 #include "includes/ComputeQuadSwap.glsl"
 
-PK_DECLARE_SET_DRAW uniform writeonly restrict image2DArray pk_Image;
-PK_DECLARE_SET_DRAW uniform writeonly restrict image2DArray pk_Image1;
-PK_DECLARE_SET_DRAW uniform writeonly restrict image2DArray pk_Image2;
-PK_DECLARE_SET_DRAW uniform writeonly restrict image2DArray pk_Image3;
-PK_DECLARE_SET_DRAW uniform writeonly restrict image2DArray pk_Image4;
+uniform writeonly restrict image2DArray pk_Image;
+uniform writeonly restrict image2DArray pk_Image1;
+uniform writeonly restrict image2DArray pk_Image2;
+uniform writeonly restrict image2DArray pk_Image3;
+uniform writeonly restrict image2DArray pk_Image4;
 
 shared float2 lds_Depth;
 

@@ -12,8 +12,8 @@
 #define PK_GUI_SHADING_MODE_FONT 1
 #define PK_FONT_MSDF_UNIT 4.0f // keep upto date with definition in PKAsset.h
 
-PK_DECLARE_READONLY_BUFFER(uint4, pk_GUI_Vertices, PK_SET_GLOBAL);
-PK_DECLARE_SET_GLOBAL uniform texture2D pk_GUI_Textures[];
+PK_DECLARE_READONLY_BUFFER(uint4, pk_GUI_Vertices);
+uniform texture2D pk_GUI_Textures[];
 
 PK_DECLARE_VS_ATTRIB(float2 vs_TEXCOORD);
 PK_DECLARE_VS_ATTRIB(float4 vs_COLOR);

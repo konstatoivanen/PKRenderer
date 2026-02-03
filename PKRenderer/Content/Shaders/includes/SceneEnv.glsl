@@ -7,9 +7,9 @@
 #define PK_SCENE_ENV_ISL_MAX_MIP 7
 #define PK_SCENE_ENV_MIN_SIZE 32
 
-PK_DECLARE_SET_GLOBAL uniform sampler2D pk_SceneEnv;
-PK_DECLARE_SET_GLOBAL uniform sampler2D pk_SceneEnv_ISL;
-PK_DECLARE_BUFFER(float4, pk_SceneEnv_SH, PK_SET_GLOBAL);
+uniform sampler2D pk_SceneEnv;
+uniform sampler2D pk_SceneEnv_ISL;
+PK_DECLARE_BUFFER(float4, pk_SceneEnv_SH);
 
 float3 SceneEnv_Sample_IBL(float2 uv, float roughness) 
 { 

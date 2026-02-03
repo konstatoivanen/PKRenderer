@@ -3,7 +3,7 @@
 #extension GL_KHR_shader_subgroup_shuffle : enable
 #pragma pk_program SHADER_STAGE_COMPUTE IntegrateCs
 #pragma pk_multi_compile PASS_INTEGRATE PASS_REDUCE_MIP
-#define PK_USE_SINGLE_DESCRIPTOR_SET
+
 #include "includes/Common.glsl"
 #include "includes/ComputeQuadSwap.glsl"
 #include "includes/SceneEnv.glsl"
@@ -11,10 +11,10 @@
 #include "includes/BRDF.glsl"
 #include "includes/Noise.glsl"
 
-PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image;
-PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image1;
-PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image2;
-PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image3;
+uniform writeonly restrict uimage2D pk_Image;
+uniform writeonly restrict uimage2D pk_Image1;
+uniform writeonly restrict uimage2D pk_Image2;
+uniform writeonly restrict uimage2D pk_Image3;
 
 shared float3 lds_scatter;
 

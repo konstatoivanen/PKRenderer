@@ -5,8 +5,8 @@
 
 #define GIZMOS_MAX_VERTICES 16384u
 
-PK_DECLARE_BUFFER(uint4, pk_Gizmos_IndirectVertices, PK_SET_GLOBAL);
-PK_DECLARE_VARIABLE(uint4, pk_Gizmos_IndirectArguments, PK_SET_GLOBAL);
+PK_DECLARE_BUFFER(uint4, pk_Gizmos_IndirectVertices);
+PK_DECLARE_VARIABLE(uint4, pk_Gizmos_IndirectArguments);
 
 void Gizmos_DrawPacked(uint4 v0, uint4 v1)
 {

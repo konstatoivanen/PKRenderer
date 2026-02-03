@@ -3,8 +3,8 @@
 #include "SceneGI.glsl"
 
 // Cant combine due to different res (well, can but shouldn't)
-PK_DECLARE_SET_DRAW uniform image2D pk_GradientInputs;
-PK_DECLARE_SET_DRAW uniform uimage2DArray pk_Gradients;
+uniform image2D pk_GradientInputs;
+uniform uimage2DArray pk_Gradients;
 
 #define GRADIENT_STRATA_SIZE 3
 

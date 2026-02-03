@@ -4,7 +4,7 @@
 
 #define PK_DFG_USE_MULTIPLE_SCATTER 1
 
-PK_DECLARE_SET_GLOBAL uniform sampler2D pk_PreIntegratedDFG;
+uniform sampler2D pk_PreIntegratedDFG;
 
 struct BxDFSurf
 {

@@ -1,17 +1,16 @@
 
 #extension GL_KHR_shader_subgroup_shuffle : enable
 #pragma pk_program SHADER_STAGE_COMPUTE TemporalAntialiasCs
-#define PK_USE_SINGLE_DESCRIPTOR_SET
 
 #include "includes/GBuffers.glsl"
 #include "includes/PostFXResources.glsl"
 #include "includes/Encoding.glsl"
 #include "includes/ComputeQuadSwap.glsl"
 
-PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture; // Current Screen
-PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture1; // History Read
-PK_DECLARE_SET_DRAW uniform uimage2D pk_Image; // History Write
-PK_DECLARE_SET_DRAW uniform image2D pk_Image1; // Color Write
+uniform sampler2D pk_Texture; // Current Screen
+uniform sampler2D pk_Texture1; // History Read
+uniform uimage2D pk_Image; // History Write
+uniform image2D pk_Image1; // Color Write
 
 float3 TonemapColor(const float3 c) { return c / (1.0 + cmax(c)); }
 float3 UntonemapColor(const float3 c) { return c / max(1.0f / 65504.0f, 1.0 - cmax(c)); }

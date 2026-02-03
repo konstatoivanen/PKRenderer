@@ -4,14 +4,14 @@
 
 #include "Common.glsl"
 
-PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_Normals;
-PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_Depth;
-PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Current_DepthBiased;
-PK_DECLARE_SET_GLOBAL uniform texture2DArray pk_GB_Current_DepthMips;
-PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_Color;
-PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_Normals;
-PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_Depth;
-PK_DECLARE_SET_GLOBAL uniform texture2D pk_GB_Previous_DepthBiased;
+uniform texture2D pk_GB_Current_Normals;
+uniform texture2D pk_GB_Current_Depth;
+uniform texture2D pk_GB_Current_DepthBiased;
+uniform texture2DArray pk_GB_Current_DepthMips;
+uniform texture2D pk_GB_Previous_Color;
+uniform texture2D pk_GB_Previous_Normals;
+uniform texture2D pk_GB_Previous_Depth;
+uniform texture2D pk_GB_Previous_DepthBiased;
 
 #define GBUFFER_SAMPLE(t, uv) texture(sampler2D(t, pk_Sampler_GBuffer), uv)
 #define GBUFFER_SAMPLE_OFFSET(t, uv, offs) textureOffset(sampler2D(t, pk_Sampler_GBuffer), uv, offs)

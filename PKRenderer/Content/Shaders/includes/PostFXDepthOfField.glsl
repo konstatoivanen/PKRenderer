@@ -16,7 +16,7 @@ struct DoFAutoFocusState
     float lens_coefficient;
 };
 
-PK_DECLARE_VARIABLE(DoFAutoFocusState, pk_DoF_AutoFocusState, PK_SET_GLOBAL);
+PK_DECLARE_VARIABLE(DoFAutoFocusState, pk_DoF_AutoFocusState);
 
 float DoF_GetLensCoefficient() 
 { 

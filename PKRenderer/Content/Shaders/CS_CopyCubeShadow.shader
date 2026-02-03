@@ -4,8 +4,8 @@
 #include "includes/Constants.glsl"
 #include "includes/Encoding.glsl"
 
-PK_DECLARE_SET_DRAW uniform samplerCubeArray pk_Texture;
-PK_DECLARE_SET_DRAW uniform image2DArray pk_Image;
+uniform samplerCubeArray pk_Texture;
+uniform image2DArray pk_Image;
 
 [pk_numthreads(8u, 8u, 1u)]
 void CopyCubeShadowCs()

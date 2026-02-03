@@ -18,12 +18,12 @@
 #define VOLUMEFOG_FADE_START_SHADOW_DIRECT 0.95f
 #define VOLUMEFOG_FADE_START_SHADOW_SELF 0.75f
 
-PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_Scatter_Read;
-PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_Inject_Read;
-PK_DECLARE_SET_SHADER uniform sampler3D pk_Fog_Density_Read;
-PK_DECLARE_SET_SHADER uniform uimage3D pk_Fog_Inject_Write;
-PK_DECLARE_SET_SHADER uniform image3D pk_Fog_Density_Write;
-PK_DECLARE_SET_SHADER uniform image3D pk_Fog_Scatter_Write;
+uniform sampler3D pk_Fog_Scatter_Read;
+uniform sampler3D pk_Fog_Inject_Read;
+uniform sampler3D pk_Fog_Density_Read;
+uniform uimage3D pk_Fog_Inject_Write;
+uniform image3D pk_Fog_Density_Write;
+uniform image3D pk_Fog_Scatter_Write;
 
 DEFINE_TRICUBIC_SAMPLER(pk_Fog_Scatter_Read, VOLUMEFOG_SIZE)
 

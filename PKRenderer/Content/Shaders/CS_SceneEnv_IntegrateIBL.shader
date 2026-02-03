@@ -2,7 +2,7 @@
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 #extension GL_KHR_shader_subgroup_shuffle : enable
 #pragma pk_program SHADER_STAGE_COMPUTE IntegrateCs
-#define PK_USE_SINGLE_DESCRIPTOR_SET
+
 #include "includes/Common.glsl"
 #include "includes/ComputeQuadSwap.glsl"
 #include "includes/SceneEnv.glsl"
@@ -11,11 +11,11 @@
 
 #define PK_STATIC_FOG_VIRTUAL_DISTANCE 14000.0f
 
-PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image;
-PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image1;
-PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image2;
-PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image3;
-PK_DECLARE_SET_DRAW uniform writeonly restrict uimage2D pk_Image4;
+uniform writeonly restrict uimage2D pk_Image;
+uniform writeonly restrict uimage2D pk_Image1;
+uniform writeonly restrict uimage2D pk_Image2;
+uniform writeonly restrict uimage2D pk_Image3;
+uniform writeonly restrict uimage2D pk_Image4;
 
 PK_DECLARE_LOCAL_CBUFFER(pk_SceneEnv_Origin)
 {

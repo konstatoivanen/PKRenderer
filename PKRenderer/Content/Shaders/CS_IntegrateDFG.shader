@@ -1,11 +1,11 @@
 
 #pragma pk_program SHADER_STAGE_COMPUTE IntegrateCs
-#define PK_USE_SINGLE_DESCRIPTOR_SET
+
 #include "includes/Common.glsl"
 #include "includes/BRDF.glsl"
 #include "includes/Noise.glsl"
 
-PK_DECLARE_SET_DRAW uniform writeonly restrict image2D pk_Image;
+uniform writeonly restrict image2D pk_Image;
 
 [pk_numthreads(8u, 8u, 1u)]
 void IntegrateCs()

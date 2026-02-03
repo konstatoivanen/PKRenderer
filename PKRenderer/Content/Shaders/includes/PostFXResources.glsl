@@ -1,8 +1,8 @@
 #pragma once
 #include "Common.glsl"
 
-PK_DECLARE_SET_PASS uniform sampler3D pk_CC_LutTex;
-PK_DECLARE_SET_PASS uniform sampler3D pk_Tonemap_LutTex;
+uniform sampler3D pk_CC_LutTex;
+uniform sampler3D pk_Tonemap_LutTex;
 
 #define FX_FEAT_VIGNETTE 0x1u
 #define FX_FEAT_BLOOM 0x2u

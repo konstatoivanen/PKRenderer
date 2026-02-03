@@ -18,7 +18,7 @@
 #include "includes/LightResources.glsl"
 #endif
 
-PK_DECLARE_SET_DRAW uniform image2D pk_Image;
+uniform image2D pk_Image;
 
 [pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void PostEffectsCompositeCs()

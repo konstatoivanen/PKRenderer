@@ -10,8 +10,8 @@
 #include "includes/LightSampling.glsl"
 #include "includes/Kernels.glsl"
 
-PK_DECLARE_SET_DRAW uniform image2D pk_Image;
-PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture;
+uniform image2D pk_Image;
+uniform sampler2D pk_Texture;
 
 [pk_numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void ShadowmapCs()

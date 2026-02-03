@@ -13,11 +13,11 @@
 #define PK_GI_STORE_LVL 0
 #endif
 
-PK_DECLARE_SET_SHADER uniform uimage2DArray pk_GI_PackedDiff;
-PK_DECLARE_SET_SHADER uniform uimage2DArray pk_GI_PackedSpec;
-PK_DECLARE_SET_SHADER uniform uimage2D pk_GI_ResolvedWrite;
-PK_DECLARE_SET_SHADER uniform image2D pk_GI_ResolvedAOWrite;
-PK_DECLARE_SET_SHADER uniform utexture2D pk_GI_ResolvedRead;
+uniform uimage2DArray pk_GI_PackedDiff;
+uniform uimage2DArray pk_GI_PackedSpec;
+uniform uimage2D pk_GI_ResolvedWrite;
+uniform image2D pk_GI_ResolvedAOWrite;
+uniform utexture2D pk_GI_ResolvedRead;
 
 #define PK_GI_APPROX_ROUGH_SPEC 1
 // Should surface shading approximate sheen & clear coat from diffuse sh

@@ -1,7 +1,7 @@
 #pragma pk_program SHADER_STAGE_COMPUTE FilmGrainCs
 #include "includes/Common.glsl"
 
-PK_DECLARE_SET_DRAW uniform image2D pk_Image;
+uniform image2D pk_Image;
 
 // Source: https://www.shadertoy.com/view/4sSXDW
 // Changed 78.233f to 88.233f to fix visible banding.

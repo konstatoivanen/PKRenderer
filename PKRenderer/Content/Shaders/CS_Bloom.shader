@@ -16,8 +16,8 @@ PK_DECLARE_LOCAL_CBUFFER(pk_Bloom_UpsampleLayerCount)
     float pk_Bloom_UpsampleLayerCount_Value;
 };
 
-PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture;
-PK_DECLARE_SET_DRAW uniform uimage2D pk_Image;
+uniform sampler2D pk_Texture;
+uniform uimage2D pk_Image;
 
 float GetLumaWeight(float3 s)
 {

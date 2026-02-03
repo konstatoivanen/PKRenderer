@@ -1,8 +1,8 @@
 #pragma once
 #include "PostFXResources.glsl"
 
-PK_DECLARE_SET_PASS uniform sampler2D pk_Bloom_Texture;
-PK_DECLARE_SET_PASS uniform sampler2D pk_Bloom_LensDirtTex;
+uniform sampler2D pk_Bloom_Texture;
+uniform sampler2D pk_Bloom_LensDirtTex;
 
 float3 Bloom(float3 color, float2 uv)
 {

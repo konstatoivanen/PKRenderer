@@ -169,7 +169,7 @@ void IntegrateCs()
     }
 }
 
-PK_DECLARE_SET_DRAW uniform image2D pk_Image;
+uniform image2D pk_Image;
 
 [pk_numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
 void CompositeCs()

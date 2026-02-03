@@ -3,8 +3,8 @@
 #include "Kernels.glsl"
 #include "Noise.glsl"
 
-PK_DECLARE_SET_PASS uniform sampler2DArray pk_ShadowmapAtlas;
-PK_DECLARE_SET_PASS uniform sampler2D pk_ShadowmapScreenSpace;
+uniform sampler2DArray pk_ShadowmapAtlas;
+uniform sampler2D pk_ShadowmapScreenSpace;
 
 #ifndef SHADOW_PROG_COORD
 #define SHADOW_PROG_COORD PK_GET_PROG_COORD

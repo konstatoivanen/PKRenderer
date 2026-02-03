@@ -464,30 +464,8 @@ namespace PK
         auto resources = m_services.globalResources;
         auto shader = m_pipelineKey.shader;
         auto bindPoint = VulkanEnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags());
-       
-        m_descritorState.pipelineLayout = m_pipelineKey.shader->GetPipelineLayout()->layout;
-
-        if (m_descritorState.bindPoint != bindPoint)
-        {
-            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
-            m_descritorState.bindPoint = bindPoint;
-        }
-
         auto* layout = shader->GetDescriptorSetLayout();
         auto& resourceLayout = shader->GetResourceLayout();
-
-        if (m_descritorState.stageFlags != layout->stageFlags)
-        {
-            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
-            m_descritorState.stageFlags = layout->stageFlags;
-        }
-
-        if (m_descritorState.setSize != resourceLayout.GetCount())
-        {
-            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
-            m_descritorState.setSize = resourceLayout.GetCount();
-        }
-
         auto* bindings = m_descritorState.bindings;
         auto bindingIndex = 0u;
 
@@ -537,9 +515,28 @@ namespace PK
             auto name = shader->GetName();
             m_descritorState.descriptorSet = m_services.descriptorCache->GetDescriptorSet(layout, bindings, bindingIndex, fence, name);
         }
+
+        if (m_descritorState.bindPoint != bindPoint)
+        {
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
+            m_descritorState.bindPoint = bindPoint;
+        }
+
+        if (m_descritorState.stageFlags != layout->stageFlags)
+        {
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
+            m_descritorState.stageFlags = layout->stageFlags;
+        }
+
+        if (m_descritorState.setSize != resourceLayout.GetCount())
+        {
+            m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
+            m_descritorState.setSize = resourceLayout.GetCount();
+        }
             
         // @TODO should not be done here. Move to descriptor cache.
         m_descritorState.descriptorSet->fence = fence;
+        m_descritorState.pipelineLayout = m_pipelineKey.shader->GetPipelineLayout()->layout;
     }
 
     void VulkanRenderState::ValidateResourceAccess()

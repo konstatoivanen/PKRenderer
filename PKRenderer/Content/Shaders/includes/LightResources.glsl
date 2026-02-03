@@ -44,16 +44,16 @@ struct LightTile
     uint cascade;
 };
 
-PK_DECLARE_SET_GLOBAL uniform sampler2DArray pk_LightCookies;
-PK_DECLARE_READONLY_BUFFER(uint4, pk_Lights, PK_SET_PASS);
-PK_DECLARE_READONLY_BUFFER(float4x4, pk_LightMatrices, PK_SET_PASS);
+uniform sampler2DArray pk_LightCookies;
+PK_DECLARE_READONLY_BUFFER(uint4, pk_Lights);
+PK_DECLARE_READONLY_BUFFER(float4x4, pk_LightMatrices);
 
 #if defined(PK_WRITE_LIGHT_CLUSTERS)
-    PK_DECLARE_WRITEONLY_BUFFER(ushort, pk_LightLists, PK_SET_PASS);
-    PK_DECLARE_SET_PASS uniform writeonly uimage3D pk_LightTiles;
+    PK_DECLARE_WRITEONLY_BUFFER(ushort, pk_LightLists);
+    uniform writeonly uimage3D pk_LightTiles;
 #else
-    PK_DECLARE_READONLY_BUFFER(ushort, pk_LightLists, PK_SET_PASS);
-    PK_DECLARE_SET_PASS uniform readonly uimage3D pk_LightTiles;
+    PK_DECLARE_READONLY_BUFFER(ushort, pk_LightLists);
+    uniform readonly uimage3D pk_LightTiles;
 #endif
 
 SceneLight Lights_UnpackLight(uint4 packed0, uint4 packed1, uint4 packed2)

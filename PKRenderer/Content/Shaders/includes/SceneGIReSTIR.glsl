@@ -3,8 +3,8 @@
 #include "Encoding.glsl"
 #include "MortonOrder.glsl"
 
-PK_DECLARE_SET_DRAW uniform uimage2DArray pk_Reservoirs0;
-PK_DECLARE_SET_DRAW uniform uimage2DArray pk_Reservoirs1;
+uniform uimage2DArray pk_Reservoirs0;
+uniform uimage2DArray pk_Reservoirs1;
 
 struct Reservoir 
 { 

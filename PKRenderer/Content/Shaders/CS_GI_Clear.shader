@@ -2,7 +2,7 @@
 #include "includes/Common.glsl"
 #include "includes/SceneGIVX.glsl"
 
-PK_DECLARE_SET_DRAW uniform image3D pk_Image;
+uniform image3D pk_Image;
 
 [pk_numthreads(4u, 4u, 4u)]
 void ClearCs()

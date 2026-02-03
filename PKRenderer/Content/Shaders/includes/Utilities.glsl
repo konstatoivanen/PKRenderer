@@ -87,31 +87,12 @@ float3x3 CreateTBN(const float3 n) { float3 t, b; CreateTBN(n,t,b); return float
 #define Test_EPS4(v) (v <= 1e-4f)
 #define Test_EPS6(v) (v <= 1e-6f)
 
-#if !defined(PK_USE_CUSTOM_DESCRIPTOR_SET_INDICES)
-    #if defined(PK_USE_SINGLE_DESCRIPTOR_SET)
-        #define PK_SET_GLOBAL 0
-        #define PK_SET_PASS 0
-        #define PK_SET_SHADER 0
-        #define PK_SET_DRAW 0
-    #else
-        #define PK_SET_GLOBAL 0
-        #define PK_SET_PASS 1
-        #define PK_SET_SHADER 2
-        #define PK_SET_DRAW 3
-    #endif
-#endif
-
-#define PK_DECLARE_SET_GLOBAL layout(set = PK_SET_GLOBAL)
-#define PK_DECLARE_SET_PASS layout(set = PK_SET_PASS)
-#define PK_DECLARE_SET_SHADER layout(set = PK_SET_SHADER)
-#define PK_DECLARE_SET_DRAW layout(set = PK_SET_DRAW)
-
 #define PK_DECLARE_LOCAL_CBUFFER(BufferName) layout(push_constant) uniform BufferName
-#define PK_DECLARE_CBUFFER(BufferName, Set) layout(std140, set = Set) uniform BufferName
-#define PK_DECLARE_BUFFER(ValueType, BufferName, Set) layout(std430, set = Set) buffer BufferName { ValueType BufferName##_Data[]; }
-#define PK_DECLARE_READONLY_BUFFER(ValueType, BufferName, Set) layout(std430, set = Set) readonly buffer BufferName { ValueType BufferName##_Data[]; }
-#define PK_DECLARE_WRITEONLY_BUFFER(ValueType, BufferName, Set) layout(std430, set = Set) writeonly buffer BufferName { ValueType BufferName##_Data[]; }
-#define PK_DECLARE_VARIABLE(ValueType, BufferName, Set) layout(std430, set = Set) buffer BufferName { ValueType BufferName##_Data; }
+#define PK_DECLARE_CBUFFER(BufferName) layout(std140) uniform BufferName
+#define PK_DECLARE_BUFFER(ValueType, BufferName) layout(std430) buffer BufferName { ValueType BufferName##_Data[]; }
+#define PK_DECLARE_READONLY_BUFFER(ValueType, BufferName) layout(std430) readonly buffer BufferName { ValueType BufferName##_Data[]; }
+#define PK_DECLARE_WRITEONLY_BUFFER(ValueType, BufferName) layout(std430) writeonly buffer BufferName { ValueType BufferName##_Data[]; }
+#define PK_DECLARE_VARIABLE(ValueType, BufferName) layout(std430) buffer BufferName { ValueType BufferName##_Data; }
 #define PK_BUFFER_DATA(BufferName, index) BufferName##_Data[index]
 #define PK_VARIABLE_DATA(BufferName) BufferName##_Data
 
@@ -157,9 +138,9 @@ float3x3 CreateTBN(const float3 n) { float3 t, b; CreateTBN(n,t,b); return float
 #endif
 
 #if defined(PK_IS_RAYTRACING_STAGE) || defined(PK_ALLOW_TLAS_DECLARATION)
-    #define PK_DECLARE_ACCELERATION_STRUCTURE(Set, Name) layout(set = Set) uniform accelerationStructureEXT Name;
+    #define PK_DECLARE_ACCELERATION_STRUCTURE(Name) uniform accelerationStructureEXT Name;
 #else
-    #define PK_DECLARE_ACCELERATION_STRUCTURE(Set, Name)
+    #define PK_DECLARE_ACCELERATION_STRUCTURE(Name)
 #endif
 
 #if defined(SHADER_STAGE_MESH_ASSEMBLY)

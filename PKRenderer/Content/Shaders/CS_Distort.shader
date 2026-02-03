@@ -9,9 +9,9 @@
 #include "includes/Common.glsl"
 #include "includes/NoiseBlue.glsl"
 
-PK_DECLARE_SET_DRAW uniform sampler2D pk_Texture;
-[pk_local(DistortPaniniCs)] PK_DECLARE_SET_DRAW uniform uimage2D pk_Image;
-[pk_local(DistortChromaCs)] PK_DECLARE_SET_DRAW uniform image2D pk_Image;
+uniform sampler2D pk_Texture;
+[pk_local(DistortPaniniCs)] uniform uimage2D pk_Image;
+[pk_local(DistortChromaCs)] uniform image2D pk_Image;
 
 [pk_numthreads(PK_W_ALIGNMENT_16, PK_W_ALIGNMENT_4, 1u)]
 void DistortPaniniCs()

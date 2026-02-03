@@ -5,7 +5,6 @@
 #pragma pk_program SHADER_STAGE_RAY_GENERATION MainRgs
 #pragma pk_program SHADER_STAGE_RAY_MISS MainRms
 #pragma pk_program SHADER_STAGE_RAY_CLOSEST_HIT MainRchs
-#define PK_USE_SINGLE_DESCRIPTOR_SET
 
 #include "includes/GBuffers.glsl"
 #include "includes/SceneGI.glsl"
