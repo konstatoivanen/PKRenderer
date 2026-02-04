@@ -45,14 +45,14 @@ struct LightTile
 };
 
 uniform sampler2DArray pk_LightCookies;
-PK_DECLARE_READONLY_BUFFER(uint4, pk_Lights);
-PK_DECLARE_READONLY_BUFFER(float4x4, pk_LightMatrices);
+readonly buffer<uint4> pk_Lights;
+readonly buffer<float4x4> pk_LightMatrices;
 
 #if defined(PK_WRITE_LIGHT_CLUSTERS)
-    PK_DECLARE_WRITEONLY_BUFFER(ushort, pk_LightLists);
+    writeonly buffer<ushort> pk_LightLists;
     uniform writeonly uimage3D pk_LightTiles;
 #else
-    PK_DECLARE_READONLY_BUFFER(ushort, pk_LightLists);
+    readonly buffer<ushort> pk_LightLists;
     uniform readonly uimage3D pk_LightTiles;
 #endif
 

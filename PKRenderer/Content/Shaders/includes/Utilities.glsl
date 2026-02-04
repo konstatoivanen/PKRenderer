@@ -90,14 +90,6 @@ float3x3 CreateTBN(const float3 n) { float3 t, b; CreateTBN(n,t,b); return float
 #define PK_DECLARE_LOCAL_CBUFFER(BufferName) layout(push_constant) uniform BufferName
 #define PK_DECLARE_CBUFFER(BufferName) layout(std140) uniform BufferName
 
-#define PK_DECLARE_BUFFER(ValueType, BufferName) layout(std430) buffer BufferName##_pkalias { ValueType BufferName[]; }
-#define PK_DECLARE_READONLY_BUFFER(ValueType, BufferName) readonly layout(std430) buffer BufferName##_pkalias { ValueType BufferName[]; }
-#define PK_DECLARE_WRITEONLY_BUFFER(ValueType, BufferName) writeonly layout(std430) buffer BufferName##_pkalias { ValueType BufferName[]; }
-#define PK_DECLARE_VARIABLE(ValueType, BufferName) layout(std430) buffer BufferName##_pkalias { ValueType BufferName; }
-
-#define PK_BUFFER_DATA(BufferName, index) BufferName##_Data[index]
-#define PK_VARIABLE_DATA(BufferName) BufferName##_Data
-
 // Ray tracing utilities
 #if defined(SHADER_STAGE_RAY_GENERATION) || defined(SHADER_STAGE_RAY_MISS) || defined(SHADER_STAGE_RAY_CLOSEST_HIT) || defined(SHADER_STAGE_RAY_ANY_HIT) || defined(SHADER_STAGE_RAY_INTERSECTION)
     #define PK_IS_RAYTRACING_STAGE 

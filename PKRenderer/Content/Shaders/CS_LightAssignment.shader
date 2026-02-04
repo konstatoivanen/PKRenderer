@@ -15,7 +15,7 @@ PK_DECLARE_LOCAL_CBUFFER(pk_LastLightIndex)
     uint LastLightIndex;
 };
 
-PK_DECLARE_VARIABLE(uint, pk_LightCounter);
+buffer<uint,1u> pk_LightCounter;
 
 struct SharedLight
 {

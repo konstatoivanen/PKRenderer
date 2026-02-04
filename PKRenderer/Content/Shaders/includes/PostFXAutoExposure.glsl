@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities.glsl"
 
-PK_DECLARE_BUFFER(uint, pk_AutoExposure_Histogram);
+buffer<uint> pk_AutoExposure_Histogram;
 
 float GetAutoExposure()
 {
