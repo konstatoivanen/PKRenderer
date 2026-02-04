@@ -30,34 +30,34 @@ float3 SceneEnv_Sample_ISL_Dual(float2 uv, float directionality)
 
 float3 SceneEnv_Sample_SH(float4 basis)
 {
-    const float R = max(0.0f, dot(PK_BUFFER_DATA(pk_SceneEnv_SH, 0), basis));
-    const float G = max(0.0f, dot(PK_BUFFER_DATA(pk_SceneEnv_SH, 1), basis));
-    const float B = max(0.0f, dot(PK_BUFFER_DATA(pk_SceneEnv_SH, 2), basis));
+    const float R = max(0.0f, dot(pk_SceneEnv_SH[0], basis));
+    const float G = max(0.0f, dot(pk_SceneEnv_SH[1], basis));
+    const float B = max(0.0f, dot(pk_SceneEnv_SH[2], basis));
     return float3(R, G, B);
 }
 
 float3 SceneEnv_Sample_SH_PeakDirection()
 {
     float3 direction = 0.0f.xxx;
-    direction += PK_BUFFER_DATA(pk_SceneEnv_SH, 0).yzw * PK_LUMA_BT709.r;
-    direction += PK_BUFFER_DATA(pk_SceneEnv_SH, 1).yzw * PK_LUMA_BT709.g;
-    direction += PK_BUFFER_DATA(pk_SceneEnv_SH, 2).yzw * PK_LUMA_BT709.b;
+    direction += pk_SceneEnv_SH[0].yzw * PK_LUMA_BT709.r;
+    direction += pk_SceneEnv_SH[1].yzw * PK_LUMA_BT709.g;
+    direction += pk_SceneEnv_SH[2].yzw * PK_LUMA_BT709.b;
     return direction / (length(direction) + 1e-6f); 
 }
 
 float3 SceneEnv_Sample_SH_Color()
 {
-    const float R = PK_BUFFER_DATA(pk_SceneEnv_SH, 0).x;
-    const float G = PK_BUFFER_DATA(pk_SceneEnv_SH, 1).x;
-    const float B = PK_BUFFER_DATA(pk_SceneEnv_SH, 2).x;
+    const float R = pk_SceneEnv_SH[0].x;
+    const float G = pk_SceneEnv_SH[1].x;
+    const float B = pk_SceneEnv_SH[2].x;
     return float3(R, G, B) / PK_L1BASIS.xxx;
 }
 
 float3 SceneEnv_Sample_SH_Diffuse(float3 direction)  
 { 
-    const float R = SH_EvaluateDiffuse(PK_BUFFER_DATA(pk_SceneEnv_SH, 0), direction);
-    const float G = SH_EvaluateDiffuse(PK_BUFFER_DATA(pk_SceneEnv_SH, 1), direction);
-    const float B = SH_EvaluateDiffuse(PK_BUFFER_DATA(pk_SceneEnv_SH, 2), direction);
+    const float R = SH_EvaluateDiffuse(pk_SceneEnv_SH[0], direction);
+    const float G = SH_EvaluateDiffuse(pk_SceneEnv_SH[1], direction);
+    const float B = SH_EvaluateDiffuse(pk_SceneEnv_SH[2], direction);
     return float3(R,G,B);
 }
 

@@ -5,5 +5,5 @@ PK_DECLARE_BUFFER(uint, pk_AutoExposure_Histogram);
 
 float GetAutoExposure()
 {
-    return uintBitsToFloat(PK_BUFFER_DATA(pk_AutoExposure_Histogram, 256));
+    return uintBitsToFloat(pk_AutoExposure_Histogram[256]);
 }

@@ -98,8 +98,8 @@ void IntegrateCs()
         local_SH_B += lds_SH_B[thread + 0x20u];
         local_SH_B += lds_SH_B[thread + 0x24u];
 
-        PK_BUFFER_DATA(pk_SceneEnv_SH, 0) = local_SH_R * PK_FOUR_PI / SAMPLE_COUNT;
-        PK_BUFFER_DATA(pk_SceneEnv_SH, 1) = local_SH_G * PK_FOUR_PI / SAMPLE_COUNT;
-        PK_BUFFER_DATA(pk_SceneEnv_SH, 2) = local_SH_B * PK_FOUR_PI / SAMPLE_COUNT;
+        pk_SceneEnv_SH[0] = local_SH_R * PK_FOUR_PI / SAMPLE_COUNT;
+        pk_SceneEnv_SH[1] = local_SH_G * PK_FOUR_PI / SAMPLE_COUNT;
+        pk_SceneEnv_SH[2] = local_SH_B * PK_FOUR_PI / SAMPLE_COUNT;
     }
 }

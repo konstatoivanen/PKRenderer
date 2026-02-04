@@ -10,7 +10,7 @@ void AutoFocusCs()
 
     center_depth = ReplaceIfResized(center_depth, pk_ClipParams.y);
 
-    DoFAutoFocusState state = PK_VARIABLE_DATA(pk_DoF_AutoFocusState);
+    DoFAutoFocusState state = pk_DoF_AutoFocusState;
    
     state.focus_depth = lerp_sat(state.focus_depth, center_depth, pk_DeltaTime.x * pk_DoF_FocusSpeed);
     state.focus_depth = max(pk_ClipParams.x, state.focus_depth);
@@ -18,5 +18,5 @@ void AutoFocusCs()
     state.lens_coefficient  = pk_DoF_FocalLength * pk_DoF_FocalLength;
     state.lens_coefficient /= (pk_DoF_FNumber * (state.focus_depth - pk_DoF_FocalLength) * pk_DoF_FilmHeight * 2.0f);
 
-    PK_VARIABLE_DATA(pk_DoF_AutoFocusState) = state;
+    pk_DoF_AutoFocusState = state;
 }

@@ -85,10 +85,7 @@ LightTile Lights_UnpackTile(uint data)
 
 SceneLight Lights_LoadLight(uint index)
 {
-    return Lights_UnpackLight(
-        PK_BUFFER_DATA(pk_Lights, index * 3u + 0u), 
-        PK_BUFFER_DATA(pk_Lights, index * 3u + 1u),
-        PK_BUFFER_DATA(pk_Lights, index * 3u + 2u));
+    return Lights_UnpackLight(pk_Lights[index * 3u + 0u], pk_Lights[index * 3u + 1u], pk_Lights[index * 3u + 2u]);
 }
 
 LightTile Lights_LoadTile(const int3 coord)

@@ -98,6 +98,7 @@ namespace PKAssets
     constexpr const static char* PK_SHADER_ATTRIB_LOCAL_CLOSE = ")]";
     constexpr const static char* PK_SHADER_ATTRIB_NUMTHREADS_OPEN = "[pk_numthreads(";
     constexpr const static char* PK_SHADER_ATTRIB_NUMTHREADS_CLOSE = ")]";
+    constexpr const static char* PK_SHADER_ATTRIB_ALIAS = "_pkalias";
 
     constexpr const static char* PK_SHADER_INSTANCING_TRANSFORMS = "pk_Instancing_Transforms";
     constexpr const static char* PK_SHADER_INSTANCING_INDICES = "pk_Instancing_Indices";

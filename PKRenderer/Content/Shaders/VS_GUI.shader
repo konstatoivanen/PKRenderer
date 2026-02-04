@@ -22,7 +22,7 @@ PK_DECLARE_VS_ATTRIB(flat uint vs_SHADING_MODE);
 
 void MainVs()
 {
-    const uint4 vertex_packed = PK_BUFFER_DATA(pk_GUI_Vertices, gl_VertexIndex);
+    const uint4 vertex_packed = pk_GUI_Vertices[gl_VertexIndex];
 
     int2 coord;
     coord.x = bitfieldExtract(int(vertex_packed.y), 0, 16);

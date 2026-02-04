@@ -32,12 +32,12 @@ float Lights_ConeAttenuation(float3 L, float3 D, float2 A)
 
 float2 Lights_GetClipUv(const float3 world_pos, const uint matrix_index)
 {
-    return ClipToUv((PK_BUFFER_DATA(pk_LightMatrices, matrix_index) * float4(world_pos, 1.0f)).xyw);
+    return ClipToUv((pk_LightMatrices[matrix_index] * float4(world_pos, 1.0f)).xyw);
 }
 
 float4 Lights_GetClipUvMinMax(const float3 world_pos, const float3 shadow_bias, const uint matrix_index)
 {
-    const float4x4 light_matrix = PK_BUFFER_DATA(pk_LightMatrices, matrix_index);
+    const float4x4 light_matrix = pk_LightMatrices[matrix_index];
     float3 coord0 = (light_matrix * float4(world_pos + shadow_bias.xyz, 1.0f)).xyw;
     float3 coord1 = (light_matrix * float4(world_pos - shadow_bias.xyz, 1.0f)).xyw;
     coord0.xy = (coord0.xy / coord0.z) * 0.5f.xx + 0.5f.xx;
@@ -119,5 +119,5 @@ SceneLightSample Lights_SampleAt(const uint index, const float3 world_pos, const
 
 SceneLightSample Lights_SampleTiled(const uint index, const float3 world_pos, const float3 shadow_bias, const uint cascade) 
 { 
-    return Lights_SampleAt(PK_BUFFER_DATA(pk_LightLists, index), world_pos, shadow_bias, cascade); 
+    return Lights_SampleAt(pk_LightLists[index], world_pos, shadow_bias, cascade); 
 }

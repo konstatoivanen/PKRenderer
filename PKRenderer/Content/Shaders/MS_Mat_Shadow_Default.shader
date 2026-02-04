@@ -67,9 +67,9 @@ void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
     float4x4 light_matrix;
 
     #if defined(PK_LIGHT_PASS_DIRECTIONAL)
-        light_matrix = PK_BUFFER_DATA(pk_LightMatrices, light.index_shadow + layer);
+        light_matrix = pk_LightMatrices[light.index_shadow + layer];
     #elif defined(PK_LIGHT_PASS_SPOT)
-        light_matrix = PK_BUFFER_DATA(pk_LightMatrices, light.index_shadow);
+        light_matrix = pk_LightMatrices[light.index_shadow];
     #endif
 
     payload.extra.light_matrix = light_matrix;

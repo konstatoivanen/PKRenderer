@@ -135,11 +135,11 @@ void LightAssignmentCs()
     [[branch]]
     if (All_Less(coord.xy, LIGHT_TILE_COUNT_XY))
     {
-        offset = atomicAdd(PK_VARIABLE_DATA(pk_LightCounter), visible_count);
+        offset = atomicAdd(pk_LightCounter, visible_count);
 
         for (uint i = 0; i < visible_count; ++i)
         {
-            PK_BUFFER_DATA(pk_LightLists, offset + i) = visible_indices[i];
+            pk_LightLists[offset + i] = visible_indices[i];
         }
     }
 

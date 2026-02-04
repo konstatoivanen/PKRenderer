@@ -213,26 +213,26 @@ PKVertex Meshlet_Unpack_Vertex(const uint4 packed, const float3 sm_bbmin, const 
 }
 
 // Loading functions
-PKTasklet Meshlet_Load_Tasklet(const uint task_index) { return Meshlet_Unpack_Tasklet(PK_BUFFER_DATA(pk_Meshlet_Tasklets, task_index)); }
+PKTasklet Meshlet_Load_Tasklet(const uint task_index) { return Meshlet_Unpack_Tasklet(pk_Meshlet_Tasklets[task_index]); }
 
 PKSubmesh Meshlet_Load_Submesh(const uint index) 
 { 
     return Meshlet_Unpack_Submesh(
-        PK_BUFFER_DATA(pk_Meshlet_Submeshes, index * 2u + 0u), 
-        PK_BUFFER_DATA(pk_Meshlet_Submeshes, index * 2u + 1u)); 
+        pk_Meshlet_Submeshes[index * 2u + 0u], 
+        pk_Meshlet_Submeshes[index * 2u + 1u]); 
 }
 
-PKMeshletLite Meshlet_Load_MeshletLite(const uint index) { return Meshlet_Unpack_MeshletLite(PK_BUFFER_DATA(pk_Meshlets, index * MESHLET_UINT4_STRIDE + 0u)); }
+PKMeshletLite Meshlet_Load_MeshletLite(const uint index) { return Meshlet_Unpack_MeshletLite(pk_Meshlets[index * MESHLET_UINT4_STRIDE + 0u]); }
 
 PKMeshlet Meshlet_Load_Meshlet(const uint index) 
 { 
     return Meshlet_Unpack_Meshlet(
-        PK_BUFFER_DATA(pk_Meshlets, index * MESHLET_UINT4_STRIDE + 0u), 
-        PK_BUFFER_DATA(pk_Meshlets, index * MESHLET_UINT4_STRIDE + 1u),
-        PK_BUFFER_DATA(pk_Meshlets, index * MESHLET_UINT4_STRIDE + 2u)); 
+        pk_Meshlets[index * MESHLET_UINT4_STRIDE + 0u], 
+        pk_Meshlets[index * MESHLET_UINT4_STRIDE + 1u],
+        pk_Meshlets[index * MESHLET_UINT4_STRIDE + 2u]); 
 }
 
-PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const float3 sm_bbmax) { return Meshlet_Unpack_Vertex(PK_BUFFER_DATA(pk_Meshlet_Vertices, index), sm_bbmin, sm_bbmax); }
+PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const float3 sm_bbmax) { return Meshlet_Unpack_Vertex(pk_Meshlet_Vertices[index], sm_bbmin, sm_bbmax); }
 
 #if defined(SHADER_STAGE_MESH_TASK)
 
@@ -443,9 +443,9 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
             const uint triangle_index = gl_LocalInvocationID.x * TRIANGLES_PER_MESHLET_THREAD + i;
             uint3 indices = uint3
             (
-                PK_BUFFER_DATA(pk_Meshlet_Indices, triangle_first * 3u + triangle_index * 3u + 0u),
-                PK_BUFFER_DATA(pk_Meshlet_Indices, triangle_first * 3u + triangle_index * 3u + 1u),
-                PK_BUFFER_DATA(pk_Meshlet_Indices, triangle_first * 3u + triangle_index * 3u + 2u)
+                pk_Meshlet_Indices[triangle_first * 3u + triangle_index * 3u + 0u],
+                pk_Meshlet_Indices[triangle_first * 3u + triangle_index * 3u + 1u],
+                pk_Meshlet_Indices[triangle_first * 3u + triangle_index * 3u + 2u]
             );
             
             [[branch]]

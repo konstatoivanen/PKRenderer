@@ -10,10 +10,10 @@ PK_DECLARE_VARIABLE(uint4, pk_Gizmos_IndirectArguments);
 
 void Gizmos_DrawPacked(uint4 v0, uint4 v1)
 {
-    uint vertexIndex = atomicAdd(PK_VARIABLE_DATA(pk_Gizmos_IndirectArguments).x, 2u);
+    uint vertexIndex = atomicAdd(pk_Gizmos_IndirectArguments.x, 2u);
     vertexIndex %= GIZMOS_MAX_VERTICES;
-    PK_BUFFER_DATA(pk_Gizmos_IndirectVertices, vertexIndex + 0u) = v0;
-    PK_BUFFER_DATA(pk_Gizmos_IndirectVertices, vertexIndex + 1u) = v1;
+    pk_Gizmos_IndirectVertices[vertexIndex + 0u] = v0;
+    pk_Gizmos_IndirectVertices[vertexIndex + 1u] = v1;
 }
 
 void Gizmos_DrawWorldLine(float3 start, float3 end, float4 color)

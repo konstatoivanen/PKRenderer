@@ -17,9 +17,9 @@ uniform sampler2D pk_Texture;
 // Source: http://www.alextardif.com/HistogramLuminance.html
 shared uint lds_Histogram[NUM_HISTOGRAM_BINS];
 
-void SetAutoExposure(float exposure) { PK_BUFFER_DATA(pk_AutoExposure_Histogram, 256) = floatBitsToUint(exposure); }
-void SetLogLuminanceMin(float value) { PK_BUFFER_DATA(pk_AutoExposure_Histogram, 257) = floatBitsToUint(value); }
-float GetLogLuminanceMin() { return ReplaceIfResized(uintBitsToFloat(PK_BUFFER_DATA(pk_AutoExposure_Histogram, 257)), DEFAULT_LOG_LUMINANCE_MIN); }
+void SetAutoExposure(float exposure) { pk_AutoExposure_Histogram[256] = floatBitsToUint(exposure); }
+void SetLogLuminanceMin(float value) { pk_AutoExposure_Histogram[257] = floatBitsToUint(value); }
+float GetLogLuminanceMin() { return ReplaceIfResized(uintBitsToFloat(pk_AutoExposure_Histogram[257]), DEFAULT_LOG_LUMINANCE_MIN); }
 
 [pk_numthreads(HISTOGRAM_THREAD_COUNT, HISTOGRAM_THREAD_COUNT, 1u)]
 void HistogramCs()
@@ -43,18 +43,17 @@ void HistogramCs()
     atomicAdd(lds_Histogram[bin_index], 1);
 
     barrier();
-    atomicAdd(PK_BUFFER_DATA(pk_AutoExposure_Histogram, gl_LocalInvocationIndex), lds_Histogram[gl_LocalInvocationIndex]);
+    atomicAdd(pk_AutoExposure_Histogram[gl_LocalInvocationIndex], lds_Histogram[gl_LocalInvocationIndex]);
 }
 
 [pk_numthreads(HISTOGRAM_THREAD_COUNT, HISTOGRAM_THREAD_COUNT, 1u)]
 void AverageCs()
 {
     const uint thread = gl_LocalInvocationIndex;
-    const uint local_bin_val = PK_BUFFER_DATA(pk_AutoExposure_Histogram, thread);
+    const uint local_bin_val = pk_AutoExposure_Histogram[thread];
 
     lds_Histogram[thread] = local_bin_val * thread;
-
-    PK_BUFFER_DATA(pk_AutoExposure_Histogram, thread) = 0;
+    pk_AutoExposure_Histogram[thread] = 0;
 
     barrier();
 
