@@ -45,15 +45,15 @@ struct LightTile
 };
 
 uniform sampler2DArray pk_LightCookies;
-readonly buffer<uint4> pk_Lights;
-readonly buffer<float4x4> pk_LightMatrices;
+uniform Buffer<uint4> pk_Lights;
+uniform Buffer<float4x4> pk_LightMatrices;
 
 #if defined(PK_WRITE_LIGHT_CLUSTERS)
-    writeonly buffer<ushort> pk_LightLists;
-    uniform writeonly uimage3D pk_LightTiles;
+uniform RWBuffer<ushort> pk_LightLists;
+uniform writeonly uimage3D pk_LightTiles;
 #else
-    readonly buffer<ushort> pk_LightLists;
-    uniform readonly uimage3D pk_LightTiles;
+uniform Buffer<ushort> pk_LightLists;
+uniform readonly uimage3D pk_LightTiles;
 #endif
 
 SceneLight Lights_UnpackLight(uint4 packed0, uint4 packed1, uint4 packed2)

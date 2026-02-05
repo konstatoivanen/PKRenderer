@@ -61,23 +61,18 @@
 #endif
 
 #if defined(SURF_USE_TANGENTS)
-    half3x3 pk_MATRIX_TBN;
-    #define SURF_MESH_NORMAL pk_MATRIX_TBN[2]
-    float2 SURF_MAKE_PARALLAX_OFFSET(float height, float amount, float3 view_dir) 
-    { 
-        view_dir = transpose(pk_MATRIX_TBN) * view_dir;
-        return (height * amount - amount * 0.5f) * view_dir.xy / (view_dir.z + 0.5f); 
-    }
-    #define SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormalTex(normalmap, pk_MATRIX_TBN, uv, amount)
-    #define SURF_SAMPLE_NORMAL_TRIPLANAR(normalmap, amount, uvw) SampleNormalTexTriplanar(normalmap, pk_MATRIX_TBN, uvw, amount)
+    #define SURF_MESH_NORMAL vs_TANGENTSPACE[2]
+    #define SURF_MAKE_PARALLAX_OFFSET(height, amount, view_dir) CalculateParallaxUvOffset(vs_TANGENTSPACE, height, amount, view_dir)
+    #define SURF_SAMPLE_NORMAL(normalmap, amount, uv) SampleNormalTex(normalmap, vs_TANGENTSPACE, uv, amount)
+    #define SURF_SAMPLE_NORMAL_TRIPLANAR(normalmap, amount, uvw) SampleNormalTexTriplanar(normalmap, vs_TANGENTSPACE, uvw, amount)
     #if defined(PK_USE_DERIVATIVE_TANGENTS)
         #define SURF_VS_ATTRIB_TANGENT
         #define SURF_VS_ASSIGN_TANGENT(index, value)
-        #define SURF_FS_ASSIGN_TBN pk_MATRIX_TBN = half3x3(ComposeDerivativeTBN(vs_NORMAL, vs_WORLDPOSITION, vs_TEXCOORD0));
+        #define SURF_FS_ASSIGN_TBN vs_TANGENTSPACE = half3x3(ComposeDerivativeTBN(vs_NORMAL, vs_WORLDPOSITION, vs_TEXCOORD0));
     #else
         #define SURF_VS_ATTRIB_TANGENT PK_DECLARE_VS_ATTRIB(float4 vs_TANGENT);
         #define SURF_VS_ASSIGN_TANGENT(index, value) PK_SET_VS_ATTRIB(vs_TANGENT, index, value);
-        #define SURF_FS_ASSIGN_TBN pk_MATRIX_TBN = half3x3(ComposeMikkTBN(vs_NORMAL, vs_TANGENT));
+        #define SURF_FS_ASSIGN_TBN vs_TANGENTSPACE = half3x3(ComposeMikkTBN(vs_NORMAL, vs_TANGENT));
     #endif
 #else
     #define SURF_VS_ATTRIB_TANGENT
@@ -205,6 +200,12 @@ struct SurfaceData
    
     #define SurfaceData_Default SurfaceData(0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f.xxx,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f)
 
+    float2 CalculateParallaxUvOffset(const half3x3 tangentSpace, float height, float amount, float3 view_dir) 
+    { 
+        view_dir = transpose(tangentSpace) * view_dir;
+        return (height * amount - amount * 0.5f) * view_dir.xy / (view_dir.z + 0.5f); 
+    }
+
     // http://www.thetenthplanet.de/archives/1180
     float3x3 ComposeDerivativeTBN(float3 normal, const float3 position, const float2 texcoord)
     {
@@ -309,6 +310,7 @@ struct SurfaceData
     // Use these to modify surface values in fragment stage
     void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf);
 
+    half3x3 vs_TANGENTSPACE;
     float3 vs_WORLDPOSITION;
 
     SURF_VS_ATTRIB_TANGENT

@@ -16,7 +16,7 @@ struct DoFAutoFocusState
     float lens_coefficient;
 };
 
-buffer<DoFAutoFocusState,1u> pk_DoF_AutoFocusState;
+uniform RWBuffer<DoFAutoFocusState, 1u> pk_DoF_AutoFocusState;
 
 float DoF_GetLensCoefficient() 
 { 

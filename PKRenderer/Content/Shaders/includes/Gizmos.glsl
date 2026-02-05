@@ -5,8 +5,8 @@
 
 #define GIZMOS_MAX_VERTICES 16384u
 
-buffer<uint4> pk_Gizmos_IndirectVertices;
-buffer<uint4,1u> pk_Gizmos_IndirectArguments;
+uniform RWBuffer<uint4> pk_Gizmos_IndirectVertices;
+uniform RWBuffer<uint4, 1u> pk_Gizmos_IndirectArguments;
 
 void Gizmos_DrawPacked(uint4 v0, uint4 v1)
 {

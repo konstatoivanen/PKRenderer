@@ -46,11 +46,11 @@
     #define PK_MESHLET_USE_FUNC_TRIANGLE 0
 #endif
 
-readonly buffer<uint2> pk_Meshlet_Tasklets;
-readonly buffer<uint4> pk_Meshlet_Submeshes;
-readonly buffer<uint4> pk_Meshlets;
-readonly buffer<uint4> pk_Meshlet_Vertices;
-readonly buffer<byte> pk_Meshlet_Indices;
+uniform Buffer<uint2> pk_Meshlet_Tasklets;
+uniform Buffer<uint4> pk_Meshlet_Submeshes;
+uniform Buffer<uint4> pk_Meshlets;
+uniform Buffer<uint4> pk_Meshlet_Vertices;
+uniform Buffer<byte> pk_Meshlet_Indices;
 
 struct PKMeshTaskPayload
 {
