@@ -6,7 +6,7 @@
 #include "App/Renderer/Passes/PassPostEffects.h"
 #include "App/Renderer/Passes/PassLights.h"
 #include "App/Renderer/Passes/PassSceneGI.h"
-#include "App/Renderer/Passes/PassVolumeFog.h"
+#include "App/Renderer/Passes/PassVolumetricFog.h"
 #include "App/Renderer/Passes/PassFilmGrain.h"
 #include "App/Renderer/Passes/PassDistort.h"
 #include "App/Renderer/Passes/PassDepthOfField.h"
@@ -25,7 +25,7 @@ namespace PK::App
         public IRenderViewResources,
         public PassLights::ViewResources,
         public PassSceneGI::ViewResources,
-        public PassVolumeFog::ViewResources,
+        public PassVolumetricFog::ViewResources,
         public PassHierarchicalDepth::ViewResources,
         public PassSceneEnv::ViewResources,
         public PassDepthOfField::ViewResources,
@@ -51,7 +51,7 @@ namespace PK::App
         private:
             PassLights m_passLights;
             PassSceneGI m_passSceneGI;
-            PassVolumeFog m_passVolumeFog;
+            PassVolumetricFog m_passVolumetricFog;
             PassHierarchicalDepth m_passHierarchicalDepth;
             PassSceneEnv m_passSceneEnv;
             PassFilmGrain m_passFilmGrain;

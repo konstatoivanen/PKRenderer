@@ -118,8 +118,8 @@ namespace PKAssets
                         if (curr_node_count > 0u && (prev_node_count < 2u || freq <= children[0u].freq + children[1u].freq))
                         {
                             auto& node = nodes[curr_node_idx++];
-                            node.freq = freq;
-                            node.symbol = symbol;
+                            node.freq = (uint32_t)freq;
+                            node.symbol = (uint32_t)symbol;
                             node.children[0u] = nullptr;
                             node.children[1u] = nullptr;
                             curr_node_count--;

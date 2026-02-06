@@ -7,7 +7,7 @@
 #include "includes/Common.glsl"
 #include "includes/Encoding.glsl"
 #include "includes/SceneEnv.glsl"
-#include "includes/VolumeFog.glsl"
+#include "includes/VolumetricFog.glsl"
 
 PK_DECLARE_VS_ATTRIB(float3 vs_TEXCOORD0);
 

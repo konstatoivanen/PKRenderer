@@ -5,7 +5,7 @@
 
 namespace PK::App
 {
-    class PassVolumeFog : public NoCopy
+    class PassVolumetricFog : public NoCopy
     {
         public:
             struct ViewResources
@@ -15,7 +15,7 @@ namespace PK::App
                 RHITextureRef volumeScatter;
             };
 
-            PassVolumeFog(AssetDatabase* assetDatabase);
+            PassVolumetricFog(AssetDatabase* assetDatabase);
             void SetViewConstants(struct RenderView* view);
             void ComputeDensity(CommandBufferExt cmd, struct RenderPipelineContext* context);
             void Compute(CommandBufferExt cmd, RenderPipelineContext* context);

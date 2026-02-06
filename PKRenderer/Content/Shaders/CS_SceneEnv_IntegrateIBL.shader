@@ -6,7 +6,7 @@
 #include "includes/Common.glsl"
 #include "includes/ComputeQuadSwap.glsl"
 #include "includes/SceneEnv.glsl"
-#include "includes/VolumeFog.glsl"
+#include "includes/VolumetricFog.glsl"
 #include "includes/Encoding.glsl"
 
 #define PK_STATIC_FOG_VIRTUAL_DISTANCE 14000.0f

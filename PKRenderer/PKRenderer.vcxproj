@@ -690,7 +690,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Renderer\Passes\PassPostEffects.h" />
     <ClInclude Include="Source\App\Renderer\Passes\PassSceneGI.h" />
     <ClInclude Include="Source\App\Renderer\Passes\PassTemporalAntialiasing.h" />
-    <ClInclude Include="Source\App\Renderer\Passes\PassVolumeFog.h" />
+    <ClInclude Include="Source\App\Renderer\Passes\PassVolumetricFog.h" />
     <ClInclude Include="Source\Core\RHI\BuiltInResources.h" />
     <ClInclude Include="Source\Core\Utilities\Disposer.h" />
     <ClInclude Include="Source\Core\Utilities\FenceRef.h" />
@@ -942,7 +942,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Shaders\includes\Kernels.glsl" />
     <None Include="Content\Shaders\includes\GBuffers.glsl" />
     <None Include="Content\Shaders\includes\SceneEnv.glsl" />
-    <None Include="Content\Shaders\includes\VolumeFog.glsl" />
+    <None Include="Content\Shaders\includes\VolumetricFog.glsl" />
     <None Include="Content\Shaders\includes\LightResources.glsl" />
     <None Include="Content\Shaders\includes\SceneGI.glsl" />
     <None Include="Content\Shaders\includes\SurfaceShaderBase.glsl" />
@@ -1139,7 +1139,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Renderer\Passes\PassPostEffects.cpp" />
     <ClCompile Include="Source\App\Renderer\Passes\PassSceneGI.cpp" />
     <ClCompile Include="Source\App\Renderer\Passes\PassTemporalAntialiasing.cpp" />
-    <ClCompile Include="Source\App\Renderer\Passes\PassVolumeFog.cpp" />
+    <ClCompile Include="Source\App\Renderer\Passes\PassVolumetricFog.cpp" />
     <ClCompile Include="Source\App\Renderer\RenderPipelineBase.cpp" />
     <ClCompile Include="Source\Core\RHI\BuiltInResources.cpp" />
     <ClCompile Include="Source\Core\Utilities\Disposer.cpp" />

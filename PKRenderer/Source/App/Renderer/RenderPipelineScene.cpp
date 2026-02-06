@@ -21,7 +21,7 @@ namespace PK::App
         IRenderPipeline(entityDb, assetDatabase, sequencer, batcher),
         m_passLights(assetDatabase),
         m_passSceneGI(assetDatabase),
-        m_passVolumeFog(assetDatabase),
+        m_passVolumetricFog(assetDatabase),
         m_passHierarchicalDepth(assetDatabase),
         m_passSceneEnv(assetDatabase),
         m_passFilmGrain(assetDatabase),
@@ -251,7 +251,7 @@ namespace PK::App
             m_passLights.SetViewConstants(view);
             m_passSceneEnv.SetViewConstants(view);
             m_passSceneGI.SetViewConstants(view);
-            m_passVolumeFog.SetViewConstants(view);
+            m_passVolumetricFog.SetViewConstants(view);
             m_distort.SetViewConstants(view);
             m_bloom.SetViewConstants(view);
             m_autoExposure.SetViewConstants(view);
@@ -314,7 +314,7 @@ namespace PK::App
         m_passLights.ComputeClusters(cmdcompute, context);
         m_autoExposure.Render(cmdcompute, context);
         m_depthOfField.ComputeAutoFocus(cmdcompute, context);
-        m_passVolumeFog.ComputeDensity(cmdcompute, context);
+        m_passVolumetricFog.ComputeDensity(cmdcompute, context);
         m_passSceneEnv.PreCompute(cmdcompute, context);
         m_passSceneGI.VoxelMips(cmdcompute);
         m_passSceneGI.ValidateReservoirs(cmdcompute, context);
@@ -352,7 +352,7 @@ namespace PK::App
         m_passSceneGI.Voxelize(cmdgraphics, context);
         m_passLights.RenderScreenSpaceShadows(cmdgraphics, context);
         m_passSceneGI.ReprojectGI(cmdgraphics, context);
-        m_passVolumeFog.Compute(cmdgraphics, context);
+        m_passVolumetricFog.Compute(cmdgraphics, context);
         queues->Submit(QueueType::Graphics, &cmdgraphics.commandBuffer);
 
         m_passSceneGI.RenderGI(cmdgraphics, context);
@@ -365,7 +365,7 @@ namespace PK::App
             DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::ForwardOpaque);
 
             m_passSceneEnv.RenderBackground(cmdgraphics, context);
-            m_passVolumeFog.Render(cmdgraphics, gbuffers.current.color);
+            m_passVolumetricFog.Render(cmdgraphics, gbuffers.current.color);
 
             DispatchRenderPipelineEvent(cmdgraphics, context, RenderPipelineEvent::ForwardTransparent);
         }

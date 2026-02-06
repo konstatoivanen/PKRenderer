@@ -1182,7 +1182,7 @@
     <ClInclude Include="Source\App\Renderer\Passes\PassTemporalAntialiasing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\App\Renderer\Passes\PassVolumeFog.h">
+    <ClInclude Include="Source\App\Renderer\Passes\PassVolumetricFog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanAccelerationStructure.h">
@@ -2015,7 +2015,7 @@
     <None Include="Content\Shaders\CS_GI_VolumeMipmap.shader" />
     <None Include="Content\Shaders\includes\SceneGI.glsl" />
     <None Include="Content\Shaders\CS_GI_Accumulate.shader" />
-    <None Include="Content\Shaders\includes\VolumeFog.glsl" />
+    <None Include="Content\Shaders\includes\VolumetricFog.glsl" />
     <None Include="Content\Shaders\CS_VolumeFog_Scatter.shader" />
     <None Include="Content\Shaders\CS_VolumeFog_Composite.shader" />
     <None Include="Content\Models\MDL_Rocks.mdl" />
@@ -2230,7 +2230,7 @@
     <ClCompile Include="Source\App\Renderer\Passes\PassTemporalAntialiasing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\App\Renderer\Passes\PassVolumeFog.cpp">
+    <ClCompile Include="Source\App\Renderer\Passes\PassVolumetricFog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Rendering\CommandBufferExt.cpp">

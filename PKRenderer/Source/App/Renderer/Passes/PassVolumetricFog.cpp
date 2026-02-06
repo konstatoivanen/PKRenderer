@@ -10,17 +10,17 @@
 #include "App/Renderer/RenderView.h"
 #include "App/Renderer/RenderViewSettings.h"
 #include "App/Renderer/RenderPipelineBase.h"
-#include "PassVolumeFog.h"
+#include "PassVolumetricFog.h"
 
 namespace PK::App
 {
-    PassVolumeFog::PassVolumeFog(AssetDatabase* assetDatabase)
+    PassVolumetricFog::PassVolumetricFog(AssetDatabase* assetDatabase)
     {
         PK_LOG_VERBOSE_FUNC("");
         m_compute = assetDatabase->Find<ShaderAsset>("CS_VolumetricFog").get();
     }
 
-    void PassVolumeFog::SetViewConstants(RenderView* view)
+    void PassVolumetricFog::SetViewConstants(RenderView* view)
     {
         auto hash = HashCache::Get();
         auto& settings = view->settings.FogSettings;
@@ -44,7 +44,7 @@ namespace PK::App
         view->constants->Set<float4>(hash->pk_Fog_Density_ExpParams1, *reinterpret_cast<float4*>(&settings.Exponential1.Constant));
     }
 
-    void PassVolumeFog::ComputeDensity(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassVolumetricFog::ComputeDensity(CommandBufferExt cmd, RenderPipelineContext* context)
     {
         auto view = context->views[0];
         auto resources = view->GetResources<ViewResources>();
@@ -95,7 +95,7 @@ namespace PK::App
         cmd->EndDebugScope();
     }
 
-    void PassVolumeFog::Compute(CommandBufferExt cmd, RenderPipelineContext* context)
+    void PassVolumetricFog::Compute(CommandBufferExt cmd, RenderPipelineContext* context)
     {
         auto view = context->views[0];
         auto resources = view->GetResources<ViewResources>();
@@ -119,7 +119,7 @@ namespace PK::App
         cmd->EndDebugScope();
     }
 
-    void PassVolumeFog::Render(CommandBufferExt cmd, RHITexture* destination)
+    void PassVolumetricFog::Render(CommandBufferExt cmd, RHITexture* destination)
     {
         cmd->BeginDebugScope("Fog.Composite", PK_COLOR_MAGENTA);
         RHI::SetImage(HashCache::Get()->pk_Image, destination);

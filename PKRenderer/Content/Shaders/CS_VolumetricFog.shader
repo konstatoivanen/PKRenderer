@@ -17,7 +17,7 @@
 uint2 g_shadow_prog_coord;
 #define SHADOW_PROG_COORD g_shadow_prog_coord
 
-#include "includes/VolumeFog.glsl"
+#include "includes/VolumetricFog.glsl"
 #include "includes/SceneGIVX.glsl"
 #include "includes/CTASwizzling.glsl"
 #include "includes/Encoding.glsl"

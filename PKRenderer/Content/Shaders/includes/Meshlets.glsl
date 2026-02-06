@@ -431,7 +431,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
             [[branch]]
             if (vertex_index < vertex_count)
             {
-                PK_SET_VERTEX_INSTANCE_ID(vertex_index, instance_id)
+                PK_INSTANCING_ASSIGN_VERTEX_INSTANCE_ID(vertex_index, instance_id)
                 PK_MESHLET_FUNC_VERTEX(vertex_index, vertex, sv_Position);
                 gl_MeshVerticesEXT[vertex_index].gl_Position = sv_Position;
             }
