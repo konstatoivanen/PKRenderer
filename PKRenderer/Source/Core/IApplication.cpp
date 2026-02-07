@@ -64,6 +64,12 @@ namespace PK
                 StaticLog::SetShowConsole(Parse::FromString<bool>(args[0]));
             }, "0 = Off, 1 = On", 1u);
 
+        CVariableRegister::Create<CVariableFunc>("Application.Log.CrashLogPath", [](const char* const* args, [[maybe_unused]] uint32_t count)
+            {
+                auto absolutePath = FixedString256({ IApplication::Get()->GetWorkingDirectory(), args[0] });
+                StaticLog::SetCrashLogPath(absolutePath);
+            }, "0 = Off, 1 = On", 1u);
+
         CVariableRegister::Create<CVariableFunc>("Application.Seed", [](const char* const* args, [[maybe_unused]] uint32_t count)
             {
                 srand(Parse::FromString<uint32_t>(args[0]));

@@ -3,7 +3,7 @@
 
 namespace PK::FileIO
 {
-    int ReadBinary(const char* filepath, void** data, size_t* size);
-    int ReadBinaryInPlace(const char* filepath, size_t maxSize, void* data, size_t* size);
-    int WriteBinary(const char* filepath, void* data, size_t size);
+    int ReadBinary(const char* filepath, bool isText, void** data, size_t* size);
+    int ReadBinaryInPlace(const char* filepath, bool isText, size_t maxSize, void* data, size_t* size);
+    int WriteBinary(const char* filepath, bool isText, void* data, size_t size);
 }

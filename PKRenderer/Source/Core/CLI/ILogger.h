@@ -47,16 +47,16 @@ namespace PK
     {
         virtual ~ILogger() = 0;
 
-        virtual void Indent(LogSeverity severity) = 0;
-        virtual void Unindent(LogSeverity severity) = 0;
+        virtual void SetCrashLogPath(const char* value) = 0;
         virtual void SetSeverityMask(LogSeverity mask) = 0;
         virtual LogSeverity GetSeverityMask() const = 0;
         virtual void SetColor(LogColor color) = 0;
         virtual void SetShowConsole(bool value) = 0;
 
-        virtual void LogNewLine() = 0;
+        virtual void Indent(LogSeverity severity) = 0;
+        virtual void Outdent(LogSeverity severity) = 0;
+        virtual void NewLine() = 0;
         virtual void LogV(LogSeverity severity, LogColor color, const char* format, va_list args) = 0;
-        virtual void LogRewriteV(LogColor color, const char* format, va_list args) = 0;
         virtual std::exception ExceptionV(LogSeverity severity, LogColor color, const char* format, va_list args) = 0;
     };
 }

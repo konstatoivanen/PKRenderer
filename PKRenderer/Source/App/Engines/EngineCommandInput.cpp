@@ -37,7 +37,7 @@ namespace PK::App
 
         if (input.GetKeyDown(m_keyBeginInput))
         {
-            StaticLog::LogNewLine();
+            StaticLog::NewLine();
             StaticLog::Log(PK_LOG_LVL_INFO, PK_LOG_COLOR_INPUT, "Awaiting command input...");
 
             std::string command;

@@ -10,7 +10,7 @@ namespace PK
 {
     ILogger::~ILogger() = default;
 
-#define PK_FORWAD_VARGS_FUNC(fmt, args, Func) \
+    #define PK_FORWAD_VARGS_FUNC(fmt, args, Func) \
         va_list args; \
         va_start(args, fmt); \
         Func \
@@ -21,19 +21,11 @@ namespace PK
         s_ActiveLogger = logger;
     }
 
-    void StaticLog::Indent(LogSeverity severity)
+    void StaticLog::SetCrashLogPath(const char* value)
     {
         if (s_ActiveLogger.IsAlive())
         {
-            s_ActiveLogger.Lock()->Indent(severity);
-        }
-    }
-
-    void StaticLog::Unindent(LogSeverity severity)
-    {
-        if (s_ActiveLogger.IsAlive())
-        {
-            s_ActiveLogger.Lock()->Unindent(severity);
+            s_ActiveLogger.Lock()->SetCrashLogPath(value);
         }
     }
 
@@ -81,11 +73,27 @@ namespace PK
         }
     }
 
-    void StaticLog::LogNewLine()
+    void StaticLog::Indent(LogSeverity severity)
     {
         if (s_ActiveLogger.IsAlive())
         {
-            s_ActiveLogger.Lock()->LogNewLine();
+            s_ActiveLogger.Lock()->Indent(severity);
+        }
+    }
+
+    void StaticLog::Outdent(LogSeverity severity)
+    {
+        if (s_ActiveLogger.IsAlive())
+        {
+            s_ActiveLogger.Lock()->Outdent(severity);
+        }
+    }
+
+    void StaticLog::NewLine()
+    {
+        if (s_ActiveLogger.IsAlive())
+        {
+            s_ActiveLogger.Lock()->NewLine();
         }
     }
 
@@ -105,25 +113,6 @@ namespace PK
         if (s_ActiveLogger.IsAlive())
         {
             s_ActiveLogger.Lock()->LogV(severity, color, format, args);
-        }
-    }
-
-    void StaticLog::LogRewrite(LogColor color, const char* format, ...)
-    {
-        PK_FORWAD_VARGS_FUNC(format, log_args, LogRewriteV(color, format, log_args);)
-    }
-
-    void StaticLog::LogRewrite(LogColor color, const std::string& format, ...)
-    {
-        const char* cformat = format.c_str();
-        PK_FORWAD_VARGS_FUNC(cformat, log_args, LogRewriteV(color, cformat, log_args);)
-    }
-
-    void StaticLog::LogRewriteV(LogColor color, const char* format, va_list args)
-    {
-        if (s_ActiveLogger.IsAlive())
-        {
-            s_ActiveLogger.Lock()->LogRewriteV(color, format, args);
         }
     }
 

@@ -11,6 +11,6 @@ namespace PK
 
     LogScopeIndent::~LogScopeIndent()
     {
-        StaticLog::Unindent((LogSeverity)severity);
+        StaticLog::Outdent((LogSeverity)severity);
     }
 }

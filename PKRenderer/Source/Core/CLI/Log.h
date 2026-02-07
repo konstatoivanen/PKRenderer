@@ -12,25 +12,19 @@ namespace PK
     {
         static void SetLogger(Weak<ILogger> logger);
 
-        static void Indent(LogSeverity severity = PK_LOG_LVL_ALL_FLAGS);
-        static void Unindent(LogSeverity severity = PK_LOG_LVL_ALL_FLAGS);
-
+        static void SetCrashLogPath(const char* value);
         static void SetSeverityMask(LogSeverity mask);
         static void SetSeverityMaskFlag(LogSeverity flag, bool value);
         static LogSeverity GetSeverityMask();
         static void SetShowConsole(bool value);
         static void SetColor(LogColor color);
 
-        static void LogNewLine();
-
+        static void Indent(LogSeverity severity = PK_LOG_LVL_ALL_FLAGS);
+        static void Outdent(LogSeverity severity = PK_LOG_LVL_ALL_FLAGS);
+        static void NewLine();
         static void Log(LogSeverity severity, LogColor color, const char* format, ...);
         static void Log(LogSeverity severity, LogColor color, const std::string& format, ...);
         static void LogV(LogSeverity severity, LogColor color, const char* format, va_list args);
-
-        static void LogRewrite(LogColor color, const char* format, ...);
-        static void LogRewrite(LogColor color, const std::string& format, ...);
-        static void LogRewriteV(LogColor color, const char* format, va_list args);
-
         static std::exception Exception(LogSeverity severity, LogColor color, const char* format, ...);
         static std::exception Exception(LogSeverity severity, LogColor color, const std::string& format, ...);
         static std::exception ExceptionV(LogSeverity severity, LogColor color, const char* format, va_list args);
@@ -53,17 +47,15 @@ namespace PK
     #define PK_LOG_RHI(...)
     #define PK_LOG_WARNING(...)
     #define PK_LOG_ERROR(...)
-    #define PK_LOG_OVERWRITE(...)
     #define PK_LOG_INDENT(severity)
 #else
-    #define PK_LOG_NEWLINE() PK::StaticLog::LogNewLine()
+    #define PK_LOG_NEWLINE() PK::StaticLog::NewLine()
     #define PK_LOG_HEADER(...) PK::StaticLog::Log(PK::PK_LOG_LVL_INFO, PK::PK_LOG_COLOR_HEADER, __VA_ARGS__)
     #define PK_LOG_INFO(...) PK::StaticLog::Log(PK::PK_LOG_LVL_INFO, PK::PK_LOG_COLOR_INFO, __VA_ARGS__)
     #define PK_LOG_VERBOSE(...) PK::StaticLog::Log(PK::PK_LOG_LVL_VERBOSE, PK::PK_LOG_COLOR_VERBOSE, __VA_ARGS__)
     #define PK_LOG_RHI(...) PK::StaticLog::Log(PK::PK_LOG_LVL_RHI, PK::PK_LOG_COLOR_RHI, __VA_ARGS__)
     #define PK_LOG_WARNING(...) PK::StaticLog::Log(PK::PK_LOG_LVL_WARNING, PK::PK_LOG_COLOR_WARNING, __VA_ARGS__)
     #define PK_LOG_ERROR(...) PK::StaticLog::Log(PK::PK_LOG_LVL_ERROR, PK::PK_LOG_COLOR_WARNING, __VA_ARGS__)
-    #define PK_LOG_OVERWRITE(...) PK::StaticLog::LogRewrite(PK::PK_LOG_COLOR_INFO, __VA_ARGS__)
     #define PK_LOG_INDENT(severity) auto PK_LOG_UNIQUE_NAME(pk_log_scope_indent_) = PK::LogScopeIndent(severity)
 #endif
 

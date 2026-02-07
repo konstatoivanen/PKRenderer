@@ -11,7 +11,7 @@ namespace PK
         void* fileData = nullptr;
         size_t fileSize = 0ull;
         
-        if (FileIO::ReadBinary(filepath.c_str(), &fileData, &fileSize) != 0)
+        if (FileIO::ReadBinary(filepath.c_str(), false, &fileData, &fileSize) != 0)
         {
             PK_LOG_WARNING("Failed to read IYamlStruct at path '%'", filepath.c_str());
             return;

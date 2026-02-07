@@ -4,25 +4,25 @@
 
 namespace PK::FileIO
 {
-    int ReadBinary(const char* filepath, void** data, size_t* size)
+    FILE* OpenFile(const char* filepath, const char* openMode, size_t* outSize)
     {
         if (strlen(filepath) == 0)
         {
-            return -1;
+            return nullptr;
         }
 
         auto cachepath = std::filesystem::path(std::string(filepath));
 
         if (!std::filesystem::exists(cachepath))
         {
-            return -1;
+            return nullptr;
         }
 
-        FILE* file = fopen(cachepath.string().c_str(), "rb");
+        FILE* file = fopen(cachepath.string().c_str(), openMode);
 
         if (file == nullptr)
         {
-            return -1;
+            return nullptr;
         }
 
         struct stat filestat;
@@ -31,14 +31,26 @@ namespace PK::FileIO
         if (fstat(fileNumber, &filestat) != 0)
         {
             fclose(file);
-            return -1;
+            return nullptr;
         }
 
-        *size = filestat.st_size;
+        *outSize = filestat.st_size;
 
-        if (*size == 0)
+        if (*outSize == 0)
         {
             fclose(file);
+            return nullptr;
+        }
+
+        return file;
+    }
+
+    int ReadBinary(const char* filepath, bool isText, void** data, size_t* size)
+    {
+        FILE* file = OpenFile(filepath, isText ? "r" : "rb", size);
+
+        if (file == nullptr)
+        {
             return -1;
         }
 
@@ -55,39 +67,16 @@ namespace PK::FileIO
         return 0;
     }
 
-    int ReadBinaryInPlace(const char* filepath, size_t maxSize, void* data, size_t* size)
+    int ReadBinaryInPlace(const char* filepath, bool isText, size_t maxSize, void* data, size_t* size)
     {
-        if (strlen(filepath) == 0)
-        {
-            return -1;
-        }
-
-        auto cachepath = std::filesystem::path(std::string(filepath));
-
-        if (!std::filesystem::exists(cachepath))
-        {
-            return -1;
-        }
-
-        FILE* file = fopen(cachepath.string().c_str(), "rb");
+        FILE* file = OpenFile(filepath, isText ? "r" : "rb", size);
 
         if (file == nullptr)
         {
             return -1;
         }
 
-        struct stat filestat;
-        int fileNumber = _fileno(file);
-
-        if (fstat(fileNumber, &filestat) != 0)
-        {
-            fclose(file);
-            return -1;
-        }
-
-        *size = filestat.st_size;
-
-        if (*size == 0 || *size >= maxSize)
+        if (*size >= maxSize)
         {
             fclose(file);
             return -1;
@@ -98,7 +87,7 @@ namespace PK::FileIO
         return 0;
     }
 
-    int WriteBinary(const char* filepath, void* data, size_t size)
+    int WriteBinary(const char* filepath, bool isText, void* data, size_t size)
     {
         FILE* file = nullptr;
 
@@ -117,7 +106,7 @@ namespace PK::FileIO
             }
         }
 
-        file = fopen(filepath, "wb");
+        file = fopen(filepath, isText ? "w" : "wb");
 
         if (file == nullptr)
         {

@@ -1,29 +1,13 @@
 #include "PrecompiledHeader.h"
-#include "LoggerPrintf.h"
 #include <conio.h>
+#include "Core/Utilities/FileIOBinary.h"
+#include "LoggerPrintf.h"
 
 namespace PK
 {
-    void LoggerPrintf::Indent(LogSeverity severity)
+    void LoggerPrintf::SetCrashLogPath(const char* value)
     {
-        for (auto i = 0u; i < PK_LOG_LVL_COUNT; ++i)
-        {
-            if ((severity & (1u << i)) != 0 && m_indentation[i] < (int32_t)MAX_INDENT)
-            {
-                ++m_indentation[i];
-            }
-        }
-    }
-
-    void LoggerPrintf::Unindent(LogSeverity severity)
-    {
-        for (auto i = 0u; i < PK_LOG_LVL_COUNT; ++i)
-        {
-            if ((severity & (1u << i)) != 0 && m_indentation[i] > 0)
-            {
-                --m_indentation[i];
-            }
-        }
+        m_crashLogPath = FixedString256(value);
     }
 
     void LoggerPrintf::SetSeverityMask(LogSeverity mask)
@@ -46,7 +30,29 @@ namespace PK
         Platform::SetConsoleVisible(value);
     }
 
-    void LoggerPrintf::LogNewLine()
+    void LoggerPrintf::Indent(LogSeverity severity)
+    {
+        for (auto i = 0u; i < PK_LOG_LVL_COUNT; ++i)
+        {
+            if ((severity & (1u << i)) != 0 && m_indentation[i] < (int32_t)MAX_INDENT)
+            {
+                ++m_indentation[i];
+            }
+        }
+    }
+
+    void LoggerPrintf::Outdent(LogSeverity severity)
+    {
+        for (auto i = 0u; i < PK_LOG_LVL_COUNT; ++i)
+        {
+            if ((severity & (1u << i)) != 0 && m_indentation[i] > 0)
+            {
+                --m_indentation[i];
+            }
+        }
+    }
+
+    void LoggerPrintf::NewLine()
     {
         SetColor(PK_LOG_COLOR_INFO);
         printf("\n");
@@ -61,30 +67,31 @@ namespace PK
             LogIndent();
             auto lineLength = vprintf(format, args);
             LogLineRemainder(lineLength);
-            LogNewLine();
+            NewLine();
         }
-    }
-
-    void LoggerPrintf::LogRewriteV(LogColor color, const char* format, va_list args)
-    {
-        SetColor(color);
-        auto lineLength = vprintf(format, args);
-        LogLineRemainder(lineLength);
-        printf("\r");
     }
 
     std::exception LoggerPrintf::ExceptionV(LogSeverity severity, LogColor color, const char* format, va_list args)
     {
+        if (m_crashLogPath.Length() > 0)
+        {
+            auto length = vprintf(format, args);
+            std::string output;
+            output.resize(length);
+            _vsnprintf(output.data(), output.size(), format, args);
+            FileIO::WriteBinary(m_crashLogPath.c_str(), true, output.data(), output.size());
+        }
+
         if ((severity & m_severityMask) != 0)
         {
             SetColor(LogColor::PK_LOG_COLOR_BLACK);
-            LogNewLine();
+            NewLine();
             SetColor(color);
             printf("--------------------PK BEGIN ERROR--------------------\n");
             vprintf(format, args);
             printf("\n--------------------PK END ERROR--------------------");
             SetColor(LogColor::PK_LOG_COLOR_BLACK);
-            LogNewLine();
+            NewLine();
         }
 
         PK_PLATFORM_DEBUG_BREAK;
