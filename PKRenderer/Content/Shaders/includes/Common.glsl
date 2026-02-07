@@ -5,7 +5,7 @@
 #include "Utilities.glsl"
 #include "Constants.glsl"
 
-PK_DECLARE_CBUFFER(pk_PerFrameConstants)
+uniform cbuffer pk_PerFrameConstants
 {
     float3x4 pk_WorldToView;     // Current view matrix.
     float3x4 pk_ViewToWorld;     // Current inverse view matrix.
@@ -115,7 +115,7 @@ PK_DECLARE_CBUFFER(pk_PerFrameConstants)
 };
 
 #if !defined(PK_INSTANCING_ENABLED)
-PK_DECLARE_CBUFFER(pk_ModelMatrices)
+uniform cbuffer pk_ModelMatrices
 {
     float3x4 pk_ObjectToWorld; // Current model matrix.
 };
@@ -124,8 +124,7 @@ PK_DECLARE_CBUFFER(pk_ModelMatrices)
 uniform sampler pk_Sampler_GBuffer;
 uniform sampler pk_Sampler_GUI;
 uniform sampler pk_Sampler_SurfDefault;
-
-PK_DECLARE_ACCELERATION_STRUCTURE(pk_SceneStructure)
+uniform accelerationStructureEXT pk_SceneStructure;
 
 uint GetShadowCascadeIndex(float view_depth)
 {

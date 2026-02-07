@@ -129,7 +129,7 @@ namespace PK
 
         disposer.New();
         stagingBufferCache.New(disposer.get(), device, allocator, properties.gcPruneDelay);
-        pipelineCache.New(device, physicalDeviceProperties, properties.workingDirectory, properties.apiVersionMajor, properties.gcPruneDelay);
+        pipelineCache.New(device, physicalDeviceProperties, properties.workingDirectory, properties.discardPipelineCache, properties.gcPruneDelay);
         samplerCache.New(device);
         layoutCache.New(device);
 

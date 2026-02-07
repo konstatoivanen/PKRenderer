@@ -87,55 +87,6 @@ float3x3 CreateTBN(const float3 n) { float3 t, b; CreateTBN(n,t,b); return float
 #define Test_EPS4(v) (v <= 1e-4f)
 #define Test_EPS6(v) (v <= 1e-6f)
 
-#define PK_DECLARE_CBUFFER(BufferName) layout(std140) uniform BufferName
-
-// Ray tracing utilities
-#if defined(SHADER_STAGE_RAY_GENERATION) || defined(SHADER_STAGE_RAY_MISS) || defined(SHADER_STAGE_RAY_CLOSEST_HIT) || defined(SHADER_STAGE_RAY_ANY_HIT) || defined(SHADER_STAGE_RAY_INTERSECTION)
-    #define PK_IS_RAYTRACING_STAGE 
-#endif
-
-#if defined(SHADER_STAGE_RAY_MISS) || defined(SHADER_STAGE_RAY_CLOSEST_HIT) || defined(SHADER_STAGE_RAY_ANY_HIT) || defined(SHADER_STAGE_RAY_INTERSECTION)
-    #define PK_IS_RAYTRACING_SUB_STAGE 
-#endif
-
-#if defined(SHADER_STAGE_RAY_CLOSEST_HIT) || defined(SHADER_STAGE_RAY_ANY_HIT)
-    #define PK_IS_RAYTRACING_HIT_STAGE
-#endif
-
-#define PK_DECLARE_RT_BARYCOORDS(name) hitAttributeEXT float2 name
-
-#if defined(PK_IS_RAYTRACING_SUB_STAGE)
-    #define PK_DECLARE_RT_PAYLOAD(type, name, index) layout(location = index) rayPayloadInEXT type name
-#elif defined(SHADER_STAGE_RAY_GENERATION)
-    #define PK_DECLARE_RT_PAYLOAD(type, name, index) layout(location = index) rayPayloadEXT type name
-    #define gl_WorldRayDirectionEXT 0.0f.xxx
-    #define gl_WorldRayOriginEXT 0.0f.xxx
-#else
-    #define PK_DECLARE_RT_PAYLOAD(type, name, index)
-#endif
-
-#if defined(PK_IS_RAYTRACING_HIT_STAGE)
-    #define PK_GET_RT_VERTEX_POSITION(index) gl_HitTriangleVertexPositionsEXT[index]
-#else
-    #define gl_HitTEXT 0.0f
-    #define gl_ObjectToWorldEXT float4x3(1)
-    #define PK_GET_RT_VERTEX_POSITION(index) float3(0,0,0)
-#endif
-
-#if defined(SHADER_STAGE_FRAGMENT)
-    #define PK_GET_PROG_COORD int2(gl_FragCoord.xy)
-#elif defined(SHADER_STAGE_COMPUTE)
-    #define PK_GET_PROG_COORD int2(gl_GlobalInvocationID)
-#else
-    #define PK_GET_PROG_COORD int2(0)
-#endif
-
-#if defined(PK_IS_RAYTRACING_STAGE) || defined(PK_ALLOW_TLAS_DECLARATION)
-    #define PK_DECLARE_ACCELERATION_STRUCTURE(Name) uniform accelerationStructureEXT Name;
-#else
-    #define PK_DECLARE_ACCELERATION_STRUCTURE(Name)
-#endif
-
 #if defined(SHADER_STAGE_MESH_ASSEMBLY)
     #define PK_DECLARE_FS_OUT(variable) variable
     #define PK_DECLARE_VS_ATTRIB(variable) out variable[]

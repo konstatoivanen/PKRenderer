@@ -1,5 +1,4 @@
 
-#extension GL_EXT_ray_tracing_position_fetch : require
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
 #pragma pk_multi_compile _ PK_GI_SSRT_PRETRACE
 #pragma pk_program SHADER_STAGE_RAY_GENERATION MainRgs
@@ -14,7 +13,7 @@
 #define HIT_NORMAL x
 #define HIT_DISTANCE y
 
-PK_DECLARE_RT_PAYLOAD(uint2, payload, 0);
+layout(location = 0) rayPayloadEXT uint2 payload;
 
 bool TraceRay_ScreenSpace(const int2 coord, const float3 origin, const float3 direction, inout float hit_t)
 {
@@ -69,6 +68,9 @@ void MainRgs()
     const float depth = PK_GI_SAMPLE_DEPTH(coord);
 
     GIRayHits hits;
+    hits.spec.dist = 1e+38f;
+    hits.spec.is_miss = true;
+    hits.spec.is_screen = false;
 
     if (Test_DepthIsScene(depth))
     {
@@ -76,27 +78,21 @@ void MainRgs()
 
         GI_LOAD_RAY_PARAMS(coord, coord_ray, depth, normal_roughness.xyz, normal_roughness.w)
 
-#if PK_GI_APPROX_ROUGH_SPEC == 1
-            if (normal_roughness.w >= PK_GI_MAX_ROUGH_SPEC)
-            {
-                hits.spec.dist = 1e+38f;
-                hits.spec.is_miss = true;
-                hits.spec.is_screen = false;
-            }
-            else
-#endif
-            {
-                hits.spec.is_screen = TraceRay_ScreenSpace(coord, origin, direction_spec, hits.spec.dist);
-                hits.spec.is_miss = !hits.spec.is_screen;
+        #if PK_GI_APPROX_ROUGH_SPEC == 1
+        if (normal_roughness.w < PK_GI_MAX_ROUGH_SPEC)
+        #endif
+        {
+            hits.spec.is_screen = TraceRay_ScreenSpace(coord, origin, direction_spec, hits.spec.dist);
+            hits.spec.is_miss = !hits.spec.is_screen;
 
-                [[branch]]
-                if (hits.spec.is_miss)
-                {
-                    traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction_spec, PK_GI_RAY_TMAX, 0);
-                    hits.spec.is_miss = payload.HIT_DISTANCE == 0xFFFFFFFFu;
-                    hits.spec.dist = uintBitsToFloat(payload.HIT_DISTANCE);
-                }
+            [[branch]]
+            if (hits.spec.is_miss)
+            {
+                traceRayEXT(pk_SceneStructure, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin, 0.0f, direction_spec, PK_GI_RAY_TMAX, 0);
+                hits.spec.is_miss = payload.HIT_DISTANCE == 0xFFFFFFFFu;
+                hits.spec.dist = uintBitsToFloat(payload.HIT_DISTANCE);
             }
+        }
 
         {
             hits.diff.is_screen = TraceRay_ScreenSpace(coord, origin, direction_diff, hits.diff.dist);
@@ -111,21 +107,25 @@ void MainRgs()
             }
         }
 
+        // Validate specular hit
+        #if PK_GI_APPROX_ROUGH_SPEC == 1
+        if (normal_roughness.w < PK_GI_MAX_ROUGH_SPEC)
+        #endif
         {
-#if PK_GI_APPROX_ROUGH_SPEC == 1
-            if (normal_roughness.w < PK_GI_MAX_ROUGH_SPEC)
-#endif
+            hits.spec.dist = lerp(hits.spec.dist, PK_HALF_MAX_MINUS1, hits.spec.is_miss);
+
+            [[branch]]
+            if (!hits.spec.is_screen)
             {
-                hits.spec.dist = hits.spec.is_miss ? uint16BitsToHalf(0x7C00us) : hits.spec.dist;
-
-                [[branch]]
-                if (!hits.spec.is_screen)
-                {
-                    hits.spec.is_screen = GI_IsScreenHit(coord, origin + direction_spec * hits.spec.dist, hits.spec.is_miss);
-                }
+                hits.spec.is_screen = GI_IsScreenHit(coord, origin + direction_spec * hits.spec.dist, hits.spec.is_miss);
             }
+        }
 
-            hits.diff.dist = hits.diff.is_miss ? uint16BitsToHalf(0x7C00us) : hits.diff.dist;
+        // Validate diffuse hit
+        {
+            hits.diff.dist = lerp(hits.diff.dist, PK_HALF_MAX_MINUS1, hits.diff.is_miss);
+            // @TODO this is wrong for screen hits.
+            hits.diff_normal = payload.HIT_NORMAL;
 
             [[branch]]
             if (!hits.diff.is_screen)
@@ -134,7 +134,6 @@ void MainRgs()
             }
         }
 
-        hits.diff_normal = payload.HIT_NORMAL;
         GI_Store_RayHits(coord_ray, hits);
     }
 }
@@ -147,9 +146,9 @@ void MainRms()
 
 void MainRchs()
 {
-    const float3 p0 = PK_GET_RT_VERTEX_POSITION(0);
-    const float3 p1 = PK_GET_RT_VERTEX_POSITION(1);
-    const float3 p2 = PK_GET_RT_VERTEX_POSITION(2);
+    const float3 p0 = gl_HitTriangleVertexPositionsEXT[0];
+    const float3 p1 = gl_HitTriangleVertexPositionsEXT[1];
+    const float3 p2 = gl_HitTriangleVertexPositionsEXT[2];
     const float3 v0 = normalize(p1 - p0);
     const float3 v1 = normalize(p2 - p0);
 

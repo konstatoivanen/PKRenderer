@@ -7,7 +7,15 @@ uniform sampler2DArray pk_ShadowmapAtlas;
 uniform sampler2D pk_ShadowmapScreenSpace;
 
 #ifndef SHADOW_PROG_COORD
-#define SHADOW_PROG_COORD PK_GET_PROG_COORD
+#if defined(SHADER_STAGE_FRAGMENT)
+    #define SHADOW_PROG_COORD int2(gl_FragCoord.xy)
+#elif defined(SHADER_STAGE_COMPUTE)
+    #define SHADOW_PROG_COORD int2(gl_GlobalInvocationID.xy)
+#elif defined(SHADER_STAGE_RAY_GENERATION)
+    #define SHADOW_PROG_COORD int2(gl_LaunchIDEXT.xy)
+#else
+    #define SHADOW_PROG_COORD int2(0)
+#endif
 #endif
 
 #define SHADOW_NEAR_BIAS 0.05f
@@ -65,7 +73,7 @@ half ShadowTest_PCF3x3Gaussian(const uint index, const float2 uv, const float z)
 
 half ShadowTest_Dither16(const uint index, const float2 uv, const float z)
 {
-    const half dither_angle = half(InterleavedGradientNoise(PK_GET_PROG_COORD, pk_FrameRandom.y) * PK_TWO_PI);
+    const half dither_angle = half(InterleavedGradientNoise(SHADOW_PROG_COORD, pk_FrameRandom.y) * PK_TWO_PI);
     const half scale = 2.5hf / half(SHADOW_SIZE.x);
     const half sina = sin(dither_angle) * scale;
     const half cosa = cos(dither_angle) * scale;

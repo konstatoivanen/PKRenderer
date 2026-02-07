@@ -13,7 +13,7 @@
 #define HIT_LOGLUMINANCE x
 #define HIT_DISTANCE y
 
-PK_DECLARE_RT_PAYLOAD(float2, payload, 0);
+layout(location = 0) rayPayloadEXT float2 payload;
 
 void MainRgs()
 {
