@@ -516,6 +516,7 @@ namespace PK
             m_descritorState.descriptorSet = m_services.descriptorCache->GetDescriptorSet(layout, bindings, bindingIndex, fence, name);
         }
 
+        // @TODO Technically we should maintain different sets for different bind points but...
         if (m_descritorState.bindPoint != bindPoint)
         {
             m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
@@ -528,15 +529,14 @@ namespace PK
             m_descritorState.stageFlags = layout->stageFlags;
         }
 
-        if (m_descritorState.setSize != resourceLayout.GetCount())
+        if (m_descritorState.bindingCount != resourceLayout.GetCount())
         {
             m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
-            m_descritorState.setSize = resourceLayout.GetCount();
+            m_descritorState.bindingCount = resourceLayout.GetCount();
         }
-            
+
         // @TODO should not be done here. Move to descriptor cache.
         m_descritorState.descriptorSet->fence = fence;
-        m_descritorState.pipelineLayout = m_pipelineKey.shader->GetPipelineLayout()->layout;
     }
 
     void VulkanRenderState::ValidateResourceAccess()
@@ -544,7 +544,7 @@ namespace PK
         auto shader = m_pipelineKey.shader;
         auto stageFlags = shader->GetStageFlags();
 
-        for (auto bindingIndex = 0u; bindingIndex < m_descritorState.setSize; ++bindingIndex)
+        for (auto bindingIndex = 0u; bindingIndex < m_descritorState.bindingCount; ++bindingIndex)
         {
             // No Array support as they're locally reserved for readonly resources
             if (!m_descritorState.bindings[bindingIndex].isArray)

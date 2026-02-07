@@ -3,6 +3,11 @@
 
 #include "includes/PostFXDepthOfField.glsl"
 
+uniform float pk_DoF_FocalLength;
+uniform float pk_DoF_FNumber;
+uniform float pk_DoF_FilmHeight;
+uniform float pk_DoF_FocusSpeed;
+
 [pk_numthreads(1u, 1u, 1u)]
 void AutoFocusCs()
 {

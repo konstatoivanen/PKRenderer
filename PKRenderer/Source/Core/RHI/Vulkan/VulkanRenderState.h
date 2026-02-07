@@ -49,10 +49,9 @@ namespace PK
     {
         VulkanDescriptorCache::DescriptorBinding bindings[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
         const VulkanDescriptorSet* descriptorSet = nullptr;
-        VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
         VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         VkShaderStageFlagBits stageFlags = (VkShaderStageFlagBits)0;
-        uint32_t setSize = 0u;
+        uint32_t bindingCount = 0u;
     };
 
     struct VulkanRenderTargetBindings
@@ -79,17 +78,18 @@ namespace PK
         public:
             VulkanRenderState(const VulkanServiceContext& services) : m_services(services) {}
 
-            constexpr VulkanServiceContext* GetServices() { return &m_services; }
-            constexpr const ShaderPushConstantLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetPushConstantLayout(); }
-            constexpr VkPipelineLayout GetPipelineLayout() const { return m_pipelineKey.shader->GetPipelineLayout()->layout; }
-            constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
-            constexpr uint3 GetComputeGroupSize() const { return m_pipelineKey.shader->GetGroupSize(); }
             constexpr bool HasPipeline() const { return m_pipeline != nullptr; }
+            constexpr VulkanServiceContext* GetServices() { return &m_services; }
+            constexpr VkPipeline GetPipeline() const { return m_pipeline->pipeline; }
+            constexpr VkPipelineLayout GetPipelineLayout() const { return m_pipelineKey.shader->GetPipelineLayout()->layout; }
+            constexpr VkShaderStageFlags GetPipelinePushConstantStageFlags() const { return m_pipelineKey.shader->GetPipelineLayout()->pushConstantStageFlags; }
+            constexpr const ShaderPushConstantLayout& GetPipelinePushConstantLayout() const { return m_pipelineKey.shader->GetPushConstantLayout(); }
+            constexpr VkDescriptorSet GetDescriptorSet() const { return m_descritorState.descriptorSet->set; }
+            constexpr uint3 GetComputeGroupSize() const { return m_pipelineKey.shader->GetGroupSize(); }
             const char* GetShaderName() const { return m_pipelineKey.shader->GetName(); }
             inline VkPipelineBindPoint GetPipelineBindPoint() const { return VulkanEnumConvert::GetPipelineBindPoint(m_pipelineKey.shader->GetStageFlags()); }
             VkRenderingInfo GetRenderPassInfo() const;
             VulkanVertexBufferBundle GetVertexBufferBundle() const;
-            const VulkanDescriptorState* GetDescriptorState() const { return &m_descritorState; }
             VkStridedDeviceAddressRegionKHR* GetShaderBindingTableAddresses();
             const VulkanBindHandle* GetIndexBuffer(VkIndexType* outIndexType) const;
 

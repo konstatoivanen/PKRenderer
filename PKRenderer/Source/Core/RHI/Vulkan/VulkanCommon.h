@@ -368,6 +368,7 @@ namespace PK
 
         const VkDevice device;
         VkPipelineLayout layout;
+        VkShaderStageFlags pushConstantStageFlags;
         FenceRef releaseFence;
         uint32_t referenceCount;
     };

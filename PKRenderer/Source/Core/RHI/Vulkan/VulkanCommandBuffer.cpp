@@ -705,26 +705,28 @@ namespace PK
             vkCmdBindIndexBuffer(m_commandBuffer, indexBufferHandle->buffer.buffer, indexBufferHandle->buffer.offset, indexType);
         }
 
-        if ((flags & PK_RENDER_STATE_DIRTY_DESCRIPTORS) != 0)
+        if (m_renderState->HasPipeline() && (flags & PK_RENDER_STATE_DIRTY_DESCRIPTORS) != 0)
         {
-            auto descriptorState = m_renderState->GetDescriptorState();
-            vkCmdBindDescriptorSets(m_commandBuffer, descriptorState->bindPoint, descriptorState->pipelineLayout, 0u, 1u, &descriptorState->descriptorSet->set, 0, nullptr);
+            const auto descriptorSet = m_renderState->GetDescriptorSet();
+            const auto layout = m_renderState->GetPipelineLayout();
+            const auto bindPoint = m_renderState->GetPipelineBindPoint();
+            vkCmdBindDescriptorSets(m_commandBuffer, bindPoint, layout, 0u, 1u, &descriptorSet, 0, nullptr);
         }
 
         if (m_renderState->HasPipeline())
         {
-            auto& constantLayout = m_renderState->GetPipelinePushConstantLayout();
-            auto props = m_renderState->GetServices()->globalResources;
+            const auto resources = m_renderState->GetServices()->globalResources;
+            const auto& constantLayout = m_renderState->GetPipelinePushConstantLayout();
+            const auto layout = m_renderState->GetPipelineLayout();
+            const auto stageFlags = m_renderState->GetPipelinePushConstantStageFlags();
+            const char* data = nullptr;
+            size_t dataSize = 0u;
 
             for (auto& element : constantLayout)
             {
-                const char* data = nullptr;
-                size_t dataSize = 0u;
-
-                if (props->TryGet<char>(element->name, data, &dataSize) && dataSize <= element->size)
+                if (resources->TryGet<char>(element->name, data, &dataSize) && dataSize <= element->size)
                 {
-                    auto stageFlags = VulkanEnumConvert::GetShaderStageFlags(element->stageFlags);
-                    vkCmdPushConstants(m_commandBuffer, m_renderState->GetPipelineLayout(), stageFlags, element->offset, (uint32_t)dataSize, data);
+                    vkCmdPushConstants(m_commandBuffer, layout, stageFlags, element->offset, (uint32_t)dataSize, data);
                 }
             }
         }

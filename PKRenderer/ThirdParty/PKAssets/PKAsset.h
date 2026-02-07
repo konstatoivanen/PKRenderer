@@ -471,9 +471,8 @@ namespace PKAssets
     struct alignas(4) PKConstantVariable
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        uint16_t size;                       // 66 bytes
-        uint16_t offset;                     // 68 bytes
-        PKShaderStageFlags stageFlags;       // 72 bytes
+        uint16_t offset;                     // 66 bytes
+        uint16_t size;                       // 68 bytes
     };
 
     struct alignas(4) PKDescriptor
@@ -511,15 +510,17 @@ namespace PKAssets
 
     struct alignas(4) PKShaderVariant
     {
-        uint32_t descriptorCount;                                           // 4 bytes
-        uint32_t constantVariableCount;                                     // 8 bytes
-        uint32_t vertexAttributeCount;                                      // 12 bytes
-        uint32_t groupSize[4]{};                                            // 28 bytes
-        RelativePtr<PKDescriptor> descriptors;                              // 32 bytes
-        RelativePtr<PKConstantVariable> constantVariables;                  // 36 bytes
-        RelativePtr<PKVertexInputAttribute> vertexAttributes;               // 38 bytes
-        uint32_t sprivSizes[(int)PKShaderStage::MaxCount];                  // 92 bytes
-        RelativePtr<void> sprivBuffers[(int)PKShaderStage::MaxCount];       // 144 bytes
+        uint16_t descriptorCount;                                           // 2 bytes
+        uint16_t vertexAttributeCount;                                      // 2 bytes
+        uint16_t constantCount;                                             // 4 bytes
+        uint16_t constantRange;                                             // 8 bytes
+        PKShaderStageFlags constantStageFlags;                              // 12 bytes
+        uint16_t groupSize[4]{};                                            // 20 bytes
+        RelativePtr<PKDescriptor> descriptors;                              // 24 bytes
+        RelativePtr<PKConstantVariable> constants;                          // 28 bytes
+        RelativePtr<PKVertexInputAttribute> vertexAttributes;               // 32 bytes
+        uint32_t sprivSizes[(int)PKShaderStage::MaxCount];                  // 84 bytes
+        RelativePtr<void> sprivBuffers[(int)PKShaderStage::MaxCount];       // 136 bytes
     };
 
     struct alignas(4) PKShader

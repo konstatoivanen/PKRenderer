@@ -17,11 +17,7 @@ uniform writeonly restrict uimage2D pk_Image2;
 uniform writeonly restrict uimage2D pk_Image3;
 uniform writeonly restrict uimage2D pk_Image4;
 
-PK_DECLARE_LOCAL_CBUFFER(pk_SceneEnv_Origin)
-{
-    float4 pk_Origin;
-};
-
+uniform float4 pk_SceneEnv_Origin;
 shared float3 lds_irrad;
 shared float3 lds_trans;
 
@@ -43,7 +39,7 @@ void IntegrateCs()
         const float3 view_dir = DecodeOctaUv(uv);
 
         float3 irrad, trans;
-        Fog_SampleStatic(pk_Origin.xyz, view_dir, PK_STATIC_FOG_VIRTUAL_DISTANCE, irrad, trans);
+        Fog_SampleStatic(pk_SceneEnv_Origin.xyz, view_dir, PK_STATIC_FOG_VIRTUAL_DISTANCE, irrad, trans);
 
         local_irrad += irrad;
         local_trans += trans;

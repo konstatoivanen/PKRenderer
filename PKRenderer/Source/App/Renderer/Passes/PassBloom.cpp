@@ -42,6 +42,7 @@ namespace PK::App
         cmd->BeginDebugScope("Bloom", PK_COLOR_MAGENTA);
 
         auto view = ctx->views[0];
+        auto& settings = view->settings.BloomSettings;
         auto source = view->gbuffers.GetView().current.color;
         auto resources = view->GetResources<ViewResources>();
         auto resolution = source->GetResolution();
@@ -86,7 +87,7 @@ namespace PK::App
 
         for (auto i = int(leveCount) - 2; i >= 0; --i)
         {
-            RHI::SetConstant(hash->pk_Bloom_UpsampleLayerCount, float(leveCount) - (i + 1.0f));
+            RHI::SetConstant(hash->pk_Bloom_UpsampleWeight, (float(leveCount) - (i + 1.0f)) * settings.Diffusion);
             RHI::SetTexture(hash->pk_Texture, bloom, i + 1u, 0u);
             RHI::SetImage(hash->pk_Image, bloom, i, 0u);
             cmd.Dispatch(m_computeBloom, m_passUpsample, { resolution.x >> i, resolution.y >> i, 1u });

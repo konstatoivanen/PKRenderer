@@ -436,14 +436,12 @@ namespace PK::App
         int viewMax[2] = { (int)resolution.x, (int)resolution.y };
         float projection[4] = { lightProjection.x, -lightProjection.y, lightProjection.z, lightProjection.w };
         auto dispatchList = Bend::BuildDispatchList(projection, viewMax, viewMin, viewMax, false, 64);
+        RHI::SetConstant(hash->pk_LightCoordinate, dispatchList.LightCoordinate_Shader, sizeof(dispatchList.LightCoordinate_Shader));
 
         for (auto i = 0; i < dispatchList.DispatchCount; ++i)
         {
             const auto& dispatch = dispatchList.Dispatch[i];
-            Bend::DispatchDataGPU dispatchData;
-            memcpy(dispatchData.LightCoordinate_Shader, dispatchList.LightCoordinate_Shader, sizeof(dispatchList.LightCoordinate_Shader));
-            memcpy(dispatchData.WaveOffset_Shader, dispatch.WaveOffset_Shader, sizeof(dispatch.WaveOffset_Shader));
-            RHI::SetConstant<Bend::DispatchDataGPU>(hash->pk_BendShadowDispatchData, dispatchData);
+            RHI::SetConstant(hash->pk_WaveOffset, dispatch.WaveOffset_Shader, sizeof(dispatch.WaveOffset_Shader));
 
             uint3 dim;
             dim.x = 64 * dispatch.WaveCount[0];

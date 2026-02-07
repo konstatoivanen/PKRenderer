@@ -333,11 +333,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
     bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet) {}
     #endif
 
-    PK_DECLARE_LOCAL_CBUFFER(pk_Meshlet_DispatchOffset)
-    {
-        uint pk_FirstTasklet;
-    };
-    
+    uniform uint pk_Meshlet_DispatchOffset;
     taskPayloadSharedEXT PKMeshTaskPayload payload;
 
     layout(local_size_x = MAX_MESHLETS_PER_TASK) in;
@@ -348,7 +344,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
         [[branch]]
         if (subgroupElect())
         {
-            const uint task_index = pk_FirstTasklet + gl_WorkGroupID.x;
+            const uint task_index = pk_Meshlet_DispatchOffset + gl_WorkGroupID.x;
             const PKTasklet tasklet = Meshlet_Load_Tasklet(task_index);
             PK_INSTANCING_ASSIGN_LOCALS(tasklet.instance_id);
             const PKSubmesh submesh = Meshlet_Load_Submesh(pk_Instancing_Submesh);

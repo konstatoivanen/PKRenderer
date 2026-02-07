@@ -215,12 +215,8 @@ void ShadowmapUpsampleCs()
     #include "includes/bend_sss_gpu.glsl"
 #endif
 
-[pk_local(ScreenSpaceShadowsCs)]
-PK_DECLARE_LOCAL_CBUFFER(pk_BendShadowDispatchData)
-{
-    float4 pk_LightCoordinate;
-    int2 pk_WaveOffset;
-};
+[pk_local(ScreenSpaceShadowsCs)] uniform float4 pk_LightCoordinate;
+[pk_local(ScreenSpaceShadowsCs)] uniform int2 pk_WaveOffset;
 
 [pk_numthreads(WAVE_SIZE, 1u, 1u)]
 void ScreenSpaceShadowsCs()

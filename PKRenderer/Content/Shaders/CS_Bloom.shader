@@ -11,11 +11,7 @@
 #include "includes/Encoding.glsl"
 #include "includes/Common.glsl"
 
-PK_DECLARE_LOCAL_CBUFFER(pk_Bloom_UpsampleLayerCount)
-{
-    float pk_Bloom_UpsampleLayerCount_Value;
-};
-
+uniform float pk_Bloom_UpsampleWeight;
 uniform sampler2D pk_Texture;
 uniform uimage2D pk_Image;
 
@@ -113,7 +109,7 @@ void UpsampleCs()
     color.rgb += texture(pk_Texture, uvs.xw).rgb;
     color.rgb *= 0.25f;
 
-    const float upsample_weight = pk_Bloom_UpsampleLayerCount_Value * pk_Bloom_Diffusion;
+    const float upsample_weight = pk_Bloom_UpsampleWeight;
 
     color.rgb *= upsample_weight;
     color.rgb += DecodeE5BGR9(imageLoad(pk_Image, coord).r);

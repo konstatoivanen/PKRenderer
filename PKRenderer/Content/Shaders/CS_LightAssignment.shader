@@ -10,11 +10,7 @@
 #include "includes/LightResources.glsl"
 #include "includes/Encoding.glsl"
 
-PK_DECLARE_LOCAL_CBUFFER(pk_LastLightIndex)
-{
-    uint LastLightIndex;
-};
-
+uniform uint pk_LastLightIndex;
 uniform RWBuffer<uint, 1u> pk_LightCounter;
 
 struct SharedLight
@@ -98,12 +94,12 @@ void LightAssignmentCs()
     uint visible_count = 0;
     ushort visible_indices[LIGHT_TILE_MAX_LIGHTS];
 
-    const uint light_count = LastLightIndex + 1u;
+    const uint light_count = pk_LastLightIndex + 1u;
     const uint batch_count = (light_count + THREAD_COUNT - 1) / THREAD_COUNT;
 
     for (uint batch = 0; batch < batch_count; ++batch)
     {
-        const uint light_index = min(batch * THREAD_COUNT + thread, LastLightIndex);
+        const uint light_index = min(batch * THREAD_COUNT + thread, pk_LastLightIndex);
         const SceneLight scene_light = Lights_LoadLight(light_index);
 
         SharedLight light;
@@ -121,7 +117,7 @@ void LightAssignmentCs()
             const ushort buffer_index = ushort(batch * THREAD_COUNT + index);
             const bool is_visible = IntersectionTest(index);
 
-            if (is_visible && buffer_index <= LastLightIndex && visible_count < LIGHT_TILE_MAX_LIGHTS)
+            if (is_visible && buffer_index <= pk_LastLightIndex && visible_count < LIGHT_TILE_MAX_LIGHTS)
             {
                 visible_indices[visible_count++] = buffer_index;
             }

@@ -62,18 +62,9 @@ namespace PK
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         pipelineLayoutInfo.pSetLayouts = &key.setlayout;
-        pipelineLayoutInfo.pPushConstantRanges = key.pushConstants;
+        pipelineLayoutInfo.pPushConstantRanges = &key.pushConstantRange;
         pipelineLayoutInfo.setLayoutCount = 1u;
-        pipelineLayoutInfo.pushConstantRangeCount = PK_RHI_MAX_PUSH_CONSTANTS;
-
-        for (auto i = 0u; i < PK_RHI_MAX_PUSH_CONSTANTS; ++i)
-        {
-            if (key.pushConstants[i].size == 0)
-            {
-                pipelineLayoutInfo.pushConstantRangeCount = i;
-                break;
-            }
-        }
+        pipelineLayoutInfo.pushConstantRangeCount = key.pushConstantRange.size > 0u ? 1u : 0u;
 
         auto newLayout = m_pipelineLayoutPool.New(m_device, pipelineLayoutInfo);
         newLayout->referenceCount = 1u;

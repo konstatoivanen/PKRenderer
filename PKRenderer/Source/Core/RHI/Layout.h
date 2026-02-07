@@ -82,17 +82,15 @@ namespace PK
     struct ShaderPushConstant
     {
         NameID name = 0u;
-        ShaderStageFlags stageFlags;
-        uint16_t size;
         uint16_t offset;
+        uint16_t size;
 
         ShaderPushConstant() = default;
 
-        ShaderPushConstant(NameID name, uint16_t size, uint16_t offset, ShaderStageFlags stageFlags) :
+        ShaderPushConstant(NameID name, uint16_t size, uint16_t offset) :
             name(name),
-            stageFlags(stageFlags),
-            size(size),
-            offset(offset)
+            offset(offset),
+            size(size)
         {
         }
     };

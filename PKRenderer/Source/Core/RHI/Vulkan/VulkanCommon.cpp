@@ -645,7 +645,9 @@ namespace PK
     }
 
 
-    VulkanPipelineLayout::VulkanPipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo& createInfo) : device(device)
+    VulkanPipelineLayout::VulkanPipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo& createInfo) : 
+        device(device),
+        pushConstantStageFlags(createInfo.pPushConstantRanges->stageFlags)
     {
         VK_ASSERT_RESULT_CTX(vkCreatePipelineLayout(device, &createInfo, nullptr, &layout), "Failed to create a pipeline layout!");
     }

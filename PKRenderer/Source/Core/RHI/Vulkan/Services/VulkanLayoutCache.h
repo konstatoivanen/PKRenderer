@@ -23,7 +23,7 @@ namespace PK
     struct PipelineLayoutKey
     {
         VkDescriptorSetLayout setlayout = VK_NULL_HANDLE;
-        VkPushConstantRange pushConstants[PK_RHI_MAX_PUSH_CONSTANTS]{};
+        VkPushConstantRange pushConstantRange{};
 
         inline bool operator == (const PipelineLayoutKey& r) const noexcept
         {

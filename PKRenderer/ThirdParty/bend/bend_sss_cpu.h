@@ -26,13 +26,6 @@
 
 namespace Bend
 {
-	// PK MOD
-	struct DispatchDataGPU
-	{
-		float LightCoordinate_Shader[4];
-		int WaveOffset_Shader[2];
-	};
-
 	// Generating a screen-space-shadow requires a number of Compute Shader dispatches
 	// The compute shader reads from a depth buffer, and writes a single-channel texture of the same dimensions
 	// Each dispatch is of the same compute shader, (see bend_sss_gpu.h).

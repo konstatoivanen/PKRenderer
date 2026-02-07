@@ -110,7 +110,8 @@ namespace PK::App
         DECLARE_HASH(pk_LastLightIndex)
         DECLARE_HASH(pk_LightLists)
         DECLARE_HASH(pk_LightTiles)
-        DECLARE_HASH(pk_BendShadowDispatchData)
+        DECLARE_HASH(pk_LightCoordinate)
+        DECLARE_HASH(pk_WaveOffset)
 
         DECLARE_HASH(pk_PostEffectsFeatureMask)
 
@@ -124,7 +125,7 @@ namespace PK::App
         DECLARE_HASH(pk_Bloom_Diffusion)
         DECLARE_HASH(pk_Bloom_Intensity)
         DECLARE_HASH(pk_Bloom_DirtIntensity)
-        DECLARE_HASH(pk_Bloom_UpsampleLayerCount)
+        DECLARE_HASH(pk_Bloom_UpsampleWeight)
         DECLARE_HASH(pk_Bloom_Texture)
         DECLARE_HASH(pk_Bloom_LensDirtTex)
 
@@ -167,7 +168,6 @@ namespace PK::App
         DECLARE_HASH(pk_DoF_FilmHeight)
         DECLARE_HASH(pk_DoF_FocusSpeed)
         DECLARE_HASH(pk_DoF_MaximumCoC)
-        DECLARE_HASH(pk_DoF_Params)
         DECLARE_HASH(pk_DoF_AutoFocusState)
         DECLARE_HASH(pk_DoF_ColorRead)
         DECLARE_HASH(pk_DoF_ColorWrite)

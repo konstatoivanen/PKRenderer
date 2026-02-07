@@ -87,7 +87,6 @@ float3x3 CreateTBN(const float3 n) { float3 t, b; CreateTBN(n,t,b); return float
 #define Test_EPS4(v) (v <= 1e-4f)
 #define Test_EPS6(v) (v <= 1e-6f)
 
-#define PK_DECLARE_LOCAL_CBUFFER(BufferName) layout(push_constant) uniform BufferName
 #define PK_DECLARE_CBUFFER(BufferName) layout(std140) uniform BufferName
 
 // Ray tracing utilities

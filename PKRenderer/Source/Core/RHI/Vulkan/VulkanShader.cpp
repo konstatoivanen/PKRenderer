@@ -71,23 +71,23 @@ namespace PK
             pipelineKey.setlayout = m_descriptorSetLayout->layout;
         }
 
-        if (variant->constantVariableCount > 0)
+        if (variant->constantRange > 0u)
         {
-            auto pVariables = variant->constantVariables.Get(base);
+            pipelineKey.pushConstantRange.stageFlags = VulkanEnumConvert::GetShaderStageFlags(variant->constantStageFlags);
+            pipelineKey.pushConstantRange.offset = 0u;
+            pipelineKey.pushConstantRange.size = variant->constantRange;
+
+            auto pVariables = variant->constants.Get(base);
 
             m_pushConstantLayout.ClearFast();
 
-            for (auto i = 0u; i < variant->constantVariableCount; ++i)
+            for (auto i = 0u; i < variant->constantCount; ++i)
             {
                 auto pVariable = pVariables + i;
                 auto constant = m_pushConstantLayout.Add();
                 constant->name = pVariable->name;
-                constant->stageFlags = pVariable->stageFlags;
-                constant->size = pVariable->size;
                 constant->offset = pVariable->offset;
-                pipelineKey.pushConstants[i].stageFlags = VulkanEnumConvert::GetShaderStageFlags(pVariable->stageFlags);
-                pipelineKey.pushConstants[i].offset = pVariable->offset;
-                pipelineKey.pushConstants[i].size = pVariable->size;
+                constant->size = pVariable->size;
             }
         }
 

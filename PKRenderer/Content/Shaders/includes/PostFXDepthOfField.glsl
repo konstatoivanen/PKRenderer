@@ -1,21 +1,13 @@
 #pragma once
 #include "GBuffers.glsl"
 
-PK_DECLARE_LOCAL_CBUFFER(pk_DoF_Params)
-{
-    float pk_DoF_FocalLength;
-    float pk_DoF_FNumber;
-    float pk_DoF_FilmHeight;
-    float pk_DoF_FocusSpeed;
-    float pk_DoF_MaximumCoC;
-};
-
 struct DoFAutoFocusState
 {
     float focus_depth;
     float lens_coefficient;
 };
 
+uniform float pk_DoF_MaximumCoC;
 uniform RWBuffer<DoFAutoFocusState, 1u> pk_DoF_AutoFocusState;
 
 float DoF_GetLensCoefficient() 
