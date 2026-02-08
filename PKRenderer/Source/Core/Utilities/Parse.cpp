@@ -61,4 +61,26 @@ namespace PK::Parse
         wcstombs(narrow.data(), str, length);
         return narrow;
     }
+
+    FixedString64 GetFilePathStem(const char* str)
+    {
+        auto last_slash = 0ull;
+        auto last_dot = 0ull;
+        auto i = 0ull;
+
+        for (; i < 256ull && str[i] != '\0'; ++i)
+        {
+            if (str[i] == '/' || str[i] == '\\')
+            {
+                last_slash = i + 1ull;
+            }
+
+            if (str[i] == '.')
+            {
+                last_dot = i;
+            }
+        }
+
+        return FixedString64(last_dot - last_slash, str + last_slash);
+    }
 }

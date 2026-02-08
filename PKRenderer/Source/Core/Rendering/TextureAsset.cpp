@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include <filesystem>
 #include <PKAssets/PKAsset.h>
 #include <PKAssets/PKAssetLoader.h>
 #include "Core/Utilities/FenceRef.h"
@@ -42,7 +41,7 @@ namespace PK
         descriptor.sampler.wrap[1] = texture.wrap[1];
         descriptor.sampler.wrap[2] = texture.wrap[2];
 
-        m_texture = RHI::CreateTexture(descriptor, std::filesystem::path(GetFileName()).stem().string().c_str());
+        m_texture = RHI::CreateTexture(descriptor, Parse::GetFilePathStem(filepath));
 
         auto regions = PK_STACK_ALLOC(TextureDataRegion, descriptor.levels);
         auto isCubeMap = descriptor.type == TextureType::CubemapArray || descriptor.type == TextureType::Cubemap;

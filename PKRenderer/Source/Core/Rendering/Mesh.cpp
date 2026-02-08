@@ -59,8 +59,8 @@ namespace PK
 
         streamLayout.CalculateOffsetsAndStride();
 
-        FixedString128 vertexBufferName({ GetFileName(), ".VertexBuffer" });
-        FixedString128 indexBufferName({ GetFileName(), ".IndexBuffer" });
+        FixedString128 vertexBufferName({ Parse::GetFilePathStem(filepath), ".VertexBuffer" });
+        FixedString128 indexBufferName({ Parse::GetFilePathStem(filepath), ".IndexBuffer" });
         auto commandBuffer = CommandBufferExt(RHI::GetCommandBuffer(QueueType::Transfer));
 
         auto pVerticesOffset = (char*)pVertices;

@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include <filesystem>
 #include <PKAssets/PKAssetLoader.h>
 #include "Core/Math/FunctionsIntersect.h"
 #include "Core/Math/FunctionsMisc.h"
@@ -56,7 +55,7 @@ namespace PK
             PK_THROW_ASSERT(baseMesh, "Cannot create a virtual mesh without a base mesh!");
 
             MeshStaticDescriptor desc{};
-            desc.name = std::filesystem::path(GetFileName()).stem().string().c_str();
+            desc.name = Parse::GetFilePathStem(filepath).c_str();
 
             desc.regular.pVertices = pVertices;
             desc.regular.pIndices = pIndices;

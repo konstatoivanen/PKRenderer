@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include <filesystem>
 #include <PKAssets/PKAssetLoader.h>
 #include "Core/Utilities/Parse.h"
 #include "Core/Utilities/PropertyBlock.h"
@@ -180,13 +179,13 @@ namespace PK
         }
 
         auto pVariants = shader->variants.Get(base);
-        auto fileName = std::filesystem::path(filepath).stem().string();
+        auto fileName = Parse::GetFilePathStem(filepath);
 
         m_shaders.Reserve(shader->variantcount);
 
         for (auto i = 0u; i < shader->variantcount; ++i)
         {
-            m_shaders[i] = RHI::CreateShader(base, pVariants + i, FixedString128("%s%u", fileName.c_str(), i));
+            m_shaders[i] = RHI::CreateShader(base, pVariants + i, FixedString128("%s%u", fileName, i));
         }
 
         PKAssets::CloseAsset(&asset);

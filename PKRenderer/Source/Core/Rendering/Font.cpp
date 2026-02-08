@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include <filesystem>
 #include <PKAssets/PKAsset.h>
 #include <PKAssets/PKAssetLoader.h>
 #include "Core/CLI/Log.h"
@@ -45,7 +44,7 @@ namespace PK
         descriptor.sampler.filterMin = FilterMode::Bilinear;
         descriptor.sampler.filterMag = FilterMode::Bilinear;
 
-        m_texture = RHI::CreateTexture(descriptor, std::filesystem::path(GetFileName()).stem().string().c_str());
+        m_texture = RHI::CreateTexture(descriptor, Parse::GetFilePathStem(filepath));
 
         TextureDataRegion dataRegion;
         dataRegion.bufferOffset = 0u;

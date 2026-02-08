@@ -83,6 +83,8 @@ namespace PK::Parse
     std::wstring ToWideString(const char* str, size_t length);
     std::string FromWideString(const wchar_t* str, size_t length);
 
+    FixedString64 GetFilePathStem(const char* str);
+
     constexpr void GetShortFunctionName(const char* str, const char** outData, size_t* outLength) noexcept
     {
         auto name_begin = 0ull;

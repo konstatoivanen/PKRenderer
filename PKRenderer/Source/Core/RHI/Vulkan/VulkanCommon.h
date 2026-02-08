@@ -550,8 +550,8 @@ namespace PK
         } \
     } \
 
-    #define VK_ASSERT_RESULT(cmd) VK_ASSERT_RESULT_CTX(cmd, "VK COMMAND FAILED! ")
-    #define VK_THROW_RESULT(result) VulkanThrowError(result, "VK Error Result: ")
+    #define VK_ASSERT_RESULT(cmd) VK_ASSERT_RESULT_CTX(cmd, "VK Error Result:")
+    #define VK_THROW_RESULT(result) VulkanThrowError(result, "VK Error Result:")
     #define VK_THROW_RESULT_CTX(result, ctx) VulkanThrowError(result, ctx)
 
 }

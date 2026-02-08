@@ -2360,7 +2360,7 @@ namespace PK
         }
         else
         {
-            PK_THROW_ERROR("%s (%s)", context, string_VkResult(result));
+            PK_THROW_ERROR("VK COMMAND FAILED! (%s)", string_VkResult(result));
         }
     }
 }
