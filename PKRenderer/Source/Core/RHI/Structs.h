@@ -493,6 +493,7 @@ namespace PK
         bool enableValidation;
         bool enableDebugNames;
         bool enableDebugLabels;
+        bool enableDebugShaderPrint;
         bool discardPipelineCache;
     };
 

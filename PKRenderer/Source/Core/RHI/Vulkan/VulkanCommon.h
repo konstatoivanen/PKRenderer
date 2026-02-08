@@ -8,6 +8,8 @@
 #include "Core/Utilities/FastLinkedList.h"
 #include "Core/RHI/Structs.h"
 
+constexpr static const char* VK_LAYER_KHRONOS_validation = "VK_LAYER_KHRONOS_validation";
+
 #if PK_PLATFORM_WINDOWS
     #define PK_VK_LIBRARY_NAME "vulkan-1.dll"
 #elif PK_PLATFORM_LINUX

@@ -11,7 +11,7 @@ uniform float pk_DoF_FocusSpeed;
 [pk_numthreads(1u, 1u, 1u)]
 void AutoFocusCs()
 {
-    float center_depth = min(SampleMinZ(float2(0.5f, 0.5f), 4), pk_ClipParams.y - 1e-4f);
+    float center_depth = min(SampleMinZ(0.5f.xx, 4), pk_ClipParams.y - 1e-4f);
 
     center_depth = ReplaceIfResized(center_depth, pk_ClipParams.y);
 
@@ -22,6 +22,5 @@ void AutoFocusCs()
 
     state.lens_coefficient  = pk_DoF_FocalLength * pk_DoF_FocalLength;
     state.lens_coefficient /= (pk_DoF_FNumber * (state.focus_depth - pk_DoF_FocalLength) * pk_DoF_FilmHeight * 2.0f);
-
     pk_DoF_AutoFocusState = state;
 }

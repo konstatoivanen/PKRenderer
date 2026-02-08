@@ -18,6 +18,14 @@ namespace PK
 
         VulkanAssertAPIVersion(properties.apiVersionMajor, properties.apiVersionMinor);
 
+        VkApplicationInfo appInfo{ VK_STRUCTURE_TYPE_APPLICATION_INFO };
+        appInfo.pApplicationName = properties.appName.c_str();
+        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.pEngineName = properties.engineName.c_str();
+        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.apiVersion = VK_MAKE_API_VERSION(0, properties.apiVersionMajor, properties.apiVersionMinor, 0);
+        apiVersion = appInfo.apiVersion;
+
         VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
         debugMessengerCreateInfo.messageSeverity = 
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | 
@@ -31,15 +39,17 @@ namespace PK
         debugMessengerCreateInfo.pfnUserCallback = VulkanDebugCallback;
         debugMessengerCreateInfo.pUserData = nullptr;
 
-        VkApplicationInfo appInfo{ VK_STRUCTURE_TYPE_APPLICATION_INFO };
-        appInfo.pApplicationName = properties.appName.c_str();
-        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName = properties.engineName.c_str();
-        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_MAKE_API_VERSION(0, properties.apiVersionMajor, properties.apiVersionMinor, 0);
-        apiVersion = appInfo.apiVersion;
+        VkLayerSettingEXT shaderPrintSetting{};
+        shaderPrintSetting.pLayerName = VK_LAYER_KHRONOS_validation;
+        shaderPrintSetting.pSettingName = "printf_enable";
+        shaderPrintSetting.type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        shaderPrintSetting.valueCount = 1u;
+        shaderPrintSetting.pValues = &shaderPrintSetting.valueCount;
 
-        const char* VK_LAYER_KHRONOS_validation = "VK_LAYER_KHRONOS_validation";
+        VkLayerSettingsCreateInfoEXT layerSettingCreateInfo{ VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT };
+        layerSettingCreateInfo.settingCount = 1u;
+        layerSettingCreateInfo.pSettings = &shaderPrintSetting;
+        debugMessengerCreateInfo.pNext = properties.enableDebugShaderPrint ? &layerSettingCreateInfo : nullptr;
 
         VkInstanceCreateInfo instanceCreateInfo{ VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
         instanceCreateInfo.pApplicationInfo = &appInfo;
@@ -98,10 +108,10 @@ namespace PK
         vkDestroySurfaceKHR(instance, temporarySurface, nullptr);
 
         VkDeviceCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
-        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueInitializer.createInfos.size());
+        createInfo.queueCreateInfoCount = (uint32_t)queueInitializer.createInfos.size();
         createInfo.pQueueCreateInfos = queueInitializer.createInfos.data();
         createInfo.pEnabledFeatures = nullptr;
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(properties.contextualDeviceExtensions->size());
+        createInfo.enabledExtensionCount = (uint32_t)properties.contextualDeviceExtensions->size();
         createInfo.ppEnabledExtensionNames = properties.contextualDeviceExtensions->data();
         createInfo.enabledLayerCount = instanceCreateInfo.enabledLayerCount;
         createInfo.ppEnabledLayerNames = instanceCreateInfo.ppEnabledLayerNames;

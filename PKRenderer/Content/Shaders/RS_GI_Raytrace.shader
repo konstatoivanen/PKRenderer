@@ -124,13 +124,21 @@ void MainRgs()
         // Validate diffuse hit
         {
             hits.diff.dist = lerp(hits.diff.dist, PK_HALF_MAX_MINUS1, hits.diff.is_miss);
-            // @TODO this is wrong for screen hits.
             hits.diff_normal = payload.HIT_NORMAL;
 
             [[branch]]
             if (!hits.diff.is_screen)
             {
                 hits.diff.is_screen = GI_IsScreenHit(coord, origin + direction_diff * hits.diff.dist, hits.diff.is_miss);
+            }
+
+
+            // read accurate normal from gbuffer as diffuse trace may have been skipped in favour of screen space trace.
+            [[branch]]
+            if (hits.diff.is_screen)
+            {
+                const float3 clip_uvw = WorldToClipUvw(origin + direction_diff * hits.diff.dist);
+                hits.diff_normal = EncodeOctaUv2x16(SampleWorldNormal(clip_uvw.xy));
             }
         }
 
