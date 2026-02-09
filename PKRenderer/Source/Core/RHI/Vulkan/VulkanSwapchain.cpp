@@ -161,7 +161,7 @@ namespace PK
         VK_ASSERT_RESULT(queuePresent->Present(m_swapchain, m_imageIndex, waitSignal));
     }
 
-    void VulkanSwapchain::Release()
+    void VulkanSwapchain::Release(VkSwapchainKHR* oldSwapchain)
     {
         if (m_descriptor.nativeMonitorHandle != nullptr)
         {
@@ -178,9 +178,14 @@ namespace PK
             }
         }
 
-        if (m_swapchain != VK_NULL_HANDLE)
+        if (m_swapchain != VK_NULL_HANDLE && oldSwapchain == nullptr)
         {
             vkDestroySwapchainKHR(m_driver->device, m_swapchain, nullptr);
+        }
+
+        if (oldSwapchain != nullptr)
+        {
+            *oldSwapchain = m_swapchain;
         }
     }
 
@@ -188,8 +193,8 @@ namespace PK
     {
         PK_LOG_INFO_FUNC("");
 
-        vkDeviceWaitIdle(m_driver->device);
-        Release();
+        VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE;
+        Release(&oldSwapchain);
 
         const auto desiredFormat = VulkanEnumConvert::GetFormat(descriptor.desiredFormat);
         const auto desiredColorSpace = VulkanEnumConvert::GetColorSpace(descriptor.desiredColorSpace);
@@ -238,7 +243,7 @@ namespace PK
         swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         swapchainCreateInfo.presentMode = m_presentMode;
         swapchainCreateInfo.clipped = VK_TRUE;
-        swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+        swapchainCreateInfo.oldSwapchain = oldSwapchain;
 
         VK_ASSERT_RESULT_CTX(vkCreateSwapchainKHR(m_driver->device, &swapchainCreateInfo, nullptr, &m_swapchain), "failed to create swap chain!");
 
@@ -288,6 +293,11 @@ namespace PK
         if (descriptor.nativeMonitorHandle && vkAcquireFullScreenExclusiveModeEXT(m_driver->device, m_swapchain) != VK_SUCCESS)
         {
             m_descriptor.nativeMonitorHandle = nullptr;
+        }
+
+        if (oldSwapchain)
+        {
+            vkDestroySwapchainKHR(m_driver->device, oldSwapchain, nullptr);
         }
 
         m_outofdate = false;

@@ -27,7 +27,7 @@ namespace PK
             ColorSpace GetColorSpace() const final { return VulkanEnumConvert::GetColorSpace(m_format.colorSpace); }
             VSyncMode GetVSyncMode() const final { return VulkanEnumConvert::GetVSyncMode(m_presentMode); }
 
-            void Release();
+            void Release(VkSwapchainKHR* oldSwapchain = nullptr);
             void Rebuild(const SwapchainDescriptor& createInfo);
 
             const VulkanBindHandle* GetBindHandle() const { return &m_imageViews[m_imageIndex]->bindHandle; }
