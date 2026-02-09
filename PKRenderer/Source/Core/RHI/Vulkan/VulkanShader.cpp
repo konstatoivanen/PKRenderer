@@ -91,7 +91,7 @@ namespace PK
             }
         }
 
-        m_pipelineLayout = m_driver->layoutCache->GetPipelineLayout(pipelineKey);
+        m_pipelineLayout = m_driver->layoutCache->GetPipelineLayout(pipelineKey, name);
     }
 
     VulkanShader::~VulkanShader()

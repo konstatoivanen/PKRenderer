@@ -50,7 +50,7 @@ namespace PK
         return newLayout;
     }
 
-    const VulkanPipelineLayout* VulkanLayoutCache::GetPipelineLayout(const PipelineLayoutKey& key)
+    const VulkanPipelineLayout* VulkanLayoutCache::GetPipelineLayout(const PipelineLayoutKey& key, const char* name)
     {
         auto index = 0u;
         if (!m_pipelineLayoutMap.AddKey(key, &index))
@@ -66,7 +66,7 @@ namespace PK
         pipelineLayoutInfo.setLayoutCount = 1u;
         pipelineLayoutInfo.pushConstantRangeCount = key.pushConstantRange.size > 0u ? 1u : 0u;
 
-        auto newLayout = m_pipelineLayoutPool.New(m_device, pipelineLayoutInfo);
+        auto newLayout = m_pipelineLayoutPool.New(m_device, pipelineLayoutInfo, FixedString64("%s.PipelineLayout", name).c_str());
         newLayout->referenceCount = 1u;
         newLayout->releaseFence.Invalidate();
         m_pipelineLayoutMap[index].value = m_pipelineLayoutPool.GetIndex(newLayout);

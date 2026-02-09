@@ -9,7 +9,7 @@ namespace PK
     class VulkanCommandBufferPool : public NoCopy
     {
         public:
-            VulkanCommandBufferPool(VkDevice device, const VulkanServiceContext& services, uint32_t queueFamily);
+            VulkanCommandBufferPool(VkDevice device, const VulkanServiceContext& services, uint32_t queueFamily, const char* name);
             ~VulkanCommandBufferPool();
     
             VulkanCommandBuffer* GetCurrent();

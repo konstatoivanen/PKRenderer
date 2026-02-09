@@ -500,7 +500,6 @@ namespace PK
     }
 
 
-
     void VulkanCommandBuffer::BeginDebugScope(const char* name, const color& color)
     {
         if (vkCmdBeginDebugUtilsLabelEXT)

@@ -100,6 +100,7 @@ namespace PK
         context.surface = surface;
         context.queueFamilies = queueFamilies;
         context.createInfos = &createInfos;
+        context.queueCount = 0u;
 
         {
             PK_LOG_INFO_SCOPE("VulkanQueueSet.Initializer: Found '%i' Physical Device Queue Families:", context.families->size());
@@ -151,14 +152,15 @@ namespace PK
     }
 
 
-    VulkanQueue::VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, VulkanServiceContext& services, uint32_t queueIndex) :
+    VulkanQueue::VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, VulkanServiceContext& services, uint32_t queueIndex, const char* name) :
         m_barrierHandler(queueFamily),
-        m_commandPool(device, services.SetBarrierHandler(&m_barrierHandler), queueFamily),
+        m_commandPool(device, services.SetBarrierHandler(&m_barrierHandler), queueFamily, name),
         m_device(device),
         m_family(queueFamily),
         m_queueIndex(queueIndex)
     {
         vkGetDeviceQueue(m_device, m_family, m_queueIndex, &m_queue);
+        VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_QUEUE, (uint64_t)m_queue, FixedString32("PK_Queue_%s", name).c_str());
 
         VkSemaphoreTypeCreateInfo timelineCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
         timelineCreateInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
@@ -166,14 +168,16 @@ namespace PK
 
         VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,};
         createInfo.pNext = &timelineCreateInfo;
-
+        
         vkCreateSemaphore(m_device, &createInfo, nullptr, &m_timeline.semaphore);
+        VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)m_timeline.semaphore, FixedString32("PK_Timeline_Semaphore_%s", name).c_str());
 
         createInfo.pNext = nullptr;
 
         for (auto& semaphore : m_semaphores)
         {
             vkCreateSemaphore(m_device, &createInfo, nullptr, &semaphore);
+            VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore, FixedString32("PK_Semaphore_%s", name).c_str());
         }
 
         m_capabilityFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT |
@@ -425,10 +429,18 @@ namespace PK
         auto servicesCopy = services;
         m_selectedFamilies.count = initializer.queueCount;
 
+        // This is just for debug naming purposes
+        QueueType queueTypes[(uint32_t)QueueType::MaxCount]{};
+        for (auto i = (int32_t)QueueType::MaxCount; i >= 0; --i)
+        {
+            queueTypes[initializer.typeIndices[i]] = (QueueType)i;
+        }
+
         for (auto i = 0u; i < initializer.queueCount; ++i)
         {
             auto& familyProps = initializer.familyProperties.at(initializer.queueFamilies[i]);
-            m_queues[i] = CreateUnique<VulkanQueue>(device, familyProps.queueFlags, initializer.queueFamilies[i], servicesCopy);
+            auto name = RHIEnumConvert::QueueTypeToString(queueTypes[i]);
+            m_queues[i] = CreateUnique<VulkanQueue>(device, familyProps.queueFlags, initializer.queueFamilies[i], servicesCopy, 0, name);
             m_selectedFamilies.indices[i] = initializer.queueFamilies[i];
         }
 

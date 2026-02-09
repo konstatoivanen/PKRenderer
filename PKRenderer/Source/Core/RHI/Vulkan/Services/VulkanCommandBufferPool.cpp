@@ -4,7 +4,7 @@
 
 namespace PK
 {
-    VulkanCommandBufferPool::VulkanCommandBufferPool(VkDevice device, const VulkanServiceContext& services, uint32_t queueFamily) :
+    VulkanCommandBufferPool::VulkanCommandBufferPool(VkDevice device, const VulkanServiceContext& services, uint32_t queueFamily, const char* name) :
         m_queueFamily(queueFamily),
         m_device(device),
         m_primaryRenderState(services)
@@ -14,11 +14,13 @@ namespace PK
         createInfo.queueFamilyIndex = queueFamily;
 
         VK_ASSERT_RESULT(vkCreateCommandPool(m_device, &createInfo, nullptr, &m_pool));
+        VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)m_pool, FixedString32("PK_Cmd_Pool_%s", name).c_str());
 
         for (auto i = 0u; i < MAX_COMMANDBUFFERS; ++i)
         {
             VkFenceCreateInfo fenceCreateInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
             VK_ASSERT_RESULT(vkCreateFence(device, &fenceCreateInfo, nullptr, &m_fences[i]));
+            VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_FENCE, (uint64_t)m_fences[i], FixedString32("PK_Cmd_Fence_%s", name).c_str());
         }
     }
 

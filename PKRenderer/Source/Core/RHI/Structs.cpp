@@ -152,7 +152,19 @@ namespace PK
         return fallback;
     }
 
+    template<size_t size>
+    const char* FindStringIndexFromEnum(const char* (&arr)[size], uint32_t index, uint32_t fallback)
+    {
+        if (index >= size)
+        {
+            return arr[fallback];
+        }
+
+        return arr[index];
+    }
+
     #define DECLARE_RHI_STRING_TO_ENUM(TType, TFallback) TType RHIEnumConvert::StringTo##TType(const char* str) { return (TType)FindEnumIndexFromString(TType##_NAMES, str, (uint32_t)TFallback); }
+    #define DECLARE_RHI_ENUM_TO_STRING(TType, TFallback) const char* RHIEnumConvert::TType##ToString(TType value) { return FindStringIndexFromEnum(TType##_NAMES, (uint32_t)value, (uint32_t)TFallback); }
 
     DECLARE_RHI_STRING_TO_ENUM(RHIAPI, RHIAPI::None)
     DECLARE_RHI_STRING_TO_ENUM(QueueType, QueueType::MaxCount)
@@ -167,6 +179,20 @@ namespace PK
     DECLARE_RHI_STRING_TO_ENUM(ColorSpace, ColorSpace::sRGB_NonLinear)
     DECLARE_RHI_STRING_TO_ENUM(VSyncMode, VSyncMode::Immediate)
     DECLARE_RHI_STRING_TO_ENUM(RayTracingShaderGroup, RayTracingShaderGroup::RayGeneration)
+
+    DECLARE_RHI_ENUM_TO_STRING(RHIAPI, RHIAPI::None)
+    DECLARE_RHI_ENUM_TO_STRING(QueueType, QueueType::MaxCount)
+    DECLARE_RHI_ENUM_TO_STRING(TextureBindMode, TextureBindMode::SampledTexture)
+    DECLARE_RHI_ENUM_TO_STRING(PolygonMode, PolygonMode::Fill)
+    DECLARE_RHI_ENUM_TO_STRING(Topology, Topology::PointList)
+    DECLARE_RHI_ENUM_TO_STRING(LogicOp, LogicOp::Clear)
+    DECLARE_RHI_ENUM_TO_STRING(FrontFace, FrontFace::CounterClockwise)
+    DECLARE_RHI_ENUM_TO_STRING(LoadOp, LoadOp::None)
+    DECLARE_RHI_ENUM_TO_STRING(StoreOp, StoreOp::Store)
+    DECLARE_RHI_ENUM_TO_STRING(InputRate, InputRate::PerVertex)
+    DECLARE_RHI_ENUM_TO_STRING(ColorSpace, ColorSpace::sRGB_NonLinear)
+    DECLARE_RHI_ENUM_TO_STRING(VSyncMode, VSyncMode::Immediate)
+    DECLARE_RHI_ENUM_TO_STRING(RayTracingShaderGroup, RayTracingShaderGroup::RayGeneration)
 
     TextureUsage RHIEnumConvert::StringToTextureUsage(const char* str)
     {
@@ -240,5 +266,11 @@ namespace PK
         return usage;
     }
 
+    const char* RHIEnumConvert::TextureUsageToString([[maybe_unused]] TextureUsage value)
+    {
+        return "String conversion not supported";
+    }
+
     #undef DECLARE_RHI_STRING_TO_ENUM
+    #undef DECLARE_RHI_ENUM_TO_STRING
 }

@@ -367,15 +367,11 @@ namespace PK::Math
 
     uint32_t CountBits(uint32_t value)
     {
-        uint32_t count = 0;
-
-        while (value > 0)
-        {
-            count += value & 1;
-            value >>= 1;
-        }
-
-        return count;
+        value = value - ((value >> 1) & 0x55555555);
+        value = (value & 0x33333333) + ((value >> 2) & 0x33333333);
+        value = (value + (value >> 4)) & 0x0F0F0F0F;
+        value *= 0x01010101;
+        return value >> 24;
     }
 
     uint4 MurmurHash41(uint32_t seed)

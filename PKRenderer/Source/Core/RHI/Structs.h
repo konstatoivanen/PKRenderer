@@ -589,5 +589,20 @@ namespace PK
         ColorSpace StringToColorSpace(const char* str);
         VSyncMode StringToVSyncMode(const char* str);
         RayTracingShaderGroup StringToRayTracingShaderGroup(const char* str);
+
+        const char* RHIAPIToString(RHIAPI value);
+        const char* QueueTypeToString(QueueType value);
+        const char* TextureBindModeToString(TextureBindMode value);
+        const char* PolygonModeToString(PolygonMode value);
+        const char* TopologyToString(Topology value);
+        const char* LogicOpToString(LogicOp value);
+        const char* FrontFaceToString(FrontFace value);
+        const char* LoadOpToString(LoadOp value);
+        const char* StoreOpToString(StoreOp value);
+        const char* InputRateToString(InputRate value);
+        const char* TextureUsageToString(TextureUsage value);
+        const char* ColorSpaceToString(ColorSpace value);
+        const char* VSyncModeToString(VSyncMode value);
+        const char* RayTracingShaderGroupToString(RayTracingShaderGroup value);
     }
 }

@@ -40,7 +40,7 @@ namespace PK
             VulkanLayoutCache(VkDevice device) : m_device(device), m_setLayoutMap(128ull, 3ull), m_pipelineLayoutMap(128ull, 3ull) {}
 
             const VulkanDescriptorSetLayout* GetSetLayout(const DescriptorSetLayoutKey& key);
-            const VulkanPipelineLayout* GetPipelineLayout(const PipelineLayoutKey& key);
+            const VulkanPipelineLayout* GetPipelineLayout(const PipelineLayoutKey& key, const char* name);
             void ReleaseSetLayout(const VulkanDescriptorSetLayout* layout, const FenceRef& releaseFence);
             void ReleasePipelineLayout(const VulkanPipelineLayout* layout, const FenceRef& releaseFence);
             void Prune();

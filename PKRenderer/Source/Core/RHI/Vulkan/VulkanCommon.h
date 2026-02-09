@@ -365,7 +365,7 @@ namespace PK
 
     struct VulkanPipelineLayout : public NoCopy
     {
-        VulkanPipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo& createInfo);
+        VulkanPipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo& createInfo, const char* name);
         ~VulkanPipelineLayout();
 
         const VkDevice device;
