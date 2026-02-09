@@ -19,6 +19,7 @@ namespace PK
         virtual bool AcquireFullScreen(const void* nativeMonitor) = 0;
         virtual bool AcquireNextImage() = 0;
         virtual void Present() = 0;
+        virtual void WaitForPresent(uint32_t historyOffset, uint64_t timeoutNanos) = 0;
         virtual bool IsFullScreen() const = 0;
         virtual uint3 GetResolution() const = 0;
         virtual TextureFormat GetFormat() const = 0;

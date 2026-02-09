@@ -57,15 +57,11 @@ namespace PK
         instanceCreateInfo.enabledLayerCount = properties.enableValidation ? 1u : 0u;
         instanceCreateInfo.ppEnabledLayerNames = &VK_LAYER_KHRONOS_validation;
 
-        auto instanceExtensions = *properties.contextualInstanceExtensions;
-        instanceExtensions.push_back("VK_KHR_surface");
-        instanceExtensions.push_back(PK_VK_SURFACE_EXTENSION_NAME);
-
-        PK_THROW_ASSERT(VulkanValidateInstanceExtensions(&instanceExtensions), "Trying to enable unavailable extentions!");
+        PK_THROW_ASSERT(VulkanValidateInstanceExtensions(properties.instanceExtensions), "Trying to enable unavailable extentions!");
         PK_THROW_ASSERT(VulkanValidateValidationLayers(instanceCreateInfo.ppEnabledLayerNames, instanceCreateInfo.enabledLayerCount), "Trying to enable unavailable validation layers!");
 
-        instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
-        instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
+        instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(properties.instanceExtensions->size());
+        instanceCreateInfo.ppEnabledExtensionNames = properties.instanceExtensions->data();
 
         VK_ASSERT_RESULT_CTX(vkCreateInstance(&instanceCreateInfo, nullptr, &instance), "Failed to create vulkan instance!");
         VulkanBindExtensionMethods(instance, properties.enableDebugNames, properties.enableDebugLabels);
@@ -94,7 +90,7 @@ namespace PK
         physicalDeviceRequirements.versionMinor = properties.apiVersionMinor;
         physicalDeviceRequirements.features = properties.features;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-        physicalDeviceRequirements.deviceExtensions = properties.contextualDeviceExtensions;
+        physicalDeviceRequirements.deviceExtensions = properties.deviceExtensions;
 
         // Create a temporary surface so that we can query & select a physical device with surface present capabilities.
         VkSurfaceKHR temporarySurface;
@@ -111,8 +107,8 @@ namespace PK
         createInfo.queueCreateInfoCount = (uint32_t)queueInitializer.createInfos.size();
         createInfo.pQueueCreateInfos = queueInitializer.createInfos.data();
         createInfo.pEnabledFeatures = nullptr;
-        createInfo.enabledExtensionCount = (uint32_t)properties.contextualDeviceExtensions->size();
-        createInfo.ppEnabledExtensionNames = properties.contextualDeviceExtensions->data();
+        createInfo.enabledExtensionCount = (uint32_t)properties.deviceExtensions->size();
+        createInfo.ppEnabledExtensionNames = properties.deviceExtensions->data();
         createInfo.enabledLayerCount = instanceCreateInfo.enabledLayerCount;
         createInfo.ppEnabledLayerNames = instanceCreateInfo.ppEnabledLayerNames;
         createInfo.pNext = &physicalDeviceRequirements.features.vk10;
@@ -298,42 +294,47 @@ namespace PK
         [[maybe_unused]] void* pUserData)
     {
         // Image layouts are validated at queue submit and at wait fences. this causes some invalid state in the validation layers.
-        auto isValidationLayoutError = strstr(pCallbackData->pMessage, "current layout is") != nullptr;
+        auto isValidationLayoutError = pCallbackData->messageIdNumber == 1180184443;
+
         // If were experiencing a long cpu frame the swapchain might return the same image index for long periods of time.
         // Causes a validation error where the semaphores used by other image indices are not used again in acquire image.
         // There is no user control over which image index is used so this is pretty stupid.
-        auto isValidationSwapchainBug = strstr(pCallbackData->pMessage, "may still be in use and cannot be safely reused with image index") != nullptr;
+        auto isValidationSwapchainBug = pCallbackData->messageIdNumber == 1402107823;
+
+        // Not all errors are flagged with error severity.
         auto isValidationError = strstr(pCallbackData->pMessage, "Error") != nullptr;
 
-        auto isLoaderMessage = strstr(pCallbackData->pMessageIdName, "Loader Message") != nullptr;
-        auto isNsightBug = strstr(pCallbackData->pMessage, "VkPrivateDataSlotCreateInfo") != nullptr;
-        auto isNsightInjectBug = strstr(pCallbackData->pMessage, "1000556003") != nullptr;
+        // Set loader messages as verbose clutter.
+        auto isLoaderMessage = pCallbackData->messageIdNumber == 0;
+        
+        // Nvidia does some things that are not compatible with vk standards.
+        auto isNvidiaBug = pCallbackData->messageIdNumber == -608309547;
+
         messageSeverity = isValidationError ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT : messageSeverity;
         messageSeverity = isValidationLayoutError ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
         messageSeverity = isValidationSwapchainBug ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
         messageSeverity = isLoaderMessage ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT : messageSeverity;
-        messageSeverity = isNsightBug ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT : messageSeverity;
-        messageSeverity = isNsightInjectBug ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT : messageSeverity;
+        messageSeverity = isNvidiaBug ? VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT : messageSeverity;
 
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
         {
-            PK_THROW_ERROR(pCallbackData->pMessage);
+            PK_THROW_ERROR("Vulkan Validation Error: %i\n%s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
             return VK_FALSE;
         }
 
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
         {
-            PK_LOG_WARNING(pCallbackData->pMessage);
+            PK_LOG_WARNING("Vulkan Validation Warning: %i\n%s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
             return VK_FALSE;
         }
 
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
         {
-            PK_LOG_INFO(pCallbackData->pMessage);
+            PK_LOG_INFO("Vulkan Validation Info: %i\n%s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
             return VK_FALSE;
         }
 
-        PK_LOG_RHI(pCallbackData->pMessage);
+        PK_LOG_RHI("Vulkan Validation Verbose: %i\n%s", pCallbackData->messageIdNumber, pCallbackData->pMessage);
         return VK_FALSE;
     }
 }

@@ -36,7 +36,7 @@ namespace PK
             FenceRef GetFenceRef(int32_t timelineOffset = 0) const;
 
             VkResult Submit(VulkanCommandBuffer* commandBuffer, VkSemaphore* outSignal = nullptr);
-            VkResult Present(VkSwapchainKHR swapchain, uint32_t imageIndex, VkSemaphore waitSignal = VK_NULL_HANDLE);
+            VkResult Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkSemaphore waitSignal = VK_NULL_HANDLE);
             VkResult BindSparse(VkBuffer buffer, const VkSparseMemoryBind* binds, uint32_t bindCount);
             VkSemaphore QueueSignal(VkPipelineStageFlags flags);
             void QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags);

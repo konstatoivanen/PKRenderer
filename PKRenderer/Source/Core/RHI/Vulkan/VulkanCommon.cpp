@@ -41,6 +41,8 @@ PFN_vkCmdDrawMeshTasksIndirectCountEXT pkfn_vkCmdDrawMeshTasksIndirectCountEXT =
 PFN_vkAcquireFullScreenExclusiveModeEXT pkfn_vkAcquireFullScreenExclusiveModeEXT = nullptr;
 PFN_vkReleaseFullScreenExclusiveModeEXT pkfn_vkReleaseFullScreenExclusiveModeEXT = nullptr;
 
+PFN_vkWaitForPresentKHR pkfn_vkWaitForPresentKHR = nullptr;
+
 namespace PK
 {
     VulkanPhysicalDeviceFeatures::VulkanPhysicalDeviceFeatures()
@@ -58,6 +60,8 @@ namespace PK
         meshshader.pNext = &shadingRate;
         shadingRate.pNext = &fifoLatestReady;
         fifoLatestReady.pNext = &swapchainMaintenance1;
+        swapchainMaintenance1.pNext = &presentId;
+        presentId.pNext = &presentWait;
     }
 
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
@@ -276,6 +280,10 @@ namespace PK
             PK_TEST_FEATURE(fifoLatestReady.presentModeFifoLatestReady)
 
             PK_TEST_FEATURE(swapchainMaintenance1.swapchainMaintenance1)
+            
+            PK_TEST_FEATURE(presentId.presentId)
+
+            PK_TEST_FEATURE(presentWait.presentWait)
         }
         
         #undef PK_TEST_FEATURE
@@ -1949,6 +1957,8 @@ namespace PK
 
         pkfn_vkAcquireFullScreenExclusiveModeEXT = (PFN_vkAcquireFullScreenExclusiveModeEXT)vkGetInstanceProcAddr(instance, "vkAcquireFullScreenExclusiveModeEXT");
         pkfn_vkReleaseFullScreenExclusiveModeEXT = (PFN_vkReleaseFullScreenExclusiveModeEXT)vkGetInstanceProcAddr(instance, "vkReleaseFullScreenExclusiveModeEXT");
+
+        pkfn_vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vkGetInstanceProcAddr(instance, "vkWaitForPresentKHR");
     }
 
     std::vector<VkPhysicalDevice> VulkanGetPhysicalDevices(VkInstance instance)

@@ -141,6 +141,9 @@ extern PFN_vkAcquireFullScreenExclusiveModeEXT pkfn_vkAcquireFullScreenExclusive
 extern PFN_vkReleaseFullScreenExclusiveModeEXT pkfn_vkReleaseFullScreenExclusiveModeEXT;
 #define vkReleaseFullScreenExclusiveModeEXT pkfn_vkReleaseFullScreenExclusiveModeEXT
 
+extern PFN_vkWaitForPresentKHR pkfn_vkWaitForPresentKHR;
+#define vkWaitForPresentKHR pkfn_vkWaitForPresentKHR
+
 namespace PK
 {
     struct VulkanQueueFamilies
@@ -190,6 +193,8 @@ namespace PK
         VkPhysicalDeviceFragmentShadingRateFeaturesKHR shadingRate{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR };
         VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT fifoLatestReady{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_EXT };
         VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT swapchainMaintenance1{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT };
+        VkPhysicalDevicePresentIdFeaturesKHR presentId{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR };
+        VkPhysicalDevicePresentWaitFeaturesKHR presentWait{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR };
         VulkanPhysicalDeviceFeatures();
         static bool CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available);
     };

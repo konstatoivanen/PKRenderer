@@ -24,8 +24,8 @@ namespace PK
         FixedString64 engineName;
         FixedString256 workingDirectory;
         VulkanPhysicalDeviceFeatures features;
-        const std::vector<const char*>* contextualInstanceExtensions;
-        const std::vector<const char*>* contextualDeviceExtensions;
+        const std::vector<const char*>* instanceExtensions;
+        const std::vector<const char*>* deviceExtensions;
 
         VulkanDriverDescriptor(
             const char* appName = "Vulkan App",
@@ -33,14 +33,14 @@ namespace PK
             const char* workingDirectory = "",
             RHIDriverDescriptor descriptor = {},
             VulkanPhysicalDeviceFeatures features = {},
-            const std::vector<const char*>* contextualInstanceExtensions = nullptr,
-            const std::vector<const char*>* contextualDeviceExtensions = nullptr) : RHIDriverDescriptor(descriptor),
+            const std::vector<const char*>* instanceExtensions = nullptr,
+            const std::vector<const char*>* deviceExtensions = nullptr) : RHIDriverDescriptor(descriptor),
             appName(appName),
             engineName(engineName),
             workingDirectory(workingDirectory),
             features(features),
-            contextualInstanceExtensions(contextualInstanceExtensions),
-            contextualDeviceExtensions(contextualDeviceExtensions)
+            instanceExtensions(instanceExtensions),
+            deviceExtensions(deviceExtensions)
         {
         }
     };

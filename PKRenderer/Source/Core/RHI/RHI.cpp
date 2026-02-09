@@ -113,10 +113,14 @@ namespace PK
                 features.shadingRate.pipelineFragmentShadingRate = VK_TRUE;
                 features.fifoLatestReady.presentModeFifoLatestReady = VK_TRUE;
                 features.swapchainMaintenance1.swapchainMaintenance1 = VK_TRUE;
+                features.presentId.presentId = VK_TRUE;
+                features.presentWait.presentWait = VK_TRUE;
                 //features.meshshader.meshShaderQueries;
-
+                
                 const std::vector<const char*> PK_INSTANCE_EXTENTIONS =
                 {
+                    VK_KHR_SURFACE_EXTENSION_NAME,
+                    PK_VK_SURFACE_EXTENSION_NAME,
                     "VK_EXT_debug_utils",
                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
                     VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME,
@@ -138,6 +142,8 @@ namespace PK
                     VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME,
                     VK_KHR_MULTIVIEW_EXTENSION_NAME,
                     VK_EXT_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME,
+                    VK_KHR_PRESENT_WAIT_EXTENSION_NAME,
+                    VK_KHR_PRESENT_ID_EXTENSION_NAME,
                     "VK_KHR_swapchain_maintenance1"
                 };
 

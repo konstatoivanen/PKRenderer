@@ -21,6 +21,7 @@ namespace PK
             bool AcquireFullScreen(const void* nativeMonitor) final;
             bool AcquireNextImage() final;
             void Present() final;
+            void WaitForPresent(uint32_t historyOffset, uint64_t timeoutNanos) final;
             bool IsFullScreen() const final { return m_descriptor.nativeMonitorHandle != nullptr; }
             uint3 GetResolution() const final { return { m_extent.width, m_extent.height, 1 }; }
             TextureFormat GetFormat() const final { return VulkanEnumConvert::GetTextureFormat(m_format.format); }
@@ -50,6 +51,7 @@ namespace PK
             VkExtent2D m_extent;
             uint32_t m_frameIndex = 0u;
             uint32_t m_imageIndex = 0u;
+            uint64_t m_presentId = 0ull;
             bool m_outofdate = false;
             bool m_suboptimal = false;
             bool m_hasExternalFrameFence = false;

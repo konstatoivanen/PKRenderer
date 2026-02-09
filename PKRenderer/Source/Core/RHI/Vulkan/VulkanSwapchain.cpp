@@ -21,7 +21,7 @@ namespace PK
 
     VulkanSwapchain::~VulkanSwapchain()
     {
-        m_driver->WaitForIdle();
+        WaitForPresent(0u, UINT64_MAX);
         Release();
         vkDestroySurfaceKHR(m_driver->instance, m_surface, nullptr);
     }
@@ -103,6 +103,9 @@ namespace PK
             Rebuild(m_descriptor);
         }
 
+        // Partially works in fixing the bellow issue. but causes issues with 60hz monitors.
+        WaitForPresent(1, UINT64_MAX);
+
         // This is not strictly necesssary when not using double buffering for staging buffers.
         // However, for them to have coherent memory operations we cannot push more than 2 frames at a time.
         // @TODO NV by default uses DXGI layered swapchain. the present of which is not visible to the application
@@ -158,7 +161,16 @@ namespace PK
         m_imageSignal = VK_NULL_HANDLE;
         m_hasExternalFrameFence = false;
         m_frameIndex = (m_frameIndex + 1) % PK_RHI_MAX_FRAMES_IN_FLIGHT;
-        VK_ASSERT_RESULT(queuePresent->Present(m_swapchain, m_imageIndex, waitSignal));
+        m_presentId++;
+        VK_ASSERT_RESULT(queuePresent->Present(m_swapchain, m_imageIndex, m_presentId, waitSignal));
+    }
+
+    void VulkanSwapchain::WaitForPresent(uint32_t historyOffset, uint64_t timeoutNanos)
+    {
+        if (m_presentId > historyOffset && m_swapchain != VK_NULL_HANDLE)
+        {
+            vkWaitForPresentKHR(m_driver->device, m_swapchain, m_presentId - historyOffset, timeoutNanos);
+        }
     }
 
     void VulkanSwapchain::Release(VkSwapchainKHR* oldSwapchain)
@@ -192,6 +204,9 @@ namespace PK
     void VulkanSwapchain::Rebuild(const SwapchainDescriptor& descriptor)
     {
         PK_LOG_INFO_FUNC("");
+
+        // Wait for last present so that we can safely release this.
+        WaitForPresent(0u, UINT64_MAX);
 
         VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE;
         Release(&oldSwapchain);
@@ -307,6 +322,7 @@ namespace PK
         }
 
         m_outofdate = false;
+        m_presentId = 0ull;
     }
     
     VkSemaphore VulkanSwapchain::ConsumeImageSignal()
