@@ -1,6 +1,4 @@
 
-#extension GL_KHR_shader_subgroup_arithmetic : enable
-#extension GL_KHR_shader_subgroup_shuffle : require
 #pragma pk_multi_compile _ PK_GI_CHECKERBOARD_TRACE
 #pragma pk_multi_compile _ PK_GI_RESTIR
 #pragma pk_program SHADER_STAGE_COMPUTE AccumulateCs

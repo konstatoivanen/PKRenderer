@@ -1,6 +1,4 @@
 
-#extension GL_KHR_shader_subgroup_arithmetic : enable
-#extension GL_KHR_shader_subgroup_shuffle : enable
 #pragma pk_multi_compile _ PK_HIZ_FINAL_PASS
 #pragma pk_program SHADER_STAGE_COMPUTE HierarchicalDepthCs
 

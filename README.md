@@ -164,6 +164,7 @@ GLSL Extensions:
 - GL_EXT_ray_tracing_position_fetch
 - GL_EXT_mesh_shader
 - GL_EXT_shader_image_load_formatted
+- GL_EXT_debug_printf
 
 Validation layers:
 - VK_LAYER_KHRONOS_validation
@@ -172,6 +173,7 @@ Instance Extensions:
 - VK_EXT_debug_utils
 - VK_KHR_get_physical_device_properties2
 - VK_KHR_get_surface_capabilities2
+- VK_KHR_surface_maintenance1
 
 Device Extensions:
 - VK_KHR_surface
@@ -189,6 +191,7 @@ Device Extensions:
 - VK_EXT_full_screen_exclusive
 - VK_KHR_multiview
 - VK_EXT_present_mode_fifo_latest_ready
+- VK_KHR_swapchain_maintenance1
 
 Physical Device Requirements:
 - alphaToOne
@@ -243,6 +246,7 @@ Physical Device Requirements:
 - primitiveFragmentShadingRate
 - pipelineFragmentShadingRate
 - presentModeFifoLatestReady
+- swapchainMaintenance1
 ```
 
 </details>

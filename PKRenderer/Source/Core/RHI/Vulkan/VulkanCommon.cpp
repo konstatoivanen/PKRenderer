@@ -57,6 +57,7 @@ namespace PK
         positionFetch.pNext = &meshshader;
         meshshader.pNext = &shadingRate;
         shadingRate.pNext = &fifoLatestReady;
+        fifoLatestReady.pNext = &swapchainMaintenance1;
     }
 
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
@@ -273,6 +274,8 @@ namespace PK
             PK_TEST_FEATURE(shadingRate.attachmentFragmentShadingRate)
 
             PK_TEST_FEATURE(fifoLatestReady.presentModeFifoLatestReady)
+
+            PK_TEST_FEATURE(swapchainMaintenance1.swapchainMaintenance1)
         }
         
         #undef PK_TEST_FEATURE

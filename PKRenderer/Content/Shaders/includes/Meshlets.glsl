@@ -1,7 +1,5 @@
 #pragma once
 
-#extension GL_KHR_shader_subgroup_arithmetic : require
-
 #pragma pk_program SHADER_STAGE_MESH_TASK MainMeshTask
 #pragma pk_program SHADER_STAGE_MESH_ASSEMBLY MainMeshAssembly
 

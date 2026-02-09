@@ -112,13 +112,15 @@ namespace PK
                 features.shadingRate.primitiveFragmentShadingRate = VK_TRUE;
                 features.shadingRate.pipelineFragmentShadingRate = VK_TRUE;
                 features.fifoLatestReady.presentModeFifoLatestReady = VK_TRUE;
+                features.swapchainMaintenance1.swapchainMaintenance1 = VK_TRUE;
                 //features.meshshader.meshShaderQueries;
 
                 const std::vector<const char*> PK_INSTANCE_EXTENTIONS =
                 {
                     "VK_EXT_debug_utils",
                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                    VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME
+                    VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME,
+                    "VK_KHR_surface_maintenance1"
                 };
 
                 const std::vector<const char*> PK_DEVICE_EXTENTIONS =
@@ -135,7 +137,8 @@ namespace PK
                     VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
                     VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME,
                     VK_KHR_MULTIVIEW_EXTENSION_NAME,
-                    VK_EXT_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME
+                    VK_EXT_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME,
+                    "VK_KHR_swapchain_maintenance1"
                 };
 
                 driver = CreateUnique<VulkanDriver>(VulkanDriverDescriptor

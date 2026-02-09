@@ -219,8 +219,14 @@ namespace PK
 
         auto fullscreenInfo = VulkanGetSwapchainFullscreenInfo(descriptor.nativeMonitorHandle, descriptor.nativeMonitorHandle != nullptr);
 
+        VkSwapchainPresentScalingCreateInfoEXT presentScalingInfo{ VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_SCALING_CREATE_INFO_EXT };
+        presentScalingInfo.pNext = fullscreenInfo.swapchainPNext;
+        presentScalingInfo.scalingBehavior = VK_PRESENT_SCALING_STRETCH_BIT_EXT;
+        presentScalingInfo.presentGravityX = VK_PRESENT_GRAVITY_CENTERED_BIT_EXT;
+        presentScalingInfo.presentGravityY = VK_PRESENT_GRAVITY_CENTERED_BIT_EXT;
+
         VkSwapchainCreateInfoKHR swapchainCreateInfo{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
-        swapchainCreateInfo.pNext = fullscreenInfo.swapchainPNext;
+        swapchainCreateInfo.pNext = &presentScalingInfo;
         swapchainCreateInfo.surface = m_surface;
         swapchainCreateInfo.minImageCount = m_imageCount;
         swapchainCreateInfo.imageFormat = m_format.format;

@@ -1,5 +1,4 @@
 
-#extension GL_KHR_shader_subgroup_arithmetic : require
 #pragma pk_multi_compile PASS_SHADOWMAP PASS_SHADOWMAP_UPSAMPLE PASS_SCREEN_DEPTH
 #pragma pk_program SHADER_STAGE_COMPUTE ShadowmapCs PASS_SHADOWMAP
 #pragma pk_program SHADER_STAGE_COMPUTE ShadowmapUpsampleCs PASS_SHADOWMAP_UPSAMPLE

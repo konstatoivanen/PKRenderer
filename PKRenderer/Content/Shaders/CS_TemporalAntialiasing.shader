@@ -1,5 +1,4 @@
 
-#extension GL_KHR_shader_subgroup_shuffle : enable
 #pragma pk_program SHADER_STAGE_COMPUTE TemporalAntialiasCs
 
 #include "includes/GBuffers.glsl"

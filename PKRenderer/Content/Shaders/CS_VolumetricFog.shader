@@ -1,6 +1,4 @@
 
-#extension GL_KHR_shader_subgroup_arithmetic : enable
-#extension GL_KHR_shader_subgroup_shuffle : require
 #pragma pk_multi_compile PASS_CLEAR PASS_DENSITY PASS_INJECT PASS_INTEGRATE PASS_COMPOSITE
 #pragma pk_program SHADER_STAGE_COMPUTE ClearCs PASS_CLEAR
 #pragma pk_program SHADER_STAGE_COMPUTE DensityCs PASS_DENSITY
