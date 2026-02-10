@@ -57,11 +57,11 @@ namespace PK
         instanceCreateInfo.enabledLayerCount = properties.enableValidation ? 1u : 0u;
         instanceCreateInfo.ppEnabledLayerNames = &VK_LAYER_KHRONOS_validation;
 
-        PK_THROW_ASSERT(VulkanValidateInstanceExtensions(properties.instanceExtensions), "Trying to enable unavailable extentions!");
+        PK_THROW_ASSERT(VulkanValidateInstanceExtensions(properties.instanceExtensions.data, properties.instanceExtensions.count), "Trying to enable unavailable extentions!");
         PK_THROW_ASSERT(VulkanValidateValidationLayers(instanceCreateInfo.ppEnabledLayerNames, instanceCreateInfo.enabledLayerCount), "Trying to enable unavailable validation layers!");
 
-        instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(properties.instanceExtensions->size());
-        instanceCreateInfo.ppEnabledExtensionNames = properties.instanceExtensions->data();
+        instanceCreateInfo.enabledExtensionCount = (uint32_t)properties.instanceExtensions.count;
+        instanceCreateInfo.ppEnabledExtensionNames = properties.instanceExtensions.data;
 
         VK_ASSERT_RESULT_CTX(vkCreateInstance(&instanceCreateInfo, nullptr, &instance), "Failed to create vulkan instance!");
         VulkanBindExtensionMethods(instance, properties.enableDebugNames, properties.enableDebugLabels);
@@ -90,7 +90,8 @@ namespace PK
         physicalDeviceRequirements.versionMinor = properties.apiVersionMinor;
         physicalDeviceRequirements.features = properties.features;
         physicalDeviceRequirements.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-        physicalDeviceRequirements.deviceExtensions = properties.deviceExtensions;
+        physicalDeviceRequirements.deviceExtensions = properties.deviceExtensions.data;
+        physicalDeviceRequirements.deviceExtensionCount = properties.deviceExtensions.count;
 
         // Create a temporary surface so that we can query & select a physical device with surface present capabilities.
         VkSurfaceKHR temporarySurface;
@@ -107,8 +108,8 @@ namespace PK
         createInfo.queueCreateInfoCount = (uint32_t)queueInitializer.createInfos.size();
         createInfo.pQueueCreateInfos = queueInitializer.createInfos.data();
         createInfo.pEnabledFeatures = nullptr;
-        createInfo.enabledExtensionCount = (uint32_t)properties.deviceExtensions->size();
-        createInfo.ppEnabledExtensionNames = properties.deviceExtensions->data();
+        createInfo.enabledExtensionCount = (uint32_t)properties.deviceExtensions.count;
+        createInfo.ppEnabledExtensionNames = properties.deviceExtensions.data;
         createInfo.enabledLayerCount = instanceCreateInfo.enabledLayerCount;
         createInfo.ppEnabledLayerNames = instanceCreateInfo.ppEnabledLayerNames;
         createInfo.pNext = &physicalDeviceRequirements.features.vk10;

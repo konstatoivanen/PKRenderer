@@ -2031,9 +2031,9 @@ namespace PK
     }
 
 
-    bool VulkanValidateInstanceExtensions(const std::vector<const char*>* extensions)
+    bool VulkanValidateInstanceExtensions(const char* const* extensions, size_t count)
     {
-        if (extensions == nullptr || extensions->size() == 0)
+        if (extensions == nullptr || count == 0)
         {
             return true;
         }
@@ -2044,16 +2044,16 @@ namespace PK
         vkEnumerateInstanceExtensionProperties(nullptr, &availableCount, availableExtensions);
 
         auto foundCount = 0u;
-        auto foundMask = PK_STACK_ALLOC(bool, extensions->size());
-        memset(foundMask, 0, sizeof(bool) * extensions->size());
+        auto foundMask = PK_STACK_ALLOC(bool, count);
+        memset(foundMask, 0, sizeof(bool) * count);
 
         for (auto i = 0u; i < availableCount; ++i)
         {
             auto name = availableExtensions[i].extensionName;
 
-            for (auto j = 0u; j < extensions->size(); ++j)
+            for (auto j = 0u; j < count; ++j)
             {
-                if (!foundMask[j] && strcmp(extensions->at(j), name) == 0)
+                if (!foundMask[j] && strcmp(extensions[j], name) == 0)
                 {
                     foundMask[j] = true;
                     foundCount++;
@@ -2061,12 +2061,12 @@ namespace PK
             }
         }
 
-        return foundCount == extensions->size();
+        return foundCount == count;
     }
 
-    bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const std::vector<const char*>* extensions)
+    bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const char* const* extensions, size_t count)
     {
-        if (extensions == nullptr || extensions->size() == 0)
+        if (extensions == nullptr || count == 0)
         {
             return true;
         }
@@ -2077,16 +2077,16 @@ namespace PK
         vkEnumerateDeviceExtensionProperties(device, nullptr, &availableCount, availableExtensions);
 
         auto foundCount = 0u;
-        auto foundMask = PK_STACK_ALLOC(bool, extensions->size());
-        memset(foundMask, 0, sizeof(bool) * extensions->size());
+        auto foundMask = PK_STACK_ALLOC(bool, count);
+        memset(foundMask, 0, sizeof(bool) * count);
 
         for (auto i = 0u; i < availableCount; ++i)
         {
             auto name = availableExtensions[i].extensionName;
 
-            for (auto j = 0u; j < extensions->size(); ++j)
+            for (auto j = 0u; j < count; ++j)
             {
-                if (!foundMask[j] && strcmp(extensions->at(j), name) == 0)
+                if (!foundMask[j] && strcmp(extensions[j], name) == 0)
                 {
                     foundMask[j] = true;
                     foundCount++;
@@ -2094,7 +2094,7 @@ namespace PK
             }
         }
 
-        return foundCount == extensions->size();
+        return foundCount == count;
     }
 
     bool VulkanValidateValidationLayers(const char* const* validationLayers, const uint32_t count)
@@ -2160,7 +2160,7 @@ namespace PK
             }
 
             auto queueFamilies = VulkanGetPhysicalDeviceQueueFamilyProperties(device);
-            auto extensionSupported = VulkanValidatePhysicalDeviceExtensions(device, requirements.deviceExtensions);
+            auto extensionSupported = VulkanValidatePhysicalDeviceExtensions(device, requirements.deviceExtensions, requirements.deviceExtensionCount);
             auto swapChainSupported = false;
 
             if (extensionSupported)

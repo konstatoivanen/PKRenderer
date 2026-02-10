@@ -116,8 +116,8 @@ namespace PK
                 features.presentId.presentId = VK_TRUE;
                 features.presentWait.presentWait = VK_TRUE;
                 //features.meshshader.meshShaderQueries;
-                
-                const std::vector<const char*> PK_INSTANCE_EXTENTIONS =
+
+                const char* PK_INSTANCE_EXTENTIONS[] =
                 {
                     VK_KHR_SURFACE_EXTENSION_NAME,
                     PK_VK_SURFACE_EXTENSION_NAME,
@@ -127,7 +127,7 @@ namespace PK
                     "VK_KHR_surface_maintenance1"
                 };
 
-                const std::vector<const char*> PK_DEVICE_EXTENTIONS =
+                const char* PK_DEVICE_EXTENTIONS[] =
                 {
                     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
                     VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
@@ -154,8 +154,8 @@ namespace PK
                     workingDirectory,
                     descriptor,
                     features,
-                    &PK_INSTANCE_EXTENTIONS,
-                    &PK_DEVICE_EXTENTIONS
+                    { PK_INSTANCE_EXTENTIONS, sizeof(PK_INSTANCE_EXTENTIONS) / sizeof(const char*) },
+                    { PK_DEVICE_EXTENTIONS, sizeof(PK_DEVICE_EXTENTIONS) / sizeof(const char*) }
                 ));
             }
             break;

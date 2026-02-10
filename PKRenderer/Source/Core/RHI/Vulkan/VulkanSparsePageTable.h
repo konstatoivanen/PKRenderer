@@ -13,24 +13,13 @@ namespace PK
     {
         struct Page
         {
-            Page(const VkDevice device,
-                const VmaAllocator allocator,
-                const VkMemoryRequirements& requirements,
-                const VmaAllocationCreateInfo& createInfo,
-                const char* name);
-            ~Page();
-
-            const VmaAllocator allocator;
-            VmaAllocation memory;
-            VmaAllocationInfo allocationInfo;
-
-            // Linked list info
+            VmaAllocation memory = VK_NULL_HANDLE;
             Page* next = nullptr;
-            size_t start = 0ull;
-            size_t end = 0ull;
+            uint32_t beg = 0u;
+            uint32_t end = 0u;
         };
 
-        Page* CreatePage(Page* next, size_t start, size_t end, std::vector<VkSparseMemoryBind>& outBindIfos);
+        Page* CreatePage(Page* next, uint32_t start, uint32_t end, std::vector<VkSparseMemoryBind>& outBindIfos);
         
         public:
             VulkanSparsePageTable(const VulkanDriver* driver, const VkBuffer buffer, VmaMemoryUsage memoryUsage, const char* name);

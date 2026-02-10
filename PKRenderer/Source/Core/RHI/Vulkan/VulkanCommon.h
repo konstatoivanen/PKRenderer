@@ -205,7 +205,8 @@ namespace PK
         uint32_t versionMinor;
         VkPhysicalDeviceType deviceType;
         VulkanPhysicalDeviceFeatures features;
-        const std::vector<const char*>* deviceExtensions;
+        const char* const* deviceExtensions;
+        size_t deviceExtensionCount;
     };
 
     struct VulkanExclusiveFullscreenInfo
@@ -521,8 +522,8 @@ namespace PK
     VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device);
     VulkanExclusiveFullscreenInfo VulkanGetSwapchainFullscreenInfo(const void* nativeMonitor, bool fullScreen);
 
-    bool VulkanValidateInstanceExtensions(const std::vector<const char*>* extensions);
-    bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const std::vector<const char*>* extensions);
+    bool VulkanValidateInstanceExtensions(const char* const* extensions, size_t count);
+    bool VulkanValidatePhysicalDeviceExtensions(VkPhysicalDevice device, const char* const* extensions, size_t count);
     bool VulkanValidateValidationLayers(const char* const* validationLayers, const uint32_t count);
     bool VulkanIsPresentSupported(VkPhysicalDevice physicalDevice, uint32_t familyIndex, VkSurfaceKHR surface);
 

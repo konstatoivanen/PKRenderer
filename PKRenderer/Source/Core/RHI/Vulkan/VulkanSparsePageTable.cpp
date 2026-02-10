@@ -6,46 +6,32 @@
 
 namespace PK
 {
-    VulkanSparsePageTable::Page::Page(const VkDevice device,
-        const VmaAllocator allocator,
-        const VkMemoryRequirements& requirements,
-        const VmaAllocationCreateInfo& createInfo,
-        const char* name) :
-        allocator(allocator)
+    VulkanSparsePageTable::Page* VulkanSparsePageTable::CreatePage(Page* next, uint32_t beg, uint32_t end, std::vector<VkSparseMemoryBind>& outBindIfos)
     {
-        VK_ASSERT_RESULT_CTX(vmaAllocateMemoryPages(allocator, &requirements, &createInfo, 1, &memory, &allocationInfo), "Failed to allocate memory page!");
-        VulkanSetObjectDebugName(device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)allocationInfo.deviceMemory, name);
-    }
+        auto page = m_pages.New();
+        const auto alignedBeg = beg * m_memoryRequirements.alignment;
+        const auto alugnedEnd = end * m_memoryRequirements.alignment;
+        
+        FixedString128 name("%s.Page(%lli-%lli)", m_name.c_str(), alignedBeg, alugnedEnd);
+        
+        VkMemoryRequirements requirements{};
+        requirements.size = alugnedEnd - alignedBeg;
+        requirements.alignment = m_memoryRequirements.alignment;
+        requirements.memoryTypeBits = m_memoryRequirements.memoryTypeBits;
 
-    VulkanSparsePageTable::Page::~Page()
-    {
-        vmaFreeMemoryPages(allocator, 1, &memory);
-    }
+        VmaAllocationInfo allocationInfo{};
+        VK_ASSERT_RESULT_CTX(vmaAllocateMemoryPages(m_driver->allocator, &requirements, &m_pageCreateInfo, 1, &page->memory, &allocationInfo), "Failed to allocate memory page!");
+        VulkanSetObjectDebugName(m_driver->device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)allocationInfo.deviceMemory, name.c_str());
 
-    VulkanSparsePageTable::Page* VulkanSparsePageTable::CreatePage(Page* next, size_t start, size_t end, std::vector<VkSparseMemoryBind>& outBindIfos)
-    {
-        FixedString128 name("%s.Page(%lli-%lli)", m_name.c_str(), start, end);
-
-        auto page = m_pages.New(m_driver->device,
-            m_driver->allocator,
-            VkMemoryRequirements
-            {
-                end - start,
-                m_memoryRequirements.alignment,
-                m_memoryRequirements.memoryTypeBits
-            },
-            m_pageCreateInfo,
-            name.c_str());
-
-        page->start = start;
+        page->beg = beg;
         page->end = end;
         page->next = next;
 
         VkSparseMemoryBind bind{};
-        bind.resourceOffset = start;
-        bind.size = end - start;
-        bind.memory = page->allocationInfo.deviceMemory;
-        bind.memoryOffset = page->allocationInfo.offset;
+        bind.resourceOffset = alignedBeg;
+        bind.size = alugnedEnd - alignedBeg;
+        bind.memory = allocationInfo.deviceMemory;
+        bind.memoryOffset = allocationInfo.offset;
         outBindIfos.push_back(bind);
         return page;
     }
@@ -62,43 +48,50 @@ namespace PK
     VulkanSparsePageTable::~VulkanSparsePageTable()
     {
         PK_WARNING_ASSERT(m_firstPage == nullptr, "not all ranges were deallocated!");
+    
+        auto next = &m_firstPage;
+
+        for (auto curr = *next; curr; curr = *next)
+        {
+            *next = curr->next;
+            vmaFreeMemoryPages(m_driver->allocator, 1, &curr->memory);
+            m_pages.Delete(curr);
+        }
     }
 
     void VulkanSparsePageTable::AllocateRange(const BufferIndexRange& range, QueueType type)
     {
-        auto alignment = m_memoryRequirements.alignment;
-        auto start = (range.offset / alignment) * alignment;
-        auto end = ((range.offset + range.count + alignment - 1) / alignment) * alignment;
+        const auto alignment = m_memoryRequirements.alignment;
+        const auto beg = (uint32_t)(range.offset / alignment);
+        const auto end = (uint32_t)((range.offset + range.count + alignment - 1) / alignment);
 
         m_residency.Reserve(range.offset, range.offset + range.count);
 
         std::vector<VkSparseMemoryBind> bindInfos;
 
-        size_t head = 0ull;
+        auto head = 0u;
         auto next = &m_firstPage;
 
-        for (auto curr = *next; curr && curr->start < end; head = curr->end, curr = *next)
+        for (auto curr = *next; curr && curr->beg < end; head = curr->end, curr = *next)
         {
-            if (curr->end > start || curr->start == head)
+            if (curr->end > beg || curr->beg == head)
             {
                 next = &curr->next;
                 continue;
             }
 
-            auto pageStart = head > start ? head : start;
-            auto pageEnd = end < curr->start ? end : curr->start;
-
-            // Fill hole
-            *next = CreatePage(curr, pageStart, pageEnd, bindInfos);
+            const auto pageBeg = head > beg ? head : beg;
+            const auto pageEnd = end < curr->beg ? end : curr->beg;
+            *next = CreatePage(curr, pageBeg, pageEnd, bindInfos);
             next = &curr->next;
         }
 
         // Append list end if range exceeded
         if (head < end)
         {
-            auto pageStart = head > start ? head : start;
+            auto pageBeg = head > beg ? head : beg;
             auto pageEnd = end;
-            *next = CreatePage(*next, pageStart, pageEnd, bindInfos);
+            *next = CreatePage(*next, pageBeg, pageEnd, bindInfos);
         }
 
         if (bindInfos.size() > 0)
@@ -117,25 +110,29 @@ namespace PK
 
     void VulkanSparsePageTable::DeallocateRange(const BufferIndexRange& range)
     {
-        auto alignment = m_memoryRequirements.alignment;
-        auto start = (range.offset / alignment) * alignment;
-        auto end = ((range.offset + range.count + alignment - 1) / alignment) * alignment;
+        const auto alignment = m_memoryRequirements.alignment;
+        const auto beg = (uint32_t)(range.offset / alignment);
+        const auto end = (uint32_t)((range.offset + range.count + alignment - 1) / alignment);
 
         m_residency.Unreserve(range.offset, range.offset + range.count);
 
         auto next = &m_firstPage;
 
-        for (auto curr = *next; curr && curr->start < end; curr = *next)
+        for (auto curr = *next; curr && curr->beg < end; curr = *next)
         {
-            if (curr->end <= start)
+            if (curr->end <= beg)
             {
                 next = &curr->next;
                 continue;
             }
 
-            if (!m_residency.IsReservedAny(curr->start, curr->end))
+            const auto currAlignedBeg = curr->beg * alignment;
+            const auto currAlignedEnd = curr->end * alignment;
+
+            if (!m_residency.IsReservedAny(currAlignedBeg, currAlignedEnd))
             {
                 *next = curr->next;
+                vmaFreeMemoryPages(m_driver->allocator, 1, &curr->memory);
                 m_pages.Delete(curr);
                 continue;
             }
