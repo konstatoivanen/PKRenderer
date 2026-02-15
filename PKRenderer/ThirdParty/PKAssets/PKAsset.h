@@ -131,7 +131,7 @@ namespace PKAssets
     constexpr static const float PK_FONT_MSDF_UNIT = 4.0f;
 
 
-    enum class PKElementType : uint16_t
+    enum class PKElementType : uint8_t
     {
         Invalid = 0,
 
@@ -456,16 +456,18 @@ namespace PKAssets
     struct alignas(4) PKVertexInputAttribute
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        PKElementType type;                  // 66 bytes
-        uint16_t location;                   // 68 bytes
+        PKElementType type;                  // 65 bytes
+        uint8_t location;                    // 66 bytes
+        uint16_t __padding = 0u;             // 68 bytes
     };
 
     struct alignas(4) PKMaterialProperty
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        PKElementType type;                  // 66 bytes
+        PKElementType type;                  // 65 bytes
 
-        uint16_t __padding = 0u;             // 68 bytes
+        uint8_t  __padding0 = 0u;            // 66 bytes
+        uint16_t __padding1 = 0u;            // 68 bytes
     };
 
     struct alignas(4) PKConstantVariable
@@ -613,9 +615,10 @@ namespace PKAssets
         RelativePtr<void> vertexBuffer;                     // 28 bytes
         RelativePtr<void> indexBuffer;                      // 32 bytes
         RelativePtr<PKMeshletMesh> meshletMesh;             // 36 bytes
-        PKElementType indexType;                            // 38 bytes
+        PKElementType indexType;                            // 37 bytes
 
-        uint16_t __padding = 0u;                            // 40 bytes
+        uint8_t  __padding0 = 0u;                           // 38 bytes
+        uint16_t __padding1 = 0u;                           // 40 bytes
     };
 
 

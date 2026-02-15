@@ -11,8 +11,8 @@ namespace PK
     {
         NameID name = 0u;
         ElementType format = ElementType::Invalid;
-        uint16_t count = 1;
-        uint32_t offset = 0;
+        uint8_t count = 1;
+        uint16_t offset = 0;
 
         uint16_t GetSize() const { return (uint16_t)RHIEnumConvert::Size(format) * count; }
 
@@ -126,11 +126,11 @@ namespace PK
     {
         NameID name = 0u;
         ElementType format = ElementType::Invalid;
-        uint16_t location = 0;
+        uint8_t location = 0;
 
         ShaderVertexInputElement() = default;
 
-        ShaderVertexInputElement(NameID name, ElementType format, uint16_t location) : name(name), format(format), location(location)
+        ShaderVertexInputElement(NameID name, ElementType format, uint8_t location) : name(name), format(format), location(location)
         {
         }
 
