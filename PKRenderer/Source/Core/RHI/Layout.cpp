@@ -4,22 +4,6 @@
 
 namespace PK
 {
-    const ShaderResourceElement* ShaderResourceLayout::TryGetElement(NameID name, uint32_t* index) const
-    {
-        // This will always have a small amount of elements (max 16) so mapping is redundant
-        // Additionally this is only used for debug.
-        for (auto i = 0u; i < GetCount(); ++i)
-        {
-            if (GetData()[i].name == name)
-            {
-                *index = i;
-                return GetData() + i;
-            }
-        }
-
-        return nullptr;
-    }
-
     void BufferLayout::CalculateOffsetsAndStride(bool applyOffsets)
     {
         m_hash = 0ull;
@@ -63,7 +47,23 @@ namespace PK
         m_hash = Hash::FNV1AHash(elements, count * sizeof(BufferElement));
     }
 
-    const BufferElement* ShaderVertexInputLayout::TryGetElement(NameID name, uint32_t* index) const
+    const ShaderResourceElement* ShaderResourceLayout::TryGetElement(NameID name, uint32_t* index) const
+    {
+        // This will always have a small amount of elements (max 16) so mapping is redundant
+        // Additionally this is only used for debug.
+        for (auto i = 0u; i < GetCount(); ++i)
+        {
+            if (GetData()[i].name == name)
+            {
+                *index = i;
+                return GetData() + i;
+            }
+        }
+
+        return nullptr;
+    }
+
+    const ShaderVertexInputElement* ShaderVertexInputLayout::TryGetElement(NameID name, uint32_t* index) const
     {
         auto valueIndex = GetHashIndex((size_t)name.identifier);
 

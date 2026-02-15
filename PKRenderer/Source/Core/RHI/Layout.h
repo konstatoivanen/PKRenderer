@@ -129,10 +129,36 @@ namespace PK
     };
 
 
-    struct ShaderVertexInputLayout : public FixedSet8<BufferElement, PK_RHI_MAX_VERTEX_ATTRIBUTES, BufferElementNameHash>
+    struct ShaderVertexInputElement
+    {
+        NameID name = 0u;
+        ElementType format = ElementType::Invalid;
+        uint16_t location = 0;
+
+        ShaderVertexInputElement() = default;
+
+        ShaderVertexInputElement(NameID name, ElementType format, uint16_t location) : name(name), format(format), location(location)
+        {
+        }
+
+        constexpr bool operator== (const ShaderVertexInputElement& b)
+        {
+            return name == b.name && format == b.format && location == b.location;
+        }
+    };
+
+    struct ShaderVertexInputElementHash
+    {
+        size_t operator()(const ShaderVertexInputElement& k) const noexcept
+        {
+            return (size_t)k.name.identifier;
+        }
+    };
+
+    struct ShaderVertexInputLayout : public FixedSet8<ShaderVertexInputElement, PK_RHI_MAX_VERTEX_ATTRIBUTES, ShaderVertexInputElementHash>
     {
         ShaderVertexInputLayout() : IFastSet() {}
-        const BufferElement* TryGetElement(NameID name, uint32_t* index) const;
+        const ShaderVertexInputElement* TryGetElement(NameID name, uint32_t* index) const;
     };
 
 
