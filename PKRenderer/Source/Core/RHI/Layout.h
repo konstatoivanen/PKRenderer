@@ -228,6 +228,7 @@ namespace PK
         uint16_t m_totalStride = 0u;
     };
 
+
     struct ShaderBindingTableInfo
     {
         enum { HandleMaxSize = 64 };

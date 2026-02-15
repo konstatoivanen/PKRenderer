@@ -575,6 +575,21 @@ namespace PK
         constexpr auto StringToColorMask = PKAssets::StringToPKColorMask;
         constexpr auto StringToRasterMode = PKAssets::StringToPKRasterMode;
 
+        constexpr auto ElementTypeToString = PKAssets::PKElementTypeToString;
+        constexpr auto ShaderResourceTypeToString = PKAssets::PKDescriptorTypeToString;
+        constexpr auto TextureTypeToString = PKAssets::PKTextureTypeToString;
+        constexpr auto TextureFormatToString = PKAssets::PKTextureFormatToString;
+        constexpr auto FilterModeToString = PKAssets::PKFilterModeToString;
+        constexpr auto WrapModeToString = PKAssets::PKWrapModeToString;
+        constexpr auto BorderColorToString = PKAssets::PKBorderColorToString;
+        constexpr auto ShaderStageToString = PKAssets::PKShaderStageToString;
+        constexpr auto ComparisonToString = PKAssets::PKComparisonToString;
+        constexpr auto CullModeToString = PKAssets::PKCullModeToString;
+        constexpr auto BlendFactorToString = PKAssets::PKBlendFactorToString;
+        constexpr auto BlendOpToString = PKAssets::PKBlendOpToString;
+        constexpr auto ColorMaskToString = PKAssets::PKColorMaskToString;
+        constexpr auto RasterModeToString = PKAssets::PKRasterModeToString;
+
         RHIAPI StringToRHIAPI(const char* str);
         QueueType StringToQueueType(const char* str);
         TextureBindMode StringToTextureBindMode(const char* str);

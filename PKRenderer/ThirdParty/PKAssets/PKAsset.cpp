@@ -391,7 +391,19 @@ namespace PKAssets
         return fallback;
     }
 
+    template<size_t size>
+    const char* FindStringFromEnum(const char* (&arr)[size], const uint32_t value, uint32_t fallback)
+    {
+        if (value >= size)
+        {
+            return arr[fallback];
+        }
+
+        return arr[value];
+    }
+
     #define DECLARE_STRING_TO_ENUM(TType, TFallback) TType StringTo##TType(const char* str) { return (TType)FindEnumIndexFromString(TType##_NAMES, str, (uint32_t)TFallback); }
+    #define DECLARE_ENUM_TO_STRING(TType, TFallback) const char* TType##ToString(TType value) { return FindStringFromEnum(TType##_NAMES, (uint32_t)value, (uint32_t)TFallback); }
 
     DECLARE_STRING_TO_ENUM(PKAssetType, PKAssetType::Invalid)
     DECLARE_STRING_TO_ENUM(PKElementType, PKElementType::Invalid)
@@ -408,7 +420,23 @@ namespace PKAssets
     DECLARE_STRING_TO_ENUM(PKBlendOp, PKBlendOp::None)
     DECLARE_STRING_TO_ENUM(PKRasterMode, PKRasterMode::Default)
 
+    DECLARE_ENUM_TO_STRING(PKAssetType, PKAssetType::Invalid)
+    DECLARE_ENUM_TO_STRING(PKElementType, PKElementType::Invalid)
+    DECLARE_ENUM_TO_STRING(PKTextureType, PKTextureType::Texture2D)
+    DECLARE_ENUM_TO_STRING(PKTextureFormat, PKTextureFormat::Invalid)
+    DECLARE_ENUM_TO_STRING(PKFilterMode, PKFilterMode::Point)
+    DECLARE_ENUM_TO_STRING(PKWrapMode, PKWrapMode::Clamp)
+    DECLARE_ENUM_TO_STRING(PKBorderColor, PKBorderColor::FloatClear)
+    DECLARE_ENUM_TO_STRING(PKShaderStage, PKShaderStage::MaxCount)
+    DECLARE_ENUM_TO_STRING(PKDescriptorType, PKDescriptorType::Invalid)
+    DECLARE_ENUM_TO_STRING(PKComparison, PKComparison::Off)
+    DECLARE_ENUM_TO_STRING(PKCullMode, PKCullMode::Off)
+    DECLARE_ENUM_TO_STRING(PKBlendFactor, PKBlendFactor::None)
+    DECLARE_ENUM_TO_STRING(PKBlendOp, PKBlendOp::None)
+    DECLARE_ENUM_TO_STRING(PKRasterMode, PKRasterMode::Default)
+
     #undef DECLARE_STRING_TO_ENUM
+    #undef DECLARE_ENUM_TO_STRING
 
     PKColorMask StringToPKColorMask(const char* str)
     {

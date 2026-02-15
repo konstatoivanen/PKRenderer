@@ -589,10 +589,9 @@ namespace PKAssets
     struct alignas(4) PKVertexAttribute
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        PKElementType type;                  // 66 bytes
-        uint16_t size = 0;                   // 68 bytes
-        uint16_t offset = 0;                 // 70 bytes
-        uint16_t stream = 0;                 // 72 bytes
+        uint8_t size = 0;                    // 65 bytes
+        uint8_t stream = 0;                  // 66 bytes
+        uint16_t offset = 0;                 // 68 bytes
     };
 
     struct alignas(4) PKSubmesh
@@ -681,6 +680,22 @@ namespace PKAssets
     PKBlendOp StringToPKBlendOp(const char* str);
     PKColorMask StringToPKColorMask(const char* str);
     PKRasterMode StringToPKRasterMode(const char* str);
+
+    const char* PKAssetTypeToString(PKAssetType value);
+    const char* PKElementTypeToString(PKElementType value);
+    const char* PKTextureTypeToString(PKTextureType value);
+    const char* PKTextureFormatToString(PKTextureFormat value);
+    const char* PKFilterModeToString(PKFilterMode value);
+    const char* PKWrapModeToString(PKWrapMode value);
+    const char* PKBorderColorToString(PKBorderColor value);
+    const char* PKShaderStageToString(PKShaderStage value);
+    const char* PKDescriptorTypeToString(PKDescriptorType value);
+    const char* PKComparisonToString(PKComparison value);
+    const char* PKCullModeToString(PKCullMode value);
+    const char* PKBlendFactorToString(PKBlendFactor value);
+    const char* PKBlendOpToString(PKBlendOp value);
+    const char* PKColorMaskToString(PKColorMask value);
+    const char* PKRasterModeToString(PKRasterMode value);
 
     PKDrawInfo PackPKDrawInfo(uint16_t material, float uniformScale, uint32_t transform, uint32_t submesh, uint32_t userdata);
 
