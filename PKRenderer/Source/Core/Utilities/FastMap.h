@@ -92,12 +92,33 @@ namespace PK
             }
         }
 
-    public:
-        bool Reserve(uint32_t count)
+        void Copy(const IFastCollectionAllocatorDynamic& other)
         {
-            if (m_capacity < count)
+            if (m_buffer)
             {
-                m_capacity = m_capacity == 0 ? count : Hash::ExpandPrime(count);
+                ContainerHelpers::ClearArray(m_values, m_count);
+                ContainerHelpers::ClearArray(m_nodes, m_count);
+                free(m_buffer);
+            }
+            
+            m_buffer = nullptr;
+            m_capacity = 0ull;
+            m_count = other.m_count;
+            m_collisions = other.m_collisions;
+            m_bucketStride = other.m_bucketStride;
+
+            Reserve(other.m_capacity);
+            ContainerHelpers::CopyArray(m_values, other.m_values, other.m_count);
+            ContainerHelpers::CopyArray(m_buckets, other.m_buckets, other.m_count);
+            ContainerHelpers::CopyArray(m_nodes, other.m_nodes, other.m_count);
+        }
+
+    public:
+        bool Reserve(uint32_t capacity)
+        {
+            if (m_capacity < capacity)
+            {
+                m_capacity = m_capacity == 0 ? capacity : Hash::ExpandPrime(capacity);
                 // Use offset 1 for bucket count & stride to have valid zeroed memory state without construction.
                 m_bucketCount = (m_bucketStride + 1u) * m_capacity - 1u;
                 
@@ -131,10 +152,10 @@ namespace PK
             return false;
         }
 
-        bool Reserve(uint32_t count, uint32_t bucketStride)
+        bool Reserve(uint32_t capacity, uint32_t bucketStride)
         {
             m_bucketStride = bucketStride > 0ull ? (bucketStride - 1ull) : 0ull;
-            return Reserve(count);
+            return Reserve(capacity);
         }
     };
 
@@ -164,6 +185,15 @@ namespace PK
             ContainerHelpers::MoveArray(m_values, other.m_values, capacity);
             m_collisions = std::exchange(other.m_collisions, 0u);
             m_count = std::exchange(other.m_count, 0u);
+        }
+
+        void Copy(const IFastCollectionAllocatorFixed& other)
+        {
+            ContainerHelpers::CopyArray(m_buckets, other.m_buckets, capacity * bucket_stride);
+            ContainerHelpers::CopyArray(m_nodes, other.m_nodes, capacity);
+            ContainerHelpers::CopyArray(m_values, other.m_values, capacity);
+            m_collisions = other.m_collisions;
+            m_count = other.m_count;
         }
 
     public: 
@@ -196,6 +226,7 @@ namespace PK
         IFastSet(uint32_t size, uint32_t bucketCountFactor) { TBase::Reserve(size, bucketCountFactor); }
         IFastSet() : IFastSet(0u, 1u) {}
         IFastSet(IFastSet&& other) noexcept { TBase::Move(std::forward<TAllocator>(other)); }
+        IFastSet(const IFastSet& other) noexcept { TBase::Copy(other); }
 
         constexpr uint32_t GetCount() const { return TBase::m_count; }
         constexpr uint32_t GetCapacity() const { return TBase::m_capacity; }
@@ -206,6 +237,7 @@ namespace PK
         const TValue& operator[](uint32_t index) const { return TBase::m_values[index]; }
         TValue& operator[](uint32_t index) { return TBase::m_values[index]; }
         IFastSet& operator=(IFastSet&& other) noexcept { TBase::Move(std::forward<TAllocator>(other)); return *this; }
+        IFastSet& operator=(const IFastSet& other) noexcept { TBase::Copy(other); return *this; }
 
         // Special case access where key is inlined into value.
         const TValue* GetValuePtr(const TValue& value) const { auto index = GetIndex(value); return index != -1 ? &TBase::m_values[index] : nullptr; }
@@ -453,6 +485,7 @@ namespace PK
         IFastMap(uint32_t size, uint32_t bucketCountFactor) { TBase::Reserve(size, bucketCountFactor); }
         IFastMap() : IFastMap(0u, 1u) {}
         IFastMap(IFastMap&& other) noexcept { TBase::Move(std::forward<TAllocator>(other)); }
+        IFastMap(const IFastMap& other) noexcept { TBase::Copy(other); }
 
         constexpr uint32_t GetCount() const { return TBase::m_count; }
         constexpr size_t GetCapacity() const { return TBase::m_capacity; }
@@ -463,6 +496,7 @@ namespace PK
         const KeyValueConst operator[](uint32_t index) const { return { TBase::m_nodes[index].key, TBase::m_values[index] }; }
         KeyValue operator[](uint32_t index) { return { TBase::m_nodes[index].key, TBase::m_values[index] }; }
         IFastMap& operator=(IFastMap&& other) noexcept { TBase::Move(std::forward<TAllocator>(other)); return *this; }
+        IFastMap& operator=(const IFastMap& other) noexcept { TBase::Copy(other); return *this; }
 
         const TValue* GetValuePtr(const TKey& key) const { auto index = GetIndex(key); return index != -1 ? &TBase::m_values[index] : nullptr; }
         TValue* GetValuePtr(const TKey& key) { auto index = GetIndex(key); return index != -1 ? &TBase::m_values[index] : nullptr; }

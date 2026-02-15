@@ -305,14 +305,14 @@ namespace PK::Math
 
     uint32_t GetAlignedSize(uint32_t value, uint32_t alignment)
     {
-        assert(alignment && ((alignment & (alignment - 1)) == 0));
-        return (value + alignment - 1u) & ~(alignment - 1u);
+        const auto remainder = value % alignment;
+        return value + (remainder ? (alignment - remainder) : 0u);
     }
 
     uint64_t GetAlignedSize(uint64_t value, uint64_t alignment)
     {
-        assert(alignment && ((alignment & (alignment - 1)) == 0));
-        return (value + alignment - 1ull) & ~(alignment - 1ull);
+        const auto remainder = value % alignment;
+        return value + (remainder ? (alignment - remainder) : 0ull);
     }
 
     uint2 GetAlignedSize(const uint2& resolution, uint32_t alignment)

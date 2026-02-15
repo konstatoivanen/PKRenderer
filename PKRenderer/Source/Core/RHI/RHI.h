@@ -63,8 +63,8 @@ namespace PK
     struct SamplerDescriptor;
     struct TextureDescriptor;
 
-    struct BufferElement;
-    struct BufferLayout;
+    struct ShaderStructElement;
+    struct ShaderStructLayout;
     struct ShaderPushConstant;
     struct ShaderPushConstantLayout;
     struct ShaderResourceElement;

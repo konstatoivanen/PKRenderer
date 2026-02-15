@@ -1,15 +1,15 @@
 #include "PrecompiledHeader.h"
 #include "Core/Utilities/Hash.h"
+#include "Core/Math/FunctionsMisc.h"
 #include "Layout.h"
 
 namespace PK
 {
-    void BufferLayout::CalculateOffsetsAndStride(bool applyOffsets)
+    void ShaderStructLayout::CalculateOffsetsAndStride()
     {
         m_hash = 0ull;
-        m_stride = 0;
-        m_alignedStride = 0;
-        m_paddedStride = 0;
+        m_stride = 0u;
+        m_stridePadded = 0u;
         auto maxAlignment = 0u;
         auto elements = data();
         auto count = size();
@@ -19,21 +19,9 @@ namespace PK
             auto& element = elements[i];
             auto alignment = RHIEnumConvert::Alignment(element.format);
 
-            if (applyOffsets)
-            {
-                element.offset = m_stride;
-            }
-
+            m_stride = Math::GetAlignedSize(m_stride, alignment);
+            element.offset = m_stride;
             m_stride += element.GetSize();
-
-            m_alignedStride = alignment * (uint32_t)glm::ceil(m_alignedStride / (float)alignment);
-
-            if (applyOffsets)
-            {
-                element.alignedOffset = m_alignedStride;
-            }
-
-            m_alignedStride += element.GetSize();
 
             if (alignment > maxAlignment)
             {
@@ -42,9 +30,9 @@ namespace PK
         }
 
         // As per std140 a structure has a base alignment equal to the largest base alignment of any of its members, rounded up to a multiple of 16.
-        maxAlignment = 16 * (uint32_t)glm::ceil(maxAlignment / 16.0f);
-        m_paddedStride = maxAlignment * (uint32_t)glm::ceil(m_alignedStride / (float)maxAlignment);
-        m_hash = Hash::FNV1AHash(elements, count * sizeof(BufferElement));
+        maxAlignment = Math::GetAlignedSize(maxAlignment, 16u);
+        m_stridePadded = Math::GetAlignedSize(m_stride, maxAlignment);
+        m_hash = Hash::FNV1AHash(elements, count * sizeof(ShaderStructElement));
     }
 
     const ShaderResourceElement* ShaderResourceLayout::TryGetElement(NameID name, uint32_t* index) const

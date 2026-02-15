@@ -52,6 +52,22 @@ namespace PK::ContainerHelpers
     }
 
     template<typename T>
+    void CopyArray(T* dst, T* src, size_t count)
+    {
+        if constexpr (std::is_trivially_copyable_v<T>)
+        {
+            memcpy(dst, src, sizeof(T) * count);
+        }
+        else
+        {
+            for (auto i = 0u; i < count; ++i)
+            {
+                dst[i] = src[i];
+            }
+        }
+    }
+
+    template<typename T>
     void ClearArray(T* values, size_t count)
     {
         // Call Destructor & zero memory. Dont call constructor to avoid allocs.

@@ -8,6 +8,6 @@ namespace PK
     {
         ShaderPropertyBlock(uint64_t capacityBytes, uint64_t capacityProperties) : PropertyBlock(capacityBytes, capacityProperties) {}
         virtual ~ShaderPropertyBlock() = 0;
-        void ReserveLayout(const BufferLayout& layout);
+        void ReserveLayout(const ShaderStructLayout& layout);
     };
 }

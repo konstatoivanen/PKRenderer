@@ -4,9 +4,9 @@
 
 namespace PK
 {
-    ConstantBuffer::ConstantBuffer(const BufferLayout& layout, const char* name) :
+    ConstantBuffer::ConstantBuffer(const ShaderStructLayout& layout, const char* name) :
         ShaderPropertyBlock(layout.GetStride(), layout.size()),
-        m_graphicsBuffer(RHI::CreateBuffer(layout.GetAlignedStride(), BufferUsage::DefaultConstant, name)),
+        m_graphicsBuffer(RHI::CreateBuffer(layout.GetStride(), BufferUsage::DefaultConstant, name)),
         m_layout(layout)
     {
         ReserveLayout(layout);
@@ -18,7 +18,7 @@ namespace PK
         cmd->UpdateBuffer(m_graphicsBuffer.get(), 0ull, m_graphicsBuffer->GetSize(), GetByteBuffer());
     }
 
-    const BufferLayout& ConstantBuffer::GetLayout() const { return m_layout; }
+    const ShaderStructLayout& ConstantBuffer::GetLayout() const { return m_layout; }
     const RHIBuffer* ConstantBuffer::GetRHI() const { return m_graphicsBuffer.get(); }
     RHIBuffer* ConstantBuffer::GetRHI() { return m_graphicsBuffer.get(); }
     ConstantBuffer::operator RHIBuffer* () { return m_graphicsBuffer.get(); }

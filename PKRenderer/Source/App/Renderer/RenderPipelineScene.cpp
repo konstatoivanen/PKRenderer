@@ -38,7 +38,7 @@ namespace PK::App
 
         auto hash = HashCache::Get();
 
-        m_constantsLayout = BufferLayout(
+        m_constantsLayout = ShaderStructLayout(
         {
             { ElementType::Float3x4, hash->pk_WorldToView },
             { ElementType::Float3x4, hash->pk_ViewToWorld },

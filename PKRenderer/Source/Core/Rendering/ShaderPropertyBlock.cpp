@@ -6,7 +6,7 @@ namespace PK
 {
     ShaderPropertyBlock::~ShaderPropertyBlock() = default;
 
-    void ShaderPropertyBlock::ReserveLayout(const BufferLayout& layout)
+    void ShaderPropertyBlock::ReserveLayout(const ShaderStructLayout& layout)
     {
         for (auto& element : layout)
         {

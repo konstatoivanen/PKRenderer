@@ -502,7 +502,7 @@ namespace PK
         VkBlendFactor GetBlendFactor(BlendFactor factor, VkBlendFactor fallback);
         VkLogicOp GetLogicOp(LogicOp op);
         VkCullModeFlagBits GetCullMode(CullMode op);
-        VkConservativeRasterizationModeEXT GetRasterMode(RasterMode mode);
+        VkConservativeRasterizationModeEXT GetRasterMode(RasterMode mode, bool allowUnderEstimation);
         VkPrimitiveTopology GetTopology(Topology topology);
         VkFrontFace GetFrontFace(FrontFace face);
         VkPipelineStageFlags GetPipelineStageFlags(VkShaderStageFlags flags);

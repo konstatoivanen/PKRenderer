@@ -54,7 +54,7 @@ namespace PK
         inline bool SupportsMaterials() const { return m_materialPropertyLayout.size() > 0; }
 
         constexpr const uint3 GetGroupSize() const { return m_shaders[0]->GetGroupSize(); }
-        constexpr const BufferLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
+        constexpr const ShaderStructLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
 
         std::string GetMetaInfo() const final;
 
@@ -64,6 +64,6 @@ namespace PK
         FastBuffer<RHIShaderScope, 4ull> m_shaders;
         Map m_map;
         FixedFunctionShaderAttributes m_attributes;
-        BufferLayout m_materialPropertyLayout;
+        ShaderStructLayout m_materialPropertyLayout;
     };
 }

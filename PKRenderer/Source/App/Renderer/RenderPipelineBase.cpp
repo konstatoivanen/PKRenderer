@@ -194,7 +194,7 @@ namespace PK::App
         }
     }
     
-    void RenderPipelineBase::ValidateViewConstantBuffer(RenderView* view, const BufferLayout& layout)
+    void RenderPipelineBase::ValidateViewConstantBuffer(RenderView* view, const ShaderStructLayout& layout)
     {
         if (view->constants == nullptr || !view->constants->GetLayout().CompareFast(layout))
         {

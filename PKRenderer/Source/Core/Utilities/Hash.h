@@ -41,7 +41,7 @@ namespace PK::Hash
     template<typename T>
     struct TMurmurHash
     {
-        std::size_t operator()(const T& k) const noexcept
+        size_t operator()(const T& k) const noexcept
         {
             constexpr uint64_t seed = 18446744073709551557ull;
             return Hash::MurmurHash(&k, sizeof(T), seed);

@@ -175,7 +175,7 @@ namespace PK
                 m_materialPropertyLayout.push_back({ prop.type, prop.name });
             }
 
-            m_materialPropertyLayout.CalculateOffsetsAndStride(true);
+            m_materialPropertyLayout.CalculateOffsetsAndStride();
         }
 
         auto pVariants = shader->variants.Get(base);
@@ -203,13 +203,11 @@ namespace PK
 
             for (const auto& prop : m_materialPropertyLayout)
             {
-                meta.append(Parse::FormatToString("   %s,%u,%u,%u,%u,%u\n", 
+                meta.append(Parse::FormatToString("   %s,%s,%u,%u\n", 
                     prop.name.c_str(), 
-                    (uint32_t)prop.format, 
+                    RHIEnumConvert::ElementTypeToString(prop.format), 
                     prop.count, 
-                    prop.location, 
-                    prop.offset, 
-                    prop.alignedOffset));
+                    prop.offset));
             }
         }
 

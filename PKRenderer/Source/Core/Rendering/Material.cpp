@@ -41,9 +41,9 @@ namespace PK
         }
     }
 
-    static void CalculateMaterialPropertySize(const BufferLayout& layout, uint32_t* outSize, uint32_t* outCount)
+    static void CalculateMaterialPropertySize(const ShaderStructLayout& layout, uint32_t* outSize, uint32_t* outCount)
     {
-        *outSize = layout.GetAlignedStride();
+        *outSize = layout.GetStride();
         *outCount = (uint32_t)layout.size();
 
         for (auto& element : layout)
@@ -183,7 +183,7 @@ namespace PK
         free(fileData);
     }
 
-    size_t Material::GetPropertyStride() const { return m_shader->GetMaterialPropertyLayout().GetPaddedStride(); }
+    size_t Material::GetPropertyStride() const { return m_shader->GetMaterialPropertyLayout().GetStridePadded(); }
 
     bool Material::SupportsKeyword(const NameID keyword) const { return m_shader->SupportsKeyword(keyword); }
 
@@ -193,7 +193,7 @@ namespace PK
     {
         auto& layout = m_shader->GetMaterialPropertyLayout();
 
-        memcpy(dst, GetByteBuffer(), layout.GetAlignedStride());
+        memcpy(dst, GetByteBuffer(), layout.GetStride());
 
         for (auto& element : layout)
         {
@@ -202,7 +202,7 @@ namespace PK
                 case ElementType::Texture2DHandle:
                 {
                     auto texIndex = textureSet->Set(*Get<RHITexture*>(element.name));
-                    memcpy(dst + element.alignedOffset, &texIndex, sizeof(int32_t));
+                    memcpy(dst + element.offset, &texIndex, sizeof(int32_t));
                 }
                 break;
                 default: break;

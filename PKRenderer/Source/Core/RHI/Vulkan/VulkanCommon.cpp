@@ -1737,13 +1737,13 @@ namespace PK
             }
         }
 
-        VkConservativeRasterizationModeEXT GetRasterMode(RasterMode mode)
+        VkConservativeRasterizationModeEXT GetRasterMode(RasterMode mode, bool allowUnderEstimation)
         {
             switch (mode)
             {
                 case RasterMode::Default: return VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
                 case RasterMode::OverEstimate: return VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT;
-                case RasterMode::UnderEstimate: return VK_CONSERVATIVE_RASTERIZATION_MODE_UNDERESTIMATE_EXT;
+                case RasterMode::UnderEstimate: return allowUnderEstimation ? VK_CONSERVATIVE_RASTERIZATION_MODE_UNDERESTIMATE_EXT : VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
                 default: return VK_CONSERVATIVE_RASTERIZATION_MODE_MAX_ENUM_EXT;
             }
         }

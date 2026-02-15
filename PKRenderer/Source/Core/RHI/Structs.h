@@ -150,7 +150,6 @@ namespace PK
         Concurrent            = 1 << 16,
 
         TypeBits = 7,
-        AlignedTypes = Storage | Constant,
         DefaultVertex = GPUOnly | TransferDst | Vertex,
         SparseVertex = DefaultVertex | Sparse,
         DefaultIndex = GPUOnly | TransferDst | Index,

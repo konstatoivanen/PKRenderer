@@ -63,6 +63,6 @@ namespace PK::App
             PassPostEffectsComposite m_passPostEffectsComposite;
             
             RHIAccelerationStructureRef m_sceneStructure;
-            BufferLayout m_constantsLayout;
+            ShaderStructLayout m_constantsLayout;
     };
 }

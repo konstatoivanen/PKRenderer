@@ -7,75 +7,68 @@
 
 namespace PK
 {
-    struct BufferElement
+    struct ShaderStructElement
     {
         NameID name = 0u;
         ElementType format = ElementType::Invalid;
-        uint8_t count = 1;
-        uint8_t location = 0;
-        uint16_t offset = 0;
-        uint16_t alignedOffset = 0;
+        uint16_t count = 1;
+        uint32_t offset = 0;
 
         uint16_t GetSize() const { return (uint16_t)RHIEnumConvert::Size(format) * count; }
 
-        BufferElement() = default;
+        ShaderStructElement() = default;
 
-        BufferElement(ElementType format, NameID name, uint8_t count = 1, uint8_t location = 0, uint16_t offset = 0, uint16_t alignedOffset = 0) :
+        ShaderStructElement(ElementType format, NameID name, uint8_t count = 1, uint16_t offset = 0) :
             name(name),
             format(format),
             count(count), 
-            location(location),
-            offset(offset),
-            alignedOffset(alignedOffset)
+            offset(offset)
         {
         }
 
-        constexpr bool operator== (const BufferElement& b)
+        constexpr bool operator== (const ShaderStructElement& b)
         {
-            return name == b.name && format == b.format && count == b.count && location == b.location && offset == b.offset && alignedOffset == b.alignedOffset;
+            return name == b.name && format == b.format && count == b.count && offset == b.offset;
         }
     };
 
-    struct BufferElementNameHash
+    struct ShaderStructElementHash
     {
-        size_t operator()(const BufferElement& k) const noexcept
+        size_t operator()(const ShaderStructElement& k) const noexcept
         {
             return (size_t)k.name.identifier;
         }
     };
 
-    struct BufferLayout : public std::vector<BufferElement>
+    struct ShaderStructLayout : public std::vector<ShaderStructElement>
     {
-        BufferLayout() {}
+        ShaderStructLayout() {}
 
-        BufferLayout(BufferElement* elements, size_t count, bool applyOffsets = true) : std::vector<BufferElement>(elements, elements + count)
+        ShaderStructLayout(ShaderStructElement* elements, size_t count) : std::vector<ShaderStructElement>(elements, elements + count)
         {
-            CalculateOffsetsAndStride(applyOffsets);
+            CalculateOffsetsAndStride();
         }
 
-        BufferLayout(std::initializer_list<BufferElement> elements, bool applyOffsets = true) : std::vector<BufferElement>(elements)
+        ShaderStructLayout(std::initializer_list<ShaderStructElement> elements) : std::vector<ShaderStructElement>(elements)
         {
-            CalculateOffsetsAndStride(applyOffsets);
+            CalculateOffsetsAndStride();
         }
 
-        BufferLayout(std::vector<BufferElement> elements, bool applyOffsets = true) : std::vector<BufferElement>(elements)
+        ShaderStructLayout(std::vector<ShaderStructElement> elements) : std::vector<ShaderStructElement>(elements)
         {
-            CalculateOffsetsAndStride(applyOffsets);
+            CalculateOffsetsAndStride();
         }
     
-        inline uint32_t GetStride(BufferUsage usage) const { return (usage & BufferUsage::AlignedTypes) != 0 ? m_alignedStride : m_stride; }
         constexpr inline uint32_t GetStride() const { return m_stride; }
-        constexpr inline uint32_t GetAlignedStride() const { return m_alignedStride; }
-        constexpr inline uint32_t GetPaddedStride() const { return m_paddedStride; }
+        constexpr inline uint32_t GetStridePadded() const { return m_stridePadded; }
         constexpr inline uint64_t GetHash() const { return m_hash; }
-        constexpr inline bool CompareFast(const BufferLayout& other) const { return m_stride == other.m_stride && m_hash == other.m_hash; }
-        void CalculateOffsetsAndStride(bool applyOffsets);
+        constexpr inline bool CompareFast(const ShaderStructLayout& other) const { return m_stride == other.m_stride && m_hash == other.m_hash; }
+        void CalculateOffsetsAndStride();
 
     private:
         uint64_t m_hash = 0ull;
         uint32_t m_stride = 0;
-        uint32_t m_alignedStride = 0;
-        uint32_t m_paddedStride = 0;
+        uint32_t m_stridePadded = 0;
     };
 
 

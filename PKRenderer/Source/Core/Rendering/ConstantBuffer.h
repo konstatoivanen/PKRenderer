@@ -6,11 +6,11 @@ namespace PK
 {
     struct ConstantBuffer : public ShaderPropertyBlock
     {
-        ConstantBuffer(const BufferLayout& layout, const char* name);
+        ConstantBuffer(const ShaderStructLayout& layout, const char* name);
 
         void FlushBuffer(RHICommandBuffer* cmd);
 
-        const BufferLayout& GetLayout() const;
+        const ShaderStructLayout& GetLayout() const;
         const RHIBuffer* GetRHI() const;
         RHIBuffer* GetRHI();
         operator RHIBuffer* ();
@@ -18,6 +18,6 @@ namespace PK
 
     private:
         RHIBufferRef m_graphicsBuffer;
-        BufferLayout m_layout;
+        ShaderStructLayout m_layout;
     };
 }
