@@ -105,8 +105,8 @@ namespace PK
         vkDestroySurfaceKHR(instance, temporarySurface, nullptr);
 
         VkDeviceCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
-        createInfo.queueCreateInfoCount = (uint32_t)queueInitializer.createInfos.size();
-        createInfo.pQueueCreateInfos = queueInitializer.createInfos.data();
+        createInfo.queueCreateInfoCount = queueInitializer.queueCount;
+        createInfo.pQueueCreateInfos = queueInitializer.createInfos;
         createInfo.pEnabledFeatures = nullptr;
         createInfo.enabledExtensionCount = (uint32_t)properties.deviceExtensions.count;
         createInfo.ppEnabledExtensionNames = properties.deviceExtensions.data;

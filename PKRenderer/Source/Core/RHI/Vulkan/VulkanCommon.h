@@ -517,7 +517,6 @@ namespace PK
 
     void VulkanBindExtensionMethods(VkInstance instance, bool enableDebugNames, bool enableDebugLabels);
 
-    std::vector<VkQueueFamilyProperties> VulkanGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice device);
     VulkanPhysicalDeviceProperties VulkanGetPhysicalDeviceProperties(VkPhysicalDevice device);
     VulkanExclusiveFullscreenInfo VulkanGetSwapchainFullscreenInfo(const void* nativeMonitor, bool fullScreen);
 

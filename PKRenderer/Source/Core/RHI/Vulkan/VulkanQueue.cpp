@@ -10,10 +10,11 @@ namespace PK
     {
         VkPhysicalDevice physicalDevice;
         VkSurfaceKHR surface;
-        std::vector<VkQueueFamilyProperties>* families;
-        std::vector<VkDeviceQueueCreateInfo>* createInfos;
-        uint32_t* queueFamilies;
-        uint32_t queueCount = 0u;
+        const VkQueueFamilyProperties* properties;
+        VkDeviceQueueCreateInfo* createInfos;
+        uint32_t* selectedIndices;
+        uint32_t familyCount;
+        uint32_t selectedCount;
     };
 
     static uint32_t GetQueueIndex(QueueFindContext& ctx,
@@ -27,41 +28,38 @@ namespace PK
         auto existingIndex = 0xFFFFFFFF;
         auto heuristic = 0u;
 
-        for (auto i = 0u; i < ctx.queueCount; ++i)
+        for (auto queueIndex = 0u; queueIndex < ctx.selectedCount; ++queueIndex)
         {
-            const auto familyIndex = ctx.queueFamilies[i];
-            const auto& family = ctx.families->at(familyIndex);
+            const auto familyIndex = ctx.selectedIndices[queueIndex];
+            const auto& properties = ctx.properties[familyIndex];
             auto presentSupport = VulkanIsPresentSupported(ctx.physicalDevice, familyIndex, ctx.surface);
 
-            if ((family.queueFlags & requiredFlags) != requiredFlags ||
-                (!presentSupport && requirePresent))
+            if ((properties.queueFlags & requiredFlags) != requiredFlags || (!presentSupport && requirePresent))
             {
                 continue;
             }
 
-            auto value = Math::CountBits(family.queueFlags & optionalFlags) + (presentSupport && optionalPresent ? 2 : 1);
+            auto value = Math::CountBits(properties.queueFlags & optionalFlags) + (presentSupport && optionalPresent ? 2 : 1);
 
             if (value > heuristic)
             {
                 heuristic = value;
                 selectedFamily = familyIndex;
-                existingIndex = i;
+                existingIndex = queueIndex;
             }
         }
 
-        for (auto i = 0u; i < ctx.families->size(); ++i)
+        for (auto familyIndex = 0u; familyIndex < ctx.familyCount; ++familyIndex)
         {
-            auto& family = ctx.families->at(i);
-            auto presentSupport = VulkanIsPresentSupported(ctx.physicalDevice, i, ctx.surface);
+            auto& properties = ctx.properties[familyIndex];
+            auto presentSupport = VulkanIsPresentSupported(ctx.physicalDevice, familyIndex, ctx.surface);
 
-            if ((family.queueFlags & requiredFlags) != requiredFlags ||
-                (*ctx.createInfos)[i].queueCount > 0 ||
-                (!presentSupport && requirePresent))
+            if ((properties.queueFlags & requiredFlags) != requiredFlags || ctx.createInfos[familyIndex].queueCount > 0u || (!presentSupport && requirePresent))
             {
                 continue;
             }
 
-            auto value = Math::CountBits(family.queueFlags & optionalFlags) + (presentSupport && optionalPresent ? 2 : 1);
+            auto value = Math::CountBits(properties.queueFlags & optionalFlags) + (presentSupport && optionalPresent ? 2 : 1);
 
             if (preferSeparate)
             {
@@ -71,7 +69,7 @@ namespace PK
             if (value > heuristic)
             {
                 heuristic = value;
-                selectedFamily = i;
+                selectedFamily = familyIndex;
                 existingIndex = 0xFFFFFFFF;
             }
         }
@@ -83,38 +81,41 @@ namespace PK
             return existingIndex;
         }
 
-        (*ctx.createInfos)[selectedFamily].queueCount = 1;
-        ctx.queueFamilies[ctx.queueCount] = selectedFamily;
-        return ctx.queueCount++;
+        ctx.createInfos[selectedFamily].queueCount = 1;
+        ctx.selectedIndices[ctx.selectedCount] = selectedFamily;
+        return ctx.selectedCount++;
     }
 
     VulkanQueueSetInitializer::VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
     {
-        createInfos.clear();
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+        VkQueueFamilyProperties* queueFamilyProperties = PK_STACK_ALLOC(VkQueueFamilyProperties, queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilyProperties);
 
-        familyProperties = VulkanGetPhysicalDeviceQueueFamilyProperties(physicalDevice);
+        VkDeviceQueueCreateInfo* queueCreateInfos = PK_STACK_ALLOC(VkDeviceQueueCreateInfo, queueFamilyCount);
 
         QueueFindContext context;
-        context.families = &familyProperties;
         context.physicalDevice = physicalDevice;
         context.surface = surface;
-        context.queueFamilies = queueFamilies;
-        context.createInfos = &createInfos;
-        context.queueCount = 0u;
+        context.properties = queueFamilyProperties;
+        context.selectedIndices = queueFamilies;
+        context.createInfos = queueCreateInfos;
+        context.familyCount = queueFamilyCount;
+        context.selectedCount = 0u;
 
         {
-            PK_LOG_INFO_SCOPE("VulkanQueueSet.Initializer: Found '%i' Physical Device Queue Families:", context.families->size());
+            PK_LOG_INFO_SCOPE("VulkanQueueSet.Initializer: Found '%u' Physical Device Queue Families:", queueFamilyCount);
 
-            for (auto i = 0u; i < context.families->size(); ++i)
+            for (auto i = 0u; i < queueFamilyCount; ++i)
             {
-                VkDeviceQueueCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
-                createInfo.flags = 0u;
-                createInfo.queueFamilyIndex = i;
-                createInfo.queueCount = 0u;
-                createInfo.pQueuePriorities = priorities;
-                createInfos.push_back(createInfo);
-
-                auto& props = context.families->at(i);
+                queueCreateInfos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+                queueCreateInfos[i].pNext = nullptr;
+                queueCreateInfos[i].flags = 0u;
+                queueCreateInfos[i].queueFamilyIndex = i;
+                queueCreateInfos[i].queueCount = 0u;
+                queueCreateInfos[i].pQueuePriorities = priorities;
+                auto& props = context.properties[i];
                 PK_LOG_INFO("Family: %i, NumQueues: %i, Flags: %s", i, props.queueCount, VulkanStr_VkQueueFlags(props.queueFlags));
             }
 
@@ -129,22 +130,26 @@ namespace PK
         typeIndices[(uint32_t)QueueType::Present] = GetQueueIndex(context, maskGraphics, maskTransfer, true, false, false);
         typeIndices[(uint32_t)QueueType::Compute] = GetQueueIndex(context, maskCompute, maskTransfer, false, false, true);
         typeIndices[(uint32_t)QueueType::Transfer] = GetQueueIndex(context, maskTransfer, 0u, false, false, true);
-        queueCount = context.queueCount;
+        queueCount = context.selectedCount;
 
-        for (auto i = (int32_t)createInfos.size() - 1; i >= 0; --i)
+        for (auto i = 0u; i < context.selectedCount; ++i)
         {
-            if (createInfos.at(i).queueCount == 0)
-            {
-                createInfos.erase(createInfos.begin() + i);
-            }
+            createInfos[i] = queueCreateInfos[context.selectedIndices[i]];
+            familyProperties[i] = queueFamilyProperties[context.selectedIndices[i]];
+        }
+
+        // This is just for debug naming purposes
+        for (auto i = (int32_t)QueueType::MaxCount; i >= 0; --i)
+        {
+            names[typeIndices[i]] = RHIEnumConvert::QueueTypeToString((QueueType)i);
         }
 
         {
-            PK_LOG_INFO_SCOPE("VulkanQueueSet.Initializer: Selected '%i' Queues From '%i' Physical Device Queue Families:", queueCount, createInfos.size());
+            PK_LOG_INFO_SCOPE("VulkanQueueSet.Initializer: Selected '%u' Queues From '%u' Physical Device Queue Families:", queueCount, queueFamilyCount);
 
             for (auto i = 0u; i < queueCount; ++i)
             {
-                PK_LOG_INFO("Family: %i", queueFamilies[i]);
+                PK_LOG_INFO("Family: %u", queueFamilies[i]);
             }
 
             PK_LOG_NEWLINE();
@@ -431,24 +436,15 @@ namespace PK
     VulkanQueueSet::VulkanQueueSet(VkDevice device, const VulkanQueueSetInitializer& initializer, const VulkanServiceContext& services)
     {
         auto servicesCopy = services;
-        m_selectedFamilies.count = initializer.queueCount;
 
-        // This is just for debug naming purposes
-        QueueType queueTypes[(uint32_t)QueueType::MaxCount]{};
-        for (auto i = (int32_t)QueueType::MaxCount; i >= 0; --i)
-        {
-            queueTypes[initializer.typeIndices[i]] = (QueueType)i;
-        }
+        m_selectedFamilies.count = initializer.queueCount;
+        memcpy(m_selectedFamilies.indices, initializer.queueFamilies, sizeof(initializer.queueFamilies));
+        memcpy(m_queueIndices, initializer.typeIndices, sizeof(m_queueIndices));
 
         for (auto i = 0u; i < initializer.queueCount; ++i)
         {
-            auto& familyProps = initializer.familyProperties.at(initializer.queueFamilies[i]);
-            auto name = RHIEnumConvert::QueueTypeToString(queueTypes[i]);
-            m_queues[i] = CreateUnique<VulkanQueue>(device, familyProps.queueFlags, initializer.queueFamilies[i], servicesCopy, 0, name);
-            m_selectedFamilies.indices[i] = initializer.queueFamilies[i];
+            m_queues[i] = CreateUnique<VulkanQueue>(device, initializer.familyProperties[i].queueFlags, initializer.queueFamilies[i], servicesCopy, 0, initializer.names[i]);
         }
-
-        memcpy(m_queueIndices, initializer.typeIndices, sizeof(m_queueIndices));
     }
 
     VkResult VulkanQueueSet::SubmitCurrent(QueueType type, VkSemaphore* outSignal)

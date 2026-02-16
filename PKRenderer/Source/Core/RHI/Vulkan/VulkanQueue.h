@@ -11,9 +11,11 @@ namespace PK
         float priorities[(uint32_t)QueueType::MaxCount] = { 1.0f, 1.0f, 1.0f, 1.0f };
         uint32_t queueFamilies[(uint32_t)QueueType::MaxCount]{};
         uint32_t typeIndices[(uint32_t)QueueType::MaxCount]{};
+        const char* names[(uint32_t)QueueType::MaxCount]{};
+        VkDeviceQueueCreateInfo createInfos[(uint32_t)QueueType::MaxCount]{};
+        VkQueueFamilyProperties familyProperties[(uint32_t)QueueType::MaxCount]{};
         uint32_t queueCount = 0u;
-        std::vector<VkDeviceQueueCreateInfo> createInfos;
-        std::vector<VkQueueFamilyProperties> familyProperties;
+
         VulkanQueueSetInitializer(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
     };
 
