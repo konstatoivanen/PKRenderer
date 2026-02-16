@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/FenceRef.h"
+#include "Core/Utilities/FastList.h"
 
 namespace PK
 {
@@ -17,22 +18,19 @@ namespace PK
                 FenceRef fence{};
             };
 
-            Disposer() { m_disposables.reserve(256u); }
+            Disposer(size_t initialCapacity);
             ~Disposer();
 
             template<typename T>
             void Dispose(T* disposable, const FenceRef& releaseFence)
             {
-                if (disposable != nullptr)
-                {
-                    m_disposables.push_back({ nullptr, disposable, []([[maybe_unused]] void* c, void* v) { delete reinterpret_cast<T*>(v); }, releaseFence });
-                }
+                Dispose(nullptr, disposable, []([[maybe_unused]] void* c, void* v) { delete reinterpret_cast<T*>(v); }, releaseFence);
             }
 
             void Dispose(void* context, void* disposable, Destructor destructor, const FenceRef& releaseFence);
             void Prune();
 
         private:
-            std::vector<DisposeHandle> m_disposables;
+            FastList<DisposeHandle> m_disposables;
     };
 }

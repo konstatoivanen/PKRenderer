@@ -4,25 +4,34 @@
 
 namespace PK
 {
-    ConstantBuffer::ConstantBuffer(const ShaderPropertyLayout& layout, const char* name) :
-        ShaderPropertyBlock(layout.GetStride(), layout.GetCount()),
-        m_rhiBuffer(RHI::CreateBuffer(layout.GetStride(), BufferUsage::DefaultConstant, name)),
-        m_layout(layout)
+    ConstantBuffer::ConstantBuffer(const ShaderPropertyLayout& layout, const char* name) : 
+        ShaderPropertyBlock(layout),
+        m_rhiBuffer(RHI::CreateBuffer(GetLayout().GetStridePadded(), BufferUsage::DefaultConstant, name))
     {
-        ReserveLayout(layout);
-        FreezeLayout();
+    }
+
+    ConstantBuffer::ConstantBuffer(ShaderProperty* elements, size_t count, const char* name) :
+        ShaderPropertyBlock(elements, count),
+        m_rhiBuffer(RHI::CreateBuffer(GetLayout().GetStridePadded(), BufferUsage::DefaultConstant, name))
+    {
+    }
+
+    ConstantBuffer::ConstantBuffer(std::initializer_list<ShaderProperty> elements, const char* name) :
+        ShaderPropertyBlock(elements),
+        m_rhiBuffer(RHI::CreateBuffer(GetLayout().GetStridePadded(), BufferUsage::DefaultConstant, name))
+    {
     }
 
     void ConstantBuffer::FlushBuffer(RHICommandBuffer* cmd)
     {
-        cmd->UpdateBuffer(m_rhiBuffer.get(), 0ull, m_rhiBuffer->GetSize(), GetByteBuffer());
+        cmd->UpdateBuffer(m_rhiBuffer.get(), 0ull, m_rhiBuffer->GetSize(), GetData());
     }
 
-    const ShaderPropertyLayout& ConstantBuffer::GetLayout() const { return m_layout; }
     const RHIBuffer* ConstantBuffer::GetRHI() const { return m_rhiBuffer.get(); }
     RHIBuffer* ConstantBuffer::GetRHI() { return m_rhiBuffer.get(); }
     ConstantBuffer::operator RHIBuffer* () { return m_rhiBuffer.get(); }
     ConstantBuffer::operator const RHIBuffer* () const { return m_rhiBuffer.get(); }
+
 
     ConstantBufferTransient::ConstantBufferTransient() : m_rhiBuffer(nullptr), m_layoutHash(0ull) {}
 

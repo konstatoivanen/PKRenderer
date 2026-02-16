@@ -1,6 +1,7 @@
 #pragma once
-#include "Core/Utilities/PropertyBlock.h"
-#include "Core/RHI/Layout.h"
+#include "Core/Utilities/FastBuffer.h"
+#include "Core/Utilities/FastMap.h"
+#include "Core/RHI/Structs.h"
 
 namespace PK
 {
@@ -91,11 +92,15 @@ namespace PK
         uint8_t* m_memory = nullptr;
     };
 
-    // @TODO rewrite this to use same pattern as materials.
-    struct ShaderPropertyBlock : public PropertyBlock
+    struct ShaderPropertyBlock : public NoCopy, public ShaderPropertyWriter
     {
-        ShaderPropertyBlock(uint64_t capacityBytes, uint64_t capacityProperties) : PropertyBlock(capacityBytes, capacityProperties) {}
-        virtual ~ShaderPropertyBlock() = 0;
-        void ReserveLayout(const ShaderPropertyLayout& layout);
+        ShaderPropertyBlock(const ShaderPropertyLayout& layout);
+        ShaderPropertyBlock(ShaderProperty* elements, size_t count);
+        ShaderPropertyBlock(std::initializer_list<ShaderProperty> elements);
+        constexpr const ShaderPropertyLayout& GetLayout() const { return m_layout; }
+        constexpr const void* GetData() const { return m_properties.GetData(); }
+    private:
+        ShaderPropertyLayout m_layout;
+        FastBuffer<uint8_t> m_properties;
     };
 }

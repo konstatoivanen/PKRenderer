@@ -312,10 +312,7 @@ namespace PK
 
     void VulkanAccelerationStructure::EndWrite()
     {
-        if (m_instanceCount <= 0)
-        {
-            PK_LOG_WARNING("VulkanAccelerationStructure.EndWrite: write has 0 instances!");
-        }
+        PK_DEBUG_WARNING_ASSERT(m_instanceCount > 0, "VulkanAccelerationStructure.EndWrite: write has 0 instances!");
 
         ValidateResources();
 

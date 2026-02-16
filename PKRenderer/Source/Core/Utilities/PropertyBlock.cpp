@@ -98,7 +98,7 @@ namespace PK
             movingValueIndex = m_properties[movingValueIndex].previous;
         }
 
-        if (m_fixedLayout || size <= 0ull)
+        if (size <= 0ull)
         {
             return ~0u;
         }

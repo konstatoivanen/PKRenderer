@@ -7,10 +7,11 @@ namespace PK
     struct ConstantBuffer : public ShaderPropertyBlock
     {
         ConstantBuffer(const ShaderPropertyLayout& layout, const char* name);
+        ConstantBuffer(ShaderProperty* elements, size_t count, const char* name);
+        ConstantBuffer(std::initializer_list<ShaderProperty> elements, const char* name);
 
         void FlushBuffer(RHICommandBuffer* cmd);
 
-        const ShaderPropertyLayout& GetLayout() const;
         const RHIBuffer* GetRHI() const;
         RHIBuffer* GetRHI();
         operator RHIBuffer* ();
@@ -18,7 +19,6 @@ namespace PK
 
     private:
         RHIBufferRef m_rhiBuffer;
-        ShaderPropertyLayout m_layout;
     };
 
     struct ConstantBufferTransient : public ShaderPropertyWriter

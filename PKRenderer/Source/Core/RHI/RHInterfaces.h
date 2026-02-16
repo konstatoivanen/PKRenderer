@@ -166,7 +166,7 @@ namespace PK
         virtual void Clear(RHIBuffer* dst, size_t offset, size_t size, uint32_t value) = 0;
         virtual void Clear(RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value) = 0;
 
-        virtual void UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, void* data) = 0;
+        virtual void UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, const void* data) = 0;
         virtual void CopyBuffer(RHIBuffer* dst, RHIBuffer* src, size_t srcOffset, size_t dstOffset, size_t size) = 0;
         virtual void* BeginBufferWrite(RHIBuffer* buffer, size_t offset, size_t size) = 0;
         virtual void EndBufferWrite(RHIBuffer* buffer) = 0;

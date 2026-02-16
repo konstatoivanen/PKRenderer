@@ -404,7 +404,7 @@ namespace PK
     }
 
 
-    void VulkanCommandBuffer::UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, void* data)
+    void VulkanCommandBuffer::UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, const void* data)
     {
         EndRenderPass();
         MarkLastCommandStage(VK_PIPELINE_STAGE_TRANSFER_BIT);

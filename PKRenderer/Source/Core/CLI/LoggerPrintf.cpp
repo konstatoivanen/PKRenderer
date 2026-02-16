@@ -55,8 +55,7 @@ namespace PK
     void LoggerPrintf::NewLine()
     {
         SetColor(PK_LOG_COLOR_INFO);
-        printf("\n");
-        m_lineClearLength = 0;
+        putchar('\n');
     }
 
     void LoggerPrintf::LogV(LogSeverity severity, LogColor color, const char* format, va_list args)
@@ -65,8 +64,7 @@ namespace PK
         {
             SetColor(color);
             LogIndent();
-            auto lineLength = vprintf(format, args);
-            LogLineRemainder(lineLength);
+            vprintf(format, args);
             NewLine();
         }
     }
@@ -87,9 +85,9 @@ namespace PK
             SetColor(LogColor::PK_LOG_COLOR_BLACK);
             NewLine();
             SetColor(color);
-            printf("--------------------PK BEGIN ERROR--------------------\n");
-            vprintf(format, args);
-            printf("\n--------------------PK END ERROR--------------------");
+            puts("--------------------PK BEGIN ERROR--------------------");
+            vfprintf(stderr, format, args);
+            puts("\n--------------------PK END ERROR--------------------");
             SetColor(LogColor::PK_LOG_COLOR_BLACK);
             NewLine();
         }
@@ -108,33 +106,18 @@ namespace PK
 
         for (auto i = 0u; i < PK_LOG_LVL_COUNT; ++i)
         {
-            if ((m_severityMask & (1 << i)) != 0)
+            if ((m_severityMask & (1u << i)) != 0u)
             {
                 indendation += m_indentation[i];
             }
         }
 
-        if (indendation > 0)
+        if (indendation > 0u)
         {
             char spaces[MAX_INDENT * 4u + 1u];
             memset(spaces, ' ', sizeof(spaces));
             spaces[indendation * 4u] = 0;
-            printf("%s", spaces);
-        }
-    }
-
-    void LoggerPrintf::LogLineRemainder(int32_t linelength)
-    {
-        auto remainder = m_lineClearLength - linelength;
-
-        if (m_lineClearLength < linelength)
-        {
-            m_lineClearLength = linelength;
-        }
-
-        if (remainder > 0)
-        {
-            printf("%s", std::string(remainder, ' ').c_str());
+            fputs(spaces, stdout);
         }
     }
 }

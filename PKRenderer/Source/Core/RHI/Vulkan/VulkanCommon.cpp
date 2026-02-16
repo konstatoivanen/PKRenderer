@@ -1961,17 +1961,6 @@ namespace PK
         pkfn_vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vkGetInstanceProcAddr(instance, "vkWaitForPresentKHR");
     }
 
-    std::vector<VkPhysicalDevice> VulkanGetPhysicalDevices(VkInstance instance)
-    {
-        uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-
-        std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-
-        return devices;
-    }
-
     std::vector<VkQueueFamilyProperties> VulkanGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice device)
     {
         uint32_t queueFamilyCount = 0;
@@ -2140,11 +2129,16 @@ namespace PK
 
     void VulkanSelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, const VulkanPhysicalDeviceRequirements& requirements, VkPhysicalDevice* selectedDevice)
     {
-        auto devices = VulkanGetPhysicalDevices(instance);
+        uint32_t deviceCount = 0u;
+        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+        VkPhysicalDevice* devices = PK_STACK_ALLOC(VkPhysicalDevice, deviceCount);
+        vkEnumeratePhysicalDevices(instance, &deviceCount, devices);
+
         *selectedDevice = VK_NULL_HANDLE;
 
-        for (auto& device : devices)
+        for (auto deviceIndex = 0u; deviceIndex < deviceCount; ++deviceIndex)
         {
+            const auto device = devices[deviceIndex];
             auto properties = VulkanGetPhysicalDeviceProperties(device);
             auto versionMajor = VK_API_VERSION_MAJOR(properties.core.apiVersion);
             auto versionMinor = VK_API_VERSION_MINOR(properties.core.apiVersion);
@@ -2159,7 +2153,11 @@ namespace PK
                 continue;
             }
 
-            auto queueFamilies = VulkanGetPhysicalDeviceQueueFamilyProperties(device);
+            uint32_t queueFamilyCount = 0;
+            vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+            VkQueueFamilyProperties* queueFamilies = PK_STACK_ALLOC(VkQueueFamilyProperties, queueFamilyCount);
+            vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies);
+
             auto extensionSupported = VulkanValidatePhysicalDeviceExtensions(device, requirements.deviceExtensions, requirements.deviceExtensionCount);
             auto swapChainSupported = false;
 
@@ -2177,11 +2175,10 @@ namespace PK
             auto hasPresent = false;
             auto queueMask = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
 
-            for (auto i = 0u; i < queueFamilies.size(); ++i)
+            for (auto familyIndex = 0u; familyIndex < queueFamilyCount; ++familyIndex)
             {
-                auto& family = queueFamilies.at(i);
-                queueMask &= ~family.queueFlags;
-                hasPresent |= VulkanIsPresentSupported(device, i, surface);
+                queueMask &= ~queueFamilies[familyIndex].queueFlags;
+                hasPresent |= VulkanIsPresentSupported(device, familyIndex, surface);
             }
 
             if (properties.core.deviceType != requirements.deviceType ||
@@ -2202,7 +2199,7 @@ namespace PK
             }
 
             {
-                PK_LOG_INFO_FUNC("from '%i' Physical Devices:", devices.size());
+                PK_LOG_INFO_FUNC("from '%u' Physical Devices:", deviceCount);
                 PK_LOG_INFO("Name: %s", properties.core.deviceName);
                 PK_LOG_INFO("Vendor: %i", properties.core.vendorID);
                 PK_LOG_INFO("Device: %i", properties.core.deviceID);

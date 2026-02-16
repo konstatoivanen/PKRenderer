@@ -4,6 +4,7 @@
 #include "Core/Utilities/PropertyBlock.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"
+#include "Core/RHI/Layout.h"
 #include "ShaderAsset.h"
 
 namespace PK

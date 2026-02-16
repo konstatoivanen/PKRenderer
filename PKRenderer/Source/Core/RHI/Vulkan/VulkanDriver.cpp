@@ -134,7 +134,7 @@ namespace PK
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
         VK_ASSERT_RESULT_CTX(vmaCreateAllocator(&allocatorInfo, &allocator), "Failed to create a VMA allocator!");
 
-        disposer.New();
+        disposer.New(512u);
         stagingBufferCache.New(disposer.get(), device, allocator, properties.gcPruneDelay);
         pipelineCache.New(device, physicalDeviceProperties, properties.workingDirectory, properties.discardPipelineCache, properties.gcPruneDelay);
         samplerCache.New(device);
@@ -183,12 +183,12 @@ namespace PK
         vkDeviceWaitIdle(device);
 
         descriptorCache.Delete();
-        disposer.Delete();
         samplerCache.Delete();
         pipelineCache.Delete();
         stagingBufferCache.Delete();
         layoutCache.Delete();
         queues.Delete();
+        disposer.Delete();
 
         vmaDestroyAllocator(allocator);
         vkDestroyDevice(device, nullptr);

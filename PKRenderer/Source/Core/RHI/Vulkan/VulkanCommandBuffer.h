@@ -47,7 +47,7 @@ namespace PK
         void Clear(RHIBuffer* dst, size_t offset, size_t size, uint32_t value) final;
         void Clear(RHITexture* dst, const TextureViewRange& range, const TextureClearValue& value) final;
 
-        void UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, void* data) final;
+        void UpdateBuffer(RHIBuffer* dst, size_t offset, size_t size, const void* data) final;
         void CopyBuffer(RHIBuffer* dst, RHIBuffer* src, size_t srcOffset, size_t dstOffset, size_t size) final;
         void* BeginBufferWrite(RHIBuffer* buffer, size_t offset, size_t size) final;
         void EndBufferWrite(RHIBuffer* buffer) final;

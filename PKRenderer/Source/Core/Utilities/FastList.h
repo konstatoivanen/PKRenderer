@@ -30,8 +30,8 @@ namespace PK
             m_data.buffer = nullptr;
         }
 
-        T* GetData() { return reinterpret_cast<T*>(IsSmallBuffer(m_count) ? &m_data : m_data.buffer); }
-        T const* GetData() const { return reinterpret_cast<const T*>(IsSmallBuffer(m_count) ? &m_data : m_data.buffer); }
+        T* GetData() { return reinterpret_cast<T*>(IsSmallBuffer(m_capacity) ? &m_data : m_data.buffer); }
+        T const* GetData() const { return reinterpret_cast<const T*>(IsSmallBuffer(m_capacity) ? &m_data : m_data.buffer); }
 
         constexpr size_t GetCount() const { return m_count; }
         constexpr size_t GetSize() const { return m_count * sizeof(T); }
@@ -67,7 +67,7 @@ namespace PK
         {
             if (this != &other)
             {
-                if (!IsSmallBuffer(m_count))
+                if (!IsSmallBuffer(m_capacity))
                 {
                     free(m_data.buffer);
                 }
@@ -148,7 +148,7 @@ namespace PK
 
         bool RemoveAt(uint32_t i)
         {
-            if (i >= m_count)
+            if (i < m_count)
             {
                 return false;
             }
@@ -165,6 +165,28 @@ namespace PK
             }
 
             return true;
+        }
+
+        bool UnorderedRemoveAt(uint32_t i)
+        {
+            if (i >= m_count)
+            {
+                return false;
+            }
+
+            if (i == --m_count)
+            {
+                (GetData() + i)->~T();
+                return true;
+            }
+
+            if (m_count > 0u)
+            {
+                GetData()[i] = std::move(GetData()[m_count]);
+                return true;
+            }
+
+            return false;
         }
 
     private:

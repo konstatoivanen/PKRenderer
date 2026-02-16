@@ -35,11 +35,6 @@ namespace PK
             void Copy(PropertyBlock& from);
             void Clear();
             void ClearAndReserve(uint64_t capacityBytes, uint64_t capacityProperties);
-        
-            inline void FreezeLayout() 
-            {
-                m_fixedLayout = true; 
-            }
 
             template<typename T>
             const T* Get(const uint32_t hashId, size_t* size) const
@@ -148,6 +143,5 @@ namespace PK
             uint32_t m_propertyCapacity = 0u;
             uint32_t m_propertyCount = 0u;
             uint32_t m_bucketCount = 1u;
-            bool m_fixedLayout = false;
     };
 }
