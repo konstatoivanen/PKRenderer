@@ -68,9 +68,11 @@ namespace PK
 #if PK_DEBUG
 #define PK_DEBUG_THROW_ASSERT(value, ...) { if(!(value)) { PK_THROW_ERROR(__VA_ARGS__); } }
 #define PK_DEBUG_WARNING_ASSERT(value, ...) { if(!(value)) { PK_LOG_WARNING(__VA_ARGS__); } }
+#define PK_DEBUG_WARNING(...) PK_LOG_WARNING(__VA_ARGS__)
 #else
 #define PK_DEBUG_THROW_ASSERT(value, ...)
 #define PK_DEBUG_WARNING_ASSERT(value, ...)
+#define PK_DEBUG_WARNING(...)
 #endif
 
 #define PK_LOG_TIMER(name) volatile auto PK_LOG_UNIQUE_NAME(pk_log_scope_timer_) = PK::LogScopeTimer(name)

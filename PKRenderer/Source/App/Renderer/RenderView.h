@@ -3,6 +3,7 @@
 #include "Core/Utilities/FixedArray.h"
 #include "Core/Timers/TimeFrameInfo.h"
 #include "Core/Rendering/RenderingFwd.h"
+#include "Core/Rendering/ConstantBuffer.h"
 #include "App/Renderer/EntityEnums.h"
 #include "App/Renderer/RenderViewSettings.h"
 
@@ -92,7 +93,7 @@ namespace PK::App
     {
         IRenderViewResources* resources = nullptr;
 
-        ConstantBufferRef constants = nullptr;
+        ConstantBufferTransient constants{};
         GBuffersFull gbuffers{};
         RenderViewSettings settings{};
 
@@ -108,6 +109,8 @@ namespace PK::App
 
         float4x4 worldToView;
         float4x4 viewToClip;
+        float4x4 worldToViewPrev;
+        float4x4 viewToClipPrev;
         float4x4 worldToClip;
         float4 forwardPlane;
         float3 position;

@@ -13,7 +13,7 @@ namespace std
 
 namespace PKAssets
 {
-    enum class PKElementType : uint8_t;
+    enum class PKElementType : uint16_t;
     enum class PKDescriptorType : uint8_t;
     enum class PKShaderStage : uint8_t;  
     enum class PKShaderStageFlags : uint32_t; 
@@ -63,8 +63,6 @@ namespace PK
     struct SamplerDescriptor;
     struct TextureDescriptor;
 
-    struct ShaderStructElement;
-    struct ShaderStructLayout;
     struct ShaderPushConstant;
     struct ShaderPushConstantLayout;
     struct ShaderResourceElement;

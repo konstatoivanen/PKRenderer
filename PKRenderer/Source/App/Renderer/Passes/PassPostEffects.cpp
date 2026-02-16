@@ -60,22 +60,22 @@ namespace PK::App
 
         color lift, gamma, gain;
         Math::GenerateLiftGammaGain(Math::HexToRGB(colorGrading.Shadows), Math::HexToRGB(colorGrading.Midtones), Math::HexToRGB(colorGrading.Highlights), &lift, &gamma, &gain);
-        view->constants->Set<float4>(hash->pk_CC_WhiteBalance, Math::GetWhiteBalance(colorGrading.TemperatureShift, colorGrading.Tint));
-        view->constants->Set<float4>(hash->pk_CC_Lift, lift);
-        view->constants->Set<float4>(hash->pk_CC_Gamma, gamma);
-        view->constants->Set<float4>(hash->pk_CC_Gain, gain);
-        view->constants->Set<float4>(hash->pk_CC_HSV, float4((float)colorGrading.Hue, (float)colorGrading.Saturation, (float)colorGrading.Value, 1.0f));
-        view->constants->Set<float4>(hash->pk_CC_MixRed, Math::HexToRGB(colorGrading.ChannelMixerRed));
-        view->constants->Set<float4>(hash->pk_CC_MixGreen, Math::HexToRGB(colorGrading.ChannelMixerGreen));
-        view->constants->Set<float4>(hash->pk_CC_MixBlue, Math::HexToRGB(colorGrading.ChannelMixerBlue));
-        view->constants->Set<float>(hash->pk_CC_LumaContrast, colorGrading.Contrast);
-        view->constants->Set<float>(hash->pk_CC_LumaGain, colorGrading.Gain);
-        view->constants->Set<float>(hash->pk_CC_LumaGamma, 1.0f / colorGrading.Gamma);
-        view->constants->Set<float>(hash->pk_CC_Vibrance, colorGrading.Vibrance);
-        view->constants->Set<float>(hash->pk_CC_Contribution, colorGrading.Contribution);
+        view->constants.Set<float4>(hash->pk_CC_WhiteBalance, Math::GetWhiteBalance(colorGrading.TemperatureShift, colorGrading.Tint));
+        view->constants.Set<float4>(hash->pk_CC_Lift, lift);
+        view->constants.Set<float4>(hash->pk_CC_Gamma, gamma);
+        view->constants.Set<float4>(hash->pk_CC_Gain, gain);
+        view->constants.Set<float4>(hash->pk_CC_HSV, float4((float)colorGrading.Hue, (float)colorGrading.Saturation, (float)colorGrading.Value, 1.0f));
+        view->constants.Set<float4>(hash->pk_CC_MixRed, Math::HexToRGB(colorGrading.ChannelMixerRed));
+        view->constants.Set<float4>(hash->pk_CC_MixGreen, Math::HexToRGB(colorGrading.ChannelMixerGreen));
+        view->constants.Set<float4>(hash->pk_CC_MixBlue, Math::HexToRGB(colorGrading.ChannelMixerBlue));
+        view->constants.Set<float>(hash->pk_CC_LumaContrast, colorGrading.Contrast);
+        view->constants.Set<float>(hash->pk_CC_LumaGain, colorGrading.Gain);
+        view->constants.Set<float>(hash->pk_CC_LumaGamma, 1.0f / colorGrading.Gamma);
+        view->constants.Set<float>(hash->pk_CC_Vibrance, colorGrading.Vibrance);
+        view->constants.Set<float>(hash->pk_CC_Contribution, colorGrading.Contribution);
 
-        view->constants->Set<float>(hash->pk_Vignette_Intensity, vignette.Intensity);
-        view->constants->Set<float>(hash->pk_Vignette_Power, vignette.Power);
+        view->constants.Set<float>(hash->pk_Vignette_Intensity, vignette.Intensity);
+        view->constants.Set<float>(hash->pk_Vignette_Power, vignette.Power);
 
         uint featureMask = 0u;
         featureMask |= (uint)(features.Vignette) << 0;
@@ -94,7 +94,7 @@ namespace PK::App
         featureMask |= (uint)(debug.HalfScreen) << 12;
         featureMask |= (uint)(debug.Zoom) << 13;
 
-        view->constants->Set<uint>(hash->pk_PostEffectsFeatureMask, featureMask);
+        view->constants.Set<uint>(hash->pk_PostEffectsFeatureMask, featureMask);
 
         // All but lut regular color grading
         const uint fullFeatureMask = 0x2Fu;

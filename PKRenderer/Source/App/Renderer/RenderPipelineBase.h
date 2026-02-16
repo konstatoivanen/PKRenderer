@@ -76,7 +76,7 @@ namespace PK::App
             virtual void Render(RenderPipelineContext* context) = 0;
 
             void ValidateViewGBuffers(RenderView* view, const GBuffersFullDescriptor& descriptors);
-            void ValidateViewConstantBuffer(RenderView* view, const ShaderStructLayout& layout);
+            void BeginWriteViewConstantBuffer(RenderView* view, IArena* arena, const ShaderPropertyLayout& layout);
             void DispatchRenderPipelineEvent(RHICommandBuffer* cmd, RenderPipelineContext* context, RenderPipelineEvent::Type type);
     
         private:

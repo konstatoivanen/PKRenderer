@@ -21,26 +21,26 @@ namespace PK::Math
     float3 RandomEuler();
     float3 ToFloat3(float* ptr);
     ushort PackHalf(float v);
-    ushort2 PackHalf(float2 v);
-    ushort3 PackHalf(float3 v);
-    ushort4 PackHalf(float4 v);
-    uint PackHalfToUint(float2 v);
+    ushort2 PackHalf(const float2& v);
+    ushort3 PackHalf(const float3& v);
+    ushort4 PackHalf(const float4& v);
+    uint PackHalfToUint(const float2& v);
     float UnPackHalf(ushort v);
-    float2 UnPackHalf(ushort2 v);
-    float3 UnPackHalf(ushort3 v);
-    float4 UnPackHalf(ushort4 v);
+    float2 UnPackHalf(const ushort2& v);
+    float3 UnPackHalf(const ushort3& v);
+    float4 UnPackHalf(const ushort4& v);
     uint FloatAsUint(float v);
-    uint2 FloatAsUint(float2 v);
-    uint3 FloatAsUint(float3 v);
-    uint4 FloatAsUint(float4 v);
+    uint2 FloatAsUint(const float2& v);
+    uint3 FloatAsUint(const float3& v);
+    uint4 FloatAsUint(const float4& v);
     float3 SafeNormalize(const float3& v);
     size_t GetNextExponentialSize(size_t start, size_t min);
     uint32_t GetMaxMipLevelPow2(uint32_t resolution);
-    uint32_t GetMaxMipLevelPow2(uint2 resolution);
-    uint32_t GetMaxMipLevelPow2(uint3 resolution);
+    uint32_t GetMaxMipLevelPow2(const uint2& resolution);
+    uint32_t GetMaxMipLevelPow2(const uint3& resolution);
     uint32_t GetMaxMipLevel(uint32_t resolution);
-    uint32_t GetMaxMipLevel(uint2 resolution);
-    uint32_t GetMaxMipLevel(uint3 resolution);
+    uint32_t GetMaxMipLevel(const uint2& resolution);
+    uint32_t GetMaxMipLevel(const uint3& resolution);
     std::string BytesToString(size_t bytes, uint32_t decimalPlaces = 2);
     void ReinterpretIndex16ToIndex32(uint32_t* dst, uint16_t* src, uint32_t count);
     uint32_t GetAlignedSize(uint32_t value, uint32_t alignment);
@@ -55,10 +55,27 @@ namespace PK::Math
     uint4 MurmurHash41(uint32_t seed);
     uint2 MurmurHash21(uint32_t seed);
     float2 OctaWrap(const float2& v);
-    float2 OctaEncode(float3 n);
+    float2 OctaEncode(const float3& n);
     uint OctaEncodeUint(const float3& direction);
     int32_t QuantizeSNorm(float v, int32_t n);
     sbyte3 QuantizeSNorm(const float3& v, int32_t n);
     float3 GetTriangleNormal(const float* p0, const float* p1, const float* p2, bool& outIsValid);
     float3 GetTriangleNormal(const float3& a, const float3& b, const float3& c);
+
+    template<typename T0, typename T1>
+    T1 BitCast(const T0& value)
+    {
+        static_assert(sizeof(T0) == sizeof(T1));
+        T1 ret;
+        memcpy(&ret, &value, sizeof(T0));
+        return ret;
+    }
+
+    template<typename T0, typename T1>
+    T1 BitCast(const T0* ptr)
+    {
+        T1 ret;
+        memcpy(&ret, ptr, sizeof(T1));
+        return ret;
+    }
 }

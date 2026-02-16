@@ -65,6 +65,7 @@ namespace PKAssets
         "texture2D",
         "texture3D",
         "textureCube",
+        "keyword",
     };
 
     const static uint32_t PKElementType_SIZES[] =
@@ -118,7 +119,8 @@ namespace PKAssets
         2 * 4 * 4,  /*Half4x4*/
         4u, /*Texture2DHandle*/
         4u, /*Texture3DHandle*/
-        4u /*TextureCubeHandle*/
+        4u, /*TextureCubeHandle*/
+        1u  /*Keyword*/
     };
 
     const static uint32_t PKElementType_ALIGNMENTS[] =
@@ -172,7 +174,8 @@ namespace PKAssets
         2u * 4u,    /*Half4x4*/
         4u,         /*Texture2DHandle*/
         4u,         /*Texture3DHandle*/
-        4u          /*TextureCubeHandle*/
+        4u,         /*TextureCubeHandle*/
+        1u          /*Keyword*/
     };
 
     const static char* PKTextureType_NAMES[] =

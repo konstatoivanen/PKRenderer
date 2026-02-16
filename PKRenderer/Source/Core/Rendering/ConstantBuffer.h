@@ -6,18 +6,34 @@ namespace PK
 {
     struct ConstantBuffer : public ShaderPropertyBlock
     {
-        ConstantBuffer(const ShaderStructLayout& layout, const char* name);
+        ConstantBuffer(const ShaderPropertyLayout& layout, const char* name);
 
         void FlushBuffer(RHICommandBuffer* cmd);
 
-        const ShaderStructLayout& GetLayout() const;
+        const ShaderPropertyLayout& GetLayout() const;
         const RHIBuffer* GetRHI() const;
         RHIBuffer* GetRHI();
         operator RHIBuffer* ();
         operator const RHIBuffer* () const;
 
     private:
-        RHIBufferRef m_graphicsBuffer;
-        ShaderStructLayout m_layout;
+        RHIBufferRef m_rhiBuffer;
+        ShaderPropertyLayout m_layout;
+    };
+
+    struct ConstantBufferTransient : public ShaderPropertyWriter
+    {
+        ConstantBufferTransient();
+        void BeginWrite(const ShaderPropertyLayout* layout, void* memory, const char* name);
+        void EndWrite(RHICommandBuffer* cmd);
+        constexpr uint64_t GetHash() const { return m_layoutHash; }
+        const RHIBuffer* GetRHI() const;
+        RHIBuffer* GetRHI();
+        operator RHIBuffer* ();
+        operator const RHIBuffer* () const;
+
+    private:
+        RHIBufferRef m_rhiBuffer;
+        uint64_t m_layoutHash;
     };
 }

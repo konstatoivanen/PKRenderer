@@ -163,8 +163,8 @@ namespace PK::App
         auto hash = HashCache::Get();
         const auto tileZParams = Math::GetExponentialZParams(view->znear, view->zfar, m_tileZDistribution, LightGridSizeZ);
         const auto shadowCascadeZSplits = Math::GetCascadeDepthsFloat4(view->znear, view->zfar, m_cascadeDistribution, tileZParams);
-        view->constants->Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
-        view->constants->Set<float4>(hash->pk_LightTileZParams, float4(tileZParams, 0.0f));
+        view->constants.Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
+        view->constants.Set<float4>(hash->pk_LightTileZParams, float4(tileZParams, 0.0f));
     }
 
     void PassLights::BuildLights(RenderPipelineContext* context)

@@ -38,7 +38,7 @@ namespace PK::App
 
         auto hash = HashCache::Get();
 
-        m_constantsLayout = ShaderStructLayout(
+        m_constantsLayout = ShaderPropertyLayout(
         {
             { ElementType::Float3x4, hash->pk_WorldToView },
             { ElementType::Float3x4, hash->pk_ViewToWorld },
@@ -182,9 +182,9 @@ namespace PK::App
             desc.previous[GBuffers::Depth] = { TextureFormat::Depth32F, TextureUsage::RTDepthSample, true };
             
             ValidateViewGBuffers(view, desc);
-            ValidateViewConstantBuffer(view, m_constantsLayout);
+            BeginWriteViewConstantBuffer(view, context->frameArena, m_constantsLayout);
 
-            auto constants = view->constants.get();
+            auto constants = &view->constants;
             auto resolution = view->GetResolution();
 
             const auto projectionJitter = m_temporalAntialiasing.GetJitter();
@@ -194,42 +194,44 @@ namespace PK::App
             const auto frameIndex = view->timeRender.frameIndex;
             const auto frameIndexResize = view->timeResize.frameIndex;
 
-            float2 jitter =
+            float4 jitter =
             {
                 projectionJitter.x / resolution.x,
-                projectionJitter.y / resolution.y
+                projectionJitter.y / resolution.y,
+                projectionJitter.z / resolution.x,
+                projectionJitter.w / resolution.y
             };
 
-            const auto viewToClipNoJitter = view->viewToClip;
-            const auto viewToClip = Math::GetPerspectiveJittered(viewToClipNoJitter, jitter);
+            const auto& viewToClipNoJitter = view->viewToClip;
+            const auto& worldToView = view->worldToView;
+            const auto viewToClip = Math::GetPerspectiveJittered(viewToClipNoJitter, jitter.xy);
             const auto clipToView = glm::inverse(viewToClip);
-            const auto worldToView = view->worldToView;
             const auto viewToWorld = glm::affineInverse(worldToView);
             const auto worldToClip = viewToClip * worldToView;
             const auto worldToClipNoJitter = viewToClipNoJitter * worldToView;
             const auto n = view->znear;
             const auto f = view->zfar;
             const auto aspect = (resolution.x / (float)resolution.y);
-            auto viewToWorldPrev = Math::TransposeTo3x4(viewToWorld);
-            auto worldToClipPrev = worldToClip;
-            auto worldToClipPrevNoJitter = worldToClipNoJitter;
 
-            constants->TryGet(hash->pk_ViewToWorld, viewToWorldPrev);
-            constants->TryGet(hash->pk_WorldToClip, worldToClipPrev);
-            constants->TryGet(hash->pk_WorldToClip_NoJitter, worldToClipPrevNoJitter);
+            const auto& viewToClipNoJitterPrev = view->viewToClipPrev;
+            const auto& worldToViewPrev = view->worldToViewPrev;
+            const auto viewToClipPrev = Math::GetPerspectiveJittered(viewToClipNoJitterPrev, jitter.xy);
+            const auto viewToWorldPrev = glm::affineInverse(worldToViewPrev);
+            const auto worldToClipPrev = viewToClipPrev * worldToViewPrev;
+            const auto worldToClipNoJitterPrev = viewToClipNoJitterPrev * worldToViewPrev;
 
-            auto viewSpaceCameraDelta = worldToView * float4(viewToWorldPrev[0].w, viewToWorldPrev[1].w, viewToWorldPrev[2].w, 1.0f);
+            auto viewSpaceCameraDelta = worldToView * float4(viewToWorldPrev[3].xyz, 1.0f);
 
             constants->Set<float3x4>(hash->pk_WorldToView, Math::TransposeTo3x4(worldToView));
             constants->Set<float3x4>(hash->pk_ViewToWorld, Math::TransposeTo3x4(viewToWorld));
-            constants->Set<float3x4>(hash->pk_ViewToWorldPrev, viewToWorldPrev);
+            constants->Set<float3x4>(hash->pk_ViewToWorldPrev, Math::TransposeTo3x4(viewToWorldPrev));
             constants->Set<float4x4>(hash->pk_ViewToClip, viewToClip);
             constants->Set<float4x4>(hash->pk_WorldToClip, worldToClip);
             constants->Set<float4x4>(hash->pk_WorldToClip_NoJitter, worldToClipNoJitter);
             constants->Set<float4x4>(hash->pk_WorldToClipPrev, worldToClipPrev);
-            constants->Set<float4x4>(hash->pk_WorldToClipPrev_NoJitter, worldToClipPrevNoJitter);
+            constants->Set<float4x4>(hash->pk_WorldToClipPrev_NoJitter, worldToClipNoJitterPrev);
             constants->Set<float4x4>(hash->pk_ViewToPrevClip, worldToClipPrev * viewToWorld);
-            constants->Set<float4x4>(hash->pk_ClipToPrevClip_NoJitter, worldToClipPrevNoJitter * glm::inverse(worldToClipNoJitter));
+            constants->Set<float4x4>(hash->pk_ClipToPrevClip_NoJitter, worldToClipNoJitterPrev * glm::inverse(worldToClipNoJitter));
             constants->Set<float4>(hash->pk_Time, { (float)time / 20.0f, (float)time, (float)time * 2.0f, (float)time * 3.0f });
             constants->Set<float4>(hash->pk_SinTime, { (float)sin(time / 8.0f), (float)sin(time / 4.0f), (float)sin(time / 2.0f), (float)sin(time) });
             constants->Set<float4>(hash->pk_CosTime, { (float)cos(time / 8.0f), (float)cos(time / 4.0f), (float)cos(time / 2.0f), (float)cos(time) });
@@ -259,7 +261,7 @@ namespace PK::App
             m_passFilmGrain.SetViewConstants(view);
             m_temporalAntialiasing.SetViewConstants(view);
             m_passPostEffectsComposite.SetViewConstants(view);
-            constants->FlushBuffer(cmdtransfer);
+            constants->EndWrite(cmdtransfer);
         }
 
         // @TODO add multi view support
@@ -272,7 +274,7 @@ namespace PK::App
         RHI::SetTexture(hash->pk_GB_Previous_Normals, gbuffers.previous.normals);
         RHI::SetTexture(hash->pk_GB_Previous_Depth, gbuffers.previous.depth);
         RHI::SetTexture(hash->pk_GB_Previous_DepthBiased, gbuffers.previous.depthBiased);
-        RHI::SetBuffer(hash->pk_PerFrameConstants, *primaryView->constants.get());
+        RHI::SetBuffer(hash->pk_PerFrameConstants, primaryView->constants);
 
         // Clear 'previous' targets if they've been reallocated 
         if (primaryView->IsResizeFrame())

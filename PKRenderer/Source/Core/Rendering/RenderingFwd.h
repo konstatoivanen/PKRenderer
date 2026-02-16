@@ -17,6 +17,9 @@ namespace PK
     struct ConstantBuffer;
     struct CommandBufferExt;
     struct ShaderBindingTable;
+    struct ShaderProperty;
+    struct ShaderPropertyLayout;
+    struct ShaderPropertyWriter;
     struct ShaderPropertyBlock;
     struct Window;
     enum class TextAlign;

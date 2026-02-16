@@ -832,8 +832,6 @@ namespace PK
             driver->m_rawInputSize = size;
         }
 
-        size = driver->m_rawInputSize;
-
         if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, driver->m_rawInput, &size, sizeof(RAWINPUTHEADER)) == (UINT)-1)
         {
             return nullptr;

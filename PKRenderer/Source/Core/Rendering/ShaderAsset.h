@@ -1,8 +1,8 @@
 #pragma once
 #include "Core/Utilities/FastBuffer.h"
 #include "Core/Assets/Asset.h"
-#include "Core/RHI/Layout.h"
 #include "Core/RHI/RHInterfaces.h"
+#include "Core/Rendering/ShaderPropertyBlock.h"
 #include "Core/Rendering/RenderingFwd.h"
 
 namespace PK
@@ -51,10 +51,10 @@ namespace PK
 
         inline bool SupportsKeyword(const NameID keywords) const { return m_map.SupportsKeyword(keywords); }
         inline bool SupportsKeywords(const NameID* keywords, const uint32_t count) const { return m_map.SupportsKeywords(keywords, count); }
-        inline bool SupportsMaterials() const { return m_materialPropertyLayout.size() > 0; }
+        inline bool SupportsMaterials() const { return m_materialPropertyLayout.GetCount() > 0; }
 
         constexpr const uint3 GetGroupSize() const { return m_shaders[0]->GetGroupSize(); }
-        constexpr const ShaderStructLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
+        constexpr const ShaderPropertyLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
 
         std::string GetMetaInfo() const final;
 
@@ -64,6 +64,6 @@ namespace PK
         FastBuffer<RHIShaderScope, 4ull> m_shaders;
         Map m_map;
         FixedFunctionShaderAttributes m_attributes;
-        ShaderStructLayout m_materialPropertyLayout;
+        ShaderPropertyLayout m_materialPropertyLayout;
     };
 }

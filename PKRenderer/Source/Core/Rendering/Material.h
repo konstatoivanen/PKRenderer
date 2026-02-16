@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/Utilities/FastBuffer.h"
 #include "Core/Assets/Asset.h"
 #include "Core/Rendering/BindSet.h"
 #include "Core/Rendering/ShaderPropertyBlock.h"
@@ -6,26 +7,23 @@
 
 namespace PK
 {
-    struct Material : public Asset, public ShaderPropertyBlock
+    struct Material : public Asset, public ShaderPropertyWriter
     {
-        Material() : 
-            ShaderPropertyBlock(0u, 0u) 
-        {
-        }
+        constexpr static const uint32_t INLINE_SIZE = 32ull;
 
-        Material(ShaderAsset* shader) :
-            ShaderPropertyBlock(0u, 0u), 
+        Material() {}
+
+        Material(ShaderAsset* shader) : 
             m_shader(shader)
         { 
-            InitializeShaderLayout(); 
+            ReservePropertyBuffer();
         }
 
         Material(ShaderAsset* shader, ShaderAsset* shadowShader) :
-            ShaderPropertyBlock(0u, 0u), 
             m_shader(shader),
             m_shaderShadow(shadowShader)
         { 
-            InitializeShaderLayout(); 
+            ReservePropertyBuffer();
         }
 
         Material(const char* filepath);
@@ -35,15 +33,14 @@ namespace PK
 
         size_t GetPropertyStride() const;
         bool SupportsKeyword(const NameID keyword) const;
-        bool SupportsKeywords(const NameID* keywords, const uint32_t count) const;
-
         void CopyTo(char* dst, BindSet<RHITexture>* textureSet) const;
 
     private:
-        void InitializeShaderLayout(uint32_t minSize = 0u, uint32_t minPropertyCount = 0u);
+        void ReservePropertyBuffer();
 
         ShaderAsset* m_shader = nullptr;
         ShaderAsset* m_shaderShadow = nullptr;
+        FastBuffer<uint8_t, INLINE_SIZE> m_propertyBuffer;
     };
 
     struct MaterialTarget

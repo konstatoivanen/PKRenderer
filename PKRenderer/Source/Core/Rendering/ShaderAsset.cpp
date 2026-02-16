@@ -164,15 +164,15 @@ namespace PK
 
         if (shader->materialPropertyCount > 0)
         {
-            m_materialPropertyLayout.clear();
-            m_materialPropertyLayout.reserve(shader->materialPropertyCount + 1u);
+            m_materialPropertyLayout.ClearFast();
+            m_materialPropertyLayout.Reserve(shader->materialPropertyCount + 1u);
 
             auto pMaterialProperties = shader->materialProperties.Get(base);
 
             for (auto i = 0u; i < shader->materialPropertyCount; ++i)
             {
                 auto& prop = pMaterialProperties[i];
-                m_materialPropertyLayout.push_back({ prop.type, prop.name });
+                m_materialPropertyLayout.Add({ prop.type, prop.name });
             }
 
             m_materialPropertyLayout.CalculateOffsetsAndStride();
@@ -197,17 +197,17 @@ namespace PK
         meta.append("   Type: Shader\n");
         meta.append("   Name: " + std::string(GetFileName()) + "\n");
 
-        if (m_materialPropertyLayout.size() > 0)
+        if (m_materialPropertyLayout.GetCount() > 0)
         {
             meta.append("\nMaterial Properties:\n");
 
             for (const auto& prop : m_materialPropertyLayout)
             {
                 meta.append(Parse::FormatToString("   %s,%s,%u,%u\n", 
-                    prop.name.c_str(), 
-                    RHIEnumConvert::ElementTypeToString(prop.format), 
-                    prop.count, 
-                    prop.offset));
+                    prop->name.c_str(), 
+                    RHIEnumConvert::ElementTypeToString(prop->format), 
+                    prop->count, 
+                    prop->offset));
             }
         }
 

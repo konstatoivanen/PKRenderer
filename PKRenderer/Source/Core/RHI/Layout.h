@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #include "Core/Utilities/FixedList.h"
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/NameID.h"
@@ -7,71 +6,6 @@
 
 namespace PK
 {
-    struct ShaderStructElement
-    {
-        NameID name = 0u;
-        ElementType format = ElementType::Invalid;
-        uint8_t count = 1;
-        uint16_t offset = 0;
-
-        uint16_t GetSize() const { return (uint16_t)RHIEnumConvert::Size(format) * count; }
-
-        ShaderStructElement() = default;
-
-        ShaderStructElement(ElementType format, NameID name, uint8_t count = 1, uint16_t offset = 0) :
-            name(name),
-            format(format),
-            count(count), 
-            offset(offset)
-        {
-        }
-
-        constexpr bool operator== (const ShaderStructElement& b)
-        {
-            return name == b.name && format == b.format && count == b.count && offset == b.offset;
-        }
-    };
-
-    struct ShaderStructElementHash
-    {
-        size_t operator()(const ShaderStructElement& k) const noexcept
-        {
-            return (size_t)k.name.identifier;
-        }
-    };
-
-    struct ShaderStructLayout : public std::vector<ShaderStructElement>
-    {
-        ShaderStructLayout() {}
-
-        ShaderStructLayout(ShaderStructElement* elements, size_t count) : std::vector<ShaderStructElement>(elements, elements + count)
-        {
-            CalculateOffsetsAndStride();
-        }
-
-        ShaderStructLayout(std::initializer_list<ShaderStructElement> elements) : std::vector<ShaderStructElement>(elements)
-        {
-            CalculateOffsetsAndStride();
-        }
-
-        ShaderStructLayout(std::vector<ShaderStructElement> elements) : std::vector<ShaderStructElement>(elements)
-        {
-            CalculateOffsetsAndStride();
-        }
-    
-        constexpr inline uint32_t GetStride() const { return m_stride; }
-        constexpr inline uint32_t GetStridePadded() const { return m_stridePadded; }
-        constexpr inline uint64_t GetHash() const { return m_hash; }
-        constexpr inline bool CompareFast(const ShaderStructLayout& other) const { return m_stride == other.m_stride && m_hash == other.m_hash; }
-        void CalculateOffsetsAndStride();
-
-    private:
-        uint64_t m_hash = 0ull;
-        uint32_t m_stride = 0;
-        uint32_t m_stridePadded = 0;
-    };
-
-
     struct ShaderPushConstant
     {
         NameID name = 0u;
@@ -116,8 +50,8 @@ namespace PK
     struct ShaderResourceLayout : public FixedList<ShaderResourceElement, PK_RHI_MAX_DESCRIPTORS_PER_SET>
     {
         ShaderResourceLayout() {}
+        ShaderResourceLayout(const ShaderResourceElement* elements, size_t count) : FixedList(elements, count) {}
         ShaderResourceLayout(std::initializer_list<ShaderResourceElement> elements) : FixedList(elements) {}
-        ShaderResourceLayout(std::vector<ShaderResourceElement> elements) : FixedList(elements.data(), elements.size()) {}
         const ShaderResourceElement* TryGetElement(NameID name, uint32_t* index) const;
     };
 
@@ -126,11 +60,11 @@ namespace PK
     {
         NameID name = 0u;
         ElementType format = ElementType::Invalid;
-        uint8_t location = 0;
+        uint16_t location = 0;
 
         ShaderVertexInputElement() = default;
 
-        ShaderVertexInputElement(NameID name, ElementType format, uint8_t location) : name(name), format(format), location(location)
+        ShaderVertexInputElement(NameID name, ElementType format, uint16_t location) : name(name), format(format), location(location)
         {
         }
 
@@ -199,11 +133,6 @@ namespace PK
         }
 
         VertexStreamLayout(std::initializer_list<VertexStreamElement> elements) : FixedList(elements)
-        {
-            CalculateOffsetsAndStride();
-        }
-
-        VertexStreamLayout(std::vector<VertexStreamElement> elements) : FixedList(elements.data(), elements.size())
         {
             CalculateOffsetsAndStride();
         }

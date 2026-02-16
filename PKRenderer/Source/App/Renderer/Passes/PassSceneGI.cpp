@@ -80,15 +80,15 @@ namespace PK::App
         const auto correctionAngle = tan(angle / 8.0f);
         const auto stepSize = (1.0f + correctionAngle) / (1.0f - correctionAngle) * voxelSize / 2.0f;
 
-        view->constants->Set<float4>(hash->pk_GI_VolumeST, float4(-76.8f, -6.0f, -76.8f, 1.0f / voxelSize));
-        view->constants->Set<float>(hash->pk_GI_VoxelSize, voxelSize);
-        view->constants->Set<float>(hash->pk_GI_VoxelStepSize, stepSize);
-        view->constants->Set<float>(hash->pk_GI_VoxelLevelScale, levelscale);
+        view->constants.Set<float4>(hash->pk_GI_VolumeST, float4(-76.8f, -6.0f, -76.8f, 1.0f / voxelSize));
+        view->constants.Set<float>(hash->pk_GI_VoxelSize, voxelSize);
+        view->constants.Set<float>(hash->pk_GI_VoxelStepSize, stepSize);
+        view->constants.Set<float>(hash->pk_GI_VoxelLevelScale, levelscale);
 
         auto frameIndexSinceResize = view->timeRender.frameIndex - view->timeResize.frameIndex;
         m_rasterAxis = frameIndexSinceResize % 3;
-        view->constants->Set<uint4>(hash->pk_GI_VolumeSwizzle, swizzles[m_rasterAxis]);
-        view->constants->Set<uint2>(hash->pk_GI_RayDither, Math::MurmurHash21(frameIndexSinceResize / 64u));
+        view->constants.Set<uint4>(hash->pk_GI_VolumeSwizzle, swizzles[m_rasterAxis]);
+        view->constants.Set<uint2>(hash->pk_GI_RayDither, Math::MurmurHash21(frameIndexSinceResize / 64u));
 
         RHI::SetKeyword("PK_GI_CHECKERBOARD_TRACE", m_settings.checkerboardTrace);
         RHI::SetKeyword("PK_GI_SPEC_VIRT_REPROJECT", m_settings.specularVirtualReproject);

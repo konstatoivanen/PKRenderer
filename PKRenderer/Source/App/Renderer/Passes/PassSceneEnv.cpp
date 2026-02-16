@@ -40,30 +40,27 @@ namespace PK::App
         auto& settings = view->settings.EnvBackgroundSettings;
         auto& fogSettings = view->settings.FogSettings;
         auto resources = view->GetResources<ViewResources>();
-
-        auto prevExposure = 0.0f;
-        auto prevDensity = 0.0f;
-        auto prevFogExpParams0 = PK_FLOAT4_ZERO;
-        auto prevFogExpParams1 = PK_FLOAT4_ZERO;
         
-        // Fogging affects scene env. check for deltas in settings.
-        view->constants->TryGet<float>(hash->pk_SceneEnv_Exposure, prevExposure);
-        view->constants->TryGet<float>(hash->pk_Fog_Density_Amount, prevDensity);
-        view->constants->TryGet<float4>(hash->pk_Fog_Density_ExpParams0, prevFogExpParams0);
-        view->constants->TryGet<float4>(hash->pk_Fog_Density_ExpParams1, prevFogExpParams1);
+        auto exponential0 = Math::BitCast<float, float4>(&fogSettings.Exponential0.Constant);
+        auto exponential1 = Math::BitCast<float, float4>(&fogSettings.Exponential1.Constant);
 
         resources->captureIsDirty |= m_forceCapture;
         resources->captureIsDirty |= settings.CaptureInterval >= 0 && resources->captureCounter >= settings.CaptureInterval;
-        resources->captureIsDirty |= prevExposure != settings.Exposure;
-        resources->captureIsDirty |= prevDensity != fogSettings.Density;
-        resources->captureIsDirty |= memcmp(&prevFogExpParams0, reinterpret_cast<float4*>(&fogSettings.Exponential0.Constant), sizeof(float4)) != 0;
-        resources->captureIsDirty |= memcmp(&prevFogExpParams1, reinterpret_cast<float4*>(&fogSettings.Exponential1.Constant), sizeof(float4)) != 0;
+        resources->captureIsDirty |= resources->prevExposure != settings.Exposure;
+        resources->captureIsDirty |= resources->prevDensity != fogSettings.Density;
+        resources->captureIsDirty |= resources->prevFogExpParams0 != exponential0;
+        resources->captureIsDirty |= resources->prevFogExpParams1 != exponential1;
+
+        resources->prevExposure = settings.Exposure;
+        resources->prevDensity = fogSettings.Density;
+        resources->prevFogExpParams0 = exponential0;
+        resources->prevFogExpParams1 = exponential1;
 
         resources->captureOrigin = settings.CaptureUsesViewOrigin ? view->position : PK_FLOAT3_ZERO;
         resources->captureOrigin += settings.CaptureOffset;
         resources->captureCounter = glm::min(resources->captureCounter + 1, glm::max(0, settings.CaptureInterval));
 
-        view->constants->Set<float>(hash->pk_SceneEnv_Exposure, settings.Exposure);
+        view->constants.Set<float>(hash->pk_SceneEnv_Exposure, settings.Exposure);
 
         if (RHI::ValidateBuffer<float4>(resources->sceneEnvSHBuffer, 4ull, BufferUsage::DefaultStorage, "Scene.Env.SHBuffer"))
         {

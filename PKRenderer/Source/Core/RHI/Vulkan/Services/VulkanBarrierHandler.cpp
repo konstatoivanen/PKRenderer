@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Math/FunctionsMisc.h"
 #include "VulkanBarrierHandler.h"
 
 namespace PK
@@ -54,7 +55,7 @@ namespace PK
         urect1D o;
         o.xmin = ra->xmin < rb->xmin ? ra->xmin : rb->xmin;
         o.xmax = (ra->xmax > rb->xmax ? ra->xmax : rb->xmax) - o.xmin;
-        return *reinterpret_cast<uint64_t*>(&o);
+        return Math::BitCast<urect1D, uint64_t>(o);
     }
 
     uint32_t VulkanBarrierHandler::TInfo<VkBuffer>::Splice(uint64_t cv, uint64_t sv, uint64_t* ov)
@@ -137,7 +138,7 @@ namespace PK
         o.xmax = (ra->xmax > rb->xmax ? ra->xmax : rb->xmax) - o.xmin;
         o.ymin = ra->ymin < rb->ymin ? ra->ymin : rb->ymin;
         o.ymax = (ra->ymax > rb->ymax ? ra->ymax : rb->ymax) - o.ymin;
-        return *reinterpret_cast<uint64_t*>(&o);
+        return Math::BitCast<urect2D, uint64_t>(o);
     }
 
     uint32_t VulkanBarrierHandler::TInfo<VkImage>::Splice(uint64_t cv, uint64_t sv, uint64_t* ov)
@@ -296,8 +297,8 @@ namespace PK
     template<>
     void VulkanBarrierHandler::ProcessBarrier<VkBuffer, VkBufferMemoryBarrier>(const VkBuffer resource, VkBufferMemoryBarrier** barrier, const AccessRecord& recordOld, const AccessRecord& recordNew)
     {
-        auto rangeo = *reinterpret_cast<const urect1D*>(&recordOld.range);
-        auto rangen = *reinterpret_cast<const urect1D*>(&recordNew.range);
+        auto rangeo = Math::BitCast<uint64_t, urect1D>(recordOld.range);
+        auto rangen = Math::BitCast<uint64_t, urect1D>(recordNew.range);
         rangeo.xmax += rangeo.xmin;
         rangen.xmax += rangen.xmin;
 
@@ -334,8 +335,8 @@ namespace PK
     template<>
     void VulkanBarrierHandler::ProcessBarrier<VkImage, VkImageMemoryBarrier>(const VkImage resource, VkImageMemoryBarrier** barrier, const AccessRecord& recordOld, const AccessRecord& recordNew)
     {
-        auto rangeo = *reinterpret_cast<const urect2D*>(&recordOld.range);
-        auto rangen = *reinterpret_cast<const urect2D*>(&recordNew.range);
+        auto rangeo = Math::BitCast<uint64_t, urect2D>(recordOld.range);
+        auto rangen = Math::BitCast<uint64_t, urect2D>(recordNew.range);
         rangeo.xmax += rangeo.xmin;
         rangeo.ymax += rangeo.ymin;
         rangen.xmax += rangen.xmin;

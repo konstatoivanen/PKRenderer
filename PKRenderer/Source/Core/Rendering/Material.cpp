@@ -10,55 +10,7 @@
 
 namespace PK
 {
-    static void CalculateMaterialSize(const ryml::ConstNodeRef& properties, const ryml::ConstNodeRef& keywords, uint32_t* outSize, uint32_t* outCount)
-    {
-        *outSize = 0u;
-        *outCount = 0u;
-
-        if (keywords.readable())
-        {
-            *outSize += sizeof(bool) * keywords.num_children();
-            *outCount += (uint32_t)keywords.num_children();
-        }
-
-        for (const auto property : properties.children())
-        {
-            auto type = property.find_child("Type");
-
-            if (type.readable())
-            {
-                auto elementType = YAML::Read<ElementType>(type);
-
-                *outSize += PKAssets::PKElementTypeToSize(elementType);
-                (*outCount)++;
-
-                if (RHIEnumConvert::IsResourceHandle(elementType))
-                {
-                    *outSize += (uint32_t)sizeof(RHITexture*);
-                    (*outCount)++;
-                }
-            }
-        }
-    }
-
-    static void CalculateMaterialPropertySize(const ShaderStructLayout& layout, uint32_t* outSize, uint32_t* outCount)
-    {
-        *outSize = layout.GetStride();
-        *outCount = (uint32_t)layout.size();
-
-        for (auto& element : layout)
-        {
-            if (RHIEnumConvert::IsResourceHandle(element.format))
-            {
-                // Reserve extra memory for actual texture references at the end of the block.
-                *outSize += (uint32_t)sizeof(RHITexture*);
-                (*outCount)++;
-            }
-        }
-    }
-
-
-    Material::Material(const char* filepath) : ShaderPropertyBlock(0u, 0u)
+    Material::Material(const char* filepath)
     {
         void* fileData = nullptr;
         size_t fileSize = 0ull;
@@ -89,9 +41,7 @@ namespace PK
             m_shaderShadow = YAML::Read<ShaderAsset*>(shaderShadowPathProp);
         }
 
-        uint32_t serializedSize, serializedPropertyCount;
-        CalculateMaterialSize(properties, keywords, &serializedSize, &serializedPropertyCount);
-        InitializeShaderLayout(serializedSize, serializedPropertyCount);
+        ReservePropertyBuffer();
 
         if (keywords.readable())
         {
@@ -172,7 +122,7 @@ namespace PK
 
                         case ElementType::Texture2DHandle: 
                         case ElementType::Texture3DHandle:
-                        case ElementType::TextureCubeHandle: Set(nameId, YAML::Read<TextureAsset*>(value)->GetRHI()); break;
+                        case ElementType::TextureCubeHandle: SetResource(nameId, YAML::Read<TextureAsset*>(value)->GetRHI()); break;
 
                         default: PK_LOG_WARNING("Unsupported material parameter type"); break;
                     }
@@ -185,24 +135,26 @@ namespace PK
 
     size_t Material::GetPropertyStride() const { return m_shader->GetMaterialPropertyLayout().GetStridePadded(); }
 
-    bool Material::SupportsKeyword(const NameID keyword) const { return m_shader->SupportsKeyword(keyword); }
-
-    bool Material::SupportsKeywords(const NameID* keywords, const uint32_t count) const { return m_shader->SupportsKeywords(keywords, count); }
+    bool Material::SupportsKeyword(const NameID keyword) const 
+    {
+        auto prop = m_shader->GetMaterialPropertyLayout().TryGetElement(keyword);
+        return prop && prop->format == ElementType::Keyword;
+    }
 
     void Material::CopyTo(char* dst, BindSet<RHITexture>* textureSet) const
     {
         auto& layout = m_shader->GetMaterialPropertyLayout();
 
-        memcpy(dst, GetByteBuffer(), layout.GetStride());
+        memcpy(dst, m_propertyBuffer.GetData(), layout.GetStride());
 
         for (auto& element : layout)
         {
-            switch (element.format)
+            switch (element->format)
             {
                 case ElementType::Texture2DHandle:
                 {
-                    auto texIndex = textureSet->Set(*Get<RHITexture*>(element.name));
-                    memcpy(dst + element.offset, &texIndex, sizeof(int32_t));
+                    auto texIndex = textureSet->Set(GetResource<RHITexture>(element->name));
+                    memcpy(dst + element->offset, &texIndex, sizeof(int32_t));
                 }
                 break;
                 default: break;
@@ -210,26 +162,24 @@ namespace PK
         }
     }
 
-    void Material::InitializeShaderLayout(uint32_t minSize, uint32_t minPropertyCount)
+    void Material::ReservePropertyBuffer()
     {
         PK_THROW_ASSERT(m_shader->SupportsMaterials(), "Shader is doesn't support materials!");
 
-        uint32_t materialSize, materialPropertyCount;
-        CalculateMaterialPropertySize(m_shader->GetMaterialPropertyLayout(), &materialSize, &materialPropertyCount);
+        EndWrite();
 
-        materialSize = glm::max(materialSize, minSize);
-        materialPropertyCount = glm::max(materialPropertyCount, minPropertyCount);
+        auto& layout = m_shader->GetMaterialPropertyLayout();
+        m_propertyBuffer.Reserve(layout.GetStrideMaterial());
 
-        ClearAndReserve(materialSize, materialPropertyCount);
-        ReserveLayout(m_shader->GetMaterialPropertyLayout());
+        BeginWrite(&layout, m_propertyBuffer.GetData());
 
         auto builtIns = RHI::GetBuiltInResources();
 
         for (auto& element : m_shader->GetMaterialPropertyLayout())
         {
-            switch (element.format)
+            switch (element->format)
             {
-                case ElementType::Texture2DHandle: Set(element.name, builtIns->BlackTexture2D.get()); break;
+                case ElementType::Texture2DHandle: SetResource(element->name, builtIns->BlackTexture2D.get()); break;
                 default: break;
             }
         }

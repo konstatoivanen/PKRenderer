@@ -15,7 +15,11 @@ namespace PK::App
                 RHITextureRef sceneEnvIBL = nullptr;
                 RHITextureRef sceneEnvISL = nullptr;
                 RHIBufferRef sceneEnvSHBuffer = nullptr;
-                int32_t captureCounter = 0;
+                float prevExposure = 0.0f;
+                float prevDensity = 0.0f;
+                float4 prevFogExpParams0 = PK_FLOAT4_ZERO;
+                float4 prevFogExpParams1 = PK_FLOAT4_ZERO;
+                int32_t captureCounter = 0u;
                 float3 captureOrigin = PK_FLOAT3_ZERO;
                 bool captureIsDirty = false;
             };

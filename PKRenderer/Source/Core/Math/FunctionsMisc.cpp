@@ -39,7 +39,7 @@ namespace PK::Math
         float cascades[5]{};
         GetCascadeDepths(znear, zfar, distribution, cascades, zAlignParams, 5);
         // Ignore first plane as it is just the near plane and we are more interested in the final clipping plane.
-        return *reinterpret_cast<float4*>(cascades + 1u);
+        return BitCast<float, float4>(cascades + 1u);
     }
 
     float3 GetExponentialZParams01(float znear, float zfar, float distribution)
@@ -95,7 +95,7 @@ namespace PK::Math
     uint32_t RandomUint()
     {
         auto v = rand();
-        return *reinterpret_cast<uint32_t*>(&v);
+        return BitCast<int32_t, uint32_t>(v);
     }
 
     float3 RandomFloat3()
@@ -148,22 +148,22 @@ namespace PK::Math
         return ((i >> 16) & (int)0xffff8000) | ((int)(ui >> 13));
     }
 
-    ushort2 PackHalf(float2 v)
+    ushort2 PackHalf(const float2& v)
     {
         return { PackHalf(v.x), PackHalf(v.y) };
     }
 
-    ushort3 PackHalf(float3 v)
+    ushort3 PackHalf(const float3& v)
     {
         return { PackHalf(v.x), PackHalf(v.y), PackHalf(v.z) };
     }
 
-    ushort4 PackHalf(float4 v)
+    ushort4 PackHalf(const float4& v)
     {
         return { PackHalf(v.x), PackHalf(v.y), PackHalf(v.z), PackHalf(v.w) };
     }
 
-    uint PackHalfToUint(float2 v)
+    uint PackHalfToUint(const float2& v)
     {
         auto p = PackHalf(v);
         return (p.x & 0xFFFFu) | (p.y << 16u);
@@ -176,39 +176,39 @@ namespace PK::Math
         return *(float*)&i * 5.192297e+33f;
     }
 
-    float2 UnPackHalf(ushort2 v)
+    float2 UnPackHalf(const ushort2& v)
     {
         return { UnPackHalf(v.x), UnPackHalf(v.y) };
     }
 
-    float3 UnPackHalf(ushort3 v)
+    float3 UnPackHalf(const ushort3& v)
     {
         return { UnPackHalf(v.x), UnPackHalf(v.y), UnPackHalf(v.z) };
     }
 
-    float4 UnPackHalf(ushort4 v)
+    float4 UnPackHalf(const ushort4& v)
     {
         return { UnPackHalf(v.x), UnPackHalf(v.y), UnPackHalf(v.z), UnPackHalf(v.w) };
     }
 
     uint FloatAsUint(float v)
     {
-        return *reinterpret_cast<uint*>(&v);
+        return BitCast<float, uint>(v);
     }
 
-    uint2 FloatAsUint(float2 v)
+    uint2 FloatAsUint(const float2& v)
     {
-        return *reinterpret_cast<uint2*>(&v);
+        return BitCast<uint2, float2>(v);
     }
 
-    uint3 FloatAsUint(float3 v)
+    uint3 FloatAsUint(const float3& v)
     {
-        return *reinterpret_cast<uint3*>(&v);
+        return BitCast<float3, uint3>(v);
     }
 
-    uint4 FloatAsUint(float4 v)
+    uint4 FloatAsUint(const float4& v)
     {
-        return *reinterpret_cast<uint4*>(&v);
+        return BitCast<float4, uint4>(v);
     }
 
     float3 SafeNormalize(const float3& v)
@@ -237,12 +237,12 @@ namespace PK::Math
         return glm::log2(resolution);
     }
 
-    uint32_t GetMaxMipLevelPow2(uint2 resolution)
+    uint32_t GetMaxMipLevelPow2(const uint2& resolution)
     {
         return glm::log2(glm::compMin(resolution));
     }
 
-    uint32_t GetMaxMipLevelPow2(uint3 resolution)
+    uint32_t GetMaxMipLevelPow2(const uint3& resolution)
     {
         return glm::log2(glm::compMin(resolution));
     }
@@ -260,12 +260,12 @@ namespace PK::Math
         return level;
     }
 
-    uint32_t GetMaxMipLevel(uint2 resolution)
+    uint32_t GetMaxMipLevel(const uint2& resolution)
     {
         return GetMaxMipLevel(glm::compMin(resolution));
     }
 
-    uint32_t GetMaxMipLevel(uint3 resolution)
+    uint32_t GetMaxMipLevel(const uint3& resolution)
     {
         return GetMaxMipLevel(glm::compMin(resolution));
     }
@@ -406,12 +406,13 @@ namespace PK::Math
 
     float2 OctaWrap(const float2& v) { return (1.0f - glm::abs(float2(v.yx))) * float2(v.x >= 0.0 ? 1.0 : -1.0, v.y >= 0.0 ? 1.0 : -1.0); }
 
-    float2 OctaEncode(float3 n)
+    float2 OctaEncode(const float3& n)
     {
-        n /= (abs(n.x) + abs(n.y) + abs(n.z));
-        n.xz = n.y >= 0.0f ? n.xz : OctaWrap(n.xz);
-        n.xz = n.xz * 0.5f + 0.5f;
-        return n.xz;
+        auto v = n;
+        v /= (abs(v.x) + abs(v.y) + abs(v.z));
+        v.xz = v.y >= 0.0f ? v.xz : OctaWrap(v.xz);
+        v.xz = v.xz * 0.5f + 0.5f;
+        return v.xz;
     }
 
     uint OctaEncodeUint(const float3& direction)

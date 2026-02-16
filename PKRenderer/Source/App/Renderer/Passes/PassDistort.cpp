@@ -43,9 +43,9 @@ namespace PK::App
         const auto scale = glm::mix(1.0f, glm::clamp(scaleF, 0.0f, 1.0f), settings.PaniniProjectionScreenFit);
         const auto paniniParams = float4(viewExtX, viewExtY, distance, scale);
 
-        view->constants->Set<float4>(hash->pk_Panini_Projection_Parameters, paniniParams);
-        view->constants->Set<float>(hash->pk_Chromatic_Aberration_Amount, settings.ChromaticAberrationAmount);
-        view->constants->Set<float>(hash->pk_Chromatic_Aberration_Power, settings.ChromaticAberrationPower);
+        view->constants.Set<float4>(hash->pk_Panini_Projection_Parameters, paniniParams);
+        view->constants.Set<float>(hash->pk_Chromatic_Aberration_Amount, settings.ChromaticAberrationAmount);
+        view->constants.Set<float>(hash->pk_Chromatic_Aberration_Power, settings.ChromaticAberrationPower);
     }
 
     void PassDistort::Render(CommandBufferExt cmd, RenderPipelineContext* ctx)

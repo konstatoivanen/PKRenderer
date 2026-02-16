@@ -2,6 +2,7 @@
 #include "Core/Math/FunctionsMisc.h"
 #include "Core/Math/FunctionsIntersect.h"
 #include "Core/Utilities/FixedString.h"
+#include "Core/Utilities/FixedArena.h"
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/ControlFlow/Sequencer.h"
 #include "Core/Assets/AssetDatabase.h"
@@ -112,7 +113,7 @@ namespace PK::App
                 views[m_renderViewCount] = &m_renderViews[m_renderViewCount];
                 auto resources = GetViewResources(m_renderViewCount);
                 auto renderView = &m_renderViews[m_renderViewCount++];
-                auto isViewChanged = renderView->viewEntityId != entity.GID.entityID();
+                auto hasViewChanged = renderView->viewEntityId != entity.GID.entityID();
                 auto viewresolution = viewrect.zw - viewrect.xy;
                 auto bufferResolution = GBuffers::AlignResolution(viewresolution);
                 auto bufferAspectRatio = (float)bufferResolution.x / (float)bufferResolution.y;
@@ -131,6 +132,8 @@ namespace PK::App
                 renderView->bufferResolution = bufferResolution;
                 renderView->finalViewRect = viewrect;
                 renderView->timeRender = entity.time->info;
+                renderView->worldToViewPrev = renderView->worldToView;
+                renderView->viewToClipPrev = renderView->viewToClip;
                 renderView->viewToClip = entity.projection->ResolveProjectionMatrix(bufferAspectRatio);
                 renderView->fieldOfView = entity.projection->fieldOfView * PK_FLOAT_DEG2RAD;
                 renderView->worldToView = entity.transform->worldToLocal;
@@ -143,7 +146,13 @@ namespace PK::App
                 renderView->cursorPosition = entity.input->state.cursorPosition;
                 renderView->cursorPositionDelta = entity.input->state.cursorPositionDelta;
 
-                if (isOutOfDate || isViewChanged)
+                if (hasViewChanged)
+                {
+                    renderView->worldToViewPrev = renderView->worldToView;
+                    renderView->viewToClipPrev = renderView->viewToClip;
+                }
+
+                if (isOutOfDate || hasViewChanged)
                 {
                     renderView->timeResize = entity.time->info;
                 }
@@ -194,12 +203,14 @@ namespace PK::App
         }
     }
     
-    void RenderPipelineBase::ValidateViewConstantBuffer(RenderView* view, const ShaderStructLayout& layout)
+    void RenderPipelineBase::BeginWriteViewConstantBuffer(RenderView* view, IArena* arena, const ShaderPropertyLayout& layout)
     {
-        if (view->constants == nullptr || !view->constants->GetLayout().CompareFast(layout))
+        const auto previousHash = view->constants.GetHash();
+        FixedString64 name({ "RenderView.", view->name, ".Constants.Frame"});
+        view->constants.BeginWrite(&layout, arena->Allocate<uint8_t>(layout.GetStridePadded()), name.c_str());
+
+        if (view->constants.GetHash() != previousHash)
         {
-            FixedString64 name({ "RenderView.", view->name, ".Constants.Frame"});
-            view->constants = CreateRef<ConstantBuffer>(layout, name);
             view->timeResize = view->timeRender;
         }
     }

@@ -301,7 +301,7 @@ namespace PK
 
         VkAccelerationStructureInstanceKHR* instance = m_writeBuffer + m_instanceCount++;
 
-        *reinterpret_cast<float4x4*>(instance->transform.matrix) = matrix;
+        instance->transform = Math::BitCast<float3x4, VkTransformMatrixKHR>(matrix);
         instance->instanceCustomIndex = geometry.customIndex;
         instance->mask = 0xFF;
         instance->instanceShaderBindingTableRecordOffset = geometry.recordOffset;
