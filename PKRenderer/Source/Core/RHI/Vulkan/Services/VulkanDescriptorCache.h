@@ -3,17 +3,13 @@
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FixedArena.h"
 #include "Core/Utilities/Ref.h"
+#include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK
 {
     struct VulkanDescriptorCache : public NoCopy
     {
-        // Match at least minimum count of VkDescriptorType enum values.
-        constexpr static uint32_t VK_DESCRIPTOR_TYPE_COUNT = 32u;
-        constexpr static uint32_t VK_MAX_DESCRIPTOR_SET_COUNT = 1024u;
-        constexpr static uint32_t VK_MAX_DESCRIPTOR_BINDINGS = 4096u;
-
         struct alignas(8) DescriptorBinding
         {
             union
@@ -55,7 +51,7 @@ namespace PK
             std::size_t operator()(const SetKey& k) const noexcept;
         };
 
-        VkDescriptorPoolSize m_poolSizes[VK_DESCRIPTOR_TYPE_COUNT]{};
+        VkDescriptorPoolSize m_poolSizes[PK_VK_MAX_DESCRIPTOR_TYPE_POOL_SIZES]{};
         VkDescriptorPoolCreateInfo m_poolCreateInfo;
         const VkDevice m_device;
         const uint64_t m_pruneDelay;
@@ -63,10 +59,10 @@ namespace PK
         uint64_t m_currentPruneTick = 0ull;
         
         VulkanDescriptorPool* m_currentPool = nullptr;
-        FixedPool<VulkanDescriptorSet, VK_MAX_DESCRIPTOR_SET_COUNT> m_setsPool;
-        FixedPool<DescriptorBinding, VK_MAX_DESCRIPTOR_BINDINGS> m_bindingPool;
-        FixedPointerMap16<SetKey, VulkanDescriptorSet, VK_MAX_DESCRIPTOR_SET_COUNT, SetKeyHash> m_sets;
-        FixedPool<VulkanDescriptorPool, 8> m_poolPool; // A great name for a great variable.
-        FixedArena<8192ull> m_writeArena;
+        FixedPool<VulkanDescriptorSet, PK_VK_MAX_DESCRIPTOR_SETS> m_setsPool;
+        FixedPool<DescriptorBinding, PK_VK_MAX_DESCRIPTOR_BINDINGS> m_bindingPool;
+        FixedPointerMap16<SetKey, VulkanDescriptorSet, PK_VK_MAX_DESCRIPTOR_SETS, SetKeyHash> m_sets;
+        FixedPool<VulkanDescriptorPool, PK_VK_MAX_DESCRIPTOR_SET_POOLS> m_poolPool; // A great name for a great variable.
+        FixedArena<PK_VK_DESCRIPTOR_WRITE_ARENA_SIZE> m_writeArena;
     };
 }

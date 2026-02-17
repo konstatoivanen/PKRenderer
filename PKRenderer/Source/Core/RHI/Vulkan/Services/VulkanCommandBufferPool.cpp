@@ -16,7 +16,7 @@ namespace PK
         VK_ASSERT_RESULT(vkCreateCommandPool(m_device, &createInfo, nullptr, &m_pool));
         VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)m_pool, FixedString32("PK_Cmd_Pool_%s", name).c_str());
 
-        for (auto i = 0u; i < MAX_COMMANDBUFFERS; ++i)
+        for (auto i = 0u; i < PK_VK_MAX_COMMAND_BUFFERS; ++i)
         {
             VkFenceCreateInfo fenceCreateInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
             VK_ASSERT_RESULT(vkCreateFence(device, &fenceCreateInfo, nullptr, &m_fences[i]));
@@ -58,10 +58,10 @@ namespace PK
 
             if (allocateInfo.commandBufferCount > 0)
             {
-                VkCommandBuffer buffers[MAX_COMMANDBUFFERS];
+                VkCommandBuffer buffers[PK_VK_MAX_COMMAND_BUFFERS];
                 VK_ASSERT_RESULT(vkAllocateCommandBuffers(m_device, &allocateInfo, buffers));
 
-                for (uint32_t i = 0u, j = 0u; i < MAX_COMMANDBUFFERS; ++i)
+                for (uint32_t i = 0u, j = 0u; i < PK_VK_MAX_COMMAND_BUFFERS; ++i)
                 {
                     if (m_commandBuffers[i] == VK_NULL_HANDLE)
                     {
@@ -104,7 +104,7 @@ namespace PK
 
     void VulkanCommandBufferPool::Prune(bool all)
     {
-        VkFence fences[MAX_COMMANDBUFFERS];
+        VkFence fences[PK_VK_MAX_COMMAND_BUFFERS];
         uint32_t count = 0;
 
         for (auto& wrapper : m_wrappers)

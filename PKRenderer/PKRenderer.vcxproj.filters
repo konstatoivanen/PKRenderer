@@ -1515,6 +1515,9 @@
     <ClInclude Include="ThirdParty\PKAssets\PKAssetEncoding.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanLimits.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ThirdParty\glm\detail\func_common.inl">

@@ -4,6 +4,7 @@
 #include "Core/Utilities/FixedPool.h"
 #include "Core/Utilities/FastMap.h"
 #include "Core/RHI/Structs.h"
+#include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK
@@ -47,9 +48,9 @@ namespace PK
 
         private:
             VkDevice m_device;
-            FixedPool<VulkanDescriptorSetLayout, 1024> m_setLayoutPool;
-            FixedPool<VulkanPipelineLayout, 1024> m_pipelineLayoutPool;
-            FixedMap16<DescriptorSetLayoutKey, uint16_t, 1024u, TDescriptorHash> m_setLayoutMap;
-            FixedMap16<PipelineLayoutKey, uint16_t, 1024u, TPipelineHash> m_pipelineLayoutMap;
+            FixedPool<VulkanDescriptorSetLayout, PK_VK_MAX_DESCRIPTOR_SET_LAYOUTS> m_setLayoutPool;
+            FixedMap16<DescriptorSetLayoutKey, uint16_t, PK_VK_MAX_DESCRIPTOR_SET_LAYOUTS, TDescriptorHash> m_setLayoutMap;
+            FixedPool<VulkanPipelineLayout, PK_VK_MAX_PIPELINE_LAYOUTS> m_pipelineLayoutPool;
+            FixedMap16<PipelineLayoutKey, uint16_t, PK_VK_MAX_PIPELINE_LAYOUTS, TPipelineHash> m_pipelineLayoutMap;
     };
 }

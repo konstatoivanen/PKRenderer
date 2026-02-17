@@ -4,6 +4,7 @@
 #include "Core/Utilities/Hash.h"
 #include "Core/Utilities/FixedPool.h"
 #include "Core/Utilities/FastMap.h"
+#include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanShader.h"
 
 namespace PK
@@ -57,6 +58,7 @@ namespace PK
             const char* workingDirectory, 
             bool discardPipelineCache, 
             uint64_t pruneDelay);
+
         ~VulkanPipelineCache();
 
         struct PipelineValue
@@ -79,10 +81,10 @@ namespace PK
 
             VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
             FixedString256 m_workingDirectory;
-            FixedPool<VulkanPipeline, 2048> m_pipelinePool;
-            FixedMap16<PipelineKey, PipelineValue, 1024u, PipelineKeyHash> m_vertexPipelines;
-            FixedMap16<MeshPipelineKey, PipelineValue, 1024u, MeshPipelineKeyHash> m_meshPipelines;
-            FixedMap16<VersionHandle<VulkanShader>, PipelineValue, 1024u, VersionHandle<VulkanShader>::Hash> m_otherPipelines;
+            FixedPool<VulkanPipeline, PK_VK_MAX_PIPELINES> m_pipelinePool;
+            FixedMap16<PipelineKey, PipelineValue, PK_VK_MAX_PIPELINES_VERTEX, PipelineKeyHash> m_vertexPipelines;
+            FixedMap16<MeshPipelineKey, PipelineValue, PK_VK_MAX_PIPELINES_MESH, MeshPipelineKeyHash> m_meshPipelines;
+            FixedMap16<VersionHandle<VulkanShader>, PipelineValue, PK_VK_MAX_PIPELINES_GENERIC, VersionHandle<VulkanShader>::Hash> m_otherPipelines;
             uint64_t m_currentPruneTick = 0;
             uint64_t m_pruneDelay = 0;
     };

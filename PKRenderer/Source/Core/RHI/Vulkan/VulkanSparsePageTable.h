@@ -3,6 +3,7 @@
 #include "Core/Utilities/FixedPool.h"
 #include "Core/Utilities/FixedRangeTable.h"
 #include "Core/RHI/Structs.h"
+#include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK
@@ -36,8 +37,8 @@ namespace PK
             const VulkanDriver* m_driver = nullptr;
             const VkBuffer m_targetBuffer = VK_NULL_HANDLE;
             Page* m_firstPage = nullptr;
-            FixedPool<Page, 1024> m_pages;
-            FixedRangeTable<1024> m_residency;
+            FixedPool<Page, PK_VK_MAX_SPARSE_PAGES> m_pages;
+            FixedRangeTable<PK_VK_MAX_SPARSE_RANGES> m_residency;
             FixedString128 m_name;
     };
 }

@@ -4,6 +4,7 @@
 #include "Core/Utilities/FixedPool.h"
 #include "Core/Utilities/Disposer.h"
 #include "Core/RHI/RHInterfaces.h"
+#include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK
@@ -47,7 +48,7 @@ namespace PK
             Disposer* m_disposer;
             VulkanStagingBuffer* m_freeBufferHead = nullptr;
             VulkanStagingBuffer* m_liveBufferHead = nullptr;
-            FixedPool<VulkanStagingBuffer, 512> m_bufferPool;
+            FixedPool<VulkanStagingBuffer, PK_VK_MAX_STAGING_BUFFERS> m_bufferPool;
             uint64_t m_currentPruneTick = 0ull;
             uint64_t m_pruneDelay = 0ull;
     };

@@ -193,7 +193,7 @@ namespace PK
             {
                 auto divisor = m_sizeMultiplier++;
 
-                for (auto i = 0u; i < VK_DESCRIPTOR_TYPE_COUNT; ++i)
+                for (auto i = 0u; i < PK_VK_MAX_DESCRIPTOR_TYPE_POOL_SIZES; ++i)
                 {
                     m_poolSizes[i].descriptorCount = (m_poolSizes[i].descriptorCount / divisor) * m_sizeMultiplier;
                 }

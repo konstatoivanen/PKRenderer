@@ -7,7 +7,7 @@ namespace PK
 {
     static void GetVkPipelineShaderStageCreateInfos(const VulkanShader* shader, ShaderStageFlags stageMask, uint16_t excludeStageMask, VkPipelineShaderStageCreateInfo* outInfos, uint32_t* outCount)
     {
-        for (auto i = 0u; i < (int)ShaderStage::MaxCount; ++i)
+        for (auto i = 0u; i < (uint32_t)ShaderStage::MaxCount; ++i)
         {
             const auto module = shader->GetModule(i);
             auto stageFlag = (ShaderStageFlags)(1u << i);

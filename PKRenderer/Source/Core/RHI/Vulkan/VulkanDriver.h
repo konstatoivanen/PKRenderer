@@ -6,6 +6,7 @@
 #include "Core/Utilities/FixedTypeSet.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/BuiltInResources.h"
+#include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 #include "Core/RHI/Vulkan/Services/VulkanDescriptorCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanSamplerCache.h"
@@ -129,13 +130,13 @@ namespace PK
         mutable FixedUnique<Disposer> disposer;
 
         FixedUnique<BuiltInResources> builtInResources;
-        PropertyBlock globalResources = PropertyBlock(16384ull, 128ull);
+        PropertyBlock globalResources = PropertyBlock(PK_VK_GLOBAL_PROPERTIES_INITIAL_SIZE, PK_VK_GLOBAL_PROPERTIES_INITIAL_COUNT);
 
         mutable FixedTypeSet<
-            FixedPool<VulkanBufferView, 1024ull>,
-            FixedPool<VulkanImageView, 1024ull>,
-            FixedPool<VulkanRawImage, 1024ull>,
-            FixedPool<VulkanRawBuffer, 1024ull>,
-            FixedPool<VulkanRawAccelerationStructure, 1024ull>> objectPools;
+            FixedPool<VulkanBufferView, PK_VK_MAX_BUFFER_VIEWS>,
+            FixedPool<VulkanImageView, PK_VK_MAX_IMAGE_VIEWS>,
+            FixedPool<VulkanRawImage, PK_VK_MAX_RAW_IMAGES>,
+            FixedPool<VulkanRawBuffer, PK_VK_MAX_RAW_BUFFERS>,
+            FixedPool<VulkanRawAccelerationStructure, PK_VK_MAX_ACCELERATION_STRUCTURES>> objectPools;
     };
 }

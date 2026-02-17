@@ -17,13 +17,12 @@ namespace PK
             void Prune(bool all);
 
         private:
-            constexpr static const uint32_t MAX_COMMANDBUFFERS = 24u;
             uint32_t m_queueFamily;
             VkDevice m_device;
             VkCommandPool m_pool;
-            VkFence m_fences[MAX_COMMANDBUFFERS]{};
-            VkCommandBuffer m_commandBuffers[MAX_COMMANDBUFFERS]{};
-            VulkanCommandBuffer m_wrappers[MAX_COMMANDBUFFERS]{};
+            VkFence m_fences[PK_VK_MAX_COMMAND_BUFFERS]{};
+            VkCommandBuffer m_commandBuffers[PK_VK_MAX_COMMAND_BUFFERS]{};
+            VulkanCommandBuffer m_wrappers[PK_VK_MAX_COMMAND_BUFFERS]{};
             VulkanRenderState m_primaryRenderState;
             VulkanCommandBuffer* m_current = nullptr;
     };

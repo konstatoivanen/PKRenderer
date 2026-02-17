@@ -3,6 +3,7 @@
 #include "Core/Utilities/FixedPool.h"
 #include "Core/Utilities/FixedList.h"
 #include "Core/Utilities/FastMap.h"
+#include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
 namespace PK
@@ -239,10 +240,10 @@ namespace PK
             }
 
             const uint32_t m_queueFamily = 0u;
-            FixedPointerMap16<uint64_t, AccessRecord, 1024u> m_resources;
-            FixedPool<AccessRecord, 1024> m_records;
-            FixedList<VkBufferMemoryBarrier, 256> m_bufferBarriers;
-            FixedList<VkImageMemoryBarrier, 256> m_imageBarriers;
+            FixedPointerMap16<uint64_t, AccessRecord, PK_VK_MAX_ACCESS_HEADERS> m_resources;
+            FixedPool<AccessRecord, PK_VK_MAX_ACCESS_RECORDS> m_records;
+            FixedList<VkBufferMemoryBarrier, PK_VK_MAX_BUFFER_BARRIERS> m_bufferBarriers;
+            FixedList<VkImageMemoryBarrier, PK_VK_MAX_IMAGE_BARRIERS> m_imageBarriers;
             uint64_t m_accessTimestamps[1024]{};
             uint64_t m_resolveTimestamps[1024]{};
             VkPipelineStageFlags m_sourceStage = 0u;

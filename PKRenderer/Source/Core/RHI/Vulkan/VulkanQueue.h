@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/RHI/RHInterfaces.h"
+#include "Core/RHI/Vulkan/VulkanLimits.h"
 #include "Core/RHI/Vulkan/Services/VulkanCommandBufferPool.h"
 
 namespace PK
@@ -21,14 +22,13 @@ namespace PK
 
     class VulkanQueue : public NoCopy
     {
-        constexpr static const uint32_t MAX_SEMAPHORES = 16u;
         constexpr static const uint32_t MAX_DEPENDENCIES = ((uint32_t)QueueType::MaxCount + 1u);
 
         public:
             VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, VulkanServiceContext& services, uint32_t queueIndex, const char* name);
             ~VulkanQueue();
 
-            inline VkSemaphore GetNextSemaphore() { return m_semaphores[m_semaphoreIndex++ % MAX_SEMAPHORES]; }
+            inline VkSemaphore GetNextSemaphore() { return m_semaphores[m_semaphoreIndex++ % PK_VK_QUEUE_SEMAPHORE_COUNT]; }
             constexpr VkQueue GetNative() const { return m_queue; }
             constexpr uint32_t GetFamily() const { return m_family; }
             constexpr VkPipelineStageFlags GetCapabilityFlags() const { return m_capabilityFlags; }
@@ -55,7 +55,7 @@ namespace PK
             VkQueue m_queue = VK_NULL_HANDLE;
             VulkanTimelineSemaphore m_timeline{};
             VulkanTimelineSemaphore m_waitTimelines[MAX_DEPENDENCIES]{};
-            VkSemaphore m_semaphores[MAX_SEMAPHORES] = {};
+            VkSemaphore m_semaphores[PK_VK_QUEUE_SEMAPHORE_COUNT] = {};
             uint32_t m_semaphoreIndex = 0u;
     };
 
@@ -76,8 +76,8 @@ namespace PK
             void Prune();
 
         private:
-            Unique<VulkanQueue> m_queues[MAX_DEPENDENCIES]{};
-            uint32_t m_queueIndices[MAX_DEPENDENCIES]{};
+            Unique<VulkanQueue> m_queues[(uint32_t)QueueType::MaxCount]{};
+            uint32_t m_queueIndices[(uint32_t)QueueType::MaxCount]{};
             VulkanQueueFamilies m_selectedFamilies{};
             FenceRef m_lastSubmitFence;
     };

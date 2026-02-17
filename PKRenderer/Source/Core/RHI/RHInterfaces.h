@@ -180,8 +180,6 @@ namespace PK
 
     struct RHIQueueSet : public NoCopy
     {
-        constexpr static const uint32_t MAX_DEPENDENCIES = (uint32_t)QueueType::MaxCount;
-
         virtual ~RHIQueueSet() = 0;
         virtual RHICommandBuffer* GetCommandBuffer(QueueType type) = 0;
         virtual FenceRef GetFenceRef(QueueType type, int32_t submitOffset = 0) = 0;
