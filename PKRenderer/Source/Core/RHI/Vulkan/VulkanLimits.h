@@ -5,6 +5,8 @@ namespace PK
 {
     // Modify these if running into limits or resizes.
 
+    constexpr static const uint64_t PK_VK_FRAME_ARENA_SIZE = 16384ull;
+
     constexpr static const uint64_t PK_VK_GLOBAL_PROPERTIES_INITIAL_SIZE = 16384ull;
     constexpr static const uint64_t PK_VK_GLOBAL_PROPERTIES_INITIAL_COUNT = 128ull;
 

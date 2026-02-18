@@ -3,7 +3,16 @@
 
 namespace PK::ContainerHelpers
 {
-    #define PK_CONTAINER_RANGE_CHECK(index, min, max) if (index >= max || index < min) throw std::exception("Index/Count outside of container bounds!")
+    #define PK_CONTAINER_RANGE_CHECK(index, min, max)                        \
+    do                                                                       \
+    {                                                                        \
+        if (index >= max || index < min)                                     \
+        {                                                                    \
+            throw std::exception("Index/Count outside of container bounds!");\
+        }                                                                    \
+    }                                                                        \
+    while(0)                                                                 \
+                                                                             \
 
     template<typename  T>
     struct Comparer

@@ -6,7 +6,7 @@
 
 namespace PK
 {
-    VulkanSparsePageTable::Page* VulkanSparsePageTable::CreatePage(Page* next, uint32_t beg, uint32_t end, std::vector<VkSparseMemoryBind>& outBindIfos)
+    VulkanSparsePageTable::Page* VulkanSparsePageTable::CreatePage(Page* next, uint32_t beg, uint32_t end)
     {
         auto page = m_pages.New();
         const auto alignedBeg = beg * m_memoryRequirements.alignment;
@@ -27,12 +27,12 @@ namespace PK
         page->end = end;
         page->next = next;
 
-        VkSparseMemoryBind bind{};
-        bind.resourceOffset = alignedBeg;
-        bind.size = alugnedEnd - alignedBeg;
-        bind.memory = allocationInfo.deviceMemory;
-        bind.memoryOffset = allocationInfo.offset;
-        outBindIfos.push_back(bind);
+        auto bindInfo = m_driver->arena.Allocate<VkSparseMemoryBind>(1u);
+        bindInfo->resourceOffset = alignedBeg;
+        bindInfo->size = alugnedEnd - alignedBeg;
+        bindInfo->memory = allocationInfo.deviceMemory;
+        bindInfo->memoryOffset = allocationInfo.offset;
+        bindInfo->flags = 0u;
         return page;
     }
 
@@ -67,7 +67,7 @@ namespace PK
 
         m_residency.Reserve(range.offset, range.offset + range.count);
 
-        std::vector<VkSparseMemoryBind> bindInfos;
+        auto bindInfos = m_driver->arena.GetHead<VkSparseMemoryBind>();
 
         auto head = 0u;
         auto next = &m_firstPage;
@@ -82,7 +82,7 @@ namespace PK
 
             const auto pageBeg = head > beg ? head : beg;
             const auto pageEnd = end < curr->beg ? end : curr->beg;
-            *next = CreatePage(curr, pageBeg, pageEnd, bindInfos);
+            *next = CreatePage(curr, pageBeg, pageEnd);
             next = &curr->next;
         }
 
@@ -91,13 +91,15 @@ namespace PK
         {
             auto pageBeg = head > beg ? head : beg;
             auto pageEnd = end;
-            *next = CreatePage(*next, pageBeg, pageEnd, bindInfos);
+            *next = CreatePage(*next, pageBeg, pageEnd);
         }
 
-        if (bindInfos.size() > 0)
+        auto bindInfoCount = m_driver->arena.GetHeadDelta(bindInfos);
+
+        if (bindInfoCount > 0ull)
         {
             auto queue = m_driver->queues->GetQueue(type);
-            queue->BindSparse(m_targetBuffer, bindInfos.data(), (uint32_t)bindInfos.size());
+            queue->BindSparse(m_targetBuffer, bindInfos, (uint32_t)bindInfoCount);
         }
     }
 

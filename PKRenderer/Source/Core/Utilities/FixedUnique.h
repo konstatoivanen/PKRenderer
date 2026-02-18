@@ -19,7 +19,7 @@ namespace PK
         T* operator -> () { return get(); }
 
         template<typename ... Args>
-        void New(Args&& ... args)
+        void New(Args&& ... args) noexcept
         {
             if (!m_isCreated)
             {
@@ -28,7 +28,7 @@ namespace PK
             }
         }
 
-        void Delete()
+        void Delete() noexcept
         {
             if (m_isCreated)
             {

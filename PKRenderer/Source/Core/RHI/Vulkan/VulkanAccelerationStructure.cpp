@@ -187,10 +187,9 @@ namespace PK
             m_structureBuffer = m_driver->CreatePooled<VulkanRawBuffer>(m_driver->device, m_driver->allocator, createInfo, name.c_str());
         }
 
-        std::vector<VkAccelerationStructureBuildGeometryInfoKHR> buildGeometryInfos;
-        std::vector<VkAccelerationStructureBuildRangeInfoKHR*> buildStructureRangeInfoPtrs;
-        buildGeometryInfos.reserve(buildCount);
-        buildStructureRangeInfoPtrs.reserve(buildCount);
+        auto buildGeometryInfos = m_driver->arena.Allocate<VkAccelerationStructureBuildGeometryInfoKHR>(buildCount);
+        auto buildStructureRangeInfoPtrs = m_driver->arena.Allocate<VkAccelerationStructureBuildRangeInfoKHR*>(buildCount);
+        auto buildInfoCount = 0u;
         auto deployBuild = false;
 
         // Full rebuild needed even if only one element compacted as buffer offsets have been recalculated.
@@ -210,8 +209,8 @@ namespace PK
                 auto buildInfo = structure->buildInfo;
                 buildInfo.dstAccelerationStructure = newstructure->structure;
                 buildInfo.scratchData.deviceAddress = m_scratchBuffer->deviceAddress + structure->scratchOffset;
-                buildGeometryInfos.push_back(buildInfo);
-                buildStructureRangeInfoPtrs.push_back(&structure->range);
+                buildGeometryInfos[buildInfoCount] = buildInfo;
+                buildStructureRangeInfoPtrs[buildInfoCount++] = &structure->range;
                 deployBuild = true;
             }
             else
@@ -254,7 +253,7 @@ namespace PK
 
         if (deployBuild)
         {
-            m_cmd->BuildAccelerationStructures((uint32_t)buildGeometryInfos.size(), buildGeometryInfos.data(), buildStructureRangeInfoPtrs.data());
+            m_cmd->BuildAccelerationStructures(buildInfoCount, buildGeometryInfos, buildStructureRangeInfoPtrs);
         }
 
         VkMemoryBarrier memoryBarrier{ VK_STRUCTURE_TYPE_MEMORY_BARRIER };

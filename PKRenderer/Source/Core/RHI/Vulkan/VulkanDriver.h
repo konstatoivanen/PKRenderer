@@ -128,8 +128,10 @@ namespace PK
         mutable FixedUnique<VulkanSamplerCache> samplerCache;
         mutable FixedUnique<VulkanLayoutCache> layoutCache;
         mutable FixedUnique<Disposer> disposer;
-
+        mutable FixedArena<PK_VK_FRAME_ARENA_SIZE> arena;
+        
         FixedUnique<BuiltInResources> builtInResources;
+        
         PropertyBlock globalResources = PropertyBlock(PK_VK_GLOBAL_PROPERTIES_INITIAL_SIZE, PK_VK_GLOBAL_PROPERTIES_INITIAL_COUNT);
 
         mutable FixedTypeSet<

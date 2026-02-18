@@ -112,7 +112,7 @@ namespace PK
             }
         }
 
-        if (indendation > 0u)
+        if (indendation > 0)
         {
             char spaces[MAX_INDENT * 4u + 1u];
             memset(spaces, ' ', sizeof(spaces));

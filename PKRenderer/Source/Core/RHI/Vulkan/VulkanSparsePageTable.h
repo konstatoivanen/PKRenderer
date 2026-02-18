@@ -20,7 +20,7 @@ namespace PK
             uint32_t end = 0u;
         };
 
-        Page* CreatePage(Page* next, uint32_t start, uint32_t end, std::vector<VkSparseMemoryBind>& outBindIfos);
+        Page* CreatePage(Page* next, uint32_t start, uint32_t end);
         
         public:
             VulkanSparsePageTable(const VulkanDriver* driver, const VkBuffer buffer, VmaMemoryUsage memoryUsage, const char* name);

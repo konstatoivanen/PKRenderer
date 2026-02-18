@@ -71,7 +71,7 @@ namespace PK
             m_head = 0ull;
         }
 
-        char m_data[capacity]{};
+        uint8_t m_data[capacity]{};
         size_t m_head = 0ull;
     };
 }

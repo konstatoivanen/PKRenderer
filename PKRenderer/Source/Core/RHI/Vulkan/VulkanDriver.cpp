@@ -142,7 +142,7 @@ namespace PK
 
         descriptorCache.New
         (
-            device, 
+            device,
             properties.gcPruneDelay,
             PK_VK_DESCRIPTOR_INITIAL_COUNT_SETS,
             std::initializer_list<std::pair<const VkDescriptorType, size_t>>(
@@ -286,6 +286,7 @@ namespace PK
         disposer->Prune();
         queues->Prune();
         layoutCache->Prune();
+        arena.Clear();
     }
 
 
