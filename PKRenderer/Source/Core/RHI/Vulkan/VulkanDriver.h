@@ -12,7 +12,6 @@
 #include "Core/RHI/Vulkan/Services/VulkanSamplerCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanPipelineCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanStagingBufferCache.h"
-#include "Core/RHI/Vulkan/Services/VulkanCommandBufferPool.h"
 #include "Core/RHI/Vulkan/Services/VulkanLayoutCache.h"
 #include "Core/RHI/Vulkan/Services/VulkanBarrierHandler.h"
 #include "Core/RHI/Vulkan/VulkanQueue.h"

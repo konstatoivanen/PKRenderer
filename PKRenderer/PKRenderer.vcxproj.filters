@@ -1218,9 +1218,6 @@
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanBarrierHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanCommandBufferPool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanDescriptorCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -2273,9 +2270,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanBarrierHandler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanCommandBufferPool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanDescriptorCache.cpp">

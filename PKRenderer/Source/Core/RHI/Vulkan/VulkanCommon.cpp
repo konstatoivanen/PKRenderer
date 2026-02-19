@@ -1777,6 +1777,49 @@ namespace PK
             }
         }
 
+        VkPipelineStageFlags GetQueueFlagsStageCapabilities(VkQueueFlags flags)
+        {
+            VkPipelineStageFlags outflags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT |
+                VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT |
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+            if (flags & VK_QUEUE_GRAPHICS_BIT)
+            {
+                outflags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
+                    VK_PIPELINE_STAGE_VERTEX_INPUT_BIT |
+                    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                    VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT |
+                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                    VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT |
+                    VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
+                    VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+                    // Requires optional features
+                    //VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
+                    //VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
+                    //VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT | 
+                    //VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT | 
+                    //VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT |
+                    //VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT |
+                    //VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+            }
+
+            if (flags & VK_QUEUE_COMPUTE_BIT)
+            {
+                outflags |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                    VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR |
+                    VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+            }
+
+            if (flags & VK_QUEUE_TRANSFER_BIT)
+            {
+                outflags |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_HOST_BIT;
+            }
+
+            return outflags;
+        }
+
         VkPipelineStageFlags GetPipelineStageFlags(VkShaderStageFlags flags)
         {
             VkPipelineStageFlags outflags = 0u;

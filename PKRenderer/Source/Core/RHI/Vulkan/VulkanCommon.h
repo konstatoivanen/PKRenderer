@@ -505,6 +505,7 @@ namespace PK
         VkConservativeRasterizationModeEXT GetRasterMode(RasterMode mode, bool allowUnderEstimation);
         VkPrimitiveTopology GetTopology(Topology topology);
         VkFrontFace GetFrontFace(FrontFace face);
+        VkPipelineStageFlags GetQueueFlagsStageCapabilities(VkQueueFlags flags);
         VkPipelineStageFlags GetPipelineStageFlags(VkShaderStageFlags flags);
         VkRayTracingShaderGroupTypeKHR GetRayTracingStageGroupType(ShaderStage stage);
         VkImageAspectFlagBits GetFormatAspect(VkFormat format);

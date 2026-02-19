@@ -122,9 +122,9 @@ namespace PK
             PK_LOG_NEWLINE();
         }
 
-        auto maskTransfer = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
-        auto maskGraphics = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
-        auto maskCompute = VK_QUEUE_COMPUTE_BIT;
+        const auto maskTransfer = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT;
+        const auto maskGraphics = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
+        const auto maskCompute = VK_QUEUE_COMPUTE_BIT;
 
         typeIndices[(uint32_t)QueueType::Graphics] = GetQueueIndex(context, maskGraphics, maskTransfer, false, true, true);
         typeIndices[(uint32_t)QueueType::Present] = GetQueueIndex(context, maskGraphics, maskTransfer, true, false, false);
@@ -158,75 +158,57 @@ namespace PK
 
 
     VulkanQueue::VulkanQueue(const VkDevice device, VkQueueFlags flags, uint32_t queueFamily, VulkanServiceContext& services, uint32_t queueIndex, const char* name) :
-        m_barrierHandler(queueFamily),
-        m_commandPool(device, services.SetBarrierHandler(&m_barrierHandler), queueFamily, name),
         m_device(device),
         m_family(queueFamily),
-        m_queueIndex(queueIndex)
+        m_queueIndex(queueIndex),
+        m_capabilityFlags(VulkanEnumConvert::GetQueueFlagsStageCapabilities(flags)),
+        m_barrierHandler(queueFamily),
+        m_renderState(services.SetBarrierHandler(&m_barrierHandler))
     {
         vkGetDeviceQueue(m_device, m_family, m_queueIndex, &m_queue);
         VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_QUEUE, (uint64_t)m_queue, FixedString32("PK_Queue_%s", name).c_str());
+
+        VkCommandPoolCreateInfo commandPoolCreateInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+        commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+        commandPoolCreateInfo.queueFamilyIndex = queueFamily;
+        VK_ASSERT_RESULT(vkCreateCommandPool(m_device, &commandPoolCreateInfo, nullptr, &m_commandPool));
+        VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)m_commandPool, FixedString32("PK_Cmd_Pool_%s", name).c_str());
 
         VkSemaphoreTypeCreateInfo timelineCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
         timelineCreateInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
         timelineCreateInfo.initialValue = 0ull;
 
-        VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,};
-        createInfo.pNext = &timelineCreateInfo;
-        
-        vkCreateSemaphore(m_device, &createInfo, nullptr, &m_timeline.semaphore);
+        VkSemaphoreCreateInfo semaphoreCreateInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,};
+        semaphoreCreateInfo.pNext = &timelineCreateInfo;
+        vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_timeline.semaphore);
         VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)m_timeline.semaphore, FixedString32("PK_Timeline_Semaphore_%s", name).c_str());
 
-        createInfo.pNext = nullptr;
+        semaphoreCreateInfo.pNext = nullptr;
 
         for (auto& semaphore : m_semaphores)
         {
-            vkCreateSemaphore(m_device, &createInfo, nullptr, &semaphore);
+            vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &semaphore);
             VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore, FixedString32("PK_Semaphore_%s", name).c_str());
         }
 
-        m_capabilityFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT |
-            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT |
-            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-
-        if (flags & VK_QUEUE_GRAPHICS_BIT)
+        for (auto& fence : m_commandFences)
         {
-            m_capabilityFlags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
-                VK_PIPELINE_STAGE_VERTEX_INPUT_BIT |
-                VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT |
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT |
-                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
-                VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
-                // Requires optional features
-                //VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
-                //VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
-                //VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT | 
-                //VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT | 
-                //VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT |
-                //VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT |
-                //VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
-        }
-
-        if (flags & VK_QUEUE_COMPUTE_BIT)
-        {
-            m_capabilityFlags |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | 
-                VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR | 
-                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
-        }
-
-        if (flags & VK_QUEUE_TRANSFER_BIT)
-        {
-            m_capabilityFlags |= VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_HOST_BIT;
+            VkFenceCreateInfo fenceCreateInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+            VK_ASSERT_RESULT(vkCreateFence(device, &fenceCreateInfo, nullptr, &fence));
+            VulkanSetObjectDebugName(m_device, VK_OBJECT_TYPE_FENCE, (uint64_t)fence, FixedString32("PK_Cmd_Fence_%s", name).c_str());
         }
     }
 
     VulkanQueue::~VulkanQueue()
     {
+        WaitCommandBuffers(true);
+        vkDestroyCommandPool(m_device, m_commandPool, nullptr);
         vkDestroySemaphore(m_device, m_timeline.semaphore, nullptr);
+
+        for (auto& fence : m_commandFences)
+        {
+            vkDestroyFence(m_device, fence, nullptr);
+        }
 
         for (auto& semaphore : m_semaphores)
         {
@@ -240,7 +222,6 @@ namespace PK
         return FenceRef(this, [](const void* ctx, uint64_t userdata, uint64_t timeout)
             {
                 auto queue = reinterpret_cast<const VulkanQueue*>(ctx);
-
                 VkSemaphoreWaitInfo waitInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO };
                 waitInfo.pNext = nullptr;
                 waitInfo.flags = VK_SEMAPHORE_WAIT_ANY_BIT;
@@ -259,12 +240,69 @@ namespace PK
             Math::ULongAdd(m_timeline.counter, timelineOffset));
     }
 
-    VkResult VulkanQueue::Submit(VulkanCommandBuffer* commandBuffer, VkSemaphore* outSignal)
+    VulkanCommandBuffer* VulkanQueue::GetCommandBuffer()
     {
-        if (!commandBuffer)
+        if (m_currentCommandBuffer != nullptr)
+        {
+            return m_currentCommandBuffer;
+        }
+
+        // Allocate all command buffers that have been completed.
+        // Doesnt assign references to wrappers (cache warmup essentially).
+        // Only primary command buffers are supported.
+        VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+        allocateInfo.commandPool = m_commandPool;
+        allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocateInfo.commandBufferCount = 0u;
+
+        for (auto& commandBuffer : m_commandBuffers)
+        {
+            allocateInfo.commandBufferCount += (uint32_t)(commandBuffer == VK_NULL_HANDLE);
+        }
+
+        if (allocateInfo.commandBufferCount > 0)
+        {
+            VkCommandBuffer buffers[PK_VK_MAX_COMMAND_BUFFERS];
+            VK_ASSERT_RESULT(vkAllocateCommandBuffers(m_device, &allocateInfo, buffers));
+
+            for (uint32_t i = 0u, j = 0u; i < PK_VK_MAX_COMMAND_BUFFERS; ++i)
+            {
+                if (m_commandBuffers[i] == VK_NULL_HANDLE)
+                {
+                    m_commandBuffers[i] = buffers[j++];
+                }
+            }
+        }
+
+        for (auto& commandBuffer : m_commandWrappers)
+        {
+            if (!commandBuffer.IsActive())
+            {
+                m_currentCommandBuffer = &commandBuffer;
+                break;
+            }
+        }
+
+        PK_DEBUG_THROW_ASSERT(m_currentCommandBuffer, "No available command buffers!");
+
+        auto currentIndex = (int64_t)(m_currentCommandBuffer - m_commandWrappers);
+        auto commandBuffer = m_commandBuffers[currentIndex];
+        auto fence = m_commandFences[currentIndex];
+        m_currentCommandBuffer->BeginRecord(commandBuffer, fence, m_family, &m_renderState);
+        return m_currentCommandBuffer;
+    }
+
+    VkResult VulkanQueue::Submit(VkSemaphore* outSignal)
+    {
+        if (m_currentCommandBuffer == nullptr)
         {
             return VK_SUCCESS;
         }
+
+        auto commandBuffer = m_currentCommandBuffer;
+        m_currentCommandBuffer->EndRecord();
+        m_currentCommandBuffer = nullptr;
+        m_timeline.waitFlags = commandBuffer->GetLastCommandStage();
 
         VkPipelineStageFlags waitFlags[MAX_DEPENDENCIES]{};
         VkSemaphore waits[MAX_DEPENDENCIES]{};
@@ -288,15 +326,19 @@ namespace PK
 
         for (auto& timeline : m_waitTimelines)
         {
-            if (timeline.semaphore == VK_NULL_HANDLE)
+            if (timeline.semaphore != VK_NULL_HANDLE)
             {
-                break;
+                waits[waitCount] = timeline.semaphore;
+                waitValues[waitCount] = timeline.counter;
+                waitFlags[waitCount] = timeline.waitFlags & m_capabilityFlags;
+                waitCount++;
             }
+        }
 
-            waits[waitCount] = timeline.semaphore;
-            waitValues[waitCount] = timeline.counter;
-            waitFlags[waitCount] = timeline.waitFlags & m_capabilityFlags;
-            waitCount++;
+        if (outSignal)
+        {
+            *outSignal = GetNextSemaphore();
+            signals[1] = *outSignal;
         }
 
         memset(m_waitTimelines, 0, sizeof(m_waitTimelines));
@@ -316,23 +358,17 @@ namespace PK
         submitInfo.pSignalSemaphores = signals;
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer->GetCommandBuffer();
-
-        if (outSignal)
-        {
-            *outSignal = GetNextSemaphore();
-            signals[1] = *outSignal;
-        }
-
-        m_timeline.waitFlags = commandBuffer->GetLastCommandStage();
         return vkQueueSubmit(m_queue, 1, &submitInfo, commandBuffer->GetFence());
     }
 
     VkResult VulkanQueue::Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkSemaphore waitSignal)
     {
         auto semaphore = waitSignal ? waitSignal : QueueSignal(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+        
         VkPresentIdKHR presentIdKHR{ VK_STRUCTURE_TYPE_PRESENT_ID_KHR };
         presentIdKHR.swapchainCount = 1u;
         presentIdKHR.pPresentIds = &presentId;
+
         VkPresentInfoKHR presentInfo{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
         presentInfo.pNext = &presentIdKHR;
         presentInfo.waitSemaphoreCount = 1;
@@ -413,15 +449,57 @@ namespace PK
 
     void VulkanQueue::QueueWait(VulkanQueue* other, int32_t timelineOffset)
     {
-        for (auto& timeline : m_waitTimelines)
+        if (other != this)
         {
-            if (timeline.semaphore == VK_NULL_HANDLE)
+            for (auto& timeline : m_waitTimelines)
             {
-                timeline = other->m_timeline;
-                timeline.counter = Math::ULongAdd(timeline.counter, timelineOffset);
-                // Wait at top of pipe as we dont know what the first op will be.
-                timeline.waitFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                break;
+                if (timeline.semaphore == VK_NULL_HANDLE)
+                {
+                    timeline = other->m_timeline;
+                    timeline.counter = Math::ULongAdd(timeline.counter, timelineOffset);
+                    // Wait at top of pipe as we dont know what the first op will be.
+                    timeline.waitFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                    break;
+                }
+            }
+        }
+    }
+
+    void VulkanQueue::WaitCommandBuffers(bool waitAll)
+    {
+        VkFence fences[PK_VK_MAX_COMMAND_BUFFERS];
+        uint32_t count = 0;
+
+        for (auto& wrapper : m_commandWrappers)
+        {
+            if (m_currentCommandBuffer != &wrapper)
+            {
+                if (wrapper.IsActive())
+                {
+                    fences[count++] = wrapper.GetFence();
+                }
+                else if (!waitAll)
+                {
+                    // At least one command buffer has been released/completed.
+                    count = 0u;
+                    break;
+                }
+            }
+        }
+
+        if (count > 0)
+        {
+            VK_ASSERT_RESULT(vkWaitForFences(m_device, count, fences, (VkBool32)waitAll, UINT64_MAX));
+        }
+
+        for (auto& wrapper : m_commandWrappers)
+        {
+            if (wrapper.IsActive() && vkGetFenceStatus(m_device, wrapper.GetFence()) == VK_SUCCESS)
+            {
+                m_commandBuffers[(int64_t)(&wrapper - &m_commandWrappers[0])] = VK_NULL_HANDLE;
+                vkFreeCommandBuffers(m_device, m_commandPool, 1, &wrapper.GetCommandBuffer());
+                VK_ASSERT_RESULT(vkResetFences(m_device, 1, &wrapper.GetFence()));
+                wrapper.FinishExecution();
             }
         }
     }
@@ -429,7 +507,7 @@ namespace PK
     void VulkanQueue::Prune()
     {
         m_barrierHandler.Prune();
-        m_commandPool.Prune(false);
+        WaitCommandBuffers(false);
     }
 
 
@@ -450,7 +528,7 @@ namespace PK
     VkResult VulkanQueueSet::SubmitCurrent(QueueType type, VkSemaphore* outSignal)
     {
         auto queue = GetQueue(type);
-        auto result = queue->Submit(GetQueue(type)->EndCommandBuffer(), outSignal);
+        auto result = queue->Submit(outSignal);
         m_lastSubmitFence = queue->GetFenceRef();
 
         // Sync resource access states to other queues.

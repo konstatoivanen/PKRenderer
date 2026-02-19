@@ -709,7 +709,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanSwapchain.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanTexture.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanBarrierHandler.h" />
-    <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanCommandBufferPool.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanDescriptorCache.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanLayoutCache.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\Services\VulkanPipelineCache.h" />
@@ -1159,7 +1158,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanSwapchain.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanTexture.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanBarrierHandler.cpp" />
-    <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanCommandBufferPool.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanDescriptorCache.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanLayoutCache.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\Services\VulkanPipelineCache.cpp" />

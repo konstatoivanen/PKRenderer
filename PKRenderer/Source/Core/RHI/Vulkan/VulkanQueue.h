@@ -1,7 +1,10 @@
 #pragma once
+#include "Core/Utilities/NoCopy.h"
+#include "Core/Utilities/Ref.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanLimits.h"
-#include "Core/RHI/Vulkan/Services/VulkanCommandBufferPool.h"
+#include "Core/RHI/Vulkan/VulkanRenderState.h"
+#include "Core/RHI/Vulkan/VulkanCommandBuffer.h"
 
 namespace PK
 {
@@ -33,29 +36,38 @@ namespace PK
             constexpr uint32_t GetFamily() const { return m_family; }
             constexpr VkPipelineStageFlags GetCapabilityFlags() const { return m_capabilityFlags; }
             inline VulkanBarrierHandler* GetBarrierHandler() { return &m_barrierHandler; }
-            inline VulkanCommandBuffer* GetCommandBuffer() { return m_commandPool.GetCurrent(); }
-            inline VulkanCommandBuffer* EndCommandBuffer() { return m_commandPool.EndCurrent(); }
             FenceRef GetFenceRef(int32_t timelineOffset = 0) const;
 
-            VkResult Submit(VulkanCommandBuffer* commandBuffer, VkSemaphore* outSignal = nullptr);
+            VulkanCommandBuffer* GetCommandBuffer();
+            VkResult Submit(VkSemaphore* outSignal = nullptr);
             VkResult Present(VkSwapchainKHR swapchain, uint32_t imageIndex, uint64_t presentId, VkSemaphore waitSignal = VK_NULL_HANDLE);
             VkResult BindSparse(VkBuffer buffer, const VkSparseMemoryBind* binds, uint32_t bindCount);
             VkSemaphore QueueSignal(VkPipelineStageFlags flags);
             void QueueWait(VkSemaphore semaphore, VkPipelineStageFlags flags);
             void QueueWait(VulkanQueue* other, int32_t timelineOffset = 0);
+            void WaitCommandBuffers(bool waitAll);
             void Prune();
 
         private:
-            VulkanBarrierHandler m_barrierHandler;
-            VulkanCommandBufferPool m_commandPool;
             const VkDevice m_device;
-            const uint32_t m_family = 0u;
-            const uint32_t m_queueIndex = 0u;
-            VkPipelineStageFlags m_capabilityFlags = 0u;
+            const uint32_t m_family;
+            const uint32_t m_queueIndex;
+            const VkPipelineStageFlags m_capabilityFlags;
+
+            VulkanBarrierHandler m_barrierHandler;
+            VulkanRenderState m_renderState;
+
             VkQueue m_queue = VK_NULL_HANDLE;
+            VkCommandPool m_commandPool = VK_NULL_HANDLE;
+
             VulkanTimelineSemaphore m_timeline{};
             VulkanTimelineSemaphore m_waitTimelines[MAX_DEPENDENCIES]{};
             VkSemaphore m_semaphores[PK_VK_QUEUE_SEMAPHORE_COUNT] = {};
+            VkFence m_commandFences[PK_VK_MAX_COMMAND_BUFFERS]{};
+            VkCommandBuffer m_commandBuffers[PK_VK_MAX_COMMAND_BUFFERS]{};
+            VulkanCommandBuffer m_commandWrappers[PK_VK_MAX_COMMAND_BUFFERS]{};
+
+            VulkanCommandBuffer* m_currentCommandBuffer = nullptr;
             uint32_t m_semaphoreIndex = 0u;
     };
 
