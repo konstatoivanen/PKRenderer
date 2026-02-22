@@ -29,7 +29,7 @@ namespace PK
 
     constexpr static const uint64_t PK_VK_MAX_DESCRIPTOR_TYPE_POOL_SIZES = 32ull;
     constexpr static const uint64_t PK_VK_MAX_DESCRIPTOR_SETS = 1024ull;
-    constexpr static const uint64_t PK_VK_MAX_DESCRIPTOR_BINDINGS = 4096ull;
+    constexpr static const uint64_t PK_VK_MAX_DESCRIPTOR_BINDINGS = 8192ull;
     constexpr static const uint64_t PK_VK_MAX_DESCRIPTOR_SET_POOLS = 8ull;
     constexpr static const uint64_t PK_VK_DESCRIPTOR_WRITE_ARENA_SIZE = 8192ull;
 

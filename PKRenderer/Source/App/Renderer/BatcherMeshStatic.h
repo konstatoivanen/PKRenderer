@@ -2,6 +2,7 @@
 #include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FixedList.h"
+#include "Core/Utilities/FixedArena.h"
 #include "Core/Rendering/MeshStaticCollection.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/Material.h"
@@ -46,6 +47,12 @@ namespace PK::App
         {
             const ShaderAsset* shader = nullptr;
             BufferIndexRange indices{};
+        };
+
+        struct PassGroup
+        {
+            DrawCall* drawCalls = nullptr;
+            size_t count = 0ull;
         };
 
         struct ShaderReference
@@ -126,12 +133,14 @@ namespace PK::App
         FixedSet16<ShaderReference, MAX_SHADERS, ShaderReferenceHash> m_shaders;
         FixedSet16<MaterialReference, MAX_MATERIALS, MaterialReferenceHash> m_materials;
         PointerSet<ComponentTransform> m_transforms;
+        FixedArena<32768ull> m_drawArena;
         uint16_t m_groupIndex = 0u;
         uint32_t m_taskletCount = 0u;
+        uint32_t m_drawInfoCount = 0u;
+        uint32_t m_groupCount = 0u;
 
-        std::vector<DrawInfo> m_drawInfos;
-        std::vector<DrawCall> m_drawCalls;
-        std::vector<BufferIndexRange> m_passGroups;
+        DrawInfo* m_drawInfos = nullptr;
+        PassGroup* m_resolvedGroups = nullptr;
 
         RHIBufferRef m_matrices;
         RHIBufferRef m_indices;
