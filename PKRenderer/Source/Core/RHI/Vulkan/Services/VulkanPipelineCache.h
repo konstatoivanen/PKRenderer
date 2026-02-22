@@ -56,7 +56,7 @@ namespace PK
         VulkanPipelineCache(VkDevice device, 
             const VulkanPhysicalDeviceProperties& physicalDeviceProperties, 
             const char* workingDirectory, 
-            bool discardPipelineCache, 
+            bool enablePipelineCache,
             uint64_t pruneDelay);
 
         ~VulkanPipelineCache();

@@ -26,7 +26,7 @@ namespace PK
     VulkanPipelineCache::VulkanPipelineCache(VkDevice device, 
         const VulkanPhysicalDeviceProperties& physicalDeviceProperties, 
         const char* workingDirectory, 
-        bool discardPipelineCache, 
+        bool enablePipelineCache,
         uint64_t pruneDelay) :
         m_device(device),
         m_maxOverEstimation(physicalDeviceProperties.conservativeRasterization.maxExtraPrimitiveOverestimationSize),
@@ -35,7 +35,7 @@ namespace PK
         m_pipelinePool(),
         m_pruneDelay(pruneDelay)
     {
-        if (m_workingDirectory.Length() != 0 && !discardPipelineCache)
+        if (m_workingDirectory.Length() != 0 && enablePipelineCache)
         {
             void* cacheData = nullptr;
             size_t cacheSize = 0ull;

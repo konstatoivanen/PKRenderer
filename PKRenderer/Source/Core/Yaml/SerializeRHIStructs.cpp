@@ -50,7 +50,8 @@ namespace PK::YAML
         isValid &= YAML::Read<bool>(node, "RHIDriverDescriptor.enableDebugNames", &rhs->enableDebugNames);
         isValid &= YAML::Read<bool>(node, "RHIDriverDescriptor.enableDebugLabels", &rhs->enableDebugLabels);
         isValid &= YAML::Read<bool>(node, "RHIDriverDescriptor.enableDebugShaderPrint", &rhs->enableDebugShaderPrint);
-        isValid &= YAML::Read<bool>(node, "RHIDriverDescriptor.discardPipelineCache", &rhs->discardPipelineCache);
+        isValid &= YAML::Read<bool>(node, "RHIDriverDescriptor.enableDebugLogging", &rhs->enableDebugLogging);
+        isValid &= YAML::Read<bool>(node, "RHIDriverDescriptor.enablePipelineCache", &rhs->enablePipelineCache);
         return isValid;
     }
 

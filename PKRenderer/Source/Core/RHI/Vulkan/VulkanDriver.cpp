@@ -55,7 +55,7 @@ namespace PK
 
         VkInstanceCreateInfo instanceCreateInfo{ VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
         instanceCreateInfo.pApplicationInfo = &appInfo;
-        instanceCreateInfo.pNext = &debugMessengerCreateInfo;
+        instanceCreateInfo.pNext = properties.enableDebugLogging ? &debugMessengerCreateInfo : nullptr;
         instanceCreateInfo.enabledLayerCount = properties.enableValidation ? 1u : 0u;
         instanceCreateInfo.ppEnabledLayerNames = &VK_LAYER_KHRONOS_validation;
 
@@ -85,7 +85,10 @@ namespace PK
             PK_LOG_NEWLINE();
         }
 
-        VK_ASSERT_RESULT_CTX(vkCreateDebugUtilsMessengerEXT(instance, &debugMessengerCreateInfo, nullptr, &debugMessenger), "Failed to create debug messenger");
+        if (properties.enableDebugLogging)
+        {
+            VK_ASSERT_RESULT_CTX(vkCreateDebugUtilsMessengerEXT(instance, &debugMessengerCreateInfo, nullptr, &debugMessenger), "Failed to create debug messenger");
+        }
 
         VulkanPhysicalDeviceRequirements physicalDeviceRequirements{};
         physicalDeviceRequirements.versionMajor = properties.apiVersionMajor;
@@ -138,7 +141,7 @@ namespace PK
 
         disposer.New(512u);
         stagingBufferCache.New(disposer.get(), device, allocator, properties.gcPruneDelay);
-        pipelineCache.New(device, physicalDeviceProperties, properties.workingDirectory, properties.discardPipelineCache, properties.gcPruneDelay);
+        pipelineCache.New(device, physicalDeviceProperties, properties.workingDirectory, properties.enablePipelineCache, properties.gcPruneDelay);
         samplerCache.New(device);
         layoutCache.New(device);
 
