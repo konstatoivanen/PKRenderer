@@ -3,7 +3,7 @@
 #include "Core/RHI/Vulkan/VulkanBuffer.h"
 #include "Core/RHI/Vulkan/VulkanTexture.h"
 #include "Core/RHI/Vulkan/VulkanAccelerationStructure.h"
-#include "Core/RHI/Vulkan/VulkanBindArray.h"
+#include "Core/RHI/Vulkan/VulkanBindSet.h"
 #include "Core/RHI/Vulkan/VulkanRenderState.h"
 #include "Core/RHI/Vulkan/VulkanSwapchain.h"
 #include "VulkanCommandBuffer.h"

@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
-#include "Core/RHI/Vulkan/VulkanBindArray.h"
+#include "Core/RHI/Vulkan/VulkanBindSet.h"
 #include "Core/RHI/Vulkan/VulkanDriver.h"
 #include "VulkanRenderState.h"
 
@@ -475,12 +475,12 @@ namespace PK
 
             if (element->count > 1)
             {
-                const VulkanBindArray* handleArray = nullptr;
-                PK_THROW_ASSERT(resources->TryGet<const VulkanBindArray*>(element->name, handleArray), "Descriptors (%s) not bound!", element->name.c_str());
+                const VulkanBindSet* handleSet = nullptr;
+                PK_THROW_ASSERT(resources->TryGet<const VulkanBindSet*>(element->name, handleSet), "Descriptors (%s) not bound!", element->name.c_str());
 
                 uint32_t version = 0u;
                 uint32_t count = 0u;
-                auto handles = handleArray->GetHandles(&version, &count);
+                auto handles = handleSet->GetHandles(&version, &count);
                 count = count < element->count ? (uint16_t)count : element->count;
 
                 if (binding->count != count || binding->type != element->type || binding->handles != handles || binding->version != version || !binding->isArray)

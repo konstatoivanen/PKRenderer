@@ -9,8 +9,8 @@
 namespace PK
 {
     RHIAccelerationStructure::~RHIAccelerationStructure() = default;
-    template<> RHIBindArray<RHITexture>::~RHIBindArray() = default;
-    template<> RHIBindArray<RHIBuffer>::~RHIBindArray() = default;
+    template<> RHIBindSet<RHITexture>::~RHIBindSet() = default;
+    template<> RHIBindSet<RHIBuffer>::~RHIBindSet() = default;
     RHIBuffer::~RHIBuffer() = default;
     RHIQueueSet::~RHIQueueSet() = default;
     RHISwapchain::~RHISwapchain() = default;
@@ -177,8 +177,8 @@ namespace PK
     RHIBuffer* RHI::AcquireStage(size_t size) { return RHIDriver::Get()->AcquireStage(size); }
     void RHI::ReleaseStage(RHIBuffer* buffer, const FenceRef& fence) { RHIDriver::Get()->ReleaseStage(buffer, fence); }
 
-    template<> RHITextureBindArrayRef RHI::CreateBindArray(size_t capacity) { return RHIDriver::Get()->CreateTextureBindArray(capacity); }
-    template<> RHIBufferBindArrayRef RHI::CreateBindArray(size_t capacity) { return RHIDriver::Get()->CreateBufferBindArray(capacity); }
+    template<> RHITextureBindSetRef RHI::CreateBindSet(size_t capacity) { return RHIDriver::Get()->CreateTextureBindSet(capacity); }
+    template<> RHIBufferBindSetRef RHI::CreateBindSet(size_t capacity) { return RHIDriver::Get()->CreateBufferBindSet(capacity); }
 
     bool RHI::ValidateTexture(RHITextureRef& inoutTexture, const TextureDescriptor& descriptor, const char* name)
     {
@@ -298,8 +298,8 @@ namespace PK
     void RHI::SetImage(NameID name, RHITexture* texture) { RHIDriver::Get()->SetImage(name, texture, {}); }
     void RHI::SetSampler(NameID name, const SamplerDescriptor& sampler) { RHIDriver::Get()->SetSampler(name, sampler); }
     void RHI::SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure) { RHIDriver::Get()->SetAccelerationStructure(name, structure); }
-    void RHI::SetBufferArray(NameID name, RHIBindArray<RHIBuffer>* bufferArray) { RHIDriver::Get()->SetBufferArray(name, bufferArray); }
-    void RHI::SetTextureArray(NameID name, RHIBindArray<RHITexture>* textureArray) { RHIDriver::Get()->SetTextureArray(name, textureArray); }
+    void RHI::SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferSet) { RHIDriver::Get()->SetBufferSet(name, bufferSet); }
+    void RHI::SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureSet) { RHIDriver::Get()->SetTextureSet(name, textureSet); }
     void RHI::SetConstant(NameID name, const void* data, uint32_t size) { RHIDriver::Get()->SetConstant(name, data, size); }
     void RHI::SetKeyword(NameID name, bool value) { RHIDriver::Get()->SetKeyword(name, value); }
 }

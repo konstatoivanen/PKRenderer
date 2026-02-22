@@ -3,7 +3,6 @@
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FixedList.h"
 #include "Core/Rendering/MeshStaticCollection.h"
-#include "Core/Rendering/BindSet.h"
 #include "Core/Rendering/ShaderAsset.h"
 #include "Core/Rendering/Material.h"
 #include "App/Renderer/IBatcher.h"
@@ -138,6 +137,6 @@ namespace PK::App
         RHIBufferRef m_indices;
         RHIBufferRef m_properties;
         RHIBufferRef m_tasklets;
-        BindSet<RHITexture> m_textures2D;
+        RHITextureBindSetRef m_textures2D;
     };
 }

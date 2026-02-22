@@ -61,8 +61,8 @@ namespace PK
         RHIBufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name) final;
         RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name) final;
         RHIAccelerationStructureRef CreateAccelerationStructure(const char* name) final;
-        RHITextureBindArrayRef CreateTextureBindArray(size_t capacity) final;
-        RHIBufferBindArrayRef CreateBufferBindArray(size_t capacity) final;
+        RHITextureBindSetRef CreateTextureBindSet(size_t capacity) final;
+        RHIBufferBindSetRef CreateBufferBindSet(size_t capacity) final;
         RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) final;
         RHISwapchainScope CreateSwapchain(const SwapchainDescriptor& descriptor) final;
 
@@ -71,8 +71,8 @@ namespace PK
 
         void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) final;
         void SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) final;
-        void SetBufferArray(NameID name, RHIBindArray<RHIBuffer>* bufferArray) final;
-        void SetTextureArray(NameID name, RHIBindArray<RHITexture>* textureArray) final;
+        void SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferArray) final;
+        void SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureArray) final;
         void SetImage(NameID name, RHITexture* texture, const TextureViewRange& range) final;
         void SetSampler(NameID name, const SamplerDescriptor& sampler) final;
         void SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure) final;
@@ -131,7 +131,7 @@ namespace PK
         
         FixedUnique<BuiltInResources> builtInResources;
         
-        PropertyBlock globalResources = PropertyBlock(PK_VK_GLOBAL_PROPERTIES_INITIAL_SIZE, PK_VK_GLOBAL_PROPERTIES_INITIAL_COUNT);
+        PropertyBlock globalResources;
 
         mutable FixedTypeSet<
             FixedPool<VulkanBufferView, PK_VK_MAX_BUFFER_VIEWS>,

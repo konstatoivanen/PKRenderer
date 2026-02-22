@@ -670,7 +670,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Renderer\IBatcher.h" />
     <ClInclude Include="Source\App\Renderer\RenderPipelineBase.h" />
     <ClInclude Include="Source\Core\Rendering\MeshUtilities.h" />
-    <ClInclude Include="Source\Core\Rendering\BindSet.h" />
     <ClInclude Include="Source\Core\Rendering\ConstantBuffer.h" />
     <ClInclude Include="Source\Core\Rendering\Material.h" />
     <ClInclude Include="Source\Core\Rendering\Mesh.h" />
@@ -699,7 +698,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\RHI\Layout.h" />
     <ClInclude Include="Source\Core\RHI\Structs.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanAccelerationStructure.h" />
-    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanBindArray.h" />
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanBindSet.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanBuffer.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanCommandBuffer.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanQueue.h" />
@@ -1035,6 +1034,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\App\Engines\EngineProfiler.cpp" />
     <ClCompile Include="Source\App\Engines\EngineViewUpdate.cpp" />
     <ClCompile Include="Source\App\Renderer\Passes\PassDistort.cpp" />
+    <ClCompile Include="Source\Core\ControlFlow\Sequencer.cpp" />
     <ClCompile Include="Source\Core\Input\InputState.cpp" />
     <ClCompile Include="Source\Core\Platform\Platform.cpp" />
     <ClCompile Include="Source\Core\Platform\Windows\Win32Driver.cpp" />
@@ -1148,7 +1148,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Rendering\CommandBufferExt.cpp" />
     <ClCompile Include="Source\Core\Rendering\ShaderAsset.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanAccelerationStructure.cpp" />
-    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanBindArray.cpp" />
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanBindSet.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanBuffer.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanCommandBuffer.cpp" />
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanQueue.cpp" />

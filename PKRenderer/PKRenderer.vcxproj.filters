@@ -1125,9 +1125,6 @@
     <ClInclude Include="Source\Core\Math\Math.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Rendering\BindSet.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Rendering\ConstantBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1188,7 +1185,7 @@
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanAccelerationStructure.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanBindArray.h">
+    <ClInclude Include="Source\Core\RHI\Vulkan\VulkanBindSet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanBuffer.h">
@@ -2242,7 +2239,7 @@
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanAccelerationStructure.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanBindArray.cpp">
+    <ClCompile Include="Source\Core\RHI\Vulkan\VulkanBindSet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanBuffer.cpp">
@@ -2429,6 +2426,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Utilities\FixedMask.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\ControlFlow\Sequencer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

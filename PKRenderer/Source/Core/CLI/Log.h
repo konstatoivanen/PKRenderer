@@ -56,7 +56,7 @@ namespace PK
     #define PK_LOG_RHI(...) PK::StaticLog::Log(PK::PK_LOG_LVL_RHI, PK::PK_LOG_COLOR_RHI, __VA_ARGS__)
     #define PK_LOG_WARNING(...) PK::StaticLog::Log(PK::PK_LOG_LVL_WARNING, PK::PK_LOG_COLOR_WARNING, __VA_ARGS__)
     #define PK_LOG_ERROR(...) PK::StaticLog::Log(PK::PK_LOG_LVL_ERROR, PK::PK_LOG_COLOR_WARNING, __VA_ARGS__)
-    #define PK_LOG_INDENT(severity) auto PK_LOG_UNIQUE_NAME(pk_log_scope_indent_) = PK::LogScopeIndent(severity)
+    #define PK_LOG_INDENT(severity) PK::LogScopeIndent PK_LOG_UNIQUE_NAME(pk_log_scope_indent_)(severity)
 #endif
 
 #define PK_LOG_EXCEPTION(...) PK::StaticLog::Exception(PK::PK_LOG_LVL_ERROR, PK::PK_LOG_COLOR_ERROR, __VA_ARGS__)
@@ -75,8 +75,8 @@ namespace PK
 #define PK_DEBUG_WARNING(...)
 #endif
 
-#define PK_LOG_TIMER(name) volatile auto PK_LOG_UNIQUE_NAME(pk_log_scope_timer_) = PK::LogScopeTimer(name)
-#define PK_LOG_TIMER_FUNC() volatile auto PK_LOG_UNIQUE_NAME(pk_log_scope_timer_) = PK::LogScopeTimer(PK_LOG_SHORT_FUNCTION_NAME_PARAMS())
+#define PK_LOG_TIMER(name) volatile PK::LogScopeTimer PK_LOG_UNIQUE_NAME(pk_log_scope_timer_)(name)
+#define PK_LOG_TIMER_FUNC() volatile PK::LogScopeTimer PK_LOG_UNIQUE_NAME(pk_log_scope_timer_)(PK_LOG_SHORT_FUNCTION_NAME_PARAMS())
 
 #define PK_LOG_HEADER_SCOPE(...) PK_LOG_HEADER(__VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_INFO)
 #define PK_LOG_INFO_SCOPE(...) PK_LOG_INFO(__VA_ARGS__); PK_LOG_INDENT(PK::PK_LOG_LVL_INFO)

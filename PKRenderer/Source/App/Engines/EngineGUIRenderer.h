@@ -2,7 +2,6 @@
 #include "Core/Utilities/ForwardDeclare.h"
 #include "Core/ControlFlow/IStep.h"
 #include "Core/RHI/Layout.h"
-#include "Core/Rendering/BindSet.h"
 #include "Core/Rendering/Font.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "App/Renderer/IGUIRenderer.h"
@@ -63,7 +62,7 @@ namespace PK::App
 
         Sequencer* m_sequencer = nullptr;
 
-        BindSet<RHITexture> m_gui_textures;
+        RHITextureBindSetRef m_gui_textures;
         ShaderAsset* m_gui_shader = nullptr;
         Font* m_gui_font = nullptr;
         RHIBufferRef m_gui_vertexBuffer;

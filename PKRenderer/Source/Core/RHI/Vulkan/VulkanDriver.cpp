@@ -3,7 +3,7 @@
 #include "Core/RHI/Vulkan/VulkanBuffer.h"
 #include "Core/RHI/Vulkan/VulkanTexture.h"
 #include "Core/RHI/Vulkan/VulkanAccelerationStructure.h"
-#include "Core/RHI/Vulkan/VulkanBindArray.h"
+#include "Core/RHI/Vulkan/VulkanBindSet.h"
 #include "Core/RHI/Vulkan/VulkanSwapchain.h"
 #include "Core/RHI/BuiltInResources.h"
 #include "VulkanDriver.h"
@@ -12,7 +12,9 @@
 
 namespace PK
 {
-    VulkanDriver::VulkanDriver(const VulkanDriverDescriptor& properties) : properties(properties)
+    VulkanDriver::VulkanDriver(const VulkanDriverDescriptor& properties) : 
+        properties(properties),
+        globalResources(PK_VK_GLOBAL_PROPERTIES_INITIAL_SIZE, PK_VK_GLOBAL_PROPERTIES_INITIAL_COUNT)
     {
         vkHandle = Platform::LoadLibrary(PK_VK_LIBRARY_NAME);
 
@@ -260,8 +262,8 @@ namespace PK
     RHIBufferRef VulkanDriver::CreateBuffer(size_t size, BufferUsage usage, const char* name) { return CreateRef<VulkanBuffer>(this, size, usage, name); }
     RHITextureRef VulkanDriver::CreateTexture(const TextureDescriptor& descriptor, const char* name) { return CreateRef<VulkanTexture>(this, descriptor, name); }
     RHIAccelerationStructureRef VulkanDriver::CreateAccelerationStructure(const char* name) { return CreateRef<VulkanAccelerationStructure>(this, name); }
-    RHITextureBindArrayRef VulkanDriver::CreateTextureBindArray(size_t capacity) { return CreateRef<VulkanBindArray>(capacity); }
-    RHIBufferBindArrayRef VulkanDriver::CreateBufferBindArray(size_t capacity) { return CreateRef<VulkanBindArray>(capacity); }
+    RHITextureBindSetRef VulkanDriver::CreateTextureBindSet(size_t capacity) { return CreateRef<VulkanBindSet>(capacity); }
+    RHIBufferBindSetRef VulkanDriver::CreateBufferBindSet(size_t capacity) { return CreateRef<VulkanBindSet>(capacity); }
     RHIShaderScope VulkanDriver::CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) { return CreateUnique<VulkanShader>(this, base, pVariant, name); }
     RHISwapchainScope VulkanDriver::CreateSwapchain(const SwapchainDescriptor& descriptor) { return CreateUnique<VulkanSwapchain>(this, descriptor); }
 
@@ -270,8 +272,8 @@ namespace PK
 
     void VulkanDriver::SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) { globalResources.Set(name, static_cast<VulkanBuffer*>(buffer)->GetBindHandle(range)); }
     void VulkanDriver::SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) { globalResources.Set(name, static_cast<VulkanTexture*>(texture)->GetBindHandle(range, TextureBindMode::SampledTexture)); }
-    void VulkanDriver::SetBufferArray(NameID name, RHIBindArray<RHIBuffer>* bufferArray) { globalResources.Set(name, static_cast<const VulkanBindArray*>(bufferArray)); }
-    void VulkanDriver::SetTextureArray(NameID name, RHIBindArray<RHITexture>* textureArray) { globalResources.Set(name, static_cast<const VulkanBindArray*>(textureArray)); }
+    void VulkanDriver::SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferArray) { globalResources.Set(name, static_cast<const VulkanBindSet*>(bufferArray)); }
+    void VulkanDriver::SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureArray) { globalResources.Set(name, static_cast<const VulkanBindSet*>(textureArray)); }
     void VulkanDriver::SetImage(NameID name, RHITexture* texture, const TextureViewRange& range) { globalResources.Set(name, static_cast<VulkanTexture*>(texture)->GetBindHandle(range, TextureBindMode::Image)); }
     void VulkanDriver::SetSampler(NameID name, const SamplerDescriptor& sampler) { globalResources.Set(name, samplerCache->GetBindHandle(sampler)); }
     void VulkanDriver::SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure) { globalResources.Set(name, static_cast<VulkanAccelerationStructure*>(structure)->GetBindHandle()); }

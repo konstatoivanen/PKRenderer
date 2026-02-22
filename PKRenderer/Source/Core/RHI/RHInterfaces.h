@@ -104,11 +104,15 @@ namespace PK
     };
 
     template<typename T>
-    struct RHIBindArray : public NoCopy
+    struct RHIBindSet : public NoCopy
     {
-        virtual ~RHIBindArray() = 0;
+        virtual ~RHIBindSet() = 0;
         virtual int32_t Add(T* value, void* bindInfo) = 0;
         virtual int32_t Add(T* value) = 0;
+
+        virtual uint3 GetBoundTextureSize(uint32_t index) const = 0;
+        virtual BufferIndexRange GetBoundBufferRange(uint32_t index) const = 0;
+        
         virtual void Clear() = 0;
     };
 
@@ -204,8 +208,8 @@ namespace PK
         virtual PropertyBlock* GetResourceState() = 0;
 
         virtual RHIAccelerationStructureRef CreateAccelerationStructure(const char* name) = 0;
-        virtual RHITextureBindArrayRef CreateTextureBindArray(size_t capacity) = 0;
-        virtual RHIBufferBindArrayRef CreateBufferBindArray(size_t capacity) = 0;
+        virtual RHITextureBindSetRef CreateTextureBindSet(size_t capacity) = 0;
+        virtual RHIBufferBindSetRef CreateBufferBindSet(size_t capacity) = 0;
         virtual RHIBufferRef CreateBuffer(size_t size, BufferUsage usage, const char* name) = 0;
         virtual RHITextureRef CreateTexture(const TextureDescriptor& descriptor, const char* name) = 0;
         virtual RHIShaderScope CreateShader(void* base, PKAssets::PKShaderVariant* pVariant, const char* name) = 0;
@@ -216,8 +220,8 @@ namespace PK
 
         virtual void SetBuffer(NameID name, RHIBuffer* buffer, const BufferIndexRange& range) = 0;
         virtual void SetTexture(NameID name, RHITexture* texture, const TextureViewRange& range) = 0;
-        virtual void SetBufferArray(NameID name, RHIBufferBindArray* bufferArray) = 0;
-        virtual void SetTextureArray(NameID name, RHITextureBindArray* textureArray) = 0;
+        virtual void SetBufferSet(NameID name, RHIBufferBindSet* bufferSet) = 0;
+        virtual void SetTextureSet(NameID name, RHITextureBindSet* textureSet) = 0;
         virtual void SetImage(NameID name, RHITexture* texture, const TextureViewRange& range) = 0;
         virtual void SetSampler(NameID name, const SamplerDescriptor& sampler) = 0;
         virtual void SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure) = 0;

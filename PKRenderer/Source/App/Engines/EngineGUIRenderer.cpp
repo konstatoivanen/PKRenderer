@@ -13,9 +13,7 @@
 
 namespace PK::App
 {
-    EngineGUIRenderer::EngineGUIRenderer(AssetDatabase* assetDatabase, Sequencer* sequencer) : 
-        m_sequencer(sequencer),
-        m_gui_textures(GUI_MAX_TEXTURES)
+    EngineGUIRenderer::EngineGUIRenderer(AssetDatabase* assetDatabase, Sequencer* sequencer) : m_sequencer(sequencer)
     {
         auto hash = HashCache::Get();
 
@@ -23,6 +21,7 @@ namespace PK::App
         m_gui_font = assetDatabase->Load<Font>("Content/Fonts/FSEX302.pkfont").get();
         m_gui_vertexBuffer = RHI::CreateBuffer<GUIVertex>(GUI_MAX_VERTICES, BufferUsage::PersistentStorage, "GUI.VertexBuffer");
         m_gui_indexBuffer = RHI::CreateBuffer<uint16_t>(GUI_MAX_INDICES, BufferUsage::DefaultIndex | BufferUsage::PersistentStage, "GUI.IndexBuffer");
+        m_gui_textures = RHI::CreateBindSet<RHITexture>(GUI_MAX_TEXTURES);
 
         SamplerDescriptor samplerDesc{};
         samplerDesc.anisotropy = 1.0f;
@@ -90,10 +89,10 @@ namespace PK::App
                     m_gui_renderAreaRect = view->renderAreaRect;
                     m_gui_vertexView = renderEvent->cmd.BeginBufferWrite<GUIVertex>(m_gui_vertexBuffer.get());
                     m_gui_indexView = renderEvent->cmd.BeginBufferWrite<uint16_t>(m_gui_indexBuffer.get());
-                    m_gui_textures.Clear();
-                    m_gui_textures.Set(RHI::GetBuiltInResources()->WhiteTexture2D.get());
-                    m_gui_textures.Set(RHI::GetBuiltInResources()->ErrorTexture2D.get());
-                    m_gui_textures.Set(m_gui_font->GetRHI());
+                    m_gui_textures->Clear();
+                    m_gui_textures->Add(RHI::GetBuiltInResources()->WhiteTexture2D.get());
+                    m_gui_textures->Add(RHI::GetBuiltInResources()->ErrorTexture2D.get());
+                    m_gui_textures->Add(m_gui_font->GetRHI());
                 }
 
                 if (m_gizmos_enabledCPU)
@@ -155,7 +154,7 @@ namespace PK::App
 
                 if (m_gui_enabled && m_gui_vertexCount >= 2)
                 {
-                    RHI::SetTextureArray(hash->pk_GUI_Textures, m_gui_textures);
+                    RHI::SetTextureSet(hash->pk_GUI_Textures, m_gui_textures.get());
                     renderEvent->cmd->SetIndexBuffer(m_gui_indexBuffer.get(), ElementType::Ushort);
                     renderEvent->cmd.SetShader(m_gui_shader);
                     renderEvent->cmd.SetRenderTarget({ gbuffers.current.color, LoadOp::Load, StoreOp::Store }, true);
@@ -183,7 +182,7 @@ namespace PK::App
             return GUI_TEX_INDEX_ERROR;
         }
 
-        return (uint16_t)m_gui_textures.Set(texture);
+        return (uint16_t)m_gui_textures->Add(texture);
     }
 
     void EngineGUIRenderer::GUIDrawTriangle(const GUIVertex& a, const GUIVertex& b, const GUIVertex& c)
@@ -225,7 +224,7 @@ namespace PK::App
             {
                 const short4 sminmax = short4(rect.x, rect.y, rect.x + rect.z, rect.y + rect.w);
                 const float4 tminmax = float4(textureRect.x, textureRect.y, textureRect.x + textureRect.z, textureRect.y + textureRect.w);
-                const float2 texelSize = m_gui_textures.Get(textureIndex)->GetTexelSize().xy;
+                const float2 texelSize = (1.0f / float3(m_gui_textures->GetBoundTextureSize(textureIndex))).xy;
                 m_gui_indexView[idxi++] = idxv + 0;
                 m_gui_indexView[idxi++] = idxv + 1;
                 m_gui_indexView[idxi++] = idxv + 2;

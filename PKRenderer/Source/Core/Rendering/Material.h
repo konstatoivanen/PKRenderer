@@ -1,7 +1,6 @@
 #pragma once
 #include "Core/Utilities/FastBuffer.h"
 #include "Core/Assets/Asset.h"
-#include "Core/Rendering/BindSet.h"
 #include "Core/Rendering/ShaderPropertyBlock.h"
 #include "Core/Rendering/RenderingFwd.h"
 
@@ -33,7 +32,7 @@ namespace PK
 
         size_t GetPropertyStride() const;
         bool SupportsKeyword(const NameID keyword) const;
-        void CopyTo(char* dst, BindSet<RHITexture>* textureSet) const;
+        void CopyTo(char* dst, RHITextureBindSet* textureSet) const;
 
     private:
         void ReservePropertyBuffer();

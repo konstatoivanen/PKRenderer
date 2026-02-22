@@ -141,7 +141,7 @@ namespace PK
         return prop && prop->format == ElementType::Keyword;
     }
 
-    void Material::CopyTo(char* dst, BindSet<RHITexture>* textureSet) const
+    void Material::CopyTo(char* dst, RHITextureBindSet* textureSet) const
     {
         auto& layout = m_shader->GetMaterialPropertyLayout();
 
@@ -153,7 +153,7 @@ namespace PK
             {
                 case ElementType::Texture2DHandle:
                 {
-                    auto texIndex = textureSet->Set(GetResource<RHITexture>(element->name));
+                    auto texIndex = textureSet->Add(GetResource<RHITexture>(element->name));
                     memcpy(dst + element->offset, &texIndex, sizeof(int32_t));
                 }
                 break;

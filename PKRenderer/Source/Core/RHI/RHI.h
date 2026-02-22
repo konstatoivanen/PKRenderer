@@ -107,21 +107,21 @@ namespace PK
     struct RHISwapchain;
     struct RHIAccelerationStructure;
     template <typename>
-    struct RHIBindArray;
+    struct RHIBindSet;
     struct RHIBuffer;
     struct RHICommandBuffer;
     struct RHIQueueSet;
     struct RHIShader;
     struct RHITexture;
     template<typename T>
-    using RHIBindArrayRef = Ref<RHIBindArray<T>>;
+    using RHIBindSetRef = Ref<RHIBindSet<T>>;
 
-    typedef RHIBindArray<RHITexture> RHITextureBindArray;
-    typedef RHIBindArray<RHIBuffer> RHIBufferBindArray;
+    typedef RHIBindSet<RHITexture> RHITextureBindSet;
+    typedef RHIBindSet<RHIBuffer> RHIBufferBindSet;
 
     typedef Ref<RHIAccelerationStructure> RHIAccelerationStructureRef;
-    typedef Ref<RHITextureBindArray> RHITextureBindArrayRef;
-    typedef Ref<RHIBufferBindArray> RHIBufferBindArrayRef;
+    typedef Ref<RHITextureBindSet> RHITextureBindSetRef;
+    typedef Ref<RHIBufferBindSet> RHIBufferBindSetRef;
     typedef Ref<RHIBuffer> RHIBufferRef;
     typedef Ref<RHITexture> RHITextureRef;
     typedef Unique<RHISwapchain> RHISwapchainScope;
@@ -152,7 +152,7 @@ namespace PK
         void ReleaseStage(RHIBuffer* buffer, const FenceRef& fence);
 
         template<typename T>
-        RHIBindArrayRef<T> CreateBindArray(size_t capacity);
+        RHIBindSetRef<T> CreateBindSet(size_t capacity);
 
         template<typename T>
         inline RHIBufferRef CreateBuffer(size_t count, BufferUsage usage, const char* name) { return CreateBuffer(sizeof(T) * count, usage, name); }
@@ -181,8 +181,8 @@ namespace PK
         void SetImage(NameID name, RHITexture* texture);
         void SetSampler(NameID name, const SamplerDescriptor& sampler);
         void SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure);
-        void SetBufferArray(NameID name, RHIBindArray<RHIBuffer>* bufferArray);
-        void SetTextureArray(NameID name, RHIBindArray<RHITexture>* textureArray);
+        void SetBufferSet(NameID name, RHIBindSet<RHIBuffer>* bufferSet);
+        void SetTextureSet(NameID name, RHIBindSet<RHITexture>* textureSet);
         void SetConstant(NameID name, const void* data, uint32_t size);
         void SetKeyword(NameID name, bool value);
 

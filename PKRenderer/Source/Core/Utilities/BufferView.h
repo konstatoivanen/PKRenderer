@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdint>
+
 namespace PK
 {
     template<typename T>
