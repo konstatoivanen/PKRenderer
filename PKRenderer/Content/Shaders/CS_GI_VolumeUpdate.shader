@@ -1,15 +1,19 @@
-#pragma pk_program SHADER_STAGE_COMPUTE VolumeMipmapCs
-#include "includes/Utilities.glsl"
+
+#pragma pk_multi_compile PASS_MIP PASS_CLEAR
+#pragma pk_program SHADER_STAGE_COMPUTE VolumeMipmapCs PASS_MIP
+#pragma pk_program SHADER_STAGE_COMPUTE VolumeClearCs PASS_CLEAR
+
+#include "includes/Common.glsl"
+#include "includes/SceneGIVX.glsl"
 
 uniform sampler3D pk_Texture;
 uniform writeonly restrict image3D pk_Image;
 uniform writeonly restrict image3D pk_Image1;
 uniform writeonly restrict image3D pk_Image2;
 
-#define GROUP_SIZE 4u
-shared float4 lds_Data[GROUP_SIZE * GROUP_SIZE * GROUP_SIZE];
+[pk_local(VolumeMipmapCs)] shared float4 lds_Data[64u];
 
-[pk_numthreads(GROUP_SIZE, GROUP_SIZE, GROUP_SIZE)]
+[pk_numthreads(4u, 4u, 4u)]
 void VolumeMipmapCs()
 {
     const uint thread = gl_LocalInvocationIndex;
@@ -52,5 +56,25 @@ void VolumeMipmapCs()
         local += lds_Data[thread + 0x2au];
         local /= 8.0f;
         imageStore(pk_Image2, int3(gl_GlobalInvocationID) >> 2, local);
+    }
+}
+
+[pk_numthreads(4u, 4u, 4u)]
+void VolumeClearCs()
+{
+    const float3 world_position = GI_VoxelToWorldSpace(int3(gl_GlobalInvocationID));
+    const float3 clip_uvw = WorldToClipUvw(world_position);
+
+    if (!Test_InUvw(clip_uvw))
+    {
+        return;
+    }
+
+    uint write_count = imageLoad(pk_GI_VolumeMaskWrite, int3(gl_GlobalInvocationID)).x;
+    imageStore(pk_GI_VolumeMaskWrite, int3(gl_GlobalInvocationID), uint4(0u));
+
+    if (write_count == 0u)
+    {
+        imageStore(pk_Image, int3(gl_GlobalInvocationID), 0.0f.xxxx);
     }
 }

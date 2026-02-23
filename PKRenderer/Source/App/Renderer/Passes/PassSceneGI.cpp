@@ -21,8 +21,7 @@ namespace PK::App
     {
         PK_LOG_VERBOSE_FUNC("");
 
-        m_computeClear = assetDatabase->Find<ShaderAsset>("CS_GI_Clear").get();
-        m_computeMipmap = assetDatabase->Find<ShaderAsset>("CS_GI_VolumeMipmap").get();
+        m_computeVolume = assetDatabase->Find<ShaderAsset>("CS_GI_VolumeUpdate").get();
         m_computeAccumulate = assetDatabase->Find<ShaderAsset>("CS_GI_Accumulate").get();
         m_computeShadeHits = assetDatabase->Find<ShaderAsset>("CS_GI_ShadeHits").get();
         m_computeReproject = assetDatabase->Find<ShaderAsset>("CS_GI_Reproject").get();
@@ -156,7 +155,7 @@ namespace PK::App
         {
             cmd->BeginDebugScope("SceneGI.PruneVoxels", PK_COLOR_GREEN);
             RHI::SetImage(HashCache::Get()->pk_Image, m_voxels.get(), 0, 0);
-            cmd.Dispatch(m_computeClear, m_voxels->GetResolution());
+            cmd.Dispatch(m_computeVolume, 1u, m_voxels->GetResolution());
             cmd->EndDebugScope();
         }
     }
@@ -236,11 +235,11 @@ namespace PK::App
         RHI::SetImage(hash->pk_Image, m_voxels.get(), 1, 0);
         RHI::SetImage(hash->pk_Image1, m_voxels.get(), 2, 0);
         RHI::SetImage(hash->pk_Image2, m_voxels.get(), 3, 0);
-        cmd.Dispatch(m_computeMipmap, 0, volumesize >> 1u);
+        cmd.Dispatch(m_computeVolume, 0, volumesize >> 1u);
         RHI::SetImage(hash->pk_Image, m_voxels.get(), 4, 0);
         RHI::SetImage(hash->pk_Image1, m_voxels.get(), 5, 0);
         RHI::SetImage(hash->pk_Image2, m_voxels.get(), 6, 0);
-        cmd.Dispatch(m_computeMipmap, 0, volumesize >> 4u);
+        cmd.Dispatch(m_computeVolume, 0, volumesize >> 4u);
     }
 
     void PassSceneGI::ValidateReservoirs(CommandBufferExt cmd, RenderPipelineContext* context)

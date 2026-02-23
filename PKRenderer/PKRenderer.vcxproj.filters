@@ -2009,7 +2009,7 @@
     <None Include="Content\Textures\Environment\T_Wood_Floor_H.ktx2" />
     <None Include="Content\Models\MDL_Spiral.mdl" />
     <None Include="Content\Models\MDL_Columns.mdl" />
-    <None Include="Content\Shaders\CS_GI_VolumeMipmap.shader" />
+    <None Include="Content\Shaders\CS_GI_VolumeUpdate.shader" />
     <None Include="Content\Shaders\includes\SceneGI.glsl" />
     <None Include="Content\Shaders\CS_GI_Accumulate.shader" />
     <None Include="Content\Shaders\includes\VolumetricFog.glsl" />
@@ -2032,7 +2032,6 @@
     <None Include="Content\Models\MDL_Rocks.mdl.pkmeta" />
     <None Include="Content\Models\MDL_Spiral.mdl.pkmeta" />
     <None Include="Content\Shaders\CS_GI_Reproject.shader" />
-    <None Include="Content\Shaders\CS_GI_Clear.shader" />
     <None Include="Content\Shaders\RS_GI_Raytrace.shader" />
     <None Include="Content\Shaders\CS_TemporalAntialiasing.shader" />
     <None Include="Content\Shaders\includes\SHL1.glsl" />

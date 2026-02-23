@@ -908,7 +908,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Models\MDL_Spiral.mdl" />
     <None Include="Content\Models\MDL_Spiral.mdl.pkmeta" />
     <None Include="Content\Shaders\CS_GI_Accumulate.shader" />
-    <None Include="Content\Shaders\CS_GI_Clear.shader" />
     <None Include="Content\Shaders\CS_GI_PostFilter.shader" />
     <None Include="Content\Shaders\CS_GI_GradientEstimation.shader" />
     <None Include="Content\Shaders\CS_GI_Reproject.shader" />
@@ -945,7 +944,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Shaders\includes\LightResources.glsl" />
     <None Include="Content\Shaders\includes\SceneGI.glsl" />
     <None Include="Content\Shaders\includes\SurfaceShaderBase.glsl" />
-    <None Include="Content\Shaders\CS_GI_VolumeMipmap.shader" />
+    <None Include="Content\Shaders\CS_GI_VolumeUpdate.shader" />
     <None Include="Content\Shaders\includes\SHL1.glsl" />
     <None Include="Content\Shaders\includes\TricubicSampler.glsl" />
     <None Include="Content\Shaders\RS_GI_Raytrace.shader" />

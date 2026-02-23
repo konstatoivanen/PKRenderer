@@ -371,7 +371,7 @@ struct SurfaceData
             float3 diffuse_color = Futil_ComputeDiffuseColor(surf.albedo, surf.metallic);
 
             #if defined(SURF_TRANSPARENT)
-            diffuse_color = Futil_PremultiplyTransparency(diffuse_color, surf.metallic, /*inout*/ surf.alpha);
+                diffuse_color = Futil_PremultiplyTransparency(diffuse_color, surf.metallic, /*inout*/ surf.alpha);
             #endif
 
             BxDFSurf bxdf_surf = BxDFSurf

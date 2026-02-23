@@ -36,8 +36,7 @@ namespace PK::App
 
         private:
             FixedFunctionShaderAttributes m_voxelizeAttribs{};
-            ShaderAsset* m_computeClear = nullptr;
-            ShaderAsset* m_computeMipmap = nullptr;
+            ShaderAsset* m_computeVolume = nullptr;
             ShaderAsset* m_computeShadeHits = nullptr;
             ShaderAsset* m_computeAccumulate = nullptr;
             ShaderAsset* m_computeReproject = nullptr;
