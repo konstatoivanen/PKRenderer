@@ -34,8 +34,8 @@ namespace PK::App
 
             auto sensitivity = camera->sensitivity / 1000.0f;
             auto deltaTime = glm::clamp((float)time.deltaTime, 0.001f, 0.99f);
-            auto interpolantPos = glm::clamp(deltaTime / camera->moveSmoothing, 0.0f, 1.0f);
-            auto interpolantRot = glm::clamp(deltaTime / camera->rotationSmoothing, 0.0f, 1.0f);
+            auto interpolantPos = 1.0f - glm::exp(-deltaTime / camera->moveSmoothing);
+            auto interpolantRot = 1.0f - glm::exp(-deltaTime / camera->rotationSmoothing);
 
             if (input->state.GetKey(m_keys.LookDrag))
             {
