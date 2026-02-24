@@ -84,7 +84,7 @@ void AverageCs()
         // Simplified factor for luminance to exposure.
         const float exposure_current = GetAutoExposure();
         const float exposure_target = clamp(pk_AutoExposure_Target * (0.104167f / luma_avg), pk_AutoExposure_Min, pk_AutoExposure_Max);
-        const float exposure_final = lerp_sat(exposure_current, exposure_target, interpolant);
+        const float exposure_final = lerp_sat(exposure_current, exposure_target, 1.0f - exp(-interpolant));
 
         const float white_point_bias = (floor(luma_log_avg) - 128.0f) / 255.0f;
         const float luma_log_min_biased = luma_log_min + (white_point_bias / luma_log_range) * float(abs(white_point_bias) > 0.1f);

@@ -17,7 +17,7 @@ void AutoFocusCs()
 
     DoFAutoFocusState state = pk_DoF_AutoFocusState;
    
-    state.focus_depth = lerp_sat(state.focus_depth, center_depth, pk_DeltaTime.x * pk_DoF_FocusSpeed);
+    state.focus_depth = lerp_sat(state.focus_depth, center_depth, 1.0f - exp(-pk_DeltaTime.x * pk_DoF_FocusSpeed));
     state.focus_depth = max(pk_ClipParams.x, state.focus_depth);
 
     state.lens_coefficient  = pk_DoF_FocalLength * pk_DoF_FocalLength;
