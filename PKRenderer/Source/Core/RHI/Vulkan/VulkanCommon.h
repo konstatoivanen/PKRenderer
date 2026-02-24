@@ -412,7 +412,7 @@ namespace PK
     struct VulkanDescriptorSet
     {
         VkDescriptorSet set;
-        uint64_t pruneTick;
+        mutable uint64_t pruneTick;
         mutable FenceRef fence;
     };
 

@@ -46,7 +46,6 @@ void MainRgs()
         const float log_luma = log(1.0f + dot(PK_LUMA_BT709, reservoir.radiance));
         invalid_dist = abs(direction.w - payload.HIT_DISTANCE) > max_error_dist;
         invalid_luma = abs(log_luma - payload.HIT_LOGLUMINANCE) > max_error_luma;
-    
     }
 
     if (invalid_dist || invalid_luma || pk_FrameIndex.y < 1u)

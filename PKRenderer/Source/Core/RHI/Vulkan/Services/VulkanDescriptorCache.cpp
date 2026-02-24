@@ -135,6 +135,15 @@ namespace PK
         return m_sets[index].value;
     }
 
+    void VulkanDescriptorCache::SetDescriptorSetFence(const VulkanDescriptorSet* set, const FenceRef& fence) const
+    {
+        if (set)
+        {
+            set->pruneTick = m_currentPruneTick + m_pruneDelay;
+            set->fence = fence;
+        }
+    }
+
     void VulkanDescriptorCache::Prune()
     {
         m_currentPruneTick++;

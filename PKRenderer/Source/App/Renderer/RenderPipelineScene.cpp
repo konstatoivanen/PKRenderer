@@ -174,8 +174,6 @@ namespace PK::App
             desc.current[GBuffers::DepthBiased] = { TextureFormat::R32F, TextureUsage::RTColorSample, true };
             desc.current[GBuffers::Depth] = { TextureFormat::Depth32F, TextureUsage::RTDepthSample, true };
 
-            // Alpha needed for current color to determine translucency in taa
-            // @TODO Refactor taa to output to previous color and flip back in composite. allows for barrel distort as well.
             desc.previous[GBuffers::Color] = { TextureFormat::RGBA16F, TextureUsage::Default | TextureUsage::Storage, false };
             desc.previous[GBuffers::Normals] = { TextureFormat::RGB10A2, TextureUsage::RTColorSample, true };
             desc.previous[GBuffers::DepthBiased] = { TextureFormat::R32F, TextureUsage::RTColorSample, true };

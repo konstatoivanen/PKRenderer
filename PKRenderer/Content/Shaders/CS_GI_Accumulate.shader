@@ -10,12 +10,6 @@
 #include "includes/SceneGI.glsl"
 #include "includes/SceneGIReSTIR.glsl"
 
-#define BOIL_FLT_GROUP_SIZE PK_W_ALIGNMENT_8
-#define BOIL_FLT_MIN_LANE_COUNT 32
-
-shared float lds_Weights[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
-shared uint lds_Count[(BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + BOIL_FLT_MIN_LANE_COUNT - 1) / BOIL_FLT_MIN_LANE_COUNT];
-
 #define ReSTIR_Load_HitAsReservoir(coord, origin) ReSTIR_Unpack_Hit(GI_Load_Packed_Diff(coord), origin)
 
 SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, const float depth, const float3 view_normal, const float3 origin, const Reservoir initial)
@@ -124,46 +118,16 @@ SHLuma ReSTIR_ResampleSpatioTemporal(const int2 coord_base, const int2 coord, co
     bool is_boiling;
     {
         const float filter_strength = 0.2f;
+        const float filter_multiplier = 10.0f / clamp(filter_strength, 1e-6f, 1.0f) - 9.0f;
         const float reservoir_weight = combined.target_pdf * combined.weight_sum;
-        const float filter_multiplier = 10.f / clamp(filter_strength, 1e-6, 1.0) - 9.0f;
-
-        const uint thread = gl_LocalInvocationID.x + gl_LocalInvocationID.y * BOIL_FLT_GROUP_SIZE;
-        const uint wave = thread / gl_SubgroupSize;
-        const uint4 thread_mask = subgroupBallot(reservoir_weight > 0.0f);
-
-        uint thread_count = subgroupBallotBitCount(thread_mask);
-        float wave_weight = subgroupAdd(reservoir_weight);
-
-        if (subgroupElect())
-        {
-            lds_Weights[wave] = wave_weight;
-            lds_Count[wave] = thread_count;
-        }
-
-        barrier();
-
-        // Reduce the per-wavefront averages into a global average using one wavefront
-        if (thread < (BOIL_FLT_GROUP_SIZE * BOIL_FLT_GROUP_SIZE + gl_SubgroupSize - 1) / gl_SubgroupSize)
-        {
-            wave_weight = lds_Weights[thread];
-            thread_count = lds_Count[thread];
-            wave_weight = subgroupAdd(wave_weight);
-            thread_count = subgroupAdd(thread_count);
-
-            if (thread == 0)
-            {
-                lds_Weights[0] = lerp(0.0f, wave_weight / float(thread_count), thread_count > 0);
-            }
-        }
-
-        barrier();
-
-        is_boiling = reservoir_weight > lds_Weights[0] * filter_multiplier;
+        const uint4 thread_mask = subgroupBallot(reservoir_weight > 1e-6f);
+        const uint thread_count = subgroupBallotBitCount(thread_mask);
+        const float wave_weight = subgroupAdd(reservoir_weight);
+        const float filter_weight = lerp(0.0f, wave_weight / float(thread_count), thread_count > 0);
+        is_boiling = reservoir_weight > filter_weight * filter_multiplier;
     }
 
-
     // Shade Hit & Store Temporal Reservoir
-
     // We should retrace visibility here as to not accumulate invalid samples.
     // However, this is expensive. Currently reservoirs are validated in async during present (which is virtually free).
     const bool reject = ReSTIR_NearFieldReject(depth, origin, initial, ReSTIR_Hash(seed + 1));

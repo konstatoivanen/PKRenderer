@@ -535,8 +535,7 @@ namespace PK
             m_descritorState.bindingCount = resourceLayout.GetCount();
         }
 
-        // @TODO should not be done here. Move to descriptor cache.
-        m_descritorState.descriptorSet->fence = fence;
+        m_services.descriptorCache->SetDescriptorSetFence(m_descritorState.descriptorSet, fence);
     }
 
     void VulkanRenderState::ValidateResourceAccess()

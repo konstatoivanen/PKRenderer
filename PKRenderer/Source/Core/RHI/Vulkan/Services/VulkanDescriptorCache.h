@@ -32,6 +32,8 @@ namespace PK
             const FenceRef& fence, 
             const char* name);
 
+        void SetDescriptorSetFence(const VulkanDescriptorSet* set, const FenceRef& fence) const;
+
         void Prune();
 
      private:
