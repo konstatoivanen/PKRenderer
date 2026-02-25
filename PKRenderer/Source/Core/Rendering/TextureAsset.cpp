@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <PKAssets/PKAsset.h>
 #include <PKAssets/PKAssetLoader.h>
+#include "Core/Utilities/Memory.h"
 #include "Core/Utilities/FenceRef.h"
 #include "Core/CLI/Log.h"
 #include "Core/RHI/RHInterfaces.h"

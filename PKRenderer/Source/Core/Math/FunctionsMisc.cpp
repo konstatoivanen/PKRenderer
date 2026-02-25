@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Utilities/Memory.h"
 #include "FunctionsMisc.h"
 #include <iomanip>
 
@@ -39,7 +40,7 @@ namespace PK::Math
         float cascades[5]{};
         GetCascadeDepths(znear, zfar, distribution, cascades, zAlignParams, 5);
         // Ignore first plane as it is just the near plane and we are more interested in the final clipping plane.
-        return BitCast<float, float4>(cascades + 1u);
+        return Memory::BitCast<float, float4>(cascades + 1u);
     }
 
     float3 GetExponentialZParams01(float znear, float zfar, float distribution)
@@ -95,7 +96,7 @@ namespace PK::Math
     uint32_t RandomUint()
     {
         auto v = rand();
-        return BitCast<int32_t, uint32_t>(v);
+        return Memory::BitCast<int32_t, uint32_t>(v);
     }
 
     float3 RandomFloat3()
@@ -193,22 +194,22 @@ namespace PK::Math
 
     uint FloatAsUint(float v)
     {
-        return BitCast<float, uint>(v);
+        return Memory::BitCast<float, uint>(v);
     }
 
     uint2 FloatAsUint(const float2& v)
     {
-        return BitCast<uint2, float2>(v);
+        return Memory::BitCast<uint2, float2>(v);
     }
 
     uint3 FloatAsUint(const float3& v)
     {
-        return BitCast<float3, uint3>(v);
+        return Memory::BitCast<float3, uint3>(v);
     }
 
     uint4 FloatAsUint(const float4& v)
     {
-        return BitCast<float4, uint4>(v);
+        return Memory::BitCast<float4, uint4>(v);
     }
 
     float3 SafeNormalize(const float3& v)

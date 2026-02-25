@@ -206,7 +206,7 @@ namespace PKAssets
     {
         PKEncodeTable table{};
         EncodeBuffer(in_data, in_data_size, &table, nullptr);
-        auto compressed_buff = reinterpret_cast<uint8_t*>(malloc(table.size));
+        auto compressed_buff = static_cast<uint8_t*>(malloc(table.size));
         EncodeBuffer(in_data, in_data_size, &table, compressed_buff);
         *out_data = compressed_buff;
         *out_data_size = table.size;
@@ -220,7 +220,7 @@ namespace PKAssets
         uint16_t codes[PK_ASSET_ENCODE_CODE_COUNT]{};
         uint16_t table[table_size]{};
     
-        auto stream_bytes = reinterpret_cast<const uint8_t*>(in_data);
+        auto stream_bytes = static_cast<const uint8_t*>(in_data);
         auto stream_bitbuffer = 0ull;
         auto stream_bitcount = 0u;
         auto stream_bytecount = 0u;

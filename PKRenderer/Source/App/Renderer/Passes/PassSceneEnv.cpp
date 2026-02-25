@@ -41,8 +41,8 @@ namespace PK::App
         auto& fogSettings = view->settings.FogSettings;
         auto resources = view->GetResources<ViewResources>();
         
-        auto exponential0 = Math::BitCast<float, float4>(&fogSettings.Exponential0.Constant);
-        auto exponential1 = Math::BitCast<float, float4>(&fogSettings.Exponential1.Constant);
+        auto exponential0 = Memory::BitCast<float, float4>(&fogSettings.Exponential0.Constant);
+        auto exponential1 = Memory::BitCast<float, float4>(&fogSettings.Exponential1.Constant);
 
         resources->captureIsDirty |= m_forceCapture;
         resources->captureIsDirty |= settings.CaptureInterval >= 0 && resources->captureCounter >= settings.CaptureInterval;

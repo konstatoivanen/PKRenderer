@@ -63,7 +63,7 @@ namespace PKAssets
             return -1;
         }
 
-        uint8_t* buffer = reinterpret_cast<uint8_t*>(malloc(header.uncompressedSize));
+        uint8_t* buffer = static_cast<uint8_t*>(malloc(header.uncompressedSize));
 
         if (header.isCompressed)
         {

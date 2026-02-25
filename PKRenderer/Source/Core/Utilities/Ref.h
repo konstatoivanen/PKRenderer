@@ -1,10 +1,6 @@
 #pragma once
 #include <memory>
 
-#define PK_STACK_ALLOC(Type, count) reinterpret_cast<Type*>(alloca(sizeof(Type) * count))
-
-#define PK_CONTIGUOUS_ALLOC(Type, count) reinterpret_cast<Type*>(calloc(count, sizeof(Type)));
-
 namespace PK
 {
     template<typename T>

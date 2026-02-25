@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include <mikktspace/mikktspace.h>
+#include "Core/Utilities/Memory.h"
 #include "Core/CLI/Log.h"
 #include "Core/Math/FunctionsMisc.h"
 #include "Core/Math/FunctionsIntersect.h"
@@ -173,9 +174,9 @@ namespace PK::MeshUtilities
         output.vertices.resize(max_meshlets * PKAssets::PK_MESHLET_MAX_VERTICES);
         output.indices.resize(max_meshlets * PKAssets::PK_MESHLET_MAX_TRIANGLES * 3);
 
-        auto* meshlet_vertices = reinterpret_cast<uint32_t*>(calloc(sizeof(uint32_t), max_meshlets * PKAssets::PK_MESHLET_MAX_VERTICES));
+        auto* meshlet_vertices = Memory::Calloc<uint32_t>(max_meshlets * PKAssets::PK_MESHLET_MAX_VERTICES);
         auto* meshlet_indices = output.indices.data();
-        auto* used = reinterpret_cast<uint8_t*>(malloc(ctx->countVertex));
+        auto* used = Memory::Malloc<uint8_t>(ctx->countVertex);
         memset(used, -1, ctx->countVertex);
 
         memcpy(output.submesh.bbmin, glm::value_ptr(ctx->aabb.min), sizeof(float3));

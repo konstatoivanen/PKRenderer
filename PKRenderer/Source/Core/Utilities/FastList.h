@@ -2,7 +2,7 @@
 #include "NoCopy.h"
 #include "BufferView.h"
 #include "BufferIterator.h"
-#include <cstdint>
+#include "Memory.h"
 #include <exception>
 
 namespace PK
@@ -92,7 +92,7 @@ namespace PK
                 return false;
             }
 
-            auto buffer = reinterpret_cast<T*>(malloc(sizeof(T) * capacity));
+            auto buffer = Memory::Malloc<T>(capacity);
 
             if (buffer == nullptr)
             {

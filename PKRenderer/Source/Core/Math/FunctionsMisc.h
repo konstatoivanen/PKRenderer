@@ -61,21 +61,4 @@ namespace PK::Math
     sbyte3 QuantizeSNorm(const float3& v, int32_t n);
     float3 GetTriangleNormal(const float* p0, const float* p1, const float* p2, bool& outIsValid);
     float3 GetTriangleNormal(const float3& a, const float3& b, const float3& c);
-
-    template<typename T0, typename T1>
-    T1 BitCast(const T0& value)
-    {
-        static_assert(sizeof(T0) == sizeof(T1));
-        T1 ret;
-        memcpy(&ret, &value, sizeof(T0));
-        return ret;
-    }
-
-    template<typename T0, typename T1>
-    T1 BitCast(const T0* ptr)
-    {
-        T1 ret;
-        memcpy(&ret, ptr, sizeof(T1));
-        return ret;
-    }
 }

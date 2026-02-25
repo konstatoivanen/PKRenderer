@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Utilities/Memory.h"
 #include "Core/Math/FunctionsMisc.h"
 #include "Core/Math/FunctionsMatrix.h"
 #include "Core/Utilities/FixedString.h"
@@ -300,7 +301,7 @@ namespace PK
 
         VkAccelerationStructureInstanceKHR* instance = m_writeBuffer + m_instanceCount++;
 
-        instance->transform = Math::BitCast<float3x4, VkTransformMatrixKHR>(matrix);
+        instance->transform = Memory::BitCast<float3x4, VkTransformMatrixKHR>(matrix);
         instance->instanceCustomIndex = geometry.customIndex;
         instance->mask = 0xFF;
         instance->instanceShaderBindingTableRecordOffset = geometry.recordOffset;

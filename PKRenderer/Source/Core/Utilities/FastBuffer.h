@@ -2,7 +2,7 @@
 #include "NoCopy.h"
 #include "BufferView.h"
 #include "BufferIterator.h"
-#include <cstdint>
+#include "Memory.h"
 #include <exception>
 
 namespace PK
@@ -27,8 +27,8 @@ namespace PK
             }
         }
 
-        T* GetData() { return reinterpret_cast<T*>(IsSmallBuffer(m_count) ? &m_data : m_data.buffer); }
-        T const* GetData() const { return reinterpret_cast<const T*>(IsSmallBuffer(m_count) ? &m_data : m_data.buffer); }
+        T* GetData() { return IsSmallBuffer(m_count) ? reinterpret_cast<T*>(&m_data) : m_data.buffer; }
+        T const* GetData() const { return IsSmallBuffer(m_count) ? reinterpret_cast<const T*>(&m_data) : m_data.buffer; }
 
         constexpr size_t GetCount() const { return m_count; }
         constexpr size_t GetSize() const { return m_count * sizeof(T); }
@@ -86,26 +86,24 @@ namespace PK
                 return false;
             }
 
-            auto oldSize = sizeof(T) * m_count;
-            auto newSize = sizeof(T) * count;
-            auto newbuffer = !IsSmallBuffer(m_count) ? realloc(m_data.buffer, newSize) : calloc(count, sizeof(T));
+            auto buffer = Memory::ReallocOrCalloc<T>(m_data.buffer, count, IsSmallBuffer(m_count));
 
-            if (newbuffer == nullptr)
+            if (buffer == nullptr)
             {
                 throw std::exception("Failed to allocate new buffer!");
             }
             
             if (m_count > 0 && IsSmallBuffer(m_count))
             {
-                memcpy(newbuffer, &m_data, oldSize);
+                Memory::Memcpy<T>(buffer, reinterpret_cast<T*>(&m_data), m_count);
             }
             else if (m_count > 0)
             {
                 // Realloc doesnt zero memory
-                memset(reinterpret_cast<char*>(newbuffer) + oldSize, 0, newSize - oldSize);
+                Memory::Memset<T>(buffer + m_count, 0, count - m_count);
             }
 
-            m_data.buffer = newbuffer;
+            m_data.buffer = buffer;
             m_count = count;
             return true;
         }
@@ -115,7 +113,7 @@ namespace PK
     private:
         constexpr static bool IsSmallBuffer(size_t count) { return count <= (sizeof(U) / sizeof(T)); }
         
-        struct U { union { void* buffer; alignas(T) unsigned char inl[sizeof(T) * inlineCapacity]; }; };
+        struct U { union { T* buffer; alignas(T) uint8_t inl[sizeof(T) * inlineCapacity]; }; };
         U m_data{};
         size_t m_count = 0ull;
     };

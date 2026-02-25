@@ -40,7 +40,7 @@ namespace PK::App
 
         if (m_copyFence.IsValid() && m_copyFence.IsComplete())
         {
-            auto pxView = m_copyBuffer->BeginRead<unsigned char>();
+            auto pxView = m_copyBuffer->BeginRead<byte>();
 
             for (auto i = 0u; i < elementCount; ++i)
             {
@@ -60,7 +60,7 @@ namespace PK::App
             return;
         }
 
-        auto pixels = PK_CONTIGUOUS_ALLOC(byte, elementCount);
+        auto pixels = Memory::Calloc<byte>(elementCount);
 
         for (auto i = 0u; i < elementCount; ++i)
         {
