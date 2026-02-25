@@ -131,13 +131,7 @@ namespace PK
                 PK_CONTAINER_RANGE_CHECK(index, 0, (int64_t)capacity);
                 PK_CONTAINER_RANGE_CHECK(index + count - 1ll, 0, (int64_t)capacity);
                 auto ptr = GetData() + index;
-                
-                // @TODO suboptimal. implement a bulk flip function.
-                for (auto i = 0u; i < count; ++i)
-                {
-                    m_mask.FlipAt(index + i);
-                }
-                
+                m_mask.FlipRange(index, index + count);
                 return ptr;
             }
 

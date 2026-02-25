@@ -33,7 +33,7 @@ namespace PK
     int64_t BinaryUtilities::FindFirstZero(const uint64_t* buffer, size_t capacity)
     {
         int64_t index = -1ll;
-        auto size = (capacity + 63ull) / 63ull;
+        auto size = (capacity + 63ull) / 64ull;
 
         for (auto i = 0ull; i < size; ++i)
         {
@@ -87,5 +87,26 @@ namespace PK
         }
 
         return -1;
+    }
+
+    void BinaryUtilities::FlipRange(uint64_t* buffer, size_t start, size_t end)
+    {
+        auto head = start;
+
+        if ((end - start) == 1ull)
+        {
+            buffer[start >> 6ull] ^= 1ull << (start & 63ull);
+            return;
+        }
+
+        while (head < end)
+        {
+            auto remaining = end - (head & 0xFFFFFFFFFFFFFFC0ull);
+            auto shiftbeg = head & 63ull;
+            auto shiftend = 64ull - (remaining > 64ull ? 64ull : remaining);
+            auto mask = ((~0ull) << shiftbeg) & ((~0ull) >> shiftend);
+            buffer[head >> 6ull] ^= mask;
+            head = (head + 64ull) & 0xFFFFFFFFFFFFFFC0ull;
+        }
     }
 }

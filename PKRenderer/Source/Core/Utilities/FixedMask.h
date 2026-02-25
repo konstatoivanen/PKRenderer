@@ -9,6 +9,7 @@ namespace PK
         size_t CountBits(const uint64_t* buffer, size_t size);
         int64_t FindFirstZero(const uint64_t* buffer, size_t capacity);
         int64_t FindFirstZeroRange(const uint64_t* buffer, size_t capacity, uint32_t count);
+        void FlipRange(uint64_t* buffer, size_t start, size_t end);
     }
 
     template<size_t capacity>
@@ -24,6 +25,7 @@ namespace PK
         bool GetAt(size_t index) const { return (m_mask[index >> 6ull] & (1ull << (index & 63ull))) != 0u; }
         void SetAt(size_t index, bool value) { m_mask[index >> 6ull] = (m_mask[index >> 6ull] & ~(1ull << (index & 63ull))) | ((uint64_t)value << (index & 63u)); }
         void FlipAt(size_t index) { m_mask[index >> 6ull] ^= 1ull << (index & 63ull); }
+        void FlipRange(size_t start, size_t end) { BinaryUtilities::FlipRange(m_mask, start, end); }
         void Clear() { memset(m_mask, 0, sizeof(m_mask)); }
     };
 }
