@@ -32,8 +32,8 @@ namespace PK::App
         const auto sampleCountMax = (uint64_t)(rectBar.z / sampleWidth);
         const auto sampleCountMin = glm::min(sampleCountMax, m_timeHistoryHead + 1ull);
 
-        m_timeHistory.resize(sampleCountMax);
-        m_timeHistory.at(m_timeHistoryHead % sampleCountMax) = m_framerate.frameMs;
+        m_timeHistory.Reserve(sampleCountMax);
+        m_timeHistory[m_timeHistoryHead % sampleCountMax] = m_framerate.frameMs;
 
         auto minHistoryTime = glm::max(1e-4, 1000.0 / m_framerate.framerateMax);
         auto maxHistoryTime = glm::max(1e-4, 1000.0 / m_framerate.framerateMin);
@@ -41,8 +41,8 @@ namespace PK::App
 
         for (auto i = 0ull; i < sampleCountMin; ++i)
         {
-            minHistoryTime = glm::min(minHistoryTime, m_timeHistory.at(i));
-            maxHistoryTime = glm::max(maxHistoryTime, m_timeHistory.at(i));
+            minHistoryTime = glm::min(minHistoryTime, m_timeHistory[i]);
+            maxHistoryTime = glm::max(maxHistoryTime, m_timeHistory[i]);
         }
 
         FixedString64 textFramerateCur("FPS: %i", m_framerate.framerate);
@@ -60,7 +60,7 @@ namespace PK::App
         for (auto i = 0ull; i < sampleCountMin; ++i)
         {
             const auto offset = (i + sampleCountMax - sampleCountMin) * sampleWidth;
-            const auto sample = m_timeHistory.at((m_timeHistoryHead + i + 1ull) % sampleCountMin);
+            const auto sample = m_timeHistory[(m_timeHistoryHead + i + 1ull) % sampleCountMin];
             const auto normalized = (sample - minHistoryTime) / (maxHistoryTime - minHistoryTime);
             const auto height = (int)glm::round(sampleHeight * normalized);
             const auto color = Math::HueToRGB32((1.0f - normalized) / 3.0f);

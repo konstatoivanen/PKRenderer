@@ -79,8 +79,17 @@ namespace PK
         m_currentIndex = 0;
         m_textLength = strlen(text);
         
-        auto pxLineSpacing = (uint32_t)glm::round(lineSpacing * m_size);
         auto lineCount = 0u;
+
+        for (auto i = 0u; i < m_textLength; ++i)
+        {
+            lineCount += text[i] == '\n';
+        }
+
+        m_lineBounds.Reserve(lineCount + 1u);
+        lineCount = 0u;
+
+        auto pxLineSpacing = (uint32_t)glm::round(lineSpacing * m_size);
         auto lineLength = 0u;
         auto totalHeight = 0;
 
@@ -92,7 +101,6 @@ namespace PK
 
             if (ch == '\n')
             {
-                m_lineBounds.resize(glm::max((uint32_t)m_lineBounds.size(), lineCount + 1u));
                 m_lineBounds[lineCount++] = { lineLength, -totalHeight, i };
                 totalHeight += pxLineSpacing;
                 lineLength = 0u;
@@ -104,7 +112,6 @@ namespace PK
             }
         }
 
-        m_lineBounds.resize(glm::max((uint32_t)m_lineBounds.size(), lineCount + 1u));
         m_lineBounds[lineCount++] = { lineLength, -totalHeight, m_textLength };
         totalHeight += pxLineSpacing;
 
@@ -134,11 +141,11 @@ namespace PK
         }
 
         auto ch = m_text[m_currentIndex];
-        auto lineBounds = &m_lineBounds.at(m_currentLineIndex);
+        auto lineBounds = &m_lineBounds[m_currentLineIndex];
 
         while (lineBounds->z == (int)m_currentIndex)
         {
-            lineBounds = &m_lineBounds.at(++m_currentLineIndex);
+            lineBounds = &m_lineBounds[++m_currentLineIndex];
             ch = m_text[++m_currentIndex];
             m_currentAdvance = 0.0f;
         }

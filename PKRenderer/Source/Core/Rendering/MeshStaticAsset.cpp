@@ -1,5 +1,6 @@
 #include "PrecompiledHeader.h"
 #include <PKAssets/PKAssetLoader.h>
+#include "Core/Utilities/Memory.h"
 #include "Core/Math/FunctionsIntersect.h"
 #include "Core/Math/FunctionsMisc.h"
 #include "Core/CLI/Log.h"
@@ -28,13 +29,13 @@ namespace PK
         auto pIndices = mesh->indexBuffer.Get(base);
         auto pSubmeshes = mesh->submeshes.Get(base);
 
-        std::vector<MeshStaticDescriptor::SubMesh> submeshes;
-        submeshes.reserve(mesh->submeshCount);
+        auto* submeshes = PK_STACK_ALLOC(MeshStaticDescriptor::SubMesh, mesh->submeshCount);
+        auto submeshIndex = 0u;
 
         for (auto i = 0u; i < mesh->submeshCount; ++i)
         {
             auto bounds = BoundingBox::MinMax(Math::ToFloat3(pSubmeshes[i].bbmin), Math::ToFloat3(pSubmeshes[i].bbmax));
-            submeshes.push_back({ 0u, mesh->vertexCount, pSubmeshes[i].firstIndex, pSubmeshes[i].indexCount, bounds });
+            submeshes[submeshIndex++] = { 0u, mesh->vertexCount, pSubmeshes[i].firstIndex, pSubmeshes[i].indexCount, bounds };
         }
 
         VertexStreamLayout streamLayout;
@@ -60,7 +61,7 @@ namespace PK
             desc.regular.pVertices = pVertices;
             desc.regular.pIndices = pIndices;
             desc.regular.streamLayout = streamLayout;
-            desc.regular.pSubmeshes = submeshes.data();
+            desc.regular.pSubmeshes = submeshes;
             desc.regular.indexType = mesh->indexType;
             desc.regular.vertexCount = mesh->vertexCount;
             desc.regular.indexCount = mesh->indexCount;

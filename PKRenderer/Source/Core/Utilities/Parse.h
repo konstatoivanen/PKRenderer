@@ -87,7 +87,7 @@ namespace PK::Parse
 
     FixedString64 GetFilePathStem(const char* str);
 
-    constexpr size_t GetFilePathDirectory(const char* str)
+    constexpr size_t GetFilePathDirectoryLength(const char* str)
     {
         auto length = 0u;
 

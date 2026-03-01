@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/Utilities/ForwardDeclare.h"
+#include "Core/Utilities/FastBuffer.h"
 #include "Core/ControlFlow/IStep.h"
 #include "Core/Timers/TimeFrameInfo.h"
 
@@ -22,7 +23,7 @@ namespace PK::App
     private:
         AssetDatabase* m_assetDatabase = nullptr;
         TimeFramerateInfo m_framerate{};
-        std::vector<double> m_timeHistory;
+        FastBuffer<double> m_timeHistory;
         uint64_t m_timeHistoryHead = 0ull;
     };
 }

@@ -12,7 +12,7 @@ namespace PK
     IApplication::IApplication(const CArguments& arguments, const char* name, Ref<ILogger> logger) :
         m_arguments(arguments),
         m_name(name),
-        m_workingDirectory(Parse::GetFilePathDirectory(arguments.args[0]), arguments.args[0]),
+        m_workingDirectory(Parse::GetFilePathDirectoryLength(arguments.args[0]), arguments.args[0]),
         m_logger(logger)
     {
         StaticLog::SetLogger(m_logger);
