@@ -87,6 +87,21 @@ namespace PK::Parse
 
     FixedString64 GetFilePathStem(const char* str);
 
+    constexpr size_t GetFilePathDirectory(const char* str)
+    {
+        auto length = 0u;
+
+        for (auto i = 0u; i < 256ull && str[i] != '\0'; ++i)
+        {
+            if (str[i] == '\\' || str[i] == '/')
+            {
+                length = i + 1u;
+            }
+        }
+
+        return length;
+    }
+
     constexpr void GetShortFunctionName(const char* str, const char** outData, size_t* outLength) noexcept
     {
         auto name_begin = 0ull;

@@ -1,7 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Utilities/Memory.h"
 #include "FunctionsMisc.h"
-#include <iomanip>
 
 namespace PK::Math
 {
