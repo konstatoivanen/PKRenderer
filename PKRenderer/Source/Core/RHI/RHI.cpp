@@ -41,14 +41,14 @@ namespace PK
                 PK_LOG_INFO("Block count: %i", info.blockCount);
                 PK_LOG_INFO("Allocation count: %i", info.allocationCount);
                 PK_LOG_INFO("Unused range count: %i", info.unusedRangeCount);
-                PK_LOG_INFO("Used: %s", Math::BytesToString(info.usedBytes).c_str());
-                PK_LOG_INFO("Unused: %s", Math::BytesToString(info.unusedBytes).c_str());
-                PK_LOG_INFO("Allocation size min: %s", Math::BytesToString(info.allocationSizeMin).c_str());
-                PK_LOG_INFO("Allocation size avg: %s", Math::BytesToString(info.allocationSizeAvg).c_str());
-                PK_LOG_INFO("Allocation size max: %s", Math::BytesToString(info.allocationSizeMax).c_str());
-                PK_LOG_INFO("Unused range size min: %s", Math::BytesToString(info.unusedRangeSizeMin).c_str());
-                PK_LOG_INFO("Unused range size avg: %s", Math::BytesToString(info.unusedRangeSizeAvg).c_str());
-                PK_LOG_INFO("Unused range size max: %s", Math::BytesToString(info.unusedRangeSizeMax).c_str());
+                PK_LOG_INFO("Used: %s", Parse::BytesToString(info.usedBytes).c_str());
+                PK_LOG_INFO("Unused: %s", Parse::BytesToString(info.unusedBytes).c_str());
+                PK_LOG_INFO("Allocation size min: %s", Parse::BytesToString(info.allocationSizeMin).c_str());
+                PK_LOG_INFO("Allocation size avg: %s", Parse::BytesToString(info.allocationSizeAvg).c_str());
+                PK_LOG_INFO("Allocation size max: %s", Parse::BytesToString(info.allocationSizeMax).c_str());
+                PK_LOG_INFO("Unused range size min: %s", Parse::BytesToString(info.unusedRangeSizeMin).c_str());
+                PK_LOG_INFO("Unused range size avg: %s", Parse::BytesToString(info.unusedRangeSizeAvg).c_str());
+                PK_LOG_INFO("Unused range size max: %s", Parse::BytesToString(info.unusedRangeSizeMax).c_str());
                 PK_LOG_NEWLINE();
             });
 

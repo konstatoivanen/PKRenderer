@@ -33,7 +33,7 @@ namespace PK
             (const WCHAR*)&s_localPtr,
             (HMODULE*)&instance))
         {
-            throw std::runtime_error("Failed to get program HINSTANCE");
+            throw std::exception("Failed to get program HINSTANCE");
         }
 
         ::SetPriorityClass(::GetCurrentProcess(), HIGH_PRIORITY_CLASS);
@@ -46,7 +46,7 @@ namespace PK
 
         if (!user32_handle)
         {
-            throw std::runtime_error("Failed to load user32.dll");
+            throw std::exception("Failed to load user32.dll");
         }
 
         pkfn_SetProcessDPIAware = (PFN_SetProcessDPIAware)GetProcAddress(user32_handle, "SetProcessDPIAware");
@@ -127,7 +127,7 @@ namespace PK
 
             if (!(m_windowClassHelper = ::RegisterClassExW(&wc)))
             {
-                throw std::runtime_error("Failed to create window helper class.");
+                throw std::exception("Failed to create window helper class.");
             }
         }
 
@@ -143,7 +143,7 @@ namespace PK
 
             if (!(m_windowClassMain = ::RegisterClassExW(&wc)))
             {
-                throw std::runtime_error("Failed to create window main class.");
+                throw std::exception("Failed to create window main class.");
             }
         }
 
@@ -161,7 +161,7 @@ namespace PK
 
         if (!m_windowInstanceHelper)
         {
-            throw std::runtime_error("Failed to create helper window.");
+            throw std::exception("Failed to create helper window.");
         }
 
         ::ShowWindow(m_windowInstanceHelper, SW_HIDE);

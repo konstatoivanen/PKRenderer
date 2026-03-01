@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include <iostream>
 #include "Core/Input/InputState.h"
 #include "Core/Input/InputKeyConfig.h"
 #include "Core/CLI/CVariableRegister.h"

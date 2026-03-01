@@ -1,5 +1,5 @@
 #pragma once
-#include <bitset>
+#include "Core/Utilities/FixedMask.h"
 
 namespace PK
 {
@@ -149,7 +149,7 @@ namespace PK
         DS5
     };
 
-    typedef std::bitset<(uint32_t)InputKey::Count> InputKeyState;
+    typedef FixedMask<(uint32_t)InputKey::Count> InputKeyState;
 
     const char* InputKeyToString(InputKey key);
     InputKey StringToInputKey(const char* string);

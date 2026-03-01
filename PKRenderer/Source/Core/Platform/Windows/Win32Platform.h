@@ -102,4 +102,16 @@
 #undef far
 #undef near
 
+namespace PK::Platform
+{
+    inline static uint32_t InterlockedExchange(volatile uint32_t* dst, uint32_t exchange) { return _InterlockedExchange(dst, exchange); }
+    inline static uint32_t InterlockedCompareExchange(volatile uint32_t* dst, uint32_t exchange, uint32_t comperand) { return _InterlockedCompareExchange(dst, exchange, comperand); }
+    inline static uint32_t InterlockedAdd(volatile uint32_t* dst, uint32_t value) { return _InterlockedExchangeAdd(dst, value); }
+    inline static uint32_t InterlockedIncrement(volatile uint32_t* dst) { return _InterlockedIncrement(dst); }
+    inline static uint32_t InterlockedDecrement(volatile uint32_t* dst) { return _InterlockedDecrement(dst); }
+    inline static uint32_t AtomicRead(const volatile uint32_t* dst) { return (unsigned)__iso_volatile_load32(reinterpret_cast<const volatile int32_t*>(dst)); }
+    inline static void AtomicStore(uint32_t volatile* dst, uint32_t value) { __iso_volatile_store32(reinterpret_cast<volatile int32_t*>(dst), value); }
+    inline static uint64_t BitScan64(uint64_t mask) { auto index = 0ul; return _BitScanForward64(&index, mask) ? index : 64u; }
+}
+
 #endif

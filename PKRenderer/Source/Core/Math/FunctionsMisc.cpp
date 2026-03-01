@@ -271,31 +271,6 @@ namespace PK::Math
         return GetMaxMipLevel(glm::compMin(resolution));
     }
 
-    std::string BytesToString(size_t bytes, uint32_t decimalPlaces)
-    {
-        if (bytes == 0)
-        {
-            return "0bytes";
-        }
-
-        auto mag = (int)(log(bytes) / log(1024));
-        mag = glm::min(mag, 2);
-
-        auto adjustedSize = (double)bytes / (1L << (mag * 10));
-        auto factor = pow(10, decimalPlaces);
-
-        if ((round(adjustedSize * factor) / factor) >= 1000)
-        {
-            mag += 1;
-            adjustedSize /= 1024;
-        }
-
-        std::stringstream stream;
-        stream << std::fixed << std::setprecision(decimalPlaces) << adjustedSize;
-        stream << (mag > 1 ? "MB" : mag > 0 ? "KB" : "bytes");
-        return stream.str();
-    }
-
     void ReinterpretIndex16ToIndex32(uint32_t* dst, uint16_t* src, uint32_t count)
     {
         for (auto i = 0u; i < count; ++i)

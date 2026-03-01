@@ -1,14 +1,12 @@
 #pragma once
-#include <cstdint>
+#include <stdint.h>
+#include "Core/Utilities/Ref.h"
 #include "Core/Math/MathFwd.h"
 
 namespace std
 {
     template <class _Fty>
     class function;
-
-    template <class, class>
-    class unique_ptr;
 }
 
 namespace PKAssets
@@ -33,9 +31,7 @@ namespace PKAssets
 
 namespace PK
 {
-    template<typename T>
-    using Unique = std::unique_ptr<T>;
-
+    template <typename, typename> struct Unique;
     template <typename T> struct Ref;
     template <typename T> struct Weak;
 

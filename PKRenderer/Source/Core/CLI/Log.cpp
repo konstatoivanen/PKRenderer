@@ -136,7 +136,7 @@ namespace PK
             return s_ActiveLogger.Lock()->ExceptionV(severity, color, format, args);
         }
 
-        return std::runtime_error(format);
+        return std::exception(format);
     }
 
 #undef PK_FORWAD_VARGS_FUNC

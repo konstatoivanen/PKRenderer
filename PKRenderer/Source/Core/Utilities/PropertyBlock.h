@@ -83,7 +83,7 @@ namespace PK
             {
                 if (!TrySet(hashId, src, count))
                 {
-                    throw std::runtime_error("Could not write property to block!");
+                    throw std::exception("Could not write property to block!");
                 }
             }
 

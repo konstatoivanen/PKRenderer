@@ -1,6 +1,7 @@
 #include <malloc.h>
 #include <stdlib.h>
-#include <memory>
+#include <string.h>
+#include <exception>
 #include "PKAssetEncoding.h"
 
 namespace PKAssets

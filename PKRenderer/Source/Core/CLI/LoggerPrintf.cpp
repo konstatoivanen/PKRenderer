@@ -97,7 +97,7 @@ namespace PK
         // Forces flush
         _getch();
         
-        return std::runtime_error(format);
+        return std::exception(format);
     }
 
     void LoggerPrintf::LogIndent()

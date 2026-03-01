@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/Utilities/Ref.h"
 #include "Core/Utilities/FixedPool.h"
 #include "Core/Utilities/FenceRef.h"
 #include "Core/RHI/Layout.h"

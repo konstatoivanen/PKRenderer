@@ -1,18 +1,114 @@
 #pragma once
-#include <memory>
+#include <utility>
 
 namespace PK
 {
-    template<typename T>
-    using Unique = std::unique_ptr<T>;
-    template<typename T, typename ... Args>
-    constexpr Unique<T> CreateUnique(Args&& ... args)
-    {
-        return std::make_unique<T>(std::forward<Args>(args)...);
-    }
-
+    using nullptr_t = decltype(nullptr);
+    template <typename, typename> struct Unique;
     template <typename T> struct Ref;
     template <typename T> struct Weak;
+
+    template<typename T>
+    struct DefaultDeleter
+    {
+        constexpr DefaultDeleter() noexcept = default;
+
+        template<typename U>  
+        DefaultDeleter(const DefaultDeleter<U>&, typename std::enable_if<std::is_convertible<U*, T*>::value>::type * = 0) noexcept {}
+
+        void operator()(T * p) const noexcept { delete p; }
+    };
+
+    template<typename T, typename D, bool isEmpty = std::is_empty_v<D> && !std::is_final_v<D>>
+    struct UniquePair
+    {
+        constexpr UniquePair() noexcept = default;
+        UniquePair(T* ptr) : pointer(ptr) {}
+        UniquePair(T* ptr, const D& del) : pointer(ptr), deleter(del) {}
+        D& GetDeleter() { return deleter; }
+        T* pointer = nullptr;
+        D deleter{};
+    };
+
+    template<typename T, typename D>
+    struct UniquePair<T, D, true> : public D
+    {
+        constexpr UniquePair() noexcept = default;
+        UniquePair(T* ptr) : pointer(ptr) {}
+        UniquePair(T* ptr, const D&) : pointer(ptr) {}
+        D& GetDeleter() { return *this; }
+        T* pointer = nullptr;
+    };
+
+    template <typename T, typename D = DefaultDeleter<T>>
+    struct Unique
+    {
+        typedef Unique<T, D>  this_type;
+
+        constexpr Unique() noexcept : pair(nullptr) {}
+        constexpr Unique(nullptr_t) noexcept : pair(nullptr) {}
+        explicit Unique(T* ptr) noexcept : pair(ptr) {}
+        Unique(T* ptr, D deleter) noexcept : pair(ptr, deleter) {}
+        Unique(T* ptr, D&& deleter) noexcept : pair(ptr, std::move(deleter)) {}
+        Unique(Unique&& other) noexcept : pair(other.Release(), std::forward<D>(other.GetDeleter())) {}
+        Unique(const Unique&) = delete;
+        
+        template <typename U, typename E>
+        Unique(Unique<U, E>&& other) noexcept : pair(other.Release(), std::forward<E>(other.GetDeleter())) {}
+
+        ~Unique() noexcept { Reset(); }
+
+        Unique& operator=(Unique&& other) noexcept
+        {
+            Reset(other.Release());
+            pair.GetDeleter() = std::move(std::forward<D>(other.GetDeleter()));
+            return *this;
+        }
+
+        template <typename U, typename E>
+        Unique& operator=(Unique<U, E>&& other) noexcept
+        {
+            Reset(other.Release());
+            pair.GetDeleter() = std::move(std::forward<E>(other.GetDeleter()));
+            return *this;
+        }
+        
+        Unique& operator=(nullptr_t) noexcept { Reset(); return *this; }
+        Unique& operator=(const Unique&) = delete;
+        Unique& operator=(T* pValue) = delete;
+        
+        const T& operator*() const { return *pair.pointer; }
+        T& operator*() { return *pair.pointer; }
+        T* operator->() const noexcept { return pair.pointer; }
+
+        T* get() const noexcept { return pair.pointer; }
+        const D& GetDeleter() const noexcept { return pair.GetDeleter(); }
+        D& GetDeleter() noexcept { return pair.GetDeleter(); }
+
+        explicit operator bool() const noexcept { return pair.pointer != nullptr; }
+
+        void Reset(T* pValue = nullptr) noexcept
+        {
+            if (pValue != pair.pointer)
+            {
+                if (auto first = std::exchange(pair.pointer, pValue))
+                {
+                    GetDeleter()(first);
+                }
+            }
+        }
+
+        T* Release() noexcept
+        {
+            T* pTemp = pair.pointer;
+            pair.pointer = nullptr;
+            return pTemp;
+        }
+
+        void Swap(Unique& other) noexcept { std::swap(pair.pointer, other.pair.pointer); }
+
+        UniquePair<T, D> pair;
+    }; 
 
     struct SharedObjectBase
     {
@@ -22,42 +118,16 @@ namespace PK
         virtual ~SharedObjectBase() noexcept {}
         virtual void Destroy() noexcept = 0;
         virtual void Delete() noexcept = 0;
-        constexpr long GetStrongRefCount() const noexcept { return static_cast<long>(referenceCount); }
-        constexpr long GetWeakRefCount() const noexcept { return static_cast<long>(weakCount); }
-        void IncrementWeakRef() noexcept { _MT_INCR(weakCount); }
-        void IncrementStrongRef() noexcept { _MT_INCR(referenceCount); }
-        void DecrementWeakRef() noexcept { if (_MT_DECR(weakCount) == 0) Delete(); }
-
-        void DecrementStrongRef() noexcept 
-        { 
-            if (_MT_DECR(referenceCount) == 0)
-            {
-                Destroy();
-                DecrementWeakRef();
-            }
-        }
-
-        bool IncrementRefNonZero() noexcept
-        {
-            auto& _Volatile_uses = reinterpret_cast<volatile long&>(referenceCount);
-            long _Count = __iso_volatile_load32(reinterpret_cast<volatile int*>(&_Volatile_uses));
-
-            while (_Count != 0) 
-            {
-                const long _Old_value = _INTRIN_RELAXED(_InterlockedCompareExchange)(&_Volatile_uses, _Count + 1, _Count);
-                if (_Old_value == _Count) 
-                {
-                    return true;
-                }
-
-                _Count = _Old_value;
-            }
-
-            return false;
-        }
+        constexpr uint32_t GetStrongRefCount() const noexcept { return referenceCount; }
+        constexpr uint32_t GetWeakRefCount() const noexcept { return weakCount; }
+        void IncrementWeakRef() noexcept;
+        void IncrementStrongRef() noexcept;
+        void DecrementWeakRef() noexcept;
+        void DecrementStrongRef() noexcept;
+        bool IncrementRefNonZero() noexcept;
         
-        unsigned long referenceCount = 1u;
-        unsigned long weakCount = 1u;
+        uint32_t referenceCount = 1u;
+        uint32_t weakCount = 1u;
     };
 
     template<typename T>
@@ -80,8 +150,8 @@ namespace PK
         constexpr RefBase() noexcept = default;
         ~RefBase() = default;
 
-        long GetStrongRefCount() const noexcept { return shared ? shared->GetStrongRefCount() : 0; }
-        long GetWeakRefCount() const noexcept { return shared ? shared->GetWeakRefCount() : 0; }
+        uint32_t GetStrongRefCount() const noexcept { return shared ? shared->GetStrongRefCount() : 0u; }
+        uint32_t GetWeakRefCount() const noexcept { return shared ? shared->GetWeakRefCount() : 0u; }
         T* get() const noexcept { return pointer; }
 
         void IncrementStrongRef() const noexcept  { if (shared) shared->IncrementStrongRef(); }
@@ -167,7 +237,7 @@ namespace PK
         using TBase::get;
 
         constexpr Ref() noexcept = default;
-        constexpr Ref(std::nullptr_t) noexcept {}
+        constexpr Ref(nullptr_t) noexcept {}
 
         Ref(SharedObjectBase* ref, T* ptr) noexcept 
         { 
@@ -295,6 +365,25 @@ namespace PK
         }
     };
 
+    template <typename T0, typename D0, typename T1, typename D1> bool operator==(const Unique<T0, D0>& a, const Unique<T1, D1>& b) { return a.get() == b.get(); }
+    template <typename T0, typename D0, typename T1, typename D1> bool operator!=(const Unique<T0, D0>& a, const Unique<T1, D1>& b) { return a.get() != b.get(); }
+    template <typename T0, typename D0, typename T1, typename D1> bool operator<(const Unique<T0, D0>& a, const Unique<T1, D1>& b) { return a.get() < b.get(); }
+    template <typename T0, typename D0, typename T1, typename D1> bool operator>=(const Unique<T0, D0>& a, const Unique<T1, D1>& b) { return a.get() >= b.get(); }
+    template <typename T0, typename D0, typename T1, typename D1> bool operator>(const Unique<T0, D1>& a, const Unique<T1, D1>& b) { return a.get() > b.get(); }
+    template <typename T0, typename D0, typename T1, typename D1> bool operator<=(const Unique<T0, D1>& a, const Unique<T1, D1>& b) { return a.get() <= b.get(); }
+    template <typename T, typename D> bool operator==(const Unique<T, D>& a, nullptr_t) noexcept { return a.get() == nullptr; }
+    template <typename T, typename D> bool operator!=(const Unique<T, D>& a, nullptr_t) noexcept { return a.get() != nullptr; }
+    template <typename T, typename D> bool operator<(const Unique<T, D>& a, nullptr_t) { return a.get() < static_cast<typename T*>(nullptr); }
+    template <typename T, typename D> bool operator>=(const Unique<T, D>& a, nullptr_t) { return a.get() >= static_cast<typename T*>(nullptr); }
+    template <typename T, typename D> bool operator>(const Unique<T, D>& a, nullptr_t) { return a.get() > T*>(nullptr); }
+    template <typename T, typename D> bool operator<=(const Unique<T, D>& a, nullptr_t) { return a.get() <= T*>(nullptr); }
+    template <typename T, typename D> bool operator==(nullptr_t, const Unique<T, D>& b) noexcept { return nullptr == b.get(); }
+    template <typename T, typename D> bool operator!=(nullptr_t, const Unique<T, D>& b) noexcept { return nullptr != b.get(); }
+    template <typename T, typename D> bool operator<(nullptr_t, const Unique<T, D>& b) { return static_cast<typename T*>(nullptr) < b.get(); }
+    template <typename T, typename D> bool operator>=(nullptr_t, const Unique<T, D>& b) { return static_cast<typename T*>(nullptr) >= b.get(); }
+    template <typename T, typename D> bool operator>(nullptr_t, const Unique<T, D>& b) { return static_cast<typename T*>(nullptr) > b.get(); }
+    template <typename T, typename D> bool operator<=(nullptr_t, const Unique<T, D>& b) { return static_cast<typename T*>(nullptr) <= b.get(); }
+
     template <typename T0, typename T1> bool operator==(const Ref<T0>& a, const Ref<T1>& b) noexcept { return a.get() == b.get(); }
     template <typename T0, typename T1> bool operator!=(const Ref<T0>& a, const Ref<T1>& b) noexcept { return a.get() != b.get(); }
     template <typename T0, typename T1> bool operator<(const Ref<T0>& a, const Ref<T1>& b) noexcept { return a.get() < b.get(); }
@@ -302,17 +391,24 @@ namespace PK
     template <typename T0, typename T1> bool operator>(const Ref<T0>& a, const Ref<T1>& b) noexcept { return a.get() > b.get();}
     template <typename T0, typename T1> bool operator<=(const Ref<T0>& a, const Ref<T1>& b) noexcept { return a.get() <= b.get(); }
     template <typename T> bool operator==(const Ref<T>& a, nullptr_t) noexcept { return a.get() == nullptr; }
-    template <typename T> bool operator==(nullptr_t, const Ref<T>& b) noexcept { return nullptr == b.get(); }
     template <typename T> bool operator!=(const Ref<T>& a, nullptr_t) noexcept { return a.get() != nullptr; }
-    template <typename T> bool operator!=(nullptr_t, const Ref<T>& b) noexcept { return nullptr != b.get(); }
     template <typename T> bool operator<(const Ref<T>& a, nullptr_t) noexcept { return a.get() < static_cast<typename T*>(nullptr); }
-    template <typename T> bool operator<(nullptr_t, const Ref<T>& b) noexcept { return static_cast<typename T*>(nullptr) < b.get(); }
     template <typename T> bool operator>=(const Ref<T>& a, nullptr_t) noexcept { return a.get() >= static_cast<typename T*>(nullptr); }
+    template <typename T> bool operator>(const Ref<T>& a, nullptr_t) noexcept { return a.get() > static_cast<typename T*>(nullptr); }
+    template <typename T> bool operator<=(const Ref<T>& a, nullptr_t) noexcept { return a.get() <= static_cast<typename T*>(nullptr); }
+    template <typename T> bool operator==(nullptr_t, const Ref<T>& b) noexcept { return nullptr == b.get(); }
+    template <typename T> bool operator!=(nullptr_t, const Ref<T>& b) noexcept { return nullptr != b.get(); }
+    template <typename T> bool operator<(nullptr_t, const Ref<T>& b) noexcept { return static_cast<typename T*>(nullptr) < b.get(); }
     template <typename T> bool operator>=(nullptr_t, const Ref<T>& b) noexcept { return static_cast<typename T*>(nullptr) >= b.get(); }
-    template <typename T> bool operator>(const Ref<T>& a, nullptr_t) noexcept { return a.get() > T*>(nullptr); }
     template <typename T> bool operator>(nullptr_t, const Ref<T>& b) noexcept { return static_cast<typename T*>(nullptr) > b.get(); }
-    template <typename T> bool operator<=(const Ref<T>& a, nullptr_t) noexcept { return a.get() <= T*>(nullptr); }
     template <typename T> bool operator<=(nullptr_t, const Ref<T>& b) noexcept { return static_cast<typename T*>(nullptr) <= b.get(); }
+
+    template<typename T, typename ... Args>
+    constexpr Unique<T> CreateUnique(Args&& ... args) noexcept
+    {
+        auto ptr = new T(std::forward<Args>(args)...);
+        return Unique<T>(ptr);
+    }
 
     template<typename T, typename ... Args>
     constexpr Ref<T> CreateRef(Args&& ... args) noexcept

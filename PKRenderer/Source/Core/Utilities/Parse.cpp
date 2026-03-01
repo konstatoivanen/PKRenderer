@@ -48,6 +48,39 @@ namespace PK::Parse
     template<> FixedString32 ToString(const float& value) { return FixedString32("%fg", value); }
     template<> FixedString32 ToString(const bool& value) { return FixedString32("%u", (uint8_t)value); }
 
+    std::string BytesToString(size_t bytes)
+    {
+        if (bytes == 0)
+        {
+            return "0B";
+        }
+
+        auto mag = (int)(log(bytes) / log(1024));
+        mag = glm::min(mag, 2);
+
+        auto adjustedSize = (double)bytes / (1L << (mag * 10));
+        auto factor = pow(10, 4);
+
+        if ((round(adjustedSize * factor) / factor) >= 1000)
+        {
+            mag += 1;
+            adjustedSize /= 1024;
+        }
+
+        char buffer[64];
+
+        auto length = snprintf(buffer, 61u, "%1.4g", adjustedSize);
+
+        switch (mag)
+        {
+            case 0: buffer[length + 0u] = 'B'; buffer[length + 1u] = '\0'; break;
+            case 1: buffer[length + 0u] = 'K'; buffer[length + 1u] = 'B'; buffer[length + 2u] = '\0'; break;
+            default: buffer[length + 0u] = 'M'; buffer[length + 1u] = 'B'; buffer[length + 2u] = '\0'; break;
+        }
+
+        return std::string(buffer);
+    }
+
     std::wstring ToWideString(const char* str, size_t length)
     {
         std::wstring wide(length, L'#');

@@ -1,5 +1,4 @@
 #pragma once
-#include <limits>
 #include "Hash.h"
 #include "NoCopy.h"
 #include "BufferView.h"

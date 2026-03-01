@@ -80,6 +80,8 @@ namespace PK::Parse
         return result;
     }
 
+    std::string BytesToString(size_t bytes);
+
     std::wstring ToWideString(const char* str, size_t length);
     std::string FromWideString(const wchar_t* str, size_t length);
 

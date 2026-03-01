@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include <cstdio>
 #include "Core/Utilities/Memory.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/CLI/Log.h"

@@ -1,19 +1,9 @@
 #include "PrecompiledHeader.h"
+#include "Core/Platform/Platform.h"
 #include "FixedMask.h"
 
 namespace PK
 {
-    inline static uint32_t BitScan64(uint64_t mask)
-    {
-#if defined(_MSC_VER) && defined(_WIN64)
-        unsigned long index = 0ul;
-        return _BitScanForward64(&index, mask) ? index : 64u;
-#elif defined(__GNUC__)
-        auto index = __builtin_ffsll(mask);
-        return index == 0 ? 64u : (uint32_t)(index - 1);
-#endif
-    }
-
     size_t BinaryUtilities::CountBits(const uint64_t* buffer, size_t size)
     {
         auto count = 0ull;
@@ -37,7 +27,7 @@ namespace PK
 
         for (auto i = 0ull; i < size; ++i)
         {
-            auto bitpos = BitScan64(~buffer[i]);
+            auto bitpos = Platform::BitScan64(~buffer[i]);
 
             if (bitpos < 64u)
             {
@@ -66,7 +56,7 @@ namespace PK
             {
                 const auto mask = ~((1ull << (head & 63u)) - 1ull);
                 const auto bits = buffer[head >> 6ull] & mask;
-                const auto pos1 = BitScan64(bits);
+                const auto pos1 = Platform::BitScan64(bits);
                 head += pos1 - (head & 63u);
                 in_scope = pos1 == 64u;
             }
@@ -74,7 +64,7 @@ namespace PK
             {
                 const auto mask = ((1ull << (head & 63u)) - 1ull);
                 const auto bits = ~(buffer[head >> 6ull] | mask);
-                const auto pos0 = BitScan64(bits);
+                const auto pos0 = Platform::BitScan64(bits);
                 head += pos0 - (head & 63u);
                 base = head;
                 in_scope = pos0 != 64u;

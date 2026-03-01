@@ -2433,6 +2433,9 @@
     <ClCompile Include="Source\Core\ControlFlow\Sequencer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Core\Utilities\Ref.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="ThirdParty\vulkan\Binaries\vulkan-1.lib" />

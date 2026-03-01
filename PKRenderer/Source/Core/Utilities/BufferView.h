@@ -1,5 +1,6 @@
 #pragma once
-#include <cstdint>
+#include <stdint.h>
+#include <exception>
 
 namespace PK
 {
@@ -16,7 +17,7 @@ namespace PK
     {
         if (index >= count)
         {
-            throw std::invalid_argument("Out of bounds index");
+            throw std::exception("Out of bounds index");
         }
     
         return data[index];
@@ -37,7 +38,7 @@ namespace PK
     {
         if (index >= count)
         {
-            throw std::invalid_argument("Out of bounds index");
+            throw std::exception("Out of bounds index");
         }
 
         return data[index];
@@ -58,7 +59,7 @@ namespace PK
     {
         if (index >= count)
         {
-            throw std::invalid_argument("Out of bounds index");
+            throw std::exception("Out of bounds index");
         }
 
         return *reinterpret_cast<T*>(data + index * stride + offset);  

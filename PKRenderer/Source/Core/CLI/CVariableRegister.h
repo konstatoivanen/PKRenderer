@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #include "Core/Utilities/Ref.h"
 #include "Core/Utilities/ISingleton.h"
 #include "Core/Utilities/FastMap.h"
@@ -56,7 +55,6 @@ namespace PK
         bool IsBoundInstance(const char* name) const;
 
         void ExecuteInstance(const char* const* args, uint32_t count);
-        void ExecuteInstance(const std::vector<std::string>& args);
         void ExecuteParseInstance(const char* arg);
 
         FastMap<NameID, CVariableBinding, Hash::TCastHash<NameID>> m_variables;

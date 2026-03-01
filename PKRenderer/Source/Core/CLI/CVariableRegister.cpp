@@ -151,18 +151,6 @@ namespace PK
         }
     }
 
-    void CVariableRegister::ExecuteInstance(const std::vector<std::string>& args)
-    {
-        std::vector<const char*> cstringArguments;
-
-        for (auto& arg : args)
-        {
-            cstringArguments.push_back(arg.data());
-        }
-
-        ExecuteInstance(cstringArguments.data(), cstringArguments.size());
-    }
-
     void CVariableRegister::ExecuteParseInstance(const char* arg)
     {
         CArgumentsInlineDefault args(arg, ' ');

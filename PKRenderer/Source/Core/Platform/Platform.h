@@ -99,6 +99,15 @@ namespace PK
         void SetConsoleColor(uint32_t color);
         void SetConsoleVisible(bool value);
         bool RemoteProcess(const char* executable, const char* arguments, std::string& outError);
+
+        inline static uint32_t InterlockedExchange(volatile uint32_t* dst, uint32_t exchange);
+        inline static uint32_t InterlockedCompareExchange(volatile uint32_t* dst, uint32_t exchange, uint32_t comperand);
+        inline static uint32_t InterlockedAdd(volatile uint32_t* dst, uint32_t value);
+        inline static uint32_t InterlockedIncrement(volatile uint32_t* dst);
+        inline static uint32_t InterlockedDecrement(volatile uint32_t* dst);
+        inline static uint32_t AtomicRead(const volatile uint32_t* dst);
+        inline static void AtomicStore(volatile uint32_t* dst, uint32_t value);
+        inline static uint64_t BitScan64(uint64_t mask);
     }
 }
 

@@ -3,8 +3,6 @@
 
 #if PK_PLATFORM_WINDOWS
 
-#include <bitset>
-
 namespace PK
 {
     struct Win32Window : public PlatformWindow

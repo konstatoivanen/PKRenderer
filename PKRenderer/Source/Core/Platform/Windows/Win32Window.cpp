@@ -198,7 +198,7 @@ namespace PK
 
         if (!m_handle)
         {
-            throw std::runtime_error("Failed to create a window through: CreateWindowExW.");
+            throw std::exception("Failed to create a window through: CreateWindowExW.");
         }
 
         // Set default icon from rc.

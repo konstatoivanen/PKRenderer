@@ -1,6 +1,5 @@
 #pragma once
-#include <cstdint>
-#include <string>
+#include <stdint.h>
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/NameID.h"
 #include "Core/Utilities/FixedString.h"

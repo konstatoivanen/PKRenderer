@@ -1,6 +1,5 @@
 #pragma once
 #include "Core/Utilities/BufferView.h"
-#include "Core/Utilities/Ref.h"
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FastTypeIndex.h"
 #include "Core/Utilities/FastBuffer.h"
@@ -22,18 +21,24 @@ namespace PK
     // @TODO convert into a pool. for deletions.
     struct ImplementerBucket
     {
-        Unique<ImplementerBucket> previous;
+        ImplementerBucket* previous;
         size_t count;
         void (*destructor)(void* value, size_t count);
         uint8_t data[PK_ECS_BUCKET_SIZE];
 
-        ~ImplementerBucket() { destructor(data, count); }
+        ~ImplementerBucket() 
+        { 
+            delete previous;
+            destructor(data, count); 
+        }
     };
 
     struct ImplementerContainer
     {
         size_t count = 0;
-        Unique<ImplementerBucket> bucketHead;
+        ImplementerBucket* bucketHead;
+
+        ~ImplementerContainer() { delete bucketHead; }
     };
 
     struct EntityViewContainer
@@ -120,8 +125,8 @@ namespace PK
 
             if (!container.bucketHead || container.bucketHead->count >= elementsPerBucket)
             {
-                auto bucket = CreateUnique<ImplementerBucket>();
-                bucket->previous = std::move(container.bucketHead);
+                auto bucket = new ImplementerBucket();
+                bucket->previous = container.bucketHead;
                 bucket->count = 0u;
                 bucket->destructor = [](void* data, size_t count)
                 {
@@ -131,7 +136,7 @@ namespace PK
                     }
                 };
                 
-                container.bucketHead = std::move(bucket);
+                container.bucketHead = bucket;
             }
 
             auto ptr = reinterpret_cast<T*>(container.bucketHead->data) + container.bucketHead->count;
@@ -148,7 +153,7 @@ namespace PK
 
             if (!egid.IsValid())
             {
-                throw std::runtime_error("Trying to acquire resources for an invalid egid!");
+                throw std::exception("Trying to acquire resources for an invalid egid!");
             }
 
             const uint32_t groupIdx = m_viewHeaders.Add(EntityViewHeader(egid.groupID(), pk_base_type_index<TView>()));

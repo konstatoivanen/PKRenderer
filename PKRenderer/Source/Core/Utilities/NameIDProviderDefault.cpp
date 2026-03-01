@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include <exception>
 #include "NameIDProviderDefault.h"
 
 namespace PK
@@ -16,7 +17,8 @@ namespace PK
     {
         if (id >= m_names.GetCount())
         {
-            throw std::invalid_argument("Trying to get a string using an invalid id: " + std::to_string(id));
+            FixedString128 fixedMessage("Trying to get a string using an invalid id: %u", id);
+            throw std::exception(fixedMessage.c_str());
         }
 
         return m_names[id].c_str();
