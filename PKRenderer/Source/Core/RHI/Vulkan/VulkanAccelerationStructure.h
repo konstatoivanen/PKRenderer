@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/FixedUnique.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
@@ -70,7 +71,7 @@ namespace PK
             VulkanRawBuffer* m_instanceInputBuffer = nullptr;
             VulkanRawBuffer* m_scratchBuffer = nullptr;
             VulkanRawBuffer* m_structureBuffer = nullptr;
-            VulkanQueryPool* m_queryPool = nullptr;
+            FixedUnique<VulkanQueryPool> m_queryPool;
             TLAS m_structure{};
             FastMap<BLASKey, BLAS, GeometryKeyHash> m_substructures;
             VulkanBindHandle m_bindHandle{};

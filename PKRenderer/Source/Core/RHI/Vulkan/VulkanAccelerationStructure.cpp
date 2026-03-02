@@ -16,17 +16,14 @@ namespace PK
         m_name(name),
         m_substructures(32u, 1ull)
     {
-        m_queryPool = new VulkanQueryPool(m_driver->device, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, 256u);
+        m_queryPool.New(m_driver->device, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, 256u);
     }
 
     VulkanAccelerationStructure::~VulkanAccelerationStructure()
     {
         auto fence = m_driver->GetQueues()->GetLastSubmitFenceRef();
 
-        if (m_queryPool != nullptr)
-        {
-            delete m_queryPool;
-        }
+        m_queryPool.Delete();
 
         if (m_structure.raw != nullptr)
         {
