@@ -8,6 +8,8 @@
 
 namespace PK
 {
+    #define PK_LOG_USE_SATIC_SEVERITY_MASK 1
+
     struct StaticLog : public NoCopy
     {
         static void SetLogger(Weak<ILogger> logger);
@@ -19,8 +21,8 @@ namespace PK
         static void SetShowConsole(bool value);
         static void SetColor(LogColor color);
 
-        static void Indent(LogSeverity severity = PK_LOG_LVL_ALL_FLAGS);
-        static void Outdent(LogSeverity severity = PK_LOG_LVL_ALL_FLAGS);
+        static void Indent(LogSeverity severity = PK_LOG_LVL_ALL);
+        static void Outdent(LogSeverity severity = PK_LOG_LVL_ALL);
         static void NewLine();
         static void Log(LogSeverity severity, LogColor color, const char* format, ...);
         static void Log(LogSeverity severity, LogColor color, const std::string& format, ...);
@@ -30,6 +32,9 @@ namespace PK
         static std::exception ExceptionV(LogSeverity severity, LogColor color, const char* format, va_list args);
 
         private: 
+            #if PK_LOG_USE_SATIC_SEVERITY_MASK
+            inline static LogSeverity s_SeverityMask;
+            #endif
             inline static Weak<ILogger> s_ActiveLogger;
     };
 }

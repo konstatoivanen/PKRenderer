@@ -406,6 +406,7 @@ namespace PK
     template<typename T, typename ... Args>
     constexpr Unique<T> CreateUnique(Args&& ... args) noexcept
     {
+        // Separate line so that memory profiler picks the type correctly :/
         auto ptr = new T(std::forward<Args>(args)...);
         return Unique<T>(ptr);
     }

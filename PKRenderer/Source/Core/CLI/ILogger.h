@@ -38,7 +38,8 @@ namespace PK
         PK_LOG_LVL_INFO = 1 << 2,
         PK_LOG_LVL_WARNING = 1 << 3,
         PK_LOG_LVL_ERROR = 1 << 4,
-        PK_LOG_LVL_ALL_FLAGS = 0xFF,
+        PK_LOG_LVL_ALL = 0xFF,
+        PK_LOG_LVL_NONE = 0,
     } LogSeverity;
 
     constexpr static const unsigned int PK_LOG_LVL_COUNT = 5u;

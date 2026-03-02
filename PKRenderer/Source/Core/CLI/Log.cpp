@@ -8,7 +8,13 @@
 
 namespace PK
 {
-    ILogger::~ILogger() = default;
+    #if PK_LOG_USE_SATIC_SEVERITY_MASK
+        #define PK_LOG_ASSIGN_STATIC_SEVERITY_MASK(var, logger) var = logger.IsAlive() ? logger.Lock()->GetSeverityMask() : LogSeverity::PK_LOG_LVL_NONE
+        #define PK_LOG_CHECK_STATIC_SEVERITY_MASK(var, mask) ((var & mask) != 0)
+    #else
+        #define PK_LOG_ASSIGN_STATIC_SEVERITY_MASK(var, logger) 
+        #define PK_LOG_CHECK_STATIC_SEVERITY_MASK(var, mask) true
+    #endif
 
     #define PK_FORWAD_VARGS_FUNC(fmt, args, Func) \
         va_list args; \
@@ -16,9 +22,13 @@ namespace PK
         Func \
         va_end(args); \
 
+    ILogger::~ILogger() = default;
+
+
     void StaticLog::SetLogger(Weak<ILogger> logger)
     {
         s_ActiveLogger = logger;
+        PK_LOG_ASSIGN_STATIC_SEVERITY_MASK(s_SeverityMask, logger);
     }
 
     void StaticLog::SetCrashLogPath(const char* value)
@@ -34,6 +44,7 @@ namespace PK
         if (s_ActiveLogger.IsAlive())
         {
             s_ActiveLogger.Lock()->SetSeverityMask(mask);
+            PK_LOG_ASSIGN_STATIC_SEVERITY_MASK(s_SeverityMask, s_ActiveLogger);
         }
     }
 
@@ -44,6 +55,7 @@ namespace PK
             auto logger = s_ActiveLogger.Lock();
             uint32_t filter = logger->GetSeverityMask();
             logger->SetSeverityMask((LogSeverity)(value ? (filter | flag) : (filter & ~flag)));
+            PK_LOG_ASSIGN_STATIC_SEVERITY_MASK(s_SeverityMask, s_ActiveLogger);
         }
     }
 
@@ -75,7 +87,7 @@ namespace PK
 
     void StaticLog::Indent(LogSeverity severity)
     {
-        if (s_ActiveLogger.IsAlive())
+        if (PK_LOG_CHECK_STATIC_SEVERITY_MASK(s_SeverityMask, severity) && s_ActiveLogger.IsAlive())
         {
             s_ActiveLogger.Lock()->Indent(severity);
         }
@@ -83,7 +95,7 @@ namespace PK
 
     void StaticLog::Outdent(LogSeverity severity)
     {
-        if (s_ActiveLogger.IsAlive())
+        if (PK_LOG_CHECK_STATIC_SEVERITY_MASK(s_SeverityMask, severity) && s_ActiveLogger.IsAlive())
         {
             s_ActiveLogger.Lock()->Outdent(severity);
         }
@@ -99,18 +111,24 @@ namespace PK
 
     void StaticLog::Log(LogSeverity severity, LogColor color, const char* format, ...)
     {
-        PK_FORWAD_VARGS_FUNC(format, log_args, LogV(severity, color, format, log_args);)
+        if (PK_LOG_CHECK_STATIC_SEVERITY_MASK(s_SeverityMask, severity))
+        {
+            PK_FORWAD_VARGS_FUNC(format, log_args, LogV(severity, color, format, log_args);)
+        }
     }
 
     void StaticLog::Log(LogSeverity severity, LogColor color, const std::string& format, ...)
     {
-        const char* cformat = format.c_str();
-        PK_FORWAD_VARGS_FUNC(cformat, log_args, LogV(severity, color, cformat, log_args);)
+        if (PK_LOG_CHECK_STATIC_SEVERITY_MASK(s_SeverityMask, severity))
+        {
+            const char* cformat = format.c_str();
+            PK_FORWAD_VARGS_FUNC(cformat, log_args, LogV(severity, color, cformat, log_args);)
+        }
     }
 
     void StaticLog::LogV(LogSeverity severity, LogColor color, const char* format, va_list args)
     {
-        if (s_ActiveLogger.IsAlive())
+        if (PK_LOG_CHECK_STATIC_SEVERITY_MASK(s_SeverityMask, severity) && s_ActiveLogger.IsAlive())
         {
             s_ActiveLogger.Lock()->LogV(severity, color, format, args);
         }
@@ -131,7 +149,7 @@ namespace PK
 
     std::exception StaticLog::ExceptionV(LogSeverity severity, LogColor color, const char* format, va_list args)
     {
-        if (s_ActiveLogger.IsAlive())
+        if (PK_LOG_CHECK_STATIC_SEVERITY_MASK(s_SeverityMask, severity) && s_ActiveLogger.IsAlive())
         {
             return s_ActiveLogger.Lock()->ExceptionV(severity, color, format, args);
         }
@@ -139,7 +157,10 @@ namespace PK
         return std::exception(format);
     }
 
-#undef PK_FORWAD_VARGS_FUNC
+    #undef PK_FORWAD_VARGS_FUNC
+    #undef PK_LOG_ASSIGN_STATIC_SEVERITY_MASK
+    #undef PK_LOG_CHECK_STATIC_SEVERITY_MASK
+
 }
 
 #ifdef __clang__
