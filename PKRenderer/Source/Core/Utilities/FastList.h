@@ -30,8 +30,8 @@ namespace PK
             m_data.buffer = nullptr;
         }
 
-        T* GetData() { return reinterpret_cast<T*>(IsSmallBuffer(m_capacity) ? &m_data : m_data.buffer); }
-        T const* GetData() const { return reinterpret_cast<const T*>(IsSmallBuffer(m_capacity) ? &m_data : m_data.buffer); }
+        T* GetData() { return IsSmallBuffer(m_capacity) ? reinterpret_cast<T*>(&m_data) : m_data.buffer; }
+        T const* GetData() const { return IsSmallBuffer(m_capacity) ? reinterpret_cast<const T*>(&m_data) : m_data.buffer; }
 
         constexpr size_t GetCount() const { return m_count; }
         constexpr size_t GetSize() const { return m_count * sizeof(T); }
@@ -191,7 +191,7 @@ namespace PK
 
     private:
         constexpr static bool IsSmallBuffer(size_t count) { return count <= (sizeof(U) / sizeof(T)); }
-        struct U { union { void* buffer; alignas(T) unsigned char inl[sizeof(T) * inlineCapacity]; }; };
+        struct U { union { T* buffer; alignas(T) uint8_t inl[sizeof(T) * inlineCapacity]; }; };
         U m_data{};
         uint32_t m_count = 0u;
         uint32_t m_capacity = inlineCapacity;

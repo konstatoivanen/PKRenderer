@@ -150,14 +150,14 @@ namespace PK
     void CommandBufferExt::UploadBufferData(RHIBuffer* buffer, const void* data)
     {
         auto dst = commandBuffer->BeginBufferWrite(buffer, 0, buffer->GetSize());
-        memcpy(reinterpret_cast<char*>(dst), data, buffer->GetSize());
+        memcpy(static_cast<char*>(dst), data, buffer->GetSize());
         commandBuffer->EndBufferWrite(buffer);
     }
 
     void CommandBufferExt::UploadBufferData(RHIBuffer* buffer, const void* data, size_t offset, size_t size)
     {
         auto dst = commandBuffer->BeginBufferWrite(buffer, 0, buffer->GetSize());
-        memcpy(reinterpret_cast<char*>(dst) + offset, data, size);
+        memcpy(static_cast<char*>(dst) + offset, data, size);
         commandBuffer->EndBufferWrite(buffer);
     }
 

@@ -14,11 +14,8 @@ namespace PK
         VkShaderStageFlags stageFlags = 0u;
         ShaderResourceType types[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
         uint16_t counts[PK_RHI_MAX_DESCRIPTORS_PER_SET]{};
-
-        inline bool operator == (const DescriptorSetLayoutKey& r) const noexcept
-        {
-            return memcmp(reinterpret_cast<const void*>(this), reinterpret_cast<const void*>(&r), sizeof(DescriptorSetLayoutKey)) == 0;
-        }
+        
+        inline bool operator == (const DescriptorSetLayoutKey& r) const noexcept { return memcmp(this, &r, sizeof(DescriptorSetLayoutKey)) == 0; }
     };
 
     struct PipelineLayoutKey
@@ -26,10 +23,7 @@ namespace PK
         VkDescriptorSetLayout setlayout = VK_NULL_HANDLE;
         VkPushConstantRange pushConstantRange{};
 
-        inline bool operator == (const PipelineLayoutKey& r) const noexcept
-        {
-            return memcmp(reinterpret_cast<const void*>(this), reinterpret_cast<const void*>(&r), sizeof(PipelineLayoutKey)) == 0;
-        }
+        inline bool operator == (const PipelineLayoutKey& r) const noexcept { return memcmp(this, &r, sizeof(PipelineLayoutKey)) == 0; }
     };
 
     class VulkanLayoutCache : public NoCopy

@@ -291,7 +291,7 @@ namespace PK::Math
         auto maxFar = -std::numeric_limits<float>().max();
         auto zrange = info.splitPlanes[info.count] - info.splitPlanes[0];
 
-        BoundingBox* aabbs = reinterpret_cast<BoundingBox*>(alloca(sizeof(BoundingBox) * info.count));
+        BoundingBox* aabbs = static_cast<BoundingBox*>(alloca(sizeof(BoundingBox) * info.count));
 
         for (auto i = 0u; i < info.count; ++i)
         {

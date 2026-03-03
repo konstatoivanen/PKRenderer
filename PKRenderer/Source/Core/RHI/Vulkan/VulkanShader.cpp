@@ -107,7 +107,7 @@ namespace PK
             {
                 auto deleter = [](void* c, void* v)
                 {
-                    vkDestroyShaderModule(reinterpret_cast<VkDevice>(c), reinterpret_cast<VkShaderModule>(v), nullptr);
+                    vkDestroyShaderModule(static_cast<VkDevice>(c), static_cast<VkShaderModule>(v), nullptr);
                 };
 
                 m_driver->disposer->Dispose(m_driver->device, module, deleter, fence);

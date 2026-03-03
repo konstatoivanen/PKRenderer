@@ -39,7 +39,7 @@ PK::BuiltInResources::BuiltInResources()
         region.offset = PK_UINT3_ZERO;
         region.extent = { 2u, 2u, 1u };
 
-        auto pMapped = reinterpret_cast<unsigned char*>(stage->BeginMap(0, 0));
+        auto pMapped = static_cast<uint8_t*>(stage->BeginMap(0, 0));
 
         memcpy(pMapped + region.bufferOffset, blackData, sizeof(blackData)); 
         commandBuffer->CopyToTexture(BlackTexture2D.get(), stage, &region, 1u);

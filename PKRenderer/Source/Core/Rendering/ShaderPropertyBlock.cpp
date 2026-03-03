@@ -103,7 +103,7 @@ namespace PK
     void ShaderPropertyWriter::BeginWrite(const ShaderPropertyLayout* layout, void* memory)
     {
         m_layout = layout;
-        m_memory = reinterpret_cast<uint8_t*>(memory);
+        m_memory = static_cast<uint8_t*>(memory);
     }
 
     void* ShaderPropertyWriter::EndWrite()

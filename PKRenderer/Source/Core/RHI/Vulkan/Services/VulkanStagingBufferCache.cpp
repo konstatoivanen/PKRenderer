@@ -84,7 +84,7 @@ namespace PK
         {
             auto deleter = [](void* c, void* v)
             {
-                reinterpret_cast<VulkanStagingBufferCache*>(c)->m_bufferPool.Delete(reinterpret_cast<VulkanStagingBuffer*>(v));
+                static_cast<VulkanStagingBufferCache*>(c)->m_bufferPool.Delete(static_cast<VulkanStagingBuffer*>(v));
             };
 
             m_disposer->Dispose(this, buffer, deleter, fence);

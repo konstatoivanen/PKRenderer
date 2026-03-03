@@ -15,8 +15,8 @@ namespace PKAssets
 
     static int32_t EncodeKeyCompare(const void* a, const void* b)
     {
-        auto freqA = *reinterpret_cast<const uint64_t*>(a) & 0xFFFFFFFFull;
-        auto freqB = *reinterpret_cast<const uint64_t*>(b) & 0xFFFFFFFFull;
+        auto freqA = *static_cast<const uint64_t*>(a) & 0xFFFFFFFFull;
+        auto freqB = *static_cast<const uint64_t*>(b) & 0xFFFFFFFFull;
         return freqA != freqB ? freqA < freqB ? -1 : 1 : 0;
     }
     
@@ -68,7 +68,7 @@ namespace PKAssets
     
     void EncodeBuffer(const void* in_data, size_t in_data_size, PKEncodeTable* table, uint8_t* out_data)
     {
-        const uint8_t* bytes = reinterpret_cast<const uint8_t*>(in_data);
+        const uint8_t* bytes = static_cast<const uint8_t*>(in_data);
     
         if (!out_data)
         {

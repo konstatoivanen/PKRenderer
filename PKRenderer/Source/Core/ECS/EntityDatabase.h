@@ -132,7 +132,7 @@ namespace PK
                 {
                     for (auto i = 0u; i < count; ++i)
                     {
-                        (reinterpret_cast<T*>(data) + i)->~T();
+                        (static_cast<T*>(data) + i)->~T();
                     }
                 };
                 

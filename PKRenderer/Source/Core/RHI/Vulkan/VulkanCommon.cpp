@@ -560,7 +560,7 @@ namespace PK
             vmaMapMemory(allocator, memory, &mappedRange);
         }
 
-        return reinterpret_cast<char*>(mappedRange) + offset;
+        return static_cast<char*>(mappedRange) + offset;
     }
 
     void VulkanRawBuffer::EndMap(size_t offset, size_t size) const

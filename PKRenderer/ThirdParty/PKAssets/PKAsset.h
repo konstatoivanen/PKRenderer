@@ -35,13 +35,13 @@ namespace PKAssets
 
         T* Get(void* base)
         {
-            auto cptr = reinterpret_cast<char*>(base) + offset;
+            auto cptr = static_cast<char*>(base) + offset;
             return reinterpret_cast<T*>(cptr);
         }
 
         void Set(void* base, T* value)
         {
-            offset = (uint32_t)(reinterpret_cast<char*>(value) - reinterpret_cast<char*>(base));
+            offset = (uint32_t)(static_cast<char*>(value) - static_cast<char*>(base));
         }
     };
 

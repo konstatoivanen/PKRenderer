@@ -30,10 +30,7 @@ namespace PK
             VkVertexInputAttributeDescription vertexAttributes[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
             VkVertexInputBindingDescription vertexBuffers[PK_RHI_MAX_VERTEX_ATTRIBUTES]{};
 
-            inline bool operator == (const PipelineKey& r) const noexcept
-            {
-                return memcmp(reinterpret_cast<const void*>(this), reinterpret_cast<const void*>(&r), sizeof(PipelineKey)) == 0;
-            }
+            inline bool operator == (const PipelineKey& r) const noexcept { return memcmp(this, &r, sizeof(PipelineKey)) == 0; }
         };
 
         // Copied from pipeline key in GetPipeline
@@ -42,10 +39,7 @@ namespace PK
             VersionHandle<VulkanShader> shader;
             FixedFunctionState fixedFunctionState{};
 
-            inline bool operator == (const MeshPipelineKey& r) const noexcept
-            {
-                return memcmp(reinterpret_cast<const void*>(this), reinterpret_cast<const void*>(&r), sizeof(MeshPipelineKey)) == 0;
-            }
+            inline bool operator == (const MeshPipelineKey& r) const noexcept { return memcmp(this, &r, sizeof(MeshPipelineKey)) == 0; }
         };
 
         using PipelineKeyHash = Hash::TMurmurHash<PipelineKey>;

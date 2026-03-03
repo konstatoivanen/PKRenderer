@@ -89,8 +89,8 @@ namespace PK::App
 
     static int EntityViewLightPtrCompare(const void* a, const void* b)
     {
-        auto lightA = *reinterpret_cast<EntityViewLight* const*>(a);
-        auto lightB = *reinterpret_cast<EntityViewLight* const*>(b);
+        auto lightA = *static_cast<EntityViewLight* const*>(a);
+        auto lightB = *static_cast<EntityViewLight* const*>(b);
         auto keyA = (int32_t)lightA->light->type | ((int32_t)((lightA->primitive->flags & ScenePrimitiveFlags::CastShadows) == 0) << 4);
         auto keyB = (int32_t)lightB->light->type | ((int32_t)((lightB->primitive->flags & ScenePrimitiveFlags::CastShadows) == 0) << 4);
         return keyA - keyB;

@@ -17,7 +17,7 @@ namespace PK
             return;
         }
 
-        auto tree = ryml::parse_in_place(c4::substr(reinterpret_cast<char*>(fileData), fileSize));
+        auto tree = ryml::parse_in_place(c4::substr(static_cast<char*>(fileData), fileSize));
         YAML::ConstNode root = tree.rootref();
 
         ParseStruct(root);

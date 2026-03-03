@@ -222,7 +222,7 @@ namespace PK
     {
         return FenceRef(this, [](const void* ctx, uint64_t userdata, uint64_t timeout)
             {
-                auto queue = reinterpret_cast<const VulkanQueue*>(ctx);
+                auto queue = static_cast<const VulkanQueue*>(ctx);
                 VkSemaphoreWaitInfo waitInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO };
                 waitInfo.pNext = nullptr;
                 waitInfo.flags = VK_SEMAPHORE_WAIT_ANY_BIT;

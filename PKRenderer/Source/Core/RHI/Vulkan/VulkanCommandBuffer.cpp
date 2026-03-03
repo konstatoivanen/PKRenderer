@@ -15,7 +15,7 @@ namespace PK
     {
         return FenceRef(this, [](const void* ctx, uint64_t userdata, [[maybe_unused]] uint64_t timeout)
             {
-                auto cmd = reinterpret_cast<const VulkanCommandBuffer*>(ctx);
+                auto cmd = static_cast<const VulkanCommandBuffer*>(ctx);
                 return cmd->m_invocationIndex >= userdata;
             },
             m_invocationIndex + 1);

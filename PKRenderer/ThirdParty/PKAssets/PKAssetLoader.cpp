@@ -141,7 +141,7 @@ namespace PKAssets
             return nullptr;
         }
 
-        auto assetPtr = reinterpret_cast<char*>(asset->rawData) + sizeof(PKAssetHeader);
+        auto assetPtr = static_cast<char*>(asset->rawData) + sizeof(PKAssetHeader);
         return reinterpret_cast<PKShader*>(assetPtr);
     }
 
@@ -152,7 +152,7 @@ namespace PKAssets
             return nullptr;
         }
 
-        auto assetPtr = reinterpret_cast<char*>(asset->rawData) + sizeof(PKAssetHeader);
+        auto assetPtr = static_cast<char*>(asset->rawData) + sizeof(PKAssetHeader);
         return reinterpret_cast<PKMesh*>(assetPtr);
     }
 
@@ -163,7 +163,7 @@ namespace PKAssets
             return nullptr;
         }
 
-        auto assetPtr = reinterpret_cast<char*>(asset->rawData) + sizeof(PKAssetHeader);
+        auto assetPtr = static_cast<char*>(asset->rawData) + sizeof(PKAssetHeader);
         return reinterpret_cast<PKFont*>(assetPtr);
     }
 
@@ -174,7 +174,7 @@ namespace PKAssets
             return nullptr;
         }
 
-        auto assetPtr = reinterpret_cast<char*>(asset->rawData) + sizeof(PKAssetHeader);
+        auto assetPtr = static_cast<char*>(asset->rawData) + sizeof(PKAssetHeader);
         return reinterpret_cast<PKTexture*>(assetPtr);
     }
 

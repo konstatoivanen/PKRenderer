@@ -99,7 +99,7 @@ namespace PK
         {
             disposer->Dispose(objectPools.GetInstance<IPool<T>>(), object, [](void* c, void* v)
             {
-                reinterpret_cast<IPool<T>*>(c)->Delete(reinterpret_cast<T*>(v));
+                static_cast<IPool<T>*>(c)->Delete(static_cast<T*>(v));
             }, 
             fence);
         }

@@ -280,7 +280,7 @@ namespace PK
     void VulkanDriver::SetImage(NameID name, RHITexture* texture, const TextureViewRange& range) { globalResources.Set(name, static_cast<VulkanTexture*>(texture)->GetBindHandle(range, TextureBindMode::Image)); }
     void VulkanDriver::SetSampler(NameID name, const SamplerDescriptor& sampler) { globalResources.Set(name, samplerCache->GetBindHandle(sampler)); }
     void VulkanDriver::SetAccelerationStructure(NameID name, RHIAccelerationStructure* structure) { globalResources.Set(name, static_cast<VulkanAccelerationStructure*>(structure)->GetBindHandle()); }
-    void VulkanDriver::SetConstant(NameID name, const void* data, uint32_t size) { globalResources.Set<char>(name, reinterpret_cast<const char*>(data), size); }
+    void VulkanDriver::SetConstant(NameID name, const void* data, uint32_t size) { globalResources.Set<char>(name, static_cast<const char*>(data), size); }
     void VulkanDriver::SetKeyword(NameID name, bool value) { globalResources.Set<bool>(name, value); }
 
     void VulkanDriver::GC()

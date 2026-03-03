@@ -59,7 +59,7 @@ namespace PK
         template<typename T>
         InterleavedBufferView<T> BeginBufferWrite(RHIBuffer* buffer, size_t stride, size_t elementOffset, size_t bufferOffset, size_t count)
         {
-            return { reinterpret_cast<uint8_t*>(commandBuffer->BeginBufferWrite(buffer, bufferOffset * stride, count * stride)), count, stride, elementOffset };
+            return { static_cast<uint8_t*>(commandBuffer->BeginBufferWrite(buffer, bufferOffset * stride, count * stride)), count, stride, elementOffset };
         }
 
         void UploadTexture(RHITexture* texture, const void* data, size_t size, uint32_t level, uint32_t layer, uint32_t layers);
