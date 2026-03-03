@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Utilities/FixedList.h"
 #include "Core/Utilities/FenceRef.h"
+#include "Core/Utilities/FastBuffer.h"
 #include "Core/Assets/Asset.h"
 #include "Core/RHI/Layout.h"
 #include "Core/Rendering/RenderingFwd.h"
@@ -58,6 +59,6 @@ namespace PK
         ElementType m_indexType;
         SubMesh m_fullRange{};
         uint32_t m_positionAttributeIndex = ~0u;
-        std::vector<SubMesh> m_submeshes;
+        FastBuffer<SubMesh> m_submeshes;
     };
 }

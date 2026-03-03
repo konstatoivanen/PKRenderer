@@ -9,7 +9,7 @@
 
 namespace PK
 {
-    void ShaderAsset::Map::AddKeyword(const NameID name, uint8_t value)
+    void ShaderAsset::Map::AddKeyword(const NameID name, uint8_t directive, uint8_t value)
     {
         if (keywordCount == 0u)
         {
@@ -27,7 +27,7 @@ namespace PK
             offsets[keywordCount] = valueIndex;
         }
 
-        keywordValues[keywordCount] = value;
+        keywordValues[keywordCount] = (value & 0xFu) | (directive << 4u);
         keywords[keywordCount] = name;
         offsets[keywordCount] = keywordCount;
         buckets[bucketIndex] = keywordCount;
@@ -156,11 +156,9 @@ namespace PK
         for (auto i = 0u; i < shader->keywordCount; ++i)
         {
             auto pKeyword = pKeywords + i;
-            auto o = pKeyword->offsets;
-            auto d = (o >> 28) & 0xF;
-            m_map.directives[d++] = o & 0xFFFFFF;
-            m_map.AddKeyword(pKeyword->name, (o >> 24) & 0xFF);
-            m_map.directivecount = d > m_map.directivecount ? d : m_map.directivecount;
+            m_map.directives[pKeyword->directive] = pKeyword->offset;
+            m_map.AddKeyword(pKeyword->name, pKeyword->directive, pKeyword->value);
+            m_map.directivecount = pKeyword->directive + 1u;
         }
 
         if (shader->materialPropertyCount > 0)
@@ -214,7 +212,8 @@ namespace PK
 
         meta.append("\nVariants:\n");
 
-        std::vector<std::vector<std::string>> keywordlist;
+        NameID keywordlist[Map::MAX_DIRECTIVES][PKAssets::PK_ASSET_MAX_SHADER_DIRECTIVE_SIZE]{};
+        uint32_t directiveSizes[Map::MAX_DIRECTIVES]{};
 
         for (auto i = 0u; i < m_map.keywordCount; ++i)
         {
@@ -222,18 +221,8 @@ namespace PK
             auto value = m_map.keywordValues[i];
             auto index0 = (value >> 4u) & 0xFu;
             auto index1 = value & 0xFu;
-
-            if (keywordlist.size() <= index0)
-            {
-                keywordlist.resize(index0 + 1);
-            }
-
-            if (keywordlist.at(index0).size() <= index1)
-            {
-                keywordlist.at(index0).resize(index1 + 1);
-            }
-
-            keywordlist.at(index0)[index1] = keyword;
+            keywordlist[index0][index1] = keyword;
+            directiveSizes[index0] = index1 + 1u;
         }
 
         for (auto j = 0u; j < m_map.variantcount; ++j)
@@ -242,18 +231,18 @@ namespace PK
             meta.append(Parse::FormatToString("   Variant: %u\n", j));
             meta.append("       Keywords:");
 
-            for (auto i = 0u; i < keywordlist.size(); ++i)
+            for (auto i = 0u; i < m_map.directivecount; ++i)
             {
-                auto& declares = keywordlist.at(i);
-                auto& keyword = declares.at(index % declares.size());
+                auto& declares = keywordlist[i];
+                auto& keyword = declares[index % directiveSizes[i]];
 
-                if (!keyword.empty())
+                if (keyword != 0u)
                 {
-                    meta.append(keyword);
+                    meta.append(keyword.c_str());
                     meta.append(" ");
                 }
 
-                index /= (uint32_t)declares.size();
+                index /= directiveSizes[i];
             }
 
             meta.append("\n");

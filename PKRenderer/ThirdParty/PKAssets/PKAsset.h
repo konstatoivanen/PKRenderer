@@ -10,6 +10,7 @@ namespace PKAssets
     constexpr static const uint32_t PK_ASSET_MAX_PUSH_CONSTANTS = 16u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_KEYWORDS = 256u;
     constexpr static const uint32_t PK_ASSET_MAX_SHADER_DIRECTIVES = 16u;
+    constexpr static const uint32_t PK_ASSET_MAX_SHADER_DIRECTIVE_SIZE = 16u;
     constexpr static const uint32_t PK_ASSET_MAX_UNBOUNDED_SIZE = 2048u;
 
     constexpr static const char* PK_ASSET_EXTENSION_SHADER = ".pkshader";
@@ -489,7 +490,9 @@ namespace PKAssets
     struct alignas(4) PKShaderKeyword
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        uint32_t offsets;                    // 68 bytes
+        uint16_t offset;                     // 66 bytes
+        uint8_t directive;                   // 67 bytes
+        uint8_t value;                       // 68 bytes
     };
 
     struct alignas(4) PKShaderFixedStateAttributes

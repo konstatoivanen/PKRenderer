@@ -31,12 +31,12 @@ namespace PK
         auto pIndexBuffer = mesh->indexBuffer.Get(base);
         auto pSubmeshes = mesh->submeshes.Get(base);
 
-        std::vector<SubMesh> submeshes;
+        SubMesh* submeshes = PK_STACK_ALLOC(SubMesh, mesh->submeshCount);
 
         for (auto i = 0u; i < mesh->submeshCount; ++i)
         {
             auto bounds = BoundingBox::MinMax(Math::ToFloat3(pSubmeshes[i].bbmin), Math::ToFloat3(pSubmeshes[i].bbmax));
-            submeshes.push_back({ 0u, mesh->vertexCount, pSubmeshes[i].firstIndex, pSubmeshes[i].indexCount, bounds });
+            submeshes[i] = { 0u, mesh->vertexCount, pSubmeshes[i].firstIndex, pSubmeshes[i].indexCount, bounds };
             Math::BoundsEncapsulate(&m_fullRange.bounds, bounds);
         }
 
@@ -85,8 +85,8 @@ namespace PK
             vertexBuffers,
             bufferCount,
             streamLayout,
-            submeshes.data(),
-            (uint32_t)submeshes.size());
+            submeshes,
+            mesh->submeshCount);
 
         m_uploadFence = commandBuffer->GetFenceRef();
 
@@ -137,7 +137,7 @@ namespace PK
         }
 
         m_fullRange = SubMesh();
-        m_submeshes.resize(submeshCount);
+        m_submeshes.Reserve(submeshCount);
 
         for (auto i = 0u; i < submeshCount; ++i)
         {
@@ -173,20 +173,19 @@ namespace PK
 
     const Mesh::SubMesh& Mesh::GetSubmesh(int32_t submesh) const
     {
-        if (submesh < 0 || m_submeshes.empty())
+        if (submesh < 0 || m_submeshes.GetCount() == 0)
         {
             return m_fullRange;
         }
 
-        auto idx = glm::min((uint)submesh, (uint)m_submeshes.size());
-        return m_submeshes.at(idx);
+        return m_submeshes[glm::min((uint)submesh, (uint)m_submeshes.GetCount())];
     }
 
     const Mesh::VertexBuffers& Mesh::GetVertexBuffers() const { return m_vertexBuffers; }
     const VertexStreamLayout& Mesh::GetVertexStreamLayout() const { return m_streamLayout; }
     ElementType Mesh::GetIndexType() const { return m_indexType; }
     const RHIBuffer* Mesh::GetIndexBuffer() const { return m_indexBuffer.get(); }
-    uint32_t Mesh::GetSubmeshCount() const { return glm::max(1u, (uint32_t)m_submeshes.size()); }
+    uint32_t Mesh::GetSubmeshCount() const { return glm::max(1u, (uint32_t)m_submeshes.GetCount()); }
     const Mesh::SubMesh& Mesh::GetFullRange() const { return m_fullRange; }
     bool Mesh::HasPendingUpload() const { return !m_uploadFence.WaitInvalidate(0ull); }
 }

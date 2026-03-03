@@ -302,7 +302,10 @@ namespace PK
                     {
                         PK_LOG_WARNING("AssetDatabase.Query.Meta.%.*s Not Found With '%s'", nameLength, name, args[0]);
                     }
-                    PK_LOG_INFO(asset->GetMetaInfo().c_str());
+                    else
+                    {
+                        PK_LOG_INFO(asset->GetMetaInfo().c_str());
+                    }
                     PK_LOG_NEWLINE();
 
                 }, "Expected a keyword argument", 1u);

@@ -15,7 +15,7 @@ namespace PK
             constexpr static const uint32_t MAX_KEYWORDS = PKAssets::PK_ASSET_MAX_SHADER_KEYWORDS;
 
             int32_t GetKeywordIndex(NameID name) const;
-            void AddKeyword(const NameID name, uint8_t value);
+            void AddKeyword(const NameID name, uint8_t directive, uint8_t value);
             inline bool SupportsKeyword(NameID name) const { return GetKeywordIndex(name) != -1; }
             bool SupportsKeywords(const NameID* names, const uint32_t count) const;
             uint32_t GetIndex(const NameID* names, size_t count) const;
@@ -24,7 +24,7 @@ namespace PK
 
             uint32_t variantcount = 0u;
             uint32_t directivecount = 0u;
-            uint32_t directives[MAX_DIRECTIVES];
+            uint8_t directives[MAX_DIRECTIVES];
             
             NameID keywords[MAX_KEYWORDS]{};
             uint8_t keywordValues[MAX_KEYWORDS]{};
