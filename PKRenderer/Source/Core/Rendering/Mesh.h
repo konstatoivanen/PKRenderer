@@ -59,6 +59,6 @@ namespace PK
         ElementType m_indexType;
         SubMesh m_fullRange{};
         uint32_t m_positionAttributeIndex = ~0u;
-        FastBuffer<SubMesh> m_submeshes;
+        FastBuffer<SubMesh, 1ull> m_submeshes;
     };
 }

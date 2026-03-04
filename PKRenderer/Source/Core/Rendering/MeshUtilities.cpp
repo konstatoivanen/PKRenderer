@@ -13,7 +13,7 @@ namespace PK::MeshUtilities
 {
     namespace MikktsInterface
     {
-        static int GetNumFaces(const SMikkTSpaceContext* pContext) { return reinterpret_cast<GeometryContext*>(pContext->m_pUserData)->countIndex / 3; }
+        static int GetNumFaces(const SMikkTSpaceContext* pContext) { return static_cast<GeometryContext*>(pContext->m_pUserData)->countIndex / 3; }
         
         static int GetNumVerticesOfFace([[maybe_unused]] const SMikkTSpaceContext* pContext, [[maybe_unused]] const int iFace) { return 3; }
         
@@ -149,23 +149,23 @@ namespace PK::MeshUtilities
     }
 
 
-    MeshletBuildData::MeshletBuildData(size_t meshletCount)
+    MeshletBuildData::MeshletBuildData(size_t count_meshlet)
     {
-        const auto indexCount = meshletCount * PKAssets::PK_MESHLET_MAX_TRIANGLES * 3ull;
-        const auto vertexCount = meshletCount * PKAssets::PK_MESHLET_MAX_VERTICES;
+        const auto count_index = count_meshlet * PKAssets::PK_MESHLET_MAX_TRIANGLES * 3ull;
+        const auto count_vertex = count_meshlet * PKAssets::PK_MESHLET_MAX_VERTICES;
 
         size_t size = 0ull;
-        const auto offsetIndices = ContainerHelpers::AlignSize<uint8_t>(&size);
-        size += sizeof(uint8_t) * indexCount;
-        const auto offsetVertices = ContainerHelpers::AlignSize<PKAssets::PKMeshletVertex>(&size);
-        size += sizeof(PKAssets::PKMeshletVertex) * vertexCount;
-        const auto offsetMeshlets = ContainerHelpers::AlignSize<PKAssets::PKMeshlet>(&size);
-        size += sizeof(PKAssets::PKMeshlet) * meshletCount;
+        const auto offset_indices = ContainerHelpers::AlignSize<uint8_t>(&size);
+        size += sizeof(uint8_t) * count_index;
+        const auto offset_vertices = ContainerHelpers::AlignSize<PKAssets::PKMeshletVertex>(&size);
+        size += sizeof(PKAssets::PKMeshletVertex) * count_vertex;
+        const auto offset_meshlets = ContainerHelpers::AlignSize<PKAssets::PKMeshlet>(&size);
+        size += sizeof(PKAssets::PKMeshlet) * count_meshlet;
 
-        auto newBuffer = calloc(size, 1u);
-        indices = ContainerHelpers::CastOffsetPtr<uint8_t>(newBuffer, offsetIndices);
-        vertices = ContainerHelpers::CastOffsetPtr<PKAssets::PKMeshletVertex>(newBuffer, offsetVertices);
-        meshlets = ContainerHelpers::CastOffsetPtr<PKAssets::PKMeshlet>(newBuffer, offsetMeshlets);
+        auto buffer = calloc(size, 1u);
+        indices = ContainerHelpers::CastOffsetPtr<uint8_t>(buffer, offset_indices);
+        vertices = ContainerHelpers::CastOffsetPtr<PKAssets::PKMeshletVertex>(buffer, offset_vertices);
+        meshlets = ContainerHelpers::CastOffsetPtr<PKAssets::PKMeshlet>(buffer, offset_meshlets);
     }
 
     MeshletBuildData::~MeshletBuildData()

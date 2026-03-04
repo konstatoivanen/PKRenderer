@@ -7,7 +7,7 @@
 
 namespace PK
 {
-    template<typename T, size_t inlineCapacity = 1u>
+    template<typename T, size_t fixed_count = 0ull>
     struct FastList : NoCopy
     {
         FastList() {}
@@ -94,11 +94,6 @@ namespace PK
 
             auto buffer = Memory::Malloc<T>(capacity);
 
-            if (buffer == nullptr)
-            {
-                throw std::exception("Failed to allocate new buffer!");
-            }
-            
             if (m_count > 0u)
             {
                 std::move(GetData(), GetData() + m_count, buffer);
@@ -148,7 +143,7 @@ namespace PK
 
         bool RemoveAt(uint32_t i)
         {
-            if (i < m_count)
+            if (i >= m_count)
             {
                 return false;
             }
@@ -191,9 +186,9 @@ namespace PK
 
     private:
         constexpr static bool IsSmallBuffer(size_t count) { return count <= (sizeof(U) / sizeof(T)); }
-        struct U { union { T* buffer; alignas(T) uint8_t inl[sizeof(T) * inlineCapacity]; }; };
+        struct U { union { T* buffer; alignas(T) uint8_t inl[fixed_count > 0ull ? sizeof(T) * fixed_count : sizeof(T*)]; }; };
         U m_data{};
         uint32_t m_count = 0u;
-        uint32_t m_capacity = inlineCapacity;
+        uint32_t m_capacity = sizeof(U) / sizeof(T);
     };
 }

@@ -145,9 +145,9 @@ namespace PK::Hash
 
         switch (len)
         {
-            case 3: h2 ^= ((unsigned char*)data)[2] << 16;
-            case 2: h2 ^= ((unsigned char*)data)[1] << 8;
-            case 1: h2 ^= ((unsigned char*)data)[0];
+            case 3: h2 ^= ((uint8_t*)data)[2] << 16;
+            case 2: h2 ^= ((uint8_t*)data)[1] << 8;
+            case 1: h2 ^= ((uint8_t*)data)[0];
                 h2 *= m;
         };
 
@@ -165,7 +165,7 @@ namespace PK::Hash
 
     uint64_t FNV1AHash(const void* data, size_t count)
     {
-        auto chardata = reinterpret_cast<const unsigned char*>(data);
+        auto chardata = reinterpret_cast<const uint8_t*>(data);
         uint64_t value = 14695981039346656037ULL;
 
         for (size_t i = 0; i < count; ++i)

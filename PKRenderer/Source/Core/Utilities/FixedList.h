@@ -27,7 +27,7 @@ namespace PK
         {
             for (auto i = 0u; i < m_count; ++i)
             {
-                (reinterpret_cast<T*>(m_data) + i)->~T();
+                (GetData() + i)->~T();
             }
         }
 
@@ -89,7 +89,7 @@ namespace PK
         }
 
     private:
-        alignas(T) unsigned char m_data[sizeof(T) * capacity];
+        alignas(T) uint8_t m_data[sizeof(T) * capacity];
         size_t m_count;
     };
 }

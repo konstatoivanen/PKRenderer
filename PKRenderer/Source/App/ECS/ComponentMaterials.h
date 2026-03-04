@@ -6,7 +6,7 @@ namespace PK::App
 {
     struct ComponentMaterials
     {
-        FastList<MaterialTarget> materials;
+        FastList<MaterialTarget, 1ull> materials;
         virtual ~ComponentMaterials() = default;
     };
 }

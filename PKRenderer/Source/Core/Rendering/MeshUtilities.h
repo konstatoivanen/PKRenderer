@@ -19,7 +19,7 @@ namespace PK::MeshUtilities
         PKAssets::PKMeshletVertex* vertices;
         PKAssets::PKMeshlet* meshlets;
 
-        MeshletBuildData(size_t meshletCount);
+        MeshletBuildData(size_t count_meshlet);
         MeshletBuildData(MeshletBuildData&& other) = default;
         MeshletBuildData(MeshletBuildData const&) = delete;
         ~MeshletBuildData();

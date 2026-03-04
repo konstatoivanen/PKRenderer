@@ -136,7 +136,7 @@ namespace PK
             }
 
         private:
-            alignas(T) unsigned char m_data[sizeof(T) * capacity];
+            alignas(T) uint8_t m_data[sizeof(T) * capacity];
             FixedMask<capacity> m_mask;
     };
 }

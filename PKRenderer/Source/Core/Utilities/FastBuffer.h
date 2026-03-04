@@ -10,7 +10,7 @@ namespace PK
     /// <summary>
     /// A non owning container. dont use for types that need implicit destructors.
     /// </summary>
-    template<typename T, size_t inlineCapacity = 1u>
+    template<typename T, size_t fixed_count = 0ull>
     struct FastBuffer : NoCopy
     {
         FastBuffer(size_t count) { Reserve(count); }
@@ -88,11 +88,6 @@ namespace PK
 
             auto buffer = Memory::ReallocOrCalloc<T>(m_data.buffer, count, IsSmallBuffer(m_count));
 
-            if (buffer == nullptr)
-            {
-                throw std::exception("Failed to allocate new buffer!");
-            }
-            
             if (m_count > 0 && IsSmallBuffer(m_count))
             {
                 Memory::Memcpy<T>(buffer, reinterpret_cast<T*>(&m_data), m_count);
@@ -113,7 +108,7 @@ namespace PK
     private:
         constexpr static bool IsSmallBuffer(size_t count) { return count <= (sizeof(U) / sizeof(T)); }
         
-        struct U { union { T* buffer; alignas(T) uint8_t inl[sizeof(T) * inlineCapacity]; }; };
+        struct U { union { T* buffer; alignas(T) uint8_t inl[fixed_count > 0ull ? sizeof(T) * fixed_count : sizeof(T*)]; }; };
         U m_data{};
         size_t m_count = 0ull;
     };

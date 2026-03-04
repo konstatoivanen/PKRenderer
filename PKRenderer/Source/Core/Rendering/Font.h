@@ -54,7 +54,7 @@ namespace PK
         const char* m_text = nullptr;
         float m_size = 0.0f;
         uint32_t m_geometryCount = 0u;
-        FastBuffer<int3> m_lineBounds;
+        FastBuffer<int3, 1ull> m_lineBounds;
 
         float m_currentAdvance = 0.0f;
         uint32_t m_currentLineIndex = 0;
