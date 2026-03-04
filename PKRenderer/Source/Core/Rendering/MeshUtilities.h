@@ -1,8 +1,7 @@
 #pragma once
-#include <vector>
 #include <PKAssets/PKAsset.h>
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Math/Math.h"
+#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Rendering/RenderingFwd.h"
 
 PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase);
@@ -12,12 +11,19 @@ namespace PK::MeshUtilities
     struct MeshletBuildData
     {
         PKAssets::PKMeshletSubmesh submesh;
-        std::vector<PKAssets::PKMeshlet> meshlets;
-        std::vector<PKAssets::PKMeshletVertex> vertices;
-        std::vector<uint8_t> indices;
         uint32_t meshlet_count = 0u;
         uint32_t vertex_count = 0u;
         uint32_t index_count = 0u;
+        
+        uint8_t* indices;
+        PKAssets::PKMeshletVertex* vertices;
+        PKAssets::PKMeshlet* meshlets;
+
+        MeshletBuildData(size_t meshletCount);
+        MeshletBuildData(MeshletBuildData&& other) = default;
+        MeshletBuildData(MeshletBuildData const&) = delete;
+        ~MeshletBuildData();
+        MeshletBuildData& operator=(MeshletBuildData const&) = delete;
     };
 
     struct GeometryContext

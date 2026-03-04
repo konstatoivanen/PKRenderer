@@ -32,7 +32,7 @@ namespace PK
     {
         if (bindInfo)
         {
-            return Add(static_cast<VulkanTexture*>(value)->GetBindHandle(*reinterpret_cast<TextureViewRange*>(bindInfo), TextureBindMode::SampledTexture));
+            return Add(static_cast<VulkanTexture*>(value)->GetBindHandle(*static_cast<TextureViewRange*>(bindInfo), TextureBindMode::SampledTexture));
         }
 
         return Add(value);
@@ -47,7 +47,7 @@ namespace PK
     {
         if (bindInfo)
         {
-            return Add(static_cast<VulkanBuffer*>(value)->GetBindHandle(*reinterpret_cast<BufferIndexRange*>(bindInfo)));
+            return Add(static_cast<VulkanBuffer*>(value)->GetBindHandle(*static_cast<BufferIndexRange*>(bindInfo)));
         }
 
         return Add(value);

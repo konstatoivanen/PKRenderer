@@ -3,8 +3,12 @@
 
 namespace PK::Memory
 {
+#if defined(_WIN32) && defined(_WIN64)
+    #define PK_STACK_ALLOC(Type, count) static_cast<Type*>(_alloca(sizeof(Type) * count))
+#else
     #define PK_STACK_ALLOC(Type, count) static_cast<Type*>(alloca(sizeof(Type) * count))
-    
+#endif
+
     template<typename T>
     T* Malloc(size_t count) noexcept { return static_cast<T*>(malloc(count * sizeof(T))); }
 

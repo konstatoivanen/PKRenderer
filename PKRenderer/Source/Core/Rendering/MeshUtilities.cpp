@@ -19,7 +19,7 @@ namespace PK::MeshUtilities
         
         static void GetPosition(const SMikkTSpaceContext* pContext, float fvPosOut[], const int iFace, const int iVert)
         {
-            auto meshData = reinterpret_cast<GeometryContext*>(pContext->m_pUserData);
+            auto meshData = static_cast<GeometryContext*>(pContext->m_pUserData);
             auto pPosition =  meshData->pPositions + meshData->pIndices[iFace * 3 + iVert] * meshData->stridePositionsf32;
             fvPosOut[0] = pPosition[0];
             fvPosOut[1] = pPosition[1];
@@ -28,7 +28,7 @@ namespace PK::MeshUtilities
 
         static void GetNormal(const SMikkTSpaceContext* pContext, float fvNormOut[], const int iFace, const int iVert)
         {
-            auto meshData = reinterpret_cast<GeometryContext*>(pContext->m_pUserData);
+            auto meshData = static_cast<GeometryContext*>(pContext->m_pUserData);
             auto pNormal = meshData->pNormals + meshData->pIndices[iFace * 3 + iVert] * meshData->strideNormalsf32;
             fvNormOut[0] = pNormal[0];
             fvNormOut[1] = pNormal[1];
@@ -37,7 +37,7 @@ namespace PK::MeshUtilities
 
         static void GetTexCoord(const SMikkTSpaceContext* pContext, float fvTexcOut[], const int iFace, const int iVert)
         {
-            auto meshData = reinterpret_cast<GeometryContext*>(pContext->m_pUserData);
+            auto meshData = static_cast<GeometryContext*>(pContext->m_pUserData);
             auto pTexcoord = meshData->pTexcoords + meshData->pIndices[iFace * 3 + iVert] * meshData->strideTexcoordsf32;
             fvTexcOut[0] = pTexcoord[0];
             fvTexcOut[1] = pTexcoord[1];
@@ -45,7 +45,7 @@ namespace PK::MeshUtilities
 
         static void SetTSpaceBasic(const SMikkTSpaceContext* pContext, const float fvTangent[], const float fSign, const int iFace, const int iVert)
         {
-            auto meshData = reinterpret_cast<GeometryContext*>(pContext->m_pUserData);
+            auto meshData = static_cast<GeometryContext*>(pContext->m_pUserData);
             auto pTangent = meshData->pTangents + meshData->pIndices[iFace * 3 + iVert] * meshData->strideTangentsf32;
             pTangent[0] = fvTangent[0];
             pTangent[1] = fvTangent[1];
@@ -53,6 +53,7 @@ namespace PK::MeshUtilities
             pTangent[3] = fSign;
         }
     }
+
 
     void AlignVertexStreams(char* vertices, size_t count, const VertexStreamLayout& src, const VertexStreamLayout& dst)
     {
@@ -148,6 +149,30 @@ namespace PK::MeshUtilities
     }
 
 
+    MeshletBuildData::MeshletBuildData(size_t meshletCount)
+    {
+        const auto indexCount = meshletCount * PKAssets::PK_MESHLET_MAX_TRIANGLES * 3ull;
+        const auto vertexCount = meshletCount * PKAssets::PK_MESHLET_MAX_VERTICES;
+
+        size_t size = 0ull;
+        const auto offsetIndices = ContainerHelpers::AlignSize<uint8_t>(&size);
+        size += sizeof(uint8_t) * indexCount;
+        const auto offsetVertices = ContainerHelpers::AlignSize<PKAssets::PKMeshletVertex>(&size);
+        size += sizeof(PKAssets::PKMeshletVertex) * vertexCount;
+        const auto offsetMeshlets = ContainerHelpers::AlignSize<PKAssets::PKMeshlet>(&size);
+        size += sizeof(PKAssets::PKMeshlet) * meshletCount;
+
+        auto newBuffer = calloc(size, 1u);
+        indices = ContainerHelpers::CastOffsetPtr<uint8_t>(newBuffer, offsetIndices);
+        vertices = ContainerHelpers::CastOffsetPtr<PKAssets::PKMeshletVertex>(newBuffer, offsetVertices);
+        meshlets = ContainerHelpers::CastOffsetPtr<PKAssets::PKMeshlet>(newBuffer, offsetMeshlets);
+    }
+
+    MeshletBuildData::~MeshletBuildData()
+    {
+        free(indices);
+    }
+
     MeshletBuildData BuildMeshletsMonotone(GeometryContext* ctx)
     {
         struct MeshletIndexInfo
@@ -157,8 +182,6 @@ namespace PK::MeshUtilities
             uint32_t vertex_count;
             uint32_t triangle_count;
         };
-
-        MeshletBuildData output{};
 
         assert(ctx->countIndex % 3 == 0);
 
@@ -170,12 +193,10 @@ namespace PK::MeshUtilities
         auto meshlet_limit_triangles = (ctx->countIndex / 3 + PKAssets::PK_MESHLET_MAX_TRIANGLES - 1) / PKAssets::PK_MESHLET_MAX_TRIANGLES;
         auto max_meshlets = meshlet_limit_vertices > meshlet_limit_triangles ? meshlet_limit_vertices : meshlet_limit_triangles;
 
-        output.meshlets.resize(max_meshlets);
-        output.vertices.resize(max_meshlets * PKAssets::PK_MESHLET_MAX_VERTICES);
-        output.indices.resize(max_meshlets * PKAssets::PK_MESHLET_MAX_TRIANGLES * 3);
+        MeshletBuildData output(max_meshlets);
 
         auto* meshlet_vertices = Memory::Calloc<uint32_t>(max_meshlets * PKAssets::PK_MESHLET_MAX_VERTICES);
-        auto* meshlet_indices = output.indices.data();
+        auto* meshlet_indices = output.indices;
         auto* used = Memory::Malloc<uint8_t>(ctx->countVertex);
         memset(used, -1, ctx->countVertex);
 
@@ -326,7 +347,7 @@ namespace PK::MeshUtilities
         }
 
         // Align triangles array size to 4bytes
-        output.index_count = 12u * ((meshlet.triangle_offset + meshlet.triangle_count * 3 + 11ull) / 12u);
+        output.index_count = 12u * ((meshlet.triangle_offset + meshlet.triangle_count * 3u + 11u) / 12u);
         output.vertex_count = meshlet.vertex_offset + meshlet.vertex_count;
         output.submesh.firstMeshlet = 0u;
         output.submesh.meshletCount = output.meshlet_count;
@@ -363,11 +384,11 @@ namespace PK::MeshUtilities
         };
         desc.meshlet.pSubmeshes = &meshlets.submesh;
         desc.meshlet.submeshCount = 1u;
-        desc.meshlet.pMeshlets = meshlets.meshlets.data();
+        desc.meshlet.pMeshlets = meshlets.meshlets;
         desc.meshlet.meshletCount = meshlets.meshlet_count;
-        desc.meshlet.pVertices = meshlets.vertices.data();
+        desc.meshlet.pVertices = meshlets.vertices;
         desc.meshlet.vertexCount = meshlets.vertex_count;
-        desc.meshlet.pIndices = meshlets.indices.data();
+        desc.meshlet.pIndices = meshlets.indices;
         desc.meshlet.triangleCount = meshlets.index_count / 3u;
 
         return baseMesh->Allocate(&desc);

@@ -51,7 +51,7 @@ namespace PK
         constexpr uint32_t GetLayers() const { return GetDescriptor().layers; }
 
         template<typename T>
-        constexpr T GetNativeHandle() const { return reinterpret_cast<T>(GetNativeHandle()); }
+        constexpr T GetNativeHandle() const { return static_cast<T>(GetNativeHandle()); }
     };
 
     struct RHIBuffer : public NoCopy
@@ -77,7 +77,7 @@ namespace PK
         constexpr BufferIndexRange GetFullRange() const { return { 0ull, GetSize() }; }
 
         template<typename T>
-        constexpr T GetNativeHandle() const { return reinterpret_cast<T>(GetNativeHandle()); }
+        constexpr T GetNativeHandle() const { return static_cast<T>(GetNativeHandle()); }
 
         template<typename T>
         ConstBufferView<T> BeginRead() const

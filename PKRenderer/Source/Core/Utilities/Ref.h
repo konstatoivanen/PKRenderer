@@ -43,6 +43,8 @@ namespace PK
     template <typename T, typename D = DefaultDeleter<T>>
     struct Unique
     {
+        static_assert(std::is_array<T>::value == false, "Unique doesn't support array types.");
+
         typedef Unique<T, D>  this_type;
 
         constexpr Unique() noexcept : pair(nullptr) {}
@@ -254,15 +256,15 @@ namespace PK
 
         Ref(const Ref& other) noexcept { TBase::CopyConstruct(other); }
 
-        template <typename TOther, std::enable_if_t<std::_SP_pointer_compatible<TOther, T>::value, int> = 0>
+        template <typename TOther, std::enable_if_t<std::is_convertible<TOther*, T*>::value, int> = 0>
         Ref(const Ref<TOther>& other) noexcept { TBase::CopyConstruct(other); }
 
         Ref(Ref&& other) noexcept { TBase::MoveConstruct(std::move(other)); }
 
-        template <typename TOther, std::enable_if_t<std::_SP_pointer_compatible<TOther, T>::value, int> = 0>
+        template <typename TOther, std::enable_if_t<std::is_convertible<TOther*, T*>::value, int> = 0>
         Ref(Ref<TOther>&& other) noexcept { TBase::MoveConstruct(std::move(other)); }
 
-        template <typename TOther, std::enable_if_t<std::_SP_pointer_compatible<TOther, T>::value, int> = 0>
+        template <typename TOther, std::enable_if_t<std::is_convertible<TOther*, T*>::value, int> = 0>
         explicit Ref(const Weak<TOther>& other)
         {
             if (!TBase::ConstructFromWeak(other))
@@ -300,12 +302,12 @@ namespace PK
         
         Weak(const Weak& other) noexcept { TBase::WeaklyConstruct(other);}
 
-        template <typename TOther, std::enable_if_t<std::_SP_pointer_compatible<TOther, T>::value, int> = 0>
+        template <typename TOther, std::enable_if_t<std::is_convertible<TOther*, T*>::value, int> = 0>
         Weak(const Ref<TOther>& other) noexcept { TBase::WeaklyConstruct(other); }
 
         Weak(Weak&& other) noexcept { TBase::MoveConstruct(std::move(other)); }
 
-        template <typename TOther, std::enable_if_t<std::_SP_pointer_compatible<TOther, T>::value, int> = 0>
+        template <typename TOther, std::enable_if_t<std::is_convertible<TOther*, T*>::value, int> = 0>
         Weak(const Weak<TOther>& other) noexcept 
         {
             if (other.shared)
@@ -321,7 +323,7 @@ namespace PK
             }
         }
 
-        template <typename TOther, std::enable_if_t<std::_SP_pointer_compatible<TOther, T>::value, int> = 0>
+        template <typename TOther, std::enable_if_t<std::is_convertible<TOther*, T*>::value, int> = 0>
         Weak(Weak<TOther>&& other) noexcept 
         {
             shared = other.shared;
