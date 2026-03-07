@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Timers/TimeHelpers.h"
+#include "Core/Utilities/TimeHelpers.h"
 
 namespace PK
 {
@@ -10,10 +10,10 @@ namespace PK
         void BeginTimerScope();
         void CaptureUnscoped();
 
-        constexpr const TimePointSeconds& GetScopedTimePoint() const { return scopedTimePoint; }
+        constexpr const double& GetScopedTimePoint() const { return scopedTimePoint; }
 
         virtual void EndTimerScope() = 0;
     
-        private: TimePointSeconds scopedTimePoint = TimeHelpers::GetTimePointSecondsNow();
+        private: double scopedTimePoint = TimeHelpers::GetSteadySeconds();
     };
 }

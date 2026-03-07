@@ -3,8 +3,7 @@
 
 void PK::TimerFrameRunner::EndTimerScope()
 {
-    auto currentTimePoint = TimeHelpers::GetTimePointSecondsNow();
-    unscaledDeltaTime = (currentTimePoint - GetScopedTimePoint()).count();
+    unscaledDeltaTime = TimeHelpers::GetSteadySeconds() - GetScopedTimePoint();
     deltaTime = unscaledDeltaTime * timeScale;
     unscaledTime += unscaledDeltaTime;
     time += deltaTime;

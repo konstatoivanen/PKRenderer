@@ -3,9 +3,7 @@
 
 void PK::TimerFramerate::EndTimerScope()
 {
-    auto currentTimePoint = TimeHelpers::GetTimePointSecondsNow();
-   
-    deltaTime = (currentTimePoint - GetScopedTimePoint()).count();
+    deltaTime = TimeHelpers::GetSteadySeconds() - GetScopedTimePoint();
     elapsed += deltaTime;
 
     ++frameCount;

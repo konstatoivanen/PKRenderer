@@ -262,7 +262,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Rendering\Window.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanLimits.h" />
     <ClInclude Include="Source\Core\Timers\ITimer.h" />
-    <ClInclude Include="Source\Core\Timers\TimeHelpers.h" />
+    <ClInclude Include="Source\Core\Utilities\TimeHelpers.h" />
     <ClInclude Include="Source\Core\Timers\TimerFramerate.h" />
     <ClInclude Include="Source\Core\Timers\TimerFrameRunner.h" />
     <ClInclude Include="Source\Core\Utilities\ContainerHelpers.h" />
@@ -723,8 +723,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\FixedMask.h" />
     <ClInclude Include="Source\Core\Utilities\BufferIterator.h" />
     <ClInclude Include="Source\Core\Utilities\BufferView.h" />
-    <ClInclude Include="Source\Core\Utilities\FileIOBinary.h" />
-    <ClInclude Include="Source\Core\Utilities\FileIOImage.h" />
+    <ClInclude Include="Source\Core\Utilities\FileIO.h" />
     <ClInclude Include="Source\Core\Utilities\FixedList.h" />
     <ClInclude Include="Source\Core\Utilities\FixedPool.h" />
     <ClInclude Include="Source\Core\Utilities\ForwardDeclare.h" />
@@ -1043,6 +1042,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Rendering\Window.cpp" />
     <ClCompile Include="Source\Core\RHI\Structs.cpp" />
     <ClCompile Include="Source\Core\Timers\ITimer.cpp" />
+    <ClCompile Include="Source\Core\Utilities\TimeHelpers.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFramerate.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFrameRunner.cpp" />
     <ClCompile Include="Source\Core\Utilities\FixedMask.cpp" />
@@ -1168,8 +1168,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\RHI\Vulkan\VulkanDriver.cpp" />
     <ClCompile Include="Source\App\Renderer\RenderPipelineScene.cpp" />
     <ClCompile Include="Source\App\Renderer\BatcherMeshStatic.cpp" />
-    <ClCompile Include="Source\Core\Utilities\FileIOBinary.cpp" />
-    <ClCompile Include="Source\Core\Utilities\FileIOImage.cpp" />
+    <ClCompile Include="Source\Core\Utilities\FileIO.cpp" />
     <ClCompile Include="Source\Core\Utilities\Hash.cpp" />
     <ClCompile Include="Source\Core\Utilities\PropertyBlock.cpp" />
     <ClCompile Include="Source\Core\Utilities\VersionedObject.cpp" />

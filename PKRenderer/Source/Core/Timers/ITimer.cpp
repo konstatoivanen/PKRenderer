@@ -7,7 +7,7 @@ namespace PK
 
     void ITimer::BeginTimerScope()
     {
-        scopedTimePoint = TimeHelpers::GetTimePointSecondsNow();
+        scopedTimePoint = TimeHelpers::GetSteadySeconds();
     }
 
     void ITimer::CaptureUnscoped()

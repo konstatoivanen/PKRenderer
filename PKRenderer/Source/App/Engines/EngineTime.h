@@ -1,6 +1,4 @@
 #pragma once
-#include <ctime>
-#include <chrono>
 #include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Timers/TimeFrameInfo.h"
 #include "Core/Timers/TimerFramerate.h"
@@ -20,9 +18,6 @@ namespace PK::App
     {
     public:
         EngineTime(Sequencer* sequencer, float timeScale);
-
-        static clock_t GetClockTicks();
-        static double GetClockSeconds();
 
         inline float GetTimeScale() const { return (float)m_runner.timeScale; }
         inline float GetTime() const { return (float)m_runner.time; }

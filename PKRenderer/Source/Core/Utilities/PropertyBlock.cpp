@@ -31,7 +31,7 @@ namespace PK
             {
                 if (m_properties[valueIndex].key == prop.key)
                 {
-                    const auto src = reinterpret_cast<char*>(from.m_buffer) + prop.offset;
+                    const auto src = static_cast<char*>(from.m_buffer) + prop.offset;
                     WriteValue(src, (uint32_t)valueIndex, prop.size);
                     break;
                 }
@@ -73,7 +73,7 @@ namespace PK
                     *size = (uint64_t)prop.size;
                 }
 
-                return reinterpret_cast<const char*>(m_buffer) + prop.offset;
+                return static_cast<const char*>(m_buffer) + prop.offset;
             }
 
             valueIndex = m_properties[valueIndex].previous;
@@ -134,7 +134,7 @@ namespace PK
     {
         if (index < m_propertyCount && m_properties[index].size >= writeSize)
         {
-            auto dst = reinterpret_cast<char*>(m_buffer) + m_properties[index].offset;
+            auto dst = static_cast<char*>(m_buffer) + m_properties[index].offset;
             memcpy(dst, src, writeSize);
             return true;
         }

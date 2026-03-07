@@ -1,19 +1,19 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
-#include "Core/Utilities/FileIOBinary.h"
+#include "Core/Utilities/FileIO.h"
 #include "Core/Yaml/RapidyamlPrivate.h"
 #include "StructMacros.h"
 
 namespace PK
 {
-    void IYamlStruct::YamlLoadFromFile(const std::string& filepath)
+    void IYamlStruct::YamlLoadFromFile(const char* filepath)
     {
         void* fileData = nullptr;
         size_t fileSize = 0ull;
         
-        if (FileIO::ReadBinary(filepath.c_str(), false, &fileData, &fileSize) != 0)
+        if (FileIO::ReadBinary(filepath, false, &fileData, &fileSize) != 0)
         {
-            PK_LOG_WARNING("Failed to read IYamlStruct at path '%'", filepath.c_str());
+            PK_LOG_WARNING("Failed to read IYamlStruct at path '%'", filepath);
             return;
         }
 

@@ -25,10 +25,8 @@ namespace PK
         static void Outdent(LogSeverity severity = PK_LOG_LVL_ALL);
         static void NewLine();
         static void Log(LogSeverity severity, LogColor color, const char* format, ...);
-        static void Log(LogSeverity severity, LogColor color, const std::string& format, ...);
         static void LogV(LogSeverity severity, LogColor color, const char* format, va_list args);
         static std::exception Exception(LogSeverity severity, LogColor color, const char* format, ...);
-        static std::exception Exception(LogSeverity severity, LogColor color, const std::string& format, ...);
         static std::exception ExceptionV(LogSeverity severity, LogColor color, const char* format, va_list args);
 
         private: 

@@ -1,5 +1,4 @@
 #pragma once
-#include <string>
 #include "Core/Yaml/RapidyamlFwd.h"
 #include "Core/Assets/Asset.h"
 
@@ -7,7 +6,7 @@ namespace PK
 {
     struct IYamlStruct
     {
-        void YamlLoadFromFile(const std::string& filepath);
+        void YamlLoadFromFile(const char* filepath);
 
         protected: 
             virtual void ParseStruct(const YAML::ConstNode& node) = 0;

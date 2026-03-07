@@ -164,10 +164,10 @@ namespace PK
         }
 
         template<typename T>
-        void LoadDirectory(const std::string& directory, bool forceReload = false)
+        void LoadDirectory(const char* directory, bool forceReload = false)
         {
             constexpr auto name = pk_base_type_name<T>();
-            PK_LOG_VERBOSE_FUNC("%.*s, %s", name.count, name.data, directory.c_str());
+            PK_LOG_VERBOSE_FUNC("%.*s, %s", name.count, name.data, directory);
 
             if (std::filesystem::exists(directory))
             {

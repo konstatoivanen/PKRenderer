@@ -1,6 +1,4 @@
 #include "PrecompiledHeader.h"
-#include <chrono>
-#include <thread>
 #include "Core/ECS/EntityDatabase.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/CLI/CVariableRegister.h"
@@ -69,7 +67,7 @@ namespace PK::App
 
         config.WindowDesc.title = { GetName(), m_RHIDriver->GetDriverHeader() };
         m_window = CreateUnique<Window>(config.WindowDesc);
-        m_window->SetOnCloseCallback([this]() { Close(); });
+        m_window->SetOnCloseCallback([]() { IApplication::Get()->Close(); });
 
         GetServices()->Create<HashCache>();
 

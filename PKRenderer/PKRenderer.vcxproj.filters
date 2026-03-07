@@ -1278,10 +1278,7 @@
     <ClInclude Include="Source\Core\Utilities\BufferView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FileIOBinary.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FileIOImage.h">
+    <ClInclude Include="Source\Core\Utilities\FileIO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\FixedList.h">
@@ -1392,7 +1389,7 @@
     <ClInclude Include="Source\Core\Timers\TimerFrameRunner.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Timers\TimeHelpers.h">
+    <ClInclude Include="Source\Core\Utilities\TimeHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\Engines\EngineProfiler.h">
@@ -2310,10 +2307,7 @@
     <ClCompile Include="Source\App\Renderer\BatcherMeshStatic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Utilities\FileIOBinary.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Utilities\FileIOImage.cpp">
+    <ClCompile Include="Source\Core\Utilities\FileIO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Utilities\Hash.cpp">
@@ -2434,6 +2428,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Utilities\Ref.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Utilities\TimeHelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

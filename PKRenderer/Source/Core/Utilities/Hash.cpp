@@ -93,7 +93,7 @@ namespace PK::Hash
 
     uint32_t ByteArrayHash(const void* data, size_t count)
     {
-        const char* bytes = reinterpret_cast<const char*>(data);
+        const char* bytes = static_cast<const char*>(data);
 
         // Source: https://stackoverflow.com/questions/16340/how-do-i-generate-a-hashcode-from-a-byte-array-in-c
         const auto p = 16777619;
@@ -165,7 +165,7 @@ namespace PK::Hash
 
     uint64_t FNV1AHash(const void* data, size_t count)
     {
-        auto chardata = reinterpret_cast<const uint8_t*>(data);
+        auto chardata = static_cast<const uint8_t*>(data);
         uint64_t value = 14695981039346656037ULL;
 
         for (size_t i = 0; i < count; ++i)

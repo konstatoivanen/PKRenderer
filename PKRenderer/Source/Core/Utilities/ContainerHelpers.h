@@ -41,7 +41,7 @@ namespace PK::ContainerHelpers
     template<typename T>
     T* CastOffsetPtr(void* data, size_t offset)
     {
-        return reinterpret_cast<T*>(reinterpret_cast<char*>(data) + offset);
+        return reinterpret_cast<T*>(static_cast<char*>(data) + offset);
     }
 
     template<typename T>

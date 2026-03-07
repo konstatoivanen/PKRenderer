@@ -117,15 +117,6 @@ namespace PK
         }
     }
 
-    void StaticLog::Log(LogSeverity severity, LogColor color, const std::string& format, ...)
-    {
-        if (PK_LOG_CHECK_STATIC_SEVERITY_MASK(s_SeverityMask, severity))
-        {
-            const char* cformat = format.c_str();
-            PK_FORWAD_VARGS_FUNC(cformat, log_args, LogV(severity, color, cformat, log_args);)
-        }
-    }
-
     void StaticLog::LogV(LogSeverity severity, LogColor color, const char* format, va_list args)
     {
         if (PK_LOG_CHECK_STATIC_SEVERITY_MASK(s_SeverityMask, severity) && s_ActiveLogger.IsAlive())
@@ -137,13 +128,6 @@ namespace PK
     std::exception StaticLog::Exception(LogSeverity severity, LogColor color, const char* format, ...)
     {
         PK_FORWAD_VARGS_FUNC(format, log_args, auto exception = ExceptionV(severity, color, format, log_args);)
-        return exception;
-    }
-
-    std::exception StaticLog::Exception(LogSeverity severity, LogColor color, const std::string& format, ...)
-    {
-        const char* cformat = format.c_str();
-        PK_FORWAD_VARGS_FUNC(cformat, log_args, auto exception = ExceptionV(severity, color, cformat, log_args);)
         return exception;
     }
 

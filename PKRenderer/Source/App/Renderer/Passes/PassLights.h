@@ -16,8 +16,6 @@ namespace PK::App
     struct RenderPipelineContext;
     struct RenderView;
 
-    typedef std::array<float, 5> ShadowCascades;
-
     class PassLights : public NoCopy
     {
         public:

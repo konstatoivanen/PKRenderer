@@ -24,6 +24,8 @@ namespace PK
     struct Window : public NoCopy, public IPlatformWindowListener
     {
         constexpr static uint32_t MIN_SIZE = 256u;
+        typedef void (*CloseFunction)();
+        typedef void (*ResizeFunction)(int32_t, int32_t);
 
         Window(const WindowDescriptor& descriptor);
         ~Window();
@@ -37,8 +39,8 @@ namespace PK
         bool IsFullscreen() const { return m_isFullScreen; }
         void SetFullscreen(bool value) { m_isFullScreen = value; }
         void SetCursorLock(bool locked, bool visible) { m_native->SetCursorLock(locked, visible); }
-        void SetOnResizeCallback(const std::function<void(int width, int height)>& callback) { m_onResize = callback; }
-        void SetOnCloseCallback(const std::function<void()>& callback) { m_onClose = callback; }
+        void SetOnResizeCallback(ResizeFunction callback) { m_onResize = callback; }
+        void SetOnCloseCallback(CloseFunction callback) { m_onClose = callback; }
         
         uint3 GetResolution() const;
         float GetAspectRatio() const;
@@ -52,10 +54,8 @@ namespace PK
     private:
         PlatformWindow* m_native;
         RHISwapchainScope m_swapchain;
-
-        std::function<void(int width, int height)> m_onResize;
-        std::function<void()> m_onClose;
-
+        CloseFunction m_onClose = nullptr;
+        ResizeFunction m_onResize = nullptr;
         bool m_inWindowScope = false;
         bool m_isFullScreen = false;
         VSyncMode m_vsync = VSyncMode::Fifo;

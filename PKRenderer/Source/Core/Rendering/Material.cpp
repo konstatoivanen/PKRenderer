@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/CLI/Log.h"
-#include "Core/Utilities/FileIOBinary.h"
+#include "Core/Utilities/FileIO.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/BuiltInResources.h"
 #include "Core/Rendering/ShaderAsset.h"
@@ -21,7 +21,7 @@ namespace PK
             return;
         }
 
-        auto tree = ryml::parse_in_place(c4::substr(reinterpret_cast<char*>(fileData), fileSize));
+        auto tree = ryml::parse_in_place(c4::substr(static_cast<char*>(fileData), fileSize));
         c4::yml::ConstNodeRef root = tree.rootref();
 
         auto material = root.find_child("Material");

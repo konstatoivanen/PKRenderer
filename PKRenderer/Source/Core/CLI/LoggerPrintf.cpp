@@ -1,6 +1,7 @@
 #include "PrecompiledHeader.h"
 #include <conio.h>
-#include "Core/Utilities/FileIOBinary.h"
+#include "Core/Utilities/FileIO.h"
+#include "Core/Utilities/Memory.h"
 #include "LoggerPrintf.h"
 
 namespace PK
@@ -74,10 +75,9 @@ namespace PK
         if (m_crashLogPath.Length() > 0)
         {
             auto length = vprintf(format, args);
-            std::string output;
-            output.resize(length);
-            _vsnprintf(output.data(), output.size(), format, args);
-            FileIO::WriteBinary(m_crashLogPath.c_str(), true, output.data(), output.size());
+            auto output = PK_STACK_ALLOC(char, length);
+            _vsnprintf(output, length, format, args);
+            FileIO::WriteBinary(m_crashLogPath.c_str(), true, output, length);
         }
 
         if ((severity & m_severityMask) != 0)

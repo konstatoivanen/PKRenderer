@@ -1,6 +1,4 @@
 #include "PrecompiledHeader.h"
-#include <ctime>
-#include <cstdlib>
 #include "Core/CLI/CVariableRegister.h"
 #include "Core/CLI/Log.h"
 #include "Core/ControlFlow/Sequencer.h"
@@ -9,22 +7,11 @@
 
 namespace PK::App
 {
-    clock_t EngineTime::GetClockTicks()
-    {
-        return clock();
-    }
-
-    double EngineTime::GetClockSeconds()
-    {
-        return clock() / (double)CLOCKS_PER_SEC;
-    }
-
     EngineTime::EngineTime(Sequencer* sequencer, float timeScale) : m_sequencer(sequencer)
     {
         m_runner.timeScale = timeScale;
         CVariableRegister::Create<CVariableFuncSimple>("Time.Reset", [this]() { Reset(); PK_LOG_INFO("Time.Reset"); });
     }
-
 
     void EngineTime::Reset()
     {

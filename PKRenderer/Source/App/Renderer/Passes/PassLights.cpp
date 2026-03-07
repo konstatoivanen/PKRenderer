@@ -185,8 +185,8 @@ namespace PK::App
         auto matrixCount = 1u;
         auto shadowCount = 0u;
 
-        ShadowCascades cascadeZSplits;
-        Math::GetCascadeDepths(renderView->znear, renderView->zfar, m_cascadeDistribution, cascadeZSplits.data(), tileZParams, 5);
+        float cascadeZSplits[5];
+        Math::GetCascadeDepths(renderView->znear, renderView->zfar, m_cascadeDistribution, cascadeZSplits, tileZParams, 5);
 
         resources->lightViews = { context->frameArena->Allocate<EntityViewLight*>(lightCount), lightCount };
         resources->shadowBatches = { context->frameArena->GetHead<ShadowbatchInfo>(), 0ull };
@@ -240,7 +240,7 @@ namespace PK::App
                 cascadeInfo.clipToWorld = clipToWorld;
                 cascadeInfo.nearPlaneOffset = 1.0f;
                 cascadeInfo.padding = renderView->znear;
-                cascadeInfo.splitPlanes = cascadeZSplits.data();
+                cascadeInfo.splitPlanes = cascadeZSplits;
                 cascadeInfo.resolution = m_shadowmaps->GetResolution().x;
                 cascadeInfo.count = ShadowCascadeCount;
                 Math::GetShadowCascadeMatrices(cascadeInfo, matrices);
@@ -252,7 +252,7 @@ namespace PK::App
             if (castShadows && view->light->type == LightType::Directional)
             {
                 // Regenerate cascades as the depth range might change based on culling. 
-                shadowCasters = context->cullingProxy->CullCascades(shadowCasterMask, matrices, renderView->forwardPlane, cascadeZSplits.data(), ShadowCascadeCount);
+                shadowCasters = context->cullingProxy->CullCascades(shadowCasterMask, matrices, renderView->forwardPlane, cascadeZSplits, ShadowCascadeCount);
                 cascadeInfo.nearPlaneOffset = shadowCasters.outMinDepth;
                 Math::GetShadowCascadeMatrices(cascadeInfo, matrices);
             }

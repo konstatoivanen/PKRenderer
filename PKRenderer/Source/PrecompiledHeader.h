@@ -6,6 +6,4 @@
 #include "Core/Math/Math.h"
 #include "Core/Platform/Platform.h"
 #include <utility>
-#include <functional>
 #include <string>
-#include <array>
