@@ -55,7 +55,7 @@ namespace PK::App
             {
                 for (const auto& material : view.materials->materials)
                 {
-                    if (view.staticMesh->sharedMesh->TryGetAccelerationStructureGeometryInfo(material->submesh, &geometry))
+                    if (view.staticMesh->sharedMesh->TryGetAccelerationStructureGeometryInfo(material.submesh, &geometry))
                     {
                         structure->AddInstance(geometry, view.transform->localToWorld);
                     }

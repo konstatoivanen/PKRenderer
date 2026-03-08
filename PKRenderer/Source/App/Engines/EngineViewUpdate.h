@@ -1,11 +1,10 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "App/FrameStep.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct Sequencer)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct InputState)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct TimeFrameInfo)
+namespace PK { struct EntityDatabase; }
+namespace PK { struct Sequencer; }
+namespace PK { struct InputState; }
+namespace PK { struct TimeFrameInfo; }
 
 namespace PK::App
 {

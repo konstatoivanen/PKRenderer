@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/ControlFlow/IStep.h"
 #include "App/Renderer/Passes/PassHierarchicalDepth.h"
 #include "App/Renderer/Passes/PassSceneEnv.h"
@@ -15,8 +14,8 @@
 #include "App/Renderer/Passes/PassBloom.h"
 #include "App/Renderer/RenderPipelineBase.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
+namespace PK { class AssetDatabase; }
+namespace PK { struct EntityDatabase; }
 
 namespace PK::App
 {    

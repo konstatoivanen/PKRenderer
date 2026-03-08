@@ -239,15 +239,15 @@ namespace PK
             memcmp(bindings, other.bindings, sizeof(DescriptorBinding) * count) == 0;
     }
 
-    std::size_t VulkanDescriptorCache::SetKeyHash::operator()(const SetKey& k) const noexcept
+    size_t VulkanDescriptorCache::SetKeyHash::operator()(const SetKey& k) const noexcept
     {
         constexpr uint64_t seed = 18446744073709551557ull;
         const auto hash0 = Hash::MurmurHash(&k.count, sizeof(k.count) + sizeof(k.poolIndex) + sizeof(k.stageFlags), seed);
         const auto hash1 = Hash::MurmurHash(k.bindings, sizeof(DescriptorBinding) * k.count, seed);
         const auto kMul = 0x9ddfea08eb382d69ULL;
-        std::size_t a = (hash0 ^ hash1) * kMul;
+        size_t a = (hash0 ^ hash1) * kMul;
         a ^= (a >> 47);
-        std::size_t b = (hash1 ^ a) * kMul;
+        size_t b = (hash1 ^ a) * kMul;
         b ^= (b >> 47);
         return b * kMul;
     }

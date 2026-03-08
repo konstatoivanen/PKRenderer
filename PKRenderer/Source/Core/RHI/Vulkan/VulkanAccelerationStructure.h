@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FixedUnique.h"
 #include "Core/RHI/RHInterfaces.h"

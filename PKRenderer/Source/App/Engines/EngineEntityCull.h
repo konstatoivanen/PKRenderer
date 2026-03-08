@@ -1,9 +1,8 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/ControlFlow/IStep.h"
 #include "App/Renderer/EntityCulling.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
+namespace PK { struct EntityDatabase; }
 
 namespace PK::App
 {

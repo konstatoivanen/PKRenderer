@@ -237,7 +237,7 @@ namespace PK::App::EntityBuilders
 
         auto mesh = assetDatabase->Find<MeshStaticAsset>("Primitive_Sphere")->GetMeshStatic();
         auto shader = assetDatabase->Find<ShaderAsset>("MS_Mat_Unlit_Color");
-        auto material = assetDatabase->CreateVirtual<Material>(("M_Point_Light_" + std::to_string(egid.entityID())).c_str(), shader.get(), nullptr);
+        auto material = assetDatabase->CreateVirtual<Material>(Parse::FormatToString("M_Point_Light_%u", egid.entityID()).c_str(), shader.get(), nullptr);
         material->Set<float4>(HashCache::Get()->_Color, color);
         material->Set<float4>(HashCache::Get()->_ColorVoxelize, PK_COLOR_BLACK);
 

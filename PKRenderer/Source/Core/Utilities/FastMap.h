@@ -2,8 +2,7 @@
 #include "Hash.h"
 #include "NoCopy.h"
 #include "BufferView.h"
-#include "BufferIterator.h"
-#include "ContainerHelpers.h"
+#include "Memory.h"
 
 namespace PK
 {
@@ -58,8 +57,8 @@ namespace PK
         {
             if (m_buffer)
             {
-                ContainerHelpers::ClearArray(m_values, m_count);
-                ContainerHelpers::ClearArray(m_nodes, m_count);
+                Memory::ClearArray(m_values, m_count);
+                Memory::ClearArray(m_nodes, m_count);
                 free(m_buffer);
             }
         }
@@ -74,8 +73,8 @@ namespace PK
             {
                 if (m_buffer)
                 {
-                    ContainerHelpers::ClearArray(m_values, m_count);
-                    ContainerHelpers::ClearArray(m_nodes, m_count);
+                    Memory::ClearArray(m_values, m_count);
+                    Memory::ClearArray(m_nodes, m_count);
                     free(m_buffer);
                 }
 
@@ -95,8 +94,8 @@ namespace PK
         {
             if (m_buffer)
             {
-                ContainerHelpers::ClearArray(m_values, m_count);
-                ContainerHelpers::ClearArray(m_nodes, m_count);
+                Memory::ClearArray(m_values, m_count);
+                Memory::ClearArray(m_nodes, m_count);
                 free(m_buffer);
             }
             
@@ -107,9 +106,9 @@ namespace PK
             m_bucketStride = other.m_bucketStride;
 
             Reserve(other.m_capacity);
-            ContainerHelpers::CopyArray(m_values, other.m_values, other.m_count);
-            ContainerHelpers::CopyArray(m_buckets, other.m_buckets, other.m_count);
-            ContainerHelpers::CopyArray(m_nodes, other.m_nodes, other.m_count);
+            Memory::CopyArray(m_values, other.m_values, other.m_count);
+            Memory::CopyArray(m_buckets, other.m_buckets, other.m_count);
+            Memory::CopyArray(m_nodes, other.m_nodes, other.m_count);
         }
 
     public:
@@ -122,22 +121,22 @@ namespace PK
                 m_bucketCount = (m_bucketStride + 1u) * m_capacity - 1u;
                 
                 size_t size = 0ull;
-                const auto offsetBuckets = ContainerHelpers::AlignSize<_TIndex>(&size);
+                const auto offsetBuckets = Memory::AlignSize<_TIndex>(&size);
                 size += sizeof(_TIndex) * GetBucketCount();
-                const auto offsetNode = ContainerHelpers::AlignSize<_TNode>(&size);
+                const auto offsetNode = Memory::AlignSize<_TNode>(&size);
                 size += sizeof(_TNode) * m_capacity;
-                const auto offsetValue = ContainerHelpers::AlignSize<_TValue>(&size);
+                const auto offsetValue = Memory::AlignSize<_TValue>(&size);
                 size += sizeof(_TValue) * m_capacity;
                 
                 auto newBuffer = calloc(size, 1u);
-                auto newBuckets = ContainerHelpers::CastOffsetPtr<_TIndex>(newBuffer, offsetBuckets);
-                auto newNodes = ContainerHelpers::CastOffsetPtr<_TNode>(newBuffer, offsetNode);
-                auto newValues = ContainerHelpers::CastOffsetPtr<_TValue>(newBuffer, offsetValue);
+                auto newBuckets = Memory::CastOffsetPtr<_TIndex>(newBuffer, offsetBuckets);
+                auto newNodes = Memory::CastOffsetPtr<_TNode>(newBuffer, offsetNode);
+                auto newValues = Memory::CastOffsetPtr<_TValue>(newBuffer, offsetValue);
 
                 if (m_buffer)
                 {
-                    ContainerHelpers::MoveArray(newValues, m_values, m_count);
-                    ContainerHelpers::MoveArray(newNodes, m_nodes, m_count);
+                    Memory::MoveArray(newValues, m_values, m_count);
+                    Memory::MoveArray(newNodes, m_nodes, m_count);
                     free(m_buffer);
                 }
 
@@ -179,18 +178,18 @@ namespace PK
 
         void Move(IFastCollectionAllocatorFixed&& other)
         {
-            ContainerHelpers::MoveArray(m_buckets, other.m_buckets, capacity * bucket_stride);
-            ContainerHelpers::MoveArray(m_nodes, other.m_nodes, capacity);
-            ContainerHelpers::MoveArray(m_values, other.m_values, capacity);
+            Memory::MoveArray(m_buckets, other.m_buckets, capacity * bucket_stride);
+            Memory::MoveArray(m_nodes, other.m_nodes, capacity);
+            Memory::MoveArray(m_values, other.m_values, capacity);
             m_collisions = std::exchange(other.m_collisions, 0u);
             m_count = std::exchange(other.m_count, 0u);
         }
 
         void Copy(const IFastCollectionAllocatorFixed& other)
         {
-            ContainerHelpers::CopyArray(m_buckets, other.m_buckets, capacity * bucket_stride);
-            ContainerHelpers::CopyArray(m_nodes, other.m_nodes, capacity);
-            ContainerHelpers::CopyArray(m_values, other.m_values, capacity);
+            Memory::CopyArray(m_buckets, other.m_buckets, capacity * bucket_stride);
+            Memory::CopyArray(m_nodes, other.m_nodes, capacity);
+            Memory::CopyArray(m_values, other.m_values, capacity);
             m_collisions = other.m_collisions;
             m_count = other.m_count;
         }
@@ -231,8 +230,8 @@ namespace PK
         constexpr uint32_t GetCapacity() const { return TBase::m_capacity; }
         constexpr const TValue* GetValues() const { return TBase::m_values; }
         TValue* GetValues() { return m_values; }
-        ConstBufferIterator<TValue> begin() const { return ConstBufferIterator<TValue>(TBase::m_values, 0ull); }
-        ConstBufferIterator<TValue> end() const { return ConstBufferIterator<TValue>(TBase::m_values + TBase::m_count, TBase::m_count); }
+        constexpr TValue const* begin() const { return TBase::m_values; }
+        constexpr TValue const* end() const { return TBase::m_values + TBase::m_count; }
         const TValue& operator[](uint32_t index) const { return TBase::m_values[index]; }
         TValue& operator[](uint32_t index) { return TBase::m_values[index]; }
         IFastSet& operator=(IFastSet&& other) noexcept { TBase::Move(std::forward<TAllocator>(other)); return *this; }
@@ -433,8 +432,8 @@ namespace PK
         {
             if (TBase::m_count > 0)
             {
-                ContainerHelpers::ClearArray(TBase::m_values, TBase::m_count);
-                ContainerHelpers::ClearArray(TBase::m_nodes, TBase::m_count);
+                Memory::ClearArray(TBase::m_values, TBase::m_count);
+                Memory::ClearArray(TBase::m_nodes, TBase::m_count);
                 ClearBuckets();
                 TBase::m_collisions = 0u;
                 TBase::m_count = 0u;
@@ -490,8 +489,8 @@ namespace PK
         constexpr size_t GetCapacity() const { return TBase::m_capacity; }
         constexpr const TValue* GetValues() const { return TBase::m_values; }
         TValue* GetValues() { return TBase::m_values; }
-        ConstBufferIterator<TValue> begin() const { return ConstBufferIterator<TValue>(TBase::m_values, 0ull); }
-        ConstBufferIterator<TValue> end() const { return ConstBufferIterator<TValue>(TBase::m_values + TBase::m_count, TBase::m_count); }
+        constexpr TValue const* begin() const { return TBase::m_values; }
+        constexpr TValue const* end() const { return TBase::m_values + TBase::m_count; }
         const KeyValueConst operator[](uint32_t index) const { return { TBase::m_nodes[index].key, TBase::m_values[index] }; }
         KeyValue operator[](uint32_t index) { return { TBase::m_nodes[index].key, TBase::m_values[index] }; }
         IFastMap& operator=(IFastMap&& other) noexcept { TBase::Move(std::forward<TAllocator>(other)); return *this; }
@@ -678,8 +677,8 @@ namespace PK
         {
             if (TBase::m_count > 0)
             {
-                ContainerHelpers::ClearArray(TBase::m_values, TBase::m_count);
-                ContainerHelpers::ClearArray(TBase::m_nodes, TBase::m_count);
+                Memory::ClearArray(TBase::m_values, TBase::m_count);
+                Memory::ClearArray(TBase::m_nodes, TBase::m_count);
                 ClearBuckets();
                 TBase::m_collisions = 0u;
                 TBase::m_count = 0u;

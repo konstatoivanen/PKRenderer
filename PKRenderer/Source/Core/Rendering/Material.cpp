@@ -147,14 +147,14 @@ namespace PK
 
         memcpy(dst, m_propertyBuffer.GetData(), layout.GetStride());
 
-        for (auto& element : layout)
+        for (const auto& element : layout)
         {
-            switch (element->format)
+            switch (element.format)
             {
                 case ElementType::Texture2DHandle:
                 {
-                    auto texIndex = textureSet->Add(GetResource<RHITexture>(element->name));
-                    memcpy(dst + element->offset, &texIndex, sizeof(int32_t));
+                    auto texIndex = textureSet->Add(GetResource<RHITexture>(element.name));
+                    memcpy(dst + element.offset, &texIndex, sizeof(int32_t));
                 }
                 break;
                 default: break;
@@ -175,11 +175,11 @@ namespace PK
 
         auto builtIns = RHI::GetBuiltInResources();
 
-        for (auto& element : m_shader->GetMaterialPropertyLayout())
+        for (const auto& element : m_shader->GetMaterialPropertyLayout())
         {
-            switch (element->format)
+            switch (element.format)
             {
-                case ElementType::Texture2DHandle: SetResource(element->name, builtIns->BlackTexture2D.get()); break;
+                case ElementType::Texture2DHandle: SetResource(element.name, builtIns->BlackTexture2D.get()); break;
                 default: break;
             }
         }

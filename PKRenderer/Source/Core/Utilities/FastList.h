@@ -1,9 +1,7 @@
 #pragma once
 #include "NoCopy.h"
 #include "BufferView.h"
-#include "BufferIterator.h"
 #include "Memory.h"
-#include <exception>
 
 namespace PK
 {
@@ -31,16 +29,18 @@ namespace PK
         }
 
         T* GetData() { return IsSmallBuffer(m_capacity) ? reinterpret_cast<T*>(&m_data) : m_data.buffer; }
-        T const* GetData() const { return IsSmallBuffer(m_capacity) ? reinterpret_cast<const T*>(&m_data) : m_data.buffer; }
+        constexpr T const* GetData() const { return IsSmallBuffer(m_capacity) ? reinterpret_cast<T const*>(&m_data) : m_data.buffer; }
 
         constexpr size_t GetCount() const { return m_count; }
         constexpr size_t GetSize() const { return m_count * sizeof(T); }
 
         BufferView<T> GetView() { return { GetData(), m_count }; }
-        ConstBufferView<T> GetView() const { return { GetData(), m_count }; }
+        constexpr ConstBufferView<T> GetView() const { return { GetData(), m_count }; }
 
-        ConstBufferIterator<T> begin() const { return ConstBufferIterator<T>(GetData(), 0ull); }
-        ConstBufferIterator<T> end() const { return ConstBufferIterator<T>(GetData() + m_count, m_count); }
+        T* begin() { return GetData(); }
+        T* end() { return GetData() + m_count; }
+        constexpr T const* begin() const { return GetData(); }
+        constexpr T const* end() const { return GetData() + m_count; }
 
         T& operator [](size_t i) { return GetData()[i]; }
         T const& operator [](size_t i) const { return GetData()[i]; }
@@ -121,11 +121,7 @@ namespace PK
 
         void Clear() 
         {
-            for (auto i = 0u; i < m_count; ++i)
-            {
-                (GetData() + i)->~T();
-            }
-
+            Memory::ClearArray(GetData(), m_count);
             m_count = 0u;
         }
 

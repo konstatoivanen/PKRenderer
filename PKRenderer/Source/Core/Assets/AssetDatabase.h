@@ -1,6 +1,6 @@
 #pragma once
 #include <filesystem>
-#include "Core/Utilities/ISingleton.h"
+#include "Core/Utilities/Singleton.h"
 #include "Core/Utilities/FastTypeIndex.h"
 #include "Core/Utilities/FastMap.h"
 #include "Core/Assets/Asset.h"
@@ -17,7 +17,7 @@ namespace PK
         Persistent  // Asset is released when AssetDatabase::Unload is called for it.
     };
 
-    class AssetDatabase : public ISingleton<AssetDatabase>
+    class AssetDatabase : public Singleton<AssetDatabase>
     {
         constexpr static uint32_t INVALID_LINK = ~0u;
 

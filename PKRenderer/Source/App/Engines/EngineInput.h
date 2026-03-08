@@ -1,7 +1,4 @@
 #pragma once
-#include "Core/Utilities/Ref.h"
-#include "Core/Utilities/ForwardDeclare.h"
-#include "Core/Utilities/ISingleton.h"
 #include "Core/Utilities/FixedPool.h"
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FixedList.h"
@@ -10,7 +7,7 @@
 #include "Core/Input/InputState.h"
 #include "App/FrameStep.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct Sequencer)
+namespace PK { struct Sequencer; }
 
 namespace PK::App
 {

@@ -1,13 +1,12 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/ControlFlow/IStep.h"
 #include "Core/RHI/Layout.h"
 #include "Core/Rendering/Font.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "App/Renderer/IGUIRenderer.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct Sequencer)
+namespace PK { class AssetDatabase; }
+namespace PK { struct Sequencer; }
 
 namespace PK::App
 {

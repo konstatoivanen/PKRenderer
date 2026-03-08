@@ -1272,9 +1272,6 @@
     <ClInclude Include="Source\Core\Utilities\FixedMask.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\BufferIterator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Utilities\BufferView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1293,7 +1290,7 @@
     <ClInclude Include="Source\Core\Utilities\FastMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\ISingleton.h">
+    <ClInclude Include="Source\Core\Utilities\Singleton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\FastBuffer.h">
@@ -1330,9 +1327,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\Renderer\RenderPipelineBase.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\ForwardDeclare.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\Renderer\IBatcher.h">
@@ -1389,7 +1383,7 @@
     <ClInclude Include="Source\Core\Timers\TimerFrameRunner.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\TimeHelpers.h">
+    <ClInclude Include="Source\Core\Timers\TimeHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\Engines\EngineProfiler.h">
@@ -1432,9 +1426,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Yaml\RapidyamlPrivate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\ContainerHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\App\ECS\ComponentViewInput.h">
@@ -2430,7 +2421,7 @@
     <ClCompile Include="Source\Core\Utilities\Ref.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Utilities\TimeHelpers.cpp">
+    <ClCompile Include="Source\Core\Timers\TimeHelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

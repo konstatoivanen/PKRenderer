@@ -296,11 +296,11 @@ namespace PK::App
                     auto mesh = entity->staticMesh->sharedMesh;
                     auto userdata = (lightIndex & 0xFFFFu) | ((layerOffset + info.clipId) << 16u);
 
-                    for (auto& kv : entity->materials->materials)
+                    for (const auto& kv : entity->materials->materials)
                     {
-                        if (kv->material->GetShaderShadow())
+                        if (kv.material->GetShaderShadow())
                         {
-                            context->batcher->SubmitMeshStaticDraw(transform, kv->material->GetShaderShadow(), nullptr, mesh, kv->submesh, userdata, info.depth);
+                            context->batcher->SubmitMeshStaticDraw(transform, kv.material->GetShaderShadow(), nullptr, mesh, kv.submesh, userdata, info.depth);
                         }
                     }
                 }

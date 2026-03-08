@@ -9,8 +9,8 @@ namespace PK
     typedef uint16_t ushort;
     typedef uint32_t uint;
     typedef uint64_t ulong;
-    typedef std::uint8_t byte;
-    typedef std::int8_t sbyte;
+    typedef uint8_t byte;
+    typedef int8_t sbyte;
 
     typedef glm::vec2 float2;
     typedef glm::vec3 float3;

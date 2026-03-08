@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FixedList.h"
 #include "Core/Utilities/FixedArena.h"
@@ -8,8 +7,8 @@
 #include "Core/Rendering/Material.h"
 #include "App/Renderer/IBatcher.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct MeshStaticAsset)
+namespace PK { class AssetDatabase; }
+namespace PK { struct MeshStaticAsset; }
 
 namespace PK::App
 {

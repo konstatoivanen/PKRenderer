@@ -1,5 +1,6 @@
 #pragma once
 #include <stdlib.h>
+#include <exception>
 
 namespace PK::Memory
 {
@@ -8,6 +9,17 @@ namespace PK::Memory
 #else
     #define PK_STACK_ALLOC(Type, count) static_cast<Type*>(alloca(sizeof(Type) * count))
 #endif
+
+    #define PK_CONTAINER_RANGE_CHECK(index, min, max)                        \
+    do                                                                       \
+    {                                                                        \
+        if (index >= max || index < min)                                     \
+        {                                                                    \
+            throw std::exception("Index/Count outside of container bounds!");\
+        }                                                                    \
+    }                                                                        \
+    while(0)                                                                 \
+                                                                             \
 
     template<typename T>
     T* Malloc(size_t count) noexcept { return static_cast<T*>(malloc(count * sizeof(T))); }
@@ -42,5 +54,72 @@ namespace PK::Memory
         T1 ret;
         memcpy(&ret, ptr, sizeof(T1));
         return ret;
+    }
+
+
+    template<typename TAlignment>
+    size_t AlignSize(size_t* size)
+    {
+        if (*size == 0ull)
+        {
+            return *size;
+        }
+
+        *size = (*size + sizeof(TAlignment) - 1ull) & ~(sizeof(TAlignment) - 1ull);
+        return *size;
+    }
+
+    template<typename T>
+    T* CastOffsetPtr(void* data, size_t offset)
+    {
+        return reinterpret_cast<T*>(static_cast<char*>(data) + offset);
+    }
+
+    template<typename T>
+    void MoveArray(T* dst, T* src, size_t count)
+    {
+        if constexpr (std::is_trivially_copyable_v<T>)
+        {
+            memcpy(dst, src, sizeof(T) * count);
+        }
+        else
+        {
+            for (auto i = 0u; i < count; ++i)
+            {
+                dst[i] = std::move(src[i]);
+            }
+        }
+    }
+
+    template<typename T>
+    void CopyArray(T* dst, T* src, size_t count)
+    {
+        if constexpr (std::is_trivially_copyable_v<T>)
+        {
+            memcpy(dst, src, sizeof(T) * count);
+        }
+        else
+        {
+            for (auto i = 0u; i < count; ++i)
+            {
+                dst[i] = src[i];
+            }
+        }
+    }
+
+    template<typename T>
+    void ClearArray(T* values, size_t count)
+    {
+        // Call Destructor & zero memory. Dont call constructor to avoid allocs.
+        // A bit hazardous but whatever.
+        if constexpr (!std::is_trivially_copyable_v<T>)
+        {
+            for (auto i = 0u; i < count; ++i)
+            {
+                (values + i)->~T();
+            }
+        }
+
+        memset(values, 0, sizeof(T) * count);
     }
 }

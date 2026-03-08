@@ -1,6 +1,4 @@
 #include "PrecompiledHeader.h"
-#include "Core/Utilities/Hash.h"
-#include "Core/Math/FunctionsMisc.h"
 #include "Layout.h"
 
 namespace PK
@@ -40,7 +38,7 @@ namespace PK
     {
         for (auto& element : other)
         {
-            Add(*element);
+            Add(element);
         }
 
         CalculateOffsetsAndStride();
@@ -50,7 +48,7 @@ namespace PK
     {
         for (auto& element : other)
         {
-            Add(*element)->stream = stream;
+            Add(element)->stream = stream;
         }
 
         CalculateOffsetsAndStride();

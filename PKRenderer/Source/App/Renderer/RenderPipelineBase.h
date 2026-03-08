@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/ControlFlow/IStep.h"
 #include "Core/Rendering/CommandBufferExt.h"
 #include "Core/Rendering/RenderingFwd.h"
@@ -8,10 +7,10 @@
 #include "App/Renderer/RenderView.h"
 #include "App/FrameStep.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct IArena)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct Sequencer)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
+namespace PK { struct IArena; }
+namespace PK { struct Sequencer; }
+namespace PK { struct EntityDatabase; }
+namespace PK { class AssetDatabase; }
 
 namespace PK::App
 {

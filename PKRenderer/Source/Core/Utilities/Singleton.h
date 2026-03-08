@@ -4,9 +4,9 @@
 namespace PK
 {
     template<typename T>
-    struct ISingleton : public NoCopy
+    struct Singleton : public NoCopy
     {
-        ISingleton() 
+        Singleton() 
         {
             if (s_Instance != nullptr)
             {
@@ -16,7 +16,7 @@ namespace PK
             s_Instance = static_cast<T*>(this); 
         }
 
-        virtual ~ISingleton() = default;
+        virtual ~Singleton() = default;
         inline static T* Get() { return s_Instance; }
     
         private: 

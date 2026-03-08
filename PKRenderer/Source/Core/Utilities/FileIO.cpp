@@ -260,14 +260,12 @@ namespace PK::FileIO
             return nullptr;
         }
 
-        auto cachepath = std::filesystem::path(std::string(filepath));
-
-        if (!std::filesystem::exists(cachepath))
+        if (!std::filesystem::exists(filepath))
         {
             return nullptr;
         }
 
-        FILE* file = fopen(cachepath.string().c_str(), openMode);
+        FILE* file = fopen(filepath, openMode);
 
         if (file == nullptr)
         {

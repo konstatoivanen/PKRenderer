@@ -1,12 +1,11 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Utilities/NoCopy.h"
 #include "Core/CLI/CVariable.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "Core/Rendering/ShaderBindingTable.h"
 #include "App/Renderer/IBatcher.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
+namespace PK { class AssetDatabase; }
 
 namespace PK::App
 {

@@ -155,17 +155,17 @@ namespace PK::MeshUtilities
         const auto count_vertex = count_meshlet * PKAssets::PK_MESHLET_MAX_VERTICES;
 
         size_t size = 0ull;
-        const auto offset_indices = ContainerHelpers::AlignSize<uint8_t>(&size);
+        const auto offset_indices = Memory::AlignSize<uint8_t>(&size);
         size += sizeof(uint8_t) * count_index;
-        const auto offset_vertices = ContainerHelpers::AlignSize<PKAssets::PKMeshletVertex>(&size);
+        const auto offset_vertices = Memory::AlignSize<PKAssets::PKMeshletVertex>(&size);
         size += sizeof(PKAssets::PKMeshletVertex) * count_vertex;
-        const auto offset_meshlets = ContainerHelpers::AlignSize<PKAssets::PKMeshlet>(&size);
+        const auto offset_meshlets = Memory::AlignSize<PKAssets::PKMeshlet>(&size);
         size += sizeof(PKAssets::PKMeshlet) * count_meshlet;
 
         auto buffer = calloc(size, 1u);
-        indices = ContainerHelpers::CastOffsetPtr<uint8_t>(buffer, offset_indices);
-        vertices = ContainerHelpers::CastOffsetPtr<PKAssets::PKMeshletVertex>(buffer, offset_vertices);
-        meshlets = ContainerHelpers::CastOffsetPtr<PKAssets::PKMeshlet>(buffer, offset_meshlets);
+        indices = Memory::CastOffsetPtr<uint8_t>(buffer, offset_indices);
+        vertices = Memory::CastOffsetPtr<PKAssets::PKMeshletVertex>(buffer, offset_vertices);
+        meshlets = Memory::CastOffsetPtr<PKAssets::PKMeshlet>(buffer, offset_meshlets);
     }
 
     MeshletBuildData::~MeshletBuildData()

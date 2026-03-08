@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Math/Math.h"
 #include "Core/ECS/EGID.h"
 #include "Core/Rendering/RenderingFwd.h"
@@ -7,8 +6,8 @@
 #include "App/FrameStep.h"
 #include "App/Renderer/RenderViewSettings.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
+namespace PK { class AssetDatabase; }
+namespace PK { struct EntityDatabase; }
 
 namespace PK::App
 {

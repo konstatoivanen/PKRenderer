@@ -722,11 +722,11 @@ namespace PK
             const char* data = nullptr;
             size_t dataSize = 0u;
 
-            for (auto& element : constantLayout)
+            for (const auto& element : constantLayout)
             {
-                if (resources->TryGet<char>(element->name, data, &dataSize) && dataSize <= element->size)
+                if (resources->TryGet<char>(element.name, data, &dataSize) && dataSize <= element.size)
                 {
-                    vkCmdPushConstants(m_commandBuffer, layout, stageFlags, element->offset, (uint32_t)dataSize, data);
+                    vkCmdPushConstants(m_commandBuffer, layout, stageFlags, element.offset, (uint32_t)dataSize, data);
                 }
             }
         }

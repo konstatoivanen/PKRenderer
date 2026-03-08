@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 

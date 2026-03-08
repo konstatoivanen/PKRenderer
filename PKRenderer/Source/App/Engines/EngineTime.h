@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Timers/TimeFrameInfo.h"
 #include "Core/Timers/TimerFramerate.h"
 #include "Core/Timers/TimerFrameRunner.h"

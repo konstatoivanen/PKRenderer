@@ -15,10 +15,12 @@ namespace PK
     template<typename T>
     T& BufferView<T>::operator[](size_t index)
     {
+        #if PK_DEBUG
         if (index >= count)
         {
             throw std::exception("Out of bounds index");
         }
+        #endif
     
         return data[index];
     }
@@ -36,10 +38,12 @@ namespace PK
     template<typename T>
     const T& ConstBufferView<T>::operator[](size_t index)
     {
+        #if PK_DEBUG
         if (index >= count)
         {
             throw std::exception("Out of bounds index");
         }
+        #endif
 
         return data[index];
     }
@@ -57,10 +61,12 @@ namespace PK
     template<typename T>
     const T& InterleavedBufferView<T>::operator[](size_t index)
     {
+        #if PK_DEBUG
         if (index >= count)
         {
             throw std::exception("Out of bounds index");
         }
+        #endif
 
         return *reinterpret_cast<T*>(data + index * stride + offset);  
     }

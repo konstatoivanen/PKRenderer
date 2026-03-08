@@ -50,7 +50,7 @@ namespace PK
 
         struct SetKeyHash
         {
-            std::size_t operator()(const SetKey& k) const noexcept;
+            size_t operator()(const SetKey& k) const noexcept;
         };
 
         VkDescriptorPoolSize m_poolSizes[PK_VK_MAX_DESCRIPTOR_TYPE_POOL_SIZES]{};

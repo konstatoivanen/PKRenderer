@@ -1,9 +1,7 @@
 #pragma once
 #include "NoCopy.h"
-#include "BufferIterator.h"
 #include "BufferView.h"
-#include "ContainerHelpers.h"
-#include <exception>
+#include "Memory.h"
 
 namespace PK
 {
@@ -23,39 +21,29 @@ namespace PK
         {
         }
 
-        ~FixedList()
-        {
-            for (auto i = 0u; i < m_count; ++i)
-            {
-                (GetData() + i)->~T();
-            }
-        }
+        ~FixedList() { Memory::ClearArray(GetData(), m_count); }
+
+        T* GetData() { return reinterpret_cast<T*>(m_data); }
+        constexpr T const* GetData() const { return reinterpret_cast<T const*>(m_data); }
 
         constexpr size_t GetCount() const { return m_count; }
         constexpr size_t GetSize() const { return m_count * sizeof(T); }
 
-        constexpr const T* GetData() const { return reinterpret_cast<const T*>(m_data); }
-        T* GetData() { return reinterpret_cast<T*>(m_data); }
-
         BufferView<T> GetView() { return { GetData(), m_count }; }
+        constexpr ConstBufferView<T> GetView() const { return { GetData(), m_count }; }
 
-        ConstBufferIterator<T> begin() const { return ConstBufferIterator<T>(GetData(), 0ull); }
-        ConstBufferIterator<T> end() const { return ConstBufferIterator<T>(GetData() + m_count, m_count); }
-        
-        BufferIterator<T> begin() { return BufferIterator<T>(GetData(), 0ull); }
-        BufferIterator<T> end() { return BufferIterator<T>(GetData() + m_count, m_count); }
-        
-        const T& operator [](size_t i) const { return GetData()[i]; }
+        T* begin() { return GetData(); }
+        T* end() { return GetData() + m_count; }
+        constexpr T const* begin() const { return GetData(); }
+        constexpr T const* end() const { return GetData() + m_count; }
         
         T& operator [](size_t i) 
         {
-            for (; m_count <= i;)
-            {
-                Add();
-            }
-
+            for (; m_count <= i;) Add();
             return GetData()[i];
         }
+        
+        T const& operator [](size_t i) const { return GetData()[i]; }
 
         T* Add()
         {
@@ -80,11 +68,7 @@ namespace PK
 
         void Clear() 
         {
-            for (auto i = 0u; i < m_count; ++i)
-            {
-                (GetData() + i)->~T();
-            }
-
+            Memory::ClearArray(GetData(), m_count);
             SetCount(0u);
         }
 

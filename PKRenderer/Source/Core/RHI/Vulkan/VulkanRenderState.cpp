@@ -380,12 +380,12 @@ namespace PK
             for (const auto& element : shaderLayout)
             {
                 auto* attribute = m_pipelineKey.vertexAttributes + index++;
-                auto format = VulkanEnumConvert::GetFormat(element->format);
+                auto format = VulkanEnumConvert::GetFormat(element.format);
 
-                if (attribute->location != element->location || attribute->format != format)
+                if (attribute->location != element.location || attribute->format != format)
                 {
                     validateAttributes = true;
-                    attribute->location = element->location;
+                    attribute->location = element.location;
                     attribute->format = format;
                 }
             }
@@ -473,21 +473,21 @@ namespace PK
         {
             auto* binding = bindings + bindingIndex++;
 
-            if (element->count > 1)
+            if (element.count > 1)
             {
                 const VulkanBindSet* handleSet = nullptr;
-                PK_THROW_ASSERT(resources->TryGet<const VulkanBindSet*>(element->name, handleSet), "Descriptors (%s) not bound!", element->name.c_str());
+                PK_THROW_ASSERT(resources->TryGet<const VulkanBindSet*>(element.name, handleSet), "Descriptors (%s) not bound!", element.name.c_str());
 
                 uint32_t version = 0u;
                 uint32_t count = 0u;
                 auto handles = handleSet->GetHandles(&version, &count);
-                count = count < element->count ? (uint16_t)count : element->count;
+                count = count < element.count ? (uint16_t)count : element.count;
 
-                if (binding->count != count || binding->type != element->type || binding->handles != handles || binding->version != version || !binding->isArray)
+                if (binding->count != count || binding->type != element.type || binding->handles != handles || binding->version != version || !binding->isArray)
                 {
                     m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
                     binding->count = count;
-                    binding->type = element->type;
+                    binding->type = element.type;
                     binding->handles = handles;
                     binding->version = version;
                     binding->isArray = true;
@@ -497,13 +497,13 @@ namespace PK
             }
 
             const VulkanBindHandle* handle = nullptr;
-            PK_THROW_ASSERT(resources->TryGet<const VulkanBindHandle*>(element->name, handle), "Descriptor (%s) not bound!", element->name.c_str());
+            PK_THROW_ASSERT(resources->TryGet<const VulkanBindHandle*>(element.name, handle), "Descriptor (%s) not bound!", element.name.c_str());
 
-            if (binding->count != element->count || binding->type != element->type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)
+            if (binding->count != element.count || binding->type != element.type || binding->handle != handle || binding->version != handle->Version() || binding->isArray)
             {
                 m_dirtyFlags |= PK_RENDER_STATE_DIRTY_DESCRIPTORS;
-                binding->count = element->count;
-                binding->type = element->type;
+                binding->count = element.count;
+                binding->type = element.type;
                 binding->handle = handle;
                 binding->version = handle->Version();
                 binding->isArray = false;

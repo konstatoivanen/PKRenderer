@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include <exception>
 #include "NameIDProviderDefault.h"
 
 namespace PK

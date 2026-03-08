@@ -1,7 +1,6 @@
 #pragma once
 #include "NoCopy.h"
-#include "ContainerHelpers.h"
-#include <exception>
+#include "Memory.h"
 
 namespace PK
 {

@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Utilities/FixedPool.h"
 #include "Core/Utilities/FixedRangeTable.h"
 #include "Core/RHI/Structs.h"

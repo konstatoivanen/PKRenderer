@@ -203,10 +203,10 @@ namespace PK
             for (const auto& prop : m_materialPropertyLayout)
             {
                 meta.append(Parse::FormatToString("   %s,%s,%u,%u\n", 
-                    prop->name.c_str(), 
-                    RHIEnumConvert::ElementTypeToString(prop->format), 
-                    prop->count, 
-                    prop->offset));
+                    prop.name.c_str(), 
+                    RHIEnumConvert::ElementTypeToString(prop.format), 
+                    prop.count, 
+                    prop.offset));
             }
         }
 
@@ -251,16 +251,16 @@ namespace PK
 
             meta.append("       Vertex Attributes:\n");
 
-            for (auto& element : shader->GetVertexLayout())
+            for (const auto& element : shader->GetVertexLayout())
             {
-                meta.append(Parse::FormatToString("         %s, %u, %u\n", + element->name.c_str(), element->location, (uint32_t)element->format));
+                meta.append(Parse::FormatToString("         %s, %u, %u\n", + element.name.c_str(), element.location, (uint32_t)element.format));
             }
 
             meta.append("       Dynamic Constants:\n");
 
-            for (auto& element : shader->GetPushConstantLayout())
+            for (const auto& element : shader->GetPushConstantLayout())
             {
-                meta.append(Parse::FormatToString("         %s, %u, %u\n", element->name.c_str(), element->offset, (uint32_t)element->size));
+                meta.append(Parse::FormatToString("         %s, %u, %u\n", element.name.c_str(), element.offset, (uint32_t)element.size));
             }
 
             {
@@ -268,9 +268,9 @@ namespace PK
 
                 meta.append(Parse::FormatToString("       Descriptor Set:\n"));
 
-                for (auto& element : set)
+                for (const auto& element : set)
                 {
-                    meta.append(Parse::FormatToString("         %s, %u\n", element->name.c_str(), (uint32_t)element->type));
+                    meta.append(Parse::FormatToString("         %s, %u\n", element.name.c_str(), (uint32_t)element.type));
                 }
             }
         }

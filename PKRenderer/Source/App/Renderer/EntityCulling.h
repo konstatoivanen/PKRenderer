@@ -1,12 +1,11 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Utilities/FastBuffer.h"
 #include "Core/Rendering/RenderingFwd.h"
 #include "App/Renderer/EntityEnums.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct Sequencer)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct IArena)
+namespace PK { struct Sequencer; }
+namespace PK { struct IArena; }
 
 namespace PK::App
 {

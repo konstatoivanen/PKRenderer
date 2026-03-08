@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Utilities/NoCopy.h"
-#include "Core/Utilities/ISingleton.h"
+#include "Core/Utilities/Singleton.h"
 #include "Core/Utilities/FixedString.h"
 #include "Core/Utilities/Ref.h"
 #include "Core/CLI/CArguments.h"
@@ -17,7 +17,7 @@ namespace PK
     extern struct IApplication* CreateProjectApplication(const CArguments& arguments);
     extern void FreeProjectApplication(IApplication* application);
 
-    struct IApplication : public ISingleton<IApplication>
+    struct IApplication : public Singleton<IApplication>
     {
         IApplication(const CArguments& arguments, const char* name, Ref<ILogger> logger);
 

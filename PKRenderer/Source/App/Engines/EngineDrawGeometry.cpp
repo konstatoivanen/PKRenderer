@@ -45,11 +45,11 @@ namespace PK::App
                         auto& info = cullRequest[i];
                         auto entity = m_entityDb->Query<EntityViewMeshStatic>(EGID(info.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
 
-                        for (auto& kv : entity->materials->materials)
+                        for (const auto& kv : entity->materials->materials)
                         {
                             auto transform = entity->transform;
-                            auto shader = kv->material->GetShader();
-                            renderEvent->context->batcher->SubmitMeshStaticDraw(transform, shader, kv->material.get(), entity->staticMesh->sharedMesh, kv->submesh, 0u, info.depth);
+                            auto shader = kv.material->GetShader();
+                            renderEvent->context->batcher->SubmitMeshStaticDraw(transform, shader, kv.material.get(), entity->staticMesh->sharedMesh, kv.submesh, 0u, info.depth);
                         }
                     }
                 }

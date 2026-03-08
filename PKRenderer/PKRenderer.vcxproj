@@ -262,10 +262,9 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Rendering\Window.h" />
     <ClInclude Include="Source\Core\RHI\Vulkan\VulkanLimits.h" />
     <ClInclude Include="Source\Core\Timers\ITimer.h" />
-    <ClInclude Include="Source\Core\Utilities\TimeHelpers.h" />
+    <ClInclude Include="Source\Core\Timers\TimeHelpers.h" />
     <ClInclude Include="Source\Core\Timers\TimerFramerate.h" />
     <ClInclude Include="Source\Core\Timers\TimerFrameRunner.h" />
-    <ClInclude Include="Source\Core\Utilities\ContainerHelpers.h" />
     <ClInclude Include="Source\Core\Utilities\FastList.h" />
     <ClInclude Include="Source\Core\Utilities\FixedArena.h" />
     <ClInclude Include="Source\Core\Utilities\FixedArray.h" />
@@ -721,15 +720,13 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\App\Renderer\EntityEnums.h" />
     <ClInclude Include="Source\App\Renderer\EntityCulling.h" />
     <ClInclude Include="Source\Core\Utilities\FixedMask.h" />
-    <ClInclude Include="Source\Core\Utilities\BufferIterator.h" />
     <ClInclude Include="Source\Core\Utilities\BufferView.h" />
     <ClInclude Include="Source\Core\Utilities\FileIO.h" />
     <ClInclude Include="Source\Core\Utilities\FixedList.h" />
     <ClInclude Include="Source\Core\Utilities\FixedPool.h" />
-    <ClInclude Include="Source\Core\Utilities\ForwardDeclare.h" />
     <ClInclude Include="Source\Core\Utilities\Hash.h" />
     <ClInclude Include="Source\Core\Utilities\FastMap.h" />
-    <ClInclude Include="Source\Core\Utilities\ISingleton.h" />
+    <ClInclude Include="Source\Core\Utilities\Singleton.h" />
     <ClInclude Include="Source\Core\Utilities\FastBuffer.h" />
     <ClInclude Include="Source\Core\Utilities\NameID.h" />
     <ClInclude Include="Source\Core\Utilities\NoCopy.h" />
@@ -1042,7 +1039,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\Rendering\Window.cpp" />
     <ClCompile Include="Source\Core\RHI\Structs.cpp" />
     <ClCompile Include="Source\Core\Timers\ITimer.cpp" />
-    <ClCompile Include="Source\Core\Utilities\TimeHelpers.cpp" />
+    <ClCompile Include="Source\Core\Timers\TimeHelpers.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFramerate.cpp" />
     <ClCompile Include="Source\Core\Timers\TimerFrameRunner.cpp" />
     <ClCompile Include="Source\Core\Utilities\FixedMask.cpp" />

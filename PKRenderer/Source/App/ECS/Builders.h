@@ -1,12 +1,11 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Math/MathFwd.h"
 #include "Core/ECS/EGID.h"
 #include "Core/Rendering/Material.h"
 #include "App/Renderer/EntityEnums.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct EntityDatabase)
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, struct MeshStatic)
+namespace PK { struct EntityDatabase; }
+namespace PK { struct MeshStatic; }
 
 namespace PK::App::EntityBuilders
 {

@@ -53,9 +53,9 @@ namespace PK::App
         RHI::ValidateBuffer<float3x4>(m_matrices, m_transforms.GetCapacity());
         auto matrixView = cmd.BeginBufferWrite<float3x4>(m_matrices.get(), 0u, m_transforms.GetCount());
 
-        for (auto& view : m_transforms)
+        for (auto index = 0u; index < m_transforms.GetCount(); ++index) 
         {
-            matrixView[view.index] = (*view)->localToWorld;
+            matrixView[index] = m_transforms[index]->localToWorld;
         }
 
         cmd->EndBufferWrite(m_matrices.get());

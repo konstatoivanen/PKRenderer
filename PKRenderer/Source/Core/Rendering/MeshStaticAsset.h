@@ -1,5 +1,4 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Assets/Asset.h"
 #include "Core/Rendering/RenderingFwd.h"
 

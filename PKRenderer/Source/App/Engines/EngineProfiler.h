@@ -1,10 +1,9 @@
 #pragma once
-#include "Core/Utilities/ForwardDeclare.h"
 #include "Core/Utilities/FastBuffer.h"
 #include "Core/ControlFlow/IStep.h"
 #include "Core/Timers/TimeFrameInfo.h"
 
-PK_FORWARD_DECLARE_IN_NAMESPACE(PK, class AssetDatabase)
+namespace PK { class AssetDatabase; }
 
 namespace PK::App
 {

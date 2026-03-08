@@ -1,11 +1,11 @@
 #pragma once
 #include <PKAssets/PKAsset.h>
-#include "Core/Utilities/ISingleton.h"
+#include "Core/Utilities/Singleton.h"
 #include "Core/Utilities/NameID.h"
 
 namespace PK::App
 {
-    struct HashCache : public ISingleton<HashCache>
+    struct HashCache : public Singleton<HashCache>
     {
 #define DECLARE_HASH(name) NameID name = #name; \
 

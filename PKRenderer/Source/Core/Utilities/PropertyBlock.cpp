@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #include "Core/Utilities/Hash.h"
-#include "Core/Utilities/ContainerHelpers.h"
+#include "Core/Utilities/Memory.h"
 #include "PropertyBlock.h"
 
 namespace PK
@@ -162,14 +162,14 @@ namespace PK
         {
             size_t size = 0ull;
             size += sizeof(char) * byteCapacity;
-            const auto offsetBuckets = ContainerHelpers::AlignSize<uint64_t>(&size);
+            const auto offsetBuckets = Memory::AlignSize<uint64_t>(&size);
             size += sizeof(uint16_t) * (propertyCapacity * BUCKET_COUNT_FACTOR);
-            const auto offsetProperties = ContainerHelpers::AlignSize<Property>(&size);
+            const auto offsetProperties = Memory::AlignSize<Property>(&size);
             size += sizeof(Property) * propertyCapacity;
 
             auto newBuffer = calloc(size, 1u);
-            auto newBuckets = ContainerHelpers::CastOffsetPtr<uint16_t>(newBuffer, offsetBuckets);
-            auto newProperties = ContainerHelpers::CastOffsetPtr<Property>(newBuffer, offsetProperties);
+            auto newBuckets = Memory::CastOffsetPtr<uint16_t>(newBuffer, offsetBuckets);
+            auto newProperties = Memory::CastOffsetPtr<Property>(newBuffer, offsetProperties);
 
             if (m_buffer)
             {

@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Utilities/Ref.h"
-#include "Core/Utilities/ISingleton.h"
+#include "Core/Utilities/Singleton.h"
 #include "Core/Utilities/FastMap.h"
 #include "Core/Utilities/FixedArena.h"
 #include "Core/CLI/CArguments.h"
@@ -10,7 +10,7 @@
 namespace PK
 {
     class CVariableRegister :
-        public ISingleton<CVariableRegister>,
+        public Singleton<CVariableRegister>,
         public IStep<CArgumentsConst>,
         public IStep<CArgumentConst>
     {
