@@ -1278,9 +1278,6 @@
     <ClInclude Include="Source\Core\Utilities\FileIO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FixedList.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Utilities\FixedPool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1477,9 +1474,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\FastTypeIndex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Utilities\FixedUnique.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Utilities\FixedArena.h">

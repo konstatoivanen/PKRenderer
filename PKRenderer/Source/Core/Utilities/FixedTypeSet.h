@@ -1,6 +1,5 @@
 #pragma once
-#include <type_traits>
-#include "Core/Utilities/FixedUnique.h"
+#include "Core/Utilities/Ref.h"
 
 namespace PK
 {

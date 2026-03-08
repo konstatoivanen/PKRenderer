@@ -272,7 +272,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\FixedString.h" />
     <ClInclude Include="Source\Core\Utilities\FastLinkedList.h" />
     <ClInclude Include="Source\Core\Utilities\FixedTypeSet.h" />
-    <ClInclude Include="Source\Core\Utilities\FixedUnique.h" />
     <ClInclude Include="Source\Core\Utilities\Memory.h" />
     <ClInclude Include="Source\Core\Utilities\Parse.h" />
     <ClInclude Include="Source\Core\Utilities\FastTypeIndex.h" />
@@ -722,7 +721,6 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Utilities\FixedMask.h" />
     <ClInclude Include="Source\Core\Utilities\BufferView.h" />
     <ClInclude Include="Source\Core\Utilities\FileIO.h" />
-    <ClInclude Include="Source\Core\Utilities\FixedList.h" />
     <ClInclude Include="Source\Core\Utilities\FixedPool.h" />
     <ClInclude Include="Source\Core\Utilities\Hash.h" />
     <ClInclude Include="Source\Core\Utilities\FastMap.h" />

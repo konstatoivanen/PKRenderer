@@ -31,10 +31,6 @@ namespace PKAssets
 
 namespace PK
 {
-    template <typename, typename> struct Unique;
-    template <typename T> struct Ref;
-    template <typename T> struct Weak;
-
     struct NameID;
     struct FenceRef;
     class PropertyBlock;

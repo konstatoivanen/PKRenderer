@@ -5,8 +5,9 @@ namespace PK
 {
     using nullptr_t = decltype(nullptr);
     template <typename, typename> struct Unique;
-    template <typename T> struct Ref;
-    template <typename T> struct Weak;
+    template <typename> struct FixedUnique;
+    template <typename> struct Ref;
+    template <typename> struct Weak;
 
     template<typename T>
     struct DefaultDeleter
@@ -111,6 +112,48 @@ namespace PK
 
         UniquePair<T, D> pair;
     }; 
+
+    template<typename T>
+    struct FixedUnique
+    {
+        FixedUnique() noexcept : m_isCreated(false) {}
+        FixedUnique(FixedUnique const&) = delete;
+        ~FixedUnique() noexcept { Delete(); }
+        FixedUnique& operator=(FixedUnique const&) = delete;
+
+        const T* get() const  noexcept { return m_isCreated ? &value : nullptr; }
+        T* get() noexcept { return m_isCreated ? &value : nullptr; }
+
+        operator const T* () const noexcept { return get(); }
+        operator T* () noexcept { return get(); }
+
+        const T* operator -> () const noexcept { return get(); }
+        T* operator -> () noexcept { return get(); }
+
+        template<typename ... Args>
+        void New(Args&& ... args) noexcept
+        {
+            if (!m_isCreated)
+            {
+                new(&value) T(std::forward<Args>(args)...);
+                m_isCreated = true;
+            }
+        }
+
+        void Delete() noexcept
+        {
+            if (m_isCreated)
+            {
+                reinterpret_cast<T*>(&value)->~T();
+                m_isCreated = false;
+            }
+        }
+
+    private:
+        bool m_isCreated;
+        struct U { constexpr U() noexcept {} };
+        union { U other; T value; };
+    };
 
     struct SharedObjectBase
     {

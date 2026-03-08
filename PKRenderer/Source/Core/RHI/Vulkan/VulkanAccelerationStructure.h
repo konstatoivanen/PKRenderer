@@ -1,6 +1,5 @@
 #pragma once
 #include "Core/Utilities/FastMap.h"
-#include "Core/Utilities/FixedUnique.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/Vulkan/VulkanCommon.h"
 
