@@ -187,4 +187,4 @@ namespace PK
 }
 
 template<>
-bool PK::Asset::IsValidExtension<PK::Material>(const char* extension) { return strcmp(extension, ".material") == 0; }
+bool PK::Asset::IsValidExtension<PK::Material>(const wchar_t* extension) { return wcscmp(extension, L".material") == 0; }

@@ -33,7 +33,7 @@ namespace PK
 #define PK_YAML_ASSET_BEGIN(TType, TExtension) \
     struct TType : public PK::IYamlStruct, public PK::Asset \
     { \
-        constexpr static const char* Extension = TExtension; \
+        constexpr static const wchar_t* Extension = TExtension; \
         TType() {}; \
         TType(const char* filepath) { YamlLoadFromFile(filepath); }; \
     private: \
@@ -107,5 +107,5 @@ namespace PK
     }; \
 
 #define PK_YAML_ASSET_ASSETDATABSE_INTERFACE(type)\
-template<> inline bool PK::Asset::IsValidExtension<type>(const char* extension) { return strcmp(extension, type::Extension) == 0; }\
+template<> inline bool PK::Asset::IsValidExtension<type>(const wchar_t* extension) { return wcscmp(extension, type::Extension) == 0; }\
 

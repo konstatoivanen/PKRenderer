@@ -83,4 +83,4 @@ namespace PK
 }
 
 template<>
-bool PK::Asset::IsValidExtension<PK::TextureAsset>(const char* extension) { return strcmp(extension, ".pktexture") == 0; }
+bool PK::Asset::IsValidExtension<PK::TextureAsset>(const wchar_t* extension) { return wcscmp(extension, L".pktexture") == 0; }

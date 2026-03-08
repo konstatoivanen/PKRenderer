@@ -191,4 +191,4 @@ namespace PK
 }
 
 template<>
-bool PK::Asset::IsValidExtension<PK::Mesh>(const char* extension) { return strcmp(extension, ".pkmesh") == 0; }
+bool PK::Asset::IsValidExtension<PK::Mesh>(const wchar_t* extension) { return wcscmp(extension, L".pkmesh") == 0; }

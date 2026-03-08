@@ -20,6 +20,11 @@ namespace PK::Parse
     template<typename T>
     FixedString32 ToString(const T& value);
 
+    FixedString32 BytesToString(size_t bytes);
+    
+    std::wstring ToWideString(const char* str, size_t length);
+    std::string FromWideString(const wchar_t* str, size_t length);
+
     template<typename T>
     void StringsToArray(const char* const* strs, T* outArray, const uint32_t count)
     {
@@ -79,11 +84,6 @@ namespace PK::Parse
 
         return result;
     }
-
-    std::string BytesToString(size_t bytes);
-
-    std::wstring ToWideString(const char* str, size_t length);
-    std::string FromWideString(const wchar_t* str, size_t length);
 
     FixedString64 GetFilePathStem(const char* str);
 

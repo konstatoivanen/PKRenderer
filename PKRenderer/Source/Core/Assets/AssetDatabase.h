@@ -173,7 +173,7 @@ namespace PK
             {
                 for (const auto& entry : std::filesystem::directory_iterator(directory))
                 {
-                    if (Asset::IsValidExtension<T>(entry.path().extension().string().c_str()))
+                    if (Asset::IsValidExtension<T>(entry.path().extension().c_str()))
                     {
                         Load<T>(AssetID(entry.path().string().c_str()), CacheMode::Persistent, forceReload);
                     }

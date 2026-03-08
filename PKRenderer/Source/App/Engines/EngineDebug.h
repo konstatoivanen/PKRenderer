@@ -13,7 +13,7 @@ namespace PK::App
 {
     struct IGizmosRenderer;
 
-    PK_YAML_ASSET_BEGIN(EngineDebugConfig, ".cfg")
+    PK_YAML_ASSET_BEGIN(EngineDebugConfig, L".cfg")
         PK_YAML_MEMBER(float3, CameraStartPosition, PK_FLOAT3_ZERO)
         PK_YAML_MEMBER(float3, CameraStartRotation, PK_FLOAT3_ZERO)
         PK_YAML_MEMBER(float, CameraSpeed, 5.0f)

@@ -48,11 +48,11 @@ namespace PK::Parse
     template<> FixedString32 ToString(const float& value) { return FixedString32("%fg", value); }
     template<> FixedString32 ToString(const bool& value) { return FixedString32("%u", (uint8_t)value); }
 
-    std::string BytesToString(size_t bytes)
+    FixedString32 BytesToString(size_t bytes)
     {
         if (bytes == 0)
         {
-            return "0B";
+            return FixedString32("0B");
         }
 
         auto mag = (int)(log(bytes) / log(1024));
@@ -78,7 +78,7 @@ namespace PK::Parse
             default: buffer[length + 0u] = 'M'; buffer[length + 1u] = 'B'; buffer[length + 2u] = '\0'; break;
         }
 
-        return std::string(buffer);
+        return FixedString32(length + 2u, buffer);
     }
 
     std::wstring ToWideString(const char* str, size_t length)

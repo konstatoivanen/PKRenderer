@@ -30,7 +30,7 @@ namespace PK
         Ref<T> CreateAliasRef(T* object) { return Ref<T>(m_referenceObject, object); }
 
         template<typename T>
-        static bool IsValidExtension(const char* extension);
+        static bool IsValidExtension(const wchar_t* extension);
 
     private:
         SharedObject* m_sharedObject = nullptr;
