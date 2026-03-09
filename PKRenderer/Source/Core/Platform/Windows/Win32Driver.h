@@ -177,7 +177,7 @@ namespace PK
         void SetClipboardString(const char* str) final;
         void SetConsoleColor(uint32_t color) const final;
         void SetConsoleVisible(bool value) const final;
-        bool RemoteProcess(const char* executable, const char* arguments, std::string& outError) const final;
+        uint32_t RemoteProcess(const char* executable, const char* arguments) const final;
 
         static bool IsGreaterOSVersion(WORD major, WORD minor, WORD sp);
         static bool IsGreaterWin10Build(WORD build);

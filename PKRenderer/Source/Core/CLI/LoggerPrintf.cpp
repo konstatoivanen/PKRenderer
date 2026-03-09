@@ -23,7 +23,11 @@ namespace PK
 
     void LoggerPrintf::SetColor(LogColor color)
     {
-        Platform::SetConsoleColor(color);
+        if (m_currentColor != color)
+        {
+            Platform::SetConsoleColor(color);
+            m_currentColor = color;
+        }
     }
 
     void LoggerPrintf::SetShowConsole(bool value)

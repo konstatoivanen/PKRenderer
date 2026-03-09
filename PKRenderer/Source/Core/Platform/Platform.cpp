@@ -109,8 +109,8 @@ namespace PK
         PlatformDriver::Get()->SetConsoleVisible(value); 
     }
 
-    bool Platform::RemoteProcess(const char* executable, const char* arguments, std::string& outError) 
+    uint32_t Platform::RemoteProcess(const char* executable, const char* arguments)
     { 
-        return PlatformDriver::Get()->RemoteProcess(executable, arguments, outError); 
+        return PlatformDriver::Get()->RemoteProcess(executable, arguments); 
     }
 }

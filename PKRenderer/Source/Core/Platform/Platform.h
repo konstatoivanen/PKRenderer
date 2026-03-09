@@ -2,6 +2,8 @@
 // Some manual guarding to avoid user error
 #define PK_IS_PLATFORM_HEADER 1
 
+#define _CRT_INTERNAL_NONSTDC_NAMES 1
+
 // Compiler defines
 #if __cplusplus < 201703L
     #error "C++ 17 support or newer required!"
@@ -98,7 +100,7 @@ namespace PK
 
         void SetConsoleColor(uint32_t color);
         void SetConsoleVisible(bool value);
-        bool RemoteProcess(const char* executable, const char* arguments, std::string& outError);
+        uint32_t RemoteProcess(const char* executable, const char* arguments);
 
         inline static uint32_t InterlockedExchange(volatile uint32_t* dst, uint32_t exchange);
         inline static uint32_t InterlockedCompareExchange(volatile uint32_t* dst, uint32_t exchange, uint32_t comperand);

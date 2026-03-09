@@ -1,5 +1,4 @@
 #include "PrecompiledHeader.h"
-#include <filesystem>
 #include "Core/Utilities/FileIO.h"
 #include "Core/CLI/Log.h"
 #include "Core/CLI/CVariableRegister.h"
@@ -77,7 +76,7 @@ namespace PK::App
         FixedString32 filename("Screenshot0.bmp");
         auto index = 0;
 
-        while (std::filesystem::exists(filename.c_str()))
+        while (FileIO::FileExists(filename.c_str()))
         {
             filename = FixedString32("Screenshot%i.bmp", ++index);
         }

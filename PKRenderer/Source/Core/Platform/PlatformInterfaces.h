@@ -108,7 +108,7 @@ namespace PK
 
         virtual void SetConsoleColor(uint32_t color) const = 0;
         virtual void SetConsoleVisible(bool value) const = 0;
-        virtual bool RemoteProcess(const char* executable, const char* arguments, std::string& outError) const = 0;
+        virtual uint32_t RemoteProcess(const char* executable, const char* arguments) const = 0;
 
         static inline PlatformDriver* Get() { return s_instance; }
         protected: inline static PlatformDriver* s_instance = nullptr;

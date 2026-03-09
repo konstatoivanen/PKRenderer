@@ -668,21 +668,14 @@ namespace PK
         ::ShowWindow(window, value ? SW_SHOW : SW_HIDE);
     }
 
-    bool Win32Driver::RemoteProcess(const char* executable, const char* arguments, std::string& outError) const
+    uint32_t Win32Driver::RemoteProcess(const char* executable, const char* arguments) const
     {
         const auto executableLen = strlen(executable);
         const auto argumentsLen = strlen(arguments);
 
-        if (executableLen == 0)
+        if (executableLen == 0 || argumentsLen == 0)
         {
-            outError = "Execute remote processs executable path was empty";
-            return false;
-        }
-
-        if (argumentsLen == 0)
-        {
-            outError = "Execute remote processs arguments were empty";
-            return false;
+            return 1u;
         }
 
         STARTUPINFO si;
@@ -710,14 +703,12 @@ namespace PK
 
         if (result == 0)
         {
-            outError = Parse::FormatToString("Execute remote processs failed with error code: %lli", GetLastError());
-            return false;
+            return ::GetLastError();
         }
 
         ::WaitForSingleObject(pi.hProcess, INFINITE);
         ::CloseHandle(pi.hProcess);
-
-        return true;
+        return 0u;
     }
 
 

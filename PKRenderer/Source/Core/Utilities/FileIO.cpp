@@ -1,7 +1,19 @@
 #include "PrecompiledHeader.h"
-#include <filesystem>
+#include <sys/stat.h>
 #include <stdio.h>
+#include <filesystem>
+#include "Core/Utilities/Parse.h"
 #include "FileIO.h"
+
+#if !defined(S_ISREG) && defined(S_IFMT) && defined(S_IFREG)
+#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
+#endif
+#if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#endif
+
+// std::filesystem is faster than win emulated posix lookups.
+#define USE_STD_FILESYSTEM 1
 
 namespace PK::FileIO
 {
@@ -17,14 +29,150 @@ namespace PK::FileIO
     constexpr static const int32_t MAX_NUMBER_OF_COLORS = 0;
     constexpr static const int32_t ALL_COLORS_REQUIRED = 0;
 
-    Image* ReadBMP(const char* fileName)
+    bool DirectoryExists(const char* path)
     {
-        if (fileName == nullptr)
+        #if USE_STD_FILESYSTEM
+        return std::filesystem::exists(path);
+        #else
+        struct stat sb;
+        return stat(path, &sb) == 0 && S_ISDIR(sb.st_mode);
+        #endif
+    }
+
+    bool FileExists(const char* path)
+    {
+        #if USE_STD_FILESYSTEM
+        return std::filesystem::exists(path);
+        #else
+        struct stat sb;
+        return stat(path, &sb) == 0 && S_ISREG(sb.st_mode);
+        #endif
+    }
+
+    FILE* OpenFile(const char* filepath, const char* openMode, size_t* outSize = nullptr)
+    {
+        if (filepath == nullptr || strlen(filepath) == 0)
         {
             return nullptr;
         }
 
-        FILE* file = fopen(fileName, "rb");
+        if (!FileExists(filepath))
+        {
+            return nullptr;
+        }
+
+        FILE* file = fopen(filepath, openMode);
+
+        if (file == nullptr)
+        {
+            return nullptr;
+        }
+
+        if (outSize)
+        {
+            struct stat filestat;
+            int fileNumber = _fileno(file);
+
+            if (fstat(fileNumber, &filestat) != 0)
+            {
+                fclose(file);
+                return nullptr;
+            }
+
+            *outSize = filestat.st_size;
+
+            if (*outSize == 0)
+            {
+                fclose(file);
+                return nullptr;
+            }
+        }
+
+        return file;
+    }
+
+    int ReadBinary(const char* filepath, bool isText, void** data, size_t* size)
+    {
+        FILE* file = OpenFile(filepath, isText ? "r" : "rb", size);
+
+        if (file == nullptr)
+        {
+            return -1;
+        }
+
+        *data = malloc(*size);
+
+        if (*data == nullptr)
+        {
+            fclose(file);
+            return -1;
+        }
+
+        fread(*data, sizeof(char), *size, file);
+        fclose(file);
+        return 0;
+    }
+
+    int ReadBinaryInPlace(const char* filepath, bool isText, size_t maxSize, void* data, size_t* size)
+    {
+        FILE* file = OpenFile(filepath, isText ? "r" : "rb", size);
+
+        if (file == nullptr)
+        {
+            return -1;
+        }
+
+        if (*size >= maxSize)
+        {
+            fclose(file);
+            return -1;
+        }
+
+        fread(data, sizeof(char), *size, file);
+        fclose(file);
+        return 0;
+    }
+
+    int WriteBinary(const char* filepath, bool isText, void* data, size_t size)
+    {
+        FILE* file = nullptr;
+
+        auto path = std::filesystem::path(filepath).remove_filename().string();
+        path = path.substr(0, path.length() - 1);
+
+        if (!std::filesystem::exists(path))
+        {
+            try
+            {
+                std::filesystem::create_directories(path);
+            }
+            catch (std::exception& e)
+            {
+                printf("%s", e.what());
+            }
+        }
+
+        file = fopen(filepath, isText ? "w" : "wb");
+
+        if (file == nullptr)
+        {
+            return -1;
+        }
+
+        fwrite(data, sizeof(char), size, file);
+        return fclose(file);
+    }
+
+
+    Image* ReadBMP(const char* fileName)
+    {
+        FILE* file = OpenFile(fileName, "rb");
+
+        if (file == nullptr)
+        {
+            return nullptr;
+        }
+
         int32_t dataOffset;
         int16_t bitsPerPixel;
         int32_t width;
@@ -35,6 +183,7 @@ namespace PK::FileIO
 
         if (header[0] != 'B' || header[1] != 'M')
         {
+            fclose(file);
             return nullptr;
         }
 
@@ -83,12 +232,12 @@ namespace PK::FileIO
 
     Image* ReadICO(const char* fileName)
     {
-        if (fileName == nullptr)
+        FILE* file = OpenFile(fileName, "rb");
+
+        if (file == nullptr)
         {
             return nullptr;
         }
-
-        FILE* file = fopen(fileName, "rb");
         
         uint16_t reserved;
         uint16_t imageType;
@@ -206,6 +355,7 @@ namespace PK::FileIO
     void WriteBMP(const char* fileName, const Image& image)
     {
         FILE* outputFile = fopen(fileName, "wb");
+
         //*****HEADER************//
         const char* BM = "BM";
         fwrite(&BM[0], 1, 1, outputFile);
@@ -251,116 +401,5 @@ namespace PK::FileIO
         }
 
         fclose(outputFile);
-    }
-
-    FILE* OpenFile(const char* filepath, const char* openMode, size_t* outSize)
-    {
-        if (strlen(filepath) == 0)
-        {
-            return nullptr;
-        }
-
-        if (!std::filesystem::exists(filepath))
-        {
-            return nullptr;
-        }
-
-        FILE* file = fopen(filepath, openMode);
-
-        if (file == nullptr)
-        {
-            return nullptr;
-        }
-
-        struct stat filestat;
-        int fileNumber = _fileno(file);
-
-        if (fstat(fileNumber, &filestat) != 0)
-        {
-            fclose(file);
-            return nullptr;
-        }
-
-        *outSize = filestat.st_size;
-
-        if (*outSize == 0)
-        {
-            fclose(file);
-            return nullptr;
-        }
-
-        return file;
-    }
-
-    int ReadBinary(const char* filepath, bool isText, void** data, size_t* size)
-    {
-        FILE* file = OpenFile(filepath, isText ? "r" : "rb", size);
-
-        if (file == nullptr)
-        {
-            return -1;
-        }
-
-        *data = malloc(*size);
-
-        if (*data == nullptr)
-        {
-            fclose(file);
-            return -1;
-        }
-
-        fread(*data, sizeof(char), *size, file);
-        fclose(file);
-        return 0;
-    }
-
-    int ReadBinaryInPlace(const char* filepath, bool isText, size_t maxSize, void* data, size_t* size)
-    {
-        FILE* file = OpenFile(filepath, isText ? "r" : "rb", size);
-
-        if (file == nullptr)
-        {
-            return -1;
-        }
-
-        if (*size >= maxSize)
-        {
-            fclose(file);
-            return -1;
-        }
-
-        fread(data, sizeof(char), *size, file);
-        fclose(file);
-        return 0;
-    }
-
-    int WriteBinary(const char* filepath, bool isText, void* data, size_t size)
-    {
-        FILE* file = nullptr;
-
-        auto path = std::filesystem::path(filepath).remove_filename().string();
-        path = path.substr(0, path.length() - 1);
-
-        if (!std::filesystem::exists(path))
-        {
-            try
-            {
-                std::filesystem::create_directories(path);
-            }
-            catch (std::exception& e)
-            {
-                printf("%s", e.what());
-            }
-        }
-
-        file = fopen(filepath, isText ? "w" : "wb");
-
-        if (file == nullptr)
-        {
-            return -1;
-        }
-
-        fwrite(data, sizeof(char), size, file);
-        return fclose(file);
     }
 }

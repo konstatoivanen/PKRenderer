@@ -3,6 +3,7 @@
 #include "Core/Utilities/Singleton.h"
 #include "Core/Utilities/FastTypeIndex.h"
 #include "Core/Utilities/FastMap.h"
+#include "Core/Utilities/FileIO.h"
 #include "Core/Assets/Asset.h"
 #include "Core/Assets/AssetImportEvent.h"
 #include "Core/ControlFlow/Sequencer.h"
@@ -151,7 +152,7 @@ namespace PK
         Ref<T> Load(AssetID assetId, CacheMode cacheMode = CacheMode::Persistent, bool forceReload = false)
         {
             FixedString256 filepath(assetId.c_str());
-            PK_THROW_ASSERT(std::filesystem::exists(filepath.c_str()), "Asset not found at path: %s", filepath.c_str());
+            PK_THROW_ASSERT(FileIO::FileExists(filepath.c_str()), "Asset not found at path: %s", filepath.c_str());
             auto object = CreateAssetObject<T>(assetId, cacheMode);
             LoadAsset(object, forceReload);
             return object->GetReference();
@@ -169,7 +170,7 @@ namespace PK
             constexpr auto name = pk_base_type_name<T>();
             PK_LOG_VERBOSE_FUNC("%.*s, %s", name.count, name.data, directory);
 
-            if (std::filesystem::exists(directory))
+            if (FileIO::DirectoryExists(directory))
             {
                 for (const auto& entry : std::filesystem::directory_iterator(directory))
                 {

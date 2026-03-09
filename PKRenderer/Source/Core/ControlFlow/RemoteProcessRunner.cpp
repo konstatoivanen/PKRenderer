@@ -33,12 +33,14 @@ namespace PK
         PK_LOG_NEWLINE();
         PK_LOG_INFO("ExecuteRemoteProcess: %s  %s", command.executablePath, command.arguments);
         PK_LOG_INFO("----------REMOTE EXECUTE SCOPE----------");
+    
+        auto result = Platform::RemoteProcess(command.executablePath, command.arguments);
 
-        std::string error;
-        if (!Platform::RemoteProcess(command.executablePath, command.arguments, error))
+        if (result != 0u)
         {
             PK_LOG_INFO("----------REMOTE EXECUTE SCOPE----------");
             PK_LOG_INFO("ExecuteRemoteProcess: Failed to run %s %s", command.executablePath, command.arguments);
+            PK_LOG_INFO("Error code: %u", result);
             PK_LOG_NEWLINE();
         }
         else

@@ -58,7 +58,7 @@ namespace PK
     {
         PK_LOG_VERBOSE_FUNC("%s", directory);
 
-        if (std::filesystem::exists(directory))
+        if (FileIO::DirectoryExists(directory))
         {
             auto directoryLen = strlen(directory);
 
@@ -76,7 +76,7 @@ namespace PK
     {
         PK_LOG_VERBOSE_FUNC("%s", directory);
 
-        if (std::filesystem::exists(directory))
+        if (FileIO::DirectoryExists(directory))
         {
             auto directoryLen = strlen(directory);
 
@@ -127,7 +127,7 @@ namespace PK
     {
         PK_LOG_VERBOSE_FUNC("%s", directory);
 
-        if (std::filesystem::exists(directory))
+        if (FileIO::DirectoryExists(directory))
         {
             auto directoryLen = strlen(directory);
 
@@ -145,7 +145,7 @@ namespace PK
     {
         PK_LOG_VERBOSE_FUNC("%s", directory);
 
-        if (std::filesystem::exists(directory))
+        if (FileIO::DirectoryExists(directory))
         {
             auto directoryLen = strlen(directory);
 
@@ -199,7 +199,7 @@ namespace PK
     {
         PK_LOG_HEADER_FUNC("%s", directory);
 
-        if (std::filesystem::exists(directory))
+        if (FileIO::DirectoryExists(directory))
         {
             auto directoryLen = strlen(directory);
 
@@ -217,7 +217,7 @@ namespace PK
     {
         PK_LOG_HEADER_FUNC("%s", directory);
 
-        if (std::filesystem::exists(directory))
+        if (FileIO::DirectoryExists(directory))
         {
             auto directoryLen = strlen(directory);
 
