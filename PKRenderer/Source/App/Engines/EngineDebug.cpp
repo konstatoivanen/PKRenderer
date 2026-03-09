@@ -28,16 +28,16 @@ namespace PK::App
         m_assetDatabase = assetDatabase;
         auto config = assetDatabase->Load<EngineDebugConfig>("Content/Configs/DebugEngine.cfg");
 
-        auto columnMesh = assetDatabase->Load<MeshStaticAsset>("Content/Models/MDL_Columns.pkmesh");
-        auto rocksMesh = assetDatabase->Load<MeshStaticAsset>("Content/Models/MDL_Rocks.pkmesh");
+        auto columnMesh = assetDatabase->Load<MeshStaticAsset>("Content/Models/MDL_Columns.pkmesh", CacheMode::Shared);
+        auto rocksMesh = assetDatabase->Load<MeshStaticAsset>("Content/Models/MDL_Rocks.pkmesh", CacheMode::Shared);
         // @TODO move these to some global resources initializer.
         auto sphereMesh = assetDatabase->CreateVirtual<MeshStaticAsset>("Primitive_Sphere", MeshUtilities::CreateSphereMeshStatic(baseMesh, PK_FLOAT3_ZERO, 1.0f));
         auto planeMesh = assetDatabase->CreateVirtual<MeshStaticAsset>("Primitive_Plane", MeshUtilities::CreatePlaneMeshStatic(baseMesh, PK_FLOAT2_ZERO, PK_FLOAT2_ONE, { 16, 16 }));
 
-        auto materialSand = assetDatabase->Load<Material>("Content/Materials/M_Sand.material");
-        auto materialAsphalt = assetDatabase->Load<Material>("Content/Materials/M_Asphalt.material");
-        auto materialMarble = assetDatabase->Load<Material>("Content/Materials/M_Marble.material");
-        auto materialPlaster = assetDatabase->Load<Material>("Content/Materials/M_Plaster.material");
+        auto materialSand = assetDatabase->Load<Material>("Content/Materials/M_Sand.material", CacheMode::Shared);
+        auto materialAsphalt = assetDatabase->Load<Material>("Content/Materials/M_Asphalt.material", CacheMode::Shared);
+        auto materialMarble = assetDatabase->Load<Material>("Content/Materials/M_Marble.material", CacheMode::Shared);
+        auto materialPlaster = assetDatabase->Load<Material>("Content/Materials/M_Plaster.material", CacheMode::Shared);
 
         auto minpos = float3(-70, -6, -70);
         auto maxpos = float3(+70, -4, +70);

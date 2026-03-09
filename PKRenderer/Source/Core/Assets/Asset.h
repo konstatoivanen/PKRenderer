@@ -27,7 +27,7 @@ namespace PK
         bool operator==(const Asset& other) const { return GetAssetID() == ((Asset&)other).GetAssetID(); }
 
         template<typename T>
-        Ref<T> CreateAliasRef(T* object) { return Ref<T>(m_referenceObject, object); }
+        Ref<T> CreateAliasRef(T* object) { return Ref<T>(m_sharedObject, object); }
 
         template<typename T>
         static bool IsValidExtension(const wchar_t* extension);

@@ -93,7 +93,12 @@ namespace PK
         m_staticMesh->baseMesh->Deallocate(m_staticMesh); 
     }
 
-    const SubMeshStatic* MeshStaticAsset::GetStaticSubmesh(uint32_t localIndex) const 
+    MeshStaticRef MeshStaticAsset::GetMeshStatic()
+    {
+        return CreateAliasRef(m_staticMesh);
+    }
+
+    const SubMeshStatic* MeshStaticAsset::GetStaticSubmesh(uint32_t localIndex) const
     { 
         return m_staticMesh->GetSubmesh(localIndex); 
     }

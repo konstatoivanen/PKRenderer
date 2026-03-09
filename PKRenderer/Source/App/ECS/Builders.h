@@ -10,7 +10,7 @@ namespace PK { struct MeshStatic; }
 namespace PK::App::EntityBuilders
 {
     EGID CreateEntityMeshStatic(EntityDatabase* entityDb,
-        MeshStatic* mesh,
+        MeshStaticRef mesh,
         const std::initializer_list<MaterialTarget>& materials,
         const float3& position,
         const float3& rotation,

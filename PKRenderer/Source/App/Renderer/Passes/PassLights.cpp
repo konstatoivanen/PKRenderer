@@ -293,7 +293,7 @@ namespace PK::App
                     const auto& info = shadowCasters[casterIndex];
                     auto entity = context->entityDb->Query<EntityViewMeshStatic>(EGID(info.entityId, (uint32_t)ENTITY_GROUPS::ACTIVE));
                     auto transform = entity->transform;
-                    auto mesh = entity->staticMesh->sharedMesh;
+                    auto mesh = entity->staticMesh->sharedMesh.get();
                     auto userdata = (lightIndex & 0xFFFFu) | ((layerOffset + info.clipId) << 16u);
 
                     for (const auto& kv : entity->materials->materials)

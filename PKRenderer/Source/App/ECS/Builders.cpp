@@ -63,7 +63,7 @@ namespace PK::App::EntityBuilders
     static void CreateEntityViewMeshStatic(EntityDatabase* entityDb,
         T* implementer,
         const EGID& egid,
-        MeshStatic* staticMesh,
+        MeshStaticRef staticMesh,
         const std::initializer_list<MaterialTarget>& materials)
     {
         entityDb->ReserveView(implementer, egid, &EntityViewMeshStatic::primitive, &EntityViewMeshStatic::materials, &EntityViewMeshStatic::staticMesh, &EntityViewMeshStatic::transform);
@@ -185,7 +185,7 @@ namespace PK::App::EntityBuilders
     }
 
     EGID CreateEntityMeshStatic(EntityDatabase* entityDb,
-        MeshStatic* mesh,
+        MeshStaticRef mesh,
         const std::initializer_list<MaterialTarget>& materials,
         const float3& position,
         const float3& rotation,
@@ -194,7 +194,7 @@ namespace PK::App::EntityBuilders
     {
         auto egid = entityDb->ReserveEntityId((uint)ENTITY_GROUPS::ACTIVE);
         auto implementer = entityDb->ReserveImplementer<ImplementerMeshStatic>();
-        CreateEntityViewTransform(entityDb, implementer, egid, position, rotation, PK_FLOAT3_ONE * size, GetSubmeshRangeBounds(mesh, materials));
+        CreateEntityViewTransform(entityDb, implementer, egid, position, rotation, PK_FLOAT3_ONE * size, GetSubmeshRangeBounds(mesh.get(), materials));
         CreateEntityViewScenePrimitive(entityDb, implementer, egid, flags | ScenePrimitiveFlags::Mesh);
         CreateEntityViewMeshStatic(entityDb, implementer, egid, mesh, materials);
         return egid;

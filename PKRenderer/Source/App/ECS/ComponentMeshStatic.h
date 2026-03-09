@@ -5,7 +5,7 @@ namespace PK::App
 {
     struct ComponentMeshStatic
     {
-        MeshStatic* sharedMesh = nullptr;
+        MeshStaticRef sharedMesh = nullptr;
         virtual ~ComponentMeshStatic() = default;
     };
 }

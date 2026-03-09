@@ -30,6 +30,7 @@ namespace PK
     typedef Ref<Font> FontRef;
     typedef Ref<Mesh> MeshRef;
     typedef Ref<MeshStaticAsset> MeshStaticAssetRef;
+    typedef Ref<MeshStatic> MeshStaticRef;
     typedef Ref<ConstantBuffer> ConstantBufferRef;
     typedef Unique<Window> WindowScope;
 }

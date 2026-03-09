@@ -10,7 +10,7 @@ namespace PK
         MeshStaticAsset(MeshStatic* staticMesh);
         ~MeshStaticAsset();
 
-        inline MeshStatic* GetMeshStatic() const { return m_staticMesh; }
+        MeshStaticRef GetMeshStatic();
         const SubMeshStatic* GetStaticSubmesh(uint32_t localIndex) const;
         uint32_t GetSubmeshCount() const;
 
