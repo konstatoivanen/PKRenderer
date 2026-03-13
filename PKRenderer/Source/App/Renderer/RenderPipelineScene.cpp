@@ -248,6 +248,7 @@ namespace PK::App
             
             constants->Set<float4>(hash->pk_MeshletCullParams, { 1.0f / (viewToClip[1][1] * resolution.y * 0.5f), view->fieldOfView * aspect, view->fieldOfView, 1.0f });
 
+            m_passHierarchicalDepth.SetViewConstants(view);
             m_passLights.SetViewConstants(view);
             m_passSceneEnv.SetViewConstants(view);
             m_passSceneGI.SetViewConstants(view);

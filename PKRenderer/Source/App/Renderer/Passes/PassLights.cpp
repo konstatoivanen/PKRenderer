@@ -165,6 +165,7 @@ namespace PK::App
         const auto shadowCascadeZSplits = Math::GetCascadeDepthsFloat4(view->znear, view->zfar, m_cascadeDistribution, tileZParams);
         view->constants.Set<float4>(hash->pk_ShadowCascadeZSplits, shadowCascadeZSplits);
         view->constants.Set<float4>(hash->pk_LightTileZParams, float4(tileZParams, 0.0f));
+        RHI::GetQueues()->GetCommandBuffer(QueueType::Transfer)->Clear(m_lightsCounter.get(), 0, sizeof(uint32_t), 0u);
     }
 
     void PassLights::BuildLights(RenderPipelineContext* context)
@@ -489,7 +490,6 @@ namespace PK::App
             RHI::SetBuffer(hash->pk_LightLists, resources->lightsLists.get());
         }
 
-        cmd->Clear(m_lightsCounter.get(), 0, sizeof(uint32_t), 0u);
         cmd.Dispatch(m_computeLightAssignment, resolution);
     }
 }

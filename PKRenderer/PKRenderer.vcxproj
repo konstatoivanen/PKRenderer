@@ -739,6 +739,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <None Include="Content\Shaders\CS_IntegrateDFG.shader" />
     <None Include="Content\Shaders\CS_SceneEnv_IntegrateISL.shader" />
     <None Include="Content\Shaders\CS_VolumetricFog.shader" />
+    <None Include="Content\Shaders\includes\ffx_spd.glsl" />
     <None Include="Content\Shaders\includes\Quaternion.glsl" />
     <None Include="Content\Shaders\VS_SceneEnv_Background.shader" />
     <None Include="Content\Shaders\VS_GUI.shader" />

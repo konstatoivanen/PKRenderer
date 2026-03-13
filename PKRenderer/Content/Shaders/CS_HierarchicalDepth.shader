@@ -1,132 +1,77 @@
 
-#pragma pk_multi_compile _ PK_HIZ_FINAL_PASS
 #pragma pk_program SHADER_STAGE_COMPUTE HierarchicalDepthCs
 
 #include "includes/GBuffers.glsl"
-#include "includes/ComputeQuadSwap.glsl"
 
 uniform writeonly restrict image2DArray pk_Image;
 uniform writeonly restrict image2DArray pk_Image1;
 uniform writeonly restrict image2DArray pk_Image2;
 uniform writeonly restrict image2DArray pk_Image3;
 uniform writeonly restrict image2DArray pk_Image4;
+uniform writeonly restrict image2DArray pk_Image5;
+uniform coherent image2DArray pk_Image6; // Load store for last mips.
+uniform writeonly restrict image2DArray pk_Image7;
+uniform writeonly restrict image2DArray pk_Image8;
+uniform writeonly restrict image2DArray pk_Image9;
+uniform writeonly restrict image2DArray pk_Image10;
+uniform writeonly restrict image2DArray pk_Image11;
+uniform writeonly restrict image2DArray pk_Image12;
+uniform RWBuffer<uint, 1u> pk_WorkgroupCounter;
+uniform uint2 pk_NumMipsAndWorkGroups;
 
-shared float2 lds_Depth;
+#define SpdFormat float2
 
-[pk_numthreads(PK_W_ALIGNMENT_8, PK_W_ALIGNMENT_8, 1u)]
+shared float lds_Depth_Min[16][16];
+shared float lds_Depth_Max[16][16];
+
+float2 SpdReduce4(float2 v0, float2 v1, float2 v2, float2 v3)
+{
+    float2 r;
+    r.x = min(min(min(v0.x, v1.x), v2.x), v3.x);
+    r.y = max(max(max(v0.y, v1.y), v2.y), v3.y);
+    return r;
+}
+
+float2 SpdLoadIntermediate(uint x, uint y) { return float2(lds_Depth_Min[x][y], lds_Depth_Max[x][y]);  }
+void SpdStoreIntermediate(uint x, uint y, float2 value) { lds_Depth_Min[x][y] = value.x; lds_Depth_Max[x][y] = value.y; }
+void SpdIncreaseAtomicCounter() { atomicAdd(pk_WorkgroupCounter, 1u); }
+uint SpdGetAtomicCounter() {  return pk_WorkgroupCounter; }
+
+float2 SpdReduceLoadSourceImage4(int2 base)
+{
+    const float4 depths = GatherViewDepths((base + 1.0f.xx) / pk_ScreenSize.xy);
+
+    // Copy source values to first image
+    [[unroll]]
+    for (uint i = 0; i < 2; ++i)
+    {
+        imageStore(pk_Image, int3(base + int2(0, 1), i), depths.xxxx);
+        imageStore(pk_Image, int3(base + int2(1, 1), i), depths.yyyy);
+        imageStore(pk_Image, int3(base + int2(1, 0), i), depths.zzzz);
+        imageStore(pk_Image, int3(base + int2(0, 0), i), depths.wwww);
+    }
+
+    return float2(cmin(depths), cmax(depths));
+}
+
+float2 SpdLoadMip5(int2 coord) { return float2(imageLoad(pk_Image6, int3(coord, 0)).x, imageLoad(pk_Image6, int3(coord, 1)).x); }
+void SpdStoreMip0(int2 coord, float2 v) { imageStore(pk_Image1, int3(coord, 0), v.xxxx); imageStore(pk_Image1, int3(coord, 1), v.yyyy); }
+void SpdStoreMip1(int2 coord, float2 v) { imageStore(pk_Image2, int3(coord, 0), v.xxxx); imageStore(pk_Image2, int3(coord, 1), v.yyyy); }
+void SpdStoreMip2(int2 coord, float2 v) { imageStore(pk_Image3, int3(coord, 0), v.xxxx); imageStore(pk_Image3, int3(coord, 1), v.yyyy); }
+void SpdStoreMip3(int2 coord, float2 v) { imageStore(pk_Image4, int3(coord, 0), v.xxxx); imageStore(pk_Image4, int3(coord, 1), v.yyyy); }
+void SpdStoreMip4(int2 coord, float2 v) { imageStore(pk_Image5, int3(coord, 0), v.xxxx); imageStore(pk_Image5, int3(coord, 1), v.yyyy); }
+void SpdStoreMip5(int2 coord, float2 v) { imageStore(pk_Image6, int3(coord, 0), v.xxxx); imageStore(pk_Image6, int3(coord, 1), v.yyyy); }
+void SpdStoreMip6(int2 coord, float2 v) { imageStore(pk_Image7, int3(coord, 0), v.xxxx); imageStore(pk_Image7, int3(coord, 1), v.yyyy); }
+void SpdStoreMip7(int2 coord, float2 v) { imageStore(pk_Image8, int3(coord, 0), v.xxxx); imageStore(pk_Image8, int3(coord, 1), v.yyyy); }
+void SpdStoreMip8(int2 coord, float2 v) { imageStore(pk_Image9, int3(coord, 0), v.xxxx); imageStore(pk_Image9, int3(coord, 1), v.yyyy); }
+void SpdStoreMip9(int2 coord, float2 v) { imageStore(pk_Image10, int3(coord, 0), v.xxxx); imageStore(pk_Image10, int3(coord, 1), v.yyyy); }
+void SpdStoreMip10(int2 coord, float2 v) { imageStore(pk_Image11, int3(coord, 0), v.xxxx); imageStore(pk_Image11, int3(coord, 1), v.yyyy); }
+void SpdStoreMip11(int2 coord, float2 v) { imageStore(pk_Image12, int3(coord, 0), v.xxxx); imageStore(pk_Image12, int3(coord, 1), v.yyyy); }
+
+#include "includes/ffx_spd.glsl"
+
+[pk_numthreads(256, 1u, 1u)]
 void HierarchicalDepthCs()
 {
-    const uint2 size = uint2(pk_ScreenSize.xy);
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const uint thread = gl_LocalInvocationIndex;
-
-    float2 local_depth = 0.0f.xx;
-
-    {
-#if defined(PK_HIZ_FINAL_PASS)
-        float4 depths[2];
-
-        [[unroll]]
-        for (int i = 0; i < 2; ++i)
-        {
-            depths[i] = float4
-            (
-                SampleHiZ(coord * 2 + int2(0, 0), i, 4),
-                SampleHiZ(coord * 2 + int2(0, 1), i, 4),
-                SampleHiZ(coord * 2 + int2(1, 1), i, 4),
-                SampleHiZ(coord * 2 + int2(1, 0), i, 4)
-            );
-        }
-
-        local_depth.x = cmin(depths[0]);
-        local_depth.y = cmax(depths[1]);
-#else
-        const float4 depths = GatherViewDepths((coord * 2 + 1.0f.xx) / size);
-
-        [[unroll]]
-        for (uint i = 0; i < 2; ++i)
-        {
-            imageStore(pk_Image, int3(coord * 2 + int2(0, 1), i), depths.xxxx);
-            imageStore(pk_Image, int3(coord * 2 + int2(1, 1), i), depths.yyyy);
-            imageStore(pk_Image, int3(coord * 2 + int2(1, 0), i), depths.zzzz);
-            imageStore(pk_Image, int3(coord * 2 + int2(0, 0), i), depths.wwww);
-        }
-
-        local_depth.x = cmin(depths);
-        local_depth.y = cmax(depths);
-#endif
-
-        imageStore(pk_Image1, int3(coord, 0), local_depth.xxxx);
-        imageStore(pk_Image1, int3(coord, 1), local_depth.yyyy);
-    }
-
-    // Mip 2
-    {
-        const uint swap_id_v = QuadSwapIdVertical8x8(gl_SubgroupInvocationID);
-        const uint swap_id_h = QuadSwapIdHorizontal(gl_SubgroupInvocationID);
-        
-        const float2 depth_v = subgroupShuffle(local_depth, swap_id_v);
-        local_depth.x = min(local_depth.x, depth_v.x);
-        local_depth.y = max(local_depth.y, depth_v.y);
-
-        const float2 depth_h = subgroupShuffle(local_depth, swap_id_h);
-        local_depth.x = min(local_depth.x, depth_h.x);
-        local_depth.y = max(local_depth.y, depth_h.y);
-
-        if ((thread & 0x9u) == 0u)
-        {
-            imageStore(pk_Image2, int3(coord / 2, 0), local_depth.xxxx);
-            imageStore(pk_Image2, int3(coord / 2, 1), local_depth.yyyy);
-        }
-    }
-
-    subgroupBarrier();
-
-    // Mip 3
-    {
-        const uint2 coord_wave = uint2(gl_SubgroupInvocationID % 8u, gl_SubgroupInvocationID / 8u);
-        const uint2 coord_wave_base = coord_wave / 2;
-        const uint2 coord_wave_swap = (coord_wave_base / 2) * 4 + ((coord_wave_base + 1) % 2) * 2;
-
-        const uint swap_id_v = coord_wave_swap.y * 8 + coord_wave.x;
-        const uint swap_id_h = coord_wave.y * 8 + coord_wave_swap.x;
-
-        const float2 depth_v = subgroupShuffle(local_depth, swap_id_v);
-        local_depth.x = min(local_depth.x, depth_v.x);
-        local_depth.y = max(local_depth.y, depth_v.y);
-
-        const float2 depth_h = subgroupShuffle(local_depth, swap_id_h);
-        local_depth.x = min(local_depth.x, depth_h.x);
-        local_depth.y = max(local_depth.y, depth_h.y);
-
-        if ((thread & 0x1Bu) == 0u)
-        {
-            imageStore(pk_Image3, int3(coord / 4, 0), local_depth.xxxx);
-            imageStore(pk_Image3, int3(coord / 4, 1), local_depth.yyyy);
-        }
-    }
-
-    subgroupBarrier();
-
-    // Combine subgroups
-    {
-        local_depth.x = subgroupMin(local_depth.x);
-        local_depth.y = subgroupMax(local_depth.y);
-
-        if (gl_SubgroupInvocationID == 0 && gl_SubgroupID == 1)
-        {
-            lds_Depth = local_depth;
-        }
-    }
-
-    barrier();
-
-    // Mip 4
-    if (thread == 0u)
-    {
-        local_depth.x = min(local_depth.x, lds_Depth.x);
-        local_depth.y = max(local_depth.y, lds_Depth.y);
-        imageStore(pk_Image4, int3(coord / 8, 0), local_depth.xxxx);
-        imageStore(pk_Image4, int3(coord / 8, 1), local_depth.yyyy);
-    }
+    SpdDownsample(gl_WorkGroupID.xy, gl_LocalInvocationIndex, pk_NumMipsAndWorkGroups.x, pk_NumMipsAndWorkGroups.y);
 }

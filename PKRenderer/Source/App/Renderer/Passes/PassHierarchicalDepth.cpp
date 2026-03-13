@@ -14,7 +14,14 @@ namespace PK::App
     {
         PK_LOG_VERBOSE_FUNC("");
         m_computeHierachicalDepth = assetDatabase->Find<ShaderAsset>("CS_HierarchicalDepth").get();
+        m_worgroupCounter = RHI::CreateBuffer(sizeof(uint32_t), BufferUsage::DefaultStorage, "HierarchicalDepth.AtomicCounter");
         RHI::SetTexture(HashCache::Get()->pk_GB_Current_DepthMips, RHI::GetBuiltInResources()->BlackTexture2DArray.get());
+        RHI::SetBuffer(HashCache::Get()->pk_WorkgroupCounter, m_worgroupCounter.get());
+    }
+
+    void PassHierarchicalDepth::SetViewConstants([[maybe_unused]] RenderView* view)
+    {
+        RHI::GetQueues()->GetCommandBuffer(QueueType::Transfer)->Clear(m_worgroupCounter.get(), 0, sizeof(uint32_t), 0u);
     }
 
     void PassHierarchicalDepth::Compute(CommandBufferExt cmd, RenderPipelineContext* context)
@@ -24,33 +31,39 @@ namespace PK::App
         auto resources = view->GetResources<ViewResources>();
         auto resolution = view->GetResolution();
 
-        TextureDescriptor hizDesc{};
-        hizDesc.type = TextureType::Texture2DArray;
-        hizDesc.format = TextureFormat::R16F;
-        hizDesc.sampler.filterMin = FilterMode::Bilinear;
-        hizDesc.sampler.filterMag = FilterMode::Bilinear;
-        hizDesc.resolution = resolution;
-        hizDesc.levels = 9u;
-        hizDesc.layers = 4u;
-        hizDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
-        RHI::ValidateTexture(resources->hierarchicalDepth, hizDesc, "Scene.HierarchicalDepth");
+        TextureDescriptor hzbDesc{};
+        hzbDesc.type = TextureType::Texture2DArray;
+        hzbDesc.format = TextureFormat::R16F;
+        hzbDesc.sampler.filterMin = FilterMode::Bilinear;
+        hzbDesc.sampler.filterMag = FilterMode::Bilinear;
+        hzbDesc.resolution = resolution;
+        hzbDesc.levels = (uint8_t)glm::min(glm::floor(glm::log2(float(glm::max(resolution.x, resolution.y)))), 13.0f);
+        hzbDesc.layers = 2u;
+        hzbDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
+        RHI::ValidateTexture(resources->hierarchicalDepth, hzbDesc, "Scene.HierarchicalDepth");
         RHI::SetTexture(hash->pk_GB_Current_DepthMips, resources->hierarchicalDepth.get());
 
-        resolution.x >>= 1u;
-        resolution.y >>= 1u;
+        const auto endIndexX = (resolution.x - 1) / 64;
+        const auto endIndexY = (resolution.y - 1) / 64;
+        const auto groupCountX = endIndexX + 1;
+        const auto groupCountY = endIndexY + 1;
+        const auto numWorkGroups = groupCountX * groupCountY;
+        RHI::SetConstant<uint2>(hash->pk_NumMipsAndWorkGroups, uint2(hzbDesc.levels - 1u, numWorkGroups));
+
+        // We have at least 8 mips based on min window scale. All targets need to be bound though, rebind last mip to fill the rest of the bindings.
         RHI::SetImage(hash->pk_Image, resources->hierarchicalDepth.get(), { 0, 0, 1, 2 });
         RHI::SetImage(hash->pk_Image1, resources->hierarchicalDepth.get(), { 1, 0, 1, 2 });
         RHI::SetImage(hash->pk_Image2, resources->hierarchicalDepth.get(), { 2, 0, 1, 2 });
         RHI::SetImage(hash->pk_Image3, resources->hierarchicalDepth.get(), { 3, 0, 1, 2 });
         RHI::SetImage(hash->pk_Image4, resources->hierarchicalDepth.get(), { 4, 0, 1, 2 });
-        cmd.Dispatch(m_computeHierachicalDepth, 0u, resolution);
-
-        resolution.x >>= 4u;
-        resolution.y >>= 4u;
-        RHI::SetImage(hash->pk_Image1, resources->hierarchicalDepth.get(), { 5, 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image2, resources->hierarchicalDepth.get(), { 6, 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image3, resources->hierarchicalDepth.get(), { 7, 0, 1, 2 });
-        RHI::SetImage(hash->pk_Image4, resources->hierarchicalDepth.get(), { 8, 0, 1, 2 });
-        cmd.Dispatch(m_computeHierachicalDepth, 1u, resolution);
+        RHI::SetImage(hash->pk_Image5, resources->hierarchicalDepth.get(), { 5, 0, 1, 2 });
+        RHI::SetImage(hash->pk_Image6, resources->hierarchicalDepth.get(), { 6, 0, 1, 2 });
+        RHI::SetImage(hash->pk_Image7, resources->hierarchicalDepth.get(), { 7, 0, 1, 2 });
+        RHI::SetImage(hash->pk_Image8, resources->hierarchicalDepth.get(), { 8, 0, 1, 2 });
+        RHI::SetImage(hash->pk_Image9, resources->hierarchicalDepth.get(), { (uint16_t)glm::min(9u, hzbDesc.levels - 1u), 0, 1, 2 });
+        RHI::SetImage(hash->pk_Image10, resources->hierarchicalDepth.get(), { (uint16_t)glm::min(10u, hzbDesc.levels - 1u), 0, 1, 2 });
+        RHI::SetImage(hash->pk_Image11, resources->hierarchicalDepth.get(), { (uint16_t)glm::min(11u, hzbDesc.levels - 1u), 0, 1, 2 });
+        RHI::SetImage(hash->pk_Image12, resources->hierarchicalDepth.get(), { (uint16_t)glm::min(12u, hzbDesc.levels - 1u), 0, 1, 2 });
+        cmd.Dispatch(m_computeHierachicalDepth, 0u, uint3(256u * groupCountX, groupCountY, 1));
     }
 }
