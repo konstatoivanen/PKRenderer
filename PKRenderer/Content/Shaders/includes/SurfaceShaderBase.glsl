@@ -2,6 +2,8 @@
 
 // needs to be declared before lighting & meshlets include.
 #define PK_MESHLET_USE_FUNC_CULL 1
+//#define PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP SampleMaxZ
+#define PK_SURF_DEBUG_SCENE_IBL 0
 
 #if defined(PK_META_PASS_GIVOXELIZE) 
     #define SHADOW_TEST ShadowTest_PCF2x2
@@ -12,10 +14,10 @@
 #endif
 
 #include "Common.glsl"
+#include "GBuffers.glsl"
 #include "Meshlets.glsl"
 
 #if !defined(SHADER_STAGE_MESH_TASK)
-#include "GBuffers.glsl"
 #include "BRDF.glsl"
 #include "LightSampling.glsl"
 #include "SceneEnv.glsl"
@@ -38,7 +40,7 @@
     // Prefilter by using a higher mip bias in voxelization.
     #define SURF_DECLARE_RASTER_OUTPUT
     #define SURF_STORE_OUTPUT(value0, value1, world_pos) GI_Store_Voxel(world_pos, value0);
-    #define SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv, 4.0f)
+    #define SURF_TEX(t, uv) texture(sampler2D(t, pk_SamplerTrilinearRepeatAniso), uv, 4.0f)
     #define SURF_TEX_TRIPLANAR(t, n, uvw) SampleTexTriplanar(t,n,uvw,4.0f)
     #define SURF_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNdcSpace(position)
     #define SURF_EVALUATE_BxDF BxDF_FullyRoughMinimal
@@ -52,7 +54,7 @@
         #define SURF_DECLARE_RASTER_OUTPUT out float4 SV_Target0;
         #define SURF_STORE_OUTPUT(value0, value1, world_pos) SV_Target0 = value0;
     #endif
-    #define SURF_TEX(t, uv) texture(sampler2D(t, pk_Sampler_SurfDefault), uv)
+    #define SURF_TEX(t, uv) texture(sampler2D(t, pk_SamplerTrilinearRepeatAniso), uv)
     #define SURF_TEX_TRIPLANAR(t, n, uvw) SampleTexTriplanar(t,n,uvw,0.0f)
     #define SURF_WORLD_TO_CLIPSPACE(position) WorldToClipPos(position)
     #define SURF_EVALUATE_BxDF BxDF_Principled
@@ -135,8 +137,13 @@ struct SurfaceData
     {
         #if defined(PK_META_PASS_GIVOXELIZE)
         return true;
+        #elif defined(PK_META_PASS_GBUFFER)
+        return Meshlet_Cone_Cull(meshlet, pk_ViewWorldOrigin.xyz) && 
+               Meshlet_Frustum_Perspective_Cull(meshlet, pk_WorldToClip);
         #else
-        return Meshlet_Cone_Cull(meshlet, pk_ViewWorldOrigin.xyz) && Meshlet_Frustum_Perspective_Cull(meshlet, pk_WorldToClip);
+        return Meshlet_Cone_Cull(meshlet, pk_ViewWorldOrigin.xyz) && 
+               Meshlet_Frustum_Perspective_Cull(meshlet, pk_WorldToClip);// &&
+               //Meshlet_Depth_Cull(meshlet, pk_WorldToClip, pk_ScreenSize);
         #endif
     }
 
@@ -232,7 +239,7 @@ struct SurfaceData
     
     float3 SampleNormalTex(const texture2D map, const float3x3 rotation, const float2 uv, const float amount) 
     {
-        float3 normal = texture(sampler2D(map, pk_Sampler_SurfDefault), uv).xyz * 2.0f - 1.0f;
+        float3 normal = texture(sampler2D(map, pk_SamplerTrilinearRepeatAniso), uv).xyz * 2.0f - 1.0f;
         normal = lerp(float3(0,0,1), normal, amount);
         return normalize(rotation * normal); 
     }
@@ -241,9 +248,9 @@ struct SurfaceData
     {
         float3 blend = abs(rotation[2]);
         blend /= dot(blend, 1.0.xxx);
-        const float3 cx = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.yz).xyz;
-        const float3 cy = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xz).xyz;
-        const float3 cz = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xy).xyz;
+        const float3 cx = texture(sampler2D(tex, pk_SamplerTrilinearRepeatAniso), uvw.yz).xyz;
+        const float3 cy = texture(sampler2D(tex, pk_SamplerTrilinearRepeatAniso), uvw.xz).xyz;
+        const float3 cz = texture(sampler2D(tex, pk_SamplerTrilinearRepeatAniso), uvw.xy).xyz;
         float3 normal = (cx * blend.x + cy * blend.y + cz * blend.z) * 2.0f - 1.0f;
         normal = lerp(float3(0,0,1), normal, amount);
         return normalize(rotation * normal); 
@@ -253,15 +260,14 @@ struct SurfaceData
     {
         float3 blend = abs(normal);
         blend /= dot(blend, 1.0.xxx);
-        const float4 cx = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.yz, bias);
-        const float4 cy = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xz, bias);
-        const float4 cz = texture(sampler2D(tex, pk_Sampler_SurfDefault), uvw.xy, bias);
+        const float4 cx = texture(sampler2D(tex, pk_SamplerTrilinearRepeatAniso), uvw.yz, bias);
+        const float4 cy = texture(sampler2D(tex, pk_SamplerTrilinearRepeatAniso), uvw.xz, bias);
+        const float4 cz = texture(sampler2D(tex, pk_SamplerTrilinearRepeatAniso), uvw.xy, bias);
         return cx * blend.x + cy * blend.y + cz * blend.z;
     }
     
     float3 GetIndirectLight_Main(const BxDFSurf surf, const float3 world_pos, const float3 clip_uvw)
     {
-        #define PK_SURF_DEBUG_SCENE_IBL 0
         #if PK_SURF_DEBUG_SCENE_IBL
             const float3 ls_dir = Futil_SpecularDominantDirection(surf.normal, surf.view_dir, sqrt(surf.alpha));
             const float2 ls_uv = EncodeOctaUv(ls_dir);

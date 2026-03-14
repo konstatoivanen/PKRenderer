@@ -23,15 +23,6 @@ namespace PK::App
         m_gui_indexBuffer = RHI::CreateBuffer<uint16_t>(GUI_MAX_INDICES, BufferUsage::DefaultIndex | BufferUsage::PersistentStage, "GUI.IndexBuffer");
         m_gui_textures = RHI::CreateBindSet<RHITexture>(GUI_MAX_TEXTURES);
 
-        SamplerDescriptor samplerDesc{};
-        samplerDesc.anisotropy = 1.0f;
-        samplerDesc.filterMin = FilterMode::Bilinear;
-        samplerDesc.filterMag = FilterMode::Bilinear;
-        samplerDesc.wrap[0] = WrapMode::Repeat;
-        samplerDesc.wrap[1] = WrapMode::Repeat;
-        samplerDesc.wrap[2] = WrapMode::Repeat;
-        samplerDesc.normalized = true;
-        RHI::SetSampler(hash->pk_Sampler_GUI, samplerDesc);
         RHI::SetBuffer(hash->pk_GUI_Vertices, m_gui_vertexBuffer.get());
 
         CVariableRegister::Create<bool*>("Engine.GUI.Enabled", &m_gui_enabled, "0 = 0ff, 1 = On", 1u);
@@ -75,6 +66,7 @@ namespace PK::App
                 {
                     RHI::ValidateBuffer<uint4>(m_gizmos_vertexBuffer, m_gizmos_vertexCount);
                     m_gizmos_color = PK_COLOR_WHITE;
+                    m_gizmos_renderAreaRect = view->renderAreaRect;
                     m_gizmos_matrix = PK_FLOAT4X4_IDENTITY;
                     m_gizmos_worldToClip = view->worldToClip;
                     m_gizmos_vertexCount = 0u;
@@ -476,5 +468,15 @@ namespace PK::App
         auto vp = m_gizmos_worldToClip * matrix;
         m_gizmos_frustrumPlanes = Math::ExtractFrustrumPlanes(vp, true);
         m_gizmos_matrix = matrix;
+    }
+
+    const float4x4& EngineGUIRenderer::GizmosGetWorldToClipMatrix() const
+    {
+        return m_gizmos_worldToClip;
+    }
+
+    const short4& EngineGUIRenderer::GizmosGetRenderAreaRect() const
+    {
+        return m_gizmos_renderAreaRect;
     }
 }

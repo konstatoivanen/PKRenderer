@@ -121,9 +121,10 @@ uniform cbuffer pk_ModelMatrices
 };
 #endif
 
-uniform sampler pk_Sampler_GBuffer;
-uniform sampler pk_Sampler_GUI;
-uniform sampler pk_Sampler_SurfDefault;
+uniform sampler pk_SamplerBilinearRepeat;
+uniform sampler pk_SamplerBilinearClamped;
+uniform sampler pk_SamplerPointClamped;
+uniform sampler pk_SamplerTrilinearRepeatAniso;
 uniform accelerationStructureEXT pk_SceneStructure;
 
 uint GetShadowCascadeIndex(float view_depth)

@@ -87,7 +87,7 @@ struct PKMeshletLite
     uint triangle_count;
 };
 
-// packed as 2x uint4
+// packed as 3x uint4
 struct PKMeshlet
 {
     uint vertex_first;
@@ -250,37 +250,75 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
         #endif 
     }
 
+    #if defined(PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP)
+    bool Meshlet_Depth_Cull(const PKMeshlet meshlet, float4x4 world_to_clip, uint2 resolution)
+    {
+        const float4 delta_x = (2.0f * meshlet.extents.x) * (world_to_clip * float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f));
+        const float4 delta_y = (2.0f * meshlet.extents.y) * (world_to_clip * float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f));
+        const float4 delta_z = (2.0f * meshlet.extents.z) * (world_to_clip * float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f));
+        const float4 clip_z0 = world_to_clip * float4(ObjectToWorldPos(meshlet.center - meshlet.extents), 1.0f);
+        const float4 clip_z1 = clip_z0 + delta_z;
+
+        float3 rmin = +1.0f.xxx;
+        float3 rmax = -1.0f.xxx;
+
+        for (uint i = 0; i < 4; ++i)
+        {
+            const float4 clip_0 = clip_z0 + delta_x * (i & 0x1) + delta_y * (i / 2);
+            const float4 clip_1 = clip_z1 + delta_x * (i & 0x1) + delta_y * (i / 2);
+            const float3 clip_0_n = clip_0.xyz / clip_0.w;
+            const float3 clip_1_n = clip_1.xyz / clip_1.w;
+            rmin = min(min(rmin, clip_0_n), clip_1_n);
+            rmax = max(max(rmax, clip_0_n), clip_1_n);
+        }
+    
+        const float4 rect_uv = saturate(float4(rmin.xy, rmax.xy) * 0.5f + 0.5f);
+        const float2 rect_size = (rect_uv.zw - rect_uv.xy) * resolution;
+        const float level = ceil(log2(max(rect_size.x, rect_size.y)));
+
+        const float depth_00 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_uv.xy, level);
+        const float depth_01 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_uv.xw, level);
+        const float depth_11 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_uv.zw, level);
+        const float depth_10 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_uv.zy, level);
+        const float depth_max = max(max(depth_00, depth_01), max(depth_11, depth_10));
+        
+        return ViewDepth(rmax.z) <= depth_max;
+    }
+    #else
+    bool Meshlet_Depth_Cull(const PKMeshlet meshlet, float4x4 world_to_clip, uint2 resolution) { return true; }
+    #endif
+
     bool Meshlet_Frustum_Perspective_Cull(const PKMeshlet meshlet, float4x4 world_to_clip)
     {
         const float4 delta_x = (2.0f * meshlet.extents.x) * (world_to_clip * float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f));
         const float4 delta_y = (2.0f * meshlet.extents.y) * (world_to_clip * float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f));
-    	const float4 delta_z = (2.0f * meshlet.extents.z) * (world_to_clip * float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f));
-    	const float4 clip_z0 = world_to_clip * float4(ObjectToWorldPos(meshlet.center - meshlet.extents), 1.0f);
-    	const float4 clip_z1 = clip_z0 + delta_z;
+        const float4 delta_z = (2.0f * meshlet.extents.z) * (world_to_clip * float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f));
+        const float4 clip_z0 = world_to_clip * float4(ObjectToWorldPos(meshlet.center - meshlet.extents), 1.0f);
+        const float4 clip_z1 = clip_z0 + delta_z;
 
         float4 pmin = 1.0f.xxxx;
 
-    	for (uint i = 0; i < 4; ++i)
+        for (uint i = 0; i < 4; ++i)
         {
-            const float4 clip_min = clip_z0 + delta_x * (i & 0x1) + delta_y * (i / 2);
-            const float4 clip_max = clip_z1 + delta_x * (i & 0x1) + delta_y * (i / 2);
-            pmin = min(pmin, float4(clip_min.xy, -clip_min.xy) - clip_min.w);
-            pmin = min(pmin, float4(clip_max.xy, -clip_max.xy) - clip_max.w);
+            const float4 clip_0 = clip_z0 + delta_x * (i & 0x1) + delta_y * (i / 2);
+            const float4 clip_1 = clip_z1 + delta_x * (i & 0x1) + delta_y * (i / 2);
+            pmin = min(pmin, float4(clip_0.xy, -clip_0.xy) - clip_0.w);
+            pmin = min(pmin, float4(clip_1.xy, -clip_1.xy) - clip_1.w);
         }
     
-    	return All_Less(pmin, 0.0f.xxxx);
+        return All_Less(pmin, 0.0f.xxxx);
     }
 
     bool Meshlet_Frustum_Ortho_Cull(const PKMeshlet meshlet, float4x4 world_to_clip)
     {
-    	const float3 clip_center = (world_to_clip * float4(ObjectToWorldPos(meshlet.center), 1.0f)).xyz;
-    	const float3 clip_delta = abs(meshlet.extents.x * (world_to_clip * float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f)).xyz) + 
-    							  abs(meshlet.extents.y * (world_to_clip * float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f)).xyz) + 
-    							  abs(meshlet.extents.z * (world_to_clip * float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f)).xyz);
-    								
-    	const float3 box_min = clip_center - clip_delta;
-    	const float3 box_max = clip_center + clip_delta;
-    	return box_max.z > 0.0f && box_min.z < 1.0f && All_Greater(box_max.xy, -1.0f.xx) && All_Less(box_min.xy, 1.0f.xx);
+        const float3 clip_center = (world_to_clip * float4(ObjectToWorldPos(meshlet.center), 1.0f)).xyz;
+        const float3 clip_delta = abs(meshlet.extents.x * (world_to_clip * float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f)).xyz) + 
+                                  abs(meshlet.extents.y * (world_to_clip * float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f)).xyz) + 
+                                  abs(meshlet.extents.z * (world_to_clip * float4(pk_ObjectToWorld[0][2], pk_ObjectToWorld[1][2], pk_ObjectToWorld[2][2], 0.0f)).xyz);
+                                    
+        const float3 box_min = clip_center - clip_delta;
+        const float3 box_max = clip_center + clip_delta;
+        return box_max.z > 0.0f && box_min.z < 1.0f && All_Greater(box_max.xy, -1.0f.xx) && All_Less(box_min.xy, 1.0f.xx);
     }
 
     bool Meshlet_Sphere_Cull(const PKMeshlet meshlet, float3 center, float radius)

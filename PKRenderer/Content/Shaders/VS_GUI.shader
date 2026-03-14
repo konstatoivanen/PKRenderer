@@ -39,7 +39,7 @@ void MainVs()
 
 void MainFs()
 {
-    const float4 value = texture(sampler2D(pk_GUI_Textures[vs_TEXTURE_INDEX], pk_Sampler_GUI), vs_TEXCOORD);
+    const float4 value = texture(sampler2D(pk_GUI_Textures[vs_TEXTURE_INDEX], pk_SamplerBilinearRepeat), vs_TEXCOORD);
     float4 color = vs_COLOR;
 
     if (vs_SHADING_MODE == PK_GUI_SHADING_MODE_FONT)

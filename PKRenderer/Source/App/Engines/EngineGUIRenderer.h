@@ -51,6 +51,9 @@ namespace PK::App
         void GizmosSetColor(const color& color) final;
         void GizmosSetMatrix(const float4x4& matrix) final;
 
+        const float4x4& GizmosGetWorldToClipMatrix() const final;
+        const short4& GizmosGetRenderAreaRect() const final;
+
     private:
         constexpr static const uint32_t GUI_MAX_VERTICES = 16384u;
         constexpr static const uint32_t GUI_MAX_INDICES = GUI_MAX_VERTICES * 3;
@@ -86,6 +89,7 @@ namespace PK::App
         FrustumPlanes m_gizmos_frustrumPlanes{};
         uint32_t m_gizmos_vertexCount = 0;
         uint32_t m_gizmos_maxVertices = 4096u;
+        short4 m_gizmos_renderAreaRect = PK_SHORT4_ZERO;
         color32 m_gizmos_color = PK_COLOR32_WHITE;
         float4x4 m_gizmos_worldToClip = PK_FLOAT4X4_IDENTITY;
         float4x4 m_gizmos_matrix = PK_FLOAT4X4_IDENTITY;

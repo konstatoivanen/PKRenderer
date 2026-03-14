@@ -46,22 +46,46 @@ namespace PK::App
         RHI::SetTexture(hash->pk_Bluenoise256, bluenoise256);
         RHI::SetTexture(hash->pk_Bluenoise128x64, bluenoise128x64);
 
-        SamplerDescriptor samplerDesc{};
-        samplerDesc.anisotropy = 16.0f;
-        samplerDesc.filterMin = FilterMode::Trilinear;
-        samplerDesc.filterMag = FilterMode::Trilinear;
-        samplerDesc.wrap[0] = WrapMode::Repeat;
-        samplerDesc.wrap[1] = WrapMode::Repeat;
-        samplerDesc.wrap[2] = WrapMode::Repeat;
-        RHI::SetSampler(hash->pk_Sampler_SurfDefault, samplerDesc);
+        {
+            SamplerDescriptor samplerDesc{};
+            samplerDesc.filterMin = FilterMode::Bilinear;
+            samplerDesc.filterMag = FilterMode::Bilinear;
+            samplerDesc.wrap[0] = WrapMode::Repeat;
+            samplerDesc.wrap[1] = WrapMode::Repeat;
+            samplerDesc.wrap[2] = WrapMode::Repeat;
+            RHI::SetSampler(hash->pk_SamplerBilinearRepeat, samplerDesc);
+        }
 
-        samplerDesc.anisotropy = 0.0f;
-        samplerDesc.filterMin = FilterMode::Bilinear;
-        samplerDesc.filterMag = FilterMode::Bilinear;
-        samplerDesc.wrap[0] = WrapMode::Clamp;
-        samplerDesc.wrap[1] = WrapMode::Clamp;
-        samplerDesc.wrap[2] = WrapMode::Clamp;
-        RHI::SetSampler(hash->pk_Sampler_GBuffer, samplerDesc);
+        {
+            SamplerDescriptor samplerDesc{};
+            samplerDesc.filterMin = FilterMode::Bilinear;
+            samplerDesc.filterMag = FilterMode::Bilinear;
+            samplerDesc.wrap[0] = WrapMode::Clamp;
+            samplerDesc.wrap[1] = WrapMode::Clamp;
+            samplerDesc.wrap[2] = WrapMode::Clamp;
+            RHI::SetSampler(hash->pk_SamplerBilinearClamped, samplerDesc);
+        }
+
+        {
+            SamplerDescriptor samplerDesc{};
+            samplerDesc.filterMin = FilterMode::Point;
+            samplerDesc.filterMag = FilterMode::Point;
+            samplerDesc.wrap[0] = WrapMode::Clamp;
+            samplerDesc.wrap[1] = WrapMode::Clamp;
+            samplerDesc.wrap[2] = WrapMode::Clamp;
+            RHI::SetSampler(hash->pk_SamplerPointClamped, samplerDesc);
+        }
+
+        {
+            SamplerDescriptor samplerDesc{};
+            samplerDesc.anisotropy = 16.0f;
+            samplerDesc.filterMin = FilterMode::Trilinear;
+            samplerDesc.filterMag = FilterMode::Trilinear;
+            samplerDesc.wrap[0] = WrapMode::Repeat;
+            samplerDesc.wrap[1] = WrapMode::Repeat;
+            samplerDesc.wrap[2] = WrapMode::Repeat;
+            RHI::SetSampler(hash->pk_SamplerTrilinearRepeatAniso, samplerDesc);
+        }
 
         // Pre integrate DFG texture for ibl shading.
         {

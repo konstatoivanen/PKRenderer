@@ -65,9 +65,10 @@ namespace PK::App
         DECLARE_HASH(pk_ViewToPrevClip)
         DECLARE_HASH(pk_ClipToPrevClip_NoJitter)
 
-        DECLARE_HASH(pk_Sampler_SurfDefault)
-        DECLARE_HASH(pk_Sampler_GBuffer)
-        DECLARE_HASH(pk_Sampler_GUI)
+        DECLARE_HASH(pk_SamplerBilinearRepeat)
+        DECLARE_HASH(pk_SamplerBilinearClamped)
+        DECLARE_HASH(pk_SamplerPointClamped)
+        DECLARE_HASH(pk_SamplerTrilinearRepeatAniso)
 
         DECLARE_HASH(pk_SceneStructure)
 

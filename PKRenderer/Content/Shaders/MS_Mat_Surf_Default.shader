@@ -31,7 +31,7 @@ void SURF_FUNCTION_FRAGMENT(float2 uv, inout SurfaceData surf)
 //    lval *= pow5(lval);
 //    float3 c = HsvToRgb(0.025f, 0.8f, lval * 20.0f);
 //    
-//    surf.emission = texture(sampler2D(_EmissionTexture, pk_Sampler_SurfDefault), uv * 4.0f).xxx * c * _EmissionColor.rgb;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;
+//    surf.emission = texture(sampler2D(_EmissionTexture, pk_SamplerTrilinearRepeatAniso), uv * 4.0f).xxx * c * _EmissionColor.rgb;//PK_ACCESS_INSTANCED_PROP(_EmissionColor).rgb;
 //#endif
 
     /*
