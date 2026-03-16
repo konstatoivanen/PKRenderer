@@ -11,7 +11,7 @@ namespace PK::App
 {
     struct GBuffers
     {
-        constexpr static uint32_t RESOLUTION_ALIGNMENT = 32u;
+        constexpr static uint32_t RESOLUTION_ALIGNMENT = 64u;
 
         typedef enum
         {

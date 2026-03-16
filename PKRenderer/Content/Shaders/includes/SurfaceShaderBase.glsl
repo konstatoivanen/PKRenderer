@@ -2,7 +2,7 @@
 
 // needs to be declared before lighting & meshlets include.
 #define PK_MESHLET_USE_FUNC_CULL 1
-//#define PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP SampleMaxZ
+#define PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP SampleMaxZ
 #define PK_SURF_DEBUG_SCENE_IBL 0
 
 #if defined(PK_META_PASS_GIVOXELIZE) 
@@ -138,12 +138,9 @@ struct SurfaceData
         #if defined(PK_META_PASS_GIVOXELIZE)
         return true;
         #elif defined(PK_META_PASS_GBUFFER)
-        return Meshlet_Cone_Cull(meshlet, pk_ViewWorldOrigin.xyz) && 
-               Meshlet_Frustum_Perspective_Cull(meshlet, pk_WorldToClip);
+        return Meshlet_Cull_Cone(meshlet, pk_ViewWorldOrigin.xyz) && Meshlet_Cull_Frustum_Perspective(meshlet, pk_WorldToClip);
         #else
-        return Meshlet_Cone_Cull(meshlet, pk_ViewWorldOrigin.xyz) && 
-               Meshlet_Frustum_Perspective_Cull(meshlet, pk_WorldToClip);// &&
-               //Meshlet_Depth_Cull(meshlet, pk_WorldToClip, pk_ScreenSize);
+        return Meshlet_Cull_Cone(meshlet, pk_ViewWorldOrigin.xyz) && Meshlet_Cull_Depth_Perspective(meshlet, pk_WorldToClip, pk_ViewToClip, pk_ScreenSize);
         #endif
     }
 
@@ -159,6 +156,20 @@ struct SurfaceData
     
     #if defined(PK_META_PASS_GIVOXELIZE)
     shared float3 lds_Positions[MAX_VERTICES_PER_MESHLET];
+    
+    // Cull triangles that should be rasterized through another axis
+    void PK_MESHLET_FUNC_TRIANGLE(uint triangle_index, inout uint3 triangle)
+    {
+        const float3 a = lds_Positions[triangle.x];
+        const float3 b = normalize(lds_Positions[triangle.y] - a);
+        const float3 c = normalize(lds_Positions[triangle.z] - a);
+        const float3 n = normalize(cross(b, c));
+
+        if (!GI_Test_VX_Normal(n))
+        {   
+            triangle = uint3(0);
+        }
+    }
     #endif
 
     SURF_VS_ATTRIB_TANGENT
@@ -185,22 +196,6 @@ struct SurfaceData
         vs_TEXCOORD0[vertex_index] = varyings.texcoord;
         SURF_VS_ASSIGN_TANGENT(vertex_index, varyings.tangent)
     }
-
-    #if defined(PK_META_PASS_GIVOXELIZE)
-    // Cull triangles that should be rasterized through another axis
-    void PK_MESHLET_FUNC_TRIANGLE(uint triangle_index, inout uint3 triangle)
-    {
-        const float3 a = lds_Positions[triangle.x];
-        const float3 b = normalize(lds_Positions[triangle.y] - a);
-        const float3 c = normalize(lds_Positions[triangle.z] - a);
-        const float3 n = normalize(cross(b, c));
-
-        if (!GI_Test_VX_Normal(n))
-        {   
-            triangle = uint3(0);
-        }
-    }
-    #endif
 
 //// ---------- FRAGMENT STAGE ---------- ////
 #elif defined(SHADER_STAGE_FRAGMENT)

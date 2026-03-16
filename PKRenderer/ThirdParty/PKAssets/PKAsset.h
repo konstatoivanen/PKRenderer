@@ -41,7 +41,7 @@ namespace PKAssets
 
         void Set(void* base, T* value)
         {
-            offset = (uint32_t)(static_cast<char*>(value) - static_cast<char*>(base));
+            offset = (uint32_t)(reinterpret_cast<char*>(value) - static_cast<char*>(base));
         }
     };
 

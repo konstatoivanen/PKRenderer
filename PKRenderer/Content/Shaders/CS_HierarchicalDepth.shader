@@ -3,6 +3,9 @@
 
 #include "includes/GBuffers.glsl"
 
+// @TODO non pot textures are not supported.
+// Backbuffer is 64px aligned. check alignment for mips 6-12
+
 uniform writeonly restrict image2DArray pk_Image;
 uniform writeonly restrict image2DArray pk_Image1;
 uniform writeonly restrict image2DArray pk_Image2;

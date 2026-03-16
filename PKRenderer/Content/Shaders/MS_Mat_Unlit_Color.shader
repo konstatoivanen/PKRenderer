@@ -25,7 +25,7 @@ PK_DECLARE_VS_ATTRIB(float3 vs_Normal);
 
 bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
 {
-    return Meshlet_Cone_Cull(meshlet, pk_ViewWorldOrigin.xyz);
+    return Meshlet_Cull_Cone(meshlet, pk_ViewWorldOrigin.xyz);
 }
 
 #elif defined(SHADER_STAGE_MESH_ASSEMBLY)

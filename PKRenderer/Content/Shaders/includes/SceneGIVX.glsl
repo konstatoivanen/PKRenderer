@@ -45,7 +45,11 @@ void GI_Store_Voxel(float3 world_pos, float4 color)
 }
 
 //----------PREDICATES----------//
-bool GI_Test_VX_HasValue(float3 world_pos) { return imageLoad(pk_GI_VolumeMaskWrite, GI_WorldToVoxelSpace(world_pos)).x != 0; }
+bool GI_Test_VX_HasValue(float3 world_pos) 
+{ 
+    return imageLoad(pk_GI_VolumeMaskWrite, GI_WorldToVoxelSpace(world_pos)).x != 0; 
+}
+
 bool GI_Test_VX_Normal(float3 normal)
 {
     normal = abs(normal);

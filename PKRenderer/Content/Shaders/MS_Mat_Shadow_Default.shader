@@ -79,11 +79,11 @@ void PK_MESHLET_FUNC_TASKLET(inout PKMeshTaskPayload payload)
 bool PK_MESHLET_FUNC_CULL(const PKMeshlet meshlet)
 {
     #if defined(PK_LIGHT_PASS_DIRECTIONAL)
-        return Meshlet_Cone_Cull_Directional(meshlet, payload.extra.light_position) && Meshlet_Frustum_Ortho_Cull(meshlet, payload.extra.light_matrix);
+        return Meshlet_Cull_Cone_Directional(meshlet, payload.extra.light_position) && Meshlet_Cull_Frustum_Ortho(meshlet, payload.extra.light_matrix);
     #elif defined(PK_LIGHT_PASS_SPOT)
-        return Meshlet_Cone_Cull(meshlet, payload.extra.light_position) && Meshlet_Frustum_Perspective_Cull(meshlet, payload.extra.light_matrix);
+        return Meshlet_Cull_Cone(meshlet, payload.extra.light_position) && Meshlet_Cull_Frustum_Perspective(meshlet, payload.extra.light_matrix);
     #else
-        return Meshlet_Cone_Cull(meshlet, payload.extra.light_position) && Meshlet_Sphere_Cull(meshlet, payload.extra.light_position, payload.extra.light_radius);
+        return Meshlet_Cull_Cone(meshlet, payload.extra.light_position) && Meshlet_Cull_Sphere(meshlet, payload.extra.light_position, payload.extra.light_radius);
     #endif
 }
 
