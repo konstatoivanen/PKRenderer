@@ -62,7 +62,7 @@ namespace PK
             {
                 key.counts[j] = pDescriptors[j].count;
                 key.types[j] = pDescriptors[j].type;
-                m_resourceLayout.Add(pDescriptors[j].type, pDescriptors[j].name, pDescriptors[j].writeStageMask, pDescriptors[j].count);
+                m_resourceLayout.Add(pDescriptors[j].type, pDescriptors[j].name, pDescriptors[j].writeMask, pDescriptors[j].count);
             }
 
             // Cache these so that we can optimize shaders easier based on profiling tools.

@@ -1527,10 +1527,10 @@ namespace PK
                 case ShaderStage::TesselationControl: return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
                 case ShaderStage::TesselationEvaluation: return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
                 case ShaderStage::Geometry: return VK_SHADER_STAGE_GEOMETRY_BIT;
-                case ShaderStage::Fragment: return VK_SHADER_STAGE_FRAGMENT_BIT;
-                case ShaderStage::Compute: return VK_SHADER_STAGE_COMPUTE_BIT;
                 case ShaderStage::MeshTask: return VK_SHADER_STAGE_TASK_BIT_EXT;
                 case ShaderStage::MeshAssembly: return VK_SHADER_STAGE_MESH_BIT_EXT;
+                case ShaderStage::Fragment: return VK_SHADER_STAGE_FRAGMENT_BIT;
+                case ShaderStage::Compute: return VK_SHADER_STAGE_COMPUTE_BIT;
                 case ShaderStage::RayGeneration: return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
                 case ShaderStage::RayMiss: return VK_SHADER_STAGE_MISS_BIT_KHR;
                 case ShaderStage::RayClosestHit: return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
@@ -1606,16 +1606,6 @@ namespace PK
                 flags |= VK_SHADER_STAGE_GEOMETRY_BIT;
             }
 
-            if ((stageFlags & ShaderStageFlags::Fragment) != 0)
-            {
-                flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
-            }
-
-            if ((stageFlags & ShaderStageFlags::Compute) != 0)
-            {
-                flags |= VK_SHADER_STAGE_COMPUTE_BIT;
-            }
-
             if ((stageFlags & ShaderStageFlags::MeshTask) != 0)
             {
                 flags |= VK_SHADER_STAGE_TASK_BIT_EXT;
@@ -1624,6 +1614,16 @@ namespace PK
             if ((stageFlags & ShaderStageFlags::MeshAssembly) != 0)
             {
                 flags |= VK_SHADER_STAGE_MESH_BIT_EXT;
+            }
+
+            if ((stageFlags & ShaderStageFlags::Fragment) != 0)
+            {
+                flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+            }
+
+            if ((stageFlags & ShaderStageFlags::Compute) != 0)
+            {
+                flags |= VK_SHADER_STAGE_COMPUTE_BIT;
             }
 
             if ((stageFlags & ShaderStageFlags::RayGeneration) != 0)

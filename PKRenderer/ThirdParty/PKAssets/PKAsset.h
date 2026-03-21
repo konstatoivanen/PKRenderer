@@ -318,10 +318,10 @@ namespace PKAssets
         TesselationControl,
         TesselationEvaluation,
         Geometry,
-        Fragment,
-        Compute,
         MeshTask,
         MeshAssembly,
+        Fragment,
+        Compute,
         RayGeneration,
         RayMiss,
         RayClosestHit,
@@ -330,31 +330,31 @@ namespace PKAssets
         MaxCount
     };
 
-    enum class PKShaderStageFlags : uint32_t
+    enum class PKShaderStageFlags : uint16_t
     {
         None = 0u,
         Vertex = 1u << (uint8_t)PKShaderStage::Vertex,
         TesselationControl = 1u << (uint8_t)PKShaderStage::TesselationControl,
         TesselationEvaluation = 1u << (uint8_t)PKShaderStage::TesselationEvaluation,
         Geometry = 1u << (uint8_t)PKShaderStage::Geometry,
-        Fragment = 1u << (uint8_t)PKShaderStage::Fragment,
-        Compute = 1u << (uint8_t)PKShaderStage::Compute,
         MeshTask = 1u << (uint8_t)PKShaderStage::MeshTask,
         MeshAssembly = 1u << (uint8_t)PKShaderStage::MeshAssembly,
+        Fragment = 1u << (uint8_t)PKShaderStage::Fragment,
+        Compute = 1u << (uint8_t)PKShaderStage::Compute,
         RayGeneration = 1u << (uint8_t)PKShaderStage::RayGeneration,
         RayMiss = 1u << (uint8_t)PKShaderStage::RayMiss,
         RayClosestHit = 1u << (uint8_t)PKShaderStage::RayClosestHit,
         RayAnyHit = 1u << (uint8_t)PKShaderStage::RayAnyHit,
         RayIntersection = 1u << (uint8_t)PKShaderStage::RayIntersection,
 
-        StagesGraphics = Vertex | TesselationControl | TesselationEvaluation | Geometry | Fragment | MeshTask | MeshAssembly,
         StagesVertex = Vertex | TesselationControl | TesselationEvaluation | Geometry,
         StagesMesh = MeshTask | MeshAssembly,
+        StagesGraphics = StagesVertex | StagesMesh | Fragment,
         StagesCompute = Compute,
-        StagesRayTrace = RayGeneration | RayMiss | RayClosestHit | RayAnyHit | RayIntersection,
         RayTraceGroupGeneration = RayGeneration,
         RayTraceGroupMiss = RayMiss,
         RayTraceGroupHit = RayClosestHit | RayAnyHit | RayIntersection,
+        StagesRayTrace = RayTraceGroupGeneration | RayTraceGroupMiss | RayTraceGroupHit,
         RayTraceGroupCallable = 0u // Not supported atm
     };
 
@@ -480,11 +480,11 @@ namespace PKAssets
     struct alignas(4) PKDescriptor
     {
         char name[PK_ASSET_NAME_MAX_LENGTH]; // 64 bytes
-        PKShaderStageFlags writeStageMask;   // 68 bytes
-        uint16_t count;                      // 70 bytes
-        PKDescriptorType type;               // 71 bytes
-
-        uint8_t __padding0 = 0u;             // 72 bytes
+        PKDescriptorType type;               // 65 bytes
+        uint8_t set;                         // 66 bytes
+        uint16_t count;                      // 68 bytes
+        PKShaderStageFlags writeMask;        // 70 bytes
+        PKShaderStageFlags accessMask;       // 72 bytes
     };
 
     struct alignas(4) PKShaderKeyword
@@ -518,13 +518,13 @@ namespace PKAssets
         uint16_t vertexAttributeCount;                                      // 2 bytes
         uint16_t constantCount;                                             // 4 bytes
         uint16_t constantRange;                                             // 8 bytes
-        PKShaderStageFlags constantStageFlags;                              // 12 bytes
-        uint16_t groupSize[4]{};                                            // 20 bytes
-        RelativePtr<PKDescriptor> descriptors;                              // 24 bytes
-        RelativePtr<PKConstantVariable> constants;                          // 28 bytes
-        RelativePtr<PKVertexInputAttribute> vertexAttributes;               // 32 bytes
-        uint32_t sprivSizes[(int)PKShaderStage::MaxCount];                  // 84 bytes
-        RelativePtr<void> sprivBuffers[(int)PKShaderStage::MaxCount];       // 136 bytes
+        PKShaderStageFlags constantStageFlags;                              // 10 bytes
+        uint16_t groupSize[3]{};                                            // 16 bytes
+        RelativePtr<PKDescriptor> descriptors;                              // 20 bytes
+        RelativePtr<PKConstantVariable> constants;                          // 24 bytes
+        RelativePtr<PKVertexInputAttribute> vertexAttributes;               // 28 bytes
+        uint32_t sprivSizes[(int)PKShaderStage::MaxCount];                  // 80 bytes
+        RelativePtr<void> sprivBuffers[(int)PKShaderStage::MaxCount];       // 132 bytes
     };
 
     struct alignas(4) PKShader

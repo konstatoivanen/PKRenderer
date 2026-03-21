@@ -246,7 +246,6 @@ namespace PK::App
             constants->Set<uint2>(hash->pk_ScreenSize, { resolution.x, resolution.y });
             constants->Set<uint2>(hash->pk_FrameIndex, { frameIndex % 0xFFFFFFFFu, (frameIndex - frameIndexResize) % 0xFFFFFFFFu });
             constants->Set<int>(hash->pk_ScreenLevels, Math::GetMaxMipLevel(resolution.xy) - 1u);
-
             constants->Set<float4>(hash->pk_MeshletCullParams, { 1.0f / (viewToClip[1][1] * resolution.y * 0.5f), view->fieldOfView * aspect, view->fieldOfView, 1.0f });
 
             m_passHierarchicalDepth.SetViewConstants(view);

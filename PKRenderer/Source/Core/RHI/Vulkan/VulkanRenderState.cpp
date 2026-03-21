@@ -550,7 +550,7 @@ namespace PK
             {
                 auto handle = m_descritorState.bindings[bindingIndex].handle;
                 auto stage = VulkanEnumConvert::GetPipelineStageFlags(m_descritorState.stageFlags);
-                auto access = shader->GetResourceLayout()[bindingIndex].writeStageMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
+                auto access = shader->GetResourceLayout()[bindingIndex].writeMask != 0u ? VK_ACCESS_SHADER_WRITE_BIT : VK_ACCESS_NONE;
 
                 switch (m_descritorState.bindings[bindingIndex].type)
                 {

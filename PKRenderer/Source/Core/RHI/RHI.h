@@ -14,7 +14,7 @@ namespace PKAssets
     enum class PKElementType : uint16_t;
     enum class PKDescriptorType : uint8_t;
     enum class PKShaderStage : uint8_t;  
-    enum class PKShaderStageFlags : uint32_t; 
+    enum class PKShaderStageFlags : uint16_t; 
     enum class PKBlendFactor : uint8_t;  
     enum class PKBlendOp : uint8_t;  
     enum class PKColorMask  : uint8_t;  

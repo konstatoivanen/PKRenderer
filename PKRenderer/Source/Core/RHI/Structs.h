@@ -239,10 +239,10 @@ namespace PK
         RayTracingShaderGroup::MaxCount,        //TesselationControl,
         RayTracingShaderGroup::MaxCount,        //TesselationEvaluation,
         RayTracingShaderGroup::MaxCount,        //Geometry,
-        RayTracingShaderGroup::MaxCount,        //Fragment,
-        RayTracingShaderGroup::MaxCount,        //Compute,
         RayTracingShaderGroup::MaxCount,        //MeshTask
         RayTracingShaderGroup::MaxCount,        //MeshAssembly,
+        RayTracingShaderGroup::MaxCount,        //Fragment,
+        RayTracingShaderGroup::MaxCount,        //Compute,
         RayTracingShaderGroup::RayGeneration,   //RayGeneration,
         RayTracingShaderGroup::Miss,            //RayMiss,
         RayTracingShaderGroup::Hit,             //RayClosestHit,

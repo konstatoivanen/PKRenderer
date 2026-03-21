@@ -32,15 +32,15 @@ namespace PK
     struct ShaderResourceElement
     {
         NameID name = 0u;
-        ShaderStageFlags writeStageMask = ShaderStageFlags::None;
+        ShaderStageFlags writeMask = ShaderStageFlags::None;
         uint16_t count = 0;
         ShaderResourceType type = ShaderResourceType::Invalid;
 
         ShaderResourceElement() = default;
 
-        ShaderResourceElement(ShaderResourceType type, NameID name, ShaderStageFlags writeStageMask, uint16_t count) :
+        ShaderResourceElement(ShaderResourceType type, NameID name, ShaderStageFlags writeMask, uint16_t count) :
             name(name),
-            writeStageMask(writeStageMask),
+            writeMask(writeMask),
             count(count),
             type(type)
         {
