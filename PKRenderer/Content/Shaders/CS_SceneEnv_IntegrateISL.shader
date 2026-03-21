@@ -13,6 +13,7 @@ uniform writeonly restrict uimage2D pk_Image;
 uniform writeonly restrict uimage2D pk_Image1;
 uniform writeonly restrict uimage2D pk_Image2;
 uniform writeonly restrict uimage2D pk_Image3;
+uniform float pk_SceneEnv_Exposure;
 
 shared float3 lds_scatter;
 

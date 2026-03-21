@@ -320,18 +320,22 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
     }
     
     #if defined(PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP)
-    bool Meshlet_Cull_Depth(const bool is_visible, const bool is_clipped_near, const float3 rect_min, const float3 rect_max, const uint2 resolution)
+    bool Meshlet_Cull_Depth(const bool is_visible, const bool is_clipped_near, const float3 rect_min, const float3 rect_max, const int2 resolution, const int max_mip)
     {
         [[branch]]
         if (is_visible && !is_clipped_near)
         {
-            const float4 rect_uv = saturate(float4(rect_min.xy, rect_max.xy) * 0.5f + 0.5f);
-            const float2 rect_size = (rect_uv.zw - rect_uv.xy) * resolution;
-            const float level = ceil(log2(max(rect_size.x, rect_size.y)));
-            const float depth_00 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_uv.xy, level);
-            const float depth_01 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_uv.xw, level);
-            const float depth_11 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_uv.zw, level);
-            const float depth_10 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_uv.zy, level);
+            const float4 rect_aabb = saturate(float4(rect_min.xy, rect_max.xy) * 0.5f + 0.5f) * resolution.xyxy;
+            const float2 rect_size = rect_aabb.zw - rect_aabb.xy;
+
+            const int  rect_level = min(max_mip, int(ceil(log2(cmax(rect_size)))));
+            const int2 rect_clamp = (resolution >> rect_level) - 1;
+            const int4 rect_coords = min(int4(rect_aabb) >> rect_level, rect_clamp.xyxy);
+            
+            const float depth_00 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_coords.xy, rect_level);
+            const float depth_01 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_coords.xw, rect_level);
+            const float depth_11 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_coords.zw, rect_level);
+            const float depth_10 = PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP(rect_coords.zy, rect_level);
             const float depth_max = max(max(depth_00, depth_01), max(depth_11, depth_10));
             return ViewDepth(rect_max.z) <= depth_max;
         }
@@ -339,7 +343,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
         return is_visible;
     }
 
-    bool Meshlet_Cull_Depth_Ortho(const PKMeshlet meshlet, const float4x4 world_to_clip, const uint2 resolution)
+    bool Meshlet_Cull_Depth_Ortho(const PKMeshlet meshlet, const float4x4 world_to_clip, const int2 resolution, const int max_mip)
     {
         const float3 clip_center = (world_to_clip * float4(ObjectToWorldPos(meshlet.center), 1.0f)).xyz;
         const float3 clip_delta = abs(meshlet.extents.x * (world_to_clip * float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f)).xyz) + 
@@ -351,10 +355,10 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
         const bool is_clipped_far = rect_min.z < 0.0f;
         const bool is_clipped_near = rect_max.z > 1.0f;
         const bool is_visible = rect_max.z > 0.0f && rect_min.z < 1.0f && All_Greater(rect_max.xy, -1.0f.xx) && All_Less(rect_min.xy, 1.0f.xx);
-        return Meshlet_Cull_Depth(is_visible, is_clipped_near, rect_min, rect_max, resolution);
+        return Meshlet_Cull_Depth(is_visible, is_clipped_near, rect_min, rect_max, resolution, max_mip);
     }
 
-    bool Meshlet_Cull_Depth_Perspective(const PKMeshlet meshlet, const float4x4 world_to_clip, const float4x4 view_to_clip, const uint2 resolution)
+    bool Meshlet_Cull_Depth_Perspective(const PKMeshlet meshlet, const float4x4 world_to_clip, const float4x4 view_to_clip, const int2 resolution, const int max_mip)
     {
         const float4 delta_x = (2.0f * meshlet.extents.x) * (world_to_clip * float4(pk_ObjectToWorld[0][0], pk_ObjectToWorld[1][0], pk_ObjectToWorld[2][0], 0.0f));
         const float4 delta_y = (2.0f * meshlet.extents.y) * (world_to_clip * float4(pk_ObjectToWorld[0][1], pk_ObjectToWorld[1][1], pk_ObjectToWorld[2][1], 0.0f));
@@ -400,12 +404,12 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
         const bool is_clipped_near = min_w <= max_z;
         const bool is_clipped_far = 0.0f >= min_z;
         const bool is_visible = max_w > min_z && 0.0f < max_z && All_Less(pmin, 0.0f.xxxx);
-        return Meshlet_Cull_Depth(is_visible, is_clipped_near, rect_min, rect_max, resolution);
+        return Meshlet_Cull_Depth(is_visible, is_clipped_near, rect_min, rect_max, resolution, max_mip);
     }
 
     #else
-    bool Meshlet_Cull_Hierarchical_Depth_Ortho(const PKMeshlet meshlet, const float4x4 world_to_clip, const uint2 resolution) { return false; }
-    bool Meshlet_Cull_Hierarchical_Depth_Perspective(const PKMeshlet meshlet, const float4x4 world_to_clip, const float4x4 view_to_clip, const uint2 resolution) { return false; }
+    bool Meshlet_Cull_Hierarchical_Depth_Ortho(const PKMeshlet meshlet, const float4x4 world_to_clip, const int2 resolution, const int max_mip) { return false; }
+    bool Meshlet_Cull_Hierarchical_Depth_Perspective(const PKMeshlet meshlet, const float4x4 world_to_clip, const float4x4 view_to_clip, const int2 resolution, const int max_mip) { return false; }
     #endif
 
     #if PK_MESHLET_USE_FUNC_TASKLET == 1

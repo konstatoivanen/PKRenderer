@@ -14,6 +14,7 @@ uniform writeonly restrict uimage2D pk_Image1;
 uniform writeonly restrict uimage2D pk_Image2;
 uniform writeonly restrict uimage2D pk_Image3;
 uniform writeonly restrict uimage2D pk_Image4;
+uniform float pk_SceneEnv_Exposure;
 
 uniform float4 pk_SceneEnv_Origin;
 shared float3 lds_irrad;

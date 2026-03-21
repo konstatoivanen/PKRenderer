@@ -49,7 +49,7 @@ namespace PK::App
         resolution.x >>= 1u;
         resolution.y >>= 1u;
 
-        auto leveCount = Math::GetMaxMipLevel(uint2(resolution.x, resolution.y));
+        auto levelCount = Math::GetMaxMipLevel(uint2(resolution.x, resolution.y));
 
         {
             TextureDescriptor descriptor{};
@@ -58,7 +58,7 @@ namespace PK::App
             descriptor.format = TextureFormat::RGB9E5;
             descriptor.formatAlias = TextureFormat::R32UI;
             descriptor.layers = 1;
-            descriptor.levels = leveCount;
+            descriptor.levels = levelCount;
             descriptor.resolution = resolution;
             descriptor.sampler.filterMin = FilterMode::Trilinear;
             descriptor.sampler.filterMag = FilterMode::Trilinear;
@@ -78,16 +78,16 @@ namespace PK::App
 
         cmd.Dispatch(m_computeBloom, m_passDownsample0, { resolution.x, resolution.y, 1u });
 
-        for (auto i = 1u; i < leveCount; ++i)
+        for (auto i = 1u; i < levelCount; ++i)
         {
             RHI::SetTexture(hash->pk_Texture, bloom, i - 1u, 0);
             RHI::SetImage(hash->pk_Image, bloom, i, 0);
             cmd.Dispatch(m_computeBloom, m_passDownsample, { resolution.x >> i, resolution.y >> i, 1u });
         }
 
-        for (auto i = int(leveCount) - 2; i >= 0; --i)
+        for (auto i = int(levelCount) - 2; i >= 0; --i)
         {
-            RHI::SetConstant(hash->pk_Bloom_UpsampleWeight, (float(leveCount) - (i + 1.0f)) * settings.Diffusion);
+            RHI::SetConstant(hash->pk_Bloom_UpsampleWeight, (float(levelCount) - (i + 1.0f)) * settings.Diffusion);
             RHI::SetTexture(hash->pk_Texture, bloom, i + 1u, 0u);
             RHI::SetImage(hash->pk_Image, bloom, i, 0u);
             cmd.Dispatch(m_computeBloom, m_passUpsample, { resolution.x >> i, resolution.y >> i, 1u });

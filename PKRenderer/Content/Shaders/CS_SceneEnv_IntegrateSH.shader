@@ -13,6 +13,8 @@ shared float4 lds_SH_R[GROUP_SIZE * GROUP_SIZE];
 shared float4 lds_SH_G[GROUP_SIZE * GROUP_SIZE];
 shared float4 lds_SH_B[GROUP_SIZE * GROUP_SIZE];
 
+uniform float pk_SceneEnv_Exposure;
+
 [pk_numthreads(GROUP_SIZE, GROUP_SIZE, 1u)]
 void IntegrateCs()
 {

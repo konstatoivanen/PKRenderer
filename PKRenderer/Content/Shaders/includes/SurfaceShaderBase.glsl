@@ -138,9 +138,11 @@ struct SurfaceData
         #if defined(PK_META_PASS_GIVOXELIZE)
         return true;
         #elif defined(PK_META_PASS_GBUFFER)
-        return Meshlet_Cull_Cone(meshlet, pk_ViewWorldOrigin.xyz) && Meshlet_Cull_Frustum_Perspective(meshlet, pk_WorldToClip);
+        return Meshlet_Cull_Cone(meshlet, pk_ViewWorldOrigin.xyz) && 
+               Meshlet_Cull_Frustum_Perspective(meshlet, pk_WorldToClip);
         #else
-        return Meshlet_Cull_Cone(meshlet, pk_ViewWorldOrigin.xyz) && Meshlet_Cull_Depth_Perspective(meshlet, pk_WorldToClip, pk_ViewToClip, pk_ScreenSize);
+        return Meshlet_Cull_Cone(meshlet, pk_ViewWorldOrigin.xyz) && 
+               Meshlet_Cull_Depth_Perspective(meshlet, pk_WorldToClip, pk_ViewToClip, int2(pk_ScreenSize), pk_ScreenLevels);
         #endif
     }
 

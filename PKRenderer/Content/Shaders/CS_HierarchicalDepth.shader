@@ -19,8 +19,8 @@ uniform writeonly restrict image2DArray pk_Image9;
 uniform writeonly restrict image2DArray pk_Image10;
 uniform writeonly restrict image2DArray pk_Image11;
 uniform writeonly restrict image2DArray pk_Image12;
-uniform RWBuffer<uint, 1u> pk_WorkgroupCounter;
-uniform uint2 pk_NumMipsAndWorkGroups;
+uniform RWBuffer<uint, 1u> pk_HZB_WorkgroupCounter;
+uniform uint4 pk_HZB_Parameters;
 
 #define SpdFormat float2
 
@@ -35,10 +35,18 @@ float2 SpdReduce4(float2 v0, float2 v1, float2 v2, float2 v3)
     return r;
 }
 
+float2 SpdReduce2(float2 v0, float2 v1)
+{
+    float2 r;
+    r.x = min(v0.x, v1.x);
+    r.y = max(v0.y, v1.y);
+    return r;
+}
+
 float2 SpdLoadIntermediate(uint x, uint y) { return float2(lds_Depth_Min[x][y], lds_Depth_Max[x][y]);  }
 void SpdStoreIntermediate(uint x, uint y, float2 value) { lds_Depth_Min[x][y] = value.x; lds_Depth_Max[x][y] = value.y; }
-void SpdIncreaseAtomicCounter() { atomicAdd(pk_WorkgroupCounter, 1u); }
-uint SpdGetAtomicCounter() {  return pk_WorkgroupCounter; }
+void SpdIncreaseAtomicCounter() { atomicAdd(pk_HZB_WorkgroupCounter, 1u); }
+uint SpdGetAtomicCounter() {  return pk_HZB_WorkgroupCounter; }
 
 float2 SpdReduceLoadSourceImage4(int2 base)
 {
@@ -57,24 +65,26 @@ float2 SpdReduceLoadSourceImage4(int2 base)
     return float2(cmin(depths), cmax(depths));
 }
 
-float2 SpdLoadMip5(int2 coord) { return float2(imageLoad(pk_Image6, int3(coord, 0)).x, imageLoad(pk_Image6, int3(coord, 1)).x); }
-void SpdStoreMip0(int2 coord, float2 v) { imageStore(pk_Image1, int3(coord, 0), v.xxxx); imageStore(pk_Image1, int3(coord, 1), v.yyyy); }
-void SpdStoreMip1(int2 coord, float2 v) { imageStore(pk_Image2, int3(coord, 0), v.xxxx); imageStore(pk_Image2, int3(coord, 1), v.yyyy); }
-void SpdStoreMip2(int2 coord, float2 v) { imageStore(pk_Image3, int3(coord, 0), v.xxxx); imageStore(pk_Image3, int3(coord, 1), v.yyyy); }
-void SpdStoreMip3(int2 coord, float2 v) { imageStore(pk_Image4, int3(coord, 0), v.xxxx); imageStore(pk_Image4, int3(coord, 1), v.yyyy); }
-void SpdStoreMip4(int2 coord, float2 v) { imageStore(pk_Image5, int3(coord, 0), v.xxxx); imageStore(pk_Image5, int3(coord, 1), v.yyyy); }
-void SpdStoreMip5(int2 coord, float2 v) { imageStore(pk_Image6, int3(coord, 0), v.xxxx); imageStore(pk_Image6, int3(coord, 1), v.yyyy); }
-void SpdStoreMip6(int2 coord, float2 v) { imageStore(pk_Image7, int3(coord, 0), v.xxxx); imageStore(pk_Image7, int3(coord, 1), v.yyyy); }
-void SpdStoreMip7(int2 coord, float2 v) { imageStore(pk_Image8, int3(coord, 0), v.xxxx); imageStore(pk_Image8, int3(coord, 1), v.yyyy); }
-void SpdStoreMip8(int2 coord, float2 v) { imageStore(pk_Image9, int3(coord, 0), v.xxxx); imageStore(pk_Image9, int3(coord, 1), v.yyyy); }
-void SpdStoreMip9(int2 coord, float2 v) { imageStore(pk_Image10, int3(coord, 0), v.xxxx); imageStore(pk_Image10, int3(coord, 1), v.yyyy); }
-void SpdStoreMip10(int2 coord, float2 v) { imageStore(pk_Image11, int3(coord, 0), v.xxxx); imageStore(pk_Image11, int3(coord, 1), v.yyyy); }
-void SpdStoreMip11(int2 coord, float2 v) { imageStore(pk_Image12, int3(coord, 0), v.xxxx); imageStore(pk_Image12, int3(coord, 1), v.yyyy); }
+float2 SpdLoadMip6(int2 coord) { return float2(imageLoad(pk_Image6, int3(coord, 0)).x, imageLoad(pk_Image6, int3(coord, 1)).x); }
+void SpdStoreMip1(int2 coord, float2 v) { imageStore(pk_Image1, int3(coord, 0), v.xxxx); imageStore(pk_Image1, int3(coord, 1), v.yyyy); }
+void SpdStoreMip2(int2 coord, float2 v) { imageStore(pk_Image2, int3(coord, 0), v.xxxx); imageStore(pk_Image2, int3(coord, 1), v.yyyy); }
+void SpdStoreMip3(int2 coord, float2 v) { imageStore(pk_Image3, int3(coord, 0), v.xxxx); imageStore(pk_Image3, int3(coord, 1), v.yyyy); }
+void SpdStoreMip4(int2 coord, float2 v) { imageStore(pk_Image4, int3(coord, 0), v.xxxx); imageStore(pk_Image4, int3(coord, 1), v.yyyy); }
+void SpdStoreMip5(int2 coord, float2 v) { imageStore(pk_Image5, int3(coord, 0), v.xxxx); imageStore(pk_Image5, int3(coord, 1), v.yyyy); }
+void SpdStoreMip6(int2 coord, float2 v) { imageStore(pk_Image6, int3(coord, 0), v.xxxx); imageStore(pk_Image6, int3(coord, 1), v.yyyy); }
+void SpdStoreMip7(int2 coord, float2 v) { imageStore(pk_Image7, int3(coord, 0), v.xxxx); imageStore(pk_Image7, int3(coord, 1), v.yyyy); }
+void SpdStoreMip8(int2 coord, float2 v) { imageStore(pk_Image8, int3(coord, 0), v.xxxx); imageStore(pk_Image8, int3(coord, 1), v.yyyy); }
+void SpdStoreMip9(int2 coord, float2 v) { imageStore(pk_Image9, int3(coord, 0), v.xxxx); imageStore(pk_Image9, int3(coord, 1), v.yyyy); }
+void SpdStoreMip10(int2 coord, float2 v) { imageStore(pk_Image10, int3(coord, 0), v.xxxx); imageStore(pk_Image10, int3(coord, 1), v.yyyy); }
+void SpdStoreMip11(int2 coord, float2 v) { imageStore(pk_Image11, int3(coord, 0), v.xxxx); imageStore(pk_Image11, int3(coord, 1), v.yyyy); }
+void SpdStoreMip12(int2 coord, float2 v) { imageStore(pk_Image12, int3(coord, 0), v.xxxx); imageStore(pk_Image12, int3(coord, 1), v.yyyy); }
+
+#define SPD_SUPPORT_NON_POT_6_TO_12
 
 #include "includes/ffx_spd.glsl"
 
 [pk_numthreads(256, 1u, 1u)]
 void HierarchicalDepthCs()
 {
-    SpdDownsample(gl_WorkGroupID.xy, gl_LocalInvocationIndex, pk_NumMipsAndWorkGroups.x, pk_NumMipsAndWorkGroups.y);
+    SpdDownsample(gl_WorkGroupID.xy, gl_LocalInvocationIndex, pk_HZB_Parameters.x, pk_HZB_Parameters.y, pk_HZB_Parameters.zw);
 }

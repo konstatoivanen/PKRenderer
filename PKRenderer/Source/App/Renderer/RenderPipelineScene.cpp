@@ -72,7 +72,7 @@ namespace PK::App
             { ElementType::Float4, hash->pk_ShadowCascadeZSplits },
             { ElementType::Float4, hash->pk_LightTileZParams },
 
-            { ElementType::Float, hash->pk_SceneEnv_Exposure },
+            { ElementType::Uint, hash->pk_ScreenLevels },
 
             // GI Parameters
             { ElementType::Float, hash->pk_GI_VoxelSize },
@@ -245,7 +245,8 @@ namespace PK::App
             constants->Set<uint4>(hash->pk_FrameRandom, Math::MurmurHash41((uint32_t)(frameIndex % ~0u)));
             constants->Set<uint2>(hash->pk_ScreenSize, { resolution.x, resolution.y });
             constants->Set<uint2>(hash->pk_FrameIndex, { frameIndex % 0xFFFFFFFFu, (frameIndex - frameIndexResize) % 0xFFFFFFFFu });
-            
+            constants->Set<int>(hash->pk_ScreenLevels, Math::GetMaxMipLevel(resolution.xy) - 1u);
+
             constants->Set<float4>(hash->pk_MeshletCullParams, { 1.0f / (viewToClip[1][1] * resolution.y * 0.5f), view->fieldOfView * aspect, view->fieldOfView, 1.0f });
 
             m_passHierarchicalDepth.SetViewConstants(view);
@@ -315,7 +316,6 @@ namespace PK::App
         m_passLights.ComputeClusters(cmdcompute, context);
         m_autoExposure.Render(cmdcompute, context);
         m_depthOfField.ComputeAutoFocus(cmdcompute, context);
-        m_passVolumetricFog.ComputeDensity(cmdcompute, context);
         m_passSceneEnv.PreCompute(cmdcompute, context);
         m_passSceneGI.VoxelMips(cmdcompute);
         m_passSceneGI.ValidateReservoirs(cmdcompute, context);
@@ -338,6 +338,7 @@ namespace PK::App
         }
 
         m_passHierarchicalDepth.Compute(cmdgraphics, context);
+        m_passVolumetricFog.ComputeDensity(cmdgraphics, context);
         queues->Wait(QueueType::Graphics, QueueType::Transfer);
         queues->Submit(QueueType::Graphics, &cmdgraphics.commandBuffer);
 

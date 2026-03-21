@@ -60,8 +60,6 @@ namespace PK::App
         resources->captureOrigin += settings.CaptureOffset;
         resources->captureCounter = glm::min(resources->captureCounter + 1, glm::max(0, settings.CaptureInterval));
 
-        view->constants.Set<float>(hash->pk_SceneEnv_Exposure, settings.Exposure);
-
         if (RHI::ValidateBuffer<float4>(resources->sceneEnvSHBuffer, 4ull, BufferUsage::DefaultStorage, "Scene.Env.SHBuffer"))
         {
             RHI::SetBuffer(hash->pk_SceneEnv_SH, resources->sceneEnvSHBuffer.get());
@@ -104,6 +102,8 @@ namespace PK::App
         {
             auto hash = HashCache::Get();
             auto resolution = resources->sceneEnvIBL->GetResolution();
+
+            RHI::SetConstant<float>(hash->pk_SceneEnv_Exposure, view->settings.EnvBackgroundSettings.Exposure);
 
             RHI::SetTexture(hash->pk_SceneEnv, resources->sourceTexture);
             RHI::SetTexture(hash->pk_SceneEnv_ISL, resources->sceneEnvISL.get());

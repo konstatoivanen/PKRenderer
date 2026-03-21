@@ -26,8 +26,8 @@ namespace PK::App
         DECLARE_HASH(pk_Image11)
         DECLARE_HASH(pk_Image12)
         
-        DECLARE_HASH(pk_WorkgroupCounter)
-        DECLARE_HASH(pk_NumMipsAndWorkGroups)
+        DECLARE_HASH(pk_HZB_WorkgroupCounter)
+        DECLARE_HASH(pk_HZB_Parameters)
 
         DECLARE_HASH(_Offset)
         DECLARE_HASH(_Color)
@@ -48,7 +48,8 @@ namespace PK::App
         DECLARE_HASH(pk_FrameRandom)
         DECLARE_HASH(pk_ScreenSize)
         DECLARE_HASH(pk_FrameIndex)
-        
+        DECLARE_HASH(pk_ScreenLevels)
+
         DECLARE_HASH(pk_MeshletCullParams)
         DECLARE_HASH(pk_ShadowCascadeZSplits)
         DECLARE_HASH(pk_LightTileZParams)

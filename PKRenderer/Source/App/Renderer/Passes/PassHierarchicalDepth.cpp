@@ -1,4 +1,5 @@
 #include "PrecompiledHeader.h"
+#include "Core/Math/FunctionsMisc.h"
 #include "Core/Assets/AssetDatabase.h"
 #include "Core/RHI/RHInterfaces.h"
 #include "Core/RHI/BuiltInResources.h"
@@ -16,7 +17,7 @@ namespace PK::App
         m_computeHierachicalDepth = assetDatabase->Find<ShaderAsset>("CS_HierarchicalDepth").get();
         m_worgroupCounter = RHI::CreateBuffer(sizeof(uint32_t), BufferUsage::DefaultStorage, "HierarchicalDepth.AtomicCounter");
         RHI::SetTexture(HashCache::Get()->pk_GB_Current_DepthMips, RHI::GetBuiltInResources()->BlackTexture2DArray.get());
-        RHI::SetBuffer(HashCache::Get()->pk_WorkgroupCounter, m_worgroupCounter.get());
+        RHI::SetBuffer(HashCache::Get()->pk_HZB_WorkgroupCounter, m_worgroupCounter.get());
     }
 
     void PassHierarchicalDepth::SetViewConstants([[maybe_unused]] RenderView* view)
@@ -37,7 +38,7 @@ namespace PK::App
         hzbDesc.sampler.filterMin = FilterMode::Bilinear;
         hzbDesc.sampler.filterMag = FilterMode::Bilinear;
         hzbDesc.resolution = resolution;
-        hzbDesc.levels = (uint8_t)glm::min(glm::floor(glm::log2(float(glm::max(resolution.x, resolution.y)))), 13.0f);
+        hzbDesc.levels = (uint8_t)glm::min(13u, Math::GetMaxMipLevel(uint2(resolution.x, resolution.y)));
         hzbDesc.layers = 2u;
         hzbDesc.usage = TextureUsage::Sample | TextureUsage::Storage;
         RHI::ValidateTexture(resources->hierarchicalDepth, hzbDesc, "Scene.HierarchicalDepth");
@@ -48,7 +49,8 @@ namespace PK::App
         const auto groupCountX = endIndexX + 1;
         const auto groupCountY = endIndexY + 1;
         const auto numWorkGroups = groupCountX * groupCountY;
-        RHI::SetConstant<uint2>(hash->pk_NumMipsAndWorkGroups, uint2(hzbDesc.levels - 1u, numWorkGroups));
+        
+        RHI::SetConstant<uint4>(hash->pk_HZB_Parameters, uint4(hzbDesc.levels, numWorkGroups, resolution.xy));
 
         // We have at least 8 mips based on min window scale. All targets need to be bound though, rebind last mip to fill the rest of the bindings.
         RHI::SetImage(hash->pk_Image, resources->hierarchicalDepth.get(), { 0, 0, 1, 2 });

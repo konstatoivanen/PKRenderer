@@ -43,8 +43,7 @@ uniform cbuffer pk_PerFrameConstants
     float4 pk_ShadowCascadeZSplits; // view space z axis splits for directional light shadow cascades
     float4 pk_LightTileZParams;     // exponential depth conversion params for light grid z coordinates
 
-    // @TODO redudant in here. remove. Currenty here as it provides padding :)
-    float pk_SceneEnv_Exposure; // Scene background environment exposure
+    int pk_ScreenLevels; // Maximum mip level of current screen dimensions.
     
     // GI Parameters
     float pk_GI_VoxelSize;
