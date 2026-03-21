@@ -248,9 +248,10 @@ namespace PK::App
         {
             auto view = context->views[0];
             auto resources = view->GetResources<ViewResources>();
+            auto resolution = resources->reservoirs0->GetResolution();
             cmd->BeginDebugScope("SceneGI.ValidateReservoirs", PK_COLOR_GREEN);
             cmd.SetShaderBindingTable(&m_sbtValidate);
-            cmd.DispatchRays(m_rayTraceValidate, resources->reservoirs0->GetResolution());
+            cmd.DispatchRays(m_rayTraceValidate, { resolution.x, resolution.y / 2, 1 });
             cmd->EndDebugScope();
         }
     }

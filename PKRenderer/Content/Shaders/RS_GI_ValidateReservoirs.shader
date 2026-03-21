@@ -17,8 +17,9 @@ layout(location = 0) rayPayloadEXT float2 payload;
 
 void MainRgs()
 {
-    const int2 coord_ray = int2(gl_LaunchIDEXT.xy);
-    const int2 coord = GI_ExpandCheckerboardCoord(gl_LaunchIDEXT.xy, 1u);
+    // Only validate half of the reservervoirs each frame. saves performance.
+    const int2 coord_ray = int2(gl_LaunchIDEXT.xy) * int2(1, 2) + int2(0, (pk_FrameIndex.y / 2u) & 0x1u);
+    const int2 coord = GI_ExpandCheckerboardCoord(coord_ray, 1u);
     const float depth = PK_GI_SAMPLE_PREV_DEPTH(coord);
 
     bool invalid_dist = false;
