@@ -4,6 +4,11 @@
 #define PK_MESHLET_USE_FUNC_CULL 1
 #define PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP SampleMaxZ
 #define PK_SURF_DEBUG_SCENE_IBL 0
+#define PK_MESHLET_DEBUG_MESHLET_INDEX 0
+
+#if PK_MESHLET_DEBUG_MESHLET_INDEX && (defined(PK_META_PASS_GIVOXELIZE) || defined(PK_META_PASS_GBUFFER))
+    #undef PK_MESHLET_DEBUG_MESHLET_INDEX
+#endif
 
 #if defined(PK_META_PASS_GIVOXELIZE) 
     #define SHADOW_TEST ShadowTest_PCF2x2
@@ -166,11 +171,7 @@ struct SurfaceData
         const float3 b = normalize(lds_Positions[triangle.y] - a);
         const float3 c = normalize(lds_Positions[triangle.z] - a);
         const float3 n = normalize(cross(b, c));
-
-        if (!GI_Test_VX_Normal(n))
-        {   
-            triangle = uint3(0);
-        }
+        gl_MeshPrimitivesEXT[triangle_index].gl_CullPrimitiveEXT = !GI_Test_VX_Normal(n);
     }
     #endif
 
@@ -407,6 +408,11 @@ struct SurfaceData
 
             sv_output0.rgb += surf.emission;
             sv_output0.a = surf.alpha;
+
+            #if PK_MESHLET_DEBUG_MESHLET_INDEX
+            sv_output0.rgb *= 0.1f;
+            sv_output0.rgb += HsvToRgb(float3((vs_MESHLET_INDEX % 32u) / 32.0f, 1.0f, 1.0f));
+            #endif
         #endif
 
         SURF_STORE_OUTPUT(sv_output0, sv_output1, surf.world_pos)

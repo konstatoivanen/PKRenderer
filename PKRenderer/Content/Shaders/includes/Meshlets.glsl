@@ -16,6 +16,10 @@
 #define MESHLET_UINT4_STRIDE 3u
 #define MESHLET_MAX_ERROR PK_HALF_MAX_MINUS1
 
+#ifndef PK_MESHLET_DEBUG_MESHLET_INDEX
+    #define PK_MESHLET_DEBUG_MESHLET_INDEX 0
+#endif
+
 #ifndef PK_MESHLET_MAX_LOD_ONLY
     #define PK_MESHLET_MAX_LOD_ONLY 0
 #endif
@@ -42,6 +46,10 @@
 
 #ifndef PK_MESHLET_USE_FUNC_TRIANGLE
     #define PK_MESHLET_USE_FUNC_TRIANGLE 0
+#endif
+
+#if PK_MESHLET_DEBUG_MESHLET_INDEX == 1
+    PK_DECLARE_VS_ATTRIB(flat uint vs_MESHLET_INDEX);
 #endif
 
 uniform Buffer<uint2> pk_Meshlet_Tasklets;
@@ -521,6 +529,9 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
                 PK_INSTANCING_ASSIGN_VERTEX_INSTANCE_ID(vertex_index, instance_id)
                 PK_MESHLET_FUNC_VERTEX(vertex_index, vertex, sv_Position);
                 gl_MeshVerticesEXT[vertex_index].gl_Position = sv_Position;
+                #if PK_MESHLET_DEBUG_MESHLET_INDEX == 1
+                vs_MESHLET_INDEX[vertex_index] = meshlet_index;
+                #endif
             }
         }
 
