@@ -4,10 +4,11 @@
 #define PK_MESHLET_USE_FUNC_CULL 1
 #define PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP SampleMaxZ
 #define PK_SURF_DEBUG_SCENE_IBL 0
-#define PK_MESHLET_DEBUG_MESHLET_INDEX 0
+//#define PK_MESHLET_DEBUG_VIEW_MODE PK_MESHLET_DEBUG_VIEW_MODE_TRIANGLES
+//#define PK_MESHLET_MAX_LOD_ONLY 1
 
-#if PK_MESHLET_DEBUG_MESHLET_INDEX && (defined(PK_META_PASS_GIVOXELIZE) || defined(PK_META_PASS_GBUFFER))
-    #undef PK_MESHLET_DEBUG_MESHLET_INDEX
+#if PK_MESHLET_DEBUG_VIEW_MODE > 0 && (defined(PK_META_PASS_GIVOXELIZE) || defined(PK_META_PASS_GBUFFER))
+    #undef PK_MESHLET_DEBUG_VIEW_MODE
 #endif
 
 #if defined(PK_META_PASS_GIVOXELIZE) 
@@ -15,7 +16,9 @@
     #define SHADOW_SAMPLE_SCREENSPACE 0
     #define PK_MESHLET_USE_FUNC_TRIANGLE 1
     // Very high error threshold for voxelize.
-    #define PK_MESHLET_LOD_ERROR_THRESHOLD 4.0f
+    #define PK_MESHLET_LOD_SCALE 8.0f
+#else
+    #define PK_MESHLET_LOD_SCALE 4.0f
 #endif
 
 #include "Common.glsl"
@@ -409,10 +412,8 @@ struct SurfaceData
             sv_output0.rgb += surf.emission;
             sv_output0.a = surf.alpha;
 
-            #if PK_MESHLET_DEBUG_MESHLET_INDEX
-            sv_output0.rgb *= 0.1f;
-            sv_output0.rgb += HsvToRgb(float3((vs_MESHLET_INDEX % 32u) / 32.0f, 1.0f, 1.0f));
-            #endif
+            PK_MESHLET_DEBUG_VISUALIZE(sv_output0.rgb);
+
         #endif
 
         SURF_STORE_OUTPUT(sv_output0, sv_output1, surf.world_pos)

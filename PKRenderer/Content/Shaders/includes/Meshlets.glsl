@@ -16,16 +16,20 @@
 #define MESHLET_UINT4_STRIDE 3u
 #define MESHLET_MAX_ERROR PK_HALF_MAX_MINUS1
 
-#ifndef PK_MESHLET_DEBUG_MESHLET_INDEX
-    #define PK_MESHLET_DEBUG_MESHLET_INDEX 0
+#define PK_MESHLET_DEBUG_VIEW_MODE_NONE 0
+#define PK_MESHLET_DEBUG_VIEW_MODE_CLUSTERS 1
+#define PK_MESHLET_DEBUG_VIEW_MODE_TRIANGLES 2
+
+#ifndef PK_MESHLET_DEBUG_VIEW_MODE
+    #define PK_MESHLET_DEBUG_VIEW_MODE 0
 #endif
 
 #ifndef PK_MESHLET_MAX_LOD_ONLY
     #define PK_MESHLET_MAX_LOD_ONLY 0
 #endif
 
-#ifndef PK_MESHLET_LOD_ERROR_THRESHOLD
-    #define PK_MESHLET_LOD_ERROR_THRESHOLD 0.15f
+#ifndef PK_MESHLET_LOD_SCALE
+    #define PK_MESHLET_LOD_SCALE 1.0f
 #endif
 
 #ifndef PK_MESHLET_HAS_EXTRA_PAYLOAD_DATA
@@ -48,8 +52,13 @@
     #define PK_MESHLET_USE_FUNC_TRIANGLE 0
 #endif
 
-#if PK_MESHLET_DEBUG_MESHLET_INDEX == 1
+#if PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_NONE
+    #define PK_MESHLET_DEBUG_VISUALIZE(color)
+#elif PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_CLUSTERS
     PK_DECLARE_VS_ATTRIB(flat uint vs_MESHLET_INDEX);
+    #define PK_MESHLET_DEBUG_VISUALIZE(color) color *= 0.1f; color += HsvToRgb(float3((vs_MESHLET_INDEX % 16u) / 16.0f, 1.0f, 1.0f))
+#elif PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_TRIANGLES
+    #define PK_MESHLET_DEBUG_VISUALIZE(color) color *= 0.1f; color += HsvToRgb(float3((gl_PrimitiveID % 16u) / 16.0f, 1.0f, 1.0f))
 #endif
 
 uniform Buffer<uint2> pk_Meshlet_Tasklets;
@@ -247,7 +256,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
         #if PK_MESHLET_MAX_LOD_ONLY == 1
             return meshlet.lod_center_error_parent.w > MESHLET_MAX_ERROR;
         #else
-            const float threshold = PK_MESHLET_LOD_ERROR_THRESHOLD * pk_MeshletCullParams.x;
+            const float threshold = PK_MESHLET_LOD_SCALE * pk_MeshletCullParams.x;
             const float4 center_c = ObjectToClipPos(meshlet.lod_center_error_current.xyz);
             const float4 center_p = ObjectToClipPos(meshlet.lod_center_error_parent.xyz);
             float error_c = pk_Instancing_UniformScale * meshlet.lod_center_error_current.w;
@@ -529,7 +538,7 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
                 PK_INSTANCING_ASSIGN_VERTEX_INSTANCE_ID(vertex_index, instance_id)
                 PK_MESHLET_FUNC_VERTEX(vertex_index, vertex, sv_Position);
                 gl_MeshVerticesEXT[vertex_index].gl_Position = sv_Position;
-                #if PK_MESHLET_DEBUG_MESHLET_INDEX == 1
+                #if PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_CLUSTERS
                 vs_MESHLET_INDEX[vertex_index] = meshlet_index;
                 #endif
             }
@@ -551,6 +560,9 @@ PKVertex Meshlet_Load_Vertex(const uint index, const float3 sm_bbmin, const floa
             {
                 PK_MESHLET_FUNC_TRIANGLE(triangle_index, indices);
                 gl_PrimitiveTriangleIndicesEXT[triangle_index] = indices;
+                #if PK_MESHLET_DEBUG_VIEW_MODE == PK_MESHLET_DEBUG_VIEW_MODE_TRIANGLES
+                gl_MeshPrimitivesEXT[triangle_index].gl_PrimitiveID = int(triangle_first + triangle_index);
+                #endif
             }
         }        
     }

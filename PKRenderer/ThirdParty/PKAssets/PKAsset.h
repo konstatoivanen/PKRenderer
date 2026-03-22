@@ -127,6 +127,7 @@ namespace PKAssets
     constexpr static const uint32_t PK_MESHLET_MAX_VERTICES = 64u;
     constexpr static const uint32_t PK_MESHLET_MAX_TRIANGLES = 124u;
     constexpr static const float PK_MESHLET_CONE_WEIGHT = 0.9f;
+    constexpr static const float PK_MESHLET_BOUNDS_SPLIT_FACTOR = 0.5f;
     constexpr static const float PK_MESHLET_LOD_MAX_ERROR = 65504.0f;
  
     constexpr static const float PK_FONT_MSDF_UNIT = 4.0f;
