@@ -36,7 +36,7 @@ namespace PK::App
             auto deltaTime = glm::clamp((float)time.deltaTime, 0.001f, 0.99f);
             auto interpolantPos = 1.0f - glm::exp(-deltaTime / camera->moveSmoothing);
             auto interpolantRot = 1.0f - glm::exp(-deltaTime / camera->rotationSmoothing);
-            auto isDragging = input->state.GetKey(m_keys.LookDrag);
+            auto isDragging = input->state.ConsumeKey(m_keys.LookDrag);
 
             if (isDragging)
             {
@@ -46,7 +46,7 @@ namespace PK::App
 
             auto targetRotation = glm::quat(camera->eulerAngles);
 
-            auto offset = input->state.GetAxis(m_keys.Left, m_keys.Right, m_keys.Down, m_keys.Up, m_keys.Backward, m_keys.Forward);
+            auto offset = input->state.ConsumeAxis(m_keys.Left, m_keys.Right, m_keys.Down, m_keys.Up, m_keys.Backward, m_keys.Forward);
             auto length = glm::length(offset);
 
             if (length > 0)
@@ -57,11 +57,11 @@ namespace PK::App
 
             camera->targetPosition += targetRotation * offset;
 
-            if (input->state.GetKey(m_keys.FovControl))
+            if (input->state.ConsumeKey(m_keys.FovControl))
             {
-                auto fovDelta = input->state.GetAxis(m_keys.FovSub, m_keys.FovAdd);
+                auto fovDelta = input->state.ConsumeAxis(m_keys.FovSub, m_keys.FovAdd);
 
-                if (input->state.GetKey(m_keys.DollyZoom))
+                if (input->state.ConsumeKey(m_keys.DollyZoom))
                 {
                     auto fov0 = projection->fieldOfView;
                     auto fov1 = projection->fieldOfView + fovDelta;
@@ -77,11 +77,11 @@ namespace PK::App
             }
             else
             {
-                auto speedDelta = input->state.GetAxis(m_keys.SpeedDown, m_keys.SpeedUp);
+                auto speedDelta = input->state.ConsumeAxis(m_keys.SpeedDown, m_keys.SpeedUp);
                 camera->moveSpeed += camera->moveSpeed * 0.25f * speedDelta;
                 camera->moveSpeed = glm::max(0.01f, camera->moveSpeed);
 
-                if (input->state.GetKey(m_keys.ResetSmoothing))
+                if (input->state.ConsumeKey(m_keys.ResetSmoothing))
                 {
                     interpolantPos = 1.0f;
                     interpolantRot = 1.0f;

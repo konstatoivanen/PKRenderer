@@ -79,6 +79,7 @@ namespace PK::App
                 m_commandInput.Append((char)input.character);
             }
 
+            input.ConsumeAll();
             return;
         }
 

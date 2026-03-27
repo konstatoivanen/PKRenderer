@@ -26,6 +26,7 @@ namespace PK
             bool operator~() const noexcept { return !mask->GetAt(index); }
             operator bool() const noexcept { return mask->GetAt(index); }
             Reference& Flip() noexcept { mask->FlipAt(index); return *this; }
+            bool Exchange(bool value) noexcept { auto e = mask->GetAt(index); mask->SetAt(index, value); return e; }
             TFixedMask* mask;
             size_t index;
         };
@@ -40,7 +41,7 @@ namespace PK
         void SetAt(size_t index, bool value) { m_mask[index >> 6ull] = (m_mask[index >> 6ull] & ~(1ull << (index & 63ull))) | ((uint64_t)value << (index & 63u)); }
         void FlipAt(size_t index) { m_mask[index >> 6ull] ^= 1ull << (index & 63ull); }
         void FlipRange(size_t start, size_t end) { BinaryUtilities::FlipRange(m_mask, start, end); }
-        void Clear() { memset(m_mask, 0, sizeof(m_mask)); }
+        void SetAll(bool value) { memset(m_mask, value ? -1 : 0, sizeof(m_mask)); }
         constexpr bool operator[](size_t i) const { return GetAt(i); }
         Reference operator[](size_t i) { return Reference(*this, i); }
         uint64_t m_mask[Size]{};

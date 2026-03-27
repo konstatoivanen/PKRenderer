@@ -26,8 +26,7 @@ namespace PK::App
 
             // @TODO select input state on some view preference.
             auto& input = views[i].input;
-            input->state = ctx->input.globalState;
-            input->keysConsumed.Clear();
+            input->state = ctx->input.lastDeviceState.state;
             input->hotControlId = 0u;
             input->controlIdCounter = 1u;
         }

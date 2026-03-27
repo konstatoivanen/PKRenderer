@@ -8,9 +8,6 @@ namespace PK::App
     {
         InputState state{};
 
-        // For systems that can have conflicting inputs
-        FixedMask<(size_t)InputKey::Count> keysConsumed;
-        
         // Current index holding input focus.
         uint32_t hotControlId = 0u;
 
