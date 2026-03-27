@@ -639,10 +639,15 @@ namespace PKAssets
     struct alignas(4) PKFont
     {
         uint32_t characterCount;                 // 4 bytes
-        uint16_t atlasResolution[2];             // 8 bytes
-        uint32_t atlasDataSize;                  // 12 bytes
-        RelativePtr<PKFontCharacter> characters; // 16 bytes
-        RelativePtr<void> atlasData;             // 20 bytes
+        float lineHeight;                        // 8 bytes
+        float ascender;                          // 12 bytes
+        float descender;                         // 16 bytes
+        float underline;                         // 20 bytes
+        float underlineThickness;                // 24 bytes
+        uint16_t atlasResolution[2];             // 28 bytes
+        uint32_t atlasDataSize;                  // 32 bytes
+        RelativePtr<PKFontCharacter> characters; // 36 bytes
+        RelativePtr<void> atlasData;             // 40 bytes
     };
 
 

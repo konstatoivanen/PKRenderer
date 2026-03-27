@@ -247,8 +247,8 @@ namespace PK::App
 
             if (m_gui_vertexCount <= GUI_MAX_VERTICES && m_gui_indexCount <= GUI_MAX_INDICES)
             {
-                const short4 inner = short4(rect.x + inset, rect.y - inset, rect.x + rect.z - inset, rect.y + rect.w + inset);
                 const short4 outer = short4(rect.x, rect.y, rect.x + rect.z, rect.y + rect.w);
+                const short4 inner = short4(outer.x + inset, outer.y + inset, outer.z - inset, outer.w - inset);
 
                 for (auto i = 0u; i < 4; ++i)
                 {
@@ -264,17 +264,17 @@ namespace PK::App
                     m_gui_indexView[idxi++] = base0 + 0;
                 }
 
-                m_gui_vertexView[idxv++] = { color, outer.xy, PK_USHORT2_ZERO, 0, 0u };
-                m_gui_vertexView[idxv++] = { color, inner.xy, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 0] = { color, outer.xy, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 1] = { color, inner.xy, PK_USHORT2_ZERO, 0, 0u };
 
-                m_gui_vertexView[idxv++] = { color, outer.xw, PK_USHORT2_ZERO, 0, 0u };
-                m_gui_vertexView[idxv++] = { color, inner.xw, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 2] = { color, outer.xw, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 3] = { color, inner.xw, PK_USHORT2_ZERO, 0, 0u };
                 
-                m_gui_vertexView[idxv++] = { color, outer.zw, PK_USHORT2_ZERO, 0, 0u };
-                m_gui_vertexView[idxv++] = { color, inner.zw, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 4] = { color, outer.zw, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 5] = { color, inner.zw, PK_USHORT2_ZERO, 0, 0u };
                 
-                m_gui_vertexView[idxv++] = { color, outer.zy, PK_USHORT2_ZERO, 0, 0u };
-                m_gui_vertexView[idxv++] = { color, inner.zy, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 6] = { color, outer.zy, PK_USHORT2_ZERO, 0, 0u };
+                m_gui_vertexView[idxv + 7] = { color, inner.zy, PK_USHORT2_ZERO, 0, 0u };
             }
         }
     }
@@ -310,51 +310,48 @@ namespace PK::App
         }
     }
 
-    void EngineGUIRenderer::GUIDrawText(const color32& color, const short2& coord, const char* text, TextAlign alignx, TextAlign aligny, float size, float lineSpacing)
+    void EngineGUIRenderer::GUIDrawText(const color32& color, const short4& rect, const char* text, const FontStyle& style)
     {
         if (m_gui_enabled)
         {
-            m_gui_textBuilder.Initialize(text, m_gui_font, alignx, aligny, size, lineSpacing);
+            auto max_rects = Font::CalculateMaxRectCount(text, m_gui_font);
             
-            auto rectCount = m_gui_textBuilder.GetVisibleGeometryCount();
-
-            if (rectCount > 0)
+            if (max_rects > 0)
             {
-                auto idxv = m_gui_vertexCount;
-                auto idxi = m_gui_indexCount;
-                m_gui_vertexCount += rectCount * 4;
-                m_gui_indexCount += rectCount * 6;
+                auto text_rects = PK_STACK_ALLOC(FontRect, max_rects);
+                auto rect_count = Font::CalculateRects(text, m_gui_font, rect, rect, style, text_rects, max_rects);
 
-                if (m_gui_vertexCount <= GUI_MAX_VERTICES && m_gui_indexCount <= GUI_MAX_INDICES)
+                if (rect_count > 0)
                 {
-                    const float2 texelSize = m_gui_font->GetRHI()->GetTexelSize().xy;
+                    auto idxv = m_gui_vertexCount;
+                    auto idxi = m_gui_indexCount;
+                    m_gui_vertexCount += rect_count * 4;
+                    m_gui_indexCount += rect_count * 6;
 
-                    for (auto rect = m_gui_textBuilder.GetNextGeometry(); rect; rect = m_gui_textBuilder.GetNextGeometry())
+                    if (m_gui_vertexCount <= GUI_MAX_VERTICES && m_gui_indexCount <= GUI_MAX_INDICES)
                     {
-                        if (!rect->isWhiteSpace)
+                        const float2 texelSize = m_gui_font->GetRHI()->GetTexelSize().xy;
+
+                        for (auto i = 0u; i <= rect_count; ++i)
                         {
-                            const short4 sminmax = short4(rect->rect.x, rect->rect.y, rect->rect.x + rect->rect.z, rect->rect.y + rect->rect.w);
-                            const float4 tminmax = float4(rect->texrect.x, rect->texrect.y, rect->texrect.x + rect->texrect.z, rect->texrect.y + rect->texrect.w);
+                            auto& crect = text_rects[i];
+                            const auto sminmax = short4(crect.rect.x, crect.rect.y, crect.rect.x + crect.rect.z, crect.rect.y + crect.rect.w);
+                            const auto tminmax = float4(crect.texrect.x, crect.texrect.y, crect.texrect.x + crect.texrect.z, crect.texrect.y + crect.texrect.w);
                             m_gui_indexView[idxi++] = idxv + 0;
                             m_gui_indexView[idxi++] = idxv + 1;
                             m_gui_indexView[idxi++] = idxv + 2;
                             m_gui_indexView[idxi++] = idxv + 2;
                             m_gui_indexView[idxi++] = idxv + 3;
                             m_gui_indexView[idxi++] = idxv + 0;
-                            m_gui_vertexView[idxv++] = { color, coord + sminmax.xy, Math::PackHalf(tminmax.xy * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
-                            m_gui_vertexView[idxv++] = { color, coord + sminmax.xw, Math::PackHalf(tminmax.xw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
-                            m_gui_vertexView[idxv++] = { color, coord + sminmax.zw, Math::PackHalf(tminmax.zw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
-                            m_gui_vertexView[idxv++] = { color, coord + sminmax.zy, Math::PackHalf(tminmax.zy * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
+                            m_gui_vertexView[idxv++] = { color, sminmax.xy, Math::PackHalf(tminmax.xy * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
+                            m_gui_vertexView[idxv++] = { color, sminmax.xw, Math::PackHalf(tminmax.xw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
+                            m_gui_vertexView[idxv++] = { color, sminmax.zw, Math::PackHalf(tminmax.zw * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
+                            m_gui_vertexView[idxv++] = { color, sminmax.zy, Math::PackHalf(tminmax.zy * texelSize), GUI_TEX_INDEX_DEFAULT_FONT, 1u };
                         }
                     }
                 }
             }
         }
-    }
-
-    void EngineGUIRenderer::GUIDrawText(const color32& color, const short2& coord, const char* text, float size, float lineSpacing)
-    {
-        GUIDrawText(color, coord, text, TextAlign::Start, TextAlign::Start, size, lineSpacing);
     }
 
 

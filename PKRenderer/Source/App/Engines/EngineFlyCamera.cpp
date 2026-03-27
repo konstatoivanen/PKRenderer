@@ -36,12 +36,15 @@ namespace PK::App
             auto deltaTime = glm::clamp((float)time.deltaTime, 0.001f, 0.99f);
             auto interpolantPos = 1.0f - glm::exp(-deltaTime / camera->moveSmoothing);
             auto interpolantRot = 1.0f - glm::exp(-deltaTime / camera->rotationSmoothing);
+            auto isDragging = input->state.GetKey(m_keys.LookDrag);
 
-            if (input->state.GetKey(m_keys.LookDrag))
+            if (isDragging)
             {
                 camera->eulerAngles.x += input->state.cursorPositionDelta.y * sensitivity;
                 camera->eulerAngles.y -= input->state.cursorPositionDelta.x * sensitivity;
             }
+
+            auto targetRotation = glm::quat(camera->eulerAngles);
 
             auto offset = input->state.GetAxis(m_keys.Left, m_keys.Right, m_keys.Down, m_keys.Up, m_keys.Backward, m_keys.Forward);
             auto length = glm::length(offset);
@@ -52,9 +55,7 @@ namespace PK::App
                 offset *= deltaTime * camera->moveSpeed;
             }
 
-            auto targetRotation = glm::quat(camera->eulerAngles);
             camera->targetPosition += targetRotation * offset;
-
 
             if (input->state.GetKey(m_keys.FovControl))
             {
@@ -93,8 +94,7 @@ namespace PK::App
             // Force automatic perspective projection for this view.
             view.projection->mode = ComponentProjection::Perspective;
 
-            const bool lockAndHideCursor = input->state.GetKey(m_keys.LookDrag);
-            ctx->window->SetCursorLock(lockAndHideCursor, !lockAndHideCursor);
+            ctx->window->SetCursorLock(isDragging, !isDragging);
             ctx->window->GetNative()->SetUseRawInput(true);
         }
     }

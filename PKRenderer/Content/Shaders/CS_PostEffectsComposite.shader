@@ -108,7 +108,7 @@ void PostEffectsCompositeCs()
         IF_FX_FEATURE_ENABLED(FX_FEAT_DEBUG_GI_VX)
         {
             float depth = SampleViewDepth(uv);
-            float4 voxel = GI_Load_Voxel(UvToWorldPos(uv, depth), 1.5f);
+            float4 voxel = GI_VX_Load(UvToWorldPos(uv, depth), 1.0f);
             voxel.rgb *= SafePositiveRcp(voxel.a);
             color = voxel.rgb * exposure;
         }

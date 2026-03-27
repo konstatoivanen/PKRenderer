@@ -46,6 +46,6 @@ void PK_MESHLET_FUNC_VERTEX(uint vertex_index, PKVertex vertex, inout float4 sv_
 
 void ForwardFs() { SV_Target0 = _Color; }
 void GBufferFs() { SV_Target0 = EncodeGBufferWorldNR(vs_Normal, 0.0f, 0.0f); }
-void GIVoxelizeFs() { GI_Store_Voxel(GI_FragVoxelToWorldSpace(gl_FragCoord.xyz), _ColorVoxelize); }
+void GIVoxelizeFs() { GI_VX_Store(GI_VX_FragToWorld(gl_FragCoord.xyz), _ColorVoxelize); }
 
 #endif

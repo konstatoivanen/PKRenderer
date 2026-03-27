@@ -146,7 +146,7 @@ void InjectCs()
     const float3 view_dir = (world_pos - pk_ViewWorldOrigin.xyz) / view_dist;
 
     const float3 gi_static = SceneEnv_Sample_ISL_Dual(EncodeOctaUv(view_dir), pow2(uvw_cur.z));
-    const float4 gi_dynamic = GI_SphereTrace_Diffuse(world_pos);
+    const float4 gi_dynamic = GI_VX_SphereTrace_Diffuse(world_pos);
 
     // Fade values for properties not present in backgroung fog
     const float fade_shadow_direct = Fog_Fade_FroxelShadows_Direct(view_dist);

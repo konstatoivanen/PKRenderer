@@ -62,7 +62,7 @@ void VolumeMipmapCs()
 [pk_numthreads(4u, 4u, 4u)]
 void VolumeClearCs()
 {
-    const float3 world_position = GI_VoxelToWorldSpace(int3(gl_GlobalInvocationID));
+    const float3 world_position = GI_VX_CoordToWorld(int3(gl_GlobalInvocationID));
     const float3 clip_uvw = WorldToClipUvw(world_position);
 
     if (!Test_InUvw(clip_uvw))
@@ -70,8 +70,8 @@ void VolumeClearCs()
         return;
     }
 
-    uint write_count = imageLoad(pk_GI_VolumeMaskWrite, int3(gl_GlobalInvocationID)).x;
-    imageStore(pk_GI_VolumeMaskWrite, int3(gl_GlobalInvocationID), uint4(0u));
+    uint write_count = imageLoad(pk_GI_VX_Mask, int3(gl_GlobalInvocationID)).x;
+    imageStore(pk_GI_VX_Mask, int3(gl_GlobalInvocationID), uint4(0u));
 
     if (write_count == 0u)
     {

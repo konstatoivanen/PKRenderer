@@ -46,11 +46,11 @@ uniform cbuffer pk_PerFrameConstants
     int pk_ScreenLevels; // Maximum mip level of current screen dimensions.
     
     // GI Parameters
-    float pk_GI_VoxelSize;
-    float pk_GI_VoxelStepSize;
-    float pk_GI_VoxelLevelScale;
-    float4 pk_GI_VolumeST;
-    uint4 pk_GI_VolumeSwizzle;
+    float3 pk_GI_VX_TexelSize;
+    float pk_GI_VX_StepSize;
+    uint3 pk_GI_VX_Swizzle;
+    float pk_GI_VX_LevelScale;
+    float4 pk_GI_VX_ST;
     uint2 pk_GI_RayDither;
 
     // Fog Parameters
@@ -122,6 +122,7 @@ uniform cbuffer pk_ModelMatrices
 
 uniform sampler pk_SamplerBilinearRepeat;
 uniform sampler pk_SamplerBilinearClamped;
+uniform sampler pk_SamplerTrilinearBorder;
 uniform sampler pk_SamplerPointClamped;
 uniform sampler pk_SamplerTrilinearRepeatAniso;
 uniform accelerationStructureEXT pk_SceneStructure;

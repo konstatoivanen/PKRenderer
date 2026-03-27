@@ -36,8 +36,7 @@ namespace PK::App
 
     void EngineInput::InputHandler_OnPoll()
     {
-        m_globalState.cursorPositionDelta = PK_FLOAT2_ZERO;
-        m_globalState.keysPrevious = m_globalState.keysCurrent;
+        m_globalState.SwapBuffers();
         m_droppedFilePaths.device = nullptr;
     }
 
@@ -47,8 +46,7 @@ namespace PK::App
 
         if (state)
         {
-            state->cursorPositionDelta = PK_FLOAT2_ZERO;
-            state->keysPrevious = state->keysCurrent;
+            state->SwapBuffers();
         }
     }
 
@@ -101,8 +99,8 @@ namespace PK::App
 
         if (state)
         {
-            state->lastCharacter = character;
-            m_globalState.lastCharacter = character;
+            state->character = character;
+            m_globalState.character = character;
             m_lastDevice = device;
         }
     }

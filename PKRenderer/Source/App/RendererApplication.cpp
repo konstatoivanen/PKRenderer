@@ -150,7 +150,8 @@ namespace PK::App
                     engineGUIRenderer,
                     {
                         Sequencer::Step::Create<IGizmosRenderer*>(engineDebug),
-                        Sequencer::Step::Create<IGUIRenderer*>(engineProfiler)
+                        Sequencer::Step::Create<IGUIRenderer*>(engineProfiler),
+                        Sequencer::Step::Create<IGUIRenderer*>(engineCommands)
                     }
                 },
                 {

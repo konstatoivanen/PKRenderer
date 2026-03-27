@@ -7,13 +7,16 @@ namespace PK
     template<size_t capacity>
     struct FixedString
     {
-        FixedString() {}
+        FixedString() 
+        {
+            m_string[0] = 0;
+        }
 
         FixedString(size_t length, const char* str)
         {
             if (str != nullptr)
             {
-                PK_CONTAINER_RANGE_CHECK(length + 1u, 0u, capacity);
+                PK_CONTAINER_RANGE_CHECK(length, 0u, capacity);
                 m_length = length;
                 strncpy(m_string, str, m_length);
                 m_string[m_length] = 0;
@@ -29,7 +32,7 @@ namespace PK
                 m_length = _vsnprintf(m_string, capacity, format, v0);
                 m_string[capacity - 1] = 0;
                 va_end(v0);
-                PK_CONTAINER_RANGE_CHECK(m_length + 1u, 0u, capacity);
+                PK_CONTAINER_RANGE_CHECK(m_length, 0u, capacity);
             }
         }
 
@@ -39,7 +42,7 @@ namespace PK
             {
                 auto offset = m_length;
                 m_length += strlen(str);
-                PK_CONTAINER_RANGE_CHECK(m_length + 1u, 0u, capacity);
+                PK_CONTAINER_RANGE_CHECK(m_length, 0u, capacity);
                 strcpy(m_string + offset, str);
             }
         }
@@ -57,12 +60,34 @@ namespace PK
         bool operator == (const char* str) { return strcmp(str, m_string) == 0; }
         bool operator != (const char* str) { return strcmp(str, m_string) != 0; }
 
+        bool IsFull() const { return m_length == capacity - 1ull; }
+
         void Append(const char* str)
         {
-            auto offset = m_length;
-            m_length += strlen(str);
-            PK_CONTAINER_RANGE_CHECK(m_length + 1u, 0u, capacity);
-            strcpy(m_string + offset, str);
+            auto length = strlen(str);
+            PK_CONTAINER_RANGE_CHECK(m_length + length, 0u, capacity);
+            strcpy(m_string + m_length, str);
+            m_length += length;
+        }
+
+        void Append(char c) 
+        {
+            PK_CONTAINER_RANGE_CHECK(m_length + 1ull, 0u, capacity);
+            m_string[m_length] = c;
+            m_string[++m_length] = 0;
+        }
+
+        char Pop()
+        {
+            auto c = m_string[m_length];
+            m_string[m_length == 0ull ? 0ull : --m_length] = 0;
+            return c;
+        }
+
+        void Clear()
+        {
+            m_string[0] = 0u;
+            m_length = 0;
         }
 
     private:

@@ -8,6 +8,7 @@ namespace PK
     struct ShaderAsset;
     struct Material;
     struct Font;
+    struct FontStyle;
     struct Mesh;
     struct MeshStatic;
     struct SubMeshStatic;
@@ -22,7 +23,6 @@ namespace PK
     struct ShaderPropertyWriter;
     struct ShaderPropertyBlock;
     struct Window;
-    enum class TextAlign;
 
     typedef Ref<TextureAsset> TextureAssetRef;
     typedef Ref<ShaderAsset> ShaderAssetRef;

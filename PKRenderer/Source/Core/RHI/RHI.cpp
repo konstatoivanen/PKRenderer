@@ -115,6 +115,8 @@ namespace PK
                 features.swapchainMaintenance1.swapchainMaintenance1 = VK_TRUE;
                 features.presentId.presentId = VK_TRUE;
                 features.presentWait.presentWait = VK_TRUE;
+                features.maximalReconvergence.shaderMaximalReconvergence = VK_TRUE;
+                features.quadControl.shaderQuadControl = VK_TRUE;
                 //features.meshshader.meshShaderQueries;
 
                 const char* PK_INSTANCE_EXTENTIONS[] =
@@ -138,13 +140,15 @@ namespace PK
                     VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME,
                     VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME,
                     VK_EXT_MESH_SHADER_EXTENSION_NAME,
+                    VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_EXTENSION_NAME,
+                    VK_KHR_SHADER_QUAD_CONTROL_EXTENSION_NAME,
                     VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
                     VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME,
                     VK_KHR_MULTIVIEW_EXTENSION_NAME,
                     VK_EXT_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME,
                     VK_KHR_PRESENT_WAIT_EXTENSION_NAME,
                     VK_KHR_PRESENT_ID_EXTENSION_NAME,
-                    "VK_KHR_swapchain_maintenance1"
+                    "VK_KHR_swapchain_maintenance1",
                 };
 
                 driver = CreateUnique<VulkanDriver>(VulkanDriverDescriptor

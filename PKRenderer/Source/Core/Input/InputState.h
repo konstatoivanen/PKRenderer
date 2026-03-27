@@ -8,7 +8,7 @@ namespace PK
     {
         InputKeyState keysCurrent;
         InputKeyState keysPrevious;
-        uint32_t lastCharacter = 0u;
+        uint32_t character = 0u;
         float2 cursorPosition = PK_FLOAT2_ZERO;
         float2 cursorPositionDelta = PK_FLOAT2_ZERO;
         float2 cursorPositionNormalized = PK_FLOAT2_ZERO;
@@ -20,6 +20,7 @@ namespace PK
         float GetAxisDown(InputKey xneg, InputKey xpos)  const;
         float2 GetAxisDown(InputKey xneg, InputKey xpos, InputKey yneg, InputKey ypos)  const;
         float3 GetAxisDown(InputKey xneg, InputKey xpos, InputKey yneg, InputKey ypos, InputKey zneg, InputKey zpos) const;
+        void SwapBuffers();
 
         bool GetKeyDown(InputKey key) const { return keysCurrent[(int)key] && !keysPrevious[(int)key]; }
         bool GetKeyUp(InputKey key) const { return !keysCurrent[(int)key] && keysPrevious[(int)key]; }

@@ -1,5 +1,7 @@
 #pragma once
 
+#extension GL_EXT_shader_quad_control : require
+
 // needs to be declared before lighting & meshlets include.
 #define PK_MESHLET_USE_FUNC_CULL 1
 #define PK_MESHLET_SAMPLE_VIEW_DEPTH_MIP SampleMaxZ
@@ -47,13 +49,13 @@
     #undef SURF_USE_TANGENTS
     // Prefilter by using a higher mip bias in voxelization.
     #define SURF_DECLARE_RASTER_OUTPUT
-    #define SURF_STORE_OUTPUT(value0, value1, world_pos) GI_Store_Voxel(world_pos, value0);
+    #define SURF_STORE_OUTPUT(value0, value1, world_pos) GI_VX_Store(world_pos, value0);
     #define SURF_TEX(t, uv) texture(sampler2D(t, pk_SamplerTrilinearRepeatAniso), uv, 4.0f)
     #define SURF_TEX_TRIPLANAR(t, n, uvw) SampleTexTriplanar(t,n,uvw,4.0f)
-    #define SURF_WORLD_TO_CLIPSPACE(position)  GI_WorldToVoxelNdcSpace(position)
+    #define SURF_WORLD_TO_CLIPSPACE(position) GI_VX_WorldToNdc(position)
     #define SURF_EVALUATE_BxDF BxDF_FullyRoughMinimal
     #define SURF_EVALUATE_BxDF_INDIRECT GetIndirectLight_VXGI
-    #define SURF_FS_ASSIGN_WORLDPOSITION vs_WORLDPOSITION = GI_FragVoxelToWorldSpace(gl_FragCoord.xyz);
+    #define SURF_FS_ASSIGN_WORLDPOSITION vs_WORLDPOSITION = GI_VX_FragToWorld(gl_FragCoord.xyz);
 #else
     #if defined(PK_META_PASS_GBUFFER)
         #define SURF_DECLARE_RASTER_OUTPUT out float4 SV_Target0; out float SV_Target1;
@@ -174,7 +176,7 @@ struct SurfaceData
         const float3 b = normalize(lds_Positions[triangle.y] - a);
         const float3 c = normalize(lds_Positions[triangle.z] - a);
         const float3 n = normalize(cross(b, c));
-        gl_MeshPrimitivesEXT[triangle_index].gl_CullPrimitiveEXT = !GI_Test_VX_Normal(n);
+        gl_MeshPrimitivesEXT[triangle_index].gl_CullPrimitiveEXT = !GI_VX_Test_Normal(n);
     }
     #endif
 
@@ -296,21 +298,22 @@ struct SurfaceData
     
     float3 GetIndirectLight_VXGI(const BxDFSurf surf, const float3 world_pos, const float3 clip_uvw)
     {
-        // Get unquantized clip uvw.
-        const float delta_depth = SampleViewDepth(clip_uvw.xy) - ViewDepth(clip_uvw.z); 
+        const float depth_view = SampleViewDepth(clip_uvw.xy);
+        const float depth_surf = ViewDepth(clip_uvw.z);
+        const bool is_invalid_surf = (abs(depth_view - depth_surf ) / depth_view) > 0.025f;
 
         // Fragment is in view
         [[branch]]
-        if (delta_depth > -0.01f && delta_depth < 0.1f)
+        if (subgroupQuadAll(is_invalid_surf))
         {
-            // Sample screen space SH values for more accurate results.
-            return surf.diffuse * GI_Evaluate_Diffuse(GI_Load_Resolved(clip_uvw.xy), surf.normal);
+            const float3 diff_scene_env = SceneEnv_Sample_SH_Diffuse(surf.normal);
+            const float4 diff_voxel_traced = GI_VX_ConeTrace_Diffuse(world_pos, surf.normal);
+            return surf.diffuse * (diff_scene_env * diff_voxel_traced.a + diff_voxel_traced.rgb);
         }
         else
         {
-            const float3 diff_scene_env = SceneEnv_Sample_SH_Diffuse(surf.normal);
-            const float4 diff_voxel_traced = GI_ConeTrace_Diffuse(world_pos, surf.normal);
-            return surf.diffuse * (diff_scene_env * diff_voxel_traced.a + diff_voxel_traced.rgb);
+            // Sample screen space SH values for more accurate results.
+            return surf.diffuse * GI_Evaluate_Diffuse(GI_Load_Resolved(clip_uvw.xy), surf.normal);
         }
     }
 
@@ -340,16 +343,14 @@ struct SurfaceData
         surf.roughness = 1.0f;
         
         #if defined(PK_META_PASS_GIVOXELIZE)
-            float3 voxel_pos = GI_QuantizeWorldToVoxelSpace(surf.world_pos);
-            voxel_pos = WorldToClipUvw(voxel_pos);
+            surf.clip_uvw = WorldToClipUvw(surf.world_pos);
 
             [[branch]]
-            if (!Test_InUvw(voxel_pos) || GI_Test_VX_HasValue(surf.world_pos))                 
+            if (!Test_InUvw(surf.clip_uvw) || GI_VX_Test_HasValue(surf.world_pos))                 
             {
                 return;
             }
 
-            surf.clip_uvw = WorldToClipUvw(surf.world_pos);
             surf.clip_uvw.xy = ClampBilinearViewUv(surf.clip_uvw.xy);
             int2 coord_screen = int2(surf.clip_uvw.xy * pk_ScreenSize.xy);
         #else

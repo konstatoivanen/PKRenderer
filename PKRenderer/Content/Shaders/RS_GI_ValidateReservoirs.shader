@@ -85,7 +85,7 @@ void MainRchs()
     }
     else
     {
-        const float4 voxel = GI_Load_Voxel(world_pos, PK_GI_GET_VX_MI_BIAS(gl_HitTEXT));
+        const float4 voxel = GI_VX_Load(world_pos, PK_GI_GET_VX_MI_BIAS(gl_HitTEXT));
         radiance = voxel.rgb / max(voxel.a, 1e-2f);
     }
 

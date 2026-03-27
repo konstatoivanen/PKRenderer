@@ -40,8 +40,7 @@ namespace PK::App
         void GUIDrawRect(const color32& color, const short4& screenRect) final;
         void GUIDrawWireRect(const color32& color, const short4& rect, short inset) final;
         void GUIDrawLine(const color32& color0, const color32& color1, const short2& p0, const short2& p1, const float width) final;
-        void GUIDrawText(const color32& color, const short2& coord, const char* text, TextAlign alignx, TextAlign aligny, float size = 1.0f, float lineSpacing = 1.0f) final;
-        void GUIDrawText(const color32& color, const short2& coord, const char* text, float size = 1.0f, float lineSpacing = 1.0f) final;
+        void GUIDrawText(const color32& color, const short4& rect, const char* text, const FontStyle& style) final;
 
         void GizmosDrawBounds(const BoundingBox& aabb) final;
         void GizmosDrawBox(const float3& origin, const float3& size) final;
@@ -71,7 +70,6 @@ namespace PK::App
         RHIBufferRef m_gui_indexBuffer;
         BufferView<GUIVertex> m_gui_vertexView;
         BufferView<uint16_t> m_gui_indexView;
-        TextGeometryBuilder m_gui_textBuilder;
 
         short4 m_gui_renderAreaRect = PK_SHORT4_ZERO;
         uint32_t m_gui_vertexCount = 0;

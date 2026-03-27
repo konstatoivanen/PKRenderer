@@ -7,6 +7,8 @@
 
 namespace PK
 {
+    #define PK_FONT_FLIP_Y 1
+
     Font::Font(const char* filepath)
     {
         PKAssets::PKAsset asset;
@@ -14,25 +16,47 @@ namespace PK
         PK_THROW_ASSERT(PKAssets::OpenAsset(filepath, &asset) == 0, "Failed to open asset at path: %s", filepath);
         PK_THROW_ASSERT(asset.header->type == PKAssets::PKAssetType::Font, "Trying to read a font from a non font file!")
 
-         auto font = PKAssets::ReadAsFont(&asset);
+        auto font = PKAssets::ReadAsFont(&asset);
         auto base = asset.rawData;
         auto pCharacters = font->characters.Get(base);
+
+        m_lineHeight = font->lineHeight;
+        m_ascender = font->ascender;
+        m_descender = font->descender;
+        m_underline = font->underline;
+        m_underlineThickness = font->underlineThickness;
+
+        auto miny = 0.0f;
+        auto maxy = 0.0f;
 
         for (auto i = 0u; i < font->characterCount; ++i)
         {
             auto& assetCharacter = pCharacters[i];
-            auto& character = m_characters[assetCharacter.unicode];
-            character.advance = assetCharacter.advance;
-            character.rect.x = assetCharacter.rect[0];
-            character.rect.y = assetCharacter.rect[1];
-            character.rect.z = assetCharacter.rect[2];
-            character.rect.w = assetCharacter.rect[3];
-            character.texrect.x = assetCharacter.texrect[0];
-            character.texrect.y = assetCharacter.texrect[1];
-            character.texrect.z = assetCharacter.texrect[2];
-            character.texrect.w = assetCharacter.texrect[3];
-            character.isWhiteSpace = assetCharacter.isWhiteSpace;
+            auto& glyph = m_glyphs[assetCharacter.unicode];
+            glyph.advance = assetCharacter.advance;
+            glyph.rect.x = assetCharacter.rect[0];
+            glyph.rect.y = assetCharacter.rect[1];
+            glyph.rect.z = assetCharacter.rect[2];
+            glyph.rect.w = assetCharacter.rect[3];
+            glyph.texrect.x = assetCharacter.texrect[0];
+            glyph.texrect.y = assetCharacter.texrect[1];
+            glyph.texrect.z = assetCharacter.texrect[2];
+            glyph.texrect.w = assetCharacter.texrect[3];
+            glyph.isWhiteSpace = assetCharacter.isWhiteSpace;
+
+            #if PK_FONT_FLIP_Y
+            glyph.rect.y *= -1.0f;
+            glyph.rect.w *= -1.0f;
+            #endif
+
+            miny = glm::min(miny, glyph.rect.y + glyph.rect.w);
+            miny = glm::min(miny, glyph.rect.y);
+            maxy = glm::max(maxy, glyph.rect.y + glyph.rect.w);
+            maxy = glm::max(maxy, glyph.rect.y);
         }
+
+        m_alignTop = -miny;
+        m_alignBottom = m_lineHeight - maxy;
 
         TextureDescriptor descriptor{};
         descriptor.usage = TextureUsage::DefaultDisk;
@@ -67,100 +91,139 @@ namespace PK
     
     const RHITexture* Font::GetRHI() const { return m_texture.get(); }
     
-    
-    void TextGeometryBuilder::Initialize(const char* text, Font* font, TextAlign alignx, TextAlign aligny, float size, float lineSpacing)
+    size_t Font::CalculateMaxRectCount(const char* text, const Font* font)
     {
-        m_font = font;
-        m_text = text;
-        m_size = size;
-        m_geometryCount = 0u;
-        m_currentAdvance = 0u;
-        m_currentLineIndex = 0u;
-        m_currentIndex = 0;
-        m_textLength = strlen(text);
-        
-        auto lineCount = 0u;
+        const auto length = strlen(text);
 
-        for (auto i = 0u; i < m_textLength; ++i)
+        if (length == 0)
         {
-            lineCount += text[i] == '\n';
+            return 0;
         }
 
-        m_lineBounds.Reserve(lineCount + 1u);
-        lineCount = 0u;
+        auto rect_count = 0u;
 
-        auto pxLineSpacing = (uint32_t)glm::round(lineSpacing * m_size);
-        auto lineLength = 0u;
-        auto totalHeight = 0;
-
-        for (auto i = 0u; i < m_textLength; ++i)
+        // Count lines 
+        for (auto i = 0u; i < length; ++i)
         {
-            auto ch = text[i];
-            auto& character = font->GetCharacter(ch);
-            auto advance = (uint32_t)glm::round(character.advance * m_size);
-
-            if (ch == '\n')
+            if (!font->GetGlyph(text[i]).isWhiteSpace)
             {
-                m_lineBounds[lineCount++] = { lineLength, -totalHeight, i };
-                totalHeight += pxLineSpacing;
-                lineLength = 0u;
-            }
-            else
-            {
-                m_geometryCount += character.isWhiteSpace ? 0u : 1u;
-                lineLength += advance;
+                rect_count++;
             }
         }
 
-        m_lineBounds[lineCount++] = { lineLength, -totalHeight, m_textLength };
-        totalHeight += pxLineSpacing;
-
-        for (auto i = 0u; i < lineCount; ++i)
-        {
-            switch (alignx)
-            {
-                case TextAlign::Start: m_lineBounds[i].x = 0; break;
-                case TextAlign::End: m_lineBounds[i].x = -m_lineBounds[i].x; break;
-                case TextAlign::Center: m_lineBounds[i].x = -m_lineBounds[i].x / 2; break;
-            }
-
-            switch (aligny)
-            {
-                case TextAlign::Start: m_lineBounds[i].y = m_lineBounds[i].y - pxLineSpacing; break;
-                case TextAlign::End: m_lineBounds[i].y = m_lineBounds[i].y + totalHeight; break;
-                case TextAlign::Center: m_lineBounds[i].y = m_lineBounds[i].y + (totalHeight / 2); break;
-            }
-        }
+        return rect_count;
     }
 
-    TextGeometryBuilder::Geometry* TextGeometryBuilder::GetNextGeometry()
+    size_t Font::CalculateRects(const char* text, const Font* font, const short4& area_rect, const short4& clip_rect, const FontStyle& style, FontRect* out_rects, size_t max_rects)
     {
-        if (m_currentIndex >= m_textLength)
+        const auto length = strlen(text);
+
+        if (length == 0)
         {
-            return nullptr;
+            return 0ull;
         }
 
-        auto ch = m_text[m_currentIndex];
-        auto lineBounds = &m_lineBounds[m_currentLineIndex];
+        const auto char_h = (int32_t)glm::round(font->GetLineHeight() * style.spacing.y * style.size);
+        const auto char_w = style.spacing.x * style.size;
+        auto line_x = 0;
+        auto line_y = 0;
 
-        while (lineBounds->z == (int)m_currentIndex)
+        // Count lines 
+        for (auto i = 0u; i <= length; ++i)
         {
-            lineBounds = &m_lineBounds[++m_currentLineIndex];
-            ch = m_text[++m_currentIndex];
-            m_currentAdvance = 0.0f;
+            if (i == length)
+            {
+                line_y++;
+                break;
+            }
+
+            auto x = (int32_t)glm::round(font->GetGlyph(text[i]).advance * char_w);
+
+            if (text[i] == '\n' || (style.wrap && line_x + x > area_rect.z))
+            {
+                line_y++;
+                line_x = 0;
+            }
+
+            line_x += x;
         }
 
-        m_currentIndex++;
-        auto& character = m_font->GetCharacter(ch);
-        m_geometry.isWhiteSpace = character.isWhiteSpace;
-        m_geometry.texrect = character.texrect;
-        m_geometry.rect.x = lineBounds->x + glm::round(m_currentAdvance + character.rect.x * m_size);
-        m_geometry.rect.y = lineBounds->y + glm::round(character.rect.y * m_size);
-        m_geometry.rect.z = glm::round(character.rect.z * m_size);
-        m_geometry.rect.w = glm::round(character.rect.w * m_size);
-        m_geometry.color = PK_COLOR32_WHITE;
-        m_currentAdvance += character.advance * m_size;
-        return &m_geometry;
+        auto offsets_x = PK_STACK_ALLOC(int16_t, line_y);
+        line_y = 0;
+        line_x = 0;
+
+        // Build line widths
+        for (auto i = 0u; i <= length; ++i)
+        {
+            if (i == length)
+            {
+                offsets_x[line_y++] = int16_t((area_rect.z - line_x) * style.align.x);
+                break;
+            }
+
+            auto x = (int32_t)glm::round(font->GetGlyph(text[i]).advance * char_w);
+
+            if (text[i] == '\n' || (style.wrap && line_x + x > area_rect.z))
+            {
+                offsets_x[line_y++] = int16_t((area_rect.z - line_x) * style.align.x);
+                line_x = 0;
+            }
+
+            line_x += x;
+        }
+
+        auto clip_min = glm::min(short2(clip_rect.xy), short2(clip_rect.xy + clip_rect.zw));
+        auto clip_max = glm::max(short2(clip_rect.xy), short2(clip_rect.xy + clip_rect.zw));
+
+        // Top/Bottom alignment needs to take into account min/max rect boundaries as we otherwise add padding.
+        auto line_align = glm::mix(font->GetAlignTop(), font->GetAlignBottom(), style.align.y) * style.size;
+        auto offset_y = (int16_t)glm::round((area_rect.w - line_y * char_h) * style.align.y + line_align);
+        auto rect_count = 0u;
+        line_x = 0;
+        line_y = 0;
+
+        // Output characters.
+        for (auto i = 0u; i < length; ++i)
+        {
+            auto& c = font->GetGlyph(text[i]);
+            auto x = (uint32_t)glm::round(c.advance * char_w);
+
+            if (text[i] == '\n' || (style.wrap && line_x + x > (uint32_t)area_rect.z))
+            {
+                line_y++;
+                line_x = 0;
+            }
+
+            if (!c.isWhiteSpace && rect_count < max_rects)
+            {
+                FontRect rect{};
+                rect.character = text[i];
+                rect.lineIndex = line_y;
+                rect.rect.x = line_x + offsets_x[line_y] + area_rect.x + (int16_t)glm::round(c.rect.x * style.size);
+                rect.rect.y = line_y * char_h + offset_y + area_rect.y + (int16_t)glm::round(c.rect.y * style.size);
+                rect.rect.z = (int16_t)glm::round(c.rect.z * style.size);
+                rect.rect.w = (int16_t)glm::round(c.rect.w * style.size);
+                rect.texrect = c.texrect;
+
+                auto is_visible = true;
+
+                if (style.clip)
+                {
+                    auto rmin = glm::min(short2(rect.rect.xy), short2(rect.rect.xy + rect.rect.zw));
+                    auto rmax = glm::max(short2(rect.rect.xy), short2(rect.rect.xy + rect.rect.zw));
+                    is_visible &= rmin.x < clip_max.x&& rmax.y < clip_max.y&& rmax.x > clip_min.x&& rmax.y > clip_min.y;
+                }
+
+                if (is_visible)
+                {
+                    out_rects[rect_count++] = rect;
+                }
+            }
+
+            line_x += x;
+        }
+
+        return rect_count;
     }
 }
 

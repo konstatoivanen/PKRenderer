@@ -27,6 +27,7 @@ void MainVs()
     int2 coord;
     coord.x = bitfieldExtract(int(vertex_packed.y), 0, 16);
     coord.y = bitfieldExtract(int(vertex_packed.y), 16, 16);
+    coord.y = int(pk_ScreenSize.y) - coord.y;
 
     gl_Position = float4((coord * pk_ScreenParams.zw) * 2.0f - 1.0f, 0.0f, 1.0f);
     vs_TEXCOORD = unpackHalf2x16(vertex_packed.z);
@@ -48,7 +49,7 @@ void MainFs()
         const float2 unit_size_screen = 1.0f.xx / fwidth(vs_TEXCOORD);
         float signed_dist = max(min(value.r, value.g), min(max(value.r, value.g), value.b)) - 0.5f;
         signed_dist *= max(0.5f * dot(unit_range, unit_size_screen), 1.0f);
-        color.a *= saturate(signed_dist + 0.5f);
+        color.a = saturate(signed_dist + 0.5f);
     }
     else
     {

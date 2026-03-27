@@ -11,19 +11,30 @@ namespace PK { struct InputKeyConfig; }
 
 namespace PK::App
 {
-    class EngineCommandInput : 
+    struct IGUIRenderer;
+
+    struct EngineCommandInput : 
+        public IStep<IGUIRenderer*>,
         public IStepFrameUpdate<>,
         public IStep<AssetImportEvent<InputKeyConfig>*>
     {
-    public:
+        constexpr const static uint32_t COMMAND_HISTORY_SIZE = 16u;
+
         EngineCommandInput(Sequencer* sequencer, InputKeyConfig* keyConfig);
 
+        virtual void Step(IGUIRenderer* gui) final;
         virtual void OnStepFrameUpdate(FrameContext* ctx) final;
         virtual void Step(AssetImportEvent<InputKeyConfig>* evt) final;
 
     private:
         Sequencer* m_sequencer = nullptr;
         InputKeyCommandBindings m_inputKeyCommands;
+        FixedString128 m_commandInput;
+        FixedString128 m_commandHistory[COMMAND_HISTORY_SIZE];
         InputKey m_keyBeginInput = InputKey::GraveAccent;
+        uint32_t m_commandHistoryHead = 0u;
+        int32_t m_commandHistoryView = 0;
+        bool m_caretBlink = false;
+        bool m_waitingInput = false;
     };
 }

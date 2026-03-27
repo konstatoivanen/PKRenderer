@@ -75,12 +75,12 @@ namespace PK::App
             { ElementType::Uint, hash->pk_ScreenLevels },
 
             // GI Parameters
-            { ElementType::Float, hash->pk_GI_VoxelSize },
-            { ElementType::Float, hash->pk_GI_VoxelStepSize },
-            { ElementType::Float, hash->pk_GI_VoxelLevelScale },
-            { ElementType::Float4, hash->pk_GI_VolumeST },
-            { ElementType::Uint4, hash->pk_GI_VolumeSwizzle },
-            { ElementType::Uint2, hash->pk_GI_RayDither },
+            { ElementType::Float3, hash->pk_GI_VX_TexelSize },
+            { ElementType::Float,  hash->pk_GI_VX_StepSize },
+            { ElementType::Uint3,  hash->pk_GI_VX_Swizzle },
+            { ElementType::Float,  hash->pk_GI_VX_LevelScale },
+            { ElementType::Float4, hash->pk_GI_VX_ST },
+            { ElementType::Uint2,  hash->pk_GI_RayDither },
 
             // Fog Parameters
             { ElementType::Float,  hash->pk_Fog_Density_NoiseAmount },

@@ -202,9 +202,9 @@ PKVertex Meshlet_Unpack_Vertex(const uint4 packed, const float3 sm_bbmin, const 
         const float4 swizzled_quat = float4
         (
             1.0f,
-            (bitfieldExtract(packed.w, 0,  10) / 1023.0f) * 2.0f - 1.0f,
-            (bitfieldExtract(packed.w, 10, 10) / 1023.0f) * 2.0f - 1.0f,
-            (bitfieldExtract(packed.w, 20, 10) / 1023.0f) * 2.0f - 1.0f
+            fma(bitfieldExtract(packed.w, 0,  10), 2.0f / 1023.0f, -1.0f),
+            fma(bitfieldExtract(packed.w, 10, 10), 2.0f / 1023.0f, -1.0f),
+            fma(bitfieldExtract(packed.w, 20, 10), 2.0f / 1023.0f, -1.0f)
         );
 
         quat = swizzled_quat;
@@ -216,7 +216,7 @@ PKVertex Meshlet_Unpack_Vertex(const uint4 packed, const float3 sm_bbmin, const 
 
     v.normal = Quat_MultiplyVector(quat, float3(0,0,1));
     v.tangent.xyz = Quat_MultiplyVector(quat, float3(1,0,0));
-    v.tangent.w = bitfieldExtract(packed.y, 16, 1) * 2.0f - 1.0f;
+    v.tangent.w = fma(bitfieldExtract(packed.y, 16, 1), 2.0f, -1.0f);
 
     #if PK_MESHLET_USE_VERTEX_COLORS
     v.color.r = bitfieldExtract(packed.y, 17, 5) / 31.0f;

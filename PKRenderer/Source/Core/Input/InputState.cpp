@@ -32,4 +32,11 @@ namespace PK
     {
         return { GetAxisDown(xneg, xpos), GetAxisDown(yneg, ypos), GetAxisDown(zneg, zpos) };
     }
+
+    void InputState::SwapBuffers()
+    {
+        keysPrevious = keysCurrent;
+        character = 0;
+        cursorPositionDelta = PK_FLOAT2_ZERO;
+    }
 }

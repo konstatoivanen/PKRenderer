@@ -55,9 +55,9 @@ namespace PK::App
         //m_voxelizeAttribs.rasterization.rasterMode = RasterMode::OverEstimate;
 
         auto hash = HashCache::Get();
-        RHI::SetImage(hash->pk_GI_VolumeMaskWrite, m_voxelMask.get());
-        RHI::SetImage(hash->pk_GI_VolumeWrite, m_voxels.get());
-        RHI::SetTexture(hash->pk_GI_VolumeRead, m_voxels.get());
+        RHI::SetImage(hash->pk_GI_VX_Mask, m_voxelMask.get());
+        RHI::SetImage(hash->pk_GI_VX_RadianceWrite, m_voxels.get());
+        RHI::SetTexture(hash->pk_GI_VX_RadianceRead, m_voxels.get());
     }
 
     void PassSceneGI::SetViewConstants(RenderView* view)
@@ -66,27 +66,31 @@ namespace PK::App
         auto resources = view->GetResources<ViewResources>();
         auto resolution = view->GetResolution();
 
-        uint4 swizzles[3] =
+        uint3 swizzles[3] =
         {
-             { 0u, 2u, 1u, 0u },
-             { 0u, 1u, 2u, 0u },
-             { 1u, 2u, 0u, 0u },
+             { 0u, 2u, 1u },
+             { 0u, 1u, 2u },
+             { 1u, 2u, 0u },
         };
 
+        // @TODO parameterize
         const auto voxelSize = 0.6f;
+        const auto volumeOrigin = float3(-76.8f, -6.0f, -76.8f);
+
         const auto angle = PK_FLOAT_PI / 3.0f;
         const auto levelscale = 2.0f * tan(angle / 2.0f) / voxelSize;
         const auto correctionAngle = tan(angle / 8.0f);
         const auto stepSize = (1.0f + correctionAngle) / (1.0f - correctionAngle) * voxelSize / 2.0f;
-
-        view->constants.Set<float4>(hash->pk_GI_VolumeST, float4(-76.8f, -6.0f, -76.8f, 1.0f / voxelSize));
-        view->constants.Set<float>(hash->pk_GI_VoxelSize, voxelSize);
-        view->constants.Set<float>(hash->pk_GI_VoxelStepSize, stepSize);
-        view->constants.Set<float>(hash->pk_GI_VoxelLevelScale, levelscale);
+        const auto volumeOriginQuantized = glm::round(volumeOrigin / voxelSize) * voxelSize;
 
         auto frameIndexSinceResize = view->timeRender.frameIndex - view->timeResize.frameIndex;
         m_rasterAxis = frameIndexSinceResize % 3;
-        view->constants.Set<uint4>(hash->pk_GI_VolumeSwizzle, swizzles[m_rasterAxis]);
+
+        view->constants.Set<float3>(hash->pk_GI_VX_TexelSize, 1.0f / float3(m_voxels->GetResolution()));
+        view->constants.Set<float>(hash->pk_GI_VX_StepSize, stepSize);
+        view->constants.Set<uint3>(hash->pk_GI_VX_Swizzle, swizzles[m_rasterAxis]);
+        view->constants.Set<float>(hash->pk_GI_VX_LevelScale, levelscale);
+        view->constants.Set<float4>(hash->pk_GI_VX_ST, float4(volumeOriginQuantized, 1.0f / voxelSize));
         view->constants.Set<uint2>(hash->pk_GI_RayDither, Math::MurmurHash21(frameIndexSinceResize / 64u));
 
         RHI::SetKeyword("PK_GI_CHECKERBOARD_TRACE", m_settings.checkerboardTrace);

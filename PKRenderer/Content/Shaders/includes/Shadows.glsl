@@ -44,9 +44,9 @@ half ShadowTest_PCF2x2(const uint index, const float2 uv, const float z)
 { 
     const float2 f = fract(uv * SHADOW_SIZE.xx - 0.5f.xx).xy;
     const float4 fw = float4(f.xy, 1.0hf - f.xy);
-    half4 s = half4(textureGather(pk_ShadowmapAtlas, float3(uv, index), 0).wzxy - z.xxxx);
+    half4 s = half4(textureGather(pk_ShadowmapAtlas, float3(uv, index), 0) - z.xxxx);
     s = clamp(s * SHADOW_HARD_EDGE_FADE_FACTOR + 1.0hf, 0.0hf, 1.0hf);
-    return dot(s, half4(fw.zxzx * fw.wwyy));
+    return dot(s, half4(fw.zxxz * fw.wwyy));
 }
 
 half ShadowTest_PCF3x3Gaussian(const uint index, const float2 uv, const float z)

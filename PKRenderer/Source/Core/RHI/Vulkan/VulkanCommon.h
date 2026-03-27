@@ -195,6 +195,8 @@ namespace PK
         VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT swapchainMaintenance1{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT };
         VkPhysicalDevicePresentIdFeaturesKHR presentId{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR };
         VkPhysicalDevicePresentWaitFeaturesKHR presentWait{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR };
+        VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR maximalReconvergence { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR };
+        VkPhysicalDeviceShaderQuadControlFeaturesKHR quadControl{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_QUAD_CONTROL_FEATURES_KHR };
         VulkanPhysicalDeviceFeatures();
         static bool CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available);
     };

@@ -59,9 +59,10 @@ uniform utexture2D pk_GI_ResolvedRead;
 #endif
 
 #if PK_GI_USE_VOXEL_MIP_BIAS == 1
-#define PK_GI_GET_VX_MI_BIAS(t) (PK_GI_VX_CONE_SIZE * log2(1.0f + (t / pk_GI_VoxelSize)))
+#define PK_GI_GET_VX_MI_BIAS(t) (PK_GI_VX_CONE_SIZE * log2(1.0f + t * pk_GI_VX_ST.w))
 #else
-#define PK_GI_GET_VX_MI_BIAS(t) 0.0f
+// Sample from the first mip for more filtered results.
+#define PK_GI_GET_VX_MI_BIAS(t) 1.0f
 #endif
 
 //----------STRUCTS----------//

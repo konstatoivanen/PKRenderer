@@ -62,6 +62,8 @@ namespace PK
         fifoLatestReady.pNext = &swapchainMaintenance1;
         swapchainMaintenance1.pNext = &presentId;
         presentId.pNext = &presentWait;
+        presentWait.pNext = &maximalReconvergence;
+        maximalReconvergence.pNext = &quadControl;
     }
 
     bool VulkanPhysicalDeviceFeatures::CheckRequirements(const VulkanPhysicalDeviceFeatures& requirements, const VulkanPhysicalDeviceFeatures available)
@@ -138,7 +140,6 @@ namespace PK
             PK_TEST_FEATURE(vk10.features.sparseResidencyAliased)
             PK_TEST_FEATURE(vk10.features.variableMultisampleRate)
             PK_TEST_FEATURE(vk10.features.inheritedQueries)
-
             PK_TEST_FEATURE(vk11.storageBuffer16BitAccess)
             PK_TEST_FEATURE(vk11.uniformAndStorageBuffer16BitAccess)
             PK_TEST_FEATURE(vk11.storagePushConstant16)
@@ -151,7 +152,6 @@ namespace PK
             PK_TEST_FEATURE(vk11.protectedMemory)
             PK_TEST_FEATURE(vk11.samplerYcbcrConversion)
             PK_TEST_FEATURE(vk11.shaderDrawParameters)
-
             PK_TEST_FEATURE(vk12.samplerMirrorClampToEdge)
             PK_TEST_FEATURE(vk12.drawIndirectCount)
             PK_TEST_FEATURE(vk12.storageBuffer8BitAccess)
@@ -199,7 +199,6 @@ namespace PK
             PK_TEST_FEATURE(vk12.shaderOutputViewportIndex)
             PK_TEST_FEATURE(vk12.shaderOutputLayer)
             PK_TEST_FEATURE(vk12.subgroupBroadcastDynamicId)
-
             PK_TEST_FEATURE(vk13.robustImageAccess)
             PK_TEST_FEATURE(vk13.inlineUniformBlock)
             PK_TEST_FEATURE(vk13.descriptorBindingInlineUniformBlockUpdateAfterBind)
@@ -215,7 +214,6 @@ namespace PK
             PK_TEST_FEATURE(vk13.dynamicRendering)
             PK_TEST_FEATURE(vk13.shaderIntegerDotProduct)
             PK_TEST_FEATURE(vk13.maintenance4)
-
             PK_TEST_FEATURE(vk14.globalPriorityQuery)
             PK_TEST_FEATURE(vk14.shaderSubgroupRotate)
             PK_TEST_FEATURE(vk14.shaderSubgroupRotateClustered)
@@ -237,21 +235,17 @@ namespace PK
             PK_TEST_FEATURE(vk14.pipelineRobustness)
             PK_TEST_FEATURE(vk14.hostImageCopy)
             PK_TEST_FEATURE(vk14.pushDescriptor)
-
             PK_TEST_FEATURE(accelerationStructure.accelerationStructure)
             PK_TEST_FEATURE(accelerationStructure.accelerationStructureCaptureReplay)
             PK_TEST_FEATURE(accelerationStructure.accelerationStructureIndirectBuild)
             PK_TEST_FEATURE(accelerationStructure.accelerationStructureHostCommands)
             PK_TEST_FEATURE(accelerationStructure.descriptorBindingAccelerationStructureUpdateAfterBind)
-
             PK_TEST_FEATURE(rayTracingPipeline.rayTracingPipeline)
             PK_TEST_FEATURE(rayTracingPipeline.rayTracingPipelineShaderGroupHandleCaptureReplay)
             PK_TEST_FEATURE(rayTracingPipeline.rayTracingPipelineShaderGroupHandleCaptureReplayMixed)
             PK_TEST_FEATURE(rayTracingPipeline.rayTracingPipelineTraceRaysIndirect)
             PK_TEST_FEATURE(rayTracingPipeline.rayTraversalPrimitiveCulling)
-
             PK_TEST_FEATURE(rayQuery.rayQuery)
-
             PK_TEST_FEATURE(atomicFloat.shaderBufferFloat32Atomics)
             PK_TEST_FEATURE(atomicFloat.shaderBufferFloat32AtomicAdd)
             PK_TEST_FEATURE(atomicFloat.shaderBufferFloat64Atomics)
@@ -264,26 +258,21 @@ namespace PK
             PK_TEST_FEATURE(atomicFloat.shaderImageFloat32AtomicAdd)
             PK_TEST_FEATURE(atomicFloat.sparseImageFloat32Atomics)
             PK_TEST_FEATURE(atomicFloat.sparseImageFloat32AtomicAdd)
-
             PK_TEST_FEATURE(positionFetch.rayTracingPositionFetch)
-
             PK_TEST_FEATURE(meshshader.taskShader)
             PK_TEST_FEATURE(meshshader.meshShader)
             PK_TEST_FEATURE(meshshader.multiviewMeshShader)
             PK_TEST_FEATURE(meshshader.primitiveFragmentShadingRateMeshShader)
             PK_TEST_FEATURE(meshshader.meshShaderQueries)
-
             PK_TEST_FEATURE(shadingRate.pipelineFragmentShadingRate)
             PK_TEST_FEATURE(shadingRate.primitiveFragmentShadingRate)
             PK_TEST_FEATURE(shadingRate.attachmentFragmentShadingRate)
-
             PK_TEST_FEATURE(fifoLatestReady.presentModeFifoLatestReady)
-
             PK_TEST_FEATURE(swapchainMaintenance1.swapchainMaintenance1)
-            
             PK_TEST_FEATURE(presentId.presentId)
-
             PK_TEST_FEATURE(presentWait.presentWait)
+            PK_TEST_FEATURE(maximalReconvergence.shaderMaximalReconvergence)
+            PK_TEST_FEATURE(quadControl.shaderQuadControl)
         }
         
         #undef PK_TEST_FEATURE
