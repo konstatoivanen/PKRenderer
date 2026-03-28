@@ -69,7 +69,7 @@ namespace PK
         Get()->ExecuteParseInstance(arg);
     }
 
-    const char* CVariableRegister::FindAutoCompleteHint(const char* pattern, size_t length, int32_t matchOffset)
+    const char* CVariableRegister::FindAutoCompleteHint(const char* pattern, int32_t matchOffset)
     {
         if (Get() == nullptr)
         {
@@ -77,7 +77,7 @@ namespace PK
             return nullptr;
         }
 
-        return Get()->FindAutoCompleteHintInstance(pattern, length, matchOffset);
+        return Get()->FindAutoCompleteHintInstance(pattern, matchOffset);
     }
 
 
@@ -140,9 +140,15 @@ namespace PK
         return binding && binding->variable != nullptr;
     }
 
-    const char* CVariableRegister::FindAutoCompleteHintInstance(const char* pattern, size_t length, int32_t matchOffset)
+    const char* CVariableRegister::FindAutoCompleteHintInstance(const char* pattern, int32_t matchOffset)
     {
         auto matchIndex = 0;
+        auto length = strlen(pattern);
+
+        if (length == 0)
+        {
+            return nullptr;
+        }
 
         for (auto i = 0u; i < m_variables.GetCount(); ++i)
         {
@@ -176,7 +182,7 @@ namespace PK
             }
         }
 
-        return pattern;
+        return nullptr;
     }
 
 

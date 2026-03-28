@@ -33,7 +33,7 @@ namespace PK
 
         static void Execute(const char* const* args, uint32_t count);
         static void ExecuteParse(const char* arg);
-        static const char* FindAutoCompleteHint(const char* pattern, size_t length, int32_t matchOffset);
+        static const char* FindAutoCompleteHint(const char* pattern, int32_t matchOffset);
 
         template<typename T>
         static void Create(const char* name, const T& value, const char* hint = "hint undefined", uint32_t minArgs = 0u)
@@ -54,7 +54,7 @@ namespace PK
         void BindInstance(ICVariable* variable, uint32_t flags);
         void UnbindInstance(ICVariable* variable);
         bool IsBoundInstance(const char* name) const;
-        const char* FindAutoCompleteHintInstance(const char* pattern, size_t length, int32_t matchOffset);
+        const char* FindAutoCompleteHintInstance(const char* pattern, int32_t matchOffset);
 
         void ExecuteInstance(const char* const* args, uint32_t count);
         void ExecuteParseInstance(const char* arg);

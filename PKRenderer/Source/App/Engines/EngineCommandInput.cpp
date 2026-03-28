@@ -22,8 +22,8 @@ namespace PK::App
     {
         if (m_waitingInput)
         {
-            FixedString256 text(">:%s%c",m_commandInput.c_str(), m_caretBlink ? '|' : ' ');
-            FixedString256 hint(">:%s",m_commandHint.c_str());
+            FixedString256 text(">:%s%c", m_lines[m_lineEdit].c_str(), m_cursorBlink ? '|' : ' ');
+            FixedString256 hint(">:%s",m_lineHint.c_str());
             constexpr auto COLOR_BG = color32(0, 0, 0, 192);
             constexpr auto COLOR_FG = color32(255, 255, 255, 127);
             constexpr auto COLOR_HINT = color32(255, 255, 255, 127);
@@ -48,8 +48,8 @@ namespace PK::App
         auto& input = ctx->input.lastDeviceState.state;
         auto bindings = m_inputKeyCommands.GetBindings();
         auto isWaitingInput = m_waitingInput;
-        
-        if (input.GetKeyDown(m_keyToggleConsole))
+
+        if (input->GetKeyDown(m_keyToggleConsole))
         {
             m_waitingInput ^= true;
         }
@@ -57,71 +57,107 @@ namespace PK::App
         // Skip first frame as we dont want to capture keys pressed during activation.
         if (isWaitingInput && m_waitingInput)
         {
-            m_caretBlink = uint64_t(ctx->time.time * 2.0) & 0x1u;
-            auto scroll = input.GetKeyDown(InputKey::Up) ? 1 : input.GetKeyDown(InputKey::Down) ? -1 : 0;
+            m_cursorBlink = uint64_t(ctx->time.time * 2.0) & 0x1u;
+            
+            input->ConsumeAll();
 
-            if (input.GetKeyDown(InputKey::Enter))
+            if (input->GetKeyDown(InputKey::Enter))
             {
-                m_sequencer->NextRoot<CArgumentConst>({ m_commandInput.c_str() });
-                m_commandHistory[m_commandHistoryHead % COMMAND_HISTORY_SIZE] = m_commandInput;
-                m_commandHistoryView = ++m_commandHistoryHead;
-                m_commandInput.Clear();
-                m_commandHint.Clear();
+                m_sequencer->NextRoot<CArgumentConst>({ m_lines[m_lineEdit].c_str() });
+                m_lineEdit = (m_lineEdit + 1) % LINE_COUNT;
+                m_lineHistory = m_lineEdit;
+                m_lines[m_lineEdit].Clear();
+                m_lineHint.Clear();
+                return;
             }
-            else if (input.GetKey(InputKey::Backspace))
+
+            if (input->GetKeyDown(InputKey::Tab) && m_lineHint.Length() > m_lines[m_lineEdit].Length())
             {
-                if (input.GetKeyDown(InputKey::Backspace))
-                {
-                    m_eraseTimer = ERASE_REPEAT_DELAY;
-                    m_commandInput.Pop();
-                }
-                else if (m_eraseTimer <= 0.0)
-                {
-                    m_eraseTimer = m_eraseTimer < ERASE_REPEAT_RATE ? ERASE_REPEAT_RATE : m_eraseTimer;
-                    m_commandInput.Pop();
-                }
-
-                m_eraseTimer -= ctx->time.deltaTime;
-
-                if (m_commandInput.Length() == 0)
-                {
-                    m_commandHint.Clear();
-                }
+                m_lines[m_lineEdit] = m_lineHint;
+                return;
             }
-            else if (scroll != 0)
+
+            if (input->GetKeyRepeat(InputKey::Backspace) && m_lines[m_lineEdit].Length() > 0)
             {
-                if (m_commandHint.Length() > 0)
+                m_lines[m_lineEdit].Pop();
+
+                if (m_lines[m_lineEdit].Length() == 0)
                 {
-                    m_commandHintOffset += scroll;
-                    m_commandHint = CVariableRegister::FindAutoCompleteHint(m_commandInput.c_str(), m_commandInput.Length(), m_commandHintOffset);
+                    m_lineHint.Clear();
+                }
+
+                return;
+            }
+
+            if (input->GetKeyRepeat(InputKey::Up) && m_lineHint.Length() > 0)
+            {
+                m_lineHint = CVariableRegister::FindAutoCompleteHint(m_lines[m_lineEdit].c_str(), ++m_hintIndex);
+                return;
+            }
+
+            if (input->GetKeyRepeat(InputKey::Down) && m_lineHint.Length() > 0)
+            {
+                m_lineHint = CVariableRegister::FindAutoCompleteHint(m_lines[m_lineEdit].c_str(), --m_hintIndex);
+                return;
+            }
+
+            if (input->GetKeyRepeat(InputKey::Up))
+            {
+                auto history = m_lineHistory;
+
+                do
+                {
+                    history = (history - 1) % LINE_COUNT;
+                }
+                while (history != m_lineEdit && !m_lines[history][0]);
+
+                if (history != m_lineEdit && m_lines[history][0])
+                {
+                    m_lines[m_lineEdit] = m_lines[history];
+                    m_lineHistory = history;
+                }
+
+                return;
+            }
+
+            if (input->GetKeyRepeat(InputKey::Down) && m_lineEdit != m_lineHistory)
+            {
+                do
+                {
+                    m_lineHistory = (m_lineHistory + 1) % LINE_COUNT;
+                } 
+                while (m_lineHistory != m_lineEdit && !m_lines[m_lineHistory][0]);
+
+                if (m_lineEdit == m_lineHistory)
+                {
+                    m_lines[m_lineEdit].Clear();
                 }
                 else
                 {
-                    m_commandHistoryView -= scroll;
-                    m_commandInput = m_commandHistory[m_commandHistoryView % COMMAND_HISTORY_SIZE];
+                    m_lines[m_lineEdit] = m_lines[m_lineHistory];
                 }
-            }
-            else if (input.GetKeyDown(InputKey::Tab) && m_commandHint.Length() > m_commandInput.Length())
-            {
-                m_commandInput = m_commandHint;
-            }
-            else if (input.character != 0 && !m_commandInput.IsFull())
-            {
-                m_commandInput.Append((char)input.character);
 
-                if (m_commandInput.Length() > m_commandHint.Length() || m_commandInput[m_commandInput.Length() - 1u] != m_commandHint[m_commandInput.Length() - 1u])
+                return;
+            }
+
+            if (input->character != 0 && !m_lines[m_lineEdit].IsFull())
+            {
+                m_lines[m_lineEdit].Append((char)input->character);
+
+                if (m_lines[m_lineEdit].Length() > m_lineHint.Length() || m_lines[m_lineEdit].Back() != m_lineHint.Back())
                 {
-                    m_commandHint = CVariableRegister::FindAutoCompleteHint(m_commandInput.c_str(), m_commandInput.Length(), m_commandHintOffset);
+                    m_lineHint = CVariableRegister::FindAutoCompleteHint(m_lines[m_lineEdit].c_str(), m_hintIndex);
                 }
+
+                return;
             }
 
-            input.ConsumeAll();
             return;
         }
 
         for (auto i = 0u; i < m_inputKeyCommands.count; ++i)
         {
-            if (input.GetKeyDown(bindings[i].key))
+            if (input->GetKeyDown(bindings[i].key))
             {
                 m_sequencer->NextRoot<CArgumentConst>({ bindings[i].command });
             }

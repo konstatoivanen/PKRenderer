@@ -9,15 +9,9 @@ namespace PK::App
 {
     void EngineInput::OnStepFrameUpdate(FrameContext* ctx)
     {
-        ctx->input.globalState = m_globalState;
+        m_deltaMillis = (uint32_t)(1000.0 * ctx->time.unscaledDeltaTime);
         ctx->input.lastDeviceState.device = m_lastDevice;
-        ctx->input.lastDeviceState.state = {};
-        auto pLastState = m_deviceStates.GetValuePtr(m_lastDevice);
-
-        if (pLastState)
-        {
-            ctx->input.lastDeviceState.state = *pLastState;
-        }
+        ctx->input.lastDeviceState.state = m_deviceStates.GetValuePtr(m_lastDevice);
 
         if (m_deviceStates.GetCount() >= InputStateCollection::MAX_DEVICES)
         {
@@ -28,7 +22,7 @@ namespace PK::App
         {
             auto pair = ctx->input.deviceStates.Add();
             pair->device = m_deviceStates[i].key;
-            pair->state = m_deviceStates[i].value;
+            pair->state = &m_deviceStates[i].value;
         }
 
         m_sequencer->Next(this, &ctx->input);
@@ -36,7 +30,6 @@ namespace PK::App
 
     void EngineInput::InputHandler_OnPoll()
     {
-        m_globalState.SwapBuffers();
         m_droppedFilePaths.device = nullptr;
     }
 
@@ -46,7 +39,7 @@ namespace PK::App
 
         if (state)
         {
-            state->SwapBuffers();
+            state->SwapBuffers(m_deltaMillis);
         }
     }
 
@@ -56,8 +49,7 @@ namespace PK::App
 
         if (state && key != InputKey::None)
         {
-            state->keysCurrent[(uint32_t)key] = isDown;
-            m_globalState.keysCurrent[(uint32_t)key] = isDown;
+            state->SetKey(key, isDown);
             m_lastDevice = device;
         }
     }
@@ -74,9 +66,6 @@ namespace PK::App
             state->cursorPosition = cursorPosition;
             state->cursorPositionDelta += cursorPositionDelta;
             state->cursorPositionNormalized = cursorPositionNormalized;
-            m_globalState.cursorPosition = cursorPosition;
-            m_globalState.cursorPositionDelta += cursorPositionDelta;
-            m_globalState.cursorPositionNormalized = cursorPositionNormalized;
             m_lastDevice = device;
         }
     }
@@ -88,7 +77,6 @@ namespace PK::App
         if (state)
         {
             state->cursorScroll[axis] = offset;
-            m_globalState.cursorScroll[axis] = offset;
             m_lastDevice = device;
         }
     }
@@ -100,7 +88,6 @@ namespace PK::App
         if (state)
         {
             state->character = character;
-            m_globalState.character = character;
             m_lastDevice = device;
         }
     }
@@ -120,6 +107,7 @@ namespace PK::App
     void EngineInput::InputHandler_OnConnect(InputDevice* device)
     {
         auto index = 0u;
+
         if (m_deviceStates.AddKey(device, &index))
         {
             m_deviceStates[index].value = {};

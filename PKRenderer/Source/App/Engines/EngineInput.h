@@ -31,8 +31,8 @@ namespace PK::App
     private:
         Sequencer* m_sequencer;
         FixedMap8<InputDevice*, InputState, InputStateCollection::MAX_DEVICES> m_deviceStates;
-        InputState m_globalState{};
         InputDevice* m_lastDevice;
         InputDeviceFilePaths m_droppedFilePaths;
+        uint32_t m_deltaMillis;
     };
 }

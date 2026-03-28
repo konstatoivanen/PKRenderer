@@ -11,7 +11,7 @@ namespace PK
     struct InputDeviceStatePair
     {
         const InputDevice* device;
-        InputState state;
+        InputState* state;
     };
 
     struct InputDeviceFilePaths
@@ -23,7 +23,6 @@ namespace PK
     struct InputStateCollection
     {
         constexpr const static uint32_t MAX_DEVICES = 5u;
-        InputState globalState;
         InputDeviceStatePair lastDeviceState;
         InputDeviceFilePaths droppedFilePaths;
         FixedList<InputDeviceStatePair, MAX_DEVICES> deviceStates;

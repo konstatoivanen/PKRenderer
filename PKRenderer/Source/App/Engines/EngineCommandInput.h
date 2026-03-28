@@ -18,7 +18,8 @@ namespace PK::App
         public IStepFrameUpdate<>,
         public IStep<AssetImportEvent<InputKeyConfig>*>
     {
-        constexpr const static uint32_t COMMAND_HISTORY_SIZE = 16u;
+        constexpr const static uint32_t LINE_COUNT = 32u;
+        constexpr const static uint32_t LINE_LENGTH = 128u;
 
         EngineCommandInput(Sequencer* sequencer, InputKeyConfig* keyConfig);
 
@@ -27,20 +28,16 @@ namespace PK::App
         virtual void Step(AssetImportEvent<InputKeyConfig>* evt) final;
 
     private:
-        constexpr static const double ERASE_REPEAT_DELAY = 0.5;
-        constexpr static const double ERASE_REPEAT_RATE = 1.0 / 30.0;
-
         Sequencer* m_sequencer = nullptr;
         InputKeyCommandBindings m_inputKeyCommands;
-        FixedString128 m_commandInput;
-        FixedString128 m_commandHint;
-        FixedString128 m_commandHistory[COMMAND_HISTORY_SIZE];
         InputKey m_keyToggleConsole = InputKey::GraveAccent;
-        uint32_t m_commandHistoryHead = 0u;
-        int32_t m_commandHistoryView = 0;
-        int32_t m_commandHintOffset = 0;
-        double m_eraseTimer = 0.0;
-        bool m_caretBlink = false;
+        
+        FixedString<LINE_LENGTH> m_lineHint;
+        FixedString<LINE_LENGTH> m_lines[LINE_COUNT];
+        int32_t m_lineEdit = 0;
+        int32_t m_lineHistory = 0;
+        int32_t m_hintIndex = 0;
+        bool m_cursorBlink = false;
         bool m_waitingInput = false;
     };
 }

@@ -12,7 +12,7 @@ namespace PK
             m_string[0] = 0;
         }
 
-        FixedString(size_t length, const char* str)
+        FixedString(size_t length, const char* str) : FixedString()
         {
             if (str != nullptr)
             {
@@ -23,20 +23,19 @@ namespace PK
             }
         }
 
-        FixedString(const char* format, ...)
+        FixedString(const char* format, ...) : FixedString()
         {
             if (format != nullptr)
             {
                 va_list v0;
                 va_start(v0, format);
                 m_length = _vsnprintf(m_string, capacity, format, v0);
-                m_string[capacity - 1] = 0;
                 va_end(v0);
                 PK_CONTAINER_RANGE_CHECK(m_length, 0u, capacity);
             }
         }
 
-        FixedString(std::initializer_list<const char*> strings)
+        FixedString(std::initializer_list<const char*> strings) : FixedString()
         {
             for (auto& str : strings)
             {
@@ -48,6 +47,8 @@ namespace PK
         }
 
         constexpr size_t Length() const { return m_length; }
+        constexpr char Back() const { return m_length == 0 ? '\0' : m_string[m_length - 1u]; }
+        constexpr bool IsFull() const { return m_length == capacity - 1ull; }
         constexpr const char* c_str() const { return m_string; }
         char* c_str() { return m_string; }
 
@@ -59,8 +60,6 @@ namespace PK
 
         bool operator == (const char* str) { return strcmp(str, m_string) == 0; }
         bool operator != (const char* str) { return strcmp(str, m_string) != 0; }
-
-        bool IsFull() const { return m_length == capacity - 1ull; }
 
         void Append(const char* str)
         {
