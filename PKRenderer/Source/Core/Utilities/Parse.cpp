@@ -75,7 +75,8 @@ namespace PK::Parse
         {
             case 0: buffer[length + 0u] = 'B'; buffer[length + 1u] = '\0'; break;
             case 1: buffer[length + 0u] = 'K'; buffer[length + 1u] = 'B'; buffer[length + 2u] = '\0'; break;
-            default: buffer[length + 0u] = 'M'; buffer[length + 1u] = 'B'; buffer[length + 2u] = '\0'; break;
+            case 2: buffer[length + 0u] = 'M'; buffer[length + 1u] = 'B'; buffer[length + 2u] = '\0'; break;
+            default: buffer[length + 0u] = 'G'; buffer[length + 1u] = 'B'; buffer[length + 2u] = '\0'; break;
         }
 
         return FixedString32(length + 2u, buffer);

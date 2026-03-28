@@ -49,7 +49,7 @@ void MainFs()
         const float2 unit_size_screen = 1.0f.xx / fwidth(vs_TEXCOORD);
         float signed_dist = max(min(value.r, value.g), min(max(value.r, value.g), value.b)) - 0.5f;
         signed_dist *= max(0.5f * dot(unit_range, unit_size_screen), 1.0f);
-        color.a = saturate(signed_dist + 0.5f);
+        color.a *= saturate(signed_dist + 0.5f);
     }
     else
     {

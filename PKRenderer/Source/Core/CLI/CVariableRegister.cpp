@@ -69,6 +69,17 @@ namespace PK
         Get()->ExecuteParseInstance(arg);
     }
 
+    const char* CVariableRegister::FindAutoCompleteHint(const char* pattern, size_t length, int32_t matchOffset)
+    {
+        if (Get() == nullptr)
+        {
+            PK_LOG_WARNING("CVariableRegister has not been initialized!");
+            return nullptr;
+        }
+
+        return Get()->FindAutoCompleteHintInstance(pattern, length, matchOffset);
+    }
+
 
 
     void CVariableRegister::DestroyBinding(CVariableBinding* binding)
@@ -127,6 +138,45 @@ namespace PK
     {
         auto binding = m_variables.GetValuePtr(name);
         return binding && binding->variable != nullptr;
+    }
+
+    const char* CVariableRegister::FindAutoCompleteHintInstance(const char* pattern, size_t length, int32_t matchOffset)
+    {
+        auto matchIndex = 0;
+
+        for (auto i = 0u; i < m_variables.GetCount(); ++i)
+        {
+            auto name = m_variables[i].key.c_str();
+            auto index = 0u;
+
+            for (; index < length && tolower(name[index]) == tolower(pattern[index]); ++index) {}
+
+            if (index == length)
+            {
+                matchIndex++;
+            }
+        }
+
+        matchOffset = matchOffset % (matchIndex == 0u ? 1u : matchIndex);
+        matchIndex = 0;
+
+        for (auto i = 0u; i < m_variables.GetCount(); ++i)
+        {
+            auto name = m_variables[i].key.c_str();
+            auto index = 0u;
+
+            for (; index < length && tolower(name[index]) == tolower(pattern[index]); ++index) {}
+
+            if (index == length)
+            {
+                if (matchIndex++ == matchOffset)
+                {
+                    return name;
+                }
+            }
+        }
+
+        return pattern;
     }
 
 

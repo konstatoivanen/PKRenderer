@@ -3,6 +3,7 @@
 #include "Core/Input/InputKeyConfig.h"
 #include "Core/Rendering/Font.h"
 #include "Core/ControlFlow/Sequencer.h"
+#include "Core/CLI/CVariableRegister.h"
 #include "App/FrameContext.h"
 #include "App/Renderer/IGUIRenderer.h"
 #include "EngineCommandInput.h"
@@ -14,7 +15,7 @@ namespace PK::App
     {
         m_inputKeyCommands.memory.Copy(keyConfig->InputKeyCommands.memory);
         m_inputKeyCommands.count = keyConfig->InputKeyCommands.count;
-        keyConfig->CommandInputKeys.TryGetKey("Console.BeginInput", &m_keyBeginInput);
+        keyConfig->CommandInputKeys.TryGetKey("Console.Toggle", &m_keyToggleConsole);
     }
 
     void EngineCommandInput::Step(IGUIRenderer* gui)
@@ -22,15 +23,18 @@ namespace PK::App
         if (m_waitingInput)
         {
             FixedString256 text(">:%s%c",m_commandInput.c_str(), m_caretBlink ? '|' : ' ');
+            FixedString256 hint(">:%s",m_commandHint.c_str());
             constexpr auto COLOR_BG = color32(0, 0, 0, 192);
             constexpr auto COLOR_FG = color32(255, 255, 255, 127);
-            constexpr auto COLOR_TEXT = color32(255, 255, 255, 127);
+            constexpr auto COLOR_HINT = color32(255, 255, 255, 127);
+            constexpr auto COLOR_TEXT = color32(255, 255, 255, 255);
             const auto renderArea = gui->GUIGetRenderAreaRect();
             const auto rectWindow = short4(renderArea.x + 4, renderArea.y + 4, renderArea.z - 8, 32);
-            const auto rectInput = short4(rectWindow.x + 8, rectWindow.y + 4, rectWindow.z - 16, rectWindow.w - 8);
+            const auto rectText = short4(rectWindow.x + 8, rectWindow.y + 4, rectWindow.z - 16, rectWindow.w - 8);
             gui->GUIDrawRect(COLOR_BG, rectWindow);
             gui->GUIDrawWireRect(COLOR_FG, rectWindow, 1);
-            gui->GUIDrawText(COLOR_TEXT, rectInput, text.c_str(), FontStyle().SetSize(16.0f).SetAlign({ 0.0f, 0.5f }).SetClip(true));
+            gui->GUIDrawText(COLOR_HINT, rectText, hint.c_str(), FontStyle().SetSize(16.0f).SetAlign({ 0.0f, 0.5f }).SetClip(true));
+            gui->GUIDrawText(COLOR_TEXT, rectText, text.c_str(), FontStyle().SetSize(16.0f).SetAlign({ 0.0f, 0.5f }).SetClip(true));
         }
     }
 
@@ -45,7 +49,7 @@ namespace PK::App
         auto bindings = m_inputKeyCommands.GetBindings();
         auto isWaitingInput = m_waitingInput;
         
-        if (input.GetKeyDown(m_keyBeginInput))
+        if (input.GetKeyDown(m_keyToggleConsole))
         {
             m_waitingInput ^= true;
         }
@@ -54,6 +58,7 @@ namespace PK::App
         if (isWaitingInput && m_waitingInput)
         {
             m_caretBlink = uint64_t(ctx->time.time * 2.0) & 0x1u;
+            auto scroll = input.GetKeyDown(InputKey::Up) ? 1 : input.GetKeyDown(InputKey::Down) ? -1 : 0;
 
             if (input.GetKeyDown(InputKey::Enter))
             {
@@ -61,22 +66,53 @@ namespace PK::App
                 m_commandHistory[m_commandHistoryHead % COMMAND_HISTORY_SIZE] = m_commandInput;
                 m_commandHistoryView = ++m_commandHistoryHead;
                 m_commandInput.Clear();
+                m_commandHint.Clear();
             }
             else if (input.GetKey(InputKey::Backspace))
             {
-                m_commandInput.Pop();
+                if (input.GetKeyDown(InputKey::Backspace))
+                {
+                    m_eraseTimer = ERASE_REPEAT_DELAY;
+                    m_commandInput.Pop();
+                }
+                else if (m_eraseTimer <= 0.0)
+                {
+                    m_eraseTimer = m_eraseTimer < ERASE_REPEAT_RATE ? ERASE_REPEAT_RATE : m_eraseTimer;
+                    m_commandInput.Pop();
+                }
+
+                m_eraseTimer -= ctx->time.deltaTime;
+
+                if (m_commandInput.Length() == 0)
+                {
+                    m_commandHint.Clear();
+                }
             }
-            else if (input.GetKeyDown(InputKey::Up))
+            else if (scroll != 0)
             {
-                m_commandInput = m_commandHistory[--m_commandHistoryView % COMMAND_HISTORY_SIZE];
+                if (m_commandHint.Length() > 0)
+                {
+                    m_commandHintOffset += scroll;
+                    m_commandHint = CVariableRegister::FindAutoCompleteHint(m_commandInput.c_str(), m_commandInput.Length(), m_commandHintOffset);
+                }
+                else
+                {
+                    m_commandHistoryView -= scroll;
+                    m_commandInput = m_commandHistory[m_commandHistoryView % COMMAND_HISTORY_SIZE];
+                }
             }
-            else if (input.GetKeyDown(InputKey::Down))
+            else if (input.GetKeyDown(InputKey::Tab) && m_commandHint.Length() > m_commandInput.Length())
             {
-                m_commandInput = m_commandHistory[++m_commandHistoryView % COMMAND_HISTORY_SIZE];
+                m_commandInput = m_commandHint;
             }
             else if (input.character != 0 && !m_commandInput.IsFull())
             {
                 m_commandInput.Append((char)input.character);
+
+                if (m_commandInput.Length() > m_commandHint.Length() || m_commandInput[m_commandInput.Length() - 1u] != m_commandHint[m_commandInput.Length() - 1u])
+                {
+                    m_commandHint = CVariableRegister::FindAutoCompleteHint(m_commandInput.c_str(), m_commandInput.Length(), m_commandHintOffset);
+                }
             }
 
             input.ConsumeAll();
@@ -96,6 +132,6 @@ namespace PK::App
     {
         m_inputKeyCommands.memory.Copy(evt->asset->InputKeyCommands.memory);
         m_inputKeyCommands.count = evt->asset->InputKeyCommands.count;
-        evt->asset->CommandInputKeys.TryGetKey("Console.BeginInput", &m_keyBeginInput);
+        evt->asset->CommandInputKeys.TryGetKey("Console.Toggle", &m_keyToggleConsole);
     }
 }
