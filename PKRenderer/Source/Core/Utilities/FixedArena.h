@@ -55,7 +55,7 @@ namespace PK
         {
             auto relativeHead = GetRelativeHead(alignment);
             m_head = relativeHead + size;
-            PK_CONTAINER_RANGE_CHECK(m_head, 0ull, capacity);
+            Memory::Assert(m_head <= capacity);
             return m_data + relativeHead;
         }
 

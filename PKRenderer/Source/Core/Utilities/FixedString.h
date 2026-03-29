@@ -7,31 +7,34 @@ namespace PK
     template<size_t capacity>
     struct FixedString
     {
+        constexpr const static size_t end = capacity - 1ull;
+
         FixedString() 
         {
-            m_string[0] = 0;
+            m_string[0] = '\0';
+            m_string[end] = '\0';
+            m_length = 0u;
         }
 
         FixedString(size_t length, const char* str) : FixedString()
         {
-            if (str != nullptr)
+            if (str && str[0])
             {
-                PK_CONTAINER_RANGE_CHECK(length, 0u, capacity);
-                m_length = length;
+                m_length = end > length ? length : end;
                 strncpy(m_string, str, m_length);
-                m_string[m_length] = 0;
+                m_string[m_length] = '\0';
             }
         }
 
         FixedString(const char* format, ...) : FixedString()
         {
-            if (format != nullptr)
+            if (format && format[0])
             {
                 va_list v0;
                 va_start(v0, format);
                 m_length = _vsnprintf(m_string, capacity, format, v0);
+                m_length = end > m_length ? m_length : end;
                 va_end(v0);
-                PK_CONTAINER_RANGE_CHECK(m_length, 0u, capacity);
             }
         }
 
@@ -39,11 +42,14 @@ namespace PK
         {
             for (auto& str : strings)
             {
-                auto offset = m_length;
-                m_length += strlen(str);
-                PK_CONTAINER_RANGE_CHECK(m_length, 0u, capacity);
-                strcpy(m_string + offset, str);
+                if (m_length < end && str && str[0])
+                {
+                    strncpy(m_string + m_length, str, end - m_length);
+                    m_length += strlen(str);
+                }
             }
+
+            m_length = end > m_length ? m_length : end;
         }
 
         constexpr size_t Length() const { return m_length; }
@@ -66,35 +72,39 @@ namespace PK
 
         void Append(const char* str)
         {
-            auto length = strlen(str);
-            PK_CONTAINER_RANGE_CHECK(m_length + length, 0u, capacity);
-            strcpy(m_string + m_length, str);
-            m_length += length;
+            if (str && str[0])
+            {
+                strncpy(m_string + m_length, str, end - m_length);
+                m_length += strlen(str);
+                m_length = end > m_length ? m_length : end;
+            }
         }
 
         void Append(char c) 
         {
-            PK_CONTAINER_RANGE_CHECK(m_length + 1ull, 0u, capacity);
-            m_string[m_length] = c;
-            m_string[++m_length] = 0;
+            if (c && m_length < end)
+            {
+                m_string[m_length] = c;
+                m_string[++m_length] = 0;
+            }
         }
 
         char Pop()
         {
             auto c = m_string[m_length];
-            m_string[m_length == 0ull ? 0ull : --m_length] = 0;
+            m_string[m_length ? --m_length : 0ull] = 0;
             return c;
         }
 
         void Clear()
         {
-            m_string[0] = 0u;
+            m_string[0] = '\0';
             m_length = 0;
         }
 
     private:
         char m_string[capacity];
-        size_t m_length = 0ull;
+        size_t m_length;
     };
 
     typedef FixedString<16> FixedString16;

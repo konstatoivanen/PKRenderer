@@ -195,7 +195,7 @@ namespace PK
 
         FixedList(const T* elements, size_t count)
         {
-            PK_CONTAINER_RANGE_CHECK(count, 0u, capacity);
+            Memory::Assert(count < capacity);
             m_count = count;
             std::copy(elements, elements + count, reinterpret_cast<T*>(m_data));
         }
@@ -230,7 +230,7 @@ namespace PK
 
         T* Add()
         {
-            PK_CONTAINER_RANGE_CHECK(m_count, 0u, capacity);
+            Memory::Assert(m_count < capacity);
             auto ptr = GetData() + m_count++;
             new(ptr) T();
             return ptr;
@@ -239,7 +239,7 @@ namespace PK
         template<typename ... Args>
         T* Add(Args&& ... args)
         {
-            PK_CONTAINER_RANGE_CHECK(m_count, 0u, capacity);
+            Memory::Assert(m_count < capacity);
             auto ptr = GetData() + m_count++;
             new(ptr) T(std::forward<Args>(args)...);
             return ptr;

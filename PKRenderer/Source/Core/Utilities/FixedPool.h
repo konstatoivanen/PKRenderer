@@ -23,7 +23,7 @@ namespace PK
 
         uint32_t GetIndex(const T* ptr) const
         {
-            PK_CONTAINER_RANGE_CHECK(ptr, GetData(), (GetData() + GetCapacity()));
+            Memory::Assert(ptr >= GetData() && ptr < GetData() + GetCapacity());
             return (uint32_t)(ptr - GetData());
         }
 
@@ -128,8 +128,7 @@ namespace PK
             T* Allocate(size_t count, int64_t index) final
             {
                 index = index != -1 ? index : m_mask.FindFirstZeroRange(count);
-                PK_CONTAINER_RANGE_CHECK(index, 0, (int64_t)capacity);
-                PK_CONTAINER_RANGE_CHECK(index + count - 1ll, 0, (int64_t)capacity);
+                Memory::Assert(index >= 0ll && index + count - 1ll < capacity);
                 auto ptr = GetData() + index;
                 m_mask.FlipRange(index, index + count);
                 return ptr;

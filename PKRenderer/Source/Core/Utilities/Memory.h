@@ -1,6 +1,5 @@
 #pragma once
 #include <stdlib.h>
-#include <exception>
 
 namespace PK::Memory
 {
@@ -10,16 +9,7 @@ namespace PK::Memory
     #define PK_STACK_ALLOC(Type, count) static_cast<Type*>(alloca(sizeof(Type) * count))
 #endif
 
-    #define PK_CONTAINER_RANGE_CHECK(index, min, max)                        \
-    do                                                                       \
-    {                                                                        \
-        if (index >= max || index < min)                                     \
-        {                                                                    \
-            throw std::exception("Index/Count outside of container bounds!");\
-        }                                                                    \
-    }                                                                        \
-    while(0)                                                                 \
-                                                                             \
+    void Assert(bool value);
 
     template<typename T>
     T* Malloc(size_t count) noexcept { return static_cast<T*>(malloc(count * sizeof(T))); }
