@@ -41,7 +41,7 @@ namespace PK
     }\
     template<> void CVariableField<TType>::CVarExecute(const char* const* args, uint32_t count)\
     {\
-        PK_CVAR_CHECK_ARG_COUNT(count, 1u, "%s = %"#TFormat, name.c_str())\
+        PK_CVAR_CHECK_ARG_COUNT(count, 1u, "%s = %"#TFormat, name.c_str(), Value)\
         Value = Parse::FromString<TType>(args[0]); PK_LOG_INFO("%s = %"#TFormat, name.c_str(), Value);\
     }\
     \
@@ -72,7 +72,7 @@ namespace PK
     PK_DECLARE_CVAR_SPECIALIZATION(i, int32_t)
     PK_DECLARE_CVAR_SPECIALIZATION(ull, uint64_t)
     PK_DECLARE_CVAR_SPECIALIZATION(ill, int64_t)
-    PK_DECLARE_CVAR_SPECIALIZATION(f, float)
+    PK_DECLARE_CVAR_SPECIALIZATION(4.4f, float)
     PK_DECLARE_CVAR_SPECIALIZATION(i, bool)
 
     PK_DECLARE_CVAR_VECTOR_SPECIALIZATION(float2, 2)

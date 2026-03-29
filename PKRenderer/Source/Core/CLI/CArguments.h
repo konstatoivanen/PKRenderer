@@ -1,5 +1,6 @@
 #pragma once
-#include <exception>
+#include <stdint.h>
+#include <string.h>
 
 namespace PK
 {
@@ -34,79 +35,64 @@ namespace PK
 
         CArgumentsInline() : count(0u)
         {
+            arguments[0] = argumentData;
+            argumentData[0] = '\0';
+            argumentData[capacity - 1u] = '\0';
         }
 
-        CArgumentsInline(const char* arg)
+        CArgumentsInline(const char* arg) : CArgumentsInline()
         {
-            auto length = strlen(arg) + 1u;
-
-            if (length >= capacity)
+            if (arg && arg[0])
             {
-                throw std::exception("Arguments size exceeds fixed capacity!");
+                strncpy(argumentData, arg, capacity - 1u);
+                count = 1u;
             }
-
-            arguments[0] = &argumentData;
-            memcpy(argumentData, arg, length);
-            count = 1u;
         }
 
-        CArgumentsInline(const char* argument, char separator)
+        CArgumentsInline(const char* arg, char separator) : CArgumentsInline()
         {
-            auto length = strlen(argument);
-
-            if (length + 1u >= capacity)
+            if (arg && arg[0])
             {
-                throw std::exception("Arguments size exceeds fixed capacity !");
-            }
+                auto i = 0u;
+                count = 1u;
+                argumentData[i++] = arg[0];
 
-            memcpy(argumentData, argument, length + 1u);
-
-            count = 0u;
-
-            for (auto i = 0u; i < length; ++i)
-            {
-                if (argumentData[i] == separator)
+                for (; i < capacity - 1ull && arg[i]; ++i)
                 {
-                    argumentData[i] = '\0';
+                    argumentData[i] = arg[i];
+
+                    if (arg[i] == separator)
+                    {
+                        argumentData[i] = '\0';
+                    }
+                    else if (arg[i - 1u] == separator)
+                    {
+                        arguments[count++] = argumentData + i;
+                    }
                 }
 
-                if (i == 0 || argumentData[i - 1u] == '\0')
-                {
-                    arguments[count++] = argumentData + i;
-                }
+                argumentData[i] = '\0';
             }
         }
 
-        CArgumentsInline(const char* const* args, uint32_t count)
+        CArgumentsInline(const char* const* args, uint32_t count) : CArgumentsInline()
         {
-            size_t head = 0ull;
+            auto head = 0ull;
 
-            for (auto i = 0u; i < count; ++i)
+            for (auto i = 0u; i < count && i < maxArguments && args[i] && args[i][0] && head < capacity; ++i)
             {
-                head += strlen(args[i]) + 1ull;
+                arguments[this->count++] = argumentData + head;
+
+                for (auto j = 0u; j < capacity && args[i][j]; ++j)
+                {
+                    if (head < capacity - 1ull)
+                    {
+                        argumentData[head++] = args[i][j];
+                    }
+                }
+
+                argumentData[head++] = '\0';
             }
-
-            if (head >= capacity)
-            {
-                throw std::exception("Arguments size exceeds fixed capacity!");
-            }
-
-            if (count >= maxArguments)
-            {
-                throw std::exception("Argument count exceeds fixed capacity!");
-            }
-
-            head = 0ull;
-
-            for (auto i = 0u; i < count; ++i)
-            {
-                auto length = strlen(args[i]) + 1ull;
-                memcpy(argumentData + head, args[i], length);
-                arguments[i] = argumentData + head;
-                head += length;
-            }
-
-            this->count = count;
         }
     };
 

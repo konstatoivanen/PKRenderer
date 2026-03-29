@@ -73,7 +73,9 @@ namespace PK::App
 
             if (input->GetKeyDown(InputKey::Tab) && m_lineHint.Length() > m_lines[m_lineEdit].Length())
             {
-                m_lines[m_lineEdit] = m_lineHint;
+                auto tokenPos = m_lineHint.FindPos(m_lines[m_lineEdit].Length(), '.') + 1ll;
+                tokenPos = tokenPos >= 0ll ? tokenPos : m_lineHint.Length();
+                m_lines[m_lineEdit] = m_lineHint.SubString(0, (size_t)tokenPos);
                 return;
             }
 

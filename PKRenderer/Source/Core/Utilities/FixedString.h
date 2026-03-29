@@ -61,6 +61,9 @@ namespace PK
         bool operator == (const char* str) { return strcmp(str, m_string) == 0; }
         bool operator != (const char* str) { return strcmp(str, m_string) != 0; }
 
+        int64_t FindPos(size_t offset, char c) const { return reinterpret_cast<int64_t>(strchr(m_string + offset, c) - m_string); }
+        FixedString SubString(size_t offset, size_t count) const { return FixedString(count, m_string + offset); }
+
         void Append(const char* str)
         {
             auto length = strlen(str);
