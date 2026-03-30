@@ -304,7 +304,7 @@ namespace PK
                     }
                     else
                     {
-                        PK_LOG_INFO(asset->GetMetaInfo().c_str());
+                        PK_LOG_INFO(asset->GetMetaInfo());
                     }
                     PK_LOG_NEWLINE();
 

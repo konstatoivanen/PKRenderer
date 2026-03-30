@@ -16,15 +16,15 @@ namespace PK
 
     void RemoteProcessRunner::ExecuteRemoteProcess(const char* const* args, uint32_t count)
     {
-        auto combinedArguments = std::string();
+        FixedString1024 combined;
 
         for (auto i = 1u; i < count; ++i)
         {
-            combinedArguments.append(args[i]);
-            combinedArguments.append(" ");
+            combined.Append(args[i]);
+            combined.Append(' ');
         }
 
-        ExecuteRemoteProcess({ args[0], combinedArguments.c_str() });
+        ExecuteRemoteProcess({ args[0], combined.c_str() });
     }
 
     void RemoteProcessRunner::ExecuteRemoteProcess(const RemoteProcessCommand& command)

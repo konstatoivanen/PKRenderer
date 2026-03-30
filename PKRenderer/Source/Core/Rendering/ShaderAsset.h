@@ -56,7 +56,7 @@ namespace PK
         constexpr const uint3 GetGroupSize() const { return m_shaders[0]->GetGroupSize(); }
         constexpr const ShaderPropertyLayout& GetMaterialPropertyLayout() const { return m_materialPropertyLayout; }
 
-        std::string GetMetaInfo() const final;
+        const char* GetMetaInfo() const final;
 
     protected:
         void ReleaseVariants();

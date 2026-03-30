@@ -19,7 +19,7 @@ namespace PK
         };
 
         virtual ~Asset() = default;
-        virtual std::string GetMetaInfo() const { return std::string("Metadata info is not implemented for this asset type."); }
+        virtual const char* GetMetaInfo() const { return "Metadata info is not implemented for this asset type."; }
         constexpr AssetID GetAssetID() const { return m_sharedObject ? m_sharedObject->assetId : AssetID(0u); }
         constexpr uint32_t GetAssetVersion() const { return m_sharedObject ? m_sharedObject->version : 0u; }
         constexpr uint64_t GetAssetHash() const { return ((uint64_t)GetAssetVersion() << 32) | ((uint64_t)GetAssetID() & 0xFFFFFFFF); }

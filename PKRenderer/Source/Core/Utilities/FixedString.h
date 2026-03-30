@@ -80,6 +80,18 @@ namespace PK
             }
         }
 
+        void AppendFormat(const char* format, ...)
+        {
+            if (format && format[0])
+            {
+                va_list v0;
+                va_start(v0, format);
+                m_length += _vsnprintf(m_string + m_length, capacity - m_length, format, v0);
+                m_length = end > m_length ? m_length : end;
+                va_end(v0);
+            }
+        }
+
         void Append(char c) 
         {
             if (c && m_length < end)
@@ -113,6 +125,7 @@ namespace PK
     typedef FixedString<128> FixedString128;
     typedef FixedString<256> FixedString256;
     typedef FixedString<512> FixedString512;
+    typedef FixedString<1024> FixedString1024;
 }
 
 namespace std 

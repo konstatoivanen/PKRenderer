@@ -12,8 +12,6 @@ namespace PK
 
 namespace PK::Parse
 {
-    std::string FormatToString(const char* format, ...);
-
     template<typename T>
     T FromString(const char* str);
 

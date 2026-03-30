@@ -190,27 +190,25 @@ namespace PK
         PKAssets::CloseAsset(&asset);
     }
 
-    std::string ShaderAsset::GetMetaInfo() const
+    const char* ShaderAsset::GetMetaInfo() const
     {
-        std::string meta = "Asset Metadata: \n";
-        meta.append("   Type: Shader\n");
-        meta.append("   Name: " + std::string(GetFileName()) + "\n");
+        FixedString1024 meta;
+        meta.Append("Asset Metadata: \n");
+        meta.Append("   Type: Shader\n");
+        meta.Append("   Name: ");
+        meta.AppendFormat("   Name: %s \n", GetFileName());
 
         if (m_materialPropertyLayout.GetCount() > 0)
         {
-            meta.append("\nMaterial Properties:\n");
+            meta.Append("\nMaterial Properties:\n");
 
             for (const auto& prop : m_materialPropertyLayout)
             {
-                meta.append(Parse::FormatToString("   %s,%s,%u,%u\n", 
-                    prop.name.c_str(), 
-                    RHIEnumConvert::ElementTypeToString(prop.format), 
-                    prop.count, 
-                    prop.offset));
+                meta.AppendFormat("   %s,%s,%u,%u\n", prop.name.c_str(), RHIEnumConvert::ElementTypeToString(prop.format), prop.count, prop.offset);
             }
         }
 
-        meta.append("\nVariants:\n");
+        meta.Append("\nVariants:\n");
 
         NameID keywordlist[Map::MAX_DIRECTIVES][PKAssets::PK_ASSET_MAX_SHADER_DIRECTIVE_SIZE]{};
         uint32_t directiveSizes[Map::MAX_DIRECTIVES]{};
@@ -228,8 +226,8 @@ namespace PK
         for (auto j = 0u; j < m_map.variantcount; ++j)
         {
             auto index = j;
-            meta.append(Parse::FormatToString("   Variant: %u\n", j));
-            meta.append("       Keywords:");
+            meta.AppendFormat("   Variant: %u\n", j);
+            meta.Append("       Keywords:");
 
             for (auto i = 0u; i < m_map.directivecount; ++i)
             {
@@ -238,44 +236,40 @@ namespace PK
 
                 if (keyword != 0u)
                 {
-                    meta.append(keyword.c_str());
-                    meta.append(" ");
+                    meta.Append(keyword.c_str());
+                    meta.Append(' ');
                 }
 
                 index /= directiveSizes[i];
             }
 
-            meta.append("\n");
+            meta.Append('\n');
 
             const auto& shader = m_shaders[j].get();
 
-            meta.append("       Vertex Attributes:\n");
+            meta.Append("       Vertex Attributes:\n");
 
             for (const auto& element : shader->GetVertexLayout())
             {
-                meta.append(Parse::FormatToString("         %s, %u, %u\n", + element.name.c_str(), element.location, (uint32_t)element.format));
+                meta.AppendFormat("         %s, %u, %u\n", element.name.c_str(), element.location, (uint32_t)element.format);
             }
 
-            meta.append("       Dynamic Constants:\n");
+            meta.Append("       Dynamic Constants:\n");
 
             for (const auto& element : shader->GetPushConstantLayout())
             {
-                meta.append(Parse::FormatToString("         %s, %u, %u\n", element.name.c_str(), element.offset, (uint32_t)element.size));
+                meta.AppendFormat("         %s, %u, %u\n", element.name.c_str(), element.offset, (uint32_t)element.size);
             }
 
+            meta.Append("       Descriptor Set:\n");
+
+            for (const auto& element : shader->GetResourceLayout())
             {
-                auto& set = shader->GetResourceLayout();
-
-                meta.append(Parse::FormatToString("       Descriptor Set:\n"));
-
-                for (const auto& element : set)
-                {
-                    meta.append(Parse::FormatToString("         %s, %u\n", element.name.c_str(), (uint32_t)element.type));
-                }
+                meta.AppendFormat("         %s, %u\n", element.name.c_str(), (uint32_t)element.type);
             }
         }
 
-        return meta;
+        return meta.c_str();
     }
 
     void ShaderAsset::ReleaseVariants()
