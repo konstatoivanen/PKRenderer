@@ -66,7 +66,7 @@ namespace PK
             template <typename ... Args>
             void ConstructVirtual(Args&&... args) 
             { 
-                new(&value) T(std::forward<Args>(args)...); 
+                new(&value) T(Memory::Forward<Args>(args)...);
                 value.m_sharedObject = this;
                 isLoaded = true; 
                 isVirtual = true;
@@ -74,7 +74,7 @@ namespace PK
 
             void ConstructAsset(AssetDatabase* caller, const char* filepath) noexcept final
             {
-                if constexpr (std::is_constructible<T, const char*>::value)
+                if constexpr (__is_constructible(T, const char*))
                 {
                     new(&value) T(filepath);
                 }
@@ -138,14 +138,14 @@ namespace PK
             constexpr auto name = pk_base_type_name<T>();
             PK_THROW_ASSERT(!object->isLoaded, "AssetDatabase.Register: (%s) already exists!", assetId.c_str());
             PK_LOG_VERBOSE_FUNC("%.*s, %s", name.count, name.data, assetId.c_str());
-            object->ConstructVirtual(std::forward<Args>(args)...);
+            object->ConstructVirtual(Memory::Forward<Args>(args)...);
             return object->GetReference();
         }
 
         template<typename T, typename ... Args>
         Ref<T> CreateVirtual(const char* name, Args&& ... args)
         {
-            return CreateVirtual<T>(AssetID(name), std::forward<Args>(args)...);
+            return CreateVirtual<T>(AssetID(name), Memory::Forward<Args>(args)...);
         }
 
         template<typename T>
@@ -239,7 +239,7 @@ namespace PK
         template<typename T>
         AssetObject<T>* CreateAssetObject(AssetID assetId, CacheMode cacheMode)
         {
-            static_assert(std::is_base_of<Asset, T>::value, "Template argument type does not derive from Asset!");
+            static_assert(__is_base_of(Asset, T), "Template argument type does not derive from Asset!");
 
             auto assetIndex = m_assets.GetHashIndex((size_t)assetId);
 

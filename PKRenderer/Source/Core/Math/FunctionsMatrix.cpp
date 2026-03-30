@@ -287,8 +287,8 @@ namespace PK::Math
     void GetShadowCascadeMatrices(const ShadowCascadeCreateInfo info, float4x4* outMatrices)
     {
         auto matrix = info.worldToLocal * info.clipToWorld;
-        auto minNear = std::numeric_limits<float>().max();
-        auto maxFar = -std::numeric_limits<float>().max();
+        auto minNear = FLT_MAX;
+        auto maxFar = -FLT_MAX;
         auto zrange = info.splitPlanes[info.count] - info.splitPlanes[0];
 
         BoundingBox* aabbs = static_cast<BoundingBox*>(alloca(sizeof(BoundingBox) * info.count));

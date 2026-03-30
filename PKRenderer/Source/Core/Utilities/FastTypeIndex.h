@@ -1,5 +1,4 @@
 #pragma once
-#include <stdint.h>
 #include "BufferView.h"
 
 namespace PK
@@ -13,7 +12,7 @@ namespace PK
     template<typename T>
     constexpr uint32_t pk_base_type_index()
     {
-        using TBase = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
+        using TBase = typename Memory::RemoveCV<typename Memory::RemoveRef<T>::Type>::Type;
         return pk_type_index<TBase>;
     }
 

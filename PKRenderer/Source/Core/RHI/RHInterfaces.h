@@ -195,7 +195,7 @@ namespace PK
 
     struct RHIDriver : public NoCopy
     {
-        RHIDriver() { if (s_instance != nullptr) throw std::exception("Trying initialize multiple RHI drivers!"); s_instance = this; }
+        RHIDriver() { Memory::Assert(s_instance == nullptr, "Attempting to create multiple RHIs"); s_instance = this; }
 
         virtual ~RHIDriver() = 0;
         virtual RHIAPI GetAPI() const = 0;

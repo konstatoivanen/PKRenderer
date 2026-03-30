@@ -13,7 +13,7 @@ namespace PK
     {
         FastBuffer(size_t count) { Reserve(count); }
         FastBuffer() {}
-        FastBuffer(FastBuffer&& other) noexcept { Move(std::forward<FastBuffer>(other)); }
+        FastBuffer(FastBuffer&& other) noexcept { Move(Memory::Forward<FastBuffer>(other)); }
 
         ~FastBuffer()
         {
@@ -45,18 +45,18 @@ namespace PK
         operator T* () { return GetData(); }
         operator T const* () const { return GetData(); }
 
-        FastBuffer& operator=(FastBuffer&& other) noexcept { Move(std::forward<FastBuffer>(other)); return *this; }
+        FastBuffer& operator=(FastBuffer&& other) noexcept { Move(Memory::Forward<FastBuffer>(other)); return *this; }
 
         void Copy(const FastBuffer& other)
         {
             Reserve(other.m_count);
-            std::copy(other.GetData(), other.GetData() + other.m_count, GetData());
+            Memory::CopyArray(GetData(), other.GetData(), other.m_count);
         }
 
         void Copy(const std::initializer_list<T>& initializer)
         {
             Reserve(initializer.size());
-            std::copy(initializer.begin(), initializer.end(), GetData());
+            Memory::CopyArray(GetData(), initializer.begin(), initializer.size());
         }
 
         void Move(FastBuffer&& other)
@@ -68,8 +68,8 @@ namespace PK
                     free(m_data.buffer);
                 }
 
-                m_data = std::exchange(other.m_data, { nullptr });
-                m_count = std::exchange(other.m_count, 0ull);
+                m_data = Memory::Exchange(other.m_data, { nullptr });
+                m_count = Memory::Exchange(other.m_count, 0ull);
             }
         }
 

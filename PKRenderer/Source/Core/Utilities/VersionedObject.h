@@ -20,11 +20,11 @@ namespace PK
     template<typename T>
     struct VersionHandle
     {
-        static_assert(std::is_base_of<VersionedObject, T>::value, "Template argument type does not derive from VersionedObject!");
+        static_assert(__is_base_of(VersionedObject, T), "Template argument type does not derive from VersionedObject!");
 
         struct Hash
         {
-            std::size_t operator()(const VersionHandle& k) const noexcept
+            size_t operator()(const VersionHandle& k) const noexcept
             {
                 return k.version;
             }

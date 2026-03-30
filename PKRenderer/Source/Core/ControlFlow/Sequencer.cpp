@@ -3,13 +3,13 @@
 
 namespace PK
 {
-    void Sequencer::SetSteps(const std::initializer_list<std::tuple<const void*, std::initializer_list<Step>>>& initializer)
+    void Sequencer::SetSteps(const std::initializer_list<std::pair<const void*, std::initializer_list<Step>>>& initializer)
     {
         auto count = 0u;
 
         for (auto& pair : initializer)
         {
-            count += std::get<1>(pair).size();
+            count += pair.second.size();
         }
 
         // Allocate for worst case where all are unique.
@@ -19,8 +19,8 @@ namespace PK
 
         for (auto& pair : initializer)
         {
-            auto caller = std::get<0>(pair);
-            auto& steps = std::get<1>(pair);
+            auto caller = pair.first;
+            auto& steps = pair.second;
             auto index = 0u; 
 
             for (auto& current : steps)

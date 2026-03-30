@@ -15,6 +15,10 @@ namespace PK
     constexpr float3 PK_FLOAT3_ZERO = { 0.0f, 0.0f, 0.0f };
     constexpr float4 PK_FLOAT4_ZERO = { 0.0f, 0.0f, 0.0f, 0.0f };
 
+    constexpr float2 PK_FLOAT2_MAX = { FLT_MAX, FLT_MAX };
+    constexpr float3 PK_FLOAT3_MAX = { FLT_MAX, FLT_MAX, FLT_MAX };
+    constexpr float4 PK_FLOAT4_MAX = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
+
     constexpr ushort2 PK_USHORT2_ZERO = { 0, 0 };
     constexpr ushort3 PK_USHORT3_ZERO = { 0, 0, 0 };
     constexpr ushort4 PK_USHORT4_ZERO = { 0, 0, 0, 0 };
@@ -134,11 +138,6 @@ namespace PK
         BoundingBox(const float3& _min, const float3& _max) : min(_min), max(_max) {}
         inline static BoundingBox MinMax(const float3& min, const float3& max) { return BoundingBox(min, max); }
         inline static BoundingBox CenterExtents(const float3& center, const float3& extents) { return BoundingBox(center - extents, center + extents); }
-        inline static BoundingBox GetMinBounds()
-        {
-            constexpr const float fmi = -std::numeric_limits<float>().max();
-            constexpr const float fma = std::numeric_limits<float>().max();
-            return BoundingBox({ fma, fma, fma }, { fmi, fmi, fmi });
-        }
+        inline static BoundingBox GetMinBounds() { return{ PK_FLOAT3_MAX, -PK_FLOAT3_MAX }; }
     };
 }

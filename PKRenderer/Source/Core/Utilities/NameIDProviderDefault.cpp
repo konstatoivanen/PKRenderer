@@ -17,7 +17,7 @@ namespace PK
         if (id >= m_names.GetCount())
         {
             FixedString128 fixedMessage("Trying to get a string using an invalid id: %u", id);
-            throw std::exception(fixedMessage.c_str());
+            Memory::Assert(false, fixedMessage.c_str());
         }
 
         return m_names[id].c_str();

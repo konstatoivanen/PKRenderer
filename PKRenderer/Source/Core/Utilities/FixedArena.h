@@ -15,7 +15,7 @@ namespace PK
         template<typename T>
         T* Allocate(size_t count)
         {
-            static_assert(std::is_trivially_copyable_v<T>, "This container only supports trivially copyable types.");
+            static_assert(__is_trivially_copyable(T), "This container only supports trivially copyable types.");
             return count > 0ull ? reinterpret_cast<T*>(AllocateBlock(sizeof(T) * count, alignof(T))) : nullptr;
         }
 
@@ -24,14 +24,14 @@ namespace PK
         T* New(Args&& ... args)
         {
             auto ptr = reinterpret_cast<T*>(AllocateBlock(sizeof(T), alignof(T)));
-            new(ptr) T(std::forward<Args>(args)...);
+            new(ptr) T(Memory::Forward<Args>(args)...);
             return ptr;
         }
 
         template<typename T>
         T* Emplace(T&& element)
         {
-            return New<T>(std::forward<T>(element));
+            return New<T>(Memory::Forward<T>(element));
         }
 
         virtual uint64_t GetAlignedHead(size_t alignment) const = 0;
@@ -55,7 +55,7 @@ namespace PK
         {
             auto relativeHead = GetRelativeHead(alignment);
             m_head = relativeHead + size;
-            Memory::Assert(m_head <= capacity);
+            Memory::Assert(m_head <= capacity, "Arena capacity exceeded!");
             return m_data + relativeHead;
         }
 

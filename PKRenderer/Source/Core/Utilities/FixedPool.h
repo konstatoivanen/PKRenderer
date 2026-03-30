@@ -23,7 +23,7 @@ namespace PK
 
         uint32_t GetIndex(const T* ptr) const
         {
-            Memory::Assert(ptr >= GetData() && ptr < GetData() + GetCapacity());
+            Memory::Assert(ptr >= GetData() && ptr < GetData() + GetCapacity(), "Ptr is outiside of pool bounds!");
             return (uint32_t)(ptr - GetData());
         }
 
@@ -31,7 +31,7 @@ namespace PK
         T* New(Args&& ... args)
         {
             auto ptr = Allocate(1u);
-            new(ptr) T(std::forward<Args>(args)...);
+            new(ptr) T(Memory::Forward<Args>(args)...);
             return ptr;
         }
 
@@ -39,7 +39,7 @@ namespace PK
         T* NewAt(int64_t index, Args&& ... args)
         {
             auto ptr = Allocate(1u, index);
-            new(ptr) T(std::forward<Args>(args)...);
+            new(ptr) T(Memory::Forward<Args>(args)...);
             return ptr;
         }
 
@@ -50,7 +50,7 @@ namespace PK
 
             for (auto i = 0u; i < count; ++i)
             {
-                new(ptr + i) T(std::forward<Args>(args)...);
+                new(ptr + i) T(Memory::Forward<Args>(args)...);
             }
 
             return ptr;
@@ -128,7 +128,7 @@ namespace PK
             T* Allocate(size_t count, int64_t index) final
             {
                 index = index != -1 ? index : m_mask.FindFirstZeroRange(count);
-                Memory::Assert(index >= 0ll && index + count - 1ll < capacity);
+                Memory::Assert(index >= 0ll && index + count - 1ll < capacity, "Pool capacity exceeded!");
                 auto ptr = GetData() + index;
                 m_mask.FlipRange(index, index + count);
                 return ptr;

@@ -1,5 +1,6 @@
 #pragma once
 #include "NoCopy.h"
+#include "Memory.h"
 
 namespace PK
 {
@@ -8,11 +9,7 @@ namespace PK
     {
         Singleton() 
         {
-            if (s_Instance != nullptr)
-            {
-                throw std::exception("Singleton instance already exists!");
-            }
-
+            Memory::Assert(s_Instance == nullptr, "Singleton instance already exists!");
             s_Instance = static_cast<T*>(this); 
         }
 

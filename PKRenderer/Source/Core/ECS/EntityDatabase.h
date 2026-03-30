@@ -47,15 +47,15 @@ namespace PK
         uint64_t head = 0ull;
 
         EntityViewContainer(EntityViewContainer&& other) noexcept :
-            buffer(std::move(other.buffer)), 
-            head(std::exchange(other.head, 0ull))
+            buffer(Memory::Move(other.buffer)),
+            head(Memory::Exchange(other.head, 0ull))
         {
         }
 
         EntityViewContainer& operator=(EntityViewContainer&& other) noexcept
         {
-            buffer = std::move(other.buffer);
-            head = std::exchange(other.head, 0ull);
+            buffer = Memory::Move(other.buffer);
+            head = Memory::Exchange(other.head, 0ull);
             return *this;
         }
     };
@@ -117,7 +117,7 @@ namespace PK
         template<typename T>
         T* ReserveImplementer()
         {
-            static_assert(std::is_base_of<IEntityImplementer, T>::value, "Template argument type does not derive from IImplementer!");
+            static_assert(__is_base_of(IEntityImplementer, T), "Template argument type does not derive from IImplementer!");
 
             const auto elementsPerBucket = PK_ECS_BUCKET_SIZE / sizeof(T);
             const auto containerIdx = m_implementers.AddKey(pk_base_type_index<T>());
@@ -149,12 +149,8 @@ namespace PK
         template<typename TView>
         TView* ReserveView(const EGID& egid)
         {
-            static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
-
-            if (!egid.IsValid())
-            {
-                throw std::exception("Trying to acquire resources for an invalid egid!");
-            }
+            static_assert(__is_base_of(IEntityView, TView), "Template argument type does not derive from IEntityView!");
+            Memory::Assert(egid.IsValid(), "Invalid Egid!");
 
             const uint32_t groupIdx = m_viewHeaders.Add(EntityViewHeader(egid.groupID(), pk_base_type_index<TView>()));
             auto& group = m_viewHeaders[groupIdx];
@@ -189,7 +185,7 @@ namespace PK
         TView* ReserveView(TImpl* implementer, const EGID& egid, M TView::* ...params)
         {
             auto* view = ReserveView<TView>(egid);
-            static_assert((... && std::is_assignable<decltype(view->*params), TImpl*>::value), "Components are not present in implementer");
+            static_assert((... && __is_assignable(decltype(view->*params), TImpl*)), "Components are not present in implementer");
             ((view->*params = static_cast<M>(implementer)), ...);
             return view;
         }
@@ -197,7 +193,7 @@ namespace PK
         template<typename TView>
         const BufferView<TView> Query(const uint32_t group)
         {
-            static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
+            static_assert(__is_base_of(IEntityView, TView), "Template argument type does not derive from IEntityView!");
             const auto* header = m_viewHeaders.GetValuePtr(EntityViewHeader(group, pk_base_type_index<TView>()));
             auto data = header ? reinterpret_cast<TView*>(m_entityViews[header->container - 1u].buffer.GetData()) : nullptr;
             auto count = header ? m_entityViews[header->container - 1u].head / (sizeof(TView) / sizeof(uint64_t)) : 0ull;
@@ -207,7 +203,7 @@ namespace PK
         template<typename TView>
         TView* Query(const EGID& egid)
         {
-            static_assert(std::is_base_of<IEntityView, TView>::value, "Template argument type does not derive from IEntityView!");
+            static_assert(__is_base_of(IEntityView, TView), "Template argument type does not derive from IEntityView!");
             const auto* header = m_viewHeaders.GetValuePtr(EntityViewHeader(egid, pk_base_type_index<TView>()));
             return header ? reinterpret_cast<TView*>(m_entityViews[header->container - 1u].buffer.GetData() + header->offset) : nullptr;
         }

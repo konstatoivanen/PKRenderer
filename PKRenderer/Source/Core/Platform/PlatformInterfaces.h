@@ -1,6 +1,6 @@
 #pragma once
-#include <exception>
 #include "Core/Platform/Platform.h"
+#include "Core/Utilities/Memory.h"
 #include "Core/Utilities/NoCopy.h"
 #include "Core/Input/InputDevice.h"
 #include "Core/Math/Math.h"
@@ -81,7 +81,7 @@ namespace PK
 
     struct PlatformDriver : public NoCopy
     {
-        PlatformDriver() { if (s_instance != nullptr) throw std::exception("Trying initialize multiple native interfaces!"); s_instance = this; }
+        PlatformDriver() { Memory::Assert(s_instance == nullptr, "Attempting to create multiple platform interfaces!"); s_instance = this; }
         virtual ~PlatformDriver() = 0;
 
         virtual void PollEvents(bool wait) = 0;

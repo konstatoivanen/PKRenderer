@@ -34,7 +34,7 @@ namespace PK
             size_t count = 0ull;
         };
 
-        void SetSteps(const std::initializer_list<std::tuple<const void*, std::initializer_list<Step>>>& initializer);
+        void SetSteps(const std::initializer_list<std::pair<const void*, std::initializer_list<Step>>>& initializer);
         void Release();
 
         inline const void* GetRoot() const { return this; }
@@ -48,17 +48,17 @@ namespace PK
 
             for (auto i = 0u; i < view.count; ++i)
             {
-                static_cast<TStep*>(view.steps[i].step)->Step(std::forward<Args>(args)...);
+                static_cast<TStep*>(view.steps[i].step)->Step(Memory::Forward<Args>(args)...);
             }
         }
 
         template<typename ... Args>
-        void NextRoot(Args ... args) { Next(this, std::forward<Args>(args)...); }
+        void NextRoot(Args ... args) { Next(this, Memory::Forward<Args>(args)...); }
 
         template<typename T, typename ... Args>
         void NextEmplace(const void* engine, Args&& ... args)
         {
-            auto token = T(std::forward<Args>(args)...);
+            auto token = T(Memory::Forward<Args>(args)...);
             Next<T*>(engine, &token);
         }
 

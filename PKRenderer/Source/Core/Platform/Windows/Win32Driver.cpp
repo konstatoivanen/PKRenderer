@@ -28,13 +28,8 @@ namespace PK
 
     Win32Driver::Win32Driver()
     {
-        if (!GetModuleHandleExW(
-            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-            (const WCHAR*)&s_localPtr,
-            (HMODULE*)&instance))
-        {
-            throw std::exception("Failed to get program HINSTANCE");
-        }
+        DWORD flags = GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
+        Memory::Assert(GetModuleHandleExW(flags, (const WCHAR*)&s_localPtr, (HMODULE*)&instance), "Failed to get program HINSTANCE");
 
         ::SetPriorityClass(::GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 
@@ -44,10 +39,7 @@ namespace PK
         ntdll_handle = LoadLibrary("ntdll.dll");
         dwmapi_handle = LoadLibrary("dwmapi.dll");
 
-        if (!user32_handle)
-        {
-            throw std::exception("Failed to load user32.dll");
-        }
+        Memory::Assert(user32_handle, "Failed to load user32.dll");
 
         pkfn_SetProcessDPIAware = (PFN_SetProcessDPIAware)GetProcAddress(user32_handle, "SetProcessDPIAware");
         pkfn_ChangeWindowMessageFilterEx = (PFN_ChangeWindowMessageFilterEx)GetProcAddress(user32_handle, "ChangeWindowMessageFilterEx");
@@ -124,11 +116,7 @@ namespace PK
             wc.hInstance = instance;
             wc.hCursor = ::LoadCursorW(NULL, IDC_ARROW);
             wc.lpszClassName = Win32Window::CLASS_HELPER;
-
-            if (!(m_windowClassHelper = ::RegisterClassExW(&wc)))
-            {
-                throw std::exception("Failed to create window helper class.");
-            }
+            Memory::Assert((m_windowClassHelper = ::RegisterClassExW(&wc)), "Failed to create window helper class.");
         }
 
         // Main window class for actual display windows.
@@ -140,11 +128,7 @@ namespace PK
             wc.hCursor = ::LoadCursorW(NULL, IDC_ARROW);
             wc.lpszClassName = Win32Window::CLASS_MAIN;
             wc.hIcon = (HICON)::LoadImageW(NULL, IDI_APPLICATION, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
-
-            if (!(m_windowClassMain = ::RegisterClassExW(&wc)))
-            {
-                throw std::exception("Failed to create window main class.");
-            }
+            Memory::Assert((m_windowClassMain = ::RegisterClassExW(&wc)), "Failed to create window main class.");
         }
 
         m_windowInstanceHelper = ::CreateWindowExW
@@ -159,10 +143,7 @@ namespace PK
             NULL
         );
 
-        if (!m_windowInstanceHelper)
-        {
-            throw std::exception("Failed to create helper window.");
-        }
+        Memory::Assert(m_windowInstanceHelper, "Failed to create helper window.");
 
         ::ShowWindow(m_windowInstanceHelper, SW_HIDE);
 

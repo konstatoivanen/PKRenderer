@@ -10,9 +10,9 @@ namespace PK
     {
         FastList() {}
         FastList(size_t capacity) { Reserve(capacity); }
-        FastList(FastList&& other) noexcept { Move(std::forward<FastBuffer>(other)); }
+        FastList(FastList&& other) noexcept { Move(Memory::Forward<FastBuffer>(other)); }
         FastList(const FastList& other) noexcept { Copy(other); }
-        FastList(std::initializer_list<T>&& other) noexcept { Move(std::forward<std::initializer_list<T>>(other)); }
+        FastList(std::initializer_list<T>&& other) noexcept { Move(Memory::Forward<std::initializer_list<T>>(other)); }
         FastList(const std::initializer_list<T>& other) noexcept { Copy(other); }
 
         ~FastList()
@@ -48,19 +48,19 @@ namespace PK
         operator T* () { return GetData(); }
         operator T const* () const { return GetData(); }
 
-        FastList& operator=(FastList&& other) noexcept { Move(std::forward<FastBuffer>(other)); return *this; }
+        FastList& operator=(FastList&& other) noexcept { Move(Memory::Forward<FastBuffer>(other)); return *this; }
 
         void Copy(const FastList& other)
         {
             Clear();
             Reserve(other.m_count);
-            std::copy(other.GetData(), other.GetData() + other.m_count, GetData());
+            Memory::CopyArray(GetData(), other.GetData(), other.m_count);
         }
 
         void Copy(const std::initializer_list<T>& initializer)
         {
             Resize(initializer.size());
-            std::copy(initializer.begin(), initializer.end(), GetData());
+            Memory::CopyArray(GetData(), initializer.begin(), initializer.size());
         }
 
         void Move(FastList&& other)
@@ -72,16 +72,16 @@ namespace PK
                     free(m_data.buffer);
                 }
 
-                m_data = std::exchange(other.m_data, { nullptr });
-                m_count = std::exchange(other.m_count, 0ull);
-                m_capacity = std::exchange(other.m_capacity, 0ull);
+                m_data = Memory::Exchange(other.m_data, { nullptr });
+                m_count = Memory::Exchange(other.m_count, 0ull);
+                m_capacity = Memory::Exchange(other.m_capacity, 0ull);
             }
         }
 
         void Move(std::initializer_list<T>&& initializer)
         {
             Reserve(initializer.size());
-            std::move(initializer.begin(), initializer.end(), GetData());
+            Memory::MoveArray(GetData(), initializer.begin(), initializer.size());
             m_count = initializer.size();
         }
 
@@ -96,7 +96,7 @@ namespace PK
 
             if (m_count > 0u)
             {
-                std::move(GetData(), GetData() + m_count, buffer);
+                Memory::MoveArray(buffer, GetData(), m_count);
             }
 
             if (!IsSmallBuffer(m_capacity))
@@ -129,7 +129,7 @@ namespace PK
         T* Add(Args&& ... args)
         {
             Reserve(m_count + 1u);
-            return new(GetData() + m_count++) T(std::forward<Args>(args)...);
+            return new(GetData() + m_count++) T(Memory::Forward<Args>(args)...);
         }
 
         bool Remove(T* ptr)
@@ -152,7 +152,7 @@ namespace PK
 
             for (; i < m_count; ++i)
             {
-                GetData()[i] = std::move(GetData()[i + 1]);
+                GetData()[i] = Memory::Move(GetData()[i + 1]);
             }
 
             return true;
@@ -173,7 +173,7 @@ namespace PK
 
             if (m_count > 0u)
             {
-                GetData()[i] = std::move(GetData()[m_count]);
+                GetData()[i] = Memory::Move(GetData()[m_count]);
                 return true;
             }
 
@@ -195,9 +195,9 @@ namespace PK
 
         FixedList(const T* elements, size_t count)
         {
-            Memory::Assert(count < capacity);
+            Memory::Assert(count < capacity, "Fixed list capacity exceeded!");
+            Memory::CopyArray(reinterpret_cast<T*>(m_data), elements, count);
             m_count = count;
-            std::copy(elements, elements + count, reinterpret_cast<T*>(m_data));
         }
 
         FixedList(std::initializer_list<T> elements) : FixedList(elements.begin(), (size_t)(elements.end() - elements.begin()))
@@ -230,7 +230,7 @@ namespace PK
 
         T* Add()
         {
-            Memory::Assert(m_count < capacity);
+            Memory::Assert(m_count < capacity, "Fast list capacity exceeded!");
             auto ptr = GetData() + m_count++;
             new(ptr) T();
             return ptr;
@@ -239,9 +239,9 @@ namespace PK
         template<typename ... Args>
         T* Add(Args&& ... args)
         {
-            Memory::Assert(m_count < capacity);
+            Memory::Assert(m_count < capacity, "Fast list capacity exceeded!");
             auto ptr = GetData() + m_count++;
-            new(ptr) T(std::forward<Args>(args)...);
+            new(ptr) T(Memory::Forward<Args>(args)...);
             return ptr;
         }
 

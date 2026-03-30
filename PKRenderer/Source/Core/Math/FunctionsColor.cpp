@@ -24,7 +24,7 @@ namespace PK::Math
     color NormalizeColor(const color& c)
     {
         auto sum = (c.r + c.g + c.b) / 3.0f;
-        return sum < std::numeric_limits<float>().epsilon() ? PK_COLOR_WHITE : color(c.r / sum, c.g / sum, c.b / sum, 1.0f);
+        return sum < FLT_EPSILON ? PK_COLOR_WHITE : color(c.r / sum, c.g / sum, c.b / sum, 1.0f);
     }
 
     color32 ColorTo32(const color& color)

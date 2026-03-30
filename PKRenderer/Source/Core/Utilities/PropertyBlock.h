@@ -1,5 +1,5 @@
 #pragma once
-#include <type_traits>
+#include "Memory.h"
 #include "NoCopy.h"
 #include "FastTypeIndex.h"
 
@@ -24,7 +24,7 @@ namespace PK
             template<typename T>
             inline static uint64_t MakeKey(const uint32_t hashId)
             {
-                static_assert(std::is_trivially_copyable_v<T>, "This container only supports trivially copyable types.");
+                static_assert(__is_trivially_copyable(T), "This container only supports trivially copyable types.");
                 return Hash::InterlaceHash32x2(hashId, pk_base_type_index<T>());
             };
 
@@ -81,10 +81,7 @@ namespace PK
             template<typename T>
             void Set(uint32_t hashId, const T* src, uint32_t count)
             {
-                if (!TrySet(hashId, src, count))
-                {
-                    throw std::exception("Could not write property to block!");
-                }
+                Memory::Assert(TrySet(hashId, src, count), "Value not found in property block");
             }
 
             template<typename T>

@@ -19,7 +19,7 @@ namespace PK
             T Instance;
 
             template<typename ... Args>
-            ServiceContainer(Args&& ... args) : Instance(std::forward<Args>(args)...) {}
+            ServiceContainer(Args&& ... args) : Instance(Memory::Forward<Args>(args)...) {}
         };
         
 
@@ -42,7 +42,7 @@ namespace PK
             auto index = 0u;
             AssertTypeExists(m_services.AddKey(typeIndex, &index), typeName);
             auto logIndent = PK::LogScopeIndent(2);
-            auto service = new ServiceContainer<T>(std::forward<Args>(args)...);
+            auto service = new ServiceContainer<T>(Memory::Forward<Args>(args)...);
             m_services[index].value = service;
             return &service->Instance;
         }

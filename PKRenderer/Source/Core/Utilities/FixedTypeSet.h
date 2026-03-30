@@ -22,7 +22,7 @@ namespace PK
         template<typename TBase>
         constexpr TBase* GetInstance()
         {
-            if constexpr (std::is_base_of<TBase, T>())
+            if constexpr (__is_base_of(TBase, T))
             {
                 return static_cast<TBase*>(&m_instance);
             }
@@ -52,7 +52,7 @@ namespace PK
         template<typename TType>
         constexpr FixedUnique<TType>* GetInstance()
         {
-            if constexpr (std::is_same<TType, T>())
+            if constexpr (__is_same(TType, T))
             {
                 return &m_instance;
             }

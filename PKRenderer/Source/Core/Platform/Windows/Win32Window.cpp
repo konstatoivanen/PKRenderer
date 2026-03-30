@@ -196,10 +196,7 @@ namespace PK
             &m_useDpiScaling
         );
 
-        if (!m_handle)
-        {
-            throw std::exception("Failed to create a window through: CreateWindowExW.");
-        }
+        Memory::Assert(m_handle, "Failed to create a window through: CreateWindowExW.");
 
         // Set default icon from rc.
         if (descriptor.useEmbeddedIcon)

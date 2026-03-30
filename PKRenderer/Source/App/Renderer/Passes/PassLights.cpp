@@ -276,7 +276,7 @@ namespace PK::App
                 shadowCount += shadowTypeInfo.TileCount;
                 auto& batches = resources->shadowBatches;
                 
-                Memory::Memcpy(matricesView.data + light.index_shadow, matrices, shadowTypeInfo.MatrixCount);
+                Memory::Memcpy<float4x4>(matricesView.data + light.index_shadow, matrices, shadowTypeInfo.MatrixCount);
 
                 if (!batches.count || batches[batches.count - 1u].count >= shadowTypeInfo.MaxBatchSize || batches[batches.count - 1u].type != view->light->type)
                 {

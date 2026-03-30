@@ -71,7 +71,7 @@ namespace PK::App
         {
             if (mask & (1 << i))
             {
-                std::swap(buffsCur[i], buffsPre[i]);
+                Memory::Swap(buffsCur[i], buffsPre[i]);
             }
         }
     }

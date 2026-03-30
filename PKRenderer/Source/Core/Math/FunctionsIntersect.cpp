@@ -326,8 +326,9 @@ namespace PK::Math
         positions[5] = inverseMatrix * float4(-1, 1, PK_CLIPZ_FAR, 1);
         positions[6] = inverseMatrix * float4(1, 1, PK_CLIPZ_FAR, 1);
         positions[7] = inverseMatrix * float4(1, -1, PK_CLIPZ_FAR, 1);
-        float3 min = { std::numeric_limits<float>().max(), std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
-        float3 max = { -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };
+        
+        auto min = +PK_FLOAT3_MAX;
+        auto max = -PK_FLOAT3_MAX;
 
         for (auto i = 0; i < 8; ++i)
         {
@@ -363,8 +364,8 @@ namespace PK::Math
             positions[i + 4] = pfar;
         }
 
-        float3 min = { std::numeric_limits<float>().max(), std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
-        float3 max = { -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };
+        auto min = +PK_FLOAT3_MAX;
+        auto max = -PK_FLOAT3_MAX;
 
         for (auto i = 0; i < 8; ++i)
         {
@@ -387,8 +388,8 @@ namespace PK::Math
         positions[6] = float4(1, 1, PK_CLIPZ_FAR, 1);
         positions[7] = float4(1, -1, PK_CLIPZ_FAR, 1);
 
-        float3 min = { std::numeric_limits<float>().max(), std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
-        float3 max = { -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max(), -std::numeric_limits<float>().max() };
+        auto min = +PK_FLOAT3_MAX;
+        auto max = -PK_FLOAT3_MAX;
 
         for (auto i = 0; i < 8; ++i)
         {
