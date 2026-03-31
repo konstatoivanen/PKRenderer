@@ -26,9 +26,9 @@ int main(int argc, char** argv)
    // _crtBreakAlloc = 483;
 #endif
 
-    auto platformDriver = PK::Platform::CreateDriver();
+    auto status = PK::Platform::Initialize();
 
-    if (platformDriver)
+    if (status == 0)
     {
         auto application = PK::CreateProjectApplication({ argv, argc });
 
@@ -37,5 +37,5 @@ int main(int argc, char** argv)
         PK::FreeProjectApplication(application);
     }
 
-    PK::Platform::DestroyDriver(platformDriver);
+    return PK::Platform::Terminate();
 }

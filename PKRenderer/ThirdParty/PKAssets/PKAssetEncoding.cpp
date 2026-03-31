@@ -1,7 +1,6 @@
 #include <malloc.h>
 #include <stdlib.h>
 #include <string.h>
-#include <exception>
 #include "PKAssetEncoding.h"
 
 namespace PKAssets
@@ -203,7 +202,7 @@ namespace PKAssets
         }
     }
     
-    void EncodeBuffer(const void* in_data, size_t in_data_size, uint8_t** out_data, size_t* out_data_size)
+    int EncodeBuffer(const void* in_data, size_t in_data_size, uint8_t** out_data, size_t* out_data_size)
     {
         PKEncodeTable table{};
         EncodeBuffer(in_data, in_data_size, &table, nullptr);
@@ -211,9 +210,10 @@ namespace PKAssets
         EncodeBuffer(in_data, in_data_size, &table, compressed_buff);
         *out_data = compressed_buff;
         *out_data_size = table.size;
+        return compressed_buff == nullptr ? -1 : 0;
     }
     
-    void DecodeBuffer(const void* in_data, uint8_t* write_data, size_t write_size)
+    int DecodeBuffer(const void* in_data, uint8_t* write_data, size_t write_size)
     {
         constexpr uint32_t table_size = 1u << PK_ASSET_ENCODE_CODE_LENGTH;
     
@@ -274,7 +274,7 @@ namespace PKAssets
             #if PK_DEBUG // In case we are using inplace decoding. we want to make sure that the write buffer doesn't overrun the read buffer.
             if (static_cast<void*>(buffer_uint32 + i) >= static_cast<const void*>(stream_bytes + stream_bytecount))
             {
-                throw std::exception("In place decode buffer overrun!");
+                return -1;
             }
             #endif
 
@@ -292,5 +292,7 @@ namespace PKAssets
             stream_bitbuffer >>= key >> 8u;
             stream_bitcount -= key >> 8u;
         }
+
+        return 0;
     }
 }

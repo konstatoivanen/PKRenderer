@@ -113,10 +113,10 @@ typedef HRESULT(WINAPI* PFN_DwmEnableBlurBehindWindow)(HWND, const DWM_BLURBEHIN
 typedef HRESULT(WINAPI* PFN_DwmGetColorizationColor)(DWORD*, BOOL*);
 typedef HRESULT(WINAPI* PFN_DwmSetWindowAttribute)(HWND, DWORD, LPCVOID, DWORD);
 
-#define PK_PLATFORM_WINDOWS_IS_8_OR_GREATER() PK::Win32Driver::IsGreaterOSVersion(HIBYTE(_WIN32_WINNT_WIN8), LOBYTE(_WIN32_WINNT_WIN8), 0)
-#define PK_PLATFORM_WINDOWS_IS_8_1_OR_GREATER() PK::Win32Driver::IsGreaterOSVersion(HIBYTE(_WIN32_WINNT_WINBLUE), LOBYTE(_WIN32_WINNT_WINBLUE), 0)
-#define PK_PLATFORM_WINDOWS_IS_10_1607_OR_GREATER() PK::Win32Driver::IsGreaterWin10Build(14393)
-#define PK_PLATFORM_WINDOWS_IS_10_1703_OR_GREATER() PK::Win32Driver::IsGreaterWin10Build(15063)
+#define PK_PLATFORM_WINDOWS_IS_8_OR_GREATER() PK::Platform::IsGreaterOSVersion(HIBYTE(_WIN32_WINNT_WIN8), LOBYTE(_WIN32_WINNT_WIN8), 0)
+#define PK_PLATFORM_WINDOWS_IS_8_1_OR_GREATER() PK::Platform::IsGreaterOSVersion(HIBYTE(_WIN32_WINNT_WINBLUE), LOBYTE(_WIN32_WINNT_WINBLUE), 0)
+#define PK_PLATFORM_WINDOWS_IS_10_1607_OR_GREATER() PK::Platform::IsGreaterWin10Build(14393)
+#define PK_PLATFORM_WINDOWS_IS_10_1703_OR_GREATER() PK::Platform::IsGreaterWin10Build(15063)
 
 extern PFN_DirectInput8Create pkfn_DirectInput8Create;
 #define PK_DirectInput8Create pkfn_DirectInput8Create
@@ -147,59 +147,8 @@ extern PFN_RtlVerifyVersionInfo pkfn_RtlVerifyVersionInfo;
 
 namespace PK
 {
-    struct Win32Window;
-
-    struct Win32Driver : public PlatformDriver
+    struct Win32Resources
     {
-        Win32Driver();
-        ~Win32Driver();
-
-        void PollEvents(bool wait) final;
-
-        static inline Win32Driver* GetInstance() { return static_cast<Win32Driver*>(Get()); }
-        inline void* GetProcess() const final { return instance; }
-        inline void* GetHelperWindow() const final { return m_windowInstanceHelper; }
-        inline void* GetProcAddress(void* handle, const char* name) const final { return (void*)::GetProcAddress((HMODULE)handle, name); }
-
-        void* LoadLibrary(const char* path) const final;
-        void FreeLibrary(void* handle) const final;
-
-        bool GetHasFocus() const final;
-        int2 GetDesktopSize() const final;
-        int4 GetMonitorRect(const int2& point, bool preferPrimary) const final;
-        void* GetNativeMonitorHandle(const int2& point, bool preferPrimary) const final;
-
-        PlatformWindow* CreateWindow(const PlatformWindowDescriptor& descriptor) final;
-        void DestroyWindow(PlatformWindow* window) final;
-
-        void SetInputHandler(InputHandler* handler) final;
-        std::string GetClipboardString() final;
-        void SetClipboardString(const char* str) final;
-        void SetConsoleColor(uint32_t color) const final;
-        void SetConsoleVisible(bool value) const final;
-        uint32_t RemoteProcess(const char* executable, const char* arguments) const final;
-
-        static bool IsGreaterOSVersion(WORD major, WORD minor, WORD sp);
-        static bool IsGreaterWin10Build(WORD build);
-        static bool IsInputEvent(UINT uMsg);
-        static bool IsWindowEvent(UINT uMsg);
-
-        static InputKey NativeToInputKey(int32_t native);
-        static int32_t InputKeyToNative(InputKey inputKey);
-
-        static bool IsDisabledCursorWindow(Win32Window* window);
-        static RAWINPUT* GetRawInput(Win32Window* window, LPARAM lParam);
-        static void SetDisabledCursorWindow(Win32Window* window, bool value, const float2& restoreCursorPos);
-        static void SetLockedCursorWindow(Win32Window* window, bool value);
-        static void DispatchInputOnKey(InputDevice* device, InputKey key, bool isDown);
-        static void DispatchInputOnMouseMoved(InputDevice* device, const float2& position, const float2& size);
-        static void DispatchInputOnScroll(InputDevice* device, uint32_t axis, float offset);
-        static void DispatchInputOnCharacter(InputDevice* device, uint32_t character);
-        static void DispatchInputOnDrop(InputDevice* device, const char* const* paths, uint32_t count);
-
-        static LRESULT CALLBACK WindowProc_Helper(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-        static LRESULT CALLBACK WindowProc_Main(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
         HINSTANCE instance = NULL;
 
         void* dinput8_handle = nullptr;
@@ -210,23 +159,26 @@ namespace PK
         void* ntdll_handle = nullptr;
         IDirectInput8W* dinput8_api = nullptr;
 
-        ATOM m_windowClassMain = NULL;
-        ATOM m_windowClassHelper = NULL;
-        HWND m_windowInstanceHelper = NULL;
+        ATOM windowClassMain = NULL;
+        ATOM windowClassHelper = NULL;
+        HWND windowInstanceHelper = NULL;
 
         InputKey native_to_keycode[512]{};
         int16_t keycode_to_native[(int32_t)InputKey::Count]{};
 
-        HDEVNOTIFY m_deviceNotificationHandle = NULL;
-        float2 m_restoreCursorPos = PK_FLOAT2_ZERO;
-        Win32Window* m_disabledCursorWindow = nullptr;
-        Win32Window* m_lockedCursorWindow = nullptr;
-        RAWINPUT* m_rawInput = nullptr;
-        uint32_t m_rawInputSize = 0u;
+        HDEVNOTIFY deviceNotificationHandle = NULL;
+        float2 restoreCursorPos = PK_FLOAT2_ZERO;
+        Win32Window* disabledCursorWindow = nullptr;
+        Win32Window* lockedCursorWindow = nullptr;
+        RAWINPUT* rawInput = nullptr;
+        uint32_t rawInputSize = 0u;
 
-        InputHandler* m_inputHandler = nullptr;
-        Win32Window* m_windowHead = nullptr;
+        InputHandler* inputHandler = nullptr;
+        Win32Window* windowHead = nullptr;
+
+        char* clipboard = nullptr;
+        size_t clipboardSize = 0ull;
     };
-}
+};
 
 #endif

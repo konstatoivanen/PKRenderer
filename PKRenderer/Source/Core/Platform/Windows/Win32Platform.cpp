@@ -1,7 +1,7 @@
 #include "PrecompiledHeader.h"
 
 #if PK_PLATFORM_WINDOWS
-#include "Win32Driver.h"
+#include "Win32Internal.h"
 #include "Core/Utilities/Parse.h"
 
 PFN_DirectInput8Create pkfn_DirectInput8Create = nullptr;
@@ -26,52 +26,59 @@ namespace PK
     static const GUID s_GUID_DEVINTERFACE_HID = { 0x4d1e55b2,0xf16f,0x11cf,{0x88,0xcb,0x00,0x11,0x11,0x00,0x00,0x30} };
     static const GUID s_IID_IDirectInput8W = { 0xbf798031,0x483a,0x4da2,{0xaa,0x99,0x5d,0x64,0xed,0x36,0x97,0x00} };
 
-    Win32Driver::Win32Driver()
+    int Win32Platform::Initialize()
     {
+        if (resources)
+        {
+            return -1;
+        }
+
+        resources = static_cast<Win32Resources*>(calloc(1, sizeof(Win32Resources)));
+
         DWORD flags = GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
-        Memory::Assert(GetModuleHandleExW(flags, (const WCHAR*)&s_localPtr, (HMODULE*)&instance), "Failed to get program HINSTANCE");
+        Memory::Assert(GetModuleHandleExW(flags, (const WCHAR*)&s_localPtr, (HMODULE*)&resources->instance), "Failed to get program HINSTANCE");
 
         ::SetPriorityClass(::GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 
-        user32_handle = LoadLibrary("user32.dll");
-        dinput8_handle = LoadLibrary("dinput8.dll");
-        shcore_handle = LoadLibrary("shcore.dll");
-        ntdll_handle = LoadLibrary("ntdll.dll");
-        dwmapi_handle = LoadLibrary("dwmapi.dll");
+        resources->user32_handle = Platform::LoadLibrary("user32.dll");
+        resources->dinput8_handle = LoadLibrary("dinput8.dll");
+        resources->shcore_handle = LoadLibrary("shcore.dll");
+        resources->ntdll_handle = LoadLibrary("ntdll.dll");
+        resources->dwmapi_handle = LoadLibrary("dwmapi.dll");
 
-        Memory::Assert(user32_handle, "Failed to load user32.dll");
+        Memory::Assert(resources->user32_handle, "Failed to load user32.dll");
 
-        pkfn_SetProcessDPIAware = (PFN_SetProcessDPIAware)GetProcAddress(user32_handle, "SetProcessDPIAware");
-        pkfn_ChangeWindowMessageFilterEx = (PFN_ChangeWindowMessageFilterEx)GetProcAddress(user32_handle, "ChangeWindowMessageFilterEx");
-        pkfn_EnableNonClientDpiScaling = (PFN_EnableNonClientDpiScaling)GetProcAddress(user32_handle, "EnableNonClientDpiScaling");
-        pkfn_SetProcessDpiAwarenessContext = (PFN_SetProcessDpiAwarenessContext)GetProcAddress(user32_handle, "SetProcessDpiAwarenessContext");
-        pkfn_GetDpiForWindow = (PFN_GetDpiForWindow)GetProcAddress(user32_handle, "GetDpiForWindow");
-        pkfn_AdjustWindowRectExForDpi = (PFN_AdjustWindowRectExForDpi)GetProcAddress(user32_handle, "AdjustWindowRectExForDpi");
+        pkfn_SetProcessDPIAware = (PFN_SetProcessDPIAware)GetProcAddress(resources->user32_handle, "SetProcessDPIAware");
+        pkfn_ChangeWindowMessageFilterEx = (PFN_ChangeWindowMessageFilterEx)GetProcAddress(resources->user32_handle, "ChangeWindowMessageFilterEx");
+        pkfn_EnableNonClientDpiScaling = (PFN_EnableNonClientDpiScaling)GetProcAddress(resources->user32_handle, "EnableNonClientDpiScaling");
+        pkfn_SetProcessDpiAwarenessContext = (PFN_SetProcessDpiAwarenessContext)GetProcAddress(resources->user32_handle, "SetProcessDpiAwarenessContext");
+        pkfn_GetDpiForWindow = (PFN_GetDpiForWindow)GetProcAddress(resources->user32_handle, "GetDpiForWindow");
+        pkfn_AdjustWindowRectExForDpi = (PFN_AdjustWindowRectExForDpi)GetProcAddress(resources->user32_handle, "AdjustWindowRectExForDpi");
 
-        if (dinput8_handle)
+        if (resources->dinput8_handle)
         {
-            pkfn_DirectInput8Create = (PFN_DirectInput8Create)GetProcAddress(dinput8_handle, "DirectInput8Create");
+            pkfn_DirectInput8Create = (PFN_DirectInput8Create)GetProcAddress(resources->dinput8_handle, "DirectInput8Create");
 
-            if (FAILED(PK_DirectInput8Create(instance, DIRECTINPUT_VERSION, s_IID_IDirectInput8W, (void**)&dinput8_api, NULL)))
+            if (FAILED(PK_DirectInput8Create(resources->instance, DIRECTINPUT_VERSION, s_IID_IDirectInput8W, (void**)&resources->dinput8_api, NULL)))
             {
-                dinput8_api = nullptr;
+                resources->dinput8_api = nullptr;
             }
         }
 
-        if (shcore_handle)
+        if (resources->shcore_handle)
         {
-            pkfn_SetProcessDpiAwareness = (PFN_SetProcessDpiAwareness)GetProcAddress(shcore_handle, "SetProcessDpiAwareness");
-            pkfn_GetDpiForMonitor = (PFN_GetDpiForMonitor)GetProcAddress(shcore_handle, "GetDpiForMonitor");
+            pkfn_SetProcessDpiAwareness = (PFN_SetProcessDpiAwareness)GetProcAddress(resources->shcore_handle, "SetProcessDpiAwareness");
+            pkfn_GetDpiForMonitor = (PFN_GetDpiForMonitor)GetProcAddress(resources->shcore_handle, "GetDpiForMonitor");
         }
 
-        if (ntdll_handle)
+        if (resources->ntdll_handle)
         {
-            pkfn_RtlVerifyVersionInfo = (PFN_RtlVerifyVersionInfo)GetProcAddress(ntdll_handle, "RtlVerifyVersionInfo");
+            pkfn_RtlVerifyVersionInfo = (PFN_RtlVerifyVersionInfo)GetProcAddress(resources->ntdll_handle, "RtlVerifyVersionInfo");
         }
 
-        if (dwmapi_handle)
+        if (resources->dwmapi_handle)
         {
-            pkfn_DwmSetWindowAttribute = (PFN_DwmSetWindowAttribute)GetProcAddress(dwmapi_handle, "DwmSetWindowAttribute");
+            pkfn_DwmSetWindowAttribute = (PFN_DwmSetWindowAttribute)GetProcAddress(resources->dwmapi_handle, "DwmSetWindowAttribute");
         }
 
         const char* xinputModuleNames[] =
@@ -85,12 +92,12 @@ namespace PK
 
         for (auto i = 0u; i < 5u; ++i)
         {
-            xinput_handle = LoadLibrary(xinputModuleNames[i]);
+            resources->xinput_handle = LoadLibrary(xinputModuleNames[i]);
 
-            if (xinput_handle)
+            if (resources->xinput_handle)
             {
-                pkfn_XInputGetCapabilities = (PFN_XInputGetCapabilities)GetProcAddress(xinput_handle, "XInputGetCapabilities");
-                pkfn_XInputGetState = (PFN_XInputGetState)GetProcAddress(xinput_handle, "XInputGetState");
+                pkfn_XInputGetCapabilities = (PFN_XInputGetCapabilities)GetProcAddress(resources->xinput_handle, "XInputGetCapabilities");
+                pkfn_XInputGetState = (PFN_XInputGetState)GetProcAddress(resources->xinput_handle, "XInputGetState");
                 break;
             }
         }
@@ -113,10 +120,10 @@ namespace PK
             WNDCLASSEXW wc = { sizeof(wc) };
             wc.style = CS_OWNDC;
             wc.lpfnWndProc = WindowProc_Helper;
-            wc.hInstance = instance;
+            wc.hInstance = resources->instance;
             wc.hCursor = ::LoadCursorW(NULL, IDC_ARROW);
             wc.lpszClassName = Win32Window::CLASS_HELPER;
-            Memory::Assert((m_windowClassHelper = ::RegisterClassExW(&wc)), "Failed to create window helper class.");
+            Memory::Assert((resources->windowClassHelper = ::RegisterClassExW(&wc)), "Failed to create window helper class.");
         }
 
         // Main window class for actual display windows.
@@ -124,14 +131,14 @@ namespace PK
             WNDCLASSEXW wc = { sizeof(wc) };
             wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
             wc.lpfnWndProc = WindowProc_Main;
-            wc.hInstance = instance;
+            wc.hInstance = resources->instance;
             wc.hCursor = ::LoadCursorW(NULL, IDC_ARROW);
             wc.lpszClassName = Win32Window::CLASS_MAIN;
             wc.hIcon = (HICON)::LoadImageW(NULL, IDI_APPLICATION, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
-            Memory::Assert((m_windowClassMain = ::RegisterClassExW(&wc)), "Failed to create window main class.");
+            Memory::Assert((resources->windowClassMain = ::RegisterClassExW(&wc)), "Failed to create window main class.");
         }
 
-        m_windowInstanceHelper = ::CreateWindowExW
+        resources->windowInstanceHelper = ::CreateWindowExW
         (
             WS_EX_OVERLAPPEDWINDOW,
             Win32Window::CLASS_HELPER,
@@ -139,13 +146,13 @@ namespace PK
             WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
             0, 0, 1, 1,
             NULL, NULL,
-            instance,
+            resources->instance,
             NULL
         );
 
-        Memory::Assert(m_windowInstanceHelper, "Failed to create helper window.");
+        Memory::Assert(resources->windowInstanceHelper, "Failed to create helper window.");
 
-        ::ShowWindow(m_windowInstanceHelper, SW_HIDE);
+        ::ShowWindow(resources->windowInstanceHelper, SW_HIDE);
 
         #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM)
         {
@@ -154,11 +161,14 @@ namespace PK
             dbi.dbcc_size = sizeof(dbi);
             dbi.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
             dbi.dbcc_classguid = s_GUID_DEVINTERFACE_HID;
-            m_deviceNotificationHandle = ::RegisterDeviceNotificationW(m_windowInstanceHelper, (DEV_BROADCAST_HDR*)&dbi, DEVICE_NOTIFY_WINDOW_HANDLE);
+            resources->deviceNotificationHandle = ::RegisterDeviceNotificationW(resources->windowInstanceHelper, (DEV_BROADCAST_HDR*)&dbi, DEVICE_NOTIFY_WINDOW_HANDLE);
         }
         #endif
 
         {
+            auto& native_to_keycode = resources->native_to_keycode;
+            auto& keycode_to_native = resources->keycode_to_native;
+
             memset(keycode_to_native, -1, sizeof(keycode_to_native));
             memset(native_to_keycode, 0, sizeof(native_to_keycode));
 
@@ -292,70 +302,77 @@ namespace PK
                 }
             }
         }
+
+        return 0;
     }
 
-    Win32Driver::~Win32Driver()
+    int Win32Platform::Terminate()
     {
-        auto head = m_windowHead;
+        auto head = resources->windowHead;
 
         while (head)
         {
-            m_windowHead = head->GetNext();
+            resources->windowHead = head->GetNext();
 
-            if (m_inputHandler)
+            if (resources->inputHandler)
             {
-                m_inputHandler->InputHandler_OnDisconnect(head);
+                resources->inputHandler->InputHandler_OnDisconnect(head);
             }
 
             delete static_cast<Win32Window*>(head);
-            head = m_windowHead;
+            head = resources->windowHead;
         }
 
         ::ClipCursor(NULL);
 
-        if (m_deviceNotificationHandle)
+        if (resources->deviceNotificationHandle)
         {
-            ::UnregisterDeviceNotification(m_deviceNotificationHandle);
+            ::UnregisterDeviceNotification(resources->deviceNotificationHandle);
         }
 
-        if (m_windowInstanceHelper)
+        if (resources->windowInstanceHelper)
         {
-            ::DestroyWindow((HWND)m_windowInstanceHelper);
+            ::DestroyWindow((HWND)resources->windowInstanceHelper);
         }
 
-        if (m_windowClassHelper)
+        if (resources->windowClassHelper)
         {
             ::UnregisterClassW(Win32Window::CLASS_HELPER, nullptr);
-            m_windowClassHelper = NULL;
+            resources->windowClassHelper = NULL;
         }
 
-        if (m_windowClassMain)
+        if (resources->windowClassMain)
         {
             ::UnregisterClassW(Win32Window::CLASS_MAIN, nullptr);
-            m_windowClassMain = NULL;
+            resources->windowClassMain = NULL;
         }
 
-        if (m_rawInput)
+        free(resources->rawInput);
+        free(resources->clipboard);
+        resources->rawInput = nullptr;
+        resources->clipboard = nullptr;
+
+        if (resources->dinput8_api)
         {
-            free(m_rawInput);
+            IDirectInput8_Release(resources->dinput8_api);
+            resources->dinput8_api = nullptr;
         }
 
-        if (dinput8_api)
-        {
-            IDirectInput8_Release(dinput8_api);
-            dinput8_api = nullptr;
-        }
+        FreeLibrary(resources->user32_handle);
+        FreeLibrary(resources->dinput8_handle);
+        FreeLibrary(resources->shcore_handle);
+        FreeLibrary(resources->ntdll_handle);
+        FreeLibrary(resources->dwmapi_handle);
+        FreeLibrary(resources->xinput_handle);
 
-        FreeLibrary(user32_handle);
-        FreeLibrary(dinput8_handle);
-        FreeLibrary(shcore_handle);
-        FreeLibrary(ntdll_handle);
-        FreeLibrary(dwmapi_handle);
-        FreeLibrary(xinput_handle);
+        free(resources);
+        resources = nullptr;
+
+        return 0;
     }
 
-    
-    void Win32Driver::PollEvents(bool wait)
+
+    void Win32Platform::PollEvents(bool wait)
     {
         if (wait)
         {
@@ -364,7 +381,7 @@ namespace PK
 
         auto activeHandle = ::GetActiveWindow();
         auto activeWindow = activeHandle ? (Win32Window*)GetPropW(activeHandle, Win32Window::WINDOW_PROP) : nullptr;
-        auto inputHandler = Win32Driver::GetInstance()->m_inputHandler;
+        auto inputHandler = resources->inputHandler;
 
         // Dont dispatch poll events when we're waiting for an activation window event.
         if (!wait && inputHandler)
@@ -382,7 +399,7 @@ namespace PK
         {
             if (msg.message == WM_QUIT)
             {
-                auto head = m_windowHead;
+                auto head = resources->windowHead;
 
                 while (head)
                 {
@@ -402,14 +419,17 @@ namespace PK
             activeWindow->OnPollEvents();
         }
 
-        if (m_disabledCursorWindow)
+        if (resources->disabledCursorWindow)
         {
-            m_disabledCursorWindow->SetCursorPosToCenter();
+            resources->disabledCursorWindow->SetCursorPosToCenter();
         }
     }
 
+    void* Win32Platform::GetProcess() { return resources->instance; }
+    void* Win32Platform::GetHelperWindow() { return resources->windowInstanceHelper; }
+    void* Win32Platform::GetProcAddress(void* handle, const char* name) { return (void*)::GetProcAddress((HMODULE)handle, name); }
 
-    void* Win32Driver::LoadLibrary(const char* path) const
+    void* Win32Platform::LoadLibrary(const char* path)
     {
         if (path == nullptr)
         {
@@ -446,7 +466,7 @@ namespace PK
         return handle;
     }
 
-    void Win32Driver::FreeLibrary(void* handle) const
+    void Win32Platform::FreeLibrary(void* handle)
     {
         if (handle)
         {
@@ -454,14 +474,15 @@ namespace PK
         }
     }
 
-    bool Win32Driver::GetHasFocus() const
+
+    bool Win32Platform::GetHasFocus()
     {
         DWORD foregroundProcess;
         GetWindowThreadProcessId(GetForegroundWindow(), &foregroundProcess);
         return foregroundProcess == ::GetCurrentProcessId();
     }
 
-    int2 Win32Driver::GetDesktopSize() const
+    int2 Win32Platform::GetDesktopSize()
     {
         return
         {
@@ -470,7 +491,7 @@ namespace PK
         };
     }
 
-    int4 Win32Driver::GetMonitorRect(const int2& point, bool preferPrimary) const
+    int4 Win32Platform::GetMonitorRect(const int2& point, bool preferPrimary)
     {
         auto monitor = (HMONITOR)GetNativeMonitorHandle(point, preferPrimary);
 
@@ -486,36 +507,36 @@ namespace PK
         };
     }
 
-    void* Win32Driver::GetNativeMonitorHandle(const int2& point, bool preferPrimary) const
+    void* Win32Platform::GetNativeMonitorHandle(const int2& point, bool preferPrimary)
     {
         POINT pt{ point.x, point.y };
         return ::MonitorFromPoint(pt, preferPrimary ? MONITOR_DEFAULTTOPRIMARY : MONITOR_DEFAULTTONEAREST);
     }
 
 
-    PlatformWindow* Win32Driver::CreateWindow(const PlatformWindowDescriptor& descriptor)
+    PlatformWindow* Win32Platform::CreateWindow(const PlatformWindowDescriptor& descriptor)
     {
         auto window = new Win32Window(descriptor);
-        window->GetNext() = m_windowHead;
-        m_windowHead = window;
+        window->GetNext() = resources->windowHead;
+        resources->windowHead = window;
 
-        if (m_inputHandler)
+        if (resources->inputHandler)
         {
-            m_inputHandler->InputHandler_OnConnect(window);
+            resources->inputHandler->InputHandler_OnConnect(window);
         }
 
         return window;
     }
 
-    void Win32Driver::DestroyWindow(PlatformWindow* window)
+    void Win32Platform::DestroyWindow(PlatformWindow* window)
     {
-        if (m_inputHandler)
+        if (resources->inputHandler)
         {
-            m_inputHandler->InputHandler_OnDisconnect(window);
+            resources->inputHandler->InputHandler_OnDisconnect(window);
         }
 
-        auto head = m_windowHead;
-        auto link = &m_windowHead;
+        auto head = resources->windowHead;
+        auto link = &resources->windowHead;
 
         while (head)
         {
@@ -532,37 +553,37 @@ namespace PK
         delete static_cast<Win32Window*>(window);
     }
 
-    void Win32Driver::SetInputHandler(InputHandler* handler)
+    void Win32Platform::SetInputHandler(InputHandler* handler)
     {
-        m_inputHandler = handler;
+        resources->inputHandler = handler;
 
-        if (m_inputHandler)
+        if (resources->inputHandler)
         {
-            auto head = m_windowHead;
+            auto head = resources->windowHead;
 
             while (head)
             {
-                m_inputHandler->InputHandler_OnConnect(head);
+                resources->inputHandler->InputHandler_OnConnect(head);
                 head = head->GetNext();
             }
         }
     }
 
 
-    std::string Win32Driver::GetClipboardString()
+    const char* Win32Platform::GetClipboardString()
     {
         HANDLE object = NULL;
         WCHAR* buffer = NULL;
         auto tries = 0;
 
-        while (!OpenClipboard(m_windowInstanceHelper))
+        while (!OpenClipboard(resources->windowInstanceHelper))
         {
             Sleep(1);
             tries++;
 
             if (tries++ >= 10)
             {
-                return std::string();
+                return "";
             }
         }
 
@@ -571,7 +592,7 @@ namespace PK
         if (!object)
         {
             ::CloseClipboard();
-            return std::string();
+            return "";
         }
 
         buffer = (WCHAR*)::GlobalLock(object);
@@ -579,18 +600,28 @@ namespace PK
         if (!buffer)
         {
             ::CloseClipboard();
-            return std::string();
+            return "";
         }
 
-        std::string string = Parse::FromWideString(buffer, wcsnlen(buffer, 0xFFFFu));
+        auto size = wcsnlen(buffer, 0xFFFFu) + 1u;
+
+        if (!resources->clipboard || resources->clipboardSize < size)
+        {
+            free(resources->clipboard);
+            resources->clipboard = Memory::Calloc<char>(size);
+            resources->clipboardSize = size;
+            resources->clipboard[size] = '\0';
+        }
+
+        wcstombs(resources->clipboard, buffer, size);
 
         ::GlobalUnlock(object);
         ::CloseClipboard();
 
-        return string;
+        return resources->clipboard;
     }
 
-    void Win32Driver::SetClipboardString(const char* str)
+    void Win32Platform::SetClipboardString(const char* str)
     {
         HANDLE object = NULL;
         WCHAR* buffer = NULL;
@@ -620,7 +651,7 @@ namespace PK
 
         ::GlobalUnlock(object);
 
-        while (!OpenClipboard(m_windowInstanceHelper))
+        while (!OpenClipboard(resources->windowInstanceHelper))
         {
             Sleep(1);
             tries++;
@@ -637,19 +668,19 @@ namespace PK
         ::CloseClipboard();
     }
     
-    void Win32Driver::SetConsoleColor(uint32_t color) const
+    void Win32Platform::SetConsoleColor(uint32_t color)
     {
         HANDLE handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
         ::SetConsoleTextAttribute(handle, (WORD)color);
     }
 
-    void Win32Driver::SetConsoleVisible(bool value) const
+    void Win32Platform::SetConsoleVisible(bool value)
     {
         HWND window = ::GetConsoleWindow();
         ::ShowWindow(window, value ? SW_SHOW : SW_HIDE);
     }
 
-    uint32_t Win32Driver::RemoteProcess(const char* executable, const char* arguments) const
+    uint32_t Win32Platform::RemoteProcess(const char* executable, const char* arguments)
     {
         const auto executableLen = strlen(executable);
         const auto argumentsLen = strlen(arguments);
@@ -693,7 +724,7 @@ namespace PK
     }
 
 
-    bool Win32Driver::IsGreaterOSVersion(WORD major, WORD minor, WORD sp)
+    bool Win32Platform::IsGreaterOSVersion(WORD major, WORD minor, WORD sp)
     {
         OSVERSIONINFOEXW osvi = { sizeof(osvi), major, minor, 0, 0, {0}, sp };
         DWORD mask = VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR;
@@ -703,7 +734,7 @@ namespace PK
         return PK_RtlVerifyVersionInfo(&osvi, mask, cond) == 0;
     }
 
-    bool Win32Driver::IsGreaterWin10Build(WORD build)
+    bool Win32Platform::IsGreaterWin10Build(WORD build)
     {
         OSVERSIONINFOEXW osvi = { sizeof(osvi), 10, 0, build };
         DWORD mask = VER_MAJORVERSION | VER_MINORVERSION | VER_BUILDNUMBER;
@@ -713,7 +744,7 @@ namespace PK
         return PK_RtlVerifyVersionInfo(&osvi, mask, cond) == 0;
     }
 
-    bool Win32Driver::IsInputEvent(UINT uMsg)
+    bool Win32Platform::IsInputEvent(UINT uMsg)
     {
         return uMsg == WM_MOUSEMOVE ||
             uMsg == WM_CHAR ||
@@ -737,7 +768,7 @@ namespace PK
             uMsg == WM_DROPFILES;
     }
 
-    bool Win32Driver::IsWindowEvent(UINT uMsg)
+    bool Win32Platform::IsWindowEvent(UINT uMsg)
     {
         return uMsg == WM_MOUSEACTIVATE ||
             uMsg == WM_CAPTURECHANGED ||
@@ -765,27 +796,25 @@ namespace PK
     }
 
 
-    InputKey Win32Driver::NativeToInputKey(int32_t native)
+    InputKey Win32Platform::NativeToInputKey(int32_t native)
     {
-        return Win32Driver::GetInstance()->native_to_keycode[native];
+        return resources->native_to_keycode[native];
     }
 
-    int32_t Win32Driver::InputKeyToNative(InputKey inputKey)
+    int32_t Win32Platform::InputKeyToNative(InputKey inputKey)
     {
-        return Win32Driver::GetInstance()->keycode_to_native[(uint32_t)inputKey];
+        return resources->keycode_to_native[(uint32_t)inputKey];
     }
 
 
-    bool Win32Driver::IsDisabledCursorWindow(Win32Window* window)
+    bool Win32Platform::IsDisabledCursorWindow(Win32Window* window)
     {
-        return Win32Driver::GetInstance()->m_disabledCursorWindow == window;
+        return resources->disabledCursorWindow == window;
     }
 
-    RAWINPUT* Win32Driver::GetRawInput(Win32Window* window, LPARAM lParam)
+    RAWINPUT* Win32Platform::GetRawInput(Win32Window* window, LPARAM lParam)
     {
-        auto driver = Win32Driver::GetInstance();
-
-        if (driver->m_disabledCursorWindow != window)
+        if (resources->disabledCursorWindow != window)
         {
             return nullptr;
         }
@@ -793,48 +822,44 @@ namespace PK
         UINT size = 0u;
         ::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &size, sizeof(RAWINPUTHEADER));
 
-        if (size > driver->m_rawInputSize)
+        if (size > resources->rawInputSize)
         {
-            if (driver->m_rawInput)
+            if (resources->rawInput)
             {
-                free(driver->m_rawInput);
+                free(resources->rawInput);
             }
 
-            driver->m_rawInput = (RAWINPUT*)calloc(size, 1);
-            driver->m_rawInputSize = size;
+            resources->rawInput = (RAWINPUT*)calloc(size, 1);
+            resources->rawInputSize = size;
         }
 
-        if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, driver->m_rawInput, &size, sizeof(RAWINPUTHEADER)) == (UINT)-1)
+        if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, resources->rawInput, &size, sizeof(RAWINPUTHEADER)) == (UINT)-1)
         {
             return nullptr;
         }
 
-        return driver->m_rawInput;
+        return resources->rawInput;
     }
 
 
-    void Win32Driver::SetDisabledCursorWindow(Win32Window* window, bool value, const float2& restoreCursorPos)
+    void Win32Platform::SetDisabledCursorWindow(Win32Window* window, bool value, const float2& restoreCursorPos)
     {
-        auto driver = Win32Driver::GetInstance();
-
-        if (window != driver->m_disabledCursorWindow && value)
+        if (window != resources->disabledCursorWindow && value)
         {
-            driver->m_disabledCursorWindow = window;
-            driver->m_restoreCursorPos = restoreCursorPos;
+            resources->disabledCursorWindow = window;
+            resources->restoreCursorPos = restoreCursorPos;
             return;
         }
 
-        if (window == driver->m_disabledCursorWindow && !value)
+        if (window == resources->disabledCursorWindow && !value)
         {
-            driver->m_disabledCursorWindow = nullptr;
-            window->SetCursorPosition(driver->m_restoreCursorPos);
+            resources->disabledCursorWindow = nullptr;
+            window->SetCursorPosition(resources->restoreCursorPos);
         }
     }
 
-    void Win32Driver::SetLockedCursorWindow(Win32Window* window, bool value)
+    void Win32Platform::SetLockedCursorWindow(Win32Window* window, bool value)
     {
-        auto driver = Win32Driver::GetInstance();
-
         if (value)
         {
             HWND handle = (HWND)window->GetNativeWindowHandle();
@@ -843,69 +868,59 @@ namespace PK
             ::ClientToScreen(handle, (POINT*)&clipRect.left);
             ::ClientToScreen(handle, (POINT*)&clipRect.right);
             ::ClipCursor(&clipRect);
-            driver->m_lockedCursorWindow = window;
+            resources->lockedCursorWindow = window;
             return;
         }
 
-        if (window == driver->m_lockedCursorWindow && !value)
+        if (window == resources->lockedCursorWindow && !value)
         {
             ::ClipCursor(NULL);
-            driver->m_lockedCursorWindow = nullptr;
+            resources->lockedCursorWindow = nullptr;
         }
     }
 
-    void Win32Driver::DispatchInputOnKey(InputDevice* device, InputKey key, bool isDown)
+    void Win32Platform::DispatchInputOnKey(InputDevice* device, InputKey key, bool isDown)
     {
-        auto driver = Win32Driver::GetInstance();
-
-        if (driver->m_inputHandler)
+        if (resources->inputHandler)
         {
-            driver->m_inputHandler->InputHandler_OnKey(device, key, isDown);
+            resources->inputHandler->InputHandler_OnKey(device, key, isDown);
         }
     }
 
-    void Win32Driver::DispatchInputOnMouseMoved(InputDevice* device, const float2& position, const float2& size)
+    void Win32Platform::DispatchInputOnMouseMoved(InputDevice* device, const float2& position, const float2& size)
     {
-        auto driver = Win32Driver::GetInstance();
-
-        if (driver->m_inputHandler)
+        if (resources->inputHandler)
         {
-            driver->m_inputHandler->InputHandler_OnMouseMoved(device, position, size);
+            resources->inputHandler->InputHandler_OnMouseMoved(device, position, size);
         }
     }
 
-    void Win32Driver::DispatchInputOnScroll(InputDevice* device, uint32_t axis, float offset)
+    void Win32Platform::DispatchInputOnScroll(InputDevice* device, uint32_t axis, float offset)
     {
-        auto driver = Win32Driver::GetInstance();
-
-        if (driver->m_inputHandler)
+        if (resources->inputHandler)
         {
-            driver->m_inputHandler->InputHandler_OnScroll(device, axis, offset);
+            resources->inputHandler->InputHandler_OnScroll(device, axis, offset);
         }
     }
 
-    void Win32Driver::DispatchInputOnCharacter(InputDevice* device, uint32_t character)
+    void Win32Platform::DispatchInputOnCharacter(InputDevice* device, uint32_t character)
     {
-        auto driver = Win32Driver::GetInstance();
-
-        if (driver->m_inputHandler && character >= 32 && (character <= 126 || character >= 160))
+        if (resources->inputHandler && character >= 32 && (character <= 126 || character >= 160))
         {
-            driver->m_inputHandler->InputHandler_OnCharacter(device, character);
+            resources->inputHandler->InputHandler_OnCharacter(device, character);
         }
     }
 
-    void Win32Driver::DispatchInputOnDrop(InputDevice* device, const char* const* paths, uint32_t count)
+    void Win32Platform::DispatchInputOnDrop(InputDevice* device, const char* const* paths, uint32_t count)
     {
-        auto driver = Win32Driver::GetInstance();
-
-        if (driver->m_inputHandler)
+        if (resources->inputHandler)
         {
-            driver->m_inputHandler->InputHandler_OnDrop(device, paths, count);
+            resources->inputHandler->InputHandler_OnDrop(device, paths, count);
         }
     }
 
 
-    LRESULT Win32Driver::WindowProc_Helper(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+    LRESULT Win32Platform::WindowProc_Helper(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         switch (uMsg)
         {
@@ -933,7 +948,7 @@ namespace PK
         return ::DefWindowProcW(hWnd, uMsg, wParam, lParam);
     }
 
-    LRESULT Win32Driver::WindowProc_Main(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+    LRESULT Win32Platform::WindowProc_Main(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         Win32Window* window = (Win32Window*)::GetPropW(hWnd, Win32Window::WINDOW_PROP);
         
@@ -949,7 +964,7 @@ namespace PK
             }
         }
 
-        if (window && (Win32Driver::IsInputEvent(uMsg) || Win32Driver::IsWindowEvent(uMsg)))
+        if (window && (Win32Platform::IsInputEvent(uMsg) || Win32Platform::IsWindowEvent(uMsg)))
         {
             return window->WindowProc(uMsg, wParam, lParam);
         }

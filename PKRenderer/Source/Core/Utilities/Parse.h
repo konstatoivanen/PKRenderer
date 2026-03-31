@@ -21,7 +21,6 @@ namespace PK::Parse
     FixedString32 BytesToString(size_t bytes);
     
     std::wstring ToWideString(const char* str, size_t length);
-    std::string FromWideString(const wchar_t* str, size_t length);
 
     template<typename T>
     void StringsToArray(const char* const* strs, T* outArray, const uint32_t count)

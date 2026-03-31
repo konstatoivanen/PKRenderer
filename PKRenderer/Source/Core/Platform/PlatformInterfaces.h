@@ -78,39 +78,4 @@ namespace PK
         inline void SetPosition(const int2& position) { SetRect({ position, GetSize() }); }
         inline void SetCursorPosToCenter() { SetCursorPosition(GetSize() / 2); }
     };
-
-    struct PlatformDriver : public NoCopy
-    {
-        PlatformDriver() { Memory::Assert(s_instance == nullptr, "Attempting to create multiple platform interfaces!"); s_instance = this; }
-        virtual ~PlatformDriver() = 0;
-
-        virtual void PollEvents(bool wait) = 0;
-
-        virtual void* GetProcess() const = 0;
-        virtual void* GetHelperWindow() const = 0;
-        virtual void* GetProcAddress(void* handle, const char* name) const = 0;
-
-        virtual void* LoadLibrary(const char* path) const = 0;
-        virtual void FreeLibrary(void* handle) const = 0;
-
-        virtual bool GetHasFocus() const = 0;
-        virtual int2 GetDesktopSize() const = 0;
-        virtual int4 GetMonitorRect(const int2& point, bool preferPrimary) const = 0;
-        virtual void* GetNativeMonitorHandle(const int2& point, bool preferPrimary) const = 0;
-
-        virtual PlatformWindow* CreateWindow(const PlatformWindowDescriptor& descriptor) = 0;
-        virtual void DestroyWindow(PlatformWindow* window) = 0;
-
-        virtual void SetInputHandler(InputHandler* handler) = 0;
-
-        virtual std::string GetClipboardString() = 0;
-        virtual void SetClipboardString(const char* str) = 0;
-
-        virtual void SetConsoleColor(uint32_t color) const = 0;
-        virtual void SetConsoleVisible(bool value) const = 0;
-        virtual uint32_t RemoteProcess(const char* executable, const char* arguments) const = 0;
-
-        static inline PlatformDriver* Get() { return s_instance; }
-        protected: inline static PlatformDriver* s_instance = nullptr;
-    };
 }

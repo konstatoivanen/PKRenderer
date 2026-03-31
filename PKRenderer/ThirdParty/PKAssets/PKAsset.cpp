@@ -1,5 +1,6 @@
 #include "PKAsset.h"
-#include <string>
+#include <string.h>
+#include <math.h>
 
 namespace PKAssets
 {

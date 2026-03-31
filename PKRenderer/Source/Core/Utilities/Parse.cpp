@@ -67,13 +67,6 @@ namespace PK::Parse
         return wide;
     }
 
-    std::string FromWideString(const wchar_t* str, size_t length)
-    {
-        std::string narrow(length, '#');
-        wcstombs(narrow.data(), str, length);
-        return narrow;
-    }
-
     FixedString64 GetFilePathStem(const char* str)
     {
         auto last_slash = 0ull;

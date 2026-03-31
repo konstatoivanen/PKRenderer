@@ -256,7 +256,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClInclude Include="Source\Core\Platform\PlatformInterfaces.h" />
     <ClInclude Include="Source\Core\Platform\Linux\LinuxPlatform.h" />
     <ClInclude Include="Source\Core\Platform\Windows\Win32Platform.h" />
-    <ClInclude Include="Source\Core\Platform\Windows\Win32Driver.h" />
+    <ClInclude Include="Source\Core\Platform\Windows\Win32Internal.h" />
     <ClInclude Include="Source\Core\Platform\Windows\Win32Window.h" />
     <ClInclude Include="Source\Core\Rendering\Font.h" />
     <ClInclude Include="Source\Core\Rendering\Window.h" />
@@ -1032,7 +1032,7 @@ Call "$(SolutionDir)Build\PKAssetTools.exe" "'$(ProjectDir)Content\'" "'$(Target
     <ClCompile Include="Source\Core\ControlFlow\Sequencer.cpp" />
     <ClCompile Include="Source\Core\Input\InputState.cpp" />
     <ClCompile Include="Source\Core\Platform\Platform.cpp" />
-    <ClCompile Include="Source\Core\Platform\Windows\Win32Driver.cpp" />
+    <ClCompile Include="Source\Core\Platform\Windows\Win32Platform.cpp" />
     <ClCompile Include="Source\Core\Platform\Windows\Win32Window.cpp" />
     <ClCompile Include="Source\Core\Rendering\Font.cpp" />
     <ClCompile Include="Source\Core\Rendering\Window.cpp" />

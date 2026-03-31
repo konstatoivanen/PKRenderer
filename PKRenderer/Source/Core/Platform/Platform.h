@@ -1,7 +1,6 @@
 #pragma once
 // Some manual guarding to avoid user error
 #define PK_IS_PLATFORM_HEADER 1
-
 #define _CRT_INTERNAL_NONSTDC_NAMES 1
 
 // Compiler defines
@@ -46,95 +45,6 @@
     #error "Unsupported compiler!"
 #endif
 
-#if defined(_WIN32) && defined(_WIN64)
-#define PK_PLATFORM_WINDOWS 1
-#else
-#define PK_PLATFORM_WINDOWS 0
-#endif
-
-#if defined(__linux__) && defined(_LINUX64)
-#define PK_PLATFORM_LINUX 1
-#else
-#define PK_PLATFORM_LINUX 0
-#endif
-
-#include <stdint.h>
-#include <string>
-#include "Core/Math/MathFwd.h"
-
-namespace PK
-{
-    struct PlatformDriver;
-    struct PlatformWindow;
-    struct PlatformWindowDescriptor;
-    struct IPlatformWindowListener;
-    struct InputHandler;
-
-    namespace Platform
-    {
-        PlatformDriver* CreateDriver();
-        void DestroyDriver(PlatformDriver* driver);
-        
-        void PollEvents();
-        void WaitEvents();
-
-        void* GetProcess();
-        void* GetHelperWindow();
-
-        void* LoadLibrary(const char* path);
-        void FreeLibrary(void* handle);
-        void* GetProcAddress(void* handle, const char* name);
-
-        bool GetHasFocus();
-        int2 GetDesktopSize();
-        int4 GetMonitorRect(const int2& point, bool preferPrimary);
-        void* GetNativeMonitorHandle(const int2& point, bool preferPrimary);
-
-        PlatformWindow* CreateWindow(const PlatformWindowDescriptor& descriptor);
-        void DestroyWindow(PlatformWindow* window);
-
-        void SetInputHandler(InputHandler* handler);
-
-        std::string GetClipboardString();
-        void SetClipboardString(const char* str);
-
-        void SetConsoleColor(uint32_t color);
-        void SetConsoleVisible(bool value);
-        uint32_t RemoteProcess(const char* executable, const char* arguments);
-
-        inline static uint32_t InterlockedExchange(volatile uint32_t* dst, uint32_t exchange);
-        inline static uint32_t InterlockedCompareExchange(volatile uint32_t* dst, uint32_t exchange, uint32_t comperand);
-        inline static uint32_t InterlockedAdd(volatile uint32_t* dst, uint32_t value);
-        inline static uint32_t InterlockedIncrement(volatile uint32_t* dst);
-        inline static uint32_t InterlockedDecrement(volatile uint32_t* dst);
-        inline static uint32_t AtomicRead(const volatile uint32_t* dst);
-        inline static void AtomicStore(volatile uint32_t* dst, uint32_t value);
-        inline static uint64_t BitScan64(uint64_t mask);
-    }
-}
-
-#include "Windows/Win32Platform.h"
-#include "Linux/LinuxPlatform.h"
-
-#ifndef PK_PLAFTORM_DRIVER_TYPE
-#error "Platform driver is undefined!"
-#endif
-
-#ifndef PK_PLATFORM_ARCH_X64
-#define PK_PLATFORM_ARCH_X64 0
-#endif
-#ifndef PK_PLATFORM_ARCH_ARM64
-#define PK_PLATFORM_ARCH_ARM64 0
-#endif
-
-#ifndef PK_PLATFORM_DEBUG_BREAK
-#define PK_PLATFORM_DEBUG_BREAK
-#endif
-
-#ifndef PK_PLATFORM_TEXT_IS_CHAR16
-#define PK_PLATFORM_TEXT_IS_CHAR16 0
-#endif
-
 // SIMD defines
 #if defined(__i386__) || defined(_M_IX86) || defined(__x86_64__) || defined(_M_X64) || defined(__SSE2__)
 #define PK_PLATFORM_SIMD_SSE2 1
@@ -161,6 +71,104 @@ namespace PK
 #endif
 
 #define PK_PLATFORM_SIMD (PK_PLATFORM_SIMD_SSE2 || PK_PLATFORM_SIMD_SSE3 || PK_PLATFORM_SIMD_SSE4 || PK_PLATFORM_SIMD_NEON || PK_PLATFORM_SIMD_VMX)
+
+#if defined(_WIN32) && defined(_WIN64)
+#define PK_PLATFORM_WINDOWS 1
+#else
+#define PK_PLATFORM_WINDOWS 0
+#endif
+
+#if defined(__linux__) && defined(_LINUX64)
+#define PK_PLATFORM_LINUX 1
+#else
+#define PK_PLATFORM_LINUX 0
+#endif
+
+#include <stdint.h>
+#include "Core/Utilities/NoCopy.h"
+#include "Core/Math/MathFwd.h"
+
+namespace PK
+{
+    #if PK_PLATFORM_WINDOWS
+    struct Win32Platform;
+    typedef Win32Platform Platform;
+    #elif PK_PLATFORM_LINUX
+    struct LinuxPlatform;
+    typedef LinuxPlatform Platform;
+    #else
+    struct IPlatform;
+    typedef IPlatform Platform;
+    #endif
+
+    struct PlatformWindow;
+    struct PlatformWindowDescriptor;
+    struct IPlatformWindowListener;
+    struct InputHandler;
+    struct InputDevice;
+
+    struct IPlatform : public NoCopy
+    {
+        static int Initialize() = delete;
+        static int Terminate() = delete;
+
+        static void PollEvents();
+        static void WaitEvents();
+
+        static void PollEvents(bool wait) = delete;
+        static void* GetProcess() = delete;
+        static void* GetHelperWindow() = delete;
+
+        static void* LoadLibrary(const char* path) = delete;
+        static void FreeLibrary(void* handle) = delete;
+        static void* GetProcAddress(void* handle, const char* name) = delete;
+
+        static bool GetHasFocus() = delete;
+        static int2 GetDesktopSize() = delete;
+        static int4 GetMonitorRect(const int2& point, bool preferPrimary) = delete;
+        static void* GetNativeMonitorHandle(const int2& point, bool preferPrimary) = delete;
+
+        static PlatformWindow* CreateWindow(const PlatformWindowDescriptor& descriptor) = delete;
+        static void DestroyWindow(PlatformWindow* window) = delete;
+
+        static void SetInputHandler(InputHandler* handler) = delete;
+
+        static const char* GetClipboardString() = delete;
+        static void SetClipboardString(const char* str) = delete;
+
+        static void SetConsoleColor(uint32_t color) = delete;
+        static void SetConsoleVisible(bool value) = delete;
+        static uint32_t RemoteProcess(const char* executable, const char* arguments) = delete;
+
+        static uint32_t InterlockedExchange(volatile uint32_t* dst, uint32_t exchange) = delete;
+        static uint32_t InterlockedCompareExchange(volatile uint32_t* dst, uint32_t exchange, uint32_t comperand) = delete;
+        static uint32_t InterlockedAdd(volatile uint32_t* dst, uint32_t value) = delete;
+        static uint32_t InterlockedIncrement(volatile uint32_t* dst) = delete;
+        static uint32_t InterlockedDecrement(volatile uint32_t* dst) = delete;
+        static uint32_t AtomicRead(const volatile uint32_t* dst) = delete;
+        static void AtomicStore(volatile uint32_t* dst, uint32_t value) = delete;
+        static uint64_t BitScan64(uint64_t mask) = delete;
+    };
+}
+
+#include "Windows/Win32Platform.h"
+#include "Linux/LinuxPlatform.h"
+
+#ifndef PK_PLATFORM_X64
+#define PK_PLATFORM_X64 0
+#endif
+
+#ifndef PK_PLATFORM_ARM64
+#define PK_PLATFORM_ARM64 0
+#endif
+
+#ifndef PK_PLATFORM_DEBUG_BREAK
+#define PK_PLATFORM_DEBUG_BREAK
+#endif
+
+#ifndef PK_PLATFORM_TEXT_IS_CHAR16
+#define PK_PLATFORM_TEXT_IS_CHAR16 0
+#endif
 
 // Unicode text macro
 // @TODO USE!!!!

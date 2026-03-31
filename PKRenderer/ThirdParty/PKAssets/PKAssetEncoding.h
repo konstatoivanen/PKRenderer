@@ -15,6 +15,6 @@ namespace PKAssets
     };
 
     void EncodeBuffer(const void* in_data, size_t in_data_size, PKEncodeTable* table, uint8_t* out_data);
-    void EncodeBuffer(const void* in_data, size_t in_data_size, uint8_t** out_data, size_t* out_data_size);
-    void DecodeBuffer(const void* in_data, uint8_t* write_data, size_t write_size);
+    int EncodeBuffer(const void* in_data, size_t in_data_size, uint8_t** out_data, size_t* out_data_size);
+    int DecodeBuffer(const void* in_data, uint8_t* write_data, size_t write_size);
 }

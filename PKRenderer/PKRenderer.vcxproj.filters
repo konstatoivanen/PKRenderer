@@ -1452,7 +1452,7 @@
     <ClInclude Include="Source\Core\Platform\Windows\Win32Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Platform\Windows\Win32Driver.h">
+    <ClInclude Include="Source\Core\Platform\Windows\Win32Internal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Input\InputDevice.h">
@@ -2380,7 +2380,7 @@
     <ClCompile Include="Source\Core\Input\InputState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Platform\Windows\Win32Driver.cpp">
+    <ClCompile Include="Source\Core\Platform\Windows\Win32Platform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Platform\Windows\Win32Window.cpp">

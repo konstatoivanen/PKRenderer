@@ -1,6 +1,6 @@
 #include "PrecompiledHeader.h"
 #if PK_PLATFORM_WINDOWS
-#include "Win32Driver.h"
+#include "Win32Internal.h"
 #include "Win32Window.h"
 #include "Windowsx.h"
 #include "Core/Utilities/Parse.h"
@@ -201,7 +201,7 @@ namespace PK
         // Set default icon from rc.
         if (descriptor.useEmbeddedIcon)
         {
-            HINSTANCE hInstance = (HINSTANCE)Win32Driver::Get()->GetProcess();
+            HINSTANCE hInstance = (HINSTANCE)Platform::GetProcess();
             HICON hIcon = ::LoadIconW(hInstance, PK_WIN32_EMBEDDED_ICON_NAME);
             ::SendMessageW(m_handle, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
             ::SendMessageW(m_handle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
@@ -732,15 +732,15 @@ namespace PK
         }
 
         ::SetCursor(isVisible ? ::LoadCursorW(NULL, IDC_ARROW) : NULL);
-        Win32Driver::SetDisabledCursorWindow(this, isDisabled, GetCursorPosition());
-        Win32Driver::SetLockedCursorWindow(this, isLocked);
+        Platform::SetDisabledCursorWindow(this, isDisabled, GetCursorPosition());
+        Platform::SetLockedCursorWindow(this, isLocked);
     }
 
     void Win32Window::UpdateRawInput(LPARAM lParam)
     {
         if (m_isUsingRawInput)
         {
-            auto rawInput = Win32Driver::GetRawInput(this, lParam);
+            auto rawInput = Platform::GetRawInput(this, lParam);
 
             if (rawInput != nullptr)
             {
@@ -795,7 +795,7 @@ namespace PK
         if (isDown != m_keyState[(uint32_t)key])
         {
             m_keyState[(uint32_t)key] = isDown;
-            Win32Driver::DispatchInputOnKey(this, key, isDown);
+            Platform::DispatchInputOnKey(this, key, isDown);
         }
     }
 
@@ -804,7 +804,7 @@ namespace PK
         if (glm::any(glm::epsilonNotEqual(m_cursorposVirtual, position, 1e-6f)))
         {
             m_cursorposVirtual = position;
-            Win32Driver::DispatchInputOnMouseMoved(this, position, m_clientsize);
+            Platform::DispatchInputOnMouseMoved(this, position, m_clientsize);
         }
     }
 
@@ -819,12 +819,12 @@ namespace PK
         m_scroll[0][axis] = offset;
         DispatchInputOnKey(axiskeys[axis][0], offset < -0.5f);
         DispatchInputOnKey(axiskeys[axis][1], offset > +0.5f);
-        Win32Driver::DispatchInputOnScroll(this, axis, offset);
+        Platform::DispatchInputOnScroll(this, axis, offset);
     }
 
     void Win32Window::DispatchInputOnCharacter(uint32_t character)
     {
-        Win32Driver::DispatchInputOnCharacter(this, character);
+        Platform::DispatchInputOnCharacter(this, character);
     }
 
     void Win32Window::DispatchInputOnDrop(WPARAM wParam)
@@ -849,7 +849,7 @@ namespace PK
             paths[i] = dst;
         }
 
-        Win32Driver::DispatchInputOnDrop(this, paths, count);
+        Platform::DispatchInputOnDrop(this, paths, count);
 
         for (auto i = 0u; i < count; ++i)
         {
@@ -1182,7 +1182,7 @@ namespace PK
             {
                 const bool isDown = !(HIWORD(lParam) & KF_UP);
                 const auto scancode = GetRemappedScanCode(wParam, lParam);
-                auto key = Win32Driver::NativeToInputKey(scancode);
+                auto key = Platform::NativeToInputKey(scancode);
 
                 if (!HandleModifierKeys(wParam, lParam, &key))
                 {
@@ -1224,7 +1224,7 @@ namespace PK
 
                 if (m_cursorLock && m_cursorHide)
                 {
-                    if (!Win32Driver::IsDisabledCursorWindow(this) || m_isUsingRawInput)
+                    if (!Platform::IsDisabledCursorWindow(this) || m_isUsingRawInput)
                     {
                         break;
                     }
