@@ -35,6 +35,17 @@ namespace PK
 
         resources = static_cast<Win32Resources*>(calloc(1, sizeof(Win32Resources)));
 
+        if (!resources)
+        {
+            return -1;
+        }
+
+        LARGE_INTEGER frequency;
+        if (::QueryPerformanceFrequency(&frequency))
+        {
+            resources->cyclesToSeconds = 1.0 / static_cast<double>(frequency.QuadPart);
+        }
+
         DWORD flags = GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
         Memory::Assert(GetModuleHandleExW(flags, (const WCHAR*)&s_localPtr, (HMODULE*)&resources->instance), "Failed to get program HINSTANCE");
 
@@ -429,6 +440,20 @@ namespace PK
     void* Win32Platform::GetHelperWindow() { return resources->windowInstanceHelper; }
     void* Win32Platform::GetProcAddress(void* handle, const char* name) { return (void*)::GetProcAddress((HMODULE)handle, name); }
 
+    double Win32Platform::GetTimeSeconds()
+    {
+        LARGE_INTEGER counter;
+        QueryPerformanceCounter(&counter);
+        return double(counter.QuadPart) * resources->cyclesToSeconds;
+    }
+
+    uint64_t Win32Platform::GetTimeCycles()
+    {
+        LARGE_INTEGER counter;
+        QueryPerformanceCounter(&counter);
+        return counter.QuadPart;
+    }
+
     void* Win32Platform::LoadLibrary(const char* path)
     {
         if (path == nullptr)
@@ -512,7 +537,6 @@ namespace PK
         POINT pt{ point.x, point.y };
         return ::MonitorFromPoint(pt, preferPrimary ? MONITOR_DEFAULTTOPRIMARY : MONITOR_DEFAULTTONEAREST);
     }
-
 
     PlatformWindow* Win32Platform::CreateWindow(const PlatformWindowDescriptor& descriptor)
     {

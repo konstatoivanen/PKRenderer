@@ -123,6 +123,9 @@ namespace PK
         static void FreeLibrary(void* handle) = delete;
         static void* GetProcAddress(void* handle, const char* name) = delete;
 
+        static double GetTimeSeconds() = delete;
+        static uint64_t GetTimeCycles() = delete;
+
         static bool GetHasFocus() = delete;
         static int2 GetDesktopSize() = delete;
         static int4 GetMonitorRect(const int2& point, bool preferPrimary) = delete;

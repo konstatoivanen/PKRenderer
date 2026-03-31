@@ -132,6 +132,9 @@ namespace PK
         static int4 GetMonitorRect(const int2& point, bool preferPrimary);
         static void* GetNativeMonitorHandle(const int2& point, bool preferPrimary);
 
+        static double GetTimeSeconds();
+        static uint64_t GetTimeCycles();
+
         static PlatformWindow* CreateWindow(const PlatformWindowDescriptor& descriptor);
         static void DestroyWindow(PlatformWindow* window);
 

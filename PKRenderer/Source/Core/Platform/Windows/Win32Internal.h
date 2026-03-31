@@ -178,6 +178,8 @@ namespace PK
 
         char* clipboard = nullptr;
         size_t clipboardSize = 0ull;
+
+        double cyclesToSeconds = 1.0;
     };
 };
 
